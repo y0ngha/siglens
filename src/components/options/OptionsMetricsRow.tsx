@@ -6,7 +6,7 @@ import {
     summarizeChainForLlm,
 } from '@y0ngha/siglens-core';
 import { InfoTooltip } from '@/components/ui/InfoTooltip';
-import { pickActiveChain } from '@/lib/options/pickActiveChain';
+import { pickActiveChain } from '@/domain/options/pickActiveChain';
 import {
     formatAtmIv,
     formatImpliedMove,

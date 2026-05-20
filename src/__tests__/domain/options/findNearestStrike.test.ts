@@ -1,4 +1,4 @@
-import { findNearestStrikeIndex } from '@/lib/options/findNearestStrike';
+import { findNearestStrikeIndex } from '@/domain/options/findNearestStrike';
 
 describe('findNearestStrikeIndex', () => {
     it('빈 배열에 대해 -1을 반환한다', () => {

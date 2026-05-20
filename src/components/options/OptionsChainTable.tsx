@@ -7,8 +7,8 @@ import {
     summarizeChainForLlm,
 } from '@y0ngha/siglens-core';
 import { InfoTooltip } from '@/components/ui/InfoTooltip';
-import { findNearestStrikeIndex } from '@/lib/options/findNearestStrike';
-import { pickActiveChain } from '@/lib/options/pickActiveChain';
+import { findNearestStrikeIndex } from '@/domain/options/findNearestStrike';
+import { pickActiveChain } from '@/domain/options/pickActiveChain';
 import { cn } from '@/lib/cn';
 
 interface OptionsChainTableProps {
@@ -84,6 +84,9 @@ export function OptionsChainTable({
     // chain is empty; only the render branches below short-circuit.
     const tableData = useMemo(() => {
         if (!selectedChain) {
+            // Safe-cast: `null` literal is widened to the (number | null) union
+            // shared with the success branch below, so the useMemo return type
+            // stays uniform across both paths. Runtime value is genuinely null.
             return {
                 rows: [],
                 nearestStrike: null as number | null,
@@ -227,7 +230,7 @@ export function OptionsChainTable({
                             {rows.map(({ strike, call, put }) => {
                                 const isAtm = strike === nearestStrike;
                                 const isMaxPain =
-                                    !isNaN(maxPainStrike) &&
+                                    !Number.isNaN(maxPainStrike) &&
                                     strike === maxPainStrike;
 
                                 return (

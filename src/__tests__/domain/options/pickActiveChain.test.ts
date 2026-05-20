@@ -1,5 +1,5 @@
 import type { OptionsChain, OptionsSnapshot } from '@y0ngha/siglens-core';
-import { pickActiveChain } from '@/lib/options/pickActiveChain';
+import { pickActiveChain } from '@/domain/options/pickActiveChain';
 
 function makeChain(expirationDate: string): OptionsChain {
     return {

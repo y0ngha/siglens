@@ -31,16 +31,15 @@ export function OptionsPageClient({
     snapshot,
     slots,
 }: OptionsPageClientProps) {
+    const [expirationDate, setExpirationDate] = useState<string | 'all'>(
+        () => slots.filter((s): s is SlotMapping => s !== null)[0]
+            ?.expirationDate ?? 'all'
+    );
+    const { modelId } = useSymbolModel();
     const validSlots = useMemo(
         () => slots.filter((s): s is SlotMapping => s !== null),
         [slots]
     );
-    const initialExpiry: string | 'all' =
-        validSlots[0]?.expirationDate ?? 'all';
-    const [expirationDate, setExpirationDate] = useState<string | 'all'>(
-        initialExpiry
-    );
-    const { modelId } = useSymbolModel();
 
     return (
         <main className="mx-auto max-w-5xl space-y-6 px-4 py-6">

@@ -62,13 +62,17 @@ const SIGNAL_KIND_LABEL: Record<OptionsSignalKind, string> = {
     neutral: '중립',
 };
 
+// Length of the 'YYYY-MM-DD HH:mm' prefix after replacing the 'T' separator
+// with a space — slice boundary for the compact header display.
+const ANALYZED_AT_DISPLAY_LENGTH = 16;
+
 /**
  * Format an ISO datetime string as "YYYY-MM-DD HH:mm". The server-side
  * timestamp is treated as already-displayable (no zone math); only the
  * minute-precision slice is shown to keep the header compact.
  */
 function formatAnalyzedAt(iso: string): string {
-    return iso.replace('T', ' ').slice(0, 16);
+    return iso.replace('T', ' ').slice(0, ANALYZED_AT_DISPLAY_LENGTH);
 }
 
 interface ToneBadgeProps {

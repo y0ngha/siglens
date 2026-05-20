@@ -49,22 +49,27 @@ async function buildEntries(): Promise<SitemapEntry[]> {
     // 순차 처리해 rate-limit 위험을 방어한다. `hasOptionsMarket`은
     // 1일 캐시라 두 번째 sitemap 빌드부터는 fetch 없이 메모리에서 해결된다.
     const OPTIONS_PROBE_CONCURRENCY = 5;
-    const resultChunks: boolean[][] = [];
-    for (
-        let i = 0;
-        i < POPULAR_TICKERS.length;
-        i += OPTIONS_PROBE_CONCURRENCY
-    ) {
-        const chunk = POPULAR_TICKERS.slice(i, i + OPTIONS_PROBE_CONCURRENCY);
-        // 청크 단위 await로 동시 호출 수를 OPTIONS_PROBE_CONCURRENCY로
-        // 상한 유지. 각 청크 결과는 외부에서 .flat()으로 단일 배열로
-        // 결합하므로 누적 배열의 in-place mutation은 없다.
-        const chunkResults = await Promise.all(
+    const allChunks = Array.from(
+        {
+            length: Math.ceil(
+                POPULAR_TICKERS.length / OPTIONS_PROBE_CONCURRENCY
+            ),
+        },
+        (_, i) =>
+            POPULAR_TICKERS.slice(
+                i * OPTIONS_PROBE_CONCURRENCY,
+                (i + 1) * OPTIONS_PROBE_CONCURRENCY
+            )
+    );
+    // 청크 단위 await로 동시 호출 수를 OPTIONS_PROBE_CONCURRENCY로
+    // 상한 유지. spread 누적으로 in-place mutation 없이 결합한다.
+    let tickerHasOptions: boolean[] = [];
+    for (const chunk of allChunks) {
+        const results = await Promise.all(
             chunk.map(ticker => hasOptionsMarket(ticker).catch(() => false))
         );
-        resultChunks.push(chunkResults);
+        tickerHasOptions = [...tickerHasOptions, ...results];
     }
-    const tickerHasOptions = resultChunks.flat();
     const tickersWithOptions = new Set(
         POPULAR_TICKERS.filter((_, i) => tickerHasOptions[i])
     );

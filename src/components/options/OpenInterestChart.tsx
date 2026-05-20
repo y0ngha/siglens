@@ -1,13 +1,14 @@
 'use client';
 
+import { useMemo } from 'react';
 import {
     type OptionsSnapshot,
     aggregateOpenInterest,
     summarizeChainForLlm,
 } from '@y0ngha/siglens-core';
 import { InfoTooltip } from '@/components/ui/InfoTooltip';
-import { findNearestStrikeIndex } from '@/lib/options/findNearestStrike';
-import { pickActiveChain } from '@/lib/options/pickActiveChain';
+import { findNearestStrikeIndex } from '@/domain/options/findNearestStrike';
+import { pickActiveChain } from '@/domain/options/pickActiveChain';
 
 interface OpenInterestChartProps {
     expirationDate: string | 'all';
@@ -64,62 +65,66 @@ export function OpenInterestChart({
     expirationDate,
     snapshot,
 }: OpenInterestChartProps) {
-    const selectedChain = pickActiveChain(snapshot, expirationDate);
-
-    if (!selectedChain) {
-        return (
-            <p className="text-secondary-500 py-4 text-sm">
-                이 만기에는 OI 데이터가 없어요.
-            </p>
-        );
-    }
-
-    const oiByStrike = aggregateOpenInterest(selectedChain);
-
-    if (oiByStrike.length === 0) {
-        return (
-            <p className="text-secondary-500 py-4 text-sm">
-                이 만기에는 OI 데이터가 없어요.
-            </p>
-        );
-    }
-
     const underlyingPrice = snapshot.underlyingPrice;
-    const maxPain = summarizeChainForLlm(
-        selectedChain,
-        underlyingPrice
-    ).maxPain;
 
-    const top3Set = new Set<number>(
-        oiByStrike
-            .toSorted(
-                (a, b) =>
-                    b.callOpenInterest +
-                    b.putOpenInterest -
-                    (a.callOpenInterest + a.putOpenInterest)
-            )
-            .slice(0, 3)
-            .map(x => x.strike)
-    );
+    const derived = useMemo(() => {
+        const selectedChain = pickActiveChain(snapshot, expirationDate);
+        if (!selectedChain) return null;
+        const oiByStrike = aggregateOpenInterest(selectedChain);
+        if (oiByStrike.length === 0) return null;
 
-    const globalMax = Math.max(
-        Math.max(...oiByStrike.map(s => s.callOpenInterest), 1),
-        Math.max(...oiByStrike.map(s => s.putOpenInterest), 1)
-    );
+        const maxPain = summarizeChainForLlm(
+            selectedChain,
+            underlyingPrice
+        ).maxPain;
 
+        const top3Set = new Set<number>(
+            oiByStrike
+                .toSorted(
+                    (a, b) =>
+                        b.callOpenInterest +
+                        b.putOpenInterest -
+                        (a.callOpenInterest + a.putOpenInterest)
+                )
+                .slice(0, 3)
+                .map(x => x.strike)
+        );
+
+        const globalMax = Math.max(
+            Math.max(...oiByStrike.map(s => s.callOpenInterest), 1),
+            Math.max(...oiByStrike.map(s => s.putOpenInterest), 1)
+        );
+
+        const strikes = oiByStrike.map(s => s.strike);
+        const maxPainIdx = Number.isNaN(maxPain)
+            ? -1
+            : findNearestStrikeIndex(strikes, maxPain);
+        const currentPriceIdx = findNearestStrikeIndex(
+            strikes,
+            underlyingPrice
+        );
+
+        return {
+            oiByStrike,
+            top3Set,
+            globalMax,
+            maxPainIdx,
+            currentPriceIdx,
+        };
+    }, [snapshot, expirationDate, underlyingPrice]);
+
+    if (!derived) {
+        return (
+            <p className="text-secondary-500 py-4 text-sm">
+                이 만기에는 OI 데이터가 없어요.
+            </p>
+        );
+    }
+
+    const { oiByStrike, top3Set, globalMax, maxPainIdx, currentPriceIdx } =
+        derived;
     const count = oiByStrike.length;
     const bw = barWidth(count);
-
-    const maxPainIdx = isNaN(maxPain)
-        ? -1
-        : findNearestStrikeIndex(
-              oiByStrike.map(s => s.strike),
-              maxPain
-          );
-    const currentPriceIdx = findNearestStrikeIndex(
-        oiByStrike.map(s => s.strike),
-        underlyingPrice
-    );
 
     const maxPainX = maxPainIdx >= 0 ? barCenterX(maxPainIdx, count) : null;
     const currentPriceX =
