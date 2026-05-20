@@ -6,7 +6,15 @@ import {
 } from '@/lib/options/optionsFormatters';
 
 describe('formatMaxPain', () => {
-    it('NaN을 em dash로 표현한다', () => {
+    it('null을 em dash로 표현한다 (siglens-core R12 이후 nullable contract)', () => {
+        expect(formatMaxPain(null)).toBe('—');
+    });
+
+    it('undefined를 em dash로 표현한다', () => {
+        expect(formatMaxPain(undefined)).toBe('—');
+    });
+
+    it('NaN을 em dash로 표현한다 (legacy 호환)', () => {
         expect(formatMaxPain(NaN)).toBe('—');
     });
 
@@ -28,7 +36,15 @@ describe('formatPutCallRatio', () => {
         expect(formatPutCallRatio(Number.POSITIVE_INFINITY)).toBe('∞');
     });
 
-    it('NaN을 em dash로 표현한다 (양쪽 OI가 0일 때)', () => {
+    it('null을 em dash로 표현한다 (siglens-core R12 이후 nullable contract)', () => {
+        expect(formatPutCallRatio(null)).toBe('—');
+    });
+
+    it('undefined를 em dash로 표현한다', () => {
+        expect(formatPutCallRatio(undefined)).toBe('—');
+    });
+
+    it('NaN을 em dash로 표현한다 (legacy 호환)', () => {
         expect(formatPutCallRatio(NaN)).toBe('—');
     });
 

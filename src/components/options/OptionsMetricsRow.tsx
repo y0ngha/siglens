@@ -67,8 +67,11 @@ export function OptionsMetricsRow({
     );
     const nearestExpiry = snapshot.chains[0]?.expirationDate ?? '';
 
-    const maxPainValue = formatMaxPain(metrics?.maxPain ?? NaN);
-    const pcRatioValue = formatPutCallRatio(metrics?.putCallRatio ?? NaN);
+    // siglens-core R12: maxPain / putCallRatio are now `number | null`
+    // (formatters tolerate the union explicitly), so pass through directly
+    // without the legacy `?? NaN` coercion.
+    const maxPainValue = formatMaxPain(metrics?.maxPain ?? null);
+    const pcRatioValue = formatPutCallRatio(metrics?.putCallRatio ?? null);
     const atmIvValue = formatAtmIv(metrics?.atmImpliedVolatility ?? null);
     const impliedMoveValue = formatImpliedMove(
         metrics?.impliedMovePercent ?? null

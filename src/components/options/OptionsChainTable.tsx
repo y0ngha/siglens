@@ -88,10 +88,12 @@ export function OptionsChainTable({
             // Safe-cast: `null` literal is widened to the (number | null) union
             // shared with the success branch below, so the useMemo return type
             // stays uniform across both paths. Runtime value is genuinely null.
+            // siglens-core R12: maxPainStrike is `number | null` (was `number`
+            // with NaN sentinel), so the fallback aligns with the new contract.
             return {
                 rows: [],
                 nearestStrike: null as number | null,
-                maxPainStrike: NaN,
+                maxPainStrike: null as number | null,
             };
         }
         const aggregatedStrikes = aggregateOpenInterest(selectedChain);
@@ -231,7 +233,7 @@ export function OptionsChainTable({
                             {rows.map(({ strike, call, put }) => {
                                 const isAtm = strike === nearestStrike;
                                 const isMaxPain =
-                                    !Number.isNaN(maxPainStrike) &&
+                                    maxPainStrike !== null &&
                                     strike === maxPainStrike;
 
                                 return (

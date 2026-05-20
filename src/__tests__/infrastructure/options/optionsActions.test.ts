@@ -134,6 +134,26 @@ describe('getOptionsSignalsAction', () => {
         const result = await getOptionsSignalsAction('AAPL');
         expect(result).toBeNull();
     });
+
+    it('passes through null maxPain/putCallRatio from siglens-core R12', async () => {
+        // siglens-core R12 (commit 40ad290) widened both to `number | null`.
+        // Verify the action forwards null without coercing to NaN.
+        mockFetchOptionsSnapshot.mockResolvedValueOnce(MOCK_SNAPSHOT);
+        mockSummarizeChainForLlm.mockReturnValueOnce({
+            ...MOCK_METRICS,
+            maxPain: null,
+            putCallRatio: null,
+        });
+
+        const result = await getOptionsSignalsAction('AAPL');
+
+        expect(result).toEqual({
+            atmIv: 0.32,
+            putCallRatio: null,
+            maxPain: null,
+            expirationDate: '2026-06-20',
+        });
+    });
 });
 
 describe('submitOptionsAnalysisAction', () => {

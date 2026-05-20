@@ -6,21 +6,27 @@
  * Put/Call ratio, ATM IV, and implied move — so they must agree on NaN/null
  * rendering. Keeping the formatters here ensures one path can't drift and
  * surface a bare `'NaN'` while the other shows `'—'`.
+ *
+ * siglens-core PR #86 R12 widened `maxPain` and `putCallRatio` to
+ * `number | null` (NaN/Infinity were silently JSON-stringified to "null",
+ * defeating downstream null-handling). These formatters accept the new
+ * union — pre-R12 callers passing NaN still render `'—'` for backward
+ * compatibility.
  */
 
-/** Format a Max Pain strike. NaN → `'—'`, otherwise `$<rounded>` with comma grouping. */
-export function formatMaxPain(value: number): string {
-    if (Number.isNaN(value)) return '—';
+/** Format a Max Pain strike. null/NaN → `'—'`, otherwise `$<rounded>` with comma grouping. */
+export function formatMaxPain(value: number | null | undefined): string {
+    if (value == null || Number.isNaN(value)) return '—';
     return `$${Math.round(value).toLocaleString()}`;
 }
 
 /**
  * Format a put/call ratio. `+Infinity` (no calls, some puts) → `'∞'`,
- * NaN → `'—'`, otherwise two-decimal fixed.
+ * null/NaN → `'—'`, otherwise two-decimal fixed.
  */
-export function formatPutCallRatio(value: number): string {
+export function formatPutCallRatio(value: number | null | undefined): string {
     if (value === Number.POSITIVE_INFINITY) return '∞';
-    if (Number.isNaN(value)) return '—';
+    if (value == null || Number.isNaN(value)) return '—';
     return value.toFixed(2);
 }
 

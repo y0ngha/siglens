@@ -107,9 +107,11 @@ export function OpenInterestChart({
         );
 
         const strikes = oiByStrike.map(s => s.strike);
-        const maxPainIdx = Number.isNaN(maxPain)
-            ? -1
-            : findNearestStrikeIndex(strikes, maxPain);
+        // siglens-core R12: maxPain is now `number | null` (was `number` with
+        // NaN sentinel). null → skip the marker entirely; otherwise locate the
+        // closest strike for the dashed guide line.
+        const maxPainIdx =
+            maxPain === null ? -1 : findNearestStrikeIndex(strikes, maxPain);
         const currentPriceIdx = findNearestStrikeIndex(
             strikes,
             underlyingPrice
