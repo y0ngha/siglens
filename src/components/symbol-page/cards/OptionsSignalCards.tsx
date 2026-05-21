@@ -7,7 +7,7 @@ import {
     formatMaxPain,
     formatPutCallRatio,
 } from '@/lib/options/optionsFormatters';
-import { MaxPainTooltip } from '@/lib/options/optionsTooltips';
+import { MaxPainTooltip } from '@/components/options/optionsTooltips';
 
 // ATM IV · Put/Call · Max Pain — the three chart-page chips this card row renders.
 const SIGNAL_CARD_COUNT = 3;

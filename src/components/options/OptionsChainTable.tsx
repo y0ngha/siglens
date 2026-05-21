@@ -135,7 +135,9 @@ export function OptionsChainTable({
         ? `▾ 전체 옵션 chain 테이블 (선택된 만기: ${selectedChain?.expirationDate ?? '—'})`
         : `▸ 전체 옵션 chain 테이블 보기 (${numberFormatter.format(totalContracts)} contracts)`;
 
-    if (isEmpty || !selectedChain) {
+    // Inline literal condition so TS narrows `selectedChain` to non-null
+    // below; `isEmpty` reuses the same predicate for the `disabled` prop.
+    if (!selectedChain || totalContracts === 0) {
         return (
             <div className="border-secondary-700 bg-secondary-800 flex w-full items-center justify-between rounded-xl border p-4">
                 <span className="text-secondary-400 text-sm">

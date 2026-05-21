@@ -19,7 +19,7 @@ import {
     ImpliedMoveTooltip,
     MaxPainTooltip,
     PutCallRatioTooltip,
-} from '@/lib/options/optionsTooltips';
+} from '@/components/options/optionsTooltips';
 
 interface OptionsMetricsRowProps {
     /** 'YYYY-MM-DD' or 'all'. */

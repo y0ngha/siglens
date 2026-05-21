@@ -20,6 +20,9 @@ const TONE_LABEL: Record<OptionsTone, string> = {
     neutral: '중립',
 };
 
+// Tone tokens (chart-bullish / chart-bearish) are part of the options-analysis
+// shared palette — distinct from the indicator-line-restricted chart-* tokens
+// (rsi/bollinger/period5/period10/period60). Safe for UI badge usage.
 const TONE_CLASS: Record<
     OptionsTone,
     { text: string; bg: string; border: string }

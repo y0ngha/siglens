@@ -31,9 +31,11 @@ interface Props {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { symbol } = await params;
     const upper = symbol.toUpperCase();
-    const assetInfo = await getAssetInfoCached(upper);
+    const [assetInfo, hasOptions] = await Promise.all([
+        getAssetInfoCached(upper),
+        hasOptionsMarket(upper),
+    ]);
     const displayName = assetInfo ? buildDisplayName(assetInfo, upper) : upper;
-    const hasOptions = await hasOptionsMarket(upper);
     const { title, fullTitle, description, url, keywords } =
         buildSymbolOptionsSeoContent(upper, {
             displayName,
