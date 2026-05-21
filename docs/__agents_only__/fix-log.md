@@ -1,6 +1,18 @@
 
 # Fix Log
 
+## [PR #441 Round 4 | fix/symbol-options-issues | 2026-05-22]
+- B1: `src/__tests__/infrastructure/options/YahooOptionsAdapter.test.ts` — 새로 추가된 `missingIsos` 병렬 fetch / 실패 격리 / dedupe 분기가 기존 FULL_FIXTURE의 만기가 너무 가까워 한 번도 실행되지 않음. `mapExpirationsToSlots` mock과 함께 신규 it() 3건 추가(추가 fetch 병합 / 추가 fetch 실패 시 부분 누락 / 동일 만기 dedupe).
+  - Rule: CONVENTIONS.md "infrastructure/ 100% (필수)", MISTAKES.md Infrastructure §2 — 모든 conditional branch는 dedicated test case가 있어야 한다.
+- B2: `src/infrastructure/options/YahooOptionsAdapter.ts` — `allExpirationIsos` 위 "ISO YYYY-MM-DD로 정규화" 코멘트와 `initialOptions` 위 "추가 fetch 대상에서 제외" 코멘트가 WHAT을 설명. `toIsoDate` 함수명과 `missingIsos` 변수명이 자명하므로 두 코멘트 제거.
+  - Rule: MISTAKES.md §15.3 — "Comments must explain WHY a decision was made, not WHAT the code does."
+- B3: `src/__tests__/infrastructure/options/YahooOptionsAdapter.test.ts` — `mapExpirationsToSlots`가 실제 구현으로 실행되면 `new Date()`에 의존해 테스트가 flaky. `jest.mock` 객체에 `mapExpirationsToSlots: jest.fn()`을 추가하고 beforeEach에서 기본값 `[]` 주입.
+  - Rule: MISTAKES.md Tests §8.5 — 호출되는 외부 의존성은 모두 mock해야 한다. §14 — 시간 의존 함수는 명시적으로 mock해야 한다.
+- S1: `src/infrastructure/options/YahooOptionsAdapter.ts` Yahoo Finance 병렬 호출을 sequential로 바꿀 것 — **거부**. 이유: 본 PR의 이슈 7(옵션 페이지 SSR 속도) 의도와 직접 충돌(wall-clock 6배), Yahoo는 MISTAKES.md §0.8 rate-limit 목록(FMP/Alpaca/Gemini) 미포함, 호출 수 ≤ 6의 사용자당 일회성 burst라 누적 부하 작음. 거부 사유는 PR #441 코멘트로 등록(comment 4511337388).
+  - Rule: PR_FIX_FLOW §1-6 Reject #5 — Reviewer Lacks Project Context (PR이 명시적으로 해결하려는 다른 보고 사항과 충돌).
+- S2: `src/components/options/OpenInterestChart.tsx` `pickLabelIndices` 명령형 for-루프 + `.add()` 누산을 선언형(Array.from + new Set spread)으로 전환.
+  - Rule: CONVENTIONS.md FP — components/는 declarative 패턴 선호.
+
 ## [PR #441 Round 3 | fix/symbol-options-issues | 2026-05-22]
 - B1: `src/components/options/OpenInterestChart.tsx` — `slotWidth(count)` 헬퍼를 추가하고도 `barCenterX`·`barWidth`가 여전히 `CHART_WIDTH / count`를 재구현. 두 함수가 `slotWidth(count)`를 사용하도록 통일하고, `barCenterX` 내부의 동명 `slotWidth` 지역 변수는 `sw`로 rename하여 shadowing 제거.
   - Rule: MISTAKES.md §2 — 헬퍼를 새로 도입하면 동일 계산을 하는 모든 사용처를 함께 갈아끼워야 한다(부분 갱신 시 중복/이름 충돌 발생).

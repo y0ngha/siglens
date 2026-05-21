@@ -102,13 +102,12 @@ function pickLabelIndices(
         return new Set(Array.from({ length: count }, (_, i) => i));
     }
     const stride = Math.ceil(count / MAX_X_AXIS_LABELS);
-    const indices = new Set<number>();
-    for (let i = 0; i < count; i += stride) indices.add(i);
-    indices.add(count - 1);
-    for (const a of anchors) {
-        if (a >= 0 && a < count) indices.add(a);
-    }
-    return indices;
+    const strideIndices = Array.from(
+        { length: Math.ceil(count / stride) },
+        (_, k) => k * stride
+    );
+    const validAnchors = anchors.filter(a => a >= 0 && a < count);
+    return new Set([...strideIndices, count - 1, ...validAnchors]);
 }
 
 function barPixelHeight(oi: number, maxOi: number): number {

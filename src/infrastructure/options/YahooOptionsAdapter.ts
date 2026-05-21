@@ -60,7 +60,6 @@ export class YahooOptionsAdapter implements OptionsDataProvider {
 
             const now = new Date();
 
-            // expirationDates는 Date[]. ISO YYYY-MM-DD로 정규화해 슬롯 매핑에 넘긴다.
             const allExpirationIsos = (initial.expirationDates ?? []).map(
                 toIsoDate
             );
@@ -71,7 +70,6 @@ export class YahooOptionsAdapter implements OptionsDataProvider {
                     .map(m => m.expirationDate)
             );
 
-            // 첫 응답에 이미 포함된 만기는 추가 fetch 대상에서 제외.
             // Cast through unknown: yahoo-finance2의 `OptionsResult.options`는
             // `[key: string]: unknown` index signature가 붙은 구조라 우리 로컬
             // YahooOption 인터페이스와 구조적 호환을 TS가 증명하지 못한다.

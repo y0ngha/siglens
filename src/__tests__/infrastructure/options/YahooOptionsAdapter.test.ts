@@ -25,10 +25,18 @@ jest.mock('@y0ngha/siglens-core', () => {
         ...actual,
         // Passthrough: return the chain as-is so adapter logic is isolated
         sanitizeOptionsChain: jest.fn((chain: unknown) => chain),
+        // adapter는 `mapExpirationsToSlots`로 추가 fetch 대상을 결정하는데,
+        // 실제 구현을 그대로 호출하면 `new Date()`에 의존해 테스트가
+        // 실행 시점 날짜에 따라 분기가 달라진다(flaky). 각 it()에서 의도한
+        // 슬롯 매핑을 직접 주입해 격리한다.
+        mapExpirationsToSlots: jest.fn(),
     };
 });
 
-import { sanitizeOptionsChain } from '@y0ngha/siglens-core';
+import {
+    mapExpirationsToSlots,
+    sanitizeOptionsChain,
+} from '@y0ngha/siglens-core';
 import { YahooOptionsAdapter } from '@/infrastructure/options/YahooOptionsAdapter';
 
 /** A minimal but complete CallOrPut fixture matching the live API shape. */
@@ -104,6 +112,9 @@ describe('YahooOptionsAdapter.fetchSnapshot', () => {
     beforeEach(() => {
         jest.clearAllMocks();
         (sanitizeOptionsChain as jest.Mock).mockImplementation(c => c);
+        // 기본값: 슬롯 매핑이 비어 있어 추가 fetch 분기가 트리거되지 않음.
+        // 추가 fetch 시나리오를 검증하는 it()는 각자 mockReturnValue로 덮어쓴다.
+        (mapExpirationsToSlots as jest.Mock).mockReturnValue([]);
         consoleErrorSpy = jest
             .spyOn(console, 'error')
             .mockImplementation(() => {});
@@ -205,6 +216,131 @@ describe('YahooOptionsAdapter.fetchSnapshot', () => {
         await adapter.fetchSnapshot('AAPL');
 
         expect(sanitizeOptionsChain).toHaveBeenCalledTimes(2);
+    });
+
+    it('초기 응답에 없는 슬롯 만기는 병렬로 추가 fetch 후 병합한다', async () => {
+        // mapExpirationsToSlots → 2026-07-18(2M)이 슬롯에 매핑됐다고 가정.
+        // 초기 응답에는 2026-05-15만 있으므로 2026-07-18은 추가 fetch 대상이다.
+        (mapExpirationsToSlots as jest.Mock).mockReturnValue([
+            {
+                slot: { key: '2M', label: '2개월', targetDays: 60 },
+                expirationDate: '2026-07-18',
+            },
+        ]);
+
+        const initialFixture = {
+            ...FULL_FIXTURE,
+            options: [FULL_FIXTURE.options[0]],
+        };
+        const additionalExpDate = new Date('2026-07-18T00:00:00.000Z');
+        const additionalFixture = {
+            ...FULL_FIXTURE,
+            options: [
+                {
+                    expirationDate: additionalExpDate,
+                    hasMiniOptions: false,
+                    calls: [
+                        {
+                            ...makeContract(195, 'C'),
+                            expiration: additionalExpDate,
+                        },
+                    ],
+                    puts: [
+                        {
+                            ...makeContract(195, 'P'),
+                            expiration: additionalExpDate,
+                        },
+                    ],
+                },
+            ],
+        };
+        mockOptionsMethod
+            .mockResolvedValueOnce(initialFixture)
+            .mockResolvedValueOnce(additionalFixture);
+
+        const adapter = makeAdapter();
+        const snapshot = await adapter.fetchSnapshot('AAPL');
+
+        expect(mockOptionsMethod).toHaveBeenCalledTimes(2);
+        expect(mockOptionsMethod).toHaveBeenNthCalledWith(2, 'AAPL', {
+            date: new Date('2026-07-18T00:00:00.000Z'),
+        });
+        expect(snapshot).not.toBeNull();
+        expect(snapshot!.chains.map(c => c.expirationDate)).toEqual([
+            '2026-05-15',
+            '2026-07-18',
+        ]);
+    });
+
+    it('추가 만기 fetch가 실패해도 그 만기만 누락된 채 스냅샷을 반환한다', async () => {
+        const warnSpy = jest
+            .spyOn(console, 'warn')
+            .mockImplementation(() => {});
+        (mapExpirationsToSlots as jest.Mock).mockReturnValue([
+            {
+                slot: { key: '2M', label: '2개월', targetDays: 60 },
+                expirationDate: '2026-07-18',
+            },
+        ]);
+        const initialFixture = {
+            ...FULL_FIXTURE,
+            options: [FULL_FIXTURE.options[0]],
+        };
+        mockOptionsMethod
+            .mockResolvedValueOnce(initialFixture)
+            .mockRejectedValueOnce(new Error('yahoo rate limit'));
+
+        const adapter = makeAdapter();
+        const snapshot = await adapter.fetchSnapshot('AAPL');
+
+        expect(snapshot).not.toBeNull();
+        expect(snapshot!.chains).toHaveLength(1);
+        expect(snapshot!.chains[0].expirationDate).toBe('2026-05-15');
+        expect(warnSpy).toHaveBeenCalledWith(
+            expect.stringContaining('fetch expiration failed'),
+            'AAPL',
+            '2026-07-18',
+            expect.any(Error)
+        );
+        warnSpy.mockRestore();
+    });
+
+    it('동일 만기가 초기·추가 응답에 모두 있으면 추가 응답으로 덮어써 dedupe된다', async () => {
+        // 슬롯 매핑이 초기 응답과 동일한 만기를 또 가리키는 경우를 가정.
+        // missingIsos는 비지만, 만약 다른 경로로 동일 만기가 두 번 들어오더라도
+        // mergedByIso Map이 ISO 키 기반으로 마지막 값만 유지해야 한다.
+        (mapExpirationsToSlots as jest.Mock).mockReturnValue([
+            {
+                slot: { key: '1W', label: '1주', targetDays: 7 },
+                expirationDate: '2026-05-15',
+            },
+        ]);
+        const dupExpDate = new Date('2026-05-15T00:00:00.000Z');
+        const fixture = {
+            ...FULL_FIXTURE,
+            options: [
+                {
+                    expirationDate: dupExpDate,
+                    hasMiniOptions: false,
+                    calls: [{ ...makeContract(190, 'C'), openInterest: 100 }],
+                    puts: [],
+                },
+                {
+                    expirationDate: dupExpDate,
+                    hasMiniOptions: false,
+                    calls: [{ ...makeContract(190, 'C'), openInterest: 999 }],
+                    puts: [],
+                },
+            ],
+        };
+        mockOptionsMethod.mockResolvedValue(fixture);
+
+        const adapter = makeAdapter();
+        const snapshot = await adapter.fetchSnapshot('AAPL');
+
+        // 동일 만기 두 항목이 들어와도 결과는 1개여야 한다(마지막 항목 우선).
+        expect(snapshot!.chains).toHaveLength(1);
+        expect(snapshot!.chains[0].calls[0].openInterest).toBe(999);
     });
 });
 
