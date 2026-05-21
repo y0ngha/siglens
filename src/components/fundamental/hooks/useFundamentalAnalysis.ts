@@ -106,9 +106,15 @@ export function useFundamentalAnalysis(
         staleTime: Infinity,
     });
 
+    // §17 exception: `refetch` is destructured immediately after useQuery
+    // because it feeds the useCallback below — derived values that are
+    // consumed by subsequent hook calls must precede those hooks. The
+    // `refetch` reference is stable across renders (React Query guarantee).
+    const { refetch } = query;
+
     const retry = useCallback(() => {
-        void query.refetch();
-    }, [query]);
+        void refetch();
+    }, [refetch]);
 
     // ref를 null로 초기화해 unmount cleanup과의 이중 cancel을 방지한다.
     const getPageHideJobs = useCallback((): CancelJobEntry[] | null => {
@@ -118,10 +124,6 @@ export function useFundamentalAnalysis(
         return [{ jobId, type: 'fundamental' as const }];
     }, []);
     usePageHideCancel(getPageHideJobs);
-
-    // MISTAKES.md §17: derived variables come AFTER all hook calls (including
-    // custom hooks). Used by effects below as a stable identity for refetch.
-    const { refetch } = query;
 
     useEffect(() => {
         if (queryClient.getQueryData(queryKey) === undefined) {

@@ -88,6 +88,9 @@ export default async function SymbolPage({ params, searchParams }: Props) {
         koreanName: assetInfo.koreanName,
     });
 
+    // `about` block intentionally omitted: hardcoding `@type: 'Corporation'`
+    // misrepresents ETF/Index tickers (e.g. SPY, QQQ, SPXUSD). Re-adding it
+    // requires an AssetInfo discriminator that distinguishes Stock/ETF/Index.
     const jsonLd = {
         '@context': 'https://schema.org',
         '@type': 'WebPage',
@@ -95,11 +98,6 @@ export default async function SymbolPage({ params, searchParams }: Props) {
         description,
         url,
         inLanguage: 'ko',
-        about: {
-            '@type': 'Corporation',
-            name: displayName,
-            tickerSymbol: ticker,
-        },
     };
 
     const breadcrumbJsonLd = buildBreadcrumbJsonLd([{ name: fullTitle, url }]);

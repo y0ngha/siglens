@@ -123,8 +123,6 @@ export function OptionsChainTable({
 
     const nearestExpiry = snapshot.chains[0]?.expirationDate ?? '';
 
-    // Compute totalContracts once — `calls.length` and `puts.length` are
-    // otherwise read twice each in the legacy version.
     const totalContracts = selectedChain
         ? selectedChain.calls.length + selectedChain.puts.length
         : 0;

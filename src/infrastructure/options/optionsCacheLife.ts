@@ -3,15 +3,13 @@ export type OptionsCacheLifeProfile =
     | 'options-market-closed'
     | 'options-weekend';
 
-const MARKET_OPEN_MIN = 9 * 60 + 30; // 09:30 ET
-const MARKET_CLOSE_MIN = 16 * 60; // 16:00 ET
+const MARKET_OPEN_MIN = 9 * 60 + 30;
+const MARKET_CLOSE_MIN = 16 * 60;
 
-/**
- * Extract weekday/hour/minute as observed in America/New_York directly from
- * an `Intl.DateTimeFormat` parts list. Avoids the previous round-trip through
- * `toLocaleString` + `new Date(...)`, which depends on the host's locale
- * parser and breaks on non-`en-US` runtimes.
- */
+// Reads ET weekday/hour/minute from formatToParts directly. The previous
+// implementation round-tripped through `toLocaleString` + `new Date(...)`,
+// which depends on the host's locale parser and breaks on non-`en-US`
+// runtimes — `formatToParts` avoids that fragility.
 const ET_PARTS_FORMATTER = new Intl.DateTimeFormat('en-US', {
     timeZone: 'America/New_York',
     weekday: 'short',

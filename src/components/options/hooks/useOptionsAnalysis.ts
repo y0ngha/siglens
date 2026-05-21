@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { OptionsAnalysisResponse, ModelId } from '@y0ngha/siglens-core';
 import {
@@ -102,17 +102,8 @@ export function useOptionsAnalysis({
     const currentJobIdRef = useRef<string | null>(null);
     const queryClient = useQueryClient();
 
-    // queryKey is prepared as input to useQuery — useMemo gives it a stable
-    // identity for downstream effect deps. Note: `query.queryKey` exists at
-    // runtime but isn't on the UseQueryResult type, so we route the key
-    // through useMemo here rather than destructuring from `query` later.
-    const queryKey = useMemo(
-        () => QUERY_KEYS.optionsAnalysis(symbol, expirationDate, modelId),
-        [symbol, expirationDate, modelId]
-    );
-
     const query = useQuery({
-        queryKey,
+        queryKey: QUERY_KEYS.optionsAnalysis(symbol, expirationDate, modelId),
         queryFn: ({ signal }) =>
             fetchOptionsAnalysis(
                 symbol,
@@ -135,9 +126,17 @@ export function useOptionsAnalysis({
         staleTime: Infinity,
     });
 
+    // §17 exception: `refetch` is destructured immediately after useQuery
+    // because it feeds the useCallback below — derived values that are
+    // consumed by subsequent hook calls must precede those hooks. The
+    // `refetch` reference is stable across renders (React Query guarantee),
+    // so this preserves the spirit of §17 (no unstable derived values in
+    // hook deps).
+    const { refetch } = query;
+
     const retry = useCallback(() => {
-        void query.refetch();
-    }, [query]);
+        void refetch();
+    }, [refetch]);
 
     // ref를 null로 초기화해 unmount cleanup과의 이중 cancel을 방지한다.
     const getPageHideJobs = useCallback((): CancelJobEntry[] | null => {
@@ -149,13 +148,16 @@ export function useOptionsAnalysis({
     usePageHideCancel(getPageHideJobs);
 
     useEffect(() => {
+        const queryKey = QUERY_KEYS.optionsAnalysis(
+            symbol,
+            expirationDate,
+            modelId
+        );
         if (queryClient.getQueryData(queryKey) === undefined) {
-            void query.refetch();
+            void refetch();
         }
-    }, [queryClient, queryKey, query]);
+    }, [queryClient, symbol, expirationDate, modelId, refetch]);
 
-    // symbol, expirationDate, 또는 modelId 변경(queryKey 교체) 시, unmount 시
-    // 진행 중인 job을 cancel한다. fire-and-forget이므로 useMutation 없이 직접 호출한다.
     useEffect(() => {
         return () => {
             const jobId = currentJobIdRef.current;
@@ -166,7 +168,7 @@ export function useOptionsAnalysis({
                 });
             }
         };
-    }, [queryKey]);
+    }, [symbol, expirationDate, modelId]);
 
     if (query.isError) {
         if (query.error instanceof BotBlockedError) {

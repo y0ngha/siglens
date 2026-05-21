@@ -43,7 +43,7 @@ const TONE_CLASS: Record<
         border: 'border-ui-warning/30',
     },
     neutral: {
-        text: 'text-secondary-300',
+        text: 'text-secondary-400',
         bg: 'bg-secondary-700/40',
         border: 'border-secondary-600',
     },

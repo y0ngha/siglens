@@ -283,6 +283,9 @@ export default async function FundamentalPage({ params }: Props) {
         }
     );
 
+    // `about` block intentionally omitted: hardcoding `@type: 'Corporation'`
+    // misrepresents ETF/Index tickers (e.g. SPY, QQQ, SPXUSD). Re-adding it
+    // requires an AssetInfo discriminator that distinguishes Stock/ETF/Index.
     const jsonLd = {
         '@context': 'https://schema.org',
         '@type': 'WebPage',
@@ -290,11 +293,6 @@ export default async function FundamentalPage({ params }: Props) {
         description,
         url,
         inLanguage: 'ko',
-        about: {
-            '@type': 'Corporation',
-            name: displayName,
-            tickerSymbol: upper,
-        },
     };
 
     const breadcrumbJsonLd = buildBreadcrumbJsonLd([
