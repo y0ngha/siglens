@@ -230,10 +230,7 @@ export function OpenInterestChart({
         // 좌우 경계 클램핑 — tooltip은 `-translate-x-1/2`로 좌우 절반이
         // anchor 좌우로 뻗어나가므로 절반 너비 + 여유만큼 안쪽에 고정.
         const clampedX = Math.min(
-            Math.max(
-                rawX,
-                TOOLTIP_HALF_WIDTH_PX + TOOLTIP_VIEWPORT_PADDING_PX
-            ),
+            Math.max(rawX, TOOLTIP_HALF_WIDTH_PX + TOOLTIP_VIEWPORT_PADDING_PX),
             rect.width - TOOLTIP_HALF_WIDTH_PX - TOOLTIP_VIEWPORT_PADDING_PX
         );
         // 상단 경계 클램핑 — tooltip은 `-translate-y-full`로 anchor 위로
@@ -399,9 +396,7 @@ export function OpenInterestChart({
                                 fillOpacity={0}
                                 pointerEvents="all"
                                 aria-describedby={TOOLTIP_ELEMENT_ID}
-                                onPointerEnter={e =>
-                                    handlePointerEnter(e, i)
-                                }
+                                onPointerEnter={e => handlePointerEnter(e, i)}
                                 onPointerMove={e => handlePointerMove(e, i)}
                                 onPointerLeave={handlePointerLeave}
                             />
@@ -473,7 +468,7 @@ export function OpenInterestChart({
                 <div
                     id={TOOLTIP_ELEMENT_ID}
                     role="tooltip"
-                    className="border-secondary-600 bg-secondary-900/95 text-secondary-100 pointer-events-none absolute z-10 min-w-[180px] -translate-x-1/2 -translate-y-full rounded-md border px-3 py-2 text-xs shadow-lg backdrop-blur top-[var(--tooltip-y)] left-[var(--tooltip-x)]"
+                    className="border-secondary-600 bg-secondary-900/95 text-secondary-100 pointer-events-none absolute top-[var(--tooltip-y)] left-[var(--tooltip-x)] z-10 min-w-[180px] -translate-x-1/2 -translate-y-full rounded-md border px-3 py-2 text-xs shadow-lg backdrop-blur"
                     style={
                         {
                             '--tooltip-x': `${tooltipPos.x}px`,
