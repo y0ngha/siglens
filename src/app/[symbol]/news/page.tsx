@@ -9,6 +9,7 @@ import { NewsAiSummarySkeleton } from '@/components/news/NewsAiSummarySkeleton';
 import { AnalystActions } from '@/components/news/sections/AnalystActions';
 import { EventCalendar } from '@/components/news/sections/EventCalendar';
 import { NewsList } from '@/components/news/sections/NewsList';
+import { DynamicMetadataMarker } from '@/components/seo/DynamicMetadataMarker';
 import { CrossLinkCards } from '@/components/symbol-page/CrossLinkCards';
 import { SectionSkeleton } from '@/components/symbol-page/SectionSkeleton';
 import { JsonLd } from '@/components/ui/JsonLd';
@@ -205,6 +206,7 @@ export default async function NewsPage({ params }: Props) {
             <JsonLd data={breadcrumbJsonLd} />
             <JsonLd data={aiArticleJsonLd} />
             {newsListJsonLd ? <JsonLd data={newsListJsonLd} /> : null}
+            <DynamicMetadataMarker />
             <main className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8">
                 <h1 className="sr-only">{displayName} 최신 뉴스와 어닝 일정</h1>
                 <NewsAiSummaryErrorBoundary>

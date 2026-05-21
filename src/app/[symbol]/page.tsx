@@ -1,3 +1,4 @@
+import { DynamicMetadataMarker } from '@/components/seo/DynamicMetadataMarker';
 import { SymbolPageClient } from '@/components/symbol-page/SymbolPageClient';
 import { JsonLd } from '@/components/ui/JsonLd';
 import { FALLBACK_ANALYSIS } from '@/domain/chat/fallbackAnalysis';
@@ -155,6 +156,7 @@ export default async function SymbolPage({ params, searchParams }: Props) {
             <JsonLd data={jsonLd} />
             <JsonLd data={breadcrumbJsonLd} />
             <JsonLd data={faqJsonLd} />
+            <DynamicMetadataMarker />
             <section className="sr-only">
                 <h2>{displayName} 기술적 분석</h2>
                 <p>
