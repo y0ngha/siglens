@@ -292,4 +292,25 @@ export const POPULAR_TICKERS = [
     'SONY',
     'USB',
     'FTNT',
+
+    // --- Trending (2026-05-19) ---
+    'RKLB',
+    'MDLZ',
+    'NEM',
+    'ORLY',
+    'TJX',
+    'BCS',
+    'WMB',
+    'DELL',
+    'RTX',
+    'SO',
+
+    // --- Trending (2026-05-21) ---
+    'IBN',
+    'ENB',
+    'ADI',
+    'COF',
+    'IBKR',
+    'EQNR',
+    'INTU',
 ] as const;

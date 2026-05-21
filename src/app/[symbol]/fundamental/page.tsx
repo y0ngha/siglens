@@ -23,6 +23,7 @@ import { PeersTable } from '@/components/fundamental/sections/PeersTable';
 import { ProfileCard } from '@/components/fundamental/sections/ProfileCard';
 import { ProfitabilityCard } from '@/components/fundamental/sections/ProfitabilityCard';
 import { ValuationCard } from '@/components/fundamental/sections/ValuationCard';
+import { DynamicMetadataMarker } from '@/components/seo/DynamicMetadataMarker';
 import { CrossLinkCards } from '@/components/symbol-page/CrossLinkCards';
 import { SectionSkeleton } from '@/components/symbol-page/SectionSkeleton';
 import { JsonLd } from '@/components/ui/JsonLd';
@@ -177,42 +178,36 @@ async function ProfileDescriptionSection({
 
 async function ProfileSection({ symbol }: SymbolSectionProps) {
     const profile = await getProfile(symbol);
-    if (profile === null) return null;
 
-    const descriptionSlot =
-        profile.description !== null ? (
-            <Suspense fallback={<ProfileDescriptionSkeleton />}>
-                <ProfileDescriptionSection
-                    symbol={symbol}
-                    fallback={profile.description}
-                />
-            </Suspense>
-        ) : undefined;
+    const descriptionSlot = (
+        <Suspense fallback={<ProfileDescriptionSkeleton />}>
+            <ProfileDescriptionSection
+                symbol={symbol}
+                fallback={profile?.description ?? ''}
+            />
+        </Suspense>
+    );
 
     return <ProfileCard profile={profile} descriptionSlot={descriptionSlot} />;
 }
 
 async function ValuationSection({ symbol }: SymbolSectionProps) {
     const metrics = await getKeyMetricsTtm(symbol);
-    if (metrics === null) return null;
     return <ValuationCard metrics={metrics} />;
 }
 
 async function PeersSection({ symbol }: SymbolSectionProps) {
     const peers = await getStockPeers(symbol);
-    if (peers.length === 0) return null;
     return <PeersTable peers={peers} />;
 }
 
 async function ProfitabilitySection({ symbol }: SymbolSectionProps) {
     const ratios = await getRatiosTtm(symbol);
-    if (ratios === null) return null;
     return <ProfitabilityCard ratios={ratios} />;
 }
 
 async function GrowthSection({ symbol }: SymbolSectionProps) {
     const growth = await getIncomeStatementGrowth(symbol);
-    if (growth === null) return null;
     return <GrowthChart growth={growth} />;
 }
 
@@ -222,7 +217,6 @@ async function FinancialHealthSection({ symbol }: SymbolSectionProps) {
         getFinancialScores(symbol),
         getCashFlowStatement(symbol),
     ]);
-    if (ratios === null && scores === null) return null;
     return (
         <FinancialHealthCard
             ratios={ratios}
@@ -239,8 +233,6 @@ async function FutureDirectionSection({ symbol }: SymbolSectionProps) {
         getPriceTargetConsensus(symbol),
         getPriceTargetSummary(symbol),
     ]);
-    if (estimates === null && grades === null && ptConsensus === null)
-        return null;
     return (
         <FutureDirectionCard
             estimates={estimates}
@@ -339,6 +331,7 @@ export default async function FundamentalPage({ params }: Props) {
             <JsonLd data={jsonLd} />
             <JsonLd data={breadcrumbJsonLd} />
             <JsonLd data={faqJsonLd} />
+            <DynamicMetadataMarker />
             <main className="mx-auto max-w-5xl space-y-6 px-4 py-8">
                 <h1 className="sr-only">
                     {displayName} 재무지표와 애널리스트 의견

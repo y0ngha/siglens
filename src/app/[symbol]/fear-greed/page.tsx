@@ -1,5 +1,6 @@
 import { FearGreedPage } from '@/components/fear-greed/FearGreedPage';
 import { CrossLinkCards } from '@/components/symbol-page/CrossLinkCards';
+import { DynamicMetadataMarker } from '@/components/seo/DynamicMetadataMarker';
 import { JsonLd } from '@/components/ui/JsonLd';
 import { DEFAULT_TIMEFRAME, VALID_TICKER_RE } from '@/domain/constants/market';
 import { FEAR_GREED_SCORE_BOUNDARIES } from '@/domain/fearGreed/classifier';
@@ -150,6 +151,7 @@ export default async function SymbolFearGreedPage({ params }: Props) {
             <JsonLd data={webPageJsonLd} />
             <JsonLd data={breadcrumbJsonLd} />
             <JsonLd data={faqJsonLd} />
+            <DynamicMetadataMarker />
             <main className="mx-auto max-w-5xl space-y-6 px-4 py-8">
                 <h1 className="sr-only">
                     {displayName} ({ticker}) 공포 탐욕 지수와 단기 매수 분위기

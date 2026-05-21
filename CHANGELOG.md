@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.11.13](https://github.com/y0ngha/siglens/compare/v0.11.12...v0.11.13) (2026-05-21)
+
+
+### Bug Fixes
+
+* **seo:** canonical URL placeholder + ticker case normalization ([f8de751](https://github.com/y0ngha/siglens/commit/f8de751c69384ac4b9fe5f4c637c3fbe3b8f9617))
+
+## [0.11.12](https://github.com/y0ngha/siglens/compare/v0.11.11...v0.11.12) (2026-05-19)
+
+
+### Bug Fixes
+
+* FinancialHealthCard 전부 null 케이스 빈 상태 UI 처리 ([397f100](https://github.com/y0ngha/siglens/commit/397f10046410aeefa37c137a70024a683582c6ec))
+* fundamental Section wrapper null 분기 제거 및 descriptionSlot Suspense 항상 렌더 ([b28ad7d](https://github.com/y0ngha/siglens/commit/b28ad7d44812b742ef7e1c7a8115a6ff3798bb92))
+* FutureDirectionCard 전부 null 케이스 빈 상태 UI 처리 ([13e4ca5](https://github.com/y0ngha/siglens/commit/13e4ca51b22a9c0ed291c2432a3beec8f1355367))
+* GrowthChart growth null 케이스 빈 상태 UI 처리 ([78eb8b8](https://github.com/y0ngha/siglens/commit/78eb8b8ed2836dce5c00f3a83b412b892aa04262))
+* PeersTable 빈 배열 케이스 빈 상태 UI 처리 ([50438c6](https://github.com/y0ngha/siglens/commit/50438c65a66ff93c0fcd1c3f144ff68c3977f564))
+* ProfileCard profile null 케이스 빈 상태 UI 처리 ([f912238](https://github.com/y0ngha/siglens/commit/f912238471b797b09b6f8889d8cee1d8d7232730))
+* ProfitabilityCard ratios null 케이스 빈 상태 UI 처리 ([12da0a4](https://github.com/y0ngha/siglens/commit/12da0a435c7a139346988d072a955fc83c6dbfc7))
+* ValuationCard metrics null 케이스 빈 상태 UI 처리 ([372ee40](https://github.com/y0ngha/siglens/commit/372ee40c8ad70c993d91fc7a61859118c42b0716))
+
 ## [0.11.11](https://github.com/y0ngha/siglens/compare/v0.11.10...v0.11.11) (2026-05-11)
 
 ## [0.11.10](https://github.com/y0ngha/siglens/compare/v0.11.9...v0.11.10) (2026-05-11)
