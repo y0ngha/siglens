@@ -69,9 +69,7 @@ async function buildEntries(): Promise<SitemapEntry[]> {
     for (const chunk of allChunks) {
         chunkResults.push(
             await Promise.all(
-                chunk.map(ticker =>
-                    hasOptionsMarket(ticker).catch(() => false)
-                )
+                chunk.map(ticker => hasOptionsMarket(ticker).catch(() => false))
             )
         );
     }

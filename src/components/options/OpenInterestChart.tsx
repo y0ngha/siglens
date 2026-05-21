@@ -116,8 +116,7 @@ export function OpenInterestChart({
         // intermediate arrays, and spreading large arrays into Math.max risks
         // hitting the JS engine's argument-length cap on long chains.
         const globalMax = oiByStrike.reduce(
-            (max, s) =>
-                Math.max(max, s.callOpenInterest, s.putOpenInterest),
+            (max, s) => Math.max(max, s.callOpenInterest, s.putOpenInterest),
             MIN_OI_SCALE_FLOOR
         );
 
