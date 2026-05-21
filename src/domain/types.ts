@@ -199,4 +199,3 @@ export interface CancelJobEntry {
 export interface CancelJobsBody {
     jobs: CancelJobEntry[];
 }
-

@@ -47,7 +47,7 @@ export default function OptionsLoading() {
                         />
                     ))}
                 </div>
-                <div className="mb-3 h-3 w-24 animate-pulse rounded bg-secondary-700" />
+                <div className="bg-secondary-700 mb-3 h-3 w-24 animate-pulse rounded" />
                 <ul className="space-y-3">
                     {Array.from({ length: 3 }).map((_, i) => (
                         <li

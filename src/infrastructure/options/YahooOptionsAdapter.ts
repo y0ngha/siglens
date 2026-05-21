@@ -97,8 +97,7 @@ export class YahooOptionsAdapter implements OptionsDataProvider {
                             // (yahoo-finance2 `OptionsResult.options`의 index
                             // signature와 우리 YahooOption 인터페이스 사이의
                             // 구조적 동등성 증명 불가). 런타임 형태는 동일.
-                            r =>
-                                (r.options as unknown as YahooOption[]) ?? []
+                            r => (r.options as unknown as YahooOption[]) ?? []
                         )
                         .catch(err => {
                             console.warn(

@@ -1,6 +1,14 @@
 
 # Fix Log
 
+## [PR #442 Round 2 | fix/symbol-options-issues | 2026-05-22]
+- Violation (Round 1 required): `src/infrastructure/options/YahooOptionsAdapter.ts` — Type assertion `initial.options as unknown as YahooOption[]` had no guarantee comment explaining why the double cast was needed
+  - Rule: MISTAKES.md TypeScript §7 — Using `as` type assertions without guarantee comments; must accompany safe-cast `as` with explanation of type system limitation
+  - Context: Assertion required because TypeScript cannot structurally express that Yahoo API response options are guaranteed to match YahooOption shape. Added guarantee comment explaining the type-system constraint.
+- Violation (Round 1 recommended): `src/app/[symbol]/options/loading.tsx` — JSX section comments labeled WHAT the code does (`{/* ExpirationSelector */}`, etc.) instead of WHY
+  - Rule: MISTAKES.md §15.5 — JSX section comments explaining WHAT are noise; component/variable names are self-documenting
+  - Context: Removed WHAT-labels; inline comments conflicted with existing intent clarity. Component structure is evident from JSX hierarchy.
+
 ## [PR #440 Round 2 | fix/disable-cache-components | 2026-05-22]
 - B1: `src/app/[symbol]/layout.tsx` + `SymbolLayoutClient.tsx` — `children`이 async RSC(`SymbolLayoutChrome`) 내부에 위치하여 `getAssetInfoCached` + `prefetchQuery(bars)` 완료까지 페이지 본문 LCP가 차단됨. 6ad891ff 리버트로 인해 master 패턴으로 회귀했으나, 해당 master 패턴은 cacheComponents 비활성 상태에서 streaming SSR LCP를 악화시킴. 수정: `children`을 Suspense 밖으로 빼고 `SymbolLayoutClient`를 `SymbolLayoutProviders`/`SymbolLayoutHeaderClient`/`SymbolLayoutFloatingChat` 3개로 분리. layout은 provider subtree 안에 chrome Suspense + children + FloatingChat Suspense를 형제로 구성.
   - Rule: vercel-react-best-practices `async-suspense-boundaries` — Suspense 경계는 페이지 본문이 layout 비동기 작업을 기다리지 않도록 chrome 단위로 좁혀야 함
