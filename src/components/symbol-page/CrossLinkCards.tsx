@@ -47,7 +47,7 @@ interface CrossLinkCardsProps {
     current: PageKey;
 }
 
-/** Cross-link cards at the bottom of each analysis page — renders the 5 sibling pages. */
+/** Cross-link cards shown below each analysis page — links to every sibling page. */
 export function CrossLinkCards({ symbol, current }: CrossLinkCardsProps) {
     const others = ALL_PAGES.filter(p => p !== current);
 

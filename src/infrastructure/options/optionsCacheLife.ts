@@ -88,7 +88,7 @@ export function getOptionsCacheLifeProfile(
     const { weekdayIndex, hour, minute } = etParts(now);
     if (weekdayIndex === 0 || weekdayIndex === 6) return 'options-weekend';
 
-    const totalMin = hour * 60 + minute;
+    const totalMin = hour * MINUTES_PER_HOUR + minute;
     if (totalMin >= MARKET_OPEN_MIN && totalMin <= MARKET_CLOSE_MIN) {
         return 'options-market-open';
     }
