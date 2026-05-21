@@ -1,3 +1,5 @@
+import { cn } from '@/lib/cn';
+
 // `mapExpirationsToSlots`가 산출하는 슬롯 6종(1W/2W/1M/2M/3M/6M)에 종합 chip을 더한 수.
 const EXPIRATION_CHIP_SKELETON_COUNT = 7;
 // OptionsMetricsRow의 카드 4종(Max Pain, P/C Ratio, ATM IV, Implied Move).
@@ -10,6 +12,8 @@ const AI_ANALYSIS_LINE_WIDTHS = [
     'w-3/5',
     'w-2/3',
 ] as const;
+// OptionsAiAnalysis 카드 안 '만기별 해석' 리스트 자리. 실제 평균 만기 수 3개.
+const AI_PER_EXPIRATION_ITEM_COUNT = 3;
 // OptionsChainTable 헤더 + 5행. 실제 페이지의 표 높이에 가깝게 잡는다.
 const CHAIN_TABLE_ROW_COUNT = 6;
 // CrossLinkCards는 3개 (overall, fundamental, news 등) 가로 그리드.
@@ -43,21 +47,26 @@ export default function OptionsLoading() {
                     {AI_ANALYSIS_LINE_WIDTHS.map(w => (
                         <div
                             key={w}
-                            className={`bg-secondary-700 h-3 animate-pulse rounded ${w}`}
+                            className={cn(
+                                'bg-secondary-700 h-3 animate-pulse rounded',
+                                w
+                            )}
                         />
                     ))}
                 </div>
                 <div className="bg-secondary-700 mb-3 h-3 w-24 animate-pulse rounded" />
                 <ul className="space-y-3">
-                    {Array.from({ length: 3 }).map((_, i) => (
-                        <li
-                            key={i}
-                            className="border-secondary-700 rounded-lg border p-3"
-                        >
-                            <div className="bg-secondary-700 mb-2 h-3 w-24 animate-pulse rounded" />
-                            <div className="bg-secondary-700 h-3 w-full animate-pulse rounded" />
-                        </li>
-                    ))}
+                    {Array.from({ length: AI_PER_EXPIRATION_ITEM_COUNT }).map(
+                        (_, i) => (
+                            <li
+                                key={i}
+                                className="border-secondary-700 rounded-lg border p-3"
+                            >
+                                <div className="bg-secondary-700 mb-2 h-3 w-24 animate-pulse rounded" />
+                                <div className="bg-secondary-700 h-3 w-full animate-pulse rounded" />
+                            </li>
+                        )
+                    )}
                 </ul>
             </section>
 

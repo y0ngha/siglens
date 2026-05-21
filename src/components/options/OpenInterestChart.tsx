@@ -72,25 +72,27 @@ const X_AXIS_LABEL_OFFSET_PX = 14;
 const ROTATED_LABEL_FONT_SIZE = 8;
 const STRAIGHT_LABEL_FONT_SIZE = 9;
 
-function barCenterX(index: number, count: number): number {
-    const slotWidth = CHART_WIDTH / count;
-    return PAD_LEFT + slotWidth * index + slotWidth / 2;
-}
-
 function slotWidth(count: number): number {
     return CHART_WIDTH / count;
 }
 
+function barCenterX(index: number, count: number): number {
+    const sw = slotWidth(count);
+    return PAD_LEFT + sw * index + sw / 2;
+}
+
 function barWidth(count: number): number {
-    return (CHART_WIDTH / count) * BAR_WIDTH_FILL_RATIO;
+    return slotWidth(count) * BAR_WIDTH_FILL_RATIO;
 }
 
 /**
  * Decide which strike indices show an x-axis label.
  *
  * 균등 stride로 thin 처리하되, 시각적 기준점인 양 끝·현재가·Max Pain
- * 인덱스는 무조건 포함한다. 결과 Set 크기는 항상 `MAX_X_AXIS_LABELS`
- * 이하 — stride 계산이 ceil 기반이라 stride 자체로 보장된다.
+ * 인덱스는 무조건 포함한다. stride 계산이 ceil 기반이라 stride 자체로
+ * 대략 `MAX_X_AXIS_LABELS` 개수가 잡히지만, anchors(현재가·Max Pain·
+ * 마지막 인덱스)가 stride 위치와 겹치지 않으면 최종 개수는 이보다
+ * 1~3개 정도 더 많아질 수 있다.
  */
 function pickLabelIndices(
     count: number,

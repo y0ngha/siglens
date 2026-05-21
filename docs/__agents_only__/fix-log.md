@@ -1,6 +1,18 @@
 
 # Fix Log
 
+## [PR #441 Round 3 | fix/symbol-options-issues | 2026-05-22]
+- B1: `src/components/options/OpenInterestChart.tsx` — `slotWidth(count)` 헬퍼를 추가하고도 `barCenterX`·`barWidth`가 여전히 `CHART_WIDTH / count`를 재구현. 두 함수가 `slotWidth(count)`를 사용하도록 통일하고, `barCenterX` 내부의 동명 `slotWidth` 지역 변수는 `sw`로 rename하여 shadowing 제거.
+  - Rule: MISTAKES.md §2 — 헬퍼를 새로 도입하면 동일 계산을 하는 모든 사용처를 함께 갈아끼워야 한다(부분 갱신 시 중복/이름 충돌 발생).
+- B2: `src/app/[symbol]/options/loading.tsx` — `<ul>` 내부의 `Array.from({ length: 3 })` 매직 넘버가 다른 모든 카운트 상수와 달리 추출되지 않음. `AI_PER_EXPIRATION_ITEM_COUNT = 3` 상수로 분리.
+  - Rule: MISTAKES.md §15 — 같은 파일에 동질의 상수 패턴이 있으면 매직 넘버를 동일한 방식으로 추출해 일관성을 맞춘다.
+- B3: `src/app/[symbol]/options/loading.tsx` — Tailwind 동적 클래스 조합에 템플릿 리터럴(`` `bg-secondary-700 ... ${w}` ``) 사용. `cn()` 유틸로 교체.
+  - Rule: MISTAKES.md §7.5 — Tailwind 클래스 결합은 반드시 `cn()` 사용; 템플릿 리터럴은 production tailwind purge가 인식 못하거나 우선순위 충돌을 일으킬 수 있다.
+- M1: `src/infrastructure/options/YahooOptionsAdapter.ts` — `for (const iso of initialIsos) targetIsos.add(iso)` 후 `!initialIsos.has(iso)`로 다시 거르는 흐름이 사실상 noop. 루프 제거하고 슬롯 후보에서 바로 미존재 만기만 필터링.
+  - Rule: 함수형 패러다임 — 결과적으로 동일한 흐름이라면 mutation 루프는 제거해 가독성을 높인다.
+- M2: `src/components/options/OpenInterestChart.tsx` — `pickLabelIndices` JSDoc이 "결과 Set 크기는 항상 MAX_X_AXIS_LABELS 이하"라고 단정했으나 anchors(현재가·Max Pain·마지막 인덱스) 추가로 약간 초과할 수 있다. 주석 문구를 실제 동작에 맞게 정정.
+  - Rule: MISTAKES.md §6.5 — 동작 변경 시 관련 코멘트 즉시 동기화; 부정확한 단정은 미래 독자에게 오해를 준다.
+
 ## [PR #442 Round 2 | fix/symbol-options-issues | 2026-05-22]
 - Violation (Round 1 required): `src/infrastructure/options/YahooOptionsAdapter.ts` — Type assertion `initial.options as unknown as YahooOption[]` had no guarantee comment explaining why the double cast was needed
   - Rule: MISTAKES.md TypeScript §7 — Using `as` type assertions without guarantee comments; must accompany safe-cast `as` with explanation of type system limitation

@@ -80,7 +80,6 @@ export class YahooOptionsAdapter implements OptionsDataProvider {
             const initialIsos = new Set(
                 initialOptions.map(o => toIsoDate(o.expirationDate))
             );
-            for (const iso of initialIsos) targetIsos.add(iso);
             const missingIsos = [...targetIsos].filter(
                 iso => !initialIsos.has(iso)
             );
