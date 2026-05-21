@@ -41,11 +41,13 @@ export default function SymbolLayout({ children, params }: SymbolLayoutProps) {
     );
 }
 
-interface SymbolLayoutChromeProps {
+// chrome과 floating chat은 둘 다 `params`만 받아 async RSC로 동작하는 동일 shape이라
+// 단일 인터페이스를 공유한다.
+interface SymbolLayoutSegmentProps {
     params: Promise<{ symbol: string }>;
 }
 
-async function SymbolLayoutChrome({ params }: SymbolLayoutChromeProps) {
+async function SymbolLayoutChrome({ params }: SymbolLayoutSegmentProps) {
     const { symbol } = await params;
     const ticker = symbol.toUpperCase();
     const assetInfo = await getAssetInfoCached(ticker);
@@ -76,11 +78,7 @@ async function SymbolLayoutChrome({ params }: SymbolLayoutChromeProps) {
     );
 }
 
-interface SymbolFloatingChatProps {
-    params: Promise<{ symbol: string }>;
-}
-
-async function SymbolFloatingChat({ params }: SymbolFloatingChatProps) {
+async function SymbolFloatingChat({ params }: SymbolLayoutSegmentProps) {
     const { symbol } = await params;
     return <SymbolLayoutFloatingChat symbol={symbol} />;
 }

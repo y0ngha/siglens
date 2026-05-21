@@ -12,7 +12,7 @@ import type { EarningsReportComparisonItem } from '@/domain/types';
 // cacheComponents 비활성 기간 동안 'use cache' / cacheLife / cacheTag 모두 제거.
 // 동일 요청 내 중복 호출(예: NewsPage 본문 + NewsListSection 내부)은 React.cache로
 // per-request memoization을 적용해 DB/FMP 중복 조회를 막는다. cross-request 캐싱은
-// 손실 — 관련 GitHub 이슈 참조.
+// 손실 — 이슈 #439 참조.
 const fundamentalClient = new FmpFundamentalClient();
 const EARNINGS_REPORT_FMP_LIMIT = 5;
 const EARNINGS_REPORT_STALE_MS = MS_PER_DAY;

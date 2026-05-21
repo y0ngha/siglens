@@ -20,7 +20,7 @@ import type {
 // cacheComponents 비활성 기간 동안 'use cache' / cacheLife / cacheTag를 모두 제거.
 // 동일 요청 내 중복 호출은 React.cache로 per-request memoization을 적용해
 // FMP HTTP 호출 중복을 막는다. cross-request 캐싱은 손실 — PPR 재활성화 또는
-// unstable_cache 도입 시 복원할 것 (관련 GitHub 이슈 참조).
+// unstable_cache 도입 시 복원할 것 (이슈 #439 참조).
 const fundamentalClient = new FmpFundamentalClient();
 
 export const getProfile = cache(
