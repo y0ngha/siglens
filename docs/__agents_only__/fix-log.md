@@ -1,6 +1,52 @@
 
 # Fix Log
 
+## [PR #441 Round 6 | fix/symbol-options-issues | 2026-05-22]
+- S1: `src/components/options/OpenInterestChart.tsx` — 렌더 함수 안에서 `const bw = barWidth(count)`(내부에서 `slotWidth(count)` 호출)과 `const sw = slotWidth(count)`가 동일한 `CHART_WIDTH / count`를 두 번 계산했음. `barWidth` 헬퍼를 제거하고 `const sw = slotWidth(count); const bw = sw * BAR_WIDTH_FILL_RATIO;`로 인라인 처리해 중복 연산을 제거.
+  - Rule: MISTAKES.md §2 — 동일 값을 한 함수 안에서 여러 번 계산하면 local const로 한 번만 계산해 재사용.
+
+## [PR #441 Round 5 | fix/symbol-options-issues | 2026-05-22]
+- B1: `src/infrastructure/options/YahooOptionsAdapter.ts` — line 85의 "누락된 슬롯 만기는 병렬로 조회. 일부 실패는 그 만기만 누락으로 처리." 및 line 111의 "동일 만기가 중복 수신되지 않도록 ISO 키로 dedupe." 코멘트 제거. `Promise.all` + `.catch` 구조와 `mergedByIso`라는 변수명이 의도를 표현하므로 WHAT 코멘트는 노이즈.
+  - Rule: MISTAKES.md §15.3 — "Comments must explain WHY a decision was made, not WHAT the code does."
+- S1: `src/infrastructure/options/YahooOptionsAdapter.ts` — `mergedByIso` Map 생성을 `for-of` + `.set()` 누산에서 `new Map(...map(opt => [k, v] as const))` 선언형 패턴으로 전환. Map 생성자가 [key, value] iterable을 받으므로 mutation 없이 동일 결과.
+  - Rule: CONVENTIONS.md FP — 함수형 패러다임 선호.
+- S2: `src/components/options/OpenInterestChart.tsx` — `tooltipText` 위 첫 줄 "SVG native tooltip — Strike, Call OI, Put OI, Total 한 줄씩." 제거(바로 아래 배열 리터럴이 그 내용을 표현). 두/세 번째 줄(WHY: 슬롯 전체 너비 hit-rect로 hover 영역 확장)만 남김.
+  - Rule: MISTAKES.md §15.3 — WHAT 줄 제거하고 WHY만 유지.
+- S3: `src/__tests__/infrastructure/options/YahooOptionsAdapter.test.ts` — dedupe 테스트 제목이 "초기·추가 응답에 모두 있으면"이었지만 실제 시나리오는 초기 응답에 동일 만기가 두 항목으로 들어오는 케이스(추가 fetch 발생 안 함)였음. 제목을 "초기 응답 안에 동일 만기 항목이 중복될 경우 Map이 마지막 항목으로 dedupe한다"로 정정.
+  - Rule: 가독성 — 테스트 제목과 실제 검증 시나리오 일치.
+
+## [PR #441 Round 4 | fix/symbol-options-issues | 2026-05-22]
+- B1: `src/__tests__/infrastructure/options/YahooOptionsAdapter.test.ts` — 새로 추가된 `missingIsos` 병렬 fetch / 실패 격리 / dedupe 분기가 기존 FULL_FIXTURE의 만기가 너무 가까워 한 번도 실행되지 않음. `mapExpirationsToSlots` mock과 함께 신규 it() 3건 추가(추가 fetch 병합 / 추가 fetch 실패 시 부분 누락 / 동일 만기 dedupe).
+  - Rule: CONVENTIONS.md "infrastructure/ 100% (필수)", MISTAKES.md Infrastructure §2 — 모든 conditional branch는 dedicated test case가 있어야 한다.
+- B2: `src/infrastructure/options/YahooOptionsAdapter.ts` — `allExpirationIsos` 위 "ISO YYYY-MM-DD로 정규화" 코멘트와 `initialOptions` 위 "추가 fetch 대상에서 제외" 코멘트가 WHAT을 설명. `toIsoDate` 함수명과 `missingIsos` 변수명이 자명하므로 두 코멘트 제거.
+  - Rule: MISTAKES.md §15.3 — "Comments must explain WHY a decision was made, not WHAT the code does."
+- B3: `src/__tests__/infrastructure/options/YahooOptionsAdapter.test.ts` — `mapExpirationsToSlots`가 실제 구현으로 실행되면 `new Date()`에 의존해 테스트가 flaky. `jest.mock` 객체에 `mapExpirationsToSlots: jest.fn()`을 추가하고 beforeEach에서 기본값 `[]` 주입.
+  - Rule: MISTAKES.md Tests §8.5 — 호출되는 외부 의존성은 모두 mock해야 한다. §14 — 시간 의존 함수는 명시적으로 mock해야 한다.
+- S1: `src/infrastructure/options/YahooOptionsAdapter.ts` Yahoo Finance 병렬 호출을 sequential로 바꿀 것 — **거부**. 이유: 본 PR의 이슈 7(옵션 페이지 SSR 속도) 의도와 직접 충돌(wall-clock 6배), Yahoo는 MISTAKES.md §0.8 rate-limit 목록(FMP/Alpaca/Gemini) 미포함, 호출 수 ≤ 6의 사용자당 일회성 burst라 누적 부하 작음. 거부 사유는 PR #441 코멘트로 등록(comment 4511337388).
+  - Rule: PR_FIX_FLOW §1-6 Reject #5 — Reviewer Lacks Project Context (PR이 명시적으로 해결하려는 다른 보고 사항과 충돌).
+- S2: `src/components/options/OpenInterestChart.tsx` `pickLabelIndices` 명령형 for-루프 + `.add()` 누산을 선언형(Array.from + new Set spread)으로 전환.
+  - Rule: CONVENTIONS.md FP — components/는 declarative 패턴 선호.
+
+## [PR #441 Round 3 | fix/symbol-options-issues | 2026-05-22]
+- B1: `src/components/options/OpenInterestChart.tsx` — `slotWidth(count)` 헬퍼를 추가하고도 `barCenterX`·`barWidth`가 여전히 `CHART_WIDTH / count`를 재구현. 두 함수가 `slotWidth(count)`를 사용하도록 통일하고, `barCenterX` 내부의 동명 `slotWidth` 지역 변수는 `sw`로 rename하여 shadowing 제거.
+  - Rule: MISTAKES.md §2 — 헬퍼를 새로 도입하면 동일 계산을 하는 모든 사용처를 함께 갈아끼워야 한다(부분 갱신 시 중복/이름 충돌 발생).
+- B2: `src/app/[symbol]/options/loading.tsx` — `<ul>` 내부의 `Array.from({ length: 3 })` 매직 넘버가 다른 모든 카운트 상수와 달리 추출되지 않음. `AI_PER_EXPIRATION_ITEM_COUNT = 3` 상수로 분리.
+  - Rule: MISTAKES.md §15 — 같은 파일에 동질의 상수 패턴이 있으면 매직 넘버를 동일한 방식으로 추출해 일관성을 맞춘다.
+- B3: `src/app/[symbol]/options/loading.tsx` — Tailwind 동적 클래스 조합에 템플릿 리터럴(`` `bg-secondary-700 ... ${w}` ``) 사용. `cn()` 유틸로 교체.
+  - Rule: MISTAKES.md §7.5 — Tailwind 클래스 결합은 반드시 `cn()` 사용; 템플릿 리터럴은 production tailwind purge가 인식 못하거나 우선순위 충돌을 일으킬 수 있다.
+- M1: `src/infrastructure/options/YahooOptionsAdapter.ts` — `for (const iso of initialIsos) targetIsos.add(iso)` 후 `!initialIsos.has(iso)`로 다시 거르는 흐름이 사실상 noop. 루프 제거하고 슬롯 후보에서 바로 미존재 만기만 필터링.
+  - Rule: 함수형 패러다임 — 결과적으로 동일한 흐름이라면 mutation 루프는 제거해 가독성을 높인다.
+- M2: `src/components/options/OpenInterestChart.tsx` — `pickLabelIndices` JSDoc이 "결과 Set 크기는 항상 MAX_X_AXIS_LABELS 이하"라고 단정했으나 anchors(현재가·Max Pain·마지막 인덱스) 추가로 약간 초과할 수 있다. 주석 문구를 실제 동작에 맞게 정정.
+  - Rule: MISTAKES.md §6.5 — 동작 변경 시 관련 코멘트 즉시 동기화; 부정확한 단정은 미래 독자에게 오해를 준다.
+
+## [PR #442 Round 2 | fix/symbol-options-issues | 2026-05-22]
+- Violation (Round 1 required): `src/infrastructure/options/YahooOptionsAdapter.ts` — Type assertion `initial.options as unknown as YahooOption[]` had no guarantee comment explaining why the double cast was needed
+  - Rule: MISTAKES.md TypeScript §7 — Using `as` type assertions without guarantee comments; must accompany safe-cast `as` with explanation of type system limitation
+  - Context: Assertion required because TypeScript cannot structurally express that Yahoo API response options are guaranteed to match YahooOption shape. Added guarantee comment explaining the type-system constraint.
+- Violation (Round 1 recommended): `src/app/[symbol]/options/loading.tsx` — JSX section comments labeled WHAT the code does (`{/* ExpirationSelector */}`, etc.) instead of WHY
+  - Rule: MISTAKES.md §15.5 — JSX section comments explaining WHAT are noise; component/variable names are self-documenting
+  - Context: Removed WHAT-labels; inline comments conflicted with existing intent clarity. Component structure is evident from JSX hierarchy.
+
 ## [PR #440 Round 2 | fix/disable-cache-components | 2026-05-22]
 - B1: `src/app/[symbol]/layout.tsx` + `SymbolLayoutClient.tsx` — `children`이 async RSC(`SymbolLayoutChrome`) 내부에 위치하여 `getAssetInfoCached` + `prefetchQuery(bars)` 완료까지 페이지 본문 LCP가 차단됨. 6ad891ff 리버트로 인해 master 패턴으로 회귀했으나, 해당 master 패턴은 cacheComponents 비활성 상태에서 streaming SSR LCP를 악화시킴. 수정: `children`을 Suspense 밖으로 빼고 `SymbolLayoutClient`를 `SymbolLayoutProviders`/`SymbolLayoutHeaderClient`/`SymbolLayoutFloatingChat` 3개로 분리. layout은 provider subtree 안에 chrome Suspense + children + FloatingChat Suspense를 형제로 구성.
   - Rule: vercel-react-best-practices `async-suspense-boundaries` — Suspense 경계는 페이지 본문이 layout 비동기 작업을 기다리지 않도록 chrome 단위로 좁혀야 함

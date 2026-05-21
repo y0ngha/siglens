@@ -10,7 +10,6 @@ jest.mock('@y0ngha/siglens-core', () => ({
     ...jest.requireActual('@y0ngha/siglens-core'),
     submitOptionsAnalysis: jest.fn(),
     pollOptionsAnalysis: jest.fn(),
-    summarizeChainForLlm: jest.fn(),
     cancelJob: jest.fn(),
 }));
 
@@ -33,13 +32,11 @@ jest.mock('@/infrastructure/market/byokGate', () => ({
 import {
     submitOptionsAnalysis,
     pollOptionsAnalysis,
-    summarizeChainForLlm,
     cancelJob,
     type ModelId,
     type SubmitOptionsAnalysisResult,
     type OptionsSnapshot,
     type OptionsChain,
-    type OptionsExpirationMetrics,
 } from '@y0ngha/siglens-core';
 import { fetchOptionsSnapshot } from '@/infrastructure/options/optionsDataCache';
 import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
@@ -48,7 +45,6 @@ import type { AnalysisGateError } from '@/domain/types';
 import {
     submitOptionsAnalysisAction,
     pollOptionsAnalysisAction,
-    getOptionsSignalsAction,
     cancelOptionsAnalysisJobAction,
 } from '@/infrastructure/options/optionsActions';
 
@@ -57,9 +53,6 @@ const mockSubmitOptionsAnalysis = submitOptionsAnalysis as jest.MockedFunction<
 >;
 const mockPollOptionsAnalysis = pollOptionsAnalysis as jest.MockedFunction<
     typeof pollOptionsAnalysis
->;
-const mockSummarizeChainForLlm = summarizeChainForLlm as jest.MockedFunction<
-    typeof summarizeChainForLlm
 >;
 const mockFetchOptionsSnapshot = fetchOptionsSnapshot as jest.MockedFunction<
     typeof fetchOptionsSnapshot
@@ -94,88 +87,10 @@ const MOCK_SNAPSHOT: OptionsSnapshot = {
     chains: [MOCK_CHAIN],
 };
 
-const MOCK_METRICS: OptionsExpirationMetrics = {
-    expirationDate: '2026-06-20',
-    maxPain: 190,
-    putCallRatio: 0.85,
-    atmImpliedVolatility: 0.32,
-    topOpenInterestStrikes: [],
-    impliedMovePercent: null,
-};
-
 const SUBMITTED_RESULT: SubmitOptionsAnalysisResult = {
     status: 'submitted',
     jobId: 'job-options-001',
 };
-
-describe('getOptionsSignalsAction', () => {
-    it('returns signals for the nearest expiration', async () => {
-        mockFetchOptionsSnapshot.mockResolvedValueOnce(MOCK_SNAPSHOT);
-        mockSummarizeChainForLlm.mockReturnValueOnce(MOCK_METRICS);
-
-        const result = await getOptionsSignalsAction('AAPL');
-
-        expect(result).toEqual({
-            atmIv: 0.32,
-            putCallRatio: 0.85,
-            maxPain: 190,
-            expirationDate: '2026-06-20',
-        });
-    });
-
-    it('returns null when snapshot is null', async () => {
-        mockFetchOptionsSnapshot.mockResolvedValueOnce(null);
-        const result = await getOptionsSignalsAction('AAPL');
-        expect(result).toBeNull();
-    });
-
-    it('returns null when snapshot has no chains', async () => {
-        mockFetchOptionsSnapshot.mockResolvedValueOnce({
-            ...MOCK_SNAPSHOT,
-            chains: [],
-        });
-        const result = await getOptionsSignalsAction('AAPL');
-        expect(result).toBeNull();
-    });
-
-    it('passes through null maxPain/putCallRatio from siglens-core R12', async () => {
-        // siglens-core R12 (commit 40ad290) widened both to `number | null`.
-        // Verify the action forwards null without coercing to NaN.
-        mockFetchOptionsSnapshot.mockResolvedValueOnce(MOCK_SNAPSHOT);
-        mockSummarizeChainForLlm.mockReturnValueOnce({
-            ...MOCK_METRICS,
-            maxPain: null,
-            putCallRatio: null,
-        });
-
-        const result = await getOptionsSignalsAction('AAPL');
-
-        expect(result).toEqual({
-            atmIv: 0.32,
-            putCallRatio: null,
-            maxPain: null,
-            expirationDate: '2026-06-20',
-        });
-    });
-
-    it('returns null and logs when fetchOptionsSnapshot throws', async () => {
-        const consoleErrorSpy = jest
-            .spyOn(console, 'error')
-            .mockImplementation(() => {});
-        const fetchError = new Error('upstream timeout');
-        mockFetchOptionsSnapshot.mockRejectedValueOnce(fetchError);
-
-        const result = await getOptionsSignalsAction('AAPL');
-
-        expect(result).toBeNull();
-        expect(consoleErrorSpy).toHaveBeenCalledWith(
-            '[getOptionsSignalsAction] fetch failed:',
-            fetchError
-        );
-
-        consoleErrorSpy.mockRestore();
-    });
-});
 
 describe('submitOptionsAnalysisAction', () => {
     beforeEach(() => {

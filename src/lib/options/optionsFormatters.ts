@@ -1,11 +1,11 @@
 /**
  * Shared formatters for options metrics rendered on the symbol page.
  *
- * Both `OptionsSignalCards` (chart-page chip row) and `OptionsMetricsRow`
- * (options tab metric grid) render the same underlying numbers — Max Pain,
- * Put/Call ratio, ATM IV, and implied move — so they must agree on NaN/null
- * rendering. Keeping the formatters here ensures one path can't drift and
- * surface a bare `'NaN'` while the other shows `'—'`.
+ * `OptionsMetricsRow` (options tab metric grid) and the options chain table
+ * render the same underlying numbers — Max Pain, Put/Call ratio, ATM IV, and
+ * implied move — so they must agree on NaN/null rendering. Keeping the
+ * formatters here ensures one path can't drift and surface a bare `'NaN'`
+ * while the other shows `'—'`.
  *
  * siglens-core PR #86 R12 widened `maxPain` and `putCallRatio` to
  * `number | null` (NaN/Infinity were silently JSON-stringified to "null",
