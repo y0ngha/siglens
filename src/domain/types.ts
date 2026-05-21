@@ -102,6 +102,8 @@ export type {
     AnalysisGateErrorCode,
 } from '@/domain/analysis/gate';
 
+export type { OptionsExpirationSelector } from '@/domain/options/types';
+
 export type ContactFormField = 'title' | 'email' | 'content';
 
 export type ContactFormErrorCode =
@@ -184,11 +186,32 @@ export interface ContextSwitchMessage {
 /** Chat display history union — `ChatMessage` (LLM-bound) + UI-only `ContextSwitchMessage`. */
 export type DisplayMessage = ChatMessage | ContextSwitchMessage;
 
-export type JobType = 'analysis' | 'fundamental' | 'news' | 'overall';
+export type JobType =
+    | 'analysis'
+    | 'fundamental'
+    | 'news'
+    | 'options'
+    | 'overall';
 export interface CancelJobEntry {
     jobId: string;
     type: JobType;
 }
 export interface CancelJobsBody {
     jobs: CancelJobEntry[];
+}
+
+/**
+ * Pre-computed option signals shown on the chart page card row (ATM IV,
+ * Put/Call, Max Pain). Anchored on the nearest expiration.
+ *
+ * `putCallRatio` and `maxPain` are `number | null` because siglens-core R12
+ * (PR #86, commit 40ad290) explicitly returns `null` when the source data is
+ * insufficient (no opposite-side OI, empty chain). Previously NaN/Infinity
+ * leaked through and JSON-stringified to `"null"` silently.
+ */
+export interface OptionsSignalsResult {
+    atmIv: number | null;
+    putCallRatio: number | null;
+    maxPain: number | null;
+    expirationDate: string;
 }

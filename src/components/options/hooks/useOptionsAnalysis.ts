@@ -1,22 +1,24 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import type { NewsAnalysisResponse, ModelId } from '@y0ngha/siglens-core';
-import { submitNewsAnalysisAction } from '@/infrastructure/market/submitNewsAnalysisAction';
+import { useCallback, useEffect, useRef } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import type { OptionsAnalysisResponse, ModelId } from '@y0ngha/siglens-core';
+import {
+    submitOptionsAnalysisAction,
+    pollOptionsAnalysisAction,
+    cancelOptionsAnalysisJobAction,
+} from '@/infrastructure/options/optionsActions';
 import { isGateBlockedResult } from '@/domain/analysis/gate';
-import { pollNewsAnalysisAction } from '@/infrastructure/market/pollNewsAnalysisAction';
-import { cancelNewsAnalysisJobAction } from '@/infrastructure/market/cancelNewsAnalysisJobAction';
 import { sleep } from '@/lib/sleep';
 import { QUERY_KEYS } from '@/lib/queryConfig';
 import { ANALYSIS_POLL_INTERVAL_MS } from '@/lib/pollingConfig';
 import { usePageHideCancel } from '@/components/hooks/usePageHideCancel';
 import { BotBlockedError } from '@/components/symbol-page/exceptions/BotBlockedError';
-import type { CancelJobEntry } from '@/domain/types';
+import type { CancelJobEntry, OptionsExpirationSelector } from '@/domain/types';
 
-export type NewsAnalysisState =
+export type OptionsAnalysisState =
     | { status: 'loading' }
-    | { status: 'done'; result: NewsAnalysisResponse }
+    | { status: 'done'; result: OptionsAnalysisResponse }
     | { status: 'bot_blocked' }
     | { status: 'error'; error: Error; retry: () => void };
 
@@ -24,17 +26,20 @@ export type NewsAnalysisState =
 // onJobId는 두 번째 인자(expectedCurrent)를 받으면 ref가 일치할 때만 갱신한다 →
 // retry/queryKey 변경으로 새 실행이 시작된 뒤에도 이전 실행의 finally가
 // 새 jobId를 null로 덮어쓰지 않는다.
-async function fetchNewsAnalysis(
+async function fetchOptionsAnalysis(
     symbol: string,
     companyName: string,
+    expirationDate: OptionsExpirationSelector,
     modelId: ModelId,
     signal: AbortSignal,
     onJobId: (jobId: string | null, expectedCurrent?: string | null) => void
-): Promise<NewsAnalysisResponse> {
+): Promise<OptionsAnalysisResponse> {
     if (signal.aborted) throw new Error('aborted');
-    const submitted = await submitNewsAnalysisAction(
+
+    const submitted = await submitOptionsAnalysisAction(
         symbol,
         companyName,
+        expirationDate,
         modelId
     );
 
@@ -42,20 +47,14 @@ async function fetchNewsAnalysis(
     if (submitted.status === 'miss_no_trigger') {
         throw new BotBlockedError();
     }
-    if (submitted.status === 'error') {
-        // Handle before the existing SubmitNewsAnalysisResult variants.
-        if (isGateBlockedResult(submitted)) {
-            throw new Error(submitted.error.message);
-        }
-        if (submitted.code === 'no_news') {
-            throw new Error(
-                '분석할 뉴스가 없습니다. 잠시 후 다시 시도해 주세요.'
-            );
-        }
-        if (submitted.code === 'usage_limit_exceeded') {
-            throw new Error(submitted.error.message);
-        }
-        throw new Error('분석 중 오류가 발생했습니다.');
+    if (submitted.status === 'no_chains_error') {
+        throw new Error(submitted.error ?? '분석할 옵션 데이터가 없습니다.');
+    }
+    if (submitted.status === 'limit_error') {
+        throw new Error(submitted.error.message);
+    }
+    if (submitted.status === 'error' && isGateBlockedResult(submitted)) {
+        throw new Error(submitted.error.message);
     }
     if (submitted.status === 'key_error') {
         throw new Error(submitted.error);
@@ -67,7 +66,7 @@ async function fetchNewsAnalysis(
         while (!signal.aborted) {
             await sleep(ANALYSIS_POLL_INTERVAL_MS);
             if (signal.aborted) break;
-            const polled = await pollNewsAnalysisAction(jobId);
+            const polled = await pollOptionsAnalysisAction(jobId);
             if (polled.status === 'done') return polled.result;
             if (polled.status === 'error') {
                 throw new Error(polled.error ?? '분석 중 오류가 발생했습니다.');
@@ -80,23 +79,36 @@ async function fetchNewsAnalysis(
     throw new Error('aborted');
 }
 
-export function useNewsAnalysis(
-    symbol: string,
-    companyName: string,
-    modelId: ModelId
-): NewsAnalysisState {
+interface UseOptionsAnalysisInput {
+    symbol: string;
+    companyName: string;
+    expirationDate: OptionsExpirationSelector;
+    modelId: ModelId;
+}
+
+/**
+ * Submit + poll hook for options analysis.
+ *
+ * Mirrors `useFundamentalAnalysis` structurally: auto-triggers on mount if no
+ * cached data exists, cancels the in-flight job on unmount or queryKey change,
+ * and fires sendBeacon via `usePageHideCancel` on page unload.
+ */
+export function useOptionsAnalysis({
+    symbol,
+    companyName,
+    expirationDate,
+    modelId,
+}: UseOptionsAnalysisInput): OptionsAnalysisState {
     const currentJobIdRef = useRef<string | null>(null);
-    const queryKey = useMemo(
-        () => QUERY_KEYS.newsAnalysis(symbol, modelId),
-        [symbol, modelId]
-    );
+    const queryClient = useQueryClient();
 
     const query = useQuery({
-        queryKey,
+        queryKey: QUERY_KEYS.optionsAnalysis(symbol, expirationDate, modelId),
         queryFn: ({ signal }) =>
-            fetchNewsAnalysis(
+            fetchOptionsAnalysis(
                 symbol,
                 companyName,
+                expirationDate,
                 modelId,
                 signal,
                 (jobId, expectedCurrent) => {
@@ -109,6 +121,7 @@ export function useNewsAnalysis(
                     currentJobIdRef.current = jobId;
                 }
             ),
+        enabled: false,
         retry: false,
         staleTime: Infinity,
     });
@@ -116,7 +129,9 @@ export function useNewsAnalysis(
     // §17 exception: `refetch` is destructured immediately after useQuery
     // because it feeds the useCallback below — derived values that are
     // consumed by subsequent hook calls must precede those hooks. The
-    // `refetch` reference is stable across renders (React Query guarantee).
+    // `refetch` reference is stable across renders (React Query guarantee),
+    // so this preserves the spirit of §17 (no unstable derived values in
+    // hook deps).
     const { refetch } = query;
 
     const retry = useCallback(() => {
@@ -128,23 +143,32 @@ export function useNewsAnalysis(
         const jobId = currentJobIdRef.current;
         if (jobId === null) return null;
         currentJobIdRef.current = null;
-        return [{ jobId, type: 'news' as const }];
+        return [{ jobId, type: 'options' as const }];
     }, []);
     usePageHideCancel(getPageHideJobs);
 
-    // symbol 또는 modelId 변경(queryKey 교체) 시, unmount 시 진행 중인 job을 cancel한다.
-    // fire-and-forget이므로 useMutation 없이 직접 호출한다.
+    useEffect(() => {
+        const queryKey = QUERY_KEYS.optionsAnalysis(
+            symbol,
+            expirationDate,
+            modelId
+        );
+        if (queryClient.getQueryData(queryKey) === undefined) {
+            void refetch();
+        }
+    }, [queryClient, symbol, expirationDate, modelId, refetch]);
+
     useEffect(() => {
         return () => {
             const jobId = currentJobIdRef.current;
             if (jobId !== null) {
                 currentJobIdRef.current = null;
-                void cancelNewsAnalysisJobAction(jobId).catch(error => {
-                    console.warn('[useNewsAnalysis] cancel failed', error);
+                void cancelOptionsAnalysisJobAction(jobId).catch(error => {
+                    console.warn('[useOptionsAnalysis] cancel failed', error);
                 });
             }
         };
-    }, [queryKey]);
+    }, [symbol, expirationDate, modelId]);
 
     if (query.isError) {
         if (query.error instanceof BotBlockedError) {
@@ -158,12 +182,6 @@ export function useNewsAnalysis(
                     : new Error('분석 중 오류가 발생했습니다.'),
             retry,
         };
-    }
-
-    // isFetching을 data보다 먼저 확인해야 background refetch(뉴스 갱신 후 재분석) 중에도
-    // 스피너가 표시된다. data 체크를 먼저 두면 이전 결과가 그대로 노출되어 스피너가 뜨지 않는다.
-    if (query.isFetching) {
-        return { status: 'loading' };
     }
 
     if (query.data !== undefined) {

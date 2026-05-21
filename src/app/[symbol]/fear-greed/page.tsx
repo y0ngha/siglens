@@ -81,6 +81,9 @@ export default async function SymbolFearGreedPage({ params }: Props) {
         }
     );
 
+    // `about` block intentionally omitted: hardcoding `@type: 'Corporation'`
+    // misrepresents ETF/Index tickers (e.g. SPY, QQQ, SPXUSD). Re-adding it
+    // requires an AssetInfo discriminator that distinguishes Stock/ETF/Index.
     const webPageJsonLd = {
         '@context': 'https://schema.org',
         '@type': 'WebPage',
@@ -88,11 +91,6 @@ export default async function SymbolFearGreedPage({ params }: Props) {
         description,
         url,
         inLanguage: 'ko',
-        about: {
-            '@type': 'Corporation',
-            name: displayName,
-            tickerSymbol: ticker,
-        },
     };
 
     const breadcrumbJsonLd = buildBreadcrumbJsonLd([

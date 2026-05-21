@@ -1,3 +1,4 @@
+import { OptionsSignalCards } from '@/components/symbol-page/cards/OptionsSignalCards';
 import { SymbolPageClient } from '@/components/symbol-page/SymbolPageClient';
 import { JsonLd } from '@/components/ui/JsonLd';
 import { FALLBACK_ANALYSIS } from '@/domain/chat/fallbackAnalysis';
@@ -87,6 +88,9 @@ export default async function SymbolPage({ params, searchParams }: Props) {
         koreanName: assetInfo.koreanName,
     });
 
+    // `about` block intentionally omitted: hardcoding `@type: 'Corporation'`
+    // misrepresents ETF/Index tickers (e.g. SPY, QQQ, SPXUSD). Re-adding it
+    // requires an AssetInfo discriminator that distinguishes Stock/ETF/Index.
     const jsonLd = {
         '@context': 'https://schema.org',
         '@type': 'WebPage',
@@ -94,11 +98,6 @@ export default async function SymbolPage({ params, searchParams }: Props) {
         description,
         url,
         inLanguage: 'ko',
-        about: {
-            '@type': 'Corporation',
-            name: displayName,
-            tickerSymbol: ticker,
-        },
     };
 
     const breadcrumbJsonLd = buildBreadcrumbJsonLd([{ name: fullTitle, url }]);
@@ -180,10 +179,7 @@ export default async function SymbolPage({ params, searchParams }: Props) {
                     // 마운트 시 useAnalysis가 자동으로 재분석을 트리거하도록 true로 설정한다.
                     initialAnalysisFailed={true}
                     indicatorCount={skillCounts.indicators}
-                    bottomSlot={
-                        // <CrossLinkCards symbol={ticker} current="chart" />
-                        null
-                    }
+                    bottomSlot={<OptionsSignalCards symbol={ticker} />}
                 />
             </HydrationBoundary>
         </>

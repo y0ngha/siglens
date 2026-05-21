@@ -17,6 +17,11 @@ export const TABS = [
         hrefBuilder: (s: string) => `/${s}/fundamental`,
     },
     {
+        key: 'options',
+        label: '옵션',
+        hrefBuilder: (s: string) => `/${s}/options`,
+    },
+    {
         key: 'fear-greed',
         label: '공포 탐욕 지수',
         hrefBuilder: (s: string) => `/${s}/fear-greed`,

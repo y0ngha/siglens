@@ -5,6 +5,9 @@
  * generateMetadata에서 직접 호출하는 외부 의존성만 최소한으로 모킹한다.
  */
 
+// 'server-only'는 Next 런타임 sentinel이라 Jest 환경에서 해석 불가 — virtual mock
+jest.mock('server-only', () => ({}), { virtual: true });
+
 // react-markdown은 ESM-only 패키지라 Jest 환경에서 파싱 불가 — 컴포넌트 전체를 stub
 jest.mock('react-markdown', () => () => null);
 

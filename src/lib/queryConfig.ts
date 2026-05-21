@@ -1,5 +1,6 @@
 import type { ModelId, Timeframe } from '@y0ngha/siglens-core';
 import { MS_PER_MINUTE } from '@/domain/constants/time';
+import type { OptionsExpirationSelector } from '@/domain/types';
 
 /** Default cache freshness for queries without a domain-specific cadence. */
 export const QUERY_STALE_TIME_MS = MS_PER_MINUTE;
@@ -63,4 +64,21 @@ export const QUERY_KEYS = {
         timeframe: Timeframe,
         modelId: ModelId
     ) => ['overall-analysis', symbol, companyName, timeframe, modelId] as const,
+    optionsSnapshot: (symbol: string) => ['options-snapshot', symbol] as const,
+    /**
+     * Chart-page card signals derived from the nearest-expiration chain — there
+     * is no user-facing expiration selector on that surface, so the key omits
+     * expirationDate. The server action resolves nearest itself.
+     */
+    optionsSignals: (symbol: string) => ['options-signals', symbol] as const,
+    /**
+     * Options analysis cache scope. Expiration date is part of the key because
+     * the AI analysis output differs per expiration — the chip selector should
+     * trigger a new fetch when the user picks a different expiration.
+     */
+    optionsAnalysis: (
+        symbol: string,
+        expirationDate: OptionsExpirationSelector,
+        modelId: ModelId
+    ) => ['options-analysis', symbol, expirationDate, modelId] as const,
 } as const;
