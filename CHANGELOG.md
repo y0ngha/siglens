@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.11.15](https://github.com/y0ngha/siglens/compare/v0.11.14...v0.11.15) (2026-05-21)
+
+
+### Bug Fixes
+
+* ppr 오류 개선 시도 ([6ad891f](https://github.com/y0ngha/siglens/commit/6ad891ff4d1642adc6cc2d7dcb10051b6e21c849))
+
 ## [0.11.14](https://github.com/y0ngha/siglens/compare/v0.11.13...v0.11.14) (2026-05-21)
 
 
