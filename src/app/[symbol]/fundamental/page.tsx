@@ -38,6 +38,7 @@ import {
 } from '@/lib/seo';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { connection } from 'next/server';
 import { Suspense } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
 
@@ -46,6 +47,13 @@ interface Props {
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
+    // generateMetadata는 페이지 본문과 별도의 prerender entry로 실행된다.
+    // 본문에 connection()이 있어도 metadata는 별도로 prerender될 수 있어,
+    // params만 의존하는 generateMetadata는 PPR shell에 fake-params(`[symbol]`)로
+    // 캐싱되어 canonical/title에 placeholder가 박힌다. searchParams를 사용하지
+    // 않는 generateMetadata는 첫 줄에 명시 connection()으로 dynamic을 보장한다.
+    await connection();
+
     const { symbol } = await params;
     const upper = symbol.toUpperCase();
     const assetInfo = await getAssetInfoCached(upper);
@@ -244,6 +252,12 @@ async function FutureDirectionSection({ symbol }: SymbolSectionProps) {
 }
 
 export default async function FundamentalPage({ params }: Props) {
+    // generateMetadata가 await params만 의존하면 cacheComponents 모드에서 PPR shell에
+    // fake params(`[symbol]`)로 prerender되어 canonical/title에 `[SYMBOL]` placeholder가
+    // 그대로 박힌다. page body 첫 줄에 connection()으로 dynamic signal을 박아
+    // metadata를 request-time으로 defer시킨다. news/fear-greed 페이지와 동일 패턴.
+    await connection();
+
     const { symbol } = await params;
     const upper = symbol.toUpperCase();
 
