@@ -1,4 +1,3 @@
-// TODO(Phase 5): Enhance with polished empty-state illustration and copy.
 import Link from 'next/link';
 
 interface OptionsEmptyStateProps {

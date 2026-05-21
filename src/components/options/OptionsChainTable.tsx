@@ -12,20 +12,6 @@ import { findNearestStrikeIndex } from '@/domain/options/findNearestStrike';
 import type { OptionsExpirationSelector } from '@/domain/types';
 import { cn } from '@/lib/cn';
 
-interface OptionsChainTableProps {
-    symbol: string;
-    /** 'YYYY-MM-DD' or 'all'. Maps to the appropriate chain via the same rule as Metrics/Chart. */
-    expirationDate: OptionsExpirationSelector;
-    /** Spot price used to anchor the ATM-row highlight. */
-    underlyingPrice: number;
-    /** Chain matching the selected expiration; null when absent. */
-    chain: OptionsChain | null;
-    /** Pre-computed metrics; `maxPain` drives the 📍 row marker. */
-    metrics: OptionsExpirationMetrics | null;
-    /** First-chain expiration date for the "종합 만기" caption. */
-    nearestExpiry: string;
-}
-
 const numberFormatter = new Intl.NumberFormat('en-US');
 
 function formatOi(value: number): string {
@@ -65,6 +51,20 @@ const ImpliedVolatilityTooltip = (
         <p>높을수록 옵션값이 비싸지고, 불확실성이 크다는 뜻이에요.</p>
     </>
 );
+
+interface OptionsChainTableProps {
+    symbol: string;
+    /** 'YYYY-MM-DD' or 'all'. Maps to the appropriate chain via the same rule as Metrics/Chart. */
+    expirationDate: OptionsExpirationSelector;
+    /** Spot price used to anchor the ATM-row highlight. */
+    underlyingPrice: number;
+    /** Chain matching the selected expiration; null when absent. */
+    chain: OptionsChain | null;
+    /** Pre-computed metrics; `maxPain` drives the 📍 row marker. */
+    metrics: OptionsExpirationMetrics | null;
+    /** First-chain expiration date for the "종합 만기" caption. */
+    nearestExpiry: string;
+}
 
 export function OptionsChainTable({
     symbol,

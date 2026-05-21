@@ -26,7 +26,7 @@ interface SitemapEntry {
 function sliceIntoChunks<T>(items: ReadonlyArray<T>, size: number): T[][] {
     return Array.from(
         { length: Math.ceil(items.length / size) },
-        (_, i) => items.slice(i * size, (i + 1) * size) as T[]
+        (_, i) => items.slice(i * size, (i + 1) * size)
     );
 }
 

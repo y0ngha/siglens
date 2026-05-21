@@ -17,15 +17,6 @@ import {
     PutCallRatioTooltip,
 } from '@/components/options/utils/optionsTooltips';
 
-interface OptionsMetricsRowProps {
-    /** 'YYYY-MM-DD' or 'all'. */
-    expirationDate: OptionsExpirationSelector;
-    /** Pre-computed metrics from the parent (shared with chart/table). */
-    metrics: OptionsExpirationMetrics | null;
-    /** First-chain expiration date for the "종합 만기" caption. */
-    nearestExpiry: string;
-}
-
 interface MetricCardProps {
     label: string;
     value: string;
@@ -46,6 +37,15 @@ function MetricCard({ label, value, tooltip }: MetricCardProps) {
             </p>
         </div>
     );
+}
+
+interface OptionsMetricsRowProps {
+    /** 'YYYY-MM-DD' or 'all'. */
+    expirationDate: OptionsExpirationSelector;
+    /** Pre-computed metrics from the parent (shared with chart/table). */
+    metrics: OptionsExpirationMetrics | null;
+    /** First-chain expiration date for the "종합 만기" caption. */
+    nearestExpiry: string;
 }
 
 export function OptionsMetricsRow({
