@@ -81,7 +81,9 @@ interface EtDateParts {
 function etMidnight(now: Date): Date {
     // `formatToParts` returns ~3-5 items; reduce+spread cost is negligible.
     // Declarative form preferred over let+for mutation.
-    const { year, month, day } = ET_DATE_FORMATTER.formatToParts(now).reduce<EtDateParts>(
+    const { year, month, day } = ET_DATE_FORMATTER.formatToParts(
+        now
+    ).reduce<EtDateParts>(
         (acc, part) => {
             if (part.type === 'year')
                 return { ...acc, year: Number.parseInt(part.value, 10) };

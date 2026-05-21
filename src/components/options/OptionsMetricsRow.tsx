@@ -90,7 +90,9 @@ export function OptionsMetricsRow({
                 },
                 {
                     label: 'Imp. Move',
-                    value: formatImpliedMove(metrics?.impliedMovePercent ?? null),
+                    value: formatImpliedMove(
+                        metrics?.impliedMovePercent ?? null
+                    ),
                     tooltip: ImpliedMoveTooltip,
                 },
             ] as const,
