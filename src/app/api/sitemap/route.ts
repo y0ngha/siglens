@@ -24,9 +24,8 @@ interface SitemapEntry {
 // inline `Array.from(..., (_, i) => items.slice(...))` expression because
 // the slice arithmetic was non-trivial to read at the call site.
 function sliceIntoChunks<T>(items: ReadonlyArray<T>, size: number): T[][] {
-    return Array.from(
-        { length: Math.ceil(items.length / size) },
-        (_, i) => items.slice(i * size, (i + 1) * size)
+    return Array.from({ length: Math.ceil(items.length / size) }, (_, i) =>
+        items.slice(i * size, (i + 1) * size)
     );
 }
 
