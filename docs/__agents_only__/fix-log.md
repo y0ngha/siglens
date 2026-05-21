@@ -1,6 +1,10 @@
 
 # Fix Log
 
+## [PR #441 Round 6 | fix/symbol-options-issues | 2026-05-22]
+- S1: `src/components/options/OpenInterestChart.tsx` — 렌더 함수 안에서 `const bw = barWidth(count)`(내부에서 `slotWidth(count)` 호출)과 `const sw = slotWidth(count)`가 동일한 `CHART_WIDTH / count`를 두 번 계산했음. `barWidth` 헬퍼를 제거하고 `const sw = slotWidth(count); const bw = sw * BAR_WIDTH_FILL_RATIO;`로 인라인 처리해 중복 연산을 제거.
+  - Rule: MISTAKES.md §2 — 동일 값을 한 함수 안에서 여러 번 계산하면 local const로 한 번만 계산해 재사용.
+
 ## [PR #441 Round 5 | fix/symbol-options-issues | 2026-05-22]
 - B1: `src/infrastructure/options/YahooOptionsAdapter.ts` — line 85의 "누락된 슬롯 만기는 병렬로 조회. 일부 실패는 그 만기만 누락으로 처리." 및 line 111의 "동일 만기가 중복 수신되지 않도록 ISO 키로 dedupe." 코멘트 제거. `Promise.all` + `.catch` 구조와 `mergedByIso`라는 변수명이 의도를 표현하므로 WHAT 코멘트는 노이즈.
   - Rule: MISTAKES.md §15.3 — "Comments must explain WHY a decision was made, not WHAT the code does."

@@ -81,10 +81,6 @@ function barCenterX(index: number, count: number): number {
     return PAD_LEFT + sw * index + sw / 2;
 }
 
-function barWidth(count: number): number {
-    return slotWidth(count) * BAR_WIDTH_FILL_RATIO;
-}
-
 /**
  * Decide which strike indices show an x-axis label.
  *
@@ -185,8 +181,8 @@ export function OpenInterestChart({
     const { oiByStrike, topOiSet, globalMax, maxPainIdx, currentPriceIdx } =
         derived;
     const count = oiByStrike.length;
-    const bw = barWidth(count);
     const sw = slotWidth(count);
+    const bw = sw * BAR_WIDTH_FILL_RATIO;
 
     const maxPainX = maxPainIdx >= 0 ? barCenterX(maxPainIdx, count) : null;
     const currentPriceX =
