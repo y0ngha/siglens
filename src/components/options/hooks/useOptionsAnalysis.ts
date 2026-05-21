@@ -126,6 +126,10 @@ export function useOptionsAnalysis({
         staleTime: Infinity,
     });
 
+    // Derived from query — referenced by effects below. React Query deep-
+    // compares keys so a stable identity isn't required; we just need a name.
+    const { queryKey } = query;
+
     const retry = useCallback(() => {
         void query.refetch();
     }, [query]);
@@ -138,10 +142,6 @@ export function useOptionsAnalysis({
         return [{ jobId, type: 'options' as const }];
     }, []);
     usePageHideCancel(getPageHideJobs);
-
-    // Derived from query — referenced by effects below. React Query deep-
-    // compares keys so a stable identity isn't required; we just need a name.
-    const { queryKey } = query;
 
     useEffect(() => {
         if (queryClient.getQueryData(queryKey) === undefined) {

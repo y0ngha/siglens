@@ -39,7 +39,12 @@ const WEEKDAY_LOOKUP: Record<string, number> = {
 function etParts(now: Date): EtParts {
     // `formatToParts` returns ~5-8 items, so reduce+spread cost is negligible.
     // Declarative form preferred over let+for mutation. 'hour12: false' usually
-    // emits '00'–'23', but some runtimes emit '24' for midnight — normalize.
+    // emits '00'–'23', but some runtimes (e.g. locales with hourCycle 'h23' such
+    // as de-DE on certain ICU versions) emit '24' at midnight as a defensive
+    // edge case. We can't trigger this from a unit test without stubbing the
+    // ICU formatter itself (V8's en-US always returns '00'–'23'), so the
+    // `parsed === 24 ? 0` branch is intentionally untested — keeping it as a
+    // belt-and-suspenders guard against host-locale drift.
     return ET_PARTS_FORMATTER.formatToParts(now).reduce<EtParts>(
         (acc, part) => {
             if (part.type === 'weekday') {

@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo } from 'react';
 import { InfoTooltip } from '@/components/ui/InfoTooltip';
 import { useOptionsSignals } from '@/components/symbol-page/hooks/useOptionsSignals';
 import {
@@ -32,33 +33,36 @@ interface OptionsSignalCardsProps {
 export function OptionsSignalCards({ symbol }: OptionsSignalCardsProps) {
     const { data, isLoading } = useOptionsSignals(symbol);
 
-    if (isLoading) return <OptionsSignalCardsSkeleton />;
-    if (!data) return null;
+    const signalCards = useMemo(() => {
+        if (!data) return null;
+        return [
+            {
+                label: 'ATM IV',
+                value: formatAtmIv(data.atmIv),
+                tooltip: AtmIvTooltip,
+            },
+            {
+                label: 'Put/Call',
+                value: formatPutCallRatio(data.putCallRatio),
+                tooltip: PutCallRatioTooltip,
+            },
+            {
+                label: 'Max Pain',
+                value: formatMaxPain(data.maxPain),
+                tooltip: MaxPainTooltip,
+            },
+        ] as const;
+    }, [data]);
 
-    const SIGNAL_CARDS = [
-        {
-            label: 'ATM IV',
-            value: formatAtmIv(data.atmIv),
-            tooltip: AtmIvTooltip,
-        },
-        {
-            label: 'Put/Call',
-            value: formatPutCallRatio(data.putCallRatio),
-            tooltip: PutCallRatioTooltip,
-        },
-        {
-            label: 'Max Pain',
-            value: formatMaxPain(data.maxPain),
-            tooltip: MaxPainTooltip,
-        },
-    ] as const;
+    if (isLoading) return <OptionsSignalCardsSkeleton />;
+    if (!signalCards) return null;
 
     return (
         <section
             aria-label={`${symbol} 옵션 보조 시그널`}
             className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-3"
         >
-            {SIGNAL_CARDS.map(({ label, value, tooltip }) => (
+            {signalCards.map(({ label, value, tooltip }) => (
                 <SignalCard
                     key={label}
                     label={label}

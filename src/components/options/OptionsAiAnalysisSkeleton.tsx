@@ -1,3 +1,13 @@
+import { cn } from '@/lib/cn';
+
+const SKELETON_LINE_WIDTHS = [
+    'w-full',
+    'w-[92%]',
+    'w-4/5',
+    'w-3/5',
+    'w-2/3',
+] as const;
+
 export function OptionsAiAnalysisSkeleton() {
     return (
         <section
@@ -12,11 +22,15 @@ export function OptionsAiAnalysisSkeleton() {
                 </span>
             </div>
             <div className="mt-4 space-y-2">
-                <div className="bg-secondary-700 h-3 w-full animate-pulse rounded" />
-                <div className="bg-secondary-700 h-3 w-[92%] animate-pulse rounded" />
-                <div className="bg-secondary-700 h-3 w-4/5 animate-pulse rounded" />
-                <div className="bg-secondary-700 h-3 w-3/5 animate-pulse rounded" />
-                <div className="bg-secondary-700 h-3 w-2/3 animate-pulse rounded" />
+                {SKELETON_LINE_WIDTHS.map(w => (
+                    <div
+                        key={w}
+                        className={cn(
+                            'bg-secondary-700 h-3 animate-pulse rounded',
+                            w
+                        )}
+                    />
+                ))}
             </div>
         </section>
     );

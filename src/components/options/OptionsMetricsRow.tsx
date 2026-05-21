@@ -70,28 +70,32 @@ export function OptionsMetricsRow({
     // siglens-core R12: maxPain / putCallRatio are now `number | null`
     // (formatters tolerate the union explicitly), so pass through directly
     // without the legacy `?? NaN` coercion.
-    const METRIC_CARDS = [
-        {
-            label: 'Max Pain',
-            value: formatMaxPain(metrics?.maxPain ?? null),
-            tooltip: MaxPainTooltip,
-        },
-        {
-            label: 'P/C Ratio',
-            value: formatPutCallRatio(metrics?.putCallRatio ?? null),
-            tooltip: PutCallRatioTooltip,
-        },
-        {
-            label: 'ATM IV',
-            value: formatAtmIv(metrics?.atmImpliedVolatility ?? null),
-            tooltip: AtmIvTooltip,
-        },
-        {
-            label: 'Imp. Move',
-            value: formatImpliedMove(metrics?.impliedMovePercent ?? null),
-            tooltip: ImpliedMoveTooltip,
-        },
-    ] as const;
+    const METRIC_CARDS = useMemo(
+        () =>
+            [
+                {
+                    label: 'Max Pain',
+                    value: formatMaxPain(metrics?.maxPain ?? null),
+                    tooltip: MaxPainTooltip,
+                },
+                {
+                    label: 'P/C Ratio',
+                    value: formatPutCallRatio(metrics?.putCallRatio ?? null),
+                    tooltip: PutCallRatioTooltip,
+                },
+                {
+                    label: 'ATM IV',
+                    value: formatAtmIv(metrics?.atmImpliedVolatility ?? null),
+                    tooltip: AtmIvTooltip,
+                },
+                {
+                    label: 'Imp. Move',
+                    value: formatImpliedMove(metrics?.impliedMovePercent ?? null),
+                    tooltip: ImpliedMoveTooltip,
+                },
+            ] as const,
+        [metrics]
+    );
 
     return (
         <div className="space-y-2">

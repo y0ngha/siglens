@@ -62,6 +62,12 @@ const ET_DATE_FORMATTER = new Intl.DateTimeFormat('en-US', {
     day: '2-digit',
 });
 
+interface EtDateParts {
+    year: number;
+    month: number;
+    day: number;
+}
+
 /**
  * Returns an instant anchored at noon UTC on the same *calendar day in
  * America/New_York* as `now`. Using noon avoids DST-transition windows
@@ -75,11 +81,7 @@ const ET_DATE_FORMATTER = new Intl.DateTimeFormat('en-US', {
 function etMidnight(now: Date): Date {
     // `formatToParts` returns ~3-5 items; reduce+spread cost is negligible.
     // Declarative form preferred over let+for mutation.
-    const { year, month, day } = ET_DATE_FORMATTER.formatToParts(now).reduce<{
-        year: number;
-        month: number;
-        day: number;
-    }>(
+    const { year, month, day } = ET_DATE_FORMATTER.formatToParts(now).reduce<EtDateParts>(
         (acc, part) => {
             if (part.type === 'year')
                 return { ...acc, year: Number.parseInt(part.value, 10) };
