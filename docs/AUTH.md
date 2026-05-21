@@ -242,8 +242,8 @@ provider별 정책:
 
 ### Header 사용자 표시
 
-- `app/layout.tsx` 변경 없음. `cacheComponents: true` 환경에서 root layout
-  prefetch는 모든 라우트를 dynamic으로 만들어 비용이 크다.
+- `app/layout.tsx` 변경 없음. root layout에서 사용자 prefetch를 수행하면 모든
+  라우트를 dynamic으로 만들 수 있어 비용이 크다.
 - HeaderUserMenu(client)가 `useCurrentUser()` (= `useQuery(currentUserAction)`)
   로 마운트 후 fetch한다. 첫 페인트 동안은 `size-10` placeholder가 잠깐 보인다.
 - 로그아웃 시 `queryClient.setQueryData(QUERY_KEYS.currentUser(), null)` 으로

@@ -1,6 +1,5 @@
 import { FearGreedPage } from '@/components/fear-greed/FearGreedPage';
 import { CrossLinkCards } from '@/components/symbol-page/CrossLinkCards';
-import { DynamicMetadataMarker } from '@/components/seo/DynamicMetadataMarker';
 import { JsonLd } from '@/components/ui/JsonLd';
 import { DEFAULT_TIMEFRAME, VALID_TICKER_RE } from '@/domain/constants/market';
 import { FEAR_GREED_SCORE_BOUNDARIES } from '@/domain/fearGreed/classifier';
@@ -21,20 +20,12 @@ import {
 } from '@tanstack/react-query';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { connection } from 'next/server';
 
 interface Props {
     params: Promise<{ symbol: string }>;
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-    // generateMetadata는 페이지 본문과 별도의 prerender entry로 실행된다.
-    // 본문에 connection()이 있어도 metadata는 별도로 prerender될 수 있어,
-    // params만 의존하는 generateMetadata는 PPR shell에 fake-params(`[symbol]`)로
-    // 캐싱되어 canonical/title에 placeholder가 박힌다. searchParams를 사용하지
-    // 않는 generateMetadata는 첫 줄에 명시 connection()으로 dynamic을 보장한다.
-    await connection();
-
     const { symbol } = await params;
     const ticker = symbol.toUpperCase();
     const assetInfo = await getAssetInfoCached(ticker);
@@ -68,11 +59,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function SymbolFearGreedPage({ params }: Props) {
-    // Cache Components: setQueryData/prefetchQuery below internally call
-    // Date.now() (`dataUpdatedAt`). `await params` doesn't satisfy the
-    // dynamic-data gate, so opt in explicitly via connection().
-    await connection();
-
     const { symbol } = await params;
     const ticker = symbol.toUpperCase();
 
@@ -160,7 +146,6 @@ export default async function SymbolFearGreedPage({ params }: Props) {
             <JsonLd data={webPageJsonLd} />
             <JsonLd data={breadcrumbJsonLd} />
             <JsonLd data={faqJsonLd} />
-            <DynamicMetadataMarker />
             <main className="mx-auto max-w-5xl space-y-6 px-4 py-8">
                 <h1 className="sr-only">
                     {displayName} ({ticker}) 공포 탐욕 지수와 단기 매수 분위기

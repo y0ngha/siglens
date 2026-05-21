@@ -12,6 +12,11 @@ interface SymbolLayoutProvidersProps {
     children: ReactNode;
 }
 
+/**
+ * Client provider subtree shared by every `/[symbol]/*` page. Keeps the chat and
+ * model contexts alive across symbol tab navigation so per-tab pages can publish
+ * and consume chat state without remounting providers.
+ */
 export function SymbolLayoutProviders({
     children,
 }: SymbolLayoutProvidersProps) {
@@ -30,9 +35,9 @@ interface SymbolLayoutHeaderClientProps {
  * Client chrome for `/[symbol]/*`. Hosts the page-agnostic header (breadcrumb +
  * SymbolTabs) and chart-route scroll lock.
  *
- * - The chart page wraps itself in a 100dvh container; non-chart pages need the body
- *   to scroll normally, so `useBodyScrollLock` only activates on `/{symbol}` (chart
- *   route).
+ * The chart page wraps itself in a 100dvh container; non-chart pages need the body
+ * to scroll normally, so `useBodyScrollLock` only activates on `/{symbol}` (chart
+ * route).
  */
 export function SymbolLayoutHeaderClient({
     symbol,
@@ -49,7 +54,14 @@ interface SymbolLayoutFloatingChatProps {
     symbol: string;
 }
 
-/** Floating chat launcher mounted after the active page subtree to preserve tab order. */
+/**
+ * Floating chat launcher. Reads chat state from `SymbolChatContext` via
+ * `useChat`/`useSymbolChat` — no props drilling. Each page (chart/fundamental/
+ * news/overall) publishes its own analysis via `usePublishSymbolChat`.
+ *
+ * Mounted after the active page subtree so the launcher's tab order follows the
+ * page content (assistive tech reaches the page first, then the chat affordance).
+ */
 export function SymbolLayoutFloatingChat({
     symbol,
 }: SymbolLayoutFloatingChatProps) {

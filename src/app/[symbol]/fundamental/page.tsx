@@ -23,7 +23,6 @@ import { PeersTable } from '@/components/fundamental/sections/PeersTable';
 import { ProfileCard } from '@/components/fundamental/sections/ProfileCard';
 import { ProfitabilityCard } from '@/components/fundamental/sections/ProfitabilityCard';
 import { ValuationCard } from '@/components/fundamental/sections/ValuationCard';
-import { DynamicMetadataMarker } from '@/components/seo/DynamicMetadataMarker';
 import { CrossLinkCards } from '@/components/symbol-page/CrossLinkCards';
 import { SectionSkeleton } from '@/components/symbol-page/SectionSkeleton';
 import { JsonLd } from '@/components/ui/JsonLd';
@@ -38,7 +37,6 @@ import {
 } from '@/lib/seo';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { connection } from 'next/server';
 import { Suspense } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
 
@@ -47,13 +45,6 @@ interface Props {
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-    // generateMetadata는 페이지 본문과 별도의 prerender entry로 실행된다.
-    // 본문에 connection()이 있어도 metadata는 별도로 prerender될 수 있어,
-    // params만 의존하는 generateMetadata는 PPR shell에 fake-params(`[symbol]`)로
-    // 캐싱되어 canonical/title에 placeholder가 박힌다. searchParams를 사용하지
-    // 않는 generateMetadata는 첫 줄에 명시 connection()으로 dynamic을 보장한다.
-    await connection();
-
     const { symbol } = await params;
     const upper = symbol.toUpperCase();
     const assetInfo = await getAssetInfoCached(upper);
@@ -252,12 +243,6 @@ async function FutureDirectionSection({ symbol }: SymbolSectionProps) {
 }
 
 export default async function FundamentalPage({ params }: Props) {
-    // generateMetadata가 await params만 의존하면 cacheComponents 모드에서 PPR shell에
-    // fake params(`[symbol]`)로 prerender되어 canonical/title에 `[SYMBOL]` placeholder가
-    // 그대로 박힌다. page body 첫 줄에 connection()으로 dynamic signal을 박아
-    // metadata를 request-time으로 defer시킨다. news/fear-greed 페이지와 동일 패턴.
-    await connection();
-
     const { symbol } = await params;
     const upper = symbol.toUpperCase();
 
@@ -265,7 +250,7 @@ export default async function FundamentalPage({ params }: Props) {
         notFound();
     }
 
-    // Early fetch for notFound guard + sector resolution; shares the same `use cache` key as ProfileSection so no duplicate HTTP call.
+    // notFound guard + sector resolution을 위해 profile을 먼저 가져온다.
     // assetInfo는 한국어 종목명을 displayName에 합치기 위해 병렬로 가져온다.
     const [profile, assetInfo] = await Promise.all([
         getProfile(upper),
@@ -347,7 +332,6 @@ export default async function FundamentalPage({ params }: Props) {
             <JsonLd data={jsonLd} />
             <JsonLd data={breadcrumbJsonLd} />
             <JsonLd data={faqJsonLd} />
-            <DynamicMetadataMarker />
             <main className="mx-auto max-w-5xl space-y-6 px-4 py-8">
                 <h1 className="sr-only">
                     {displayName} 재무지표와 애널리스트 의견
