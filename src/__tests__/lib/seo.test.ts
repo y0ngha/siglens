@@ -3,6 +3,7 @@ import {
     buildSymbolFundamentalSeoContent,
     buildSymbolNewsSeoContent,
     buildSymbolOverallSeoContent,
+    buildSymbolFearGreedSeoContent,
 } from '@/lib/seo';
 
 describe('buildSymbolSeoContent', () => {
@@ -287,5 +288,60 @@ describe('buildSymbolOverallSeoContent', () => {
     it('[SYMBOL] 플레이스홀더가 결과에 포함되지 않는다', () => {
         const content = buildSymbolOverallSeoContent('AMZN');
         expect(JSON.stringify(content)).not.toContain('[SYMBOL]');
+    });
+});
+
+describe('Placeholder 회귀 가드 — 어떤 입력에도 [SYMBOL] / [symbol] 누수 금지', () => {
+    const inputs = ['AAPL', 'aapl', 'Aapl', 'A', 'BRK.B', 'brk.b'];
+    const builders = [
+        ['buildSymbolSeoContent', buildSymbolSeoContent, ''],
+        [
+            'buildSymbolFundamentalSeoContent',
+            buildSymbolFundamentalSeoContent,
+            '/fundamental',
+        ],
+        ['buildSymbolNewsSeoContent', buildSymbolNewsSeoContent, '/news'],
+        [
+            'buildSymbolOverallSeoContent',
+            buildSymbolOverallSeoContent,
+            '/overall',
+        ],
+        [
+            'buildSymbolFearGreedSeoContent',
+            buildSymbolFearGreedSeoContent,
+            '/fear-greed',
+        ],
+    ] as const;
+
+    it.each(
+        builders.flatMap(([name, builder, _suffix]) =>
+            inputs.map(input => [name, builder, input] as const)
+        )
+    )('%s(%s) — [symbol] 플레이스홀더가 결과에 포함되지 않는다', (
+        _name,
+        builder,
+        input
+    ) => {
+        const content = builder(input);
+        const serialized = JSON.stringify(content);
+        expect(serialized).not.toMatch(/\[symbol\]/i);
+        expect(content.ticker).toBe(input.toUpperCase());
+    });
+
+    it.each(
+        builders.flatMap(([name, builder, suffix]) =>
+            inputs.map(input => [name, builder, input, suffix] as const)
+        )
+    )('%s(%s) — canonical URL이 https://siglens.io/<대문자티커> 형식이다', (
+        _name,
+        builder,
+        input,
+        suffix
+    ) => {
+        const content = builder(input);
+        const expectedTicker = input.toUpperCase();
+        expect(content.url).toBe(
+            `https://siglens.io/${expectedTicker}${suffix}`
+        );
     });
 });

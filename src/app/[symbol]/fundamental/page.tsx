@@ -23,6 +23,7 @@ import { PeersTable } from '@/components/fundamental/sections/PeersTable';
 import { ProfileCard } from '@/components/fundamental/sections/ProfileCard';
 import { ProfitabilityCard } from '@/components/fundamental/sections/ProfitabilityCard';
 import { ValuationCard } from '@/components/fundamental/sections/ValuationCard';
+import { DynamicMetadataMarker } from '@/components/seo/DynamicMetadataMarker';
 import { CrossLinkCards } from '@/components/symbol-page/CrossLinkCards';
 import { SectionSkeleton } from '@/components/symbol-page/SectionSkeleton';
 import { JsonLd } from '@/components/ui/JsonLd';
@@ -332,6 +333,7 @@ export default async function FundamentalPage({ params }: Props) {
             <JsonLd data={jsonLd} />
             <JsonLd data={breadcrumbJsonLd} />
             <JsonLd data={faqJsonLd} />
+            <DynamicMetadataMarker />
             <main className="mx-auto max-w-5xl space-y-6 px-4 py-8">
                 <h1 className="sr-only">
                     {displayName} 재무지표와 애널리스트 의견
