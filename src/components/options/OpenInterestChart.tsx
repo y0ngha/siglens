@@ -421,7 +421,7 @@ export function OpenInterestChart({
                     </div>
                     <div className="border-secondary-700 mt-1 flex items-center justify-between gap-3 border-t pt-1">
                         <span className="text-secondary-400">합계</span>
-                        <span className="tabular-nums font-semibold">
+                        <span className="font-semibold tabular-nums">
                             {(
                                 hoveredRow.callOpenInterest +
                                 hoveredRow.putOpenInterest
