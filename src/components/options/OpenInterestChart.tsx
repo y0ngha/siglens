@@ -268,7 +268,6 @@ export function OpenInterestChart({
                     );
                     const putH = barPixelHeight(row.putOpenInterest, globalMax);
                     const totalOi = row.callOpenInterest + row.putOpenInterest;
-                    // SVG native tooltip — Strike, Call OI, Put OI, Total 한 줄씩.
                     // 슬롯 전체 너비의 투명 hit-rect를 깔아 막대 사이 빈 공간도
                     // hover 가능하게 한다(특히 OI가 한쪽만 있는 strike).
                     const tooltipText = [

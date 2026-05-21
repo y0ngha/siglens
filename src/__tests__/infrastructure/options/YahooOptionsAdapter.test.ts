@@ -305,9 +305,9 @@ describe('YahooOptionsAdapter.fetchSnapshot', () => {
         warnSpy.mockRestore();
     });
 
-    it('동일 만기가 초기·추가 응답에 모두 있으면 추가 응답으로 덮어써 dedupe된다', async () => {
-        // 슬롯 매핑이 초기 응답과 동일한 만기를 또 가리키는 경우를 가정.
-        // missingIsos는 비지만, 만약 다른 경로로 동일 만기가 두 번 들어오더라도
+    it('초기 응답 안에 동일 만기 항목이 중복될 경우 Map이 마지막 항목으로 dedupe한다', async () => {
+        // 초기 응답에 동일 만기가 두 항목으로 들어오는 코너 케이스를 가정.
+        // missingIsos는 비어 있어 추가 fetch는 일어나지 않지만,
         // mergedByIso Map이 ISO 키 기반으로 마지막 값만 유지해야 한다.
         (mapExpirationsToSlots as jest.Mock).mockReturnValue([
             {

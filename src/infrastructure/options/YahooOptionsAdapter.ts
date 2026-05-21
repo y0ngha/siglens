@@ -82,7 +82,6 @@ export class YahooOptionsAdapter implements OptionsDataProvider {
                 iso => !initialIsos.has(iso)
             );
 
-            // 누락된 슬롯 만기는 병렬로 조회. 일부 실패는 그 만기만 누락으로 처리.
             const additional = await Promise.all(
                 missingIsos.map(iso =>
                     yahooFinance
@@ -108,11 +107,11 @@ export class YahooOptionsAdapter implements OptionsDataProvider {
                 )
             );
 
-            // 동일 만기가 중복 수신되지 않도록 ISO 키로 dedupe.
-            const mergedByIso = new Map<string, YahooOption>();
-            for (const opt of [...initialOptions, ...additional.flat()]) {
-                mergedByIso.set(toIsoDate(opt.expirationDate), opt);
-            }
+            const mergedByIso = new Map(
+                [...initialOptions, ...additional.flat()].map(
+                    opt => [toIsoDate(opt.expirationDate), opt] as const
+                )
+            );
 
             // Cast through unknown: OptionsResult.quote is a large union type
             // that TypeScript cannot prove structurally compatible with our

@@ -1,6 +1,16 @@
 
 # Fix Log
 
+## [PR #441 Round 5 | fix/symbol-options-issues | 2026-05-22]
+- B1: `src/infrastructure/options/YahooOptionsAdapter.ts` — line 85의 "누락된 슬롯 만기는 병렬로 조회. 일부 실패는 그 만기만 누락으로 처리." 및 line 111의 "동일 만기가 중복 수신되지 않도록 ISO 키로 dedupe." 코멘트 제거. `Promise.all` + `.catch` 구조와 `mergedByIso`라는 변수명이 의도를 표현하므로 WHAT 코멘트는 노이즈.
+  - Rule: MISTAKES.md §15.3 — "Comments must explain WHY a decision was made, not WHAT the code does."
+- S1: `src/infrastructure/options/YahooOptionsAdapter.ts` — `mergedByIso` Map 생성을 `for-of` + `.set()` 누산에서 `new Map(...map(opt => [k, v] as const))` 선언형 패턴으로 전환. Map 생성자가 [key, value] iterable을 받으므로 mutation 없이 동일 결과.
+  - Rule: CONVENTIONS.md FP — 함수형 패러다임 선호.
+- S2: `src/components/options/OpenInterestChart.tsx` — `tooltipText` 위 첫 줄 "SVG native tooltip — Strike, Call OI, Put OI, Total 한 줄씩." 제거(바로 아래 배열 리터럴이 그 내용을 표현). 두/세 번째 줄(WHY: 슬롯 전체 너비 hit-rect로 hover 영역 확장)만 남김.
+  - Rule: MISTAKES.md §15.3 — WHAT 줄 제거하고 WHY만 유지.
+- S3: `src/__tests__/infrastructure/options/YahooOptionsAdapter.test.ts` — dedupe 테스트 제목이 "초기·추가 응답에 모두 있으면"이었지만 실제 시나리오는 초기 응답에 동일 만기가 두 항목으로 들어오는 케이스(추가 fetch 발생 안 함)였음. 제목을 "초기 응답 안에 동일 만기 항목이 중복될 경우 Map이 마지막 항목으로 dedupe한다"로 정정.
+  - Rule: 가독성 — 테스트 제목과 실제 검증 시나리오 일치.
+
 ## [PR #441 Round 4 | fix/symbol-options-issues | 2026-05-22]
 - B1: `src/__tests__/infrastructure/options/YahooOptionsAdapter.test.ts` — 새로 추가된 `missingIsos` 병렬 fetch / 실패 격리 / dedupe 분기가 기존 FULL_FIXTURE의 만기가 너무 가까워 한 번도 실행되지 않음. `mapExpirationsToSlots` mock과 함께 신규 it() 3건 추가(추가 fetch 병합 / 추가 fetch 실패 시 부분 누락 / 동일 만기 dedupe).
   - Rule: CONVENTIONS.md "infrastructure/ 100% (필수)", MISTAKES.md Infrastructure §2 — 모든 conditional branch는 dedicated test case가 있어야 한다.
