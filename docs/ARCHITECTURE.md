@@ -289,8 +289,7 @@ Server-side data orchestration for the dashboard:
   → useAnalysis 훅 → infrastructure/market/submitAnalysisAction.ts (Server Action)
     → infrastructure/cache/redis.ts → 캐시 조회 (캐시 히트 시 즉시 반환)
     → infrastructure/market/barsApi.ts → fetchBarsWithIndicators (서버 재구성)
-      ↳ 'use cache' cacheLife('minutes') 캐시 히트 시 추가 API 호출 없음
-      ↳ 캐시 미스 시 → FMP/Alpaca API 1회 호출 → domain/indicators/* 재계산
+      ↳ FMP/Alpaca API 호출 → domain/indicators/* 재계산
     → infrastructure/skills/loader.ts → Skills 파일 로드
     → domain/analysis/prompt.ts → 프롬프트 구성
     → Cloud Run worker (fire-and-forget via waitUntil)
@@ -320,10 +319,10 @@ const data = await fetch(url, {
 });
 ```
 
-**`'use cache'` 캐싱 (bars + indicators)**
-- `fetchBarsWithIndicators`는 `'use cache'` + `cacheLife('minutes')` + `cacheTag(\`bars:{symbol}:{timeframe}\`)` 적용.
-- 캐시 키: `(symbol, timeframe, fromDay)` — `fromDay`는 UTC 날짜 단위(`YYYY-MM-DD`)로 절삭되어 하루 내 안정적.
-- 동일 `(symbol, timeframe)` 요청이 RSC 렌더·타임프레임 변경·Server Action 내부에서 연달아 발생해도 캐시 히트 → FMP/Alpaca 추가 호출 없음.
+**cacheComponents (PPR) 비활성화 상태**
+- 현재 `next.config.ts`에서 `cacheComponents`는 임시로 비활성화되어 있다 (`'use cache'` / `cacheLife` / `cacheTag` 미사용).
+- 사유: PPR resumable slots 오류로 dynamic route의 metadata가 HTML head에 박히지 않고 streaming payload로만 노출되어 SEO bot 크롤러가 metadata를 읽지 못하는 회귀 발생.
+- 재활성화 시 dynamic `generateMetadata`의 prerender 동작과 `'use cache'` 함수 배치 전략을 함께 재설계해야 한다 (관련 GitHub 이슈 참고).
 
 **Upstash Redis 캐싱 (AI 분석 결과)**
 - AI 분석 결과는 타임프레임별 TTL로 Upstash Redis에 캐싱한다.
@@ -331,15 +330,3 @@ const data = await fetch(url, {
 - 타임프레임별 TTL: 1Min=300s, 5Min=900s, 15Min=1800s, 1Hour=3600s, 1Day=86400s
 - 환경변수(`UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`) 미설정 시 캐시 없이 정상 동작 (graceful degradation)
 - 구현: `infrastructure/cache/` (`types.ts`, `config.ts`, `redis.ts`)
-
-### 'use cache' 지시어 (Next.js 16)
-
-Next.js 16의 명시적 캐싱 모델을 활용한다.
-
-```typescript
-// 함수 단위 캐싱
-async function fetchBars(symbol: string, timeframe: string) {
-    'use cache';
-    // ...
-}
-```

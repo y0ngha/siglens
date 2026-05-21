@@ -23,20 +23,12 @@ import {
 } from '@tanstack/react-query';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { connection } from 'next/server';
 
 interface Props {
     params: Promise<{ symbol: string }>;
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-    // generateMetadata는 페이지 본문과 별도의 prerender entry로 실행된다.
-    // 본문에 connection()이 있어도 metadata는 별도로 prerender될 수 있어,
-    // params만 의존하는 generateMetadata는 PPR shell에 fake-params(`[symbol]`)로
-    // 캐싱되어 canonical/title에 placeholder가 박힌다. searchParams를 사용하지
-    // 않는 generateMetadata는 첫 줄에 명시 connection()으로 dynamic을 보장한다.
-    await connection();
-
     const { symbol } = await params;
     const upper = symbol.toUpperCase();
     const [assetInfo, hasOptions] = await Promise.all([
@@ -73,11 +65,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function OptionsPage({ params }: Props) {
-    // 본문에서 `new Date()`(line below)와 같은 비결정 값을 사용하므로
-    // build 시점이 아닌 request 시점으로 defer한다. cached fetcher만 호출하는
-    // 본문도 동일한 dynamic signal이 없으면 PPR이 정적으로 prerender하려 한다.
-    await connection();
-
     const { symbol } = await params;
     const upper = symbol.toUpperCase();
 

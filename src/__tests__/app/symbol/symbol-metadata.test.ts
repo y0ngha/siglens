@@ -15,9 +15,6 @@ jest.mock('react-markdown', () => () => null);
 jest.mock('@/components/symbol-page/SymbolPageClient', () => ({
     SymbolPageClient: () => null,
 }));
-jest.mock('@/components/seo/DynamicMetadataMarker', () => ({
-    DynamicMetadataMarker: () => null,
-}));
 jest.mock('@/components/ui/JsonLd', () => ({
     JsonLd: () => null,
 }));
@@ -127,10 +124,6 @@ jest.mock('next/navigation', () => ({
     notFound: jest.fn(() => {
         throw new Error('NOT_FOUND');
     }),
-}));
-
-jest.mock('next/server', () => ({
-    connection: jest.fn(() => Promise.resolve()),
 }));
 
 // 페이지 본문에서 쓰는 인프라 — generateMetadata에는 필요 없지만 import chain에서 로드될 수 있음

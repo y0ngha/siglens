@@ -1,31 +1,5 @@
 import type { NextConfig } from 'next';
 
-const SECONDS_PER_MINUTE = 60;
-const SECONDS_PER_HOUR = 60 * SECONDS_PER_MINUTE;
-const SECONDS_PER_DAY = 24 * SECONDS_PER_HOUR;
-
-/**
- * Cache life profiles for options data. ET-anchored cadence chosen so the
- * sweetest cache revalidation window matches active US options trading.
- */
-const OPTIONS_CACHE_LIFE = {
-    'options-market-open': {
-        stale: 1 * SECONDS_PER_MINUTE,
-        revalidate: 5 * SECONDS_PER_MINUTE,
-        expire: 30 * SECONDS_PER_MINUTE,
-    },
-    'options-market-closed': {
-        stale: 5 * SECONDS_PER_MINUTE,
-        revalidate: 30 * SECONDS_PER_MINUTE,
-        expire: 2 * SECONDS_PER_HOUR,
-    },
-    'options-weekend': {
-        stale: 1 * SECONDS_PER_HOUR,
-        revalidate: 6 * SECONDS_PER_HOUR,
-        expire: 1 * SECONDS_PER_DAY,
-    },
-} as const;
-
 const nextConfig: NextConfig = {
     allowedDevOrigins: ['172.30.1.26'],
 
@@ -47,10 +21,14 @@ const nextConfig: NextConfig = {
         '/**': ['./skills/**/*'],
     },
 
-    // 'use cache' 지시어 활성화 (Next.js 16)
-    cacheComponents: true,
-
-    cacheLife: OPTIONS_CACHE_LIFE,
+    // cacheComponents (Next.js 16 PPR + 'use cache' directive)는 임시 비활성.
+    // 활성 상태에서 모든 [symbol] 라우트가 "Couldn't find all resumable slots"
+    // 에러로 client fallback rendering으로 떨어져 SEO bot이 metadata를 못 보는
+    // 문제가 발생했음(이슈 #439 참조). 표준 SSR로 임시 회귀 후 root cause
+    // 진단 + 안전한 fix가 마련되면 재활성화. 재활성화 시 options-market-open
+    // (stale 1m / revalidate 5m / expire 30m), options-market-closed
+    // (5m / 30m / 2h), options-weekend (1h / 6h / 1d) cacheLife profile도
+    // 함께 부활시킬 것.
 
     // Turbopack (Next.js 16 기본값이나 명시)
     turbopack: {

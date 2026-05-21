@@ -1,6 +1,16 @@
 
 # Fix Log
 
+## [PR #440 Round 2 | fix/disable-cache-components | 2026-05-22]
+- B1: `src/app/[symbol]/layout.tsx` + `SymbolLayoutClient.tsx` — `children`이 async RSC(`SymbolLayoutChrome`) 내부에 위치하여 `getAssetInfoCached` + `prefetchQuery(bars)` 완료까지 페이지 본문 LCP가 차단됨. 6ad891ff 리버트로 인해 master 패턴으로 회귀했으나, 해당 master 패턴은 cacheComponents 비활성 상태에서 streaming SSR LCP를 악화시킴. 수정: `children`을 Suspense 밖으로 빼고 `SymbolLayoutClient`를 `SymbolLayoutProviders`/`SymbolLayoutHeaderClient`/`SymbolLayoutFloatingChat` 3개로 분리. layout은 provider subtree 안에 chrome Suspense + children + FloatingChat Suspense를 형제로 구성.
+  - Rule: vercel-react-best-practices `async-suspense-boundaries` — Suspense 경계는 페이지 본문이 layout 비동기 작업을 기다리지 않도록 chrome 단위로 좁혀야 함
+- S1: `src/app/[symbol]/fundamental/fundamentalData.ts` + `news/newsData.ts` — `'use cache'` 제거로 인해 동일 요청 내 `getProfile`/`getNewsList` 등이 여러 호출 사이트(page 본문 + Section 내부)에서 중복 HTTP/DB 조회를 발생시킴. 수정: `react.cache`로 wrap하여 per-request memoization 적용 (cross-request 캐싱은 별개).
+  - Rule: MISTAKES.md §6 — 데이터 페칭 helper에서 동일 요청 내 dedup이 명시적으로 보장되어야 함
+
+## [PR #440 Round 1 | fix/disable-cache-components | 2026-05-21]
+- S1: `src/app/[symbol]/fundamental/page.tsx:253` — `'use cache'` dedup이 제거되었는데 해당 함수 호출에 대한 주석은 `"shares the same use cache key as ProfileSection so no duplicate HTTP call"`로 남아 있어 거짓 정보가 됨. 주석을 notFound guard + sector resolution 의도로 재작성.
+  - Rule: MISTAKES.md §6.5 — 구현 변경 시 관련 주석/문서를 동기화
+
 ## [PR #432 Round 4 | fix/cancel-job-on-page-unload | 2026-05-09]
 - Violation: `route.ts` body validation used `!j.type` (falsy check only), allowing invalid type strings (e.g. `"unknown"`) to pass and silently return 204
   - Rule: Infrastructure Functions — validate all inputs at API boundaries; invalid values must return 400

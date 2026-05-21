@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.11.16](https://github.com/y0ngha/siglens/compare/v0.11.15...v0.11.16) (2026-05-21)
+
+
+### Bug Fixes
+
+* PR [#440](https://github.com/y0ngha/siglens/issues/440) Round 3 review 반영 — type alias 중복 제거 + 이슈 [#439](https://github.com/y0ngha/siglens/issues/439) 명시 ([b9f3952](https://github.com/y0ngha/siglens/commit/b9f3952d852802d8b3e70dbf3840e308b04e9925))
+
+
+### Performance Improvements
+
+* react.cache로 동일 요청 내 fundamental/news 페치 dedup 복원 ([429f8bd](https://github.com/y0ngha/siglens/commit/429f8bd91e81143964df63d3eb1e633663cabb0f))
+
+
+### Reverts
+
+* ppr 오류 개선 시도 (commit 6ad891ff) ([87ab934](https://github.com/y0ngha/siglens/commit/87ab93420a16435141e1411840b11f9071e65e19))
+
+## [0.11.15](https://github.com/y0ngha/siglens/compare/v0.11.14...v0.11.15) (2026-05-21)
+
+
+### Bug Fixes
+
+* ppr 오류 개선 시도 ([6ad891f](https://github.com/y0ngha/siglens/commit/6ad891ff4d1642adc6cc2d7dcb10051b6e21c849))
+
 ## [0.11.14](https://github.com/y0ngha/siglens/compare/v0.11.13...v0.11.14) (2026-05-21)
 
 
