@@ -1,6 +1,12 @@
 'use client';
 
-import { useMemo, useRef, useState, type PointerEvent } from 'react';
+import {
+    useMemo,
+    useRef,
+    useState,
+    type CSSProperties,
+    type PointerEvent,
+} from 'react';
 import {
     type OptionsChain,
     type OptionsExpirationMetrics,
@@ -72,6 +78,19 @@ const X_AXIS_LABEL_OFFSET_PX = 14;
 const ROTATED_LABEL_FONT_SIZE = 8;
 const STRAIGHT_LABEL_FONT_SIZE = 9;
 
+// Tooltip이 커서 위로 띄울 세로 오프셋 (px). 위로 띄워야 막대를 가리지 않는다.
+const TOOLTIP_CURSOR_OFFSET_Y_PX = 8;
+// Tooltip의 가로 절반 너비. `min-w-[180px]`의 절반에 맞춘다. 뷰포트 좌우
+// 경계 클램핑 계산에 사용.
+const TOOLTIP_HALF_WIDTH_PX = 90;
+// 뷰포트 경계와 tooltip 사이 여유 (px). 컨테이너 모서리에 딱 붙지 않도록.
+const TOOLTIP_VIEWPORT_PADDING_PX = 8;
+// Tooltip 카드 자체의 대략적 높이. 정확한 측정 대신 추정값으로 상단 클램핑에 사용.
+const TOOLTIP_APPROX_HEIGHT_PX = 110;
+// DOM tooltip id — `role="tooltip"` 요소와 hit-rect의 `aria-describedby`가
+// 공유하는 anchor. ARIA tooltip 패턴(MISTAKES.md Accessibility §3).
+const TOOLTIP_ELEMENT_ID = 'oi-chart-tooltip';
+
 function slotWidth(count: number): number {
     return CHART_WIDTH / count;
 }
@@ -122,6 +141,17 @@ export function OpenInterestChart({
     chain,
     metrics,
 }: OpenInterestChartProps) {
+    const containerRef = useRef<HTMLDivElement | null>(null);
+    // 컨테이너 DOMRect 캐시. pointerEnter 시 한 번 측정해 두고 pointerMove에서
+    // 재사용한다 — move마다 `getBoundingClientRect`를 부르면 reflow를 매번
+    // 트리거해 마우스가 빠르게 움직일 때 frame drop을 유발한다.
+    const cachedRectRef = useRef<DOMRect | null>(null);
+    const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+    const [tooltipPos, setTooltipPos] = useState<{
+        x: number;
+        y: number;
+    } | null>(null);
+
     const derived = useMemo(() => {
         if (!chain) return null;
         const oiByStrike = aggregateOpenInterest(chain);
@@ -170,13 +200,6 @@ export function OpenInterestChart({
         };
     }, [chain, metrics, underlyingPrice]);
 
-    const containerRef = useRef<HTMLDivElement | null>(null);
-    const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
-    const [tooltipPos, setTooltipPos] = useState<{
-        x: number;
-        y: number;
-    } | null>(null);
-
     if (!derived) {
         return (
             <p className="text-secondary-500 py-4 text-sm">
@@ -191,28 +214,76 @@ export function OpenInterestChart({
     const sw = slotWidth(count);
     const bw = sw * BAR_WIDTH_FILL_RATIO;
 
-    const handlePointerMove = (
+    // hoveredIndex 가드: oiByStrike가 chip 전환으로 짧아지는 사이에 hover state
+    // 가 stale이 되면 `oiByStrike[hoveredIndex]`가 undefined가 될 수 있다.
+    // 직접 lookup 결과를 ||로 정규화해 stale index → null로 떨어뜨린다.
+    const hoveredRow =
+        (hoveredIndex !== null && oiByStrike[hoveredIndex]) || null;
+
+    const computeTooltipPos = (
+        event: PointerEvent<SVGRectElement>,
+        rect: DOMRect
+    ): { x: number; y: number } => {
+        // viewport 기준 좌표 → container 기준 좌표.
+        const rawX = event.clientX - rect.left;
+        const rawY = event.clientY - rect.top;
+        // 좌우 경계 클램핑 — tooltip은 `-translate-x-1/2`로 좌우 절반이
+        // anchor 좌우로 뻗어나가므로 절반 너비 + 여유만큼 안쪽에 고정.
+        const clampedX = Math.min(
+            Math.max(
+                rawX,
+                TOOLTIP_HALF_WIDTH_PX + TOOLTIP_VIEWPORT_PADDING_PX
+            ),
+            rect.width - TOOLTIP_HALF_WIDTH_PX - TOOLTIP_VIEWPORT_PADDING_PX
+        );
+        // 상단 경계 클램핑 — tooltip은 `-translate-y-full`로 anchor 위로
+        // 뻗으므로 anchor가 너무 위면 tooltip이 컨테이너 밖으로 튀어나간다.
+        const minY =
+            TOOLTIP_APPROX_HEIGHT_PX +
+            TOOLTIP_VIEWPORT_PADDING_PX +
+            TOOLTIP_CURSOR_OFFSET_Y_PX;
+        const clampedY = Math.max(rawY, minY);
+        return { x: clampedX, y: clampedY - TOOLTIP_CURSOR_OFFSET_Y_PX };
+    };
+
+    const handlePointerEnter = (
         event: PointerEvent<SVGRectElement>,
         index: number
     ): void => {
         const container = containerRef.current;
         if (!container) return;
-        const containerRect = container.getBoundingClientRect();
+        const rect = container.getBoundingClientRect();
+        cachedRectRef.current = rect;
         setHoveredIndex(index);
-        // container 기준 상대 좌표로 변환 — wrapper에 `position: relative`가
-        // 걸려 있고 tooltip은 absolute로 띄우므로, viewport 좌표를 빼서 정렬.
-        setTooltipPos({
-            x: event.clientX - containerRect.left,
-            y: event.clientY - containerRect.top,
-        });
+        setTooltipPos(computeTooltipPos(event, rect));
+    };
+
+    const handlePointerMove = (
+        event: PointerEvent<SVGRectElement>,
+        index: number
+    ): void => {
+        const rect = cachedRectRef.current;
+        // enter 핸들러가 캐시를 채우기 전에 move가 발사되는 경로(예: 모바일
+        // touchmove)에서는 한 번 측정해 즉시 캐시한다 — 이후 move부터는
+        // 캐시된 rect만 사용해 reflow 비용 없음.
+        if (rect === null) {
+            const container = containerRef.current;
+            if (!container) return;
+            const measured = container.getBoundingClientRect();
+            cachedRectRef.current = measured;
+            setHoveredIndex(index);
+            setTooltipPos(computeTooltipPos(event, measured));
+            return;
+        }
+        if (hoveredIndex !== index) setHoveredIndex(index);
+        setTooltipPos(computeTooltipPos(event, rect));
     };
 
     const handlePointerLeave = (): void => {
+        cachedRectRef.current = null;
         setHoveredIndex(null);
         setTooltipPos(null);
     };
-
-    const hoveredRow = hoveredIndex !== null ? oiByStrike[hoveredIndex] : null;
 
     const maxPainX = maxPainIdx >= 0 ? barCenterX(maxPainIdx, count) : null;
     const currentPriceX =
@@ -327,7 +398,10 @@ export function OpenInterestChart({
                                 fill="white"
                                 fillOpacity={0}
                                 pointerEvents="all"
-                                onPointerEnter={e => handlePointerMove(e, i)}
+                                aria-describedby={TOOLTIP_ELEMENT_ID}
+                                onPointerEnter={e =>
+                                    handlePointerEnter(e, i)
+                                }
                                 onPointerMove={e => handlePointerMove(e, i)}
                                 onPointerLeave={handlePointerLeave}
                             />
@@ -397,12 +471,15 @@ export function OpenInterestChart({
 
             {hoveredRow !== null && tooltipPos !== null && (
                 <div
+                    id={TOOLTIP_ELEMENT_ID}
                     role="tooltip"
-                    className="border-secondary-600 bg-secondary-900/95 text-secondary-100 pointer-events-none absolute z-10 min-w-[180px] -translate-x-1/2 -translate-y-full rounded-md border px-3 py-2 text-xs shadow-lg backdrop-blur"
-                    style={{
-                        left: tooltipPos.x,
-                        top: tooltipPos.y - 8,
-                    }}
+                    className="border-secondary-600 bg-secondary-900/95 text-secondary-100 pointer-events-none absolute z-10 min-w-[180px] -translate-x-1/2 -translate-y-full rounded-md border px-3 py-2 text-xs shadow-lg backdrop-blur top-[var(--tooltip-y)] left-[var(--tooltip-x)]"
+                    style={
+                        {
+                            '--tooltip-x': `${tooltipPos.x}px`,
+                            '--tooltip-y': `${tooltipPos.y}px`,
+                        } as CSSProperties
+                    }
                 >
                     <div className="text-secondary-300 mb-1 font-semibold tabular-nums">
                         Strike ${hoveredRow.strike.toLocaleString()}

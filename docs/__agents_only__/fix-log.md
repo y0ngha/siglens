@@ -1,6 +1,22 @@
 
 # Fix Log
 
+## [PR #442 Round 2 | fix/oi-tooltip-floating | 2026-05-22]
+- B1: `src/components/options/OpenInterestChart.tsx` — Hook 선언 순서 위반. `useMemo`(derived)가 `useRef`(containerRef)/`useState`(hoveredIndex, tooltipPos)보다 먼저 선언돼 있었음. CONVENTIONS.md "Custom Hook Declaration Order"에 맞춰 useRef/useState를 함수 본문 최상단으로 끌어올리고 useMemo는 그 다음에 배치.
+  - Rule: MISTAKES.md §17 / CONVENTIONS.md Custom Hook Declaration Order.
+- B2: 같은 파일 — tooltip 위치를 인라인 style(`{ left, top }`)로 주고 있었음. CSS 커스텀 프로퍼티(`--tooltip-x`, `--tooltip-y`) + Tailwind arbitrary value(`top-[var(--tooltip-y)] left-[var(--tooltip-x)]`) 패턴으로 변환. `style` 객체는 `as CSSProperties` 단언이 필요해 React import도 갱신.
+  - Rule: MISTAKES.md §19 — 동적 런타임 값도 CSS 커스텀 프로퍼티 + Tailwind arbitrary로 처리.
+- B3: 같은 파일 — `role="tooltip"`만 있고 id 없음, hit-rect의 `aria-describedby`도 누락. `TOOLTIP_ELEMENT_ID = 'oi-chart-tooltip'` 상수로 anchor를 만들고 tooltip div의 `id`와 각 hit-rect의 `aria-describedby`에 연결.
+  - Rule: MISTAKES.md Accessibility §3 — ARIA tooltip 패턴.
+- B4: 같은 파일 — tooltip 위치 계산에 viewport 경계 체크 없음(`-translate-x-1/2 -translate-y-full`만 적용). `computeTooltipPos` 헬퍼 추가: 좌우는 `TOOLTIP_HALF_WIDTH_PX + TOOLTIP_VIEWPORT_PADDING_PX` 이내로 clamp, 상단은 `TOOLTIP_APPROX_HEIGHT_PX + offset` 이상으로 clamp.
+  - Rule: MISTAKES.md UX §2 — Tooltip 위치 계산 시 뷰포트 경계 체크 필요.
+- H1: 같은 파일 — `oiByStrike`가 만기 전환으로 짧아지면 `hoveredIndex`가 stale 상태로 남아 `hoveredRow.strike` 접근 시 런타임 에러 가능. `hoveredRow = (hoveredIndex !== null && oiByStrike[hoveredIndex]) || null` 패턴으로 인덱스 lookup 결과를 직접 정규화.
+  - Rule: FF Predictability — 데이터 변경 사이의 stale state도 안전하게 처리.
+- M1: 같은 파일 — `onPointerMove`에서 매번 `getBoundingClientRect()` 호출 → 마우스 빠르게 움직이면 reflow 폭증. `cachedRectRef`(useRef)로 enter 시점 한 번 측정 후 캐시; move는 캐시된 rect만 사용. touchmove 같은 enter-skip 경로엔 lazy 측정 fallback 추가.
+  - Rule: 성능 — DOMRect 측정은 reflow를 강제하므로 mousemove 핸들러 안에서 반복 호출 금지.
+- M2: 같은 파일 — tooltip 위치 계산의 매직 넘버 `8` (커서 위로 띄우는 오프셋) 등을 module-level 상수로 추출. `TOOLTIP_CURSOR_OFFSET_Y_PX`, `TOOLTIP_HALF_WIDTH_PX`, `TOOLTIP_VIEWPORT_PADDING_PX`, `TOOLTIP_APPROX_HEIGHT_PX` 4종.
+  - Rule: MISTAKES.md §13 — 매직 넘버 module-level 상수 추출.
+
 ## [PR #441 Round 6 | fix/symbol-options-issues | 2026-05-22]
 - S1: `src/components/options/OpenInterestChart.tsx` — 렌더 함수 안에서 `const bw = barWidth(count)`(내부에서 `slotWidth(count)` 호출)과 `const sw = slotWidth(count)`가 동일한 `CHART_WIDTH / count`를 두 번 계산했음. `barWidth` 헬퍼를 제거하고 `const sw = slotWidth(count); const bw = sw * BAR_WIDTH_FILL_RATIO;`로 인라인 처리해 중복 연산을 제거.
   - Rule: MISTAKES.md §2 — 동일 값을 한 함수 안에서 여러 번 계산하면 local const로 한 번만 계산해 재사용.
