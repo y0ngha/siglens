@@ -8,52 +8,37 @@ import { SymbolChatProvider } from '@/components/chat/SymbolChatContext';
 import { SymbolLayoutHeader } from '@/components/symbol-page/SymbolLayoutHeader';
 import { SymbolModelProvider } from '@/components/symbol-page/SymbolModelContext';
 
-interface SymbolLayoutProvidersProps {
+interface SymbolLayoutClientProps {
+    symbol: string;
     children: ReactNode;
 }
 
-export function SymbolLayoutProviders({
-    children,
-}: SymbolLayoutProvidersProps) {
-    return (
-        <SymbolChatProvider>
-            <SymbolModelProvider>{children}</SymbolModelProvider>
-        </SymbolChatProvider>
-    );
-}
-
-interface SymbolLayoutHeaderClientProps {
-    symbol: string;
-}
-
 /**
- * Client chrome for `/[symbol]/*`. Hosts the page-agnostic header (breadcrumb +
- * SymbolTabs) and chart-route scroll lock.
+ * Client shell for `/[symbol]/*`. Hosts the page-agnostic header (breadcrumb +
+ * SymbolTabs), the floating chat button, and the chat context — all of which need
+ * to survive navigation between the 4 symbol pages.
  *
  * - The chart page wraps itself in a 100dvh container; non-chart pages need the body
  *   to scroll normally, so `useBodyScrollLock` only activates on `/{symbol}` (chart
  *   route).
+ * - `FloatingChatButton` reads its state from `SymbolChatContext` directly via
+ *   `useChat`/`useSymbolChat` — no props drilling. Each page (chart/fundamental/
+ *   news/overall) publishes its own analysis via `usePublishSymbolChat`.
  */
-export function SymbolLayoutHeaderClient({
+export function SymbolLayoutClient({
     symbol,
-}: SymbolLayoutHeaderClientProps) {
+    children,
+}: SymbolLayoutClientProps) {
     return (
-        <>
-            <ChartScrollLockGate symbol={symbol} />
-            <SymbolLayoutHeader symbol={symbol} />
-        </>
+        <SymbolChatProvider>
+            <SymbolModelProvider>
+                <ChartScrollLockGate symbol={symbol} />
+                <SymbolLayoutHeader symbol={symbol} />
+                {children}
+                <FloatingChatButton symbol={symbol} />
+            </SymbolModelProvider>
+        </SymbolChatProvider>
     );
-}
-
-interface SymbolLayoutFloatingChatProps {
-    symbol: string;
-}
-
-/** Floating chat launcher mounted after the active page subtree to preserve tab order. */
-export function SymbolLayoutFloatingChat({
-    symbol,
-}: SymbolLayoutFloatingChatProps) {
-    return <FloatingChatButton symbol={symbol} />;
 }
 
 interface ChartScrollLockGateProps {

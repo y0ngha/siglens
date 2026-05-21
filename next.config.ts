@@ -21,8 +21,11 @@ const nextConfig: NextConfig = {
         '/**': ['./skills/**/*'],
     },
 
-    // 'use cache' 지시어 활성화 (Next.js 16)
-    cacheComponents: true,
+    // cacheComponents (Next.js 16 PPR + 'use cache' directive)는 임시 비활성.
+    // 활성 상태에서 모든 [symbol] 라우트가 "Couldn't find all resumable slots"
+    // 에러로 client fallback rendering으로 떨어져 SEO bot이 metadata를 못 보는
+    // 문제가 발생했음(GitHub 이슈 참조). 표준 SSR로 임시 회귀 후 root cause
+    // 진단 + 안전한 fix가 마련되면 재활성화.
 
     // Turbopack (Next.js 16 기본값이나 명시)
     turbopack: {

@@ -5,11 +5,7 @@ import {
     QueryClient,
 } from '@tanstack/react-query';
 import { connection } from 'next/server';
-import {
-    SymbolLayoutFloatingChat,
-    SymbolLayoutHeaderClient,
-    SymbolLayoutProviders,
-} from '@/app/[symbol]/SymbolLayoutClient';
+import { SymbolLayoutClient } from '@/app/[symbol]/SymbolLayoutClient';
 import { SymbolTabsSkeleton } from '@/components/symbol-page/SymbolTabsSkeleton';
 import { DEFAULT_TIMEFRAME } from '@/domain/constants/market';
 import { getBarsAction } from '@/infrastructure/market/getBarsAction';
@@ -21,32 +17,31 @@ interface SymbolLayoutProps {
     params: Promise<{ symbol: string }>;
 }
 
-// Layout shell stays as an RSC: it hands off to a client provider subtree that
-// keeps model/chat state alive across the symbol tabs.
+// Layout shell stays as an RSC: it hands off to a single client subtree that hosts
+// the page-agnostic header, scroll lock, and floating chat button.
 //
 // Awaiting `params` is dynamic under Next.js Cache Components, so the chrome that
 // depends on `symbol` is gated behind Suspense to keep the static shell prerenderable.
-// Keep `children` outside that PPR boundary so the header resume slot cannot also
-// own the active page subtree.
+// PPR resolves each child segment's static/dynamic split independently of the chrome's
+// Suspense, so a page (fundamental/news/overall/chart) is not delayed by chrome
+// resolution even though `children` is composed inside the same boundary here.
 export default function SymbolLayout({ children, params }: SymbolLayoutProps) {
     return (
-        <SymbolLayoutProviders>
-            <Suspense fallback={<SymbolHeaderShellFallback />}>
-                <SymbolLayoutChrome params={params} />
-            </Suspense>
-            {children}
-            <Suspense fallback={null}>
-                <SymbolFloatingChat params={params} />
-            </Suspense>
-        </SymbolLayoutProviders>
+        <Suspense fallback={<SymbolHeaderShellFallback />}>
+            <SymbolLayoutChrome params={params}>{children}</SymbolLayoutChrome>
+        </Suspense>
     );
 }
 
 interface SymbolLayoutChromeProps {
     params: Promise<{ symbol: string }>;
+    children: ReactNode;
 }
 
-async function SymbolLayoutChrome({ params }: SymbolLayoutChromeProps) {
+async function SymbolLayoutChrome({
+    params,
+    children,
+}: SymbolLayoutChromeProps) {
     // Cache Components (Next.js 16) requires that any `Date.now()` read during
     // render (incl. React Query's internal `dataUpdatedAt = Date.now()` inside
     // setQueryData / prefetchQuery below) be preceded by either a `fetch()` or
@@ -62,8 +57,8 @@ async function SymbolLayoutChrome({ params }: SymbolLayoutChromeProps) {
     // FearGreedHeaderChipMounted (in SymbolLayoutHeader) calls useBars with DEFAULT_TIMEFRAME
     // via useSuspenseQuery + getBarsAction (a Server Action). Server Actions cannot be invoked
     // during SSR rendering. Prefetching here and dehydrating into HydrationBoundary ensures
-    // the header chip satisfies the query from cache instead of calling getBarsAction
-    // during initial render.
+    // every sub-page (/fundamental, /news, /overall, chart) satisfies the query from cache
+    // instead of calling getBarsAction during initial render.
     const queryClient = new QueryClient({
         defaultOptions: { queries: { staleTime: QUERY_STALE_TIME_MS } },
     });
@@ -80,14 +75,9 @@ async function SymbolLayoutChrome({ params }: SymbolLayoutChromeProps) {
 
     return (
         <HydrationBoundary state={dehydrate(queryClient)}>
-            <SymbolLayoutHeaderClient symbol={symbol} />
+            <SymbolLayoutClient symbol={symbol}>{children}</SymbolLayoutClient>
         </HydrationBoundary>
     );
-}
-
-async function SymbolFloatingChat({ params }: SymbolLayoutChromeProps) {
-    const { symbol } = await params;
-    return <SymbolLayoutFloatingChat symbol={symbol} />;
 }
 
 // Static shell mirroring SymbolLayoutHeader's outer shape. Used as the PPR fallback
