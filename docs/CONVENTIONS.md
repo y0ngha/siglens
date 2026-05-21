@@ -837,8 +837,7 @@ export async function fetchBarsWithIndicators(
     symbol: string,
     timeframe: Timeframe
 ): Promise<BarsData> {
-    'use cache';
-    // FMP/Alpaca 호출 + domain indicator 계산 결과를 함께 캐싱
+    // FMP/Alpaca 호출 + domain indicator 계산
     // ...
 }
 
