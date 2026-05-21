@@ -1,10 +1,12 @@
 /**
  * Shared tooltip JSX for options-page metrics.
  *
- * Two components surface the same metrics — `OptionsSignalCards` (chart-page
- * chips) and `OptionsMetricsRow` (options-tab grid) — so the explanation
- * copy must agree. Centralising the JSX here prevents silent drift when one
- * site is reworded and the other is forgotten.
+ * Multiple components surface the same metrics — `OptionsSignalCards`
+ * (chart-page chips), `OptionsMetricsRow` (options-tab grid),
+ * `OpenInterestChart` (OI distribution chart header), and `OptionsChainTable`
+ * (chain table OI column) — so the explanation copy must agree. Centralising
+ * the JSX here prevents silent drift when one site is reworded and the others
+ * are forgotten.
  *
  * Each constant is a JSX fragment with multiple `<p>` blocks; consumers
  * render them inside `<InfoTooltip>`.
@@ -53,5 +55,15 @@ export const ImpliedMoveTooltip = (
             가능성이 높다고 보고 있는 거예요.
         </p>
         <p>어닝 같은 큰 이벤트 직전에는 이 값이 평소보다 커져요.</p>
+    </>
+);
+
+export const OpenInterestTooltip = (
+    <>
+        <p>특정 옵션에 현재 살아있는(아직 청산 안 된) 계약 수예요.</p>
+        <p>
+            한쪽 가격대에 OI가 두텁다는 건 그 가격에 많은 사람이 베팅했다는
+            뜻이에요.
+        </p>
     </>
 );

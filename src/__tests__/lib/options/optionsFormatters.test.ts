@@ -62,6 +62,10 @@ describe('formatAtmIv', () => {
         expect(formatAtmIv(null)).toBe('—');
     });
 
+    it('undefined를 em dash로 표현한다', () => {
+        expect(formatAtmIv(undefined)).toBe('—');
+    });
+
     it('NaN을 em dash로 표현한다', () => {
         expect(formatAtmIv(NaN)).toBe('—');
     });
@@ -78,6 +82,10 @@ describe('formatAtmIv', () => {
 describe('formatImpliedMove', () => {
     it('null을 em dash로 표현한다', () => {
         expect(formatImpliedMove(null)).toBe('—');
+    });
+
+    it('undefined를 em dash로 표현한다', () => {
+        expect(formatImpliedMove(undefined)).toBe('—');
     });
 
     it('NaN을 em dash로 표현한다', () => {

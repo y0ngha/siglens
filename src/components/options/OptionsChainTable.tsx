@@ -2,13 +2,13 @@
 
 import { useMemo, useState } from 'react';
 import {
-    type OptionsSnapshot,
+    type OptionsChain,
+    type OptionsExpirationMetrics,
     aggregateOpenInterest,
-    summarizeChainForLlm,
 } from '@y0ngha/siglens-core';
 import { InfoTooltip } from '@/components/ui/InfoTooltip';
+import { OpenInterestTooltip } from '@/components/options/utils/optionsTooltips';
 import { findNearestStrikeIndex } from '@/domain/options/findNearestStrike';
-import { pickActiveChain } from '@/domain/options/pickActiveChain';
 import type { OptionsExpirationSelector } from '@/domain/types';
 import { cn } from '@/lib/cn';
 
@@ -16,7 +16,14 @@ interface OptionsChainTableProps {
     symbol: string;
     /** 'YYYY-MM-DD' or 'all'. Maps to the appropriate chain via the same rule as Metrics/Chart. */
     expirationDate: OptionsExpirationSelector;
-    snapshot: OptionsSnapshot;
+    /** Spot price used to anchor the ATM-row highlight. */
+    underlyingPrice: number;
+    /** Chain matching the selected expiration; null when absent. */
+    chain: OptionsChain | null;
+    /** Pre-computed metrics; `maxPain` drives the 📍 row marker. */
+    metrics: OptionsExpirationMetrics | null;
+    /** First-chain expiration date for the "종합 만기" caption. */
+    nearestExpiry: string;
 }
 
 const numberFormatter = new Intl.NumberFormat('en-US');
@@ -52,16 +59,6 @@ const StrikeTooltip = (
     </>
 );
 
-const OpenInterestTooltip = (
-    <>
-        <p>특정 옵션에 현재 살아있는(아직 청산 안 된) 계약 수예요.</p>
-        <p>
-            한쪽 가격대에 OI가 두텁다는 건 그 가격에 많은 사람이 베팅했다는
-            뜻이에요.
-        </p>
-    </>
-);
-
 const ImpliedVolatilityTooltip = (
     <>
         <p>옵션 시장이 예측하는 미래 변동성이에요.</p>
@@ -72,19 +69,17 @@ const ImpliedVolatilityTooltip = (
 export function OptionsChainTable({
     symbol,
     expirationDate,
-    snapshot,
+    underlyingPrice,
+    chain,
+    metrics,
+    nearestExpiry,
 }: OptionsChainTableProps) {
     const [expanded, setExpanded] = useState(false);
-
-    const selectedChain = useMemo(
-        () => pickActiveChain(snapshot, expirationDate),
-        [snapshot, expirationDate]
-    );
 
     // Hooks must run unconditionally — compute derived data even when the
     // chain is empty; only the render branches below short-circuit.
     const tableData = useMemo(() => {
-        if (!selectedChain) {
+        if (!chain) {
             // Safe-cast: `null` literal is widened to the (number | null) union
             // shared with the success branch below, so the useMemo return type
             // stays uniform across both paths. Runtime value is genuinely null.
@@ -96,15 +91,13 @@ export function OptionsChainTable({
                 maxPainStrike: null as number | null,
             };
         }
-        const aggregatedStrikes = aggregateOpenInterest(selectedChain);
-        const callByStrike = new Map(
-            selectedChain.calls.map(c => [c.strike, c])
-        );
-        const putByStrike = new Map(selectedChain.puts.map(p => [p.strike, p]));
+        const aggregatedStrikes = aggregateOpenInterest(chain);
+        const callByStrike = new Map(chain.calls.map(c => [c.strike, c]));
+        const putByStrike = new Map(chain.puts.map(p => [p.strike, p]));
         const allStrikes = aggregatedStrikes.map(s => s.strike);
         const nearestStrikeIdx = findNearestStrikeIndex(
             allStrikes,
-            snapshot.underlyingPrice
+            underlyingPrice
         );
         return {
             rows: aggregatedStrikes.map(({ strike }) => ({
@@ -114,24 +107,17 @@ export function OptionsChainTable({
             })),
             nearestStrike:
                 nearestStrikeIdx >= 0 ? allStrikes[nearestStrikeIdx] : null,
-            maxPainStrike: summarizeChainForLlm(
-                selectedChain,
-                snapshot.underlyingPrice
-            ).maxPain,
+            maxPainStrike: metrics?.maxPain ?? null,
         };
-    }, [selectedChain, snapshot.underlyingPrice]);
+    }, [chain, metrics, underlyingPrice]);
 
-    const nearestExpiry = snapshot.chains[0]?.expirationDate ?? '';
-
-    const totalContracts = selectedChain
-        ? selectedChain.calls.length + selectedChain.puts.length
-        : 0;
+    const totalContracts = chain ? chain.calls.length + chain.puts.length : 0;
 
     const headerLabel = expanded
-        ? `▾ 전체 옵션 chain 테이블 (선택된 만기: ${selectedChain?.expirationDate ?? '—'})`
+        ? `▾ 전체 옵션 chain 테이블 (선택된 만기: ${chain?.expirationDate ?? '—'})`
         : `▸ 전체 옵션 chain 테이블 보기 (${numberFormatter.format(totalContracts)} contracts)`;
 
-    if (!selectedChain || totalContracts === 0) {
+    if (!chain || totalContracts === 0) {
         return (
             <div className="border-secondary-700 bg-secondary-800 flex w-full items-center justify-between rounded-xl border p-4">
                 <span className="text-secondary-400 text-sm">

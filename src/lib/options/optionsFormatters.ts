@@ -30,14 +30,14 @@ export function formatPutCallRatio(value: number | null | undefined): string {
     return value.toFixed(2);
 }
 
-/** Format ATM implied volatility (fraction). null / NaN → `'—'`, otherwise `<pct>%` with 1 decimal. */
-export function formatAtmIv(value: number | null): string {
-    if (value === null || Number.isNaN(value)) return '—';
+/** Format ATM implied volatility (fraction). null/undefined/NaN → `'—'`, otherwise `<pct>%` with 1 decimal. */
+export function formatAtmIv(value: number | null | undefined): string {
+    if (value == null || Number.isNaN(value)) return '—';
     return `${(value * 100).toFixed(1)}%`;
 }
 
-/** Format implied move %. null / NaN → `'—'`, otherwise `±<pct>%` with 1 decimal. */
-export function formatImpliedMove(value: number | null): string {
-    if (value === null || Number.isNaN(value)) return '—';
+/** Format implied move %. null/undefined/NaN → `'—'`, otherwise `±<pct>%` with 1 decimal. */
+export function formatImpliedMove(value: number | null | undefined): string {
+    if (value == null || Number.isNaN(value)) return '—';
     return `±${value.toFixed(1)}%`;
 }

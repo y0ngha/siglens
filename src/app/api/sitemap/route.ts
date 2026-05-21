@@ -20,6 +20,16 @@ interface SitemapEntry {
     priority: number;
 }
 
+// Slice a read-only sequence into fixed-size chunks. Pulled out of the
+// inline `Array.from(..., (_, i) => items.slice(...))` expression because
+// the slice arithmetic was non-trivial to read at the call site.
+function sliceIntoChunks<T>(items: ReadonlyArray<T>, size: number): T[][] {
+    return Array.from(
+        { length: Math.ceil(items.length / size) },
+        (_, i) => items.slice(i * size, (i + 1) * size) as T[]
+    );
+}
+
 async function buildEntries(): Promise<SitemapEntry[]> {
     // Per-axis lastModified timestamps. These are signals to Google about
     // change frequency, not exact change times. We avoid per-ticker DB
@@ -53,17 +63,9 @@ async function buildEntries(): Promise<SitemapEntry[]> {
     // 무제한 동시 호출하지 않도록 OPTIONS_PROBE_CONCURRENCY개씩 청크로
     // 순차 처리해 rate-limit 위험을 방어한다. `hasOptionsMarket`은
     // 1일 캐시라 두 번째 sitemap 빌드부터는 fetch 없이 메모리에서 해결된다.
-    const allChunks = Array.from(
-        {
-            length: Math.ceil(
-                POPULAR_TICKERS.length / OPTIONS_PROBE_CONCURRENCY
-            ),
-        },
-        (_, i) =>
-            POPULAR_TICKERS.slice(
-                i * OPTIONS_PROBE_CONCURRENCY,
-                (i + 1) * OPTIONS_PROBE_CONCURRENCY
-            )
+    const allChunks = sliceIntoChunks(
+        POPULAR_TICKERS,
+        OPTIONS_PROBE_CONCURRENCY
     );
     // 청크 단위 await로 동시 호출 수를 OPTIONS_PROBE_CONCURRENCY로 상한 유지.
     // Immutable accumulate via [...acc, result]: POPULAR_TICKERS / 5 ≈ 20 청크

@@ -62,6 +62,12 @@ const ET_DATE_FORMATTER = new Intl.DateTimeFormat('en-US', {
     day: '2-digit',
 });
 
+// 정오(UTC) — ET 캘린더 날짜를 UTC 인스턴트로 매핑할 때 DST 전이 윈도우
+// (봄·가을 각 몇 시간씩 시각이 모호한 구간)에 걸리지 않도록 하루의 중간
+// 시점에 앵커링한다. 자정 대신 정오를 쓰는 이유는 자정 자체가 DST
+// 변환 시각이라 시간 산술이 한 시간씩 어긋날 수 있어서.
+const ET_NOON_UTC_HOUR = 12;
+
 interface EtDateParts {
     year: number;
     month: number;
@@ -95,7 +101,7 @@ function etMidnight(now: Date): Date {
         },
         { year: 0, month: 0, day: 0 }
     );
-    return new Date(Date.UTC(year, month - 1, day, 12));
+    return new Date(Date.UTC(year, month - 1, day, ET_NOON_UTC_HOUR));
 }
 
 /** Normalize a single call or put contract from yahoo-finance2 into an OptionsContract. */

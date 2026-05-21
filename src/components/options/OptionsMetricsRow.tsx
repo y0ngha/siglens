@@ -1,12 +1,8 @@
 'use client';
 
 import { useMemo } from 'react';
-import {
-    type OptionsSnapshot,
-    summarizeChainForLlm,
-} from '@y0ngha/siglens-core';
+import type { OptionsExpirationMetrics } from '@y0ngha/siglens-core';
 import { InfoTooltip } from '@/components/ui/InfoTooltip';
-import { pickActiveChain } from '@/domain/options/pickActiveChain';
 import type { OptionsExpirationSelector } from '@/domain/types';
 import {
     formatAtmIv,
@@ -24,8 +20,10 @@ import {
 interface OptionsMetricsRowProps {
     /** 'YYYY-MM-DD' or 'all'. */
     expirationDate: OptionsExpirationSelector;
-    /** Pre-fetched snapshot from the parent (HydrationBoundary-prefilled). */
-    snapshot: OptionsSnapshot;
+    /** Pre-computed metrics from the parent (shared with chart/table). */
+    metrics: OptionsExpirationMetrics | null;
+    /** First-chain expiration date for the "종합 만기" caption. */
+    nearestExpiry: string;
 }
 
 interface MetricCardProps {
@@ -52,21 +50,9 @@ function MetricCard({ label, value, tooltip }: MetricCardProps) {
 
 export function OptionsMetricsRow({
     expirationDate,
-    snapshot,
+    metrics,
+    nearestExpiry,
 }: OptionsMetricsRowProps) {
-    const selectedChain = useMemo(
-        () => pickActiveChain(snapshot, expirationDate),
-        [snapshot, expirationDate]
-    );
-    const metrics = useMemo(
-        () =>
-            selectedChain
-                ? summarizeChainForLlm(selectedChain, snapshot.underlyingPrice)
-                : null,
-        [selectedChain, snapshot.underlyingPrice]
-    );
-    const nearestExpiry = snapshot.chains[0]?.expirationDate ?? '';
-
     // siglens-core R12: maxPain / putCallRatio are now `number | null`
     // (formatters tolerate the union explicitly), so pass through directly
     // without the legacy `?? NaN` coercion.

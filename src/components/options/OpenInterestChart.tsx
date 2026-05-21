@@ -2,18 +2,21 @@
 
 import { useMemo } from 'react';
 import {
-    type OptionsSnapshot,
+    type OptionsChain,
+    type OptionsExpirationMetrics,
     aggregateOpenInterest,
-    summarizeChainForLlm,
 } from '@y0ngha/siglens-core';
 import { InfoTooltip } from '@/components/ui/InfoTooltip';
+import { OpenInterestTooltip } from '@/components/options/utils/optionsTooltips';
 import { findNearestStrikeIndex } from '@/domain/options/findNearestStrike';
-import { pickActiveChain } from '@/domain/options/pickActiveChain';
-import type { OptionsExpirationSelector } from '@/domain/types';
 
 interface OpenInterestChartProps {
-    expirationDate: OptionsExpirationSelector;
-    snapshot: OptionsSnapshot;
+    /** Spot price used to anchor the current-price guide line. */
+    underlyingPrice: number;
+    /** Chain matching the parent's selected expiration; null when absent. */
+    chain: OptionsChain | null;
+    /** Pre-computed metrics — `maxPain` drives the dashed guide line. */
+    metrics: OptionsExpirationMetrics | null;
 }
 
 const SVG_WIDTH = 600;
@@ -83,21 +86,16 @@ function fmtOi(value: number): string {
 }
 
 export function OpenInterestChart({
-    expirationDate,
-    snapshot,
+    underlyingPrice,
+    chain,
+    metrics,
 }: OpenInterestChartProps) {
-    const underlyingPrice = snapshot.underlyingPrice;
-
     const derived = useMemo(() => {
-        const selectedChain = pickActiveChain(snapshot, expirationDate);
-        if (!selectedChain) return null;
-        const oiByStrike = aggregateOpenInterest(selectedChain);
+        if (!chain) return null;
+        const oiByStrike = aggregateOpenInterest(chain);
         if (oiByStrike.length === 0) return null;
 
-        const maxPain = summarizeChainForLlm(
-            selectedChain,
-            underlyingPrice
-        ).maxPain;
+        const maxPain = metrics?.maxPain ?? null;
 
         const topOiSet = new Set<number>(
             oiByStrike
@@ -138,7 +136,7 @@ export function OpenInterestChart({
             maxPainIdx,
             currentPriceIdx,
         };
-    }, [snapshot, expirationDate, underlyingPrice]);
+    }, [chain, metrics, underlyingPrice]);
 
     if (!derived) {
         return (
@@ -166,15 +164,7 @@ export function OpenInterestChart({
                 <span className="text-secondary-300 text-sm font-medium">
                     Open Interest 분포 (Strike별)
                 </span>
-                <InfoTooltip>
-                    <p>
-                        특정 옵션에 현재 살아있는(아직 청산 안 된) 계약 수예요.
-                    </p>
-                    <p>
-                        한쪽 가격대에 OI가 두텁다는 건 그 가격에 많은 사람이
-                        베팅했다는 뜻이에요.
-                    </p>
-                </InfoTooltip>
+                <InfoTooltip>{OpenInterestTooltip}</InfoTooltip>
             </div>
 
             <svg

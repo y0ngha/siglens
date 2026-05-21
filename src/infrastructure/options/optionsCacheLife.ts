@@ -3,8 +3,18 @@ export type OptionsCacheLifeProfile =
     | 'options-market-closed'
     | 'options-weekend';
 
-const MARKET_OPEN_MIN = 9 * 60 + 30;
-const MARKET_CLOSE_MIN = 16 * 60;
+const MINUTES_PER_HOUR = 60;
+
+// US 정규 거래시간 (ET) — 09:30 open · 16:00 close. 이 상수들이 시장 시간대를
+// 표현하는 단일 진실의 출처이며, MARKET_OPEN_MIN / MARKET_CLOSE_MIN 의
+// 계산식이 변경 시 자동 추종한다.
+const MARKET_OPEN_HOUR = 9;
+const MARKET_OPEN_MINUTE = 30;
+const MARKET_CLOSE_HOUR = 16;
+
+const MARKET_OPEN_MIN =
+    MARKET_OPEN_HOUR * MINUTES_PER_HOUR + MARKET_OPEN_MINUTE;
+const MARKET_CLOSE_MIN = MARKET_CLOSE_HOUR * MINUTES_PER_HOUR;
 
 // Reads ET weekday/hour/minute from formatToParts directly. The previous
 // implementation round-tripped through `toLocaleString` + `new Date(...)`,

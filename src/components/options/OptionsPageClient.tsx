@@ -10,6 +10,7 @@ import { OptionsAiAnalysisError } from '@/components/options/OptionsAiAnalysisEr
 import { OptionsChainTable } from '@/components/options/OptionsChainTable';
 import { OpenInterestChart } from '@/components/options/OpenInterestChart';
 import { OptionsMetricsRow } from '@/components/options/OptionsMetricsRow';
+import { useOptionsChainMetrics } from '@/components/options/hooks/useOptionsChainMetrics';
 import type { OptionsSnapshot, SlotMapping } from '@y0ngha/siglens-core';
 import type { OptionsExpirationSelector } from '@/domain/types';
 
@@ -40,6 +41,12 @@ export function OptionsPageClient({
         );
     const { modelId } = useSymbolModel();
     const validSlots = useMemo(() => slots.filter(isSlotMapping), [slots]);
+    // 단일 호출로 (chain, metrics)을 산출하고 세 자식에 prop-drill 한다 —
+    // 이전엔 OptionsMetricsRow / OpenInterestChart / OptionsChainTable이
+    // 각자 pickActiveChain + summarizeChainForLlm을 동일 입력으로 3번
+    // 돌렸다. chip 전환 시마다 같은 계산이 세 번 반복되던 비용을 제거한다.
+    const chainMetrics = useOptionsChainMetrics(snapshot, expirationDate);
+    const nearestExpiry = snapshot.chains[0]?.expirationDate ?? '';
 
     return (
         <main className="mx-auto max-w-5xl space-y-6 px-4 py-6">
@@ -60,18 +67,23 @@ export function OptionsPageClient({
 
             <OptionsMetricsRow
                 expirationDate={expirationDate}
-                snapshot={snapshot}
+                metrics={chainMetrics.metrics}
+                nearestExpiry={nearestExpiry}
             />
 
             <OpenInterestChart
-                expirationDate={expirationDate}
-                snapshot={snapshot}
+                underlyingPrice={snapshot.underlyingPrice}
+                chain={chainMetrics.chain}
+                metrics={chainMetrics.metrics}
             />
 
             <OptionsChainTable
                 symbol={symbol}
                 expirationDate={expirationDate}
-                snapshot={snapshot}
+                underlyingPrice={snapshot.underlyingPrice}
+                chain={chainMetrics.chain}
+                metrics={chainMetrics.metrics}
+                nearestExpiry={nearestExpiry}
             />
 
             <CrossLinkCards symbol={symbol} current="options" />
