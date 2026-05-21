@@ -79,7 +79,6 @@ jest.mock('@/components/fear-greed/FearGreedPage', () => ({
     FearGreedPage: () => null,
 }));
 
-// 각 page.tsx의 local data fetcher 모듈
 jest.mock('@/app/[symbol]/fundamental/fundamentalData', () => ({
     getAnalystEstimates: jest.fn(),
     getCashFlowStatement: jest.fn(),
@@ -105,7 +104,6 @@ jest.mock('@/infrastructure/utils/dateKey', () => ({
     todayKstIsoDate: jest.fn(() => '2026-05-21'),
 }));
 
-// fear-greed 도메인 의존성
 jest.mock('@/domain/fearGreed/classifier', () => ({
     FEAR_GREED_SCORE_BOUNDARIES: {},
 }));
@@ -122,7 +120,6 @@ jest.mock('react', () => ({
     cache: (fn: unknown) => fn,
 }));
 
-// Next.js 서버 모듈
 jest.mock('next/navigation', () => ({
     notFound: jest.fn(() => {
         throw new Error('NOT_FOUND');
