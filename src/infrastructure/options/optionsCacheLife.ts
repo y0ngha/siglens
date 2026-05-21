@@ -37,22 +37,28 @@ const WEEKDAY_LOOKUP: Record<string, number> = {
 };
 
 function etParts(now: Date): EtParts {
-    let weekdayIndex = 0;
-    let hour = 0;
-    let minute = 0;
-    for (const part of ET_PARTS_FORMATTER.formatToParts(now)) {
-        if (part.type === 'weekday') {
-            weekdayIndex = WEEKDAY_LOOKUP[part.value] ?? 0;
-        } else if (part.type === 'hour') {
-            // 'hour12: false' usually emits '00'–'23', but some runtimes
-            // emit '24' for midnight — normalize.
-            const parsed = Number.parseInt(part.value, 10);
-            hour = parsed === 24 ? 0 : parsed;
-        } else if (part.type === 'minute') {
-            minute = Number.parseInt(part.value, 10);
-        }
-    }
-    return { weekdayIndex, hour, minute };
+    // `formatToParts` returns ~5-8 items, so reduce+spread cost is negligible.
+    // Declarative form preferred over let+for mutation. 'hour12: false' usually
+    // emits '00'–'23', but some runtimes emit '24' for midnight — normalize.
+    return ET_PARTS_FORMATTER.formatToParts(now).reduce<EtParts>(
+        (acc, part) => {
+            if (part.type === 'weekday') {
+                return {
+                    ...acc,
+                    weekdayIndex: WEEKDAY_LOOKUP[part.value] ?? 0,
+                };
+            }
+            if (part.type === 'hour') {
+                const parsed = Number.parseInt(part.value, 10);
+                return { ...acc, hour: parsed === 24 ? 0 : parsed };
+            }
+            if (part.type === 'minute') {
+                return { ...acc, minute: Number.parseInt(part.value, 10) };
+            }
+            return acc;
+        },
+        { weekdayIndex: 0, hour: 0, minute: 0 }
+    );
 }
 
 /**

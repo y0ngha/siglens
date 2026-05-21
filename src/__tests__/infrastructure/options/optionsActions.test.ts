@@ -34,6 +34,7 @@ import {
     submitOptionsAnalysis,
     pollOptionsAnalysis,
     summarizeChainForLlm,
+    cancelJob,
     type ModelId,
     type SubmitOptionsAnalysisResult,
     type OptionsSnapshot,
@@ -48,6 +49,7 @@ import {
     submitOptionsAnalysisAction,
     pollOptionsAnalysisAction,
     getOptionsSignalsAction,
+    cancelOptionsAnalysisJobAction,
 } from '@/infrastructure/options/optionsActions';
 
 const mockSubmitOptionsAnalysis = submitOptionsAnalysis as jest.MockedFunction<
@@ -68,6 +70,7 @@ const mockGetCurrentUser = getCurrentUser as jest.MockedFunction<
 const mockResolveTierAndByok = resolveTierAndByok as jest.MockedFunction<
     typeof resolveTierAndByok
 >;
+const mockCancelJob = cancelJob as jest.MockedFunction<typeof cancelJob>;
 
 const MODEL_ID = 'gemini-2.5-flash' as ModelId;
 const PREMIUM_MODEL = 'claude-opus-4-7' as ModelId;
@@ -153,6 +156,24 @@ describe('getOptionsSignalsAction', () => {
             maxPain: null,
             expirationDate: '2026-06-20',
         });
+    });
+
+    it('returns null and logs when fetchOptionsSnapshot throws', async () => {
+        const consoleErrorSpy = jest
+            .spyOn(console, 'error')
+            .mockImplementation(() => {});
+        const fetchError = new Error('upstream timeout');
+        mockFetchOptionsSnapshot.mockRejectedValueOnce(fetchError);
+
+        const result = await getOptionsSignalsAction('AAPL');
+
+        expect(result).toBeNull();
+        expect(consoleErrorSpy).toHaveBeenCalledWith(
+            '[getOptionsSignalsAction] fetch failed:',
+            fetchError
+        );
+
+        consoleErrorSpy.mockRestore();
     });
 });
 
@@ -313,5 +334,61 @@ describe('pollOptionsAnalysisAction', () => {
 
         expect(mockPollOptionsAnalysis).toHaveBeenCalledWith('job-001');
         expect(result).toBe(polledResult);
+    });
+
+    it('returns unexpected_error and logs when pollOptionsAnalysis throws', async () => {
+        const consoleErrorSpy = jest
+            .spyOn(console, 'error')
+            .mockImplementation(() => {});
+        const pollError = new Error('queue down');
+        mockPollOptionsAnalysis.mockRejectedValueOnce(pollError);
+
+        const result = await pollOptionsAnalysisAction('job-err');
+
+        expect(result).toEqual({
+            status: 'error',
+            error: 'unexpected_error',
+        });
+        expect(consoleErrorSpy).toHaveBeenCalledWith(
+            '[pollOptionsAnalysisAction] poll failed:',
+            'job-err',
+            pollError
+        );
+
+        consoleErrorSpy.mockRestore();
+    });
+});
+
+describe('cancelOptionsAnalysisJobAction', () => {
+    beforeEach(() => {
+        mockCancelJob.mockReset();
+    });
+
+    it('delegates to cancelJob and resolves to undefined on success', async () => {
+        mockCancelJob.mockResolvedValueOnce(undefined);
+
+        const result = await cancelOptionsAnalysisJobAction('job-cancel-001');
+
+        expect(mockCancelJob).toHaveBeenCalledWith('job-cancel-001');
+        expect(result).toBeUndefined();
+    });
+
+    it('swallows errors and logs a warning when cancelJob rejects', async () => {
+        const consoleWarnSpy = jest
+            .spyOn(console, 'warn')
+            .mockImplementation(() => {});
+        const cancelError = new Error('worker unreachable');
+        mockCancelJob.mockRejectedValueOnce(cancelError);
+
+        await expect(
+            cancelOptionsAnalysisJobAction('job-cancel-err')
+        ).resolves.toBeUndefined();
+        expect(consoleWarnSpy).toHaveBeenCalledWith(
+            '[cancelOptionsAnalysisJobAction] 취소 신호 전송 실패:',
+            'job-cancel-err',
+            cancelError
+        );
+
+        consoleWarnSpy.mockRestore();
     });
 });

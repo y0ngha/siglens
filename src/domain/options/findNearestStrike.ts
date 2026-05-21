@@ -13,14 +13,11 @@ export function findNearestStrikeIndex(
     target: number
 ): number {
     if (strikes.length === 0) return -1;
-    let bestIdx = 0;
-    let bestDist = Math.abs(strikes[0] - target);
-    for (let i = 1; i < strikes.length; i++) {
-        const d = Math.abs(strikes[i] - target);
-        if (d < bestDist) {
-            bestDist = d;
-            bestIdx = i;
-        }
-    }
-    return bestIdx;
+    return strikes.reduce(
+        (best, strike, i) => {
+            const d = Math.abs(strike - target);
+            return d < best.dist ? { idx: i, dist: d } : best;
+        },
+        { idx: 0, dist: Math.abs(strikes[0] - target) }
+    ).idx;
 }

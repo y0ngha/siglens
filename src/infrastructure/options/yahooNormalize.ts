@@ -73,15 +73,24 @@ const ET_DATE_FORMATTER = new Intl.DateTimeFormat('en-US', {
  * IANA-aware date-part extraction via `Intl.DateTimeFormat`.
  */
 function etMidnight(now: Date): Date {
-    const parts = ET_DATE_FORMATTER.formatToParts(now);
-    let year = 0;
-    let month = 0;
-    let day = 0;
-    for (const part of parts) {
-        if (part.type === 'year') year = Number.parseInt(part.value, 10);
-        else if (part.type === 'month') month = Number.parseInt(part.value, 10);
-        else if (part.type === 'day') day = Number.parseInt(part.value, 10);
-    }
+    // `formatToParts` returns ~3-5 items; reduce+spread cost is negligible.
+    // Declarative form preferred over let+for mutation.
+    const { year, month, day } = ET_DATE_FORMATTER.formatToParts(now).reduce<{
+        year: number;
+        month: number;
+        day: number;
+    }>(
+        (acc, part) => {
+            if (part.type === 'year')
+                return { ...acc, year: Number.parseInt(part.value, 10) };
+            if (part.type === 'month')
+                return { ...acc, month: Number.parseInt(part.value, 10) };
+            if (part.type === 'day')
+                return { ...acc, day: Number.parseInt(part.value, 10) };
+            return acc;
+        },
+        { year: 0, month: 0, day: 0 }
+    );
     return new Date(Date.UTC(year, month - 1, day, 12));
 }
 
