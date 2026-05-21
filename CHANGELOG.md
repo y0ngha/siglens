@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.11.13](https://github.com/y0ngha/siglens/compare/v0.11.12...v0.11.13) (2026-05-21)
+
+
+### Bug Fixes
+
+* **seo:** canonical URL placeholder + ticker case normalization ([f8de751](https://github.com/y0ngha/siglens/commit/f8de751c69384ac4b9fe5f4c637c3fbe3b8f9617))
+
 ## [0.11.12](https://github.com/y0ngha/siglens/compare/v0.11.11...v0.11.12) (2026-05-19)
 
 
