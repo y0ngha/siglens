@@ -11,13 +11,6 @@
 - Rule: N/A
 - Context: All round 1 findings fixed and approved; no additional issues identified in round 2.
 
-## [PR #430 Round 2 | feat/analysis-key-routing | 2026-05-08]
-- Violation: `getCurrentUser()` called outside try-catch in `submitOverallAnalysisAction.ts` while the same call is inside try in the other 3 sibling actions — asymmetric failure handling
-  - Rule: MISTAKES.md I/O & Error Handling #1 — When one I/O operation in a module is protected with try-catch, all I/O operations at the same call depth must be equivalently protected
-  - Context: Only `submitOverallAnalysisAction` had `getCurrentUser()` before the try block; moving it inside ensures auth failures are caught and returned as `unexpected_error` instead of propagating uncaught
-- Violation: Anonymous `catch {}` blocks in all 4 action files swallow error info silently — no logging, no diagnostics
-  - Rule: MISTAKES.md Infrastructure Functions #3 — No debug artifacts, but errors must not be silently swallowed; log with `console.error` before returning gracefully
-  - Context: `catch {}` → `catch (err) { console.error('[submitXxxAction] unexpected error:', err); }` applied to all 4 submit action files (submitAnalysisAction, submitFundamentalAnalysisAction, submitNewsAnalysisAction, submitOverallAnalysisAction)
 
 ## [PR #430 | feat/analysis-key-routing | 2026-05-08]
 - Violation: `AnalysisGateBlockedResult` interface defined independently in 4 action files instead of being centralized in `byokGate.ts`
@@ -170,10 +163,6 @@
 - Rule: Open Redirect 방어 — 사용자 변조 가능 입력은 사용 시점마다 sanitize (defense-in-depth)
 - Context: state 쿠키는 HMAC 서명 없이 base64url JSON으로만 저장되므로 next 값이 변조 가능. /start에서 한 번 sanitize했더라도 콜백에서 redirect 직전에 sanitizeNextPath를 다시 적용해야 안전.
 
-## [PR #390 | feat/369/auth-social | 2026-04-28]
-- Violation: 외부 OAuth 토큰/유저 응답의 .json() 파싱 실패가 500 에러로 노출됨
-- Rule: 시스템 경계(외부 API)의 예측 불가능한 응답은 try/catch로 감싸 결과 객체로 변환
-- Context: tokenResponse.ok가 200이라도 본문이 JSON이 아닐 수 있어 await response.json()가 SyntaxError를 throw할 수 있음. google/kakao/apple 세 어댑터 모두에 동일 패턴 적용.
 
 
 ## [PR #395 Round 4 | feat/394/email-verification-redis-migration | 2026-05-01]
