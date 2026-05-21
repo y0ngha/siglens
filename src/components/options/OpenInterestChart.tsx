@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useRef, useState, type PointerEvent } from 'react';
 import {
     type OptionsChain,
     type OptionsExpirationMetrics,
@@ -170,6 +170,13 @@ export function OpenInterestChart({
         };
     }, [chain, metrics, underlyingPrice]);
 
+    const containerRef = useRef<HTMLDivElement | null>(null);
+    const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+    const [tooltipPos, setTooltipPos] = useState<{
+        x: number;
+        y: number;
+    } | null>(null);
+
     if (!derived) {
         return (
             <p className="text-secondary-500 py-4 text-sm">
@@ -184,6 +191,29 @@ export function OpenInterestChart({
     const sw = slotWidth(count);
     const bw = sw * BAR_WIDTH_FILL_RATIO;
 
+    const handlePointerMove = (
+        event: PointerEvent<SVGRectElement>,
+        index: number
+    ): void => {
+        const container = containerRef.current;
+        if (!container) return;
+        const containerRect = container.getBoundingClientRect();
+        setHoveredIndex(index);
+        // container 기준 상대 좌표로 변환 — wrapper에 `position: relative`가
+        // 걸려 있고 tooltip은 absolute로 띄우므로, viewport 좌표를 빼서 정렬.
+        setTooltipPos({
+            x: event.clientX - containerRect.left,
+            y: event.clientY - containerRect.top,
+        });
+    };
+
+    const handlePointerLeave = (): void => {
+        setHoveredIndex(null);
+        setTooltipPos(null);
+    };
+
+    const hoveredRow = hoveredIndex !== null ? oiByStrike[hoveredIndex] : null;
+
     const maxPainX = maxPainIdx >= 0 ? barCenterX(maxPainIdx, count) : null;
     const currentPriceX =
         currentPriceIdx >= 0 ? barCenterX(currentPriceIdx, count) : null;
@@ -193,7 +223,10 @@ export function OpenInterestChart({
     const peakOiLabel = fmtOi(globalMax);
 
     return (
-        <div className="border-secondary-700 bg-secondary-800 space-y-2 rounded-xl border p-4">
+        <div
+            ref={containerRef}
+            className="border-secondary-700 bg-secondary-800 relative space-y-2 rounded-xl border p-4"
+        >
             <div className="flex items-center gap-1">
                 <span className="text-secondary-300 text-sm font-medium">
                     Open Interest 분포 (Strike별)
@@ -263,15 +296,6 @@ export function OpenInterestChart({
                         globalMax
                     );
                     const putH = barPixelHeight(row.putOpenInterest, globalMax);
-                    const totalOi = row.callOpenInterest + row.putOpenInterest;
-                    // 슬롯 전체 너비의 투명 hit-rect를 깔아 막대 사이 빈 공간도
-                    // hover 가능하게 한다(특히 OI가 한쪽만 있는 strike).
-                    const tooltipText = [
-                        `Strike $${row.strike.toLocaleString()}`,
-                        `Call OI ${row.callOpenInterest.toLocaleString()} 계약`,
-                        `Put OI ${row.putOpenInterest.toLocaleString()} 계약`,
-                        `합계 ${totalOi.toLocaleString()} 계약`,
-                    ].join('\n');
 
                     return (
                         <g key={row.strike}>
@@ -300,11 +324,13 @@ export function OpenInterestChart({
                                 y={PAD_TOP}
                                 width={sw}
                                 height={CHART_HEIGHT}
-                                fill="transparent"
+                                fill="white"
+                                fillOpacity={0}
                                 pointerEvents="all"
-                            >
-                                <title>{tooltipText}</title>
-                            </rect>
+                                onPointerEnter={e => handlePointerMove(e, i)}
+                                onPointerMove={e => handlePointerMove(e, i)}
+                                onPointerLeave={handlePointerLeave}
+                            />
                         </g>
                     );
                 })}
@@ -368,6 +394,43 @@ export function OpenInterestChart({
                     );
                 })}
             </svg>
+
+            {hoveredRow !== null && tooltipPos !== null && (
+                <div
+                    role="tooltip"
+                    className="border-secondary-600 bg-secondary-900/95 text-secondary-100 pointer-events-none absolute z-10 min-w-[180px] -translate-x-1/2 -translate-y-full rounded-md border px-3 py-2 text-xs shadow-lg backdrop-blur"
+                    style={{
+                        left: tooltipPos.x,
+                        top: tooltipPos.y - 8,
+                    }}
+                >
+                    <div className="text-secondary-300 mb-1 font-semibold tabular-nums">
+                        Strike ${hoveredRow.strike.toLocaleString()}
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                        <span className="text-chart-bullish">Call OI</span>
+                        <span className="tabular-nums">
+                            {hoveredRow.callOpenInterest.toLocaleString()} 계약
+                        </span>
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                        <span className="text-chart-bearish">Put OI</span>
+                        <span className="tabular-nums">
+                            {hoveredRow.putOpenInterest.toLocaleString()} 계약
+                        </span>
+                    </div>
+                    <div className="border-secondary-700 mt-1 flex items-center justify-between gap-3 border-t pt-1">
+                        <span className="text-secondary-400">합계</span>
+                        <span className="tabular-nums font-semibold">
+                            {(
+                                hoveredRow.callOpenInterest +
+                                hoveredRow.putOpenInterest
+                            ).toLocaleString()}{' '}
+                            계약
+                        </span>
+                    </div>
+                </div>
+            )}
 
             <div className="text-secondary-500 mt-2 flex flex-wrap items-center gap-3 text-[10px]">
                 <span className="flex items-center gap-1">
