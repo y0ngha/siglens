@@ -55,6 +55,13 @@ export interface YahooOptionsResult {
     options: YahooOption[];
 }
 
+const ET_DATE_FORMATTER = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/New_York',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+});
+
 /**
  * Returns an instant anchored at noon UTC on the same *calendar day in
  * America/New_York* as `now`. Using noon avoids DST-transition windows
@@ -77,13 +84,6 @@ function etMidnight(now: Date): Date {
     }
     return new Date(Date.UTC(year, month - 1, day, 12));
 }
-
-const ET_DATE_FORMATTER = new Intl.DateTimeFormat('en-US', {
-    timeZone: 'America/New_York',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-});
 
 /** Normalize a single call or put contract from yahoo-finance2 into an OptionsContract. */
 export function normalizeYahooContract(c: YahooCallOrPut): OptionsContract {

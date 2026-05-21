@@ -67,7 +67,12 @@ export class YahooOptionsAdapter implements OptionsDataProvider {
         try {
             const response = await yahooFinance.options(symbol);
             return (response.expirationDates?.length ?? 0) > 0;
-        } catch {
+        } catch (err) {
+            console.warn(
+                '[YahooOptionsAdapter] hasOptionsMarket failed',
+                symbol,
+                err
+            );
             return false;
         }
     }

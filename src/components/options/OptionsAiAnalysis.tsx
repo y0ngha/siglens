@@ -127,7 +127,7 @@ function OptionsAiAnalysisView({ result }: OptionsAiAnalysisViewProps) {
         result.signals.length === 0;
 
     if (isEmpty) {
-        return <OptionsAiAnalysisError resetErrorBoundary={undefined} />;
+        return <OptionsAiAnalysisError />;
     }
 
     return (

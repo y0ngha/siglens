@@ -8,6 +8,11 @@ import { hasOptionsMarket } from '@/infrastructure/options/optionsDataCache';
 // 미국 주식 시장 마감 시각(UTC). 16:00 ET = 20:00 UTC (DST 미고려, 신호 용도라 충분).
 const US_MARKET_CLOSE_UTC_HOUR = 20;
 
+// `hasOptionsMarket` 동시 호출 상한. Yahoo Finance rate-limit 보호용 — 캐시
+// 미스 시 한 번의 sitemap 빌드가 POPULAR_TICKERS 전체에 대해 병렬 요청을
+// 보내지 않도록 청크 단위 await로 묶는다.
+const OPTIONS_PROBE_CONCURRENCY = 5;
+
 interface SitemapEntry {
     url: string;
     lastModified: Date;
@@ -48,7 +53,6 @@ async function buildEntries(): Promise<SitemapEntry[]> {
     // 무제한 동시 호출하지 않도록 OPTIONS_PROBE_CONCURRENCY개씩 청크로
     // 순차 처리해 rate-limit 위험을 방어한다. `hasOptionsMarket`은
     // 1일 캐시라 두 번째 sitemap 빌드부터는 fetch 없이 메모리에서 해결된다.
-    const OPTIONS_PROBE_CONCURRENCY = 5;
     const allChunks = Array.from(
         {
             length: Math.ceil(

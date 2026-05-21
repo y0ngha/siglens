@@ -234,12 +234,23 @@ describe('YahooOptionsAdapter.hasOptionsMarket', () => {
         expect(result).toBe(false);
     });
 
-    it('returns false on any library error', async () => {
+    it('returns false on any library error and logs the failure for diagnostics', async () => {
+        // Errors must surface to console.warn so production failures don't
+        // hide silently behind the boolean false return (MISTAKES.md §0.5).
+        const warnSpy = jest
+            .spyOn(console, 'warn')
+            .mockImplementation(() => {});
         mockOptionsMethod.mockRejectedValue(new Error('unknown symbol'));
         const adapter = makeAdapter();
 
         const result = await adapter.hasOptionsMarket('INVALID');
 
         expect(result).toBe(false);
+        expect(warnSpy).toHaveBeenCalledWith(
+            expect.stringContaining('hasOptionsMarket failed'),
+            'INVALID',
+            expect.any(Error)
+        );
+        warnSpy.mockRestore();
     });
 });

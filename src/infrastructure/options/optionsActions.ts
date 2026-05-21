@@ -43,9 +43,8 @@ export async function getOptionsSignalsAction(
         const snapshot = await fetchOptionsSnapshot(symbol);
         if (snapshot === null || snapshot.chains.length === 0) return null;
 
+        // chains[0] is provably defined past the length guard above.
         const nearest = snapshot.chains[0];
-        if (!nearest) return null;
-
         const summary = summarizeChainForLlm(nearest, snapshot.underlyingPrice);
         return {
             atmIv: summary.atmImpliedVolatility,
