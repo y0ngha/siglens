@@ -1,5 +1,4 @@
 import { OverallContent } from '@/components/overall/OverallContent';
-import { DynamicMetadataMarker } from '@/components/seo/DynamicMetadataMarker';
 import { CrossLinkCards } from '@/components/symbol-page/CrossLinkCards';
 import { JsonLd } from '@/components/ui/JsonLd';
 import {
@@ -148,7 +147,6 @@ export default async function OverallPage({ params, searchParams }: Props) {
             <JsonLd data={jsonLd} />
             <JsonLd data={breadcrumbJsonLd} />
             <JsonLd data={faqJsonLd} />
-            <DynamicMetadataMarker />
             <main className="mx-auto max-w-5xl space-y-6 px-4 py-8">
                 <h1 className="sr-only">
                     {displayName} 차트와 실적, 뉴스, 공포 탐욕 지수 종합 분석

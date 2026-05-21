@@ -9,7 +9,6 @@ import { NewsAiSummarySkeleton } from '@/components/news/NewsAiSummarySkeleton';
 import { AnalystActions } from '@/components/news/sections/AnalystActions';
 import { EventCalendar } from '@/components/news/sections/EventCalendar';
 import { NewsList } from '@/components/news/sections/NewsList';
-import { DynamicMetadataMarker } from '@/components/seo/DynamicMetadataMarker';
 import { CrossLinkCards } from '@/components/symbol-page/CrossLinkCards';
 import { SectionSkeleton } from '@/components/symbol-page/SectionSkeleton';
 import { JsonLd } from '@/components/ui/JsonLd';
@@ -29,7 +28,6 @@ import {
 import { waitUntil } from '@vercel/functions';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { connection } from 'next/server';
 import { Suspense } from 'react';
 
 // JSON-LD ItemList 최대 노출 — Google ItemList 가이드라인의 "주요 항목"만 노출하라는 권고에 맞춤.
@@ -40,13 +38,6 @@ interface Props {
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-    // generateMetadata는 페이지 본문과 별도의 prerender entry로 실행된다.
-    // 본문에 connection()이 있어도 metadata는 별도로 prerender될 수 있어,
-    // params만 의존하는 generateMetadata는 PPR shell에 fake-params(`[symbol]`)로
-    // 캐싱되어 canonical/title에 placeholder가 박힌다. searchParams를 사용하지
-    // 않는 generateMetadata는 첫 줄에 명시 connection()으로 dynamic을 보장한다.
-    await connection();
-
     const { symbol } = await params;
     const upper = symbol.toUpperCase();
     const assetInfo = await getAssetInfoCached(upper);
@@ -101,11 +92,6 @@ async function AnalystActionsSection({ symbol }: SymbolSectionProps) {
 }
 
 export default async function NewsPage({ params }: Props) {
-    // Cache Components: `new Date().toISOString()` below (for the JSON-LD
-    // `dateModified`) reads Date.now(), which requires a prior dynamic-data
-    // accessor. `await params` doesn't qualify; opt in explicitly.
-    await connection();
-
     const { symbol } = await params;
     const upper = symbol.toUpperCase();
 
@@ -181,7 +167,6 @@ export default async function NewsPage({ params }: Props) {
         },
     };
 
-    // getNewsList uses `'use cache'`, so this call is deduped against NewsListSection's fetch.
     const newsItems = await getNewsList(upper);
     // At least one AI-enriched card means aggregate analysis can start immediately.
     const hasEnrichedNews = newsItems.some(item => item.sentiment !== null);
@@ -213,7 +198,6 @@ export default async function NewsPage({ params }: Props) {
             <JsonLd data={breadcrumbJsonLd} />
             <JsonLd data={aiArticleJsonLd} />
             {newsListJsonLd ? <JsonLd data={newsListJsonLd} /> : null}
-            <DynamicMetadataMarker />
             <main className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8">
                 <h1 className="sr-only">{displayName} 최신 뉴스와 어닝 일정</h1>
                 <NewsAiSummaryErrorBoundary>
