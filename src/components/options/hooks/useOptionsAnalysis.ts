@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { OptionsAnalysisResponse, ModelId } from '@y0ngha/siglens-core';
 import {
@@ -101,13 +101,9 @@ export function useOptionsAnalysis({
 }: UseOptionsAnalysisInput): OptionsAnalysisState {
     const currentJobIdRef = useRef<string | null>(null);
     const queryClient = useQueryClient();
-    const queryKey = useMemo(
-        () => QUERY_KEYS.optionsAnalysis(symbol, expirationDate, modelId),
-        [symbol, expirationDate, modelId]
-    );
 
     const query = useQuery({
-        queryKey,
+        queryKey: QUERY_KEYS.optionsAnalysis(symbol, expirationDate, modelId),
         queryFn: ({ signal }) =>
             fetchOptionsAnalysis(
                 symbol,
@@ -142,6 +138,10 @@ export function useOptionsAnalysis({
         return [{ jobId, type: 'options' as const }];
     }, []);
     usePageHideCancel(getPageHideJobs);
+
+    // Derived from query — referenced by effects below. React Query deep-
+    // compares keys so a stable identity isn't required; we just need a name.
+    const { queryKey } = query;
 
     useEffect(() => {
         if (queryClient.getQueryData(queryKey) === undefined) {

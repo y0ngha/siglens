@@ -123,20 +123,16 @@ export function OptionsChainTable({
 
     const nearestExpiry = snapshot.chains[0]?.expirationDate ?? '';
 
-    // Compute totalContracts once and derive isEmpty from it — `calls.length`
-    // and `puts.length` are otherwise read twice each in the legacy version.
+    // Compute totalContracts once — `calls.length` and `puts.length` are
+    // otherwise read twice each in the legacy version.
     const totalContracts = selectedChain
         ? selectedChain.calls.length + selectedChain.puts.length
         : 0;
-
-    const isEmpty = !selectedChain || totalContracts === 0;
 
     const headerLabel = expanded
         ? `▾ 전체 옵션 chain 테이블 (선택된 만기: ${selectedChain?.expirationDate ?? '—'})`
         : `▸ 전체 옵션 chain 테이블 보기 (${numberFormatter.format(totalContracts)} contracts)`;
 
-    // Inline literal condition so TS narrows `selectedChain` to non-null
-    // below; `isEmpty` reuses the same predicate for the `disabled` prop.
     if (!selectedChain || totalContracts === 0) {
         return (
             <div className="border-secondary-700 bg-secondary-800 flex w-full items-center justify-between rounded-xl border p-4">
@@ -155,7 +151,6 @@ export function OptionsChainTable({
                 type="button"
                 aria-expanded={expanded}
                 aria-controls="options-chain-table"
-                disabled={isEmpty}
                 onClick={() => setExpanded(prev => !prev)}
                 className="border-secondary-700 bg-secondary-800 hover:border-primary-500 focus-visible:ring-primary-500 flex w-full cursor-pointer items-center justify-between rounded-xl border p-4 transition-colors focus-visible:ring-2 focus-visible:outline-none"
             >

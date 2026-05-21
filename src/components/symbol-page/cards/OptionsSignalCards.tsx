@@ -7,7 +7,11 @@ import {
     formatMaxPain,
     formatPutCallRatio,
 } from '@/lib/options/optionsFormatters';
-import { MaxPainTooltip } from '@/components/options/optionsTooltips';
+import {
+    AtmIvTooltip,
+    MaxPainTooltip,
+    PutCallRatioTooltip,
+} from '@/components/options/utils/optionsTooltips';
 
 // ATM IV · Put/Call · Max Pain — the three chart-page chips this card row renders.
 const SIGNAL_CARD_COUNT = 3;
@@ -31,52 +35,37 @@ export function OptionsSignalCards({ symbol }: OptionsSignalCardsProps) {
     if (isLoading) return <OptionsSignalCardsSkeleton />;
     if (!data) return null;
 
-    const atmIvDisplay = formatAtmIv(data.atmIv);
-    const pcDisplay = formatPutCallRatio(data.putCallRatio);
-    const maxPainDisplay = formatMaxPain(data.maxPain);
+    const SIGNAL_CARDS = [
+        {
+            label: 'ATM IV',
+            value: formatAtmIv(data.atmIv),
+            tooltip: AtmIvTooltip,
+        },
+        {
+            label: 'Put/Call',
+            value: formatPutCallRatio(data.putCallRatio),
+            tooltip: PutCallRatioTooltip,
+        },
+        {
+            label: 'Max Pain',
+            value: formatMaxPain(data.maxPain),
+            tooltip: MaxPainTooltip,
+        },
+    ] as const;
 
     return (
         <section
             aria-label={`${symbol} 옵션 보조 시그널`}
             className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-3"
         >
-            <SignalCard
-                label="ATM IV"
-                value={atmIvDisplay}
-                tooltip={
-                    <>
-                        <p>
-                            지금 옵션 시장이 보는 변동성이에요. 보통 20~30%가
-                            평범한 편이고, 40% 넘으면 시장이 큰 움직임을
-                            예상하고 있어요.
-                        </p>
-                        <p>어닝 발표 같은 큰 이벤트 직전에 보통 올라가요.</p>
-                    </>
-                }
-            />
-            <SignalCard
-                label="Put/Call"
-                value={pcDisplay}
-                tooltip={
-                    <>
-                        <p>풋옵션 거래량을 콜옵션 거래량으로 나눈 값이에요.</p>
-                        <p>
-                            1보다 크면 풋(하락 베팅)이 더 많아 시장이
-                            조심스럽다는 뜻이고, 1보다 작으면 콜(상승 베팅)이 더
-                            많다는 뜻이에요.
-                        </p>
-                        <p>
-                            너무 극단으로 치우치면 오히려 반대 신호로 해석하는
-                            경우도 많아요.
-                        </p>
-                    </>
-                }
-            />
-            <SignalCard
-                label="Max Pain"
-                value={maxPainDisplay}
-                tooltip={MaxPainTooltip}
-            />
+            {SIGNAL_CARDS.map(({ label, value, tooltip }) => (
+                <SignalCard
+                    key={label}
+                    label={label}
+                    value={value}
+                    tooltip={tooltip}
+                />
+            ))}
         </section>
     );
 }

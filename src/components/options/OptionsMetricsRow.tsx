@@ -19,7 +19,7 @@ import {
     ImpliedMoveTooltip,
     MaxPainTooltip,
     PutCallRatioTooltip,
-} from '@/components/options/optionsTooltips';
+} from '@/components/options/utils/optionsTooltips';
 
 interface OptionsMetricsRowProps {
     /** 'YYYY-MM-DD' or 'all'. */
@@ -70,36 +70,40 @@ export function OptionsMetricsRow({
     // siglens-core R12: maxPain / putCallRatio are now `number | null`
     // (formatters tolerate the union explicitly), so pass through directly
     // without the legacy `?? NaN` coercion.
-    const maxPainValue = formatMaxPain(metrics?.maxPain ?? null);
-    const pcRatioValue = formatPutCallRatio(metrics?.putCallRatio ?? null);
-    const atmIvValue = formatAtmIv(metrics?.atmImpliedVolatility ?? null);
-    const impliedMoveValue = formatImpliedMove(
-        metrics?.impliedMovePercent ?? null
-    );
+    const METRIC_CARDS = [
+        {
+            label: 'Max Pain',
+            value: formatMaxPain(metrics?.maxPain ?? null),
+            tooltip: MaxPainTooltip,
+        },
+        {
+            label: 'P/C Ratio',
+            value: formatPutCallRatio(metrics?.putCallRatio ?? null),
+            tooltip: PutCallRatioTooltip,
+        },
+        {
+            label: 'ATM IV',
+            value: formatAtmIv(metrics?.atmImpliedVolatility ?? null),
+            tooltip: AtmIvTooltip,
+        },
+        {
+            label: 'Imp. Move',
+            value: formatImpliedMove(metrics?.impliedMovePercent ?? null),
+            tooltip: ImpliedMoveTooltip,
+        },
+    ] as const;
 
     return (
         <div className="space-y-2">
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                <MetricCard
-                    label="Max Pain"
-                    value={maxPainValue}
-                    tooltip={MaxPainTooltip}
-                />
-                <MetricCard
-                    label="P/C Ratio"
-                    value={pcRatioValue}
-                    tooltip={PutCallRatioTooltip}
-                />
-                <MetricCard
-                    label="ATM IV"
-                    value={atmIvValue}
-                    tooltip={AtmIvTooltip}
-                />
-                <MetricCard
-                    label="Imp. Move"
-                    value={impliedMoveValue}
-                    tooltip={ImpliedMoveTooltip}
-                />
+                {METRIC_CARDS.map(({ label, value, tooltip }) => (
+                    <MetricCard
+                        key={label}
+                        label={label}
+                        value={value}
+                        tooltip={tooltip}
+                    />
+                ))}
             </div>
             {expirationDate === 'all' && nearestExpiry && (
                 <p className="text-secondary-500 text-[10px]">
