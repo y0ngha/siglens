@@ -14,8 +14,7 @@ import { QUERY_KEYS } from '@/lib/queryConfig';
 import { ANALYSIS_POLL_INTERVAL_MS } from '@/lib/pollingConfig';
 import { usePageHideCancel } from '@/components/hooks/usePageHideCancel';
 import { BotBlockedError } from '@/components/symbol-page/exceptions/BotBlockedError';
-import type { CancelJobEntry } from '@/domain/types';
-import type { OptionsExpirationSelector } from '@/domain/options/types';
+import type { CancelJobEntry, OptionsExpirationSelector } from '@/domain/types';
 
 export type OptionsAnalysisState =
     | { status: 'loading' }

@@ -11,7 +11,7 @@ import { OptionsChainTable } from '@/components/options/OptionsChainTable';
 import { OpenInterestChart } from '@/components/options/OpenInterestChart';
 import { OptionsMetricsRow } from '@/components/options/OptionsMetricsRow';
 import type { OptionsSnapshot, SlotMapping } from '@y0ngha/siglens-core';
-import type { OptionsExpirationSelector } from '@/domain/options/types';
+import type { OptionsExpirationSelector } from '@/domain/types';
 
 interface OptionsPageClientProps {
     symbol: string;
@@ -36,7 +36,7 @@ export function OptionsPageClient({
 }: OptionsPageClientProps) {
     const [expirationDate, setExpirationDate] =
         useState<OptionsExpirationSelector>(
-            () => slots.filter(isSlotMapping)[0]?.expirationDate ?? 'all'
+            () => slots.find(isSlotMapping)?.expirationDate ?? 'all'
         );
     const { modelId } = useSymbolModel();
     const validSlots = useMemo(() => slots.filter(isSlotMapping), [slots]);

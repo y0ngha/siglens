@@ -11,7 +11,7 @@ import { cn } from '@/lib/cn';
 import { OptionsAiAnalysisError } from '@/components/options/OptionsAiAnalysisError';
 import { OptionsAiAnalysisSkeleton } from '@/components/options/OptionsAiAnalysisSkeleton';
 import { useOptionsAnalysis } from '@/components/options/hooks/useOptionsAnalysis';
-import type { OptionsExpirationSelector } from '@/domain/options/types';
+import type { OptionsExpirationSelector } from '@/domain/types';
 
 const TONE_LABEL: Record<OptionsTone, string> = {
     bullish: '강세',
@@ -190,9 +190,12 @@ function OptionsAiAnalysisView({ result }: OptionsAiAnalysisViewProps) {
                         ▸ 시그널
                     </h3>
                     <ul className="space-y-2" aria-label="옵션 시그널 목록">
-                        {result.signals.map((signal, i) => (
+                        {result.signals.map(signal => (
                             <li
-                                key={i}
+                                // Signals are render-only and the AI rarely emits
+                                // duplicate `${kind}::${message}` pairs; using the
+                                // composite as key avoids the index-key anti-pattern.
+                                key={`${signal.kind}::${signal.message}`}
                                 className="text-secondary-400 flex min-w-0 items-start gap-2 text-sm"
                             >
                                 <span

@@ -9,6 +9,9 @@ import {
 } from '@/lib/options/optionsFormatters';
 import { MaxPainTooltip } from '@/lib/options/optionsTooltips';
 
+// ATM IV · Put/Call · Max Pain — the three chart-page chips this card row renders.
+const SIGNAL_CARD_COUNT = 3;
+
 interface OptionsSignalCardsProps {
     symbol: string;
 }
@@ -105,7 +108,7 @@ function OptionsSignalCardsSkeleton() {
             aria-busy="true"
             aria-label="옵션 보조 시그널 불러오는 중"
         >
-            {[0, 1, 2].map(i => (
+            {Array.from({ length: SIGNAL_CARD_COUNT }).map((_, i) => (
                 <div
                     key={i}
                     className="border-secondary-700 bg-secondary-800 animate-pulse rounded-xl border p-4"

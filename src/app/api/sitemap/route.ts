@@ -62,15 +62,20 @@ async function buildEntries(): Promise<SitemapEntry[]> {
             )
     );
     // 청크 단위 await로 동시 호출 수를 OPTIONS_PROBE_CONCURRENCY로 상한 유지.
-    const tickerHasOptions: boolean[] = await allChunks.reduce<
-        Promise<boolean[]>
-    >(async (accP, chunk) => {
-        const acc = await accP;
-        const results = await Promise.all(
-            chunk.map(ticker => hasOptionsMarket(ticker).catch(() => false))
+    // `chunkResults`는 이 함수 안에서만 보이는 로컬 누산기이고, 외부 관찰자가
+    // 중간 상태를 보지 못한다. 따라서 reduce + spread(O(N²))나 청크 전체를
+    // Promise.all로 묶는 방식(rate-limit 깨짐)보다 for-of + push가 실용적이다.
+    const chunkResults: boolean[][] = [];
+    for (const chunk of allChunks) {
+        chunkResults.push(
+            await Promise.all(
+                chunk.map(ticker =>
+                    hasOptionsMarket(ticker).catch(() => false)
+                )
+            )
         );
-        return [...acc, ...results];
-    }, Promise.resolve([]));
+    }
+    const tickerHasOptions = chunkResults.flat();
     const tickersWithOptions = new Set(
         POPULAR_TICKERS.filter((_, i) => tickerHasOptions[i])
     );

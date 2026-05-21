@@ -9,7 +9,7 @@ import {
 import { InfoTooltip } from '@/components/ui/InfoTooltip';
 import { findNearestStrikeIndex } from '@/domain/options/findNearestStrike';
 import { pickActiveChain } from '@/domain/options/pickActiveChain';
-import type { OptionsExpirationSelector } from '@/domain/options/types';
+import type { OptionsExpirationSelector } from '@/domain/types';
 import { cn } from '@/lib/cn';
 
 interface OptionsChainTableProps {
@@ -123,13 +123,13 @@ export function OptionsChainTable({
 
     const nearestExpiry = snapshot.chains[0]?.expirationDate ?? '';
 
-    const isEmpty =
-        !selectedChain ||
-        (selectedChain.calls.length === 0 && selectedChain.puts.length === 0);
-
+    // Compute totalContracts once and derive isEmpty from it — `calls.length`
+    // and `puts.length` are otherwise read twice each in the legacy version.
     const totalContracts = selectedChain
         ? selectedChain.calls.length + selectedChain.puts.length
         : 0;
+
+    const isEmpty = !selectedChain || totalContracts === 0;
 
     const headerLabel = expanded
         ? `▾ 전체 옵션 chain 테이블 (선택된 만기: ${selectedChain?.expirationDate ?? '—'})`

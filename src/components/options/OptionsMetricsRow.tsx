@@ -7,7 +7,7 @@ import {
 } from '@y0ngha/siglens-core';
 import { InfoTooltip } from '@/components/ui/InfoTooltip';
 import { pickActiveChain } from '@/domain/options/pickActiveChain';
-import type { OptionsExpirationSelector } from '@/domain/options/types';
+import type { OptionsExpirationSelector } from '@/domain/types';
 import {
     formatAtmIv,
     formatImpliedMove,

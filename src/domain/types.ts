@@ -102,6 +102,8 @@ export type {
     AnalysisGateErrorCode,
 } from '@/domain/analysis/gate';
 
+export type { OptionsExpirationSelector } from '@/domain/options/types';
+
 export type ContactFormField = 'title' | 'email' | 'content';
 
 export type ContactFormErrorCode =

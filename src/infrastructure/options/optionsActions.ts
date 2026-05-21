@@ -20,9 +20,9 @@ import {
 import { isBot } from '@/infrastructure/http/isBot';
 import type {
     AnalysisGateBlockedResult,
+    OptionsExpirationSelector,
     OptionsSignalsResult,
 } from '@/domain/types';
-import type { OptionsExpirationSelector } from '@/domain/options/types';
 
 /** Final return type — core's options result + our siglens-side gate errors. */
 export type SubmitOptionsAnalysisActionResult =
