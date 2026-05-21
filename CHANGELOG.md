@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.11.14](https://github.com/y0ngha/siglens/compare/v0.11.13...v0.11.14) (2026-05-21)
+
+
+### Bug Fixes
+
+* **seo:** apply connection() to generateMetadata in params-only [symbol] routes + document rule ([102aad3](https://github.com/y0ngha/siglens/commit/102aad3d6033b76ee7f5df767595a827d8c555ba)), closes [#438](https://github.com/y0ngha/siglens/issues/438)
+* **seo:** force dynamic metadata via connection() in 3 [symbol] routes + login og:url ([8579707](https://github.com/y0ngha/siglens/commit/8579707b90d74a6147debc47592cc69c23896814))
+
 ## [0.11.13](https://github.com/y0ngha/siglens/compare/v0.11.12...v0.11.13) (2026-05-21)
 
 
