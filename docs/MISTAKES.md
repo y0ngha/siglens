@@ -885,6 +885,17 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    → Infrastructure functions are utilities; logging belongs in higher layers
    ❌ getBars() { console.log(...timing...); return bars; }
    ✅ Remove logging; expose metrics via return type if needed
+
+4. External I/O operations at system boundaries must be wrapped in try-catch
+   → All I/O operations that can fail (DB queries, API calls, auth checks, JSON parsing) must be protected with try-catch
+   → When one I/O operation in a module is protected, all I/O operations at the same call depth must be equivalently protected
+   → External system failures must be caught and returned as error results, not propagated as uncaught exceptions
+   ❌ async function submitAnalysisAction() { return db.query(...); }  // DB failure throws uncaught
+   ❌ const user = getCurrentUser();  // outside try-catch, but same call inside try in sibling actions
+   ❌ const payload = await response.json();  // OAuth API response parsing can throw SyntaxError uncaught
+   ✅ async function submitAnalysisAction(): Promise<AnalysisResult> { try { return db.query(...); } catch (e) { console.error('[submitAnalysisAction]', e); return { status: 'error' }; } }
+   ✅ async function submitOverallAnalysisAction() { try { const user = getCurrentUser(); ... } catch (e) { ... } }  // protected like other actions
+   ✅ try { const payload = await response.json(); } catch (e) { console.error('[parseOAuthResponse]', e); return { ok: false, error: 'parse_error' }; }
 ```
 
 ---

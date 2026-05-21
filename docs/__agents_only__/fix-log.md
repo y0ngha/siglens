@@ -11,13 +11,6 @@
 - Rule: N/A
 - Context: All round 1 findings fixed and approved; no additional issues identified in round 2.
 
-## [PR #430 Round 2 | feat/analysis-key-routing | 2026-05-08]
-- Violation: `getCurrentUser()` called outside try-catch in `submitOverallAnalysisAction.ts` while the same call is inside try in the other 3 sibling actions — asymmetric failure handling
-  - Rule: MISTAKES.md I/O & Error Handling #1 — When one I/O operation in a module is protected with try-catch, all I/O operations at the same call depth must be equivalently protected
-  - Context: Only `submitOverallAnalysisAction` had `getCurrentUser()` before the try block; moving it inside ensures auth failures are caught and returned as `unexpected_error` instead of propagating uncaught
-- Violation: Anonymous `catch {}` blocks in all 4 action files swallow error info silently — no logging, no diagnostics
-  - Rule: MISTAKES.md Infrastructure Functions #3 — No debug artifacts, but errors must not be silently swallowed; log with `console.error` before returning gracefully
-  - Context: `catch {}` → `catch (err) { console.error('[submitXxxAction] unexpected error:', err); }` applied to all 4 submit action files (submitAnalysisAction, submitFundamentalAnalysisAction, submitNewsAnalysisAction, submitOverallAnalysisAction)
 
 ## [PR #430 | feat/analysis-key-routing | 2026-05-08]
 - Violation: `AnalysisGateBlockedResult` interface defined independently in 4 action files instead of being centralized in `byokGate.ts`
@@ -170,10 +163,6 @@
 - Rule: Open Redirect 방어 — 사용자 변조 가능 입력은 사용 시점마다 sanitize (defense-in-depth)
 - Context: state 쿠키는 HMAC 서명 없이 base64url JSON으로만 저장되므로 next 값이 변조 가능. /start에서 한 번 sanitize했더라도 콜백에서 redirect 직전에 sanitizeNextPath를 다시 적용해야 안전.
 
-## [PR #390 | feat/369/auth-social | 2026-04-28]
-- Violation: 외부 OAuth 토큰/유저 응답의 .json() 파싱 실패가 500 에러로 노출됨
-- Rule: 시스템 경계(외부 API)의 예측 불가능한 응답은 try/catch로 감싸 결과 객체로 변환
-- Context: tokenResponse.ok가 200이라도 본문이 JSON이 아닐 수 있어 await response.json()가 SyntaxError를 throw할 수 있음. google/kakao/apple 세 어댑터 모두에 동일 패턴 적용.
 
 
 ## [PR #395 Round 4 | feat/394/email-verification-redis-migration | 2026-05-01]
@@ -259,17 +248,3 @@
 - Context: Blocker 2 — 4 Server Actions started passing `skipEnqueueIfMiss` to siglens-core submit functions, but no test asserted it. Added bot-UA and non-bot-UA cases (2 each × 4 Actions = 8 new tests) using `mockHeaders.mockResolvedValueOnce(new Headers({...}))` to control isBot, and `expect.objectContaining({ skipEnqueueIfMiss: <bool> })` on the submit mock.
 
 
-## [PR #436 | fix/ppr-resumable-slots | 2026-05-18]
-- Violation: `'데이터를 불러올 수 없습니다.'` 문자열 리터럴이 7개 카드 컴포넌트(`ProfileCard`, `ValuationCard`, `PeersTable`, `ProfitabilityCard`, `GrowthChart`, `FinancialHealthCard`, `FutureDirectionCard`)에 중복 — 동시에 빈 상태 `<section>` JSX 골격도 7회 중복
-- Rule: MISTAKES.md Coding Paradigm #15 (string literals must be extracted to constants, not duplicated across files) + Design & Cohesion #9 (repeated literal values across multiple locations → extract to named constant) + FF §4-C (3회 이상 반복되는 패턴은 추상화 권장)
-- Context: PPR resumable slots fix 의 일환으로 7개 카드에 빈 상태 UI 를 동시 추가하면서 동일 마크업·메시지가 인라인 중복. Blocker review 후 공통 컴포넌트 `EmptySectionCard` 를 `src/components/fundamental/sections/` 에 신규 추출, `EMPTY_MESSAGE` 를 내부 const 로 단일화. 7개 카드는 headingId/title/headingClassName prop 만 전달.
-
-
-## [PR #436 Round 2 | fix/ppr-resumable-slots | 2026-05-18]
-- Violation: `EmptySectionCard.tsx` 의 `EMPTY_MESSAGE` 상수가 export 되지 않아 8개 테스트 파일에서 `'데이터를 불러올 수 없습니다.'` 문자열을 직접 하드코딩
-- Rule: MISTAKES.md Tests §13 ("Expected values from module exports must also be imported, not hardcoded") + Coding Paradigm §15 ("string literals must be extracted to constants, not duplicated across files")
-- Context: R1 에서 production 코드 중복은 EmptySectionCard 추출로 해결했지만 테스트 단의 동일 리터럴이 남아있었음. R2 에서 EMPTY_MESSAGE 를 export 로 노출하고 8개 테스트 파일 모두 import 하도록 변경.
-
-- Violation: 각 카드 컴포넌트에서 `headingId` 문자열이 3개 위치(EmptySectionCard prop, section aria-labelledby, h2 id)에 중복 + `headingClassName` 이 2개 위치(EmptySectionCard prop, 정상 경로 h2 className)에 중복
-- Rule: FF §3-B (Cohesion — 함께 바뀌는 코드를 함께 두기). ID drift 시 ARIA 불일치가 silent 버그가 됨.
-- Context: R1 에서 EmptySectionCard 도입 직후 각 카드 파일에 동일 문자열이 다중 출현. R2 에서 7개 카드 모두 파일 상단에 `HEADING_ID`/`HEADING_CLASS_NAME` const 를 선언하고 모든 사용처가 const 를 참조하도록 통일.
