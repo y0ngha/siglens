@@ -113,8 +113,7 @@ jest.mock('@/domain/fearGreed/classifier', () => ({
 const mockGetAssetInfoCached = jest.fn();
 
 jest.mock('@/infrastructure/ticker/getAssetInfoCached', () => ({
-    getAssetInfoCached: (...args: unknown[]) =>
-        mockGetAssetInfoCached(...args),
+    getAssetInfoCached: (...args: unknown[]) => mockGetAssetInfoCached(...args),
 }));
 
 // react.cache는 Node 환경에서 identity wrapper로 대체
@@ -202,7 +201,9 @@ describe('generateMetadata — canonical URL 회귀 가드', () => {
             );
             expect(metadata.alternates?.canonical).not.toMatch(/\[symbol\]/i);
             expect(String(metadata.title)).not.toMatch(/\[SYMBOL\]/i);
-            expect(metadata.openGraph?.url).toBe(metadata.alternates?.canonical);
+            expect(metadata.openGraph?.url).toBe(
+                metadata.alternates?.canonical
+            );
         });
 
         it('대문자 TSLA → canonical이 /TSLA', async () => {
@@ -225,7 +226,9 @@ describe('generateMetadata — canonical URL 회귀 가드', () => {
             );
             expect(metadata.alternates?.canonical).not.toMatch(/\[symbol\]/i);
             expect(String(metadata.title)).not.toMatch(/\[SYMBOL\]/i);
-            expect(metadata.openGraph?.url).toBe(metadata.alternates?.canonical);
+            expect(metadata.openGraph?.url).toBe(
+                metadata.alternates?.canonical
+            );
         });
     });
 
@@ -237,7 +240,9 @@ describe('generateMetadata — canonical URL 회귀 가드', () => {
             );
             expect(metadata.alternates?.canonical).not.toMatch(/\[symbol\]/i);
             expect(String(metadata.title)).not.toMatch(/\[SYMBOL\]/i);
-            expect(metadata.openGraph?.url).toBe(metadata.alternates?.canonical);
+            expect(metadata.openGraph?.url).toBe(
+                metadata.alternates?.canonical
+            );
         });
     });
 
@@ -251,7 +256,9 @@ describe('generateMetadata — canonical URL 회귀 가드', () => {
             );
             expect(metadata.alternates?.canonical).not.toMatch(/\[symbol\]/i);
             expect(String(metadata.title)).not.toMatch(/\[SYMBOL\]/i);
-            expect(metadata.openGraph?.url).toBe(metadata.alternates?.canonical);
+            expect(metadata.openGraph?.url).toBe(
+                metadata.alternates?.canonical
+            );
         });
     });
 
@@ -265,7 +272,9 @@ describe('generateMetadata — canonical URL 회귀 가드', () => {
             );
             expect(metadata.alternates?.canonical).not.toMatch(/\[symbol\]/i);
             expect(String(metadata.title)).not.toMatch(/\[SYMBOL\]/i);
-            expect(metadata.openGraph?.url).toBe(metadata.alternates?.canonical);
+            expect(metadata.openGraph?.url).toBe(
+                metadata.alternates?.canonical
+            );
         });
     });
 
@@ -273,8 +282,7 @@ describe('generateMetadata — canonical URL 회귀 가드', () => {
         const cases = [
             {
                 name: '[symbol] 루트',
-                fn: () =>
-                    generateSymbolMetadata(makeParamsWithSearch('BRK.B')),
+                fn: () => generateSymbolMetadata(makeParamsWithSearch('BRK.B')),
                 expectedCanonical: 'https://siglens.io/BRK.B',
             },
             {
@@ -289,8 +297,7 @@ describe('generateMetadata — canonical URL 회귀 가드', () => {
             },
             {
                 name: 'overall',
-                fn: () =>
-                    generateOverallMetadata(makeParamsWithSearch('amzn')),
+                fn: () => generateOverallMetadata(makeParamsWithSearch('amzn')),
                 expectedCanonical: 'https://siglens.io/AMZN/overall',
             },
             {
