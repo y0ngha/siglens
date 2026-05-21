@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { OptionsAnalysisResponse, ModelId } from '@y0ngha/siglens-core';
 import {
@@ -102,8 +102,17 @@ export function useOptionsAnalysis({
     const currentJobIdRef = useRef<string | null>(null);
     const queryClient = useQueryClient();
 
+    // queryKey is prepared as input to useQuery — useMemo gives it a stable
+    // identity for downstream effect deps. Note: `query.queryKey` exists at
+    // runtime but isn't on the UseQueryResult type, so we route the key
+    // through useMemo here rather than destructuring from `query` later.
+    const queryKey = useMemo(
+        () => QUERY_KEYS.optionsAnalysis(symbol, expirationDate, modelId),
+        [symbol, expirationDate, modelId]
+    );
+
     const query = useQuery({
-        queryKey: QUERY_KEYS.optionsAnalysis(symbol, expirationDate, modelId),
+        queryKey,
         queryFn: ({ signal }) =>
             fetchOptionsAnalysis(
                 symbol,
@@ -125,10 +134,6 @@ export function useOptionsAnalysis({
         retry: false,
         staleTime: Infinity,
     });
-
-    // Derived from query — referenced by effects below. React Query deep-
-    // compares keys so a stable identity isn't required; we just need a name.
-    const { queryKey } = query;
 
     const retry = useCallback(() => {
         void query.refetch();

@@ -113,11 +113,9 @@ export function useNewsAnalysis(
         staleTime: Infinity,
     });
 
-    const { refetch } = query;
-
     const retry = useCallback(() => {
-        void refetch();
-    }, [refetch]);
+        void query.refetch();
+    }, [query]);
 
     // ref를 null로 초기화해 unmount cleanup과의 이중 cancel을 방지한다.
     const getPageHideJobs = useCallback((): CancelJobEntry[] | null => {

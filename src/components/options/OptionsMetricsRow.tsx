@@ -70,7 +70,7 @@ export function OptionsMetricsRow({
     // siglens-core R12: maxPain / putCallRatio are now `number | null`
     // (formatters tolerate the union explicitly), so pass through directly
     // without the legacy `?? NaN` coercion.
-    const METRIC_CARDS = useMemo(
+    const metricCards = useMemo(
         () =>
             [
                 {
@@ -102,7 +102,7 @@ export function OptionsMetricsRow({
     return (
         <div className="space-y-2">
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                {METRIC_CARDS.map(({ label, value, tooltip }) => (
+                {metricCards.map(({ label, value, tooltip }) => (
                     <MetricCard
                         key={label}
                         label={label}

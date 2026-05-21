@@ -66,16 +66,15 @@ async function buildEntries(): Promise<SitemapEntry[]> {
             )
     );
     // 청크 단위 await로 동시 호출 수를 OPTIONS_PROBE_CONCURRENCY로 상한 유지.
-    // `chunkResults`는 이 함수 안에서만 보이는 로컬 누산기이고, 외부 관찰자가
-    // 중간 상태를 보지 못한다. 따라서 reduce + spread(O(N²))나 청크 전체를
-    // Promise.all로 묶는 방식(rate-limit 깨짐)보다 for-of + push가 실용적이다.
-    const chunkResults: boolean[][] = [];
+    // Immutable accumulate via [...acc, result]: POPULAR_TICKERS / 5 ≈ 20 청크
+    // 가 상한이라 O(N²) spread 비용은 무시 가능하고, FP 일관성을 우선한다.
+    // 청크 전체를 Promise.all로 묶는 방식은 rate-limit을 깨뜨리므로 불가.
+    let chunkResults: boolean[][] = [];
     for (const chunk of allChunks) {
-        chunkResults.push(
-            await Promise.all(
-                chunk.map(ticker => hasOptionsMarket(ticker).catch(() => false))
-            )
+        const result = await Promise.all(
+            chunk.map(ticker => hasOptionsMarket(ticker).catch(() => false))
         );
+        chunkResults = [...chunkResults, result];
     }
     const tickerHasOptions = chunkResults.flat();
     const tickersWithOptions = new Set(

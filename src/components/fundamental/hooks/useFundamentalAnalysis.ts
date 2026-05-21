@@ -106,11 +106,9 @@ export function useFundamentalAnalysis(
         staleTime: Infinity,
     });
 
-    const { refetch } = query;
-
     const retry = useCallback(() => {
-        void refetch();
-    }, [refetch]);
+        void query.refetch();
+    }, [query]);
 
     // ref를 null로 초기화해 unmount cleanup과의 이중 cancel을 방지한다.
     const getPageHideJobs = useCallback((): CancelJobEntry[] | null => {
@@ -120,6 +118,10 @@ export function useFundamentalAnalysis(
         return [{ jobId, type: 'fundamental' as const }];
     }, []);
     usePageHideCancel(getPageHideJobs);
+
+    // MISTAKES.md §17: derived variables come AFTER all hook calls (including
+    // custom hooks). Used by effects below as a stable identity for refetch.
+    const { refetch } = query;
 
     useEffect(() => {
         if (queryClient.getQueryData(queryKey) === undefined) {
