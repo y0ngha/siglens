@@ -38,6 +38,7 @@ import {
 } from '@/lib/seo';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { connection } from 'next/server';
 import { Suspense } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
 
@@ -244,6 +245,12 @@ async function FutureDirectionSection({ symbol }: SymbolSectionProps) {
 }
 
 export default async function FundamentalPage({ params }: Props) {
+    // generateMetadata가 await params만 의존하면 cacheComponents 모드에서 PPR shell에
+    // fake params(`[symbol]`)로 prerender되어 canonical/title에 `[SYMBOL]` placeholder가
+    // 그대로 박힌다. page body 첫 줄에 connection()으로 dynamic signal을 박아
+    // metadata를 request-time으로 defer시킨다. news/fear-greed 페이지와 동일 패턴.
+    await connection();
+
     const { symbol } = await params;
     const upper = symbol.toUpperCase();
 
