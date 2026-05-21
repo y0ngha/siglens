@@ -4,7 +4,6 @@ import {
     HydrationBoundary,
     QueryClient,
 } from '@tanstack/react-query';
-import { connection } from 'next/server';
 import { SymbolLayoutClient } from '@/app/[symbol]/SymbolLayoutClient';
 import { SymbolTabsSkeleton } from '@/components/symbol-page/SymbolTabsSkeleton';
 import { DEFAULT_TIMEFRAME } from '@/domain/constants/market';
@@ -20,11 +19,9 @@ interface SymbolLayoutProps {
 // Layout shell stays as an RSC: it hands off to a single client subtree that hosts
 // the page-agnostic header, scroll lock, and floating chat button.
 //
-// Awaiting `params` is dynamic under Next.js Cache Components, so the chrome that
-// depends on `symbol` is gated behind Suspense to keep the static shell prerenderable.
-// PPR resolves each child segment's static/dynamic split independently of the chrome's
-// Suspense, so a page (fundamental/news/overall/chart) is not delayed by chrome
-// resolution even though `children` is composed inside the same boundary here.
+// `params` is async (Next.js 16) so the chrome that depends on `symbol` is gated
+// behind Suspense. cacheComponents가 비활성화되어 있으므로 connection() 명시
+// 신호는 필요 없다.
 export default function SymbolLayout({ children, params }: SymbolLayoutProps) {
     return (
         <Suspense fallback={<SymbolHeaderShellFallback />}>
@@ -42,14 +39,6 @@ async function SymbolLayoutChrome({
     params,
     children,
 }: SymbolLayoutChromeProps) {
-    // Cache Components (Next.js 16) requires that any `Date.now()` read during
-    // render (incl. React Query's internal `dataUpdatedAt = Date.now()` inside
-    // setQueryData / prefetchQuery below) be preceded by either a `fetch()` or
-    // a request-data accessor in the cookies/headers/connection/searchParams
-    // family. `await params` does NOT count for this gate, so we explicitly
-    // mark the segment dynamic up front to avoid a NEXT_STATIC_GEN_BAILOUT.
-    await connection();
-
     const { symbol } = await params;
     const ticker = symbol.toUpperCase();
     const assetInfo = await getAssetInfoCached(ticker);
