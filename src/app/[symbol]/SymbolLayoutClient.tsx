@@ -8,37 +8,64 @@ import { SymbolChatProvider } from '@/components/chat/SymbolChatContext';
 import { SymbolLayoutHeader } from '@/components/symbol-page/SymbolLayoutHeader';
 import { SymbolModelProvider } from '@/components/symbol-page/SymbolModelContext';
 
-interface SymbolLayoutClientProps {
-    symbol: string;
+interface SymbolLayoutProvidersProps {
     children: ReactNode;
 }
 
 /**
- * Client shell for `/[symbol]/*`. Hosts the page-agnostic header (breadcrumb +
- * SymbolTabs), the floating chat button, and the chat context — all of which need
- * to survive navigation between the 4 symbol pages.
- *
- * - The chart page wraps itself in a 100dvh container; non-chart pages need the body
- *   to scroll normally, so `useBodyScrollLock` only activates on `/{symbol}` (chart
- *   route).
- * - `FloatingChatButton` reads its state from `SymbolChatContext` directly via
- *   `useChat`/`useSymbolChat` — no props drilling. Each page (chart/fundamental/
- *   news/overall) publishes its own analysis via `usePublishSymbolChat`.
+ * Client provider subtree shared by every `/[symbol]/*` page. Keeps the chat and
+ * model contexts alive across symbol tab navigation so per-tab pages can publish
+ * and consume chat state without remounting providers.
  */
-export function SymbolLayoutClient({
-    symbol,
+export function SymbolLayoutProviders({
     children,
-}: SymbolLayoutClientProps) {
+}: SymbolLayoutProvidersProps) {
     return (
         <SymbolChatProvider>
-            <SymbolModelProvider>
-                <ChartScrollLockGate symbol={symbol} />
-                <SymbolLayoutHeader symbol={symbol} />
-                {children}
-                <FloatingChatButton symbol={symbol} />
-            </SymbolModelProvider>
+            <SymbolModelProvider>{children}</SymbolModelProvider>
         </SymbolChatProvider>
     );
+}
+
+interface SymbolLayoutHeaderClientProps {
+    symbol: string;
+}
+
+/**
+ * Client chrome for `/[symbol]/*`. Hosts the page-agnostic header (breadcrumb +
+ * SymbolTabs) and chart-route scroll lock.
+ *
+ * The chart page wraps itself in a 100dvh container; non-chart pages need the body
+ * to scroll normally, so `useBodyScrollLock` only activates on `/{symbol}` (chart
+ * route).
+ */
+export function SymbolLayoutHeaderClient({
+    symbol,
+}: SymbolLayoutHeaderClientProps) {
+    return (
+        <>
+            <ChartScrollLockGate symbol={symbol} />
+            <SymbolLayoutHeader symbol={symbol} />
+        </>
+    );
+}
+
+interface SymbolLayoutFloatingChatProps {
+    symbol: string;
+}
+
+/**
+ * Floating chat launcher. Reads chat state from `SymbolChatContext` via
+ * `useChat`/`useSymbolChat` — no props drilling. Each page (chart/fundamental/
+ * news/overall) publishes its own analysis via `usePublishSymbolChat`.
+ *
+ * Mounted after the active page subtree so the launcher's tab order follows the
+ * page content (assistive tech reaches the page first, then the chat affordance).
+ */
+export function SymbolLayoutFloatingChat({
+    symbol,
+}: SymbolLayoutFloatingChatProps) {
+    return <FloatingChatButton symbol={symbol} />;
 }
 
 interface ChartScrollLockGateProps {

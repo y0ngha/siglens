@@ -4,7 +4,11 @@ import {
     HydrationBoundary,
     QueryClient,
 } from '@tanstack/react-query';
-import { SymbolLayoutClient } from '@/app/[symbol]/SymbolLayoutClient';
+import {
+    SymbolLayoutFloatingChat,
+    SymbolLayoutHeaderClient,
+    SymbolLayoutProviders,
+} from '@/app/[symbol]/SymbolLayoutClient';
 import { SymbolTabsSkeleton } from '@/components/symbol-page/SymbolTabsSkeleton';
 import { DEFAULT_TIMEFRAME } from '@/domain/constants/market';
 import { getBarsAction } from '@/infrastructure/market/getBarsAction';
@@ -16,29 +20,32 @@ interface SymbolLayoutProps {
     params: Promise<{ symbol: string }>;
 }
 
-// Layout shell stays as an RSC: it hands off to a single client subtree that hosts
-// the page-agnostic header, scroll lock, and floating chat button.
+// Layout shell stays as an RSC: it composes a shared provider subtree (chat/model
+// contexts) around the chrome (header + scroll lock) and the active page subtree.
 //
-// `params` is async (Next.js 16) so the chrome that depends on `symbol` is gated
-// behind Suspense. cacheComponents가 비활성화되어 있으므로 connection() 명시
-// 신호는 필요 없다.
+// `params` is async (Next.js 16) and the chrome depends on it + a bars prefetch,
+// so the chrome lives behind Suspense with a header-shaped skeleton. `children`
+// (the active page subtree) is kept outside that Suspense so a page's LCP never
+// waits on the layout chrome's async work (getAssetInfoCached + prefetchQuery(bars)).
 export default function SymbolLayout({ children, params }: SymbolLayoutProps) {
     return (
-        <Suspense fallback={<SymbolHeaderShellFallback />}>
-            <SymbolLayoutChrome params={params}>{children}</SymbolLayoutChrome>
-        </Suspense>
+        <SymbolLayoutProviders>
+            <Suspense fallback={<SymbolHeaderShellFallback />}>
+                <SymbolLayoutChrome params={params} />
+            </Suspense>
+            {children}
+            <Suspense fallback={null}>
+                <SymbolFloatingChat params={params} />
+            </Suspense>
+        </SymbolLayoutProviders>
     );
 }
 
 interface SymbolLayoutChromeProps {
     params: Promise<{ symbol: string }>;
-    children: ReactNode;
 }
 
-async function SymbolLayoutChrome({
-    params,
-    children,
-}: SymbolLayoutChromeProps) {
+async function SymbolLayoutChrome({ params }: SymbolLayoutChromeProps) {
     const { symbol } = await params;
     const ticker = symbol.toUpperCase();
     const assetInfo = await getAssetInfoCached(ticker);
@@ -46,8 +53,8 @@ async function SymbolLayoutChrome({
     // FearGreedHeaderChipMounted (in SymbolLayoutHeader) calls useBars with DEFAULT_TIMEFRAME
     // via useSuspenseQuery + getBarsAction (a Server Action). Server Actions cannot be invoked
     // during SSR rendering. Prefetching here and dehydrating into HydrationBoundary ensures
-    // every sub-page (/fundamental, /news, /overall, chart) satisfies the query from cache
-    // instead of calling getBarsAction during initial render.
+    // the header chip satisfies the query from cache instead of calling getBarsAction
+    // during initial render.
     const queryClient = new QueryClient({
         defaultOptions: { queries: { staleTime: QUERY_STALE_TIME_MS } },
     });
@@ -64,13 +71,22 @@ async function SymbolLayoutChrome({
 
     return (
         <HydrationBoundary state={dehydrate(queryClient)}>
-            <SymbolLayoutClient symbol={symbol}>{children}</SymbolLayoutClient>
+            <SymbolLayoutHeaderClient symbol={symbol} />
         </HydrationBoundary>
     );
 }
 
-// Static shell mirroring SymbolLayoutHeader's outer shape. Used as the PPR fallback
-// while params resolve and the client chrome hydrates.
+interface SymbolFloatingChatProps {
+    params: Promise<{ symbol: string }>;
+}
+
+async function SymbolFloatingChat({ params }: SymbolFloatingChatProps) {
+    const { symbol } = await params;
+    return <SymbolLayoutFloatingChat symbol={symbol} />;
+}
+
+// Static shell mirroring SymbolLayoutHeader's outer shape. Used as the Suspense
+// fallback while params resolve and the bars prefetch completes.
 function SymbolHeaderShellFallback() {
     return (
         <header className="px-4 py-3" aria-hidden="true">
