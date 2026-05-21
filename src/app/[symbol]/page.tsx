@@ -20,7 +20,6 @@ import {
 } from '@tanstack/react-query';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { connection } from 'next/server';
 
 interface Props {
     params: Promise<{ symbol: string }>;
@@ -73,10 +72,6 @@ export async function generateMetadata({
 }
 
 export default async function SymbolPage({ params, searchParams }: Props) {
-    // cacheComponents 모드에서 generateMetadata가 PPR shell에 fake params로 prerender되어
-    // canonical/title에 `[SYMBOL]` placeholder가 박히는 것을 막는다. news/fear-greed 페이지와 동일 패턴.
-    await connection();
-
     const { symbol } = await params;
     const { tf } = await searchParams;
     const initialTimeframe = isValidTimeframe(tf) ? tf : DEFAULT_TIMEFRAME;

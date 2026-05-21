@@ -47,6 +47,13 @@ interface Props {
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
+    // generateMetadata는 페이지 본문과 별도의 prerender entry로 실행된다.
+    // 본문에 connection()이 있어도 metadata는 별도로 prerender될 수 있어,
+    // params만 의존하는 generateMetadata는 PPR shell에 fake-params(`[symbol]`)로
+    // 캐싱되어 canonical/title에 placeholder가 박힌다. searchParams를 사용하지
+    // 않는 generateMetadata는 첫 줄에 명시 connection()으로 dynamic을 보장한다.
+    await connection();
+
     const { symbol } = await params;
     const upper = symbol.toUpperCase();
     const assetInfo = await getAssetInfoCached(upper);
