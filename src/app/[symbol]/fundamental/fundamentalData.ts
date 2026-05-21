@@ -47,7 +47,9 @@ export const getProfileDescriptionKo = cache(
         const profile = await getProfile(symbol);
         if (profile === null || profile.description === null) return null;
 
-        const translated = await translateCompanyDescription(profile.description);
+        const translated = await translateCompanyDescription(
+            profile.description
+        );
         if (translated === null) return null;
 
         await repo.upsert({ symbol, descriptionKo: translated });
@@ -98,9 +100,7 @@ export const getAnalystEstimates = cache(
 );
 
 export const getGradesConsensus = cache(
-    async (
-        symbol: string
-    ): Promise<FundamentalGradesConsensusInput | null> => {
+    async (symbol: string): Promise<FundamentalGradesConsensusInput | null> => {
         return fundamentalClient.getGradesConsensus(symbol);
     }
 );

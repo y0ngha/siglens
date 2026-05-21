@@ -17,13 +17,11 @@ const fundamentalClient = new FmpFundamentalClient();
 const EARNINGS_REPORT_FMP_LIMIT = 5;
 const EARNINGS_REPORT_STALE_MS = MS_PER_DAY;
 
-export const getNewsList = cache(
-    async (symbol: string): Promise<NewsRow[]> => {
-        const { db } = getDatabaseClient();
-        const repo = new DrizzleNewsRepository(db);
-        return repo.listBySymbol(symbol, NEWS_LOOKBACK_MS);
-    }
-);
+export const getNewsList = cache(async (symbol: string): Promise<NewsRow[]> => {
+    const { db } = getDatabaseClient();
+    const repo = new DrizzleNewsRepository(db);
+    return repo.listBySymbol(symbol, NEWS_LOOKBACK_MS);
+});
 
 export const getGradeEvents = cache(
     async (symbol: string): Promise<GradesEvent[]> => {
