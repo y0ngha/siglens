@@ -35,6 +35,11 @@ export const getProfile = cache(
  *
  * Read path: DB lookup (instant on cache hit).
  * Write path: Gemini translation → DB upsert (first visit per symbol only).
+ *
+ * Nested `cache()` 호출 의도: 이 함수와 내부에서 호출하는 `getProfile`이 둘 다
+ * 별도 per-request memoization을 갖는다. 같은 요청에서 description-Ko 미스이지만
+ * profile은 이미 다른 호출자가 캐싱한 경우, 내부 `getProfile(symbol)`이 추가 FMP
+ * 호출을 발생시키지 않는다.
  */
 export const getProfileDescriptionKo = cache(
     async (symbol: string): Promise<string | null> => {
