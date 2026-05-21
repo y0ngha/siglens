@@ -200,18 +200,3 @@ export interface CancelJobsBody {
     jobs: CancelJobEntry[];
 }
 
-/**
- * Pre-computed option signals shown on the chart page card row (ATM IV,
- * Put/Call, Max Pain). Anchored on the nearest expiration.
- *
- * `putCallRatio` and `maxPain` are `number | null` because siglens-core R12
- * (PR #86, commit 40ad290) explicitly returns `null` when the source data is
- * insufficient (no opposite-side OI, empty chain). Previously NaN/Infinity
- * leaked through and JSON-stringified to `"null"` silently.
- */
-export interface OptionsSignalsResult {
-    atmIv: number | null;
-    putCallRatio: number | null;
-    maxPain: number | null;
-    expirationDate: string;
-}

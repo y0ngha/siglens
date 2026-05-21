@@ -5,7 +5,6 @@ import { headers } from 'next/headers';
 import {
     submitOptionsAnalysis,
     pollOptionsAnalysis,
-    summarizeChainForLlm,
     cancelJob,
     type SubmitOptionsAnalysisResult,
     type PollOptionsAnalysisResult,
@@ -21,42 +20,12 @@ import { isBot } from '@/infrastructure/http/isBot';
 import type {
     AnalysisGateBlockedResult,
     OptionsExpirationSelector,
-    OptionsSignalsResult,
 } from '@/domain/types';
 
 /** Final return type — core's options result + our siglens-side gate errors. */
 export type SubmitOptionsAnalysisActionResult =
     | SubmitOptionsAnalysisResult
     | AnalysisGateBlockedResult;
-
-/**
- * Server Action: compute ATM IV, put/call ratio, and max pain for the nearest
- * expiration from the cached snapshot. Returns null when no snapshot exists.
- *
- * The result is intentionally minimal — callers that need per-expiration metrics
- * for all expirations should use `fetchOptionsSnapshot` directly.
- */
-export async function getOptionsSignalsAction(
-    symbol: string
-): Promise<OptionsSignalsResult | null> {
-    try {
-        const snapshot = await fetchOptionsSnapshot(symbol);
-        if (snapshot === null || snapshot.chains.length === 0) return null;
-
-        // chains[0] is provably defined past the length guard above.
-        const nearest = snapshot.chains[0];
-        const summary = summarizeChainForLlm(nearest, snapshot.underlyingPrice);
-        return {
-            atmIv: summary.atmImpliedVolatility,
-            putCallRatio: summary.putCallRatio,
-            maxPain: summary.maxPain,
-            expirationDate: nearest.expirationDate,
-        };
-    } catch (error) {
-        console.error('[getOptionsSignalsAction] fetch failed:', error);
-        return null;
-    }
-}
 
 /**
  * Server Action: tier + BYOK gate, then submit options analysis via siglens-core

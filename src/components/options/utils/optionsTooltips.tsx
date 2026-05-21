@@ -1,12 +1,11 @@
 /**
  * Shared tooltip JSX for options-page metrics.
  *
- * Multiple components surface the same metrics — `OptionsSignalCards`
- * (chart-page chips), `OptionsMetricsRow` (options-tab grid),
- * `OpenInterestChart` (OI distribution chart header), and `OptionsChainTable`
- * (chain table OI column) — so the explanation copy must agree. Centralising
- * the JSX here prevents silent drift when one site is reworded and the others
- * are forgotten.
+ * Multiple components surface the same metrics — `OptionsMetricsRow`
+ * (options-tab grid), `OpenInterestChart` (OI distribution chart header),
+ * and `OptionsChainTable` (chain table OI column) — so the explanation copy
+ * must agree. Centralising the JSX here prevents silent drift when one site
+ * is reworded and the others are forgotten.
  *
  * Each constant is a JSX fragment with multiple `<p>` blocks; consumers
  * render them inside `<InfoTooltip>`.

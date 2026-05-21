@@ -56,8 +56,15 @@ const TOP_OI_STRIKE_COUNT = 3;
 // 인접 strike와 시각적으로 구분되도록 한다.
 const BAR_WIDTH_FILL_RATIO = 0.7;
 
-// strike 개수가 이 임계값을 초과하면 x축 라벨이 겹치므로 -45° 회전.
-const LABEL_ROTATION_THRESHOLD = 14;
+// x축에 동시에 보여줄 라벨 최대 개수. PLTR 같은 weekly + LEAPS 종목은
+// strike 수가 30~50개에 달해 모든 라벨을 그리면 글자가 겹치고 시각적으로
+// 답답해진다. 이 값을 기준으로 균등하게 thinning하고, 현재가·Max Pain·양 끝
+// strike는 항상 표시되도록 보존한다.
+const MAX_X_AXIS_LABELS = 10;
+
+// 라벨 thinning 후에도 글자 길이를 줄여 가독성을 확보하기 위한 회전 임계값.
+// 라벨 개수가 이 임계값 이상이면 -45° 회전한다.
+const LABEL_ROTATION_THRESHOLD = 7;
 
 // x축 라벨을 차트 영역 하단에서 띄울 px 거리. font baseline 위치 보정.
 const X_AXIS_LABEL_OFFSET_PX = 14;
@@ -70,8 +77,36 @@ function barCenterX(index: number, count: number): number {
     return PAD_LEFT + slotWidth * index + slotWidth / 2;
 }
 
+function slotWidth(count: number): number {
+    return CHART_WIDTH / count;
+}
+
 function barWidth(count: number): number {
     return (CHART_WIDTH / count) * BAR_WIDTH_FILL_RATIO;
+}
+
+/**
+ * Decide which strike indices show an x-axis label.
+ *
+ * 균등 stride로 thin 처리하되, 시각적 기준점인 양 끝·현재가·Max Pain
+ * 인덱스는 무조건 포함한다. 결과 Set 크기는 항상 `MAX_X_AXIS_LABELS`
+ * 이하 — stride 계산이 ceil 기반이라 stride 자체로 보장된다.
+ */
+function pickLabelIndices(
+    count: number,
+    anchors: ReadonlyArray<number>
+): Set<number> {
+    if (count <= MAX_X_AXIS_LABELS) {
+        return new Set(Array.from({ length: count }, (_, i) => i));
+    }
+    const stride = Math.ceil(count / MAX_X_AXIS_LABELS);
+    const indices = new Set<number>();
+    for (let i = 0; i < count; i += stride) indices.add(i);
+    indices.add(count - 1);
+    for (const a of anchors) {
+        if (a >= 0 && a < count) indices.add(a);
+    }
+    return indices;
 }
 
 function barPixelHeight(oi: number, maxOi: number): number {
@@ -150,12 +185,17 @@ export function OpenInterestChart({
         derived;
     const count = oiByStrike.length;
     const bw = barWidth(count);
+    const sw = slotWidth(count);
 
     const maxPainX = maxPainIdx >= 0 ? barCenterX(maxPainIdx, count) : null;
     const currentPriceX =
         currentPriceIdx >= 0 ? barCenterX(currentPriceIdx, count) : null;
 
-    const rotateLabels = count > LABEL_ROTATION_THRESHOLD;
+    const labelIndices = pickLabelIndices(count, [
+        maxPainIdx,
+        currentPriceIdx,
+    ]);
+    const rotateLabels = labelIndices.size > LABEL_ROTATION_THRESHOLD;
     const peakOiLabel = fmtOi(globalMax);
 
     return (
@@ -229,6 +269,17 @@ export function OpenInterestChart({
                         globalMax
                     );
                     const putH = barPixelHeight(row.putOpenInterest, globalMax);
+                    const totalOi =
+                        row.callOpenInterest + row.putOpenInterest;
+                    // SVG native tooltip — Strike, Call OI, Put OI, Total 한 줄씩.
+                    // 슬롯 전체 너비의 투명 hit-rect를 깔아 막대 사이 빈 공간도
+                    // hover 가능하게 한다(특히 OI가 한쪽만 있는 strike).
+                    const tooltipText = [
+                        `Strike $${row.strike.toLocaleString()}`,
+                        `Call OI ${row.callOpenInterest.toLocaleString()} 계약`,
+                        `Put OI ${row.putOpenInterest.toLocaleString()} 계약`,
+                        `합계 ${totalOi.toLocaleString()} 계약`,
+                    ].join('\n');
 
                     return (
                         <g key={row.strike}>
@@ -252,6 +303,16 @@ export function OpenInterestChart({
                                     opacity={opacity}
                                 />
                             )}
+                            <rect
+                                x={cx - sw / 2}
+                                y={PAD_TOP}
+                                width={sw}
+                                height={CHART_HEIGHT}
+                                fill="transparent"
+                                pointerEvents="all"
+                            >
+                                <title>{tooltipText}</title>
+                            </rect>
                         </g>
                     );
                 })}
@@ -280,6 +341,7 @@ export function OpenInterestChart({
                 )}
 
                 {oiByStrike.map((row, i) => {
+                    if (!labelIndices.has(i)) return null;
                     const cx = barCenterX(i, count);
                     const labelY =
                         SVG_HEIGHT - PAD_BOTTOM + X_AXIS_LABEL_OFFSET_PX;
