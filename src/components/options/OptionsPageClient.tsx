@@ -9,6 +9,7 @@ import { OptionsAiAnalysis } from '@/components/options/OptionsAiAnalysis';
 import { OptionsAiAnalysisError } from '@/components/options/OptionsAiAnalysisError';
 import { OptionsChainTable } from '@/components/options/OptionsChainTable';
 import { OpenInterestChart } from '@/components/options/OpenInterestChart';
+import { StrikeVolumeChart } from '@/components/options/StrikeVolumeChart';
 import { OptionsMetricsRow } from '@/components/options/OptionsMetricsRow';
 import { useOptionsChainMetrics } from '@/components/options/hooks/useOptionsChainMetrics';
 import type { OptionsSnapshot, SlotMapping } from '@y0ngha/siglens-core';
@@ -75,6 +76,11 @@ export function OptionsPageClient({
                 underlyingPrice={snapshot.underlyingPrice}
                 chain={chainMetrics.chain}
                 metrics={chainMetrics.metrics}
+            />
+
+            <StrikeVolumeChart
+                underlyingPrice={snapshot.underlyingPrice}
+                chain={chainMetrics.chain}
             />
 
             <OptionsChainTable

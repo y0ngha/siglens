@@ -7,20 +7,16 @@ import {
     type CSSProperties,
     type PointerEvent,
 } from 'react';
-import {
-    type OptionsChain,
-    type OptionsExpirationMetrics,
-    aggregateOpenInterest,
-} from '@y0ngha/siglens-core';
+import type { OptionsChain } from '@y0ngha/siglens-core';
 import { InfoTooltip } from '@/components/ui/InfoTooltip';
-import { OpenInterestTooltip } from '@/components/options/utils/optionsTooltips';
+import { VolumeTooltip } from '@/components/options/utils/optionsTooltips';
 import {
     computeTooltipPos,
-    TOOLTIP_ELEMENT_ID,
     TOOLTIP_MIN_WIDTH_PX,
     type TooltipPosition,
 } from '@/components/options/utils/computeTooltipPos';
 import { pickLabelIndices } from '@/components/options/utils/pickLabelIndices';
+import { aggregateStrikeVolume } from '@/components/options/utils/aggregateStrikeVolume';
 import { formatCompactCount } from '@/components/options/utils/formatCompactCount';
 import {
     PEAK_LABEL_TOP_OFFSET_PX,
@@ -33,15 +29,19 @@ import {
 } from '@/components/options/utils/chartStrokeWidths';
 import { findNearestStrikeIndex } from '@/domain/options/findNearestStrike';
 
-interface OpenInterestChartProps {
+interface StrikeVolumeChartProps {
     /** Spot price used to anchor the current-price guide line. */
     underlyingPrice: number;
     /** Chain matching the parent's selected expiration; null when absent. */
     chain: OptionsChain | null;
-    /** Pre-computed metrics — `maxPain` drives the dashed guide line. */
-    metrics: OptionsExpirationMetrics | null;
 }
 
+// SVG 레이아웃 상수는 OpenInterestChart와 동일하게 복제한다 — 두 차트가
+// 나란히 렌더되면서 같은 viewport / 같은 막대 비율을 공유해야 사용자가
+// 두 차트를 비교하는 시선 흐름이 어색해지지 않는다. 상수를 별도 유틸로
+// 빼지 않는 이유: 추후 어느 한쪽 차트의 패딩만 미세조정할 가능성이
+// 충분히 있고, 한 변경이 두 차트에 동시에 영향을 주는 결합도를 미리
+// 만들 필요는 없다.
 const SVG_WIDTH = 600;
 const SVG_HEIGHT = 240;
 const PAD_TOP = 30;
@@ -54,46 +54,33 @@ const CHART_HEIGHT = SVG_HEIGHT - PAD_TOP - PAD_BOTTOM;
 const MIDLINE_Y = PAD_TOP + CHART_HEIGHT / 2;
 const HALF_HEIGHT = CHART_HEIGHT / 2;
 
-// Semantic chart tokens — referenced directly because SVG attributes
-// (`fill`, `stroke`) don't consume Tailwind classes targeting `color`.
-// Max Pain and the current-price line intentionally share `ui-warning`
-// since both communicate "pivot levels worth watching"; the dashed vs
-// solid stroke pattern differentiates them visually.
+// Volume 전용 색상 토큰. OpenInterestChart와 같은 chart-bullish/bearish를
+// 사용해 "Call 위 / Put 아래" 시각 언어를 통일한다.
 const COLOR_CALL = 'var(--color-chart-bullish)';
 const COLOR_PUT = 'var(--color-chart-bearish)';
 const COLOR_GUIDE_LINE = 'var(--color-ui-warning)';
 const COLOR_MIDLINE = 'var(--color-secondary-600)';
 const COLOR_LABEL = 'var(--color-secondary-500)';
 
-const BAR_OPACITY_DEFAULT = 0.7;
-const BAR_OPACITY_TOP_OI = 1;
+const BAR_OPACITY = 0.85;
 
-// 모든 strike의 OI가 0일 때 globalMax 가 0이 되어 barPixelHeight에서
-// 0으로 나누는 경로를 막기 위한 하한값.
-const MIN_OI_SCALE_FLOOR = 1;
+// 모든 strike의 volume이 0일 때 globalMax가 0이 되어 barPixelHeight에서
+// 0으로 나누는 경로를 막기 위한 하한값. OpenInterestChart와 동일 패턴.
+const MIN_VOLUME_SCALE_FLOOR = 1;
 
-// 가장 OI가 두꺼운 상위 N개 strike만 강조해 시각적으로 두드러지게 한다.
-const TOP_OI_STRIKE_COUNT = 3;
-
-// 슬롯 너비 대비 막대 두께 비율 — 슬롯 양쪽에 약간의 간격을 남겨
-// 인접 strike와 시각적으로 구분되도록 한다.
+// 슬롯 너비 대비 막대 두께 비율 — OpenInterestChart와 통일.
 const BAR_WIDTH_FILL_RATIO = 0.7;
 
-// x축에 동시에 보여줄 라벨 최대 개수. PLTR 같은 weekly + LEAPS 종목은
-// strike 수가 30~50개에 달해 모든 라벨을 그리면 글자가 겹치고 시각적으로
-// 답답해진다. 이 값을 기준으로 균등하게 thinning하고, 현재가·Max Pain·양 끝
-// strike는 항상 표시되도록 보존한다.
 const MAX_X_AXIS_LABELS = 10;
-
-// 라벨 thinning 후에도 글자 길이를 줄여 가독성을 확보하기 위한 회전 임계값.
-// 라벨 개수가 이 임계값 이상이면 -45° 회전한다.
 const LABEL_ROTATION_THRESHOLD = 7;
-
-// x축 라벨을 차트 영역 하단에서 띄울 px 거리. font baseline 위치 보정.
 const X_AXIS_LABEL_OFFSET_PX = 14;
-// 가독성을 잃지 않는 한도에서, 회전 라벨은 한 글자만큼 작게 잡는다.
 const ROTATED_LABEL_FONT_SIZE = 8;
 const STRAIGHT_LABEL_FONT_SIZE = 9;
+
+// OpenInterestChart의 `oi-chart-tooltip`과 충돌하지 않도록 자체 id 사용.
+// 두 차트가 같은 페이지에 동시에 렌더되므로 id가 겹치면 `aria-describedby`
+// anchor가 어느 tooltip을 가리키는지 모호해진다.
+const TOOLTIP_ELEMENT_ID = 'volume-chart-tooltip';
 
 function slotWidth(count: number): number {
     return CHART_WIDTH / count;
@@ -104,116 +91,89 @@ function barCenterX(index: number, count: number): number {
     return PAD_LEFT + sw * index + sw / 2;
 }
 
-function barPixelHeight(oi: number, maxOi: number): number {
-    if (maxOi === 0) return 0;
-    return Math.min((oi / maxOi) * HALF_HEIGHT, HALF_HEIGHT);
+function barPixelHeight(volume: number, maxVolume: number): number {
+    if (maxVolume === 0) return 0;
+    return Math.min((volume / maxVolume) * HALF_HEIGHT, HALF_HEIGHT);
 }
 
-export function OpenInterestChart({
+export function StrikeVolumeChart({
     underlyingPrice,
     chain,
-    metrics,
-}: OpenInterestChartProps) {
+}: StrikeVolumeChartProps) {
     const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
     const [tooltipPos, setTooltipPos] = useState<TooltipPosition | null>(null);
     const containerRef = useRef<HTMLDivElement | null>(null);
-    // 컨테이너 DOMRect 캐시. pointerEnter 시 한 번 측정해 두고 pointerMove에서
-    // 재사용한다 — move마다 `getBoundingClientRect`를 부르면 reflow를 매번
-    // 트리거해 마우스가 빠르게 움직일 때 frame drop을 유발한다.
+    // 컨테이너 DOMRect 캐시 — OpenInterestChart와 동일한 reflow 회피 패턴.
     const cachedRectRef = useRef<DOMRect | null>(null);
 
     const derived = useMemo(() => {
         if (!chain) return null;
-        const oiByStrike = aggregateOpenInterest(chain);
-        if (oiByStrike.length === 0) return null;
+        const volumeByStrike = aggregateStrikeVolume(chain);
+        if (volumeByStrike.length === 0) return null;
 
-        const maxPain = metrics?.maxPain ?? null;
-
-        const topOiSet = new Set<number>(
-            oiByStrike
-                .toSorted(
-                    (a, b) =>
-                        b.callOpenInterest +
-                        b.putOpenInterest -
-                        (a.callOpenInterest + a.putOpenInterest)
-                )
-                .slice(0, TOP_OI_STRIKE_COUNT)
-                .map(x => x.strike)
+        // 전 strike의 volume이 모두 0인 케이스(주말·휴장·만기 갱신 직후)는
+        // "차트는 그릴 수 있지만 정보가 0"인 상태이므로 비어있다는 안내로
+        // 대체한다. OI 차트는 OI=0 만기가 거의 없으므로 동일 검사가 없지만,
+        // volume은 휴장 직후 흔히 발생하는 경로.
+        //
+        // raw max를 한 번의 reduce로 구한 뒤 0이면 empty state, 아니면
+        // MIN_VOLUME_SCALE_FLOOR로 클램프해 barPixelHeight의 0 나누기를
+        // 막는다 — 두 번의 순회(some + reduce)를 한 번으로 합쳤다.
+        const globalMaxRaw = volumeByStrike.reduce(
+            (max, s) => Math.max(max, s.callVolume, s.putVolume),
+            0
         );
+        if (globalMaxRaw === 0) return null;
+        const globalMax = Math.max(globalMaxRaw, MIN_VOLUME_SCALE_FLOOR);
 
-        // Single pass through oiByStrike yields the max of either side; the
-        // earlier two-`Math.max(...spread)` form re-iterated and allocated two
-        // intermediate arrays, and spreading large arrays into Math.max risks
-        // hitting the JS engine's argument-length cap on long chains.
-        const globalMax = oiByStrike.reduce(
-            (max, s) => Math.max(max, s.callOpenInterest, s.putOpenInterest),
-            MIN_OI_SCALE_FLOOR
-        );
-
-        const strikes = oiByStrike.map(s => s.strike);
-        // siglens-core R12: maxPain is now `number | null` (was `number` with
-        // NaN sentinel). null → skip the marker entirely; otherwise locate the
-        // closest strike for the dashed guide line.
-        const maxPainIdx =
-            maxPain === null ? -1 : findNearestStrikeIndex(strikes, maxPain);
+        const strikes = volumeByStrike.map(s => s.strike);
         const currentPriceIdx = findNearestStrikeIndex(
             strikes,
             underlyingPrice
         );
 
-        // derived와 같은 메모 경계에서 라벨 인덱스 Set도 한 번에 계산해
-        // hover state가 바뀌어도 Set이 재생성되지 않도록 한다
+        // Max Pain은 OI 개념이므로 volume 차트에는 적합하지 않다. anchors는
+        // 현재가만 강제 포함. derived와 같은 메모 경계에서 한 번에 계산해
+        // hover state가 바뀌어도 라벨 Set이 재생성되지 않도록 한다
         // (MISTAKES.md §10).
         const labelIndices = pickLabelIndices(
-            oiByStrike.length,
-            [maxPainIdx, currentPriceIdx],
+            volumeByStrike.length,
+            [currentPriceIdx],
             MAX_X_AXIS_LABELS
         );
 
         return {
-            oiByStrike,
-            topOiSet,
+            volumeByStrike,
             globalMax,
-            maxPainIdx,
             currentPriceIdx,
             labelIndices,
         };
-    }, [chain, metrics, underlyingPrice]);
+    }, [chain, underlyingPrice]);
 
     if (!derived) {
         return (
             <p className="text-secondary-500 py-4 text-sm">
-                이 만기에는 OI 데이터가 없어요.
+                이 만기에는 거래량 데이터가 없어요.
             </p>
         );
     }
 
-    const {
-        oiByStrike,
-        topOiSet,
-        globalMax,
-        maxPainIdx,
-        currentPriceIdx,
-        labelIndices,
-    } = derived;
-    const count = oiByStrike.length;
+    const { volumeByStrike, globalMax, currentPriceIdx, labelIndices } =
+        derived;
+    const count = volumeByStrike.length;
     const sw = slotWidth(count);
     const bw = sw * BAR_WIDTH_FILL_RATIO;
 
-    // hoveredIndex 가드: oiByStrike가 chip 전환으로 짧아지는 사이에 hover state
-    // 가 stale이 되면 `oiByStrike[hoveredIndex]`가 undefined가 될 수 있다.
-    // `??`로 정규화해 "배열 범위 초과 → null" 의도를 명시(`||`의 암묵적 falsy
-    // 처리에 의존하지 않음 — row 객체는 항상 truthy라 의미 차이는 없지만
-    // 표현이 더 정확하다).
+    // hoveredIndex 가드 — 만기 chip 전환으로 배열이 짧아지는 사이 stale
+    // index가 남아있어도 안전하게 null 처리한다.
     const hoveredRow =
-        hoveredIndex !== null ? (oiByStrike[hoveredIndex] ?? null) : null;
+        hoveredIndex !== null ? (volumeByStrike[hoveredIndex] ?? null) : null;
 
-    const maxPainX = maxPainIdx >= 0 ? barCenterX(maxPainIdx, count) : null;
     const currentPriceX =
         currentPriceIdx >= 0 ? barCenterX(currentPriceIdx, count) : null;
 
     const rotateLabels = labelIndices.size > LABEL_ROTATION_THRESHOLD;
-    const peakOiLabel = formatCompactCount(globalMax);
+    const peakVolumeLabel = formatCompactCount(globalMax);
 
     const handlePointerEnter = (
         event: PointerEvent<SVGRectElement>,
@@ -232,9 +192,8 @@ export function OpenInterestChart({
         index: number
     ): void => {
         const rect = cachedRectRef.current;
-        // enter 핸들러가 캐시를 채우기 전에 move가 발사되는 경로(예: 모바일
-        // touchmove)에서는 한 번 측정해 즉시 캐시한다 — 이후 move부터는
-        // 캐시된 rect만 사용해 reflow 비용 없음.
+        // enter 전에 move가 먼저 발사되는 모바일 touchmove 경로 대응 —
+        // 한 번 측정해 캐시한 뒤 이후 move부터는 캐시만 읽는다.
         if (rect === null) {
             const container = containerRef.current;
             if (!container) return;
@@ -261,21 +220,21 @@ export function OpenInterestChart({
         >
             <div className="flex items-center gap-1">
                 <span className="text-secondary-300 text-sm font-medium">
-                    Open Interest 분포 (Strike별)
+                    Volume 분포 (Strike별)
                 </span>
-                <InfoTooltip>{OpenInterestTooltip}</InfoTooltip>
+                <InfoTooltip>{VolumeTooltip}</InfoTooltip>
             </div>
 
             <svg
                 viewBox={`0 0 ${SVG_WIDTH} ${SVG_HEIGHT}`}
                 role="img"
-                aria-labelledby="oi-chart-title oi-chart-desc"
+                aria-labelledby="volume-chart-title volume-chart-desc"
                 className="block w-full"
             >
-                <title id="oi-chart-title">Strike별 Open Interest 분포</title>
-                <desc id="oi-chart-desc">
-                    Call과 Put의 만기별 OI를 strike 가격대별로 막대그래프로
-                    표시합니다. Max Pain과 현재 주가는 세로선으로 강조됩니다.
+                <title id="volume-chart-title">Strike별 거래량 분포</title>
+                <desc id="volume-chart-desc">
+                    Call과 Put의 오늘 거래량을 strike 가격대별로 막대그래프로
+                    표시합니다. 현재 주가는 세로선으로 강조됩니다.
                 </desc>
 
                 <line
@@ -294,7 +253,7 @@ export function OpenInterestChart({
                     fontSize={STRAIGHT_LABEL_FONT_SIZE}
                     textAnchor="start"
                 >
-                    {peakOiLabel}
+                    {peakVolumeLabel}
                 </text>
 
                 <text
@@ -304,7 +263,7 @@ export function OpenInterestChart({
                     fontSize={STRAIGHT_LABEL_FONT_SIZE}
                     textAnchor="start"
                 >
-                    ▲ Call OI
+                    ▲ Call Vol
                 </text>
 
                 <text
@@ -314,41 +273,34 @@ export function OpenInterestChart({
                     fontSize={STRAIGHT_LABEL_FONT_SIZE}
                     textAnchor="start"
                 >
-                    ▼ Put OI
+                    ▼ Put Vol
                 </text>
 
-                {oiByStrike.map((row, i) => {
+                {volumeByStrike.map((row, i) => {
                     const cx = barCenterX(i, count);
-                    const isTopOi = topOiSet.has(row.strike);
-                    const opacity = isTopOi
-                        ? BAR_OPACITY_TOP_OI
-                        : BAR_OPACITY_DEFAULT;
-                    const callH = barPixelHeight(
-                        row.callOpenInterest,
-                        globalMax
-                    );
-                    const putH = barPixelHeight(row.putOpenInterest, globalMax);
+                    const callH = barPixelHeight(row.callVolume, globalMax);
+                    const putH = barPixelHeight(row.putVolume, globalMax);
 
                     return (
                         <g key={row.strike}>
-                            {row.callOpenInterest > 0 && (
+                            {row.callVolume > 0 && (
                                 <rect
                                     x={cx - bw / 2}
                                     y={MIDLINE_Y - callH}
                                     width={bw}
                                     height={callH}
                                     fill={COLOR_CALL}
-                                    opacity={opacity}
+                                    opacity={BAR_OPACITY}
                                 />
                             )}
-                            {row.putOpenInterest > 0 && (
+                            {row.putVolume > 0 && (
                                 <rect
                                     x={cx - bw / 2}
                                     y={MIDLINE_Y}
                                     width={bw}
                                     height={putH}
                                     fill={COLOR_PUT}
-                                    opacity={opacity}
+                                    opacity={BAR_OPACITY}
                                 />
                             )}
                             <rect
@@ -368,18 +320,6 @@ export function OpenInterestChart({
                     );
                 })}
 
-                {maxPainX !== null && (
-                    <line
-                        x1={maxPainX}
-                        y1={PAD_TOP}
-                        x2={maxPainX}
-                        y2={SVG_HEIGHT - PAD_BOTTOM}
-                        stroke={COLOR_GUIDE_LINE}
-                        strokeWidth={GUIDE_LINE_STROKE_WIDTH}
-                        strokeDasharray="4 4"
-                    />
-                )}
-
                 {currentPriceX !== null && (
                     <line
                         x1={currentPriceX}
@@ -391,7 +331,7 @@ export function OpenInterestChart({
                     />
                 )}
 
-                {oiByStrike.map((row, i) => {
+                {volumeByStrike.map((row, i) => {
                     if (!labelIndices.has(i)) return null;
                     const cx = barCenterX(i, count);
                     const labelY =
@@ -429,20 +369,15 @@ export function OpenInterestChart({
             </svg>
 
             {/* `aria-describedby`가 가리키는 대상은 항상 DOM에 있어야 한다.
-                `hidden` 속성으로 숨기면 접근성 트리에서도 제거되어 screen
-                reader가 참조를 따라올 수 없지만, 하단 `sr-only` 테이블이
-                전체 OI 데이터를 제공하므로 이 pointer-only tooltip에서는
-                허용 가능한 트레이드오프다. */}
+                `hidden`으로 숨기면 접근성 트리에서도 빠지지만, 하단 sr-only
+                테이블이 전체 volume 데이터를 제공하므로 이 pointer-only
+                tooltip에서는 허용 가능한 트레이드오프다. */}
             <div
                 id={TOOLTIP_ELEMENT_ID}
                 role="tooltip"
                 hidden={hoveredRow === null || tooltipPos === null}
                 className="border-secondary-600 bg-secondary-900/95 text-secondary-100 pointer-events-none absolute top-[var(--tooltip-y)] left-[var(--tooltip-x)] z-10 min-w-[var(--tooltip-min-w)] -translate-x-1/2 -translate-y-full rounded-md border px-3 py-2 text-xs shadow-lg backdrop-blur"
                 style={
-                    // CSS 커스텀 프로퍼티(--*)는 런타임에 유효하나 React의
-                    // CSSProperties 타입은 임의 `--*` 키를 포함하지 않아
-                    // 인덱스 시그니처가 막힘 — TS 한계 우회용 cast이며
-                    // 런타임 리스크는 없다.
                     {
                         '--tooltip-x': `${tooltipPos?.x ?? 0}px`,
                         '--tooltip-y': `${tooltipPos?.y ?? 0}px`,
@@ -456,25 +391,22 @@ export function OpenInterestChart({
                             Strike ${hoveredRow.strike.toLocaleString()}
                         </div>
                         <div className="flex items-center justify-between gap-3">
-                            <span className="text-chart-bullish">Call OI</span>
+                            <span className="text-chart-bullish">Call Vol</span>
                             <span className="tabular-nums">
-                                {hoveredRow.callOpenInterest.toLocaleString()}{' '}
-                                계약
+                                {hoveredRow.callVolume.toLocaleString()} 계약
                             </span>
                         </div>
                         <div className="flex items-center justify-between gap-3">
-                            <span className="text-chart-bearish">Put OI</span>
+                            <span className="text-chart-bearish">Put Vol</span>
                             <span className="tabular-nums">
-                                {hoveredRow.putOpenInterest.toLocaleString()}{' '}
-                                계약
+                                {hoveredRow.putVolume.toLocaleString()} 계약
                             </span>
                         </div>
                         <div className="border-secondary-700 mt-1 flex items-center justify-between gap-3 border-t pt-1">
                             <span className="text-secondary-400">합계</span>
                             <span className="font-semibold tabular-nums">
                                 {(
-                                    hoveredRow.callOpenInterest +
-                                    hoveredRow.putOpenInterest
+                                    hoveredRow.callVolume + hoveredRow.putVolume
                                 ).toLocaleString()}{' '}
                                 계약
                             </span>
@@ -489,21 +421,14 @@ export function OpenInterestChart({
                         className="bg-chart-bullish inline-block h-2.5 w-2.5 rounded-sm"
                         aria-hidden="true"
                     />
-                    Call OI
+                    Call Vol
                 </span>
                 <span className="flex items-center gap-1">
                     <span
                         className="bg-chart-bearish inline-block h-2.5 w-2.5 rounded-sm"
                         aria-hidden="true"
                     />
-                    Put OI
-                </span>
-                <span className="flex items-center gap-1">
-                    <span
-                        className="border-ui-warning inline-block w-[14px] border-t-[1.5px] border-dashed"
-                        aria-hidden="true"
-                    />
-                    Max Pain
+                    Put Vol
                 </span>
                 <span className="flex items-center gap-1">
                     <span
@@ -515,20 +440,20 @@ export function OpenInterestChart({
             </div>
 
             <table className="sr-only">
-                <caption>Strike별 Open Interest 데이터</caption>
+                <caption>Strike별 거래량 데이터</caption>
                 <thead>
                     <tr>
                         <th scope="col">Strike</th>
-                        <th scope="col">Call OI</th>
-                        <th scope="col">Put OI</th>
+                        <th scope="col">Call Volume</th>
+                        <th scope="col">Put Volume</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {oiByStrike.map(row => (
+                    {volumeByStrike.map(row => (
                         <tr key={row.strike}>
                             <td>{row.strike}</td>
-                            <td>{row.callOpenInterest}</td>
-                            <td>{row.putOpenInterest}</td>
+                            <td>{row.callVolume}</td>
+                            <td>{row.putVolume}</td>
                         </tr>
                     ))}
                 </tbody>

@@ -66,3 +66,13 @@ export const OpenInterestTooltip = (
         </p>
     </>
 );
+
+export const VolumeTooltip = (
+    <>
+        <p>오늘 새로 체결된 옵션 계약 수예요.</p>
+        <p>
+            OI(누적 베팅)와 Volume(오늘의 활동)을 함께 보면 시장이 어느 가격대로
+            새로 움직이고 있는지 짚어볼 수 있어요.
+        </p>
+    </>
+);
