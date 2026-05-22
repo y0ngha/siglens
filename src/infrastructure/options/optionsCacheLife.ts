@@ -1,4 +1,4 @@
-import { etParts, isUsOptionsRegularSession } from '@/domain/market/session';
+import { getEtSessionStatus } from '@/domain/market/session';
 
 export type OptionsCacheLifeProfile =
     | 'options-market-open'
@@ -16,14 +16,7 @@ export type OptionsCacheLifeProfile =
 export function getOptionsCacheLifeProfile(
     now: Date = new Date()
 ): OptionsCacheLifeProfile {
-    // `etParts` is invoked twice on the weekday path (once here, once inside
-    // `isUsOptionsRegularSession`). The Intl.DateTimeFormat is a cached
-    // singleton so the marginal cost is negligible; we keep the delegation
-    // to `isUsOptionsRegularSession` for single-source-of-truth on the
-    // session boundary rather than inlining `totalMin` math here.
-    const { weekdayIndex } = etParts(now);
-    if (weekdayIndex === 0 || weekdayIndex === 6) return 'options-weekend';
-    return isUsOptionsRegularSession(now)
-        ? 'options-market-open'
-        : 'options-market-closed';
+    const status = getEtSessionStatus(now);
+    if (status === 'weekend') return 'options-weekend';
+    return status === 'open' ? 'options-market-open' : 'options-market-closed';
 }

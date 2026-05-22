@@ -13,9 +13,13 @@
 
 import {
     etParts,
+    getEtSessionStatus,
     hasAllZeroOpenInterest,
     isUsOptionsRegularSession,
     lookupWeekday,
+    MARKET_CLOSE_HOUR,
+    MARKET_OPEN_HOUR,
+    MARKET_OPEN_MINUTE,
     normalizeHour,
 } from '@/domain/market/session';
 import type {
@@ -88,17 +92,26 @@ describe('isUsOptionsRegularSession — weekend', () => {
 
 describe('isUsOptionsRegularSession — weekday in regular session (EDT)', () => {
     it('returns true at 09:30 ET (opening boundary)', () => {
-        // 2026-05-20 Wed. 09:30 EDT = 13:30 UTC.
-        expect(
-            isUsOptionsRegularSession(new Date('2026-05-20T13:30:00Z'))
-        ).toBe(true);
+        // 2026-05-20 Wed. EDT: UTC = ET + 4h. 상수 기반 파생으로 hardcoded
+        // boundary 값이 session.ts와 어긋날 가능성을 차단.
+        const edtOpenUtcHour = MARKET_OPEN_HOUR + 4;
+        const edtOpenUtcDate = new Date(
+            `2026-05-20T${String(edtOpenUtcHour).padStart(2, '0')}:${String(
+                MARKET_OPEN_MINUTE
+            ).padStart(2, '0')}:00Z`
+        );
+        expect(isUsOptionsRegularSession(edtOpenUtcDate)).toBe(true);
     });
 
     it('returns true at 16:00 ET (closing boundary, inclusive)', () => {
-        // 2026-05-20 Wed. 16:00 EDT = 20:00 UTC.
-        expect(
-            isUsOptionsRegularSession(new Date('2026-05-20T20:00:00Z'))
-        ).toBe(true);
+        // 2026-05-20 Wed. EDT: UTC = ET + 4h. 상수 기반 파생으로 hardcoded
+        // boundary 값이 session.ts와 어긋날 가능성을 차단. 마감은 정각이라
+        // 분은 인라인 '00' 유지.
+        const edtCloseUtcHour = MARKET_CLOSE_HOUR + 4;
+        const edtCloseUtcDate = new Date(
+            `2026-05-20T${String(edtCloseUtcHour).padStart(2, '0')}:00:00Z`
+        );
+        expect(isUsOptionsRegularSession(edtCloseUtcDate)).toBe(true);
     });
 
     it('returns true at 12:00 ET (midday)', () => {
@@ -111,17 +124,26 @@ describe('isUsOptionsRegularSession — weekday in regular session (EDT)', () =>
 
 describe('isUsOptionsRegularSession — weekday in regular session (EST)', () => {
     it('returns true at 09:30 ET (opening boundary)', () => {
-        // 2026-12-15 Tue. 09:30 EST = 14:30 UTC.
-        expect(
-            isUsOptionsRegularSession(new Date('2026-12-15T14:30:00Z'))
-        ).toBe(true);
+        // 2026-12-15 Tue. EST: UTC = ET + 5h. 상수 기반 파생으로 hardcoded
+        // boundary 값이 session.ts와 어긋날 가능성을 차단.
+        const estOpenUtcHour = MARKET_OPEN_HOUR + 5;
+        const estOpenUtcDate = new Date(
+            `2026-12-15T${String(estOpenUtcHour).padStart(2, '0')}:${String(
+                MARKET_OPEN_MINUTE
+            ).padStart(2, '0')}:00Z`
+        );
+        expect(isUsOptionsRegularSession(estOpenUtcDate)).toBe(true);
     });
 
     it('returns true at 16:00 ET (closing boundary, inclusive)', () => {
-        // 2026-12-15 Tue. 16:00 EST = 21:00 UTC.
-        expect(
-            isUsOptionsRegularSession(new Date('2026-12-15T21:00:00Z'))
-        ).toBe(true);
+        // 2026-12-15 Tue. EST: UTC = ET + 5h. 상수 기반 파생으로 hardcoded
+        // boundary 값이 session.ts와 어긋날 가능성을 차단. 마감은 정각이라
+        // 분은 인라인 '00' 유지.
+        const estCloseUtcHour = MARKET_CLOSE_HOUR + 5;
+        const estCloseUtcDate = new Date(
+            `2026-12-15T${String(estCloseUtcHour).padStart(2, '0')}:00:00Z`
+        );
+        expect(isUsOptionsRegularSession(estCloseUtcDate)).toBe(true);
     });
 
     it('returns true at 12:00 ET (midday)', () => {
@@ -255,6 +277,27 @@ describe('hasAllZeroOpenInterest', () => {
         // 비어 있는 응답 자체가 정상 데이터가 아니므로 영향이 제한적이다.
         const snapshot = makeSnapshot([]);
         expect(hasAllZeroOpenInterest(snapshot)).toBe(true);
+    });
+});
+
+describe('getEtSessionStatus', () => {
+    it('주말 ET는 weekend를 반환한다', () => {
+        // 2026-05-23 Saturday 09:30 EDT = 13:30 UTC.
+        expect(getEtSessionStatus(new Date('2026-05-23T13:30:00Z'))).toBe(
+            'weekend'
+        );
+    });
+    it('평일 정규장 시간은 open을 반환한다', () => {
+        // 2026-05-20 Wed 09:30 EDT = 13:30 UTC.
+        expect(getEtSessionStatus(new Date('2026-05-20T13:30:00Z'))).toBe(
+            'open'
+        );
+    });
+    it('평일이지만 정규장 외 시간은 closed를 반환한다', () => {
+        // 2026-05-20 Wed 03:00 EDT = 07:00 UTC.
+        expect(getEtSessionStatus(new Date('2026-05-20T07:00:00Z'))).toBe(
+            'closed'
+        );
     });
 });
 

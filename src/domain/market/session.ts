@@ -39,7 +39,7 @@ const ET_PARTS_FORMATTER = new Intl.DateTimeFormat('en-US', {
     hour12: false,
 });
 
-export interface EtParts {
+interface EtParts {
     weekdayIndex: number; // 0 = Sunday … 6 = Saturday
     hour: number;
     minute: number;
@@ -70,10 +70,10 @@ export function etParts(now: Date): EtParts {
     // Declarative form preferred over let+for mutation. 'hour12: false' usually
     // emits '00'–'23', but some runtimes (e.g. locales with hourCycle 'h23' such
     // as de-DE on certain ICU versions) emit '24' at midnight as a defensive
-    // edge case. We can't trigger this from a unit test without stubbing the
-    // ICU formatter itself (V8's en-US always returns '00'–'23'), so the
-    // `parsed === 24 ? 0` branch is intentionally untested — keeping it as a
-    // belt-and-suspenders guard against host-locale drift.
+    // edge case. `normalizeHour` 추출 이후 24 → 0 정규화 로직은 직접 단위 테스트로
+    // 검증된다. V8 en-US 환경에서는 ICU formatter가 항상 '00'–'23'을 emit하므로
+    // etParts 안에서 이 분기를 trigger할 수는 없지만, 다른 ICU locale 변화에
+    // 대비한 defensive guard로 normalizeHour를 통해 격리·검증한다.
     return ET_PARTS_FORMATTER.formatToParts(now).reduce<EtParts>(
         (acc, part) => {
             if (part.type === 'weekday') {
@@ -95,6 +95,18 @@ export function etParts(now: Date): EtParts {
     );
 }
 
+export type EtSessionStatus = 'weekend' | 'open' | 'closed';
+
+/** Classify the current ET moment as weekend / regular-session-open / closed-but-weekday. */
+export function getEtSessionStatus(now: Date): EtSessionStatus {
+    const { weekdayIndex, hour, minute } = etParts(now);
+    if (weekdayIndex === 0 || weekdayIndex === 6) return 'weekend';
+    const totalMin = hour * MINUTES_PER_HOUR + minute;
+    if (totalMin >= MARKET_OPEN_MIN && totalMin <= MARKET_CLOSE_MIN)
+        return 'open';
+    return 'closed';
+}
+
 /**
  * `true` when `now` is inside U.S. equity options regular session
  * (ET Mon–Fri 09:30–16:00). DST-safe — the Intl formatter resolves EDT/EST
@@ -104,10 +116,7 @@ export function etParts(now: Date): EtParts {
  * stays deterministic and tests can freeze the clock without mocking.
  */
 export function isUsOptionsRegularSession(now: Date): boolean {
-    const { weekdayIndex, hour, minute } = etParts(now);
-    if (weekdayIndex === 0 || weekdayIndex === 6) return false;
-    const totalMin = hour * MINUTES_PER_HOUR + minute;
-    return totalMin >= MARKET_OPEN_MIN && totalMin <= MARKET_CLOSE_MIN;
+    return getEtSessionStatus(now) === 'open';
 }
 
 /**
