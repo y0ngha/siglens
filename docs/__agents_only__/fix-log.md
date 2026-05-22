@@ -65,8 +65,6 @@
   - Rule: MISTAKES.md §20 / CONVENTIONS.md FP — 클로저 의존이 없는 헬퍼는 module-level로.
 - S2: 같은 파일 — `const rawX = event.clientX - rect.left` 위 "viewport 기준 좌표 → container 기준 좌표" 코멘트가 WHAT. 제거. 그 아래 클램핑 WHY 코멘트는 유지.
   - Rule: MISTAKES.md §15.3 — WHAT 코멘트 금지.
-- S3: 같은 파일 — `as CSSProperties` safe-cast에 guarantee 주석 추가. CSS 커스텀 프로퍼티(--*)는 런타임 유효하지만 React `CSSProperties` 타입에 포함 안 되는 TS 한계 우회임을 명시.
-  - Rule: MISTAKES.md TypeScript §7 — 모든 safe-cast `as`에 guarantee 주석 필수.
 - S4: 같은 파일 — hit-rect의 `aria-describedby={TOOLTIP_ELEMENT_ID}`가 가리키는 tooltip div가 hover 시에만 조건부 렌더링되어 스크린리더가 anchor를 찾지 못함. tooltip div를 항상 DOM에 두고 비활성 시 `hidden` 속성으로 숨기는 WAI-ARIA tooltip 패턴 적용. 내부 컨텐츠는 hoveredRow가 있을 때만 렌더.
   - Rule: WAI-ARIA tooltip 패턴 — describedby anchor는 항상 DOM에 있어야 한다.
 
@@ -333,10 +331,6 @@
 - Rule: MISTAKES.md #13 — eslint-disable suppresses lint warnings instead of fixing root cause; restructure code to eliminate the warning
 - Context: Partial React Query refactor reverted; poll/cooldown use async-IIFE patterns where setState happens inside callback, not synchronously in effect body. Pattern does not trigger rule because setState is wrapped in async callback scope.
 
-## [PR #413 R18 | feat/fundamental-news-analysis | 2026-05-03]
-- Violation: NewsDisplayItem.sentiment and .category were `string | null`, losing type safety
-- Rule: MISTAKES.md TypeScript 7 — Using `as` type assertions instead of type guards; DB columns backed by domain enums must be cast at repository boundary
-- Context: Now typed `NewsSentiment | null` / `NewsCategory | null` from @y0ngha/siglens-core with trust model comment in toNewsRow: "DB는 sentiment/category를 raw text로 저장하므로 LLM 결과를 신뢰해 좁혀준다."
 ## [Phase 7 OAuth Consent Flow | Spec compliance R2 | 2026-05-04]
 - Violation: finalizeOAuthSignupAction.ts variable `let createdUserId` may be uninitialized from TypeScript perspective when returned
 - Rule: MISTAKES.md Coding Paradigm 0 — Non-null return type implies value is always assigned; use const + ternary/null coalescing
@@ -378,6 +372,37 @@
 - Context: Suggestion — `OpenInterestChart.tsx` `oiByStrike.reduce(sum, 0) === 0` 가드를 `oiByStrike.every(s => s.callOpenInterest === 0 && s.putOpenInterest === 0)` 으로 교체.
 
 
+## [PR #449 Round 1 | feat/db-neon-transient-retry | 2026-05-22]
+- Violation: `jest.mock(...)` 호출이 정적 `import` 사이에 끼어 있어 `import/first` ESLint 규칙 위반
+- Rule: ESLint `import/first` — 모든 정적 import는 파일 최상단에 연속으로 위치해야 하며, 그 사이에 다른 statement가 끼어들 수 없음. `jest.mock`은 호이스트되므로 import보다 위에 두는 게 안전
+- Context: Blocker — `src/__tests__/lib/withRetry.test.ts`에 `import { withRetry } ... → jest.mock(...) → import { sleep } ...` 순서. `jest.mock`을 파일 최상단으로 옮기고 두 import를 하나로 묶음.
+- Violation: 인프라성 retry 헬퍼(`withRetry`)가 `src/lib/`에 배치 — sleep 타이밍·재시도 정책 등 infrastructure 관심사인데도 UI utility 전용 레이어에 거주
+- Rule: ARCHITECTURE.md / lib CLAUDE.md — `lib/`는 외부 UI utility wrapper(clsx, tailwind-merge 등)와 순수 상수/팩토리만 허용. retry/backoff 같은 infrastructure 유틸은 `infrastructure/utils/`로 배치
+- Context: Suggestion — `src/lib/withRetry.ts` → `src/infrastructure/utils/withRetry.ts`, 테스트 동반 이동. 6개 repository + isNeonTransientError import 경로 갱신.
+- Violation: `Pick<T, K>`로 `T`의 *모든* 키를 지정 — 결과 타입이 `T`와 동일해 정보 손실 없이 boilerplate만 추가
+- Rule: TypeScript 타입 표현 최소성 — `Pick<T, 'a' | 'b' | 'c'>`가 `T = { a; b; c }`와 같은 형태라면 그냥 `T`로 표기. `Pick`은 *일부 키만* 선택할 때 의미가 있음
+- Context: Suggestion — `NEON_TRANSIENT_RETRY: Pick<WithRetryOptions, 'maxRetries' | 'baseDelayMs' | 'isRetryable'>` 가 `WithRetryOptions`의 모든 필드와 동일. `: WithRetryOptions` 로 단순화.
+
+
+## [PR #449 Round 1 follow-up | feat/db-neon-transient-retry | 2026-05-22]
+- Violation: jsdom 환경 jest 테스트에서 `@neondatabase/serverless`가 transitively import되면 `TextDecoder is not defined`로 실패 — pre-push hook이 차단해 R1을 push 못 함
+- Rule: 테스트 환경 호환성 — Node가 노출하는 전역(`TextDecoder`/`TextEncoder`)이 jsdom env에는 기본 노출되지 않음. 외부 라이브러리가 모듈 로드 시점에 이를 참조하면 import 체인 어디든 deep에서도 jsdom 테스트가 죽음
+- Context: 회귀 — PR #449 원본 커밋(b37060b5)에서 `isNeonTransientError → @neondatabase/serverless` 체인이 도입돼 `userRepository`까지 transitively 흘러갔고, `ContactForm.test.tsx`(jsdom) → `useCurrentUser` → ... → `userRepository` 체인에서 폭발. CI는 Jest workflow가 없어 처음 push 때 통과한 듯. `jest.setup.ts`에서 `globalThis.TextDecoder/TextEncoder`가 undefined일 때만 Node `util` 구현으로 폴리필. 사용자 결정으로 R1과 함께 같은 push에 동봉(별도 커밋).
+
+
+## [PR #449 Round 2 | feat/db-neon-transient-retry | 2026-05-22]
+- Violation: 같은 PR 안에서 jest.mock 배치 패턴이 두 파일 간 다름 (한쪽은 import 위, 다른 쪽은 import 사이)
+- Rule: FF Cohesion — 같은 idiom은 같은 형태로 통일
+- Context: Suggestion 1 — `newsRepository.test.ts`의 `jest.mock('@/lib/sleep', ...)`을 imports 위로 이동. `withRetry.test.ts`와 일치.
+- Violation: 공유 wrapper(`withRetry` + `NEON_TRANSIENT_RETRY`) 통합이 6개 repository에 적용됐는데 wire-up smoke test가 1개 repo만 커버
+- Rule: 통합 일관성 — 같은 패턴으로 wire-up된 N개 사이트는 동일한 smoke 테스트 깊이로 검증되어야 reviewer가 회귀 가능성을 일관되게 인식
+- Context: Suggestion 2 — R1에서 reject했던 항목을 R2에서 reviewer가 재요청, 사용자 결정으로 적용. earningsReports/terms/ticker/userApiKey/userRepository 5개 test 파일에 minimal "transient retry success + non-transient immediate throw" 케이스 추가. ticker 는 KoreanTicker.upsertMany, userRepository 는 createEmailUser 를 대표 site 로 선정 — 동일 wrapper 패턴이므로 대표 1개 검증으로 충분.
+
+
+## [PR #449 Round 3 | feat/db-neon-transient-retry | 2026-05-22]
+- Violation: 테스트 헬퍼에 불필요한 intersection 캐스트(`as Error & { name: string }`) — `Error.name`은 이미 lib 정의상 writable
+- Rule: FF Readability — 동일 동작을 달성하는 더 단순한 표현이 있다면 그것을 선택
+- Context: Suggestion 2 — `isNeonTransientError.test.ts`의 `makeNeonError`에서 intersection 캐스트 제거. `const err = new Error(message); err.name = 'NeonDbError';` 직접 할당으로 단순화.
 ## [PR #450 Round 1 | refactor/chat-build-chat-state | 2026-05-22]
 - Violation: 부모/자식 컴포넌트가 동일한 publish 훅(`usePublishSymbolChat`)을 각각 호출해 mount 시 자식 effect가 먼저 실행된 뒤 부모 effect가 valid state를 `WAITING_CHAT_STATE`(null)로 덮어쓰는 race condition
 - Rule: FF Predictability / Components §publish — 동일 publish channel에는 단일 호출 사이트만 둔다. parent/child 양쪽 publish는 mount-order race를 유발하므로 child wrapper를 제거하고 parent에서 conditional `chatState`로 통합.

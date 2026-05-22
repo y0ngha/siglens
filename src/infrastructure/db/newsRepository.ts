@@ -6,9 +6,11 @@ import type {
     NewsItem,
     NewsSentiment,
 } from '@y0ngha/siglens-core';
+import { NEON_TRANSIENT_RETRY } from '@/infrastructure/db/isNeonTransientError';
 import { news } from '@/infrastructure/db/schema';
 import type { SiglensDatabase } from '@/infrastructure/db/types';
 import type { NewsDisplayItem } from '@/domain/types';
+import { withRetry } from '@/infrastructure/utils/withRetry';
 
 /** Domain-level row returned from the `news` table; extends the display projection with persistence-only fields. */
 export interface NewsRow extends NewsDisplayItem {
@@ -25,35 +27,43 @@ export class DrizzleNewsRepository {
 
     // Identity fields only on conflict — analysis columns (titleKo, sentiment, etc.) are written by attachAnalysis.
     async upsertNewsItem(item: NewsItem): Promise<void> {
-        await this.db
-            .insert(news)
-            .values({
-                id: item.id,
-                symbol: item.symbol,
-                source: item.source,
-                url: item.url,
-                publishedAt: new Date(item.publishedAt),
-                titleEn: item.titleEn,
-                bodyEn: item.bodyEn ?? null,
-            })
-            /**
-             * bodyKo intentionally NOT in the conflict update — it is
-             * write-once via attachAnalysis() (the LLM translation step) to
-             * avoid overwriting LLM-translated content with raw English on
-             * every FMP refetch. The same reasoning applies to titleKo,
-             * summaryKo, sentiment, category, priceImpact, and analyzedAt:
-             * those columns belong to the analysis step, not the fetch step.
-             */
-            .onConflictDoUpdate({
-                target: news.id,
-                set: {
-                    symbol: sql`excluded.symbol`,
-                    source: sql`excluded.source`,
-                    publishedAt: sql`excluded.published_at`,
-                    titleEn: sql`excluded.title_en`,
-                    bodyEn: sql`excluded.body_en`,
-                },
-            });
+        // Wrapped in withRetry: the Neon HTTP driver intermittently throws
+        // `fetch failed` on connection recycling; retrying transparently
+        // keeps single-item dropouts from leaving news cards permanently
+        // un-upserted in the 250-item batch.
+        await withRetry(
+            () =>
+                this.db
+                    .insert(news)
+                    .values({
+                        id: item.id,
+                        symbol: item.symbol,
+                        source: item.source,
+                        url: item.url,
+                        publishedAt: new Date(item.publishedAt),
+                        titleEn: item.titleEn,
+                        bodyEn: item.bodyEn ?? null,
+                    })
+                    /**
+                     * bodyKo intentionally NOT in the conflict update — it is
+                     * write-once via attachAnalysis() (the LLM translation step) to
+                     * avoid overwriting LLM-translated content with raw English on
+                     * every FMP refetch. The same reasoning applies to titleKo,
+                     * summaryKo, sentiment, category, priceImpact, and analyzedAt:
+                     * those columns belong to the analysis step, not the fetch step.
+                     */
+                    .onConflictDoUpdate({
+                        target: news.id,
+                        set: {
+                            symbol: sql`excluded.symbol`,
+                            source: sql`excluded.source`,
+                            publishedAt: sql`excluded.published_at`,
+                            titleEn: sql`excluded.title_en`,
+                            bodyEn: sql`excluded.body_en`,
+                        },
+                    }),
+            NEON_TRANSIENT_RETRY
+        );
     }
 
     async attachAnalysis(

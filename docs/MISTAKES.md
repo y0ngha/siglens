@@ -627,7 +627,14 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     ❌ deleteAccountAction(oauthAccounts, oauthRevoker) added, but test asserts deleteAccountAction called without verifying deps passed
     ✅ Assertion explicitly checks both oauthAccounts and oauthRevoker are included in the deps passed
 
-17. New threshold/conditional branch introduced without test cases covering both true and false paths
+17. `jest.mock(...)` placed between static imports — `import/first` ESLint violation
+    → All static `import` statements must be contiguous at the very top of the file
+    → `jest.mock(...)` is hoisted by Jest's babel transform, so placing it ABOVE imports is safe and idiomatic
+    → Never sandwich `jest.mock(...)` between two `import` statements — splits the import block and trips `import/first`
+    ❌ `import { withRetry } from '...'; jest.mock('@/lib/sleep', ...); import { sleep } from '@/lib/sleep';`
+    ✅ `jest.mock('@/lib/sleep', ...); import { withRetry } from '...'; import { sleep } from '@/lib/sleep';`
+
+18. New threshold/conditional branch introduced without test cases covering both true and false paths
     → When a function adds a new `if (value < THRESHOLD)` check, tests must explicitly verify the branch-taken case (value below threshold) and branch-not-taken case (value at/above threshold)
     → Testing only the normal (non-threshold) case leaves the new branch untested and vulnerable to regression
     → Boundary test cases: values just below and just above the threshold

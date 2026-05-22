@@ -1,5 +1,6 @@
 import type { LlmProvider } from '@/domain/llm';
 import { and, eq, sql } from 'drizzle-orm';
+import { NEON_TRANSIENT_RETRY } from '@/infrastructure/db/isNeonTransientError';
 import { userApiKeys } from '@/infrastructure/db/schema';
 import type { SiglensDatabase } from '@/infrastructure/db/types';
 import {
@@ -13,6 +14,7 @@ import type {
     UserApiKeyRecord,
     UserApiKeyRepository,
 } from '@/infrastructure/db/types';
+import { withRetry } from '@/infrastructure/utils/withRetry';
 
 /**
  * Thrown when a stored ciphertext exists but cannot be decrypted with the
@@ -75,18 +77,22 @@ export class DrizzleUserApiKeyRepository implements UserApiKeyRepository {
         const encryptionKey = requireLlmEncryptionKey();
         const encryptedApiKey = encryptToken(input.apiKey, encryptionKey);
 
-        const [row] = await this.db
-            .insert(userApiKeys)
-            .values({
-                userId: input.userId,
-                provider: input.provider,
-                encryptedApiKey,
-            })
-            .onConflictDoUpdate({
-                target: [userApiKeys.userId, userApiKeys.provider],
-                set: { encryptedApiKey, updatedAt: sql`now()` },
-            })
-            .returning(userApiKeyMetaColumns);
+        const [row] = await withRetry(
+            () =>
+                this.db
+                    .insert(userApiKeys)
+                    .values({
+                        userId: input.userId,
+                        provider: input.provider,
+                        encryptedApiKey,
+                    })
+                    .onConflictDoUpdate({
+                        target: [userApiKeys.userId, userApiKeys.provider],
+                        set: { encryptedApiKey, updatedAt: sql`now()` },
+                    })
+                    .returning(userApiKeyMetaColumns),
+            NEON_TRANSIENT_RETRY
+        );
 
         if (row === undefined) {
             throw new Error('Failed to upsert user API key');

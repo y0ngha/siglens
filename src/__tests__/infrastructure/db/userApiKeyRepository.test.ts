@@ -1,3 +1,10 @@
+// withRetry 내부 sleep을 즉시 resolve로 stubbing해서 transient retry 케이스의
+// 실제 대기 시간을 없앤다. `jest.mock` 은 정적 import 보다 먼저 평가되도록
+// 호이스트되어야 한다 (`import/first` 규칙과 일치).
+jest.mock('@/lib/sleep', () => ({
+    sleep: jest.fn().mockResolvedValue(undefined),
+}));
+
 import { encryptToken } from '@/infrastructure/db/tokenEncryption';
 import {
     DrizzleUserApiKeyRepository,
@@ -347,5 +354,62 @@ describe('DrizzleUserApiKeyRepository.deleteByUserAndProvider', () => {
         await expect(
             repo.deleteByUserAndProvider('user-1', 'anthropic')
         ).resolves.toBe(true);
+    });
+});
+
+// upsert 가 NEON_TRANSIENT_RETRY 정책을 실제로 통과시키는지 확인하는 smoke 테스트.
+// withRetry/isNeonTransientError 자체 동작은 각자의 단위 테스트에서 검증하므로
+// 여기서는 "정책이 wire-up 됐다"만 보장한다.
+describe('DrizzleUserApiKeyRepository.upsert — Neon transient retry wire-up', () => {
+    const UPSERT_INPUT = {
+        userId: 'user-1',
+        provider: 'anthropic' as const,
+        apiKey: PLAINTEXT_API_KEY,
+    };
+
+    beforeEach(() => {
+        process.env['LLM_API_KEY_ENCRYPTION_KEY'] = String(VALID_KEY_HEX);
+    });
+
+    afterEach(() => {
+        delete process.env['LLM_API_KEY_ENCRYPTION_KEY'];
+    });
+
+    it('transient NeonDbError 가 발생하면 재시도해 결국 성공한다', async () => {
+        const neonTransient = Object.assign(
+            new Error('Error connecting to database: fetch failed'),
+            { name: 'NeonDbError' }
+        );
+        const returning = jest
+            .fn()
+            .mockRejectedValueOnce(neonTransient)
+            .mockResolvedValueOnce([metaRow]);
+        const onConflictDoUpdate = jest.fn(() => ({ returning }));
+        const values = jest.fn(() => ({ onConflictDoUpdate }));
+        const insert = jest.fn(() => ({ values }));
+        const db = { insert } as unknown as SiglensDatabase;
+        const repo = new DrizzleUserApiKeyRepository(db);
+
+        await expect(repo.upsert(UPSERT_INPUT)).resolves.toEqual(metaRow);
+        expect(insert).toHaveBeenCalledTimes(2);
+        expect(returning).toHaveBeenCalledTimes(2);
+    });
+
+    it('non-transient 에러는 재시도 없이 즉시 전파한다', async () => {
+        const constraintError = Object.assign(
+            new Error(
+                'duplicate key value violates unique constraint "user_api_keys_user_provider_unique"'
+            ),
+            { name: 'NeonDbError' }
+        );
+        const returning = jest.fn().mockRejectedValueOnce(constraintError);
+        const onConflictDoUpdate = jest.fn(() => ({ returning }));
+        const values = jest.fn(() => ({ onConflictDoUpdate }));
+        const insert = jest.fn(() => ({ values }));
+        const db = { insert } as unknown as SiglensDatabase;
+        const repo = new DrizzleUserApiKeyRepository(db);
+
+        await expect(repo.upsert(UPSERT_INPUT)).rejects.toBe(constraintError);
+        expect(insert).toHaveBeenCalledTimes(1);
     });
 });

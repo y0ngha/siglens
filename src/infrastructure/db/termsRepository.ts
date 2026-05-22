@@ -1,6 +1,8 @@
 import type { TermsKind } from '@/infrastructure/db/constants';
+import { NEON_TRANSIENT_RETRY } from '@/infrastructure/db/isNeonTransientError';
 import { terms } from '@/infrastructure/db/schema';
 import type { SiglensDatabase } from '@/infrastructure/db/types';
+import { withRetry } from '@/infrastructure/utils/withRetry';
 import { and, desc, eq, lte, sql } from 'drizzle-orm';
 
 /** Public-facing record returned by the repository. */
@@ -62,16 +64,20 @@ export class DrizzleTermsRepository implements TermsRepository {
     }
 
     async upsertFromSeed(input: TermsSeedInput): Promise<void> {
-        await this.db
-            .insert(terms)
-            .values({
-                kind: input.kind,
-                version: input.version,
-                effectiveDate: input.effectiveDate,
-                body: input.body,
-            })
-            .onConflictDoNothing({
-                target: [terms.kind, terms.version],
-            });
+        await withRetry(
+            () =>
+                this.db
+                    .insert(terms)
+                    .values({
+                        kind: input.kind,
+                        version: input.version,
+                        effectiveDate: input.effectiveDate,
+                        body: input.body,
+                    })
+                    .onConflictDoNothing({
+                        target: [terms.kind, terms.version],
+                    }),
+            NEON_TRANSIENT_RETRY
+        );
     }
 }
