@@ -1,36 +1,6 @@
 
 # Fix Log
 
-## [PR #442 Round 5 | fix/oi-tooltip-floating | 2026-05-22]
-- S1: `src/components/options/OpenInterestChart.tsx` — tooltip JSX 주석이 "`hidden`으로 숨겨 스크린리더가 대상을 찾되 시각적으로만 숨김"이라고 표기. 실제로 HTML `hidden` 속성은 접근성 트리에서도 완전히 제거함. 사실관계 정정: "screen reader도 참조를 따라올 수 없지만 하단 sr-only 테이블이 대체 제공하므로 pointer-only tooltip에선 허용 가능 트레이드오프"로 재작성.
-  - Rule: MISTAKES.md §15.3 — 사실관계가 잘못된 주석은 미래 독자에게 오해를 준다.
-- S2: 같은 파일 — `hoveredRow` 표현이 `||` 기반(`(hoveredIndex !== null && oiByStrike[hoveredIndex]) || null`)이라 row 객체 falsy 처리에 암묵 의존. `??` ternary(`hoveredIndex !== null ? (oiByStrike[hoveredIndex] ?? null) : null`)로 "배열 범위 초과 → null" 의도를 명시화.
-  - Rule: CONVENTIONS.md FP — 의도가 명확한 표현 방식 선호.
-- S3: `src/components/options/utils/computeTooltipPos.ts` (신규) + `src/__tests__/components/options/computeTooltipPos.test.ts` (신규) — pure 함수 `computeTooltipPos`와 tooltip 레이아웃 상수 6종을 별도 utility 파일로 분리하고 5건 단위 테스트 추가(가운데 정상 / 좌측 클램핑 / 우측 클램핑 / 상단 클램핑 / container 오프셋 상대좌표). OpenInterestChart.tsx는 named import로 전환.
-  - Rule: CONVENTIONS.md Coverage Targets — pure utility functions may be freely tested. 클램핑 분기는 상수(TOOLTIP_HALF_WIDTH_PX 등) 변경 시 회귀가 즉시 잡히도록 명시 검증.
-
-## [PR #442 Round 4 | fix/oi-tooltip-floating | 2026-05-22]
-- B1: `src/components/options/OpenInterestChart.tsx` — `handlePointerEnter` / `handlePointerMove` / `handlePointerLeave` 세 핸들러가 파생 변수(`maxPainX`, `currentPriceX`, `peakOiLabel`)보다 앞에 선언됨. CONVENTIONS.md 처방 순서(`파생 변수 → 핸들러`)에 맞춰 핸들러를 `peakOiLabel` 뒤로 이동.
-  - Rule: MISTAKES.md §17 — Hook 선언 순서: useState/useRef → useQuery/useMutation → useCallback/useMemo → 파생 변수 → 핸들러 → useEffect.
-- S1: 같은 파일 — `TOOLTIP_HALF_WIDTH_PX = 90`이 className `min-w-[180px]`의 절반에 의존하지만 두 값이 별도라 한쪽만 바뀌면 클램핑 오작동. `TOOLTIP_MIN_WIDTH_PX = 180` single source of truth 도입 후 `TOOLTIP_HALF_WIDTH_PX = TOOLTIP_MIN_WIDTH_PX / 2`로 파생. className에서도 `min-w-[var(--tooltip-min-w)]` + style에 `--tooltip-min-w` 변수 주입해 한 곳에서 관리.
-  - Rule: MISTAKES.md §15 / drift 방지 — 동일 값을 두 표현(상수 + 클래스 리터럴)에 중복하면 silent drift 위험.
-- S2: 같은 파일 — `TOOLTIP_HALF_WIDTH_PX` 주석 첫 구절 "Tooltip의 가로 절반 너비" 제거. 상수명이 이미 표현. WHY(클램핑 용도)만 남김. S1과 함께 주석을 새 single source 의도("anchor 좌우로 절반씩 뻗으므로 절반 너비")로 재작성.
-  - Rule: MISTAKES.md §15.3 — WHAT 코멘트 금지.
-
-## [PR #442 Round 3 | fix/oi-tooltip-floating | 2026-05-22]
-- B1: `src/components/options/OpenInterestChart.tsx` — Hook 선언 순서 재정정. CONVENTIONS.md 순서는 useState → useRef인데 R2에서 useRef를 먼저 선언해 두 번 반전됐다. useState 2개를 먼저, useRef 2개를 뒤로.
-  - Rule: CONVENTIONS.md Custom Hook Declaration Order / MISTAKES.md §17. **이전 라운드(R2)에서 같은 룰에 대한 정정 → 부분 회귀**. 이번엔 useState → useRef 순서로 명확히 고정.
-- B2: 같은 파일 — `{ x: number; y: number }` 인라인 객체 타입이 useState 타입 파라미터와 (R2의) `computeTooltipPos` 반환 타입 두 곳에 중복. 컴포넌트 위에 `TooltipPosition` 인터페이스를 추출해 모두 명명된 타입으로 통일.
-  - Rule: MISTAKES.md TypeScript §5.3 — 함수 반환 타입과 상태 타입에 인라인 객체 리터럴 금지.
-- S1: 같은 파일 — `computeTooltipPos`가 컴포넌트 상태/ref를 클로저하지 않음에도 컴포넌트 안에 정의돼 매 렌더마다 재생성. module-level 순수 함수로 추출.
-  - Rule: MISTAKES.md §20 / CONVENTIONS.md FP — 클로저 의존이 없는 헬퍼는 module-level로.
-- S2: 같은 파일 — `const rawX = event.clientX - rect.left` 위 "viewport 기준 좌표 → container 기준 좌표" 코멘트가 WHAT. 제거. 그 아래 클램핑 WHY 코멘트는 유지.
-  - Rule: MISTAKES.md §15.3 — WHAT 코멘트 금지.
-- S3: 같은 파일 — `as CSSProperties` safe-cast에 guarantee 주석 추가. CSS 커스텀 프로퍼티(--*)는 런타임 유효하지만 React `CSSProperties` 타입에 포함 안 되는 TS 한계 우회임을 명시.
-  - Rule: MISTAKES.md TypeScript §7 — 모든 safe-cast `as`에 guarantee 주석 필수.
-- S4: 같은 파일 — hit-rect의 `aria-describedby={TOOLTIP_ELEMENT_ID}`가 가리키는 tooltip div가 hover 시에만 조건부 렌더링되어 스크린리더가 anchor를 찾지 못함. tooltip div를 항상 DOM에 두고 비활성 시 `hidden` 속성으로 숨기는 WAI-ARIA tooltip 패턴 적용. 내부 컨텐츠는 hoveredRow가 있을 때만 렌더.
-  - Rule: WAI-ARIA tooltip 패턴 — describedby anchor는 항상 DOM에 있어야 한다.
-
 ## [PR #442 Round 2 | fix/oi-tooltip-floating | 2026-05-22]
 - B1: `src/components/options/OpenInterestChart.tsx` — Hook 선언 순서 위반. `useMemo`(derived)가 `useRef`(containerRef)/`useState`(hoveredIndex, tooltipPos)보다 먼저 선언돼 있었음. CONVENTIONS.md "Custom Hook Declaration Order"에 맞춰 useRef/useState를 함수 본문 최상단으로 끌어올리고 useMemo는 그 다음에 배치.
   - Rule: MISTAKES.md §17 / CONVENTIONS.md Custom Hook Declaration Order.
