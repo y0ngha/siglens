@@ -77,6 +77,16 @@ describe('formatAtmIv', () => {
     it('소수점 첫째 자리까지 반올림한다', () => {
         expect(formatAtmIv(0.123456)).toBe('12.3%');
     });
+
+    it('0 fraction은 em dash로 표현한다 (Yahoo가 IV를 클리어한 케이스)', () => {
+        // ATM contract의 IV가 0으로 들어오면 의미 있는 변동성이 아니므로
+        // 사용자에게 "데이터 없음"으로 안내한다.
+        expect(formatAtmIv(0)).toBe('—');
+    });
+
+    it('음수 fraction도 em dash로 표현한다 (방어적 가드)', () => {
+        expect(formatAtmIv(-0.1)).toBe('—');
+    });
 });
 
 describe('formatImpliedMove', () => {
@@ -96,7 +106,13 @@ describe('formatImpliedMove', () => {
         expect(formatImpliedMove(4.2)).toBe('±4.2%');
     });
 
-    it('0% 움직임도 정상 표시', () => {
-        expect(formatImpliedMove(0)).toBe('±0.0%');
+    it('0%는 em dash로 표현한다 (ATM IV가 0이라 기대 변동성도 0인 케이스)', () => {
+        // calculateImpliedMove(atmIv=0, ...) === 0 → "±0.0%"는 변동성이 정말
+        // 0이라는 잘못된 인상을 주므로 placeholder로 대체한다.
+        expect(formatImpliedMove(0)).toBe('—');
+    });
+
+    it('음수 implied move도 em dash로 표현한다 (방어적 가드)', () => {
+        expect(formatImpliedMove(-1)).toBe('—');
     });
 });

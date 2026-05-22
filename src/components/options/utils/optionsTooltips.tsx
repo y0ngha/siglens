@@ -7,9 +7,19 @@
  * must agree. Centralising the JSX here prevents silent drift when one site
  * is reworded and the others are forgotten.
  *
- * Each constant is a JSX fragment with multiple `<p>` blocks; consumers
- * render them inside `<InfoTooltip>`.
+ * 대부분 const JSX fragment로 두지만, 한국 시간/DST에 따라 본문이 달라지는
+ * 안내(ATM IV·Imp. Move)는 함수 컴포넌트로 둔다 — module-level const는 import
+ * 시점에만 평가돼 DST 경계를 가로지르는 사용자에게 잘못된 시간을 보여준다.
  */
+
+import { getEasternOffsetHours } from '@/domain/time/eastern';
+import {
+    ET_MARKET_HOURS_DISPLAY,
+    KST_EDT_HOURS_DISPLAY,
+    KST_EST_HOURS_DISPLAY,
+} from '@/lib/options/marketHoursDisplay';
+
+const EDT_OFFSET_HOURS = -4;
 
 export const MaxPainTooltip = (
     <>
@@ -29,33 +39,62 @@ export const PutCallRatioTooltip = (
             1보다 크면 풋(하락 베팅)이 더 많아 시장이 조심스럽다는 뜻이고, 1보다
             작으면 콜(상승 베팅)이 더 많다는 뜻이에요.
         </p>
-        <p>
-            너무 극단으로 치우치면 오히려 반대 신호로 해석하는 경우도 많아요 —
-            모두 두려워할 때가 바닥인 경우가 있거든요.
-        </p>
+        <p>너무 극단으로 치우치면 오히려 반대 신호로 해석하는 경우도 많아요.</p>
+        <p>모두 두려워할 때가 바닥인 경우가 있거든요.</p>
     </>
 );
 
-export const AtmIvTooltip = (
-    <>
-        <p>현재 주가에 가장 가까운 옵션이 반영하고 있는 예상 변동성이에요.</p>
-        <p>어닝 발표 직전에 보통 올라가요.</p>
-    </>
-);
+function getCurrentKstWindow(): { window: string; label: string } {
+    const inEdt = getEasternOffsetHours(new Date()) === EDT_OFFSET_HOURS;
+    return inEdt
+        ? { window: KST_EDT_HOURS_DISPLAY, label: '서머타임(EDT)' }
+        : { window: KST_EST_HOURS_DISPLAY, label: '표준시(EST)' };
+}
 
-export const ImpliedMoveTooltip = (
-    <>
-        <p>
-            옵션 시장이 &ldquo;이 주식이 앞으로 얼마나 출렁일 것 같다&rdquo;고
-            가격에 반영해놓은 폭이에요.
-        </p>
-        <p>
-            예를 들어 ±4%라면 시장은 다음 만기일까지 주가가 ±4% 정도 움직일
-            가능성이 높다고 보고 있는 거예요.
-        </p>
-        <p>어닝 같은 큰 이벤트 직전에는 이 값이 평소보다 커져요.</p>
-    </>
-);
+export function AtmIvTooltip() {
+    const { window: kstWindow, label } = getCurrentKstWindow();
+    return (
+        <>
+            <p>
+                현재 주가에 가장 가까운 옵션이 반영하고 있는 예상 변동성이에요.
+            </p>
+            <p>어닝 발표 직전에 보통 올라가요.</p>
+            <br />
+            <p>
+                <strong>&lsquo;—&rsquo;로 표시될 때</strong>: 미국 정규장 마감
+                후나 pre-market에는 Yahoo가 ATM 옵션의 IV를 0으로 클리어해
+                보내는 경우가 있어서 정확한 수치를 받을 수 없어요. 한국 시간
+                기준으로 평일 {kstWindow}(미국 정규장, {ET_MARKET_HOURS_DISPLAY}
+                ) 에 다시 확인해 주세요. 지금은 {label} 기간이에요.
+            </p>
+        </>
+    );
+}
+
+export function ImpliedMoveTooltip() {
+    const { window: kstWindow, label } = getCurrentKstWindow();
+    return (
+        <>
+            <p>
+                옵션 시장이 &ldquo;이 주식이 앞으로 얼마나 출렁일 것 같다&rdquo;
+                고 가격에 반영해놓은 폭이에요.
+            </p>
+            <p>
+                예를 들어 ±4%라면 시장은 다음 만기일까지 주가가 ±4% 정도 움직일
+                가능성이 높다고 보고 있는 거예요.
+            </p>
+            <p>어닝 같은 큰 이벤트 직전에는 이 값이 평소보다 커져요.</p>
+            <br />
+            <p>
+                <strong>&lsquo;—&rsquo;로 표시될 때</strong>: ATM IV에서
+                계산하기 때문에 ATM IV가 비어 있으면(정규장 외 시간 등) 같이
+                비워져요. 또 만기 당일이면 남은 시간이 0이라 계산이 불가능해
+                비어 보일 수 있어요. 한국 시간 기준으로 평일 {kstWindow}(미국
+                정규장)에 다시 확인해 주세요. 지금은 {label} 기간이에요.
+            </p>
+        </>
+    );
+}
 
 export const OpenInterestTooltip = (
     <>
@@ -75,8 +114,11 @@ export const CallOpenInterestTooltip = (
         </p>
         <p>
             이 가격에 콜 OI가 두텁다 = 시장 참여자들이 &ldquo;주가가 이 가격
-            위로 갈 것&rdquo;에 베팅을 많이 걸어둔 자리예요. 추세가 살아 있으면
-            저항이 깨졌을 때 빠르게 올라붙는 자석 같은 역할을 해요.
+            위로 갈 것&rdquo;에 베팅을 많이 걸어둔 자리예요.
+        </p>
+        <p>
+            추세가 살아 있으면 저항이 깨졌을 때 빠르게 올라붙는 자석 같은 역할을
+            해요.
         </p>
     </>
 );
@@ -89,9 +131,9 @@ export const PutOpenInterestTooltip = (
         </p>
         <p>
             이 가격에 풋 OI가 두텁다 = &ldquo;이 가격 아래로는 안 떨어졌으면
-            좋겠다&rdquo;는 보험성 베팅이 쌓인 자리예요. 주가가 가까이 가면
-            지지선처럼 작동하는 경우가 많아요.
+            좋겠다&rdquo;는 보험성 베팅이 쌓인 자리예요.
         </p>
+        <p>주가가 가까이 가면 지지선처럼 작동하는 경우가 많아요.</p>
     </>
 );
 

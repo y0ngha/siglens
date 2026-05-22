@@ -89,25 +89,19 @@ export function OptionsPageClient({
                 expirationDate={expirationDate}
                 metrics={chainMetrics.metrics}
                 nearestExpiry={nearestExpiry}
+                oiStale={oiStale}
             />
 
-            {/* 두 차트를 큰 화면(lg+)에서 가로로 나란히 배치해 페이지 세로
-                길이를 약 240px 절약한다 — 두 SVG(각 240px)가 sibling으로
-                연달아 쌓이면 모바일 외 환경에서 스크롤이 과도하게 길어진다.
-                모바일(<lg)은 1열 유지해 좁은 너비에서 막대가 뭉치지 않도록
-                한다. */}
-            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-                <OpenInterestChart
-                    underlyingPrice={snapshot.underlyingPrice}
-                    chain={chainMetrics.chain}
-                    metrics={chainMetrics.metrics}
-                />
+            <OpenInterestChart
+                underlyingPrice={snapshot.underlyingPrice}
+                chain={chainMetrics.chain}
+                metrics={chainMetrics.metrics}
+            />
 
-                <StrikeVolumeChart
-                    underlyingPrice={snapshot.underlyingPrice}
-                    chain={chainMetrics.chain}
-                />
-            </div>
+            <StrikeVolumeChart
+                underlyingPrice={snapshot.underlyingPrice}
+                chain={chainMetrics.chain}
+            />
 
             <OptionsChainTable
                 symbol={symbol}

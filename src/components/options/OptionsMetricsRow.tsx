@@ -39,6 +39,10 @@ function MetricCard({ label, value, tooltip }: MetricCardProps) {
     );
 }
 
+// OI snapshot이 stale일 때 metric 카드 값에 일괄 표시하는 placeholder.
+// formatters의 null/NaN 분기와 동일한 글자(`—`)를 쓴다.
+const EM_DASH = '—';
+
 interface OptionsMetricsRowProps {
     /** 'YYYY-MM-DD' or 'all'. */
     expirationDate: OptionsExpirationSelector;
@@ -46,12 +50,20 @@ interface OptionsMetricsRowProps {
     metrics: OptionsExpirationMetrics | null;
     /** First-chain expiration date for the "종합 만기" caption. */
     nearestExpiry: string;
+    /**
+     * `true`이면 OI 스냅샷이 stale 상태(Yahoo 정규장 외 quote 클리어)로 판정되어
+     * 카드의 모든 metric을 EM DASH로 표시한다. Max Pain·ATM IV·Imp. Move는
+     * OI/IV에 직접 의존하므로 stale 데이터로 계산하면 사용자에게 잘못된 숫자
+     * (예: $50, 0.0%)를 신뢰성 있게 보이도록 노출하게 된다.
+     */
+    oiStale: boolean;
 }
 
 export function OptionsMetricsRow({
     expirationDate,
     metrics,
     nearestExpiry,
+    oiStale,
 }: OptionsMetricsRowProps) {
     // siglens-core R12: maxPain / putCallRatio are now `number | null`
     // (formatters tolerate the union explicitly), so pass through directly
@@ -61,28 +73,36 @@ export function OptionsMetricsRow({
             [
                 {
                     label: 'Max Pain',
-                    value: formatMaxPain(metrics?.maxPain ?? null),
+                    value: oiStale
+                        ? EM_DASH
+                        : formatMaxPain(metrics?.maxPain ?? null),
                     tooltip: MaxPainTooltip,
                 },
                 {
                     label: 'P/C Ratio',
-                    value: formatPutCallRatio(metrics?.putCallRatio ?? null),
+                    value: oiStale
+                        ? EM_DASH
+                        : formatPutCallRatio(metrics?.putCallRatio ?? null),
                     tooltip: PutCallRatioTooltip,
                 },
                 {
                     label: 'ATM IV',
-                    value: formatAtmIv(metrics?.atmImpliedVolatility ?? null),
-                    tooltip: AtmIvTooltip,
+                    value: oiStale
+                        ? EM_DASH
+                        : formatAtmIv(metrics?.atmImpliedVolatility ?? null),
+                    tooltip: <AtmIvTooltip />,
                 },
                 {
                     label: 'Imp. Move',
-                    value: formatImpliedMove(
-                        metrics?.impliedMovePercent ?? null
-                    ),
-                    tooltip: ImpliedMoveTooltip,
+                    value: oiStale
+                        ? EM_DASH
+                        : formatImpliedMove(
+                              metrics?.impliedMovePercent ?? null
+                          ),
+                    tooltip: <ImpliedMoveTooltip />,
                 },
             ] as const,
-        [metrics]
+        [metrics, oiStale]
     );
 
     return (
