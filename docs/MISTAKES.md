@@ -468,6 +468,15 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     ❌ const [isPushed, setIsPushed] = useState(false); handlePush() { setIsPushed(true); }
     ✅ const isPushedRef = useRef(false); handlePush() { isPushedRef.current = true; }
 
+12.5. useRef used to capture mount-time value, but .current read during render for derived variable
+     → When the goal is to "capture once at mount, never update", use useState with lazy initializer instead of useRef
+     → Reading .current during render violates react-hooks/refs rule; eslint will flag it
+     → useRef is for values that should NOT trigger re-renders or be used in render logic — not for capturing initial prop values
+     ❌ const initialValueRef = useRef(initialValue); const derived = isLoading || initialValueRef.current;  // .current read during render
+     ❌ const countRef = useRef(props.initialCount); return countRef.current + computeSteps(countRef.current);  // multiple .current reads during render
+     ✅ const [capturedValue] = useState(initialValue);  // lazy init, stable per mount, readable during render
+     ✅ const [initialCount] = useState(() => props.initialCount);  // same intent, no lint violation
+
 13. Component props interface declared inline instead of above component function
     → Extract inline prop type definitions to named interface declared directly above component
     → Improves readability and allows reuse in tests or other contexts

@@ -124,6 +124,10 @@ export function useAnalysis({
     const [isPolling, setIsPolling] = useState(false);
     const [pollError, setPollError] = useState<string | null>(null);
     const [isBotBlocked, setIsBotBlocked] = useState(false);
+    // 초기 마운트 시 서버 분석 실패 여부를 캡처한다.
+    // useState 초기화로 마운트 시 1회만 평가되며, 이후 prop 변경이 있어도 갱신되지 않는다.
+    // useRef를 쓰지 않는 이유: 렌더 중 접근이 필요해 react-hooks/refs 룰을 위반하기 때문.
+    const [initialAnalysisFailedAtMount] = useState(initialAnalysisFailed);
 
     // 2. useRef
     const latestRef = useRef<{
@@ -149,9 +153,6 @@ export function useAnalysis({
     );
     // 현재 진행 중인 워커 job ID. 타임프레임 변경 시 취소 신호 전달에 사용.
     const currentJobIdRef = useRef<string | null>(null);
-    // 초기 마운트 시 서버 분석 실패 여부를 캡처한다.
-    // 이후 렌더링에서 이 값이 변경되더라도 마운트 시 한 번만 사용된다.
-    const initialAnalysisFailedRef = useRef(initialAnalysisFailed);
     // polling 완료 시 force 경로 쿨다운 처리를 위해 마지막 요청의 force 여부를 추적
     const lastForceRef = useRef(false);
 
@@ -254,7 +255,7 @@ export function useAnalysis({
     const isAnalyzing =
         isSubmitting ||
         isPolling ||
-        (initialAnalysisFailedRef.current && isModelHydrated === false);
+        (initialAnalysisFailedAtMount && isModelHydrated === false);
     const analysisError = submitError?.message ?? pollError ?? null;
     // 쿨다운 카운트다운이 활성화된 상태. effect deps에 사용해 불필요한 재시작을 방지한다.
     const isCountdownActive = reanalyzeCooldownMs > 0;
@@ -384,7 +385,7 @@ export function useAnalysis({
     // 서버에서 초기 AI 분석이 실패한 경우, localStorage hydration이 완료된 뒤 자동으로 재분석을 실행한다.
     // isModelHydrated=false 동안에는 기본값(DEFAULT_MODEL)이 사용 중이므로 hydration 완료까지 대기한다.
     useEffect(() => {
-        if (!initialAnalysisFailedRef.current) return;
+        if (!initialAnalysisFailedAtMount) return;
         if (isModelHydrated === false) return;
         mutate({
             symbol: latestRef.current.symbol,
@@ -393,7 +394,7 @@ export function useAnalysis({
             fmpSymbol: latestRef.current.fmpSymbol,
             modelId: latestModelIdRef.current,
         });
-    }, [mutate, isModelHydrated]);
+    }, [mutate, isModelHydrated, initialAnalysisFailedAtMount]);
 
     // 타임프레임 변경 시 진행 중인 워커 작업을 취소하고, 이전 mutation 상태를 초기화한 뒤 새 분석을 자동 실행한다.
     useEffect(() => {

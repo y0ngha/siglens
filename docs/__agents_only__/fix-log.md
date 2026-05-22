@@ -153,10 +153,6 @@
 
 
 
-## [PR #423 Round 2 | feat/news-thinking-budget-and-refresh | 2026-05-07]
-- S1: `src/components/news/sections/NewsList.tsx` — `initialEnrichedCountRef`가 symbol 변경 시 초기화되지 않는 문제. reviewer 제안(render-time ref mutation)은 react-hooks/refs 위반이므로 `useRef` → `useState`로 전환 후 `prevSymbol` render-time reset 패턴 적용.
-  - Rule: react-hooks/refs — refs must not be mutated during render; use setState + prevState pattern instead
-
 ## [PR #422 Round 2 | fix/post-9e88a2f9-audit | 2026-05-07]
 - S3: `src/components/chat/hooks/useChat.ts` `MODEL_STORAGE_KEY` export + `useChat.test.tsx`에서 로컬 재정의 제거 후 import.
   - Rule: MISTAKES.md Tests 13 — 테스트는 production 코드를 직접 import해 검증
