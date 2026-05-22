@@ -1,0 +1,34 @@
+/**
+ * @jest-environment jsdom
+ */
+
+import '@testing-library/jest-dom';
+import { render, screen, fireEvent } from '@testing-library/react';
+import { StaleAnalysisBanner } from '@/components/analysis/StaleAnalysisBanner';
+
+describe('StaleAnalysisBanner', () => {
+    it('renders the stale message and triggers onReanalyze when clicked', () => {
+        const onReanalyze = jest.fn();
+        render(
+            <StaleAnalysisBanner
+                onReanalyze={onReanalyze}
+                reanalyzeCooldownMs={0}
+            />
+        );
+        expect(screen.getByText(/AI 분석 데이터가 오래되었습니다/)).toBeInTheDocument();
+        fireEvent.click(screen.getByRole('button', { name: /재분석/ }));
+        expect(onReanalyze).toHaveBeenCalledTimes(1);
+    });
+
+    it('disables the reanalyze button while cooldown is active', () => {
+        const onReanalyze = jest.fn();
+        render(
+            <StaleAnalysisBanner
+                onReanalyze={onReanalyze}
+                reanalyzeCooldownMs={60_000}
+            />
+        );
+        const button = screen.getByRole('button', { name: /재분석/ });
+        expect(button).toBeDisabled();
+    });
+});
