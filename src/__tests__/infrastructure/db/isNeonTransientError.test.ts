@@ -5,7 +5,8 @@ import {
 } from '@/infrastructure/db/isNeonTransientError';
 
 function makeNeonError(message: string): NeonDbError {
-    const err = new Error(message) as Error & { name: string };
+    // `Error.name`은 lib 정의상 writable string이라 추가 캐스트 없이 직접 할당 가능.
+    const err = new Error(message);
     err.name = 'NeonDbError';
     // Cast to NeonDbError so callers receive the structural shape they expect.
     return err as unknown as NeonDbError;

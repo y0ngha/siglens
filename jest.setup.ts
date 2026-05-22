@@ -12,6 +12,9 @@ import { TextDecoder, TextEncoder } from 'util';
 
 if (typeof globalThis.TextDecoder === 'undefined') {
     // jsdom env에 한해 채워 넣는다 — node env에서는 typeof check가 이미 true.
+    // `as unknown as`: TypeScript 표준 `globalThis` 타입은 임의 property 추가를
+    // 거절한다. 런타임의 globalThis는 extensible object이므로 property injection은
+    // 안전 (Node `util`의 native TextDecoder/TextEncoder를 그대로 attach).
     (globalThis as unknown as { TextDecoder: typeof TextDecoder }).TextDecoder =
         TextDecoder;
 }
