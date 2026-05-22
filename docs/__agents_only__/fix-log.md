@@ -388,3 +388,12 @@
 - Violation: `reduce`로 합산 후 `=== 0`만 확인 — sum 값이 버려져 의미가 흐려지고 short-circuit 기회를 놓침
 - Rule: 의미 정합성 — "모두 0인가" 는 합산이 아닌 `.every()`로 표현해야 의도가 직접 드러나고 첫 비-zero에서 short-circuit
 - Context: Suggestion — `OpenInterestChart.tsx` `oiByStrike.reduce(sum, 0) === 0` 가드를 `oiByStrike.every(s => s.callOpenInterest === 0 && s.putOpenInterest === 0)` 으로 교체.
+
+
+## [PR #450 Round 1 | refactor/chat-build-chat-state | 2026-05-22]
+- Violation: 부모/자식 컴포넌트가 동일한 publish 훅(`usePublishSymbolChat`)을 각각 호출해 mount 시 자식 effect가 먼저 실행된 뒤 부모 effect가 valid state를 `WAITING_CHAT_STATE`(null)로 덮어쓰는 race condition
+- Rule: FF Predictability / Components §publish — 동일 publish channel에는 단일 호출 사이트만 둔다. parent/child 양쪽 publish는 mount-order race를 유발하므로 child wrapper를 제거하고 parent에서 conditional `chatState`로 통합.
+- Context: A1 — `NewsAiSummaryContent` 래퍼를 제거하고 `useNewsAnalysis`/`useDefaultModelId`를 `NewsAiSummary` 본체로 끌어올림. `useMemo`로 `isCardsReady ? buildChatState(analysis) : WAITING_CHAT_STATE` 단일 publish. `FundamentalAiSummary` 패턴과 일치.
+- Violation: 이미 discriminated union으로 좁혀진 `state.result`에 동일 타입(`OptionsAnalysisResponse`)을 다시 annotate하는 중간 변수 도입
+- Rule: MISTAKES.md §narrowed value reuse — TS 내로잉으로 이미 좁혀진 값에 동일 타입 annotation을 붙여 중간 변수로 빼는 것은 no-op이며 import만 늘림
+- Context: A2 — `options/utils/buildChatState.ts`의 `const payload: OptionsAnalysisResponse = state.result;`를 제거하고 객체 리터럴에 `payload: state.result` 직접 인라인. 미사용된 `OptionsAnalysisResponse` import도 삭제. `news`/`fundamental` sibling 구현과 일치.

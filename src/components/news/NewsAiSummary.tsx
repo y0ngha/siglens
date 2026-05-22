@@ -219,47 +219,6 @@ function NewsAiSummaryInlineError({
     );
 }
 
-interface NewsAiSummaryContentProps {
-    symbol: string;
-    companyName: string;
-}
-
-function NewsAiSummaryContent({
-    symbol,
-    companyName,
-}: NewsAiSummaryContentProps) {
-    const modelId = useDefaultModelId();
-    const analysis = useNewsAnalysis(symbol, companyName, modelId);
-
-    // 훅 선언 순서 예외(MISTAKES.md #17): usePublishSymbolChat은 chatState(파생 변수)를
-    // 인자로 받기 때문에 useMemo 뒤에 위치해야 한다.
-    //
-    // `analysis`는 discriminated union이라 deps에는 객체 전체를 둔다. React Query가
-    // `query.data`를 memoize하므로 동일 분석에 대한 reference는 안정적 — 실제
-    // 데이터가 바뀔 때만 재계산된다.
-    const chatState = useMemo(() => buildChatState(analysis), [analysis]);
-    usePublishSymbolChat(chatState);
-
-    if (analysis.status === 'error') {
-        return (
-            <NewsAiSummaryInlineError
-                error={analysis.error}
-                onRetry={analysis.retry}
-            />
-        );
-    }
-
-    if (analysis.status === 'bot_blocked') {
-        return <BotBlockedNotice />;
-    }
-
-    if (analysis.status === 'loading') {
-        return <StatusCard phase="analyzing" />;
-    }
-
-    return <NewsAiSummaryView result={analysis.result} />;
-}
-
 interface NewsAiSummaryProps {
     symbol: string;
     companyName: string;
@@ -289,12 +248,25 @@ export function NewsAiSummary({
         symbol,
         hasEnrichedNews
     );
+    const modelId = useDefaultModelId();
+    const analysis = useNewsAnalysis(symbol, companyName, modelId);
 
-    // cards 준비 전에는 NewsAiSummaryContent가 mount되지 않아 inner의 publish가
-    // 동작하지 않는다. 이전 페이지에서 publish된 context가 그대로 남는 stale
-    // 버그를 막기 위해 parent에서 null chatState를 명시적으로 publish한다.
-    // cards ready 후에는 inner의 useNewsAnalysis 기반 publish가 takeover한다.
-    usePublishSymbolChat(WAITING_CHAT_STATE);
+    // 훅 선언 순서 예외(MISTAKES.md #17): usePublishSymbolChat은 chatState(파생 변수)를
+    // 인자로 받기 때문에 useMemo 뒤에 위치해야 한다.
+    //
+    // cards 준비 전에는 분석 결과가 아직 없으므로 WAITING_CHAT_STATE를 publish하여
+    // 이전 페이지의 stale context가 그대로 남지 않게 한다. cards ready 후에는
+    // analysis 상태 기반 chatState로 takeover한다. 단일 publish 사이트를 유지하여
+    // parent/child 이중 publish로 인한 race condition을 막는다.
+    //
+    // `analysis`는 discriminated union이라 deps에는 객체 전체를 둔다. React Query가
+    // `query.data`를 memoize하므로 동일 분석에 대한 reference는 안정적 — 실제
+    // 데이터가 바뀔 때만 재계산된다.
+    const chatState = useMemo(
+        () => (isCardsReady ? buildChatState(analysis) : WAITING_CHAT_STATE),
+        [isCardsReady, analysis]
+    );
+    usePublishSymbolChat(chatState);
 
     // Surface persistent polling errors to the surrounding error boundary
     // (NewsAiSummaryErrorBoundary) so the fallback UI takes over.
@@ -306,5 +278,22 @@ export function NewsAiSummary({
         return <StatusCard phase="fetching" />;
     }
 
-    return <NewsAiSummaryContent symbol={symbol} companyName={companyName} />;
+    if (analysis.status === 'error') {
+        return (
+            <NewsAiSummaryInlineError
+                error={analysis.error}
+                onRetry={analysis.retry}
+            />
+        );
+    }
+
+    if (analysis.status === 'bot_blocked') {
+        return <BotBlockedNotice />;
+    }
+
+    if (analysis.status === 'loading') {
+        return <StatusCard phase="analyzing" />;
+    }
+
+    return <NewsAiSummaryView result={analysis.result} />;
 }

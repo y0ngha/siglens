@@ -1,4 +1,3 @@
-import type { OptionsAnalysisResponse } from '@y0ngha/siglens-core';
 import type { SymbolChatState } from '@/components/chat/hooks/useSymbolChat';
 import type { OptionsAnalysisState } from '@/components/options/hooks/useOptionsAnalysis';
 
@@ -9,9 +8,8 @@ import type { OptionsAnalysisState } from '@/components/options/hooks/useOptions
 // FloatingChatButton 측에서 DEFAULT_TIMEFRAME으로 fallback 한다.
 export function buildChatState(state: OptionsAnalysisState): SymbolChatState {
     if (state.status === 'done') {
-        const payload: OptionsAnalysisResponse = state.result;
         return {
-            context: { kind: 'options', payload },
+            context: { kind: 'options', payload: state.result },
             timeframe: null,
             isAnalysisReady: true,
         };
