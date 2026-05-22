@@ -89,6 +89,7 @@ export function OptionsPageClient({
                 expirationDate={expirationDate}
                 metrics={chainMetrics.metrics}
                 nearestExpiry={nearestExpiry}
+                oiStale={oiStale}
             />
 
             {/* 두 차트를 큰 화면(lg+)에서 가로로 나란히 배치해 페이지 세로

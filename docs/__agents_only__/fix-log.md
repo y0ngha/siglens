@@ -369,18 +369,6 @@
 
 
 
-## [PR #446 Round 1 | fix/options-oi-stale-fraction | 2026-05-22]
-- Violation: 비율 경계 테스트가 `puts: []` 고정 헬퍼만 사용해 calls/puts 혼합 시나리오를 커버하지 않음
-- Rule: 분기 커버리지 — 구현이 `flatMap([...calls, ...puts])`로 양쪽을 합산하므로 puts 비어있는 케이스만 검증하면 합산 분기가 회귀에 노출됨
-- Context: Suggestion 1 — `session.test.ts`에 (1) 50/50 혼합 nonstale (2) 혼합 boundary stale 2개 케이스 추가. boundary는 `Math.ceil(total * OI_STALE_FRACTION_THRESHOLD)`로 임계값에서 파생.
-- Violation: 단일 자식만 남은 컨테이너에 `gap-1` Tailwind 클래스가 남아 no-op
-- Rule: MISTAKES.md Components §4 — 사용 효과가 없는 Tailwind class 잔존 금지
-- Context: Suggestion 2 — `StrikeVolumeChart.tsx` 정상 헤더 + 빈 상태 헤더 둘 다 `<InfoTooltip>`을 범례로 옮긴 뒤 단일 자식. 외곽 `<div className="flex items-center gap-1">`을 그대로 `<span>` 하나로 치환.
-- Violation: sibling grid 셀(`OpenInterestChart` 빈 상태 vs `StrikeVolumeChart` 빈 상태)이 헤더 유무·텍스트 스타일에서 어긋남
-- Rule: FF Readability / visual consistency — `lg:grid-cols-2`로 묶인 sibling 빈 상태는 동일한 레이아웃(header + body)을 따라야 함
-- Context: Gemini Medium 권고 — OI 차트 빈 상태도 `Open Interest 분포 (Strike별)` 헤더 유지 + 본문 안내로 분리. Volume 빈 상태 본문은 `text-xs leading-relaxed`로 통일.
-
-
 ## [PR #446 Round 3 | fix/options-oi-stale-fraction | 2026-05-22]
 - Violation: 동일 값(`allContracts.length`)을 같은 함수 안에서 두 번 접근
 - Rule: MISTAKES.md §2 — Identical values queried or computed multiple times → Extract to a local const
@@ -397,3 +385,21 @@
 - Violation: 이미 discriminated union으로 좁혀진 `state.result`에 동일 타입(`OptionsAnalysisResponse`)을 다시 annotate하는 중간 변수 도입
 - Rule: MISTAKES.md §narrowed value reuse — TS 내로잉으로 이미 좁혀진 값에 동일 타입 annotation을 붙여 중간 변수로 빼는 것은 no-op이며 import만 늘림
 - Context: A2 — `options/utils/buildChatState.ts`의 `const payload: OptionsAnalysisResponse = state.result;`를 제거하고 객체 리터럴에 `payload: state.result` 직접 인라인. 미사용된 `OptionsAnalysisResponse` import도 삭제. `news`/`fundamental` sibling 구현과 일치.
+
+
+## [PR #448 Round 2 | fix/options-stale-oi-em-dash | 2026-05-22]
+- Violation: 모듈에서 export하는 placeholder 상수(`METRIC_PLACEHOLDER`)를 테스트가 import하지 않고 리터럴 `'—'`를 하드코딩
+- Rule: MISTAKES.md §Tests §13 — Expected values from module exports must be imported, not hardcoded
+- Context: Blocker — R1에서 `optionsFormatters.ts`에 `METRIC_PLACEHOLDER` export를 도입했지만 test 파일은 이전 리터럴을 그대로 유지. value drift 시 silent pass 가능. 모든 `toBe('—')`를 `toBe(METRIC_PLACEHOLDER)`로 교체.
+- Violation: `new Date()`를 평가하는 함수 컴포넌트를 export하는 파일에 `'use client'` 누락
+- Rule: FF Cohesion — DST 평가는 client 시점에만 정확. 같은 PR에서 OptionsStaleDataBanner에 `'use client'`를 추가한 결정과 일관성 필요
+- Context: Suggestion — `optionsTooltips.tsx`의 `AtmIvTooltip`/`ImpliedMoveTooltip`가 render-time `new Date()` 평가. 현재는 client consumer만 import해 기능적 문제 없으나, RSC import 시 builds-time 평가로 잘못 안내 위험. `'use client'` directive 추가.
+
+
+## [PR #448 Round 3 | fix/options-stale-oi-em-dash | 2026-05-22]
+- Violation: 모듈에서 export하는 상수가 자신을 참조하는 function declaration보다 아래에 위치 — 런타임은 closure로 OK지만 reader에게 "어디서 옴?" 인식 부담
+- Rule: FF Readability — single source of truth는 파일 상단에 배치해 reader가 stub 참조 전에 정의를 만나도록
+- Context: Suggestion 1 — `optionsFormatters.ts`의 `METRIC_PLACEHOLDER`/`PERCENT_DISPLAY_FLOOR`가 formatters 아래(L41~L46). 두 상수를 파일 최상단(JSDoc 직후, 모든 function 선언 이전)으로 이동.
+- Violation: 테스트 설명문/입력값이 floor 상수(`PERCENT_DISPLAY_FLOOR`) 값을 하드코딩 — 상수 변경 시 description text와 input value가 자동 갱신 안 됨
+- Rule: MISTAKES.md §Tests §4 — boundary 테스트 상수는 source에서 import; description도 상수를 interpolate해 drift 차단
+- Context: Suggestion 2 — `PERCENT_DISPLAY_FLOOR`를 export로 승격. 4개 boundary 테스트에서 입력값을 `(PERCENT_DISPLAY_FLOOR / 100) * 0.8/1.2`(formatAtmIv) 또는 `PERCENT_DISPLAY_FLOOR * 0.8/1.2`(formatImpliedMove)로 derive. description은 `${PERCENT_DISPLAY_FLOOR}` interpolation.
