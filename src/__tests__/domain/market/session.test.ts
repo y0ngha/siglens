@@ -11,7 +11,48 @@
  *   - Fall back:      2026-11-01 02:00 → 01:00 (EST begins, UTC-5)
  */
 
-import { isUsOptionsRegularSession } from '@/domain/market/session';
+import {
+    hasAllZeroOpenInterest,
+    isUsOptionsRegularSession,
+    normalizeHour,
+} from '@/domain/market/session';
+import type {
+    OptionsChain,
+    OptionsContract,
+    OptionsSnapshot,
+} from '@y0ngha/siglens-core';
+
+const makeContract = (
+    overrides: Partial<OptionsContract> = {}
+): OptionsContract => ({
+    contractSymbol: 'AAPL250620C00200000',
+    strike: 200,
+    lastPrice: null,
+    bid: null,
+    ask: null,
+    volume: 0,
+    openInterest: 0,
+    impliedVolatility: null,
+    inTheMoney: false,
+    ...overrides,
+});
+
+const makeChain = (overrides: Partial<OptionsChain> = {}): OptionsChain => ({
+    expirationDate: '2026-06-20',
+    daysToExpiration: 30,
+    calls: [],
+    puts: [],
+    ...overrides,
+});
+
+const makeSnapshot = (
+    chains: ReadonlyArray<OptionsChain>
+): OptionsSnapshot => ({
+    symbol: 'AAPL',
+    underlyingPrice: 200,
+    capturedAt: '2026-05-22T00:00:00Z',
+    chains,
+});
 
 describe('isUsOptionsRegularSession — weekend', () => {
     it('returns false on Saturday (EDT)', () => {
@@ -165,8 +206,61 @@ describe('isUsOptionsRegularSession — DST correctness', () => {
     });
 });
 
-describe('isUsOptionsRegularSession — default parameter', () => {
-    it('returns a boolean when called with no arguments', () => {
-        expect(typeof isUsOptionsRegularSession()).toBe('boolean');
+describe('hasAllZeroOpenInterest', () => {
+    it('returns true when every call and put on every chain has OI = 0', () => {
+        const snapshot = makeSnapshot([
+            makeChain({
+                calls: [makeContract({ openInterest: 0 })],
+                puts: [makeContract({ openInterest: 0 })],
+            }),
+            makeChain({
+                calls: [makeContract({ openInterest: 0 })],
+                puts: [makeContract({ openInterest: 0 })],
+            }),
+        ]);
+        expect(hasAllZeroOpenInterest(snapshot)).toBe(true);
+    });
+
+    it('returns false when a single call contract has nonzero OI', () => {
+        const snapshot = makeSnapshot([
+            makeChain({
+                calls: [
+                    makeContract({ openInterest: 0 }),
+                    makeContract({ openInterest: 5 }),
+                ],
+                puts: [makeContract({ openInterest: 0 })],
+            }),
+        ]);
+        expect(hasAllZeroOpenInterest(snapshot)).toBe(false);
+    });
+
+    it('returns false when a single put contract has nonzero OI', () => {
+        const snapshot = makeSnapshot([
+            makeChain({
+                calls: [makeContract({ openInterest: 0 })],
+                puts: [
+                    makeContract({ openInterest: 0 }),
+                    makeContract({ openInterest: 7 }),
+                ],
+            }),
+        ]);
+        expect(hasAllZeroOpenInterest(snapshot)).toBe(false);
+    });
+
+    it('returns true when chains is empty (vacuous truth of Array#every)', () => {
+        // 코너 케이스: snapshot.chains.every(...)는 빈 배열에서 true를 반환한다.
+        // 호출부(OptionsPageClient)는 정규장 외 시간과 AND로 묶고, snapshot이
+        // 비어 있는 응답 자체가 정상 데이터가 아니므로 영향이 제한적이다.
+        const snapshot = makeSnapshot([]);
+        expect(hasAllZeroOpenInterest(snapshot)).toBe(true);
+    });
+});
+
+describe('normalizeHour', () => {
+    it('하루 종일의 정상 시간 값을 그대로 반환한다', () => {
+        for (let h = 0; h <= 23; h++) expect(normalizeHour(h)).toBe(h);
+    });
+    it('ICU edge case로 24가 들어오면 0으로 정규화한다', () => {
+        expect(normalizeHour(24)).toBe(0);
     });
 });

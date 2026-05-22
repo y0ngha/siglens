@@ -1,8 +1,8 @@
+import { MINUTES_PER_HOUR } from '@/domain/constants/time';
 import {
     etParts,
     MARKET_CLOSE_MIN,
     MARKET_OPEN_MIN,
-    MINUTES_PER_HOUR,
 } from '@/domain/market/session';
 
 export type OptionsCacheLifeProfile =

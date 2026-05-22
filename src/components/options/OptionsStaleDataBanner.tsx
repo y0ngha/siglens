@@ -19,7 +19,6 @@ export function OptionsStaleDataBanner() {
     return (
         <div
             role="status"
-            aria-live="polite"
             className="border-ui-warning bg-ui-warning/10 text-ui-warning rounded-lg border px-3 py-2 text-xs leading-relaxed"
         >
             <p className="font-semibold">옵션 OI 데이터가 비어 있어요</p>

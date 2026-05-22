@@ -14,7 +14,8 @@
  * answer stays in lockstep with the market regardless of DST.
  */
 
-export const MINUTES_PER_HOUR = 60;
+import { MINUTES_PER_HOUR } from '@/domain/constants/time';
+import type { OptionsSnapshot } from '@y0ngha/siglens-core';
 
 // US equity options regular session (ET): 09:30 open · 16:00 close.
 const MARKET_OPEN_HOUR = 9;
@@ -53,6 +54,11 @@ const WEEKDAY_LOOKUP: Record<string, number> = {
     Sat: 6,
 };
 
+/** @internal Normalize hour value from ICU formatter — some locales emit '24' for midnight, but downstream math expects '00'–'23'. */
+export function normalizeHour(parsed: number): number {
+    return parsed === 24 ? 0 : parsed;
+}
+
 export function etParts(now: Date): EtParts {
     // `formatToParts` returns ~5-8 items, so reduce+spread cost is negligible.
     // Declarative form preferred over let+for mutation. 'hour12: false' usually
@@ -72,7 +78,7 @@ export function etParts(now: Date): EtParts {
             }
             if (part.type === 'hour') {
                 const parsed = Number.parseInt(part.value, 10);
-                return { ...acc, hour: parsed === 24 ? 0 : parsed };
+                return { ...acc, hour: normalizeHour(parsed) };
             }
             if (part.type === 'minute') {
                 return { ...acc, minute: Number.parseInt(part.value, 10) };
@@ -88,11 +94,32 @@ export function etParts(now: Date): EtParts {
  * (ET Mon–Fri 09:30–16:00). DST-safe — the Intl formatter resolves EDT/EST
  * automatically based on the calendar position of `now`.
  *
- * Pure function — accepts an optional `now` so tests can freeze the clock.
+ * Pure function — callers must pass an explicit `now` so the domain layer
+ * stays deterministic and tests can freeze the clock without mocking.
  */
-export function isUsOptionsRegularSession(now: Date = new Date()): boolean {
+export function isUsOptionsRegularSession(now: Date): boolean {
     const { weekdayIndex, hour, minute } = etParts(now);
     if (weekdayIndex === 0 || weekdayIndex === 6) return false;
     const totalMin = hour * MINUTES_PER_HOUR + minute;
     return totalMin >= MARKET_OPEN_MIN && totalMin <= MARKET_CLOSE_MIN;
+}
+
+/**
+ * Yahoo Finance가 미국 정규장 외 시간(PRE-PRE / POST-POST)에 옵션 quote
+ * 필드 — 특히 openInterest — 를 0으로 응답하는 시간대가 있다. 두 신호가
+ * 동시에 성립할 때만 stale로 판정한다:
+ *
+ *   1. ET 기준 정규 거래시간(09:30~16:00 평일)이 아니다 — `isUsOptionsRegularSession`
+ *      가 DST를 자동 보정해 EDT/EST 모두 정확히 판정.
+ *   2. 모든 chain의 모든 strike OI가 0이다 — 진짜 stale data 시그널.
+ *
+ * 둘 다 만족할 때만 배너를 띄워, 정규장 중 일시적 0 응답이나 OI는 정상이지만
+ * 정규장 외인 경우의 false positive를 막는다.
+ */
+export function hasAllZeroOpenInterest(snapshot: OptionsSnapshot): boolean {
+    return snapshot.chains.every(
+        c =>
+            c.calls.every(x => x.openInterest === 0) &&
+            c.puts.every(x => x.openInterest === 0)
+    );
 }
