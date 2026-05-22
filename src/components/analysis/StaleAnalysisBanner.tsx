@@ -1,5 +1,3 @@
-'use client';
-
 interface StaleAnalysisBannerProps {
     onReanalyze: () => void;
     reanalyzeCooldownMs: number;
@@ -23,7 +21,12 @@ export function StaleAnalysisBanner({
                 type="button"
                 onClick={onReanalyze}
                 disabled={isCoolingDown}
-                className="border-ui-warning/40 hover:bg-ui-warning/20 disabled:opacity-40 rounded-md border px-2 py-1 text-xs font-medium"
+                title={
+                    isCoolingDown
+                        ? '재분석은 5분에 한 번만 실행할 수 있어요.'
+                        : undefined
+                }
+                className="border-ui-warning/40 hover:bg-ui-warning/20 focus-visible:ring-primary-500 disabled:opacity-40 rounded-md border px-2 py-1 text-xs font-medium focus-visible:ring-1 focus-visible:outline-none"
             >
                 재분석
             </button>

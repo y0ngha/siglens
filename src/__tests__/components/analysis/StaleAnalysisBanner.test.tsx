@@ -31,4 +31,16 @@ describe('StaleAnalysisBanner', () => {
         const button = screen.getByRole('button', { name: /재분석/ });
         expect(button).toBeDisabled();
     });
+
+    it('does not invoke onReanalyze when the button is clicked while cooling down', () => {
+        const onReanalyze = jest.fn();
+        render(
+            <StaleAnalysisBanner
+                onReanalyze={onReanalyze}
+                reanalyzeCooldownMs={60_000}
+            />
+        );
+        fireEvent.click(screen.getByRole('button', { name: /재분석/ }));
+        expect(onReanalyze).not.toHaveBeenCalled();
+    });
 });
