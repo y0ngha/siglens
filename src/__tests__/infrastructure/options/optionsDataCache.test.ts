@@ -37,6 +37,7 @@ jest.mock('@/infrastructure/options/optionsCacheLife', () => ({
 import {
     hasOptionsMarket,
     fetchOptionsSnapshot,
+    HAS_OPTIONS_MARKET_TTL_SECONDS,
 } from '@/infrastructure/options/optionsDataCache';
 
 const ORIGINAL_REDIS_URL = process.env.UPSTASH_REDIS_REST_URL;
@@ -142,7 +143,7 @@ describe('hasOptionsMarket — Redis 캐시 레이어', () => {
         expect(mockRedisSet).toHaveBeenCalledWith(
             'options:has-market:AAPL',
             true,
-            { ex: 6 * 60 * 60 }
+            { ex: HAS_OPTIONS_MARKET_TTL_SECONDS }
         );
         expect(result).toBe(true);
     });

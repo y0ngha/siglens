@@ -10,10 +10,10 @@ const adapter = new YahooOptionsAdapter();
 // 반영될 필요는 없고, sitemap 빌드가 매 시간 ~300 ticker × Yahoo probe로
 // rate-limit을 깨는 위험이 더 큼. 6시간이면 동일 sitemap window 안에서
 // 단 한 번만 fetch한다 (이슈 #439 참조).
-const HAS_OPTIONS_MARKET_TTL_SECONDS = 6 * 60 * 60;
+// export — 테스트가 동일 상수를 import해 silent divergence를 차단한다.
+export const HAS_OPTIONS_MARKET_TTL_SECONDS = 6 * 60 * 60;
 
-// tokenStore.ts / pendingOAuthSignupStore.ts와 같은 패턴: Redis 타입을 직접 쓰고
-// env 미설정 시 null로 fallback.
+// tokenStore.ts / pendingOAuthSignupStore.ts와 같은 lazy-singleton 패턴.
 let cachedRedis: Redis | null | undefined;
 
 function getRedis(): Redis | null {

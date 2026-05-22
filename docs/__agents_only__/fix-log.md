@@ -446,3 +446,12 @@
 - Violation: System boundary external I/O가 try-catch 없이 호출돼 일시 장애가 호출 스택으로 전파
 - Rule: MISTAKES.md Infrastructure §4 — External I/O at system boundaries must be wrapped in try-catch
 - Context: Suggestion S-3 — `optionsDataCache.ts`의 `adapter.hasOptionsMarket(symbol)`. Yahoo Finance API 일시 장애 시 sitemap 빌드 전체가 깨질 위험. try-catch로 보호하고 실패 시 보수적으로 `false` 반환 + cache write 생략 (다음 요청에서 회복).
+
+
+## [PR #453 Round 4 (post-merge claude-review) | feat/seo-overhaul | 2026-05-22]
+- Violation: 테스트가 구현 측 상수(`HAS_OPTIONS_MARKET_TTL_SECONDS = 6 * 60 * 60`)를 import하지 않고 동일 리터럴을 하드코딩 — silent divergence 위험
+- Rule: MISTAKES.md Tests §4 — 테스트는 구현 측 상수를 import해 drift 차단
+- Context: Blocker B-1 — round 3에서 `optionsDataCache.ts`에 `const HAS_OPTIONS_MARKET_TTL_SECONDS`를 두면서 export를 빼먹어 test에 `{ ex: 6 * 60 * 60 }` 하드코딩이 남음. const → export const 승격 + test가 import해 assertion 사용.
+- Violation: WHY 주석에 WHAT(타입 선언이 자체 표현하는 의미)이 섞임
+- Rule: MISTAKES.md §15.3 — WHAT 주석 금지 (식별자/타입이 이미 표현하면 코멘트로 반복하지 않음)
+- Context: Suggestion S-1 — round 3에서 추가한 `let cachedRedis: Redis | null | undefined` 위 주석의 후반부 "Redis 타입을 직접 쓰고 env 미설정 시 null로 fallback"이 declaration과 중복. 패턴 cross-reference(lazy-singleton) WHY만 남기고 축약.
