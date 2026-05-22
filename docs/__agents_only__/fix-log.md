@@ -378,6 +378,15 @@
 - Context: Suggestion — `OpenInterestChart.tsx` `oiByStrike.reduce(sum, 0) === 0` 가드를 `oiByStrike.every(s => s.callOpenInterest === 0 && s.putOpenInterest === 0)` 으로 교체.
 
 
+## [PR #450 Round 1 | refactor/chat-build-chat-state | 2026-05-22]
+- Violation: 부모/자식 컴포넌트가 동일한 publish 훅(`usePublishSymbolChat`)을 각각 호출해 mount 시 자식 effect가 먼저 실행된 뒤 부모 effect가 valid state를 `WAITING_CHAT_STATE`(null)로 덮어쓰는 race condition
+- Rule: FF Predictability / Components §publish — 동일 publish channel에는 단일 호출 사이트만 둔다. parent/child 양쪽 publish는 mount-order race를 유발하므로 child wrapper를 제거하고 parent에서 conditional `chatState`로 통합.
+- Context: A1 — `NewsAiSummaryContent` 래퍼를 제거하고 `useNewsAnalysis`/`useDefaultModelId`를 `NewsAiSummary` 본체로 끌어올림. `useMemo`로 `isCardsReady ? buildChatState(analysis) : WAITING_CHAT_STATE` 단일 publish. `FundamentalAiSummary` 패턴과 일치.
+- Violation: 이미 discriminated union으로 좁혀진 `state.result`에 동일 타입(`OptionsAnalysisResponse`)을 다시 annotate하는 중간 변수 도입
+- Rule: MISTAKES.md §narrowed value reuse — TS 내로잉으로 이미 좁혀진 값에 동일 타입 annotation을 붙여 중간 변수로 빼는 것은 no-op이며 import만 늘림
+- Context: A2 — `options/utils/buildChatState.ts`의 `const payload: OptionsAnalysisResponse = state.result;`를 제거하고 객체 리터럴에 `payload: state.result` 직접 인라인. 미사용된 `OptionsAnalysisResponse` import도 삭제. `news`/`fundamental` sibling 구현과 일치.
+
+
 ## [PR #448 Round 2 | fix/options-stale-oi-em-dash | 2026-05-22]
 - Violation: 모듈에서 export하는 placeholder 상수(`METRIC_PLACEHOLDER`)를 테스트가 import하지 않고 리터럴 `'—'`를 하드코딩
 - Rule: MISTAKES.md §Tests §13 — Expected values from module exports must be imported, not hardcoded
@@ -394,5 +403,3 @@
 - Violation: 테스트 설명문/입력값이 floor 상수(`PERCENT_DISPLAY_FLOOR`) 값을 하드코딩 — 상수 변경 시 description text와 input value가 자동 갱신 안 됨
 - Rule: MISTAKES.md §Tests §4 — boundary 테스트 상수는 source에서 import; description도 상수를 interpolate해 drift 차단
 - Context: Suggestion 2 — `PERCENT_DISPLAY_FLOOR`를 export로 승격. 4개 boundary 테스트에서 입력값을 `(PERCENT_DISPLAY_FLOOR / 100) * 0.8/1.2`(formatAtmIv) 또는 `PERCENT_DISPLAY_FLOOR * 0.8/1.2`(formatImpliedMove)로 derive. description은 `${PERCENT_DISPLAY_FLOOR}` interpolation.
-
-

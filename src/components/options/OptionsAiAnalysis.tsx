@@ -6,12 +6,15 @@ import type {
     OptionsSignalKind,
     OptionsTone,
 } from '@y0ngha/siglens-core';
+import { useMemo } from 'react';
 import { BotBlockedNotice } from '@/components/symbol-page/BotBlockedNotice';
+import { usePublishSymbolChat } from '@/components/chat/hooks/useSymbolChat';
 import { cn } from '@/lib/cn';
 import { formatAnalyzedAt } from '@/lib/formatAnalyzedAt';
 import { OptionsAiAnalysisError } from '@/components/options/OptionsAiAnalysisError';
 import { OptionsAiAnalysisSkeleton } from '@/components/options/OptionsAiAnalysisSkeleton';
 import { useOptionsAnalysis } from '@/components/options/hooks/useOptionsAnalysis';
+import { buildChatState } from '@/components/options/utils/buildChatState';
 import type { OptionsExpirationSelector } from '@/domain/types';
 
 const TONE_LABEL: Record<OptionsTone, string> = {
@@ -230,6 +233,12 @@ export function OptionsAiAnalysis({
         expirationDate,
         modelId,
     });
+
+    // 훅 선언 순서 예외(MISTAKES.md #17): usePublishSymbolChat은 chatState(파생
+    // 변수)를 인자로 받으므로 useMemo 뒤에 위치해야 한다. 다른 페이지
+    // (overall/fundamental/news/chart) 모두 동일 패턴.
+    const chatState = useMemo(() => buildChatState(state), [state]);
+    usePublishSymbolChat(chatState);
 
     if (state.status === 'loading') {
         return <OptionsAiAnalysisSkeleton />;
