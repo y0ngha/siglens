@@ -41,6 +41,7 @@ import type { CooldownNotice } from '@/components/symbol-page/hooks/useAnalysis'
 import { TRENDLINE_DIRECTION_LABEL } from '@/components/trendline/constants';
 import { MS_PER_SECOND, SECONDS_PER_MINUTE } from '@/domain/constants/time';
 import { DEFAULT_RESET_MS as COPY_RESET_MS } from '@/components/hooks/useCopyToClipboard';
+import { formatAnalyzedAt } from '@/lib/formatAnalyzedAt';
 
 function formatCooldown(ms: number): string {
     const totalSec = Math.ceil(ms / MS_PER_SECOND);
@@ -806,6 +807,14 @@ export function AnalysisPanel({
                     <TrendBadge trend={analysis.trend} />
                 </div>
                 <div className="flex items-center gap-3">
+                    {analysis?.analyzedAt !== undefined && (
+                        <time
+                            dateTime={analysis.analyzedAt}
+                            className="text-secondary-500 text-xs"
+                        >
+                            {formatAnalyzedAt(analysis.analyzedAt)}
+                        </time>
+                    )}
                     <button
                         type="button"
                         onClick={handleCopyReport}
