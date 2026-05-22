@@ -73,8 +73,7 @@ export function OptionsPageClient({
     // `useMemo`로 묶을 만큼은 아니지만 OI 검사와 함께 일관된 시점 판정을
     // 위해 둘을 같은 단계에서 계산한다.
     const oiStale = useMemo(
-        () =>
-            !isUsOptionsRegularSession() && hasAllZeroOpenInterest(snapshot),
+        () => !isUsOptionsRegularSession() && hasAllZeroOpenInterest(snapshot),
         [snapshot]
     );
 
