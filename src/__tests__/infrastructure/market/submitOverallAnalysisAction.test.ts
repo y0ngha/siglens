@@ -16,10 +16,9 @@ jest.mock('@vercel/functions', () => ({
     waitUntil: jest.fn(),
 }));
 
-// 워크트리에 sync된 siglens-core dist는 tsc-alias 미적용 상태라 `requireActual`로
-// 실 모듈을 로드하면 unresolved `@/...` import에서 실패한다. 이 테스트가 실제로
-// 호출하는 export는 `submitOverallAnalysis` 하나뿐이므로 mock surface를 명시적으로
-// 좁힌다.
+// 이 테스트는 action이 core로 forwarding하는 인자 shape만 검증하므로
+// `submitOverallAnalysis` 한 export만 mocking하면 충분하다. 반환값 chain까지
+// assert하지 않아 `requireActual`로 전체 surface를 합칠 필요가 없다.
 jest.mock('@y0ngha/siglens-core', () => ({
     submitOverallAnalysis: jest.fn(),
 }));
