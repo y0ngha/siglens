@@ -66,3 +66,41 @@ export const OpenInterestTooltip = (
         </p>
     </>
 );
+
+export const CallOpenInterestTooltip = (
+    <>
+        <p>
+            특정 strike에서 콜(상승) 옵션을 산 사람들이 아직 갖고 있는 계약
+            수예요.
+        </p>
+        <p>
+            이 가격에 콜 OI가 두텁다 = 시장 참여자들이 &ldquo;주가가 이 가격
+            위로 갈 것&rdquo;에 베팅을 많이 걸어둔 자리예요. 추세가 살아 있으면
+            저항이 깨졌을 때 빠르게 올라붙는 자석 같은 역할을 해요.
+        </p>
+    </>
+);
+
+export const PutOpenInterestTooltip = (
+    <>
+        <p>
+            특정 strike에서 풋(하락) 옵션을 산 사람들이 아직 갖고 있는 계약
+            수예요.
+        </p>
+        <p>
+            이 가격에 풋 OI가 두텁다 = &ldquo;이 가격 아래로는 안 떨어졌으면
+            좋겠다&rdquo;는 보험성 베팅이 쌓인 자리예요. 주가가 가까이 가면
+            지지선처럼 작동하는 경우가 많아요.
+        </p>
+    </>
+);
+
+export const VolumeTooltip = (
+    <>
+        <p>오늘 새로 체결된 옵션 계약 수예요.</p>
+        <p>
+            OI(누적 베팅)와 Volume(오늘의 활동)을 함께 보면 시장이 어느 가격대로
+            새로 움직이고 있는지 짚어볼 수 있어요.
+        </p>
+    </>
+);

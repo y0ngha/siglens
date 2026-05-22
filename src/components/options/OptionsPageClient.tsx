@@ -9,8 +9,14 @@ import { OptionsAiAnalysis } from '@/components/options/OptionsAiAnalysis';
 import { OptionsAiAnalysisError } from '@/components/options/OptionsAiAnalysisError';
 import { OptionsChainTable } from '@/components/options/OptionsChainTable';
 import { OpenInterestChart } from '@/components/options/OpenInterestChart';
+import { StrikeVolumeChart } from '@/components/options/StrikeVolumeChart';
 import { OptionsMetricsRow } from '@/components/options/OptionsMetricsRow';
+import { OptionsStaleDataBanner } from '@/components/options/OptionsStaleDataBanner';
 import { useOptionsChainMetrics } from '@/components/options/hooks/useOptionsChainMetrics';
+import {
+    hasAllZeroOpenInterest,
+    isUsOptionsRegularSession,
+} from '@/domain/market/session';
 import type { OptionsSnapshot, SlotMapping } from '@y0ngha/siglens-core';
 import type { OptionsExpirationSelector } from '@/domain/types';
 
@@ -46,6 +52,17 @@ export function OptionsPageClient({
     // 각자 pickActiveChain + summarizeChainForLlm을 동일 입력으로 3번
     // 돌렸다. chip 전환 시마다 같은 계산이 세 번 반복되던 비용을 제거한다.
     const chainMetrics = useOptionsChainMetrics(snapshot, expirationDate);
+    // hasAllZeroOpenInterest는 모든 chain × strike를 순회하므로 chip 전환 등으로
+    // 컴포넌트가 리렌더될 때마다 다시 돌면 비용이 든다. snapshot 참조 안정성을
+    // deps로 memoize. `new Date()`는 deps에 들어가지 않는데, 매 호출마다 다른
+    // 결과를 낼 수 있지만 사용자가 페이지에 머무는 동안 정규장 boundary를
+    // 가로지르는 케이스는 거의 없고, snapshot이 새로 들어오면 자동으로 재평가된다.
+    const oiStale = useMemo(
+        () =>
+            !isUsOptionsRegularSession(new Date()) &&
+            hasAllZeroOpenInterest(snapshot),
+        [snapshot]
+    );
     const nearestExpiry = snapshot.chains[0]?.expirationDate ?? '';
 
     return (
@@ -55,6 +72,8 @@ export function OptionsPageClient({
                 value={expirationDate}
                 onChange={setExpirationDate}
             />
+
+            {oiStale && <OptionsStaleDataBanner />}
 
             <ErrorBoundary FallbackComponent={OptionsAiAnalysisError}>
                 <OptionsAiAnalysis
@@ -75,6 +94,11 @@ export function OptionsPageClient({
                 underlyingPrice={snapshot.underlyingPrice}
                 chain={chainMetrics.chain}
                 metrics={chainMetrics.metrics}
+            />
+
+            <StrikeVolumeChart
+                underlyingPrice={snapshot.underlyingPrice}
+                chain={chainMetrics.chain}
             />
 
             <OptionsChainTable
