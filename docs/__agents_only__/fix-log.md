@@ -1,6 +1,14 @@
 
 # Fix Log
 
+## [PR #445 Round 2 | fix/analysis-snapshot-ui | 2026-05-22]
+- B1: `src/components/analysis/AnalysisPanel.tsx` — round 1에서 hydration 회피를 위해 추가한 `useEffect` + `setNow(new Date())`에 `// eslint-disable-next-line react-hooks/set-state-in-effect`를 사용했음. MISTAKES.md §13(eslint-disable 사용 금지) + §10(setState in useEffect의 canonical fix는 `useEffectEvent`) 위반. `captureNow = useEffectEvent(() => startTransition(() => setNow(new Date())))` 패턴으로 변경하고 useEffect는 `captureNow()` 호출만. 동일 워크트리 `useChat.ts:382` / `useDMIChart.ts` 패턴과 일치.
+  - Rule: MISTAKES.md §13 — eslint-disable 억제 금지. §10 — `setState in useEffect` canonical = `useEffectEvent` + 내부에서 setState (필요 시 `startTransition`).
+- S1: `src/components/analysis/StaleAnalysisBanner.tsx` — `disabled` 버튼의 `title` 속성은 키보드 포커스 시 노출되지 않음(WCAG 2.4.7). `aria-describedby="stale-banner-cooldown-tooltip"`로 가리키는 `<span id role="tooltip" className="sr-only">` 보조 요소를 추가해 SR/키보드 사용자도 쿨다운 이유를 인지할 수 있게 함. `title`은 마우스 사용자 fallback으로 유지.
+  - Rule: WCAG 2.4.7 (Focus Visible) / WCAG 4.1.2 (Name, Role, Value).
+- S2: `src/domain/analysis/staleThreshold.ts` — `5Min`/`15Min`/`30Min`이 모두 5분 임계값을 공유하는 정책이 의도적임에도 코드만으로는 알 수 없어 reviewer가 Question 제기. `STALE_THRESHOLD_MS` 위에 WHY 주석(단기는 5분 일률, 중기는 30분, 장기는 4시간)을 추가해 정책 합의를 코드 옆에 명시.
+  - Rule: FF Readability — non-obvious policy decision은 코드 옆 WHY 주석.
+
 ## [PR #445 Round 1 | fix/analysis-snapshot-ui | 2026-05-22]
 - B1: `src/components/analysis/StaleAnalysisBanner.tsx` — `'use client'` 디렉티브 누락. `<button onClick={onReanalyze}>` 등록은 컨벤션상 클라이언트 경계 명시가 필수. async Server Component 트리에서 import 시 runtime 오류 위험. 파일 첫 줄에 `'use client';` 추가.
   - Rule: CONVENTIONS.md L306 (Registers event handlers → `'use client'` 필수), components/CLAUDE.md L15. Phase 2.4 라운드 1의 내부 review-agent 권고("leaf parent already client니까 불필요")가 컨벤션 문자 해석과 충돌했고, 외부 reviewer가 정확히 지적 — 컨벤션 우선으로 결정.

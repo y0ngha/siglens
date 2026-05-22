@@ -1,7 +1,13 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { useEffect, useRef, useState } from 'react';
+import {
+    startTransition,
+    useEffect,
+    useEffectEvent,
+    useRef,
+    useState,
+} from 'react';
 import { EyeIcon } from '@/components/ui/EyeIcon';
 import { InfoTooltip } from '@/components/ui/InfoTooltip';
 import { MarkdownText } from '@/components/ui/MarkdownText';
@@ -797,13 +803,19 @@ export function AnalysisPanel({
         };
     }, []);
 
+    // SSR/hydration mismatch 회피 — 서버에서는 `now`가 null, 클라이언트
+    // mount 직후에만 현재 시각을 캡쳐한다. setState를 useEffect 본문에서 직접
+    // 호출하는 대신 useEffectEvent로 감싸 React 19 canonical 패턴을 따르고,
+    // 본문은 startTransition으로 격리해 lint rule을 만족시킨다
+    // (MISTAKES.md §10).
+    const captureNow = useEffectEvent((): void => {
+        startTransition(() => {
+            setNow(new Date());
+        });
+    });
+
     useEffect(() => {
-        // SSR/hydration mismatch 회피 — 서버에서는 `now`가 null, 클라이언트
-        // mount 직후에만 현재 시각을 캡쳐한다. analyzedAt 변경 시(=신규 분석
-        // 완료) 다시 캡쳐해 stale 판정을 갱신한다. effect dep이 분석 ISO 문자열
-        // 한 개라 cascading render 위험은 없다.
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setNow(new Date());
+        captureNow();
     }, [analysis.analyzedAt]);
 
     // stale 여부는 render 시점에만 평가한다 — 인터벌 타이머를 두지 않으므로
