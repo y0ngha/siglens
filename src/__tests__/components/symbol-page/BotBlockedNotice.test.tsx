@@ -19,4 +19,13 @@ describe('BotBlockedNotice', () => {
         const { container } = render(<BotBlockedNotice />);
         expect(container.querySelector('[role="status"]')).toBeInTheDocument();
     });
+
+    it('외부에서 전달한 className을 병합한다', () => {
+        const { container } = render(
+            <BotBlockedNotice className="custom-class" />
+        );
+        const root = container.firstChild as HTMLElement;
+        expect(root).toHaveClass('custom-class');
+        expect(root).toHaveClass('rounded-md');
+    });
 });
