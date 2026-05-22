@@ -94,10 +94,9 @@ const mockResolveTierAndByok = resolveTierAndByok as jest.MockedFunction<
 const mockFetchSnapshot = fetchOptionsSnapshot as jest.MockedFunction<
     typeof fetchOptionsSnapshot
 >;
-const mockIsRegularSession =
-    isUsOptionsRegularSession as jest.MockedFunction<
-        typeof isUsOptionsRegularSession
-    >;
+const mockIsRegularSession = isUsOptionsRegularSession as jest.MockedFunction<
+    typeof isUsOptionsRegularSession
+>;
 const mockIsOiStale = isOpenInterestSnapshotStale as jest.MockedFunction<
     typeof isOpenInterestSnapshotStale
 >;

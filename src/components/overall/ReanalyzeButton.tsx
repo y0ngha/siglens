@@ -14,7 +14,10 @@ interface ReanalyzeButtonProps {
  * 항상 분석 done 화면에 노출되는 재분석 CTA. 클릭 시 hook이 4-axis 전체에
  * force=true를 전달해 캐시를 우회한다 (`useOverallAnalysis.trigger` 참고).
  */
-export function ReanalyzeButton({ onClick, highlighted }: ReanalyzeButtonProps) {
+export function ReanalyzeButton({
+    onClick,
+    highlighted,
+}: ReanalyzeButtonProps) {
     return (
         <div className="flex justify-center pt-2">
             <button
