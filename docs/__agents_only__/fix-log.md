@@ -387,3 +387,12 @@
 - Context: Suggestion — `optionsTooltips.tsx`의 `AtmIvTooltip`/`ImpliedMoveTooltip`가 render-time `new Date()` 평가. 현재는 client consumer만 import해 기능적 문제 없으나, RSC import 시 builds-time 평가로 잘못 안내 위험. `'use client'` directive 추가.
 
 
+## [PR #448 Round 3 | fix/options-stale-oi-em-dash | 2026-05-22]
+- Violation: 모듈에서 export하는 상수가 자신을 참조하는 function declaration보다 아래에 위치 — 런타임은 closure로 OK지만 reader에게 "어디서 옴?" 인식 부담
+- Rule: FF Readability — single source of truth는 파일 상단에 배치해 reader가 stub 참조 전에 정의를 만나도록
+- Context: Suggestion 1 — `optionsFormatters.ts`의 `METRIC_PLACEHOLDER`/`PERCENT_DISPLAY_FLOOR`가 formatters 아래(L41~L46). 두 상수를 파일 최상단(JSDoc 직후, 모든 function 선언 이전)으로 이동.
+- Violation: 테스트 설명문/입력값이 floor 상수(`PERCENT_DISPLAY_FLOOR`) 값을 하드코딩 — 상수 변경 시 description text와 input value가 자동 갱신 안 됨
+- Rule: MISTAKES.md §Tests §4 — boundary 테스트 상수는 source에서 import; description도 상수를 interpolate해 drift 차단
+- Context: Suggestion 2 — `PERCENT_DISPLAY_FLOOR`를 export로 승격. 4개 boundary 테스트에서 입력값을 `(PERCENT_DISPLAY_FLOOR / 100) * 0.8/1.2`(formatAtmIv) 또는 `PERCENT_DISPLAY_FLOOR * 0.8/1.2`(formatImpliedMove)로 derive. description은 `${PERCENT_DISPLAY_FLOOR}` interpolation.
+
+
