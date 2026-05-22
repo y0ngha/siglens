@@ -7,6 +7,12 @@
             "skillPath": "skills/brainstorming/SKILL.md",
             "computedHash": "8df9b47092524833138b58682d03f2e153a242e550d1693657afdbee0cc9cdb0"
         },
+        "core-web-vitals": {
+            "source": "addyosmani/web-quality-skills",
+            "sourceType": "github",
+            "skillPath": "skills/core-web-vitals/SKILL.md",
+            "computedHash": "8e55888cc177e994e2cbfa0ee0a277e1273c6d43c8cf7649165f9e2f39489a48"
+        },
         "executing-plans": {
             "source": "obra/superpowers",
             "sourceType": "github",
