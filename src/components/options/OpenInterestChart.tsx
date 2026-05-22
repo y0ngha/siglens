@@ -25,6 +25,12 @@ interface OpenInterestChartProps {
     metrics: OptionsExpirationMetrics | null;
 }
 
+/** Container-relative coordinates the floating tooltip is anchored at. */
+interface TooltipPosition {
+    x: number;
+    y: number;
+}
+
 const SVG_WIDTH = 600;
 const SVG_HEIGHT = 240;
 const PAD_TOP = 30;
@@ -136,21 +142,48 @@ function fmtOi(value: number): string {
     return String(value);
 }
 
+/**
+ * Pure helper. Computes container-relative tooltip coordinates from a pointer
+ * event, clamping to viewport boundaries so the tooltip can't escape the
+ * chart container even when the cursor is near an edge.
+ *
+ * Defined at module scope (not inside the component) because it captures no
+ * state or refs — only its arguments and module-level layout constants.
+ */
+function computeTooltipPos(
+    event: PointerEvent<SVGRectElement>,
+    rect: DOMRect
+): TooltipPosition {
+    const rawX = event.clientX - rect.left;
+    const rawY = event.clientY - rect.top;
+    // 좌우 경계 클램핑 — tooltip은 `-translate-x-1/2`로 좌우 절반이
+    // anchor 좌우로 뻗어나가므로 절반 너비 + 여유만큼 안쪽에 고정.
+    const clampedX = Math.min(
+        Math.max(rawX, TOOLTIP_HALF_WIDTH_PX + TOOLTIP_VIEWPORT_PADDING_PX),
+        rect.width - TOOLTIP_HALF_WIDTH_PX - TOOLTIP_VIEWPORT_PADDING_PX
+    );
+    // 상단 경계 클램핑 — tooltip은 `-translate-y-full`로 anchor 위로
+    // 뻗으므로 anchor가 너무 위면 tooltip이 컨테이너 밖으로 튀어나간다.
+    const minY =
+        TOOLTIP_APPROX_HEIGHT_PX +
+        TOOLTIP_VIEWPORT_PADDING_PX +
+        TOOLTIP_CURSOR_OFFSET_Y_PX;
+    const clampedY = Math.max(rawY, minY);
+    return { x: clampedX, y: clampedY - TOOLTIP_CURSOR_OFFSET_Y_PX };
+}
+
 export function OpenInterestChart({
     underlyingPrice,
     chain,
     metrics,
 }: OpenInterestChartProps) {
+    const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+    const [tooltipPos, setTooltipPos] = useState<TooltipPosition | null>(null);
     const containerRef = useRef<HTMLDivElement | null>(null);
     // 컨테이너 DOMRect 캐시. pointerEnter 시 한 번 측정해 두고 pointerMove에서
     // 재사용한다 — move마다 `getBoundingClientRect`를 부르면 reflow를 매번
     // 트리거해 마우스가 빠르게 움직일 때 frame drop을 유발한다.
     const cachedRectRef = useRef<DOMRect | null>(null);
-    const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
-    const [tooltipPos, setTooltipPos] = useState<{
-        x: number;
-        y: number;
-    } | null>(null);
 
     const derived = useMemo(() => {
         if (!chain) return null;
@@ -219,29 +252,6 @@ export function OpenInterestChart({
     // 직접 lookup 결과를 ||로 정규화해 stale index → null로 떨어뜨린다.
     const hoveredRow =
         (hoveredIndex !== null && oiByStrike[hoveredIndex]) || null;
-
-    const computeTooltipPos = (
-        event: PointerEvent<SVGRectElement>,
-        rect: DOMRect
-    ): { x: number; y: number } => {
-        // viewport 기준 좌표 → container 기준 좌표.
-        const rawX = event.clientX - rect.left;
-        const rawY = event.clientY - rect.top;
-        // 좌우 경계 클램핑 — tooltip은 `-translate-x-1/2`로 좌우 절반이
-        // anchor 좌우로 뻗어나가므로 절반 너비 + 여유만큼 안쪽에 고정.
-        const clampedX = Math.min(
-            Math.max(rawX, TOOLTIP_HALF_WIDTH_PX + TOOLTIP_VIEWPORT_PADDING_PX),
-            rect.width - TOOLTIP_HALF_WIDTH_PX - TOOLTIP_VIEWPORT_PADDING_PX
-        );
-        // 상단 경계 클램핑 — tooltip은 `-translate-y-full`로 anchor 위로
-        // 뻗으므로 anchor가 너무 위면 tooltip이 컨테이너 밖으로 튀어나간다.
-        const minY =
-            TOOLTIP_APPROX_HEIGHT_PX +
-            TOOLTIP_VIEWPORT_PADDING_PX +
-            TOOLTIP_CURSOR_OFFSET_Y_PX;
-        const clampedY = Math.max(rawY, minY);
-        return { x: clampedX, y: clampedY - TOOLTIP_CURSOR_OFFSET_Y_PX };
-    };
 
     const handlePointerEnter = (
         event: PointerEvent<SVGRectElement>,
@@ -464,45 +474,57 @@ export function OpenInterestChart({
                 })}
             </svg>
 
-            {hoveredRow !== null && tooltipPos !== null && (
-                <div
-                    id={TOOLTIP_ELEMENT_ID}
-                    role="tooltip"
-                    className="border-secondary-600 bg-secondary-900/95 text-secondary-100 pointer-events-none absolute top-[var(--tooltip-y)] left-[var(--tooltip-x)] z-10 min-w-[180px] -translate-x-1/2 -translate-y-full rounded-md border px-3 py-2 text-xs shadow-lg backdrop-blur"
-                    style={
-                        {
-                            '--tooltip-x': `${tooltipPos.x}px`,
-                            '--tooltip-y': `${tooltipPos.y}px`,
-                        } as CSSProperties
-                    }
-                >
-                    <div className="text-secondary-300 mb-1 font-semibold tabular-nums">
-                        Strike ${hoveredRow.strike.toLocaleString()}
-                    </div>
-                    <div className="flex items-center justify-between gap-3">
-                        <span className="text-chart-bullish">Call OI</span>
-                        <span className="tabular-nums">
-                            {hoveredRow.callOpenInterest.toLocaleString()} 계약
-                        </span>
-                    </div>
-                    <div className="flex items-center justify-between gap-3">
-                        <span className="text-chart-bearish">Put OI</span>
-                        <span className="tabular-nums">
-                            {hoveredRow.putOpenInterest.toLocaleString()} 계약
-                        </span>
-                    </div>
-                    <div className="border-secondary-700 mt-1 flex items-center justify-between gap-3 border-t pt-1">
-                        <span className="text-secondary-400">합계</span>
-                        <span className="font-semibold tabular-nums">
-                            {(
-                                hoveredRow.callOpenInterest +
-                                hoveredRow.putOpenInterest
-                            ).toLocaleString()}{' '}
-                            계약
-                        </span>
-                    </div>
-                </div>
-            )}
+            {/* WAI-ARIA tooltip 패턴: hit-rect의 `aria-describedby`가 가리키는
+                대상은 항상 DOM에 있어야 한다. 비활성 시 `hidden` 속성으로 숨겨
+                스크린리더가 대상을 찾되 시각적으로는 보이지 않게 한다. */}
+            <div
+                id={TOOLTIP_ELEMENT_ID}
+                role="tooltip"
+                hidden={hoveredRow === null || tooltipPos === null}
+                className="border-secondary-600 bg-secondary-900/95 text-secondary-100 pointer-events-none absolute top-[var(--tooltip-y)] left-[var(--tooltip-x)] z-10 min-w-[180px] -translate-x-1/2 -translate-y-full rounded-md border px-3 py-2 text-xs shadow-lg backdrop-blur"
+                style={
+                    // CSS 커스텀 프로퍼티(--*)는 런타임에 유효하나 React의
+                    // CSSProperties 타입은 임의 `--*` 키를 포함하지 않아
+                    // 인덱스 시그니처가 막힘 — TS 한계 우회용 cast이며
+                    // 런타임 리스크는 없다.
+                    {
+                        '--tooltip-x': `${tooltipPos?.x ?? 0}px`,
+                        '--tooltip-y': `${tooltipPos?.y ?? 0}px`,
+                    } as CSSProperties
+                }
+            >
+                {hoveredRow !== null && (
+                    <>
+                        <div className="text-secondary-300 mb-1 font-semibold tabular-nums">
+                            Strike ${hoveredRow.strike.toLocaleString()}
+                        </div>
+                        <div className="flex items-center justify-between gap-3">
+                            <span className="text-chart-bullish">Call OI</span>
+                            <span className="tabular-nums">
+                                {hoveredRow.callOpenInterest.toLocaleString()}{' '}
+                                계약
+                            </span>
+                        </div>
+                        <div className="flex items-center justify-between gap-3">
+                            <span className="text-chart-bearish">Put OI</span>
+                            <span className="tabular-nums">
+                                {hoveredRow.putOpenInterest.toLocaleString()}{' '}
+                                계약
+                            </span>
+                        </div>
+                        <div className="border-secondary-700 mt-1 flex items-center justify-between gap-3 border-t pt-1">
+                            <span className="text-secondary-400">합계</span>
+                            <span className="font-semibold tabular-nums">
+                                {(
+                                    hoveredRow.callOpenInterest +
+                                    hoveredRow.putOpenInterest
+                                ).toLocaleString()}{' '}
+                                계약
+                            </span>
+                        </div>
+                    </>
+                )}
+            </div>
 
             <div className="text-secondary-500 mt-2 flex flex-wrap items-center gap-3 text-[10px]">
                 <span className="flex items-center gap-1">

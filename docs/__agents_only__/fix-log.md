@@ -1,6 +1,20 @@
 
 # Fix Log
 
+## [PR #442 Round 3 | fix/oi-tooltip-floating | 2026-05-22]
+- B1: `src/components/options/OpenInterestChart.tsx` — Hook 선언 순서 재정정. CONVENTIONS.md 순서는 useState → useRef인데 R2에서 useRef를 먼저 선언해 두 번 반전됐다. useState 2개를 먼저, useRef 2개를 뒤로.
+  - Rule: CONVENTIONS.md Custom Hook Declaration Order / MISTAKES.md §17. **이전 라운드(R2)에서 같은 룰에 대한 정정 → 부분 회귀**. 이번엔 useState → useRef 순서로 명확히 고정.
+- B2: 같은 파일 — `{ x: number; y: number }` 인라인 객체 타입이 useState 타입 파라미터와 (R2의) `computeTooltipPos` 반환 타입 두 곳에 중복. 컴포넌트 위에 `TooltipPosition` 인터페이스를 추출해 모두 명명된 타입으로 통일.
+  - Rule: MISTAKES.md TypeScript §5.3 — 함수 반환 타입과 상태 타입에 인라인 객체 리터럴 금지.
+- S1: 같은 파일 — `computeTooltipPos`가 컴포넌트 상태/ref를 클로저하지 않음에도 컴포넌트 안에 정의돼 매 렌더마다 재생성. module-level 순수 함수로 추출.
+  - Rule: MISTAKES.md §20 / CONVENTIONS.md FP — 클로저 의존이 없는 헬퍼는 module-level로.
+- S2: 같은 파일 — `const rawX = event.clientX - rect.left` 위 "viewport 기준 좌표 → container 기준 좌표" 코멘트가 WHAT. 제거. 그 아래 클램핑 WHY 코멘트는 유지.
+  - Rule: MISTAKES.md §15.3 — WHAT 코멘트 금지.
+- S3: 같은 파일 — `as CSSProperties` safe-cast에 guarantee 주석 추가. CSS 커스텀 프로퍼티(--*)는 런타임 유효하지만 React `CSSProperties` 타입에 포함 안 되는 TS 한계 우회임을 명시.
+  - Rule: MISTAKES.md TypeScript §7 — 모든 safe-cast `as`에 guarantee 주석 필수.
+- S4: 같은 파일 — hit-rect의 `aria-describedby={TOOLTIP_ELEMENT_ID}`가 가리키는 tooltip div가 hover 시에만 조건부 렌더링되어 스크린리더가 anchor를 찾지 못함. tooltip div를 항상 DOM에 두고 비활성 시 `hidden` 속성으로 숨기는 WAI-ARIA tooltip 패턴 적용. 내부 컨텐츠는 hoveredRow가 있을 때만 렌더.
+  - Rule: WAI-ARIA tooltip 패턴 — describedby anchor는 항상 DOM에 있어야 한다.
+
 ## [PR #442 Round 2 | fix/oi-tooltip-floating | 2026-05-22]
 - B1: `src/components/options/OpenInterestChart.tsx` — Hook 선언 순서 위반. `useMemo`(derived)가 `useRef`(containerRef)/`useState`(hoveredIndex, tooltipPos)보다 먼저 선언돼 있었음. CONVENTIONS.md "Custom Hook Declaration Order"에 맞춰 useRef/useState를 함수 본문 최상단으로 끌어올리고 useMemo는 그 다음에 배치.
   - Rule: MISTAKES.md §17 / CONVENTIONS.md Custom Hook Declaration Order.
