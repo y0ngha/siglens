@@ -14,6 +14,10 @@ import { pollOverallAnalysisAction } from '@/infrastructure/market/pollOverallAn
 import { pollAnalysisAction } from '@/infrastructure/market/pollAnalysisAction';
 import { pollFundamentalAnalysisAction } from '@/infrastructure/market/pollFundamentalAnalysisAction';
 import { pollNewsAnalysisAction } from '@/infrastructure/market/pollNewsAnalysisAction';
+import {
+    cancelOptionsAnalysisJobAction,
+    pollOptionsAnalysisAction,
+} from '@/infrastructure/options/optionsActions';
 import { cancelAnalysisJobAction } from '@/infrastructure/market/cancelAnalysisJobAction';
 import { cancelFundamentalAnalysisJobAction } from '@/infrastructure/market/cancelFundamentalAnalysisJobAction';
 import { cancelNewsAnalysisJobAction } from '@/infrastructure/market/cancelNewsAnalysisJobAction';
@@ -53,7 +57,12 @@ interface DependencyPollResult {
     error?: string;
 }
 
-const AXIS_ORDER: readonly OverallAxis[] = ['technical', 'fundamental', 'news'];
+const AXIS_ORDER: readonly OverallAxis[] = [
+    'technical',
+    'fundamental',
+    'news',
+    'options',
+];
 
 /**
  * submitUntilReady 재진입 한도. dedup이 적용된 뒤에도 의존성 분석이 끊임없이
@@ -92,6 +101,8 @@ async function pollDependencyJob(
             return pollFundamentalAnalysisAction(jobId);
         case 'news':
             return pollNewsAnalysisAction(jobId);
+        case 'options':
+            return pollOptionsAnalysisAction(jobId);
     }
 }
 
@@ -154,6 +165,10 @@ async function waitForDependencies(
 /**
  * submitOverallAnalysisAction을 호출하고, pending_dependencies이면
  * 각 axis job을 직접 polling한 뒤 완료 후 한 번만 재submit한다.
+ *
+ * `force`는 사용자가 done 상태에서 재분석을 트리거할 때만 true로 전달된다.
+ * pending_dependencies로 진입 후 재submit하는 재귀 호출에서는 propagation하지
+ * 않는다 — dependency가 이미 새로 만들어진 상태이므로 추가 force는 불필요하다.
  */
 async function submitUntilReady(
     symbol: string,
@@ -163,6 +178,7 @@ async function submitUntilReady(
     signal: AbortSignal,
     onProgress: (p: ProgressState) => void,
     onJobsUpdate: (jobs: CurrentJobs) => void,
+    options: { force?: boolean } = {},
     depth = 0
 ): Promise<
     Exclude<
@@ -180,7 +196,8 @@ async function submitUntilReady(
         symbol,
         companyName,
         timeframe,
-        modelId
+        modelId,
+        options
     );
     throwIfAborted(signal);
 
@@ -200,7 +217,8 @@ async function submitUntilReady(
     );
     throwIfAborted(signal);
 
-    // 모든 dependency 완료 후 재submit — 이번엔 pending_dependencies가 반환되지 않는다.
+    // 모든 dependency 완료 후 재submit — 이번엔 pending_dependencies가 반환되지
+    // 않는다. force는 의도적으로 전파하지 않는다(위 JSDoc 참고).
     return submitUntilReady(
         symbol,
         companyName,
@@ -209,6 +227,7 @@ async function submitUntilReady(
         signal,
         onProgress,
         onJobsUpdate,
+        {},
         depth + 1
     );
 }
@@ -223,7 +242,8 @@ async function fetchOverallAnalysis(
     // expectedCurrent가 주어지면 ref가 일치할 때만 갱신한다. retry/queryKey
     // 변경으로 새 실행이 시작된 뒤 이전 실행의 finally가 새 실행의 ref를 null로
     // 덮어쓰는 race를 막기 위해 사용한다.
-    onJobsUpdate: (jobs: CurrentJobs, expectedCurrent?: CurrentJobs) => void
+    onJobsUpdate: (jobs: CurrentJobs, expectedCurrent?: CurrentJobs) => void,
+    options: { force?: boolean } = {}
 ): Promise<OverallAnalysisResponse> {
     // 이 실행이 마지막으로 ref에 기록한 값. finally에서 compare-and-clear의
     // 비교 기준으로 사용한다 — 다른 실행이 ref를 갱신했다면 그 값을 보존한다.
@@ -242,7 +262,8 @@ async function fetchOverallAnalysis(
         modelId,
         signal,
         onProgress,
-        trackedUpdate
+        trackedUpdate,
+        options
     );
 
     if (submitted.status === 'cached') return submitted.result;
@@ -311,6 +332,12 @@ export function useOverallAnalysis(
     const [triggered, setTriggered] = useState(false);
     const [progress, setProgress] = useState<ProgressState | null>(null);
     const currentJobsRef = useRef<CurrentJobs>(null);
+    // 재분석 trigger가 다음 queryFn 호출에서 force=true를 사용해야 한다고 신호를
+    // 보내는 single-shot ref. queryFn 안에서 read 후 즉시 false로 reset한다.
+    // useState 대신 ref를 쓰는 이유: trigger → refetch → queryFn 흐름이 같은
+    // React commit cycle 안에서 진행돼야 해서 setState의 비동기 반영 타이밍에
+    // 의존할 수 없다.
+    const queryFnForceRef = useRef<boolean>(false);
     const queryKey = useMemo(
         () =>
             QUERY_KEYS.overallAnalysis(symbol, companyName, timeframe, modelId),
@@ -321,8 +348,10 @@ export function useOverallAnalysis(
 
     const query = useQuery({
         queryKey,
-        queryFn: ({ signal }) =>
-            fetchOverallAnalysis(
+        queryFn: ({ signal }) => {
+            const force = queryFnForceRef.current;
+            queryFnForceRef.current = false;
+            return fetchOverallAnalysis(
                 symbol,
                 companyName,
                 timeframe,
@@ -337,8 +366,10 @@ export function useOverallAnalysis(
                         return;
                     }
                     currentJobsRef.current = jobs;
-                }
-            ),
+                },
+                { force }
+            );
+        },
         enabled: triggered,
         retry: false,
         staleTime: Infinity,
@@ -380,6 +411,9 @@ export function useOverallAnalysis(
         if (!triggered) {
             setTriggered(true);
         } else {
+            // 이미 한 번 분석이 끝난 뒤의 사용자 행동은 항상 4-axis full force
+            // 재분석으로 간주한다 (spec §2: "재분석 = 4축 전체 force").
+            queryFnForceRef.current = true;
             void refetch();
         }
     }, [triggered, refetch]);
@@ -417,6 +451,14 @@ export function useOverallAnalysis(
                                 },
                             ]
                           : []),
+                      ...(current.jobs.options !== undefined
+                          ? [
+                                {
+                                    jobId: current.jobs.options,
+                                    type: 'options' as const,
+                                },
+                            ]
+                          : []),
                   ]
                 : [{ jobId: current.jobId, type: 'overall' as const }];
 
@@ -440,7 +482,7 @@ export function useOverallAnalysis(
             currentJobsRef.current = null;
 
             if (current.phase === 'dependencies') {
-                const { technical, fundamental, news } = current.jobs;
+                const { technical, fundamental, news, options } = current.jobs;
                 if (technical !== undefined)
                     void cancelAnalysisJobAction(technical).catch(error =>
                         console.warn(
@@ -460,6 +502,13 @@ export function useOverallAnalysis(
                     void cancelNewsAnalysisJobAction(news).catch(error =>
                         console.warn(
                             '[useOverallAnalysis] cancel news failed',
+                            error
+                        )
+                    );
+                if (options !== undefined)
+                    void cancelOptionsAnalysisJobAction(options).catch(error =>
+                        console.warn(
+                            '[useOverallAnalysis] cancel options failed',
                             error
                         )
                     );

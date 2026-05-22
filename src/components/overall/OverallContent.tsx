@@ -4,13 +4,15 @@ import { usePublishSymbolChat } from '@/components/chat/hooks/useSymbolChat';
 import { DependencyProgress } from '@/components/overall/DependencyProgress';
 import { useOverallAnalysis } from '@/components/overall/hooks/useOverallAnalysis';
 import { OverallTriggerCta } from '@/components/overall/OverallTriggerCta';
+import { ReanalyzeButton } from '@/components/overall/ReanalyzeButton';
 import { FundamentalSummary } from '@/components/overall/sections/FundamentalSummary';
+import { IntegratedConclusion } from '@/components/overall/sections/IntegratedConclusion';
 import { NewsSummary } from '@/components/overall/sections/NewsSummary';
+import { OptionsSummary } from '@/components/overall/sections/OptionsSummary';
 import { OverallSummary } from '@/components/overall/sections/OverallSummary';
 import { RiskFactors } from '@/components/overall/sections/RiskFactors';
 import { ScenarioAnalysis } from '@/components/overall/sections/ScenarioAnalysis';
 import { TechnicalSummary } from '@/components/overall/sections/TechnicalSummary';
-import { ThreeAxisConclusion } from '@/components/overall/sections/ThreeAxisConclusion';
 import { buildChatState } from '@/components/overall/utils/buildChatState';
 import { BotBlockedNotice } from '@/components/symbol-page/BotBlockedNotice';
 import { useDefaultModelId } from '@/components/symbol-page/hooks/useDefaultModelId';
@@ -147,15 +149,30 @@ export function OverallContent({
     if (state.status !== 'done') return null;
 
     const r = state.result;
+    const optionsOiStale = r.optionsOiStale ?? false;
+    // 옵션 분석이 실제로 수행됐고(=bullets 존재) OI 스냅샷이 stale일 때만 재분석
+    // 버튼을 amber로 강조한다. 빈 옵션 분석(NoChains)에서는 stale 여부가 의미가
+    // 없으므로 강조하지 않는다 — OptionsSummary의 stale 배지 노출 조건과 동일.
+    const reanalyzeHighlighted =
+        r.optionsBulletsKo.length > 0 && optionsOiStale;
+
     return (
         <div className="space-y-6">
             <OverallSummary headline={r.headlineKo} />
             <TechnicalSummary bullets={r.technicalBulletsKo} />
+            <OptionsSummary
+                bullets={r.optionsBulletsKo}
+                oiStale={optionsOiStale}
+            />
             <FundamentalSummary bullets={r.fundamentalBulletsKo} />
             <NewsSummary bullets={r.newsBulletsKo} />
-            <ThreeAxisConclusion text={r.threeAxisConclusionKo} />
+            <IntegratedConclusion text={r.integratedConclusionKo} />
             <ScenarioAnalysis scenarios={r.scenarios} />
             <RiskFactors factors={r.riskFactorsKo} />
+            <ReanalyzeButton
+                onClick={trigger}
+                highlighted={reanalyzeHighlighted}
+            />
         </div>
     );
 }
