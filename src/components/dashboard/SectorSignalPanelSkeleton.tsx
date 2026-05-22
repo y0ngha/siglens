@@ -7,11 +7,18 @@ export function SectorSignalPanelSkeleton() {
             aria-busy="true"
             className="sector-panel-bg relative px-6 py-10 lg:px-[15vw]"
         >
-            <div className="mb-6 flex items-center justify-between">
+            {/* 의미 없는 pulse 영역은 aria-hidden으로 스크린리더에서 숨기고, 상위 section의 aria-label만 안내한다. */}
+            <div
+                className="mb-6 flex items-center justify-between"
+                aria-hidden="true"
+            >
                 <div className="bg-secondary-700/50 h-3.5 w-24 animate-pulse rounded" />
                 <div className="bg-secondary-700/50 h-3.5 w-20 animate-pulse rounded" />
             </div>
-            <div className="border-secondary-700 flex gap-6 overflow-x-auto border-b pb-2">
+            <div
+                className="border-secondary-700 flex gap-6 overflow-x-auto border-b pb-2"
+                aria-hidden="true"
+            >
                 {SIGNAL_SECTORS.map(etf => (
                     <div
                         key={etf.symbol}
@@ -19,7 +26,7 @@ export function SectorSignalPanelSkeleton() {
                     />
                 ))}
             </div>
-            <div className="mt-6 flex flex-col gap-4">
+            <div className="mt-6 flex flex-col gap-4" aria-hidden="true">
                 {[0, 1, 2, 3].map(i => (
                     <div
                         key={i}

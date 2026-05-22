@@ -63,6 +63,8 @@ interface StockChartProps {
     onChartReady?: (chart: IChartApi) => void;
     /** 차트가 제거되기 직전에 호출된다. 구독 해제에 사용된다. */
     onChartRemove?: () => void;
+    /** aria-label에 들어갈 ticker — 스크린 리더에 차트 종목 안내. 없으면 generic label로 fallback. */
+    ticker?: string;
 }
 
 export function StockChart({
@@ -74,6 +76,7 @@ export function StockChart({
     actionPricesVisible = true,
     onChartReady,
     onChartRemove,
+    ticker,
 }: StockChartProps) {
     const wrapperRef = useRef<HTMLDivElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -308,9 +311,23 @@ export function StockChart({
         );
     }
 
+    // Lightweight Charts 캔버스 자체는 스크린 리더가 읽을 수 없으므로 캔버스 컨테이너에
+    // role/aria-label을 부여한다. wrapperRef에 붙이면 자식으로 들어가는 IndicatorToolbar·
+    // OverlayLegend의 인터랙티브 요소가 일부 스크린리더에서 presentational로 취급될 수 있어
+    // 캔버스만 들어가는 containerRef에 둔다.
+    const chartAriaLabel =
+        ticker !== undefined && ticker !== ''
+            ? `${ticker} ${timeframe} 캔들 차트`
+            : '가격 차트';
+
     return (
         <div ref={wrapperRef} className="relative h-full w-full">
-            <div ref={containerRef} className="h-full w-full" />
+            <div
+                ref={containerRef}
+                className="h-full w-full"
+                role="img"
+                aria-label={chartAriaLabel}
+            />
             <div className="pointer-events-none absolute top-2 left-2 z-10 flex flex-col gap-1">
                 <div className="pointer-events-auto">
                     <IndicatorToolbar

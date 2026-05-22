@@ -5,12 +5,15 @@ import { OAuthConsentForm } from '@/components/auth/OAuthConsentForm';
 import { createPendingOAuthSignupStoreFromEnv } from '@/infrastructure/auth/pendingOAuthSignupStore';
 import { cancelOAuthSignupAction } from '@/infrastructure/auth/cancelOAuthSignupAction';
 import { OAUTH_ERROR_REDIRECT } from '@/infrastructure/auth/errorMessages';
-import { SITE_NAME } from '@/lib/seo';
+import { SITE_NAME, SITE_URL } from '@/lib/seo';
 import type { Metadata } from 'next';
 
+// noindex 페이지에도 canonical/openGraph.url을 명시한다. 자세한 근거는 src/app/login/page.tsx 주석 참조.
 export const metadata: Metadata = {
     title: '소셜 로그인 가입 동의',
     description: `${SITE_NAME} 소셜 로그인 가입 약관 동의`,
+    alternates: { canonical: `${SITE_URL}/signup/oauth/consent` },
+    openGraph: { url: `${SITE_URL}/signup/oauth/consent` },
     robots: { index: false, follow: false },
 };
 

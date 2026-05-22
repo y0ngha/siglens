@@ -1,7 +1,11 @@
 import { SymbolPageClient } from '@/components/symbol-page/SymbolPageClient';
 import { JsonLd } from '@/components/ui/JsonLd';
 import { FALLBACK_ANALYSIS } from '@/domain/chat/fallbackAnalysis';
-import { DEFAULT_TIMEFRAME, isValidTimeframe } from '@/domain/constants/market';
+import {
+    DEFAULT_TIMEFRAME,
+    isValidTimeframe,
+    VALID_TICKER_RE,
+} from '@/domain/constants/market';
 import { buildDisplayName } from '@/domain/ticker';
 import { getBarsAction } from '@/infrastructure/market/getBarsAction';
 import { countSkillFiles } from '@/infrastructure/skills/loader';
@@ -32,6 +36,10 @@ export async function generateMetadata({
     const { symbol } = await params;
     const { tf } = await searchParams;
     const ticker = symbol.toUpperCase();
+    // 본문 notFound()와 일관: 잘못된 ticker는 메타데이터를 비우고 noindex로 응답한다.
+    if (!VALID_TICKER_RE.test(ticker)) {
+        return { robots: { index: false, follow: false } };
+    }
     const assetInfo = await getAssetInfoCached(ticker);
     const displayName = assetInfo
         ? buildDisplayName(assetInfo, ticker)
@@ -75,6 +83,9 @@ export default async function SymbolPage({ params, searchParams }: Props) {
     const { tf } = await searchParams;
     const initialTimeframe = isValidTimeframe(tf) ? tf : DEFAULT_TIMEFRAME;
     const ticker = symbol.toUpperCase();
+    // 다른 5개 sibling 페이지(news/fundamental/options/overall/fear-greed)와 일관:
+    // 잘못된 ticker 형식은 본문에서도 notFound로 즉시 차단한다 (generateMetadata 가드와 짝).
+    if (!VALID_TICKER_RE.test(ticker)) notFound();
     const [assetInfo, skillCounts] = await Promise.all([
         getAssetInfoCached(ticker),
         countSkillFiles(),
@@ -99,7 +110,9 @@ export default async function SymbolPage({ params, searchParams }: Props) {
         inLanguage: 'ko',
     };
 
-    const breadcrumbJsonLd = buildBreadcrumbJsonLd([{ name: fullTitle, url }]);
+    // 차트 페이지는 ticker landing이므로 [Siglens, ticker] 2단계로 통일한다.
+    // (sibling 페이지들은 [Siglens, ticker, 섹션명] 3단계 — buildBreadcrumbJsonLd가 Siglens를 자동 prepend.)
+    const breadcrumbJsonLd = buildBreadcrumbJsonLd([{ name: ticker, url }]);
 
     const faqJsonLd = {
         '@context': 'https://schema.org',
@@ -110,7 +123,9 @@ export default async function SymbolPage({ params, searchParams }: Props) {
                 name: `${displayName} 차트 분석에서 무엇을 볼 수 있나요?`,
                 acceptedAnswer: {
                     '@type': 'Answer',
-                    text: `RSI, MACD, 볼린저밴드 같은 보조지표 ${skillCounts.indicators}종으로 추세를 해석하고, 도지나 해머 같은 캔들 패턴, 헤드앤숄더 같은 차트 패턴, 주요 지지선과 저항선 레벨, 매매 신호까지 한 페이지에서 정리해 보여줍니다. AI가 추세 판단과 진입 후보 가격대를 따로 정리해 같이 읽기 좋습니다.`,
+                    // FAQ JSON-LD는 동적 숫자(보조지표 개수)를 빼고 질적 표현으로
+                    // 유지해 Skills 카운트 변화 시 schema 회귀를 막는다.
+                    text: `RSI, MACD, 볼린저밴드 같은 다양한 보조지표로 추세를 해석하고, 도지나 해머 같은 캔들 패턴, 헤드앤숄더 같은 차트 패턴, 주요 지지선과 저항선 레벨, 매매 신호까지 한 페이지에서 정리해 보여줍니다. AI가 추세 판단과 진입 후보 가격대를 따로 정리해 같이 읽기 좋습니다.`,
                 },
             },
             {
@@ -156,11 +171,17 @@ export default async function SymbolPage({ params, searchParams }: Props) {
             <section className="sr-only">
                 <h2>{displayName} 기술적 분석</h2>
                 <p>
-                    {displayName} 주가를 RSI, MACD, 볼린저밴드 등{' '}
-                    {skillCounts.indicators}종 보조지표로 해석하고, 도지나 해머,
-                    장악형 같은 주요 캔들 패턴과 차트 패턴을 자동으로
-                    감지합니다. 주요 지지선과 저항선 레벨, 매매 전략도 함께
-                    확인할 수 있습니다.
+                    {displayName}({ticker})의 기술적 분석 페이지입니다. 보조지표{' '}
+                    {skillCounts.indicators}종, 캔들 패턴{' '}
+                    {skillCounts.candlesticks}종, 차트 패턴{' '}
+                    {skillCounts.patterns}종을 활용해 추세, 진입 구간, 지지선과
+                    저항선을 분석합니다.
+                </p>
+                <p>
+                    {displayName} 주가를 RSI, MACD, 볼린저밴드 등 보조지표로
+                    해석하고, 도지나 해머, 장악형 같은 주요 캔들 패턴과 차트
+                    패턴을 자동으로 감지합니다. 주요 지지선과 저항선 레벨, 매매
+                    전략도 함께 확인할 수 있습니다.
                 </p>
                 <h2>AI와 대화로 분석 결과 확인</h2>
                 <p>

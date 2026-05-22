@@ -1,5 +1,7 @@
 import type { TickerCategory } from '@/domain/types';
 
+// TODO(seo): 현재 수동 관리 — 매일 새벽 FMP `/stable/stock-list`와 동기화하는 cron job 검토.
+//            상장폐지된 종목이 sitemap에 남아 404를 유발하는 케이스 모니터링 필요.
 export const TICKER_CATEGORIES: readonly TickerCategory[] = [
     {
         id: 'megacap',

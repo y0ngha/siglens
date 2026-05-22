@@ -271,6 +271,7 @@ export function ChartContent({
                         actionPricesVisible={actionPricesVisible}
                         onChartReady={handleStockChartReady}
                         onChartRemove={handleStockChartRemove}
+                        ticker={symbol}
                     />
                 </div>
 
@@ -281,6 +282,7 @@ export function ChartContent({
                         buySellVolume={indicators.buySellVolume}
                         onChartReady={handleVolumeChartReady}
                         onChartRemove={handleVolumeChartRemove}
+                        ticker={symbol}
                     />
                 </div>
 

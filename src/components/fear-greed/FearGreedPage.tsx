@@ -39,7 +39,7 @@ export function FearGreedPage({ symbol, fmpSymbol }: FearGreedPageProps) {
         <div className="flex flex-col gap-6 p-4 md:p-6">
             <div className="grid gap-6 md:grid-cols-2">
                 <section className="flex flex-col gap-3">
-                    <h2 className="sr-only">
+                    <h2 className="text-secondary-300 text-sm font-medium">
                         현재 공포 탐욕 지수와 기간별 비교
                     </h2>
                     <FearGreedHero snapshot={snapshot} />

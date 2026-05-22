@@ -179,8 +179,12 @@ export async function GET(): Promise<Response> {
     return new NextResponse(xml, {
         headers: {
             'Content-Type': 'application/xml; charset=utf-8',
+            // 옵션 신규 상장/폐지를 최대 2시간 내 반영하기 위해 SWR을 1시간으로
+            // 단축한다 (M4의 6시간 Redis 캐시와 별개 레이어). 기존 24시간 SWR은
+            // CDN edge가 하루 동안 stale sitemap을 그대로 노출해 옵션 페이지
+            // index/de-index가 지연됐다.
             'Cache-Control':
-                'public, max-age=3600, stale-while-revalidate=86400',
+                'public, max-age=3600, stale-while-revalidate=3600',
         },
     });
 }

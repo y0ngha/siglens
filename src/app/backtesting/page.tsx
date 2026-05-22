@@ -6,6 +6,7 @@ import {
     BACKTESTING_TITLE,
     BACKTESTING_URL,
     buildBreadcrumbJsonLd,
+    SITE_BUILD_DATE,
     SITE_NAME,
     SITE_URL,
 } from '@/lib/seo';
@@ -92,6 +93,7 @@ const datasetJsonLd = {
             '@type': 'DataDownload',
             encodingFormat: 'application/json',
             contentUrl: `${SITE_URL}/backtesting/data.json`,
+            dateModified: SITE_BUILD_DATE.toISOString(),
         },
     ],
 };

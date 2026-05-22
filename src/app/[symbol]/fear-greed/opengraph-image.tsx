@@ -4,7 +4,7 @@ import { buildSymbolOgImage } from '@/infrastructure/og/buildSymbolOgImage';
 export const size = { width: OG_IMAGE_WIDTH, height: OG_IMAGE_HEIGHT };
 export const contentType = 'image/png';
 // alt는 module-scope const라 ticker 동적 주입 불가 — 페이지 카테고리까지만 명시한다.
-export const alt = 'Siglens 미국 주식 옵션 분석';
+export const alt = 'Siglens 미국 주식 공포 탐욕 지수';
 
 interface Props {
     params: Promise<{ symbol: string }>;
@@ -14,6 +14,6 @@ export default async function Image({ params }: Props) {
     const { symbol } = await params;
     return buildSymbolOgImage({
         ticker: symbol.toUpperCase(),
-        label: '옵션 분석',
+        label: '공포 탐욕 지수',
     });
 }

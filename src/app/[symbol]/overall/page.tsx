@@ -30,6 +30,10 @@ export async function generateMetadata({
     const { symbol } = await params;
     const { tf } = await searchParams;
     const upper = symbol.toUpperCase();
+    // 본문 notFound()와 일관: 잘못된 ticker는 메타데이터를 비우고 noindex로 응답한다.
+    if (!VALID_TICKER_RE.test(upper)) {
+        return { robots: { index: false, follow: false } };
+    }
     const assetInfo = await getAssetInfoCached(upper);
     const displayName = assetInfo ? buildDisplayName(assetInfo, upper) : upper;
     const { title, fullTitle, description, url, keywords } =
@@ -149,6 +153,14 @@ export default async function OverallPage({ params, searchParams }: Props) {
                 <h1 className="sr-only">
                     {displayName} 차트와 옵션 시장, 실적, 뉴스 종합 분석
                 </h1>
+                <section className="sr-only">
+                    <h2>{displayName} AI 종합 분석 개요</h2>
+                    <p>
+                        {displayName}의 AI 종합 분석. 기술적 분석, 펀더멘털,
+                        뉴스, 옵션, 공포 탐욕 지수의 5축을 통합한 결론과
+                        강세·약세 시나리오, 위험 요인을 정리합니다.
+                    </p>
+                </section>
                 <section
                     aria-labelledby="overall-guide-heading"
                     className="border-secondary-800 bg-secondary-800/30 space-y-3 rounded-lg border p-5"

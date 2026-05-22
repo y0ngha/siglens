@@ -31,6 +31,10 @@ interface Props {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { symbol } = await params;
     const upper = symbol.toUpperCase();
+    // 본문 notFound()와 일관: 잘못된 ticker는 메타데이터를 비우고 noindex로 응답한다.
+    if (!VALID_TICKER_RE.test(upper)) {
+        return { robots: { index: false, follow: false } };
+    }
     const [assetInfo, hasOptions] = await Promise.all([
         getAssetInfoCached(upper),
         hasOptionsMarket(upper),
@@ -60,6 +64,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
             title: fullTitle,
             description,
         },
+        // 옵션 없는 종목은 본문 OptionsEmptyState에서 sibling 분석 페이지
+        // (차트/펀더멘털/뉴스 등)로 안내하므로, crawler가 그 internal link를
+        // 따라갈 수 있도록 follow는 true를 유지한다. noindex이지만 follow:true는
+        // "이 페이지는 색인 말고, 링크는 따라가라"는 정확한 의도 표현.
         ...(hasOptions ? {} : { robots: { index: false, follow: true } }),
     };
 }
@@ -90,6 +98,9 @@ export default async function OptionsPage({ params }: Props) {
     });
     queryClient.setQueryData(QUERY_KEYS.optionsSnapshot(upper), snapshot);
 
+    // hasOptions: true 하드코딩은 의도적 — 위 OptionsEmptyState 분기(line 79, 83)를
+    // 통과한 시점이라 옵션 시장이 존재함이 보장된다. generateMetadata와 달리 본문
+    // 렌더 경로에서는 false 분기로 빠질 수 없으므로 재조회 없이 상수로 둔다.
     const { fullTitle, description, url } = buildSymbolOptionsSeoContent(
         upper,
         {
@@ -161,6 +172,12 @@ export default async function OptionsPage({ params }: Props) {
                     지표와 Strike별 Open Interest 분포를 함께 살펴볼 수
                     있습니다.
                 </p>
+                {expirations.length > 0 ? (
+                    <p>
+                        현재 거래 가능한 만기일은 총 {expirations.length}개이며,
+                        가장 가까운 만기는 {expirations[0]}입니다.
+                    </p>
+                ) : null}
             </section>
             <HydrationBoundary state={dehydrate(queryClient)}>
                 <OptionsPageClient

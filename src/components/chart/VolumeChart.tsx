@@ -26,6 +26,8 @@ interface VolumeChartProps {
     onChartReady?: (chart: IChartApi) => void;
     /** 차트가 제거되기 직전에 호출된다. 구독 해제에 사용된다. */
     onChartRemove?: () => void;
+    /** aria-label에 들어갈 ticker — 스크린 리더 안내용. 없으면 generic label로 fallback. */
+    ticker?: string;
 }
 
 export function VolumeChart({
@@ -33,6 +35,7 @@ export function VolumeChart({
     buySellVolume,
     onChartReady,
     onChartRemove,
+    ticker,
 }: VolumeChartProps) {
     const wrapperRef = useRef<HTMLDivElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -57,9 +60,21 @@ export function VolumeChart({
         labels: VOLUME_LABELS,
     });
 
+    // Lightweight Charts 캔버스는 스크린 리더에 노출되지 않으므로 캔버스 컨테이너에 role/aria-label.
+    // wrapperRef가 아닌 containerRef에 두어 향후 wrapper에 인터랙티브 자식이 추가돼도 영향 없게.
+    const chartAriaLabel =
+        ticker !== undefined && ticker !== ''
+            ? `${ticker} 거래량 차트`
+            : '거래량 차트';
+
     return (
         <div ref={wrapperRef} className="relative h-full w-full">
-            <div ref={containerRef} className="h-full w-full" />
+            <div
+                ref={containerRef}
+                className="h-full w-full"
+                role="img"
+                aria-label={chartAriaLabel}
+            />
         </div>
     );
 }

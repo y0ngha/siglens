@@ -70,6 +70,8 @@ export async function generateMetadata({
         title: MARKET_TITLE,
         description: MARKET_DESCRIPTION,
         keywords: MARKET_KEYWORDS,
+        // canonical은 variant 여부와 무관하게 항상 /market로 고정한다 — variant URL이
+        // 자기참조 canonical을 가지면 Google이 별개 페이지로 색인하므로 일관성 깨짐.
         alternates: { canonical: MARKET_URL },
         openGraph: {
             title: MARKET_FULL_TITLE,
