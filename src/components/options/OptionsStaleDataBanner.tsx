@@ -17,7 +17,7 @@
  */
 export function OptionsStaleDataBanner() {
     return (
-        <aside
+        <div
             role="status"
             aria-live="polite"
             className="border-ui-warning bg-ui-warning/10 text-ui-warning rounded-lg border px-3 py-2 text-xs leading-relaxed"
@@ -30,6 +30,6 @@ export function OptionsStaleDataBanner() {
                 시간으로는 서머타임(EDT) 기간이면 22:30~05:00, 표준시(EST)
                 기간이면 23:30~06:00이에요.
             </p>
-        </aside>
+        </div>
     );
 }

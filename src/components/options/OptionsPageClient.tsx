@@ -12,7 +12,7 @@ import { OpenInterestChart } from '@/components/options/OpenInterestChart';
 import { OptionsMetricsRow } from '@/components/options/OptionsMetricsRow';
 import { OptionsStaleDataBanner } from '@/components/options/OptionsStaleDataBanner';
 import { useOptionsChainMetrics } from '@/components/options/hooks/useOptionsChainMetrics';
-import { isUsOptionsRegularSession } from '@/lib/marketSession';
+import { isUsOptionsRegularSession } from '@/domain/market/session';
 import type { OptionsSnapshot, SlotMapping } from '@y0ngha/siglens-core';
 import type { OptionsExpirationSelector } from '@/domain/types';
 
@@ -69,9 +69,12 @@ export function OptionsPageClient({
     // 돌렸다. chip 전환 시마다 같은 계산이 세 번 반복되던 비용을 제거한다.
     const chainMetrics = useOptionsChainMetrics(snapshot, expirationDate);
     const nearestExpiry = snapshot.chains[0]?.expirationDate ?? '';
-    // marketSession은 매 렌더 호출돼도 작은 비용(Intl.DateTimeFormat 한 번).
-    // `useMemo`로 묶을 만큼은 아니지만 OI 검사와 함께 일관된 시점 판정을
-    // 위해 둘을 같은 단계에서 계산한다.
+    // hasAllZeroOpenInterest는 모든 chain × strike를 순회하므로 chip 전환 등으로
+    // 컴포넌트가 리렌더될 때마다 다시 돌면 비용이 든다. snapshot 참조 안정성을
+    // deps로 memoize. isUsOptionsRegularSession()은 deps에 들어가지 않는데,
+    // 함수 내부에서 new Date()를 호출해 매 호출마다 다른 결과를 낼 수 있지만
+    // 사용자가 페이지에 머무는 동안 정규장 boundary를 가로지르는 케이스는 거의
+    // 없고, snapshot이 새로 들어오면 자동으로 재평가된다.
     const oiStale = useMemo(
         () => !isUsOptionsRegularSession() && hasAllZeroOpenInterest(snapshot),
         [snapshot]
