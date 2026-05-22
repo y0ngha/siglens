@@ -36,6 +36,11 @@ import {
     GUIDE_LINE_STROKE_WIDTH,
 } from '@/components/options/utils/chartStrokeWidths';
 import { findNearestStrikeIndex } from '@/domain/options/findNearestStrike';
+import {
+    ET_MARKET_HOURS_DISPLAY,
+    KST_EDT_HOURS_DISPLAY,
+    KST_EST_HOURS_DISPLAY,
+} from '@/lib/options/marketHoursDisplay';
 
 interface OpenInterestChartProps {
     /** Spot price used to anchor the current-price guide line. */
@@ -131,6 +136,17 @@ export function OpenInterestChart({
         const oiByStrike = aggregateOpenInterest(chain);
         if (oiByStrike.length === 0) return null;
 
+        // 모든 strike의 OI가 0이면 차트를 그려도 막대가 안 나오므로 빈
+        // 메시지 분기로 떨어뜨려 사용자에게 정규장 시간 안내를 보여준다.
+        // `.every()`로 첫 비-zero strike에서 short-circuit — 합계가 필요한 게
+        // 아니라 "모두 0인가"만 확인하면 충분하다.
+        if (
+            oiByStrike.every(
+                s => s.callOpenInterest === 0 && s.putOpenInterest === 0
+            )
+        )
+            return null;
+
         const maxPain = metrics?.maxPain ?? null;
 
         const topOiSet = new Set<number>(
@@ -185,10 +201,28 @@ export function OpenInterestChart({
     }, [chain, metrics, underlyingPrice]);
 
     if (!derived) {
+        // 빈 상태에서도 정상 헤더(`Open Interest 분포 (Strike별)`)를 유지해
+        // sibling Volume 차트의 빈 상태와 시각 흐름이 일치하도록 한다.
+        //
+        // `derived === null` 경로는 세 가지: (1) chain 미선택 (2) strike 0개
+        // (3) 모든 strike OI=0. 운영상 (1)은 호출부에서 chain을 항상 넘기므로
+        // 사실상 차단되고, (2)는 Yahoo가 만기를 추가했지만 strike 메타데이터를
+        // 아직 채우지 못한 직후의 일시적 케이스로 (3)과 동일하게 정규장 외
+        // stale-quote 시그니처에 해당한다. 세 경로 모두 사용자 대응법
+        // (정규장 시간에 재확인)이 같아 메시지를 통합한다.
         return (
-            <p className="text-secondary-500 py-4 text-sm">
-                이 만기에는 OI 데이터가 없어요.
-            </p>
+            <div className="border-secondary-700 bg-secondary-800 space-y-2 rounded-xl border p-4">
+                <span className="text-secondary-300 text-sm font-medium">
+                    Open Interest 분포 (Strike별)
+                </span>
+                <p className="text-secondary-500 text-xs leading-relaxed">
+                    이 만기에는 OI 데이터가 없어요. 미국 정규장 마감 후에는
+                    Yahoo가 Open Interest를 갱신하지 않아 비어 보일 수 있어요.
+                    정확한 수치는 미국 정규장 시간({ET_MARKET_HOURS_DISPLAY},
+                    평일, 한국 시간 EDT 기간 {KST_EDT_HOURS_DISPLAY} / EST 기간{' '}
+                    {KST_EST_HOURS_DISPLAY})에 다시 확인해 주세요.
+                </p>
+            </div>
         );
     }
 
