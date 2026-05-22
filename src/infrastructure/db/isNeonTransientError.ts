@@ -58,7 +58,7 @@ export function isNeonTransientError(error: unknown): boolean {
         if (isNeonError(current) && messageLooksTransient(current)) {
             return true;
         }
-        current = (current as { cause?: unknown }).cause;
+        current = current.cause;
     }
     return false;
 }

@@ -1,3 +1,10 @@
+// withRetry 내부 sleep을 즉시 resolve로 stubbing해서 transient retry 케이스의
+// 실제 대기 시간을 없앤다. `jest.mock` 은 정적 import 보다 먼저 평가되도록
+// 호이스트되어야 한다 (`import/first` 규칙과 일치).
+jest.mock('@/lib/sleep', () => ({
+    sleep: jest.fn().mockResolvedValue(undefined),
+}));
+
 import {
     DrizzleAssetTranslationRepository,
     DrizzleKoreanTickerRepository,
@@ -237,5 +244,49 @@ describe('DrizzleProfileDescriptionTranslationRepository', () => {
         >;
         expect(passedSet).toHaveProperty('updatedAt');
         expect(passedSet.updatedAt).toBeDefined();
+    });
+});
+
+// DrizzleKoreanTickerRepository.upsertMany 를 대표 site 로 골라
+// NEON_TRANSIENT_RETRY 정책이 wire-up 됐는지 확인하는 smoke 테스트. 이 파일의
+// 다른 두 클래스(Asset/ProfileDescription)도 동일한 withRetry + NEON_TRANSIENT_RETRY
+// 패턴을 쓰므로 대표 1개만 검증해도 회귀 방지에 충분하다.
+describe('Neon transient retry wire-up', () => {
+    it('transient NeonDbError 가 발생하면 재시도해 결국 성공한다', async () => {
+        const neonTransient = Object.assign(
+            new Error('Error connecting to database: fetch failed'),
+            { name: 'NeonDbError' }
+        );
+        const onConflictDoUpdate = jest
+            .fn()
+            .mockRejectedValueOnce(neonTransient)
+            .mockResolvedValueOnce(undefined);
+        const values = jest.fn(() => ({ onConflictDoUpdate }));
+        const insert = jest.fn(() => ({ values }));
+        const db = { insert } as unknown as SiglensDatabase;
+        const repo = new DrizzleKoreanTickerRepository(db);
+
+        await expect(repo.upsertMany([apple])).resolves.toBeUndefined();
+        expect(insert).toHaveBeenCalledTimes(2);
+        expect(onConflictDoUpdate).toHaveBeenCalledTimes(2);
+    });
+
+    it('non-transient 에러는 재시도 없이 즉시 전파한다', async () => {
+        const constraintError = Object.assign(
+            new Error(
+                'duplicate key value violates unique constraint "korean_tickers_pkey"'
+            ),
+            { name: 'NeonDbError' }
+        );
+        const onConflictDoUpdate = jest
+            .fn()
+            .mockRejectedValueOnce(constraintError);
+        const values = jest.fn(() => ({ onConflictDoUpdate }));
+        const insert = jest.fn(() => ({ values }));
+        const db = { insert } as unknown as SiglensDatabase;
+        const repo = new DrizzleKoreanTickerRepository(db);
+
+        await expect(repo.upsertMany([apple])).rejects.toBe(constraintError);
+        expect(insert).toHaveBeenCalledTimes(1);
     });
 });

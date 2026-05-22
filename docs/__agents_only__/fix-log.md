@@ -406,3 +406,15 @@
 - Violation: jsdom 환경 jest 테스트에서 `@neondatabase/serverless`가 transitively import되면 `TextDecoder is not defined`로 실패 — pre-push hook이 차단해 R1을 push 못 함
 - Rule: 테스트 환경 호환성 — Node가 노출하는 전역(`TextDecoder`/`TextEncoder`)이 jsdom env에는 기본 노출되지 않음. 외부 라이브러리가 모듈 로드 시점에 이를 참조하면 import 체인 어디든 deep에서도 jsdom 테스트가 죽음
 - Context: 회귀 — PR #449 원본 커밋(b37060b5)에서 `isNeonTransientError → @neondatabase/serverless` 체인이 도입돼 `userRepository`까지 transitively 흘러갔고, `ContactForm.test.tsx`(jsdom) → `useCurrentUser` → ... → `userRepository` 체인에서 폭발. CI는 Jest workflow가 없어 처음 push 때 통과한 듯. `jest.setup.ts`에서 `globalThis.TextDecoder/TextEncoder`가 undefined일 때만 Node `util` 구현으로 폴리필. 사용자 결정으로 R1과 함께 같은 push에 동봉(별도 커밋).
+
+
+## [PR #449 Round 2 | feat/db-neon-transient-retry | 2026-05-22]
+- Violation: `as` 캐스트(safe-cast)에 보장 코멘트 누락 (또는 불필요한 캐스트)
+- Rule: MISTAKES.md TypeScript §7 — every safe-cast `as` must be accompanied by a comment explaining the guarantee
+- Context: Blocker — `isNeonTransientError.ts:61`의 `(current as { cause?: unknown }).cause`. Option A 선택: `lib: ["esnext"]`에서 `Error.cause?: unknown` (ES2022) 이 이미 노출되므로 캐스트 자체가 불필요. `current = current.cause;` 로 단순화. `yarn tsc --noEmit` exit 0 으로 확인.
+- Violation: 같은 PR 안에서 jest.mock 배치 패턴이 두 파일 간 다름 (한쪽은 import 위, 다른 쪽은 import 사이)
+- Rule: FF Cohesion — 같은 idiom은 같은 형태로 통일
+- Context: Suggestion 1 — `newsRepository.test.ts`의 `jest.mock('@/lib/sleep', ...)`을 imports 위로 이동. `withRetry.test.ts`와 일치.
+- Violation: 공유 wrapper(`withRetry` + `NEON_TRANSIENT_RETRY`) 통합이 6개 repository에 적용됐는데 wire-up smoke test가 1개 repo만 커버
+- Rule: 통합 일관성 — 같은 패턴으로 wire-up된 N개 사이트는 동일한 smoke 테스트 깊이로 검증되어야 reviewer가 회귀 가능성을 일관되게 인식
+- Context: Suggestion 2 — R1에서 reject했던 항목을 R2에서 reviewer가 재요청, 사용자 결정으로 적용. earningsReports/terms/ticker/userApiKey/userRepository 5개 test 파일에 minimal "transient retry success + non-transient immediate throw" 케이스 추가. ticker 는 KoreanTicker.upsertMany, userRepository 는 createEmailUser 를 대표 site 로 선정 — 동일 wrapper 패턴이므로 대표 1개 검증으로 충분.

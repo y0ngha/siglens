@@ -1,15 +1,17 @@
+// withRetry 내부 sleep을 즉시 resolve로 stubbing해서 retry 케이스의 실제
+// 대기 시간을 없앤다. retry 발생 시 sleep이 호출되는 것만 검증.
+// `jest.mock` 은 import 위로 호이스트되어야 static import 보다 먼저 평가된다
+// (`import/first` 규칙과 일치).
+jest.mock('@/lib/sleep', () => ({
+    sleep: jest.fn().mockResolvedValue(undefined),
+}));
+
 import type { NewsCardAnalysis, NewsItem } from '@y0ngha/siglens-core';
 import type { SiglensDatabase } from '@/infrastructure/db/types';
 import {
     DrizzleNewsRepository,
     type NewsRow,
 } from '@/infrastructure/db/newsRepository';
-
-// withRetry 내부 sleep을 즉시 resolve로 stubbing해서 retry 케이스의 실제
-// 대기 시간을 없앤다. retry 발생 시 sleep이 호출되는 것만 검증.
-jest.mock('@/lib/sleep', () => ({
-    sleep: jest.fn().mockResolvedValue(undefined),
-}));
 
 const baseItem: NewsItem = {
     id: 'abc123',
