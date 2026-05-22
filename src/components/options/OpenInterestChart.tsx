@@ -1,46 +1,41 @@
 'use client';
 
 import {
-    useMemo,
-    useRef,
-    useState,
-    type CSSProperties,
-    type PointerEvent,
-} from 'react';
+    CALL_LABEL_MIDLINE_OFFSET_PX,
+    PEAK_LABEL_TOP_OFFSET_PX,
+    PUT_LABEL_MIDLINE_OFFSET_PX,
+} from '@/components/options/utils/chartLabelOffsets';
 import {
-    type OptionsChain,
-    type OptionsExpirationMetrics,
-    aggregateOpenInterest,
-} from '@y0ngha/siglens-core';
-import { InfoTooltip } from '@/components/ui/InfoTooltip';
-import {
-    CallOpenInterestTooltip,
-    OpenInterestTooltip,
-    PutOpenInterestTooltip,
-} from '@/components/options/utils/optionsTooltips';
+    GUIDE_LINE_STROKE_WIDTH,
+    MIDLINE_STROKE_WIDTH,
+} from '@/components/options/utils/chartStrokeWidths';
 import {
     computeTooltipPos,
     TOOLTIP_ELEMENT_ID,
     TOOLTIP_MIN_WIDTH_PX,
     type TooltipPosition,
 } from '@/components/options/utils/computeTooltipPos';
-import { pickLabelIndices } from '@/components/options/utils/pickLabelIndices';
 import { formatCompactCount } from '@/components/options/utils/formatCompactCount';
 import {
-    PEAK_LABEL_TOP_OFFSET_PX,
-    CALL_LABEL_MIDLINE_OFFSET_PX,
-    PUT_LABEL_MIDLINE_OFFSET_PX,
-} from '@/components/options/utils/chartLabelOffsets';
-import {
-    MIDLINE_STROKE_WIDTH,
-    GUIDE_LINE_STROKE_WIDTH,
-} from '@/components/options/utils/chartStrokeWidths';
+    CallOpenInterestTooltip,
+    OpenInterestTooltip,
+    PutOpenInterestTooltip,
+} from '@/components/options/utils/optionsTooltips';
+import { pickLabelIndices } from '@/components/options/utils/pickLabelIndices';
+import { InfoTooltip } from '@/components/ui/InfoTooltip';
 import { findNearestStrikeIndex } from '@/domain/options/findNearestStrike';
 import {
-    ET_MARKET_HOURS_DISPLAY,
-    KST_EDT_HOURS_DISPLAY,
-    KST_EST_HOURS_DISPLAY,
-} from '@/lib/options/marketHoursDisplay';
+    aggregateOpenInterest,
+    type OptionsChain,
+    type OptionsExpirationMetrics,
+} from '@y0ngha/siglens-core';
+import {
+    useMemo,
+    useRef,
+    useState,
+    type CSSProperties,
+    type PointerEvent,
+} from 'react';
 
 interface OpenInterestChartProps {
     /** Spot price used to anchor the current-price guide line. */
@@ -216,11 +211,7 @@ export function OpenInterestChart({
                     Open Interest 분포 (Strike별)
                 </span>
                 <p className="text-secondary-500 text-xs leading-relaxed">
-                    이 만기에는 OI 데이터가 없어요. 미국 정규장 마감 후에는
-                    Yahoo가 Open Interest를 갱신하지 않아 비어 보일 수 있어요.
-                    정확한 수치는 미국 정규장 시간({ET_MARKET_HOURS_DISPLAY},
-                    평일, 한국 시간 EDT 기간 {KST_EDT_HOURS_DISPLAY} / EST 기간{' '}
-                    {KST_EST_HOURS_DISPLAY})에 다시 확인해 주세요.
+                    이 만기에는 OI 데이터가 없어요.
                 </p>
             </div>
         );
@@ -554,25 +545,31 @@ export function OpenInterestChart({
                 </span>
             </div>
 
-            <table className="sr-only">
-                <caption>Strike별 Open Interest 데이터</caption>
-                <thead>
-                    <tr>
-                        <th scope="col">Strike</th>
-                        <th scope="col">Call OI</th>
-                        <th scope="col">Put OI</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {oiByStrike.map(row => (
-                        <tr key={row.strike}>
-                            <td>{row.strike}</td>
-                            <td>{row.callOpenInterest}</td>
-                            <td>{row.putOpenInterest}</td>
+            {/* sr-only를 <table>이 아니라 wrapper <div>에 둔다 —
+                <table>은 `display: table`이라 `position: absolute`와 결합돼도
+                일부 환경에서 normal flow에 잔재가 남아 페이지 height에
+                영향을 준다. <div>로 감싸 absolute 컨텍스트를 분리한다. */}
+            <div className="sr-only">
+                <table>
+                    <caption>Strike별 Open Interest 데이터</caption>
+                    <thead>
+                        <tr>
+                            <th scope="col">Strike</th>
+                            <th scope="col">Call OI</th>
+                            <th scope="col">Put OI</th>
                         </tr>
-                    ))}
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        {oiByStrike.map(row => (
+                            <tr key={row.strike}>
+                                <td>{row.strike}</td>
+                                <td>{row.callOpenInterest}</td>
+                                <td>{row.putOpenInterest}</td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
         </div>
     );
 }

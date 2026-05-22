@@ -450,25 +450,30 @@ export function StrikeVolumeChart({
                 </span>
             </div>
 
-            <table className="sr-only">
-                <caption>Strike별 거래량 데이터</caption>
-                <thead>
-                    <tr>
-                        <th scope="col">Strike</th>
-                        <th scope="col">Call Volume</th>
-                        <th scope="col">Put Volume</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {volumeByStrike.map(row => (
-                        <tr key={row.strike}>
-                            <td>{row.strike}</td>
-                            <td>{row.callVolume}</td>
-                            <td>{row.putVolume}</td>
+            {/* OpenInterestChart와 동일 — <table>에 sr-only를 직접 두면
+                `display: table`이 normal flow에 잔재를 남겨 페이지 height에
+                영향을 주므로 <div>로 감싼다. */}
+            <div className="sr-only">
+                <table>
+                    <caption>Strike별 거래량 데이터</caption>
+                    <thead>
+                        <tr>
+                            <th scope="col">Strike</th>
+                            <th scope="col">Call Volume</th>
+                            <th scope="col">Put Volume</th>
                         </tr>
-                    ))}
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        {volumeByStrike.map(row => (
+                            <tr key={row.strike}>
+                                <td>{row.strike}</td>
+                                <td>{row.callVolume}</td>
+                                <td>{row.putVolume}</td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
         </div>
     );
 }

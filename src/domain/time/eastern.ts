@@ -11,8 +11,8 @@ const FIRST_SUNDAY = 1;
 const DST_START_UTC_HOUR = 7;
 const DST_END_UTC_HOUR = 6;
 
-const EDT_OFFSET_HOURS = -4 as const;
-const EST_OFFSET_HOURS = -5 as const;
+export const EDT_OFFSET_HOURS = -4 as const;
+export const EST_OFFSET_HOURS = -5 as const;
 
 function getNthSundayOfMonth(
     year: number,
