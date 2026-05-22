@@ -1,8 +1,12 @@
 'use client';
 
-import { usePublishSymbolChat } from '@/components/chat/hooks/useSymbolChat';
+import {
+    usePublishSymbolChat,
+    type SymbolChatState,
+} from '@/components/chat/hooks/useSymbolChat';
 import { useNewsAnalysis } from '@/components/news/hooks/useNewsAnalysis';
 import { useWaitForNewsCards } from '@/components/news/hooks/useWaitForNewsCards';
+import { buildChatState } from '@/components/news/utils/buildChatState';
 import { BotBlockedNotice } from '@/components/symbol-page/BotBlockedNotice';
 import { useDefaultModelId } from '@/components/symbol-page/hooks/useDefaultModelId';
 import { cn } from '@/lib/cn';
@@ -230,27 +234,10 @@ function NewsAiSummaryContent({
     // 훅 선언 순서 예외(MISTAKES.md #17): usePublishSymbolChat은 chatState(파생 변수)를
     // 인자로 받기 때문에 useMemo 뒤에 위치해야 한다.
     //
-    // `analysis`는 discriminated union이라 `analysis.result`는 narrowing 후에만
-    // 접근 가능하므로 deps에는 객체 전체를 둔다. React Query가 `query.data`를
-    // memoize하므로 동일 분석에 대한 reference는 안정적 — 실제 데이터가 바뀔
-    // 때만 재계산된다.
-    const chatState = useMemo(() => {
-        const result = analysis.status === 'done' ? analysis.result : null;
-        return result !== null
-            ? ({
-                  context: {
-                      kind: 'news',
-                      payload: result,
-                  } as const,
-                  timeframe: null,
-                  isAnalysisReady: true,
-              } as const)
-            : ({
-                  context: null,
-                  timeframe: null,
-                  isAnalysisReady: false,
-              } as const);
-    }, [analysis]);
+    // `analysis`는 discriminated union이라 deps에는 객체 전체를 둔다. React Query가
+    // `query.data`를 memoize하므로 동일 분석에 대한 reference는 안정적 — 실제
+    // 데이터가 바뀔 때만 재계산된다.
+    const chatState = useMemo(() => buildChatState(analysis), [analysis]);
     usePublishSymbolChat(chatState);
 
     if (analysis.status === 'error') {
@@ -284,6 +271,15 @@ interface NewsAiSummaryProps {
     hasEnrichedNews: boolean;
 }
 
+// cards 대기/poll error 동안 publish할 stale-safe chatState.
+// 모듈 스코프 상수라 매 렌더마다 새 객체가 만들어지지 않아 useMemo 없이도
+// publish의 prev 비교가 동일 reference로 dedupe된다.
+const WAITING_CHAT_STATE: SymbolChatState = {
+    context: null,
+    timeframe: null,
+    isAnalysisReady: false,
+};
+
 export function NewsAiSummary({
     symbol,
     companyName,
@@ -293,6 +289,12 @@ export function NewsAiSummary({
         symbol,
         hasEnrichedNews
     );
+
+    // cards 준비 전에는 NewsAiSummaryContent가 mount되지 않아 inner의 publish가
+    // 동작하지 않는다. 이전 페이지에서 publish된 context가 그대로 남는 stale
+    // 버그를 막기 위해 parent에서 null chatState를 명시적으로 publish한다.
+    // cards ready 후에는 inner의 useNewsAnalysis 기반 publish가 takeover한다.
+    usePublishSymbolChat(WAITING_CHAT_STATE);
 
     // Surface persistent polling errors to the surrounding error boundary
     // (NewsAiSummaryErrorBoundary) so the fallback UI takes over.

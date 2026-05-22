@@ -25,6 +25,7 @@ import { getAnalysisStatus } from '@/components/symbol-page/utils/analysisStatus
 import { SNAP_PEEK } from '@/components/symbol-page/constants/mobileSheet';
 import { useAnalysisProgress } from '@/components/symbol-page/hooks/useAnalysisProgress';
 import { usePublishSymbolChat } from '@/components/chat/hooks/useSymbolChat';
+import { buildChatState } from '@/components/symbol-page/utils/buildChatState';
 import { PWA_TRIGGER_EVENT } from '@/lib/pwaEvents';
 import { FearGreedCardMounted } from '@/components/symbol-page/FearGreedCardMounted';
 
@@ -225,17 +226,20 @@ export function ChartContent({
 
     // Publish chart state to the layout-mounted FloatingChatButton so it survives
     // navigation between the 4 symbol pages. Layout owns the button; we only feed it.
-    // Memoize the published object so usePublishSymbolChat's effect re-runs only when
-    // one of the three values actually changes, not on every ChartContent render.
+    // bot_blocked/error 시 context는 null로 보내 stale technical payload가 챗봇에
+    // 흘러가지 않게 한다 — 다른 페이지(news/overall/options)의 buildChatState와 동일 규약.
     // 훅 선언 순서 예외(MISTAKES.md #17): usePublishSymbolChat은 chatState(파생 변수)를
     // 인자로 받기 때문에 useMemo 뒤에 위치해야 한다.
     const chatState = useMemo(
-        () => ({
-            context: { kind: 'technical', payload: analysis } as const,
-            timeframe,
-            isAnalysisReady: !displayAnalyzing,
-        }),
-        [analysis, timeframe, displayAnalyzing]
+        () =>
+            buildChatState({
+                analysis,
+                timeframe,
+                displayAnalyzing,
+                isBotBlocked,
+                analysisError,
+            }),
+        [analysis, timeframe, displayAnalyzing, isBotBlocked, analysisError]
     );
     usePublishSymbolChat(chatState);
 
