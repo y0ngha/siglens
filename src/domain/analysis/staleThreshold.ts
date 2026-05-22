@@ -1,7 +1,7 @@
 import type { Timeframe } from '@y0ngha/siglens-core';
 import { MS_PER_MINUTE, MS_PER_HOUR } from '@/domain/constants/time';
 
-const STALE_THRESHOLD_MS: Record<Timeframe, number> = {
+export const STALE_THRESHOLD_MS: Record<Timeframe, number> = {
     '5Min': 5 * MS_PER_MINUTE,
     '15Min': 5 * MS_PER_MINUTE,
     '30Min': 5 * MS_PER_MINUTE,
@@ -13,7 +13,7 @@ const STALE_THRESHOLD_MS: Record<Timeframe, number> = {
 export function isAnalysisStale(
     analyzedAt: string,
     timeframe: Timeframe,
-    now: Date = new Date()
+    now: Date
 ): boolean {
     const analyzedTime = new Date(analyzedAt).getTime();
     if (Number.isNaN(analyzedTime)) return false;

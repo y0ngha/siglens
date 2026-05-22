@@ -1,5 +1,8 @@
-import { isAnalysisStale } from '@/domain/analysis/staleThreshold';
-import { MS_PER_HOUR } from '@/domain/constants/time';
+import {
+    isAnalysisStale,
+    STALE_THRESHOLD_MS,
+} from '@/domain/analysis/staleThreshold';
+import { MS_PER_MINUTE } from '@/domain/constants/time';
 
 describe('isAnalysisStale', () => {
     const now = new Date('2026-05-22T12:00:00.000Z');
@@ -14,11 +17,25 @@ describe('isAnalysisStale', () => {
         expect(isAnalysisStale(analyzedAt, '1Day', now)).toBe(true);
     });
 
-    it('returns false at the exact boundary (1Day, 4h ago — strict >)', () => {
+    it('returns false at the exact boundary (1Day — strict >)', () => {
         const analyzedAt = new Date(
-            now.getTime() - 4 * MS_PER_HOUR
+            now.getTime() - STALE_THRESHOLD_MS['1Day']
         ).toISOString();
         expect(isAnalysisStale(analyzedAt, '1Day', now)).toBe(false);
+    });
+
+    it('returns false when analyzed within threshold (1Hour, 29min ago)', () => {
+        const analyzedAt = new Date(
+            now.getTime() - STALE_THRESHOLD_MS['1Hour'] + MS_PER_MINUTE
+        ).toISOString();
+        expect(isAnalysisStale(analyzedAt, '1Hour', now)).toBe(false);
+    });
+
+    it('returns true when analyzed beyond threshold (4Hour, boundary + 1min)', () => {
+        const analyzedAt = new Date(
+            now.getTime() - STALE_THRESHOLD_MS['4Hour'] - MS_PER_MINUTE
+        ).toISOString();
+        expect(isAnalysisStale(analyzedAt, '4Hour', now)).toBe(true);
     });
 
     it('returns true when analyzed beyond threshold (5Min, 10min ago)', () => {

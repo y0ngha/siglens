@@ -1,6 +1,26 @@
 
 # Fix Log
 
+## [PR #445 Round 1 | fix/analysis-snapshot-ui | 2026-05-22]
+- B1: `src/components/analysis/StaleAnalysisBanner.tsx` — `'use client'` 디렉티브 누락. `<button onClick={onReanalyze}>` 등록은 컨벤션상 클라이언트 경계 명시가 필수. async Server Component 트리에서 import 시 runtime 오류 위험. 파일 첫 줄에 `'use client';` 추가.
+  - Rule: CONVENTIONS.md L306 (Registers event handlers → `'use client'` 필수), components/CLAUDE.md L15. Phase 2.4 라운드 1의 내부 review-agent 권고("leaf parent already client니까 불필요")가 컨벤션 문자 해석과 충돌했고, 외부 reviewer가 정확히 지적 — 컨벤션 우선으로 결정.
+- B2: `src/domain/analysis/staleThreshold.ts` — `isAnalysisStale`의 `now: Date = new Date()` 기본 파라미터가 `Date.now()` 호출과 동등한 부작용. 도메인 순수 함수 규칙 위반. 기본값 제거 후 `now`를 필수 인자로 선언하고 호출부(`AnalysisPanel.tsx`)에서 `new Date()`를 명시 주입.
+  - Rule: CONVENTIONS.md L397 (`No side effects: fetch, console.log, Date.now() are all prohibited` in domain layer).
+- B3: `src/__tests__/domain/analysis/staleThreshold.test.ts` — 경계값 테스트에서 `4 * MS_PER_HOUR`를 로컬 재정의해 production `STALE_THRESHOLD_MS['1Day']`와 silent drift 가능. `STALE_THRESHOLD_MS`를 `staleThreshold.ts`에서 export하고 테스트는 직접 import해 임계값 변경을 자동 추적하도록 변경.
+  - Rule: MISTAKES.md §Tests §4 — boundary 테스트 상수는 source에서 import (로컬 재정의 금지).
+- B4: `src/components/analysis/StaleAnalysisBanner.tsx` — 툴팁 문자열이 `재분석은 5분에 한 번만 실행할 수 있어요.`로 하드코딩됐는데 `reanalyzeCooldownMs` prop이 실제 ms 정책을 담음. 정책 변경 시 UI 텍스트가 drift. `Math.ceil(reanalyzeCooldownMs / MS_PER_MINUTE)`로 분 단위를 계산해 템플릿 리터럴로 메시지 생성.
+  - Rule: MISTAKES.md §15 drift trap — 상수와 표시 텍스트의 단일 source.
+- S1: `src/components/analysis/AnalysisPanel.tsx` — `analysis.analyzedAt !== undefined` 두 곳을 truthy check `analysis.analyzedAt`로 단순화. `OptionsAiAnalysis.tsx`(ternary 패턴)와 표현 일관화.
+  - Rule: FF Cohesion — 동일 의미는 동일 표현으로.
+- S2: `src/components/analysis/StaleAnalysisBanner.tsx` — `mb-3` className 제거. 부모(`AnalysisPanel`)의 outer wrapper가 `flex flex-col gap-4`로 자식 spacing을 일괄 처리하므로 자식의 `mb-3`은 중복 spacing.
+  - Rule: FF Cohesion — layout spacing single source of truth.
+- S3: `src/components/analysis/AnalysisPanel.tsx` — SSR/hydration mismatch 회피. `isAnalysisStale`이 렌더 중 `new Date()`를 평가하면 서버 시각과 클라이언트 시각이 다를 때 임계값 근처에서 stale 판정이 갈리며 hydration warning 발생. `now: Date | null` state로 client mount 후에만 시각을 캡쳐하고 `analyzedAt` 변경 시 재캡쳐 (`useEffect` + `react-hooks/set-state-in-effect` disable + WHY 주석). 첫 SSR/hydration 동안 banner는 노출되지 않는다.
+  - Rule: CONVENTIONS.md L374 (`new Date()` in Server Component → hydration mismatch).
+- S4: `src/__tests__/domain/analysis/staleThreshold.test.ts` — 30분 임계값 버킷(`1Hour`/`4Hour`) 경계 회귀를 잡기 위해 within(`1Hour`, 29min ago → false), beyond(`4Hour`, boundary + 1min → true) 케이스 추가.
+  - Rule: MISTAKES.md §Tests — 임계값 버킷별 boundary 명시 검증.
+- S5: `src/components/analysis/StaleAnalysisBanner.tsx` — UI 메시지 두 종(`STALE_MESSAGE`, `REANALYZE_LABEL`)을 컴포넌트 내 상수로 추출. 향후 동일 메시지를 다른 위치(예: 토스트, 모바일 시트)에서도 사용할 때 content drift 방지의 기반.
+  - Rule: 공통 UI 패턴 추출 시 message string은 상수로 통합.
+
 ## [PR #442 Round 5 | fix/oi-tooltip-floating | 2026-05-22]
 - S1: `src/components/options/OpenInterestChart.tsx` — tooltip JSX 주석이 "`hidden`으로 숨겨 스크린리더가 대상을 찾되 시각적으로만 숨김"이라고 표기. 실제로 HTML `hidden` 속성은 접근성 트리에서도 완전히 제거함. 사실관계 정정: "screen reader도 참조를 따라올 수 없지만 하단 sr-only 테이블이 대체 제공하므로 pointer-only tooltip에선 허용 가능 트레이드오프"로 재작성.
   - Rule: MISTAKES.md §15.3 — 사실관계가 잘못된 주석은 미래 독자에게 오해를 준다.

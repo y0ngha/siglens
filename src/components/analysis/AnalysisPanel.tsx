@@ -730,6 +730,10 @@ export function AnalysisPanel({
     const [copyState, setCopyState] = useState<'idle' | 'copied' | 'failed'>(
         'idle'
     );
+    // SSR/hydration mismatch 방지 — 서버 렌더링 시점의 `new Date()`와
+    // 클라이언트 hydration 시점의 시각이 다를 수 있어 stale 평가는 client mount
+    // 이후로 미룬다. `now`가 null인 동안에는 배너가 표시되지 않는다.
+    const [now, setNow] = useState<Date | null>(null);
     const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const resetCopyStateLater = (): void => {
@@ -793,16 +797,28 @@ export function AnalysisPanel({
         };
     }, []);
 
+    useEffect(() => {
+        // SSR/hydration mismatch 회피 — 서버에서는 `now`가 null, 클라이언트
+        // mount 직후에만 현재 시각을 캡쳐한다. analyzedAt 변경 시(=신규 분석
+        // 완료) 다시 캡쳐해 stale 판정을 갱신한다. effect dep이 분석 ISO 문자열
+        // 한 개라 cascading render 위험은 없다.
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setNow(new Date());
+    }, [analysis.analyzedAt]);
+
     // stale 여부는 render 시점에만 평가한다 — 인터벌 타이머를 두지 않으므로
     // 사용자 인터랙션 / 신규 분석 / 라우트 변경 등으로 다음 render가 일어나야
     // 배너가 갱신된다. 로딩 상태(isAnalyzing/showProgress)에서는 곧 새 분석으로
     // 교체되므로 stale 배너를 노출하지 않는다.
+    // `now`는 client mount 이후에만 값이 채워지므로 SSR/hydration 단계에서는
+    // 배너가 노출되지 않는다.
     const showStaleBanner =
         !isAnalyzing &&
         !showProgress &&
-        analysis.analyzedAt !== undefined &&
+        analysis.analyzedAt &&
         onReanalyze !== undefined &&
-        isAnalysisStale(analysis.analyzedAt, timeframe);
+        now !== null &&
+        isAnalysisStale(analysis.analyzedAt, timeframe, now);
 
     return (
         <div className="bg-secondary-800 relative flex flex-col gap-4 rounded-lg p-4">
@@ -830,7 +846,7 @@ export function AnalysisPanel({
                     <TrendBadge trend={analysis.trend} />
                 </div>
                 <div className="flex items-center gap-3">
-                    {analysis.analyzedAt !== undefined && (
+                    {analysis.analyzedAt && (
                         <time
                             dateTime={analysis.analyzedAt}
                             aria-label="분석 완료 시각"
