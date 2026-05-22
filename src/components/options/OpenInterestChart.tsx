@@ -27,6 +27,10 @@ import {
     CALL_LABEL_MIDLINE_OFFSET_PX,
     PUT_LABEL_MIDLINE_OFFSET_PX,
 } from '@/components/options/utils/chartLabelOffsets';
+import {
+    MIDLINE_STROKE_WIDTH,
+    GUIDE_LINE_STROKE_WIDTH,
+} from '@/components/options/utils/chartStrokeWidths';
 import { findNearestStrikeIndex } from '@/domain/options/findNearestStrike';
 
 interface OpenInterestChartProps {
@@ -280,7 +284,7 @@ export function OpenInterestChart({
                     x2={SVG_WIDTH - PAD_RIGHT}
                     y2={MIDLINE_Y}
                     stroke={COLOR_MIDLINE}
-                    strokeWidth={1}
+                    strokeWidth={MIDLINE_STROKE_WIDTH}
                 />
 
                 <text
@@ -371,7 +375,7 @@ export function OpenInterestChart({
                         x2={maxPainX}
                         y2={SVG_HEIGHT - PAD_BOTTOM}
                         stroke={COLOR_GUIDE_LINE}
-                        strokeWidth={1.5}
+                        strokeWidth={GUIDE_LINE_STROKE_WIDTH}
                         strokeDasharray="4 4"
                     />
                 )}
@@ -383,7 +387,7 @@ export function OpenInterestChart({
                         x2={currentPriceX}
                         y2={SVG_HEIGHT - PAD_BOTTOM}
                         stroke={COLOR_GUIDE_LINE}
-                        strokeWidth={1.5}
+                        strokeWidth={GUIDE_LINE_STROKE_WIDTH}
                     />
                 )}
 
