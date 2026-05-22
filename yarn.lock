@@ -3801,14 +3801,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@y0ngha/siglens-core@npm:0.11.4":
-  version: 0.11.4
-  resolution: "@y0ngha/siglens-core@npm:0.11.4::__archiveUrl=https%3A%2F%2Fnpm.pkg.github.com%2Fdownload%2F%40y0ngha%2Fsiglens-core%2F0.11.4%2F7299a9d41dd8396e216c24f88cc2fcbd054da6a4"
+"@y0ngha/siglens-core@npm:0.12.0":
+  version: 0.12.0
+  resolution: "@y0ngha/siglens-core@npm:0.12.0::__archiveUrl=https%3A%2F%2Fnpm.pkg.github.com%2Fdownload%2F%40y0ngha%2Fsiglens-core%2F0.12.0%2F5919d83342216757d2961beebf0e749d41a3a1e2"
   dependencies:
     jsonrepair: "npm:^3.14.0"
   peerDependencies:
     "@upstash/redis": ^1.37.0
-  checksum: 10c0/dc6922f76301bc73331554bbd7299efc4d18c75aad370ac683d3909dc404b4df9254247ae4bc73c5fc9a48c49751aff2116ae4f215c2ffc765e92567b2ce52ca
+  checksum: 10c0/f229a0866ddd39d4e27b2d2e0d1cfff6707957b1ae51651687b0eb2fbce4ab714db5725c6d460ade3e8119f2ebd022b89b8a025f1450f33c16bc4fcacfdc75b8
   languageName: node
   linkType: hard
 
@@ -11415,7 +11415,7 @@ __metadata:
     "@upstash/redis": "npm:^1.37.0"
     "@vercel/analytics": "npm:^2.0.1"
     "@vercel/functions": "npm:^3.4.3"
-    "@y0ngha/siglens-core": "npm:0.11.4"
+    "@y0ngha/siglens-core": "npm:0.12.0"
     babel-plugin-react-compiler: "npm:^1.0.0"
     bcryptjs: "npm:^3.0.3"
     clsx: "npm:^2.1.1"
@@ -11453,7 +11453,7 @@ __metadata:
     ts-jest: "npm:^29.4.6"
     typescript: "npm:^5"
     vaul: "npm:^1.1.2"
-    yahoo-finance2: "npm:^3.14.0"
+    yahoo-finance2: "npm:3.14.1"
   languageName: unknown
   linkType: soft
 
@@ -13120,9 +13120,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"yahoo-finance2@npm:^3.14.0":
-  version: 3.14.0
-  resolution: "yahoo-finance2@npm:3.14.0"
+"yahoo-finance2@npm:3.14.1":
+  version: 3.14.1
+  resolution: "yahoo-finance2@npm:3.14.1"
   dependencies:
     "@deno/shim-deno": "npm:~0.18.0"
     fetch-mock-cache: "npm:fetch-mock-cache@^2.1.3"
@@ -13131,7 +13131,7 @@ __metadata:
     tough-cookie-file-store: "npm:tough-cookie-file-store@^2.0.3"
   bin:
     yahoo-finance: esm/bin/yahoo-finance.js
-  checksum: 10c0/c953f008e375d8db9435e823e91a7fa789301ccffede111cb7dcb43aaa4f95822a9534b874e97f5d7aa72777c6f7167417062f8923c4f8fea20072ae0afc5af0
+  checksum: 10c0/66700f75ec5c5654f4d6880886bfe8c3ad519227d447cf80a62638d77f75437599e839bea5e93bea836903cb3e1036cc91aa3f64bcc365bd0d6d34b77e0d36db
   languageName: node
   linkType: hard
 
