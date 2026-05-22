@@ -1,8 +1,12 @@
 'use client';
 
-import { usePublishSymbolChat } from '@/components/chat/hooks/useSymbolChat';
+import {
+    usePublishSymbolChat,
+    type SymbolChatState,
+} from '@/components/chat/hooks/useSymbolChat';
 import { useNewsAnalysis } from '@/components/news/hooks/useNewsAnalysis';
 import { useWaitForNewsCards } from '@/components/news/hooks/useWaitForNewsCards';
+import { buildChatState } from '@/components/news/utils/buildChatState';
 import { BotBlockedNotice } from '@/components/symbol-page/BotBlockedNotice';
 import { useDefaultModelId } from '@/components/symbol-page/hooks/useDefaultModelId';
 import { cn } from '@/lib/cn';
@@ -215,43 +219,70 @@ function NewsAiSummaryInlineError({
     );
 }
 
-interface NewsAiSummaryContentProps {
+interface NewsAiSummaryProps {
     symbol: string;
     companyName: string;
+    /**
+     * Whether the SSR snapshot already contained at least one AI-enriched
+     * news card. When `false`, the component waits for background enrichment
+     * to produce the first enriched card before triggering aggregate analysis.
+     */
+    hasEnrichedNews: boolean;
 }
 
-function NewsAiSummaryContent({
+// cards 대기/poll error 동안 publish할 stale-safe chatState.
+// 모듈 스코프 상수라 매 렌더마다 새 객체가 만들어지지 않아 useMemo 없이도
+// publish의 prev 비교가 동일 reference로 dedupe된다.
+const WAITING_CHAT_STATE: SymbolChatState = {
+    context: null,
+    timeframe: null,
+    isAnalysisReady: false,
+};
+
+export function NewsAiSummary({
     symbol,
     companyName,
-}: NewsAiSummaryContentProps) {
+    hasEnrichedNews,
+}: NewsAiSummaryProps) {
+    const { isReady: isCardsReady, pollError } = useWaitForNewsCards(
+        symbol,
+        hasEnrichedNews
+    );
     const modelId = useDefaultModelId();
-    const analysis = useNewsAnalysis(symbol, companyName, modelId);
+    // enabled 게이트: enriched news cards가 DB에 적어도 1개 있을 때까지 submit을
+    // 미룬다. 이 게이트가 없으면 빈 DB에 대해 submit이 즉시 fire되어 core가
+    // no_news 결과를 돌려주고, retry:false + staleTime:Infinity 정책에 의해
+    // 에러가 영구 캐시돼 cards가 enrich된 뒤에도 분석 패널이 회복되지 않는다.
+    const analysis = useNewsAnalysis(symbol, companyName, modelId, {
+        enabled: isCardsReady,
+    });
 
     // 훅 선언 순서 예외(MISTAKES.md #17): usePublishSymbolChat은 chatState(파생 변수)를
     // 인자로 받기 때문에 useMemo 뒤에 위치해야 한다.
     //
-    // `analysis`는 discriminated union이라 `analysis.result`는 narrowing 후에만
-    // 접근 가능하므로 deps에는 객체 전체를 둔다. React Query가 `query.data`를
-    // memoize하므로 동일 분석에 대한 reference는 안정적 — 실제 데이터가 바뀔
-    // 때만 재계산된다.
-    const chatState = useMemo(() => {
-        const result = analysis.status === 'done' ? analysis.result : null;
-        return result !== null
-            ? ({
-                  context: {
-                      kind: 'news',
-                      payload: result,
-                  } as const,
-                  timeframe: null,
-                  isAnalysisReady: true,
-              } as const)
-            : ({
-                  context: null,
-                  timeframe: null,
-                  isAnalysisReady: false,
-              } as const);
-    }, [analysis]);
+    // cards 준비 전에는 분석 결과가 아직 없으므로 WAITING_CHAT_STATE를 publish하여
+    // 이전 페이지의 stale context가 그대로 남지 않게 한다. cards ready 후에는
+    // analysis 상태 기반 chatState로 takeover한다. 단일 publish 사이트를 유지하여
+    // parent/child 이중 publish로 인한 race condition을 막는다.
+    //
+    // `analysis`는 discriminated union이라 deps에는 객체 전체를 둔다. React Query가
+    // `query.data`를 memoize하므로 동일 분석에 대한 reference는 안정적 — 실제
+    // 데이터가 바뀔 때만 재계산된다.
+    const chatState = useMemo(
+        () => (isCardsReady ? buildChatState(analysis) : WAITING_CHAT_STATE),
+        [isCardsReady, analysis]
+    );
     usePublishSymbolChat(chatState);
+
+    // Surface persistent polling errors to the surrounding error boundary
+    // (NewsAiSummaryErrorBoundary) so the fallback UI takes over.
+    if (pollError !== null) {
+        throw pollError;
+    }
+
+    if (!isCardsReady) {
+        return <StatusCard phase="fetching" />;
+    }
 
     if (analysis.status === 'error') {
         return (
@@ -271,38 +302,4 @@ function NewsAiSummaryContent({
     }
 
     return <NewsAiSummaryView result={analysis.result} />;
-}
-
-interface NewsAiSummaryProps {
-    symbol: string;
-    companyName: string;
-    /**
-     * Whether the SSR snapshot already contained at least one AI-enriched
-     * news card. When `false`, the component waits for background enrichment
-     * to produce the first enriched card before triggering aggregate analysis.
-     */
-    hasEnrichedNews: boolean;
-}
-
-export function NewsAiSummary({
-    symbol,
-    companyName,
-    hasEnrichedNews,
-}: NewsAiSummaryProps) {
-    const { isReady: isCardsReady, pollError } = useWaitForNewsCards(
-        symbol,
-        hasEnrichedNews
-    );
-
-    // Surface persistent polling errors to the surrounding error boundary
-    // (NewsAiSummaryErrorBoundary) so the fallback UI takes over.
-    if (pollError !== null) {
-        throw pollError;
-    }
-
-    if (!isCardsReady) {
-        return <StatusCard phase="fetching" />;
-    }
-
-    return <NewsAiSummaryContent symbol={symbol} companyName={companyName} />;
 }

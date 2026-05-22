@@ -10,6 +10,7 @@ import { cn } from '@/lib/cn';
 import { useDefaultModelId } from '@/components/symbol-page/hooks/useDefaultModelId';
 import { useFundamentalAnalysis } from '@/components/fundamental/hooks/useFundamentalAnalysis';
 import { usePublishSymbolChat } from '@/components/chat/hooks/useSymbolChat';
+import { buildChatState } from '@/components/fundamental/utils/buildChatState';
 import { FundamentalAiSummaryError } from '@/components/fundamental/FundamentalAiSummaryError';
 import { FundamentalAiSummarySkeleton } from '@/components/fundamental/FundamentalAiSummarySkeleton';
 import { BotBlockedNotice } from '@/components/symbol-page/BotBlockedNotice';
@@ -122,32 +123,16 @@ interface FundamentalAiSummaryProps {
     symbol: string;
 }
 
-function FundamentalAiSummaryContent({
-    result,
-}: FundamentalAiSummaryViewProps) {
-    // Publish the in-view fundamental result to the layout-mounted chat panel
-    // so the chatbot's system prompt receives `## Current analysis context`
-    // with this page's numbers (not stale chart context). `timeframe` is null —
-    // fundamental analysis is timeframe-agnostic; the launcher falls back to
-    // DEFAULT_TIMEFRAME for the chat request.
-    // 훅 선언 순서 예외(MISTAKES.md #17): usePublishSymbolChat은 chatState(파생 변수)를
-    // 인자로 받기 때문에 useMemo 뒤에 위치해야 한다.
-    const chatState = useMemo(
-        () => ({
-            context: { kind: 'fundamental', payload: result } as const,
-            timeframe: null,
-            isAnalysisReady: true,
-        }),
-        [result]
-    );
-    usePublishSymbolChat(chatState);
-
-    return <FundamentalAiSummaryView result={result} />;
-}
-
 export function FundamentalAiSummary({ symbol }: FundamentalAiSummaryProps) {
     const modelId = useDefaultModelId();
     const state = useFundamentalAnalysis(symbol, modelId);
+
+    // bot_blocked/loading/error 시에도 chatState를 명시적으로 publish하여 챗봇이
+    // 이전 페이지의 stale context를 그대로 들고 가지 않게 한다.
+    // 훅 선언 순서 예외(MISTAKES.md #17): usePublishSymbolChat은 chatState(파생 변수)를
+    // 인자로 받기 때문에 useMemo 뒤에 위치해야 한다.
+    const chatState = useMemo(() => buildChatState(state), [state]);
+    usePublishSymbolChat(chatState);
 
     if (state.status === 'loading') {
         return <FundamentalAiSummarySkeleton />;
@@ -166,5 +151,5 @@ export function FundamentalAiSummary({ symbol }: FundamentalAiSummaryProps) {
         );
     }
 
-    return <FundamentalAiSummaryContent result={state.result} />;
+    return <FundamentalAiSummaryView result={state.result} />;
 }

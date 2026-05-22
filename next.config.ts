@@ -15,6 +15,15 @@ const nextConfig: NextConfig = {
     // React Compiler (Next.js 16 stable)
     reactCompiler: true,
 
+    // streaming metadata 비활성화. Next.js 16은 generateMetadata가 async이고 layout/page에
+    // async work(getAssetInfoCached, prefetchQuery(bars) 등)가 있으면 shell을 먼저 flush한 뒤
+    // metadata를 body 끝에 streaming inject한다. Googlebot 등 default htmlLimitedBots 매치
+    // UA는 head로 받지만 Naver Yeti, KakaoTalk 등 매치되지 않는 봇은 body에서 OG/canonical을
+    // 못 읽어 SNS 미리보기·검색 시그널이 깨진다. /.*/로 모든 UA를 blocking 경로로 강제해
+    // metadata가 항상 head에 박히도록 보장. TTFB가 generateMetadata 완료 시점까지 늦춰지지만,
+    // 우리 generateMetadata는 cached getAssetInfoCached + 문자열 빌드뿐이라 영향은 미미하다.
+    htmlLimitedBots: /.*/,
+
     // skills/ 디렉토리는 fs.readdir로 동적 접근하므로 Vercel이 자동 추적하지 못한다.
     // 명시적으로 포함시켜 Server Actions에서 파일을 읽을 수 있도록 한다.
     outputFileTracingIncludes: {

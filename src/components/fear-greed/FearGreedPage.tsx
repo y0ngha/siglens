@@ -9,6 +9,7 @@ import { FearGreedHistoricalChart } from '@/components/chart/FearGreedHistorical
 import { SelfNormWarningBadge } from '@/components/fear-greed/SelfNormWarningBadge';
 import { formatConfidenceFooter } from '@/lib/fearGreedLabels';
 import { usePublishSymbolChat } from '@/components/chat/hooks/useSymbolChat';
+import { buildChatState } from '@/components/fear-greed/utils/buildChatState';
 
 interface FearGreedPageProps {
     symbol: string;
@@ -18,14 +19,7 @@ interface FearGreedPageProps {
 export function FearGreedPage({ symbol, fmpSymbol }: FearGreedPageProps) {
     const { snapshot, history } = useFearGreedFromSymbol({ symbol, fmpSymbol });
 
-    const chatState = useMemo(
-        () => ({
-            context: null as null,
-            timeframe: null,
-            isAnalysisReady: snapshot !== null,
-        }),
-        [snapshot]
-    );
+    const chatState = useMemo(() => buildChatState(snapshot), [snapshot]);
     usePublishSymbolChat(chatState);
 
     if (!snapshot) {

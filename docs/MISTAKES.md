@@ -633,6 +633,14 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     → Never sandwich `jest.mock(...)` between two `import` statements — splits the import block and trips `import/first`
     ❌ `import { withRetry } from '...'; jest.mock('@/lib/sleep', ...); import { sleep } from '@/lib/sleep';`
     ✅ `jest.mock('@/lib/sleep', ...); import { withRetry } from '...'; import { sleep } from '@/lib/sleep';`
+
+18. New threshold/conditional branch introduced without test cases covering both true and false paths
+    → When a function adds a new `if (value < THRESHOLD)` check, tests must explicitly verify the branch-taken case (value below threshold) and branch-not-taken case (value at/above threshold)
+    → Testing only the normal (non-threshold) case leaves the new branch untested and vulnerable to regression
+    → Boundary test cases: values just below and just above the threshold
+    ❌ formatImpliedMove(0.04) adds `if (pct < PERCENT_DISPLAY_FLOOR)`, but tests only verify value <= 0 case, not the 0 < value < floor case
+    ✅ Add explicit test cases: formatImpliedMove(0.0004) for below-floor, formatImpliedMove(0.05) for above-floor, plus boundary values
+    → Applies to all conditional branches (time thresholds, percentage boundaries, count limits) added in a PR
 ```
 
 ---

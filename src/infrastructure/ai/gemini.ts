@@ -1,5 +1,9 @@
 import { GoogleGenAI } from '@google/genai';
-import type { CallAiProviderOptions } from '@y0ngha/siglens-core';
+import type {
+    AiContents,
+    CallAiProviderOptions,
+    ConversationTurn,
+} from '@y0ngha/siglens-core';
 
 interface GeminiChatOptions extends CallAiProviderOptions {
     /**
@@ -8,6 +12,27 @@ interface GeminiChatOptions extends CallAiProviderOptions {
      * Omit to use the model's default thinking behaviour.
      */
     thinkingBudget?: number;
+}
+
+/** Gemini SDK's native conversation-turn shape. */
+interface GeminiTurn {
+    role: 'user' | 'model';
+    parts: [{ text: string }];
+}
+
+/**
+ * Convert siglens-core's provider-neutral `AiContents` to the Gemini SDK's
+ * native turn shape. Gemini expects `{ role: 'user' | 'model', parts: [{ text }] }`,
+ * whereas siglens-core 0.11.4 emits `{ role: 'user' | 'assistant', text }`.
+ */
+function toGeminiContents(contents: AiContents): string | GeminiTurn[] {
+    if (typeof contents === 'string') {
+        return contents;
+    }
+    return contents.map((turn: ConversationTurn) => ({
+        role: turn.role === 'assistant' ? 'model' : 'user',
+        parts: [{ text: turn.text }],
+    }));
 }
 
 export async function callGeminiChat({
@@ -24,7 +49,7 @@ export async function callGeminiChat({
 
     const response = await genai.models.generateContent({
         model,
-        contents,
+        contents: toGeminiContents(contents),
         ...(hasSystemInstruction || hasThinkingBudget
             ? {
                   config: {

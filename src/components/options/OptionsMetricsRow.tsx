@@ -9,6 +9,7 @@ import {
     formatImpliedMove,
     formatMaxPain,
     formatPutCallRatio,
+    METRIC_PLACEHOLDER,
 } from '@/lib/options/optionsFormatters';
 import {
     AtmIvTooltip,
@@ -46,12 +47,20 @@ interface OptionsMetricsRowProps {
     metrics: OptionsExpirationMetrics | null;
     /** First-chain expiration date for the "종합 만기" caption. */
     nearestExpiry: string;
+    /**
+     * `true`이면 OI 스냅샷이 stale 상태(Yahoo 정규장 외 quote 클리어)로 판정되어
+     * 카드의 모든 metric을 EM DASH로 표시한다. Max Pain·ATM IV·Imp. Move는
+     * OI/IV에 직접 의존하므로 stale 데이터로 계산하면 사용자에게 잘못된 숫자
+     * (예: $50, 0.0%)를 신뢰성 있게 보이도록 노출하게 된다.
+     */
+    oiStale: boolean;
 }
 
 export function OptionsMetricsRow({
     expirationDate,
     metrics,
     nearestExpiry,
+    oiStale,
 }: OptionsMetricsRowProps) {
     // siglens-core R12: maxPain / putCallRatio are now `number | null`
     // (formatters tolerate the union explicitly), so pass through directly
@@ -61,28 +70,36 @@ export function OptionsMetricsRow({
             [
                 {
                     label: 'Max Pain',
-                    value: formatMaxPain(metrics?.maxPain ?? null),
+                    value: oiStale
+                        ? METRIC_PLACEHOLDER
+                        : formatMaxPain(metrics?.maxPain ?? null),
                     tooltip: MaxPainTooltip,
                 },
                 {
                     label: 'P/C Ratio',
-                    value: formatPutCallRatio(metrics?.putCallRatio ?? null),
+                    value: oiStale
+                        ? METRIC_PLACEHOLDER
+                        : formatPutCallRatio(metrics?.putCallRatio ?? null),
                     tooltip: PutCallRatioTooltip,
                 },
                 {
                     label: 'ATM IV',
-                    value: formatAtmIv(metrics?.atmImpliedVolatility ?? null),
-                    tooltip: AtmIvTooltip,
+                    value: oiStale
+                        ? METRIC_PLACEHOLDER
+                        : formatAtmIv(metrics?.atmImpliedVolatility ?? null),
+                    tooltip: <AtmIvTooltip />,
                 },
                 {
                     label: 'Imp. Move',
-                    value: formatImpliedMove(
-                        metrics?.impliedMovePercent ?? null
-                    ),
-                    tooltip: ImpliedMoveTooltip,
+                    value: oiStale
+                        ? METRIC_PLACEHOLDER
+                        : formatImpliedMove(
+                              metrics?.impliedMovePercent ?? null
+                          ),
+                    tooltip: <ImpliedMoveTooltip />,
                 },
             ] as const,
-        [metrics]
+        [metrics, oiStale]
     );
 
     return (
