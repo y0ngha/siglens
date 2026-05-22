@@ -9,6 +9,7 @@ import {
     formatImpliedMove,
     formatMaxPain,
     formatPutCallRatio,
+    METRIC_PLACEHOLDER,
 } from '@/lib/options/optionsFormatters';
 import {
     AtmIvTooltip,
@@ -38,10 +39,6 @@ function MetricCard({ label, value, tooltip }: MetricCardProps) {
         </div>
     );
 }
-
-// OI snapshot이 stale일 때 metric 카드 값에 일괄 표시하는 placeholder.
-// formatters의 null/NaN 분기와 동일한 글자(`—`)를 쓴다.
-const EM_DASH = '—';
 
 interface OptionsMetricsRowProps {
     /** 'YYYY-MM-DD' or 'all'. */
@@ -74,28 +71,28 @@ export function OptionsMetricsRow({
                 {
                     label: 'Max Pain',
                     value: oiStale
-                        ? EM_DASH
+                        ? METRIC_PLACEHOLDER
                         : formatMaxPain(metrics?.maxPain ?? null),
                     tooltip: MaxPainTooltip,
                 },
                 {
                     label: 'P/C Ratio',
                     value: oiStale
-                        ? EM_DASH
+                        ? METRIC_PLACEHOLDER
                         : formatPutCallRatio(metrics?.putCallRatio ?? null),
                     tooltip: PutCallRatioTooltip,
                 },
                 {
                     label: 'ATM IV',
                     value: oiStale
-                        ? EM_DASH
+                        ? METRIC_PLACEHOLDER
                         : formatAtmIv(metrics?.atmImpliedVolatility ?? null),
                     tooltip: <AtmIvTooltip />,
                 },
                 {
                     label: 'Imp. Move',
                     value: oiStale
-                        ? EM_DASH
+                        ? METRIC_PLACEHOLDER
                         : formatImpliedMove(
                               metrics?.impliedMovePercent ?? null
                           ),

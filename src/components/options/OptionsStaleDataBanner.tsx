@@ -5,9 +5,7 @@ import {
     KST_EDT_HOURS_DISPLAY,
     KST_EST_HOURS_DISPLAY,
 } from '@/lib/options/marketHoursDisplay';
-import { getEasternOffsetHours } from '@/domain/time/eastern';
-
-const EDT_OFFSET_HOURS = -4;
+import { EDT_OFFSET_HOURS, getEasternOffsetHours } from '@/domain/time/eastern';
 
 /**
  * Surfaces a "data temporarily empty" notice when the upstream provider

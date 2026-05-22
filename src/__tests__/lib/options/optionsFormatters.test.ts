@@ -87,6 +87,19 @@ describe('formatAtmIv', () => {
     it('음수 fraction도 em dash로 표현한다 (방어적 가드)', () => {
         expect(formatAtmIv(-0.1)).toBe('—');
     });
+
+    it('PERCENT_DISPLAY_FLOOR(0.05%) 미만 sub-percent noise는 em dash로 표현한다', () => {
+        // value=0.0004 → pct=0.04 → pct < 0.05이므로 placeholder.
+        // Yahoo가 pre-market에서 ATM IV를 0 또는 sub-percent로 채워 보내는
+        // 경우의 noise 컷오프.
+        expect(formatAtmIv(0.0004)).toBe('—');
+    });
+
+    it('PERCENT_DISPLAY_FLOOR(0.05%) 바로 위 값은 표시한다', () => {
+        // value=0.0006 → pct=0.06 → floor(0.05) 초과 → "0.1%"로 반올림 표시.
+        // FP 정밀도 이슈를 피해 경계값(0.0005)이 아닌 명확히 위 값으로 검증.
+        expect(formatAtmIv(0.0006)).toBe('0.1%');
+    });
 });
 
 describe('formatImpliedMove', () => {
@@ -114,5 +127,17 @@ describe('formatImpliedMove', () => {
 
     it('음수 implied move도 em dash로 표현한다 (방어적 가드)', () => {
         expect(formatImpliedMove(-1)).toBe('—');
+    });
+
+    it('PERCENT_DISPLAY_FLOOR(0.05) 미만 sub-percent noise는 em dash로 표현한다', () => {
+        // value=0.04 → value < 0.05이므로 placeholder.
+        // ATM IV가 sub-percent일 때 implied move도 같은 구간에서 노이즈로 떨어진다.
+        expect(formatImpliedMove(0.04)).toBe('—');
+    });
+
+    it('PERCENT_DISPLAY_FLOOR(0.05) 바로 위 값은 표시한다', () => {
+        // value=0.06 → floor(0.05) 초과 → "±0.1%"로 반올림 표시.
+        // FP 정밀도 이슈를 피해 경계값(0.05)이 아닌 명확히 위 값으로 검증.
+        expect(formatImpliedMove(0.06)).toBe('±0.1%');
     });
 });

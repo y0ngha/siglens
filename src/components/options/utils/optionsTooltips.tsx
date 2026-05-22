@@ -12,14 +12,17 @@
  * 시점에만 평가돼 DST 경계를 가로지르는 사용자에게 잘못된 시간을 보여준다.
  */
 
-import { getEasternOffsetHours } from '@/domain/time/eastern';
+import { EDT_OFFSET_HOURS, getEasternOffsetHours } from '@/domain/time/eastern';
 import {
     ET_MARKET_HOURS_DISPLAY,
     KST_EDT_HOURS_DISPLAY,
     KST_EST_HOURS_DISPLAY,
 } from '@/lib/options/marketHoursDisplay';
 
-const EDT_OFFSET_HOURS = -4;
+interface KstWindowInfo {
+    window: string;
+    label: string;
+}
 
 export const MaxPainTooltip = (
     <>
@@ -44,7 +47,7 @@ export const PutCallRatioTooltip = (
     </>
 );
 
-function getCurrentKstWindow(): { window: string; label: string } {
+function getCurrentKstWindow(): KstWindowInfo {
     const inEdt = getEasternOffsetHours(new Date()) === EDT_OFFSET_HOURS;
     return inEdt
         ? { window: KST_EDT_HOURS_DISPLAY, label: '서머타임(EDT)' }

@@ -16,7 +16,7 @@
 
 /** Format a Max Pain strike. null/NaN → `'—'`, otherwise `$<rounded>` with comma grouping. */
 export function formatMaxPain(value: number | null | undefined): string {
-    if (value == null || Number.isNaN(value)) return '—';
+    if (value == null || Number.isNaN(value)) return METRIC_PLACEHOLDER;
     return `$${Math.round(value).toLocaleString()}`;
 }
 
@@ -26,9 +26,19 @@ export function formatMaxPain(value: number | null | undefined): string {
  */
 export function formatPutCallRatio(value: number | null | undefined): string {
     if (value === Number.POSITIVE_INFINITY) return '∞';
-    if (value == null || Number.isNaN(value)) return '—';
+    if (value == null || Number.isNaN(value)) return METRIC_PLACEHOLDER;
     return value.toFixed(2);
 }
+
+/**
+ * Shared placeholder string for metrics that can't be displayed.
+ *
+ * Exported so `OptionsMetricsRow` (stale OI 시나리오에서 metric을 일괄 대체)와
+ * formatters의 null/NaN 분기가 같은 글자를 사용함을 코드 레벨에서 강제한다
+ * (§15 drift trap). 둘 중 한 쪽 표기만 바뀌면 사용자에게는 같은 자리에 서로
+ * 다른 placeholder가 보이게 된다.
+ */
+export const METRIC_PLACEHOLDER = '—';
 
 // `toFixed(1)`이 "0.0"으로 반올림되는 경계값. 정상 시장의 IV는 보통 5% 이상이고
 // `±implied move`도 0.05% 이상이라, 이 임계 아래의 값은 noise(또는 Yahoo가 채우다
@@ -45,9 +55,10 @@ const PERCENT_DISPLAY_FLOOR = 0.05;
  * 인상을 준다.
  */
 export function formatAtmIv(value: number | null | undefined): string {
-    if (value == null || Number.isNaN(value) || value <= 0) return '—';
+    if (value == null || Number.isNaN(value) || value <= 0)
+        return METRIC_PLACEHOLDER;
     const pct = value * 100;
-    if (pct < PERCENT_DISPLAY_FLOOR) return '—';
+    if (pct < PERCENT_DISPLAY_FLOOR) return METRIC_PLACEHOLDER;
     return `${pct.toFixed(1)}%`;
 }
 
@@ -60,7 +71,8 @@ export function formatAtmIv(value: number | null | undefined): string {
  * 떨어진다 (위 ATM IV와 동일 사유).
  */
 export function formatImpliedMove(value: number | null | undefined): string {
-    if (value == null || Number.isNaN(value) || value <= 0) return '—';
-    if (value < PERCENT_DISPLAY_FLOOR) return '—';
+    if (value == null || Number.isNaN(value) || value <= 0)
+        return METRIC_PLACEHOLDER;
+    if (value < PERCENT_DISPLAY_FLOOR) return METRIC_PLACEHOLDER;
     return `±${value.toFixed(1)}%`;
 }
