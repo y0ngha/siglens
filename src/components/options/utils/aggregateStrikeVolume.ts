@@ -54,13 +54,15 @@ function bumpStrikeVolume(
  *   readonly so downstream consumers must not mutate.
  */
 export function aggregateStrikeVolume(chain: OptionsChain): StrikeVolume[] {
-    const tagged = [
-        ...chain.calls.map(c => ({ side: 'call' as const, ...c })),
-        ...chain.puts.map(p => ({ side: 'put' as const, ...p })),
-    ];
-    const byStrike = tagged.reduce(
-        (acc, c) => bumpStrikeVolume(acc, c.strike, c.side, c.volume),
-        new Map<number, StrikeVolume>()
+    // 두 reduce를 직렬로 연결해 같은 Map accumulator를 calls → puts
+    // 순으로 통과시킨다. 이전의 `tagged` 중간 배열(spread + 두 map +
+    // 객체 alloc)을 제거해 컨트랙트 개수에 비례하던 임시 할당을 없앴다.
+    const byStrike = chain.puts.reduce(
+        (acc, p) => bumpStrikeVolume(acc, p.strike, 'put', p.volume),
+        chain.calls.reduce(
+            (acc, c) => bumpStrikeVolume(acc, c.strike, 'call', c.volume),
+            new Map<number, StrikeVolume>()
+        )
     );
     return [...byStrike.values()].toSorted((a, b) => a.strike - b.strike);
 }

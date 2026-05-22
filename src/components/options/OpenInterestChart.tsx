@@ -22,6 +22,11 @@ import {
 } from '@/components/options/utils/computeTooltipPos';
 import { pickLabelIndices } from '@/components/options/utils/pickLabelIndices';
 import { formatCompactCount } from '@/components/options/utils/formatCompactCount';
+import {
+    PEAK_LABEL_TOP_OFFSET_PX,
+    CALL_LABEL_MIDLINE_OFFSET_PX,
+    PUT_LABEL_MIDLINE_OFFSET_PX,
+} from '@/components/options/utils/chartLabelOffsets';
 import { findNearestStrikeIndex } from '@/domain/options/findNearestStrike';
 
 interface OpenInterestChartProps {
@@ -152,12 +157,22 @@ export function OpenInterestChart({
             underlyingPrice
         );
 
+        // derived와 같은 메모 경계에서 라벨 인덱스 Set도 한 번에 계산해
+        // hover state가 바뀌어도 Set이 재생성되지 않도록 한다
+        // (MISTAKES.md §10).
+        const labelIndices = pickLabelIndices(
+            oiByStrike.length,
+            [maxPainIdx, currentPriceIdx],
+            MAX_X_AXIS_LABELS
+        );
+
         return {
             oiByStrike,
             topOiSet,
             globalMax,
             maxPainIdx,
             currentPriceIdx,
+            labelIndices,
         };
     }, [chain, metrics, underlyingPrice]);
 
@@ -169,8 +184,14 @@ export function OpenInterestChart({
         );
     }
 
-    const { oiByStrike, topOiSet, globalMax, maxPainIdx, currentPriceIdx } =
-        derived;
+    const {
+        oiByStrike,
+        topOiSet,
+        globalMax,
+        maxPainIdx,
+        currentPriceIdx,
+        labelIndices,
+    } = derived;
     const count = oiByStrike.length;
     const sw = slotWidth(count);
     const bw = sw * BAR_WIDTH_FILL_RATIO;
@@ -187,11 +208,6 @@ export function OpenInterestChart({
     const currentPriceX =
         currentPriceIdx >= 0 ? barCenterX(currentPriceIdx, count) : null;
 
-    const labelIndices = pickLabelIndices(
-        count,
-        [maxPainIdx, currentPriceIdx],
-        MAX_X_AXIS_LABELS
-    );
     const rotateLabels = labelIndices.size > LABEL_ROTATION_THRESHOLD;
     const peakOiLabel = formatCompactCount(globalMax);
 
@@ -269,9 +285,9 @@ export function OpenInterestChart({
 
                 <text
                     x={PAD_LEFT}
-                    y={PAD_TOP - 4}
+                    y={PAD_TOP - PEAK_LABEL_TOP_OFFSET_PX}
                     fill={COLOR_LABEL}
-                    fontSize={9}
+                    fontSize={STRAIGHT_LABEL_FONT_SIZE}
                     textAnchor="start"
                 >
                     {peakOiLabel}
@@ -279,9 +295,9 @@ export function OpenInterestChart({
 
                 <text
                     x={PAD_LEFT}
-                    y={MIDLINE_Y - 6}
+                    y={MIDLINE_Y - CALL_LABEL_MIDLINE_OFFSET_PX}
                     fill={COLOR_CALL}
-                    fontSize={9}
+                    fontSize={STRAIGHT_LABEL_FONT_SIZE}
                     textAnchor="start"
                 >
                     ▲ Call OI
@@ -289,9 +305,9 @@ export function OpenInterestChart({
 
                 <text
                     x={PAD_LEFT}
-                    y={MIDLINE_Y + 14}
+                    y={MIDLINE_Y + PUT_LABEL_MIDLINE_OFFSET_PX}
                     fill={COLOR_PUT}
-                    fontSize={9}
+                    fontSize={STRAIGHT_LABEL_FONT_SIZE}
                     textAnchor="start"
                 >
                     ▼ Put OI

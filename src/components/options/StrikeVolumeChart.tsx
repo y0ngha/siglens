@@ -18,6 +18,11 @@ import {
 import { pickLabelIndices } from '@/components/options/utils/pickLabelIndices';
 import { aggregateStrikeVolume } from '@/components/options/utils/aggregateStrikeVolume';
 import { formatCompactCount } from '@/components/options/utils/formatCompactCount';
+import {
+    PEAK_LABEL_TOP_OFFSET_PX,
+    CALL_LABEL_MIDLINE_OFFSET_PX,
+    PUT_LABEL_MIDLINE_OFFSET_PX,
+} from '@/components/options/utils/chartLabelOffsets';
 import { findNearestStrikeIndex } from '@/domain/options/findNearestStrike';
 
 interface StrikeVolumeChartProps {
@@ -106,18 +111,16 @@ export function StrikeVolumeChart({
         // "차트는 그릴 수 있지만 정보가 0"인 상태이므로 비어있다는 안내로
         // 대체한다. OI 차트는 OI=0 만기가 거의 없으므로 동일 검사가 없지만,
         // volume은 휴장 직후 흔히 발생하는 경로.
-        const hasAnyVolume = volumeByStrike.some(
-            s => s.callVolume > 0 || s.putVolume > 0
-        );
-        if (!hasAnyVolume) return null;
-
-        // OpenInterestChart와 같이 한 번의 reduce로 양쪽 최대를 구한다 —
-        // 두 번의 `Math.max(...spread)` 형태는 인자 개수 한계에 부딪힐
-        // 수 있고 중간 배열을 두 번 할당한다.
-        const globalMax = volumeByStrike.reduce(
+        //
+        // raw max를 한 번의 reduce로 구한 뒤 0이면 empty state, 아니면
+        // MIN_VOLUME_SCALE_FLOOR로 클램프해 barPixelHeight의 0 나누기를
+        // 막는다 — 두 번의 순회(some + reduce)를 한 번으로 합쳤다.
+        const globalMaxRaw = volumeByStrike.reduce(
             (max, s) => Math.max(max, s.callVolume, s.putVolume),
-            MIN_VOLUME_SCALE_FLOOR
+            0
         );
+        if (globalMaxRaw === 0) return null;
+        const globalMax = Math.max(globalMaxRaw, MIN_VOLUME_SCALE_FLOOR);
 
         const strikes = volumeByStrike.map(s => s.strike);
         const currentPriceIdx = findNearestStrikeIndex(
@@ -125,10 +128,21 @@ export function StrikeVolumeChart({
             underlyingPrice
         );
 
+        // Max Pain은 OI 개념이므로 volume 차트에는 적합하지 않다. anchors는
+        // 현재가만 강제 포함. derived와 같은 메모 경계에서 한 번에 계산해
+        // hover state가 바뀌어도 라벨 Set이 재생성되지 않도록 한다
+        // (MISTAKES.md §10).
+        const labelIndices = pickLabelIndices(
+            volumeByStrike.length,
+            [currentPriceIdx],
+            MAX_X_AXIS_LABELS
+        );
+
         return {
             volumeByStrike,
             globalMax,
             currentPriceIdx,
+            labelIndices,
         };
     }, [chain, underlyingPrice]);
 
@@ -140,7 +154,8 @@ export function StrikeVolumeChart({
         );
     }
 
-    const { volumeByStrike, globalMax, currentPriceIdx } = derived;
+    const { volumeByStrike, globalMax, currentPriceIdx, labelIndices } =
+        derived;
     const count = volumeByStrike.length;
     const sw = slotWidth(count);
     const bw = sw * BAR_WIDTH_FILL_RATIO;
@@ -153,13 +168,6 @@ export function StrikeVolumeChart({
     const currentPriceX =
         currentPriceIdx >= 0 ? barCenterX(currentPriceIdx, count) : null;
 
-    // Max Pain은 OI 개념이므로 volume 차트에는 적합하지 않다. anchors는
-    // 현재가만 강제 포함.
-    const labelIndices = pickLabelIndices(
-        count,
-        [currentPriceIdx],
-        MAX_X_AXIS_LABELS
-    );
     const rotateLabels = labelIndices.size > LABEL_ROTATION_THRESHOLD;
     const peakVolumeLabel = formatCompactCount(globalMax);
 
@@ -236,9 +244,9 @@ export function StrikeVolumeChart({
 
                 <text
                     x={PAD_LEFT}
-                    y={PAD_TOP - 4}
+                    y={PAD_TOP - PEAK_LABEL_TOP_OFFSET_PX}
                     fill={COLOR_LABEL}
-                    fontSize={9}
+                    fontSize={STRAIGHT_LABEL_FONT_SIZE}
                     textAnchor="start"
                 >
                     {peakVolumeLabel}
@@ -246,9 +254,9 @@ export function StrikeVolumeChart({
 
                 <text
                     x={PAD_LEFT}
-                    y={MIDLINE_Y - 6}
+                    y={MIDLINE_Y - CALL_LABEL_MIDLINE_OFFSET_PX}
                     fill={COLOR_CALL}
-                    fontSize={9}
+                    fontSize={STRAIGHT_LABEL_FONT_SIZE}
                     textAnchor="start"
                 >
                     ▲ Call Vol
@@ -256,9 +264,9 @@ export function StrikeVolumeChart({
 
                 <text
                     x={PAD_LEFT}
-                    y={MIDLINE_Y + 14}
+                    y={MIDLINE_Y + PUT_LABEL_MIDLINE_OFFSET_PX}
                     fill={COLOR_PUT}
-                    fontSize={9}
+                    fontSize={STRAIGHT_LABEL_FONT_SIZE}
                     textAnchor="start"
                 >
                     ▼ Put Vol
