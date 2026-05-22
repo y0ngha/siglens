@@ -379,3 +379,12 @@
 - Violation: sibling grid 셀(`OpenInterestChart` 빈 상태 vs `StrikeVolumeChart` 빈 상태)이 헤더 유무·텍스트 스타일에서 어긋남
 - Rule: FF Readability / visual consistency — `lg:grid-cols-2`로 묶인 sibling 빈 상태는 동일한 레이아웃(header + body)을 따라야 함
 - Context: Gemini Medium 권고 — OI 차트 빈 상태도 `Open Interest 분포 (Strike별)` 헤더 유지 + 본문 안내로 분리. Volume 빈 상태 본문은 `text-xs leading-relaxed`로 통일.
+
+
+## [PR #446 Round 3 | fix/options-oi-stale-fraction | 2026-05-22]
+- Violation: 동일 값(`allContracts.length`)을 같은 함수 안에서 두 번 접근
+- Rule: MISTAKES.md §2 — Identical values queried or computed multiple times → Extract to a local const
+- Context: Suggestion — `isOpenInterestSnapshotStale` 안 `allContracts.length`가 가드와 나눗셈 두 곳에서 사용. `const totalCount = allContracts.length` 로 추출.
+- Violation: `reduce`로 합산 후 `=== 0`만 확인 — sum 값이 버려져 의미가 흐려지고 short-circuit 기회를 놓침
+- Rule: 의미 정합성 — "모두 0인가" 는 합산이 아닌 `.every()`로 표현해야 의도가 직접 드러나고 첫 비-zero에서 short-circuit
+- Context: Suggestion — `OpenInterestChart.tsx` `oiByStrike.reduce(sum, 0) === 0` 가드를 `oiByStrike.every(s => s.callOpenInterest === 0 && s.putOpenInterest === 0)` 으로 교체.

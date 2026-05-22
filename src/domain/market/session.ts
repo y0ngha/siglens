@@ -146,7 +146,8 @@ export function isOpenInterestSnapshotStale(
     snapshot: OptionsSnapshot
 ): boolean {
     const allContracts = snapshot.chains.flatMap(c => [...c.calls, ...c.puts]);
-    if (allContracts.length === 0) return true;
+    const totalCount = allContracts.length;
+    if (totalCount === 0) return true;
     const zeroCount = allContracts.filter(c => c.openInterest === 0).length;
-    return zeroCount / allContracts.length >= OI_STALE_FRACTION_THRESHOLD;
+    return zeroCount / totalCount >= OI_STALE_FRACTION_THRESHOLD;
 }

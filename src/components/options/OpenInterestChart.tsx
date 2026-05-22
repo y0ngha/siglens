@@ -138,11 +138,14 @@ export function OpenInterestChart({
 
         // 모든 strike의 OI가 0이면 차트를 그려도 막대가 안 나오므로 빈
         // 메시지 분기로 떨어뜨려 사용자에게 정규장 시간 안내를 보여준다.
-        const totalOi = oiByStrike.reduce(
-            (sum, s) => sum + s.callOpenInterest + s.putOpenInterest,
-            0
-        );
-        if (totalOi === 0) return null;
+        // `.every()`로 첫 비-zero strike에서 short-circuit — 합계가 필요한 게
+        // 아니라 "모두 0인가"만 확인하면 충분하다.
+        if (
+            oiByStrike.every(
+                s => s.callOpenInterest === 0 && s.putOpenInterest === 0
+            )
+        )
+            return null;
 
         const maxPain = metrics?.maxPain ?? null;
 
@@ -200,6 +203,13 @@ export function OpenInterestChart({
     if (!derived) {
         // 빈 상태에서도 정상 헤더(`Open Interest 분포 (Strike별)`)를 유지해
         // sibling Volume 차트의 빈 상태와 시각 흐름이 일치하도록 한다.
+        //
+        // `derived === null` 경로는 세 가지: (1) chain 미선택 (2) strike 0개
+        // (3) 모든 strike OI=0. 운영상 (1)은 호출부에서 chain을 항상 넘기므로
+        // 사실상 차단되고, (2)는 Yahoo가 만기를 추가했지만 strike 메타데이터를
+        // 아직 채우지 못한 직후의 일시적 케이스로 (3)과 동일하게 정규장 외
+        // stale-quote 시그니처에 해당한다. 세 경로 모두 사용자 대응법
+        // (정규장 시간에 재확인)이 같아 메시지를 통합한다.
         return (
             <div className="border-secondary-700 bg-secondary-800 space-y-2 rounded-xl border p-4">
                 <span className="text-secondary-300 text-sm font-medium">
