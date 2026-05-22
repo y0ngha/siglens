@@ -1539,6 +1539,162 @@ display:
 - AI provider 호출 옵션을 변경할 때는 `src/__tests__/infrastructure/ai/{gemini,claude,utils}.test.ts`의
   spy 검증을 함께 갱신한다.
 
+## Options Domain
+
+옵션 분석에 필요한 핵심 도메인 로직(체인 타입, 스냅샷 정규화, Max Pain / Put-Call Ratio / ATM IV / Implied Move 계산, 만기 슬롯 매핑, `OptionsDataProvider` 인터페이스, AI 응답 스키마)은 **`@y0ngha/siglens-core` 에 정의**되어 있다.
+siglens 레포의 `src/domain/options/` 는 **siglens 앱 전용 UI 계층 보조 헬퍼**만 보관한다 — core 가 모르는, 선택자(`'all'` 포함) · ATM strike 인덱스 · 선택된 chain 선택 등 표현 계층 결정만 다룬다.
+
+### 위치
+
+`src/domain/options/` — 외부 의존성 없는 순수 함수만 둔다(`@y0ngha/siglens-core` 의 도메인 타입 import는 허용).
+
+```
+src/domain/options/
+├── types.ts                # OptionsExpirationSelector
+├── findNearestStrike.ts    # findNearestStrikeIndex
+└── pickActiveChain.ts      # pickActiveChain
+```
+
+### 타입
+
+```typescript
+// domain/options/types.ts
+
+/**
+ * 만기 선택 UI(ExpirationSelector) 와 그 하위(metrics row, OI 차트,
+ * chain table) 가 공유하는 selector 값.
+ * - 'YYYY-MM-DD' ISO 문자열: 해당 만기 단일 선택
+ * - 'all': 모든 만기 합산
+ *
+ * `(string & {})` intersection 은 TypeScript 가 union 을 `string` 으로
+ * 넓혀 'all' 자동완성을 잃는 것을 방지하기 위한 IDE-DX trick 이다.
+ * Runtime 동작은 `string | 'all'` 과 동일.
+ * Mirrors siglens-core의 `OptionsExpirationFilter`.
+ */
+export type OptionsExpirationSelector = (string & {}) | 'all';
+```
+
+### 함수
+
+```typescript
+// domain/options/findNearestStrike.ts
+
+/**
+ * `strikes` 배열에서 `target` 가격과 가장 가까운 strike의 인덱스를 반환.
+ * - 빈 배열: -1
+ * - 등거리: 더 낮은 인덱스(먼저 순회되는 값) 우선
+ *
+ * OI 차트(x축 위치 산출)와 chain table(ATM row 하이라이트) 양쪽에서 쓰이므로
+ * 인덱스를 노출한다. 호출 측이 strike 값 자체가 필요하면 `strikes[result]` 로 접근.
+ */
+export function findNearestStrikeIndex(
+    strikes: ReadonlyArray<number>,
+    target: number
+): number;
+```
+
+```typescript
+// domain/options/pickActiveChain.ts
+
+import type { OptionsChain, OptionsSnapshot } from '@y0ngha/siglens-core';
+
+/**
+ * selector 값에 해당하는 chain 을 스냅샷에서 골라 반환.
+ *
+ * 규칙:
+ * - chains 가 비어 있으면 null
+ * - `'all'` → 가장 가까운 만기(chains[0])
+ * - ISO 만기 문자열 → 정확히 일치하는 chain 우선, 없으면 가장 가까운 만기
+ *
+ * 옵션 페이지에는 metrics row · OI 차트 · chain table 세 표현이 동일한
+ * selection 축을 공유한다. 각 표면이 각자 lookup 을 들고 있으면
+ * 동기화 오류가 생기므로 이 한 함수로 통일한다.
+ */
+export function pickActiveChain(
+    snapshot: OptionsSnapshot,
+    expirationDate: OptionsExpirationSelector
+): OptionsChain | null;
+```
+
+### siglens-core 가 담당하는 옵션 도메인 로직
+
+다음은 모두 `@y0ngha/siglens-core` 에 위치하므로 siglens 레포에 재구현하지 않는다:
+
+| 항목 | core export |
+|---|---|
+| 체인/스냅샷 타입 | `OptionsChain`, `OptionsSnapshot`, `OptionsContract`, `OptionsExpirationFilter` |
+| 데이터 어댑터 인터페이스 | `OptionsDataProvider` (siglens 레포의 `YahooOptionsAdapter` 가 구현) |
+| 시그널 계산 | `computeOptionsSignals` (Max Pain · Put/Call · ATM IV · Implied Move) |
+| 만기 슬롯 매핑 | `mapExpirationsToSlots` (이번주/다음주/월간/분기 등) |
+| AI 응답 스키마 | `OptionsAnalysisResponse` 및 axis별 type |
+
+### 데이터 소스 어댑터 (Phase 1)
+
+```
+infrastructure/options/
+├── YahooOptionsAdapter.ts   # OptionsDataProvider 구현 (yahoo-finance2)
+├── yahooNormalize.ts        # yahoo 응답 → siglens-core 타입
+├── optionsCacheLife.ts      # ET 시계 → open / closed / weekend 프로파일 선택
+├── optionsCacheTags.ts      # revalidateTag 헬퍼
+├── optionsDataCache.ts      # 'use cache' 래퍼 + hasOptionsMarket
+└── optionsActions.ts        # 5개 Server Action (chain · signals · submit · poll · cancel)
+```
+
+**Phase 1 한계** (siglens-core 후속 작업 대기):
+- yfinance only — Tradier fallback adapter 미구현 (인터페이스만 마련)
+- Snapshot only — historical OI / IV 누적 파이프라인 없음
+- IV Rank 미산출 — ATM IV 값으로 대체 표시
+
+> 종합 분석(`/overall`)의 5축 통합(기술 + 펀더 + 뉴스 + 공포탐욕 + 옵션)은 라이브 완료.
+
+---
+
+## LLM Provider Domain
+
+LLM 호출과 모델 선택의 핵심 타입 / 상수는 `src/domain/llm/`에 둔다.
+실제 provider SDK 호출은 `infrastructure/llm/`에서 담당하며 (BYOK 키 암복호화, Server Action), 도메인은 모델 식별자와 우선순위 정책만 안다.
+
+```
+src/domain/llm/
+├── constants.ts        # AI_PROVIDER_VALUES = ['claude', 'gemini', 'chatgpt']
+└── providerDefaults.ts # provider별 우선순위 모델 리스트, fallback = Claude Haiku 4.5
+```
+
+### 핵심 타입
+
+```typescript
+// @y0ngha/siglens-core 에서 export — domain 측에서 그대로 사용
+type AIProvider = 'claude' | 'gemini' | 'chatgpt';
+type ModelId =
+    // Claude
+    | 'claude-haiku-4-5' | 'claude-sonnet-4-6' | 'claude-opus-4-7'
+    // Gemini
+    | 'gemini-2.5-flash-lite' | 'gemini-2.5-flash' | 'gemini-2.5-pro'
+    | 'gemini-3-flash-preview' | 'gemini-3.1-pro-preview'
+    // ChatGPT
+    | 'gpt-5-mini' | 'gpt-5.4' | 'gpt-5.5';
+
+type UserTier = 'free' | 'member' | 'pro';
+```
+
+### Tier 게이팅 규칙
+
+`@y0ngha/siglens-core` 의 `getAllowedModels(tier)` 가 단일 진실 공급원이다.
+UI(`useModelGate`) 는 잠금 해제 모달만 책임지고, 어떤 모델이 어떤 tier에 허용되는지는 도메인 정책에 위임.
+
+- Free 모델: 모든 사용자가 선택 가능
+- Pro 모델: `member` 이상 + BYOK 등록 사용자에게 잠금 해제
+- 모델 선택은 페이지마다 독립적이며, 사용자가 마지막으로 고른 모델이 `localStorage` 에 저장
+
+### BYOK (Bring Your Own Key)
+
+- 지원 provider: Anthropic, Google, OpenAI (`src/domain/llm/constants.ts`)
+- 키 저장: `LLM_API_KEY_ENCRYPTION_KEY` 로 암호화하여 DB에 저장
+- 등록/조회/삭제: `infrastructure/llm/` 의 Server Action (`saveApiKeyAction`, `getRegisteredProvidersAction`, `deleteApiKeyAction`)
+- domain 측은 키 자체를 보지 않으며, provider 식별자만 다룬다
+
+---
+
 ## Signal Detection
 
 `domain/signals/` contains pure-function signal detectors used by the `/market` page's Panel C.

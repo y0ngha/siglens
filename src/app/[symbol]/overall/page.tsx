@@ -118,7 +118,7 @@ export default async function OverallPage({ params, searchParams }: Props) {
                 name: `${displayName} 종합 분석에서는 어떤 축을 같이 보나요?`,
                 acceptedAnswer: {
                     '@type': 'Answer',
-                    text: `${displayName} 주가의 차트 추세, 분기 실적과 펀더멘털, 최근 뉴스 분위기, 그리고 단기 매수 분위기(공포 탐욕 지수)까지 네 축을 묶어 강세와 약세 시나리오, 진입을 고려할 만한 가격대, 시나리오가 깨지는 위험 요인을 함께 정리합니다.`,
+                    text: `${displayName} 주가의 차트 추세, 옵션 시장이 평가하는 단기 방향성, 분기 실적과 펀더멘털, 최근 뉴스 분위기까지 네 가지 분석 축에 시장 분위기(공포 탐욕 지수)를 더해 강세와 약세 시나리오, 진입을 고려할 만한 가격대, 시나리오가 깨지는 위험 요인을 함께 정리합니다.`,
                 },
             },
             {
@@ -126,7 +126,7 @@ export default async function OverallPage({ params, searchParams }: Props) {
                 name: '강세 시나리오와 약세 시나리오는 어떤 기준으로 나뉘나요?',
                 acceptedAnswer: {
                     '@type': 'Answer',
-                    text: '차트 추세, 실적과 가이던스 흐름, 뉴스 분위기, 단기 매수세를 종합해 상승 압력이 우세한지 하방 압력이 우세한지 판단합니다. 각 시나리오마다 어떤 가격대에서 진입을 고려할 만한지, 어떤 신호가 나오면 시나리오가 깨지는지를 같이 정리합니다.',
+                    text: '차트 추세, 옵션 시장의 콜·풋 베팅 분위기, 실적과 가이던스 흐름, 뉴스 분위기를 종합해 상승 압력이 우세한지 하방 압력이 우세한지 판단합니다. 각 시나리오마다 어떤 가격대에서 진입을 고려할 만한지, 어떤 신호가 나오면 시나리오가 깨지는지를 같이 정리합니다.',
                 },
             },
             {
@@ -147,7 +147,7 @@ export default async function OverallPage({ params, searchParams }: Props) {
             <JsonLd data={faqJsonLd} />
             <main className="mx-auto max-w-5xl space-y-6 px-4 py-8">
                 <h1 className="sr-only">
-                    {displayName} 차트와 실적, 뉴스, 공포 탐욕 지수 종합 분석
+                    {displayName} 차트와 옵션 시장, 실적, 뉴스 종합 분석
                 </h1>
                 <section
                     aria-labelledby="overall-guide-heading"
@@ -161,15 +161,17 @@ export default async function OverallPage({ params, searchParams }: Props) {
                     </h2>
                     <p className="text-secondary-400 text-sm leading-relaxed">
                         {displayName} 주가가 지금 어디쯤 와 있는지 한 페이지에서
-                        정리해 봅니다. 차트의 추세와 주요 지지선과 저항선, 분기
-                        실적 흐름, 최근 뉴스에서 시장이 무엇에 반응하고 있는지,
-                        그리고 단기 매수 분위기까지 네 가지 축을 같이
-                        살펴봅니다.
+                        정리해 봅니다. 차트의 추세와 주요 지지선과 저항선, 옵션
+                        시장이 평가하는 단기 방향성, 분기 실적 흐름, 최근
+                        뉴스에서 시장이 무엇에 반응하고 있는지까지 네 가지 분석
+                        축에 시장 분위기를 더해 살펴봅니다.
                     </p>
                     <p className="text-secondary-400 text-sm leading-relaxed">
-                        네 축을 합쳐 강세와 약세 시나리오를 각각 정리하고, 어떤
-                        가격대에서 진입을 고려해 볼 만한지, 어떤 신호가 나오면
-                        시나리오가 깨지는지를 함께 짚습니다.
+                        옵션 시장이 가까운 만기에서 콜과 풋 어느 쪽에 더 큰
+                        베팅을 걸고 있는지도 한 줄로 짚어 줍니다. 네 축을 합쳐
+                        강세와 약세 시나리오를 각각 정리하고, 어떤 가격대에서
+                        진입을 고려해 볼 만한지, 어떤 신호가 나오면 시나리오가
+                        깨지는지를 함께 짚습니다.
                     </p>
                     <p className="text-secondary-400 text-sm leading-relaxed">
                         실적 발표, 가이던스 변화, 매크로 이벤트처럼 시나리오를

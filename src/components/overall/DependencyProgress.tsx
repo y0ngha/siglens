@@ -6,18 +6,28 @@ const AXIS_LABEL: Record<OverallAxis, string> = {
     technical: '기술적 분석',
     news: '뉴스 분석',
     fundamental: '펀더멘털 분석',
+    options: '옵션 시장 분석',
 };
 
-const AXIS_ORDER: readonly OverallAxis[] = ['technical', 'fundamental', 'news'];
+const AXIS_ORDER: readonly OverallAxis[] = [
+    'technical',
+    'fundamental',
+    'news',
+    'options',
+];
 
 /**
  * 각 축의 평균 처리 소요 시간 (초 단위).
  * 기술적 분석은 다단계 지표 계산으로 약 5분, 나머지는 약 1분.
+ * 옵션 분석은 단일 만기 contract 묶음만 LLM에 보내므로 뉴스/펀더멘털과
+ * 비슷한 1분으로 가정한다. snapshot fetch는 action 단계에서 이미 끝났기
+ * 때문에 이 추정에는 포함되지 않는다 — 폴링 윈도우는 LLM 처리 시간만 다룬다.
  */
 const AXIS_ESTIMATED_SECONDS: Record<OverallAxis, number> = {
     technical: 5 * SECONDS_PER_MINUTE,
     news: SECONDS_PER_MINUTE,
     fundamental: SECONDS_PER_MINUTE,
+    options: SECONDS_PER_MINUTE,
 };
 
 interface DependencyProgressProps {

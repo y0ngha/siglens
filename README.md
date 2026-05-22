@@ -49,7 +49,11 @@ Siglens     → 티커만 입력 → 차트 + 인디케이터 자동 렌더 → 
 - **📈 인디케이터 25종** — RSI, MACD, 볼린저 밴드, ADX, DMI, Stochastic, StochRSI, CCI, VWAP, MA, EMA, Volume Profile, Ichimoku Cloud, ATR, Donchian/Keltner Channel, SuperTrend, OBV, CMF, MFI, Parabolic SAR, Williams %R, Squeeze Momentum, Smart Money Concepts 자동 계산
 - **🕯️ 캔들 패턴** — 단일 캔들 15종 + 멀티 캔들 30종 자동 감지
 - **🔍 차트 패턴** — 헤드앤숄더, 쐐기, 이중천장/바닥, 삼각수렴, 플래그, 컵앤핸들 등 Skills 기반 감지
+- **🎯 옵션 분석** — Max Pain, Put/Call Ratio, ATM IV, Implied Move, Strike별 Open Interest 분포를 AI가 한국어로 해석 (`/[symbol]/options`)
 - **🤖 AI 종합 분석** — 트렌드 방향, 리스크 레벨, 지지/저항, 가격 목표, 진입 추천 리포트
+- **🧠 AI 모델 선택** — Claude(Haiku/Sonnet/Opus), Gemini(2.5 Flash-Lite~3.1 Pro Preview), ChatGPT(GPT-5) 중 페이지별로 직접 선택. Free 모델은 누구나 / Pro 모델은 회원 게이트
+- **🔑 BYOK (Bring Your Own Key)** — 본인 API Key 등록 시 한도 우회 (Anthropic / Google / OpenAI 지원, 암호화 저장)
+- **👤 회원가입 (옵션)** — 비회원도 모든 기본 기능 사용. 가입 시 free/member/pro tier에 따라 Pro 모델·BYOK·한도 상향
 - **💬 AI 챗봇** — 분석 결과 기반 자연어 후속 질문 (Gemini 2.5 Flash, IP당 5회/일)
 - **🌐 시장 현황 대시보드** — 11개 섹터 200+ 종목 신호 스캐너 (골든크로스, RSI 다이버전스, 볼린저 스퀴즈)
 - **🧪 AI 백테스팅** — 2년간 100건 분석 결과의 실제 수익률 검증 (/backtesting)
@@ -75,19 +79,68 @@ Siglens     → 티커만 입력 → 차트 + 인디케이터 자동 렌더 → 
 
 ---
 
-## 💬 AI 챗봇
+## 💬 AI 챗봇 & 모델 선택
 
-분석 리포트를 받은 뒤 궁금한 점을 **자연어로 바로 물어볼 수 있습니다.**
+분석 리포트를 받은 뒤 궁금한 점을 **자연어로 바로 물어볼 수 있습니다.** 분석 페이지마다 사용할 AI 모델을 직접 골라 쓸 수도 있습니다.
 
 ```
 AI 분석 리포트 수신 → 챗봇 패널에서 후속 질문 → 분석 컨텍스트를 그대로 이어서 답변
 ```
 
+**선택 가능한 AI 모델 (3 프로바이더):**
+- **Claude (Anthropic)** — Haiku 4.5 / Sonnet 4.6 / Opus 4.7
+- **Gemini (Google)** — 2.5 Flash-Lite / 2.5 Flash / 2.5 Pro / 3 Flash Preview / 3.1 Pro Preview
+- **ChatGPT (OpenAI)** — GPT-5 Mini / 5.4 / 5.5
+
+> Free 모델은 누구나 사용 가능, Pro 모델은 회원 게이트(`useModelGate`)로 잠금 해제. 본인 API Key를 등록하면(BYOK) 사용량 한도 우회.
+
+**챗봇:**
 - **엔진**: Gemini 2.5 Flash — 분석 원문 전체가 컨텍스트로 주입됨
 - **대화 기록**: localStorage에 세션 단위로 저장
-- **사용 제한**: IP당 5회/일 (무료 서비스 유지를 위한 제한)
+- **사용 제한**: IP당 5회/일 (무료 서비스 유지를 위한 제한, BYOK 등록 시 무제한)
 
 > 예시 질문: "지금 RSI가 과매도라고 했는데, 어느 레벨에서 반등을 기대할 수 있어?"
+
+---
+
+## 👤 회원가입 (옵션)
+
+회원가입은 **선택입니다.** 비회원도 모든 기본 분석 기능을 그대로 쓸 수 있고, 회원이 되면 tier에 따라 Pro AI 모델 / BYOK / 분석 한도 상향 등이 열립니다.
+
+| Tier | AI 모델 | BYOK | 한도 |
+|------|---------|------|------|
+| Free (비회원/기본 회원) | Free 모델 전체 | ❌ | IP 단위 |
+| Member | Free + 일부 Pro | ✅ | 사용자 단위 |
+| Pro | 모든 Pro 모델 | ✅ | 사용자 단위 (상향) |
+
+- **인증**: 이메일/비밀번호 (bcrypt) + Google OAuth + Kakao OAuth (구성)
+- **계정 페이지**: `/account` (정보 수정), `/account/delete` (즉시 파기)
+- **비밀번호 재설정**: `/forgot-password` → 이메일 링크 → `/reset-password`
+- **이메일 인증**: 가입 후 메일 발송 (Resend)
+
+---
+
+## 🎯 옵션 분석 (`/[symbol]/options`)
+
+미국 옵션 시장은 한국 투자자가 접근하기 어렵습니다. Max Pain이 어디인지, Put/Call Ratio가 어느 쪽으로 기울었는지, 만기까지 시장이 얼마나 변동을 예상하는지(ATM IV / Implied Move) — 이런 신호를 **AI가 만기별로 한국어로 해석**해줍니다.
+
+```
+/AAPL/options 접속 → 만기 선택 → 4개 메트릭 카드 + Strike별 OI 분포 차트 + 옵션 체인 테이블 + AI 한국어 해석
+```
+
+**제공 항목:**
+- **Max Pain** — 만기일에 옵션 매도자가 손실을 최소화하는 가격
+- **Put/Call Ratio** — Call 대비 Put 거래 비중
+- **ATM IV** — 등가격(At-The-Money) 옵션의 내재 변동성
+- **Implied Move** — 시장이 다음 만기까지 예상하는 변동 폭
+- **Open Interest 분포** — Strike별 미결제 약정 (Call/Put bar, Max Pain 점선, 현재가 실선)
+- **옵션 체인 테이블** — Call/Put × Strike별 IV, 거래량, OI
+
+**차트 페이지 보조 카드:** 옵션 시장이 있는 종목은 차트 페이지 하단에도 3개 시그널 카드(ATM IV / Put/Call / Max Pain)가 자동 표시됩니다.
+
+**데이터 소스:** yahoo-finance2 (스냅샷 기반, 시장 시간대에 따라 캐시 프로파일 자동 전환). 옵션 시장이 없는 종목은 `hasOptionsMarket` 가드로 빈 상태 안내 + `robots: noindex`.
+
+> ⚠️ Phase 1 한계: 스냅샷 only (Historical OI/IV 누적 파이프라인 없음, IV Rank는 ATM IV로 표시). Tradier fallback 어댑터는 후속 PR로 추가 예정.
 
 ---
 
@@ -105,14 +158,12 @@ AI 분석의 실제 정확도를 검증하기 위해 **2년간(2024.04 ~ 2026.04
 
 ## 📊 Data Source
 
-[Financial Modeling Prep](https://site.financialmodelingprep.com)
-
-| 항목 | 값                               |
-|------|---------------------------------|
-| Exchange | 미국 전체 시장                        |
-| Timeframe | 5분봉, 15분봉, 30분봉, 4시간봉, 1시간봉, 일봉 |
-| Delay | 최대 15분 지연                       |
-| History | 다년간                             |
+| 데이터 | 출처 | 비고 |
+|------|------|------|
+| 시세 (OHLCV) | [Financial Modeling Prep](https://site.financialmodelingprep.com) | 5분봉~일봉 멀티 타임프레임, 최대 15분 지연 |
+| 펀더멘털 (재무·밸류에이션·애널리스트) | FMP `/stable` API | PER, ROE, EPS, 컨센서스, 목표가 |
+| 뉴스·어닝 | FMP `/stable` API | 한국어 sentiment는 Gemini Flash-lite로 자체 분석 |
+| 옵션 시장 (체인·OI·IV·Greeks) | yahoo-finance2 | `OptionsDataProvider` 어댑터 (Tradier fallback 가능) |
 
 ---
 
@@ -141,10 +192,11 @@ AI 분석의 실제 정확도를 검증하기 위해 **2년간(2024.04 ~ 2026.04
 |------|-----------------------------------------------------------------|
 | Framework | Next.js 16.2 (App Router + Turbopack + React Compiler)          |
 | UI | React 19.2, Tailwind CSS 4                                      |
-| Chart | Lightweight Charts v5                                           |
-| Data | FMP API                                                         |
+| Chart | Lightweight Charts v5 (가격) + 자체 SVG (옵션 OI)                |
+| Data | FMP API (시세·펀더·뉴스), yahoo-finance2 (옵션 체인)            |
 | Cache | Upstash Redis                                                   |
-| AI | Claude (Anthropic), Gemini 2.5 — 분석 리포트 / Gemini 2.5 Flash — 챗봇 |
+| AI | Claude (Anthropic), Gemini 2.5/3.x (Google), ChatGPT GPT-5 (OpenAI) — 페이지별 모델 선택 / Gemini 2.5 Flash — 챗봇·옵션 해석 |
+| Auth | bcryptjs (이메일/비밀번호) + Google/Kakao OAuth + 암호화 세션 쿠키 |
 | State | TanStack Query v5                                               |
 | Testing | Jest (domain / infrastructure)                                  |
 | Language | TypeScript 5                                                    |
@@ -182,8 +234,10 @@ cp .env.example .env.local
 | 변수 | 발급처 | 용도 |
 |------|--------|------|
 | `FMP_API_KEY` | [Financial Modeling Prep](https://site.financialmodelingprep.com/developer) | 시세 · 종목 데이터 |
-| `GEMINI_CHAT_API_KEY` | [Google AI Studio](https://aistudio.google.com/apikey) | AI 분석 리포트 · 챗봇 (유료 키) |
+| `GEMINI_CHAT_API_KEY` | [Google AI Studio](https://aistudio.google.com/apikey) | Gemini 모델 — AI 분석 리포트 · 챗봇 · 옵션 해석 (유료 키) |
 | `GEMINI_CHAT_FREE_API_KEY` | [Google AI Studio](https://aistudio.google.com/apikey) | 챗봇 quota 소진 시 fallback (무료 키) |
+| `ANTHROPIC_API_KEY` | [Anthropic Console](https://console.anthropic.com/) | Claude 모델 (Haiku 4.5 / Sonnet 4.6 / Opus 4.7) |
+| `OPENAI_CHAT_API_KEY` | [OpenAI Platform](https://platform.openai.com/api-keys) | ChatGPT 모델 (GPT-5 Mini / 5.4 / 5.5) |
 | `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` | [Upstash](https://upstash.com) | 분석 캐시 |
 | `DATABASE_URL` | [Neon](https://neon.tech) | PostgreSQL (인증 · 사용자 데이터) |
 | `OAUTH_TOKEN_ENCRYPTION_KEY` / `LLM_API_KEY_ENCRYPTION_KEY` | `openssl rand -hex 32` 로 생성 | DB 저장 시 토큰 · API 키 암호화 |
@@ -216,11 +270,11 @@ siglens/
 │   ├── app/              # Next.js App Router (RSC, Route Handler)
 │   │   ├── market/       # 시장 현황 대시보드 (섹터별 신호 스캐너)
 │   │   ├── backtesting/  # AI 백테스팅 결과 페이지 + data.json
-│   │   └── [symbol]/     # 종목별 AI 분석 페이지
-│   ├── domain/           # 순수 TS — 인디케이터, 패턴, 프롬프트 빌더
-│   ├── infrastructure/   # 외부 의존성 — Alpaca, FMP, AI Provider, Skills Loader
-│   ├── components/       # React Client Components
-│   └── lib/              # UI 유틸, React Query 키 팩토리
+│   │   └── [symbol]/     # 종목별 AI 분석 페이지 (기술/펀더/뉴스/공포탐욕/옵션/종합)
+│   ├── domain/           # 순수 TS — 인디케이터, 패턴, 프롬프트 빌더, options 헬퍼
+│   ├── infrastructure/   # 외부 의존성 — FMP, AI Provider, Skills Loader, YahooOptionsAdapter
+│   ├── components/       # React Client Components (options/ 포함)
+│   └── lib/              # UI 유틸, React Query 키 팩토리, optionsFormatters
 ├── skills/               # 분석 기법 정의 (.md, 코드 아님)
 │   ├── patterns/         # 차트 패턴 (헤드앤숄더, 쐐기, 이중천장/바닥 등)
 │   ├── indicators/       # 보조지표 시그널 해석
@@ -273,13 +327,15 @@ Claude Code가 이슈를 받아 브랜치 생성 → 코드 작성 → 테스트
 본문을 파싱하고, `domain/analysis/prompt.ts`가 이를 AI 프롬프트에 주입합니다.
 도메인 코드를 건드리지 않고 분석 기법을 추가/수정할 수 있다는 의미입니다.
 
-현재 등록된 카테고리 (총 61개 Skills):
+현재 등록된 카테고리 (7개 카테고리 / 총 67개 Skills):
 
 - `skills/patterns/` — 차트 패턴 (헤드앤숄더, 쐐기, 이중천장/바닥, 삼각수렴, 플래그 등)
 - `skills/indicators/` — 보조지표 시그널 해석 (RSI, MACD, 볼린저 밴드, 일목균형표 등)
 - `skills/strategies/` — 엘리어트 파동, 와이코프, 대순환 분석, 다이버전스, 브레이크아웃 등
 - `skills/support-resistance/` — 피보나치 되돌림/확장, 피봇포인트
 - `skills/candlesticks/` — 도지, 장악형, 망치형, 마루보주, 하라미, 이브닝/모닝스타 등
+- `skills/fundamental/` — 가치 투자 / 성장 투자 / 퀄리티 투자 등
+- `skills/news/` — 이벤트 드리븐 / 매크로 영향 / 어닝 리액션 등
 
 ---
 

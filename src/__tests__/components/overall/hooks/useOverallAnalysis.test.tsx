@@ -9,6 +9,10 @@ import { cancelAnalysisJobAction } from '@/infrastructure/market/cancelAnalysisJ
 import { cancelFundamentalAnalysisJobAction } from '@/infrastructure/market/cancelFundamentalAnalysisJobAction';
 import { cancelNewsAnalysisJobAction } from '@/infrastructure/market/cancelNewsAnalysisJobAction';
 import { cancelOverallAnalysisJobAction } from '@/infrastructure/market/cancelOverallAnalysisJobAction';
+import {
+    cancelOptionsAnalysisJobAction,
+    pollOptionsAnalysisAction,
+} from '@/infrastructure/options/optionsActions';
 import { pollAnalysisAction } from '@/infrastructure/market/pollAnalysisAction';
 import { pollFundamentalAnalysisAction } from '@/infrastructure/market/pollFundamentalAnalysisAction';
 import { pollNewsAnalysisAction } from '@/infrastructure/market/pollNewsAnalysisAction';
@@ -48,6 +52,10 @@ jest.mock('@/infrastructure/market/cancelNewsAnalysisJobAction', () => ({
 jest.mock('@/infrastructure/market/cancelOverallAnalysisJobAction', () => ({
     cancelOverallAnalysisJobAction: jest.fn().mockResolvedValue(undefined),
 }));
+jest.mock('@/infrastructure/options/optionsActions', () => ({
+    pollOptionsAnalysisAction: jest.fn(),
+    cancelOptionsAnalysisJobAction: jest.fn().mockResolvedValue(undefined),
+}));
 jest.mock('@/lib/sleep', () => ({
     sleep: jest.fn().mockResolvedValue(undefined),
 }));
@@ -81,13 +89,20 @@ const mockCancelNews = cancelNewsAnalysisJobAction as jest.MockedFunction<
 const mockCancelOverall = cancelOverallAnalysisJobAction as jest.MockedFunction<
     typeof cancelOverallAnalysisJobAction
 >;
+const mockPollOptions = pollOptionsAnalysisAction as jest.MockedFunction<
+    typeof pollOptionsAnalysisAction
+>;
+const mockCancelOptions = cancelOptionsAnalysisJobAction as jest.MockedFunction<
+    typeof cancelOptionsAnalysisJobAction
+>;
 
 const OVERALL_RESULT: OverallAnalysisResponse = {
     headlineKo: 'AAPL 종합 분석',
     technicalBulletsKo: [],
     fundamentalBulletsKo: [],
     newsBulletsKo: [],
-    threeAxisConclusionKo: '중립',
+    optionsBulletsKo: [],
+    integratedConclusionKo: '중립',
     scenarios: [],
     riskFactorsKo: [],
 };
@@ -98,6 +113,7 @@ const PENDING_DEPS = {
         technical: 'job-t' as string | undefined,
         fundamental: 'job-f' as string | undefined,
         news: 'job-n' as string | undefined,
+        options: 'job-o' as string | undefined,
     },
 };
 
@@ -128,14 +144,17 @@ describe('useOverallAnalysis', () => {
         mockPollTechnical.mockReset();
         mockPollFundamental.mockReset();
         mockPollNews.mockReset();
+        mockPollOptions.mockReset();
         mockCancelTechnical.mockReset();
         mockCancelFundamental.mockReset();
         mockCancelNews.mockReset();
         mockCancelOverall.mockReset();
+        mockCancelOptions.mockReset();
         mockCancelTechnical.mockResolvedValue(undefined);
         mockCancelFundamental.mockResolvedValue(undefined);
         mockCancelNews.mockResolvedValue(undefined);
         mockCancelOverall.mockResolvedValue(undefined);
+        mockCancelOptions.mockResolvedValue(undefined);
     });
 
     afterEach(() => {
@@ -230,6 +249,10 @@ describe('useOverallAnalysis', () => {
                 status: 'done',
                 result: {} as never,
             });
+            mockPollOptions.mockResolvedValue({
+                status: 'done',
+                result: {} as never,
+            });
             mockPollOverall.mockResolvedValue({
                 status: 'done',
                 result: OVERALL_RESULT,
@@ -253,6 +276,7 @@ describe('useOverallAnalysis', () => {
             expect(mockPollTechnical).toHaveBeenCalledWith('job-t');
             expect(mockPollFundamental).toHaveBeenCalledWith('job-f');
             expect(mockPollNews).toHaveBeenCalledWith('job-n');
+            expect(mockPollOptions).toHaveBeenCalledWith('job-o');
         });
 
         it('processing 응답이 오면 polling을 반복하다가 done이 되면 재submit한다', async () => {
@@ -270,6 +294,9 @@ describe('useOverallAnalysis', () => {
                 .mockResolvedValueOnce({ status: 'processing' })
                 .mockResolvedValue({ status: 'done', result: {} as never });
             mockPollNews
+                .mockResolvedValueOnce({ status: 'processing' })
+                .mockResolvedValue({ status: 'done', result: {} as never });
+            mockPollOptions
                 .mockResolvedValueOnce({ status: 'processing' })
                 .mockResolvedValue({ status: 'done', result: {} as never });
             mockPollOverall.mockResolvedValue({
@@ -294,13 +321,14 @@ describe('useOverallAnalysis', () => {
         });
 
         it('일부 axis만 pending일 때 해당 axis의 jobId만 polling한다', async () => {
-            // technical만 pending, fundamental/news는 완료된 상태
+            // technical만 pending, 나머지 3개 axis는 완료된 상태
             const partialPending = {
                 status: 'pending_dependencies' as const,
                 pendingJobs: {
                     technical: 'job-t' as string | undefined,
                     fundamental: undefined,
                     news: undefined,
+                    options: undefined,
                 },
             };
             mockSubmit
@@ -334,6 +362,133 @@ describe('useOverallAnalysis', () => {
             expect(mockPollTechnical).toHaveBeenCalledWith('job-t');
             expect(mockPollFundamental).not.toHaveBeenCalled();
             expect(mockPollNews).not.toHaveBeenCalled();
+            expect(mockPollOptions).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('options axis (4축)', () => {
+        it('options jobId가 있으면 pollOptionsAnalysisAction으로 polling한다', async () => {
+            mockSubmit
+                .mockResolvedValueOnce(PENDING_DEPS)
+                .mockResolvedValueOnce({
+                    status: 'submitted',
+                    jobId: 'overall-job',
+                });
+            mockPollTechnical.mockResolvedValue({
+                status: 'done',
+                result: {} as never,
+            });
+            mockPollFundamental.mockResolvedValue({
+                status: 'done',
+                result: {} as never,
+            });
+            mockPollNews.mockResolvedValue({
+                status: 'done',
+                result: {} as never,
+            });
+            mockPollOptions.mockResolvedValue({
+                status: 'done',
+                result: {} as never,
+            });
+            mockPollOverall.mockResolvedValue({
+                status: 'done',
+                result: OVERALL_RESULT,
+            });
+
+            const { result } = renderHook(
+                () => useOverallAnalysis(...hookArgs()),
+                { wrapper: makeWrapper() }
+            );
+
+            act(() => {
+                result.current.trigger();
+            });
+
+            await waitFor(() => {
+                expect(result.current.state.status).toBe('done');
+            });
+
+            expect(mockPollOptions).toHaveBeenCalledWith('job-o');
+        });
+
+        it('pending_dependencies 중 unmount 시 options jobId로 cancel을 호출한다', async () => {
+            mockSubmit.mockResolvedValue(PENDING_DEPS);
+            mockPollTechnical.mockImplementation(() => new Promise(() => {}));
+            mockPollFundamental.mockImplementation(() => new Promise(() => {}));
+            mockPollNews.mockImplementation(() => new Promise(() => {}));
+            mockPollOptions.mockImplementation(() => new Promise(() => {}));
+
+            const { result, unmount } = renderHook(
+                () => useOverallAnalysis(...hookArgs()),
+                { wrapper: makeWrapper() }
+            );
+
+            act(() => {
+                result.current.trigger();
+            });
+
+            await waitFor(() => {
+                expect(mockPollOptions).toHaveBeenCalled();
+            });
+
+            unmount();
+
+            expect(mockCancelOptions).toHaveBeenCalledWith('job-o');
+        });
+
+        it('done 상태에서 trigger를 다시 호출하면 force=true를 action에 전달한다', async () => {
+            mockSubmit.mockResolvedValue({
+                status: 'cached',
+                result: OVERALL_RESULT,
+            });
+
+            const { result } = renderHook(
+                () => useOverallAnalysis(...hookArgs()),
+                { wrapper: makeWrapper() }
+            );
+
+            act(() => {
+                result.current.trigger();
+            });
+            await waitFor(() =>
+                expect(result.current.state.status).toBe('done')
+            );
+
+            act(() => {
+                result.current.trigger();
+            });
+
+            await waitFor(() => {
+                const lastCall =
+                    mockSubmit.mock.calls[mockSubmit.mock.calls.length - 1];
+                expect(lastCall?.[4]).toEqual({ force: true });
+            });
+        });
+
+        it('첫 trigger에는 force를 전달하지 않는다 (options 인자 생략 또는 force=false)', async () => {
+            mockSubmit.mockResolvedValue({
+                status: 'cached',
+                result: OVERALL_RESULT,
+            });
+
+            const { result } = renderHook(
+                () => useOverallAnalysis(...hookArgs()),
+                { wrapper: makeWrapper() }
+            );
+
+            act(() => {
+                result.current.trigger();
+            });
+            await waitFor(() =>
+                expect(result.current.state.status).toBe('done')
+            );
+
+            const firstCall = mockSubmit.mock.calls[0];
+            // 5번째 인자가 없거나 { force: false } 형태여야 한다.
+            const fifthArg = firstCall?.[4];
+            expect(fifthArg === undefined || fifthArg.force !== true).toBe(
+                true
+            );
         });
     });
 
@@ -349,6 +504,10 @@ describe('useOverallAnalysis', () => {
                 result: {} as never,
             });
             mockPollNews.mockResolvedValue({
+                status: 'done',
+                result: {} as never,
+            });
+            mockPollOptions.mockResolvedValue({
                 status: 'done',
                 result: {} as never,
             });
@@ -511,6 +670,7 @@ describe('useOverallAnalysis', () => {
             expect(mockCancelTechnical).not.toHaveBeenCalled();
             expect(mockCancelFundamental).not.toHaveBeenCalled();
             expect(mockCancelNews).not.toHaveBeenCalled();
+            expect(mockCancelOptions).not.toHaveBeenCalled();
         });
 
         it('pending_dependencies 중 unmount 시 각 axis jobId로 cancel을 호출한다', async () => {
@@ -518,6 +678,7 @@ describe('useOverallAnalysis', () => {
             mockPollTechnical.mockImplementation(() => new Promise(() => {}));
             mockPollFundamental.mockImplementation(() => new Promise(() => {}));
             mockPollNews.mockImplementation(() => new Promise(() => {}));
+            mockPollOptions.mockImplementation(() => new Promise(() => {}));
 
             const { result, unmount } = renderHook(
                 () => useOverallAnalysis(...hookArgs()),
@@ -537,6 +698,7 @@ describe('useOverallAnalysis', () => {
             expect(mockCancelTechnical).toHaveBeenCalledWith('job-t');
             expect(mockCancelFundamental).toHaveBeenCalledWith('job-f');
             expect(mockCancelNews).toHaveBeenCalledWith('job-n');
+            expect(mockCancelOptions).toHaveBeenCalledWith('job-o');
             expect(mockCancelOverall).not.toHaveBeenCalled();
         });
 
@@ -599,6 +761,7 @@ describe('useOverallAnalysis', () => {
             expect(mockCancelTechnical).not.toHaveBeenCalled();
             expect(mockCancelFundamental).not.toHaveBeenCalled();
             expect(mockCancelNews).not.toHaveBeenCalled();
+            expect(mockCancelOptions).not.toHaveBeenCalled();
         });
 
         describe('pagehide', () => {
@@ -658,6 +821,7 @@ describe('useOverallAnalysis', () => {
                     () => new Promise(() => {})
                 );
                 mockPollNews.mockImplementation(() => new Promise(() => {}));
+                mockPollOptions.mockImplementation(() => new Promise(() => {}));
 
                 const { result } = renderHook(
                     () => useOverallAnalysis(...hookArgs()),
@@ -691,9 +855,10 @@ describe('useOverallAnalysis', () => {
                         { jobId: 'job-t', type: 'analysis' },
                         { jobId: 'job-f', type: 'fundamental' },
                         { jobId: 'job-n', type: 'news' },
+                        { jobId: 'job-o', type: 'options' },
                     ])
                 );
-                expect(body.jobs).toHaveLength(3);
+                expect(body.jobs).toHaveLength(4);
             });
 
             it('job 없을 때 pagehide 발화해도 sendBeacon을 호출하지 않는다', async () => {
