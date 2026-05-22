@@ -16,9 +16,7 @@ describe('toProviderTurns', () => {
         });
 
         it('role이 user인 턴은 user로 그대로 매핑한다', () => {
-            const contents: ConversationTurn[] = [
-                { role: 'user', text: 'Hi' },
-            ];
+            const contents: ConversationTurn[] = [{ role: 'user', text: 'Hi' }];
             const result = toProviderTurns(contents);
             expect(result).toEqual([{ role: 'user', content: 'Hi' }]);
         });
