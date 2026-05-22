@@ -14,6 +14,7 @@
 import {
     hasAllZeroOpenInterest,
     isUsOptionsRegularSession,
+    lookupWeekday,
     normalizeHour,
 } from '@/domain/market/session';
 import type {
@@ -262,5 +263,17 @@ describe('normalizeHour', () => {
     });
     it('ICU edge case로 24가 들어오면 0으로 정규화한다', () => {
         expect(normalizeHour(24)).toBe(0);
+    });
+});
+
+describe('lookupWeekday', () => {
+    it('인식된 요일 약어를 0(Sun)~6(Sat) 인덱스로 매핑한다', () => {
+        expect(lookupWeekday('Sun')).toBe(0);
+        expect(lookupWeekday('Mon')).toBe(1);
+        expect(lookupWeekday('Sat')).toBe(6);
+    });
+    it('미인식 입력은 fallback 0을 반환한다', () => {
+        expect(lookupWeekday('Xyz')).toBe(0);
+        expect(lookupWeekday('')).toBe(0);
     });
 });

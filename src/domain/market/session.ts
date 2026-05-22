@@ -54,9 +54,14 @@ const WEEKDAY_LOOKUP: Record<string, number> = {
     Sat: 6,
 };
 
-/** @internal Normalize hour value from ICU formatter — some locales emit '24' for midnight, but downstream math expects '00'–'23'. */
+/** Normalize hour value from ICU formatter — some locales emit '24' for midnight, but downstream math expects '00'–'23'. */
 export function normalizeHour(parsed: number): number {
     return parsed === 24 ? 0 : parsed;
+}
+
+/** Look up the weekday index for an ICU `'short'` weekday string. Falls back to 0 (Sunday) for unrecognized values — defensive guard for locale drift. */
+export function lookupWeekday(raw: string): number {
+    return WEEKDAY_LOOKUP[raw] ?? 0;
 }
 
 export function etParts(now: Date): EtParts {
@@ -73,7 +78,7 @@ export function etParts(now: Date): EtParts {
             if (part.type === 'weekday') {
                 return {
                     ...acc,
-                    weekdayIndex: WEEKDAY_LOOKUP[part.value] ?? 0,
+                    weekdayIndex: lookupWeekday(part.value),
                 };
             }
             if (part.type === 'hour') {

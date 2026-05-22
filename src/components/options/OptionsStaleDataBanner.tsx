@@ -9,11 +9,9 @@
  * across the board. The banner explains why instead of letting the chart
  * silently render an empty distribution.
  *
- * 본문 텍스트는 KST 시각을 명시하지 않는다 — 미국 서머타임(EDT, 3~11월)
- * 기준 KST 22:30~05:00이고, 표준시(EST, 11~3월) 기준 KST 23:30~06:00으로
- * 한 시간씩 어긋나기 때문이다. 대신 ET 기준 정규장 시간을 그대로 적고
- * "ET ↔ KST 시차는 -13/-14h" 한 줄로 사용자가 자기 KST 시계로 환산할 수
- * 있도록 안내한다.
+ * KST 시각은 EDT/EST 구간별로 한 시간씩 어긋나므로, 두 구간(EDT: 22:30~05:00,
+ * EST: 23:30~06:00)을 모두 병기해 사용자가 현재 시점이 어느 구간인지와
+ * 무관하게 자기 KST 시계로 환산할 수 있도록 한다.
  */
 export function OptionsStaleDataBanner() {
     return (

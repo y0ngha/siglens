@@ -1,9 +1,4 @@
-import { MINUTES_PER_HOUR } from '@/domain/constants/time';
-import {
-    etParts,
-    MARKET_CLOSE_MIN,
-    MARKET_OPEN_MIN,
-} from '@/domain/market/session';
+import { etParts, isUsOptionsRegularSession } from '@/domain/market/session';
 
 export type OptionsCacheLifeProfile =
     | 'options-market-open'
@@ -21,12 +16,9 @@ export type OptionsCacheLifeProfile =
 export function getOptionsCacheLifeProfile(
     now: Date = new Date()
 ): OptionsCacheLifeProfile {
-    const { weekdayIndex, hour, minute } = etParts(now);
+    const { weekdayIndex } = etParts(now);
     if (weekdayIndex === 0 || weekdayIndex === 6) return 'options-weekend';
-
-    const totalMin = hour * MINUTES_PER_HOUR + minute;
-    if (totalMin >= MARKET_OPEN_MIN && totalMin <= MARKET_CLOSE_MIN) {
-        return 'options-market-open';
-    }
-    return 'options-market-closed';
+    return isUsOptionsRegularSession(now)
+        ? 'options-market-open'
+        : 'options-market-closed';
 }
