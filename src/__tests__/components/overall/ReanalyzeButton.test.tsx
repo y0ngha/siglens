@@ -21,10 +21,10 @@ describe('ReanalyzeButton', () => {
         expect(handler).toHaveBeenCalledTimes(1);
     });
 
-    it('highlighted=true일 때 amber 스타일을 적용한다', () => {
+    it('highlighted=true일 때 ui-warning 스타일을 적용한다', () => {
         render(<ReanalyzeButton onClick={() => {}} highlighted={true} />);
         const btn = screen.getByRole('button');
-        expect(btn.className).toMatch(/ring-amber|bg-amber/);
+        expect(btn.className).toMatch(/ring-ui-warning|bg-ui-warning/);
     });
 
     it('rate / 한도 같은 cost 카피를 노출하지 않는다 (사양상 무료/무제한 가정)', () => {

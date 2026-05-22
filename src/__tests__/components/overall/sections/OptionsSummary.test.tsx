@@ -4,6 +4,16 @@
 
 import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
+import type { ReactNode } from 'react';
+
+// react-markdown은 ESM-only라 jest의 기본 transform이 처리하지 못한다.
+// MarkdownText를 단순 wrapper로 대체해 inline markdown 렌더 경로를 우회한다.
+jest.mock('@/components/ui/MarkdownText', () => ({
+    MarkdownText: ({ children }: { children: ReactNode }) => (
+        <span>{children}</span>
+    ),
+}));
+
 import { OptionsSummary } from '@/components/overall/sections/OptionsSummary';
 
 describe('OptionsSummary', () => {

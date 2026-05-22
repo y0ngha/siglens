@@ -1,3 +1,5 @@
+import { MarkdownText } from '@/components/ui/MarkdownText';
+
 interface OptionsSummaryProps {
     bullets: string[];
     oiStale: boolean;
@@ -25,7 +27,7 @@ export function OptionsSummary({ bullets, oiStale }: OptionsSummaryProps) {
                 </h2>
                 {!isEmpty && oiStale && (
                     <span
-                        className="rounded-md bg-amber-900/30 px-2 py-0.5 text-xs text-amber-300"
+                        className="bg-ui-warning/10 text-ui-warning rounded-md px-2 py-0.5 text-xs"
                         title="미국 옵션 정규 거래 시간 외에 수집된 스냅샷으로, Open Interest가 직전 세션 기준일 수 있습니다."
                     >
                         OI 데이터 stale
@@ -37,9 +39,19 @@ export function OptionsSummary({ bullets, oiStale }: OptionsSummaryProps) {
                     분석 대상 옵션 없음 (옵션 미상장 또는 데이터 없음)
                 </p>
             ) : (
-                <ul className="text-secondary-200 list-disc space-y-2 pl-5 leading-relaxed">
-                    {bullets.map((b, i) => (
-                        <li key={i}>{b}</li>
+                <ul aria-label="옵션 분석 항목" className="space-y-2">
+                    {bullets.map((bullet, i) => (
+                        <li key={i} className="flex gap-2 text-sm">
+                            <span
+                                aria-hidden="true"
+                                className="text-secondary-400 mt-0.5 shrink-0"
+                            >
+                                •
+                            </span>
+                            <MarkdownText className="text-secondary-400 min-w-0">
+                                {bullet}
+                            </MarkdownText>
+                        </li>
                     ))}
                 </ul>
             )}

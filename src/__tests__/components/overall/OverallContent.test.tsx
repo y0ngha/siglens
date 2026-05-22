@@ -115,7 +115,7 @@ describe('OverallContent done branch', () => {
         ).toBeInTheDocument();
     });
 
-    it('options bullets가 있고 OI가 stale이면 ReanalyzeButton을 amber로 강조한다', () => {
+    it('options bullets가 있고 OI가 stale이면 ReanalyzeButton을 ui-warning으로 강조한다', () => {
         mockDoneState(
             makeDoneResult({
                 optionsBulletsKo: ['감마 상승'],
@@ -130,7 +130,7 @@ describe('OverallContent done branch', () => {
             />
         );
         const btn = screen.getByRole('button', { name: /재분석/ });
-        expect(btn.className).toMatch(/amber/);
+        expect(btn.className).toMatch(/ui-warning/);
     });
 
     it('options bullets가 비어 있으면 stale이어도 ReanalyzeButton을 강조하지 않는다', () => {
@@ -148,7 +148,7 @@ describe('OverallContent done branch', () => {
             />
         );
         const btn = screen.getByRole('button', { name: /재분석/ });
-        expect(btn.className).not.toMatch(/amber/);
+        expect(btn.className).not.toMatch(/ui-warning/);
     });
 
     it('ReanalyzeButton 클릭 시 trigger를 호출한다', () => {
