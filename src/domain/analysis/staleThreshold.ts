@@ -1,20 +1,14 @@
 import type { Timeframe } from '@y0ngha/siglens-core';
-
-const MINUTE_MS = 60 * 1000;
-const HOUR_MS = 60 * MINUTE_MS;
+import { MS_PER_MINUTE, MS_PER_HOUR } from '@/domain/constants/time';
 
 const STALE_THRESHOLD_MS: Record<Timeframe, number> = {
-    '5Min': 5 * MINUTE_MS,
-    '15Min': 5 * MINUTE_MS,
-    '30Min': 5 * MINUTE_MS,
-    '1Hour': 30 * MINUTE_MS,
-    '4Hour': 30 * MINUTE_MS,
-    '1Day': 4 * HOUR_MS,
+    '5Min': 5 * MS_PER_MINUTE,
+    '15Min': 5 * MS_PER_MINUTE,
+    '30Min': 5 * MS_PER_MINUTE,
+    '1Hour': 30 * MS_PER_MINUTE,
+    '4Hour': 30 * MS_PER_MINUTE,
+    '1Day': 4 * MS_PER_HOUR,
 };
-
-export function getStaleThresholdMs(timeframe: Timeframe): number {
-    return STALE_THRESHOLD_MS[timeframe];
-}
 
 export function isAnalysisStale(
     analyzedAt: string,
