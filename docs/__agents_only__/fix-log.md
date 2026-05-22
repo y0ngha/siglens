@@ -1,36 +1,6 @@
 
 # Fix Log
 
-## [PR #442 Round 5 | fix/oi-tooltip-floating | 2026-05-22]
-- S1: `src/components/options/OpenInterestChart.tsx` — tooltip JSX 주석이 "`hidden`으로 숨겨 스크린리더가 대상을 찾되 시각적으로만 숨김"이라고 표기. 실제로 HTML `hidden` 속성은 접근성 트리에서도 완전히 제거함. 사실관계 정정: "screen reader도 참조를 따라올 수 없지만 하단 sr-only 테이블이 대체 제공하므로 pointer-only tooltip에선 허용 가능 트레이드오프"로 재작성.
-  - Rule: MISTAKES.md §15.3 — 사실관계가 잘못된 주석은 미래 독자에게 오해를 준다.
-- S2: 같은 파일 — `hoveredRow` 표현이 `||` 기반(`(hoveredIndex !== null && oiByStrike[hoveredIndex]) || null`)이라 row 객체 falsy 처리에 암묵 의존. `??` ternary(`hoveredIndex !== null ? (oiByStrike[hoveredIndex] ?? null) : null`)로 "배열 범위 초과 → null" 의도를 명시화.
-  - Rule: CONVENTIONS.md FP — 의도가 명확한 표현 방식 선호.
-- S3: `src/components/options/utils/computeTooltipPos.ts` (신규) + `src/__tests__/components/options/computeTooltipPos.test.ts` (신규) — pure 함수 `computeTooltipPos`와 tooltip 레이아웃 상수 6종을 별도 utility 파일로 분리하고 5건 단위 테스트 추가(가운데 정상 / 좌측 클램핑 / 우측 클램핑 / 상단 클램핑 / container 오프셋 상대좌표). OpenInterestChart.tsx는 named import로 전환.
-  - Rule: CONVENTIONS.md Coverage Targets — pure utility functions may be freely tested. 클램핑 분기는 상수(TOOLTIP_HALF_WIDTH_PX 등) 변경 시 회귀가 즉시 잡히도록 명시 검증.
-
-## [PR #442 Round 4 | fix/oi-tooltip-floating | 2026-05-22]
-- B1: `src/components/options/OpenInterestChart.tsx` — `handlePointerEnter` / `handlePointerMove` / `handlePointerLeave` 세 핸들러가 파생 변수(`maxPainX`, `currentPriceX`, `peakOiLabel`)보다 앞에 선언됨. CONVENTIONS.md 처방 순서(`파생 변수 → 핸들러`)에 맞춰 핸들러를 `peakOiLabel` 뒤로 이동.
-  - Rule: MISTAKES.md §17 — Hook 선언 순서: useState/useRef → useQuery/useMutation → useCallback/useMemo → 파생 변수 → 핸들러 → useEffect.
-- S1: 같은 파일 — `TOOLTIP_HALF_WIDTH_PX = 90`이 className `min-w-[180px]`의 절반에 의존하지만 두 값이 별도라 한쪽만 바뀌면 클램핑 오작동. `TOOLTIP_MIN_WIDTH_PX = 180` single source of truth 도입 후 `TOOLTIP_HALF_WIDTH_PX = TOOLTIP_MIN_WIDTH_PX / 2`로 파생. className에서도 `min-w-[var(--tooltip-min-w)]` + style에 `--tooltip-min-w` 변수 주입해 한 곳에서 관리.
-  - Rule: MISTAKES.md §15 / drift 방지 — 동일 값을 두 표현(상수 + 클래스 리터럴)에 중복하면 silent drift 위험.
-- S2: 같은 파일 — `TOOLTIP_HALF_WIDTH_PX` 주석 첫 구절 "Tooltip의 가로 절반 너비" 제거. 상수명이 이미 표현. WHY(클램핑 용도)만 남김. S1과 함께 주석을 새 single source 의도("anchor 좌우로 절반씩 뻗으므로 절반 너비")로 재작성.
-  - Rule: MISTAKES.md §15.3 — WHAT 코멘트 금지.
-
-## [PR #442 Round 3 | fix/oi-tooltip-floating | 2026-05-22]
-- B1: `src/components/options/OpenInterestChart.tsx` — Hook 선언 순서 재정정. CONVENTIONS.md 순서는 useState → useRef인데 R2에서 useRef를 먼저 선언해 두 번 반전됐다. useState 2개를 먼저, useRef 2개를 뒤로.
-  - Rule: CONVENTIONS.md Custom Hook Declaration Order / MISTAKES.md §17. **이전 라운드(R2)에서 같은 룰에 대한 정정 → 부분 회귀**. 이번엔 useState → useRef 순서로 명확히 고정.
-- B2: 같은 파일 — `{ x: number; y: number }` 인라인 객체 타입이 useState 타입 파라미터와 (R2의) `computeTooltipPos` 반환 타입 두 곳에 중복. 컴포넌트 위에 `TooltipPosition` 인터페이스를 추출해 모두 명명된 타입으로 통일.
-  - Rule: MISTAKES.md TypeScript §5.3 — 함수 반환 타입과 상태 타입에 인라인 객체 리터럴 금지.
-- S1: 같은 파일 — `computeTooltipPos`가 컴포넌트 상태/ref를 클로저하지 않음에도 컴포넌트 안에 정의돼 매 렌더마다 재생성. module-level 순수 함수로 추출.
-  - Rule: MISTAKES.md §20 / CONVENTIONS.md FP — 클로저 의존이 없는 헬퍼는 module-level로.
-- S2: 같은 파일 — `const rawX = event.clientX - rect.left` 위 "viewport 기준 좌표 → container 기준 좌표" 코멘트가 WHAT. 제거. 그 아래 클램핑 WHY 코멘트는 유지.
-  - Rule: MISTAKES.md §15.3 — WHAT 코멘트 금지.
-- S3: 같은 파일 — `as CSSProperties` safe-cast에 guarantee 주석 추가. CSS 커스텀 프로퍼티(--*)는 런타임 유효하지만 React `CSSProperties` 타입에 포함 안 되는 TS 한계 우회임을 명시.
-  - Rule: MISTAKES.md TypeScript §7 — 모든 safe-cast `as`에 guarantee 주석 필수.
-- S4: 같은 파일 — hit-rect의 `aria-describedby={TOOLTIP_ELEMENT_ID}`가 가리키는 tooltip div가 hover 시에만 조건부 렌더링되어 스크린리더가 anchor를 찾지 못함. tooltip div를 항상 DOM에 두고 비활성 시 `hidden` 속성으로 숨기는 WAI-ARIA tooltip 패턴 적용. 내부 컨텐츠는 hoveredRow가 있을 때만 렌더.
-  - Rule: WAI-ARIA tooltip 패턴 — describedby anchor는 항상 DOM에 있어야 한다.
-
 ## [PR #442 Round 2 | fix/oi-tooltip-floating | 2026-05-22]
 - B1: `src/components/options/OpenInterestChart.tsx` — Hook 선언 순서 위반. `useMemo`(derived)가 `useRef`(containerRef)/`useState`(hoveredIndex, tooltipPos)보다 먼저 선언돼 있었음. CONVENTIONS.md "Custom Hook Declaration Order"에 맞춰 useRef/useState를 함수 본문 최상단으로 끌어올리고 useMemo는 그 다음에 배치.
   - Rule: MISTAKES.md §17 / CONVENTIONS.md Custom Hook Declaration Order.
@@ -48,50 +18,21 @@
   - Rule: MISTAKES.md §13 — 매직 넘버 module-level 상수 추출.
 
 ## [PR #441 Round 6 | fix/symbol-options-issues | 2026-05-22]
-- S1: `src/components/options/OpenInterestChart.tsx` — 렌더 함수 안에서 `const bw = barWidth(count)`(내부에서 `slotWidth(count)` 호출)과 `const sw = slotWidth(count)`가 동일한 `CHART_WIDTH / count`를 두 번 계산했음. `barWidth` 헬퍼를 제거하고 `const sw = slotWidth(count); const bw = sw * BAR_WIDTH_FILL_RATIO;`로 인라인 처리해 중복 연산을 제거.
-  - Rule: MISTAKES.md §2 — 동일 값을 한 함수 안에서 여러 번 계산하면 local const로 한 번만 계산해 재사용.
-
-## [PR #441 Round 5 | fix/symbol-options-issues | 2026-05-22]
-- B1: `src/infrastructure/options/YahooOptionsAdapter.ts` — line 85의 "누락된 슬롯 만기는 병렬로 조회. 일부 실패는 그 만기만 누락으로 처리." 및 line 111의 "동일 만기가 중복 수신되지 않도록 ISO 키로 dedupe." 코멘트 제거. `Promise.all` + `.catch` 구조와 `mergedByIso`라는 변수명이 의도를 표현하므로 WHAT 코멘트는 노이즈.
-  - Rule: MISTAKES.md §15.3 — "Comments must explain WHY a decision was made, not WHAT the code does."
-- S1: `src/infrastructure/options/YahooOptionsAdapter.ts` — `mergedByIso` Map 생성을 `for-of` + `.set()` 누산에서 `new Map(...map(opt => [k, v] as const))` 선언형 패턴으로 전환. Map 생성자가 [key, value] iterable을 받으므로 mutation 없이 동일 결과.
-  - Rule: CONVENTIONS.md FP — 함수형 패러다임 선호.
-- S2: `src/components/options/OpenInterestChart.tsx` — `tooltipText` 위 첫 줄 "SVG native tooltip — Strike, Call OI, Put OI, Total 한 줄씩." 제거(바로 아래 배열 리터럴이 그 내용을 표현). 두/세 번째 줄(WHY: 슬롯 전체 너비 hit-rect로 hover 영역 확장)만 남김.
-  - Rule: MISTAKES.md §15.3 — WHAT 줄 제거하고 WHY만 유지.
 - S3: `src/__tests__/infrastructure/options/YahooOptionsAdapter.test.ts` — dedupe 테스트 제목이 "초기·추가 응답에 모두 있으면"이었지만 실제 시나리오는 초기 응답에 동일 만기가 두 항목으로 들어오는 케이스(추가 fetch 발생 안 함)였음. 제목을 "초기 응답 안에 동일 만기 항목이 중복될 경우 Map이 마지막 항목으로 dedupe한다"로 정정.
   - Rule: 가독성 — 테스트 제목과 실제 검증 시나리오 일치.
 
 ## [PR #441 Round 4 | fix/symbol-options-issues | 2026-05-22]
 - B1: `src/__tests__/infrastructure/options/YahooOptionsAdapter.test.ts` — 새로 추가된 `missingIsos` 병렬 fetch / 실패 격리 / dedupe 분기가 기존 FULL_FIXTURE의 만기가 너무 가까워 한 번도 실행되지 않음. `mapExpirationsToSlots` mock과 함께 신규 it() 3건 추가(추가 fetch 병합 / 추가 fetch 실패 시 부분 누락 / 동일 만기 dedupe).
   - Rule: CONVENTIONS.md "infrastructure/ 100% (필수)", MISTAKES.md Infrastructure §2 — 모든 conditional branch는 dedicated test case가 있어야 한다.
-- B2: `src/infrastructure/options/YahooOptionsAdapter.ts` — `allExpirationIsos` 위 "ISO YYYY-MM-DD로 정규화" 코멘트와 `initialOptions` 위 "추가 fetch 대상에서 제외" 코멘트가 WHAT을 설명. `toIsoDate` 함수명과 `missingIsos` 변수명이 자명하므로 두 코멘트 제거.
-  - Rule: MISTAKES.md §15.3 — "Comments must explain WHY a decision was made, not WHAT the code does."
 - B3: `src/__tests__/infrastructure/options/YahooOptionsAdapter.test.ts` — `mapExpirationsToSlots`가 실제 구현으로 실행되면 `new Date()`에 의존해 테스트가 flaky. `jest.mock` 객체에 `mapExpirationsToSlots: jest.fn()`을 추가하고 beforeEach에서 기본값 `[]` 주입.
   - Rule: MISTAKES.md Tests §8.5 — 호출되는 외부 의존성은 모두 mock해야 한다. §14 — 시간 의존 함수는 명시적으로 mock해야 한다.
 - S1: `src/infrastructure/options/YahooOptionsAdapter.ts` Yahoo Finance 병렬 호출을 sequential로 바꿀 것 — **거부**. 이유: 본 PR의 이슈 7(옵션 페이지 SSR 속도) 의도와 직접 충돌(wall-clock 6배), Yahoo는 MISTAKES.md §0.8 rate-limit 목록(FMP/Alpaca/Gemini) 미포함, 호출 수 ≤ 6의 사용자당 일회성 burst라 누적 부하 작음. 거부 사유는 PR #441 코멘트로 등록(comment 4511337388).
   - Rule: PR_FIX_FLOW §1-6 Reject #5 — Reviewer Lacks Project Context (PR이 명시적으로 해결하려는 다른 보고 사항과 충돌).
-- S2: `src/components/options/OpenInterestChart.tsx` `pickLabelIndices` 명령형 for-루프 + `.add()` 누산을 선언형(Array.from + new Set spread)으로 전환.
-  - Rule: CONVENTIONS.md FP — components/는 declarative 패턴 선호.
 
 ## [PR #441 Round 3 | fix/symbol-options-issues | 2026-05-22]
-- B1: `src/components/options/OpenInterestChart.tsx` — `slotWidth(count)` 헬퍼를 추가하고도 `barCenterX`·`barWidth`가 여전히 `CHART_WIDTH / count`를 재구현. 두 함수가 `slotWidth(count)`를 사용하도록 통일하고, `barCenterX` 내부의 동명 `slotWidth` 지역 변수는 `sw`로 rename하여 shadowing 제거.
-  - Rule: MISTAKES.md §2 — 헬퍼를 새로 도입하면 동일 계산을 하는 모든 사용처를 함께 갈아끼워야 한다(부분 갱신 시 중복/이름 충돌 발생).
-- B2: `src/app/[symbol]/options/loading.tsx` — `<ul>` 내부의 `Array.from({ length: 3 })` 매직 넘버가 다른 모든 카운트 상수와 달리 추출되지 않음. `AI_PER_EXPIRATION_ITEM_COUNT = 3` 상수로 분리.
-  - Rule: MISTAKES.md §15 — 같은 파일에 동질의 상수 패턴이 있으면 매직 넘버를 동일한 방식으로 추출해 일관성을 맞춘다.
 - B3: `src/app/[symbol]/options/loading.tsx` — Tailwind 동적 클래스 조합에 템플릿 리터럴(`` `bg-secondary-700 ... ${w}` ``) 사용. `cn()` 유틸로 교체.
   - Rule: MISTAKES.md §7.5 — Tailwind 클래스 결합은 반드시 `cn()` 사용; 템플릿 리터럴은 production tailwind purge가 인식 못하거나 우선순위 충돌을 일으킬 수 있다.
-- M1: `src/infrastructure/options/YahooOptionsAdapter.ts` — `for (const iso of initialIsos) targetIsos.add(iso)` 후 `!initialIsos.has(iso)`로 다시 거르는 흐름이 사실상 noop. 루프 제거하고 슬롯 후보에서 바로 미존재 만기만 필터링.
-  - Rule: 함수형 패러다임 — 결과적으로 동일한 흐름이라면 mutation 루프는 제거해 가독성을 높인다.
-- M2: `src/components/options/OpenInterestChart.tsx` — `pickLabelIndices` JSDoc이 "결과 Set 크기는 항상 MAX_X_AXIS_LABELS 이하"라고 단정했으나 anchors(현재가·Max Pain·마지막 인덱스) 추가로 약간 초과할 수 있다. 주석 문구를 실제 동작에 맞게 정정.
-  - Rule: MISTAKES.md §6.5 — 동작 변경 시 관련 코멘트 즉시 동기화; 부정확한 단정은 미래 독자에게 오해를 준다.
 
-## [PR #442 Round 2 | fix/symbol-options-issues | 2026-05-22]
-- Violation (Round 1 required): `src/infrastructure/options/YahooOptionsAdapter.ts` — Type assertion `initial.options as unknown as YahooOption[]` had no guarantee comment explaining why the double cast was needed
-  - Rule: MISTAKES.md TypeScript §7 — Using `as` type assertions without guarantee comments; must accompany safe-cast `as` with explanation of type system limitation
-  - Context: Assertion required because TypeScript cannot structurally express that Yahoo API response options are guaranteed to match YahooOption shape. Added guarantee comment explaining the type-system constraint.
-- Violation (Round 1 recommended): `src/app/[symbol]/options/loading.tsx` — JSX section comments labeled WHAT the code does (`{/* ExpirationSelector */}`, etc.) instead of WHY
-  - Rule: MISTAKES.md §15.5 — JSX section comments explaining WHAT are noise; component/variable names are self-documenting
-  - Context: Removed WHAT-labels; inline comments conflicted with existing intent clarity. Component structure is evident from JSX hierarchy.
 
 ## [PR #440 Round 2 | fix/disable-cache-components | 2026-05-22]
 - B1: `src/app/[symbol]/layout.tsx` + `SymbolLayoutClient.tsx` — `children`이 async RSC(`SymbolLayoutChrome`) 내부에 위치하여 `getAssetInfoCached` + `prefetchQuery(bars)` 완료까지 페이지 본문 LCP가 차단됨. 6ad891ff 리버트로 인해 master 패턴으로 회귀했으나, 해당 master 패턴은 cacheComponents 비활성 상태에서 streaming SSR LCP를 악화시킴. 수정: `children`을 Suspense 밖으로 빼고 `SymbolLayoutClient`를 `SymbolLayoutProviders`/`SymbolLayoutHeaderClient`/`SymbolLayoutFloatingChat` 3개로 분리. layout은 provider subtree 안에 chrome Suspense + children + FloatingChat Suspense를 형제로 구성.
@@ -99,9 +40,6 @@
 - S1: `src/app/[symbol]/fundamental/fundamentalData.ts` + `news/newsData.ts` — `'use cache'` 제거로 인해 동일 요청 내 `getProfile`/`getNewsList` 등이 여러 호출 사이트(page 본문 + Section 내부)에서 중복 HTTP/DB 조회를 발생시킴. 수정: `react.cache`로 wrap하여 per-request memoization 적용 (cross-request 캐싱은 별개).
   - Rule: MISTAKES.md §6 — 데이터 페칭 helper에서 동일 요청 내 dedup이 명시적으로 보장되어야 함
 
-## [PR #440 Round 1 | fix/disable-cache-components | 2026-05-21]
-- S1: `src/app/[symbol]/fundamental/page.tsx:253` — `'use cache'` dedup이 제거되었는데 해당 함수 호출에 대한 주석은 `"shares the same use cache key as ProfileSection so no duplicate HTTP call"`로 남아 있어 거짓 정보가 됨. 주석을 notFound guard + sector resolution 의도로 재작성.
-  - Rule: MISTAKES.md §6.5 — 구현 변경 시 관련 주석/문서를 동기화
 
 ## [PR #432 Round 4 | fix/cancel-job-on-page-unload | 2026-05-09]
 - Violation: `route.ts` body validation used `!j.type` (falsy check only), allowing invalid type strings (e.g. `"unknown"`) to pass and silently return 204
@@ -180,8 +118,6 @@
   - Rule: 주석은 실행 흐름이 도달하는 위치에 둔다
 - S5 (skipped — 이전 라운드 결정): `useSelectedModel.ts` `eslint-disable` 근본 수정은 별도 이슈로 트래킹.
 
-## [PR #420 Round 15 | master | 2026-05-05]
-- S3 (skipped — False Positive): `src/infrastructure/auth/finalizeOAuthSignupAction.ts` — reviewer suggested changing `tx as unknown as SiglensDatabase` to `tx as SiglensDatabase`. Reverted: `PgTransaction<NeonHttpQueryResultHKT, ...>` doesn't overlap with `NeonHttpDatabase<...>` (SiglensDatabase), causing TS error 2352. The double cast is required.
 
 
 ## [PR #420 Round 8 | master | 2026-05-05]

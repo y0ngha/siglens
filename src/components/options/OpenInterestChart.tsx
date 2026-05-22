@@ -13,7 +13,11 @@ import {
     aggregateOpenInterest,
 } from '@y0ngha/siglens-core';
 import { InfoTooltip } from '@/components/ui/InfoTooltip';
-import { OpenInterestTooltip } from '@/components/options/utils/optionsTooltips';
+import {
+    CallOpenInterestTooltip,
+    OpenInterestTooltip,
+    PutOpenInterestTooltip,
+} from '@/components/options/utils/optionsTooltips';
 import {
     computeTooltipPos,
     TOOLTIP_ELEMENT_ID,
@@ -495,6 +499,7 @@ export function OpenInterestChart({
                         aria-hidden="true"
                     />
                     Call OI
+                    <InfoTooltip>{CallOpenInterestTooltip}</InfoTooltip>
                 </span>
                 <span className="flex items-center gap-1">
                     <span
@@ -502,6 +507,7 @@ export function OpenInterestChart({
                         aria-hidden="true"
                     />
                     Put OI
+                    <InfoTooltip>{PutOpenInterestTooltip}</InfoTooltip>
                 </span>
                 <span className="flex items-center gap-1">
                     <span
