@@ -14,8 +14,8 @@ import { OptionsMetricsRow } from '@/components/options/OptionsMetricsRow';
 import { OptionsStaleDataBanner } from '@/components/options/OptionsStaleDataBanner';
 import { useOptionsChainMetrics } from '@/components/options/hooks/useOptionsChainMetrics';
 import {
-    hasAllZeroOpenInterest,
     isUsOptionsRegularSession,
+    isOpenInterestSnapshotStale,
 } from '@/domain/market/session';
 import type { OptionsSnapshot, SlotMapping } from '@y0ngha/siglens-core';
 import type { OptionsExpirationSelector } from '@/domain/types';
@@ -52,15 +52,16 @@ export function OptionsPageClient({
     // 각자 pickActiveChain + summarizeChainForLlm을 동일 입력으로 3번
     // 돌렸다. chip 전환 시마다 같은 계산이 세 번 반복되던 비용을 제거한다.
     const chainMetrics = useOptionsChainMetrics(snapshot, expirationDate);
-    // hasAllZeroOpenInterest는 모든 chain × strike를 순회하므로 chip 전환 등으로
-    // 컴포넌트가 리렌더될 때마다 다시 돌면 비용이 든다. snapshot 참조 안정성을
-    // deps로 memoize. `new Date()`는 deps에 들어가지 않는데, 매 호출마다 다른
-    // 결과를 낼 수 있지만 사용자가 페이지에 머무는 동안 정규장 boundary를
-    // 가로지르는 케이스는 거의 없고, snapshot이 새로 들어오면 자동으로 재평가된다.
+    // isOpenInterestSnapshotStale은 모든 chain × strike를 순회해 OI=0 비율을
+    // 산정하므로 chip 전환 등으로 컴포넌트가 리렌더될 때마다 다시 돌면 비용이
+    // 든다. snapshot 참조 안정성을 deps로 memoize. `new Date()`는 deps에 들어가지
+    // 않는데, 매 호출마다 다른 결과를 낼 수 있지만 사용자가 페이지에 머무는 동안
+    // 정규장 boundary를 가로지르는 케이스는 거의 없고, snapshot이 새로 들어오면
+    // 자동으로 재평가된다.
     const oiStale = useMemo(
         () =>
             !isUsOptionsRegularSession(new Date()) &&
-            hasAllZeroOpenInterest(snapshot),
+            isOpenInterestSnapshotStale(snapshot),
         [snapshot]
     );
     const nearestExpiry = snapshot.chains[0]?.expirationDate ?? '';
@@ -90,16 +91,23 @@ export function OptionsPageClient({
                 nearestExpiry={nearestExpiry}
             />
 
-            <OpenInterestChart
-                underlyingPrice={snapshot.underlyingPrice}
-                chain={chainMetrics.chain}
-                metrics={chainMetrics.metrics}
-            />
+            {/* 두 차트를 큰 화면(lg+)에서 가로로 나란히 배치해 페이지 세로
+                길이를 약 240px 절약한다 — 두 SVG(각 240px)가 sibling으로
+                연달아 쌓이면 모바일 외 환경에서 스크롤이 과도하게 길어진다.
+                모바일(<lg)은 1열 유지해 좁은 너비에서 막대가 뭉치지 않도록
+                한다. */}
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                <OpenInterestChart
+                    underlyingPrice={snapshot.underlyingPrice}
+                    chain={chainMetrics.chain}
+                    metrics={chainMetrics.metrics}
+                />
 
-            <StrikeVolumeChart
-                underlyingPrice={snapshot.underlyingPrice}
-                chain={chainMetrics.chain}
-            />
+                <StrikeVolumeChart
+                    underlyingPrice={snapshot.underlyingPrice}
+                    chain={chainMetrics.chain}
+                />
+            </div>
 
             <OptionsChainTable
                 symbol={symbol}

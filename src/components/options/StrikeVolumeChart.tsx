@@ -9,7 +9,10 @@ import {
 } from 'react';
 import type { OptionsChain } from '@y0ngha/siglens-core';
 import { InfoTooltip } from '@/components/ui/InfoTooltip';
-import { VolumeTooltip } from '@/components/options/utils/optionsTooltips';
+import {
+    CallVolumeTooltip,
+    PutVolumeTooltip,
+} from '@/components/options/utils/optionsTooltips';
 import {
     computeTooltipPos,
     TOOLTIP_MIN_WIDTH_PX,
@@ -151,10 +154,20 @@ export function StrikeVolumeChart({
     }, [chain, underlyingPrice]);
 
     if (!derived) {
+        // 빈 상태도 OpenInterestChart와 동일한 카드 컨테이너로 감싼다 —
+        // 두 차트가 lg+에서 grid-cols-2 sibling이 되므로 한쪽만 naked
+        // paragraph로 떨어지면 셀 높이/시각 무게가 어긋난다.
         return (
-            <p className="text-secondary-500 py-4 text-sm">
-                이 만기에는 거래량 데이터가 없어요.
-            </p>
+            <div className="border-secondary-700 bg-secondary-800 space-y-2 rounded-xl border p-4">
+                <div className="flex items-center gap-1">
+                    <span className="text-secondary-300 text-sm font-medium">
+                        Volume 분포 (Strike별)
+                    </span>
+                </div>
+                <p className="text-secondary-500 py-4 text-sm">
+                    이 만기에는 거래량 데이터가 없어요.
+                </p>
+            </div>
         );
     }
 
@@ -222,7 +235,6 @@ export function StrikeVolumeChart({
                 <span className="text-secondary-300 text-sm font-medium">
                     Volume 분포 (Strike별)
                 </span>
-                <InfoTooltip>{VolumeTooltip}</InfoTooltip>
             </div>
 
             <svg
@@ -422,6 +434,7 @@ export function StrikeVolumeChart({
                         aria-hidden="true"
                     />
                     Call Vol
+                    <InfoTooltip>{CallVolumeTooltip}</InfoTooltip>
                 </span>
                 <span className="flex items-center gap-1">
                     <span
@@ -429,6 +442,7 @@ export function StrikeVolumeChart({
                         aria-hidden="true"
                     />
                     Put Vol
+                    <InfoTooltip>{PutVolumeTooltip}</InfoTooltip>
                 </span>
                 <span className="flex items-center gap-1">
                     <span

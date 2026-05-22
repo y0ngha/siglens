@@ -36,6 +36,11 @@ import {
     GUIDE_LINE_STROKE_WIDTH,
 } from '@/components/options/utils/chartStrokeWidths';
 import { findNearestStrikeIndex } from '@/domain/options/findNearestStrike';
+import {
+    ET_MARKET_HOURS_DISPLAY,
+    KST_EDT_HOURS_DISPLAY,
+    KST_EST_HOURS_DISPLAY,
+} from '@/components/options/utils/marketHoursDisplay';
 
 interface OpenInterestChartProps {
     /** Spot price used to anchor the current-price guide line. */
@@ -131,6 +136,14 @@ export function OpenInterestChart({
         const oiByStrike = aggregateOpenInterest(chain);
         if (oiByStrike.length === 0) return null;
 
+        // 모든 strike의 OI가 0이면 차트를 그려도 막대가 안 나오므로 빈
+        // 메시지 분기로 떨어뜨려 사용자에게 정규장 시간 안내를 보여준다.
+        const totalOi = oiByStrike.reduce(
+            (sum, s) => sum + s.callOpenInterest + s.putOpenInterest,
+            0
+        );
+        if (totalOi === 0) return null;
+
         const maxPain = metrics?.maxPain ?? null;
 
         const topOiSet = new Set<number>(
@@ -186,9 +199,18 @@ export function OpenInterestChart({
 
     if (!derived) {
         return (
-            <p className="text-secondary-500 py-4 text-sm">
-                이 만기에는 OI 데이터가 없어요.
-            </p>
+            <div className="border-secondary-700 bg-secondary-800 space-y-2 rounded-xl border p-4">
+                <p className="text-secondary-300 text-sm font-medium">
+                    이 만기에는 OI 데이터가 없어요.
+                </p>
+                <p className="text-secondary-500 text-xs leading-relaxed">
+                    미국 정규장 마감 후에는 Yahoo가 Open Interest를 갱신하지
+                    않아 비어 보일 수 있어요. 정확한 수치는 미국 정규장 시간(
+                    {ET_MARKET_HOURS_DISPLAY}, 평일, 한국 시간 EDT 기간{' '}
+                    {KST_EDT_HOURS_DISPLAY} / EST 기간 {KST_EST_HOURS_DISPLAY}
+                    )에 다시 확인해 주세요.
+                </p>
+            </div>
         );
     }
 

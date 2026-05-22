@@ -14,13 +14,14 @@
 import {
     etParts,
     getEtSessionStatus,
-    hasAllZeroOpenInterest,
+    isOpenInterestSnapshotStale,
     isUsOptionsRegularSession,
     lookupWeekday,
     MARKET_CLOSE_HOUR,
     MARKET_OPEN_HOUR,
     MARKET_OPEN_MINUTE,
     normalizeHour,
+    OI_STALE_FRACTION_THRESHOLD,
 } from '@/domain/market/session';
 import type {
     OptionsChain,
@@ -230,53 +231,69 @@ describe('isUsOptionsRegularSession — DST correctness', () => {
     });
 });
 
-describe('hasAllZeroOpenInterest', () => {
-    it('returns true when every call and put on every chain has OI = 0', () => {
-        const snapshot = makeSnapshot([
-            makeChain({
-                calls: [makeContract({ openInterest: 0 })],
-                puts: [makeContract({ openInterest: 0 })],
-            }),
-            makeChain({
-                calls: [makeContract({ openInterest: 0 })],
-                puts: [makeContract({ openInterest: 0 })],
-            }),
-        ]);
-        expect(hasAllZeroOpenInterest(snapshot)).toBe(true);
+describe('isOpenInterestSnapshotStale', () => {
+    // 헬퍼: openInterest=0 / >0 를 원하는 개수만큼 섞은 단일 chain snapshot 생성.
+    const buildSnapshotWith = (
+        zeroCount: number,
+        nonzeroCount: number
+    ): OptionsSnapshot => {
+        const calls: OptionsContract[] = [
+            ...Array.from({ length: zeroCount }, () =>
+                makeContract({ openInterest: 0 })
+            ),
+            ...Array.from({ length: nonzeroCount }, () =>
+                makeContract({ openInterest: 100 })
+            ),
+        ];
+        return makeSnapshot([makeChain({ calls, puts: [] })]);
+    };
+
+    it('returns true when zero-OI fraction equals the threshold boundary', () => {
+        // 임계값이 바뀌어도 boundary가 자동 추적되도록 source 상수에서 파생한다.
+        // total = 20 → zeros = ceil(20 * THRESHOLD) → 정확히 THRESHOLD 이상.
+        const total = 20;
+        const zeros = Math.ceil(total * OI_STALE_FRACTION_THRESHOLD);
+        const snapshot = buildSnapshotWith(zeros, total - zeros);
+        expect(isOpenInterestSnapshotStale(snapshot)).toBe(true);
     });
 
-    it('returns false when a single call contract has nonzero OI', () => {
+    it('returns false when zero-OI fraction is just below the threshold', () => {
+        // boundary 바로 아래 비율: (zeros - 1) / total < THRESHOLD.
+        const total = 20;
+        const zeros = Math.ceil(total * OI_STALE_FRACTION_THRESHOLD) - 1;
+        const snapshot = buildSnapshotWith(zeros, total - zeros);
+        expect(isOpenInterestSnapshotStale(snapshot)).toBe(false);
+    });
+
+    it('returns true when every contract has OI = 0 (regression guard for original semantics)', () => {
         const snapshot = makeSnapshot([
             makeChain({
                 calls: [
                     makeContract({ openInterest: 0 }),
-                    makeContract({ openInterest: 5 }),
+                    makeContract({ openInterest: 0 }),
                 ],
-                puts: [makeContract({ openInterest: 0 })],
-            }),
-        ]);
-        expect(hasAllZeroOpenInterest(snapshot)).toBe(false);
-    });
-
-    it('returns false when a single put contract has nonzero OI', () => {
-        const snapshot = makeSnapshot([
-            makeChain({
-                calls: [makeContract({ openInterest: 0 })],
                 puts: [
                     makeContract({ openInterest: 0 }),
-                    makeContract({ openInterest: 7 }),
+                    makeContract({ openInterest: 0 }),
                 ],
             }),
         ]);
-        expect(hasAllZeroOpenInterest(snapshot)).toBe(false);
+        expect(isOpenInterestSnapshotStale(snapshot)).toBe(true);
     });
 
-    it('returns true when chains is empty (vacuous truth of Array#every)', () => {
-        // 코너 케이스: snapshot.chains.every(...)는 빈 배열에서 true를 반환한다.
-        // 호출부(OptionsPageClient)는 정규장 외 시간과 AND로 묶고, snapshot이
-        // 비어 있는 응답 자체가 정상 데이터가 아니므로 영향이 제한적이다.
+    it('returns true when there are no contracts at all (vacuous)', () => {
+        // 코너 케이스: 빈 응답은 호출부(OptionsPageClient)가 정규장 외 시간과
+        // AND로 묶기 때문에 정규장이 아니면서 응답이 비어 있는 비정상 경로이고,
+        // 사용자에게 stale 안내를 보여주는 편이 안전하다.
         const snapshot = makeSnapshot([]);
-        expect(hasAllZeroOpenInterest(snapshot)).toBe(true);
+        expect(isOpenInterestSnapshotStale(snapshot)).toBe(true);
+    });
+
+    it('returns true for the realistic PLTR PRE-PRE case (~99% stale)', () => {
+        // 실측 PLTR PRE-PRE: 1252 contract 중 12개만 OI > 0 (즉 1240 zero).
+        // 1240 / 1252 ≈ 0.9904 → stale.
+        const snapshot = buildSnapshotWith(1240, 12);
+        expect(isOpenInterestSnapshotStale(snapshot)).toBe(true);
     });
 });
 

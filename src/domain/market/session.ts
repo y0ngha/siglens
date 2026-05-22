@@ -120,21 +120,32 @@ export function isUsOptionsRegularSession(now: Date): boolean {
 }
 
 /**
- * Yahoo Finance가 미국 정규장 외 시간(PRE-PRE / POST-POST)에 옵션 quote
- * 필드 — 특히 openInterest — 를 0으로 응답하는 시간대가 있다. 두 신호가
- * 동시에 성립할 때만 stale로 판정한다:
+ * 전체 contract 중 OI=0 비율이 이 임계값 이상이면 stale로 판정.
  *
- *   1. ET 기준 정규 거래시간(09:30~16:00 평일)이 아니다 — `isUsOptionsRegularSession`
- *      가 DST를 자동 보정해 EDT/EST 모두 정확히 판정.
- *   2. 모든 chain의 모든 strike OI가 0이다 — 진짜 stale data 시그널.
- *
- * 둘 다 만족할 때만 배너를 띄워, 정규장 중 일시적 0 응답이나 OI는 정상이지만
- * 정규장 외인 경우의 false positive를 막는다.
+ * 테스트에서 임계값 경계 케이스를 검증할 때 동일한 상수를 import해 사용해야
+ * 임계값 조정 시 테스트가 자동으로 따라온다 — 하드코딩 금지.
  */
-export function hasAllZeroOpenInterest(snapshot: OptionsSnapshot): boolean {
-    return snapshot.chains.every(
-        c =>
-            c.calls.every(x => x.openInterest === 0) &&
-            c.puts.every(x => x.openInterest === 0)
-    );
+export const OI_STALE_FRACTION_THRESHOLD = 0.95;
+
+/**
+ * Stale-quote 휴리스틱: 옵션 시장이 활성화된 종목인데도 전체 contract의 95%
+ * 이상이 OI=0인 경우 Yahoo의 정규장 외 quote 클리어 상태로 판정한다.
+ *
+ * "100% 모두 0"이 아닌 비율 임계값을 쓰는 이유: Yahoo는 PRE / PRE-PRE /
+ * POSTPOST 시간대에 대부분 contract의 quote(OI 포함)를 0/sentinel로
+ * 클리어하지만, 일부 deep ITM hedge LEAPS처럼 거래가 거의 없는
+ * contract는 마지막 EOD 값을 그대로 보존한다 (실측: PLTR PRE-PRE 1252개 중
+ * 12개만 OI > 0). 압도적 다수가 0이면 stale로 본다.
+ *
+ * 정규장 시간대에는 호출하지 말 것 — 활발히 거래되는 종목은 정규장에도
+ * deep OTM strike OI 0이 흔하므로 false positive 위험. 호출자
+ * (OptionsPageClient)에서 `isUsOptionsRegularSession`과 AND 조건으로 결합한다.
+ */
+export function isOpenInterestSnapshotStale(
+    snapshot: OptionsSnapshot
+): boolean {
+    const allContracts = snapshot.chains.flatMap(c => [...c.calls, ...c.puts]);
+    if (allContracts.length === 0) return true;
+    const zeroCount = allContracts.filter(c => c.openInterest === 0).length;
+    return zeroCount / allContracts.length >= OI_STALE_FRACTION_THRESHOLD;
 }

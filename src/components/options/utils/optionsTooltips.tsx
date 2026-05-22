@@ -95,12 +95,34 @@ export const PutOpenInterestTooltip = (
     </>
 );
 
-export const VolumeTooltip = (
+export const CallVolumeTooltip = (
     <>
-        <p>오늘 새로 체결된 옵션 계약 수예요.</p>
+        <p>오늘 새로 체결된 콜 옵션 계약 수예요.</p>
         <p>
-            OI(누적 베팅)와 Volume(오늘의 활동)을 함께 보면 시장이 어느 가격대로
-            새로 움직이고 있는지 짚어볼 수 있어요.
+            Call Vol이 많다 = 오늘 새로 콜에 베팅하는 사람이 많다 → 단기 강세
+            기대가 활발하다는 뜻이에요.
+        </p>
+        <p>
+            <strong>OI와 함께 읽기</strong>: Vol↑ + OI↑는 새 자금이 들어와
+            추세가 강해지는 신호, Vol↑ + OI↓는 기존 포지션을 청산하며 추세가
+            약해지는 신호, Vol이 적은데 OI가 두텁다면 자리잡은 베팅이 그대로
+            남아 있다는 의미예요.
+        </p>
+    </>
+);
+
+export const PutVolumeTooltip = (
+    <>
+        <p>오늘 새로 체결된 풋 옵션 계약 수예요.</p>
+        <p>
+            Put Vol이 많다 = 오늘 새로 하락 베팅이나 헷지가 늘었다 → 단기 위험
+            관리 수요가 강하다는 뜻이에요.
+        </p>
+        <p>
+            <strong>OI와 함께 읽기</strong>: Vol↑ + OI↑는 새 헷지/하락 베팅이
+            진짜 자금으로 들어오는 신호, Vol↑ + OI↓는 보유 포지션을 청산하는
+            (헷지 해제 등) 신호, Vol이 낮은데 OI가 두텁다면 기존 보호 포지션이
+            그대로 유지되고 있다는 의미예요.
         </p>
     </>
 );
