@@ -5,8 +5,10 @@ import type {
     EarningsReportComparisonSlot,
     EarningsReportPeriod,
 } from '@/domain/types';
+import { NEON_TRANSIENT_RETRY } from '@/infrastructure/db/isNeonTransientError';
 import { earningsReports } from '@/infrastructure/db/schema';
 import type { SiglensDatabase } from '@/infrastructure/db/types';
+import { withRetry } from '@/lib/withRetry';
 
 export interface EarningsReportUpsertInput {
     symbol: string;
@@ -26,21 +28,28 @@ export class DrizzleEarningsReportsRepository {
         const uniqueReports = dedupeEarningsReportInputs(reports);
         if (uniqueReports.length === 0) return;
 
-        await this.db
-            .insert(earningsReports)
-            .values(uniqueReports.map(toInsertRow))
-            .onConflictDoUpdate({
-                target: [earningsReports.symbol, earningsReports.earningsDate],
-                set: {
-                    epsActual: sql`excluded.eps_actual`,
-                    epsEstimated: sql`excluded.eps_estimated`,
-                    revenueActual: sql`excluded.revenue_actual`,
-                    revenueEstimated: sql`excluded.revenue_estimated`,
-                    lastUpdated: sql`excluded.last_updated`,
-                    rawPayload: sql`excluded.raw_payload`,
-                    fetchedAt: sql`excluded.fetched_at`,
-                },
-            });
+        await withRetry(
+            () =>
+                this.db
+                    .insert(earningsReports)
+                    .values(uniqueReports.map(toInsertRow))
+                    .onConflictDoUpdate({
+                        target: [
+                            earningsReports.symbol,
+                            earningsReports.earningsDate,
+                        ],
+                        set: {
+                            epsActual: sql`excluded.eps_actual`,
+                            epsEstimated: sql`excluded.eps_estimated`,
+                            revenueActual: sql`excluded.revenue_actual`,
+                            revenueEstimated: sql`excluded.revenue_estimated`,
+                            lastUpdated: sql`excluded.last_updated`,
+                            rawPayload: sql`excluded.raw_payload`,
+                            fetchedAt: sql`excluded.fetched_at`,
+                        },
+                    }),
+            NEON_TRANSIENT_RETRY
+        );
     }
 
     /** Next upcoming (or same-day) earnings entry for `symbol` on/after `fromDate` (ISO date) where no actual values have been reported yet; `null` when none. */

@@ -5,6 +5,12 @@ import {
     type NewsRow,
 } from '@/infrastructure/db/newsRepository';
 
+// withRetry 내부 sleep을 즉시 resolve로 stubbing해서 retry 케이스의 실제
+// 대기 시간을 없앤다. retry 발생 시 sleep이 호출되는 것만 검증.
+jest.mock('@/lib/sleep', () => ({
+    sleep: jest.fn().mockResolvedValue(undefined),
+}));
+
 const baseItem: NewsItem = {
     id: 'abc123',
     symbol: 'AAPL',
@@ -116,6 +122,55 @@ describe('DrizzleNewsRepository', () => {
                 set: Record<string, unknown>;
             };
             expect(conflictArg.set).toHaveProperty('publishedAt');
+        });
+
+        it('Neon transient 에러 발생 시 재시도해 결국 성공한다', async () => {
+            // 첫 chain은 onConflictDoUpdate에서 transient NeonDbError를 던지고,
+            // 두 번째 chain은 성공해야 retry 정책이 의도대로 동작함을 보장한다.
+            const neonTransient = Object.assign(
+                new Error('Error connecting to database: fetch failed'),
+                { name: 'NeonDbError' }
+            );
+            const onConflictDoUpdate = jest
+                .fn()
+                .mockRejectedValueOnce(neonTransient)
+                .mockResolvedValueOnce(undefined);
+            const values = jest.fn(() => ({ onConflictDoUpdate }));
+            const insert = jest.fn(() => ({ values }));
+            const db = { insert } as unknown as SiglensDatabase;
+
+            const repo = new DrizzleNewsRepository(db);
+            await expect(
+                repo.upsertNewsItem(baseItem)
+            ).resolves.toBeUndefined();
+
+            // insert chain이 두 번 재구성됐는지 확인 — 동일 promise를 await 한 것이 아니라
+            // 매 retry마다 새 query builder를 만들고 있다는 증거.
+            expect(insert).toHaveBeenCalledTimes(2);
+            expect(onConflictDoUpdate).toHaveBeenCalledTimes(2);
+        });
+
+        it('non-transient 에러는 재시도 없이 즉시 전파한다', async () => {
+            // Constraint 위반 같은 영구 에러는 retry 해도 동일하게 실패할 뿐이므로
+            // 첫 시도에서 즉시 throw 되어야 한다.
+            const constraintError = Object.assign(
+                new Error(
+                    'duplicate key value violates unique constraint "news_pkey"'
+                ),
+                { name: 'NeonDbError' }
+            );
+            const onConflictDoUpdate = jest
+                .fn()
+                .mockRejectedValueOnce(constraintError);
+            const values = jest.fn(() => ({ onConflictDoUpdate }));
+            const insert = jest.fn(() => ({ values }));
+            const db = { insert } as unknown as SiglensDatabase;
+
+            const repo = new DrizzleNewsRepository(db);
+            await expect(repo.upsertNewsItem(baseItem)).rejects.toBe(
+                constraintError
+            );
+            expect(insert).toHaveBeenCalledTimes(1);
         });
     });
 

@@ -1,5 +1,6 @@
 import type { KoreanTickerEntry } from '@/domain/types';
 import { eq, inArray, sql } from 'drizzle-orm';
+import { NEON_TRANSIENT_RETRY } from '@/infrastructure/db/isNeonTransientError';
 import {
     assetTranslations,
     koreanTickers,
@@ -13,6 +14,7 @@ import type {
     ProfileDescriptionTranslationRecord,
     ProfileDescriptionTranslationRepository,
 } from '@/infrastructure/db/types';
+import { withRetry } from '@/lib/withRetry';
 
 const koreanTickerColumns = {
     symbol: koreanTickers.symbol,
@@ -61,24 +63,28 @@ export class DrizzleKoreanTickerRepository implements KoreanTickerRepository {
     async upsertMany(entries: readonly KoreanTickerEntry[]): Promise<void> {
         if (entries.length === 0) return;
 
-        await this.db
-            .insert(koreanTickers)
-            .values(entries.map(toKoreanTickerRow))
-            .onConflictDoUpdate({
-                target: koreanTickers.symbol,
-                // Drizzle's onConflictDoUpdate does not trigger schema-level
-                // $onUpdateFn hooks; set updated_at explicitly. We use sql`now()`
-                // (DB-server clock) rather than new Date() (app-server clock) so
-                // timestamps stay monotonic across concurrent app instances
-                // writing to the same row.
-                set: {
-                    name: sql`excluded.name`,
-                    koreanName: sql`excluded.korean_name`,
-                    exchange: sql`excluded.exchange`,
-                    exchangeFullName: sql`excluded.exchange_full_name`,
-                    updatedAt: sql`now()`,
-                },
-            });
+        await withRetry(
+            () =>
+                this.db
+                    .insert(koreanTickers)
+                    .values(entries.map(toKoreanTickerRow))
+                    .onConflictDoUpdate({
+                        target: koreanTickers.symbol,
+                        // Drizzle's onConflictDoUpdate does not trigger schema-level
+                        // $onUpdateFn hooks; set updated_at explicitly. We use sql`now()`
+                        // (DB-server clock) rather than new Date() (app-server clock) so
+                        // timestamps stay monotonic across concurrent app instances
+                        // writing to the same row.
+                        set: {
+                            name: sql`excluded.name`,
+                            koreanName: sql`excluded.korean_name`,
+                            exchange: sql`excluded.exchange`,
+                            exchangeFullName: sql`excluded.exchange_full_name`,
+                            updatedAt: sql`now()`,
+                        },
+                    }),
+            NEON_TRANSIENT_RETRY
+        );
     }
 }
 
@@ -102,23 +108,27 @@ export class DrizzleAssetTranslationRepository implements AssetTranslationReposi
     }
 
     async upsert(record: AssetTranslationRecord): Promise<void> {
-        await this.db
-            .insert(assetTranslations)
-            .values(record)
-            .onConflictDoUpdate({
-                target: assetTranslations.symbol,
-                // Drizzle's onConflictDoUpdate does not trigger schema-level
-                // $onUpdateFn hooks; set updated_at explicitly. We use sql`now()`
-                // (DB-server clock) rather than new Date() (app-server clock) so
-                // timestamps stay monotonic across concurrent app instances
-                // writing to the same row.
-                set: {
-                    name: sql`excluded.name`,
-                    koreanName: sql`excluded.korean_name`,
-                    fmpSymbol: sql`excluded.fmp_symbol`,
-                    updatedAt: sql`now()`,
-                },
-            });
+        await withRetry(
+            () =>
+                this.db
+                    .insert(assetTranslations)
+                    .values(record)
+                    .onConflictDoUpdate({
+                        target: assetTranslations.symbol,
+                        // Drizzle's onConflictDoUpdate does not trigger schema-level
+                        // $onUpdateFn hooks; set updated_at explicitly. We use sql`now()`
+                        // (DB-server clock) rather than new Date() (app-server clock) so
+                        // timestamps stay monotonic across concurrent app instances
+                        // writing to the same row.
+                        set: {
+                            name: sql`excluded.name`,
+                            koreanName: sql`excluded.korean_name`,
+                            fmpSymbol: sql`excluded.fmp_symbol`,
+                            updatedAt: sql`now()`,
+                        },
+                    }),
+            NEON_TRANSIENT_RETRY
+        );
     }
 }
 
@@ -147,16 +157,20 @@ export class DrizzleProfileDescriptionTranslationRepository implements ProfileDe
     }
 
     async upsert(record: ProfileDescriptionTranslationRecord): Promise<void> {
-        await this.db
-            .insert(profileDescriptionTranslations)
-            .values(record)
-            .onConflictDoUpdate({
-                target: profileDescriptionTranslations.symbol,
-                set: {
-                    descriptionKo: sql`excluded.description_ko`,
-                    updatedAt: sql`now()`,
-                },
-            });
+        await withRetry(
+            () =>
+                this.db
+                    .insert(profileDescriptionTranslations)
+                    .values(record)
+                    .onConflictDoUpdate({
+                        target: profileDescriptionTranslations.symbol,
+                        set: {
+                            descriptionKo: sql`excluded.description_ko`,
+                            updatedAt: sql`now()`,
+                        },
+                    }),
+            NEON_TRANSIENT_RETRY
+        );
     }
 }
 
