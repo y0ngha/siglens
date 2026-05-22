@@ -2,6 +2,7 @@ import { submitOverallAnalysisAction } from '@/infrastructure/market/submitOvera
 import {
     submitOverallAnalysis,
     type ModelId,
+    type OptionsSnapshot,
     type SubmitOverallAnalysisResult,
     type EnrichedNewsItem,
     type EarningsCalendarItem,
@@ -15,8 +16,11 @@ jest.mock('@vercel/functions', () => ({
     waitUntil: jest.fn(),
 }));
 
+// 워크트리에 sync된 siglens-core dist는 tsc-alias 미적용 상태라 `requireActual`로
+// 실 모듈을 로드하면 unresolved `@/...` import에서 실패한다. 이 테스트가 실제로
+// 호출하는 export는 `submitOverallAnalysis` 하나뿐이므로 mock surface를 명시적으로
+// 좁힌다.
 jest.mock('@y0ngha/siglens-core', () => ({
-    ...jest.requireActual('@y0ngha/siglens-core'),
     submitOverallAnalysis: jest.fn(),
 }));
 
@@ -50,11 +54,25 @@ jest.mock('@/infrastructure/market/byokGate', () => ({
     })),
 }));
 
+jest.mock('@/infrastructure/options/optionsDataCache', () => ({
+    fetchOptionsSnapshot: jest.fn(),
+}));
+
+jest.mock('@/domain/market/session', () => ({
+    isUsOptionsRegularSession: jest.fn(),
+    isOpenInterestSnapshotStale: jest.fn(),
+}));
+
 import { headers } from 'next/headers';
 import { DrizzleNewsRepository } from '@/infrastructure/db/newsRepository';
 import { getNextEarningsReport } from '@/infrastructure/market/nextEarningsReport';
 import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
 import { resolveTierAndByok } from '@/infrastructure/market/byokGate';
+import { fetchOptionsSnapshot } from '@/infrastructure/options/optionsDataCache';
+import {
+    isUsOptionsRegularSession,
+    isOpenInterestSnapshotStale,
+} from '@/domain/market/session';
 import type { AnalysisGateError } from '@/domain/types';
 
 const mockHeaders = headers as jest.MockedFunction<typeof headers>;
@@ -74,6 +92,25 @@ const mockGetCurrentUser = getCurrentUser as jest.MockedFunction<
 const mockResolveTierAndByok = resolveTierAndByok as jest.MockedFunction<
     typeof resolveTierAndByok
 >;
+const mockFetchSnapshot = fetchOptionsSnapshot as jest.MockedFunction<
+    typeof fetchOptionsSnapshot
+>;
+const mockIsRegularSession =
+    isUsOptionsRegularSession as jest.MockedFunction<
+        typeof isUsOptionsRegularSession
+    >;
+const mockIsOiStale = isOpenInterestSnapshotStale as jest.MockedFunction<
+    typeof isOpenInterestSnapshotStale
+>;
+
+function makeSnapshot(): OptionsSnapshot {
+    return {
+        symbol: 'AAPL',
+        underlyingPrice: 150,
+        capturedAt: '2026-05-22T13:30:00Z',
+        chains: [],
+    };
+}
 
 const ANALYZED_ROW = {
     id: 'abc123',
@@ -134,6 +171,9 @@ describe('submitOverallAnalysisAction 함수는', () => {
         mockResolveTierAndByok.mockReset();
         MockNewsRepository.mockClear();
         mockGetNextEarningsReport.mockReset();
+        mockFetchSnapshot.mockReset();
+        mockIsRegularSession.mockReset();
+        mockIsOiStale.mockReset();
 
         mockListBySymbol = jest.fn().mockResolvedValue([]);
         mockGetNextEarningsReport.mockResolvedValue(null);
@@ -147,6 +187,11 @@ describe('submitOverallAnalysisAction 함수는', () => {
             kind: 'allowed',
             tier: 'free' as never,
         });
+        // 기본값: 옵션 스냅샷 없음 + 정규장 외 + stale false 처리.
+        // 옵션 axis 통합 전 기존 케이스가 영향받지 않도록 안전한 디폴트.
+        mockFetchSnapshot.mockResolvedValue(null);
+        mockIsRegularSession.mockReturnValue(false);
+        mockIsOiStale.mockReturnValue(false);
         mockSubmitOverallAnalysis.mockResolvedValue(SUBMITTED_RESULT);
     });
 
@@ -396,5 +441,86 @@ describe('submitOverallAnalysisAction 함수는', () => {
         expect(mockSubmitOverallAnalysis).toHaveBeenCalledWith(
             expect.objectContaining({ skipEnqueueIfMiss: false })
         );
+    });
+
+    describe('options axis integration', () => {
+        it('passes optionsSnapshot + optionsOiStale to core', async () => {
+            mockFetchSnapshot.mockResolvedValueOnce(makeSnapshot());
+            mockIsRegularSession.mockReturnValueOnce(false);
+            mockIsOiStale.mockReturnValueOnce(true);
+
+            await submitOverallAnalysisAction(
+                'AAPL',
+                'Apple Inc.',
+                '1Day',
+                MODEL_ID
+            );
+
+            expect(mockSubmitOverallAnalysis).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    optionsSnapshot: expect.any(Object),
+                    optionsOiStale: true,
+                })
+            );
+        });
+
+        it('passes optionsSnapshot=undefined for NoChains symbols', async () => {
+            mockFetchSnapshot.mockResolvedValueOnce(null);
+
+            await submitOverallAnalysisAction(
+                'SPXUSD',
+                'S&P',
+                '1Day',
+                MODEL_ID
+            );
+
+            expect(mockSubmitOverallAnalysis).toHaveBeenCalledWith(
+                expect.objectContaining({ optionsSnapshot: undefined })
+            );
+        });
+
+        it('forwards force=true through to core', async () => {
+            await submitOverallAnalysisAction(
+                'AAPL',
+                'Apple Inc.',
+                '1Day',
+                MODEL_ID,
+                { force: true }
+            );
+
+            expect(mockSubmitOverallAnalysis).toHaveBeenCalledWith(
+                expect.objectContaining({ force: true })
+            );
+        });
+
+        it('does not force when called without options arg', async () => {
+            await submitOverallAnalysisAction(
+                'AAPL',
+                'Apple Inc.',
+                '1Day',
+                MODEL_ID
+            );
+
+            expect(mockSubmitOverallAnalysis).toHaveBeenCalledWith(
+                expect.not.objectContaining({ force: true })
+            );
+        });
+
+        it('passes optionsOiStale=false during regular session even if snapshot stale', async () => {
+            mockFetchSnapshot.mockResolvedValueOnce(makeSnapshot());
+            mockIsRegularSession.mockReturnValueOnce(true);
+            mockIsOiStale.mockReturnValueOnce(true);
+
+            await submitOverallAnalysisAction(
+                'AAPL',
+                'Apple Inc.',
+                '1Day',
+                MODEL_ID
+            );
+
+            expect(mockSubmitOverallAnalysis).toHaveBeenCalledWith(
+                expect.objectContaining({ optionsOiStale: false })
+            );
+        });
     });
 });

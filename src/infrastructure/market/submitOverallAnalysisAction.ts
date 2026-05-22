@@ -24,6 +24,11 @@ import {
     buildGateError,
 } from '@/infrastructure/market/byokGate';
 import { isBot } from '@/infrastructure/http/isBot';
+import { fetchOptionsSnapshot } from '@/infrastructure/options/optionsDataCache';
+import {
+    isOpenInterestSnapshotStale,
+    isUsOptionsRegularSession,
+} from '@/domain/market/session';
 import type { AnalysisGateBlockedResult } from '@/domain/types';
 
 /** Final return type — core's overall result + our siglens-side gate errors. */
@@ -31,12 +36,21 @@ export type SubmitOverallAnalysisActionResult =
     | SubmitOverallAnalysisResult
     | AnalysisGateBlockedResult;
 
-/** Server Action: tier + BYOK gate, then submit a 3-axis overall analysis job; loads enriched news + earnings from DB, injects FMP provider; returns `cached | submitted | pending_dependencies | error`. */
+/**
+ * 재분석(force) 같이 axis 일반 인자가 아니라 호출자 의도를 전달하기 위한 옵션.
+ * 현재는 `force` 하나만 있지만 향후 확장 가능하도록 객체로 받는다.
+ */
+export interface SubmitOverallAnalysisActionOptions {
+    force?: boolean;
+}
+
+/** Server Action: tier + BYOK gate, then submit a 4-axis overall analysis job; loads enriched news + earnings from DB, options snapshot, injects FMP provider; returns `cached | submitted | pending_dependencies | error`. */
 export async function submitOverallAnalysisAction(
     symbol: string,
     companyName: string,
     timeframe: Timeframe,
-    modelId: SubmitOverallAnalysisOptions['modelId']
+    modelId: SubmitOverallAnalysisOptions['modelId'],
+    options: SubmitOverallAnalysisActionOptions = {}
 ): Promise<SubmitOverallAnalysisActionResult> {
     try {
         const requestHeaders = await headers();
@@ -62,6 +76,25 @@ export async function submitOverallAnalysisAction(
             .filter(isEnrichedRow)
             .map(toEnrichedNewsItem);
 
+        // 옵션 스냅샷 조회 실패는 4번째 axis가 graceful skip되는 시나리오로 처리한다.
+        // NoChains 종목(SPXUSD 등) 또는 Yahoo 일시 장애에도 overall 분석은 진행돼야 한다.
+        const optionsSnapshot = await fetchOptionsSnapshot(symbol).catch(
+            error => {
+                console.warn(
+                    '[submitOverallAnalysisAction] options snapshot fetch failed:',
+                    error
+                );
+                return null;
+            }
+        );
+
+        // 정규장 시간대에는 OI=0 비율이 높아도 stale로 보지 않는다 — deep OTM strike
+        // OI 0이 흔하므로 false positive 위험. 정규장 외에서만 stale 휴리스틱 적용.
+        const optionsOiStale =
+            optionsSnapshot !== null &&
+            !isUsOptionsRegularSession(new Date()) &&
+            isOpenInterestSnapshotStale(optionsSnapshot);
+
         return await submitOverallAnalysis({
             symbol,
             companyName,
@@ -74,9 +107,12 @@ export async function submitOverallAnalysisAction(
             waitUntil,
             tier: gate.tier,
             skipEnqueueIfMiss,
+            optionsSnapshot: optionsSnapshot ?? undefined,
+            optionsOiStale,
             ...(gate.userApiKey !== undefined
                 ? { userApiKey: gate.userApiKey }
                 : {}),
+            ...(options.force ? { force: true } : {}),
         });
     } catch (err) {
         console.error('[submitOverallAnalysisAction] unexpected error:', err);
