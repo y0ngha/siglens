@@ -1,6 +1,12 @@
 'use client';
 
-import { useMemo } from 'react';
+import {
+    useMemo,
+    useRef,
+    useState,
+    type CSSProperties,
+    type PointerEvent,
+} from 'react';
 import {
     type OptionsChain,
     type OptionsExpirationMetrics,
@@ -8,6 +14,12 @@ import {
 } from '@y0ngha/siglens-core';
 import { InfoTooltip } from '@/components/ui/InfoTooltip';
 import { OpenInterestTooltip } from '@/components/options/utils/optionsTooltips';
+import {
+    computeTooltipPos,
+    TOOLTIP_ELEMENT_ID,
+    TOOLTIP_MIN_WIDTH_PX,
+    type TooltipPosition,
+} from '@/components/options/utils/computeTooltipPos';
 import { findNearestStrikeIndex } from '@/domain/options/findNearestStrike';
 
 interface OpenInterestChartProps {
@@ -122,6 +134,14 @@ export function OpenInterestChart({
     chain,
     metrics,
 }: OpenInterestChartProps) {
+    const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+    const [tooltipPos, setTooltipPos] = useState<TooltipPosition | null>(null);
+    const containerRef = useRef<HTMLDivElement | null>(null);
+    // 컨테이너 DOMRect 캐시. pointerEnter 시 한 번 측정해 두고 pointerMove에서
+    // 재사용한다 — move마다 `getBoundingClientRect`를 부르면 reflow를 매번
+    // 트리거해 마우스가 빠르게 움직일 때 frame drop을 유발한다.
+    const cachedRectRef = useRef<DOMRect | null>(null);
+
     const derived = useMemo(() => {
         if (!chain) return null;
         const oiByStrike = aggregateOpenInterest(chain);
@@ -184,6 +204,14 @@ export function OpenInterestChart({
     const sw = slotWidth(count);
     const bw = sw * BAR_WIDTH_FILL_RATIO;
 
+    // hoveredIndex 가드: oiByStrike가 chip 전환으로 짧아지는 사이에 hover state
+    // 가 stale이 되면 `oiByStrike[hoveredIndex]`가 undefined가 될 수 있다.
+    // `??`로 정규화해 "배열 범위 초과 → null" 의도를 명시(`||`의 암묵적 falsy
+    // 처리에 의존하지 않음 — row 객체는 항상 truthy라 의미 차이는 없지만
+    // 표현이 더 정확하다).
+    const hoveredRow =
+        hoveredIndex !== null ? (oiByStrike[hoveredIndex] ?? null) : null;
+
     const maxPainX = maxPainIdx >= 0 ? barCenterX(maxPainIdx, count) : null;
     const currentPriceX =
         currentPriceIdx >= 0 ? barCenterX(currentPriceIdx, count) : null;
@@ -192,8 +220,50 @@ export function OpenInterestChart({
     const rotateLabels = labelIndices.size > LABEL_ROTATION_THRESHOLD;
     const peakOiLabel = fmtOi(globalMax);
 
+    const handlePointerEnter = (
+        event: PointerEvent<SVGRectElement>,
+        index: number
+    ): void => {
+        const container = containerRef.current;
+        if (!container) return;
+        const rect = container.getBoundingClientRect();
+        cachedRectRef.current = rect;
+        setHoveredIndex(index);
+        setTooltipPos(computeTooltipPos(event, rect));
+    };
+
+    const handlePointerMove = (
+        event: PointerEvent<SVGRectElement>,
+        index: number
+    ): void => {
+        const rect = cachedRectRef.current;
+        // enter 핸들러가 캐시를 채우기 전에 move가 발사되는 경로(예: 모바일
+        // touchmove)에서는 한 번 측정해 즉시 캐시한다 — 이후 move부터는
+        // 캐시된 rect만 사용해 reflow 비용 없음.
+        if (rect === null) {
+            const container = containerRef.current;
+            if (!container) return;
+            const measured = container.getBoundingClientRect();
+            cachedRectRef.current = measured;
+            setHoveredIndex(index);
+            setTooltipPos(computeTooltipPos(event, measured));
+            return;
+        }
+        if (hoveredIndex !== index) setHoveredIndex(index);
+        setTooltipPos(computeTooltipPos(event, rect));
+    };
+
+    const handlePointerLeave = (): void => {
+        cachedRectRef.current = null;
+        setHoveredIndex(null);
+        setTooltipPos(null);
+    };
+
     return (
-        <div className="border-secondary-700 bg-secondary-800 space-y-2 rounded-xl border p-4">
+        <div
+            ref={containerRef}
+            className="border-secondary-700 bg-secondary-800 relative space-y-2 rounded-xl border p-4"
+        >
             <div className="flex items-center gap-1">
                 <span className="text-secondary-300 text-sm font-medium">
                     Open Interest 분포 (Strike별)
@@ -263,15 +333,6 @@ export function OpenInterestChart({
                         globalMax
                     );
                     const putH = barPixelHeight(row.putOpenInterest, globalMax);
-                    const totalOi = row.callOpenInterest + row.putOpenInterest;
-                    // 슬롯 전체 너비의 투명 hit-rect를 깔아 막대 사이 빈 공간도
-                    // hover 가능하게 한다(특히 OI가 한쪽만 있는 strike).
-                    const tooltipText = [
-                        `Strike $${row.strike.toLocaleString()}`,
-                        `Call OI ${row.callOpenInterest.toLocaleString()} 계약`,
-                        `Put OI ${row.putOpenInterest.toLocaleString()} 계약`,
-                        `합계 ${totalOi.toLocaleString()} 계약`,
-                    ].join('\n');
 
                     return (
                         <g key={row.strike}>
@@ -300,11 +361,14 @@ export function OpenInterestChart({
                                 y={PAD_TOP}
                                 width={sw}
                                 height={CHART_HEIGHT}
-                                fill="transparent"
+                                fill="white"
+                                fillOpacity={0}
                                 pointerEvents="all"
-                            >
-                                <title>{tooltipText}</title>
-                            </rect>
+                                aria-describedby={TOOLTIP_ELEMENT_ID}
+                                onPointerEnter={e => handlePointerEnter(e, i)}
+                                onPointerMove={e => handlePointerMove(e, i)}
+                                onPointerLeave={handlePointerLeave}
+                            />
                         </g>
                     );
                 })}
@@ -368,6 +432,61 @@ export function OpenInterestChart({
                     );
                 })}
             </svg>
+
+            {/* `aria-describedby`가 가리키는 대상은 항상 DOM에 있어야 한다.
+                `hidden` 속성으로 숨기면 접근성 트리에서도 제거되어 screen
+                reader가 참조를 따라올 수 없지만, 하단 `sr-only` 테이블이
+                전체 OI 데이터를 제공하므로 이 pointer-only tooltip에서는
+                허용 가능한 트레이드오프다. */}
+            <div
+                id={TOOLTIP_ELEMENT_ID}
+                role="tooltip"
+                hidden={hoveredRow === null || tooltipPos === null}
+                className="border-secondary-600 bg-secondary-900/95 text-secondary-100 pointer-events-none absolute top-[var(--tooltip-y)] left-[var(--tooltip-x)] z-10 min-w-[var(--tooltip-min-w)] -translate-x-1/2 -translate-y-full rounded-md border px-3 py-2 text-xs shadow-lg backdrop-blur"
+                style={
+                    // CSS 커스텀 프로퍼티(--*)는 런타임에 유효하나 React의
+                    // CSSProperties 타입은 임의 `--*` 키를 포함하지 않아
+                    // 인덱스 시그니처가 막힘 — TS 한계 우회용 cast이며
+                    // 런타임 리스크는 없다.
+                    {
+                        '--tooltip-x': `${tooltipPos?.x ?? 0}px`,
+                        '--tooltip-y': `${tooltipPos?.y ?? 0}px`,
+                        '--tooltip-min-w': `${TOOLTIP_MIN_WIDTH_PX}px`,
+                    } as CSSProperties
+                }
+            >
+                {hoveredRow !== null && (
+                    <>
+                        <div className="text-secondary-300 mb-1 font-semibold tabular-nums">
+                            Strike ${hoveredRow.strike.toLocaleString()}
+                        </div>
+                        <div className="flex items-center justify-between gap-3">
+                            <span className="text-chart-bullish">Call OI</span>
+                            <span className="tabular-nums">
+                                {hoveredRow.callOpenInterest.toLocaleString()}{' '}
+                                계약
+                            </span>
+                        </div>
+                        <div className="flex items-center justify-between gap-3">
+                            <span className="text-chart-bearish">Put OI</span>
+                            <span className="tabular-nums">
+                                {hoveredRow.putOpenInterest.toLocaleString()}{' '}
+                                계약
+                            </span>
+                        </div>
+                        <div className="border-secondary-700 mt-1 flex items-center justify-between gap-3 border-t pt-1">
+                            <span className="text-secondary-400">합계</span>
+                            <span className="font-semibold tabular-nums">
+                                {(
+                                    hoveredRow.callOpenInterest +
+                                    hoveredRow.putOpenInterest
+                                ).toLocaleString()}{' '}
+                                계약
+                            </span>
+                        </div>
+                    </>
+                )}
+            </div>
 
             <div className="text-secondary-500 mt-2 flex flex-wrap items-center gap-3 text-[10px]">
                 <span className="flex items-center gap-1">
