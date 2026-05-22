@@ -793,14 +793,20 @@ export function AnalysisPanel({
         };
     }, []);
 
+    // stale 여부는 render 시점에만 평가한다 — 인터벌 타이머를 두지 않으므로
+    // 사용자 인터랙션 / 신규 분석 / 라우트 변경 등으로 다음 render가 일어나야
+    // 배너가 갱신된다. 로딩 상태(isAnalyzing/showProgress)에서는 곧 새 분석으로
+    // 교체되므로 stale 배너를 노출하지 않는다.
     const showStaleBanner =
+        !isAnalyzing &&
+        !showProgress &&
         analysis.analyzedAt !== undefined &&
         onReanalyze !== undefined &&
         isAnalysisStale(analysis.analyzedAt, timeframe);
 
     return (
         <div className="bg-secondary-800 relative flex flex-col gap-4 rounded-lg p-4">
-            {showStaleBanner && onReanalyze !== undefined && (
+            {showStaleBanner && (
                 <StaleAnalysisBanner
                     onReanalyze={onReanalyze}
                     reanalyzeCooldownMs={reanalyzeCooldownMs ?? 0}
