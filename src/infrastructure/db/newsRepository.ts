@@ -10,7 +10,7 @@ import { NEON_TRANSIENT_RETRY } from '@/infrastructure/db/isNeonTransientError';
 import { news } from '@/infrastructure/db/schema';
 import type { SiglensDatabase } from '@/infrastructure/db/types';
 import type { NewsDisplayItem } from '@/domain/types';
-import { withRetry } from '@/lib/withRetry';
+import { withRetry } from '@/infrastructure/utils/withRetry';
 
 /** Domain-level row returned from the `news` table; extends the display projection with persistence-only fields. */
 export interface NewsRow extends NewsDisplayItem {

@@ -2,7 +2,7 @@ import type { TermsKind } from '@/infrastructure/db/constants';
 import { NEON_TRANSIENT_RETRY } from '@/infrastructure/db/isNeonTransientError';
 import { terms } from '@/infrastructure/db/schema';
 import type { SiglensDatabase } from '@/infrastructure/db/types';
-import { withRetry } from '@/lib/withRetry';
+import { withRetry } from '@/infrastructure/utils/withRetry';
 import { and, desc, eq, lte, sql } from 'drizzle-orm';
 
 /** Public-facing record returned by the repository. */

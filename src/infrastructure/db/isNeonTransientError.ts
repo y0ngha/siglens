@@ -1,5 +1,5 @@
 import { NeonDbError } from '@neondatabase/serverless';
-import type { WithRetryOptions } from '@/lib/withRetry';
+import type { WithRetryOptions } from '@/infrastructure/utils/withRetry';
 
 /**
  * Substrings that indicate a Neon HTTP driver connection / network failure
@@ -71,10 +71,7 @@ export function isNeonTransientError(error: unknown): boolean {
  * Import this constant from every `*Repository.upsert*` site so the retry
  * behavior stays uniform across repositories.
  */
-export const NEON_TRANSIENT_RETRY: Pick<
-    WithRetryOptions,
-    'maxRetries' | 'baseDelayMs' | 'isRetryable'
-> = {
+export const NEON_TRANSIENT_RETRY: WithRetryOptions = {
     maxRetries: 3,
     baseDelayMs: 200,
     isRetryable: isNeonTransientError,

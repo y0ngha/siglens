@@ -7,8 +7,8 @@ import { sleep } from '@/lib/sleep';
  * total number of `fn` invocations is `maxRetries + 1`.
  *
  * Backoff schedule (proportional jitter):
- *   attempt 0 fails → wait `baseDelayMs * 2^0 + random(0, baseDelayMs)`
- *   attempt 1 fails → wait `baseDelayMs * 2^1 + random(0, baseDelayMs)`
+ *   attempt 0 fails → wait `baseDelayMs * 2^0 + random(0, baseDelayMs * 2^0)`
+ *   attempt 1 fails → wait `baseDelayMs * 2^1 + random(0, baseDelayMs * 2^1)`
  *   …
  * Jitter prevents synchronized retry storms when many concurrent callers fail
  * against the same upstream.
@@ -47,7 +47,7 @@ export async function withRetry<T>(
                 throw error;
             }
             const exponential = baseDelayMs * 2 ** attempt;
-            const jitter = Math.random() * baseDelayMs;
+            const jitter = Math.random() * exponential;
             await sleep(exponential + jitter);
         }
     }

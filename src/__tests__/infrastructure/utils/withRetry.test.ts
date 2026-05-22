@@ -1,12 +1,12 @@
-import { withRetry } from '@/lib/withRetry';
-
 // `sleep` is the only true side effect inside withRetry. Stubbing it lets each
 // test run synchronously and lets us assert on delay schedules without burning
-// real wall-clock time.
+// real wall-clock time. `jest.mock` is hoisted to the top of the file so it
+// runs before the static imports below (required by `import/first`).
 jest.mock('@/lib/sleep', () => ({
     sleep: jest.fn().mockResolvedValue(undefined),
 }));
 
+import { withRetry } from '@/infrastructure/utils/withRetry';
 import { sleep } from '@/lib/sleep';
 
 const sleepMock = sleep as jest.MockedFunction<typeof sleep>;
@@ -107,8 +107,8 @@ describe('withRetry', () => {
         expect(sleepMock).toHaveBeenNthCalledWith(3, 800);
     });
 
-    it('jitter는 base 의 [0, base) 범위에서 더해진다', async () => {
-        // Math.random=0.5 ⇒ jitter = baseDelayMs * 0.5 = 100ms.
+    it('jitter는 exponential 의 [0, exponential) 범위에서 더해진다', async () => {
+        // Math.random=0.5 ⇒ jitter = exponential * 0.5 = 200 * 0.5 = 100ms.
         (Math.random as jest.Mock).mockReturnValue(0.5);
 
         const fn = jest

@@ -18,7 +18,7 @@ import type {
     UserRepository,
     UserTierRepository,
 } from '@/infrastructure/db/types';
-import { withRetry } from '@/lib/withRetry';
+import { withRetry } from '@/infrastructure/utils/withRetry';
 
 function encryptOptional(
     token: string | undefined,

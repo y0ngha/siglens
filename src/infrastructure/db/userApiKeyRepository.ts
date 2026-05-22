@@ -14,7 +14,7 @@ import type {
     UserApiKeyRecord,
     UserApiKeyRepository,
 } from '@/infrastructure/db/types';
-import { withRetry } from '@/lib/withRetry';
+import { withRetry } from '@/infrastructure/utils/withRetry';
 
 /**
  * Thrown when a stored ciphertext exists but cannot be decrypted with the

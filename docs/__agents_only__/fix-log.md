@@ -388,3 +388,15 @@
 - Violation: `reduce`로 합산 후 `=== 0`만 확인 — sum 값이 버려져 의미가 흐려지고 short-circuit 기회를 놓침
 - Rule: 의미 정합성 — "모두 0인가" 는 합산이 아닌 `.every()`로 표현해야 의도가 직접 드러나고 첫 비-zero에서 short-circuit
 - Context: Suggestion — `OpenInterestChart.tsx` `oiByStrike.reduce(sum, 0) === 0` 가드를 `oiByStrike.every(s => s.callOpenInterest === 0 && s.putOpenInterest === 0)` 으로 교체.
+
+
+## [PR #449 Round 1 | feat/db-neon-transient-retry | 2026-05-22]
+- Violation: `jest.mock(...)` 호출이 정적 `import` 사이에 끼어 있어 `import/first` ESLint 규칙 위반
+- Rule: ESLint `import/first` — 모든 정적 import는 파일 최상단에 연속으로 위치해야 하며, 그 사이에 다른 statement가 끼어들 수 없음. `jest.mock`은 호이스트되므로 import보다 위에 두는 게 안전
+- Context: Blocker — `src/__tests__/lib/withRetry.test.ts`에 `import { withRetry } ... → jest.mock(...) → import { sleep } ...` 순서. `jest.mock`을 파일 최상단으로 옮기고 두 import를 하나로 묶음.
+- Violation: 인프라성 retry 헬퍼(`withRetry`)가 `src/lib/`에 배치 — sleep 타이밍·재시도 정책 등 infrastructure 관심사인데도 UI utility 전용 레이어에 거주
+- Rule: ARCHITECTURE.md / lib CLAUDE.md — `lib/`는 외부 UI utility wrapper(clsx, tailwind-merge 등)와 순수 상수/팩토리만 허용. retry/backoff 같은 infrastructure 유틸은 `infrastructure/utils/`로 배치
+- Context: Suggestion — `src/lib/withRetry.ts` → `src/infrastructure/utils/withRetry.ts`, 테스트 동반 이동. 6개 repository + isNeonTransientError import 경로 갱신.
+- Violation: `Pick<T, K>`로 `T`의 *모든* 키를 지정 — 결과 타입이 `T`와 동일해 정보 손실 없이 boilerplate만 추가
+- Rule: TypeScript 타입 표현 최소성 — `Pick<T, 'a' | 'b' | 'c'>`가 `T = { a; b; c }`와 같은 형태라면 그냥 `T`로 표기. `Pick`은 *일부 키만* 선택할 때 의미가 있음
+- Context: Suggestion — `NEON_TRANSIENT_RETRY: Pick<WithRetryOptions, 'maxRetries' | 'baseDelayMs' | 'isRetryable'>` 가 `WithRetryOptions`의 모든 필드와 동일. `: WithRetryOptions` 로 단순화.

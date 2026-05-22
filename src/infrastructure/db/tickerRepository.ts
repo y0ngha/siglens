@@ -14,7 +14,7 @@ import type {
     ProfileDescriptionTranslationRecord,
     ProfileDescriptionTranslationRepository,
 } from '@/infrastructure/db/types';
-import { withRetry } from '@/lib/withRetry';
+import { withRetry } from '@/infrastructure/utils/withRetry';
 
 const koreanTickerColumns = {
     symbol: koreanTickers.symbol,

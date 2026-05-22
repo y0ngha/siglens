@@ -626,6 +626,13 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     → Test assertion must explicitly check the new dependency is received and used
     ❌ deleteAccountAction(oauthAccounts, oauthRevoker) added, but test asserts deleteAccountAction called without verifying deps passed
     ✅ Assertion explicitly checks both oauthAccounts and oauthRevoker are included in the deps passed
+
+17. `jest.mock(...)` placed between static imports — `import/first` ESLint violation
+    → All static `import` statements must be contiguous at the very top of the file
+    → `jest.mock(...)` is hoisted by Jest's babel transform, so placing it ABOVE imports is safe and idiomatic
+    → Never sandwich `jest.mock(...)` between two `import` statements — splits the import block and trips `import/first`
+    ❌ `import { withRetry } from '...'; jest.mock('@/lib/sleep', ...); import { sleep } from '@/lib/sleep';`
+    ✅ `jest.mock('@/lib/sleep', ...); import { withRetry } from '...'; import { sleep } from '@/lib/sleep';`
 ```
 
 ---
