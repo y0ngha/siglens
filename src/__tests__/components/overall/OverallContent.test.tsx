@@ -5,11 +5,9 @@
  * 다양한 state shape를 강제로 주입하고, 4축 layout(특히 OptionsSummary 위치,
  * IntegratedConclusion rename, ReanalyzeButton 노출 + amber 강조 조건)을 확인한다.
  */
-import '@testing-library/jest-dom';
-import { render, screen, fireEvent } from '@testing-library/react';
-import type { ReactNode } from 'react';
-import type { OverallAnalysisResponse } from '@y0ngha/siglens-core';
 
+// jest.mock은 babel-jest가 import 위로 hoist하지만, ESLint(import/first)와
+// 가독성을 위해 소스 코드에서도 모든 import보다 위에 둔다.
 jest.mock('@/components/overall/hooks/useOverallAnalysis', () => ({
     useOverallAnalysis: jest.fn(),
 }));
@@ -27,6 +25,11 @@ jest.mock('@/components/ui/MarkdownText', () => ({
         <div>{children}</div>
     ),
 }));
+
+import '@testing-library/jest-dom';
+import { render, screen, fireEvent } from '@testing-library/react';
+import type { ReactNode } from 'react';
+import type { OverallAnalysisResponse } from '@y0ngha/siglens-core';
 
 import { OverallContent } from '@/components/overall/OverallContent';
 import { useOverallAnalysis } from '@/components/overall/hooks/useOverallAnalysis';

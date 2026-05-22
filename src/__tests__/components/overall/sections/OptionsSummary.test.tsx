@@ -2,17 +2,19 @@
  * @jest-environment jsdom
  */
 
-import '@testing-library/jest-dom';
-import { render, screen } from '@testing-library/react';
-import type { ReactNode } from 'react';
-
 // react-markdown은 ESM-only라 jest의 기본 transform이 처리하지 못한다.
 // MarkdownText를 단순 wrapper로 대체해 inline markdown 렌더 경로를 우회한다.
+// jest.mock은 babel-jest가 import 위로 hoist하지만, ESLint(import/first)와
+// 가독성을 위해 소스 코드에서도 모든 import보다 위에 둔다.
 jest.mock('@/components/ui/MarkdownText', () => ({
     MarkdownText: ({ children }: { children: ReactNode }) => (
         <span>{children}</span>
     ),
 }));
+
+import '@testing-library/jest-dom';
+import { render, screen } from '@testing-library/react';
+import type { ReactNode } from 'react';
 
 import { OptionsSummary } from '@/components/overall/sections/OptionsSummary';
 

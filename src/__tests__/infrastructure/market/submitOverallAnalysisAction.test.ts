@@ -1,13 +1,5 @@
-import { submitOverallAnalysisAction } from '@/infrastructure/market/submitOverallAnalysisAction';
-import {
-    submitOverallAnalysis,
-    type ModelId,
-    type OptionsSnapshot,
-    type SubmitOverallAnalysisResult,
-    type EnrichedNewsItem,
-    type EarningsCalendarItem,
-} from '@y0ngha/siglens-core';
-
+// jest.mock은 babel-jest가 import 위로 hoist하지만, ESLint(import/first)와
+// 가독성을 위해 소스 코드에서도 모든 import보다 위에 둔다.
 jest.mock('next/headers', () => ({
     headers: jest.fn(() => Promise.resolve(new Headers())),
 }));
@@ -62,6 +54,15 @@ jest.mock('@/domain/market/session', () => ({
     isOpenInterestSnapshotStale: jest.fn(),
 }));
 
+import { submitOverallAnalysisAction } from '@/infrastructure/market/submitOverallAnalysisAction';
+import {
+    submitOverallAnalysis,
+    type ModelId,
+    type OptionsSnapshot,
+    type SubmitOverallAnalysisResult,
+    type EnrichedNewsItem,
+    type EarningsCalendarItem,
+} from '@y0ngha/siglens-core';
 import { headers } from 'next/headers';
 import { DrizzleNewsRepository } from '@/infrastructure/db/newsRepository';
 import { getNextEarningsReport } from '@/infrastructure/market/nextEarningsReport';
