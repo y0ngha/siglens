@@ -173,6 +173,7 @@ export function ChartContent({
                         symbol={symbol}
                         analysis={analysis}
                         keyLevels={clusteredKeyLevels}
+                        timeframe={timeframe}
                         isAnalyzing={isAnalyzing}
                         showProgress={displayAnalyzing}
                         progressPhaseIndex={progressPhaseIndex}
@@ -198,6 +199,7 @@ export function ChartContent({
             analysisStatus,
             analysis,
             clusteredKeyLevels,
+            timeframe,
             displayAnalyzing,
             progressPhaseIndex,
             progressTipIndex,

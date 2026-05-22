@@ -17,6 +17,7 @@ import type {
     PriceScenario,
     RiskLevel,
     StrategyResult,
+    Timeframe,
     Trend,
     Trendline,
     TrendlineDirection,
@@ -42,6 +43,8 @@ import { TRENDLINE_DIRECTION_LABEL } from '@/components/trendline/constants';
 import { MS_PER_SECOND, SECONDS_PER_MINUTE } from '@/domain/constants/time';
 import { DEFAULT_RESET_MS as COPY_RESET_MS } from '@/components/hooks/useCopyToClipboard';
 import { formatAnalyzedAt } from '@/lib/formatAnalyzedAt';
+import { isAnalysisStale } from '@/domain/analysis/staleThreshold';
+import { StaleAnalysisBanner } from '@/components/analysis/StaleAnalysisBanner';
 
 function formatCooldown(ms: number): string {
     const totalSec = Math.ceil(ms / MS_PER_SECOND);
@@ -685,6 +688,8 @@ interface AnalysisPanelProps {
     symbol: string;
     analysis: AnalysisResponse;
     keyLevels: ClusteredKeyLevels;
+    /** 분석 대상 타임프레임. stale 판정 임계값 산정에 사용된다. */
+    timeframe: Timeframe;
     isAnalyzing?: boolean;
     /** 마무리 애니메이션을 포함해 "사용자에게 분석이 진행 중인 것처럼 보이는" 상태.
      *  AnalysisProgress 표시·본문 섹션 숨김에 사용된다. ChartContent가 소유한다. */
@@ -709,6 +714,7 @@ export function AnalysisPanel({
     symbol,
     analysis,
     keyLevels,
+    timeframe,
     isAnalyzing = false,
     showProgress = false,
     progressPhaseIndex = 0,
@@ -787,8 +793,19 @@ export function AnalysisPanel({
         };
     }, []);
 
+    const showStaleBanner =
+        analysis.analyzedAt !== undefined &&
+        onReanalyze !== undefined &&
+        isAnalysisStale(analysis.analyzedAt, timeframe);
+
     return (
         <div className="bg-secondary-800 relative flex flex-col gap-4 rounded-lg p-4">
+            {showStaleBanner && onReanalyze !== undefined && (
+                <StaleAnalysisBanner
+                    onReanalyze={onReanalyze}
+                    reanalyzeCooldownMs={reanalyzeCooldownMs ?? 0}
+                />
+            )}
             <AnalysisToast
                 key={cooldownNotice?.nonce}
                 notice={cooldownNotice}
