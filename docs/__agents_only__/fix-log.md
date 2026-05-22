@@ -1,6 +1,17 @@
 
 # Fix Log
 
+## [PR #445 Round 3 | fix/analysis-snapshot-ui | 2026-05-22]
+- S1: `src/components/analysis/AnalysisPanel.tsx` — `showStaleBanner` 파생 변수가 `captureNow` (useEffectEvent) + 새 `useEffect` 뒤에 위치해 MISTAKES.md §17 이상적 순서(derived → handlers → useEffect)와 어긋남. props/state만 의존하므로 핸들러·effect 앞으로 이동.
+  - Rule: MISTAKES.md §17 — Hook 선언 순서.
+- S2: `src/components/analysis/AnalysisPanel.tsx` — `<time aria-label="분석 완료 시각">`이 AT에 visible text(타임스탬프 값)를 덮어써 사용자가 실제 시각을 들을 수 없게 만듦. `aria-label` 제거. `<time dateTime={iso}>{formatted}</time>` 구조에서는 visible text가 SR로 그대로 읽혀 충분.
+  - Rule: WCAG 4.1.2 (Name, Role, Value) — `aria-label`은 의미 명확하지 않은 비텍스트 요소용. text content가 이미 정확한 정보면 abuse.
+- S3: PR diff 상의 "어차임" 오탈자는 워크트리 실제 파일에서 이미 "어차피"로 정상이라 코드 변경 없음. Reviewer가 본 diff 표시 오해로 추정.
+- S4: `src/__tests__/components/analysis/StaleAnalysisBanner.test.tsx` — `fireEvent.click`(JSDOM이 disabled 버튼 동작을 완전 재현하지 않음) → `@testing-library/user-event`의 `userEvent.click`으로 마이그레이션. 비동기 setup 패턴(`userEvent.setup()` + `await user.click(...)`)을 적용해 실제 브라우저 동작과 일치하는 disabled 버튼 click 차단을 검증.
+  - Rule: 회귀 신뢰도 — disabled 동작 같은 native 브라우저 동작은 userEvent로 검증해야 정확.
+- S5: `src/__tests__/domain/analysis/staleThreshold.test.ts` — `15Min`/`30Min` 버킷에 boundary 케이스 누락. `15Min` beyond(+1min → true), `30Min` within(-1min → false)을 추가해 5분 임계값을 공유하는 세 단기 버킷 모두 회귀 안전망 확보.
+  - Rule: MISTAKES.md §Tests — 임계값 버킷별 boundary 명시 검증.
+
 ## [PR #445 Round 2 | fix/analysis-snapshot-ui | 2026-05-22]
 - B1: `src/components/analysis/AnalysisPanel.tsx` — round 1에서 hydration 회피를 위해 추가한 `useEffect` + `setNow(new Date())`에 `// eslint-disable-next-line react-hooks/set-state-in-effect`를 사용했음. MISTAKES.md §13(eslint-disable 사용 금지) + §10(setState in useEffect의 canonical fix는 `useEffectEvent`) 위반. `captureNow = useEffectEvent(() => startTransition(() => setNow(new Date())))` 패턴으로 변경하고 useEffect는 `captureNow()` 호출만. 동일 워크트리 `useChat.ts:382` / `useDMIChart.ts` 패턴과 일치.
   - Rule: MISTAKES.md §13 — eslint-disable 억제 금지. §10 — `setState in useEffect` canonical = `useEffectEvent` + 내부에서 setState (필요 시 `startTransition`).

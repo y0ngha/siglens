@@ -3,11 +3,13 @@
  */
 
 import '@testing-library/jest-dom';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { StaleAnalysisBanner } from '@/components/analysis/StaleAnalysisBanner';
 
 describe('StaleAnalysisBanner', () => {
-    it('renders the stale message and triggers onReanalyze when clicked', () => {
+    it('renders the stale message and triggers onReanalyze when clicked', async () => {
+        const user = userEvent.setup();
         const onReanalyze = jest.fn();
         render(
             <StaleAnalysisBanner
@@ -18,7 +20,7 @@ describe('StaleAnalysisBanner', () => {
         expect(
             screen.getByText(/AI 분석 데이터가 오래되었습니다/)
         ).toBeInTheDocument();
-        fireEvent.click(screen.getByRole('button', { name: /재분석/ }));
+        await user.click(screen.getByRole('button', { name: /재분석/ }));
         expect(onReanalyze).toHaveBeenCalledTimes(1);
     });
 
@@ -34,7 +36,8 @@ describe('StaleAnalysisBanner', () => {
         expect(button).toBeDisabled();
     });
 
-    it('does not invoke onReanalyze when the button is clicked while cooling down', () => {
+    it('does not invoke onReanalyze when the button is clicked while cooling down', async () => {
+        const user = userEvent.setup();
         const onReanalyze = jest.fn();
         render(
             <StaleAnalysisBanner
@@ -42,7 +45,7 @@ describe('StaleAnalysisBanner', () => {
                 reanalyzeCooldownMs={60_000}
             />
         );
-        fireEvent.click(screen.getByRole('button', { name: /재분석/ }));
+        await user.click(screen.getByRole('button', { name: /재분석/ }));
         expect(onReanalyze).not.toHaveBeenCalled();
     });
 });

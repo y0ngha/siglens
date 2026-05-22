@@ -795,29 +795,6 @@ export function AnalysisPanel({
         r => r.indicatorName !== '' && !patternSkillNames.has(r.indicatorName)
     );
 
-    useEffect(() => {
-        return () => {
-            if (copyTimeoutRef.current !== null) {
-                clearTimeout(copyTimeoutRef.current);
-            }
-        };
-    }, []);
-
-    // SSR/hydration mismatch 회피 — 서버에서는 `now`가 null, 클라이언트
-    // mount 직후에만 현재 시각을 캡쳐한다. setState를 useEffect 본문에서 직접
-    // 호출하는 대신 useEffectEvent로 감싸 React 19 canonical 패턴을 따르고,
-    // 본문은 startTransition으로 격리해 lint rule을 만족시킨다
-    // (MISTAKES.md §10).
-    const captureNow = useEffectEvent((): void => {
-        startTransition(() => {
-            setNow(new Date());
-        });
-    });
-
-    useEffect(() => {
-        captureNow();
-    }, [analysis.analyzedAt]);
-
     // stale 여부는 render 시점에만 평가한다 — 인터벌 타이머를 두지 않으므로
     // 사용자 인터랙션 / 신규 분석 / 라우트 변경 등으로 다음 render가 일어나야
     // 배너가 갱신된다. 로딩 상태(isAnalyzing/showProgress)에서는 곧 새 분석으로
@@ -831,6 +808,29 @@ export function AnalysisPanel({
         onReanalyze !== undefined &&
         now !== null &&
         isAnalysisStale(analysis.analyzedAt, timeframe, now);
+
+    // SSR/hydration mismatch 회피 — 서버에서는 `now`가 null, 클라이언트
+    // mount 직후에만 현재 시각을 캡쳐한다. setState를 useEffect 본문에서 직접
+    // 호출하는 대신 useEffectEvent로 감싸 React 19 canonical 패턴을 따르고,
+    // 본문은 startTransition으로 격리해 lint rule을 만족시킨다
+    // (MISTAKES.md §10).
+    const captureNow = useEffectEvent((): void => {
+        startTransition(() => {
+            setNow(new Date());
+        });
+    });
+
+    useEffect(() => {
+        return () => {
+            if (copyTimeoutRef.current !== null) {
+                clearTimeout(copyTimeoutRef.current);
+            }
+        };
+    }, []);
+
+    useEffect(() => {
+        captureNow();
+    }, [analysis.analyzedAt]);
 
     return (
         <div className="bg-secondary-800 relative flex flex-col gap-4 rounded-lg p-4">
@@ -861,7 +861,6 @@ export function AnalysisPanel({
                     {analysis.analyzedAt && (
                         <time
                             dateTime={analysis.analyzedAt}
-                            aria-label="분석 완료 시각"
                             className="text-secondary-500 text-xs"
                         >
                             {formatAnalyzedAt(analysis.analyzedAt)}

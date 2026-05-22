@@ -43,6 +43,20 @@ describe('isAnalysisStale', () => {
         expect(isAnalysisStale(analyzedAt, '5Min', now)).toBe(true);
     });
 
+    it('returns true when analyzed beyond threshold (15Min, boundary + 1min)', () => {
+        const analyzedAt = new Date(
+            now.getTime() - STALE_THRESHOLD_MS['15Min'] - MS_PER_MINUTE
+        ).toISOString();
+        expect(isAnalysisStale(analyzedAt, '15Min', now)).toBe(true);
+    });
+
+    it('returns false when analyzed within threshold (30Min, boundary - 1min)', () => {
+        const analyzedAt = new Date(
+            now.getTime() - STALE_THRESHOLD_MS['30Min'] + MS_PER_MINUTE
+        ).toISOString();
+        expect(isAnalysisStale(analyzedAt, '30Min', now)).toBe(false);
+    });
+
     it('returns false for invalid ISO input', () => {
         expect(isAnalysisStale('not-a-date', '1Day', now)).toBe(false);
     });
