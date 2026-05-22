@@ -7,6 +7,7 @@ import { useSymbolModel } from '@/components/symbol-page/SymbolModelContext';
 import { ExpirationSelector } from '@/components/options/ExpirationSelector';
 import { OptionsAiAnalysis } from '@/components/options/OptionsAiAnalysis';
 import { OptionsAiAnalysisError } from '@/components/options/OptionsAiAnalysisError';
+import { OptionsAiAnalysisStaleNotice } from '@/components/options/OptionsAiAnalysisStaleNotice';
 import { OptionsChainTable } from '@/components/options/OptionsChainTable';
 import { OpenInterestChart } from '@/components/options/OpenInterestChart';
 import { StrikeVolumeChart } from '@/components/options/StrikeVolumeChart';
@@ -76,14 +77,22 @@ export function OptionsPageClient({
 
             {oiStale && <OptionsStaleDataBanner />}
 
-            <ErrorBoundary FallbackComponent={OptionsAiAnalysisError}>
-                <OptionsAiAnalysis
-                    symbol={symbol}
-                    companyName={companyName}
-                    expirationDate={expirationDate}
-                    modelId={modelId}
-                />
-            </ErrorBoundary>
+            {/* OI/호가가 비어 있으면 prompt에 들어가는 핵심 지표(Max Pain,
+                P/C, top OI/IV/mid·spread)가 모두 무력화되므로, 분석 호출 자체를
+                건너뛰고 안내 카드를 보여준다. ErrorBoundary 분기는 정상
+                경로에서만 필요. */}
+            {oiStale ? (
+                <OptionsAiAnalysisStaleNotice />
+            ) : (
+                <ErrorBoundary FallbackComponent={OptionsAiAnalysisError}>
+                    <OptionsAiAnalysis
+                        symbol={symbol}
+                        companyName={companyName}
+                        expirationDate={expirationDate}
+                        modelId={modelId}
+                    />
+                </ErrorBoundary>
+            )}
 
             <OptionsMetricsRow
                 expirationDate={expirationDate}
@@ -92,12 +101,7 @@ export function OptionsPageClient({
                 oiStale={oiStale}
             />
 
-            {/* 두 차트를 큰 화면(lg+)에서 가로로 나란히 배치해 페이지 세로
-                길이를 약 240px 절약한다 — 두 SVG(각 240px)가 sibling으로
-                연달아 쌓이면 모바일 외 환경에서 스크롤이 과도하게 길어진다.
-                모바일(<lg)은 1열 유지해 좁은 너비에서 막대가 뭉치지 않도록
-                한다. */}
-            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <div className="space-y-4">
                 <OpenInterestChart
                     underlyingPrice={snapshot.underlyingPrice}
                     chain={chainMetrics.chain}
