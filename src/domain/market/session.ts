@@ -9,7 +9,8 @@
  * truth — `lib/` is reserved for thin UI utility wrappers, and this module
  * encodes a business rule (regular-session boundary) so it belongs in domain.
  *
- * The boundary is ET 09:30 ~ 16:00 weekdays. We resolve EDT/EST via
+ * The boundary is ET weekdays — see MARKET_OPEN_HOUR / MARKET_OPEN_MINUTE /
+ * MARKET_CLOSE_HOUR. We resolve EDT/EST via
  * `Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York' })` so the
  * answer stays in lockstep with the market regardless of DST.
  */
@@ -17,7 +18,7 @@
 import { MINUTES_PER_HOUR } from '@/domain/constants/time';
 import type { OptionsSnapshot } from '@y0ngha/siglens-core';
 
-// US equity options regular session (ET): 09:30 open · 16:00 close.
+// US equity options regular session — see MARKET_OPEN_HOUR / MARKET_OPEN_MINUTE / MARKET_CLOSE_HOUR.
 const MARKET_OPEN_HOUR = 9;
 const MARKET_OPEN_MINUTE = 30;
 const MARKET_CLOSE_HOUR = 16;

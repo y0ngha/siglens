@@ -12,6 +12,10 @@
  * KST 시각은 EDT/EST 구간별로 한 시간씩 어긋나므로, 두 구간(EDT: 22:30~05:00,
  * EST: 23:30~06:00)을 모두 병기해 사용자가 현재 시점이 어느 구간인지와
  * 무관하게 자기 KST 시계로 환산할 수 있도록 한다.
+ *
+ * NOTE: The displayed ET hours (09:30~16:00) and KST conversions (EDT 22:30~05:00,
+ * EST 23:30~06:00) are derived from `session.ts`의 MARKET_OPEN_HOUR/MARKET_OPEN_MINUTE/
+ * MARKET_CLOSE_HOUR. 시장 운영시간이 바뀌면 이 텍스트도 수동으로 동기화해야 한다.
  */
 export function OptionsStaleDataBanner() {
     return (

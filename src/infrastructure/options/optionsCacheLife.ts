@@ -16,6 +16,11 @@ export type OptionsCacheLifeProfile =
 export function getOptionsCacheLifeProfile(
     now: Date = new Date()
 ): OptionsCacheLifeProfile {
+    // `etParts` is invoked twice on the weekday path (once here, once inside
+    // `isUsOptionsRegularSession`). The Intl.DateTimeFormat is a cached
+    // singleton so the marginal cost is negligible; we keep the delegation
+    // to `isUsOptionsRegularSession` for single-source-of-truth on the
+    // session boundary rather than inlining `totalMin` math here.
     const { weekdayIndex } = etParts(now);
     if (weekdayIndex === 0 || weekdayIndex === 6) return 'options-weekend';
     return isUsOptionsRegularSession(now)
