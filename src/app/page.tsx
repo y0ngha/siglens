@@ -8,12 +8,14 @@ import { TickerCategories } from '@/components/home/TickerCategories';
 import { Footer } from '@/components/layout/Footer';
 import { SymbolSearchPanel } from '@/components/search/SymbolSearchPanel';
 import { JsonLd } from '@/components/ui/JsonLd';
+import { VALID_TICKER_RE } from '@/domain/constants/market';
 import {
     countSkillFiles,
     FileSkillsLoader,
 } from '@/infrastructure/skills/loader';
 import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from '@/lib/seo';
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 import { cache, Suspense } from 'react';
 
 const loadSkills = cache(() => new FileSkillsLoader().loadSkills());
@@ -28,7 +30,22 @@ async function SkillsShowcaseServer() {
     return <SkillsShowcase skills={skills} />;
 }
 
-export default async function Home() {
+interface HomePageProps {
+    // 런타임상 Next.js의 searchParams 값은 동일 키 중복 시 string[]도 들어올 수 있다.
+    // 타입을 string으로만 좁히면 ?q=AAPL&q=TSLA에서 q.toUpperCase()가 TypeError를 던진다.
+    searchParams: Promise<{ q?: string | string[] }>;
+}
+
+// WebSite SearchAction(urlTemplate=`?q={search_term_string}`)을 받는 핸들러.
+// 유효한 티커면 종목 페이지로 즉시 redirect하고, 그렇지 않으면 무시해 홈을 그대로 렌더한다.
+export default async function Home({ searchParams }: HomePageProps) {
+    const { q } = await searchParams;
+    const qStr = Array.isArray(q) ? q[0] : q;
+    if (qStr) {
+        const ticker = qStr.toUpperCase().trim();
+        if (VALID_TICKER_RE.test(ticker)) redirect(`/${ticker}`);
+    }
+
     const skillCounts = await countSkillFiles();
 
     const jsonLd = {
@@ -146,31 +163,37 @@ export default async function Home() {
                 '@type': 'HowToStep',
                 name: '종목명이나 심볼 입력',
                 text: '분석하고 싶은 미국 주식 종목명이나 심볼을 검색창에 입력합니다. 예: 애플, 테슬라, 엔비디아, AAPL, TSLA, NVDA.',
+                url: `${SITE_URL}/#search`,
             },
             {
                 '@type': 'HowToStep',
                 name: '차트 분석 살펴보기',
                 text: `종목 페이지에서 보조지표 ${skillCounts.indicators}종, 캔들 패턴 ${skillCounts.candlesticks}종, 차트 패턴 ${skillCounts.patterns}종, 전략 ${skillCounts.strategies}종, 지지선과 저항선 레벨 ${skillCounts.supportResistance}종 기준으로 추세와 진입 후보 구간을 살펴봅니다.`,
+                url: `${SITE_URL}/AAPL`,
             },
             {
                 '@type': 'HowToStep',
                 name: '실적과 뉴스로 보강하기',
                 text: '종목 페이지의 펀더멘털 탭에서 PER, PBR, ROE 같은 밸류에이션과 수익성 지표를, 뉴스 탭에서 어닝과 실적 발표, 뉴스 분위기를 확인해 차트가 보여주지 않는 배경을 보강합니다. 예: /AAPL/fundamental, /AAPL/news.',
+                url: `${SITE_URL}/AAPL/fundamental`,
             },
             {
                 '@type': 'HowToStep',
                 name: '단기 매수 분위기 확인',
                 text: '공포 탐욕 지수 탭(예: /AAPL/fear-greed)에서 단기 매수세가 강한지 약한지를 0~100 점수와 5단계 분위기로 확인합니다. 차트가 좋아 보여도 분위기가 너무 과열이면 진입 타이밍을 한 번 더 따져볼 수 있습니다.',
+                url: `${SITE_URL}/AAPL/fear-greed`,
             },
             {
                 '@type': 'HowToStep',
                 name: '종합 결론 확인',
                 text: '종합 분석 탭(예: /AAPL/overall)에서 차트, 실적, 뉴스, 공포 탐욕 지수를 묶은 종합 결론과 강세, 약세 시나리오, 모니터링 포인트, 위험 요인을 함께 확인합니다.',
+                url: `${SITE_URL}/AAPL/overall`,
             },
             {
                 '@type': 'HowToStep',
                 name: 'AI에게 추가 질문',
                 text: '판단이 애매할 때는 챗봇에게 직접 질문할 수 있습니다. 현재 보고 있는 종목 데이터를 맥락으로, 지표 해석, 시나리오 비교, 매매 전략 같은 질문에 답변을 받습니다.',
+                url: `${SITE_URL}/AAPL#chat`,
             },
         ],
     };

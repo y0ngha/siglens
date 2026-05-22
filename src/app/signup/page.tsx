@@ -4,13 +4,16 @@ import { AuthCardShell } from '@/components/auth/AuthCardShell';
 import { SignupForm } from '@/components/auth/SignupForm';
 import { SocialLoginButtons } from '@/components/auth/SocialLoginButtons';
 import { sanitizeNextPath } from '@/domain/auth/redirect';
-import { SITE_NAME } from '@/lib/seo';
+import { SITE_NAME, SITE_URL } from '@/lib/seo';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 
+// noindex 페이지에도 canonical/openGraph.url을 명시한다. 자세한 근거는 src/app/login/page.tsx 주석 참조.
 export const metadata: Metadata = {
     title: '회원가입',
     description: `${SITE_NAME} 회원이 되면 추가 혜택을 누릴 수 있어요. 가입은 옵션이며 비회원도 모든 기본 기능을 그대로 이용할 수 있습니다.`,
+    alternates: { canonical: `${SITE_URL}/signup` },
+    openGraph: { url: `${SITE_URL}/signup` },
     robots: { index: false, follow: true },
 };
 

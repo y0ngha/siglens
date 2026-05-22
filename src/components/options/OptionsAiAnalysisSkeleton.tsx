@@ -21,7 +21,7 @@ export function OptionsAiAnalysisSkeleton() {
                     AI 옵션 분석 생성 중
                 </span>
             </div>
-            <div className="mt-4 space-y-2">
+            <div className="mt-4 space-y-2" aria-hidden="true">
                 {SKELETON_LINE_WIDTHS.map(w => (
                     <div
                         key={w}

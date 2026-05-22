@@ -1,7 +1,11 @@
 import type { Timeframe } from '@y0ngha/siglens-core';
 
-/** Valid U.S. ticker symbols: 1–8 uppercase letters or dots. */
-export const VALID_TICKER_RE = /^[A-Z.]{1,8}$/;
+/**
+ * Valid U.S. ticker symbols: 1–8 uppercase letters with optional dot (BRK.B
+ * 같은 클래스 구분) or hyphen (PBR-A 같은 ADR 우선주). 첫 글자는 영문 대문자로
+ * 고정해 빈 입력과 기호 시작을 차단한다.
+ */
+export const VALID_TICKER_RE = /^[A-Z][A-Z.\-]{0,7}$/;
 
 export const DEFAULT_TIMEFRAME: Timeframe = '1Day';
 

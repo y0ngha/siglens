@@ -11,7 +11,7 @@ export function MarketSummaryPanelSkeleton() {
             aria-busy="true"
         >
             <div className="bg-secondary-700/50 mb-6 h-3.5 w-16 animate-pulse rounded" />
-            <div className="flex flex-col gap-6">
+            <div className="flex flex-col gap-6" aria-hidden="true">
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                     {MARKET_INDICES.map(idx => (
                         <div

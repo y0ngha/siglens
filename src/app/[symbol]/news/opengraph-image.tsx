@@ -3,7 +3,8 @@ import { buildSymbolOgImage } from '@/infrastructure/og/buildSymbolOgImage';
 
 export const size = { width: OG_IMAGE_WIDTH, height: OG_IMAGE_HEIGHT };
 export const contentType = 'image/png';
-export const alt = 'Siglens 뉴스 분석';
+// alt는 module-scope const라 ticker 동적 주입 불가 — 페이지 카테고리까지만 명시한다.
+export const alt = 'Siglens 미국 주식 뉴스 분석';
 
 interface Props {
     params: Promise<{ symbol: string }>;

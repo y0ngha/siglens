@@ -43,31 +43,53 @@ const HREF: Record<PageKey, (symbol: string) => string> = {
 interface CrossLinkCardsProps {
     /** Ticker symbol (already uppercased). */
     symbol: string;
-    /** The current page — omitted from the rendered links. */
+    /** The current page — rendered as a non-link "current page" marker (aria-current). */
     current: PageKey;
 }
 
-/** Cross-link cards shown below each analysis page — links to every sibling page. */
+// 현재 페이지 카드는 self-link로 두지 않고 비활성 div + aria-current="page"로 표시한다.
+// (a) self-link는 SEO 신호가 약하고 접근성에서 혼란을 주며, (b) 6장 그리드에서 한 칸이
+// 빠지면 lg:grid-cols-3 레이아웃이 비대칭이 되어 UX가 어색하다.
 export function CrossLinkCards({ symbol, current }: CrossLinkCardsProps) {
-    const others = ALL_PAGES.filter(p => p !== current);
-
     return (
         <section
             className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
             aria-label="다른 분석 종류 보기"
         >
-            {others.map(p => (
-                <Link
-                    key={p}
-                    href={HREF[p](symbol)}
-                    className="border-secondary-700 hover:border-primary-500 focus-visible:ring-primary-500 rounded-xl border p-6 transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
-                >
-                    <h3 className="font-semibold">{LABEL[p]}</h3>
-                    <p className="text-secondary-400 mt-2 text-sm">
-                        {DESCRIPTION[p]}
-                    </p>
-                </Link>
-            ))}
+            {ALL_PAGES.map(p => {
+                const isCurrent = p === current;
+                if (isCurrent) {
+                    return (
+                        <div
+                            key={p}
+                            aria-current="page"
+                            className="border-primary-500 bg-secondary-800/40 ring-primary-500/30 cursor-default rounded-xl border p-6 ring-1"
+                        >
+                            <h3 className="text-secondary-100 font-semibold">
+                                {LABEL[p]}
+                            </h3>
+                            <p className="text-secondary-400 mt-2 text-sm">
+                                {DESCRIPTION[p]}
+                            </p>
+                            <p className="text-primary-400 mt-3 text-xs font-medium">
+                                현재 보고 있는 분석
+                            </p>
+                        </div>
+                    );
+                }
+                return (
+                    <Link
+                        key={p}
+                        href={HREF[p](symbol)}
+                        className="border-secondary-700 hover:border-primary-500 focus-visible:ring-primary-500 rounded-xl border p-6 transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+                    >
+                        <h3 className="font-semibold">{LABEL[p]}</h3>
+                        <p className="text-secondary-400 mt-2 text-sm">
+                            {DESCRIPTION[p]}
+                        </p>
+                    </Link>
+                );
+            })}
         </section>
     );
 }

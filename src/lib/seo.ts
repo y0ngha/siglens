@@ -20,63 +20,64 @@ function parseBuildDate(): Date {
 }
 export const SITE_BUILD_DATE = parseBuildDate();
 
-export const SITE_DESCRIPTION =
-    '테슬라 PER이 비싼지, AAPL 실적(어닝)이 언제인지, 차트가 좋아 보이는지 — 미국 주식을 볼 때 궁금한 것들을 티커 하나로 확인합니다. 보조지표 25종 기반 차트 분석부터 펀더멘털, 뉴스, 셋을 합친 종합 결론은 물론, 지금 매수 분위기가 강한지(공포 탐욕 지수)까지 함께 봅니다. 2년치 AI 백테스팅 결과도 같이 공개합니다.';
+/**
+ * 한글 SERP description 안전권. Google 한국어 SERP에서 모바일은 ~80자,
+ * 데스크톱은 ~120자 안팎에서 절단되므로 120자를 상한으로 둔다.
+ * 현재 모든 빌더는 이미 90~115자 범위로 짧지만, 입력(displayName/sector)
+ * 변화로 인한 회귀를 막기 위해 출력단에서 한 번 더 강제한다.
+ */
+export const SEO_DESCRIPTION_MAX_LENGTH = 120;
+
+/**
+ * 입력이 SEO_DESCRIPTION_MAX_LENGTH 이하면 그대로, 초과 시 잘라내고 말줄임표(…)를 붙인다.
+ * 말줄임표는 1자로 계산해 최종 길이가 항상 SEO_DESCRIPTION_MAX_LENGTH 이하가 되게 한다.
+ *
+ * 길이/슬라이스는 모두 code point 기준으로 처리해 surrogate pair(이모지,
+ * supplementary plane 한자 등)가 split되어 invalid UTF-16이 되는 것을 막는다.
+ */
+export function clampSeoDescription(text: string): string {
+    const codePoints = [...text];
+    if (codePoints.length <= SEO_DESCRIPTION_MAX_LENGTH) return text;
+    return (
+        codePoints
+            .slice(0, SEO_DESCRIPTION_MAX_LENGTH - 1)
+            .join('')
+            .trimEnd() + '…'
+    );
+}
+
+// "보조지표 25종" 같은 동적 숫자는 Skills 개수가 바뀌면 stale되므로 질적 표현으로 둔다
+// (M7에서 FAQ JSON-LD에 적용한 정책을 SITE_DESCRIPTION에도 일관 적용).
+export const SITE_DESCRIPTION = clampSeoDescription(
+    '미국 주식을 티커 하나로 종합 분석합니다. 다양한 보조지표 차트, 펀더멘털·뉴스·옵션, 공포 탐욕 지수를 묶은 AI 종합 결론과 2년 백테스팅 결과까지 한 화면에서.'
+);
 
 export const ROOT_TITLE = `미국 주식 AI 분석 — 차트와 실적, 뉴스로 보는 결론 | ${SITE_NAME}`;
 
+// 한글 SERP는 80~120자가 안전권이라 키워드는 핵심 검색의도 위주로 추렸다.
+// 영문 키워드, 동의어 중복(매매 신호/차트 해석 등), 너무 일반적인 단일 명사(RSI, MACD 등)는 의도적으로 제외했다.
 export const ROOT_KEYWORDS = [
     'Siglens',
     '미국 주식 AI 분석',
-    '미국 주식 분석',
     '미국 주식 차트 분석',
     '미국 주식 펀더멘털',
     '미국 주식 뉴스',
-    '미국 주식 시장 동향',
+    '미국 주식 옵션',
+    'AI 종합 분석',
+    '공포 탐욕 지수',
+    'AI 주식 백테스팅',
     '오늘의 미국 주식',
-    '미국 주식 전망',
     '섹터별 주식 분석',
-    '섹터 순환',
-    '급등주',
-    '매매 신호',
-    '차트 해석',
-    '무료 주식 차트',
-    'RSI',
-    'MACD',
-    '볼린저밴드',
-    '이동평균선',
-    '골든크로스',
-    '데드크로스',
-    '캔들 패턴',
-    '지지 저항',
-    '주식 PER',
-    '주식 ROE',
-    '밸류에이션 분석',
+    '골든크로스 종목',
+    '미국 주식 PER',
+    '어닝 일정',
     '애널리스트 컨센서스',
     '목표 주가',
-    '어닝 일정',
-    '어닝 발표',
-    '실적 발표',
-    '실적 일정',
-    '뉴스 분위기',
-    '주식 호재',
-    '주식 악재',
-    '주식 이슈',
-    '공포 탐욕 지수',
-    '투자 심리 지표',
-    '주식 매수 분위기',
-    'Fear Greed Index',
-    'AI 종합 분석',
-    '시나리오 분석',
-    'AI 주식 백테스팅',
-    '주식 예측 정확도',
-    'AI stock analysis',
-    'stock chart analysis',
 ];
 
 function buildSymbolDescription(displayName: string, sector?: string): string {
     const sectorPhrase = sector ? `${sector} 섹터 ` : '';
-    return `${sectorPhrase}${displayName} 주가가 지금 어떤 흐름인지, 어느 가격대에서 매매 신호가 나오는지 차트에서 확인합니다. RSI, MACD, 볼린저밴드와 캔들 패턴, 주요 지지선과 저항선을 같이 보고, AI가 정리한 추세 판단과 진입 후보 가격대를 이어서 읽습니다.`;
+    return `${sectorPhrase}${displayName} 주가 흐름과 매매 신호를 차트에서 확인합니다. RSI·MACD·볼린저밴드와 캔들 패턴, 주요 지지·저항을 AI가 추세 판단과 진입 후보 가격대로 정리합니다.`;
 }
 
 export interface SymbolSeoContent {
@@ -108,7 +109,9 @@ export function buildSymbolSeoContent(
         ticker,
         title,
         fullTitle: `${title} | ${SITE_NAME}`,
-        description: buildSymbolDescription(displayName, opts.sector),
+        description: clampSeoDescription(
+            buildSymbolDescription(displayName, opts.sector)
+        ),
         url: `${SITE_URL}/${ticker}`,
         keywords: buildSymbolKeywords(ticker, displayName, opts.koreanName),
     };
@@ -176,7 +179,7 @@ export const BACKTESTING_URL = `${SITE_URL}${BACKTESTING_PATH}`;
 export const BACKTESTING_TITLE =
     'AAPL, NVDA, TSLA 2년 백테스트 — AI 신호 예측 정확도';
 export const BACKTESTING_DESCRIPTION =
-    'AAPL, NVDA, TSLA 등 10개 종목을 2년간 실제 분석한 백테스팅 케이스입니다. RSI, MACD, Supertrend 기술적 신호와 AI 예측이 실제로 얼마나 맞았는지 데이터로 직접 확인하세요.';
+    'AAPL·NVDA·TSLA 등 10개 종목 2년 백테스트입니다. RSI·MACD·Supertrend 기술적 신호와 AI 예측이 실제로 얼마나 맞았는지 데이터로 확인하세요.';
 export const BACKTESTING_KEYWORDS = [
     ...ROOT_KEYWORDS,
     '주식 AI 백테스팅',
@@ -207,7 +210,9 @@ export function buildSymbolFundamentalSeoContent(
         ticker: upper,
         title,
         fullTitle,
-        description: buildSymbolFundamentalDescription(subject, opts.sector),
+        description: clampSeoDescription(
+            buildSymbolFundamentalDescription(subject, opts.sector)
+        ),
         url: `${SITE_URL}/${upper}/fundamental`,
         keywords: buildSymbolFundamentalKeywords(
             upper,
@@ -221,8 +226,8 @@ function buildSymbolFundamentalDescription(
     subject: string,
     sector?: string
 ): string {
-    const sectorPhrase = sector ? ` ${sector} 섹터에서의 위치,` : '';
-    return `${subject} 회사 프로필과 PER, PSR, EPS로 보는 밸류에이션, ROE와 마진으로 보는 수익성, 부채와 현금흐름으로 보는 재무 건전성을 살펴봅니다.${sectorPhrase} 애널리스트 컨센서스와 목표 주가도 이어서 확인합니다.`;
+    const sectorPhrase = sector ? ` ${sector} 섹터 위치와` : '';
+    return `${subject} 회사 프로필, PER·PSR·EPS 밸류에이션, ROE·마진 수익성, 부채·현금흐름 재무 건전성을 한 페이지에서 정리합니다.${sectorPhrase} 애널리스트 컨센서스와 목표 주가도 이어 봅니다.`;
 }
 
 function buildSymbolFundamentalKeywords(
@@ -281,9 +286,11 @@ export function buildSymbolOptionsSeoContent(
         ticker: upper,
         title,
         fullTitle,
-        description: hasOptions
-            ? `${subject} 옵션 시장을 AI가 한국어로 해석합니다. 만기별 Max Pain, Put/Call, ATM IV, Implied Move와 Strike별 OI로 시장이 어디에 베팅하는지 살펴봅니다.`
-            : `${subject}는 현재 옵션 시장이 형성되어 있지 않습니다. 차트, 펀더멘털, 뉴스 분석으로 종목을 살펴보세요.`,
+        description: clampSeoDescription(
+            hasOptions
+                ? `${subject} 옵션 시장을 AI가 한국어로 해석합니다. 만기별 Max Pain·Put/Call·ATM IV·Implied Move와 Strike별 OI로 시장이 어디에 베팅하는지 봅니다.`
+                : `${subject}는 현재 옵션 시장이 형성되어 있지 않습니다. 차트·펀더멘털·뉴스 분석으로 종목을 살펴보세요.`
+        ),
         url: `${SITE_URL}/${upper}/options`,
         keywords: buildSymbolOptionsKeywords(upper, opts.koreanName),
     };
@@ -330,14 +337,14 @@ export function buildSymbolNewsSeoContent(
         ticker: upper,
         title,
         fullTitle,
-        description: buildSymbolNewsDescription(subject),
+        description: clampSeoDescription(buildSymbolNewsDescription(subject)),
         url: `${SITE_URL}/${upper}/news`,
         keywords: buildSymbolNewsKeywords(upper, opts.koreanName),
     };
 }
 
 function buildSymbolNewsDescription(subject: string): string {
-    return `${subject} 주가가 왜 움직였는지 궁금할 때 보는 페이지입니다. 최신 뉴스마다 호재나 악재 분위기를 표시하고, 어떤 이슈와 소식이 영향을 줬는지 분석 의견과 함께 정리합니다. 다음 어닝과 실적 발표, 애널리스트 목표 주가와 등급 변경도 이어서 살펴봅니다.`;
+    return `${subject} 주가가 왜 움직였는지 최신 뉴스에서 확인합니다. 기사마다 호재·악재 분위기와 핵심 이슈를 정리하고, 다음 어닝·실적 발표, 애널리스트 목표 주가와 등급 변경도 이어 봅니다.`;
 }
 
 function buildSymbolNewsKeywords(
@@ -394,14 +401,16 @@ export function buildSymbolOverallSeoContent(
         ticker: upper,
         title,
         fullTitle,
-        description: buildSymbolOverallDescription(subject),
+        description: clampSeoDescription(
+            buildSymbolOverallDescription(subject)
+        ),
         url: `${SITE_URL}/${upper}/overall`,
         keywords: buildSymbolOverallKeywords(upper, opts.koreanName),
     };
 }
 
 function buildSymbolOverallDescription(subject: string): string {
-    return `${subject} 주가를 살 만한지 판단할 때 보는 페이지입니다. 차트의 추세와 분기 실적, 최근 뉴스 분위기, 그리고 단기 매수 분위기까지 묶어 강세와 약세 시나리오를 정리하고, 어떤 가격대에서 진입을 고려할 만한지, 어떤 신호가 나오면 시나리오가 깨지는지 위험 요인까지 짚습니다.`;
+    return `${subject} 주가를 살 만한지 차트·실적·뉴스·단기 매수 분위기 네 축을 묶어 강세와 약세 시나리오로 정리합니다. 진입 후보 가격대와 시나리오가 깨지는 위험 요인도 같이 짚습니다.`;
 }
 
 function buildSymbolOverallKeywords(
@@ -449,7 +458,9 @@ export function buildSymbolFearGreedSeoContent(
         ticker: upper,
         title,
         fullTitle,
-        description: buildSymbolFearGreedDescription(subject),
+        description: clampSeoDescription(
+            buildSymbolFearGreedDescription(subject)
+        ),
         url: `${SITE_URL}/${upper}/fear-greed`,
         keywords: buildSymbolFearGreedKeywords(
             upper,
@@ -460,7 +471,7 @@ export function buildSymbolFearGreedSeoContent(
 }
 
 function buildSymbolFearGreedDescription(subject: string): string {
-    return `${subject} 매수세가 지금 강한지 약한지 궁금할 때 보는 페이지입니다. 거래량 흐름과 가격 위치를 묶어 0~100 점수로 정리하고, 극심한 공포부터 극심한 탐욕까지 5단계로 분위기를 보여줍니다. 1년 시계열로 흐름이 어떻게 바뀌어왔는지도 같이 확인합니다.`;
+    return `${subject} 매수세가 강한지 약한지 거래량 흐름과 가격 위치로 산출한 0~100 점수로 확인합니다. 극심한 공포부터 극심한 탐욕까지 5단계 분위기와 1년 시계열도 같이 봅니다.`;
 }
 
 function buildSymbolFearGreedKeywords(

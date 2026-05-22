@@ -2,7 +2,6 @@ import { FearGreedPage } from '@/components/fear-greed/FearGreedPage';
 import { CrossLinkCards } from '@/components/symbol-page/CrossLinkCards';
 import { JsonLd } from '@/components/ui/JsonLd';
 import { DEFAULT_TIMEFRAME, VALID_TICKER_RE } from '@/domain/constants/market';
-import { FEAR_GREED_SCORE_BOUNDARIES } from '@/domain/fearGreed/classifier';
 import { buildDisplayName } from '@/domain/ticker';
 import { getBarsAction } from '@/infrastructure/market/getBarsAction';
 import { getAssetInfoCached } from '@/infrastructure/ticker/getAssetInfoCached';
@@ -28,6 +27,10 @@ interface Props {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { symbol } = await params;
     const ticker = symbol.toUpperCase();
+    // 본문 notFound()와 일관: 잘못된 ticker는 메타데이터를 비우고 noindex로 응답한다.
+    if (!VALID_TICKER_RE.test(ticker)) {
+        return { robots: { index: false, follow: false } };
+    }
     const assetInfo = await getAssetInfoCached(ticker);
     const displayName = assetInfo
         ? buildDisplayName(assetInfo, ticker)
@@ -123,7 +126,10 @@ export default async function SymbolFearGreedPage({ params }: Props) {
                 name: '5단계 분위기 라벨은 어떻게 구분되나요?',
                 acceptedAnswer: {
                     '@type': 'Answer',
-                    text: `0~${FEAR_GREED_SCORE_BOUNDARIES.EXTREME_FEAR_MAX} 극심한 공포, ${FEAR_GREED_SCORE_BOUNDARIES.EXTREME_FEAR_MAX}~${FEAR_GREED_SCORE_BOUNDARIES.FEAR_MAX} 공포, ${FEAR_GREED_SCORE_BOUNDARIES.FEAR_MAX}~${FEAR_GREED_SCORE_BOUNDARIES.NEUTRAL_MAX} 중립, ${FEAR_GREED_SCORE_BOUNDARIES.NEUTRAL_MAX}~${FEAR_GREED_SCORE_BOUNDARIES.GREED_MAX} 탐욕, ${FEAR_GREED_SCORE_BOUNDARIES.GREED_MAX}~100 극심한 탐욕입니다. 표본 수가 60일 미만이면 신뢰도 "제한"으로 표시되며, 라벨은 데이터가 더 쌓인 뒤 다시 확인하는 게 안전합니다.`,
+                    // FAQ JSON-LD는 경계값 상수 변경에 따른 schema 회귀를 막기 위해
+                    // 구체 숫자(0~25, 25~45 등) 대신 질적 표현으로만 정리한다.
+                    // 실제 경계값은 페이지 본문 가이드(공포 탐욕 지수 가이드 섹션)에서 노출.
+                    text: '극심한 공포부터 극심한 탐욕까지 5단계(극심한 공포 · 공포 · 중립 · 탐욕 · 극심한 탐욕)로 구분됩니다. 표본 수가 60일 미만이면 신뢰도 "제한"으로 표시되며, 라벨은 데이터가 더 쌓인 뒤 다시 확인하는 게 안전합니다.',
                 },
             },
         ],
@@ -148,6 +154,15 @@ export default async function SymbolFearGreedPage({ params }: Props) {
                 <h1 className="sr-only">
                     {displayName} ({ticker}) 공포 탐욕 지수와 단기 매수 분위기
                 </h1>
+                <section className="sr-only">
+                    <h2>{displayName} 공포 탐욕 지수 개요</h2>
+                    <p>
+                        {displayName}의 단기 매수 분위기를 0~100 점수와 5단계(극
+                        공포 / 공포 / 중립 / 탐욕 / 극탐욕)로 표시합니다. 거래량
+                        흐름과 가격 위치를 종목 자체 분포 안에서 환산해
+                        산출합니다.
+                    </p>
+                </section>
                 <section
                     aria-labelledby="fear-greed-guide-heading"
                     className="border-secondary-800 bg-secondary-800/30 space-y-3 rounded-lg border p-5"

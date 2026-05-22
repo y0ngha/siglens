@@ -21,7 +21,6 @@ import {
     buildBreadcrumbJsonLd,
     buildSymbolNewsSeoContent,
     buildSymbolSeoContent,
-    SITE_BUILD_DATE,
     SITE_NAME,
     SITE_URL,
 } from '@/lib/seo';
@@ -40,6 +39,10 @@ interface Props {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { symbol } = await params;
     const upper = symbol.toUpperCase();
+    // 본문 notFound()와 일관: 잘못된 ticker는 메타데이터를 비우고 noindex로 응답한다.
+    if (!VALID_TICKER_RE.test(upper)) {
+        return { robots: { index: false, follow: false } };
+    }
     const assetInfo = await getAssetInfoCached(upper);
     const displayName = assetInfo ? buildDisplayName(assetInfo, upper) : upper;
     const { title, fullTitle, description, url, keywords } =
@@ -137,17 +140,19 @@ export default async function NewsPage({ params }: Props) {
         { name: '뉴스 분석', url: buildSymbolNewsSeoContent(upper).url },
     ]);
 
-    // datePublished는 페이지(요약 콘텐츠)가 처음 노출되는 빌드 시각으로 고정. 매 요청마다 변동시키면 Googlebot이 매번 "방금 발행"으로 간주.
-    // dateModified는 실제 카드 분석이 백그라운드에서 갱신되므로 요청 시각으로 둔다.
-    const nowIso = new Date().toISOString();
+    // dateModified는 실제 카드 분석이 백그라운드에서 갱신되므로 일 단위로 양자화한다.
+    // 매 요청마다 ISO 정확 시각을 노출하면 Google이 freshness 거짓 신호로 인식할 수 있어 일 단위로 절삭.
+    // datePublished는 의도적으로 생략한다 — ticker별 최초 뉴스 ingestion 시각 fetch 없이는
+    // 정확한 datePublished를 알 수 없어 SITE_BUILD_DATE를 쓰면 모든 ticker가 동일 시점으로
+    // 표기되는 오류 신호가 된다. Article schema에서 datePublished는 옵션이라 생략 가능.
+    const todayIsoDay = `${new Date().toISOString().split('T')[0]}T00:00:00.000Z`;
     const aiArticleJsonLd = {
         '@context': 'https://schema.org',
         '@type': 'Article',
         headline: `${displayName} 최근 뉴스 AI 요약`,
         description: `${displayName} 관련 최신 뉴스의 호재나 악재 분위기와 핵심 이슈를 한국어로 정리합니다.`,
         inLanguage: 'ko',
-        datePublished: SITE_BUILD_DATE.toISOString(),
-        dateModified: nowIso,
+        dateModified: todayIsoDay,
         isPartOf: { '@type': 'WebPage', url },
         author: {
             '@type': 'Organization',
@@ -198,6 +203,13 @@ export default async function NewsPage({ params }: Props) {
             {newsListJsonLd ? <JsonLd data={newsListJsonLd} /> : null}
             <main className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8">
                 <h1 className="sr-only">{displayName} 최신 뉴스와 어닝 일정</h1>
+                <section className="sr-only">
+                    <h2>{displayName} 뉴스 분석 개요</h2>
+                    <p>
+                        {displayName}의 최신 뉴스 분위기, 다음 어닝 일정, 최근
+                        실적 보고서, 애널리스트 등급 변경을 한국어로 정리합니다.
+                    </p>
+                </section>
                 <NewsAiSummaryErrorBoundary>
                     <Suspense fallback={<NewsAiSummarySkeleton />}>
                         <NewsAiSummary

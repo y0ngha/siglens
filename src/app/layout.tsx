@@ -23,6 +23,8 @@ import {
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/lib/og';
 import './globals.css';
 
+// TODO(seo): Geist는 라틴만 지원해 한글은 OS fallback에 의존 — CLS/디자인 일관성을 위해
+//            Pretendard 같은 한글 웹폰트 도입을 검토. (FOIT vs FOUT, 번들 영향 별도 평가 필요)
 const geistSans = Geist({
     variable: '--font-geist-sans',
     subsets: ['latin'],
@@ -56,7 +58,7 @@ export const metadata: Metadata = {
                 url: '/og-image.png',
                 width: OG_IMAGE_WIDTH,
                 height: OG_IMAGE_HEIGHT,
-                alt: SITE_NAME,
+                alt: '미국 주식 AI 분석 — 차트, 펀더멘털, 뉴스, 옵션, 공포 탐욕 지수, 종합 결론',
             },
         ],
     },

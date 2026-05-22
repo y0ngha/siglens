@@ -3,11 +3,14 @@ import Link from 'next/link';
 import { Suspense } from 'react';
 import { AuthCardShell } from '@/components/auth/AuthCardShell';
 import { ResetPasswordForm } from '@/components/auth/ResetPasswordForm';
-import { SITE_NAME } from '@/lib/seo';
+import { SITE_NAME, SITE_URL } from '@/lib/seo';
 
+// noindex 페이지에도 canonical/openGraph.url을 명시한다. 자세한 근거는 src/app/login/page.tsx 주석 참조.
 export const metadata: Metadata = {
     title: '비밀번호 재설정',
     description: `${SITE_NAME} 새 비밀번호 설정`,
+    alternates: { canonical: `${SITE_URL}/reset-password` },
+    openGraph: { url: `${SITE_URL}/reset-password` },
     robots: { index: false, follow: true },
 };
 

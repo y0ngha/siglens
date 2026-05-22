@@ -47,6 +47,10 @@ interface Props {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { symbol } = await params;
     const upper = symbol.toUpperCase();
+    // 본문 notFound()와 일관: 잘못된 ticker는 메타데이터를 비우고 noindex로 응답한다.
+    if (!VALID_TICKER_RE.test(upper)) {
+        return { robots: { index: false, follow: false } };
+    }
     const assetInfo = await getAssetInfoCached(upper);
     const displayName = assetInfo ? buildDisplayName(assetInfo, upper) : upper;
     // sector는 의도적으로 generateMetadata에서 사용하지 않는다. sector는 FMP getProfile 응답에만 있고
@@ -334,6 +338,16 @@ export default async function FundamentalPage({ params }: Props) {
                 <h1 className="sr-only">
                     {displayName} 재무지표와 애널리스트 의견
                 </h1>
+                <section className="sr-only">
+                    <h2>{displayName} 펀더멘털 분석 개요</h2>
+                    <p>
+                        {displayName}
+                        {sector !== '' ? `(${sector} 섹터)` : ''}의 펀더멘털
+                        분석. 회사 프로필, 밸류에이션(PER, PSR, EPS),
+                        수익성(ROE, 마진), 재무건전성, 애널리스트 컨센서스
+                        목표가를 분석합니다.
+                    </p>
+                </section>
                 <Suspense fallback={<ProfileCardSkeleton symbol={upper} />}>
                     <ProfileSection symbol={upper} />
                 </Suspense>

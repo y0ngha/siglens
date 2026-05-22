@@ -4,6 +4,9 @@ import {
     buildSymbolNewsSeoContent,
     buildSymbolOverallSeoContent,
     buildSymbolFearGreedSeoContent,
+    buildSymbolOptionsSeoContent,
+    clampSeoDescription,
+    SEO_DESCRIPTION_MAX_LENGTH,
 } from '@/lib/seo';
 
 describe('buildSymbolSeoContent', () => {
@@ -72,20 +75,23 @@ describe('buildSymbolFundamentalSeoContent', () => {
         expect(content.description).toContain('애널리스트 컨센서스');
     });
 
-    it('description은 메타 디스크립션 길이 권장치(120-170자) 안에 든다', () => {
+    it('description은 SEO_DESCRIPTION_MAX_LENGTH(120자) 이하다 — 한글 SERP 안전권', () => {
         const content = buildSymbolFundamentalSeoContent('AAPL', {
             displayName: '애플, Apple Inc. (AAPL)',
         });
-        expect(content.description.length).toBeGreaterThanOrEqual(120);
-        expect(content.description.length).toBeLessThanOrEqual(170);
+        expect(content.description.length).toBeLessThanOrEqual(
+            SEO_DESCRIPTION_MAX_LENGTH
+        );
     });
 
-    it('sector가 함께 들어와도 description이 170자를 넘지 않는다', () => {
+    it('sector가 함께 들어와도 description이 120자 클램프를 넘지 않는다', () => {
         const content = buildSymbolFundamentalSeoContent('AAPL', {
             displayName: '애플, Apple Inc. (AAPL)',
             sector: 'Technology',
         });
-        expect(content.description.length).toBeLessThanOrEqual(170);
+        expect(content.description.length).toBeLessThanOrEqual(
+            SEO_DESCRIPTION_MAX_LENGTH
+        );
     });
 
     it('displayName이 있으면 description에 반영된다', () => {
@@ -165,10 +171,11 @@ describe('buildSymbolNewsSeoContent', () => {
         expect(content.description).toContain('애널리스트');
     });
 
-    it('description은 메타 디스크립션 길이 권장치(120-170자) 안에 든다', () => {
+    it('description은 SEO_DESCRIPTION_MAX_LENGTH(120자) 이하다 — 한글 SERP 안전권', () => {
         const content = buildSymbolNewsSeoContent('AAPL');
-        expect(content.description.length).toBeGreaterThanOrEqual(120);
-        expect(content.description.length).toBeLessThanOrEqual(170);
+        expect(content.description.length).toBeLessThanOrEqual(
+            SEO_DESCRIPTION_MAX_LENGTH
+        );
     });
 
     it('keywords 배열에 티커와 뉴스 관련 용어가 포함된다', () => {
@@ -250,10 +257,11 @@ describe('buildSymbolOverallSeoContent', () => {
         expect(content.description).toContain('위험 요인');
     });
 
-    it('description은 메타 디스크립션 길이 권장치(120-170자) 안에 든다', () => {
+    it('description은 SEO_DESCRIPTION_MAX_LENGTH(120자) 이하다 — 한글 SERP 안전권', () => {
         const content = buildSymbolOverallSeoContent('AAPL');
-        expect(content.description.length).toBeGreaterThanOrEqual(120);
-        expect(content.description.length).toBeLessThanOrEqual(170);
+        expect(content.description.length).toBeLessThanOrEqual(
+            SEO_DESCRIPTION_MAX_LENGTH
+        );
     });
 
     it('keywords 배열에 티커와 종합 분석 관련 용어가 포함된다', () => {
@@ -341,4 +349,108 @@ describe('Placeholder 회귀 가드 — 어떤 입력에도 [SYMBOL] / [symbol] 
             );
         }
     );
+});
+
+describe('clampSeoDescription', () => {
+    it('안전권(120자 이하)은 변형 없이 그대로 반환한다', () => {
+        const short = '짧은 설명입니다.';
+        expect(clampSeoDescription(short)).toBe(short);
+    });
+
+    it('정확히 SEO_DESCRIPTION_MAX_LENGTH 길이는 변형 없이 그대로 반환한다', () => {
+        const boundary = 'a'.repeat(SEO_DESCRIPTION_MAX_LENGTH);
+        expect(clampSeoDescription(boundary)).toBe(boundary);
+        expect(clampSeoDescription(boundary).length).toBe(
+            SEO_DESCRIPTION_MAX_LENGTH
+        );
+    });
+
+    it('SEO_DESCRIPTION_MAX_LENGTH 초과는 잘라내고 말줄임표(…)를 붙인다', () => {
+        const over = 'a'.repeat(SEO_DESCRIPTION_MAX_LENGTH + 50);
+        const clamped = clampSeoDescription(over);
+        expect(clamped.length).toBe(SEO_DESCRIPTION_MAX_LENGTH);
+        expect(clamped.endsWith('…')).toBe(true);
+    });
+
+    it('말줄임표 포함 길이가 한도를 절대 넘지 않는다 — 회귀 가드', () => {
+        for (const len of [
+            SEO_DESCRIPTION_MAX_LENGTH + 1,
+            SEO_DESCRIPTION_MAX_LENGTH + 10,
+            SEO_DESCRIPTION_MAX_LENGTH * 3,
+        ]) {
+            const over = 'x'.repeat(len);
+            expect(clampSeoDescription(over).length).toBeLessThanOrEqual(
+                SEO_DESCRIPTION_MAX_LENGTH
+            );
+        }
+    });
+
+    it('한글이 정확히 경계를 넘는 입력도 안전권 안으로 클램프된다', () => {
+        const overByOne = '한'.repeat(SEO_DESCRIPTION_MAX_LENGTH + 1);
+        const clamped = clampSeoDescription(overByOne);
+        expect([...clamped].length).toBe(SEO_DESCRIPTION_MAX_LENGTH);
+        expect(clamped.endsWith('…')).toBe(true);
+
+        const wayOver = '한'.repeat(SEO_DESCRIPTION_MAX_LENGTH * 2);
+        expect([...clampSeoDescription(wayOver)].length).toBe(
+            SEO_DESCRIPTION_MAX_LENGTH
+        );
+    });
+
+    it('surrogate pair(이모지)도 깨지지 않고 code-point 단위로 잘린다', () => {
+        // '🚀' (U+1F680)은 UTF-16에서 surrogate pair(2 code units).
+        // .slice()로 자르면 중간이 갈라져 invalid UTF-16이 될 위험이 있다.
+        // 안전권을 초과하도록 50자 더 넣어 클램프가 작동하는 케이스를 만든다.
+        const emoji = '🚀'.repeat(SEO_DESCRIPTION_MAX_LENGTH + 50);
+        const clamped = clampSeoDescription(emoji);
+
+        // 잘린 결과의 모든 code point가 온전한 이모지여야 한다 (lone surrogate 없음).
+        const codePoints = [...clamped];
+        expect(codePoints.length).toBe(SEO_DESCRIPTION_MAX_LENGTH);
+        // 마지막은 말줄임표, 나머지는 모두 🚀.
+        expect(codePoints[codePoints.length - 1]).toBe('…');
+        expect(codePoints.slice(0, -1).every(cp => cp === '🚀')).toBe(true);
+    });
+});
+
+describe('description 길이 가드 — 모든 빌더가 SEO_DESCRIPTION_MAX_LENGTH 이하를 보장', () => {
+    // 한국 displayName + sector를 같이 넣어 가장 긴 입력 케이스로 가드한다.
+    const richOpts = {
+        displayName: '애플, Apple Inc. (AAPL)',
+        koreanName: '애플',
+        sector: 'Technology',
+    };
+
+    it.each([
+        ['buildSymbolSeoContent', buildSymbolSeoContent],
+        ['buildSymbolFundamentalSeoContent', buildSymbolFundamentalSeoContent],
+        ['buildSymbolNewsSeoContent', buildSymbolNewsSeoContent],
+        ['buildSymbolOverallSeoContent', buildSymbolOverallSeoContent],
+        ['buildSymbolFearGreedSeoContent', buildSymbolFearGreedSeoContent],
+    ] as const)('%s — description이 120자 클램프 이하', (_name, builder) => {
+        const content = builder('AAPL', richOpts);
+        expect(content.description.length).toBeLessThanOrEqual(
+            SEO_DESCRIPTION_MAX_LENGTH
+        );
+    });
+
+    it('buildSymbolOptionsSeoContent — hasOptions:true에서도 120자 이하', () => {
+        const content = buildSymbolOptionsSeoContent('AAPL', {
+            ...richOpts,
+            hasOptions: true,
+        });
+        expect(content.description.length).toBeLessThanOrEqual(
+            SEO_DESCRIPTION_MAX_LENGTH
+        );
+    });
+
+    it('buildSymbolOptionsSeoContent — hasOptions:false에서도 120자 이하', () => {
+        const content = buildSymbolOptionsSeoContent('AAPL', {
+            ...richOpts,
+            hasOptions: false,
+        });
+        expect(content.description.length).toBeLessThanOrEqual(
+            SEO_DESCRIPTION_MAX_LENGTH
+        );
+    });
 });
