@@ -102,6 +102,39 @@ describe('callGeminiChat', () => {
         });
     });
 
+    describe('ConversationTurn[] contents 변환', () => {
+        it('role: assistant는 model로 변환하여 Gemini에 전달한다', async () => {
+            mockGenerateContent.mockResolvedValue({ text: 'ok' });
+
+            await callGeminiChat({
+                ...BASE_OPTIONS,
+                contents: [
+                    { role: 'user', text: 'Q' },
+                    { role: 'assistant', text: 'A' },
+                ],
+            });
+
+            expect(mockGenerateContent).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    contents: [
+                        { role: 'user', parts: [{ text: 'Q' }] },
+                        { role: 'model', parts: [{ text: 'A' }] },
+                    ],
+                })
+            );
+        });
+
+        it('빈 배열이면 빈 배열로 변환한다', async () => {
+            mockGenerateContent.mockResolvedValue({ text: 'ok' });
+
+            await callGeminiChat({ ...BASE_OPTIONS, contents: [] });
+
+            expect(mockGenerateContent).toHaveBeenCalledWith(
+                expect.objectContaining({ contents: [] })
+            );
+        });
+    });
+
     describe('thinkingBudget', () => {
         it('thinkingBudget: 0 이면 config.thinkingConfig에 포함한다', async () => {
             mockGenerateContent.mockResolvedValue({ text: 'ok' });
