@@ -520,5 +520,27 @@ describe('submitOverallAnalysisAction 함수는', () => {
                 expect.objectContaining({ optionsOiStale: false })
             );
         });
+
+        it('falls back to optionsSnapshot=undefined when fetchOptionsSnapshot rejects', async () => {
+            // graceful degradation: 옵션 데이터 fetch가 실패해도 다른 3축으로
+            // 종합 분석을 계속 진행해야 한다 (spec §2 row 1 NoChains와 동일 경로).
+            mockFetchSnapshot.mockRejectedValueOnce(new Error('timeout'));
+
+            const result = await submitOverallAnalysisAction(
+                'AAPL',
+                'Apple Inc.',
+                '1Day',
+                MODEL_ID
+            );
+
+            expect(mockSubmitOverallAnalysis).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    optionsSnapshot: undefined,
+                    optionsOiStale: false,
+                })
+            );
+            // 정상 흐름 유지 — error로 빠지지 않는다.
+            expect(result).toBe(SUBMITTED_RESULT);
+        });
     });
 });

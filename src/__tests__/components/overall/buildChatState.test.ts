@@ -45,18 +45,12 @@ describe('overall buildChatState', () => {
             result: FOUR_AXIS_RESULT,
         };
         const next = buildChatState(state, TIMEFRAME);
+        // toEqual(payload: FOUR_AXIS_RESULT)이 객체 전체를 비교하므로
+        // optionsBulletsKo / integratedConclusionKo도 함께 검증된다.
         expect(next.context).toEqual({
             kind: 'overall',
             payload: FOUR_AXIS_RESULT,
         });
-        if (next.context !== null && next.context.kind === 'overall') {
-            expect(next.context.payload.optionsBulletsKo).toEqual([
-                '감마 상승',
-            ]);
-            expect(next.context.payload.integratedConclusionKo).toBe(
-                '통합 결론'
-            );
-        }
     });
 
     it.each<OverallAnalysisState>([
