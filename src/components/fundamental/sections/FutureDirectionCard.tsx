@@ -182,7 +182,7 @@ export function FutureDirectionCard({
             className="border-secondary-700 bg-secondary-800 rounded-xl border p-6"
         >
             <h2 id={HEADING_ID} className={HEADING_CLASS_NAME}>
-                미래 방향
+                전망과 목표가
             </h2>
 
             {estimates !== null && (

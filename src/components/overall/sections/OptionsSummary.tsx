@@ -30,13 +30,14 @@ export function OptionsSummary({ bullets, oiStale }: OptionsSummaryProps) {
                         className="bg-ui-warning/10 text-ui-warning rounded-md px-2 py-0.5 text-xs"
                         title="미국 옵션 정규 거래 시간 외에 수집된 스냅샷으로, Open Interest가 직전 세션 기준일 수 있습니다."
                     >
-                        OI 데이터 stale
+                        OI 데이터 지연
                     </span>
                 )}
             </div>
             {isEmpty ? (
                 <p className="text-secondary-400 text-sm">
-                    분석 대상 옵션 없음 (옵션 미상장 또는 데이터 없음)
+                    이 종목은 옵션이 상장되어 있지 않거나 분석할 데이터가
+                    없어요.
                 </p>
             ) : (
                 <ul aria-label="옵션 분석 항목" className="space-y-2">

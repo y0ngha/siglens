@@ -6,6 +6,7 @@ import {
     isValidTimeframe,
     VALID_TICKER_RE,
 } from '@/domain/constants/market';
+import { buildAssetAboutNode } from '@/domain/seo/assetClassification';
 import { buildDisplayName } from '@/domain/ticker';
 import { getAssetInfoCached } from '@/infrastructure/ticker/getAssetInfoCached';
 import {
@@ -13,6 +14,7 @@ import {
     buildSymbolOverallSeoContent,
     buildSymbolSeoContent,
     SITE_NAME,
+    SITE_URL,
 } from '@/lib/seo';
 import type { Timeframe } from '@y0ngha/siglens-core';
 import type { Metadata } from 'next';
@@ -96,16 +98,23 @@ export default async function OverallPage({ params, searchParams }: Props) {
         }
     );
 
-    // `about` block intentionally omitted: hardcoding `@type: 'Corporation'`
-    // misrepresents ETF/Index tickers (e.g. SPY, QQQ, SPXUSD). Re-adding it
-    // requires an AssetInfo discriminator that distinguishes Stock/ETF/Index.
+    // about 노드는 stock으로 분류된 경우만 채워지고, ETF/Index/모호한 종목은
+    // undefined로 자연 생략된다 (assetClassification 모듈 doc 참고).
+    const aboutNode = buildAssetAboutNode(
+        upper,
+        assetInfo.koreanName ?? assetInfo.name,
+        assetInfo.fmpSymbol
+    );
     const jsonLd = {
         '@context': 'https://schema.org',
         '@type': 'WebPage',
+        '@id': `${url}#webpage`,
         name: fullTitle,
         description,
         url,
         inLanguage: 'ko',
+        isPartOf: { '@type': 'WebSite', '@id': `${SITE_URL}#website` },
+        ...(aboutNode && { about: aboutNode }),
     };
 
     const breadcrumbJsonLd = buildBreadcrumbJsonLd([
@@ -138,7 +147,7 @@ export default async function OverallPage({ params, searchParams }: Props) {
                 name: '어떤 신호가 나오면 시나리오가 깨졌다고 봐야 하나요?',
                 acceptedAnswer: {
                     '@type': 'Answer',
-                    text: '실적 발표 결과나 가이던스 변화, 매크로 이벤트, 분위기 급반전 같은 위험 요인이 시나리오 판단의 핵심 가정과 어긋나면 시나리오가 깨졌다고 봅니다. 위험 요인 항목에 따로 표시되어 있어 매수 전에 한 번 확인하기 좋습니다.',
+                    text: '실적 발표 결과나 가이던스 변화, 매크로 이벤트, 분위기 급반전 같은 위험 요인이 시나리오의 전제를 무너뜨리면 그 시나리오는 깨졌다고 봅니다. 위험 요인 항목에 따로 표시되어 있어 매수 전에 한 번 확인하기 좋습니다.',
                 },
             },
         ],

@@ -13,8 +13,10 @@ import { CrossLinkCards } from '@/components/symbol-page/CrossLinkCards';
 import { SectionSkeleton } from '@/components/symbol-page/SectionSkeleton';
 import { JsonLd } from '@/components/ui/JsonLd';
 import { VALID_TICKER_RE } from '@/domain/constants/market';
+import { buildAssetAboutNode } from '@/domain/seo/assetClassification';
 import { buildDisplayName } from '@/domain/ticker';
 import { ensureNewsCardsAnalyzedAction } from '@/infrastructure/market/ensureNewsCardsAnalyzedAction';
+import { getTodayIsoDay } from '@/infrastructure/seo/getTodayIsoDay';
 import { getAssetInfoCached } from '@/infrastructure/ticker/getAssetInfoCached';
 import { todayKstIsoDate } from '@/infrastructure/utils/dateKey';
 import {
@@ -123,16 +125,23 @@ export default async function NewsPage({ params }: Props) {
         })
     );
 
-    // `about` block intentionally omitted: hardcoding `@type: 'Corporation'`
-    // misrepresents ETF/Index tickers (e.g. SPY, QQQ, SPXUSD). Re-adding it
-    // requires an AssetInfo discriminator that distinguishes Stock/ETF/Index.
+    // about 노드는 stock으로 분류된 경우만 채워지고, ETF/Index/모호한 종목은
+    // undefined로 자연 생략된다 (assetClassification 모듈 doc 참고).
+    const aboutNode = buildAssetAboutNode(
+        upper,
+        assetInfo.koreanName ?? assetInfo.name,
+        assetInfo.fmpSymbol
+    );
     const jsonLd = {
         '@context': 'https://schema.org',
         '@type': 'WebPage',
+        '@id': `${url}#webpage`,
         name: fullTitle,
         description,
         url,
         inLanguage: 'ko',
+        isPartOf: { '@type': 'WebSite', '@id': `${SITE_URL}#website` },
+        ...(aboutNode && { about: aboutNode }),
     };
 
     const breadcrumbJsonLd = buildBreadcrumbJsonLd([
@@ -140,20 +149,27 @@ export default async function NewsPage({ params }: Props) {
         { name: '뉴스 분석', url: buildSymbolNewsSeoContent(upper).url },
     ]);
 
-    // dateModified는 실제 카드 분석이 백그라운드에서 갱신되므로 일 단위로 양자화한다.
-    // 매 요청마다 ISO 정확 시각을 노출하면 Google이 freshness 거짓 신호로 인식할 수 있어 일 단위로 절삭.
-    // datePublished는 의도적으로 생략한다 — ticker별 최초 뉴스 ingestion 시각 fetch 없이는
-    // 정확한 datePublished를 알 수 없어 SITE_BUILD_DATE를 쓰면 모든 ticker가 동일 시점으로
-    // 표기되는 오류 신호가 된다. Article schema에서 datePublished는 옵션이라 생략 가능.
-    const todayIsoDay = `${new Date().toISOString().split('T')[0]}T00:00:00.000Z`;
+    // datePublished는 의도적으로 생략한다 — ticker별 최초 뉴스 ingestion 시각
+    // fetch 없이는 정확한 datePublished를 알 수 없어 SITE_BUILD_DATE를 쓰면 모든
+    // ticker가 동일 시점으로 표기되는 오류 신호가 된다. Article schema에서
+    // datePublished는 옵션이라 생략 가능. dateModified는 getTodayIsoDay()로
+    // 일 단위 양자화 (rationale은 helper JSDoc 참고).
+    const todayIsoDay = getTodayIsoDay();
     const aiArticleJsonLd = {
         '@context': 'https://schema.org',
         '@type': 'Article',
         headline: `${displayName} 최근 뉴스 AI 요약`,
-        description: `${displayName} 관련 최신 뉴스의 호재나 악재 분위기와 핵심 이슈를 한국어로 정리합니다.`,
+        description: `${displayName} 최신 뉴스의 호재·악재 분위기와 핵심 이슈를 한국어로 정리합니다.`,
         inLanguage: 'ko',
         dateModified: todayIsoDay,
-        isPartOf: { '@type': 'WebPage', url },
+        isPartOf: { '@type': 'WebPage', '@id': `${url}#webpage` },
+        // Article schema는 image를 명시할 때 Rich Results 자격이 강해진다.
+        // 정적 og-image.png를 사용해 hashless permanent URL을 보장 — Next.js의
+        // file-based opengraph-image route는 빌드 시 `?<hash>` cache-buster를
+        // URL에 부여하기 때문에, schema에서 그 URL을 hardcode하면 빌드마다
+        // schema image와 OG meta가 불일치하는 회귀가 발생한다. 정적 자원은
+        // 영구 URL이라 schema image 신뢰도 측면에서 더 유리.
+        image: [`${SITE_URL}/og-image.png`],
         author: {
             '@type': 'Organization',
             name: SITE_NAME,

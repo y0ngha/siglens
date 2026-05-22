@@ -4,6 +4,7 @@ import { SITE_BUILD_DATE, SITE_URL } from '@/lib/seo';
 import { POPULAR_TICKERS } from '@/domain/constants/popular-tickers';
 import { MS_PER_DAY, MS_PER_HOUR } from '@/domain/constants/time';
 import { hasOptionsMarket } from '@/infrastructure/options/optionsDataCache';
+import { loadLongTailTickers } from '@/infrastructure/sitemap/loadLongTailTickers';
 
 // Upstash Redis(`no-store` fetch)와 Yahoo Finance probe를 호출하기 때문에
 // 빌드 시점 prerender가 불가능하다. force-dynamic으로 요청 시 생성하고,
@@ -18,10 +19,21 @@ const US_MARKET_CLOSE_UTC_HOUR = 20;
 // 보내지 않도록 청크 단위 await로 묶는다.
 const OPTIONS_PROBE_CONCURRENCY = 5;
 
+// sitemap.org changefreq 표준 값 — string 대신 literal union으로 좁혀 잘못된
+// 값이 silently invalid XML로 들어가는 회귀를 컴파일 시점에서 차단한다.
+type SitemapChangeFrequency =
+    | 'always'
+    | 'hourly'
+    | 'daily'
+    | 'weekly'
+    | 'monthly'
+    | 'yearly'
+    | 'never';
+
 interface SitemapEntry {
     url: string;
     lastModified: Date;
-    changeFrequency: string;
+    changeFrequency: SitemapChangeFrequency;
     priority: number;
 }
 
@@ -72,20 +84,26 @@ async function buildEntries(): Promise<SitemapEntry[]> {
         OPTIONS_PROBE_CONCURRENCY
     );
     // 청크 단위 await로 동시 호출 수를 OPTIONS_PROBE_CONCURRENCY로 상한 유지.
-    // Immutable accumulate via [...acc, result]: POPULAR_TICKERS / 5 ≈ 20 청크
-    // 가 상한이라 O(N²) spread 비용은 무시 가능하고, FP 일관성을 우선한다.
     // 청크 전체를 Promise.all로 묶는 방식은 rate-limit을 깨뜨리므로 불가.
-    let chunkResults: boolean[][] = [];
+    // const 배열 local-scope mutation으로 누적 — 외부 노출 없는 함수 내부
+    // 누적은 push가 spread-reassign보다 단순하고 O(N) 비용도 회피한다.
+    const chunkResults: boolean[][] = [];
     for (const chunk of allChunks) {
         const result = await Promise.all(
             chunk.map(ticker => hasOptionsMarket(ticker).catch(() => false))
         );
-        chunkResults = [...chunkResults, result];
+        chunkResults.push(result);
     }
     const tickerHasOptions = chunkResults.flat();
     const tickersWithOptions = new Set(
         POPULAR_TICKERS.filter((_, i) => tickerHasOptions[i])
     );
+
+    // POPULAR_TICKERS 외 DB 등록 ticker (long-tail). DB 미설정/실패 시 빈 배열.
+    // 차트 페이지만 sitemap에 노출한다 — sibling 라우트는 cross-link로 발견되며,
+    // 옵션 hasOptionsMarket probe를 long-tail 전체로 확장하면 Yahoo Finance
+    // rate-limit 위험이 있다. helper 내부 주석 참고.
+    const longTailTickers = await loadLongTailTickers();
 
     return [
         {
@@ -125,7 +143,7 @@ async function buildEntries(): Promise<SitemapEntry[]> {
             changeFrequency: 'yearly',
             priority: 0.3,
         },
-        ...POPULAR_TICKERS.flatMap(ticker => [
+        ...POPULAR_TICKERS.flatMap((ticker): SitemapEntry[] => [
             {
                 url: `${SITE_URL}/${ticker}`,
                 lastModified: TODAY_AT_MARKET_CLOSE,
@@ -149,7 +167,11 @@ async function buildEntries(): Promise<SitemapEntry[]> {
                       {
                           url: `${SITE_URL}/${ticker}/options`,
                           lastModified: TODAY_AT_MARKET_CLOSE,
-                          changeFrequency: 'daily',
+                          // ternary 안의 inline array literal은 outer flatMap의
+                          // SitemapEntry[] annotation이 닿지 않아 'daily'가 string
+                          // 으로 widening된다. 런타임 값은 항상 'daily'(=valid
+                          // SitemapChangeFrequency)이므로 `as const`로 좁혀 safe.
+                          changeFrequency: 'daily' as const,
                           priority: 0.75,
                       },
                   ]
@@ -167,6 +189,17 @@ async function buildEntries(): Promise<SitemapEntry[]> {
                 priority: 0.78,
             },
         ]),
+        // long-tail ticker는 chart 페이지만 sitemap에 노출한다 (이유: helper 주석).
+        // priority는 POPULAR(0.8)보다 한 단 낮춰 0.5로, changeFrequency는 weekly로
+        // 둬 Googlebot 크롤 가중치를 POPULAR에 집중시킨다.
+        ...longTailTickers.map(
+            (ticker): SitemapEntry => ({
+                url: `${SITE_URL}/${ticker}`,
+                lastModified: TODAY_AT_MARKET_CLOSE,
+                changeFrequency: 'weekly',
+                priority: 0.5,
+            })
+        ),
     ];
 }
 

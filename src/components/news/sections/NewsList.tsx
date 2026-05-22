@@ -20,10 +20,10 @@ const SENTIMENT_CLASS: Record<NewsSentiment, string> = {
 };
 
 const IMPACT_LABEL: Record<NewsImpact, string> = {
-    high: '주가영향 높음',
-    medium: '주가영향 보통',
-    low: '주가영향 낮음',
-    negligible: '주가영향 미미',
+    high: '주가 영향 큼',
+    medium: '주가 영향 보통',
+    low: '주가 영향 작음',
+    negligible: '주가 영향 거의 없음',
 };
 
 const IMPACT_CLASS: Record<NewsImpact, string> = {
@@ -334,7 +334,7 @@ export function NewsList({ items: initialItems, symbol }: NewsListProps) {
                     </span>
                 </div>
                 <p className="text-secondary-400 text-sm">
-                    {NEWS_LIST_PERIOD_LABEL}간 뉴스가 없습니다.
+                    {NEWS_LIST_PERIOD_LABEL} 동안 들어온 뉴스가 없어요.
                 </p>
             </section>
         );

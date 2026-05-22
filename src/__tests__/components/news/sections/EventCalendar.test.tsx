@@ -61,7 +61,7 @@ describe('EventCalendar', () => {
         expect(screen.getByText('$109.5B')).toBeInTheDocument();
     });
 
-    it('과거 실적은 서프라이즈와 보합 뱃지를 표시하고 미래 실적에는 표시하지 않는다', () => {
+    it('과거 실적은 서프라이즈와 예상치 부합 뱃지를 표시하고 미래 실적에는 표시하지 않는다', () => {
         render(
             <EventCalendar
                 earningsReports={[INLINE_ITEM, SURPRISE_ITEM, FUTURE_ITEM]}
@@ -69,7 +69,7 @@ describe('EventCalendar', () => {
         );
 
         expect(screen.getByText(/서프라이즈/)).toBeInTheDocument();
-        expect(screen.getByText(/보합/)).toBeInTheDocument();
+        expect(screen.getByText(/예상치 부합/)).toBeInTheDocument();
         expect(screen.queryByText(/쇼크/)).not.toBeInTheDocument();
     });
 

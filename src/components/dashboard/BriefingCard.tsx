@@ -41,7 +41,7 @@ export function BriefingCard({ briefing, generatedAt }: BriefingCardProps) {
                     {sectorAnalysis.leadingSectors.length > 0 && (
                         <p className="text-xs">
                             <span className="text-secondary-500 mr-1">
-                                상승
+                                상승 섹터
                             </span>
                             <span className="text-chart-bullish font-mono">
                                 {sectorAnalysis.leadingSectors.join('·')}
@@ -51,7 +51,7 @@ export function BriefingCard({ briefing, generatedAt }: BriefingCardProps) {
                     {sectorAnalysis.laggingSectors.length > 0 && (
                         <p className="text-xs">
                             <span className="text-secondary-500 mr-1">
-                                하락
+                                하락 섹터
                             </span>
                             <span className="text-chart-bearish font-mono">
                                 {sectorAnalysis.laggingSectors.join('·')}
@@ -89,7 +89,7 @@ export function BriefingCard({ briefing, generatedAt }: BriefingCardProps) {
                     hour: '2-digit',
                     minute: '2-digit',
                 })}{' '}
-                기준 분석
+                기준
             </p>
         </div>
     );
@@ -117,7 +117,7 @@ export function BriefingErrorCard() {
             className="border-secondary-700/50 rounded-lg border p-4"
         >
             <p className="text-chart-bearish text-sm">
-                브리핑을 불러오지 못했습니다.
+                브리핑을 불러오지 못했어요.
             </p>
         </div>
     );

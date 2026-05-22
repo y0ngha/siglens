@@ -23,10 +23,10 @@ export function BotBlockedNotice({ className }: BotBlockedNoticeProps) {
             )}
         >
             <p className="text-secondary-200">
-                자동화된 접근으로 판정되어 분석 결과를 표시하지 않습니다.
+                봇 트래픽으로 보여 분석 결과를 표시하지 않았어요.
             </p>
             <p className="text-secondary-300">
-                실제 사용자라면 다른 브라우저로 접속하시거나 문의해 주세요.
+                실제 사용자라면 새로고침하거나 다른 브라우저로 접속해 보세요.
             </p>
         </div>
     );

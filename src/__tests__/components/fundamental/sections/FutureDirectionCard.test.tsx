@@ -43,7 +43,7 @@ describe('FutureDirectionCard', () => {
             />
         );
         expect(
-            screen.getByRole('heading', { name: '미래 방향' })
+            screen.getByRole('heading', { name: '전망과 목표가' })
         ).toBeInTheDocument();
         expect(screen.getByText('애널리스트 추정')).toBeInTheDocument();
     });
@@ -73,7 +73,7 @@ describe('FutureDirectionCard', () => {
             />
         );
         expect(
-            screen.getByRole('heading', { name: '미래 방향' })
+            screen.getByRole('heading', { name: '전망과 목표가' })
         ).toBeInTheDocument();
         expect(screen.getByText('애널리스트 추정')).toBeInTheDocument();
     });

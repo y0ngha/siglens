@@ -116,8 +116,8 @@ export function OptionsMetricsRow({
             </div>
             {expirationDate === 'all' && nearestExpiry && (
                 <p className="text-secondary-500 text-[10px]">
-                    종합 만기 기준 — 가장 가까운 만기 데이터를 표시합니다 (
-                    {nearestExpiry}).
+                    전체 만기 합산 — 가장 가까운 만기({nearestExpiry}) 기준으로
+                    표시합니다.
                 </p>
             )}
         </div>

@@ -25,7 +25,7 @@ const LABEL: Record<PageKey, string> = {
 const DESCRIPTION: Record<PageKey, string> = {
     chart: '기술적 지표 + AI 종합 리포트',
     news: '실시간 뉴스 + 애널리스트 의견 분석',
-    fundamental: '재무·밸류에이션·미래 방향',
+    fundamental: '재무·밸류에이션·애널리스트 전망',
     options: '옵션 시장이 보는 가격대와 기대 변동성',
     'fear-greed': '단기 매매 심리 0~100 점수',
     overall: '4축 통합 AI 결론 + 시나리오',
@@ -54,7 +54,7 @@ export function CrossLinkCards({ symbol, current }: CrossLinkCardsProps) {
     return (
         <section
             className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
-            aria-label="다른 분석 종류 보기"
+            aria-label="다른 분석 탭"
         >
             {ALL_PAGES.map(p => {
                 const isCurrent = p === current;
@@ -72,7 +72,7 @@ export function CrossLinkCards({ symbol, current }: CrossLinkCardsProps) {
                                 {DESCRIPTION[p]}
                             </p>
                             <p className="text-primary-400 mt-3 text-xs font-medium">
-                                현재 보고 있는 분석
+                                지금 보는 페이지예요
                             </p>
                         </div>
                     );

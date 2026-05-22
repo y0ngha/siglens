@@ -2,15 +2,20 @@ import { ApiKeySection } from '@/components/account/ApiKeySection';
 import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
 import { getRegisteredProvidersAction } from '@/infrastructure/llm/getRegisteredProvidersAction';
 import { TIER_LABEL } from '@/lib/auth/tierLabel';
-import { SITE_NAME } from '@/lib/seo';
+import { SITE_NAME, SITE_URL } from '@/lib/seo';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
 
+// noindex 페이지에도 canonical/og:url을 명시한다 (login/signup 정책과 일관).
+// 외부에 변형 URL이 공유되더라도 "원본은 /account 하나"라는 신호를 명확히 두면
+// 일부 크롤러/공유 도구가 변형을 강조하지 않는다.
 export const metadata: Metadata = {
     title: '계정 설정',
     description: `${SITE_NAME} 계정 설정 페이지`,
+    alternates: { canonical: `${SITE_URL}/account` },
+    openGraph: { url: `${SITE_URL}/account` },
     robots: { index: false, follow: false },
 };
 

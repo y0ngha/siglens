@@ -57,8 +57,8 @@ const CHAT_MODEL_OPTIONS = VALID_CHAT_MODELS.map(id => ({
 })) satisfies ReadonlyArray<ChatModelOption>;
 
 const LOADING_MESSAGES = {
-    analyzing: '요청을 분석하고 있어요...',
-    generating: '응답을 생성하고 있어요...',
+    analyzing: '질문 내용을 살펴보고 있어요...',
+    generating: '답변을 작성하고 있어요...',
 } as const;
 
 interface ChatPanelProps {
@@ -205,8 +205,8 @@ export function ChatPanel({ symbol, onClose }: ChatPanelProps) {
                 {messages.length === 0 && loadingPhase === null && (
                     <div className="bg-secondary-700/30 rounded-lg rounded-tl-sm p-3">
                         <p className="text-secondary-400 text-xs leading-relaxed">
-                            분석 결과를 바탕으로 질문해보세요. 진입 타이밍, 매도
-                            전략, 지표 해석 등을 물어보실 수 있어요.
+                            분석 결과를 바탕으로 질문해 보세요. 진입 타이밍,
+                            매도 전략, 지표 해석까지 모두 물어볼 수 있어요.
                         </p>
                     </div>
                 )}
@@ -378,7 +378,7 @@ export function ChatPanel({ symbol, onClose }: ChatPanelProps) {
                     </div>
 
                     <span>·</span>
-                    <span>분석 범위 내 질문만 가능</span>
+                    <span>분석 결과 안에서만 답해요</span>
                     {remainingTokens !== null && (
                         <>
                             <span>·</span>

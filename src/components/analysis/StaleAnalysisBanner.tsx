@@ -3,7 +3,7 @@
 import { MS_PER_MINUTE } from '@/domain/constants/time';
 
 const STALE_MESSAGE =
-    'AI 분석 데이터가 오래되었습니다. 최신 시장가를 반영하려면 재분석을 실행해 주세요.';
+    'AI 분석 결과가 오래됐어요. 지금 시장 가격을 반영하려면 재분석해 주세요.';
 const REANALYZE_LABEL = '재분석';
 const COOLDOWN_TOOLTIP_ID = 'stale-banner-cooldown-tooltip';
 

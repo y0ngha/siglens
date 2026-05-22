@@ -23,7 +23,7 @@ const RULES: readonly Rule[] = [
         label: `${MIN_PASSWORD_LENGTH}자 이상`,
         test: hasMinLength,
     },
-    { id: 'letter', label: '영문 포함', test: hasLetter },
+    { id: 'letter', label: '영어 포함', test: hasLetter },
     { id: 'number', label: '숫자 포함', test: hasNumber },
 ];
 

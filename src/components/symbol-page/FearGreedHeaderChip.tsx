@@ -23,7 +23,7 @@ export function FearGreedHeaderChip({ snapshot }: FearGreedHeaderChipProps) {
     if (!snapshot) {
         return (
             <span className="bg-secondary-700/40 text-secondary-400 inline-flex items-center rounded px-2 py-0.5 text-xs">
-                F&G 데이터 부족
+                공포·탐욕 데이터 부족
             </span>
         );
     }

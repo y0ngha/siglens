@@ -6,6 +6,7 @@ import {
     isValidTimeframe,
     VALID_TICKER_RE,
 } from '@/domain/constants/market';
+import { buildAssetAboutNode } from '@/domain/seo/assetClassification';
 import { buildDisplayName } from '@/domain/ticker';
 import { getBarsAction } from '@/infrastructure/market/getBarsAction';
 import { countSkillFiles } from '@/infrastructure/skills/loader';
@@ -15,6 +16,7 @@ import {
     buildBreadcrumbJsonLd,
     buildSymbolSeoContent,
     SITE_NAME,
+    SITE_URL,
 } from '@/lib/seo';
 import {
     dehydrate,
@@ -98,16 +100,25 @@ export default async function SymbolPage({ params, searchParams }: Props) {
         koreanName: assetInfo.koreanName,
     });
 
-    // `about` block intentionally omitted: hardcoding `@type: 'Corporation'`
-    // misrepresents ETF/Index tickers (e.g. SPY, QQQ, SPXUSD). Re-adding it
-    // requires an AssetInfo discriminator that distinguishes Stock/ETF/Index.
+    // about 노드는 classifyAsset 결과가 stock일 때만 Corporation으로 채워지고,
+    // ETF/Index/모호한 종목은 undefined를 반환해 spread로 자연 생략된다.
+    // 이전에는 ETF/Index 오분류 위험으로 about 자체를 두지 않았으나, 분류 안전망
+    // 도입 후엔 분류 가능한 종목만 안전하게 Corporation 노드를 노출한다.
+    const aboutNode = buildAssetAboutNode(
+        ticker,
+        assetInfo.koreanName ?? assetInfo.name,
+        assetInfo.fmpSymbol
+    );
     const jsonLd = {
         '@context': 'https://schema.org',
         '@type': 'WebPage',
+        '@id': `${url}#webpage`,
         name: fullTitle,
         description,
         url,
         inLanguage: 'ko',
+        isPartOf: { '@type': 'WebSite', '@id': `${SITE_URL}#website` },
+        ...(aboutNode && { about: aboutNode }),
     };
 
     // 차트 페이지는 ticker landing이므로 [Siglens, ticker] 2단계로 통일한다.
@@ -168,39 +179,51 @@ export default async function SymbolPage({ params, searchParams }: Props) {
             <JsonLd data={jsonLd} />
             <JsonLd data={breadcrumbJsonLd} />
             <JsonLd data={faqJsonLd} />
-            <section className="sr-only">
-                <h2>{displayName} 기술적 분석</h2>
-                <p>
-                    {displayName}({ticker})의 기술적 분석 페이지입니다. 보조지표{' '}
-                    {skillCounts.indicators}종, 캔들 패턴{' '}
-                    {skillCounts.candlesticks}종, 차트 패턴{' '}
-                    {skillCounts.patterns}종을 활용해 추세, 진입 구간, 지지선과
-                    저항선을 분석합니다.
-                </p>
-                <p>
-                    {displayName} 주가를 RSI, MACD, 볼린저밴드 등 보조지표로
-                    해석하고, 도지나 해머, 장악형 같은 주요 캔들 패턴과 차트
-                    패턴을 자동으로 감지합니다. 주요 지지선과 저항선 레벨, 매매
-                    전략도 함께 확인할 수 있습니다.
-                </p>
-                <h2>AI와 대화로 분석 결과 확인</h2>
-                <p>
-                    분석된 차트 데이터를 근거로 AI와 대화할 수 있습니다. 추세
-                    판단, 지표 의미, 진입 타이밍 등 궁금한 점을 질문하면{' '}
-                    {displayName}의 현재 상황에 맞춰 답변합니다.
-                </p>
-            </section>
-            <HydrationBoundary state={dehydrate(queryClient)}>
-                <SymbolPageClient
-                    symbol={symbol}
-                    companyName={assetInfo.name}
-                    initialAnalysis={FALLBACK_ANALYSIS}
-                    // SSR 단계에서 AI 분석을 의도적으로 생략하고 클라이언트로 위임한다.
-                    // 마운트 시 useAnalysis가 자동으로 재분석을 트리거하도록 true로 설정한다.
-                    initialAnalysisFailed={true}
-                    indicatorCount={skillCounts.indicators}
-                />
-            </HydrationBoundary>
+            {/* main 랜드마크: 다른 5개 sibling 페이지는 본문에 <main>이 있는데
+                차트 페이지만 빠져 있어 의미론적 일관성이 깨졌었다. SymbolPageClient
+                outer div는 flex-1로 viewport를 채우는 구조라 그 위 한 단을 main으로
+                감싸 sr-only h1과 chart 본문을 하나의 랜드마크로 묶는다. */}
+            {/* 차트 페이지는 CrossLinkCards를 본문에 두지 않는다 — 100dvh
+                viewport jail + useBodyScrollLock 구조라 카드를 추가하면
+                사용자가 도달 못하고 visible-but-unreachable element만 만든다.
+                cross-link 역할은 layout header의 SymbolTabs가 충분히 수행
+                (탭으로 sibling 페이지 전환 가능). SEO internal-link 측면에서도
+                SymbolTabs는 anchor 기반이라 crawler가 follow 가능. */}
+            <main className="flex min-h-0 flex-1 flex-col">
+                <section className="sr-only">
+                    <h1>{displayName} 차트 분석과 매매 신호</h1>
+                    <p>
+                        {displayName}({ticker})의 기술적 분석 페이지입니다.
+                        보조지표 {skillCounts.indicators}종, 캔들 패턴{' '}
+                        {skillCounts.candlesticks}종, 차트 패턴{' '}
+                        {skillCounts.patterns}종을 활용해 추세, 진입 구간,
+                        지지선과 저항선을 분석합니다.
+                    </p>
+                    <p>
+                        {displayName} 주가를 RSI, MACD, 볼린저밴드 등 보조지표로
+                        해석하고, 도지나 해머, 장악형 같은 주요 캔들 패턴과 차트
+                        패턴을 자동으로 감지합니다. 주요 지지선과 저항선 레벨,
+                        매매 전략도 함께 확인할 수 있습니다.
+                    </p>
+                    <h2>AI와 대화로 분석 결과 확인</h2>
+                    <p>
+                        분석된 차트 데이터를 근거로 AI와 대화할 수 있습니다.
+                        추세 판단, 지표 의미, 진입 타이밍 등 궁금한 점을
+                        질문하면 {displayName}의 현재 상황에 맞춰 답변합니다.
+                    </p>
+                </section>
+                <HydrationBoundary state={dehydrate(queryClient)}>
+                    <SymbolPageClient
+                        symbol={symbol}
+                        companyName={assetInfo.name}
+                        initialAnalysis={FALLBACK_ANALYSIS}
+                        // SSR 단계에서 AI 분석을 의도적으로 생략하고 클라이언트로 위임한다.
+                        // 마운트 시 useAnalysis가 자동으로 재분석을 트리거하도록 true로 설정한다.
+                        initialAnalysisFailed={true}
+                        indicatorCount={skillCounts.indicators}
+                    />
+                </HydrationBoundary>
+            </main>
         </>
     );
 }

@@ -49,7 +49,14 @@ export function SymbolLayoutHeader({ symbol }: SymbolLayoutHeaderProps) {
                         SIGLENS
                     </Link>
                     <span className="text-secondary-700">/</span>
-                    <h1 className="text-secondary-100 truncate text-lg font-semibold tracking-wide">
+                    {/* 종목 브레드크럼은 5개 sibling 페이지(/[symbol], /news,
+                        /fundamental, /options, /overall, /fear-greed)에 공통으로
+                        렌더되므로 h1으로 두면 페이지별 sr-only h1과 충돌해 페이지당
+                        h1이 2개가 된다. 페이지마다 실제 주제가 다르므로 페이지 h1을
+                        살리고, 여기는 시각 스타일만 유지한 채 의미론적 위계에서는
+                        제외한다. role 미부여(plain span)로 두면 layout banner 영역의
+                        breadcrumb 정도로 처리되어 의도와 일치한다. */}
+                    <span className="text-secondary-100 truncate text-lg font-semibold tracking-wide">
                         {assetInfo?.koreanName && (
                             <span className="text-secondary-300">
                                 {assetInfo.koreanName}
@@ -61,8 +68,8 @@ export function SymbolLayoutHeader({ symbol }: SymbolLayoutHeaderProps) {
                                 {assetInfo.name}{' '}
                             </span>
                         )}
-                        ({ticker})<span className="sr-only"> 기술적 분석</span>
-                    </h1>
+                        ({ticker})
+                    </span>
                     {/* useBars가 useSuspenseQuery 기반이라 promise를 throw하면 부모 트리까지
                         suspend된다. 헤더 chip 로딩이 헤더 전체(모델 셀렉터·브레드크럼) 영역에
                         영향을 주지 않도록 여기서 경계를 잡고, 빈 chip 자리만 잠깐 보이게 한다.

@@ -48,18 +48,18 @@ export function HowItWorks({ skillCounts }: HowItWorksProps) {
         {
             number: '01',
             title: '종목 입력',
-            description: '종목명, 심볼을 입력하면 차트가 렌더링됩니다',
+            description: '종목명이나 심볼을 입력하면 차트가 바로 그려져요',
         },
         {
             number: '02',
             title: '자동 분석',
-            description: `보조지표 ${indicators}종, 캔들 패턴 ${candlesticks}종, 차트 패턴 ${patterns}종, 전략 ${strategies}종, 지지/저항 ${supportResistance}종 자동 분석`,
+            description: `보조지표 ${indicators}종, 캔들 패턴 ${candlesticks}종, 차트 패턴 ${patterns}종, 전략 ${strategies}종, 지지·저항선 ${supportResistance}종을 자동으로 분석해요`,
         },
         {
             number: '03',
             title: 'AI 리포트',
             description:
-                '추세, 리스크, 진입 추천, 시그널, 차트 패턴, 전략 분석, 주요 지지/저항 레벨을 한 화면에서 확인',
+                '추세와 리스크, 매수 진입 가이드, 매매 신호, 차트 패턴, 전략, 주요 지지·저항선까지 한 화면에서 확인할 수 있어요',
         },
     ];
     return (

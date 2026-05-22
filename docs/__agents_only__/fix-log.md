@@ -1,6 +1,32 @@
 
 # Fix Log
 
+## [feat/seo-followup | Sonnet R1-3, Opus R1-4 | 2026-05-23]
+- B1 (Sonnet R1): `src/components/chat/UserApiKeyRequiredModal.tsx:43` — Dead route links `/account/api-keys`, `/auth/sign-up` don't exist. Pre-existing bug surfaced during SEO PR review.
+  - Rule: CONVENTIONS.md — All href links must be verified to exist in app router.
+- B2 (Sonnet R1): `src/app/[symbol]/options/page.tsx:170` — Missing `<main>` landmark on options-data path. Sibling pages (chart, fundamental, news) all have it. Regression from H1+H2 fix that missed this branch.
+  - Rule: MISTAKES.md Accessibility / Components — `<main>` landmark must be consistent across mutually exclusive page states (empty vs data).
+- B3 (Sonnet R2): `src/app/api/sitemap/route.ts:170` — `'daily' as const` safe-cast without explanatory comment. MISTAKES.md TypeScript §7 requires comment explaining guarantee.
+  - Rule: MISTAKES.md TypeScript §7 — Every safe-cast `as` in production code must have a guarantee comment (test files exempt).
+- B4 (Opus R1): `src/infrastructure/sitemap/loadLongTailTickers.ts:28` — Case-sensitive `Set.has()` against uppercase POPULAR_TICKERS constant but DB rows not normalized. Causes duplicate sitemap entries (e.g. `/AAPL` + `/aapl`).
+  - Rule: Hardcoded data membership — When validating external data against local constants, normalize both to same case before comparison.
+- B5 (Opus R1): `src/app/globals.css:101` — Misleading comment on `:where()` wrapper; actual safety is `:not(:focus-visible)` + `!important`. Comment rewrites misleading specificity claim.
+  - Rule: MISTAKES.md §15.3 — Comments must be factually accurate or omitted entirely.
+- B6 (Opus R1): `src/app/account/delete/page.tsx:45` — `<Suspense>` with no fallback on destructive action page shows blank card. Add fallback skeleton matching card height/width.
+  - Rule: Components § — `<Suspense>` on destructive/critical actions must have fallback UI (never null/blank).
+- B7 (Opus R1): `src/app/api/sitemap/route.ts:90` — `let chunkResults = []` + spread reassignment instead of `const` + `push()` for local accumulation.
+  - Rule: MISTAKES.md §5 / Coding Paradigm §2 — Local accumulation should use `const` + `push()` (mutation is safe in local scope), not `let` + spread.
+- B8 (Opus R1): `src/app/[symbol]/news/page.tsx:156` — Inline `todayIsoDay` computation should extract to named helper with rationale (used 3+ times across codebase).
+  - Rule: MISTAKES.md §1 — Identical logic 3+ times → extract to helper.
+- B9 (Opus R1): `src/components/options/OptionsAiAnalysisStaleNotice.tsx:4` — `<div aria-labelledby>` lacks implicit landmark role; sibling component uses `<section>`. Inconsistent ARIA roles across related components.
+  - Rule: Components §9 / Accessibility — Related components should use consistent ARIA role patterns (section vs div).
+- B10 (Opus R3): `src/infrastructure/seo/getTodayIsoDay.ts` (newly created) — `new Date()` side effect placed in infrastructure layer. Violated lib/CLAUDE.md purity rule when previously in lib. **Regression analysis**: Infrastructure correctly owns side effects; lib layer must remain pure. Placement corrected in this round.
+  - Rule: MISTAKES.md Architecture § / lib/CLAUDE.md — Side effects (new Date(), fetch, fs) belong only in infrastructure; lib must be pure utilities + constants only.
+- B11 (Opus R4): Import order broken in `src/app/[symbol]/news/page.tsx` — infrastructure import after lib import. ESLint import order enforces: domain/types → lib → infrastructure → app.
+  - Rule: CONVENTIONS.md ESLint import/order — infrastructure imports must not precede lib imports.
+- S1 (Opus R3): Added unit test `src/__tests__/infrastructure/seo/getTodayIsoDay.test.ts` with 5 test cases using `jest.useFakeTimers()` (matches MISTAKES.md Tests §12 requirement for time-dependent functions).
+  - Rule: MISTAKES.md Tests §14 — Time-dependent functions must be explicitly mocked in tests.
+
 ## [PR #445 Round 3 | fix/analysis-snapshot-ui | 2026-05-22]
 - S1: `src/components/analysis/AnalysisPanel.tsx` — `showStaleBanner` 파생 변수가 `captureNow` (useEffectEvent) + 새 `useEffect` 뒤에 위치해 MISTAKES.md §17 이상적 순서(derived → handlers → useEffect)와 어긋남. props/state만 의존하므로 핸들러·effect 앞으로 이동.
   - Rule: MISTAKES.md §17 — Hook 선언 순서.

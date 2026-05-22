@@ -310,7 +310,7 @@ function getSurpriseLabel(kind: SurpriseKind): string {
     const labels: Record<SurpriseKind, string> = {
         surprise: '서프라이즈',
         shock: '쇼크',
-        inline: '보합',
+        inline: '예상치 부합',
     };
     return labels[kind];
 }
@@ -346,7 +346,7 @@ export function EventCalendar({ earningsReports }: EventCalendarProps) {
                 id="event-calendar-heading"
                 className="text-lg font-semibold tracking-tight"
             >
-                실적(어닝)
+                실적 발표
             </h2>
             <EarningsReportComparison items={earningsReports} />
         </section>

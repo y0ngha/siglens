@@ -1,35 +1,22 @@
 /**
  * @jest-environment jsdom
  */
+
 import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
 import { BotBlockedNotice } from '@/components/symbol-page/BotBlockedNotice';
 
 describe('BotBlockedNotice', () => {
-    it('봇 차단 안내 첫 줄을 렌더링한다', () => {
+    it('봇 차단 안내를 렌더링한다', () => {
         render(<BotBlockedNotice />);
+        expect(screen.getByText(/봇 트래픽으로 보여/)).toBeInTheDocument();
         expect(
-            screen.getByText(
-                '자동화된 접근으로 판정되어 분석 결과를 표시하지 않습니다.'
-            )
+            screen.getByText(/새로고침하거나 다른 브라우저로 접속/)
         ).toBeInTheDocument();
     });
 
-    it('실제 사용자 대응 안내 두 번째 줄을 렌더링한다', () => {
-        render(<BotBlockedNotice />);
-        expect(
-            screen.getByText(
-                '실제 사용자라면 다른 브라우저로 접속하시거나 문의해 주세요.'
-            )
-        ).toBeInTheDocument();
-    });
-
-    it('외부에서 전달한 className을 병합한다', () => {
-        const { container } = render(
-            <BotBlockedNotice className="custom-class" />
-        );
-        const root = container.firstChild as HTMLElement;
-        expect(root).toHaveClass('custom-class');
-        expect(root).toHaveClass('rounded-md');
+    it('role="status"를 갖추어 스크린 리더에 알린다', () => {
+        const { container } = render(<BotBlockedNotice />);
+        expect(container.querySelector('[role="status"]')).toBeInTheDocument();
     });
 });

@@ -12,9 +12,9 @@ interface SelfNormWarningBadgeProps {
  */
 export const WARNING_TEXT: Record<NonNullable<FearGreedWarning>, string> = {
     CHRONIC_WEAKNESS:
-        '이 종목은 장기 약세 사이클입니다. 점수는 자기 분포 대비 상대적 위치를 의미합니다.',
+        '이 종목은 장기 약세 흐름이에요. 점수는 이 종목의 평소 흐름 안에서의 상대적 위치를 보여줘 절대적인 강도와 다를 수 있어요. 참고만 해 주세요.',
     CHRONIC_STRENGTH:
-        '이 종목은 장기 강세 사이클입니다. 점수는 자기 분포 대비 상대적 위치를 의미합니다.',
+        '이 종목은 장기 강세 흐름이에요. 점수는 이 종목의 평소 흐름 안에서의 상대적 위치를 보여줘 절대적인 강도와 다를 수 있어요. 참고만 해 주세요.',
 };
 
 /** Heroicons exclamation-triangle outline 변형의 표준 stroke width (24px viewBox 기준). */

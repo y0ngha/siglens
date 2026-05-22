@@ -47,7 +47,7 @@ function StatusCard({ phase }: StatusCardProps) {
                     id="news-ai-summary-status-heading"
                     className="text-lg font-semibold tracking-tight"
                 >
-                    AI 뉴스 종합 분석
+                    뉴스 AI 종합 분석
                 </h2>
                 <span className="bg-secondary-700 text-secondary-400 rounded px-2 py-0.5 text-xs">
                     {NEWS_ANALYSIS_PERIOD_LABEL}
@@ -76,8 +76,8 @@ function StatusCard({ phase }: StatusCardProps) {
             </div>
             <p className="text-secondary-500 mt-2 text-xs">
                 {isFetching
-                    ? '최신 뉴스를 가져온 후 AI 분석을 시작합니다.'
-                    : '수집된 뉴스를 종합 분석하고 있습니다. 잠시만 기다려 주세요.'}
+                    ? '최신 뉴스를 가져온 뒤에 AI 분석을 시작해요.'
+                    : '수집한 뉴스를 종합 분석하고 있어요. 잠시만 기다려 주세요.'}
             </p>
             <div className="mt-4 space-y-2" aria-hidden="true">
                 <div className="bg-secondary-700 h-4 w-[91%] animate-pulse rounded motion-reduce:animate-none" />
@@ -104,7 +104,7 @@ function NewsAiSummaryView({ result }: NewsAiSummaryViewProps) {
                         id="news-ai-summary-heading"
                         className="text-lg font-semibold tracking-tight"
                     >
-                        AI 뉴스 종합 분석
+                        뉴스 AI 종합 분석
                     </h2>
                     <span className="bg-secondary-700 text-secondary-400 shrink-0 rounded px-2 py-0.5 text-xs">
                         {NEWS_ANALYSIS_PERIOD_LABEL}
@@ -151,11 +151,11 @@ function NewsAiSummaryView({ result }: NewsAiSummaryViewProps) {
             {result.upcomingEventsKo.length > 0 && (
                 <div>
                     <h3 className="mb-2 text-sm font-semibold">
-                        향후 주의 이벤트
+                        다가오는 주요 일정
                     </h3>
                     <ul
                         className="space-y-1.5"
-                        aria-label="향후 주의 이벤트 목록"
+                        aria-label="다가오는 주요 일정 목록"
                     >
                         {result.upcomingEventsKo.map((event, i) => (
                             <li
@@ -199,7 +199,7 @@ function NewsAiSummaryInlineError({
                     id="news-ai-summary-error-heading"
                     className="text-lg font-semibold tracking-tight"
                 >
-                    AI 뉴스 종합 분석
+                    뉴스 AI 종합 분석
                 </h2>
                 <span className="bg-secondary-700 text-secondary-400 rounded px-2 py-0.5 text-xs">
                     {NEWS_ANALYSIS_PERIOD_LABEL}

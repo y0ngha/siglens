@@ -27,6 +27,7 @@ import { CrossLinkCards } from '@/components/symbol-page/CrossLinkCards';
 import { SectionSkeleton } from '@/components/symbol-page/SectionSkeleton';
 import { JsonLd } from '@/components/ui/JsonLd';
 import { VALID_TICKER_RE } from '@/domain/constants/market';
+import { buildAssetAboutNode } from '@/domain/seo/assetClassification';
 import { buildDisplayName } from '@/domain/ticker';
 import { getAssetInfoCached } from '@/infrastructure/ticker/getAssetInfoCached';
 import {
@@ -34,6 +35,7 @@ import {
     buildSymbolFundamentalSeoContent,
     buildSymbolSeoContent,
     SITE_NAME,
+    SITE_URL,
 } from '@/lib/seo';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
@@ -278,16 +280,25 @@ export default async function FundamentalPage({ params }: Props) {
         }
     );
 
-    // `about` block intentionally omitted: hardcoding `@type: 'Corporation'`
-    // misrepresents ETF/Index tickers (e.g. SPY, QQQ, SPXUSD). Re-adding it
-    // requires an AssetInfo discriminator that distinguishes Stock/ETF/Index.
+    // about 노드는 stock으로 분류된 경우만 채워지고, ETF/Index/모호한 종목은
+    // undefined로 자연 생략된다 (assetClassification 모듈 doc 참고).
+    // fundamental 페이지는 assetInfo가 optional이라 ticker를 fallback name으로
+    // 사용해 displayName 계산 정책과 일관성을 유지한다.
+    const aboutNode = buildAssetAboutNode(
+        upper,
+        assetInfo?.koreanName ?? assetInfo?.name ?? upper,
+        assetInfo?.fmpSymbol
+    );
     const jsonLd = {
         '@context': 'https://schema.org',
         '@type': 'WebPage',
+        '@id': `${url}#webpage`,
         name: fullTitle,
         description,
         url,
         inLanguage: 'ko',
+        isPartOf: { '@type': 'WebSite', '@id': `${SITE_URL}#website` },
+        ...(aboutNode && { about: aboutNode }),
     };
 
     const breadcrumbJsonLd = buildBreadcrumbJsonLd([

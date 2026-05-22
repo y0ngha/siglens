@@ -57,10 +57,11 @@ export const metadata: Metadata = {
 const webPageJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'WebPage',
+    '@id': `${BACKTESTING_URL}#webpage`,
     name: BACKTESTING_FULL_TITLE,
     description: BACKTESTING_DESCRIPTION,
     url: BACKTESTING_URL,
-    isPartOf: { '@type': 'WebSite', name: SITE_NAME, url: SITE_URL },
+    isPartOf: { '@type': 'WebSite', '@id': `${SITE_URL}#website` },
 };
 
 const breadcrumbJsonLd = buildBreadcrumbJsonLd([
@@ -104,19 +105,20 @@ export default function BacktestingPage() {
             <JsonLd data={webPageJsonLd} />
             <JsonLd data={breadcrumbJsonLd} />
             <JsonLd data={datasetJsonLd} />
-            <div className="bg-secondary-900 min-h-screen">
+            {/* main이 백테스트 컨텐츠 전체(hero h1 포함)를 감싸야 의미론적
+                landmark가 페이지 주제와 일치한다. 이전엔 BacktestHero가 main
+                바깥에 있어 h1이 landmark 밖으로 빠지는 문제가 있었다. */}
+            <main className="bg-secondary-900 min-h-screen">
                 <BacktestHero meta={data.meta} />
-                <main>
-                    <Suspense
-                        fallback={
-                            <div className="text-secondary-500 py-10 text-center text-sm">
-                                로딩 중...
-                            </div>
-                        }
-                    >
-                        <BacktestTabs cases={data.cases} tickers={TICKERS} />
-                    </Suspense>
-                </main>
+                <Suspense
+                    fallback={
+                        <div className="text-secondary-500 py-10 text-center text-sm">
+                            로딩 중...
+                        </div>
+                    }
+                >
+                    <BacktestTabs cases={data.cases} tickers={TICKERS} />
+                </Suspense>
                 <div
                     role="note"
                     aria-label="투자 면책 고지"
@@ -128,7 +130,7 @@ export default function BacktestingPage() {
                         있습니다.
                     </p>
                 </div>
-            </div>
+            </main>
         </>
     );
 }

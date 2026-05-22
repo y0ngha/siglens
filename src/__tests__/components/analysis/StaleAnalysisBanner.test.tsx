@@ -18,7 +18,7 @@ describe('StaleAnalysisBanner', () => {
             />
         );
         expect(
-            screen.getByText(/AI 분석 데이터가 오래되었습니다/)
+            screen.getByText(/AI 분석 결과가 오래됐어요/)
         ).toBeInTheDocument();
         await user.click(screen.getByRole('button', { name: /재분석/ }));
         expect(onReanalyze).toHaveBeenCalledTimes(1);

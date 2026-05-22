@@ -35,7 +35,7 @@ function DangerSubmitButton({ disabled }: DangerSubmitButtonProps) {
                     <span>탈퇴 처리 중…</span>
                 </>
             ) : (
-                '영구 탈퇴'
+                '계정 영구 삭제'
             )}
         </button>
     );
@@ -63,9 +63,10 @@ export function DeleteAccountConfirm({ userEmail }: DeleteAccountConfirmProps) {
                 <AuthErrorAlert message={state.error.message} />
             ) : null}
             <ul className="text-secondary-300 list-disc space-y-1 pl-5 text-sm">
-                <li>이메일, 표시 이름, 아바타가 즉시 영구 파기됩니다.</li>
+                <li>이메일·닉네임·프로필 사진이 즉시 영구 삭제됩니다.</li>
                 <li>
-                    모든 활성 세션이 종료되고 OAuth 연결이 자동으로 해제됩니다.
+                    지금 로그인된 모든 기기에서 로그아웃되고, 소셜 로그인(구글
+                    등) 연결도 자동으로 해제됩니다.
                 </li>
                 <li>
                     법령상 보유 사유가 있는 경우 해당 기간 동안만 보유됩니다.

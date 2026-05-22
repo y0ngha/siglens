@@ -2,6 +2,7 @@ import { OptionsPageClient } from '@/components/options/OptionsPageClient';
 import { OptionsEmptyState } from '@/components/options/OptionsEmptyState';
 import { JsonLd } from '@/components/ui/JsonLd';
 import { VALID_TICKER_RE } from '@/domain/constants/market';
+import { buildAssetAboutNode } from '@/domain/seo/assetClassification';
 import { buildDisplayName } from '@/domain/ticker';
 import { getAssetInfoCached } from '@/infrastructure/ticker/getAssetInfoCached';
 import { mapExpirationsToSlots } from '@y0ngha/siglens-core';
@@ -15,6 +16,7 @@ import {
     buildSymbolOptionsSeoContent,
     buildSymbolSeoContent,
     SITE_NAME,
+    SITE_URL,
 } from '@/lib/seo';
 import {
     dehydrate,
@@ -110,17 +112,23 @@ export default async function OptionsPage({ params }: Props) {
         }
     );
 
-    // `about` block intentionally omitted: hardcoding `@type: 'Corporation'`
-    // misrepresents ETF/Index tickers (e.g. SPY, QQQ, SPXUSD). Re-adding it
-    // requires an AssetInfo discriminator that distinguishes Stock/ETF/Index
-    // — tracked separately. See PR #434 R19a review.
+    // about 노드는 stock으로 분류된 경우만 채워지고, ETF/Index/모호한 종목은
+    // undefined로 자연 생략된다 (assetClassification 모듈 doc 참고).
+    const aboutNode = buildAssetAboutNode(
+        upper,
+        assetInfo.koreanName ?? assetInfo.name,
+        assetInfo.fmpSymbol
+    );
     const jsonLd = {
         '@context': 'https://schema.org',
         '@type': 'WebPage',
+        '@id': `${url}#webpage`,
         name: fullTitle,
         description,
         url,
         inLanguage: 'ko',
+        isPartOf: { '@type': 'WebSite', '@id': `${SITE_URL}#website` },
+        ...(aboutNode && { about: aboutNode }),
     };
 
     const breadcrumbJsonLd = buildBreadcrumbJsonLd([
@@ -164,29 +172,35 @@ export default async function OptionsPage({ params }: Props) {
             <JsonLd data={jsonLd} />
             <JsonLd data={breadcrumbJsonLd} />
             <JsonLd data={faqJsonLd} />
-            <section className="sr-only">
-                <h2>{displayName} 옵션 시장 풍경</h2>
-                <p>
-                    {displayName} 옵션 시장을 AI가 한국어로 해석합니다. 만기별
-                    Max Pain, Put/Call Ratio, ATM IV, Implied Move 등 핵심
-                    지표와 Strike별 Open Interest 분포를 함께 살펴볼 수
-                    있습니다.
-                </p>
-                {expirations.length > 0 ? (
+            {/* main 랜드마크: 다른 5개 sibling 페이지와 일관성. options-empty
+                상태(OptionsEmptyState)는 자체적으로 <main>을 가지지만, 옵션
+                데이터가 있는 정상 path도 동일하게 main으로 감싸야 sibling 일관성
+                과 a11y landmark navigation이 유지된다. */}
+            <main className="mx-auto w-full max-w-5xl px-4 py-8">
+                <section className="sr-only">
+                    <h1>{displayName} 옵션 시장 분석</h1>
                     <p>
-                        현재 거래 가능한 만기일은 총 {expirations.length}개이며,
-                        가장 가까운 만기는 {expirations[0]}입니다.
+                        {displayName} 옵션 시장을 AI가 한국어로 해석합니다.
+                        만기별 Max Pain, Put/Call Ratio, ATM IV, Implied Move 등
+                        핵심 지표와 Strike별 Open Interest 분포를 함께 살펴볼 수
+                        있습니다.
                     </p>
-                ) : null}
-            </section>
-            <HydrationBoundary state={dehydrate(queryClient)}>
-                <OptionsPageClient
-                    symbol={upper}
-                    companyName={displayName}
-                    snapshot={snapshot}
-                    slots={slots}
-                />
-            </HydrationBoundary>
+                    {expirations.length > 0 ? (
+                        <p>
+                            현재 거래 가능한 만기일은 총 {expirations.length}
+                            개이며, 가장 가까운 만기는 {expirations[0]}입니다.
+                        </p>
+                    ) : null}
+                </section>
+                <HydrationBoundary state={dehydrate(queryClient)}>
+                    <OptionsPageClient
+                        symbol={upper}
+                        companyName={displayName}
+                        snapshot={snapshot}
+                        slots={slots}
+                    />
+                </HydrationBoundary>
+            </main>
         </>
     );
 }
