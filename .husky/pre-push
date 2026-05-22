@@ -1,20 +1,23 @@
-echo "🎨 Running prettier before push..."
+#!/bin/sh
+set -e
 
-yarn format | grep -v "unchanged"
+echo "🔍 Running pre-push checks..."
 
-# 포맷 후 변경된 파일이 있는지 확인
-if ! git diff --quiet; then
-  echo "✅ Prettier made changes. Committing as 'style: apply prettier'..."
-  git add -A
-  git commit -m "style: apply prettier"
+echo ""
+echo "1/4 format:check"
+yarn format:check
 
-  # 현재 브랜치 이름 가져오기
-  CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+echo ""
+echo "2/4 lintcheck"
+yarn lint
 
-  # 무한 루프 방지를 위해 --no-verify 옵션 사용
-  git push --no-verify origin "$CURRENT_BRANCH"
+echo ""
+echo "3/4 typecheck"
+yarn typecheck
 
-  echo "📦 Style commit added and pushed. Continuing original push..."
-else
-  echo "✨ No formatting changes detected."
-fi
+echo ""
+echo "4/4 test"
+yarn test
+
+echo ""
+echo "✅ All checks passed. Proceeding with push."
