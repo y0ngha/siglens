@@ -2,7 +2,7 @@ import {
     ET_MARKET_HOURS_DISPLAY,
     KST_EDT_HOURS_DISPLAY,
     KST_EST_HOURS_DISPLAY,
-} from '@/components/options/utils/marketHoursDisplay';
+} from '@/lib/options/marketHoursDisplay';
 
 /**
  * Surfaces a "data temporarily empty" notice when the upstream provider
@@ -19,7 +19,7 @@ import {
  * EST: 23:30~06:00)을 모두 병기해 사용자가 현재 시점이 어느 구간인지와
  * 무관하게 자기 KST 시계로 환산할 수 있도록 한다.
  *
- * 모든 시간 표기(ET 정규장 + KST 환산)는 `utils/marketHoursDisplay`를
+ * 모든 시간 표기(ET 정규장 + KST 환산)는 `@/lib/options/marketHoursDisplay`를
  * single source of truth로 사용한다 — 같은 ET/KST 환산 문자열을 쓰는
  * `OpenInterestChart`의 빈 데이터 안내와 표기가 자동으로 일치한다.
  */

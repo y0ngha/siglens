@@ -40,7 +40,7 @@ import {
     ET_MARKET_HOURS_DISPLAY,
     KST_EDT_HOURS_DISPLAY,
     KST_EST_HOURS_DISPLAY,
-} from '@/components/options/utils/marketHoursDisplay';
+} from '@/lib/options/marketHoursDisplay';
 
 interface OpenInterestChartProps {
     /** Spot price used to anchor the current-price guide line. */
@@ -200,7 +200,6 @@ export function OpenInterestChart({
     if (!derived) {
         // 빈 상태에서도 정상 헤더(`Open Interest 분포 (Strike별)`)를 유지해
         // sibling Volume 차트의 빈 상태와 시각 흐름이 일치하도록 한다.
-        // 본문은 마감 후 Yahoo가 OI를 갱신하지 않는다는 안내 + 정규장 시간.
         return (
             <div className="border-secondary-700 bg-secondary-800 space-y-2 rounded-xl border p-4">
                 <span className="text-secondary-300 text-sm font-medium">
