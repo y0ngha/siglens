@@ -1,6 +1,14 @@
 
 # Fix Log
 
+## [PR #442 Round 4 | fix/oi-tooltip-floating | 2026-05-22]
+- B1: `src/components/options/OpenInterestChart.tsx` — `handlePointerEnter` / `handlePointerMove` / `handlePointerLeave` 세 핸들러가 파생 변수(`maxPainX`, `currentPriceX`, `peakOiLabel`)보다 앞에 선언됨. CONVENTIONS.md 처방 순서(`파생 변수 → 핸들러`)에 맞춰 핸들러를 `peakOiLabel` 뒤로 이동.
+  - Rule: MISTAKES.md §17 — Hook 선언 순서: useState/useRef → useQuery/useMutation → useCallback/useMemo → 파생 변수 → 핸들러 → useEffect.
+- S1: 같은 파일 — `TOOLTIP_HALF_WIDTH_PX = 90`이 className `min-w-[180px]`의 절반에 의존하지만 두 값이 별도라 한쪽만 바뀌면 클램핑 오작동. `TOOLTIP_MIN_WIDTH_PX = 180` single source of truth 도입 후 `TOOLTIP_HALF_WIDTH_PX = TOOLTIP_MIN_WIDTH_PX / 2`로 파생. className에서도 `min-w-[var(--tooltip-min-w)]` + style에 `--tooltip-min-w` 변수 주입해 한 곳에서 관리.
+  - Rule: MISTAKES.md §15 / drift 방지 — 동일 값을 두 표현(상수 + 클래스 리터럴)에 중복하면 silent drift 위험.
+- S2: 같은 파일 — `TOOLTIP_HALF_WIDTH_PX` 주석 첫 구절 "Tooltip의 가로 절반 너비" 제거. 상수명이 이미 표현. WHY(클램핑 용도)만 남김. S1과 함께 주석을 새 single source 의도("anchor 좌우로 절반씩 뻗으므로 절반 너비")로 재작성.
+  - Rule: MISTAKES.md §15.3 — WHAT 코멘트 금지.
+
 ## [PR #442 Round 3 | fix/oi-tooltip-floating | 2026-05-22]
 - B1: `src/components/options/OpenInterestChart.tsx` — Hook 선언 순서 재정정. CONVENTIONS.md 순서는 useState → useRef인데 R2에서 useRef를 먼저 선언해 두 번 반전됐다. useState 2개를 먼저, useRef 2개를 뒤로.
   - Rule: CONVENTIONS.md Custom Hook Declaration Order / MISTAKES.md §17. **이전 라운드(R2)에서 같은 룰에 대한 정정 → 부분 회귀**. 이번엔 useState → useRef 순서로 명확히 고정.

@@ -86,9 +86,12 @@ const STRAIGHT_LABEL_FONT_SIZE = 9;
 
 // Tooltip이 커서 위로 띄울 세로 오프셋 (px). 위로 띄워야 막대를 가리지 않는다.
 const TOOLTIP_CURSOR_OFFSET_Y_PX = 8;
-// Tooltip의 가로 절반 너비. `min-w-[180px]`의 절반에 맞춘다. 뷰포트 좌우
-// 경계 클램핑 계산에 사용.
-const TOOLTIP_HALF_WIDTH_PX = 90;
+// Tooltip min-width의 단일 진실 원천 (px). className의 `min-w-[var(--tooltip-min-w)]`
+// 와 `TOOLTIP_HALF_WIDTH_PX` 둘 다 이 값에서 파생되므로, 이 상수만 바꾸면
+// 좌우 경계 클램핑과 실제 가시 너비가 자동으로 동기화된다.
+const TOOLTIP_MIN_WIDTH_PX = 180;
+// 좌우 경계 클램핑용 — `-translate-x-1/2`로 anchor 좌우로 절반씩 뻗으므로 절반 너비.
+const TOOLTIP_HALF_WIDTH_PX = TOOLTIP_MIN_WIDTH_PX / 2;
 // 뷰포트 경계와 tooltip 사이 여유 (px). 컨테이너 모서리에 딱 붙지 않도록.
 const TOOLTIP_VIEWPORT_PADDING_PX = 8;
 // Tooltip 카드 자체의 대략적 높이. 정확한 측정 대신 추정값으로 상단 클램핑에 사용.
@@ -253,6 +256,14 @@ export function OpenInterestChart({
     const hoveredRow =
         (hoveredIndex !== null && oiByStrike[hoveredIndex]) || null;
 
+    const maxPainX = maxPainIdx >= 0 ? barCenterX(maxPainIdx, count) : null;
+    const currentPriceX =
+        currentPriceIdx >= 0 ? barCenterX(currentPriceIdx, count) : null;
+
+    const labelIndices = pickLabelIndices(count, [maxPainIdx, currentPriceIdx]);
+    const rotateLabels = labelIndices.size > LABEL_ROTATION_THRESHOLD;
+    const peakOiLabel = fmtOi(globalMax);
+
     const handlePointerEnter = (
         event: PointerEvent<SVGRectElement>,
         index: number
@@ -291,14 +302,6 @@ export function OpenInterestChart({
         setHoveredIndex(null);
         setTooltipPos(null);
     };
-
-    const maxPainX = maxPainIdx >= 0 ? barCenterX(maxPainIdx, count) : null;
-    const currentPriceX =
-        currentPriceIdx >= 0 ? barCenterX(currentPriceIdx, count) : null;
-
-    const labelIndices = pickLabelIndices(count, [maxPainIdx, currentPriceIdx]);
-    const rotateLabels = labelIndices.size > LABEL_ROTATION_THRESHOLD;
-    const peakOiLabel = fmtOi(globalMax);
 
     return (
         <div
@@ -481,7 +484,7 @@ export function OpenInterestChart({
                 id={TOOLTIP_ELEMENT_ID}
                 role="tooltip"
                 hidden={hoveredRow === null || tooltipPos === null}
-                className="border-secondary-600 bg-secondary-900/95 text-secondary-100 pointer-events-none absolute top-[var(--tooltip-y)] left-[var(--tooltip-x)] z-10 min-w-[180px] -translate-x-1/2 -translate-y-full rounded-md border px-3 py-2 text-xs shadow-lg backdrop-blur"
+                className="border-secondary-600 bg-secondary-900/95 text-secondary-100 pointer-events-none absolute top-[var(--tooltip-y)] left-[var(--tooltip-x)] z-10 min-w-[var(--tooltip-min-w)] -translate-x-1/2 -translate-y-full rounded-md border px-3 py-2 text-xs shadow-lg backdrop-blur"
                 style={
                     // CSS 커스텀 프로퍼티(--*)는 런타임에 유효하나 React의
                     // CSSProperties 타입은 임의 `--*` 키를 포함하지 않아
@@ -490,6 +493,7 @@ export function OpenInterestChart({
                     {
                         '--tooltip-x': `${tooltipPos?.x ?? 0}px`,
                         '--tooltip-y': `${tooltipPos?.y ?? 0}px`,
+                        '--tooltip-min-w': `${TOOLTIP_MIN_WIDTH_PX}px`,
                     } as CSSProperties
                 }
             >
