@@ -128,8 +128,9 @@ export function isUsOptionsRegularSession(now: Date): boolean {
 export const OI_STALE_FRACTION_THRESHOLD = 0.95;
 
 /**
- * Stale-quote 휴리스틱: 옵션 시장이 활성화된 종목인데도 전체 contract의 95%
- * 이상이 OI=0인 경우 Yahoo의 정규장 외 quote 클리어 상태로 판정한다.
+ * Stale-quote 휴리스틱: 옵션 시장이 활성화된 종목인데도 전체 contract 중
+ * OI=0 비율이 `OI_STALE_FRACTION_THRESHOLD` 이상이면 Yahoo의 정규장 외
+ * quote 클리어 상태로 판정한다.
  *
  * "100% 모두 0"이 아닌 비율 임계값을 쓰는 이유: Yahoo는 PRE / PRE-PRE /
  * POSTPOST 시간대에 대부분 contract의 quote(OI 포함)를 0/sentinel로

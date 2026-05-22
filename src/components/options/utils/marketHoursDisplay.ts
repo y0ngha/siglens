@@ -27,7 +27,7 @@ function formatKstTime(
 /** US 옵션 정규장 시간 (ET 기준), 예: "ET 9:30 ~ 16:00". */
 export const ET_MARKET_HOURS_DISPLAY = `ET ${MARKET_OPEN_HOUR}:${pad2(
     MARKET_OPEN_MINUTE
-)} ~ ${MARKET_CLOSE_HOUR}:00`;
+)} ~ ${MARKET_CLOSE_HOUR}:${pad2(MARKET_CLOSE_MINUTE)}`;
 
 /** KST 환산 시간 — 서머타임(EDT) 기간. */
 export const KST_EDT_HOURS_DISPLAY = `${formatKstTime(

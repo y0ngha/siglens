@@ -367,3 +367,15 @@
 - Context: Blocker 2 — 4 Server Actions started passing `skipEnqueueIfMiss` to siglens-core submit functions, but no test asserted it. Added bot-UA and non-bot-UA cases (2 each × 4 Actions = 8 new tests) using `mockHeaders.mockResolvedValueOnce(new Headers({...}))` to control isBot, and `expect.objectContaining({ skipEnqueueIfMiss: <bool> })` on the submit mock.
 
 
+
+
+## [PR #446 Round 1 | fix/options-oi-stale-fraction | 2026-05-22]
+- Violation: 비율 경계 테스트가 `puts: []` 고정 헬퍼만 사용해 calls/puts 혼합 시나리오를 커버하지 않음
+- Rule: 분기 커버리지 — 구현이 `flatMap([...calls, ...puts])`로 양쪽을 합산하므로 puts 비어있는 케이스만 검증하면 합산 분기가 회귀에 노출됨
+- Context: Suggestion 1 — `session.test.ts`에 (1) 50/50 혼합 nonstale (2) 혼합 boundary stale 2개 케이스 추가. boundary는 `Math.ceil(total * OI_STALE_FRACTION_THRESHOLD)`로 임계값에서 파생.
+- Violation: 단일 자식만 남은 컨테이너에 `gap-1` Tailwind 클래스가 남아 no-op
+- Rule: MISTAKES.md Components §4 — 사용 효과가 없는 Tailwind class 잔존 금지
+- Context: Suggestion 2 — `StrikeVolumeChart.tsx` 정상 헤더 + 빈 상태 헤더 둘 다 `<InfoTooltip>`을 범례로 옮긴 뒤 단일 자식. 외곽 `<div className="flex items-center gap-1">`을 그대로 `<span>` 하나로 치환.
+- Violation: sibling grid 셀(`OpenInterestChart` 빈 상태 vs `StrikeVolumeChart` 빈 상태)이 헤더 유무·텍스트 스타일에서 어긋남
+- Rule: FF Readability / visual consistency — `lg:grid-cols-2`로 묶인 sibling 빈 상태는 동일한 레이아웃(header + body)을 따라야 함
+- Context: Gemini Medium 권고 — OI 차트 빈 상태도 `Open Interest 분포 (Strike별)` 헤더 유지 + 본문 안내로 분리. Volume 빈 상태 본문은 `text-xs leading-relaxed`로 통일.

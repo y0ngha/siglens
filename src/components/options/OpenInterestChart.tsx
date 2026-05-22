@@ -198,17 +198,20 @@ export function OpenInterestChart({
     }, [chain, metrics, underlyingPrice]);
 
     if (!derived) {
+        // 빈 상태에서도 정상 헤더(`Open Interest 분포 (Strike별)`)를 유지해
+        // sibling Volume 차트의 빈 상태와 시각 흐름이 일치하도록 한다.
+        // 본문은 마감 후 Yahoo가 OI를 갱신하지 않는다는 안내 + 정규장 시간.
         return (
             <div className="border-secondary-700 bg-secondary-800 space-y-2 rounded-xl border p-4">
-                <p className="text-secondary-300 text-sm font-medium">
-                    이 만기에는 OI 데이터가 없어요.
-                </p>
+                <span className="text-secondary-300 text-sm font-medium">
+                    Open Interest 분포 (Strike별)
+                </span>
                 <p className="text-secondary-500 text-xs leading-relaxed">
-                    미국 정규장 마감 후에는 Yahoo가 Open Interest를 갱신하지
-                    않아 비어 보일 수 있어요. 정확한 수치는 미국 정규장 시간(
-                    {ET_MARKET_HOURS_DISPLAY}, 평일, 한국 시간 EDT 기간{' '}
-                    {KST_EDT_HOURS_DISPLAY} / EST 기간 {KST_EST_HOURS_DISPLAY}
-                    )에 다시 확인해 주세요.
+                    이 만기에는 OI 데이터가 없어요. 미국 정규장 마감 후에는
+                    Yahoo가 Open Interest를 갱신하지 않아 비어 보일 수 있어요.
+                    정확한 수치는 미국 정규장 시간({ET_MARKET_HOURS_DISPLAY},
+                    평일, 한국 시간 EDT 기간 {KST_EDT_HOURS_DISPLAY} / EST 기간{' '}
+                    {KST_EST_HOURS_DISPLAY})에 다시 확인해 주세요.
                 </p>
             </div>
         );

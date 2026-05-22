@@ -295,6 +295,49 @@ describe('isOpenInterestSnapshotStale', () => {
         const snapshot = buildSnapshotWith(1240, 12);
         expect(isOpenInterestSnapshotStale(snapshot)).toBe(true);
     });
+
+    it('counts calls and puts together when computing the fraction', () => {
+        // 구현이 calls + puts 양쪽을 합산해 비율을 계산하는지 검증.
+        // calls 10개(전부 zero) + puts 10개(전부 nonzero) → zero 비율 0.5 → stale 아님.
+        // calls만 검사했다면 1.0이 나와 stale로 잘못 판정될 수 있음.
+        const calls: OptionsContract[] = Array.from({ length: 10 }, () =>
+            makeContract({ openInterest: 0 })
+        );
+        const puts: OptionsContract[] = Array.from({ length: 10 }, () =>
+            makeContract({ openInterest: 100 })
+        );
+        const snapshot = makeSnapshot([makeChain({ calls, puts })]);
+        expect(isOpenInterestSnapshotStale(snapshot)).toBe(false);
+    });
+
+    it('classifies a calls+puts mix at the threshold boundary as stale', () => {
+        // calls/puts 혼합 boundary: 총 20개(calls 10 + puts 10) 중
+        // ceil(20 * THRESHOLD)개가 zero이면 정확히 threshold 이상.
+        const total = 20;
+        const half = total / 2;
+        const zerosTotal = Math.ceil(total * OI_STALE_FRACTION_THRESHOLD);
+        // zero를 calls/puts에 나눠 배치 (calls가 더 많이 받음).
+        const callZeros = Math.min(zerosTotal, half);
+        const putZeros = zerosTotal - callZeros;
+        const calls: OptionsContract[] = [
+            ...Array.from({ length: callZeros }, () =>
+                makeContract({ openInterest: 0 })
+            ),
+            ...Array.from({ length: half - callZeros }, () =>
+                makeContract({ openInterest: 100 })
+            ),
+        ];
+        const puts: OptionsContract[] = [
+            ...Array.from({ length: putZeros }, () =>
+                makeContract({ openInterest: 0 })
+            ),
+            ...Array.from({ length: half - putZeros }, () =>
+                makeContract({ openInterest: 100 })
+            ),
+        ];
+        const snapshot = makeSnapshot([makeChain({ calls, puts })]);
+        expect(isOpenInterestSnapshotStale(snapshot)).toBe(true);
+    });
 });
 
 describe('getEtSessionStatus', () => {

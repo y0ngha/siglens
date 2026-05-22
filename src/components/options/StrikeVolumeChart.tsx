@@ -156,15 +156,14 @@ export function StrikeVolumeChart({
     if (!derived) {
         // 빈 상태도 OpenInterestChart와 동일한 카드 컨테이너로 감싼다 —
         // 두 차트가 lg+에서 grid-cols-2 sibling이 되므로 한쪽만 naked
-        // paragraph로 떨어지면 셀 높이/시각 무게가 어긋난다.
+        // paragraph로 떨어지면 셀 높이/시각 무게가 어긋난다. 텍스트 스타일도
+        // OI 차트 빈 상태와 통일(`text-xs leading-relaxed`).
         return (
             <div className="border-secondary-700 bg-secondary-800 space-y-2 rounded-xl border p-4">
-                <div className="flex items-center gap-1">
-                    <span className="text-secondary-300 text-sm font-medium">
-                        Volume 분포 (Strike별)
-                    </span>
-                </div>
-                <p className="text-secondary-500 py-4 text-sm">
+                <span className="text-secondary-300 text-sm font-medium">
+                    Volume 분포 (Strike별)
+                </span>
+                <p className="text-secondary-500 text-xs leading-relaxed">
                     이 만기에는 거래량 데이터가 없어요.
                 </p>
             </div>
@@ -231,11 +230,9 @@ export function StrikeVolumeChart({
             ref={containerRef}
             className="border-secondary-700 bg-secondary-800 relative space-y-2 rounded-xl border p-4"
         >
-            <div className="flex items-center gap-1">
-                <span className="text-secondary-300 text-sm font-medium">
-                    Volume 분포 (Strike별)
-                </span>
-            </div>
+            <span className="text-secondary-300 text-sm font-medium">
+                Volume 분포 (Strike별)
+            </span>
 
             <svg
                 viewBox={`0 0 ${SVG_WIDTH} ${SVG_HEIGHT}`}
