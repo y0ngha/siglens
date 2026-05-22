@@ -15,7 +15,9 @@ describe('StaleAnalysisBanner', () => {
                 reanalyzeCooldownMs={0}
             />
         );
-        expect(screen.getByText(/AI 분석 데이터가 오래되었습니다/)).toBeInTheDocument();
+        expect(
+            screen.getByText(/AI 분석 데이터가 오래되었습니다/)
+        ).toBeInTheDocument();
         fireEvent.click(screen.getByRole('button', { name: /재분석/ }));
         expect(onReanalyze).toHaveBeenCalledTimes(1);
     });

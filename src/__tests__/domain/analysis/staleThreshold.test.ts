@@ -15,7 +15,9 @@ describe('isAnalysisStale', () => {
     });
 
     it('returns false at the exact boundary (1Day, 4h ago — strict >)', () => {
-        const analyzedAt = new Date(now.getTime() - 4 * MS_PER_HOUR).toISOString();
+        const analyzedAt = new Date(
+            now.getTime() - 4 * MS_PER_HOUR
+        ).toISOString();
         expect(isAnalysisStale(analyzedAt, '1Day', now)).toBe(false);
     });
 
