@@ -7,10 +7,7 @@
  * fields are filled with realistic defaults so we don't rely on type
  * assertions to bypass the public type.
  */
-import type {
-    OptionsChain,
-    OptionsContract,
-} from '@y0ngha/siglens-core';
+import type { OptionsChain, OptionsContract } from '@y0ngha/siglens-core';
 import { aggregateStrikeVolume } from '@/components/options/utils/aggregateStrikeVolume';
 
 function makeContract(
