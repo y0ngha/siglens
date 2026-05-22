@@ -807,9 +807,10 @@ export function AnalysisPanel({
                     <TrendBadge trend={analysis.trend} />
                 </div>
                 <div className="flex items-center gap-3">
-                    {analysis?.analyzedAt !== undefined && (
+                    {analysis.analyzedAt !== undefined && (
                         <time
                             dateTime={analysis.analyzedAt}
+                            aria-label="분석 완료 시각"
                             className="text-secondary-500 text-xs"
                         >
                             {formatAnalyzedAt(analysis.analyzedAt)}
