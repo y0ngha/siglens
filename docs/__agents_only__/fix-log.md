@@ -428,3 +428,21 @@
 - Violation: 테스트 설명문/입력값이 floor 상수(`PERCENT_DISPLAY_FLOOR`) 값을 하드코딩 — 상수 변경 시 description text와 input value가 자동 갱신 안 됨
 - Rule: MISTAKES.md §Tests §4 — boundary 테스트 상수는 source에서 import; description도 상수를 interpolate해 drift 차단
 - Context: Suggestion 2 — `PERCENT_DISPLAY_FLOOR`를 export로 승격. 4개 boundary 테스트에서 입력값을 `(PERCENT_DISPLAY_FLOOR / 100) * 0.8/1.2`(formatAtmIv) 또는 `PERCENT_DISPLAY_FLOOR * 0.8/1.2`(formatImpliedMove)로 derive. description은 `${PERCENT_DISPLAY_FLOOR}` interpolation.
+
+
+## [PR #453 Round 3 (post-merge claude-review) | feat/seo-overhaul | 2026-05-22]
+- Violation: `<section>`에 `role="status"`를 명시해 native ARIA role(region)을 덮어씀 + live region 의미는 정적 안내에 부적절
+- Rule: MISTAKES.md Accessibility §1 — Native roles must not be replaced with role attributes
+- Context: Blocker B-1 — `OptionsAiAnalysisStaleNotice.tsx`. role="status" 제거하고 `<section aria-labelledby>`만 남김. native region role이 그대로 노출되고 정적 카드라 live region 의미도 빠짐.
+- Violation: 정적 JSX만 렌더하는 컴포넌트에 `'use client'` 지시문 부착
+- Rule: CONVENTIONS.md — Do not add 'use client' to components that only render static JSX with no interactivity
+- Context: Suggestion S-2 — `OptionsAiAnalysisStaleNotice.tsx`에서 hooks/handlers/browser API 없음. `'use client'` 제거해 Server Component로 만들고 클라이언트 번들 비용 절약.
+- Violation: infrastructure에서 추가된 Redis 캐싱 분기(hit/miss/get-error/set-error/adapter-error/env-missing)에 대응하는 테스트 부재
+- Rule: CONVENTIONS.md infrastructure/ 100% 필수
+- Context: Blocker B-2 — `optionsDataCache.ts` M4에서 추가한 Upstash Redis 레이어가 테스트 미커버. `optionsDataCache.test.ts`에 `jest.isolateModulesAsync`로 env 토글하면서 6개 분기 케이스 추가.
+- Violation: 정규식 문자 클래스에서 끝 위치 하이픈에 불필요한 backslash escape
+- Rule: ESLint no-useless-escape (CONVENTIONS.md eslint-disable 금지)
+- Context: Suggestion S-1 — `VALID_TICKER_RE = /^[A-Z][A-Z.\-]{0,7}$/` → `/^[A-Z][A-Z.-]{0,7}$/`. 문자 클래스 끝의 하이픈은 리터럴로 해석됨.
+- Violation: System boundary external I/O가 try-catch 없이 호출돼 일시 장애가 호출 스택으로 전파
+- Rule: MISTAKES.md Infrastructure §4 — External I/O at system boundaries must be wrapped in try-catch
+- Context: Suggestion S-3 — `optionsDataCache.ts`의 `adapter.hasOptionsMarket(symbol)`. Yahoo Finance API 일시 장애 시 sitemap 빌드 전체가 깨질 위험. try-catch로 보호하고 실패 시 보수적으로 `false` 반환 + cache write 생략 (다음 요청에서 회복).

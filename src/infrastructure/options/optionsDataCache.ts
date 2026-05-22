@@ -61,7 +61,20 @@ export const hasOptionsMarket = cache(
             }
         }
 
-        const fresh = await adapter.hasOptionsMarket(symbol);
+        // Yahoo Finance API 일시 장애도 sitemap 빌드가 깨지지 않게 흡수한다.
+        // 옵션 시장 정보는 보수적으로 false 처리해 sitemap에서 제외하고
+        // 다음 요청에서 회복되면 자연스럽게 복원된다.
+        let fresh: boolean;
+        try {
+            fresh = await adapter.hasOptionsMarket(symbol);
+        } catch (error) {
+            console.error(
+                '[optionsDataCache] adapter.hasOptionsMarket failed for',
+                key,
+                error
+            );
+            return false;
+        }
 
         if (redis !== null) {
             try {
