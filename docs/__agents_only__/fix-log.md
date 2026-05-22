@@ -1,6 +1,75 @@
 
 # Fix Log
 
+## [PR #445 Round 3 | fix/analysis-snapshot-ui | 2026-05-22]
+- S1: `src/components/analysis/AnalysisPanel.tsx` — `showStaleBanner` 파생 변수가 `captureNow` (useEffectEvent) + 새 `useEffect` 뒤에 위치해 MISTAKES.md §17 이상적 순서(derived → handlers → useEffect)와 어긋남. props/state만 의존하므로 핸들러·effect 앞으로 이동.
+  - Rule: MISTAKES.md §17 — Hook 선언 순서.
+- S2: `src/components/analysis/AnalysisPanel.tsx` — `<time aria-label="분석 완료 시각">`이 AT에 visible text(타임스탬프 값)를 덮어써 사용자가 실제 시각을 들을 수 없게 만듦. `aria-label` 제거. `<time dateTime={iso}>{formatted}</time>` 구조에서는 visible text가 SR로 그대로 읽혀 충분.
+  - Rule: WCAG 4.1.2 (Name, Role, Value) — `aria-label`은 의미 명확하지 않은 비텍스트 요소용. text content가 이미 정확한 정보면 abuse.
+- S3: PR diff 상의 "어차임" 오탈자는 워크트리 실제 파일에서 이미 "어차피"로 정상이라 코드 변경 없음. Reviewer가 본 diff 표시 오해로 추정.
+- S4: `src/__tests__/components/analysis/StaleAnalysisBanner.test.tsx` — `fireEvent.click`(JSDOM이 disabled 버튼 동작을 완전 재현하지 않음) → `@testing-library/user-event`의 `userEvent.click`으로 마이그레이션. 비동기 setup 패턴(`userEvent.setup()` + `await user.click(...)`)을 적용해 실제 브라우저 동작과 일치하는 disabled 버튼 click 차단을 검증.
+  - Rule: 회귀 신뢰도 — disabled 동작 같은 native 브라우저 동작은 userEvent로 검증해야 정확.
+- S5: `src/__tests__/domain/analysis/staleThreshold.test.ts` — `15Min`/`30Min` 버킷에 boundary 케이스 누락. `15Min` beyond(+1min → true), `30Min` within(-1min → false)을 추가해 5분 임계값을 공유하는 세 단기 버킷 모두 회귀 안전망 확보.
+  - Rule: MISTAKES.md §Tests — 임계값 버킷별 boundary 명시 검증.
+
+## [PR #445 Round 2 | fix/analysis-snapshot-ui | 2026-05-22]
+- B1: `src/components/analysis/AnalysisPanel.tsx` — round 1에서 hydration 회피를 위해 추가한 `useEffect` + `setNow(new Date())`에 `// eslint-disable-next-line react-hooks/set-state-in-effect`를 사용했음. MISTAKES.md §13(eslint-disable 사용 금지) + §10(setState in useEffect의 canonical fix는 `useEffectEvent`) 위반. `captureNow = useEffectEvent(() => startTransition(() => setNow(new Date())))` 패턴으로 변경하고 useEffect는 `captureNow()` 호출만. 동일 워크트리 `useChat.ts:382` / `useDMIChart.ts` 패턴과 일치.
+  - Rule: MISTAKES.md §13 — eslint-disable 억제 금지. §10 — `setState in useEffect` canonical = `useEffectEvent` + 내부에서 setState (필요 시 `startTransition`).
+- S1: `src/components/analysis/StaleAnalysisBanner.tsx` — `disabled` 버튼의 `title` 속성은 키보드 포커스 시 노출되지 않음(WCAG 2.4.7). `aria-describedby="stale-banner-cooldown-tooltip"`로 가리키는 `<span id role="tooltip" className="sr-only">` 보조 요소를 추가해 SR/키보드 사용자도 쿨다운 이유를 인지할 수 있게 함. `title`은 마우스 사용자 fallback으로 유지.
+  - Rule: WCAG 2.4.7 (Focus Visible) / WCAG 4.1.2 (Name, Role, Value).
+- S2: `src/domain/analysis/staleThreshold.ts` — `5Min`/`15Min`/`30Min`이 모두 5분 임계값을 공유하는 정책이 의도적임에도 코드만으로는 알 수 없어 reviewer가 Question 제기. `STALE_THRESHOLD_MS` 위에 WHY 주석(단기는 5분 일률, 중기는 30분, 장기는 4시간)을 추가해 정책 합의를 코드 옆에 명시.
+  - Rule: FF Readability — non-obvious policy decision은 코드 옆 WHY 주석.
+
+## [PR #445 Round 1 | fix/analysis-snapshot-ui | 2026-05-22]
+- B1: `src/components/analysis/StaleAnalysisBanner.tsx` — `'use client'` 디렉티브 누락. `<button onClick={onReanalyze}>` 등록은 컨벤션상 클라이언트 경계 명시가 필수. async Server Component 트리에서 import 시 runtime 오류 위험. 파일 첫 줄에 `'use client';` 추가.
+  - Rule: CONVENTIONS.md L306 (Registers event handlers → `'use client'` 필수), components/CLAUDE.md L15. Phase 2.4 라운드 1의 내부 review-agent 권고("leaf parent already client니까 불필요")가 컨벤션 문자 해석과 충돌했고, 외부 reviewer가 정확히 지적 — 컨벤션 우선으로 결정.
+- B2: `src/domain/analysis/staleThreshold.ts` — `isAnalysisStale`의 `now: Date = new Date()` 기본 파라미터가 `Date.now()` 호출과 동등한 부작용. 도메인 순수 함수 규칙 위반. 기본값 제거 후 `now`를 필수 인자로 선언하고 호출부(`AnalysisPanel.tsx`)에서 `new Date()`를 명시 주입.
+  - Rule: CONVENTIONS.md L397 (`No side effects: fetch, console.log, Date.now() are all prohibited` in domain layer).
+- B3: `src/__tests__/domain/analysis/staleThreshold.test.ts` — 경계값 테스트에서 `4 * MS_PER_HOUR`를 로컬 재정의해 production `STALE_THRESHOLD_MS['1Day']`와 silent drift 가능. `STALE_THRESHOLD_MS`를 `staleThreshold.ts`에서 export하고 테스트는 직접 import해 임계값 변경을 자동 추적하도록 변경.
+  - Rule: MISTAKES.md §Tests §4 — boundary 테스트 상수는 source에서 import (로컬 재정의 금지).
+- B4: `src/components/analysis/StaleAnalysisBanner.tsx` — 툴팁 문자열이 `재분석은 5분에 한 번만 실행할 수 있어요.`로 하드코딩됐는데 `reanalyzeCooldownMs` prop이 실제 ms 정책을 담음. 정책 변경 시 UI 텍스트가 drift. `Math.ceil(reanalyzeCooldownMs / MS_PER_MINUTE)`로 분 단위를 계산해 템플릿 리터럴로 메시지 생성.
+  - Rule: MISTAKES.md §15 drift trap — 상수와 표시 텍스트의 단일 source.
+- S1: `src/components/analysis/AnalysisPanel.tsx` — `analysis.analyzedAt !== undefined` 두 곳을 truthy check `analysis.analyzedAt`로 단순화. `OptionsAiAnalysis.tsx`(ternary 패턴)와 표현 일관화.
+  - Rule: FF Cohesion — 동일 의미는 동일 표현으로.
+- S2: `src/components/analysis/StaleAnalysisBanner.tsx` — `mb-3` className 제거. 부모(`AnalysisPanel`)의 outer wrapper가 `flex flex-col gap-4`로 자식 spacing을 일괄 처리하므로 자식의 `mb-3`은 중복 spacing.
+  - Rule: FF Cohesion — layout spacing single source of truth.
+- S3: `src/components/analysis/AnalysisPanel.tsx` — SSR/hydration mismatch 회피. `isAnalysisStale`이 렌더 중 `new Date()`를 평가하면 서버 시각과 클라이언트 시각이 다를 때 임계값 근처에서 stale 판정이 갈리며 hydration warning 발생. `now: Date | null` state로 client mount 후에만 시각을 캡쳐하고 `analyzedAt` 변경 시 재캡쳐 (`useEffect` + `react-hooks/set-state-in-effect` disable + WHY 주석). 첫 SSR/hydration 동안 banner는 노출되지 않는다.
+  - Rule: CONVENTIONS.md L374 (`new Date()` in Server Component → hydration mismatch).
+- S4: `src/__tests__/domain/analysis/staleThreshold.test.ts` — 30분 임계값 버킷(`1Hour`/`4Hour`) 경계 회귀를 잡기 위해 within(`1Hour`, 29min ago → false), beyond(`4Hour`, boundary + 1min → true) 케이스 추가.
+  - Rule: MISTAKES.md §Tests — 임계값 버킷별 boundary 명시 검증.
+- S5: `src/components/analysis/StaleAnalysisBanner.tsx` — UI 메시지 두 종(`STALE_MESSAGE`, `REANALYZE_LABEL`)을 컴포넌트 내 상수로 추출. 향후 동일 메시지를 다른 위치(예: 토스트, 모바일 시트)에서도 사용할 때 content drift 방지의 기반.
+  - Rule: 공통 UI 패턴 추출 시 message string은 상수로 통합.
+
+## [PR #442 Round 5 | fix/oi-tooltip-floating | 2026-05-22]
+- S1: `src/components/options/OpenInterestChart.tsx` — tooltip JSX 주석이 "`hidden`으로 숨겨 스크린리더가 대상을 찾되 시각적으로만 숨김"이라고 표기. 실제로 HTML `hidden` 속성은 접근성 트리에서도 완전히 제거함. 사실관계 정정: "screen reader도 참조를 따라올 수 없지만 하단 sr-only 테이블이 대체 제공하므로 pointer-only tooltip에선 허용 가능 트레이드오프"로 재작성.
+  - Rule: MISTAKES.md §15.3 — 사실관계가 잘못된 주석은 미래 독자에게 오해를 준다.
+- S2: 같은 파일 — `hoveredRow` 표현이 `||` 기반(`(hoveredIndex !== null && oiByStrike[hoveredIndex]) || null`)이라 row 객체 falsy 처리에 암묵 의존. `??` ternary(`hoveredIndex !== null ? (oiByStrike[hoveredIndex] ?? null) : null`)로 "배열 범위 초과 → null" 의도를 명시화.
+  - Rule: CONVENTIONS.md FP — 의도가 명확한 표현 방식 선호.
+- S3: `src/components/options/utils/computeTooltipPos.ts` (신규) + `src/__tests__/components/options/computeTooltipPos.test.ts` (신규) — pure 함수 `computeTooltipPos`와 tooltip 레이아웃 상수 6종을 별도 utility 파일로 분리하고 5건 단위 테스트 추가(가운데 정상 / 좌측 클램핑 / 우측 클램핑 / 상단 클램핑 / container 오프셋 상대좌표). OpenInterestChart.tsx는 named import로 전환.
+  - Rule: CONVENTIONS.md Coverage Targets — pure utility functions may be freely tested. 클램핑 분기는 상수(TOOLTIP_HALF_WIDTH_PX 등) 변경 시 회귀가 즉시 잡히도록 명시 검증.
+
+## [PR #442 Round 4 | fix/oi-tooltip-floating | 2026-05-22]
+- B1: `src/components/options/OpenInterestChart.tsx` — `handlePointerEnter` / `handlePointerMove` / `handlePointerLeave` 세 핸들러가 파생 변수(`maxPainX`, `currentPriceX`, `peakOiLabel`)보다 앞에 선언됨. CONVENTIONS.md 처방 순서(`파생 변수 → 핸들러`)에 맞춰 핸들러를 `peakOiLabel` 뒤로 이동.
+  - Rule: MISTAKES.md §17 — Hook 선언 순서: useState/useRef → useQuery/useMutation → useCallback/useMemo → 파생 변수 → 핸들러 → useEffect.
+- S1: 같은 파일 — `TOOLTIP_HALF_WIDTH_PX = 90`이 className `min-w-[180px]`의 절반에 의존하지만 두 값이 별도라 한쪽만 바뀌면 클램핑 오작동. `TOOLTIP_MIN_WIDTH_PX = 180` single source of truth 도입 후 `TOOLTIP_HALF_WIDTH_PX = TOOLTIP_MIN_WIDTH_PX / 2`로 파생. className에서도 `min-w-[var(--tooltip-min-w)]` + style에 `--tooltip-min-w` 변수 주입해 한 곳에서 관리.
+  - Rule: MISTAKES.md §15 / drift 방지 — 동일 값을 두 표현(상수 + 클래스 리터럴)에 중복하면 silent drift 위험.
+- S2: 같은 파일 — `TOOLTIP_HALF_WIDTH_PX` 주석 첫 구절 "Tooltip의 가로 절반 너비" 제거. 상수명이 이미 표현. WHY(클램핑 용도)만 남김. S1과 함께 주석을 새 single source 의도("anchor 좌우로 절반씩 뻗으므로 절반 너비")로 재작성.
+  - Rule: MISTAKES.md §15.3 — WHAT 코멘트 금지.
+
+## [PR #442 Round 3 | fix/oi-tooltip-floating | 2026-05-22]
+- B1: `src/components/options/OpenInterestChart.tsx` — Hook 선언 순서 재정정. CONVENTIONS.md 순서는 useState → useRef인데 R2에서 useRef를 먼저 선언해 두 번 반전됐다. useState 2개를 먼저, useRef 2개를 뒤로.
+  - Rule: CONVENTIONS.md Custom Hook Declaration Order / MISTAKES.md §17. **이전 라운드(R2)에서 같은 룰에 대한 정정 → 부분 회귀**. 이번엔 useState → useRef 순서로 명확히 고정.
+- B2: 같은 파일 — `{ x: number; y: number }` 인라인 객체 타입이 useState 타입 파라미터와 (R2의) `computeTooltipPos` 반환 타입 두 곳에 중복. 컴포넌트 위에 `TooltipPosition` 인터페이스를 추출해 모두 명명된 타입으로 통일.
+  - Rule: MISTAKES.md TypeScript §5.3 — 함수 반환 타입과 상태 타입에 인라인 객체 리터럴 금지.
+- S1: 같은 파일 — `computeTooltipPos`가 컴포넌트 상태/ref를 클로저하지 않음에도 컴포넌트 안에 정의돼 매 렌더마다 재생성. module-level 순수 함수로 추출.
+  - Rule: MISTAKES.md §20 / CONVENTIONS.md FP — 클로저 의존이 없는 헬퍼는 module-level로.
+- S2: 같은 파일 — `const rawX = event.clientX - rect.left` 위 "viewport 기준 좌표 → container 기준 좌표" 코멘트가 WHAT. 제거. 그 아래 클램핑 WHY 코멘트는 유지.
+  - Rule: MISTAKES.md §15.3 — WHAT 코멘트 금지.
+- S3: 같은 파일 — `as CSSProperties` safe-cast에 guarantee 주석 추가. CSS 커스텀 프로퍼티(--*)는 런타임 유효하지만 React `CSSProperties` 타입에 포함 안 되는 TS 한계 우회임을 명시.
+  - Rule: MISTAKES.md TypeScript §7 — 모든 safe-cast `as`에 guarantee 주석 필수.
+- S4: 같은 파일 — hit-rect의 `aria-describedby={TOOLTIP_ELEMENT_ID}`가 가리키는 tooltip div가 hover 시에만 조건부 렌더링되어 스크린리더가 anchor를 찾지 못함. tooltip div를 항상 DOM에 두고 비활성 시 `hidden` 속성으로 숨기는 WAI-ARIA tooltip 패턴 적용. 내부 컨텐츠는 hoveredRow가 있을 때만 렌더.
+  - Rule: WAI-ARIA tooltip 패턴 — describedby anchor는 항상 DOM에 있어야 한다.
+
 ## [PR #442 Round 2 | fix/oi-tooltip-floating | 2026-05-22]
 - B1: `src/components/options/OpenInterestChart.tsx` — Hook 선언 순서 위반. `useMemo`(derived)가 `useRef`(containerRef)/`useState`(hoveredIndex, tooltipPos)보다 먼저 선언돼 있었음. CONVENTIONS.md "Custom Hook Declaration Order"에 맞춰 useRef/useState를 함수 본문 최상단으로 끌어올리고 useMemo는 그 다음에 배치.
   - Rule: MISTAKES.md §17 / CONVENTIONS.md Custom Hook Declaration Order.

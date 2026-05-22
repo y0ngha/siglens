@@ -173,6 +173,7 @@ export function ChartContent({
                         symbol={symbol}
                         analysis={analysis}
                         keyLevels={clusteredKeyLevels}
+                        timeframe={timeframe}
                         isAnalyzing={isAnalyzing}
                         showProgress={displayAnalyzing}
                         progressPhaseIndex={progressPhaseIndex}
@@ -198,6 +199,7 @@ export function ChartContent({
             analysisStatus,
             analysis,
             clusteredKeyLevels,
+            timeframe,
             displayAnalyzing,
             progressPhaseIndex,
             progressTipIndex,
@@ -210,7 +212,8 @@ export function ChartContent({
         ]
     );
 
-    // timeframe key로 래핑 — Suspense 경계 밖 전달 + 타임프레임 변경 시 effect 재실행 보장.
+    // timeframe을 React.Fragment key로 전달 — Suspense 경계 밖에서 timeframe 변경 시 자식 트리를 강제 remount한다.
+    // timeframe이 useMemo dep에 포함되어 있으므로 mobileContent는 timeframe 변경 시 어차피 재생성되지만, Suspense 재진입은 key 경유로만 트리거된다.
     const mobileContent = useMemo(
         () => (
             <React.Fragment key={timeframe}>{analysisContent}</React.Fragment>

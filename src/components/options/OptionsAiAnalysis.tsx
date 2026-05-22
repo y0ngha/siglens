@@ -8,6 +8,7 @@ import type {
 } from '@y0ngha/siglens-core';
 import { BotBlockedNotice } from '@/components/symbol-page/BotBlockedNotice';
 import { cn } from '@/lib/cn';
+import { formatAnalyzedAt } from '@/lib/formatAnalyzedAt';
 import { OptionsAiAnalysisError } from '@/components/options/OptionsAiAnalysisError';
 import { OptionsAiAnalysisSkeleton } from '@/components/options/OptionsAiAnalysisSkeleton';
 import { useOptionsAnalysis } from '@/components/options/hooks/useOptionsAnalysis';
@@ -65,19 +66,6 @@ const SIGNAL_KIND_LABEL: Record<OptionsSignalKind, string> = {
     volatility: '변동성',
     neutral: '중립',
 };
-
-// Length of the 'YYYY-MM-DD HH:mm' prefix after replacing the 'T' separator
-// with a space — slice boundary for the compact header display.
-const ANALYZED_AT_DISPLAY_LENGTH = 16;
-
-/**
- * Format an ISO datetime string as "YYYY-MM-DD HH:mm". The server-side
- * timestamp is treated as already-displayable (no zone math); only the
- * minute-precision slice is shown to keep the header compact.
- */
-function formatAnalyzedAt(iso: string): string {
-    return iso.replace('T', ' ').slice(0, ANALYZED_AT_DISPLAY_LENGTH);
-}
 
 interface ToneBadgeProps {
     tone: OptionsTone;
