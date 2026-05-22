@@ -1,6 +1,14 @@
 
 # Fix Log
 
+## [PR #442 Round 5 | fix/oi-tooltip-floating | 2026-05-22]
+- S1: `src/components/options/OpenInterestChart.tsx` — tooltip JSX 주석이 "`hidden`으로 숨겨 스크린리더가 대상을 찾되 시각적으로만 숨김"이라고 표기. 실제로 HTML `hidden` 속성은 접근성 트리에서도 완전히 제거함. 사실관계 정정: "screen reader도 참조를 따라올 수 없지만 하단 sr-only 테이블이 대체 제공하므로 pointer-only tooltip에선 허용 가능 트레이드오프"로 재작성.
+  - Rule: MISTAKES.md §15.3 — 사실관계가 잘못된 주석은 미래 독자에게 오해를 준다.
+- S2: 같은 파일 — `hoveredRow` 표현이 `||` 기반(`(hoveredIndex !== null && oiByStrike[hoveredIndex]) || null`)이라 row 객체 falsy 처리에 암묵 의존. `??` ternary(`hoveredIndex !== null ? (oiByStrike[hoveredIndex] ?? null) : null`)로 "배열 범위 초과 → null" 의도를 명시화.
+  - Rule: CONVENTIONS.md FP — 의도가 명확한 표현 방식 선호.
+- S3: `src/components/options/utils/computeTooltipPos.ts` (신규) + `src/__tests__/components/options/computeTooltipPos.test.ts` (신규) — pure 함수 `computeTooltipPos`와 tooltip 레이아웃 상수 6종을 별도 utility 파일로 분리하고 5건 단위 테스트 추가(가운데 정상 / 좌측 클램핑 / 우측 클램핑 / 상단 클램핑 / container 오프셋 상대좌표). OpenInterestChart.tsx는 named import로 전환.
+  - Rule: CONVENTIONS.md Coverage Targets — pure utility functions may be freely tested. 클램핑 분기는 상수(TOOLTIP_HALF_WIDTH_PX 등) 변경 시 회귀가 즉시 잡히도록 명시 검증.
+
 ## [PR #442 Round 4 | fix/oi-tooltip-floating | 2026-05-22]
 - B1: `src/components/options/OpenInterestChart.tsx` — `handlePointerEnter` / `handlePointerMove` / `handlePointerLeave` 세 핸들러가 파생 변수(`maxPainX`, `currentPriceX`, `peakOiLabel`)보다 앞에 선언됨. CONVENTIONS.md 처방 순서(`파생 변수 → 핸들러`)에 맞춰 핸들러를 `peakOiLabel` 뒤로 이동.
   - Rule: MISTAKES.md §17 — Hook 선언 순서: useState/useRef → useQuery/useMutation → useCallback/useMemo → 파생 변수 → 핸들러 → useEffect.
