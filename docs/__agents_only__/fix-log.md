@@ -17,6 +17,22 @@
 - M2: 같은 파일 — tooltip 위치 계산의 매직 넘버 `8` (커서 위로 띄우는 오프셋) 등을 module-level 상수로 추출. `TOOLTIP_CURSOR_OFFSET_Y_PX`, `TOOLTIP_HALF_WIDTH_PX`, `TOOLTIP_VIEWPORT_PADDING_PX`, `TOOLTIP_APPROX_HEIGHT_PX` 4종.
   - Rule: MISTAKES.md §13 — 매직 넘버 module-level 상수 추출.
 
+## [PR #442 Round 2 | fix/oi-tooltip-floating | 2026-05-22]
+- B1: `src/components/options/OpenInterestChart.tsx` — Hook 선언 순서 위반. `useMemo`(derived)가 `useRef`(containerRef)/`useState`(hoveredIndex, tooltipPos)보다 먼저 선언돼 있었음. CONVENTIONS.md "Custom Hook Declaration Order"에 맞춰 useRef/useState를 함수 본문 최상단으로 끌어올리고 useMemo는 그 다음에 배치.
+  - Rule: MISTAKES.md §17 / CONVENTIONS.md Custom Hook Declaration Order.
+- B2: 같은 파일 — tooltip 위치를 인라인 style(`{ left, top }`)로 주고 있었음. CSS 커스텀 프로퍼티(`--tooltip-x`, `--tooltip-y`) + Tailwind arbitrary value(`top-[var(--tooltip-y)] left-[var(--tooltip-x)]`) 패턴으로 변환. `style` 객체는 `as CSSProperties` 단언이 필요해 React import도 갱신.
+  - Rule: MISTAKES.md §19 — 동적 런타임 값도 CSS 커스텀 프로퍼티 + Tailwind arbitrary로 처리.
+- B3: 같은 파일 — `role="tooltip"`만 있고 id 없음, hit-rect의 `aria-describedby`도 누락. `TOOLTIP_ELEMENT_ID = 'oi-chart-tooltip'` 상수로 anchor를 만들고 tooltip div의 `id`와 각 hit-rect의 `aria-describedby`에 연결.
+  - Rule: MISTAKES.md Accessibility §3 — ARIA tooltip 패턴.
+- B4: 같은 파일 — tooltip 위치 계산에 viewport 경계 체크 없음(`-translate-x-1/2 -translate-y-full`만 적용). `computeTooltipPos` 헬퍼 추가: 좌우는 `TOOLTIP_HALF_WIDTH_PX + TOOLTIP_VIEWPORT_PADDING_PX` 이내로 clamp, 상단은 `TOOLTIP_APPROX_HEIGHT_PX + offset` 이상으로 clamp.
+  - Rule: MISTAKES.md UX §2 — Tooltip 위치 계산 시 뷰포트 경계 체크 필요.
+- H1: 같은 파일 — `oiByStrike`가 만기 전환으로 짧아지면 `hoveredIndex`가 stale 상태로 남아 `hoveredRow.strike` 접근 시 런타임 에러 가능. `hoveredRow = (hoveredIndex !== null && oiByStrike[hoveredIndex]) || null` 패턴으로 인덱스 lookup 결과를 직접 정규화.
+  - Rule: FF Predictability — 데이터 변경 사이의 stale state도 안전하게 처리.
+- M1: 같은 파일 — `onPointerMove`에서 매번 `getBoundingClientRect()` 호출 → 마우스 빠르게 움직이면 reflow 폭증. `cachedRectRef`(useRef)로 enter 시점 한 번 측정 후 캐시; move는 캐시된 rect만 사용. touchmove 같은 enter-skip 경로엔 lazy 측정 fallback 추가.
+  - Rule: 성능 — DOMRect 측정은 reflow를 강제하므로 mousemove 핸들러 안에서 반복 호출 금지.
+- M2: 같은 파일 — tooltip 위치 계산의 매직 넘버 `8` (커서 위로 띄우는 오프셋) 등을 module-level 상수로 추출. `TOOLTIP_CURSOR_OFFSET_Y_PX`, `TOOLTIP_HALF_WIDTH_PX`, `TOOLTIP_VIEWPORT_PADDING_PX`, `TOOLTIP_APPROX_HEIGHT_PX` 4종.
+  - Rule: MISTAKES.md §13 — 매직 넘버 module-level 상수 추출.
+
 ## [PR #441 Round 6 | fix/symbol-options-issues | 2026-05-22]
 - S3: `src/__tests__/infrastructure/options/YahooOptionsAdapter.test.ts` — dedupe 테스트 제목이 "초기·추가 응답에 모두 있으면"이었지만 실제 시나리오는 초기 응답에 동일 만기가 두 항목으로 들어오는 케이스(추가 fetch 발생 안 함)였음. 제목을 "초기 응답 안에 동일 만기 항목이 중복될 경우 Map이 마지막 항목으로 dedupe한다"로 정정.
   - Rule: 가독성 — 테스트 제목과 실제 검증 시나리오 일치.
@@ -106,10 +122,6 @@
 
 
 
-
-## [PR #423 Round 2 | feat/news-thinking-budget-and-refresh | 2026-05-07]
-- S1: `src/components/news/sections/NewsList.tsx` — `initialEnrichedCountRef`가 symbol 변경 시 초기화되지 않는 문제. reviewer 제안(render-time ref mutation)은 react-hooks/refs 위반이므로 `useRef` → `useState`로 전환 후 `prevSymbol` render-time reset 패턴 적용.
-  - Rule: react-hooks/refs — refs must not be mutated during render; use setState + prevState pattern instead
 
 ## [PR #422 Round 2 | fix/post-9e88a2f9-audit | 2026-05-07]
 - S3: `src/components/chat/hooks/useChat.ts` `MODEL_STORAGE_KEY` export + `useChat.test.tsx`에서 로컬 재정의 제거 후 import.
