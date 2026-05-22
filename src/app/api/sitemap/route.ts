@@ -5,6 +5,11 @@ import { POPULAR_TICKERS } from '@/domain/constants/popular-tickers';
 import { MS_PER_DAY, MS_PER_HOUR } from '@/domain/constants/time';
 import { hasOptionsMarket } from '@/infrastructure/options/optionsDataCache';
 
+// Upstash Redis(`no-store` fetch)와 Yahoo Finance probe를 호출하기 때문에
+// 빌드 시점 prerender가 불가능하다. force-dynamic으로 요청 시 생성하고,
+// 트래픽 보호는 GET 응답의 Cache-Control(1h max-age + 1h SWR)에 위임한다.
+export const dynamic = 'force-dynamic';
+
 // 미국 주식 시장 마감 시각(UTC). 16:00 ET = 20:00 UTC (DST 미고려, 신호 용도라 충분).
 const US_MARKET_CLOSE_UTC_HOUR = 20;
 
@@ -84,15 +89,22 @@ async function buildEntries(): Promise<SitemapEntry[]> {
 
     return [
         {
+            // 메인은 마케팅 카피 + JSON-LD + 파일시스템 기반 Skills 카운트로
+            // 구성돼 빌드 시점에만 콘텐츠가 변경된다. lastModified를 NOW로
+            // 슬라이딩하면 거짓 신선도 신호가 돼 Googlebot의 크롤 가중치가
+            // 점차 떨어질 수 있으므로 SITE_BUILD_DATE로 고정한다.
             url: SITE_URL,
-            lastModified: NOW,
-            changeFrequency: 'hourly',
+            lastModified: SITE_BUILD_DATE,
+            changeFrequency: 'monthly',
             priority: 1,
         },
         {
+            // /market은 장중 11개 섹터 신호 스캔을 노출하는 페이지로 실시간
+            // 콘텐츠에 가깝다. news 페이지와 동일하게 1시간 단위 슬라이딩
+            // lastModified를 적용해 CDN max-age=3600과 일관된 신호를 보낸다.
             url: `${SITE_URL}/market`,
-            lastModified: TODAY_AT_MARKET_CLOSE,
-            changeFrequency: 'daily',
+            lastModified: ONE_HOUR_AGO,
+            changeFrequency: 'hourly',
             priority: 0.9,
         },
         {
