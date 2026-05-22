@@ -4,6 +4,7 @@ import { Suspense } from 'react';
 import Script from 'next/script';
 import { cookies } from 'next/headers';
 import { Geist, Geist_Mono } from 'next/font/google';
+import { Analytics } from '@vercel/analytics/next';
 import { Header } from '@/components/layout/Header';
 import type { HeaderUserMenuUser } from '@/components/layout/HeaderUserMenu';
 import { SiteJsonLd } from '@/components/layout/SiteJsonLd';
@@ -168,6 +169,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
                         strategy="lazyOnload"
                     />
                 )}
+                <Analytics />
             </body>
         </html>
     );
