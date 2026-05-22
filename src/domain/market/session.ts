@@ -29,7 +29,7 @@ export const MARKET_CLOSE_MIN = MARKET_CLOSE_HOUR * MINUTES_PER_HOUR;
 // implementation round-tripped through `toLocaleString` + `new Date(...)`,
 // which depends on the host's locale parser and breaks on non-`en-US`
 // runtimes — `formatToParts` avoids that fragility.
-export const ET_PARTS_FORMATTER = new Intl.DateTimeFormat('en-US', {
+const ET_PARTS_FORMATTER = new Intl.DateTimeFormat('en-US', {
     timeZone: 'America/New_York',
     weekday: 'short',
     hour: '2-digit',
@@ -43,7 +43,7 @@ export interface EtParts {
     minute: number;
 }
 
-export const WEEKDAY_LOOKUP: Record<string, number> = {
+const WEEKDAY_LOOKUP: Record<string, number> = {
     Sun: 0,
     Mon: 1,
     Tue: 2,
