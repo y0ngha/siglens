@@ -12,6 +12,7 @@
  */
 
 import {
+    etParts,
     hasAllZeroOpenInterest,
     isUsOptionsRegularSession,
     lookupWeekday,
@@ -254,6 +255,23 @@ describe('hasAllZeroOpenInterest', () => {
         // 비어 있는 응답 자체가 정상 데이터가 아니므로 영향이 제한적이다.
         const snapshot = makeSnapshot([]);
         expect(hasAllZeroOpenInterest(snapshot)).toBe(true);
+    });
+});
+
+describe('etParts', () => {
+    it('EDT 기간: weekdayIndex/hour/minute를 정확히 반환한다', () => {
+        // 2026-05-20 Wed 09:30 EDT = 13:30 UTC
+        const result = etParts(new Date('2026-05-20T13:30:00Z'));
+        expect(result).toEqual({ weekdayIndex: 3, hour: 9, minute: 30 });
+    });
+    it('EST 기간: DST 보정된 hour를 반환한다', () => {
+        // 2026-12-15 Tue 09:30 EST = 14:30 UTC
+        const result = etParts(new Date('2026-12-15T14:30:00Z'));
+        expect(result).toEqual({ weekdayIndex: 2, hour: 9, minute: 30 });
+    });
+    it('토요일: weekdayIndex=6을 반환한다', () => {
+        const result = etParts(new Date('2026-05-23T13:30:00Z'));
+        expect(result.weekdayIndex).toBe(6);
     });
 });
 

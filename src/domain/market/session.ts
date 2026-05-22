@@ -19,9 +19,9 @@ import { MINUTES_PER_HOUR } from '@/domain/constants/time';
 import type { OptionsSnapshot } from '@y0ngha/siglens-core';
 
 // US equity options regular session — see MARKET_OPEN_HOUR / MARKET_OPEN_MINUTE / MARKET_CLOSE_HOUR.
-const MARKET_OPEN_HOUR = 9;
-const MARKET_OPEN_MINUTE = 30;
-const MARKET_CLOSE_HOUR = 16;
+export const MARKET_OPEN_HOUR = 9;
+export const MARKET_OPEN_MINUTE = 30;
+export const MARKET_CLOSE_HOUR = 16;
 
 export const MARKET_OPEN_MIN =
     MARKET_OPEN_HOUR * MINUTES_PER_HOUR + MARKET_OPEN_MINUTE;
