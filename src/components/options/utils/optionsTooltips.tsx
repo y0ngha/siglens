@@ -1,3 +1,5 @@
+'use client';
+
 /**
  * Shared tooltip JSX for options-page metrics.
  *
@@ -10,6 +12,12 @@
  * 대부분 const JSX fragment로 두지만, 한국 시간/DST에 따라 본문이 달라지는
  * 안내(ATM IV·Imp. Move)는 함수 컴포넌트로 둔다 — module-level const는 import
  * 시점에만 평가돼 DST 경계를 가로지르는 사용자에게 잘못된 시간을 보여준다.
+ *
+ * `'use client'`: `AtmIvTooltip`/`ImpliedMoveTooltip`은 render 시점에
+ * `getEasternOffsetHours(new Date())`를 호출해 DST 윈도우를 분기한다. RSC에서
+ * import되면 build/요청 시점의 한 시점만 평가돼 DST 경계를 건너는 사용자에게
+ * 잘못된 한국 시간 안내가 굳어버리므로, OptionsStaleDataBanner와 동일하게
+ * 클라이언트에서만 렌더되도록 강제한다.
  */
 
 import { EDT_OFFSET_HOURS, getEasternOffsetHours } from '@/domain/time/eastern';

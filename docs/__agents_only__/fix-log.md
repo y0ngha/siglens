@@ -378,3 +378,12 @@
 - Context: Suggestion — `OpenInterestChart.tsx` `oiByStrike.reduce(sum, 0) === 0` 가드를 `oiByStrike.every(s => s.callOpenInterest === 0 && s.putOpenInterest === 0)` 으로 교체.
 
 
+## [PR #448 Round 2 | fix/options-stale-oi-em-dash | 2026-05-22]
+- Violation: 모듈에서 export하는 placeholder 상수(`METRIC_PLACEHOLDER`)를 테스트가 import하지 않고 리터럴 `'—'`를 하드코딩
+- Rule: MISTAKES.md §Tests §13 — Expected values from module exports must be imported, not hardcoded
+- Context: Blocker — R1에서 `optionsFormatters.ts`에 `METRIC_PLACEHOLDER` export를 도입했지만 test 파일은 이전 리터럴을 그대로 유지. value drift 시 silent pass 가능. 모든 `toBe('—')`를 `toBe(METRIC_PLACEHOLDER)`로 교체.
+- Violation: `new Date()`를 평가하는 함수 컴포넌트를 export하는 파일에 `'use client'` 누락
+- Rule: FF Cohesion — DST 평가는 client 시점에만 정확. 같은 PR에서 OptionsStaleDataBanner에 `'use client'`를 추가한 결정과 일관성 필요
+- Context: Suggestion — `optionsTooltips.tsx`의 `AtmIvTooltip`/`ImpliedMoveTooltip`가 render-time `new Date()` 평가. 현재는 client consumer만 import해 기능적 문제 없으나, RSC import 시 builds-time 평가로 잘못 안내 위험. `'use client'` directive 추가.
+
+
