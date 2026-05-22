@@ -80,10 +80,22 @@ async function fetchNewsAnalysis(
     throw new Error('aborted');
 }
 
+interface UseNewsAnalysisOptions {
+    /**
+     * 분석 submit을 트리거할지 여부. 기본값 `true`.
+     *
+     * `false` 일 때 useQuery는 비활성 — 호출자가 사전 조건(예: enriched news cards
+     * 준비 완료)을 기다리는 동안 빈 DB에 대해 submit 이 fire되어 `no_news` 결과가
+     * `retry: false + staleTime: Infinity` 정책 하에 영구 캐시되는 회귀를 막는다.
+     */
+    enabled?: boolean;
+}
+
 export function useNewsAnalysis(
     symbol: string,
     companyName: string,
-    modelId: ModelId
+    modelId: ModelId,
+    { enabled = true }: UseNewsAnalysisOptions = {}
 ): NewsAnalysisState {
     const currentJobIdRef = useRef<string | null>(null);
     const queryKey = useMemo(
@@ -109,6 +121,7 @@ export function useNewsAnalysis(
                     currentJobIdRef.current = jobId;
                 }
             ),
+        enabled,
         retry: false,
         staleTime: Infinity,
     });
