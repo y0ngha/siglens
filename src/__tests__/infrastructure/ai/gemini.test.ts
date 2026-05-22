@@ -102,6 +102,18 @@ describe('callGeminiChat', () => {
         });
     });
 
+    describe('string contents 변환', () => {
+        it('string contents는 그대로 Gemini에 전달한다', async () => {
+            mockGenerateContent.mockResolvedValue({ text: 'ok' });
+
+            await callGeminiChat({ ...BASE_OPTIONS, contents: 'Hello' });
+
+            expect(mockGenerateContent).toHaveBeenCalledWith(
+                expect.objectContaining({ contents: 'Hello' })
+            );
+        });
+    });
+
     describe('ConversationTurn[] contents 변환', () => {
         it('role: assistant는 model로 변환하여 Gemini에 전달한다', async () => {
             mockGenerateContent.mockResolvedValue({ text: 'ok' });
