@@ -1,4 +1,4 @@
-import { NextResponse, connection } from 'next/server';
+import { NextResponse } from 'next/server';
 import { loadLongTailTickers } from '@/infrastructure/sitemap/loadLongTailTickers';
 import type { SitemapIndexEntry } from '@/infrastructure/sitemap/types';
 import { SITEMAP_MAX_URLS_PER_FILE } from '@/infrastructure/sitemap/types';
@@ -20,11 +20,6 @@ import { SITE_BUILD_DATE, SITE_URL } from '@/lib/seo';
  * (Next.js rewrite는 next.config.ts에서 /sitemap-*.xml → /api/sitemap/* 으로 매핑)
  */
 export async function GET(): Promise<Response> {
-    // cacheComponents 모드는 build 때 route를 prerender 시도하는데, Neon
-    // serverless driver의 fetch가 prerender lifetime을 넘기면 HANGING_PROMISE_
-    // REJECTION으로 새어나간다. connection()을 명시적으로 호출해 prerender
-    // attempt 자체를 차단하고 runtime dynamic만 보장한다.
-    await connection();
     const now = new Date();
     const longTailTickers = await loadLongTailTickers();
     const longTailPages = Math.ceil(
