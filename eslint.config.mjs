@@ -101,7 +101,7 @@ const eslintConfig = defineConfig([
                             allow: [
                                 'entities',
                                 'shared',
-                                'legacy-comp',
+                                'legacy-comp', // 마이그레이션 중 임시 허용: 새 feature가 아직 widgets로 이동하지 않은 legacy UI를 사용. Phase 7 완료 시 제거.
                                 'legacy-domain',
                                 'legacy-infra',
                                 'legacy-lib',
@@ -133,6 +133,8 @@ const eslintConfig = defineConfig([
                             ],
                         },
                         {
+                            // legacy-comp → legacy-infra: 옛 코드 현상 유지. components/ hooks만 infrastructure fetch 함수 import 허용 (ARCHITECTURE.md).
+                            // Phase 7 (widgets 마이그레이션) 완료 시 legacy-comp 타입 자체가 제거되므로 이 규칙도 함께 삭제.
                             from: 'legacy-comp',
                             allow: [
                                 'legacy-domain',

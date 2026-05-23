@@ -127,6 +127,7 @@ This file contains only **recurring gotchas** that agents keep missing despite e
 
 7.6. Relative import paths used instead of path aliases
    → All imports must use path aliases (@/, @y0ngha/...) instead of relative paths (./, ../)
+   → 예외: FSD 슬라이스 내부 segment 간 참조는 relative import를 사용한다 (CONVENTIONS.md §FSD Slice Internal Imports 참조)
    → Relative paths create brittle dependencies when files move and make refactoring difficult
    → Path aliases are statically resolvable and enable IDE support
    ❌ import { Component } from './'
@@ -135,6 +136,9 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    ✅ import { Component } from '@/components/contact'
    ✅ import { util } from '@/utils/someUtil'
    ✅ import { type } from '@/domain/types'
+   ✅ // FSD 슬라이스 내부 (src/features/auth/ui/LoginForm.tsx)
+      import type { AuthFormState } from '../model/types';  // 슬라이스 내부 relative OK
+   ❌ import type { AuthFormState } from '@/features/auth/model/types';  // 같은 슬라이스라도 no-restricted-imports 위반
 
 8. Tight coupling between interface props and dependent files
    → Group related prop pairs into a single type (e.g. IndicatorToggleGroup { visible, onToggle })
@@ -425,12 +429,15 @@ This file contains only **recurring gotchas** that agents keep missing despite e
 
 0.1. Relative path imports instead of path aliases
    → All imports must use @/ path aliases, never relative paths (./, ../)
+   → 예외: FSD 슬라이스 내부 segment 간 참조는 relative import 허용 (CONVENTIONS.md §FSD Slice Internal Imports 참조)
    → Applies to all layers: components, domain, infrastructure, lib
    → Path aliases enable safe refactoring and improve code clarity across layers
    ❌ import { formatPrice } from '../../lib/priceFormat'
    ❌ import { validateInput } from './validation'
    ✅ import { formatPrice } from '@/lib/priceFormat'
    ✅ import { validateInput } from '@/domain/contact/validation'
+   ✅ // FSD 슬라이스 내부
+      import type { AuthFormState } from '../model/types';  // 슬라이스 내부 relative OK
 
 1. External callback prop in useEffect dependency array → infinite loops
    → Use useEffectEvent to wrap callback props
