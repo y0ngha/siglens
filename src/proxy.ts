@@ -1,4 +1,10 @@
 import { AUTH_SESSION_COOKIE_NAME } from '@/infrastructure/auth/sessionCookie';
+// edge runtime 안전성을 위해 외부 의존이 0인 simple constant file에서 직접 import한다.
+// `@/domain/constants/market`은 `@y0ngha/siglens-core` 타입을 끌어와 cross-module
+// type 의존성을 거치는데, Turbopack의 `import type` strip이 dev 환경에서 간헐적으로
+// 누락돼 [symbol] 라우트 fetch가 차단되는 회귀가 관찰돼 회피한다 (자세한 배경은
+// ticker.ts JSDoc 참조).
+import { TICKER_RE } from '@/domain/constants/ticker';
 import { NextResponse, type NextRequest } from 'next/server';
 
 const RESERVED_FIRST_SEGMENTS = new Set([
@@ -14,24 +20,6 @@ const RESERVED_FIRST_SEGMENTS = new Set([
     'api',
     '_next',
 ]);
-
-/**
- * Ticker 정규식 (edge runtime용 로컬 정의).
- *
- * 형상은 `@/domain/constants/market`의 `VALID_TICKER_RE`와 동일하게 유지한다 —
- * 1글자 이상 8글자 이하 영문 대문자 + 선택적 점(.) 또는 하이픈(-)
- * (예: BRK.B, PBR-A).
- *
- * domain 모듈을 직접 import하지 않고 인라인으로 둔 이유:
- * proxy.ts는 Vercel edge runtime에서 실행되며, `@/domain/constants/market`은
- * `@y0ngha/siglens-core` 패키지 타입을 끌어와 cross-module 의존성을 거친다.
- * Turbopack이 `import type`을 항상 strip한다는 보장이 약해 dev 환경에서 [symbol]
- * 라우트의 데이터 fetch가 간헐적으로 차단되는 회귀(404)가 관찰됐다.
- *
- * 형상이 어긋나지 않도록 변경 시 `src/domain/constants/market.ts`의
- * `VALID_TICKER_RE`와 함께 갱신할 것.
- */
-const TICKER_RE = /^[A-Z][A-Z.-]{0,7}$/;
 
 /**
  * 두 가지 가드를 처리하는 미들웨어 함수.

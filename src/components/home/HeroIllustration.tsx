@@ -12,8 +12,11 @@ interface Candle {
     readonly bullish: boolean;
 }
 
-const CANDLE_BULL = '#3b82f6';
-const CANDLE_BEAR = '#fb7185';
+// 색상값은 globals.css `@theme`의 design token과 동일한 hex로 박는다 — 정적 시각
+// 자산이라는 의도(아래 JSDoc 참조)를 유지하면서 brand palette과의 정합성은 확보.
+// 변경 시 token 값과 함께 일관되게 갱신할 것.
+const CANDLE_BULL = '#3b82f6'; // primary-500
+const CANDLE_BEAR = '#ef5350'; // chart-bearish (= ui-danger)
 const CANDLE_HALF_WIDTH = 10;
 const CANDLE_BODY_WIDTH = CANDLE_HALF_WIDTH * 2;
 
@@ -71,10 +74,26 @@ const CANDLES: ReadonlyArray<Candle> = [
  * 추상화한 결정적 디자인이라 실제 데이터에 의존하지 않고 시간이 지나도 outdate
  * 되지 않는다. 모든 좌표·색상은 viewBox(800×500) 내 SVG primitive로 고정한다.
  *
- * 색상은 Tailwind palette hex를 직접 박는다. SVG presentation attribute도
- * `var(--color-primary-500)` 같은 CSS 변수를 받을 수 있지만, 이 illustration은
- * brand color 변경의 영향을 받지 않는 정적 시각 자산이라는 의도로 hex를 그대로
- * 유지한다. dark-only 사이트라 light variant 분기도 불필요.
+ * 색상은 globals.css `@theme`에서 정의된 design token과 동일한 hex 값으로 박는다.
+ * SVG presentation attribute도 `var(--color-primary-500)` 같은 CSS 변수를 받지만,
+ * 이 illustration은 brand color 변경의 영향을 받지 않는 정적 시각 자산이라는
+ * 의도로 hex를 그대로 유지한다. design 변경 시에는 token 값과 함께 일관되게
+ * 갱신해야 한다. dark-only 사이트라 light variant 분기도 불필요.
+ *
+ * Token 매핑:
+ *  - `#3b82f6` = primary-500 (bullish candle, ticker chip 강조)
+ *  - `#ef5350` = chart-bearish / ui-danger (bearish candle)
+ *  - `#26a69a` = chart-bullish / ui-success (가격 변화율)
+ *  - `#f59e0b` = chart-signal / ui-warning (골든크로스 마커, 신호 라벨 텍스트)
+ *  - `#a78bfa` = chart-rsi (RSI 곡선)
+ *  - `#0f172a` / `#1e293b` / `#334155` = secondary-900/800/700 (배경·테두리)
+ *  - `#172554` = primary-950 (ticker chip 배경)
+ *  - `#1d4ed8` = primary-700 (ticker chip 테두리)
+ *  - `#60a5fa`/`#93c5fd` = primary-400/300 (MA gradient, 라벨)
+ *  - `#94a3b8` = secondary-400 / chart-neutral (DAILY · 1Y 보조 라벨)
+ *  - `#e2e8f0` = secondary-200 (가격 텍스트)
+ *  - `#64748b` = secondary-500 (RSI 라벨)
+ *  - `#cbd5e1` = secondary-300 (신호 라벨 텍스트)
  */
 export function HeroIllustration({ className }: HeroIllustrationProps) {
     return (
@@ -171,7 +190,7 @@ export function HeroIllustration({ className }: HeroIllustrationProps) {
                 textAnchor="end"
                 fontFamily="ui-monospace, SFMono-Regular, monospace"
                 fontSize="11"
-                fill="#34d399"
+                fill="#26a69a"
                 fontWeight="600"
             >
                 +1.82% (+4.16)
@@ -251,10 +270,10 @@ export function HeroIllustration({ className }: HeroIllustrationProps) {
                 cy="215"
                 r="11"
                 fill="none"
-                stroke="#fbbf24"
+                stroke="#f59e0b"
                 strokeWidth="2"
             />
-            <circle cx="364" cy="215" r="3" fill="#fbbf24" />
+            <circle cx="364" cy="215" r="3" fill="#f59e0b" />
 
             {/* 신호 라벨 chip */}
             <g transform="translate(382, 196)">
@@ -264,7 +283,7 @@ export function HeroIllustration({ className }: HeroIllustrationProps) {
                     width="110"
                     height="26"
                     rx="6"
-                    fill="#0c1326"
+                    fill="#0f172a"
                     stroke="#1d4ed8"
                 />
                 <text
@@ -272,7 +291,7 @@ export function HeroIllustration({ className }: HeroIllustrationProps) {
                     y="17"
                     fontFamily="ui-monospace, SFMono-Regular, monospace"
                     fontSize="11"
-                    fill="#fbbf24"
+                    fill="#f59e0b"
                     fontWeight="700"
                 >
                     ▲
