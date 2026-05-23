@@ -16,9 +16,6 @@ const RESERVED_FIRST_SEGMENTS = new Set([
     '_next',
 ]);
 
-// US ticker shape: 1–5 alpha chars, optional .X (e.g. BRK.B). Case-insensitive — we redirect non-uppercase forms to uppercase.
-const TICKER_SEGMENT_CI_RE = /^[A-Za-z]{1,5}(\.[A-Za-z])?$/;
-
 /**
  * 두 가지 가드를 처리하는 미들웨어 함수.
  *
@@ -39,11 +36,12 @@ export function proxy(req: NextRequest): NextResponse {
      * 받을 수 없기 때문이다. proxy는 모든 요청에 대해 항상 실행되므로 redirect 처리는
      * 그대로 가능하고, page.tsx는 순수 정적 페이지로 캐싱될 수 있다.
      *
-     * - 동일 키 중복(`?q=AAPL&q=TSLA`)은 첫 번째 값을 사용
+     * - 동일 키 중복(`?q=AAPL&q=TSLA`)은 첫 번째 값을 사용 (`get()`이 기본 동작)
      * - 유효 ticker가 아니면 fall through — page.tsx가 일반 랜딩으로 렌더
+     * - status code는 기본값 307(임시) — 검색 쿼리는 브라우저가 영구 캐싱하지 않도록 의도
      */
     if (pathname === '/' && reqUrl.searchParams.has('q')) {
-        const qRaw = reqUrl.searchParams.getAll('q')[0];
+        const qRaw = reqUrl.searchParams.get('q');
         if (qRaw) {
             const ticker = qRaw.trim().toUpperCase();
             if (VALID_TICKER_RE.test(ticker)) {
@@ -65,10 +63,10 @@ export function proxy(req: NextRequest): NextResponse {
     if (
         firstSegment !== undefined &&
         !RESERVED_FIRST_SEGMENTS.has(firstSegment.toLowerCase()) &&
-        TICKER_SEGMENT_CI_RE.test(firstSegment) &&
+        VALID_TICKER_RE.test(firstSegment.toUpperCase()) &&
         firstSegment !== firstSegment.toUpperCase()
     ) {
-        const canonicalUrl = new URL(req.url);
+        const canonicalUrl = new URL(reqUrl);
         canonicalUrl.pathname = pathname.replace(
             /^\/[^/]+/,
             '/' + firstSegment.toUpperCase()
