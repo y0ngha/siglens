@@ -73,7 +73,7 @@ export function HowItWorks({ skillCounts }: HowItWorksProps) {
                         <div className="bg-secondary-800/50 border-secondary-700 flex-1 rounded-lg border p-6">
                             <span
                                 aria-hidden="true"
-                                className="text-primary-500/70 font-mono text-3xl leading-none font-bold"
+                                className="text-primary-400/80 font-mono text-3xl leading-none font-bold"
                             >
                                 {step.number}
                             </span>

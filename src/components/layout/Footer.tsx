@@ -17,12 +17,12 @@ export function Footer() {
                 <div
                     role="note"
                     aria-label="투자 면책 고지"
-                    className="text-secondary-500 text-xs leading-relaxed sm:text-sm"
+                    className="text-secondary-400 text-xs leading-relaxed sm:text-sm"
                 >
                     {INVESTMENT_DISCLAIMER}
                 </div>
                 <div className="border-secondary-800 flex flex-col items-center gap-3 sm:flex-row sm:justify-between">
-                    <p className="text-secondary-600 text-sm">
+                    <p className="text-secondary-400 text-sm">
                         © <CurrentYear /> Siglens
                     </p>
                     <nav
@@ -31,21 +31,21 @@ export function Footer() {
                     >
                         <Link
                             href={PRIVACY_PATH}
-                            className="text-secondary-500 hover:text-secondary-300 text-sm transition-colors"
+                            className="text-secondary-400 hover:text-secondary-200 text-sm transition-colors"
                         >
                             {PRIVACY_TITLE}
                         </Link>
                         <DotSeparator />
                         <Link
                             href={TERMS_PATH}
-                            className="text-secondary-500 hover:text-secondary-300 text-sm transition-colors"
+                            className="text-secondary-400 hover:text-secondary-200 text-sm transition-colors"
                         >
                             {TERMS_TITLE}
                         </Link>
                         <DotSeparator />
                         <ContactDialog
                             triggerLabel="문의하기"
-                            triggerClassName="text-secondary-500 hover:text-secondary-300 text-sm transition-colors"
+                            triggerClassName="text-secondary-400 hover:text-secondary-200 text-sm transition-colors"
                         />
                         {/* <DotSeparator />
                         <a
