@@ -188,6 +188,7 @@ app  →  pages  →  widgets  →  features  →  entities  →  shared
 
 - 각 레이어는 자기 위 레이어를 import할 수 없다 (예: entities는 features를 import할 수 없음).
 - 같은 레이어 안의 다른 슬라이스끼리 import 금지 (예: `entities/user`는 `entities/session`을 직접 import할 수 없음 — 상위 레이어를 통해 라우팅).
+  **예외: `shared` 레이어는 내부 슬라이스 간 import 허용** (예: `shared/ui` → `shared/lib` 허용 — ESLint boundaries `{ from: 'shared', allow: ['shared'] }` 정책과 일치).
 - production 코드는 슬라이스 root만 import (예: `@/widgets/stock-chart`, NOT `@/widgets/stock-chart/ui/Chart`). 테스트 파일은 예외.
 
 ### Legacy 의존 방향 (마이그레이션 동안 유지)
@@ -195,9 +196,12 @@ app  →  pages  →  widgets  →  features  →  entities  →  shared
 ```
 domain         ← No external imports. Pure TypeScript functions only.
                  Exception: @y0ngha/siglens-core may be imported.
-infrastructure ← May import from domain and lib.
+infrastructure ← May import from domain and lib (lib must be pure utilities/constants only).
+                 Handles file I/O (Skills) and API calls.
 lib            ← External UI utility wrappers. Pure functions only.
-app (RSC)      ← May import from infrastructure, domain, lib.
+                 React Query key factories (QUERY_KEYS) and config constants belong in lib/.
+                 May import types from domain (e.g. Timeframe) when needed for key factories.
+app (RSC/Route) ← May import from infrastructure, domain, lib.
 components     ← May import from domain, lib.
                Component files (.tsx): Direct imports from infrastructure are prohibited.
                Hook files (hooks/): May import fetch functions from infrastructure only
@@ -209,7 +213,7 @@ Phase 9 완료 시 legacy 섹션은 제거된다.
 
 ### siglens-core 직접 import 예외 (모든 레이어)
 
-`@y0ngha/siglens-core`는 외부 라이브러리가 아니라 외부 분석 도메인 패키지다. 모든 레이어가 직접 import 가능하다. deep import(`@y0ngha/siglens-core/dist/...`) 금지.
+`@y0ngha/siglens-core`는 외부 라이브러리가 아니라 외부 분석 도메인 패키지다. 모든 레이어가 직접 import 가능하다. deep import(`@y0ngha/siglens-core/dist/...`) 금지. 로컬 `src/domain/`은 SigLens 앱 고유 로직(backtest, chat 모델 상수, 대시보드 섹터 그룹핑 등)만 보유한다. FSD 마이그레이션 중에도 이 원칙은 유지된다.
 
 ### Server Action 예외
 
