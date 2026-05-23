@@ -489,3 +489,14 @@
 - S2: `src/infrastructure/options/optionsDataCache.ts` — `1 * SECONDS_PER_MINUTE` 중복 multiplier (MISTAKES.md §15 readability gradient).
   - Rule: MISTAKES.md §15 — 상수와 표시 텍스트의 단일 source.
   - Context: Suggestion — `SECONDS_PER_MINUTE`로 단순화.
+
+## [PR #457 | worktree-agent-a43a5be58b9f76809 | 2026-05-23]
+- Violation: `@next/bundle-analyzer` (^16.2.6) version drifted from `next` (16.2.0)
+- Rule: Next.js convention — `@next/*` packages should match `next` version
+- Context: Added bundle-analyzer with `yarn add` which picked latest 16.2.x; should have constrained to project's pinned next major.minor
+- Violation: `browserslist` missing `last 2 ChromeAndroid versions` despite PR targeting mobile LCP
+- Rule: Config completeness — declared user-base coverage must align with PR's stated optimization goal
+- Context: Browserslist had Chrome/Firefox/Safari/Edge + iOS but no Android Chrome line; siglens.io's mobile users include Android, so SWC transpile target was unintentionally excluding them
+- Violation: `analyze` script missing from package.json scripts after wiring bundle-analyzer
+- Rule: Tool integration — when wiring a tool that needs env-prefixed invocation, expose a script entrypoint so it's discoverable and CI-friendly
+- Context: bundle-analyzer is gated on ANALYZE=true env; without a script, users have to remember the magic command
