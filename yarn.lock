@@ -2222,7 +2222,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@next/bundle-analyzer@npm:^16.2.6":
+"@next/bundle-analyzer@npm:^16.2.0":
   version: 16.2.6
   resolution: "@next/bundle-analyzer@npm:16.2.6"
   dependencies:
@@ -11477,7 +11477,7 @@ __metadata:
     "@anthropic-ai/sdk": "npm:^0.92.0"
     "@google/genai": "npm:^1.50.1"
     "@neondatabase/serverless": "npm:^1.1.0"
-    "@next/bundle-analyzer": "npm:^16.2.6"
+    "@next/bundle-analyzer": "npm:^16.2.0"
     "@release-it/conventional-changelog": "npm:^10.0.6"
     "@tailwindcss/postcss": "npm:^4"
     "@tanstack/react-query": "npm:^5.95.2"

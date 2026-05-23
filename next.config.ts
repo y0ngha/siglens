@@ -1,7 +1,6 @@
 import type { NextConfig } from 'next';
 import bundleAnalyzer from '@next/bundle-analyzer';
 
-// ANALYZE=true 시에만 활성화. 일반 dev/build에는 영향 없음.
 const withBundleAnalyzer = bundleAnalyzer({
     enabled: process.env.ANALYZE === 'true',
 });
