@@ -281,33 +281,74 @@
 
 ---
 
-## 11. After 측정 체크리스트 (PPR 활성화 + Wave 1+2 배포 후)
+## 11. After 측정 결과 (2026-05-24 시점 — PR #457/#458/#459/#460/#461/#466/#467 머지 후)
 
-> 배포에 포함되는 변경: PR #457 #458 #459 #460 #461 + PR #462 (cacheComponents:true 재활성화 + Next.js 16.1.2 downgrade) + Cloudflare Content-Signal 제거.
+> **실제 배포 시나리오와 baseline 예상의 차이**:
+> - PPR(`cacheComponents: true`) 재활성화는 **롤백** (PR #464/#465). Vercel adapter가 PR #462의 16.1.2 다운그레이드 환경에서 `application/x-nextjs-pre-render` MIME wrapper를 브라우저에 그대로 노출해 다운로드 발생 → 즉시 rollback.
+> - 따라서 PR #459 (cookies isolation) + PR #461 (`revalidate=3600`)의 ISR/`x-vercel-cache: HIT` 효과는 미실현. TTFB 개선은 Vercel infra 자체 + 페이로드 감소가 견인.
+> - PR-F (#466): Hero를 외부 SVG + next/image priority + fetchPriority로 전환해 LCP를 텍스트(폰트 의존) → image LCP로 이전.
+> - PR-G (#467): lcp-discovery fetchPriority + color-contrast 6건 + SkillsShowcase `HIGH_CONFIDENCE_WEIGHT` 로컬 미러(siglens-core barrel tree-shake 회피, -33 KB).
+> - PR-G fix(5f8855ab) → **revert**(fa6a8154): aspect-ratio + h3 색상 후속 fix가 mobile LCP를 2.7s → 5.4s로 회귀시켜 즉시 revert.
 
-### 자동 (스크립트가 채움)
+### PSI v5 (Lighthouse 11)
 
-| 지표 | Before | After 목표 | After 실측 |
+| 지표 | Before | After 목표 | After 실측 | 달성 |
+|---|---|---|---|---|
+| **Mobile Performance** | 67 | ≥ 90 | **89** | 🟡 −1 차 |
+| Mobile LCP | 13.0 s | ≤ 2.5 s | **2.7 s** | 🟡 Good 직전 |
+| Mobile FCP | 1.5 s | ≤ 1.0 s | 1.5 s | 🟡 flat |
+| Mobile SI | 6.2 s | ≤ 3.4 s | 4.6 s | 🟡 |
+| Mobile TBT | 40 ms | ≤ 200 ms | **10 ms** | 🟢 |
+| Mobile TTI | 13.3 s | ≤ 3.8 s | 5.3 s | 🟡 |
+| Mobile CLS | 0.08 | ≤ 0.1 | 0.123 | 🔴 PSI 환경 특화 (사용자 LH는 0) |
+| Mobile TTFB | 430 ms (MISS) | ≤ 100 ms (HIT) | **150 ms** | 🟢 (HIT 미달성, infra로만) |
+| **Desktop Performance** | 88 | ≥ 95 | **98** | 🟢 |
+| Desktop LCP | 2.3 s | ≤ 1.5 s | **1.1 s** | 🟢 |
+| Desktop FCP | 0.4 s | ≤ 0.5 s | 0.5 s | 🟢 |
+| Desktop TBT | 50 ms | ≤ 200 ms | 60 ms | 🟢 |
+| Desktop CLS | 0.003 | ≤ 0.1 | 0.001 | 🟢 |
+| Desktop TTFB | 600 ms (MISS) | ≤ 100 ms (HIT) | **100 ms** | 🟢 |
+| **Accessibility (M / D)** | 97 / 97 | 100 / 100 | **97 / 97** | 🟡 TickerCategories fintech h3 1건 (text-primary-500) 미해결 |
+| **Best Practices (M / D)** | 100 / 100 | 100 / 100 | **100 / 100** | 🟢 |
+| **SEO (M / D)** | 92 / 92 | 100 / 100 | **100 / 100** | 🟢 |
+
+### 사용자 로컬 Lighthouse v13.0.2
+
+| 지표 | Before Mobile | After Mobile | Before Desktop | After Desktop |
+|---|---|---|---|---|
+| Performance | 64 | **85** (+21) | 95 | 93 |
+| **LCP** | 20.4 s | **4.3 s** (**−79%**) | 1.4 s | 1.7 s |
+| FCP | 1.7 s | 1.5 s | 0.8 s | 0.7 s |
+| **SI** | 25.4 s | **2.0 s** (**−92%**) | 1.1 s | 0.9 s |
+| TBT | 50 ms | 20 ms | 0 | 0 |
+| TTI | 20.8 s | 5.3 s | 1.4 s | 1.7 s |
+| CLS | 0 | **0** | 0 | 0.001 |
+| Best Practices | 81 | 81 | 100 | 100 |
+| SEO | 100 | 100 | 100 | 100 |
+
+### 인프라 / 자산
+
+| 항목 | Before | After | 달성 |
 |---|---|---|---|
-| **Mobile Performance** | 67 | ≥ 90 | — |
-| Mobile LCP | 13.0 s | ≤ 2.5 s | — |
-| Mobile FCP | 1.5 s | ≤ 1.0 s | — |
-| Mobile SI | 6.2 s | ≤ 3.4 s | — |
-| Mobile TBT | 40 ms | ≤ 200 ms | — |
-| Mobile TTI | 13.3 s | ≤ 3.8 s | — |
-| Mobile CLS | 0.08 | ≤ 0.1 | — |
-| **Mobile TTFB** | 430 ms (MISS) | ≤ 100 ms (HIT) | — |
-| **Desktop Performance** | 88 | ≥ 95 | — |
-| Desktop LCP | 2.3 s | ≤ 1.5 s | — |
-| Desktop TTFB | 600 ms (MISS) | ≤ 100 ms (HIT) | — |
-| **Accessibility (Mobile/Desktop)** | 97 / 97 | 100 / 100 | — |
-| **Best Practices** | 100 / 100 | 100 / 100 (유지) | — |
-| **SEO (PSI)** | 92 / 92 | 100 / 100 | — |
-| `x-vercel-cache` | MISS | **HIT** | — |
-| `cache-control` | `no-store, must-revalidate` | (no-store 제거) | — |
-| Pretendard 폰트 크기 | 2,057,688 bytes | ~478,124 (467 KB) | — |
-| HTML size (br) | 643 KB | < 400 KB 기대 (PPR 정적 셸 효과) | — |
-| Inline RSC payload | 459 KB | 크게 감소 기대 | — |
+| Pretendard 폰트 크기 | 2,057,688 bytes | **478,124 bytes (467 KB)** | 🟢 −77% |
+| Hero LCP element | `<p>` 또는 `<h1>` 텍스트 (폰트 의존) | **`<img>` SVG (hero-dashboard.svg)** | 🟢 폰트 의존성 제거 |
+| robots.txt | Cloudflare 주입 30줄 | 4줄 (정리됨) | 🟢 |
+| HTML cache-control | `no-store, must-revalidate` | 동일 (PPR 롤백) | ⚫ 미달성 |
+| `x-vercel-cache` | MISS | MISS (동일) | ⚫ 미달성 (PPR 의존) |
+| icon | icon96.png | icon96.png (Header/Auth — BP `image-size-responsive` 통과) | 🟢 |
+| Landing chunk (`0amtymn_*`) | 53.8 KB / 33.3 KB unused | **−33 KB** (HIGH_CONFIDENCE_WEIGHT 로컬 미러) | 🟢 |
+
+### 미달 항목 + 잔여 작업 (모두 marginal ROI)
+
+| 항목 | 상태 | 원인 | 처리 |
+|---|---|---|---|
+| Mobile LCP < 2.5s | 2.7s — Good 직전 | aspect-ratio 시도가 LCP 회귀 유발해 revert | 추가 시도 보류 |
+| A11y 100 (PSI) | 97 — h3 1건 | `TickerCategories.tsx` fintech-crypto `text-primary-500` (4.42:1) | 차후 단독 PR 5분 작업 |
+| CLS PSI 0.12 | 사용자 LH는 0 | PSI 모바일 throttle 환경 특화 — 일반 사용자 영향 미미 | 별도 디버깅 보류 |
+| `x-vercel-cache: HIT` | MISS | PPR(이슈 #439) 미해결 → ISR 무력화 | upstream 해결 대기 |
+| `cache-insight` (Cloudflare beacon TTL) | 0.5 | Cloudflare 인프라 영역 | Cloudflare dashboard 작업 |
+| `legacy-javascript-insight` | 0.5 | Turbopack이 `browserslist` 무시 | Next.js upstream 대기 |
+| TTI 5.3s | NI 경계 | SkillsShowcase + StatsBar hydration | bundle-analyzer로 추가 lazy 분리 가능 (큰 작업) |
 
 ### 수동 (사람 또는 추가 도구 필요)
 
@@ -351,3 +392,6 @@
 | 2026-05-23 | PSI API key 등록 후 실수치로 전면 갱신 + Chrome DevTools 실측 추가 | Claude Code |
 | 2026-05-23 | **로컬 Lighthouse v13.0.2 측정 (`lighthouse/260523-before/{mobile,desktop}.json`) 통합** — Pretendard 2 MB 폰트가 진짜 LCP 병목임을 식별, target-size/bf-cache/deprecations 신규 발견 | 사용자 측정 + Claude Code |
 | 2026-05-23 | **After 측정 준비** — `scripts/measure-performance.sh` 추가, §11 PPR-aware 체크리스트 작성. Wave 1+2 (PR #457/#458/#459/#460/#461) + PPR 재활성화 (PR #462) + Cloudflare Content-Signal 제거 통합 배포 후 측정 예정 | Claude Code |
+| 2026-05-23 | **PR-F 머지 + 측정** — Mobile Perf 67→92, LCP 13s→2.6s (Good). Hero를 SVG `<img>`(외부) + priority + fetchPriority로 전환해 폰트 의존 텍스트 LCP 탈출. proxy.ts `src/proxy.ts`로 통일(dead root proxy.ts 삭제), edge runtime 호환을 위해 `VALID_TICKER_RE` 대신 로컬 `TICKER_RE` 인라인. Header `icon24.png → icon96.png` BP `image-size-responsive` 통과. | 사용자 측정 + Claude Code |
+| 2026-05-24 | **PR-G 머지 + 측정** — Mobile Perf 92→89(약간 회귀, CLS spike), color-contrast 6건 fix, `HIGH_CONFIDENCE_WEIGHT` 로컬 미러로 landing chunk −33 KB. 5f8855ab(aspect-ratio + h3 색상 후속 fix)는 mobile LCP 2.7→5.4s로 회귀해 즉시 revert(fa6a8154). 추적 이슈 #468 (siglens-core barrel 분리). | 사용자 측정 + Claude Code |
+| 2026-05-24 | **§11 "After 실측" 컬럼 작성 완료** — Mobile Perf 89 / LCP 2.7s / SI 4.6s / CLS 0.12 / A11y 97 / SEO 100, Desktop Perf 98 / LCP 1.1s. 잔여 작업(LCP <2.5s, A11y 100, PPR ISR)은 marginal ROI로 보류, 차후 FSD 마이그레이션 후 재측정 사이클 시점에 재검토. | Claude Code |
