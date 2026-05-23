@@ -50,8 +50,10 @@ export function OptionsPageClient({
 }: OptionsPageClientProps) {
     // 훅 선언 순서(CONVENTIONS.md / MISTAKES.md §17):
     //   useState/useRef → 사용자 정의 훅 → useMemo/useCallback → derived → handlers → useEffect.
-    // 모든 useState 와 그에 직결된 useEffectEvent setter 를 사용자 정의 훅 호출
-    // 이전에 모아 둔다.
+    // useEffectEvent 는 effect 본문의 setState 를 lint-rule(react-hooks/
+    // set-state-in-effect)을 만족시키기 위한 stable handler 이므로 "handlers"
+    // 구간(useEffect 직전)에 둔다 — `AnalysisPanel.tsx` 의 canonical 위치와
+    // 동일.
     const [expirationDate, setExpirationDate] =
         useState<OptionsExpirationSelector>(
             () => slots.find(isSlotMapping)?.expirationDate ?? 'all'
@@ -62,16 +64,7 @@ export function OptionsPageClient({
     //   hydration mismatch 경고가 발생한다. `now`를 useState(null)로 두고
     //   useEffect로 mount 직후 한 번만 채워 SSR 마크업은 항상 banner 없음
     //   상태로 통일한다. snapshot 참조가 갱신되면 자동으로 재평가된다.
-    //
-    //   setNow는 useEffect 본문에서 직접 호출하면 react-hooks/set-state-in-effect
-    //   lint rule에 걸린다. AnalysisPanel.tsx의 canonical 패턴
-    //   (MISTAKES.md §10)을 따라 useEffectEvent + startTransition 으로 감싼다.
     const [now, setNow] = useState<Date | null>(null);
-    const captureNow = useEffectEvent((): void => {
-        startTransition(() => {
-            setNow(new Date());
-        });
-    });
     const { modelId } = useSymbolModel();
     const validSlots = useMemo(() => slots.filter(isSlotMapping), [slots]);
     // 단일 호출로 (chain, metrics)을 산출하고 세 자식에 prop-drill 한다 —
@@ -87,6 +80,14 @@ export function OptionsPageClient({
         [now, snapshot]
     );
     const nearestExpiry = snapshot.chains[0]?.expirationDate ?? '';
+    // handlers — useEffectEvent 는 stable reference 이므로 deps 에 넣지 않는다
+    // (MISTAKES.md Predictability §3). 본문은 startTransition 으로 격리해
+    // react-hooks/set-state-in-effect lint rule 을 만족시킨다 (§10).
+    const captureNow = useEffectEvent((): void => {
+        startTransition(() => {
+            setNow(new Date());
+        });
+    });
     useEffect(() => {
         captureNow();
     }, []);

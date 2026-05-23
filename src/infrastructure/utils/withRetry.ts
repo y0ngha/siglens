@@ -25,14 +25,20 @@ export interface WithRetryOptions {
      */
     isRetryable: (error: unknown) => boolean;
     /**
-     * Budget for *backoff sleeps* (NOT individual `fn()` runtime), measured
-     * from the first attempt. When the next backoff sleep would push elapsed
-     * time past the deadline, `withRetry` bails out and re-throws the most
-     * recent error rather than waiting. A hanging in-flight `fn()` is NOT
-     * aborted — that would require an AbortSignal which we don't thread
-     * through. The name reflects this scope: it caps how long retry-related
-     * waiting can grow, not the overall function lifetime. Omit to disable
-     * the cap (legacy behavior).
+     * Wall-clock budget for backoff-related waiting, measured from the
+     * first attempt's *start*. Important semantic details:
+     *
+     *  - `fn()` runtime *does* count against the elapsed measurement (the
+     *    deadline is set before the first attempt and read between
+     *    attempts). A slow first call can consume the budget on its own.
+     *  - We check the budget only when deciding whether to *sleep before
+     *    the next retry*. An in-flight `fn()` is NEVER aborted — that
+     *    would require an AbortSignal we don't thread through.
+     *
+     * The name (`backoffBudgetMs`) reflects what callers can rely on: a
+     * cap on how long retry-related *waiting* can grow. It is NOT a hard
+     * cap on the overall withRetry call duration. Omit to disable the
+     * cap (legacy behavior).
      */
     backoffBudgetMs?: number;
 }

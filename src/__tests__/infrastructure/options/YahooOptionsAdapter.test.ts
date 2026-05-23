@@ -193,21 +193,26 @@ describe('YahooOptionsAdapter.fetchSnapshot', () => {
         const consoleWarnSpy = jest
             .spyOn(console, 'warn')
             .mockImplementation(() => {});
-        const fixtureNoQuote = {
-            ...FULL_FIXTURE,
-            quote: {} as { regularMarketPrice?: number },
-        };
-        mockOptionsMethod.mockResolvedValue(fixtureNoQuote);
-        const adapter = makeAdapter();
+        // try/finally — assertion 실패 시에도 console.warn spy를 반드시 복구해
+        // 후속 테스트 간 spy leak을 막는다 (formatAnalyzedAt.test.ts 패턴 일치).
+        try {
+            const fixtureNoQuote = {
+                ...FULL_FIXTURE,
+                quote: {} as { regularMarketPrice?: number },
+            };
+            mockOptionsMethod.mockResolvedValue(fixtureNoQuote);
+            const adapter = makeAdapter();
 
-        const result = await adapter.fetchSnapshot('AAPL');
+            const result = await adapter.fetchSnapshot('AAPL');
 
-        expect(result).toBeNull();
-        expect(consoleWarnSpy).toHaveBeenCalledWith(
-            '[YahooOptionsAdapter] missing underlyingPrice — treating snapshot as unavailable',
-            'AAPL'
-        );
-        consoleWarnSpy.mockRestore();
+            expect(result).toBeNull();
+            expect(consoleWarnSpy).toHaveBeenCalledWith(
+                '[YahooOptionsAdapter] missing underlyingPrice — treating snapshot as unavailable',
+                'AAPL'
+            );
+        } finally {
+            consoleWarnSpy.mockRestore();
+        }
     });
 
     it('returns null when all chains are rejected by sanitizeOptionsChain', async () => {

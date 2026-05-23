@@ -78,12 +78,11 @@ function isNeonError(value: unknown): value is Error {
 }
 
 function messageLooksTransient(error: Error): boolean {
-    if (
-        TRANSIENT_MESSAGE_NEEDLES.some(needle => error.message.includes(needle))
-    ) {
-        return true;
-    }
-    return TRANSIENT_SQLSTATE_REGEX.test(error.message);
+    return (
+        TRANSIENT_MESSAGE_NEEDLES.some(needle =>
+            error.message.includes(needle)
+        ) || TRANSIENT_SQLSTATE_REGEX.test(error.message)
+    );
 }
 
 function codeLooksTransient(error: Error): boolean {
