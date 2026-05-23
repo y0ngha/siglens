@@ -8,6 +8,14 @@
  * unchanged through the wrapper to the underlying `YahooOptionsAdapter`.
  */
 
+// release-it 경유 실행 시 `.env.local`의 UPSTASH_REDIS_REST_*가 부모 프로세스에 주입되어,
+// module-level에서 import되는 `hasOptionsMarket`/`fetchOptionsSnapshot`이 cached Redis 인스턴스를
+// 만들고 redis 경로를 타게 된다(mock 미설정 시 cache hit 오인). 첫 번째 describe block들의
+// "adapter 직행 forwarding" 검증을 보존하기 위해 import 평가 전에 unset 한다.
+// `loadWithEnv` 기반 describe들은 isolateModulesAsync로 env를 명시 주입하므로 영향 없음.
+delete process.env.UPSTASH_REDIS_REST_URL;
+delete process.env.UPSTASH_REDIS_REST_TOKEN;
+
 jest.mock('server-only', () => ({}), { virtual: true });
 
 const mockHasOptionsMarket = jest.fn();
@@ -41,9 +49,6 @@ import {
     OPTIONS_SNAPSHOT_TTL_SECONDS,
 } from '@/infrastructure/options/optionsDataCache';
 
-const ORIGINAL_REDIS_URL = process.env.UPSTASH_REDIS_REST_URL;
-const ORIGINAL_REDIS_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
-
 /**
  * optionsDataCache가 module-scope에서 Redis 인스턴스를 캐싱(`cachedRedis`)하므로
  * env를 토글한 케이스마다 모듈을 isolate해서 다시 import해야 한다.
@@ -61,9 +66,13 @@ async function loadWithEnv(opts: {
     return mod;
 }
 
+// 파일 최상단(line 16-17)에서 Redis env를 unset해 module-level import의 redis 경로를
+// 차단했다. afterEach는 `loadWithEnv`가 세팅한 변수를 매 케이스마다 동일한 unset 상태로
+// 되돌려 케이스 간 leak을 막는다. `process.env.X = undefined`는 Node에서 문자열
+// 'undefined'로 강제 변환되므로 `delete`가 올바른 idiom.
 afterEach(() => {
-    process.env.UPSTASH_REDIS_REST_URL = ORIGINAL_REDIS_URL;
-    process.env.UPSTASH_REDIS_REST_TOKEN = ORIGINAL_REDIS_TOKEN;
+    delete process.env.UPSTASH_REDIS_REST_URL;
+    delete process.env.UPSTASH_REDIS_REST_TOKEN;
 });
 
 describe('hasOptionsMarket', () => {
