@@ -414,14 +414,20 @@ src/__tests__/infrastructure/market/alpaca.test.ts
 ### Coverage Targets
 
 ```
-domain/         100% (필수)
-infrastructure/ 100% (필수)
+domain/         90% (필수, legacy — Phase 4에서 entities로 이동)
+infrastructure/ 90% (필수, legacy — Phase 2~3에서 entities로 이동)
+entities/       90% (필수)
+features/lib/   90% (필수)
+features/api/   90% (필수)
+shared/lib/     90% (필수)
 components/     optional
+widgets/        optional
+pages/          optional
 app/            optional
 ```
 
-`domain/` and `infrastructure/` require 100% coverage.
-`components/` and `app/` are not required to have tests, but writing tests for them is allowed.
+`domain/`, `infrastructure/`, `entities/`, `features/lib/`, `features/api/`, `shared/lib/` require 90% coverage.
+`components/`, `widgets/`, `pages/`, `app/` are not required to have tests, but writing tests for them is allowed.
 Pure utility functions and other units that benefit from testing may be freely tested.
 
 ### Test Structure
@@ -502,24 +508,28 @@ import { calculateRSI } from '../../../domain/indicators/rsi';
 ### FSD Slice Internal Imports
 
 FSD 슬라이스 내부에서 다른 segment를 참조할 때(예: `features/auth/ui/LoginForm.tsx` → `features/auth/model/types.ts`):
-- **relative import 허용** (`../model/types` 형태)
-- `no-restricted-imports`는 **다른 슬라이스**의 internal path만 차단하므로, 같은 슬라이스 내부 참조는 자동으로 허용됨
-- 슬라이스 root barrel(`@/features/auth`)을 통한 import도 가능하지만, 같은 슬라이스 내부에서는 필수 아님
+- **relative import 사용** (`../model/types` 형태)
+- `no-restricted-imports`는 path alias 기반(`@/features/*/model/*`)으로 차단하므로, **같은 슬라이스 내에서도 `@/` 절대경로로 internal segment에 접근하면 lint 에러**
+- 같은 슬라이스 내부는 반드시 relative import 사용
 
 ```typescript
-// ✅ 같은 slice 내 — relative import 허용
+// ✅ 같은 slice 내 — relative import
 // src/features/auth/ui/LoginForm.tsx
-import { AuthFormState } from '../model/types';
+import type { AuthFormState } from '../model/types';
 
-// ✅ 같은 slice 내 — path alias도 가능 (비필수)
-import { AuthFormState } from '@/features/auth/model/types';
+// ❌ 같은 slice 내라도 절대경로 internal path — no-restricted-imports 위반
+// src/features/auth/ui/LoginForm.tsx
+import type { AuthFormState } from '@/features/auth/model/types'; // 차단됨
 
 // ❌ 다른 slice의 internal path — no-restricted-imports 위반
 // src/features/auth/ui/LoginForm.tsx
-import { ChatState } from '@/features/symbol-chat/model/types'; // 차단됨
+import type { ChatState } from '@/features/symbol-chat/model/types'; // 차단됨
+
+// ✅ 다른 slice는 public API(barrel)로만 접근
+import { useChatActions } from '@/features/symbol-chat';
 ```
 
-> 기존 §7.6 ("All imports must use path aliases") 규칙은 **cross-module** import 기준이며, FSD 같은 슬라이스 내부 segment 간 참조에는 적용되지 않는다.
+> 기존 §7.6 ("All imports must use path aliases") 규칙은 **cross-slice** import 기준이며, 같은 슬라이스 내부 segment 간 참조는 relative import를 사용한다.
 
 ---
 

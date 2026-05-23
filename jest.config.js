@@ -20,6 +20,7 @@ module.exports = {
     // github-slugger is ESM-only; transform it via ts-jest so Jest can consume it
     transformIgnorePatterns: ['/node_modules/(?!github-slugger)'],
     // 옛(domain, infrastructure) + 새 FSD layer(entities, features/lib, features/api, shared/lib) 측정.
+    // features/model — 주로 타입 정의이므로 의도적 제외. features/hooks — UI 훅이므로 optional.
     // UI 레이어(widgets, pages, app)는 제외.
     collectCoverageFrom: [
         'src/domain/**/*.ts',

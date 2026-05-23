@@ -101,6 +101,7 @@ const eslintConfig = defineConfig([
                             allow: [
                                 'entities',
                                 'shared',
+                                'legacy-comp',
                                 'legacy-domain',
                                 'legacy-infra',
                                 'legacy-lib',
@@ -120,11 +121,15 @@ const eslintConfig = defineConfig([
                         {
                             from: 'legacy-app',
                             allow: [
+                                'pages',
+                                'widgets',
+                                'features',
+                                'entities',
+                                'shared',
                                 'legacy-comp',
                                 'legacy-domain',
                                 'legacy-infra',
                                 'legacy-lib',
-                                'shared',
                             ],
                         },
                         {
