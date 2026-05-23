@@ -1,6 +1,5 @@
-import { NextResponse, type NextRequest } from 'next/server';
 import { AUTH_SESSION_COOKIE_NAME } from '@/infrastructure/auth/sessionCookie';
-import { VALID_TICKER_RE } from '@/domain/constants/market';
+import { NextResponse, type NextRequest } from 'next/server';
 
 const RESERVED_FIRST_SEGMENTS = new Set([
     'login',
@@ -15,6 +14,24 @@ const RESERVED_FIRST_SEGMENTS = new Set([
     'api',
     '_next',
 ]);
+
+/**
+ * Ticker 정규식 (edge runtime용 로컬 정의).
+ *
+ * 형상은 `@/domain/constants/market`의 `VALID_TICKER_RE`와 동일하게 유지한다 —
+ * 1글자 이상 8글자 이하 영문 대문자 + 선택적 점(.) 또는 하이픈(-)
+ * (예: BRK.B, PBR-A).
+ *
+ * domain 모듈을 직접 import하지 않고 인라인으로 둔 이유:
+ * proxy.ts는 Vercel edge runtime에서 실행되며, `@/domain/constants/market`은
+ * `@y0ngha/siglens-core` 패키지 타입을 끌어와 cross-module 의존성을 거친다.
+ * Turbopack이 `import type`을 항상 strip한다는 보장이 약해 dev 환경에서 [symbol]
+ * 라우트의 데이터 fetch가 간헐적으로 차단되는 회귀(404)가 관찰됐다.
+ *
+ * 형상이 어긋나지 않도록 변경 시 `src/domain/constants/market.ts`의
+ * `VALID_TICKER_RE`와 함께 갱신할 것.
+ */
+const TICKER_RE = /^[A-Z][A-Z.-]{0,7}$/;
 
 /**
  * 두 가지 가드를 처리하는 미들웨어 함수.
@@ -44,7 +61,7 @@ export function proxy(req: NextRequest): NextResponse {
         const qRaw = reqUrl.searchParams.get('q');
         if (qRaw) {
             const ticker = qRaw.trim().toUpperCase();
-            if (VALID_TICKER_RE.test(ticker)) {
+            if (TICKER_RE.test(ticker)) {
                 return NextResponse.redirect(new URL('/' + ticker, req.url));
             }
         }
@@ -58,12 +75,14 @@ export function proxy(req: NextRequest): NextResponse {
      * 그렇지 않으면 self-referencing canonical 위반이 발생한다.
      *
      * 첫 segment가 명명된 페이지(login, market 등)일 때는 우회한다.
+     * 동일 정규식(`TICKER_RE`)을 ?q= redirect와 공유해 정규식 일관성을 유지한다
+     * (예: PBR-A 같은 하이픈 ticker도 정규화).
      */
     const firstSegment = pathname.split('/').filter(Boolean)[0];
     if (
         firstSegment !== undefined &&
         !RESERVED_FIRST_SEGMENTS.has(firstSegment.toLowerCase()) &&
-        VALID_TICKER_RE.test(firstSegment.toUpperCase()) &&
+        TICKER_RE.test(firstSegment.toUpperCase()) &&
         firstSegment !== firstSegment.toUpperCase()
     ) {
         const canonicalUrl = new URL(reqUrl);

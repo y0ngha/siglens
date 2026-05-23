@@ -53,13 +53,13 @@ export function SymbolPageClient({
 
     return (
         <SymbolPageProvider indicatorCount={indicatorCount}>
-            {/* Chart page is the only `/[symbol]/*` route that fills the remaining
-                viewport height and disables outer scrolling. The layout header sits
-                above this container; combined with the site header (3.5rem) and the
-                layout header's intrinsic height, the chart fills the rest via the
-                `useBodyScrollLock` html/body lock applied in SymbolLayoutClient. */}
+            {/* Chart page fills the first viewport via SymbolLayout's sticky-footer
+                jail: site header(3.5rem)를 viewport에서 뺀 jail 컨테이너 안에서
+                SymbolLayoutHeader가 자기 자리 + page main(flex-1)이 잔여를 차지하고,
+                이 outer div가 그 main 안에서 flex-1로 chart+AI 영역을 채운다. footer는
+                jail 형제로 push되어 스크롤 내려야 보인다. */}
             <div className="bg-secondary-900 text-secondary-200 flex min-h-0 flex-1 flex-col overflow-hidden">
-                {/* Chart-only timeframe controls live inside the scroll-locked chart
+                {/* Chart-only timeframe controls live inside this overflow-hidden chart
                     container so the layout header can stay free of useSearchParams
                     (which would force PPR to mark the whole route as dynamic). */}
                 <div className="border-secondary-700 flex items-center justify-end border-b px-4 py-2 sm:py-1.5">

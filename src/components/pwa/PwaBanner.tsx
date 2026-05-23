@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import { usePwaInstall } from '@/components/pwa/hooks/usePwaInstall';
 import { IosInstallModal } from '@/components/pwa/IosInstallModal';
 import { cn } from '@/lib/cn';
@@ -21,6 +22,20 @@ export function PwaBanner() {
         handleDismiss,
         handleModalClose,
     } = usePwaInstall();
+
+    // Banner가 보일 때 root에 --pwa-banner-h를 3rem(=h-12)으로 set한다.
+    // /[symbol] 라우트의 sticky-footer jail이 `calc(100dvh - 3.5rem - var(--pwa-banner-h, 0px))`로
+    // chrome 높이를 차감하므로, banner 토글이 jail viewport-fill과 일관되게 동작한다.
+    useEffect(() => {
+        const root = document.documentElement;
+        if (showBanner) {
+            root.style.setProperty('--pwa-banner-h', '3rem');
+            return () => {
+                root.style.removeProperty('--pwa-banner-h');
+            };
+        }
+        return undefined;
+    }, [showBanner]);
 
     if (!showBanner) {
         return null;

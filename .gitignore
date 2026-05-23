@@ -68,3 +68,6 @@ next-env.d.ts
 **node_modules**
 
 /scripts/**
+
+# Local Lighthouse audit outputs (psi_*.json, desktop.json, mobile.json, headers.txt)
+/lighthouse/

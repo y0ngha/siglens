@@ -6,9 +6,9 @@ import {
 } from '@tanstack/react-query';
 import {
     SymbolLayoutFloatingChat,
-    SymbolLayoutHeaderClient,
     SymbolLayoutProviders,
 } from '@/app/[symbol]/SymbolLayoutClient';
+import { SymbolLayoutHeader } from '@/components/symbol-page/SymbolLayoutHeader';
 import { SymbolTabsSkeleton } from '@/components/symbol-page/SymbolTabsSkeleton';
 import { DEFAULT_TIMEFRAME } from '@/domain/constants/market';
 import { getBarsAction } from '@/infrastructure/market/getBarsAction';
@@ -21,7 +21,18 @@ interface SymbolLayoutProps {
 }
 
 // Layout shell stays as an RSC: it composes a shared provider subtree (chat/model
-// contexts) around the chrome (header + scroll lock) and the active page subtree.
+// contexts) around the chrome (header) and the active page subtree.
+//
+// Sticky-footer jail: SymbolLayoutHeader + page main(`flex-1`)을 viewport 잔여 영역에
+// 맞춘 컨테이너로 감싼다. viewport에서 site Header(`h-14` = 3.5rem) + PwaBanner(h-12 = 3rem,
+// banner 표시 중일 때만, --pwa-banner-h CSS variable로 동적 차감)를 빼면 jail이 첫 화면의
+// 잔여 영역을 정확히 차지하고, 그 안에서 layout header가 자기 자리 + page main(flex-1)이
+// viewport 잔여를 차지해 차트 페이지의 chart+AI가 한 화면을 가득 채운다. footer는 root
+// layout에서 jail의 형제로 위치하므로 자연스럽게 jail 아래로 push되어 스크롤해야 보인다.
+//
+// `--pwa-banner-h` 기본값은 0이고 PwaBanner mount 시점에 3rem으로 set, dismiss 또는 unmount
+// 시점에 remove된다. PwaBanner는 root layout 안에서 jail보다 위에 있으므로 banner 표시 시
+// chrome 높이가 6.5rem이 되고, dismiss 시 다시 3.5rem으로 돌아간다.
 //
 // `params` is async (Next.js 16) and the chrome depends on it + a bars prefetch,
 // so the chrome lives behind Suspense with a header-shaped skeleton. `children`
@@ -30,10 +41,12 @@ interface SymbolLayoutProps {
 export default function SymbolLayout({ children, params }: SymbolLayoutProps) {
     return (
         <SymbolLayoutProviders>
-            <Suspense fallback={<SymbolHeaderShellFallback />}>
-                <SymbolLayoutChrome params={params} />
-            </Suspense>
-            {children}
+            <div className="flex min-h-[calc(100dvh-3.5rem-var(--pwa-banner-h,0px))] flex-col">
+                <Suspense fallback={<SymbolHeaderShellFallback />}>
+                    <SymbolLayoutChrome params={params} />
+                </Suspense>
+                {children}
+            </div>
             <Suspense fallback={null}>
                 <SymbolFloatingChat params={params} />
             </Suspense>
@@ -73,7 +86,7 @@ async function SymbolLayoutChrome({ params }: SymbolLayoutSegmentProps) {
 
     return (
         <HydrationBoundary state={dehydrate(queryClient)}>
-            <SymbolLayoutHeaderClient symbol={symbol} />
+            <SymbolLayoutHeader symbol={symbol} />
         </HydrationBoundary>
     );
 }

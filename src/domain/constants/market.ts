@@ -4,6 +4,11 @@ import type { Timeframe } from '@y0ngha/siglens-core';
  * Valid U.S. ticker symbols: 1–8 uppercase letters with optional dot (BRK.B
  * 같은 클래스 구분) or hyphen (PBR-A 같은 ADR 우선주). 첫 글자는 영문 대문자로
  * 고정해 빈 입력과 기호 시작을 차단한다.
+ *
+ * Sync warning: 이 regex는 `src/proxy.ts`의 `TICKER_RE` 인라인 정의와 형상이
+ * 동일해야 한다. proxy.ts는 edge runtime + Turbopack 안정성 때문에 domain
+ * 모듈을 직접 import하지 않고 인라인 사본을 유지한다 (자세한 사유는 proxy.ts
+ * `TICKER_RE` JSDoc 참조). 둘 중 하나를 수정할 때 다른 쪽도 함께 갱신할 것.
  */
 export const VALID_TICKER_RE = /^[A-Z][A-Z.-]{0,7}$/;
 
