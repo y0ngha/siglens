@@ -86,6 +86,8 @@ export function StockChart({
     );
     const onChartReadyRef = useRef(onChartReady);
     const onChartRemoveRef = useRef(onChartRemove);
+    // paneIndices effect의 첫 mount skip 마커 (아래 useEffect 참조).
+    const isInitialPaneRenderRef = useRef(true);
 
     const {
         rsiVisible,
@@ -242,7 +244,16 @@ export function StockChart({
     });
 
     // indicator 제거 시 LWC v5가 빈 pane DOM을 정리하지 않아 autoSize 토글로 layout invalidate를 강제한다.
+    // 단, 첫 mount에서는 이 명시 resize를 skip한다 (`isInitialPaneRenderRef`) — hydration /
+    // 첫 진입 시 layout 안정화 전에 wrapper.clientHeight를 측정하면 작은 값(예: 30px)이
+    // 그대로 chart에 박혀 viewport 잔여 size를 무시한 작은 차트로 그려진다. 첫 mount의
+    // sizing은 createChart의 autoSize ResizeObserver에 위임하고, 사용자 indicator 토글로
+    // paneIndices가 실제 변경된 이후부터만 명시 resize를 호출한다.
     useEffect(() => {
+        if (isInitialPaneRenderRef.current) {
+            isInitialPaneRenderRef.current = false;
+            return;
+        }
         const chart = chartRef.current;
         const wrapper = wrapperRef.current;
         if (!chart || !wrapper) return;

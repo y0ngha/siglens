@@ -255,10 +255,15 @@ export function ChartContent({
 
     return (
         <div className="flex h-full w-full flex-col md:flex-row">
-            {/* 차트 영역 — 바텀시트는 fixed 오버레이. pb는 SNAP_PEEK 높이만큼 확보해 Peek 시 거래량 차트가 가려지지 않도록 한다 */}
+            {/* 차트 영역 — 바텀시트는 fixed 오버레이. pb는 SNAP_PEEK 높이만큼 확보해 Peek 시 거래량 차트가 가려지지 않도록 한다.
+                 sizing: `h-full` 대신 `flex-1 min-h-0`을 사용한다. 부모 ChartContent outer가 flex-row(md+)일 때
+                 h-full(= height:100%)이 부모의 stretch-결과 height를 percentage resolution용 "definite"로 못 읽고
+                 자식 컨텐츠 height(24~54px)로 fallback해 차트가 30px로 그려지는 Chrome flex spec 회색-영역 이슈가 있었다.
+                 flex-1은 데스크탑에서 main-axis(width) grow + cross-axis stretch로 height를 자동으로 받고,
+                 모바일(flex-col)에서는 main-axis(height) grow로 부모 height를 채운다. */}
             <div
                 style={{ '--snap-peek': SNAP_PEEK } as React.CSSProperties}
-                className="flex h-full shrink-0 flex-col overflow-hidden pb-[calc(var(--snap-peek)*100svh)] md:flex-1 md:pb-0"
+                className="flex min-h-0 flex-1 shrink-0 flex-col overflow-hidden pb-[calc(var(--snap-peek)*100svh)] md:pb-0"
             >
                 {/* 캔들 차트 */}
                 <div className="relative flex-3">

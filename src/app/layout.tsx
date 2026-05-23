@@ -148,12 +148,12 @@ export default function RootLayout({ children }: RootLayoutProps) {
                         <AuthSessionHeader />
                     </Suspense>
                     {children}
-                    {/* Footer를 root layout에 두는 이유: home/404/legal 페이지
-                        에만 footer가 있어 /market, /backtesting, /[symbol]/* 등
-                        대부분 라우트에 내부 링크가 누수됐다. 차트 페이지
-                        (/[symbol])는 SymbolPageClient의 100dvh + flex 구조로
-                        viewport를 채워 footer가 사용자 뷰에서 push 되지만, DOM
-                        에는 존재하므로 crawler internal-link 가치는 유지된다. */}
+                    {/* Footer를 root layout에 두는 이유: home/404/legal 페이지에만
+                        footer가 있어 /market, /backtesting, /[symbol]/* 등 대부분 라우트
+                        에 내부 링크가 누수됐다. 차트 페이지(/[symbol])는 SymbolLayout의
+                        sticky-footer jail(`min-h-[calc(100dvh-3.5rem)]`)이 chart+AI를
+                        첫 viewport에 가득 채우고, footer는 jail의 형제로 그 아래에
+                        위치한다 — 사용자가 스크롤을 내리면 footer가 보인다. */}
                     <Footer />
                 </ReactQueryProvider>
                 {ADSENSE_ENABLED && (

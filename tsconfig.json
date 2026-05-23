@@ -30,7 +30,6 @@
         "**/*.ts",
         "**/*.tsx",
         ".next/types/**/*.ts",
-        "proxy.ts",
         ".next/dev/types/**/*.ts"
     ],
     "exclude": ["node_modules", "worker", "scripts"]

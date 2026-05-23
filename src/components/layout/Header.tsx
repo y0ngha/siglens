@@ -41,18 +41,20 @@ export function Header({ currentUser, loadingUserMenu }: HeaderProps) {
                     className="focus-visible:ring-primary-500 -mx-1 flex min-h-11 shrink-0 touch-manipulation items-center gap-2 rounded px-1 focus-visible:ring-2 focus-visible:outline-none"
                 >
                     {/*
-                        Serving the 96×96 PNG for the 24×24 display wasted
-                        ~7 KB; icon24.png is ~1.3 KB and the LCP/SEO audits
-                        flag the upscaled asset as `uses-responsive-images`.
+                        icon96.png(96×96)을 24×24로 렌더 — Lighthouse의
+                        `image-size-responsive` audit이 1.5× DPI(36×36) 기준으로
+                        검증하므로 source가 display의 최소 1.5× 이상이어야 한다.
+                        `unoptimized`를 제거해 next/image가 24/48 responsive 변형을
+                        자동 생성·서빙하도록 한다(WebP 변환 포함, 실제 전송 바이트는
+                        원본보다 작다).
                     */}
                     <Image
-                        src="/icon24.png"
+                        src="/icon96.png"
                         alt="Siglens 로고"
                         width={24}
                         height={24}
                         className="h-6 w-6"
                         priority
-                        unoptimized
                     />
                     <span
                         translate="no"

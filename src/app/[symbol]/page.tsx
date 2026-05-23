@@ -183,12 +183,12 @@ export default async function SymbolPage({ params, searchParams }: Props) {
                 차트 페이지만 빠져 있어 의미론적 일관성이 깨졌었다. SymbolPageClient
                 outer div는 flex-1로 viewport를 채우는 구조라 그 위 한 단을 main으로
                 감싸 sr-only h1과 chart 본문을 하나의 랜드마크로 묶는다. */}
-            {/* 차트 페이지는 CrossLinkCards를 본문에 두지 않는다 — 100dvh
-                viewport jail + useBodyScrollLock 구조라 카드를 추가하면
-                사용자가 도달 못하고 visible-but-unreachable element만 만든다.
-                cross-link 역할은 layout header의 SymbolTabs가 충분히 수행
-                (탭으로 sibling 페이지 전환 가능). SEO internal-link 측면에서도
-                SymbolTabs는 anchor 기반이라 crawler가 follow 가능. */}
+            {/* 차트 페이지는 CrossLinkCards를 본문에 두지 않는다 — SymbolLayout의
+                sticky-footer jail이 main(flex-1) 안에서 chart+AI가 첫 viewport를
+                채우게 하므로, 카드를 추가하면 jail 안 flex 분배가 깨져 chart 가시
+                영역이 침범된다. cross-link 역할은 layout header의 SymbolTabs가
+                충분히 수행 (탭으로 sibling 페이지 전환 가능). SEO internal-link
+                측면에서도 SymbolTabs는 anchor 기반이라 crawler가 follow 가능. */}
             <main className="flex min-h-0 flex-1 flex-col">
                 <section className="sr-only">
                     <h1>{displayName} 차트 분석과 매매 신호</h1>

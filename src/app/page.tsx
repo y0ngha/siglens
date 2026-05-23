@@ -1,3 +1,4 @@
+import { HeroIllustration } from '@/components/home/HeroIllustration';
 import { HowItWorks } from '@/components/home/HowItWorks';
 import {
     SkillsShowcase,
@@ -216,42 +217,64 @@ export default async function Home() {
                 검색으로 건너뛰기
             </a>
             <main className="flex flex-1 flex-col">
-                <section className="relative flex flex-col items-center justify-center overflow-hidden px-6 py-12 text-center sm:py-16 lg:items-start lg:pr-[10vw] lg:pl-[15vw] lg:text-left">
+                <section className="relative overflow-hidden px-6 py-12 sm:py-16 lg:pr-[10vw] lg:pl-[15vw]">
                     <div
                         aria-hidden="true"
                         className="hero-report-lines pointer-events-none absolute inset-0"
                     />
-                    <div className="relative w-full max-w-4xl">
-                        <p className="text-secondary-400 mb-5 font-mono text-[0.68rem] leading-relaxed tracking-[0.18em] uppercase sm:text-xs">
-                            미국 주식 AI 분석 플랫폼, SIGLENS
-                        </p>
-                        <h1 className="text-secondary-100 mx-auto max-w-sm text-[2.2rem] leading-[1.1] font-bold tracking-tight text-balance sm:max-w-2xl sm:text-5xl lg:mx-0 lg:text-6xl">
-                            복잡한 미국 주식 분석을
-                            <br />
-                            <span className="text-primary-300">
-                                읽기 좋게 정리합니다
-                            </span>
-                        </h1>
-                        <p className="text-secondary-400 mx-auto mt-5 max-w-sm text-base leading-relaxed sm:max-w-2xl sm:text-lg lg:mx-0">
-                            티커를 입력하면 보조지표 {skillCounts.indicators}종
-                            기반 차트 흐름, 실적과 밸류에이션, 최근 뉴스, 그리고
-                            단기 매수 분위기까지 정리하고, 이걸 합친 종합 결론을
-                            함께 보여줍니다.
-                        </p>
-                        <div
-                            id="search"
-                            className="mt-8 flex w-full justify-center lg:justify-start"
-                        >
-                            <SymbolSearchPanel />
+                    <div className="relative grid grid-cols-1 items-center gap-10 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)] lg:gap-10">
+                        {/*
+                            HeroIllustration이 mobile에서 H1보다 먼저 등장(order-first)
+                            해야 above-the-fold에서 LCP 후보로 잡힌다. 인라인 SVG는
+                            추가 fetch가 없어 HTML 파싱 즉시 페인트되므로 폰트 의존
+                            텍스트 LCP보다 결정적으로 빠르다.
+                            (lg+에서는 order 해제 — 텍스트가 좌측, 일러스트가 우측)
+                        */}
+                        <div className="order-first lg:order-last">
+                            <HeroIllustration className="mx-auto h-auto w-full max-w-md lg:max-w-none" />
                         </div>
-                        <div className="mt-6 flex justify-center lg:justify-start">
-                            <Link
-                                href="/market"
-                                className="text-primary-400 hover:text-primary-300 inline-flex items-center gap-1 text-sm font-semibold transition-colors"
+                        <div className="text-center lg:text-left">
+                            <p className="text-secondary-400 mb-5 font-mono text-[0.68rem] leading-relaxed tracking-[0.18em] uppercase sm:text-xs">
+                                미국 주식 AI 분석 플랫폼, SIGLENS
+                            </p>
+                            {/*
+                                H1 크기 단계 — split column 폭에 맞춰 두 줄 구조 유지.
+                                lg(1024-1279, 텍스트 컬럼 ~404px): text-[2.25rem]로 축소
+                                xl(1280+, 텍스트 컬럼 ~530px+): text-5xl로 복귀
+                                (lg에서 text-5xl을 유지하면 "복잡한 미국 주식 분석을"이
+                                추가 줄바꿈돼 3줄이 된다.)
+                            */}
+                            <h1 className="text-secondary-100 mx-auto max-w-sm text-[2.2rem] leading-[1.1] font-bold tracking-tight text-balance sm:max-w-2xl sm:text-5xl lg:mx-0 lg:text-[2.25rem] xl:text-5xl">
+                                복잡한 미국 주식 분석을
+                                <br />
+                                <span className="text-primary-300">
+                                    읽기 좋게 정리합니다
+                                </span>
+                            </h1>
+                            <p className="text-secondary-400 mx-auto mt-5 max-w-sm text-base leading-relaxed sm:max-w-2xl sm:text-lg lg:mx-0">
+                                티커를 입력하면 보조지표{' '}
+                                {skillCounts.indicators}종 기반 차트 흐름,
+                                실적과 밸류에이션, 최근 뉴스, 그리고 단기 매수
+                                분위기까지 정리하고, 이걸 합친 종합 결론을 함께
+                                보여줍니다.
+                            </p>
+                            <div
+                                id="search"
+                                className="mt-8 flex w-full justify-center lg:justify-start"
                             >
-                                오늘 주목할 종목 →
-                            </Link>
+                                <SymbolSearchPanel />
+                            </div>
+                            <div className="mt-6 flex justify-center lg:justify-start">
+                                <Link
+                                    href="/market"
+                                    className="text-primary-400 hover:text-primary-300 inline-flex items-center gap-1 text-sm font-semibold transition-colors"
+                                >
+                                    오늘 주목할 종목 →
+                                </Link>
+                            </div>
                         </div>
+                    </div>
+                    <div className="relative mt-10">
                         <Suspense fallback={<StatsBarSkeleton />}>
                             <AsyncStatsBar />
                         </Suspense>
