@@ -35,11 +35,18 @@ export function Header({ currentUser, loadingUserMenu }: HeaderProps) {
                 <Link
                     href="/"
                     title="홈으로"
-                    aria-label={`${SITE_NAME} 홈`}
+                    // Visible brand text is `text-...uppercase` (renders "SIGLENS"),
+                    // so the accessible name must match what users see (WCAG 2.5.3).
+                    aria-label={`${SITE_NAME.toUpperCase()} 홈`}
                     className="focus-visible:ring-primary-500 -mx-1 flex min-h-11 shrink-0 touch-manipulation items-center gap-2 rounded px-1 focus-visible:ring-2 focus-visible:outline-none"
                 >
+                    {/*
+                        Display size is 24×24. Serving the 96×96 PNG wasted
+                        ~7 KB; icon24.png is ~1.3 KB and the LCP/SEO audits
+                        flag the upscaled asset as `uses-responsive-images`.
+                    */}
                     <Image
-                        src="/icon96.png"
+                        src="/icon24.png"
                         alt="Siglens 로고"
                         width={24}
                         height={24}

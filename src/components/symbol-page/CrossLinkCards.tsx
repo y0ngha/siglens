@@ -53,7 +53,7 @@ interface CrossLinkCardsProps {
 export function CrossLinkCards({ symbol, current }: CrossLinkCardsProps) {
     return (
         <section
-            className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
+            className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3"
             aria-label="다른 분석 탭"
         >
             {ALL_PAGES.map(p => {

@@ -1160,4 +1160,17 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    ✅ Components / hooks / app code imports directly: `import { calculateATR } from '@y0ngha/siglens-core';`
    ✅ src/domain/ keeps only SigLens-app-specific logic (backtest, chat models, dashboard sector grouping, etc.)
    ❌ Deep imports: `from '@y0ngha/siglens-core/dist/domain/indicators/atr'` (only the public package surface is allowed)
+
+4. lib/ misused as a dumping ground for non-UI-utility code (side effects, types, infrastructure helpers)
+   → `lib/` is for pure UI utility wrappers (clsx, tailwind-merge), React Query key factories, config constants, and chart colors only
+   → Side effects (new Date(), fetch, fs, crypto) belong in `infrastructure/`
+   → Cross-layer shared types belong in `domain/types.ts`
+   → Infrastructure helpers (retry/backoff, sleep timing, rate limiting) belong in `infrastructure/utils/`
+   → This recurs because lib/ is the path of least resistance when unsure where code goes; default answer should be "not lib/"
+   ❌ src/lib/og.ts: `loadKoreanFont()` with fs.readFile  // side effect in lib
+   ❌ src/lib/fearGreedLabels.ts: `export type SnapshotConfidence`  // cross-layer type in lib
+   ❌ src/lib/withRetry.ts: retry wrapper with sleep/backoff  // infrastructure helper in lib
+   ✅ Move side-effect functions to src/infrastructure/seo/loadKoreanFont.ts
+   ✅ Move cross-layer types to src/domain/types.ts; lib/ files import them
+   ✅ Move infra utilities to src/infrastructure/utils/withRetry.ts
 ```
