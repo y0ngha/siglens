@@ -497,3 +497,13 @@
 - Violation: JSX 주석에 WHAT 첫 문장 3건 — "Auth header chip displays the brand mark at 32×32." / "Display size is 24×24." / "Link uses min-h-6 ... button uses h-6 w-6 ... 24×24 box with flex centering"
 - Rule: MISTAKES.md §15.5 — JSX 주석은 WHY만 남기고 WHAT은 className/props에서 자명한 경우 제거
 - Context: review-agent round 2 통과 후 외부 reviewer (claude bot) 라운드에서 WHAT-style 주석으로 재지적 — 첫 문장만 정확히 trim하고 비직관적 시각 동작 WHY는 보존
+## [PR #457 | worktree-agent-a43a5be58b9f76809 | 2026-05-23]
+- Violation: `@next/bundle-analyzer` (^16.2.6) version drifted from `next` (16.2.0)
+- Rule: Next.js convention — `@next/*` packages should match `next` version
+- Context: Added bundle-analyzer with `yarn add` which picked latest 16.2.x; should have constrained to project's pinned next major.minor
+- Violation: `browserslist` missing `last 2 ChromeAndroid versions` despite PR targeting mobile LCP
+- Rule: Config completeness — declared user-base coverage must align with PR's stated optimization goal
+- Context: Browserslist had Chrome/Firefox/Safari/Edge + iOS but no Android Chrome line; siglens.io's mobile users include Android, so SWC transpile target was unintentionally excluding them
+- Violation: `analyze` script missing from package.json scripts after wiring bundle-analyzer
+- Rule: Tool integration — when wiring a tool that needs env-prefixed invocation, expose a script entrypoint so it's discoverable and CI-friendly
+- Context: bundle-analyzer is gated on ANALYZE=true env; without a script, users have to remember the magic command
