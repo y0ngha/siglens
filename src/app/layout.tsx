@@ -147,7 +147,11 @@ export default function RootLayout({ children }: RootLayoutProps) {
                     >
                         <AuthSessionHeader />
                     </Suspense>
-                    {children}
+                    {/* cacheComponents 모드: 페이지가 uncached data(searchParams,
+                        cookies 등)를 await할 때 부모 Suspense가 없으면 build fail.
+                        children boundary에서 page-level dynamic content를 stream
+                        가능한 형태로 분리한다. */}
+                    <Suspense>{children}</Suspense>
                     {/* Footer를 root layout에 두는 이유: home/404/legal 페이지
                         에만 footer가 있어 /market, /backtesting, /[symbol]/* 등
                         대부분 라우트에 내부 링크가 누수됐다. 차트 페이지

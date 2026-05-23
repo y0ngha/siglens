@@ -211,9 +211,8 @@ const countMdFiles = async (subdir: string): Promise<number> => {
     return files.length;
 };
 
-// cacheComponents 비활성 기간 동안 'use cache' 제거.
-// skills 디렉토리는 빌드 산출물이라 매 요청 fs.readdir이 사실상 OS page cache hit.
 export async function countSkillFiles(): Promise<SkillCounts> {
+    'use cache';
     const [
         indicators,
         candlesticks,
