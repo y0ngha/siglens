@@ -24,6 +24,12 @@ export function AuthCardShell({
             <section className="ring-secondary-800 bg-secondary-900/80 relative w-full max-w-md rounded-2xl p-8 shadow-[0_30px_80px_-30px_rgba(0,0,0,0.7)] ring-1 backdrop-blur-xl motion-safe:animate-[fade-up_220ms_ease-out]">
                 <header className="mb-8 flex flex-col items-start gap-5">
                     <div className="flex items-center gap-2">
+                        {/*
+                            Use the 96×96 PNG (not icon24) because a 24→32 upscale
+                            on a logo with sharp edges produces visible blurriness
+                            on 1× DPI displays; the auth page is not LCP-sensitive
+                            so the extra bytes are fine.
+                        */}
                         <Image
                             src="/icon96.png"
                             alt=""

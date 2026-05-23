@@ -11,6 +11,7 @@
         "prebuild": "yarn clear:backtesting && yarn copy:backtesting",
         "dev": "yarn predev && next dev --turbopack -p 4200",
         "build": "yarn prebuild && rm -rf .next && next build",
+        "analyze": "ANALYZE=true yarn build",
         "start": "next start",
         "lint": "eslint",
         "lint:fix": "eslint --fix",
@@ -65,6 +66,7 @@
         "yahoo-finance2": "3.14.1"
     },
     "devDependencies": {
+        "@next/bundle-analyzer": "^16.2.0",
         "@release-it/conventional-changelog": "^10.0.6",
         "@tailwindcss/postcss": "^4",
         "@testing-library/dom": "^10.4.1",
@@ -98,5 +100,14 @@
         "ts-jest": "^29.4.6",
         "typescript": "^5"
     },
-    "packageManager": "yarn@4.12.0"
+    "packageManager": "yarn@4.12.0",
+    "browserslist": [
+        "last 2 Chrome versions",
+        "last 2 ChromeAndroid versions",
+        "last 2 Firefox versions",
+        "last 2 Safari versions",
+        "last 2 Edge versions",
+        "iOS >= 15",
+        "not dead"
+    ]
 }

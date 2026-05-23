@@ -69,7 +69,7 @@ export function IosInstallModal({ onClose }: IosInstallModalProps) {
                         aria-label="닫기"
                         className="text-secondary-500 hover:text-secondary-300 focus-visible:ring-primary-500 text-xl leading-none transition-colors focus-visible:ring-1 focus-visible:outline-none"
                     >
-                        ×
+                        ✕
                     </button>
                 </div>
                 <div className="space-y-3">

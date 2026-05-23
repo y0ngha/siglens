@@ -204,7 +204,7 @@ export function ChatPanel({ symbol, onClose }: ChatPanelProps) {
             <div className="flex h-80 flex-col gap-2 overflow-y-auto px-3 py-2">
                 {messages.length === 0 && loadingPhase === null && (
                     <div className="bg-secondary-700/30 rounded-lg rounded-tl-sm p-3">
-                        <p className="text-secondary-400 text-xs leading-relaxed">
+                        <p className="text-secondary-400 text-sm leading-relaxed">
                             분석 결과를 바탕으로 질문해 보세요. 진입 타이밍,
                             매도 전략, 지표 해석까지 모두 물어볼 수 있어요.
                         </p>
