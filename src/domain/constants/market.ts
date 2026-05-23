@@ -1,16 +1,12 @@
 import type { Timeframe } from '@y0ngha/siglens-core';
+import { TICKER_RE } from '@/domain/constants/ticker';
 
 /**
- * Valid U.S. ticker symbols: 1–8 uppercase letters with optional dot (BRK.B
- * 같은 클래스 구분) or hyphen (PBR-A 같은 ADR 우선주). 첫 글자는 영문 대문자로
- * 고정해 빈 입력과 기호 시작을 차단한다.
- *
- * Sync warning: 이 regex는 `src/proxy.ts`의 `TICKER_RE` 인라인 정의와 형상이
- * 동일해야 한다. proxy.ts는 edge runtime + Turbopack 안정성 때문에 domain
- * 모듈을 직접 import하지 않고 인라인 사본을 유지한다 (자세한 사유는 proxy.ts
- * `TICKER_RE` JSDoc 참조). 둘 중 하나를 수정할 때 다른 쪽도 함께 갱신할 것.
+ * Valid U.S. ticker symbols. 형상 정의는 `@/domain/constants/ticker`의 `TICKER_RE`로 통합됐고
+ * 이 export는 기존 호출부 호환을 위한 alias다. proxy.ts(edge runtime)와 한 source를 공유하므로
+ * 향후 형상 변경 시 ticker.ts만 수정하면 양쪽에 일관 적용된다.
  */
-export const VALID_TICKER_RE = /^[A-Z][A-Z.-]{0,7}$/;
+export const VALID_TICKER_RE = TICKER_RE;
 
 export const DEFAULT_TIMEFRAME: Timeframe = '1Day';
 

@@ -24,15 +24,16 @@ interface SymbolLayoutProps {
 // contexts) around the chrome (header) and the active page subtree.
 //
 // Sticky-footer jail: SymbolLayoutHeader + page main(`flex-1`)을 viewport 잔여 영역에
-// 맞춘 컨테이너로 감싼다. viewport에서 site Header(`h-14` = 3.5rem) + PwaBanner(h-12 = 3rem,
-// banner 표시 중일 때만, --pwa-banner-h CSS variable로 동적 차감)를 빼면 jail이 첫 화면의
-// 잔여 영역을 정확히 차지하고, 그 안에서 layout header가 자기 자리 + page main(flex-1)이
+// 맞춘 컨테이너로 감싼다. viewport에서 site Header(`var(--header-h)` = 3.5rem) + PwaBanner
+// (`var(--pwa-banner-h, 0px)`, banner 표시 중일 때만 3rem)를 빼면 jail이 첫 화면의 잔여
+// 영역을 정확히 차지하고, 그 안에서 layout header가 자기 자리 + page main(flex-1)이
 // viewport 잔여를 차지해 차트 페이지의 chart+AI가 한 화면을 가득 채운다. footer는 root
 // layout에서 jail의 형제로 위치하므로 자연스럽게 jail 아래로 push되어 스크롤해야 보인다.
 //
-// `--pwa-banner-h` 기본값은 0이고 PwaBanner mount 시점에 3rem으로 set, dismiss 또는 unmount
-// 시점에 remove된다. PwaBanner는 root layout 안에서 jail보다 위에 있으므로 banner 표시 시
-// chrome 높이가 6.5rem이 되고, dismiss 시 다시 3.5rem으로 돌아간다.
+// `--header-h`는 globals.css의 @theme에서 3.5rem 기본값으로 정의되어 site Header h-14와
+// 동기화된다. `--pwa-banner-h`는 PwaBanner mount 시점에 3rem으로 set, dismiss/unmount
+// 시점에 remove돼 jail이 PwaBanner 토글에 일관되게 반응한다. 두 변수 모두 한 곳에서만
+// 관리되므로 chrome 높이 변경 시 jail 계산식을 수정할 필요가 없다.
 //
 // `params` is async (Next.js 16) and the chrome depends on it + a bars prefetch,
 // so the chrome lives behind Suspense with a header-shaped skeleton. `children`
@@ -41,7 +42,7 @@ interface SymbolLayoutProps {
 export default function SymbolLayout({ children, params }: SymbolLayoutProps) {
     return (
         <SymbolLayoutProviders>
-            <div className="flex min-h-[calc(100dvh-3.5rem-var(--pwa-banner-h,0px))] flex-col">
+            <div className="flex min-h-[calc(100dvh-var(--header-h,3.5rem)-var(--pwa-banner-h,0px))] flex-col">
                 <Suspense fallback={<SymbolHeaderShellFallback />}>
                     <SymbolLayoutChrome params={params} />
                 </Suspense>

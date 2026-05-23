@@ -69,6 +69,13 @@
 
     /* Brand — Social login */
     --color-brand-kakao: #fee500;
+
+    /* Layout chrome heights — site Header(h-14) 고정값. PwaBanner처럼 dynamic하게
+       변하는 chrome은 자체 컴포넌트가 mount/unmount 시 root에 CSS variable을 토글한다
+       (예: PwaBanner의 --pwa-banner-h). 차트 페이지의 sticky-footer jail은 이 변수들을
+       조합해 `calc(100dvh - var(--header-h) - var(--pwa-banner-h, 0px))`로 viewport
+       잔여 영역을 정확히 계산한다. */
+    --header-h: 3.5rem;
     /* font stack 순서: Geist(라틴)가 한글 글리프를 못 가지므로 자동으로
        다음 폰트(Pretendard, self-host)로 fallback된다. next/font/local이
        --font-pretendard CSS 변수를 주입하고 size-adjust를 자동 측정해

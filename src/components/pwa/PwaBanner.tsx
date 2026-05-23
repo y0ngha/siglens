@@ -10,8 +10,14 @@ import { cn } from '@/lib/cn';
 // `pwa-trigger` event flips `showBanner` from false → true.
 // Hidden state uses `aria-hidden` + `invisible` to keep height while
 // removing the banner from the accessibility tree and pointer events.
+//
+// PWA_BANNER_HEIGHT_CSS와 BANNER_SHELL_CLASS의 h-12는 동일한 값(3rem)을 다른 형태로
+// 표현한 것이다. /[symbol] 라우트의 sticky-footer jail이 `--pwa-banner-h` CSS variable을
+// 통해 banner 높이를 차감하므로, banner shell의 height 클래스를 바꿀 때는 반드시
+// PWA_BANNER_HEIGHT_CSS도 함께 갱신해야 한다.
 const BANNER_SHELL_CLASS =
     'border-secondary-700 bg-secondary-800 flex h-12 items-center gap-2 border-b px-3';
+const PWA_BANNER_HEIGHT_CSS = '3rem';
 
 export function PwaBanner() {
     const {
@@ -29,7 +35,7 @@ export function PwaBanner() {
     useEffect(() => {
         const root = document.documentElement;
         if (showBanner) {
-            root.style.setProperty('--pwa-banner-h', '3rem');
+            root.style.setProperty('--pwa-banner-h', PWA_BANNER_HEIGHT_CSS);
             return () => {
                 root.style.removeProperty('--pwa-banner-h');
             };
