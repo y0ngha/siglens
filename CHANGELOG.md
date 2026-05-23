@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.12.8](https://github.com/y0ngha/siglens/compare/v0.12.7...v0.12.8) (2026-05-23)
+
+
+### Reverts
+
+* Revert "design: cls, cc 교정" ([fa6a815](https://github.com/y0ngha/siglens/commit/fa6a815474d34975b32e69f98b47514d4dda07c9))
+
 ## [0.12.7](https://github.com/y0ngha/siglens/compare/v0.12.6...v0.12.7) (2026-05-23)
 
 ## [0.12.6](https://github.com/y0ngha/siglens/compare/v0.12.5...v0.12.6) (2026-05-23)
