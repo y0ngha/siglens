@@ -83,7 +83,11 @@ export function BriefingCard({ briefing, generatedAt }: BriefingCardProps) {
             )}
 
             <p className="text-secondary-600 text-xs">
+                {/* timeZone을 'Asia/Seoul'로 고정해 SSR(Node 서버)와 CSR(브라우저)
+                    사이 timezone mismatch로 인한 hydration 오류를 막는다. 본
+                    프로덕트는 한국어 사용자 대상이라 KST 표기가 의미에도 부합. */}
                 {new Date(generatedAt).toLocaleString('ko-KR', {
+                    timeZone: 'Asia/Seoul',
                     month: 'long',
                     day: 'numeric',
                     hour: '2-digit',

@@ -96,6 +96,16 @@ export function classifyAsset(
 }
 
 /**
+ * schema.org Corporation about-node의 구체 형태. 반환 타입을 named interface로
+ * 좁혀 두면 호출자(page.tsx)에서 spread할 때 키 누락/오타가 컴파일 시점에 잡힌다.
+ */
+export interface CorporationAboutNode {
+    '@type': 'Corporation';
+    name: string;
+    tickerSymbol: string;
+}
+
+/**
  * JSON-LD `about` 블록을 빌드한다. stock으로 분류된 경우만 Corporation
  * 노드를 반환하고, ETF/Index는 `undefined`를 반환해 호출자가 about 자체를
  * 생략하도록 한다. spread 패턴으로 conditional 삽입:
@@ -107,7 +117,7 @@ export function buildAssetAboutNode(
     symbol: string,
     name: string,
     fmpSymbol?: string
-): Record<string, unknown> | undefined {
+): CorporationAboutNode | undefined {
     const category = classifyAsset(symbol, fmpSymbol);
     if (category !== 'stock') return undefined;
     return {

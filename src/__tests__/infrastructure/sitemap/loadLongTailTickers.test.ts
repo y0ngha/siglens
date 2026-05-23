@@ -6,10 +6,17 @@ jest.mock('@/infrastructure/db/tickerRepository', () => ({
     DrizzleKoreanTickerRepository: jest.fn(),
 }));
 
+import { POPULAR_TICKERS } from '@/domain/constants/popular-tickers';
 import type { KoreanTickerEntry } from '@/domain/types';
 import { tryGetDatabaseClient } from '@/infrastructure/db/client';
 import { DrizzleKoreanTickerRepository } from '@/infrastructure/db/tickerRepository';
 import { loadLongTailTickers } from '@/infrastructure/sitemap/loadLongTailTickers';
+
+// POPULAR_TICKERS가 변경돼도 본 테스트의 dedupe 검증이 의도와 어긋나지 않도록
+// 생산 코드의 상수에서 직접 샘플을 가져온다 (MISTAKES.md Tests §4 정신: 경계
+// 상수는 hardcode하지 말고 생산 코드에서 import).
+const POPULAR_SAMPLE_1 = POPULAR_TICKERS[0];
+const POPULAR_SAMPLE_2 = POPULAR_TICKERS[1];
 
 const mockedTryGetDatabaseClient = tryGetDatabaseClient as jest.MockedFunction<
     typeof tryGetDatabaseClient
@@ -70,7 +77,6 @@ describe('loadLongTailTickers', () => {
     });
 
     it('POPULAR_TICKERS와 중복되는 심볼은 결과에서 제외한다', async () => {
-        // POPULAR_TICKERS는 hardcoded uppercase. AAPL/MSFT는 popular에 포함되어 있다.
         mockedTryGetDatabaseClient.mockReturnValue({
             db: {} as never,
             sql: {} as never,
@@ -81,8 +87,8 @@ describe('loadLongTailTickers', () => {
                     findAll: jest
                         .fn()
                         .mockResolvedValue([
-                            makeEntry('AAPL'),
-                            makeEntry('MSFT'),
+                            makeEntry(POPULAR_SAMPLE_1),
+                            makeEntry(POPULAR_SAMPLE_2),
                             makeEntry('LONGTAIL1'),
                             makeEntry('LONGTAIL2'),
                         ]),
@@ -94,8 +100,8 @@ describe('loadLongTailTickers', () => {
     });
 
     it('DB row symbol이 소문자/혼합 대소문자여도 toUpperCase로 정규화한다', async () => {
-        // 정규화하지 않으면 'aapl'은 POPULAR_TICKERS('AAPL')와 매칭 안 돼 sitemap에
-        // 중복 엔트리(/AAPL + /aapl) 생성 위험. 회귀 방어 케이스.
+        // 정규화하지 않으면 소문자 POPULAR 심볼은 Set.has 매칭 실패 → sitemap에
+        // 중복 엔트리(/AAPL + /aapl 형태) 생성 위험. 회귀 방어 케이스.
         mockedTryGetDatabaseClient.mockReturnValue({
             db: {} as never,
             sql: {} as never,
@@ -104,9 +110,12 @@ describe('loadLongTailTickers', () => {
             () =>
                 ({
                     findAll: jest.fn().mockResolvedValue([
-                        makeEntry('aapl'), // 소문자 POPULAR → 제외돼야 함
-                        makeEntry('Msft'), // 혼합 → 제외돼야 함
-                        makeEntry('newticker'), // 소문자 long-tail
+                        makeEntry(POPULAR_SAMPLE_1.toLowerCase()), // 소문자 POPULAR → 제외
+                        makeEntry(
+                            POPULAR_SAMPLE_2.charAt(0) +
+                                POPULAR_SAMPLE_2.slice(1).toLowerCase()
+                        ), // 혼합 POPULAR → 제외
+                        makeEntry('newticker'),
                         makeEntry('MixedCase'),
                     ]),
                 }) as unknown as DrizzleKoreanTickerRepository
