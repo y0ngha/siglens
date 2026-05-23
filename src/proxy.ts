@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { AUTH_SESSION_COOKIE_NAME } from '@/infrastructure/auth/sessionCookie';
+import { VALID_TICKER_RE } from '@/domain/constants/market';
 
 const RESERVED_FIRST_SEGMENTS = new Set([
     'login',
@@ -26,7 +27,32 @@ const TICKER_SEGMENT_CI_RE = /^[A-Za-z]{1,5}(\.[A-Za-z])?$/;
  */
 export function proxy(req: NextRequest): NextResponse {
     const hasSession = !!req.cookies.get(AUTH_SESSION_COOKIE_NAME)?.value;
-    const { pathname } = new URL(req.url);
+    const reqUrl = new URL(req.url);
+    const { pathname } = reqUrl;
+
+    /**
+     * 랜딩 검색 redirect.
+     *
+     * `/?q=AAPL` 형태의 WebSite SearchAction 요청을 종목 페이지로 즉시 redirect한다.
+     * 이 처리를 page.tsx가 아닌 proxy에 두는 이유는, page.tsx에서 `searchParams`를
+     * 소비하면 Next.js가 해당 라우트를 dynamic으로 분류해 ISR/`x-vercel-cache: HIT`을
+     * 받을 수 없기 때문이다. proxy는 모든 요청에 대해 항상 실행되므로 redirect 처리는
+     * 그대로 가능하고, page.tsx는 순수 정적 페이지로 캐싱될 수 있다.
+     *
+     * - 동일 키 중복(`?q=AAPL&q=TSLA`)은 첫 번째 값을 사용
+     * - 유효 ticker가 아니면 fall through — page.tsx가 일반 랜딩으로 렌더
+     */
+    if (pathname === '/' && reqUrl.searchParams.has('q')) {
+        const qRaw = reqUrl.searchParams.getAll('q')[0];
+        if (qRaw) {
+            const ticker = qRaw.trim().toUpperCase();
+            if (VALID_TICKER_RE.test(ticker)) {
+                return NextResponse.redirect(
+                    new URL('/' + ticker, req.url)
+                );
+            }
+        }
+    }
 
     /**
      * Ticker 경로 케이스 정규화.
@@ -44,12 +70,12 @@ export function proxy(req: NextRequest): NextResponse {
         TICKER_SEGMENT_CI_RE.test(firstSegment) &&
         firstSegment !== firstSegment.toUpperCase()
     ) {
-        const url = new URL(req.url);
-        url.pathname = pathname.replace(
+        const canonicalUrl = new URL(req.url);
+        canonicalUrl.pathname = pathname.replace(
             /^\/[^/]+/,
             '/' + firstSegment.toUpperCase()
         );
-        return NextResponse.redirect(url, 301);
+        return NextResponse.redirect(canonicalUrl, 301);
     }
 
     if (GUEST_ONLY_PATHS.has(pathname) && hasSession) {
