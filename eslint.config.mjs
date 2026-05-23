@@ -52,6 +52,8 @@ const eslintConfig = defineConfig([
         settings: {
             'boundaries/elements': [
                 // 새 FSD layer (Phase 0에서는 디렉토리가 아직 생성되지 않음)
+                // ⚠️ src/pages/는 FSD composition layer 용도. Next.js 라우팅은 src/app/에서만 처리.
+                // Next.js App Router 프로젝트에서 src/pages/ 파일 추가 시 Pages Router 활성화 주의.
                 { type: 'pages', pattern: 'src/pages/*' },
                 { type: 'widgets', pattern: 'src/widgets/*' },
                 { type: 'features', pattern: 'src/features/*' },
@@ -133,8 +135,10 @@ const eslintConfig = defineConfig([
                             ],
                         },
                         {
-                            // legacy-comp → legacy-infra: 옛 코드 현상 유지. components/ hooks만 infrastructure fetch 함수 import 허용 (ARCHITECTURE.md).
-                            // Phase 7 (widgets 마이그레이션) 완료 시 legacy-comp 타입 자체가 제거되므로 이 규칙도 함께 삭제.
+                            // legacy-comp → legacy-infra: 옛 코드 현상 유지 (현상 유지 허용).
+                            // .tsx 파일의 직접 infrastructure import는 ARCHITECTURE.md 규칙으로 별도 차단되며,
+                            // 이 boundaries 규칙은 hooks/와 .tsx를 구분하지 않음.
+                            // Phase 7 (widgets 마이그레이션) 완료 시 legacy-comp 타입 제거.
                             from: 'legacy-comp',
                             allow: [
                                 'legacy-domain',
@@ -186,6 +190,8 @@ const eslintConfig = defineConfig([
                         '@/widgets/*/hooks/*',
                         '@/widgets/*/lib',
                         '@/widgets/*/lib/*',
+                        '@/widgets/*/model', // widgets 설계에 model 없음, 방어적 차단
+                        '@/widgets/*/model/*',
                         // entities — barrel + deep path (actions 제외: 'use server')
                         '@/entities/*/api',
                         '@/entities/*/api/*',

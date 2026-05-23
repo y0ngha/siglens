@@ -407,8 +407,14 @@ function calculateRSI(closes: number[], period = RSI_DEFAULT_PERIOD): (number | 
 ### File Locations
 
 ```
+# Legacy (마이그레이션 완료까지 유지)
 src/__tests__/domain/indicators/rsi.test.ts
 src/__tests__/infrastructure/market/alpaca.test.ts
+
+# FSD 슬라이스 colocated (Phase 1+)
+src/entities/user/__tests__/userRepository.test.ts
+src/features/auth/__tests__/loginAction.test.ts
+src/shared/lib/__tests__/cn.test.ts
 ```
 
 ### Coverage Targets
