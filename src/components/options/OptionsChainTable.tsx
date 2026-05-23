@@ -146,9 +146,9 @@ export function OptionsChainTable({
             <div id="options-chain-table" hidden={!expanded}>
                 {expirationDate === 'all' && nearestExpiry && (
                     <p className="text-secondary-500 mt-2 px-1 text-[10px]">
-                        종합 만기 — 가장 가까운 만기를 표시합니다 (
-                        {nearestExpiry}). 다른 만기를 보려면 위 chip에서
-                        선택하세요.
+                        전체 만기 합산 — 가장 가까운 만기({nearestExpiry}) 기준
+                        으로 표시합니다. 다른 만기를 보려면 위 만기 버튼에서
+                        선택해 주세요.
                     </p>
                 )}
 

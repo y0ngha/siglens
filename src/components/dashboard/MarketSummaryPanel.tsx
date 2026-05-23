@@ -63,12 +63,12 @@ export function MarketSummaryPanel() {
 
     return (
         <section
-            aria-label="시장 현황"
+            aria-label="오늘의 미국 시장"
             aria-live="polite"
             className="px-6 py-10 lg:px-[15vw]"
         >
             <h2 className="text-secondary-200 mb-6 text-sm font-semibold tracking-[0.15em] uppercase">
-                시장 현황
+                오늘의 미국 시장
             </h2>
             <div className="flex flex-col gap-6">
                 {/* 주요 지수 */}

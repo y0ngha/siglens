@@ -33,10 +33,10 @@ export function BacktestHero({ meta }: BacktestHeroProps) {
                 Siglens가 얼마나 정확한가요?
             </h1>
             <p className="text-secondary-400 mb-5 text-xs leading-relaxed">
-                실제 시장 데이터를 기반으로 한 백테스트(회귀 테스트) 결과입니다.
+                실제 시장 데이터로 검증한 백테스트 결과예요.
                 <br />
-                지금 Siglens가 제공하는 AI 분석 기능을 그대로 과거에 적용했을
-                때의 성과입니다.
+                지금 Siglens가 제공하는 AI 분석 기능을 그대로 과거에 적용했을 때
+                얼마나 잘 맞았는지 보여드려요.
             </p>
             <div className="border-secondary-700 bg-secondary-800/40 inline-flex items-center gap-5 rounded-lg border px-6 py-3">
                 <StatCard

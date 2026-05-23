@@ -52,7 +52,7 @@ export const SITE_DESCRIPTION = clampSeoDescription(
     '미국 주식을 티커 하나로 종합 분석합니다. 다양한 보조지표 차트, 펀더멘털·뉴스·옵션, 공포 탐욕 지수를 묶은 AI 종합 결론과 2년 백테스팅 결과까지 한 화면에서.'
 );
 
-export const ROOT_TITLE = `미국 주식 AI 분석 — 차트와 실적, 뉴스로 보는 결론 | ${SITE_NAME}`;
+export const ROOT_TITLE = `미국 주식 AI 분석 — 차트·실적·뉴스로 투자 결론까지 | ${SITE_NAME}`;
 
 // 한글 SERP는 80~120자가 안전권이라 키워드는 핵심 검색의도 위주로 추렸다.
 // 영문 키워드, 동의어 중복(매매 신호/차트 해석 등), 너무 일반적인 단일 명사(RSI, MACD 등)는 의도적으로 제외했다.
@@ -77,7 +77,7 @@ export const ROOT_KEYWORDS = [
 
 function buildSymbolDescription(displayName: string, sector?: string): string {
     const sectorPhrase = sector ? `${sector} 섹터 ` : '';
-    return `${sectorPhrase}${displayName} 주가 흐름과 매매 신호를 차트에서 확인합니다. RSI·MACD·볼린저밴드와 캔들 패턴, 주요 지지·저항을 AI가 추세 판단과 진입 후보 가격대로 정리합니다.`;
+    return `${sectorPhrase}${displayName} 주가 흐름과 매매 신호를 차트에서 확인합니다. RSI·MACD·볼린저밴드, 캔들 패턴, 주요 지지·저항선을 AI가 분석해 추세와 진입 후보 가격대를 정리합니다.`;
 }
 
 export interface SymbolSeoContent {
@@ -103,7 +103,7 @@ export function buildSymbolSeoContent(
     opts: BuildSymbolSeoOptions = {}
 ): SymbolSeoContent {
     const ticker = symbol.toUpperCase();
-    const title = `${ticker} 주가 분석 — 차트와 매매 신호, 지지저항`;
+    const title = `${ticker} 주가 분석 — 차트와 매매 신호, 지지선·저항선`;
     const displayName = opts.displayName ?? ticker;
     return {
         ticker,
@@ -410,7 +410,7 @@ export function buildSymbolOverallSeoContent(
 }
 
 function buildSymbolOverallDescription(subject: string): string {
-    return `${subject} 주가를 살 만한지 차트·실적·뉴스·단기 매수 분위기 네 축을 묶어 강세와 약세 시나리오로 정리합니다. 진입 후보 가격대와 시나리오가 깨지는 위험 요인도 같이 짚습니다.`;
+    return `${subject} 주가를 매수할 만한지 차트·실적·뉴스·매수 분위기 네 축으로 묶어 강세·약세 시나리오로 정리합니다. 진입 후보 가격대와 시나리오가 깨지는 위험 요인도 함께 짚습니다.`;
 }
 
 function buildSymbolOverallKeywords(

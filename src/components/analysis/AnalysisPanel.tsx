@@ -60,9 +60,9 @@ function formatCooldown(ms: number): string {
 }
 
 const ENTRY_RECOMMENDATION_LABEL: Record<EntryRecommendation, string> = {
-    enter: '진입 추천',
-    wait: '대기 추천',
-    avoid: '진입 비추천',
+    enter: '지금 진입',
+    wait: '관망',
+    avoid: '진입 보류',
 };
 
 const ENTRY_RECOMMENDATION_COLOR: Record<EntryRecommendation, string> = {
@@ -105,7 +105,7 @@ function ActionRecommendationSection({
             {rec.entryRecommendation !== undefined && (
                 <div className="flex items-center gap-2">
                     <span className="text-secondary-500 text-xs">
-                        진입 추천 여부
+                        진입 의견
                     </span>
                     <span
                         className={cn(

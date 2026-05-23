@@ -68,7 +68,7 @@ export function SignalSubsection({
                     className="text-secondary-500 py-4 text-center text-xs italic"
                     role="status"
                 >
-                    오늘은 해당 신호가 없습니다. 다른 섹터를 확인해 보세요.
+                    오늘은 이 신호가 잡힌 종목이 없어요. 다른 섹터도 살펴보세요.
                 </p>
             ) : (
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">

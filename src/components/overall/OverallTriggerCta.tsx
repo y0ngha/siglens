@@ -17,7 +17,8 @@ export function OverallTriggerCta({ onTrigger }: OverallTriggerCtaProps) {
                 AI 종합 분석
             </h2>
             <p className="text-secondary-400 mt-3 text-sm leading-relaxed">
-                기술적 분석 · 펀더멘털 · 뉴스를 통합한 종합 분석을 받아보세요.
+                차트·옵션·펀더멘털·뉴스·시장 분위기를 통합한 AI 결론을
+                받아보세요.
             </p>
             <button
                 type="button"

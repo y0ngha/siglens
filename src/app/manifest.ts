@@ -3,8 +3,10 @@ import { SITE_NAME } from '@/lib/seo';
 
 // Shorter than SITE_DESCRIPTION because Chrome's install prompt truncates
 // around ~135 characters; long Korean copy gets cut mid-sentence.
+// PR #415 정책: Skills 개수가 변하면 stale되는 동적 숫자(보조지표 N종)는
+// 질적 표현으로 대체. SITE_DESCRIPTION과 같은 접근.
 const MANIFEST_DESCRIPTION =
-    '미국 주식 AI 기술적 분석 — 차트, 펀더멘털, 뉴스를 묶어 보고 보조지표 25종 기반 종합 결론과 2년치 백테스팅을 제공합니다.';
+    '미국 주식 AI 기술적 분석 — 차트·펀더멘털·뉴스를 묶어 다양한 보조지표 기반 종합 결론과 2년 백테스팅을 제공합니다.';
 
 export default function manifest(): MetadataRoute.Manifest {
     return {

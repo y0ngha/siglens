@@ -7,8 +7,8 @@ import { cn } from '@/lib/cn';
 const ACTION_LABEL: Record<GradesAction, string> = {
     upgrade: '상향',
     downgrade: '하향',
-    maintained: '유지',
-    initiated: '신규',
+    maintained: '등급 유지',
+    initiated: '신규 커버리지',
     other: '기타',
 };
 

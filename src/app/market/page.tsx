@@ -177,10 +177,12 @@ export default function MarketPage({ searchParams }: MarketPageProps) {
     const jsonLd = {
         '@context': 'https://schema.org',
         '@type': 'WebPage',
+        '@id': `${MARKET_URL}#webpage`,
         name: MARKET_FULL_TITLE,
         description: MARKET_DESCRIPTION,
         url: MARKET_URL,
         inLanguage: 'ko',
+        isPartOf: { '@type': 'WebSite', '@id': `${SITE_URL}#website` },
     };
 
     const breadcrumbJsonLd = buildBreadcrumbJsonLd([
@@ -206,19 +208,25 @@ export default function MarketPage({ searchParams }: MarketPageProps) {
             <JsonLd data={jsonLd} />
             <JsonLd data={breadcrumbJsonLd} />
             <JsonLd data={itemListJsonLd} />
-            <h1 className="text-secondary-100 px-6 pt-10 text-2xl font-bold tracking-tight text-balance sm:text-3xl lg:px-[15vw]">
-                {MARKET_TITLE}
-            </h1>
-            <Suspense
-                fallback={
-                    <>
-                        <MarketSummaryPanelSkeleton />
-                        <SectorSignalPanelSkeleton />
-                    </>
-                }
-            >
-                <MarketContent searchParams={searchParams} />
-            </Suspense>
+            {/* main 랜드마크: 이전엔 h1 + Suspense가 fragment 아래 직접 노출돼
+                의미론적 랜드마크가 빠져 있었다. backtesting/page.tsx가 같은
+                패턴으로 회귀했었던 이력 — sibling 페이지(/[symbol]/*) 6개와의
+                일관성을 맞춰 둔다. */}
+            <main className="flex-1">
+                <h1 className="text-secondary-100 px-6 pt-10 text-2xl font-bold tracking-tight text-balance sm:text-3xl lg:px-[15vw]">
+                    {MARKET_TITLE}
+                </h1>
+                <Suspense
+                    fallback={
+                        <>
+                            <MarketSummaryPanelSkeleton />
+                            <SectorSignalPanelSkeleton />
+                        </>
+                    }
+                >
+                    <MarketContent searchParams={searchParams} />
+                </Suspense>
+            </main>
         </>
     );
 }

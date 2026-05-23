@@ -5,11 +5,14 @@ import { redirect } from 'next/navigation';
 import { AuthCardShell } from '@/components/auth/AuthCardShell';
 import { DeleteAccountConfirm } from '@/components/auth/DeleteAccountConfirm';
 import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
-import { SITE_NAME } from '@/lib/seo';
+import { SITE_NAME, SITE_URL } from '@/lib/seo';
 
+// noindex 페이지에도 canonical/og:url을 명시한다 (login/signup 정책과 일관).
 export const metadata: Metadata = {
     title: '회원 탈퇴',
     description: `${SITE_NAME} 회원 탈퇴`,
+    alternates: { canonical: `${SITE_URL}/account/delete` },
+    openGraph: { url: `${SITE_URL}/account/delete` },
     robots: { index: false, follow: false },
 };
 
@@ -39,7 +42,28 @@ export default function DeleteAccountPage() {
                 </p>
             }
         >
-            <Suspense>
+            {/* fallback: 인접 /account 페이지가 skeleton을 제공하는 패턴과
+                일관성. 빈 카드 대신 최소한의 시각 피드백을 줘 destructive 흐름
+                에서 사용자가 시스템이 응답 중임을 인지하게 한다. role="status"
+                + aria-live="polite"로 스크린 리더가 마운트 시 로딩 상태를
+                즉시 announce하도록 명시. */}
+            <Suspense
+                fallback={
+                    <div
+                        role="status"
+                        aria-live="polite"
+                        className="flex items-center justify-center gap-2 py-6"
+                    >
+                        <span
+                            aria-hidden="true"
+                            className="border-secondary-500 h-3 w-3 animate-spin rounded-full border-2 border-t-transparent"
+                        />
+                        <span className="text-secondary-400 text-xs">
+                            계정 정보를 불러오고 있어요…
+                        </span>
+                    </div>
+                }
+            >
                 <DeleteAccountContent />
             </Suspense>
         </AuthCardShell>

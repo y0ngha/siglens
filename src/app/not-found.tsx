@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { SITE_NAME } from '@/lib/seo';
-import { Footer } from '@/components/layout/Footer';
 import { ContactDialog } from '@/components/layout/ContactDialog';
 import { TickerCategories } from '@/components/home/TickerCategories';
 
@@ -50,7 +49,6 @@ export default function NotFound() {
                 </div>
                 <TickerCategories />
             </main>
-            <Footer />
         </>
     );
 }

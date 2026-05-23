@@ -23,15 +23,12 @@ const PAGE_URL = `${SITE_URL}${TERMS_PATH}`;
 const JSON_LD = {
     '@context': 'https://schema.org',
     '@type': 'WebPage',
+    '@id': `${PAGE_URL}#webpage`,
     name: TERMS_TITLE,
     description: TERMS_DESCRIPTION,
     url: PAGE_URL,
     inLanguage: 'ko',
-    isPartOf: {
-        '@type': 'WebSite',
-        name: SITE_NAME,
-        url: SITE_URL,
-    },
+    isPartOf: { '@type': 'WebSite', '@id': `${SITE_URL}#website` },
 };
 
 const BREADCRUMB_JSON_LD = buildBreadcrumbJsonLd([

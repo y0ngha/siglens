@@ -2,6 +2,7 @@ import { FearGreedPage } from '@/components/fear-greed/FearGreedPage';
 import { CrossLinkCards } from '@/components/symbol-page/CrossLinkCards';
 import { JsonLd } from '@/components/ui/JsonLd';
 import { DEFAULT_TIMEFRAME, VALID_TICKER_RE } from '@/domain/constants/market';
+import { buildAssetAboutNode } from '@/domain/seo/assetClassification';
 import { buildDisplayName } from '@/domain/ticker';
 import { getBarsAction } from '@/infrastructure/market/getBarsAction';
 import { getAssetInfoCached } from '@/infrastructure/ticker/getAssetInfoCached';
@@ -11,6 +12,7 @@ import {
     buildSymbolFearGreedSeoContent,
     buildSymbolSeoContent,
     SITE_NAME,
+    SITE_URL,
 } from '@/lib/seo';
 import {
     dehydrate,
@@ -84,16 +86,23 @@ export default async function SymbolFearGreedPage({ params }: Props) {
         }
     );
 
-    // `about` block intentionally omitted: hardcoding `@type: 'Corporation'`
-    // misrepresents ETF/Index tickers (e.g. SPY, QQQ, SPXUSD). Re-adding it
-    // requires an AssetInfo discriminator that distinguishes Stock/ETF/Index.
+    // about 노드는 stock으로 분류된 경우만 채워지고, ETF/Index/모호한 종목은
+    // undefined로 자연 생략된다 (assetClassification 모듈 doc 참고).
+    const aboutNode = buildAssetAboutNode(
+        ticker,
+        assetInfo.koreanName ?? assetInfo.name,
+        assetInfo.fmpSymbol
+    );
     const webPageJsonLd = {
         '@context': 'https://schema.org',
         '@type': 'WebPage',
+        '@id': `${url}#webpage`,
         name: fullTitle,
         description,
         url,
         inLanguage: 'ko',
+        isPartOf: { '@type': 'WebSite', '@id': `${SITE_URL}#website` },
+        ...(aboutNode && { about: aboutNode }),
     };
 
     const breadcrumbJsonLd = buildBreadcrumbJsonLd([

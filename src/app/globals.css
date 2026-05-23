@@ -69,7 +69,15 @@
 
     /* Brand — Social login */
     --color-brand-kakao: #fee500;
-    --font-sans: var(--font-geist-sans);
+    /* font stack 순서: Geist(라틴)가 한글 글리프를 못 가지므로 자동으로
+       다음 폰트(Pretendard, self-host)로 fallback된다. next/font/local이
+       --font-pretendard CSS 변수를 주입하고 size-adjust를 자동 측정해
+       fallback OS 폰트와 metric을 맞추므로 CLS가 거의 0이 된다. 이전엔
+       OS 폰트(맥: Apple SD Gothic Neo, 윈도: Malgun Gothic)로 fallback돼
+       디바이스마다 typography가 달라지고 CLS도 발생했다. */
+    --font-sans:
+        var(--font-geist-sans), var(--font-pretendard), -apple-system,
+        BlinkMacSystemFont, system-ui, 'Helvetica Neue', Arial, sans-serif;
     --font-mono: var(--font-geist-mono);
 }
 
@@ -80,13 +88,27 @@
  * (e.g. truncated headings), inflating document scrollWidth and breaking
  * `fixed` element layout. Anchoring to (0,0) keeps the element at the
  * containing block's origin; clip-path: inset(50%) still hides it visually.
+ *
+ * 실제 안전망은 `:not(:focus-visible)` 매칭 제외 + `!important`다. skip link
+ * 패턴(`sr-only focus-visible:not-sr-only focus-visible:fixed
+ * focus-visible:top-4 left-4`)처럼 focus 시 visible로 풀리는 요소는 자체
+ * top/left 유틸리티가 작동해야 하는데, 모든 .sr-only에 !important top/left를
+ * 박으면 focus utility를 덮어 skip link가 좌상단(0,0)에 박혀버린다.
+ * `:not(:focus-visible)`로 focus 상태에서는 이 룰 자체가 매칭되지 않게 하고,
+ * 비-focus 상태에서만 !important로 iOS Safari fix를 유지한다. (`:where()`로
+ * 감싼 건 selector 의도를 시각적으로 분리해 두기 위함이며, specificity 측면
+ * 효과는 `:not(:focus-visible)`의 (0,1,0)에 가려져 실질적 의미가 없다.)
  */
-.sr-only {
+:where(.sr-only):not(:focus-visible) {
     top: 0 !important;
     left: 0 !important;
 }
 
 body {
+    /* Tailwind v4 preflight가 --font-sans를 자동 매핑하지만, 한글 폰트 fallback이
+       실제로 발동되는지 시각 확인이 어려워 명시적으로 한 번 더 박는다. var() 체인
+       자체는 globals.css 상단 @theme에서 정의된 Geist→Pretendard→OS 순서. */
+    font-family: var(--font-sans);
     color: var(--color-secondary-50);
     background-color: var(--color-secondary-900);
 }

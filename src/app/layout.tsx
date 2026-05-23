@@ -4,7 +4,9 @@ import { Suspense } from 'react';
 import Script from 'next/script';
 import { cookies } from 'next/headers';
 import { Geist, Geist_Mono } from 'next/font/google';
+import localFont from 'next/font/local';
 import { Analytics } from '@vercel/analytics/next';
+import { Footer } from '@/components/layout/Footer';
 import { Header } from '@/components/layout/Header';
 import type { HeaderUserMenuUser } from '@/components/layout/HeaderUserMenu';
 import { SiteJsonLd } from '@/components/layout/SiteJsonLd';
@@ -23,8 +25,9 @@ import {
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/lib/og';
 import './globals.css';
 
-// TODO(seo): Geist는 라틴만 지원해 한글은 OS fallback에 의존 — CLS/디자인 일관성을 위해
-//            Pretendard 같은 한글 웹폰트 도입을 검토. (FOIT vs FOUT, 번들 영향 별도 평가 필요)
+// Geist는 라틴만 지원하므로 한글 글리프는 globals.css의 --font-sans 스택에서
+// 자동으로 Pretendard Variable로 fallback된다. 한글 OS 폰트 의존을 끊어
+// 디바이스 간 typography 일관성과 한글 CLS를 개선한다.
 const geistSans = Geist({
     variable: '--font-geist-sans',
     subsets: ['latin'],
@@ -33,6 +36,17 @@ const geistSans = Geist({
 const geistMono = Geist_Mono({
     variable: '--font-geist-mono',
     subsets: ['latin'],
+});
+
+// Pretendard Variable — self-host. next/font/local이 fingerprint URL + 1년
+// immutable Cache-Control을 자동 부여하고, fallback font(OS)와의 metric을
+// 자동 측정해 size-adjust로 CLS를 거의 0으로 만든다. third-party CDN 의존
+// 없이도 dynamic-subset CDN 대비 안정성과 privacy가 우위.
+const pretendard = localFont({
+    src: '../../public/fonts/PretendardVariable.woff2',
+    variable: '--font-pretendard',
+    display: 'swap',
+    weight: '100 900',
 });
 
 export const metadata: Metadata = {
@@ -150,7 +164,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
     return (
         <html
             lang="ko"
-            className={`${geistSans.variable} ${geistMono.variable} h-full antialiased scheme-dark`}
+            className={`${geistSans.variable} ${geistMono.variable} ${pretendard.variable} h-full antialiased scheme-dark`}
         >
             <body className="flex min-h-full flex-col">
                 <SiteJsonLd />
@@ -162,6 +176,13 @@ export default function RootLayout({ children }: RootLayoutProps) {
                         <HeaderWithHint />
                     </Suspense>
                     {children}
+                    {/* Footer를 root layout에 두는 이유: home/404/legal 페이지
+                        에만 footer가 있어 /market, /backtesting, /[symbol]/* 등
+                        대부분 라우트에 내부 링크가 누수됐다. 차트 페이지
+                        (/[symbol])는 SymbolPageClient의 100dvh + flex 구조로
+                        viewport를 채워 footer가 사용자 뷰에서 push 되지만, DOM
+                        에는 존재하므로 crawler internal-link 가치는 유지된다. */}
+                    <Footer />
                 </ReactQueryProvider>
                 {ADSENSE_ENABLED && (
                     <Script

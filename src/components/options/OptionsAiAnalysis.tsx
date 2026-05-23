@@ -20,7 +20,7 @@ import type { OptionsExpirationSelector } from '@/domain/types';
 const TONE_LABEL: Record<OptionsTone, string> = {
     bullish: '강세',
     bearish: '약세',
-    cautious: '방어적',
+    cautious: '신중',
     neutral: '중립',
 };
 
@@ -134,7 +134,7 @@ function OptionsAiAnalysisView({ result }: OptionsAiAnalysisViewProps) {
                     id="options-ai-analysis-heading"
                     className="text-lg font-semibold tracking-tight"
                 >
-                    ⚡ AI 옵션 분석
+                    AI 옵션 분석
                 </h2>
                 {result.analyzedAt ? (
                     <time
@@ -254,7 +254,7 @@ export function OptionsAiAnalysis({
                     id="options-ai-analysis-heading"
                     className="text-secondary-400 mb-3 text-xs tracking-widest uppercase"
                 >
-                    ⚡ AI 옵션 분석
+                    AI 옵션 분석
                 </h2>
                 <BotBlockedNotice />
             </section>

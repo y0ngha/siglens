@@ -15,10 +15,10 @@ describe('buildSymbolSeoContent', () => {
 
         expect(content.ticker).toBe('AAPL');
         expect(content.title).toBe(
-            'AAPL 주가 분석 — 차트와 매매 신호, 지지저항'
+            'AAPL 주가 분석 — 차트와 매매 신호, 지지선·저항선'
         );
         expect(content.fullTitle).toBe(
-            'AAPL 주가 분석 — 차트와 매매 신호, 지지저항 | Siglens'
+            'AAPL 주가 분석 — 차트와 매매 신호, 지지선·저항선 | Siglens'
         );
         expect(content.description).toContain('AAPL');
         expect(content.url).toBe('https://siglens.io/AAPL');

@@ -40,7 +40,10 @@ export function UserApiKeyRequiredModal({
 
     if (!open) return null;
 
-    const ctaHref = loggedIn ? '/account/api-keys' : '/auth/sign-up';
+    // /account 페이지 안에 ApiKeySection이 호스팅되므로 로그인 사용자는 /account로,
+    // 비로그인은 /signup으로 보낸다. 이전엔 존재하지 않는 /account/api-keys, /auth/sign-up
+    // 경로로 박혀 있어 클릭 시 404가 나는 dead link였다.
+    const ctaHref = loggedIn ? '/account' : '/signup';
     const ctaLabel = loggedIn ? 'API 키 등록하기' : '회원가입하기';
     const bodyText = loggedIn
         ? 'API 키를 등록하면 이 모델을 사용할 수 있어요.'
@@ -61,7 +64,7 @@ export function UserApiKeyRequiredModal({
                         id="api-key-modal-title"
                         className="text-secondary-100 text-sm font-semibold"
                     >
-                        {PROVIDER_DISPLAY[provider]} API 키가 필요해요
+                        {PROVIDER_DISPLAY[provider]} API 키 등록이 필요해요
                     </h2>
                     <button
                         type="button"

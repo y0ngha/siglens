@@ -47,8 +47,18 @@ const nextConfig: NextConfig = {
     // /sitemap.xml을 API Route Handler로 리라이트.
     // app/sitemap.ts 메타데이터 파일이 [symbol] 다이나믹 라우트에 우선순위를 뺏기는
     // Next.js 16 버그 회피 — 리라이트는 라우팅보다 먼저 실행되어 [symbol] 간섭 불가.
+    //
+    // sitemap index 분할로 sub-sitemap도 일관된 외부 경로(/sitemap-*.xml)로
+    // 노출한다 — sitemap index에서 노출하는 sub-sitemap URL과 실제 라우트가
+    // 일치해야 crawler가 정상 fetch.
     rewrites: async () => [
         { source: '/sitemap.xml', destination: '/api/sitemap' },
+        { source: '/sitemap-static.xml', destination: '/api/sitemap/static' },
+        { source: '/sitemap-popular.xml', destination: '/api/sitemap/popular' },
+        {
+            source: '/sitemap-longtail-:page.xml',
+            destination: '/api/sitemap/longtail/:page',
+        },
     ],
 
     headers: async () => [

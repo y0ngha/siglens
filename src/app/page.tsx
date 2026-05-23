@@ -5,7 +5,6 @@ import {
 } from '@/components/home/SkillsShowcase';
 import { StatsBar, StatsBarSkeleton } from '@/components/home/StatsBar';
 import { TickerCategories } from '@/components/home/TickerCategories';
-import { Footer } from '@/components/layout/Footer';
 import { SymbolSearchPanel } from '@/components/search/SymbolSearchPanel';
 import { JsonLd } from '@/components/ui/JsonLd';
 import { VALID_TICKER_RE } from '@/domain/constants/market';
@@ -51,6 +50,7 @@ export default async function Home({ searchParams }: HomePageProps) {
     const jsonLd = {
         '@context': 'https://schema.org',
         '@type': 'WebApplication',
+        '@id': `${SITE_URL}#webapplication`,
         name: SITE_NAME,
         description: SITE_DESCRIPTION,
         url: SITE_URL,
@@ -62,6 +62,21 @@ export default async function Home({ searchParams }: HomePageProps) {
             price: '0',
             priceCurrency: 'KRW',
         },
+    };
+
+    // 홈 WebPage 노드 — SiteJsonLd의 WebSite와 jsonLd(WebApplication)를
+    // entity graph로 연결한다. 다른 모든 페이지가 WebPage @id 패턴을 따르므로
+    // 홈에도 동일 패턴을 둬야 cross-link가 일관된다.
+    const webPageJsonLd = {
+        '@context': 'https://schema.org',
+        '@type': 'WebPage',
+        '@id': `${SITE_URL}#webpage`,
+        name: `${SITE_NAME} — ${SITE_DESCRIPTION}`,
+        description: SITE_DESCRIPTION,
+        url: SITE_URL,
+        inLanguage: 'ko',
+        isPartOf: { '@type': 'WebSite', '@id': `${SITE_URL}#website` },
+        mainEntity: { '@id': `${SITE_URL}#webapplication` },
     };
 
     const organizationJsonLd = {
@@ -131,7 +146,7 @@ export default async function Home({ searchParams }: HomePageProps) {
                 name: '차트와 실적, 뉴스를 합친 결론은 어디서 볼 수 있나요?',
                 acceptedAnswer: {
                     '@type': 'Answer',
-                    text: '종목 페이지의 종합 분석 탭에서 차트, 실적, 뉴스, 공포 탐욕 지수를 묶어 강세와 약세 시나리오, 핵심 모니터링 포인트, 위험 요인을 함께 정리한 결론을 확인할 수 있습니다. 예를 들어 엔비디아는 /NVDA/overall 경로입니다.',
+                    text: '종목 페이지의 종합 분석 탭에서 차트, 실적, 뉴스, 공포 탐욕 지수를 묶어 강세와 약세 시나리오, 핵심 점검 포인트, 위험 요인을 함께 정리한 결론을 확인할 수 있습니다. 예를 들어 엔비디아는 /NVDA/overall 경로입니다.',
                 },
             },
             {
@@ -186,7 +201,7 @@ export default async function Home({ searchParams }: HomePageProps) {
             {
                 '@type': 'HowToStep',
                 name: '종합 결론 확인',
-                text: '종합 분석 탭(예: /AAPL/overall)에서 차트, 실적, 뉴스, 공포 탐욕 지수를 묶은 종합 결론과 강세, 약세 시나리오, 모니터링 포인트, 위험 요인을 함께 확인합니다.',
+                text: '종합 분석 탭(예: /AAPL/overall)에서 차트, 실적, 뉴스, 공포 탐욕 지수를 묶은 종합 결론과 강세, 약세 시나리오, 점검 포인트, 위험 요인을 함께 확인합니다.',
                 url: `${SITE_URL}/AAPL/overall`,
             },
             {
@@ -201,6 +216,7 @@ export default async function Home({ searchParams }: HomePageProps) {
     return (
         <>
             <JsonLd data={jsonLd} />
+            <JsonLd data={webPageJsonLd} />
             <JsonLd data={organizationJsonLd} />
             <JsonLd data={howToJsonLd} />
             <JsonLd data={faqJsonLd} />
@@ -260,8 +276,8 @@ export default async function Home({ searchParams }: HomePageProps) {
                                 Siglens는 얼마나 정확할까요?
                             </p>
                             <p className="text-secondary-500 mt-0.5 text-xs">
-                                2년간 10개 종목 기술적 분석 + AI 예측 백테스팅
-                                결과를 확인하세요.
+                                주요 10개 종목으로 2년치 기술적 분석과 AI 예측을
+                                백테스트한 결과를 확인하세요.
                             </p>
                         </div>
                         <Link
@@ -277,7 +293,6 @@ export default async function Home({ searchParams }: HomePageProps) {
                 </Suspense>
                 <TickerCategories />
             </main>
-            <Footer />
         </>
     );
 }
