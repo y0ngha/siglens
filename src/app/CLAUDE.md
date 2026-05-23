@@ -48,14 +48,10 @@ const data = await fetch(url, {
 });
 ```
 
-> **Note (cacheComponents 활성화 / phase 1):** `next.config.ts`에서 `cacheComponents: true`
-> 상태이며 next 버전은 16.1.2로 pin되어 있다(16.2.x resumable slots 회귀 회피 — 이슈 #439).
-> 활성화와 동시에 `'use cache'` / `cacheLife` / `cacheTag` 지시어도 복구되었으며
-> (fundamentalData, newsData, getBarsAction, loader, CurrentYear), 이는 cacheComponents가
-> opt-in 캐싱을 강제하기 때문이다 — prerender 가능한 server component는 명시적 cache
-> 지시어 없이는 build가 실패한다. cacheLife profile(options-market-open/closed/weekend)
-> 도입은 후속 PR로 분리. Route Handler에서 `export const dynamic = 'force-dynamic'`은
-> incompatible — 제거하고 Cache-Control 헤더로 CDN cache를 제어한다.
+> **Note (cacheComponents 비활성화):** 현재 `next.config.ts`에서 `cacheComponents`는
+> 비활성화 상태다. PPR resumable slots 오류로 인한 SEO metadata placeholder 누출 때문에
+> 임시로 꺼 둔 상태이며, 추후 재활성화 시 `'use cache'` / `cacheLife` / `cacheTag` 패턴과
+> dynamic metadata 처리 방식을 함께 재설계해야 한다.
 
 ---
 
@@ -72,10 +68,9 @@ Server Actions are defined in `infrastructure/market/` and called directly from 
 
 - Use `proxy.ts` instead of `middleware.ts` (if needed)
 - Follow App Router conventions
-- `cacheComponents` (PPR)는 활성화 상태(phase 1). dynamic route의 `generateMetadata`가
-  fake-params로 prerender되어 canonical에 `[SYMBOL]` placeholder가 박히는 문제는 phase 2
-  ('use cache' 복구 + dynamic metadata 처리 재설계)에서 함께 다룬다 — Vercel preview
-  배포에서 해당 증상이 재발하면 그 시점에 다시 검토.
+- `cacheComponents` (PPR)는 현재 비활성화 — 활성화 시 dynamic route의 `generateMetadata`가
+  fake-params로 prerender되어 canonical에 `[SYMBOL]` placeholder가 박히는 문제를 다시
+  검토해야 한다.
 
 ---
 

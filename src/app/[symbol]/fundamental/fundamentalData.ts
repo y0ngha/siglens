@@ -1,10 +1,8 @@
-import { cacheLife, cacheTag } from 'next/cache';
 import { cache } from 'react';
 import { getDatabaseClient } from '@/infrastructure/db/client';
 import { DrizzleProfileDescriptionTranslationRepository } from '@/infrastructure/db/tickerRepository';
 import { FmpFundamentalClient } from '@/infrastructure/fmp/fundamentalClient';
 import { translateCompanyDescription } from '@/infrastructure/ticker/koreanTranslator';
-import { TTL_T4_30D, TTL_T3_7D, TTL_T2_24H } from '@/lib/fundamental/cacheTtl';
 import type {
     FundamentalProfile,
     FundamentalPeerInput,
@@ -19,16 +17,17 @@ import type {
     FundamentalPriceTargetSummaryInput,
 } from '@y0ngha/siglens-core';
 
+// cacheComponents 비활성 기간 동안 'use cache' / cacheLife / cacheTag를 모두 제거.
+// 동일 요청 내 중복 호출은 React.cache로 per-request memoization을 적용해
+// FMP HTTP 호출 중복을 막는다. cross-request 캐싱은 손실 — PPR 재활성화 또는
+// unstable_cache 도입 시 복원할 것 (이슈 #439 참조).
 const fundamentalClient = new FmpFundamentalClient();
 
-export async function getProfile(
-    symbol: string
-): Promise<FundamentalProfile | null> {
-    'use cache';
-    cacheLife({ revalidate: TTL_T4_30D });
-    cacheTag(`fundamental:profile:${symbol}`);
-    return fundamentalClient.getProfile(symbol);
-}
+export const getProfile = cache(
+    async (symbol: string): Promise<FundamentalProfile | null> => {
+        return fundamentalClient.getProfile(symbol);
+    }
+);
 
 /**
  * Returns the Korean translation of the company description, storing it in
@@ -37,11 +36,10 @@ export async function getProfile(
  * Read path: DB lookup (instant on cache hit).
  * Write path: Gemini translation → DB upsert (first visit per symbol only).
  *
- * `'use cache'` 대신 React.cache를 쓰는 이유: 함수가 DB upsert + 외부 Gemini
- * 호출이라는 side effect를 갖는다. Next.js 'use cache'는 pure read에 적합하고
- * 첫 write 이후의 cache invalidation 보장이 까다로워, per-request dedup만으로
- * 충분한 이 함수는 React.cache로 처리한다. 내부에서 호출하는 `getProfile`은
- * 'use cache'가 적용되어 cross-request memoization이 그대로 동작한다.
+ * Nested `cache()` 호출 의도: 이 함수와 내부에서 호출하는 `getProfile`이 둘 다
+ * 별도 per-request memoization을 갖는다. 같은 요청에서 description-Ko 미스이지만
+ * profile은 이미 다른 호출자가 캐싱한 경우, 내부 `getProfile(symbol)`이 추가 FMP
+ * 호출을 발생시키지 않는다.
  */
 export const getProfileDescriptionKo = cache(
     async (symbol: string): Promise<string | null> => {
@@ -64,92 +62,66 @@ export const getProfileDescriptionKo = cache(
     }
 );
 
-export async function getStockPeers(
-    symbol: string
-): Promise<FundamentalPeerInput[]> {
-    'use cache';
-    cacheLife({ revalidate: TTL_T4_30D });
-    cacheTag(`fundamental:stock-peers:${symbol}`);
-    return fundamentalClient.getStockPeers(symbol);
-}
+export const getStockPeers = cache(
+    async (symbol: string): Promise<FundamentalPeerInput[]> => {
+        return fundamentalClient.getStockPeers(symbol);
+    }
+);
 
-export async function getKeyMetricsTtm(
-    symbol: string
-): Promise<FundamentalValuationMetrics | null> {
-    'use cache';
-    cacheLife({ revalidate: TTL_T3_7D });
-    cacheTag(`fundamental:key-metrics-ttm:${symbol}`);
-    return fundamentalClient.getKeyMetricsTtm(symbol);
-}
+export const getKeyMetricsTtm = cache(
+    async (symbol: string): Promise<FundamentalValuationMetrics | null> => {
+        return fundamentalClient.getKeyMetricsTtm(symbol);
+    }
+);
 
-export async function getRatiosTtm(
-    symbol: string
-): Promise<FundamentalRatiosInput | null> {
-    'use cache';
-    cacheLife({ revalidate: TTL_T3_7D });
-    cacheTag(`fundamental:ratios-ttm:${symbol}`);
-    return fundamentalClient.getRatiosTtm(symbol);
-}
+export const getRatiosTtm = cache(
+    async (symbol: string): Promise<FundamentalRatiosInput | null> => {
+        return fundamentalClient.getRatiosTtm(symbol);
+    }
+);
 
-export async function getIncomeStatementGrowth(
-    symbol: string
-): Promise<FundamentalGrowthInput | null> {
-    'use cache';
-    cacheLife({ revalidate: TTL_T3_7D });
-    cacheTag(`fundamental:income-statement-growth:${symbol}`);
-    return fundamentalClient.getIncomeStatementGrowth(symbol);
-}
+export const getIncomeStatementGrowth = cache(
+    async (symbol: string): Promise<FundamentalGrowthInput | null> => {
+        return fundamentalClient.getIncomeStatementGrowth(symbol);
+    }
+);
 
-export async function getFinancialScores(
-    symbol: string
-): Promise<FundamentalFinancialScoresInput | null> {
-    'use cache';
-    cacheLife({ revalidate: TTL_T3_7D });
-    cacheTag(`fundamental:financial-scores:${symbol}`);
-    return fundamentalClient.getFinancialScores(symbol);
-}
+export const getFinancialScores = cache(
+    async (symbol: string): Promise<FundamentalFinancialScoresInput | null> => {
+        return fundamentalClient.getFinancialScores(symbol);
+    }
+);
 
-export async function getCashFlowStatement(
-    symbol: string
-): Promise<FundamentalCashFlowInput | null> {
-    'use cache';
-    cacheLife({ revalidate: TTL_T3_7D });
-    cacheTag(`fundamental:cash-flow-statement:${symbol}`);
-    return fundamentalClient.getCashFlowStatement(symbol);
-}
+export const getCashFlowStatement = cache(
+    async (symbol: string): Promise<FundamentalCashFlowInput | null> => {
+        return fundamentalClient.getCashFlowStatement(symbol);
+    }
+);
 
-export async function getAnalystEstimates(
-    symbol: string
-): Promise<FundamentalAnalystEstimateInput | null> {
-    'use cache';
-    cacheLife({ revalidate: TTL_T2_24H });
-    cacheTag(`fundamental:analyst-estimates:${symbol}`);
-    return fundamentalClient.getAnalystEstimates(symbol);
-}
+export const getAnalystEstimates = cache(
+    async (symbol: string): Promise<FundamentalAnalystEstimateInput | null> => {
+        return fundamentalClient.getAnalystEstimates(symbol);
+    }
+);
 
-export async function getGradesConsensus(
-    symbol: string
-): Promise<FundamentalGradesConsensusInput | null> {
-    'use cache';
-    cacheLife({ revalidate: TTL_T2_24H });
-    cacheTag(`fundamental:grades-consensus:${symbol}`);
-    return fundamentalClient.getGradesConsensus(symbol);
-}
+export const getGradesConsensus = cache(
+    async (symbol: string): Promise<FundamentalGradesConsensusInput | null> => {
+        return fundamentalClient.getGradesConsensus(symbol);
+    }
+);
 
-export async function getPriceTargetConsensus(
-    symbol: string
-): Promise<FundamentalPriceTargetConsensusInput | null> {
-    'use cache';
-    cacheLife({ revalidate: TTL_T2_24H });
-    cacheTag(`fundamental:price-target-consensus:${symbol}`);
-    return fundamentalClient.getPriceTargetConsensus(symbol);
-}
+export const getPriceTargetConsensus = cache(
+    async (
+        symbol: string
+    ): Promise<FundamentalPriceTargetConsensusInput | null> => {
+        return fundamentalClient.getPriceTargetConsensus(symbol);
+    }
+);
 
-export async function getPriceTargetSummary(
-    symbol: string
-): Promise<FundamentalPriceTargetSummaryInput | null> {
-    'use cache';
-    cacheLife({ revalidate: TTL_T2_24H });
-    cacheTag(`fundamental:price-target-summary:${symbol}`);
-    return fundamentalClient.getPriceTargetSummary(symbol);
-}
+export const getPriceTargetSummary = cache(
+    async (
+        symbol: string
+    ): Promise<FundamentalPriceTargetSummaryInput | null> => {
+        return fundamentalClient.getPriceTargetSummary(symbol);
+    }
+);
