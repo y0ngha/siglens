@@ -2,18 +2,15 @@ import type { Metadata, Viewport } from 'next';
 import type { ReactNode } from 'react';
 import { Suspense } from 'react';
 import Script from 'next/script';
-import { cookies } from 'next/headers';
 import { Geist, Geist_Mono } from 'next/font/google';
 import localFont from 'next/font/local';
 import { Analytics } from '@vercel/analytics/next';
+import { AuthSessionHeader } from '@/app/_components/AuthSessionHeader';
 import { Footer } from '@/components/layout/Footer';
 import { Header } from '@/components/layout/Header';
-import type { HeaderUserMenuUser } from '@/components/layout/HeaderUserMenu';
 import { SiteJsonLd } from '@/components/layout/SiteJsonLd';
 import { PwaBanner } from '@/components/pwa/PwaBanner';
 import { ReactQueryProvider } from '@/components/providers/ReactQueryProvider';
-import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
-import { AUTH_HINT_COOKIE_NAME } from '@/lib/auth/cookieNames';
 import { ADSENSE_ENABLED } from '@/lib/adsense';
 import {
     ROOT_KEYWORDS,
@@ -120,46 +117,6 @@ interface RootLayoutProps {
     readonly children: ReactNode;
 }
 
-/**
- * 두 단계 Suspense로 header flash를 원천 제거한다.
- *
- * 1단계(HeaderWithHint): hint 쿠키만 읽는다 — I/O 없음, 거의 즉시 완료.
- *    → 쿠키 있음: 내부 fallback을 skeleton으로 설정 (로그인 상태 힌트)
- *    → 쿠키 없음: 내부 fallback을 로그인/회원가입으로 설정 (이미 정답, flash 없음)
- *
- * 2단계(HeaderWithUser): DB 세션 조회 — blocking 작업이므로 Suspense 안에 격리.
- *    → 완료 후 실제 auth 상태로 교체.
- *
- * 외부 Suspense(skeleton)는 hint 쿠키 읽기가 완료될 때까지만 표시되며
- * cookies()는 메모리 조회라 실질적으로 비가시 구간이다.
- */
-async function HeaderWithHint() {
-    const cookieStore = await cookies();
-    const hasSession = !!cookieStore.get(AUTH_HINT_COOKIE_NAME)?.value;
-    return (
-        <Suspense
-            fallback={
-                <Header currentUser={null} loadingUserMenu={hasSession} />
-            }
-        >
-            <HeaderWithUser />
-        </Suspense>
-    );
-}
-
-async function HeaderWithUser() {
-    const authUser = await getCurrentUser();
-    const currentUser: HeaderUserMenuUser | null = authUser
-        ? {
-              email: authUser.email,
-              name: authUser.name,
-              tier: authUser.tier,
-              avatarUrl: authUser.avatarUrl,
-          }
-        : null;
-    return <Header currentUser={currentUser} />;
-}
-
 export default function RootLayout({ children }: RootLayoutProps) {
     return (
         <html
@@ -170,10 +127,13 @@ export default function RootLayout({ children }: RootLayoutProps) {
                 <SiteJsonLd />
                 <ReactQueryProvider>
                     <PwaBanner />
+                    {/* cookies() 격리용 Suspense — 상세 동작은 AuthSessionHeader의 JSDoc 참조.
+                        fallback은 동일한 Header shell + skeleton user menu라 DOM 구조가
+                        일치해 CLS / hydration mismatch가 없다. */}
                     <Suspense
                         fallback={<Header currentUser={null} loadingUserMenu />}
                     >
-                        <HeaderWithHint />
+                        <AuthSessionHeader />
                     </Suspense>
                     {children}
                     {/* Footer를 root layout에 두는 이유: home/404/legal 페이지
