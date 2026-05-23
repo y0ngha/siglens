@@ -1,4 +1,4 @@
-import { NextResponse, connection } from 'next/server';
+import { NextResponse } from 'next/server';
 import { loadLongTailTickers } from '@/infrastructure/sitemap/loadLongTailTickers';
 import { SITEMAP_MAX_URLS_PER_FILE } from '@/infrastructure/sitemap/types';
 import type { SitemapEntry } from '@/infrastructure/sitemap/types';
@@ -16,10 +16,6 @@ export async function GET(
     _req: Request,
     { params }: RouteContext
 ): Promise<Response> {
-    // cacheComponents 모드의 build prerender attempt 차단 —
-    // loadLongTailTickers() DB fetch가 prerender lifetime을 넘겨
-    // HANGING_PROMISE_REJECTION으로 새지 않도록 runtime dynamic을 보장한다.
-    await connection();
     const { page } = await params;
     const pageNum = Number.parseInt(page, 10);
     if (!Number.isFinite(pageNum) || pageNum < 1) {

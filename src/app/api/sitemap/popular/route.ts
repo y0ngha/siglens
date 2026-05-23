@@ -1,4 +1,4 @@
-import { NextResponse, connection } from 'next/server';
+import { NextResponse } from 'next/server';
 import { buildPopularEntries } from '@/infrastructure/sitemap/buildPopularEntries';
 import { toUrlSetXml } from '@/infrastructure/sitemap/xml';
 
@@ -7,10 +7,6 @@ import { toUrlSetXml } from '@/infrastructure/sitemap/xml';
 export const dynamic = 'force-dynamic';
 
 export async function GET(): Promise<Response> {
-    // cacheComponents 모드의 build prerender attempt 차단 — hasOptionsMarket
-    // 외부 fetch(Yahoo Finance)가 prerender lifetime을 넘겨 HANGING_PROMISE_
-    // REJECTION으로 새지 않도록 runtime dynamic을 보장한다.
-    await connection();
     const xml = toUrlSetXml(await buildPopularEntries(new Date()));
     return new NextResponse(xml, {
         headers: {
