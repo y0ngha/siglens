@@ -2,11 +2,7 @@
 
 import React, { useId, useRef } from 'react';
 import { cn } from '@/lib/cn';
-import {
-    type SkillShowcaseItem,
-    type SkillType,
-    HIGH_CONFIDENCE_WEIGHT,
-} from '@y0ngha/siglens-core';
+import type { SkillShowcaseItem, SkillType } from '@y0ngha/siglens-core';
 import { usePopoverToggle } from '@/components/hooks/usePopoverToggle';
 import { buildPanelId, buildTabId, TabsPill } from '@/components/ui/tabs';
 import {
@@ -17,6 +13,20 @@ import {
 const INITIAL_VISIBLE_COUNT = 12;
 const SKELETON_TAB_WIDTHS_PX = [48, 56, 64, 52, 60, 72] as const;
 const SKELETON_CARD_COUNT = 12;
+
+/**
+ * `HIGH_CONFIDENCE_WEIGHT` 로컬 미러 — `@y0ngha/siglens-core`의
+ * `domain/indicators/constants.js`에서 동일 상수를 그대로 들고 와도 되지만,
+ * 그 모듈은 RSI/MACD/BOLLINGER/STOCHASTIC/KELTNER/ICHIMOKU/SMC/SQUEEZE 등
+ * 60+ 개 indicator 상수를 한 파일에 묶어둔 barrel이라 Turbopack tree-shaking이
+ * 실패하면서 ~33 KB unused JS가 landing chunk에 끌려와 PSI unused-javascript
+ * audit이 0.5점, lcp-discovery에 영향. 단일 0.8 상수를 인라인해 의존성 절단.
+ *
+ * 추적 이슈: #468 — siglens-core가 indicator constants barrel을 관심사별 파일로
+ * 분리하면 본 미러를 제거하고 직접 import로 복귀. 그때까지는 siglens-core의
+ * `HIGH_CONFIDENCE_WEIGHT`와 함께 일관되게 갱신할 것 (현재 양쪽 모두 0.8).
+ */
+const HIGH_CONFIDENCE_WEIGHT = 0.8;
 
 interface TabConfig {
     value: SkillsActiveTab;
