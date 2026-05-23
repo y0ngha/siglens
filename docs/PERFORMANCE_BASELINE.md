@@ -257,31 +257,97 @@
 
 ---
 
-## 10. 재측정 절차 (After 측정 시 동일하게 반복)
+## 10. 재측정 절차 (After 측정 시)
+
+자동화 스크립트 사용 — 모든 측정 + summary.md 자동 생성:
 
 ```bash
-# 1) PSI mobile + desktop
-KEY=$(grep "^PAGE_SPEED_INSIGHT_API_KEY=" .env.local | sed 's/^PAGE_SPEED_INSIGHT_API_KEY=//' | tr -d "'\"")
-curl -s "https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=https://siglens.io&strategy=mobile&category=performance&category=accessibility&category=best-practices&category=seo&key=$KEY" > /tmp/psi_mobile.json
-curl -s "https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=https://siglens.io&strategy=desktop&category=performance&category=accessibility&category=best-practices&category=seo&key=$KEY" > /tmp/psi_desktop.json
-
-# 2) 핵심 수치 추출
-jq -f /tmp/psi.jq /tmp/psi_mobile.json
-jq -f /tmp/psi.jq /tmp/psi_desktop.json
-
-# 3) Chrome 실측 (mcp__claude-in-chrome__javascript_tool로 LCP/FCP/CLS PerformanceObserver)
-
-# 4) curl로 캐시 헤더 확인 (x-vercel-cache가 HIT인지)
-curl -sI https://siglens.io/ | grep -iE "cache|vercel|cf-cache"
-
-# 5) 이 문서의 "After" 컬럼에 모든 수치 기입 → commit
+./scripts/measure-performance.sh
+# 또는 출력 디렉토리 지정:
+./scripts/measure-performance.sh lighthouse/260524-after
 ```
+
+출력물:
+- `lighthouse/<날짜>-after/summary.md` — Before/After 비교표 (사람이 읽기 좋게)
+- `psi_{mobile,desktop}.json` — PSI 원본
+- `headers.txt` — TTFB / cache-control / x-vercel-cache
+- `font.txt` — Pretendard subset 크기
+
+수동 보완 (스크립트 cover 안 되는 항목 — 아래 §12 체크리스트 참조):
+- Vercel 프로덕션 로그 확인 (이슈 #439 회귀 감시)
+- Chrome DevTools bf-cache audit
+- `/[symbol]` 메타데이터 초기 HTML 포함 검증
+- 폰트 subset이 실제 사용 글리프를 다 커버하는지 시각 확인
 
 ---
 
-## 11. 변경 이력
+## 11. After 측정 체크리스트 (PPR 활성화 + Wave 1+2 배포 후)
+
+> 배포에 포함되는 변경: PR #457 #458 #459 #460 #461 + PR #462 (cacheComponents:true 재활성화 + Next.js 16.1.2 downgrade) + Cloudflare Content-Signal 제거.
+
+### 자동 (스크립트가 채움)
+
+| 지표 | Before | After 목표 | After 실측 |
+|---|---|---|---|
+| **Mobile Performance** | 67 | ≥ 90 | — |
+| Mobile LCP | 13.0 s | ≤ 2.5 s | — |
+| Mobile FCP | 1.5 s | ≤ 1.0 s | — |
+| Mobile SI | 6.2 s | ≤ 3.4 s | — |
+| Mobile TBT | 40 ms | ≤ 200 ms | — |
+| Mobile TTI | 13.3 s | ≤ 3.8 s | — |
+| Mobile CLS | 0.08 | ≤ 0.1 | — |
+| **Mobile TTFB** | 430 ms (MISS) | ≤ 100 ms (HIT) | — |
+| **Desktop Performance** | 88 | ≥ 95 | — |
+| Desktop LCP | 2.3 s | ≤ 1.5 s | — |
+| Desktop TTFB | 600 ms (MISS) | ≤ 100 ms (HIT) | — |
+| **Accessibility (Mobile/Desktop)** | 97 / 97 | 100 / 100 | — |
+| **Best Practices** | 100 / 100 | 100 / 100 (유지) | — |
+| **SEO (PSI)** | 92 / 92 | 100 / 100 | — |
+| `x-vercel-cache` | MISS | **HIT** | — |
+| `cache-control` | `no-store, must-revalidate` | (no-store 제거) | — |
+| Pretendard 폰트 크기 | 2,057,688 bytes | ~478,124 (467 KB) | — |
+| HTML size (br) | 643 KB | < 400 KB 기대 (PPR 정적 셸 효과) | — |
+| Inline RSC payload | 459 KB | 크게 감소 기대 | — |
+
+### 수동 (사람 또는 추가 도구 필요)
+
+| # | 검증 | 방법 | 통과 조건 |
+|---|---|---|---|
+| 1 | **로컬 build 시 `/` 라우트 마커** | `yarn build` 출력에서 `/` 라인 확인 | `○ Static` (PPR 정상) |
+| 2 | **이슈 #439 회귀 없음** | Vercel 프로덕션 로그 24h+ 모니터링 | "Couldn't find all resumable slots" 0건 |
+| 3 | **`/[symbol]` 메타데이터 head 포함** | 모든 5개 라우트 curl: `/AAPL`, `/AAPL/news`, `/AAPL/fundamental`, `/AAPL/overall`, `/AAPL/fear-greed` | `<title>`, `<meta name="description">`, `<link rel="canonical">`, OG/JSON-LD가 초기 HTML head에 포함 |
+| 4 | **bf-cache 통과** | Chrome DevTools → Application → Back/forward cache → Test back/forward cache | "Page is eligible for back/forward cache" |
+| 5 | **CrUX 필드 데이터 시작 여부** | PSI 응답의 `loadingExperience.metrics` | 데이터 생성 시작 (트래픽 임계값 도달 시) |
+| 6 | **폰트 subset 글리프 커버리지** | siglens.io 브라우저 접속 후 다음 글리프 시각 확인 (PR-A subset 추가분) | tofu(□) 없이 정상 렌더: → ↑ ↓ ← ⓘ ▲ ▼ ○ ◈ ▾ ⚠ ✓ ✕ ✗ |
+| 7 | **`?q=` proxy redirect 동작** | `curl -sI 'https://siglens.io/?q=AAPL'` | `HTTP/2 307` + `location: /AAPL` |
+| 8 | **`/pbr-a` 케이스 정규화 동작** | `curl -sI https://siglens.io/pbr-a` | `HTTP/2 301` + `location: /PBR-A` |
+| 9 | **Pretendard 2 MB 파일 사라짐** | `curl -sI 'https://siglens.io/_next/static/media/PretendardVariable-s.p.0a.~5ku~863u1.woff2'` | 404 (구 파일은 fingerprint도 바뀜) |
+| 10 | **AuthSessionHeader Suspense fallback 정상** | 로그인/비로그인 상태로 `/` 방문 후 헤더 깜빡임 정도 관찰 | 게스트: skeleton → CTA 1회 swap (예상) / 로그인 hint: skeleton 유지 → 실 메뉴 |
+| 11 | **robots.txt 정리 확인** | `curl -s https://siglens.io/robots.txt | wc -l` | ~4 줄 (Cloudflare 주입 제거 확인) |
+
+### 측정 후 갱신할 것
+
+1. 위 표의 "After 실측" 컬럼을 `lighthouse/<날짜>-after/summary.md`에서 옮겨 적기
+2. §0 Executive Summary의 점수표 갱신
+3. §11 변경 이력에 측정 라인 추가
+4. baseline `git commit` (예: `docs: PERFORMANCE_BASELINE.md After 측정 결과 기록`)
+
+### 회귀 발견 시 대응
+
+| 회귀 유형 | 1차 대응 |
+|---|---|
+| Mobile LCP 회귀 (목표 미달) | PR #460 폰트 파일 확인 — 467 KB 맞나? 더 크면 빌드 캐시 의심 |
+| TTFB MISS 지속 | `cacheComponents` 활성화 확인 + AuthSessionHeader 외 추가 `cookies()` 호출처 grep |
+| 이슈 #439 재발 | 즉시 cacheComponents 비활성화 후 사용자에게 보고 |
+| 메타데이터 누락 (`[symbol]` head 비어 있음) | 동일 — 이슈 #439 재발 신호 |
+| 폰트 글리프 누락 (tofu) | pyftsubset 재실행 + subset codepoint 추가 |
+
+---
+
+## 12. 변경 이력
 | 날짜 | 변경 | 측정자 |
 |---|---|---|
 | 2026-05-23 | 초기 baseline (PSI quota 소진, 정적 분석 기반) | Claude Code (5-agent parallel) |
 | 2026-05-23 | PSI API key 등록 후 실수치로 전면 갱신 + Chrome DevTools 실측 추가 | Claude Code |
 | 2026-05-23 | **로컬 Lighthouse v13.0.2 측정 (`lighthouse/260523-before/{mobile,desktop}.json`) 통합** — Pretendard 2 MB 폰트가 진짜 LCP 병목임을 식별, target-size/bf-cache/deprecations 신규 발견 | 사용자 측정 + Claude Code |
+| 2026-05-23 | **After 측정 준비** — `scripts/measure-performance.sh` 추가, §11 PPR-aware 체크리스트 작성. Wave 1+2 (PR #457/#458/#459/#460/#461) + PPR 재활성화 (PR #462) + Cloudflare Content-Signal 제거 통합 배포 후 측정 예정 | Claude Code |
