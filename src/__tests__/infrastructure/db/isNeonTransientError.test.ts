@@ -84,10 +84,7 @@ describe('isNeonTransientError', () => {
     ])(
         'NeonDbError.code=%s (%s) 면 transient 로 인식한다',
         (code, _description) => {
-            const err = makeNeonError(
-                'Failed query: connection broken',
-                code
-            );
+            const err = makeNeonError('Failed query: connection broken', code);
             expect(isNeonTransientError(err)).toBe(true);
         }
     );
@@ -105,12 +102,28 @@ describe('isNeonTransientError', () => {
         );
         expect(isNeonTransientError(err)).toBe(false);
     });
+
+    it.each([
+        ['user_id A57P01B detected', 'user 데이터/식별자에 코드 숫자 포함'],
+        [
+            'constraint pk_53300_check failed',
+            'identifier 내부에 코드 숫자 포함 (underscore-delimited)',
+        ],
+    ])('false positive 방어: %s', (message, _description) => {
+        // 메시지에 SQLSTATE 코드 숫자가 단어 경계 없이 포함되면 transient로 오인하지
+        // 않는다. .code 필드가 없고 message에만 박힌 경우의 false positive 방어.
+        const err = makeNeonError(message);
+        expect(isNeonTransientError(err)).toBe(false);
+    });
 });
 
 describe('NEON_TRANSIENT_RETRY', () => {
-    it('3회 / 200ms / isNeonTransientError 정책으로 고정되어 있다', () => {
+    it('3회 / 200ms / 5s budget / isNeonTransientError 정책으로 고정되어 있다', () => {
         expect(NEON_TRANSIENT_RETRY.maxRetries).toBe(3);
         expect(NEON_TRANSIENT_RETRY.baseDelayMs).toBe(200);
         expect(NEON_TRANSIENT_RETRY.isRetryable).toBe(isNeonTransientError);
+        // 최악 시 backoff sleeps: 200+400+800 = 1.4s + 1×jitter ≈ 2.8s.
+        // 5s budget은 fn() 자체 시간을 포함해도 Vercel 10s 안에 안전하게 들어간다.
+        expect(NEON_TRANSIENT_RETRY.totalTimeoutMs).toBe(5000);
     });
 });

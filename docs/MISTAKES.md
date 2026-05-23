@@ -307,6 +307,16 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     → When extracting a function from a parent function scope, make all parent variables explicit parameters
     ❌ function searchAction() { function toResult(x) { ... parent var ... } }
     ✅ function toResult(x, parentVar) { ... }; function searchAction() { toResult(..., parentVar); }
+
+20.5. Substring matching on ID/code patterns instead of whole-token matching
+    → Fixed code patterns (SQLSTATE codes, error IDs, constant values) must not be matched with substring searches
+    → Substring matching produces false positives when user data or identifiers happen to contain the same digits/characters
+    → Use word-boundary regex (`\b(code1|code2|...)\b`), whole-token matching, or array membership (Set/indexOf) instead
+    ❌ `'57P01'.includes(message)` or regex without word boundary — matches false positives in user data like "user_57P01_backup"
+    ❌ const TRANSIENT_CODES = ['57P01', '08006']; ... regex `/${TRANSIENT_CODES.join('|')}/` — substring match
+    ✅ const TRANSIENT_CODES = ['57P01', '08006']; regex `/\b(${TRANSIENT_CODES.join('|')})\b/` — word boundary
+    ✅ const TRANSIENT_SQLSTATE_SET = new Set(TRANSIENT_CODES); ... TRANSIENT_SQLSTATE_SET.has(extractedCode) — exact token match
+    → Recurring: PR #456 B4 (SQLSTATE false positive on user data like `pk_constraint_53300_check`)
 ```
 
 ---

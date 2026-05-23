@@ -75,9 +75,9 @@ export function OptionsPageClient({
             setNow(new Date());
         });
     });
-    useEffect(() => {
-        captureNow();
-    }, []);
+    // 훅 선언 순서(CONVENTIONS.md / MISTAKES.md §17):
+    //   useState → 사용자 정의 훅 → useMemo/useCallback → derived → handlers → useEffect.
+    // oiStale은 useMemo이므로 useEffect 전에 선언해야 한다.
     const oiStale = useMemo(
         () =>
             now !== null &&
@@ -86,6 +86,9 @@ export function OptionsPageClient({
         [now, snapshot]
     );
     const nearestExpiry = snapshot.chains[0]?.expirationDate ?? '';
+    useEffect(() => {
+        captureNow();
+    }, []);
 
     return (
         // page.tsx가 이미 <main> landmark로 감싸므로 여기는 일반 컨테이너만.
