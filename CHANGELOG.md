@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.12.1](https://github.com/y0ngha/siglens/compare/v0.12.0...v0.12.1) (2026-05-23)
+
+
+### Bug Fixes
+
+* a11y/SEO 빠른 개선 + 아이콘 최적화 ([35887e2](https://github.com/y0ngha/siglens/commit/35887e2d31f72434a5bd8088a0fcbfb848155ca2))
+* **review:** PR [#457](https://github.com/y0ngha/siglens/issues/457) bot 리뷰 반영 — 버전 정렬·browserslist·analyze 스크립트·WHAT 코멘트 정리 ([6865bf1](https://github.com/y0ngha/siglens/commit/6865bf11e761aa618012cce8bf22ccaa87a5424d))
+* **review:** PR [#458](https://github.com/y0ngha/siglens/issues/458) bot 리뷰 반영 — ✕ 통일·WHAT 주석 정리 ([8df50a7](https://github.com/y0ngha/siglens/commit/8df50a77cfdc058cab8a8a243cdf7d0607c2fe82))
+* **review:** PR [#459](https://github.com/y0ngha/siglens/issues/459) JSDoc 정확성 — Suspense flash 의미 명확화 ([46ebef4](https://github.com/y0ngha/siglens/commit/46ebef422fafd17a33a14c848ff323cde8eeebc3))
+* **review:** PR [#461](https://github.com/y0ngha/siglens/issues/461) bot 리뷰 반영 ([ad54704](https://github.com/y0ngha/siglens/commit/ad54704962ce79d57252a9fe8c6f99a16136486f))
+* route handlers prerender connection 및 incompatible config 제거 ([4079ef2](https://github.com/y0ngha/siglens/commit/4079ef202fe87e42b082af3e5d6bdb1c70d7ed45))
+* Suspense fallback null 명시적 설정 (페이지 내부 skeleton 패턴 중복 방지) ([89f6bd6](https://github.com/y0ngha/siglens/commit/89f6bd659b1949e8b179f094deb06d16ae4d5f31))
+
+
+### Performance Improvements
+
+* **font:** Pretendard 2.0MB → 467KB 서브셋으로 LCP 개선 ([c11d5e8](https://github.com/y0ngha/siglens/commit/c11d5e817879de6e58826bd4ac8123f36483991d))
+* **infra:** browserslist + bundle-analyzer 인프라 추가 ([86c2af6](https://github.com/y0ngha/siglens/commit/86c2af6dde0b259271eef520388a793827111531))
+* **landing:** ?q= proxy 이동 + revalidate=3600 (PR-C Wave 2) ([345b2dd](https://github.com/y0ngha/siglens/commit/345b2dd32a600951f448b65688aade059a7b0704))
+
 # [0.12.0](https://github.com/y0ngha/siglens/compare/v0.11.16...v0.12.0) (2026-05-23)
 
 
