@@ -4,10 +4,11 @@ import {
     isNeonTransientError,
 } from '@/infrastructure/db/isNeonTransientError';
 
-function makeNeonError(message: string): NeonDbError {
+function makeNeonError(message: string, code?: string): NeonDbError {
     // `Error.name`은 lib 정의상 writable string이라 추가 캐스트 없이 직접 할당 가능.
-    const err = new Error(message);
+    const err = new Error(message) as Error & { code?: string };
     err.name = 'NeonDbError';
+    if (code !== undefined) err.code = code;
     // Cast to NeonDbError so callers receive the structural shape they expect.
     return err as unknown as NeonDbError;
 }
@@ -72,12 +73,57 @@ describe('isNeonTransientError', () => {
         err.cause = err;
         expect(isNeonTransientError(err)).toBe(false);
     });
+
+    it.each([
+        ['57P01', 'admin_shutdown'],
+        ['08006', 'connection_failure'],
+        ['08003', 'connection_does_not_exist'],
+        ['08001', 'sqlclient_unable_to_establish_sqlconnection'],
+        ['08004', 'sqlserver_rejected_establishment_of_sqlconnection'],
+        ['53300', 'too_many_connections'],
+    ])(
+        'NeonDbError.code=%s (%s) 면 transient 로 인식한다',
+        (code, _description) => {
+            const err = makeNeonError('Failed query: connection broken', code);
+            expect(isNeonTransientError(err)).toBe(true);
+        }
+    );
+
+    it('SQLSTATE가 메시지에만 박혀 있어도 transient 로 인식한다', () => {
+        // Postgres가 code 필드 없이 메시지로만 내려준 경우의 fallback.
+        const err = makeNeonError('terminating connection (code 57P01)');
+        expect(isNeonTransientError(err)).toBe(true);
+    });
+
+    it('permanent SQLSTATE(23505 unique_violation)은 transient 가 아니다', () => {
+        const err = makeNeonError(
+            'duplicate key value violates unique constraint',
+            '23505'
+        );
+        expect(isNeonTransientError(err)).toBe(false);
+    });
+
+    it.each([
+        ['user_id A57P01B detected', 'user 데이터/식별자에 코드 숫자 포함'],
+        [
+            'constraint pk_53300_check failed',
+            'identifier 내부에 코드 숫자 포함 (underscore-delimited)',
+        ],
+    ])('false positive 방어: %s', (message, _description) => {
+        // 메시지에 SQLSTATE 코드 숫자가 단어 경계 없이 포함되면 transient로 오인하지
+        // 않는다. .code 필드가 없고 message에만 박힌 경우의 false positive 방어.
+        const err = makeNeonError(message);
+        expect(isNeonTransientError(err)).toBe(false);
+    });
 });
 
 describe('NEON_TRANSIENT_RETRY', () => {
-    it('3회 / 200ms / isNeonTransientError 정책으로 고정되어 있다', () => {
+    it('3회 / 200ms / 5s budget / isNeonTransientError 정책으로 고정되어 있다', () => {
         expect(NEON_TRANSIENT_RETRY.maxRetries).toBe(3);
         expect(NEON_TRANSIENT_RETRY.baseDelayMs).toBe(200);
         expect(NEON_TRANSIENT_RETRY.isRetryable).toBe(isNeonTransientError);
+        // 최악 시 backoff sleeps: 200+400+800 = 1.4s + 1×jitter ≈ 2.8s.
+        // 5s budget은 fn() 자체 시간을 포함해도 Vercel 10s 안에 안전하게 들어간다.
+        expect(NEON_TRANSIENT_RETRY.backoffBudgetMs).toBe(5000);
     });
 });

@@ -81,10 +81,16 @@ export class DrizzleUserRepository
     }
 
     async deleteUser(userId: string): Promise<boolean> {
-        const deletedUsers = await this.db
-            .delete(users)
-            .where(eq(users.id, userId))
-            .returning({ id: users.id });
+        // 회원 탈퇴는 사용자 명시적 액션 — transient 실패는 retry로 흡수해
+        // 재시도 유도 없이 일관 동작.
+        const deletedUsers = await withRetry(
+            () =>
+                this.db
+                    .delete(users)
+                    .where(eq(users.id, userId))
+                    .returning({ id: users.id }),
+            NEON_TRANSIENT_RETRY
+        );
 
         return deletedUsers.length > 0;
     }
@@ -93,11 +99,16 @@ export class DrizzleUserRepository
         userId: string,
         passwordHash: string
     ): Promise<boolean> {
-        const updatedUsers = await this.db
-            .update(users)
-            .set({ passwordHash, updatedAt: sql`now()` })
-            .where(eq(users.id, userId))
-            .returning({ id: users.id });
+        // 비밀번호 변경 — 사용자가 폼 제출 직후 결과를 본다. transient retry로 흡수.
+        const updatedUsers = await withRetry(
+            () =>
+                this.db
+                    .update(users)
+                    .set({ passwordHash, updatedAt: sql`now()` })
+                    .where(eq(users.id, userId))
+                    .returning({ id: users.id }),
+            NEON_TRANSIENT_RETRY
+        );
 
         return updatedUsers.length > 0;
     }
@@ -248,11 +259,17 @@ export class DrizzleUserRepository
     }
 
     async updateUserTier(userId: string, tier: Tier): Promise<Tier | null> {
-        const [user] = await this.db
-            .update(users)
-            .set({ tier, updatedAt: sql`now()` })
-            .where(eq(users.id, userId))
-            .returning({ tier: users.tier });
+        // 결제/티어 상승 직후 호출 — transient 실패가 노출되면 결제는 됐는데
+        // 티어가 안 올라간 것처럼 보인다. retry로 흡수.
+        const [user] = await withRetry(
+            () =>
+                this.db
+                    .update(users)
+                    .set({ tier, updatedAt: sql`now()` })
+                    .where(eq(users.id, userId))
+                    .returning({ tier: users.tier }),
+            NEON_TRANSIENT_RETRY
+        );
 
         return user?.tier ?? null;
     }

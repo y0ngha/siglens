@@ -71,18 +71,25 @@ export class DrizzleNewsRepository {
         analysis: NewsCardAnalysis,
         analyzedAt: Date = new Date()
     ): Promise<void> {
-        await this.db
-            .update(news)
-            .set({
-                titleKo: analysis.titleKo,
-                bodyKo: analysis.bodyKo ?? null,
-                summaryKo: analysis.summaryKo,
-                sentiment: analysis.sentiment,
-                category: analysis.category,
-                priceImpact: analysis.priceImpact,
-                analyzedAt,
-            })
-            .where(eq(news.id, id));
+        // LLM 번역 결과는 비용/지연이 모두 큰 호출이라 transient `fetch failed` 한 번에
+        // 영구적으로 분실되면 다음 fetch까지 카드가 `analyzed: null` 상태로 남는다.
+        // upsertNewsItem과 동일한 retry 정책으로 자가 회복 가능하게 한다.
+        await withRetry(
+            () =>
+                this.db
+                    .update(news)
+                    .set({
+                        titleKo: analysis.titleKo,
+                        bodyKo: analysis.bodyKo ?? null,
+                        summaryKo: analysis.summaryKo,
+                        sentiment: analysis.sentiment,
+                        category: analysis.category,
+                        priceImpact: analysis.priceImpact,
+                        analyzedAt,
+                    })
+                    .where(eq(news.id, id)),
+            NEON_TRANSIENT_RETRY
+        );
     }
 
     async listBySymbol(symbol: string, sinceMs: number): Promise<NewsRow[]> {

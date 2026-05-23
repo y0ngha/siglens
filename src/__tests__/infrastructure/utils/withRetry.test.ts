@@ -126,6 +126,44 @@ describe('withRetry', () => {
         expect(sleepMock).toHaveBeenCalledWith(300);
     });
 
+    it('backoffBudgetMs 초과 시 다음 sleep 호출 없이 마지막 에러를 던진다', async () => {
+        // Math.random=0 + baseDelayMs=200 ⇒ 첫 sleep=200ms.
+        // backoffBudgetMs=50으로 두면 deadline이 즉시 지나 sleep 없이 throw.
+        const firstError = new Error('attempt-0');
+        const fn = jest.fn().mockRejectedValueOnce(firstError);
+
+        await expect(
+            withRetry(fn, {
+                maxRetries: 3,
+                baseDelayMs: 200,
+                isRetryable: () => true,
+                backoffBudgetMs: 50,
+            })
+        ).rejects.toBe(firstError);
+        expect(fn).toHaveBeenCalledTimes(1);
+        // budget이 잘려서 backoff sleep도 실행되지 않아야 한다.
+        expect(sleepMock).not.toHaveBeenCalled();
+    });
+
+    it('backoffBudgetMs 가 충분하면 정상 backoff 후 성공한다', async () => {
+        // 첫 실패 후 200ms sleep까지는 budget 1초 안에 충분히 들어간다.
+        const fn = jest
+            .fn()
+            .mockRejectedValueOnce(new Error('transient'))
+            .mockResolvedValueOnce('ok');
+
+        const result = await withRetry(fn, {
+            maxRetries: 3,
+            baseDelayMs: 200,
+            isRetryable: () => true,
+            backoffBudgetMs: 1000,
+        });
+
+        expect(result).toBe('ok');
+        expect(fn).toHaveBeenCalledTimes(2);
+        expect(sleepMock).toHaveBeenCalledTimes(1);
+    });
+
     it('non-retryable 판정이 중간에 발생해도 즉시 던진다', async () => {
         // 1st: transient retryable, 2nd: non-retryable.
         const transient = new Error('transient');
