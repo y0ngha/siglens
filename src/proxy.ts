@@ -47,9 +47,7 @@ export function proxy(req: NextRequest): NextResponse {
         if (qRaw) {
             const ticker = qRaw.trim().toUpperCase();
             if (VALID_TICKER_RE.test(ticker)) {
-                return NextResponse.redirect(
-                    new URL('/' + ticker, req.url)
-                );
+                return NextResponse.redirect(new URL('/' + ticker, req.url));
             }
         }
     }
