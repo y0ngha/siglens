@@ -57,7 +57,7 @@ export function PwaBanner() {
                     tabIndex={showBanner ? 0 : -1}
                     className="text-secondary-500 hover:text-secondary-300 focus-visible:ring-primary-500 shrink-0 text-lg leading-none transition-colors focus-visible:ring-1 focus-visible:outline-none"
                 >
-                    ×
+                    ✕
                 </button>
             </div>
             {isIos && showIosModal && (

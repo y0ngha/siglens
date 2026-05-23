@@ -25,7 +25,6 @@ export function AuthCardShell({
                 <header className="mb-8 flex flex-col items-start gap-5">
                     <div className="flex items-center gap-2">
                         {/*
-                            Auth header chip displays the brand mark at 32×32.
                             Use the 96×96 PNG (not icon24) because a 24→32 upscale
                             on a logo with sharp edges produces visible blurriness
                             on 1× DPI displays; the auth page is not LCP-sensitive

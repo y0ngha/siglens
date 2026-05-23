@@ -41,7 +41,7 @@ export function Header({ currentUser, loadingUserMenu }: HeaderProps) {
                     className="focus-visible:ring-primary-500 -mx-1 flex min-h-11 shrink-0 touch-manipulation items-center gap-2 rounded px-1 focus-visible:ring-2 focus-visible:outline-none"
                 >
                     {/*
-                        Display size is 24×24. Serving the 96×96 PNG wasted
+                        Serving the 96×96 PNG for the 24×24 display wasted
                         ~7 KB; icon24.png is ~1.3 KB and the LCP/SEO audits
                         flag the upscaled asset as `uses-responsive-images`.
                     */}

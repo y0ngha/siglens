@@ -30,11 +30,9 @@ export function SymbolSearchPanel({ className }: SymbolSearchPanelProps) {
                         >
                             {/*
                                 a11y target-size: WCAG 2.5.8 requires interactive
-                                targets ≥ 24×24 CSS px. Link uses min-h-6 (24px)
-                                + py-1.5; the × button uses h-6 w-6 as a fixed
-                                24×24 box with flex centering — the visible glyph
-                                stays small because it inherits text-xs sizing
-                                inside the 24px square.
+                                targets ≥ 24×24 CSS px. The ✕ button's visible
+                                glyph stays small because it inherits text-xs
+                                sizing inside the 24×24 flex box.
                             */}
                             <Link
                                 href={`/${ticker}`}
@@ -49,7 +47,7 @@ export function SymbolSearchPanel({ className }: SymbolSearchPanelProps) {
                                 onClick={() => removeSearch(ticker)}
                                 className="text-secondary-500 hover:text-secondary-100 focus-visible:ring-primary-500 inline-flex h-6 w-6 items-center justify-center rounded-full leading-none focus-visible:ring-1 focus-visible:outline-none"
                             >
-                                ×
+                                ✕
                             </button>
                         </span>
                     ))}

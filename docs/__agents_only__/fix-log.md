@@ -489,3 +489,11 @@
   - Rule: MISTAKES.md §15.3 — WHAT-style comments listing technical details (unicode ranges) must be verified against the actual artifact (cmap inspection via fontTools).
 - S2 (Sonnet R1): Font file placed under `public/fonts/` instead of colocated `src/app/fonts/` — risks dual-serving (both /fonts/ URL and Next.js fingerprinted URL).
   - Rule: Next.js font asset placement — with next/font/local, colocate font assets next to the consumer (src/app/fonts/) per the official Next.js pattern, not under public/.
+
+## [PR #458 | worktree-agent-ae1c225912b319b47 | 2026-05-23]
+- Violation: × (U+00D7 MULTIPLICATION SIGN) vs ✕ (U+2715 MULTIPLICATION X) 혼용 — close 버튼 character 일관성 깨짐
+- Rule: UI consistency — 같은 의미(닫기/제거)의 유사 글리프는 코드베이스 전반에서 통일
+- Context: SymbolSearchPanel + IosInstallModal + PwaBanner는 U+00D7 사용, chat 컴포넌트는 U+2715 사용 → ✕(U+2715)로 통일
+- Violation: JSX 주석에 WHAT 첫 문장 3건 — "Auth header chip displays the brand mark at 32×32." / "Display size is 24×24." / "Link uses min-h-6 ... button uses h-6 w-6 ... 24×24 box with flex centering"
+- Rule: MISTAKES.md §15.5 — JSX 주석은 WHY만 남기고 WHAT은 className/props에서 자명한 경우 제거
+- Context: review-agent round 2 통과 후 외부 reviewer (claude bot) 라운드에서 WHAT-style 주석으로 재지적 — 첫 문장만 정확히 trim하고 비직관적 시각 동작 WHY는 보존
