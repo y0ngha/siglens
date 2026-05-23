@@ -174,26 +174,50 @@ Every sub-agent ends its response with a JSON exit signal and nothing else.
 
 ## Layer Dependency Rules (Never Violate)
 
+### Migration in progress: Layered → FSD
+
+본 프로젝트는 현재 **Layered 구조에서 Feature-Sliced Design (FSD) 6-layer로 단계적으로 마이그레이션 중**이다. Phase 0~9 동안 옛 layer와 새 layer가 공존한다. 자세한 설계는 `docs/superpowers/specs/2026-05-24-fsd-migration-design.md` 참고.
+
+### FSD 의존 방향 (목표 상태)
+
+```
+app  →  pages  →  widgets  →  features  →  entities  →  shared
+                                                          ↑
+                                          @y0ngha/siglens-core (외부, 모든 레이어 직접 import 가능)
+```
+
+- 각 레이어는 자기 위 레이어를 import할 수 없다 (예: entities는 features를 import할 수 없음).
+- 같은 레이어 안의 다른 슬라이스끼리 import 금지 (예: `entities/user`는 `entities/session`을 직접 import할 수 없음 — 상위 레이어를 통해 라우팅).
+- production 코드는 슬라이스 root만 import (예: `@/widgets/stock-chart`, NOT `@/widgets/stock-chart/ui/Chart`). 테스트 파일은 예외.
+
+### Legacy 의존 방향 (마이그레이션 동안 유지)
+
 ```
 domain         ← No external imports. Pure TypeScript functions only.
-                 Exception: @y0ngha/siglens-core may be imported (see below).
-infrastructure ← May import from domain and lib (lib must be pure utilities/constants only). Handles file I/O (Skills) and API calls.
-lib            ← External UI utility wrappers (clsx, tailwind-merge, etc.). Pure functions only.
-app (RSC/Route)← May import from infrastructure, domain, lib.
+                 Exception: @y0ngha/siglens-core may be imported.
+infrastructure ← May import from domain and lib.
+lib            ← External UI utility wrappers. Pure functions only.
+app (RSC)      ← May import from infrastructure, domain, lib.
 components     ← May import from domain, lib.
                Component files (.tsx): Direct imports from infrastructure are prohibited.
                Hook files (hooks/): May import fetch functions from infrastructure only
-                 → Limited to queryFn/mutationFn connection or useActionState Server Action connection purpose
-                 → Type imports must be from @/domain/types or @y0ngha/siglens-core
-
-lib            ← External UI utility wrappers (clsx, tailwind-merge, etc.). Pure functions only.
-               May import types from domain (e.g. Timeframe) when needed for React Query key factories.
-               React Query key factories (QUERY_KEYS) and config constants belong in lib/.
+                 → Limited to queryFn/mutationFn or useActionState connection.
+                 → Type imports from @/domain/types or @y0ngha/siglens-core.
 ```
 
-**`@y0ngha/siglens-core` exception**: This package is not a third-party library — it is the externalized SigLens domain logic (indicators, candle patterns, signals, domain types). Direct import is allowed from **every layer** including `components/` and hooks. Do not create thin re-export wrappers in `domain/` — they are pure boilerplate. Deep imports (`@y0ngha/siglens-core/dist/...`) are still prohibited; use only the public package surface. Local `src/domain/` keeps only SigLens-app-specific logic (backtest, chat models, dashboard sector grouping, etc.).
+Phase 9 완료 시 legacy 섹션은 제거된다.
 
-Violations trigger ESLint errors. PRs cannot be merged.
+### siglens-core 직접 import 예외 (모든 레이어)
+
+`@y0ngha/siglens-core`는 외부 라이브러리가 아니라 외부 분석 도메인 패키지다. 모든 레이어가 직접 import 가능하다. deep import(`@y0ngha/siglens-core/dist/...`) 금지.
+
+### Server Action 예외
+
+`entities/<x>/actions.ts`(Next.js `'use server'` 파일)는 features/widgets/pages에서 import 가능하다. `entities/<x>/api.ts`는 server-only이므로 same-entity 또는 app 레이어에서만 import.
+
+### ESLint 강제
+
+위 규칙은 `eslint-plugin-boundaries` + `no-restricted-imports`로 정적 검증된다. 위반 시 PR 머지 불가. 자세한 설정은 `eslint.config.mjs`.
 
 ---
 
