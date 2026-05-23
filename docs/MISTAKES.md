@@ -256,8 +256,8 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     ❌ const lines = []; for (const rec of reconciled) { lines.push(...extractLines(rec)); } return lines;
     ✅ const lines = reconciled.flatMap(extractLines); return lines;
 
-22. Domain functions incomplete test coverage — missing unit tests entirely or covering <100% branches
-    → Every new domain function must have dedicated unit tests with 100% branch coverage
+22. Domain functions incomplete test coverage — missing unit tests entirely or covering below the project threshold
+    → Every new domain function must have dedicated unit tests achieving the project's coverage threshold (90%)
     → Test infrastructure functions similarly; coverage checks catch missing edge cases
     ❌ callGeminiWithKeyFallback added to infrastructure/ai/gemini.ts without src/__tests__/infrastructure/ test file
     ❌ extractReconciledActionLines added to domain/analysis/ without corresponding unit tests for 8+ cases
@@ -921,7 +921,7 @@ This file contains only **recurring gotchas** that agents keep missing despite e
       Background job: cache.set(symbol, { symbol, name, koreanName })  // fmpSymbol missing
    ✅ Both paths: cache.set(symbol, { symbol, name, koreanName, fmpSymbol })
 
-2. Infrastructure functions must have 100% branch coverage
+2. Infrastructure functions must have 90% branch coverage
    → All if/else, optional chaining (?.), nullish coalescing (??) paths tested
    → Test edge cases like subsecond boundaries, zero values, Math.max guard behavior
    ❌ Math.max(1, Math.floor(diffMs / 1000)) guard that converts 0→1 untested

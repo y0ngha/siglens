@@ -22,11 +22,12 @@
         ],
         "baseUrl": ".",
         "paths": {
-            "@/*": ["./src/*"],
             "@/widgets/*": ["./src/widgets/*"],
             "@/features/*": ["./src/features/*"],
             "@/entities/*": ["./src/entities/*"],
-            "@/pages/*": ["./src/pages/*"]
+            "@/pages/*": ["./src/pages/*"],
+            "@/shared/*": ["./src/shared/*"],
+            "@/*": ["./src/*"]
         }
     },
     "include": [

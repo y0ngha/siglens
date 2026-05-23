@@ -499,6 +499,28 @@ import { calculateRSI } from '@/domain/indicators/rsi';
 import { calculateRSI } from '../../../domain/indicators/rsi';
 ```
 
+### FSD Slice Internal Imports
+
+FSD 슬라이스 내부에서 다른 segment를 참조할 때(예: `features/auth/ui/LoginForm.tsx` → `features/auth/model/types.ts`):
+- **relative import 허용** (`../model/types` 형태)
+- `no-restricted-imports`는 **다른 슬라이스**의 internal path만 차단하므로, 같은 슬라이스 내부 참조는 자동으로 허용됨
+- 슬라이스 root barrel(`@/features/auth`)을 통한 import도 가능하지만, 같은 슬라이스 내부에서는 필수 아님
+
+```typescript
+// ✅ 같은 slice 내 — relative import 허용
+// src/features/auth/ui/LoginForm.tsx
+import { AuthFormState } from '../model/types';
+
+// ✅ 같은 slice 내 — path alias도 가능 (비필수)
+import { AuthFormState } from '@/features/auth/model/types';
+
+// ❌ 다른 slice의 internal path — no-restricted-imports 위반
+// src/features/auth/ui/LoginForm.tsx
+import { ChatState } from '@/features/symbol-chat/model/types'; // 차단됨
+```
+
+> 기존 §7.6 ("All imports must use path aliases") 규칙은 **cross-module** import 기준이며, FSD 같은 슬라이스 내부 segment 간 참조에는 적용되지 않는다.
+
 ---
 
 ## useEffect Side Effect Isolation

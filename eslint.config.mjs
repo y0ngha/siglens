@@ -51,8 +51,7 @@ const eslintConfig = defineConfig([
         plugins: { boundaries },
         settings: {
             'boundaries/elements': [
-                // 새 FSD layer (현재 디렉토리 비어 있음)
-                { type: 'app', pattern: 'src/app/**' },
+                // 새 FSD layer (Phase 0에서는 디렉토리가 아직 생성되지 않음)
                 { type: 'pages', pattern: 'src/pages/*' },
                 { type: 'widgets', pattern: 'src/widgets/*' },
                 { type: 'features', pattern: 'src/features/*' },
@@ -72,20 +71,6 @@ const eslintConfig = defineConfig([
                 {
                     default: 'disallow',
                     rules: [
-                        {
-                            from: 'app',
-                            allow: [
-                                'pages',
-                                'widgets',
-                                'features',
-                                'entities',
-                                'shared',
-                                'legacy-comp',
-                                'legacy-domain',
-                                'legacy-infra',
-                                'legacy-lib',
-                            ],
-                        },
                         {
                             from: 'pages',
                             allow: [
@@ -176,19 +161,33 @@ const eslintConfig = defineConfig([
                 'error',
                 {
                     patterns: [
+                        // features — barrel + deep path
+                        '@/features/*/model',
                         '@/features/*/model/*',
+                        '@/features/*/hooks',
                         '@/features/*/hooks/*',
+                        '@/features/*/ui',
                         '@/features/*/ui/*',
+                        '@/features/*/lib',
                         '@/features/*/lib/*',
+                        '@/features/*/api',
                         '@/features/*/api/*',
+                        // widgets — barrel + deep path
+                        '@/widgets/*/ui',
                         '@/widgets/*/ui/*',
+                        '@/widgets/*/hooks',
                         '@/widgets/*/hooks/*',
+                        '@/widgets/*/lib',
                         '@/widgets/*/lib/*',
+                        // entities — barrel + deep path (actions 제외: 'use server')
                         '@/entities/*/api',
                         '@/entities/*/api/*',
                         '@/entities/*/model',
+                        '@/entities/*/model/*',
                         '@/entities/*/lib',
                         '@/entities/*/lib/*',
+                        '@/entities/*/ui',
+                        '@/entities/*/ui/*',
                     ],
                 },
             ],
