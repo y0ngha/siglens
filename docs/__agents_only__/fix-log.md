@@ -167,10 +167,6 @@
   - Rule: MISTAKES.md Coding Paradigm #6 — Repeating identical type/logic across modules without a shared source
   - Context: `buildGateError` was moved to byokGate.ts in a previous refactor but its dependent type was left behind as a stale duplicate; removed
 
-## [PR #428 Round 16 | feat/per-stock-fear-greed-ui | 2026-05-08]
-- S1: `src/components/symbol-page/hooks/useDefaultModelId.ts` JSDoc — `'모든 분석 탭(뉴스·펀더·종합·차트 패널 내 공포지수 카드)'` → `'AI 분석 탭(뉴스, 펀더멘털, 종합)'`. fear-greed는 AI 모델이 필요 없는 순수 산출(`computeFearGreedIndex`)이라 이 hook을 사용하지 않음. NewsAugment 제거 라운드에서 잘못 갱신된 주석을 정확한 소비자 목록으로 정정.
-  - Rule: MISTAKES.md §11 — JSDoc에 명시된 소비자 목록과 실제 사용처 동기화
-- S2 (skipped — oscillation): `UseFearGreedResult`를 `domain/types.ts`로 이동 또는 inline 선언 권고. Round 15에서 duplicate type 제거를 위해 peer hook에서 import 패턴을 채택했으므로 round 16의 권고는 직전 결정과 직접 충돌. PR이 APPROVED 상태이고 reviewer 자신이 "참고만"이라 명시 → 사용자 결정으로 skip.
 
 ## [PR #428 Round 14 | feat/per-stock-fear-greed-ui | 2026-05-08]
 - B1: 4개 test 파일에서 `jest.mock`/`const` 뒤에 위치하던 import 문을 모두 최상단으로 이동. `import/first` 위반 정정. 영향 파일: `__tests__/components/chart/FearGreedHistoricalChart.test.tsx`, `__tests__/components/fear-greed/FearGreedPage.test.tsx`, `__tests__/components/symbol-page/{FearGreedCardMounted,FearGreedHeaderChipMounted}.test.tsx`. babel-jest의 `jest.mock` hoisting으로 동작은 동일.
@@ -361,10 +357,6 @@
 ## [PR #420 Round 16 | master | 2026-05-05]
 - S2 (skipped — intentional design): `registerUser.ts` DI pattern (`createTransactionalRepositories` factory) — reviewer noted "현 설계가 의도적이라면 pass". Confirmed intentional, skipped.
 
-## [Phase 7 OAuth Consent Flow | Code quality R1 | 2026-05-04]
-- Violation: route.ts cast comment inaccurate — stated narrowing was "isOAuthProvider narrows profile.provider" when actually narrowing URL param
-- Rule: Narrowing guard comments must accurately describe which variable is being constrained
-- Context: Comment should explain that isOAuthProvider checks the URL param, not a profile field.
 
 ## [Multi-domain audit + 7-task patch | Round 2 (approved) | 2026-05-07]
 - B3: `src/__tests__/components/chat/hooks/useChat.test.tsx:79` — ESLint react/display-name error: anonymous component returned from makeWrapper(). Fixed by giving it a named function declaration TestQueryWrapper.

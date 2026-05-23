@@ -209,6 +209,18 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     → Exceptions: comments explaining WHY a guard exists (e.g., "// guard against negative value which breaks downstream log calculation") are acceptable
     → Recurring: PR #420 R12 (3 comments in route.ts), current session (6+ additional removals across multiple files)
 
+15.6. Comments/JSDoc making factually inaccurate claims about the code they describe
+    → Every assertion in a comment/JSDoc (about behavior, consumers, type-system narrowing target, browser semantics, accessibility tree effects, etc.) must match the actual runtime/code reality
+    → When the implementation changes or a comment is copy-edited, re-verify the underlying claim — false WHY comments are worse than no comment at all (mislead future readers + hide regressions)
+    → Recurring patterns: misleading CSS specificity claims, JSDoc consumer lists that lag refactors, narrowing-cast comments naming the wrong variable, "flash 없음" claims that ignore non-authenticated code paths, JSX comments stating `hidden` keeps element accessible (it removes it from the a11y tree)
+    ❌ // :where() wrapper keeps specificity at 0 — actual mechanism is `:not(:focus-visible)` + `!important`
+    ❌ /** Used by 모든 분석 탭(뉴스·펀더·종합·차트 패널 내 공포지수 카드) */ — fear-greed card doesn't use this hook
+    ❌ // isOAuthProvider narrows profile.provider — actually narrows the URL param, not a profile field
+    ❌ /** AuthSessionHeader는 flash 없음 */ — guest users still see skeleton → CTA swap once
+    ❌ {/* hidden으로 숨겨 스크린리더가 대상을 찾되 시각적으로만 숨김 */} — `hidden` removes from a11y tree entirely
+    ✅ Comments either match reality exactly, or are removed and the WHY moved to commit/PR description
+    → Recurring: PR #420 Phase 7 R1, PR #428 R16 S1, PR #442 R5 S1, PR #453 R3/R4, PR #459, feat/seo-followup B5
+
 15.4. Visual section separator comments (`// ─── Title ───────────`) inside source files
     → Box-drawing characters used to "organize" sections in code are WHAT-comments in disguise (they label what's below).
     → Function/interface/type names already organize the file; section labels add visual noise that drifts whenever sections move.
