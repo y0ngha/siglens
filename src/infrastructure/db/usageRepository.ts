@@ -5,12 +5,14 @@ import {
     type UsageLogRecord,
 } from '@y0ngha/siglens-core';
 import { and, count, eq } from 'drizzle-orm';
+import { NEON_TRANSIENT_RETRY } from '@/infrastructure/db/isNeonTransientError';
 import { usageLogs } from '@/infrastructure/db/schema';
 import type { SiglensDatabase } from '@/infrastructure/db/types';
 import type {
     SiglensUsageCounts,
     SiglensUsageRepository,
 } from '@/infrastructure/db/usageCounts';
+import { withRetry } from '@/infrastructure/utils/withRetry';
 
 const EMPTY_USAGE_COUNTS: SiglensUsageCounts = {
     analysis: 0,
@@ -43,24 +45,31 @@ export class DrizzleUsageRepository implements SiglensUsageRepository {
 
     async recordUsage(input: RecordUsageInput): Promise<UsageLogRecord> {
         const occurredAt = input.occurredAt ?? new Date();
-        const [usageLog] = await this.db
-            .insert(usageLogs)
-            .values({
-                userId: input.userId ?? null,
-                ipHash: hashUsageIp(input.ipAddress, occurredAt),
-                actionType: input.actionType,
-                modelUsed: input.modelUsed,
-                date: toUtcDateString(occurredAt),
-            })
-            .returning({
-                id: usageLogs.id,
-                userId: usageLogs.userId,
-                ipHash: usageLogs.ipHash,
-                actionType: usageLogs.actionType,
-                modelUsed: usageLogs.modelUsed,
-                date: usageLogs.date,
-                createdAt: usageLogs.createdAt,
-            });
+        // Usage 로깅은 사용자에게 직접 노출되는 동작(분석/챗봇 호출 등) 직후 동기로
+        // 호출되므로 transient `fetch failed`가 그대로 에러로 노출되면 사용자가 본
+        // 작업이 실패한 것처럼 보인다. retry로 흡수해 로그가 자가 회복되게 한다.
+        const [usageLog] = await withRetry(
+            () =>
+                this.db
+                    .insert(usageLogs)
+                    .values({
+                        userId: input.userId ?? null,
+                        ipHash: hashUsageIp(input.ipAddress, occurredAt),
+                        actionType: input.actionType,
+                        modelUsed: input.modelUsed,
+                        date: toUtcDateString(occurredAt),
+                    })
+                    .returning({
+                        id: usageLogs.id,
+                        userId: usageLogs.userId,
+                        ipHash: usageLogs.ipHash,
+                        actionType: usageLogs.actionType,
+                        modelUsed: usageLogs.modelUsed,
+                        date: usageLogs.date,
+                        createdAt: usageLogs.createdAt,
+                    }),
+            NEON_TRANSIENT_RETRY
+        );
 
         return usageLog!;
     }

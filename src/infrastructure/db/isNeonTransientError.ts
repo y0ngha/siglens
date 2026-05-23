@@ -9,14 +9,45 @@ import type { WithRetryOptions } from '@/infrastructure/utils/withRetry';
  *   "Error connecting to database: TypeError: fetch failed"
  *   "Error connecting to database: …"
  *
+ * SQLSTATE codes are matched as substrings against the error message because
+ * Postgres surfaces them inline ("…code 57P01…"). The codes below cover the
+ * Neon connection-lifecycle and capacity-exhaustion classes:
+ *   - 57P01: admin_shutdown (Neon scales pooler down mid-request)
+ *   - 08006: connection_failure
+ *   - 08003: connection_does_not_exist
+ *   - 08001: sqlclient_unable_to_establish_sqlconnection
+ *   - 08004: sqlserver_rejected_establishment_of_sqlconnection
+ *   - 53300: too_many_connections (transient cap; safe to retry with backoff)
+ *
  * Permanent errors (constraint violations, undefined column, etc.) carry
- * different messages and are NOT matched here, so callers won't burn retries
- * on something that will fail identically next time.
+ * different codes/messages and are NOT matched here, so callers won't burn
+ * retries on something that will fail identically next time.
  */
 const TRANSIENT_MESSAGE_NEEDLES = [
     'Error connecting to database',
     'fetch failed',
+    '57P01',
+    '08006',
+    '08003',
+    '08001',
+    '08004',
+    '53300',
 ] as const;
+
+/**
+ * SQLSTATE codes treated as transient when surfaced on `NeonDbError.code`
+ * (the typed field) instead of embedded in the message. NeonDbError exposes
+ * `code?: string` for server-side errors; checking it directly avoids
+ * dependency on message formatting.
+ */
+const TRANSIENT_SQLSTATES = new Set([
+    '57P01',
+    '08006',
+    '08003',
+    '08001',
+    '08004',
+    '53300',
+]);
 
 /**
  * Upper bound on how many `cause` links we follow before giving up. Drizzle
@@ -42,6 +73,16 @@ function messageLooksTransient(error: Error): boolean {
     );
 }
 
+function codeLooksTransient(error: Error): boolean {
+    // Safe-cast 근거: NeonDbError 는 Error를 확장하면서 optional `code: string`을
+    // 노출한다(@neondatabase/serverless type 정의). 그러나 본 함수는 NeonDbError 인지
+    // 미확정 상태에서도 호출될 수 있으므로 정적 타입을 `code?: unknown` 으로 일단
+    // 넓힌 뒤 바로 아래에서 `typeof code === 'string'` 으로 좁힌다 — 런타임에
+    // code 가 없거나 비-문자열이면 false 로 떨어져 안전하다.
+    const code = (error as Error & { code?: unknown }).code;
+    return typeof code === 'string' && TRANSIENT_SQLSTATES.has(code);
+}
+
 /**
  * Walk the `cause` chain looking for a transient Neon HTTP driver error.
  * Drizzle wraps Neon errors in a generic `Failed query: …` Error and stashes
@@ -55,7 +96,10 @@ export function isNeonTransientError(error: unknown): boolean {
         depth < MAX_CAUSE_DEPTH && current instanceof Error;
         depth++
     ) {
-        if (isNeonError(current) && messageLooksTransient(current)) {
+        if (
+            isNeonError(current) &&
+            (messageLooksTransient(current) || codeLooksTransient(current))
+        ) {
             return true;
         }
         current = current.cause;

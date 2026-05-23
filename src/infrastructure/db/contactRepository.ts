@@ -1,5 +1,7 @@
+import { NEON_TRANSIENT_RETRY } from '@/infrastructure/db/isNeonTransientError';
 import { inquiries } from '@/infrastructure/db/schema';
 import type { SiglensDatabase } from '@/infrastructure/db/types';
+import { withRetry } from '@/infrastructure/utils/withRetry';
 
 /** Input required to create a new inquiry record. */
 export interface ContactInput {
@@ -23,10 +25,16 @@ export class DrizzleContactRepository implements ContactRepository {
 
     /** Insert the inquiry record into the database. */
     async create(input: ContactInput): Promise<void> {
-        await this.db.insert(inquiries).values({
-            title: input.title,
-            content: input.content,
-            email: input.email,
-        });
+        // 문의 제출은 사용자가 명시적으로 클릭한 직후라 실패가 즉시 화면에
+        // 노출된다. transient 실패는 retry로 흡수한다.
+        await withRetry(
+            () =>
+                this.db.insert(inquiries).values({
+                    title: input.title,
+                    content: input.content,
+                    email: input.email,
+                }),
+            NEON_TRANSIENT_RETRY
+        );
     }
 }

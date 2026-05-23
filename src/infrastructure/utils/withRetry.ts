@@ -24,6 +24,15 @@ export interface WithRetryOptions {
      * re-thrown immediately so callers see the real failure without delay.
      */
     isRetryable: (error: unknown) => boolean;
+    /**
+     * Overall budget across `fn` invocations + backoff sleeps combined,
+     * measured from the first attempt. When the next backoff sleep would push
+     * elapsed time past the deadline, `withRetry` bails out and re-throws the
+     * most recent error rather than waiting. Note this does NOT abort an
+     * in-flight `fn()` — a hanging call still blocks until it settles. Omit
+     * to disable the cap (legacy behavior).
+     */
+    totalTimeoutMs?: number;
 }
 
 /**
@@ -37,7 +46,9 @@ export async function withRetry<T>(
     fn: () => Promise<T>,
     options: WithRetryOptions
 ): Promise<T> {
-    const { maxRetries, baseDelayMs, isRetryable } = options;
+    const { maxRetries, baseDelayMs, isRetryable, totalTimeoutMs } = options;
+    const deadline =
+        totalTimeoutMs !== undefined ? Date.now() + totalTimeoutMs : Infinity;
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
         try {
             return await fn();
@@ -48,7 +59,15 @@ export async function withRetry<T>(
             }
             const exponential = baseDelayMs * 2 ** attempt;
             const jitter = Math.random() * exponential;
-            await sleep(exponential + jitter);
+            const sleepMs = exponential + jitter;
+            // 다음 backoff sleep을 마치는 시점이 deadline을 넘어서면 더 기다리지
+            // 않고 즉시 마지막 에러를 던진다. fn() 자체의 진행 중인 호출은 멈출
+            // 수 없지만, 적어도 retry sleep 으로 인한 추가 지연이 예상 예산을
+            // 초과하는 일은 막는다.
+            if (Date.now() + sleepMs >= deadline) {
+                throw error;
+            }
+            await sleep(sleepMs);
         }
     }
     // Genuinely unreachable: every iteration either returns or throws. TS

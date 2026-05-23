@@ -4,10 +4,11 @@ import {
     isNeonTransientError,
 } from '@/infrastructure/db/isNeonTransientError';
 
-function makeNeonError(message: string): NeonDbError {
+function makeNeonError(message: string, code?: string): NeonDbError {
     // `Error.name`은 lib 정의상 writable string이라 추가 캐스트 없이 직접 할당 가능.
-    const err = new Error(message);
+    const err = new Error(message) as Error & { code?: string };
     err.name = 'NeonDbError';
+    if (code !== undefined) err.code = code;
     // Cast to NeonDbError so callers receive the structural shape they expect.
     return err as unknown as NeonDbError;
 }
@@ -70,6 +71,38 @@ describe('isNeonTransientError', () => {
     it('cause 체인이 self-referential 이어도 무한 루프 없이 종료된다', () => {
         const err = new Error('outer') as Error & { cause?: unknown };
         err.cause = err;
+        expect(isNeonTransientError(err)).toBe(false);
+    });
+
+    it.each([
+        ['57P01', 'admin_shutdown'],
+        ['08006', 'connection_failure'],
+        ['08003', 'connection_does_not_exist'],
+        ['08001', 'sqlclient_unable_to_establish_sqlconnection'],
+        ['08004', 'sqlserver_rejected_establishment_of_sqlconnection'],
+        ['53300', 'too_many_connections'],
+    ])(
+        'NeonDbError.code=%s (%s) 면 transient 로 인식한다',
+        (code, _description) => {
+            const err = makeNeonError(
+                'Failed query: connection broken',
+                code
+            );
+            expect(isNeonTransientError(err)).toBe(true);
+        }
+    );
+
+    it('SQLSTATE가 메시지에만 박혀 있어도 transient 로 인식한다', () => {
+        // Postgres가 code 필드 없이 메시지로만 내려준 경우의 fallback.
+        const err = makeNeonError('terminating connection (code 57P01)');
+        expect(isNeonTransientError(err)).toBe(true);
+    });
+
+    it('permanent SQLSTATE(23505 unique_violation)은 transient 가 아니다', () => {
+        const err = makeNeonError(
+            'duplicate key value violates unique constraint',
+            '23505'
+        );
         expect(isNeonTransientError(err)).toBe(false);
     });
 });
