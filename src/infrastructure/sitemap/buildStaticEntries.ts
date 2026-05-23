@@ -1,7 +1,7 @@
 import { MS_PER_HOUR } from '@/domain/constants/time';
 import { PRIVACY_PATH, TERMS_PATH } from '@/lib/legal';
 import { SITE_BUILD_DATE, SITE_URL } from '@/lib/seo';
-import type { SitemapEntry } from './types';
+import type { SitemapEntry } from '@/infrastructure/sitemap/types';
 
 /**
  * 정적 라우트(home, market, backtesting, legal)의 sitemap 엔트리.
