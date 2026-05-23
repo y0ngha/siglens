@@ -35,16 +35,14 @@ const nextConfig: NextConfig = {
         '/**': ['./skills/**/*'],
     },
 
-    // cacheComponents (Next.js 16 PPR + 'use cache' directive) 재활성화.
-    // next@16.2.x에서는 모든 [symbol] 라우트가 "Couldn't find all resumable
-    // slots" 에러로 client fallback rendering으로 떨어져 SEO bot이 metadata를
-    // 못 보는 회귀가 있어 next@16.1.2로 pin한 상태(이슈 #439). 'use cache' /
-    // cacheLife / cacheTag 지시어도 함께 복구 — cacheComponents는 opt-in
-    // 캐싱을 강제하므로 prerender 가능한 server component는 cache 지시어가
-    // 있어야 build pass. cacheLife profile(options-market-open/closed/weekend)
-    // 도입은 다음 PR로 분리. upstream resumable slots 픽스 머지 후 16.2+
-    // 재진입 가능.
-    cacheComponents: true,
+    // cacheComponents (Next.js 16 PPR + 'use cache' directive)는 임시 비활성.
+    // 활성 상태에서 모든 [symbol] 라우트가 "Couldn't find all resumable slots"
+    // 에러로 client fallback rendering으로 떨어져 SEO bot이 metadata를 못 보는
+    // 문제가 발생했음(이슈 #439 참조). 표준 SSR로 임시 회귀 후 root cause
+    // 진단 + 안전한 fix가 마련되면 재활성화. 재활성화 시 options-market-open
+    // (stale 1m / revalidate 5m / expire 30m), options-market-closed
+    // (5m / 30m / 2h), options-weekend (1h / 6h / 1d) cacheLife profile도
+    // 함께 부활시킬 것.
 
     // Turbopack (Next.js 16 기본값이나 명시)
     turbopack: {

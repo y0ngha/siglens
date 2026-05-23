@@ -1,11 +1,6 @@
-import { cacheLife } from 'next/cache';
+// cacheComponents 비활성 기간 동안 'use cache' directive 제거. 단순 동기 렌더로
+// 충분(year는 매 요청마다 server time으로 평가, 비용 무시할 수준).
 
-// 'use cache' 안에서 new Date()를 호출하지만 cacheLife('days')로 캐시 기간을
-// 일 단위로 묶어두면 재검증 시점에만 year가 다시 평가되어 결정적으로 동작한다.
-// year는 연 1회만 바뀌므로 일 단위 revalidate면 cross-year boundary도 24시간
-// 이내에 자동 반영된다. cacheComponents non-determinism 경고를 피하는 의도.
-export async function CurrentYear() {
-    'use cache';
-    cacheLife('days');
+export function CurrentYear() {
     return <>{new Date().getFullYear()}</>;
 }

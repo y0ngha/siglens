@@ -69,7 +69,6 @@
 
     /* Brand — Social login */
     --color-brand-kakao: #fee500;
-
     /* font stack 순서: Geist(라틴)가 한글 글리프를 못 가지므로 자동으로
        다음 폰트(Pretendard, self-host)로 fallback된다. next/font/local이
        --font-pretendard CSS 변수를 주입하고 size-adjust를 자동 측정해
@@ -78,7 +77,7 @@
        디바이스마다 typography가 달라지고 CLS도 발생했다. */
     --font-sans:
         var(--font-geist-sans), var(--font-pretendard), -apple-system,
-        blinkmacsystemfont, system-ui, 'Helvetica Neue', arial, sans-serif;
+        BlinkMacSystemFont, system-ui, 'Helvetica Neue', Arial, sans-serif;
     --font-mono: var(--font-geist-mono);
 }
 

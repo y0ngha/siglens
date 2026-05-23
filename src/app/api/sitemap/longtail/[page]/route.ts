@@ -5,6 +5,9 @@ import type { SitemapEntry } from '@/infrastructure/sitemap/types';
 import { toUrlSetXml } from '@/infrastructure/sitemap/xml';
 import { SITE_BUILD_DATE, SITE_URL } from '@/lib/seo';
 
+// DB 의존(no-store fetch)이라 force-dynamic. trafic 보호는 CDN cache에 위임.
+export const dynamic = 'force-dynamic';
+
 interface RouteContext {
     params: Promise<{ page: string }>;
 }

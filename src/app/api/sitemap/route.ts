@@ -5,6 +5,10 @@ import { SITEMAP_MAX_URLS_PER_FILE } from '@/infrastructure/sitemap/types';
 import { toSitemapIndexXml } from '@/infrastructure/sitemap/xml';
 import { SITE_BUILD_DATE, SITE_URL } from '@/lib/seo';
 
+// loadLongTailTickers는 DB 조회(no-store fetch)라 빌드 시점 prerender 불가.
+// force-dynamic + CDN 1h cache로 처리.
+export const dynamic = 'force-dynamic';
+
 /**
  * 메인 sitemap은 sitemapindex로 동작한다 — sub-sitemap 여러 개를 가리키는
  * 메타 파일. 단일 urlset에 모든 URL을 박는 기존 방식은 sitemap.org 50,000개
