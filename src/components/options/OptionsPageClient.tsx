@@ -48,17 +48,14 @@ export function OptionsPageClient({
     snapshot,
     slots,
 }: OptionsPageClientProps) {
+    // 훅 선언 순서(CONVENTIONS.md / MISTAKES.md §17):
+    //   useState/useRef → 사용자 정의 훅 → useMemo/useCallback → derived → handlers → useEffect.
+    // 모든 useState 와 그에 직결된 useEffectEvent setter 를 사용자 정의 훅 호출
+    // 이전에 모아 둔다.
     const [expirationDate, setExpirationDate] =
         useState<OptionsExpirationSelector>(
             () => slots.find(isSlotMapping)?.expirationDate ?? 'all'
         );
-    const { modelId } = useSymbolModel();
-    const validSlots = useMemo(() => slots.filter(isSlotMapping), [slots]);
-    // 단일 호출로 (chain, metrics)을 산출하고 세 자식에 prop-drill 한다 —
-    // 이전엔 OptionsMetricsRow / OpenInterestChart / OptionsChainTable이
-    // 각자 pickActiveChain + summarizeChainForLlm을 동일 입력으로 3번
-    // 돌렸다. chip 전환 시마다 같은 계산이 세 번 반복되던 비용을 제거한다.
-    const chainMetrics = useOptionsChainMetrics(snapshot, expirationDate);
     // oiStale 평가는 client-only.
     //   SSR(또는 initial client render)에서 `new Date()`로 평가하면 정규장
     //   boundary를 가로지르는 사용자에게 서버/클라이언트 결과가 어긋나
@@ -75,9 +72,13 @@ export function OptionsPageClient({
             setNow(new Date());
         });
     });
-    // 훅 선언 순서(CONVENTIONS.md / MISTAKES.md §17):
-    //   useState → 사용자 정의 훅 → useMemo/useCallback → derived → handlers → useEffect.
-    // oiStale은 useMemo이므로 useEffect 전에 선언해야 한다.
+    const { modelId } = useSymbolModel();
+    const validSlots = useMemo(() => slots.filter(isSlotMapping), [slots]);
+    // 단일 호출로 (chain, metrics)을 산출하고 세 자식에 prop-drill 한다 —
+    // 이전엔 OptionsMetricsRow / OpenInterestChart / OptionsChainTable이
+    // 각자 pickActiveChain + summarizeChainForLlm을 동일 입력으로 3번
+    // 돌렸다. chip 전환 시마다 같은 계산이 세 번 반복되던 비용을 제거한다.
+    const chainMetrics = useOptionsChainMetrics(snapshot, expirationDate);
     const oiStale = useMemo(
         () =>
             now !== null &&

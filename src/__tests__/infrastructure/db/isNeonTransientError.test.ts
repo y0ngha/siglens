@@ -124,6 +124,6 @@ describe('NEON_TRANSIENT_RETRY', () => {
         expect(NEON_TRANSIENT_RETRY.isRetryable).toBe(isNeonTransientError);
         // 최악 시 backoff sleeps: 200+400+800 = 1.4s + 1×jitter ≈ 2.8s.
         // 5s budget은 fn() 자체 시간을 포함해도 Vercel 10s 안에 안전하게 들어간다.
-        expect(NEON_TRANSIENT_RETRY.totalTimeoutMs).toBe(5000);
+        expect(NEON_TRANSIENT_RETRY.backoffBudgetMs).toBe(5000);
     });
 });

@@ -369,9 +369,9 @@ describe('OPTIONS_SNAPSHOT_TTL_SECONDS', () => {
     it('시장 시간대별 TTL은 open < closed < weekend 순으로 늘어난다', () => {
         // freshness vs Yahoo 호출량 trade-off — 정규장 중에는 분 단위로 짧게,
         // 주말에는 시간 단위로 길게 캐시하는 정책이 invariant.
-        expect(OPTIONS_SNAPSHOT_TTL_SECONDS['options-market-open']).toBeLessThan(
-            OPTIONS_SNAPSHOT_TTL_SECONDS['options-market-closed']
-        );
+        expect(
+            OPTIONS_SNAPSHOT_TTL_SECONDS['options-market-open']
+        ).toBeLessThan(OPTIONS_SNAPSHOT_TTL_SECONDS['options-market-closed']);
         expect(
             OPTIONS_SNAPSHOT_TTL_SECONDS['options-market-closed']
         ).toBeLessThan(OPTIONS_SNAPSHOT_TTL_SECONDS['options-weekend']);

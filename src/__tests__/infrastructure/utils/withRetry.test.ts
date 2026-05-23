@@ -126,9 +126,9 @@ describe('withRetry', () => {
         expect(sleepMock).toHaveBeenCalledWith(300);
     });
 
-    it('totalTimeoutMs 초과 시 다음 sleep 호출 없이 마지막 에러를 던진다', async () => {
+    it('backoffBudgetMs 초과 시 다음 sleep 호출 없이 마지막 에러를 던진다', async () => {
         // Math.random=0 + baseDelayMs=200 ⇒ 첫 sleep=200ms.
-        // totalTimeoutMs=50으로 두면 deadline이 즉시 지나 sleep 없이 throw.
+        // backoffBudgetMs=50으로 두면 deadline이 즉시 지나 sleep 없이 throw.
         const firstError = new Error('attempt-0');
         const fn = jest.fn().mockRejectedValueOnce(firstError);
 
@@ -137,7 +137,7 @@ describe('withRetry', () => {
                 maxRetries: 3,
                 baseDelayMs: 200,
                 isRetryable: () => true,
-                totalTimeoutMs: 50,
+                backoffBudgetMs: 50,
             })
         ).rejects.toBe(firstError);
         expect(fn).toHaveBeenCalledTimes(1);
@@ -145,7 +145,7 @@ describe('withRetry', () => {
         expect(sleepMock).not.toHaveBeenCalled();
     });
 
-    it('totalTimeoutMs 가 충분하면 정상 backoff 후 성공한다', async () => {
+    it('backoffBudgetMs 가 충분하면 정상 backoff 후 성공한다', async () => {
         // 첫 실패 후 200ms sleep까지는 budget 1초 안에 충분히 들어간다.
         const fn = jest
             .fn()
@@ -156,7 +156,7 @@ describe('withRetry', () => {
             maxRetries: 3,
             baseDelayMs: 200,
             isRetryable: () => true,
-            totalTimeoutMs: 1000,
+            backoffBudgetMs: 1000,
         });
 
         expect(result).toBe('ok');

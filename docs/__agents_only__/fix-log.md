@@ -481,3 +481,11 @@
 - Violation: WHY 주석에 WHAT(타입 선언이 자체 표현하는 의미)이 섞임
 - Rule: MISTAKES.md §15.3 — WHAT 주석 금지 (식별자/타입이 이미 표현하면 코멘트로 반복하지 않음)
 - Context: Suggestion S-1 — round 3에서 추가한 `let cachedRedis: Redis | null | undefined` 위 주석의 후반부 "Redis 타입을 직접 쓰고 env 미설정 시 null로 fallback"이 declaration과 중복. 패턴 cross-reference(lazy-singleton) WHY만 남기고 축약.
+
+## [PR #456 Round 2 | fix/pre-deploy-cleanup-v0.11.17 | 2026-05-23]
+- S1: `src/infrastructure/utils/withRetry.ts` — 파라미터명 `totalTimeoutMs` 오해의 소지 (실제로는 backoff sleep budget만 제한; 실행 중 `fn()`은 abort 안 됨, JSDoc에 기재). `backoffBudgetMs`로 전역 rename (interface, impl, NEON_TRANSIENT_RETRY usage, test assertions).
+  - Rule: 파라미터 이름은 control-flow 결과를 정확히 반영해야 함 (MISTAKES.md Design §4.6 개념)
+  - Context: Suggestion — 함수 이름/도메인 설명과 실제 동작의 gap을 파라미터명으로 해소. 호출부에서 의도가 명확해짐.
+- S2: `src/infrastructure/options/optionsDataCache.ts` — `1 * SECONDS_PER_MINUTE` 중복 multiplier (MISTAKES.md §15 readability gradient).
+  - Rule: MISTAKES.md §15 — 상수와 표시 텍스트의 단일 source.
+  - Context: Suggestion — `SECONDS_PER_MINUTE`로 단순화.

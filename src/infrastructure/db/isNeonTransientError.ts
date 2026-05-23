@@ -125,11 +125,12 @@ export function isNeonTransientError(error: unknown): boolean {
  * 200/400/800ms exponential backoff + jitter absorb the typical transient
  * `fetch failed` window while staying well inside serverless-function budgets.
  *
- * `totalTimeoutMs: 5000` caps the cumulative backoff sleep budget — if `fn()`
- * itself runs slow and the elapsed time approaches 5s, withRetry bails out
- * rather than queueing more sleeps. Maximum sleep cap is ~2.8s (200+400+800 +
- * up to 1× jitter), so this budget covers the worst case comfortably while
- * leaving headroom inside Vercel serverless 10s function limits.
+ * `backoffBudgetMs: 5000` caps the cumulative backoff sleep budget — if
+ * `fn()` itself runs slow and the elapsed time approaches 5s, withRetry
+ * bails out rather than queueing more sleeps. Maximum sleep cap is ~2.8s
+ * (200+400+800 + up to 1× jitter), so this budget covers the worst case
+ * comfortably while leaving headroom inside Vercel serverless 10s function
+ * limits.
  *
  * Import this constant from every `*Repository.upsert*` site so the retry
  * behavior stays uniform across repositories.
@@ -138,5 +139,5 @@ export const NEON_TRANSIENT_RETRY: WithRetryOptions = {
     maxRetries: 3,
     baseDelayMs: 200,
     isRetryable: isNeonTransientError,
-    totalTimeoutMs: 5000,
+    backoffBudgetMs: 5000,
 };

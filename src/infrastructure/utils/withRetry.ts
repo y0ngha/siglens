@@ -25,14 +25,16 @@ export interface WithRetryOptions {
      */
     isRetryable: (error: unknown) => boolean;
     /**
-     * Overall budget across `fn` invocations + backoff sleeps combined,
-     * measured from the first attempt. When the next backoff sleep would push
-     * elapsed time past the deadline, `withRetry` bails out and re-throws the
-     * most recent error rather than waiting. Note this does NOT abort an
-     * in-flight `fn()` — a hanging call still blocks until it settles. Omit
-     * to disable the cap (legacy behavior).
+     * Budget for *backoff sleeps* (NOT individual `fn()` runtime), measured
+     * from the first attempt. When the next backoff sleep would push elapsed
+     * time past the deadline, `withRetry` bails out and re-throws the most
+     * recent error rather than waiting. A hanging in-flight `fn()` is NOT
+     * aborted — that would require an AbortSignal which we don't thread
+     * through. The name reflects this scope: it caps how long retry-related
+     * waiting can grow, not the overall function lifetime. Omit to disable
+     * the cap (legacy behavior).
      */
-    totalTimeoutMs?: number;
+    backoffBudgetMs?: number;
 }
 
 /**
@@ -46,9 +48,9 @@ export async function withRetry<T>(
     fn: () => Promise<T>,
     options: WithRetryOptions
 ): Promise<T> {
-    const { maxRetries, baseDelayMs, isRetryable, totalTimeoutMs } = options;
+    const { maxRetries, baseDelayMs, isRetryable, backoffBudgetMs } = options;
     const deadline =
-        totalTimeoutMs !== undefined ? Date.now() + totalTimeoutMs : Infinity;
+        backoffBudgetMs !== undefined ? Date.now() + backoffBudgetMs : Infinity;
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
         try {
             return await fn();

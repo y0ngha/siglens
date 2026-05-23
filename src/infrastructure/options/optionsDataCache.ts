@@ -33,7 +33,7 @@ export const OPTIONS_SNAPSHOT_TTL_SECONDS: Record<
     OptionsCacheLifeProfile,
     number
 > = {
-    'options-market-open': 1 * SECONDS_PER_MINUTE,
+    'options-market-open': SECONDS_PER_MINUTE,
     'options-market-closed': 30 * SECONDS_PER_MINUTE,
     'options-weekend': 4 * SECONDS_PER_HOUR,
 };
@@ -158,7 +158,8 @@ export const fetchOptionsSnapshot = cache(
 
         // null은 캐시하지 않음 — 위 docstring 참고.
         if (fresh !== null && redis !== null) {
-            const ttl = OPTIONS_SNAPSHOT_TTL_SECONDS[getOptionsCacheLifeProfile()];
+            const ttl =
+                OPTIONS_SNAPSHOT_TTL_SECONDS[getOptionsCacheLifeProfile()];
             try {
                 await redis.set(key, fresh, { ex: ttl });
             } catch (error) {
