@@ -20,8 +20,6 @@
   - Rule: MISTAKES.md §1 — Identical logic 3+ times → extract to helper.
 - B9 (Opus R1): `src/components/options/OptionsAiAnalysisStaleNotice.tsx:4` — `<div aria-labelledby>` lacks implicit landmark role; sibling component uses `<section>`. Inconsistent ARIA roles across related components.
   - Rule: Components §9 / Accessibility — Related components should use consistent ARIA role patterns (section vs div).
-- B10 (Opus R3): `src/infrastructure/seo/getTodayIsoDay.ts` (newly created) — `new Date()` side effect placed in infrastructure layer. Violated lib/CLAUDE.md purity rule when previously in lib. **Regression analysis**: Infrastructure correctly owns side effects; lib layer must remain pure. Placement corrected in this round.
-  - Rule: MISTAKES.md Architecture § / lib/CLAUDE.md — Side effects (new Date(), fetch, fs) belong only in infrastructure; lib must be pure utilities + constants only.
 - B11 (Opus R4): Import order broken in `src/app/[symbol]/news/page.tsx` — infrastructure import after lib import. ESLint import order enforces: domain/types → lib → infrastructure → app.
   - Rule: CONVENTIONS.md ESLint import/order — infrastructure imports must not precede lib imports.
 - S1 (Opus R3): Added unit test `src/__tests__/infrastructure/seo/getTodayIsoDay.test.ts` with 5 test cases using `jest.useFakeTimers()` (matches MISTAKES.md Tests §12 requirement for time-dependent functions).
@@ -180,9 +178,6 @@
 - S2: `useFearGreedFromSymbol` shared hook 신규 추출. `FearGreedPage`, `FearGreedCardMounted`, `FearGreedHeaderChipMounted` 3곳의 동일 hook 체인(useBars + useFearGreed + DEFAULT_TIMEFRAME)을 단일 호출로 단순화. `FearGreedPage.test.tsx` mock도 `useFearGreedFromSymbol`로 교체.
   - Rule: MISTAKES.md §1 — 동일 패턴 3곳 추출 임계값 도달
 
-## [PR #428 Round 12 | feat/per-stock-fear-greed-ui | 2026-05-08]
-- B1: `SnapshotConfidence` 타입을 `src/lib/fearGreedLabels.ts` → `src/domain/types.ts`로 이동. lib/CLAUDE.md "타입은 lib에 두지 않는다" 규칙 위반(향후 hook이 lib에서 타입을 import하는 드리프트 통로 차단). `lib/fearGreedLabels.ts`는 `@/domain/types`에서 import.
-  - Rule: lib/CLAUDE.md — cross-layer 공유 타입은 `domain/types.ts`에만
 ## [PR #428 SEO sweep | feat/per-stock-fear-greed-ui | 2026-05-08]
 - C1: `src/lib/seo.ts` — fear-greed 신규 axis가 사이트 전반 SEO 표면(SITE_DESCRIPTION, ROOT_KEYWORDS, sibling helper)에 반영되지 않은 점 정리. SITE_DESCRIPTION 4축 확장(매수 분위기 절). ROOT_KEYWORDS에 공포 탐욕 지수, 투자 심리 지표, 주식 매수 분위기, Fear Greed Index, 뉴스 분위기, 주식 호재/악재/이슈, 실적 발표/일정 등 9개 추가, '뉴스 sentiment' 제거. news description은 sentiment → 호재 분위기, 이슈, 소식, 분석 의견 자연어 재작성, 어닝/실적 동반. fear-greed description은 jargon 제거 후 sibling 톤(매수세가 강한지 약한지 궁금할 때)으로 재작성. overall description에 단기 매수 분위기 절 추가. 5개 sibling title의 `·` 모두 자연어 punctuation(쉼표/와)로 교체.
   - Rule: 사용자 톤 가이드(자연어, 사람이 쓴 친근한 화법) + 가운뎃점은 일반 검색자가 입력하지 않는 punctuation.
@@ -402,9 +397,6 @@
 - Violation: `jest.mock(...)` 호출이 정적 `import` 사이에 끼어 있어 `import/first` ESLint 규칙 위반
 - Rule: ESLint `import/first` — 모든 정적 import는 파일 최상단에 연속으로 위치해야 하며, 그 사이에 다른 statement가 끼어들 수 없음. `jest.mock`은 호이스트되므로 import보다 위에 두는 게 안전
 - Context: Blocker — `src/__tests__/lib/withRetry.test.ts`에 `import { withRetry } ... → jest.mock(...) → import { sleep } ...` 순서. `jest.mock`을 파일 최상단으로 옮기고 두 import를 하나로 묶음.
-- Violation: 인프라성 retry 헬퍼(`withRetry`)가 `src/lib/`에 배치 — sleep 타이밍·재시도 정책 등 infrastructure 관심사인데도 UI utility 전용 레이어에 거주
-- Rule: ARCHITECTURE.md / lib CLAUDE.md — `lib/`는 외부 UI utility wrapper(clsx, tailwind-merge 등)와 순수 상수/팩토리만 허용. retry/backoff 같은 infrastructure 유틸은 `infrastructure/utils/`로 배치
-- Context: Suggestion — `src/lib/withRetry.ts` → `src/infrastructure/utils/withRetry.ts`, 테스트 동반 이동. 6개 repository + isNeonTransientError import 경로 갱신.
 - Violation: `Pick<T, K>`로 `T`의 *모든* 키를 지정 — 결과 타입이 `T`와 동일해 정보 손실 없이 boilerplate만 추가
 - Rule: TypeScript 타입 표현 최소성 — `Pick<T, 'a' | 'b' | 'c'>`가 `T = { a; b; c }`와 같은 형태라면 그냥 `T`로 표기. `Pick`은 *일부 키만* 선택할 때 의미가 있음
 - Context: Suggestion — `NEON_TRANSIENT_RETRY: Pick<WithRetryOptions, 'maxRetries' | 'baseDelayMs' | 'isRetryable'>` 가 `WithRetryOptions`의 모든 필드와 동일. `: WithRetryOptions` 로 단순화.
@@ -490,6 +482,21 @@
   - Rule: MISTAKES.md §15 — 상수와 표시 텍스트의 단일 source.
   - Context: Suggestion — `SECONDS_PER_MINUTE`로 단순화.
 
+## [PR-A SEO followup | worktree-agent-a1d062edf1e93c4a3 | 2026-05-23]
+- B1 (Sonnet R1): Subset font unicode range missing 14+ UI glyphs (arrows, geometric shapes, ⚠, ✓✕✗, ⓘ) — caused OS-font fallback / tofu boxes on devices without matching system fonts.
+  - Rule: Font subsetting — When subsetting a font, grep the actual codebase for non-ASCII glyphs in JSX/strings before deciding unicode ranges. Don't rely on intuition about "common" symbols.
+- S1 (Sonnet R1): Subset range comment misleadingly claimed "한글 자모" was included but actual cmap had 0 glyphs in U+1100-11FF (only Hangul Compatibility Jamo U+3130-318F).
+  - Rule: MISTAKES.md §15.3 — WHAT-style comments listing technical details (unicode ranges) must be verified against the actual artifact (cmap inspection via fontTools).
+- S2 (Sonnet R1): Font file placed under `public/fonts/` instead of colocated `src/app/fonts/` — risks dual-serving (both /fonts/ URL and Next.js fingerprinted URL).
+  - Rule: Next.js font asset placement — with next/font/local, colocate font assets next to the consumer (src/app/fonts/) per the official Next.js pattern, not under public/.
+
+## [PR #458 | worktree-agent-ae1c225912b319b47 | 2026-05-23]
+- Violation: × (U+00D7 MULTIPLICATION SIGN) vs ✕ (U+2715 MULTIPLICATION X) 혼용 — close 버튼 character 일관성 깨짐
+- Rule: UI consistency — 같은 의미(닫기/제거)의 유사 글리프는 코드베이스 전반에서 통일
+- Context: SymbolSearchPanel + IosInstallModal + PwaBanner는 U+00D7 사용, chat 컴포넌트는 U+2715 사용 → ✕(U+2715)로 통일
+- Violation: JSX 주석에 WHAT 첫 문장 3건 — "Auth header chip displays the brand mark at 32×32." / "Display size is 24×24." / "Link uses min-h-6 ... button uses h-6 w-6 ... 24×24 box with flex centering"
+- Rule: MISTAKES.md §15.5 — JSX 주석은 WHY만 남기고 WHAT은 className/props에서 자명한 경우 제거
+- Context: review-agent round 2 통과 후 외부 reviewer (claude bot) 라운드에서 WHAT-style 주석으로 재지적 — 첫 문장만 정확히 trim하고 비직관적 시각 동작 WHY는 보존
 ## [PR #457 | worktree-agent-a43a5be58b9f76809 | 2026-05-23]
 - Violation: `@next/bundle-analyzer` (^16.2.6) version drifted from `next` (16.2.0)
 - Rule: Next.js convention — `@next/*` packages should match `next` version

@@ -32,7 +32,7 @@ export function BacktestHero({ meta }: BacktestHeroProps) {
             <h1 className="text-secondary-100 mb-2 text-xl font-bold text-balance">
                 Siglens가 얼마나 정확한가요?
             </h1>
-            <p className="text-secondary-400 mb-5 text-xs leading-relaxed">
+            <p className="text-secondary-400 mb-5 text-sm leading-relaxed">
                 실제 시장 데이터로 검증한 백테스트 결과예요.
                 <br />
                 지금 Siglens가 제공하는 AI 분석 기능을 그대로 과거에 적용했을 때

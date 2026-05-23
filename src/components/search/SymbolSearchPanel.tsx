@@ -26,12 +26,18 @@ export function SymbolSearchPanel({ className }: SymbolSearchPanelProps) {
                     {recentSearches.map(ticker => (
                         <span
                             key={ticker}
-                            className="border-primary-600/30 bg-primary-600/5 text-secondary-200 hover:border-primary-500/60 hover:text-primary-300 inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs transition-colors"
+                            className="border-primary-600/30 bg-primary-600/5 text-secondary-200 hover:border-primary-500/60 hover:text-primary-300 inline-flex touch-manipulation items-center gap-1 rounded-full border pr-1 pl-3 text-xs transition-colors"
                         >
+                            {/*
+                                a11y target-size: WCAG 2.5.8 requires interactive
+                                targets ≥ 24×24 CSS px. The ✕ button's visible
+                                glyph stays small because it inherits text-xs
+                                sizing inside the 24×24 flex box.
+                            */}
                             <Link
                                 href={`/${ticker}`}
                                 onClick={() => addSearch(ticker)}
-                                className="focus-visible:ring-primary-500 rounded focus-visible:ring-1 focus-visible:outline-none"
+                                className="focus-visible:ring-primary-500 inline-flex min-h-6 items-center rounded py-1.5 focus-visible:ring-1 focus-visible:outline-none"
                             >
                                 {ticker}
                             </Link>
@@ -39,9 +45,9 @@ export function SymbolSearchPanel({ className }: SymbolSearchPanelProps) {
                                 type="button"
                                 aria-label={`${ticker} 최근 검색에서 제거`}
                                 onClick={() => removeSearch(ticker)}
-                                className="text-secondary-500 hover:text-secondary-100 leading-none"
+                                className="text-secondary-500 hover:text-secondary-100 focus-visible:ring-primary-500 inline-flex h-6 w-6 items-center justify-center rounded-full leading-none focus-visible:ring-1 focus-visible:outline-none"
                             >
-                                ×
+                                ✕
                             </button>
                         </span>
                     ))}

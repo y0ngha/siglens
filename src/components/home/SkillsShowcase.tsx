@@ -127,7 +127,7 @@ function SkillCard({ skill }: SkillCardProps) {
                     </span>
                 )}
             </div>
-            <p className="text-secondary-400 mb-3 line-clamp-2 text-xs leading-relaxed">
+            <p className="text-secondary-400 mb-3 line-clamp-2 text-sm leading-relaxed">
                 {skill.description}
             </p>
             <div className="flex items-center gap-2">
