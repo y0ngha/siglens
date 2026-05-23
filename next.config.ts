@@ -1,4 +1,10 @@
 import type { NextConfig } from 'next';
+import bundleAnalyzer from '@next/bundle-analyzer';
+
+// ANALYZE=true 시에만 활성화. 일반 dev/build에는 영향 없음.
+const withBundleAnalyzer = bundleAnalyzer({
+    enabled: process.env.ANALYZE === 'true',
+});
 
 const nextConfig: NextConfig = {
     allowedDevOrigins: ['172.30.1.26'],
@@ -86,4 +92,4 @@ const nextConfig: NextConfig = {
     ],
 };
 
-export default nextConfig;
+export default withBundleAnalyzer(nextConfig);
