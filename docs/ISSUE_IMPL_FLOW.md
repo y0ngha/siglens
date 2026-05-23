@@ -37,20 +37,24 @@ Use this value directly in all `gh` commands.
 Always read (targeted):
 - `docs/MISTAKES.md` — read only the sections relevant to the task scope:
 
-| Modified layer | MISTAKES.md sections to read |
+| Modified area | MISTAKES.md sections to read |
 |---|---|
-| domain/ | Coding Paradigm, TypeScript, Domain Functions, Pure Function Contracts |
-| infrastructure/ | Coding Paradigm, TypeScript |
-| components/ | Coding Paradigm, Components, Design & Cohesion |
-| components/chart/ | (above) + Lightweight Charts |
-| \_\_tests\_\_/ | Tests |
+| Indicator calculations, signal logic, candle patterns, or prompt builders | Coding Paradigm, Domain Functions |
+| UI components (.tsx) | Components |
+| TypeScript type definitions | TypeScript |
+| Test files | Tests |
+| SEO / structured data | SEO & Semantic Markup |
+| Accessibility / ARIA | Accessibility (WAI-ARIA) |
+| All other changes | Coding Paradigm (general) |
 
-Multiple layers → read the union of their sections.
+Determine the area by reading the diff content — do not match on concrete directory paths (src/domain/, src/infrastructure/). FSD migration is in progress.
+
+Multiple areas → read the union of their sections.
 
 Additional documents by scope:
-- domain/ related → `docs/DOMAIN.md` + `docs/ARCHITECTURE.md`
-- infrastructure/ → `docs/API.md` + `docs/ARCHITECTURE.md`
-- components/ → `docs/DESIGN.md` + `docs/ARCHITECTURE.md`
+- Indicator / signal / candle pattern / prompt logic → `docs/DOMAIN.md` + `docs/ARCHITECTURE.md`
+- External API integration → `docs/API.md` + `docs/ARCHITECTURE.md`
+- UI components → `docs/DESIGN.md` + `docs/ARCHITECTURE.md`
 - Layer structure check needed → `docs/ARCHITECTURE.md`
 
 Read existing similar implementations first for pattern recognition:
