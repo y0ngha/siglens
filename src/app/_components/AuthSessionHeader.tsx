@@ -14,17 +14,17 @@ import { AUTH_HINT_COOKIE_NAME } from '@/lib/auth/cookieNames';
  * 이 컴포넌트를 <Suspense>로 감싸 layout 자체는 static-eligible 상태를
  * 유지하면서, header만 per-request로 hydration 되도록 한다.
  *
- * 두 단계 Suspense로 header flash를 원천 제거한다.
+ * 두 단계 Suspense로 **내부 fallback flash**(skeleton → 잘못 추정한 상태 →
+ * 정답으로 교체되는 깜빡임)를 제거한다. 외부 fallback(layout.tsx의 skeleton)은
+ * 정적 셸에 포함되어 게스트·로그인 사용자 모두에게 한 번 보였다가 본 컴포넌트
+ * 결과로 교체된다 — 이 부분은 PPR 셸 구조상 불가피한 1회 swap이다.
  *
  * 1단계(AuthSessionHeader 본체): hint 쿠키만 읽는다 — I/O 없음, 거의 즉시 완료.
- *    → 쿠키 있음: 내부 fallback을 skeleton으로 설정 (로그인 상태 힌트)
- *    → 쿠키 없음: 내부 fallback을 로그인/회원가입으로 설정 (이미 정답, flash 없음)
+ *    → 쿠키 있음: 내부 fallback을 skeleton(로그인 상태 추정)으로 설정
+ *    → 쿠키 없음: 내부 fallback을 로그인/회원가입 CTA로 설정 (이미 정답, 내부 flash 없음)
  *
  * 2단계(HeaderWithUser): DB 세션 조회 — blocking 작업이므로 Suspense 안에 격리.
  *    → 완료 후 실제 auth 상태로 교체.
- *
- * 외부 Suspense(layout.tsx의 skeleton)는 hint 쿠키 읽기가 완료될 때까지만
- * 표시되며 cookies()는 메모리 조회라 실질적으로 비가시 구간이다.
  */
 export async function AuthSessionHeader(): Promise<ReactNode> {
     const cookieStore = await cookies();
