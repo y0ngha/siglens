@@ -191,16 +191,14 @@ describe('랜딩 ?q= redirect — proxy가 page.tsx 대신 처리 (ISR 보존)',
         expect((calledUrl as URL).pathname).toBe('/AAPL');
     });
 
-    it.each([
-        '/?q=invalidticker123',
-        '/?q=',
-        '/?q=TOOLONGTICKER',
-        '/?q=123',
-    ])('유효하지 않은 ticker %s 는 fall through (next())', input => {
-        proxy(makeRequest(undefined, input));
-        expect(mockRedirect).not.toHaveBeenCalled();
-        expect(mockNext).toHaveBeenCalledTimes(1);
-    });
+    it.each(['/?q=invalidticker123', '/?q=', '/?q=TOOLONGTICKER', '/?q=123'])(
+        '유효하지 않은 ticker %s 는 fall through (next())',
+        input => {
+            proxy(makeRequest(undefined, input));
+            expect(mockRedirect).not.toHaveBeenCalled();
+            expect(mockNext).toHaveBeenCalledTimes(1);
+        }
+    );
 
     it('?q=가 없는 / 는 fall through (next())', () => {
         proxy(makeRequest(undefined, '/'));
