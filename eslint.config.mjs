@@ -1,6 +1,7 @@
 import { defineConfig, globalIgnores } from 'eslint/config';
 import nextVitals from 'eslint-config-next/core-web-vitals';
 import nextTs from 'eslint-config-next/typescript';
+import boundaries from 'eslint-plugin-boundaries';
 
 const eslintConfig = defineConfig([
     ...nextVitals,
@@ -42,6 +43,153 @@ const eslintConfig = defineConfig([
                     varsIgnorePattern: '^_',
                     caughtErrorsIgnorePattern: '^_',
                     destructuredArrayIgnorePattern: '^_',
+                },
+            ],
+        },
+    },
+    {
+        plugins: { boundaries },
+        settings: {
+            'boundaries/elements': [
+                // 새 FSD layer (현재 디렉토리 비어 있음)
+                { type: 'app', pattern: 'src/app/**' },
+                { type: 'pages', pattern: 'src/pages/*' },
+                { type: 'widgets', pattern: 'src/widgets/*' },
+                { type: 'features', pattern: 'src/features/*' },
+                { type: 'entities', pattern: 'src/entities/*' },
+                { type: 'shared', pattern: 'src/shared/**' },
+                // 옛 layer (Phase 1~9 동안 점진 제거)
+                { type: 'legacy-app', pattern: 'src/app/**' },
+                { type: 'legacy-comp', pattern: 'src/components/**' },
+                { type: 'legacy-domain', pattern: 'src/domain/**' },
+                { type: 'legacy-infra', pattern: 'src/infrastructure/**' },
+                { type: 'legacy-lib', pattern: 'src/lib/**' },
+            ],
+        },
+        rules: {
+            'boundaries/element-types': [
+                'error',
+                {
+                    default: 'disallow',
+                    rules: [
+                        {
+                            from: 'app',
+                            allow: [
+                                'pages',
+                                'widgets',
+                                'features',
+                                'entities',
+                                'shared',
+                                'legacy-comp',
+                                'legacy-domain',
+                                'legacy-infra',
+                                'legacy-lib',
+                            ],
+                        },
+                        {
+                            from: 'pages',
+                            allow: [
+                                'widgets',
+                                'features',
+                                'entities',
+                                'shared',
+                                'legacy-comp',
+                                'legacy-domain',
+                                'legacy-infra',
+                                'legacy-lib',
+                            ],
+                        },
+                        {
+                            from: 'widgets',
+                            allow: [
+                                'features',
+                                'entities',
+                                'shared',
+                                'legacy-comp',
+                                'legacy-domain',
+                                'legacy-infra',
+                                'legacy-lib',
+                            ],
+                        },
+                        {
+                            from: 'features',
+                            allow: [
+                                'entities',
+                                'shared',
+                                'legacy-domain',
+                                'legacy-infra',
+                                'legacy-lib',
+                            ],
+                        },
+                        {
+                            from: 'entities',
+                            allow: [
+                                'shared',
+                                'legacy-domain',
+                                'legacy-infra',
+                                'legacy-lib',
+                            ],
+                        },
+                        { from: 'shared', allow: ['shared'] },
+                        // 옛 layer 간 의존: 현재 코드 그대로 허용
+                        {
+                            from: 'legacy-app',
+                            allow: [
+                                'legacy-comp',
+                                'legacy-domain',
+                                'legacy-infra',
+                                'legacy-lib',
+                                'shared',
+                            ],
+                        },
+                        {
+                            from: 'legacy-comp',
+                            allow: [
+                                'legacy-domain',
+                                'legacy-infra',
+                                'legacy-lib',
+                                'shared',
+                            ],
+                        },
+                        {
+                            from: 'legacy-domain',
+                            allow: ['legacy-lib', 'shared'],
+                        },
+                        {
+                            from: 'legacy-infra',
+                            allow: ['legacy-domain', 'legacy-lib', 'shared'],
+                        },
+                        {
+                            from: 'legacy-lib',
+                            allow: ['legacy-domain', 'shared'],
+                        },
+                    ],
+                },
+            ],
+        },
+    },
+    {
+        files: ['src/**/*.{ts,tsx}'],
+        ignores: ['src/**/*.test.{ts,tsx}', 'src/**/__tests__/**'],
+        rules: {
+            'no-restricted-imports': [
+                'error',
+                {
+                    patterns: [
+                        '@/features/*/model/*',
+                        '@/features/*/hooks/*',
+                        '@/features/*/ui/*',
+                        '@/features/*/lib/*',
+                        '@/features/*/api/*',
+                        '@/widgets/*/ui/*',
+                        '@/widgets/*/hooks/*',
+                        '@/widgets/*/lib/*',
+                        '@/entities/*/api',
+                        '@/entities/*/api/*',
+                        '@/entities/*/model',
+                        '@/entities/*/lib',
+                        '@/entities/*/lib/*',
+                    ],
                 },
             ],
         },
