@@ -315,4 +315,14 @@ export const POPULAR_TICKERS = [
     'IBKR',
     'EQNR',
     'INTU',
+
+    // --- Trending (2026-05-23) ---
+    'CBRS',
+    'D',
+    'STM',
+    'ASX',
+    'CVE',
+    'VST',
+    'DASH',
+    'PGR',
 ] as const;
