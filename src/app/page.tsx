@@ -7,15 +7,17 @@ import { StatsBar, StatsBarSkeleton } from '@/components/home/StatsBar';
 import { TickerCategories } from '@/components/home/TickerCategories';
 import { SymbolSearchPanel } from '@/components/search/SymbolSearchPanel';
 import { JsonLd } from '@/components/ui/JsonLd';
-import { VALID_TICKER_RE } from '@/domain/constants/market';
 import {
     countSkillFiles,
     FileSkillsLoader,
 } from '@/infrastructure/skills/loader';
 import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from '@/lib/seo';
 import Link from 'next/link';
-import { redirect } from 'next/navigation';
 import { cache, Suspense } from 'react';
+
+// 랜딩은 ISR 정적 페이지로 운영 — proxy.ts가 ?q= 쿼리를 처리해 redirect하므로
+// 이 페이지 자체는 dynamic 의존성이 없다. revalidate로 skills 파일 변경 반영.
+export const revalidate = 3600;
 
 const loadSkills = cache(() => new FileSkillsLoader().loadSkills());
 
@@ -29,22 +31,9 @@ async function SkillsShowcaseServer() {
     return <SkillsShowcase skills={skills} />;
 }
 
-interface HomePageProps {
-    // 런타임상 Next.js의 searchParams 값은 동일 키 중복 시 string[]도 들어올 수 있다.
-    // 타입을 string으로만 좁히면 ?q=AAPL&q=TSLA에서 q.toUpperCase()가 TypeError를 던진다.
-    searchParams: Promise<{ q?: string | string[] }>;
-}
-
-// WebSite SearchAction(urlTemplate=`?q={search_term_string}`)을 받는 핸들러.
-// 유효한 티커면 종목 페이지로 즉시 redirect하고, 그렇지 않으면 무시해 홈을 그대로 렌더한다.
-export default async function Home({ searchParams }: HomePageProps) {
-    const { q } = await searchParams;
-    const qStr = Array.isArray(q) ? q[0] : q;
-    if (qStr) {
-        const ticker = qStr.toUpperCase().trim();
-        if (VALID_TICKER_RE.test(ticker)) redirect(`/${ticker}`);
-    }
-
+// WebSite SearchAction(urlTemplate=`?q={search_term_string}`)의 ?q= 처리는 proxy.ts가 담당한다.
+// page.tsx에서 searchParams를 소비하면 라우트가 dynamic으로 바뀌어 ISR 캐싱이 불가능하기 때문이다.
+export default async function Home() {
     const skillCounts = await countSkillFiles();
 
     const jsonLd = {
