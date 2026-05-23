@@ -22,6 +22,7 @@
         "db:seed:terms": "dotenv -e .env.local -- node_modules/.bin/tsx db/scripts/seedTerms.ts",
         "db:migrate:tickers": "dotenv -e .env.local -- node_modules/.bin/tsx scripts/seed-korean-tickers.ts",
         "test": "jest",
+        "test:quiet": "NODE_NO_WARNINGS=1 jest --silent --reporters=summary",
         "test-watch": "jest --watch",
         "test-coverage": "jest --coverage",
         "test-coverage-watch": "jest --coverage --watch",

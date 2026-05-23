@@ -3,21 +3,58 @@ set -e
 
 echo "🔍 Running pre-push checks..."
 
-echo ""
-echo "1/4 format:check"
-yarn format:check
+tmp_dir=$(mktemp -d)
+status=0
 
-echo ""
-echo "2/4 lintcheck"
-yarn lint
+cleanup() {
+    rm -rf "$tmp_dir"
+}
+trap cleanup EXIT
 
-echo ""
-echo "3/4 typecheck"
-yarn typecheck
+run_check() {
+    label=$1
+    log_file=$2
+    shift 2
 
-echo ""
-echo "4/4 test"
-yarn test
+    echo "▶ $label"
+
+    set +e
+    "$@" > "$log_file" 2>&1
+    code=$?
+    set -e
+
+    if [ "$code" -eq 0 ]; then
+        echo "✅ $label"
+        return 0
+    fi
+
+    echo "❌ $label"
+    cat "$log_file"
+    return "$code"
+}
+
+run_check "1/4 format:check" "$tmp_dir/format-check.log" yarn format:check &
+pid_format=$!
+
+run_check "2/4 lint" "$tmp_dir/lint.log" yarn lint &
+pid_lint=$!
+
+run_check "3/4 typecheck" "$tmp_dir/typecheck.log" yarn typecheck &
+pid_typecheck=$!
+
+run_check "4/4 test" "$tmp_dir/test.log" yarn test:quiet &
+pid_test=$!
+
+wait "$pid_format" || status=1
+wait "$pid_lint" || status=1
+wait "$pid_typecheck" || status=1
+wait "$pid_test" || status=1
+
+if [ "$status" -ne 0 ]; then
+    echo ""
+    echo "❌ Pre-push checks failed. Push aborted."
+    exit 1
+fi
 
 echo ""
 echo "✅ All checks passed. Proceeding with push."
