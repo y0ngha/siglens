@@ -5,6 +5,7 @@ import { headers } from 'next/headers';
 import {
     submitOverallAnalysis,
     type EnrichedNewsItem,
+    type OptionsSnapshot,
     type SubmitOverallAnalysisOptions,
     type SubmitOverallAnalysisResult,
     type Timeframe,
@@ -67,26 +68,32 @@ export async function submitOverallAnalysisAction(
         const { db } = getDatabaseClient();
         const newsRepo = new DrizzleNewsRepository(db);
 
-        const [rows, next] = await Promise.all([
+        // bot 트래픽은 어차피 enqueue를 skip하므로 (`skipEnqueueIfMiss`) 옵션
+        // 스냅샷을 위해 Yahoo를 두드리지 않는다 — 크롤러가 Yahoo rate-limit을
+        // 소진시키는 시나리오 차단. 일반 유저는 fetchOptionsSnapshot의 cross-
+        // request 캐시(Upstash)로 흡수.
+        // news / earnings / options 세 fetch는 서로 독립이므로 Promise.all로
+        // 병렬화해 직렬 대기 비용 (~1-3s)을 제거한다.
+        const optionsSnapshotPromise: Promise<OptionsSnapshot | null> =
+            skipEnqueueIfMiss
+                ? Promise.resolve(null)
+                : fetchOptionsSnapshot(symbol).catch(error => {
+                      console.warn(
+                          '[submitOverallAnalysisAction] options snapshot fetch failed:',
+                          error
+                      );
+                      return null;
+                  });
+
+        const [rows, next, optionsSnapshot] = await Promise.all([
             newsRepo.listBySymbol(symbol, NEWS_ANALYSIS_LOOKBACK_MS),
             getNextEarningsReport(symbol, db),
+            optionsSnapshotPromise,
         ]);
 
         const enrichedNews: ReadonlyArray<EnrichedNewsItem> = rows
             .filter(isEnrichedRow)
             .map(toEnrichedNewsItem);
-
-        // 옵션 스냅샷 조회 실패는 4번째 axis가 graceful skip되는 시나리오로 처리한다.
-        // NoChains 종목(SPXUSD 등) 또는 Yahoo 일시 장애에도 overall 분석은 진행돼야 한다.
-        const optionsSnapshot = await fetchOptionsSnapshot(symbol).catch(
-            error => {
-                console.warn(
-                    '[submitOverallAnalysisAction] options snapshot fetch failed:',
-                    error
-                );
-                return null;
-            }
-        );
 
         // 정규장 시간대에는 OI=0 비율이 높아도 stale로 보지 않는다 — deep OTM strike
         // OI 0이 흔하므로 false positive 위험. 정규장 외에서만 stale 휴리스틱 적용.

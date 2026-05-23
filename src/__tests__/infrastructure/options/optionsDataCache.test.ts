@@ -38,6 +38,7 @@ import {
     hasOptionsMarket,
     fetchOptionsSnapshot,
     HAS_OPTIONS_MARKET_TTL_SECONDS,
+    OPTIONS_SNAPSHOT_TTL_SECONDS,
 } from '@/infrastructure/options/optionsDataCache';
 
 const ORIGINAL_REDIS_URL = process.env.UPSTASH_REDIS_REST_URL;
@@ -249,5 +250,130 @@ describe('fetchOptionsSnapshot', () => {
         const result = await fetchOptionsSnapshot('TSLA');
 
         expect(result).toBe(snapshot);
+    });
+});
+
+describe('fetchOptionsSnapshot — Redis 캐시 레이어', () => {
+    beforeEach(() => {
+        jest.clearAllMocks();
+    });
+
+    const sampleSnapshot = {
+        symbol: 'AAPL',
+        underlyingPrice: 195,
+        chains: [],
+        capturedAt: '2026-05-14T16:00:00Z',
+    };
+
+    it('Redis env가 없으면 adapter로 직행한다', async () => {
+        mockFetchSnapshot.mockResolvedValue(sampleSnapshot);
+
+        const mod = await loadWithEnv({});
+        const result = await mod.fetchOptionsSnapshot('AAPL');
+
+        expect(mockRedisConstructor).not.toHaveBeenCalled();
+        expect(mockFetchSnapshot).toHaveBeenCalledWith('AAPL');
+        expect(result).toEqual(sampleSnapshot);
+    });
+
+    it('Redis cache hit 시 adapter를 호출하지 않고 캐시 값을 그대로 반환', async () => {
+        mockRedisGet.mockResolvedValue(sampleSnapshot);
+
+        const mod = await loadWithEnv({
+            url: 'https://example.upstash.io',
+            token: 'tok',
+        });
+        const result = await mod.fetchOptionsSnapshot('AAPL');
+
+        expect(mockRedisGet).toHaveBeenCalledWith('options:snapshot:AAPL');
+        expect(mockFetchSnapshot).not.toHaveBeenCalled();
+        expect(mockRedisSet).not.toHaveBeenCalled();
+        expect(result).toEqual(sampleSnapshot);
+    });
+
+    it('Redis cache miss 시 adapter 결과를 market-aware TTL로 저장', async () => {
+        mockRedisGet.mockResolvedValue(null);
+        mockFetchSnapshot.mockResolvedValue(sampleSnapshot);
+        mockRedisSet.mockResolvedValue('OK');
+
+        const mod = await loadWithEnv({
+            url: 'https://example.upstash.io',
+            token: 'tok',
+        });
+        await mod.fetchOptionsSnapshot('AAPL');
+
+        // beforeEach 위에서 getOptionsCacheLifeProfile mock이 'options-market-open' 반환
+        expect(mockRedisSet).toHaveBeenCalledWith(
+            'options:snapshot:AAPL',
+            sampleSnapshot,
+            { ex: OPTIONS_SNAPSHOT_TTL_SECONDS['options-market-open'] }
+        );
+    });
+
+    it('adapter가 null을 반환하면 negative cache를 남기지 않는다', async () => {
+        mockRedisGet.mockResolvedValue(null);
+        mockFetchSnapshot.mockResolvedValue(null);
+
+        const mod = await loadWithEnv({
+            url: 'https://example.upstash.io',
+            token: 'tok',
+        });
+        const result = await mod.fetchOptionsSnapshot('NOOPT');
+
+        expect(result).toBeNull();
+        // Yahoo 일시 장애를 TTL 동안 굳히지 않도록 null은 캐시하지 않는다.
+        expect(mockRedisSet).not.toHaveBeenCalled();
+    });
+
+    it('Redis get 예외는 흡수하고 adapter fresh로 진행', async () => {
+        const errSpy = jest
+            .spyOn(console, 'error')
+            .mockImplementation(() => {});
+        mockRedisGet.mockRejectedValue(new Error('redis down'));
+        mockFetchSnapshot.mockResolvedValue(sampleSnapshot);
+        mockRedisSet.mockResolvedValue('OK');
+
+        const mod = await loadWithEnv({
+            url: 'https://example.upstash.io',
+            token: 'tok',
+        });
+        const result = await mod.fetchOptionsSnapshot('AAPL');
+
+        expect(errSpy).toHaveBeenCalled();
+        expect(mockFetchSnapshot).toHaveBeenCalledWith('AAPL');
+        expect(result).toEqual(sampleSnapshot);
+        errSpy.mockRestore();
+    });
+
+    it('Redis set 예외는 흡수하고 fresh 값을 정상 반환', async () => {
+        const errSpy = jest
+            .spyOn(console, 'error')
+            .mockImplementation(() => {});
+        mockRedisGet.mockResolvedValue(null);
+        mockFetchSnapshot.mockResolvedValue(sampleSnapshot);
+        mockRedisSet.mockRejectedValue(new Error('redis write fail'));
+
+        const mod = await loadWithEnv({
+            url: 'https://example.upstash.io',
+            token: 'tok',
+        });
+        const result = await mod.fetchOptionsSnapshot('AAPL');
+
+        expect(errSpy).toHaveBeenCalled();
+        expect(result).toEqual(sampleSnapshot);
+        errSpy.mockRestore();
+    });
+});
+
+describe('OPTIONS_SNAPSHOT_TTL_SECONDS', () => {
+    it('시장 시간대별 TTL은 open < closed < weekend 순으로 늘어난다', () => {
+        // freshness vs Yahoo 호출량 trade-off — 정규장 중에는 분 단위로 짧게,
+        // 주말에는 시간 단위로 길게 캐시하는 정책이 invariant.
+        expect(OPTIONS_SNAPSHOT_TTL_SECONDS['options-market-open']).toBeLessThan(
+            OPTIONS_SNAPSHOT_TTL_SECONDS['options-market-closed']
+        );
+        expect(
+            OPTIONS_SNAPSHOT_TTL_SECONDS['options-market-closed']
+        ).toBeLessThan(OPTIONS_SNAPSHOT_TTL_SECONDS['options-weekend']);
     });
 });

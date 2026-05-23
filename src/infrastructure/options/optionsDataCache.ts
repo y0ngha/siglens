@@ -1,7 +1,12 @@
 import 'server-only';
 import { cache } from 'react';
 import { Redis } from '@upstash/redis';
+import { SECONDS_PER_HOUR, SECONDS_PER_MINUTE } from '@/domain/constants/time';
 import { YahooOptionsAdapter } from '@/infrastructure/options/YahooOptionsAdapter';
+import {
+    getOptionsCacheLifeProfile,
+    type OptionsCacheLifeProfile,
+} from '@/infrastructure/options/optionsCacheLife';
 import type { OptionsSnapshot } from '@y0ngha/siglens-core';
 
 const adapter = new YahooOptionsAdapter();
@@ -11,7 +16,27 @@ const adapter = new YahooOptionsAdapter();
 // rate-limit을 깨는 위험이 더 큼. 6시간이면 동일 sitemap window 안에서
 // 단 한 번만 fetch한다 (이슈 #439 참조).
 // export — 테스트가 동일 상수를 import해 silent divergence를 차단한다.
-export const HAS_OPTIONS_MARKET_TTL_SECONDS = 6 * 60 * 60;
+export const HAS_OPTIONS_MARKET_TTL_SECONDS = 6 * SECONDS_PER_HOUR;
+
+/**
+ * fetchOptionsSnapshot cross-request 캐시 TTL — 시장 시간대별로 freshness
+ * trade-off가 달라 세 단계로 분리한다.
+ *
+ * - market-open: 활성 트레이딩 중 quote/IV/volume이 실시간으로 변동하지만 옵션
+ *   페이지는 분 단위 freshness면 충분. 1분이면 인기 ticker 트래픽에서도
+ *   Yahoo 호출이 분당 1회로 수렴.
+ * - market-closed: 정규장 외(pre/post)는 OI snapshot이 다음 정규장 직전까지
+ *   거의 변하지 않는다. 30분 캐시로 충분.
+ * - weekend: 주말은 Yahoo가 갱신하지 않으므로 4시간 캐시로 호출량을 최소화.
+ */
+export const OPTIONS_SNAPSHOT_TTL_SECONDS: Record<
+    OptionsCacheLifeProfile,
+    number
+> = {
+    'options-market-open': 1 * SECONDS_PER_MINUTE,
+    'options-market-closed': 30 * SECONDS_PER_MINUTE,
+    'options-weekend': 4 * SECONDS_PER_HOUR,
+};
 
 // tokenStore.ts / pendingOAuthSignupStore.ts와 같은 lazy-singleton 패턴.
 let cachedRedis: Redis | null | undefined;
@@ -31,6 +56,10 @@ function getRedis(): Redis | null {
 
 function buildHasOptionsKey(symbol: string): string {
     return `options:has-market:${symbol.toUpperCase()}`;
+}
+
+function buildSnapshotKey(symbol: string): string {
+    return `options:snapshot:${symbol.toUpperCase()}`;
 }
 
 /**
@@ -95,9 +124,51 @@ export const hasOptionsMarket = cache(
 
 /**
  * 종목의 전체 옵션 스냅샷(모든 만기)을 가져온다. 옵션 없는 종목이면 null.
+ *
+ * 캐시 레이어:
+ *   1. React.cache — request 내 dedup (page.tsx + Server Action 같은 요청
+ *      안에서 여러 번 호출돼도 한 번만 Yahoo를 친다).
+ *   2. Upstash Redis — cross-request 캐시. 시장 시간대별 TTL(`OPTIONS_SNAPSHOT_TTL_SECONDS`)
+ *      을 적용해 활성 트레이딩 중에는 짧게, 주말은 길게 캐시한다. Redis 미설정 시
+ *      graceful fallback으로 Yahoo 직접 호출.
+ *
+ * `null` 결과(옵션 없는 ticker, Yahoo 일시 장애)는 negative cache로 저장하지 않는다 —
+ * Yahoo가 일시적으로 실패한 경우 TTL 동안 잘못된 'no data' 상태가 굳어버릴 위험이
+ * 크기 때문. `hasOptionsMarket`은 옵션 존재 여부만 묻는 가벼운 probe라 negative
+ * cache가 안전하지만, snapshot은 전체 chain을 다루므로 더 보수적으로 동작한다.
  */
 export const fetchOptionsSnapshot = cache(
     async (symbol: string): Promise<OptionsSnapshot | null> => {
-        return adapter.fetchSnapshot(symbol);
+        const key = buildSnapshotKey(symbol);
+        const redis = getRedis();
+        if (redis !== null) {
+            try {
+                const cached = await redis.get<OptionsSnapshot>(key);
+                if (cached !== null) return cached;
+            } catch (error) {
+                console.error(
+                    '[optionsDataCache] Redis get failed for',
+                    key,
+                    error
+                );
+            }
+        }
+
+        const fresh = await adapter.fetchSnapshot(symbol);
+
+        // null은 캐시하지 않음 — 위 docstring 참고.
+        if (fresh !== null && redis !== null) {
+            const ttl = OPTIONS_SNAPSHOT_TTL_SECONDS[getOptionsCacheLifeProfile()];
+            try {
+                await redis.set(key, fresh, { ex: ttl });
+            } catch (error) {
+                console.error(
+                    '[optionsDataCache] Redis set failed for',
+                    key,
+                    error
+                );
+            }
+        }
+        return fresh;
     }
 );
