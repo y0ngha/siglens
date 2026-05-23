@@ -36,12 +36,7 @@ export function HeroIllustration({ className }: HeroIllustrationProps) {
             priority
             fetchPriority="high"
             unoptimized
-            // aspect-[800/500]로 컨테이너가 SVG 로드 전에 비율을 잠궈 CLS를 방지한다.
-            // next/image가 width/height attr을 emit하지만 SVG는 intrinsic ratio를
-            // 브라우저가 인식하는 시점이 throttle 환경(PSI mobile)에서 늦어, 검색
-            // 패널 아래 컨테이너가 reflow되며 CLS 0.12까지 측정됐다(PR-G 머지 후).
-            // Tailwind aspect 유틸로 명시해 즉시 공간 예약.
-            className={`aspect-[800/500] ${className ?? ''}`}
+            className={className}
         />
     );
 }

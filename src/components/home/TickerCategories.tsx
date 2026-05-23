@@ -24,10 +24,7 @@ const CATEGORY_STYLES: Record<CategoryId, CategoryStyle> = {
     },
     'fintech-crypto': {
         borderColor: 'border-l-primary-500',
-        // text-primary-500(#3b82f6) on bg-secondary-800/50 = 4.42:1 (WCAG AA 4.5 미달).
-        // text-primary-400(#60a5fa)으로 한 단계 lighten해 카테고리 식별성은 유지하면서
-        // small-text 대비 4.5:1+ 확보.
-        textColor: 'text-primary-400',
+        textColor: 'text-primary-500',
     },
     'leveraged-etf': {
         borderColor: 'border-l-ui-warning',
