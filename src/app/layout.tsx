@@ -38,12 +38,24 @@ const geistMono = Geist_Mono({
     subsets: ['latin'],
 });
 
-// Pretendard Variable — self-host. next/font/local이 fingerprint URL + 1년
-// immutable Cache-Control을 자동 부여하고, fallback font(OS)와의 metric을
-// 자동 측정해 size-adjust로 CLS를 거의 0으로 만든다. third-party CDN 의존
+// Pretendard Variable (subset) — self-host. next/font/local이 fingerprint URL
+// + 1년 immutable Cache-Control을 자동 부여하고, fallback font(OS)와의 metric
+// 을 자동 측정해 size-adjust로 CLS를 거의 0으로 만든다. third-party CDN 의존
 // 없이도 dynamic-subset CDN 대비 안정성과 privacy가 우위.
+//
+// Subset 범위 (cmap에 포함된 실제 글리프 기준):
+//  • Basic Latin / Latin-1 Supplement
+//  • Hangul Compatibility Jamo (U+3130–U+318F)
+//  • Hangul Syllables 중 KS X 1001 상용 음절 2,350자 (전체 U+AC00–U+D7A3가 아님)
+//  • 일반 구두점 · 통화 · 위·아래 첨자 · 분수 · 수학 기호
+//  • UI 글리프: 화살표(→ ↑ ↓ ←), 도형(▲ ▼ ▽ ○ ◈ ▾), ⚠, ✓ ✕ ✗, ⓘ 등 49자
+// 폰트 파일은 src/app/fonts/에 colocate한다 (next/font/local 권장 패턴 — 단일
+// 소비자인 layout.tsx 옆에 두어 dual-serving 가능성을 차단).
+// 원본 2.0 MB → 467 KB (-77%). 모바일 Slow 4G에서 text LCP 차단 시간을 10초
+// 이상 단축한다. unicode-range 분할은 운영 복잡도 증가 대비 효과가 크지 않아
+// 단일 파일을 유지한다.
 const pretendard = localFont({
-    src: '../../public/fonts/PretendardVariable.woff2',
+    src: './fonts/PretendardVariable-subset.woff2',
     variable: '--font-pretendard',
     display: 'swap',
     weight: '100 900',
