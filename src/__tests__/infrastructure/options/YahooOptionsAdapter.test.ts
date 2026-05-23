@@ -186,6 +186,30 @@ describe('YahooOptionsAdapter.fetchSnapshot', () => {
         expect(result).toBeNull();
     });
 
+    it('returns null when underlyingPrice is missing (regularMarketPrice undefined)', async () => {
+        // Yahoo가 quote.regularMarketPrice를 누락하면 normalize가 0으로 폴백한다.
+        // 이 경우 underlyingPrice=0 인 채로 통과되면 차트 가이드라인이 최저
+        // strike에 그려지는 등 잘못된 시각을 노출하므로 adapter에서 reject한다.
+        const consoleWarnSpy = jest
+            .spyOn(console, 'warn')
+            .mockImplementation(() => {});
+        const fixtureNoQuote = {
+            ...FULL_FIXTURE,
+            quote: {} as { regularMarketPrice?: number },
+        };
+        mockOptionsMethod.mockResolvedValue(fixtureNoQuote);
+        const adapter = makeAdapter();
+
+        const result = await adapter.fetchSnapshot('AAPL');
+
+        expect(result).toBeNull();
+        expect(consoleWarnSpy).toHaveBeenCalledWith(
+            '[YahooOptionsAdapter] missing underlyingPrice — treating snapshot as unavailable',
+            'AAPL'
+        );
+        consoleWarnSpy.mockRestore();
+    });
+
     it('returns null when all chains are rejected by sanitizeOptionsChain', async () => {
         mockOptionsMethod.mockResolvedValue(FULL_FIXTURE);
         (sanitizeOptionsChain as jest.Mock).mockReturnValue(null);

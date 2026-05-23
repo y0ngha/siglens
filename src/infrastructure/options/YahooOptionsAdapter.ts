@@ -124,6 +124,19 @@ export class YahooOptionsAdapter implements OptionsDataProvider {
 
             const raw = normalizeYahooSnapshot(combined, now);
 
+            // Yahoo가 quote.regularMarketPrice를 누락하면 normalize 단에서 0으로
+            // 폴백된다. underlyingPrice=0 인 채로 그냥 통과시키면 downstream
+            // (findNearestStrike, ImpliedMove, Max Pain 가이드라인)이 최저 strike에
+            // 가이드라인을 그리는 등 시각적으로 잘못된 정보를 노출한다.
+            // 단일 경계인 adapter에서 null로 reject해 OptionsEmptyState로 떨어뜨린다.
+            if (raw.underlyingPrice <= 0) {
+                console.warn(
+                    '[YahooOptionsAdapter] missing underlyingPrice — treating snapshot as unavailable',
+                    symbol
+                );
+                return null;
+            }
+
             const sanitizedChains = raw.chains
                 .map(chain => sanitizeOptionsChain(chain))
                 .filter((chain): chain is OptionsChain => chain !== null);
