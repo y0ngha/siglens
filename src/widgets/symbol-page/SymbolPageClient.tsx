@@ -1,8 +1,10 @@
 'use client';
 
-import { ChartErrorFallback } from '@/widgets/chart/ChartErrorFallback';
-import { ChartSkeleton } from '@/widgets/chart/ChartSkeleton';
-import { TimeframeSelector } from '@/widgets/chart/TimeframeSelector';
+import {
+    ChartErrorFallback,
+    ChartSkeleton,
+    TimeframeSelector,
+} from '@/widgets/chart';
 import { useHydrated } from '@/shared/hooks/useHydrated';
 import { useIsMobileViewport } from '@/shared/hooks/useIsMobileViewport';
 import { ChartContent } from './ChartContent';

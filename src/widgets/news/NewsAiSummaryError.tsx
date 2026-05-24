@@ -1,3 +1,5 @@
+'use client';
+
 import type { FallbackProps } from 'react-error-boundary';
 
 export function NewsAiSummaryError({

@@ -213,7 +213,7 @@ function OptionsAiAnalysisView({ result }: OptionsAiAnalysisViewProps) {
     );
 }
 
-export interface OptionsAiAnalysisProps {
+interface OptionsAiAnalysisProps {
     symbol: string;
     companyName: string;
     /** 'YYYY-MM-DD' or 'all'. */

@@ -3,7 +3,7 @@ import type { Components } from 'react-markdown';
 import ReactMarkdown from 'react-markdown';
 import { cn } from '@/shared/lib/cn';
 
-export const MARKDOWN_TEXT_COMPONENTS: Components = {
+const MARKDOWN_TEXT_COMPONENTS: Components = {
     p: ({ children }) => (
         <p className="mb-2 leading-[1.75] whitespace-pre-line last:mb-0">
             {children}

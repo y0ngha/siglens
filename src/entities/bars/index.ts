@@ -1,1 +1,2 @@
-// actions are imported from @/entities/bars/actions
+// actions are imported directly from @/entities/bars/actions
+export {};

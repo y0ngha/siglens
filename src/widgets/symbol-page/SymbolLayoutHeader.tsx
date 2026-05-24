@@ -6,7 +6,7 @@ import { SymbolTabs } from './SymbolTabs';
 import { SymbolTabsSkeleton } from './SymbolTabsSkeleton';
 import { useAssetInfo } from './hooks/useAssetInfo';
 import { useSymbolModel } from './SymbolModelContext';
-import { ModelSelector } from '@/widgets/analysis/ModelSelector';
+import { ModelSelector } from '@/widgets/analysis';
 import { FearGreedHeaderChipMounted } from './FearGreedHeaderChipMounted';
 import { PremiumModelGateModal } from '@/features/premium-gate';
 import { LLM_PROVIDER_LABELS } from '@/shared/lib/llmProviderLabels';

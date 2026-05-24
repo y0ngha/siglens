@@ -1,7 +1,7 @@
 import { Fragment } from 'react';
 import type { SkillCounts } from '@y0ngha/siglens-core';
 
-export function HowItWorksSkeleton() {
+function _HowItWorksSkeleton() {
     return (
         <section className="px-6 py-10 lg:px-[15vw]">
             <div className="bg-secondary-700/50 mb-6 h-3.5 w-24 animate-pulse rounded" />

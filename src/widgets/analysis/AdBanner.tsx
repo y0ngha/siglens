@@ -8,7 +8,7 @@ import {
 } from '@/shared/lib/adsense';
 import { useAdSensePush } from './hooks/useAdSensePush';
 
-export type AdBannerSlot = 'analysis-progress' | 'analysis-panel-bottom';
+type AdBannerSlot = 'analysis-progress' | 'analysis-panel-bottom';
 
 const SLOT_MAPPING: Record<AdBannerSlot, string> = {
     'analysis-progress': ADSENSE_SLOTS.PROGRESS,
