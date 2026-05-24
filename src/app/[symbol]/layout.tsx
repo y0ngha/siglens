@@ -11,7 +11,7 @@ import {
 import { SymbolLayoutHeader } from '@/components/symbol-page/SymbolLayoutHeader';
 import { SymbolTabsSkeleton } from '@/components/symbol-page/SymbolTabsSkeleton';
 import { DEFAULT_TIMEFRAME } from '@/domain/constants/market';
-import { getBarsAction } from '@/infrastructure/market/getBarsAction';
+import { getBarsAction } from '@/entities/bars/actions';
 import { getAssetInfoCached } from '@/infrastructure/ticker/getAssetInfoCached';
 import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/shared/config/queryConfig';
 

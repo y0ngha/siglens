@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getNewsCardsAction } from '@/infrastructure/market/getNewsCardsAction';
+import { getNewsCardsAction } from '@/entities/news-article/actions';
 import type { NewsDisplayItem } from '@/domain/types';
 import {
     POLL_INTERVAL_MS,

@@ -17,14 +17,14 @@ import { MS_PER_MINUTE } from '@/domain/constants/time';
 import {
     submitAnalysisAction,
     type SubmitAnalysisActionResult,
-} from '@/infrastructure/market/submitAnalysisAction';
-import { pollAnalysisAction } from '@/infrastructure/market/pollAnalysisAction';
-import { cancelAnalysisJobAction } from '@/infrastructure/market/cancelAnalysisJobAction';
+    pollAnalysisAction,
+    cancelAnalysisJobAction,
+} from '@/entities/analysis/actions';
 import {
     getReanalyzeCooldownMs as fetchReanalyzeCooldownMs,
     releaseReanalyzeCooldown,
     tryAcquireReanalyzeCooldown,
-} from '@/infrastructure/market/reanalyzeCooldown';
+} from '@/entities/analysis';
 import { sleep } from '@/shared/lib/sleep';
 import { CHART_ANALYSIS_POLL_INTERVAL_MS } from '@/shared/config/pollingConfig';
 import { usePageHideCancel } from '@/shared/hooks/usePageHideCancel';

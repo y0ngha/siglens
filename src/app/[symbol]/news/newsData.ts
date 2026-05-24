@@ -4,7 +4,7 @@ import { DrizzleNewsRepository } from '@/entities/news-article';
 import { DrizzleEarningsReportsRepository } from '@/entities/earnings-report';
 import { FmpFundamentalClient } from '@/infrastructure/fmp/fundamentalClient';
 import { MS_PER_DAY } from '@/domain/constants/time';
-import { NEWS_LOOKBACK_MS } from '@/infrastructure/market/newsLookback';
+import { NEWS_LOOKBACK_MS } from '@/entities/news-article';
 import type { NewsRow } from '@/entities/news-article';
 import type { GradesEvent } from '@y0ngha/siglens-core';
 import type { EarningsReportComparisonItem } from '@/domain/types';

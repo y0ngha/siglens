@@ -6,10 +6,12 @@ import type {
     FundamentalAnalysisResponse,
     ModelId,
 } from '@y0ngha/siglens-core';
-import { submitFundamentalAnalysisAction } from '@/infrastructure/market/submitFundamentalAnalysisAction';
+import {
+    submitFundamentalAnalysisAction,
+    pollFundamentalAnalysisAction,
+    cancelFundamentalAnalysisJobAction,
+} from '@/entities/analysis/actions';
 import { isGateBlockedResult } from '@/domain/analysis/gate';
-import { pollFundamentalAnalysisAction } from '@/infrastructure/market/pollFundamentalAnalysisAction';
-import { cancelFundamentalAnalysisJobAction } from '@/infrastructure/market/cancelFundamentalAnalysisJobAction';
 import { sleep } from '@/shared/lib/sleep';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
 import { ANALYSIS_POLL_INTERVAL_MS } from '@/shared/config/pollingConfig';

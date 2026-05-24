@@ -2,9 +2,11 @@
  * @jest-environment jsdom
  */
 import { useFundamentalAnalysis } from '@/components/fundamental/hooks/useFundamentalAnalysis';
-import { cancelFundamentalAnalysisJobAction } from '@/infrastructure/market/cancelFundamentalAnalysisJobAction';
-import { pollFundamentalAnalysisAction } from '@/infrastructure/market/pollFundamentalAnalysisAction';
-import { submitFundamentalAnalysisAction } from '@/infrastructure/market/submitFundamentalAnalysisAction';
+import {
+    cancelFundamentalAnalysisJobAction,
+    pollFundamentalAnalysisAction,
+    submitFundamentalAnalysisAction,
+} from '@/entities/analysis/actions';
 import { CANCEL_JOBS_API_PATH } from '@/shared/lib/cancelJobsApi';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook, waitFor } from '@testing-library/react';
@@ -13,15 +15,9 @@ import type { ReactNode } from 'react';
 import { renderToString } from 'react-dom/server';
 import { readBlobText } from '@/__tests__/utils/readBlobText';
 
-jest.mock('@/infrastructure/market/submitFundamentalAnalysisAction', () => ({
+jest.mock('@/entities/analysis/actions', () => ({
     submitFundamentalAnalysisAction: jest.fn(),
-}));
-
-jest.mock('@/infrastructure/market/pollFundamentalAnalysisAction', () => ({
     pollFundamentalAnalysisAction: jest.fn(),
-}));
-
-jest.mock('@/infrastructure/market/cancelFundamentalAnalysisJobAction', () => ({
     cancelFundamentalAnalysisJobAction: jest.fn().mockResolvedValue(undefined),
 }));
 
