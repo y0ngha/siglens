@@ -204,7 +204,8 @@ lib            ← External UI utility wrappers. Pure functions only.
 app (RSC/Route) ← May import from infrastructure, domain, lib.
 components     ← May import from domain, lib.
                Component files (.tsx): Direct imports from infrastructure are prohibited.
-               Hook files (hooks/): May import fetch functions from infrastructure only
+               Hook files (hooks/): May import fetch functions from infrastructure,
+                 or Server Actions from `entities/<x>/actions.ts`
                  → Limited to queryFn/mutationFn or useActionState connection.
                  → Type imports from @/domain/types or @y0ngha/siglens-core.
 ```
@@ -217,7 +218,7 @@ Phase 9 완료 시 legacy 섹션은 제거된다.
 
 ### Server Action 예외
 
-`entities/<x>/actions.ts`(Next.js `'use server'` 파일)는 features/widgets/pages에서 import 가능하다. `entities/<x>/api.ts`는 server-only이므로 same-entity 또는 app 레이어에서만 import.
+`entities/<x>/actions.ts`(Next.js `'use server'` 파일)는 features/widgets/pages 및 components/hooks에서 import 가능하다. `entities/<x>/api.ts`는 server-only이므로 same-entity 또는 app 레이어에서만 import.
 
 **pages/ RSC 데이터 흐름**: `app/` 레이어(RSC entry)가 `entities/<x>/api.ts`를 호출해 `queryClient.prefetchQuery()` → `dehydrate()` → `HydrationBoundary`로 pages에 전달. pages/ 레이어는 entity의 `hooks/`(client component 안)나 `actions.ts`(Server Action)를 통해 데이터에 접근하며, `api.ts`를 직접 import하지 않는다.
 
