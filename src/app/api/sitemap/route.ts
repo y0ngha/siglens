@@ -1,8 +1,10 @@
 import { NextResponse } from 'next/server';
-import { loadLongTailTickers } from '@/infrastructure/sitemap/loadLongTailTickers';
-import type { SitemapIndexEntry } from '@/infrastructure/sitemap/types';
-import { SITEMAP_MAX_URLS_PER_FILE } from '@/infrastructure/sitemap/types';
-import { toSitemapIndexXml } from '@/infrastructure/sitemap/xml';
+import {
+    loadLongTailTickers,
+    type SitemapIndexEntry,
+    SITEMAP_MAX_URLS_PER_FILE,
+    toSitemapIndexXml,
+} from '@/entities/sitemap-entry';
 import { SITE_BUILD_DATE, SITE_URL } from '@/shared/lib/seo';
 
 // loadLongTailTickers는 DB 조회(no-store fetch)라 빌드 시점 prerender 불가.

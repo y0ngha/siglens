@@ -8,7 +8,7 @@ import {
     getRecentSearches,
     RECENT_SEARCHES_STORAGE_KEY,
     removeRecentSearch,
-} from '@/infrastructure/storage/recentSearches';
+} from '@/entities/ticker';
 
 interface UseRecentSearchesResult {
     recentSearches: string[];

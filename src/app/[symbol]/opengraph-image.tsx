@@ -1,5 +1,5 @@
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
-import { buildSymbolOgImage } from '@/infrastructure/og/buildSymbolOgImage';
+import { buildSymbolOgImage } from '@/entities/og-image';
 
 export const size = { width: OG_IMAGE_WIDTH, height: OG_IMAGE_HEIGHT };
 export const contentType = 'image/png';

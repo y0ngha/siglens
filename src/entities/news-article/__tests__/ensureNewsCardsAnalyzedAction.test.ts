@@ -5,7 +5,7 @@ import {
     submitNewsCardAnalysis,
     pollNewsCardAnalysis,
 } from '@y0ngha/siglens-core';
-import { FmpNewsClient } from '@/infrastructure/fmp/newsClient';
+import { FmpNewsClient } from '../lib/fmpNewsClient';
 import type {
     NewsItem,
     NewsCardAnalysis,
@@ -27,7 +27,7 @@ jest.mock('@/shared/lib/sleep', () => ({
     sleep: jest.fn().mockResolvedValue(undefined),
 }));
 
-jest.mock('@/infrastructure/fmp/newsClient', () => ({
+jest.mock('../lib/fmpNewsClient', () => ({
     FmpNewsClient: jest.fn().mockImplementation(() => ({
         fetchNewsForPeriod: jest.fn(),
     })),

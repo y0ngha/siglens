@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { getAssetInfoAction } from '@/infrastructure/ticker/getAssetInfoAction';
+import { getAssetInfoAction } from '@/entities/ticker/actions';
 import {
     ASSET_INFO_STALE_TIME_MS,
     QUERY_KEYS,

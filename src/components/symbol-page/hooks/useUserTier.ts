@@ -2,7 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { DEFAULT_TIER, type Tier } from '@y0ngha/siglens-core';
-import { getUserTierAction } from '@/infrastructure/tier/getUserTierAction';
+import { getUserTierAction } from '@/entities/user-tier/actions';
 import {
     QUERY_GC_TIME_MS,
     QUERY_KEYS,

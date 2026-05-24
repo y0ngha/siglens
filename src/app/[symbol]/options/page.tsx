@@ -4,12 +4,12 @@ import { JsonLd } from '@/shared/ui/JsonLd';
 import { VALID_TICKER_RE } from '@/domain/constants/market';
 import { buildAssetAboutNode } from '@/domain/seo/assetClassification';
 import { buildDisplayName } from '@/domain/ticker';
-import { getAssetInfoCached } from '@/infrastructure/ticker/getAssetInfoCached';
+import { getAssetInfoCached } from '@/entities/ticker';
 import { mapExpirationsToSlots } from '@y0ngha/siglens-core';
 import {
     fetchOptionsSnapshot,
     hasOptionsMarket,
-} from '@/infrastructure/options/optionsDataCache';
+} from '@/entities/options-chain';
 import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/shared/config/queryConfig';
 import {
     buildBreadcrumbJsonLd,

@@ -25,7 +25,7 @@ import {
 import {
     cancelOptionsAnalysisJobAction,
     pollOptionsAnalysisAction,
-} from '@/infrastructure/options/optionsActions';
+} from '@/entities/options-chain/actions';
 import { sleep } from '@/shared/lib/sleep';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
 import { AUGMENT_AND_OVERALL_POLL_INTERVAL_MS } from '@/shared/config/pollingConfig';

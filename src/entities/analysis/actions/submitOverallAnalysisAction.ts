@@ -10,7 +10,7 @@ import {
     type SubmitOverallAnalysisResult,
     type Timeframe,
 } from '@y0ngha/siglens-core';
-import { FmpFundamentalClient } from '@/infrastructure/fmp/fundamentalClient';
+import { FmpFundamentalClient } from '@/shared/api/fmp/fundamentalClient';
 import { getDatabaseClient } from '@/shared/db/client';
 import {
     DrizzleNewsRepository,
@@ -22,7 +22,8 @@ import { getNextEarningsReport } from '@/entities/earnings-report';
 import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
 import { resolveTierAndByok, buildGateError } from '@/shared/lib/byokGate';
 import { isBot } from '@/shared/api/isBot';
-import { fetchOptionsSnapshot } from '@/infrastructure/options/optionsDataCache';
+// Cross-entity: options-chain fetchOptionsSnapshot 필요. Phase 9에서 features 레이어 도입 시 해소.
+import { fetchOptionsSnapshot } from '@/entities/options-chain';
 import {
     isOpenInterestSnapshotStale,
     isUsOptionsRegularSession,

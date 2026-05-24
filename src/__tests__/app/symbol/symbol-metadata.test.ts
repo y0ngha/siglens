@@ -120,7 +120,7 @@ jest.mock('@/domain/fearGreed/classifier', () => ({
 
 const mockGetAssetInfoCached = jest.fn();
 
-jest.mock('@/infrastructure/ticker/getAssetInfoCached', () => ({
+jest.mock('@/entities/ticker', () => ({
     getAssetInfoCached: (...args: unknown[]) => mockGetAssetInfoCached(...args),
 }));
 

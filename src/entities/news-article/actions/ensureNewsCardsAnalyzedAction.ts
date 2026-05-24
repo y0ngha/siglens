@@ -2,7 +2,7 @@
 
 import { getDatabaseClient } from '@/shared/db/client';
 import { DrizzleNewsRepository } from '@/entities/news-article';
-import { FmpNewsClient } from '@/infrastructure/fmp/newsClient';
+import { FmpNewsClient } from '../lib/fmpNewsClient';
 import { DISABLED_THINKING_BUDGET } from '../lib/newsAnalysisConstants';
 import { NEWS_LOOKBACK_MS } from '../lib/newsLookback';
 import { sleep } from '@/shared/lib/sleep';
