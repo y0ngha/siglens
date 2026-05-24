@@ -1,4 +1,4 @@
-import type { TranslatorConfig } from '@/infrastructure/ticker/types';
+import type { TranslatorConfig } from '../model';
 
 const DEFAULT_TRANSLATE_MODEL = 'gemini-2.5-flash';
 

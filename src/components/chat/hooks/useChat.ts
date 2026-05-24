@@ -18,8 +18,10 @@ import {
     type ModelId,
 } from '@y0ngha/siglens-core';
 import type { ContextSwitchMessage, DisplayMessage } from '@/domain/types';
-import { chatAction } from '@/infrastructure/chat/chatAction';
-import { getRemainingTokensAction } from '@/infrastructure/chat/getRemainingTokensAction';
+import {
+    chatAction,
+    getRemainingTokensAction,
+} from '@/entities/chat-message/actions';
 import { DEFAULT_TIMEFRAME } from '@/domain/constants/market';
 import { CHAT_NON_CHART_BASELINE_ANALYSIS } from '@/domain/chat/fallbackAnalysis';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';

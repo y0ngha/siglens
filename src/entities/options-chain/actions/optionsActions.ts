@@ -10,7 +10,7 @@ import {
     type PollOptionsAnalysisResult,
     type ModelId,
 } from '@y0ngha/siglens-core';
-import { fetchOptionsSnapshot } from '@/infrastructure/options/optionsDataCache';
+import { fetchOptionsSnapshot } from '../lib/optionsDataCache';
 import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
 import { resolveTierAndByok, buildGateError } from '@/shared/lib/byokGate';
 import { isBot } from '@/shared/api/isBot';

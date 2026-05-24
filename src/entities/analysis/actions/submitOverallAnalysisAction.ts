@@ -10,7 +10,7 @@ import {
     type SubmitOverallAnalysisResult,
     type Timeframe,
 } from '@y0ngha/siglens-core';
-import { FmpFundamentalClient } from '@/infrastructure/fmp/fundamentalClient';
+import { FmpFundamentalClient } from '@/entities/fundamental';
 import { getDatabaseClient } from '@/shared/db/client';
 import {
     DrizzleNewsRepository,
@@ -22,7 +22,7 @@ import { getNextEarningsReport } from '@/entities/earnings-report';
 import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
 import { resolveTierAndByok, buildGateError } from '@/shared/lib/byokGate';
 import { isBot } from '@/shared/api/isBot';
-import { fetchOptionsSnapshot } from '@/infrastructure/options/optionsDataCache';
+import { fetchOptionsSnapshot } from '@/entities/options-chain';
 import {
     isOpenInterestSnapshotStale,
     isUsOptionsRegularSession,

@@ -10,7 +10,7 @@ import { POPULAR_TICKERS } from '@/domain/constants/popular-tickers';
 import type { KoreanTickerEntry } from '@/domain/types';
 import { tryGetDatabaseClient } from '@/shared/db/client';
 import { DrizzleKoreanTickerRepository } from '@/entities/ticker';
-import { loadLongTailTickers } from '@/infrastructure/sitemap/loadLongTailTickers';
+import { loadLongTailTickers } from '../lib/loadLongTailTickers';
 
 // POPULAR_TICKERS가 변경돼도 본 테스트의 dedupe 검증이 의도와 어긋나지 않도록
 // 생산 코드의 상수에서 직접 샘플을 가져온다 (MISTAKES.md Tests §4 정신: 경계

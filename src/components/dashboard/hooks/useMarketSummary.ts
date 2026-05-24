@@ -4,7 +4,7 @@ import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import type { MarketIndexData, MarketSectorData } from '@y0ngha/siglens-core';
 import type { MarketSummaryActionResult } from '@/domain/types';
-import { getMarketSummaryAction } from '@/infrastructure/dashboard/getMarketSummaryAction';
+import { getMarketSummaryAction } from '@/entities/market-summary/actions';
 import {
     MARKET_SUMMARY_STALE_TIME_MS,
     QUERY_KEYS,

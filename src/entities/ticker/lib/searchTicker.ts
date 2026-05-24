@@ -2,24 +2,21 @@ import { deduplicateResults, isKoreanInput } from '@/domain/ticker';
 import {
     buildTickerSearchCacheKey,
     TICKER_SEARCH_CACHE_TTL,
-} from '@/infrastructure/ticker/cacheKeys';
+} from './cacheKeys';
 import {
     filterUsExchanges,
     searchByName,
     searchBySymbol,
     toTickerSearchResult,
-} from '@/infrastructure/ticker/fmpTickerApi';
-import { translateCompanyNames } from '@/infrastructure/ticker/koreanTranslator';
+} from './fmpTickerApi';
+import { translateCompanyNames } from './koreanTranslator';
 import {
     getKoreanNames,
     searchByKoreanName,
     setKoreanTickers,
-} from '@/infrastructure/ticker/use-cases/koreanNameStore';
-import {
-    fireAndForget,
-    type BackgroundTaskOptions,
-} from '@/infrastructure/ticker/use-cases/types';
-import { createSingleFlight } from '@/infrastructure/ticker/utils/singleFlight';
+} from './koreanNameStore';
+import { fireAndForget, type BackgroundTaskOptions } from './backgroundTask';
+import { createSingleFlight } from './utils/singleFlight';
 import { createCacheProvider } from '@y0ngha/siglens-core';
 import type { KoreanTickerEntry, TickerSearchResult } from '@/domain/types';
 

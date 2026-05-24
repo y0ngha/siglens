@@ -4,11 +4,8 @@ import type {
     NewsItem,
     NewsTimeRange,
 } from '@y0ngha/siglens-core';
-import { fmpGet } from '@/infrastructure/fmp/httpClient';
-import type {
-    RawFmpEarningsReport,
-    RawFmpNews,
-} from '@/infrastructure/fmp/types';
+import { fmpGet } from '@/shared/api/fmp/httpClient';
+import type { RawFmpEarningsReport, RawFmpNews } from '@/shared/api/fmp/types';
 import { MS_PER_HOUR } from '@/domain/constants/time';
 
 /** Maximum article count to request per `NewsTimeRange` value. */

@@ -1,8 +1,8 @@
 import { POPULAR_TICKERS } from '@/domain/constants/popular-tickers';
 import { MS_PER_DAY, MS_PER_HOUR } from '@/domain/constants/time';
-import { hasOptionsMarket } from '@/infrastructure/options/optionsDataCache';
+import { hasOptionsMarket } from '@/entities/options-chain';
 import { SITE_URL } from '@/shared/lib/seo';
-import type { SitemapEntry } from '@/infrastructure/sitemap/types';
+import type { SitemapEntry } from '../model';
 
 // 미국 주식 시장 마감 시각(UTC). 16:00 ET = 20:00 UTC (DST 미고려).
 const US_MARKET_CLOSE_UTC_HOUR = 20;

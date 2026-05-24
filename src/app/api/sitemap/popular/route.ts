@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
-import { buildPopularEntries } from '@/infrastructure/sitemap/buildPopularEntries';
-import { toUrlSetXml } from '@/infrastructure/sitemap/xml';
+import { buildPopularEntries, toUrlSetXml } from '@/entities/sitemap-entry';
 
 // hasOptionsMarket probe(Yahoo Finance) + 슬라이딩 lastmod 때문에 빌드 시점
 // prerender 불가. force-dynamic + CDN 1h max-age로 처리.

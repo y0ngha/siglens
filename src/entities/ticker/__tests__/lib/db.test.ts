@@ -10,7 +10,7 @@ import {
 import {
     resetTickerDatabaseClientForTests,
     tryGetTickerDatabaseClient,
-} from '@/infrastructure/ticker/db';
+} from '../../lib/db';
 
 const mockTryGet = tryGetDatabaseClient as jest.MockedFunction<
     typeof tryGetDatabaseClient

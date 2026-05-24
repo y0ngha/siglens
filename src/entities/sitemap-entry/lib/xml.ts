@@ -1,7 +1,4 @@
-import type {
-    SitemapEntry,
-    SitemapIndexEntry,
-} from '@/infrastructure/sitemap/types';
+import type { SitemapEntry, SitemapIndexEntry } from '../model';
 
 /**
  * XML 텍스트 노드에 들어갈 수 없는 문자(`& < > ' "`)를 이스케이프한다.

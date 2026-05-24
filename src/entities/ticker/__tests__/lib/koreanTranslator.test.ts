@@ -10,7 +10,7 @@ jest.mock('@/entities/llm-provider', () => ({
 import {
     translateCompanyDescription,
     translateCompanyNames,
-} from '@/infrastructure/ticker/koreanTranslator';
+} from '../../lib/koreanTranslator';
 
 describe('translateCompanyNames', () => {
     beforeEach(() => {

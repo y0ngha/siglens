@@ -2,7 +2,7 @@ import type {
     SetUserTierInput,
     SetUserTierResult,
     UserTierDependencies,
-} from '@/infrastructure/tier/use-cases/types';
+} from '../model';
 
 /** Manually change a user's tier for admin workflows; returns a discriminated result with a `user_not_found` error when missing. */
 export async function setUserTier(

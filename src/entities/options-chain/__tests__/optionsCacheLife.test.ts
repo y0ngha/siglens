@@ -10,7 +10,7 @@
  *   - Fall back:      2026-11-01 02:00 → 01:00 (EST begins, UTC-5)
  */
 
-import { getOptionsCacheLifeProfile } from '@/infrastructure/options/optionsCacheLife';
+import { getOptionsCacheLifeProfile } from '../lib/optionsCacheLife';
 
 describe('getOptionsCacheLifeProfile — weekend', () => {
     it('returns options-weekend for Saturday (EDT)', () => {

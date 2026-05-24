@@ -1,11 +1,11 @@
-jest.mock('@/infrastructure/options/optionsDataCache', () => ({
+jest.mock('@/entities/options-chain', () => ({
     hasOptionsMarket: jest.fn(),
 }));
 
 import { POPULAR_TICKERS } from '@/domain/constants/popular-tickers';
 import { MS_PER_HOUR } from '@/domain/constants/time';
-import { hasOptionsMarket } from '@/infrastructure/options/optionsDataCache';
-import { buildPopularEntries } from '@/infrastructure/sitemap/buildPopularEntries';
+import { hasOptionsMarket } from '@/entities/options-chain';
+import { buildPopularEntries } from '../lib/buildPopularEntries';
 import { SITE_URL } from '@/shared/lib/seo';
 
 const mockedHasOptionsMarket = hasOptionsMarket as jest.MockedFunction<

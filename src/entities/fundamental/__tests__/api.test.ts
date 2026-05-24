@@ -1,4 +1,4 @@
-import { FmpFundamentalClient } from '@/infrastructure/fmp/fundamentalClient';
+import { FmpFundamentalClient } from '../api';
 
 const mockFetch = jest.fn();
 

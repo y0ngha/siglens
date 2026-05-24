@@ -1,7 +1,7 @@
 /**
  * @jest-environment node
  */
-import { buildSymbolOgImage } from '@/infrastructure/og/buildSymbolOgImage';
+import { buildSymbolOgImage } from '../lib/buildSymbolOgImage';
 
 const mockImageResponse = jest.fn();
 const mockLoadKoreanFont = jest.fn();
@@ -15,7 +15,7 @@ jest.mock('next/og', () => ({
         }),
 }));
 
-jest.mock('@/infrastructure/og/loadKoreanFont', () => ({
+jest.mock('../lib/loadKoreanFont', () => ({
     loadKoreanFont: jest.fn(() => mockLoadKoreanFont()),
 }));
 

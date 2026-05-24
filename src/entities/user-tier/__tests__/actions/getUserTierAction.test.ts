@@ -13,11 +13,11 @@ jest.mock('@/entities/user', () => ({
     DrizzleUserRepository: jest.fn().mockImplementation(() => ({})),
 }));
 
-jest.mock('@/infrastructure/tier/use-cases/getUserTier', () => ({
+jest.mock('../../lib/getUserTier', () => ({
     getUserTier: (...args: unknown[]) => mockGetUserTier(...args),
 }));
 
-import { getUserTierAction } from '@/infrastructure/tier/getUserTierAction';
+import { getUserTierAction } from '../../actions/getUserTierAction';
 
 describe('getUserTierAction', () => {
     beforeEach(() => {

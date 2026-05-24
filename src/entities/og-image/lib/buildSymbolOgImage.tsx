@@ -15,7 +15,7 @@ import {
     OG_SITE_NAME_TOP,
     OG_TICKER_FONT_SIZE,
 } from '@/shared/lib/og';
-import { loadKoreanFont } from '@/infrastructure/og/loadKoreanFont';
+import { loadKoreanFont } from './loadKoreanFont';
 
 export interface SymbolOgImageOptions {
     ticker: string;

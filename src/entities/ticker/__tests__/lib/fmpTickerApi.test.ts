@@ -3,8 +3,8 @@ import {
     searchByName,
     searchBySymbol,
     toTickerSearchResult,
-} from '@/infrastructure/ticker/fmpTickerApi';
-import type { FmpSearchResult } from '@/infrastructure/ticker/types';
+} from '../../lib/fmpTickerApi';
+import type { FmpSearchResult } from '../../model';
 
 const mockFetch = jest.fn();
 

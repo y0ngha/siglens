@@ -1,4 +1,4 @@
-import { getTodayIsoDay } from '@/infrastructure/seo/getTodayIsoDay';
+import { getTodayIsoDay } from '../getTodayIsoDay';
 
 describe('getTodayIsoDay', () => {
     beforeEach(() => {

@@ -9,11 +9,11 @@ jest.mock('@/entities/inquiry', () => ({
         create: mockCreate,
     })),
 }));
-jest.mock('@/infrastructure/contact/use-cases/submitInquiry', () => ({
+jest.mock('../lib/submitInquiry', () => ({
     submitInquiry: (...args: unknown[]) => mockSubmitInquiry(...args),
 }));
 
-import { submitContactAction } from '@/infrastructure/contact/submitContactAction';
+import { submitContactAction } from '../actions/submitContactAction';
 import type { ContactFormState } from '@/domain/types';
 import { makeFormData } from '@/__tests__/utils/makeFormData';
 

@@ -1,5 +1,5 @@
-import { getUserTier } from '@/infrastructure/tier/use-cases/getUserTier';
-import { makeUserTierRepositoryMock } from '@/__tests__/infrastructure/tier/use-cases/helpers';
+import { getUserTier } from '../../lib/getUserTier';
+import { makeUserTierRepositoryMock } from './helpers';
 
 describe('getUserTier', () => {
     it('returns the persisted user tier', async () => {

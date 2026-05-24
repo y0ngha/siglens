@@ -1,8 +1,5 @@
-import { toSitemapIndexXml, toUrlSetXml } from '@/infrastructure/sitemap/xml';
-import type {
-    SitemapEntry,
-    SitemapIndexEntry,
-} from '@/infrastructure/sitemap/types';
+import { toSitemapIndexXml, toUrlSetXml } from '../lib/xml';
+import type { SitemapEntry, SitemapIndexEntry } from '../model';
 
 const FIXED_DATE = new Date('2026-05-23T10:00:00.000Z');
 

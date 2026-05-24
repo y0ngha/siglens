@@ -1,9 +1,6 @@
 import { callGeminiChat, parseJsonResponse } from '@/entities/llm-provider';
-import { tryReadTranslatorConfig } from '@/infrastructure/ticker/config';
-import type {
-    TranslatorConfig,
-    TranslatorEntry,
-} from '@/infrastructure/ticker/types';
+import { tryReadTranslatorConfig } from './config';
+import type { TranslatorConfig, TranslatorEntry } from '../model';
 
 function buildTranslatePrompt(entries: readonly TranslatorEntry[]): string {
     const entryList = entries.map(e => `- ${e.symbol}: ${e.name}`).join('\n');

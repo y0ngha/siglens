@@ -1,7 +1,7 @@
 import { MS_PER_SECOND } from '@/domain/constants/time';
 import { tryReadFmpConfig } from '@y0ngha/siglens-core';
 import type { TickerSearchResult } from '@/domain/types';
-import type { FmpSearchResult } from '@/infrastructure/ticker/types';
+import type { FmpSearchResult } from '../model';
 
 const FMP_BASE_URL = 'https://financialmodelingprep.com/stable';
 const FMP_SEARCH_LIMIT = 20;

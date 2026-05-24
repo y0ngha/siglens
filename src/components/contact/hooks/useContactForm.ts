@@ -2,7 +2,7 @@
 
 import { useActionState } from 'react';
 import type { ContactFormState } from '@/domain/types';
-import { submitContactAction } from '@/infrastructure/contact/submitContactAction';
+import { submitContactAction } from '@/entities/inquiry/actions';
 
 const INITIAL_STATE: ContactFormState = {
     submitted: false,

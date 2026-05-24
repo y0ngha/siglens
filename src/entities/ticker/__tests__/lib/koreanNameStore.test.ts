@@ -34,7 +34,7 @@ jest.mock('@y0ngha/siglens-core', () => ({
     ...jest.requireActual('@y0ngha/siglens-core'),
     createCacheProvider: () => createCacheProviderMock(),
 }));
-jest.mock('@/infrastructure/ticker/db', () => ({
+jest.mock('../../lib/db', () => ({
     tryGetTickerDatabaseClient: () => tryGetTickerDatabaseClientMock(),
 }));
 jest.mock('@/entities/ticker', () => ({
@@ -49,7 +49,7 @@ import {
     getKoreanNames,
     searchByKoreanName,
     setKoreanTickers,
-} from '@/infrastructure/ticker/use-cases/koreanNameStore';
+} from '../../lib/koreanNameStore';
 
 const apple: KoreanTickerEntry = {
     symbol: 'AAPL',

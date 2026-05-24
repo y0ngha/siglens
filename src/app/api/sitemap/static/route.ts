@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
-import { buildStaticEntries } from '@/infrastructure/sitemap/buildStaticEntries';
-import { toUrlSetXml } from '@/infrastructure/sitemap/xml';
+import { buildStaticEntries, toUrlSetXml } from '@/entities/sitemap-entry';
 
 // /market 엔트리의 1시간 슬라이딩 lastmod 때문에 빌드 시점 prerender 불가.
 // CDN max-age 1h + SWR 1h로 trafic 보호.

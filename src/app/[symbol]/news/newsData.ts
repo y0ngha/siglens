@@ -2,7 +2,7 @@ import { cache } from 'react';
 import { getDatabaseClient } from '@/shared/db/client';
 import { DrizzleNewsRepository } from '@/entities/news-article';
 import { DrizzleEarningsReportsRepository } from '@/entities/earnings-report';
-import { FmpFundamentalClient } from '@/infrastructure/fmp/fundamentalClient';
+import { FmpFundamentalClient } from '@/entities/fundamental';
 import { MS_PER_DAY } from '@/domain/constants/time';
 import { NEWS_LOOKBACK_MS } from '@/entities/news-article';
 import type { NewsRow } from '@/entities/news-article';

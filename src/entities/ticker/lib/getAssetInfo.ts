@@ -9,19 +9,13 @@ import {
     ASSET_INFO_CACHE_TTL_WITH_KOREAN,
     ASSET_INFO_CACHE_TTL_WITHOUT_KOREAN,
     buildAssetInfoCacheKey,
-} from '@/infrastructure/ticker/cacheKeys';
-import { tryGetTickerDatabaseClient } from '@/infrastructure/ticker/db';
-import {
-    filterUsExchanges,
-    searchBySymbol,
-} from '@/infrastructure/ticker/fmpTickerApi';
-import { translateCompanyNames } from '@/infrastructure/ticker/koreanTranslator';
-import {
-    getKoreanNames,
-    setKoreanTickers,
-} from '@/infrastructure/ticker/use-cases/koreanNameStore';
-import type { AssetInfoMatch } from '@/infrastructure/ticker/use-cases/types';
-import { createSingleFlight } from '@/infrastructure/ticker/utils/singleFlight';
+} from './cacheKeys';
+import { tryGetTickerDatabaseClient } from './db';
+import { filterUsExchanges, searchBySymbol } from './fmpTickerApi';
+import { translateCompanyNames } from './koreanTranslator';
+import { getKoreanNames, setKoreanTickers } from './koreanNameStore';
+import type { AssetInfoMatch } from './backgroundTask';
+import { createSingleFlight } from './utils/singleFlight';
 import { createCacheProvider, type CacheProvider } from '@y0ngha/siglens-core';
 import type { AssetInfo, KoreanTickerEntry } from '@/domain/types';
 

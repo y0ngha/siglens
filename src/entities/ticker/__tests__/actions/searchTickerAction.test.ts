@@ -1,12 +1,12 @@
-import { searchTickerAction } from '@/infrastructure/ticker/searchTickerAction';
-import { searchTicker } from '@/infrastructure/ticker/use-cases/searchTicker';
+import { searchTickerAction } from '../../actions/searchTickerAction';
+import { searchTicker } from '../../lib/searchTicker';
 import type { TickerSearchResult } from '@/domain/types';
 
 jest.mock('@vercel/functions', () => ({
     waitUntil: jest.fn(),
 }));
 
-jest.mock('@/infrastructure/ticker/use-cases/searchTicker', () => ({
+jest.mock('../../lib/searchTicker', () => ({
     searchTicker: jest.fn(),
 }));
 

@@ -1,9 +1,9 @@
-jest.mock('@/infrastructure/ticker/getAssetInfoAction', () => ({
+jest.mock('../../actions/getAssetInfoAction', () => ({
     getAssetInfoAction: jest.fn(),
 }));
 
-import { getAssetInfoCached } from '@/infrastructure/ticker/getAssetInfoCached';
-import { getAssetInfoAction } from '@/infrastructure/ticker/getAssetInfoAction';
+import { getAssetInfoCached } from '../../lib/getAssetInfoCached';
+import { getAssetInfoAction } from '../../actions/getAssetInfoAction';
 
 const mockGetAssetInfoAction = getAssetInfoAction as jest.MockedFunction<
     typeof getAssetInfoAction

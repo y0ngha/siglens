@@ -1,8 +1,8 @@
-import { getAssetInfoAction } from '@/infrastructure/ticker/getAssetInfoAction';
-import { getAssetInfo } from '@/infrastructure/ticker/use-cases/getAssetInfo';
+import { getAssetInfoAction } from '../../actions/getAssetInfoAction';
+import { getAssetInfo } from '../../lib/getAssetInfo';
 import type { AssetInfo } from '@/domain/types';
 
-jest.mock('@/infrastructure/ticker/use-cases/getAssetInfo', () => ({
+jest.mock('../../lib/getAssetInfo', () => ({
     getAssetInfo: jest.fn(),
 }));
 

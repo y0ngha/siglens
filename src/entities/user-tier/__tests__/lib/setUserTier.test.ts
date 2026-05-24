@@ -1,5 +1,5 @@
-import { setUserTier } from '@/infrastructure/tier/use-cases/setUserTier';
-import { makeUserTierRepositoryMock } from '@/__tests__/infrastructure/tier/use-cases/helpers';
+import { setUserTier } from '../../lib/setUserTier';
+import { makeUserTierRepositoryMock } from './helpers';
 
 describe('setUserTier', () => {
     it('updates a user tier for admin workflows', async () => {

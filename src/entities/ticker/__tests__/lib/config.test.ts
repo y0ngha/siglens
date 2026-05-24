@@ -1,4 +1,4 @@
-import { tryReadTranslatorConfig } from '@/infrastructure/ticker/config';
+import { tryReadTranslatorConfig } from '../../lib/config';
 
 describe('tryReadTranslatorConfig', () => {
     // release-it 경유 실행 시 `.env.local`의 TRANSLATE_* 변수가 부모 프로세스에 주입되므로,

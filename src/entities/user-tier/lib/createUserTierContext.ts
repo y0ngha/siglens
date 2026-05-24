@@ -2,7 +2,7 @@ import { DEFAULT_TIER, type UserTierContext } from '@y0ngha/siglens-core';
 import type {
     CreateUserTierContextInput,
     UserTierDependencies,
-} from '@/infrastructure/tier/use-cases/types';
+} from '../model';
 
 /** Build request-scoped tier context; anonymous requests get the default free tier, missing accounts fall back to free. */
 export async function createUserTierContext(

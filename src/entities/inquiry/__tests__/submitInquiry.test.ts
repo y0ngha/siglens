@@ -1,6 +1,6 @@
 import type { ContactInput, ContactRepository } from '@/entities/inquiry';
-import { submitInquiry } from '@/infrastructure/contact/use-cases/submitInquiry';
-import type { SubmitInquiryDeps } from '@/infrastructure/contact/use-cases/types';
+import { submitInquiry } from '../lib/submitInquiry';
+import type { SubmitInquiryDeps } from '../lib/types';
 
 function makeDeps(): {
     deps: SubmitInquiryDeps;

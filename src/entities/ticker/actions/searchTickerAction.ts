@@ -1,7 +1,7 @@
 'use server';
 
 import { waitUntil } from '@vercel/functions';
-import { searchTicker } from '@/infrastructure/ticker/use-cases/searchTicker';
+import { searchTicker } from '../lib/searchTicker';
 import type { TickerSearchResult } from '@/domain/types';
 
 export async function searchTickerAction(

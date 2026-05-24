@@ -9,12 +9,12 @@ import {
     normalizeYahooContract,
     normalizeYahooExpiration,
     normalizeYahooSnapshot,
-} from '@/infrastructure/options/yahooNormalize';
+} from '../lib/yahooNormalize';
 import type {
     YahooCallOrPut,
     YahooOption,
     YahooOptionsResult,
-} from '@/infrastructure/options/yahooNormalize';
+} from '../lib/yahooNormalize';
 
 function makeYahooContract(
     strike: number,

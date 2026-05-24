@@ -10,7 +10,7 @@ import { buildAssetAboutNode } from '@/domain/seo/assetClassification';
 import { buildDisplayName } from '@/domain/ticker';
 import { getBarsAction } from '@/entities/bars/actions';
 import { countSkillFiles } from '@/entities/skill';
-import { getAssetInfoCached } from '@/infrastructure/ticker/getAssetInfoCached';
+import { getAssetInfoCached } from '@/entities/ticker';
 import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/shared/config/queryConfig';
 import {
     buildBreadcrumbJsonLd,

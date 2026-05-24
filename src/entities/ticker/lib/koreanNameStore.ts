@@ -1,8 +1,5 @@
-import { tryGetTickerDatabaseClient } from '@/infrastructure/ticker/db';
-import {
-    KOREAN_NAMES_CACHE_TTL,
-    KOREAN_TICKERS_CACHE_KEY,
-} from '@/infrastructure/ticker/cacheKeys';
+import { tryGetTickerDatabaseClient } from './db';
+import { KOREAN_NAMES_CACHE_TTL, KOREAN_TICKERS_CACHE_KEY } from './cacheKeys';
 import { createCacheProvider, type CacheProvider } from '@y0ngha/siglens-core';
 import type { KoreanTickerEntry, TickerSearchResult } from '@/domain/types';
 import { DrizzleKoreanTickerRepository } from '@/entities/ticker';

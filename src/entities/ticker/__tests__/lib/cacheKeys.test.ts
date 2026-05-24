@@ -10,7 +10,7 @@ import {
     buildAssetInfoCacheKey,
     buildTickerSearchCacheKey,
     TICKER_SEARCH_CACHE_TTL,
-} from '@/infrastructure/ticker/cacheKeys';
+} from '../../lib/cacheKeys';
 
 describe('ticker cache constants', () => {
     it('TICKER_SEARCH_CACHE_TTL', () => {

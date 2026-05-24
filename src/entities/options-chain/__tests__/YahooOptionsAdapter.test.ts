@@ -37,7 +37,7 @@ import {
     mapExpirationsToSlots,
     sanitizeOptionsChain,
 } from '@y0ngha/siglens-core';
-import { YahooOptionsAdapter } from '@/infrastructure/options/YahooOptionsAdapter';
+import { YahooOptionsAdapter } from '../lib/YahooOptionsAdapter';
 
 /** A minimal but complete CallOrPut fixture matching the live API shape. */
 const makeContract = (

@@ -1,8 +1,10 @@
 import { cache } from 'react';
 import { getDatabaseClient } from '@/shared/db/client';
-import { DrizzleProfileDescriptionTranslationRepository } from '@/entities/ticker';
-import { FmpFundamentalClient } from '@/infrastructure/fmp/fundamentalClient';
-import { translateCompanyDescription } from '@/infrastructure/ticker/koreanTranslator';
+import {
+    DrizzleProfileDescriptionTranslationRepository,
+    translateCompanyDescription,
+} from '@/entities/ticker';
+import { FmpFundamentalClient } from '@/entities/fundamental';
 import type {
     FundamentalProfile,
     FundamentalPeerInput,

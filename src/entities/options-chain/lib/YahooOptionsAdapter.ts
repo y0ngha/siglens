@@ -20,7 +20,7 @@ import {
     normalizeYahooSnapshot,
     type YahooOption,
     type YahooOptionsResult,
-} from '@/infrastructure/options/yahooNormalize';
+} from './yahooNormalize';
 
 // `yahooSurvey` 공지는 yahoo-finance2가 첫 호출 시 한 번 출력하는 마케팅 배너로,
 // 운영 로그에 노이즈만 남기므로 명시적으로 억제한다.

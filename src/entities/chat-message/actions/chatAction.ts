@@ -5,7 +5,7 @@ import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
 import { getDatabaseClient } from '@/shared/db/client';
 import { DrizzleUserApiKeyRepository } from '@/entities/api-key';
 import { DrizzleUserRepository } from '@/entities/user';
-import { getUserTier } from '@/infrastructure/tier/use-cases/getUserTier';
+import { getUserTier } from '@/entities/user-tier';
 import type {
     AnalysisResponse,
     ChatActionResult,

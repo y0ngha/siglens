@@ -13,7 +13,7 @@ jest.mock('@y0ngha/siglens-core', () => ({
     cancelJob: jest.fn(),
 }));
 
-jest.mock('@/infrastructure/options/optionsDataCache', () => ({
+jest.mock('../lib/optionsDataCache', () => ({
     fetchOptionsSnapshot: jest.fn(),
 }));
 
@@ -38,7 +38,7 @@ import {
     type OptionsSnapshot,
     type OptionsChain,
 } from '@y0ngha/siglens-core';
-import { fetchOptionsSnapshot } from '@/infrastructure/options/optionsDataCache';
+import { fetchOptionsSnapshot } from '../lib/optionsDataCache';
 import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
 import { resolveTierAndByok } from '@/shared/lib/byokGate';
 import type { AnalysisGateError } from '@/domain/types';
@@ -46,7 +46,7 @@ import {
     submitOptionsAnalysisAction,
     pollOptionsAnalysisAction,
     cancelOptionsAnalysisJobAction,
-} from '@/infrastructure/options/optionsActions';
+} from '../actions/optionsActions';
 
 const mockSubmitOptionsAnalysis = submitOptionsAnalysis as jest.MockedFunction<
     typeof submitOptionsAnalysis

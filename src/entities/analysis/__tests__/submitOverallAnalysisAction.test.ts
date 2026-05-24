@@ -15,7 +15,7 @@ jest.mock('@y0ngha/siglens-core', () => ({
     submitOverallAnalysis: jest.fn(),
 }));
 
-jest.mock('@/infrastructure/fmp/fundamentalClient', () => ({
+jest.mock('@/entities/fundamental', () => ({
     FmpFundamentalClient: jest.fn().mockImplementation(() => ({})),
 }));
 
@@ -49,7 +49,7 @@ jest.mock('@/shared/lib/byokGate', () => ({
     })),
 }));
 
-jest.mock('@/infrastructure/options/optionsDataCache', () => ({
+jest.mock('@/entities/options-chain', () => ({
     fetchOptionsSnapshot: jest.fn(),
 }));
 
@@ -72,7 +72,7 @@ import { DrizzleNewsRepository } from '@/entities/news-article';
 import { getNextEarningsReport } from '@/entities/earnings-report';
 import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
 import { resolveTierAndByok } from '@/shared/lib/byokGate';
-import { fetchOptionsSnapshot } from '@/infrastructure/options/optionsDataCache';
+import { fetchOptionsSnapshot } from '@/entities/options-chain';
 import {
     isUsOptionsRegularSession,
     isOpenInterestSnapshotStale,

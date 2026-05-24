@@ -4,7 +4,7 @@ import type {
     AssetTranslationRecord,
     AssetTranslationRepository,
 } from '@/shared/db/types';
-import type { FmpSearchResult } from '@/infrastructure/ticker/types';
+import type { FmpSearchResult } from '../../model';
 
 const mockCache: {
     get: jest.Mock;
@@ -46,7 +46,7 @@ jest.mock('@y0ngha/siglens-core', () => ({
     ...jest.requireActual('@y0ngha/siglens-core'),
     createCacheProvider: () => createCacheProviderMock(),
 }));
-jest.mock('@/infrastructure/ticker/db', () => ({
+jest.mock('../../lib/db', () => ({
     tryGetTickerDatabaseClient: () => tryGetTickerDatabaseClientMock(),
 }));
 jest.mock('@/entities/ticker', () => ({
@@ -56,25 +56,25 @@ jest.mock('@/entities/ticker', () => ({
         }
     },
 }));
-jest.mock('@/infrastructure/ticker/fmpTickerApi', () => {
-    const actual = jest.requireActual('@/infrastructure/ticker/fmpTickerApi');
+jest.mock('../../lib/fmpTickerApi', () => {
+    const actual = jest.requireActual('../../lib/fmpTickerApi');
     return {
         ...actual,
         searchBySymbol: (q: string) => searchBySymbolMock(q),
     };
 });
-jest.mock('@/infrastructure/ticker/use-cases/koreanNameStore', () => ({
+jest.mock('../../lib/koreanNameStore', () => ({
     getKoreanNames: (symbols: string[]) => getKoreanNamesMock(symbols),
     setKoreanTickers: (entries: unknown[]) => setKoreanTickersMock(entries),
 }));
-jest.mock('@/infrastructure/ticker/koreanTranslator', () => ({
+jest.mock('../../lib/koreanTranslator', () => ({
     translateCompanyNames: () => translateCompanyNamesMock(),
 }));
 
 import {
     _resetInFlightTranslationsForTest,
     getAssetInfo,
-} from '@/infrastructure/ticker/use-cases/getAssetInfo';
+} from '../../lib/getAssetInfo';
 
 const apple: FmpSearchResult = {
     symbol: 'AAPL',

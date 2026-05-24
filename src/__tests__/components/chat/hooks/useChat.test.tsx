@@ -36,11 +36,8 @@ jest.mock('@/components/symbol-page/hooks/useAssetInfo', () => ({
     useAssetInfo: () => ({ name: 'AAPL Inc.' }),
 }));
 
-jest.mock('@/infrastructure/chat/chatAction', () => ({
+jest.mock('@/entities/chat-message/actions', () => ({
     chatAction: jest.fn(),
-}));
-
-jest.mock('@/infrastructure/chat/getRemainingTokensAction', () => ({
     getRemainingTokensAction: jest.fn().mockResolvedValue(5),
 }));
 

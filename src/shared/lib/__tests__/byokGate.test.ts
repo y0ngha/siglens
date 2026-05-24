@@ -11,7 +11,7 @@ jest.mock('@/entities/user', () => ({
     DrizzleUserRepository: jest.fn().mockImplementation(() => ({})),
 }));
 
-jest.mock('@/infrastructure/tier/use-cases/getUserTier', () => ({
+jest.mock('@/entities/user-tier', () => ({
     getUserTier: (...args: unknown[]) => mockGetUserTier(...args),
 }));
 

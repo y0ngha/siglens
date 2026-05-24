@@ -1,4 +1,4 @@
-import { getMarketSummaryAction } from '@/infrastructure/dashboard/getMarketSummaryAction';
+import { getMarketSummaryAction } from '../actions/getMarketSummaryAction';
 import {
     getMarketSummary,
     getMarketSummaryWithBriefing,

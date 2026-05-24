@@ -1,4 +1,4 @@
-import { optionsSymbolTag } from '@/infrastructure/options/optionsCacheTags';
+import { optionsSymbolTag } from '../lib/optionsCacheTags';
 
 describe('optionsSymbolTag', () => {
     it('returns a stable `options:{symbol}` tag for uppercase tickers', () => {

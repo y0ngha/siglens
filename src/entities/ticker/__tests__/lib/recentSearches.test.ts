@@ -5,7 +5,7 @@ import {
     MAX_RECENT_SEARCHES,
     RECENT_SEARCHES_STORAGE_KEY,
     removeRecentSearch,
-} from '@/infrastructure/storage/recentSearches';
+} from '../../lib/recentSearches';
 
 function createMemoryStorage() {
     const map = new Map<string, string>();

@@ -24,7 +24,7 @@ const mockRedisGet = jest.fn();
 const mockRedisSet = jest.fn();
 const mockRedisConstructor = jest.fn();
 
-jest.mock('@/infrastructure/options/YahooOptionsAdapter', () => ({
+jest.mock('../lib/YahooOptionsAdapter', () => ({
     YahooOptionsAdapter: jest.fn().mockImplementation(() => ({
         hasOptionsMarket: mockHasOptionsMarket,
         fetchSnapshot: mockFetchSnapshot,
@@ -38,7 +38,7 @@ jest.mock('@upstash/redis', () => ({
     }),
 }));
 
-jest.mock('@/infrastructure/options/optionsCacheLife', () => ({
+jest.mock('../lib/optionsCacheLife', () => ({
     getOptionsCacheLifeProfile: jest.fn(() => 'options-market-open'),
 }));
 
@@ -47,7 +47,7 @@ import {
     fetchOptionsSnapshot,
     HAS_OPTIONS_MARKET_TTL_SECONDS,
     OPTIONS_SNAPSHOT_TTL_SECONDS,
-} from '@/infrastructure/options/optionsDataCache';
+} from '../lib/optionsDataCache';
 
 /**
  * optionsDataCache가 module-scope에서 Redis 인스턴스를 캐싱(`cachedRedis`)하므로
@@ -56,12 +56,12 @@ import {
 async function loadWithEnv(opts: {
     url?: string;
     token?: string;
-}): Promise<typeof import('@/infrastructure/options/optionsDataCache')> {
+}): Promise<typeof import('../lib/optionsDataCache')> {
     process.env.UPSTASH_REDIS_REST_URL = opts.url ?? '';
     process.env.UPSTASH_REDIS_REST_TOKEN = opts.token ?? '';
-    let mod!: typeof import('@/infrastructure/options/optionsDataCache');
+    let mod!: typeof import('../lib/optionsDataCache');
     await jest.isolateModulesAsync(async () => {
-        mod = await import('@/infrastructure/options/optionsDataCache');
+        mod = await import('../lib/optionsDataCache');
     });
     return mod;
 }

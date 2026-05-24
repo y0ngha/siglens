@@ -1,6 +1,6 @@
 import { callAiProviderRouter } from '@/entities/llm-provider';
 import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
-import { chatAction } from '@/infrastructure/chat/chatAction';
+import { chatAction } from '../actions/chatAction';
 import { getDatabaseClient } from '@/shared/db/client';
 import { DrizzleUserApiKeyRepository } from '@/entities/api-key';
 import type {
@@ -50,7 +50,7 @@ jest.mock('@/entities/api-key', () => ({
     DrizzleUserApiKeyRepository: jest.fn(),
 }));
 
-jest.mock('@/infrastructure/tier/use-cases/getUserTier', () => ({
+jest.mock('@/entities/user-tier', () => ({
     getUserTier: jest.fn().mockResolvedValue('free'),
 }));
 

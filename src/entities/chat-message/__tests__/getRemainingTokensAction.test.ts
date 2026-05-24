@@ -1,4 +1,4 @@
-import { getRemainingTokensAction } from '@/infrastructure/chat/getRemainingTokensAction';
+import { getRemainingTokensAction } from '../actions/getRemainingTokensAction';
 import { createChatTokenStore, hashClientIp } from '@y0ngha/siglens-core';
 import { headers } from 'next/headers';
 

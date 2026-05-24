@@ -10,8 +10,8 @@ import { MarketSummaryPanelSkeleton } from '@/components/dashboard/MarketSummary
 import { SectorSignalPanel } from '@/components/dashboard/SectorSignalPanel';
 import { SectorSignalPanelSkeleton } from '@/components/dashboard/SectorSignalPanelSkeleton';
 import { SignalTypeGuide } from '@/components/dashboard/SignalTypeGuide';
-import { getSectorSignalsAction } from '@/infrastructure/dashboard/getSectorSignalsAction';
-import { getMarketSummaryAction } from '@/infrastructure/dashboard/getMarketSummaryAction';
+import { getSectorSignalsAction } from '@/entities/sector-signal/actions';
+import { getMarketSummaryAction } from '@/entities/market-summary/actions';
 import type { DashboardTimeframe } from '@y0ngha/siglens-core';
 import {
     DASHBOARD_TIMEFRAMES,

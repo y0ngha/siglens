@@ -7,7 +7,7 @@ import {
     QUERY_KEYS,
     TICKER_SEARCH_STALE_TIME_MS,
 } from '@/shared/config/queryConfig';
-import { searchTickerAction } from '@/infrastructure/ticker/searchTickerAction';
+import { searchTickerAction } from '@/entities/ticker/actions';
 import type { TickerSearchResult } from '@/domain/types';
 
 const DEBOUNCE_MS = 300;

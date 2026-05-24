@@ -7,7 +7,7 @@ import {
     submitOptionsAnalysisAction,
     pollOptionsAnalysisAction,
     cancelOptionsAnalysisJobAction,
-} from '@/infrastructure/options/optionsActions';
+} from '@/entities/options-chain/actions';
 import { isGateBlockedResult } from '@/domain/analysis/gate';
 import { sleep } from '@/shared/lib/sleep';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';

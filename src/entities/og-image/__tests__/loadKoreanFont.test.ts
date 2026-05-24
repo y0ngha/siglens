@@ -1,4 +1,4 @@
-import { loadKoreanFont } from '@/infrastructure/og/loadKoreanFont';
+import { loadKoreanFont } from '../lib/loadKoreanFont';
 
 describe('loadKoreanFont', () => {
     const originalFetch = global.fetch;

@@ -1,4 +1,4 @@
-import { createSingleFlight } from '@/infrastructure/ticker/utils/singleFlight';
+import { createSingleFlight } from '../../../lib/utils/singleFlight';
 
 describe('createSingleFlight', () => {
     it('shares a single promise across concurrent calls with the same key', async () => {

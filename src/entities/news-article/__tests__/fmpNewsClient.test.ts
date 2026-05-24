@@ -4,7 +4,7 @@ import {
     hashUrlToId,
     normalizeFmpPublishedDate,
     toYyyyMmDd,
-} from '@/infrastructure/fmp/newsClient';
+} from '../lib/fmpNewsClient';
 import { MS_PER_DAY, MS_PER_HOUR } from '@/domain/constants/time';
 
 const mockFetch = jest.fn();

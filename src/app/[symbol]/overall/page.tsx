@@ -8,7 +8,7 @@ import {
 } from '@/domain/constants/market';
 import { buildAssetAboutNode } from '@/domain/seo/assetClassification';
 import { buildDisplayName } from '@/domain/ticker';
-import { getAssetInfoCached } from '@/infrastructure/ticker/getAssetInfoCached';
+import { getAssetInfoCached } from '@/entities/ticker';
 import {
     buildBreadcrumbJsonLd,
     buildSymbolOverallSeoContent,

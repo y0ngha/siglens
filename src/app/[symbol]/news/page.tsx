@@ -16,8 +16,8 @@ import { VALID_TICKER_RE } from '@/domain/constants/market';
 import { buildAssetAboutNode } from '@/domain/seo/assetClassification';
 import { buildDisplayName } from '@/domain/ticker';
 import { ensureNewsCardsAnalyzedAction } from '@/entities/news-article/actions';
-import { getTodayIsoDay } from '@/infrastructure/seo/getTodayIsoDay';
-import { getAssetInfoCached } from '@/infrastructure/ticker/getAssetInfoCached';
+import { getTodayIsoDay } from '@/shared/lib/getTodayIsoDay';
+import { getAssetInfoCached } from '@/entities/ticker';
 import { todayKstIsoDate } from '@/shared/lib/dateKey';
 import {
     buildBreadcrumbJsonLd,

@@ -6,10 +6,7 @@ jest.mock('resend', () => ({
 }));
 
 import { Resend } from 'resend';
-import {
-    ResendEmailDispatcher,
-    createEmailDispatcher,
-} from '../dispatcher';
+import { ResendEmailDispatcher, createEmailDispatcher } from '../dispatcher';
 
 const ResendCtor = Resend as jest.MockedClass<typeof Resend>;
 

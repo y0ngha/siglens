@@ -18,7 +18,7 @@ jest.mock('@/entities/earnings-report', () => ({
     })),
 }));
 
-jest.mock('@/infrastructure/fmp/fundamentalClient', () => ({
+jest.mock('@/entities/fundamental', () => ({
     FmpFundamentalClient: jest.fn().mockImplementation(() => ({
         getEarningsReports: mockGetEarningsReports,
         getGrades: jest.fn(),
