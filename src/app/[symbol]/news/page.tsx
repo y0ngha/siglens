@@ -9,7 +9,7 @@ import { NewsAiSummarySkeleton } from '@/widgets/news/NewsAiSummarySkeleton';
 import { AnalystActions } from '@/widgets/news/sections/AnalystActions';
 import { EventCalendar } from '@/widgets/news/sections/EventCalendar';
 import { NewsList } from '@/widgets/news/sections/NewsList';
-import { CrossLinkCards } from '@/widgets/symbol-page/CrossLinkCards';
+import { CrossLinkCards } from '@/widgets/symbol-page';
 import { SectionSkeleton } from '@/widgets/symbol-page/SectionSkeleton';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { VALID_TICKER_RE } from '@/shared/config/market';

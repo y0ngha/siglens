@@ -3,14 +3,10 @@
 // are imported directly by app routes, not re-exported here, to keep the
 // barrel tree-shake-friendly and avoid Jest ESM resolution issues.
 
-export {
-    SymbolPageProvider,
-    useSymbolPageContext,
-} from './SymbolPageContext';
-export {
-    SymbolModelProvider,
-    useSymbolModel,
-} from './SymbolModelContext';
+export { SymbolPageProvider, useSymbolPageContext } from './SymbolPageContext';
+export { SymbolModelProvider, useSymbolModel } from './SymbolModelContext';
+
+export { CrossLinkCards } from './CrossLinkCards';
 
 // Types re-exported for cross-widget consumption
 export type { CooldownNotice } from './types';

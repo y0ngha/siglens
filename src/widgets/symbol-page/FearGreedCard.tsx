@@ -1,5 +1,5 @@
 import type { FearGreedSnapshot } from '@y0ngha/siglens-core';
-import { SelfNormWarningBadge } from '@/widgets/fear-greed/SelfNormWarningBadge';
+import { SelfNormWarningBadge } from '@/widgets/fear-greed';
 import {
     FACTOR_LABEL,
     SENTIMENT_LABEL_TEXT,

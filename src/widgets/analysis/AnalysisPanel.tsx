@@ -33,7 +33,7 @@ import {
     MIN_CONFIDENCE_WEIGHT,
 } from '@y0ngha/siglens-core';
 import { cn } from '@/shared/lib/cn';
-import { useSymbolPageContext } from '@/widgets/symbol-page/SymbolPageContext';
+import { useSymbolPageContext } from '@/widgets/symbol-page';
 import {
     parseStructuredSummary,
     type SkillSummarySection,

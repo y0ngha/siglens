@@ -16,6 +16,14 @@
 | `shared/cache/` | Redis client (Upstash) |
 | `shared/api/` | HTTP client: isBot (bot detection), FMP fundamental client |
 
+## 의도적 예외 (shared → entities)
+
+| from | to | 사유 |
+|---|---|---|
+| `shared/lib/byokGate.ts` | `entities/api-key`, `entities/user-tier`, `entities/user` | Tier 확인 + BYOK 검증 cross-cutting utility. 7개 entity action에서 호출되므로 entities 레이어로 이동하면 역방향 의존 발생. DI로 해소 가능하나 과설계 |
+
+이 예외는 ESLint `from: 'shared', allow: ['shared', 'entities']`로 관리됨.
+
 ## 규칙
 
 1. **도메인 어휘 금지.** shared는 Metric, Widget, Event 등 도메인 개념을 알지 못한다.

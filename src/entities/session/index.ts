@@ -33,3 +33,4 @@ export type {
     PasswordVerifier,
 } from './lib/types';
 export { bcryptPasswordHasher, bcryptPasswordVerifier } from './lib/bcrypt';
+export { useCurrentUser } from './hooks/useCurrentUser';

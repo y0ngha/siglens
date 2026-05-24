@@ -1,5 +1,5 @@
 import { FearGreedPage } from '@/widgets/fear-greed/FearGreedPage';
-import { CrossLinkCards } from '@/widgets/symbol-page/CrossLinkCards';
+import { CrossLinkCards } from '@/widgets/symbol-page';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { DEFAULT_TIMEFRAME, VALID_TICKER_RE } from '@/shared/config/market';
 import {

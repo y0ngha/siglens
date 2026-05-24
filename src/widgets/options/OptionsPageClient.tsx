@@ -8,8 +8,7 @@ import {
     useState,
 } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
-import { CrossLinkCards } from '@/widgets/symbol-page/CrossLinkCards';
-import { useSymbolModel } from '@/widgets/symbol-page/SymbolModelContext';
+import { CrossLinkCards, useSymbolModel } from '@/widgets/symbol-page';
 import { ExpirationSelector } from './ExpirationSelector';
 import { OptionsAiAnalysis } from './OptionsAiAnalysis';
 import { OptionsAiAnalysisError } from './OptionsAiAnalysisError';
