@@ -52,7 +52,9 @@ next-env.d.ts
 /worker/dist/
 /worker/node_modules/
 /.superpowers/
-/docs/superpowers/
+/docs/superpowers/*
+!/docs/superpowers/specs/
+!/docs/superpowers/plans/
 
 # backtest batch job state
 /scripts/backtests/.batch-job.txt
