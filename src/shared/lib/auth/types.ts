@@ -66,3 +66,27 @@ export interface ConfirmPasswordResetError {
     field?: AuthValidationErrorField | 'token';
     message: string;
 }
+
+/** Shape of the HTTP-only session cookie set after authentication. */
+export interface AuthSessionCookie {
+    name: string;
+    value: string;
+    httpOnly: true;
+    secure: boolean;
+    sameSite: 'lax' | 'strict' | 'none';
+    path: string;
+    expires: Date;
+    maxAgeSeconds: number;
+}
+
+/** Interface for hashing plain-text passwords before storage. */
+export interface PasswordHasher {
+    /** Hash a plain-text password and return the storage-safe hash. */
+    hashPassword(password: string): Promise<string>;
+}
+
+/** Interface for comparing a plain-text password against a stored password hash. */
+export interface PasswordVerifier {
+    /** Compare a plain-text password with a stored password hash in constant time. */
+    verifyPassword(password: string, passwordHash: string): Promise<boolean>;
+}

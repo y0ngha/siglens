@@ -13,11 +13,14 @@ export {
 } from './passwordRules';
 export { DEFAULT_REDIRECT_PATH, sanitizeNextPath } from './redirect';
 export type {
+    AuthSessionCookie,
     AuthUserRecord,
     ConfirmPasswordResetError,
     ConfirmPasswordResetErrorCode,
     DeleteAccountErrorCode,
     LoginUserErrorCode,
+    PasswordHasher,
+    PasswordVerifier,
     RegisterUserError,
     RegisterUserErrorCode,
     RegisterUserErrorField,

@@ -10,9 +10,10 @@ import type {
 } from '@/shared/db/types';
 import type { OAuthRevoker } from '@/entities/oauth-account';
 import type {
+    AuthSessionCookie,
     PasswordHasher,
     PasswordVerifier,
-} from '@/entities/session/lib/types';
+} from '@/shared/lib/auth/types';
 import type { EmailDispatcher, EmailMessage } from '@/shared/email';
 import type { EmailTokenStore } from '@/entities/email-token';
 import type {
@@ -77,16 +78,7 @@ export interface LoginUserError {
     message: string;
 }
 
-export interface AuthSessionCookie {
-    name: string;
-    value: string;
-    httpOnly: true;
-    secure: boolean;
-    sameSite: 'lax' | 'strict' | 'none';
-    path: string;
-    expires: Date;
-    maxAgeSeconds: number;
-}
+export type { AuthSessionCookie };
 
 export interface AuthSessionOptions {
     now?: Date;

@@ -1,5 +1,5 @@
 import type { AuthSessionRecord, SessionRepository } from '@/shared/db/types';
-import type { AuthSessionCookie } from '@/entities/user';
+import type { AuthSessionCookie } from '@/shared/lib/auth/types';
 
 import { AUTH_SESSION_COOKIE_NAME } from '@/shared/config/cookieNames';
 

@@ -1,4 +1,4 @@
-import type { AuthSessionCookie } from '@/entities/user';
+import type { AuthSessionCookie } from '@/shared/lib/auth/types';
 import type { ResponseCookie } from './types';
 
 /** siglens-core의 AuthSessionCookie를 next/headers cookies().set() 형태로 변환한다. */

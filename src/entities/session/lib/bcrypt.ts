@@ -1,7 +1,7 @@
 import { compare, hash } from 'bcryptjs';
 import type { PasswordHasher, PasswordVerifier } from './types';
 
-/** @internal Salt rounds for the default bcrypt adapter — cost 12 balances brute-force resistance and per-request CPU cost. */
+/** Salt rounds for the default bcrypt adapter — cost 12 balances brute-force resistance and per-request CPU cost. */
 export const BCRYPT_DEFAULT_SALT_ROUNDS = 12;
 
 /** Default {@link PasswordHasher} backed by `bcryptjs` with cost {@link BCRYPT_DEFAULT_SALT_ROUNDS}. */

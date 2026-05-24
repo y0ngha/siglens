@@ -3,7 +3,7 @@ import {
     DEFAULT_SESSION_TTL_SECONDS,
 } from '@/entities/session/lib/sessionCookie';
 import { loginUser } from '@/entities/user/lib/loginUser';
-import type { PasswordVerifier } from '@/entities/session/lib/types';
+import type { PasswordVerifier } from '@/shared/lib/auth/types';
 import type {
     AuthSessionRecord,
     EmailAuthUserRecord,

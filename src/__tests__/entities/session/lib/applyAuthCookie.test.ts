@@ -1,5 +1,5 @@
 import { applyAuthCookie } from '@/entities/session/lib/applyAuthCookie';
-import type { AuthSessionCookie } from '@/entities/user/lib/authUseCaseTypes';
+import type { AuthSessionCookie } from '@/shared/lib/auth/types';
 
 describe('applyAuthCookie', () => {
     it('AuthSessionCookie 메타를 next/headers cookies().set 형식으로 매핑한다', () => {
