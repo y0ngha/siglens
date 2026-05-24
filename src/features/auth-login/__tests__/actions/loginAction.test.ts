@@ -30,7 +30,7 @@ import { redirect } from 'next/navigation';
 import { loginUser } from '@/entities/user';
 import { loginAction } from '@/features/auth-login/actions/loginAction';
 import { resetAuthDatabaseClientForTests } from '@/entities/session/lib/db';
-import { makeFormData } from '@/__tests__/utils/makeFormData';
+import { makeFormData } from '@/shared/test-utils/makeFormData';
 
 const mockCookies = cookies as jest.MockedFunction<typeof cookies>;
 const mockLogin = loginUser as jest.MockedFunction<typeof loginUser>;

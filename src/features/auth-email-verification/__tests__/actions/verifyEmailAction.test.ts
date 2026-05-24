@@ -18,7 +18,7 @@ import {
     AUTH_SERVICE_UNAVAILABLE_MESSAGE,
 } from '@/entities/session';
 import { verifyEmailAction } from '@/features/auth-email-verification/actions/verifyEmailAction';
-import { makeFormData } from '@/__tests__/utils/makeFormData';
+import { makeFormData } from '@/shared/test-utils/makeFormData';
 
 const mockVerify = verifyEmail as jest.MockedFunction<typeof verifyEmail>;
 const mockCreateTokenStore = createEmailTokenStore as jest.MockedFunction<

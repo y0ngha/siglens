@@ -31,7 +31,7 @@ import {
 } from '@/entities/email-token';
 import { requestPasswordResetAction } from '@/features/auth-password-reset/actions/requestPasswordResetAction';
 import { resetAuthDatabaseClientForTests } from '@/entities/session/lib/db';
-import { makeFormData } from '@/__tests__/utils/makeFormData';
+import { makeFormData } from '@/shared/test-utils/makeFormData';
 
 const mockRequest = requestPasswordReset as jest.MockedFunction<
     typeof requestPasswordReset

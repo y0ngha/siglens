@@ -27,7 +27,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import type { OverallAnalysisResponse } from '@y0ngha/siglens-core';
 import type { ReactNode } from 'react';
-import { readBlobText } from '@/__tests__/utils/readBlobText';
+import { readBlobText } from '@/shared/test-utils/readBlobText';
 
 jest.mock('@/entities/analysis/actions', () => ({
     submitOverallAnalysisAction: jest.fn(),

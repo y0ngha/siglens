@@ -14,7 +14,7 @@ import { act, renderHook, waitFor } from '@testing-library/react';
 import type { NewsAnalysisResponse } from '@y0ngha/siglens-core';
 import type { ReactNode } from 'react';
 import { renderToString } from 'react-dom/server';
-import { readBlobText } from '@/__tests__/utils/readBlobText';
+import { readBlobText } from '@/shared/test-utils/readBlobText';
 
 jest.mock('@/entities/news-article/actions', () => ({
     submitNewsAnalysisAction: jest.fn(),

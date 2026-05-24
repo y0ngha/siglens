@@ -4,7 +4,7 @@
 import { usePageHideCancel } from '@/shared/hooks/usePageHideCancel';
 import { CANCEL_JOBS_API_PATH } from '@/shared/lib/cancelJobsApi';
 import { renderHook } from '@testing-library/react';
-import { readBlobText } from '@/__tests__/utils/readBlobText';
+import { readBlobText } from '@/shared/test-utils/readBlobText';
 
 describe('usePageHideCancel', () => {
     let sendBeaconMock: jest.Mock;

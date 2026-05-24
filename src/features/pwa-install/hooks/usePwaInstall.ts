@@ -2,7 +2,7 @@
 
 import { registerServiceWorker } from '../lib/registerServiceWorker';
 import { type PwaEnvironment } from '@/shared/lib/types';
-import { detectPwaEnvironment } from '@/lib/pwa/detectPwaEnvironment';
+import { detectPwaEnvironment } from '../lib/detectPwaEnvironment';
 import { PWA_TRIGGER_EVENT } from '@/shared/lib/pwaEvents';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
