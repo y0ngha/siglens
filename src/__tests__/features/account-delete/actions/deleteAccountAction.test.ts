@@ -13,6 +13,7 @@ jest.mock('@/entities/session/lib/sessionCookie', () => ({
 }));
 jest.mock('@/entities/user', () => ({
     DrizzleUserRepository: jest.fn().mockImplementation(() => ({})),
+    deleteAccount: jest.fn(),
 }));
 jest.mock('@/entities/session', () => ({
     DrizzleSessionRepository: jest.fn().mockImplementation(() => ({})),
@@ -21,20 +22,15 @@ jest.mock('@/entities/oauth-account', () => ({
     DrizzleOAuthAccountRepository: jest
         .fn()
         .mockImplementation(() => ({ findByUserId: jest.fn() })),
-}));
-jest.mock('@/entities/user/lib/deleteAccount', () => ({
-    deleteAccount: jest.fn(),
+    compositeOAuthRevoker: { revokeToken: jest.fn() },
 }));
 jest.mock('@/entities/user/lib/findUserBySessionToken', () => ({
     findUserBySessionToken: jest.fn(),
 }));
-jest.mock('@/entities/oauth-account/lib/revoker', () => ({
-    compositeOAuthRevoker: { revokeToken: jest.fn() },
-}));
 
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { deleteAccount } from '@/entities/user/lib/deleteAccount';
+import { deleteAccount } from '@/entities/user';
 import { findUserBySessionToken } from '@/entities/user/lib/findUserBySessionToken';
 import { deleteAccountAction } from '@/features/account-delete/actions/deleteAccountAction';
 import { resetAuthDatabaseClientForTests } from '@/entities/session/lib/db';

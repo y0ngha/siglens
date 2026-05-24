@@ -1,9 +1,10 @@
 'use server';
 
-import { DrizzleOAuthAccountRepository } from '@/entities/oauth-account';
-import { DrizzleUserRepository } from '@/entities/user';
-import { deleteAccount } from '@/entities/user/lib/deleteAccount';
-import { compositeOAuthRevoker } from '@/entities/oauth-account/lib/revoker';
+import {
+    DrizzleOAuthAccountRepository,
+    compositeOAuthRevoker,
+} from '@/entities/oauth-account';
+import { DrizzleUserRepository, deleteAccount } from '@/entities/user';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import type { DeleteAccountFormState } from '@/shared/lib/auth/formTypes';
