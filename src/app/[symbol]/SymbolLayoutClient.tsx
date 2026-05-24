@@ -1,9 +1,9 @@
 'use client';
 
 import { type ReactNode } from 'react';
-import { FloatingChatButton } from '@/components/chat/FloatingChatButton';
+import { FloatingChatButton } from '@/widgets/chat/FloatingChatButton';
 import { SymbolChatProvider } from '@/features/symbol-chat';
-import { SymbolModelProvider } from '@/components/symbol-page/SymbolModelContext';
+import { SymbolModelProvider } from '@/widgets/symbol-page/SymbolModelContext';
 
 interface SymbolLayoutProvidersProps {
     children: ReactNode;

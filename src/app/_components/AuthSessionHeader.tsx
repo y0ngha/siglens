@@ -1,8 +1,8 @@
 import { Suspense } from 'react';
 import { cookies } from 'next/headers';
 import type { ReactNode } from 'react';
-import { Header } from '@/components/layout/Header';
-import type { HeaderUserMenuUser } from '@/components/layout/HeaderUserMenu';
+import { Header } from '@/widgets/layout/Header';
+import type { HeaderUserMenuUser } from '@/widgets/layout/HeaderUserMenu';
 import { getCurrentUser } from '@/entities/session';
 import { AUTH_HINT_COOKIE_NAME } from '@/shared/config/cookieNames';
 

@@ -1,0 +1,42 @@
+'use client';
+
+import type { CSSProperties } from 'react';
+import type { OverlayLegendItem } from './types';
+import { useOverlayGroups } from './hooks/useOverlayGroups';
+import { formatOverlayValue } from './utils/overlayLegendFormat';
+
+interface OverlayLegendProps {
+    items: OverlayLegendItem[];
+}
+
+export function OverlayLegend({ items }: OverlayLegendProps) {
+    const groups = useOverlayGroups(items);
+
+    if (items.length === 0) return null;
+
+    return (
+        <div className="pointer-events-none flex flex-col gap-1.5">
+            {groups.map(group => (
+                <div
+                    key={group.key}
+                    className="flex flex-wrap gap-x-3 gap-y-1.5"
+                >
+                    {group.items.map(item => (
+                        <span
+                            key={item.name}
+                            className="font-mono text-[11px] leading-none text-(--legend-color)"
+                            style={
+                                {
+                                    '--legend-color': item.color,
+                                } as CSSProperties
+                            }
+                        >
+                            {'\u25CF'} {item.name}{' '}
+                            {formatOverlayValue(item.value)}
+                        </span>
+                    ))}
+                </div>
+            ))}
+        </div>
+    );
+}

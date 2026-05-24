@@ -5,11 +5,11 @@ import {
     HydrationBoundary,
     QueryClient,
 } from '@tanstack/react-query';
-import { MarketSummaryPanel } from '@/components/dashboard/MarketSummaryPanel';
-import { MarketSummaryPanelSkeleton } from '@/components/dashboard/MarketSummaryPanelSkeleton';
-import { SectorSignalPanel } from '@/components/dashboard/SectorSignalPanel';
-import { SectorSignalPanelSkeleton } from '@/components/dashboard/SectorSignalPanelSkeleton';
-import { SignalTypeGuide } from '@/components/dashboard/SignalTypeGuide';
+import { MarketSummaryPanel } from '@/widgets/dashboard/MarketSummaryPanel';
+import { MarketSummaryPanelSkeleton } from '@/widgets/dashboard/MarketSummaryPanelSkeleton';
+import { SectorSignalPanel } from '@/widgets/dashboard/SectorSignalPanel';
+import { SectorSignalPanelSkeleton } from '@/widgets/dashboard/SectorSignalPanelSkeleton';
+import { SignalTypeGuide } from '@/widgets/dashboard/SignalTypeGuide';
 import { getSectorSignalsAction } from '@/entities/sector-signal/actions';
 import { getMarketSummaryAction } from '@/entities/market-summary/actions';
 import type { DashboardTimeframe } from '@y0ngha/siglens-core';

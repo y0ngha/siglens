@@ -8,8 +8,8 @@ import {
     SymbolLayoutFloatingChat,
     SymbolLayoutProviders,
 } from '@/app/[symbol]/SymbolLayoutClient';
-import { SymbolLayoutHeader } from '@/components/symbol-page/SymbolLayoutHeader';
-import { SymbolTabsSkeleton } from '@/components/symbol-page/SymbolTabsSkeleton';
+import { SymbolLayoutHeader } from '@/widgets/symbol-page/SymbolLayoutHeader';
+import { SymbolTabsSkeleton } from '@/widgets/symbol-page/SymbolTabsSkeleton';
 import { DEFAULT_TIMEFRAME } from '@/shared/config/market';
 import { getBarsAction } from '@/entities/bars/actions';
 import { getAssetInfoCached } from '@/entities/ticker';

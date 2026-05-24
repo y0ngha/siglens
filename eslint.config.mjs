@@ -61,7 +61,7 @@ const eslintConfig = defineConfig([
                 { type: 'shared', pattern: 'src/shared/**' },
                 // 옛 layer (Phase 1~9 동안 점진 제거)
                 { type: 'legacy-app', pattern: 'src/app/**' },
-                { type: 'legacy-comp', pattern: 'src/components/**' },
+                // legacy-comp 제거 완료 (Phase 7). src/components/ → src/widgets/ 마이그레이션 완료.
                 { type: 'legacy-domain', pattern: 'src/domain/**' },
                 { type: 'legacy-infra', pattern: 'src/infrastructure/**' },
                 { type: 'legacy-lib', pattern: 'src/lib/**' },
@@ -80,19 +80,20 @@ const eslintConfig = defineConfig([
                                 'features',
                                 'entities',
                                 'shared',
-                                'legacy-comp',
                                 'legacy-domain',
                                 'legacy-infra',
                                 'legacy-lib',
                             ],
                         },
                         {
+                            // widgets 간 cross-import 허용: symbol-page가 chart/analysis/fear-greed 위젯을 조합하고,
+                            // fundamental/news/options/overall이 symbol-page barrel에서 공통 hook(useDefaultModelId 등)을 소비.
                             from: 'widgets',
                             allow: [
+                                'widgets',
                                 'features',
                                 'entities',
                                 'shared',
-                                'legacy-comp',
                                 'legacy-domain',
                                 'legacy-infra',
                                 'legacy-lib',
@@ -101,13 +102,12 @@ const eslintConfig = defineConfig([
                         {
                             // Phase 5 임시 허용 — auth 슬라이스 간 cross-import.
                             // 허용 쌍: auth-signup → auth-email-verification, auth-oauth-consent → auth-signup
-                            // TODO(Phase 7): 공유 로직을 entities/shared로 추출하여 해소.
+                            // TODO(Phase 8+): 공유 로직을 entities/shared로 추출하여 해소.
                             from: 'features',
                             allow: [
                                 'features',
                                 'entities',
                                 'shared',
-                                'legacy-comp', // 마이그레이션 중 임시 허용: 새 feature가 아직 widgets로 이동하지 않은 legacy UI를 사용. Phase 7 완료 시 제거.
                                 'legacy-domain',
                                 'legacy-infra',
                                 'legacy-lib',
@@ -147,29 +147,12 @@ const eslintConfig = defineConfig([
                                 'features',
                                 'entities',
                                 'shared',
-                                'legacy-comp',
                                 'legacy-domain',
                                 'legacy-infra',
                                 'legacy-lib',
                             ],
                         },
-                        {
-                            // legacy-comp → legacy-infra: 옛 코드 현상 유지 (현상 유지 허용).
-                            // .tsx 파일의 직접 infrastructure import는 ARCHITECTURE.md 규칙으로 별도 차단되며,
-                            // 이 boundaries 규칙은 hooks/와 .tsx를 구분하지 않음.
-                            // Phase 7 (widgets 마이그레이션) 완료 시 legacy-comp 타입 제거.
-                            from: 'legacy-comp',
-                            allow: [
-                                // Phase 5+: components hooks가 entities actions/hooks 및 features barrel을 import 필요.
-                                // HeaderUserMenu → auth-logout 등. Phase 7 (widgets 마이그레이션) 완료 시 legacy-comp 자체 제거.
-                                'features',
-                                'entities',
-                                'legacy-domain',
-                                'legacy-infra',
-                                'legacy-lib',
-                                'shared',
-                            ],
-                        },
+                        // legacy-comp 블록 제거 완료 (Phase 7). src/components/ → src/widgets/로 전량 이동.
                         {
                             from: 'legacy-domain',
                             allow: ['legacy-lib', 'shared'],
@@ -207,6 +190,9 @@ const eslintConfig = defineConfig([
             'src/entities/*/lib/**',
             // Route handlers는 서버 전용 코드로 entity/feature 내부 구현 접근 필요.
             'src/app/api/**',
+            // widgets 간 cross-import: hook에 server-side 의존이 있어 barrel re-export 시
+            // Jest ESM 해석 실패. deep path 허용으로 우회 (Phase 7).
+            'src/widgets/**',
         ],
         rules: {
             'no-restricted-imports': [

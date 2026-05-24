@@ -1,4 +1,4 @@
-import { SymbolPageClient } from '@/components/symbol-page/SymbolPageClient';
+import { SymbolPageClient } from '@/widgets/symbol-page/SymbolPageClient';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { FALLBACK_ANALYSIS } from '@/entities/chat-message';
 import {

@@ -1,11 +1,11 @@
-import { HeroIllustration } from '@/components/home/HeroIllustration';
-import { HowItWorks } from '@/components/home/HowItWorks';
+import { HeroIllustration } from '@/widgets/home/HeroIllustration';
+import { HowItWorks } from '@/widgets/home/HowItWorks';
 import {
     SkillsShowcase,
     SkillsShowcaseSkeleton,
-} from '@/components/home/SkillsShowcase';
-import { StatsBar, StatsBarSkeleton } from '@/components/home/StatsBar';
-import { TickerCategories } from '@/components/home/TickerCategories';
+} from '@/widgets/home/SkillsShowcase';
+import { StatsBar, StatsBarSkeleton } from '@/widgets/home/StatsBar';
+import { TickerCategories } from '@/widgets/home/TickerCategories';
 import { SymbolSearchPanel } from '@/features/ticker-search';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { countSkillFiles, FileSkillsLoader } from '@/entities/skill';

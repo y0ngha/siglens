@@ -1,5 +1,5 @@
-import { OptionsPageClient } from '@/components/options/OptionsPageClient';
-import { OptionsEmptyState } from '@/components/options/OptionsEmptyState';
+import { OptionsPageClient } from '@/widgets/options/OptionsPageClient';
+import { OptionsEmptyState } from '@/widgets/options/OptionsEmptyState';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { VALID_TICKER_RE } from '@/shared/config/market';
 import {

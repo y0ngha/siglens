@@ -1,5 +1,5 @@
-import { OverallContent } from '@/components/overall/OverallContent';
-import { CrossLinkCards } from '@/components/symbol-page/CrossLinkCards';
+import { OverallContent } from '@/widgets/overall/OverallContent';
+import { CrossLinkCards } from '@/widgets/symbol-page/CrossLinkCards';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import {
     DEFAULT_TIMEFRAME,

@@ -1,8 +1,8 @@
 import { Suspense } from 'react';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { LegalPageShell } from '@/components/legal/LegalPageShell';
-import { PolicyMarkdownBody } from '@/components/legal/PolicyMarkdownBody';
+import { LegalPageShell } from '@/widgets/legal/LegalPageShell';
+import { PolicyMarkdownBody } from '@/widgets/legal/PolicyMarkdownBody';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import {
     formatKoreanDate,
