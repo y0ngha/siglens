@@ -182,7 +182,7 @@ describe('confirmPasswordResetAction', () => {
             ).rejects.toThrow();
             expect(mockConfirm).toHaveBeenCalledWith(
                 {
-                    email: 'USER@example.com',
+                    email: 'user@example.com',
                     token: 'tok-x',
                     newPassword: 'NewPass1234',
                 },

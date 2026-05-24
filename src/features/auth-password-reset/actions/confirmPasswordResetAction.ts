@@ -10,13 +10,14 @@ import {
 import { createEmailTokenStore } from '@/entities/email-token';
 import { redirect } from 'next/navigation';
 import type { ResetPasswordFormState } from '@/shared/lib/auth/formTypes';
+import { normalizeEmail } from '@/shared/lib/auth/validation';
 
 export async function confirmPasswordResetAction(
     _prev: ResetPasswordFormState,
     formData: FormData
 ): Promise<ResetPasswordFormState> {
     try {
-        const email = String(formData.get('email') ?? '').trim();
+        const email = normalizeEmail(String(formData.get('email') ?? ''));
         const token = String(formData.get('token') ?? '');
         const newPassword = String(formData.get('newPassword') ?? '');
 

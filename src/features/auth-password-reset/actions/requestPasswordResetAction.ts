@@ -6,6 +6,7 @@ import {
     buildPasswordResetEmail,
 } from '@/entities/email-token';
 import type { ForgotPasswordFormState } from '@/shared/lib/auth/formTypes';
+import { normalizeEmail } from '@/shared/lib/auth/validation';
 import { createEmailDispatcher } from '@/shared/email';
 import { getAuthDatabaseClient } from '@/entities/session';
 
@@ -14,7 +15,7 @@ export async function requestPasswordResetAction(
     formData: FormData
 ): Promise<ForgotPasswordFormState> {
     try {
-        const email = String(formData.get('email') ?? '').trim();
+        const email = normalizeEmail(String(formData.get('email') ?? ''));
 
         const emailTokens = createEmailTokenStore();
         // enumeration 회피: Redis 미설정·미가입 이메일을 구분할 수 없도록 항상 submitted:true 반환.

@@ -14,7 +14,7 @@ export async function verifyEmailAction(
     formData: FormData
 ): Promise<VerifyEmailFormState> {
     try {
-        const email = String(formData.get('email') ?? '').trim();
+        const email = normalizeEmail(String(formData.get('email') ?? ''));
         const code = String(formData.get('code') ?? '').trim();
 
         const emailTokens = createEmailTokenStore();
