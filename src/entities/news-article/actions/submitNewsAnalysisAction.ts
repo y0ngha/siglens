@@ -14,7 +14,7 @@ import { NEWS_ANALYSIS_LOOKBACK_MS } from '../lib/newsLookback';
 import { isEnrichedRow, toEnrichedNewsItem } from '../lib/newsEnrichment';
 import { getNextEarningsReport } from '@/entities/earnings-report';
 import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
-import { resolveTierAndByok, buildGateError } from '@/entities/analysis';
+import { resolveTierAndByok, buildGateError } from '@/shared/lib/byokGate';
 import { isBot } from '@/shared/api/isBot';
 import type { AnalysisGateBlockedResult } from '@/domain/types';
 

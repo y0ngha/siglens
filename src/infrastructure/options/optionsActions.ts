@@ -12,7 +12,7 @@ import {
 } from '@y0ngha/siglens-core';
 import { fetchOptionsSnapshot } from '@/infrastructure/options/optionsDataCache';
 import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
-import { resolveTierAndByok, buildGateError } from '@/entities/analysis';
+import { resolveTierAndByok, buildGateError } from '@/shared/lib/byokGate';
 import { isBot } from '@/shared/api/isBot';
 import type {
     AnalysisGateBlockedResult,

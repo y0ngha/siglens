@@ -24,19 +24,12 @@ jest.mock('@/shared/db/client', () => ({
 }));
 
 jest.mock('@/entities/news-article', () => {
-    const actual = jest.requireActual(
-        '@/entities/news-article/lib/newsEnrichment'
-    );
-    const actualLookback = jest.requireActual(
-        '@/entities/news-article/lib/newsLookback'
-    );
+    const actual = jest.requireActual('@/entities/news-article');
     return {
+        ...actual,
         DrizzleNewsRepository: jest.fn().mockImplementation(() => ({
             listBySymbol: jest.fn(),
         })),
-        NEWS_ANALYSIS_LOOKBACK_MS: actualLookback.NEWS_ANALYSIS_LOOKBACK_MS,
-        isEnrichedRow: actual.isEnrichedRow,
-        toEnrichedNewsItem: actual.toEnrichedNewsItem,
     };
 });
 
@@ -48,7 +41,7 @@ jest.mock('@/infrastructure/auth/getCurrentUser', () => ({
     getCurrentUser: jest.fn(),
 }));
 
-jest.mock('@/entities/analysis/lib/byokGate', () => ({
+jest.mock('@/shared/lib/byokGate', () => ({
     resolveTierAndByok: jest.fn(),
     buildGateError: jest.fn((code: string) => ({
         code,
@@ -78,7 +71,7 @@ import { headers } from 'next/headers';
 import { DrizzleNewsRepository } from '@/entities/news-article';
 import { getNextEarningsReport } from '@/entities/earnings-report';
 import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
-import { resolveTierAndByok } from '../lib/byokGate';
+import { resolveTierAndByok } from '@/shared/lib/byokGate';
 import { fetchOptionsSnapshot } from '@/infrastructure/options/optionsDataCache';
 import {
     isUsOptionsRegularSession,

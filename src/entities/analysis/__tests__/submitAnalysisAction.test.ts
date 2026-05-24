@@ -14,7 +14,7 @@ jest.mock('@/infrastructure/auth/getCurrentUser', () => ({
     getCurrentUser: jest.fn(),
 }));
 
-jest.mock('@/entities/analysis/lib/byokGate', () => ({
+jest.mock('@/shared/lib/byokGate', () => ({
     resolveTierAndByok: jest.fn(),
     buildGateError: jest.fn((code: string) => ({
         code,
@@ -23,7 +23,7 @@ jest.mock('@/entities/analysis/lib/byokGate', () => ({
 }));
 
 import { headers } from 'next/headers';
-import { resolveTierAndByok } from '../lib/byokGate';
+import { resolveTierAndByok } from '@/shared/lib/byokGate';
 import type { AnalysisGateError } from '@/domain/types';
 import { submitAnalysisAction } from '../actions/submitAnalysisAction';
 import {
