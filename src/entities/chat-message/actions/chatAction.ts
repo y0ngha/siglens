@@ -1,7 +1,7 @@
 'use server';
 
 import { callAiProviderRouter } from '@/entities/llm-provider';
-import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
+import { getCurrentUser } from '@/entities/session/lib/getCurrentUser';
 import { getDatabaseClient } from '@/shared/db/client';
 import { DrizzleUserApiKeyRepository } from '@/entities/api-key';
 import { DrizzleUserRepository } from '@/entities/user';

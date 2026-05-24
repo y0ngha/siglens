@@ -8,7 +8,7 @@ import {
     type SubmitFundamentalAnalysisResult,
 } from '@y0ngha/siglens-core';
 import { FmpFundamentalClient } from '@/shared/api/fmp/fundamentalClient';
-import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
+import { getCurrentUser } from '@/entities/session/lib/getCurrentUser';
 import { resolveTierAndByok, buildGateError } from '@/shared/lib/byokGate';
 import { isBot } from '@/shared/api/isBot';
 import type { AnalysisGateBlockedResult } from '@/shared/lib/types';

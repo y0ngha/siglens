@@ -8,7 +8,7 @@ import { useContactForm } from '@/components/contact/hooks/useContactForm';
 import { useCurrentUser } from '@/components/hooks/useCurrentUser';
 import type { ContactFormState } from '@/shared/lib/types';
 import type { UseQueryResult } from '@tanstack/react-query';
-import type { AuthUserRecord } from '@/domain/auth/types';
+import type { AuthUserRecord } from '@/shared/lib/auth/types';
 
 // Block transitive imports that pull in the Neon serverless client (which
 // requires Web APIs not available in the jsdom test environment).

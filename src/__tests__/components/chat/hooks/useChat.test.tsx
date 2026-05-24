@@ -41,7 +41,7 @@ jest.mock('@/entities/chat-message/actions', () => ({
     getRemainingTokensAction: jest.fn().mockResolvedValue(5),
 }));
 
-jest.mock('@/infrastructure/auth/currentUserAction', () => ({
+jest.mock('@/entities/session/actions/currentUserAction', () => ({
     currentUserAction: jest.fn().mockResolvedValue(null),
 }));
 

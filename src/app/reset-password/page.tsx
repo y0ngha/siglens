@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Suspense } from 'react';
-import { AuthCardShell } from '@/components/auth/AuthCardShell';
-import { ResetPasswordForm } from '@/components/auth/ResetPasswordForm';
+import { AuthCardShell } from '@/shared/ui/auth/AuthCardShell';
+import { ResetPasswordForm } from '@/features/auth-password-reset';
 import { SITE_NAME, SITE_URL } from '@/shared/lib/seo';
 
 // noindex 페이지에도 canonical/openGraph.url을 명시한다. 자세한 근거는 src/app/login/page.tsx 주석 참조.

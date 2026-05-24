@@ -1,5 +1,5 @@
 import { callAiProviderRouter } from '@/entities/llm-provider';
-import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
+import { getCurrentUser } from '@/entities/session/lib/getCurrentUser';
 import { chatAction } from '../actions/chatAction';
 import { getDatabaseClient } from '@/shared/db/client';
 import { DrizzleUserApiKeyRepository } from '@/entities/api-key';
@@ -38,7 +38,7 @@ jest.mock('@/entities/llm-provider', () => ({
     callAiProviderRouter: jest.fn(),
 }));
 
-jest.mock('@/infrastructure/auth/getCurrentUser', () => ({
+jest.mock('@/entities/session/lib/getCurrentUser', () => ({
     getCurrentUser: jest.fn(),
 }));
 

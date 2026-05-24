@@ -1,10 +1,10 @@
 import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
-import { AuthCardShell } from '@/components/auth/AuthCardShell';
-import { OAuthConsentForm } from '@/components/auth/OAuthConsentForm';
-import { createPendingOAuthSignupStoreFromEnv } from '@/infrastructure/auth/pendingOAuthSignupStore';
-import { cancelOAuthSignupAction } from '@/infrastructure/auth/cancelOAuthSignupAction';
-import { OAUTH_ERROR_REDIRECT } from '@/infrastructure/auth/errorMessages';
+import { AuthCardShell } from '@/shared/ui/auth/AuthCardShell';
+import { OAuthConsentForm } from '@/features/auth-oauth-consent';
+import { createPendingOAuthSignupStoreFromEnv } from '@/entities/oauth-account';
+import { cancelOAuthSignupAction } from '@/features/auth-oauth/actions';
+import { OAUTH_ERROR_REDIRECT } from '@/entities/session';
 import { SITE_NAME, SITE_URL } from '@/shared/lib/seo';
 import type { Metadata } from 'next';
 

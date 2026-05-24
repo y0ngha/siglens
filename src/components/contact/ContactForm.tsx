@@ -1,6 +1,6 @@
 'use client';
 
-import { SubmitButton } from '@/components/auth/SubmitButton';
+import { SubmitButton } from '@/shared/ui/auth/SubmitButton';
 import { useContactForm } from '@/components/contact/hooks/useContactForm';
 import { ContactSubmittedNotice } from '@/components/contact/ContactSubmittedNotice';
 import { ContactTextField } from '@/components/contact/ContactTextField';

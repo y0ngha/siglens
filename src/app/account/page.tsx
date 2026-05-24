@@ -1,5 +1,5 @@
 import { ApiKeySection } from '@/components/account/ApiKeySection';
-import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
+import { getCurrentUser } from '@/entities/session';
 import { getRegisteredProvidersAction } from '@/entities/api-key/actions';
 import { TIER_LABEL } from '@/lib/auth/tierLabel';
 import { SITE_NAME, SITE_URL } from '@/shared/lib/seo';

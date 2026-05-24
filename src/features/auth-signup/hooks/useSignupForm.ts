@@ -1,0 +1,18 @@
+'use client';
+
+import { useActionState } from 'react';
+import type { SignupFormState } from '@/shared/lib/types';
+import { registerAction } from '../actions/registerAction';
+
+const INITIAL_STATE: SignupFormState = { error: null };
+
+type UseSignupFormReturn = ReturnType<
+    typeof useActionState<SignupFormState, FormData>
+>;
+
+export function useSignupForm(): UseSignupFormReturn {
+    return useActionState<SignupFormState, FormData>(
+        registerAction,
+        INITIAL_STATE
+    );
+}

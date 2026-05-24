@@ -1,27 +1,27 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { DrizzleSessionRepository } from '@/entities/session';
 import { DrizzleUserRepository } from '@/entities/user';
-import { applyAuthCookie } from '@/infrastructure/auth/applyAuthCookie';
-import { createAuthHintCookie } from '@/infrastructure/auth/authHintCookie';
-import { getAuthDatabaseClient } from '@/infrastructure/auth/db';
+import { applyAuthCookie } from '@/entities/session/lib/applyAuthCookie';
+import { createAuthHintCookie } from '@/entities/session/lib/authHintCookie';
+import { getAuthDatabaseClient } from '@/entities/session/lib/db';
 import {
     createAuthSession,
     DEFAULT_SESSION_TTL_SECONDS,
-} from '@/infrastructure/auth/sessionCookie';
-import { createPendingOAuthSignupStoreFromEnv } from '@/infrastructure/auth/pendingOAuthSignupStore';
+} from '@/entities/session/lib/sessionCookie';
+import { createPendingOAuthSignupStoreFromEnv } from '@/entities/oauth-account/lib/pendingOAuthSignupStore';
 import {
     buildOAuthRedirectUri,
     getOAuthAdapter,
     isOAuthProvider,
-} from '@/infrastructure/auth/oauth/providers';
+} from '@/features/auth-oauth/lib/providers';
 import {
     OAUTH_STATE_COOKIE_NAME,
     OAuthStateSecretMisconfiguredError,
     expiredOAuthStateCookie,
     verifyOAuthState,
-} from '@/infrastructure/auth/oauth/state';
-import { isSecureCookieEnv } from '@/infrastructure/auth/sessionCookieOptions';
-import { sanitizeNextPath } from '@/domain/auth/redirect';
+} from '@/features/auth-oauth/lib/state';
+import { isSecureCookieEnv } from '@/entities/session/lib/sessionCookieOptions';
+import { sanitizeNextPath } from '@/shared/lib/auth/redirect';
 
 interface CallbackRouteParams {
     params: Promise<{ provider: string }>;

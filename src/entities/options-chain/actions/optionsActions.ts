@@ -11,7 +11,7 @@ import {
     type ModelId,
 } from '@y0ngha/siglens-core';
 import { fetchOptionsSnapshot } from '../lib/optionsDataCache';
-import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
+import { getCurrentUser } from '@/entities/session/lib/getCurrentUser';
 import { resolveTierAndByok, buildGateError } from '@/shared/lib/byokGate';
 import { isBot } from '@/shared/api/isBot';
 import type {

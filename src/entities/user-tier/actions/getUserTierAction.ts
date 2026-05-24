@@ -1,7 +1,7 @@
 'use server';
 
 import { DEFAULT_TIER, type Tier } from '@y0ngha/siglens-core';
-import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
+import { getCurrentUser } from '@/entities/session/lib/getCurrentUser';
 import { getDatabaseClient } from '@/shared/db/client';
 import { DrizzleUserRepository } from '@/entities/user';
 import { getUserTier } from '../lib/getUserTier';

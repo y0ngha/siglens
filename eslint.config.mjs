@@ -99,8 +99,12 @@ const eslintConfig = defineConfig([
                             ],
                         },
                         {
+                            // Phase 5: features 간 cross-import 허용. auth-signup이 auth-email-verification을,
+                            // auth-oauth-consent가 auth-signup을, account-delete가 auth-oauth를 참조하는 등
+                            // auth 슬라이스 간 의존이 불가피. Phase 7 (widgets 분리) 완료 시 재평가.
                             from: 'features',
                             allow: [
+                                'features',
                                 'entities',
                                 'shared',
                                 'legacy-comp', // 마이그레이션 중 임시 허용: 새 feature가 아직 widgets로 이동하지 않은 legacy UI를 사용. Phase 7 완료 시 제거.
@@ -156,8 +160,9 @@ const eslintConfig = defineConfig([
                             // Phase 7 (widgets 마이그레이션) 완료 시 legacy-comp 타입 제거.
                             from: 'legacy-comp',
                             allow: [
-                                // Phase 5+: components hooks가 entities actions/hooks를 import 필요.
-                                // Phase 7 (widgets 마이그레이션) 완료 시 legacy-comp 자체 제거.
+                                // Phase 5+: components hooks가 entities actions/hooks 및 features barrel을 import 필요.
+                                // HeaderUserMenu → auth-logout 등. Phase 7 (widgets 마이그레이션) 완료 시 legacy-comp 자체 제거.
+                                'features',
                                 'entities',
                                 'legacy-domain',
                                 'legacy-infra',
@@ -191,7 +196,18 @@ const eslintConfig = defineConfig([
     },
     {
         files: ['src/**/*.{ts,tsx}'],
-        ignores: ['src/**/*.test.{ts,tsx}', 'src/**/__tests__/**'],
+        ignores: [
+            'src/**/*.test.{ts,tsx}',
+            'src/**/__tests__/**',
+            // Phase 5: Server Actions는 entity/feature 내부 구현에 접근해야 하므로
+            // deep import 제한에서 제외. jest.mock 경로 일관성도 보장.
+            'src/features/*/actions/**',
+            'src/entities/*/actions/**',
+            // entities 내부 lib 간 cross-import는 barrel 순환을 피하기 위해 deep path 사용.
+            'src/entities/*/lib/**',
+            // Route handlers는 서버 전용 코드로 entity/feature 내부 구현 접근 필요.
+            'src/app/api/**',
+        ],
         rules: {
             'no-restricted-imports': [
                 'error',

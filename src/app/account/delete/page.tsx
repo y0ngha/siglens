@@ -2,9 +2,9 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Suspense } from 'react';
 import { redirect } from 'next/navigation';
-import { AuthCardShell } from '@/components/auth/AuthCardShell';
-import { DeleteAccountConfirm } from '@/components/auth/DeleteAccountConfirm';
-import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
+import { AuthCardShell } from '@/shared/ui/auth/AuthCardShell';
+import { DeleteAccountConfirm } from '@/features/account-delete';
+import { getCurrentUser } from '@/entities/session';
 import { SITE_NAME, SITE_URL } from '@/shared/lib/seo';
 
 // noindex 페이지에도 canonical/og:url을 명시한다 (login/signup 정책과 일관).

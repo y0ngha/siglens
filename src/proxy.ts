@@ -1,4 +1,4 @@
-import { AUTH_SESSION_COOKIE_NAME } from '@/infrastructure/auth/sessionCookie';
+import { AUTH_SESSION_COOKIE_NAME } from '@/entities/session';
 // edge runtime 안전성을 위해 외부 의존이 0인 simple constant file에서 직접 import한다.
 // `@/shared/config/market`은 `@y0ngha/siglens-core` 타입을 끌어와 cross-module
 // type 의존성을 거치는데, Turbopack의 `import type` strip이 dev 환경에서 간헐적으로
