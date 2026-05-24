@@ -1,7 +1,5 @@
 import { AUTH_HINT_COOKIE_NAME } from '@/shared/config/cookieNames';
 
-export { AUTH_HINT_COOKIE_NAME };
-
 /** Cookie descriptor returned by hint cookie factories. */
 export interface AuthHintCookieDescriptor {
     readonly name: string;

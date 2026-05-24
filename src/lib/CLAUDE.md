@@ -1,5 +1,5 @@
 > **FSD 마이그레이션 진행 중.** 대부분의 파일이 `src/shared/`로 이동했습니다.
-> 이 디렉토리의 잔여 파일은 Phase 3/6에서 entities/features로 이동 예정입니다.
+> 이 디렉토리의 잔여 파일은 Phase 3/6에서 각각 `src/entities/` (tierLabel, news, options, fundamental) 및 `src/features/` (pwa-install)로 이동 예정입니다.
 
 # Lib Layer Rules
 
