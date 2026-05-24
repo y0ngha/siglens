@@ -12,7 +12,7 @@ import {
 } from '@y0ngha/siglens-core';
 import { FmpFundamentalClient } from '@/infrastructure/fmp/fundamentalClient';
 import { getDatabaseClient } from '@/shared/db/client';
-import { DrizzleNewsRepository } from '@/infrastructure/db/newsRepository';
+import { DrizzleNewsRepository } from '@/entities/news-article';
 import { NEWS_ANALYSIS_LOOKBACK_MS } from '@/infrastructure/market/newsLookback';
 import {
     isEnrichedRow,

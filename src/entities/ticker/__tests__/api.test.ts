@@ -9,7 +9,7 @@ import {
     DrizzleAssetTranslationRepository,
     DrizzleKoreanTickerRepository,
     DrizzleProfileDescriptionTranslationRepository,
-} from '@/infrastructure/db/tickerRepository';
+} from '@/entities/ticker';
 import type {
     AssetTranslationRecord,
     ProfileDescriptionTranslationRecord,

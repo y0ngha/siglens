@@ -3,7 +3,7 @@ import type { SiglensDatabase } from '@/shared/db/types';
 import {
     DrizzleContactRepository,
     type ContactInput,
-} from '@/infrastructure/db/contactRepository';
+} from '@/entities/inquiry';
 
 function makeInsertDb(): {
     db: SiglensDatabase;

@@ -8,10 +8,7 @@ import { and, count, eq } from 'drizzle-orm';
 import { NEON_TRANSIENT_RETRY } from '@/shared/db/isNeonTransientError';
 import { usageLogs } from '@/shared/db/schema';
 import type { SiglensDatabase } from '@/shared/db/types';
-import type {
-    SiglensUsageCounts,
-    SiglensUsageRepository,
-} from '@/infrastructure/db/usageCounts';
+import type { SiglensUsageCounts, SiglensUsageRepository } from './usageCounts';
 import { withRetry } from '@/shared/lib/withRetry';
 
 const EMPTY_USAGE_COUNTS: SiglensUsageCounts = {

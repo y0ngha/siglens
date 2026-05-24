@@ -23,7 +23,7 @@ jest.mock('@/shared/db/client', () => ({
     getDatabaseClient: jest.fn().mockReturnValue({ db: {} }),
 }));
 
-jest.mock('@/infrastructure/db/newsRepository', () => ({
+jest.mock('@/entities/news-article', () => ({
     DrizzleNewsRepository: jest.fn().mockImplementation(() => ({
         listBySymbol: jest.fn(),
     })),
@@ -64,7 +64,7 @@ import {
     type EarningsCalendarItem,
 } from '@y0ngha/siglens-core';
 import { headers } from 'next/headers';
-import { DrizzleNewsRepository } from '@/infrastructure/db/newsRepository';
+import { DrizzleNewsRepository } from '@/entities/news-article';
 import { getNextEarningsReport } from '@/infrastructure/market/nextEarningsReport';
 import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
 import { resolveTierAndByok } from '@/infrastructure/market/byokGate';

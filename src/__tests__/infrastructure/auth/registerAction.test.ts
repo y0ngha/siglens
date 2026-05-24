@@ -17,10 +17,10 @@ jest.mock('@/entities/session', () => ({
 jest.mock('@/entities/user', () => ({
     DrizzleUserRepository: jest.fn().mockImplementation(() => ({})),
 }));
-jest.mock('@/infrastructure/db/agreementRepository', () => ({
+jest.mock('@/entities/agreement', () => ({
     DrizzleAgreementRepository: jest.fn(),
 }));
-jest.mock('@/infrastructure/db/termsRepository', () => ({
+jest.mock('@/entities/terms', () => ({
     DrizzleTermsRepository: jest.fn(),
 }));
 jest.mock('@/infrastructure/auth/bcrypt', () => ({
@@ -43,8 +43,8 @@ import { loginUser } from '@/infrastructure/auth/use-cases/loginUser';
 import { registerUser } from '@/infrastructure/auth/use-cases/registerUser';
 import { createEmailTokenStore } from '@/infrastructure/email/tokenStore';
 import { getDatabaseClient } from '@/shared/db/client';
-import { DrizzleAgreementRepository } from '@/infrastructure/db/agreementRepository';
-import { DrizzleTermsRepository } from '@/infrastructure/db/termsRepository';
+import { DrizzleAgreementRepository } from '@/entities/agreement';
+import { DrizzleTermsRepository } from '@/entities/terms';
 import { AUTH_SERVICE_UNAVAILABLE_MESSAGE } from '@/infrastructure/auth/errorMessages';
 import { registerAction } from '@/infrastructure/auth/registerAction';
 import { resetAuthDatabaseClientForTests } from '@/infrastructure/auth/db';

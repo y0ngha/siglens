@@ -15,7 +15,7 @@ jest.mock('@/shared/db/client', () => ({
     getDatabaseClient: jest.fn().mockReturnValue({ db: {} }),
 }));
 
-jest.mock('@/infrastructure/db/newsRepository', () => ({
+jest.mock('@/entities/news-article', () => ({
     DrizzleNewsRepository: jest.fn().mockImplementation(() => ({
         listBySymbol: jest.fn(),
     })),
@@ -38,7 +38,7 @@ jest.mock('@/infrastructure/market/byokGate', () => ({
 }));
 
 import { headers } from 'next/headers';
-import { DrizzleNewsRepository } from '@/infrastructure/db/newsRepository';
+import { DrizzleNewsRepository } from '@/entities/news-article';
 import { getNextEarningsReport } from '@/infrastructure/market/nextEarningsReport';
 import {
     submitNewsAnalysis,

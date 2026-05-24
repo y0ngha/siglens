@@ -4,7 +4,7 @@ import { glob } from 'glob';
 import matter from 'gray-matter';
 import { z } from 'zod';
 import { TERMS_KIND_VALUES, type TermsKind } from '@/shared/db/constants';
-import { DrizzleTermsRepository } from '@/infrastructure/db/termsRepository';
+import { DrizzleTermsRepository } from '@/entities/terms';
 import { getDatabaseClient } from '@/shared/db/client';
 
 const FrontmatterSchema = z.object({

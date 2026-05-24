@@ -37,7 +37,7 @@ jest.mock('@/shared/db/client', () => ({
     getDatabaseClient: jest.fn().mockReturnValue({ db: {} }),
 }));
 
-jest.mock('@/infrastructure/db/newsRepository', () => ({
+jest.mock('@/entities/news-article', () => ({
     DrizzleNewsRepository: jest.fn().mockImplementation(() => ({
         upsertNewsItem: jest.fn(),
         attachAnalysis: jest.fn(),
@@ -49,7 +49,7 @@ jest.mock('@/infrastructure/db/newsRepository', () => ({
 // Typed mocks & fixtures
 // ---------------------------------------------------------------------------
 
-import { DrizzleNewsRepository } from '@/infrastructure/db/newsRepository';
+import { DrizzleNewsRepository } from '@/entities/news-article';
 
 const MockNewsRepository = DrizzleNewsRepository as jest.MockedClass<
     typeof DrizzleNewsRepository
