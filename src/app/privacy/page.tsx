@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
-import { PolicyMarkdownBody } from '@/components/legal/PolicyMarkdownBody';
-import { LegalPageShell } from '@/components/legal/LegalPageShell';
+import { PolicyMarkdownBody } from '@/widgets/legal/PolicyMarkdownBody';
+import { LegalPageShell } from '@/widgets/legal/LegalPageShell';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import {
     formatKoreanDate,

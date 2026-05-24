@@ -3,14 +3,14 @@ import {
     getGradeEvents,
     getNewsList,
 } from '@/app/[symbol]/news/newsData';
-import { NewsAiSummary } from '@/components/news/NewsAiSummary';
-import { NewsAiSummaryErrorBoundary } from '@/components/news/NewsAiSummaryErrorBoundary';
-import { NewsAiSummarySkeleton } from '@/components/news/NewsAiSummarySkeleton';
-import { AnalystActions } from '@/components/news/sections/AnalystActions';
-import { EventCalendar } from '@/components/news/sections/EventCalendar';
-import { NewsList } from '@/components/news/sections/NewsList';
-import { CrossLinkCards } from '@/components/symbol-page/CrossLinkCards';
-import { SectionSkeleton } from '@/components/symbol-page/SectionSkeleton';
+import { NewsAiSummary } from '@/widgets/news/NewsAiSummary';
+import { NewsAiSummaryErrorBoundary } from '@/widgets/news/NewsAiSummaryErrorBoundary';
+import { NewsAiSummarySkeleton } from '@/widgets/news/NewsAiSummarySkeleton';
+import { AnalystActions } from '@/widgets/news/sections/AnalystActions';
+import { EventCalendar } from '@/widgets/news/sections/EventCalendar';
+import { NewsList } from '@/widgets/news/sections/NewsList';
+import { CrossLinkCards } from '@/widgets/symbol-page/CrossLinkCards';
+import { SectionSkeleton } from '@/widgets/symbol-page/SectionSkeleton';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { VALID_TICKER_RE } from '@/shared/config/market';
 import {

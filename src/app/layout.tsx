@@ -6,11 +6,11 @@ import { Geist, Geist_Mono } from 'next/font/google';
 import localFont from 'next/font/local';
 import { Analytics } from '@vercel/analytics/next';
 import { AuthSessionHeader } from '@/app/_components/AuthSessionHeader';
-import { Footer } from '@/components/layout/Footer';
-import { Header } from '@/components/layout/Header';
-import { SiteJsonLd } from '@/components/layout/SiteJsonLd';
+import { Footer } from '@/widgets/layout/Footer';
+import { Header } from '@/widgets/layout/Header';
+import { SiteJsonLd } from '@/widgets/layout/SiteJsonLd';
 import { PwaBanner } from '@/features/pwa-install';
-import { ReactQueryProvider } from '@/components/providers/ReactQueryProvider';
+import { ReactQueryProvider } from '@/app/providers';
 import { ADSENSE_ENABLED } from '@/shared/lib/adsense';
 import {
     ROOT_KEYWORDS,

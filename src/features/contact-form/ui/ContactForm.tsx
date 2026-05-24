@@ -6,7 +6,7 @@ import { ContactSubmittedNotice } from './ContactSubmittedNotice';
 import { ContactTextField } from './ContactTextField';
 import { ContactTextareaField } from './ContactTextareaField';
 import { getFieldError, getSubmissionError } from '../lib/contactFormUtils';
-import { useCurrentUser } from '@/components/hooks/useCurrentUser';
+import { useCurrentUser } from '@/shared/hooks/useCurrentUser';
 import {
     CONTACT_CONTENT_MAX_LENGTH,
     CONTACT_TITLE_MAX_LENGTH,

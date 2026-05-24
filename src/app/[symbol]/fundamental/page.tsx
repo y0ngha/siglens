@@ -13,18 +13,18 @@ import {
     getStockPeers,
 } from '@/app/[symbol]/fundamental/fundamentalData';
 
-import { FundamentalAiSummary } from '@/components/fundamental/FundamentalAiSummary';
-import { FundamentalAiSummaryError } from '@/components/fundamental/FundamentalAiSummaryError';
-import { FundamentalAiSummarySkeleton } from '@/components/fundamental/FundamentalAiSummarySkeleton';
-import { FinancialHealthCard } from '@/components/fundamental/sections/FinancialHealthCard';
-import { FutureDirectionCard } from '@/components/fundamental/sections/FutureDirectionCard';
-import { GrowthChart } from '@/components/fundamental/sections/GrowthChart';
-import { PeersTable } from '@/components/fundamental/sections/PeersTable';
-import { ProfileCard } from '@/components/fundamental/sections/ProfileCard';
-import { ProfitabilityCard } from '@/components/fundamental/sections/ProfitabilityCard';
-import { ValuationCard } from '@/components/fundamental/sections/ValuationCard';
-import { CrossLinkCards } from '@/components/symbol-page/CrossLinkCards';
-import { SectionSkeleton } from '@/components/symbol-page/SectionSkeleton';
+import { FundamentalAiSummary } from '@/widgets/fundamental/FundamentalAiSummary';
+import { FundamentalAiSummaryError } from '@/widgets/fundamental/FundamentalAiSummaryError';
+import { FundamentalAiSummarySkeleton } from '@/widgets/fundamental/FundamentalAiSummarySkeleton';
+import { FinancialHealthCard } from '@/widgets/fundamental/sections/FinancialHealthCard';
+import { FutureDirectionCard } from '@/widgets/fundamental/sections/FutureDirectionCard';
+import { GrowthChart } from '@/widgets/fundamental/sections/GrowthChart';
+import { PeersTable } from '@/widgets/fundamental/sections/PeersTable';
+import { ProfileCard } from '@/widgets/fundamental/sections/ProfileCard';
+import { ProfitabilityCard } from '@/widgets/fundamental/sections/ProfitabilityCard';
+import { ValuationCard } from '@/widgets/fundamental/sections/ValuationCard';
+import { CrossLinkCards } from '@/widgets/symbol-page/CrossLinkCards';
+import { SectionSkeleton } from '@/widgets/symbol-page/SectionSkeleton';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { VALID_TICKER_RE } from '@/shared/config/market';
 import {

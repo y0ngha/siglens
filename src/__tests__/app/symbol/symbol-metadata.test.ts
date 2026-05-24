@@ -22,70 +22,70 @@ jest.mock('server-only', () => ({}), { virtual: true });
 jest.mock('react-markdown', () => () => null);
 
 // page.tsx → SymbolPageClient → AnalysisPanel → MarkdownText 체인을 끊기 위해 컴포넌트를 stub
-jest.mock('@/components/symbol-page/SymbolPageClient', () => ({
+jest.mock('@/widgets/symbol-page/SymbolPageClient', () => ({
     SymbolPageClient: () => null,
 }));
 jest.mock('@/shared/ui/JsonLd', () => ({
     JsonLd: () => null,
 }));
-jest.mock('@/components/symbol-page/CrossLinkCards', () => ({
+jest.mock('@/widgets/symbol-page/CrossLinkCards', () => ({
     CrossLinkCards: () => null,
 }));
-jest.mock('@/components/fundamental/FundamentalAiSummary', () => ({
+jest.mock('@/widgets/fundamental/FundamentalAiSummary', () => ({
     FundamentalAiSummary: () => null,
 }));
-jest.mock('@/components/fundamental/FundamentalAiSummaryError', () => ({
+jest.mock('@/widgets/fundamental/FundamentalAiSummaryError', () => ({
     FundamentalAiSummaryError: () => null,
 }));
-jest.mock('@/components/fundamental/FundamentalAiSummarySkeleton', () => ({
+jest.mock('@/widgets/fundamental/FundamentalAiSummarySkeleton', () => ({
     FundamentalAiSummarySkeleton: () => null,
 }));
-jest.mock('@/components/fundamental/sections/FinancialHealthCard', () => ({
+jest.mock('@/widgets/fundamental/sections/FinancialHealthCard', () => ({
     FinancialHealthCard: () => null,
 }));
-jest.mock('@/components/fundamental/sections/FutureDirectionCard', () => ({
+jest.mock('@/widgets/fundamental/sections/FutureDirectionCard', () => ({
     FutureDirectionCard: () => null,
 }));
-jest.mock('@/components/fundamental/sections/GrowthChart', () => ({
+jest.mock('@/widgets/fundamental/sections/GrowthChart', () => ({
     GrowthChart: () => null,
 }));
-jest.mock('@/components/fundamental/sections/PeersTable', () => ({
+jest.mock('@/widgets/fundamental/sections/PeersTable', () => ({
     PeersTable: () => null,
 }));
-jest.mock('@/components/fundamental/sections/ProfileCard', () => ({
+jest.mock('@/widgets/fundamental/sections/ProfileCard', () => ({
     ProfileCard: () => null,
 }));
-jest.mock('@/components/fundamental/sections/ProfitabilityCard', () => ({
+jest.mock('@/widgets/fundamental/sections/ProfitabilityCard', () => ({
     ProfitabilityCard: () => null,
 }));
-jest.mock('@/components/fundamental/sections/ValuationCard', () => ({
+jest.mock('@/widgets/fundamental/sections/ValuationCard', () => ({
     ValuationCard: () => null,
 }));
-jest.mock('@/components/symbol-page/SectionSkeleton', () => ({
+jest.mock('@/widgets/symbol-page/SectionSkeleton', () => ({
     SectionSkeleton: () => null,
 }));
-jest.mock('@/components/news/NewsAiSummary', () => ({
+jest.mock('@/widgets/news/NewsAiSummary', () => ({
     NewsAiSummary: () => null,
 }));
-jest.mock('@/components/news/NewsAiSummaryErrorBoundary', () => ({
+jest.mock('@/widgets/news/NewsAiSummaryErrorBoundary', () => ({
     NewsAiSummaryErrorBoundary: () => null,
 }));
-jest.mock('@/components/news/NewsAiSummarySkeleton', () => ({
+jest.mock('@/widgets/news/NewsAiSummarySkeleton', () => ({
     NewsAiSummarySkeleton: () => null,
 }));
-jest.mock('@/components/news/sections/AnalystActions', () => ({
+jest.mock('@/widgets/news/sections/AnalystActions', () => ({
     AnalystActions: () => null,
 }));
-jest.mock('@/components/news/sections/EventCalendar', () => ({
+jest.mock('@/widgets/news/sections/EventCalendar', () => ({
     EventCalendar: () => null,
 }));
-jest.mock('@/components/news/sections/NewsList', () => ({
+jest.mock('@/widgets/news/sections/NewsList', () => ({
     NewsList: () => null,
 }));
-jest.mock('@/components/overall/OverallContent', () => ({
+jest.mock('@/widgets/overall/OverallContent', () => ({
     OverallContent: () => null,
 }));
-jest.mock('@/components/fear-greed/FearGreedPage', () => ({
+jest.mock('@/widgets/fear-greed/FearGreedPage', () => ({
     FearGreedPage: () => null,
 }));
 

@@ -12,8 +12,8 @@ import {
 } from '@/shared/lib/seo';
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
 import { TERMS_PATH } from '@/shared/lib/legal';
-import { BacktestHero } from '@/components/backtesting/BacktestHero';
-import { BacktestTabs } from '@/components/backtesting/BacktestTabs';
+import { BacktestHero } from '@/widgets/backtesting/BacktestHero';
+import { BacktestTabs } from '@/widgets/backtesting/BacktestTabs';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import backtestData from '@/app/backtesting/data.json';
 import { validateBacktestData } from '@/entities/backtest-case';
