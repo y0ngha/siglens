@@ -128,15 +128,18 @@ const parseFrontmatter = (raw: string): ParsedFrontmatter | null => {
 
 const isSkillCategory = (value: unknown): value is SkillCategory =>
     typeof value === 'string' &&
+    // SKILL_CATEGORIES is `as const` literal tuple; widening to readonly string[] for .includes() is safe — every element is a string literal.
     (SKILL_CATEGORIES as readonly string[]).includes(value);
 
 const parseSkillDisplay = (raw: unknown): SkillDisplay | undefined => {
     if (typeof raw !== 'object' || raw === null) return undefined;
 
+    // typeof + non-null guard above ensures raw is a non-null object; YamlNode widening is safe.
     const obj = raw as YamlNode;
     const chartRaw = obj.chart;
     if (typeof chartRaw !== 'object' || chartRaw === null) return undefined;
 
+    // typeof + non-null guard above ensures chartRaw is a non-null object.
     const chart = chartRaw as YamlNode;
     if (
         typeof chart.show !== 'boolean' &&
@@ -169,6 +172,7 @@ const SKILL_TYPES = [
 
 const isSkillType = (value: unknown): value is SkillType =>
     typeof value === 'string' &&
+    // SKILL_TYPES is `as const` literal tuple; widening to readonly string[] for .includes() is safe.
     (SKILL_TYPES as readonly string[]).includes(value);
 
 const toSkill = (data: Record<string, unknown>, content: string): Skill => ({
