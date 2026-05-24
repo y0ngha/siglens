@@ -12,7 +12,7 @@ import {
 import { useBriefing } from '@/components/dashboard/hooks/useBriefing';
 import { useMarketSummary } from '@/components/dashboard/hooks/useMarketSummary';
 import { MarketSummaryPanelSkeleton } from '@/components/dashboard/MarketSummaryPanelSkeleton';
-import { BotBlockedNotice } from '@/components/symbol-page/BotBlockedNotice';
+import { BotBlockedNotice } from '@/components/ui/BotBlockedNotice';
 import { SECTOR_GROUPS } from '@/domain/constants/dashboard-tickers';
 import type {
     MarketSectorData,
@@ -62,6 +62,7 @@ export function MarketSummaryPanel() {
     const { data, isPending, sectorMap, indices } = useMarketSummary();
 
     if (isPending) return <MarketSummaryPanelSkeleton />;
+    if (data && 'ok' in data) return null;
 
     return (
         <section
@@ -116,7 +117,7 @@ export function MarketSummaryPanel() {
                 </div>
 
                 {/* AI 브리핑 */}
-                <BriefingRegion input={data?.briefing} />
+                <BriefingRegion input={data?.briefing ?? undefined} />
             </div>
         </section>
     );

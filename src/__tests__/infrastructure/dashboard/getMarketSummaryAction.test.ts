@@ -98,4 +98,28 @@ describe('getMarketSummaryAction 함수는', () => {
             });
         });
     });
+
+    describe('API 에러 발생 시', () => {
+        it('일반 사용자 요청에서 예외가 발생하면 에러 결과를 반환한다', async () => {
+            mockIsBot.mockReturnValue(false);
+            mockGetSummaryWithBriefing.mockRejectedValueOnce(
+                new Error('network timeout')
+            );
+
+            const result = await getMarketSummaryAction();
+
+            expect(result).toEqual({ ok: false, error: 'server_error' });
+        });
+
+        it('봇 요청에서 예외가 발생하면 에러 결과를 반환한다', async () => {
+            mockIsBot.mockReturnValue(true);
+            mockGetSummary.mockRejectedValueOnce(
+                new Error('API unavailable')
+            );
+
+            const result = await getMarketSummaryAction();
+
+            expect(result).toEqual({ ok: false, error: 'server_error' });
+        });
+    });
 });

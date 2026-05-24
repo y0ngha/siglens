@@ -190,7 +190,8 @@ export type DisplayMessage = ChatMessage | ContextSwitchMessage;
 
 export type MarketSummaryActionResult =
     | (MarketSummaryWithBriefing & { botBlocked: false })
-    | { summary: MarketSummaryData; briefing: null; botBlocked: true };
+    | { summary: MarketSummaryData; briefing: null; botBlocked: true }
+    | { ok: false; error: string };
 
 export type JobType =
     | 'analysis'

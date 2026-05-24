@@ -63,6 +63,9 @@ async function analyzeAndPersist(
  *
  * Designed to run inside `waitUntil` so it doesn't block the response stream.
  * Per-item errors are logged and never thrown; other items continue normally.
+ *
+ * @param options.skipAnalysis When true (bot traffic), FMP fetch + DB upsert
+ *   still run but LLM card analysis is skipped to avoid unnecessary worker cost.
  */
 export async function ensureNewsCardsAnalyzedAction(
     symbol: string,

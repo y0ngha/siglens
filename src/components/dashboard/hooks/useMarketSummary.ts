@@ -14,6 +14,12 @@ interface UseMarketSummaryReturn {
     indices: readonly MarketIndexData[];
 }
 
+function hasSummary(
+    data: MarketSummaryActionResult | undefined
+): data is Exclude<MarketSummaryActionResult, { ok: false }> {
+    return data !== undefined && !('ok' in data);
+}
+
 export function useMarketSummary(): UseMarketSummaryReturn {
     const { data, isPending } = useQuery({
         queryKey: QUERY_KEYS.marketSummary(),
@@ -21,17 +27,19 @@ export function useMarketSummary(): UseMarketSummaryReturn {
         staleTime: MARKET_SUMMARY_STALE_TIME_MS,
     });
 
+    const resolved = hasSummary(data) ? data : undefined;
+
     const sectorMap = useMemo(
         () =>
             new Map<string, MarketSectorData>(
-                (data?.summary.sectors ?? []).map(s => [s.symbol, s])
+                (resolved?.summary.sectors ?? []).map(s => [s.symbol, s])
             ),
-        [data?.summary.sectors]
+        [resolved?.summary.sectors]
     );
 
     const indices = useMemo(
-        () => data?.summary.indices ?? [],
-        [data?.summary.indices]
+        () => resolved?.summary.indices ?? [],
+        [resolved?.summary.indices]
     );
 
     return { data, isPending, sectorMap, indices };
