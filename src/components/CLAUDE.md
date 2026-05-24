@@ -52,8 +52,9 @@ Custom hooks → `hooks/` subfolder. Pure utility functions → `utils/` subfold
 
 ## React Query Rules
 
-- Key factories (`QUERY_KEYS`) are defined in `lib/`
-- Call infrastructure fetch functions in `queryFn`/`mutationFn`
+- Key factories (`QUERY_KEYS`) are defined in `shared/config/`
+- `queryFn`/`mutationFn`: `infrastructure` fetch 함수 또는 `entities/*/actions` Server Action 사용
+- `useActionState`: `entities/<x>/actions.ts` Server Action 직접 연결 허용
 - Never mix server state and client state
 
 ---
