@@ -91,20 +91,57 @@ export type {
 
 export type { AuthUserRecord } from '@/domain/auth/types';
 
-export type {
-    ApiKeyActionState,
-    GateMode,
-    RegisteredProvider,
-} from '@/entities/api-key';
-export type { LlmProvider } from '@/entities/api-key';
+import type { LlmProvider } from '@/shared/config/llmProviders';
 
-export type {
-    AnalysisGateError,
-    AnalysisGateBlockedResult,
-    AnalysisGateErrorCode,
-} from '@/entities/analysis';
+export type { LlmProvider };
 
-export type { OptionsExpirationSelector } from '@/entities/options-chain';
+export type GateMode = 'auth' | 'byok';
+
+export type ApiKeyActionStatus = 'idle' | 'success' | 'error';
+
+export type ApiKeyActionErrorCode =
+    | 'invalid_key_format'
+    | 'server_misconfigured'
+    | 'storage_unavailable'
+    | 'unknown';
+
+export interface ApiKeyActionState {
+    status: ApiKeyActionStatus;
+    message: string | null;
+    /** Present only when `status === 'error'`. */
+    code?: ApiKeyActionErrorCode;
+}
+
+export interface RegisteredProvider {
+    provider: LlmProvider;
+    updatedAt: Date;
+}
+
+/** Machine-readable codes for siglens-side analysis gate denials. */
+export type AnalysisGateErrorCode =
+    | 'tier_premium_blocked'
+    | 'invalid_model'
+    | 'api_key_corrupted'
+    | 'unexpected_error';
+
+/** Structured gate error returned from action layer. */
+export interface AnalysisGateError {
+    code: AnalysisGateErrorCode;
+    message: string;
+}
+
+/** Gate denial result — mirrors core's `{ status: 'error' }` discriminator. */
+export interface AnalysisGateBlockedResult {
+    status: 'error';
+    error: AnalysisGateError;
+}
+
+/**
+ * UI-level expiration filter value used by the expiration selector and
+ * downstream chain/metrics views. An ISO 'YYYY-MM-DD' string selects a
+ * single expiration; `'all'` aggregates every expiration in the snapshot.
+ */
+export type OptionsExpirationSelector = (string & {}) | 'all';
 
 export type ContactFormField = 'title' | 'email' | 'content';
 

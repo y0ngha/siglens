@@ -27,9 +27,11 @@ import { CrossLinkCards } from '@/components/symbol-page/CrossLinkCards';
 import { SectionSkeleton } from '@/components/symbol-page/SectionSkeleton';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { VALID_TICKER_RE } from '@/shared/config/market';
-import { buildAssetAboutNode } from '@/entities/ticker';
-import { buildDisplayName } from '@/entities/ticker';
-import { getAssetInfoCached } from '@/entities/ticker';
+import {
+    buildAssetAboutNode,
+    buildDisplayName,
+    getAssetInfoCached,
+} from '@/entities/ticker';
 import {
     buildBreadcrumbJsonLd,
     buildSymbolFundamentalSeoContent,

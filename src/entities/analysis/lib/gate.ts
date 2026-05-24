@@ -2,29 +2,22 @@
  * Analysis gate types and runtime guards.
  *
  * These describe siglens-side denial outcomes from the BYOK/tier gate
- * (`resolveTierAndByok` in infrastructure). The types live in the domain
- * layer so consumer hooks can narrow on action results without depending
- * on the infrastructure implementation.
+ * (`resolveTierAndByok` in infrastructure). The canonical type definitions
+ * live in `shared/lib/types` so every layer can reference them without
+ * upward dependency. This module re-exports them for barrel convenience
+ * and hosts the runtime guards.
  */
 
-/** Machine-readable codes for siglens-side analysis gate denials. */
-export type AnalysisGateErrorCode =
-    | 'tier_premium_blocked'
-    | 'invalid_model'
-    | 'api_key_corrupted'
-    | 'unexpected_error';
+export type {
+    AnalysisGateBlockedResult,
+    AnalysisGateError,
+    AnalysisGateErrorCode,
+} from '@/shared/lib/types';
 
-/** Structured gate error returned from action layer. */
-export interface AnalysisGateError {
-    code: AnalysisGateErrorCode;
-    message: string;
-}
-
-/** Gate denial result — mirrors core's `{ status: 'error' }` discriminator. */
-export interface AnalysisGateBlockedResult {
-    status: 'error';
-    error: AnalysisGateError;
-}
+import type {
+    AnalysisGateBlockedResult,
+    AnalysisGateErrorCode,
+} from '@/shared/lib/types';
 
 /**
  * Marker record forcing compile-time exhaustiveness for {@link GATE_ERROR_CODES}.

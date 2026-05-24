@@ -16,8 +16,8 @@ import {
     EMPTY_QUADRANTS,
     filterStrictAnticipation,
     groupStockIntoQuadrants,
+    resolveConflicts,
 } from '@/entities/analysis';
-import { resolveConflicts } from '@/entities/analysis';
 
 interface UseSectorSignalStateOptions {
     data: SectorSignalsResult;

@@ -2,8 +2,7 @@ import type { NeonQueryFunction } from '@neondatabase/serverless';
 import type { NeonHttpDatabase } from 'drizzle-orm/neon-http';
 import type { Tier } from '@y0ngha/siglens-core';
 import type { OAuthProvider } from '@/shared/lib/types';
-// eslint-disable-next-line no-restricted-imports -- Type-only; barrel creates circular dep via api-key/api → shared/db/schema.
-import type { LlmProvider } from '@/entities/api-key/lib/constants';
+import type { LlmProvider } from '../config/llmProviders';
 import type { KoreanTickerEntry } from '@/shared/lib/types';
 import type { AuthUserRecord } from '@/domain/auth/types';
 import type * as schema from './schema';

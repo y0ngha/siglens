@@ -1,10 +1,9 @@
 import type { AIProvider } from '@y0ngha/siglens-core';
 
-/** All supported LLM provider identifiers for stored user API keys. */
-export const LLM_PROVIDER_VALUES = ['anthropic', 'google', 'openai'] as const;
-
-/** Identifier for an LLM provider whose API key a user can bring (BYOK). */
-export type LlmProvider = (typeof LLM_PROVIDER_VALUES)[number];
+export {
+    LLM_PROVIDER_VALUES,
+    type LlmProvider,
+} from '@/shared/config/llmProviders';
 
 // Core exports AIProvider type-only; siglens owns the runtime list. `satisfies`
 // forbids stale values; the Exclude<...> check below enforces exhaustiveness.

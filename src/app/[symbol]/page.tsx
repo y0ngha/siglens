@@ -6,11 +6,13 @@ import {
     isValidTimeframe,
     VALID_TICKER_RE,
 } from '@/shared/config/market';
-import { buildAssetAboutNode } from '@/entities/ticker';
-import { buildDisplayName } from '@/entities/ticker';
+import {
+    buildAssetAboutNode,
+    buildDisplayName,
+    getAssetInfoCached,
+} from '@/entities/ticker';
 import { getBarsAction } from '@/entities/bars/actions';
 import { countSkillFiles } from '@/entities/skill';
-import { getAssetInfoCached } from '@/entities/ticker';
 import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/shared/config/queryConfig';
 import {
     buildBreadcrumbJsonLd,
