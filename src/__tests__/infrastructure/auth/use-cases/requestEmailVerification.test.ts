@@ -2,7 +2,7 @@ import { requestEmailVerification } from '@/infrastructure/auth/use-cases/reques
 import type { RequestEmailVerificationDependencies } from '@/infrastructure/auth/use-cases/types';
 import { EMAIL_VERIFICATION_PENDING_TTL_SECONDS } from '@/infrastructure/auth/use-cases/constants';
 import { hashEmailToken } from '@/infrastructure/auth/tokenUtils';
-import type { EmailMessage } from '@/infrastructure/email/tokenStore';
+import type { EmailMessage } from '@/entities/email-token';
 
 function makeBuildMessage(): {
     buildMessage: (code: string) => EmailMessage;

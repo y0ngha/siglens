@@ -21,7 +21,7 @@ import { DrizzleAgreementRepository } from '@/entities/agreement';
 import { DrizzleSessionRepository } from '@/entities/session';
 import { DrizzleTermsRepository } from '@/entities/terms';
 import { DrizzleUserRepository } from '@/entities/user';
-import { createEmailTokenStore } from '@/infrastructure/email/tokenStore';
+import { createEmailTokenStore } from '@/entities/email-token';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 

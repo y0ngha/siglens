@@ -1,10 +1,10 @@
 'use server';
 
 import { requestEmailVerification } from '@/infrastructure/auth/use-cases/requestEmailVerification';
-import { createEmailTokenStore } from '@/infrastructure/email/tokenStore';
+import { createEmailTokenStore } from '@/entities/email-token';
 import type { RequestEmailVerificationFormState } from '@/domain/auth/formTypes';
-import { buildEmailVerificationEmail } from '@/infrastructure/email/emailVerificationEmail';
-import { createEmailDispatcher } from '@/infrastructure/email/resend';
+import { buildEmailVerificationEmail } from '@/entities/email-token';
+import { createEmailDispatcher } from '@/shared/email/dispatcher';
 import { AUTH_SERVICE_UNAVAILABLE_MESSAGE } from '@/infrastructure/auth/errorMessages';
 import { normalizeEmail } from '@/domain/auth/validation';
 

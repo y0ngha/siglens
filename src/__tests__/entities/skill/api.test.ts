@@ -1,7 +1,4 @@
-import {
-    countSkillFiles,
-    FileSkillsLoader,
-} from '@/infrastructure/skills/loader';
+import { countSkillFiles, FileSkillsLoader } from '@/entities/skill';
 import path from 'node:path';
 
 const mockReaddir = jest.fn();

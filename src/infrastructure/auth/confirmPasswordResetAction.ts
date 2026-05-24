@@ -6,7 +6,7 @@ import {
     bcryptPasswordVerifier,
 } from '@/infrastructure/auth/bcrypt';
 import { confirmPasswordReset } from '@/infrastructure/auth/use-cases/confirmPasswordReset';
-import { createEmailTokenStore } from '@/infrastructure/email/tokenStore';
+import { createEmailTokenStore } from '@/entities/email-token';
 import { redirect } from 'next/navigation';
 import type { ResetPasswordFormState } from '@/domain/auth/formTypes';
 import { getAuthDatabaseClient } from '@/infrastructure/auth/db';

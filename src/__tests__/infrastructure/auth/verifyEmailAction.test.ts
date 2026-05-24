@@ -1,7 +1,7 @@
 jest.mock('@/infrastructure/auth/use-cases/verifyEmail', () => ({
     verifyEmail: jest.fn(),
 }));
-jest.mock('@/infrastructure/email/tokenStore', () => ({
+jest.mock('@/entities/email-token', () => ({
     createEmailTokenStore: jest.fn(),
 }));
 jest.mock('@/infrastructure/auth/db', () => ({
@@ -12,7 +12,7 @@ jest.mock('@/entities/user', () => ({
 }));
 
 import { verifyEmail } from '@/infrastructure/auth/use-cases/verifyEmail';
-import { createEmailTokenStore } from '@/infrastructure/email/tokenStore';
+import { createEmailTokenStore } from '@/entities/email-token';
 import { getAuthDatabaseClient } from '@/infrastructure/auth/db';
 import { DrizzleUserRepository } from '@/entities/user';
 import { AUTH_SERVICE_UNAVAILABLE_MESSAGE } from '@/infrastructure/auth/errorMessages';

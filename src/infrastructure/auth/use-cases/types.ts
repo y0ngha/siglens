@@ -17,7 +17,7 @@ import type {
     EmailDispatcher,
     EmailMessage,
     EmailTokenStore,
-} from '@/infrastructure/email/tokenStore';
+} from '@/entities/email-token';
 import type {
     ConfirmPasswordResetError,
     ConfirmPasswordResetErrorCode,

@@ -1,7 +1,7 @@
 import {
     DEFAULT_SITE_URL,
     buildPasswordResetEmail,
-} from '@/infrastructure/email/passwordResetEmail';
+} from '@/entities/email-token';
 
 describe('buildPasswordResetEmail', () => {
     const originalEnv = process.env.NEXT_PUBLIC_SITE_URL;

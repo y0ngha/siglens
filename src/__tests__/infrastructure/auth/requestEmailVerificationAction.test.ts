@@ -1,16 +1,8 @@
 jest.mock('@/infrastructure/auth/use-cases/requestEmailVerification', () => ({
     requestEmailVerification: jest.fn(),
 }));
-jest.mock('@/infrastructure/email/tokenStore', () => ({
+jest.mock('@/entities/email-token', () => ({
     createEmailTokenStore: jest.fn(),
-}));
-
-const sendEmailMock = jest.fn();
-jest.mock('@/infrastructure/email/resend', () => ({
-    createEmailDispatcher: jest.fn(() => ({ sendEmail: sendEmailMock })),
-}));
-
-jest.mock('@/infrastructure/email/emailVerificationEmail', () => ({
     buildEmailVerificationEmail: jest.fn(({ to, code }) => ({
         to,
         subject: 'subj',
@@ -19,9 +11,14 @@ jest.mock('@/infrastructure/email/emailVerificationEmail', () => ({
     })),
 }));
 
+const sendEmailMock = jest.fn();
+jest.mock('@/shared/email/dispatcher', () => ({
+    createEmailDispatcher: jest.fn(() => ({ sendEmail: sendEmailMock })),
+}));
+
 import { requestEmailVerification } from '@/infrastructure/auth/use-cases/requestEmailVerification';
-import { createEmailTokenStore } from '@/infrastructure/email/tokenStore';
-import { buildEmailVerificationEmail } from '@/infrastructure/email/emailVerificationEmail';
+import { createEmailTokenStore } from '@/entities/email-token';
+import { buildEmailVerificationEmail } from '@/entities/email-token';
 import { AUTH_SERVICE_UNAVAILABLE_MESSAGE } from '@/infrastructure/auth/errorMessages';
 import { requestEmailVerificationAction } from '@/infrastructure/auth/requestEmailVerificationAction';
 import { makeFormData } from '@/__tests__/utils/makeFormData';

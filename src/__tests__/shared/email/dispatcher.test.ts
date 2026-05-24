@@ -9,7 +9,7 @@ import { Resend } from 'resend';
 import {
     ResendEmailDispatcher,
     createEmailDispatcher,
-} from '@/infrastructure/email/resend';
+} from '@/shared/email/dispatcher';
 
 const ResendCtor = Resend as jest.MockedClass<typeof Resend>;
 
