@@ -1,4 +1,4 @@
-jest.mock('@/infrastructure/db/client', () => ({
+jest.mock('@/shared/db/client', () => ({
     tryGetDatabaseClient: jest.fn(),
 }));
 
@@ -8,7 +8,7 @@ jest.mock('@/infrastructure/db/tickerRepository', () => ({
 
 import { POPULAR_TICKERS } from '@/domain/constants/popular-tickers';
 import type { KoreanTickerEntry } from '@/domain/types';
-import { tryGetDatabaseClient } from '@/infrastructure/db/client';
+import { tryGetDatabaseClient } from '@/shared/db/client';
 import { DrizzleKoreanTickerRepository } from '@/infrastructure/db/tickerRepository';
 import { loadLongTailTickers } from '@/infrastructure/sitemap/loadLongTailTickers';
 

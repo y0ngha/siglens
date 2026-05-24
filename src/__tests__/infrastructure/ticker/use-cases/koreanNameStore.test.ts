@@ -1,6 +1,6 @@
 import type { CacheProvider } from '@y0ngha/siglens-core';
 import type { KoreanTickerEntry } from '@/domain/types';
-import type { KoreanTickerRepository } from '@/infrastructure/db/types';
+import type { KoreanTickerRepository } from '@/shared/db/types';
 
 const mockCache: {
     get: jest.Mock;

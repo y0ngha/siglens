@@ -6,7 +6,7 @@ import {
 import { createCacheProvider, type CacheProvider } from '@y0ngha/siglens-core';
 import type { KoreanTickerEntry, TickerSearchResult } from '@/domain/types';
 import { DrizzleKoreanTickerRepository } from '@/infrastructure/db/tickerRepository';
-import type { KoreanTickerRepository } from '@/infrastructure/db/types';
+import type { KoreanTickerRepository } from '@/shared/db/types';
 
 function koreanEntryToSearchResult(
     entry: KoreanTickerEntry

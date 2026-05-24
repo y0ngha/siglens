@@ -1,12 +1,12 @@
 import { eq, lt } from 'drizzle-orm';
-import { NEON_TRANSIENT_RETRY } from '@/infrastructure/db/isNeonTransientError';
-import { sessions } from '@/infrastructure/db/schema';
-import type { SiglensDatabase } from '@/infrastructure/db/types';
+import { NEON_TRANSIENT_RETRY } from '@/shared/db/isNeonTransientError';
+import { sessions } from '@/shared/db/schema';
+import type { SiglensDatabase } from '@/shared/db/types';
 import type {
     AuthSessionRecord,
     CreateSessionInput,
     SessionRepository,
-} from '@/infrastructure/db/types';
+} from '@/shared/db/types';
 import { withRetry } from '@/shared/lib/withRetry';
 
 const sessionColumns = {

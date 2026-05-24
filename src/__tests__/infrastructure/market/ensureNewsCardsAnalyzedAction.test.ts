@@ -33,7 +33,7 @@ jest.mock('@/infrastructure/fmp/newsClient', () => ({
     })),
 }));
 
-jest.mock('@/infrastructure/db/client', () => ({
+jest.mock('@/shared/db/client', () => ({
     getDatabaseClient: jest.fn().mockReturnValue({ db: {} }),
 }));
 

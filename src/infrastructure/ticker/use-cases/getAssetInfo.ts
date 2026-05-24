@@ -4,7 +4,7 @@ import { DrizzleAssetTranslationRepository } from '@/infrastructure/db/tickerRep
 import type {
     AssetTranslationRecord,
     AssetTranslationRepository,
-} from '@/infrastructure/db/types';
+} from '@/shared/db/types';
 import {
     ASSET_INFO_CACHE_TTL_WITH_KOREAN,
     ASSET_INFO_CACHE_TTL_WITHOUT_KOREAN,

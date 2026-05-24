@@ -1,6 +1,6 @@
 import { DrizzleSessionRepository } from '@/infrastructure/db/sessionRepository';
-import { sessions } from '@/infrastructure/db/schema';
-import type { SiglensDatabase } from '@/infrastructure/db/types';
+import { sessions } from '@/shared/db/schema';
+import type { SiglensDatabase } from '@/shared/db/types';
 
 const expiresAt = new Date('2026-05-27T00:00:00.000Z');
 const sessionRecord = {

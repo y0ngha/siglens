@@ -1,19 +1,19 @@
 import type { KoreanTickerEntry } from '@/domain/types';
 import { eq, inArray, sql } from 'drizzle-orm';
-import { NEON_TRANSIENT_RETRY } from '@/infrastructure/db/isNeonTransientError';
+import { NEON_TRANSIENT_RETRY } from '@/shared/db/isNeonTransientError';
 import {
     assetTranslations,
     koreanTickers,
     profileDescriptionTranslations,
-} from '@/infrastructure/db/schema';
-import type { SiglensDatabase } from '@/infrastructure/db/types';
+} from '@/shared/db/schema';
+import type { SiglensDatabase } from '@/shared/db/types';
 import type {
     AssetTranslationRecord,
     AssetTranslationRepository,
     KoreanTickerRepository,
     ProfileDescriptionTranslationRecord,
     ProfileDescriptionTranslationRepository,
-} from '@/infrastructure/db/types';
+} from '@/shared/db/types';
 import { withRetry } from '@/shared/lib/withRetry';
 
 const koreanTickerColumns = {

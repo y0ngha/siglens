@@ -5,7 +5,7 @@ jest.mock('@/infrastructure/auth/getCurrentUser', () => ({
     getCurrentUser: (...args: unknown[]) => mockGetCurrentUser(...args),
 }));
 
-jest.mock('@/infrastructure/db/client', () => ({
+jest.mock('@/shared/db/client', () => ({
     getDatabaseClient: jest.fn(() => ({ db: {}, sql: () => null })),
 }));
 

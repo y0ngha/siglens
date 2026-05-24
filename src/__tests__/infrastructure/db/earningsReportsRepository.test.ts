@@ -5,7 +5,7 @@ jest.mock('@/shared/lib/sleep', () => ({
     sleep: jest.fn().mockResolvedValue(undefined),
 }));
 
-import type { SiglensDatabase } from '@/infrastructure/db/types';
+import type { SiglensDatabase } from '@/shared/db/types';
 import {
     dedupeEarningsReportInputs,
     DrizzleEarningsReportsRepository,

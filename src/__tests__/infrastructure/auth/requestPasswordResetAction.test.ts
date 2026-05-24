@@ -1,4 +1,4 @@
-jest.mock('@/infrastructure/db/client', () => ({
+jest.mock('@/shared/db/client', () => ({
     getDatabaseClient: jest.fn(() => ({ db: {}, sql: () => null })),
     resetDatabaseClientForTests: jest.fn(),
 }));

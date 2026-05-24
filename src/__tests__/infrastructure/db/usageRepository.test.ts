@@ -1,6 +1,6 @@
 import { hashUsageIp } from '@y0ngha/siglens-core';
-import { usageLogs } from '@/infrastructure/db/schema';
-import type { SiglensDatabase } from '@/infrastructure/db/types';
+import { usageLogs } from '@/shared/db/schema';
+import type { SiglensDatabase } from '@/shared/db/types';
 import { DrizzleUsageRepository } from '@/infrastructure/db/usageRepository';
 
 const usageLogRecord = {

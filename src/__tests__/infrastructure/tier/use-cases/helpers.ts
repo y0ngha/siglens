@@ -1,4 +1,4 @@
-import type { UserTierRepository } from '@/infrastructure/db/types';
+import type { UserTierRepository } from '@/shared/db/types';
 
 type UserTierRepositoryMock = {
     repository: UserTierRepository;

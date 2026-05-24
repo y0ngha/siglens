@@ -1,5 +1,5 @@
-import { usageLogs } from '@/infrastructure/db/schema';
-import type { SiglensDatabase } from '@/infrastructure/db/types';
+import { usageLogs } from '@/shared/db/schema';
+import type { SiglensDatabase } from '@/shared/db/types';
 import { DrizzleUsageLogRepository } from '@/infrastructure/db/usageLogRepository';
 
 function makeInsertDb(): {

@@ -4,7 +4,7 @@ jest.mock('next/navigation', () => ({
         throw new Error(`NEXT_REDIRECT:${path}`);
     }),
 }));
-jest.mock('@/infrastructure/db/client', () => ({
+jest.mock('@/shared/db/client', () => ({
     getDatabaseClient: jest.fn(() => ({
         db: {},
         sql: () => null,
@@ -42,7 +42,7 @@ import { redirect } from 'next/navigation';
 import { loginUser } from '@/infrastructure/auth/use-cases/loginUser';
 import { registerUser } from '@/infrastructure/auth/use-cases/registerUser';
 import { createEmailTokenStore } from '@/infrastructure/email/tokenStore';
-import { getDatabaseClient } from '@/infrastructure/db/client';
+import { getDatabaseClient } from '@/shared/db/client';
 import { DrizzleAgreementRepository } from '@/infrastructure/db/agreementRepository';
 import { DrizzleTermsRepository } from '@/infrastructure/db/termsRepository';
 import { AUTH_SERVICE_UNAVAILABLE_MESSAGE } from '@/infrastructure/auth/errorMessages';

@@ -1,7 +1,4 @@
-import type {
-    AuthSessionRecord,
-    SessionRepository,
-} from '@/infrastructure/db/types';
+import type { AuthSessionRecord, SessionRepository } from '@/shared/db/types';
 import type { AuthSessionCookie } from '@/infrastructure/auth/use-cases/types';
 
 /** Default cookie name used for the auth session token. */

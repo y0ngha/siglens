@@ -2,7 +2,7 @@
 
 import type { ContactFormState } from '@/domain/types';
 import { validateContactInput } from '@/domain/contact/validation';
-import { getDatabaseClient } from '@/infrastructure/db/client';
+import { getDatabaseClient } from '@/shared/db/client';
 import { DrizzleContactRepository } from '@/infrastructure/db/contactRepository';
 import { submitInquiry } from '@/infrastructure/contact/use-cases/submitInquiry';
 

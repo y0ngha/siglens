@@ -1,4 +1,4 @@
-jest.mock('@/infrastructure/db/client', () => ({
+jest.mock('@/shared/db/client', () => ({
     getDatabaseClient: jest.fn(),
     resetDatabaseClientForTests: jest.fn(),
 }));
@@ -6,7 +6,7 @@ jest.mock('@/infrastructure/db/client', () => ({
 import {
     getDatabaseClient,
     resetDatabaseClientForTests,
-} from '@/infrastructure/db/client';
+} from '@/shared/db/client';
 import {
     getAuthDatabaseClient,
     resetAuthDatabaseClientForTests,

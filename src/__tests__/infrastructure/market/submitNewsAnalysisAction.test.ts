@@ -11,7 +11,7 @@ jest.mock('@y0ngha/siglens-core', () => ({
     submitNewsAnalysis: jest.fn(),
 }));
 
-jest.mock('@/infrastructure/db/client', () => ({
+jest.mock('@/shared/db/client', () => ({
     getDatabaseClient: jest.fn().mockReturnValue({ db: {} }),
 }));
 

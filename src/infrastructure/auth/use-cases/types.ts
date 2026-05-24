@@ -7,7 +7,7 @@ import type {
     OAuthAccountRepository,
     SessionRepository,
     UserRepository,
-} from '@/infrastructure/db/types';
+} from '@/shared/db/types';
 import type { OAuthRevoker } from '@/infrastructure/auth/oauth/revokerTypes';
 import type {
     PasswordHasher,

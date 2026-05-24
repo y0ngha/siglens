@@ -1,6 +1,6 @@
-import { NEON_TRANSIENT_RETRY } from '@/infrastructure/db/isNeonTransientError';
-import { inquiries } from '@/infrastructure/db/schema';
-import type { SiglensDatabase } from '@/infrastructure/db/types';
+import { NEON_TRANSIENT_RETRY } from '@/shared/db/isNeonTransientError';
+import { inquiries } from '@/shared/db/schema';
+import type { SiglensDatabase } from '@/shared/db/types';
 import { withRetry } from '@/shared/lib/withRetry';
 
 /** Input required to create a new inquiry record. */

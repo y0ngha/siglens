@@ -7,7 +7,7 @@ import {
     type ModelId,
     type Tier,
 } from '@y0ngha/siglens-core';
-import { getDatabaseClient } from '@/infrastructure/db/client';
+import { getDatabaseClient } from '@/shared/db/client';
 import {
     DrizzleUserApiKeyRepository,
     LlmApiKeyDecryptionFailedError,

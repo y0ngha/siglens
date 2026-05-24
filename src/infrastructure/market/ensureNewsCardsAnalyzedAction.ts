@@ -1,6 +1,6 @@
 'use server';
 
-import { getDatabaseClient } from '@/infrastructure/db/client';
+import { getDatabaseClient } from '@/shared/db/client';
 import { DrizzleNewsRepository } from '@/infrastructure/db/newsRepository';
 import { FmpNewsClient } from '@/infrastructure/fmp/newsClient';
 import { DISABLED_THINKING_BUDGET } from '@/infrastructure/market/newsAnalysisConstants';

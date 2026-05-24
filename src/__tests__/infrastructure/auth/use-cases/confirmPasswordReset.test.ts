@@ -5,7 +5,7 @@ import type {
     EmailTokenPurpose,
     EmailTokenValue,
 } from '@/infrastructure/email/tokenStore';
-import type { EmailAuthUserRecord } from '@/infrastructure/db/types';
+import type { EmailAuthUserRecord } from '@/shared/db/types';
 
 const RAW_TOKEN = 'raw-token-value';
 const STORED_TOKEN_HASH = hashEmailToken(RAW_TOKEN);

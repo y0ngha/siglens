@@ -14,7 +14,7 @@ import type {
     AssetTranslationRecord,
     ProfileDescriptionTranslationRecord,
     SiglensDatabase,
-} from '@/infrastructure/db/types';
+} from '@/shared/db/types';
 import type { KoreanTickerEntry } from '@/domain/types';
 
 const apple: KoreanTickerEntry = {

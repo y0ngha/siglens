@@ -11,7 +11,7 @@
 | `shared/config/` | 설정 상수: queryKeys (QUERY_KEYS), pollingConfig, cookieNames |
 | `shared/ui/` | Primitive UI 컴포넌트: DotSeparator, EyeIcon, InfoTooltip, JsonLd, MarkdownText, tabs/ |
 | `shared/hooks/` | React 의존 일반 hook: useDialog, useEscapeKey, useFocusTrap, useHydrated, useIsMobileViewport 등 |
-| `shared/db/` | (Phase 2에서 추가 예정) Drizzle client + schema |
+| `shared/db/` | Drizzle/Neon client, schema, token encryption, DB config/constants/types |
 | `shared/email/` | (Phase 2에서 추가 예정) Email dispatcher |
 | `shared/cache/` | (Phase 2에서 추가 예정) Redis client |
 | `shared/api/` | (Phase 1 PR B에서 추가 예정) HTTP client, third-party API wrapper |

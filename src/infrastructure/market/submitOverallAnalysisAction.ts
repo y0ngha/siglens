@@ -11,7 +11,7 @@ import {
     type Timeframe,
 } from '@y0ngha/siglens-core';
 import { FmpFundamentalClient } from '@/infrastructure/fmp/fundamentalClient';
-import { getDatabaseClient } from '@/infrastructure/db/client';
+import { getDatabaseClient } from '@/shared/db/client';
 import { DrizzleNewsRepository } from '@/infrastructure/db/newsRepository';
 import { NEWS_ANALYSIS_LOOKBACK_MS } from '@/infrastructure/market/newsLookback';
 import {

@@ -9,7 +9,7 @@ import type {
     EmailAuthUserRecord,
     EmailAuthUserRepository,
     SessionRepository,
-} from '@/infrastructure/db/types';
+} from '@/shared/db/types';
 
 const now = new Date('2026-04-27T00:00:00.000Z');
 const createdAt = new Date('2026-04-26T00:00:00.000Z');
