@@ -7,6 +7,8 @@ Define interfaces (`types.ts`) **before** implementation.
 
 > **Note:** Email (shared/email, entities/email-token) and Skills (entities/skill) have been
 > migrated out of infrastructure in Phase 2.
+> AI providers (entities/llm-provider) and LLM API key actions (entities/api-key/actions)
+> have been migrated out of infrastructure in Phase 3.
 
 **Dependency:** `→ see docs/ARCHITECTURE.md` for full layer dependency rules.
 
@@ -26,11 +28,10 @@ Define interfaces (`types.ts`) **before** implementation.
 
 `→ see docs/API.md` for full Alpaca API spec.
 
-### ai/ (AI Provider)
+### ai/ → entities/llm-provider (migrated in Phase 3)
 
-- Supports multiple AI providers (Claude, Gemini, etc.)
-- Interchangeable via common interface (`AIProvider`)
-- Provider selected by `AI_PROVIDER` env var (`createAIProvider()` in factory.ts)
+> AI provider adapters (Anthropic, Gemini, OpenAI), router, and JSON response
+> parsing utilities have moved to `entities/llm-provider/`.
 
 ### market/barsApi.ts
 

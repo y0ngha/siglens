@@ -1,5 +1,4 @@
-import { callGeminiChat } from '@/infrastructure/ai/gemini';
-import { parseJsonResponse } from '@/infrastructure/ai/parseJsonResponse';
+import { callGeminiChat, parseJsonResponse } from '@/entities/llm-provider';
 import { tryReadTranslatorConfig } from '@/infrastructure/ticker/config';
 import type {
     TranslatorConfig,

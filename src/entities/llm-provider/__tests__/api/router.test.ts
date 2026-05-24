@@ -1,12 +1,12 @@
-jest.mock('@/infrastructure/ai/anthropic', () => ({
+jest.mock('@/entities/llm-provider/api/anthropic', () => ({
     callAnthropicChat: jest.fn(),
 }));
 
-jest.mock('@/infrastructure/ai/openai', () => ({
+jest.mock('@/entities/llm-provider/api/openai', () => ({
     callOpenaiChat: jest.fn(),
 }));
 
-jest.mock('@/infrastructure/ai/gemini', () => ({
+jest.mock('@/entities/llm-provider/api/gemini', () => ({
     callGeminiChat: jest.fn(),
 }));
 
@@ -22,10 +22,10 @@ jest.mock('@y0ngha/siglens-core', () => {
     };
 });
 
-import { callAnthropicChat } from '@/infrastructure/ai/anthropic';
-import { callGeminiChat } from '@/infrastructure/ai/gemini';
-import { callOpenaiChat } from '@/infrastructure/ai/openai';
-import { callAiProviderRouter } from '@/infrastructure/ai/router';
+import { callAnthropicChat } from '@/entities/llm-provider/api/anthropic';
+import { callGeminiChat } from '@/entities/llm-provider/api/gemini';
+import { callOpenaiChat } from '@/entities/llm-provider/api/openai';
+import { callAiProviderRouter } from '@/entities/llm-provider/api/router';
 import type { LlmProvider } from '@y0ngha/siglens-core';
 import { getProviderForModel } from '@y0ngha/siglens-core';
 

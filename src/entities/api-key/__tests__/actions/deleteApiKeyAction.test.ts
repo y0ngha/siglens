@@ -23,7 +23,7 @@ jest.mock('@/entities/api-key', () => ({
 import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
-import { deleteApiKeyAction } from '@/infrastructure/llm/deleteApiKeyAction';
+import { deleteApiKeyAction } from '@/entities/api-key/actions/deleteApiKeyAction';
 import { makeFormData } from '@/__tests__/utils/makeFormData';
 import type { ApiKeyActionState } from '@/domain/llm';
 

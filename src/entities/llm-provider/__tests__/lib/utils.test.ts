@@ -1,4 +1,4 @@
-import { toProviderTurns } from '@/infrastructure/ai/utils';
+import { toProviderTurns } from '@/entities/llm-provider/lib/utils';
 import type { ConversationTurn } from '@y0ngha/siglens-core';
 
 describe('toProviderTurns', () => {
