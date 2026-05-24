@@ -3,7 +3,7 @@
  */
 import '@testing-library/jest-dom';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { IosInstallModal } from '@/components/pwa/IosInstallModal';
+import { IosInstallModal } from '@/features/pwa-install';
 
 describe('IosInstallModal', () => {
     it('3단계 안내가 모두 렌더된다', () => {

@@ -29,7 +29,7 @@ jest.mock('@/components/chart/FearGreedHistoricalChart', () => ({
     FearGreedHistoricalChart: () => null,
 }));
 
-jest.mock('@/components/chat/hooks/useSymbolChat', () => ({
+jest.mock('@/features/symbol-chat', () => ({
     usePublishSymbolChat: () => undefined,
 }));
 

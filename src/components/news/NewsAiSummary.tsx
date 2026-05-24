@@ -3,7 +3,7 @@
 import {
     usePublishSymbolChat,
     type SymbolChatState,
-} from '@/components/chat/hooks/useSymbolChat';
+} from '@/features/symbol-chat';
 import { useNewsAnalysis } from '@/components/news/hooks/useNewsAnalysis';
 import { useWaitForNewsCards } from '@/components/news/hooks/useWaitForNewsCards';
 import { buildChatState } from '@/components/news/utils/buildChatState';

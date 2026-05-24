@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect } from 'react';
-import { usePwaInstall } from '@/components/pwa/hooks/usePwaInstall';
-import { IosInstallModal } from '@/components/pwa/IosInstallModal';
+import { usePwaInstall } from '../hooks/usePwaInstall';
+import { IosInstallModal } from './IosInstallModal';
 import { cn } from '@/shared/lib/cn';
 
 // Pattern A (CLS prevention): always render a fixed-height shell so

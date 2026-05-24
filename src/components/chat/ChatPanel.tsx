@@ -3,10 +3,10 @@
 import { ContextSwitchSystemMessage } from '@/components/chat/ContextSwitchSystemMessage';
 import { useChat } from '@/components/chat/hooks/useChat';
 import { useChatInput } from '@/components/chat/hooks/useChatInput';
-import { useSymbolChat } from '@/components/chat/hooks/useSymbolChat';
+import { useSymbolChat } from '@/features/symbol-chat';
 import { usePopoverToggle } from '@/shared/hooks/usePopoverToggle';
 import { MarkdownText } from '@/shared/ui/MarkdownText';
-import { PremiumModelGateModal } from '@/components/ui/PremiumModelGateModal';
+import { PremiumModelGateModal } from '@/features/premium-gate';
 import { cn } from '@/shared/lib/cn';
 import { LLM_PROVIDER_LABELS } from '@/shared/lib/llmProviderLabels';
 import {

@@ -2,7 +2,7 @@
 
 import type { BacktestCase } from '@y0ngha/siglens-core';
 import { buildPanelId, buildTabId, TabsUnderline } from '@/shared/ui/tabs';
-import { useBacktestFilter } from '@/components/backtesting/hooks/useBacktestFilter';
+import { useBacktestFilter } from '@/features/backtest-filter';
 import { BacktestCaseList } from '@/components/backtesting/BacktestCaseList';
 
 interface BacktestTabsProps {

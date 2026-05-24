@@ -8,7 +8,7 @@ import { FearGreedGroupBar } from '@/components/fear-greed/FearGreedGroupBar';
 import { FearGreedHistoricalChart } from '@/components/chart/FearGreedHistoricalChart';
 import { SelfNormWarningBadge } from '@/components/fear-greed/SelfNormWarningBadge';
 import { formatConfidenceFooter } from '@/shared/lib/fearGreedLabels';
-import { usePublishSymbolChat } from '@/components/chat/hooks/useSymbolChat';
+import { usePublishSymbolChat } from '@/features/symbol-chat';
 import { buildChatState } from '@/components/fear-greed/utils/buildChatState';
 
 interface FearGreedPageProps {

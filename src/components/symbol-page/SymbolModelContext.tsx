@@ -3,10 +3,7 @@
 import { createContext, useContext, useMemo, type ReactNode } from 'react';
 import { getAllowedModels, type ModelId } from '@y0ngha/siglens-core';
 import { useSelectedModel } from '@/components/symbol-page/hooks/useSelectedModel';
-import {
-    useModelGate,
-    type ModelGateState,
-} from '@/components/hooks/useModelGate';
+import { useModelGate, type ModelGateState } from '@/features/premium-gate';
 import { useUserTier } from '@/components/symbol-page/hooks/useUserTier';
 
 interface SymbolModelContextValue {

@@ -8,7 +8,7 @@ import { useAssetInfo } from '@/components/symbol-page/hooks/useAssetInfo';
 import { useSymbolModel } from '@/components/symbol-page/SymbolModelContext';
 import { ModelSelector } from '@/components/analysis/ModelSelector';
 import { FearGreedHeaderChipMounted } from '@/components/symbol-page/FearGreedHeaderChipMounted';
-import { PremiumModelGateModal } from '@/components/ui/PremiumModelGateModal';
+import { PremiumModelGateModal } from '@/features/premium-gate';
 import { LLM_PROVIDER_LABELS } from '@/shared/lib/llmProviderLabels';
 
 interface SymbolLayoutHeaderProps {

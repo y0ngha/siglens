@@ -1,6 +1,6 @@
 'use client';
 
-import { usePublishSymbolChat } from '@/components/chat/hooks/useSymbolChat';
+import { usePublishSymbolChat } from '@/features/symbol-chat';
 import { DependencyProgress } from '@/components/overall/DependencyProgress';
 import { useOverallAnalysis } from '@/components/overall/hooks/useOverallAnalysis';
 import { OverallTriggerCta } from '@/components/overall/OverallTriggerCta';

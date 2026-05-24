@@ -26,12 +26,9 @@ import { DEFAULT_TIMEFRAME } from '@/shared/config/market';
 import { CHAT_NON_CHART_BASELINE_ANALYSIS } from '@/entities/chat-message';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
 import { usePageContextLabel } from '@/components/chat/hooks/usePageContextLabel';
-import { useSymbolChat } from '@/components/chat/hooks/useSymbolChat';
+import { useSymbolChat } from '@/features/symbol-chat';
 import { useAssetInfo } from '@/components/symbol-page/hooks/useAssetInfo';
-import {
-    useModelGate,
-    type ModelGateState,
-} from '@/components/hooks/useModelGate';
+import { useModelGate, type ModelGateState } from '@/features/premium-gate';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
     startTransition,
