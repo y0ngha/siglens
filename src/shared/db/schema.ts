@@ -20,7 +20,7 @@ import {
     TERMS_KIND_VALUES,
     USAGE_ACTION_TYPE_VALUES,
     USER_TIER_VALUES,
-} from '@/shared/db/constants';
+} from './constants';
 
 const EMAIL_MAX_LENGTH = 320;
 const SYMBOL_MAX_LENGTH = 32;
