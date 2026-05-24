@@ -19,6 +19,7 @@ export async function getNewsCardsAction(
     const { db } = getDatabaseClient();
     const repo = new DrizzleNewsRepository(db);
     const rows = await repo.listBySymbol(symbol, NEWS_LOOKBACK_MS);
+    // Allowlist: NewsDisplayItem에 필요한 필드만 노출. DB row의 내부 필드(bodyEn, analyzedAt 등)를 client에 전송하지 않음.
     return rows.map(
         ({
             id,

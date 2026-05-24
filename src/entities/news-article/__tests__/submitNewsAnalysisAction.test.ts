@@ -83,6 +83,7 @@ const ANALYZED_ROW = {
     bodyKo: '애플이 보고했다...',
     summaryKo: '긍정적 실적 발표',
     sentiment: 'bullish',
+    priceImpact: 'positive',
     category: 'earnings',
     analyzedAt: new Date('2025-07-01T11:00:00.000Z'),
 };
@@ -93,6 +94,7 @@ const UNANALYZED_ROW = {
     id: 'def456',
     titleKo: null,
     bodyKo: null,
+    priceImpact: null,
     summaryKo: null,
     sentiment: null,
     category: null,
