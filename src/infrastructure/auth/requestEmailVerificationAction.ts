@@ -6,7 +6,7 @@ import {
     buildEmailVerificationEmail,
 } from '@/entities/email-token';
 import type { RequestEmailVerificationFormState } from '@/domain/auth/formTypes';
-import { createEmailDispatcher } from '@/shared/email/dispatcher';
+import { createEmailDispatcher } from '@/shared/email';
 import { AUTH_SERVICE_UNAVAILABLE_MESSAGE } from '@/infrastructure/auth/errorMessages';
 import { normalizeEmail } from '@/domain/auth/validation';
 

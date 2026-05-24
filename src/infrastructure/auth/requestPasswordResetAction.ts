@@ -7,7 +7,7 @@ import {
     buildPasswordResetEmail,
 } from '@/entities/email-token';
 import type { ForgotPasswordFormState } from '@/domain/auth/formTypes';
-import { createEmailDispatcher } from '@/shared/email/dispatcher';
+import { createEmailDispatcher } from '@/shared/email';
 import { getAuthDatabaseClient } from '@/infrastructure/auth/db';
 
 export async function requestPasswordResetAction(

@@ -1,7 +1,5 @@
 import { Redis } from '@upstash/redis';
 
-export type { EmailDispatcher, EmailMessage } from '@/shared/email/types';
-
 /** Purpose tag namespacing email-token Redis keys so password-reset and email-verification tokens for the same email never collide. */
 export type EmailTokenPurpose = 'password_reset' | 'email_verification';
 
@@ -67,13 +65,13 @@ function readUpstashConfig(): UpstashConfig | null {
     return { url, token, readonlyToken };
 }
 
-/** @internal Test-only reset of the cached Redis client pair. */
+/** Test-only reset of the cached Redis client pair. */
 export function __resetEmailTokenStoreCacheForTests(): void {
     cachedRedisPair = null;
     cachedConfigKey = null;
 }
 
-/** @internal Build the Redis key for an email-token entry. */
+/** Build the Redis key for an email-token entry. */
 export function buildEmailTokenKey(
     purpose: EmailTokenPurpose,
     email: string

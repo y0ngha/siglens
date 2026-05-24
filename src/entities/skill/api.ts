@@ -12,7 +12,7 @@ import type { SkillsProvider } from './model';
 
 const SKILLS_DIR = join(process.cwd(), 'skills');
 
-const SKILL_CATEGORIES: readonly SkillCategory[] = [
+const SKILL_CATEGORIES = [
     'reversal_bullish',
     'reversal_bearish',
     'continuation_bullish',
@@ -20,7 +20,7 @@ const SKILL_CATEGORIES: readonly SkillCategory[] = [
     'neutral',
     'fundamental',
     'news',
-];
+] as const satisfies readonly SkillCategory[];
 
 const parseYamlValue = (value: string): unknown => {
     if (value === '[]') return [];
@@ -159,13 +159,13 @@ const parseSkillDisplay = (raw: unknown): SkillDisplay | undefined => {
     };
 };
 
-const SKILL_TYPES: readonly SkillType[] = [
+const SKILL_TYPES = [
     'pattern',
     'indicator_guide',
     'strategy',
     'candlestick',
     'support_resistance',
-];
+] as const satisfies readonly SkillType[];
 
 const isSkillType = (value: unknown): value is SkillType =>
     typeof value === 'string' &&

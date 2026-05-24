@@ -1,7 +1,5 @@
 export { createEmailTokenStore } from './api';
 export type {
-    EmailDispatcher,
-    EmailMessage,
     EmailTokenPurpose,
     EmailTokenStore,
     EmailTokenValue,

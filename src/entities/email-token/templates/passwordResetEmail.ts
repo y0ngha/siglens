@@ -1,4 +1,4 @@
-import type { EmailMessage } from '@/shared/email/types';
+import type { EmailMessage } from '@/shared/email';
 
 // Duplicates @/lib/seo SITE_NAME/SITE_URL — update both if changed.
 const SITE_NAME = 'Siglens';
