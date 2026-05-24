@@ -24,8 +24,10 @@ jest.mock('@/shared/email/dispatcher', () => ({
 }));
 
 import { requestPasswordReset } from '@/infrastructure/auth/use-cases/requestPasswordReset';
-import { createEmailTokenStore } from '@/entities/email-token';
-import { buildPasswordResetEmail } from '@/entities/email-token';
+import {
+    createEmailTokenStore,
+    buildPasswordResetEmail,
+} from '@/entities/email-token';
 import { requestPasswordResetAction } from '@/infrastructure/auth/requestPasswordResetAction';
 import { resetAuthDatabaseClientForTests } from '@/infrastructure/auth/db';
 import { makeFormData } from '@/__tests__/utils/makeFormData';

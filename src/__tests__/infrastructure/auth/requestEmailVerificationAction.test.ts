@@ -17,8 +17,10 @@ jest.mock('@/shared/email/dispatcher', () => ({
 }));
 
 import { requestEmailVerification } from '@/infrastructure/auth/use-cases/requestEmailVerification';
-import { createEmailTokenStore } from '@/entities/email-token';
-import { buildEmailVerificationEmail } from '@/entities/email-token';
+import {
+    createEmailTokenStore,
+    buildEmailVerificationEmail,
+} from '@/entities/email-token';
 import { AUTH_SERVICE_UNAVAILABLE_MESSAGE } from '@/infrastructure/auth/errorMessages';
 import { requestEmailVerificationAction } from '@/infrastructure/auth/requestEmailVerificationAction';
 import { makeFormData } from '@/__tests__/utils/makeFormData';

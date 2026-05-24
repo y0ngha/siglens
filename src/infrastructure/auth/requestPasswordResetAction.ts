@@ -2,9 +2,11 @@
 
 import { DrizzleUserRepository } from '@/entities/user';
 import { requestPasswordReset } from '@/infrastructure/auth/use-cases/requestPasswordReset';
-import { createEmailTokenStore } from '@/entities/email-token';
+import {
+    createEmailTokenStore,
+    buildPasswordResetEmail,
+} from '@/entities/email-token';
 import type { ForgotPasswordFormState } from '@/domain/auth/formTypes';
-import { buildPasswordResetEmail } from '@/entities/email-token';
 import { createEmailDispatcher } from '@/shared/email/dispatcher';
 import { getAuthDatabaseClient } from '@/infrastructure/auth/db';
 
