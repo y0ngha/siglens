@@ -3,9 +3,7 @@ module.exports = {
     testEnvironment: 'node',
     setupFiles: ['<rootDir>/jest.setup.ts'],
     testMatch: [
-        // 옛 mirror 구조 (하위 호환, Phase 9까지 유지)
-        '<rootDir>/src/__tests__/**/*.+(test|spec).+(ts|tsx)',
-        // FSD 슬라이스 colocated 테스트 (Phase 1+)
+        // legacy mirror(src/__tests__/) + FSD colocated(src/<layer>/<slice>/__tests__/) 모두 커버
         '<rootDir>/src/**/__tests__/**/*.+(test|spec).+(ts|tsx)',
     ],
     transform: {

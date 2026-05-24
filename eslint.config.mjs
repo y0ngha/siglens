@@ -201,6 +201,9 @@ const eslintConfig = defineConfig([
                         '@/entities/*/lib/*',
                         '@/entities/*/ui',
                         '@/entities/*/ui/*',
+                        // siglens-core deep import 차단 (CLAUDE.md / ARCHITECTURE.md 정책)
+                        '@y0ngha/siglens-core/dist',
+                        '@y0ngha/siglens-core/dist/*',
                     ],
                 },
             ],
