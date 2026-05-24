@@ -7,7 +7,7 @@ import type {
     OptionsTone,
 } from '@y0ngha/siglens-core';
 import { useMemo } from 'react';
-import { BotBlockedNotice } from '@/components/symbol-page/BotBlockedNotice';
+import { BotBlockedNotice } from '@/components/ui/BotBlockedNotice';
 import { usePublishSymbolChat } from '@/components/chat/hooks/useSymbolChat';
 import { cn } from '@/lib/cn';
 import { formatAnalyzedAt } from '@/lib/formatAnalyzedAt';

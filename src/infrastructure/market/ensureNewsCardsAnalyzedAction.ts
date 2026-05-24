@@ -63,9 +63,13 @@ async function analyzeAndPersist(
  *
  * Designed to run inside `waitUntil` so it doesn't block the response stream.
  * Per-item errors are logged and never thrown; other items continue normally.
+ *
+ * @param options.skipAnalysis When true (bot traffic), FMP fetch + DB upsert
+ *   still run but LLM card analysis is skipped to avoid unnecessary worker cost.
  */
 export async function ensureNewsCardsAnalyzedAction(
-    symbol: string
+    symbol: string,
+    options?: { skipAnalysis?: boolean }
 ): Promise<void> {
     const newsClient = new FmpNewsClient();
     const { db } = getDatabaseClient();
@@ -110,6 +114,8 @@ export async function ensureNewsCardsAnalyzedAction(
     }
 
     if (fresh.length === 0) return;
+
+    if (options?.skipAnalysis) return;
 
     // Read the current DB state after upsert so newly inserted rows are included.
     const rows = await repo.listBySymbol(symbol, NEWS_LOOKBACK_MS);

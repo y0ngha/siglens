@@ -349,6 +349,39 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
         });
     });
 
+    describe('skipAnalysis 옵션은', () => {
+        it('true이면 FMP fetch와 DB upsert는 수행하지만 LLM 분석은 건너뛴다', async () => {
+            mockFetchNewsForPeriod.mockResolvedValue([
+                NEWS_ITEM_1,
+                NEWS_ITEM_2,
+            ]);
+
+            await ensureNewsCardsAnalyzedAction('AAPL', {
+                skipAnalysis: true,
+            });
+
+            expect(mockFetchNewsForPeriod).toHaveBeenCalledWith(
+                'AAPL',
+                NEWS_LOOKBACK_MS
+            );
+            expect(mockUpsertNewsItem).toHaveBeenCalledTimes(2);
+            expect(mockListBySymbol).not.toHaveBeenCalled();
+            expect(mockSubmitNewsCardAnalysis).not.toHaveBeenCalled();
+        });
+
+        it('false이면 기존과 동일하게 LLM 분석까지 수행한다', async () => {
+            mockFetchNewsForPeriod.mockResolvedValue([NEWS_ITEM_1]);
+            mockSubmitNewsCardAnalysis.mockResolvedValue(SUBMITTED_RESULT);
+            mockPollNewsCardAnalysis.mockResolvedValue(POLL_DONE);
+
+            await ensureNewsCardsAnalyzedAction('AAPL', {
+                skipAnalysis: false,
+            });
+
+            expect(mockSubmitNewsCardAnalysis).toHaveBeenCalledTimes(1);
+        });
+    });
+
     it('뉴스가 없으면 upsert와 카드 분석을 호출하지 않는다', async () => {
         mockFetchNewsForPeriod.mockResolvedValue([]);
 

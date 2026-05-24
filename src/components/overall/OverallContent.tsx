@@ -14,7 +14,7 @@ import { RiskFactors } from '@/components/overall/sections/RiskFactors';
 import { ScenarioAnalysis } from '@/components/overall/sections/ScenarioAnalysis';
 import { TechnicalSummary } from '@/components/overall/sections/TechnicalSummary';
 import { buildChatState } from '@/components/overall/utils/buildChatState';
-import { BotBlockedNotice } from '@/components/symbol-page/BotBlockedNotice';
+import { BotBlockedNotice } from '@/components/ui/BotBlockedNotice';
 import { useDefaultModelId } from '@/components/symbol-page/hooks/useDefaultModelId';
 import { cn } from '@/lib/cn';
 import { type Timeframe } from '@y0ngha/siglens-core';

@@ -1,6 +1,8 @@
 import type {
     ChatMessage,
     FearGreedConfidence,
+    MarketSummaryData,
+    MarketSummaryWithBriefing,
     NewsCategory,
     NewsImpact,
     NewsSentiment,
@@ -185,6 +187,11 @@ export interface ContextSwitchMessage {
 
 /** Chat display history union — `ChatMessage` (LLM-bound) + UI-only `ContextSwitchMessage`. */
 export type DisplayMessage = ChatMessage | ContextSwitchMessage;
+
+export type MarketSummaryActionResult =
+    | (MarketSummaryWithBriefing & { botBlocked: false })
+    | { summary: MarketSummaryData; briefing: null; botBlocked: true }
+    | { ok: false; error: string };
 
 export type JobType =
     | 'analysis'

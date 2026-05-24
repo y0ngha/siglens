@@ -7,7 +7,7 @@ import {
 import { useNewsAnalysis } from '@/components/news/hooks/useNewsAnalysis';
 import { useWaitForNewsCards } from '@/components/news/hooks/useWaitForNewsCards';
 import { buildChatState } from '@/components/news/utils/buildChatState';
-import { BotBlockedNotice } from '@/components/symbol-page/BotBlockedNotice';
+import { BotBlockedNotice } from '@/components/ui/BotBlockedNotice';
 import { useDefaultModelId } from '@/components/symbol-page/hooks/useDefaultModelId';
 import { cn } from '@/lib/cn';
 import {

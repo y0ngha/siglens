@@ -4,7 +4,7 @@
 
 import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
-import { BotBlockedNotice } from '@/components/symbol-page/BotBlockedNotice';
+import { BotBlockedNotice } from '@/components/ui/BotBlockedNotice';
 
 describe('BotBlockedNotice', () => {
     it('봇 차단 안내를 렌더링한다', () => {

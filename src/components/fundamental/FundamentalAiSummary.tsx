@@ -13,7 +13,7 @@ import { usePublishSymbolChat } from '@/components/chat/hooks/useSymbolChat';
 import { buildChatState } from '@/components/fundamental/utils/buildChatState';
 import { FundamentalAiSummaryError } from '@/components/fundamental/FundamentalAiSummaryError';
 import { FundamentalAiSummarySkeleton } from '@/components/fundamental/FundamentalAiSummarySkeleton';
-import { BotBlockedNotice } from '@/components/symbol-page/BotBlockedNotice';
+import { BotBlockedNotice } from '@/components/ui/BotBlockedNotice';
 
 const SENTIMENT_LABEL: Record<FundamentalSentiment, string> = {
     bullish: '긍정',
