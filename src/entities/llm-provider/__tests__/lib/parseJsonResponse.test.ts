@@ -1,7 +1,7 @@
 import {
     parseJsonResponse,
     stripMarkdownCodeBlock,
-} from '@/entities/llm-provider/lib/parseJsonResponse';
+} from '../../lib/parseJsonResponse';
 
 describe('stripMarkdownCodeBlock', () => {
     it('strips ```json fenced wrapper and trims inner content', () => {
