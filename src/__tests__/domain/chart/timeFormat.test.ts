@@ -1,4 +1,4 @@
-import { getTimeFormatter } from '@/domain/chart/timeFormat';
+import { getTimeFormatter } from '@/shared/lib/timeFormat';
 
 // 2024-03-30 09:30:00 UTC = 2024-03-30 18:30:00 KST (UTC+9)
 const UTC_TIMESTAMP_SECONDS = 1711791000;

@@ -5,7 +5,7 @@ import type {
 import { NEON_TRANSIENT_RETRY } from '@/infrastructure/db/isNeonTransientError';
 import { usageLogs } from '@/infrastructure/db/schema';
 import type { SiglensDatabase } from '@/infrastructure/db/types';
-import { withRetry } from '@/infrastructure/utils/withRetry';
+import { withRetry } from '@/shared/lib/withRetry';
 
 /**
  * Drizzle ORM implementation of {@link UsageLogRepository} backed by a Neon

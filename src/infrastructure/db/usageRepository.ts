@@ -12,7 +12,7 @@ import type {
     SiglensUsageCounts,
     SiglensUsageRepository,
 } from '@/infrastructure/db/usageCounts';
-import { withRetry } from '@/infrastructure/utils/withRetry';
+import { withRetry } from '@/shared/lib/withRetry';
 
 const EMPTY_USAGE_COUNTS: SiglensUsageCounts = {
     analysis: 0,

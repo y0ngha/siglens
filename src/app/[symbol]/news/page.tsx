@@ -18,7 +18,7 @@ import { buildDisplayName } from '@/domain/ticker';
 import { ensureNewsCardsAnalyzedAction } from '@/infrastructure/market/ensureNewsCardsAnalyzedAction';
 import { getTodayIsoDay } from '@/infrastructure/seo/getTodayIsoDay';
 import { getAssetInfoCached } from '@/infrastructure/ticker/getAssetInfoCached';
-import { todayKstIsoDate } from '@/infrastructure/utils/dateKey';
+import { todayKstIsoDate } from '@/shared/lib/dateKey';
 import {
     buildBreadcrumbJsonLd,
     buildSymbolNewsSeoContent,

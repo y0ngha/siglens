@@ -2,7 +2,7 @@ import {
     MARKET_OPEN_HOUR,
     MARKET_OPEN_MINUTE,
     MARKET_CLOSE_HOUR,
-} from '@/domain/market/session';
+} from '@/shared/lib/marketSession';
 
 // UTC offset gap from ET to KST: EDT(-4) → KST(+9) = 13h, EST(-5) → KST(+9) = 14h.
 const EDT_TO_KST_OFFSET_HOURS = 13;

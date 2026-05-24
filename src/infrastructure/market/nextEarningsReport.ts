@@ -2,7 +2,7 @@ import type { EarningsCalendarItem } from '@y0ngha/siglens-core';
 import { MS_PER_DAY } from '@/domain/constants/time';
 import { DrizzleEarningsReportsRepository } from '@/infrastructure/db/earningsReportsRepository';
 import { FmpFundamentalClient } from '@/infrastructure/fmp/fundamentalClient';
-import { todayKstIsoDate } from '@/infrastructure/utils/dateKey';
+import { todayKstIsoDate } from '@/shared/lib/dateKey';
 import type { SiglensDatabase } from '@/infrastructure/db/types';
 
 const EARNINGS_REPORT_FMP_LIMIT = 5;

@@ -7,7 +7,7 @@ import type {
     CreateSessionInput,
     SessionRepository,
 } from '@/infrastructure/db/types';
-import { withRetry } from '@/infrastructure/utils/withRetry';
+import { withRetry } from '@/shared/lib/withRetry';
 
 const sessionColumns = {
     id: sessions.id,

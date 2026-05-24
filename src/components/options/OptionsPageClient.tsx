@@ -23,7 +23,7 @@ import { useOptionsChainMetrics } from '@/components/options/hooks/useOptionsCha
 import {
     isUsOptionsRegularSession,
     isOpenInterestSnapshotStale,
-} from '@/domain/market/session';
+} from '@/shared/lib/marketSession';
 import type { OptionsSnapshot, SlotMapping } from '@y0ngha/siglens-core';
 import type { OptionsExpirationSelector } from '@/domain/types';
 
