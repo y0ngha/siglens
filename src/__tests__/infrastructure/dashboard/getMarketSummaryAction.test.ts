@@ -113,9 +113,7 @@ describe('getMarketSummaryAction 함수는', () => {
 
         it('봇 요청에서 예외가 발생하면 에러 결과를 반환한다', async () => {
             mockIsBot.mockReturnValue(true);
-            mockGetSummary.mockRejectedValueOnce(
-                new Error('API unavailable')
-            );
+            mockGetSummary.mockRejectedValueOnce(new Error('API unavailable'));
 
             const result = await getMarketSummaryAction();
 
