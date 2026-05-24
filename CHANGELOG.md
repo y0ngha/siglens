@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.12.9](https://github.com/y0ngha/siglens/compare/v0.12.8...v0.12.9) (2026-05-24)
+
+
+### Bug Fixes
+
+* 봇 트래픽 시 news/market 페이지 LLM 비용 차단 ([4b8b298](https://github.com/y0ngha/siglens/commit/4b8b2984c0f180d63665ad909254d1d7116beae1))
+* getMarketSummary error handling and BotBlockedNotice refactoring ([9d6bd80](https://github.com/y0ngha/siglens/commit/9d6bd803b9585cdb1b96ea0a496466320625e3ac))
+
 ## [0.12.8](https://github.com/y0ngha/siglens/compare/v0.12.7...v0.12.8) (2026-05-23)
 
 
