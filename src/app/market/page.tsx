@@ -18,14 +18,14 @@ import {
     DEFAULT_DASHBOARD_TIMEFRAME,
     SIGNAL_SECTORS,
 } from '@/domain/constants/dashboard-tickers';
-import { QUERY_KEYS } from '@/lib/queryConfig';
+import { QUERY_KEYS } from '@/shared/config/queryConfig';
 import {
     buildBreadcrumbJsonLd,
     ROOT_KEYWORDS,
     SITE_NAME,
     SITE_URL,
-} from '@/lib/seo';
-import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/lib/og';
+} from '@/shared/lib/seo';
+import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
 import { JsonLd } from '@/components/ui/JsonLd';
 
 // Root layout template appends "| Siglens" — exclude brand name to prevent duplication.

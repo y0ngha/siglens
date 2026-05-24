@@ -1,5 +1,5 @@
 import { buildPaneLabels } from '@/components/chart/utils/paneLabelUtils';
-import { CHART_COLORS } from '@/lib/chartColors';
+import { CHART_COLORS } from '@/shared/lib/chartColors';
 import {
     CCI_DEFAULT_PERIOD,
     DMI_DEFAULT_PERIOD,

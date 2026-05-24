@@ -1,4 +1,4 @@
-import { SITE_NAME } from '@/lib/seo';
+import { SITE_NAME } from '@/shared/lib/seo';
 import Image from 'next/image';
 import type { ReactNode } from 'react';
 

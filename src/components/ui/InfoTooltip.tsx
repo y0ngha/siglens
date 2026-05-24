@@ -9,8 +9,8 @@ import { useOnClickOutside } from '@/components/hooks/useOnClickOutside';
 import {
     getTooltipPosition,
     type TooltipPosition,
-} from '@/lib/tooltipPosition';
-import { cn } from '@/lib/cn';
+} from '@/shared/lib/tooltipPosition';
+import { cn } from '@/shared/lib/cn';
 
 // 키보드·마우스·터치 접근 가능한 ⓘ disclosure 툴팁 — WCAG 2.1 SC 1.4.13 준수.
 interface InfoTooltipProps {

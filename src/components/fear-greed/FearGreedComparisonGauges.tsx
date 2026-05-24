@@ -1,7 +1,7 @@
 import type { FearGreedHistoryPoint } from '@y0ngha/siglens-core';
 import { FearGreedGauge } from '@/components/fear-greed/FearGreedGauge';
 import { classifyScore } from '@/domain/fearGreed/classifier';
-import { cn } from '@/lib/cn';
+import { cn } from '@/shared/lib/cn';
 
 interface FearGreedComparisonGaugesProps {
     history: FearGreedHistoryPoint[];

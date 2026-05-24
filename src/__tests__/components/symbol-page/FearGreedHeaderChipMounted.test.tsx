@@ -3,7 +3,7 @@
  */
 import '@testing-library/jest-dom';
 import { render } from '@testing-library/react';
-import { SENTIMENT_LABEL_TEXT } from '@/lib/fearGreedLabels';
+import { SENTIMENT_LABEL_TEXT } from '@/shared/lib/fearGreedLabels';
 import { FearGreedHeaderChipMounted } from '@/components/symbol-page/FearGreedHeaderChipMounted';
 
 jest.mock('@/components/symbol-page/hooks/useBars', () => ({

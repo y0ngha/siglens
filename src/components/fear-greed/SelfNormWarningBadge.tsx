@@ -1,5 +1,5 @@
 import type { FearGreedWarning } from '@y0ngha/siglens-core';
-import { cn } from '@/lib/cn';
+import { cn } from '@/shared/lib/cn';
 
 interface SelfNormWarningBadgeProps {
     warning: FearGreedWarning;

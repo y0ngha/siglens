@@ -1,7 +1,7 @@
 'use client';
 
-import { cn } from '@/lib/cn';
-import { PRIVACY_PATH, TERMS_PATH } from '@/lib/legal';
+import { cn } from '@/shared/lib/cn';
+import { PRIVACY_PATH, TERMS_PATH } from '@/shared/lib/legal';
 import Link from 'next/link';
 import { useEffect, useId, useRef } from 'react';
 

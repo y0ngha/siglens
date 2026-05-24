@@ -10,7 +10,7 @@ import {
 } from 'react';
 import type { IChartApi, ISeriesApi, LineWidth } from 'lightweight-charts';
 import { AreaSeries, LineSeries } from 'lightweight-charts';
-import { CHART_COLORS } from '@/lib/chartColors';
+import { CHART_COLORS } from '@/shared/lib/chartColors';
 import type { Bar, IndicatorResult } from '@y0ngha/siglens-core';
 import { DEFAULT_LINE_WIDTH } from '@/components/chart/constants';
 import { buildSeriesData } from '@/components/chart/utils/seriesDataUtils';

@@ -13,7 +13,7 @@ import type {
     ReconciledActionLineData,
     ValidatedActionPrices,
 } from '@y0ngha/siglens-core';
-import { CHART_COLORS } from '@/lib/chartColors';
+import { CHART_COLORS } from '@/shared/lib/chartColors';
 import { DEFAULT_LINE_WIDTH } from '@/components/chart/constants';
 
 // 보정값(reconciledLevels) 차트 라인 스타일.

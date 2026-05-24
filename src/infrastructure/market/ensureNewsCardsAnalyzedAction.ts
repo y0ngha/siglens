@@ -5,7 +5,7 @@ import { DrizzleNewsRepository } from '@/infrastructure/db/newsRepository';
 import { FmpNewsClient } from '@/infrastructure/fmp/newsClient';
 import { DISABLED_THINKING_BUDGET } from '@/infrastructure/market/newsAnalysisConstants';
 import { NEWS_LOOKBACK_MS } from '@/infrastructure/market/newsLookback';
-import { sleep } from '@/lib/sleep';
+import { sleep } from '@/shared/lib/sleep';
 import {
     pollNewsCardAnalysis,
     submitNewsCardAnalysis,

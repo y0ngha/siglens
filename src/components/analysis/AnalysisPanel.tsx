@@ -32,7 +32,7 @@ import {
     HIGH_CONFIDENCE_WEIGHT,
     MIN_CONFIDENCE_WEIGHT,
 } from '@y0ngha/siglens-core';
-import { cn } from '@/lib/cn';
+import { cn } from '@/shared/lib/cn';
 import { useSymbolPageContext } from '@/components/symbol-page/SymbolPageContext';
 import {
     parseStructuredSummary,
@@ -48,7 +48,7 @@ import type { CooldownNotice } from '@/components/symbol-page/hooks/useAnalysis'
 import { TRENDLINE_DIRECTION_LABEL } from '@/components/trendline/constants';
 import { MS_PER_SECOND, SECONDS_PER_MINUTE } from '@/domain/constants/time';
 import { DEFAULT_RESET_MS as COPY_RESET_MS } from '@/components/hooks/useCopyToClipboard';
-import { formatAnalyzedAt } from '@/lib/formatAnalyzedAt';
+import { formatAnalyzedAt } from '@/shared/lib/formatAnalyzedAt';
 import { isAnalysisStale } from '@/domain/analysis/staleThreshold';
 import { StaleAnalysisBanner } from '@/components/analysis/StaleAnalysisBanner';
 

@@ -7,7 +7,7 @@ import {
     QUERY_GC_TIME_MS,
     QUERY_KEYS,
     QUERY_STALE_TIME_MS,
-} from '@/lib/queryConfig';
+} from '@/shared/config/queryConfig';
 
 export function useCurrentUser(): UseQueryResult<AuthUserRecord | null> {
     return useQuery<AuthUserRecord | null>({

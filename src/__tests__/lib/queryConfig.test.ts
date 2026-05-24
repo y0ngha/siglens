@@ -8,7 +8,7 @@ import {
     QUERY_STALE_TIME_MS,
     TICKER_SEARCH_STALE_TIME_MS,
     USER_TIER_STALE_TIME_MS,
-} from '@/lib/queryConfig';
+} from '@/shared/config/queryConfig';
 
 describe('queryConfig staleTime constants', () => {
     const constants: Record<string, number> = {

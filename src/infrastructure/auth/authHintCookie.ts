@@ -1,6 +1,4 @@
-import { AUTH_HINT_COOKIE_NAME } from '@/lib/auth/cookieNames';
-
-export { AUTH_HINT_COOKIE_NAME };
+import { AUTH_HINT_COOKIE_NAME } from '@/shared/config/cookieNames';
 
 /** Cookie descriptor returned by hint cookie factories. */
 export interface AuthHintCookieDescriptor {

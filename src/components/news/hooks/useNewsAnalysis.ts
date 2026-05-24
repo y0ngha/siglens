@@ -7,9 +7,9 @@ import { submitNewsAnalysisAction } from '@/infrastructure/market/submitNewsAnal
 import { isGateBlockedResult } from '@/domain/analysis/gate';
 import { pollNewsAnalysisAction } from '@/infrastructure/market/pollNewsAnalysisAction';
 import { cancelNewsAnalysisJobAction } from '@/infrastructure/market/cancelNewsAnalysisJobAction';
-import { sleep } from '@/lib/sleep';
-import { QUERY_KEYS } from '@/lib/queryConfig';
-import { ANALYSIS_POLL_INTERVAL_MS } from '@/lib/pollingConfig';
+import { sleep } from '@/shared/lib/sleep';
+import { QUERY_KEYS } from '@/shared/config/queryConfig';
+import { ANALYSIS_POLL_INTERVAL_MS } from '@/shared/config/pollingConfig';
 import { usePageHideCancel } from '@/components/hooks/usePageHideCancel';
 import { BotBlockedError } from '@/components/symbol-page/exceptions/BotBlockedError';
 import type { CancelJobEntry } from '@/domain/types';

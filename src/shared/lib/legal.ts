@@ -1,4 +1,4 @@
-import { SITE_NAME } from '@/lib/seo';
+import { SITE_NAME } from '@/shared/lib/seo';
 
 export const INVESTMENT_DISCLAIMER =
     '본 서비스의 분석 정보는 투자 참고용이며, 투자 결정의 책임은 이용자에게 있습니다.';

@@ -1,5 +1,5 @@
 import type { SupportedOAuthProvider } from '@/domain/types';
-import { cn } from '@/lib/cn';
+import { cn } from '@/shared/lib/cn';
 import { ReactNode } from 'react';
 
 function GoogleIcon() {

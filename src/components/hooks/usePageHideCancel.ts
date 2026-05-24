@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import type { CancelJobEntry } from '@/domain/types';
-import { CANCEL_JOBS_API_PATH } from '@/lib/cancelJobsApi';
+import { CANCEL_JOBS_API_PATH } from '@/shared/lib/cancelJobsApi';
 
 /**
  * pagehide 이벤트(탭 닫기·새로고침·뒤로가기 등 모든 언로드)에서 분석 job을 cancel한다.

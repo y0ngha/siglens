@@ -23,7 +23,7 @@ jest.mock('@y0ngha/siglens-core', () => ({
     pollNewsCardAnalysis: jest.fn(),
 }));
 
-jest.mock('@/lib/sleep', () => ({
+jest.mock('@/shared/lib/sleep', () => ({
     sleep: jest.fn().mockResolvedValue(undefined),
 }));
 

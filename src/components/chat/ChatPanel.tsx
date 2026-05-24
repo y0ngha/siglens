@@ -7,8 +7,8 @@ import { useSymbolChat } from '@/components/chat/hooks/useSymbolChat';
 import { usePopoverToggle } from '@/components/hooks/usePopoverToggle';
 import { MarkdownText } from '@/components/ui/MarkdownText';
 import { PremiumModelGateModal } from '@/components/ui/PremiumModelGateModal';
-import { cn } from '@/lib/cn';
-import { LLM_PROVIDER_LABELS } from '@/lib/llmProviderLabels';
+import { cn } from '@/shared/lib/cn';
+import { LLM_PROVIDER_LABELS } from '@/shared/lib/llmProviderLabels';
 import {
     isFreeModel,
     VALID_CHAT_MODELS,

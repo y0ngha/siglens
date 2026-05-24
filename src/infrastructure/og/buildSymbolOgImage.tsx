@@ -1,5 +1,5 @@
 import { ImageResponse } from 'next/og';
-import { SITE_NAME } from '@/lib/seo';
+import { SITE_NAME } from '@/shared/lib/seo';
 import {
     OG_ACCENT,
     OG_BG,
@@ -14,7 +14,7 @@ import {
     OG_SITE_NAME_RIGHT,
     OG_SITE_NAME_TOP,
     OG_TICKER_FONT_SIZE,
-} from '@/lib/og';
+} from '@/shared/lib/og';
 import { loadKoreanFont } from '@/infrastructure/og/loadKoreanFont';
 
 export interface SymbolOgImageOptions {

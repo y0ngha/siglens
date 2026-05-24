@@ -1,6 +1,6 @@
-import { cn } from '@/lib/cn';
+import { cn } from '@/shared/lib/cn';
 import { LegalBreadcrumb } from '@/components/legal/LegalBreadcrumb';
-import type { TocItem } from '@/lib/legal-toc';
+import type { TocItem } from '@/shared/lib/legal-toc';
 import type { ReactNode } from 'react';
 
 interface LegalPageShellProps {

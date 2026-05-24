@@ -25,7 +25,7 @@ import {
     buildSymbolSeoContent,
     SITE_NAME,
     SITE_URL,
-} from '@/lib/seo';
+} from '@/shared/lib/seo';
 import { waitUntil } from '@vercel/functions';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';

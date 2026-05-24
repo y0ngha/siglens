@@ -5,7 +5,7 @@ import '@testing-library/jest-dom';
 import { render } from '@testing-library/react';
 import type { FearGreedGroup } from '@y0ngha/siglens-core';
 import { FearGreedGroupBar } from '@/components/fear-greed/FearGreedGroupBar';
-import { FACTOR_LABEL } from '@/lib/fearGreedLabels';
+import { FACTOR_LABEL } from '@/shared/lib/fearGreedLabels';
 
 const flowGroup: FearGreedGroup = {
     name: 'Flow',

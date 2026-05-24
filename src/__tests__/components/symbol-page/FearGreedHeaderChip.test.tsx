@@ -8,7 +8,7 @@ import { FearGreedHeaderChip } from '@/components/symbol-page/FearGreedHeaderChi
 import {
     CONFIDENCE_LIMITED_LABEL,
     SENTIMENT_LABEL_TEXT,
-} from '@/lib/fearGreedLabels';
+} from '@/shared/lib/fearGreedLabels';
 
 const make = (
     label: FearGreedSnapshot['label'],

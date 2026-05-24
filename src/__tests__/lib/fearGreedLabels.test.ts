@@ -3,7 +3,7 @@ import {
     CONFIDENCE_NORMAL_LABEL,
     formatConfidenceFooter,
     formatFactorRaw,
-} from '@/lib/fearGreedLabels';
+} from '@/shared/lib/fearGreedLabels';
 
 describe('formatFactorRaw', () => {
     it('volume_z는 소수 둘째 자리 일반 포맷으로 출력한다', () => {

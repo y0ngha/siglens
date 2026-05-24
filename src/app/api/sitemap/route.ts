@@ -3,7 +3,7 @@ import { loadLongTailTickers } from '@/infrastructure/sitemap/loadLongTailTicker
 import type { SitemapIndexEntry } from '@/infrastructure/sitemap/types';
 import { SITEMAP_MAX_URLS_PER_FILE } from '@/infrastructure/sitemap/types';
 import { toSitemapIndexXml } from '@/infrastructure/sitemap/xml';
-import { SITE_BUILD_DATE, SITE_URL } from '@/lib/seo';
+import { SITE_BUILD_DATE, SITE_URL } from '@/shared/lib/seo';
 
 // loadLongTailTickers는 DB 조회(no-store fetch)라 빌드 시점 prerender 불가.
 // force-dynamic + CDN 1h cache로 처리.

@@ -1,4 +1,4 @@
-import { cn } from '@/lib/cn';
+import { cn } from '@/shared/lib/cn';
 
 // hover/focus/motion-reduce 스타일 — Link로 감싸진 카드(IndexCard, SignalStockCard) 공용.
 // 카드 고유 배경/테두리는 각 컴포넌트가 직접 지정한다 (IndexCard: inner div, SignalStockCard: 외곽 Link에 함께).

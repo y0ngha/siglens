@@ -2,7 +2,7 @@
 
 import { TIMEFRAMES } from '@/domain/constants/market';
 import type { Timeframe } from '@y0ngha/siglens-core';
-import { cn } from '@/lib/cn';
+import { cn } from '@/shared/lib/cn';
 
 const TIMEFRAME_LABEL: Record<Timeframe, string> = {
     '5Min': '5분',

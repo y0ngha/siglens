@@ -6,14 +6,14 @@ import { buildAssetAboutNode } from '@/domain/seo/assetClassification';
 import { buildDisplayName } from '@/domain/ticker';
 import { getBarsAction } from '@/infrastructure/market/getBarsAction';
 import { getAssetInfoCached } from '@/infrastructure/ticker/getAssetInfoCached';
-import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/lib/queryConfig';
+import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/shared/config/queryConfig';
 import {
     buildBreadcrumbJsonLd,
     buildSymbolFearGreedSeoContent,
     buildSymbolSeoContent,
     SITE_NAME,
     SITE_URL,
-} from '@/lib/seo';
+} from '@/shared/lib/seo';
 import {
     dehydrate,
     HydrationBoundary,

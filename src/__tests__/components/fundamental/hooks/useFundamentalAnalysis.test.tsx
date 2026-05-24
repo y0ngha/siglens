@@ -5,7 +5,7 @@ import { useFundamentalAnalysis } from '@/components/fundamental/hooks/useFundam
 import { cancelFundamentalAnalysisJobAction } from '@/infrastructure/market/cancelFundamentalAnalysisJobAction';
 import { pollFundamentalAnalysisAction } from '@/infrastructure/market/pollFundamentalAnalysisAction';
 import { submitFundamentalAnalysisAction } from '@/infrastructure/market/submitFundamentalAnalysisAction';
-import { CANCEL_JOBS_API_PATH } from '@/lib/cancelJobsApi';
+import { CANCEL_JOBS_API_PATH } from '@/shared/lib/cancelJobsApi';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import type { FundamentalAnalysisResponse } from '@y0ngha/siglens-core';
@@ -25,7 +25,7 @@ jest.mock('@/infrastructure/market/cancelFundamentalAnalysisJobAction', () => ({
     cancelFundamentalAnalysisJobAction: jest.fn().mockResolvedValue(undefined),
 }));
 
-jest.mock('@/lib/sleep', () => ({
+jest.mock('@/shared/lib/sleep', () => ({
     sleep: jest.fn().mockResolvedValue(undefined),
 }));
 

@@ -3,7 +3,7 @@
 import { useEscapeKey } from '@/components/hooks/useEscapeKey';
 import { useFocusTrap } from '@/components/hooks/useFocusTrap';
 import type { GateMode } from '@/domain/llm';
-import { cn } from '@/lib/cn';
+import { cn } from '@/shared/lib/cn';
 import Link from 'next/link';
 import { useEffect, useRef } from 'react';
 

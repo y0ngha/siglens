@@ -1,4 +1,4 @@
-import { getRovingNextIndex } from '@/lib/rovingKeyboardNav';
+import { getRovingNextIndex } from '@/shared/lib/rovingKeyboardNav';
 
 describe('getRovingNextIndex', () => {
     describe('ArrowRight', () => {

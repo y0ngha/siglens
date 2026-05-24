@@ -4,7 +4,7 @@ import { useActionState, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { saveApiKeyAction } from '@/infrastructure/llm/saveApiKeyAction';
 import { deleteApiKeyAction } from '@/infrastructure/llm/deleteApiKeyAction';
-import { QUERY_KEYS } from '@/lib/queryConfig';
+import { QUERY_KEYS } from '@/shared/config/queryConfig';
 import type { ApiKeyActionState } from '@/domain/types';
 
 const INITIAL_STATE: ApiKeyActionState = { status: 'idle', message: null };

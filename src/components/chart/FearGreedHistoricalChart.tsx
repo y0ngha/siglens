@@ -1,6 +1,6 @@
 'use client';
 
-import { CHART_COLORS } from '@/lib/chartColors';
+import { CHART_COLORS } from '@/shared/lib/chartColors';
 import type { FearGreedHistoryPoint } from '@y0ngha/siglens-core';
 import {
     createChart,

@@ -1,5 +1,5 @@
 import type { ContactFormError, ContactFormField } from '@/domain/types';
-import { CONTACT_ERROR_MESSAGES } from '@/lib/contactErrorMessages';
+import { CONTACT_ERROR_MESSAGES } from '@/shared/lib/contactErrorMessages';
 
 export function getFieldError(
     error: ContactFormError | null,

@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useFormStatus } from 'react-dom';
 import Link from 'next/link';
 import { useDeleteAccountForm } from '@/components/hooks/useDeleteAccountForm';
-import { cn } from '@/lib/cn';
+import { cn } from '@/shared/lib/cn';
 import { AuthErrorAlert } from '@/components/auth/AuthErrorAlert';
 
 const INPUT_HINT_ID = 'delete-account-email-hint';

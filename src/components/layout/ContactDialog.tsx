@@ -2,7 +2,7 @@
 
 import { ContactForm } from '@/components/contact/ContactForm';
 import { useDialog } from '@/components/hooks/useDialog';
-import { cn } from '@/lib/cn';
+import { cn } from '@/shared/lib/cn';
 
 const TRIGGER_BASE_CLASS =
     'rounded focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary-500';

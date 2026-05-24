@@ -7,7 +7,7 @@ import {
     PRIVACY_TITLE,
     TERMS_PATH,
     TERMS_TITLE,
-} from '@/lib/legal';
+} from '@/shared/lib/legal';
 import Link from 'next/link';
 
 export function Footer() {

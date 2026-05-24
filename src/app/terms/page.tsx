@@ -11,10 +11,10 @@ import {
     TERMS_FULL_TITLE,
     TERMS_PATH,
     TERMS_TITLE,
-} from '@/lib/legal';
-import { extractToc } from '@/lib/legal-toc';
-import { buildBreadcrumbJsonLd, SITE_NAME, SITE_URL } from '@/lib/seo';
-import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/lib/og';
+} from '@/shared/lib/legal';
+import { extractToc } from '@/shared/lib/legal-toc';
+import { buildBreadcrumbJsonLd, SITE_NAME, SITE_URL } from '@/shared/lib/seo';
+import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
 import { getDatabaseClient } from '@/infrastructure/db/client';
 import { DrizzleTermsRepository } from '@/infrastructure/db/termsRepository';
 

@@ -6,7 +6,7 @@ import { cancelAnalysisJobAction } from '@/infrastructure/market/cancelAnalysisJ
 import { pollAnalysisAction } from '@/infrastructure/market/pollAnalysisAction';
 import { getReanalyzeCooldownMs } from '@/infrastructure/market/reanalyzeCooldown';
 import { submitAnalysisAction } from '@/infrastructure/market/submitAnalysisAction';
-import { CANCEL_JOBS_API_PATH } from '@/lib/cancelJobsApi';
+import { CANCEL_JOBS_API_PATH } from '@/shared/lib/cancelJobsApi';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
 import type { AnalysisResponse, Timeframe } from '@y0ngha/siglens-core';
@@ -31,7 +31,7 @@ jest.mock('@/infrastructure/market/reanalyzeCooldown', () => ({
     tryAcquireReanalyzeCooldown: jest.fn().mockResolvedValue({ ok: true }),
 }));
 
-jest.mock('@/lib/sleep', () => ({
+jest.mock('@/shared/lib/sleep', () => ({
     sleep: jest.fn().mockResolvedValue(undefined),
 }));
 

@@ -2,8 +2,8 @@
 
 import type { CSSProperties } from 'react';
 import { createPortal } from 'react-dom';
-import { cn } from '@/lib/cn';
-import { getPeriodColor } from '@/lib/chartColors';
+import { cn } from '@/shared/lib/cn';
+import { getPeriodColor } from '@/shared/lib/chartColors';
 import {
     type DropdownPosition,
     type IndicatorDropdownType,

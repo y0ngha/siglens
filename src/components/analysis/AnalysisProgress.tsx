@@ -1,6 +1,6 @@
 'use client';
 
-import { cn } from '@/lib/cn';
+import { cn } from '@/shared/lib/cn';
 import {
     ANALYSIS_PHASES,
     ANALYSIS_TIPS,

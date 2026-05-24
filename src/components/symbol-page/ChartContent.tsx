@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 import React, { Suspense, useEffect, useEffectEvent, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import { type AnalysisResponse, type Timeframe } from '@y0ngha/siglens-core';
-import { cn } from '@/lib/cn';
+import { cn } from '@/shared/lib/cn';
 import { ChartSkeleton } from '@/components/chart/ChartSkeleton';
 import { AnalysisPanel } from '@/components/analysis/AnalysisPanel';
 import { BotBlockedNotice } from '@/components/symbol-page/BotBlockedNotice';
@@ -26,7 +26,7 @@ import { SNAP_PEEK } from '@/components/symbol-page/constants/mobileSheet';
 import { useAnalysisProgress } from '@/components/symbol-page/hooks/useAnalysisProgress';
 import { usePublishSymbolChat } from '@/components/chat/hooks/useSymbolChat';
 import { buildChatState } from '@/components/symbol-page/utils/buildChatState';
-import { PWA_TRIGGER_EVENT } from '@/lib/pwaEvents';
+import { PWA_TRIGGER_EVENT } from '@/shared/lib/pwaEvents';
 import { FearGreedCardMounted } from '@/components/symbol-page/FearGreedCardMounted';
 
 const StockChart = dynamic(
