@@ -1,4 +1,4 @@
-import { SECONDS_PER_DAY } from '@/domain/constants/time';
+import { SECONDS_PER_DAY } from '@/shared/config/time';
 
 /** T4: 30 days — company profile, peer list (very slow-changing). */
 export const TTL_T4_30D = 30 * SECONDS_PER_DAY;

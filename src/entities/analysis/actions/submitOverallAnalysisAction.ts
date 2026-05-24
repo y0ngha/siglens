@@ -28,7 +28,7 @@ import {
     isOpenInterestSnapshotStale,
     isUsOptionsRegularSession,
 } from '@/shared/lib/marketSession';
-import type { AnalysisGateBlockedResult } from '@/domain/types';
+import type { AnalysisGateBlockedResult } from '@/shared/lib/types';
 
 /** Final return type — core's overall result + our siglens-side gate errors. */
 export type SubmitOverallAnalysisActionResult =

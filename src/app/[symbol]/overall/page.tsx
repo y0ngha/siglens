@@ -5,9 +5,9 @@ import {
     DEFAULT_TIMEFRAME,
     isValidTimeframe,
     VALID_TICKER_RE,
-} from '@/domain/constants/market';
-import { buildAssetAboutNode } from '@/domain/seo/assetClassification';
-import { buildDisplayName } from '@/domain/ticker';
+} from '@/shared/config/market';
+import { buildAssetAboutNode } from '@/entities/ticker';
+import { buildDisplayName } from '@/entities/ticker';
 import { getAssetInfoCached } from '@/entities/ticker';
 import {
     buildBreadcrumbJsonLd,

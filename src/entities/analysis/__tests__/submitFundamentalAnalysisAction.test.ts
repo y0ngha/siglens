@@ -36,7 +36,7 @@ import {
 import { FmpFundamentalClient } from '@/shared/api/fmp/fundamentalClient';
 import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
 import { resolveTierAndByok } from '@/shared/lib/byokGate';
-import type { AnalysisGateError } from '@/domain/types';
+import type { AnalysisGateError } from '@/shared/lib/types';
 import { submitFundamentalAnalysisAction } from '../actions/submitFundamentalAnalysisAction';
 
 const mockHeaders = headers as jest.MockedFunction<typeof headers>;

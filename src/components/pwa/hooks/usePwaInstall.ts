@@ -1,7 +1,7 @@
 'use client';
 
 import { registerServiceWorker } from '@/components/pwa/utils/registerServiceWorker';
-import { type PwaEnvironment } from '@/domain/types';
+import { type PwaEnvironment } from '@/shared/lib/types';
 import { detectPwaEnvironment } from '@/lib/pwa/detectPwaEnvironment';
 import { PWA_TRIGGER_EVENT } from '@/shared/lib/pwaEvents';
 import { useCallback, useEffect, useRef, useState } from 'react';

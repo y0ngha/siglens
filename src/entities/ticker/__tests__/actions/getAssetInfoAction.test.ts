@@ -1,6 +1,6 @@
 import { getAssetInfoAction } from '../../actions/getAssetInfoAction';
 import { getAssetInfo } from '../../lib/getAssetInfo';
-import type { AssetInfo } from '@/domain/types';
+import type { AssetInfo } from '@/shared/lib/types';
 
 jest.mock('../../lib/getAssetInfo', () => ({
     getAssetInfo: jest.fn(),

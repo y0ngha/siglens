@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import type { CancelJobEntry } from '@/domain/types';
+import type { CancelJobEntry } from '@/shared/lib/types';
 import { CANCEL_JOBS_API_PATH } from '@/shared/lib/cancelJobsApi';
 
 /**

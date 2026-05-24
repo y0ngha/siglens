@@ -2,7 +2,7 @@
 
 import { usePathname } from 'next/navigation';
 import { useMemo } from 'react';
-import { deriveLabel } from '@/domain/chat/derivePageContextLabel';
+import { deriveLabel } from '@/entities/chat-message';
 
 /** Korean page-context label for the current pathname; `null` on non-symbol pages. */
 export function usePageContextLabel(): string | null {

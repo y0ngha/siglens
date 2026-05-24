@@ -2,7 +2,7 @@
  * @jest-environment jsdom
  */
 import { act, renderHook } from '@testing-library/react';
-import type { NewsDisplayItem } from '@/domain/types';
+import type { NewsDisplayItem } from '@/shared/lib/types';
 import { getNewsCardsAction } from '@/entities/news-article/actions';
 import {
     EMPTY_SNAPSHOT_MAX_POLLS,

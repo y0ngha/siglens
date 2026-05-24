@@ -1,7 +1,7 @@
 'use client';
 
 import { useActionState } from 'react';
-import type { ContactFormState } from '@/domain/types';
+import type { ContactFormState } from '@/shared/lib/types';
 import { submitContactAction } from '@/entities/inquiry/actions';
 
 const INITIAL_STATE: ContactFormState = {

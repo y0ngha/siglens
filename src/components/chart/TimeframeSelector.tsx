@@ -1,6 +1,6 @@
 'use client';
 
-import { TIMEFRAMES } from '@/domain/constants/market';
+import { TIMEFRAMES } from '@/shared/config/market';
 import type { Timeframe } from '@y0ngha/siglens-core';
 import { cn } from '@/shared/lib/cn';
 

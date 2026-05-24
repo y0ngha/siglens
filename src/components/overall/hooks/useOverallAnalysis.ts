@@ -17,7 +17,7 @@ import {
     cancelFundamentalAnalysisJobAction,
     cancelOverallAnalysisJobAction,
 } from '@/entities/analysis/actions';
-import { isGateBlockedResult } from '@/domain/analysis/gate';
+import { isGateBlockedResult } from '@/entities/analysis';
 import {
     pollNewsAnalysisAction,
     cancelNewsAnalysisJobAction,
@@ -29,7 +29,7 @@ import {
 import { sleep } from '@/shared/lib/sleep';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
 import { AUGMENT_AND_OVERALL_POLL_INTERVAL_MS } from '@/shared/config/pollingConfig';
-import type { CancelJobEntry } from '@/domain/types';
+import type { CancelJobEntry } from '@/shared/lib/types';
 import { usePageHideCancel } from '@/shared/hooks/usePageHideCancel';
 import { BotBlockedError } from '@/components/symbol-page/exceptions/BotBlockedError';
 import type {

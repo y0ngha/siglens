@@ -13,7 +13,7 @@ import { useBriefing } from '@/components/dashboard/hooks/useBriefing';
 import { useMarketSummary } from '@/components/dashboard/hooks/useMarketSummary';
 import { MarketSummaryPanelSkeleton } from '@/components/dashboard/MarketSummaryPanelSkeleton';
 import { BotBlockedNotice } from '@/components/ui/BotBlockedNotice';
-import { SECTOR_GROUPS } from '@/domain/constants/dashboard-tickers';
+import { SECTOR_GROUPS } from '@/shared/config/dashboard-tickers';
 import type {
     MarketSectorData,
     SubmitBriefingResult,

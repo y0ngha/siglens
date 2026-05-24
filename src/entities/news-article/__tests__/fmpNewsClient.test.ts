@@ -5,7 +5,7 @@ import {
     normalizeFmpPublishedDate,
     toYyyyMmDd,
 } from '../lib/fmpNewsClient';
-import { MS_PER_DAY, MS_PER_HOUR } from '@/domain/constants/time';
+import { MS_PER_DAY, MS_PER_HOUR } from '@/shared/config/time';
 
 const mockFetch = jest.fn();
 

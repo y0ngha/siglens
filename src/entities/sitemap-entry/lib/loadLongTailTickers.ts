@@ -1,4 +1,4 @@
-import { POPULAR_TICKERS } from '@/domain/constants/popular-tickers';
+import { POPULAR_TICKERS } from '@/shared/config/popular-tickers';
 import { tryGetDatabaseClient } from '@/shared/db/client';
 import { DrizzleKoreanTickerRepository } from '@/entities/ticker';
 

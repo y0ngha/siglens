@@ -3,7 +3,7 @@
 import { getDatabaseClient } from '@/shared/db/client';
 import { DrizzleNewsRepository } from '@/entities/news-article';
 import { NEWS_LOOKBACK_MS } from '../lib/newsLookback';
-import type { NewsDisplayItem } from '@/domain/types';
+import type { NewsDisplayItem } from '@/shared/lib/types';
 
 /**
  * Server Action: fetch the latest per-card analysis state from DB.

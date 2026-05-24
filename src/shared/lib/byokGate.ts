@@ -17,7 +17,7 @@ import { DrizzleUserRepository } from '@/entities/user';
 import type {
     AnalysisGateError,
     AnalysisGateErrorCode,
-} from '@/domain/analysis/gate';
+} from '@/entities/analysis';
 
 const GATE_MESSAGES: Record<AnalysisGateErrorCode, string> = {
     tier_premium_blocked:

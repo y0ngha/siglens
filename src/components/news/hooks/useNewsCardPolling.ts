@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { getNewsCardsAction } from '@/entities/news-article/actions';
-import type { NewsDisplayItem } from '@/domain/types';
-import { MS_PER_MINUTE } from '@/domain/constants/time';
+import type { NewsDisplayItem } from '@/shared/lib/types';
+import { MS_PER_MINUTE } from '@/shared/config/time';
 import {
     POLL_INTERVAL_MS,
     MAX_CONSECUTIVE_FAILURES,

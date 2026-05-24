@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react';
 import type { FearGreedLabel } from '@y0ngha/siglens-core';
-import type { SnapshotConfidence } from '@/domain/types';
+import type { SnapshotConfidence } from '@/shared/lib/types';
 import { SENTIMENT_LABEL_TEXT } from '@/shared/lib/fearGreedLabels';
-import { FEAR_GREED_SCORE_BOUNDARIES } from '@/domain/fearGreed/classifier';
+import { FEAR_GREED_SCORE_BOUNDARIES } from '@/entities/fear-greed';
 import { cn } from '@/shared/lib/cn';
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
 

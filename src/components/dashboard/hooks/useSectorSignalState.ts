@@ -11,13 +11,13 @@ import type {
 import {
     DEFAULT_DASHBOARD_TIMEFRAME,
     SIGNAL_SECTORS,
-} from '@/domain/constants/dashboard-tickers';
+} from '@/shared/config/dashboard-tickers';
 import {
     EMPTY_QUADRANTS,
     filterStrictAnticipation,
     groupStockIntoQuadrants,
-} from '@/domain/signals/quadrants';
-import { resolveConflicts } from '@/domain/signals/resolveConflicts';
+} from '@/entities/analysis';
+import { resolveConflicts } from '@/entities/analysis';
 
 interface UseSectorSignalStateOptions {
     data: SectorSignalsResult;

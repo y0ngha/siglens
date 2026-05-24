@@ -26,9 +26,9 @@ import { ValuationCard } from '@/components/fundamental/sections/ValuationCard';
 import { CrossLinkCards } from '@/components/symbol-page/CrossLinkCards';
 import { SectionSkeleton } from '@/components/symbol-page/SectionSkeleton';
 import { JsonLd } from '@/shared/ui/JsonLd';
-import { VALID_TICKER_RE } from '@/domain/constants/market';
-import { buildAssetAboutNode } from '@/domain/seo/assetClassification';
-import { buildDisplayName } from '@/domain/ticker';
+import { VALID_TICKER_RE } from '@/shared/config/market';
+import { buildAssetAboutNode } from '@/entities/ticker';
+import { buildDisplayName } from '@/entities/ticker';
 import { getAssetInfoCached } from '@/entities/ticker';
 import {
     buildBreadcrumbJsonLd,

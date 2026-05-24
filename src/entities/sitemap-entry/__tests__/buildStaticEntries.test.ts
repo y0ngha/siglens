@@ -9,7 +9,7 @@
 process.env.NEXT_PUBLIC_SITE_URL = 'https://siglens.io';
 
 import { buildStaticEntries } from '../lib/buildStaticEntries';
-import { MS_PER_HOUR } from '@/domain/constants/time';
+import { MS_PER_HOUR } from '@/shared/config/time';
 
 const NOW = new Date('2026-05-23T15:30:00.000Z');
 

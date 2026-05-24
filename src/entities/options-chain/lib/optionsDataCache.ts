@@ -1,7 +1,7 @@
 import 'server-only';
 import { cache } from 'react';
 import { Redis } from '@upstash/redis';
-import { SECONDS_PER_HOUR, SECONDS_PER_MINUTE } from '@/domain/constants/time';
+import { SECONDS_PER_HOUR, SECONDS_PER_MINUTE } from '@/shared/config/time';
 import { YahooOptionsAdapter } from './YahooOptionsAdapter';
 import {
     getOptionsCacheLifeProfile,

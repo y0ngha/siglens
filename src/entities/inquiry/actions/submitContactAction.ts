@@ -1,7 +1,7 @@
 'use server';
 
-import type { ContactFormState } from '@/domain/types';
-import { validateContactInput } from '@/domain/contact/validation';
+import type { ContactFormState } from '@/shared/lib/types';
+import { validateContactInput } from '../lib/validation';
 import { getDatabaseClient } from '@/shared/db/client';
 import { DrizzleContactRepository } from '@/entities/inquiry';
 import { submitInquiry } from '../lib/submitInquiry';

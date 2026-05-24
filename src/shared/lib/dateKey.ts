@@ -1,4 +1,4 @@
-import { KST_OFFSET_HOURS, MS_PER_HOUR } from '@/domain/constants/time';
+import { KST_OFFSET_HOURS, MS_PER_HOUR } from '@/shared/config/time';
 
 /** Returns today's KST date as `YYYY-MM-DD`; call outside `'use cache'` boundaries so the date is always fresh. */
 export function todayKstIsoDate(): string {

@@ -1,5 +1,5 @@
 import type { CacheProvider } from '@y0ngha/siglens-core';
-import type { AssetInfo } from '@/domain/types';
+import type { AssetInfo } from '@/shared/lib/types';
 import type {
     AssetTranslationRecord,
     AssetTranslationRepository,

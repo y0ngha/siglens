@@ -1,6 +1,6 @@
 import type { ModelId, Timeframe } from '@y0ngha/siglens-core';
-import { MS_PER_MINUTE } from '@/domain/constants/time';
-import type { OptionsExpirationSelector } from '@/domain/types';
+import { MS_PER_MINUTE } from '@/shared/config/time';
+import type { OptionsExpirationSelector } from '@/shared/lib/types';
 
 /** Default cache freshness for queries without a domain-specific cadence. */
 export const QUERY_STALE_TIME_MS = MS_PER_MINUTE;

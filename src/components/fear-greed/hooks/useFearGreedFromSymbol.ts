@@ -5,7 +5,7 @@ import {
     useFearGreed,
     type UseFearGreedResult,
 } from '@/components/fear-greed/hooks/useFearGreed';
-import { DEFAULT_TIMEFRAME } from '@/domain/constants/market';
+import { DEFAULT_TIMEFRAME } from '@/shared/config/market';
 
 interface UseFearGreedFromSymbolInput {
     symbol: string;

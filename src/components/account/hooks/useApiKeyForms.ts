@@ -7,7 +7,7 @@ import {
     deleteApiKeyAction,
 } from '@/entities/api-key/actions';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
-import type { ApiKeyActionState } from '@/domain/types';
+import type { ApiKeyActionState } from '@/shared/lib/types';
 
 const INITIAL_STATE: ApiKeyActionState = { status: 'idle', message: null };
 

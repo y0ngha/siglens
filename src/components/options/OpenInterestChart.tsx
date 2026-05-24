@@ -23,7 +23,7 @@ import {
 } from '@/components/options/utils/optionsTooltips';
 import { pickLabelIndices } from '@/components/options/utils/pickLabelIndices';
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
-import { findNearestStrikeIndex } from '@/domain/options/findNearestStrike';
+import { findNearestStrikeIndex } from '@/entities/options-chain';
 import {
     aggregateOpenInterest,
     type OptionsChain,

@@ -1,7 +1,7 @@
 import type { CSSProperties } from 'react';
 import type { FearGreedGroup, FearGreedLabel } from '@y0ngha/siglens-core';
 import { FACTOR_LABEL, formatFactorRaw } from '@/shared/lib/fearGreedLabels';
-import { classifyScore } from '@/domain/fearGreed/classifier';
+import { classifyScore } from '@/entities/fear-greed';
 import { cn } from '@/shared/lib/cn';
 
 interface FearGreedGroupBarProps {

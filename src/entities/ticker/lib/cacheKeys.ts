@@ -2,7 +2,7 @@ import {
     SECONDS_PER_DAY,
     SECONDS_PER_HOUR,
     SECONDS_PER_YEAR,
-} from '@/domain/constants/time';
+} from '@/shared/config/time';
 
 /** 티커 검색 결과: 하루 캐시 */
 export const TICKER_SEARCH_CACHE_TTL = SECONDS_PER_DAY;

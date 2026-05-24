@@ -13,7 +13,7 @@ import type {
     ModelId,
     Timeframe,
 } from '@y0ngha/siglens-core';
-import { MS_PER_MINUTE } from '@/domain/constants/time';
+import { MS_PER_MINUTE } from '@/shared/config/time';
 import {
     submitAnalysisAction,
     type SubmitAnalysisActionResult,
@@ -28,7 +28,7 @@ import {
 import { sleep } from '@/shared/lib/sleep';
 import { CHART_ANALYSIS_POLL_INTERVAL_MS } from '@/shared/config/pollingConfig';
 import { usePageHideCancel } from '@/shared/hooks/usePageHideCancel';
-import type { CancelJobEntry } from '@/domain/types';
+import type { CancelJobEntry } from '@/shared/lib/types';
 
 interface AnalyzeMutationVariables {
     symbol: string;

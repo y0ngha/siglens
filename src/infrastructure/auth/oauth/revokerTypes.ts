@@ -1,4 +1,4 @@
-import type { OAuthProvider } from '@/domain/types';
+import type { OAuthProvider } from '@/shared/lib/types';
 
 /** Parameters for revoking a provider OAuth token. */
 export interface RevokeTokenParams {

@@ -1,5 +1,5 @@
 import { createHmac, randomBytes, timingSafeEqual } from 'crypto';
-import type { SupportedOAuthProvider } from '@/domain/types';
+import type { SupportedOAuthProvider } from '@/shared/lib/types';
 import type { ResponseCookie } from '@/infrastructure/auth/types';
 import { isSecureCookieEnv } from '@/infrastructure/auth/sessionCookieOptions';
 

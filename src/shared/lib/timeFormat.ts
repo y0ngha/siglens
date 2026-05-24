@@ -3,7 +3,7 @@ import {
     KST_OFFSET_HOURS,
     MS_PER_HOUR,
     MS_PER_SECOND,
-} from '@/domain/constants/time';
+} from '@/shared/config/time';
 
 const MONTH_NAMES = [
     'Jan',

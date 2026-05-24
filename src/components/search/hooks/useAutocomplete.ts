@@ -9,7 +9,7 @@ import {
     useState,
 } from 'react';
 import { useRouter } from 'next/navigation';
-import type { TickerSearchResult } from '@/domain/types';
+import type { TickerSearchResult } from '@/shared/lib/types';
 import { useOnClickOutside } from '@/shared/hooks/useOnClickOutside';
 import { useTickerSearch } from '@/components/search/hooks/useTickerSearch';
 

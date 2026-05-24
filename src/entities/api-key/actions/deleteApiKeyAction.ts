@@ -3,7 +3,8 @@
 import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
 import { getDatabaseClient } from '@/shared/db/client';
 import { DrizzleUserApiKeyRepository } from '@/entities/api-key';
-import { isLlmProvider, type ApiKeyActionState } from '@/domain/llm';
+import { isLlmProvider } from '../lib/apiKey';
+import type { ApiKeyActionState } from '../lib/types';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 

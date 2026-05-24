@@ -4,7 +4,7 @@ import type {
     EarningsReportComparisonItem,
     EarningsReportComparisonSlot,
     EarningsReportPeriod,
-} from '@/domain/types';
+} from '@/shared/lib/types';
 import { NEON_TRANSIENT_RETRY } from '@/shared/db/isNeonTransientError';
 import { earningsReports } from '@/shared/db/schema';
 import type { SiglensDatabase } from '@/shared/db/types';

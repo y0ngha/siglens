@@ -41,7 +41,7 @@ import {
 import { fetchOptionsSnapshot } from '../lib/optionsDataCache';
 import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
 import { resolveTierAndByok } from '@/shared/lib/byokGate';
-import type { AnalysisGateError } from '@/domain/types';
+import type { AnalysisGateError } from '@/shared/lib/types';
 import {
     submitOptionsAnalysisAction,
     pollOptionsAnalysisAction,

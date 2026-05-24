@@ -7,7 +7,7 @@ import type { DashboardTimeframe } from '@y0ngha/siglens-core';
 import {
     DASHBOARD_TIMEFRAME_LABELS,
     DASHBOARD_TIMEFRAMES,
-} from '@/domain/constants/dashboard-tickers';
+} from '@/shared/config/dashboard-tickers';
 
 interface TimeframeSelectorProps {
     timeframe: DashboardTimeframe;

@@ -1,6 +1,6 @@
 import crypto from 'crypto';
 import { Redis } from '@upstash/redis';
-import type { SupportedOAuthProvider } from '@/domain/types';
+import type { SupportedOAuthProvider } from '@/shared/lib/types';
 
 const NAMESPACE = 'pending_oauth_signup';
 const TTL_SECONDS = 600;

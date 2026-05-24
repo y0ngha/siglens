@@ -4,7 +4,7 @@
 import { renderHook, act } from '@testing-library/react';
 import { LOCAL_STORAGE_PROVIDER_KEY } from '@/shared/lib/storageKeys';
 import { useSelectedProvider } from '@/components/symbol-page/hooks/useSelectedProvider';
-import { AI_PROVIDER_VALUES } from '@/domain/llm';
+import { AI_PROVIDER_VALUES } from '@/entities/api-key/lib';
 
 let store: Record<string, string> = {};
 const localStorageMock = {

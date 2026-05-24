@@ -8,13 +8,16 @@ import {
     pollOptionsAnalysisAction,
     cancelOptionsAnalysisJobAction,
 } from '@/entities/options-chain/actions';
-import { isGateBlockedResult } from '@/domain/analysis/gate';
+import { isGateBlockedResult } from '@/entities/analysis';
 import { sleep } from '@/shared/lib/sleep';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
 import { ANALYSIS_POLL_INTERVAL_MS } from '@/shared/config/pollingConfig';
 import { usePageHideCancel } from '@/shared/hooks/usePageHideCancel';
 import { BotBlockedError } from '@/components/symbol-page/exceptions/BotBlockedError';
-import type { CancelJobEntry, OptionsExpirationSelector } from '@/domain/types';
+import type {
+    CancelJobEntry,
+    OptionsExpirationSelector,
+} from '@/shared/lib/types';
 
 export type OptionsAnalysisState =
     | { status: 'loading' }

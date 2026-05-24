@@ -1,7 +1,7 @@
 import {
     MARKET_INDICES,
     SECTOR_GROUPS,
-} from '@/domain/constants/dashboard-tickers';
+} from '@/shared/config/dashboard-tickers';
 
 export function MarketSummaryPanelSkeleton() {
     return (

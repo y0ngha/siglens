@@ -1,4 +1,4 @@
-import { deduplicateResults, isKoreanInput } from '@/domain/ticker';
+import { deduplicateResults, isKoreanInput } from './ticker';
 import {
     buildTickerSearchCacheKey,
     TICKER_SEARCH_CACHE_TTL,
@@ -18,7 +18,7 @@ import {
 import { fireAndForget, type BackgroundTaskOptions } from './backgroundTask';
 import { createSingleFlight } from './utils/singleFlight';
 import { createCacheProvider } from '@y0ngha/siglens-core';
-import type { KoreanTickerEntry, TickerSearchResult } from '@/domain/types';
+import type { KoreanTickerEntry, TickerSearchResult } from '@/shared/lib/types';
 
 const MAX_SEARCH_RESULTS = 10;
 

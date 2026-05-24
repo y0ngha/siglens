@@ -1,4 +1,4 @@
-import type { ContactFormError, ContactFormField } from '@/domain/types';
+import type { ContactFormError, ContactFormField } from '@/shared/lib/types';
 import { CONTACT_ERROR_MESSAGES } from '@/shared/lib/contactErrorMessages';
 
 export function getFieldError(

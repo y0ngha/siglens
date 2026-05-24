@@ -4,7 +4,7 @@ import { useMemo, useRef, type KeyboardEvent } from 'react';
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
 import { cn } from '@/shared/lib/cn';
 import type { SlotMapping } from '@y0ngha/siglens-core';
-import type { OptionsExpirationSelector } from '@/domain/types';
+import type { OptionsExpirationSelector } from '@/shared/lib/types';
 
 interface ExpirationSelectorProps {
     /** Slot mappings filtered to non-null entries (`OptionsPageClient` filters before passing). */

@@ -1,6 +1,10 @@
 import type { Tier, UsageActionType } from '@y0ngha/siglens-core';
-import type { OAuthProvider } from '@/domain/types';
-import { LLM_PROVIDER_VALUES } from '@/domain/llm';
+import type { OAuthProvider } from '@/shared/lib/types';
+// Barrel import creates circular dependency:
+// api-key/index → api-key/api → shared/db/schema → shared/db/constants → api-key/index.
+// Direct lib import breaks the cycle. Safe: constants file has no DB/schema dependency.
+// eslint-disable-next-line no-restricted-imports
+import { LLM_PROVIDER_VALUES } from '@/entities/api-key/lib/constants';
 
 export { LLM_PROVIDER_VALUES };
 

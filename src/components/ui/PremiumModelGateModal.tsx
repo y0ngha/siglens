@@ -2,7 +2,7 @@
 
 import { useEscapeKey } from '@/shared/hooks/useEscapeKey';
 import { useFocusTrap } from '@/shared/hooks/useFocusTrap';
-import type { GateMode } from '@/domain/llm';
+import type { GateMode } from '@/entities/api-key';
 import { cn } from '@/shared/lib/cn';
 import Link from 'next/link';
 import { useEffect, useRef } from 'react';

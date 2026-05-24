@@ -1,9 +1,9 @@
 'use client';
 
-import { isKoreanInput } from '@/domain/ticker';
+import { isKoreanInput } from '@/entities/ticker';
 import { useAutocomplete } from '@/components/search/hooks/useAutocomplete';
 import { cn } from '@/shared/lib/cn';
-import type { TickerSearchResult } from '@/domain/types';
+import type { TickerSearchResult } from '@/shared/lib/types';
 
 const LISTBOX_ID = 'ticker-autocomplete-listbox';
 const OPTION_ID_PREFIX = `${LISTBOX_ID}-option`;

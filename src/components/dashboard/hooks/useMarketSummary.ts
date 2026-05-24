@@ -3,7 +3,7 @@
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import type { MarketIndexData, MarketSectorData } from '@y0ngha/siglens-core';
-import type { MarketSummaryActionResult } from '@/domain/types';
+import type { MarketSummaryActionResult } from '@/shared/lib/types';
 import { getMarketSummaryAction } from '@/entities/market-summary/actions';
 import {
     MARKET_SUMMARY_STALE_TIME_MS,

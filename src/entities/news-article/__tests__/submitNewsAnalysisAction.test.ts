@@ -49,7 +49,7 @@ import {
 } from '@y0ngha/siglens-core';
 import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
 import { resolveTierAndByok } from '@/shared/lib/byokGate';
-import type { AnalysisGateError } from '@/domain/types';
+import type { AnalysisGateError } from '@/shared/lib/types';
 import { submitNewsAnalysisAction } from '../actions/submitNewsAnalysisAction';
 
 const mockHeaders = headers as jest.MockedFunction<typeof headers>;

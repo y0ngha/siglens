@@ -15,7 +15,7 @@ import { OptionsAiAnalysisError } from '@/components/options/OptionsAiAnalysisEr
 import { OptionsAiAnalysisSkeleton } from '@/components/options/OptionsAiAnalysisSkeleton';
 import { useOptionsAnalysis } from '@/components/options/hooks/useOptionsAnalysis';
 import { buildChatState } from '@/components/options/utils/buildChatState';
-import type { OptionsExpirationSelector } from '@/domain/types';
+import type { OptionsExpirationSelector } from '@/shared/lib/types';
 
 const TONE_LABEL: Record<OptionsTone, string> = {
     bullish: '강세',

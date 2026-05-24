@@ -6,8 +6,8 @@ jest.mock('@/entities/ticker', () => ({
     DrizzleKoreanTickerRepository: jest.fn(),
 }));
 
-import { POPULAR_TICKERS } from '@/domain/constants/popular-tickers';
-import type { KoreanTickerEntry } from '@/domain/types';
+import { POPULAR_TICKERS } from '@/shared/config/popular-tickers';
+import type { KoreanTickerEntry } from '@/shared/lib/types';
 import { tryGetDatabaseClient } from '@/shared/db/client';
 import { DrizzleKoreanTickerRepository } from '@/entities/ticker';
 import { loadLongTailTickers } from '../lib/loadLongTailTickers';

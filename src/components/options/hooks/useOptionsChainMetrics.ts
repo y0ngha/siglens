@@ -7,8 +7,8 @@ import {
     type OptionsSnapshot,
     summarizeChainForLlm,
 } from '@y0ngha/siglens-core';
-import { pickActiveChain } from '@/domain/options/pickActiveChain';
-import type { OptionsExpirationSelector } from '@/domain/types';
+import { pickActiveChain } from '@/entities/options-chain';
+import type { OptionsExpirationSelector } from '@/shared/lib/types';
 
 export interface OptionsChainMetrics {
     /** Chain matching the selected expiration (or null when no chain exists). */

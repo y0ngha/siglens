@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
-import type { OAuthProvider, SupportedOAuthProvider } from '@/domain/types';
+import type { OAuthProvider, SupportedOAuthProvider } from '@/shared/lib/types';
 import { ConsentCheckboxGroup } from '@/components/auth/ConsentCheckboxGroup';
 import { useFinalizeOAuthSignup } from '@/components/auth/hooks/useFinalizeOAuthSignup';
 import { usePageShowReload } from '@/shared/hooks/usePageShowReload';

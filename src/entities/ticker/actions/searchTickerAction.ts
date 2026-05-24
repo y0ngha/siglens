@@ -2,7 +2,7 @@
 
 import { waitUntil } from '@vercel/functions';
 import { searchTicker } from '../lib/searchTicker';
-import type { TickerSearchResult } from '@/domain/types';
+import type { TickerSearchResult } from '@/shared/lib/types';
 
 export async function searchTickerAction(
     query: string

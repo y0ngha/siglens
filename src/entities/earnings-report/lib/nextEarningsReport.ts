@@ -1,5 +1,5 @@
 import type { EarningsCalendarItem } from '@y0ngha/siglens-core';
-import { MS_PER_DAY } from '@/domain/constants/time';
+import { MS_PER_DAY } from '@/shared/config/time';
 import { DrizzleEarningsReportsRepository } from '@/entities/earnings-report';
 import { FmpFundamentalClient } from '@/shared/api/fmp/fundamentalClient';
 import { todayKstIsoDate } from '@/shared/lib/dateKey';

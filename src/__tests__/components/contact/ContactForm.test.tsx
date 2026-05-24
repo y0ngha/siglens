@@ -6,7 +6,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { ContactForm } from '@/components/contact/ContactForm';
 import { useContactForm } from '@/components/contact/hooks/useContactForm';
 import { useCurrentUser } from '@/components/hooks/useCurrentUser';
-import type { ContactFormState } from '@/domain/types';
+import type { ContactFormState } from '@/shared/lib/types';
 import type { UseQueryResult } from '@tanstack/react-query';
 import type { AuthUserRecord } from '@/domain/auth/types';
 

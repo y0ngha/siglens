@@ -1,4 +1,4 @@
-import type { LlmProvider } from '@/domain/llm';
+import type { LlmProvider } from './lib/constants';
 import { and, eq, sql } from 'drizzle-orm';
 import { NEON_TRANSIENT_RETRY } from '@/shared/db/isNeonTransientError';
 import { userApiKeys } from '@/shared/db/schema';

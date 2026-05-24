@@ -2,8 +2,8 @@ jest.mock('@/entities/options-chain', () => ({
     hasOptionsMarket: jest.fn(),
 }));
 
-import { POPULAR_TICKERS } from '@/domain/constants/popular-tickers';
-import { MS_PER_HOUR } from '@/domain/constants/time';
+import { POPULAR_TICKERS } from '@/shared/config/popular-tickers';
+import { MS_PER_HOUR } from '@/shared/config/time';
 import { hasOptionsMarket } from '@/entities/options-chain';
 import { buildPopularEntries } from '../lib/buildPopularEntries';
 import { SITE_URL } from '@/shared/lib/seo';

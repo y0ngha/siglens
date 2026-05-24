@@ -1,4 +1,4 @@
-import { MS_PER_DAY } from '@/domain/constants/time';
+import { MS_PER_DAY } from '@/shared/config/time';
 
 /** Lookback window for the news list UI display and per-card enrichment (6 months). */
 export const NEWS_LOOKBACK_MS = 180 * MS_PER_DAY;

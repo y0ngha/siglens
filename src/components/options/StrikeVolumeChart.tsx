@@ -30,7 +30,7 @@ import {
     MIDLINE_STROKE_WIDTH,
     GUIDE_LINE_STROKE_WIDTH,
 } from '@/components/options/utils/chartStrokeWidths';
-import { findNearestStrikeIndex } from '@/domain/options/findNearestStrike';
+import { findNearestStrikeIndex } from '@/entities/options-chain';
 
 interface StrikeVolumeChartProps {
     /** Spot price used to anchor the current-price guide line. */

@@ -1,13 +1,13 @@
 import { SymbolPageClient } from '@/components/symbol-page/SymbolPageClient';
 import { JsonLd } from '@/shared/ui/JsonLd';
-import { FALLBACK_ANALYSIS } from '@/domain/chat/fallbackAnalysis';
+import { FALLBACK_ANALYSIS } from '@/entities/chat-message';
 import {
     DEFAULT_TIMEFRAME,
     isValidTimeframe,
     VALID_TICKER_RE,
-} from '@/domain/constants/market';
-import { buildAssetAboutNode } from '@/domain/seo/assetClassification';
-import { buildDisplayName } from '@/domain/ticker';
+} from '@/shared/config/market';
+import { buildAssetAboutNode } from '@/entities/ticker';
+import { buildDisplayName } from '@/entities/ticker';
 import { getBarsAction } from '@/entities/bars/actions';
 import { countSkillFiles } from '@/entities/skill';
 import { getAssetInfoCached } from '@/entities/ticker';
