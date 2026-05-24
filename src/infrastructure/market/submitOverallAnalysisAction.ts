@@ -24,12 +24,12 @@ import {
     resolveTierAndByok,
     buildGateError,
 } from '@/infrastructure/market/byokGate';
-import { isBot } from '@/infrastructure/http/isBot';
+import { isBot } from '@/shared/api/isBot';
 import { fetchOptionsSnapshot } from '@/infrastructure/options/optionsDataCache';
 import {
     isOpenInterestSnapshotStale,
     isUsOptionsRegularSession,
-} from '@/domain/market/session';
+} from '@/shared/lib/marketSession';
 import type { AnalysisGateBlockedResult } from '@/domain/types';
 
 /** Final return type — core's overall result + our siglens-side gate errors. */

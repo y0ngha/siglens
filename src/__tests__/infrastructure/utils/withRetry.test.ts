@@ -6,7 +6,7 @@ jest.mock('@/shared/lib/sleep', () => ({
     sleep: jest.fn().mockResolvedValue(undefined),
 }));
 
-import { withRetry } from '@/infrastructure/utils/withRetry';
+import { withRetry } from '@/shared/lib/withRetry';
 import { sleep } from '@/shared/lib/sleep';
 
 const sleepMock = sleep as jest.MockedFunction<typeof sleep>;

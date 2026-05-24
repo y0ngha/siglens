@@ -17,7 +17,7 @@ import type {
     Timeframe,
     ValidatedActionPrices,
 } from '@y0ngha/siglens-core';
-import { getTimeFormatter } from '@/domain/chart/timeFormat';
+import { getTimeFormatter } from '@/shared/lib/timeFormat';
 import { useMAOverlay } from '@/components/chart/hooks/useMAOverlay';
 import { useEMAOverlay } from '@/components/chart/hooks/useEMAOverlay';
 import { useBollingerOverlay } from '@/components/chart/hooks/useBollingerOverlay';

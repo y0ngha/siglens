@@ -5,9 +5,8 @@
  *
  * Originally lived in `lib/marketSession` (client-safe helpers only), but the
  * same constants + ET-parts extraction were duplicated in `optionsCacheLife`.
- * Promoted to `domain/market` so both call sites import a single source of
- * truth — `lib/` is reserved for thin UI utility wrappers, and this module
- * encodes a business rule (regular-session boundary) so it belongs in domain.
+ * Promoted to `shared/lib/marketSession` so both call sites import a single
+ * source of truth.
  *
  * The boundary is ET weekdays — see MARKET_OPEN_HOUR / MARKET_OPEN_MINUTE /
  * MARKET_CLOSE_HOUR. We resolve EDT/EST via

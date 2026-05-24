@@ -110,7 +110,7 @@ jest.mock('@/app/[symbol]/news/newsData', () => ({
     getNewsList: jest.fn(() => Promise.resolve([])),
 }));
 
-jest.mock('@/infrastructure/utils/dateKey', () => ({
+jest.mock('@/shared/lib/dateKey', () => ({
     todayKstIsoDate: jest.fn(() => '2026-05-21'),
 }));
 

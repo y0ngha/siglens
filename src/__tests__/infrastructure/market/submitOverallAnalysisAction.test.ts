@@ -49,7 +49,7 @@ jest.mock('@/infrastructure/options/optionsDataCache', () => ({
     fetchOptionsSnapshot: jest.fn(),
 }));
 
-jest.mock('@/domain/market/session', () => ({
+jest.mock('@/shared/lib/marketSession', () => ({
     isUsOptionsRegularSession: jest.fn(),
     isOpenInterestSnapshotStale: jest.fn(),
 }));
@@ -72,7 +72,7 @@ import { fetchOptionsSnapshot } from '@/infrastructure/options/optionsDataCache'
 import {
     isUsOptionsRegularSession,
     isOpenInterestSnapshotStale,
-} from '@/domain/market/session';
+} from '@/shared/lib/marketSession';
 import type { AnalysisGateError } from '@/domain/types';
 
 const mockHeaders = headers as jest.MockedFunction<typeof headers>;

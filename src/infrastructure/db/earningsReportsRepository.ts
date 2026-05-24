@@ -8,7 +8,7 @@ import type {
 import { NEON_TRANSIENT_RETRY } from '@/infrastructure/db/isNeonTransientError';
 import { earningsReports } from '@/infrastructure/db/schema';
 import type { SiglensDatabase } from '@/infrastructure/db/types';
-import { withRetry } from '@/infrastructure/utils/withRetry';
+import { withRetry } from '@/shared/lib/withRetry';
 
 export interface EarningsReportUpsertInput {
     symbol: string;

@@ -1,5 +1,5 @@
 import { NeonDbError } from '@neondatabase/serverless';
-import type { WithRetryOptions } from '@/infrastructure/utils/withRetry';
+import type { WithRetryOptions } from '@/shared/lib/withRetry';
 
 /**
  * Single source of truth for transient SQLSTATE codes — Neon connection-

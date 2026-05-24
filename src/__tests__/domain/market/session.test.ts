@@ -22,7 +22,7 @@ import {
     MARKET_OPEN_MINUTE,
     normalizeHour,
     OI_STALE_FRACTION_THRESHOLD,
-} from '@/domain/market/session';
+} from '@/shared/lib/marketSession';
 import type {
     OptionsChain,
     OptionsContract,
