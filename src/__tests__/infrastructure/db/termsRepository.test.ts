@@ -6,8 +6,8 @@ jest.mock('@/shared/lib/sleep', () => ({
 }));
 
 import { DrizzleTermsRepository } from '@/infrastructure/db/termsRepository';
-import type { SiglensDatabase } from '@/infrastructure/db/types';
-import type { TermsKind } from '@/infrastructure/db/constants';
+import type { SiglensDatabase } from '@/shared/db/types';
+import type { TermsKind } from '@/shared/db/constants';
 
 interface InsertedRow {
     id: string;

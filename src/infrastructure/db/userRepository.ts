@@ -1,13 +1,13 @@
 import { DEFAULT_TIER, type Tier } from '@y0ngha/siglens-core';
 import type { OAuthProvider } from '@/domain/types';
 import { and, eq, sql } from 'drizzle-orm';
-import { NEON_TRANSIENT_RETRY } from '@/infrastructure/db/isNeonTransientError';
-import { oauthAccounts, users } from '@/infrastructure/db/schema';
-import type { SiglensDatabase } from '@/infrastructure/db/types';
+import { NEON_TRANSIENT_RETRY } from '@/shared/db/isNeonTransientError';
+import { oauthAccounts, users } from '@/shared/db/schema';
+import type { SiglensDatabase } from '@/shared/db/types';
 import {
     encryptToken,
     requireOauthTokenEncryptionKey,
-} from '@/infrastructure/db/tokenEncryption';
+} from '@/shared/db/tokenEncryption';
 import type {
     AuthUserRecord,
     CreateEmailUserInput,
@@ -17,7 +17,7 @@ import type {
     OAuthUserRepository,
     UserRepository,
     UserTierRepository,
-} from '@/infrastructure/db/types';
+} from '@/shared/db/types';
 import { withRetry } from '@/shared/lib/withRetry';
 
 function encryptOptional(

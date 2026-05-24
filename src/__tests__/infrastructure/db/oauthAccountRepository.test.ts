@@ -1,6 +1,6 @@
 import { DrizzleOAuthAccountRepository } from '@/infrastructure/db/oauthAccountRepository';
-import { encryptToken } from '@/infrastructure/db/tokenEncryption';
-import type { SiglensDatabase } from '@/infrastructure/db/types';
+import { encryptToken } from '@/shared/db/tokenEncryption';
+import type { SiglensDatabase } from '@/shared/db/types';
 
 const VALID_KEY_HEX = '0'.repeat(64);
 const createdAt = new Date('2026-04-27T00:00:00.000Z');

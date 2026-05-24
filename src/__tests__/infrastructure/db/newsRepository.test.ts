@@ -7,7 +7,7 @@ jest.mock('@/shared/lib/sleep', () => ({
 }));
 
 import type { NewsCardAnalysis, NewsItem } from '@y0ngha/siglens-core';
-import type { SiglensDatabase } from '@/infrastructure/db/types';
+import type { SiglensDatabase } from '@/shared/db/types';
 import {
     DrizzleNewsRepository,
     type NewsRow,

@@ -3,7 +3,7 @@ jest.mock('server-only', () => ({}), { virtual: true });
 const mockGetUserTier = jest.fn();
 const mockFindByUserAndProvider = jest.fn();
 
-jest.mock('@/infrastructure/db/client', () => ({
+jest.mock('@/shared/db/client', () => ({
     getDatabaseClient: jest.fn(() => ({ db: {}, sql: () => null })),
 }));
 

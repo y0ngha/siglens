@@ -5,9 +5,9 @@ import {
     type UsageLogRecord,
 } from '@y0ngha/siglens-core';
 import { and, count, eq } from 'drizzle-orm';
-import { NEON_TRANSIENT_RETRY } from '@/infrastructure/db/isNeonTransientError';
-import { usageLogs } from '@/infrastructure/db/schema';
-import type { SiglensDatabase } from '@/infrastructure/db/types';
+import { NEON_TRANSIENT_RETRY } from '@/shared/db/isNeonTransientError';
+import { usageLogs } from '@/shared/db/schema';
+import type { SiglensDatabase } from '@/shared/db/types';
 import type {
     SiglensUsageCounts,
     SiglensUsageRepository,

@@ -5,12 +5,12 @@ jest.mock('@/shared/lib/sleep', () => ({
     sleep: jest.fn().mockResolvedValue(undefined),
 }));
 
-import { encryptToken } from '@/infrastructure/db/tokenEncryption';
+import { encryptToken } from '@/shared/db/tokenEncryption';
 import {
     DrizzleUserApiKeyRepository,
     LlmApiKeyDecryptionFailedError,
 } from '@/infrastructure/db/userApiKeyRepository';
-import type { SiglensDatabase } from '@/infrastructure/db/types';
+import type { SiglensDatabase } from '@/shared/db/types';
 
 const VALID_KEY_HEX = 'b'.repeat(64);
 const OTHER_KEY_HEX = 'c'.repeat(64);

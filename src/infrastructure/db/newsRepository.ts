@@ -6,9 +6,9 @@ import type {
     NewsItem,
     NewsSentiment,
 } from '@y0ngha/siglens-core';
-import { NEON_TRANSIENT_RETRY } from '@/infrastructure/db/isNeonTransientError';
-import { news } from '@/infrastructure/db/schema';
-import type { SiglensDatabase } from '@/infrastructure/db/types';
+import { NEON_TRANSIENT_RETRY } from '@/shared/db/isNeonTransientError';
+import { news } from '@/shared/db/schema';
+import type { SiglensDatabase } from '@/shared/db/types';
 import type { NewsDisplayItem } from '@/domain/types';
 import { withRetry } from '@/shared/lib/withRetry';
 

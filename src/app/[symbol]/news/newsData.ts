@@ -1,5 +1,5 @@
 import { cache } from 'react';
-import { getDatabaseClient } from '@/infrastructure/db/client';
+import { getDatabaseClient } from '@/shared/db/client';
 import { DrizzleNewsRepository } from '@/infrastructure/db/newsRepository';
 import { DrizzleEarningsReportsRepository } from '@/infrastructure/db/earningsReportsRepository';
 import { FmpFundamentalClient } from '@/infrastructure/fmp/fundamentalClient';

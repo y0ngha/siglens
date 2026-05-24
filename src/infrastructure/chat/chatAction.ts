@@ -2,7 +2,7 @@
 
 import { callAiProviderRouter } from '@/infrastructure/ai/router';
 import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
-import { getDatabaseClient } from '@/infrastructure/db/client';
+import { getDatabaseClient } from '@/shared/db/client';
 import { DrizzleUserApiKeyRepository } from '@/infrastructure/db/userApiKeyRepository';
 import { DrizzleUserRepository } from '@/infrastructure/db/userRepository';
 import { getUserTier } from '@/infrastructure/tier/use-cases/getUserTier';

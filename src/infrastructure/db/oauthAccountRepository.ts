@@ -1,14 +1,14 @@
 import { eq } from 'drizzle-orm';
-import { oauthAccounts } from '@/infrastructure/db/schema';
-import type { SiglensDatabase } from '@/infrastructure/db/types';
+import { oauthAccounts } from '@/shared/db/schema';
+import type { SiglensDatabase } from '@/shared/db/types';
 import {
     decryptToken,
     tryReadEncryptionKey,
-} from '@/infrastructure/db/tokenEncryption';
+} from '@/shared/db/tokenEncryption';
 import type {
     OAuthAccountRecord,
     OAuthAccountRepository,
-} from '@/infrastructure/db/types';
+} from '@/shared/db/types';
 
 const oauthAccountColumns = {
     id: oauthAccounts.id,

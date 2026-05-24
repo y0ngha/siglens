@@ -5,9 +5,9 @@ import type {
     EarningsReportComparisonSlot,
     EarningsReportPeriod,
 } from '@/domain/types';
-import { NEON_TRANSIENT_RETRY } from '@/infrastructure/db/isNeonTransientError';
-import { earningsReports } from '@/infrastructure/db/schema';
-import type { SiglensDatabase } from '@/infrastructure/db/types';
+import { NEON_TRANSIENT_RETRY } from '@/shared/db/isNeonTransientError';
+import { earningsReports } from '@/shared/db/schema';
+import type { SiglensDatabase } from '@/shared/db/types';
 import { withRetry } from '@/shared/lib/withRetry';
 
 export interface EarningsReportUpsertInput {

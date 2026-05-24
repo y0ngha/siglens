@@ -15,7 +15,7 @@ import {
 import { extractToc } from '@/shared/lib/legal-toc';
 import { buildBreadcrumbJsonLd, SITE_NAME, SITE_URL } from '@/shared/lib/seo';
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
-import { getDatabaseClient } from '@/infrastructure/db/client';
+import { getDatabaseClient } from '@/shared/db/client';
 import { DrizzleTermsRepository } from '@/infrastructure/db/termsRepository';
 
 const PAGE_URL = `${SITE_URL}${TERMS_PATH}`;

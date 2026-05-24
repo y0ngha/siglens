@@ -1,5 +1,5 @@
 import { POPULAR_TICKERS } from '@/domain/constants/popular-tickers';
-import { tryGetDatabaseClient } from '@/infrastructure/db/client';
+import { tryGetDatabaseClient } from '@/shared/db/client';
 import { DrizzleKoreanTickerRepository } from '@/infrastructure/db/tickerRepository';
 
 /**

@@ -3,7 +3,7 @@ import type { AssetInfo } from '@/domain/types';
 import type {
     AssetTranslationRecord,
     AssetTranslationRepository,
-} from '@/infrastructure/db/types';
+} from '@/shared/db/types';
 import type { FmpSearchResult } from '@/infrastructure/ticker/types';
 
 const mockCache: {

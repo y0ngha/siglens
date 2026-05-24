@@ -5,7 +5,7 @@ import type { OAuthProvider } from '@/domain/types';
 import type { LlmProvider } from '@/domain/llm';
 import type { KoreanTickerEntry } from '@/domain/types';
 import type { AuthUserRecord } from '@/domain/auth/types';
-import type * as schema from '@/infrastructure/db/schema';
+import type * as schema from './schema';
 
 export type { AuthUserRecord };
 

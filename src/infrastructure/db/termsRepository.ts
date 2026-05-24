@@ -1,7 +1,7 @@
-import type { TermsKind } from '@/infrastructure/db/constants';
-import { NEON_TRANSIENT_RETRY } from '@/infrastructure/db/isNeonTransientError';
-import { terms } from '@/infrastructure/db/schema';
-import type { SiglensDatabase } from '@/infrastructure/db/types';
+import type { TermsKind } from '@/shared/db/constants';
+import { NEON_TRANSIENT_RETRY } from '@/shared/db/isNeonTransientError';
+import { terms } from '@/shared/db/schema';
+import type { SiglensDatabase } from '@/shared/db/types';
 import { withRetry } from '@/shared/lib/withRetry';
 import { and, desc, eq, lte, sql } from 'drizzle-orm';
 

@@ -1,5 +1,5 @@
 import { DrizzleAgreementRepository } from '@/infrastructure/db/agreementRepository';
-import type { SiglensDatabase } from '@/infrastructure/db/types';
+import type { SiglensDatabase } from '@/shared/db/types';
 
 describe('DrizzleAgreementRepository', () => {
     it('inserts multiple agreement rows', async () => {

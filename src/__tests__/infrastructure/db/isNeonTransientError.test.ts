@@ -2,7 +2,7 @@ import { NeonDbError } from '@neondatabase/serverless';
 import {
     NEON_TRANSIENT_RETRY,
     isNeonTransientError,
-} from '@/infrastructure/db/isNeonTransientError';
+} from '@/shared/db/isNeonTransientError';
 
 function makeNeonError(message: string, code?: string): NeonDbError {
     // `Error.name`은 lib 정의상 writable string이라 추가 캐스트 없이 직접 할당 가능.

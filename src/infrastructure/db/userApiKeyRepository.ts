@@ -1,19 +1,19 @@
 import type { LlmProvider } from '@/domain/llm';
 import { and, eq, sql } from 'drizzle-orm';
-import { NEON_TRANSIENT_RETRY } from '@/infrastructure/db/isNeonTransientError';
-import { userApiKeys } from '@/infrastructure/db/schema';
-import type { SiglensDatabase } from '@/infrastructure/db/types';
+import { NEON_TRANSIENT_RETRY } from '@/shared/db/isNeonTransientError';
+import { userApiKeys } from '@/shared/db/schema';
+import type { SiglensDatabase } from '@/shared/db/types';
 import {
     decryptToken,
     encryptToken,
     tryReadLlmApiKeyEncryptionKey,
-} from '@/infrastructure/db/tokenEncryption';
+} from '@/shared/db/tokenEncryption';
 import type {
     UpsertUserApiKeyInput,
     UserApiKeyMetaRecord,
     UserApiKeyRecord,
     UserApiKeyRepository,
-} from '@/infrastructure/db/types';
+} from '@/shared/db/types';
 import { withRetry } from '@/shared/lib/withRetry';
 
 /**

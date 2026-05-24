@@ -1,8 +1,8 @@
 import {
     getDatabaseClient,
     resetDatabaseClientForTests,
-} from '@/infrastructure/db/client';
-import type { DatabaseClient } from '@/infrastructure/db/types';
+} from '@/shared/db/client';
+import type { DatabaseClient } from '@/shared/db/types';
 
 /** 인증 DB 접근용 모듈 캐시된 DatabaseClient. DATABASE_URL이 비어 있으면 throw. */
 export function getAuthDatabaseClient(): DatabaseClient {
