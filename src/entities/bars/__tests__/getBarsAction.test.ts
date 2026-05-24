@@ -1,4 +1,4 @@
-import { getBarsAction } from '@/infrastructure/market/getBarsAction';
+import { getBarsAction } from '../actions/getBarsAction';
 import {
     EMPTY_SMC_RESULT,
     fetchBarsWithIndicators,

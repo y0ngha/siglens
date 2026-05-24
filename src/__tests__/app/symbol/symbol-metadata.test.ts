@@ -137,7 +137,7 @@ jest.mock('next/navigation', () => ({
 }));
 
 // 페이지 본문에서 쓰는 인프라 — generateMetadata에는 필요 없지만 import chain에서 로드될 수 있음
-jest.mock('@/infrastructure/market/getBarsAction', () => ({
+jest.mock('@/entities/bars/actions', () => ({
     getBarsAction: jest.fn(),
 }));
 
@@ -145,7 +145,7 @@ jest.mock('@/entities/skill', () => ({
     countSkillFiles: jest.fn(() => Promise.resolve({ indicators: 13 })),
 }));
 
-jest.mock('@/infrastructure/market/ensureNewsCardsAnalyzedAction', () => ({
+jest.mock('@/entities/news-article/actions', () => ({
     ensureNewsCardsAnalyzedAction: jest.fn(() => Promise.resolve()),
 }));
 

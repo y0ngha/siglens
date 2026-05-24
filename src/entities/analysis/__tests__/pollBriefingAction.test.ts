@@ -1,4 +1,4 @@
-import { pollBriefingAction } from '@/infrastructure/market/pollBriefingAction';
+import { pollBriefingAction } from '../actions/pollBriefingAction';
 import { pollBriefing } from '@y0ngha/siglens-core';
 import type { PollBriefingResult } from '@y0ngha/siglens-core';
 

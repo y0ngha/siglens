@@ -2,9 +2,11 @@
  * @jest-environment jsdom
  */
 import { useNewsAnalysis } from '@/components/news/hooks/useNewsAnalysis';
-import { cancelNewsAnalysisJobAction } from '@/infrastructure/market/cancelNewsAnalysisJobAction';
-import { pollNewsAnalysisAction } from '@/infrastructure/market/pollNewsAnalysisAction';
-import { submitNewsAnalysisAction } from '@/infrastructure/market/submitNewsAnalysisAction';
+import {
+    cancelNewsAnalysisJobAction,
+    pollNewsAnalysisAction,
+    submitNewsAnalysisAction,
+} from '@/entities/news-article/actions';
 import { CANCEL_JOBS_API_PATH } from '@/shared/lib/cancelJobsApi';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -14,15 +16,9 @@ import type { ReactNode } from 'react';
 import { renderToString } from 'react-dom/server';
 import { readBlobText } from '@/__tests__/utils/readBlobText';
 
-jest.mock('@/infrastructure/market/submitNewsAnalysisAction', () => ({
+jest.mock('@/entities/news-article/actions', () => ({
     submitNewsAnalysisAction: jest.fn(),
-}));
-
-jest.mock('@/infrastructure/market/pollNewsAnalysisAction', () => ({
     pollNewsAnalysisAction: jest.fn(),
-}));
-
-jest.mock('@/infrastructure/market/cancelNewsAnalysisJobAction', () => ({
     cancelNewsAnalysisJobAction: jest.fn().mockResolvedValue(undefined),
 }));
 

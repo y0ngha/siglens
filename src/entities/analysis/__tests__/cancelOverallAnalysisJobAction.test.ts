@@ -1,4 +1,4 @@
-import { cancelOverallAnalysisJobAction } from '@/infrastructure/market/cancelOverallAnalysisJobAction';
+import { cancelOverallAnalysisJobAction } from '../actions/cancelOverallAnalysisJobAction';
 import { cancelOverallAnalysisJob } from '@y0ngha/siglens-core';
 
 // ---------------------------------------------------------------------------

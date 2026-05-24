@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useLayoutEffect, useRef } from 'react';
-import { getNewsCardsAction } from '@/infrastructure/market/getNewsCardsAction';
+import { getNewsCardsAction } from '@/entities/news-article/actions';
 import type { NewsDisplayItem } from '@/domain/types';
 import { MS_PER_MINUTE } from '@/domain/constants/time';
 import {

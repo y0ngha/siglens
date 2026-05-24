@@ -2,7 +2,7 @@ import {
     isEnrichedRow,
     toEnrichedNewsItem,
     type EnrichedNewsRow,
-} from '@/infrastructure/market/newsEnrichment';
+} from '../lib/newsEnrichment';
 import type { NewsRow } from '@/entities/news-article';
 
 const baseRow: NewsRow = {

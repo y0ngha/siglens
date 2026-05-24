@@ -3,10 +3,12 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import type { NewsAnalysisResponse, ModelId } from '@y0ngha/siglens-core';
-import { submitNewsAnalysisAction } from '@/infrastructure/market/submitNewsAnalysisAction';
+import {
+    submitNewsAnalysisAction,
+    pollNewsAnalysisAction,
+    cancelNewsAnalysisJobAction,
+} from '@/entities/news-article/actions';
 import { isGateBlockedResult } from '@/domain/analysis/gate';
-import { pollNewsAnalysisAction } from '@/infrastructure/market/pollNewsAnalysisAction';
-import { cancelNewsAnalysisJobAction } from '@/infrastructure/market/cancelNewsAnalysisJobAction';
 import { sleep } from '@/shared/lib/sleep';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
 import { ANALYSIS_POLL_INTERVAL_MS } from '@/shared/config/pollingConfig';

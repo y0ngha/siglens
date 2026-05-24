@@ -8,20 +8,24 @@ import type {
     OverallAxis,
     Timeframe,
 } from '@y0ngha/siglens-core';
-import { submitOverallAnalysisAction } from '@/infrastructure/market/submitOverallAnalysisAction';
+import {
+    submitOverallAnalysisAction,
+    pollOverallAnalysisAction,
+    pollAnalysisAction,
+    pollFundamentalAnalysisAction,
+    cancelAnalysisJobAction,
+    cancelFundamentalAnalysisJobAction,
+    cancelOverallAnalysisJobAction,
+} from '@/entities/analysis/actions';
 import { isGateBlockedResult } from '@/domain/analysis/gate';
-import { pollOverallAnalysisAction } from '@/infrastructure/market/pollOverallAnalysisAction';
-import { pollAnalysisAction } from '@/infrastructure/market/pollAnalysisAction';
-import { pollFundamentalAnalysisAction } from '@/infrastructure/market/pollFundamentalAnalysisAction';
-import { pollNewsAnalysisAction } from '@/infrastructure/market/pollNewsAnalysisAction';
+import {
+    pollNewsAnalysisAction,
+    cancelNewsAnalysisJobAction,
+} from '@/entities/news-article/actions';
 import {
     cancelOptionsAnalysisJobAction,
     pollOptionsAnalysisAction,
 } from '@/infrastructure/options/optionsActions';
-import { cancelAnalysisJobAction } from '@/infrastructure/market/cancelAnalysisJobAction';
-import { cancelFundamentalAnalysisJobAction } from '@/infrastructure/market/cancelFundamentalAnalysisJobAction';
-import { cancelNewsAnalysisJobAction } from '@/infrastructure/market/cancelNewsAnalysisJobAction';
-import { cancelOverallAnalysisJobAction } from '@/infrastructure/market/cancelOverallAnalysisJobAction';
 import { sleep } from '@/shared/lib/sleep';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
 import { AUGMENT_AND_OVERALL_POLL_INTERVAL_MS } from '@/shared/config/pollingConfig';

@@ -3,8 +3,8 @@
 import { getDatabaseClient } from '@/shared/db/client';
 import { DrizzleNewsRepository } from '@/entities/news-article';
 import { FmpNewsClient } from '@/infrastructure/fmp/newsClient';
-import { DISABLED_THINKING_BUDGET } from '@/infrastructure/market/newsAnalysisConstants';
-import { NEWS_LOOKBACK_MS } from '@/infrastructure/market/newsLookback';
+import { DISABLED_THINKING_BUDGET } from '../lib/newsAnalysisConstants';
+import { NEWS_LOOKBACK_MS } from '../lib/newsLookback';
 import { sleep } from '@/shared/lib/sleep';
 import {
     pollNewsCardAnalysis,

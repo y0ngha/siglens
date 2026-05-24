@@ -15,7 +15,7 @@ import { JsonLd } from '@/shared/ui/JsonLd';
 import { VALID_TICKER_RE } from '@/domain/constants/market';
 import { buildAssetAboutNode } from '@/domain/seo/assetClassification';
 import { buildDisplayName } from '@/domain/ticker';
-import { ensureNewsCardsAnalyzedAction } from '@/infrastructure/market/ensureNewsCardsAnalyzedAction';
+import { ensureNewsCardsAnalyzedAction } from '@/entities/news-article/actions';
 import { getTodayIsoDay } from '@/infrastructure/seo/getTodayIsoDay';
 import { getAssetInfoCached } from '@/infrastructure/ticker/getAssetInfoCached';
 import { todayKstIsoDate } from '@/shared/lib/dateKey';

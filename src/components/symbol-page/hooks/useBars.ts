@@ -7,7 +7,7 @@ import type {
     IndicatorResult,
     Timeframe,
 } from '@y0ngha/siglens-core';
-import { getBarsAction } from '@/infrastructure/market/getBarsAction';
+import { getBarsAction } from '@/entities/bars/actions';
 import { BARS_STALE_TIME_MS, QUERY_KEYS } from '@/shared/config/queryConfig';
 
 interface UseBarsOptions {

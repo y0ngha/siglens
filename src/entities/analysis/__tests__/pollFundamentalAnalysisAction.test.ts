@@ -1,4 +1,4 @@
-import { pollFundamentalAnalysisAction } from '@/infrastructure/market/pollFundamentalAnalysisAction';
+import { pollFundamentalAnalysisAction } from '../actions/pollFundamentalAnalysisAction';
 import { pollFundamentalAnalysis } from '@y0ngha/siglens-core';
 import type { PollFundamentalAnalysisResult } from '@y0ngha/siglens-core';
 

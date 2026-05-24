@@ -19,7 +19,7 @@ jest.mock('@/infrastructure/auth/getCurrentUser', () => ({
     getCurrentUser: jest.fn(),
 }));
 
-jest.mock('@/infrastructure/market/byokGate', () => ({
+jest.mock('@/entities/analysis/lib/byokGate', () => ({
     resolveTierAndByok: jest.fn(),
     buildGateError: jest.fn((code: string) => ({
         code,
@@ -35,9 +35,9 @@ import {
 } from '@y0ngha/siglens-core';
 import { FmpFundamentalClient } from '@/infrastructure/fmp/fundamentalClient';
 import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
-import { resolveTierAndByok } from '@/infrastructure/market/byokGate';
+import { resolveTierAndByok } from '../lib/byokGate';
 import type { AnalysisGateError } from '@/domain/types';
-import { submitFundamentalAnalysisAction } from '@/infrastructure/market/submitFundamentalAnalysisAction';
+import { submitFundamentalAnalysisAction } from '../actions/submitFundamentalAnalysisAction';
 
 const mockHeaders = headers as jest.MockedFunction<typeof headers>;
 const mockSubmitFundamentalAnalysis =

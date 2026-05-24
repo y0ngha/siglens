@@ -110,8 +110,12 @@ const eslintConfig = defineConfig([
                             ],
                         },
                         {
+                            // Phase 3: entities 간 cross-import 허용. submitOverallAnalysisAction (analysis)이
+                            // news-article, earnings-report 데이터를 조합하는 등 entity 간 의존이 불가피.
+                            // Phase 9 (features 분리) 완료 시 entities 자체 제거하고 재평가.
                             from: 'entities',
                             allow: [
+                                'entities',
                                 'shared',
                                 'legacy-domain',
                                 'legacy-infra',

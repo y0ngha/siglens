@@ -23,13 +23,24 @@ jest.mock('@/shared/db/client', () => ({
     getDatabaseClient: jest.fn().mockReturnValue({ db: {} }),
 }));
 
-jest.mock('@/entities/news-article', () => ({
-    DrizzleNewsRepository: jest.fn().mockImplementation(() => ({
-        listBySymbol: jest.fn(),
-    })),
-}));
+jest.mock('@/entities/news-article', () => {
+    const actual = jest.requireActual(
+        '@/entities/news-article/lib/newsEnrichment'
+    );
+    const actualLookback = jest.requireActual(
+        '@/entities/news-article/lib/newsLookback'
+    );
+    return {
+        DrizzleNewsRepository: jest.fn().mockImplementation(() => ({
+            listBySymbol: jest.fn(),
+        })),
+        NEWS_ANALYSIS_LOOKBACK_MS: actualLookback.NEWS_ANALYSIS_LOOKBACK_MS,
+        isEnrichedRow: actual.isEnrichedRow,
+        toEnrichedNewsItem: actual.toEnrichedNewsItem,
+    };
+});
 
-jest.mock('@/infrastructure/market/nextEarningsReport', () => ({
+jest.mock('@/entities/earnings-report', () => ({
     getNextEarningsReport: jest.fn(),
 }));
 
@@ -37,7 +48,7 @@ jest.mock('@/infrastructure/auth/getCurrentUser', () => ({
     getCurrentUser: jest.fn(),
 }));
 
-jest.mock('@/infrastructure/market/byokGate', () => ({
+jest.mock('@/entities/analysis/lib/byokGate', () => ({
     resolveTierAndByok: jest.fn(),
     buildGateError: jest.fn((code: string) => ({
         code,
@@ -54,7 +65,7 @@ jest.mock('@/shared/lib/marketSession', () => ({
     isOpenInterestSnapshotStale: jest.fn(),
 }));
 
-import { submitOverallAnalysisAction } from '@/infrastructure/market/submitOverallAnalysisAction';
+import { submitOverallAnalysisAction } from '../actions/submitOverallAnalysisAction';
 import {
     submitOverallAnalysis,
     type ModelId,
@@ -65,9 +76,9 @@ import {
 } from '@y0ngha/siglens-core';
 import { headers } from 'next/headers';
 import { DrizzleNewsRepository } from '@/entities/news-article';
-import { getNextEarningsReport } from '@/infrastructure/market/nextEarningsReport';
+import { getNextEarningsReport } from '@/entities/earnings-report';
 import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
-import { resolveTierAndByok } from '@/infrastructure/market/byokGate';
+import { resolveTierAndByok } from '../lib/byokGate';
 import { fetchOptionsSnapshot } from '@/infrastructure/options/optionsDataCache';
 import {
     isUsOptionsRegularSession,

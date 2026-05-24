@@ -21,7 +21,7 @@ jest.mock('@/entities/news-article', () => ({
     })),
 }));
 
-jest.mock('@/infrastructure/market/nextEarningsReport', () => ({
+jest.mock('@/entities/earnings-report', () => ({
     getNextEarningsReport: jest.fn(),
 }));
 
@@ -29,7 +29,7 @@ jest.mock('@/infrastructure/auth/getCurrentUser', () => ({
     getCurrentUser: jest.fn(),
 }));
 
-jest.mock('@/infrastructure/market/byokGate', () => ({
+jest.mock('@/entities/analysis', () => ({
     resolveTierAndByok: jest.fn(),
     buildGateError: jest.fn((code: string) => ({
         code,
@@ -39,7 +39,7 @@ jest.mock('@/infrastructure/market/byokGate', () => ({
 
 import { headers } from 'next/headers';
 import { DrizzleNewsRepository } from '@/entities/news-article';
-import { getNextEarningsReport } from '@/infrastructure/market/nextEarningsReport';
+import { getNextEarningsReport } from '@/entities/earnings-report';
 import {
     submitNewsAnalysis,
     type ModelId,
@@ -48,9 +48,9 @@ import {
     type EarningsCalendarItem,
 } from '@y0ngha/siglens-core';
 import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
-import { resolveTierAndByok } from '@/infrastructure/market/byokGate';
+import { resolveTierAndByok } from '@/entities/analysis';
 import type { AnalysisGateError } from '@/domain/types';
-import { submitNewsAnalysisAction } from '@/infrastructure/market/submitNewsAnalysisAction';
+import { submitNewsAnalysisAction } from '../actions/submitNewsAnalysisAction';
 
 const mockHeaders = headers as jest.MockedFunction<typeof headers>;
 const MockNewsRepository = DrizzleNewsRepository as jest.MockedClass<

@@ -10,17 +10,11 @@ import {
 } from '@y0ngha/siglens-core';
 import { getDatabaseClient } from '@/shared/db/client';
 import { DrizzleNewsRepository } from '@/entities/news-article';
-import { NEWS_ANALYSIS_LOOKBACK_MS } from '@/infrastructure/market/newsLookback';
-import {
-    isEnrichedRow,
-    toEnrichedNewsItem,
-} from '@/infrastructure/market/newsEnrichment';
-import { getNextEarningsReport } from '@/infrastructure/market/nextEarningsReport';
+import { NEWS_ANALYSIS_LOOKBACK_MS } from '../lib/newsLookback';
+import { isEnrichedRow, toEnrichedNewsItem } from '../lib/newsEnrichment';
+import { getNextEarningsReport } from '@/entities/earnings-report';
 import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
-import {
-    resolveTierAndByok,
-    buildGateError,
-} from '@/infrastructure/market/byokGate';
+import { resolveTierAndByok, buildGateError } from '@/entities/analysis';
 import { isBot } from '@/shared/api/isBot';
 import type { AnalysisGateBlockedResult } from '@/domain/types';
 

@@ -21,7 +21,7 @@ jest.mock('@/infrastructure/auth/getCurrentUser', () => ({
     getCurrentUser: jest.fn(),
 }));
 
-jest.mock('@/infrastructure/market/byokGate', () => ({
+jest.mock('@/entities/analysis', () => ({
     resolveTierAndByok: jest.fn(),
     buildGateError: jest.fn((code: string) => ({
         code,
@@ -40,7 +40,7 @@ import {
 } from '@y0ngha/siglens-core';
 import { fetchOptionsSnapshot } from '@/infrastructure/options/optionsDataCache';
 import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
-import { resolveTierAndByok } from '@/infrastructure/market/byokGate';
+import { resolveTierAndByok } from '@/entities/analysis';
 import type { AnalysisGateError } from '@/domain/types';
 import {
     submitOptionsAnalysisAction,

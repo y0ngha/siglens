@@ -1,4 +1,4 @@
-import { cancelAnalysisJobAction } from '@/infrastructure/market/cancelAnalysisJobAction';
+import { cancelAnalysisJobAction } from '../actions/cancelAnalysisJobAction';
 import { cancelAnalysisJob } from '@y0ngha/siglens-core';
 
 jest.mock('@y0ngha/siglens-core', () => ({

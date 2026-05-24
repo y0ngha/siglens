@@ -3,7 +3,7 @@
  */
 import { act, renderHook } from '@testing-library/react';
 import type { NewsDisplayItem } from '@/domain/types';
-import { getNewsCardsAction } from '@/infrastructure/market/getNewsCardsAction';
+import { getNewsCardsAction } from '@/entities/news-article/actions';
 import {
     EMPTY_SNAPSHOT_MAX_POLLS,
     MAX_CONSECUTIVE_FAILURES,
@@ -12,7 +12,7 @@ import {
     useNewsCardPolling,
 } from '@/components/news/hooks/useNewsCardPolling';
 
-jest.mock('@/infrastructure/market/getNewsCardsAction', () => ({
+jest.mock('@/entities/news-article/actions', () => ({
     getNewsCardsAction: jest.fn(),
 }));
 

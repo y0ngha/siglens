@@ -5,19 +5,23 @@
  * 각 axis jobId를 직접 polling한 뒤 완료 후 한 번만 재submit하는지 검증한다.
  */
 import { useOverallAnalysis } from '@/components/overall/hooks/useOverallAnalysis';
-import { cancelAnalysisJobAction } from '@/infrastructure/market/cancelAnalysisJobAction';
-import { cancelFundamentalAnalysisJobAction } from '@/infrastructure/market/cancelFundamentalAnalysisJobAction';
-import { cancelNewsAnalysisJobAction } from '@/infrastructure/market/cancelNewsAnalysisJobAction';
-import { cancelOverallAnalysisJobAction } from '@/infrastructure/market/cancelOverallAnalysisJobAction';
+import {
+    cancelAnalysisJobAction,
+    cancelFundamentalAnalysisJobAction,
+    cancelOverallAnalysisJobAction,
+    pollAnalysisAction,
+    pollFundamentalAnalysisAction,
+    pollOverallAnalysisAction,
+    submitOverallAnalysisAction,
+} from '@/entities/analysis/actions';
+import {
+    cancelNewsAnalysisJobAction,
+    pollNewsAnalysisAction,
+} from '@/entities/news-article/actions';
 import {
     cancelOptionsAnalysisJobAction,
     pollOptionsAnalysisAction,
 } from '@/infrastructure/options/optionsActions';
-import { pollAnalysisAction } from '@/infrastructure/market/pollAnalysisAction';
-import { pollFundamentalAnalysisAction } from '@/infrastructure/market/pollFundamentalAnalysisAction';
-import { pollNewsAnalysisAction } from '@/infrastructure/market/pollNewsAnalysisAction';
-import { pollOverallAnalysisAction } from '@/infrastructure/market/pollOverallAnalysisAction';
-import { submitOverallAnalysisAction } from '@/infrastructure/market/submitOverallAnalysisAction';
 import { CANCEL_JOBS_API_PATH } from '@/shared/lib/cancelJobsApi';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook, waitFor } from '@testing-library/react';
@@ -25,32 +29,18 @@ import type { OverallAnalysisResponse } from '@y0ngha/siglens-core';
 import type { ReactNode } from 'react';
 import { readBlobText } from '@/__tests__/utils/readBlobText';
 
-jest.mock('@/infrastructure/market/submitOverallAnalysisAction', () => ({
+jest.mock('@/entities/analysis/actions', () => ({
     submitOverallAnalysisAction: jest.fn(),
-}));
-jest.mock('@/infrastructure/market/pollOverallAnalysisAction', () => ({
     pollOverallAnalysisAction: jest.fn(),
-}));
-jest.mock('@/infrastructure/market/pollAnalysisAction', () => ({
     pollAnalysisAction: jest.fn(),
-}));
-jest.mock('@/infrastructure/market/pollFundamentalAnalysisAction', () => ({
     pollFundamentalAnalysisAction: jest.fn(),
-}));
-jest.mock('@/infrastructure/market/pollNewsAnalysisAction', () => ({
-    pollNewsAnalysisAction: jest.fn(),
-}));
-jest.mock('@/infrastructure/market/cancelAnalysisJobAction', () => ({
     cancelAnalysisJobAction: jest.fn().mockResolvedValue(undefined),
-}));
-jest.mock('@/infrastructure/market/cancelFundamentalAnalysisJobAction', () => ({
     cancelFundamentalAnalysisJobAction: jest.fn().mockResolvedValue(undefined),
-}));
-jest.mock('@/infrastructure/market/cancelNewsAnalysisJobAction', () => ({
-    cancelNewsAnalysisJobAction: jest.fn().mockResolvedValue(undefined),
-}));
-jest.mock('@/infrastructure/market/cancelOverallAnalysisJobAction', () => ({
     cancelOverallAnalysisJobAction: jest.fn().mockResolvedValue(undefined),
+}));
+jest.mock('@/entities/news-article/actions', () => ({
+    pollNewsAnalysisAction: jest.fn(),
+    cancelNewsAnalysisJobAction: jest.fn().mockResolvedValue(undefined),
 }));
 jest.mock('@/infrastructure/options/optionsActions', () => ({
     pollOptionsAnalysisAction: jest.fn(),

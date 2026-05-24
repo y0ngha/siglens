@@ -2,7 +2,7 @@
 
 import { getDatabaseClient } from '@/shared/db/client';
 import { DrizzleNewsRepository } from '@/entities/news-article';
-import { NEWS_LOOKBACK_MS } from '@/infrastructure/market/newsLookback';
+import { NEWS_LOOKBACK_MS } from '../lib/newsLookback';
 import type { NewsDisplayItem } from '@/domain/types';
 
 /**

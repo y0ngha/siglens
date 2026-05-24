@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { pollBriefingAction } from '@/infrastructure/market/pollBriefingAction';
+import { pollBriefingAction } from '@/entities/analysis/actions';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
 import type { MarketBriefingResponse } from '@y0ngha/siglens-core';
 

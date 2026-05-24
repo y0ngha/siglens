@@ -1,4 +1,4 @@
-import { pollNewsAnalysisAction } from '@/infrastructure/market/pollNewsAnalysisAction';
+import { pollNewsAnalysisAction } from '../actions/pollNewsAnalysisAction';
 import { pollNewsAnalysis } from '@y0ngha/siglens-core';
 import type { PollNewsAnalysisResult } from '@y0ngha/siglens-core';
 

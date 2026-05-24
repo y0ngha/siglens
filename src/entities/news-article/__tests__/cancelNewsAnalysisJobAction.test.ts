@@ -1,4 +1,4 @@
-import { cancelNewsAnalysisJobAction } from '@/infrastructure/market/cancelNewsAnalysisJobAction';
+import { cancelNewsAnalysisJobAction } from '../actions/cancelNewsAnalysisJobAction';
 import { cancelNewsAnalysisJob } from '@y0ngha/siglens-core';
 
 // ---------------------------------------------------------------------------

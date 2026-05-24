@@ -2,10 +2,12 @@
  * @jest-environment jsdom
  */
 import { useAnalysis } from '@/components/symbol-page/hooks/useAnalysis';
-import { cancelAnalysisJobAction } from '@/infrastructure/market/cancelAnalysisJobAction';
-import { pollAnalysisAction } from '@/infrastructure/market/pollAnalysisAction';
-import { getReanalyzeCooldownMs } from '@/infrastructure/market/reanalyzeCooldown';
-import { submitAnalysisAction } from '@/infrastructure/market/submitAnalysisAction';
+import {
+    cancelAnalysisJobAction,
+    pollAnalysisAction,
+    submitAnalysisAction,
+} from '@/entities/analysis/actions';
+import { getReanalyzeCooldownMs } from '@/entities/analysis';
 import { CANCEL_JOBS_API_PATH } from '@/shared/lib/cancelJobsApi';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
@@ -13,19 +15,13 @@ import type { AnalysisResponse, Timeframe } from '@y0ngha/siglens-core';
 import type { ReactNode } from 'react';
 import { readBlobText } from '@/__tests__/utils/readBlobText';
 
-jest.mock('@/infrastructure/market/submitAnalysisAction', () => ({
+jest.mock('@/entities/analysis/actions', () => ({
     submitAnalysisAction: jest.fn(),
-}));
-
-jest.mock('@/infrastructure/market/pollAnalysisAction', () => ({
     pollAnalysisAction: jest.fn(),
-}));
-
-jest.mock('@/infrastructure/market/cancelAnalysisJobAction', () => ({
     cancelAnalysisJobAction: jest.fn().mockResolvedValue(undefined),
 }));
 
-jest.mock('@/infrastructure/market/reanalyzeCooldown', () => ({
+jest.mock('@/entities/analysis', () => ({
     getReanalyzeCooldownMs: jest.fn().mockResolvedValue(0),
     releaseReanalyzeCooldown: jest.fn().mockResolvedValue(undefined),
     tryAcquireReanalyzeCooldown: jest.fn().mockResolvedValue({ ok: true }),

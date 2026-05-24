@@ -1,4 +1,4 @@
-import { pollOverallAnalysisAction } from '@/infrastructure/market/pollOverallAnalysisAction';
+import { pollOverallAnalysisAction } from '../actions/pollOverallAnalysisAction';
 import { pollOverallAnalysis } from '@y0ngha/siglens-core';
 import type { PollOverallAnalysisResult } from '@y0ngha/siglens-core';
 

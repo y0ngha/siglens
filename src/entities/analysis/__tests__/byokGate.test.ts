@@ -30,7 +30,7 @@ import {
     resolveTierAndByok,
     buildGateError,
     isKnownModelId,
-} from '@/infrastructure/market/byokGate';
+} from '../lib/byokGate';
 import type { ModelId } from '@y0ngha/siglens-core';
 
 const FREE_MODEL = 'gemini-2.5-flash' as ModelId;

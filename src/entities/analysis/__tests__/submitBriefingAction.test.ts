@@ -1,4 +1,4 @@
-import { submitBriefingAction } from '@/infrastructure/market/submitBriefingAction';
+import { submitBriefingAction } from '../actions/submitBriefingAction';
 import { submitBriefing } from '@y0ngha/siglens-core';
 import type {
     MarketSummaryData,

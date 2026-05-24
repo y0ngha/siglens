@@ -1,6 +1,6 @@
-import { ensureNewsCardsAnalyzedAction } from '@/infrastructure/market/ensureNewsCardsAnalyzedAction';
-import { DISABLED_THINKING_BUDGET } from '@/infrastructure/market/newsAnalysisConstants';
-import { NEWS_LOOKBACK_MS } from '@/infrastructure/market/newsLookback';
+import { ensureNewsCardsAnalyzedAction } from '../actions/ensureNewsCardsAnalyzedAction';
+import { DISABLED_THINKING_BUDGET } from '../lib/newsAnalysisConstants';
+import { NEWS_LOOKBACK_MS } from '../lib/newsLookback';
 import {
     submitNewsCardAnalysis,
     pollNewsCardAnalysis,

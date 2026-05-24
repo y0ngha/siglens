@@ -8,7 +8,7 @@ import {
 } from '@/domain/constants/market';
 import { buildAssetAboutNode } from '@/domain/seo/assetClassification';
 import { buildDisplayName } from '@/domain/ticker';
-import { getBarsAction } from '@/infrastructure/market/getBarsAction';
+import { getBarsAction } from '@/entities/bars/actions';
 import { countSkillFiles } from '@/entities/skill';
 import { getAssetInfoCached } from '@/infrastructure/ticker/getAssetInfoCached';
 import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/shared/config/queryConfig';

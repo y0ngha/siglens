@@ -12,18 +12,15 @@ import {
 } from '@y0ngha/siglens-core';
 import { FmpFundamentalClient } from '@/infrastructure/fmp/fundamentalClient';
 import { getDatabaseClient } from '@/shared/db/client';
-import { DrizzleNewsRepository } from '@/entities/news-article';
-import { NEWS_ANALYSIS_LOOKBACK_MS } from '@/infrastructure/market/newsLookback';
 import {
+    DrizzleNewsRepository,
+    NEWS_ANALYSIS_LOOKBACK_MS,
     isEnrichedRow,
     toEnrichedNewsItem,
-} from '@/infrastructure/market/newsEnrichment';
-import { getNextEarningsReport } from '@/infrastructure/market/nextEarningsReport';
+} from '@/entities/news-article';
+import { getNextEarningsReport } from '@/entities/earnings-report';
 import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
-import {
-    resolveTierAndByok,
-    buildGateError,
-} from '@/infrastructure/market/byokGate';
+import { resolveTierAndByok, buildGateError } from '../lib/byokGate';
 import { isBot } from '@/shared/api/isBot';
 import { fetchOptionsSnapshot } from '@/infrastructure/options/optionsDataCache';
 import {
