@@ -1,7 +1,7 @@
 import {
     CONTACT_CONTENT_MAX_LENGTH,
     CONTACT_TITLE_MAX_LENGTH,
-} from '@/entities/inquiry';
+} from '../config/contact';
 import type { ContactFormErrorCode } from '@/shared/lib/types';
 
 export const CONTACT_ERROR_MESSAGES: Record<ContactFormErrorCode, string> = {

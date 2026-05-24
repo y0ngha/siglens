@@ -1,4 +1,4 @@
-import type { LlmProvider } from '@/entities/api-key';
+import type { LlmProvider } from '../config/llmProviders';
 
 export const LLM_PROVIDER_LABELS: Record<LlmProvider, string> = {
     anthropic: 'Claude (Anthropic)',
