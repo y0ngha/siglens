@@ -9,7 +9,7 @@ import {
 } from '@y0ngha/siglens-core';
 import type { GateMode } from '@/domain/llm';
 import { currentUserAction } from '@/infrastructure/auth/currentUserAction';
-import { getRegisteredProvidersAction } from '@/entities/api-key/actions/getRegisteredProvidersAction';
+import { getRegisteredProvidersAction } from '@/entities/api-key/actions';
 import { useQuery } from '@tanstack/react-query';
 import {
     CURRENT_USER_STALE_TIME_MS,
