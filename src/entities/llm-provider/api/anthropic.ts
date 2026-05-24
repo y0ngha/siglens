@@ -1,4 +1,4 @@
-import { toProviderTurns } from '@/infrastructure/ai/utils';
+import { toProviderTurns } from '../lib/utils';
 import Anthropic from '@anthropic-ai/sdk';
 import { MODEL_SPECS } from '@y0ngha/siglens-core';
 import type {

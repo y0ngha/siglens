@@ -8,7 +8,7 @@ jest.mock('openai', () => ({
     default: MockOpenAI,
 }));
 
-import { callOpenaiChat } from '@/infrastructure/ai/openai';
+import { callOpenaiChat } from '@/entities/llm-provider/api/openai';
 
 const BASE_OPTIONS = {
     serverApiKey: 'server-key',

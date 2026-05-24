@@ -1,4 +1,4 @@
-import { toProviderTurns } from '@/infrastructure/ai/utils';
+import { toProviderTurns } from '../lib/utils';
 import type {
     AiContents,
     CallAiProviderOptions,

@@ -1,7 +1,10 @@
 const callGeminiMock = jest.fn();
 
-jest.mock('@/infrastructure/ai/gemini', () => ({
+jest.mock('@/entities/llm-provider', () => ({
     callGeminiChat: (...args: unknown[]) => callGeminiMock(...args),
+    parseJsonResponse: jest.requireActual(
+        '@/entities/llm-provider/lib/parseJsonResponse'
+    ).parseJsonResponse,
 }));
 
 import {

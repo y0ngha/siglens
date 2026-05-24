@@ -2,8 +2,7 @@
 
 import { useActionState, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { saveApiKeyAction } from '@/infrastructure/llm/saveApiKeyAction';
-import { deleteApiKeyAction } from '@/infrastructure/llm/deleteApiKeyAction';
+import { saveApiKeyAction, deleteApiKeyAction } from '@/entities/api-key/actions';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
 import type { ApiKeyActionState } from '@/domain/types';
 

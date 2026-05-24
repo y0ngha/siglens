@@ -1,6 +1,6 @@
 import { ApiKeySection } from '@/components/account/ApiKeySection';
 import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
-import { getRegisteredProvidersAction } from '@/infrastructure/llm/getRegisteredProvidersAction';
+import { getRegisteredProvidersAction } from '@/entities/api-key/actions';
 import { TIER_LABEL } from '@/lib/auth/tierLabel';
 import { SITE_NAME, SITE_URL } from '@/shared/lib/seo';
 import type { Metadata } from 'next';

@@ -1,4 +1,4 @@
-import { callAiProviderRouter } from '@/infrastructure/ai/router';
+import { callAiProviderRouter } from '@/entities/llm-provider';
 import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
 import { chatAction } from '@/infrastructure/chat/chatAction';
 import { getDatabaseClient } from '@/shared/db/client';
@@ -34,7 +34,7 @@ jest.mock('@y0ngha/siglens-core', () => {
     };
 });
 
-jest.mock('@/infrastructure/ai/router', () => ({
+jest.mock('@/entities/llm-provider', () => ({
     callAiProviderRouter: jest.fn(),
 }));
 

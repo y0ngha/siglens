@@ -1,6 +1,6 @@
-import { callAnthropicChat } from '@/infrastructure/ai/anthropic';
-import { callGeminiChat } from '@/infrastructure/ai/gemini';
-import { callOpenaiChat } from '@/infrastructure/ai/openai';
+import { callAnthropicChat } from './anthropic';
+import { callGeminiChat } from './gemini';
+import { callOpenaiChat } from './openai';
 import type {
     ActiveModelId,
     CallAiProviderOptions,

@@ -13,7 +13,7 @@ jest.mock('@/entities/api-key', () => ({
 }));
 
 import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
-import { getRegisteredProvidersAction } from '@/infrastructure/llm/getRegisteredProvidersAction';
+import { getRegisteredProvidersAction } from '@/entities/api-key/actions/getRegisteredProvidersAction';
 
 const mockGetCurrentUser = getCurrentUser as jest.MockedFunction<
     typeof getCurrentUser

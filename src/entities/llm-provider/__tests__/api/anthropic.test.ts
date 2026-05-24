@@ -21,7 +21,7 @@ jest.mock('@y0ngha/siglens-core', () => {
     };
 });
 
-import { callAnthropicChat } from '@/infrastructure/ai/anthropic';
+import { callAnthropicChat } from '@/entities/llm-provider/api/anthropic';
 import { MODEL_SPECS } from '@y0ngha/siglens-core';
 
 const BASE_OPTIONS = {

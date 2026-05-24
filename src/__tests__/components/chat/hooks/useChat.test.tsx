@@ -48,7 +48,7 @@ jest.mock('@/infrastructure/auth/currentUserAction', () => ({
     currentUserAction: jest.fn().mockResolvedValue(null),
 }));
 
-jest.mock('@/infrastructure/llm/getRegisteredProvidersAction', () => ({
+jest.mock('@/entities/api-key/actions', () => ({
     getRegisteredProvidersAction: jest.fn().mockResolvedValue([]),
 }));
 

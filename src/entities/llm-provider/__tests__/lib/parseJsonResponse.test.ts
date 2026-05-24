@@ -1,7 +1,7 @@
 import {
     parseJsonResponse,
     stripMarkdownCodeBlock,
-} from '@/infrastructure/ai/parseJsonResponse';
+} from '../../lib/parseJsonResponse';
 
 describe('stripMarkdownCodeBlock', () => {
     it('strips ```json fenced wrapper and trims inner content', () => {

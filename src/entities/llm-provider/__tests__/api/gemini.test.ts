@@ -9,7 +9,7 @@ jest.mock('@google/genai', () => {
     return { GoogleGenAI: MockGoogleGenAI };
 });
 
-import { callGeminiChat } from '@/infrastructure/ai/gemini';
+import { callGeminiChat } from '@/entities/llm-provider/api/gemini';
 
 const BASE_OPTIONS = {
     userApiKey: undefined,
