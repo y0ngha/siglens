@@ -2,8 +2,8 @@
 
 import { useMemo } from 'react';
 import type { BacktestCase } from '@y0ngha/siglens-core';
-import type { TabItem } from '@/components/ui/tabs';
-import { useQueryParamState } from '@/components/hooks/useQueryParamState';
+import type { TabItem } from '@/shared/ui/tabs';
+import { useQueryParamState } from '@/shared/hooks/useQueryParamState';
 
 const ALL_TAB = '전체';
 

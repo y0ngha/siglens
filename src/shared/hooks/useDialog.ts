@@ -8,9 +8,9 @@ import {
     useRef,
     useState,
 } from 'react';
-import { useEscapeKey } from '@/components/hooks/useEscapeKey';
-import { useOnClickOutside } from '@/components/hooks/useOnClickOutside';
-import { useFocusTrap } from '@/components/hooks/useFocusTrap';
+import { useEscapeKey } from '@/shared/hooks/useEscapeKey';
+import { useOnClickOutside } from '@/shared/hooks/useOnClickOutside';
+import { useFocusTrap } from '@/shared/hooks/useFocusTrap';
 
 interface UseDialogReturn {
     isOpen: boolean;

@@ -1,7 +1,7 @@
 'use client';
 
 import { type RefObject, useCallback, useMemo, useRef, useState } from 'react';
-import { useOnClickOutside } from '@/components/hooks/useOnClickOutside';
+import { useOnClickOutside } from '@/shared/hooks/useOnClickOutside';
 
 export type IndicatorDropdownType = 'ma' | 'ema';
 export type DropdownType = IndicatorDropdownType | null;

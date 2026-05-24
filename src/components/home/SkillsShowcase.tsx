@@ -3,8 +3,8 @@
 import React, { useId, useRef } from 'react';
 import { cn } from '@/shared/lib/cn';
 import type { SkillShowcaseItem, SkillType } from '@y0ngha/siglens-core';
-import { usePopoverToggle } from '@/components/hooks/usePopoverToggle';
-import { buildPanelId, buildTabId, TabsPill } from '@/components/ui/tabs';
+import { usePopoverToggle } from '@/shared/hooks/usePopoverToggle';
+import { buildPanelId, buildTabId, TabsPill } from '@/shared/ui/tabs';
 import {
     type SkillsActiveTab,
     useSkillsShowcase,

@@ -1,4 +1,4 @@
-import { MarkdownText } from '@/components/ui/MarkdownText';
+import { MarkdownText } from '@/shared/ui/MarkdownText';
 
 interface FundamentalSummaryProps {
     bullets: string[];

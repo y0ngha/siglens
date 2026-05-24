@@ -1,5 +1,5 @@
 import { EmptySectionCard } from '@/components/fundamental/sections/EmptySectionCard';
-import { InfoTooltip } from '@/components/ui/InfoTooltip';
+import { InfoTooltip } from '@/shared/ui/InfoTooltip';
 import type {
     FundamentalAnalystEstimateInput,
     FundamentalGradesConsensusInput,

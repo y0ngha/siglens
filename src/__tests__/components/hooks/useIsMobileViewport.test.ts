@@ -5,7 +5,7 @@ import { act, renderHook } from '@testing-library/react';
 import {
     MOBILE_VIEWPORT_MEDIA_QUERY,
     useIsMobileViewport,
-} from '@/components/hooks/useIsMobileViewport';
+} from '@/shared/hooks/useIsMobileViewport';
 
 describe('useIsMobileViewport', () => {
     const listeners = new Set<(event: MediaQueryListEvent) => void>();

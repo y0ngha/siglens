@@ -9,8 +9,8 @@
 |---|---|
 | `shared/lib/` | 순수 유틸리티 함수: cn, chartColors, priceFormat, seo, og, a11y 등 |
 | `shared/config/` | 설정 상수: queryKeys (QUERY_KEYS), pollingConfig, cookieNames |
-| `shared/ui/` | (Phase 1 PR C에서 추가 예정) Primitive UI 컴포넌트 |
-| `shared/hooks/` | (Phase 1 PR C에서 추가 예정) React 의존 일반 hook |
+| `shared/ui/` | Primitive UI 컴포넌트: DotSeparator, EyeIcon, InfoTooltip, JsonLd, MarkdownText, Tabs |
+| `shared/hooks/` | React 의존 일반 hook: useDialog, useEscapeKey, useFocusTrap, useHydrated, useIsMobileViewport 등 |
 | `shared/db/` | (Phase 2에서 추가 예정) Drizzle client + schema |
 | `shared/email/` | (Phase 2에서 추가 예정) Email dispatcher |
 | `shared/cache/` | (Phase 2에서 추가 예정) Redis client |

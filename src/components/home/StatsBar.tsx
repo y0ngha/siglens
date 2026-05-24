@@ -2,7 +2,7 @@ import type { CSSProperties } from 'react';
 import { Fragment } from 'react';
 
 import type { SkillShowcaseItem } from '@y0ngha/siglens-core';
-import { DotSeparator } from '@/components/ui/DotSeparator';
+import { DotSeparator } from '@/shared/ui/DotSeparator';
 import { buildSkillStats } from '@/shared/lib/skillStats';
 
 interface StatsBarProps {

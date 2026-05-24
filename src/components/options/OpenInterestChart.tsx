@@ -22,7 +22,7 @@ import {
     PutOpenInterestTooltip,
 } from '@/components/options/utils/optionsTooltips';
 import { pickLabelIndices } from '@/components/options/utils/pickLabelIndices';
-import { InfoTooltip } from '@/components/ui/InfoTooltip';
+import { InfoTooltip } from '@/shared/ui/InfoTooltip';
 import { findNearestStrikeIndex } from '@/domain/options/findNearestStrike';
 import {
     aggregateOpenInterest,

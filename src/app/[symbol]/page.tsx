@@ -1,5 +1,5 @@
 import { SymbolPageClient } from '@/components/symbol-page/SymbolPageClient';
-import { JsonLd } from '@/components/ui/JsonLd';
+import { JsonLd } from '@/shared/ui/JsonLd';
 import { FALLBACK_ANALYSIS } from '@/domain/chat/fallbackAnalysis';
 import {
     DEFAULT_TIMEFRAME,

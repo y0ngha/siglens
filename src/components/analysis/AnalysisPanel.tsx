@@ -8,9 +8,9 @@ import {
     useRef,
     useState,
 } from 'react';
-import { EyeIcon } from '@/components/ui/EyeIcon';
-import { InfoTooltip } from '@/components/ui/InfoTooltip';
-import { MarkdownText } from '@/components/ui/MarkdownText';
+import { EyeIcon } from '@/shared/ui/EyeIcon';
+import { InfoTooltip } from '@/shared/ui/InfoTooltip';
+import { MarkdownText } from '@/shared/ui/MarkdownText';
 import type {
     ActionRecommendation,
     AnalysisResponse,
@@ -47,7 +47,7 @@ import { AdBanner } from '@/components/analysis/AdBanner';
 import type { CooldownNotice } from '@/components/symbol-page/hooks/useAnalysis';
 import { TRENDLINE_DIRECTION_LABEL } from '@/components/trendline/constants';
 import { MS_PER_SECOND, SECONDS_PER_MINUTE } from '@/domain/constants/time';
-import { DEFAULT_RESET_MS as COPY_RESET_MS } from '@/components/hooks/useCopyToClipboard';
+import { DEFAULT_RESET_MS as COPY_RESET_MS } from '@/shared/hooks/useCopyToClipboard';
 import { formatAnalyzedAt } from '@/shared/lib/formatAnalyzedAt';
 import { isAnalysisStale } from '@/domain/analysis/staleThreshold';
 import { StaleAnalysisBanner } from '@/components/analysis/StaleAnalysisBanner';

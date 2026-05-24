@@ -10,6 +10,19 @@ React Client Components layer. Handles UI rendering and user interactions.
 
 ---
 
+## Migration Notice (Phase 1)
+
+**UI primitives** (`DotSeparator`, `EyeIcon`, `InfoTooltip`, `JsonLd`, `MarkdownText`, `tabs/`)는 `shared/ui/`로 이동 완료.
+`PremiumModelGateModal`만 잔류 (Phase 6에서 `features/premium-gate/`로 이동 예정).
+
+**Generic hooks** (`useDialog`, `useEscapeKey`, `useFocusTrap`, `useHydrated`, `useIsMobileViewport`,
+`useOnClickOutside`, `usePageHideCancel`, `usePageShowReload`, `usePointerTooltip`, `usePopoverToggle`,
+`useQueryParamState`, `useRovingKeyboardNav`, `useCopyToClipboard`)는 `shared/hooks/`로 이동 완료.
+
+`hooks/` 디렉토리에 잔류하는 feature-specific hooks는 이후 Phase에서 각 feature로 이동 예정.
+
+---
+
 ## Component Rules
 
 - `'use client'` required only when using hooks, event handlers, or browser APIs

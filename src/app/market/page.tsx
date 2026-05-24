@@ -26,7 +26,7 @@ import {
     SITE_URL,
 } from '@/shared/lib/seo';
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
-import { JsonLd } from '@/components/ui/JsonLd';
+import { JsonLd } from '@/shared/ui/JsonLd';
 
 // Root layout template appends "| Siglens" — exclude brand name to prevent duplication.
 const MARKET_TITLE = '오늘의 미국 주식, 섹터별 기술적 신호';

@@ -13,7 +13,7 @@ import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
 import React from 'react';
 
-jest.mock('@/components/ui/MarkdownText', () => ({
+jest.mock('@/shared/ui/MarkdownText', () => ({
     MarkdownText: ({ children }: { children: React.ReactNode }) => (
         <span>{children}</span>
     ),

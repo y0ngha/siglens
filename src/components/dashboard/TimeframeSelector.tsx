@@ -2,7 +2,7 @@
 
 import type { KeyboardEvent } from 'react';
 import { cn } from '@/shared/lib/cn';
-import { useRovingKeyboardNav } from '@/components/hooks/useRovingKeyboardNav';
+import { useRovingKeyboardNav } from '@/shared/hooks/useRovingKeyboardNav';
 import type { DashboardTimeframe } from '@y0ngha/siglens-core';
 import {
     DASHBOARD_TIMEFRAME_LABELS,

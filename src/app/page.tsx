@@ -7,7 +7,7 @@ import {
 import { StatsBar, StatsBarSkeleton } from '@/components/home/StatsBar';
 import { TickerCategories } from '@/components/home/TickerCategories';
 import { SymbolSearchPanel } from '@/components/search/SymbolSearchPanel';
-import { JsonLd } from '@/components/ui/JsonLd';
+import { JsonLd } from '@/shared/ui/JsonLd';
 import {
     countSkillFiles,
     FileSkillsLoader,

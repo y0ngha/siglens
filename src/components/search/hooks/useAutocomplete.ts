@@ -10,7 +10,7 @@ import {
 } from 'react';
 import { useRouter } from 'next/navigation';
 import type { TickerSearchResult } from '@/domain/types';
-import { useOnClickOutside } from '@/components/hooks/useOnClickOutside';
+import { useOnClickOutside } from '@/shared/hooks/useOnClickOutside';
 import { useTickerSearch } from '@/components/search/hooks/useTickerSearch';
 
 interface UseAutocompleteOptions {
