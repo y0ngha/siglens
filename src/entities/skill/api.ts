@@ -31,7 +31,6 @@ const parseYamlValue = (value: string): unknown => {
     }
     const num = Number(value);
     if (value !== '' && !isNaN(num)) return num;
-    // 따옴표로 감싸진 문자열 처리
     if (
         (value.startsWith('"') && value.endsWith('"')) ||
         (value.startsWith("'") && value.endsWith("'"))
@@ -112,9 +111,12 @@ const parseYamlBlock = (lines: string[], baseIndent: number): YamlNode =>
         { result: {}, skip: 0 }
     ).result;
 
-const parseFrontmatter = (
-    raw: string
-): { data: Record<string, unknown>; content: string } | null => {
+interface ParsedFrontmatter {
+    data: Record<string, unknown>;
+    content: string;
+}
+
+const parseFrontmatter = (raw: string): ParsedFrontmatter | null => {
     const match = /^---\n([\s\S]*?)\n---\n?([\s\S]*)$/.exec(raw);
     if (!match) return null;
 

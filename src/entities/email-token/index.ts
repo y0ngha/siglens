@@ -1,8 +1,4 @@
-export {
-    __resetEmailTokenStoreCacheForTests,
-    buildEmailTokenKey,
-    createEmailTokenStore,
-} from './api';
+export { createEmailTokenStore } from './api';
 export type {
     EmailDispatcher,
     EmailMessage,

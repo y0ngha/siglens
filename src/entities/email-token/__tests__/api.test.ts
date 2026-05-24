@@ -13,7 +13,7 @@ import {
     buildEmailTokenKey,
     createEmailTokenStore,
     type EmailTokenValue,
-} from '@/entities/email-token';
+} from '../api';
 
 const MockRedis = Redis as unknown as jest.Mock;
 
