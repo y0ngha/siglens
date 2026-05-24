@@ -2,7 +2,7 @@
 
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { DrizzleSessionRepository } from '@/infrastructure/db/sessionRepository';
+import { DrizzleSessionRepository } from '@/entities/session';
 import { AUTH_SESSION_COOKIE_NAME } from '@/infrastructure/auth/sessionCookie';
 import { logoutUser } from '@/infrastructure/auth/use-cases/logoutUser';
 import { applyAuthCookie } from '@/infrastructure/auth/applyAuthCookie';

@@ -4,20 +4,20 @@ jest.mock('next/navigation', () => ({
         throw new Error(`NEXT_REDIRECT:${path}`);
     }),
 }));
-jest.mock('@/infrastructure/db/client', () => ({
+jest.mock('@/shared/db/client', () => ({
     getDatabaseClient: jest.fn(() => ({ db: {}, sql: () => null })),
     resetDatabaseClientForTests: jest.fn(),
 }));
 jest.mock('@/infrastructure/auth/sessionCookie', () => ({
     AUTH_SESSION_COOKIE_NAME: 'siglens_session',
 }));
-jest.mock('@/infrastructure/db/userRepository', () => ({
+jest.mock('@/entities/user', () => ({
     DrizzleUserRepository: jest.fn().mockImplementation(() => ({})),
 }));
-jest.mock('@/infrastructure/db/sessionRepository', () => ({
+jest.mock('@/entities/session', () => ({
     DrizzleSessionRepository: jest.fn().mockImplementation(() => ({})),
 }));
-jest.mock('@/infrastructure/db/oauthAccountRepository', () => ({
+jest.mock('@/entities/oauth-account', () => ({
     DrizzleOAuthAccountRepository: jest
         .fn()
         .mockImplementation(() => ({ findByUserId: jest.fn() })),

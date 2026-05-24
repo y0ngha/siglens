@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import type { GradesAction, GradesEvent } from '@y0ngha/siglens-core';
-import { cn } from '@/lib/cn';
+import { cn } from '@/shared/lib/cn';
 
 const ACTION_LABEL: Record<GradesAction, string> = {
     upgrade: '상향',

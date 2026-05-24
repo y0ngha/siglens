@@ -7,12 +7,9 @@ import {
 import { StatsBar, StatsBarSkeleton } from '@/components/home/StatsBar';
 import { TickerCategories } from '@/components/home/TickerCategories';
 import { SymbolSearchPanel } from '@/components/search/SymbolSearchPanel';
-import { JsonLd } from '@/components/ui/JsonLd';
-import {
-    countSkillFiles,
-    FileSkillsLoader,
-} from '@/infrastructure/skills/loader';
-import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from '@/lib/seo';
+import { JsonLd } from '@/shared/ui/JsonLd';
+import { countSkillFiles, FileSkillsLoader } from '@/entities/skill';
+import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from '@/shared/lib/seo';
 import Link from 'next/link';
 import { cache, Suspense } from 'react';
 

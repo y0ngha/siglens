@@ -1,7 +1,7 @@
 'use client';
 
 import { Suspense } from 'react';
-import { cn } from '@/lib/cn';
+import { cn } from '@/shared/lib/cn';
 import { ErrorBoundary } from 'react-error-boundary';
 import { IndexCard } from '@/components/dashboard/IndexCard';
 import {

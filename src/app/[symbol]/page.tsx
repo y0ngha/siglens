@@ -1,5 +1,5 @@
 import { SymbolPageClient } from '@/components/symbol-page/SymbolPageClient';
-import { JsonLd } from '@/components/ui/JsonLd';
+import { JsonLd } from '@/shared/ui/JsonLd';
 import { FALLBACK_ANALYSIS } from '@/domain/chat/fallbackAnalysis';
 import {
     DEFAULT_TIMEFRAME,
@@ -9,15 +9,15 @@ import {
 import { buildAssetAboutNode } from '@/domain/seo/assetClassification';
 import { buildDisplayName } from '@/domain/ticker';
 import { getBarsAction } from '@/infrastructure/market/getBarsAction';
-import { countSkillFiles } from '@/infrastructure/skills/loader';
+import { countSkillFiles } from '@/entities/skill';
 import { getAssetInfoCached } from '@/infrastructure/ticker/getAssetInfoCached';
-import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/lib/queryConfig';
+import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/shared/config/queryConfig';
 import {
     buildBreadcrumbJsonLd,
     buildSymbolSeoContent,
     SITE_NAME,
     SITE_URL,
-} from '@/lib/seo';
+} from '@/shared/lib/seo';
 import {
     dehydrate,
     HydrationBoundary,

@@ -1,6 +1,6 @@
 'use client';
 
-import { InfoTooltip } from '@/components/ui/InfoTooltip';
+import { InfoTooltip } from '@/shared/ui/InfoTooltip';
 import type { EarningsReportComparisonItem } from '@/domain/types';
 import type React from 'react';
 

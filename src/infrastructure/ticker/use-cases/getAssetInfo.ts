@@ -1,10 +1,10 @@
 import { waitUntil } from '@vercel/functions';
 import { isValidTickerFormat } from '@/domain/ticker';
-import { DrizzleAssetTranslationRepository } from '@/infrastructure/db/tickerRepository';
+import { DrizzleAssetTranslationRepository } from '@/entities/ticker';
 import type {
     AssetTranslationRecord,
     AssetTranslationRepository,
-} from '@/infrastructure/db/types';
+} from '@/shared/db/types';
 import {
     ASSET_INFO_CACHE_TTL_WITH_KOREAN,
     ASSET_INFO_CACHE_TTL_WITHOUT_KOREAN,

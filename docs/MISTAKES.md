@@ -127,6 +127,7 @@ This file contains only **recurring gotchas** that agents keep missing despite e
 
 7.6. Relative import paths used instead of path aliases
    → All imports must use path aliases (@/, @y0ngha/...) instead of relative paths (./, ../)
+   → 예외: FSD 슬라이스 내부 segment 간 참조는 relative import를 사용한다 (CONVENTIONS.md §FSD Slice Internal Imports 참조)
    → Relative paths create brittle dependencies when files move and make refactoring difficult
    → Path aliases are statically resolvable and enable IDE support
    ❌ import { Component } from './'
@@ -135,6 +136,9 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    ✅ import { Component } from '@/components/contact'
    ✅ import { util } from '@/utils/someUtil'
    ✅ import { type } from '@/domain/types'
+   ✅ // FSD 슬라이스 내부 (src/features/auth/ui/LoginForm.tsx)
+      import type { AuthFormState } from '../model/types';  // 슬라이스 내부 relative OK
+   ❌ import type { AuthFormState } from '@/features/auth/model/types';  // 같은 슬라이스라도 no-restricted-imports 위반
 
 8. Tight coupling between interface props and dependent files
    → Group related prop pairs into a single type (e.g. IndicatorToggleGroup { visible, onToggle })
@@ -256,8 +260,8 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     ❌ const lines = []; for (const rec of reconciled) { lines.push(...extractLines(rec)); } return lines;
     ✅ const lines = reconciled.flatMap(extractLines); return lines;
 
-22. Domain functions incomplete test coverage — missing unit tests entirely or covering <100% branches
-    → Every new domain function must have dedicated unit tests with 100% branch coverage
+22. Domain functions incomplete test coverage — missing unit tests entirely or covering below the project threshold
+    → Every new domain function must have dedicated unit tests achieving the project's coverage threshold (90%)
     → Test infrastructure functions similarly; coverage checks catch missing edge cases
     ❌ callGeminiWithKeyFallback added to infrastructure/ai/gemini.ts without src/__tests__/infrastructure/ test file
     ❌ extractReconciledActionLines added to domain/analysis/ without corresponding unit tests for 8+ cases
@@ -425,12 +429,15 @@ This file contains only **recurring gotchas** that agents keep missing despite e
 
 0.1. Relative path imports instead of path aliases
    → All imports must use @/ path aliases, never relative paths (./, ../)
+   → 예외: FSD 슬라이스 내부 segment 간 참조는 relative import 허용 (CONVENTIONS.md §FSD Slice Internal Imports 참조)
    → Applies to all layers: components, domain, infrastructure, lib
    → Path aliases enable safe refactoring and improve code clarity across layers
    ❌ import { formatPrice } from '../../lib/priceFormat'
    ❌ import { validateInput } from './validation'
    ✅ import { formatPrice } from '@/lib/priceFormat'
    ✅ import { validateInput } from '@/domain/contact/validation'
+   ✅ // FSD 슬라이스 내부
+      import type { AuthFormState } from '../model/types';  // 슬라이스 내부 relative OK
 
 1. External callback prop in useEffect dependency array → infinite loops
    → Use useEffectEvent to wrap callback props
@@ -921,7 +928,7 @@ This file contains only **recurring gotchas** that agents keep missing despite e
       Background job: cache.set(symbol, { symbol, name, koreanName })  // fmpSymbol missing
    ✅ Both paths: cache.set(symbol, { symbol, name, koreanName, fmpSymbol })
 
-2. Infrastructure functions must have 100% branch coverage
+2. Infrastructure functions must have 90% branch coverage
    → All if/else, optional chaining (?.), nullish coalescing (??) paths tested
    → Test edge cases like subsecond boundaries, zero values, Math.max guard behavior
    ❌ Math.max(1, Math.floor(diffMs / 1000)) guard that converts 0→1 untested

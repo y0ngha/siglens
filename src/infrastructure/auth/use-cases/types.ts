@@ -1,5 +1,5 @@
 import type { OAuthProvider } from '@/domain/types';
-import type { AgreementRepository } from '@/infrastructure/db/agreementRepository';
+import type { AgreementRepository } from '@/entities/agreement';
 import type {
     AuthSessionRecord,
     AuthUserRecord,
@@ -7,17 +7,14 @@ import type {
     OAuthAccountRepository,
     SessionRepository,
     UserRepository,
-} from '@/infrastructure/db/types';
+} from '@/shared/db/types';
 import type { OAuthRevoker } from '@/infrastructure/auth/oauth/revokerTypes';
 import type {
     PasswordHasher,
     PasswordVerifier,
 } from '@/infrastructure/auth/types';
-import type {
-    EmailDispatcher,
-    EmailMessage,
-    EmailTokenStore,
-} from '@/infrastructure/email/tokenStore';
+import type { EmailDispatcher, EmailMessage } from '@/shared/email';
+import type { EmailTokenStore } from '@/entities/email-token';
 import type {
     ConfirmPasswordResetError,
     ConfirmPasswordResetErrorCode,

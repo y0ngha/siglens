@@ -2,8 +2,11 @@
 
 ## Core Principle
 
-Handles communication with external systems (Alpaca API, AI Providers, Skills file I/O).
+Handles communication with external systems (Alpaca API, AI Providers).
 Define interfaces (`types.ts`) **before** implementation.
+
+> **Note:** Email (shared/email, entities/email-token) and Skills (entities/skill) have been
+> migrated out of infrastructure in Phase 2.
 
 **Dependency:** `→ see docs/ARCHITECTURE.md` for full layer dependency rules.
 
@@ -13,7 +16,7 @@ Define interfaces (`types.ts`) **before** implementation.
 
 - Always use `export function` (named function declaration)
 - No `export default` or arrow function exports
-- Classes allowed only for special cases (e.g., Skills Loader, Providers)
+- Classes allowed only for special cases (e.g., Providers)
 
 ---
 
@@ -28,12 +31,6 @@ Define interfaces (`types.ts`) **before** implementation.
 - Supports multiple AI providers (Claude, Gemini, etc.)
 - Interchangeable via common interface (`AIProvider`)
 - Provider selected by `AI_PROVIDER` env var (`createAIProvider()` in factory.ts)
-
-### skills/ (Skills Loader)
-
-- `FileSkillsLoader` recursively scans `skills/` for `.md` files → parses into `Skill[]`
-- Parsed `Skill[]` is passed to `domain/analysis/prompt.ts`
-- Domain has no file I/O, so infrastructure must load and inject
 
 ### market/barsApi.ts
 

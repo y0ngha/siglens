@@ -3,7 +3,7 @@ import {
     findBarIndex,
     resolveOverlayValues,
 } from '@/components/chart/utils/overlayLabelUtils';
-import { CHART_COLORS, getPeriodColor } from '@/lib/chartColors';
+import { CHART_COLORS, getPeriodColor } from '@/shared/lib/chartColors';
 import { EMPTY_SMC_RESULT } from '@y0ngha/siglens-core';
 import type { Bar, IndicatorResult } from '@y0ngha/siglens-core';
 

@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import type { StockWithConflict } from '@y0ngha/siglens-core';
-import { cn } from '@/lib/cn';
-import { InfoTooltip } from '@/components/ui/InfoTooltip';
+import { cn } from '@/shared/lib/cn';
+import { InfoTooltip } from '@/shared/ui/InfoTooltip';
 import { SignalStockCard } from '@/components/dashboard/SignalStockCard';
 
 interface SignalSubsectionProps {

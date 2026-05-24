@@ -1,6 +1,7 @@
 import { defineConfig, globalIgnores } from 'eslint/config';
 import nextVitals from 'eslint-config-next/core-web-vitals';
 import nextTs from 'eslint-config-next/typescript';
+import boundaries from 'eslint-plugin-boundaries';
 
 const eslintConfig = defineConfig([
     ...nextVitals,
@@ -42,6 +43,183 @@ const eslintConfig = defineConfig([
                     varsIgnorePattern: '^_',
                     caughtErrorsIgnorePattern: '^_',
                     destructuredArrayIgnorePattern: '^_',
+                },
+            ],
+        },
+    },
+    {
+        plugins: { boundaries },
+        settings: {
+            'boundaries/elements': [
+                // 새 FSD layer (Phase 0에서는 디렉토리가 아직 생성되지 않음)
+                // ⚠️ src/pages/는 FSD composition layer 용도. Next.js 라우팅은 src/app/에서만 처리.
+                // Next.js App Router 프로젝트에서 src/pages/ 파일 추가 시 Pages Router 활성화 주의.
+                { type: 'pages', pattern: 'src/pages/*' },
+                { type: 'widgets', pattern: 'src/widgets/*' },
+                { type: 'features', pattern: 'src/features/*' },
+                { type: 'entities', pattern: 'src/entities/*' },
+                { type: 'shared', pattern: 'src/shared/**' },
+                // 옛 layer (Phase 1~9 동안 점진 제거)
+                { type: 'legacy-app', pattern: 'src/app/**' },
+                { type: 'legacy-comp', pattern: 'src/components/**' },
+                { type: 'legacy-domain', pattern: 'src/domain/**' },
+                { type: 'legacy-infra', pattern: 'src/infrastructure/**' },
+                { type: 'legacy-lib', pattern: 'src/lib/**' },
+            ],
+        },
+        rules: {
+            'boundaries/element-types': [
+                'error',
+                {
+                    default: 'disallow',
+                    rules: [
+                        {
+                            from: 'pages',
+                            allow: [
+                                'widgets',
+                                'features',
+                                'entities',
+                                'shared',
+                                'legacy-comp',
+                                'legacy-domain',
+                                'legacy-infra',
+                                'legacy-lib',
+                            ],
+                        },
+                        {
+                            from: 'widgets',
+                            allow: [
+                                'features',
+                                'entities',
+                                'shared',
+                                'legacy-comp',
+                                'legacy-domain',
+                                'legacy-infra',
+                                'legacy-lib',
+                            ],
+                        },
+                        {
+                            from: 'features',
+                            allow: [
+                                'entities',
+                                'shared',
+                                'legacy-comp', // 마이그레이션 중 임시 허용: 새 feature가 아직 widgets로 이동하지 않은 legacy UI를 사용. Phase 7 완료 시 제거.
+                                'legacy-domain',
+                                'legacy-infra',
+                                'legacy-lib',
+                            ],
+                        },
+                        {
+                            from: 'entities',
+                            allow: [
+                                'shared',
+                                'legacy-domain',
+                                'legacy-infra',
+                                'legacy-lib',
+                            ],
+                        },
+                        {
+                            from: 'shared',
+                            // 마이그레이션 중 임시 허용: shared로 이동한 파일이 아직 legacy-domain 타입/상수를 참조.
+                            // Phase 3 (entities 마이그레이션) 완료 시 legacy-domain 제거.
+                            allow: ['shared', 'legacy-domain'],
+                        },
+                        // 옛 layer 간 의존: 현재 코드 그대로 허용
+                        {
+                            from: 'legacy-app',
+                            allow: [
+                                'pages',
+                                'widgets',
+                                'features',
+                                'entities',
+                                'shared',
+                                'legacy-comp',
+                                'legacy-domain',
+                                'legacy-infra',
+                                'legacy-lib',
+                            ],
+                        },
+                        {
+                            // legacy-comp → legacy-infra: 옛 코드 현상 유지 (현상 유지 허용).
+                            // .tsx 파일의 직접 infrastructure import는 ARCHITECTURE.md 규칙으로 별도 차단되며,
+                            // 이 boundaries 규칙은 hooks/와 .tsx를 구분하지 않음.
+                            // Phase 7 (widgets 마이그레이션) 완료 시 legacy-comp 타입 제거.
+                            from: 'legacy-comp',
+                            allow: [
+                                // Phase 5+: components hooks가 entities actions/hooks를 import 필요.
+                                // Phase 7 (widgets 마이그레이션) 완료 시 legacy-comp 자체 제거.
+                                'entities',
+                                'legacy-domain',
+                                'legacy-infra',
+                                'legacy-lib',
+                                'shared',
+                            ],
+                        },
+                        {
+                            from: 'legacy-domain',
+                            allow: ['legacy-lib', 'shared'],
+                        },
+                        {
+                            // Phase 2: repositories가 entities로 이동하면서 legacy-infra에서 entity import 필요.
+                            // Phase 5 (features auth) 완료 시 legacy-infra 의존 자체가 사라짐.
+                            from: 'legacy-infra',
+                            allow: [
+                                'entities',
+                                'legacy-domain',
+                                'legacy-lib',
+                                'shared',
+                            ],
+                        },
+                        {
+                            from: 'legacy-lib',
+                            allow: ['legacy-domain', 'shared'],
+                        },
+                    ],
+                },
+            ],
+        },
+    },
+    {
+        files: ['src/**/*.{ts,tsx}'],
+        ignores: ['src/**/*.test.{ts,tsx}', 'src/**/__tests__/**'],
+        rules: {
+            'no-restricted-imports': [
+                'error',
+                {
+                    patterns: [
+                        // features — barrel + deep path
+                        '@/features/*/model',
+                        '@/features/*/model/*',
+                        '@/features/*/hooks',
+                        '@/features/*/hooks/*',
+                        '@/features/*/ui',
+                        '@/features/*/ui/*',
+                        '@/features/*/lib',
+                        '@/features/*/lib/*',
+                        '@/features/*/api',
+                        '@/features/*/api/*',
+                        // widgets — barrel + deep path
+                        '@/widgets/*/ui',
+                        '@/widgets/*/ui/*',
+                        '@/widgets/*/hooks',
+                        '@/widgets/*/hooks/*',
+                        '@/widgets/*/lib',
+                        '@/widgets/*/lib/*',
+                        '@/widgets/*/model', // widgets 설계에 model 없음, 방어적 차단
+                        '@/widgets/*/model/*',
+                        // entities — barrel + deep path (actions 제외: 'use server')
+                        '@/entities/*/api',
+                        '@/entities/*/api/*',
+                        '@/entities/*/model',
+                        '@/entities/*/model/*',
+                        '@/entities/*/lib',
+                        '@/entities/*/lib/*',
+                        '@/entities/*/ui',
+                        '@/entities/*/ui/*',
+                        // siglens-core deep import 차단 (CLAUDE.md / ARCHITECTURE.md 정책)
+                        '@y0ngha/siglens-core/dist',
+                        '@y0ngha/siglens-core/dist/*',
+                    ],
                 },
             ],
         },

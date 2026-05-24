@@ -1,4 +1,4 @@
-import type { ContactRepository } from '@/infrastructure/db/contactRepository';
+import type { ContactRepository } from '@/entities/inquiry';
 
 /** Dependencies required by the `submitInquiry` use-case. */
 export interface SubmitInquiryDeps {

@@ -3,12 +3,9 @@ import { readFileSync } from 'fs';
 import { glob } from 'glob';
 import matter from 'gray-matter';
 import { z } from 'zod';
-import {
-    TERMS_KIND_VALUES,
-    type TermsKind,
-} from '@/infrastructure/db/constants';
-import { DrizzleTermsRepository } from '@/infrastructure/db/termsRepository';
-import { getDatabaseClient } from '@/infrastructure/db/client';
+import { TERMS_KIND_VALUES, type TermsKind } from '@/shared/db/constants';
+import { DrizzleTermsRepository } from '@/entities/terms';
+import { getDatabaseClient } from '@/shared/db/client';
 
 const FrontmatterSchema = z.object({
     kind: z.enum(TERMS_KIND_VALUES),

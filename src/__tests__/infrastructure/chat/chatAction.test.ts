@@ -1,8 +1,8 @@
 import { callAiProviderRouter } from '@/infrastructure/ai/router';
 import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
 import { chatAction } from '@/infrastructure/chat/chatAction';
-import { getDatabaseClient } from '@/infrastructure/db/client';
-import { DrizzleUserApiKeyRepository } from '@/infrastructure/db/userApiKeyRepository';
+import { getDatabaseClient } from '@/shared/db/client';
+import { DrizzleUserApiKeyRepository } from '@/entities/api-key';
 import type {
     AnalysisResponse,
     ChatActionResult,
@@ -42,11 +42,11 @@ jest.mock('@/infrastructure/auth/getCurrentUser', () => ({
     getCurrentUser: jest.fn(),
 }));
 
-jest.mock('@/infrastructure/db/client', () => ({
+jest.mock('@/shared/db/client', () => ({
     getDatabaseClient: jest.fn(),
 }));
 
-jest.mock('@/infrastructure/db/userApiKeyRepository', () => ({
+jest.mock('@/entities/api-key', () => ({
     DrizzleUserApiKeyRepository: jest.fn(),
 }));
 

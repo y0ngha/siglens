@@ -9,8 +9,8 @@ import type {
 import { useMemo } from 'react';
 import { BotBlockedNotice } from '@/components/ui/BotBlockedNotice';
 import { usePublishSymbolChat } from '@/components/chat/hooks/useSymbolChat';
-import { cn } from '@/lib/cn';
-import { formatAnalyzedAt } from '@/lib/formatAnalyzedAt';
+import { cn } from '@/shared/lib/cn';
+import { formatAnalyzedAt } from '@/shared/lib/formatAnalyzedAt';
 import { OptionsAiAnalysisError } from '@/components/options/OptionsAiAnalysisError';
 import { OptionsAiAnalysisSkeleton } from '@/components/options/OptionsAiAnalysisSkeleton';
 import { useOptionsAnalysis } from '@/components/options/hooks/useOptionsAnalysis';

@@ -2,12 +2,12 @@
 // test run synchronously and lets us assert on delay schedules without burning
 // real wall-clock time. `jest.mock` is hoisted to the top of the file so it
 // runs before the static imports below (required by `import/first`).
-jest.mock('@/lib/sleep', () => ({
+jest.mock('@/shared/lib/sleep', () => ({
     sleep: jest.fn().mockResolvedValue(undefined),
 }));
 
-import { withRetry } from '@/infrastructure/utils/withRetry';
-import { sleep } from '@/lib/sleep';
+import { withRetry } from '@/shared/lib/withRetry';
+import { sleep } from '@/shared/lib/sleep';
 
 const sleepMock = sleep as jest.MockedFunction<typeof sleep>;
 

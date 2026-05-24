@@ -25,7 +25,7 @@ jest.mock('react-markdown', () => () => null);
 jest.mock('@/components/symbol-page/SymbolPageClient', () => ({
     SymbolPageClient: () => null,
 }));
-jest.mock('@/components/ui/JsonLd', () => ({
+jest.mock('@/shared/ui/JsonLd', () => ({
     JsonLd: () => null,
 }));
 jest.mock('@/components/symbol-page/CrossLinkCards', () => ({
@@ -110,7 +110,7 @@ jest.mock('@/app/[symbol]/news/newsData', () => ({
     getNewsList: jest.fn(() => Promise.resolve([])),
 }));
 
-jest.mock('@/infrastructure/utils/dateKey', () => ({
+jest.mock('@/shared/lib/dateKey', () => ({
     todayKstIsoDate: jest.fn(() => '2026-05-21'),
 }));
 
@@ -141,7 +141,7 @@ jest.mock('@/infrastructure/market/getBarsAction', () => ({
     getBarsAction: jest.fn(),
 }));
 
-jest.mock('@/infrastructure/skills/loader', () => ({
+jest.mock('@/entities/skill', () => ({
     countSkillFiles: jest.fn(() => Promise.resolve({ indicators: 13 })),
 }));
 

@@ -1,6 +1,6 @@
 import type { CacheProvider } from '@y0ngha/siglens-core';
 import type { KoreanTickerEntry } from '@/domain/types';
-import type { KoreanTickerRepository } from '@/infrastructure/db/types';
+import type { KoreanTickerRepository } from '@/shared/db/types';
 
 const mockCache: {
     get: jest.Mock;
@@ -37,7 +37,7 @@ jest.mock('@y0ngha/siglens-core', () => ({
 jest.mock('@/infrastructure/ticker/db', () => ({
     tryGetTickerDatabaseClient: () => tryGetTickerDatabaseClientMock(),
 }));
-jest.mock('@/infrastructure/db/tickerRepository', () => ({
+jest.mock('@/entities/ticker', () => ({
     DrizzleKoreanTickerRepository: class {
         constructor(db: unknown) {
             return repositoryFactoryMock(db) as unknown as object;

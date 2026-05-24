@@ -5,8 +5,8 @@ import type {
     FundamentalCashFlowInput,
 } from '@y0ngha/siglens-core';
 import { EmptySectionCard } from '@/components/fundamental/sections/EmptySectionCard';
-import { cn } from '@/lib/cn';
-import { InfoTooltip } from '@/components/ui/InfoTooltip';
+import { cn } from '@/shared/lib/cn';
+import { InfoTooltip } from '@/shared/ui/InfoTooltip';
 
 const HEADING_ID = 'health-heading';
 const HEADING_CLASS_NAME = 'mb-4 text-lg font-semibold tracking-tight';

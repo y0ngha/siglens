@@ -1,7 +1,7 @@
 'use server';
 
 import type { MarketSummaryActionResult } from '@/domain/types';
-import { isBot } from '@/infrastructure/http/isBot';
+import { isBot } from '@/shared/api/isBot';
 import {
     getMarketSummary,
     getMarketSummaryWithBriefing,

@@ -1,11 +1,11 @@
 'use server';
 
 import { verifyEmail } from '@/infrastructure/auth/use-cases/verifyEmail';
-import { createEmailTokenStore } from '@/infrastructure/email/tokenStore';
+import { createEmailTokenStore } from '@/entities/email-token';
 import type { VerifyEmailFormState } from '@/domain/auth/formTypes';
 import { AUTH_SERVICE_UNAVAILABLE_MESSAGE } from '@/infrastructure/auth/errorMessages';
 import { getAuthDatabaseClient } from '@/infrastructure/auth/db';
-import { DrizzleUserRepository } from '@/infrastructure/db/userRepository';
+import { DrizzleUserRepository } from '@/entities/user';
 import { normalizeEmail } from '@/domain/auth/validation';
 
 export async function verifyEmailAction(

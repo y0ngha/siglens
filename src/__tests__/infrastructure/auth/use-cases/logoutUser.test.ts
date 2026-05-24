@@ -1,6 +1,6 @@
 import { AUTH_SESSION_COOKIE_NAME } from '@/infrastructure/auth/sessionCookie';
 import { logoutUser } from '@/infrastructure/auth/use-cases/logoutUser';
-import type { SessionRepository } from '@/infrastructure/db/types';
+import type { SessionRepository } from '@/shared/db/types';
 
 function makeDependencies(sessionInvalidated: boolean): {
     dependencies: { sessions: SessionRepository };

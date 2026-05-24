@@ -9,7 +9,7 @@ import { useWaitForNewsCards } from '@/components/news/hooks/useWaitForNewsCards
 import { buildChatState } from '@/components/news/utils/buildChatState';
 import { BotBlockedNotice } from '@/components/ui/BotBlockedNotice';
 import { useDefaultModelId } from '@/components/symbol-page/hooks/useDefaultModelId';
-import { cn } from '@/lib/cn';
+import { cn } from '@/shared/lib/cn';
 import {
     type NewsAnalysisResponse,
     type NewsSentiment,

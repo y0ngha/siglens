@@ -5,7 +5,10 @@ import { useQuery } from '@tanstack/react-query';
 import type { MarketIndexData, MarketSectorData } from '@y0ngha/siglens-core';
 import type { MarketSummaryActionResult } from '@/domain/types';
 import { getMarketSummaryAction } from '@/infrastructure/dashboard/getMarketSummaryAction';
-import { MARKET_SUMMARY_STALE_TIME_MS, QUERY_KEYS } from '@/lib/queryConfig';
+import {
+    MARKET_SUMMARY_STALE_TIME_MS,
+    QUERY_KEYS,
+} from '@/shared/config/queryConfig';
 
 interface UseMarketSummaryReturn {
     data: MarketSummaryActionResult | undefined;

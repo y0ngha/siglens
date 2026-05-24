@@ -1,4 +1,4 @@
-import { todayKstIsoDate } from '@/infrastructure/utils/dateKey';
+import { todayKstIsoDate } from '@/shared/lib/dateKey';
 
 describe('todayKstIsoDate 함수는', () => {
     afterEach(() => {

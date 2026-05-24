@@ -2,8 +2,8 @@ import { requestPasswordReset } from '@/infrastructure/auth/use-cases/requestPas
 import type { RequestPasswordResetDependencies } from '@/infrastructure/auth/use-cases/types';
 import { PASSWORD_RESET_TTL_SECONDS } from '@/infrastructure/auth/use-cases/constants';
 import { hashEmailToken } from '@/infrastructure/auth/tokenUtils';
-import type { EmailMessage } from '@/infrastructure/email/tokenStore';
-import type { EmailAuthUserRecord } from '@/infrastructure/db/types';
+import type { EmailMessage } from '@/shared/email/types';
+import type { EmailAuthUserRecord } from '@/shared/db/types';
 
 const createdAt = new Date('2026-04-27T00:00:00.000Z');
 const updatedAt = new Date('2026-04-27T00:00:01.000Z');

@@ -25,9 +25,9 @@ import {
     releaseReanalyzeCooldown,
     tryAcquireReanalyzeCooldown,
 } from '@/infrastructure/market/reanalyzeCooldown';
-import { sleep } from '@/lib/sleep';
-import { CHART_ANALYSIS_POLL_INTERVAL_MS } from '@/lib/pollingConfig';
-import { usePageHideCancel } from '@/components/hooks/usePageHideCancel';
+import { sleep } from '@/shared/lib/sleep';
+import { CHART_ANALYSIS_POLL_INTERVAL_MS } from '@/shared/config/pollingConfig';
+import { usePageHideCancel } from '@/shared/hooks/usePageHideCancel';
 import type { CancelJobEntry } from '@/domain/types';
 
 interface AnalyzeMutationVariables {

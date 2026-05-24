@@ -11,22 +11,22 @@ import { EventCalendar } from '@/components/news/sections/EventCalendar';
 import { NewsList } from '@/components/news/sections/NewsList';
 import { CrossLinkCards } from '@/components/symbol-page/CrossLinkCards';
 import { SectionSkeleton } from '@/components/symbol-page/SectionSkeleton';
-import { JsonLd } from '@/components/ui/JsonLd';
+import { JsonLd } from '@/shared/ui/JsonLd';
 import { VALID_TICKER_RE } from '@/domain/constants/market';
 import { buildAssetAboutNode } from '@/domain/seo/assetClassification';
 import { buildDisplayName } from '@/domain/ticker';
 import { ensureNewsCardsAnalyzedAction } from '@/infrastructure/market/ensureNewsCardsAnalyzedAction';
 import { getTodayIsoDay } from '@/infrastructure/seo/getTodayIsoDay';
 import { getAssetInfoCached } from '@/infrastructure/ticker/getAssetInfoCached';
-import { todayKstIsoDate } from '@/infrastructure/utils/dateKey';
+import { todayKstIsoDate } from '@/shared/lib/dateKey';
 import {
     buildBreadcrumbJsonLd,
     buildSymbolNewsSeoContent,
     buildSymbolSeoContent,
     SITE_NAME,
     SITE_URL,
-} from '@/lib/seo';
-import { isBot } from '@/infrastructure/http/isBot';
+} from '@/shared/lib/seo';
+import { isBot } from '@/shared/api/isBot';
 import { waitUntil } from '@vercel/functions';
 import type { Metadata } from 'next';
 import { headers } from 'next/headers';

@@ -1,4 +1,4 @@
-import { extractToc } from '@/lib/legal-toc';
+import { extractToc } from '@/shared/lib/legal-toc';
 
 describe('extractToc', () => {
     it('extracts h2 headings only (h3 ignored)', () => {

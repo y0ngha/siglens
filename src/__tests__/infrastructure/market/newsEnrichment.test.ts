@@ -3,7 +3,7 @@ import {
     toEnrichedNewsItem,
     type EnrichedNewsRow,
 } from '@/infrastructure/market/newsEnrichment';
-import type { NewsRow } from '@/infrastructure/db/newsRepository';
+import type { NewsRow } from '@/entities/news-article';
 
 const baseRow: NewsRow = {
     id: 'id-1',

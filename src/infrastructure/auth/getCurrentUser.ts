@@ -1,9 +1,9 @@
 import { cookies } from 'next/headers';
 import { AUTH_SESSION_COOKIE_NAME } from '@/infrastructure/auth/sessionCookie';
-import { DrizzleSessionRepository } from '@/infrastructure/db/sessionRepository';
-import { DrizzleUserRepository } from '@/infrastructure/db/userRepository';
+import { DrizzleSessionRepository } from '@/entities/session';
+import { DrizzleUserRepository } from '@/entities/user';
 import { findUserBySessionToken } from '@/infrastructure/auth/use-cases/findUserBySessionToken';
-import type { AuthUserRecord } from '@/infrastructure/db/types';
+import type { AuthUserRecord } from '@/shared/db/types';
 import { getAuthDatabaseClient } from '@/infrastructure/auth/db';
 
 /** 현재 요청의 세션 쿠키를 읽어 사용자 레코드를 반환한다. 쿠키 없음/만료/사용자 없음 시 null. */

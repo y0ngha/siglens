@@ -2,8 +2,8 @@
 
 import type { ContactFormState } from '@/domain/types';
 import { validateContactInput } from '@/domain/contact/validation';
-import { getDatabaseClient } from '@/infrastructure/db/client';
-import { DrizzleContactRepository } from '@/infrastructure/db/contactRepository';
+import { getDatabaseClient } from '@/shared/db/client';
+import { DrizzleContactRepository } from '@/entities/inquiry';
 import { submitInquiry } from '@/infrastructure/contact/use-cases/submitInquiry';
 
 function getVal(formData: FormData, key: string): string {

@@ -1,5 +1,5 @@
 import { createExpiredSessionCookie } from '@/infrastructure/auth/sessionCookie';
-import type { OAuthAccountRecord } from '@/infrastructure/db/types';
+import type { OAuthAccountRecord } from '@/shared/db/types';
 import type {
     DeleteAccountDependencies,
     DeleteAccountError,

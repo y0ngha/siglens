@@ -1,5 +1,5 @@
-import { SITE_NAME, SITE_URL } from '@/lib/seo';
-import { JsonLd } from '@/components/ui/JsonLd';
+import { SITE_NAME, SITE_URL } from '@/shared/lib/seo';
+import { JsonLd } from '@/shared/ui/JsonLd';
 
 export function SiteJsonLd() {
     const data = {

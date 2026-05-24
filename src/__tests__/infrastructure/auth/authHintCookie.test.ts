@@ -1,5 +1,5 @@
+import { AUTH_HINT_COOKIE_NAME } from '@/shared/config/cookieNames';
 import {
-    AUTH_HINT_COOKIE_NAME,
     createAuthHintCookie,
     createExpiredAuthHintCookie,
 } from '@/infrastructure/auth/authHintCookie';

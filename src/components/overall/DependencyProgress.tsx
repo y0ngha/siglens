@@ -1,5 +1,5 @@
 import { MS_PER_SECOND, SECONDS_PER_MINUTE } from '@/domain/constants/time';
-import { AUGMENT_AND_OVERALL_POLL_INTERVAL_MS } from '@/lib/pollingConfig';
+import { AUGMENT_AND_OVERALL_POLL_INTERVAL_MS } from '@/shared/config/pollingConfig';
 import type { OverallAxis } from '@y0ngha/siglens-core';
 
 const AXIS_LABEL: Record<OverallAxis, string> = {

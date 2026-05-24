@@ -1,13 +1,13 @@
 import { ContactDialog } from '@/components/layout/ContactDialog';
 import { CurrentYear } from '@/components/layout/CurrentYear';
-import { DotSeparator } from '@/components/ui/DotSeparator';
+import { DotSeparator } from '@/shared/ui/DotSeparator';
 import {
     INVESTMENT_DISCLAIMER,
     PRIVACY_PATH,
     PRIVACY_TITLE,
     TERMS_PATH,
     TERMS_TITLE,
-} from '@/lib/legal';
+} from '@/shared/lib/legal';
 import Link from 'next/link';
 
 export function Footer() {

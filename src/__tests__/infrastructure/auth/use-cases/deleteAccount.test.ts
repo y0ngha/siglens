@@ -1,9 +1,6 @@
 import { AUTH_SESSION_COOKIE_NAME } from '@/infrastructure/auth/sessionCookie';
 import { deleteAccount } from '@/infrastructure/auth/use-cases/deleteAccount';
-import type {
-    OAuthAccountRepository,
-    UserRepository,
-} from '@/infrastructure/db/types';
+import type { OAuthAccountRepository, UserRepository } from '@/shared/db/types';
 import type { OAuthRevoker } from '@/infrastructure/auth/oauth/revokerTypes';
 
 async function waitFor(

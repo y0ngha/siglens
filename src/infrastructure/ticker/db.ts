@@ -1,8 +1,8 @@
 import {
     resetDatabaseClientForTests,
     tryGetDatabaseClient,
-} from '@/infrastructure/db/client';
-import type { DatabaseClient } from '@/infrastructure/db/types';
+} from '@/shared/db/client';
+import type { DatabaseClient } from '@/shared/db/types';
 
 /**
  * Returns a cached `DatabaseClient`, or `null` when `DATABASE_URL` is unset.

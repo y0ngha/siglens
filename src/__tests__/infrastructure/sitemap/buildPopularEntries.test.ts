@@ -6,7 +6,7 @@ import { POPULAR_TICKERS } from '@/domain/constants/popular-tickers';
 import { MS_PER_HOUR } from '@/domain/constants/time';
 import { hasOptionsMarket } from '@/infrastructure/options/optionsDataCache';
 import { buildPopularEntries } from '@/infrastructure/sitemap/buildPopularEntries';
-import { SITE_URL } from '@/lib/seo';
+import { SITE_URL } from '@/shared/lib/seo';
 
 const mockedHasOptionsMarket = hasOptionsMarket as jest.MockedFunction<
     typeof hasOptionsMarket

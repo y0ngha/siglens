@@ -7,7 +7,7 @@ import {
     QUERY_GC_TIME_MS,
     QUERY_KEYS,
     USER_TIER_STALE_TIME_MS,
-} from '@/lib/queryConfig';
+} from '@/shared/config/queryConfig';
 
 interface UseUserTierResult {
     /** Resolved tier for the current user, or {@link DEFAULT_TIER} during fetch. */

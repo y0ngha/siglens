@@ -1,4 +1,4 @@
-import { getEtSessionStatus } from '@/domain/market/session';
+import { getEtSessionStatus } from '@/shared/lib/marketSession';
 
 export type OptionsCacheLifeProfile =
     | 'options-market-open'

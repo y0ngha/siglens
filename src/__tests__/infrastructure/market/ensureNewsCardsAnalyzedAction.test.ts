@@ -23,7 +23,7 @@ jest.mock('@y0ngha/siglens-core', () => ({
     pollNewsCardAnalysis: jest.fn(),
 }));
 
-jest.mock('@/lib/sleep', () => ({
+jest.mock('@/shared/lib/sleep', () => ({
     sleep: jest.fn().mockResolvedValue(undefined),
 }));
 
@@ -33,11 +33,11 @@ jest.mock('@/infrastructure/fmp/newsClient', () => ({
     })),
 }));
 
-jest.mock('@/infrastructure/db/client', () => ({
+jest.mock('@/shared/db/client', () => ({
     getDatabaseClient: jest.fn().mockReturnValue({ db: {} }),
 }));
 
-jest.mock('@/infrastructure/db/newsRepository', () => ({
+jest.mock('@/entities/news-article', () => ({
     DrizzleNewsRepository: jest.fn().mockImplementation(() => ({
         upsertNewsItem: jest.fn(),
         attachAnalysis: jest.fn(),
@@ -49,7 +49,7 @@ jest.mock('@/infrastructure/db/newsRepository', () => ({
 // Typed mocks & fixtures
 // ---------------------------------------------------------------------------
 
-import { DrizzleNewsRepository } from '@/infrastructure/db/newsRepository';
+import { DrizzleNewsRepository } from '@/entities/news-article';
 
 const MockNewsRepository = DrizzleNewsRepository as jest.MockedClass<
     typeof DrizzleNewsRepository

@@ -5,7 +5,7 @@ import { redirect } from 'next/navigation';
 import { AuthCardShell } from '@/components/auth/AuthCardShell';
 import { DeleteAccountConfirm } from '@/components/auth/DeleteAccountConfirm';
 import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
-import { SITE_NAME, SITE_URL } from '@/lib/seo';
+import { SITE_NAME, SITE_URL } from '@/shared/lib/seo';
 
 // noindex 페이지에도 canonical/og:url을 명시한다 (login/signup 정책과 일관).
 export const metadata: Metadata = {

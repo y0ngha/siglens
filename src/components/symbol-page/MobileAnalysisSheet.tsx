@@ -2,7 +2,7 @@
 
 import { useEffect, type ReactNode } from 'react';
 import { Drawer } from 'vaul';
-import { cn } from '@/lib/cn';
+import { cn } from '@/shared/lib/cn';
 import {
     SNAP_POINTS_MUTABLE,
     type SnapPoint,

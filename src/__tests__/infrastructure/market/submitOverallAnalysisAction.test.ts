@@ -19,11 +19,11 @@ jest.mock('@/infrastructure/fmp/fundamentalClient', () => ({
     FmpFundamentalClient: jest.fn().mockImplementation(() => ({})),
 }));
 
-jest.mock('@/infrastructure/db/client', () => ({
+jest.mock('@/shared/db/client', () => ({
     getDatabaseClient: jest.fn().mockReturnValue({ db: {} }),
 }));
 
-jest.mock('@/infrastructure/db/newsRepository', () => ({
+jest.mock('@/entities/news-article', () => ({
     DrizzleNewsRepository: jest.fn().mockImplementation(() => ({
         listBySymbol: jest.fn(),
     })),
@@ -49,7 +49,7 @@ jest.mock('@/infrastructure/options/optionsDataCache', () => ({
     fetchOptionsSnapshot: jest.fn(),
 }));
 
-jest.mock('@/domain/market/session', () => ({
+jest.mock('@/shared/lib/marketSession', () => ({
     isUsOptionsRegularSession: jest.fn(),
     isOpenInterestSnapshotStale: jest.fn(),
 }));
@@ -64,7 +64,7 @@ import {
     type EarningsCalendarItem,
 } from '@y0ngha/siglens-core';
 import { headers } from 'next/headers';
-import { DrizzleNewsRepository } from '@/infrastructure/db/newsRepository';
+import { DrizzleNewsRepository } from '@/entities/news-article';
 import { getNextEarningsReport } from '@/infrastructure/market/nextEarningsReport';
 import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
 import { resolveTierAndByok } from '@/infrastructure/market/byokGate';
@@ -72,7 +72,7 @@ import { fetchOptionsSnapshot } from '@/infrastructure/options/optionsDataCache'
 import {
     isUsOptionsRegularSession,
     isOpenInterestSnapshotStale,
-} from '@/domain/market/session';
+} from '@/shared/lib/marketSession';
 import type { AnalysisGateError } from '@/domain/types';
 
 const mockHeaders = headers as jest.MockedFunction<typeof headers>;

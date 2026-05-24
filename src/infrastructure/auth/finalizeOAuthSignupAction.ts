@@ -15,10 +15,10 @@ import {
     DEFAULT_SESSION_TTL_SECONDS,
 } from '@/infrastructure/auth/sessionCookie';
 import { isSecureCookieEnv } from '@/infrastructure/auth/sessionCookieOptions';
-import { DrizzleAgreementRepository } from '@/infrastructure/db/agreementRepository';
-import { DrizzleSessionRepository } from '@/infrastructure/db/sessionRepository';
-import { DrizzleTermsRepository } from '@/infrastructure/db/termsRepository';
-import { DrizzleUserRepository } from '@/infrastructure/db/userRepository';
+import { DrizzleAgreementRepository } from '@/entities/agreement';
+import { DrizzleSessionRepository } from '@/entities/session';
+import { DrizzleTermsRepository } from '@/entities/terms';
+import { DrizzleUserRepository } from '@/entities/user';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 

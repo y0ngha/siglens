@@ -6,11 +6,11 @@ const mockGetComparisonItems = jest.fn();
 const mockUpsertMany = jest.fn();
 const mockGetEarningsReports = jest.fn();
 
-jest.mock('@/infrastructure/db/client', () => ({
+jest.mock('@/shared/db/client', () => ({
     getDatabaseClient: jest.fn(() => ({ db: mockDb })),
 }));
 
-jest.mock('@/infrastructure/db/earningsReportsRepository', () => ({
+jest.mock('@/entities/earnings-report', () => ({
     DrizzleEarningsReportsRepository: jest.fn().mockImplementation(() => ({
         getLatestFetchedAt: mockGetLatestFetchedAt,
         getComparisonItems: mockGetComparisonItems,

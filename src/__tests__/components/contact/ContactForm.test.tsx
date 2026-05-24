@@ -12,7 +12,7 @@ import type { AuthUserRecord } from '@/domain/auth/types';
 
 // Block transitive imports that pull in the Neon serverless client (which
 // requires Web APIs not available in the jsdom test environment).
-jest.mock('@/infrastructure/db/client', () => ({
+jest.mock('@/shared/db/client', () => ({
     getDatabaseClient: jest.fn(() => ({ db: {}, sql: () => null })),
 }));
 jest.mock('@/components/contact/hooks/useContactForm');

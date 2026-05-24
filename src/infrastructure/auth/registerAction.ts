@@ -17,11 +17,11 @@ import { DEFAULT_SESSION_TTL_SECONDS } from '@/infrastructure/auth/sessionCookie
 import { isSecureCookieEnv } from '@/infrastructure/auth/sessionCookieOptions';
 import { loginUser } from '@/infrastructure/auth/use-cases/loginUser';
 import { registerUser } from '@/infrastructure/auth/use-cases/registerUser';
-import { DrizzleAgreementRepository } from '@/infrastructure/db/agreementRepository';
-import { DrizzleSessionRepository } from '@/infrastructure/db/sessionRepository';
-import { DrizzleTermsRepository } from '@/infrastructure/db/termsRepository';
-import { DrizzleUserRepository } from '@/infrastructure/db/userRepository';
-import { createEmailTokenStore } from '@/infrastructure/email/tokenStore';
+import { DrizzleAgreementRepository } from '@/entities/agreement';
+import { DrizzleSessionRepository } from '@/entities/session';
+import { DrizzleTermsRepository } from '@/entities/terms';
+import { DrizzleUserRepository } from '@/entities/user';
+import { createEmailTokenStore } from '@/entities/email-token';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 

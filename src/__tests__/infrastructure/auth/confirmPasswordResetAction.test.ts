@@ -3,11 +3,11 @@ jest.mock('next/navigation', () => ({
         throw new Error(`NEXT_REDIRECT:${path}`);
     }),
 }));
-jest.mock('@/infrastructure/db/client', () => ({
+jest.mock('@/shared/db/client', () => ({
     getDatabaseClient: jest.fn(() => ({ db: {}, sql: () => null })),
     resetDatabaseClientForTests: jest.fn(),
 }));
-jest.mock('@/infrastructure/db/userRepository', () => ({
+jest.mock('@/entities/user', () => ({
     DrizzleUserRepository: jest.fn().mockImplementation(() => ({})),
 }));
 jest.mock('@/infrastructure/auth/bcrypt', () => ({
@@ -16,12 +16,12 @@ jest.mock('@/infrastructure/auth/bcrypt', () => ({
 jest.mock('@/infrastructure/auth/use-cases/confirmPasswordReset', () => ({
     confirmPasswordReset: jest.fn(),
 }));
-jest.mock('@/infrastructure/email/tokenStore', () => ({
+jest.mock('@/entities/email-token', () => ({
     createEmailTokenStore: jest.fn(),
 }));
 
 import { confirmPasswordReset } from '@/infrastructure/auth/use-cases/confirmPasswordReset';
-import { createEmailTokenStore } from '@/infrastructure/email/tokenStore';
+import { createEmailTokenStore } from '@/entities/email-token';
 import { AUTH_SERVICE_UNAVAILABLE_MESSAGE } from '@/infrastructure/auth/errorMessages';
 import { confirmPasswordResetAction } from '@/infrastructure/auth/confirmPasswordResetAction';
 import { resetAuthDatabaseClientForTests } from '@/infrastructure/auth/db';

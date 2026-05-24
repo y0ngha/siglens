@@ -4,8 +4,8 @@ import { ApiKeyInput } from '@/components/account/ApiKeyInput';
 import { useApiKeyForms } from '@/components/account/hooks/useApiKeyForms';
 import type { ApiKeyActionState } from '@/domain/llm';
 import { LLM_PROVIDER_VALUES, type LlmProvider } from '@/domain/llm';
-import { cn } from '@/lib/cn';
-import { LLM_PROVIDER_LABELS } from '@/lib/llmProviderLabels';
+import { cn } from '@/shared/lib/cn';
+import { LLM_PROVIDER_LABELS } from '@/shared/lib/llmProviderLabels';
 import { useMemo, useState } from 'react';
 import { useFormStatus } from 'react-dom';
 

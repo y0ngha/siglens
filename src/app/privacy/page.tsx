@@ -1,7 +1,7 @@
 import { Suspense } from 'react';
 import { PolicyMarkdownBody } from '@/components/legal/PolicyMarkdownBody';
 import { LegalPageShell } from '@/components/legal/LegalPageShell';
-import { JsonLd } from '@/components/ui/JsonLd';
+import { JsonLd } from '@/shared/ui/JsonLd';
 import {
     formatKoreanDate,
     INVESTMENT_DISCLAIMER,
@@ -11,12 +11,12 @@ import {
     PRIVACY_TITLE,
     TERMS_PATH,
     TERMS_TITLE,
-} from '@/lib/legal';
-import { extractToc } from '@/lib/legal-toc';
-import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/lib/og';
-import { buildBreadcrumbJsonLd, SITE_NAME, SITE_URL } from '@/lib/seo';
-import { getDatabaseClient } from '@/infrastructure/db/client';
-import { DrizzleTermsRepository } from '@/infrastructure/db/termsRepository';
+} from '@/shared/lib/legal';
+import { extractToc } from '@/shared/lib/legal-toc';
+import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
+import { buildBreadcrumbJsonLd, SITE_NAME, SITE_URL } from '@/shared/lib/seo';
+import { getDatabaseClient } from '@/shared/db/client';
+import { DrizzleTermsRepository } from '@/entities/terms';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';

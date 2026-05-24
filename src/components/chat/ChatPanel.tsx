@@ -4,11 +4,11 @@ import { ContextSwitchSystemMessage } from '@/components/chat/ContextSwitchSyste
 import { useChat } from '@/components/chat/hooks/useChat';
 import { useChatInput } from '@/components/chat/hooks/useChatInput';
 import { useSymbolChat } from '@/components/chat/hooks/useSymbolChat';
-import { usePopoverToggle } from '@/components/hooks/usePopoverToggle';
-import { MarkdownText } from '@/components/ui/MarkdownText';
+import { usePopoverToggle } from '@/shared/hooks/usePopoverToggle';
+import { MarkdownText } from '@/shared/ui/MarkdownText';
 import { PremiumModelGateModal } from '@/components/ui/PremiumModelGateModal';
-import { cn } from '@/lib/cn';
-import { LLM_PROVIDER_LABELS } from '@/lib/llmProviderLabels';
+import { cn } from '@/shared/lib/cn';
+import { LLM_PROVIDER_LABELS } from '@/shared/lib/llmProviderLabels';
 import {
     isFreeModel,
     VALID_CHAT_MODELS,

@@ -1,8 +1,8 @@
 'use server';
 
 import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
-import { getDatabaseClient } from '@/infrastructure/db/client';
-import { DrizzleUserApiKeyRepository } from '@/infrastructure/db/userApiKeyRepository';
+import { getDatabaseClient } from '@/shared/db/client';
+import { DrizzleUserApiKeyRepository } from '@/entities/api-key';
 import type { RegisteredProvider } from '@/domain/llm';
 
 export async function getRegisteredProvidersAction(): Promise<

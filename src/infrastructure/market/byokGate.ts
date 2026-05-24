@@ -7,13 +7,13 @@ import {
     type ModelId,
     type Tier,
 } from '@y0ngha/siglens-core';
-import { getDatabaseClient } from '@/infrastructure/db/client';
+import { getDatabaseClient } from '@/shared/db/client';
 import {
     DrizzleUserApiKeyRepository,
     LlmApiKeyDecryptionFailedError,
-} from '@/infrastructure/db/userApiKeyRepository';
+} from '@/entities/api-key';
 import { getUserTier } from '@/infrastructure/tier/use-cases/getUserTier';
-import { DrizzleUserRepository } from '@/infrastructure/db/userRepository';
+import { DrizzleUserRepository } from '@/entities/user';
 import type {
     AnalysisGateError,
     AnalysisGateErrorCode,

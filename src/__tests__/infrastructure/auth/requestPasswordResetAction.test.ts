@@ -1,23 +1,15 @@
-jest.mock('@/infrastructure/db/client', () => ({
+jest.mock('@/shared/db/client', () => ({
     getDatabaseClient: jest.fn(() => ({ db: {}, sql: () => null })),
     resetDatabaseClientForTests: jest.fn(),
 }));
-jest.mock('@/infrastructure/db/userRepository', () => ({
+jest.mock('@/entities/user', () => ({
     DrizzleUserRepository: jest.fn().mockImplementation(() => ({})),
 }));
 jest.mock('@/infrastructure/auth/use-cases/requestPasswordReset', () => ({
     requestPasswordReset: jest.fn(),
 }));
-jest.mock('@/infrastructure/email/tokenStore', () => ({
+jest.mock('@/entities/email-token', () => ({
     createEmailTokenStore: jest.fn(),
-}));
-
-const sendEmailMock = jest.fn();
-jest.mock('@/infrastructure/email/resend', () => ({
-    createEmailDispatcher: jest.fn(() => ({ sendEmail: sendEmailMock })),
-}));
-
-jest.mock('@/infrastructure/email/passwordResetEmail', () => ({
     buildPasswordResetEmail: jest.fn(({ email, token }) => ({
         to: email,
         subject: 'subject',
@@ -26,9 +18,16 @@ jest.mock('@/infrastructure/email/passwordResetEmail', () => ({
     })),
 }));
 
+const sendEmailMock = jest.fn();
+jest.mock('@/shared/email/dispatcher', () => ({
+    createEmailDispatcher: jest.fn(() => ({ sendEmail: sendEmailMock })),
+}));
+
 import { requestPasswordReset } from '@/infrastructure/auth/use-cases/requestPasswordReset';
-import { createEmailTokenStore } from '@/infrastructure/email/tokenStore';
-import { buildPasswordResetEmail } from '@/infrastructure/email/passwordResetEmail';
+import {
+    createEmailTokenStore,
+    buildPasswordResetEmail,
+} from '@/entities/email-token';
 import { requestPasswordResetAction } from '@/infrastructure/auth/requestPasswordResetAction';
 import { resetAuthDatabaseClientForTests } from '@/infrastructure/auth/db';
 import { makeFormData } from '@/__tests__/utils/makeFormData';

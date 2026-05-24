@@ -142,8 +142,8 @@ export interface PwaEnvironment {
 }
 
 // Cross-layer news field set shared by components/news/sections/NewsList.tsx and
-// infrastructure/db/newsRepository.NewsRow — lives in domain because it is the only
-// layer importable by both components/ and infrastructure/.
+// entities/news-article/api.NewsRow — lives in domain because it is the only
+// layer importable by both components/ and entities/.
 export interface NewsDisplayItem {
     id: string;
     publishedAt: string;

@@ -1,11 +1,13 @@
 'use server';
 
-import { DrizzleUserRepository } from '@/infrastructure/db/userRepository';
+import { DrizzleUserRepository } from '@/entities/user';
 import { requestPasswordReset } from '@/infrastructure/auth/use-cases/requestPasswordReset';
-import { createEmailTokenStore } from '@/infrastructure/email/tokenStore';
+import {
+    createEmailTokenStore,
+    buildPasswordResetEmail,
+} from '@/entities/email-token';
 import type { ForgotPasswordFormState } from '@/domain/auth/formTypes';
-import { buildPasswordResetEmail } from '@/infrastructure/email/passwordResetEmail';
-import { createEmailDispatcher } from '@/infrastructure/email/resend';
+import { createEmailDispatcher } from '@/shared/email';
 import { getAuthDatabaseClient } from '@/infrastructure/auth/db';
 
 export async function requestPasswordResetAction(

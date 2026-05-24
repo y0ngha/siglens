@@ -2,7 +2,7 @@
 
 import { isKoreanInput } from '@/domain/ticker';
 import { useAutocomplete } from '@/components/search/hooks/useAutocomplete';
-import { cn } from '@/lib/cn';
+import { cn } from '@/shared/lib/cn';
 import type { TickerSearchResult } from '@/domain/types';
 
 const LISTBOX_ID = 'ticker-autocomplete-listbox';

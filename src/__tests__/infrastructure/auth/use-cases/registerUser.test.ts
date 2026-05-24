@@ -3,7 +3,7 @@ import type { RegisterUserDependencies } from '@/infrastructure/auth/use-cases/t
 import type {
     EmailTokenPurpose,
     EmailTokenValue,
-} from '@/infrastructure/email/tokenStore';
+} from '@/entities/email-token';
 import type { AuthUserRecord } from '@/domain/auth/types';
 
 const createdAt = new Date('2026-04-26T00:00:00.000Z');

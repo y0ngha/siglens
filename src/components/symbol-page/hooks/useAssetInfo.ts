@@ -2,7 +2,10 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { getAssetInfoAction } from '@/infrastructure/ticker/getAssetInfoAction';
-import { ASSET_INFO_STALE_TIME_MS, QUERY_KEYS } from '@/lib/queryConfig';
+import {
+    ASSET_INFO_STALE_TIME_MS,
+    QUERY_KEYS,
+} from '@/shared/config/queryConfig';
 import type { AssetInfo } from '@/domain/types';
 
 export function useAssetInfo(symbol: string): AssetInfo | undefined {

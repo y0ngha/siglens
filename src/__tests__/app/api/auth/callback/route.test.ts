@@ -1,7 +1,7 @@
-jest.mock('@/infrastructure/db/userRepository', () => ({
+jest.mock('@/entities/user', () => ({
     DrizzleUserRepository: jest.fn(),
 }));
-jest.mock('@/infrastructure/db/sessionRepository', () => ({
+jest.mock('@/entities/session', () => ({
     DrizzleSessionRepository: jest.fn(),
 }));
 jest.mock('@/infrastructure/auth/db', () => ({
@@ -46,8 +46,8 @@ jest.mock('@/domain/auth/redirect', () => ({
 
 import { NextRequest } from 'next/server';
 import { GET } from '@/app/api/auth/callback/[provider]/route';
-import { DrizzleUserRepository } from '@/infrastructure/db/userRepository';
-import { DrizzleSessionRepository } from '@/infrastructure/db/sessionRepository';
+import { DrizzleUserRepository } from '@/entities/user';
+import { DrizzleSessionRepository } from '@/entities/session';
 import { createAuthSession } from '@/infrastructure/auth/sessionCookie';
 import { createPendingOAuthSignupStoreFromEnv } from '@/infrastructure/auth/pendingOAuthSignupStore';
 import {

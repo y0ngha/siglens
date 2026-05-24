@@ -8,7 +8,7 @@ import type {
     Timeframe,
 } from '@y0ngha/siglens-core';
 import { getBarsAction } from '@/infrastructure/market/getBarsAction';
-import { BARS_STALE_TIME_MS, QUERY_KEYS } from '@/lib/queryConfig';
+import { BARS_STALE_TIME_MS, QUERY_KEYS } from '@/shared/config/queryConfig';
 
 interface UseBarsOptions {
     symbol: string;

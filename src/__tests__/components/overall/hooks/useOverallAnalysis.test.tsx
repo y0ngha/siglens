@@ -18,7 +18,7 @@ import { pollFundamentalAnalysisAction } from '@/infrastructure/market/pollFunda
 import { pollNewsAnalysisAction } from '@/infrastructure/market/pollNewsAnalysisAction';
 import { pollOverallAnalysisAction } from '@/infrastructure/market/pollOverallAnalysisAction';
 import { submitOverallAnalysisAction } from '@/infrastructure/market/submitOverallAnalysisAction';
-import { CANCEL_JOBS_API_PATH } from '@/lib/cancelJobsApi';
+import { CANCEL_JOBS_API_PATH } from '@/shared/lib/cancelJobsApi';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import type { OverallAnalysisResponse } from '@y0ngha/siglens-core';
@@ -56,7 +56,7 @@ jest.mock('@/infrastructure/options/optionsActions', () => ({
     pollOptionsAnalysisAction: jest.fn(),
     cancelOptionsAnalysisJobAction: jest.fn().mockResolvedValue(undefined),
 }));
-jest.mock('@/lib/sleep', () => ({
+jest.mock('@/shared/lib/sleep', () => ({
     sleep: jest.fn().mockResolvedValue(undefined),
 }));
 

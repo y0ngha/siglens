@@ -5,7 +5,7 @@ import {
     GEMINI_2_5_FLASH_LITE_MODEL,
     type ModelId,
 } from '@y0ngha/siglens-core';
-import { LOCAL_STORAGE_ANALYSIS_MODEL_KEY } from '@/lib/storageKeys';
+import { LOCAL_STORAGE_ANALYSIS_MODEL_KEY } from '@/shared/lib/storageKeys';
 
 const DEFAULT_MODEL: ModelId = GEMINI_2_5_FLASH_LITE_MODEL;
 

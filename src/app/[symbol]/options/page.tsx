@@ -1,6 +1,6 @@
 import { OptionsPageClient } from '@/components/options/OptionsPageClient';
 import { OptionsEmptyState } from '@/components/options/OptionsEmptyState';
-import { JsonLd } from '@/components/ui/JsonLd';
+import { JsonLd } from '@/shared/ui/JsonLd';
 import { VALID_TICKER_RE } from '@/domain/constants/market';
 import { buildAssetAboutNode } from '@/domain/seo/assetClassification';
 import { buildDisplayName } from '@/domain/ticker';
@@ -10,14 +10,14 @@ import {
     fetchOptionsSnapshot,
     hasOptionsMarket,
 } from '@/infrastructure/options/optionsDataCache';
-import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/lib/queryConfig';
+import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/shared/config/queryConfig';
 import {
     buildBreadcrumbJsonLd,
     buildSymbolOptionsSeoContent,
     buildSymbolSeoContent,
     SITE_NAME,
     SITE_URL,
-} from '@/lib/seo';
+} from '@/shared/lib/seo';
 import {
     dehydrate,
     HydrationBoundary,

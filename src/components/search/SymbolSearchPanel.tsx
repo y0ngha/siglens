@@ -4,7 +4,7 @@ import Link from 'next/link';
 
 import { useRecentSearches } from '@/components/search/hooks/useRecentSearches';
 import { TickerAutocomplete } from '@/components/search/TickerAutocomplete';
-import { cn } from '@/lib/cn';
+import { cn } from '@/shared/lib/cn';
 
 interface SymbolSearchPanelProps {
     className?: string;

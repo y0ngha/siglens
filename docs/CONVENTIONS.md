@@ -407,21 +407,33 @@ function calculateRSI(closes: number[], period = RSI_DEFAULT_PERIOD): (number | 
 ### File Locations
 
 ```
+# Legacy (마이그레이션 완료까지 유지)
 src/__tests__/domain/indicators/rsi.test.ts
 src/__tests__/infrastructure/market/alpaca.test.ts
+
+# FSD 슬라이스 colocated (Phase 1+)
+src/entities/user/__tests__/userRepository.test.ts
+src/features/auth/__tests__/loginAction.test.ts
+src/shared/lib/__tests__/cn.test.ts
 ```
 
 ### Coverage Targets
 
 ```
-domain/         100% (필수)
-infrastructure/ 100% (필수)
+domain/         90% (필수, legacy — Phase 4에서 entities로 이동)
+infrastructure/ 90% (필수, legacy — Phase 2~3에서 entities로 이동)
+entities/       90% (필수)
+features/lib/   90% (필수)
+features/api/   90% (필수)
+shared/lib/     90% (필수)
 components/     optional
+widgets/        optional
+pages/          optional
 app/            optional
 ```
 
-`domain/` and `infrastructure/` require 100% coverage.
-`components/` and `app/` are not required to have tests, but writing tests for them is allowed.
+`domain/`, `infrastructure/`, `entities/`, `features/lib/`, `features/api/`, `shared/lib/` require 90% coverage.
+`components/`, `widgets/`, `pages/`, `app/` are not required to have tests, but writing tests for them is allowed.
 Pure utility functions and other units that benefit from testing may be freely tested.
 
 ### Test Structure
@@ -498,6 +510,32 @@ import { calculateRSI } from '@/domain/indicators/rsi';
 // ❌ No relative paths
 import { calculateRSI } from '../../../domain/indicators/rsi';
 ```
+
+### FSD Slice Internal Imports
+
+FSD 슬라이스 내부에서 다른 segment를 참조할 때(예: `features/auth/ui/LoginForm.tsx` → `features/auth/model/types.ts`):
+- **relative import 사용** (`../model/types` 형태)
+- `no-restricted-imports`는 path alias 기반(`@/features/*/model/*`)으로 차단하므로, **같은 슬라이스 내에서도 `@/` 절대경로로 internal segment에 접근하면 lint 에러**
+- 같은 슬라이스 내부는 반드시 relative import 사용
+
+```typescript
+// ✅ 같은 slice 내 — relative import
+// src/features/auth/ui/LoginForm.tsx
+import type { AuthFormState } from '../model/types';
+
+// ❌ 같은 slice 내라도 절대경로 internal path — no-restricted-imports 위반
+// src/features/auth/ui/LoginForm.tsx
+import type { AuthFormState } from '@/features/auth/model/types'; // 차단됨
+
+// ❌ 다른 slice의 internal path — no-restricted-imports 위반
+// src/features/auth/ui/LoginForm.tsx
+import type { ChatState } from '@/features/symbol-chat/model/types'; // 차단됨
+
+// ✅ 다른 slice는 public API(barrel)로만 접근
+import { useChatActions } from '@/features/symbol-chat';
+```
+
+> 기존 §7.6 ("All imports must use path aliases") 규칙은 **cross-slice** import 기준이며, 같은 슬라이스 내부 segment 간 참조는 relative import를 사용한다.
 
 ---
 

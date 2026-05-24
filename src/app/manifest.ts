@@ -1,5 +1,5 @@
 import type { MetadataRoute } from 'next';
-import { SITE_NAME } from '@/lib/seo';
+import { SITE_NAME } from '@/shared/lib/seo';
 
 // Shorter than SITE_DESCRIPTION because Chrome's install prompt truncates
 // around ~135 characters; long Korean copy gets cut mid-sentence.

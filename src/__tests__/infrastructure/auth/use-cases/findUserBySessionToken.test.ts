@@ -4,7 +4,7 @@ import type {
     AuthUserRecord,
     SessionRepository,
     UserRepository,
-} from '@/infrastructure/db/types';
+} from '@/shared/db/types';
 
 const sessionToken = 'session-token-1';
 const now = new Date('2026-04-28T00:00:00.000Z');

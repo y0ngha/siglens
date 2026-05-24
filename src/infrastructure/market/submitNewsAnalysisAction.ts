@@ -8,8 +8,8 @@ import {
     type SubmitNewsAnalysisOptions,
     type SubmitNewsAnalysisResult,
 } from '@y0ngha/siglens-core';
-import { getDatabaseClient } from '@/infrastructure/db/client';
-import { DrizzleNewsRepository } from '@/infrastructure/db/newsRepository';
+import { getDatabaseClient } from '@/shared/db/client';
+import { DrizzleNewsRepository } from '@/entities/news-article';
 import { NEWS_ANALYSIS_LOOKBACK_MS } from '@/infrastructure/market/newsLookback';
 import {
     isEnrichedRow,
@@ -21,7 +21,7 @@ import {
     resolveTierAndByok,
     buildGateError,
 } from '@/infrastructure/market/byokGate';
-import { isBot } from '@/infrastructure/http/isBot';
+import { isBot } from '@/shared/api/isBot';
 import type { AnalysisGateBlockedResult } from '@/domain/types';
 
 /** Final return type — core's news result + our siglens-side gate errors. */

@@ -3,7 +3,7 @@ import type { AssetInfo } from '@/domain/types';
 import type {
     AssetTranslationRecord,
     AssetTranslationRepository,
-} from '@/infrastructure/db/types';
+} from '@/shared/db/types';
 import type { FmpSearchResult } from '@/infrastructure/ticker/types';
 
 const mockCache: {
@@ -49,7 +49,7 @@ jest.mock('@y0ngha/siglens-core', () => ({
 jest.mock('@/infrastructure/ticker/db', () => ({
     tryGetTickerDatabaseClient: () => tryGetTickerDatabaseClientMock(),
 }));
-jest.mock('@/infrastructure/db/tickerRepository', () => ({
+jest.mock('@/entities/ticker', () => ({
     DrizzleAssetTranslationRepository: class {
         constructor(db: unknown) {
             return repositoryFactoryMock(db) as unknown as object;

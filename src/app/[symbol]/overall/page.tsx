@@ -1,6 +1,6 @@
 import { OverallContent } from '@/components/overall/OverallContent';
 import { CrossLinkCards } from '@/components/symbol-page/CrossLinkCards';
-import { JsonLd } from '@/components/ui/JsonLd';
+import { JsonLd } from '@/shared/ui/JsonLd';
 import {
     DEFAULT_TIMEFRAME,
     isValidTimeframe,
@@ -15,7 +15,7 @@ import {
     buildSymbolSeoContent,
     SITE_NAME,
     SITE_URL,
-} from '@/lib/seo';
+} from '@/shared/lib/seo';
 import type { Timeframe } from '@y0ngha/siglens-core';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';

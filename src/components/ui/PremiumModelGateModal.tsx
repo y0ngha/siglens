@@ -1,9 +1,9 @@
 'use client';
 
-import { useEscapeKey } from '@/components/hooks/useEscapeKey';
-import { useFocusTrap } from '@/components/hooks/useFocusTrap';
+import { useEscapeKey } from '@/shared/hooks/useEscapeKey';
+import { useFocusTrap } from '@/shared/hooks/useFocusTrap';
 import type { GateMode } from '@/domain/llm';
-import { cn } from '@/lib/cn';
+import { cn } from '@/shared/lib/cn';
 import Link from 'next/link';
 import { useEffect, useRef } from 'react';
 

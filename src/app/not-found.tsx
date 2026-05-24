@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { SITE_NAME } from '@/lib/seo';
+import { SITE_NAME } from '@/shared/lib/seo';
 import { ContactDialog } from '@/components/layout/ContactDialog';
 import { TickerCategories } from '@/components/home/TickerCategories';
 

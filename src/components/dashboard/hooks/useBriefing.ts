@@ -2,7 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { pollBriefingAction } from '@/infrastructure/market/pollBriefingAction';
-import { QUERY_KEYS } from '@/lib/queryConfig';
+import { QUERY_KEYS } from '@/shared/config/queryConfig';
 import type { MarketBriefingResponse } from '@y0ngha/siglens-core';
 
 const POLL_INTERVAL_MS = 5_000;

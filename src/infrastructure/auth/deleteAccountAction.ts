@@ -1,7 +1,7 @@
 'use server';
 
-import { DrizzleOAuthAccountRepository } from '@/infrastructure/db/oauthAccountRepository';
-import { DrizzleUserRepository } from '@/infrastructure/db/userRepository';
+import { DrizzleOAuthAccountRepository } from '@/entities/oauth-account';
+import { DrizzleUserRepository } from '@/entities/user';
 import { deleteAccount } from '@/infrastructure/auth/use-cases/deleteAccount';
 import { compositeOAuthRevoker } from '@/infrastructure/auth/oauth/revoker';
 import { cookies } from 'next/headers';

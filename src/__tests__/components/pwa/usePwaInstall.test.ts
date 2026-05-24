@@ -8,7 +8,7 @@ import {
     PWA_BANNER_FALLBACK_DELAY_MS,
 } from '@/components/pwa/hooks/usePwaInstall';
 import { _resetRegisterServiceWorkerForTests } from '@/components/pwa/utils/registerServiceWorker';
-import { PWA_TRIGGER_EVENT } from '@/lib/pwaEvents';
+import { PWA_TRIGGER_EVENT } from '@/shared/lib/pwaEvents';
 
 describe('usePwaInstall', () => {
     beforeAll(() => {

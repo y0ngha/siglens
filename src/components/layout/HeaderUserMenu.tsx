@@ -1,10 +1,10 @@
 'use client';
 
 import { LogoutButton } from '@/components/auth/LogoutButton';
-import { useEscapeKey } from '@/components/hooks/useEscapeKey';
-import { usePopoverToggle } from '@/components/hooks/usePopoverToggle';
+import { useEscapeKey } from '@/shared/hooks/useEscapeKey';
+import { usePopoverToggle } from '@/shared/hooks/usePopoverToggle';
 import { TIER_LABEL } from '@/lib/auth/tierLabel';
-import { cn } from '@/lib/cn';
+import { cn } from '@/shared/lib/cn';
 import type { Tier } from '@y0ngha/siglens-core';
 import Image from 'next/image';
 import Link from 'next/link';

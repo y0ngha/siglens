@@ -5,7 +5,7 @@ import {
     type HeaderUserMenuUser,
 } from '@/components/layout/HeaderUserMenu';
 import { TickerAutocomplete } from '@/components/search/TickerAutocomplete';
-import { SITE_NAME } from '@/lib/seo';
+import { SITE_NAME } from '@/shared/lib/seo';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Suspense } from 'react';

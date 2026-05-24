@@ -1,8 +1,8 @@
 'use client';
 
 import { useMemo, useRef, type KeyboardEvent } from 'react';
-import { InfoTooltip } from '@/components/ui/InfoTooltip';
-import { cn } from '@/lib/cn';
+import { InfoTooltip } from '@/shared/ui/InfoTooltip';
+import { cn } from '@/shared/lib/cn';
 import type { SlotMapping } from '@y0ngha/siglens-core';
 import type { OptionsExpirationSelector } from '@/domain/types';
 

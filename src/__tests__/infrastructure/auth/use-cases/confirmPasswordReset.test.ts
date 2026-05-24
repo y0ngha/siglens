@@ -4,8 +4,8 @@ import { hashEmailToken } from '@/infrastructure/auth/tokenUtils';
 import type {
     EmailTokenPurpose,
     EmailTokenValue,
-} from '@/infrastructure/email/tokenStore';
-import type { EmailAuthUserRecord } from '@/infrastructure/db/types';
+} from '@/entities/email-token';
+import type { EmailAuthUserRecord } from '@/shared/db/types';
 
 const RAW_TOKEN = 'raw-token-value';
 const STORED_TOKEN_HASH = hashEmailToken(RAW_TOKEN);

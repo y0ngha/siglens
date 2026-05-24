@@ -5,7 +5,7 @@ import {
     type MarketSummaryData,
     type MarketSummaryWithBriefing,
 } from '@y0ngha/siglens-core';
-import { isBot } from '@/infrastructure/http/isBot';
+import { isBot } from '@/shared/api/isBot';
 
 jest.mock('@y0ngha/siglens-core', () => ({
     ...jest.requireActual('@y0ngha/siglens-core'),
@@ -17,7 +17,7 @@ jest.mock('next/headers', () => ({
     headers: jest.fn().mockResolvedValue(new Headers()),
 }));
 
-jest.mock('@/infrastructure/http/isBot', () => ({
+jest.mock('@/shared/api/isBot', () => ({
     isBot: jest.fn(),
 }));
 

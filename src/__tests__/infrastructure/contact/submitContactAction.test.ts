@@ -1,10 +1,10 @@
 const mockSubmitInquiry = jest.fn();
 const mockCreate = jest.fn();
 
-jest.mock('@/infrastructure/db/client', () => ({
+jest.mock('@/shared/db/client', () => ({
     getDatabaseClient: jest.fn(() => ({ db: {}, sql: () => null })),
 }));
-jest.mock('@/infrastructure/db/contactRepository', () => ({
+jest.mock('@/entities/inquiry', () => ({
     DrizzleContactRepository: jest.fn().mockImplementation(() => ({
         create: mockCreate,
     })),

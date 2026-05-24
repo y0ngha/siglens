@@ -3,7 +3,10 @@
 import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 
-import { QUERY_KEYS, TICKER_SEARCH_STALE_TIME_MS } from '@/lib/queryConfig';
+import {
+    QUERY_KEYS,
+    TICKER_SEARCH_STALE_TIME_MS,
+} from '@/shared/config/queryConfig';
 import { searchTickerAction } from '@/infrastructure/ticker/searchTickerAction';
 import type { TickerSearchResult } from '@/domain/types';
 

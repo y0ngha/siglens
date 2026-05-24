@@ -20,7 +20,7 @@
  * 클라이언트에서만 렌더되도록 강제한다.
  */
 
-import { EDT_OFFSET_HOURS, getEasternOffsetHours } from '@/domain/time/eastern';
+import { EDT_OFFSET_HOURS, getEasternOffsetHours } from '@/shared/lib/eastern';
 import {
     ET_MARKET_HOURS_DISPLAY,
     KST_EDT_HOURS_DISPLAY,

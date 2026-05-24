@@ -2,8 +2,8 @@
 
 import { useRef, useEffect } from 'react';
 import Link from 'next/link';
-import { useFocusTrap } from '@/components/hooks/useFocusTrap';
-import { useEscapeKey } from '@/components/hooks/useEscapeKey';
+import { useFocusTrap } from '@/shared/hooks/useFocusTrap';
+import { useEscapeKey } from '@/shared/hooks/useEscapeKey';
 import type { LlmProvider } from '@y0ngha/siglens-core';
 
 const PROVIDER_DISPLAY: Record<LlmProvider, string> = {

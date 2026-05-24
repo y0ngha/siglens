@@ -1,5 +1,5 @@
 import type { Tier } from '@y0ngha/siglens-core';
-import type { UserTierRepository } from '@/infrastructure/db/types';
+import type { UserTierRepository } from '@/shared/db/types';
 
 /** Input for looking up a user's persisted tier. */
 export interface GetUserTierInput {

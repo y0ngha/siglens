@@ -16,7 +16,7 @@ import {
     resolveTierAndByok,
     buildGateError,
 } from '@/infrastructure/market/byokGate';
-import { isBot } from '@/infrastructure/http/isBot';
+import { isBot } from '@/shared/api/isBot';
 import type {
     AnalysisGateBlockedResult,
     OptionsExpirationSelector,

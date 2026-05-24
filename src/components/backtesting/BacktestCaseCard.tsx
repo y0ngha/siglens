@@ -1,6 +1,6 @@
 import type { BacktestCase, BacktestRiskLevel } from '@y0ngha/siglens-core';
-import { cn } from '@/lib/cn';
-import { formatUsdCurrency } from '@/lib/priceFormat';
+import { cn } from '@/shared/lib/cn';
+import { formatUsdCurrency } from '@/shared/lib/priceFormat';
 
 interface BacktestCaseCardProps {
     case_: BacktestCase;

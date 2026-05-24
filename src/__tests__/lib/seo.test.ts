@@ -17,7 +17,7 @@ import {
     buildSymbolOptionsSeoContent,
     clampSeoDescription,
     SEO_DESCRIPTION_MAX_LENGTH,
-} from '@/lib/seo';
+} from '@/shared/lib/seo';
 
 describe('buildSymbolSeoContent', () => {
     it('동적 세그먼트 플레이스홀더가 아닌 실제 티커로 심볼 메타데이터를 만든다', () => {

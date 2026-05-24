@@ -1,4 +1,4 @@
-import { getEasternOffsetHours } from '@/domain/time/eastern';
+import { getEasternOffsetHours } from '@/shared/lib/eastern';
 
 describe('eastern', () => {
     describe('getEasternOffsetHours', () => {
