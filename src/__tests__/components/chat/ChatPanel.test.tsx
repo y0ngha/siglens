@@ -35,7 +35,7 @@ jest.mock('@/components/chat/hooks/useChat', () => ({
 }));
 
 let mockIsAnalysisReady = true;
-jest.mock('@/components/chat/hooks/useSymbolChat', () => ({
+jest.mock('@/features/symbol-chat', () => ({
     useSymbolChat: () => ({
         context: null,
         timeframe: '1Day',

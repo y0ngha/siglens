@@ -4,7 +4,7 @@ import {
     HeaderUserMenu,
     type HeaderUserMenuUser,
 } from '@/components/layout/HeaderUserMenu';
-import { TickerAutocomplete } from '@/components/search/TickerAutocomplete';
+import { TickerAutocomplete } from '@/features/ticker-search';
 import { SITE_NAME } from '@/shared/lib/seo';
 import Image from 'next/image';
 import Link from 'next/link';

@@ -5,7 +5,7 @@ import {
     SymbolChatContext,
     type SymbolChatContextValue,
     type SymbolChatState,
-} from '@/components/chat/SymbolChatContext';
+} from '../model/SymbolChatContext';
 
 export type { SymbolChatState };
 

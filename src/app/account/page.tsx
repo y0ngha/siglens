@@ -1,4 +1,4 @@
-import { ApiKeySection } from '@/components/account/ApiKeySection';
+import { ApiKeySection } from '@/features/api-key-management';
 import { getCurrentUser } from '@/entities/session';
 import { getRegisteredProvidersAction } from '@/entities/api-key/actions';
 import { TIER_LABEL } from '@/lib/auth/tierLabel';

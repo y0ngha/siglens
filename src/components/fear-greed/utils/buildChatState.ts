@@ -1,5 +1,5 @@
 import type { FearGreedSnapshot } from '@y0ngha/siglens-core';
-import type { SymbolChatState } from '@/components/chat/hooks/useSymbolChat';
+import type { SymbolChatState } from '@/features/symbol-chat';
 
 // 공포 탐욕 페이지의 채팅 publish 페이로드.
 // 다른 페이지와 달리 fear-greed 데이터는 챗봇 context에 포함되지 않으므로

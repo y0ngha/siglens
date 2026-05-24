@@ -2,7 +2,7 @@
 
 import { type ReactNode } from 'react';
 import { FloatingChatButton } from '@/components/chat/FloatingChatButton';
-import { SymbolChatProvider } from '@/components/chat/SymbolChatContext';
+import { SymbolChatProvider } from '@/features/symbol-chat';
 import { SymbolModelProvider } from '@/components/symbol-page/SymbolModelContext';
 
 interface SymbolLayoutProvidersProps {

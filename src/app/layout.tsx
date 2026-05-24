@@ -9,7 +9,7 @@ import { AuthSessionHeader } from '@/app/_components/AuthSessionHeader';
 import { Footer } from '@/components/layout/Footer';
 import { Header } from '@/components/layout/Header';
 import { SiteJsonLd } from '@/components/layout/SiteJsonLd';
-import { PwaBanner } from '@/components/pwa/PwaBanner';
+import { PwaBanner } from '@/features/pwa-install';
 import { ReactQueryProvider } from '@/components/providers/ReactQueryProvider';
 import { ADSENSE_ENABLED } from '@/shared/lib/adsense';
 import {

@@ -1,4 +1,4 @@
-import type { SymbolChatState } from '@/components/chat/hooks/useSymbolChat';
+import type { SymbolChatState } from '@/features/symbol-chat';
 import type { OptionsAnalysisState } from '@/components/options/hooks/useOptionsAnalysis';
 
 // 옵션 페이지에서 채팅 컨텍스트로 publish할 페이로드를 만든다.

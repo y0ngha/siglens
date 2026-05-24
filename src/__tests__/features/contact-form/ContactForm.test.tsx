@@ -3,8 +3,8 @@
  */
 import '@testing-library/jest-dom';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { ContactForm } from '@/components/contact/ContactForm';
-import { useContactForm } from '@/components/contact/hooks/useContactForm';
+import { ContactForm } from '@/features/contact-form';
+import { useContactForm } from '@/features/contact-form/hooks/useContactForm';
 import { useCurrentUser } from '@/components/hooks/useCurrentUser';
 import type { ContactFormState } from '@/shared/lib/types';
 import type { UseQueryResult } from '@tanstack/react-query';
@@ -15,7 +15,7 @@ import type { AuthUserRecord } from '@/shared/lib/auth/types';
 jest.mock('@/shared/db/client', () => ({
     getDatabaseClient: jest.fn(() => ({ db: {}, sql: () => null })),
 }));
-jest.mock('@/components/contact/hooks/useContactForm');
+jest.mock('@/features/contact-form/hooks/useContactForm');
 jest.mock('@/components/hooks/useCurrentUser');
 
 const mockUseContactForm = jest.mocked(useContactForm);

@@ -1,6 +1,6 @@
 'use client';
 
-import { registerServiceWorker } from '@/components/pwa/utils/registerServiceWorker';
+import { registerServiceWorker } from '../lib/registerServiceWorker';
 import { type PwaEnvironment } from '@/shared/lib/types';
 import { detectPwaEnvironment } from '@/lib/pwa/detectPwaEnvironment';
 import { PWA_TRIGGER_EVENT } from '@/shared/lib/pwaEvents';

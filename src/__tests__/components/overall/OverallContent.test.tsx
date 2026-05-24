@@ -11,7 +11,7 @@
 jest.mock('@/components/overall/hooks/useOverallAnalysis', () => ({
     useOverallAnalysis: jest.fn(),
 }));
-jest.mock('@/components/chat/hooks/useSymbolChat', () => ({
+jest.mock('@/features/symbol-chat', () => ({
     usePublishSymbolChat: jest.fn(),
 }));
 jest.mock('@/components/symbol-page/hooks/useDefaultModelId', () => ({

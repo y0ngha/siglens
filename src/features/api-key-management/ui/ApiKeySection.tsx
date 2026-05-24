@@ -1,7 +1,7 @@
 'use client';
 
-import { ApiKeyInput } from '@/components/account/ApiKeyInput';
-import { useApiKeyForms } from '@/components/account/hooks/useApiKeyForms';
+import { ApiKeyInput } from './ApiKeyInput';
+import { useApiKeyForms } from '../hooks/useApiKeyForms';
 import type { ApiKeyActionState } from '@/entities/api-key';
 import { LLM_PROVIDER_VALUES, type LlmProvider } from '@/entities/api-key';
 import { cn } from '@/shared/lib/cn';

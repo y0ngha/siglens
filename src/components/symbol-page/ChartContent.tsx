@@ -24,7 +24,7 @@ import type { AnalysisStatus } from '@/components/symbol-page/utils/analysisStat
 import { getAnalysisStatus } from '@/components/symbol-page/utils/analysisStatus';
 import { SNAP_PEEK } from '@/components/symbol-page/constants/mobileSheet';
 import { useAnalysisProgress } from '@/components/symbol-page/hooks/useAnalysisProgress';
-import { usePublishSymbolChat } from '@/components/chat/hooks/useSymbolChat';
+import { usePublishSymbolChat } from '@/features/symbol-chat';
 import { buildChatState } from '@/components/symbol-page/utils/buildChatState';
 import { PWA_TRIGGER_EVENT } from '@/shared/lib/pwaEvents';
 import { FearGreedCardMounted } from '@/components/symbol-page/FearGreedCardMounted';

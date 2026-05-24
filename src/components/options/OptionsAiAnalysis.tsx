@@ -8,7 +8,7 @@ import type {
 } from '@y0ngha/siglens-core';
 import { useMemo } from 'react';
 import { BotBlockedNotice } from '@/components/ui/BotBlockedNotice';
-import { usePublishSymbolChat } from '@/components/chat/hooks/useSymbolChat';
+import { usePublishSymbolChat } from '@/features/symbol-chat';
 import { cn } from '@/shared/lib/cn';
 import { formatAnalyzedAt } from '@/shared/lib/formatAnalyzedAt';
 import { OptionsAiAnalysisError } from '@/components/options/OptionsAiAnalysisError';

@@ -1,12 +1,12 @@
 /**
  * @jest-environment jsdom
  */
-import { PwaBanner } from '@/components/pwa/PwaBanner';
-import { usePwaInstall } from '@/components/pwa/hooks/usePwaInstall';
+import { PwaBanner } from '@/features/pwa-install';
+import { usePwaInstall } from '@/features/pwa-install/hooks/usePwaInstall';
 import '@testing-library/jest-dom';
 import { fireEvent, render, screen } from '@testing-library/react';
 
-jest.mock('@/components/pwa/hooks/usePwaInstall');
+jest.mock('@/features/pwa-install/hooks/usePwaInstall');
 
 const mockUsePwaInstall = jest.mocked(usePwaInstall);
 

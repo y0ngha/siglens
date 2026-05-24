@@ -1,7 +1,7 @@
 'use client';
 
 import { isKoreanInput } from '@/entities/ticker';
-import { useAutocomplete } from '@/components/search/hooks/useAutocomplete';
+import { useAutocomplete } from '../hooks/useAutocomplete';
 import { cn } from '@/shared/lib/cn';
 import type { TickerSearchResult } from '@/shared/lib/types';
 

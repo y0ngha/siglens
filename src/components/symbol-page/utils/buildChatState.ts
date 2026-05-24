@@ -1,5 +1,5 @@
 import type { AnalysisResponse, Timeframe } from '@y0ngha/siglens-core';
-import type { SymbolChatState } from '@/components/chat/hooks/useSymbolChat';
+import type { SymbolChatState } from '@/features/symbol-chat';
 
 interface BuildChatStateInput {
     analysis: AnalysisResponse;

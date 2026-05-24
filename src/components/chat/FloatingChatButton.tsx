@@ -2,7 +2,7 @@
 
 import { ChatPanel } from '@/components/chat/ChatPanel';
 import { useChatButtonState } from '@/components/chat/hooks/useChatButtonState';
-import { useSymbolChat } from '@/components/chat/hooks/useSymbolChat';
+import { useSymbolChat } from '@/features/symbol-chat';
 
 interface FloatingChatButtonProps {
     symbol: string;

@@ -18,7 +18,7 @@ import { MODEL_STORAGE_KEY } from '@/components/chat/hooks/useChat';
 
 // --- Module-level mocks ---------------------------------------------------
 
-jest.mock('@/components/chat/hooks/useSymbolChat', () => ({
+jest.mock('@/features/symbol-chat', () => ({
     useSymbolChat: () => ({
         context: null,
         timeframe: '1Day',

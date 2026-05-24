@@ -1,14 +1,11 @@
 'use client';
 
 import { SubmitButton } from '@/shared/ui/auth/SubmitButton';
-import { useContactForm } from '@/components/contact/hooks/useContactForm';
-import { ContactSubmittedNotice } from '@/components/contact/ContactSubmittedNotice';
-import { ContactTextField } from '@/components/contact/ContactTextField';
-import { ContactTextareaField } from '@/components/contact/ContactTextareaField';
-import {
-    getFieldError,
-    getSubmissionError,
-} from '@/components/contact/utils/contactFormUtils';
+import { useContactForm } from '../hooks/useContactForm';
+import { ContactSubmittedNotice } from './ContactSubmittedNotice';
+import { ContactTextField } from './ContactTextField';
+import { ContactTextareaField } from './ContactTextareaField';
+import { getFieldError, getSubmissionError } from '../lib/contactFormUtils';
 import { useCurrentUser } from '@/components/hooks/useCurrentUser';
 import {
     CONTACT_CONTENT_MAX_LENGTH,

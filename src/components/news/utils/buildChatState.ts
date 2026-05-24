@@ -1,4 +1,4 @@
-import type { SymbolChatState } from '@/components/chat/hooks/useSymbolChat';
+import type { SymbolChatState } from '@/features/symbol-chat';
 import type { NewsAnalysisState } from '@/components/news/hooks/useNewsAnalysis';
 
 // 뉴스 페이지의 채팅 publish 페이로드.

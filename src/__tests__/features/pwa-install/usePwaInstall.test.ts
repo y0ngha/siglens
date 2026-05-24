@@ -6,8 +6,8 @@ import { renderHook, act } from '@testing-library/react';
 import {
     usePwaInstall,
     PWA_BANNER_FALLBACK_DELAY_MS,
-} from '@/components/pwa/hooks/usePwaInstall';
-import { _resetRegisterServiceWorkerForTests } from '@/components/pwa/utils/registerServiceWorker';
+} from '@/features/pwa-install/hooks/usePwaInstall';
+import { _resetRegisterServiceWorkerForTests } from '@/features/pwa-install/lib/registerServiceWorker';
 import { PWA_TRIGGER_EVENT } from '@/shared/lib/pwaEvents';
 
 describe('usePwaInstall', () => {

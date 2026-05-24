@@ -1,6 +1,6 @@
 'use client';
 
-import { ContactForm } from '@/components/contact/ContactForm';
+import { ContactForm } from '@/features/contact-form';
 import { useDialog } from '@/shared/hooks/useDialog';
 import { cn } from '@/shared/lib/cn';
 
