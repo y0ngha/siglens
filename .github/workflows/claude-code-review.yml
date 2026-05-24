@@ -70,7 +70,21 @@ jobs:
                         ## Review Procedure & Agentic Flow
                         1. Run: gh pr comment ${{ github.event.pull_request.number }} --repo ${{ github.repository }} --body "🔍 리뷰를 진행 중입니다."
                         2. Run: gh pr diff ${{ github.event.pull_request.number }} --repo ${{ github.repository }} to analyze the changes.
-                        3. **Contextual Reading**: Based on the diff, read CLAUDE.md, /docs/MISTAKES.md, and ONLY the relevant principle documents from the list below.
+                        3. **Contextual Reading**: Always read the following core documents:
+                           - CLAUDE.md
+                           - /docs/MISTAKES.md (highest priority — known repeated patterns)
+                           - /docs/ARCHITECTURE.md
+                           - /docs/CONVENTIONS.md
+                           - /docs/FF.md
+
+                           Additionally read **only** the documents relevant to the changed files:
+                           - If the diff touches indicator calculations, signal logic, candle patterns, or prompt builders → read /docs/DOMAIN.md
+                           - If the diff touches UI components (.tsx files) → read /docs/DESIGN.md
+                           - If the diff touches external API integrations (AI providers, market data) → read /docs/API.md
+                           - If the diff touches authentication flows or session management → read /docs/AUTH.md
+                           - If the diff touches FSD layer boundaries or cross-layer imports → read the relevant src/<layer>/CLAUDE.md (if it exists)
+
+                           Do NOT use concrete directory paths (src/domain/, src/infrastructure/) as triggers — those layers are being migrated to FSD and may not exist mid-migration. Use file content / responsibility as the trigger instead.
                         4. Review the diff strictly against the loaded rules.
 
                         ## Completeness Rule (CRITICAL — Never Omit)
@@ -103,6 +117,7 @@ jobs:
                         - /docs/FF.md: Frontend principles (Readability, Predictability, Cohesion, Coupling).
                         - /docs/ARCHITECTURE.md: Layer structure, folder layout, dependency directions.
                         - /docs/DOMAIN.md: Indicator specs, domain rules, IndicatorResult structure.
+                        - /docs/AUTH.md: Authentication flows, session management.
                         - /docs/DESIGN.md: Color system, chart color constants.
 
                         ## Documentation Policy (Override — DO NOT FLAG)

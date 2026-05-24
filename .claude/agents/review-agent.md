@@ -96,10 +96,13 @@ Additionally, based on changed file locations:
 
 | Condition | Also read |
 |---|---|
-| `src/domain/` changed (excluding `__tests__/` only changes) | `docs/DOMAIN.md` |
-| `src/components/*.tsx` changed | `docs/DESIGN.md` |
-| `src/infrastructure/ai/` or `src/infrastructure/market/` changed | `docs/API.md` |
-| Only `src/__tests__/` files changed, no source files | Skip all conditional docs |
+| Diff touches indicator calculations, signal logic, candle patterns, or prompt builders | `docs/DOMAIN.md` |
+| Diff touches `.tsx` files (UI components) | `docs/DESIGN.md` |
+| Diff touches AI provider calls or market data fetches | `docs/API.md` |
+| Diff touches authentication flows or session management | `docs/AUTH.md` |
+| Only test files changed, no source files | Skip all conditional docs |
+
+Determine the trigger by reading the actual file content of the diff — do NOT match on directory paths (`src/domain/`, `src/infrastructure/`). FSD migration is in progress; concrete layer paths are unstable.
 
 **Round 2+ note:** On round 2+, "changed file locations" refers to the `modified_files` list provided by the orchestrator, not the full diff.
 
