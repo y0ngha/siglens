@@ -6,7 +6,7 @@ import type { FearGreedLabel } from '@y0ngha/siglens-core';
  * app side. Mirrors `@y0ngha/siglens-core`의 `FEAR_GREED_LABEL_CUTOFFS` /
  * `labelOf` 동작.
  *
- * 원본 정의: `node_modules/@y0ngha/siglens-core/dist/domain/indicators/fearGreed/composition.ts`.
+ * 원본 정의: `@y0ngha/siglens-core` 내부 fearGreed composition 모듈.
  * 현재 siglens-core 0.8.0은 이 상수를 public barrel에서 export하지 않으므로
  * 로컬 복제만 가능. core가 export하면 직접 import로 교체.
  *
