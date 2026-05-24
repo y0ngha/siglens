@@ -32,9 +32,7 @@ import { EDT_OFFSET_HOURS, getEasternOffsetHours } from '@/shared/lib/eastern';
  * 평가되어 DST 경계를 가로질러 사용자가 보는 페이지가 잘못 안내될 수 있다.
  */
 export function OptionsStaleDataBanner() {
-    // DST 판정은 도메인 SoT(`domain/time/eastern`)을 사용한다 — 같은 산술
-    // 알고리즘(2번째 일요일·3월 / 1번째 일요일·11월)을 lib에 중복 구현하지
-    // 않는다.
+    // DST 판정은 `shared/lib/eastern`의 getEasternOffsetHours를 사용한다.
     const inEdt = getEasternOffsetHours(new Date()) === EDT_OFFSET_HOURS;
     const currentKstWindow = inEdt
         ? KST_EDT_HOURS_DISPLAY
