@@ -2,8 +2,8 @@
 
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { DrizzleSessionRepository } from '@/infrastructure/db/sessionRepository';
-import { DrizzleUserRepository } from '@/infrastructure/db/userRepository';
+import { DrizzleSessionRepository } from '@/entities/session';
+import { DrizzleUserRepository } from '@/entities/user';
 import { bcryptPasswordVerifier } from '@/infrastructure/auth/bcrypt';
 import { loginUser } from '@/infrastructure/auth/use-cases/loginUser';
 import type { LoginFormState } from '@/domain/auth/formTypes';

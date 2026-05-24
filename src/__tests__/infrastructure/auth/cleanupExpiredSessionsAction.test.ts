@@ -10,7 +10,7 @@ jest.mock('next/headers', () => ({
     headers: jest.fn(async () => ({ get: mockHeadersGet })),
 }));
 
-jest.mock('@/infrastructure/db/sessionRepository', () => ({
+jest.mock('@/entities/session', () => ({
     DrizzleSessionRepository: jest.fn().mockImplementation(() => ({
         deleteExpiredSessions: mockDeleteExpiredSessions,
     })),

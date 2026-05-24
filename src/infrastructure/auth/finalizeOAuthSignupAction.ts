@@ -16,9 +16,9 @@ import {
 } from '@/infrastructure/auth/sessionCookie';
 import { isSecureCookieEnv } from '@/infrastructure/auth/sessionCookieOptions';
 import { DrizzleAgreementRepository } from '@/infrastructure/db/agreementRepository';
-import { DrizzleSessionRepository } from '@/infrastructure/db/sessionRepository';
+import { DrizzleSessionRepository } from '@/entities/session';
 import { DrizzleTermsRepository } from '@/infrastructure/db/termsRepository';
-import { DrizzleUserRepository } from '@/infrastructure/db/userRepository';
+import { DrizzleUserRepository } from '@/entities/user';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 

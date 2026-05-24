@@ -1,4 +1,4 @@
-import { DrizzleSessionRepository } from '@/infrastructure/db/sessionRepository';
+import { DrizzleSessionRepository } from '@/entities/session';
 import { sessions } from '@/shared/db/schema';
 import type { SiglensDatabase } from '@/shared/db/types';
 

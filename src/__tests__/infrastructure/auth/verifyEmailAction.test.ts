@@ -7,14 +7,14 @@ jest.mock('@/infrastructure/email/tokenStore', () => ({
 jest.mock('@/infrastructure/auth/db', () => ({
     getAuthDatabaseClient: jest.fn(),
 }));
-jest.mock('@/infrastructure/db/userRepository', () => ({
+jest.mock('@/entities/user', () => ({
     DrizzleUserRepository: jest.fn(),
 }));
 
 import { verifyEmail } from '@/infrastructure/auth/use-cases/verifyEmail';
 import { createEmailTokenStore } from '@/infrastructure/email/tokenStore';
 import { getAuthDatabaseClient } from '@/infrastructure/auth/db';
-import { DrizzleUserRepository } from '@/infrastructure/db/userRepository';
+import { DrizzleUserRepository } from '@/entities/user';
 import { AUTH_SERVICE_UNAVAILABLE_MESSAGE } from '@/infrastructure/auth/errorMessages';
 import { verifyEmailAction } from '@/infrastructure/auth/verifyEmailAction';
 import { makeFormData } from '@/__tests__/utils/makeFormData';

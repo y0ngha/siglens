@@ -9,7 +9,7 @@ jest.mock('@/shared/db/client', () => ({
     getDatabaseClient: jest.fn(() => ({ db: {}, sql: () => null })),
 }));
 
-jest.mock('@/infrastructure/db/userRepository', () => ({
+jest.mock('@/entities/user', () => ({
     DrizzleUserRepository: jest.fn().mockImplementation(() => ({})),
 }));
 

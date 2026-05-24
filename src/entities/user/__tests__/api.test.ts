@@ -8,7 +8,7 @@ jest.mock('@/shared/lib/sleep', () => ({
 import { oauthAccounts, users } from '@/shared/db/schema';
 import { decryptToken } from '@/shared/db/tokenEncryption';
 import type { SiglensDatabase } from '@/shared/db/types';
-import { DrizzleUserRepository } from '@/infrastructure/db/userRepository';
+import { DrizzleUserRepository } from '@/entities/user';
 const VALID_KEY_HEX = 'a'.repeat(64);
 
 const userRecord = {

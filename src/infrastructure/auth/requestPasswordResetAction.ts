@@ -1,6 +1,6 @@
 'use server';
 
-import { DrizzleUserRepository } from '@/infrastructure/db/userRepository';
+import { DrizzleUserRepository } from '@/entities/user';
 import { requestPasswordReset } from '@/infrastructure/auth/use-cases/requestPasswordReset';
 import { createEmailTokenStore } from '@/infrastructure/email/tokenStore';
 import type { ForgotPasswordFormState } from '@/domain/auth/formTypes';

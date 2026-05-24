@@ -1,7 +1,7 @@
 import { cookies } from 'next/headers';
 import { AUTH_SESSION_COOKIE_NAME } from '@/infrastructure/auth/sessionCookie';
-import { DrizzleSessionRepository } from '@/infrastructure/db/sessionRepository';
-import { DrizzleUserRepository } from '@/infrastructure/db/userRepository';
+import { DrizzleSessionRepository } from '@/entities/session';
+import { DrizzleUserRepository } from '@/entities/user';
 import { findUserBySessionToken } from '@/infrastructure/auth/use-cases/findUserBySessionToken';
 import type { AuthUserRecord } from '@/shared/db/types';
 import { getAuthDatabaseClient } from '@/infrastructure/auth/db';

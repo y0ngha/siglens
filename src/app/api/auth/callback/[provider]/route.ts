@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { DrizzleSessionRepository } from '@/infrastructure/db/sessionRepository';
-import { DrizzleUserRepository } from '@/infrastructure/db/userRepository';
+import { DrizzleSessionRepository } from '@/entities/session';
+import { DrizzleUserRepository } from '@/entities/user';
 import { applyAuthCookie } from '@/infrastructure/auth/applyAuthCookie';
 import { createAuthHintCookie } from '@/infrastructure/auth/authHintCookie';
 import { getAuthDatabaseClient } from '@/infrastructure/auth/db';

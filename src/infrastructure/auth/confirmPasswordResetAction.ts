@@ -1,6 +1,6 @@
 'use server';
 
-import { DrizzleUserRepository } from '@/infrastructure/db/userRepository';
+import { DrizzleUserRepository } from '@/entities/user';
 import {
     bcryptPasswordHasher,
     bcryptPasswordVerifier,

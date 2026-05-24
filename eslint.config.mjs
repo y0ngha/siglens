@@ -146,6 +146,7 @@ const eslintConfig = defineConfig([
                             // Phase 7 (widgets 마이그레이션) 완료 시 legacy-comp 타입 제거.
                             from: 'legacy-comp',
                             allow: [
+                                'entities',
                                 'legacy-domain',
                                 'legacy-infra',
                                 'legacy-lib',
@@ -157,8 +158,15 @@ const eslintConfig = defineConfig([
                             allow: ['legacy-lib', 'shared'],
                         },
                         {
+                            // Phase 2: repositories가 entities로 이동하면서 legacy-infra에서 entity import 필요.
+                            // Phase 5 (features auth) 완료 시 legacy-infra 의존 자체가 사라짐.
                             from: 'legacy-infra',
-                            allow: ['legacy-domain', 'legacy-lib', 'shared'],
+                            allow: [
+                                'entities',
+                                'legacy-domain',
+                                'legacy-lib',
+                                'shared',
+                            ],
                         },
                         {
                             from: 'legacy-lib',

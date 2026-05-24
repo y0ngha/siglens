@@ -14,7 +14,7 @@ jest.mock('next/navigation', () => ({
         throw new Error(`NEXT_REDIRECT:${path}`);
     }),
 }));
-jest.mock('@/infrastructure/db/userApiKeyRepository', () => ({
+jest.mock('@/entities/api-key', () => ({
     DrizzleUserApiKeyRepository: jest.fn().mockImplementation(() => ({
         deleteByUserAndProvider: mockDeleteByUserAndProvider,
     })),
