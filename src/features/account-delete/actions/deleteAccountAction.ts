@@ -8,11 +8,13 @@ import { DrizzleUserRepository, deleteAccount } from '@/entities/user';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import type { DeleteAccountFormState } from '@/shared/lib/auth/formTypes';
-import { applyAuthCookie } from '@/entities/session/lib/applyAuthCookie';
-import { getAuthDatabaseClient } from '@/entities/session/lib/db';
-import { getCurrentUser } from '@/entities/session/lib/getCurrentUser';
-import { isSecureCookieEnv } from '@/entities/session/lib/sessionCookieOptions';
-import { createExpiredAuthHintCookie } from '@/entities/session/lib/authHintCookie';
+import {
+    applyAuthCookie,
+    getAuthDatabaseClient,
+    getCurrentUser,
+    isSecureCookieEnv,
+    createExpiredAuthHintCookie,
+} from '@/entities/session';
 
 const NOT_AUTHENTICATED_MESSAGE = '로그인이 필요합니다.';
 const EMAIL_MISMATCH_MESSAGE =

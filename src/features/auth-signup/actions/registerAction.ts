@@ -2,25 +2,25 @@
 
 import type { SignupFormState } from '@/shared/lib/auth/formTypes';
 import { sanitizeNextPath } from '@/shared/lib/auth/redirect';
-import { applyAuthCookie } from '@/entities/session/lib/applyAuthCookie';
-import { createAuthHintCookie } from '@/entities/session/lib/authHintCookie';
 import {
+    applyAuthCookie,
+    createAuthHintCookie,
     bcryptPasswordHasher,
     bcryptPasswordVerifier,
-} from '@/entities/session/lib/bcrypt';
-import { getAuthDatabaseClient } from '@/entities/session/lib/db';
-import {
+    getAuthDatabaseClient,
     AUTH_SERVICE_UNAVAILABLE_MESSAGE,
     CONSENT_REQUIRED_MESSAGE,
-} from '@/entities/session/lib/errorMessages';
-import { DEFAULT_SESSION_TTL_SECONDS } from '@/entities/session/lib/sessionCookie';
-import { isSecureCookieEnv } from '@/entities/session/lib/sessionCookieOptions';
-import { loginUser } from '@/entities/user/lib/loginUser';
-import { registerUser } from '@/entities/user/lib/registerUser';
+    DEFAULT_SESSION_TTL_SECONDS,
+    isSecureCookieEnv,
+    DrizzleSessionRepository,
+} from '@/entities/session';
+import {
+    loginUser,
+    registerUser,
+    DrizzleUserRepository,
+} from '@/entities/user';
 import { DrizzleAgreementRepository } from '@/entities/agreement';
-import { DrizzleSessionRepository } from '@/entities/session';
 import { DrizzleTermsRepository } from '@/entities/terms';
-import { DrizzleUserRepository } from '@/entities/user';
 import { createEmailTokenStore } from '@/entities/email-token';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';

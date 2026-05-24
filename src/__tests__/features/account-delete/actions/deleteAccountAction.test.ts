@@ -8,15 +8,20 @@ jest.mock('@/shared/db/client', () => ({
     getDatabaseClient: jest.fn(() => ({ db: {}, sql: () => null })),
     resetDatabaseClientForTests: jest.fn(),
 }));
-jest.mock('@/entities/session/lib/sessionCookie', () => ({
-    AUTH_SESSION_COOKIE_NAME: 'siglens_session',
-}));
 jest.mock('@/entities/user', () => ({
     DrizzleUserRepository: jest.fn().mockImplementation(() => ({})),
     deleteAccount: jest.fn(),
 }));
 jest.mock('@/entities/session', () => ({
     DrizzleSessionRepository: jest.fn().mockImplementation(() => ({})),
+    applyAuthCookie: jest.fn((c: unknown) => c),
+    getAuthDatabaseClient: jest.fn(() => ({ db: {}, sql: () => null })),
+    getCurrentUser: jest.fn(),
+    isSecureCookieEnv: jest.fn(() => false),
+    createExpiredAuthHintCookie: jest.fn(() => ({
+        name: 'auth_hint',
+        value: '',
+    })),
 }));
 jest.mock('@/entities/oauth-account', () => ({
     DrizzleOAuthAccountRepository: jest
@@ -24,22 +29,19 @@ jest.mock('@/entities/oauth-account', () => ({
         .mockImplementation(() => ({ findByUserId: jest.fn() })),
     compositeOAuthRevoker: { revokeToken: jest.fn() },
 }));
-jest.mock('@/entities/user/lib/findUserBySessionToken', () => ({
-    findUserBySessionToken: jest.fn(),
-}));
 
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { deleteAccount } from '@/entities/user';
-import { findUserBySessionToken } from '@/entities/user/lib/findUserBySessionToken';
+import { getCurrentUser } from '@/entities/session';
 import { deleteAccountAction } from '@/features/account-delete/actions/deleteAccountAction';
 import { resetAuthDatabaseClientForTests } from '@/entities/session/lib/db';
 import { makeFormData } from '@/__tests__/utils/makeFormData';
 
 const mockCookies = cookies as jest.MockedFunction<typeof cookies>;
 const mockDelete = deleteAccount as jest.MockedFunction<typeof deleteAccount>;
-const mockFindUser = findUserBySessionToken as jest.MockedFunction<
-    typeof findUserBySessionToken
+const mockGetCurrentUser = getCurrentUser as jest.MockedFunction<
+    typeof getCurrentUser
 >;
 const mockRedirect = redirect as jest.MockedFunction<typeof redirect>;
 
@@ -55,20 +57,17 @@ const USER = {
 };
 
 describe('deleteAccountAction', () => {
-    let getSpy: jest.Mock;
     let setSpy: jest.Mock;
 
     beforeEach(() => {
         resetAuthDatabaseClientForTests();
         process.env.DATABASE_URL = 'postgres://test';
-        getSpy = jest.fn();
         setSpy = jest.fn();
         mockCookies.mockResolvedValue({
-            get: getSpy,
             set: setSpy,
         } as unknown as Awaited<ReturnType<typeof cookies>>);
         mockDelete.mockReset();
-        mockFindUser.mockReset();
+        mockGetCurrentUser.mockReset();
         mockRedirect.mockClear();
     });
 
@@ -84,19 +83,8 @@ describe('deleteAccountAction', () => {
     };
 
     describe('인증 실패 (not_authenticated)', () => {
-        it('세션 쿠키가 없으면 not_authenticated 에러를 반환한다', async () => {
-            getSpy.mockReturnValue(undefined);
-            const result = await deleteAccountAction(
-                { error: null },
-                makeFormData({ email: 'user@example.com' })
-            );
-            expect(result.error?.code).toBe('not_authenticated');
-            expect(mockDelete).not.toHaveBeenCalled();
-        });
-
-        it('세션 토큰으로 사용자를 찾지 못하면 not_authenticated 에러를 반환한다', async () => {
-            getSpy.mockReturnValue({ value: 'tok' });
-            mockFindUser.mockResolvedValue(null);
+        it('getCurrentUser가 null을 반환하면 not_authenticated 에러를 반환한다', async () => {
+            mockGetCurrentUser.mockResolvedValue(null);
             const result = await deleteAccountAction(
                 { error: null },
                 makeFormData({ email: 'user@example.com' })
@@ -108,8 +96,7 @@ describe('deleteAccountAction', () => {
 
     describe('이메일 검증 (email_mismatch)', () => {
         beforeEach(() => {
-            getSpy.mockReturnValue({ value: 'tok' });
-            mockFindUser.mockResolvedValue(USER);
+            mockGetCurrentUser.mockResolvedValue(USER);
         });
 
         it('입력 이메일이 사용자 이메일과 일치하지 않으면 email_mismatch 에러를 반환한다', async () => {
@@ -132,8 +119,7 @@ describe('deleteAccountAction', () => {
 
     describe('이메일 정규화', () => {
         beforeEach(() => {
-            getSpy.mockReturnValue({ value: 'tok' });
-            mockFindUser.mockResolvedValue(USER);
+            mockGetCurrentUser.mockResolvedValue(USER);
         });
 
         it('이메일 비교는 대소문자/공백을 무시한다', async () => {
@@ -161,8 +147,7 @@ describe('deleteAccountAction', () => {
 
     describe('deleteAccount 호출 결과 처리', () => {
         beforeEach(() => {
-            getSpy.mockReturnValue({ value: 'tok' });
-            mockFindUser.mockResolvedValue(USER);
+            mockGetCurrentUser.mockResolvedValue(USER);
         });
 
         it('실패 시 폼 상태로 에러를 반환하고 쿠키를 set하지 않는다', async () => {
@@ -202,7 +187,7 @@ describe('deleteAccountAction', () => {
             expect(setSpy).toHaveBeenCalledWith(
                 expect.objectContaining({
                     name: 'siglens_session',
-                    maxAge: 0,
+                    maxAgeSeconds: 0,
                 })
             );
         });

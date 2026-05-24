@@ -32,3 +32,4 @@ export type {
     PasswordHasher,
     PasswordVerifier,
 } from './lib/types';
+export { bcryptPasswordHasher, bcryptPasswordVerifier } from './lib/bcrypt';

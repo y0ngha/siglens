@@ -2,10 +2,11 @@ jest.mock('@/shared/db/client', () => ({
     getDatabaseClient: jest.fn(() => ({ db: {}, sql: () => null })),
     resetDatabaseClientForTests: jest.fn(),
 }));
+jest.mock('@/entities/session', () => ({
+    getAuthDatabaseClient: jest.fn(() => ({ db: {}, sql: () => null })),
+}));
 jest.mock('@/entities/user', () => ({
     DrizzleUserRepository: jest.fn().mockImplementation(() => ({})),
-}));
-jest.mock('@/entities/user/lib/requestPasswordReset', () => ({
     requestPasswordReset: jest.fn(),
 }));
 jest.mock('@/entities/email-token', () => ({
@@ -23,7 +24,7 @@ jest.mock('@/shared/email/dispatcher', () => ({
     createEmailDispatcher: jest.fn(() => ({ sendEmail: sendEmailMock })),
 }));
 
-import { requestPasswordReset } from '@/entities/user/lib/requestPasswordReset';
+import { requestPasswordReset } from '@/entities/user';
 import {
     createEmailTokenStore,
     buildPasswordResetEmail,

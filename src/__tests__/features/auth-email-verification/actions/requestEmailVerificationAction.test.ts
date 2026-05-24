@@ -1,5 +1,9 @@
-jest.mock('@/entities/user/lib/requestEmailVerification', () => ({
+jest.mock('@/entities/user', () => ({
     requestEmailVerification: jest.fn(),
+}));
+jest.mock('@/entities/session', () => ({
+    AUTH_SERVICE_UNAVAILABLE_MESSAGE:
+        '서비스에 일시적인 문제가 발생했습니다. 잠시 후 다시 시도해주세요.',
 }));
 jest.mock('@/entities/email-token', () => ({
     createEmailTokenStore: jest.fn(),
@@ -16,12 +20,12 @@ jest.mock('@/shared/email/dispatcher', () => ({
     createEmailDispatcher: jest.fn(() => ({ sendEmail: sendEmailMock })),
 }));
 
-import { requestEmailVerification } from '@/entities/user/lib/requestEmailVerification';
+import { requestEmailVerification } from '@/entities/user';
 import {
     createEmailTokenStore,
     buildEmailVerificationEmail,
 } from '@/entities/email-token';
-import { AUTH_SERVICE_UNAVAILABLE_MESSAGE } from '@/entities/session/lib/errorMessages';
+import { AUTH_SERVICE_UNAVAILABLE_MESSAGE } from '@/entities/session';
 import { requestEmailVerificationAction } from '@/features/auth-email-verification/actions/requestEmailVerificationAction';
 import { makeFormData } from '@/__tests__/utils/makeFormData';
 

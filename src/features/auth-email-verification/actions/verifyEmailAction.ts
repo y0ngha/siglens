@@ -1,11 +1,12 @@
 'use server';
 
-import { verifyEmail } from '@/entities/user/lib/verifyEmail';
+import { DrizzleUserRepository, verifyEmail } from '@/entities/user';
 import { createEmailTokenStore } from '@/entities/email-token';
 import type { VerifyEmailFormState } from '@/shared/lib/auth/formTypes';
-import { AUTH_SERVICE_UNAVAILABLE_MESSAGE } from '@/entities/session/lib/errorMessages';
-import { getAuthDatabaseClient } from '@/entities/session/lib/db';
-import { DrizzleUserRepository } from '@/entities/user';
+import {
+    AUTH_SERVICE_UNAVAILABLE_MESSAGE,
+    getAuthDatabaseClient,
+} from '@/entities/session';
 import { normalizeEmail } from '@/shared/lib/auth/validation';
 
 export async function verifyEmailAction(

@@ -1,24 +1,33 @@
-jest.mock('@/entities/oauth-account/lib/pendingOAuthSignupStore');
+jest.mock('@/entities/oauth-account', () => ({
+    DrizzleOAuthAccountRepository: jest.fn().mockImplementation(() => ({})),
+    compositeOAuthRevoker: { revokeToken: jest.fn() },
+    createPendingOAuthSignupStore: jest.fn(),
+    createPendingOAuthSignupStoreFromEnv: jest.fn(),
+}));
 jest.mock('@/entities/terms');
 jest.mock('@/entities/user');
 jest.mock('@/entities/agreement');
-jest.mock('@/entities/session');
-jest.mock('@/entities/session/lib/db');
-jest.mock('@/entities/session/lib/sessionCookie', () => ({
+jest.mock('@/entities/session', () => ({
+    applyAuthCookie: jest.fn((c: unknown) => c),
+    createAuthHintCookie: jest.fn(() => ({
+        name: 'auth_hint',
+        value: 'true',
+    })),
+    getAuthDatabaseClient: jest.fn(() => ({ db: {}, sql: () => null })),
+    CONSENT_REQUIRED_MESSAGE: '서비스 이용을 위해 필수 약관에 동의해 주세요.',
+    OAUTH_ERROR_REDIRECT: {
+        consentInvalid: '/login?error=oauth_consent_invalid',
+        consentExpired: '/login?error=oauth_consent_expired',
+        serviceUnavailable: '/login?error=service_unavailable',
+        emailConflict: '/login?error=oauth_email_conflict',
+    },
     createAuthSession: jest.fn(),
     DEFAULT_SESSION_TTL_SECONDS: 7776000,
+    isSecureCookieEnv: jest.fn(() => false),
+    DrizzleSessionRepository: jest.fn().mockImplementation(() => ({})),
 }));
 jest.mock('next/headers', () => ({
     cookies: jest.fn(),
-}));
-jest.mock('@/entities/session/lib/applyAuthCookie', () => ({
-    applyAuthCookie: jest.fn((c: unknown) => c),
-}));
-jest.mock('@/entities/session/lib/authHintCookie', () => ({
-    createAuthHintCookie: jest.fn(() => ({ name: 'auth_hint', value: 'true' })),
-}));
-jest.mock('@/entities/session/lib/sessionCookieOptions', () => ({
-    isSecureCookieEnv: jest.fn(() => false),
 }));
 jest.mock('@/shared/lib/auth/redirect', () => ({
     sanitizeNextPath: jest.fn((p: unknown) =>
@@ -33,12 +42,11 @@ jest.mock('next/navigation', () => ({
 
 import { finalizeOAuthSignupAction } from '@/features/auth-oauth-consent/actions/finalizeOAuthSignupAction';
 import { redirect } from 'next/navigation';
-import { createPendingOAuthSignupStoreFromEnv } from '@/entities/oauth-account/lib/pendingOAuthSignupStore';
+import { createPendingOAuthSignupStoreFromEnv } from '@/entities/oauth-account';
 import { DrizzleTermsRepository } from '@/entities/terms';
 import { DrizzleUserRepository } from '@/entities/user';
 import { DrizzleAgreementRepository } from '@/entities/agreement';
-import { getAuthDatabaseClient } from '@/entities/session/lib/db';
-import { createAuthSession } from '@/entities/session/lib/sessionCookie';
+import { getAuthDatabaseClient, createAuthSession } from '@/entities/session';
 import { cookies } from 'next/headers';
 
 const mockRedirect = redirect as unknown as jest.Mock;

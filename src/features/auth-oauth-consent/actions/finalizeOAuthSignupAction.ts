@@ -2,21 +2,19 @@
 
 import type { FinalizeOAuthSignupState } from '@/shared/lib/auth/formTypes';
 import { sanitizeNextPath } from '@/shared/lib/auth/redirect';
-import { applyAuthCookie } from '@/entities/session/lib/applyAuthCookie';
-import { createAuthHintCookie } from '@/entities/session/lib/authHintCookie';
-import { getAuthDatabaseClient } from '@/entities/session/lib/db';
 import {
+    applyAuthCookie,
+    createAuthHintCookie,
+    getAuthDatabaseClient,
     CONSENT_REQUIRED_MESSAGE,
     OAUTH_ERROR_REDIRECT,
-} from '@/entities/session/lib/errorMessages';
-import { createPendingOAuthSignupStoreFromEnv } from '@/entities/oauth-account/lib/pendingOAuthSignupStore';
-import {
     createAuthSession,
     DEFAULT_SESSION_TTL_SECONDS,
-} from '@/entities/session/lib/sessionCookie';
-import { isSecureCookieEnv } from '@/entities/session/lib/sessionCookieOptions';
+    isSecureCookieEnv,
+    DrizzleSessionRepository,
+} from '@/entities/session';
+import { createPendingOAuthSignupStoreFromEnv } from '@/entities/oauth-account';
 import { DrizzleAgreementRepository } from '@/entities/agreement';
-import { DrizzleSessionRepository } from '@/entities/session';
 import { DrizzleTermsRepository } from '@/entities/terms';
 import { DrizzleUserRepository } from '@/entities/user';
 import { cookies } from 'next/headers';

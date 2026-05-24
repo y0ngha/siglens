@@ -2,17 +2,18 @@
 
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { DrizzleSessionRepository } from '@/entities/session';
-import { DrizzleUserRepository } from '@/entities/user';
-import { bcryptPasswordVerifier } from '@/entities/session/lib/bcrypt';
-import { loginUser } from '@/entities/user/lib/loginUser';
+import {
+    DrizzleSessionRepository,
+    bcryptPasswordVerifier,
+    applyAuthCookie,
+    getAuthDatabaseClient,
+    isSecureCookieEnv,
+    createAuthHintCookie,
+    DEFAULT_SESSION_TTL_SECONDS,
+} from '@/entities/session';
+import { DrizzleUserRepository, loginUser } from '@/entities/user';
 import type { LoginFormState } from '@/shared/lib/auth/formTypes';
 import { sanitizeNextPath } from '@/shared/lib/auth/redirect';
-import { applyAuthCookie } from '@/entities/session/lib/applyAuthCookie';
-import { getAuthDatabaseClient } from '@/entities/session/lib/db';
-import { isSecureCookieEnv } from '@/entities/session/lib/sessionCookieOptions';
-import { createAuthHintCookie } from '@/entities/session/lib/authHintCookie';
-import { DEFAULT_SESSION_TTL_SECONDS } from '@/entities/session/lib/sessionCookie';
 import { normalizeEmail } from '@/shared/lib/auth/validation';
 
 export async function loginAction(

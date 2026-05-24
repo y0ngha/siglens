@@ -7,22 +7,24 @@ jest.mock('@/shared/db/client', () => ({
     getDatabaseClient: jest.fn(() => ({ db: {}, sql: () => null })),
     resetDatabaseClientForTests: jest.fn(),
 }));
+jest.mock('@/entities/session', () => ({
+    bcryptPasswordHasher: { hashPassword: jest.fn() },
+    bcryptPasswordVerifier: { verifyPassword: jest.fn() },
+    getAuthDatabaseClient: jest.fn(() => ({ db: {}, sql: () => null })),
+    AUTH_SERVICE_UNAVAILABLE_MESSAGE:
+        '서비스에 일시적인 문제가 발생했습니다. 잠시 후 다시 시도해주세요.',
+}));
 jest.mock('@/entities/user', () => ({
     DrizzleUserRepository: jest.fn().mockImplementation(() => ({})),
-}));
-jest.mock('@/entities/session/lib/bcrypt', () => ({
-    bcryptPasswordHasher: { hashPassword: jest.fn() },
-}));
-jest.mock('@/entities/user/lib/confirmPasswordReset', () => ({
     confirmPasswordReset: jest.fn(),
 }));
 jest.mock('@/entities/email-token', () => ({
     createEmailTokenStore: jest.fn(),
 }));
 
-import { confirmPasswordReset } from '@/entities/user/lib/confirmPasswordReset';
+import { confirmPasswordReset } from '@/entities/user';
 import { createEmailTokenStore } from '@/entities/email-token';
-import { AUTH_SERVICE_UNAVAILABLE_MESSAGE } from '@/entities/session/lib/errorMessages';
+import { AUTH_SERVICE_UNAVAILABLE_MESSAGE } from '@/entities/session';
 import { confirmPasswordResetAction } from '@/features/auth-password-reset/actions/confirmPasswordResetAction';
 import { resetAuthDatabaseClientForTests } from '@/entities/session/lib/db';
 import { makeFormData } from '@/__tests__/utils/makeFormData';

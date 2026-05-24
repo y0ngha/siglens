@@ -13,9 +13,24 @@ jest.mock('@/shared/db/client', () => ({
 }));
 jest.mock('@/entities/session', () => ({
     DrizzleSessionRepository: jest.fn().mockImplementation(() => ({})),
+    bcryptPasswordHasher: { hashPassword: jest.fn() },
+    bcryptPasswordVerifier: { verifyPassword: jest.fn() },
+    applyAuthCookie: jest.fn((c: unknown) => c),
+    createAuthHintCookie: jest.fn(() => ({
+        name: 'auth_hint',
+        value: 'true',
+    })),
+    getAuthDatabaseClient: jest.fn(() => ({ db: {}, sql: () => null })),
+    AUTH_SERVICE_UNAVAILABLE_MESSAGE:
+        '서비스에 일시적인 문제가 발생했습니다. 잠시 후 다시 시도해주세요.',
+    CONSENT_REQUIRED_MESSAGE: '서비스 이용을 위해 필수 약관에 동의해 주세요.',
+    DEFAULT_SESSION_TTL_SECONDS: 7776000,
+    isSecureCookieEnv: jest.fn(() => false),
 }));
 jest.mock('@/entities/user', () => ({
     DrizzleUserRepository: jest.fn().mockImplementation(() => ({})),
+    loginUser: jest.fn(),
+    registerUser: jest.fn(),
 }));
 jest.mock('@/entities/agreement', () => ({
     DrizzleAgreementRepository: jest.fn(),
@@ -23,29 +38,20 @@ jest.mock('@/entities/agreement', () => ({
 jest.mock('@/entities/terms', () => ({
     DrizzleTermsRepository: jest.fn(),
 }));
-jest.mock('@/entities/session/lib/bcrypt', () => ({
-    bcryptPasswordHasher: { hashPassword: jest.fn() },
-    bcryptPasswordVerifier: { verifyPassword: jest.fn() },
-}));
-jest.mock('@/entities/user/lib/loginUser', () => ({
-    loginUser: jest.fn(),
-}));
-jest.mock('@/entities/user/lib/registerUser', () => ({
-    registerUser: jest.fn(),
-}));
 jest.mock('@/entities/email-token', () => ({
     createEmailTokenStore: jest.fn(),
 }));
 
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { loginUser } from '@/entities/user/lib/loginUser';
-import { registerUser } from '@/entities/user/lib/registerUser';
+import { loginUser, registerUser } from '@/entities/user';
 import { createEmailTokenStore } from '@/entities/email-token';
-import { getDatabaseClient } from '@/shared/db/client';
 import { DrizzleAgreementRepository } from '@/entities/agreement';
 import { DrizzleTermsRepository } from '@/entities/terms';
-import { AUTH_SERVICE_UNAVAILABLE_MESSAGE } from '@/entities/session/lib/errorMessages';
+import {
+    AUTH_SERVICE_UNAVAILABLE_MESSAGE,
+    getAuthDatabaseClient,
+} from '@/entities/session';
 import { registerAction } from '@/features/auth-signup/actions/registerAction';
 import { resetAuthDatabaseClientForTests } from '@/entities/session/lib/db';
 import { makeFormData } from '@/__tests__/utils/makeFormData';
@@ -57,8 +63,8 @@ const mockCreateTokenStore = createEmailTokenStore as jest.MockedFunction<
     typeof createEmailTokenStore
 >;
 const mockRedirect = redirect as jest.MockedFunction<typeof redirect>;
-const mockGetDatabaseClient = getDatabaseClient as jest.MockedFunction<
-    typeof getDatabaseClient
+const mockGetAuthDatabaseClient = getAuthDatabaseClient as jest.MockedFunction<
+    typeof getAuthDatabaseClient
 >;
 const MockTermsRepository = DrizzleTermsRepository as jest.MockedClass<
     typeof DrizzleTermsRepository
@@ -424,7 +430,7 @@ describe('registerAction', () => {
         });
 
         it('예상치 못한 내부 에러 발생 시 service_unavailable을 반환한다', async () => {
-            mockGetDatabaseClient.mockImplementationOnce(() => {
+            mockGetAuthDatabaseClient.mockImplementationOnce(() => {
                 throw new Error('Unexpected db error');
             });
             const result = await registerAction(

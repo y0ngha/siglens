@@ -1,21 +1,22 @@
-jest.mock('@/entities/user/lib/verifyEmail', () => ({
-    verifyEmail: jest.fn(),
-}));
 jest.mock('@/entities/email-token', () => ({
     createEmailTokenStore: jest.fn(),
 }));
-jest.mock('@/entities/session/lib/db', () => ({
+jest.mock('@/entities/session', () => ({
+    AUTH_SERVICE_UNAVAILABLE_MESSAGE:
+        '서비스에 일시적인 문제가 발생했습니다. 잠시 후 다시 시도해주세요.',
     getAuthDatabaseClient: jest.fn(),
 }));
 jest.mock('@/entities/user', () => ({
     DrizzleUserRepository: jest.fn(),
+    verifyEmail: jest.fn(),
 }));
 
-import { verifyEmail } from '@/entities/user/lib/verifyEmail';
+import { verifyEmail, DrizzleUserRepository } from '@/entities/user';
 import { createEmailTokenStore } from '@/entities/email-token';
-import { getAuthDatabaseClient } from '@/entities/session/lib/db';
-import { DrizzleUserRepository } from '@/entities/user';
-import { AUTH_SERVICE_UNAVAILABLE_MESSAGE } from '@/entities/session/lib/errorMessages';
+import {
+    getAuthDatabaseClient,
+    AUTH_SERVICE_UNAVAILABLE_MESSAGE,
+} from '@/entities/session';
 import { verifyEmailAction } from '@/features/auth-email-verification/actions/verifyEmailAction';
 import { makeFormData } from '@/__tests__/utils/makeFormData';
 

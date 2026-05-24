@@ -8,19 +8,24 @@ jest.mock('@/shared/db/client', () => ({
     getDatabaseClient: jest.fn(() => ({ db: {}, sql: () => null })),
     resetDatabaseClientForTests: jest.fn(),
 }));
-jest.mock('@/entities/session/lib/sessionCookie', () => ({
-    AUTH_SESSION_COOKIE_NAME: 'siglens_session',
-}));
 jest.mock('@/entities/session', () => ({
     DrizzleSessionRepository: jest.fn().mockImplementation(() => ({})),
+    AUTH_SESSION_COOKIE_NAME: 'siglens_session',
+    applyAuthCookie: jest.fn((c: unknown) => c),
+    getAuthDatabaseClient: jest.fn(() => ({ db: {}, sql: () => null })),
+    isSecureCookieEnv: jest.fn(() => false),
+    createExpiredAuthHintCookie: jest.fn(() => ({
+        name: 'auth_hint',
+        value: '',
+    })),
 }));
-jest.mock('@/entities/user/lib/logoutUser', () => ({
+jest.mock('@/entities/user', () => ({
     logoutUser: jest.fn(),
 }));
 
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { logoutUser } from '@/entities/user/lib/logoutUser';
+import { logoutUser } from '@/entities/user';
 import { logoutAction } from '@/features/auth-logout/actions/logoutAction';
 import { resetAuthDatabaseClientForTests } from '@/entities/session/lib/db';
 
@@ -75,7 +80,10 @@ describe('logoutAction', () => {
             expect.objectContaining({ secureCookie: false })
         );
         expect(setSpy).toHaveBeenCalledWith(
-            expect.objectContaining({ name: 'siglens_session', maxAge: 0 })
+            expect.objectContaining({
+                name: 'siglens_session',
+                maxAgeSeconds: 0,
+            })
         );
     });
 });

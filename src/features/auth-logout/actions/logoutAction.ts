@@ -2,13 +2,15 @@
 
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { DrizzleSessionRepository } from '@/entities/session';
-import { AUTH_SESSION_COOKIE_NAME } from '@/entities/session/lib/sessionCookie';
-import { logoutUser } from '@/entities/user/lib/logoutUser';
-import { applyAuthCookie } from '@/entities/session/lib/applyAuthCookie';
-import { getAuthDatabaseClient } from '@/entities/session/lib/db';
-import { isSecureCookieEnv } from '@/entities/session/lib/sessionCookieOptions';
-import { createExpiredAuthHintCookie } from '@/entities/session/lib/authHintCookie';
+import {
+    DrizzleSessionRepository,
+    AUTH_SESSION_COOKIE_NAME,
+    applyAuthCookie,
+    getAuthDatabaseClient,
+    isSecureCookieEnv,
+    createExpiredAuthHintCookie,
+} from '@/entities/session';
+import { logoutUser } from '@/entities/user';
 
 export async function logoutAction(): Promise<void> {
     try {

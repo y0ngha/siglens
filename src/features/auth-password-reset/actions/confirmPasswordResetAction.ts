@@ -1,16 +1,15 @@
 'use server';
 
-import { DrizzleUserRepository } from '@/entities/user';
+import { DrizzleUserRepository, confirmPasswordReset } from '@/entities/user';
 import {
     bcryptPasswordHasher,
     bcryptPasswordVerifier,
-} from '@/entities/session/lib/bcrypt';
-import { confirmPasswordReset } from '@/entities/user/lib/confirmPasswordReset';
+    getAuthDatabaseClient,
+    AUTH_SERVICE_UNAVAILABLE_MESSAGE,
+} from '@/entities/session';
 import { createEmailTokenStore } from '@/entities/email-token';
 import { redirect } from 'next/navigation';
 import type { ResetPasswordFormState } from '@/shared/lib/auth/formTypes';
-import { getAuthDatabaseClient } from '@/entities/session/lib/db';
-import { AUTH_SERVICE_UNAVAILABLE_MESSAGE } from '@/entities/session/lib/errorMessages';
 
 export async function confirmPasswordResetAction(
     _prev: ResetPasswordFormState,

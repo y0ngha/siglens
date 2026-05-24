@@ -1,13 +1,13 @@
 'use server';
 
-import { requestEmailVerification } from '@/entities/user/lib/requestEmailVerification';
+import { requestEmailVerification } from '@/entities/user';
 import {
     createEmailTokenStore,
     buildEmailVerificationEmail,
 } from '@/entities/email-token';
 import type { RequestEmailVerificationFormState } from '@/shared/lib/auth/formTypes';
 import { createEmailDispatcher } from '@/shared/email';
-import { AUTH_SERVICE_UNAVAILABLE_MESSAGE } from '@/entities/session/lib/errorMessages';
+import { AUTH_SERVICE_UNAVAILABLE_MESSAGE } from '@/entities/session';
 import { normalizeEmail } from '@/shared/lib/auth/validation';
 
 export async function requestEmailVerificationAction(

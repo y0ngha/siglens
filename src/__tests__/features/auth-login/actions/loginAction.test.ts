@@ -10,20 +10,24 @@ jest.mock('@/shared/db/client', () => ({
 }));
 jest.mock('@/entities/session', () => ({
     DrizzleSessionRepository: jest.fn().mockImplementation(() => ({})),
+    bcryptPasswordVerifier: { verifyPassword: jest.fn() },
+    applyAuthCookie: jest.fn((c: unknown) => c),
+    getAuthDatabaseClient: jest.fn(() => ({ db: {}, sql: () => null })),
+    isSecureCookieEnv: jest.fn(() => false),
+    createAuthHintCookie: jest.fn(() => ({
+        name: 'auth_hint',
+        value: 'true',
+    })),
+    DEFAULT_SESSION_TTL_SECONDS: 7776000,
 }));
 jest.mock('@/entities/user', () => ({
     DrizzleUserRepository: jest.fn().mockImplementation(() => ({})),
-}));
-jest.mock('@/entities/session/lib/bcrypt', () => ({
-    bcryptPasswordVerifier: { verifyPassword: jest.fn() },
-}));
-jest.mock('@/entities/user/lib/loginUser', () => ({
     loginUser: jest.fn(),
 }));
 
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { loginUser } from '@/entities/user/lib/loginUser';
+import { loginUser } from '@/entities/user';
 import { loginAction } from '@/features/auth-login/actions/loginAction';
 import { resetAuthDatabaseClientForTests } from '@/entities/session/lib/db';
 import { makeFormData } from '@/__tests__/utils/makeFormData';
