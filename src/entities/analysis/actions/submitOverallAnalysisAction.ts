@@ -10,8 +10,7 @@ import {
     type SubmitOverallAnalysisResult,
     type Timeframe,
 } from '@y0ngha/siglens-core';
-// Cross-entity: FMP fundamental API 필요. Phase 9에서 features 레이어 도입 시 해소.
-import { FmpFundamentalClient } from '@/entities/fundamental';
+import { FmpFundamentalClient } from '@/shared/api/fmp/fundamentalClient';
 import { getDatabaseClient } from '@/shared/db/client';
 import {
     DrizzleNewsRepository,

@@ -15,7 +15,7 @@ jest.mock('@y0ngha/siglens-core', () => ({
     submitOverallAnalysis: jest.fn(),
 }));
 
-jest.mock('@/entities/fundamental', () => ({
+jest.mock('@/shared/api/fmp/fundamentalClient', () => ({
     FmpFundamentalClient: jest.fn().mockImplementation(() => ({})),
 }));
 

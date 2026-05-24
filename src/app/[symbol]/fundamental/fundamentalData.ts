@@ -4,7 +4,7 @@ import {
     DrizzleProfileDescriptionTranslationRepository,
     translateCompanyDescription,
 } from '@/entities/ticker';
-import { FmpFundamentalClient } from '@/entities/fundamental';
+import { FmpFundamentalClient } from '@/shared/api/fmp/fundamentalClient';
 import type {
     FundamentalProfile,
     FundamentalPeerInput,

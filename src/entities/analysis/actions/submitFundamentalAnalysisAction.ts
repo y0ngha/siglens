@@ -7,8 +7,7 @@ import {
     type SubmitFundamentalAnalysisOptions,
     type SubmitFundamentalAnalysisResult,
 } from '@y0ngha/siglens-core';
-// Cross-entity: FMP fundamental API 필요. Phase 9에서 features 레이어 도입 시 해소.
-import { FmpFundamentalClient } from '@/entities/fundamental';
+import { FmpFundamentalClient } from '@/shared/api/fmp/fundamentalClient';
 import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
 import { resolveTierAndByok, buildGateError } from '@/shared/lib/byokGate';
 import { isBot } from '@/shared/api/isBot';

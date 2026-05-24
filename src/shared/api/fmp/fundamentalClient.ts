@@ -1,4 +1,4 @@
-import { fmpGet } from '@/shared/api/fmp/httpClient';
+import { fmpGet } from './httpClient';
 import type {
     RawFmpAnalystEstimate,
     RawFmpCashFlowStatement,
@@ -14,7 +14,7 @@ import type {
     RawFmpRatiosTtm,
     RawFmpSectorPerformance,
     RawFmpStockPeer,
-} from '@/shared/api/fmp/types';
+} from './types';
 import type {
     EarningsReport,
     FundamentalAnalystEstimateInput,
