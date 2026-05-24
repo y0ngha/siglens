@@ -12,6 +12,7 @@ import {
 import { useBriefing } from '@/components/dashboard/hooks/useBriefing';
 import { useMarketSummary } from '@/components/dashboard/hooks/useMarketSummary';
 import { MarketSummaryPanelSkeleton } from '@/components/dashboard/MarketSummaryPanelSkeleton';
+import { BotBlockedNotice } from '@/components/symbol-page/BotBlockedNotice';
 import { SECTOR_GROUPS } from '@/domain/constants/dashboard-tickers';
 import type {
     MarketSectorData,
@@ -34,11 +35,12 @@ function BriefingContent({ jobId }: BriefingContentProps) {
 }
 
 interface BriefingRegionProps {
-    input: SubmitBriefingResult | undefined;
+    input: SubmitBriefingResult | null | undefined;
 }
 
 function BriefingRegion({ input }: BriefingRegionProps) {
-    if (!input) return null;
+    if (input === undefined) return null;
+    if (input === null) return <BotBlockedNotice />;
     if (input.status === 'cached') {
         return (
             <BriefingCard

@@ -65,7 +65,8 @@ async function analyzeAndPersist(
  * Per-item errors are logged and never thrown; other items continue normally.
  */
 export async function ensureNewsCardsAnalyzedAction(
-    symbol: string
+    symbol: string,
+    options?: { skipAnalysis?: boolean }
 ): Promise<void> {
     const newsClient = new FmpNewsClient();
     const { db } = getDatabaseClient();
@@ -110,6 +111,8 @@ export async function ensureNewsCardsAnalyzedAction(
     }
 
     if (fresh.length === 0) return;
+
+    if (options?.skipAnalysis) return;
 
     // Read the current DB state after upsert so newly inserted rows are included.
     const rows = await repo.listBySymbol(symbol, NEWS_LOOKBACK_MS);
