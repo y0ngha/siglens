@@ -146,6 +146,8 @@ const eslintConfig = defineConfig([
                             // Phase 7 (widgets 마이그레이션) 완료 시 legacy-comp 타입 제거.
                             from: 'legacy-comp',
                             allow: [
+                                // Phase 5+: components hooks가 entities actions/hooks를 import 필요.
+                                // Phase 7 (widgets 마이그레이션) 완료 시 legacy-comp 자체 제거.
                                 'entities',
                                 'legacy-domain',
                                 'legacy-infra',

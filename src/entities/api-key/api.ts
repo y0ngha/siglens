@@ -49,7 +49,7 @@ const userApiKeyRowColumns = {
     encryptedApiKey: userApiKeys.encryptedApiKey,
 };
 
-/** @internal Resolves the LLM encryption key, throwing when absent or invalid, to prevent plaintext storage or blank decryption. */
+/** Resolves the LLM encryption key, throwing when absent or invalid, to prevent plaintext storage or blank decryption. */
 function requireLlmEncryptionKey(): string {
     const encryptionKey = tryReadLlmApiKeyEncryptionKey();
     if (encryptionKey === null) {
