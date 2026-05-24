@@ -3,18 +3,6 @@ import { Redis } from '@upstash/redis';
 /** Purpose tag namespacing email-token Redis keys so password-reset and email-verification tokens for the same email never collide. */
 export type EmailTokenPurpose = 'password_reset' | 'email_verification';
 
-/** Email message payload passed to an {@link EmailDispatcher} implementation. */
-export interface EmailMessage {
-    /** Recipient email address. */
-    to: string;
-    /** Email subject line. */
-    subject: string;
-    /** HTML body of the email. */
-    html: string;
-    /** Plain-text body of the email. */
-    text: string;
-}
-
 /** Persisted Redis value for an email token: 'pending' (token issued; tokenHash stored for constant-time compare on verify) or 'verified' (email-verification flow only; marker so later registration confirms ownership without re-prompting the code). */
 export type EmailTokenValue =
     | { status: 'pending'; tokenHash: string }
@@ -48,12 +36,6 @@ export interface EmailTokenStore {
     ): Promise<EmailTokenValue | null>;
 }
 
-/** 트랜잭셔널 이메일 발송 추상 (Resend/SendGrid/SMTP 등을 use-case에 주입). */
-export interface EmailDispatcher {
-    /** 메시지 발송 — 전송 수락 시 true, 거절 시 false. */
-    sendEmail(message: EmailMessage): Promise<boolean>;
-}
-
 const KEY_PREFIX = 'email_token';
 
 interface UpstashConfig {
@@ -83,13 +65,13 @@ function readUpstashConfig(): UpstashConfig | null {
     return { url, token, readonlyToken };
 }
 
-/** @internal Test-only reset of the cached Redis client pair. */
+/** Test-only reset of the cached Redis client pair. */
 export function __resetEmailTokenStoreCacheForTests(): void {
     cachedRedisPair = null;
     cachedConfigKey = null;
 }
 
-/** @internal Build the Redis key for an email-token entry. */
+/** Build the Redis key for an email-token entry. */
 export function buildEmailTokenKey(
     purpose: EmailTokenPurpose,
     email: string

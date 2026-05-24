@@ -13,11 +13,8 @@ import type {
     PasswordHasher,
     PasswordVerifier,
 } from '@/infrastructure/auth/types';
-import type {
-    EmailDispatcher,
-    EmailMessage,
-    EmailTokenStore,
-} from '@/infrastructure/email/tokenStore';
+import type { EmailDispatcher, EmailMessage } from '@/shared/email';
+import type { EmailTokenStore } from '@/entities/email-token';
 import type {
     ConfirmPasswordResetError,
     ConfirmPasswordResetErrorCode,

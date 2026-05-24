@@ -1,7 +1,4 @@
-import type {
-    EmailDispatcher,
-    EmailMessage,
-} from '@/infrastructure/email/tokenStore';
+import type { EmailDispatcher, EmailMessage } from './types';
 import { Resend } from 'resend';
 
 const RESEND_API_KEY_ENV = 'RESEND_API_KEY';

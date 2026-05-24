@@ -8,11 +8,11 @@ import type {
     SkillDisplay,
     SkillType,
 } from '@y0ngha/siglens-core';
-import type { SkillsProvider } from '@/infrastructure/skills/types';
+import type { SkillsProvider } from './model';
 
 const SKILLS_DIR = join(process.cwd(), 'skills');
 
-const SKILL_CATEGORIES: readonly SkillCategory[] = [
+const SKILL_CATEGORIES = [
     'reversal_bullish',
     'reversal_bearish',
     'continuation_bullish',
@@ -20,7 +20,7 @@ const SKILL_CATEGORIES: readonly SkillCategory[] = [
     'neutral',
     'fundamental',
     'news',
-];
+] as const satisfies readonly SkillCategory[];
 
 const parseYamlValue = (value: string): unknown => {
     if (value === '[]') return [];
@@ -31,7 +31,6 @@ const parseYamlValue = (value: string): unknown => {
     }
     const num = Number(value);
     if (value !== '' && !isNaN(num)) return num;
-    // 따옴표로 감싸진 문자열 처리
     if (
         (value.startsWith('"') && value.endsWith('"')) ||
         (value.startsWith("'") && value.endsWith("'"))
@@ -112,9 +111,12 @@ const parseYamlBlock = (lines: string[], baseIndent: number): YamlNode =>
         { result: {}, skip: 0 }
     ).result;
 
-const parseFrontmatter = (
-    raw: string
-): { data: Record<string, unknown>; content: string } | null => {
+interface ParsedFrontmatter {
+    data: Record<string, unknown>;
+    content: string;
+}
+
+const parseFrontmatter = (raw: string): ParsedFrontmatter | null => {
     const match = /^---\n([\s\S]*?)\n---\n?([\s\S]*)$/.exec(raw);
     if (!match) return null;
 
@@ -126,15 +128,18 @@ const parseFrontmatter = (
 
 const isSkillCategory = (value: unknown): value is SkillCategory =>
     typeof value === 'string' &&
+    // SKILL_CATEGORIES is `as const` literal tuple; widening to readonly string[] for .includes() is safe — every element is a string literal.
     (SKILL_CATEGORIES as readonly string[]).includes(value);
 
 const parseSkillDisplay = (raw: unknown): SkillDisplay | undefined => {
     if (typeof raw !== 'object' || raw === null) return undefined;
 
+    // typeof + non-null guard above ensures raw is a non-null object; YamlNode widening is safe.
     const obj = raw as YamlNode;
     const chartRaw = obj.chart;
     if (typeof chartRaw !== 'object' || chartRaw === null) return undefined;
 
+    // typeof + non-null guard above ensures chartRaw is a non-null object.
     const chart = chartRaw as YamlNode;
     if (
         typeof chart.show !== 'boolean' &&
@@ -157,16 +162,17 @@ const parseSkillDisplay = (raw: unknown): SkillDisplay | undefined => {
     };
 };
 
-const SKILL_TYPES: readonly SkillType[] = [
+const SKILL_TYPES = [
     'pattern',
     'indicator_guide',
     'strategy',
     'candlestick',
     'support_resistance',
-];
+] as const satisfies readonly SkillType[];
 
 const isSkillType = (value: unknown): value is SkillType =>
     typeof value === 'string' &&
+    // SKILL_TYPES is `as const` literal tuple; widening to readonly string[] for .includes() is safe.
     (SKILL_TYPES as readonly string[]).includes(value);
 
 const toSkill = (data: Record<string, unknown>, content: string): Skill => ({

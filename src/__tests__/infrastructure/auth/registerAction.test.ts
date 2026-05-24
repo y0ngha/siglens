@@ -33,7 +33,7 @@ jest.mock('@/infrastructure/auth/use-cases/loginUser', () => ({
 jest.mock('@/infrastructure/auth/use-cases/registerUser', () => ({
     registerUser: jest.fn(),
 }));
-jest.mock('@/infrastructure/email/tokenStore', () => ({
+jest.mock('@/entities/email-token', () => ({
     createEmailTokenStore: jest.fn(),
 }));
 
@@ -41,7 +41,7 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { loginUser } from '@/infrastructure/auth/use-cases/loginUser';
 import { registerUser } from '@/infrastructure/auth/use-cases/registerUser';
-import { createEmailTokenStore } from '@/infrastructure/email/tokenStore';
+import { createEmailTokenStore } from '@/entities/email-token';
 import { getDatabaseClient } from '@/shared/db/client';
 import { DrizzleAgreementRepository } from '@/entities/agreement';
 import { DrizzleTermsRepository } from '@/entities/terms';

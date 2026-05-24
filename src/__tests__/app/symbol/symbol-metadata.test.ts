@@ -141,7 +141,7 @@ jest.mock('@/infrastructure/market/getBarsAction', () => ({
     getBarsAction: jest.fn(),
 }));
 
-jest.mock('@/infrastructure/skills/loader', () => ({
+jest.mock('@/entities/skill', () => ({
     countSkillFiles: jest.fn(() => Promise.resolve({ indicators: 13 })),
 }));
 
