@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import type { CooldownNotice } from '@/widgets/symbol-page';
+import { MS_PER_SECOND, SECONDS_PER_MINUTE } from '@/shared/config/time';
 
 /**
  * AnalysisPanel 내부에서만 표시되는 경량 토스트.
@@ -19,9 +20,9 @@ interface AnalysisToastProps {
 }
 
 function formatRemaining(ms: number): string {
-    const totalSec = Math.ceil(ms / 1000);
-    const minutes = Math.floor(totalSec / 60);
-    const seconds = totalSec % 60;
+    const totalSec = Math.ceil(ms / MS_PER_SECOND);
+    const minutes = Math.floor(totalSec / SECONDS_PER_MINUTE);
+    const seconds = totalSec % SECONDS_PER_MINUTE;
     if (minutes <= 0) return `${seconds}초`;
     return `${minutes}분 ${seconds.toString().padStart(2, '0')}초`;
 }

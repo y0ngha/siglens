@@ -273,10 +273,10 @@ export function buildExpertAnalysisReport({
     analysis,
     keyLevels,
 }: BuildExpertAnalysisReportInput): string {
-    const supportLevels = keyLevels.support.sort((a, b) => {
+    const supportLevels = keyLevels.support.toSorted((a, b) => {
         return a.price - b.price;
     });
-    const resistanceLevels = keyLevels.resistance.sort((a, b) => {
+    const resistanceLevels = keyLevels.resistance.toSorted((a, b) => {
         return b.price - a.price;
     });
 

@@ -887,7 +887,6 @@ export function AnalysisPanel({
                                         copyState === 'failed',
                                     'border-secondary-700 text-secondary-300 hover:border-secondary-600 hover:text-secondary-100':
                                         copyState === 'idle',
-                                    // idle은 기본 상태를 의미하며, 필요에 따라 copyState !== 'copied' && copyState !== 'failed'로 작성 가능
                                 }
                         )}
                         title={

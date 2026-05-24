@@ -1,6 +1,12 @@
 'use client';
 
-import { startTransition, useCallback, useEffect, useState } from 'react';
+import {
+    startTransition,
+    useCallback,
+    useEffect,
+    useEffectEvent,
+    useState,
+} from 'react';
 import {
     GEMINI_2_5_FLASH_LITE_MODEL,
     type ModelId,
@@ -23,7 +29,7 @@ export function useSelectedModel(
         setSelectedModelState(model);
     }, []);
 
-    useEffect(() => {
+    const readFromStorage = useEffectEvent((): void => {
         if (typeof window === 'undefined') return;
         const stored = localStorage.getItem(
             LOCAL_STORAGE_ANALYSIS_MODEL_KEY
@@ -36,11 +42,10 @@ export function useSelectedModel(
             setSelectedModelState(resolved);
             setIsHydrated(true);
         });
-        // Hydration-only effect — intentionally omits `allowedModels` so the
-        // first read from localStorage runs once on mount with the initial
-        // tier snapshot. Re-validation when `allowedModels` changes (e.g.,
-        // after login/logout) is handled by the next effect below.
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+    });
+
+    useEffect(() => {
+        readFromStorage();
     }, []);
 
     // Re-validate when tier changes (e.g., user logs in/out)
