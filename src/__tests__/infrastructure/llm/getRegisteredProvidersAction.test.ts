@@ -6,7 +6,7 @@ jest.mock('@/infrastructure/auth/getCurrentUser', () => ({
 jest.mock('@/shared/db/client', () => ({
     getDatabaseClient: jest.fn(() => ({ db: {}, sql: () => null })),
 }));
-jest.mock('@/infrastructure/db/userApiKeyRepository', () => ({
+jest.mock('@/entities/api-key', () => ({
     DrizzleUserApiKeyRepository: jest.fn().mockImplementation(() => ({
         findByUser: mockFindByUser,
     })),

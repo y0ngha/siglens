@@ -1,8 +1,8 @@
 jest.mock('@/infrastructure/auth/pendingOAuthSignupStore');
 jest.mock('@/infrastructure/db/termsRepository');
-jest.mock('@/infrastructure/db/userRepository');
+jest.mock('@/entities/user');
 jest.mock('@/infrastructure/db/agreementRepository');
-jest.mock('@/infrastructure/db/sessionRepository');
+jest.mock('@/entities/session');
 jest.mock('@/infrastructure/auth/db');
 jest.mock('@/infrastructure/auth/sessionCookie', () => ({
     createAuthSession: jest.fn(),
@@ -35,7 +35,7 @@ import { finalizeOAuthSignupAction } from '@/infrastructure/auth/finalizeOAuthSi
 import { redirect } from 'next/navigation';
 import { createPendingOAuthSignupStoreFromEnv } from '@/infrastructure/auth/pendingOAuthSignupStore';
 import { DrizzleTermsRepository } from '@/infrastructure/db/termsRepository';
-import { DrizzleUserRepository } from '@/infrastructure/db/userRepository';
+import { DrizzleUserRepository } from '@/entities/user';
 import { DrizzleAgreementRepository } from '@/infrastructure/db/agreementRepository';
 import { getAuthDatabaseClient } from '@/infrastructure/auth/db';
 import { createAuthSession } from '@/infrastructure/auth/sessionCookie';

@@ -7,7 +7,7 @@ jest.mock('@/shared/db/client', () => ({
     getDatabaseClient: jest.fn(() => ({ db: {}, sql: () => null })),
 }));
 
-jest.mock('@/infrastructure/db/userRepository', () => ({
+jest.mock('@/entities/user', () => ({
     DrizzleUserRepository: jest.fn().mockImplementation(() => ({})),
 }));
 
@@ -15,10 +15,8 @@ jest.mock('@/infrastructure/tier/use-cases/getUserTier', () => ({
     getUserTier: (...args: unknown[]) => mockGetUserTier(...args),
 }));
 
-jest.mock('@/infrastructure/db/userApiKeyRepository', () => {
-    const actual = jest.requireActual(
-        '@/infrastructure/db/userApiKeyRepository'
-    );
+jest.mock('@/entities/api-key', () => {
+    const actual = jest.requireActual('@/entities/api-key');
     return {
         ...actual,
         DrizzleUserApiKeyRepository: jest.fn().mockImplementation(() => ({
@@ -27,7 +25,7 @@ jest.mock('@/infrastructure/db/userApiKeyRepository', () => {
     };
 });
 
-import { LlmApiKeyDecryptionFailedError } from '@/infrastructure/db/userApiKeyRepository';
+import { LlmApiKeyDecryptionFailedError } from '@/entities/api-key';
 import {
     resolveTierAndByok,
     buildGateError,

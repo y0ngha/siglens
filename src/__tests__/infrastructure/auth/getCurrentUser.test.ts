@@ -7,10 +7,10 @@ jest.mock('@/shared/db/client', () => ({
 jest.mock('@/infrastructure/auth/sessionCookie', () => ({
     AUTH_SESSION_COOKIE_NAME: 'siglens_session',
 }));
-jest.mock('@/infrastructure/db/sessionRepository', () => ({
+jest.mock('@/entities/session', () => ({
     DrizzleSessionRepository: jest.fn().mockImplementation(() => ({})),
 }));
-jest.mock('@/infrastructure/db/userRepository', () => ({
+jest.mock('@/entities/user', () => ({
     DrizzleUserRepository: jest.fn().mockImplementation(() => ({})),
 }));
 jest.mock('@/infrastructure/auth/use-cases/findUserBySessionToken', () => ({

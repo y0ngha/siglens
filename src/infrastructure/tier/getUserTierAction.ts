@@ -3,7 +3,7 @@
 import { DEFAULT_TIER, type Tier } from '@y0ngha/siglens-core';
 import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
 import { getDatabaseClient } from '@/shared/db/client';
-import { DrizzleUserRepository } from '@/infrastructure/db/userRepository';
+import { DrizzleUserRepository } from '@/entities/user';
 import { getUserTier } from '@/infrastructure/tier/use-cases/getUserTier';
 
 /** Resolve the current user's tier for client-side gating; falls back to DEFAULT_TIER for guests/unset users. */

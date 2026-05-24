@@ -2,7 +2,7 @@
 
 import { timingSafeEqual } from 'crypto';
 import { headers } from 'next/headers';
-import { DrizzleSessionRepository } from '@/infrastructure/db/sessionRepository';
+import { DrizzleSessionRepository } from '@/entities/session';
 import { getAuthDatabaseClient } from '@/infrastructure/auth/db';
 
 /** Result of {@link cleanupExpiredSessionsAction}. */
