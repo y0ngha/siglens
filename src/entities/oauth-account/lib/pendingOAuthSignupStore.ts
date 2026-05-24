@@ -36,9 +36,11 @@ function buildKey(token: string): string {
 function tryParse(value: unknown): PendingOAuthSignup | null {
     if (value === null || value === undefined) return null;
     // Upstash Redis auto-deserializes stored JSON, so value may already be an object.
+    // Safe cast: we only store PendingOAuthSignup via save(), and Upstash preserves the shape on deserialization.
     if (typeof value === 'object') return value as PendingOAuthSignup;
     if (typeof value !== 'string') return null;
     try {
+        // Safe cast: the serialized value was produced by JSON.stringify on a PendingOAuthSignup in save().
         return JSON.parse(value) as PendingOAuthSignup;
     } catch {
         return null;

@@ -18,7 +18,7 @@ export function AuthCardShell({
     return (
         <main className="bg-secondary-950 relative flex min-h-[calc(100dvh-3.5rem)] items-center justify-center overflow-hidden px-4 py-12">
             <div aria-hidden className="pointer-events-none absolute inset-0">
-                <div className="absolute -top-40 -left-40 h-144 w-xl rounded-full bg-blue-600/15 blur-3xl" />
+                <div className="bg-primary-600/15 absolute -top-40 -left-40 h-144 w-xl rounded-full blur-3xl" />
                 <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(30,41,59,0.35)_1px,transparent_1px),linear-gradient(to_bottom,rgba(30,41,59,0.35)_1px,transparent_1px)] mask-[radial-gradient(ellipse_at_center,black,transparent_75%)] bg-size-[48px_48px] opacity-30" />
             </div>
             <section className="ring-secondary-800 bg-secondary-900/80 relative w-full max-w-md rounded-2xl p-8 shadow-[0_30px_80px_-30px_rgba(0,0,0,0.7)] ring-1 backdrop-blur-xl motion-safe:animate-[fade-up_220ms_ease-out]">

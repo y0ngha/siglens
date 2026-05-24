@@ -9,13 +9,17 @@ import type {
 } from '@/shared/lib/auth/types';
 
 export interface LoginFormState {
-    error: { code: LoginUserErrorCode; message: string } | null;
+    error: {
+        code: LoginUserErrorCode | UnexpectedErrorCode;
+        message: string;
+    } | null;
 }
 
 export type DeleteAccountFormErrorCode =
     | DeleteAccountErrorCode
     | 'not_authenticated'
-    | 'email_mismatch';
+    | 'email_mismatch'
+    | UnexpectedErrorCode;
 
 export interface DeleteAccountFormState {
     error: { code: DeleteAccountFormErrorCode; message: string } | null;
@@ -28,9 +32,16 @@ export interface ForgotPasswordFormState {
 
 export type LocalInfraErrorCode = 'redis_unavailable';
 
+/**
+ * Catch-all error code for unexpected runtime exceptions in Server Actions.
+ * Kept separate from domain error codes to avoid polluting domain type contracts.
+ */
+export type UnexpectedErrorCode = 'unexpected';
+
 export type RequestEmailVerificationErrorCode =
     | LocalInfraErrorCode
-    | 'invalid_email';
+    | 'invalid_email'
+    | UnexpectedErrorCode;
 
 export type SignupFormErrorCode =
     | RegisterUserErrorCode
@@ -49,7 +60,10 @@ export interface SignupFormState {
 
 export interface ResetPasswordFormState {
     error: {
-        code: ConfirmPasswordResetErrorCode | LocalInfraErrorCode;
+        code:
+            | ConfirmPasswordResetErrorCode
+            | LocalInfraErrorCode
+            | UnexpectedErrorCode;
         field?: ConfirmPasswordResetError['field'];
         message: string;
     } | null;
@@ -63,7 +77,7 @@ export interface RequestEmailVerificationFormState {
 export interface VerifyEmailFormState {
     verified: boolean;
     error: {
-        code: VerifyEmailErrorCode | LocalInfraErrorCode;
+        code: VerifyEmailErrorCode | LocalInfraErrorCode | UnexpectedErrorCode;
         message: string;
     } | null;
 }

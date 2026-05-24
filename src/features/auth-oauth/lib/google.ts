@@ -52,6 +52,7 @@ export const googleOAuthAdapter: OAuthProviderAdapter = {
             return { ok: false, reason: 'token_exchange_failed' };
         let tokenJson: GoogleTokenResponse;
         try {
+            // Google OAuth token endpoint returns { access_token, ... } — shape validated by the access_token check below.
             tokenJson = (await tokenResponse.json()) as GoogleTokenResponse;
         } catch {
             return { ok: false, reason: 'token_exchange_failed' };
@@ -66,6 +67,7 @@ export const googleOAuthAdapter: OAuthProviderAdapter = {
             return { ok: false, reason: 'profile_fetch_failed' };
         let profile: GoogleUserInfoResponse;
         try {
+            // Google userinfo endpoint returns { sub, email, name, picture } — required fields validated by the sub/email check below.
             profile = (await userinfoResponse.json()) as GoogleUserInfoResponse;
         } catch {
             return { ok: false, reason: 'profile_fetch_failed' };

@@ -22,47 +22,65 @@ export async function deleteAccountAction(
     _prev: DeleteAccountFormState,
     formData: FormData
 ): Promise<DeleteAccountFormState> {
-    const confirmEmail = String(formData.get('email') ?? '')
-        .trim()
-        .toLowerCase();
+    try {
+        const confirmEmail = String(formData.get('email') ?? '')
+            .trim()
+            .toLowerCase();
 
-    const user = await getCurrentUser();
-    if (!user) {
+        const user = await getCurrentUser();
+        if (!user) {
+            return {
+                error: {
+                    code: 'not_authenticated',
+                    message: NOT_AUTHENTICATED_MESSAGE,
+                },
+            };
+        }
+
+        if (confirmEmail !== user.email.toLowerCase()) {
+            return {
+                error: {
+                    code: 'email_mismatch',
+                    message: EMAIL_MISMATCH_MESSAGE,
+                },
+            };
+        }
+
+        const secure = isSecureCookieEnv();
+        const { db } = getAuthDatabaseClient();
+        const result = await deleteAccount(
+            { userId: user.id },
+            {
+                users: new DrizzleUserRepository(db),
+                oauthAccounts: new DrizzleOAuthAccountRepository(db),
+                oauthRevoker: compositeOAuthRevoker,
+            },
+            { secureCookie: secure }
+        );
+
+        if (!result.ok) {
+            return {
+                error: {
+                    code: result.error.code,
+                    message: result.error.message,
+                },
+            };
+        }
+
+        const cookieStore = await cookies();
+        cookieStore.set(applyAuthCookie(result.cookie));
+        cookieStore.set(createExpiredAuthHintCookie({ secure }));
+        redirect('/?account_deleted=1');
+    } catch (err) {
+        if (err instanceof Error && err.message.startsWith('NEXT_REDIRECT'))
+            throw err;
+        console.error('[deleteAccountAction] unexpected error:', err);
         return {
             error: {
-                code: 'not_authenticated',
-                message: NOT_AUTHENTICATED_MESSAGE,
+                code: 'unexpected',
+                message:
+                    '계정 삭제 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.',
             },
         };
     }
-
-    if (confirmEmail !== user.email.toLowerCase()) {
-        return {
-            error: { code: 'email_mismatch', message: EMAIL_MISMATCH_MESSAGE },
-        };
-    }
-
-    const { db } = getAuthDatabaseClient();
-    const result = await deleteAccount(
-        { userId: user.id },
-        {
-            users: new DrizzleUserRepository(db),
-            oauthAccounts: new DrizzleOAuthAccountRepository(db),
-            oauthRevoker: compositeOAuthRevoker,
-        },
-        { secureCookie: isSecureCookieEnv() }
-    );
-
-    if (!result.ok) {
-        return {
-            error: { code: result.error.code, message: result.error.message },
-        };
-    }
-
-    const cookieStore = await cookies();
-    cookieStore.set(applyAuthCookie(result.cookie));
-    cookieStore.set(
-        createExpiredAuthHintCookie({ secure: isSecureCookieEnv() })
-    );
-    redirect('/?account_deleted=1');
 }

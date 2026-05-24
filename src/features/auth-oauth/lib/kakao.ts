@@ -56,6 +56,7 @@ export const kakaoOAuthAdapter: OAuthProviderAdapter = {
             return { ok: false, reason: 'token_exchange_failed' };
         let tokenJson: KakaoTokenResponse;
         try {
+            // Kakao OAuth token endpoint returns { access_token, ... } — shape validated by the access_token check below.
             tokenJson = (await tokenResponse.json()) as KakaoTokenResponse;
         } catch {
             return { ok: false, reason: 'token_exchange_failed' };
@@ -70,6 +71,7 @@ export const kakaoOAuthAdapter: OAuthProviderAdapter = {
             return { ok: false, reason: 'profile_fetch_failed' };
         let user: KakaoUserResponse;
         try {
+            // Kakao user API returns { id, kakao_account: { email, profile } } — required fields validated by the id/email check below.
             user = (await userResponse.json()) as KakaoUserResponse;
         } catch {
             return { ok: false, reason: 'profile_fetch_failed' };

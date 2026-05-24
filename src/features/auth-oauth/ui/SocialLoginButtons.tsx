@@ -80,7 +80,7 @@ export function SocialLoginButtons({ next }: SocialLoginButtonsProps) {
                     href={buildHref(provider.id, next)}
                     rel="nofollow"
                     className={cn(
-                        'flex h-12 w-full items-center justify-center gap-3 rounded-md text-sm font-semibold transition-colors focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none',
+                        'focus-visible:ring-primary-500 flex h-12 w-full items-center justify-center gap-3 rounded-md text-sm font-semibold transition-colors focus-visible:ring-2 focus-visible:outline-none',
                         provider.buttonClassName
                     )}
                 >
