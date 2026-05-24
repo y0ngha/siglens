@@ -19,7 +19,7 @@ import {
     toEnrichedNewsItem,
 } from '@/entities/news-article';
 import { getNextEarningsReport } from '@/entities/earnings-report';
-import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
+import { getCurrentUser } from '@/entities/session/lib/getCurrentUser';
 import { resolveTierAndByok, buildGateError } from '@/shared/lib/byokGate';
 import { isBot } from '@/shared/api/isBot';
 // Cross-entity: options-chain fetchOptionsSnapshot 필요. Phase 9에서 features 레이어 도입 시 해소.

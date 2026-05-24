@@ -3,11 +3,14 @@
  */
 import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
-import { OAuthConsentForm } from '@/components/auth/OAuthConsentForm';
+import { OAuthConsentForm } from '@/features/auth-oauth-consent/ui/OAuthConsentForm';
 
-jest.mock('@/infrastructure/auth/finalizeOAuthSignupAction', () => ({
-    finalizeOAuthSignupAction: jest.fn(),
-}));
+jest.mock(
+    '@/features/auth-oauth-consent/actions/finalizeOAuthSignupAction',
+    () => ({
+        finalizeOAuthSignupAction: jest.fn(),
+    })
+);
 
 describe('OAuthConsentForm', () => {
     const baseProps = {

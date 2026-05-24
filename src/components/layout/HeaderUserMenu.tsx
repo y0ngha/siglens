@@ -1,6 +1,6 @@
 'use client';
 
-import { LogoutButton } from '@/components/auth/LogoutButton';
+import { LogoutButton } from '@/features/auth-logout';
 import { useEscapeKey } from '@/shared/hooks/useEscapeKey';
 import { usePopoverToggle } from '@/shared/hooks/usePopoverToggle';
 import { TIER_LABEL } from '@/lib/auth/tierLabel';

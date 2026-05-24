@@ -1,6 +1,6 @@
 const mockUpsert = jest.fn();
 
-jest.mock('@/infrastructure/auth/getCurrentUser', () => ({
+jest.mock('@/entities/session/lib/getCurrentUser', () => ({
     getCurrentUser: jest.fn(),
 }));
 jest.mock('@/shared/db/client', () => ({
@@ -20,7 +20,7 @@ jest.mock('@/entities/api-key', () => ({
     })),
 }));
 
-import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
+import { getCurrentUser } from '@/entities/session/lib/getCurrentUser';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { saveApiKeyAction } from '@/entities/api-key/actions/saveApiKeyAction';

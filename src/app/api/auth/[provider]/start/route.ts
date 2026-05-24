@@ -3,12 +3,10 @@ import {
     buildOAuthRedirectUri,
     getOAuthAdapter,
     isOAuthProvider,
-} from '@/infrastructure/auth/oauth/providers';
-import {
     OAuthStateSecretMisconfiguredError,
     issueOAuthState,
-} from '@/infrastructure/auth/oauth/state';
-import { sanitizeNextPath } from '@/domain/auth/redirect';
+} from '@/features/auth-oauth';
+import { sanitizeNextPath } from '@/shared/lib/auth/redirect';
 
 interface StartRouteParams {
     params: Promise<{ provider: string }>;

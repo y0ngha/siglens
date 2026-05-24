@@ -15,7 +15,7 @@ jest.mock('@/shared/api/fmp/fundamentalClient', () => ({
     FmpFundamentalClient: jest.fn().mockImplementation(() => ({})),
 }));
 
-jest.mock('@/infrastructure/auth/getCurrentUser', () => ({
+jest.mock('@/entities/session/lib/getCurrentUser', () => ({
     getCurrentUser: jest.fn(),
 }));
 
@@ -34,7 +34,7 @@ import {
     type SubmitFundamentalAnalysisResult,
 } from '@y0ngha/siglens-core';
 import { FmpFundamentalClient } from '@/shared/api/fmp/fundamentalClient';
-import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
+import { getCurrentUser } from '@/entities/session/lib/getCurrentUser';
 import { resolveTierAndByok } from '@/shared/lib/byokGate';
 import type { AnalysisGateError } from '@/shared/lib/types';
 import { submitFundamentalAnalysisAction } from '../actions/submitFundamentalAnalysisAction';

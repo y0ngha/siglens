@@ -1,6 +1,6 @@
 const mockFindByUser = jest.fn();
 
-jest.mock('@/infrastructure/auth/getCurrentUser', () => ({
+jest.mock('@/entities/session/lib/getCurrentUser', () => ({
     getCurrentUser: jest.fn(),
 }));
 jest.mock('@/shared/db/client', () => ({
@@ -12,7 +12,7 @@ jest.mock('@/entities/api-key', () => ({
     })),
 }));
 
-import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
+import { getCurrentUser } from '@/entities/session/lib/getCurrentUser';
 import { getRegisteredProvidersAction } from '@/entities/api-key/actions/getRegisteredProvidersAction';
 
 const mockGetCurrentUser = getCurrentUser as jest.MockedFunction<

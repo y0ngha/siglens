@@ -10,7 +10,7 @@ jest.mock('@y0ngha/siglens-core', () => ({
     submitAnalysis: jest.fn(),
 }));
 
-jest.mock('@/infrastructure/auth/getCurrentUser', () => ({
+jest.mock('@/entities/session/lib/getCurrentUser', () => ({
     getCurrentUser: jest.fn(),
 }));
 
@@ -31,7 +31,7 @@ import {
     type ModelId,
     type SubmitAnalysisGatedResult,
 } from '@y0ngha/siglens-core';
-import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
+import { getCurrentUser } from '@/entities/session/lib/getCurrentUser';
 
 const mockHeaders = headers as jest.MockedFunction<typeof headers>;
 

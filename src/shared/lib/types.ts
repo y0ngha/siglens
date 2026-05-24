@@ -87,9 +87,9 @@ export type {
     ResetPasswordFormState,
     SignupFormState,
     VerifyEmailFormState,
-} from '@/domain/auth/formTypes';
+} from '@/shared/lib/auth/formTypes';
 
-export type { AuthUserRecord } from '@/domain/auth/types';
+export type { AuthUserRecord } from '@/shared/lib/auth/types';
 
 import type { LlmProvider } from '@/shared/config/llmProviders';
 

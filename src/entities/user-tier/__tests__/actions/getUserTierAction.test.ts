@@ -1,7 +1,7 @@
 const mockGetCurrentUser = jest.fn();
 const mockGetUserTier = jest.fn();
 
-jest.mock('@/infrastructure/auth/getCurrentUser', () => ({
+jest.mock('@/entities/session/lib/getCurrentUser', () => ({
     getCurrentUser: (...args: unknown[]) => mockGetCurrentUser(...args),
 }));
 

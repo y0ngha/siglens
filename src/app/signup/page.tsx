@@ -1,9 +1,9 @@
 import { Suspense } from 'react';
 
-import { AuthCardShell } from '@/components/auth/AuthCardShell';
-import { SignupForm } from '@/components/auth/SignupForm';
-import { SocialLoginButtons } from '@/components/auth/SocialLoginButtons';
-import { sanitizeNextPath } from '@/domain/auth/redirect';
+import { AuthCardShell } from '@/shared/ui/auth/AuthCardShell';
+import { SignupForm } from '@/features/auth-signup';
+import { SocialLoginButtons } from '@/features/auth-oauth';
+import { sanitizeNextPath } from '@/shared/lib/auth/redirect';
 import { SITE_NAME, SITE_URL } from '@/shared/lib/seo';
 import type { Metadata } from 'next';
 import Link from 'next/link';

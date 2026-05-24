@@ -5,7 +5,7 @@ import '@testing-library/jest-dom';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { HeaderUserMenu } from '@/components/layout/HeaderUserMenu';
 
-jest.mock('@/components/auth/LogoutButton', () => ({
+jest.mock('@/features/auth-logout/ui/LogoutButton', () => ({
     LogoutButton: () => <button>로그아웃</button>,
 }));
 

@@ -1,9 +1,6 @@
-// proxy.ts는 `@/infrastructure/auth/sessionCookie`에서 AUTH_SESSION_COOKIE_NAME을
-// import한다 (siglens-core가 아님). 잘못된 모듈을 mock하면 mock이 실제로 적용되지 않고
-// 두 source가 우연히 같은 literal('siglens_session')을 공유한 덕에 통과해온 상태였다.
-// sessionCookie.ts는 외부 의존 없는 순수 상수 모듈이라 실제로 mock할 필요도 없지만,
-// 명시적으로 의도를 드러내기 위해 올바른 모듈 경로로 mock을 유지한다.
-jest.mock('@/infrastructure/auth/sessionCookie', () => ({
+// proxy.ts는 @/shared/config/cookieNames에서 AUTH_SESSION_COOKIE_NAME을 import한다.
+// edge runtime 안전성을 위해 entities barrel 대신 shared 순수 상수 파일 사용.
+jest.mock('@/shared/config/cookieNames', () => ({
     AUTH_SESSION_COOKIE_NAME: 'siglens_session',
 }));
 jest.mock('next/server', () => ({

@@ -13,7 +13,7 @@ import { DrizzleNewsRepository } from '@/entities/news-article';
 import { NEWS_ANALYSIS_LOOKBACK_MS } from '../lib/newsLookback';
 import { isEnrichedRow, toEnrichedNewsItem } from '../lib/newsEnrichment';
 import { getNextEarningsReport } from '@/entities/earnings-report';
-import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
+import { getCurrentUser } from '@/entities/session/lib/getCurrentUser';
 import { resolveTierAndByok, buildGateError } from '@/shared/lib/byokGate';
 import { isBot } from '@/shared/api/isBot';
 import type { AnalysisGateBlockedResult } from '@/shared/lib/types';

@@ -1,0 +1,149 @@
+'use server';
+
+import type { SignupFormState } from '@/shared/lib/auth/formTypes';
+import { sanitizeNextPath } from '@/shared/lib/auth/redirect';
+import {
+    applyAuthCookie,
+    createAuthHintCookie,
+    bcryptPasswordHasher,
+    bcryptPasswordVerifier,
+    getAuthDatabaseClient,
+    AUTH_SERVICE_UNAVAILABLE_MESSAGE,
+    CONSENT_REQUIRED_MESSAGE,
+    DEFAULT_SESSION_TTL_SECONDS,
+    isSecureCookieEnv,
+    DrizzleSessionRepository,
+} from '@/entities/session';
+import {
+    loginUser,
+    registerUser,
+    DrizzleUserRepository,
+} from '@/entities/user';
+import { DrizzleAgreementRepository } from '@/entities/agreement';
+import { DrizzleTermsRepository } from '@/entities/terms';
+import { createEmailTokenStore } from '@/entities/email-token';
+import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
+
+const AUTO_LOGIN_FAILED_MESSAGE =
+    '회원가입은 완료되었으나 자동 로그인에 실패했습니다. 로그인 페이지에서 다시 시도해주세요.';
+
+export async function registerAction(
+    _prev: SignupFormState,
+    formData: FormData
+): Promise<SignupFormState> {
+    try {
+        const email = String(formData.get('email') ?? '').trim();
+        const password = String(formData.get('password') ?? '');
+        const rawName = String(formData.get('name') ?? '').trim();
+        const name = rawName ? rawName : undefined;
+        const next = sanitizeNextPath(formData.get('next')?.toString());
+        // null (field absent) and 'false' (unchecked) both fail the !== 'true' check
+        const agreedPrivacy = formData.get('agreed_privacy');
+        const agreedTos = formData.get('agreed_tos');
+
+        if (agreedPrivacy !== 'true' || agreedTos !== 'true') {
+            return {
+                error: {
+                    code: 'consent_required',
+                    message: CONSENT_REQUIRED_MESSAGE,
+                },
+            };
+        }
+
+        const emailTokens = createEmailTokenStore();
+        if (!emailTokens) {
+            return {
+                error: {
+                    code: 'redis_unavailable',
+                    message: AUTH_SERVICE_UNAVAILABLE_MESSAGE,
+                },
+            };
+        }
+
+        const { db } = getAuthDatabaseClient();
+        const termsRepo = new DrizzleTermsRepository(db);
+        const [privacyTerms, tosTerms] = await Promise.all([
+            termsRepo.findActive('privacy'),
+            termsRepo.findActive('tos'),
+        ]);
+
+        if (!privacyTerms || !tosTerms) {
+            return {
+                error: {
+                    code: 'service_unavailable',
+                    message: AUTH_SERVICE_UNAVAILABLE_MESSAGE,
+                },
+            };
+        }
+
+        const userRepo = new DrizzleUserRepository(db);
+
+        const registerResult = await registerUser(
+            {
+                email,
+                password,
+                name,
+                agreedTermsIds: [privacyTerms.id, tosTerms.id],
+            },
+            {
+                users: userRepo,
+                agreements: new DrizzleAgreementRepository(db),
+                passwordHasher: bcryptPasswordHasher,
+                emailTokens,
+            }
+        );
+
+        if (!registerResult.ok) {
+            return {
+                error: {
+                    code: registerResult.error.code,
+                    field: registerResult.error.field,
+                    message: registerResult.error.message,
+                },
+            };
+        }
+
+        const secure = isSecureCookieEnv();
+        const loginResult = await loginUser(
+            { email, password },
+            {
+                users: userRepo,
+                sessions: new DrizzleSessionRepository(db),
+                passwordVerifier: bcryptPasswordVerifier,
+            },
+            { secureCookie: secure }
+        );
+
+        if (!loginResult.ok) {
+            return {
+                error: {
+                    code: 'auto_login_failed',
+                    message: AUTO_LOGIN_FAILED_MESSAGE,
+                },
+            };
+        }
+
+        const cookieStore = await cookies();
+        cookieStore.set(applyAuthCookie(loginResult.cookie));
+        cookieStore.set(
+            createAuthHintCookie({
+                maxAgeSeconds: DEFAULT_SESSION_TTL_SECONDS,
+                secure,
+            })
+        );
+        redirect(next);
+    } catch (err) {
+        console.error('Error in registerAction:', err);
+        // Re-throw Next.js redirect (not an error — it's a control-flow signal).
+        if (err instanceof Error && err.message.startsWith('NEXT_REDIRECT')) {
+            throw err;
+        }
+        return {
+            error: {
+                code: 'service_unavailable',
+                message: AUTH_SERVICE_UNAVAILABLE_MESSAGE,
+            },
+        };
+    }
+}

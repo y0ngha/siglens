@@ -4,7 +4,7 @@ import type { Tier } from '@y0ngha/siglens-core';
 import type { OAuthProvider } from '@/shared/lib/types';
 import type { LlmProvider } from '../config/llmProviders';
 import type { KoreanTickerEntry } from '@/shared/lib/types';
-import type { AuthUserRecord } from '@/domain/auth/types';
+import type { AuthUserRecord } from '@/shared/lib/auth/types';
 import type * as schema from './schema';
 
 export type { AuthUserRecord };

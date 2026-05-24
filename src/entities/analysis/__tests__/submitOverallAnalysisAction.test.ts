@@ -37,7 +37,7 @@ jest.mock('@/entities/earnings-report', () => ({
     getNextEarningsReport: jest.fn(),
 }));
 
-jest.mock('@/infrastructure/auth/getCurrentUser', () => ({
+jest.mock('@/entities/session/lib/getCurrentUser', () => ({
     getCurrentUser: jest.fn(),
 }));
 
@@ -70,7 +70,7 @@ import {
 import { headers } from 'next/headers';
 import { DrizzleNewsRepository } from '@/entities/news-article';
 import { getNextEarningsReport } from '@/entities/earnings-report';
-import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
+import { getCurrentUser } from '@/entities/session/lib/getCurrentUser';
 import { resolveTierAndByok } from '@/shared/lib/byokGate';
 import { fetchOptionsSnapshot } from '@/entities/options-chain';
 import {
