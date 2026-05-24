@@ -8,6 +8,7 @@ import { DrizzleUserRepository, deleteAccount } from '@/entities/user';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import type { DeleteAccountFormState } from '@/shared/lib/auth/formTypes';
+import { normalizeEmail } from '@/shared/lib/auth/validation';
 import {
     applyAuthCookie,
     getAuthDatabaseClient,
@@ -25,9 +26,9 @@ export async function deleteAccountAction(
     formData: FormData
 ): Promise<DeleteAccountFormState> {
     try {
-        const confirmEmail = String(formData.get('email') ?? '')
-            .trim()
-            .toLowerCase();
+        const confirmEmail = normalizeEmail(
+            String(formData.get('email') ?? '')
+        );
 
         const user = await getCurrentUser();
         if (!user) {

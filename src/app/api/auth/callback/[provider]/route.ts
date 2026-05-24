@@ -1,26 +1,24 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { DrizzleSessionRepository } from '@/entities/session';
-import { DrizzleUserRepository } from '@/entities/user';
-import { applyAuthCookie } from '@/entities/session/lib/applyAuthCookie';
-import { createAuthHintCookie } from '@/entities/session/lib/authHintCookie';
-import { getAuthDatabaseClient } from '@/entities/session/lib/db';
 import {
+    DrizzleSessionRepository,
+    applyAuthCookie,
+    createAuthHintCookie,
+    getAuthDatabaseClient,
     createAuthSession,
     DEFAULT_SESSION_TTL_SECONDS,
-} from '@/entities/session/lib/sessionCookie';
-import { createPendingOAuthSignupStoreFromEnv } from '@/entities/oauth-account/lib/pendingOAuthSignupStore';
+    isSecureCookieEnv,
+} from '@/entities/session';
+import { DrizzleUserRepository } from '@/entities/user';
+import { createPendingOAuthSignupStoreFromEnv } from '@/entities/oauth-account';
 import {
     buildOAuthRedirectUri,
     getOAuthAdapter,
     isOAuthProvider,
-} from '@/features/auth-oauth/lib/providers';
-import {
     OAUTH_STATE_COOKIE_NAME,
     OAuthStateSecretMisconfiguredError,
     expiredOAuthStateCookie,
     verifyOAuthState,
-} from '@/features/auth-oauth/lib/state';
-import { isSecureCookieEnv } from '@/entities/session/lib/sessionCookieOptions';
+} from '@/features/auth-oauth';
 import { sanitizeNextPath } from '@/shared/lib/auth/redirect';
 
 interface CallbackRouteParams {

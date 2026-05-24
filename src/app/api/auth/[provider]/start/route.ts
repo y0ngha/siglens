@@ -3,11 +3,9 @@ import {
     buildOAuthRedirectUri,
     getOAuthAdapter,
     isOAuthProvider,
-} from '@/features/auth-oauth/lib/providers';
-import {
     OAuthStateSecretMisconfiguredError,
     issueOAuthState,
-} from '@/features/auth-oauth/lib/state';
+} from '@/features/auth-oauth';
 import { sanitizeNextPath } from '@/shared/lib/auth/redirect';
 
 interface StartRouteParams {

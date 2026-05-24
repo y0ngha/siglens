@@ -3,42 +3,30 @@ jest.mock('@/entities/user', () => ({
 }));
 jest.mock('@/entities/session', () => ({
     DrizzleSessionRepository: jest.fn(),
-}));
-jest.mock('@/entities/session/lib/db', () => ({
-    getAuthDatabaseClient: jest.fn().mockReturnValue({ db: {} }),
-}));
-jest.mock('@/entities/session/lib/applyAuthCookie', () => ({
     applyAuthCookie: jest.fn().mockReturnValue({ name: 'auth', value: 'v' }),
-}));
-jest.mock('@/entities/session/lib/authHintCookie', () => ({
     createAuthHintCookie: jest
         .fn()
         .mockReturnValue({ name: 'hint', value: '1' }),
-}));
-jest.mock('@/entities/session/lib/sessionCookie', () => ({
+    getAuthDatabaseClient: jest.fn().mockReturnValue({ db: {} }),
     createAuthSession: jest.fn(),
     DEFAULT_SESSION_TTL_SECONDS: 86400,
+    isSecureCookieEnv: jest.fn().mockReturnValue(false),
 }));
-jest.mock('@/entities/oauth-account/lib/pendingOAuthSignupStore', () => ({
+jest.mock('@/entities/oauth-account', () => ({
     createPendingOAuthSignupStoreFromEnv: jest.fn(),
 }));
-jest.mock('@/features/auth-oauth/lib/providers', () => ({
+jest.mock('@/features/auth-oauth', () => ({
     buildOAuthRedirectUri: jest
         .fn()
         .mockReturnValue('https://example.com/callback/google'),
     getOAuthAdapter: jest.fn(),
     isOAuthProvider: jest.fn(),
-}));
-jest.mock('@/features/auth-oauth/lib/state', () => ({
     OAUTH_STATE_COOKIE_NAME: 'oauth_state',
     OAuthStateSecretMisconfiguredError: class OAuthStateSecretMisconfiguredError extends Error {},
     expiredOAuthStateCookie: jest
         .fn()
         .mockReturnValue({ name: 'oauth_state', value: '', maxAge: 0 }),
     verifyOAuthState: jest.fn(),
-}));
-jest.mock('@/entities/session/lib/sessionCookieOptions', () => ({
-    isSecureCookieEnv: jest.fn().mockReturnValue(false),
 }));
 jest.mock('@/shared/lib/auth/redirect', () => ({
     sanitizeNextPath: jest.fn().mockImplementation((p: string) => p || '/'),
@@ -47,14 +35,16 @@ jest.mock('@/shared/lib/auth/redirect', () => ({
 import { NextRequest } from 'next/server';
 import { GET } from '@/app/api/auth/callback/[provider]/route';
 import { DrizzleUserRepository } from '@/entities/user';
-import { DrizzleSessionRepository } from '@/entities/session';
-import { createAuthSession } from '@/entities/session/lib/sessionCookie';
-import { createPendingOAuthSignupStoreFromEnv } from '@/entities/oauth-account/lib/pendingOAuthSignupStore';
+import {
+    DrizzleSessionRepository,
+    createAuthSession,
+} from '@/entities/session';
+import { createPendingOAuthSignupStoreFromEnv } from '@/entities/oauth-account';
 import {
     getOAuthAdapter,
     isOAuthProvider,
-} from '@/features/auth-oauth/lib/providers';
-import { verifyOAuthState } from '@/features/auth-oauth/lib/state';
+    verifyOAuthState,
+} from '@/features/auth-oauth';
 
 const MockUserRepository = DrizzleUserRepository as jest.MockedClass<
     typeof DrizzleUserRepository
