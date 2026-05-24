@@ -37,7 +37,7 @@ jest.mock('@y0ngha/siglens-core', () => ({
 jest.mock('@/infrastructure/ticker/db', () => ({
     tryGetTickerDatabaseClient: () => tryGetTickerDatabaseClientMock(),
 }));
-jest.mock('@/infrastructure/db/tickerRepository', () => ({
+jest.mock('@/entities/ticker', () => ({
     DrizzleKoreanTickerRepository: class {
         constructor(db: unknown) {
             return repositoryFactoryMock(db) as unknown as object;

@@ -1,6 +1,6 @@
 import { usageLogs } from '@/shared/db/schema';
 import type { SiglensDatabase } from '@/shared/db/types';
-import { DrizzleUsageLogRepository } from '@/infrastructure/db/usageLogRepository';
+import { DrizzleUsageLogRepository } from '@/entities/analysis/usageLogRepository';
 
 function makeInsertDb(): {
     db: SiglensDatabase;

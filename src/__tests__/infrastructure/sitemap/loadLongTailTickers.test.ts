@@ -2,14 +2,14 @@ jest.mock('@/shared/db/client', () => ({
     tryGetDatabaseClient: jest.fn(),
 }));
 
-jest.mock('@/infrastructure/db/tickerRepository', () => ({
+jest.mock('@/entities/ticker', () => ({
     DrizzleKoreanTickerRepository: jest.fn(),
 }));
 
 import { POPULAR_TICKERS } from '@/domain/constants/popular-tickers';
 import type { KoreanTickerEntry } from '@/domain/types';
 import { tryGetDatabaseClient } from '@/shared/db/client';
-import { DrizzleKoreanTickerRepository } from '@/infrastructure/db/tickerRepository';
+import { DrizzleKoreanTickerRepository } from '@/entities/ticker';
 import { loadLongTailTickers } from '@/infrastructure/sitemap/loadLongTailTickers';
 
 // POPULAR_TICKERS가 변경돼도 본 테스트의 dedupe 검증이 의도와 어긋나지 않도록

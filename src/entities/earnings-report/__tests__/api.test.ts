@@ -11,7 +11,7 @@ import {
     DrizzleEarningsReportsRepository,
     toComparisonItems,
     type EarningsReportUpsertInput,
-} from '@/infrastructure/db/earningsReportsRepository';
+} from '@/entities/earnings-report';
 
 const rawPayload = {
     date: '2025-08-01',

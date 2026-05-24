@@ -1,7 +1,4 @@
-import type {
-    ContactInput,
-    ContactRepository,
-} from '@/infrastructure/db/contactRepository';
+import type { ContactInput, ContactRepository } from '@/entities/inquiry';
 import { submitInquiry } from '@/infrastructure/contact/use-cases/submitInquiry';
 import type { SubmitInquiryDeps } from '@/infrastructure/contact/use-cases/types';
 

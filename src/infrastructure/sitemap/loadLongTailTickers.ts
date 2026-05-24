@@ -1,6 +1,6 @@
 import { POPULAR_TICKERS } from '@/domain/constants/popular-tickers';
 import { tryGetDatabaseClient } from '@/shared/db/client';
-import { DrizzleKoreanTickerRepository } from '@/infrastructure/db/tickerRepository';
+import { DrizzleKoreanTickerRepository } from '@/entities/ticker';
 
 /**
  * sitemap에 포함할 long-tail ticker 목록을 반환한다.

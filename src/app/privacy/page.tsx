@@ -16,7 +16,7 @@ import { extractToc } from '@/shared/lib/legal-toc';
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
 import { buildBreadcrumbJsonLd, SITE_NAME, SITE_URL } from '@/shared/lib/seo';
 import { getDatabaseClient } from '@/shared/db/client';
-import { DrizzleTermsRepository } from '@/infrastructure/db/termsRepository';
+import { DrizzleTermsRepository } from '@/entities/terms';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';

@@ -1,5 +1,5 @@
 import type { OAuthProvider } from '@/domain/types';
-import type { AgreementRepository } from '@/infrastructure/db/agreementRepository';
+import type { AgreementRepository } from '@/entities/agreement';
 import type {
     AuthSessionRecord,
     AuthUserRecord,

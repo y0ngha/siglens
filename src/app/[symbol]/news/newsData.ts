@@ -1,11 +1,11 @@
 import { cache } from 'react';
 import { getDatabaseClient } from '@/shared/db/client';
-import { DrizzleNewsRepository } from '@/infrastructure/db/newsRepository';
-import { DrizzleEarningsReportsRepository } from '@/infrastructure/db/earningsReportsRepository';
+import { DrizzleNewsRepository } from '@/entities/news-article';
+import { DrizzleEarningsReportsRepository } from '@/entities/earnings-report';
 import { FmpFundamentalClient } from '@/infrastructure/fmp/fundamentalClient';
 import { MS_PER_DAY } from '@/domain/constants/time';
 import { NEWS_LOOKBACK_MS } from '@/infrastructure/market/newsLookback';
-import type { NewsRow } from '@/infrastructure/db/newsRepository';
+import type { NewsRow } from '@/entities/news-article';
 import type { GradesEvent } from '@y0ngha/siglens-core';
 import type { EarningsReportComparisonItem } from '@/domain/types';
 

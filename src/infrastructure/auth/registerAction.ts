@@ -17,9 +17,9 @@ import { DEFAULT_SESSION_TTL_SECONDS } from '@/infrastructure/auth/sessionCookie
 import { isSecureCookieEnv } from '@/infrastructure/auth/sessionCookieOptions';
 import { loginUser } from '@/infrastructure/auth/use-cases/loginUser';
 import { registerUser } from '@/infrastructure/auth/use-cases/registerUser';
-import { DrizzleAgreementRepository } from '@/infrastructure/db/agreementRepository';
+import { DrizzleAgreementRepository } from '@/entities/agreement';
 import { DrizzleSessionRepository } from '@/entities/session';
-import { DrizzleTermsRepository } from '@/infrastructure/db/termsRepository';
+import { DrizzleTermsRepository } from '@/entities/terms';
 import { DrizzleUserRepository } from '@/entities/user';
 import { createEmailTokenStore } from '@/infrastructure/email/tokenStore';
 import { cookies } from 'next/headers';

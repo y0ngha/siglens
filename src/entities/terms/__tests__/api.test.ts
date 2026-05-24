@@ -5,7 +5,7 @@ jest.mock('@/shared/lib/sleep', () => ({
     sleep: jest.fn().mockResolvedValue(undefined),
 }));
 
-import { DrizzleTermsRepository } from '@/infrastructure/db/termsRepository';
+import { DrizzleTermsRepository } from '@/entities/terms';
 import type { SiglensDatabase } from '@/shared/db/types';
 import type { TermsKind } from '@/shared/db/constants';
 
