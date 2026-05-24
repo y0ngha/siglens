@@ -9,5 +9,10 @@ import type {
 export async function getSectorSignalsAction(
     timeframe?: DashboardTimeframe
 ): Promise<SectorSignalsResult> {
-    return getSectorSignals(timeframe);
+    try {
+        return await getSectorSignals(timeframe);
+    } catch (error) {
+        console.error('[getSectorSignalsAction] failed:', error);
+        return { computedAt: new Date().toISOString(), stocks: [] };
+    }
 }

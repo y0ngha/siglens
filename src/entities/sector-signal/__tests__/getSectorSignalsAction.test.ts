@@ -45,9 +45,11 @@ describe('getSectorSignalsAction 함수는', () => {
         expect(result).toBe(sectorResult);
     });
 
-    it('에러를 호출자에게 그대로 전파한다', async () => {
+    it('에러 발생 시 빈 결과를 반환한다', async () => {
         mockGetSectorSignals.mockRejectedValueOnce(new Error('network error'));
 
-        await expect(getSectorSignalsAction()).rejects.toThrow('network error');
+        const result = await getSectorSignalsAction();
+        expect(result.stocks).toEqual([]);
+        expect(result.computedAt).toBeDefined();
     });
 });

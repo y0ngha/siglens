@@ -9,14 +9,7 @@ export {
     type OptionsCacheLifeProfile,
 } from './lib/optionsCacheLife';
 export { optionsSymbolTag } from './lib/optionsCacheTags';
-export {
-    normalizeYahooContract,
-    normalizeYahooExpiration,
-    normalizeYahooSnapshot,
-    type YahooCallOrPut,
-    type YahooOption,
-    type YahooOptionsResult,
-} from './lib/yahooNormalize';
-export { YahooOptionsAdapter } from './lib/YahooOptionsAdapter';
+// Yahoo adapter 구현 세부사항(normalizeYahoo*, YahooOptionsAdapter 등)은
+// optionsDataCache 내부에서만 사용. 외부 노출 불필요 — 테스트만 직접 import.
 
 // actions are imported from @/entities/options-chain/actions

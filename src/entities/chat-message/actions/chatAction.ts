@@ -155,7 +155,6 @@ export async function chatAction(
                 callAiProvider: callAiProviderRouter,
             }
         );
-        console.log(r);
         return r;
     } catch {
         return { ok: false, error: 'server_error' };
