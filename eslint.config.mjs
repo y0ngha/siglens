@@ -101,7 +101,8 @@ const eslintConfig = defineConfig([
                         {
                             // Phase 5: features 간 cross-import 허용. auth-signup이 auth-email-verification을,
                             // auth-oauth-consent가 auth-signup을, account-delete가 auth-oauth를 참조하는 등
-                            // auth 슬라이스 간 의존이 불가피. Phase 7 (widgets 분리) 완료 시 재평가.
+                            // auth 슬라이스 간 의존이 불가피.
+                            // TODO(Phase 7): widgets 레이어 분리 시 공유 로직을 widgets로 올려 features 간 직접 의존 제거.
                             from: 'features',
                             allow: [
                                 'features',

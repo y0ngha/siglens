@@ -32,8 +32,4 @@ export type {
     PasswordHasher,
     PasswordVerifier,
 } from './lib/types';
-export {
-    bcryptPasswordHasher,
-    bcryptPasswordVerifier,
-    BCRYPT_DEFAULT_SALT_ROUNDS,
-} from './lib/bcrypt';
+export { bcryptPasswordHasher, bcryptPasswordVerifier } from './lib/bcrypt';
