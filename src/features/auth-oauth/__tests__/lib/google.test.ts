@@ -1,5 +1,5 @@
 import { googleOAuthAdapter } from '@/features/auth-oauth/lib/google';
-import { jsonResponse } from '@/__tests__/fixtures/jsonResponse';
+import { jsonResponse } from '@/shared/test-utils/jsonResponse';
 
 const ORIGINAL_FETCH = global.fetch;
 

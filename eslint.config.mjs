@@ -61,8 +61,6 @@ const eslintConfig = defineConfig([
                 { type: 'shared', pattern: 'src/shared/**' },
                 // app layer (Next.js App Router)
                 { type: 'app', pattern: 'src/app/**' },
-                // legacy-lib: src/lib/ 잔여 파일 (Phase 10에서 shared/lib 또는 entities로 이동 예정)
-                { type: 'legacy-lib', pattern: 'src/lib/**' },
             ],
         },
         rules: {
@@ -78,7 +76,6 @@ const eslintConfig = defineConfig([
                                 'features',
                                 'entities',
                                 'shared',
-                                'legacy-lib',
                             ],
                         },
                         {
@@ -90,25 +87,19 @@ const eslintConfig = defineConfig([
                                 'features',
                                 'entities',
                                 'shared',
-                                'legacy-lib',
                             ],
                         },
                         {
                             // auth 슬라이스 간 cross-import 허용.
                             // 허용 쌍: auth-signup → auth-email-verification, auth-oauth-consent → auth-signup
                             from: 'features',
-                            allow: [
-                                'features',
-                                'entities',
-                                'shared',
-                                'legacy-lib',
-                            ],
+                            allow: ['features', 'entities', 'shared'],
                         },
                         {
                             // entities 간 cross-import 허용. submitOverallAnalysisAction (analysis)이
                             // news-article, earnings-report 데이터를 조합하는 등 entity 간 의존이 불가피.
                             from: 'entities',
-                            allow: ['entities', 'shared', 'legacy-lib'],
+                            allow: ['entities', 'shared'],
                         },
                         {
                             from: 'shared',
@@ -123,12 +114,7 @@ const eslintConfig = defineConfig([
                                 'features',
                                 'entities',
                                 'shared',
-                                'legacy-lib',
                             ],
-                        },
-                        {
-                            from: 'legacy-lib',
-                            allow: ['shared'],
                         },
                     ],
                 },

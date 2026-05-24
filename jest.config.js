@@ -3,7 +3,7 @@ module.exports = {
     testEnvironment: 'node',
     setupFiles: ['<rootDir>/jest.setup.ts'],
     testMatch: [
-        // FSD colocated(src/<layer>/<slice>/__tests__/) + shared fixtures/utils(src/__tests__/)
+        // FSD colocated: src/<layer>/<slice>/__tests__/
         '<rootDir>/src/**/__tests__/**/*.+(test|spec).+(ts|tsx)',
     ],
     transform: {

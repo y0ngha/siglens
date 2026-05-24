@@ -25,7 +25,7 @@ import {
     ET_MARKET_HOURS_DISPLAY,
     KST_EDT_HOURS_DISPLAY,
     KST_EST_HOURS_DISPLAY,
-} from '@/lib/options/marketHoursDisplay';
+} from '@/shared/lib/options/marketHoursDisplay';
 
 interface KstWindowInfo {
     window: string;

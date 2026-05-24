@@ -36,7 +36,7 @@ import { deleteAccount } from '@/entities/user';
 import { getCurrentUser } from '@/entities/session';
 import { deleteAccountAction } from '@/features/account-delete/actions/deleteAccountAction';
 import { resetAuthDatabaseClientForTests } from '@/entities/session/lib/db';
-import { makeFormData } from '@/__tests__/utils/makeFormData';
+import { makeFormData } from '@/shared/test-utils/makeFormData';
 
 const mockCookies = cookies as jest.MockedFunction<typeof cookies>;
 const mockDelete = deleteAccount as jest.MockedFunction<typeof deleteAccount>;

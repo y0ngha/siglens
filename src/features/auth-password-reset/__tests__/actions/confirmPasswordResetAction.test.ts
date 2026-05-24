@@ -27,7 +27,7 @@ import { createEmailTokenStore } from '@/entities/email-token';
 import { AUTH_SERVICE_UNAVAILABLE_MESSAGE } from '@/entities/session';
 import { confirmPasswordResetAction } from '@/features/auth-password-reset/actions/confirmPasswordResetAction';
 import { resetAuthDatabaseClientForTests } from '@/entities/session/lib/db';
-import { makeFormData } from '@/__tests__/utils/makeFormData';
+import { makeFormData } from '@/shared/test-utils/makeFormData';
 
 const mockConfirm = confirmPasswordReset as jest.MockedFunction<
     typeof confirmPasswordReset

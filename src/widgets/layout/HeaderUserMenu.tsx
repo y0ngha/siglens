@@ -3,7 +3,7 @@
 import { LogoutButton } from '@/features/auth-logout';
 import { useEscapeKey } from '@/shared/hooks/useEscapeKey';
 import { usePopoverToggle } from '@/shared/hooks/usePopoverToggle';
-import { TIER_LABEL } from '@/lib/auth/tierLabel';
+import { TIER_LABEL } from '@/shared/lib/auth/tierLabel';
 import { cn } from '@/shared/lib/cn';
 import type { Tier } from '@y0ngha/siglens-core';
 import Image from 'next/image';

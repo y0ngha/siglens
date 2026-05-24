@@ -15,7 +15,7 @@ jest.mock('../lib/submitInquiry', () => ({
 
 import { submitContactAction } from '../actions/submitContactAction';
 import type { ContactFormState } from '@/shared/lib/types';
-import { makeFormData } from '@/__tests__/utils/makeFormData';
+import { makeFormData } from '@/shared/test-utils/makeFormData';
 
 const INITIAL_STATE: ContactFormState = {
     submitted: false,

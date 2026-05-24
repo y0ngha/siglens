@@ -15,7 +15,7 @@ import {
     type NewsSentiment,
 } from '@y0ngha/siglens-core';
 import { useMemo } from 'react';
-import { NEWS_ANALYSIS_PERIOD_LABEL } from '@/lib/news/periodLabels';
+import { NEWS_ANALYSIS_PERIOD_LABEL } from '@/shared/lib/news/periodLabels';
 
 const SENTIMENT_LABEL: Record<NewsSentiment, string> = {
     bullish: '긍정',

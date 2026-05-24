@@ -1,7 +1,7 @@
 import { ApiKeySection } from '@/features/api-key-management';
 import { getCurrentUser } from '@/entities/session';
 import { getRegisteredProvidersAction } from '@/entities/api-key/actions';
-import { TIER_LABEL } from '@/lib/auth/tierLabel';
+import { TIER_LABEL } from '@/shared/lib/auth/tierLabel';
 import { SITE_NAME, SITE_URL } from '@/shared/lib/seo';
 import type { Metadata } from 'next';
 import Link from 'next/link';

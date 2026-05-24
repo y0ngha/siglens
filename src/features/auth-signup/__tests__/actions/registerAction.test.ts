@@ -54,7 +54,7 @@ import {
 } from '@/entities/session';
 import { registerAction } from '@/features/auth-signup/actions/registerAction';
 import { resetAuthDatabaseClientForTests } from '@/entities/session/lib/db';
-import { makeFormData } from '@/__tests__/utils/makeFormData';
+import { makeFormData } from '@/shared/test-utils/makeFormData';
 
 const mockCookies = cookies as jest.MockedFunction<typeof cookies>;
 const mockRegister = registerUser as jest.MockedFunction<typeof registerUser>;

@@ -5,7 +5,7 @@ import {
     formatPutCallRatio,
     METRIC_PLACEHOLDER,
     PERCENT_DISPLAY_FLOOR,
-} from '@/lib/options/optionsFormatters';
+} from '@/entities/options-chain/lib/optionsFormatters';
 
 describe('formatMaxPain', () => {
     it('null을 em dash로 표현한다 (siglens-core R12 이후 nullable contract)', () => {

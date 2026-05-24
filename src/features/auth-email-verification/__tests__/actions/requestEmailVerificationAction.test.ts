@@ -27,7 +27,7 @@ import {
 } from '@/entities/email-token';
 import { AUTH_SERVICE_UNAVAILABLE_MESSAGE } from '@/entities/session';
 import { requestEmailVerificationAction } from '@/features/auth-email-verification/actions/requestEmailVerificationAction';
-import { makeFormData } from '@/__tests__/utils/makeFormData';
+import { makeFormData } from '@/shared/test-utils/makeFormData';
 
 const mockRequest = requestEmailVerification as jest.MockedFunction<
     typeof requestEmailVerification

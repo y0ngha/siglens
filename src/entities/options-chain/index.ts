@@ -16,4 +16,13 @@ export { findNearestStrikeIndex } from './lib/findNearestStrike';
 export { pickActiveChain } from './lib/pickActiveChain';
 export type { OptionsExpirationSelector } from './lib/types';
 
+export {
+    formatAtmIv,
+    formatImpliedMove,
+    formatMaxPain,
+    formatPutCallRatio,
+    METRIC_PLACEHOLDER,
+    PERCENT_DISPLAY_FLOOR,
+} from './lib/optionsFormatters';
+
 // actions are imported from @/entities/options-chain/actions
