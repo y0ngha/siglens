@@ -1,4 +1,4 @@
-import type { SupportedOAuthProvider } from '@/domain/types';
+import type { SupportedOAuthProvider } from '@/shared/lib/types';
 import { googleOAuthAdapter } from '@/infrastructure/auth/oauth/google';
 import type { OAuthProviderAdapter } from '@/infrastructure/auth/oauth/types';
 

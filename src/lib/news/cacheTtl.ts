@@ -1,4 +1,4 @@
-import { SECONDS_PER_HOUR, SECONDS_PER_MINUTE } from '@/domain/constants/time';
+import { SECONDS_PER_HOUR, SECONDS_PER_MINUTE } from '@/shared/config/time';
 
 /** T1: 15 minutes — news list snapshot. */
 export const NEWS_LIST_TTL_S = 15 * SECONDS_PER_MINUTE;

@@ -14,10 +14,7 @@ import {
 } from '@/entities/api-key';
 import { getUserTier } from '@/entities/user-tier';
 import { DrizzleUserRepository } from '@/entities/user';
-import type {
-    AnalysisGateError,
-    AnalysisGateErrorCode,
-} from '@/domain/analysis/gate';
+import type { AnalysisGateError, AnalysisGateErrorCode } from './types';
 
 const GATE_MESSAGES: Record<AnalysisGateErrorCode, string> = {
     tier_premium_blocked:

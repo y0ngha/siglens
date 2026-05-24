@@ -10,3 +10,10 @@ export {
 } from './lib/parseJsonResponse';
 export { toProviderTurns } from './lib/utils';
 export type { ProviderTurn } from './lib/utils';
+export {
+    CLAUDE_MODEL_PRIORITY,
+    CHATGPT_MODEL_PRIORITY,
+    FALLBACK_MODEL_ID,
+    GEMINI_MODEL_PRIORITY,
+    resolveDefaultModelForProvider,
+} from './lib/providerDefaults';

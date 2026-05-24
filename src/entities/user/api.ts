@@ -1,5 +1,5 @@
 import { DEFAULT_TIER, type Tier } from '@y0ngha/siglens-core';
-import type { OAuthProvider } from '@/domain/types';
+import type { OAuthProvider } from '@/shared/lib/types';
 import { and, eq, sql } from 'drizzle-orm';
 import { NEON_TRANSIENT_RETRY } from '@/shared/db/isNeonTransientError';
 import { oauthAccounts, users } from '@/shared/db/schema';

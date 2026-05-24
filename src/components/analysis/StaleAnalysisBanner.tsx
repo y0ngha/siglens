@@ -1,6 +1,6 @@
 'use client';
 
-import { MS_PER_MINUTE } from '@/domain/constants/time';
+import { MS_PER_MINUTE } from '@/shared/config/time';
 
 const STALE_MESSAGE =
     'AI 분석 결과가 오래됐어요. 지금 시장 가격을 반영하려면 재분석해 주세요.';

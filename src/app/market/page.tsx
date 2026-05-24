@@ -17,7 +17,7 @@ import {
     DASHBOARD_TIMEFRAMES,
     DEFAULT_DASHBOARD_TIMEFRAME,
     SIGNAL_SECTORS,
-} from '@/domain/constants/dashboard-tickers';
+} from '@/shared/config/dashboard-tickers';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
 import {
     buildBreadcrumbJsonLd,

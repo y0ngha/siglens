@@ -24,7 +24,7 @@ jest.mock('@/shared/lib/byokGate', () => ({
 
 import { headers } from 'next/headers';
 import { resolveTierAndByok } from '@/shared/lib/byokGate';
-import type { AnalysisGateError } from '@/domain/types';
+import type { AnalysisGateError } from '@/shared/lib/types';
 import { submitAnalysisAction } from '../actions/submitAnalysisAction';
 import {
     submitAnalysis,

@@ -14,7 +14,7 @@
  * answer stays in lockstep with the market regardless of DST.
  */
 
-import { MINUTES_PER_HOUR } from '@/domain/constants/time';
+import { MINUTES_PER_HOUR } from '@/shared/config/time';
 import type { OptionsSnapshot } from '@y0ngha/siglens-core';
 
 // US equity options regular session — see MARKET_OPEN_HOUR / MARKET_OPEN_MINUTE / MARKET_CLOSE_HOUR.

@@ -17,7 +17,7 @@ import { isBot } from '@/shared/api/isBot';
 import type {
     AnalysisGateBlockedResult,
     OptionsExpirationSelector,
-} from '@/domain/types';
+} from '@/shared/lib/types';
 
 /** Final return type — core's options result + our siglens-side gate errors. */
 export type SubmitOptionsAnalysisActionResult =

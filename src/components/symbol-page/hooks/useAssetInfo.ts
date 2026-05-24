@@ -6,7 +6,7 @@ import {
     ASSET_INFO_STALE_TIME_MS,
     QUERY_KEYS,
 } from '@/shared/config/queryConfig';
-import type { AssetInfo } from '@/domain/types';
+import type { AssetInfo } from '@/shared/lib/types';
 
 export function useAssetInfo(symbol: string): AssetInfo | undefined {
     const { data } = useQuery({

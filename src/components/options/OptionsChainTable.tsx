@@ -8,8 +8,8 @@ import {
 } from '@y0ngha/siglens-core';
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
 import { OpenInterestTooltip } from '@/components/options/utils/optionsTooltips';
-import { findNearestStrikeIndex } from '@/domain/options/findNearestStrike';
-import type { OptionsExpirationSelector } from '@/domain/types';
+import { findNearestStrikeIndex } from '@/entities/options-chain';
+import type { OptionsExpirationSelector } from '@/shared/lib/types';
 import { cn } from '@/shared/lib/cn';
 
 const numberFormatter = new Intl.NumberFormat('en-US');

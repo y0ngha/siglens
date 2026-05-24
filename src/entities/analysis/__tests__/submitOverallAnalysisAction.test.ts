@@ -77,7 +77,7 @@ import {
     isUsOptionsRegularSession,
     isOpenInterestSnapshotStale,
 } from '@/shared/lib/marketSession';
-import type { AnalysisGateError } from '@/domain/types';
+import type { AnalysisGateError } from '@/shared/lib/types';
 
 const mockHeaders = headers as jest.MockedFunction<typeof headers>;
 const MockNewsRepository = DrizzleNewsRepository as jest.MockedClass<

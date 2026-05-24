@@ -1,7 +1,7 @@
 'use server';
 
 import { getAssetInfo } from '../lib/getAssetInfo';
-import type { AssetInfo } from '@/domain/types';
+import type { AssetInfo } from '@/shared/lib/types';
 
 export async function getAssetInfoAction(
     symbol: string

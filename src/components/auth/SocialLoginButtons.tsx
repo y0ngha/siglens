@@ -1,4 +1,4 @@
-import type { SupportedOAuthProvider } from '@/domain/types';
+import type { SupportedOAuthProvider } from '@/shared/lib/types';
 import { cn } from '@/shared/lib/cn';
 import { ReactNode } from 'react';
 

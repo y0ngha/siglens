@@ -8,7 +8,7 @@ import {
     TICKER_SEARCH_STALE_TIME_MS,
 } from '@/shared/config/queryConfig';
 import { searchTickerAction } from '@/entities/ticker/actions';
-import type { TickerSearchResult } from '@/domain/types';
+import type { TickerSearchResult } from '@/shared/lib/types';
 
 const DEBOUNCE_MS = 300;
 const MIN_QUERY_LENGTH = 1;

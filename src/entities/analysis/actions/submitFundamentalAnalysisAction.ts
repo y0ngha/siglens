@@ -11,7 +11,7 @@ import { FmpFundamentalClient } from '@/shared/api/fmp/fundamentalClient';
 import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
 import { resolveTierAndByok, buildGateError } from '@/shared/lib/byokGate';
 import { isBot } from '@/shared/api/isBot';
-import type { AnalysisGateBlockedResult } from '@/domain/types';
+import type { AnalysisGateBlockedResult } from '@/shared/lib/types';
 
 /** Final return type — core's fundamental result + our siglens-side gate errors. */
 export type SubmitFundamentalAnalysisActionResult =

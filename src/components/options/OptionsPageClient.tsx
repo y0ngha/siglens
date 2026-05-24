@@ -25,7 +25,7 @@ import {
     isOpenInterestSnapshotStale,
 } from '@/shared/lib/marketSession';
 import type { OptionsSnapshot, SlotMapping } from '@y0ngha/siglens-core';
-import type { OptionsExpirationSelector } from '@/domain/types';
+import type { OptionsExpirationSelector } from '@/shared/lib/types';
 
 interface OptionsPageClientProps {
     symbol: string;

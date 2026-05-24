@@ -1,6 +1,6 @@
 import { searchTickerAction } from '../../actions/searchTickerAction';
 import { searchTicker } from '../../lib/searchTicker';
-import type { TickerSearchResult } from '@/domain/types';
+import type { TickerSearchResult } from '@/shared/lib/types';
 
 jest.mock('@vercel/functions', () => ({
     waitUntil: jest.fn(),

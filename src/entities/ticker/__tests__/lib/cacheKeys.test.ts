@@ -2,7 +2,7 @@ import {
     SECONDS_PER_DAY,
     SECONDS_PER_HOUR,
     SECONDS_PER_YEAR,
-} from '@/domain/constants/time';
+} from '@/shared/config/time';
 import {
     ASSET_INFO_CACHE_TTL_WITH_KOREAN,
     ASSET_INFO_CACHE_TTL_WITHOUT_KOREAN,

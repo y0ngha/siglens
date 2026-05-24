@@ -114,7 +114,7 @@ jest.mock('@/shared/lib/dateKey', () => ({
     todayKstIsoDate: jest.fn(() => '2026-05-21'),
 }));
 
-jest.mock('@/domain/fearGreed/classifier', () => ({
+jest.mock('@/entities/fear-greed/lib/classifier', () => ({
     FEAR_GREED_SCORE_BOUNDARIES: {},
 }));
 

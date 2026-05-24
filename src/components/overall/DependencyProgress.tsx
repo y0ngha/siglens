@@ -1,4 +1,4 @@
-import { MS_PER_SECOND, SECONDS_PER_MINUTE } from '@/domain/constants/time';
+import { MS_PER_SECOND, SECONDS_PER_MINUTE } from '@/shared/config/time';
 import { AUGMENT_AND_OVERALL_POLL_INTERVAL_MS } from '@/shared/config/pollingConfig';
 import type { OverallAxis } from '@y0ngha/siglens-core';
 

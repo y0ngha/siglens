@@ -1,4 +1,4 @@
-import type { KoreanTickerEntry } from '@/domain/types';
+import type { KoreanTickerEntry } from '@/shared/lib/types';
 import { eq, inArray, sql } from 'drizzle-orm';
 import { NEON_TRANSIENT_RETRY } from '@/shared/db/isNeonTransientError';
 import {

@@ -15,7 +15,7 @@ import type {
     ProfileDescriptionTranslationRecord,
     SiglensDatabase,
 } from '@/shared/db/types';
-import type { KoreanTickerEntry } from '@/domain/types';
+import type { KoreanTickerEntry } from '@/shared/lib/types';
 
 const apple: KoreanTickerEntry = {
     symbol: 'AAPL',

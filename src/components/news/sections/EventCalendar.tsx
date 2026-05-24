@@ -1,7 +1,7 @@
 'use client';
 
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
-import type { EarningsReportComparisonItem } from '@/domain/types';
+import type { EarningsReportComparisonItem } from '@/shared/lib/types';
 import type React from 'react';
 
 const MATERIAL_SURPRISE_PCT = 2;

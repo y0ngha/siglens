@@ -1,10 +1,12 @@
 import { OptionsPageClient } from '@/components/options/OptionsPageClient';
 import { OptionsEmptyState } from '@/components/options/OptionsEmptyState';
 import { JsonLd } from '@/shared/ui/JsonLd';
-import { VALID_TICKER_RE } from '@/domain/constants/market';
-import { buildAssetAboutNode } from '@/domain/seo/assetClassification';
-import { buildDisplayName } from '@/domain/ticker';
-import { getAssetInfoCached } from '@/entities/ticker';
+import { VALID_TICKER_RE } from '@/shared/config/market';
+import {
+    buildAssetAboutNode,
+    buildDisplayName,
+    getAssetInfoCached,
+} from '@/entities/ticker';
 import { mapExpirationsToSlots } from '@y0ngha/siglens-core';
 import {
     fetchOptionsSnapshot,

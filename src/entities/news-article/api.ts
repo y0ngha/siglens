@@ -9,7 +9,7 @@ import type {
 import { NEON_TRANSIENT_RETRY } from '@/shared/db/isNeonTransientError';
 import { news } from '@/shared/db/schema';
 import type { SiglensDatabase } from '@/shared/db/types';
-import type { NewsDisplayItem } from '@/domain/types';
+import type { NewsDisplayItem } from '@/shared/lib/types';
 import { withRetry } from '@/shared/lib/withRetry';
 
 /** Domain-level row returned from the `news` table; extends the display projection with persistence-only fields. */

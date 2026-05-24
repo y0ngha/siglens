@@ -1,10 +1,10 @@
 import { AUTH_SESSION_COOKIE_NAME } from '@/infrastructure/auth/sessionCookie';
 // edge runtime 안전성을 위해 외부 의존이 0인 simple constant file에서 직접 import한다.
-// `@/domain/constants/market`은 `@y0ngha/siglens-core` 타입을 끌어와 cross-module
+// `@/shared/config/market`은 `@y0ngha/siglens-core` 타입을 끌어와 cross-module
 // type 의존성을 거치는데, Turbopack의 `import type` strip이 dev 환경에서 간헐적으로
 // 누락돼 [symbol] 라우트 fetch가 차단되는 회귀가 관찰돼 회피한다 (자세한 배경은
 // ticker.ts JSDoc 참조).
-import { TICKER_RE } from '@/domain/constants/ticker';
+import { TICKER_RE } from '@/shared/config/ticker';
 import { NextResponse, type NextRequest } from 'next/server';
 
 const RESERVED_FIRST_SEGMENTS = new Set([

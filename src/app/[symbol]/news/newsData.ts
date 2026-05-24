@@ -3,11 +3,11 @@ import { getDatabaseClient } from '@/shared/db/client';
 import { DrizzleNewsRepository } from '@/entities/news-article';
 import { DrizzleEarningsReportsRepository } from '@/entities/earnings-report';
 import { FmpFundamentalClient } from '@/shared/api/fmp/fundamentalClient';
-import { MS_PER_DAY } from '@/domain/constants/time';
+import { MS_PER_DAY } from '@/shared/config/time';
 import { NEWS_LOOKBACK_MS } from '@/entities/news-article';
 import type { NewsRow } from '@/entities/news-article';
 import type { GradesEvent } from '@y0ngha/siglens-core';
-import type { EarningsReportComparisonItem } from '@/domain/types';
+import type { EarningsReportComparisonItem } from '@/shared/lib/types';
 
 // cacheComponents 비활성 기간 동안 'use cache' / cacheLife / cacheTag 모두 제거.
 // 동일 요청 내 중복 호출(예: NewsPage 본문 + NewsListSection 내부)은 React.cache로

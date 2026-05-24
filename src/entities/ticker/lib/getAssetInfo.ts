@@ -1,5 +1,5 @@
 import { waitUntil } from '@vercel/functions';
-import { isValidTickerFormat } from '@/domain/ticker';
+import { isValidTickerFormat } from './ticker';
 import { DrizzleAssetTranslationRepository } from '../api';
 import type {
     AssetTranslationRecord,
@@ -17,7 +17,7 @@ import { getKoreanNames, setKoreanTickers } from './koreanNameStore';
 import type { AssetInfoMatch } from './backgroundTask';
 import { createSingleFlight } from './utils/singleFlight';
 import { createCacheProvider, type CacheProvider } from '@y0ngha/siglens-core';
-import type { AssetInfo, KoreanTickerEntry } from '@/domain/types';
+import type { AssetInfo, KoreanTickerEntry } from '@/shared/lib/types';
 
 function tryGetRepository(): AssetTranslationRepository | null {
     const client = tryGetTickerDatabaseClient();

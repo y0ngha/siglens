@@ -10,7 +10,7 @@ import type {
     OptionsContract,
     OptionsSnapshot,
 } from '@y0ngha/siglens-core';
-import { MS_PER_DAY } from '@/domain/constants/time';
+import { MS_PER_DAY } from '@/shared/config/time';
 
 /**
  * Structural types mirroring yahoo-finance2 v3 CallOrPut / Option / OptionsResult.

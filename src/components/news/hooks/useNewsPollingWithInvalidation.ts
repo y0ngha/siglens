@@ -2,7 +2,7 @@
 
 import { useCallback, useLayoutEffect, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import type { NewsDisplayItem } from '@/domain/types';
+import type { NewsDisplayItem } from '@/shared/lib/types';
 import {
     useNewsCardPolling,
     type OnPollingComplete,

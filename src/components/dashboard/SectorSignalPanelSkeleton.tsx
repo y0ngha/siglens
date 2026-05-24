@@ -1,4 +1,4 @@
-import { SIGNAL_SECTORS } from '@/domain/constants/dashboard-tickers';
+import { SIGNAL_SECTORS } from '@/shared/config/dashboard-tickers';
 
 export function SectorSignalPanelSkeleton() {
     return (

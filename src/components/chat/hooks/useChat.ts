@@ -17,13 +17,13 @@ import {
     type ChatMessage,
     type ModelId,
 } from '@y0ngha/siglens-core';
-import type { ContextSwitchMessage, DisplayMessage } from '@/domain/types';
+import type { ContextSwitchMessage, DisplayMessage } from '@/shared/lib/types';
 import {
     chatAction,
     getRemainingTokensAction,
 } from '@/entities/chat-message/actions';
-import { DEFAULT_TIMEFRAME } from '@/domain/constants/market';
-import { CHAT_NON_CHART_BASELINE_ANALYSIS } from '@/domain/chat/fallbackAnalysis';
+import { DEFAULT_TIMEFRAME } from '@/shared/config/market';
+import { CHAT_NON_CHART_BASELINE_ANALYSIS } from '@/entities/chat-message';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
 import { usePageContextLabel } from '@/components/chat/hooks/usePageContextLabel';
 import { useSymbolChat } from '@/components/chat/hooks/useSymbolChat';

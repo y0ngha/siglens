@@ -3,7 +3,7 @@
 import { useMemo } from 'react';
 import type { OptionsExpirationMetrics } from '@y0ngha/siglens-core';
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
-import type { OptionsExpirationSelector } from '@/domain/types';
+import type { OptionsExpirationSelector } from '@/shared/lib/types';
 import {
     formatAtmIv,
     formatImpliedMove,

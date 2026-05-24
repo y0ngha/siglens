@@ -25,7 +25,7 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { saveApiKeyAction } from '@/entities/api-key/actions/saveApiKeyAction';
 import { makeFormData } from '@/__tests__/utils/makeFormData';
-import type { ApiKeyActionState } from '@/domain/llm';
+import type { ApiKeyActionState } from '@/entities/api-key/lib';
 
 const mockGetCurrentUser = getCurrentUser as jest.MockedFunction<
     typeof getCurrentUser

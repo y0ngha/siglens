@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { getNewsCardsAction } from '@/entities/news-article/actions';
-import type { NewsDisplayItem } from '@/domain/types';
+import type { NewsDisplayItem } from '@/shared/lib/types';
 import {
     POLL_INTERVAL_MS,
     MAX_CONSECUTIVE_FAILURES,

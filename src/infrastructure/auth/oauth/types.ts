@@ -1,4 +1,4 @@
-import type { OAuthProvider } from '@/domain/types';
+import type { OAuthProvider } from '@/shared/lib/types';
 import type { SocialLoginUserInput } from '@/infrastructure/auth/use-cases/types';
 
 /** OAuth 콜백 처리 단계의 실패 사유. */

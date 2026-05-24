@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { MS_PER_MINUTE } from '@/domain/constants/time';
+import { MS_PER_MINUTE } from '@/shared/config/time';
 
 export const ANALYSIS_PHASES = [
     '시장 데이터 정렬 중',

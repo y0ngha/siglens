@@ -10,4 +10,22 @@ export {
     getReanalyzeCooldownMs,
 } from './lib/reanalyzeCooldown';
 
+export {
+    GATE_ERROR_CODES,
+    isGateBlockedResult,
+    type AnalysisGateBlockedResult,
+    type AnalysisGateError,
+    type AnalysisGateErrorCode,
+} from './lib/gate';
+
+export { isAnalysisStale, STALE_THRESHOLD_MS } from './lib/staleThreshold';
+
+export {
+    EMPTY_QUADRANTS,
+    filterStrictAnticipation,
+    groupStockIntoQuadrants,
+} from './lib/quadrants';
+
+export { resolveConflicts } from './lib/resolveConflicts';
+
 // actions are imported from @/entities/analysis/actions

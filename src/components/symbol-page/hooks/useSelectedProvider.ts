@@ -2,7 +2,7 @@
 
 import { startTransition, useCallback, useEffect, useState } from 'react';
 import type { AIProvider } from '@y0ngha/siglens-core';
-import { AI_PROVIDER_VALUES } from '@/domain/llm';
+import { AI_PROVIDER_VALUES } from '@/entities/api-key';
 import { LOCAL_STORAGE_PROVIDER_KEY } from '@/shared/lib/storageKeys';
 
 const DEFAULT_PROVIDER: AIProvider = 'claude';

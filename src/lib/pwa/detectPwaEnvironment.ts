@@ -1,4 +1,4 @@
-import { type PwaEnvironment } from '@/domain/types';
+import { type PwaEnvironment } from '@/shared/lib/types';
 
 export function detectPwaEnvironment(
     ua: string,

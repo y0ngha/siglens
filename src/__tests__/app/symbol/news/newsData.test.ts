@@ -1,4 +1,4 @@
-import type { EarningsReportComparisonItem } from '@/domain/types';
+import type { EarningsReportComparisonItem } from '@/shared/lib/types';
 
 const mockDb = {};
 const mockGetLatestFetchedAt = jest.fn();

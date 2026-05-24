@@ -13,7 +13,7 @@ import { useCurrentUser } from '@/components/hooks/useCurrentUser';
 import {
     CONTACT_CONTENT_MAX_LENGTH,
     CONTACT_TITLE_MAX_LENGTH,
-} from '@/domain/contact/constants';
+} from '@/entities/inquiry';
 
 export function ContactForm() {
     const [state, formAction] = useContactForm();

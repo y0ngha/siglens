@@ -1,4 +1,4 @@
-import type { OAuthProvider } from '@/domain/types';
+import type { OAuthProvider } from '@/shared/lib/types';
 import type { AgreementRepository } from '@/entities/agreement';
 import type {
     AuthSessionRecord,

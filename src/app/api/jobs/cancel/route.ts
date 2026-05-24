@@ -6,7 +6,11 @@ import {
     cancelNewsAnalysisJob,
     cancelOverallAnalysisJob,
 } from '@y0ngha/siglens-core';
-import type { CancelJobEntry, CancelJobsBody, JobType } from '@/domain/types';
+import type {
+    CancelJobEntry,
+    CancelJobsBody,
+    JobType,
+} from '@/shared/lib/types';
 
 const { HTTP_STATUS_BAD_REQUEST, HTTP_STATUS_NO_CONTENT } = constants;
 

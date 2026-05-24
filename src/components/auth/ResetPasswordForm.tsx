@@ -5,7 +5,7 @@ import { PasswordField } from '@/components/auth/PasswordField';
 import { PasswordStrengthHint } from '@/components/auth/PasswordStrengthHint';
 import { SubmitButton } from '@/components/auth/SubmitButton';
 import { useResetPasswordForm } from '@/components/hooks/useResetPasswordForm';
-import type { ResetPasswordFormState } from '@/domain/types';
+import type { ResetPasswordFormState } from '@/shared/lib/types';
 import { useCallback, useId, useState } from 'react';
 
 interface ResetPasswordFormProps {

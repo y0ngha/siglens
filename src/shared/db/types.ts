@@ -1,9 +1,9 @@
 import type { NeonQueryFunction } from '@neondatabase/serverless';
 import type { NeonHttpDatabase } from 'drizzle-orm/neon-http';
 import type { Tier } from '@y0ngha/siglens-core';
-import type { OAuthProvider } from '@/domain/types';
-import type { LlmProvider } from '@/domain/llm';
-import type { KoreanTickerEntry } from '@/domain/types';
+import type { OAuthProvider } from '@/shared/lib/types';
+import type { LlmProvider } from '../config/llmProviders';
+import type { KoreanTickerEntry } from '@/shared/lib/types';
 import type { AuthUserRecord } from '@/domain/auth/types';
 import type * as schema from './schema';
 

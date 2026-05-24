@@ -3,7 +3,7 @@
  */
 import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
-import type { EarningsReportComparisonItem } from '@/domain/types';
+import type { EarningsReportComparisonItem } from '@/shared/lib/types';
 import { EventCalendar } from '@/components/news/sections/EventCalendar';
 
 const SURPRISE_ITEM: EarningsReportComparisonItem = {

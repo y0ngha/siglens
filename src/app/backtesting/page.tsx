@@ -16,7 +16,7 @@ import { BacktestHero } from '@/components/backtesting/BacktestHero';
 import { BacktestTabs } from '@/components/backtesting/BacktestTabs';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import backtestData from '@/app/backtesting/data.json';
-import { validateBacktestData } from '@/domain/backtest/validate';
+import { validateBacktestData } from '@/entities/backtest-case';
 
 // JSON import typed as any; validateBacktestData ensures shape at load time
 const data = validateBacktestData(backtestData as unknown);

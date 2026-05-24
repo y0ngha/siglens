@@ -1,4 +1,4 @@
-import { SECONDS_PER_DAY } from '@/domain/constants/time';
+import { SECONDS_PER_DAY } from '@/shared/config/time';
 
 // next/og의 ImageResponse는 Latin 폴백만 내장 → Pretendard를 CDN에서 가져와 한글 라벨 렌더링에 사용한다. 네트워크 실패는 null 반환으로 graceful degrade.
 const PRETENDARD_BOLD_URL =

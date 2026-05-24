@@ -1,8 +1,8 @@
 import Link from 'next/link';
 
 import { cn } from '@/shared/lib/cn';
-import type { CategoryId } from '@/domain/types';
-import { TICKER_CATEGORIES } from '@/domain/constants/popular-tickers';
+import type { CategoryId } from '@/shared/lib/types';
+import { TICKER_CATEGORIES } from '@/shared/config/popular-tickers';
 
 type CategoryStyle = {
     borderColor: string;
