@@ -470,8 +470,8 @@ This file contains only **recurring gotchas** that agents keep missing despite e
 8. Custom hook params missing optional properties present in sibling hooks
    → All hooks in the same family must accept consistent parameter patterns
 
-9. Custom hooks in components/ without 'use client' directive
-   → Every hook file under components/ must declare 'use client' at the top
+9. Custom hooks in widgets/ without 'use client' directive
+   → Every hook file under widgets/ must declare 'use client' at the top
    → Hooks are Client Components and will fail without the directive when parent is async Server Component
 
 10. setState called directly in useEffect body (react-hooks/set-state-in-effect)
@@ -537,12 +537,12 @@ This file contains only **recurring gotchas** that agents keep missing despite e
            void runAnalysis(ctx, 0);
        }, [deps]);
 
-15. Feature-scoped hooks placed in components/hooks/ global directory
-    → Feature-specific hooks must live in components/{feature}/hooks/, not components/hooks/
-    → components/hooks/ is reserved for generic/reusable hooks shared across all features
-    ❌ useContactForm.ts, useApiKeyForms.ts in components/hooks/  // feature-specific hooks mixing with generic
-    ✅ components/contact/hooks/useContactForm.ts, components/account/hooks/useApiKeyForms.ts
-    → Layer dependency improves when hooks are colocated with their feature components
+15. Feature-scoped hooks placed in shared/hooks/ global directory
+    → Feature-specific hooks must live in widgets/{feature}/hooks/ or features/{feature}/hooks/
+    → shared/hooks/ is reserved for generic/reusable hooks shared across all features
+    ❌ useContactForm.ts in shared/hooks/  // feature-specific hook in shared
+    ✅ features/contact-form/hooks/useContactForm.ts
+    → Layer dependency improves when hooks are colocated with their feature/widget slices
 ```
 
 ---
@@ -1127,69 +1127,55 @@ This file contains only **recurring gotchas** that agents keep missing despite e
 ## Architecture
 
 ```
-0. Component (.tsx) files importing directly from infrastructure or infrastructure types
-   → `.tsx` component files are prohibited from importing @/infrastructure modules or types
-   → Hook files (`hooks/*.ts`) may import fetch/Server Action functions from infrastructure for queryFn/mutationFn or useActionState Server Action connection use only
-   → Component files must receive all data/actions through hook abstractions
-   ❌ LoginForm.tsx: `import { loginAction } from '@/infrastructure/auth'`  // direct infrastructure import in .tsx
-   ❌ SocialLoginButtons.tsx: `import { SupportedOAuthProvider } from '@/infrastructure/oauth'`  // infrastructure type in .tsx
-   ✅ LoginForm.tsx: `import { useLoginForm } from '@/components/hooks/useLoginForm'`  // hook abstraction
-   ✅ Hook file (hooks/useLoginForm.ts) imports infrastructure; component uses hook only
-   ✅ App-layer RSC files may import infrastructure (infrastructure ← app direction allowed)
+0. Widget/Feature .tsx files importing directly from entity internal paths
+   → `.tsx` UI files are prohibited from importing entity internal modules (lib/, api/)
+   → Hook files (`hooks/*.ts`) may import Server Actions from `entities/*/actions/` for queryFn/mutationFn or useActionState connection only
+   → UI files must receive all data/actions through hook abstractions or barrel imports
+   ❌ LoginForm.tsx: `import { loginUser } from '@/entities/user/lib/loginUser'`  // entity internal import in .tsx
+   ✅ LoginForm.tsx: `import { useLoginForm } from '../hooks/useLoginForm'`  // hook abstraction
+   ✅ Hook file imports entity action; UI component uses hook only
+   ✅ App-layer RSC files may import entity api.ts directly
 
-0.5. Hook file type imports from infrastructure or domain submodules
-   → Hook files must import types only from @/domain/types or @y0ngha/siglens-core
-   → Infrastructure types and domain submodule types (e.g., @/domain/auth/types, @/infrastructure/db/types) violate layer dependencies
-   → Types must be centralized in @/domain/types.ts barrel export
-   ❌ hooks/useCurrentUser.ts: `import { AuthUserRecord } from '@/infrastructure/db/types'`
-   ❌ hooks/useContactForm.ts: `import { ContactFormState } from '@/domain/contact/formTypes'`
-   ✅ hooks/useCurrentUser.ts: `import { AuthUserRecord } from '@/domain/types'`  // re-exported from @/domain/auth/types
-   ✅ hooks/useContactForm.ts: `import { ContactFormState } from '@/domain/types'`  // moved to @/domain/types
+0.5. Hook file type imports from entity internal modules
+   → Hook files must import types from entity barrel or @y0ngha/siglens-core
+   → Entity internal types (e.g., @/entities/user/lib/types) violate layer boundaries
+   ❌ hooks/useCurrentUser.ts: `import { AuthUserRecord } from '@/entities/session/lib/db'`
+   ✅ hooks/useCurrentUser.ts: `import type { AuthUserRecord } from '@/entities/session'`  // barrel export
 
-0.6. Helper files (hooks, utilities) mixed at same directory level as component files
+0.6. Helper files (hooks, utilities) mixed at same directory level as UI files
    → Custom hooks must always live in a `hooks/` subfolder
    → Pure utility functions must always live in a `utils/` subfolder
-   → Never place component files, hook files, and utility files at the same directory level
+   → Never place UI files, hook files, and utility files at the same directory level
    → Enforces CONVENTIONS.md modularity — each concern (UI, logic, helpers) isolated in subfolders
-   ❌ src/components/symbol-page/useSymbolChat.ts (hook at component level)
-   ❌ src/components/symbol-page/SymbolTabsConfig.ts (utility at component level)
-   ✅ src/components/symbol-page/hooks/useSymbolChat.ts (hooks in dedicated subfolder)
-   ✅ src/components/symbol-page/utils/symbolTabsConfig.ts (utilities in dedicated subfolder)
+   ❌ src/widgets/symbol-page/useSymbolChat.ts (hook at widget level)
+   ❌ src/widgets/symbol-page/SymbolTabsConfig.ts (utility at widget level)
+   ✅ src/widgets/symbol-page/hooks/useSymbolChat.ts (hooks in dedicated subfolder)
+   ✅ src/widgets/symbol-page/utils/symbolTabsConfig.ts (utilities in dedicated subfolder)
 
-1. Pure utility functions placed in components/ instead of proper layers
-   → Pure functions with no React dependencies must be in domain/ (business logic) or lib/ (UI utilities)
-   → Utility functions extracted from components must go to utils/ subfolders, not remain in components/
-   ❌ Pure function in components/dashboard/utils/ or inlined in SectorSignalPanel.tsx
-   ✅ Pure function in domain/signals/ or dedicated utils/ subfolder with proper layer imports
+1. Pure utility functions placed in widgets/ instead of proper layers
+   → Pure functions with no React dependencies must be in shared/lib/ (utilities) or entity/lib/ (business logic)
+   → Utility functions extracted from widgets must go to utils/ subfolders, not remain at widget root
+   ❌ Pure function in widgets/dashboard/utils/ when it has no widget dependency
+   ✅ Pure function in shared/lib/ or entity slice lib/ with proper layer imports
 
-2. UI presentation types or configurations with display labels defined in domain/
-   → domain/types.ts and domain/ modules must contain only pure business logic types
-   → Presentation concerns (Korean labels, CSS class names, UI-specific configurations, display enums) belong in lib/ or component-specific modules
-   ❌ SkillStat, SkillStatConfig, SKILL_STAT_CONFIG defined in domain/skills.ts with Korean display labels
-   ❌ PriceChangeDisplay, BreadcrumbItem UI types defined in domain/types.ts
-   ✅ Move presentation-specific types to lib/ (e.g., lib/skillStats.ts, lib/priceFormat.ts)
-   ✅ domain/ contains only pure calculation functions: countSkillsByType, formatPrice logic, etc.
+2. UI presentation types or configurations with display labels placed in entity/lib/
+   → entity lib/ modules should contain pure business logic
+   → Presentation concerns (Korean labels, CSS class names, UI-specific configurations, display enums) belong in shared/lib/ or widget-specific modules
+   ❌ SkillStat, SkillStatConfig defined in entities/skill/lib/ with Korean display labels
+   ✅ Move presentation-specific types to shared/lib/ (e.g., shared/lib/skillStats.ts)
 
 3. Creating thin re-export wrappers around `@y0ngha/siglens-core`
    → `@y0ngha/siglens-core` is the externalized SigLens domain — direct import from any layer is allowed (see ARCHITECTURE.md)
-   → Wrapper files in `src/domain/` that only re-export from siglens-core add no information and should not exist
-   → Other third-party packages (e.g. technicalindicators) remain prohibited inside domain/
-   ❌ src/domain/indicators/atr.ts: `export { calculateATR } from '@y0ngha/siglens-core';`  // pure boilerplate wrapper
-   ❌ src/domain/analysis/candle-detection.ts re-exporting from siglens-core
-   ✅ Components / hooks / app code imports directly: `import { calculateATR } from '@y0ngha/siglens-core';`
-   ✅ src/domain/ keeps only SigLens-app-specific logic (backtest, chat models, dashboard sector grouping, etc.)
+   → Wrapper files that only re-export from siglens-core add no information and should not exist
+   ❌ src/entities/bars/lib/indicators.ts: `export { calculateATR } from '@y0ngha/siglens-core';`  // pure boilerplate wrapper
+   ✅ Widgets / hooks / app code imports directly: `import { calculateATR } from '@y0ngha/siglens-core';`
    ❌ Deep imports: `from '@y0ngha/siglens-core/dist/domain/indicators/atr'` (only the public package surface is allowed)
 
-4. lib/ misused as a dumping ground for non-UI-utility code (side effects, types, infrastructure helpers)
-   → `lib/` is for pure UI utility wrappers (clsx, tailwind-merge), React Query key factories, config constants, and chart colors only
-   → Side effects (new Date(), fetch, fs, crypto) belong in `infrastructure/`
-   → Cross-layer shared types belong in `domain/types.ts`
-   → Infrastructure helpers (retry/backoff, sleep timing, rate limiting) belong in `infrastructure/utils/`
-   → This recurs because lib/ is the path of least resistance when unsure where code goes; default answer should be "not lib/"
-   ❌ src/lib/og.ts: `loadKoreanFont()` with fs.readFile  // side effect in lib
-   ❌ src/lib/fearGreedLabels.ts: `export type SnapshotConfidence`  // cross-layer type in lib
-   ❌ src/lib/withRetry.ts: retry wrapper with sleep/backoff  // infrastructure helper in lib
-   ✅ Move side-effect functions to src/infrastructure/seo/loadKoreanFont.ts
-   ✅ Move cross-layer types to src/domain/types.ts; lib/ files import them
-   ✅ Move infra utilities to src/infrastructure/utils/withRetry.ts
+4. shared/lib/ misused as a dumping ground for non-utility code (side effects, types, entity logic)
+   → `shared/lib/` is for pure UI utility wrappers (clsx, tailwind-merge), chart colors, and format functions only
+   → Side effects (new Date(), fetch, fs, crypto) belong in entity api/ or shared/db/
+   → Cross-layer shared types belong in entity barrel exports or @y0ngha/siglens-core
+   → Infrastructure helpers (retry/backoff, sleep timing, rate limiting) belong in shared/lib/ as pure functions
+   ❌ shared/lib/ with fs.readFile  // side effect in shared/lib
+   ✅ Move side-effect functions to entity api/ or shared/db/
 ```

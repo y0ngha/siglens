@@ -116,9 +116,10 @@ return results;
 ### Priority by Layer
 
 ```
-domain/         Functional required — pure functions, immutability, higher-order functions
-infrastructure/ Functional recommended — separate internal logic into pure functions
-components/     Declarative required — replace conditionals with object maps or component splits
+shared/lib/     Functional required — pure functions, immutability, higher-order functions
+entities/lib/   Functional required — pure business logic functions
+features/lib/   Functional recommended — separate internal logic into pure functions
+widgets/        Declarative required — replace conditionals with object maps or component splits
 app/            Declarative recommended — aligns naturally with RSC async/await patterns
 ```
 
@@ -246,7 +247,7 @@ export function useExample(props: ExampleOptions): ExampleResult {
 
 ---
 
-## Component Folder Structure
+## Widget / Feature / Entity Folder Structure
 
 Custom hooks must always be placed in a `hooks/` subfolder.
 Pure utility functions (non-hook helpers) must always be placed in a `utils/` subfolder.
@@ -254,22 +255,26 @@ Never mix component files, hook files, or utility files at the same directory le
 
 ```
 # ✅ Correct structure
-src/components/
+src/widgets/
 ├── chart/
 │   ├── hooks/
 │   │   ├── useBollingerOverlay.ts
 │   │   └── useChartData.ts
 │   ├── utils/
 │   │   └── seriesDataUtils.ts
-│   └── StockChart.tsx
+│   ├── ui/
+│   │   └── StockChart.tsx
+│   └── index.ts
 └── symbol-page/
     ├── hooks/
     │   ├── useAnalysis.ts
     │   └── useBars.ts
-    └── SymbolPageClient.tsx
+    ├── ui/
+    │   └── SymbolPageClient.tsx
+    └── index.ts
 
 # ❌ Incorrect — hooks or utils at the same level as components
-src/components/chart/
+src/widgets/chart/
 ├── StockChart.tsx
 ├── useChartData.ts     ← prohibited (must be in hooks/)
 └── seriesDataUtils.ts  ← prohibited (must be in utils/)
@@ -285,7 +290,7 @@ src/components/chart/
 
 ```typescript
 // ✅ 'use client' — required at the top of every custom hook file
-// Custom hooks in components/ always run on the client; declare 'use client' unconditionally.
+// Custom hooks in widgets/ always run on the client; declare 'use client' unconditionally.
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -390,7 +395,7 @@ export default function Page() {}
 
 ---
 
-## Domain Function Rules
+## Pure Function Rules (shared/lib, entities/lib)
 
 ```typescript
 // ✅ Pure functions only
@@ -407,33 +412,30 @@ function calculateRSI(closes: number[], period = RSI_DEFAULT_PERIOD): (number | 
 ### File Locations
 
 ```
-# Legacy (마이그레이션 완료까지 유지)
-src/__tests__/domain/indicators/rsi.test.ts
-src/__tests__/infrastructure/market/alpaca.test.ts
-
-# FSD 슬라이스 colocated (Phase 1+)
-src/entities/user/__tests__/userRepository.test.ts
-src/features/auth/__tests__/loginAction.test.ts
+# FSD 슬라이스 colocated
+src/entities/user/__tests__/lib/loginUser.test.ts
+src/features/auth-login/__tests__/actions/loginAction.test.ts
 src/shared/lib/__tests__/cn.test.ts
+
+# 공유 fixture/utility (여러 테스트에서 사용)
+src/__tests__/fixtures/jsonResponse.ts
+src/__tests__/utils/makeFormData.ts
 ```
 
 ### Coverage Targets
 
 ```
-domain/         90% (필수, legacy — Phase 4에서 entities로 이동)
-infrastructure/ 90% (필수, legacy — Phase 2~3에서 entities로 이동)
 entities/       90% (필수)
 features/lib/   90% (필수)
 features/api/   90% (필수)
 shared/lib/     90% (필수)
-components/     optional
 widgets/        optional
 pages/          optional
 app/            optional
 ```
 
-`domain/`, `infrastructure/`, `entities/`, `features/lib/`, `features/api/`, `shared/lib/` require 90% coverage.
-`components/`, `widgets/`, `pages/`, `app/` are not required to have tests, but writing tests for them is allowed.
+`entities/`, `features/lib/`, `features/api/`, `shared/lib/` require 90% coverage.
+`widgets/`, `pages/`, `app/` are not required to have tests, but writing tests for them is allowed.
 Pure utility functions and other units that benefit from testing may be freely tested.
 
 ### Test Structure
@@ -584,8 +586,8 @@ useEffect(() => {
 Official docs: https://tradingview.github.io/lightweight-charts/docs
 
 ```
-✅ Use only inside components/chart/
-❌ No imports from app/, domain/, or infrastructure/
+✅ Use only inside widgets/chart/
+❌ No imports from app/ or entities/api/
 ```
 
 ```typescript
@@ -852,11 +854,12 @@ function calculateEagerRSI(closes: number[], period: number): (number | null)[] 
 ### Lazy Evaluation and Layer Rules
 
 ```
-domain/         Lazy pipeline definitions allowed (pure generator functions)
+shared/lib/     Lazy pipeline definitions allowed (pure generator functions)
+entities/lib/   Lazy pipeline definitions allowed (pure generator functions)
                 Materialize (spread / Array.from) only as the last step inside the function
-infrastructure/ Call domain generator functions and consume their results
-components/     Do not define lazy pipelines directly
-                Receive already-materialized arrays via domain functions
+entities/api/   Call entity/shared generator functions and consume their results
+widgets/        Do not define lazy pipelines directly
+                Receive already-materialized arrays via entity/shared functions
 ```
 
 ---
@@ -864,29 +867,30 @@ components/     Do not define lazy pipelines directly
 ## React Query and Server State Rules
 
 Manage server state on the client using React Query.
-Fetch logic must always live in the infrastructure layer.
-Component hooks are responsible only for connecting infrastructure fetch functions
+Fetch logic must live in entity/feature slices (api.ts or actions/).
+Widget hooks are responsible only for connecting Server Actions or entity fetch functions
 to `useQuery`/`useMutation` as `queryFn`/`mutationFn`.
 
 ```typescript
-// ✅ infrastructure layer — fetch logic
-// src/infrastructure/market/barsApi.ts
-export async function fetchBarsWithIndicators(
+// ✅ entity action — Server Action
+// src/entities/bars/actions/getBarsAction.ts
+'use server';
+export async function getBarsAction(
     symbol: string,
     timeframe: Timeframe
 ): Promise<BarsData> {
-    // FMP/Alpaca 호출 + domain indicator 계산
+    // FMP/Alpaca 호출 + @y0ngha/siglens-core indicator 계산
     // ...
 }
 
-// ✅ component hook — connects queryFn only
-// src/components/symbol-page/hooks/useBars.ts
+// ✅ widget hook — connects queryFn only
+// src/widgets/symbol-page/hooks/useBars.ts
 const { data } = useQuery({
     queryKey: QUERY_KEYS.bars(symbol, timeframe),
-    queryFn: () => fetchBarsWithIndicators(symbol, timeframe),
+    queryFn: () => getBarsAction(symbol, timeframe),
 });
 
-// ❌ No inline fetch logic inside component hooks
+// ❌ No inline fetch logic inside widget hooks
 const { data: barsData } = useQuery({
     queryKey: QUERY_KEYS.bars(symbol, timeframe),
     queryFn: async ({ signal }) => {

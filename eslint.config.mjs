@@ -51,7 +51,7 @@ const eslintConfig = defineConfig([
         plugins: { boundaries },
         settings: {
             'boundaries/elements': [
-                // 새 FSD layer (Phase 0에서는 디렉토리가 아직 생성되지 않음)
+                // FSD 6-layer
                 // ⚠️ src/pages/는 FSD composition layer 용도. Next.js 라우팅은 src/app/에서만 처리.
                 // Next.js App Router 프로젝트에서 src/pages/ 파일 추가 시 Pages Router 활성화 주의.
                 { type: 'pages', pattern: 'src/pages/*' },
@@ -59,11 +59,9 @@ const eslintConfig = defineConfig([
                 { type: 'features', pattern: 'src/features/*' },
                 { type: 'entities', pattern: 'src/entities/*' },
                 { type: 'shared', pattern: 'src/shared/**' },
-                // 옛 layer (Phase 1~9 동안 점진 제거)
-                { type: 'legacy-app', pattern: 'src/app/**' },
-                // legacy-comp 제거 완료 (Phase 7). src/components/ → src/widgets/ 마이그레이션 완료.
-                { type: 'legacy-domain', pattern: 'src/domain/**' },
-                { type: 'legacy-infra', pattern: 'src/infrastructure/**' },
+                // app layer (Next.js App Router)
+                { type: 'app', pattern: 'src/app/**' },
+                // legacy-lib: src/lib/ 잔여 파일 (Phase 10에서 shared/lib 또는 entities로 이동 예정)
                 { type: 'legacy-lib', pattern: 'src/lib/**' },
             ],
         },
@@ -80,8 +78,6 @@ const eslintConfig = defineConfig([
                                 'features',
                                 'entities',
                                 'shared',
-                                'legacy-domain',
-                                'legacy-infra',
                                 'legacy-lib',
                             ],
                         },
@@ -94,83 +90,45 @@ const eslintConfig = defineConfig([
                                 'features',
                                 'entities',
                                 'shared',
-                                'legacy-domain',
-                                'legacy-infra',
                                 'legacy-lib',
                             ],
                         },
                         {
-                            // Phase 5 임시 허용 — auth 슬라이스 간 cross-import.
+                            // auth 슬라이스 간 cross-import 허용.
                             // 허용 쌍: auth-signup → auth-email-verification, auth-oauth-consent → auth-signup
-                            // TODO(Phase 8+): 공유 로직을 entities/shared로 추출하여 해소.
                             from: 'features',
                             allow: [
                                 'features',
                                 'entities',
                                 'shared',
-                                'legacy-domain',
-                                'legacy-infra',
                                 'legacy-lib',
                             ],
                         },
                         {
-                            // Phase 3: entities 간 cross-import 허용. submitOverallAnalysisAction (analysis)이
+                            // entities 간 cross-import 허용. submitOverallAnalysisAction (analysis)이
                             // news-article, earnings-report 데이터를 조합하는 등 entity 간 의존이 불가피.
-                            // Phase 9 (features 분리) 완료 시 entities 자체 제거하고 재평가.
                             from: 'entities',
-                            allow: [
-                                'entities',
-                                'shared',
-                                'legacy-domain',
-                                'legacy-infra',
-                                'legacy-lib',
-                            ],
+                            allow: ['entities', 'shared', 'legacy-lib'],
                         },
                         {
                             from: 'shared',
-                            // 마이그레이션 중 임시 허용: shared로 이동한 파일이 아직 legacy-domain 타입/상수를 참조.
-                            // Phase 3: byokGate가 shared/lib/로 이동하면서 entities(api-key, user)와
-                            // legacy-infra(tier)를 참조. Phase 5 (features 분리) 완료 시 entities/legacy-infra 제거.
-                            allow: [
-                                'shared',
-                                'entities',
-                                'legacy-domain',
-                                'legacy-infra',
-                            ],
+                            // byokGate가 shared/lib/에서 entities(api-key, user)를 참조.
+                            allow: ['shared', 'entities'],
                         },
-                        // 옛 layer 간 의존: 현재 코드 그대로 허용
                         {
-                            from: 'legacy-app',
+                            from: 'app',
                             allow: [
                                 'pages',
                                 'widgets',
                                 'features',
                                 'entities',
                                 'shared',
-                                'legacy-domain',
-                                'legacy-infra',
                                 'legacy-lib',
-                            ],
-                        },
-                        // legacy-comp 블록 제거 완료 (Phase 7). src/components/ → src/widgets/로 전량 이동.
-                        {
-                            from: 'legacy-domain',
-                            allow: ['legacy-lib', 'shared'],
-                        },
-                        {
-                            // Phase 2: repositories가 entities로 이동하면서 legacy-infra에서 entity import 필요.
-                            // Phase 5 (features auth) 완료 시 legacy-infra 의존 자체가 사라짐.
-                            from: 'legacy-infra',
-                            allow: [
-                                'entities',
-                                'legacy-domain',
-                                'legacy-lib',
-                                'shared',
                             ],
                         },
                         {
                             from: 'legacy-lib',
-                            allow: ['legacy-domain', 'shared'],
+                            allow: ['shared'],
                         },
                     ],
                 },

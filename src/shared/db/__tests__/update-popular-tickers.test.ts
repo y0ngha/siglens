@@ -1,4 +1,4 @@
-import { deduplicatePopularTickerEntries } from '../../update-popular-tickers';
+import { deduplicatePopularTickerEntries } from '../../../../update-popular-tickers';
 
 describe('deduplicatePopularTickerEntries', () => {
     it('POPULAR_TICKERS 배열에서 첫 등장 티커만 유지한다', () => {

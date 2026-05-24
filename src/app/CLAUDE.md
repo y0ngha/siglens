@@ -1,16 +1,19 @@
-# App Layer Rules
+# App Layer (FSD + Next.js App Router)
 
 ## Core Principle
 
 Next.js App Router layer. Handles RSC (React Server Components) and Route Handlers.
-This folder is **routing only** — do not implement business logic or UI components here.
+This folder is **routing only** — it composes widgets/features/entities/shared but does not implement business logic or UI components here.
+
+In FSD, `app/` is the **composition root**: it wires together widgets, features, entities, and shared layers via page-level RSC orchestration.
 
 ---
 
 ## Dependency Rules
 
 ```
-✅ Allowed: infrastructure, domain, lib imports
+✅ Allowed: widgets, features, entities, shared imports
+✅ Allowed: @y0ngha/siglens-core direct imports
 ❌ Forbidden: implementing business logic directly in route files
 ```
 
@@ -19,9 +22,9 @@ This folder is **routing only** — do not implement business logic or UI compon
 ## RSC (React Server Components)
 
 - Page files like `app/[symbol]/page.tsx` are server components
-- Data fetching → call infrastructure
-- Indicator calculations → call domain
-- 클라이언트로 초기 데이터를 전달할 때는 props 드릴링 대신 HydrationBoundary 패턴을 사용한다 (아래 Data Flow 참고)
+- Data fetching: call entity/feature actions or shared/api
+- Indicator calculations: delegated to @y0ngha/siglens-core or entity/feature layers
+- Client components are composed via widget layer
 
 ### Data Flow (Initial Page Load)
 
@@ -32,7 +35,7 @@ This folder is **routing only** — do not implement business logic or UI compon
 /AAPL request
   → app/[symbol]/page.tsx (RSC)
     → QueryClient (per-request, server-only) 생성
-    → queryClient.prefetchQuery(bars) → infrastructure/market/barsApi.ts → Market API
+    → queryClient.prefetchQuery(bars) → entities/bars getBarsAction
     → dehydrate(queryClient) → HydrationBoundary로 클라이언트에 전달
   → SymbolPageClient (HydrationBoundary 안)
     → useBars: hydrated 캐시에서 즉시 읽기
@@ -57,10 +60,7 @@ const data = await fetch(url, {
 
 ## Server Actions
 
-Server Actions are defined in `infrastructure/market/` and called directly from hooks.
-
-- `getBarsAction` — returns bars + indicators for timeframe switch
-- `analyzeAction` — AI re-analysis with skills
+Server Actions are defined within FSD slices (entities/*/actions/, features/*/actions/) and called from widget hooks.
 
 ---
 
@@ -82,6 +82,6 @@ See `docs/DESIGN.md` for the full color system and Tailwind CSS rules.
 
 ## Common Mistakes
 
-- Implementing domain logic in route handlers → delegate to domain/
+- Implementing domain logic in route handlers → delegate to entities/features/shared
 - No caching strategy, calling API every request → use `fetch`의 `next: { revalidate }`
 - Exposing internal error details in responses → return generic messages to client

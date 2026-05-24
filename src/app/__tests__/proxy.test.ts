@@ -15,7 +15,7 @@ jest.mock('next/server', () => ({
 }));
 
 import { NextResponse, type NextRequest } from 'next/server';
-import { proxy } from '../proxy';
+import { proxy } from '@/proxy';
 
 const mockRedirect = NextResponse.redirect as jest.MockedFunction<
     typeof NextResponse.redirect
