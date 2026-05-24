@@ -1,5 +1,6 @@
 import { buildPasswordResetEmail } from '@/entities/email-token';
-import { DEFAULT_SITE_URL } from '../../templates/passwordResetEmail';
+
+const DEFAULT_SITE_URL = 'https://siglens.io';
 
 describe('buildPasswordResetEmail', () => {
     const originalEnv = process.env.NEXT_PUBLIC_SITE_URL;

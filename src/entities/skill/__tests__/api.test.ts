@@ -772,6 +772,13 @@ describe('countSkillFiles', () => {
                     fileDirent('pivot-points.md'),
                     fileDirent('fibonacci-retracement.md'),
                 ]);
+            if (dir === path.join(SKILLS_DIR, 'fundamental'))
+                return Promise.resolve([fileDirent('earnings.md')]);
+            if (dir === path.join(SKILLS_DIR, 'news'))
+                return Promise.resolve([
+                    fileDirent('sentiment.md'),
+                    fileDirent('catalyst.md'),
+                ]);
             return Promise.resolve([]);
         });
 
@@ -782,6 +789,8 @@ describe('countSkillFiles', () => {
         expect(counts.patterns).toBe(3);
         expect(counts.strategies).toBe(1);
         expect(counts.supportResistance).toBe(2);
+        expect(counts.fundamental).toBe(1);
+        expect(counts.news).toBe(2);
     });
 
     it('서브디렉토리의 .md 파일을 재귀적으로 카운트한다', async () => {
