@@ -1,8 +1,9 @@
 import type { AuthSessionRecord, SessionRepository } from '@/shared/db/types';
 import type { AuthSessionCookie } from '@/entities/user';
 
-/** Default cookie name used for the auth session token. */
-export const AUTH_SESSION_COOKIE_NAME = 'siglens_session';
+import { AUTH_SESSION_COOKIE_NAME } from '@/shared/config/cookieNames';
+
+export { AUTH_SESSION_COOKIE_NAME };
 
 /** Default session lifetime in seconds (30 days). */
 export const DEFAULT_SESSION_TTL_SECONDS = 60 * 60 * 24 * 30;

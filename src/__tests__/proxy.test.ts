@@ -1,7 +1,6 @@
-// proxy.ts는 `@/entities/session` 배럴에서 AUTH_SESSION_COOKIE_NAME을 import한다.
-// sessionCookie.ts는 외부 의존 없는 순수 상수 모듈이라 실제로 mock할 필요도 없지만,
-// 명시적으로 의도를 드러내기 위해 배럴 경로로 mock을 유지한다.
-jest.mock('@/entities/session', () => ({
+// proxy.ts는 @/shared/config/cookieNames에서 AUTH_SESSION_COOKIE_NAME을 import한다.
+// edge runtime 안전성을 위해 entities barrel 대신 shared 순수 상수 파일 사용.
+jest.mock('@/shared/config/cookieNames', () => ({
     AUTH_SESSION_COOKIE_NAME: 'siglens_session',
 }));
 jest.mock('next/server', () => ({
