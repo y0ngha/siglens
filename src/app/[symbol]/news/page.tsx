@@ -26,8 +26,10 @@ import {
     SITE_NAME,
     SITE_URL,
 } from '@/shared/lib/seo';
+import { isBot } from '@/shared/api/isBot';
 import { waitUntil } from '@vercel/functions';
 import type { Metadata } from 'next';
+import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 
@@ -116,14 +118,18 @@ export default async function NewsPage({ params }: Props) {
     });
 
     // waitUntil keeps the serverless function alive past response completion so the analysis settles without blocking the stream.
-    waitUntil(
-        ensureNewsCardsAnalyzedAction(upper).catch((error: unknown) => {
-            console.error(
-                '[NewsPage] ensureNewsCardsAnalyzedAction failed:',
-                error
-            );
-        })
-    );
+    // Bot/crawler traffic skips this to avoid unnecessary LLM worker dispatch cost.
+    const requestHeaders = await headers();
+    if (!isBot(requestHeaders)) {
+        waitUntil(
+            ensureNewsCardsAnalyzedAction(upper).catch((error: unknown) => {
+                console.error(
+                    '[NewsPage] ensureNewsCardsAnalyzedAction failed:',
+                    error
+                );
+            })
+        );
+    }
 
     // about 노드는 stock으로 분류된 경우만 채워지고, ETF/Index/모호한 종목은
     // undefined로 자연 생략된다 (assetClassification 모듈 doc 참고).
