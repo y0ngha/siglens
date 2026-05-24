@@ -23,7 +23,7 @@ import { PeersTable } from '@/widgets/fundamental/sections/PeersTable';
 import { ProfileCard } from '@/widgets/fundamental/sections/ProfileCard';
 import { ProfitabilityCard } from '@/widgets/fundamental/sections/ProfitabilityCard';
 import { ValuationCard } from '@/widgets/fundamental/sections/ValuationCard';
-import { CrossLinkCards } from '@/widgets/symbol-page/CrossLinkCards';
+import { CrossLinkCards } from '@/widgets/symbol-page';
 import { SectionSkeleton } from '@/widgets/symbol-page/SectionSkeleton';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { VALID_TICKER_RE } from '@/shared/config/market';

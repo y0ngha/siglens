@@ -16,7 +16,7 @@ jest.mock('@/shared/db/client', () => ({
     getDatabaseClient: jest.fn(() => ({ db: {}, sql: () => null })),
 }));
 jest.mock('@/features/contact-form/hooks/useContactForm');
-jest.mock('@/entities/session/hooks/useCurrentUser');
+jest.mock('@/entities/session');
 
 const mockUseContactForm = jest.mocked(useContactForm);
 const mockUseCurrentUser = jest.mocked(useCurrentUser);
