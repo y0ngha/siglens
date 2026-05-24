@@ -15,7 +15,7 @@ import {
     CURRENT_USER_STALE_TIME_MS,
     QUERY_KEYS,
     REGISTERED_PROVIDERS_STALE_TIME_MS,
-} from '@/lib/queryConfig';
+} from '@/shared/config/queryConfig';
 
 export interface ModelGateState {
     mode: GateMode;

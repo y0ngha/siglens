@@ -8,7 +8,7 @@ import {
     type OnPollingComplete,
     type UseNewsCardPollingReturn,
 } from '@/components/news/hooks/useNewsCardPolling';
-import { QUERY_KEYS } from '@/lib/queryConfig';
+import { QUERY_KEYS } from '@/shared/config/queryConfig';
 
 function isPendingAnalysis(item: NewsDisplayItem): boolean {
     return item.sentiment === null || item.priceImpact === null;

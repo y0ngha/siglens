@@ -1,4 +1,4 @@
-import { cn } from '@/lib/cn';
+import { cn } from '@/shared/lib/cn';
 
 // `mapExpirationsToSlots`가 산출하는 슬롯 6종(1W/2W/1M/2M/3M/6M)에 종합 chip을 더한 수.
 const EXPIRATION_CHIP_SKELETON_COUNT = 7;

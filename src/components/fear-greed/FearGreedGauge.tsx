@@ -1,9 +1,9 @@
 import type { ReactNode } from 'react';
 import type { FearGreedLabel } from '@y0ngha/siglens-core';
 import type { SnapshotConfidence } from '@/domain/types';
-import { SENTIMENT_LABEL_TEXT } from '@/lib/fearGreedLabels';
+import { SENTIMENT_LABEL_TEXT } from '@/shared/lib/fearGreedLabels';
 import { FEAR_GREED_SCORE_BOUNDARIES } from '@/domain/fearGreed/classifier';
-import { cn } from '@/lib/cn';
+import { cn } from '@/shared/lib/cn';
 import { InfoTooltip } from '@/components/ui/InfoTooltip';
 
 const { EXTREME_FEAR_MAX, FEAR_MAX, NEUTRAL_MAX, GREED_MAX } =

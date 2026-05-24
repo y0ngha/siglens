@@ -1,4 +1,4 @@
-import { sleep } from '@/lib/sleep';
+import { sleep } from '@/shared/lib/sleep';
 
 /**
  * Options for {@link withRetry}.

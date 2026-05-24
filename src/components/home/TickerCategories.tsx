@@ -1,6 +1,6 @@
 import Link from 'next/link';
 
-import { cn } from '@/lib/cn';
+import { cn } from '@/shared/lib/cn';
 import type { CategoryId } from '@/domain/types';
 import { TICKER_CATEGORIES } from '@/domain/constants/popular-tickers';
 

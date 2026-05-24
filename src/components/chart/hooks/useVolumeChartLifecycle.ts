@@ -7,7 +7,7 @@ import {
     type IChartApi,
     type ISeriesApi,
 } from 'lightweight-charts';
-import { CHART_COLORS } from '@/lib/chartColors';
+import { CHART_COLORS } from '@/shared/lib/chartColors';
 
 interface UseVolumeChartLifecycleOptions {
     containerRef: RefObject<HTMLDivElement | null>;

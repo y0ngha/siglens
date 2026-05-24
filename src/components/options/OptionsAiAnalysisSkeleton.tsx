@@ -1,4 +1,4 @@
-import { cn } from '@/lib/cn';
+import { cn } from '@/shared/lib/cn';
 
 const SKELETON_LINE_WIDTHS = [
     'w-full',

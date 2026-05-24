@@ -1,4 +1,4 @@
-import { AUTH_HINT_COOKIE_NAME } from '@/lib/auth/cookieNames';
+import { AUTH_HINT_COOKIE_NAME } from '@/shared/config/cookieNames';
 
 export { AUTH_HINT_COOKIE_NAME };
 

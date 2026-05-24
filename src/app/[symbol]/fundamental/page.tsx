@@ -36,7 +36,7 @@ import {
     buildSymbolSeoContent,
     SITE_NAME,
     SITE_URL,
-} from '@/lib/seo';
+} from '@/shared/lib/seo';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';

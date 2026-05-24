@@ -16,7 +16,7 @@ import type {
 } from 'lightweight-charts';
 import { LineSeries } from 'lightweight-charts';
 import type { Bar, IndicatorResult } from '@y0ngha/siglens-core';
-import { CHART_COLORS } from '@/lib/chartColors';
+import { CHART_COLORS } from '@/shared/lib/chartColors';
 import { DEFAULT_LINE_WIDTH } from '@/components/chart/constants';
 
 interface UseVolumeProfileOverlayParams {

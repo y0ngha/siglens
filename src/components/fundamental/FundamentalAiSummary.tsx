@@ -6,7 +6,7 @@ import {
     type FundamentalCategory,
     type FundamentalSentiment,
 } from '@y0ngha/siglens-core';
-import { cn } from '@/lib/cn';
+import { cn } from '@/shared/lib/cn';
 import { useDefaultModelId } from '@/components/symbol-page/hooks/useDefaultModelId';
 import { useFundamentalAnalysis } from '@/components/fundamental/hooks/useFundamentalAnalysis';
 import { usePublishSymbolChat } from '@/components/chat/hooks/useSymbolChat';

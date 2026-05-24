@@ -1,6 +1,6 @@
 import { MS_PER_HOUR } from '@/domain/constants/time';
-import { PRIVACY_PATH, TERMS_PATH } from '@/lib/legal';
-import { SITE_BUILD_DATE, SITE_URL } from '@/lib/seo';
+import { PRIVACY_PATH, TERMS_PATH } from '@/shared/lib/legal';
+import { SITE_BUILD_DATE, SITE_URL } from '@/shared/lib/seo';
 import type { SitemapEntry } from '@/infrastructure/sitemap/types';
 
 /**

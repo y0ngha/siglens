@@ -2,7 +2,7 @@ import { ApiKeySection } from '@/components/account/ApiKeySection';
 import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
 import { getRegisteredProvidersAction } from '@/infrastructure/llm/getRegisteredProvidersAction';
 import { TIER_LABEL } from '@/lib/auth/tierLabel';
-import { SITE_NAME, SITE_URL } from '@/lib/seo';
+import { SITE_NAME, SITE_URL } from '@/shared/lib/seo';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';

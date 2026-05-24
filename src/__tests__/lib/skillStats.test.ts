@@ -1,4 +1,4 @@
-import { buildSkillStats, SKILL_STAT_CONFIG } from '@/lib/skillStats';
+import { buildSkillStats, SKILL_STAT_CONFIG } from '@/shared/lib/skillStats';
 import type { SkillShowcaseItem } from '@y0ngha/siglens-core';
 
 function buildSkill(

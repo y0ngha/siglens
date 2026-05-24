@@ -22,7 +22,7 @@ import { chatAction } from '@/infrastructure/chat/chatAction';
 import { getRemainingTokensAction } from '@/infrastructure/chat/getRemainingTokensAction';
 import { DEFAULT_TIMEFRAME } from '@/domain/constants/market';
 import { CHAT_NON_CHART_BASELINE_ANALYSIS } from '@/domain/chat/fallbackAnalysis';
-import { QUERY_KEYS } from '@/lib/queryConfig';
+import { QUERY_KEYS } from '@/shared/config/queryConfig';
 import { usePageContextLabel } from '@/components/chat/hooks/usePageContextLabel';
 import { useSymbolChat } from '@/components/chat/hooks/useSymbolChat';
 import { useAssetInfo } from '@/components/symbol-page/hooks/useAssetInfo';

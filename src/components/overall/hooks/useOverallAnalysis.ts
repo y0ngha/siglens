@@ -22,9 +22,9 @@ import { cancelAnalysisJobAction } from '@/infrastructure/market/cancelAnalysisJ
 import { cancelFundamentalAnalysisJobAction } from '@/infrastructure/market/cancelFundamentalAnalysisJobAction';
 import { cancelNewsAnalysisJobAction } from '@/infrastructure/market/cancelNewsAnalysisJobAction';
 import { cancelOverallAnalysisJobAction } from '@/infrastructure/market/cancelOverallAnalysisJobAction';
-import { sleep } from '@/lib/sleep';
-import { QUERY_KEYS } from '@/lib/queryConfig';
-import { AUGMENT_AND_OVERALL_POLL_INTERVAL_MS } from '@/lib/pollingConfig';
+import { sleep } from '@/shared/lib/sleep';
+import { QUERY_KEYS } from '@/shared/config/queryConfig';
+import { AUGMENT_AND_OVERALL_POLL_INTERVAL_MS } from '@/shared/config/pollingConfig';
 import type { CancelJobEntry } from '@/domain/types';
 import { usePageHideCancel } from '@/components/hooks/usePageHideCancel';
 import { BotBlockedError } from '@/components/symbol-page/exceptions/BotBlockedError';

@@ -12,7 +12,7 @@ import {
     countSkillFiles,
     FileSkillsLoader,
 } from '@/infrastructure/skills/loader';
-import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from '@/lib/seo';
+import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from '@/shared/lib/seo';
 import Link from 'next/link';
 import { cache, Suspense } from 'react';
 

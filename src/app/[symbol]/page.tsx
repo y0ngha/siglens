@@ -11,13 +11,13 @@ import { buildDisplayName } from '@/domain/ticker';
 import { getBarsAction } from '@/infrastructure/market/getBarsAction';
 import { countSkillFiles } from '@/infrastructure/skills/loader';
 import { getAssetInfoCached } from '@/infrastructure/ticker/getAssetInfoCached';
-import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/lib/queryConfig';
+import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/shared/config/queryConfig';
 import {
     buildBreadcrumbJsonLd,
     buildSymbolSeoContent,
     SITE_NAME,
     SITE_URL,
-} from '@/lib/seo';
+} from '@/shared/lib/seo';
 import {
     dehydrate,
     HydrationBoundary,

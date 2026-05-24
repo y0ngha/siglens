@@ -2,7 +2,7 @@
 
 import { useRef } from 'react';
 import type { IChartApi } from 'lightweight-charts';
-import { CHART_COLORS } from '@/lib/chartColors';
+import { CHART_COLORS } from '@/shared/lib/chartColors';
 import type { Bar, BuySellVolumeResult } from '@y0ngha/siglens-core';
 import { usePaneLabels } from '@/components/chart/hooks/usePaneLabels';
 import { useVolumeChartData } from '@/components/chart/hooks/useVolumeChartData';

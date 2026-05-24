@@ -1,6 +1,6 @@
 import type { FundamentalGrowthInput } from '@y0ngha/siglens-core';
 import { EmptySectionCard } from '@/components/fundamental/sections/EmptySectionCard';
-import { cn } from '@/lib/cn';
+import { cn } from '@/shared/lib/cn';
 
 const HEADING_ID = 'growth-heading';
 const HEADING_CLASS_NAME = 'mb-2 text-lg font-semibold tracking-tight';

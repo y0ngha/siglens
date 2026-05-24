@@ -1,7 +1,7 @@
 import type { ComponentPropsWithoutRef } from 'react';
 import type { Components } from 'react-markdown';
 import ReactMarkdown from 'react-markdown';
-import { cn } from '@/lib/cn';
+import { cn } from '@/shared/lib/cn';
 
 export const MARKDOWN_TEXT_COMPONENTS: Components = {
     p: ({ children }) => (

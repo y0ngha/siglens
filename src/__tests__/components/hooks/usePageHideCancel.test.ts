@@ -2,7 +2,7 @@
  * @jest-environment jsdom
  */
 import { usePageHideCancel } from '@/components/hooks/usePageHideCancel';
-import { CANCEL_JOBS_API_PATH } from '@/lib/cancelJobsApi';
+import { CANCEL_JOBS_API_PATH } from '@/shared/lib/cancelJobsApi';
 import { renderHook } from '@testing-library/react';
 import { readBlobText } from '@/__tests__/utils/readBlobText';
 

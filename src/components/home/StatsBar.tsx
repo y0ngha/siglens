@@ -3,7 +3,7 @@ import { Fragment } from 'react';
 
 import type { SkillShowcaseItem } from '@y0ngha/siglens-core';
 import { DotSeparator } from '@/components/ui/DotSeparator';
-import { buildSkillStats } from '@/lib/skillStats';
+import { buildSkillStats } from '@/shared/lib/skillStats';
 
 interface StatsBarProps {
     skills: SkillShowcaseItem[];

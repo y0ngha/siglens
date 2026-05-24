@@ -4,7 +4,7 @@ import {
     hasMinLength,
     hasNumber,
 } from '@/domain/auth/passwordRules';
-import { cn } from '@/lib/cn';
+import { cn } from '@/shared/lib/cn';
 
 interface PasswordStrengthHintProps {
     password: string;

@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { SITE_NAME } from '@/lib/seo';
+import { SITE_NAME } from '@/shared/lib/seo';
 
 interface LegalBreadcrumbProps {
     pageTitle: string;

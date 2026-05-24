@@ -3,7 +3,7 @@ import { AuthCardShell } from '@/components/auth/AuthCardShell';
 import { LoginForm } from '@/components/auth/LoginForm';
 import { SocialLoginButtons } from '@/components/auth/SocialLoginButtons';
 import { sanitizeNextPath } from '@/domain/auth/redirect';
-import { SITE_NAME, SITE_URL } from '@/lib/seo';
+import { SITE_NAME, SITE_URL } from '@/shared/lib/seo';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 

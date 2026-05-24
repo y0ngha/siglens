@@ -2,7 +2,7 @@ import {
     formatUsdPrice,
     formatUsdCurrency,
     formatPriceChange,
-} from '@/lib/priceFormat';
+} from '@/shared/lib/priceFormat';
 
 describe('formatUsdPrice', () => {
     it('정수를 쉼표 포맷으로 반환한다', () => {

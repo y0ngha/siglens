@@ -13,7 +13,7 @@ import { SymbolTabsSkeleton } from '@/components/symbol-page/SymbolTabsSkeleton'
 import { DEFAULT_TIMEFRAME } from '@/domain/constants/market';
 import { getBarsAction } from '@/infrastructure/market/getBarsAction';
 import { getAssetInfoCached } from '@/infrastructure/ticker/getAssetInfoCached';
-import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/lib/queryConfig';
+import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/shared/config/queryConfig';
 
 interface SymbolLayoutProps {
     children: ReactNode;

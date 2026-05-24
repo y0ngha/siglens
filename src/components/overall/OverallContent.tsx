@@ -16,7 +16,7 @@ import { TechnicalSummary } from '@/components/overall/sections/TechnicalSummary
 import { buildChatState } from '@/components/overall/utils/buildChatState';
 import { BotBlockedNotice } from '@/components/symbol-page/BotBlockedNotice';
 import { useDefaultModelId } from '@/components/symbol-page/hooks/useDefaultModelId';
-import { cn } from '@/lib/cn';
+import { cn } from '@/shared/lib/cn';
 import { type Timeframe } from '@y0ngha/siglens-core';
 import { type CSSProperties, useMemo } from 'react';
 

@@ -2,7 +2,7 @@
 // 대기 시간을 없앤다. retry 발생 시 sleep이 호출되는 것만 검증.
 // `jest.mock` 은 import 위로 호이스트되어야 static import 보다 먼저 평가된다
 // (`import/first` 규칙과 일치).
-jest.mock('@/lib/sleep', () => ({
+jest.mock('@/shared/lib/sleep', () => ({
     sleep: jest.fn().mockResolvedValue(undefined),
 }));
 

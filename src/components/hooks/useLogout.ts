@@ -3,7 +3,7 @@
 import { useTransition } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { logoutAction } from '@/infrastructure/auth/logoutAction';
-import { QUERY_KEYS } from '@/lib/queryConfig';
+import { QUERY_KEYS } from '@/shared/config/queryConfig';
 
 interface UseLogoutResult {
     pending: boolean;

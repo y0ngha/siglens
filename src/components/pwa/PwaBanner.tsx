@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import { usePwaInstall } from '@/components/pwa/hooks/usePwaInstall';
 import { IosInstallModal } from '@/components/pwa/IosInstallModal';
-import { cn } from '@/lib/cn';
+import { cn } from '@/shared/lib/cn';
 
 // Pattern A (CLS prevention): always render a fixed-height shell so
 // the layout below does not shift when the 30s fallback timer or the

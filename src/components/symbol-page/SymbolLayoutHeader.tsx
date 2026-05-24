@@ -9,7 +9,7 @@ import { useSymbolModel } from '@/components/symbol-page/SymbolModelContext';
 import { ModelSelector } from '@/components/analysis/ModelSelector';
 import { FearGreedHeaderChipMounted } from '@/components/symbol-page/FearGreedHeaderChipMounted';
 import { PremiumModelGateModal } from '@/components/ui/PremiumModelGateModal';
-import { LLM_PROVIDER_LABELS } from '@/lib/llmProviderLabels';
+import { LLM_PROVIDER_LABELS } from '@/shared/lib/llmProviderLabels';
 
 interface SymbolLayoutHeaderProps {
     /** Ticker from the dynamic route param. Internally upper-cased for the breadcrumb. */

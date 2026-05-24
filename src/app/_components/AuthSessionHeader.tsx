@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 import { Header } from '@/components/layout/Header';
 import type { HeaderUserMenuUser } from '@/components/layout/HeaderUserMenu';
 import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
-import { AUTH_HINT_COOKIE_NAME } from '@/lib/auth/cookieNames';
+import { AUTH_HINT_COOKIE_NAME } from '@/shared/config/cookieNames';
 
 /**
  * cookies()/DB-세션 조회를 root layout 밖으로 격리한 Server Component.

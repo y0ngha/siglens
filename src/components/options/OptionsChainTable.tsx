@@ -10,7 +10,7 @@ import { InfoTooltip } from '@/components/ui/InfoTooltip';
 import { OpenInterestTooltip } from '@/components/options/utils/optionsTooltips';
 import { findNearestStrikeIndex } from '@/domain/options/findNearestStrike';
 import type { OptionsExpirationSelector } from '@/domain/types';
-import { cn } from '@/lib/cn';
+import { cn } from '@/shared/lib/cn';
 
 const numberFormatter = new Intl.NumberFormat('en-US');
 

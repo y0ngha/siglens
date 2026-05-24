@@ -5,7 +5,7 @@ import '@testing-library/jest-dom';
 import { render } from '@testing-library/react';
 import type { FearGreedSnapshot } from '@y0ngha/siglens-core';
 import { FearGreedHero } from '@/components/fear-greed/FearGreedHero';
-import { SENTIMENT_LABEL_TEXT } from '@/lib/fearGreedLabels';
+import { SENTIMENT_LABEL_TEXT } from '@/shared/lib/fearGreedLabels';
 
 const snapshot: FearGreedSnapshot = {
     score: 18,

@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import type { StockWithConflict } from '@y0ngha/siglens-core';
-import { cn } from '@/lib/cn';
+import { cn } from '@/shared/lib/cn';
 import { InfoTooltip } from '@/components/ui/InfoTooltip';
 import { SignalStockCard } from '@/components/dashboard/SignalStockCard';
 

@@ -1,4 +1,4 @@
-import { formatAnalyzedAt } from '@/lib/formatAnalyzedAt';
+import { formatAnalyzedAt } from '@/shared/lib/formatAnalyzedAt';
 
 describe('formatAnalyzedAt', () => {
     it('UTC ISO 를 KST(+09:00) YYYY-MM-DD HH:mm 으로 환산한다', () => {

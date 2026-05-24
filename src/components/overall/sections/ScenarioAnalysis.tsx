@@ -3,7 +3,7 @@ import type {
     OverallScenarioName,
 } from '@y0ngha/siglens-core';
 import { MarkdownText } from '@/components/ui/MarkdownText';
-import { cn } from '@/lib/cn';
+import { cn } from '@/shared/lib/cn';
 
 const SCENARIO_LABEL: Record<OverallScenarioName, string> = {
     bullish: '강세',

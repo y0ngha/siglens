@@ -10,7 +10,7 @@ import {
     CONFIDENCE_LIMITED_LABEL,
     FACTOR_LABEL,
     SENTIMENT_LABEL_TEXT,
-} from '@/lib/fearGreedLabels';
+} from '@/shared/lib/fearGreedLabels';
 
 const sample: FearGreedSnapshot = {
     score: 18.6,

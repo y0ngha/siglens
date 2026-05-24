@@ -1,7 +1,7 @@
 'use client';
 
 import type { KeyboardEvent } from 'react';
-import { cn } from '@/lib/cn';
+import { cn } from '@/shared/lib/cn';
 import { useRovingKeyboardNav } from '@/components/hooks/useRovingKeyboardNav';
 import type { DashboardTimeframe } from '@y0ngha/siglens-core';
 import {

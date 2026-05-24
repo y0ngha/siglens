@@ -2,7 +2,7 @@
 
 import { useNewsPollingWithInvalidation } from '@/components/news/hooks/useNewsPollingWithInvalidation';
 import type { NewsDisplayItem } from '@/domain/types';
-import { cn } from '@/lib/cn';
+import { cn } from '@/shared/lib/cn';
 import { NEWS_LIST_PERIOD_LABEL } from '@/lib/news/periodLabels';
 import type { NewsImpact, NewsSentiment } from '@y0ngha/siglens-core';
 import { useState } from 'react';

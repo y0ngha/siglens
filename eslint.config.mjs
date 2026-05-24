@@ -118,7 +118,12 @@ const eslintConfig = defineConfig([
                                 'legacy-lib',
                             ],
                         },
-                        { from: 'shared', allow: ['shared'] },
+                        {
+                            from: 'shared',
+                            // 마이그레이션 중 임시 허용: shared로 이동한 파일이 아직 legacy-domain 타입/상수를 참조.
+                            // Phase 3 (entities 마이그레이션) 완료 시 legacy-domain 제거.
+                            allow: ['shared', 'legacy-domain'],
+                        },
                         // 옛 layer 간 의존: 현재 코드 그대로 허용
                         {
                             from: 'legacy-app',

@@ -5,8 +5,8 @@ import { useNewsAnalysis } from '@/components/news/hooks/useNewsAnalysis';
 import { cancelNewsAnalysisJobAction } from '@/infrastructure/market/cancelNewsAnalysisJobAction';
 import { pollNewsAnalysisAction } from '@/infrastructure/market/pollNewsAnalysisAction';
 import { submitNewsAnalysisAction } from '@/infrastructure/market/submitNewsAnalysisAction';
-import { CANCEL_JOBS_API_PATH } from '@/lib/cancelJobsApi';
-import { QUERY_KEYS } from '@/lib/queryConfig';
+import { CANCEL_JOBS_API_PATH } from '@/shared/lib/cancelJobsApi';
+import { QUERY_KEYS } from '@/shared/config/queryConfig';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import type { NewsAnalysisResponse } from '@y0ngha/siglens-core';
@@ -26,7 +26,7 @@ jest.mock('@/infrastructure/market/cancelNewsAnalysisJobAction', () => ({
     cancelNewsAnalysisJobAction: jest.fn().mockResolvedValue(undefined),
 }));
 
-jest.mock('@/lib/sleep', () => ({
+jest.mock('@/shared/lib/sleep', () => ({
     sleep: jest.fn().mockResolvedValue(undefined),
 }));
 

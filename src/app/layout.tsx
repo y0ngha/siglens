@@ -11,15 +11,15 @@ import { Header } from '@/components/layout/Header';
 import { SiteJsonLd } from '@/components/layout/SiteJsonLd';
 import { PwaBanner } from '@/components/pwa/PwaBanner';
 import { ReactQueryProvider } from '@/components/providers/ReactQueryProvider';
-import { ADSENSE_ENABLED } from '@/lib/adsense';
+import { ADSENSE_ENABLED } from '@/shared/lib/adsense';
 import {
     ROOT_KEYWORDS,
     ROOT_TITLE,
     SITE_DESCRIPTION,
     SITE_NAME,
     SITE_URL,
-} from '@/lib/seo';
-import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/lib/og';
+} from '@/shared/lib/seo';
+import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
 import './globals.css';
 
 // Geist는 라틴만 지원하므로 한글 글리프는 globals.css의 --font-sans 스택에서
