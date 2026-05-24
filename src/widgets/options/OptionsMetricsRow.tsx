@@ -10,7 +10,7 @@ import {
     formatMaxPain,
     formatPutCallRatio,
     METRIC_PLACEHOLDER,
-} from '@/entities/options-chain/lib/optionsFormatters';
+} from '@/entities/options-chain';
 import {
     AtmIvTooltip,
     ImpliedMoveTooltip,
