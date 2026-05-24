@@ -22,6 +22,11 @@
         ],
         "baseUrl": ".",
         "paths": {
+            "@/widgets/*": ["./src/widgets/*"],
+            "@/features/*": ["./src/features/*"],
+            "@/entities/*": ["./src/entities/*"],
+            "@/pages/*": ["./src/pages/*"],
+            "@/shared/*": ["./src/shared/*"],
             "@/*": ["./src/*"]
         }
     },

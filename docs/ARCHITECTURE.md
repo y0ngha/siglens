@@ -7,6 +7,18 @@ Layered Architecture를 기반으로 한다.
 
 ---
 
+## ⚠️ FSD 마이그레이션 진행 중
+
+본 프로젝트는 현재 Layered Architecture에서 **Feature-Sliced Design (FSD) 6-layer**로 단계적 마이그레이션 중이다.
+Phase 0~9 동안 아래 기술된 옛 레이어(domain/infrastructure/lib/components/app)와 새 FSD 레이어(pages/widgets/features/entities/shared)가 공존한다.
+
+FSD 의존 방향 및 상세 설계: `docs/superpowers/specs/2026-05-24-fsd-migration-design.md`
+CLAUDE.md의 "Layer Dependency Rules" 섹션도 함께 참고.
+
+Phase 9 완료 시 본 문서를 FSD 기준으로 전면 재작성한다.
+
+---
+
 ## 레이어 구조
 
 ```
