@@ -188,7 +188,7 @@ app  →  pages  →  widgets  →  features  →  entities  →  shared
 
 - 각 레이어는 자기 위 레이어를 import할 수 없다 (예: entities는 features를 import할 수 없음).
 - 같은 레이어 안의 다른 슬라이스끼리 import 금지 (예: `entities/user`는 `entities/session`을 직접 import할 수 없음 — 상위 레이어를 통해 라우팅).
-  - **예외**: `shared` 레이어는 내부 슬라이스 간 import 허용 (예: `shared/ui` → `shared/lib`). Phase 0 PR 1 완료 후 ESLint `{ from: 'shared', allow: ['shared'] }` 규칙으로 강제.
+  - **예외**: `shared` 레이어는 내부 슬라이스 간 import 허용 (예: `shared/ui` → `shared/lib`). ESLint `{ from: 'shared', allow: ['shared'] }` 규칙으로 강제.
 - production 코드는 슬라이스 root만 import (예: `@/widgets/stock-chart`, NOT `@/widgets/stock-chart/ui/Chart`). 테스트 파일은 예외.
 
 ### Legacy 의존 방향 (마이그레이션 동안 유지)
@@ -223,7 +223,7 @@ Phase 9 완료 시 legacy 섹션은 제거된다.
 
 ### ESLint 강제
 
-위 규칙은 `eslint-plugin-boundaries` + `no-restricted-imports`로 정적 검증된다 (Phase 0 PR 1에서 도입). 도입 완료 후 위반 시 PR 머지 불가. 자세한 설정은 `eslint.config.mjs`.
+위 규칙은 `eslint-plugin-boundaries` + `no-restricted-imports`로 정적 검증된다. 위반 시 PR 머지 불가. 자세한 설정은 `eslint.config.mjs`.
 
 ---
 
