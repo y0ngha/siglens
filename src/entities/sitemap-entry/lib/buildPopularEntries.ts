@@ -1,5 +1,6 @@
 import { POPULAR_TICKERS } from '@/domain/constants/popular-tickers';
 import { MS_PER_DAY, MS_PER_HOUR } from '@/domain/constants/time';
+// Cross-entity: options-chain hasOptionsMarket 필요. Phase 9에서 features 레이어 도입 시 해소.
 import { hasOptionsMarket } from '@/entities/options-chain';
 import { SITE_URL } from '@/shared/lib/seo';
 import type { SitemapEntry } from '../model';

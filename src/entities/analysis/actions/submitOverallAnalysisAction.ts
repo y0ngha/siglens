@@ -10,6 +10,7 @@ import {
     type SubmitOverallAnalysisResult,
     type Timeframe,
 } from '@y0ngha/siglens-core';
+// Cross-entity: FMP fundamental API 필요. Phase 9에서 features 레이어 도입 시 해소.
 import { FmpFundamentalClient } from '@/entities/fundamental';
 import { getDatabaseClient } from '@/shared/db/client';
 import {
@@ -22,6 +23,7 @@ import { getNextEarningsReport } from '@/entities/earnings-report';
 import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
 import { resolveTierAndByok, buildGateError } from '@/shared/lib/byokGate';
 import { isBot } from '@/shared/api/isBot';
+// Cross-entity: options-chain fetchOptionsSnapshot 필요. Phase 9에서 features 레이어 도입 시 해소.
 import { fetchOptionsSnapshot } from '@/entities/options-chain';
 import {
     isOpenInterestSnapshotStale,

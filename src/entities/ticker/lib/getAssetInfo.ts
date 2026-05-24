@@ -1,6 +1,6 @@
 import { waitUntil } from '@vercel/functions';
 import { isValidTickerFormat } from '@/domain/ticker';
-import { DrizzleAssetTranslationRepository } from '@/entities/ticker';
+import { DrizzleAssetTranslationRepository } from '../api';
 import type {
     AssetTranslationRecord,
     AssetTranslationRepository,

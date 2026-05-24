@@ -1,6 +1,7 @@
 import type { EarningsCalendarItem } from '@y0ngha/siglens-core';
 import { MS_PER_DAY } from '@/domain/constants/time';
 import { DrizzleEarningsReportsRepository } from '@/entities/earnings-report';
+// Cross-entity: FMP fundamental API 필요. Phase 9에서 features 레이어 도입 시 해소.
 import { FmpFundamentalClient } from '@/entities/fundamental';
 import { todayKstIsoDate } from '@/shared/lib/dateKey';
 import type { SiglensDatabase } from '@/shared/db/types';
