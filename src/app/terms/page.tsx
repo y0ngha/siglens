@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { LegalPageShell } from '@/components/legal/LegalPageShell';
 import { PolicyMarkdownBody } from '@/components/legal/PolicyMarkdownBody';
-import { JsonLd } from '@/components/ui/JsonLd';
+import { JsonLd } from '@/shared/ui/JsonLd';
 import {
     formatKoreanDate,
     INVESTMENT_DISCLAIMER,

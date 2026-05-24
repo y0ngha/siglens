@@ -1,6 +1,6 @@
 import { ContactDialog } from '@/components/layout/ContactDialog';
 import { CurrentYear } from '@/components/layout/CurrentYear';
-import { DotSeparator } from '@/components/ui/DotSeparator';
+import { DotSeparator } from '@/shared/ui/DotSeparator';
 import {
     INVESTMENT_DISCLAIMER,
     PRIVACY_PATH,

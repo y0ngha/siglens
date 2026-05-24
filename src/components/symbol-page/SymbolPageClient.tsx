@@ -3,8 +3,8 @@
 import { ChartErrorFallback } from '@/components/chart/ChartErrorFallback';
 import { ChartSkeleton } from '@/components/chart/ChartSkeleton';
 import { TimeframeSelector } from '@/components/chart/TimeframeSelector';
-import { useHydrated } from '@/components/hooks/useHydrated';
-import { useIsMobileViewport } from '@/components/hooks/useIsMobileViewport';
+import { useHydrated } from '@/shared/hooks/useHydrated';
+import { useIsMobileViewport } from '@/shared/hooks/useIsMobileViewport';
 import { ChartContent } from '@/components/symbol-page/ChartContent';
 import { useAssetInfo } from '@/components/symbol-page/hooks/useAssetInfo';
 import { useMobileSheet } from '@/components/symbol-page/hooks/useMobileSheet';

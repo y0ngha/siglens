@@ -8,7 +8,7 @@ import {
     type PointerEvent,
 } from 'react';
 import type { OptionsChain } from '@y0ngha/siglens-core';
-import { InfoTooltip } from '@/components/ui/InfoTooltip';
+import { InfoTooltip } from '@/shared/ui/InfoTooltip';
 import {
     CallVolumeTooltip,
     PutVolumeTooltip,

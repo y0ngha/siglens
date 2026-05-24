@@ -25,7 +25,7 @@ jest.mock('react-markdown', () => () => null);
 jest.mock('@/components/symbol-page/SymbolPageClient', () => ({
     SymbolPageClient: () => null,
 }));
-jest.mock('@/components/ui/JsonLd', () => ({
+jest.mock('@/shared/ui/JsonLd', () => ({
     JsonLd: () => null,
 }));
 jest.mock('@/components/symbol-page/CrossLinkCards', () => ({

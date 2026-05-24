@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import type { FundamentalValuationMetrics } from '@y0ngha/siglens-core';
 import { EmptySectionCard } from '@/components/fundamental/sections/EmptySectionCard';
-import { InfoTooltip } from '@/components/ui/InfoTooltip';
+import { InfoTooltip } from '@/shared/ui/InfoTooltip';
 
 const HEADING_ID = 'valuation-heading';
 const HEADING_CLASS_NAME = 'mb-4 text-lg font-semibold tracking-tight';

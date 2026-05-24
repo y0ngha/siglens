@@ -4,7 +4,7 @@
 import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
 import { useRef } from 'react';
-import { useFocusTrap } from '@/components/hooks/useFocusTrap';
+import { useFocusTrap } from '@/shared/hooks/useFocusTrap';
 
 interface DialogProps {
     readonly active: boolean;

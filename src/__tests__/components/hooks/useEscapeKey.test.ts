@@ -2,7 +2,7 @@
  * @jest-environment jsdom
  */
 import { renderHook, fireEvent } from '@testing-library/react';
-import { useEscapeKey } from '@/components/hooks/useEscapeKey';
+import { useEscapeKey } from '@/shared/hooks/useEscapeKey';
 
 describe('useEscapeKey', () => {
     it('Escape 키 → callback 호출', () => {

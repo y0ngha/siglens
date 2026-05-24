@@ -2,8 +2,8 @@
 
 import { useMemo } from 'react';
 import { cn } from '@/shared/lib/cn';
-import { useTabs } from '@/components/ui/tabs/hooks/useTabs';
-import type { TabItem } from '@/components/ui/tabs/utils/tabIds';
+import { useTabs } from '@/shared/ui/tabs/hooks/useTabs';
+import type { TabItem } from '@/shared/ui/tabs/utils/tabIds';
 
 interface TabsPillProps<T extends string> {
     tabs: readonly TabItem<T>[];

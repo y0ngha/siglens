@@ -1,6 +1,6 @@
 import { FearGreedPage } from '@/components/fear-greed/FearGreedPage';
 import { CrossLinkCards } from '@/components/symbol-page/CrossLinkCards';
-import { JsonLd } from '@/components/ui/JsonLd';
+import { JsonLd } from '@/shared/ui/JsonLd';
 import { DEFAULT_TIMEFRAME, VALID_TICKER_RE } from '@/domain/constants/market';
 import { buildAssetAboutNode } from '@/domain/seo/assetClassification';
 import { buildDisplayName } from '@/domain/ticker';

@@ -20,7 +20,7 @@ jest.mock('@/components/symbol-page/hooks/useDefaultModelId', () => ({
 // react-markdown은 ESM-only라 Jest 환경에서 직접 로드하면 실패한다. 본 테스트는
 // markdown rendering이 아니라 OverallContent의 layout과 trigger 동작을 검증하므로
 // MarkdownText를 단순 wrapper로 대체한다.
-jest.mock('@/components/ui/MarkdownText', () => ({
+jest.mock('@/shared/ui/MarkdownText', () => ({
     MarkdownText: ({ children }: { children: ReactNode }) => (
         <div>{children}</div>
     ),

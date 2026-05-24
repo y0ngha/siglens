@@ -11,7 +11,7 @@ import { EventCalendar } from '@/components/news/sections/EventCalendar';
 import { NewsList } from '@/components/news/sections/NewsList';
 import { CrossLinkCards } from '@/components/symbol-page/CrossLinkCards';
 import { SectionSkeleton } from '@/components/symbol-page/SectionSkeleton';
-import { JsonLd } from '@/components/ui/JsonLd';
+import { JsonLd } from '@/shared/ui/JsonLd';
 import { VALID_TICKER_RE } from '@/domain/constants/market';
 import { buildAssetAboutNode } from '@/domain/seo/assetClassification';
 import { buildDisplayName } from '@/domain/ticker';

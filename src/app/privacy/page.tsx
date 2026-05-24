@@ -1,7 +1,7 @@
 import { Suspense } from 'react';
 import { PolicyMarkdownBody } from '@/components/legal/PolicyMarkdownBody';
 import { LegalPageShell } from '@/components/legal/LegalPageShell';
-import { JsonLd } from '@/components/ui/JsonLd';
+import { JsonLd } from '@/shared/ui/JsonLd';
 import {
     formatKoreanDate,
     INVESTMENT_DISCLAIMER,

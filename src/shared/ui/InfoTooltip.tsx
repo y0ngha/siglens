@@ -4,8 +4,8 @@ import type React from 'react';
 import type { ReactNode } from 'react';
 import { useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { useEscapeKey } from '@/components/hooks/useEscapeKey';
-import { useOnClickOutside } from '@/components/hooks/useOnClickOutside';
+import { useEscapeKey } from '@/shared/hooks/useEscapeKey';
+import { useOnClickOutside } from '@/shared/hooks/useOnClickOutside';
 import {
     getTooltipPosition,
     type TooltipPosition,

@@ -1,6 +1,6 @@
 'use client';
 
-import { EyeIcon } from '@/components/ui/EyeIcon';
+import { EyeIcon } from '@/shared/ui/EyeIcon';
 import { useState, type ReactNode } from 'react';
 
 interface PasswordFieldProps {

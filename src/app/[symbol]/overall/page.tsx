@@ -1,6 +1,6 @@
 import { OverallContent } from '@/components/overall/OverallContent';
 import { CrossLinkCards } from '@/components/symbol-page/CrossLinkCards';
-import { JsonLd } from '@/components/ui/JsonLd';
+import { JsonLd } from '@/shared/ui/JsonLd';
 import {
     DEFAULT_TIMEFRAME,
     isValidTimeframe,

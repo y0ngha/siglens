@@ -1,7 +1,7 @@
 'use client';
 
-import { useEscapeKey } from '@/components/hooks/useEscapeKey';
-import { useFocusTrap } from '@/components/hooks/useFocusTrap';
+import { useEscapeKey } from '@/shared/hooks/useEscapeKey';
+import { useFocusTrap } from '@/shared/hooks/useFocusTrap';
 import Image from 'next/image';
 import { useRef } from 'react';
 

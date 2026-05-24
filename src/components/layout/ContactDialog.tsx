@@ -1,7 +1,7 @@
 'use client';
 
 import { ContactForm } from '@/components/contact/ContactForm';
-import { useDialog } from '@/components/hooks/useDialog';
+import { useDialog } from '@/shared/hooks/useDialog';
 import { cn } from '@/shared/lib/cn';
 
 const TRIGGER_BASE_CLASS =

@@ -1,7 +1,7 @@
 'use client';
 
 import { SIGNAL_SECTORS } from '@/domain/constants/dashboard-tickers';
-import { TabsUnderline } from '@/components/ui/tabs';
+import { TabsUnderline } from '@/shared/ui/tabs';
 
 interface SectorTabsProps {
     activeSector: string;

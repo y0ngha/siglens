@@ -6,7 +6,7 @@ import {
     type OptionsExpirationMetrics,
     aggregateOpenInterest,
 } from '@y0ngha/siglens-core';
-import { InfoTooltip } from '@/components/ui/InfoTooltip';
+import { InfoTooltip } from '@/shared/ui/InfoTooltip';
 import { OpenInterestTooltip } from '@/components/options/utils/optionsTooltips';
 import { findNearestStrikeIndex } from '@/domain/options/findNearestStrike';
 import type { OptionsExpirationSelector } from '@/domain/types';
