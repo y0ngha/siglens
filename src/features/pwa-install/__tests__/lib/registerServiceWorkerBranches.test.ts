@@ -11,6 +11,11 @@ import {
     registerServiceWorker,
     _resetRegisterServiceWorkerForTests,
 } from '@/features/pwa-install/lib/registerServiceWorker';
+import { pageReload } from '@/shared/lib/pageReload';
+
+vi.mock('@/shared/lib/pageReload', () => ({
+    pageReload: vi.fn(),
+}));
 
 interface FakeContainer {
     register: Mock;
@@ -79,25 +84,16 @@ describe('registerServiceWorker — branch coverage', () => {
         expect(mockRegister).toHaveBeenCalledWith('/sw.js');
     });
 
-    it('controllerchange fires window.location.reload when no reload option provided', () => {
+    it('controllerchange fires pageReload when no reload option provided', () => {
         const previousController = {} as ServiceWorker;
         const container = createFakeContainer(previousController);
-        const reloadMock = vi.fn();
-
-        // Mock window.location.reload
-        Object.defineProperty(window, 'location', {
-            value: { ...window.location, reload: reloadMock },
-            configurable: true,
-            writable: true,
-        });
 
         registerServiceWorker({
             serviceWorker: container as unknown as ServiceWorkerContainer,
-            // no reload option — should fall back to window.location.reload
         });
 
         container.fire('controllerchange');
-        expect(reloadMock).toHaveBeenCalledTimes(1);
+        expect(pageReload).toHaveBeenCalledTimes(1);
     });
 
     it('handles register error gracefully (warns but does not throw)', () => {

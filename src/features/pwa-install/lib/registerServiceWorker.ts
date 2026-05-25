@@ -1,3 +1,5 @@
+import { pageReload } from '@/shared/lib/pageReload';
+
 // SW 등록 + controllerchange 시 소프트 리로드 → 캐시된 HTML과 신규 JS 청크 간 hydration mismatch 방지.
 // 모듈 플래그로 controllerchange 리스너 1회 부착 보장 (브라우저 register 자체는 idempotent).
 let registered = false;
@@ -32,12 +34,8 @@ export function registerServiceWorker(
     // installed for the first time (no previous controller existed).
     if (container.controller === null) return;
     container.addEventListener('controllerchange', () => {
-        const reload =
-            options.reload ??
-            (typeof window !== 'undefined'
-                ? () => window.location.reload()
-                : undefined);
-        reload?.();
+        const reload = options.reload ?? pageReload;
+        reload();
     });
 }
 

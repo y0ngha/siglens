@@ -11,7 +11,12 @@ const sharedConfig = {
 
 const sharedTestConfig = {
     globals: true as const,
-    setupFiles: ['./vitest.setup.ts'],
+    pool: 'vmThreads' as const,
+    poolOptions: {
+        vmThreads: {
+            maxThreads: 8,
+        },
+    },
 };
 
 const coverageConfig = {
@@ -67,6 +72,7 @@ export default defineConfig({
                 test: {
                     ...sharedTestConfig,
                     name: 'node',
+                    setupFiles: ['./vitest.setup.node.ts'],
                     include: [
                         'src/**/__tests__/**/*.test.ts',
                         'src/__integration__/**/*.test.ts',
@@ -78,7 +84,8 @@ export default defineConfig({
                 ...sharedConfig,
                 test: {
                     ...sharedTestConfig,
-                    name: 'jsdom',
+                    name: 'dom',
+                    setupFiles: ['./vitest.setup.dom.ts'],
                     include: [
                         'src/**/__tests__/**/*.test.tsx',
                         'src/__integration__/**/*.test.tsx',
