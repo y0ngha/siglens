@@ -1,4 +1,3 @@
-
 // release-it 경유 실행 시 `.env.local`의 NEXT_PUBLIC_SITE_URL(=dev URL)이 부모 프로세스에
 // 주입되어 SITE_URL이 'http://localhost:4200'으로 평가될 수 있다. SEO 메타데이터 빌더의
 // canonical URL 회귀가드는 production URL 형태를 검증해야 하므로 import 평가 전에 강제 세팅한다.
