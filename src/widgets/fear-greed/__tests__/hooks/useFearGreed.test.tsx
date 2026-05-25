@@ -7,8 +7,8 @@ import {
 } from '@y0ngha/siglens-core';
 import { useFearGreed } from '@/widgets/fear-greed/hooks/useFearGreed';
 
-vi.mock('@y0ngha/siglens-core', () => {
-    const actual = jest.requireActual('@y0ngha/siglens-core');
+vi.mock('@y0ngha/siglens-core', async () => {
+    const actual = await vi.importActual('@y0ngha/siglens-core');
     return {
         ...actual,
         computeFearGreedIndex: vi.fn(() => ({

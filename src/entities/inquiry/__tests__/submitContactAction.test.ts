@@ -1,14 +1,16 @@
 import { vi, type MockInstance } from 'vitest';
-const mockSubmitInquiry = vi.fn();
-const mockCreate = vi.fn();
+const { mockSubmitInquiry, mockCreate } = vi.hoisted(() => ({
+    mockSubmitInquiry: vi.fn(),
+    mockCreate: vi.fn(),
+}));
 
 vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: vi.fn(() => ({ db: {}, sql: () => null })),
 }));
 vi.mock('@/entities/inquiry', () => ({
-    DrizzleContactRepository: vi.fn().mockImplementation(() => ({
+    DrizzleContactRepository: vi.fn().mockImplementation(function() { return {
         create: mockCreate,
-    })),
+    }; }),
 }));
 vi.mock('../lib/submitInquiry', () => ({
     submitInquiry: (...args: unknown[]) => mockSubmitInquiry(...args),

@@ -18,6 +18,27 @@ process.env.ANTHROPIC_CHAT_API_KEY = 'test-anthropic-key';
 process.env.OPENAI_CHAT_API_KEY = 'test-openai-key';
 process.env.DATABASE_URL = 'test-database-url';
 
+// Node 25 ships a native localStorage that conflicts with jsdom's.
+// Provide a minimal in-memory polyfill when the native one is broken.
+if (
+    typeof globalThis.localStorage !== 'undefined' &&
+    typeof globalThis.localStorage.setItem !== 'function'
+) {
+    const store = new Map<string, string>();
+    const storage = {
+        getItem: (key: string) => store.get(key) ?? null,
+        setItem: (key: string, value: string) => store.set(key, String(value)),
+        removeItem: (key: string) => store.delete(key),
+        clear: () => store.clear(),
+        get length() { return store.size; },
+        key: (index: number) => [...store.keys()][index] ?? null,
+    };
+    Object.defineProperty(globalThis, 'localStorage', { value: storage, writable: true });
+    if (typeof window !== 'undefined') {
+        Object.defineProperty(window, 'localStorage', { value: storage, writable: true });
+    }
+}
+
 vi.mock('next/cache', () => ({
     cacheLife: () => {},
     cacheTag: () => {},

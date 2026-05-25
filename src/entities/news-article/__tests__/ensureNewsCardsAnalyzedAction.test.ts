@@ -18,8 +18,8 @@ import type {
 // Module mocks
 // ---------------------------------------------------------------------------
 
-vi.mock('@y0ngha/siglens-core', () => ({
-    ...jest.requireActual('@y0ngha/siglens-core'),
+vi.mock('@y0ngha/siglens-core', async () => ({
+    ...(await vi.importActual('@y0ngha/siglens-core')),
     submitNewsCardAnalysis: vi.fn(),
     pollNewsCardAnalysis: vi.fn(),
 }));
@@ -29,9 +29,9 @@ vi.mock('@/shared/lib/sleep', () => ({
 }));
 
 vi.mock('../lib/fmpNewsClient', () => ({
-    FmpNewsClient: vi.fn().mockImplementation(() => ({
+    FmpNewsClient: vi.fn().mockImplementation(function() { return {
         fetchNewsForPeriod: vi.fn(),
-    })),
+    }; }),
 }));
 
 vi.mock('@/shared/db/client', () => ({
@@ -39,11 +39,11 @@ vi.mock('@/shared/db/client', () => ({
 }));
 
 vi.mock('@/entities/news-article', () => ({
-    DrizzleNewsRepository: vi.fn().mockImplementation(() => ({
+    DrizzleNewsRepository: vi.fn().mockImplementation(function() { return {
         upsertNewsItem: vi.fn(),
         attachAnalysis: vi.fn(),
         listBySymbol: vi.fn().mockResolvedValue([]),
-    })),
+    }; }),
 }));
 
 // ---------------------------------------------------------------------------
@@ -132,17 +132,16 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
         mockAttachAnalysis = vi.fn().mockResolvedValue(undefined);
         mockListBySymbol = vi.fn().mockResolvedValue([]);
 
-        MockFmpNewsClient.mockImplementation(
-            () => ({ fetchNewsForPeriod: mockFetchNewsForPeriod }) as never
-        );
-        MockNewsRepository.mockImplementation(
-            () =>
-                ({
-                    upsertNewsItem: mockUpsertNewsItem,
-                    attachAnalysis: mockAttachAnalysis,
-                    listBySymbol: mockListBySymbol,
-                }) as never
-        );
+        MockFmpNewsClient.mockImplementation(function() {
+            return { fetchNewsForPeriod: mockFetchNewsForPeriod } as never;
+        });
+        MockNewsRepository.mockImplementation(function() {
+            return {
+                upsertNewsItem: mockUpsertNewsItem,
+                attachAnalysis: mockAttachAnalysis,
+                listBySymbol: mockListBySymbol,
+            } as never;
+        });
     });
 
     it('FMP에서 6개월치 뉴스를 가져온다', async () => {

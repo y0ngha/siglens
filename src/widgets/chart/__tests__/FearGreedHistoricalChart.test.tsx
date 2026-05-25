@@ -4,17 +4,34 @@ import type { FearGreedHistoryPoint } from '@y0ngha/siglens-core';
 import { FearGreedHistoricalChart } from '@/widgets/chart/FearGreedHistoricalChart';
 
 // lightweight-charts uses canvas internally — jsdom can't run it, so we mock.
-const mockSetData = vi.fn();
-const mockFitContent = vi.fn();
-const mockAddSeries = vi.fn(() => ({ setData: mockSetData }));
-const mockRemove = vi.fn();
-const mockApplyOptions = vi.fn();
-const mockChart = {
-    addSeries: mockAddSeries,
-    timeScale: () => ({ fitContent: mockFitContent }),
-    remove: mockRemove,
-    applyOptions: mockApplyOptions,
-};
+const {
+    mockSetData,
+    mockFitContent,
+    mockAddSeries,
+    mockRemove,
+    mockApplyOptions,
+    mockChart,
+} = vi.hoisted(() => {
+    const mockSetData = vi.fn();
+    const mockFitContent = vi.fn();
+    const mockAddSeries = vi.fn(() => ({ setData: mockSetData }));
+    const mockRemove = vi.fn();
+    const mockApplyOptions = vi.fn();
+    const mockChart = {
+        addSeries: mockAddSeries,
+        timeScale: () => ({ fitContent: mockFitContent }),
+        remove: mockRemove,
+        applyOptions: mockApplyOptions,
+    };
+    return {
+        mockSetData,
+        mockFitContent,
+        mockAddSeries,
+        mockRemove,
+        mockApplyOptions,
+        mockChart,
+    };
+});
 
 // `virtual: true` is required because lightweight-charts is ESM-only
 // (`"type": "module"`, no CJS export). Jest's CJS resolver can't find it

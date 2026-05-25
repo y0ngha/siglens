@@ -1,21 +1,24 @@
 import { vi } from 'vitest';
-const mockFinalMessage = vi.fn();
-const mockStream = vi
-    .fn()
-    .mockReturnValue({ finalMessage: mockFinalMessage });
-const MockAnthropic = vi.fn().mockImplementation(() => ({
-    messages: { stream: mockStream },
-}));
+const { mockFinalMessage, mockStream, MockAnthropic } = vi.hoisted(() => {
+    const mockFinalMessage = vi.fn();
+    const mockStream = vi
+        .fn()
+        .mockReturnValue({ finalMessage: mockFinalMessage });
+    const MockAnthropic = vi.fn().mockImplementation(function() {
+        return { messages: { stream: mockStream } };
+    });
+    return { mockFinalMessage, mockStream, MockAnthropic };
+});
 
 vi.mock('@anthropic-ai/sdk', () => ({
     __esModule: true,
     default: MockAnthropic,
 }));
 
-vi.mock('@y0ngha/siglens-core', () => {
-    const actual = jest.requireActual<typeof import('@y0ngha/siglens-core')>(
-        '@y0ngha/siglens-core'
-    );
+vi.mock('@y0ngha/siglens-core', async () => {
+    const actual = await vi.importActual<
+        typeof import('@y0ngha/siglens-core')
+    >('@y0ngha/siglens-core');
     return {
         ...actual,
         MODEL_SPECS: { ...actual.MODEL_SPECS },

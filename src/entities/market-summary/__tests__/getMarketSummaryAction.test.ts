@@ -8,8 +8,8 @@ import {
 } from '@y0ngha/siglens-core';
 import { isBot } from '@/shared/api/isBot';
 
-vi.mock('@y0ngha/siglens-core', () => ({
-    ...jest.requireActual('@y0ngha/siglens-core'),
+vi.mock('@y0ngha/siglens-core', async () => ({
+    ...(await vi.importActual('@y0ngha/siglens-core')),
     getMarketSummaryWithBriefing: vi.fn(),
     getMarketSummary: vi.fn(),
 }));

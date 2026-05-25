@@ -15,7 +15,9 @@ const baseSnapshot: FearGreedSnapshot = {
     warning: null,
 };
 
-const mockUseFearGreedFromSymbol = vi.fn();
+const { mockUseFearGreedFromSymbol } = vi.hoisted(() => ({
+    mockUseFearGreedFromSymbol: vi.fn(),
+}));
 vi.mock('@/widgets/fear-greed/hooks/useFearGreedFromSymbol', () => ({
     useFearGreedFromSymbol: (...args: unknown[]) =>
         mockUseFearGreedFromSymbol(...args),

@@ -6,8 +6,8 @@ import { cancelOverallAnalysisJob } from '@y0ngha/siglens-core';
 // Module mocks
 // ---------------------------------------------------------------------------
 
-vi.mock('@y0ngha/siglens-core', () => ({
-    ...jest.requireActual('@y0ngha/siglens-core'),
+vi.mock('@y0ngha/siglens-core', async () => ({
+    ...(await vi.importActual('@y0ngha/siglens-core')),
     cancelOverallAnalysisJob: vi.fn(),
 }));
 

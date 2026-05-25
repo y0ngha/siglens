@@ -13,7 +13,7 @@ vi.mock('@/shared/db/client', () => ({
     resetDatabaseClientForTests: vi.fn(),
 }));
 vi.mock('@/entities/session', () => ({
-    DrizzleSessionRepository: vi.fn().mockImplementation(() => ({})),
+    DrizzleSessionRepository: vi.fn().mockImplementation(function() { return {}; }),
     bcryptPasswordHasher: { hashPassword: vi.fn() },
     bcryptPasswordVerifier: { verifyPassword: vi.fn() },
     applyAuthCookie: vi.fn((c: unknown) => c),
@@ -29,7 +29,7 @@ vi.mock('@/entities/session', () => ({
     isSecureCookieEnv: vi.fn(() => false),
 }));
 vi.mock('@/entities/user', () => ({
-    DrizzleUserRepository: vi.fn().mockImplementation(() => ({})),
+    DrizzleUserRepository: vi.fn().mockImplementation(function() { return {}; }),
     loginUser: vi.fn(),
     registerUser: vi.fn(),
 }));
@@ -141,19 +141,18 @@ describe('registerAction', () => {
         });
         mockRedirect.mockClear();
         // Default: active terms exist for both kinds
-        MockTermsRepository.mockImplementation(
-            () =>
-                ({
-                    findActive: vi.fn().mockImplementation((kind: string) => {
-                        if (kind === 'privacy')
-                            return Promise.resolve(FAKE_PRIVACY_TERMS);
-                        if (kind === 'tos')
-                            return Promise.resolve(FAKE_TOS_TERMS);
-                        return Promise.resolve(null);
-                    }),
-                    upsertFromSeed: vi.fn(),
-                }) as unknown as InstanceType<typeof DrizzleTermsRepository>
-        );
+        MockTermsRepository.mockImplementation(function() {
+            return {
+                findActive: vi.fn().mockImplementation((kind: string) => {
+                    if (kind === 'privacy')
+                        return Promise.resolve(FAKE_PRIVACY_TERMS);
+                    if (kind === 'tos')
+                        return Promise.resolve(FAKE_TOS_TERMS);
+                    return Promise.resolve(null);
+                }),
+                upsertFromSeed: vi.fn(),
+            } as unknown as InstanceType<typeof DrizzleTermsRepository>;
+        });
     });
 
     describe('동의 검증', () => {
@@ -185,13 +184,12 @@ describe('registerAction', () => {
 
     describe('약관 DB 조회', () => {
         it('활성 약관이 없으면 service_unavailable을 반환한다', async () => {
-            MockTermsRepository.mockImplementation(
-                () =>
-                    ({
-                        findActive: vi.fn().mockResolvedValue(null),
-                        upsertFromSeed: vi.fn(),
-                    }) as unknown as InstanceType<typeof DrizzleTermsRepository>
-            );
+            MockTermsRepository.mockImplementation(function() {
+                return {
+                    findActive: vi.fn().mockResolvedValue(null),
+                    upsertFromSeed: vi.fn(),
+                } as unknown as InstanceType<typeof DrizzleTermsRepository>;
+            });
             const result = await registerAction(
                 { error: null },
                 makeConsentFormData()
@@ -201,19 +199,18 @@ describe('registerAction', () => {
         });
 
         it('privacyTerms만 없으면 service_unavailable을 반환한다', async () => {
-            MockTermsRepository.mockImplementation(
-                () =>
-                    ({
-                        findActive: vi
-                            .fn()
-                            .mockImplementation((kind: string) =>
-                                kind === 'privacy'
-                                    ? Promise.resolve(null)
-                                    : Promise.resolve(FAKE_TOS_TERMS)
-                            ),
-                        upsertFromSeed: vi.fn(),
-                    }) as unknown as InstanceType<typeof DrizzleTermsRepository>
-            );
+            MockTermsRepository.mockImplementation(function() {
+                return {
+                    findActive: vi
+                        .fn()
+                        .mockImplementation((kind: string) =>
+                            kind === 'privacy'
+                                ? Promise.resolve(null)
+                                : Promise.resolve(FAKE_TOS_TERMS)
+                        ),
+                    upsertFromSeed: vi.fn(),
+                } as unknown as InstanceType<typeof DrizzleTermsRepository>;
+            });
             const result = await registerAction(
                 { error: null },
                 makeConsentFormData()
@@ -223,19 +220,18 @@ describe('registerAction', () => {
         });
 
         it('tosTerms만 없으면 service_unavailable을 반환한다', async () => {
-            MockTermsRepository.mockImplementation(
-                () =>
-                    ({
-                        findActive: vi
-                            .fn()
-                            .mockImplementation((kind: string) =>
-                                kind === 'tos'
-                                    ? Promise.resolve(null)
-                                    : Promise.resolve(FAKE_PRIVACY_TERMS)
-                            ),
-                        upsertFromSeed: vi.fn(),
-                    }) as unknown as InstanceType<typeof DrizzleTermsRepository>
-            );
+            MockTermsRepository.mockImplementation(function() {
+                return {
+                    findActive: vi
+                        .fn()
+                        .mockImplementation((kind: string) =>
+                            kind === 'tos'
+                                ? Promise.resolve(null)
+                                : Promise.resolve(FAKE_PRIVACY_TERMS)
+                        ),
+                    upsertFromSeed: vi.fn(),
+                } as unknown as InstanceType<typeof DrizzleTermsRepository>;
+            });
             const result = await registerAction(
                 { error: null },
                 makeConsentFormData()

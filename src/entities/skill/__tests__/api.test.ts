@@ -2,8 +2,10 @@ import { vi } from 'vitest';
 import { countSkillFiles, FileSkillsLoader } from '@/entities/skill';
 import path from 'node:path';
 
-const mockReaddir = vi.fn();
-const mockReadFile = vi.fn();
+const { mockReaddir, mockReadFile } = vi.hoisted(() => ({
+    mockReaddir: vi.fn(),
+    mockReadFile: vi.fn(),
+}));
 
 vi.mock('node:fs/promises', () => ({
     readdir: (...args: unknown[]) => mockReaddir(...args),

@@ -9,10 +9,10 @@ vi.mock('@/entities/session/lib/sessionCookie', () => ({
     AUTH_SESSION_COOKIE_NAME: 'siglens_session',
 }));
 vi.mock('@/entities/session/api', () => ({
-    DrizzleSessionRepository: vi.fn().mockImplementation(() => ({})),
+    DrizzleSessionRepository: vi.fn().mockImplementation(function() { return {}; }),
 }));
 vi.mock('@/entities/user/api', () => ({
-    DrizzleUserRepository: vi.fn().mockImplementation(() => ({})),
+    DrizzleUserRepository: vi.fn().mockImplementation(function() { return {}; }),
 }));
 vi.mock('@/entities/user/lib/findUserBySessionToken', () => ({
     findUserBySessionToken: vi.fn(),

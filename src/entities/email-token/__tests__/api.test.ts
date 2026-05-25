@@ -1,10 +1,12 @@
 import { vi, type Mock } from 'vitest';
 vi.mock('@upstash/redis', () => {
-    const MockRedis = vi.fn(() => ({
-        get: vi.fn(),
-        set: vi.fn(),
-        del: vi.fn(),
-    }));
+    const MockRedis = vi.fn(function() {
+        return {
+            get: vi.fn(),
+            set: vi.fn(),
+            del: vi.fn(),
+        };
+    });
     return { Redis: MockRedis };
 });
 
@@ -50,11 +52,11 @@ describe('createEmailTokenStore', () => {
         delete process.env.UPSTASH_REDIS_REST_READONLY_TOKEN;
         __resetEmailTokenStoreCacheForTests();
         MockRedis.mockReset();
-        MockRedis.mockImplementation(() => ({
+        MockRedis.mockImplementation(function() { return {
             get: vi.fn(),
             set: vi.fn(),
             del: vi.fn(),
-        }));
+        }; });
     });
 
     afterAll(() => {
@@ -125,11 +127,11 @@ describe('createEmailTokenStore', () => {
 
         it('set delegates to writer.set with the namespaced key, value, and TTL', async () => {
             const mockSet = vi.fn().mockResolvedValue('OK');
-            MockRedis.mockImplementation(() => ({
+            MockRedis.mockImplementation(function() { return {
                 get: vi.fn(),
                 set: mockSet,
                 del: vi.fn(),
-            }));
+            }; });
 
             const store = createEmailTokenStore()!;
             const value: EmailTokenValue = {
@@ -152,11 +154,11 @@ describe('createEmailTokenStore', () => {
         it('get delegates to reader.get with the namespaced key', async () => {
             const stored: EmailTokenValue = { status: 'verified' };
             const mockGet = vi.fn().mockResolvedValue(stored);
-            MockRedis.mockImplementation(() => ({
+            MockRedis.mockImplementation(function() { return {
                 get: mockGet,
                 set: vi.fn(),
                 del: vi.fn(),
-            }));
+            }; });
 
             const store = createEmailTokenStore()!;
             const result = await store.get(
@@ -171,11 +173,11 @@ describe('createEmailTokenStore', () => {
 
         it('delete delegates to writer.del with the namespaced key', async () => {
             const mockDel = vi.fn().mockResolvedValue(1);
-            MockRedis.mockImplementation(() => ({
+            MockRedis.mockImplementation(function() { return {
                 get: vi.fn(),
                 set: vi.fn(),
                 del: mockDel,
-            }));
+            }; });
 
             const store = createEmailTokenStore()!;
             await store.delete('password_reset', 'user@example.com');
@@ -224,12 +226,12 @@ describe('createEmailTokenStore', () => {
                 tokenHash: 'hash',
             };
             const mockGetdel = vi.fn().mockResolvedValue(stored);
-            MockRedis.mockImplementation(() => ({
+            MockRedis.mockImplementation(function() { return {
                 get: vi.fn(),
                 set: vi.fn(),
                 del: vi.fn(),
                 getdel: mockGetdel,
-            }));
+            }; });
 
             const store = createEmailTokenStore()!;
             const value = await store.consume(
@@ -244,12 +246,12 @@ describe('createEmailTokenStore', () => {
 
         it('returns null when the key did not exist', async () => {
             const mockGetdel = vi.fn().mockResolvedValue(null);
-            MockRedis.mockImplementation(() => ({
+            MockRedis.mockImplementation(function() { return {
                 get: vi.fn(),
                 set: vi.fn(),
                 del: vi.fn(),
                 getdel: mockGetdel,
-            }));
+            }; });
 
             const store = createEmailTokenStore()!;
             const value = await store.consume(
@@ -265,12 +267,12 @@ describe('createEmailTokenStore', () => {
             // must verify status === 'pending' itself).
             const stored: EmailTokenValue = { status: 'verified' };
             const mockGetdel = vi.fn().mockResolvedValue(stored);
-            MockRedis.mockImplementation(() => ({
+            MockRedis.mockImplementation(function() { return {
                 get: vi.fn(),
                 set: vi.fn(),
                 del: vi.fn(),
                 getdel: mockGetdel,
-            }));
+            }; });
 
             const store = createEmailTokenStore()!;
             const value = await store.consume(
@@ -291,7 +293,7 @@ describe('createEmailTokenStore', () => {
         const writerGet = vi.fn();
         const readerGet = vi.fn().mockResolvedValue(null);
         let callCount = 0;
-        MockRedis.mockImplementation(() => {
+        MockRedis.mockImplementation(function() {
             callCount++;
             return callCount === 1
                 ? { get: writerGet, set: vi.fn(), del: vi.fn() }

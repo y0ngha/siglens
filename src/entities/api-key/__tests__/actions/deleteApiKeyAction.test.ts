@@ -1,5 +1,7 @@
 import { vi, type MockedFunction } from 'vitest';
-const mockDeleteByUserAndProvider = vi.fn();
+const { mockDeleteByUserAndProvider } = vi.hoisted(() => ({
+    mockDeleteByUserAndProvider: vi.fn(),
+}));
 
 vi.mock('@/entities/session/lib/getCurrentUser', () => ({
     getCurrentUser: vi.fn(),
@@ -16,9 +18,9 @@ vi.mock('next/navigation', () => ({
     }),
 }));
 vi.mock('@/entities/api-key', () => ({
-    DrizzleUserApiKeyRepository: vi.fn().mockImplementation(() => ({
+    DrizzleUserApiKeyRepository: vi.fn().mockImplementation(function() { return {
         deleteByUserAndProvider: mockDeleteByUserAndProvider,
-    })),
+    }; }),
 }));
 
 import { getCurrentUser } from '@/entities/session/lib/getCurrentUser';

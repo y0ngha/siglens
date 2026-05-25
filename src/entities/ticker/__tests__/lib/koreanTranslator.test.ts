@@ -1,12 +1,17 @@
 import { vi } from 'vitest';
-const callGeminiMock = vi.fn();
-
-vi.mock('@/entities/llm-provider', () => ({
-    callGeminiChat: (...args: unknown[]) => callGeminiMock(...args),
-    parseJsonResponse: jest.requireActual(
-        '@/entities/llm-provider/lib/parseJsonResponse'
-    ).parseJsonResponse,
+const { callGeminiMock } = vi.hoisted(() => ({
+    callGeminiMock: vi.fn(),
 }));
+
+vi.mock('@/entities/llm-provider', async () => {
+    const actual = await vi.importActual<
+        typeof import('@/entities/llm-provider/lib/parseJsonResponse')
+    >('@/entities/llm-provider/lib/parseJsonResponse');
+    return {
+        callGeminiChat: (...args: unknown[]) => callGeminiMock(...args),
+        parseJsonResponse: actual.parseJsonResponse,
+    };
+});
 
 import {
     translateCompanyDescription,

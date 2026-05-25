@@ -7,7 +7,7 @@ vi.mock('@/entities/session', () => ({
     getAuthDatabaseClient: vi.fn(() => ({ db: {}, sql: () => null })),
 }));
 vi.mock('@/entities/user', () => ({
-    DrizzleUserRepository: vi.fn().mockImplementation(() => ({})),
+    DrizzleUserRepository: vi.fn().mockImplementation(function() { return {}; }),
     requestPasswordReset: vi.fn(),
 }));
 vi.mock('@/entities/email-token', () => ({
@@ -20,7 +20,7 @@ vi.mock('@/entities/email-token', () => ({
     })),
 }));
 
-const sendEmailMock = vi.fn();
+const { sendEmailMock } = vi.hoisted(() => ({ sendEmailMock: vi.fn() }));
 vi.mock('@/shared/email/dispatcher', () => ({
     createEmailDispatcher: vi.fn(() => ({ sendEmail: sendEmailMock })),
 }));

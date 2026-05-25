@@ -8,17 +8,19 @@ import { vi, type MockInstance, type Mock } from 'vitest';
  * sanitization rules.
  */
 
-const mockOptionsMethod = vi.fn();
+const { mockOptionsMethod } = vi.hoisted(() => ({
+    mockOptionsMethod: vi.fn(),
+}));
 
 vi.mock('yahoo-finance2', () => ({
     __esModule: true,
-    default: vi.fn().mockImplementation(() => ({
+    default: vi.fn().mockImplementation(function() { return {
         options: mockOptionsMethod,
-    })),
+    }; }),
 }));
 
-vi.mock('@y0ngha/siglens-core', () => {
-    const actual = jest.requireActual('@y0ngha/siglens-core') as Record<
+vi.mock('@y0ngha/siglens-core', async () => {
+    const actual = (await vi.importActual('@y0ngha/siglens-core')) as Record<
         string,
         unknown
     >;

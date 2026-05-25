@@ -7,8 +7,8 @@ vi.mock('next/headers', () => ({
     headers: vi.fn(),
 }));
 
-vi.mock('@y0ngha/siglens-core', () => ({
-    ...jest.requireActual('@y0ngha/siglens-core'),
+vi.mock('@y0ngha/siglens-core', async () => ({
+    ...(await vi.importActual('@y0ngha/siglens-core')),
     createChatTokenStore: vi.fn(),
     hashClientIp: vi.fn((ip: string) => `hashed_${ip}`),
 }));

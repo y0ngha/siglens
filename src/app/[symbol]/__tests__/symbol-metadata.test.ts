@@ -119,15 +119,17 @@ vi.mock('@/entities/fear-greed/lib/classifier', () => ({
     FEAR_GREED_SCORE_BOUNDARIES: {},
 }));
 
-const mockGetAssetInfoCached = vi.fn();
+const { mockGetAssetInfoCached } = vi.hoisted(() => ({
+    mockGetAssetInfoCached: vi.fn(),
+}));
 
 vi.mock('@/entities/ticker', () => ({
     getAssetInfoCached: (...args: unknown[]) => mockGetAssetInfoCached(...args),
 }));
 
 // react.cache는 Node 환경에서 identity wrapper로 대체
-vi.mock('react', () => ({
-    ...jest.requireActual('react'),
+vi.mock('react', async () => ({
+    ...(await vi.importActual('react')),
     cache: (fn: unknown) => fn,
 }));
 
@@ -156,10 +158,10 @@ vi.mock('@vercel/functions', () => ({
 
 // tanstack query (페이지 default export에서 사용, generateMetadata에는 불필요)
 vi.mock('@tanstack/react-query', () => ({
-    QueryClient: vi.fn().mockImplementation(() => ({
+    QueryClient: vi.fn().mockImplementation(function() { return {
         setQueryData: vi.fn(),
         prefetchQuery: vi.fn(() => Promise.resolve()),
-    })),
+    }; }),
     HydrationBoundary: ({ children }: { children: React.ReactNode }) =>
         children,
     dehydrate: vi.fn(() => ({})),

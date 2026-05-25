@@ -1,6 +1,8 @@
 import { vi } from 'vitest';
-const mockGetCurrentUser = vi.fn();
-const mockGetUserTier = vi.fn();
+const { mockGetCurrentUser, mockGetUserTier } = vi.hoisted(() => ({
+    mockGetCurrentUser: vi.fn(),
+    mockGetUserTier: vi.fn(),
+}));
 
 vi.mock('@/entities/session/lib/getCurrentUser', () => ({
     getCurrentUser: (...args: unknown[]) => mockGetCurrentUser(...args),
@@ -11,7 +13,7 @@ vi.mock('@/shared/db/client', () => ({
 }));
 
 vi.mock('@/entities/user', () => ({
-    DrizzleUserRepository: vi.fn().mockImplementation(() => ({})),
+    DrizzleUserRepository: vi.fn().mockImplementation(function() { return {}; }),
 }));
 
 vi.mock('../../lib/getUserTier', () => ({

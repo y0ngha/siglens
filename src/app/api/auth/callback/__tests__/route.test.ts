@@ -143,8 +143,8 @@ describe('GET /api/auth/callback/[provider]', () => {
         } as never;
         mockSessionRepo = {} as never;
 
-        MockUserRepository.mockImplementation(() => mockUserRepo);
-        MockSessionRepository.mockImplementation(() => mockSessionRepo);
+        MockUserRepository.mockImplementation(function() { return mockUserRepo; });
+        MockSessionRepository.mockImplementation(function() { return mockSessionRepo; });
 
         mockCreatePendingOAuthSignupStoreFromEnv.mockReturnValue({
             save: vi.fn().mockResolvedValue('pending-token'),

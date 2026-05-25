@@ -88,6 +88,7 @@
         "eslint-plugin-boundaries": "^6.0.2",
         "glob": "^13.0.6",
         "husky": "^9.1.7",
+        "jsdom": "^29.1.1",
         "postgres": "^3.4.9",
         "prettier": "^3.7.4",
         "prettier-plugin-tailwindcss": "^0.7.2",

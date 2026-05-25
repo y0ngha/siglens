@@ -19,21 +19,29 @@ delete process.env.UPSTASH_REDIS_REST_TOKEN;
 
 vi.mock('server-only', () => ({}), { virtual: true });
 
-const mockHasOptionsMarket = vi.fn();
-const mockFetchSnapshot = vi.fn();
-const mockRedisGet = vi.fn();
-const mockRedisSet = vi.fn();
-const mockRedisConstructor = vi.fn();
+const {
+    mockHasOptionsMarket,
+    mockFetchSnapshot,
+    mockRedisGet,
+    mockRedisSet,
+    mockRedisConstructor,
+} = vi.hoisted(() => ({
+    mockHasOptionsMarket: vi.fn(),
+    mockFetchSnapshot: vi.fn(),
+    mockRedisGet: vi.fn(),
+    mockRedisSet: vi.fn(),
+    mockRedisConstructor: vi.fn(),
+}));
 
 vi.mock('../lib/YahooOptionsAdapter', () => ({
-    YahooOptionsAdapter: vi.fn().mockImplementation(() => ({
+    YahooOptionsAdapter: vi.fn().mockImplementation(function() { return {
         hasOptionsMarket: mockHasOptionsMarket,
         fetchSnapshot: mockFetchSnapshot,
-    })),
+    }; }),
 }));
 
 vi.mock('@upstash/redis', () => ({
-    Redis: vi.fn().mockImplementation((opts: unknown) => {
+    Redis: vi.fn().mockImplementation(function(opts: unknown) {
         mockRedisConstructor(opts);
         return { get: mockRedisGet, set: mockRedisSet };
     }),
@@ -60,10 +68,8 @@ async function loadWithEnv(opts: {
 }): Promise<typeof import('../lib/optionsDataCache')> {
     process.env.UPSTASH_REDIS_REST_URL = opts.url ?? '';
     process.env.UPSTASH_REDIS_REST_TOKEN = opts.token ?? '';
-    let mod!: typeof import('../lib/optionsDataCache');
-    await vi.isolateModulesAsync(async () => {
-        mod = await import('../lib/optionsDataCache');
-    });
+    vi.resetModules();
+    const mod = await import('../lib/optionsDataCache');
     return mod;
 }
 

@@ -3,36 +3,34 @@ import type { CacheProvider } from '@y0ngha/siglens-core';
 import type { KoreanTickerEntry } from '@/shared/lib/types';
 import type { KoreanTickerRepository } from '@/shared/db/types';
 
-const mockCache: {
-    get: Mock;
-    set: Mock;
-    delete: Mock;
-} = {
-    get: vi.fn(),
-    set: vi.fn(),
-    delete: vi.fn(),
-};
-
-const mockRepository: {
-    findAll: Mock;
-    findBySymbols: Mock;
-    upsertMany: Mock;
-} = {
-    findAll: vi.fn(),
-    findBySymbols: vi.fn(),
-    upsertMany: vi.fn(),
-};
+const {
+    mockCache,
+    mockRepository,
+    createCacheProviderMock,
+    tryGetTickerDatabaseClientMock,
+    repositoryFactoryMock,
+} = vi.hoisted(() => ({
+    mockCache: {
+        get: vi.fn(),
+        set: vi.fn(),
+        delete: vi.fn(),
+    },
+    mockRepository: {
+        findAll: vi.fn(),
+        findBySymbols: vi.fn(),
+        upsertMany: vi.fn(),
+    },
+    createCacheProviderMock: vi.fn(),
+    tryGetTickerDatabaseClientMock: vi.fn(),
+    repositoryFactoryMock: vi.fn(),
+}));
 
 interface FakeDbClient {
     db: unknown;
 }
 
-const createCacheProviderMock = vi.fn<CacheProvider | null, []>();
-const tryGetTickerDatabaseClientMock = vi.fn<FakeDbClient | null, []>();
-const repositoryFactoryMock = vi.fn<KoreanTickerRepository, [unknown]>();
-
-vi.mock('@y0ngha/siglens-core', () => ({
-    ...jest.requireActual('@y0ngha/siglens-core'),
+vi.mock('@y0ngha/siglens-core', async () => ({
+    ...(await vi.importActual('@y0ngha/siglens-core')),
     createCacheProvider: () => createCacheProviderMock(),
 }));
 vi.mock('../../lib/db', () => ({

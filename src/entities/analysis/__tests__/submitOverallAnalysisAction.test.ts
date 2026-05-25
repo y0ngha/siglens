@@ -17,20 +17,20 @@ vi.mock('@y0ngha/siglens-core', () => ({
 }));
 
 vi.mock('@/shared/api/fmp/fundamentalClient', () => ({
-    FmpFundamentalClient: vi.fn().mockImplementation(() => ({})),
+    FmpFundamentalClient: vi.fn().mockImplementation(function() { return {}; }),
 }));
 
 vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: vi.fn().mockReturnValue({ db: {} }),
 }));
 
-vi.mock('@/entities/news-article', () => {
-    const actual = jest.requireActual('@/entities/news-article');
+vi.mock('@/entities/news-article', async () => {
+    const actual = await vi.importActual('@/entities/news-article');
     return {
         ...actual,
-        DrizzleNewsRepository: vi.fn().mockImplementation(() => ({
+        DrizzleNewsRepository: vi.fn().mockImplementation(function() { return {
             listBySymbol: vi.fn(),
-        })),
+        }; }),
     };
 });
 
@@ -185,7 +185,7 @@ describe('submitOverallAnalysisAction 함수는', () => {
         mockGetNextEarningsReport.mockResolvedValue(null);
 
         MockNewsRepository.mockImplementation(
-            () => ({ listBySymbol: mockListBySymbol }) as never
+            function() { return { listBySymbol: mockListBySymbol } as never; }
         );
 
         mockGetCurrentUser.mockResolvedValue(null);

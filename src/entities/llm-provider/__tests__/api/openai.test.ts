@@ -1,8 +1,11 @@
 import { vi } from 'vitest';
-const mockCreate = vi.fn();
-const MockOpenAI = vi.fn().mockImplementation(() => ({
-    responses: { create: mockCreate },
-}));
+const { mockCreate, MockOpenAI } = vi.hoisted(() => {
+    const mockCreate = vi.fn();
+    const MockOpenAI = vi.fn().mockImplementation(function() {
+        return { responses: { create: mockCreate } };
+    });
+    return { mockCreate, MockOpenAI };
+});
 
 vi.mock('openai', () => ({
     __esModule: true,

@@ -4,17 +4,19 @@ import {
     CleanupUnauthorizedError,
 } from '@/entities/session/actions/cleanupExpiredSessionsAction';
 
-const mockDeleteExpiredSessions = vi.fn();
-const mockHeadersGet = vi.fn();
+const { mockDeleteExpiredSessions, mockHeadersGet } = vi.hoisted(() => ({
+    mockDeleteExpiredSessions: vi.fn(),
+    mockHeadersGet: vi.fn(),
+}));
 
 vi.mock('next/headers', () => ({
     headers: vi.fn(async () => ({ get: mockHeadersGet })),
 }));
 
 vi.mock('@/entities/session/api', () => ({
-    DrizzleSessionRepository: vi.fn().mockImplementation(() => ({
+    DrizzleSessionRepository: vi.fn().mockImplementation(function() { return {
         deleteExpiredSessions: mockDeleteExpiredSessions,
-    })),
+    }; }),
 }));
 
 vi.mock('@/entities/session/lib/db', () => ({

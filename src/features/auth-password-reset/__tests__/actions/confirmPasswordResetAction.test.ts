@@ -16,7 +16,7 @@ vi.mock('@/entities/session', () => ({
         '서비스에 일시적인 문제가 발생했습니다. 잠시 후 다시 시도해주세요.',
 }));
 vi.mock('@/entities/user', () => ({
-    DrizzleUserRepository: vi.fn().mockImplementation(() => ({})),
+    DrizzleUserRepository: vi.fn().mockImplementation(function() { return {}; }),
     confirmPasswordReset: vi.fn(),
 }));
 vi.mock('@/entities/email-token', () => ({

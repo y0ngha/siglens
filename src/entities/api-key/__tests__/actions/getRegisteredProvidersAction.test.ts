@@ -1,5 +1,5 @@
 import { vi, type MockedFunction } from 'vitest';
-const mockFindByUser = vi.fn();
+const { mockFindByUser } = vi.hoisted(() => ({ mockFindByUser: vi.fn() }));
 
 vi.mock('@/entities/session/lib/getCurrentUser', () => ({
     getCurrentUser: vi.fn(),
@@ -8,9 +8,9 @@ vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: vi.fn(() => ({ db: {}, sql: () => null })),
 }));
 vi.mock('@/entities/api-key', () => ({
-    DrizzleUserApiKeyRepository: vi.fn().mockImplementation(() => ({
+    DrizzleUserApiKeyRepository: vi.fn().mockImplementation(function() { return {
         findByUser: mockFindByUser,
-    })),
+    }; }),
 }));
 
 import { getCurrentUser } from '@/entities/session/lib/getCurrentUser';

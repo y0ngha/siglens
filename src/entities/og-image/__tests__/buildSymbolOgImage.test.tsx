@@ -2,13 +2,15 @@ import { vi } from 'vitest';
 // @vitest-environment node
 import { buildSymbolOgImage } from '../lib/buildSymbolOgImage';
 
-const mockImageResponse = vi.fn();
-const mockLoadKoreanFont = vi.fn();
+const { mockImageResponse, mockLoadKoreanFont } = vi.hoisted(() => ({
+    mockImageResponse: vi.fn(),
+    mockLoadKoreanFont: vi.fn(),
+}));
 
 vi.mock('next/og', () => ({
     ImageResponse: vi
         .fn()
-        .mockImplementation((jsx: unknown, opts: unknown) => {
+        .mockImplementation(function(jsx: unknown, opts: unknown) {
             mockImageResponse(jsx, opts);
             return { jsx, opts } as unknown;
         }),

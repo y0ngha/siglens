@@ -3,8 +3,8 @@ import { getSectorSignalsAction } from '../actions/getSectorSignalsAction';
 import { getSectorSignals } from '@y0ngha/siglens-core';
 import type { SectorSignalsResult } from '@y0ngha/siglens-core';
 
-vi.mock('@y0ngha/siglens-core', () => ({
-    ...jest.requireActual('@y0ngha/siglens-core'),
+vi.mock('@y0ngha/siglens-core', async () => ({
+    ...(await vi.importActual('@y0ngha/siglens-core')),
     getSectorSignals: vi.fn(),
 }));
 

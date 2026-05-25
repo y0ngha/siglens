@@ -1,12 +1,16 @@
 import { vi } from 'vitest';
-const mockGenerateContent = vi.fn();
+const { mockGenerateContent } = vi.hoisted(() => ({
+    mockGenerateContent: vi.fn(),
+}));
 
 vi.mock('@google/genai', () => {
-    const MockGoogleGenAI = vi.fn(() => ({
-        models: {
-            generateContent: mockGenerateContent,
-        },
-    }));
+    const MockGoogleGenAI = vi.fn(function() {
+        return {
+            models: {
+                generateContent: mockGenerateContent,
+            },
+        };
+    });
     return { GoogleGenAI: MockGoogleGenAI };
 });
 

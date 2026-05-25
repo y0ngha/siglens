@@ -7,8 +7,8 @@ vi.mock('next/headers', () => ({
     headers: vi.fn(() => Promise.resolve(new Headers())),
 }));
 
-vi.mock('@y0ngha/siglens-core', () => ({
-    ...jest.requireActual('@y0ngha/siglens-core'),
+vi.mock('@y0ngha/siglens-core', async () => ({
+    ...(await vi.importActual('@y0ngha/siglens-core')),
     submitNewsAnalysis: vi.fn(),
 }));
 
@@ -17,9 +17,9 @@ vi.mock('@/shared/db/client', () => ({
 }));
 
 vi.mock('@/entities/news-article', () => ({
-    DrizzleNewsRepository: vi.fn().mockImplementation(() => ({
+    DrizzleNewsRepository: vi.fn().mockImplementation(function() { return {
         listBySymbol: vi.fn(),
-    })),
+    }; }),
 }));
 
 vi.mock('@/entities/earnings-report', () => ({
@@ -139,7 +139,7 @@ describe('submitNewsAnalysisAction 함수는', () => {
         mockGetNextEarningsReport.mockResolvedValue(null);
 
         MockNewsRepository.mockImplementation(
-            () => ({ listBySymbol: mockListBySymbol }) as never
+            function() { return { listBySymbol: mockListBySymbol } as never; }
         );
 
         mockGetCurrentUser.mockResolvedValue(null);

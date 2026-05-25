@@ -16,7 +16,7 @@ vi.mock('@/entities/email-token', () => ({
     })),
 }));
 
-const sendEmailMock = vi.fn();
+const { sendEmailMock } = vi.hoisted(() => ({ sendEmailMock: vi.fn() }));
 vi.mock('@/shared/email/dispatcher', () => ({
     createEmailDispatcher: vi.fn(() => ({ sendEmail: sendEmailMock })),
 }));

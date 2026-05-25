@@ -7,44 +7,41 @@ import type {
 } from '@/shared/db/types';
 import type { FmpSearchResult } from '../../model';
 
-const mockCache: {
-    get: Mock;
-    set: Mock;
-    delete: Mock;
-} = {
-    get: vi.fn(),
-    set: vi.fn(),
-    delete: vi.fn(),
-};
-
-const mockRepository: {
-    findBySymbol: Mock;
-    upsert: Mock;
-} = {
-    findBySymbol: vi.fn(),
-    upsert: vi.fn(),
-};
+const {
+    mockCache,
+    mockRepository,
+    createCacheProviderMock,
+    tryGetTickerDatabaseClientMock,
+    repositoryFactoryMock,
+    searchBySymbolMock,
+    getKoreanNamesMock,
+    setKoreanTickersMock,
+    translateCompanyNamesMock,
+} = vi.hoisted(() => ({
+    mockCache: {
+        get: vi.fn(),
+        set: vi.fn(),
+        delete: vi.fn(),
+    },
+    mockRepository: {
+        findBySymbol: vi.fn(),
+        upsert: vi.fn(),
+    },
+    createCacheProviderMock: vi.fn(),
+    tryGetTickerDatabaseClientMock: vi.fn(),
+    repositoryFactoryMock: vi.fn(),
+    searchBySymbolMock: vi.fn(),
+    getKoreanNamesMock: vi.fn(),
+    setKoreanTickersMock: vi.fn(),
+    translateCompanyNamesMock: vi.fn(),
+}));
 
 interface FakeDbClient {
     db: unknown;
 }
 
-const createCacheProviderMock = vi.fn<CacheProvider | null, []>();
-const tryGetTickerDatabaseClientMock = vi.fn<FakeDbClient | null, []>();
-const repositoryFactoryMock = vi.fn<AssetTranslationRepository, [unknown]>();
-const searchBySymbolMock = vi.fn<Promise<FmpSearchResult[]>, [string]>();
-const getKoreanNamesMock = vi.fn<
-    Promise<Record<string, string>>,
-    [string[]]
->();
-const setKoreanTickersMock = vi.fn<Promise<void>, [unknown[]]>();
-const translateCompanyNamesMock = vi.fn<
-    Promise<Record<string, string>>,
-    []
->();
-
-vi.mock('@y0ngha/siglens-core', () => ({
-    ...jest.requireActual('@y0ngha/siglens-core'),
+vi.mock('@y0ngha/siglens-core', async () => ({
+    ...(await vi.importActual('@y0ngha/siglens-core')),
     createCacheProvider: () => createCacheProviderMock(),
 }));
 vi.mock('../../lib/db', () => ({
@@ -57,8 +54,8 @@ vi.mock('../../api', () => ({
         }
     },
 }));
-vi.mock('../../lib/fmpTickerApi', () => {
-    const actual = jest.requireActual('../../lib/fmpTickerApi');
+vi.mock('../../lib/fmpTickerApi', async () => {
+    const actual = await vi.importActual('../../lib/fmpTickerApi');
     return {
         ...actual,
         searchBySymbol: (q: string) => searchBySymbolMock(q),

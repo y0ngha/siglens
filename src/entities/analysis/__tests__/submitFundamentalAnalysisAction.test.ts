@@ -7,13 +7,13 @@ vi.mock('next/headers', () => ({
     headers: vi.fn(() => Promise.resolve(new Headers())),
 }));
 
-vi.mock('@y0ngha/siglens-core', () => ({
-    ...jest.requireActual('@y0ngha/siglens-core'),
+vi.mock('@y0ngha/siglens-core', async () => ({
+    ...(await vi.importActual('@y0ngha/siglens-core')),
     submitFundamentalAnalysis: vi.fn(),
 }));
 
 vi.mock('@/shared/api/fmp/fundamentalClient', () => ({
-    FmpFundamentalClient: vi.fn().mockImplementation(() => ({})),
+    FmpFundamentalClient: vi.fn().mockImplementation(function() { return {}; }),
 }));
 
 vi.mock('@/entities/session/lib/getCurrentUser', () => ({

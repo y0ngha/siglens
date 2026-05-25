@@ -3,39 +3,36 @@ import type { CacheProvider } from '@y0ngha/siglens-core';
 import type { TickerSearchResult } from '@/shared/lib/types';
 import type { FmpSearchResult } from '../../model';
 
-const mockCache: {
-    get: Mock;
-    set: Mock;
-    delete: Mock;
-} = {
-    get: vi.fn(),
-    set: vi.fn(),
-    delete: vi.fn(),
-};
+const {
+    mockCache,
+    createCacheProviderMock,
+    searchBySymbolMock,
+    searchByNameMock,
+    searchByKoreanNameMock,
+    getKoreanNamesMock,
+    setKoreanTickersMock,
+    translateCompanyNamesMock,
+} = vi.hoisted(() => ({
+    mockCache: {
+        get: vi.fn(),
+        set: vi.fn(),
+        delete: vi.fn(),
+    },
+    createCacheProviderMock: vi.fn(),
+    searchBySymbolMock: vi.fn(),
+    searchByNameMock: vi.fn(),
+    searchByKoreanNameMock: vi.fn(),
+    getKoreanNamesMock: vi.fn(),
+    setKoreanTickersMock: vi.fn(),
+    translateCompanyNamesMock: vi.fn(),
+}));
 
-const createCacheProviderMock = vi.fn<CacheProvider | null, []>();
-const searchBySymbolMock = vi.fn<Promise<FmpSearchResult[]>, [string]>();
-const searchByNameMock = vi.fn<Promise<FmpSearchResult[]>, [string]>();
-const searchByKoreanNameMock = vi.fn<
-    Promise<TickerSearchResult[]>,
-    [string]
->();
-const getKoreanNamesMock = vi.fn<
-    Promise<Record<string, string>>,
-    [string[]]
->();
-const setKoreanTickersMock = vi.fn<Promise<void>, [unknown[]]>();
-const translateCompanyNamesMock = vi.fn<
-    Promise<Record<string, string>>,
-    []
->();
-
-vi.mock('@y0ngha/siglens-core', () => ({
-    ...jest.requireActual('@y0ngha/siglens-core'),
+vi.mock('@y0ngha/siglens-core', async () => ({
+    ...(await vi.importActual('@y0ngha/siglens-core')),
     createCacheProvider: () => createCacheProviderMock(),
 }));
-vi.mock('../../lib/fmpTickerApi', () => {
-    const actual = jest.requireActual('../../lib/fmpTickerApi');
+vi.mock('../../lib/fmpTickerApi', async () => {
+    const actual = await vi.importActual('../../lib/fmpTickerApi');
     return {
         ...actual,
         searchBySymbol: (q: string) => searchBySymbolMock(q),

@@ -1,29 +1,37 @@
 import { vi } from 'vitest';
 import type { EarningsReportComparisonItem } from '@/shared/lib/types';
 
-const mockDb = {};
-const mockGetLatestFetchedAt = vi.fn();
-const mockGetComparisonItems = vi.fn();
-const mockUpsertMany = vi.fn();
-const mockGetEarningsReports = vi.fn();
+const {
+    mockDb,
+    mockGetLatestFetchedAt,
+    mockGetComparisonItems,
+    mockUpsertMany,
+    mockGetEarningsReports,
+} = vi.hoisted(() => ({
+    mockDb: {} as Record<string, unknown>,
+    mockGetLatestFetchedAt: vi.fn(),
+    mockGetComparisonItems: vi.fn(),
+    mockUpsertMany: vi.fn(),
+    mockGetEarningsReports: vi.fn(),
+}));
 
 vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: vi.fn(() => ({ db: mockDb })),
 }));
 
 vi.mock('@/entities/earnings-report', () => ({
-    DrizzleEarningsReportsRepository: vi.fn().mockImplementation(() => ({
+    DrizzleEarningsReportsRepository: vi.fn().mockImplementation(function() { return {
         getLatestFetchedAt: mockGetLatestFetchedAt,
         getComparisonItems: mockGetComparisonItems,
         upsertMany: mockUpsertMany,
-    })),
+    }; }),
 }));
 
 vi.mock('@/shared/api/fmp/fundamentalClient', () => ({
-    FmpFundamentalClient: vi.fn().mockImplementation(() => ({
+    FmpFundamentalClient: vi.fn().mockImplementation(function() { return {
         getEarningsReports: mockGetEarningsReports,
         getGrades: vi.fn(),
-    })),
+    }; }),
 }));
 
 import { getEarningsReportComparison } from '@/app/[symbol]/news/newsData';

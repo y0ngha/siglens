@@ -22,10 +22,10 @@ vi.mock('next/headers', () => ({
     headers: vi.fn(),
 }));
 
-vi.mock('@y0ngha/siglens-core', () => {
-    const actual = jest.requireActual<typeof import('@y0ngha/siglens-core')>(
-        '@y0ngha/siglens-core'
-    );
+vi.mock('@y0ngha/siglens-core', async () => {
+    const actual = await vi.importActual<
+        typeof import('@y0ngha/siglens-core')
+    >('@y0ngha/siglens-core');
     return {
         ...actual,
         requestChatCompletion: vi.fn(),
@@ -97,7 +97,7 @@ function makeHeadersMap(xForwardedFor?: string) {
 }
 
 describe('chatAction 함수는', () => {
-    beforeEach(() => {
+    beforeEach(async () => {
         vi.clearAllMocks();
         process.env.GEMINI_CHAT_API_KEY = 'gemini-server-key';
         delete process.env.GEMINI_CHAT_FREE_API_KEY;
@@ -110,10 +110,11 @@ describe('chatAction 함수는', () => {
         );
         mockRequestChatCompletion.mockResolvedValue(SUCCESS_RESULT);
         mockGetCurrentUser.mockResolvedValue(null);
+        const actual = await vi.importActual<
+            typeof import('@y0ngha/siglens-core')
+        >('@y0ngha/siglens-core');
         mockGetProviderForModel.mockImplementation(
-            jest.requireActual<typeof import('@y0ngha/siglens-core')>(
-                '@y0ngha/siglens-core'
-            ).getProviderForModel
+            actual.getProviderForModel
         );
     });
 
@@ -307,12 +308,11 @@ describe('chatAction 함수는', () => {
                 DrizzleUserApiKeyRepository as MockedClass<
                     typeof DrizzleUserApiKeyRepository
                 >
-            ).mockImplementation(
-                () =>
-                    ({
-                        findByUserAndProvider: mockFindByUserAndProvider,
-                    }) as unknown as DrizzleUserApiKeyRepository
-            );
+            ).mockImplementation(function() {
+                return {
+                    findByUserAndProvider: mockFindByUserAndProvider,
+                } as unknown as DrizzleUserApiKeyRepository;
+            });
             (getDatabaseClient as Mock).mockReturnValue({ db: {} });
             mockGetCurrentUser.mockResolvedValue({ id: 'user-1' } as Awaited<
                 ReturnType<typeof getCurrentUser>
@@ -349,12 +349,11 @@ describe('chatAction 함수는', () => {
                 DrizzleUserApiKeyRepository as MockedClass<
                     typeof DrizzleUserApiKeyRepository
                 >
-            ).mockImplementation(
-                () =>
-                    ({
-                        findByUserAndProvider: mockFindByUserAndProvider,
-                    }) as unknown as DrizzleUserApiKeyRepository
-            );
+            ).mockImplementation(function() {
+                return {
+                    findByUserAndProvider: mockFindByUserAndProvider,
+                } as unknown as DrizzleUserApiKeyRepository;
+            });
             (getDatabaseClient as Mock).mockReturnValue({ db: {} });
             mockGetCurrentUser.mockResolvedValue({ id: 'user-1' } as Awaited<
                 ReturnType<typeof getCurrentUser>
