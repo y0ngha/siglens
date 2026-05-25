@@ -9,17 +9,15 @@ describe('adsense', () => {
     describe('ADSENSE_PUBLISHER_ID', () => {
         it('returns env value when NEXT_PUBLIC_ADSENSE_PUBLISHER_ID is set', async () => {
             process.env.NEXT_PUBLIC_ADSENSE_PUBLISHER_ID = 'ca-pub-123';
-            const { ADSENSE_PUBLISHER_ID } = await import(
-                '@/shared/lib/adsense'
-            );
+            const { ADSENSE_PUBLISHER_ID } =
+                await import('@/shared/lib/adsense');
             expect(ADSENSE_PUBLISHER_ID).toBe('ca-pub-123');
         });
 
         it('defaults to empty string when env var is not set', async () => {
             delete process.env.NEXT_PUBLIC_ADSENSE_PUBLISHER_ID;
-            const { ADSENSE_PUBLISHER_ID } = await import(
-                '@/shared/lib/adsense'
-            );
+            const { ADSENSE_PUBLISHER_ID } =
+                await import('@/shared/lib/adsense');
             expect(ADSENSE_PUBLISHER_ID).toBe('');
         });
     });

@@ -48,7 +48,9 @@ describe('getTooltipPosition', () => {
             );
 
             // aboveTop = 200 - 40 - 6 = 154, which is >= 8 (padding)
-            expect(top).toBe(triggerRect.top - tooltipRect.height - TOOLTIP_GAP);
+            expect(top).toBe(
+                triggerRect.top - tooltipRect.height - TOOLTIP_GAP
+            );
         });
 
         it('places tooltip below trigger when above space is insufficient', () => {
@@ -145,7 +147,9 @@ describe('getTooltipPosition', () => {
             // rawLeft = 990 + 15 - 100 = 905
             // maxLeft = 1024 - 200 - 8 = 816
             // left = max(8, min(905, 816)) = 816
-            expect(left).toBe(viewportWidth - tooltipRect.width - TOOLTIP_VIEWPORT_PADDING);
+            expect(left).toBe(
+                viewportWidth - tooltipRect.width - TOOLTIP_VIEWPORT_PADDING
+            );
         });
     });
 

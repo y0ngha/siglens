@@ -24,7 +24,7 @@ describe('sleep', () => {
         expect(spy).not.toHaveBeenCalled();
 
         await vi.advanceTimersByTimeAsync(1);
-        expect(spy).toHaveBeenCalledOnce();
+        expect(spy).toHaveBeenCalledTimes(1);
     });
 
     it('resolves with undefined', async () => {
