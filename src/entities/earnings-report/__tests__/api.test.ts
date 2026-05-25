@@ -441,7 +441,6 @@ describe('DrizzleEarningsReportsRepository', () => {
 
             const result = dedupeEarningsReportInputs([first, second]);
             expect(result).toHaveLength(1);
-            // Both have identical lastUpdated and populated count, so the later wins
             expect(result[0]).toBe(second);
         });
 

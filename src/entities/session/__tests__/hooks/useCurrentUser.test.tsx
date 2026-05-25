@@ -1,8 +1,3 @@
-import { renderHook, waitFor } from '@testing-library/react';
-import React from 'react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import type { AuthUserRecord } from '@/shared/lib/auth/types';
-
 const { mockCurrentUserAction } = vi.hoisted(() => ({
     mockCurrentUserAction: vi.fn(),
 }));
@@ -11,6 +6,10 @@ vi.mock('@/entities/session/actions', () => ({
     currentUserAction: mockCurrentUserAction,
 }));
 
+import { renderHook, waitFor } from '@testing-library/react';
+import React from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import type { AuthUserRecord } from '@/shared/lib/auth/types';
 import { useCurrentUser } from '@/entities/session/hooks/useCurrentUser';
 
 function makeWrapper() {

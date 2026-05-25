@@ -182,8 +182,8 @@ describe('recentSearches', () => {
         });
 
         it('window가 undefined인 환경에서 addRecentSearch storage 인자 없이 호출', () => {
+            // null storage — 결과는 반환되지만 영속화되지 않음
             const result = addRecentSearch('AAPL');
-            // Returns the in-memory result but cannot persist (null storage)
             expect(result).toEqual(['AAPL']);
         });
 

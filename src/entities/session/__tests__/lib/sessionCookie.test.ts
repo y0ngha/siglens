@@ -8,6 +8,7 @@ import {
 } from '@/entities/session/lib/sessionCookie';
 import { AUTH_SESSION_COOKIE_NAME } from '@/shared/config/cookieNames';
 import type { SessionRepository } from '@/shared/db/types';
+import { MS_PER_SECOND } from '@/shared/config/time';
 
 describe('createSessionCookie', () => {
     it('builds an active cookie with all defaults', () => {
@@ -99,7 +100,7 @@ describe('createAuthSession', () => {
             id: 'sess_123',
             userId: 'user_1',
             expiresAt: new Date(
-                now.getTime() + DEFAULT_SESSION_TTL_SECONDS * 1000
+                now.getTime() + DEFAULT_SESSION_TTL_SECONDS * MS_PER_SECOND
             ),
             createdAt: now,
         });
@@ -123,7 +124,9 @@ describe('createAuthSession', () => {
 
     it('accepts a custom sessionTtlSeconds', async () => {
         const customTtl = 3600;
-        const expectedExpiry = new Date(now.getTime() + customTtl * 1000);
+        const expectedExpiry = new Date(
+            now.getTime() + customTtl * MS_PER_SECOND
+        );
         (
             mockSessions.createSession as ReturnType<typeof vi.fn>
         ).mockResolvedValue({
