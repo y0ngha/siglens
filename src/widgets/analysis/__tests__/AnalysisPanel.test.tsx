@@ -746,55 +746,65 @@ describe('AnalysisPanel', () => {
 
     it('handles copy report button click', async () => {
         const writeTextMock = vi.fn().mockResolvedValue(undefined);
+        const originalClipboard = navigator.clipboard;
         Object.assign(navigator, {
             clipboard: { writeText: writeTextMock },
         });
 
-        render(
-            <AnalysisPanel
-                symbol="AAPL"
-                analysis={makeAnalysis()}
-                keyLevels={EMPTY_KEY_LEVELS}
-                timeframe="1Day"
-            />
-        );
+        try {
+            render(
+                <AnalysisPanel
+                    symbol="AAPL"
+                    analysis={makeAnalysis()}
+                    keyLevels={EMPTY_KEY_LEVELS}
+                    timeframe="1Day"
+                />
+            );
 
-        const copyButton = screen.getByText('리포트 복사');
-        await act(async () => {
-            fireEvent.click(copyButton);
-        });
+            const copyButton = screen.getByText('리포트 복사');
+            await act(async () => {
+                fireEvent.click(copyButton);
+            });
 
-        expect(writeTextMock).toHaveBeenCalledWith('report text');
-        expect(screen.getByText('복사됨')).toBeInTheDocument();
+            expect(writeTextMock).toHaveBeenCalledWith('report text');
+            expect(screen.getByText('복사됨')).toBeInTheDocument();
+        } finally {
+            Object.assign(navigator, { clipboard: originalClipboard });
+        }
     });
 
     it('shows copy failed state when clipboard fails', async () => {
+        const originalClipboard = navigator.clipboard;
         Object.assign(navigator, {
             clipboard: {
                 writeText: vi.fn().mockRejectedValue(new Error('denied')),
             },
         });
 
-        render(
-            <AnalysisPanel
-                symbol="AAPL"
-                analysis={makeAnalysis()}
-                keyLevels={EMPTY_KEY_LEVELS}
-                timeframe="1Day"
-            />
-        );
+        try {
+            render(
+                <AnalysisPanel
+                    symbol="AAPL"
+                    analysis={makeAnalysis()}
+                    keyLevels={EMPTY_KEY_LEVELS}
+                    timeframe="1Day"
+                />
+            );
 
-        const copyButton = screen.getByText('리포트 복사');
-        await act(async () => {
-            fireEvent.click(copyButton);
-        });
+            const copyButton = screen.getByText('리포트 복사');
+            await act(async () => {
+                fireEvent.click(copyButton);
+            });
 
-        expect(screen.getByText('복사 실패')).toBeInTheDocument();
-        expect(
-            screen.getByText(
-                '클립보드 복사에 실패했습니다. 브라우저 권한을 확인해 주세요.'
-            )
-        ).toBeInTheDocument();
+            expect(screen.getByText('복사 실패')).toBeInTheDocument();
+            expect(
+                screen.getByText(
+                    '클립보드 복사에 실패했습니다. 브라우저 권한을 확인해 주세요.'
+                )
+            ).toBeInTheDocument();
+        } finally {
+            Object.assign(navigator, { clipboard: originalClipboard });
+        }
     });
 
     it('does not copy when showProgress is true', async () => {

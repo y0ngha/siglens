@@ -101,6 +101,10 @@ describe('useChat — branch coverage', () => {
         mockLoadSessionFull.mockReturnValue({ messages: [], savedAt: null });
     });
 
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
     describe('resolveAiContent branches (L73-81)', () => {
         it('returns ok message when result.ok is true', async () => {
             mockChatAction.mockResolvedValue({

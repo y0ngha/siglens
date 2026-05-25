@@ -55,8 +55,8 @@ describe('useFocusTrap — branch coverage', () => {
 
         // Shift+Tab from middle element — should NOT wrap (not first or container)
         fireEvent.keyDown(document, { key: 'Tab', shiftKey: true });
-        // Browser would move focus, but in test the handler skips the wrap
-        // The focus trap only intervenes at boundaries
+
+        expect(document.activeElement).toBe(screen.getByTestId('btn-2'));
     });
 
     it('Tab when focus is not on last element does not wrap', () => {
@@ -79,7 +79,8 @@ describe('useFocusTrap — branch coverage', () => {
 
         // Tab from middle — should not wrap to first
         fireEvent.keyDown(document, { key: 'Tab' });
-        // No wrap should happen
+
+        expect(document.activeElement).toBe(screen.getByTestId('btn-2'));
     });
 
     it('does not focus container without tabindex attribute', () => {

@@ -68,11 +68,9 @@ describe('useFocusTrap', () => {
         const closeBtn = screen.getByTestId('dialog-close');
         const actionBtn = screen.getByTestId('dialog-action');
 
-        // Focus is on first (close). Move to action.
         actionBtn.focus();
         expect(document.activeElement).toBe(actionBtn);
 
-        // Tab from last element should wrap to first
         fireEvent.keyDown(document, { key: 'Tab' });
         expect(document.activeElement).toBe(closeBtn);
     });

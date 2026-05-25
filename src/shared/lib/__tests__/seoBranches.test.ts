@@ -21,6 +21,9 @@ describe('seo — parseBuildDate branches', () => {
 
     it('falls back to new Date() when NEXT_BUILD_DATE is invalid', async () => {
         vi.stubEnv('NEXT_BUILD_DATE', 'not-a-date');
+        // Not using vi.useFakeTimers: the test verifies the fallback produces
+        // a real "now" timestamp. Faking the clock would make before/after
+        // identical to the fallback, defeating the bracket assertion.
         const before = Date.now();
         const { SITE_BUILD_DATE } = await import('@/shared/lib/seo');
         const after = Date.now();
