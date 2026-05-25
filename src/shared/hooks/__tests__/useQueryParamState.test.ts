@@ -44,7 +44,6 @@ describe('useQueryParamState', () => {
     it('removes param from URL when setting to default value', () => {
         const { result } = renderHook(() => useQueryParamState('tab', 'chart'));
         act(() => {
-            // Setting to default value should remove the param
             result.current[1]('chart');
         });
         expect(pushMock).toHaveBeenCalledWith('/stocks', { scroll: false });

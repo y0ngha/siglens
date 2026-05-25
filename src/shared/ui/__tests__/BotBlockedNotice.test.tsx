@@ -2,12 +2,7 @@ import { render, screen } from '@testing-library/react';
 import { BotBlockedNotice } from '@/shared/ui/BotBlockedNotice';
 
 describe('BotBlockedNotice', () => {
-    it('renders without error', () => {
-        render(<BotBlockedNotice />);
-        expect(screen.getByRole('status')).toBeInTheDocument();
-    });
-
-    it('has role="status" for accessibility', () => {
+    it('renders with role="status" for accessibility', () => {
         render(<BotBlockedNotice />);
         expect(screen.getByRole('status')).toBeInTheDocument();
     });

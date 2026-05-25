@@ -3,9 +3,8 @@ import { AuthCardShell } from '@/shared/ui/auth/AuthCardShell';
 
 vi.mock('next/image', () => ({
     __esModule: true,
-    default: (props: Record<string, unknown>) => {
-        // eslint-disable-next-line @next/next/no-img-element, jsx-a11y/alt-text -- test mock
-        return <img {...props} />;
+    default: function MockImage(props: Record<string, unknown>) {
+        return <img alt="" {...props} />;
     },
 }));
 

@@ -62,10 +62,9 @@ describe('usePopoverToggle', () => {
 
     it('auto-closes on click outside when open', async () => {
         render(<PopoverHarness />);
-        // Open via button
         fireEvent.click(screen.getByTestId('open-btn'));
         expect(screen.getByTestId('popover')).toHaveTextContent('OPEN');
-        // Click outside
+
         fireEvent.pointerDown(screen.getByTestId('outside'));
         expect(screen.getByTestId('popover')).toHaveTextContent('CLOSED');
     });
