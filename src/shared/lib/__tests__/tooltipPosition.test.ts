@@ -67,7 +67,7 @@ describe('getTooltipPosition', () => {
             expect(top).toBe(triggerRect.bottom + TOOLTIP_GAP);
         });
 
-        it('falls back to below when trigger is at very top (aboveTop exactly at padding)', () => {
+        it('places tooltip above trigger when aboveTop equals padding exactly (boundary condition)', () => {
             // aboveTop = TOOLTIP_VIEWPORT_PADDING means it should still go above
             const tooltipHeight = 40;
             const triggerTop =

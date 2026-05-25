@@ -12,8 +12,8 @@ describe('TIER_LABEL', () => {
         }
     });
 
-    it('has exactly three entries', () => {
-        expect(Object.keys(TIER_LABEL)).toHaveLength(3);
+    it('has exactly as many entries as ALL_TIERS', () => {
+        expect(Object.keys(TIER_LABEL)).toHaveLength(ALL_TIERS.length);
     });
 
     it('free tier is labeled "Free"', () => {

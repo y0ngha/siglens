@@ -10,8 +10,10 @@ describe('LLM_PROVIDER_LABELS', () => {
         }
     });
 
-    it('has exactly three entries', () => {
-        expect(Object.keys(LLM_PROVIDER_LABELS)).toHaveLength(3);
+    it('has exactly as many entries as LLM_PROVIDER_VALUES', () => {
+        expect(Object.keys(LLM_PROVIDER_LABELS)).toHaveLength(
+            LLM_PROVIDER_VALUES.length
+        );
     });
 
     it('anthropic label contains Claude', () => {

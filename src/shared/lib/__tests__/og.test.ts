@@ -40,14 +40,6 @@ describe('OG color constants', () => {
     it('OG_MUTED is slate gray', () => {
         expect(OG_MUTED).toBe('#94a3b8');
     });
-
-    it('all color values are valid hex colors', () => {
-        const hexPattern = /^#[0-9a-f]{6}$/;
-        expect(OG_BG).toMatch(hexPattern);
-        expect(OG_FG).toMatch(hexPattern);
-        expect(OG_ACCENT).toMatch(hexPattern);
-        expect(OG_MUTED).toMatch(hexPattern);
-    });
 });
 
 describe('OG layout constants', () => {

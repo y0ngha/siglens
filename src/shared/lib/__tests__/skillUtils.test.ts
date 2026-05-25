@@ -35,7 +35,7 @@ describe('countSkillsByType', () => {
         expect(result).toEqual({ pattern: 2, indicator_guide: 1, strategy: 1 });
     });
 
-    it('skips skills with null type', () => {
+    it('skips skills with nullish type (null coerced to undefined by makeSkill)', () => {
         const skills = [
             makeSkill('pattern'),
             makeSkill(null),
