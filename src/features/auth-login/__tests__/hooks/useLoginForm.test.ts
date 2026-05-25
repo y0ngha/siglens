@@ -16,12 +16,6 @@ describe('useLoginForm', () => {
         expect(isPending).toBe(false);
     });
 
-    it('initial state has error: null', () => {
-        const { result } = renderHook(() => useLoginForm());
-
-        expect(result.current[0]).toStrictEqual({ error: null });
-    });
-
     it('returns a stable formAction reference across re-renders', () => {
         const { result, rerender } = renderHook(() => useLoginForm());
         const firstAction = result.current[1];

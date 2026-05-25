@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { renderHook, act } from '@testing-library/react';
 import { useModelGate } from '@/features/premium-gate/hooks/useModelGate';
+import { QUERY_KEYS } from '@/shared/config/queryConfig';
 import type { ModelId, LlmProvider } from '@y0ngha/siglens-core';
 
 vi.mock('@/shared/db/client', () => ({
@@ -12,10 +13,10 @@ let mockRegisteredProviders: { provider: string }[] = [];
 
 vi.mock('@tanstack/react-query', () => ({
     useQuery: ({ queryKey }: { queryKey: readonly string[] }) => {
-        if (queryKey[0] === 'current-user') {
+        if (queryKey[0] === QUERY_KEYS.currentUser()[0]) {
             return { data: mockCurrentUser };
         }
-        if (queryKey[0] === 'llm') {
+        if (queryKey[0] === QUERY_KEYS.registeredProviders()[0]) {
             return { data: mockRegisteredProviders };
         }
         return { data: undefined };

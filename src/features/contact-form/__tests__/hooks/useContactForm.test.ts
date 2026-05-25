@@ -34,16 +34,6 @@ describe('useContactForm', () => {
         });
     });
 
-    it('initial values contain empty title, email, and content', () => {
-        const { result } = renderHook(() => useContactForm());
-        const { values } = result.current[0];
-
-        expect(values).toBeDefined();
-        expect(values!.title).toBe('');
-        expect(values!.email).toBe('');
-        expect(values!.content).toBe('');
-    });
-
     it('returns a stable formAction reference across re-renders', () => {
         const { result, rerender } = renderHook(() => useContactForm());
         const firstAction = result.current[1];

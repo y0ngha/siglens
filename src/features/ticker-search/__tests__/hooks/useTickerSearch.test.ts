@@ -2,6 +2,7 @@
 import { renderHook, act } from '@testing-library/react';
 import { useTickerSearch } from '@/features/ticker-search/hooks/useTickerSearch';
 import type { TickerSearchResult } from '@/shared/lib/types';
+import { QUERY_KEYS } from '@/shared/config/queryConfig';
 
 vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: vi.fn(() => ({ db: {}, sql: () => null })),
@@ -109,6 +110,6 @@ describe('useTickerSearch', () => {
             vi.advanceTimersByTime(300);
         });
 
-        expect(lastQueryKey).toEqual(['ticker-search', 'MSFT']);
+        expect(lastQueryKey).toEqual(QUERY_KEYS.tickerSearch('MSFT'));
     });
 });

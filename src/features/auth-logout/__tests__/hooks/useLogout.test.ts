@@ -1,6 +1,5 @@
 // @vitest-environment jsdom
 import { renderHook, act } from '@testing-library/react';
-import React from 'react';
 import { useLogout } from '@/features/auth-logout/hooks/useLogout';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
 

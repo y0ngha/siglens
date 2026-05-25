@@ -2,6 +2,8 @@
 import { renderHook, act } from '@testing-library/react';
 import { useRecentSearches } from '@/features/ticker-search/hooks/useRecentSearches';
 
+const RECENT_SEARCHES_EVENT = 'siglens:recent-searches-change';
+
 const mockGetRecentSearches = vi.fn<() => string[]>(() => []);
 const mockAddRecentSearch = vi.fn();
 const mockRemoveRecentSearch = vi.fn();
@@ -78,7 +80,7 @@ describe('useRecentSearches', () => {
         });
 
         const dispatched = dispatchSpy.mock.calls.find(
-            call => (call[0] as Event).type === 'siglens:recent-searches-change'
+            call => (call[0] as Event).type === RECENT_SEARCHES_EVENT
         );
         expect(dispatched).toBeDefined();
 
@@ -94,7 +96,7 @@ describe('useRecentSearches', () => {
         });
 
         const dispatched = dispatchSpy.mock.calls.find(
-            call => (call[0] as Event).type === 'siglens:recent-searches-change'
+            call => (call[0] as Event).type === RECENT_SEARCHES_EVENT
         );
         expect(dispatched).toBeDefined();
 
@@ -110,7 +112,7 @@ describe('useRecentSearches', () => {
         });
 
         const dispatched = dispatchSpy.mock.calls.find(
-            call => (call[0] as Event).type === 'siglens:recent-searches-change'
+            call => (call[0] as Event).type === RECENT_SEARCHES_EVENT
         );
         expect(dispatched).toBeDefined();
 
