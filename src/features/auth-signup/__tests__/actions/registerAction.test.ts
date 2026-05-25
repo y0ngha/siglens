@@ -13,7 +13,9 @@ vi.mock('@/shared/db/client', () => ({
     resetDatabaseClientForTests: vi.fn(),
 }));
 vi.mock('@/entities/session', () => ({
-    DrizzleSessionRepository: vi.fn().mockImplementation(function() { return {}; }),
+    DrizzleSessionRepository: vi.fn().mockImplementation(function () {
+        return {};
+    }),
     bcryptPasswordHasher: { hashPassword: vi.fn() },
     bcryptPasswordVerifier: { verifyPassword: vi.fn() },
     applyAuthCookie: vi.fn((c: unknown) => c),
@@ -29,7 +31,9 @@ vi.mock('@/entities/session', () => ({
     isSecureCookieEnv: vi.fn(() => false),
 }));
 vi.mock('@/entities/user', () => ({
-    DrizzleUserRepository: vi.fn().mockImplementation(function() { return {}; }),
+    DrizzleUserRepository: vi.fn().mockImplementation(function () {
+        return {};
+    }),
     loginUser: vi.fn(),
     registerUser: vi.fn(),
 }));
@@ -141,13 +145,12 @@ describe('registerAction', () => {
         });
         mockRedirect.mockClear();
         // Default: active terms exist for both kinds
-        MockTermsRepository.mockImplementation(function() {
+        MockTermsRepository.mockImplementation(function () {
             return {
                 findActive: vi.fn().mockImplementation((kind: string) => {
                     if (kind === 'privacy')
                         return Promise.resolve(FAKE_PRIVACY_TERMS);
-                    if (kind === 'tos')
-                        return Promise.resolve(FAKE_TOS_TERMS);
+                    if (kind === 'tos') return Promise.resolve(FAKE_TOS_TERMS);
                     return Promise.resolve(null);
                 }),
                 upsertFromSeed: vi.fn(),
@@ -184,7 +187,7 @@ describe('registerAction', () => {
 
     describe('약관 DB 조회', () => {
         it('활성 약관이 없으면 service_unavailable을 반환한다', async () => {
-            MockTermsRepository.mockImplementation(function() {
+            MockTermsRepository.mockImplementation(function () {
                 return {
                     findActive: vi.fn().mockResolvedValue(null),
                     upsertFromSeed: vi.fn(),
@@ -199,7 +202,7 @@ describe('registerAction', () => {
         });
 
         it('privacyTerms만 없으면 service_unavailable을 반환한다', async () => {
-            MockTermsRepository.mockImplementation(function() {
+            MockTermsRepository.mockImplementation(function () {
                 return {
                     findActive: vi
                         .fn()
@@ -220,7 +223,7 @@ describe('registerAction', () => {
         });
 
         it('tosTerms만 없으면 service_unavailable을 반환한다', async () => {
-            MockTermsRepository.mockImplementation(function() {
+            MockTermsRepository.mockImplementation(function () {
                 return {
                     findActive: vi
                         .fn()

@@ -12,9 +12,9 @@ vi.mock('@/entities/llm-provider/api/gemini', () => ({
 }));
 
 vi.mock('@y0ngha/siglens-core', async () => {
-    const actual = await vi.importActual<
-        typeof import('@y0ngha/siglens-core')
-    >('@y0ngha/siglens-core');
+    const actual = await vi.importActual<typeof import('@y0ngha/siglens-core')>(
+        '@y0ngha/siglens-core'
+    );
     return {
         MODEL_SPECS: actual.MODEL_SPECS,
         getProviderForModel: vi
@@ -58,9 +58,7 @@ describe('callAiProviderRouter', () => {
         const actual = await vi.importActual<
             typeof import('@y0ngha/siglens-core')
         >('@y0ngha/siglens-core');
-        mockGetProviderForModel.mockImplementation(
-            actual.getProviderForModel
-        );
+        mockGetProviderForModel.mockImplementation(actual.getProviderForModel);
     });
 
     describe('Anthropic 모델 라우팅', () => {

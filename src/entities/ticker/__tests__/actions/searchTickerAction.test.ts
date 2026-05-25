@@ -11,9 +11,7 @@ vi.mock('../../lib/searchTicker', () => ({
     searchTicker: vi.fn(),
 }));
 
-const mockSearchTicker = searchTicker as MockedFunction<
-    typeof searchTicker
->;
+const mockSearchTicker = searchTicker as MockedFunction<typeof searchTicker>;
 
 const results: TickerSearchResult[] = [
     { symbol: 'AAPL', name: 'Apple Inc.' } as TickerSearchResult,

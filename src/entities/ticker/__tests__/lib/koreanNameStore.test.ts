@@ -1,4 +1,4 @@
-import { vi, type Mock } from 'vitest';
+import { vi } from 'vitest';
 import type { CacheProvider } from '@y0ngha/siglens-core';
 import type { KoreanTickerEntry } from '@/shared/lib/types';
 import type { KoreanTickerRepository } from '@/shared/db/types';

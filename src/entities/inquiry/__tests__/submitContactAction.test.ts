@@ -8,9 +8,11 @@ vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: vi.fn(() => ({ db: {}, sql: () => null })),
 }));
 vi.mock('@/entities/inquiry', () => ({
-    DrizzleContactRepository: vi.fn().mockImplementation(function() { return {
-        create: mockCreate,
-    }; }),
+    DrizzleContactRepository: vi.fn().mockImplementation(function () {
+        return {
+            create: mockCreate,
+        };
+    }),
 }));
 vi.mock('../lib/submitInquiry', () => ({
     submitInquiry: (...args: unknown[]) => mockSubmitInquiry(...args),

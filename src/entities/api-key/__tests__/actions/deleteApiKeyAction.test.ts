@@ -18,9 +18,11 @@ vi.mock('next/navigation', () => ({
     }),
 }));
 vi.mock('@/entities/api-key', () => ({
-    DrizzleUserApiKeyRepository: vi.fn().mockImplementation(function() { return {
-        deleteByUserAndProvider: mockDeleteByUserAndProvider,
-    }; }),
+    DrizzleUserApiKeyRepository: vi.fn().mockImplementation(function () {
+        return {
+            deleteByUserAndProvider: mockDeleteByUserAndProvider,
+        };
+    }),
 }));
 
 import { getCurrentUser } from '@/entities/session/lib/getCurrentUser';

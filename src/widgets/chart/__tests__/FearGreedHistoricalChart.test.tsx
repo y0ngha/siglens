@@ -36,14 +36,10 @@ const {
 // `virtual: true` is required because lightweight-charts is ESM-only
 // (`"type": "module"`, no CJS export). Jest's CJS resolver can't find it
 // from this test file, even though we never call the real module.
-vi.mock(
-    'lightweight-charts',
-    () => ({
-        createChart: vi.fn(() => mockChart),
-        LineSeries: 'LineSeries',
-    }),
-    { virtual: true }
-);
+vi.mock('lightweight-charts', () => ({
+    createChart: vi.fn(() => mockChart),
+    LineSeries: 'LineSeries',
+}));
 
 const history: FearGreedHistoryPoint[] = [
     { date: '2026-01-01', score: null, label: null },

@@ -1,4 +1,4 @@
-import { vi, type Mock } from 'vitest';
+import { vi } from 'vitest';
 import type { CacheProvider } from '@y0ngha/siglens-core';
 import type { TickerSearchResult } from '@/shared/lib/types';
 import type { FmpSearchResult } from '../../model';
@@ -85,7 +85,7 @@ describe('searchTicker', () => {
         getKoreanNamesMock.mockReset();
         getKoreanNamesMock.mockResolvedValue({});
         setKoreanTickersMock.mockReset();
-        setKoreanTickersMock.mockResolvedValue();
+        setKoreanTickersMock.mockResolvedValue(undefined);
         translateCompanyNamesMock.mockReset();
         translateCompanyNamesMock.mockResolvedValue({});
     });

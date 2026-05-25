@@ -17,9 +17,11 @@ vi.mock('@/shared/db/client', () => ({
 }));
 
 vi.mock('@/entities/news-article', () => ({
-    DrizzleNewsRepository: vi.fn().mockImplementation(function() { return {
-        listBySymbol: vi.fn(),
-    }; }),
+    DrizzleNewsRepository: vi.fn().mockImplementation(function () {
+        return {
+            listBySymbol: vi.fn(),
+        };
+    }),
 }));
 
 vi.mock('@/entities/earnings-report', () => ({
@@ -138,9 +140,9 @@ describe('submitNewsAnalysisAction 함수는', () => {
         mockListBySymbol = vi.fn().mockResolvedValue([ANALYZED_ROW]);
         mockGetNextEarningsReport.mockResolvedValue(null);
 
-        MockNewsRepository.mockImplementation(
-            function() { return { listBySymbol: mockListBySymbol } as never; }
-        );
+        MockNewsRepository.mockImplementation(function () {
+            return { listBySymbol: mockListBySymbol } as never;
+        });
 
         mockGetCurrentUser.mockResolvedValue(null);
         mockResolveTierAndByok.mockResolvedValue({

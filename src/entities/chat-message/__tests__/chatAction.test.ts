@@ -23,9 +23,9 @@ vi.mock('next/headers', () => ({
 }));
 
 vi.mock('@y0ngha/siglens-core', async () => {
-    const actual = await vi.importActual<
-        typeof import('@y0ngha/siglens-core')
-    >('@y0ngha/siglens-core');
+    const actual = await vi.importActual<typeof import('@y0ngha/siglens-core')>(
+        '@y0ngha/siglens-core'
+    );
     return {
         ...actual,
         requestChatCompletion: vi.fn(),
@@ -113,9 +113,7 @@ describe('chatAction 함수는', () => {
         const actual = await vi.importActual<
             typeof import('@y0ngha/siglens-core')
         >('@y0ngha/siglens-core');
-        mockGetProviderForModel.mockImplementation(
-            actual.getProviderForModel
-        );
+        mockGetProviderForModel.mockImplementation(actual.getProviderForModel);
     });
 
     afterEach(() => {
@@ -308,7 +306,7 @@ describe('chatAction 함수는', () => {
                 DrizzleUserApiKeyRepository as MockedClass<
                     typeof DrizzleUserApiKeyRepository
                 >
-            ).mockImplementation(function() {
+            ).mockImplementation(function () {
                 return {
                     findByUserAndProvider: mockFindByUserAndProvider,
                 } as unknown as DrizzleUserApiKeyRepository;
@@ -349,7 +347,7 @@ describe('chatAction 함수는', () => {
                 DrizzleUserApiKeyRepository as MockedClass<
                     typeof DrizzleUserApiKeyRepository
                 >
-            ).mockImplementation(function() {
+            ).mockImplementation(function () {
                 return {
                     findByUserAndProvider: mockFindByUserAndProvider,
                 } as unknown as DrizzleUserApiKeyRepository;

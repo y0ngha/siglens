@@ -13,7 +13,9 @@ vi.mock('@y0ngha/siglens-core', async () => ({
 }));
 
 vi.mock('@/shared/api/fmp/fundamentalClient', () => ({
-    FmpFundamentalClient: vi.fn().mockImplementation(function() { return {}; }),
+    FmpFundamentalClient: vi.fn().mockImplementation(function () {
+        return {};
+    }),
 }));
 
 vi.mock('@/entities/session/lib/getCurrentUser', () => ({

@@ -17,7 +17,7 @@ import { vi } from 'vitest';
 delete process.env.UPSTASH_REDIS_REST_URL;
 delete process.env.UPSTASH_REDIS_REST_TOKEN;
 
-vi.mock('server-only', () => ({}), { virtual: true });
+vi.mock('server-only', () => ({}));
 
 const {
     mockHasOptionsMarket,
@@ -34,14 +34,16 @@ const {
 }));
 
 vi.mock('../lib/YahooOptionsAdapter', () => ({
-    YahooOptionsAdapter: vi.fn().mockImplementation(function() { return {
-        hasOptionsMarket: mockHasOptionsMarket,
-        fetchSnapshot: mockFetchSnapshot,
-    }; }),
+    YahooOptionsAdapter: vi.fn().mockImplementation(function () {
+        return {
+            hasOptionsMarket: mockHasOptionsMarket,
+            fetchSnapshot: mockFetchSnapshot,
+        };
+    }),
 }));
 
 vi.mock('@upstash/redis', () => ({
-    Redis: vi.fn().mockImplementation(function(opts: unknown) {
+    Redis: vi.fn().mockImplementation(function (opts: unknown) {
         mockRedisConstructor(opts);
         return { get: mockRedisGet, set: mockRedisSet };
     }),
@@ -166,9 +168,7 @@ describe('hasOptionsMarket — Redis 캐시 레이어', () => {
     });
 
     it('Redis get 예외는 흡수하고 adapter로 fallback', async () => {
-        const errSpy = vi
-            .spyOn(console, 'error')
-            .mockImplementation(() => {});
+        const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
         mockRedisGet.mockRejectedValue(new Error('redis down'));
         mockHasOptionsMarket.mockResolvedValue(false);
         mockRedisSet.mockResolvedValue('OK');
@@ -186,9 +186,7 @@ describe('hasOptionsMarket — Redis 캐시 레이어', () => {
     });
 
     it('Redis set 예외는 흡수하고 fresh 값을 정상 반환', async () => {
-        const errSpy = vi
-            .spyOn(console, 'error')
-            .mockImplementation(() => {});
+        const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
         mockRedisGet.mockResolvedValue(null);
         mockHasOptionsMarket.mockResolvedValue(true);
         mockRedisSet.mockRejectedValue(new Error('redis write fail'));
@@ -205,9 +203,7 @@ describe('hasOptionsMarket — Redis 캐시 레이어', () => {
     });
 
     it('adapter.hasOptionsMarket 예외는 false로 흡수해 sitemap 빌드를 보호', async () => {
-        const errSpy = vi
-            .spyOn(console, 'error')
-            .mockImplementation(() => {});
+        const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
         mockRedisGet.mockResolvedValue(null);
         mockHasOptionsMarket.mockRejectedValue(new Error('yahoo 503'));
 
@@ -342,9 +338,7 @@ describe('fetchOptionsSnapshot — Redis 캐시 레이어', () => {
     });
 
     it('Redis get 예외는 흡수하고 adapter fresh로 진행', async () => {
-        const errSpy = vi
-            .spyOn(console, 'error')
-            .mockImplementation(() => {});
+        const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
         mockRedisGet.mockRejectedValue(new Error('redis down'));
         mockFetchSnapshot.mockResolvedValue(sampleSnapshot);
         mockRedisSet.mockResolvedValue('OK');
@@ -362,9 +356,7 @@ describe('fetchOptionsSnapshot — Redis 캐시 레이어', () => {
     });
 
     it('Redis set 예외는 흡수하고 fresh 값을 정상 반환', async () => {
-        const errSpy = vi
-            .spyOn(console, 'error')
-            .mockImplementation(() => {});
+        const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
         mockRedisGet.mockResolvedValue(null);
         mockFetchSnapshot.mockResolvedValue(sampleSnapshot);
         mockRedisSet.mockRejectedValue(new Error('redis write fail'));

@@ -4,7 +4,7 @@ const { mockFinalMessage, mockStream, MockAnthropic } = vi.hoisted(() => {
     const mockStream = vi
         .fn()
         .mockReturnValue({ finalMessage: mockFinalMessage });
-    const MockAnthropic = vi.fn().mockImplementation(function() {
+    const MockAnthropic = vi.fn().mockImplementation(function () {
         return { messages: { stream: mockStream } };
     });
     return { mockFinalMessage, mockStream, MockAnthropic };
@@ -16,9 +16,9 @@ vi.mock('@anthropic-ai/sdk', () => ({
 }));
 
 vi.mock('@y0ngha/siglens-core', async () => {
-    const actual = await vi.importActual<
-        typeof import('@y0ngha/siglens-core')
-    >('@y0ngha/siglens-core');
+    const actual = await vi.importActual<typeof import('@y0ngha/siglens-core')>(
+        '@y0ngha/siglens-core'
+    );
     return {
         ...actual,
         MODEL_SPECS: { ...actual.MODEL_SPECS },

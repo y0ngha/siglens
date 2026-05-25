@@ -17,7 +17,7 @@ import { vi } from 'vitest';
 process.env.NEXT_PUBLIC_SITE_URL = 'https://siglens.io';
 
 // 'server-only'는 Next 런타임 sentinel이라 Jest 환경에서 해석 불가 — virtual mock
-vi.mock('server-only', () => ({}), { virtual: true });
+vi.mock('server-only', () => ({}));
 
 // react-markdown은 ESM-only 패키지라 Jest 환경에서 파싱 불가 — 컴포넌트 전체를 stub
 vi.mock('react-markdown', () => () => null);
@@ -158,10 +158,12 @@ vi.mock('@vercel/functions', () => ({
 
 // tanstack query (페이지 default export에서 사용, generateMetadata에는 불필요)
 vi.mock('@tanstack/react-query', () => ({
-    QueryClient: vi.fn().mockImplementation(function() { return {
-        setQueryData: vi.fn(),
-        prefetchQuery: vi.fn(() => Promise.resolve()),
-    }; }),
+    QueryClient: vi.fn().mockImplementation(function () {
+        return {
+            setQueryData: vi.fn(),
+            prefetchQuery: vi.fn(() => Promise.resolve()),
+        };
+    }),
     HydrationBoundary: ({ children }: { children: React.ReactNode }) =>
         children,
     dehydrate: vi.fn(() => ({})),

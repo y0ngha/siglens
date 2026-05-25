@@ -15,10 +15,9 @@ vi.mock('@y0ngha/siglens-core', async () => ({
 // Typed mock
 // ---------------------------------------------------------------------------
 
-const mockCancelOverallAnalysisJob =
-    cancelOverallAnalysisJob as MockedFunction<
-        typeof cancelOverallAnalysisJob
-    >;
+const mockCancelOverallAnalysisJob = cancelOverallAnalysisJob as MockedFunction<
+    typeof cancelOverallAnalysisJob
+>;
 
 // ---------------------------------------------------------------------------
 // Tests

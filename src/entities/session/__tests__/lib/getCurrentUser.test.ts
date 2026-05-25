@@ -1,5 +1,5 @@
 import { vi, type MockedFunction } from 'vitest';
-vi.mock('server-only', () => ({}), { virtual: true });
+vi.mock('server-only', () => ({}));
 vi.mock('next/headers', () => ({ cookies: vi.fn() }));
 vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: vi.fn(() => ({ db: {}, sql: () => null })),
@@ -9,10 +9,14 @@ vi.mock('@/entities/session/lib/sessionCookie', () => ({
     AUTH_SESSION_COOKIE_NAME: 'siglens_session',
 }));
 vi.mock('@/entities/session/api', () => ({
-    DrizzleSessionRepository: vi.fn().mockImplementation(function() { return {}; }),
+    DrizzleSessionRepository: vi.fn().mockImplementation(function () {
+        return {};
+    }),
 }));
 vi.mock('@/entities/user/api', () => ({
-    DrizzleUserRepository: vi.fn().mockImplementation(function() { return {}; }),
+    DrizzleUserRepository: vi.fn().mockImplementation(function () {
+        return {};
+    }),
 }));
 vi.mock('@/entities/user/lib/findUserBySessionToken', () => ({
     findUserBySessionToken: vi.fn(),

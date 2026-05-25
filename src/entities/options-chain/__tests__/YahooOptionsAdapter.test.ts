@@ -14,9 +14,11 @@ const { mockOptionsMethod } = vi.hoisted(() => ({
 
 vi.mock('yahoo-finance2', () => ({
     __esModule: true,
-    default: vi.fn().mockImplementation(function() { return {
-        options: mockOptionsMethod,
-    }; }),
+    default: vi.fn().mockImplementation(function () {
+        return {
+            options: mockOptionsMethod,
+        };
+    }),
 }));
 
 vi.mock('@y0ngha/siglens-core', async () => {
@@ -305,9 +307,7 @@ describe('YahooOptionsAdapter.fetchSnapshot', () => {
     });
 
     it('추가 만기 fetch가 실패해도 그 만기만 누락된 채 스냅샷을 반환한다', async () => {
-        const warnSpy = vi
-            .spyOn(console, 'warn')
-            .mockImplementation(() => {});
+        const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
         (mapExpirationsToSlots as Mock).mockReturnValue([
             {
                 slot: { key: '2M', label: '2개월', targetDays: 60 },
@@ -405,9 +405,7 @@ describe('YahooOptionsAdapter.hasOptionsMarket', () => {
     it('returns false on any library error and logs the failure for diagnostics', async () => {
         // Errors must surface to console.warn so production failures don't
         // hide silently behind the boolean false return (MISTAKES.md §0.5).
-        const warnSpy = vi
-            .spyOn(console, 'warn')
-            .mockImplementation(() => {});
+        const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
         mockOptionsMethod.mockRejectedValue(new Error('unknown symbol'));
         const adapter = makeAdapter();
 

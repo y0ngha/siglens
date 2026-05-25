@@ -21,9 +21,7 @@ import { proxy } from '@/proxy';
 const mockRedirect = NextResponse.redirect as MockedFunction<
     typeof NextResponse.redirect
 >;
-const mockNext = NextResponse.next as MockedFunction<
-    typeof NextResponse.next
->;
+const mockNext = NextResponse.next as MockedFunction<typeof NextResponse.next>;
 
 function makeRequest(
     sessionValue: string | undefined,

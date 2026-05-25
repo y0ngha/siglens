@@ -10,7 +10,9 @@ vi.mock('@/shared/db/client', () => ({
     resetDatabaseClientForTests: vi.fn(),
 }));
 vi.mock('@/entities/session', () => ({
-    DrizzleSessionRepository: vi.fn().mockImplementation(function() { return {}; }),
+    DrizzleSessionRepository: vi.fn().mockImplementation(function () {
+        return {};
+    }),
     bcryptPasswordVerifier: { verifyPassword: vi.fn() },
     applyAuthCookie: vi.fn((c: unknown) => c),
     getAuthDatabaseClient: vi.fn(() => ({ db: {}, sql: () => null })),
@@ -22,7 +24,9 @@ vi.mock('@/entities/session', () => ({
     DEFAULT_SESSION_TTL_SECONDS: 7776000,
 }));
 vi.mock('@/entities/user', () => ({
-    DrizzleUserRepository: vi.fn().mockImplementation(function() { return {}; }),
+    DrizzleUserRepository: vi.fn().mockImplementation(function () {
+        return {};
+    }),
     loginUser: vi.fn(),
 }));
 

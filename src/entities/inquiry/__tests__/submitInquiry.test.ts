@@ -5,12 +5,9 @@ import type { SubmitInquiryDeps } from '../lib/types';
 
 function makeDeps(): {
     deps: SubmitInquiryDeps;
-    create: Mock;
+    create: Mock<ContactRepository['create']>;
 } {
-    const create = vi.fn<
-        ReturnType<ContactRepository['create']>,
-        Parameters<ContactRepository['create']>
-    >();
+    const create = vi.fn<ContactRepository['create']>();
     create.mockResolvedValue(undefined);
     const contactRepository: ContactRepository = { create };
     return {
@@ -37,10 +34,7 @@ describe('submitInquiry', () => {
 
     it('propagates repository errors to the caller', async () => {
         const dbError = new Error('db connection lost');
-        const create = vi.fn<
-            ReturnType<ContactRepository['create']>,
-            Parameters<ContactRepository['create']>
-        >();
+        const create = vi.fn<ContactRepository['create']>();
         create.mockRejectedValue(dbError);
         const deps: SubmitInquiryDeps = {
             contactRepository: { create },

@@ -17,9 +17,7 @@ const mockHeaders = headers as MockedFunction<typeof headers>;
 const mockCreateChatTokenStore = createChatTokenStore as MockedFunction<
     typeof createChatTokenStore
 >;
-const mockHashClientIp = hashClientIp as MockedFunction<
-    typeof hashClientIp
->;
+const mockHashClientIp = hashClientIp as MockedFunction<typeof hashClientIp>;
 const mockGetRemainingTokens = vi.fn();
 
 function makeHeadersMap(xForwardedFor?: string) {

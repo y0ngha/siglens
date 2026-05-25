@@ -17,9 +17,7 @@ vi.mock('@y0ngha/siglens-core', async () => ({
     getReanalyzeCooldownMs: vi.fn(),
 }));
 
-const mockTryAcquire = coreTryAcquire as MockedFunction<
-    typeof coreTryAcquire
->;
+const mockTryAcquire = coreTryAcquire as MockedFunction<typeof coreTryAcquire>;
 const mockRelease = coreRelease as MockedFunction<typeof coreRelease>;
 const mockGetMs = coreGetMs as MockedFunction<typeof coreGetMs>;
 

@@ -1,4 +1,4 @@
-import { vi } from 'vitest';
+
 // release-it 경유 실행 시 `.env.local`의 NEXT_PUBLIC_SITE_URL(=dev URL)이 부모 프로세스에
 // 주입되어 home 엔트리 URL이 'http://localhost:4200'(`siglens.io$` 정규식 미매치)으로
 // 평가될 수 있다. production URL 회귀가드 의도 보존을 위해 import 평가 전에 강제 세팅한다.

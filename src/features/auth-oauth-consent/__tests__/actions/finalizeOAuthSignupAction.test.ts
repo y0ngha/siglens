@@ -1,6 +1,8 @@
 import { vi, type MockedClass, type Mock } from 'vitest';
 vi.mock('@/entities/oauth-account', () => ({
-    DrizzleOAuthAccountRepository: vi.fn().mockImplementation(function() { return {}; }),
+    DrizzleOAuthAccountRepository: vi.fn().mockImplementation(function () {
+        return {};
+    }),
     compositeOAuthRevoker: { revokeToken: vi.fn() },
     createPendingOAuthSignupStore: vi.fn(),
     createPendingOAuthSignupStoreFromEnv: vi.fn(),
@@ -25,15 +27,15 @@ vi.mock('@/entities/session', () => ({
     createAuthSession: vi.fn(),
     DEFAULT_SESSION_TTL_SECONDS: 7776000,
     isSecureCookieEnv: vi.fn(() => false),
-    DrizzleSessionRepository: vi.fn().mockImplementation(function() { return {}; }),
+    DrizzleSessionRepository: vi.fn().mockImplementation(function () {
+        return {};
+    }),
 }));
 vi.mock('next/headers', () => ({
     cookies: vi.fn(),
 }));
 vi.mock('@/shared/lib/auth/redirect', () => ({
-    sanitizeNextPath: vi.fn((p: unknown) =>
-        typeof p === 'string' ? p : '/'
-    ),
+    sanitizeNextPath: vi.fn((p: unknown) => (typeof p === 'string' ? p : '/')),
 }));
 vi.mock('next/navigation', () => ({
     redirect: vi.fn().mockImplementation((url: string) => {
@@ -51,8 +53,7 @@ import { getAuthDatabaseClient, createAuthSession } from '@/entities/session';
 import { cookies } from 'next/headers';
 
 const mockRedirect = redirect as unknown as Mock;
-const mockCreateStore =
-    createPendingOAuthSignupStoreFromEnv as unknown as Mock;
+const mockCreateStore = createPendingOAuthSignupStoreFromEnv as unknown as Mock;
 const MockTermsRepo = DrizzleTermsRepository as MockedClass<
     typeof DrizzleTermsRepository
 >;
@@ -131,34 +132,32 @@ function setupMocks(
         consume: vi.fn().mockResolvedValue(consumeResult),
     });
 
-    MockTermsRepo.mockImplementation(function() {
-            return {
-                findActive: vi
-                    .fn()
-                    .mockImplementation((kind: string) =>
-                        Promise.resolve(
-                            kind === 'privacy' ? privacyTerms : tosTerms
-                        )
-                    ),
-            } as unknown as InstanceType<typeof DrizzleTermsRepository>;
+    MockTermsRepo.mockImplementation(function () {
+        return {
+            findActive: vi
+                .fn()
+                .mockImplementation((kind: string) =>
+                    Promise.resolve(
+                        kind === 'privacy' ? privacyTerms : tosTerms
+                    )
+                ),
+        } as unknown as InstanceType<typeof DrizzleTermsRepository>;
     });
 
-    MockUserRepo.mockImplementation(function() {
-            return {
-                findByEmail: vi.fn().mockResolvedValue(existingUser),
-                createOAuthUser: vi
-                    .fn()
-                    .mockResolvedValue(createOAuthUserResult),
-                deleteUser: vi.fn().mockResolvedValue(true),
-            } as unknown as InstanceType<typeof DrizzleUserRepository>;
+    MockUserRepo.mockImplementation(function () {
+        return {
+            findByEmail: vi.fn().mockResolvedValue(existingUser),
+            createOAuthUser: vi.fn().mockResolvedValue(createOAuthUserResult),
+            deleteUser: vi.fn().mockResolvedValue(true),
+        } as unknown as InstanceType<typeof DrizzleUserRepository>;
     });
 
-    MockAgreementRepo.mockImplementation(function() {
-            return {
-                insertMany: insertManyThrows
-                    ? vi.fn().mockRejectedValue(new Error('db error'))
-                    : vi.fn().mockResolvedValue(undefined),
-            } as unknown as InstanceType<typeof DrizzleAgreementRepository>;
+    MockAgreementRepo.mockImplementation(function () {
+        return {
+            insertMany: insertManyThrows
+                ? vi.fn().mockRejectedValue(new Error('db error'))
+                : vi.fn().mockResolvedValue(undefined),
+        } as unknown as InstanceType<typeof DrizzleAgreementRepository>;
     });
 
     mockGetAuthDb.mockReturnValue({ db: {} });
@@ -236,14 +235,14 @@ describe('finalizeOAuthSignupAction', () => {
         setupMocks({ insertManyThrows: true });
 
         const deleteUser = vi.fn().mockResolvedValue(true);
-        MockUserRepo.mockImplementation(function() {
-                return {
-                    findByEmail: vi.fn().mockResolvedValue(null),
-                    createOAuthUser: vi
-                        .fn()
-                        .mockResolvedValue({ id: 'new-user-id' }),
-                    deleteUser,
-                } as unknown as InstanceType<typeof DrizzleUserRepository>;
+        MockUserRepo.mockImplementation(function () {
+            return {
+                findByEmail: vi.fn().mockResolvedValue(null),
+                createOAuthUser: vi
+                    .fn()
+                    .mockResolvedValue({ id: 'new-user-id' }),
+                deleteUser,
+            } as unknown as InstanceType<typeof DrizzleUserRepository>;
         });
 
         await expectRedirectTo('/login?error=service_unavailable');

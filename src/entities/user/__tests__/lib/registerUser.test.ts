@@ -54,8 +54,10 @@ function makeDependencies(options?: {
             : ({ status: 'verified' } satisfies EmailTokenValue);
     const getToken = vi
         .fn<
-            Promise<EmailTokenValue | null>,
-            [purpose: EmailTokenPurpose, email: string]
+            (
+                purpose: EmailTokenPurpose,
+                email: string
+            ) => Promise<EmailTokenValue | null>
         >()
         .mockResolvedValue(verificationState);
     const deleteToken = vi.fn().mockResolvedValue(undefined);

@@ -10,7 +10,9 @@ vi.mock('@/shared/db/client', () => ({
     resetDatabaseClientForTests: vi.fn(),
 }));
 vi.mock('@/entities/session', () => ({
-    DrizzleSessionRepository: vi.fn().mockImplementation(function() { return {}; }),
+    DrizzleSessionRepository: vi.fn().mockImplementation(function () {
+        return {};
+    }),
     AUTH_SESSION_COOKIE_NAME: 'siglens_session',
     applyAuthCookie: vi.fn((c: unknown) => c),
     getAuthDatabaseClient: vi.fn(() => ({ db: {}, sql: () => null })),

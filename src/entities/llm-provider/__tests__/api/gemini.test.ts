@@ -4,7 +4,7 @@ const { mockGenerateContent } = vi.hoisted(() => ({
 }));
 
 vi.mock('@google/genai', () => {
-    const MockGoogleGenAI = vi.fn(function() {
+    const MockGoogleGenAI = vi.fn(function () {
         return {
             models: {
                 generateContent: mockGenerateContent,

@@ -1,5 +1,5 @@
 import { vi } from 'vitest';
-vi.mock('server-only', () => ({}), { virtual: true });
+vi.mock('server-only', () => ({}));
 
 const { mockGetUserTier, mockFindByUserAndProvider } = vi.hoisted(() => ({
     mockGetUserTier: vi.fn(),
@@ -11,7 +11,9 @@ vi.mock('@/shared/db/client', () => ({
 }));
 
 vi.mock('@/entities/user', () => ({
-    DrizzleUserRepository: vi.fn().mockImplementation(function() { return {}; }),
+    DrizzleUserRepository: vi.fn().mockImplementation(function () {
+        return {};
+    }),
 }));
 
 vi.mock('@/entities/user-tier', () => ({
@@ -22,9 +24,11 @@ vi.mock('@/entities/api-key', async () => {
     const actual = await vi.importActual('@/entities/api-key');
     return {
         ...actual,
-        DrizzleUserApiKeyRepository: vi.fn().mockImplementation(function() { return {
-            findByUserAndProvider: mockFindByUserAndProvider,
-        }; }),
+        DrizzleUserApiKeyRepository: vi.fn().mockImplementation(function () {
+            return {
+                findByUserAndProvider: mockFindByUserAndProvider,
+            };
+        }),
     };
 });
 

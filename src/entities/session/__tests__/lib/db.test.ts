@@ -13,9 +13,7 @@ import {
     resetAuthDatabaseClientForTests,
 } from '@/entities/session/lib/db';
 
-const mockGet = getDatabaseClient as MockedFunction<
-    typeof getDatabaseClient
->;
+const mockGet = getDatabaseClient as MockedFunction<typeof getDatabaseClient>;
 const mockReset = resetDatabaseClientForTests as MockedFunction<
     typeof resetDatabaseClientForTests
 >;

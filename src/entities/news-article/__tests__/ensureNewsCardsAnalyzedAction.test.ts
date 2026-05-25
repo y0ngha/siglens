@@ -29,9 +29,11 @@ vi.mock('@/shared/lib/sleep', () => ({
 }));
 
 vi.mock('../lib/fmpNewsClient', () => ({
-    FmpNewsClient: vi.fn().mockImplementation(function() { return {
-        fetchNewsForPeriod: vi.fn(),
-    }; }),
+    FmpNewsClient: vi.fn().mockImplementation(function () {
+        return {
+            fetchNewsForPeriod: vi.fn(),
+        };
+    }),
 }));
 
 vi.mock('@/shared/db/client', () => ({
@@ -39,11 +41,13 @@ vi.mock('@/shared/db/client', () => ({
 }));
 
 vi.mock('@/entities/news-article', () => ({
-    DrizzleNewsRepository: vi.fn().mockImplementation(function() { return {
-        upsertNewsItem: vi.fn(),
-        attachAnalysis: vi.fn(),
-        listBySymbol: vi.fn().mockResolvedValue([]),
-    }; }),
+    DrizzleNewsRepository: vi.fn().mockImplementation(function () {
+        return {
+            upsertNewsItem: vi.fn(),
+            attachAnalysis: vi.fn(),
+            listBySymbol: vi.fn().mockResolvedValue([]),
+        };
+    }),
 }));
 
 // ---------------------------------------------------------------------------
@@ -55,14 +59,11 @@ import { DrizzleNewsRepository } from '@/entities/news-article';
 const MockNewsRepository = DrizzleNewsRepository as MockedClass<
     typeof DrizzleNewsRepository
 >;
-const MockFmpNewsClient = FmpNewsClient as MockedClass<
-    typeof FmpNewsClient
->;
+const MockFmpNewsClient = FmpNewsClient as MockedClass<typeof FmpNewsClient>;
 
-const mockSubmitNewsCardAnalysis =
-    submitNewsCardAnalysis as MockedFunction<
-        typeof submitNewsCardAnalysis
-    >;
+const mockSubmitNewsCardAnalysis = submitNewsCardAnalysis as MockedFunction<
+    typeof submitNewsCardAnalysis
+>;
 
 const mockPollNewsCardAnalysis = pollNewsCardAnalysis as MockedFunction<
     typeof pollNewsCardAnalysis
@@ -132,10 +133,10 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
         mockAttachAnalysis = vi.fn().mockResolvedValue(undefined);
         mockListBySymbol = vi.fn().mockResolvedValue([]);
 
-        MockFmpNewsClient.mockImplementation(function() {
+        MockFmpNewsClient.mockImplementation(function () {
             return { fetchNewsForPeriod: mockFetchNewsForPeriod } as never;
         });
-        MockNewsRepository.mockImplementation(function() {
+        MockNewsRepository.mockImplementation(function () {
             return {
                 upsertNewsItem: mockUpsertNewsItem,
                 attachAnalysis: mockAttachAnalysis,

@@ -1,4 +1,9 @@
-import { vi, type MockedFunction, type MockedClass, type MockInstance } from 'vitest';
+import {
+    vi,
+    type MockedFunction,
+    type MockedClass,
+    type MockInstance,
+} from 'vitest';
 vi.mock('@/shared/db/client', () => ({
     tryGetDatabaseClient: vi.fn(),
 }));
@@ -61,12 +66,12 @@ describe('loadLongTailTickers', () => {
             db: {} as never,
             sql: {} as never,
         });
-        MockedRepository.mockImplementation(function() {
-                return {
-                    findAll: vi
-                        .fn()
-                        .mockRejectedValue(new Error('DB connection failed')),
-                } as unknown as DrizzleKoreanTickerRepository;
+        MockedRepository.mockImplementation(function () {
+            return {
+                findAll: vi
+                    .fn()
+                    .mockRejectedValue(new Error('DB connection failed')),
+            } as unknown as DrizzleKoreanTickerRepository;
         });
 
         await expect(loadLongTailTickers()).resolves.toEqual([]);
@@ -81,17 +86,17 @@ describe('loadLongTailTickers', () => {
             db: {} as never,
             sql: {} as never,
         });
-        MockedRepository.mockImplementation(function() {
-                return {
-                    findAll: vi
-                        .fn()
-                        .mockResolvedValue([
-                            makeEntry(POPULAR_SAMPLE_1),
-                            makeEntry(POPULAR_SAMPLE_2),
-                            makeEntry('LONGTAIL1'),
-                            makeEntry('LONGTAIL2'),
-                        ]),
-                } as unknown as DrizzleKoreanTickerRepository;
+        MockedRepository.mockImplementation(function () {
+            return {
+                findAll: vi
+                    .fn()
+                    .mockResolvedValue([
+                        makeEntry(POPULAR_SAMPLE_1),
+                        makeEntry(POPULAR_SAMPLE_2),
+                        makeEntry('LONGTAIL1'),
+                        makeEntry('LONGTAIL2'),
+                    ]),
+            } as unknown as DrizzleKoreanTickerRepository;
         });
 
         const result = await loadLongTailTickers();
@@ -105,18 +110,18 @@ describe('loadLongTailTickers', () => {
             db: {} as never,
             sql: {} as never,
         });
-        MockedRepository.mockImplementation(function() {
-                return {
-                    findAll: vi.fn().mockResolvedValue([
-                        makeEntry(POPULAR_SAMPLE_1.toLowerCase()), // 소문자 POPULAR → 제외
-                        makeEntry(
-                            POPULAR_SAMPLE_2.charAt(0) +
-                                POPULAR_SAMPLE_2.slice(1).toLowerCase()
-                        ), // 혼합 POPULAR → 제외
-                        makeEntry('newticker'),
-                        makeEntry('MixedCase'),
-                    ]),
-                } as unknown as DrizzleKoreanTickerRepository;
+        MockedRepository.mockImplementation(function () {
+            return {
+                findAll: vi.fn().mockResolvedValue([
+                    makeEntry(POPULAR_SAMPLE_1.toLowerCase()), // 소문자 POPULAR → 제외
+                    makeEntry(
+                        POPULAR_SAMPLE_2.charAt(0) +
+                            POPULAR_SAMPLE_2.slice(1).toLowerCase()
+                    ), // 혼합 POPULAR → 제외
+                    makeEntry('newticker'),
+                    makeEntry('MixedCase'),
+                ]),
+            } as unknown as DrizzleKoreanTickerRepository;
         });
 
         const result = await loadLongTailTickers();
@@ -128,15 +133,15 @@ describe('loadLongTailTickers', () => {
             db: {} as never,
             sql: {} as never,
         });
-        MockedRepository.mockImplementation(function() {
-                return {
-                    findAll: vi
-                        .fn()
-                        .mockResolvedValue([
-                            makeEntry('OBSCURE1'),
-                            makeEntry('OBSCURE2'),
-                        ]),
-                } as unknown as DrizzleKoreanTickerRepository;
+        MockedRepository.mockImplementation(function () {
+            return {
+                findAll: vi
+                    .fn()
+                    .mockResolvedValue([
+                        makeEntry('OBSCURE1'),
+                        makeEntry('OBSCURE2'),
+                    ]),
+            } as unknown as DrizzleKoreanTickerRepository;
         });
 
         const result = await loadLongTailTickers();
@@ -148,10 +153,10 @@ describe('loadLongTailTickers', () => {
             db: {} as never,
             sql: {} as never,
         });
-        MockedRepository.mockImplementation(function() {
-                return {
-                    findAll: vi.fn().mockResolvedValue([]),
-                } as unknown as DrizzleKoreanTickerRepository;
+        MockedRepository.mockImplementation(function () {
+            return {
+                findAll: vi.fn().mockResolvedValue([]),
+            } as unknown as DrizzleKoreanTickerRepository;
         });
 
         await expect(loadLongTailTickers()).resolves.toEqual([]);

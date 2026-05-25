@@ -11,10 +11,9 @@ vi.mock('@y0ngha/siglens-core', async () => ({
     fetchBarsWithIndicators: vi.fn(),
 }));
 
-const mockFetchBarsWithIndicators =
-    fetchBarsWithIndicators as MockedFunction<
-        typeof fetchBarsWithIndicators
-    >;
+const mockFetchBarsWithIndicators = fetchBarsWithIndicators as MockedFunction<
+    typeof fetchBarsWithIndicators
+>;
 
 const mockBarsData: BarsData = {
     bars: [

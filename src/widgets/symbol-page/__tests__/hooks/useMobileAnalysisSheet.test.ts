@@ -13,10 +13,9 @@ import {
 
 describe('useMobileAnalysisSheet', () => {
     let requestAnimationFrameSpy: MockInstance<
-        number,
-        [FrameRequestCallback]
+        (callback: FrameRequestCallback) => number
     >;
-    let cancelAnimationFrameSpy: MockInstance<void, [number]>;
+    let cancelAnimationFrameSpy: MockInstance<(frameId: number) => void>;
 
     beforeEach(() => {
         vi.useFakeTimers();

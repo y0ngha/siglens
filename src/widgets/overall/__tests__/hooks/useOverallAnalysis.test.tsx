@@ -58,10 +58,9 @@ const mockPollOverall = pollOverallAnalysisAction as MockedFunction<
 const mockPollTechnical = pollAnalysisAction as MockedFunction<
     typeof pollAnalysisAction
 >;
-const mockPollFundamental =
-    pollFundamentalAnalysisAction as MockedFunction<
-        typeof pollFundamentalAnalysisAction
-    >;
+const mockPollFundamental = pollFundamentalAnalysisAction as MockedFunction<
+    typeof pollFundamentalAnalysisAction
+>;
 const mockPollNews = pollNewsAnalysisAction as MockedFunction<
     typeof pollNewsAnalysisAction
 >;

@@ -62,14 +62,18 @@ function makeDependencies(options?: {
 
     const getToken = vi
         .fn<
-            Promise<EmailTokenValue | null>,
-            [purpose: EmailTokenPurpose, email: string]
+            (
+                purpose: EmailTokenPurpose,
+                email: string
+            ) => Promise<EmailTokenValue | null>
         >()
         .mockResolvedValue(peeked);
     const consumeToken = vi
         .fn<
-            Promise<EmailTokenValue | null>,
-            [purpose: EmailTokenPurpose, email: string]
+            (
+                purpose: EmailTokenPurpose,
+                email: string
+            ) => Promise<EmailTokenValue | null>
         >()
         .mockResolvedValue(consumed);
     const findEmailAuthUserByEmail = vi.fn().mockResolvedValue(foundUser);

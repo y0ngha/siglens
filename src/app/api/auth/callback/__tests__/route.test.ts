@@ -5,9 +5,7 @@ vi.mock('@/entities/user', () => ({
 vi.mock('@/entities/session', () => ({
     DrizzleSessionRepository: vi.fn(),
     applyAuthCookie: vi.fn().mockReturnValue({ name: 'auth', value: 'v' }),
-    createAuthHintCookie: vi
-        .fn()
-        .mockReturnValue({ name: 'hint', value: '1' }),
+    createAuthHintCookie: vi.fn().mockReturnValue({ name: 'hint', value: '1' }),
     getAuthDatabaseClient: vi.fn().mockReturnValue({ db: {} }),
     createAuthSession: vi.fn(),
     DEFAULT_SESSION_TTL_SECONDS: 86400,
@@ -121,9 +119,7 @@ const DEFAULT_PARAMS = { params: Promise.resolve({ provider: 'google' }) };
 
 describe('GET /api/auth/callback/[provider]', () => {
     let mockUserRepo: Mocked<InstanceType<typeof DrizzleUserRepository>>;
-    let mockSessionRepo: Mocked<
-        InstanceType<typeof DrizzleSessionRepository>
-    >;
+    let mockSessionRepo: Mocked<InstanceType<typeof DrizzleSessionRepository>>;
 
     beforeEach(() => {
         vi.clearAllMocks();
@@ -143,8 +139,12 @@ describe('GET /api/auth/callback/[provider]', () => {
         } as never;
         mockSessionRepo = {} as never;
 
-        MockUserRepository.mockImplementation(function() { return mockUserRepo; });
-        MockSessionRepository.mockImplementation(function() { return mockSessionRepo; });
+        MockUserRepository.mockImplementation(function () {
+            return mockUserRepo;
+        });
+        MockSessionRepository.mockImplementation(function () {
+            return mockSessionRepo;
+        });
 
         mockCreatePendingOAuthSignupStoreFromEnv.mockReturnValue({
             save: vi.fn().mockResolvedValue('pending-token'),

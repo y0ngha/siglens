@@ -13,7 +13,9 @@ vi.mock('@/shared/db/client', () => ({
 }));
 
 vi.mock('@/entities/user', () => ({
-    DrizzleUserRepository: vi.fn().mockImplementation(function() { return {}; }),
+    DrizzleUserRepository: vi.fn().mockImplementation(function () {
+        return {};
+    }),
 }));
 
 vi.mock('../../lib/getUserTier', () => ({

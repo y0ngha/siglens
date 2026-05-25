@@ -34,7 +34,7 @@ const MockDrizzleUserRepository = DrizzleUserRepository as MockedClass<
 
 function mockUserRepo(existingUser: object | null) {
     const findByEmail = vi.fn().mockResolvedValue(existingUser);
-    MockDrizzleUserRepository.mockImplementation(function() {
+    MockDrizzleUserRepository.mockImplementation(function () {
         return { findByEmail } as unknown as InstanceType<
             typeof DrizzleUserRepository
         >;

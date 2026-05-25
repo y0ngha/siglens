@@ -3,10 +3,12 @@ import { vi } from 'vitest';
 import { TextDecoder, TextEncoder } from 'util';
 
 if (typeof globalThis.TextDecoder === 'undefined') {
-    (globalThis as unknown as { TextDecoder: typeof TextDecoder }).TextDecoder = TextDecoder;
+    (globalThis as unknown as { TextDecoder: typeof TextDecoder }).TextDecoder =
+        TextDecoder;
 }
 if (typeof globalThis.TextEncoder === 'undefined') {
-    (globalThis as unknown as { TextEncoder: typeof TextEncoder }).TextEncoder = TextEncoder;
+    (globalThis as unknown as { TextEncoder: typeof TextEncoder }).TextEncoder =
+        TextEncoder;
 }
 
 process.env.ALPACA_API_KEY = 'test-alpaca-key';
@@ -30,12 +32,20 @@ if (
         setItem: (key: string, value: string) => store.set(key, String(value)),
         removeItem: (key: string) => store.delete(key),
         clear: () => store.clear(),
-        get length() { return store.size; },
+        get length() {
+            return store.size;
+        },
         key: (index: number) => [...store.keys()][index] ?? null,
     };
-    Object.defineProperty(globalThis, 'localStorage', { value: storage, writable: true });
+    Object.defineProperty(globalThis, 'localStorage', {
+        value: storage,
+        writable: true,
+    });
     if (typeof window !== 'undefined') {
-        Object.defineProperty(window, 'localStorage', { value: storage, writable: true });
+        Object.defineProperty(window, 'localStorage', {
+            value: storage,
+            writable: true,
+        });
     }
 }
 

@@ -7,9 +7,7 @@ vi.mock('../../lib/getAssetInfo', () => ({
     getAssetInfo: vi.fn(),
 }));
 
-const mockGetAssetInfo = getAssetInfo as MockedFunction<
-    typeof getAssetInfo
->;
+const mockGetAssetInfo = getAssetInfo as MockedFunction<typeof getAssetInfo>;
 
 const assetInfo = { symbol: 'AAPL' } as AssetInfo;
 

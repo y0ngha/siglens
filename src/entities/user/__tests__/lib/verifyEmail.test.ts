@@ -23,8 +23,10 @@ function makeDependencies(options?: { stored?: EmailTokenValue | null }): {
 
     const getToken = vi
         .fn<
-            Promise<EmailTokenValue | null>,
-            [purpose: EmailTokenPurpose, email: string]
+            (
+                purpose: EmailTokenPurpose,
+                email: string
+            ) => Promise<EmailTokenValue | null>
         >()
         .mockResolvedValue(stored);
     const setToken = vi.fn().mockResolvedValue(undefined);

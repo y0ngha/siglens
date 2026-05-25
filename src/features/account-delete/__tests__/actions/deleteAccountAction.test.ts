@@ -10,11 +10,15 @@ vi.mock('@/shared/db/client', () => ({
     resetDatabaseClientForTests: vi.fn(),
 }));
 vi.mock('@/entities/user', () => ({
-    DrizzleUserRepository: vi.fn().mockImplementation(function() { return {}; }),
+    DrizzleUserRepository: vi.fn().mockImplementation(function () {
+        return {};
+    }),
     deleteAccount: vi.fn(),
 }));
 vi.mock('@/entities/session', () => ({
-    DrizzleSessionRepository: vi.fn().mockImplementation(function() { return {}; }),
+    DrizzleSessionRepository: vi.fn().mockImplementation(function () {
+        return {};
+    }),
     applyAuthCookie: vi.fn((c: unknown) => c),
     getAuthDatabaseClient: vi.fn(() => ({ db: {}, sql: () => null })),
     getCurrentUser: vi.fn(),
@@ -25,9 +29,9 @@ vi.mock('@/entities/session', () => ({
     })),
 }));
 vi.mock('@/entities/oauth-account', () => ({
-    DrizzleOAuthAccountRepository: vi
-        .fn()
-        .mockImplementation(function() { return { findByUserId: vi.fn() }; }),
+    DrizzleOAuthAccountRepository: vi.fn().mockImplementation(function () {
+        return { findByUserId: vi.fn() };
+    }),
     compositeOAuthRevoker: { revokeToken: vi.fn() },
 }));
 

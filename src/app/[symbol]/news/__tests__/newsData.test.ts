@@ -20,18 +20,22 @@ vi.mock('@/shared/db/client', () => ({
 }));
 
 vi.mock('@/entities/earnings-report', () => ({
-    DrizzleEarningsReportsRepository: vi.fn().mockImplementation(function() { return {
-        getLatestFetchedAt: mockGetLatestFetchedAt,
-        getComparisonItems: mockGetComparisonItems,
-        upsertMany: mockUpsertMany,
-    }; }),
+    DrizzleEarningsReportsRepository: vi.fn().mockImplementation(function () {
+        return {
+            getLatestFetchedAt: mockGetLatestFetchedAt,
+            getComparisonItems: mockGetComparisonItems,
+            upsertMany: mockUpsertMany,
+        };
+    }),
 }));
 
 vi.mock('@/shared/api/fmp/fundamentalClient', () => ({
-    FmpFundamentalClient: vi.fn().mockImplementation(function() { return {
-        getEarningsReports: mockGetEarningsReports,
-        getGrades: vi.fn(),
-    }; }),
+    FmpFundamentalClient: vi.fn().mockImplementation(function () {
+        return {
+            getEarningsReports: mockGetEarningsReports,
+            getGrades: vi.fn(),
+        };
+    }),
 }));
 
 import { getEarningsReportComparison } from '@/app/[symbol]/news/newsData';

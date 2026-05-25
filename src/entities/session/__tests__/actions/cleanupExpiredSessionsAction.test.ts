@@ -14,9 +14,11 @@ vi.mock('next/headers', () => ({
 }));
 
 vi.mock('@/entities/session/api', () => ({
-    DrizzleSessionRepository: vi.fn().mockImplementation(function() { return {
-        deleteExpiredSessions: mockDeleteExpiredSessions,
-    }; }),
+    DrizzleSessionRepository: vi.fn().mockImplementation(function () {
+        return {
+            deleteExpiredSessions: mockDeleteExpiredSessions,
+        };
+    }),
 }));
 
 vi.mock('@/entities/session/lib/db', () => ({

@@ -7,7 +7,9 @@ vi.mock('@/entities/session', () => ({
     getAuthDatabaseClient: vi.fn(() => ({ db: {}, sql: () => null })),
 }));
 vi.mock('@/entities/user', () => ({
-    DrizzleUserRepository: vi.fn().mockImplementation(function() { return {}; }),
+    DrizzleUserRepository: vi.fn().mockImplementation(function () {
+        return {};
+    }),
     requestPasswordReset: vi.fn(),
 }));
 vi.mock('@/entities/email-token', () => ({

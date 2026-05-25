@@ -16,10 +16,9 @@ vi.mock('@y0ngha/siglens-core', async () => ({
 // Typed mock
 // ---------------------------------------------------------------------------
 
-const mockPollFundamentalAnalysis =
-    pollFundamentalAnalysis as MockedFunction<
-        typeof pollFundamentalAnalysis
-    >;
+const mockPollFundamentalAnalysis = pollFundamentalAnalysis as MockedFunction<
+    typeof pollFundamentalAnalysis
+>;
 
 const PROCESSING_RESULT: PollFundamentalAnalysisResult = {
     status: 'processing',

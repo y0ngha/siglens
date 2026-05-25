@@ -8,12 +8,13 @@ const { mockImageResponse, mockLoadKoreanFont } = vi.hoisted(() => ({
 }));
 
 vi.mock('next/og', () => ({
-    ImageResponse: vi
-        .fn()
-        .mockImplementation(function(jsx: unknown, opts: unknown) {
-            mockImageResponse(jsx, opts);
-            return { jsx, opts } as unknown;
-        }),
+    ImageResponse: vi.fn().mockImplementation(function (
+        jsx: unknown,
+        opts: unknown
+    ) {
+        mockImageResponse(jsx, opts);
+        return { jsx, opts } as unknown;
+    }),
 }));
 
 vi.mock('../lib/loadKoreanFont', () => ({

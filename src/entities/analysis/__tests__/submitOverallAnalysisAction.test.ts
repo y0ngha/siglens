@@ -17,7 +17,9 @@ vi.mock('@y0ngha/siglens-core', () => ({
 }));
 
 vi.mock('@/shared/api/fmp/fundamentalClient', () => ({
-    FmpFundamentalClient: vi.fn().mockImplementation(function() { return {}; }),
+    FmpFundamentalClient: vi.fn().mockImplementation(function () {
+        return {};
+    }),
 }));
 
 vi.mock('@/shared/db/client', () => ({
@@ -28,9 +30,11 @@ vi.mock('@/entities/news-article', async () => {
     const actual = await vi.importActual('@/entities/news-article');
     return {
         ...actual,
-        DrizzleNewsRepository: vi.fn().mockImplementation(function() { return {
-            listBySymbol: vi.fn(),
-        }; }),
+        DrizzleNewsRepository: vi.fn().mockImplementation(function () {
+            return {
+                listBySymbol: vi.fn(),
+            };
+        }),
     };
 });
 
@@ -184,9 +188,9 @@ describe('submitOverallAnalysisAction 함수는', () => {
         mockListBySymbol = vi.fn().mockResolvedValue([]);
         mockGetNextEarningsReport.mockResolvedValue(null);
 
-        MockNewsRepository.mockImplementation(
-            function() { return { listBySymbol: mockListBySymbol } as never; }
-        );
+        MockNewsRepository.mockImplementation(function () {
+            return { listBySymbol: mockListBySymbol } as never;
+        });
 
         mockGetCurrentUser.mockResolvedValue(null);
         mockResolveTierAndByok.mockResolvedValue({

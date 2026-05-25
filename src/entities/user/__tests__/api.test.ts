@@ -103,9 +103,7 @@ function makeOAuthInsertDb(options: {
     deleteWhere: ReturnType<typeof vi.fn>;
     deleteReturning: ReturnType<typeof vi.fn>;
 } {
-    const deleteReturning = vi
-        .fn()
-        .mockResolvedValue(options.deleteRows ?? []);
+    const deleteReturning = vi.fn().mockResolvedValue(options.deleteRows ?? []);
     const deleteWhere = vi.fn(() => ({ returning: deleteReturning }));
     const deleteFn = vi.fn(() => ({ where: deleteWhere }));
 
