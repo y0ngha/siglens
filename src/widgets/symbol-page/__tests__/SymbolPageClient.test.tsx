@@ -24,10 +24,10 @@ vi.mock('@/widgets/chart', () => ({
     ChartSkeleton: () => <div data-testid="chart-skeleton" />,
     TimeframeSelector: ({
         value,
-        _onChange,
+        onChange: _onChange,
     }: {
         value: string;
-        _onChange: (v: string) => void;
+        onChange: (v: string) => void;
     }) => <div data-testid="timeframe-selector">{value}</div>,
 }));
 

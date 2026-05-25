@@ -51,36 +51,11 @@ vi.mock('@/widgets/backtesting/BacktestCaseList', () => ({
     BacktestCaseList: () => <div data-testid="case-list">Cases</div>,
 }));
 
-vi.mock('@/shared/ui/tabs', () => ({
-    TabsUnderline: ({
-        tabs,
-        activeTab,
-        onChange,
-        ariaLabel,
-    }: {
-        tabs: Array<{ value: string; label: string }>;
-        activeTab: string;
-        onChange: (v: string) => void;
-        ariaLabel: string;
-        size?: string;
-        idPrefix?: string;
-    }) => (
-        <div role="tablist" aria-label={ariaLabel}>
-            {tabs.map(t => (
-                <button
-                    key={t.value}
-                    role="tab"
-                    aria-selected={t.value === activeTab}
-                    onClick={() => onChange(t.value)}
-                >
-                    {t.label}
-                </button>
-            ))}
-        </div>
-    ),
-    buildPanelId: (prefix: string, tab: string) => `${prefix}-panel-${tab}`,
-    buildTabId: (prefix: string, tab: string) => `${prefix}-tab-${tab}`,
-}));
+vi.mock('@/shared/ui/tabs', async () => {
+    const { createTabsUnderlineMock } =
+        await import('./helpers/TabsUnderlineMock');
+    return createTabsUnderlineMock();
+});
 
 describe('Backtesting Filter Flow', () => {
     beforeEach(() => {

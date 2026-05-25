@@ -1,4 +1,6 @@
 import { render, screen } from '@testing-library/react';
+import { LegalBreadcrumb } from '@/widgets/legal/LegalBreadcrumb';
+import { PolicySection } from '@/widgets/legal/PolicySection';
 
 vi.mock('next/navigation', () => ({
     useRouter: () => ({ push: vi.fn(), prefetch: vi.fn() }),
@@ -26,94 +28,62 @@ vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: vi.fn(() => ({ db: {}, sql: () => null })),
 }));
 
-function LegalPageMock({
-    title,
-    content,
-    links,
-}: {
-    title: string;
-    content: string;
-    links: Array<{ href: string; label: string }>;
-}) {
-    const Link = ({
-        href,
-        children,
-    }: {
-        href: string;
-        children: React.ReactNode;
-    }) => <a href={href}>{children}</a>;
-
-    return (
-        <div>
-            <nav aria-label="법적 문서 탐색">
-                {links.map(l => (
-                    <Link key={l.href} href={l.href}>
-                        {l.label}
-                    </Link>
-                ))}
-            </nav>
-            <h1>{title}</h1>
-            <div>{content}</div>
-        </div>
-    );
-}
-
 describe('Legal Page Navigation', () => {
-    const LEGAL_LINKS = [
-        { href: '/privacy', label: '개인정보 처리방침' },
-        { href: '/terms', label: '서비스 이용약관' },
-    ];
+    describe('LegalBreadcrumb', () => {
+        it('renders breadcrumb with page title', () => {
+            render(<LegalBreadcrumb pageTitle="개인정보 처리방침" />);
+            expect(screen.getByText('개인정보 처리방침')).toBeInTheDocument();
+        });
 
-    it('renders privacy page with navigation links', () => {
-        render(
-            <LegalPageMock
-                title="개인정보 처리방침"
-                content="SigLens는 사용자의 개인정보를 보호합니다."
-                links={LEGAL_LINKS}
-            />
-        );
-        expect(
-            screen.getByRole('heading', { name: '개인정보 처리방침' })
-        ).toBeInTheDocument();
-        expect(
-            screen.getByRole('link', { name: '서비스 이용약관' })
-        ).toHaveAttribute('href', '/terms');
+        it('has accessible breadcrumb navigation landmark', () => {
+            render(<LegalBreadcrumb pageTitle="개인정보 처리방침" />);
+            expect(
+                screen.getByRole('navigation', { name: 'breadcrumb' })
+            ).toBeInTheDocument();
+        });
+
+        it('renders link to home page with site name', () => {
+            render(<LegalBreadcrumb pageTitle="서비스 이용약관" />);
+            const homeLink = screen.getByRole('link');
+            expect(homeLink).toHaveAttribute('href', '/');
+        });
+
+        it('marks current page with aria-current', () => {
+            render(<LegalBreadcrumb pageTitle="개인정보 처리방침" />);
+            const currentItem = screen.getByText('개인정보 처리방침');
+            expect(currentItem.closest('[aria-current="page"]')).toBeTruthy();
+        });
     });
 
-    it('renders terms page with correct content', () => {
-        render(
-            <LegalPageMock
-                title="서비스 이용약관"
-                content="SigLens 서비스 이용약관입니다."
-                links={LEGAL_LINKS}
-            />
-        );
-        expect(
-            screen.getByRole('heading', { name: '서비스 이용약관' })
-        ).toBeInTheDocument();
-        expect(
-            screen.getByRole('link', { name: '개인정보 처리방침' })
-        ).toHaveAttribute('href', '/privacy');
-    });
+    describe('PolicySection', () => {
+        it('renders section with id and title', () => {
+            render(
+                <PolicySection id="data-collection" title="개인정보 수집">
+                    <p>수집 항목에 대한 설명입니다.</p>
+                </PolicySection>
+            );
+            expect(
+                screen.getByRole('heading', { name: '개인정보 수집' })
+            ).toBeInTheDocument();
+        });
 
-    it('has accessible navigation landmark', () => {
-        render(
-            <LegalPageMock
-                title="개인정보 처리방침"
-                content=""
-                links={LEGAL_LINKS}
-            />
-        );
-        expect(
-            screen.getByRole('navigation', { name: '법적 문서 탐색' })
-        ).toBeInTheDocument();
-    });
+        it('renders children content', () => {
+            render(
+                <PolicySection id="usage" title="개인정보 이용">
+                    <p>이용 목적 설명</p>
+                </PolicySection>
+            );
+            expect(screen.getByText('이용 목적 설명')).toBeInTheDocument();
+        });
 
-    it('all legal links have valid hrefs', () => {
-        render(<LegalPageMock title="" content="" links={LEGAL_LINKS} />);
-        const links = screen.getAllByRole('link');
-        for (const link of links) {
-            expect(link.getAttribute('href')).toMatch(/^\/(privacy|terms)/);
-        }
+        it('has correct id attribute for anchor navigation', () => {
+            const { container } = render(
+                <PolicySection id="retention" title="보유기간">
+                    <p>보유기간 설명</p>
+                </PolicySection>
+            );
+            const section = container.querySelector('#retention');
+            expect(section).toBeTruthy();
+        });
     });
 });

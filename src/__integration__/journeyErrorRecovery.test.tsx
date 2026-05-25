@@ -1,5 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { NewsAiSummaryError } from '@/widgets/news/NewsAiSummaryError';
+import { AnalysisProgress } from '@/widgets/analysis/AnalysisProgress';
 
 vi.mock('next/navigation', () => ({
     useRouter: () => ({ push: vi.fn(), prefetch: vi.fn() }),
@@ -11,247 +13,125 @@ vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: vi.fn(() => ({ db: {}, sql: () => null })),
 }));
 
-interface ErrorBoundaryMockProps {
-    error: string | null;
-    onRetry: () => void;
-    children: React.ReactNode;
-}
+vi.mock('@/widgets/symbol-page', () => ({
+    ANALYSIS_PHASES: [
+        '데이터 수집',
+        '패턴 분석',
+        '시그널 종합',
+        'AI 판단',
+        '보고서 작성',
+    ],
+    ANALYSIS_TIPS: ['팁 1', '팁 2'],
+}));
 
-function ErrorBoundaryMock({
-    error,
-    onRetry,
-    children,
-}: ErrorBoundaryMockProps) {
-    if (error) {
-        return (
-            <div role="alert">
-                <p data-testid="error-message">{error}</p>
-                <button onClick={onRetry}>다시 시도</button>
-            </div>
-        );
-    }
-    return <>{children}</>;
-}
-
-interface AnalysisWithErrorProps {
-    status: 'idle' | 'loading' | 'success' | 'error' | 'timeout';
-    onRetry: () => void;
-    onCancel: () => void;
-}
-
-function AnalysisWithError({
-    status,
-    onRetry,
-    onCancel,
-}: AnalysisWithErrorProps) {
-    if (status === 'loading') {
-        return (
-            <div>
-                <div data-testid="analysis-loading">분석 중...</div>
-                <button onClick={onCancel}>취소</button>
-            </div>
-        );
-    }
-    if (status === 'timeout') {
-        return (
-            <ErrorBoundaryMock
-                error="분석 시간이 초과되었습니다."
-                onRetry={onRetry}
-            >
-                <div />
-            </ErrorBoundaryMock>
-        );
-    }
-    if (status === 'error') {
-        return (
-            <ErrorBoundaryMock error="분석에 실패했습니다." onRetry={onRetry}>
-                <div />
-            </ErrorBoundaryMock>
-        );
-    }
-    if (status === 'success') {
-        return <div data-testid="analysis-result">분석 결과</div>;
-    }
-    return <div data-testid="analysis-idle">대기 중</div>;
-}
-
-interface NewsWithErrorProps {
-    status: 'loading' | 'success' | 'error';
-    onRetry: () => void;
-}
-
-function NewsWithError({ status, onRetry }: NewsWithErrorProps) {
-    if (status === 'loading') {
-        return <div data-testid="news-loading">뉴스 로딩 중...</div>;
-    }
-    if (status === 'error') {
-        return (
-            <ErrorBoundaryMock
-                error="뉴스를 불러올 수 없습니다."
-                onRetry={onRetry}
-            >
-                <div />
-            </ErrorBoundaryMock>
-        );
-    }
-    return <div data-testid="news-content">뉴스 목록</div>;
-}
+vi.mock('./AdBanner', () => ({
+    AdBanner: () => null,
+}));
 
 describe('Journey: Error Recovery', () => {
-    describe('Analysis timeout -> Retry', () => {
-        it('shows timeout error with retry button', () => {
+    describe('News error fallback — NewsAiSummaryError', () => {
+        it('renders error message from Error instance', () => {
+            const error = new Error('뉴스를 불러올 수 없습니다.');
             render(
-                <AnalysisWithError
-                    status="timeout"
-                    onRetry={vi.fn()}
-                    onCancel={vi.fn()}
+                <NewsAiSummaryError
+                    error={error}
+                    resetErrorBoundary={vi.fn()}
                 />
             );
             expect(
-                screen.getByText('분석 시간이 초과되었습니다.')
+                screen.getByText('뉴스를 불러올 수 없습니다.')
             ).toBeInTheDocument();
+        });
+
+        it('renders retry button', () => {
+            const error = new Error('네트워크 오류');
+            render(
+                <NewsAiSummaryError
+                    error={error}
+                    resetErrorBoundary={vi.fn()}
+                />
+            );
             expect(
                 screen.getByRole('button', { name: '다시 시도' })
             ).toBeInTheDocument();
         });
 
-        it('calls retry handler on button click', async () => {
-            const onRetry = vi.fn();
+        it('calls resetErrorBoundary on retry click', async () => {
+            const resetFn = vi.fn();
+            const error = new Error('오류');
             render(
-                <AnalysisWithError
-                    status="timeout"
-                    onRetry={onRetry}
-                    onCancel={vi.fn()}
+                <NewsAiSummaryError
+                    error={error}
+                    resetErrorBoundary={resetFn}
                 />
             );
             const user = userEvent.setup();
             await user.click(screen.getByRole('button', { name: '다시 시도' }));
-            expect(onRetry).toHaveBeenCalledTimes(1);
+            expect(resetFn).toHaveBeenCalledTimes(1);
         });
-    });
 
-    describe('Cancel loading analysis', () => {
-        it('shows cancel button during loading', () => {
+        it('renders default message for non-Error values', () => {
             render(
-                <AnalysisWithError
-                    status="loading"
-                    onRetry={vi.fn()}
-                    onCancel={vi.fn()}
+                <NewsAiSummaryError
+                    error="string error"
+                    resetErrorBoundary={vi.fn()}
                 />
             );
-            expect(screen.getByTestId('analysis-loading')).toBeInTheDocument();
             expect(
-                screen.getByRole('button', { name: '취소' })
+                screen.getByText('분석 중 오류가 발생했습니다.')
             ).toBeInTheDocument();
         });
 
-        it('calls cancel handler', async () => {
-            const onCancel = vi.fn();
+        it('has accessible alert role', () => {
+            const error = new Error('오류');
             render(
-                <AnalysisWithError
-                    status="loading"
-                    onRetry={vi.fn()}
-                    onCancel={onCancel}
+                <NewsAiSummaryError
+                    error={error}
+                    resetErrorBoundary={vi.fn()}
                 />
             );
-            const user = userEvent.setup();
-            await user.click(screen.getByRole('button', { name: '취소' }));
-            expect(onCancel).toHaveBeenCalledTimes(1);
+            expect(screen.getByRole('alert')).toBeInTheDocument();
         });
     });
 
-    describe('Analysis error -> Retry -> Success', () => {
-        it('transitions from error to success after retry', () => {
+    describe('Analysis progress indicator — AnalysisProgress', () => {
+        it('renders progress status with aria attributes', () => {
+            render(<AnalysisProgress phaseIndex={0} tipIndex={0} />);
+            expect(
+                screen.getByRole('status', { name: 'AI 분석 진행 중' })
+            ).toBeInTheDocument();
+        });
+
+        it('displays current phase message', () => {
+            render(<AnalysisProgress phaseIndex={1} tipIndex={0} />);
+            expect(screen.getByText('패턴 분석')).toBeInTheDocument();
+        });
+
+        it('displays current tip', () => {
+            render(<AnalysisProgress phaseIndex={0} tipIndex={1} />);
+            expect(screen.getByText('팁 2')).toBeInTheDocument();
+        });
+    });
+
+    describe('Error -> Retry -> Recovery transition', () => {
+        it('transitions from news error to recovered state', () => {
+            const resetFn = vi.fn();
+            const error = new Error('뉴스를 불러올 수 없습니다.');
             const { rerender } = render(
-                <AnalysisWithError
-                    status="error"
-                    onRetry={vi.fn()}
-                    onCancel={vi.fn()}
+                <NewsAiSummaryError
+                    error={error}
+                    resetErrorBoundary={resetFn}
                 />
             );
             expect(
-                screen.getByText('분석에 실패했습니다.')
+                screen.getByText('뉴스를 불러올 수 없습니다.')
             ).toBeInTheDocument();
 
-            rerender(
-                <AnalysisWithError
-                    status="success"
-                    onRetry={vi.fn()}
-                    onCancel={vi.fn()}
-                />
-            );
-            expect(screen.getByTestId('analysis-result')).toBeInTheDocument();
+            rerender(<div data-testid="news-recovered">뉴스 목록</div>);
+            expect(screen.getByTestId('news-recovered')).toBeInTheDocument();
             expect(
-                screen.queryByText('분석에 실패했습니다.')
+                screen.queryByText('뉴스를 불러올 수 없습니다.')
             ).not.toBeInTheDocument();
-        });
-    });
-
-    describe('News failure -> Retry', () => {
-        it('shows news error with retry option', () => {
-            render(<NewsWithError status="error" onRetry={vi.fn()} />);
-            expect(
-                screen.getByText('뉴스를 불러올 수 없습니다.')
-            ).toBeInTheDocument();
-        });
-
-        it('recovers from news error after retry', () => {
-            const { rerender } = render(
-                <NewsWithError status="error" onRetry={vi.fn()} />
-            );
-            expect(
-                screen.getByText('뉴스를 불러올 수 없습니다.')
-            ).toBeInTheDocument();
-
-            rerender(<NewsWithError status="success" onRetry={vi.fn()} />);
-            expect(screen.getByTestId('news-content')).toBeInTheDocument();
-        });
-    });
-
-    describe('Multiple error states in sequence', () => {
-        it('handles analysis timeout -> retry -> news error -> retry', () => {
-            const { rerender } = render(
-                <div>
-                    <AnalysisWithError
-                        status="timeout"
-                        onRetry={vi.fn()}
-                        onCancel={vi.fn()}
-                    />
-                    <NewsWithError status="loading" onRetry={vi.fn()} />
-                </div>
-            );
-            expect(
-                screen.getByText('분석 시간이 초과되었습니다.')
-            ).toBeInTheDocument();
-            expect(screen.getByTestId('news-loading')).toBeInTheDocument();
-
-            rerender(
-                <div>
-                    <AnalysisWithError
-                        status="success"
-                        onRetry={vi.fn()}
-                        onCancel={vi.fn()}
-                    />
-                    <NewsWithError status="error" onRetry={vi.fn()} />
-                </div>
-            );
-            expect(screen.getByTestId('analysis-result')).toBeInTheDocument();
-            expect(
-                screen.getByText('뉴스를 불러올 수 없습니다.')
-            ).toBeInTheDocument();
-
-            rerender(
-                <div>
-                    <AnalysisWithError
-                        status="success"
-                        onRetry={vi.fn()}
-                        onCancel={vi.fn()}
-                    />
-                    <NewsWithError status="success" onRetry={vi.fn()} />
-                </div>
-            );
-            expect(screen.getByTestId('analysis-result')).toBeInTheDocument();
-            expect(screen.getByTestId('news-content')).toBeInTheDocument();
         });
     });
 });

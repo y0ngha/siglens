@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import {
     SNAP_POINTS_MUTABLE,
     type SnapPoint,
@@ -87,8 +88,6 @@ describe('Mobile Sheet Interaction', () => {
     });
 
     it('calls onSnapChange when expand button is clicked', async () => {
-        const { default: userEvent } =
-            await import('@testing-library/user-event');
         const onSnap = vi.fn();
         render(
             <MockMobileSheet
@@ -102,8 +101,6 @@ describe('Mobile Sheet Interaction', () => {
     });
 
     it('calls onSnapChange when collapse button is clicked', async () => {
-        const { default: userEvent } =
-            await import('@testing-library/user-event');
         const onSnap = vi.fn();
         render(<MockMobileSheet snap={1} onSnapChange={onSnap} />);
         const user = userEvent.setup();

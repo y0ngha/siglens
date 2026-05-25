@@ -16,16 +16,6 @@ let mockNewsState = {
     error: null as Error | null,
 };
 
-vi.mock('@/widgets/news/hooks/useNewsAnalysis', () => ({
-    useNewsAnalysis: () => mockNewsState,
-}));
-
-vi.mock('@/widgets/news/NewsAiSummary', () => ({
-    NewsAiSummary: ({ symbol }: { symbol: string }) => (
-        <div data-testid="news-ai-summary">AI Summary for {symbol}</div>
-    ),
-}));
-
 function NewsPageMock({ symbol }: { symbol: string }) {
     return (
         <div>

@@ -38,34 +38,11 @@ vi.mock('@/shared/config/dashboard-tickers', () => ({
     ],
 }));
 
-vi.mock('@/shared/ui/tabs', () => ({
-    TabsUnderline: ({
-        tabs,
-        activeTab,
-        onChange,
-        ariaLabel,
-    }: {
-        tabs: Array<{ value: string; label: string }>;
-        activeTab: string;
-        onChange: (v: string) => void;
-        ariaLabel: string;
-        size?: string;
-        idPrefix?: string;
-    }) => (
-        <div role="tablist" aria-label={ariaLabel}>
-            {tabs.map(t => (
-                <button
-                    key={t.value}
-                    role="tab"
-                    aria-selected={t.value === activeTab}
-                    onClick={() => onChange(t.value)}
-                >
-                    {t.label}
-                </button>
-            ))}
-        </div>
-    ),
-}));
+vi.mock('@/shared/ui/tabs', async () => {
+    const { createTabsUnderlineMock } =
+        await import('./helpers/TabsUnderlineMock');
+    return createTabsUnderlineMock();
+});
 
 describe('Dashboard Navigation', () => {
     describe('SectorTabs', () => {
