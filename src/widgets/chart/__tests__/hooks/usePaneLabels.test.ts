@@ -16,6 +16,10 @@ class MockResizeObserver {
 
 vi.stubGlobal('ResizeObserver', MockResizeObserver);
 
+afterAll(() => {
+    vi.unstubAllGlobals();
+});
+
 function makeChartRef(chart: unknown = null) {
     return { current: chart } as Parameters<
         typeof usePaneLabels
