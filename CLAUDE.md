@@ -264,11 +264,9 @@ yarn lint:style
 yarn lint:style-fix
 
 # Test
-yarn test
-yarn test-watch
-yarn test-coverage
-yarn test-coverage-watch
-yarn test-coverage-report
+yarn test              # vitest run
+yarn test-watch        # vitest (watch mode)
+yarn test-coverage     # vitest run --coverage
 
 # Format
 yarn format
