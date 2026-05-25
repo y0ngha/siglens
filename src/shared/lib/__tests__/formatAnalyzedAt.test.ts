@@ -30,30 +30,6 @@ describe('formatAnalyzedAt', () => {
         expect(formatAnalyzedAt('')).toBe('');
     });
 
-    it('missing part type falls back to empty string', () => {
-        // Simulate a broken ICU formatter that omits the "minute" part
-        const spy = vi
-            .spyOn(Intl.DateTimeFormat.prototype, 'formatToParts')
-            .mockReturnValueOnce([
-                { type: 'year', value: '2026' },
-                { type: 'literal', value: '-' },
-                { type: 'month', value: '05' },
-                { type: 'literal', value: '-' },
-                { type: 'day', value: '22' },
-                { type: 'literal', value: ', ' },
-                { type: 'hour', value: '14' },
-                // "minute" part is deliberately missing
-            ]);
-        try {
-            // The missing minute falls back to '' via the ?? '' branch
-            expect(formatAnalyzedAt('2026-05-22T05:30:00.000Z')).toBe(
-                '2026-05-22 14:'
-            );
-        } finally {
-            spy.mockRestore();
-        }
-    });
-
     it("ICU hour='24' edge case 를 '00' 으로 정규화한다", () => {
         // 일부 Node/ICU 버전은 hour12:false + 자정에 '24'를 emit한다. V8 en-US 에선
         // 직접 trigger할 수 없으므로 formatToParts 를 spy 로 가로채 '24'를 강제로

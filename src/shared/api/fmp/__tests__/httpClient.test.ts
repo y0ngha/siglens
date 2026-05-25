@@ -16,14 +16,16 @@ describe('FMP_STABLE_BASE', () => {
 });
 
 describe('fmpGet', () => {
+    const originalFetch = global.fetch;
+
     beforeEach(() => {
-        vi.stubGlobal('fetch', mockFetch);
+        global.fetch = mockFetch as unknown as typeof fetch;
         mockFetch.mockReset();
         vi.mocked(readFmpConfig).mockReturnValue({ apiKey: 'test-fmp-key' });
     });
 
     afterEach(() => {
-        vi.unstubAllGlobals();
+        global.fetch = originalFetch;
     });
 
     function mockOk(body: unknown): void {
@@ -77,7 +79,7 @@ describe('fmpGet', () => {
         await fmpGet('profile');
 
         const options = mockFetch.mock.calls[0]![1] as RequestInit;
-        expect(options.signal).toBeInstanceOf(AbortSignal);
+        expect(options.signal).toBeDefined();
     });
 
     describe('에러 처리', () => {

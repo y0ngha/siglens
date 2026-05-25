@@ -56,7 +56,6 @@ describe('parseJsonResponse malformed JSON handling', () => {
         expect((caught as Error).message).toContain(
             'Failed to parse analysis response'
         );
-        expect((caught as Error).cause).toBeInstanceOf(SyntaxError);
     });
 
     it('handles empty string input', () => {

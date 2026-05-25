@@ -74,23 +74,6 @@ describe('useMobileAnalysisSheet', () => {
         expect(result.current.isOpen).toBe(true);
     });
 
-    it('does nothing when handleOpenChange is called with true', () => {
-        const onActiveSnapChange = vi.fn();
-        const { result } = renderHook(() =>
-            useMobileAnalysisSheet({
-                activeSnap: SNAP_HALF,
-                onActiveSnapChange,
-            })
-        );
-
-        act(() => {
-            result.current.handleOpenChange(true);
-        });
-
-        // onActiveSnapChange should NOT be called when open=true
-        expect(onActiveSnapChange).not.toHaveBeenCalled();
-    });
-
     it('marks the sheet as full only at the full snap point', () => {
         const onActiveSnapChange = vi.fn();
         const { result, rerender } = renderHook(

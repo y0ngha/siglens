@@ -69,7 +69,7 @@ describe('useBriefing', () => {
         client.clear();
     });
 
-    it('throws when poll returns error (initial render returns processing)', async () => {
+    it('stays in processing when poll returns error', async () => {
         mockPoll.mockResolvedValue({
             status: 'error',
             error: 'Server failure',

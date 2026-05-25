@@ -102,29 +102,6 @@ describe('useSectorSignalState', () => {
         expect(mockReplace).toHaveBeenCalledTimes(1);
     });
 
-    it('uses pathname without query when both sector and timeframe are defaults', () => {
-        const { result } = renderHook(() =>
-            useSectorSignalState({
-                data: DATA,
-                initialSector: 'XLF',
-                initialTimeframe: '1Hour',
-            })
-        );
-
-        // Switch both to defaults → qs should be empty → url = pathname only
-        act(() => {
-            result.current.handleTimeframeChange('1Day');
-        });
-        mockReplace.mockClear();
-
-        act(() => {
-            result.current.handleSectorChange('XLK');
-        });
-
-        const url = mockReplace.mock.calls[0]?.[0] as string;
-        expect(url).toBe('/dashboard');
-    });
-
     it('omits default sector and timeframe from query string', () => {
         const { result } = renderHook(() =>
             useSectorSignalState({

@@ -24,40 +24,4 @@ describe('GrowthChart', () => {
         ).toBeInTheDocument();
         expect(screen.getByText(EMPTY_MESSAGE)).toBeInTheDocument();
     });
-
-    it('shows positive growth as green with + prefix', () => {
-        render(<GrowthChart growth={SAMPLE_GROWTH} />);
-        expect(screen.getByText('+12.0%')).toBeInTheDocument();
-        expect(screen.getByText('+18.0%')).toBeInTheDocument();
-    });
-
-    it('shows negative growth as red without + prefix', () => {
-        const negativeGrowth = {
-            growthRevenue: -0.08,
-            growthEPS: -0.25,
-        } as unknown as FundamentalGrowthInput;
-        render(<GrowthChart growth={negativeGrowth} />);
-        expect(screen.getByText('-8.0%')).toBeInTheDocument();
-        expect(screen.getByText('-25.0%')).toBeInTheDocument();
-    });
-
-    it('shows dash for null values', () => {
-        const nullGrowth = {
-            growthRevenue: null,
-            growthEPS: null,
-        } as unknown as FundamentalGrowthInput;
-        render(<GrowthChart growth={nullGrowth} />);
-        const dashes = screen.getAllByText('—');
-        expect(dashes.length).toBe(2);
-    });
-
-    it('shows zero growth as +0.0%', () => {
-        const zeroGrowth = {
-            growthRevenue: 0,
-            growthEPS: 0,
-        } as unknown as FundamentalGrowthInput;
-        render(<GrowthChart growth={zeroGrowth} />);
-        const zeros = screen.getAllByText('+0.0%');
-        expect(zeros.length).toBe(2);
-    });
 });

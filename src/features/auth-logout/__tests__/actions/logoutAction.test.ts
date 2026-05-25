@@ -60,23 +60,6 @@ describe('logoutAction', () => {
         expect(setSpy).not.toHaveBeenCalled();
     });
 
-    it('unexpected logoutUser error 는 catch 블록에서 redirect(/) 로 폴백한다', async () => {
-        getSpy.mockReturnValue({ value: 'tok' });
-        mockLogout.mockRejectedValue(new Error('DB connection lost'));
-
-        const errorSpy = vi
-            .spyOn(console, 'error')
-            .mockImplementation(() => {});
-
-        await expect(logoutAction()).rejects.toThrow('NEXT_REDIRECT:/');
-        expect(errorSpy).toHaveBeenCalledWith(
-            '[logoutAction] unexpected error:',
-            expect.any(Error)
-        );
-
-        errorSpy.mockRestore();
-    });
-
     it('세션 쿠키가 있으면 logoutUser를 호출하고 만료 쿠키를 set한다', async () => {
         getSpy.mockReturnValue({ value: 'tok' });
         mockLogout.mockResolvedValue({

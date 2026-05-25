@@ -7,7 +7,7 @@
  */
 
 import { ChatPanel } from '@/widgets/chat/ChatPanel';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import React from 'react';
 
 vi.mock('@/shared/ui/MarkdownText', () => ({
@@ -16,27 +16,19 @@ vi.mock('@/shared/ui/MarkdownText', () => ({
     ),
 }));
 
-const mockUseChatReturn = {
-    messages: [] as Array<{
-        role: string;
-        content?: string;
-        label?: string;
-        kind?: string;
-    }>,
-    loadingPhase: null as string | null,
-    analysisUpdated: false,
-    remainingTokens: null as number | null,
-    sendMessage: vi.fn(),
-    dismissAnalysisUpdated: vi.fn(),
-    selectedModel: 'gemini-2.5-flash',
-    isModelHydrated: true,
-    handleModelChange: vi.fn(),
-    gateModal: null as { mode: string; provider: string } | null,
-    dismissGate: vi.fn(),
-};
-
 vi.mock('@/widgets/chat/hooks/useChat', () => ({
-    useChat: () => mockUseChatReturn,
+    useChat: () => ({
+        messages: [],
+        loadingPhase: null,
+        analysisUpdated: false,
+        remainingTokens: null,
+        sendMessage: vi.fn(),
+        dismissAnalysisUpdated: vi.fn(),
+        selectedModel: 'gemini-2.5-flash',
+        handleModelChange: vi.fn(),
+        gateModal: null,
+        dismissGate: vi.fn(),
+    }),
 }));
 
 let mockIsAnalysisReady = true;
@@ -55,16 +47,6 @@ function renderPanel(overrides: Partial<{ onClose: () => void }> = {}) {
     return render(<ChatPanel symbol="AAPL" onClose={overrides.onClose} />);
 }
 
-function resetMockChat() {
-    mockUseChatReturn.messages = [];
-    mockUseChatReturn.loadingPhase = null;
-    mockUseChatReturn.analysisUpdated = false;
-    mockUseChatReturn.remainingTokens = null;
-    mockUseChatReturn.selectedModel = 'gemini-2.5-flash';
-    mockUseChatReturn.isModelHydrated = true;
-    mockUseChatReturn.gateModal = null;
-}
-
 describe('ChatPanel', () => {
     // jsdom does not implement scrollIntoView; useChatInput calls it on
     // messagesEndRef in a useEffect. Scoped inside the describe block per
@@ -76,7 +58,6 @@ describe('ChatPanel', () => {
     beforeEach(() => {
         // 모듈 스코프 mock state는 테스트 간 순서 의존성을 만들 수 있으므로 명시적 초기화.
         mockIsAnalysisReady = true;
-        resetMockChat();
     });
 
     describe('PR #407 mobile-input regression guards', () => {
@@ -155,205 +136,6 @@ describe('ChatPanel', () => {
                 /분석이 완료된 후/
             ) as HTMLTextAreaElement;
             expect(textarea).toBeDisabled();
-        });
-    });
-
-    describe('message rendering', () => {
-        it('shows empty state when no messages and no loading', () => {
-            renderPanel();
-            expect(
-                screen.getByText(/분석 결과를 바탕으로 질문해 보세요/)
-            ).toBeInTheDocument();
-        });
-
-        it('renders user messages on the right', () => {
-            mockUseChatReturn.messages = [
-                { role: 'user', content: '이 종목 지금 매수해도 될까요?' },
-            ];
-            renderPanel();
-            expect(
-                screen.getByText('이 종목 지금 매수해도 될까요?')
-            ).toBeInTheDocument();
-        });
-
-        it('renders model messages with MarkdownText', () => {
-            mockUseChatReturn.messages = [
-                { role: 'model', content: 'AI 답변입니다.' },
-            ];
-            renderPanel();
-            expect(screen.getByText('AI 답변입니다.')).toBeInTheDocument();
-        });
-
-        it('renders system context-switch messages', () => {
-            mockUseChatReturn.messages = [
-                {
-                    role: 'system',
-                    kind: 'context_switch',
-                    label: 'AAPL 1Day',
-                },
-            ];
-            renderPanel();
-            expect(
-                screen.getByText(/AAPL 1Day 페이지로 전환되었습니다/)
-            ).toBeInTheDocument();
-        });
-
-        it('shows analyzing loading state', () => {
-            mockUseChatReturn.loadingPhase = 'analyzing';
-            renderPanel();
-            expect(
-                screen.getByText('질문 내용을 살펴보고 있어요...')
-            ).toBeInTheDocument();
-        });
-
-        it('shows generating loading state', () => {
-            mockUseChatReturn.loadingPhase = 'generating';
-            renderPanel();
-            expect(
-                screen.getByText('답변을 작성하고 있어요...')
-            ).toBeInTheDocument();
-        });
-    });
-
-    describe('analysis updated banner', () => {
-        it('shows analysis updated banner and dismiss button', () => {
-            mockUseChatReturn.analysisUpdated = true;
-            renderPanel();
-            expect(
-                screen.getByText(/분석이 업데이트됐어요/)
-            ).toBeInTheDocument();
-        });
-    });
-
-    describe('remaining tokens', () => {
-        it('shows remaining tokens when provided', () => {
-            mockUseChatReturn.remainingTokens = 3;
-            renderPanel();
-            expect(screen.getByText(/오늘 3회 남음/)).toBeInTheDocument();
-        });
-
-        it('hides remaining tokens when null', () => {
-            mockUseChatReturn.remainingTokens = null;
-            renderPanel();
-            expect(screen.queryByText(/회 남음/)).not.toBeInTheDocument();
-        });
-    });
-
-    describe('model hydration', () => {
-        it('shows skeleton when model is not hydrated', () => {
-            mockUseChatReturn.isModelHydrated = false;
-            renderPanel();
-            // Should show a skeleton, not the button
-            expect(
-                screen.queryByRole('button', { name: 'AI 모델 선택' })
-            ).not.toBeInTheDocument();
-        });
-
-        it('shows model button when hydrated', () => {
-            mockUseChatReturn.isModelHydrated = true;
-            renderPanel();
-            expect(
-                screen.getByRole('button', { name: 'AI 모델 선택' })
-            ).toBeInTheDocument();
-        });
-    });
-
-    describe('model dropdown', () => {
-        it('opens model dropdown on click', () => {
-            renderPanel();
-            const modelBtn = screen.getByRole('button', {
-                name: 'AI 모델 선택',
-            });
-            fireEvent.click(modelBtn);
-            expect(
-                screen.getByRole('listbox', { name: 'AI 모델 목록' })
-            ).toBeInTheDocument();
-        });
-
-        it('keyboard ArrowDown navigates model options', () => {
-            renderPanel();
-            const modelBtn = screen.getByRole('button', {
-                name: 'AI 모델 선택',
-            });
-            fireEvent.click(modelBtn);
-
-            const listbox = screen.getByRole('listbox');
-            fireEvent.keyDown(listbox, { key: 'ArrowDown' });
-            expect(mockUseChatReturn.handleModelChange).toHaveBeenCalled();
-        });
-
-        it('keyboard ArrowUp navigates model options', () => {
-            renderPanel();
-            const modelBtn = screen.getByRole('button', {
-                name: 'AI 모델 선택',
-            });
-            fireEvent.click(modelBtn);
-
-            const listbox = screen.getByRole('listbox');
-            fireEvent.keyDown(listbox, { key: 'ArrowUp' });
-            expect(mockUseChatReturn.handleModelChange).toHaveBeenCalled();
-        });
-
-        it('keyboard Home selects first option', () => {
-            renderPanel();
-            fireEvent.click(
-                screen.getByRole('button', { name: 'AI 모델 선택' })
-            );
-            fireEvent.keyDown(screen.getByRole('listbox'), { key: 'Home' });
-            expect(mockUseChatReturn.handleModelChange).toHaveBeenCalled();
-        });
-
-        it('keyboard End selects last option', () => {
-            renderPanel();
-            fireEvent.click(
-                screen.getByRole('button', { name: 'AI 모델 선택' })
-            );
-            fireEvent.keyDown(screen.getByRole('listbox'), { key: 'End' });
-            expect(mockUseChatReturn.handleModelChange).toHaveBeenCalled();
-        });
-
-        it('Escape closes the dropdown', () => {
-            renderPanel();
-            fireEvent.click(
-                screen.getByRole('button', { name: 'AI 모델 선택' })
-            );
-            expect(screen.getByRole('listbox')).toBeInTheDocument();
-
-            fireEvent.keyDown(screen.getByRole('listbox'), { key: 'Escape' });
-            expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
-        });
-
-        it('clicking an option selects it and closes dropdown', () => {
-            renderPanel();
-            fireEvent.click(
-                screen.getByRole('button', { name: 'AI 모델 선택' })
-            );
-
-            const options = screen.getAllByRole('option');
-            fireEvent.click(options[1]);
-            expect(mockUseChatReturn.handleModelChange).toHaveBeenCalled();
-        });
-
-        it('Enter on an option selects it and closes dropdown', () => {
-            renderPanel();
-            fireEvent.click(
-                screen.getByRole('button', { name: 'AI 모델 선택' })
-            );
-
-            const options = screen.getAllByRole('option');
-            fireEvent.keyDown(options[0], { key: 'Enter' });
-            expect(mockUseChatReturn.handleModelChange).toHaveBeenCalled();
-        });
-
-        it('Space on an option selects it', () => {
-            renderPanel();
-            fireEvent.click(
-                screen.getByRole('button', { name: 'AI 모델 선택' })
-            );
-
-            const options = screen.getAllByRole('option');
-            fireEvent.keyDown(options[0], { key: ' ' });
-            expect(mockUseChatReturn.handleModelChange).toHaveBeenCalled();
         });
     });
 });

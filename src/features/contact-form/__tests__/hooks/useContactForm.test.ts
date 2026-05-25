@@ -2,6 +2,10 @@
 import { renderHook } from '@testing-library/react';
 import { useContactForm } from '@/features/contact-form/hooks/useContactForm';
 
+vi.mock('@/shared/db/client', () => ({
+    getDatabaseClient: vi.fn(() => ({ db: {}, sql: () => null })),
+}));
+
 vi.mock('@/entities/inquiry/actions', () => ({
     submitContactAction: vi.fn(),
 }));
