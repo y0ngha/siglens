@@ -1,10 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { MarketSummaryPanel } from '@/widgets/dashboard/MarketSummaryPanel';
 
-vi.mock('./hooks/useBriefing', () => ({
-    useBriefing: vi.fn(),
-}));
-
 const mockUseMarketSummary = vi.fn();
 vi.mock('@/widgets/dashboard/hooks/useMarketSummary', () => ({
     useMarketSummary: () => mockUseMarketSummary(),

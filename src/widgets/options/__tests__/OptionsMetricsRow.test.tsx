@@ -36,6 +36,7 @@ const METRICS: OptionsExpirationMetrics = {
     topVolumeStrikes: [],
     topOiBidAskSummary: [],
 };
+
 describe('OptionsMetricsRow', () => {
     it('renders all four metric cards', () => {
         render(

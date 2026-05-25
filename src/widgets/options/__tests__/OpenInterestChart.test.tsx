@@ -139,6 +139,7 @@ const METRICS: OptionsExpirationMetrics = {
     topVolumeStrikes: [],
     topOiBidAskSummary: [],
 };
+
 describe('OpenInterestChart', () => {
     it('renders empty state when chain is null', () => {
         render(

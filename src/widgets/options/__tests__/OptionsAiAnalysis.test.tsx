@@ -70,7 +70,7 @@ describe('OptionsAiAnalysis', () => {
                 symbol="AAPL"
                 companyName="Apple"
                 expirationDate="2025-06-20"
-                modelId={'gemini-2.5-flash-lite' as never}
+                modelId={'gemini-2.5-flash-lite'}
             />
         );
         expect(screen.getByTestId('skeleton')).toBeInTheDocument();
@@ -83,7 +83,7 @@ describe('OptionsAiAnalysis', () => {
                 symbol="AAPL"
                 companyName="Apple"
                 expirationDate="2025-06-20"
-                modelId={'gemini-2.5-flash-lite' as never}
+                modelId={'gemini-2.5-flash-lite'}
             />
         );
         expect(screen.getByTestId('bot-blocked')).toBeInTheDocument();
@@ -100,7 +100,7 @@ describe('OptionsAiAnalysis', () => {
                 symbol="AAPL"
                 companyName="Apple"
                 expirationDate="2025-06-20"
-                modelId={'gemini-2.5-flash-lite' as never}
+                modelId={'gemini-2.5-flash-lite'}
             />
         );
         expect(screen.getByTestId('error')).toBeInTheDocument();
@@ -113,7 +113,7 @@ describe('OptionsAiAnalysis', () => {
                 symbol="AAPL"
                 companyName="Apple"
                 expirationDate="2025-06-20"
-                modelId={'gemini-2.5-flash-lite' as never}
+                modelId={'gemini-2.5-flash-lite'}
             />
         );
         expect(screen.getByText('Bullish options flow')).toBeInTheDocument();

@@ -74,7 +74,7 @@ describe('useOptionsAnalysis', () => {
                     symbol: 'AAPL',
                     companyName: 'Apple Inc.',
                     expirationDate: '2025-06-20',
-                    modelId: 'gemini-2.5-flash-lite' as never,
+                    modelId: 'gemini-2.5-flash-lite',
                 }),
             { wrapper }
         );
@@ -94,7 +94,7 @@ describe('useOptionsAnalysis', () => {
                     symbol: 'AAPL',
                     companyName: 'Apple Inc.',
                     expirationDate: '2025-06-20',
-                    modelId: 'gemini-2.5-flash-lite' as never,
+                    modelId: 'gemini-2.5-flash-lite',
                 }),
             { wrapper }
         );
@@ -120,7 +120,7 @@ describe('useOptionsAnalysis', () => {
                     symbol: 'AAPL',
                     companyName: 'Apple Inc.',
                     expirationDate: '2025-06-20',
-                    modelId: 'gemini-2.5-flash-lite' as never,
+                    modelId: 'gemini-2.5-flash-lite',
                 }),
             { wrapper }
         );
@@ -146,7 +146,7 @@ describe('useOptionsAnalysis', () => {
                     symbol: 'AAPL',
                     companyName: 'Apple Inc.',
                     expirationDate: '2025-06-20',
-                    modelId: 'gemini-2.5-flash-lite' as never,
+                    modelId: 'gemini-2.5-flash-lite',
                 }),
             { wrapper }
         );
@@ -174,7 +174,7 @@ describe('useOptionsAnalysis', () => {
                     symbol: 'AAPL',
                     companyName: 'Apple Inc.',
                     expirationDate: '2025-06-20',
-                    modelId: 'gemini-2.5-flash-lite' as never,
+                    modelId: 'gemini-2.5-flash-lite',
                 }),
             { wrapper }
         );

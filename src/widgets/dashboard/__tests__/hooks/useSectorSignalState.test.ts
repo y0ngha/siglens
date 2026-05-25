@@ -44,8 +44,9 @@ const DATA: SectorSignalsResult = {
             sectorSymbol: 'XLK',
             price: 150,
             changePercent: 1.5,
+            trend: 'uptrend' as const,
             signals: [],
-        } as never,
+        },
     ],
     computedAt: '2025-01-01T00:00:00Z',
 };
@@ -116,5 +117,6 @@ describe('useSectorSignalState', () => {
 
         const url = mockReplace.mock.calls[0]?.[0] as string;
         expect(url).not.toContain('sector=');
+        expect(url).toContain('timeframe=1Hour');
     });
 });

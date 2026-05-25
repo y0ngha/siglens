@@ -88,6 +88,7 @@ const METRICS: OptionsExpirationMetrics = {
     topVolumeStrikes: [],
     topOiBidAskSummary: [],
 };
+
 describe('OptionsChainTable', () => {
     it('renders 0 contracts when chain is null', () => {
         render(

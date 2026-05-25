@@ -9,7 +9,7 @@ import { CANCEL_JOBS_API_PATH } from '@/shared/lib/cancelJobsApi';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook, waitFor } from '@testing-library/react';
-import type { NewsAnalysisResponse } from '@y0ngha/siglens-core';
+import type { ModelId, NewsAnalysisResponse } from '@y0ngha/siglens-core';
 import type { ReactNode } from 'react';
 import { renderToString } from 'react-dom/server';
 import { readBlobText } from '@/shared/test-utils/readBlobText';
@@ -302,8 +302,8 @@ describe('useNewsAnalysis', () => {
             mockPoll.mockImplementation(() => new Promise(() => {}));
 
             const { rerender } = renderHook(
-                ({ modelId }: { modelId: string }) =>
-                    useNewsAnalysis('AAPL', 'Apple Inc.', modelId as never),
+                ({ modelId }: { modelId: ModelId }) =>
+                    useNewsAnalysis('AAPL', 'Apple Inc.', modelId),
                 {
                     wrapper: makeWrapper(),
                     initialProps: { modelId: 'gemini-2.5-flash-lite' },

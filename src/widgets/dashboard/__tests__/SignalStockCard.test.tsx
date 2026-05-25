@@ -51,15 +51,15 @@ const STOCK: StockWithConflict = {
     trend: 'uptrend',
     signals: [
         {
-            type: 'golden_cross' as never,
-            direction: 'bullish' as never,
-            phase: 'confirmed' as never,
+            type: 'golden_cross',
+            direction: 'bullish',
+            phase: 'confirmed',
             detectedAt: 0,
         },
         {
-            type: 'rsi_oversold' as never,
-            direction: 'bullish' as never,
-            phase: 'confirmed' as never,
+            type: 'rsi_oversold',
+            direction: 'bullish',
+            phase: 'confirmed',
             detectedAt: 0,
         },
     ],
