@@ -71,7 +71,6 @@ describe('useCopyToClipboard', () => {
         await act(async () => {
             await result.current.copy('first');
         });
-        // Call copy again before timer expires
         await act(async () => {
             await result.current.copy('second');
         });
