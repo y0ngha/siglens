@@ -65,7 +65,7 @@ function isValidChatModel(value: string): value is ModelId {
     return VALID_CHAT_MODELS.some(model => model === value);
 }
 
-function isChatMessage(m: DisplayMessage): m is ChatMessage {
+export function isChatMessage(m: DisplayMessage): m is ChatMessage {
     return m.role !== 'system';
 }
 

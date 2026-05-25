@@ -4,10 +4,6 @@ import { useModelGate } from '@/features/premium-gate/hooks/useModelGate';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
 import type { ModelId, LlmProvider } from '@y0ngha/siglens-core';
 
-vi.mock('@/shared/db/client', () => ({
-    getDatabaseClient: vi.fn(() => ({ db: {}, sql: () => null })),
-}));
-
 let mockCurrentUser: { tier: string } | null = null;
 let mockRegisteredProviders: { provider: string }[] = [];
 

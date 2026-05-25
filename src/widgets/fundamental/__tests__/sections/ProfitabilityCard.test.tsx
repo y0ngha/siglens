@@ -22,6 +22,18 @@ describe('ProfitabilityCard', () => {
         expect(screen.getByText('ROE')).toBeInTheDocument();
     });
 
+    it('shows dash and no progress bar when a ratio value is null', () => {
+        const ratiosWithNull = {
+            ...SAMPLE_RATIOS,
+            returnOnEquityTTM: null,
+            returnOnAssetsTTM: null,
+        } as unknown as FundamentalRatiosInput;
+        render(<ProfitabilityCard ratios={ratiosWithNull} />);
+        // Null values render as em-dash "—"
+        const dashes = screen.getAllByText('—');
+        expect(dashes.length).toBeGreaterThanOrEqual(2);
+    });
+
     it('renders empty state with heading when ratios is null', () => {
         render(<ProfitabilityCard ratios={null} />);
         expect(
