@@ -1,12 +1,13 @@
+import { vi, type Mock } from 'vitest';
 import type { ContactInput, ContactRepository } from '@/entities/inquiry';
 import { submitInquiry } from '../lib/submitInquiry';
 import type { SubmitInquiryDeps } from '../lib/types';
 
 function makeDeps(): {
     deps: SubmitInquiryDeps;
-    create: jest.Mock;
+    create: Mock;
 } {
-    const create = jest.fn<
+    const create = vi.fn<
         ReturnType<ContactRepository['create']>,
         Parameters<ContactRepository['create']>
     >();
@@ -36,7 +37,7 @@ describe('submitInquiry', () => {
 
     it('propagates repository errors to the caller', async () => {
         const dbError = new Error('db connection lost');
-        const create = jest.fn<
+        const create = vi.fn<
             ReturnType<ContactRepository['create']>,
             Parameters<ContactRepository['create']>
         >();

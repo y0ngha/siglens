@@ -1,6 +1,5 @@
-/**
- * @jest-environment jsdom
- */
+import { vi } from 'vitest';
+// @vitest-environment jsdom
 import { act, renderHook } from '@testing-library/react';
 import {
     MOBILE_VIEWPORT_MEDIA_QUERY,
@@ -17,13 +16,13 @@ describe('useIsMobileViewport', () => {
 
         Object.defineProperty(window, 'matchMedia', {
             configurable: true,
-            value: jest.fn().mockImplementation((query: string) => ({
+            value: vi.fn().mockImplementation((query: string) => ({
                 get matches() {
                     return matches;
                 },
                 media: query,
                 onchange: null,
-                addEventListener: jest.fn(
+                addEventListener: vi.fn(
                     (
                         eventName: string,
                         listener: (event: MediaQueryListEvent) => void
@@ -31,7 +30,7 @@ describe('useIsMobileViewport', () => {
                         if (eventName === 'change') listeners.add(listener);
                     }
                 ),
-                removeEventListener: jest.fn(
+                removeEventListener: vi.fn(
                     (
                         eventName: string,
                         listener: (event: MediaQueryListEvent) => void
@@ -39,9 +38,9 @@ describe('useIsMobileViewport', () => {
                         if (eventName === 'change') listeners.delete(listener);
                     }
                 ),
-                addListener: jest.fn(),
-                removeListener: jest.fn(),
-                dispatchEvent: jest.fn(),
+                addListener: vi.fn(),
+                removeListener: vi.fn(),
+                dispatchEvent: vi.fn(),
             })),
         });
     });

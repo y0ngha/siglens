@@ -1,16 +1,15 @@
-/**
- * @jest-environment jsdom
- */
+import { vi, type Mock } from 'vitest';
+// @vitest-environment jsdom
 import { usePageHideCancel } from '@/shared/hooks/usePageHideCancel';
 import { CANCEL_JOBS_API_PATH } from '@/shared/lib/cancelJobsApi';
 import { renderHook } from '@testing-library/react';
 import { readBlobText } from '@/shared/test-utils/readBlobText';
 
 describe('usePageHideCancel', () => {
-    let sendBeaconMock: jest.Mock;
+    let sendBeaconMock: Mock;
 
     beforeEach(() => {
-        sendBeaconMock = jest.fn();
+        sendBeaconMock = vi.fn();
         Object.defineProperty(navigator, 'sendBeacon', {
             value: sendBeaconMock,
             configurable: true,
@@ -19,7 +18,7 @@ describe('usePageHideCancel', () => {
     });
 
     it('pagehide 발화 시 sendBeacon을 CANCEL_JOBS_API_PATH로 호출한다', () => {
-        const getJobs = jest
+        const getJobs = vi
             .fn()
             .mockReturnValue([{ jobId: 'job-123', type: 'analysis' }]);
         renderHook(() => usePageHideCancel(getJobs));
@@ -34,7 +33,7 @@ describe('usePageHideCancel', () => {
     });
 
     it('Blob의 Content-Type이 application/json이다', () => {
-        const getJobs = jest
+        const getJobs = vi
             .fn()
             .mockReturnValue([{ jobId: 'job-123', type: 'analysis' }]);
         renderHook(() => usePageHideCancel(getJobs));
@@ -50,7 +49,7 @@ describe('usePageHideCancel', () => {
             { jobId: 'job-123', type: 'analysis' as const },
             { jobId: 'job-456', type: 'fundamental' as const },
         ];
-        const getJobs = jest.fn().mockReturnValue(jobs);
+        const getJobs = vi.fn().mockReturnValue(jobs);
         renderHook(() => usePageHideCancel(getJobs));
 
         window.dispatchEvent(new Event('pagehide'));
@@ -61,7 +60,7 @@ describe('usePageHideCancel', () => {
     });
 
     it('getJobs()가 null을 반환하면 sendBeacon을 호출하지 않는다', () => {
-        const getJobs = jest.fn().mockReturnValue(null);
+        const getJobs = vi.fn().mockReturnValue(null);
         renderHook(() => usePageHideCancel(getJobs));
 
         window.dispatchEvent(new Event('pagehide'));
@@ -70,7 +69,7 @@ describe('usePageHideCancel', () => {
     });
 
     it('getJobs()가 빈 배열을 반환하면 sendBeacon을 호출하지 않는다', () => {
-        const getJobs = jest.fn().mockReturnValue([]);
+        const getJobs = vi.fn().mockReturnValue([]);
         renderHook(() => usePageHideCancel(getJobs));
 
         window.dispatchEvent(new Event('pagehide'));
@@ -79,7 +78,7 @@ describe('usePageHideCancel', () => {
     });
 
     it('unmount 후 pagehide가 발화해도 sendBeacon을 호출하지 않는다', () => {
-        const getJobs = jest
+        const getJobs = vi
             .fn()
             .mockReturnValue([{ jobId: 'job-123', type: 'analysis' }]);
         const { unmount } = renderHook(() => usePageHideCancel(getJobs));
@@ -96,7 +95,7 @@ describe('usePageHideCancel', () => {
             { jobId: 'job-f', type: 'fundamental' as const },
             { jobId: 'job-n', type: 'news' as const },
         ];
-        const getJobs = jest.fn().mockReturnValue(jobs);
+        const getJobs = vi.fn().mockReturnValue(jobs);
         renderHook(() => usePageHideCancel(getJobs));
 
         window.dispatchEvent(new Event('pagehide'));

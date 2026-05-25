@@ -1,6 +1,5 @@
+import { vi, type MockedFunction, type Mock } from 'vitest';
 /**
- * @jest-environment jsdom
- *
  * pending_dependencies 상태에서 submitOverallAnalysisAction을 반복 호출하지 않고
  * 각 axis jobId를 직접 polling한 뒤 완료 후 한 번만 재submit하는지 검증한다.
  */
@@ -29,60 +28,60 @@ import type { OverallAnalysisResponse } from '@y0ngha/siglens-core';
 import type { ReactNode } from 'react';
 import { readBlobText } from '@/shared/test-utils/readBlobText';
 
-jest.mock('@/entities/analysis/actions', () => ({
-    submitOverallAnalysisAction: jest.fn(),
-    pollOverallAnalysisAction: jest.fn(),
-    pollAnalysisAction: jest.fn(),
-    pollFundamentalAnalysisAction: jest.fn(),
-    cancelAnalysisJobAction: jest.fn().mockResolvedValue(undefined),
-    cancelFundamentalAnalysisJobAction: jest.fn().mockResolvedValue(undefined),
-    cancelOverallAnalysisJobAction: jest.fn().mockResolvedValue(undefined),
+vi.mock('@/entities/analysis/actions', () => ({
+    submitOverallAnalysisAction: vi.fn(),
+    pollOverallAnalysisAction: vi.fn(),
+    pollAnalysisAction: vi.fn(),
+    pollFundamentalAnalysisAction: vi.fn(),
+    cancelAnalysisJobAction: vi.fn().mockResolvedValue(undefined),
+    cancelFundamentalAnalysisJobAction: vi.fn().mockResolvedValue(undefined),
+    cancelOverallAnalysisJobAction: vi.fn().mockResolvedValue(undefined),
 }));
-jest.mock('@/entities/news-article/actions', () => ({
-    pollNewsAnalysisAction: jest.fn(),
-    cancelNewsAnalysisJobAction: jest.fn().mockResolvedValue(undefined),
+vi.mock('@/entities/news-article/actions', () => ({
+    pollNewsAnalysisAction: vi.fn(),
+    cancelNewsAnalysisJobAction: vi.fn().mockResolvedValue(undefined),
 }));
-jest.mock('@/entities/options-chain/actions', () => ({
-    pollOptionsAnalysisAction: jest.fn(),
-    cancelOptionsAnalysisJobAction: jest.fn().mockResolvedValue(undefined),
+vi.mock('@/entities/options-chain/actions', () => ({
+    pollOptionsAnalysisAction: vi.fn(),
+    cancelOptionsAnalysisJobAction: vi.fn().mockResolvedValue(undefined),
 }));
-jest.mock('@/shared/lib/sleep', () => ({
-    sleep: jest.fn().mockResolvedValue(undefined),
+vi.mock('@/shared/lib/sleep', () => ({
+    sleep: vi.fn().mockResolvedValue(undefined),
 }));
 
-const mockSubmit = submitOverallAnalysisAction as jest.MockedFunction<
+const mockSubmit = submitOverallAnalysisAction as MockedFunction<
     typeof submitOverallAnalysisAction
 >;
-const mockPollOverall = pollOverallAnalysisAction as jest.MockedFunction<
+const mockPollOverall = pollOverallAnalysisAction as MockedFunction<
     typeof pollOverallAnalysisAction
 >;
-const mockPollTechnical = pollAnalysisAction as jest.MockedFunction<
+const mockPollTechnical = pollAnalysisAction as MockedFunction<
     typeof pollAnalysisAction
 >;
 const mockPollFundamental =
-    pollFundamentalAnalysisAction as jest.MockedFunction<
+    pollFundamentalAnalysisAction as MockedFunction<
         typeof pollFundamentalAnalysisAction
     >;
-const mockPollNews = pollNewsAnalysisAction as jest.MockedFunction<
+const mockPollNews = pollNewsAnalysisAction as MockedFunction<
     typeof pollNewsAnalysisAction
 >;
-const mockCancelTechnical = cancelAnalysisJobAction as jest.MockedFunction<
+const mockCancelTechnical = cancelAnalysisJobAction as MockedFunction<
     typeof cancelAnalysisJobAction
 >;
 const mockCancelFundamental =
-    cancelFundamentalAnalysisJobAction as jest.MockedFunction<
+    cancelFundamentalAnalysisJobAction as MockedFunction<
         typeof cancelFundamentalAnalysisJobAction
     >;
-const mockCancelNews = cancelNewsAnalysisJobAction as jest.MockedFunction<
+const mockCancelNews = cancelNewsAnalysisJobAction as MockedFunction<
     typeof cancelNewsAnalysisJobAction
 >;
-const mockCancelOverall = cancelOverallAnalysisJobAction as jest.MockedFunction<
+const mockCancelOverall = cancelOverallAnalysisJobAction as MockedFunction<
     typeof cancelOverallAnalysisJobAction
 >;
-const mockPollOptions = pollOptionsAnalysisAction as jest.MockedFunction<
+const mockPollOptions = pollOptionsAnalysisAction as MockedFunction<
     typeof pollOptionsAnalysisAction
 >;
-const mockCancelOptions = cancelOptionsAnalysisJobAction as jest.MockedFunction<
+const mockCancelOptions = cancelOptionsAnalysisJobAction as MockedFunction<
     typeof cancelOptionsAnalysisJobAction
 >;
 
@@ -755,10 +754,10 @@ describe('useOverallAnalysis', () => {
         });
 
         describe('pagehide', () => {
-            let sendBeaconMock: jest.Mock;
+            let sendBeaconMock: Mock;
 
             beforeEach(() => {
-                sendBeaconMock = jest.fn();
+                sendBeaconMock = vi.fn();
                 Object.defineProperty(navigator, 'sendBeacon', {
                     value: sendBeaconMock,
                     configurable: true,

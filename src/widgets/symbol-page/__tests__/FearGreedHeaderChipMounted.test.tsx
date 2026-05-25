@@ -1,20 +1,17 @@
-/**
- * @jest-environment jsdom
- */
-import '@testing-library/jest-dom';
+import { vi } from 'vitest';
 import { render } from '@testing-library/react';
 import { SENTIMENT_LABEL_TEXT } from '@/shared/lib/fearGreedLabels';
 import { FearGreedHeaderChipMounted } from '@/widgets/symbol-page/FearGreedHeaderChipMounted';
 
-jest.mock('@/widgets/symbol-page/hooks/useBars', () => ({
-    useBars: jest.fn(() => ({
+vi.mock('@/widgets/symbol-page/hooks/useBars', () => ({
+    useBars: vi.fn(() => ({
         bars: [],
         indicators: { buySellVolume: [] },
     })),
 }));
 
-jest.mock('@/widgets/fear-greed/hooks/useFearGreed', () => ({
-    useFearGreed: jest.fn(() => ({
+vi.mock('@/widgets/fear-greed/hooks/useFearGreed', () => ({
+    useFearGreed: vi.fn(() => ({
         snapshot: {
             score: 50,
             label: 'NEUTRAL',

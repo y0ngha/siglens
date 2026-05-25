@@ -1,29 +1,30 @@
-jest.mock('@vercel/functions', () => ({
-    waitUntil: jest.fn(),
+import { vi, type MockedFunction } from 'vitest';
+vi.mock('@vercel/functions', () => ({
+    waitUntil: vi.fn(),
 }));
 
-jest.mock('next/headers', () => ({
-    headers: jest.fn(() => Promise.resolve(new Headers())),
+vi.mock('next/headers', () => ({
+    headers: vi.fn(() => Promise.resolve(new Headers())),
 }));
 
-jest.mock('@y0ngha/siglens-core', () => ({
+vi.mock('@y0ngha/siglens-core', () => ({
     ...jest.requireActual('@y0ngha/siglens-core'),
-    submitOptionsAnalysis: jest.fn(),
-    pollOptionsAnalysis: jest.fn(),
-    cancelJob: jest.fn(),
+    submitOptionsAnalysis: vi.fn(),
+    pollOptionsAnalysis: vi.fn(),
+    cancelJob: vi.fn(),
 }));
 
-jest.mock('../lib/optionsDataCache', () => ({
-    fetchOptionsSnapshot: jest.fn(),
+vi.mock('../lib/optionsDataCache', () => ({
+    fetchOptionsSnapshot: vi.fn(),
 }));
 
-jest.mock('@/entities/session/lib/getCurrentUser', () => ({
-    getCurrentUser: jest.fn(),
+vi.mock('@/entities/session/lib/getCurrentUser', () => ({
+    getCurrentUser: vi.fn(),
 }));
 
-jest.mock('@/shared/lib/byokGate', () => ({
-    resolveTierAndByok: jest.fn(),
-    buildGateError: jest.fn((code: string) => ({
+vi.mock('@/shared/lib/byokGate', () => ({
+    resolveTierAndByok: vi.fn(),
+    buildGateError: vi.fn((code: string) => ({
         code,
         message: `mock-${code}`,
     })),
@@ -48,22 +49,22 @@ import {
     cancelOptionsAnalysisJobAction,
 } from '../actions/optionsActions';
 
-const mockSubmitOptionsAnalysis = submitOptionsAnalysis as jest.MockedFunction<
+const mockSubmitOptionsAnalysis = submitOptionsAnalysis as MockedFunction<
     typeof submitOptionsAnalysis
 >;
-const mockPollOptionsAnalysis = pollOptionsAnalysis as jest.MockedFunction<
+const mockPollOptionsAnalysis = pollOptionsAnalysis as MockedFunction<
     typeof pollOptionsAnalysis
 >;
-const mockFetchOptionsSnapshot = fetchOptionsSnapshot as jest.MockedFunction<
+const mockFetchOptionsSnapshot = fetchOptionsSnapshot as MockedFunction<
     typeof fetchOptionsSnapshot
 >;
-const mockGetCurrentUser = getCurrentUser as jest.MockedFunction<
+const mockGetCurrentUser = getCurrentUser as MockedFunction<
     typeof getCurrentUser
 >;
-const mockResolveTierAndByok = resolveTierAndByok as jest.MockedFunction<
+const mockResolveTierAndByok = resolveTierAndByok as MockedFunction<
     typeof resolveTierAndByok
 >;
-const mockCancelJob = cancelJob as jest.MockedFunction<typeof cancelJob>;
+const mockCancelJob = cancelJob as MockedFunction<typeof cancelJob>;
 
 const MODEL_ID = 'gemini-2.5-flash' as ModelId;
 const PREMIUM_MODEL = 'claude-opus-4-7' as ModelId;
@@ -252,7 +253,7 @@ describe('pollOptionsAnalysisAction', () => {
     });
 
     it('returns unexpected_error and logs when pollOptionsAnalysis throws', async () => {
-        const consoleErrorSpy = jest
+        const consoleErrorSpy = vi
             .spyOn(console, 'error')
             .mockImplementation(() => {});
         const pollError = new Error('queue down');
@@ -289,7 +290,7 @@ describe('cancelOptionsAnalysisJobAction', () => {
     });
 
     it('swallows errors and logs a warning when cancelJob rejects', async () => {
-        const consoleWarnSpy = jest
+        const consoleWarnSpy = vi
             .spyOn(console, 'warn')
             .mockImplementation(() => {});
         const cancelError = new Error('worker unreachable');

@@ -1,7 +1,8 @@
-const mockGenerateContent = jest.fn();
+import { vi } from 'vitest';
+const mockGenerateContent = vi.fn();
 
-jest.mock('@google/genai', () => {
-    const MockGoogleGenAI = jest.fn(() => ({
+vi.mock('@google/genai', () => {
+    const MockGoogleGenAI = vi.fn(() => ({
         models: {
             generateContent: mockGenerateContent,
         },

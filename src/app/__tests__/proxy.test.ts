@@ -1,26 +1,27 @@
+import { vi, type MockedFunction } from 'vitest';
 // proxy.ts는 @/shared/config/cookieNames에서 AUTH_SESSION_COOKIE_NAME을 import한다.
 // edge runtime 안전성을 위해 entities barrel 대신 shared 순수 상수 파일 사용.
-jest.mock('@/shared/config/cookieNames', () => ({
+vi.mock('@/shared/config/cookieNames', () => ({
     AUTH_SESSION_COOKIE_NAME: 'siglens_session',
 }));
-jest.mock('next/server', () => ({
+vi.mock('next/server', () => ({
     NextResponse: {
-        redirect: jest.fn((url: URL, status?: number) => ({
+        redirect: vi.fn((url: URL, status?: number) => ({
             type: 'redirect',
             url,
             status,
         })),
-        next: jest.fn(() => ({ type: 'next' })),
+        next: vi.fn(() => ({ type: 'next' })),
     },
 }));
 
 import { NextResponse, type NextRequest } from 'next/server';
 import { proxy } from '@/proxy';
 
-const mockRedirect = NextResponse.redirect as jest.MockedFunction<
+const mockRedirect = NextResponse.redirect as MockedFunction<
     typeof NextResponse.redirect
 >;
-const mockNext = NextResponse.next as jest.MockedFunction<
+const mockNext = NextResponse.next as MockedFunction<
     typeof NextResponse.next
 >;
 
@@ -31,7 +32,7 @@ function makeRequest(
     return {
         url: `https://example.com${path}`,
         cookies: {
-            get: jest.fn((name: string) =>
+            get: vi.fn((name: string) =>
                 name === 'siglens_session' && sessionValue !== undefined
                     ? { value: sessionValue }
                     : undefined

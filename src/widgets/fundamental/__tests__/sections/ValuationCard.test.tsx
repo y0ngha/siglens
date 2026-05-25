@@ -1,8 +1,3 @@
-/**
- * @jest-environment jsdom
- */
-
-import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
 import { EMPTY_MESSAGE } from '@/widgets/fundamental/sections/EmptySectionCard';
 import { ValuationCard } from '@/widgets/fundamental/sections/ValuationCard';

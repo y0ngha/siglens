@@ -1,6 +1,4 @@
-/**
- * @jest-environment jsdom
- */
+import { vi, type Mock } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import {
     computeFearGreedIndex,
@@ -9,11 +7,11 @@ import {
 } from '@y0ngha/siglens-core';
 import { useFearGreed } from '@/widgets/fear-greed/hooks/useFearGreed';
 
-jest.mock('@y0ngha/siglens-core', () => {
+vi.mock('@y0ngha/siglens-core', () => {
     const actual = jest.requireActual('@y0ngha/siglens-core');
     return {
         ...actual,
-        computeFearGreedIndex: jest.fn(() => ({
+        computeFearGreedIndex: vi.fn(() => ({
             score: 18,
             label: 'EXTREME_FEAR',
             groups: [
@@ -24,7 +22,7 @@ jest.mock('@y0ngha/siglens-core', () => {
             sampleSize: 412,
             warning: null,
         })),
-        computeFearGreedHistory: jest.fn(() => [
+        computeFearGreedHistory: vi.fn(() => [
             { date: '2026-05-01', score: 22, label: 'EXTREME_FEAR' },
             { date: '2026-05-05', score: 18, label: 'EXTREME_FEAR' },
         ]),
@@ -55,7 +53,7 @@ describe('useFearGreed', () => {
 
     describe('when computeFearGreedIndex returns null', () => {
         it('returns null snapshot when computeFearGreedIndex returns null', () => {
-            (computeFearGreedIndex as jest.Mock).mockReturnValueOnce(null);
+            (computeFearGreedIndex as Mock).mockReturnValueOnce(null);
             const { result } = renderHook(() =>
                 useFearGreed({ bars: [], buySellVolume: [] })
             );

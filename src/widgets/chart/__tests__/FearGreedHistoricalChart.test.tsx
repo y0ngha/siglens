@@ -1,17 +1,14 @@
-/**
- * @jest-environment jsdom
- */
-import '@testing-library/jest-dom';
+import { vi } from 'vitest';
 import { render } from '@testing-library/react';
 import type { FearGreedHistoryPoint } from '@y0ngha/siglens-core';
 import { FearGreedHistoricalChart } from '@/widgets/chart/FearGreedHistoricalChart';
 
 // lightweight-charts uses canvas internally — jsdom can't run it, so we mock.
-const mockSetData = jest.fn();
-const mockFitContent = jest.fn();
-const mockAddSeries = jest.fn(() => ({ setData: mockSetData }));
-const mockRemove = jest.fn();
-const mockApplyOptions = jest.fn();
+const mockSetData = vi.fn();
+const mockFitContent = vi.fn();
+const mockAddSeries = vi.fn(() => ({ setData: mockSetData }));
+const mockRemove = vi.fn();
+const mockApplyOptions = vi.fn();
 const mockChart = {
     addSeries: mockAddSeries,
     timeScale: () => ({ fitContent: mockFitContent }),
@@ -22,10 +19,10 @@ const mockChart = {
 // `virtual: true` is required because lightweight-charts is ESM-only
 // (`"type": "module"`, no CJS export). Jest's CJS resolver can't find it
 // from this test file, even though we never call the real module.
-jest.mock(
+vi.mock(
     'lightweight-charts',
     () => ({
-        createChart: jest.fn(() => mockChart),
+        createChart: vi.fn(() => mockChart),
         LineSeries: 'LineSeries',
     }),
     { virtual: true }

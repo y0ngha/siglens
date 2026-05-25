@@ -1,20 +1,21 @@
-jest.mock('server-only', () => ({}), { virtual: true });
-jest.mock('next/headers', () => ({ cookies: jest.fn() }));
-jest.mock('@/shared/db/client', () => ({
-    getDatabaseClient: jest.fn(() => ({ db: {}, sql: () => null })),
-    resetDatabaseClientForTests: jest.fn(),
+import { vi, type MockedFunction } from 'vitest';
+vi.mock('server-only', () => ({}), { virtual: true });
+vi.mock('next/headers', () => ({ cookies: vi.fn() }));
+vi.mock('@/shared/db/client', () => ({
+    getDatabaseClient: vi.fn(() => ({ db: {}, sql: () => null })),
+    resetDatabaseClientForTests: vi.fn(),
 }));
-jest.mock('@/entities/session/lib/sessionCookie', () => ({
+vi.mock('@/entities/session/lib/sessionCookie', () => ({
     AUTH_SESSION_COOKIE_NAME: 'siglens_session',
 }));
-jest.mock('@/entities/session/api', () => ({
-    DrizzleSessionRepository: jest.fn().mockImplementation(() => ({})),
+vi.mock('@/entities/session/api', () => ({
+    DrizzleSessionRepository: vi.fn().mockImplementation(() => ({})),
 }));
-jest.mock('@/entities/user/api', () => ({
-    DrizzleUserRepository: jest.fn().mockImplementation(() => ({})),
+vi.mock('@/entities/user/api', () => ({
+    DrizzleUserRepository: vi.fn().mockImplementation(() => ({})),
 }));
-jest.mock('@/entities/user/lib/findUserBySessionToken', () => ({
-    findUserBySessionToken: jest.fn(),
+vi.mock('@/entities/user/lib/findUserBySessionToken', () => ({
+    findUserBySessionToken: vi.fn(),
 }));
 
 import { cookies } from 'next/headers';
@@ -22,8 +23,8 @@ import { findUserBySessionToken } from '@/entities/user/lib/findUserBySessionTok
 import { getCurrentUser } from '@/entities/session/lib/getCurrentUser';
 import { resetAuthDatabaseClientForTests } from '@/entities/session/lib/db';
 
-const mockCookies = cookies as jest.MockedFunction<typeof cookies>;
-const mockFind = findUserBySessionToken as jest.MockedFunction<
+const mockCookies = cookies as MockedFunction<typeof cookies>;
+const mockFind = findUserBySessionToken as MockedFunction<
     typeof findUserBySessionToken
 >;
 

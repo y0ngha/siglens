@@ -1,8 +1,3 @@
-/**
- * @jest-environment jsdom
- */
-
-import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
 import { EMPTY_MESSAGE } from '@/widgets/fundamental/sections/EmptySectionCard';
 import { PeersTable } from '@/widgets/fundamental/sections/PeersTable';

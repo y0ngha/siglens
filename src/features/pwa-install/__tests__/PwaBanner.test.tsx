@@ -1,14 +1,11 @@
-/**
- * @jest-environment jsdom
- */
+import { vi } from 'vitest';
 import { PwaBanner } from '@/features/pwa-install';
 import { usePwaInstall } from '@/features/pwa-install/hooks/usePwaInstall';
-import '@testing-library/jest-dom';
 import { fireEvent, render, screen } from '@testing-library/react';
 
-jest.mock('@/features/pwa-install/hooks/usePwaInstall');
+vi.mock('@/features/pwa-install/hooks/usePwaInstall');
 
-const mockUsePwaInstall = jest.mocked(usePwaInstall);
+const mockUsePwaInstall = vi.mocked(usePwaInstall);
 
 describe('PwaBanner', () => {
     it('showBanner=true이면 같은 shell을 가시 상태로 렌더한다', () => {
@@ -16,9 +13,9 @@ describe('PwaBanner', () => {
             showBanner: true,
             showIosModal: false,
             isIos: false,
-            handleInstall: jest.fn(),
-            handleDismiss: jest.fn(),
-            handleModalClose: jest.fn(),
+            handleInstall: vi.fn(),
+            handleDismiss: vi.fn(),
+            handleModalClose: vi.fn(),
         });
         render(<PwaBanner />);
         const shell = screen.getByTestId('pwa-banner-shell');
@@ -37,14 +34,14 @@ describe('PwaBanner', () => {
     });
 
     it('닫기 버튼 클릭 → handleDismiss 호출', () => {
-        const handleDismiss = jest.fn();
+        const handleDismiss = vi.fn();
         mockUsePwaInstall.mockReturnValue({
             showBanner: true,
             showIosModal: false,
             isIos: false,
-            handleInstall: jest.fn(),
+            handleInstall: vi.fn(),
             handleDismiss,
-            handleModalClose: jest.fn(),
+            handleModalClose: vi.fn(),
         });
         render(<PwaBanner />);
         fireEvent.click(screen.getByRole('button', { name: '배너 닫기' }));
@@ -52,14 +49,14 @@ describe('PwaBanner', () => {
     });
 
     it('설치하기 버튼 클릭 → handleInstall 호출', () => {
-        const handleInstall = jest.fn();
+        const handleInstall = vi.fn();
         mockUsePwaInstall.mockReturnValue({
             showBanner: true,
             showIosModal: false,
             isIos: false,
             handleInstall,
-            handleDismiss: jest.fn(),
-            handleModalClose: jest.fn(),
+            handleDismiss: vi.fn(),
+            handleModalClose: vi.fn(),
         });
         render(<PwaBanner />);
         fireEvent.click(screen.getByRole('button', { name: '설치하기' }));
@@ -71,9 +68,9 @@ describe('PwaBanner', () => {
             showBanner: true,
             showIosModal: true,
             isIos: true,
-            handleInstall: jest.fn(),
-            handleDismiss: jest.fn(),
-            handleModalClose: jest.fn(),
+            handleInstall: vi.fn(),
+            handleDismiss: vi.fn(),
+            handleModalClose: vi.fn(),
         });
         render(<PwaBanner />);
         expect(screen.getByRole('dialog')).toBeInTheDocument();

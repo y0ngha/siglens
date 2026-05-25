@@ -1,5 +1,6 @@
-jest.mock('@/entities/options-chain', () => ({
-    hasOptionsMarket: jest.fn(),
+import { vi, type MockedFunction } from 'vitest';
+vi.mock('@/entities/options-chain', () => ({
+    hasOptionsMarket: vi.fn(),
 }));
 
 import { POPULAR_TICKERS } from '@/shared/config/popular-tickers';
@@ -8,7 +9,7 @@ import { hasOptionsMarket } from '@/entities/options-chain';
 import { buildPopularEntries } from '../lib/buildPopularEntries';
 import { SITE_URL } from '@/shared/lib/seo';
 
-const mockedHasOptionsMarket = hasOptionsMarket as jest.MockedFunction<
+const mockedHasOptionsMarket = hasOptionsMarket as MockedFunction<
     typeof hasOptionsMarket
 >;
 
@@ -18,7 +19,7 @@ const NOW = new Date('2026-05-23T21:00:00.000Z');
 
 describe('buildPopularEntries', () => {
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     it('모든 POPULAR_TICKERS에 대해 chart/news/fundamental/overall/fear-greed 5축 + options(옵션 있을 때) 라우트를 생성한다', async () => {

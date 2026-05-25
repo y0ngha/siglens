@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import {
     filterUsExchanges,
     searchByName,
@@ -6,7 +7,7 @@ import {
 } from '../../lib/fmpTickerApi';
 import type { FmpSearchResult } from '../../model';
 
-const mockFetch = jest.fn();
+const mockFetch = vi.fn();
 
 const apple: FmpSearchResult = {
     symbol: 'AAPL',
@@ -118,7 +119,7 @@ describe('searchBySymbol/searchByName', () => {
 
     it('필수 필드가 누락된 row 는 검증 단계에서 제외하고 유효한 row 만 반환한다', async () => {
         const malformed = { symbol: 'BAD' }; // missing name/currency/exchange/exchangeFullName
-        const warnSpy = jest
+        const warnSpy = vi
             .spyOn(console, 'warn')
             .mockImplementation(() => undefined);
         mockFetch.mockResolvedValueOnce({

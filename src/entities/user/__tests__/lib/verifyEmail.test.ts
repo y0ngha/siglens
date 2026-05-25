@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { verifyEmail } from '@/entities/user/lib/verifyEmail';
 import type { VerifyEmailDependencies } from '@/entities/user/lib/authUseCaseTypes';
 import { EMAIL_VERIFICATION_VERIFIED_TTL_SECONDS } from '@/entities/user/lib/authUseCaseConstants';
@@ -12,29 +13,29 @@ const STORED_HASH = hashEmailToken(VALID_CODE);
 
 function makeDependencies(options?: { stored?: EmailTokenValue | null }): {
     dependencies: VerifyEmailDependencies;
-    getToken: ReturnType<typeof jest.fn>;
-    setToken: ReturnType<typeof jest.fn>;
+    getToken: ReturnType<typeof vi.fn>;
+    setToken: ReturnType<typeof vi.fn>;
 } {
     const stored: EmailTokenValue | null =
         options && 'stored' in options
             ? (options.stored ?? null)
             : { status: 'pending', tokenHash: STORED_HASH };
 
-    const getToken = jest
+    const getToken = vi
         .fn<
             Promise<EmailTokenValue | null>,
             [purpose: EmailTokenPurpose, email: string]
         >()
         .mockResolvedValue(stored);
-    const setToken = jest.fn().mockResolvedValue(undefined);
+    const setToken = vi.fn().mockResolvedValue(undefined);
 
     return {
         dependencies: {
             emailTokens: {
                 set: setToken,
                 get: getToken,
-                delete: jest.fn(),
-                consume: jest.fn(),
+                delete: vi.fn(),
+                consume: vi.fn(),
             },
         },
         getToken,

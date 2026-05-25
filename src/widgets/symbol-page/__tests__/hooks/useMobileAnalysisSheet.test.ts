@@ -1,6 +1,5 @@
-/**
- * @jest-environment jsdom
- */
+import { vi, type MockInstance } from 'vitest';
+// @vitest-environment jsdom
 import { act, renderHook } from '@testing-library/react';
 import {
     MOBILE_ANALYSIS_SHEET_OPEN_DELAY_MS,
@@ -13,20 +12,20 @@ import {
 } from '@/widgets/symbol-page/constants/mobileSheet';
 
 describe('useMobileAnalysisSheet', () => {
-    let requestAnimationFrameSpy: jest.SpyInstance<
+    let requestAnimationFrameSpy: MockInstance<
         number,
         [FrameRequestCallback]
     >;
-    let cancelAnimationFrameSpy: jest.SpyInstance<void, [number]>;
+    let cancelAnimationFrameSpy: MockInstance<void, [number]>;
 
     beforeEach(() => {
-        jest.useFakeTimers();
-        requestAnimationFrameSpy = jest
+        vi.useFakeTimers();
+        requestAnimationFrameSpy = vi
             .spyOn(window, 'requestAnimationFrame')
             .mockImplementation(callback =>
                 window.setTimeout(() => callback(performance.now()), 16)
             );
-        cancelAnimationFrameSpy = jest
+        cancelAnimationFrameSpy = vi
             .spyOn(window, 'cancelAnimationFrame')
             .mockImplementation(frameId => window.clearTimeout(frameId));
     });
@@ -34,11 +33,11 @@ describe('useMobileAnalysisSheet', () => {
     afterEach(() => {
         requestAnimationFrameSpy.mockRestore();
         cancelAnimationFrameSpy.mockRestore();
-        jest.useRealTimers();
+        vi.useRealTimers();
     });
 
     it('delays opening until after the first animation frame and hydration buffer', () => {
-        const onActiveSnapChange = jest.fn();
+        const onActiveSnapChange = vi.fn();
         const { result } = renderHook(() =>
             useMobileAnalysisSheet({
                 activeSnap: SNAP_HALF,
@@ -49,18 +48,18 @@ describe('useMobileAnalysisSheet', () => {
         expect(result.current.isOpen).toBe(false);
 
         act(() => {
-            jest.advanceTimersByTime(16);
+            vi.advanceTimersByTime(16);
         });
         expect(result.current.isOpen).toBe(false);
 
         act(() => {
-            jest.advanceTimersByTime(MOBILE_ANALYSIS_SHEET_OPEN_DELAY_MS);
+            vi.advanceTimersByTime(MOBILE_ANALYSIS_SHEET_OPEN_DELAY_MS);
         });
         expect(result.current.isOpen).toBe(true);
     });
 
     it('reopens at peek snap when vaul attempts to close the persistent sheet', () => {
-        const onActiveSnapChange = jest.fn();
+        const onActiveSnapChange = vi.fn();
         const { result } = renderHook(() =>
             useMobileAnalysisSheet({
                 activeSnap: SNAP_HALF,
@@ -77,7 +76,7 @@ describe('useMobileAnalysisSheet', () => {
     });
 
     it('marks the sheet as full only at the full snap point', () => {
-        const onActiveSnapChange = jest.fn();
+        const onActiveSnapChange = vi.fn();
         const { result, rerender } = renderHook(
             ({ activeSnap }) =>
                 useMobileAnalysisSheet({ activeSnap, onActiveSnapChange }),

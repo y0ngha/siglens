@@ -1,8 +1,9 @@
+import { vi, type Mock } from 'vitest';
 // withRetry 내부 sleep을 즉시 resolve로 stubbing해서 transient retry 케이스의
-// 실제 대기 시간을 없앤다. `jest.mock` 은 정적 import 보다 먼저 평가되도록
+// 실제 대기 시간을 없앤다. `vi.mock` 은 정적 import 보다 먼저 평가되도록
 // 호이스트되어야 한다 (`import/first` 규칙과 일치).
-jest.mock('@/shared/lib/sleep', () => ({
-    sleep: jest.fn().mockResolvedValue(undefined),
+vi.mock('@/shared/lib/sleep', () => ({
+    sleep: vi.fn().mockResolvedValue(undefined),
 }));
 
 import {
@@ -35,46 +36,46 @@ const microsoft: KoreanTickerEntry = {
 
 function makeSelectFromDb(rows: unknown[]): {
     db: SiglensDatabase;
-    select: jest.Mock;
-    from: jest.Mock;
+    select: Mock;
+    from: Mock;
 } {
     const fromResult = Promise.resolve(rows);
-    const from = jest.fn(() => fromResult);
-    const select = jest.fn(() => ({ from }));
+    const from = vi.fn(() => fromResult);
+    const select = vi.fn(() => ({ from }));
     return { db: { select } as unknown as SiglensDatabase, select, from };
 }
 
 function makeFindBySymbolDb(rows: unknown[]): {
     db: SiglensDatabase;
-    limit: jest.Mock;
+    limit: Mock;
 } {
-    const limit = jest.fn().mockResolvedValue(rows);
-    const where = jest.fn(() => ({ limit }));
-    const from = jest.fn(() => ({ where }));
-    const select = jest.fn(() => ({ from }));
+    const limit = vi.fn().mockResolvedValue(rows);
+    const where = vi.fn(() => ({ limit }));
+    const from = vi.fn(() => ({ where }));
+    const select = vi.fn(() => ({ from }));
     return { db: { select } as unknown as SiglensDatabase, limit };
 }
 
 function makeFindBySymbolsDb(rows: unknown[]): {
     db: SiglensDatabase;
-    where: jest.Mock;
-    select: jest.Mock;
+    where: Mock;
+    select: Mock;
 } {
-    const where = jest.fn().mockResolvedValue(rows);
-    const from = jest.fn(() => ({ where }));
-    const select = jest.fn(() => ({ from }));
+    const where = vi.fn().mockResolvedValue(rows);
+    const from = vi.fn(() => ({ where }));
+    const select = vi.fn(() => ({ from }));
     return { db: { select } as unknown as SiglensDatabase, where, select };
 }
 
 function makeUpsertDb(): {
     db: SiglensDatabase;
-    insert: jest.Mock;
-    values: jest.Mock;
-    onConflictDoUpdate: jest.Mock;
+    insert: Mock;
+    values: Mock;
+    onConflictDoUpdate: Mock;
 } {
-    const onConflictDoUpdate = jest.fn().mockResolvedValue(undefined);
-    const values = jest.fn(() => ({ onConflictDoUpdate }));
-    const insert = jest.fn(() => ({ values }));
+    const onConflictDoUpdate = vi.fn().mockResolvedValue(undefined);
+    const values = vi.fn(() => ({ onConflictDoUpdate }));
+    const insert = vi.fn(() => ({ values }));
     return {
         db: { insert } as unknown as SiglensDatabase,
         insert,
@@ -257,12 +258,12 @@ describe('Neon transient retry wire-up', () => {
             new Error('Error connecting to database: fetch failed'),
             { name: 'NeonDbError' }
         );
-        const onConflictDoUpdate = jest
+        const onConflictDoUpdate = vi
             .fn()
             .mockRejectedValueOnce(neonTransient)
             .mockResolvedValueOnce(undefined);
-        const values = jest.fn(() => ({ onConflictDoUpdate }));
-        const insert = jest.fn(() => ({ values }));
+        const values = vi.fn(() => ({ onConflictDoUpdate }));
+        const insert = vi.fn(() => ({ values }));
         const db = { insert } as unknown as SiglensDatabase;
         const repo = new DrizzleKoreanTickerRepository(db);
 
@@ -278,11 +279,11 @@ describe('Neon transient retry wire-up', () => {
             ),
             { name: 'NeonDbError' }
         );
-        const onConflictDoUpdate = jest
+        const onConflictDoUpdate = vi
             .fn()
             .mockRejectedValueOnce(constraintError);
-        const values = jest.fn(() => ({ onConflictDoUpdate }));
-        const insert = jest.fn(() => ({ values }));
+        const values = vi.fn(() => ({ onConflictDoUpdate }));
+        const insert = vi.fn(() => ({ values }));
         const db = { insert } as unknown as SiglensDatabase;
         const repo = new DrizzleKoreanTickerRepository(db);
 

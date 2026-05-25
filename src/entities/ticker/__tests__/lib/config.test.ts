@@ -10,7 +10,7 @@ describe('tryReadTranslatorConfig', () => {
     });
 
     // 마지막 케이스가 세팅한 값이 같은 worker process에 남아 sibling suite로 leak되는
-    // 것을 방지(jest worker pool은 file별 새 process지만 같은 file 내 다른 describe로의
+    // 것을 방지(vitest worker pool은 file별 새 process지만 같은 file 내 다른 describe로의
     // leak은 가능). beforeEach만 두면 마지막 케이스 cleanup이 빠진다.
     afterEach(() => {
         delete process.env.TRANSLATE_API_KEY;

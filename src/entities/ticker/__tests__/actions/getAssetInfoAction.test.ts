@@ -1,12 +1,13 @@
+import { vi, type MockedFunction } from 'vitest';
 import { getAssetInfoAction } from '../../actions/getAssetInfoAction';
 import { getAssetInfo } from '../../lib/getAssetInfo';
 import type { AssetInfo } from '@/shared/lib/types';
 
-jest.mock('../../lib/getAssetInfo', () => ({
-    getAssetInfo: jest.fn(),
+vi.mock('../../lib/getAssetInfo', () => ({
+    getAssetInfo: vi.fn(),
 }));
 
-const mockGetAssetInfo = getAssetInfo as jest.MockedFunction<
+const mockGetAssetInfo = getAssetInfo as MockedFunction<
     typeof getAssetInfo
 >;
 

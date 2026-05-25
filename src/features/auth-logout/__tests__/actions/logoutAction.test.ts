@@ -1,26 +1,27 @@
-jest.mock('next/headers', () => ({ cookies: jest.fn() }));
-jest.mock('next/navigation', () => ({
-    redirect: jest.fn((path: string) => {
+import { vi, type MockedFunction, type Mock } from 'vitest';
+vi.mock('next/headers', () => ({ cookies: vi.fn() }));
+vi.mock('next/navigation', () => ({
+    redirect: vi.fn((path: string) => {
         throw new Error(`NEXT_REDIRECT:${path}`);
     }),
 }));
-jest.mock('@/shared/db/client', () => ({
-    getDatabaseClient: jest.fn(() => ({ db: {}, sql: () => null })),
-    resetDatabaseClientForTests: jest.fn(),
+vi.mock('@/shared/db/client', () => ({
+    getDatabaseClient: vi.fn(() => ({ db: {}, sql: () => null })),
+    resetDatabaseClientForTests: vi.fn(),
 }));
-jest.mock('@/entities/session', () => ({
-    DrizzleSessionRepository: jest.fn().mockImplementation(() => ({})),
+vi.mock('@/entities/session', () => ({
+    DrizzleSessionRepository: vi.fn().mockImplementation(() => ({})),
     AUTH_SESSION_COOKIE_NAME: 'siglens_session',
-    applyAuthCookie: jest.fn((c: unknown) => c),
-    getAuthDatabaseClient: jest.fn(() => ({ db: {}, sql: () => null })),
-    isSecureCookieEnv: jest.fn(() => false),
-    createExpiredAuthHintCookie: jest.fn(() => ({
+    applyAuthCookie: vi.fn((c: unknown) => c),
+    getAuthDatabaseClient: vi.fn(() => ({ db: {}, sql: () => null })),
+    isSecureCookieEnv: vi.fn(() => false),
+    createExpiredAuthHintCookie: vi.fn(() => ({
         name: 'auth_hint',
         value: '',
     })),
 }));
-jest.mock('@/entities/user', () => ({
-    logoutUser: jest.fn(),
+vi.mock('@/entities/user', () => ({
+    logoutUser: vi.fn(),
 }));
 
 import { cookies } from 'next/headers';
@@ -29,19 +30,19 @@ import { logoutUser } from '@/entities/user';
 import { logoutAction } from '@/features/auth-logout/actions/logoutAction';
 import { resetAuthDatabaseClientForTests } from '@/entities/session/lib/db';
 
-const mockCookies = cookies as jest.MockedFunction<typeof cookies>;
-const mockLogout = logoutUser as jest.MockedFunction<typeof logoutUser>;
-const mockRedirect = redirect as jest.MockedFunction<typeof redirect>;
+const mockCookies = cookies as MockedFunction<typeof cookies>;
+const mockLogout = logoutUser as MockedFunction<typeof logoutUser>;
+const mockRedirect = redirect as MockedFunction<typeof redirect>;
 
 describe('logoutAction', () => {
-    let getSpy: jest.Mock;
-    let setSpy: jest.Mock;
+    let getSpy: Mock;
+    let setSpy: Mock;
 
     beforeEach(() => {
         resetAuthDatabaseClientForTests();
         process.env.DATABASE_URL = 'postgres://test';
-        getSpy = jest.fn();
-        setSpy = jest.fn();
+        getSpy = vi.fn();
+        setSpy = vi.fn();
         mockCookies.mockResolvedValue({
             get: getSpy,
             set: setSpy,

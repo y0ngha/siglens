@@ -1,3 +1,4 @@
+import { vi, type MockedFunction, type MockedClass, type Mock } from 'vitest';
 import { callAiProviderRouter } from '@/entities/llm-provider';
 import { getCurrentUser } from '@/entities/session/lib/getCurrentUser';
 import { chatAction } from '../actions/chatAction';
@@ -17,51 +18,51 @@ import {
 } from '@y0ngha/siglens-core';
 import { headers } from 'next/headers';
 
-jest.mock('next/headers', () => ({
-    headers: jest.fn(),
+vi.mock('next/headers', () => ({
+    headers: vi.fn(),
 }));
 
-jest.mock('@y0ngha/siglens-core', () => {
+vi.mock('@y0ngha/siglens-core', () => {
     const actual = jest.requireActual<typeof import('@y0ngha/siglens-core')>(
         '@y0ngha/siglens-core'
     );
     return {
         ...actual,
-        requestChatCompletion: jest.fn(),
-        getProviderForModel: jest
+        requestChatCompletion: vi.fn(),
+        getProviderForModel: vi
             .fn()
             .mockImplementation(actual.getProviderForModel),
     };
 });
 
-jest.mock('@/entities/llm-provider', () => ({
-    callAiProviderRouter: jest.fn(),
+vi.mock('@/entities/llm-provider', () => ({
+    callAiProviderRouter: vi.fn(),
 }));
 
-jest.mock('@/entities/session/lib/getCurrentUser', () => ({
-    getCurrentUser: jest.fn(),
+vi.mock('@/entities/session/lib/getCurrentUser', () => ({
+    getCurrentUser: vi.fn(),
 }));
 
-jest.mock('@/shared/db/client', () => ({
-    getDatabaseClient: jest.fn(),
+vi.mock('@/shared/db/client', () => ({
+    getDatabaseClient: vi.fn(),
 }));
 
-jest.mock('@/entities/api-key', () => ({
-    DrizzleUserApiKeyRepository: jest.fn(),
+vi.mock('@/entities/api-key', () => ({
+    DrizzleUserApiKeyRepository: vi.fn(),
 }));
 
-jest.mock('@/entities/user-tier', () => ({
-    getUserTier: jest.fn().mockResolvedValue('free'),
+vi.mock('@/entities/user-tier', () => ({
+    getUserTier: vi.fn().mockResolvedValue('free'),
 }));
 
-const mockHeaders = headers as jest.MockedFunction<typeof headers>;
-const mockRequestChatCompletion = requestChatCompletion as jest.MockedFunction<
+const mockHeaders = headers as MockedFunction<typeof headers>;
+const mockRequestChatCompletion = requestChatCompletion as MockedFunction<
     typeof requestChatCompletion
 >;
-const mockGetCurrentUser = getCurrentUser as jest.MockedFunction<
+const mockGetCurrentUser = getCurrentUser as MockedFunction<
     typeof getCurrentUser
 >;
-const mockGetProviderForModel = getProviderForModel as jest.MockedFunction<
+const mockGetProviderForModel = getProviderForModel as MockedFunction<
     typeof getProviderForModel
 >;
 
@@ -89,7 +90,7 @@ const SUCCESS_RESULT: ChatActionResult = {
 
 function makeHeadersMap(xForwardedFor?: string) {
     return {
-        get: jest.fn((key: string) =>
+        get: vi.fn((key: string) =>
             key === 'x-forwarded-for' ? (xForwardedFor ?? null) : null
         ),
     };
@@ -97,7 +98,7 @@ function makeHeadersMap(xForwardedFor?: string) {
 
 describe('chatAction 함수는', () => {
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         process.env.GEMINI_CHAT_API_KEY = 'gemini-server-key';
         delete process.env.GEMINI_CHAT_FREE_API_KEY;
         delete process.env.ANTHROPIC_CHAT_API_KEY;
@@ -299,11 +300,11 @@ describe('chatAction 함수는', () => {
         });
 
         it('premium 모델이고 로그인 + 사용자 키 등록이면 userApiKey로 사용자 키를 전달한다', async () => {
-            const mockFindByUserAndProvider = jest
+            const mockFindByUserAndProvider = vi
                 .fn()
                 .mockResolvedValue({ apiKey: 'user-personal-key' });
             (
-                DrizzleUserApiKeyRepository as jest.MockedClass<
+                DrizzleUserApiKeyRepository as MockedClass<
                     typeof DrizzleUserApiKeyRepository
                 >
             ).mockImplementation(
@@ -312,7 +313,7 @@ describe('chatAction 함수는', () => {
                         findByUserAndProvider: mockFindByUserAndProvider,
                     }) as unknown as DrizzleUserApiKeyRepository
             );
-            (getDatabaseClient as jest.Mock).mockReturnValue({ db: {} });
+            (getDatabaseClient as Mock).mockReturnValue({ db: {} });
             mockGetCurrentUser.mockResolvedValue({ id: 'user-1' } as Awaited<
                 ReturnType<typeof getCurrentUser>
             >);
@@ -343,9 +344,9 @@ describe('chatAction 함수는', () => {
         });
 
         it('premium 모델이고 로그인했지만 키 미등록이면 userApiKey를 undefined로 전달한다', async () => {
-            const mockFindByUserAndProvider = jest.fn().mockResolvedValue(null);
+            const mockFindByUserAndProvider = vi.fn().mockResolvedValue(null);
             (
-                DrizzleUserApiKeyRepository as jest.MockedClass<
+                DrizzleUserApiKeyRepository as MockedClass<
                     typeof DrizzleUserApiKeyRepository
                 >
             ).mockImplementation(
@@ -354,7 +355,7 @@ describe('chatAction 함수는', () => {
                         findByUserAndProvider: mockFindByUserAndProvider,
                     }) as unknown as DrizzleUserApiKeyRepository
             );
-            (getDatabaseClient as jest.Mock).mockReturnValue({ db: {} });
+            (getDatabaseClient as Mock).mockReturnValue({ db: {} });
             mockGetCurrentUser.mockResolvedValue({ id: 'user-1' } as Awaited<
                 ReturnType<typeof getCurrentUser>
             >);

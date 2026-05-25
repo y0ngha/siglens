@@ -1,31 +1,32 @@
+import { vi, type MockedFunction } from 'vitest';
 import { cancelOAuthSignupAction } from '@/features/auth-oauth/actions/cancelOAuthSignupAction';
 import { redirect } from 'next/navigation';
 import { createPendingOAuthSignupStoreFromEnv } from '@/entities/oauth-account/lib/pendingOAuthSignupStore';
 
-jest.mock('next/navigation', () => ({
-    redirect: jest.fn().mockImplementation((url: string) => {
+vi.mock('next/navigation', () => ({
+    redirect: vi.fn().mockImplementation((url: string) => {
         throw Object.assign(new Error('NEXT_REDIRECT'), { url });
     }),
 }));
-jest.mock('@/entities/oauth-account/lib/pendingOAuthSignupStore', () => ({
-    createPendingOAuthSignupStoreFromEnv: jest.fn(),
+vi.mock('@/entities/oauth-account/lib/pendingOAuthSignupStore', () => ({
+    createPendingOAuthSignupStoreFromEnv: vi.fn(),
 }));
 
-const mockCreatePendingOAuthSignupStoreFromEnv = jest.mocked(
+const mockCreatePendingOAuthSignupStoreFromEnv = vi.mocked(
     createPendingOAuthSignupStoreFromEnv
 );
-const mockRedirect = redirect as jest.MockedFunction<typeof redirect>;
+const mockRedirect = redirect as MockedFunction<typeof redirect>;
 
 describe('cancelOAuthSignupAction', () => {
-    afterEach(() => jest.clearAllMocks());
+    afterEach(() => vi.clearAllMocks());
 
     it('deletes the token and redirects to /login', async () => {
-        const deleteMock = jest.fn().mockResolvedValue(undefined);
+        const deleteMock = vi.fn().mockResolvedValue(undefined);
         mockCreatePendingOAuthSignupStoreFromEnv.mockReturnValue({
             delete: deleteMock,
-            save: jest.fn(),
-            peek: jest.fn(),
-            consume: jest.fn(),
+            save: vi.fn(),
+            peek: vi.fn(),
+            consume: vi.fn(),
         });
 
         const fd = new FormData();
@@ -57,12 +58,12 @@ describe('cancelOAuthSignupAction', () => {
     });
 
     it('redirects to /login even when store.delete throws (best-effort cleanup)', async () => {
-        const deleteMock = jest.fn().mockRejectedValue(new Error('Redis down'));
+        const deleteMock = vi.fn().mockRejectedValue(new Error('Redis down'));
         mockCreatePendingOAuthSignupStoreFromEnv.mockReturnValue({
             delete: deleteMock,
-            save: jest.fn(),
-            peek: jest.fn(),
-            consume: jest.fn(),
+            save: vi.fn(),
+            peek: vi.fn(),
+            consume: vi.fn(),
         });
         const fd = new FormData();
         fd.set('token', 'tok');

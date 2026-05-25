@@ -1,14 +1,15 @@
-jest.mock('@/entities/email-token', () => ({
-    createEmailTokenStore: jest.fn(),
+import { vi, type MockedFunction, type MockedClass } from 'vitest';
+vi.mock('@/entities/email-token', () => ({
+    createEmailTokenStore: vi.fn(),
 }));
-jest.mock('@/entities/session', () => ({
+vi.mock('@/entities/session', () => ({
     AUTH_SERVICE_UNAVAILABLE_MESSAGE:
         '서비스에 일시적인 문제가 발생했습니다. 잠시 후 다시 시도해주세요.',
-    getAuthDatabaseClient: jest.fn(),
+    getAuthDatabaseClient: vi.fn(),
 }));
-jest.mock('@/entities/user', () => ({
-    DrizzleUserRepository: jest.fn(),
-    verifyEmail: jest.fn(),
+vi.mock('@/entities/user', () => ({
+    DrizzleUserRepository: vi.fn(),
+    verifyEmail: vi.fn(),
 }));
 
 import { verifyEmail, DrizzleUserRepository } from '@/entities/user';
@@ -20,19 +21,19 @@ import {
 import { verifyEmailAction } from '@/features/auth-email-verification/actions/verifyEmailAction';
 import { makeFormData } from '@/shared/test-utils/makeFormData';
 
-const mockVerify = verifyEmail as jest.MockedFunction<typeof verifyEmail>;
-const mockCreateTokenStore = createEmailTokenStore as jest.MockedFunction<
+const mockVerify = verifyEmail as MockedFunction<typeof verifyEmail>;
+const mockCreateTokenStore = createEmailTokenStore as MockedFunction<
     typeof createEmailTokenStore
 >;
-const mockGetAuthDatabaseClient = getAuthDatabaseClient as jest.MockedFunction<
+const mockGetAuthDatabaseClient = getAuthDatabaseClient as MockedFunction<
     typeof getAuthDatabaseClient
 >;
-const MockDrizzleUserRepository = DrizzleUserRepository as jest.MockedClass<
+const MockDrizzleUserRepository = DrizzleUserRepository as MockedClass<
     typeof DrizzleUserRepository
 >;
 
 function mockUserRepo(existingUser: object | null) {
-    const findByEmail = jest.fn().mockResolvedValue(existingUser);
+    const findByEmail = vi.fn().mockResolvedValue(existingUser);
     MockDrizzleUserRepository.mockImplementation(
         () =>
             ({ findByEmail }) as unknown as InstanceType<
@@ -53,10 +54,10 @@ describe('verifyEmailAction', () => {
         mockGetAuthDatabaseClient.mockReset();
         MockDrizzleUserRepository.mockReset();
         mockCreateTokenStore.mockReturnValue({
-            set: jest.fn(),
-            get: jest.fn(),
-            delete: jest.fn(),
-            consume: jest.fn(),
+            set: vi.fn(),
+            get: vi.fn(),
+            delete: vi.fn(),
+            consume: vi.fn(),
         });
     });
 

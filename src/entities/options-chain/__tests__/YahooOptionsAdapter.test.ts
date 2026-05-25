@@ -1,3 +1,4 @@
+import { vi, type MockInstance, type Mock } from 'vitest';
 /**
  * Unit tests for YahooOptionsAdapter.
  *
@@ -7,16 +8,16 @@
  * sanitization rules.
  */
 
-const mockOptionsMethod = jest.fn();
+const mockOptionsMethod = vi.fn();
 
-jest.mock('yahoo-finance2', () => ({
+vi.mock('yahoo-finance2', () => ({
     __esModule: true,
-    default: jest.fn().mockImplementation(() => ({
+    default: vi.fn().mockImplementation(() => ({
         options: mockOptionsMethod,
     })),
 }));
 
-jest.mock('@y0ngha/siglens-core', () => {
+vi.mock('@y0ngha/siglens-core', () => {
     const actual = jest.requireActual('@y0ngha/siglens-core') as Record<
         string,
         unknown
@@ -24,12 +25,12 @@ jest.mock('@y0ngha/siglens-core', () => {
     return {
         ...actual,
         // Passthrough: return the chain as-is so adapter logic is isolated
-        sanitizeOptionsChain: jest.fn((chain: unknown) => chain),
+        sanitizeOptionsChain: vi.fn((chain: unknown) => chain),
         // adapter는 `mapExpirationsToSlots`로 추가 fetch 대상을 결정하는데,
         // 실제 구현을 그대로 호출하면 `new Date()`에 의존해 테스트가
         // 실행 시점 날짜에 따라 분기가 달라진다(flaky). 각 it()에서 의도한
         // 슬롯 매핑을 직접 주입해 격리한다.
-        mapExpirationsToSlots: jest.fn(),
+        mapExpirationsToSlots: vi.fn(),
     };
 });
 
@@ -107,15 +108,15 @@ function makeAdapter(): YahooOptionsAdapter {
 }
 
 describe('YahooOptionsAdapter.fetchSnapshot', () => {
-    let consoleErrorSpy: jest.SpyInstance;
+    let consoleErrorSpy: MockInstance;
 
     beforeEach(() => {
-        jest.clearAllMocks();
-        (sanitizeOptionsChain as jest.Mock).mockImplementation(c => c);
+        vi.clearAllMocks();
+        (sanitizeOptionsChain as Mock).mockImplementation(c => c);
         // 기본값: 슬롯 매핑이 비어 있어 추가 fetch 분기가 트리거되지 않음.
         // 추가 fetch 시나리오를 검증하는 it()는 각자 mockReturnValue로 덮어쓴다.
-        (mapExpirationsToSlots as jest.Mock).mockReturnValue([]);
-        consoleErrorSpy = jest
+        (mapExpirationsToSlots as Mock).mockReturnValue([]);
+        consoleErrorSpy = vi
             .spyOn(console, 'error')
             .mockImplementation(() => {});
     });
@@ -190,7 +191,7 @@ describe('YahooOptionsAdapter.fetchSnapshot', () => {
         // Yahoo가 quote.regularMarketPrice를 누락하면 normalize가 0으로 폴백한다.
         // 이 경우 underlyingPrice=0 인 채로 통과되면 차트 가이드라인이 최저
         // strike에 그려지는 등 잘못된 시각을 노출하므로 adapter에서 reject한다.
-        const consoleWarnSpy = jest
+        const consoleWarnSpy = vi
             .spyOn(console, 'warn')
             .mockImplementation(() => {});
         // try/finally — assertion 실패 시에도 console.warn spy를 반드시 복구해
@@ -217,7 +218,7 @@ describe('YahooOptionsAdapter.fetchSnapshot', () => {
 
     it('returns null when all chains are rejected by sanitizeOptionsChain', async () => {
         mockOptionsMethod.mockResolvedValue(FULL_FIXTURE);
-        (sanitizeOptionsChain as jest.Mock).mockReturnValue(null);
+        (sanitizeOptionsChain as Mock).mockReturnValue(null);
         const adapter = makeAdapter();
 
         const result = await adapter.fetchSnapshot('AAPL');
@@ -250,7 +251,7 @@ describe('YahooOptionsAdapter.fetchSnapshot', () => {
     it('초기 응답에 없는 슬롯 만기는 병렬로 추가 fetch 후 병합한다', async () => {
         // mapExpirationsToSlots → 2026-07-18(2M)이 슬롯에 매핑됐다고 가정.
         // 초기 응답에는 2026-05-15만 있으므로 2026-07-18은 추가 fetch 대상이다.
-        (mapExpirationsToSlots as jest.Mock).mockReturnValue([
+        (mapExpirationsToSlots as Mock).mockReturnValue([
             {
                 slot: { key: '2M', label: '2개월', targetDays: 60 },
                 expirationDate: '2026-07-18',
@@ -302,10 +303,10 @@ describe('YahooOptionsAdapter.fetchSnapshot', () => {
     });
 
     it('추가 만기 fetch가 실패해도 그 만기만 누락된 채 스냅샷을 반환한다', async () => {
-        const warnSpy = jest
+        const warnSpy = vi
             .spyOn(console, 'warn')
             .mockImplementation(() => {});
-        (mapExpirationsToSlots as jest.Mock).mockReturnValue([
+        (mapExpirationsToSlots as Mock).mockReturnValue([
             {
                 slot: { key: '2M', label: '2개월', targetDays: 60 },
                 expirationDate: '2026-07-18',
@@ -338,7 +339,7 @@ describe('YahooOptionsAdapter.fetchSnapshot', () => {
         // 초기 응답에 동일 만기가 두 항목으로 들어오는 코너 케이스를 가정.
         // missingIsos는 비어 있어 추가 fetch는 일어나지 않지만,
         // mergedByIso Map이 ISO 키 기반으로 마지막 값만 유지해야 한다.
-        (mapExpirationsToSlots as jest.Mock).mockReturnValue([
+        (mapExpirationsToSlots as Mock).mockReturnValue([
             {
                 slot: { key: '1W', label: '1주', targetDays: 7 },
                 expirationDate: '2026-05-15',
@@ -375,7 +376,7 @@ describe('YahooOptionsAdapter.fetchSnapshot', () => {
 
 describe('YahooOptionsAdapter.hasOptionsMarket', () => {
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     it('returns true when expirationDates is non-empty', async () => {
@@ -402,7 +403,7 @@ describe('YahooOptionsAdapter.hasOptionsMarket', () => {
     it('returns false on any library error and logs the failure for diagnostics', async () => {
         // Errors must surface to console.warn so production failures don't
         // hide silently behind the boolean false return (MISTAKES.md §0.5).
-        const warnSpy = jest
+        const warnSpy = vi
             .spyOn(console, 'warn')
             .mockImplementation(() => {});
         mockOptionsMethod.mockRejectedValue(new Error('unknown symbol'));

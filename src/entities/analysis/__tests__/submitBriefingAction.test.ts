@@ -1,3 +1,4 @@
+import { vi, type MockedFunction } from 'vitest';
 import { submitBriefingAction } from '../actions/submitBriefingAction';
 import { submitBriefing } from '@y0ngha/siglens-core';
 import type {
@@ -5,16 +6,16 @@ import type {
     SubmitBriefingResult,
 } from '@y0ngha/siglens-core';
 
-jest.mock('@vercel/functions', () => ({
-    waitUntil: jest.fn(),
+vi.mock('@vercel/functions', () => ({
+    waitUntil: vi.fn(),
 }));
 
-jest.mock('@y0ngha/siglens-core', () => ({
+vi.mock('@y0ngha/siglens-core', () => ({
     ...jest.requireActual('@y0ngha/siglens-core'),
-    submitBriefing: jest.fn(),
+    submitBriefing: vi.fn(),
 }));
 
-const mockSubmitBriefing = submitBriefing as jest.MockedFunction<
+const mockSubmitBriefing = submitBriefing as MockedFunction<
     typeof submitBriefing
 >;
 

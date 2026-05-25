@@ -1,6 +1,7 @@
-const callGeminiMock = jest.fn();
+import { vi } from 'vitest';
+const callGeminiMock = vi.fn();
 
-jest.mock('@/entities/llm-provider', () => ({
+vi.mock('@/entities/llm-provider', () => ({
     callGeminiChat: (...args: unknown[]) => callGeminiMock(...args),
     parseJsonResponse: jest.requireActual(
         '@/entities/llm-provider/lib/parseJsonResponse'

@@ -1,6 +1,4 @@
-/**
- * @jest-environment jsdom
- */
+import { vi, type MockedFunction, type Mock } from 'vitest';
 import { useNewsAnalysis } from '@/widgets/news/hooks/useNewsAnalysis';
 import {
     cancelNewsAnalysisJobAction,
@@ -16,23 +14,23 @@ import type { ReactNode } from 'react';
 import { renderToString } from 'react-dom/server';
 import { readBlobText } from '@/shared/test-utils/readBlobText';
 
-jest.mock('@/entities/news-article/actions', () => ({
-    submitNewsAnalysisAction: jest.fn(),
-    pollNewsAnalysisAction: jest.fn(),
-    cancelNewsAnalysisJobAction: jest.fn().mockResolvedValue(undefined),
+vi.mock('@/entities/news-article/actions', () => ({
+    submitNewsAnalysisAction: vi.fn(),
+    pollNewsAnalysisAction: vi.fn(),
+    cancelNewsAnalysisJobAction: vi.fn().mockResolvedValue(undefined),
 }));
 
-jest.mock('@/shared/lib/sleep', () => ({
-    sleep: jest.fn().mockResolvedValue(undefined),
+vi.mock('@/shared/lib/sleep', () => ({
+    sleep: vi.fn().mockResolvedValue(undefined),
 }));
 
-const mockSubmit = submitNewsAnalysisAction as jest.MockedFunction<
+const mockSubmit = submitNewsAnalysisAction as MockedFunction<
     typeof submitNewsAnalysisAction
 >;
-const mockPoll = pollNewsAnalysisAction as jest.MockedFunction<
+const mockPoll = pollNewsAnalysisAction as MockedFunction<
     typeof pollNewsAnalysisAction
 >;
-const mockCancel = cancelNewsAnalysisJobAction as jest.MockedFunction<
+const mockCancel = cancelNewsAnalysisJobAction as MockedFunction<
     typeof cancelNewsAnalysisJobAction
 >;
 
@@ -347,10 +345,10 @@ describe('useNewsAnalysis', () => {
         });
 
         describe('pagehide', () => {
-            let sendBeaconMock: jest.Mock;
+            let sendBeaconMock: Mock;
 
             beforeEach(() => {
-                sendBeaconMock = jest.fn();
+                sendBeaconMock = vi.fn();
                 Object.defineProperty(navigator, 'sendBeacon', {
                     value: sendBeaconMock,
                     configurable: true,

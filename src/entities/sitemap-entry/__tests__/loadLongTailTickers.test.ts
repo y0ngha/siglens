@@ -1,9 +1,10 @@
-jest.mock('@/shared/db/client', () => ({
-    tryGetDatabaseClient: jest.fn(),
+import { vi, type MockedFunction, type MockedClass, type MockInstance } from 'vitest';
+vi.mock('@/shared/db/client', () => ({
+    tryGetDatabaseClient: vi.fn(),
 }));
 
-jest.mock('@/entities/ticker', () => ({
-    DrizzleKoreanTickerRepository: jest.fn(),
+vi.mock('@/entities/ticker', () => ({
+    DrizzleKoreanTickerRepository: vi.fn(),
 }));
 
 import { POPULAR_TICKERS } from '@/shared/config/popular-tickers';
@@ -18,10 +19,10 @@ import { loadLongTailTickers } from '../lib/loadLongTailTickers';
 const POPULAR_SAMPLE_1 = POPULAR_TICKERS[0];
 const POPULAR_SAMPLE_2 = POPULAR_TICKERS[1];
 
-const mockedTryGetDatabaseClient = tryGetDatabaseClient as jest.MockedFunction<
+const mockedTryGetDatabaseClient = tryGetDatabaseClient as MockedFunction<
     typeof tryGetDatabaseClient
 >;
-const MockedRepository = DrizzleKoreanTickerRepository as jest.MockedClass<
+const MockedRepository = DrizzleKoreanTickerRepository as MockedClass<
     typeof DrizzleKoreanTickerRepository
 >;
 
@@ -36,11 +37,11 @@ function makeEntry(symbol: string): KoreanTickerEntry {
 }
 
 describe('loadLongTailTickers', () => {
-    let consoleErrorSpy: jest.SpyInstance;
+    let consoleErrorSpy: MockInstance;
 
     beforeEach(() => {
-        jest.clearAllMocks();
-        consoleErrorSpy = jest
+        vi.clearAllMocks();
+        consoleErrorSpy = vi
             .spyOn(console, 'error')
             .mockImplementation(() => {});
     });
@@ -63,7 +64,7 @@ describe('loadLongTailTickers', () => {
         MockedRepository.mockImplementation(
             () =>
                 ({
-                    findAll: jest
+                    findAll: vi
                         .fn()
                         .mockRejectedValue(new Error('DB connection failed')),
                 }) as unknown as DrizzleKoreanTickerRepository
@@ -84,7 +85,7 @@ describe('loadLongTailTickers', () => {
         MockedRepository.mockImplementation(
             () =>
                 ({
-                    findAll: jest
+                    findAll: vi
                         .fn()
                         .mockResolvedValue([
                             makeEntry(POPULAR_SAMPLE_1),
@@ -109,7 +110,7 @@ describe('loadLongTailTickers', () => {
         MockedRepository.mockImplementation(
             () =>
                 ({
-                    findAll: jest.fn().mockResolvedValue([
+                    findAll: vi.fn().mockResolvedValue([
                         makeEntry(POPULAR_SAMPLE_1.toLowerCase()), // 소문자 POPULAR → 제외
                         makeEntry(
                             POPULAR_SAMPLE_2.charAt(0) +
@@ -133,7 +134,7 @@ describe('loadLongTailTickers', () => {
         MockedRepository.mockImplementation(
             () =>
                 ({
-                    findAll: jest
+                    findAll: vi
                         .fn()
                         .mockResolvedValue([
                             makeEntry('OBSCURE1'),
@@ -154,7 +155,7 @@ describe('loadLongTailTickers', () => {
         MockedRepository.mockImplementation(
             () =>
                 ({
-                    findAll: jest.fn().mockResolvedValue([]),
+                    findAll: vi.fn().mockResolvedValue([]),
                 }) as unknown as DrizzleKoreanTickerRepository
         );
 

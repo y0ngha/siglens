@@ -1,3 +1,4 @@
+import { vi, type MockedFunction } from 'vitest';
 import { pollFundamentalAnalysisAction } from '../actions/pollFundamentalAnalysisAction';
 import { pollFundamentalAnalysis } from '@y0ngha/siglens-core';
 import type { PollFundamentalAnalysisResult } from '@y0ngha/siglens-core';
@@ -6,9 +7,9 @@ import type { PollFundamentalAnalysisResult } from '@y0ngha/siglens-core';
 // Module mocks
 // ---------------------------------------------------------------------------
 
-jest.mock('@y0ngha/siglens-core', () => ({
+vi.mock('@y0ngha/siglens-core', () => ({
     ...jest.requireActual('@y0ngha/siglens-core'),
-    pollFundamentalAnalysis: jest.fn(),
+    pollFundamentalAnalysis: vi.fn(),
 }));
 
 // ---------------------------------------------------------------------------
@@ -16,7 +17,7 @@ jest.mock('@y0ngha/siglens-core', () => ({
 // ---------------------------------------------------------------------------
 
 const mockPollFundamentalAnalysis =
-    pollFundamentalAnalysis as jest.MockedFunction<
+    pollFundamentalAnalysis as MockedFunction<
         typeof pollFundamentalAnalysis
     >;
 

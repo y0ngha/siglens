@@ -1,3 +1,4 @@
+import { vi, type MockedFunction } from 'vitest';
 import {
     getReanalyzeCooldownMs,
     releaseReanalyzeCooldown,
@@ -9,18 +10,18 @@ import {
     tryAcquireReanalyzeCooldown as coreTryAcquire,
 } from '@y0ngha/siglens-core';
 
-jest.mock('@y0ngha/siglens-core', () => ({
+vi.mock('@y0ngha/siglens-core', () => ({
     ...jest.requireActual('@y0ngha/siglens-core'),
-    tryAcquireReanalyzeCooldown: jest.fn(),
-    releaseReanalyzeCooldown: jest.fn(),
-    getReanalyzeCooldownMs: jest.fn(),
+    tryAcquireReanalyzeCooldown: vi.fn(),
+    releaseReanalyzeCooldown: vi.fn(),
+    getReanalyzeCooldownMs: vi.fn(),
 }));
 
-const mockTryAcquire = coreTryAcquire as jest.MockedFunction<
+const mockTryAcquire = coreTryAcquire as MockedFunction<
     typeof coreTryAcquire
 >;
-const mockRelease = coreRelease as jest.MockedFunction<typeof coreRelease>;
-const mockGetMs = coreGetMs as jest.MockedFunction<typeof coreGetMs>;
+const mockRelease = coreRelease as MockedFunction<typeof coreRelease>;
+const mockGetMs = coreGetMs as MockedFunction<typeof coreGetMs>;
 
 describe('reanalyzeCooldown wrapper는', () => {
     beforeEach(() => {

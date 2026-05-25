@@ -1,61 +1,62 @@
-// jest.mock은 babel-jest가 import 위로 hoist하지만, ESLint(import/first)와
+import { vi, type MockedFunction, type MockedClass, type Mock } from 'vitest';
+// vi.mock은 vitest가 import 위로 hoist하지만, ESLint(import/first)와
 // 가독성을 위해 소스 코드에서도 모든 import보다 위에 둔다.
-jest.mock('next/headers', () => ({
-    headers: jest.fn(() => Promise.resolve(new Headers())),
+vi.mock('next/headers', () => ({
+    headers: vi.fn(() => Promise.resolve(new Headers())),
 }));
 
-jest.mock('@vercel/functions', () => ({
-    waitUntil: jest.fn(),
+vi.mock('@vercel/functions', () => ({
+    waitUntil: vi.fn(),
 }));
 
 // 이 테스트는 action이 core로 forwarding하는 인자 shape만 검증하므로
 // `submitOverallAnalysis` 한 export만 mocking하면 충분하다. 반환값 chain까지
 // assert하지 않아 `requireActual`로 전체 surface를 합칠 필요가 없다.
-jest.mock('@y0ngha/siglens-core', () => ({
-    submitOverallAnalysis: jest.fn(),
+vi.mock('@y0ngha/siglens-core', () => ({
+    submitOverallAnalysis: vi.fn(),
 }));
 
-jest.mock('@/shared/api/fmp/fundamentalClient', () => ({
-    FmpFundamentalClient: jest.fn().mockImplementation(() => ({})),
+vi.mock('@/shared/api/fmp/fundamentalClient', () => ({
+    FmpFundamentalClient: vi.fn().mockImplementation(() => ({})),
 }));
 
-jest.mock('@/shared/db/client', () => ({
-    getDatabaseClient: jest.fn().mockReturnValue({ db: {} }),
+vi.mock('@/shared/db/client', () => ({
+    getDatabaseClient: vi.fn().mockReturnValue({ db: {} }),
 }));
 
-jest.mock('@/entities/news-article', () => {
+vi.mock('@/entities/news-article', () => {
     const actual = jest.requireActual('@/entities/news-article');
     return {
         ...actual,
-        DrizzleNewsRepository: jest.fn().mockImplementation(() => ({
-            listBySymbol: jest.fn(),
+        DrizzleNewsRepository: vi.fn().mockImplementation(() => ({
+            listBySymbol: vi.fn(),
         })),
     };
 });
 
-jest.mock('@/entities/earnings-report', () => ({
-    getNextEarningsReport: jest.fn(),
+vi.mock('@/entities/earnings-report', () => ({
+    getNextEarningsReport: vi.fn(),
 }));
 
-jest.mock('@/entities/session/lib/getCurrentUser', () => ({
-    getCurrentUser: jest.fn(),
+vi.mock('@/entities/session/lib/getCurrentUser', () => ({
+    getCurrentUser: vi.fn(),
 }));
 
-jest.mock('@/shared/lib/byokGate', () => ({
-    resolveTierAndByok: jest.fn(),
-    buildGateError: jest.fn((code: string) => ({
+vi.mock('@/shared/lib/byokGate', () => ({
+    resolveTierAndByok: vi.fn(),
+    buildGateError: vi.fn((code: string) => ({
         code,
         message: `mock-${code}`,
     })),
 }));
 
-jest.mock('@/entities/options-chain', () => ({
-    fetchOptionsSnapshot: jest.fn(),
+vi.mock('@/entities/options-chain', () => ({
+    fetchOptionsSnapshot: vi.fn(),
 }));
 
-jest.mock('@/shared/lib/marketSession', () => ({
-    isUsOptionsRegularSession: jest.fn(),
-    isOpenInterestSnapshotStale: jest.fn(),
+vi.mock('@/shared/lib/marketSession', () => ({
+    isUsOptionsRegularSession: vi.fn(),
+    isOpenInterestSnapshotStale: vi.fn(),
 }));
 
 import { submitOverallAnalysisAction } from '../actions/submitOverallAnalysisAction';
@@ -79,30 +80,30 @@ import {
 } from '@/shared/lib/marketSession';
 import type { AnalysisGateError } from '@/shared/lib/types';
 
-const mockHeaders = headers as jest.MockedFunction<typeof headers>;
-const MockNewsRepository = DrizzleNewsRepository as jest.MockedClass<
+const mockHeaders = headers as MockedFunction<typeof headers>;
+const MockNewsRepository = DrizzleNewsRepository as MockedClass<
     typeof DrizzleNewsRepository
 >;
-const mockGetNextEarningsReport = getNextEarningsReport as jest.MockedFunction<
+const mockGetNextEarningsReport = getNextEarningsReport as MockedFunction<
     typeof getNextEarningsReport
 >;
 
-const mockSubmitOverallAnalysis = submitOverallAnalysis as jest.MockedFunction<
+const mockSubmitOverallAnalysis = submitOverallAnalysis as MockedFunction<
     typeof submitOverallAnalysis
 >;
-const mockGetCurrentUser = getCurrentUser as jest.MockedFunction<
+const mockGetCurrentUser = getCurrentUser as MockedFunction<
     typeof getCurrentUser
 >;
-const mockResolveTierAndByok = resolveTierAndByok as jest.MockedFunction<
+const mockResolveTierAndByok = resolveTierAndByok as MockedFunction<
     typeof resolveTierAndByok
 >;
-const mockFetchSnapshot = fetchOptionsSnapshot as jest.MockedFunction<
+const mockFetchSnapshot = fetchOptionsSnapshot as MockedFunction<
     typeof fetchOptionsSnapshot
 >;
-const mockIsRegularSession = isUsOptionsRegularSession as jest.MockedFunction<
+const mockIsRegularSession = isUsOptionsRegularSession as MockedFunction<
     typeof isUsOptionsRegularSession
 >;
-const mockIsOiStale = isOpenInterestSnapshotStale as jest.MockedFunction<
+const mockIsOiStale = isOpenInterestSnapshotStale as MockedFunction<
     typeof isOpenInterestSnapshotStale
 >;
 
@@ -168,7 +169,7 @@ const gateError: AnalysisGateError = {
 };
 
 describe('submitOverallAnalysisAction 함수는', () => {
-    let mockListBySymbol: jest.Mock;
+    let mockListBySymbol: Mock;
 
     beforeEach(() => {
         mockSubmitOverallAnalysis.mockReset();
@@ -180,7 +181,7 @@ describe('submitOverallAnalysisAction 함수는', () => {
         mockIsRegularSession.mockReset();
         mockIsOiStale.mockReset();
 
-        mockListBySymbol = jest.fn().mockResolvedValue([]);
+        mockListBySymbol = vi.fn().mockResolvedValue([]);
         mockGetNextEarningsReport.mockResolvedValue(null);
 
         MockNewsRepository.mockImplementation(

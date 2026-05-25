@@ -1,27 +1,28 @@
-jest.mock('@vercel/functions', () => ({
-    waitUntil: jest.fn(),
+import { vi, type MockedFunction } from 'vitest';
+vi.mock('@vercel/functions', () => ({
+    waitUntil: vi.fn(),
 }));
 
-jest.mock('next/headers', () => ({
-    headers: jest.fn(() => Promise.resolve(new Headers())),
+vi.mock('next/headers', () => ({
+    headers: vi.fn(() => Promise.resolve(new Headers())),
 }));
 
-jest.mock('@y0ngha/siglens-core', () => ({
+vi.mock('@y0ngha/siglens-core', () => ({
     ...jest.requireActual('@y0ngha/siglens-core'),
-    submitFundamentalAnalysis: jest.fn(),
+    submitFundamentalAnalysis: vi.fn(),
 }));
 
-jest.mock('@/shared/api/fmp/fundamentalClient', () => ({
-    FmpFundamentalClient: jest.fn().mockImplementation(() => ({})),
+vi.mock('@/shared/api/fmp/fundamentalClient', () => ({
+    FmpFundamentalClient: vi.fn().mockImplementation(() => ({})),
 }));
 
-jest.mock('@/entities/session/lib/getCurrentUser', () => ({
-    getCurrentUser: jest.fn(),
+vi.mock('@/entities/session/lib/getCurrentUser', () => ({
+    getCurrentUser: vi.fn(),
 }));
 
-jest.mock('@/shared/lib/byokGate', () => ({
-    resolveTierAndByok: jest.fn(),
-    buildGateError: jest.fn((code: string) => ({
+vi.mock('@/shared/lib/byokGate', () => ({
+    resolveTierAndByok: vi.fn(),
+    buildGateError: vi.fn((code: string) => ({
         code,
         message: `mock-${code}`,
     })),
@@ -39,15 +40,15 @@ import { resolveTierAndByok } from '@/shared/lib/byokGate';
 import type { AnalysisGateError } from '@/shared/lib/types';
 import { submitFundamentalAnalysisAction } from '../actions/submitFundamentalAnalysisAction';
 
-const mockHeaders = headers as jest.MockedFunction<typeof headers>;
+const mockHeaders = headers as MockedFunction<typeof headers>;
 const mockSubmitFundamentalAnalysis =
-    submitFundamentalAnalysis as jest.MockedFunction<
+    submitFundamentalAnalysis as MockedFunction<
         typeof submitFundamentalAnalysis
     >;
-const mockGetCurrentUser = getCurrentUser as jest.MockedFunction<
+const mockGetCurrentUser = getCurrentUser as MockedFunction<
     typeof getCurrentUser
 >;
-const mockResolveTierAndByok = resolveTierAndByok as jest.MockedFunction<
+const mockResolveTierAndByok = resolveTierAndByok as MockedFunction<
     typeof resolveTierAndByok
 >;
 

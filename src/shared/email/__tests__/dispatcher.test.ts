@@ -1,6 +1,7 @@
-const sendMock = jest.fn();
-jest.mock('resend', () => ({
-    Resend: jest.fn().mockImplementation(() => ({
+import { vi, type MockedClass } from 'vitest';
+const sendMock = vi.fn();
+vi.mock('resend', () => ({
+    Resend: vi.fn().mockImplementation(() => ({
         emails: { send: sendMock },
     })),
 }));
@@ -8,7 +9,7 @@ jest.mock('resend', () => ({
 import { Resend } from 'resend';
 import { ResendEmailDispatcher, createEmailDispatcher } from '../dispatcher';
 
-const ResendCtor = Resend as jest.MockedClass<typeof Resend>;
+const ResendCtor = Resend as MockedClass<typeof Resend>;
 
 describe('ResendEmailDispatcher', () => {
     const message = {
@@ -59,7 +60,7 @@ describe('ResendEmailDispatcher', () => {
 
     it('이메일 발송이 타임아웃되면 false를 반환한다', async () => {
         sendMock.mockReturnValue(new Promise(() => {}));
-        jest.spyOn(AbortSignal, 'timeout').mockReturnValueOnce(
+        vi.spyOn(AbortSignal, 'timeout').mockReturnValueOnce(
             AbortSignal.abort(new DOMException('timeout', 'TimeoutError'))
         );
         const dispatcher = new ResendEmailDispatcher({
@@ -67,7 +68,7 @@ describe('ResendEmailDispatcher', () => {
             from: 'noreply@siglens.io',
         });
         await expect(dispatcher.sendEmail(message)).resolves.toBe(false);
-        jest.restoreAllMocks();
+        vi.restoreAllMocks();
     });
 });
 

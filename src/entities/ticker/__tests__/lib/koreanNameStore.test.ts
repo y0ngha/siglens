@@ -1,43 +1,44 @@
+import { vi, type Mock } from 'vitest';
 import type { CacheProvider } from '@y0ngha/siglens-core';
 import type { KoreanTickerEntry } from '@/shared/lib/types';
 import type { KoreanTickerRepository } from '@/shared/db/types';
 
 const mockCache: {
-    get: jest.Mock;
-    set: jest.Mock;
-    delete: jest.Mock;
+    get: Mock;
+    set: Mock;
+    delete: Mock;
 } = {
-    get: jest.fn(),
-    set: jest.fn(),
-    delete: jest.fn(),
+    get: vi.fn(),
+    set: vi.fn(),
+    delete: vi.fn(),
 };
 
 const mockRepository: {
-    findAll: jest.Mock;
-    findBySymbols: jest.Mock;
-    upsertMany: jest.Mock;
+    findAll: Mock;
+    findBySymbols: Mock;
+    upsertMany: Mock;
 } = {
-    findAll: jest.fn(),
-    findBySymbols: jest.fn(),
-    upsertMany: jest.fn(),
+    findAll: vi.fn(),
+    findBySymbols: vi.fn(),
+    upsertMany: vi.fn(),
 };
 
 interface FakeDbClient {
     db: unknown;
 }
 
-const createCacheProviderMock = jest.fn<CacheProvider | null, []>();
-const tryGetTickerDatabaseClientMock = jest.fn<FakeDbClient | null, []>();
-const repositoryFactoryMock = jest.fn<KoreanTickerRepository, [unknown]>();
+const createCacheProviderMock = vi.fn<CacheProvider | null, []>();
+const tryGetTickerDatabaseClientMock = vi.fn<FakeDbClient | null, []>();
+const repositoryFactoryMock = vi.fn<KoreanTickerRepository, [unknown]>();
 
-jest.mock('@y0ngha/siglens-core', () => ({
+vi.mock('@y0ngha/siglens-core', () => ({
     ...jest.requireActual('@y0ngha/siglens-core'),
     createCacheProvider: () => createCacheProviderMock(),
 }));
-jest.mock('../../lib/db', () => ({
+vi.mock('../../lib/db', () => ({
     tryGetTickerDatabaseClient: () => tryGetTickerDatabaseClientMock(),
 }));
-jest.mock('../../api', () => ({
+vi.mock('../../api', () => ({
     DrizzleKoreanTickerRepository: class {
         constructor(db: unknown) {
             return repositoryFactoryMock(db) as unknown as object;
@@ -93,7 +94,7 @@ function resetMocks(): void {
 
 describe('searchByKoreanName', () => {
     beforeEach(resetMocks);
-    afterEach(() => jest.clearAllMocks());
+    afterEach(() => vi.clearAllMocks());
 
     it('cache hit 시 cache 결과로 검색한다', async () => {
         mockCache.get.mockResolvedValue([apple, microsoft]);
@@ -161,7 +162,7 @@ describe('searchByKoreanName', () => {
 
 describe('getKoreanNames', () => {
     beforeEach(resetMocks);
-    afterEach(() => jest.clearAllMocks());
+    afterEach(() => vi.clearAllMocks());
 
     it('빈 symbols 입력은 cache 호출 없이 빈 객체 반환', async () => {
         await expect(getKoreanNames([])).resolves.toEqual({});
@@ -199,7 +200,7 @@ describe('getKoreanNames', () => {
 
 describe('setKoreanTickers', () => {
     beforeEach(resetMocks);
-    afterEach(() => jest.clearAllMocks());
+    afterEach(() => vi.clearAllMocks());
 
     it('빈 배열은 DB / cache 호출 없이 종료한다', async () => {
         await setKoreanTickers([]);

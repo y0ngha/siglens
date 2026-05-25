@@ -1,45 +1,46 @@
-jest.mock('next/headers', () => ({ cookies: jest.fn() }));
-jest.mock('next/navigation', () => ({
-    redirect: jest.fn((path: string) => {
+import { vi, type MockedFunction, type MockedClass, type Mock } from 'vitest';
+vi.mock('next/headers', () => ({ cookies: vi.fn() }));
+vi.mock('next/navigation', () => ({
+    redirect: vi.fn((path: string) => {
         throw new Error(`NEXT_REDIRECT:${path}`);
     }),
 }));
-jest.mock('@/shared/db/client', () => ({
-    getDatabaseClient: jest.fn(() => ({
+vi.mock('@/shared/db/client', () => ({
+    getDatabaseClient: vi.fn(() => ({
         db: {},
         sql: () => null,
     })),
-    resetDatabaseClientForTests: jest.fn(),
+    resetDatabaseClientForTests: vi.fn(),
 }));
-jest.mock('@/entities/session', () => ({
-    DrizzleSessionRepository: jest.fn().mockImplementation(() => ({})),
-    bcryptPasswordHasher: { hashPassword: jest.fn() },
-    bcryptPasswordVerifier: { verifyPassword: jest.fn() },
-    applyAuthCookie: jest.fn((c: unknown) => c),
-    createAuthHintCookie: jest.fn(() => ({
+vi.mock('@/entities/session', () => ({
+    DrizzleSessionRepository: vi.fn().mockImplementation(() => ({})),
+    bcryptPasswordHasher: { hashPassword: vi.fn() },
+    bcryptPasswordVerifier: { verifyPassword: vi.fn() },
+    applyAuthCookie: vi.fn((c: unknown) => c),
+    createAuthHintCookie: vi.fn(() => ({
         name: 'auth_hint',
         value: 'true',
     })),
-    getAuthDatabaseClient: jest.fn(() => ({ db: {}, sql: () => null })),
+    getAuthDatabaseClient: vi.fn(() => ({ db: {}, sql: () => null })),
     AUTH_SERVICE_UNAVAILABLE_MESSAGE:
         '서비스에 일시적인 문제가 발생했습니다. 잠시 후 다시 시도해주세요.',
     CONSENT_REQUIRED_MESSAGE: '서비스 이용을 위해 필수 약관에 동의해 주세요.',
     DEFAULT_SESSION_TTL_SECONDS: 7776000,
-    isSecureCookieEnv: jest.fn(() => false),
+    isSecureCookieEnv: vi.fn(() => false),
 }));
-jest.mock('@/entities/user', () => ({
-    DrizzleUserRepository: jest.fn().mockImplementation(() => ({})),
-    loginUser: jest.fn(),
-    registerUser: jest.fn(),
+vi.mock('@/entities/user', () => ({
+    DrizzleUserRepository: vi.fn().mockImplementation(() => ({})),
+    loginUser: vi.fn(),
+    registerUser: vi.fn(),
 }));
-jest.mock('@/entities/agreement', () => ({
-    DrizzleAgreementRepository: jest.fn(),
+vi.mock('@/entities/agreement', () => ({
+    DrizzleAgreementRepository: vi.fn(),
 }));
-jest.mock('@/entities/terms', () => ({
-    DrizzleTermsRepository: jest.fn(),
+vi.mock('@/entities/terms', () => ({
+    DrizzleTermsRepository: vi.fn(),
 }));
-jest.mock('@/entities/email-token', () => ({
-    createEmailTokenStore: jest.fn(),
+vi.mock('@/entities/email-token', () => ({
+    createEmailTokenStore: vi.fn(),
 }));
 
 import { cookies } from 'next/headers';
@@ -56,17 +57,17 @@ import { registerAction } from '@/features/auth-signup/actions/registerAction';
 import { resetAuthDatabaseClientForTests } from '@/entities/session/lib/db';
 import { makeFormData } from '@/shared/test-utils/makeFormData';
 
-const mockCookies = cookies as jest.MockedFunction<typeof cookies>;
-const mockRegister = registerUser as jest.MockedFunction<typeof registerUser>;
-const mockLogin = loginUser as jest.MockedFunction<typeof loginUser>;
-const mockCreateTokenStore = createEmailTokenStore as jest.MockedFunction<
+const mockCookies = cookies as MockedFunction<typeof cookies>;
+const mockRegister = registerUser as MockedFunction<typeof registerUser>;
+const mockLogin = loginUser as MockedFunction<typeof loginUser>;
+const mockCreateTokenStore = createEmailTokenStore as MockedFunction<
     typeof createEmailTokenStore
 >;
-const mockRedirect = redirect as jest.MockedFunction<typeof redirect>;
-const mockGetAuthDatabaseClient = getAuthDatabaseClient as jest.MockedFunction<
+const mockRedirect = redirect as MockedFunction<typeof redirect>;
+const mockGetAuthDatabaseClient = getAuthDatabaseClient as MockedFunction<
     typeof getAuthDatabaseClient
 >;
-const MockTermsRepository = DrizzleTermsRepository as jest.MockedClass<
+const MockTermsRepository = DrizzleTermsRepository as MockedClass<
     typeof DrizzleTermsRepository
 >;
 
@@ -120,12 +121,12 @@ function makeConsentFormData(overrides: Record<string, string> = {}): FormData {
 }
 
 describe('registerAction', () => {
-    let setSpy: jest.Mock;
+    let setSpy: Mock;
 
     beforeEach(() => {
         resetAuthDatabaseClientForTests();
         process.env.DATABASE_URL = 'postgres://test';
-        setSpy = jest.fn();
+        setSpy = vi.fn();
         mockCookies.mockResolvedValue({
             set: setSpy,
         } as unknown as Awaited<ReturnType<typeof cookies>>);
@@ -133,24 +134,24 @@ describe('registerAction', () => {
         mockLogin.mockReset();
         mockCreateTokenStore.mockReset();
         mockCreateTokenStore.mockReturnValue({
-            set: jest.fn(),
-            get: jest.fn(),
-            delete: jest.fn(),
-            consume: jest.fn(),
+            set: vi.fn(),
+            get: vi.fn(),
+            delete: vi.fn(),
+            consume: vi.fn(),
         });
         mockRedirect.mockClear();
         // Default: active terms exist for both kinds
         MockTermsRepository.mockImplementation(
             () =>
                 ({
-                    findActive: jest.fn().mockImplementation((kind: string) => {
+                    findActive: vi.fn().mockImplementation((kind: string) => {
                         if (kind === 'privacy')
                             return Promise.resolve(FAKE_PRIVACY_TERMS);
                         if (kind === 'tos')
                             return Promise.resolve(FAKE_TOS_TERMS);
                         return Promise.resolve(null);
                     }),
-                    upsertFromSeed: jest.fn(),
+                    upsertFromSeed: vi.fn(),
                 }) as unknown as InstanceType<typeof DrizzleTermsRepository>
         );
     });
@@ -187,8 +188,8 @@ describe('registerAction', () => {
             MockTermsRepository.mockImplementation(
                 () =>
                     ({
-                        findActive: jest.fn().mockResolvedValue(null),
-                        upsertFromSeed: jest.fn(),
+                        findActive: vi.fn().mockResolvedValue(null),
+                        upsertFromSeed: vi.fn(),
                     }) as unknown as InstanceType<typeof DrizzleTermsRepository>
             );
             const result = await registerAction(
@@ -203,14 +204,14 @@ describe('registerAction', () => {
             MockTermsRepository.mockImplementation(
                 () =>
                     ({
-                        findActive: jest
+                        findActive: vi
                             .fn()
                             .mockImplementation((kind: string) =>
                                 kind === 'privacy'
                                     ? Promise.resolve(null)
                                     : Promise.resolve(FAKE_TOS_TERMS)
                             ),
-                        upsertFromSeed: jest.fn(),
+                        upsertFromSeed: vi.fn(),
                     }) as unknown as InstanceType<typeof DrizzleTermsRepository>
             );
             const result = await registerAction(
@@ -225,14 +226,14 @@ describe('registerAction', () => {
             MockTermsRepository.mockImplementation(
                 () =>
                     ({
-                        findActive: jest
+                        findActive: vi
                             .fn()
                             .mockImplementation((kind: string) =>
                                 kind === 'tos'
                                     ? Promise.resolve(null)
                                     : Promise.resolve(FAKE_PRIVACY_TERMS)
                             ),
-                        upsertFromSeed: jest.fn(),
+                        upsertFromSeed: vi.fn(),
                     }) as unknown as InstanceType<typeof DrizzleTermsRepository>
             );
             const result = await registerAction(

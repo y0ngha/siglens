@@ -1,7 +1,3 @@
-/**
- * @jest-environment jsdom
- */
-import '@testing-library/jest-dom';
 import { render } from '@testing-library/react';
 import type { FearGreedLabel, FearGreedSnapshot } from '@y0ngha/siglens-core';
 import { FearGreedHeaderChip } from '@/widgets/symbol-page/FearGreedHeaderChip';

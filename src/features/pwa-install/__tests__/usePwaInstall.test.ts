@@ -1,7 +1,5 @@
-/**
- * @jest-environment jsdom
- */
-import '@testing-library/jest-dom';
+import { vi } from 'vitest';
+// @vitest-environment jsdom
 import { renderHook, act } from '@testing-library/react';
 import {
     usePwaInstall,
@@ -17,24 +15,24 @@ describe('usePwaInstall', () => {
             value: (query: string) => ({
                 matches: false,
                 media: query,
-                addEventListener: jest.fn(),
-                removeEventListener: jest.fn(),
-                dispatchEvent: jest.fn(),
+                addEventListener: vi.fn(),
+                removeEventListener: vi.fn(),
+                dispatchEvent: vi.fn(),
             }),
         });
         Object.defineProperty(navigator, 'serviceWorker', {
             writable: true,
             value: {
-                register: jest.fn().mockResolvedValue(undefined),
-                addEventListener: jest.fn(),
+                register: vi.fn().mockResolvedValue(undefined),
+                addEventListener: vi.fn(),
                 controller: null,
             },
         });
     });
 
     afterEach(() => {
-        jest.clearAllTimers();
-        jest.useRealTimers();
+        vi.clearAllTimers();
+        vi.useRealTimers();
     });
 
     beforeEach(() => {
@@ -115,7 +113,7 @@ describe('usePwaInstall', () => {
             configurable: true,
         });
 
-        const mockPrompt = jest.fn().mockResolvedValue(undefined);
+        const mockPrompt = vi.fn().mockResolvedValue(undefined);
         const promptEvent = Object.assign(new Event('beforeinstallprompt'), {
             prompt: mockPrompt,
             userChoice: Promise.resolve({ outcome: 'accepted' as const }),
@@ -141,7 +139,7 @@ describe('usePwaInstall', () => {
             configurable: true,
         });
 
-        const mockPrompt = jest.fn().mockResolvedValue(undefined);
+        const mockPrompt = vi.fn().mockResolvedValue(undefined);
         const promptEvent = Object.assign(new Event('beforeinstallprompt'), {
             prompt: mockPrompt,
             userChoice: Promise.resolve({ outcome: 'dismissed' as const }),
@@ -165,11 +163,11 @@ describe('usePwaInstall', () => {
     });
 
     it('30초 폴백 타이머 → 모바일에서 showBanner=true', () => {
-        jest.useFakeTimers();
+        vi.useFakeTimers();
         const { result } = renderHook(() => usePwaInstall());
         expect(result.current.showBanner).toBe(false);
         act(() => {
-            jest.advanceTimersByTime(PWA_BANNER_FALLBACK_DELAY_MS);
+            vi.advanceTimersByTime(PWA_BANNER_FALLBACK_DELAY_MS);
         });
         expect(result.current.showBanner).toBe(true);
     });

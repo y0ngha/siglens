@@ -1,9 +1,10 @@
+import { vi, type Mock } from 'vitest';
 // withRetry 내부 sleep을 즉시 resolve로 stubbing해서 retry 케이스의 실제
 // 대기 시간을 없앤다. retry 발생 시 sleep이 호출되는 것만 검증.
-// `jest.mock` 은 import 위로 호이스트되어야 static import 보다 먼저 평가된다
+// `vi.mock` 은 import 위로 호이스트되어야 static import 보다 먼저 평가된다
 // (`import/first` 규칙과 일치).
-jest.mock('@/shared/lib/sleep', () => ({
-    sleep: jest.fn().mockResolvedValue(undefined),
+vi.mock('@/shared/lib/sleep', () => ({
+    sleep: vi.fn().mockResolvedValue(undefined),
 }));
 
 import type { NewsCardAnalysis, NewsItem } from '@y0ngha/siglens-core';
@@ -34,13 +35,13 @@ const analysis: NewsCardAnalysis = {
 /** Build a mock `db` that handles insert→onConflictDoUpdate chains. */
 function makeUpsertDb(): {
     db: SiglensDatabase;
-    insert: jest.Mock;
-    values: jest.Mock;
-    onConflictDoUpdate: jest.Mock;
+    insert: Mock;
+    values: Mock;
+    onConflictDoUpdate: Mock;
 } {
-    const onConflictDoUpdate = jest.fn().mockResolvedValue(undefined);
-    const values = jest.fn(() => ({ onConflictDoUpdate }));
-    const insert = jest.fn(() => ({ values }));
+    const onConflictDoUpdate = vi.fn().mockResolvedValue(undefined);
+    const values = vi.fn(() => ({ onConflictDoUpdate }));
+    const insert = vi.fn(() => ({ values }));
     return {
         db: { insert } as unknown as SiglensDatabase,
         insert,
@@ -52,13 +53,13 @@ function makeUpsertDb(): {
 /** Build a mock `db` that handles update→set→where chains. */
 function makeUpdateDb(): {
     db: SiglensDatabase;
-    update: jest.Mock;
-    set: jest.Mock;
-    where: jest.Mock;
+    update: Mock;
+    set: Mock;
+    where: Mock;
 } {
-    const where = jest.fn().mockResolvedValue(undefined);
-    const set = jest.fn(() => ({ where }));
-    const update = jest.fn(() => ({ set }));
+    const where = vi.fn().mockResolvedValue(undefined);
+    const set = vi.fn(() => ({ where }));
+    const update = vi.fn(() => ({ set }));
     return {
         db: { update } as unknown as SiglensDatabase,
         update,
@@ -70,13 +71,13 @@ function makeUpdateDb(): {
 /** Build a mock `db` for a select…where…orderBy chain returning `rows`. */
 function makeSelectDb(rows: unknown[]): {
     db: SiglensDatabase;
-    select: jest.Mock;
-    orderBy: jest.Mock;
+    select: Mock;
+    orderBy: Mock;
 } {
-    const orderBy = jest.fn().mockResolvedValue(rows);
-    const where = jest.fn(() => ({ orderBy }));
-    const from = jest.fn(() => ({ where }));
-    const select = jest.fn(() => ({ from }));
+    const orderBy = vi.fn().mockResolvedValue(rows);
+    const where = vi.fn(() => ({ orderBy }));
+    const from = vi.fn(() => ({ where }));
+    const select = vi.fn(() => ({ from }));
     return {
         db: { select } as unknown as SiglensDatabase,
         select,
@@ -130,12 +131,12 @@ describe('DrizzleNewsRepository', () => {
                 new Error('Error connecting to database: fetch failed'),
                 { name: 'NeonDbError' }
             );
-            const onConflictDoUpdate = jest
+            const onConflictDoUpdate = vi
                 .fn()
                 .mockRejectedValueOnce(neonTransient)
                 .mockResolvedValueOnce(undefined);
-            const values = jest.fn(() => ({ onConflictDoUpdate }));
-            const insert = jest.fn(() => ({ values }));
+            const values = vi.fn(() => ({ onConflictDoUpdate }));
+            const insert = vi.fn(() => ({ values }));
             const db = { insert } as unknown as SiglensDatabase;
 
             const repo = new DrizzleNewsRepository(db);
@@ -158,11 +159,11 @@ describe('DrizzleNewsRepository', () => {
                 ),
                 { name: 'NeonDbError' }
             );
-            const onConflictDoUpdate = jest
+            const onConflictDoUpdate = vi
                 .fn()
                 .mockRejectedValueOnce(constraintError);
-            const values = jest.fn(() => ({ onConflictDoUpdate }));
-            const insert = jest.fn(() => ({ values }));
+            const values = vi.fn(() => ({ onConflictDoUpdate }));
+            const insert = vi.fn(() => ({ values }));
             const db = { insert } as unknown as SiglensDatabase;
 
             const repo = new DrizzleNewsRepository(db);

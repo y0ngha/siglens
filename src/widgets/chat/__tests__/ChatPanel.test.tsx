@@ -1,6 +1,5 @@
+import { vi } from 'vitest';
 /**
- * @jest-environment jsdom
- *
  * jsdom-level coverage for ChatPanel mobile-input regression risk
  * (PR #407 follow-up). These tests verify class composition, ref
  * wiring, and event handler attachment — they CANNOT verify actual
@@ -9,39 +8,38 @@
  */
 
 import { ChatPanel } from '@/widgets/chat/ChatPanel';
-import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
 import React from 'react';
 
-jest.mock('@/shared/ui/MarkdownText', () => ({
+vi.mock('@/shared/ui/MarkdownText', () => ({
     MarkdownText: ({ children }: { children: React.ReactNode }) => (
         <span>{children}</span>
     ),
 }));
 
-jest.mock('@/widgets/chat/hooks/useChat', () => ({
+vi.mock('@/widgets/chat/hooks/useChat', () => ({
     useChat: () => ({
         messages: [],
         loadingPhase: null,
         analysisUpdated: false,
         remainingTokens: null,
-        sendMessage: jest.fn(),
-        dismissAnalysisUpdated: jest.fn(),
+        sendMessage: vi.fn(),
+        dismissAnalysisUpdated: vi.fn(),
         selectedModel: 'gemini-2.5-flash',
-        handleModelChange: jest.fn(),
+        handleModelChange: vi.fn(),
         gateModal: null,
-        dismissGate: jest.fn(),
+        dismissGate: vi.fn(),
     }),
 }));
 
 let mockIsAnalysisReady = true;
-jest.mock('@/features/symbol-chat', () => ({
+vi.mock('@/features/symbol-chat', () => ({
     useSymbolChat: () => ({
         context: null,
         timeframe: '1Day',
         isAnalysisReady: mockIsAnalysisReady,
-        publish: jest.fn(),
-        clear: jest.fn(),
+        publish: vi.fn(),
+        clear: vi.fn(),
     }),
 }));
 
@@ -55,7 +53,7 @@ describe('ChatPanel', () => {
     // messagesEndRef in a useEffect. Scoped inside the describe block per
     // MISTAKES.md Tests rule 3.
     beforeAll(() => {
-        Element.prototype.scrollIntoView = jest.fn();
+        Element.prototype.scrollIntoView = vi.fn();
     });
 
     beforeEach(() => {
@@ -105,7 +103,7 @@ describe('ChatPanel', () => {
         });
 
         it('close button (when onClose provided) meets 44px minimum tap target on mobile', () => {
-            renderPanel({ onClose: jest.fn() });
+            renderPanel({ onClose: vi.fn() });
             const close = screen.getByRole('button', { name: '채팅 닫기' });
             expect(close.className).toContain('h-11');
             expect(close.className).toContain('w-11');

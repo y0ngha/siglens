@@ -1,28 +1,29 @@
-jest.mock('next/headers', () => ({ cookies: jest.fn() }));
-jest.mock('next/navigation', () => ({
-    redirect: jest.fn((path: string) => {
+import { vi, type MockedFunction, type Mock } from 'vitest';
+vi.mock('next/headers', () => ({ cookies: vi.fn() }));
+vi.mock('next/navigation', () => ({
+    redirect: vi.fn((path: string) => {
         throw new Error(`NEXT_REDIRECT:${path}`);
     }),
 }));
-jest.mock('@/shared/db/client', () => ({
-    getDatabaseClient: jest.fn(() => ({ db: {}, sql: () => null })),
-    resetDatabaseClientForTests: jest.fn(),
+vi.mock('@/shared/db/client', () => ({
+    getDatabaseClient: vi.fn(() => ({ db: {}, sql: () => null })),
+    resetDatabaseClientForTests: vi.fn(),
 }));
-jest.mock('@/entities/session', () => ({
-    DrizzleSessionRepository: jest.fn().mockImplementation(() => ({})),
-    bcryptPasswordVerifier: { verifyPassword: jest.fn() },
-    applyAuthCookie: jest.fn((c: unknown) => c),
-    getAuthDatabaseClient: jest.fn(() => ({ db: {}, sql: () => null })),
-    isSecureCookieEnv: jest.fn(() => false),
-    createAuthHintCookie: jest.fn(() => ({
+vi.mock('@/entities/session', () => ({
+    DrizzleSessionRepository: vi.fn().mockImplementation(() => ({})),
+    bcryptPasswordVerifier: { verifyPassword: vi.fn() },
+    applyAuthCookie: vi.fn((c: unknown) => c),
+    getAuthDatabaseClient: vi.fn(() => ({ db: {}, sql: () => null })),
+    isSecureCookieEnv: vi.fn(() => false),
+    createAuthHintCookie: vi.fn(() => ({
         name: 'auth_hint',
         value: 'true',
     })),
     DEFAULT_SESSION_TTL_SECONDS: 7776000,
 }));
-jest.mock('@/entities/user', () => ({
-    DrizzleUserRepository: jest.fn().mockImplementation(() => ({})),
-    loginUser: jest.fn(),
+vi.mock('@/entities/user', () => ({
+    DrizzleUserRepository: vi.fn().mockImplementation(() => ({})),
+    loginUser: vi.fn(),
 }));
 
 import { cookies } from 'next/headers';
@@ -32,17 +33,17 @@ import { loginAction } from '@/features/auth-login/actions/loginAction';
 import { resetAuthDatabaseClientForTests } from '@/entities/session/lib/db';
 import { makeFormData } from '@/shared/test-utils/makeFormData';
 
-const mockCookies = cookies as jest.MockedFunction<typeof cookies>;
-const mockLogin = loginUser as jest.MockedFunction<typeof loginUser>;
-const mockRedirect = redirect as jest.MockedFunction<typeof redirect>;
+const mockCookies = cookies as MockedFunction<typeof cookies>;
+const mockLogin = loginUser as MockedFunction<typeof loginUser>;
+const mockRedirect = redirect as MockedFunction<typeof redirect>;
 
 describe('loginAction', () => {
-    let setSpy: jest.Mock;
+    let setSpy: Mock;
 
     beforeEach(() => {
         resetAuthDatabaseClientForTests();
         process.env.DATABASE_URL = 'postgres://test';
-        setSpy = jest.fn();
+        setSpy = vi.fn();
         mockCookies.mockResolvedValue({
             set: setSpy,
         } as unknown as Awaited<ReturnType<typeof cookies>>);

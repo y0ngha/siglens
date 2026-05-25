@@ -1,39 +1,40 @@
+import { vi, type Mock } from 'vitest';
 import type { CacheProvider } from '@y0ngha/siglens-core';
 import type { TickerSearchResult } from '@/shared/lib/types';
 import type { FmpSearchResult } from '../../model';
 
 const mockCache: {
-    get: jest.Mock;
-    set: jest.Mock;
-    delete: jest.Mock;
+    get: Mock;
+    set: Mock;
+    delete: Mock;
 } = {
-    get: jest.fn(),
-    set: jest.fn(),
-    delete: jest.fn(),
+    get: vi.fn(),
+    set: vi.fn(),
+    delete: vi.fn(),
 };
 
-const createCacheProviderMock = jest.fn<CacheProvider | null, []>();
-const searchBySymbolMock = jest.fn<Promise<FmpSearchResult[]>, [string]>();
-const searchByNameMock = jest.fn<Promise<FmpSearchResult[]>, [string]>();
-const searchByKoreanNameMock = jest.fn<
+const createCacheProviderMock = vi.fn<CacheProvider | null, []>();
+const searchBySymbolMock = vi.fn<Promise<FmpSearchResult[]>, [string]>();
+const searchByNameMock = vi.fn<Promise<FmpSearchResult[]>, [string]>();
+const searchByKoreanNameMock = vi.fn<
     Promise<TickerSearchResult[]>,
     [string]
 >();
-const getKoreanNamesMock = jest.fn<
+const getKoreanNamesMock = vi.fn<
     Promise<Record<string, string>>,
     [string[]]
 >();
-const setKoreanTickersMock = jest.fn<Promise<void>, [unknown[]]>();
-const translateCompanyNamesMock = jest.fn<
+const setKoreanTickersMock = vi.fn<Promise<void>, [unknown[]]>();
+const translateCompanyNamesMock = vi.fn<
     Promise<Record<string, string>>,
     []
 >();
 
-jest.mock('@y0ngha/siglens-core', () => ({
+vi.mock('@y0ngha/siglens-core', () => ({
     ...jest.requireActual('@y0ngha/siglens-core'),
     createCacheProvider: () => createCacheProviderMock(),
 }));
-jest.mock('../../lib/fmpTickerApi', () => {
+vi.mock('../../lib/fmpTickerApi', () => {
     const actual = jest.requireActual('../../lib/fmpTickerApi');
     return {
         ...actual,
@@ -41,12 +42,12 @@ jest.mock('../../lib/fmpTickerApi', () => {
         searchByName: (q: string) => searchByNameMock(q),
     };
 });
-jest.mock('../../lib/koreanNameStore', () => ({
+vi.mock('../../lib/koreanNameStore', () => ({
     searchByKoreanName: (q: string) => searchByKoreanNameMock(q),
     getKoreanNames: (s: string[]) => getKoreanNamesMock(s),
     setKoreanTickers: (entries: unknown[]) => setKoreanTickersMock(entries),
 }));
-jest.mock('../../lib/koreanTranslator', () => ({
+vi.mock('../../lib/koreanTranslator', () => ({
     translateCompanyNames: () => translateCompanyNamesMock(),
 }));
 
@@ -93,7 +94,7 @@ describe('searchTicker', () => {
     });
 
     afterEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     it('빈 query 는 빈 배열 반환', async () => {
@@ -220,7 +221,7 @@ describe('searchTicker', () => {
     });
 
     it('waitUntil이 제공되면 번역과 캐시 저장 promise를 등록한다', async () => {
-        const waitUntil = jest.fn();
+        const waitUntil = vi.fn();
         mockCache.get.mockResolvedValue(null);
         searchBySymbolMock.mockResolvedValue([apple]);
         searchByNameMock.mockResolvedValue([]);

@@ -1,7 +1,4 @@
-/**
- * @jest-environment jsdom
- */
-import '@testing-library/jest-dom';
+import { vi } from 'vitest';
 import { render } from '@testing-library/react';
 import type { FearGreedSnapshot } from '@y0ngha/siglens-core';
 import { FearGreedPage } from '@/widgets/fear-greed/FearGreedPage';
@@ -18,18 +15,18 @@ const baseSnapshot: FearGreedSnapshot = {
     warning: null,
 };
 
-const mockUseFearGreedFromSymbol = jest.fn();
-jest.mock('@/widgets/fear-greed/hooks/useFearGreedFromSymbol', () => ({
+const mockUseFearGreedFromSymbol = vi.fn();
+vi.mock('@/widgets/fear-greed/hooks/useFearGreedFromSymbol', () => ({
     useFearGreedFromSymbol: (...args: unknown[]) =>
         mockUseFearGreedFromSymbol(...args),
 }));
 
 // Mock the chart subcomponent (it uses lightweight-charts and is hard to render under jsdom).
-jest.mock('@/widgets/chart/FearGreedHistoricalChart', () => ({
+vi.mock('@/widgets/chart/FearGreedHistoricalChart', () => ({
     FearGreedHistoricalChart: () => null,
 }));
 
-jest.mock('@/features/symbol-chat', () => ({
+vi.mock('@/features/symbol-chat', () => ({
     usePublishSymbolChat: () => undefined,
 }));
 

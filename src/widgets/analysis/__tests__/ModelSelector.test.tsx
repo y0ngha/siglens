@@ -1,8 +1,4 @@
-/**
- * @jest-environment jsdom
- */
-
-import '@testing-library/jest-dom';
+import { vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ModelSelector } from '@/widgets/analysis/ModelSelector';
@@ -22,7 +18,7 @@ function renderSelector(
         disabled: boolean;
     }> = {}
 ) {
-    const onModelChange = props.onModelChange ?? jest.fn();
+    const onModelChange = props.onModelChange ?? vi.fn();
     return {
         onModelChange,
         ...render(

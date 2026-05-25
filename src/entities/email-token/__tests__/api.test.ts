@@ -1,8 +1,9 @@
-jest.mock('@upstash/redis', () => {
-    const MockRedis = jest.fn(() => ({
-        get: jest.fn(),
-        set: jest.fn(),
-        del: jest.fn(),
+import { vi, type Mock } from 'vitest';
+vi.mock('@upstash/redis', () => {
+    const MockRedis = vi.fn(() => ({
+        get: vi.fn(),
+        set: vi.fn(),
+        del: vi.fn(),
     }));
     return { Redis: MockRedis };
 });
@@ -15,7 +16,7 @@ import {
     type EmailTokenValue,
 } from '../api';
 
-const MockRedis = Redis as unknown as jest.Mock;
+const MockRedis = Redis as unknown as Mock;
 
 const ORIGINAL_ENV = { ...process.env };
 
@@ -50,9 +51,9 @@ describe('createEmailTokenStore', () => {
         __resetEmailTokenStoreCacheForTests();
         MockRedis.mockReset();
         MockRedis.mockImplementation(() => ({
-            get: jest.fn(),
-            set: jest.fn(),
-            del: jest.fn(),
+            get: vi.fn(),
+            set: vi.fn(),
+            del: vi.fn(),
         }));
     });
 
@@ -123,11 +124,11 @@ describe('createEmailTokenStore', () => {
         });
 
         it('set delegates to writer.set with the namespaced key, value, and TTL', async () => {
-            const mockSet = jest.fn().mockResolvedValue('OK');
+            const mockSet = vi.fn().mockResolvedValue('OK');
             MockRedis.mockImplementation(() => ({
-                get: jest.fn(),
+                get: vi.fn(),
                 set: mockSet,
-                del: jest.fn(),
+                del: vi.fn(),
             }));
 
             const store = createEmailTokenStore()!;
@@ -150,11 +151,11 @@ describe('createEmailTokenStore', () => {
 
         it('get delegates to reader.get with the namespaced key', async () => {
             const stored: EmailTokenValue = { status: 'verified' };
-            const mockGet = jest.fn().mockResolvedValue(stored);
+            const mockGet = vi.fn().mockResolvedValue(stored);
             MockRedis.mockImplementation(() => ({
                 get: mockGet,
-                set: jest.fn(),
-                del: jest.fn(),
+                set: vi.fn(),
+                del: vi.fn(),
             }));
 
             const store = createEmailTokenStore()!;
@@ -169,10 +170,10 @@ describe('createEmailTokenStore', () => {
         });
 
         it('delete delegates to writer.del with the namespaced key', async () => {
-            const mockDel = jest.fn().mockResolvedValue(1);
+            const mockDel = vi.fn().mockResolvedValue(1);
             MockRedis.mockImplementation(() => ({
-                get: jest.fn(),
-                set: jest.fn(),
+                get: vi.fn(),
+                set: vi.fn(),
                 del: mockDel,
             }));
 
@@ -222,11 +223,11 @@ describe('createEmailTokenStore', () => {
                 status: 'pending',
                 tokenHash: 'hash',
             };
-            const mockGetdel = jest.fn().mockResolvedValue(stored);
+            const mockGetdel = vi.fn().mockResolvedValue(stored);
             MockRedis.mockImplementation(() => ({
-                get: jest.fn(),
-                set: jest.fn(),
-                del: jest.fn(),
+                get: vi.fn(),
+                set: vi.fn(),
+                del: vi.fn(),
                 getdel: mockGetdel,
             }));
 
@@ -242,11 +243,11 @@ describe('createEmailTokenStore', () => {
         });
 
         it('returns null when the key did not exist', async () => {
-            const mockGetdel = jest.fn().mockResolvedValue(null);
+            const mockGetdel = vi.fn().mockResolvedValue(null);
             MockRedis.mockImplementation(() => ({
-                get: jest.fn(),
-                set: jest.fn(),
-                del: jest.fn(),
+                get: vi.fn(),
+                set: vi.fn(),
+                del: vi.fn(),
                 getdel: mockGetdel,
             }));
 
@@ -263,11 +264,11 @@ describe('createEmailTokenStore', () => {
             // gating is the caller's responsibility (e.g. confirmPasswordReset
             // must verify status === 'pending' itself).
             const stored: EmailTokenValue = { status: 'verified' };
-            const mockGetdel = jest.fn().mockResolvedValue(stored);
+            const mockGetdel = vi.fn().mockResolvedValue(stored);
             MockRedis.mockImplementation(() => ({
-                get: jest.fn(),
-                set: jest.fn(),
-                del: jest.fn(),
+                get: vi.fn(),
+                set: vi.fn(),
+                del: vi.fn(),
                 getdel: mockGetdel,
             }));
 
@@ -287,14 +288,14 @@ describe('createEmailTokenStore', () => {
             UPSTASH_REDIS_REST_READONLY_TOKEN: 'readonly-token',
         });
 
-        const writerGet = jest.fn();
-        const readerGet = jest.fn().mockResolvedValue(null);
+        const writerGet = vi.fn();
+        const readerGet = vi.fn().mockResolvedValue(null);
         let callCount = 0;
         MockRedis.mockImplementation(() => {
             callCount++;
             return callCount === 1
-                ? { get: writerGet, set: jest.fn(), del: jest.fn() }
-                : { get: readerGet, set: jest.fn(), del: jest.fn() };
+                ? { get: writerGet, set: vi.fn(), del: vi.fn() }
+                : { get: readerGet, set: vi.fn(), del: vi.fn() };
         });
 
         const store = createEmailTokenStore()!;

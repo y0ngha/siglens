@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { requestEmailVerification } from '@/entities/user/lib/requestEmailVerification';
 import type { RequestEmailVerificationDependencies } from '@/entities/user/lib/authUseCaseTypes';
 import { EMAIL_VERIFICATION_PENDING_TTL_SECONDS } from '@/entities/user/lib/authUseCaseConstants';
@@ -28,23 +29,23 @@ function makeDependencies(options?: {
     sendEmailThrows?: boolean;
 }): {
     dependencies: RequestEmailVerificationDependencies;
-    setToken: ReturnType<typeof jest.fn>;
-    sendEmail: ReturnType<typeof jest.fn>;
+    setToken: ReturnType<typeof vi.fn>;
+    sendEmail: ReturnType<typeof vi.fn>;
 } {
-    const setToken = jest.fn().mockResolvedValue(undefined);
+    const setToken = vi.fn().mockResolvedValue(undefined);
     const sendEmailThrows = options?.sendEmailThrows ?? false;
     const sendEmailResolves = options?.sendEmailResolves ?? true;
     const sendEmail = sendEmailThrows
-        ? jest.fn().mockRejectedValue(new Error('smtp'))
-        : jest.fn().mockResolvedValue(sendEmailResolves);
+        ? vi.fn().mockRejectedValue(new Error('smtp'))
+        : vi.fn().mockResolvedValue(sendEmailResolves);
 
     return {
         dependencies: {
             emailTokens: {
                 set: setToken,
-                get: jest.fn(),
-                delete: jest.fn(),
-                consume: jest.fn(),
+                get: vi.fn(),
+                delete: vi.fn(),
+                consume: vi.fn(),
             },
             emailDispatcher: { sendEmail },
         },

@@ -1,3 +1,4 @@
+import { vi, type MockedFunction, type MockedClass, type Mock } from 'vitest';
 import { ensureNewsCardsAnalyzedAction } from '../actions/ensureNewsCardsAnalyzedAction';
 import { DISABLED_THINKING_BUDGET } from '../lib/newsAnalysisConstants';
 import { NEWS_LOOKBACK_MS } from '../lib/newsLookback';
@@ -17,31 +18,31 @@ import type {
 // Module mocks
 // ---------------------------------------------------------------------------
 
-jest.mock('@y0ngha/siglens-core', () => ({
+vi.mock('@y0ngha/siglens-core', () => ({
     ...jest.requireActual('@y0ngha/siglens-core'),
-    submitNewsCardAnalysis: jest.fn(),
-    pollNewsCardAnalysis: jest.fn(),
+    submitNewsCardAnalysis: vi.fn(),
+    pollNewsCardAnalysis: vi.fn(),
 }));
 
-jest.mock('@/shared/lib/sleep', () => ({
-    sleep: jest.fn().mockResolvedValue(undefined),
+vi.mock('@/shared/lib/sleep', () => ({
+    sleep: vi.fn().mockResolvedValue(undefined),
 }));
 
-jest.mock('../lib/fmpNewsClient', () => ({
-    FmpNewsClient: jest.fn().mockImplementation(() => ({
-        fetchNewsForPeriod: jest.fn(),
+vi.mock('../lib/fmpNewsClient', () => ({
+    FmpNewsClient: vi.fn().mockImplementation(() => ({
+        fetchNewsForPeriod: vi.fn(),
     })),
 }));
 
-jest.mock('@/shared/db/client', () => ({
-    getDatabaseClient: jest.fn().mockReturnValue({ db: {} }),
+vi.mock('@/shared/db/client', () => ({
+    getDatabaseClient: vi.fn().mockReturnValue({ db: {} }),
 }));
 
-jest.mock('@/entities/news-article', () => ({
-    DrizzleNewsRepository: jest.fn().mockImplementation(() => ({
-        upsertNewsItem: jest.fn(),
-        attachAnalysis: jest.fn(),
-        listBySymbol: jest.fn().mockResolvedValue([]),
+vi.mock('@/entities/news-article', () => ({
+    DrizzleNewsRepository: vi.fn().mockImplementation(() => ({
+        upsertNewsItem: vi.fn(),
+        attachAnalysis: vi.fn(),
+        listBySymbol: vi.fn().mockResolvedValue([]),
     })),
 }));
 
@@ -51,19 +52,19 @@ jest.mock('@/entities/news-article', () => ({
 
 import { DrizzleNewsRepository } from '@/entities/news-article';
 
-const MockNewsRepository = DrizzleNewsRepository as jest.MockedClass<
+const MockNewsRepository = DrizzleNewsRepository as MockedClass<
     typeof DrizzleNewsRepository
 >;
-const MockFmpNewsClient = FmpNewsClient as jest.MockedClass<
+const MockFmpNewsClient = FmpNewsClient as MockedClass<
     typeof FmpNewsClient
 >;
 
 const mockSubmitNewsCardAnalysis =
-    submitNewsCardAnalysis as jest.MockedFunction<
+    submitNewsCardAnalysis as MockedFunction<
         typeof submitNewsCardAnalysis
     >;
 
-const mockPollNewsCardAnalysis = pollNewsCardAnalysis as jest.MockedFunction<
+const mockPollNewsCardAnalysis = pollNewsCardAnalysis as MockedFunction<
     typeof pollNewsCardAnalysis
 >;
 
@@ -116,20 +117,20 @@ const POLL_ERROR: PollNewsCardAnalysisResult = {
 // ---------------------------------------------------------------------------
 
 describe('ensureNewsCardsAnalyzedAction 함수는', () => {
-    let mockFetchNewsForPeriod: jest.Mock;
-    let mockUpsertNewsItem: jest.Mock;
-    let mockAttachAnalysis: jest.Mock;
-    let mockListBySymbol: jest.Mock;
+    let mockFetchNewsForPeriod: Mock;
+    let mockUpsertNewsItem: Mock;
+    let mockAttachAnalysis: Mock;
+    let mockListBySymbol: Mock;
 
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         mockSubmitNewsCardAnalysis.mockReset();
         mockPollNewsCardAnalysis.mockReset();
 
-        mockFetchNewsForPeriod = jest.fn();
-        mockUpsertNewsItem = jest.fn().mockResolvedValue(undefined);
-        mockAttachAnalysis = jest.fn().mockResolvedValue(undefined);
-        mockListBySymbol = jest.fn().mockResolvedValue([]);
+        mockFetchNewsForPeriod = vi.fn();
+        mockUpsertNewsItem = vi.fn().mockResolvedValue(undefined);
+        mockAttachAnalysis = vi.fn().mockResolvedValue(undefined);
+        mockListBySymbol = vi.fn().mockResolvedValue([]);
 
         MockFmpNewsClient.mockImplementation(
             () => ({ fetchNewsForPeriod: mockFetchNewsForPeriod }) as never

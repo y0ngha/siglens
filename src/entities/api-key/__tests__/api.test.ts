@@ -1,8 +1,9 @@
+import { vi } from 'vitest';
 // withRetry 내부 sleep을 즉시 resolve로 stubbing해서 transient retry 케이스의
-// 실제 대기 시간을 없앤다. `jest.mock` 은 정적 import 보다 먼저 평가되도록
+// 실제 대기 시간을 없앤다. `vi.mock` 은 정적 import 보다 먼저 평가되도록
 // 호이스트되어야 한다 (`import/first` 규칙과 일치).
-jest.mock('@/shared/lib/sleep', () => ({
-    sleep: jest.fn().mockResolvedValue(undefined),
+vi.mock('@/shared/lib/sleep', () => ({
+    sleep: vi.fn().mockResolvedValue(undefined),
 }));
 
 import { encryptToken } from '@/shared/db/tokenEncryption';
@@ -28,15 +29,15 @@ const metaRow = {
 
 function makeUpsertDb(rows: unknown[]): {
     db: SiglensDatabase;
-    insert: ReturnType<typeof jest.fn>;
-    values: ReturnType<typeof jest.fn>;
-    onConflictDoUpdate: ReturnType<typeof jest.fn>;
-    returning: ReturnType<typeof jest.fn>;
+    insert: ReturnType<typeof vi.fn>;
+    values: ReturnType<typeof vi.fn>;
+    onConflictDoUpdate: ReturnType<typeof vi.fn>;
+    returning: ReturnType<typeof vi.fn>;
 } {
-    const returning = jest.fn().mockResolvedValue(rows);
-    const onConflictDoUpdate = jest.fn(() => ({ returning }));
-    const values = jest.fn(() => ({ onConflictDoUpdate }));
-    const insert = jest.fn(() => ({ values }));
+    const returning = vi.fn().mockResolvedValue(rows);
+    const onConflictDoUpdate = vi.fn(() => ({ returning }));
+    const values = vi.fn(() => ({ onConflictDoUpdate }));
+    const insert = vi.fn(() => ({ values }));
 
     return {
         db: { insert } as unknown as SiglensDatabase,
@@ -49,11 +50,11 @@ function makeUpsertDb(rows: unknown[]): {
 
 function makeFindByUserDb(rows: unknown[]): {
     db: SiglensDatabase;
-    where: ReturnType<typeof jest.fn>;
+    where: ReturnType<typeof vi.fn>;
 } {
-    const where = jest.fn().mockResolvedValue(rows);
-    const from = jest.fn(() => ({ where }));
-    const select = jest.fn(() => ({ from }));
+    const where = vi.fn().mockResolvedValue(rows);
+    const from = vi.fn(() => ({ where }));
+    const select = vi.fn(() => ({ from }));
     return {
         db: { select } as unknown as SiglensDatabase,
         where,
@@ -62,12 +63,12 @@ function makeFindByUserDb(rows: unknown[]): {
 
 function makeFindByUserAndProviderDb(rows: unknown[]): {
     db: SiglensDatabase;
-    limit: ReturnType<typeof jest.fn>;
+    limit: ReturnType<typeof vi.fn>;
 } {
-    const limit = jest.fn().mockResolvedValue(rows);
-    const where = jest.fn(() => ({ limit }));
-    const from = jest.fn(() => ({ where }));
-    const select = jest.fn(() => ({ from }));
+    const limit = vi.fn().mockResolvedValue(rows);
+    const where = vi.fn(() => ({ limit }));
+    const from = vi.fn(() => ({ where }));
+    const select = vi.fn(() => ({ from }));
     return {
         db: { select } as unknown as SiglensDatabase,
         limit,
@@ -76,13 +77,13 @@ function makeFindByUserAndProviderDb(rows: unknown[]): {
 
 function makeDeleteDb(rows: unknown[]): {
     db: SiglensDatabase;
-    delete: ReturnType<typeof jest.fn>;
-    where: ReturnType<typeof jest.fn>;
-    returning: ReturnType<typeof jest.fn>;
+    delete: ReturnType<typeof vi.fn>;
+    where: ReturnType<typeof vi.fn>;
+    returning: ReturnType<typeof vi.fn>;
 } {
-    const returning = jest.fn().mockResolvedValue(rows);
-    const where = jest.fn(() => ({ returning }));
-    const deleteFn = jest.fn(() => ({ where }));
+    const returning = vi.fn().mockResolvedValue(rows);
+    const where = vi.fn(() => ({ returning }));
+    const deleteFn = vi.fn(() => ({ where }));
     return {
         db: { delete: deleteFn } as unknown as SiglensDatabase,
         delete: deleteFn,
@@ -280,7 +281,7 @@ describe('DrizzleUserApiKeyRepository.findByUserAndProvider', () => {
             { ...metaRow, encryptedApiKey: encryptedWithOtherKey },
         ]);
         const repo = new DrizzleUserApiKeyRepository(db);
-        const consoleErrorSpy = jest
+        const consoleErrorSpy = vi
             .spyOn(console, 'error')
             .mockImplementation(() => {});
 
@@ -300,7 +301,7 @@ describe('DrizzleUserApiKeyRepository.findByUserAndProvider', () => {
             { ...metaRow, encryptedApiKey: encryptedWithOtherKey },
         ]);
         const repo = new DrizzleUserApiKeyRepository(db);
-        const consoleErrorSpy = jest
+        const consoleErrorSpy = vi
             .spyOn(console, 'error')
             .mockImplementation(() => {});
 
@@ -380,13 +381,13 @@ describe('DrizzleUserApiKeyRepository.upsert — Neon transient retry wire-up', 
             new Error('Error connecting to database: fetch failed'),
             { name: 'NeonDbError' }
         );
-        const returning = jest
+        const returning = vi
             .fn()
             .mockRejectedValueOnce(neonTransient)
             .mockResolvedValueOnce([metaRow]);
-        const onConflictDoUpdate = jest.fn(() => ({ returning }));
-        const values = jest.fn(() => ({ onConflictDoUpdate }));
-        const insert = jest.fn(() => ({ values }));
+        const onConflictDoUpdate = vi.fn(() => ({ returning }));
+        const values = vi.fn(() => ({ onConflictDoUpdate }));
+        const insert = vi.fn(() => ({ values }));
         const db = { insert } as unknown as SiglensDatabase;
         const repo = new DrizzleUserApiKeyRepository(db);
 
@@ -402,10 +403,10 @@ describe('DrizzleUserApiKeyRepository.upsert — Neon transient retry wire-up', 
             ),
             { name: 'NeonDbError' }
         );
-        const returning = jest.fn().mockRejectedValueOnce(constraintError);
-        const onConflictDoUpdate = jest.fn(() => ({ returning }));
-        const values = jest.fn(() => ({ onConflictDoUpdate }));
-        const insert = jest.fn(() => ({ values }));
+        const returning = vi.fn().mockRejectedValueOnce(constraintError);
+        const onConflictDoUpdate = vi.fn(() => ({ returning }));
+        const values = vi.fn(() => ({ onConflictDoUpdate }));
+        const insert = vi.fn(() => ({ values }));
         const db = { insert } as unknown as SiglensDatabase;
         const repo = new DrizzleUserApiKeyRepository(db);
 

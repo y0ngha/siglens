@@ -1,8 +1,9 @@
+import { vi, type Mock } from 'vitest';
 // withRetry 내부 sleep을 즉시 resolve로 stubbing해서 transient retry 케이스의
-// 실제 대기 시간을 없앤다. `jest.mock` 은 정적 import 보다 먼저 평가되도록
+// 실제 대기 시간을 없앤다. `vi.mock` 은 정적 import 보다 먼저 평가되도록
 // 호이스트되어야 한다 (`import/first` 규칙과 일치).
-jest.mock('@/shared/lib/sleep', () => ({
-    sleep: jest.fn().mockResolvedValue(undefined),
+vi.mock('@/shared/lib/sleep', () => ({
+    sleep: vi.fn().mockResolvedValue(undefined),
 }));
 
 import type { SiglensDatabase } from '@/shared/db/types';
@@ -35,13 +36,13 @@ const reportInput: EarningsReportUpsertInput = {
 
 function makeUpsertDb(): {
     db: SiglensDatabase;
-    insert: jest.Mock;
-    values: jest.Mock;
-    onConflictDoUpdate: jest.Mock;
+    insert: Mock;
+    values: Mock;
+    onConflictDoUpdate: Mock;
 } {
-    const onConflictDoUpdate = jest.fn().mockResolvedValue(undefined);
-    const values = jest.fn(() => ({ onConflictDoUpdate }));
-    const insert = jest.fn(() => ({ values }));
+    const onConflictDoUpdate = vi.fn().mockResolvedValue(undefined);
+    const values = vi.fn(() => ({ onConflictDoUpdate }));
+    const insert = vi.fn(() => ({ values }));
     return {
         db: { insert } as unknown as SiglensDatabase,
         insert,
@@ -52,14 +53,14 @@ function makeUpsertDb(): {
 
 function makeSelectLimitDb(rows: unknown[]): {
     db: SiglensDatabase;
-    select: jest.Mock;
-    limit: jest.Mock;
+    select: Mock;
+    limit: Mock;
 } {
-    const limit = jest.fn().mockResolvedValue(rows);
-    const orderBy = jest.fn(() => ({ limit }));
-    const where = jest.fn(() => ({ orderBy }));
-    const from = jest.fn(() => ({ where }));
-    const select = jest.fn(() => ({ from }));
+    const limit = vi.fn().mockResolvedValue(rows);
+    const orderBy = vi.fn(() => ({ limit }));
+    const where = vi.fn(() => ({ orderBy }));
+    const from = vi.fn(() => ({ where }));
+    const select = vi.fn(() => ({ from }));
     return {
         db: { select } as unknown as SiglensDatabase,
         select,
@@ -69,11 +70,11 @@ function makeSelectLimitDb(rows: unknown[]): {
 
 function makeSelectWhereDb(rows: unknown[]): {
     db: SiglensDatabase;
-    select: jest.Mock;
+    select: Mock;
 } {
-    const where = jest.fn().mockResolvedValue(rows);
-    const from = jest.fn(() => ({ where }));
-    const select = jest.fn(() => ({ from }));
+    const where = vi.fn().mockResolvedValue(rows);
+    const from = vi.fn(() => ({ where }));
+    const select = vi.fn(() => ({ from }));
     return {
         db: { select } as unknown as SiglensDatabase,
         select,
@@ -291,12 +292,12 @@ describe('DrizzleEarningsReportsRepository', () => {
                 new Error('Error connecting to database: fetch failed'),
                 { name: 'NeonDbError' }
             );
-            const onConflictDoUpdate = jest
+            const onConflictDoUpdate = vi
                 .fn()
                 .mockRejectedValueOnce(neonTransient)
                 .mockResolvedValueOnce(undefined);
-            const values = jest.fn(() => ({ onConflictDoUpdate }));
-            const insert = jest.fn(() => ({ values }));
+            const values = vi.fn(() => ({ onConflictDoUpdate }));
+            const insert = vi.fn(() => ({ values }));
             const db = { insert } as unknown as SiglensDatabase;
             const repo = new DrizzleEarningsReportsRepository(db);
 
@@ -314,11 +315,11 @@ describe('DrizzleEarningsReportsRepository', () => {
                 ),
                 { name: 'NeonDbError' }
             );
-            const onConflictDoUpdate = jest
+            const onConflictDoUpdate = vi
                 .fn()
                 .mockRejectedValueOnce(constraintError);
-            const values = jest.fn(() => ({ onConflictDoUpdate }));
-            const insert = jest.fn(() => ({ values }));
+            const values = vi.fn(() => ({ onConflictDoUpdate }));
+            const insert = vi.fn(() => ({ values }));
             const db = { insert } as unknown as SiglensDatabase;
             const repo = new DrizzleEarningsReportsRepository(db);
 

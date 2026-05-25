@@ -1,11 +1,12 @@
-jest.mock('@/entities/session/lib/getCurrentUser', () => ({
-    getCurrentUser: jest.fn(),
+import { vi, type MockedFunction } from 'vitest';
+vi.mock('@/entities/session/lib/getCurrentUser', () => ({
+    getCurrentUser: vi.fn(),
 }));
 
 import { getCurrentUser } from '@/entities/session/lib/getCurrentUser';
 import { currentUserAction } from '@/entities/session/actions/currentUserAction';
 
-const mockGet = getCurrentUser as jest.MockedFunction<typeof getCurrentUser>;
+const mockGet = getCurrentUser as MockedFunction<typeof getCurrentUser>;
 
 describe('currentUserAction', () => {
     it('getCurrentUser 결과를 그대로 반환한다', async () => {

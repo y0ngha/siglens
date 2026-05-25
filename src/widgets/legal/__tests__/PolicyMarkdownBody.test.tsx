@@ -1,14 +1,10 @@
-/**
- * @jest-environment jsdom
- */
-
-import '@testing-library/jest-dom';
+import { vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import React from 'react';
 
 // react-markdown and its plugins are ESM-only. Mock the module with a minimal
 // implementation that parses the markdown just enough for structural testing.
-jest.mock('react-markdown', () => {
+vi.mock('react-markdown', () => {
     const React = jest.requireActual<typeof import('react')>('react');
     return {
         __esModule: true,
@@ -125,8 +121,8 @@ jest.mock('react-markdown', () => {
     };
 });
 
-jest.mock('remark-gfm', () => ({ __esModule: true, default: () => {} }));
-jest.mock('rehype-slug', () => ({ __esModule: true, default: () => {} }));
+vi.mock('remark-gfm', () => ({ __esModule: true, default: () => {} }));
+vi.mock('rehype-slug', () => ({ __esModule: true, default: () => {} }));
 
 import { PolicyMarkdownBody } from '@/widgets/legal/PolicyMarkdownBody';
 

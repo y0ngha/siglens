@@ -1,3 +1,4 @@
+import { vi, type MockedFunction } from 'vitest';
 import { pollNewsAnalysisAction } from '../actions/pollNewsAnalysisAction';
 import { pollNewsAnalysis } from '@y0ngha/siglens-core';
 import type { PollNewsAnalysisResult } from '@y0ngha/siglens-core';
@@ -6,16 +7,16 @@ import type { PollNewsAnalysisResult } from '@y0ngha/siglens-core';
 // Module mocks
 // ---------------------------------------------------------------------------
 
-jest.mock('@y0ngha/siglens-core', () => ({
+vi.mock('@y0ngha/siglens-core', () => ({
     ...jest.requireActual('@y0ngha/siglens-core'),
-    pollNewsAnalysis: jest.fn(),
+    pollNewsAnalysis: vi.fn(),
 }));
 
 // ---------------------------------------------------------------------------
 // Typed mock
 // ---------------------------------------------------------------------------
 
-const mockPollNewsAnalysis = pollNewsAnalysis as jest.MockedFunction<
+const mockPollNewsAnalysis = pollNewsAnalysis as MockedFunction<
     typeof pollNewsAnalysis
 >;
 

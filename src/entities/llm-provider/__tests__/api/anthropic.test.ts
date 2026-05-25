@@ -1,17 +1,18 @@
-const mockFinalMessage = jest.fn();
-const mockStream = jest
+import { vi } from 'vitest';
+const mockFinalMessage = vi.fn();
+const mockStream = vi
     .fn()
     .mockReturnValue({ finalMessage: mockFinalMessage });
-const MockAnthropic = jest.fn().mockImplementation(() => ({
+const MockAnthropic = vi.fn().mockImplementation(() => ({
     messages: { stream: mockStream },
 }));
 
-jest.mock('@anthropic-ai/sdk', () => ({
+vi.mock('@anthropic-ai/sdk', () => ({
     __esModule: true,
     default: MockAnthropic,
 }));
 
-jest.mock('@y0ngha/siglens-core', () => {
+vi.mock('@y0ngha/siglens-core', () => {
     const actual = jest.requireActual<typeof import('@y0ngha/siglens-core')>(
         '@y0ngha/siglens-core'
     );
@@ -38,7 +39,7 @@ const SONNET_OPTIONS = {
 
 describe('callAnthropicChat', () => {
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         mockStream.mockReturnValue({ finalMessage: mockFinalMessage });
     });
 

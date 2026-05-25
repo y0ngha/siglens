@@ -34,7 +34,7 @@ describe('formatAnalyzedAt', () => {
         // 일부 Node/ICU 버전은 hour12:false + 자정에 '24'를 emit한다. V8 en-US 에선
         // 직접 trigger할 수 없으므로 formatToParts 를 spy 로 가로채 '24'를 강제로
         // 주입해 정규화 분기를 검증한다 (MISTAKES.md Tests §18).
-        const spy = jest
+        const spy = vi
             .spyOn(Intl.DateTimeFormat.prototype, 'formatToParts')
             .mockReturnValueOnce([
                 { type: 'year', value: '2026' },

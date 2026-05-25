@@ -1,7 +1,4 @@
-/**
- * @jest-environment jsdom
- */
-import '@testing-library/jest-dom';
+import { vi, type MockedFunction } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { NewsDisplayItem } from '@/shared/lib/types';
@@ -11,12 +8,12 @@ import {
     NewsList,
 } from '@/widgets/news/sections/NewsList';
 
-jest.mock('@/widgets/news/hooks/useNewsPollingWithInvalidation', () => ({
-    useNewsPollingWithInvalidation: jest.fn(),
+vi.mock('@/widgets/news/hooks/useNewsPollingWithInvalidation', () => ({
+    useNewsPollingWithInvalidation: vi.fn(),
 }));
 
 const mockUseNewsPollingWithInvalidation =
-    useNewsPollingWithInvalidation as jest.MockedFunction<
+    useNewsPollingWithInvalidation as MockedFunction<
         typeof useNewsPollingWithInvalidation
     >;
 

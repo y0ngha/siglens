@@ -1,32 +1,30 @@
+import { vi, type MockedFunction } from 'vitest';
 /**
- * @jest-environment jsdom
- *
  * OverallContent done branch만 검증하는 테스트. hook은 mock 처리해
  * 다양한 state shape를 강제로 주입하고, 4축 layout(특히 OptionsSummary 위치,
  * IntegratedConclusion rename, ReanalyzeButton 노출 + amber 강조 조건)을 확인한다.
  */
 
-// jest.mock은 babel-jest가 import 위로 hoist하지만, ESLint(import/first)와
+// vi.mock은 vitest가 import 위로 hoist하지만, ESLint(import/first)와
 // 가독성을 위해 소스 코드에서도 모든 import보다 위에 둔다.
-jest.mock('@/widgets/overall/hooks/useOverallAnalysis', () => ({
-    useOverallAnalysis: jest.fn(),
+vi.mock('@/widgets/overall/hooks/useOverallAnalysis', () => ({
+    useOverallAnalysis: vi.fn(),
 }));
-jest.mock('@/features/symbol-chat', () => ({
-    usePublishSymbolChat: jest.fn(),
+vi.mock('@/features/symbol-chat', () => ({
+    usePublishSymbolChat: vi.fn(),
 }));
-jest.mock('@/widgets/symbol-page/hooks/useDefaultModelId', () => ({
-    useDefaultModelId: jest.fn(() => 'gemini-2.5-flash-lite'),
+vi.mock('@/widgets/symbol-page/hooks/useDefaultModelId', () => ({
+    useDefaultModelId: vi.fn(() => 'gemini-2.5-flash-lite'),
 }));
 // react-markdown은 ESM-only라 Jest 환경에서 직접 로드하면 실패한다. 본 테스트는
 // markdown rendering이 아니라 OverallContent의 layout과 trigger 동작을 검증하므로
 // MarkdownText를 단순 wrapper로 대체한다.
-jest.mock('@/shared/ui/MarkdownText', () => ({
+vi.mock('@/shared/ui/MarkdownText', () => ({
     MarkdownText: ({ children }: { children: ReactNode }) => (
         <div>{children}</div>
     ),
 }));
 
-import '@testing-library/jest-dom';
 import { render, screen, fireEvent } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import type { OverallAnalysisResponse } from '@y0ngha/siglens-core';
@@ -34,7 +32,7 @@ import type { OverallAnalysisResponse } from '@y0ngha/siglens-core';
 import { OverallContent } from '@/widgets/overall/OverallContent';
 import { useOverallAnalysis } from '@/widgets/overall/hooks/useOverallAnalysis';
 
-const mockUseOverallAnalysis = useOverallAnalysis as jest.MockedFunction<
+const mockUseOverallAnalysis = useOverallAnalysis as MockedFunction<
     typeof useOverallAnalysis
 >;
 
@@ -54,7 +52,7 @@ function makeDoneResult(
     };
 }
 
-function mockDoneState(result: OverallAnalysisResponse, trigger = jest.fn()) {
+function mockDoneState(result: OverallAnalysisResponse, trigger = vi.fn()) {
     mockUseOverallAnalysis.mockReturnValue({
         state: { status: 'done', result },
         trigger,
@@ -155,7 +153,7 @@ describe('OverallContent done branch', () => {
     });
 
     it('ReanalyzeButton 클릭 시 trigger를 호출한다', () => {
-        const trigger = jest.fn();
+        const trigger = vi.fn();
         mockDoneState(makeDoneResult(), trigger);
         render(
             <OverallContent

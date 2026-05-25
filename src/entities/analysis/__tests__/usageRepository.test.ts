@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { hashUsageIp } from '@y0ngha/siglens-core';
 import { usageLogs } from '@/shared/db/schema';
 import type { SiglensDatabase } from '@/shared/db/types';
@@ -15,13 +16,13 @@ const usageLogRecord = {
 
 function makeInsertDb(rows: unknown[]): {
     db: SiglensDatabase;
-    insert: ReturnType<typeof jest.fn>;
-    values: ReturnType<typeof jest.fn>;
-    returning: ReturnType<typeof jest.fn>;
+    insert: ReturnType<typeof vi.fn>;
+    values: ReturnType<typeof vi.fn>;
+    returning: ReturnType<typeof vi.fn>;
 } {
-    const returning = jest.fn().mockResolvedValue(rows);
-    const values = jest.fn(() => ({ returning }));
-    const insert = jest.fn(() => ({ values }));
+    const returning = vi.fn().mockResolvedValue(rows);
+    const values = vi.fn(() => ({ returning }));
+    const insert = vi.fn(() => ({ values }));
 
     return {
         db: { insert } as unknown as SiglensDatabase,
@@ -33,15 +34,15 @@ function makeInsertDb(rows: unknown[]): {
 
 function makeUsageCountDb(rows: unknown[]): {
     db: SiglensDatabase;
-    select: ReturnType<typeof jest.fn>;
-    from: ReturnType<typeof jest.fn>;
-    where: ReturnType<typeof jest.fn>;
-    groupBy: ReturnType<typeof jest.fn>;
+    select: ReturnType<typeof vi.fn>;
+    from: ReturnType<typeof vi.fn>;
+    where: ReturnType<typeof vi.fn>;
+    groupBy: ReturnType<typeof vi.fn>;
 } {
-    const groupBy = jest.fn().mockResolvedValue(rows);
-    const where = jest.fn(() => ({ groupBy }));
-    const from = jest.fn(() => ({ where }));
-    const select = jest.fn(() => ({ from }));
+    const groupBy = vi.fn().mockResolvedValue(rows);
+    const where = vi.fn(() => ({ groupBy }));
+    const from = vi.fn(() => ({ where }));
+    const select = vi.fn(() => ({ from }));
 
     return {
         db: { select } as unknown as SiglensDatabase,
@@ -54,7 +55,7 @@ function makeUsageCountDb(rows: unknown[]): {
 
 describe('DrizzleUsageRepository', () => {
     afterEach(() => {
-        jest.useRealTimers();
+        vi.useRealTimers();
     });
 
     it('records usage with the hashed IP and UTC date only', async () => {
@@ -119,8 +120,8 @@ describe('DrizzleUsageRepository', () => {
             },
         ]);
         const repository = new DrizzleUsageRepository(db);
-        jest.useFakeTimers();
-        jest.setSystemTime(now);
+        vi.useFakeTimers();
+        vi.setSystemTime(now);
 
         const result = await repository.recordUsage({
             userId: null,
@@ -203,8 +204,8 @@ describe('DrizzleUsageRepository', () => {
     it('uses the infrastructure clock when counting today usage without a date override', async () => {
         const { db } = makeUsageCountDb([{ actionType: 'chatbot', count: 1 }]);
         const repository = new DrizzleUsageRepository(db);
-        jest.useFakeTimers();
-        jest.setSystemTime(new Date('2026-04-29T00:00:00.000Z'));
+        vi.useFakeTimers();
+        vi.setSystemTime(new Date('2026-04-29T00:00:00.000Z'));
 
         const result = await repository.getUsageToday('hashed-ip');
 

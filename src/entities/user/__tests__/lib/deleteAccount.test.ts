@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { AUTH_SESSION_COOKIE_NAME } from '@/entities/session/lib/sessionCookie';
 import { deleteAccount } from '@/entities/user/lib/deleteAccount';
 import type { OAuthAccountRepository, UserRepository } from '@/shared/db/types';
@@ -29,24 +30,24 @@ function makeDependencies(deleted: boolean): {
         oauthAccounts: OAuthAccountRepository;
         oauthRevoker: OAuthRevoker;
     };
-    deleteUser: ReturnType<typeof jest.fn>;
+    deleteUser: ReturnType<typeof vi.fn>;
 } {
-    const deleteUser = jest.fn().mockResolvedValue(deleted);
+    const deleteUser = vi.fn().mockResolvedValue(deleted);
 
     return {
         dependencies: {
             users: {
-                findByEmail: jest.fn(),
-                findById: jest.fn(),
-                createEmailUser: jest.fn(),
+                findByEmail: vi.fn(),
+                findById: vi.fn(),
+                createEmailUser: vi.fn(),
                 deleteUser,
-                updatePassword: jest.fn(),
+                updatePassword: vi.fn(),
             },
             oauthAccounts: {
-                findByUserId: jest.fn().mockResolvedValue([]),
+                findByUserId: vi.fn().mockResolvedValue([]),
             },
             oauthRevoker: {
-                revokeToken: jest.fn().mockResolvedValue(undefined),
+                revokeToken: vi.fn().mockResolvedValue(undefined),
             },
         },
         deleteUser,
@@ -55,7 +56,7 @@ function makeDependencies(deleted: boolean): {
 
 describe('deleteAccount', () => {
     afterEach(() => {
-        jest.restoreAllMocks();
+        vi.restoreAllMocks();
     });
 
     it('deletes the user account and returns an expired HTTP-only cookie', async () => {
@@ -122,8 +123,8 @@ describe('deleteAccount', () => {
     });
 
     it('loads OAuth tokens before deleting the user and revokes tokens in the background', async () => {
-        const revokeToken = jest.fn().mockResolvedValue(undefined);
-        const findByUserId = jest.fn().mockResolvedValue([
+        const revokeToken = vi.fn().mockResolvedValue(undefined);
+        const findByUserId = vi.fn().mockResolvedValue([
             {
                 id: 'account-1',
                 userId: 'user-1',
@@ -138,11 +139,11 @@ describe('deleteAccount', () => {
 
         const dependencies = {
             users: {
-                findByEmail: jest.fn(),
-                findById: jest.fn(),
-                createEmailUser: jest.fn(),
-                deleteUser: jest.fn().mockResolvedValue(true),
-                updatePassword: jest.fn(),
+                findByEmail: vi.fn(),
+                findById: vi.fn(),
+                createEmailUser: vi.fn(),
+                deleteUser: vi.fn().mockResolvedValue(true),
+                updatePassword: vi.fn(),
             },
             oauthAccounts: { findByUserId },
             oauthRevoker: { revokeToken },
@@ -163,8 +164,8 @@ describe('deleteAccount', () => {
     });
 
     it('skips revocation for accounts without an access token', async () => {
-        const revokeToken = jest.fn().mockResolvedValue(undefined);
-        const findByUserId = jest.fn().mockResolvedValue([
+        const revokeToken = vi.fn().mockResolvedValue(undefined);
+        const findByUserId = vi.fn().mockResolvedValue([
             {
                 id: 'account-2',
                 userId: 'user-1',
@@ -179,11 +180,11 @@ describe('deleteAccount', () => {
 
         const dependencies = {
             users: {
-                findByEmail: jest.fn(),
-                findById: jest.fn(),
-                createEmailUser: jest.fn(),
-                deleteUser: jest.fn().mockResolvedValue(true),
-                updatePassword: jest.fn(),
+                findByEmail: vi.fn(),
+                findById: vi.fn(),
+                createEmailUser: vi.fn(),
+                deleteUser: vi.fn().mockResolvedValue(true),
+                updatePassword: vi.fn(),
             },
             oauthAccounts: { findByUserId },
             oauthRevoker: { revokeToken },
@@ -199,22 +200,22 @@ describe('deleteAccount', () => {
 
     it('logs and continues deleting when OAuth account lookup fails', async () => {
         const lookupError = new Error('lookup failed');
-        const consoleWarn = jest
+        const consoleWarn = vi
             .spyOn(console, 'warn')
             .mockImplementation(() => undefined);
         const dependencies = {
             users: {
-                findByEmail: jest.fn(),
-                findById: jest.fn(),
-                createEmailUser: jest.fn(),
-                deleteUser: jest.fn().mockResolvedValue(true),
-                updatePassword: jest.fn(),
+                findByEmail: vi.fn(),
+                findById: vi.fn(),
+                createEmailUser: vi.fn(),
+                deleteUser: vi.fn().mockResolvedValue(true),
+                updatePassword: vi.fn(),
             },
             oauthAccounts: {
-                findByUserId: jest.fn().mockRejectedValue(lookupError),
+                findByUserId: vi.fn().mockRejectedValue(lookupError),
             },
             oauthRevoker: {
-                revokeToken: jest.fn().mockResolvedValue(undefined),
+                revokeToken: vi.fn().mockResolvedValue(undefined),
             },
         };
 
@@ -230,19 +231,19 @@ describe('deleteAccount', () => {
 
     it('logs provider revocation failures without blocking deletion', async () => {
         const revokeError = new Error('revoke failed');
-        const consoleWarn = jest
+        const consoleWarn = vi
             .spyOn(console, 'warn')
             .mockImplementation(() => undefined);
         const dependencies = {
             users: {
-                findByEmail: jest.fn(),
-                findById: jest.fn(),
-                createEmailUser: jest.fn(),
-                deleteUser: jest.fn().mockResolvedValue(true),
-                updatePassword: jest.fn(),
+                findByEmail: vi.fn(),
+                findById: vi.fn(),
+                createEmailUser: vi.fn(),
+                deleteUser: vi.fn().mockResolvedValue(true),
+                updatePassword: vi.fn(),
             },
             oauthAccounts: {
-                findByUserId: jest.fn().mockResolvedValue([
+                findByUserId: vi.fn().mockResolvedValue([
                     {
                         id: 'account-1',
                         userId: 'user-1',
@@ -256,7 +257,7 @@ describe('deleteAccount', () => {
                 ]),
             },
             oauthRevoker: {
-                revokeToken: jest.fn().mockRejectedValue(revokeError),
+                revokeToken: vi.fn().mockRejectedValue(revokeError),
             },
         };
 
