@@ -256,4 +256,56 @@ describe('searchTicker', () => {
         const result = await searchTicker('AAPL');
         expect(result).toEqual([]);
     });
+
+    it('번역 실패 시 경고 로그만 남기고 결과는 정상 반환', async () => {
+        const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        mockCache.get.mockResolvedValue(null);
+        searchBySymbolMock.mockResolvedValue([apple]);
+        searchByNameMock.mockResolvedValue([]);
+        getKoreanNamesMock.mockResolvedValue({});
+        translateCompanyNamesMock.mockRejectedValue(
+            new Error('translation failed')
+        );
+
+        const result = await searchTicker('AAPL');
+        expect(result).toHaveLength(1);
+
+        // Wait for fire-and-forget to settle
+        await new Promise(resolve => setImmediate(resolve));
+        expect(warnSpy).toHaveBeenCalledWith(
+            '[searchTicker] background translation failed',
+            expect.any(Error)
+        );
+        warnSpy.mockRestore();
+    });
+
+    it('cache set 실패 시 경고 로그만 남기고 결과는 정상 반환', async () => {
+        const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        mockCache.get.mockResolvedValue(null);
+        mockCache.set.mockRejectedValue(new Error('cache write failed'));
+        searchBySymbolMock.mockResolvedValue([apple]);
+        searchByNameMock.mockResolvedValue([]);
+        getKoreanNamesMock.mockResolvedValue({ AAPL: '애플' });
+
+        const result = await searchTicker('AAPL');
+        expect(result).toHaveLength(1);
+
+        // Wait for fire-and-forget to settle
+        await new Promise(resolve => setImmediate(resolve));
+        expect(warnSpy).toHaveBeenCalledWith(
+            '[searchTicker] cache write failed',
+            expect.any(Error)
+        );
+        warnSpy.mockRestore();
+    });
+
+    it('FMP 양쪽 모두 결과가 없으면 빈 배열 반환', async () => {
+        mockCache.get.mockResolvedValue(null);
+        searchBySymbolMock.mockResolvedValue([]);
+        searchByNameMock.mockResolvedValue([]);
+        getKoreanNamesMock.mockResolvedValue({});
+
+        const result = await searchTicker('NONEXIST');
+        expect(result).toEqual([]);
+    });
 });

@@ -166,6 +166,47 @@ describe('callAnthropicChat', () => {
         });
     });
 
+    describe('모델 검증', () => {
+        it('알 수 없는 model 이면 에러를 던진다', async () => {
+            await expect(
+                callAnthropicChat({
+                    ...BASE_OPTIONS,
+                    model: 'unknown-model-xyz',
+                })
+            ).rejects.toThrow('Unknown model: unknown-model-xyz');
+            expect(mockStream).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('systemInstruction', () => {
+        it('systemInstruction이 있으면 system 파라미터로 전달한다', async () => {
+            mockFinalMessage.mockResolvedValue({
+                content: [{ type: 'text', text: 'ok' }],
+                stop_reason: 'end_turn',
+            });
+
+            await callAnthropicChat({
+                ...BASE_OPTIONS,
+                systemInstruction: 'Be concise',
+            });
+
+            const call = mockStream.mock.calls[0][0];
+            expect(call.system).toBe('Be concise');
+        });
+
+        it('systemInstruction이 없으면 system 파라미터를 포함하지 않는다', async () => {
+            mockFinalMessage.mockResolvedValue({
+                content: [{ type: 'text', text: 'ok' }],
+                stop_reason: 'end_turn',
+            });
+
+            await callAnthropicChat(BASE_OPTIONS);
+
+            const call = mockStream.mock.calls[0][0];
+            expect(call).not.toHaveProperty('system');
+        });
+    });
+
     describe('effort 검증', () => {
         it('유효한 effort(medium)는 통과한다', async () => {
             mockFinalMessage.mockResolvedValue({

@@ -110,6 +110,37 @@ describe('callOpenaiChat', () => {
         });
     });
 
+    describe('모델 검증', () => {
+        it('알 수 없는 model 이면 에러를 던진다', async () => {
+            await expect(
+                callOpenaiChat({
+                    ...BASE_OPTIONS,
+                    model: 'unknown-model-123',
+                })
+            ).rejects.toThrow('Unknown model: unknown-model-123');
+            expect(mockCreate).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('다중 턴 입력', () => {
+        it('배열 형태의 contents를 Responses API input으로 변환한다', async () => {
+            mockCreate.mockResolvedValue({ output_text: 'ok' });
+
+            await callOpenaiChat({
+                ...BASE_OPTIONS,
+                contents: [
+                    { role: 'user', text: 'Hello' },
+                    { role: 'assistant', text: 'Hi' },
+                    { role: 'user', text: 'How are you?' },
+                ],
+            });
+
+            const call = mockCreate.mock.calls[0][0];
+            expect(Array.isArray(call.input)).toBe(true);
+            expect(call.input).toHaveLength(3);
+        });
+    });
+
     describe('응답 파싱', () => {
         it('output_text가 빈 문자열이면 경고 로그 후 그대로 반환한다', async () => {
             mockCreate.mockResolvedValue({ output_text: '' });

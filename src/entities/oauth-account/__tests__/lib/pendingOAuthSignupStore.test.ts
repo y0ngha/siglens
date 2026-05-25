@@ -99,4 +99,85 @@ describe('PendingOAuthSignupStore', () => {
 
         expect(result).toBeNull();
     });
+
+    it('tryParse handles already-deserialized object from Upstash (auto-deserialization)', async () => {
+        const { client } = makeRedis();
+        // Upstash may auto-deserialize JSON into an object instead of returning a string
+        (client.get as Mock).mockResolvedValueOnce(sample);
+        const sut = createPendingOAuthSignupStore(client);
+
+        const result = await sut.peek('some-token');
+
+        expect(result).toEqual(sample);
+    });
+
+    it('tryParse returns null for non-string, non-object value (e.g. number)', async () => {
+        const { client } = makeRedis();
+        (client.get as Mock).mockResolvedValueOnce(42);
+        const sut = createPendingOAuthSignupStore(client);
+
+        const result = await sut.peek('some-token');
+
+        expect(result).toBeNull();
+    });
+
+    it('consume returns null for corrupted stored value', async () => {
+        const { client } = makeRedis();
+        (client.getdel as Mock).mockResolvedValueOnce('not valid json {{');
+        const sut = createPendingOAuthSignupStore(client);
+
+        const result = await sut.consume('some-token');
+
+        expect(result).toBeNull();
+    });
+
+    it('consume handles already-deserialized object from Upstash', async () => {
+        const { client } = makeRedis();
+        (client.getdel as Mock).mockResolvedValueOnce(sample);
+        const sut = createPendingOAuthSignupStore(client);
+
+        const result = await sut.consume('some-token');
+
+        expect(result).toEqual(sample);
+    });
+});
+
+describe('createPendingOAuthSignupStoreFromEnv', () => {
+    const originalUrl = process.env.UPSTASH_REDIS_REST_URL;
+    const originalToken = process.env.UPSTASH_REDIS_REST_TOKEN;
+
+    afterEach(() => {
+        if (originalUrl !== undefined) {
+            process.env.UPSTASH_REDIS_REST_URL = originalUrl;
+        } else {
+            delete process.env.UPSTASH_REDIS_REST_URL;
+        }
+        if (originalToken !== undefined) {
+            process.env.UPSTASH_REDIS_REST_TOKEN = originalToken;
+        } else {
+            delete process.env.UPSTASH_REDIS_REST_TOKEN;
+        }
+    });
+
+    it('returns null when UPSTASH_REDIS_REST_URL is not set', async () => {
+        delete process.env.UPSTASH_REDIS_REST_URL;
+        process.env.UPSTASH_REDIS_REST_TOKEN = 'token';
+
+        const { createPendingOAuthSignupStoreFromEnv } =
+            await import('@/entities/oauth-account/lib/pendingOAuthSignupStore');
+        const store = createPendingOAuthSignupStoreFromEnv();
+
+        expect(store).toBeNull();
+    });
+
+    it('returns null when UPSTASH_REDIS_REST_TOKEN is not set', async () => {
+        process.env.UPSTASH_REDIS_REST_URL = 'https://redis.upstash.io';
+        delete process.env.UPSTASH_REDIS_REST_TOKEN;
+
+        const { createPendingOAuthSignupStoreFromEnv } =
+            await import('@/entities/oauth-account/lib/pendingOAuthSignupStore');
+        const store = createPendingOAuthSignupStoreFromEnv();
+
+        expect(store).toBeNull();
+    });
 });

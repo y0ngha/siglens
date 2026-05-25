@@ -705,6 +705,119 @@ Pivot Points calculate intraday support and resistance levels.`;
         });
     });
 
+    describe('display 파싱 — 엣지 케이스', () => {
+        it('display.chart.show가 문자열 "false"이면 show=false로 파싱한다', async () => {
+            const md = `---
+name: 테스트
+description: 테스트
+type: pattern
+indicators: []
+confidence_weight: 0.5
+display:
+  chart:
+    show: false
+    type: line
+    color: "#000"
+    label: "test"
+---
+
+내용`;
+            mockReaddir.mockResolvedValue([fileDirent('skill.md')]);
+            mockReadFile.mockResolvedValue(md);
+
+            const skills = await loader.loadSkills();
+
+            expect(skills[0].display?.chart.show).toBe(false);
+        });
+
+        it('display.chart가 없으면(non-object) display는 undefined', async () => {
+            const md = `---
+name: 테스트
+description: 테스트
+type: pattern
+indicators: []
+confidence_weight: 0.5
+display:
+  other: value
+---
+
+내용`;
+            mockReaddir.mockResolvedValue([fileDirent('skill.md')]);
+            mockReadFile.mockResolvedValue(md);
+
+            const skills = await loader.loadSkills();
+
+            expect(skills[0].display).toBeUndefined();
+        });
+
+        it('display.chart.type이 유효하지 않으면 display는 undefined', async () => {
+            const md = `---
+name: 테스트
+description: 테스트
+type: pattern
+indicators: []
+confidence_weight: 0.5
+display:
+  chart:
+    show: true
+    type: invalid_type
+    color: "#000"
+    label: "test"
+---
+
+내용`;
+            mockReaddir.mockResolvedValue([fileDirent('skill.md')]);
+            mockReadFile.mockResolvedValue(md);
+
+            const skills = await loader.loadSkills();
+
+            expect(skills[0].display).toBeUndefined();
+        });
+
+        it('display.chart.show가 boolean도 "true"/"false" 문자열도 아니면 display는 undefined', async () => {
+            const md = `---
+name: 테스트
+description: 테스트
+type: pattern
+indicators: []
+confidence_weight: 0.5
+display:
+  chart:
+    show: maybe
+    type: line
+    color: "#000"
+    label: "test"
+---
+
+내용`;
+            mockReaddir.mockResolvedValue([fileDirent('skill.md')]);
+            mockReadFile.mockResolvedValue(md);
+
+            const skills = await loader.loadSkills();
+
+            expect(skills[0].display).toBeUndefined();
+        });
+    });
+
+    describe('ENOENT 서브디렉토리 처리', () => {
+        it('skills 서브디렉토리가 없으면 (ENOENT) 빈 배열 반환', async () => {
+            const SKILLS_DIR = path.join(process.cwd(), 'skills');
+            const enoentError = Object.assign(
+                new Error('ENOENT: no such file or directory'),
+                { code: 'ENOENT' }
+            );
+
+            mockReaddir.mockImplementation((dir: string) => {
+                if (dir === SKILLS_DIR)
+                    return Promise.resolve([dirDirent('nonexistent')]);
+                return Promise.reject(enoentError);
+            });
+
+            const skills = await loader.loadSkills();
+            expect(skills).toEqual([]);
+        });
+    });
+
     describe('readdir 에러', () => {
         it('readdir가 실패하면 에러를 전파한다', async () => {
             mockReaddir.mockRejectedValue(
