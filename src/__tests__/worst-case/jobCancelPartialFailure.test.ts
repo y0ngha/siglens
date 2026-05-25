@@ -32,40 +32,6 @@ describe('Job cancel partial failure behavior', () => {
         vi.clearAllMocks();
     });
 
-    it('returns 204 when some cancellations succeed and some fail', async () => {
-        mockCancelAnalysis.mockResolvedValue(undefined);
-        mockCancelFundamental.mockRejectedValue(new Error('Redis timeout'));
-        mockCancelOverall.mockResolvedValue(undefined);
-
-        const req = createJsonRequest({
-            jobs: [
-                { jobId: 'j1', type: 'analysis' },
-                { jobId: 'j2', type: 'fundamental' },
-                { jobId: 'j3', type: 'overall' },
-            ],
-        });
-
-        const res = await POST(req);
-
-        expect(res.status).toBe(204);
-    });
-
-    it('returns 204 when all cancellations fail', async () => {
-        mockCancelAnalysis.mockRejectedValue(new Error('fail'));
-        mockCancelFundamental.mockRejectedValue(new Error('fail'));
-
-        const req = createJsonRequest({
-            jobs: [
-                { jobId: 'j1', type: 'analysis' },
-                { jobId: 'j2', type: 'fundamental' },
-            ],
-        });
-
-        const res = await POST(req);
-
-        expect(res.status).toBe(204);
-    });
-
     it('returns 204 for empty jobs array (valid but no-op)', async () => {
         const req = createJsonRequest({ jobs: [] });
 

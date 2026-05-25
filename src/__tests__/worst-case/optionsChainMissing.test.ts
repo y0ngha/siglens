@@ -125,12 +125,15 @@ describe('YahooOptionsAdapter failure modes', () => {
 
     describe('hasOptionsMarket', () => {
         it('returns false on API error', async () => {
-            vi.spyOn(console, 'warn').mockImplementation(() => {});
+            const warnSpy = vi
+                .spyOn(console, 'warn')
+                .mockImplementation(() => {});
             mockYahooOptions.mockRejectedValue(new Error('Network error'));
 
             const result = await adapter.hasOptionsMarket('AAPL');
 
             expect(result).toBe(false);
+            expect(warnSpy).toHaveBeenCalled();
         });
 
         it('returns false when no expiration dates', async () => {

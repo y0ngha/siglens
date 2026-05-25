@@ -55,11 +55,11 @@ describe('FmpNewsClient malformed data handling', () => {
         expect(result.length).toBeLessThanOrEqual(2);
         const urls = result.map(r => r.url);
         expect(urls).not.toContain('https://example.com/bad');
+        expect(warnSpy).toHaveBeenCalled();
         warnSpy.mockRestore();
     });
 
     it('returns empty array when all items have invalid dates', async () => {
-        vi.spyOn(console, 'warn').mockImplementation(() => {});
         mockFmpGet.mockResolvedValue([
             {
                 symbol: 'AAPL',

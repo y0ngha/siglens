@@ -15,7 +15,16 @@ import { fmpGet } from '@/shared/api/fmp/httpClient';
 
 const mockFmpGet = fmpGet as ReturnType<typeof vi.fn>;
 
-function makeRawNews(count: number, baseTime = Date.now()) {
+interface RawNewsStub {
+    symbol: string;
+    site: string;
+    url: string;
+    publishedDate: string;
+    title: string;
+    text: string;
+}
+
+function makeRawNews(count: number, baseTime = Date.now()): RawNewsStub[] {
     return Array.from({ length: count }, (_, i) => ({
         symbol: 'AAPL',
         site: `Source${i}`,

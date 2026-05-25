@@ -11,7 +11,7 @@ import { pollAnalysis } from '@y0ngha/siglens-core';
 
 const mockPollAnalysis = pollAnalysis as ReturnType<typeof vi.fn>;
 
-describe('pollAnalysisAction Redis/error scenarios', () => {
+describe('pollAnalysisAction error handling and edge cases', () => {
     afterEach(() => {
         vi.clearAllMocks();
     });

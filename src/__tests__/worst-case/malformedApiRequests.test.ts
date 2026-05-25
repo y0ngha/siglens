@@ -58,7 +58,9 @@ describe('POST /api/jobs/cancel malformed requests', () => {
     });
 
     it('returns 400 for non-JSON body', async () => {
-        vi.spyOn(console, 'error').mockImplementation(() => {});
+        const errorSpy = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => {});
         const req = new Request('http://localhost/api/jobs/cancel', {
             method: 'POST',
             body: 'not json',
@@ -67,6 +69,7 @@ describe('POST /api/jobs/cancel malformed requests', () => {
         const res = await POST(req);
 
         expect(res.status).toBe(400);
+        expect(errorSpy).toHaveBeenCalled();
     });
 
     it('returns 204 for valid request with mixed job types', async () => {

@@ -30,7 +30,9 @@ describe('Yahoo API timeout and error scenarios', () => {
     });
 
     it('returns null on network timeout', async () => {
-        vi.spyOn(console, 'error').mockImplementation(() => {});
+        const errorSpy = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => {});
         mockYahooOptions.mockRejectedValue(
             new Error('network timeout at: https://query2.finance.yahoo.com')
         );
@@ -38,10 +40,13 @@ describe('Yahoo API timeout and error scenarios', () => {
         const result = await adapter.fetchSnapshot('AAPL');
 
         expect(result).toBeNull();
+        expect(errorSpy).toHaveBeenCalled();
     });
 
     it('returns null when Yahoo returns HTML error page', async () => {
-        vi.spyOn(console, 'error').mockImplementation(() => {});
+        const errorSpy = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => {});
         mockYahooOptions.mockRejectedValue(
             new Error('Unexpected token < in JSON at position 0')
         );
@@ -49,10 +54,13 @@ describe('Yahoo API timeout and error scenarios', () => {
         const result = await adapter.fetchSnapshot('AAPL');
 
         expect(result).toBeNull();
+        expect(errorSpy).toHaveBeenCalled();
     });
 
     it('returns null on 429 rate limit', async () => {
-        vi.spyOn(console, 'error').mockImplementation(() => {});
+        const errorSpy = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => {});
         const rateLimitError = new Error('Too Many Requests');
         (rateLimitError as Error & { status: number }).status = 429;
         mockYahooOptions.mockRejectedValue(rateLimitError);
@@ -60,6 +68,7 @@ describe('Yahoo API timeout and error scenarios', () => {
         const result = await adapter.fetchSnapshot('AAPL');
 
         expect(result).toBeNull();
+        expect(errorSpy).toHaveBeenCalled();
     });
 
     it('handles response with 100+ expiration dates', async () => {
@@ -103,12 +112,13 @@ describe('Yahoo API timeout and error scenarios', () => {
     });
 
     it('hasOptionsMarket returns false on timeout', async () => {
-        vi.spyOn(console, 'warn').mockImplementation(() => {});
+        const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
         mockYahooOptions.mockRejectedValue(new Error('Timeout'));
 
         const result = await adapter.hasOptionsMarket('AAPL');
 
         expect(result).toBe(false);
+        expect(warnSpy).toHaveBeenCalled();
     });
 
     it('warns but continues when individual expiration fetch fails', async () => {

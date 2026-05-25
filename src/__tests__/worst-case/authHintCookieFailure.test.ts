@@ -52,7 +52,7 @@ function createFormData(fields: Record<string, string>): FormData {
     return fd;
 }
 
-describe('loginAction auth hint cookie failure', () => {
+describe('loginAction error handling and cookie behavior', () => {
     afterEach(() => {
         vi.clearAllMocks();
     });
