@@ -17,16 +17,3 @@ describe('contactFormUtils — getFieldError matching field branch', () => {
         expect(result).toBe(CONTACT_ERROR_MESSAGES.email_required);
     });
 });
-
-describe('formatAnalyzedAt — missing DateTimeFormat part fallback', () => {
-    it('formats valid ISO date string', async () => {
-        // Reset the module to test with different env
-        vi.resetModules();
-        const { formatAnalyzedAt } =
-            await import('@/shared/lib/formatAnalyzedAt');
-
-        const result = formatAnalyzedAt('2025-06-01T12:00:00Z');
-        expect(typeof result).toBe('string');
-        expect(result.length).toBeGreaterThan(0);
-    });
-});

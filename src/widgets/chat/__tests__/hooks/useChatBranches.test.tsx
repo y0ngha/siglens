@@ -7,13 +7,11 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
 import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import type { ChatMessage } from '@y0ngha/siglens-core';
-import { MODEL_STORAGE_KEY, useChat } from '@/widgets/chat/hooks/useChat';
-import type { DisplayMessage } from '@/shared/lib/types';
-
-function isChatMessage(m: DisplayMessage): m is ChatMessage {
-    return m.role !== 'system';
-}
+import {
+    MODEL_STORAGE_KEY,
+    useChat,
+    isChatMessage,
+} from '@/widgets/chat/hooks/useChat';
 
 // --- Controllable mocks ---
 

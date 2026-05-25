@@ -15,7 +15,7 @@ function createMockRef<T>(value: T | null): RefObject<T | null> {
     return { current: value };
 }
 
-function fireTouchStart(el: HTMLElement, clientY: number) {
+function fireTouchStart(el: HTMLElement, clientY: number): void {
     const event = new TouchEvent('touchstart', {
         touches: [{ clientY, clientX: 0 } as Touch],
         bubbles: true,
@@ -23,7 +23,7 @@ function fireTouchStart(el: HTMLElement, clientY: number) {
     el.dispatchEvent(event);
 }
 
-function fireTouchMove(el: HTMLElement, clientY: number) {
+function fireTouchMove(el: HTMLElement, clientY: number): void {
     const event = new TouchEvent('touchmove', {
         touches: [{ clientY, clientX: 0 } as Touch],
         cancelable: true,
@@ -32,7 +32,7 @@ function fireTouchMove(el: HTMLElement, clientY: number) {
     el.dispatchEvent(event);
 }
 
-function fireTouchEnd(el: HTMLElement, clientY: number) {
+function fireTouchEnd(el: HTMLElement, clientY: number): void {
     const event = new TouchEvent('touchend', {
         changedTouches: [{ clientY, clientX: 0 } as Touch],
         bubbles: true,
@@ -40,7 +40,7 @@ function fireTouchEnd(el: HTMLElement, clientY: number) {
     el.dispatchEvent(event);
 }
 
-function fireTouchCancel(el: HTMLElement) {
+function fireTouchCancel(el: HTMLElement): void {
     const event = new TouchEvent('touchcancel', { bubbles: true });
     el.dispatchEvent(event);
 }

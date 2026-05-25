@@ -5,19 +5,13 @@
  */
 
 describe('seo — parseBuildDate branches', () => {
-    const originalBuildDate = process.env.NEXT_BUILD_DATE;
-
     afterEach(() => {
-        if (originalBuildDate !== undefined) {
-            process.env.NEXT_BUILD_DATE = originalBuildDate;
-        } else {
-            delete process.env.NEXT_BUILD_DATE;
-        }
+        vi.unstubAllEnvs();
         vi.resetModules();
     });
 
     it('uses NEXT_BUILD_DATE when env is a valid ISO date', async () => {
-        process.env.NEXT_BUILD_DATE = '2025-06-01T00:00:00Z';
+        vi.stubEnv('NEXT_BUILD_DATE', '2025-06-01T00:00:00Z');
         const { SITE_BUILD_DATE } = await import('@/shared/lib/seo');
 
         expect(SITE_BUILD_DATE.getTime()).toBe(
@@ -26,7 +20,7 @@ describe('seo — parseBuildDate branches', () => {
     });
 
     it('falls back to new Date() when NEXT_BUILD_DATE is invalid', async () => {
-        process.env.NEXT_BUILD_DATE = 'not-a-date';
+        vi.stubEnv('NEXT_BUILD_DATE', 'not-a-date');
         const before = Date.now();
         const { SITE_BUILD_DATE } = await import('@/shared/lib/seo');
         const after = Date.now();

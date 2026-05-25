@@ -9,18 +9,12 @@ import { verifyOAuthState } from '@/features/auth-oauth/lib/state';
 const VALID_SECRET = 'a'.repeat(64);
 
 describe('verifyOAuthState — branch coverage', () => {
-    const ORIGINAL_SECRET = process.env.OAUTH_STATE_HMAC_SECRET;
-
     beforeEach(() => {
-        process.env.OAUTH_STATE_HMAC_SECRET = VALID_SECRET;
+        vi.stubEnv('OAUTH_STATE_HMAC_SECRET', VALID_SECRET);
     });
 
     afterEach(() => {
-        if (ORIGINAL_SECRET === undefined) {
-            delete process.env.OAUTH_STATE_HMAC_SECRET;
-        } else {
-            process.env.OAUTH_STATE_HMAC_SECRET = ORIGINAL_SECRET;
-        }
+        vi.unstubAllEnvs();
     });
 
     it('returns { ok: false } when cookie has separator but empty payload', () => {
