@@ -15,8 +15,11 @@ import {
     buildSymbolOverallSeoContent,
     buildSymbolFearGreedSeoContent,
     buildSymbolOptionsSeoContent,
+    buildBreadcrumbJsonLd,
     clampSeoDescription,
     SEO_DESCRIPTION_MAX_LENGTH,
+    SITE_URL,
+    SITE_NAME,
 } from '@/shared/lib/seo';
 
 describe('buildSymbolSeoContent', () => {
@@ -420,6 +423,92 @@ describe('clampSeoDescription', () => {
         // 마지막은 말줄임표, 나머지는 모두 🚀.
         expect(codePoints[codePoints.length - 1]).toBe('…');
         expect(codePoints.slice(0, -1).every(cp => cp === '🚀')).toBe(true);
+    });
+});
+
+describe('buildBreadcrumbJsonLd', () => {
+    it('produces a valid BreadcrumbList with home as first item', () => {
+        const result = buildBreadcrumbJsonLd([{ name: 'AAPL', url: '/AAPL' }]);
+
+        expect(result['@context']).toBe('https://schema.org');
+        expect(result['@type']).toBe('BreadcrumbList');
+        const items = result.itemListElement as Array<{
+            position: number;
+            name: string;
+            item: string;
+        }>;
+        expect(items).toHaveLength(2);
+        expect(items[0].position).toBe(1);
+        expect(items[0].name).toBe(SITE_NAME);
+        expect(items[0].item).toBe(SITE_URL);
+        expect(items[1].position).toBe(2);
+        expect(items[1].name).toBe('AAPL');
+        expect(items[1].item).toBe(`${SITE_URL}/AAPL`);
+    });
+
+    it('keeps absolute URLs as-is without prepending SITE_URL', () => {
+        const result = buildBreadcrumbJsonLd([
+            { name: 'External', url: 'https://other.com/path' },
+        ]);
+
+        const items = result.itemListElement as Array<{
+            item: string;
+        }>;
+        expect(items[1].item).toBe('https://other.com/path');
+    });
+});
+
+describe('buildSymbolFearGreedSeoContent', () => {
+    it('produces correct title, URL, and description', () => {
+        const content = buildSymbolFearGreedSeoContent('AAPL');
+        expect(content.title).toContain('AAPL 공포 탐욕 지수');
+        expect(content.url).toBe('https://siglens.io/AAPL/fear-greed');
+    });
+
+    it('includes sector in keywords when provided', () => {
+        const content = buildSymbolFearGreedSeoContent('AAPL', {
+            sector: 'Technology',
+        });
+        expect(content.keywords).toContain('Technology 섹터 매수 분위기');
+    });
+
+    it('includes koreanName in keywords when provided', () => {
+        const content = buildSymbolFearGreedSeoContent('AAPL', {
+            koreanName: '애플',
+        });
+        expect(content.keywords).toContain('애플 공포 지수');
+        expect(content.keywords).toContain('애플 탐욕 지수');
+    });
+});
+
+describe('buildSymbolOptionsSeoContent', () => {
+    it('produces different titles for hasOptions true vs false', () => {
+        const withOptions = buildSymbolOptionsSeoContent('AAPL', {
+            hasOptions: true,
+        });
+        const noOptions = buildSymbolOptionsSeoContent('AAPL', {
+            hasOptions: false,
+        });
+
+        expect(withOptions.title).toContain('Max Pain');
+        expect(noOptions.title).not.toContain('Max Pain');
+    });
+
+    it('produces correct URL', () => {
+        const content = buildSymbolOptionsSeoContent('NVDA');
+        expect(content.url).toBe('https://siglens.io/NVDA/options');
+    });
+
+    it('includes koreanName in keywords', () => {
+        const content = buildSymbolOptionsSeoContent('AAPL', {
+            koreanName: '애플',
+        });
+        expect(content.keywords).toContain('애플 옵션');
+    });
+
+    it('defaults hasOptions to true', () => {
+        const content = buildSymbolOptionsSeoContent('AAPL');
+        expect(content.title).toContain('Max Pain');
     });
 });
 

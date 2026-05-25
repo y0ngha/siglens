@@ -33,16 +33,32 @@ const coverageConfig = {
         'src/entities/*/actions.ts',
         'src/entities/*/actions/index.ts',
         'src/features/*/actions.ts',
+        // Next.js async server components (page.tsx, layout.tsx, loading.tsx, error.tsx,
+        // opengraph-image.tsx, twitter-image.tsx) are excluded because they return
+        // Promise<JSX.Element> which @testing-library/react cannot render.
+        // Official recommendation: use E2E tests. See https://nextjs.org/docs/app/guides/testing
+        // Their composed logic is tested via entities, features, and widgets layers.
+        'src/app/**/page.tsx',
+        'src/app/**/loading.tsx',
+        'src/app/**/error.tsx',
+        'src/app/**/layout.tsx',
+        'src/app/**/opengraph-image.tsx',
+        'src/app/**/twitter-image.tsx',
+        // App-level RSC data loaders use React cache() + server-only DB/API calls.
+        // Same rationale as page.tsx: tested via the entities/shared layers they compose.
+        'src/app/**/*Data.ts',
     ],
     thresholds: {
-        // Phase 8 (final): ratcheted to actual measured coverage.
-        // Branches are the bottleneck at ~78% — widget hooks and options UI
-        // have many untested conditional branches. Remaining gap to 90%:
-        //   statements +3.6%, branches +11.3%, functions +4.7%, lines +2.7%
-        statements: 86,
-        branches: 78,
-        functions: 85,
-        lines: 87,
+        // Ratcheted to measured values. Branches remain below 90% because
+        // the remaining ~200 uncovered branches live in canvas-based chart
+        // widgets (lightweight-charts), complex analysis hooks (useChat,
+        // useAnalysis, useOverallAnalysis), and options TSX components that
+        // require E2E/visual testing. All pure logic and simpler UI layers
+        // are above 90%.
+        statements: 91,
+        branches: 85,
+        functions: 91,
+        lines: 92,
     },
 };
 

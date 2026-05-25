@@ -91,4 +91,125 @@ describe('useIndicatorDropdown', () => {
         rerender();
         expect(result.current.buttonRefs).toBe(firstRefs);
     });
+
+    it('toggleDropdown closes dropdown when toggling same type', () => {
+        const { result } = renderHook(() => useIndicatorDropdown());
+
+        const button = document.createElement('button');
+        button.getBoundingClientRect = vi.fn(() => ({
+            top: 100,
+            left: 200,
+            bottom: 120,
+            right: 280,
+            width: 80,
+            height: 20,
+            x: 200,
+            y: 100,
+            toJSON: vi.fn(),
+        }));
+        Object.defineProperty(result.current.buttonRefs.ma, 'current', {
+            value: button,
+            writable: true,
+        });
+
+        act(() => {
+            result.current.toggleDropdown('ma');
+        });
+        expect(result.current.openDropdown).toBe('ma');
+
+        act(() => {
+            result.current.toggleDropdown('ma');
+        });
+        expect(result.current.openDropdown).toBeNull();
+    });
+
+    it('toggleDropdown does nothing when button ref is null', () => {
+        const { result } = renderHook(() => useIndicatorDropdown());
+
+        // buttonRefs.ma.current is null by default
+        act(() => {
+            result.current.toggleDropdown('ma');
+        });
+        expect(result.current.openDropdown).toBeNull();
+    });
+
+    it('toggleDropdown switches from one type to another', () => {
+        const { result } = renderHook(() => useIndicatorDropdown());
+
+        const maButton = document.createElement('button');
+        maButton.getBoundingClientRect = vi.fn(() => ({
+            top: 100,
+            left: 200,
+            bottom: 120,
+            right: 280,
+            width: 80,
+            height: 20,
+            x: 200,
+            y: 100,
+            toJSON: vi.fn(),
+        }));
+        const emaButton = document.createElement('button');
+        emaButton.getBoundingClientRect = vi.fn(() => ({
+            top: 100,
+            left: 300,
+            bottom: 120,
+            right: 380,
+            width: 80,
+            height: 20,
+            x: 300,
+            y: 100,
+            toJSON: vi.fn(),
+        }));
+        Object.defineProperty(result.current.buttonRefs.ma, 'current', {
+            value: maButton,
+            writable: true,
+        });
+        Object.defineProperty(result.current.buttonRefs.ema, 'current', {
+            value: emaButton,
+            writable: true,
+        });
+
+        act(() => {
+            result.current.toggleDropdown('ma');
+        });
+        expect(result.current.openDropdown).toBe('ma');
+
+        act(() => {
+            result.current.toggleDropdown('ema');
+        });
+        expect(result.current.openDropdown).toBe('ema');
+        expect(result.current.dropdownPosition).toEqual({
+            top: 120 + 4,
+            left: 300,
+        });
+    });
+
+    it('toggleDropdown sets correct position from button rect', () => {
+        const { result } = renderHook(() => useIndicatorDropdown());
+
+        const button = document.createElement('button');
+        button.getBoundingClientRect = vi.fn(() => ({
+            top: 50,
+            left: 150,
+            bottom: 70,
+            right: 230,
+            width: 80,
+            height: 20,
+            x: 150,
+            y: 50,
+            toJSON: vi.fn(),
+        }));
+        Object.defineProperty(result.current.buttonRefs.ma, 'current', {
+            value: button,
+            writable: true,
+        });
+
+        act(() => {
+            result.current.toggleDropdown('ma');
+        });
+        expect(result.current.dropdownPosition).toEqual({
+            top: 70 + 4, // bottom + DROPDOWN_OFFSET_PX
+            left: 150,
+        });
+    });
 });
