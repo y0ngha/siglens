@@ -14,6 +14,7 @@ describe('OAuth state validation edge cases', () => {
 
     describe('HMAC misconfiguration', () => {
         it('throws OAuthStateSecretMisconfiguredError when secret is missing', () => {
+            // 빈 문자열은 프로덕션의 !raw (falsy) 체크에서 undefined와 동치로 처리됨
             vi.stubEnv('OAUTH_STATE_HMAC_SECRET', '');
 
             expect(() => issueOAuthState('google', '/')).toThrow(
