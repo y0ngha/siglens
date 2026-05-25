@@ -47,3 +47,65 @@ vi.mock('next/cache', () => ({
     revalidateTag: () => {},
     unstable_cache: <T extends (...args: unknown[]) => unknown>(fn: T): T => fn,
 }));
+
+const expectedConsolePrefixes = [
+    '[ReanalyzeCooldown]',
+    '[PWA]',
+    '[YahooOptionsAdapter]',
+    '[cancel route]',
+    '[cancelAnalysisJobAction]',
+    '[cancelFundamentalAnalysisJobAction]',
+    '[cancelNewsAnalysisJobAction]',
+    '[cancelOverallAnalysisJobAction]',
+    '[confirmPasswordResetAction]',
+    '[currentUserAction]',
+    '[deleteAccountAction]',
+    '[ensureNewsCardsAnalyzedAction]',
+    '[getAssetInfo]',
+    '[getMarketSummaryAction]',
+    '[getRegisteredProvidersAction]',
+    '[getSectorSignalsAction]',
+    '[koreanNameStore]',
+    '[loginAction]',
+    '[newsClient]',
+    '[optionsDataCache]',
+    '[pollOptionsAnalysisAction]',
+    '[requestEmailVerification]',
+    '[requestEmailVerificationAction]',
+    '[requestPasswordReset]',
+    '[requestPasswordResetAction]',
+    '[searchTicker]',
+    '[submitAnalysisAction]',
+    '[submitContactAction]',
+    '[submitFundamentalAnalysisAction]',
+    '[submitNewsAnalysisAction]',
+    '[submitOptionsAnalysisAction]',
+    '[submitOverallAnalysisAction]',
+    '[useAnalysis]',
+    '[useNewsCardPolling]',
+    '[useWaitForNewsCards]',
+    '[verifyEmailAction]',
+    'Error in registerAction:',
+];
+
+function isExpectedConsoleMessage(args: unknown[]) {
+    const [first] = args;
+    if (typeof first !== 'string') return false;
+    if (expectedConsolePrefixes.some(prefix => first.startsWith(prefix)))
+        return true;
+    if (first.includes('was not wrapped in act(')) return true;
+    return false;
+}
+
+const originalConsoleError = console.error.bind(console);
+const originalConsoleWarn = console.warn.bind(console);
+
+console.error = (...args: unknown[]) => {
+    if (isExpectedConsoleMessage(args)) return;
+    originalConsoleError(...args);
+};
+
+console.warn = (...args: unknown[]) => {
+    if (isExpectedConsoleMessage(args)) return;
+    originalConsoleWarn(...args);
+};

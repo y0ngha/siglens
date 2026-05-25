@@ -12,11 +12,7 @@ const sharedConfig = {
 const sharedTestConfig = {
     globals: true as const,
     pool: 'vmThreads' as const,
-    poolOptions: {
-        vmThreads: {
-            maxThreads: 8,
-        },
-    },
+    maxThreads: 8,
 };
 
 const coverageConfig = {
