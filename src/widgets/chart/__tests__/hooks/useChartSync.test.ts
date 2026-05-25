@@ -1,0 +1,117 @@
+// @vitest-environment jsdom
+import { renderHook } from '@testing-library/react';
+import { useChartSync } from '../../hooks/useChartSync';
+
+vi.mock('lightweight-charts', () => ({}));
+
+function makeMockChart() {
+    const ts = {
+        subscribeVisibleLogicalRangeChange: vi.fn(),
+        unsubscribeVisibleLogicalRangeChange: vi.fn(),
+        setVisibleLogicalRange: vi.fn(),
+    };
+    return {
+        timeScale: () => ts,
+        _timeScaleMock: ts,
+    };
+}
+
+describe('useChartSync', () => {
+    it('returns four handler functions', () => {
+        const { result } = renderHook(() => useChartSync());
+
+        expect(typeof result.current.handleStockChartReady).toBe('function');
+        expect(typeof result.current.handleStockChartRemove).toBe('function');
+        expect(typeof result.current.handleVolumeChartReady).toBe('function');
+        expect(typeof result.current.handleVolumeChartRemove).toBe('function');
+    });
+
+    it('provides stable handler references across re-renders', () => {
+        const { result, rerender } = renderHook(() => useChartSync());
+
+        const firstHandlers = { ...result.current };
+        rerender();
+
+        expect(result.current.handleStockChartReady).toBe(
+            firstHandlers.handleStockChartReady
+        );
+        expect(result.current.handleStockChartRemove).toBe(
+            firstHandlers.handleStockChartRemove
+        );
+        expect(result.current.handleVolumeChartReady).toBe(
+            firstHandlers.handleVolumeChartReady
+        );
+        expect(result.current.handleVolumeChartRemove).toBe(
+            firstHandlers.handleVolumeChartRemove
+        );
+    });
+
+    it('subscribes to visible range changes on stock chart ready', () => {
+        const { result } = renderHook(() => useChartSync());
+        const mockChart = makeMockChart();
+
+        result.current.handleStockChartReady(
+            mockChart as unknown as Parameters<
+                typeof result.current.handleStockChartReady
+            >[0]
+        );
+
+        expect(
+            mockChart._timeScaleMock.subscribeVisibleLogicalRangeChange
+        ).toHaveBeenCalled();
+    });
+
+    it('subscribes to visible range changes on volume chart ready', () => {
+        const { result } = renderHook(() => useChartSync());
+        const mockChart = makeMockChart();
+
+        result.current.handleVolumeChartReady(
+            mockChart as unknown as Parameters<
+                typeof result.current.handleVolumeChartReady
+            >[0]
+        );
+
+        expect(
+            mockChart._timeScaleMock.subscribeVisibleLogicalRangeChange
+        ).toHaveBeenCalled();
+    });
+
+    it('unsubscribes on stock chart remove', () => {
+        const { result } = renderHook(() => useChartSync());
+        const mockChart = makeMockChart();
+
+        result.current.handleStockChartReady(
+            mockChart as unknown as Parameters<
+                typeof result.current.handleStockChartReady
+            >[0]
+        );
+        result.current.handleStockChartRemove();
+
+        expect(
+            mockChart._timeScaleMock.unsubscribeVisibleLogicalRangeChange
+        ).toHaveBeenCalled();
+    });
+
+    it('unsubscribes on volume chart remove', () => {
+        const { result } = renderHook(() => useChartSync());
+        const mockChart = makeMockChart();
+
+        result.current.handleVolumeChartReady(
+            mockChart as unknown as Parameters<
+                typeof result.current.handleVolumeChartReady
+            >[0]
+        );
+        result.current.handleVolumeChartRemove();
+
+        expect(
+            mockChart._timeScaleMock.unsubscribeVisibleLogicalRangeChange
+        ).toHaveBeenCalled();
+    });
+
+    it('does not throw when removing chart before ready', () => {
+        const { result } = renderHook(() => useChartSync());
+
+        expect(() => result.current.handleStockChartRemove()).not.toThrow();
+        expect(() => result.current.handleVolumeChartRemove()).not.toThrow();
+    });
+});
