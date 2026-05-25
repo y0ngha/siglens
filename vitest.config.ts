@@ -35,16 +35,14 @@ const coverageConfig = {
         'src/features/*/actions.ts',
     ],
     thresholds: {
-        // Temporarily lowered from 90% because coverage scope was expanded to include
-        // widgets/, app/, features/hooks/, features/ui/, shared/hooks/, shared/ui/ layers.
-        // These new layers currently have <50% coverage.
-        // Ramp-up plan: 50% → 60% (Phase 1+2) → 70% (Phase 3) → 80% (Phase 4) → 90% (Phase 6+7)
-
-        // Previously tested layers (entities, features/lib, shared/lib) maintain 90%+ individually.
-        statements: 50,
-        branches: 50,
-        functions: 50,
-        lines: 50,
+        // Phase 8 (final): ratcheted to actual measured coverage.
+        // Branches are the bottleneck at ~78% — widget hooks and options UI
+        // have many untested conditional branches. Remaining gap to 90%:
+        //   statements +3.6%, branches +11.3%, functions +4.7%, lines +2.7%
+        statements: 86,
+        branches: 78,
+        functions: 85,
+        lines: 87,
     },
 };
 
