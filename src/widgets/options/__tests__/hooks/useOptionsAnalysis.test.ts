@@ -7,7 +7,6 @@ import { useOptionsAnalysis } from '@/widgets/options/hooks/useOptionsAnalysis';
 import {
     submitOptionsAnalysisAction,
     pollOptionsAnalysisAction,
-    cancelOptionsAnalysisJobAction,
 } from '@/entities/options-chain/actions';
 import type { OptionsAnalysisResponse } from '@y0ngha/siglens-core';
 

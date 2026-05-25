@@ -5,7 +5,7 @@ import { SNAP_HALF } from '@/widgets/symbol-page/constants/mobileSheet';
 vi.mock('vaul', () => {
     const DrawerRoot = ({
         children,
-        ...rest
+        ..._rest
     }: {
         children: React.ReactNode;
         [key: string]: unknown;
@@ -17,7 +17,7 @@ vi.mock('vaul', () => {
 
     const DrawerContent = ({
         children,
-        ...rest
+        ..._rest
     }: {
         children: React.ReactNode;
         [key: string]: unknown;

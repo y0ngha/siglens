@@ -59,7 +59,10 @@ export default defineConfig({
                 test: {
                     ...sharedTestConfig,
                     name: 'node',
-                    include: ['src/**/__tests__/**/*.test.ts'],
+                    include: [
+                        'src/**/__tests__/**/*.test.ts',
+                        'src/__integration__/**/*.test.ts',
+                    ],
                     environment: 'node',
                 },
             },
@@ -68,7 +71,10 @@ export default defineConfig({
                 test: {
                     ...sharedTestConfig,
                     name: 'jsdom',
-                    include: ['src/**/__tests__/**/*.test.tsx'],
+                    include: [
+                        'src/**/__tests__/**/*.test.tsx',
+                        'src/__integration__/**/*.test.tsx',
+                    ],
                     environment: 'jsdom',
                     environmentOptions: {
                         jsdom: {

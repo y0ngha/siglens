@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { renderHook, waitFor, act } from '@testing-library/react';
+import { renderHook, waitFor } from '@testing-library/react';
 import { useWaitForNewsCards } from '@/widgets/news/hooks/useWaitForNewsCards';
 import { getNewsCardsAction } from '@/entities/news-article/actions';
 import type { NewsDisplayItem } from '@/shared/lib/types';

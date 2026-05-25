@@ -8,14 +8,18 @@ vi.mock('next/link', () => ({
         children: React.ReactNode;
         [key: string]: unknown;
     }) => (
-        <a href={href} {...rest}>
+        <span data-href={href} role="link" {...rest}>
             {children}
-        </a>
+        </span>
     ),
 }));
 vi.mock('next/image', () => ({
     default: (props: Record<string, unknown>) => (
-        <img src={props.src as string} alt={props.alt as string} />
+        <span
+            role="img"
+            aria-label={props.alt as string}
+            data-src={props.src as string}
+        />
     ),
 }));
 vi.mock('../HeaderNav', () => ({
@@ -43,14 +47,14 @@ describe('Header', () => {
     it('renders the site logo and name', () => {
         render(<Header currentUser={null} />);
 
-        expect(screen.getByAltText('Siglens 로고')).toBeInTheDocument();
+        expect(screen.getByLabelText('Siglens 로고')).toBeInTheDocument();
     });
 
     it('renders the home link', () => {
         render(<Header currentUser={null} />);
 
         const homeLink = screen.getByLabelText(/SIGLENS 홈/);
-        expect(homeLink).toHaveAttribute('href', '/');
+        expect(homeLink).toHaveAttribute('data-href', '/');
     });
 
     it('renders ticker search and user menu', () => {

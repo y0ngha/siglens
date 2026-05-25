@@ -1,10 +1,11 @@
 vi.mock('next/image', () => ({
     default: (props: Record<string, unknown>) => (
-        <img
-            src={props.src as string}
-            alt={props.alt as string}
-            width={props.width as number}
-            height={props.height as number}
+        <span
+            role="img"
+            data-src={props.src as string}
+            aria-label={props.alt as string}
+            data-width={props.width as number}
+            data-height={props.height as number}
             className={props.className as string}
             data-priority={String(props.priority)}
             data-fetch-priority={props.fetchPriority as string}
@@ -21,7 +22,7 @@ describe('HeroIllustration', () => {
         render(<HeroIllustration />);
 
         const img = screen.getByRole('img');
-        expect(img).toHaveAttribute('src', '/hero-dashboard.svg');
+        expect(img).toHaveAttribute('data-src', '/hero-dashboard.svg');
     });
 
     it('has a descriptive alt text', () => {
@@ -29,7 +30,7 @@ describe('HeroIllustration', () => {
 
         const img = screen.getByRole('img');
         expect(img).toHaveAttribute(
-            'alt',
+            'aria-label',
             expect.stringContaining('캔들 차트')
         );
     });
