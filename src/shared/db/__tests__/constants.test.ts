@@ -5,6 +5,7 @@ import {
     USAGE_ACTION_TYPE_VALUES,
     USER_TIER_VALUES,
 } from '@/shared/db/constants';
+import { LLM_PROVIDER_VALUES as SOURCE_LLM_VALUES } from '@/shared/config/llmProviders';
 
 describe('USER_TIER_VALUES', () => {
     it('비어있지 않은 배열이다', () => {
@@ -104,10 +105,6 @@ describe('TERMS_KIND_VALUES', () => {
 
 describe('LLM_PROVIDER_VALUES (re-export)', () => {
     it('shared/config/llmProviders의 값과 동일하다', () => {
-        expect([...LLM_PROVIDER_VALUES]).toEqual([
-            'anthropic',
-            'google',
-            'openai',
-        ]);
+        expect([...LLM_PROVIDER_VALUES]).toEqual([...SOURCE_LLM_VALUES]);
     });
 });

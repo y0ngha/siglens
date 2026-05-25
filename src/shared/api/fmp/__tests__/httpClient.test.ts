@@ -28,7 +28,6 @@ describe('fmpGet', () => {
         global.fetch = originalFetch;
     });
 
-    /** Helper — resolve fetch with a JSON body. */
     function mockOk(body: unknown): void {
         mockFetch.mockResolvedValueOnce({
             ok: true,
@@ -36,7 +35,6 @@ describe('fmpGet', () => {
         });
     }
 
-    /** Helper — resolve fetch with a non-2xx status. */
     function mockError(status: number): void {
         mockFetch.mockResolvedValueOnce({ ok: false, status });
     }

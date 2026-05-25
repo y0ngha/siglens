@@ -21,10 +21,9 @@ describe('schema 테이블 export', () => {
         expect(schema[tableName]).toBeDefined();
     });
 
-    it('각 테이블이 Drizzle Table 객체이다 (Symbol.toStringTag 또는 _ 속성)', () => {
+    it('각 테이블이 non-null 객체이다', () => {
         for (const tableName of expectedTables) {
             const table = schema[tableName];
-            // Drizzle tables expose an internal `_` descriptor or `Symbol.toStringTag`.
             expect(typeof table).toBe('object');
             expect(table).not.toBeNull();
         }
