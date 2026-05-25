@@ -19,10 +19,7 @@ import {
 import { DEFAULT_LINE_WIDTH } from '../constants';
 import { buildSeriesData } from '../utils/seriesDataUtils';
 import type { FutureCloudBase } from '../utils/ichimokuUtils';
-import {
-    buildCloudData,
-    extendWithFutureCloud,
-} from '../utils/ichimokuUtils';
+import { buildCloudData, extendWithFutureCloud } from '../utils/ichimokuUtils';
 
 interface UseIchimokuOverlayParams {
     chartRef: RefObject<IChartApi | null>;

@@ -1,10 +1,7 @@
 'use client';
 
 import { useBars } from '@/widgets/symbol-page/hooks/useBars';
-import {
-    useFearGreed,
-    type UseFearGreedResult,
-} from './useFearGreed';
+import { useFearGreed, type UseFearGreedResult } from './useFearGreed';
 import { DEFAULT_TIMEFRAME } from '@/shared/config/market';
 
 interface UseFearGreedFromSymbolInput {

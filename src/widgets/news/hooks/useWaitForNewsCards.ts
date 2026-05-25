@@ -3,10 +3,7 @@
 import { useState, useEffect } from 'react';
 import { getNewsCardsAction } from '@/entities/news-article/actions';
 import type { NewsDisplayItem } from '@/shared/lib/types';
-import {
-    POLL_INTERVAL_MS,
-    MAX_CONSECUTIVE_FAILURES,
-} from '../constants';
+import { POLL_INTERVAL_MS, MAX_CONSECUTIVE_FAILURES } from '../constants';
 
 function hasAnyEnrichedCard(items: NewsDisplayItem[]): boolean {
     return items.some(item => item.sentiment !== null);

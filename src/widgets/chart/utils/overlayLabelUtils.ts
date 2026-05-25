@@ -1,9 +1,6 @@
 import { CHART_COLORS, getPeriodColor } from '@/shared/lib/chartColors';
 import type { Bar, IndicatorResult } from '@y0ngha/siglens-core';
-import type {
-    OverlayItemBase,
-    OverlayLegendItem,
-} from '../types';
+import type { OverlayItemBase, OverlayLegendItem } from '../types';
 
 export interface OverlayLabelConfig extends OverlayItemBase {
     getValue: (indicators: IndicatorResult, barIndex: number) => number | null;

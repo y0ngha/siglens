@@ -3,10 +3,7 @@
 import { useEffect, type ReactNode } from 'react';
 import { Drawer } from 'vaul';
 import { cn } from '@/shared/lib/cn';
-import {
-    SNAP_POINTS_MUTABLE,
-    type SnapPoint,
-} from './constants/mobileSheet';
+import { SNAP_POINTS_MUTABLE, type SnapPoint } from './constants/mobileSheet';
 import { useMobileAnalysisSheet } from './hooks/useMobileAnalysisSheet';
 import { useMobileSheetDrag } from './hooks/useMobileSheetDrag';
 

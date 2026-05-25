@@ -6,10 +6,7 @@ import {
     type SetStateAction,
     useState,
 } from 'react';
-import {
-    SNAP_HALF,
-    type SnapPoint,
-} from '../constants/mobileSheet';
+import { SNAP_HALF, type SnapPoint } from '../constants/mobileSheet';
 
 interface UseMobileSheetReturn {
     sheetSnap: SnapPoint;

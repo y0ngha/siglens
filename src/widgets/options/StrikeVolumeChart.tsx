@@ -9,10 +9,7 @@ import {
 } from 'react';
 import type { OptionsChain } from '@y0ngha/siglens-core';
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
-import {
-    CallVolumeTooltip,
-    PutVolumeTooltip,
-} from './utils/optionsTooltips';
+import { CallVolumeTooltip, PutVolumeTooltip } from './utils/optionsTooltips';
 import {
     computeTooltipPos,
     TOOLTIP_MIN_WIDTH_PX,
