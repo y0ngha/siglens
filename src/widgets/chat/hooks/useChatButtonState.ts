@@ -2,7 +2,7 @@
 
 import { startTransition, useCallback, useEffect, useState } from 'react';
 
-const TOOLTIP_SHOWN_KEY = 'siglens:chat-tooltip-shown';
+export const TOOLTIP_SHOWN_KEY = 'siglens:chat-tooltip-shown';
 
 interface UseChatButtonStateReturn {
     isOpen: boolean;

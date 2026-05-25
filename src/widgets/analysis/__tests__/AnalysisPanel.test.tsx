@@ -51,17 +51,17 @@ vi.mock('../AdBanner', () => ({
 vi.mock('../StaleAnalysisBanner', () => ({
     StaleAnalysisBanner: () => null,
 }));
-vi.mock('./utils/parseStructuredSummary', () => ({
+vi.mock('@/widgets/analysis/utils/parseStructuredSummary', () => ({
     parseStructuredSummary: () => null,
 }));
-vi.mock('./utils/buildExpertAnalysisReport', () => ({
+vi.mock('@/widgets/analysis/utils/buildExpertAnalysisReport', () => ({
     buildExpertAnalysisReport: () => 'report text',
 }));
-vi.mock('./utils/trendUtils', () => ({
+vi.mock('@/widgets/analysis/utils/trendUtils', () => ({
     resolveTrendDisplay: (t: string | null | undefined) =>
         t === 'bullish' ? { label: '강세', color: '', bgColor: '' } : null,
 }));
-vi.mock('./utils/signalUtils', () => ({
+vi.mock('@/widgets/analysis/utils/signalUtils', () => ({
     resolveStrengthDisplay: () => null,
 }));
 

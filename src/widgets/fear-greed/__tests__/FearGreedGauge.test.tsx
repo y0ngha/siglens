@@ -17,8 +17,8 @@ vi.mock('@/shared/lib/fearGreedLabels', () => ({
 vi.mock('@/entities/fear-greed', () => ({
     FEAR_GREED_SCORE_BOUNDARIES: {
         EXTREME_FEAR_MAX: 25,
-        FEAR_MAX: 40,
-        NEUTRAL_MAX: 60,
+        FEAR_MAX: 45,
+        NEUTRAL_MAX: 55,
         GREED_MAX: 75,
     },
 }));

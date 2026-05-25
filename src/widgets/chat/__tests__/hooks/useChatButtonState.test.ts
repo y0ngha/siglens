@@ -1,9 +1,10 @@
 // @vitest-environment jsdom
 import { renderHook, act } from '@testing-library/react';
 
-import { useChatButtonState } from '../../hooks/useChatButtonState';
-
-const TOOLTIP_SHOWN_KEY = 'siglens:chat-tooltip-shown';
+import {
+    useChatButtonState,
+    TOOLTIP_SHOWN_KEY,
+} from '../../hooks/useChatButtonState';
 
 describe('useChatButtonState', () => {
     beforeEach(() => {
