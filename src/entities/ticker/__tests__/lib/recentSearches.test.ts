@@ -174,4 +174,39 @@ describe('recentSearches', () => {
             expect(() => clearRecentSearches(storage)).not.toThrow();
         });
     });
+
+    describe('getDefaultStorage fallback (node env)', () => {
+        it('window가 undefined인 환경에서 storage 인자 없이 호출하면 빈 배열 반환', () => {
+            // In node test env, window is undefined → getDefaultStorage returns null
+            expect(getRecentSearches()).toEqual([]);
+        });
+
+        it('window가 undefined인 환경에서 addRecentSearch storage 인자 없이 호출', () => {
+            const result = addRecentSearch('AAPL');
+            // Returns the in-memory result but cannot persist (null storage)
+            expect(result).toEqual(['AAPL']);
+        });
+
+        it('window가 undefined인 환경에서 removeRecentSearch storage 인자 없이 호출', () => {
+            const result = removeRecentSearch('AAPL');
+            expect(result).toEqual([]);
+        });
+
+        it('window가 undefined인 환경에서 clearRecentSearches storage 인자 없이 호출', () => {
+            expect(() => clearRecentSearches()).not.toThrow();
+        });
+    });
+
+    describe('storage getItem error', () => {
+        it('getItem이 throw하면 에러가 전파된다', () => {
+            const storage = {
+                getItem: () => {
+                    throw new Error('SecurityError');
+                },
+                setItem: () => {},
+                removeItem: () => {},
+            };
+            expect(() => getRecentSearches(storage)).toThrow('SecurityError');
+        });
+    });
 });

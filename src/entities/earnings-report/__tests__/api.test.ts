@@ -227,6 +227,97 @@ describe('DrizzleEarningsReportsRepository', () => {
     });
 
     describe('toComparisonItems', () => {
+        it('빈 배열이면 빈 결과를 반환한다', () => {
+            expect(toComparisonItems([], '2026-05-10')).toEqual([]);
+        });
+
+        it('과거 항목이 1개뿐이면 recent-or-future 슬롯으로 반환', () => {
+            const result = toComparisonItems(
+                [
+                    {
+                        symbol: 'AAPL',
+                        earningsDate: '2026-04-30',
+                        epsActual: '2.01',
+                        epsEstimated: '1.95',
+                        revenueActual: '111184000000',
+                        revenueEstimated: '109457600000',
+                        lastUpdated: '2026-05-10',
+                    },
+                ],
+                '2026-05-10'
+            );
+            expect(result).toHaveLength(1);
+            expect(result[0].slot).toBe('recent-or-future');
+        });
+
+        it('과거 항목이 2개뿐이면 past-1 + recent-or-future 슬롯으로 반환', () => {
+            const result = toComparisonItems(
+                [
+                    {
+                        symbol: 'AAPL',
+                        earningsDate: '2026-01-29',
+                        epsActual: '2.85',
+                        epsEstimated: '2.67',
+                        revenueActual: '143756000000',
+                        revenueEstimated: '138391000000',
+                        lastUpdated: '2026-04-29',
+                    },
+                    {
+                        symbol: 'AAPL',
+                        earningsDate: '2026-04-30',
+                        epsActual: '2.01',
+                        epsEstimated: '1.95',
+                        revenueActual: '111184000000',
+                        revenueEstimated: '109457600000',
+                        lastUpdated: '2026-05-10',
+                    },
+                ],
+                '2026-05-10'
+            ).map(item => [item.earningsDate, item.slot]);
+            expect(result).toEqual([
+                ['2026-01-29', 'past-1'],
+                ['2026-04-30', 'recent-or-future'],
+            ]);
+        });
+
+        it('미래 항목만 있고 과거 없으면 future 1개를 반환한다', () => {
+            const result = toComparisonItems(
+                [
+                    {
+                        symbol: 'AAPL',
+                        earningsDate: '2026-07-30',
+                        epsActual: null,
+                        epsEstimated: '1.86',
+                        revenueActual: null,
+                        revenueEstimated: '107618800000',
+                        lastUpdated: '2026-05-10',
+                    },
+                ],
+                '2026-05-10'
+            );
+            expect(result).toHaveLength(1);
+            expect(result[0].period).toBe('future');
+            expect(result[0].slot).toBe('recent-or-future');
+        });
+
+        it('미래 항목 중 estimate 없으면 제외된다', () => {
+            const result = toComparisonItems(
+                [
+                    {
+                        symbol: 'AAPL',
+                        earningsDate: '2026-07-30',
+                        epsActual: null,
+                        epsEstimated: null,
+                        revenueActual: null,
+                        revenueEstimated: null,
+                        lastUpdated: '2026-05-10',
+                    },
+                ],
+                '2026-05-10'
+            );
+            expect(result).toEqual([]);
+        });
+
         it('미래 항목이 없으면 최근 과거 3개를 오래된 순서부터 반환한다', () => {
             expect(
                 toComparisonItems(
@@ -269,6 +360,62 @@ describe('DrizzleEarningsReportsRepository', () => {
         });
     });
 
+    describe('getNextForSymbol', () => {
+        it('row 의 lastUpdated 가 null 이면 null 반환', async () => {
+            const { db } = makeSelectLimitDb([
+                {
+                    symbol: 'AAPL',
+                    earningsDate: '2026-07-30',
+                    epsActual: null,
+                    epsEstimated: '1.86',
+                    revenueActual: null,
+                    revenueEstimated: '107618800000',
+                    lastUpdated: null,
+                },
+            ]);
+            const repo = new DrizzleEarningsReportsRepository(db);
+
+            await expect(
+                repo.getNextForSymbol('AAPL', '2026-05-25')
+            ).resolves.toBeNull();
+        });
+
+        it('row 가 없으면 null 반환', async () => {
+            const { db } = makeSelectLimitDb([]);
+            const repo = new DrizzleEarningsReportsRepository(db);
+
+            await expect(
+                repo.getNextForSymbol('AAPL', '2026-05-25')
+            ).resolves.toBeNull();
+        });
+
+        it('정상 row 가 있으면 EarningsCalendarItem 반환', async () => {
+            const { db } = makeSelectLimitDb([
+                {
+                    symbol: 'AAPL',
+                    earningsDate: '2026-07-30',
+                    epsActual: null,
+                    epsEstimated: '1.86',
+                    revenueActual: null,
+                    revenueEstimated: '107618800000',
+                    lastUpdated: '2026-05-10',
+                },
+            ]);
+            const repo = new DrizzleEarningsReportsRepository(db);
+
+            const result = await repo.getNextForSymbol('AAPL', '2026-05-25');
+            expect(result).toEqual({
+                symbol: 'AAPL',
+                earningsDate: '2026-07-30',
+                epsActual: null,
+                epsEstimated: 1.86,
+                revenueActual: null,
+                revenueEstimated: 107618800000,
+                lastUpdated: '2026-05-10',
+            });
+        });
+    });
+
     describe('dedupeEarningsReportInputs', () => {
         it('lastUpdated 가 같으면 값이 더 많이 채워진 항목을 남긴다', () => {
             const sparse: EarningsReportUpsertInput = {
@@ -280,6 +427,52 @@ describe('DrizzleEarningsReportsRepository', () => {
             expect(dedupeEarningsReportInputs([reportInput, sparse])).toEqual([
                 reportInput,
             ]);
+        });
+
+        it('lastUpdated 와 populated count 가 동일하면 후순위 항목으로 교체', () => {
+            const first: EarningsReportUpsertInput = {
+                ...reportInput,
+                lastUpdated: '2025-08-02',
+            };
+            const second: EarningsReportUpsertInput = {
+                ...reportInput,
+                lastUpdated: '2025-08-02',
+            };
+
+            const result = dedupeEarningsReportInputs([first, second]);
+            expect(result).toHaveLength(1);
+            // Both have identical lastUpdated and populated count, so the later wins
+            expect(result[0]).toBe(second);
+        });
+
+        it('candidate lastUpdated null 이면 교체하지 않는다', () => {
+            const existing: EarningsReportUpsertInput = {
+                ...reportInput,
+                lastUpdated: '2025-08-01',
+            };
+            const candidate: EarningsReportUpsertInput = {
+                ...reportInput,
+                lastUpdated: null,
+            };
+
+            const result = dedupeEarningsReportInputs([existing, candidate]);
+            expect(result).toHaveLength(1);
+            expect(result[0]).toBe(existing);
+        });
+
+        it('existing lastUpdated null 이고 candidate 는 non-null 이면 교체', () => {
+            const existing: EarningsReportUpsertInput = {
+                ...reportInput,
+                lastUpdated: null,
+            };
+            const candidate: EarningsReportUpsertInput = {
+                ...reportInput,
+                lastUpdated: '2025-08-02',
+            };
+
+            const result = dedupeEarningsReportInputs([existing, candidate]);
+            expect(result).toHaveLength(1);
+            expect(result[0]).toBe(candidate);
         });
     });
 

@@ -373,4 +373,38 @@ describe('getAssetInfo', () => {
             fmpSymbol: 'AAPL.MX',
         });
     });
+
+    it('DB read 에서 AbortError (Neon cause.sourceError) 발생 시 FMP 폴백', async () => {
+        // Neon wraps AbortError in cause.sourceError chain
+        const sourceError = new Error('AbortError');
+        sourceError.name = 'AbortError';
+        const neonCause = Object.assign(new Error('Neon error'), {
+            sourceError,
+        });
+        const outerError = Object.assign(new Error('DB read failed'), {
+            cause: neonCause,
+        });
+        mockCache.get.mockResolvedValue(null);
+        mockRepository.findBySymbol.mockRejectedValue(outerError);
+        searchBySymbolMock.mockResolvedValue([apple]);
+        const result = await getAssetInfo('AAPL');
+        expect(result).toEqual({ symbol: 'AAPL', name: 'Apple Inc.' });
+    });
+
+    it('DB read 에서 직접 AbortError 발생 시 FMP 폴백', async () => {
+        const abortError = new Error('AbortError');
+        abortError.name = 'AbortError';
+        mockCache.get.mockResolvedValue(null);
+        mockRepository.findBySymbol.mockRejectedValue(abortError);
+        searchBySymbolMock.mockResolvedValue([apple]);
+        const result = await getAssetInfo('AAPL');
+        expect(result).toEqual({ symbol: 'AAPL', name: 'Apple Inc.' });
+    });
+
+    it('FMP 검색 시간 초과(reject)는 에러를 전파한다', async () => {
+        mockCache.get.mockResolvedValue(null);
+        mockRepository.findBySymbol.mockResolvedValue(null);
+        searchBySymbolMock.mockRejectedValue(new Error('FMP timeout'));
+        await expect(getAssetInfo('AAPL')).rejects.toThrow('FMP timeout');
+    });
 });
