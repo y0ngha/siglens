@@ -1,3 +1,4 @@
+import type { Mock } from 'vitest';
 import { registerUser } from '@/entities/user/lib/registerUser';
 import type { RegisterUserDependencies } from '@/entities/user/lib/authUseCaseTypes';
 import type {
@@ -28,54 +29,56 @@ function makeDependencies(options?: {
     verificationState?: EmailTokenValue | null;
 }): {
     dependencies: RegisterUserDependencies;
-    findByEmail: ReturnType<typeof jest.fn>;
-    createEmailUser: ReturnType<typeof jest.fn>;
-    deleteUser: ReturnType<typeof jest.fn>;
-    hashPassword: ReturnType<typeof jest.fn>;
-    getToken: ReturnType<typeof jest.fn>;
-    deleteToken: ReturnType<typeof jest.fn>;
-    insertMany: ReturnType<typeof jest.fn>;
+    findByEmail: ReturnType<typeof vi.fn>;
+    createEmailUser: ReturnType<typeof vi.fn>;
+    deleteUser: ReturnType<typeof vi.fn>;
+    hashPassword: ReturnType<typeof vi.fn>;
+    getToken: ReturnType<typeof vi.fn>;
+    deleteToken: ReturnType<typeof vi.fn>;
+    insertMany: ReturnType<typeof vi.fn>;
 } {
-    const findByEmail = jest
+    const findByEmail = vi
         .fn()
         .mockResolvedValue(options?.existingUser ?? null);
     const createdUser =
         options && 'createdUser' in options
             ? options.createdUser
             : makeUser('user@example.com');
-    const createEmailUser = jest.fn().mockResolvedValue(createdUser);
-    const deleteUser = jest.fn().mockResolvedValue(true);
-    const hashPassword = jest.fn().mockResolvedValue('hashed-password');
+    const createEmailUser = vi.fn().mockResolvedValue(createdUser);
+    const deleteUser = vi.fn().mockResolvedValue(true);
+    const hashPassword = vi.fn().mockResolvedValue('hashed-password');
 
     const verificationState =
         options && 'verificationState' in options
             ? (options.verificationState ?? null)
             : ({ status: 'verified' } satisfies EmailTokenValue);
-    const getToken = jest
+    const getToken = vi
         .fn<
-            Promise<EmailTokenValue | null>,
-            [purpose: EmailTokenPurpose, email: string]
+            (
+                purpose: EmailTokenPurpose,
+                email: string
+            ) => Promise<EmailTokenValue | null>
         >()
         .mockResolvedValue(verificationState);
-    const deleteToken = jest.fn().mockResolvedValue(undefined);
-    const insertMany = jest.fn().mockResolvedValue(undefined);
+    const deleteToken = vi.fn().mockResolvedValue(undefined);
+    const insertMany = vi.fn().mockResolvedValue(undefined);
 
     return {
         dependencies: {
             users: {
                 findByEmail,
-                findById: jest.fn(),
+                findById: vi.fn(),
                 createEmailUser,
                 deleteUser,
-                updatePassword: jest.fn(),
+                updatePassword: vi.fn(),
             },
             agreements: { insertMany },
             passwordHasher: { hashPassword },
             emailTokens: {
-                set: jest.fn(),
+                set: vi.fn(),
                 get: getToken,
                 delete: deleteToken,
-                consume: jest.fn(),
+                consume: vi.fn(),
             },
         },
         findByEmail,
@@ -194,7 +197,7 @@ describe('registerUser', () => {
     it('preserves the verified marker when hashPassword throws', async () => {
         const { dependencies, deleteToken } = makeDependencies();
         (
-            dependencies.passwordHasher.hashPassword as jest.Mock
+            dependencies.passwordHasher.hashPassword as Mock
         ).mockRejectedValueOnce(new Error('hash failure'));
 
         await expect(registerUser(DEFAULT_INPUT, dependencies)).rejects.toThrow(
@@ -208,7 +211,7 @@ describe('registerUser', () => {
     it('preserves the verified marker when createEmailUser throws', async () => {
         const { dependencies, deleteToken, createEmailUser } =
             makeDependencies();
-        (createEmailUser as jest.Mock).mockRejectedValueOnce(
+        (createEmailUser as Mock).mockRejectedValueOnce(
             new Error('database is on fire')
         );
 
@@ -236,7 +239,7 @@ describe('registerUser', () => {
     it('compensates by deleting the user when insertMany throws', async () => {
         const { dependencies, deleteUser, deleteToken, insertMany } =
             makeDependencies();
-        (insertMany as jest.Mock).mockRejectedValueOnce(
+        (insertMany as Mock).mockRejectedValueOnce(
             new Error('agreements insert failed')
         );
 

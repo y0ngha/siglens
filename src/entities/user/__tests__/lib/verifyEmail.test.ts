@@ -12,29 +12,31 @@ const STORED_HASH = hashEmailToken(VALID_CODE);
 
 function makeDependencies(options?: { stored?: EmailTokenValue | null }): {
     dependencies: VerifyEmailDependencies;
-    getToken: ReturnType<typeof jest.fn>;
-    setToken: ReturnType<typeof jest.fn>;
+    getToken: ReturnType<typeof vi.fn>;
+    setToken: ReturnType<typeof vi.fn>;
 } {
     const stored: EmailTokenValue | null =
         options && 'stored' in options
             ? (options.stored ?? null)
             : { status: 'pending', tokenHash: STORED_HASH };
 
-    const getToken = jest
+    const getToken = vi
         .fn<
-            Promise<EmailTokenValue | null>,
-            [purpose: EmailTokenPurpose, email: string]
+            (
+                purpose: EmailTokenPurpose,
+                email: string
+            ) => Promise<EmailTokenValue | null>
         >()
         .mockResolvedValue(stored);
-    const setToken = jest.fn().mockResolvedValue(undefined);
+    const setToken = vi.fn().mockResolvedValue(undefined);
 
     return {
         dependencies: {
             emailTokens: {
                 set: setToken,
                 get: getToken,
-                delete: jest.fn(),
-                consume: jest.fn(),
+                delete: vi.fn(),
+                consume: vi.fn(),
             },
         },
         getToken,

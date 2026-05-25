@@ -1,19 +1,18 @@
+import type { MockedFunction } from 'vitest';
 import { pollAnalysisAction } from '../actions/pollAnalysisAction';
 import { pollAnalysis } from '@y0ngha/siglens-core';
 import type { PollAnalysisResult } from '@y0ngha/siglens-core';
 
-jest.mock('@vercel/functions', () => ({
-    waitUntil: jest.fn(),
+vi.mock('@vercel/functions', () => ({
+    waitUntil: vi.fn(),
 }));
 
-jest.mock('@y0ngha/siglens-core', () => ({
-    ...jest.requireActual('@y0ngha/siglens-core'),
-    pollAnalysis: jest.fn(),
+vi.mock('@y0ngha/siglens-core', async () => ({
+    ...(await vi.importActual('@y0ngha/siglens-core')),
+    pollAnalysis: vi.fn(),
 }));
 
-const mockPollAnalysis = pollAnalysis as jest.MockedFunction<
-    typeof pollAnalysis
->;
+const mockPollAnalysis = pollAnalysis as MockedFunction<typeof pollAnalysis>;
 
 const processingResult: PollAnalysisResult = { status: 'processing' };
 

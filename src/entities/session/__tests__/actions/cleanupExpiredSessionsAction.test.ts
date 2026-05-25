@@ -3,21 +3,25 @@ import {
     CleanupUnauthorizedError,
 } from '@/entities/session/actions/cleanupExpiredSessionsAction';
 
-const mockDeleteExpiredSessions = jest.fn();
-const mockHeadersGet = jest.fn();
-
-jest.mock('next/headers', () => ({
-    headers: jest.fn(async () => ({ get: mockHeadersGet })),
+const { mockDeleteExpiredSessions, mockHeadersGet } = vi.hoisted(() => ({
+    mockDeleteExpiredSessions: vi.fn(),
+    mockHeadersGet: vi.fn(),
 }));
 
-jest.mock('@/entities/session/api', () => ({
-    DrizzleSessionRepository: jest.fn().mockImplementation(() => ({
-        deleteExpiredSessions: mockDeleteExpiredSessions,
-    })),
+vi.mock('next/headers', () => ({
+    headers: vi.fn(async () => ({ get: mockHeadersGet })),
 }));
 
-jest.mock('@/entities/session/lib/db', () => ({
-    getAuthDatabaseClient: jest.fn(() => ({ db: {} })),
+vi.mock('@/entities/session/api', () => ({
+    DrizzleSessionRepository: vi.fn().mockImplementation(function () {
+        return {
+            deleteExpiredSessions: mockDeleteExpiredSessions,
+        };
+    }),
+}));
+
+vi.mock('@/entities/session/lib/db', () => ({
+    getAuthDatabaseClient: vi.fn(() => ({ db: {} })),
 }));
 
 describe('cleanupExpiredSessionsAction', () => {

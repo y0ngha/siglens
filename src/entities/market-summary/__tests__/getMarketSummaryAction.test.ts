@@ -1,3 +1,4 @@
+import type { MockedFunction } from 'vitest';
 import { getMarketSummaryAction } from '../actions/getMarketSummaryAction';
 import {
     getMarketSummary,
@@ -7,28 +8,28 @@ import {
 } from '@y0ngha/siglens-core';
 import { isBot } from '@/shared/api/isBot';
 
-jest.mock('@y0ngha/siglens-core', () => ({
-    ...jest.requireActual('@y0ngha/siglens-core'),
-    getMarketSummaryWithBriefing: jest.fn(),
-    getMarketSummary: jest.fn(),
+vi.mock('@y0ngha/siglens-core', async () => ({
+    ...(await vi.importActual('@y0ngha/siglens-core')),
+    getMarketSummaryWithBriefing: vi.fn(),
+    getMarketSummary: vi.fn(),
 }));
 
-jest.mock('next/headers', () => ({
-    headers: jest.fn().mockResolvedValue(new Headers()),
+vi.mock('next/headers', () => ({
+    headers: vi.fn().mockResolvedValue(new Headers()),
 }));
 
-jest.mock('@/shared/api/isBot', () => ({
-    isBot: jest.fn(),
+vi.mock('@/shared/api/isBot', () => ({
+    isBot: vi.fn(),
 }));
 
 const mockGetSummaryWithBriefing =
-    getMarketSummaryWithBriefing as jest.MockedFunction<
+    getMarketSummaryWithBriefing as MockedFunction<
         typeof getMarketSummaryWithBriefing
     >;
-const mockGetSummary = getMarketSummary as jest.MockedFunction<
+const mockGetSummary = getMarketSummary as MockedFunction<
     typeof getMarketSummary
 >;
-const mockIsBot = isBot as jest.MockedFunction<typeof isBot>;
+const mockIsBot = isBot as MockedFunction<typeof isBot>;
 
 const summaryData: MarketSummaryData = { indices: [], sectors: [] };
 
@@ -39,7 +40,7 @@ const summaryWithBriefing: MarketSummaryWithBriefing = {
 
 describe('getMarketSummaryAction 함수는', () => {
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     describe('일반 사용자 요청 시', () => {

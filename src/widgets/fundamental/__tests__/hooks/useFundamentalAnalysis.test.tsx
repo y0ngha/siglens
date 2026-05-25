@@ -1,6 +1,4 @@
-/**
- * @jest-environment jsdom
- */
+import type { MockedFunction, Mock } from 'vitest';
 import { useFundamentalAnalysis } from '@/widgets/fundamental/hooks/useFundamentalAnalysis';
 import {
     cancelFundamentalAnalysisJobAction,
@@ -15,23 +13,23 @@ import type { ReactNode } from 'react';
 import { renderToString } from 'react-dom/server';
 import { readBlobText } from '@/shared/test-utils/readBlobText';
 
-jest.mock('@/entities/analysis/actions', () => ({
-    submitFundamentalAnalysisAction: jest.fn(),
-    pollFundamentalAnalysisAction: jest.fn(),
-    cancelFundamentalAnalysisJobAction: jest.fn().mockResolvedValue(undefined),
+vi.mock('@/entities/analysis/actions', () => ({
+    submitFundamentalAnalysisAction: vi.fn(),
+    pollFundamentalAnalysisAction: vi.fn(),
+    cancelFundamentalAnalysisJobAction: vi.fn().mockResolvedValue(undefined),
 }));
 
-jest.mock('@/shared/lib/sleep', () => ({
-    sleep: jest.fn().mockResolvedValue(undefined),
+vi.mock('@/shared/lib/sleep', () => ({
+    sleep: vi.fn().mockResolvedValue(undefined),
 }));
 
-const mockSubmit = submitFundamentalAnalysisAction as jest.MockedFunction<
+const mockSubmit = submitFundamentalAnalysisAction as MockedFunction<
     typeof submitFundamentalAnalysisAction
 >;
-const mockPoll = pollFundamentalAnalysisAction as jest.MockedFunction<
+const mockPoll = pollFundamentalAnalysisAction as MockedFunction<
     typeof pollFundamentalAnalysisAction
 >;
-const mockCancel = cancelFundamentalAnalysisJobAction as jest.MockedFunction<
+const mockCancel = cancelFundamentalAnalysisJobAction as MockedFunction<
     typeof cancelFundamentalAnalysisJobAction
 >;
 
@@ -217,10 +215,10 @@ describe('useFundamentalAnalysis', () => {
         });
 
         describe('pagehide', () => {
-            let sendBeaconMock: jest.Mock;
+            let sendBeaconMock: Mock;
 
             beforeEach(() => {
-                sendBeaconMock = jest.fn();
+                sendBeaconMock = vi.fn();
                 Object.defineProperty(navigator, 'sendBeacon', {
                     value: sendBeaconMock,
                     configurable: true,

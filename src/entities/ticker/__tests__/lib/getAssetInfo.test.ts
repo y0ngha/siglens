@@ -6,68 +6,65 @@ import type {
 } from '@/shared/db/types';
 import type { FmpSearchResult } from '../../model';
 
-const mockCache: {
-    get: jest.Mock;
-    set: jest.Mock;
-    delete: jest.Mock;
-} = {
-    get: jest.fn(),
-    set: jest.fn(),
-    delete: jest.fn(),
-};
-
-const mockRepository: {
-    findBySymbol: jest.Mock;
-    upsert: jest.Mock;
-} = {
-    findBySymbol: jest.fn(),
-    upsert: jest.fn(),
-};
+const {
+    mockCache,
+    mockRepository,
+    createCacheProviderMock,
+    tryGetTickerDatabaseClientMock,
+    repositoryFactoryMock,
+    searchBySymbolMock,
+    getKoreanNamesMock,
+    setKoreanTickersMock,
+    translateCompanyNamesMock,
+} = vi.hoisted(() => ({
+    mockCache: {
+        get: vi.fn(),
+        set: vi.fn(),
+        delete: vi.fn(),
+    },
+    mockRepository: {
+        findBySymbol: vi.fn(),
+        upsert: vi.fn(),
+    },
+    createCacheProviderMock: vi.fn(),
+    tryGetTickerDatabaseClientMock: vi.fn(),
+    repositoryFactoryMock: vi.fn(),
+    searchBySymbolMock: vi.fn(),
+    getKoreanNamesMock: vi.fn(),
+    setKoreanTickersMock: vi.fn(),
+    translateCompanyNamesMock: vi.fn(),
+}));
 
 interface FakeDbClient {
     db: unknown;
 }
 
-const createCacheProviderMock = jest.fn<CacheProvider | null, []>();
-const tryGetTickerDatabaseClientMock = jest.fn<FakeDbClient | null, []>();
-const repositoryFactoryMock = jest.fn<AssetTranslationRepository, [unknown]>();
-const searchBySymbolMock = jest.fn<Promise<FmpSearchResult[]>, [string]>();
-const getKoreanNamesMock = jest.fn<
-    Promise<Record<string, string>>,
-    [string[]]
->();
-const setKoreanTickersMock = jest.fn<Promise<void>, [unknown[]]>();
-const translateCompanyNamesMock = jest.fn<
-    Promise<Record<string, string>>,
-    []
->();
-
-jest.mock('@y0ngha/siglens-core', () => ({
-    ...jest.requireActual('@y0ngha/siglens-core'),
+vi.mock('@y0ngha/siglens-core', async () => ({
+    ...(await vi.importActual('@y0ngha/siglens-core')),
     createCacheProvider: () => createCacheProviderMock(),
 }));
-jest.mock('../../lib/db', () => ({
+vi.mock('../../lib/db', () => ({
     tryGetTickerDatabaseClient: () => tryGetTickerDatabaseClientMock(),
 }));
-jest.mock('../../api', () => ({
+vi.mock('../../api', () => ({
     DrizzleAssetTranslationRepository: class {
         constructor(db: unknown) {
             return repositoryFactoryMock(db) as unknown as object;
         }
     },
 }));
-jest.mock('../../lib/fmpTickerApi', () => {
-    const actual = jest.requireActual('../../lib/fmpTickerApi');
+vi.mock('../../lib/fmpTickerApi', async () => {
+    const actual = await vi.importActual('../../lib/fmpTickerApi');
     return {
         ...actual,
         searchBySymbol: (q: string) => searchBySymbolMock(q),
     };
 });
-jest.mock('../../lib/koreanNameStore', () => ({
+vi.mock('../../lib/koreanNameStore', () => ({
     getKoreanNames: (symbols: string[]) => getKoreanNamesMock(symbols),
     setKoreanTickers: (entries: unknown[]) => setKoreanTickersMock(entries),
 }));
-jest.mock('../../lib/koreanTranslator', () => ({
+vi.mock('../../lib/koreanTranslator', () => ({
     translateCompanyNames: () => translateCompanyNamesMock(),
 }));
 
@@ -118,13 +115,13 @@ describe('getAssetInfo', () => {
         getKoreanNamesMock.mockReset();
         getKoreanNamesMock.mockResolvedValue({});
         setKoreanTickersMock.mockReset();
-        setKoreanTickersMock.mockResolvedValue();
+        setKoreanTickersMock.mockResolvedValue(undefined);
         translateCompanyNamesMock.mockReset();
         translateCompanyNamesMock.mockResolvedValue({});
     });
 
     afterEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     it('잘못된 ticker format 은 null 반환', async () => {

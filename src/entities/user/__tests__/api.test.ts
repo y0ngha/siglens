@@ -1,8 +1,8 @@
 // withRetry 내부 sleep을 즉시 resolve로 stubbing해서 transient retry 케이스의
-// 실제 대기 시간을 없앤다. `jest.mock` 은 정적 import 보다 먼저 평가되도록
+// 실제 대기 시간을 없앤다. `vi.mock` 은 정적 import 보다 먼저 평가되도록
 // 호이스트되어야 한다 (`import/first` 규칙과 일치).
-jest.mock('@/shared/lib/sleep', () => ({
-    sleep: jest.fn().mockResolvedValue(undefined),
+vi.mock('@/shared/lib/sleep', () => ({
+    sleep: vi.fn().mockResolvedValue(undefined),
 }));
 
 import { oauthAccounts, users } from '@/shared/db/schema';
@@ -24,17 +24,17 @@ const userRecord = {
 
 function makeSelectDb(rows: unknown[]): {
     db: SiglensDatabase;
-    select: ReturnType<typeof jest.fn>;
-    from: ReturnType<typeof jest.fn>;
-    innerJoin: ReturnType<typeof jest.fn>;
-    where: ReturnType<typeof jest.fn>;
-    limit: ReturnType<typeof jest.fn>;
+    select: ReturnType<typeof vi.fn>;
+    from: ReturnType<typeof vi.fn>;
+    innerJoin: ReturnType<typeof vi.fn>;
+    where: ReturnType<typeof vi.fn>;
+    limit: ReturnType<typeof vi.fn>;
 } {
-    const limit = jest.fn().mockResolvedValue(rows);
-    const where = jest.fn(() => ({ limit }));
-    const innerJoin = jest.fn(() => ({ where }));
-    const from = jest.fn(() => ({ innerJoin, where }));
-    const select = jest.fn(() => ({ from }));
+    const limit = vi.fn().mockResolvedValue(rows);
+    const where = vi.fn(() => ({ limit }));
+    const innerJoin = vi.fn(() => ({ where }));
+    const from = vi.fn(() => ({ innerJoin, where }));
+    const select = vi.fn(() => ({ from }));
 
     return {
         db: { select } as unknown as SiglensDatabase,
@@ -48,15 +48,15 @@ function makeSelectDb(rows: unknown[]): {
 
 function makeInsertDb(rows: unknown[]): {
     db: SiglensDatabase;
-    insert: ReturnType<typeof jest.fn>;
-    values: ReturnType<typeof jest.fn>;
-    onConflictDoNothing: ReturnType<typeof jest.fn>;
-    returning: ReturnType<typeof jest.fn>;
+    insert: ReturnType<typeof vi.fn>;
+    values: ReturnType<typeof vi.fn>;
+    onConflictDoNothing: ReturnType<typeof vi.fn>;
+    returning: ReturnType<typeof vi.fn>;
 } {
-    const returning = jest.fn().mockResolvedValue(rows);
-    const onConflictDoNothing = jest.fn(() => ({ returning }));
-    const values = jest.fn(() => ({ onConflictDoNothing }));
-    const insert = jest.fn(() => ({ values }));
+    const returning = vi.fn().mockResolvedValue(rows);
+    const onConflictDoNothing = vi.fn(() => ({ returning }));
+    const values = vi.fn(() => ({ onConflictDoNothing }));
+    const insert = vi.fn(() => ({ values }));
 
     return {
         db: { insert } as unknown as SiglensDatabase,
@@ -69,13 +69,13 @@ function makeInsertDb(rows: unknown[]): {
 
 function makeDeleteDb(rows: unknown[]): {
     db: SiglensDatabase;
-    delete: ReturnType<typeof jest.fn>;
-    where: ReturnType<typeof jest.fn>;
-    returning: ReturnType<typeof jest.fn>;
+    delete: ReturnType<typeof vi.fn>;
+    where: ReturnType<typeof vi.fn>;
+    returning: ReturnType<typeof vi.fn>;
 } {
-    const returning = jest.fn().mockResolvedValue(rows);
-    const where = jest.fn(() => ({ returning }));
-    const deleteFn = jest.fn(() => ({ where }));
+    const returning = vi.fn().mockResolvedValue(rows);
+    const where = vi.fn(() => ({ returning }));
+    const deleteFn = vi.fn(() => ({ where }));
 
     return {
         db: { delete: deleteFn } as unknown as SiglensDatabase,
@@ -91,38 +91,36 @@ function makeOAuthInsertDb(options: {
     deleteRows?: unknown[];
 }): {
     db: SiglensDatabase;
-    insert: ReturnType<typeof jest.fn>;
-    userValues: ReturnType<typeof jest.fn>;
-    accountValues: ReturnType<typeof jest.fn>;
-    userOnConflictDoNothing: ReturnType<typeof jest.fn>;
-    accountOnConflictDoNothing: ReturnType<typeof jest.fn>;
-    userReturning: ReturnType<typeof jest.fn>;
-    accountReturning: ReturnType<typeof jest.fn>;
-    deleteFn: ReturnType<typeof jest.fn>;
-    deleteWhere: ReturnType<typeof jest.fn>;
-    deleteReturning: ReturnType<typeof jest.fn>;
+    insert: ReturnType<typeof vi.fn>;
+    userValues: ReturnType<typeof vi.fn>;
+    accountValues: ReturnType<typeof vi.fn>;
+    userOnConflictDoNothing: ReturnType<typeof vi.fn>;
+    accountOnConflictDoNothing: ReturnType<typeof vi.fn>;
+    userReturning: ReturnType<typeof vi.fn>;
+    accountReturning: ReturnType<typeof vi.fn>;
+    deleteFn: ReturnType<typeof vi.fn>;
+    deleteWhere: ReturnType<typeof vi.fn>;
+    deleteReturning: ReturnType<typeof vi.fn>;
 } {
-    const deleteReturning = jest
-        .fn()
-        .mockResolvedValue(options.deleteRows ?? []);
-    const deleteWhere = jest.fn(() => ({ returning: deleteReturning }));
-    const deleteFn = jest.fn(() => ({ where: deleteWhere }));
+    const deleteReturning = vi.fn().mockResolvedValue(options.deleteRows ?? []);
+    const deleteWhere = vi.fn(() => ({ returning: deleteReturning }));
+    const deleteFn = vi.fn(() => ({ where: deleteWhere }));
 
-    const userReturning = jest.fn().mockResolvedValue(options.userRows);
-    const accountReturning = jest.fn().mockResolvedValue(options.accountRows);
-    const userOnConflictDoNothing = jest.fn(() => ({
+    const userReturning = vi.fn().mockResolvedValue(options.userRows);
+    const accountReturning = vi.fn().mockResolvedValue(options.accountRows);
+    const userOnConflictDoNothing = vi.fn(() => ({
         returning: userReturning,
     }));
-    const accountOnConflictDoNothing = jest.fn(() => ({
+    const accountOnConflictDoNothing = vi.fn(() => ({
         returning: accountReturning,
     }));
-    const userValues = jest.fn(() => ({
+    const userValues = vi.fn(() => ({
         onConflictDoNothing: userOnConflictDoNothing,
     }));
-    const accountValues = jest.fn(() => ({
+    const accountValues = vi.fn(() => ({
         onConflictDoNothing: accountOnConflictDoNothing,
     }));
-    const insert = jest
+    const insert = vi
         .fn()
         .mockReturnValueOnce({ values: userValues })
         .mockReturnValueOnce({ values: accountValues });
@@ -144,12 +142,12 @@ function makeOAuthInsertDb(options: {
 
 function makeFailingOAuthInsertDb(error: Error): {
     db: SiglensDatabase;
-    insert: ReturnType<typeof jest.fn>;
+    insert: ReturnType<typeof vi.fn>;
 } {
-    const returning = jest.fn().mockRejectedValue(error);
-    const onConflictDoNothing = jest.fn(() => ({ returning }));
-    const values = jest.fn(() => ({ onConflictDoNothing }));
-    const insert = jest.fn(() => ({ values }));
+    const returning = vi.fn().mockRejectedValue(error);
+    const onConflictDoNothing = vi.fn(() => ({ returning }));
+    const values = vi.fn(() => ({ onConflictDoNothing }));
+    const insert = vi.fn(() => ({ values }));
 
     return {
         db: { insert } as unknown as SiglensDatabase,
@@ -159,15 +157,15 @@ function makeFailingOAuthInsertDb(error: Error): {
 
 function makeUpdateDb(rows: unknown[]): {
     db: SiglensDatabase;
-    update: ReturnType<typeof jest.fn>;
-    set: ReturnType<typeof jest.fn>;
-    where: ReturnType<typeof jest.fn>;
-    returning: ReturnType<typeof jest.fn>;
+    update: ReturnType<typeof vi.fn>;
+    set: ReturnType<typeof vi.fn>;
+    where: ReturnType<typeof vi.fn>;
+    returning: ReturnType<typeof vi.fn>;
 } {
-    const returning = jest.fn().mockResolvedValue(rows);
-    const where = jest.fn(() => ({ returning }));
-    const set = jest.fn(() => ({ where }));
-    const update = jest.fn(() => ({ set }));
+    const returning = vi.fn().mockResolvedValue(rows);
+    const where = vi.fn(() => ({ returning }));
+    const set = vi.fn(() => ({ where }));
+    const update = vi.fn(() => ({ set }));
 
     return {
         db: { update } as unknown as SiglensDatabase,
@@ -715,13 +713,13 @@ describe('DrizzleUserRepository — Neon transient retry wire-up', () => {
             new Error('Error connecting to database: fetch failed'),
             { name: 'NeonDbError' }
         );
-        const returning = jest
+        const returning = vi
             .fn()
             .mockRejectedValueOnce(neonTransient)
             .mockResolvedValueOnce([userRecord]);
-        const onConflictDoNothing = jest.fn(() => ({ returning }));
-        const values = jest.fn(() => ({ onConflictDoNothing }));
-        const insert = jest.fn(() => ({ values }));
+        const onConflictDoNothing = vi.fn(() => ({ returning }));
+        const values = vi.fn(() => ({ onConflictDoNothing }));
+        const insert = vi.fn(() => ({ values }));
         const db = { insert } as unknown as SiglensDatabase;
         const repository = new DrizzleUserRepository(db);
 
@@ -739,10 +737,10 @@ describe('DrizzleUserRepository — Neon transient retry wire-up', () => {
             ),
             { name: 'NeonDbError' }
         );
-        const returning = jest.fn().mockRejectedValueOnce(constraintError);
-        const onConflictDoNothing = jest.fn(() => ({ returning }));
-        const values = jest.fn(() => ({ onConflictDoNothing }));
-        const insert = jest.fn(() => ({ values }));
+        const returning = vi.fn().mockRejectedValueOnce(constraintError);
+        const onConflictDoNothing = vi.fn(() => ({ returning }));
+        const values = vi.fn(() => ({ onConflictDoNothing }));
+        const insert = vi.fn(() => ({ values }));
         const db = { insert } as unknown as SiglensDatabase;
         const repository = new DrizzleUserRepository(db);
 

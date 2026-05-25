@@ -1,37 +1,40 @@
-jest.mock('@vercel/functions', () => ({
-    waitUntil: jest.fn(),
+import type { MockedFunction, MockedClass, Mock } from 'vitest';
+vi.mock('@vercel/functions', () => ({
+    waitUntil: vi.fn(),
 }));
 
-jest.mock('next/headers', () => ({
-    headers: jest.fn(() => Promise.resolve(new Headers())),
+vi.mock('next/headers', () => ({
+    headers: vi.fn(() => Promise.resolve(new Headers())),
 }));
 
-jest.mock('@y0ngha/siglens-core', () => ({
-    ...jest.requireActual('@y0ngha/siglens-core'),
-    submitNewsAnalysis: jest.fn(),
+vi.mock('@y0ngha/siglens-core', async () => ({
+    ...(await vi.importActual('@y0ngha/siglens-core')),
+    submitNewsAnalysis: vi.fn(),
 }));
 
-jest.mock('@/shared/db/client', () => ({
-    getDatabaseClient: jest.fn().mockReturnValue({ db: {} }),
+vi.mock('@/shared/db/client', () => ({
+    getDatabaseClient: vi.fn().mockReturnValue({ db: {} }),
 }));
 
-jest.mock('@/entities/news-article', () => ({
-    DrizzleNewsRepository: jest.fn().mockImplementation(() => ({
-        listBySymbol: jest.fn(),
-    })),
+vi.mock('@/entities/news-article', () => ({
+    DrizzleNewsRepository: vi.fn().mockImplementation(function () {
+        return {
+            listBySymbol: vi.fn(),
+        };
+    }),
 }));
 
-jest.mock('@/entities/earnings-report', () => ({
-    getNextEarningsReport: jest.fn(),
+vi.mock('@/entities/earnings-report', () => ({
+    getNextEarningsReport: vi.fn(),
 }));
 
-jest.mock('@/entities/session/lib/getCurrentUser', () => ({
-    getCurrentUser: jest.fn(),
+vi.mock('@/entities/session/lib/getCurrentUser', () => ({
+    getCurrentUser: vi.fn(),
 }));
 
-jest.mock('@/shared/lib/byokGate', () => ({
-    resolveTierAndByok: jest.fn(),
-    buildGateError: jest.fn((code: string) => ({
+vi.mock('@/shared/lib/byokGate', () => ({
+    resolveTierAndByok: vi.fn(),
+    buildGateError: vi.fn((code: string) => ({
         code,
         message: `mock-${code}`,
     })),
@@ -52,21 +55,21 @@ import { resolveTierAndByok } from '@/shared/lib/byokGate';
 import type { AnalysisGateError } from '@/shared/lib/types';
 import { submitNewsAnalysisAction } from '../actions/submitNewsAnalysisAction';
 
-const mockHeaders = headers as jest.MockedFunction<typeof headers>;
-const MockNewsRepository = DrizzleNewsRepository as jest.MockedClass<
+const mockHeaders = headers as MockedFunction<typeof headers>;
+const MockNewsRepository = DrizzleNewsRepository as MockedClass<
     typeof DrizzleNewsRepository
 >;
-const mockGetNextEarningsReport = getNextEarningsReport as jest.MockedFunction<
+const mockGetNextEarningsReport = getNextEarningsReport as MockedFunction<
     typeof getNextEarningsReport
 >;
 
-const mockSubmitNewsAnalysis = submitNewsAnalysis as jest.MockedFunction<
+const mockSubmitNewsAnalysis = submitNewsAnalysis as MockedFunction<
     typeof submitNewsAnalysis
 >;
-const mockGetCurrentUser = getCurrentUser as jest.MockedFunction<
+const mockGetCurrentUser = getCurrentUser as MockedFunction<
     typeof getCurrentUser
 >;
-const mockResolveTierAndByok = resolveTierAndByok as jest.MockedFunction<
+const mockResolveTierAndByok = resolveTierAndByok as MockedFunction<
     typeof resolveTierAndByok
 >;
 
@@ -125,7 +128,7 @@ const gateError: AnalysisGateError = {
 };
 
 describe('submitNewsAnalysisAction 함수는', () => {
-    let mockListBySymbol: jest.Mock;
+    let mockListBySymbol: Mock;
 
     beforeEach(() => {
         mockSubmitNewsAnalysis.mockReset();
@@ -134,12 +137,12 @@ describe('submitNewsAnalysisAction 함수는', () => {
         mockGetCurrentUser.mockReset();
         mockResolveTierAndByok.mockReset();
 
-        mockListBySymbol = jest.fn().mockResolvedValue([ANALYZED_ROW]);
+        mockListBySymbol = vi.fn().mockResolvedValue([ANALYZED_ROW]);
         mockGetNextEarningsReport.mockResolvedValue(null);
 
-        MockNewsRepository.mockImplementation(
-            () => ({ listBySymbol: mockListBySymbol }) as never
-        );
+        MockNewsRepository.mockImplementation(function () {
+            return { listBySymbol: mockListBySymbol } as never;
+        });
 
         mockGetCurrentUser.mockResolvedValue(null);
         mockResolveTierAndByok.mockResolvedValue({

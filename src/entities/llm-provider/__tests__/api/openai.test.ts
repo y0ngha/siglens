@@ -1,10 +1,12 @@
-const mockCreate = jest.fn();
-const MockOpenAI = jest.fn().mockImplementation(() => ({
-    responses: { create: mockCreate },
-}));
+const { mockCreate, MockOpenAI } = vi.hoisted(() => {
+    const mockCreate = vi.fn();
+    const MockOpenAI = vi.fn().mockImplementation(function () {
+        return { responses: { create: mockCreate } };
+    });
+    return { mockCreate, MockOpenAI };
+});
 
-jest.mock('openai', () => ({
-    __esModule: true,
+vi.mock('openai', () => ({
     default: MockOpenAI,
 }));
 
@@ -24,7 +26,7 @@ const GPT5_OPTIONS = {
 
 describe('callOpenaiChat', () => {
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     describe('API 키 라우팅', () => {
@@ -111,7 +113,7 @@ describe('callOpenaiChat', () => {
     describe('응답 파싱', () => {
         it('output_text가 빈 문자열이면 경고 로그 후 그대로 반환한다', async () => {
             mockCreate.mockResolvedValue({ output_text: '' });
-            const warnSpy = jest
+            const warnSpy = vi
                 .spyOn(console, 'warn')
                 .mockImplementation(() => {});
 

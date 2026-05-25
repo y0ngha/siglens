@@ -1,13 +1,9 @@
-/**
- * @jest-environment jsdom
- */
-import '@testing-library/jest-dom';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { IosInstallModal } from '@/features/pwa-install';
 
 describe('IosInstallModal', () => {
     it('3단계 안내가 모두 렌더된다', () => {
-        render(<IosInstallModal onClose={jest.fn()} />);
+        render(<IosInstallModal onClose={vi.fn()} />);
         expect(
             screen.getByText('Safari 하단 공유 버튼을 탭하세요')
         ).toBeInTheDocument();
@@ -20,28 +16,28 @@ describe('IosInstallModal', () => {
     });
 
     it('닫기(×) 버튼 클릭 → onClose 호출', () => {
-        const onClose = jest.fn();
+        const onClose = vi.fn();
         render(<IosInstallModal onClose={onClose} />);
         fireEvent.click(screen.getByRole('button', { name: '닫기' }));
         expect(onClose).toHaveBeenCalledTimes(1);
     });
 
     it('backdrop 클릭 → onClose 호출', () => {
-        const onClose = jest.fn();
+        const onClose = vi.fn();
         render(<IosInstallModal onClose={onClose} />);
         fireEvent.click(screen.getByTestId('ios-modal-backdrop'));
         expect(onClose).toHaveBeenCalledTimes(1);
     });
 
     it('모달 콘텐츠 클릭 → onClose 호출 안 됨 (이벤트 버블 차단)', () => {
-        const onClose = jest.fn();
+        const onClose = vi.fn();
         render(<IosInstallModal onClose={onClose} />);
         fireEvent.click(screen.getByTestId('ios-modal-content'));
         expect(onClose).not.toHaveBeenCalled();
     });
 
     it('Escape 키 → onClose 호출', () => {
-        const onClose = jest.fn();
+        const onClose = vi.fn();
         render(<IosInstallModal onClose={onClose} />);
         fireEvent.keyDown(document, { key: 'Escape' });
         expect(onClose).toHaveBeenCalledTimes(1);
@@ -54,7 +50,7 @@ describe('IosInstallModal', () => {
         trigger.focus();
         expect(document.activeElement).toBe(trigger);
 
-        render(<IosInstallModal onClose={jest.fn()} />);
+        render(<IosInstallModal onClose={vi.fn()} />);
         expect(document.activeElement).toBe(
             screen.getByRole('button', { name: '닫기' })
         );
@@ -66,7 +62,7 @@ describe('IosInstallModal', () => {
         document.body.appendChild(trigger);
         trigger.focus();
 
-        const { unmount } = render(<IosInstallModal onClose={jest.fn()} />);
+        const { unmount } = render(<IosInstallModal onClose={vi.fn()} />);
         // Sanity check: focus moved into modal.
         expect(document.activeElement).toBe(
             screen.getByRole('button', { name: '닫기' })

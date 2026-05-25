@@ -1,17 +1,20 @@
-jest.mock('@/shared/db/client', () => ({
-    getDatabaseClient: jest.fn(() => ({ db: {}, sql: () => null })),
-    resetDatabaseClientForTests: jest.fn(),
+import type { MockedFunction } from 'vitest';
+vi.mock('@/shared/db/client', () => ({
+    getDatabaseClient: vi.fn(() => ({ db: {}, sql: () => null })),
+    resetDatabaseClientForTests: vi.fn(),
 }));
-jest.mock('@/entities/session', () => ({
-    getAuthDatabaseClient: jest.fn(() => ({ db: {}, sql: () => null })),
+vi.mock('@/entities/session', () => ({
+    getAuthDatabaseClient: vi.fn(() => ({ db: {}, sql: () => null })),
 }));
-jest.mock('@/entities/user', () => ({
-    DrizzleUserRepository: jest.fn().mockImplementation(() => ({})),
-    requestPasswordReset: jest.fn(),
+vi.mock('@/entities/user', () => ({
+    DrizzleUserRepository: vi.fn().mockImplementation(function () {
+        return {};
+    }),
+    requestPasswordReset: vi.fn(),
 }));
-jest.mock('@/entities/email-token', () => ({
-    createEmailTokenStore: jest.fn(),
-    buildPasswordResetEmail: jest.fn(({ email, token }) => ({
+vi.mock('@/entities/email-token', () => ({
+    createEmailTokenStore: vi.fn(),
+    buildPasswordResetEmail: vi.fn(({ email, token }) => ({
         to: email,
         subject: 'subject',
         html: `html-${email}-${token}`,
@@ -19,9 +22,9 @@ jest.mock('@/entities/email-token', () => ({
     })),
 }));
 
-const sendEmailMock = jest.fn();
-jest.mock('@/shared/email/dispatcher', () => ({
-    createEmailDispatcher: jest.fn(() => ({ sendEmail: sendEmailMock })),
+const { sendEmailMock } = vi.hoisted(() => ({ sendEmailMock: vi.fn() }));
+vi.mock('@/shared/email/dispatcher', () => ({
+    createEmailDispatcher: vi.fn(() => ({ sendEmail: sendEmailMock })),
 }));
 
 import { requestPasswordReset } from '@/entities/user';
@@ -33,13 +36,13 @@ import { requestPasswordResetAction } from '@/features/auth-password-reset/actio
 import { resetAuthDatabaseClientForTests } from '@/entities/session/lib/db';
 import { makeFormData } from '@/shared/test-utils/makeFormData';
 
-const mockRequest = requestPasswordReset as jest.MockedFunction<
+const mockRequest = requestPasswordReset as MockedFunction<
     typeof requestPasswordReset
 >;
-const mockCreateTokenStore = createEmailTokenStore as jest.MockedFunction<
+const mockCreateTokenStore = createEmailTokenStore as MockedFunction<
     typeof createEmailTokenStore
 >;
-const mockBuild = buildPasswordResetEmail as jest.MockedFunction<
+const mockBuild = buildPasswordResetEmail as MockedFunction<
     typeof buildPasswordResetEmail
 >;
 
@@ -52,10 +55,10 @@ describe('requestPasswordResetAction', () => {
         mockBuild.mockClear();
         mockCreateTokenStore.mockReset();
         mockCreateTokenStore.mockReturnValue({
-            set: jest.fn(),
-            get: jest.fn(),
-            delete: jest.fn(),
-            consume: jest.fn(),
+            set: vi.fn(),
+            get: vi.fn(),
+            delete: vi.fn(),
+            consume: vi.fn(),
         });
     });
 

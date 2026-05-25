@@ -1,8 +1,8 @@
 // withRetry 내부 sleep을 즉시 resolve로 stubbing해서 transient retry 케이스의
-// 실제 대기 시간을 없앤다. `jest.mock` 은 정적 import 보다 먼저 평가되도록
+// 실제 대기 시간을 없앤다. `vi.mock` 은 정적 import 보다 먼저 평가되도록
 // 호이스트되어야 한다 (`import/first` 규칙과 일치).
-jest.mock('@/shared/lib/sleep', () => ({
-    sleep: jest.fn().mockResolvedValue(undefined),
+vi.mock('@/shared/lib/sleep', () => ({
+    sleep: vi.fn().mockResolvedValue(undefined),
 }));
 
 import { DrizzleTermsRepository } from '@/entities/terms';
@@ -69,11 +69,11 @@ describe('DrizzleTermsRepository', () => {
 
     describe('upsertFromSeed', () => {
         it('calls insert with onConflictDoNothing', async () => {
-            const onConflict = jest.fn().mockResolvedValue(undefined);
-            const values = jest.fn().mockReturnValue({
+            const onConflict = vi.fn().mockResolvedValue(undefined);
+            const values = vi.fn().mockReturnValue({
                 onConflictDoNothing: onConflict,
             });
-            const insert = jest.fn().mockReturnValue({ values });
+            const insert = vi.fn().mockReturnValue({ values });
             const db = { insert } as unknown as SiglensDatabase;
             const repo = new DrizzleTermsRepository(db);
 
@@ -112,12 +112,12 @@ describe('DrizzleTermsRepository', () => {
                 new Error('Error connecting to database: fetch failed'),
                 { name: 'NeonDbError' }
             );
-            const onConflictDoNothing = jest
+            const onConflictDoNothing = vi
                 .fn()
                 .mockRejectedValueOnce(neonTransient)
                 .mockResolvedValueOnce(undefined);
-            const values = jest.fn(() => ({ onConflictDoNothing }));
-            const insert = jest.fn(() => ({ values }));
+            const values = vi.fn(() => ({ onConflictDoNothing }));
+            const insert = vi.fn(() => ({ values }));
             const db = { insert } as unknown as SiglensDatabase;
             const repo = new DrizzleTermsRepository(db);
 
@@ -135,11 +135,11 @@ describe('DrizzleTermsRepository', () => {
                 ),
                 { name: 'NeonDbError' }
             );
-            const onConflictDoNothing = jest
+            const onConflictDoNothing = vi
                 .fn()
                 .mockRejectedValueOnce(constraintError);
-            const values = jest.fn(() => ({ onConflictDoNothing }));
-            const insert = jest.fn(() => ({ values }));
+            const values = vi.fn(() => ({ onConflictDoNothing }));
+            const insert = vi.fn(() => ({ values }));
             const db = { insert } as unknown as SiglensDatabase;
             const repo = new DrizzleTermsRepository(db);
 

@@ -1,3 +1,4 @@
+import type { Mock } from 'vitest';
 import { inquiries } from '@/shared/db/schema';
 import type { SiglensDatabase } from '@/shared/db/types';
 import {
@@ -7,11 +8,11 @@ import {
 
 function makeInsertDb(): {
     db: SiglensDatabase;
-    insert: jest.Mock;
-    values: jest.Mock;
+    insert: Mock;
+    values: Mock;
 } {
-    const values = jest.fn().mockResolvedValue(undefined);
-    const insert = jest.fn(() => ({ values }));
+    const values = vi.fn().mockResolvedValue(undefined);
+    const insert = vi.fn(() => ({ values }));
 
     return {
         db: { insert } as unknown as SiglensDatabase,
@@ -44,8 +45,8 @@ describe('DrizzleContactRepository', () => {
 
         it('propagates database errors to the caller', async () => {
             const dbError = new Error('db connection lost');
-            const values = jest.fn().mockRejectedValue(dbError);
-            const insert = jest.fn(() => ({ values }));
+            const values = vi.fn().mockRejectedValue(dbError);
+            const insert = vi.fn(() => ({ values }));
             const db = { insert } as unknown as SiglensDatabase;
             const repository = new DrizzleContactRepository(db);
 

@@ -1,10 +1,12 @@
 import { countSkillFiles, FileSkillsLoader } from '@/entities/skill';
 import path from 'node:path';
 
-const mockReaddir = jest.fn();
-const mockReadFile = jest.fn();
+const { mockReaddir, mockReadFile } = vi.hoisted(() => ({
+    mockReaddir: vi.fn(),
+    mockReadFile: vi.fn(),
+}));
 
-jest.mock('node:fs/promises', () => ({
+vi.mock('node:fs/promises', () => ({
     readdir: (...args: unknown[]) => mockReaddir(...args),
     readFile: (...args: unknown[]) => mockReadFile(...args),
 }));

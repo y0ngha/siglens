@@ -1,3 +1,4 @@
+import type { MockedFunction } from 'vitest';
 import { pollFundamentalAnalysisAction } from '../actions/pollFundamentalAnalysisAction';
 import { pollFundamentalAnalysis } from '@y0ngha/siglens-core';
 import type { PollFundamentalAnalysisResult } from '@y0ngha/siglens-core';
@@ -6,19 +7,18 @@ import type { PollFundamentalAnalysisResult } from '@y0ngha/siglens-core';
 // Module mocks
 // ---------------------------------------------------------------------------
 
-jest.mock('@y0ngha/siglens-core', () => ({
-    ...jest.requireActual('@y0ngha/siglens-core'),
-    pollFundamentalAnalysis: jest.fn(),
+vi.mock('@y0ngha/siglens-core', async () => ({
+    ...(await vi.importActual('@y0ngha/siglens-core')),
+    pollFundamentalAnalysis: vi.fn(),
 }));
 
 // ---------------------------------------------------------------------------
 // Typed mock
 // ---------------------------------------------------------------------------
 
-const mockPollFundamentalAnalysis =
-    pollFundamentalAnalysis as jest.MockedFunction<
-        typeof pollFundamentalAnalysis
-    >;
+const mockPollFundamentalAnalysis = pollFundamentalAnalysis as MockedFunction<
+    typeof pollFundamentalAnalysis
+>;
 
 const PROCESSING_RESULT: PollFundamentalAnalysisResult = {
     status: 'processing',

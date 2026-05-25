@@ -1,19 +1,23 @@
-const mockGetCurrentUser = jest.fn();
-const mockGetUserTier = jest.fn();
+const { mockGetCurrentUser, mockGetUserTier } = vi.hoisted(() => ({
+    mockGetCurrentUser: vi.fn(),
+    mockGetUserTier: vi.fn(),
+}));
 
-jest.mock('@/entities/session/lib/getCurrentUser', () => ({
+vi.mock('@/entities/session/lib/getCurrentUser', () => ({
     getCurrentUser: (...args: unknown[]) => mockGetCurrentUser(...args),
 }));
 
-jest.mock('@/shared/db/client', () => ({
-    getDatabaseClient: jest.fn(() => ({ db: {}, sql: () => null })),
+vi.mock('@/shared/db/client', () => ({
+    getDatabaseClient: vi.fn(() => ({ db: {}, sql: () => null })),
 }));
 
-jest.mock('@/entities/user', () => ({
-    DrizzleUserRepository: jest.fn().mockImplementation(() => ({})),
+vi.mock('@/entities/user', () => ({
+    DrizzleUserRepository: vi.fn().mockImplementation(function () {
+        return {};
+    }),
 }));
 
-jest.mock('../../lib/getUserTier', () => ({
+vi.mock('../../lib/getUserTier', () => ({
     getUserTier: (...args: unknown[]) => mockGetUserTier(...args),
 }));
 
@@ -21,7 +25,7 @@ import { getUserTierAction } from '../../actions/getUserTierAction';
 
 describe('getUserTierAction', () => {
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     it('비로그인 시 기본 tier ("free") 를 반환한다', async () => {

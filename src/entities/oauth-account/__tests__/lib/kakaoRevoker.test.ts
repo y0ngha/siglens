@@ -1,11 +1,12 @@
+import type { Mock } from 'vitest';
 import { kakaoOAuthRevokerAdapter } from '@/entities/oauth-account/lib/kakaoRevoker';
 
 describe('kakaoOAuthRevokerAdapter.revokeToken', () => {
     const originalFetch = global.fetch;
-    let fetchMock: jest.Mock;
+    let fetchMock: Mock;
 
     beforeEach(() => {
-        fetchMock = jest.fn();
+        fetchMock = vi.fn();
         global.fetch = fetchMock as unknown as typeof fetch;
     });
 

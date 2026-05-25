@@ -1,3 +1,4 @@
+import type { MockedFunction } from 'vitest';
 import { pollOverallAnalysisAction } from '../actions/pollOverallAnalysisAction';
 import { pollOverallAnalysis } from '@y0ngha/siglens-core';
 import type { PollOverallAnalysisResult } from '@y0ngha/siglens-core';
@@ -6,16 +7,16 @@ import type { PollOverallAnalysisResult } from '@y0ngha/siglens-core';
 // Module mocks
 // ---------------------------------------------------------------------------
 
-jest.mock('@y0ngha/siglens-core', () => ({
-    ...jest.requireActual('@y0ngha/siglens-core'),
-    pollOverallAnalysis: jest.fn(),
+vi.mock('@y0ngha/siglens-core', async () => ({
+    ...(await vi.importActual('@y0ngha/siglens-core')),
+    pollOverallAnalysis: vi.fn(),
 }));
 
 // ---------------------------------------------------------------------------
 // Typed mock
 // ---------------------------------------------------------------------------
 
-const mockPollOverallAnalysis = pollOverallAnalysis as jest.MockedFunction<
+const mockPollOverallAnalysis = pollOverallAnalysis as MockedFunction<
     typeof pollOverallAnalysis
 >;
 

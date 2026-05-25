@@ -1,6 +1,6 @@
 import { FmpFundamentalClient } from '../fundamentalClient';
 
-const mockFetch = jest.fn();
+const mockFetch = vi.fn();
 
 const TEST_API_KEY = 'test-api-key';
 

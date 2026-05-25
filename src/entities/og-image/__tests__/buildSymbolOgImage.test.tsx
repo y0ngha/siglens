@@ -1,22 +1,23 @@
-/**
- * @jest-environment node
- */
+// @vitest-environment node
 import { buildSymbolOgImage } from '../lib/buildSymbolOgImage';
 
-const mockImageResponse = jest.fn();
-const mockLoadKoreanFont = jest.fn();
-
-jest.mock('next/og', () => ({
-    ImageResponse: jest
-        .fn()
-        .mockImplementation((jsx: unknown, opts: unknown) => {
-            mockImageResponse(jsx, opts);
-            return { jsx, opts } as unknown;
-        }),
+const { mockImageResponse, mockLoadKoreanFont } = vi.hoisted(() => ({
+    mockImageResponse: vi.fn(),
+    mockLoadKoreanFont: vi.fn(),
 }));
 
-jest.mock('../lib/loadKoreanFont', () => ({
-    loadKoreanFont: jest.fn(() => mockLoadKoreanFont()),
+vi.mock('next/og', () => ({
+    ImageResponse: vi.fn().mockImplementation(function (
+        jsx: unknown,
+        opts: unknown
+    ) {
+        mockImageResponse(jsx, opts);
+        return { jsx, opts } as unknown;
+    }),
+}));
+
+vi.mock('../lib/loadKoreanFont', () => ({
+    loadKoreanFont: vi.fn(() => mockLoadKoreanFont()),
 }));
 
 describe('buildSymbolOgImage', () => {

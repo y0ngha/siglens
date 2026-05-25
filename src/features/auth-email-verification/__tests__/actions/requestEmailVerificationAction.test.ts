@@ -1,13 +1,14 @@
-jest.mock('@/entities/user', () => ({
-    requestEmailVerification: jest.fn(),
+import type { MockedFunction } from 'vitest';
+vi.mock('@/entities/user', () => ({
+    requestEmailVerification: vi.fn(),
 }));
-jest.mock('@/entities/session', () => ({
+vi.mock('@/entities/session', () => ({
     AUTH_SERVICE_UNAVAILABLE_MESSAGE:
         '서비스에 일시적인 문제가 발생했습니다. 잠시 후 다시 시도해주세요.',
 }));
-jest.mock('@/entities/email-token', () => ({
-    createEmailTokenStore: jest.fn(),
-    buildEmailVerificationEmail: jest.fn(({ to, code }) => ({
+vi.mock('@/entities/email-token', () => ({
+    createEmailTokenStore: vi.fn(),
+    buildEmailVerificationEmail: vi.fn(({ to, code }) => ({
         to,
         subject: 'subj',
         html: `html-${code}`,
@@ -15,9 +16,9 @@ jest.mock('@/entities/email-token', () => ({
     })),
 }));
 
-const sendEmailMock = jest.fn();
-jest.mock('@/shared/email/dispatcher', () => ({
-    createEmailDispatcher: jest.fn(() => ({ sendEmail: sendEmailMock })),
+const { sendEmailMock } = vi.hoisted(() => ({ sendEmailMock: vi.fn() }));
+vi.mock('@/shared/email/dispatcher', () => ({
+    createEmailDispatcher: vi.fn(() => ({ sendEmail: sendEmailMock })),
 }));
 
 import { requestEmailVerification } from '@/entities/user';
@@ -29,13 +30,13 @@ import { AUTH_SERVICE_UNAVAILABLE_MESSAGE } from '@/entities/session';
 import { requestEmailVerificationAction } from '@/features/auth-email-verification/actions/requestEmailVerificationAction';
 import { makeFormData } from '@/shared/test-utils/makeFormData';
 
-const mockRequest = requestEmailVerification as jest.MockedFunction<
+const mockRequest = requestEmailVerification as MockedFunction<
     typeof requestEmailVerification
 >;
-const mockCreateTokenStore = createEmailTokenStore as jest.MockedFunction<
+const mockCreateTokenStore = createEmailTokenStore as MockedFunction<
     typeof createEmailTokenStore
 >;
-const mockBuild = buildEmailVerificationEmail as jest.MockedFunction<
+const mockBuild = buildEmailVerificationEmail as MockedFunction<
     typeof buildEmailVerificationEmail
 >;
 
@@ -46,10 +47,10 @@ describe('requestEmailVerificationAction', () => {
         mockBuild.mockClear();
         mockCreateTokenStore.mockReset();
         mockCreateTokenStore.mockReturnValue({
-            set: jest.fn(),
-            get: jest.fn(),
-            delete: jest.fn(),
-            consume: jest.fn(),
+            set: vi.fn(),
+            get: vi.fn(),
+            delete: vi.fn(),
+            consume: vi.fn(),
         });
     });
 

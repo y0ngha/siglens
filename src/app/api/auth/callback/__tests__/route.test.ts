@@ -1,35 +1,34 @@
-jest.mock('@/entities/user', () => ({
-    DrizzleUserRepository: jest.fn(),
+import type { Mocked, MockedFunction, MockedClass } from 'vitest';
+vi.mock('@/entities/user', () => ({
+    DrizzleUserRepository: vi.fn(),
 }));
-jest.mock('@/entities/session', () => ({
-    DrizzleSessionRepository: jest.fn(),
-    applyAuthCookie: jest.fn().mockReturnValue({ name: 'auth', value: 'v' }),
-    createAuthHintCookie: jest
-        .fn()
-        .mockReturnValue({ name: 'hint', value: '1' }),
-    getAuthDatabaseClient: jest.fn().mockReturnValue({ db: {} }),
-    createAuthSession: jest.fn(),
+vi.mock('@/entities/session', () => ({
+    DrizzleSessionRepository: vi.fn(),
+    applyAuthCookie: vi.fn().mockReturnValue({ name: 'auth', value: 'v' }),
+    createAuthHintCookie: vi.fn().mockReturnValue({ name: 'hint', value: '1' }),
+    getAuthDatabaseClient: vi.fn().mockReturnValue({ db: {} }),
+    createAuthSession: vi.fn(),
     DEFAULT_SESSION_TTL_SECONDS: 86400,
-    isSecureCookieEnv: jest.fn().mockReturnValue(false),
+    isSecureCookieEnv: vi.fn().mockReturnValue(false),
 }));
-jest.mock('@/entities/oauth-account', () => ({
-    createPendingOAuthSignupStoreFromEnv: jest.fn(),
+vi.mock('@/entities/oauth-account', () => ({
+    createPendingOAuthSignupStoreFromEnv: vi.fn(),
 }));
-jest.mock('@/features/auth-oauth', () => ({
-    buildOAuthRedirectUri: jest
+vi.mock('@/features/auth-oauth', () => ({
+    buildOAuthRedirectUri: vi
         .fn()
         .mockReturnValue('https://example.com/callback/google'),
-    getOAuthAdapter: jest.fn(),
-    isOAuthProvider: jest.fn(),
+    getOAuthAdapter: vi.fn(),
+    isOAuthProvider: vi.fn(),
     OAUTH_STATE_COOKIE_NAME: 'oauth_state',
     OAuthStateSecretMisconfiguredError: class OAuthStateSecretMisconfiguredError extends Error {},
-    expiredOAuthStateCookie: jest
+    expiredOAuthStateCookie: vi
         .fn()
         .mockReturnValue({ name: 'oauth_state', value: '', maxAge: 0 }),
-    verifyOAuthState: jest.fn(),
+    verifyOAuthState: vi.fn(),
 }));
-jest.mock('@/shared/lib/auth/redirect', () => ({
-    sanitizeNextPath: jest.fn().mockImplementation((p: string) => p || '/'),
+vi.mock('@/shared/lib/auth/redirect', () => ({
+    sanitizeNextPath: vi.fn().mockImplementation((p: string) => p || '/'),
 }));
 
 import { NextRequest } from 'next/server';
@@ -46,25 +45,25 @@ import {
     verifyOAuthState,
 } from '@/features/auth-oauth';
 
-const MockUserRepository = DrizzleUserRepository as jest.MockedClass<
+const MockUserRepository = DrizzleUserRepository as MockedClass<
     typeof DrizzleUserRepository
 >;
-const MockSessionRepository = DrizzleSessionRepository as jest.MockedClass<
+const MockSessionRepository = DrizzleSessionRepository as MockedClass<
     typeof DrizzleSessionRepository
 >;
-const mockCreateAuthSession = createAuthSession as jest.MockedFunction<
+const mockCreateAuthSession = createAuthSession as MockedFunction<
     typeof createAuthSession
 >;
-const mockCreatePendingOAuthSignupStoreFromEnv = jest.mocked(
+const mockCreatePendingOAuthSignupStoreFromEnv = vi.mocked(
     createPendingOAuthSignupStoreFromEnv
 );
-const mockGetOAuthAdapter = getOAuthAdapter as jest.MockedFunction<
+const mockGetOAuthAdapter = getOAuthAdapter as MockedFunction<
     typeof getOAuthAdapter
 >;
-const mockIsOAuthProvider = isOAuthProvider as jest.MockedFunction<
+const mockIsOAuthProvider = isOAuthProvider as MockedFunction<
     typeof isOAuthProvider
 >;
-const mockVerifyOAuthState = verifyOAuthState as jest.MockedFunction<
+const mockVerifyOAuthState = verifyOAuthState as MockedFunction<
     typeof verifyOAuthState
 >;
 
@@ -119,37 +118,39 @@ function makeRequest(
 const DEFAULT_PARAMS = { params: Promise.resolve({ provider: 'google' }) };
 
 describe('GET /api/auth/callback/[provider]', () => {
-    let mockUserRepo: jest.Mocked<InstanceType<typeof DrizzleUserRepository>>;
-    let mockSessionRepo: jest.Mocked<
-        InstanceType<typeof DrizzleSessionRepository>
-    >;
+    let mockUserRepo: Mocked<InstanceType<typeof DrizzleUserRepository>>;
+    let mockSessionRepo: Mocked<InstanceType<typeof DrizzleSessionRepository>>;
 
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         mockIsOAuthProvider.mockReturnValue(true);
         mockVerifyOAuthState.mockReturnValue({ ok: true, next: '/' });
         mockGetOAuthAdapter.mockReturnValue({
             id: 'google',
-            exchangeCodeForProfile: jest.fn().mockResolvedValue({
+            exchangeCodeForProfile: vi.fn().mockResolvedValue({
                 ok: true,
                 profile: FAKE_PROFILE,
             }),
         } as never);
 
         mockUserRepo = {
-            findByOAuthAccount: jest.fn().mockResolvedValue(null),
-            findByEmail: jest.fn().mockResolvedValue(null),
+            findByOAuthAccount: vi.fn().mockResolvedValue(null),
+            findByEmail: vi.fn().mockResolvedValue(null),
         } as never;
         mockSessionRepo = {} as never;
 
-        MockUserRepository.mockImplementation(() => mockUserRepo);
-        MockSessionRepository.mockImplementation(() => mockSessionRepo);
+        MockUserRepository.mockImplementation(function () {
+            return mockUserRepo;
+        });
+        MockSessionRepository.mockImplementation(function () {
+            return mockSessionRepo;
+        });
 
         mockCreatePendingOAuthSignupStoreFromEnv.mockReturnValue({
-            save: jest.fn().mockResolvedValue('pending-token'),
-            peek: jest.fn(),
-            consume: jest.fn(),
-            delete: jest.fn(),
+            save: vi.fn().mockResolvedValue('pending-token'),
+            peek: vi.fn(),
+            consume: vi.fn(),
+            delete: vi.fn(),
         });
     });
 
@@ -214,10 +215,10 @@ describe('GET /api/auth/callback/[provider]', () => {
             mockUserRepo.findByOAuthAccount.mockResolvedValue(null);
             mockUserRepo.findByEmail.mockResolvedValue(null);
             mockCreatePendingOAuthSignupStoreFromEnv.mockReturnValue({
-                save: jest.fn().mockRejectedValue(new Error('Redis down')),
-                peek: jest.fn(),
-                consume: jest.fn(),
-                delete: jest.fn(),
+                save: vi.fn().mockRejectedValue(new Error('Redis down')),
+                peek: vi.fn(),
+                consume: vi.fn(),
+                delete: vi.fn(),
             });
 
             const req = makeRequest(

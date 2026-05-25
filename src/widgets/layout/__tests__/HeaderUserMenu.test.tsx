@@ -1,11 +1,7 @@
-/**
- * @jest-environment jsdom
- */
-import '@testing-library/jest-dom';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { HeaderUserMenu } from '@/widgets/layout/HeaderUserMenu';
 
-jest.mock('@/features/auth-logout/ui/LogoutButton', () => ({
+vi.mock('@/features/auth-logout/ui/LogoutButton', () => ({
     LogoutButton: () => <button>로그아웃</button>,
 }));
 

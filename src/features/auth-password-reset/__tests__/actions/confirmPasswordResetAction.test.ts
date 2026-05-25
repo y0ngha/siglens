@@ -1,25 +1,28 @@
-jest.mock('next/navigation', () => ({
-    redirect: jest.fn((path: string) => {
+import type { MockedFunction } from 'vitest';
+vi.mock('next/navigation', () => ({
+    redirect: vi.fn((path: string) => {
         throw new Error(`NEXT_REDIRECT:${path}`);
     }),
 }));
-jest.mock('@/shared/db/client', () => ({
-    getDatabaseClient: jest.fn(() => ({ db: {}, sql: () => null })),
-    resetDatabaseClientForTests: jest.fn(),
+vi.mock('@/shared/db/client', () => ({
+    getDatabaseClient: vi.fn(() => ({ db: {}, sql: () => null })),
+    resetDatabaseClientForTests: vi.fn(),
 }));
-jest.mock('@/entities/session', () => ({
-    bcryptPasswordHasher: { hashPassword: jest.fn() },
-    bcryptPasswordVerifier: { verifyPassword: jest.fn() },
-    getAuthDatabaseClient: jest.fn(() => ({ db: {}, sql: () => null })),
+vi.mock('@/entities/session', () => ({
+    bcryptPasswordHasher: { hashPassword: vi.fn() },
+    bcryptPasswordVerifier: { verifyPassword: vi.fn() },
+    getAuthDatabaseClient: vi.fn(() => ({ db: {}, sql: () => null })),
     AUTH_SERVICE_UNAVAILABLE_MESSAGE:
         '서비스에 일시적인 문제가 발생했습니다. 잠시 후 다시 시도해주세요.',
 }));
-jest.mock('@/entities/user', () => ({
-    DrizzleUserRepository: jest.fn().mockImplementation(() => ({})),
-    confirmPasswordReset: jest.fn(),
+vi.mock('@/entities/user', () => ({
+    DrizzleUserRepository: vi.fn().mockImplementation(function () {
+        return {};
+    }),
+    confirmPasswordReset: vi.fn(),
 }));
-jest.mock('@/entities/email-token', () => ({
-    createEmailTokenStore: jest.fn(),
+vi.mock('@/entities/email-token', () => ({
+    createEmailTokenStore: vi.fn(),
 }));
 
 import { confirmPasswordReset } from '@/entities/user';
@@ -29,10 +32,10 @@ import { confirmPasswordResetAction } from '@/features/auth-password-reset/actio
 import { resetAuthDatabaseClientForTests } from '@/entities/session/lib/db';
 import { makeFormData } from '@/shared/test-utils/makeFormData';
 
-const mockConfirm = confirmPasswordReset as jest.MockedFunction<
+const mockConfirm = confirmPasswordReset as MockedFunction<
     typeof confirmPasswordReset
 >;
-const mockCreateTokenStore = createEmailTokenStore as jest.MockedFunction<
+const mockCreateTokenStore = createEmailTokenStore as MockedFunction<
     typeof createEmailTokenStore
 >;
 
@@ -43,10 +46,10 @@ describe('confirmPasswordResetAction', () => {
         mockConfirm.mockReset();
         mockCreateTokenStore.mockReset();
         mockCreateTokenStore.mockReturnValue({
-            set: jest.fn(),
-            get: jest.fn(),
-            delete: jest.fn(),
-            consume: jest.fn(),
+            set: vi.fn(),
+            get: vi.fn(),
+            delete: vi.fn(),
+            consume: vi.fn(),
         });
     });
 

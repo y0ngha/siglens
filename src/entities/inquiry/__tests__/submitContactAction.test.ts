@@ -1,15 +1,20 @@
-const mockSubmitInquiry = jest.fn();
-const mockCreate = jest.fn();
+import type { MockInstance } from 'vitest';
+const { mockSubmitInquiry, mockCreate } = vi.hoisted(() => ({
+    mockSubmitInquiry: vi.fn(),
+    mockCreate: vi.fn(),
+}));
 
-jest.mock('@/shared/db/client', () => ({
-    getDatabaseClient: jest.fn(() => ({ db: {}, sql: () => null })),
+vi.mock('@/shared/db/client', () => ({
+    getDatabaseClient: vi.fn(() => ({ db: {}, sql: () => null })),
 }));
-jest.mock('@/entities/inquiry', () => ({
-    DrizzleContactRepository: jest.fn().mockImplementation(() => ({
-        create: mockCreate,
-    })),
+vi.mock('@/entities/inquiry', () => ({
+    DrizzleContactRepository: vi.fn().mockImplementation(function () {
+        return {
+            create: mockCreate,
+        };
+    }),
 }));
-jest.mock('../lib/submitInquiry', () => ({
+vi.mock('../lib/submitInquiry', () => ({
     submitInquiry: (...args: unknown[]) => mockSubmitInquiry(...args),
 }));
 
@@ -30,13 +35,13 @@ const validForm = {
 };
 
 describe('submitContactAction', () => {
-    let consoleErrorSpy: jest.SpyInstance;
+    let consoleErrorSpy: MockInstance;
 
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         mockSubmitInquiry.mockResolvedValue(undefined);
         mockCreate.mockResolvedValue(undefined);
-        consoleErrorSpy = jest
+        consoleErrorSpy = vi
             .spyOn(console, 'error')
             .mockImplementation(() => {});
     });

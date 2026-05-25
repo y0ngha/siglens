@@ -3,8 +3,8 @@ import type { SiglensDatabase } from '@/shared/db/types';
 
 describe('DrizzleAgreementRepository', () => {
     it('inserts multiple agreement rows', async () => {
-        const valuesMock = jest.fn().mockResolvedValue(undefined);
-        const insert = jest.fn().mockReturnValue({ values: valuesMock });
+        const valuesMock = vi.fn().mockResolvedValue(undefined);
+        const insert = vi.fn().mockReturnValue({ values: valuesMock });
         const db = { insert } as unknown as SiglensDatabase;
         const repo = new DrizzleAgreementRepository(db);
 
@@ -41,7 +41,7 @@ describe('DrizzleAgreementRepository', () => {
 
     it('throws if input array is empty', async () => {
         const db = {
-            insert: jest.fn(),
+            insert: vi.fn(),
         } as unknown as SiglensDatabase;
         const repo = new DrizzleAgreementRepository(db);
 

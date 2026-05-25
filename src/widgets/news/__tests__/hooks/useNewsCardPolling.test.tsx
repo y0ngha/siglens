@@ -1,6 +1,4 @@
-/**
- * @jest-environment jsdom
- */
+import type { MockedFunction } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 import type { NewsDisplayItem } from '@/shared/lib/types';
 import { getNewsCardsAction } from '@/entities/news-article/actions';
@@ -12,11 +10,11 @@ import {
     useNewsCardPolling,
 } from '@/widgets/news/hooks/useNewsCardPolling';
 
-jest.mock('@/entities/news-article/actions', () => ({
-    getNewsCardsAction: jest.fn(),
+vi.mock('@/entities/news-article/actions', () => ({
+    getNewsCardsAction: vi.fn(),
 }));
 
-const mockGetNewsCardsAction = getNewsCardsAction as jest.MockedFunction<
+const mockGetNewsCardsAction = getNewsCardsAction as MockedFunction<
     typeof getNewsCardsAction
 >;
 
@@ -51,19 +49,19 @@ const PENDING_ITEM: NewsDisplayItem = {
 async function advancePolls(count: number) {
     for (let i = 0; i < count; i++) {
         await act(async () => {
-            await jest.advanceTimersByTimeAsync(POLL_INTERVAL_MS);
+            await vi.advanceTimersByTimeAsync(POLL_INTERVAL_MS);
         });
     }
 }
 
 describe('useNewsCardPolling', () => {
     beforeEach(() => {
-        jest.useFakeTimers();
+        vi.useFakeTimers();
         mockGetNewsCardsAction.mockReset();
     });
 
     afterEach(() => {
-        jest.useRealTimers();
+        vi.useRealTimers();
     });
 
     it('초기 뉴스가 비어 있으면 폴링 상태로 시작하고 새 카드를 반영한 뒤 확인 카드를 닫는다', async () => {
@@ -167,7 +165,7 @@ describe('useNewsCardPolling', () => {
     });
 
     it('분석 완료로 폴링 종료 시 onPollingComplete를 최종 아이템과 함께 호출한다', async () => {
-        const onComplete = jest.fn();
+        const onComplete = vi.fn();
         mockGetNewsCardsAction.mockResolvedValue([READY_ITEM]);
 
         renderHook(() => useNewsCardPolling('AAPL', [READY_ITEM], onComplete));
@@ -179,7 +177,7 @@ describe('useNewsCardPolling', () => {
     });
 
     it('최대 폴링 시간 초과 시 아이템이 있으면 onPollingComplete를 호출한다', async () => {
-        const onComplete = jest.fn();
+        const onComplete = vi.fn();
         // PENDING items never become READY → polling continues until timeout
         mockGetNewsCardsAction.mockResolvedValue([PENDING_ITEM]);
 
@@ -194,7 +192,7 @@ describe('useNewsCardPolling', () => {
     });
 
     it('빈 뉴스 목록으로 폴링이 종료되면 onPollingComplete를 호출하지 않는다', async () => {
-        const onComplete = jest.fn();
+        const onComplete = vi.fn();
         mockGetNewsCardsAction.mockResolvedValue([]);
 
         renderHook(() => useNewsCardPolling('AAPL', [], onComplete));
@@ -205,9 +203,9 @@ describe('useNewsCardPolling', () => {
     });
 
     it('연속 실패로 폴링이 종료되면 onPollingComplete를 호출하지 않는다', async () => {
-        const onComplete = jest.fn();
+        const onComplete = vi.fn();
         mockGetNewsCardsAction.mockRejectedValue(new Error('db unavailable'));
-        const errorSpy = jest
+        const errorSpy = vi
             .spyOn(console, 'error')
             .mockImplementation(() => {});
 
@@ -226,7 +224,7 @@ describe('useNewsCardPolling', () => {
     it('뉴스 스냅샷 조회가 연속 실패하면 폴링을 멈추고 pollError를 노출한다', async () => {
         const dbError = new Error('db unavailable');
         mockGetNewsCardsAction.mockRejectedValue(dbError);
-        const errorSpy = jest
+        const errorSpy = vi
             .spyOn(console, 'error')
             .mockImplementation(() => {});
 

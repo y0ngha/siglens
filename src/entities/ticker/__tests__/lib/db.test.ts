@@ -1,6 +1,7 @@
-jest.mock('@/shared/db/client', () => ({
-    tryGetDatabaseClient: jest.fn(),
-    resetDatabaseClientForTests: jest.fn(),
+import type { MockedFunction } from 'vitest';
+vi.mock('@/shared/db/client', () => ({
+    tryGetDatabaseClient: vi.fn(),
+    resetDatabaseClientForTests: vi.fn(),
 }));
 
 import {
@@ -12,10 +13,10 @@ import {
     tryGetTickerDatabaseClient,
 } from '../../lib/db';
 
-const mockTryGet = tryGetDatabaseClient as jest.MockedFunction<
+const mockTryGet = tryGetDatabaseClient as MockedFunction<
     typeof tryGetDatabaseClient
 >;
-const mockReset = resetDatabaseClientForTests as jest.MockedFunction<
+const mockReset = resetDatabaseClientForTests as MockedFunction<
     typeof resetDatabaseClientForTests
 >;
 

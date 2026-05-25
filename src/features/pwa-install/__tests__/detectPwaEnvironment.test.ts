@@ -1,6 +1,4 @@
-/**
- * @jest-environment jsdom
- */
+// @vitest-environment jsdom
 import { detectPwaEnvironment } from '@/features/pwa-install/lib/detectPwaEnvironment';
 
 describe('detectPwaEnvironment', () => {

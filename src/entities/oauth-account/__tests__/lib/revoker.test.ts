@@ -1,12 +1,12 @@
-jest.mock('@/entities/oauth-account/lib/googleRevoker', () => ({
+vi.mock('@/entities/oauth-account/lib/googleRevoker', () => ({
     googleOAuthRevokerAdapter: {
-        revokeToken: jest.fn().mockResolvedValue(undefined),
+        revokeToken: vi.fn().mockResolvedValue(undefined),
     },
 }));
 
-jest.mock('@/entities/oauth-account/lib/kakaoRevoker', () => ({
+vi.mock('@/entities/oauth-account/lib/kakaoRevoker', () => ({
     kakaoOAuthRevokerAdapter: {
-        revokeToken: jest.fn().mockResolvedValue(undefined),
+        revokeToken: vi.fn().mockResolvedValue(undefined),
     },
 }));
 

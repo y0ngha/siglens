@@ -1,14 +1,10 @@
-/**
- * @jest-environment jsdom
- */
-import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
 import { OAuthConsentForm } from '@/features/auth-oauth-consent/ui/OAuthConsentForm';
 
-jest.mock(
+vi.mock(
     '@/features/auth-oauth-consent/actions/finalizeOAuthSignupAction',
     () => ({
-        finalizeOAuthSignupAction: jest.fn(),
+        finalizeOAuthSignupAction: vi.fn(),
     })
 );
 
@@ -19,7 +15,7 @@ describe('OAuthConsentForm', () => {
         email: 'new@example.com',
         name: 'Hong Gildong',
         avatarUrl: undefined,
-        cancelAction: jest.fn() as unknown as (
+        cancelAction: vi.fn() as unknown as (
             formData: FormData
         ) => Promise<void>,
     };

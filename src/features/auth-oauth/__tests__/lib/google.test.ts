@@ -23,7 +23,7 @@ describe('googleOAuthAdapter', () => {
             redirectUri: REDIRECT_URI,
         });
         expect(new URL(url).searchParams.get('client_id')).toBe('');
-        global.fetch = jest.fn(async () => jsonResponse(400, {})) as never;
+        global.fetch = vi.fn(async () => jsonResponse(400, {})) as never;
         await expect(
             googleOAuthAdapter.exchangeCodeForProfile({
                 code: 'c',
@@ -46,7 +46,7 @@ describe('googleOAuthAdapter', () => {
     });
 
     it('token endpoint 가 비OK면 token_exchange_failed', async () => {
-        global.fetch = jest.fn(async () => jsonResponse(400, {})) as never;
+        global.fetch = vi.fn(async () => jsonResponse(400, {})) as never;
         await expect(
             googleOAuthAdapter.exchangeCodeForProfile({
                 code: 'c',
@@ -56,7 +56,7 @@ describe('googleOAuthAdapter', () => {
     });
 
     it('access_token이 누락되면 token_exchange_failed', async () => {
-        global.fetch = jest.fn(async () => jsonResponse(200, {})) as never;
+        global.fetch = vi.fn(async () => jsonResponse(200, {})) as never;
         await expect(
             googleOAuthAdapter.exchangeCodeForProfile({
                 code: 'c',
@@ -70,7 +70,7 @@ describe('googleOAuthAdapter', () => {
             jsonResponse(200, { access_token: 'tok' }),
             jsonResponse(401, {}),
         ];
-        global.fetch = jest.fn(async () => calls.shift()!) as never;
+        global.fetch = vi.fn(async () => calls.shift()!) as never;
         await expect(
             googleOAuthAdapter.exchangeCodeForProfile({
                 code: 'c',
@@ -84,7 +84,7 @@ describe('googleOAuthAdapter', () => {
             jsonResponse(200, { access_token: 'tok' }),
             jsonResponse(200, { sub: 'gid' }),
         ];
-        global.fetch = jest.fn(async () => calls.shift()!) as never;
+        global.fetch = vi.fn(async () => calls.shift()!) as never;
         await expect(
             googleOAuthAdapter.exchangeCodeForProfile({
                 code: 'c',
@@ -94,7 +94,7 @@ describe('googleOAuthAdapter', () => {
     });
 
     it('token JSON 파싱 실패 시 token_exchange_failed', async () => {
-        global.fetch = jest.fn(
+        global.fetch = vi.fn(
             async () => new Response('not-json', { status: 200 })
         ) as never;
         await expect(
@@ -110,7 +110,7 @@ describe('googleOAuthAdapter', () => {
             jsonResponse(200, { access_token: 'tok' }),
             new Response('not-json', { status: 200 }),
         ];
-        global.fetch = jest.fn(async () => calls.shift()!) as never;
+        global.fetch = vi.fn(async () => calls.shift()!) as never;
         await expect(
             googleOAuthAdapter.exchangeCodeForProfile({
                 code: 'c',
@@ -129,7 +129,7 @@ describe('googleOAuthAdapter', () => {
                 picture: 'https://img/u.png',
             }),
         ];
-        global.fetch = jest.fn(async () => calls.shift()!) as never;
+        global.fetch = vi.fn(async () => calls.shift()!) as never;
         await expect(
             googleOAuthAdapter.exchangeCodeForProfile({
                 code: 'c',

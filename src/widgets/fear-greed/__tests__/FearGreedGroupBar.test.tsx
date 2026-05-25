@@ -1,7 +1,3 @@
-/**
- * @jest-environment jsdom
- */
-import '@testing-library/jest-dom';
 import { render } from '@testing-library/react';
 import type { FearGreedGroup } from '@y0ngha/siglens-core';
 import { FearGreedGroupBar } from '@/widgets/fear-greed/FearGreedGroupBar';

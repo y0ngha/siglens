@@ -1,6 +1,7 @@
-jest.mock('bcryptjs', () => ({
-    hash: jest.fn(),
-    compare: jest.fn(),
+import type { MockedFunction } from 'vitest';
+vi.mock('bcryptjs', () => ({
+    hash: vi.fn(),
+    compare: vi.fn(),
 }));
 
 import { compare, hash } from 'bcryptjs';
@@ -10,8 +11,8 @@ import {
     bcryptPasswordVerifier,
 } from '@/entities/session/lib/bcrypt';
 
-const mockedHash = hash as jest.MockedFunction<typeof hash>;
-const mockedCompare = compare as jest.MockedFunction<typeof compare>;
+const mockedHash = hash as MockedFunction<typeof hash>;
+const mockedCompare = compare as MockedFunction<typeof compare>;
 
 beforeEach(() => {
     mockedHash.mockReset();

@@ -1,11 +1,15 @@
-const mockGenerateContent = jest.fn();
+const { mockGenerateContent } = vi.hoisted(() => ({
+    mockGenerateContent: vi.fn(),
+}));
 
-jest.mock('@google/genai', () => {
-    const MockGoogleGenAI = jest.fn(() => ({
-        models: {
-            generateContent: mockGenerateContent,
-        },
-    }));
+vi.mock('@google/genai', () => {
+    const MockGoogleGenAI = vi.fn(function () {
+        return {
+            models: {
+                generateContent: mockGenerateContent,
+            },
+        };
+    });
     return { GoogleGenAI: MockGoogleGenAI };
 });
 

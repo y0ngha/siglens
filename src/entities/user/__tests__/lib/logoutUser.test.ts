@@ -4,17 +4,17 @@ import type { SessionRepository } from '@/shared/db/types';
 
 function makeDependencies(sessionInvalidated: boolean): {
     dependencies: { sessions: SessionRepository };
-    deleteSession: ReturnType<typeof jest.fn>;
+    deleteSession: ReturnType<typeof vi.fn>;
 } {
-    const deleteSession = jest.fn().mockResolvedValue(sessionInvalidated);
+    const deleteSession = vi.fn().mockResolvedValue(sessionInvalidated);
 
     return {
         dependencies: {
             sessions: {
-                createSession: jest.fn(),
-                findSession: jest.fn(),
+                createSession: vi.fn(),
+                findSession: vi.fn(),
                 deleteSession,
-                deleteExpiredSessions: jest.fn(),
+                deleteExpiredSessions: vi.fn(),
             },
         },
         deleteSession,

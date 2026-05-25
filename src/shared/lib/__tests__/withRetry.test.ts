@@ -1,30 +1,31 @@
+import type { MockedFunction, Mock } from 'vitest';
 // `sleep` is the only true side effect inside withRetry. Stubbing it lets each
 // test run synchronously and lets us assert on delay schedules without burning
-// real wall-clock time. `jest.mock` is hoisted to the top of the file so it
+// real wall-clock time. `vi.mock` is hoisted to the top of the file so it
 // runs before the static imports below (required by `import/first`).
-jest.mock('@/shared/lib/sleep', () => ({
-    sleep: jest.fn().mockResolvedValue(undefined),
+vi.mock('@/shared/lib/sleep', () => ({
+    sleep: vi.fn().mockResolvedValue(undefined),
 }));
 
 import { withRetry } from '@/shared/lib/withRetry';
 import { sleep } from '@/shared/lib/sleep';
 
-const sleepMock = sleep as jest.MockedFunction<typeof sleep>;
+const sleepMock = sleep as MockedFunction<typeof sleep>;
 
 describe('withRetry', () => {
     beforeEach(() => {
         sleepMock.mockClear();
         // Deterministic jitter so the assertions below can pin exact delays.
         // 0 ⇒ jitter contributes nothing, leaving the pure exponential schedule.
-        jest.spyOn(Math, 'random').mockReturnValue(0);
+        vi.spyOn(Math, 'random').mockReturnValue(0);
     });
 
     afterEach(() => {
-        jest.restoreAllMocks();
+        vi.restoreAllMocks();
     });
 
     it('첫 시도 성공이면 fn 을 1회만 호출하고 sleep 을 호출하지 않는다', async () => {
-        const fn = jest.fn().mockResolvedValue('ok');
+        const fn = vi.fn().mockResolvedValue('ok');
         const result = await withRetry(fn, {
             maxRetries: 3,
             baseDelayMs: 200,
@@ -37,7 +38,7 @@ describe('withRetry', () => {
     });
 
     it('transient 실패 후 재시도에 성공하면 결과를 반환한다', async () => {
-        const fn = jest
+        const fn = vi
             .fn()
             .mockRejectedValueOnce(new Error('transient'))
             .mockResolvedValueOnce('eventual');
@@ -55,7 +56,7 @@ describe('withRetry', () => {
 
     it('maxRetries 초과 시 마지막 에러를 던진다', async () => {
         const finalError = new Error('attempt-3');
-        const fn = jest
+        const fn = vi
             .fn()
             .mockRejectedValueOnce(new Error('attempt-0'))
             .mockRejectedValueOnce(new Error('attempt-1'))
@@ -76,8 +77,8 @@ describe('withRetry', () => {
 
     it('non-retryable 에러는 즉시 던지고 sleep 도 호출하지 않는다', async () => {
         const permanent = new Error('permanent');
-        const fn = jest.fn().mockRejectedValue(permanent);
-        const isRetryable = jest.fn().mockReturnValue(false);
+        const fn = vi.fn().mockRejectedValue(permanent);
+        const isRetryable = vi.fn().mockReturnValue(false);
 
         await expect(
             withRetry(fn, { maxRetries: 3, baseDelayMs: 200, isRetryable })
@@ -88,7 +89,7 @@ describe('withRetry', () => {
     });
 
     it('지수 백오프 200 → 400 → 800ms 스케줄로 sleep 을 호출한다', async () => {
-        const fn = jest
+        const fn = vi
             .fn()
             .mockRejectedValueOnce(new Error('a'))
             .mockRejectedValueOnce(new Error('b'))
@@ -109,9 +110,9 @@ describe('withRetry', () => {
 
     it('jitter는 exponential 의 [0, exponential) 범위에서 더해진다', async () => {
         // Math.random=0.5 ⇒ jitter = exponential * 0.5 = 200 * 0.5 = 100ms.
-        (Math.random as jest.Mock).mockReturnValue(0.5);
+        (Math.random as Mock).mockReturnValue(0.5);
 
-        const fn = jest
+        const fn = vi
             .fn()
             .mockRejectedValueOnce(new Error('a'))
             .mockResolvedValueOnce('done');
@@ -130,7 +131,7 @@ describe('withRetry', () => {
         // Math.random=0 + baseDelayMs=200 ⇒ 첫 sleep=200ms.
         // backoffBudgetMs=50으로 두면 deadline이 즉시 지나 sleep 없이 throw.
         const firstError = new Error('attempt-0');
-        const fn = jest.fn().mockRejectedValueOnce(firstError);
+        const fn = vi.fn().mockRejectedValueOnce(firstError);
 
         await expect(
             withRetry(fn, {
@@ -147,7 +148,7 @@ describe('withRetry', () => {
 
     it('backoffBudgetMs 가 충분하면 정상 backoff 후 성공한다', async () => {
         // 첫 실패 후 200ms sleep까지는 budget 1초 안에 충분히 들어간다.
-        const fn = jest
+        const fn = vi
             .fn()
             .mockRejectedValueOnce(new Error('transient'))
             .mockResolvedValueOnce('ok');
@@ -168,11 +169,11 @@ describe('withRetry', () => {
         // 1st: transient retryable, 2nd: non-retryable.
         const transient = new Error('transient');
         const permanent = new Error('permanent');
-        const fn = jest
+        const fn = vi
             .fn()
             .mockRejectedValueOnce(transient)
             .mockRejectedValueOnce(permanent);
-        const isRetryable = jest
+        const isRetryable = vi
             .fn()
             .mockImplementation((err: unknown) => err === transient);
 

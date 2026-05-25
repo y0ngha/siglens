@@ -1,20 +1,16 @@
-/**
- * @jest-environment jsdom
- */
-import '@testing-library/jest-dom';
 import { render } from '@testing-library/react';
 import { FearGreedCardMounted } from '@/widgets/symbol-page/FearGreedCardMounted';
 import { useBars } from '@/widgets/symbol-page/hooks/useBars';
 
-jest.mock('@/widgets/symbol-page/hooks/useBars', () => ({
-    useBars: jest.fn(() => ({
+vi.mock('@/widgets/symbol-page/hooks/useBars', () => ({
+    useBars: vi.fn(() => ({
         bars: [],
         indicators: { buySellVolume: [] },
     })),
 }));
 
-jest.mock('@/widgets/fear-greed/hooks/useFearGreed', () => ({
-    useFearGreed: jest.fn(() => ({
+vi.mock('@/widgets/fear-greed/hooks/useFearGreed', () => ({
+    useFearGreed: vi.fn(() => ({
         snapshot: {
             score: 50,
             label: 'NEUTRAL',

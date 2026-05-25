@@ -1,3 +1,4 @@
+import type { MockedFunction } from 'vitest';
 import { getBarsAction } from '../actions/getBarsAction';
 import {
     EMPTY_SMC_RESULT,
@@ -5,15 +6,14 @@ import {
 } from '@y0ngha/siglens-core';
 import type { BarsData } from '@y0ngha/siglens-core';
 
-jest.mock('@y0ngha/siglens-core', () => ({
-    ...jest.requireActual('@y0ngha/siglens-core'),
-    fetchBarsWithIndicators: jest.fn(),
+vi.mock('@y0ngha/siglens-core', async () => ({
+    ...(await vi.importActual('@y0ngha/siglens-core')),
+    fetchBarsWithIndicators: vi.fn(),
 }));
 
-const mockFetchBarsWithIndicators =
-    fetchBarsWithIndicators as jest.MockedFunction<
-        typeof fetchBarsWithIndicators
-    >;
+const mockFetchBarsWithIndicators = fetchBarsWithIndicators as MockedFunction<
+    typeof fetchBarsWithIndicators
+>;
 
 const mockBarsData: BarsData = {
     bars: [

@@ -1,35 +1,44 @@
-/**
- * @jest-environment jsdom
- */
-import '@testing-library/jest-dom';
 import { render } from '@testing-library/react';
 import type { FearGreedHistoryPoint } from '@y0ngha/siglens-core';
 import { FearGreedHistoricalChart } from '@/widgets/chart/FearGreedHistoricalChart';
 
 // lightweight-charts uses canvas internally — jsdom can't run it, so we mock.
-const mockSetData = jest.fn();
-const mockFitContent = jest.fn();
-const mockAddSeries = jest.fn(() => ({ setData: mockSetData }));
-const mockRemove = jest.fn();
-const mockApplyOptions = jest.fn();
-const mockChart = {
-    addSeries: mockAddSeries,
-    timeScale: () => ({ fitContent: mockFitContent }),
-    remove: mockRemove,
-    applyOptions: mockApplyOptions,
-};
+const {
+    mockSetData,
+    mockFitContent,
+    mockAddSeries,
+    mockRemove,
+    mockApplyOptions,
+    mockChart,
+} = vi.hoisted(() => {
+    const mockSetData = vi.fn();
+    const mockFitContent = vi.fn();
+    const mockAddSeries = vi.fn(() => ({ setData: mockSetData }));
+    const mockRemove = vi.fn();
+    const mockApplyOptions = vi.fn();
+    const mockChart = {
+        addSeries: mockAddSeries,
+        timeScale: () => ({ fitContent: mockFitContent }),
+        remove: mockRemove,
+        applyOptions: mockApplyOptions,
+    };
+    return {
+        mockSetData,
+        mockFitContent,
+        mockAddSeries,
+        mockRemove,
+        mockApplyOptions,
+        mockChart,
+    };
+});
 
 // `virtual: true` is required because lightweight-charts is ESM-only
 // (`"type": "module"`, no CJS export). Jest's CJS resolver can't find it
 // from this test file, even though we never call the real module.
-jest.mock(
-    'lightweight-charts',
-    () => ({
-        createChart: jest.fn(() => mockChart),
-        LineSeries: 'LineSeries',
-    }),
-    { virtual: true }
-);
+vi.mock('lightweight-charts', () => ({
+    createChart: vi.fn(() => mockChart),
+    LineSeries: 'LineSeries',
+}));
 
 const history: FearGreedHistoryPoint[] = [
     { date: '2026-01-01', score: null, label: null },

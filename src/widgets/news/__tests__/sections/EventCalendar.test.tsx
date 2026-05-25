@@ -1,7 +1,3 @@
-/**
- * @jest-environment jsdom
- */
-import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
 import type { EarningsReportComparisonItem } from '@/shared/lib/types';
 import { EventCalendar } from '@/widgets/news/sections/EventCalendar';

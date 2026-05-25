@@ -1,13 +1,14 @@
+import type { MockedFunction } from 'vitest';
 import { getSectorSignalsAction } from '../actions/getSectorSignalsAction';
 import { getSectorSignals } from '@y0ngha/siglens-core';
 import type { SectorSignalsResult } from '@y0ngha/siglens-core';
 
-jest.mock('@y0ngha/siglens-core', () => ({
-    ...jest.requireActual('@y0ngha/siglens-core'),
-    getSectorSignals: jest.fn(),
+vi.mock('@y0ngha/siglens-core', async () => ({
+    ...(await vi.importActual('@y0ngha/siglens-core')),
+    getSectorSignals: vi.fn(),
 }));
 
-const mockGetSectorSignals = getSectorSignals as jest.MockedFunction<
+const mockGetSectorSignals = getSectorSignals as MockedFunction<
     typeof getSectorSignals
 >;
 

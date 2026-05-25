@@ -1,9 +1,9 @@
 /**
  * Unit tests for optionsDataCache delegation.
  *
- * The `'use cache'` directive is a Next.js compiler directive — in the jest
+ * The `'use cache'` directive is a Next.js compiler directive — in the vitest
  * runtime it has no effect, and `cacheLife` / `cacheTag` from `next/cache`
- * are already mocked to noops in `jest.setup.ts`. We therefore verify the
+ * are already mocked to noops in `vitest.setup.ts`. We therefore verify the
  * functions' *forwarding* contract: that arguments and return values flow
  * unchanged through the wrapper to the underlying `YahooOptionsAdapter`.
  */
@@ -16,30 +16,40 @@
 delete process.env.UPSTASH_REDIS_REST_URL;
 delete process.env.UPSTASH_REDIS_REST_TOKEN;
 
-jest.mock('server-only', () => ({}), { virtual: true });
+vi.mock('server-only', () => ({}));
 
-const mockHasOptionsMarket = jest.fn();
-const mockFetchSnapshot = jest.fn();
-const mockRedisGet = jest.fn();
-const mockRedisSet = jest.fn();
-const mockRedisConstructor = jest.fn();
-
-jest.mock('../lib/YahooOptionsAdapter', () => ({
-    YahooOptionsAdapter: jest.fn().mockImplementation(() => ({
-        hasOptionsMarket: mockHasOptionsMarket,
-        fetchSnapshot: mockFetchSnapshot,
-    })),
+const {
+    mockHasOptionsMarket,
+    mockFetchSnapshot,
+    mockRedisGet,
+    mockRedisSet,
+    mockRedisConstructor,
+} = vi.hoisted(() => ({
+    mockHasOptionsMarket: vi.fn(),
+    mockFetchSnapshot: vi.fn(),
+    mockRedisGet: vi.fn(),
+    mockRedisSet: vi.fn(),
+    mockRedisConstructor: vi.fn(),
 }));
 
-jest.mock('@upstash/redis', () => ({
-    Redis: jest.fn().mockImplementation((opts: unknown) => {
+vi.mock('../lib/YahooOptionsAdapter', () => ({
+    YahooOptionsAdapter: vi.fn().mockImplementation(function () {
+        return {
+            hasOptionsMarket: mockHasOptionsMarket,
+            fetchSnapshot: mockFetchSnapshot,
+        };
+    }),
+}));
+
+vi.mock('@upstash/redis', () => ({
+    Redis: vi.fn().mockImplementation(function (opts: unknown) {
         mockRedisConstructor(opts);
         return { get: mockRedisGet, set: mockRedisSet };
     }),
 }));
 
-jest.mock('../lib/optionsCacheLife', () => ({
-    getOptionsCacheLifeProfile: jest.fn(() => 'options-market-open'),
+vi.mock('../lib/optionsCacheLife', () => ({
+    getOptionsCacheLifeProfile: vi.fn(() => 'options-market-open'),
 }));
 
 import {
@@ -59,10 +69,8 @@ async function loadWithEnv(opts: {
 }): Promise<typeof import('../lib/optionsDataCache')> {
     process.env.UPSTASH_REDIS_REST_URL = opts.url ?? '';
     process.env.UPSTASH_REDIS_REST_TOKEN = opts.token ?? '';
-    let mod!: typeof import('../lib/optionsDataCache');
-    await jest.isolateModulesAsync(async () => {
-        mod = await import('../lib/optionsDataCache');
-    });
+    vi.resetModules();
+    const mod = await import('../lib/optionsDataCache');
     return mod;
 }
 
@@ -77,7 +85,7 @@ afterEach(() => {
 
 describe('hasOptionsMarket', () => {
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     it('forwards the symbol to YahooOptionsAdapter.hasOptionsMarket', async () => {
@@ -109,7 +117,7 @@ describe('hasOptionsMarket', () => {
 
 describe('hasOptionsMarket — Redis 캐시 레이어', () => {
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     it('Redis env가 없으면 Redis 인스턴스를 만들지 않고 adapter로 직행한다', async () => {
@@ -159,9 +167,7 @@ describe('hasOptionsMarket — Redis 캐시 레이어', () => {
     });
 
     it('Redis get 예외는 흡수하고 adapter로 fallback', async () => {
-        const errSpy = jest
-            .spyOn(console, 'error')
-            .mockImplementation(() => {});
+        const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
         mockRedisGet.mockRejectedValue(new Error('redis down'));
         mockHasOptionsMarket.mockResolvedValue(false);
         mockRedisSet.mockResolvedValue('OK');
@@ -179,9 +185,7 @@ describe('hasOptionsMarket — Redis 캐시 레이어', () => {
     });
 
     it('Redis set 예외는 흡수하고 fresh 값을 정상 반환', async () => {
-        const errSpy = jest
-            .spyOn(console, 'error')
-            .mockImplementation(() => {});
+        const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
         mockRedisGet.mockResolvedValue(null);
         mockHasOptionsMarket.mockResolvedValue(true);
         mockRedisSet.mockRejectedValue(new Error('redis write fail'));
@@ -198,9 +202,7 @@ describe('hasOptionsMarket — Redis 캐시 레이어', () => {
     });
 
     it('adapter.hasOptionsMarket 예외는 false로 흡수해 sitemap 빌드를 보호', async () => {
-        const errSpy = jest
-            .spyOn(console, 'error')
-            .mockImplementation(() => {});
+        const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
         mockRedisGet.mockResolvedValue(null);
         mockHasOptionsMarket.mockRejectedValue(new Error('yahoo 503'));
 
@@ -220,7 +222,7 @@ describe('hasOptionsMarket — Redis 캐시 레이어', () => {
 
 describe('fetchOptionsSnapshot', () => {
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     it('forwards the symbol to YahooOptionsAdapter.fetchSnapshot', async () => {
@@ -264,7 +266,7 @@ describe('fetchOptionsSnapshot', () => {
 
 describe('fetchOptionsSnapshot — Redis 캐시 레이어', () => {
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     const sampleSnapshot = {
@@ -335,9 +337,7 @@ describe('fetchOptionsSnapshot — Redis 캐시 레이어', () => {
     });
 
     it('Redis get 예외는 흡수하고 adapter fresh로 진행', async () => {
-        const errSpy = jest
-            .spyOn(console, 'error')
-            .mockImplementation(() => {});
+        const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
         mockRedisGet.mockRejectedValue(new Error('redis down'));
         mockFetchSnapshot.mockResolvedValue(sampleSnapshot);
         mockRedisSet.mockResolvedValue('OK');
@@ -355,9 +355,7 @@ describe('fetchOptionsSnapshot — Redis 캐시 레이어', () => {
     });
 
     it('Redis set 예외는 흡수하고 fresh 값을 정상 반환', async () => {
-        const errSpy = jest
-            .spyOn(console, 'error')
-            .mockImplementation(() => {});
+        const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
         mockRedisGet.mockResolvedValue(null);
         mockFetchSnapshot.mockResolvedValue(sampleSnapshot);
         mockRedisSet.mockRejectedValue(new Error('redis write fail'));

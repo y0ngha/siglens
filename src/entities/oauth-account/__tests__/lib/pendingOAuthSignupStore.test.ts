@@ -1,3 +1,4 @@
+import type { Mock } from 'vitest';
 import {
     createPendingOAuthSignupStore,
     type PendingOAuthSignup,
@@ -8,16 +9,16 @@ describe('PendingOAuthSignupStore', () => {
     function makeRedis() {
         const store = new Map<string, string>();
         const client = {
-            set: jest.fn(async (key: string, value: string) => {
+            set: vi.fn(async (key: string, value: string) => {
                 store.set(key, value);
             }),
-            get: jest.fn(async (key: string) => store.get(key) ?? null),
-            getdel: jest.fn(async (key: string) => {
+            get: vi.fn(async (key: string) => store.get(key) ?? null),
+            getdel: vi.fn(async (key: string) => {
                 const value = store.get(key) ?? null;
                 store.delete(key);
                 return value;
             }),
-            del: jest.fn(async (key: string) => {
+            del: vi.fn(async (key: string) => {
                 store.delete(key);
             }),
         };
@@ -41,7 +42,7 @@ describe('PendingOAuthSignupStore', () => {
         const token = await store.save(sample);
 
         expect(token).toMatch(/^[a-f0-9]{64}$/);
-        expect(client.set as jest.Mock).toHaveBeenCalledWith(
+        expect(client.set as Mock).toHaveBeenCalledWith(
             `pending_oauth_signup:${token}`,
             JSON.stringify(sample),
             expect.objectContaining({ ex: 600 })
@@ -91,7 +92,7 @@ describe('PendingOAuthSignupStore', () => {
 
     it('peek returns null for corrupted (non-JSON) stored value', async () => {
         const { client } = makeRedis();
-        (client.get as jest.Mock).mockResolvedValueOnce('{{invalid-json}}');
+        (client.get as Mock).mockResolvedValueOnce('{{invalid-json}}');
         const sut = createPendingOAuthSignupStore(client);
 
         const result = await sut.peek('some-token');

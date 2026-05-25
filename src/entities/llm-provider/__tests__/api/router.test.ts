@@ -1,22 +1,23 @@
-jest.mock('@/entities/llm-provider/api/anthropic', () => ({
-    callAnthropicChat: jest.fn(),
+import type { MockedFunction } from 'vitest';
+vi.mock('@/entities/llm-provider/api/anthropic', () => ({
+    callAnthropicChat: vi.fn(),
 }));
 
-jest.mock('@/entities/llm-provider/api/openai', () => ({
-    callOpenaiChat: jest.fn(),
+vi.mock('@/entities/llm-provider/api/openai', () => ({
+    callOpenaiChat: vi.fn(),
 }));
 
-jest.mock('@/entities/llm-provider/api/gemini', () => ({
-    callGeminiChat: jest.fn(),
+vi.mock('@/entities/llm-provider/api/gemini', () => ({
+    callGeminiChat: vi.fn(),
 }));
 
-jest.mock('@y0ngha/siglens-core', () => {
-    const actual = jest.requireActual<typeof import('@y0ngha/siglens-core')>(
+vi.mock('@y0ngha/siglens-core', async () => {
+    const actual = await vi.importActual<typeof import('@y0ngha/siglens-core')>(
         '@y0ngha/siglens-core'
     );
     return {
         MODEL_SPECS: actual.MODEL_SPECS,
-        getProviderForModel: jest
+        getProviderForModel: vi
             .fn()
             .mockImplementation(actual.getProviderForModel),
     };
@@ -29,16 +30,16 @@ import { callAiProviderRouter } from '@/entities/llm-provider/api/router';
 import type { LlmProvider } from '@y0ngha/siglens-core';
 import { getProviderForModel } from '@y0ngha/siglens-core';
 
-const mockCallAnthropicChat = callAnthropicChat as jest.MockedFunction<
+const mockCallAnthropicChat = callAnthropicChat as MockedFunction<
     typeof callAnthropicChat
 >;
-const mockCallOpenaiChat = callOpenaiChat as jest.MockedFunction<
+const mockCallOpenaiChat = callOpenaiChat as MockedFunction<
     typeof callOpenaiChat
 >;
-const mockCallGeminiWithKeyFallback = callGeminiChat as jest.MockedFunction<
+const mockCallGeminiWithKeyFallback = callGeminiChat as MockedFunction<
     typeof callGeminiChat
 >;
-const mockGetProviderForModel = getProviderForModel as jest.MockedFunction<
+const mockGetProviderForModel = getProviderForModel as MockedFunction<
     typeof getProviderForModel
 >;
 
@@ -49,16 +50,15 @@ const BASE_OPTIONS = {
 } as const;
 
 describe('callAiProviderRouter', () => {
-    beforeEach(() => {
-        jest.clearAllMocks();
+    beforeEach(async () => {
+        vi.clearAllMocks();
         mockCallAnthropicChat.mockResolvedValue('anthropic response');
         mockCallOpenaiChat.mockResolvedValue('openai response');
         mockCallGeminiWithKeyFallback.mockResolvedValue('gemini response');
-        mockGetProviderForModel.mockImplementation(
-            jest.requireActual<typeof import('@y0ngha/siglens-core')>(
-                '@y0ngha/siglens-core'
-            ).getProviderForModel
-        );
+        const actual = await vi.importActual<
+            typeof import('@y0ngha/siglens-core')
+        >('@y0ngha/siglens-core');
+        mockGetProviderForModel.mockImplementation(actual.getProviderForModel);
     });
 
     describe('Anthropic 모델 라우팅', () => {

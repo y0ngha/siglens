@@ -1,27 +1,33 @@
-jest.mock('server-only', () => ({}), { virtual: true });
+vi.mock('server-only', () => ({}));
 
-const mockGetUserTier = jest.fn();
-const mockFindByUserAndProvider = jest.fn();
-
-jest.mock('@/shared/db/client', () => ({
-    getDatabaseClient: jest.fn(() => ({ db: {}, sql: () => null })),
+const { mockGetUserTier, mockFindByUserAndProvider } = vi.hoisted(() => ({
+    mockGetUserTier: vi.fn(),
+    mockFindByUserAndProvider: vi.fn(),
 }));
 
-jest.mock('@/entities/user', () => ({
-    DrizzleUserRepository: jest.fn().mockImplementation(() => ({})),
+vi.mock('@/shared/db/client', () => ({
+    getDatabaseClient: vi.fn(() => ({ db: {}, sql: () => null })),
 }));
 
-jest.mock('@/entities/user-tier', () => ({
+vi.mock('@/entities/user', () => ({
+    DrizzleUserRepository: vi.fn().mockImplementation(function () {
+        return {};
+    }),
+}));
+
+vi.mock('@/entities/user-tier', () => ({
     getUserTier: (...args: unknown[]) => mockGetUserTier(...args),
 }));
 
-jest.mock('@/entities/api-key', () => {
-    const actual = jest.requireActual('@/entities/api-key');
+vi.mock('@/entities/api-key', async () => {
+    const actual = await vi.importActual('@/entities/api-key');
     return {
         ...actual,
-        DrizzleUserApiKeyRepository: jest.fn().mockImplementation(() => ({
-            findByUserAndProvider: mockFindByUserAndProvider,
-        })),
+        DrizzleUserApiKeyRepository: vi.fn().mockImplementation(function () {
+            return {
+                findByUserAndProvider: mockFindByUserAndProvider,
+            };
+        }),
     };
 });
 
@@ -39,7 +45,7 @@ const UNKNOWN_MODEL = 'totally-not-a-model' as ModelId;
 
 describe('resolveTierAndByok', () => {
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         mockGetUserTier.mockResolvedValue('free');
         mockFindByUserAndProvider.mockResolvedValue(null);
     });

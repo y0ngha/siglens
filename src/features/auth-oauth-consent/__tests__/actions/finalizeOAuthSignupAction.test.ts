@@ -1,19 +1,22 @@
-jest.mock('@/entities/oauth-account', () => ({
-    DrizzleOAuthAccountRepository: jest.fn().mockImplementation(() => ({})),
-    compositeOAuthRevoker: { revokeToken: jest.fn() },
-    createPendingOAuthSignupStore: jest.fn(),
-    createPendingOAuthSignupStoreFromEnv: jest.fn(),
+import type { MockedClass, Mock } from 'vitest';
+vi.mock('@/entities/oauth-account', () => ({
+    DrizzleOAuthAccountRepository: vi.fn().mockImplementation(function () {
+        return {};
+    }),
+    compositeOAuthRevoker: { revokeToken: vi.fn() },
+    createPendingOAuthSignupStore: vi.fn(),
+    createPendingOAuthSignupStoreFromEnv: vi.fn(),
 }));
-jest.mock('@/entities/terms');
-jest.mock('@/entities/user');
-jest.mock('@/entities/agreement');
-jest.mock('@/entities/session', () => ({
-    applyAuthCookie: jest.fn((c: unknown) => c),
-    createAuthHintCookie: jest.fn(() => ({
+vi.mock('@/entities/terms');
+vi.mock('@/entities/user');
+vi.mock('@/entities/agreement');
+vi.mock('@/entities/session', () => ({
+    applyAuthCookie: vi.fn((c: unknown) => c),
+    createAuthHintCookie: vi.fn(() => ({
         name: 'auth_hint',
         value: 'true',
     })),
-    getAuthDatabaseClient: jest.fn(() => ({ db: {}, sql: () => null })),
+    getAuthDatabaseClient: vi.fn(() => ({ db: {}, sql: () => null })),
     CONSENT_REQUIRED_MESSAGE: '서비스 이용을 위해 필수 약관에 동의해 주세요.',
     OAUTH_ERROR_REDIRECT: {
         consentInvalid: '/login?error=oauth_consent_invalid',
@@ -21,21 +24,21 @@ jest.mock('@/entities/session', () => ({
         serviceUnavailable: '/login?error=service_unavailable',
         emailConflict: '/login?error=oauth_email_conflict',
     },
-    createAuthSession: jest.fn(),
+    createAuthSession: vi.fn(),
     DEFAULT_SESSION_TTL_SECONDS: 7776000,
-    isSecureCookieEnv: jest.fn(() => false),
-    DrizzleSessionRepository: jest.fn().mockImplementation(() => ({})),
+    isSecureCookieEnv: vi.fn(() => false),
+    DrizzleSessionRepository: vi.fn().mockImplementation(function () {
+        return {};
+    }),
 }));
-jest.mock('next/headers', () => ({
-    cookies: jest.fn(),
+vi.mock('next/headers', () => ({
+    cookies: vi.fn(),
 }));
-jest.mock('@/shared/lib/auth/redirect', () => ({
-    sanitizeNextPath: jest.fn((p: unknown) =>
-        typeof p === 'string' ? p : '/'
-    ),
+vi.mock('@/shared/lib/auth/redirect', () => ({
+    sanitizeNextPath: vi.fn((p: unknown) => (typeof p === 'string' ? p : '/')),
 }));
-jest.mock('next/navigation', () => ({
-    redirect: jest.fn().mockImplementation((url: string) => {
+vi.mock('next/navigation', () => ({
+    redirect: vi.fn().mockImplementation((url: string) => {
         throw Object.assign(new Error('NEXT_REDIRECT'), { url });
     }),
 }));
@@ -49,19 +52,18 @@ import { DrizzleAgreementRepository } from '@/entities/agreement';
 import { getAuthDatabaseClient, createAuthSession } from '@/entities/session';
 import { cookies } from 'next/headers';
 
-const mockRedirect = redirect as unknown as jest.Mock;
-const mockCreateStore =
-    createPendingOAuthSignupStoreFromEnv as unknown as jest.Mock;
-const MockTermsRepo = DrizzleTermsRepository as jest.MockedClass<
+const mockRedirect = redirect as unknown as Mock;
+const mockCreateStore = createPendingOAuthSignupStoreFromEnv as unknown as Mock;
+const MockTermsRepo = DrizzleTermsRepository as MockedClass<
     typeof DrizzleTermsRepository
 >;
-const MockUserRepo = DrizzleUserRepository as jest.MockedClass<
+const MockUserRepo = DrizzleUserRepository as MockedClass<
     typeof DrizzleUserRepository
 >;
-const MockAgreementRepo = DrizzleAgreementRepository as jest.MockedClass<
+const MockAgreementRepo = DrizzleAgreementRepository as MockedClass<
     typeof DrizzleAgreementRepository
 >;
-const mockGetAuthDb = getAuthDatabaseClient as unknown as jest.Mock;
+const mockGetAuthDb = getAuthDatabaseClient as unknown as Mock;
 
 const SAMPLE_PROFILE = {
     provider: 'google' as const,
@@ -126,42 +128,37 @@ function setupMocks(
     }
 
     mockCreateStore.mockReturnValue({
-        peek: jest.fn().mockResolvedValue(peekResult),
-        consume: jest.fn().mockResolvedValue(consumeResult),
+        peek: vi.fn().mockResolvedValue(peekResult),
+        consume: vi.fn().mockResolvedValue(consumeResult),
     });
 
-    MockTermsRepo.mockImplementation(
-        () =>
-            ({
-                findActive: jest
-                    .fn()
-                    .mockImplementation((kind: string) =>
-                        Promise.resolve(
-                            kind === 'privacy' ? privacyTerms : tosTerms
-                        )
-                    ),
-            }) as unknown as InstanceType<typeof DrizzleTermsRepository>
-    );
+    MockTermsRepo.mockImplementation(function () {
+        return {
+            findActive: vi
+                .fn()
+                .mockImplementation((kind: string) =>
+                    Promise.resolve(
+                        kind === 'privacy' ? privacyTerms : tosTerms
+                    )
+                ),
+        } as unknown as InstanceType<typeof DrizzleTermsRepository>;
+    });
 
-    MockUserRepo.mockImplementation(
-        () =>
-            ({
-                findByEmail: jest.fn().mockResolvedValue(existingUser),
-                createOAuthUser: jest
-                    .fn()
-                    .mockResolvedValue(createOAuthUserResult),
-                deleteUser: jest.fn().mockResolvedValue(true),
-            }) as unknown as InstanceType<typeof DrizzleUserRepository>
-    );
+    MockUserRepo.mockImplementation(function () {
+        return {
+            findByEmail: vi.fn().mockResolvedValue(existingUser),
+            createOAuthUser: vi.fn().mockResolvedValue(createOAuthUserResult),
+            deleteUser: vi.fn().mockResolvedValue(true),
+        } as unknown as InstanceType<typeof DrizzleUserRepository>;
+    });
 
-    MockAgreementRepo.mockImplementation(
-        () =>
-            ({
-                insertMany: insertManyThrows
-                    ? jest.fn().mockRejectedValue(new Error('db error'))
-                    : jest.fn().mockResolvedValue(undefined),
-            }) as unknown as InstanceType<typeof DrizzleAgreementRepository>
-    );
+    MockAgreementRepo.mockImplementation(function () {
+        return {
+            insertMany: insertManyThrows
+                ? vi.fn().mockRejectedValue(new Error('db error'))
+                : vi.fn().mockResolvedValue(undefined),
+        } as unknown as InstanceType<typeof DrizzleAgreementRepository>;
+    });
 
     mockGetAuthDb.mockReturnValue({ db: {} });
 }
@@ -178,7 +175,7 @@ async function expectRedirectTo(
 
 describe('finalizeOAuthSignupAction', () => {
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     it('returns consent_required when agreed_privacy is false', async () => {
@@ -237,17 +234,16 @@ describe('finalizeOAuthSignupAction', () => {
     it('redirects to service_unavailable when agreement insertion throws and compensates by deleting the user', async () => {
         setupMocks({ insertManyThrows: true });
 
-        const deleteUser = jest.fn().mockResolvedValue(true);
-        MockUserRepo.mockImplementation(
-            () =>
-                ({
-                    findByEmail: jest.fn().mockResolvedValue(null),
-                    createOAuthUser: jest
-                        .fn()
-                        .mockResolvedValue({ id: 'new-user-id' }),
-                    deleteUser,
-                }) as unknown as InstanceType<typeof DrizzleUserRepository>
-        );
+        const deleteUser = vi.fn().mockResolvedValue(true);
+        MockUserRepo.mockImplementation(function () {
+            return {
+                findByEmail: vi.fn().mockResolvedValue(null),
+                createOAuthUser: vi
+                    .fn()
+                    .mockResolvedValue({ id: 'new-user-id' }),
+                deleteUser,
+            } as unknown as InstanceType<typeof DrizzleUserRepository>;
+        });
 
         await expectRedirectTo('/login?error=service_unavailable');
 
@@ -268,15 +264,15 @@ describe('finalizeOAuthSignupAction', () => {
 
     it('성공 시 세션 쿠키를 설정하고 next 경로로 리다이렉트', async () => {
         setupMocks();
-        const mockCookieSet = jest.fn();
-        (cookies as jest.Mock).mockResolvedValue({ set: mockCookieSet });
-        (createAuthSession as jest.Mock).mockResolvedValue({
+        const mockCookieSet = vi.fn();
+        (cookies as Mock).mockResolvedValue({ set: mockCookieSet });
+        (createAuthSession as Mock).mockResolvedValue({
             cookie: { name: 'session', value: 'test-session' },
         });
 
         await expectRedirectTo('/');
 
-        expect(createAuthSession as jest.Mock).toHaveBeenCalledWith(
+        expect(createAuthSession as Mock).toHaveBeenCalledWith(
             expect.objectContaining({ userId: 'new-user-id' })
         );
         expect(mockCookieSet).toHaveBeenCalledTimes(2);

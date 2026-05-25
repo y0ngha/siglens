@@ -5,14 +5,14 @@ describe('loadKoreanFont', () => {
 
     afterEach(() => {
         global.fetch = originalFetch;
-        jest.restoreAllMocks();
+        vi.restoreAllMocks();
     });
 
     it('fetch가 성공하면 ArrayBuffer를 반환한다', async () => {
         const mockBuffer = new ArrayBuffer(8);
-        global.fetch = jest.fn().mockResolvedValue({
+        global.fetch = vi.fn().mockResolvedValue({
             ok: true,
-            arrayBuffer: jest.fn().mockResolvedValue(mockBuffer),
+            arrayBuffer: vi.fn().mockResolvedValue(mockBuffer),
         });
 
         const result = await loadKoreanFont();
@@ -21,9 +21,9 @@ describe('loadKoreanFont', () => {
     });
 
     it('res.ok가 false면 null을 반환한다', async () => {
-        global.fetch = jest.fn().mockResolvedValue({
+        global.fetch = vi.fn().mockResolvedValue({
             ok: false,
-            arrayBuffer: jest.fn(),
+            arrayBuffer: vi.fn(),
         });
 
         const result = await loadKoreanFont();
@@ -32,7 +32,7 @@ describe('loadKoreanFont', () => {
     });
 
     it('fetch가 throw하면 null을 반환해 graceful degrade한다', async () => {
-        global.fetch = jest.fn().mockRejectedValue(new Error('network error'));
+        global.fetch = vi.fn().mockRejectedValue(new Error('network error'));
 
         const result = await loadKoreanFont();
 
@@ -40,9 +40,9 @@ describe('loadKoreanFont', () => {
     });
 
     it('arrayBuffer()가 throw해도 null을 반환한다', async () => {
-        global.fetch = jest.fn().mockResolvedValue({
+        global.fetch = vi.fn().mockResolvedValue({
             ok: true,
-            arrayBuffer: jest.fn().mockRejectedValue(new Error('decode error')),
+            arrayBuffer: vi.fn().mockRejectedValue(new Error('decode error')),
         });
 
         const result = await loadKoreanFont();

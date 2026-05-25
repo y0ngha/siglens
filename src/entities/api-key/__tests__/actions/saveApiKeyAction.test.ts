@@ -1,23 +1,26 @@
-const mockUpsert = jest.fn();
+import type { MockedFunction } from 'vitest';
+const { mockUpsert } = vi.hoisted(() => ({ mockUpsert: vi.fn() }));
 
-jest.mock('@/entities/session/lib/getCurrentUser', () => ({
-    getCurrentUser: jest.fn(),
+vi.mock('@/entities/session/lib/getCurrentUser', () => ({
+    getCurrentUser: vi.fn(),
 }));
-jest.mock('@/shared/db/client', () => ({
-    getDatabaseClient: jest.fn(() => ({ db: {}, sql: () => null })),
+vi.mock('@/shared/db/client', () => ({
+    getDatabaseClient: vi.fn(() => ({ db: {}, sql: () => null })),
 }));
-jest.mock('next/cache', () => ({
-    revalidatePath: jest.fn(),
+vi.mock('next/cache', () => ({
+    revalidatePath: vi.fn(),
 }));
-jest.mock('next/navigation', () => ({
-    redirect: jest.fn((path: string) => {
+vi.mock('next/navigation', () => ({
+    redirect: vi.fn((path: string) => {
         throw new Error(`NEXT_REDIRECT:${path}`);
     }),
 }));
-jest.mock('@/entities/api-key', () => ({
-    DrizzleUserApiKeyRepository: jest.fn().mockImplementation(() => ({
-        upsert: mockUpsert,
-    })),
+vi.mock('@/entities/api-key', () => ({
+    DrizzleUserApiKeyRepository: vi.fn().mockImplementation(function () {
+        return {
+            upsert: mockUpsert,
+        };
+    }),
 }));
 
 import { getCurrentUser } from '@/entities/session/lib/getCurrentUser';
@@ -27,19 +30,19 @@ import { saveApiKeyAction } from '@/entities/api-key/actions/saveApiKeyAction';
 import { makeFormData } from '@/shared/test-utils/makeFormData';
 import type { ApiKeyActionState } from '@/entities/api-key/lib';
 
-const mockGetCurrentUser = getCurrentUser as jest.MockedFunction<
+const mockGetCurrentUser = getCurrentUser as MockedFunction<
     typeof getCurrentUser
 >;
-const mockRevalidatePath = revalidatePath as jest.MockedFunction<
+const mockRevalidatePath = revalidatePath as MockedFunction<
     typeof revalidatePath
 >;
-const mockRedirect = redirect as jest.MockedFunction<typeof redirect>;
+const mockRedirect = redirect as MockedFunction<typeof redirect>;
 
 const IDLE_STATE: ApiKeyActionState = { status: 'idle', message: null };
 
 describe('saveApiKeyAction', () => {
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         mockUpsert.mockResolvedValue({
             id: 'key-1',
             userId: 'user-1',
@@ -132,7 +135,7 @@ describe('saveApiKeyAction', () => {
             code: '23505',
         });
         mockUpsert.mockRejectedValue(dbError);
-        const consoleErrorSpy = jest
+        const consoleErrorSpy = vi
             .spyOn(console, 'error')
             .mockImplementation(() => {});
 
@@ -155,7 +158,7 @@ describe('saveApiKeyAction', () => {
             email: 'test@example.com',
         } as never);
         mockUpsert.mockRejectedValue(new Error('unexpected non-db failure'));
-        const consoleErrorSpy = jest
+        const consoleErrorSpy = vi
             .spyOn(console, 'error')
             .mockImplementation(() => {});
 
@@ -179,7 +182,7 @@ describe('saveApiKeyAction', () => {
                 'LLM_API_KEY_ENCRYPTION_KEY environment variable is required for user API key encryption'
             )
         );
-        const consoleErrorSpy = jest
+        const consoleErrorSpy = vi
             .spyOn(console, 'error')
             .mockImplementation(() => {});
 

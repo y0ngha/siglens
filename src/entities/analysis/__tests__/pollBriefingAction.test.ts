@@ -1,19 +1,18 @@
+import type { MockedFunction } from 'vitest';
 import { pollBriefingAction } from '../actions/pollBriefingAction';
 import { pollBriefing } from '@y0ngha/siglens-core';
 import type { PollBriefingResult } from '@y0ngha/siglens-core';
 
-jest.mock('@vercel/functions', () => ({
-    waitUntil: jest.fn(),
+vi.mock('@vercel/functions', () => ({
+    waitUntil: vi.fn(),
 }));
 
-jest.mock('@y0ngha/siglens-core', () => ({
-    ...jest.requireActual('@y0ngha/siglens-core'),
-    pollBriefing: jest.fn(),
+vi.mock('@y0ngha/siglens-core', async () => ({
+    ...(await vi.importActual('@y0ngha/siglens-core')),
+    pollBriefing: vi.fn(),
 }));
 
-const mockPollBriefing = pollBriefing as jest.MockedFunction<
-    typeof pollBriefing
->;
+const mockPollBriefing = pollBriefing as MockedFunction<typeof pollBriefing>;
 
 const processingResult: PollBriefingResult = { status: 'processing' };
 

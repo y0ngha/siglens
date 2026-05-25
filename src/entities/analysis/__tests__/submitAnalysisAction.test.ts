@@ -1,22 +1,23 @@
-jest.mock('@vercel/functions', () => ({
-    waitUntil: jest.fn(),
+import type { MockedFunction } from 'vitest';
+vi.mock('@vercel/functions', () => ({
+    waitUntil: vi.fn(),
 }));
 
-jest.mock('next/headers', () => ({
-    headers: jest.fn(() => Promise.resolve(new Headers())),
+vi.mock('next/headers', () => ({
+    headers: vi.fn(() => Promise.resolve(new Headers())),
 }));
 
-jest.mock('@y0ngha/siglens-core', () => ({
-    submitAnalysis: jest.fn(),
+vi.mock('@y0ngha/siglens-core', () => ({
+    submitAnalysis: vi.fn(),
 }));
 
-jest.mock('@/entities/session/lib/getCurrentUser', () => ({
-    getCurrentUser: jest.fn(),
+vi.mock('@/entities/session/lib/getCurrentUser', () => ({
+    getCurrentUser: vi.fn(),
 }));
 
-jest.mock('@/shared/lib/byokGate', () => ({
-    resolveTierAndByok: jest.fn(),
-    buildGateError: jest.fn((code: string) => ({
+vi.mock('@/shared/lib/byokGate', () => ({
+    resolveTierAndByok: vi.fn(),
+    buildGateError: vi.fn((code: string) => ({
         code,
         message: `mock-${code}`,
     })),
@@ -33,15 +34,15 @@ import {
 } from '@y0ngha/siglens-core';
 import { getCurrentUser } from '@/entities/session/lib/getCurrentUser';
 
-const mockHeaders = headers as jest.MockedFunction<typeof headers>;
+const mockHeaders = headers as MockedFunction<typeof headers>;
 
-const mockResolveTierAndByok = resolveTierAndByok as jest.MockedFunction<
+const mockResolveTierAndByok = resolveTierAndByok as MockedFunction<
     typeof resolveTierAndByok
 >;
-const mockSubmitAnalysis = submitAnalysis as jest.MockedFunction<
+const mockSubmitAnalysis = submitAnalysis as MockedFunction<
     typeof submitAnalysis
 >;
-const mockGetCurrentUser = getCurrentUser as jest.MockedFunction<
+const mockGetCurrentUser = getCurrentUser as MockedFunction<
     typeof getCurrentUser
 >;
 
@@ -60,7 +61,7 @@ const gateError: AnalysisGateError = {
 
 describe('submitAnalysisAction tier + BYOK gate', () => {
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         mockSubmitAnalysis.mockResolvedValue(cachedResult);
         mockGetCurrentUser.mockResolvedValue(null);
     });

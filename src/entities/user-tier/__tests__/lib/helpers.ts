@@ -1,9 +1,10 @@
+import { vi } from 'vitest';
 import type { UserTierRepository } from '@/shared/db/types';
 
 type UserTierRepositoryMock = {
     repository: UserTierRepository;
-    getUserTierMock: ReturnType<typeof jest.fn>;
-    updateUserTierMock: ReturnType<typeof jest.fn>;
+    getUserTierMock: ReturnType<typeof vi.fn>;
+    updateUserTierMock: ReturnType<typeof vi.fn>;
 };
 
 export function makeUserTierRepositoryMock({
@@ -13,8 +14,8 @@ export function makeUserTierRepositoryMock({
     getUserTier?: Awaited<ReturnType<UserTierRepository['getUserTier']>>;
     updateUserTier?: Awaited<ReturnType<UserTierRepository['updateUserTier']>>;
 } = {}): UserTierRepositoryMock {
-    const getUserTierMock = jest.fn().mockResolvedValue(getUserTier);
-    const updateUserTierMock = jest.fn().mockResolvedValue(updateUserTier);
+    const getUserTierMock = vi.fn().mockResolvedValue(getUserTier);
+    const updateUserTierMock = vi.fn().mockResolvedValue(updateUserTier);
 
     return {
         repository: {

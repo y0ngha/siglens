@@ -1,6 +1,4 @@
-/**
- * @jest-environment jsdom
- */
+import type { MockedFunction, Mock } from 'vitest';
 import { useAnalysis } from '@/widgets/symbol-page/hooks/useAnalysis';
 import {
     cancelAnalysisJobAction,
@@ -15,29 +13,29 @@ import type { AnalysisResponse, Timeframe } from '@y0ngha/siglens-core';
 import type { ReactNode } from 'react';
 import { readBlobText } from '@/shared/test-utils/readBlobText';
 
-jest.mock('@/entities/analysis/actions', () => ({
-    submitAnalysisAction: jest.fn(),
-    pollAnalysisAction: jest.fn(),
-    cancelAnalysisJobAction: jest.fn().mockResolvedValue(undefined),
+vi.mock('@/entities/analysis/actions', () => ({
+    submitAnalysisAction: vi.fn(),
+    pollAnalysisAction: vi.fn(),
+    cancelAnalysisJobAction: vi.fn().mockResolvedValue(undefined),
 }));
 
-jest.mock('@/entities/analysis', () => ({
-    getReanalyzeCooldownMs: jest.fn().mockResolvedValue(0),
-    releaseReanalyzeCooldown: jest.fn().mockResolvedValue(undefined),
-    tryAcquireReanalyzeCooldown: jest.fn().mockResolvedValue({ ok: true }),
+vi.mock('@/entities/analysis', () => ({
+    getReanalyzeCooldownMs: vi.fn().mockResolvedValue(0),
+    releaseReanalyzeCooldown: vi.fn().mockResolvedValue(undefined),
+    tryAcquireReanalyzeCooldown: vi.fn().mockResolvedValue({ ok: true }),
 }));
 
-jest.mock('@/shared/lib/sleep', () => ({
-    sleep: jest.fn().mockResolvedValue(undefined),
+vi.mock('@/shared/lib/sleep', () => ({
+    sleep: vi.fn().mockResolvedValue(undefined),
 }));
 
-const mockSubmit = submitAnalysisAction as jest.MockedFunction<
+const mockSubmit = submitAnalysisAction as MockedFunction<
     typeof submitAnalysisAction
 >;
-const mockPoll = pollAnalysisAction as jest.MockedFunction<
+const mockPoll = pollAnalysisAction as MockedFunction<
     typeof pollAnalysisAction
 >;
-const mockCancel = cancelAnalysisJobAction as jest.MockedFunction<
+const mockCancel = cancelAnalysisJobAction as MockedFunction<
     typeof cancelAnalysisJobAction
 >;
 
@@ -84,16 +82,16 @@ function makeOptions(overrides?: PartialOptions) {
 }
 
 describe('useAnalysis', () => {
-    let sendBeaconMock: jest.Mock;
+    let sendBeaconMock: Mock;
 
     beforeEach(() => {
         mockSubmit.mockReset();
         mockPoll.mockReset();
         mockCancel.mockReset();
         mockCancel.mockResolvedValue(undefined);
-        (getReanalyzeCooldownMs as jest.Mock).mockResolvedValue(0);
+        (getReanalyzeCooldownMs as Mock).mockResolvedValue(0);
 
-        sendBeaconMock = jest.fn();
+        sendBeaconMock = vi.fn();
         Object.defineProperty(navigator, 'sendBeacon', {
             value: sendBeaconMock,
             configurable: true,

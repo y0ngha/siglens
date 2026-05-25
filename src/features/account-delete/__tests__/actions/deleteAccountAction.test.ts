@@ -1,33 +1,38 @@
-jest.mock('next/headers', () => ({ cookies: jest.fn() }));
-jest.mock('next/navigation', () => ({
-    redirect: jest.fn((path: string) => {
+import type { MockedFunction, Mock } from 'vitest';
+vi.mock('next/headers', () => ({ cookies: vi.fn() }));
+vi.mock('next/navigation', () => ({
+    redirect: vi.fn((path: string) => {
         throw new Error(`NEXT_REDIRECT:${path}`);
     }),
 }));
-jest.mock('@/shared/db/client', () => ({
-    getDatabaseClient: jest.fn(() => ({ db: {}, sql: () => null })),
-    resetDatabaseClientForTests: jest.fn(),
+vi.mock('@/shared/db/client', () => ({
+    getDatabaseClient: vi.fn(() => ({ db: {}, sql: () => null })),
+    resetDatabaseClientForTests: vi.fn(),
 }));
-jest.mock('@/entities/user', () => ({
-    DrizzleUserRepository: jest.fn().mockImplementation(() => ({})),
-    deleteAccount: jest.fn(),
+vi.mock('@/entities/user', () => ({
+    DrizzleUserRepository: vi.fn().mockImplementation(function () {
+        return {};
+    }),
+    deleteAccount: vi.fn(),
 }));
-jest.mock('@/entities/session', () => ({
-    DrizzleSessionRepository: jest.fn().mockImplementation(() => ({})),
-    applyAuthCookie: jest.fn((c: unknown) => c),
-    getAuthDatabaseClient: jest.fn(() => ({ db: {}, sql: () => null })),
-    getCurrentUser: jest.fn(),
-    isSecureCookieEnv: jest.fn(() => false),
-    createExpiredAuthHintCookie: jest.fn(() => ({
+vi.mock('@/entities/session', () => ({
+    DrizzleSessionRepository: vi.fn().mockImplementation(function () {
+        return {};
+    }),
+    applyAuthCookie: vi.fn((c: unknown) => c),
+    getAuthDatabaseClient: vi.fn(() => ({ db: {}, sql: () => null })),
+    getCurrentUser: vi.fn(),
+    isSecureCookieEnv: vi.fn(() => false),
+    createExpiredAuthHintCookie: vi.fn(() => ({
         name: 'auth_hint',
         value: '',
     })),
 }));
-jest.mock('@/entities/oauth-account', () => ({
-    DrizzleOAuthAccountRepository: jest
-        .fn()
-        .mockImplementation(() => ({ findByUserId: jest.fn() })),
-    compositeOAuthRevoker: { revokeToken: jest.fn() },
+vi.mock('@/entities/oauth-account', () => ({
+    DrizzleOAuthAccountRepository: vi.fn().mockImplementation(function () {
+        return { findByUserId: vi.fn() };
+    }),
+    compositeOAuthRevoker: { revokeToken: vi.fn() },
 }));
 
 import { cookies } from 'next/headers';
@@ -38,12 +43,12 @@ import { deleteAccountAction } from '@/features/account-delete/actions/deleteAcc
 import { resetAuthDatabaseClientForTests } from '@/entities/session/lib/db';
 import { makeFormData } from '@/shared/test-utils/makeFormData';
 
-const mockCookies = cookies as jest.MockedFunction<typeof cookies>;
-const mockDelete = deleteAccount as jest.MockedFunction<typeof deleteAccount>;
-const mockGetCurrentUser = getCurrentUser as jest.MockedFunction<
+const mockCookies = cookies as MockedFunction<typeof cookies>;
+const mockDelete = deleteAccount as MockedFunction<typeof deleteAccount>;
+const mockGetCurrentUser = getCurrentUser as MockedFunction<
     typeof getCurrentUser
 >;
-const mockRedirect = redirect as jest.MockedFunction<typeof redirect>;
+const mockRedirect = redirect as MockedFunction<typeof redirect>;
 
 const USER = {
     id: 'u1',
@@ -57,12 +62,12 @@ const USER = {
 };
 
 describe('deleteAccountAction', () => {
-    let setSpy: jest.Mock;
+    let setSpy: Mock;
 
     beforeEach(() => {
         resetAuthDatabaseClientForTests();
         process.env.DATABASE_URL = 'postgres://test';
-        setSpy = jest.fn();
+        setSpy = vi.fn();
         mockCookies.mockResolvedValue({
             set: setSpy,
         } as unknown as Awaited<ReturnType<typeof cookies>>);

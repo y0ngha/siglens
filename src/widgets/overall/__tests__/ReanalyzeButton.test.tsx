@@ -1,8 +1,3 @@
-/**
- * @jest-environment jsdom
- */
-
-import '@testing-library/jest-dom';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ReanalyzeButton } from '@/widgets/overall/ReanalyzeButton';
 
@@ -15,7 +10,7 @@ describe('ReanalyzeButton', () => {
     });
 
     it('클릭 시 onClick을 호출한다', () => {
-        const handler = jest.fn();
+        const handler = vi.fn();
         render(<ReanalyzeButton onClick={handler} highlighted={false} />);
         fireEvent.click(screen.getByRole('button'));
         expect(handler).toHaveBeenCalledTimes(1);

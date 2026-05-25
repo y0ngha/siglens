@@ -1,27 +1,30 @@
-const mockFindByUser = jest.fn();
+import type { MockedFunction } from 'vitest';
+const { mockFindByUser } = vi.hoisted(() => ({ mockFindByUser: vi.fn() }));
 
-jest.mock('@/entities/session/lib/getCurrentUser', () => ({
-    getCurrentUser: jest.fn(),
+vi.mock('@/entities/session/lib/getCurrentUser', () => ({
+    getCurrentUser: vi.fn(),
 }));
-jest.mock('@/shared/db/client', () => ({
-    getDatabaseClient: jest.fn(() => ({ db: {}, sql: () => null })),
+vi.mock('@/shared/db/client', () => ({
+    getDatabaseClient: vi.fn(() => ({ db: {}, sql: () => null })),
 }));
-jest.mock('@/entities/api-key', () => ({
-    DrizzleUserApiKeyRepository: jest.fn().mockImplementation(() => ({
-        findByUser: mockFindByUser,
-    })),
+vi.mock('@/entities/api-key', () => ({
+    DrizzleUserApiKeyRepository: vi.fn().mockImplementation(function () {
+        return {
+            findByUser: mockFindByUser,
+        };
+    }),
 }));
 
 import { getCurrentUser } from '@/entities/session/lib/getCurrentUser';
 import { getRegisteredProvidersAction } from '@/entities/api-key/actions/getRegisteredProvidersAction';
 
-const mockGetCurrentUser = getCurrentUser as jest.MockedFunction<
+const mockGetCurrentUser = getCurrentUser as MockedFunction<
     typeof getCurrentUser
 >;
 
 describe('getRegisteredProvidersAction', () => {
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         mockFindByUser.mockResolvedValue([]);
     });
 
@@ -94,7 +97,7 @@ describe('getRegisteredProvidersAction', () => {
             email: 'test@example.com',
         } as never);
         mockFindByUser.mockRejectedValue(new Error('DB connection failed'));
-        const consoleErrorSpy = jest
+        const consoleErrorSpy = vi
             .spyOn(console, 'error')
             .mockImplementation(() => {});
 

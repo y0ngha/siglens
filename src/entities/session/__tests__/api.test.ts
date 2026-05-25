@@ -12,13 +12,13 @@ const sessionRecord = {
 
 function makeInsertDb(rows: unknown[]): {
     db: SiglensDatabase;
-    insert: ReturnType<typeof jest.fn>;
-    values: ReturnType<typeof jest.fn>;
-    returning: ReturnType<typeof jest.fn>;
+    insert: ReturnType<typeof vi.fn>;
+    values: ReturnType<typeof vi.fn>;
+    returning: ReturnType<typeof vi.fn>;
 } {
-    const returning = jest.fn().mockResolvedValue(rows);
-    const values = jest.fn(() => ({ returning }));
-    const insert = jest.fn(() => ({ values }));
+    const returning = vi.fn().mockResolvedValue(rows);
+    const values = vi.fn(() => ({ returning }));
+    const insert = vi.fn(() => ({ values }));
 
     return {
         db: { insert } as unknown as SiglensDatabase,
@@ -30,15 +30,15 @@ function makeInsertDb(rows: unknown[]): {
 
 function makeSelectDb(rows: unknown[]): {
     db: SiglensDatabase;
-    select: ReturnType<typeof jest.fn>;
-    from: ReturnType<typeof jest.fn>;
-    where: ReturnType<typeof jest.fn>;
-    limit: ReturnType<typeof jest.fn>;
+    select: ReturnType<typeof vi.fn>;
+    from: ReturnType<typeof vi.fn>;
+    where: ReturnType<typeof vi.fn>;
+    limit: ReturnType<typeof vi.fn>;
 } {
-    const limit = jest.fn().mockResolvedValue(rows);
-    const where = jest.fn(() => ({ limit }));
-    const from = jest.fn(() => ({ where }));
-    const select = jest.fn(() => ({ from }));
+    const limit = vi.fn().mockResolvedValue(rows);
+    const where = vi.fn(() => ({ limit }));
+    const from = vi.fn(() => ({ where }));
+    const select = vi.fn(() => ({ from }));
 
     return {
         db: { select } as unknown as SiglensDatabase,
@@ -51,13 +51,13 @@ function makeSelectDb(rows: unknown[]): {
 
 function makeDeleteDb(rows: unknown[]): {
     db: SiglensDatabase;
-    delete: ReturnType<typeof jest.fn>;
-    where: ReturnType<typeof jest.fn>;
-    returning: ReturnType<typeof jest.fn>;
+    delete: ReturnType<typeof vi.fn>;
+    where: ReturnType<typeof vi.fn>;
+    returning: ReturnType<typeof vi.fn>;
 } {
-    const returning = jest.fn().mockResolvedValue(rows);
-    const where = jest.fn(() => ({ returning }));
-    const deleteFn = jest.fn(() => ({ where }));
+    const returning = vi.fn().mockResolvedValue(rows);
+    const where = vi.fn(() => ({ returning }));
+    const deleteFn = vi.fn(() => ({ where }));
 
     return {
         db: { delete: deleteFn } as unknown as SiglensDatabase,

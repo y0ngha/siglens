@@ -1,29 +1,28 @@
+import type { MockedFunction } from 'vitest';
 import { getRemainingTokensAction } from '../actions/getRemainingTokensAction';
 import { createChatTokenStore, hashClientIp } from '@y0ngha/siglens-core';
 import { headers } from 'next/headers';
 
-jest.mock('next/headers', () => ({
-    headers: jest.fn(),
+vi.mock('next/headers', () => ({
+    headers: vi.fn(),
 }));
 
-jest.mock('@y0ngha/siglens-core', () => ({
-    ...jest.requireActual('@y0ngha/siglens-core'),
-    createChatTokenStore: jest.fn(),
-    hashClientIp: jest.fn((ip: string) => `hashed_${ip}`),
+vi.mock('@y0ngha/siglens-core', async () => ({
+    ...(await vi.importActual('@y0ngha/siglens-core')),
+    createChatTokenStore: vi.fn(),
+    hashClientIp: vi.fn((ip: string) => `hashed_${ip}`),
 }));
 
-const mockHeaders = headers as jest.MockedFunction<typeof headers>;
-const mockCreateChatTokenStore = createChatTokenStore as jest.MockedFunction<
+const mockHeaders = headers as MockedFunction<typeof headers>;
+const mockCreateChatTokenStore = createChatTokenStore as MockedFunction<
     typeof createChatTokenStore
 >;
-const mockHashClientIp = hashClientIp as jest.MockedFunction<
-    typeof hashClientIp
->;
-const mockGetRemainingTokens = jest.fn();
+const mockHashClientIp = hashClientIp as MockedFunction<typeof hashClientIp>;
+const mockGetRemainingTokens = vi.fn();
 
 function makeHeadersMap(xForwardedFor?: string) {
     return {
-        get: jest.fn((key: string) =>
+        get: vi.fn((key: string) =>
             key === 'x-forwarded-for' ? (xForwardedFor ?? null) : null
         ),
     };
@@ -31,11 +30,11 @@ function makeHeadersMap(xForwardedFor?: string) {
 
 describe('getRemainingTokensAction 함수는', () => {
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         mockCreateChatTokenStore.mockReturnValue({
-            tryConsumeToken: jest.fn(),
+            tryConsumeToken: vi.fn(),
             getRemainingTokens: mockGetRemainingTokens,
-            refundConsumedToken: jest.fn().mockResolvedValue(undefined),
+            refundConsumedToken: vi.fn().mockResolvedValue(undefined),
         });
     });
 

@@ -45,28 +45,28 @@ function makeDependencies(options?: {
     sendEmailThrows?: boolean;
 }): {
     dependencies: RequestPasswordResetDependencies;
-    findEmailAuthUserByEmail: ReturnType<typeof jest.fn>;
-    setToken: ReturnType<typeof jest.fn>;
-    sendEmail: ReturnType<typeof jest.fn>;
+    findEmailAuthUserByEmail: ReturnType<typeof vi.fn>;
+    setToken: ReturnType<typeof vi.fn>;
+    sendEmail: ReturnType<typeof vi.fn>;
 } {
     const foundUser = options && 'user' in options ? options.user : user;
-    const findEmailAuthUserByEmail = jest.fn().mockResolvedValue(foundUser);
-    const setToken = jest.fn().mockResolvedValue(undefined);
+    const findEmailAuthUserByEmail = vi.fn().mockResolvedValue(foundUser);
+    const setToken = vi.fn().mockResolvedValue(undefined);
 
     const sendEmailThrows = options?.sendEmailThrows ?? false;
     const sendEmailResolves = options?.sendEmailResolves ?? true;
     const sendEmail = sendEmailThrows
-        ? jest.fn().mockRejectedValue(new Error('smtp error'))
-        : jest.fn().mockResolvedValue(sendEmailResolves);
+        ? vi.fn().mockRejectedValue(new Error('smtp error'))
+        : vi.fn().mockResolvedValue(sendEmailResolves);
 
     return {
         dependencies: {
             users: { findEmailAuthUserByEmail },
             emailTokens: {
                 set: setToken,
-                get: jest.fn(),
-                delete: jest.fn(),
-                consume: jest.fn(),
+                get: vi.fn(),
+                delete: vi.fn(),
+                consume: vi.fn(),
             },
             emailDispatcher: { sendEmail },
         },

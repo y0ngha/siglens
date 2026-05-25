@@ -40,28 +40,28 @@ function makeDependencies(options: {
         users: UserRepository;
         sessions: SessionRepository;
     };
-    findSession: ReturnType<typeof jest.fn>;
-    findById: ReturnType<typeof jest.fn>;
+    findSession: ReturnType<typeof vi.fn>;
+    findById: ReturnType<typeof vi.fn>;
 } {
-    const findSession = jest.fn().mockResolvedValue(options.session);
-    const findById = jest
+    const findSession = vi.fn().mockResolvedValue(options.session);
+    const findById = vi
         .fn()
         .mockResolvedValue(options.user === undefined ? user : options.user);
 
     return {
         dependencies: {
             users: {
-                findByEmail: jest.fn(),
+                findByEmail: vi.fn(),
                 findById,
-                createEmailUser: jest.fn(),
-                deleteUser: jest.fn(),
-                updatePassword: jest.fn(),
+                createEmailUser: vi.fn(),
+                deleteUser: vi.fn(),
+                updatePassword: vi.fn(),
             },
             sessions: {
-                createSession: jest.fn(),
+                createSession: vi.fn(),
                 findSession,
-                deleteSession: jest.fn(),
-                deleteExpiredSessions: jest.fn(),
+                deleteSession: vi.fn(),
+                deleteExpiredSessions: vi.fn(),
             },
         },
         findSession,
@@ -146,12 +146,12 @@ describe('findUserBySessionToken', () => {
 
     describe('when options.now is not provided', () => {
         beforeEach(() => {
-            jest.useFakeTimers();
-            jest.setSystemTime(now);
+            vi.useFakeTimers();
+            vi.setSystemTime(now);
         });
 
         afterEach(() => {
-            jest.useRealTimers();
+            vi.useRealTimers();
         });
 
         it('uses the current system time to evaluate expiration', async () => {

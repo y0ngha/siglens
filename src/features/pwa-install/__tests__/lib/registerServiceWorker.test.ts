@@ -1,14 +1,13 @@
-/**
- * @jest-environment jsdom
- */
+import type { Mock } from 'vitest';
+// @vitest-environment jsdom
 import {
     registerServiceWorker,
     _resetRegisterServiceWorkerForTests,
 } from '@/features/pwa-install/lib/registerServiceWorker';
 
 interface FakeContainer {
-    register: jest.Mock;
-    addEventListener: jest.Mock;
+    register: Mock;
+    addEventListener: Mock;
     controller: ServiceWorker | null;
     fire: (type: 'controllerchange') => void;
 }
@@ -16,8 +15,8 @@ interface FakeContainer {
 function createFakeContainer(controller: ServiceWorker | null): FakeContainer {
     const listeners: Record<string, Array<() => void>> = {};
     return {
-        register: jest.fn().mockResolvedValue(undefined),
-        addEventListener: jest.fn((type: string, fn: () => void) => {
+        register: vi.fn().mockResolvedValue(undefined),
+        addEventListener: vi.fn((type: string, fn: () => void) => {
             listeners[type] ??= [];
             listeners[type].push(fn);
         }),
@@ -37,7 +36,7 @@ describe('registerServiceWorker', () => {
         const container = createFakeContainer(null);
         registerServiceWorker({
             serviceWorker: container as unknown as ServiceWorkerContainer,
-            reload: jest.fn(),
+            reload: vi.fn(),
         });
         expect(container.register).toHaveBeenCalledWith('/sw.js');
     });
@@ -46,7 +45,7 @@ describe('registerServiceWorker', () => {
         const container = createFakeContainer(null);
         registerServiceWorker({
             serviceWorker: container as unknown as ServiceWorkerContainer,
-            reload: jest.fn(),
+            reload: vi.fn(),
         });
         expect(container.addEventListener).not.toHaveBeenCalled();
     });
@@ -54,7 +53,7 @@ describe('registerServiceWorker', () => {
     it('reloads the page on controllerchange when a previous SW was already in control', () => {
         const previousController = {} as ServiceWorker;
         const container = createFakeContainer(previousController);
-        const reload = jest.fn();
+        const reload = vi.fn();
         registerServiceWorker({
             serviceWorker: container as unknown as ServiceWorkerContainer,
             reload,
@@ -71,11 +70,11 @@ describe('registerServiceWorker', () => {
         const container = createFakeContainer(null);
         registerServiceWorker({
             serviceWorker: container as unknown as ServiceWorkerContainer,
-            reload: jest.fn(),
+            reload: vi.fn(),
         });
         registerServiceWorker({
             serviceWorker: container as unknown as ServiceWorkerContainer,
-            reload: jest.fn(),
+            reload: vi.fn(),
         });
         expect(container.register).toHaveBeenCalledTimes(1);
     });

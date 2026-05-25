@@ -7,13 +7,13 @@ const createdAt = new Date('2026-04-27T00:00:00.000Z');
 
 function makeSelectDb(rows: unknown[]): {
     db: SiglensDatabase;
-    select: ReturnType<typeof jest.fn>;
-    from: ReturnType<typeof jest.fn>;
-    where: ReturnType<typeof jest.fn>;
+    select: ReturnType<typeof vi.fn>;
+    from: ReturnType<typeof vi.fn>;
+    where: ReturnType<typeof vi.fn>;
 } {
-    const where = jest.fn().mockResolvedValue(rows);
-    const from = jest.fn(() => ({ where }));
-    const select = jest.fn(() => ({ from }));
+    const where = vi.fn().mockResolvedValue(rows);
+    const from = vi.fn(() => ({ where }));
+    const select = vi.fn(() => ({ from }));
     return {
         db: { select } as unknown as SiglensDatabase,
         select,

@@ -1,12 +1,13 @@
+import type { MockedFunction } from 'vitest';
 import { cancelAnalysisJobAction } from '../actions/cancelAnalysisJobAction';
 import { cancelAnalysisJob } from '@y0ngha/siglens-core';
 
-jest.mock('@y0ngha/siglens-core', () => ({
-    ...jest.requireActual('@y0ngha/siglens-core'),
-    cancelAnalysisJob: jest.fn(),
+vi.mock('@y0ngha/siglens-core', async () => ({
+    ...(await vi.importActual('@y0ngha/siglens-core')),
+    cancelAnalysisJob: vi.fn(),
 }));
 
-const mockCancelAnalysisJob = cancelAnalysisJob as jest.MockedFunction<
+const mockCancelAnalysisJob = cancelAnalysisJob as MockedFunction<
     typeof cancelAnalysisJob
 >;
 

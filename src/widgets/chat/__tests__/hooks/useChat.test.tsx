@@ -1,6 +1,4 @@
 /**
- * @jest-environment jsdom
- *
  * Unit tests for `useChat` model persistence (B4 regression guard).
  *
  * Scope: this test file covers ONLY the model-write effect behavior to lock in
@@ -18,43 +16,43 @@ import { MODEL_STORAGE_KEY } from '@/widgets/chat/hooks/useChat';
 
 // --- Module-level mocks ---------------------------------------------------
 
-jest.mock('@/features/symbol-chat', () => ({
+vi.mock('@/features/symbol-chat', () => ({
     useSymbolChat: () => ({
         context: null,
         timeframe: '1Day',
         isAnalysisReady: true,
-        publish: jest.fn(),
-        clear: jest.fn(),
+        publish: vi.fn(),
+        clear: vi.fn(),
     }),
 }));
 
-jest.mock('@/widgets/chat/hooks/usePageContextLabel', () => ({
+vi.mock('@/widgets/chat/hooks/usePageContextLabel', () => ({
     usePageContextLabel: () => null,
 }));
 
-jest.mock('@/widgets/symbol-page/hooks/useAssetInfo', () => ({
+vi.mock('@/widgets/symbol-page/hooks/useAssetInfo', () => ({
     useAssetInfo: () => ({ name: 'AAPL Inc.' }),
 }));
 
-jest.mock('@/entities/chat-message/actions', () => ({
-    chatAction: jest.fn(),
-    getRemainingTokensAction: jest.fn().mockResolvedValue(5),
+vi.mock('@/entities/chat-message/actions', () => ({
+    chatAction: vi.fn(),
+    getRemainingTokensAction: vi.fn().mockResolvedValue(5),
 }));
 
-jest.mock('@/entities/session/actions/currentUserAction', () => ({
-    currentUserAction: jest.fn().mockResolvedValue(null),
+vi.mock('@/entities/session/actions/currentUserAction', () => ({
+    currentUserAction: vi.fn().mockResolvedValue(null),
 }));
 
-jest.mock('@/entities/api-key/actions', () => ({
-    getRegisteredProvidersAction: jest.fn().mockResolvedValue([]),
+vi.mock('@/entities/api-key/actions', () => ({
+    getRegisteredProvidersAction: vi.fn().mockResolvedValue([]),
 }));
 
-jest.mock('@/widgets/chat/utils/chatStorage', () => ({
+vi.mock('@/widgets/chat/utils/chatStorage', () => ({
     buildStorageKey: (symbol: string, tf: string) =>
         `siglens_chat_${symbol.toUpperCase()}_${tf}`,
-    loadSession: jest.fn().mockReturnValue([]),
-    loadSessionFull: jest.fn().mockReturnValue({ messages: [], savedAt: null }),
-    saveSession: jest.fn(),
+    loadSession: vi.fn().mockReturnValue([]),
+    loadSessionFull: vi.fn().mockReturnValue({ messages: [], savedAt: null }),
+    saveSession: vi.fn(),
 }));
 
 // Import after mocks so the hook picks them up.
@@ -84,13 +82,13 @@ function makeWrapper() {
 describe('useChat — model persistence', () => {
     beforeEach(() => {
         localStorage.clear();
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     it('does not overwrite stored model with the default on initial mount', async () => {
         // Pre-existing stored model from a previous session.
         localStorage.setItem(MODEL_STORAGE_KEY, 'gemini-2.5-flash');
-        const setItemSpy = jest.spyOn(Storage.prototype, 'setItem');
+        const setItemSpy = vi.spyOn(Storage.prototype, 'setItem');
 
         await act(async () => {
             renderHook(() => useChat({ symbol: 'AAPL' }), {

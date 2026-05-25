@@ -7,7 +7,7 @@ import {
 } from '../lib/fmpNewsClient';
 import { MS_PER_DAY, MS_PER_HOUR } from '@/shared/config/time';
 
-const mockFetch = jest.fn();
+const mockFetch = vi.fn();
 
 const TEST_API_KEY = 'test-api-key';
 
@@ -28,11 +28,11 @@ describe('toYyyyMmDd', () => {
 
 describe('computeCutoff', () => {
     beforeEach(() => {
-        jest.spyOn(Date, 'now').mockReturnValue(FIXED_NOW_MS);
+        vi.spyOn(Date, 'now').mockReturnValue(FIXED_NOW_MS);
     });
 
     afterEach(() => {
-        jest.restoreAllMocks();
+        vi.restoreAllMocks();
     });
 
     it('returns 24 hours before now for "24h"', () => {
@@ -119,13 +119,13 @@ describe('FmpNewsClient', () => {
         global.fetch = mockFetch as unknown as typeof fetch;
         mockFetch.mockReset();
         process.env.FMP_API_KEY = TEST_API_KEY;
-        jest.spyOn(Date, 'now').mockReturnValue(FIXED_NOW_MS);
+        vi.spyOn(Date, 'now').mockReturnValue(FIXED_NOW_MS);
     });
 
     afterEach(() => {
         global.fetch = originalFetch;
         process.env.FMP_API_KEY = originalEnv;
-        jest.restoreAllMocks();
+        vi.restoreAllMocks();
     });
 
     /** Helper — resolve fetch with a JSON array. */

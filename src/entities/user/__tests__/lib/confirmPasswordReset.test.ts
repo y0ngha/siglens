@@ -39,12 +39,12 @@ function makeDependencies(options?: {
     isSamePassword?: boolean;
 }): {
     dependencies: ConfirmPasswordResetDependencies;
-    getToken: ReturnType<typeof jest.fn>;
-    consumeToken: ReturnType<typeof jest.fn>;
-    findEmailAuthUserByEmail: ReturnType<typeof jest.fn>;
-    updatePassword: ReturnType<typeof jest.fn>;
-    hashPassword: ReturnType<typeof jest.fn>;
-    verifyPassword: ReturnType<typeof jest.fn>;
+    getToken: ReturnType<typeof vi.fn>;
+    consumeToken: ReturnType<typeof vi.fn>;
+    findEmailAuthUserByEmail: ReturnType<typeof vi.fn>;
+    updatePassword: ReturnType<typeof vi.fn>;
+    hashPassword: ReturnType<typeof vi.fn>;
+    verifyPassword: ReturnType<typeof vi.fn>;
 } {
     const peeked =
         options && 'peekedToken' in options
@@ -59,37 +59,41 @@ function makeDependencies(options?: {
     const hashed = options?.hashedNewPassword ?? 'new-hashed-password';
     const samePassword = options?.isSamePassword ?? false;
 
-    const getToken = jest
+    const getToken = vi
         .fn<
-            Promise<EmailTokenValue | null>,
-            [purpose: EmailTokenPurpose, email: string]
+            (
+                purpose: EmailTokenPurpose,
+                email: string
+            ) => Promise<EmailTokenValue | null>
         >()
         .mockResolvedValue(peeked);
-    const consumeToken = jest
+    const consumeToken = vi
         .fn<
-            Promise<EmailTokenValue | null>,
-            [purpose: EmailTokenPurpose, email: string]
+            (
+                purpose: EmailTokenPurpose,
+                email: string
+            ) => Promise<EmailTokenValue | null>
         >()
         .mockResolvedValue(consumed);
-    const findEmailAuthUserByEmail = jest.fn().mockResolvedValue(foundUser);
-    const updatePassword = jest.fn().mockResolvedValue(updateResult);
-    const hashPassword = jest.fn().mockResolvedValue(hashed);
-    const verifyPassword = jest.fn().mockResolvedValue(samePassword);
+    const findEmailAuthUserByEmail = vi.fn().mockResolvedValue(foundUser);
+    const updatePassword = vi.fn().mockResolvedValue(updateResult);
+    const hashPassword = vi.fn().mockResolvedValue(hashed);
+    const verifyPassword = vi.fn().mockResolvedValue(samePassword);
 
     return {
         dependencies: {
             emailAuthUsers: { findEmailAuthUserByEmail },
             users: {
-                findByEmail: jest.fn(),
-                findById: jest.fn(),
-                createEmailUser: jest.fn(),
-                deleteUser: jest.fn(),
+                findByEmail: vi.fn(),
+                findById: vi.fn(),
+                createEmailUser: vi.fn(),
+                deleteUser: vi.fn(),
                 updatePassword,
             },
             emailTokens: {
-                set: jest.fn(),
+                set: vi.fn(),
                 get: getToken,
-                delete: jest.fn(),
+                delete: vi.fn(),
                 consume: consumeToken,
             },
             passwordHasher: { hashPassword },

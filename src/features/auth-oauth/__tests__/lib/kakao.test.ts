@@ -1,3 +1,4 @@
+import type { Mock } from 'vitest';
 import { kakaoOAuthAdapter } from '@/features/auth-oauth/lib/kakao';
 import { jsonResponse } from '@/shared/test-utils/jsonResponse';
 
@@ -22,7 +23,7 @@ describe('kakaoOAuthAdapter', () => {
             redirectUri: REDIRECT_URI,
         });
         expect(new URL(url).searchParams.get('client_id')).toBe('');
-        global.fetch = jest.fn(async () => jsonResponse(400, {})) as never;
+        global.fetch = vi.fn(async () => jsonResponse(400, {})) as never;
         await expect(
             kakaoOAuthAdapter.exchangeCodeForProfile({
                 code: 'c',
@@ -39,7 +40,7 @@ describe('kakaoOAuthAdapter', () => {
                 kakao_account: { email: 'u@e.com' },
             }),
         ];
-        global.fetch = jest.fn(async () => calls.shift()!) as never;
+        global.fetch = vi.fn(async () => calls.shift()!) as never;
         await expect(
             kakaoOAuthAdapter.exchangeCodeForProfile({
                 code: 'c',
@@ -77,7 +78,7 @@ describe('kakaoOAuthAdapter', () => {
                 kakao_account: { email: 'u@e.com' },
             }),
         ];
-        const fetchMock = jest.fn(async () => calls.shift()!) as jest.Mock;
+        const fetchMock = vi.fn(async () => calls.shift()!) as Mock;
         global.fetch = fetchMock as never;
         await kakaoOAuthAdapter.exchangeCodeForProfile({
             code: 'c',
@@ -88,7 +89,7 @@ describe('kakaoOAuthAdapter', () => {
     });
 
     it('token endpoint가 비OK면 token_exchange_failed', async () => {
-        global.fetch = jest.fn(async () => jsonResponse(400, {})) as never;
+        global.fetch = vi.fn(async () => jsonResponse(400, {})) as never;
         await expect(
             kakaoOAuthAdapter.exchangeCodeForProfile({
                 code: 'c',
@@ -98,7 +99,7 @@ describe('kakaoOAuthAdapter', () => {
     });
 
     it('access_token이 누락되면 token_exchange_failed', async () => {
-        global.fetch = jest.fn(async () => jsonResponse(200, {})) as never;
+        global.fetch = vi.fn(async () => jsonResponse(200, {})) as never;
         await expect(
             kakaoOAuthAdapter.exchangeCodeForProfile({
                 code: 'c',
@@ -112,7 +113,7 @@ describe('kakaoOAuthAdapter', () => {
             jsonResponse(200, { access_token: 'tok' }),
             jsonResponse(500, {}),
         ];
-        global.fetch = jest.fn(async () => calls.shift()!) as never;
+        global.fetch = vi.fn(async () => calls.shift()!) as never;
         await expect(
             kakaoOAuthAdapter.exchangeCodeForProfile({
                 code: 'c',
@@ -126,7 +127,7 @@ describe('kakaoOAuthAdapter', () => {
             jsonResponse(200, { access_token: 'tok' }),
             jsonResponse(200, { id: 1 }),
         ];
-        global.fetch = jest.fn(async () => calls.shift()!) as never;
+        global.fetch = vi.fn(async () => calls.shift()!) as never;
         await expect(
             kakaoOAuthAdapter.exchangeCodeForProfile({
                 code: 'c',
@@ -136,7 +137,7 @@ describe('kakaoOAuthAdapter', () => {
     });
 
     it('token JSON 파싱 실패 시 token_exchange_failed', async () => {
-        global.fetch = jest.fn(
+        global.fetch = vi.fn(
             async () => new Response('not-json', { status: 200 })
         ) as never;
         await expect(
@@ -152,7 +153,7 @@ describe('kakaoOAuthAdapter', () => {
             jsonResponse(200, { access_token: 'tok' }),
             new Response('not-json', { status: 200 }),
         ];
-        global.fetch = jest.fn(async () => calls.shift()!) as never;
+        global.fetch = vi.fn(async () => calls.shift()!) as never;
         await expect(
             kakaoOAuthAdapter.exchangeCodeForProfile({
                 code: 'c',
@@ -175,7 +176,7 @@ describe('kakaoOAuthAdapter', () => {
                 },
             }),
         ];
-        global.fetch = jest.fn(async () => calls.shift()!) as never;
+        global.fetch = vi.fn(async () => calls.shift()!) as never;
         await expect(
             kakaoOAuthAdapter.exchangeCodeForProfile({
                 code: 'c',

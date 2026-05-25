@@ -1,28 +1,40 @@
 import type { EarningsReportComparisonItem } from '@/shared/lib/types';
 
-const mockDb = {};
-const mockGetLatestFetchedAt = jest.fn();
-const mockGetComparisonItems = jest.fn();
-const mockUpsertMany = jest.fn();
-const mockGetEarningsReports = jest.fn();
-
-jest.mock('@/shared/db/client', () => ({
-    getDatabaseClient: jest.fn(() => ({ db: mockDb })),
+const {
+    mockDb,
+    mockGetLatestFetchedAt,
+    mockGetComparisonItems,
+    mockUpsertMany,
+    mockGetEarningsReports,
+} = vi.hoisted(() => ({
+    mockDb: {} as Record<string, unknown>,
+    mockGetLatestFetchedAt: vi.fn(),
+    mockGetComparisonItems: vi.fn(),
+    mockUpsertMany: vi.fn(),
+    mockGetEarningsReports: vi.fn(),
 }));
 
-jest.mock('@/entities/earnings-report', () => ({
-    DrizzleEarningsReportsRepository: jest.fn().mockImplementation(() => ({
-        getLatestFetchedAt: mockGetLatestFetchedAt,
-        getComparisonItems: mockGetComparisonItems,
-        upsertMany: mockUpsertMany,
-    })),
+vi.mock('@/shared/db/client', () => ({
+    getDatabaseClient: vi.fn(() => ({ db: mockDb })),
 }));
 
-jest.mock('@/shared/api/fmp/fundamentalClient', () => ({
-    FmpFundamentalClient: jest.fn().mockImplementation(() => ({
-        getEarningsReports: mockGetEarningsReports,
-        getGrades: jest.fn(),
-    })),
+vi.mock('@/entities/earnings-report', () => ({
+    DrizzleEarningsReportsRepository: vi.fn().mockImplementation(function () {
+        return {
+            getLatestFetchedAt: mockGetLatestFetchedAt,
+            getComparisonItems: mockGetComparisonItems,
+            upsertMany: mockUpsertMany,
+        };
+    }),
+}));
+
+vi.mock('@/shared/api/fmp/fundamentalClient', () => ({
+    FmpFundamentalClient: vi.fn().mockImplementation(function () {
+        return {
+            getEarningsReports: mockGetEarningsReports,
+            getGrades: vi.fn(),
+        };
+    }),
 }));
 
 import { getEarningsReportComparison } from '@/app/[symbol]/news/newsData';
@@ -41,7 +53,7 @@ const COMPARISON_ITEM: EarningsReportComparisonItem = {
 
 describe('newsData getEarningsReportComparison', () => {
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         mockGetLatestFetchedAt.mockResolvedValue(new Date());
         mockGetComparisonItems.mockResolvedValue([COMPARISON_ITEM]);
         mockGetEarningsReports.mockResolvedValue([COMPARISON_ITEM]);
@@ -49,7 +61,7 @@ describe('newsData getEarningsReportComparison', () => {
     });
 
     afterEach(() => {
-        jest.restoreAllMocks();
+        vi.restoreAllMocks();
     });
 
     it('DB 비교 데이터가 있고 최신이면 FMP 를 호출하지 않는다', async () => {
@@ -79,7 +91,7 @@ describe('newsData getEarningsReportComparison', () => {
         const staleFetchedAt = new Date(Date.now() - 25 * 60 * 60 * 1000);
         mockGetLatestFetchedAt.mockResolvedValue(staleFetchedAt);
         mockGetEarningsReports.mockRejectedValue(new Error('rate limited'));
-        jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+        vi.spyOn(console, 'warn').mockImplementation(() => undefined);
 
         await expect(
             getEarningsReportComparison('AAPL', '2026-05-10')

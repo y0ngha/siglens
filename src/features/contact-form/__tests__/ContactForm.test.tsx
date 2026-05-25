@@ -1,7 +1,3 @@
-/**
- * @jest-environment jsdom
- */
-import '@testing-library/jest-dom';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ContactForm } from '@/features/contact-form';
 import { useContactForm } from '@/features/contact-form/hooks/useContactForm';
@@ -12,14 +8,14 @@ import type { AuthUserRecord } from '@/shared/lib/auth/types';
 
 // Block transitive imports that pull in the Neon serverless client (which
 // requires Web APIs not available in the jsdom test environment).
-jest.mock('@/shared/db/client', () => ({
-    getDatabaseClient: jest.fn(() => ({ db: {}, sql: () => null })),
+vi.mock('@/shared/db/client', () => ({
+    getDatabaseClient: vi.fn(() => ({ db: {}, sql: () => null })),
 }));
-jest.mock('@/features/contact-form/hooks/useContactForm');
-jest.mock('@/entities/session');
+vi.mock('@/features/contact-form/hooks/useContactForm');
+vi.mock('@/entities/session');
 
-const mockUseContactForm = jest.mocked(useContactForm);
-const mockUseCurrentUser = jest.mocked(useCurrentUser);
+const mockUseContactForm = vi.mocked(useContactForm);
+const mockUseCurrentUser = vi.mocked(useCurrentUser);
 
 const IDLE_STATE: ContactFormState = {
     submitted: false,
@@ -28,7 +24,7 @@ const IDLE_STATE: ContactFormState = {
 };
 
 function setContactFormState(state: ContactFormState) {
-    mockUseContactForm.mockReturnValue([state, jest.fn(), false]);
+    mockUseContactForm.mockReturnValue([state, vi.fn(), false]);
 }
 
 type CurrentUserResult = UseQueryResult<AuthUserRecord | null>;
@@ -61,7 +57,7 @@ function resolvedCurrentUser(
 
 describe('ContactForm', () => {
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         setContactFormState(IDLE_STATE);
     });
 

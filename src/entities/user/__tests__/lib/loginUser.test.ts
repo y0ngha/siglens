@@ -50,10 +50,10 @@ function makeDependencies(options?: {
         sessions: SessionRepository;
         passwordVerifier: PasswordVerifier;
     };
-    findEmailAuthUserByEmail: ReturnType<typeof jest.fn>;
-    verifyPassword: ReturnType<typeof jest.fn>;
-    createSession: ReturnType<typeof jest.fn>;
-    deleteSession: ReturnType<typeof jest.fn>;
+    findEmailAuthUserByEmail: ReturnType<typeof vi.fn>;
+    verifyPassword: ReturnType<typeof vi.fn>;
+    createSession: ReturnType<typeof vi.fn>;
+    deleteSession: ReturnType<typeof vi.fn>;
 } {
     const user = options && 'user' in options ? options.user : makeUser('hash');
     const passwordMatches =
@@ -61,19 +61,19 @@ function makeDependencies(options?: {
             ? options.passwordMatches
             : true;
     const session = options?.session ?? makeSession(defaultExpiresAt);
-    const findEmailAuthUserByEmail = jest.fn().mockResolvedValue(user);
-    const verifyPassword = jest.fn().mockResolvedValue(passwordMatches);
-    const createSession = jest.fn().mockResolvedValue(session);
-    const deleteSession = jest.fn().mockResolvedValue(false);
+    const findEmailAuthUserByEmail = vi.fn().mockResolvedValue(user);
+    const verifyPassword = vi.fn().mockResolvedValue(passwordMatches);
+    const createSession = vi.fn().mockResolvedValue(session);
+    const deleteSession = vi.fn().mockResolvedValue(false);
 
     return {
         dependencies: {
             users: { findEmailAuthUserByEmail },
             sessions: {
                 createSession,
-                findSession: jest.fn(),
+                findSession: vi.fn(),
                 deleteSession,
-                deleteExpiredSessions: jest.fn(),
+                deleteExpiredSessions: vi.fn(),
             },
             passwordVerifier: { verifyPassword },
         },
@@ -89,12 +89,12 @@ describe('loginUser', () => {
         const fixedNow = new Date('2026-04-27T12:00:00.000Z');
 
         beforeEach(() => {
-            jest.useFakeTimers();
-            jest.setSystemTime(fixedNow);
+            vi.useFakeTimers();
+            vi.setSystemTime(fixedNow);
         });
 
         afterEach(() => {
-            jest.useRealTimers();
+            vi.useRealTimers();
         });
 
         it('uses the current system time as the session start', async () => {

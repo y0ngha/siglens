@@ -1,18 +1,17 @@
+import type { MockedFunction } from 'vitest';
 import { searchTickerAction } from '../../actions/searchTickerAction';
 import { searchTicker } from '../../lib/searchTicker';
 import type { TickerSearchResult } from '@/shared/lib/types';
 
-jest.mock('@vercel/functions', () => ({
-    waitUntil: jest.fn(),
+vi.mock('@vercel/functions', () => ({
+    waitUntil: vi.fn(),
 }));
 
-jest.mock('../../lib/searchTicker', () => ({
-    searchTicker: jest.fn(),
+vi.mock('../../lib/searchTicker', () => ({
+    searchTicker: vi.fn(),
 }));
 
-const mockSearchTicker = searchTicker as jest.MockedFunction<
-    typeof searchTicker
->;
+const mockSearchTicker = searchTicker as MockedFunction<typeof searchTicker>;
 
 const results: TickerSearchResult[] = [
     { symbol: 'AAPL', name: 'Apple Inc.' } as TickerSearchResult,
