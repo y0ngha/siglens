@@ -120,8 +120,16 @@ describe('useChartSync', () => {
         const stockChart = makeMockChart();
         const volumeChart = makeMockChart();
 
-        result.current.handleStockChartReady(stockChart as any);
-        result.current.handleVolumeChartReady(volumeChart as any);
+        result.current.handleStockChartReady(
+            stockChart as unknown as Parameters<
+                typeof result.current.handleStockChartReady
+            >[0]
+        );
+        result.current.handleVolumeChartReady(
+            volumeChart as unknown as Parameters<
+                typeof result.current.handleVolumeChartReady
+            >[0]
+        );
 
         // Get the handler that was subscribed on the stock chart
         const handler =
@@ -142,8 +150,16 @@ describe('useChartSync', () => {
         const stockChart = makeMockChart();
         const volumeChart = makeMockChart();
 
-        result.current.handleStockChartReady(stockChart as any);
-        result.current.handleVolumeChartReady(volumeChart as any);
+        result.current.handleStockChartReady(
+            stockChart as unknown as Parameters<
+                typeof result.current.handleStockChartReady
+            >[0]
+        );
+        result.current.handleVolumeChartReady(
+            volumeChart as unknown as Parameters<
+                typeof result.current.handleVolumeChartReady
+            >[0]
+        );
 
         const handler =
             stockChart._timeScaleMock.subscribeVisibleLogicalRangeChange.mock
@@ -160,7 +176,11 @@ describe('useChartSync', () => {
         const { result } = renderHook(() => useChartSync());
         const stockChart = makeMockChart();
 
-        result.current.handleStockChartReady(stockChart as any);
+        result.current.handleStockChartReady(
+            stockChart as unknown as Parameters<
+                typeof result.current.handleStockChartReady
+            >[0]
+        );
 
         const handler =
             stockChart._timeScaleMock.subscribeVisibleLogicalRangeChange.mock
@@ -175,8 +195,16 @@ describe('useChartSync', () => {
         const stockChart = makeMockChart();
         const volumeChart = makeMockChart();
 
-        result.current.handleStockChartReady(stockChart as any);
-        result.current.handleVolumeChartReady(volumeChart as any);
+        result.current.handleStockChartReady(
+            stockChart as unknown as Parameters<
+                typeof result.current.handleStockChartReady
+            >[0]
+        );
+        result.current.handleVolumeChartReady(
+            volumeChart as unknown as Parameters<
+                typeof result.current.handleVolumeChartReady
+            >[0]
+        );
 
         const handler =
             volumeChart._timeScaleMock.subscribeVisibleLogicalRangeChange.mock
@@ -195,8 +223,16 @@ describe('useChartSync', () => {
         const stockChart = makeMockChart();
         const volumeChart = makeMockChart();
 
-        result.current.handleStockChartReady(stockChart as any);
-        result.current.handleVolumeChartReady(volumeChart as any);
+        result.current.handleStockChartReady(
+            stockChart as unknown as Parameters<
+                typeof result.current.handleStockChartReady
+            >[0]
+        );
+        result.current.handleVolumeChartReady(
+            volumeChart as unknown as Parameters<
+                typeof result.current.handleVolumeChartReady
+            >[0]
+        );
 
         const handler =
             volumeChart._timeScaleMock.subscribeVisibleLogicalRangeChange.mock
@@ -213,7 +249,11 @@ describe('useChartSync', () => {
         const { result } = renderHook(() => useChartSync());
         const volumeChart = makeMockChart();
 
-        result.current.handleVolumeChartReady(volumeChart as any);
+        result.current.handleVolumeChartReady(
+            volumeChart as unknown as Parameters<
+                typeof result.current.handleVolumeChartReady
+            >[0]
+        );
 
         const handler =
             volumeChart._timeScaleMock.subscribeVisibleLogicalRangeChange.mock

@@ -49,16 +49,10 @@ const coverageConfig = {
         'src/app/**/*Data.ts',
     ],
     thresholds: {
-        // Ratcheted to measured values. Branches remain below 90% because
-        // the remaining ~200 uncovered branches live in canvas-based chart
-        // widgets (lightweight-charts), complex analysis hooks (useChat,
-        // useAnalysis, useOverallAnalysis), and options TSX components that
-        // require E2E/visual testing. All pure logic and simpler UI layers
-        // are above 90%.
-        statements: 91,
-        branches: 85,
-        functions: 91,
-        lines: 92,
+        statements: 90,
+        branches: 90,
+        functions: 90,
+        lines: 90,
     },
 };
 
