@@ -1,4 +1,4 @@
-import { vi, type MockInstance } from 'vitest';
+import type { MockInstance } from 'vitest';
 // @vitest-environment jsdom
 import { act, renderHook } from '@testing-library/react';
 import {

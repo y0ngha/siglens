@@ -1,4 +1,3 @@
-import { vi } from 'vitest';
 import {
     AUTH_SESSION_COOKIE_NAME,
     DEFAULT_SESSION_TTL_SECONDS,

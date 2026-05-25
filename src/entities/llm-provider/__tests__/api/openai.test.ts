@@ -1,4 +1,3 @@
-import { vi } from 'vitest';
 const { mockCreate, MockOpenAI } = vi.hoisted(() => {
     const mockCreate = vi.fn();
     const MockOpenAI = vi.fn().mockImplementation(function () {

@@ -1,4 +1,3 @@
-import { vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ReanalyzeButton } from '@/widgets/overall/ReanalyzeButton';
 

@@ -1,4 +1,4 @@
-import { vi, type MockInstance } from 'vitest';
+import type { MockInstance } from 'vitest';
 const { mockSubmitInquiry, mockCreate } = vi.hoisted(() => ({
     mockSubmitInquiry: vi.fn(),
     mockCreate: vi.fn(),

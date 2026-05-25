@@ -1,4 +1,3 @@
-import { vi } from 'vitest';
 import { countSkillFiles, FileSkillsLoader } from '@/entities/skill';
 import path from 'node:path';
 

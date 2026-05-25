@@ -1,4 +1,3 @@
-import { vi } from 'vitest';
 vi.mock('@/entities/oauth-account/lib/googleRevoker', () => ({
     googleOAuthRevokerAdapter: {
         revokeToken: vi.fn().mockResolvedValue(undefined),

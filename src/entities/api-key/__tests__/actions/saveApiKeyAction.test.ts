@@ -1,4 +1,4 @@
-import { vi, type MockedFunction } from 'vitest';
+import type { MockedFunction } from 'vitest';
 const { mockUpsert } = vi.hoisted(() => ({ mockUpsert: vi.fn() }));
 
 vi.mock('@/entities/session/lib/getCurrentUser', () => ({

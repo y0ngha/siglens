@@ -1,4 +1,4 @@
-import { vi, type Mock } from 'vitest';
+import type { Mock } from 'vitest';
 import { inquiries } from '@/shared/db/schema';
 import type { SiglensDatabase } from '@/shared/db/types';
 import {

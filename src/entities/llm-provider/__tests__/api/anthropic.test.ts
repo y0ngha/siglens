@@ -1,4 +1,3 @@
-import { vi } from 'vitest';
 const { mockFinalMessage, mockStream, MockAnthropic } = vi.hoisted(() => {
     const mockFinalMessage = vi.fn();
     const mockStream = vi

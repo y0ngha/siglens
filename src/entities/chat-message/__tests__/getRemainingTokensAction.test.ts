@@ -1,4 +1,4 @@
-import { vi, type MockedFunction } from 'vitest';
+import type { MockedFunction } from 'vitest';
 import { getRemainingTokensAction } from '../actions/getRemainingTokensAction';
 import { createChatTokenStore, hashClientIp } from '@y0ngha/siglens-core';
 import { headers } from 'next/headers';

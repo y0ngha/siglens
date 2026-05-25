@@ -1,4 +1,3 @@
-import { vi } from 'vitest';
 import { render } from '@testing-library/react';
 import { FearGreedCardMounted } from '@/widgets/symbol-page/FearGreedCardMounted';
 import { useBars } from '@/widgets/symbol-page/hooks/useBars';

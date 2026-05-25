@@ -1,4 +1,3 @@
-import { vi } from 'vitest';
 import { formatAnalyzedAt } from '@/shared/lib/formatAnalyzedAt';
 
 describe('formatAnalyzedAt', () => {

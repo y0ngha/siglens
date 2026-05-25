@@ -1,4 +1,3 @@
-import { vi } from 'vitest';
 // @vitest-environment jsdom
 import { act, renderHook } from '@testing-library/react';
 import {

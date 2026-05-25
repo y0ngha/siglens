@@ -1,4 +1,3 @@
-import { vi } from 'vitest';
 const { callGeminiMock } = vi.hoisted(() => ({
     callGeminiMock: vi.fn(),
 }));

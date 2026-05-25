@@ -1,4 +1,4 @@
-import { vi, type Mock } from 'vitest';
+import type { Mock } from 'vitest';
 import { registerUser } from '@/entities/user/lib/registerUser';
 import type { RegisterUserDependencies } from '@/entities/user/lib/authUseCaseTypes';
 import type {

@@ -22,7 +22,7 @@
         "db:seed:terms": "dotenv -e .env.local -- node_modules/.bin/tsx db/scripts/seedTerms.ts",
         "db:migrate:tickers": "dotenv -e .env.local -- node_modules/.bin/tsx scripts/seed-korean-tickers.ts",
         "test": "vitest run",
-        "test:quiet": "vitest run --reporter=verbose",
+        "test:quiet": "NODE_NO_WARNINGS=1 vitest run --reporter=dot",
         "test-watch": "vitest",
         "test-coverage": "vitest run --coverage",
         "test-coverage-watch": "vitest --coverage",

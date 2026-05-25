@@ -1,4 +1,3 @@
-import { vi } from 'vitest';
 const { mockGetCurrentUser, mockGetUserTier } = vi.hoisted(() => ({
     mockGetCurrentUser: vi.fn(),
     mockGetUserTier: vi.fn(),

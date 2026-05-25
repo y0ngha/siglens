@@ -1,4 +1,3 @@
-import { vi } from 'vitest';
 // @vitest-environment jsdom
 import { renderHook, fireEvent } from '@testing-library/react';
 import { useEscapeKey } from '@/shared/hooks/useEscapeKey';

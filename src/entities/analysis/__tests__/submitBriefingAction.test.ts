@@ -1,4 +1,4 @@
-import { vi, type MockedFunction } from 'vitest';
+import type { MockedFunction } from 'vitest';
 import { submitBriefingAction } from '../actions/submitBriefingAction';
 import { submitBriefing } from '@y0ngha/siglens-core';
 import type {

@@ -1,4 +1,3 @@
-import { vi } from 'vitest';
 // @vitest-environment node
 import { buildSymbolOgImage } from '../lib/buildSymbolOgImage';
 

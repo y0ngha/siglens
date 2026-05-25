@@ -1,4 +1,3 @@
-import { vi } from 'vitest';
 import { AUTH_SESSION_COOKIE_NAME } from '@/entities/session/lib/sessionCookie';
 import { logoutUser } from '@/entities/user/lib/logoutUser';
 import type { SessionRepository } from '@/shared/db/types';

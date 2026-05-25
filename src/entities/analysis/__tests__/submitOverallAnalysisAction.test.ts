@@ -1,4 +1,4 @@
-import { vi, type MockedFunction, type MockedClass, type Mock } from 'vitest';
+import type { MockedFunction, MockedClass, Mock } from 'vitest';
 // vi.mock은 vitest가 import 위로 hoist하지만, ESLint(import/first)와
 // 가독성을 위해 소스 코드에서도 모든 import보다 위에 둔다.
 vi.mock('next/headers', () => ({

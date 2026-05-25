@@ -1,4 +1,3 @@
-import { vi } from 'vitest';
 import type { CacheProvider } from '@y0ngha/siglens-core';
 import type { TickerSearchResult } from '@/shared/lib/types';
 import type { FmpSearchResult } from '../../model';

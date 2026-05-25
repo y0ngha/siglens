@@ -1,4 +1,3 @@
-import { vi } from 'vitest';
 import { requestEmailVerification } from '@/entities/user/lib/requestEmailVerification';
 import type { RequestEmailVerificationDependencies } from '@/entities/user/lib/authUseCaseTypes';
 import { EMAIL_VERIFICATION_PENDING_TTL_SECONDS } from '@/entities/user/lib/authUseCaseConstants';

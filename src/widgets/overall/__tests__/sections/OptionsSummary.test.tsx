@@ -1,4 +1,3 @@
-import { vi } from 'vitest';
 // react-markdown은 ESM-only라 vitest의 기본 transform이 처리하지 못한다.
 // MarkdownText를 단순 wrapper로 대체해 inline markdown 렌더 경로를 우회한다.
 // vi.mock은 vitest가 import 위로 hoist하지만, ESLint(import/first)와

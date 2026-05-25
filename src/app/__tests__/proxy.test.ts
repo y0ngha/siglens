@@ -1,4 +1,4 @@
-import { vi, type MockedFunction } from 'vitest';
+import type { MockedFunction } from 'vitest';
 // proxy.ts는 @/shared/config/cookieNames에서 AUTH_SESSION_COOKIE_NAME을 import한다.
 // edge runtime 안전성을 위해 entities barrel 대신 shared 순수 상수 파일 사용.
 vi.mock('@/shared/config/cookieNames', () => ({

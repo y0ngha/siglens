@@ -1,4 +1,4 @@
-import { vi, type MockedFunction } from 'vitest';
+import type { MockedFunction } from 'vitest';
 vi.mock('server-only', () => ({}));
 vi.mock('next/headers', () => ({ cookies: vi.fn() }));
 vi.mock('@/shared/db/client', () => ({

@@ -1,4 +1,3 @@
-import { vi } from 'vitest';
 import { findUserBySessionToken } from '@/entities/user/lib/findUserBySessionToken';
 import type {
     AuthSessionRecord,

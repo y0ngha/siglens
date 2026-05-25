@@ -1,4 +1,4 @@
-import { vi, type MockedFunction, type Mock } from 'vitest';
+import type { MockedFunction, Mock } from 'vitest';
 vi.mock('next/headers', () => ({ cookies: vi.fn() }));
 vi.mock('next/navigation', () => ({
     redirect: vi.fn((path: string) => {

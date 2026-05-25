@@ -1,3 +1,5 @@
+/// <reference types="vitest/globals" />
+
 /**
  * Augment jest-dom custom matchers for Vitest.
  *
@@ -48,6 +50,5 @@ interface TestingLibraryMatchers<R = void> {
 }
 
 declare namespace jest {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-empty-object-type
-    interface Matchers<R, T = {}> extends TestingLibraryMatchers<R> {}
+    interface Matchers<R, _T = unknown> extends TestingLibraryMatchers<R> {}
 }

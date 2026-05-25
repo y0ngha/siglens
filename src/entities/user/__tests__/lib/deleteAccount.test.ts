@@ -1,4 +1,3 @@
-import { vi } from 'vitest';
 import { AUTH_SESSION_COOKIE_NAME } from '@/entities/session/lib/sessionCookie';
 import { deleteAccount } from '@/entities/user/lib/deleteAccount';
 import type { OAuthAccountRepository, UserRepository } from '@/shared/db/types';

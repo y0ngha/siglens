@@ -1,4 +1,3 @@
-import { vi } from 'vitest';
 import { DrizzleAgreementRepository } from '@/entities/agreement';
 import type { SiglensDatabase } from '@/shared/db/types';
 

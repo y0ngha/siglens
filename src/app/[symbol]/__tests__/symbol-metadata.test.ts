@@ -1,4 +1,3 @@
-import { vi } from 'vitest';
 /**
  * generateMetadata 회귀 테스트 — canonical URL에 [symbol] 플레이스홀더가 누출되지 않는지 검증.
  *

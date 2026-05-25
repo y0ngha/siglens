@@ -1,4 +1,3 @@
-import { vi } from 'vitest';
 /**
  * Unit tests for `useChat` model persistence (B4 regression guard).
  *

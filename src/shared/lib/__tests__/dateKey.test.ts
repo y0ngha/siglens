@@ -1,4 +1,3 @@
-import { vi } from 'vitest';
 import { todayKstIsoDate } from '@/shared/lib/dateKey';
 
 describe('todayKstIsoDate 함수는', () => {

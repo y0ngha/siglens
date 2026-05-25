@@ -1,4 +1,4 @@
-import { vi, type MockedFunction } from 'vitest';
+import type { MockedFunction } from 'vitest';
 import { searchTickerAction } from '../../actions/searchTickerAction';
 import { searchTicker } from '../../lib/searchTicker';
 import type { TickerSearchResult } from '@/shared/lib/types';

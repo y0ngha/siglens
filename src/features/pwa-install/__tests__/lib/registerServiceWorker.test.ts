@@ -1,4 +1,4 @@
-import { vi, type Mock } from 'vitest';
+import type { Mock } from 'vitest';
 // @vitest-environment jsdom
 import {
     registerServiceWorker,

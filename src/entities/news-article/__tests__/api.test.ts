@@ -1,4 +1,4 @@
-import { vi, type Mock } from 'vitest';
+import type { Mock } from 'vitest';
 // withRetry 내부 sleep을 즉시 resolve로 stubbing해서 retry 케이스의 실제
 // 대기 시간을 없앤다. retry 발생 시 sleep이 호출되는 것만 검증.
 // `vi.mock` 은 import 위로 호이스트되어야 static import 보다 먼저 평가된다

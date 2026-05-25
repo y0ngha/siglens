@@ -1,4 +1,4 @@
-import { vi, type MockedFunction, type Mock } from 'vitest';
+import type { MockedFunction, Mock } from 'vitest';
 /**
  * pending_dependencies 상태에서 submitOverallAnalysisAction을 반복 호출하지 않고
  * 각 axis jobId를 직접 polling한 뒤 완료 후 한 번만 재submit하는지 검증한다.

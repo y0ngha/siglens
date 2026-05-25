@@ -1,4 +1,3 @@
-import { vi } from 'vitest';
 import { render } from '@testing-library/react';
 import type { FearGreedSnapshot } from '@y0ngha/siglens-core';
 import { FearGreedPage } from '@/widgets/fear-greed/FearGreedPage';

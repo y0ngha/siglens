@@ -1,4 +1,4 @@
-import { vi, type Mock } from 'vitest';
+import type { Mock } from 'vitest';
 import {
     createPendingOAuthSignupStore,
     type PendingOAuthSignup,

@@ -1,4 +1,3 @@
-import { vi } from 'vitest';
 import { loadKoreanFont } from '../lib/loadKoreanFont';
 
 describe('loadKoreanFont', () => {

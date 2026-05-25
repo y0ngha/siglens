@@ -1,4 +1,4 @@
-import { vi, type Mock } from 'vitest';
+import type { Mock } from 'vitest';
 import type { ContactInput, ContactRepository } from '@/entities/inquiry';
 import { submitInquiry } from '../lib/submitInquiry';
 import type { SubmitInquiryDeps } from '../lib/types';

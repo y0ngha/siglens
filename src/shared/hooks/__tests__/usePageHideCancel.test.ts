@@ -1,4 +1,4 @@
-import { vi, type Mock } from 'vitest';
+import type { Mock } from 'vitest';
 // @vitest-environment jsdom
 import { usePageHideCancel } from '@/shared/hooks/usePageHideCancel';
 import { CANCEL_JOBS_API_PATH } from '@/shared/lib/cancelJobsApi';

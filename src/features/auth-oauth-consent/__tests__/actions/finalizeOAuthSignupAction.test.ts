@@ -1,4 +1,4 @@
-import { vi, type MockedClass, type Mock } from 'vitest';
+import type { MockedClass, Mock } from 'vitest';
 vi.mock('@/entities/oauth-account', () => ({
     DrizzleOAuthAccountRepository: vi.fn().mockImplementation(function () {
         return {};

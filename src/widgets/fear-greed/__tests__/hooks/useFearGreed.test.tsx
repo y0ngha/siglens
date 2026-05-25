@@ -1,4 +1,4 @@
-import { vi, type Mock } from 'vitest';
+import type { Mock } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import {
     computeFearGreedIndex,

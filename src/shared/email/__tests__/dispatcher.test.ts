@@ -1,4 +1,4 @@
-import { vi, type MockedClass } from 'vitest';
+import type { MockedClass } from 'vitest';
 const { sendMock } = vi.hoisted(() => ({ sendMock: vi.fn() }));
 vi.mock('resend', () => ({
     Resend: vi.fn().mockImplementation(function () {

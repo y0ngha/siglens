@@ -1,4 +1,3 @@
-import { vi } from 'vitest';
 import { render } from '@testing-library/react';
 import type { FearGreedHistoryPoint } from '@y0ngha/siglens-core';
 import { FearGreedHistoricalChart } from '@/widgets/chart/FearGreedHistoricalChart';

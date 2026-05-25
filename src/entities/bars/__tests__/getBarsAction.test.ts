@@ -1,4 +1,4 @@
-import { vi, type MockedFunction } from 'vitest';
+import type { MockedFunction } from 'vitest';
 import { getBarsAction } from '../actions/getBarsAction';
 import {
     EMPTY_SMC_RESULT,

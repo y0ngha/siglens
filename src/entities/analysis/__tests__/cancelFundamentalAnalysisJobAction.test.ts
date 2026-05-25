@@ -1,4 +1,4 @@
-import { vi, type MockedFunction } from 'vitest';
+import type { MockedFunction } from 'vitest';
 import { cancelFundamentalAnalysisJobAction } from '../actions/cancelFundamentalAnalysisJobAction';
 import { cancelFundamentalAnalysisJob } from '@y0ngha/siglens-core';
 

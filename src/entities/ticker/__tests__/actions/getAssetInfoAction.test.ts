@@ -1,4 +1,4 @@
-import { vi, type MockedFunction } from 'vitest';
+import type { MockedFunction } from 'vitest';
 import { getAssetInfoAction } from '../../actions/getAssetInfoAction';
 import { getAssetInfo } from '../../lib/getAssetInfo';
 import type { AssetInfo } from '@/shared/lib/types';

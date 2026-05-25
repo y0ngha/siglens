@@ -1,4 +1,3 @@
-import { vi } from 'vitest';
 vi.mock('server-only', () => ({}));
 
 const { mockGetUserTier, mockFindByUserAndProvider } = vi.hoisted(() => ({

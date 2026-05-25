@@ -1,4 +1,4 @@
-import { vi, type Mocked, type MockedFunction, type MockedClass } from 'vitest';
+import type { Mocked, MockedFunction, MockedClass } from 'vitest';
 vi.mock('@/entities/user', () => ({
     DrizzleUserRepository: vi.fn(),
 }));

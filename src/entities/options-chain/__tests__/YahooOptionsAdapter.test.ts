@@ -1,4 +1,4 @@
-import { vi, type MockInstance, type Mock } from 'vitest';
+import type { MockInstance, Mock } from 'vitest';
 /**
  * Unit tests for YahooOptionsAdapter.
  *

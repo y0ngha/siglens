@@ -1,4 +1,4 @@
-import { vi, type MockedFunction } from 'vitest';
+import type { MockedFunction } from 'vitest';
 vi.mock('@/entities/session/lib/getCurrentUser', () => ({
     getCurrentUser: vi.fn(),
 }));

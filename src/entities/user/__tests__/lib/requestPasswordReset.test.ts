@@ -1,4 +1,3 @@
-import { vi } from 'vitest';
 import { requestPasswordReset } from '@/entities/user/lib/requestPasswordReset';
 import type { RequestPasswordResetDependencies } from '@/entities/user/lib/authUseCaseTypes';
 import { PASSWORD_RESET_TTL_SECONDS } from '@/entities/user/lib/authUseCaseConstants';

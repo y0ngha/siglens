@@ -1,4 +1,3 @@
-import { vi } from 'vitest';
 import { hashUsageIp } from '@y0ngha/siglens-core';
 import { usageLogs } from '@/shared/db/schema';
 import type { SiglensDatabase } from '@/shared/db/types';

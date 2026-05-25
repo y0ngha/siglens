@@ -1,4 +1,3 @@
-import { vi } from 'vitest';
 /**
  * jsdom-level coverage for ChatPanel mobile-input regression risk
  * (PR #407 follow-up). These tests verify class composition, ref

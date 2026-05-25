@@ -1,4 +1,3 @@
-import { vi } from 'vitest';
 import { DrizzleOAuthAccountRepository } from '@/entities/oauth-account';
 import { encryptToken } from '@/shared/db/tokenEncryption';
 import type { SiglensDatabase } from '@/shared/db/types';

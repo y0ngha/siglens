@@ -1,4 +1,4 @@
-import { vi, type MockedFunction, type MockedClass, type Mock } from 'vitest';
+import type { MockedFunction, MockedClass, Mock } from 'vitest';
 vi.mock('@vercel/functions', () => ({
     waitUntil: vi.fn(),
 }));

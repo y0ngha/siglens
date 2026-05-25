@@ -1,4 +1,4 @@
-import { vi, type MockedFunction, type MockedClass } from 'vitest';
+import type { MockedFunction, MockedClass } from 'vitest';
 vi.mock('@/entities/email-token', () => ({
     createEmailTokenStore: vi.fn(),
 }));

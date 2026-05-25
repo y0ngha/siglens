@@ -1,4 +1,4 @@
-import { vi, type MockedFunction } from 'vitest';
+import type { MockedFunction } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 import type { NewsDisplayItem } from '@/shared/lib/types';
 import { getNewsCardsAction } from '@/entities/news-article/actions';

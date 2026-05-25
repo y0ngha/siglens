@@ -1,4 +1,4 @@
-import { vi, type MockedFunction } from 'vitest';
+import type { MockedFunction } from 'vitest';
 import { getSectorSignalsAction } from '../actions/getSectorSignalsAction';
 import { getSectorSignals } from '@y0ngha/siglens-core';
 import type { SectorSignalsResult } from '@y0ngha/siglens-core';

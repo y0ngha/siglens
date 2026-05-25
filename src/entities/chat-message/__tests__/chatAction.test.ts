@@ -1,4 +1,4 @@
-import { vi, type MockedFunction, type MockedClass, type Mock } from 'vitest';
+import type { MockedFunction, MockedClass, Mock } from 'vitest';
 import { callAiProviderRouter } from '@/entities/llm-provider';
 import { getCurrentUser } from '@/entities/session/lib/getCurrentUser';
 import { chatAction } from '../actions/chatAction';

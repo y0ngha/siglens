@@ -1,4 +1,4 @@
-import { vi, type MockedFunction } from 'vitest';
+import type { MockedFunction } from 'vitest';
 const { mockDeleteByUserAndProvider } = vi.hoisted(() => ({
     mockDeleteByUserAndProvider: vi.fn(),
 }));

@@ -1,4 +1,4 @@
-import { vi, type MockedFunction } from 'vitest';
+import type { MockedFunction } from 'vitest';
 vi.mock('next/navigation', () => ({
     redirect: vi.fn((path: string) => {
         throw new Error(`NEXT_REDIRECT:${path}`);

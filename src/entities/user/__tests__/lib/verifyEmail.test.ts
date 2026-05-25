@@ -1,4 +1,3 @@
-import { vi } from 'vitest';
 import { verifyEmail } from '@/entities/user/lib/verifyEmail';
 import type { VerifyEmailDependencies } from '@/entities/user/lib/authUseCaseTypes';
 import { EMAIL_VERIFICATION_VERIFIED_TTL_SECONDS } from '@/entities/user/lib/authUseCaseConstants';

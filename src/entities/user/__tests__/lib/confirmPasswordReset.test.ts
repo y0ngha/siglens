@@ -1,4 +1,3 @@
-import { vi } from 'vitest';
 import { confirmPasswordReset } from '@/entities/user/lib/confirmPasswordReset';
 import type { ConfirmPasswordResetDependencies } from '@/entities/user/lib/authUseCaseTypes';
 import { hashEmailToken } from '@/entities/session/lib/tokenUtils';

@@ -1,4 +1,4 @@
-import { vi, type Mock } from 'vitest';
+import type { Mock } from 'vitest';
 vi.mock('@upstash/redis', () => {
     const MockRedis = vi.fn(function () {
         return {

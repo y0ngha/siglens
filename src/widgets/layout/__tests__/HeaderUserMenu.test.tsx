@@ -1,4 +1,3 @@
-import { vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { HeaderUserMenu } from '@/widgets/layout/HeaderUserMenu';
 

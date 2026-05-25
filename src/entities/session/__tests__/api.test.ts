@@ -1,4 +1,3 @@
-import { vi } from 'vitest';
 import { DrizzleSessionRepository } from '@/entities/session';
 import { sessions } from '@/shared/db/schema';
 import type { SiglensDatabase } from '@/shared/db/types';

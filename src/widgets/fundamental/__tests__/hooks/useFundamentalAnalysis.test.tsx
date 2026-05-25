@@ -1,4 +1,4 @@
-import { vi, type MockedFunction, type Mock } from 'vitest';
+import type { MockedFunction, Mock } from 'vitest';
 import { useFundamentalAnalysis } from '@/widgets/fundamental/hooks/useFundamentalAnalysis';
 import {
     cancelFundamentalAnalysisJobAction,

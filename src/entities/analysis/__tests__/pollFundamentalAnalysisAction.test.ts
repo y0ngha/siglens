@@ -1,4 +1,4 @@
-import { vi, type MockedFunction } from 'vitest';
+import type { MockedFunction } from 'vitest';
 import { pollFundamentalAnalysisAction } from '../actions/pollFundamentalAnalysisAction';
 import { pollFundamentalAnalysis } from '@y0ngha/siglens-core';
 import type { PollFundamentalAnalysisResult } from '@y0ngha/siglens-core';

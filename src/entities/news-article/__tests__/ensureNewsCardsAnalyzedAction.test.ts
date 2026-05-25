@@ -1,4 +1,4 @@
-import { vi, type MockedFunction, type MockedClass, type Mock } from 'vitest';
+import type { MockedFunction, MockedClass, Mock } from 'vitest';
 import { ensureNewsCardsAnalyzedAction } from '../actions/ensureNewsCardsAnalyzedAction';
 import { DISABLED_THINKING_BUDGET } from '../lib/newsAnalysisConstants';
 import { NEWS_LOOKBACK_MS } from '../lib/newsLookback';

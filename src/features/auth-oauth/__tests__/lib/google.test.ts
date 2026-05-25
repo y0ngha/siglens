@@ -1,4 +1,3 @@
-import { vi } from 'vitest';
 import { googleOAuthAdapter } from '@/features/auth-oauth/lib/google';
 import { jsonResponse } from '@/shared/test-utils/jsonResponse';
 

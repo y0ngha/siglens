@@ -1,4 +1,4 @@
-import { vi, type MockedFunction } from 'vitest';
+import type { MockedFunction } from 'vitest';
 /**
  * OverallContent done branch만 검증하는 테스트. hook은 mock 처리해
  * 다양한 state shape를 강제로 주입하고, 4축 layout(특히 OptionsSummary 위치,

@@ -1,4 +1,4 @@
-import { vi, type Mock } from 'vitest';
+import type { Mock } from 'vitest';
 import { kakaoOAuthAdapter } from '@/features/auth-oauth/lib/kakao';
 import { jsonResponse } from '@/shared/test-utils/jsonResponse';
 

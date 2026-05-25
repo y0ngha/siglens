@@ -1,4 +1,3 @@
-import { vi } from 'vitest';
 import { FmpFundamentalClient } from '../fundamentalClient';
 
 const mockFetch = vi.fn();

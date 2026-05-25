@@ -1,4 +1,4 @@
-import { vi, type MockedFunction, type Mock } from 'vitest';
+import type { MockedFunction, Mock } from 'vitest';
 // `sleep` is the only true side effect inside withRetry. Stubbing it lets each
 // test run synchronously and lets us assert on delay schedules without burning
 // real wall-clock time. `vi.mock` is hoisted to the top of the file so it

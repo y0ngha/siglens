@@ -1,4 +1,3 @@
-import { vi } from 'vitest';
 import { render } from '@testing-library/react';
 import { SENTIMENT_LABEL_TEXT } from '@/shared/lib/fearGreedLabels';
 import { FearGreedHeaderChipMounted } from '@/widgets/symbol-page/FearGreedHeaderChipMounted';

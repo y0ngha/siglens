@@ -1,4 +1,4 @@
-import { vi, type MockedFunction } from 'vitest';
+import type { MockedFunction } from 'vitest';
 vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: vi.fn(() => ({ db: {}, sql: () => null })),
     resetDatabaseClientForTests: vi.fn(),

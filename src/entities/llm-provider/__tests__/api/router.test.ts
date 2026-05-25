@@ -1,4 +1,4 @@
-import { vi, type MockedFunction } from 'vitest';
+import type { MockedFunction } from 'vitest';
 vi.mock('@/entities/llm-provider/api/anthropic', () => ({
     callAnthropicChat: vi.fn(),
 }));

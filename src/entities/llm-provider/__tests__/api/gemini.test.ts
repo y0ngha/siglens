@@ -1,4 +1,3 @@
-import { vi } from 'vitest';
 const { mockGenerateContent } = vi.hoisted(() => ({
     mockGenerateContent: vi.fn(),
 }));

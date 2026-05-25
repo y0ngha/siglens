@@ -1,4 +1,3 @@
-import { vi } from 'vitest';
 // withRetry 내부 sleep을 즉시 resolve로 stubbing해서 transient retry 케이스의
 // 실제 대기 시간을 없앤다. `vi.mock` 은 정적 import 보다 먼저 평가되도록
 // 호이스트되어야 한다 (`import/first` 규칙과 일치).

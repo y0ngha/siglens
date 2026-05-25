@@ -1,4 +1,3 @@
-import { vi } from 'vitest';
 import type { EarningsReportComparisonItem } from '@/shared/lib/types';
 
 const {
