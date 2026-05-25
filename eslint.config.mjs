@@ -33,6 +33,13 @@ const eslintConfig = defineConfig([
         },
     },
     {
+        // Declaration merging in .d.ts uses empty interfaces (extends-only) by design.
+        files: ['**/*.d.ts'],
+        rules: {
+            '@typescript-eslint/no-empty-object-type': 'off',
+        },
+    },
+    {
         // Variables and parameters prefixed with _ are intentionally unused
         // (kept for future use, documented with TODO comments).
         rules: {
