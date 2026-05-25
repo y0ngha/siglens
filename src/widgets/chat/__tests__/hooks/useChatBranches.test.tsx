@@ -7,11 +7,8 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
 import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import {
-    MODEL_STORAGE_KEY,
-    useChat,
-    isChatMessage,
-} from '@/widgets/chat/hooks/useChat';
+import { MODEL_STORAGE_KEY, useChat } from '@/widgets/chat/hooks/useChat';
+import { isChatMessage } from '@/widgets/chat/utils/chatMessageUtils';
 
 // --- Controllable mocks ---
 
