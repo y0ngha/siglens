@@ -3,8 +3,8 @@ import type { AnalysisResponse, Timeframe } from '@y0ngha/siglens-core';
 import { ChartContent } from '@/widgets/symbol-page/ChartContent';
 
 vi.mock('next/dynamic', () => ({
-    default: (loader: () => Promise<{ default: React.FC }>) => {
-        const Component = (props: Record<string, unknown>) => (
+    default: (_loader: () => Promise<{ default: React.FC }>) => {
+        const Component = (_props: Record<string, unknown>) => (
             <div data-testid="dynamic-component" />
         );
         Component.displayName = 'DynamicMock';
@@ -27,7 +27,7 @@ vi.mock('@/widgets/chart', () => ({
 }));
 
 vi.mock('@/widgets/analysis', () => ({
-    AnalysisPanel: (props: Record<string, unknown>) => (
+    AnalysisPanel: (_props: Record<string, unknown>) => (
         <div data-testid="analysis-panel" />
     ),
 }));

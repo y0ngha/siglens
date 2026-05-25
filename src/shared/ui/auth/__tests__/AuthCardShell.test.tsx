@@ -4,7 +4,14 @@ import { AuthCardShell } from '@/shared/ui/auth/AuthCardShell';
 vi.mock('next/image', () => ({
     __esModule: true,
     default: function MockImage(props: Record<string, unknown>) {
-        return <img alt="" {...props} />;
+        return (
+            <span
+                data-testid="mock-image"
+                data-src={props.src as string}
+                data-alt={props.alt as string}
+                {...props}
+            />
+        );
     },
 }));
 
@@ -63,8 +70,7 @@ describe('AuthCardShell', () => {
         const { container } = render(
             <AuthCardShell title="Sign In">content</AuthCardShell>
         );
-        // alt="" makes the image role="presentation", so we query by tag
-        const img = container.querySelector('img[src="/icon96.png"]');
+        const img = container.querySelector('[data-src="/icon96.png"]');
         expect(img).toBeInTheDocument();
     });
 

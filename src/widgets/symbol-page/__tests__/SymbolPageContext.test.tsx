@@ -1,5 +1,4 @@
 import { render, screen, renderHook } from '@testing-library/react';
-import type { ReactNode } from 'react';
 import {
     SymbolPageProvider,
     useSymbolPageContext,
