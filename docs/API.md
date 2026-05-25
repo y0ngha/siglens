@@ -1,135 +1,5 @@
 # API
 
-## Alpaca Market Data API
-
-공식 문서: https://docs.alpaca.markets/reference/stockbars
-
-Base URL: `https://data.alpaca.markets/v2`
-
-### 인증
-
-```
-Header: APCA-API-KEY-ID: {API_KEY}
-Header: APCA-API-SECRET-KEY: {API_SECRET}
-```
-
-환경변수:
-```
-ALPACA_API_KEY=
-ALPACA_API_SECRET=
-```
-
-### 플랜 제한 (Free Tier)
-
-```
-거래소:   IEX만 (전체 거래소 대비 거래량 약 28~30% 낮음)
-지연:     15분
-API 호출: 200회/분
-데이터:   7년+ 히스토리컬
-```
-
----
-
-## 사용하는 엔드포인트
-
-### 1. Historical Bars (단일 심볼)
-
-```
-GET /v2/stocks/{symbol}/bars
-```
-
-**공식 문서**: https://docs.alpaca.markets/reference/stockbarsingle-1
-
-**Query Parameters**
-
-| 파라미터 | 타입 | 필수 | 설명 |
-|----------|------|------|------|
-| timeframe | string | ✅ | `{multiplier}{unit}` 형식 (예: 1Min, 5Min, 15Min, 30Min, 1Hour, 4Hour, 1Day). unit: Min, Hour, Day, Week, Month |
-| start | string | - | ISO 8601 (예: 2024-01-15T09:30:00Z) |
-| end | string | - | ISO 8601 |
-| limit | number | - | 최대 10000, 기본 1000 |
-| feed | string | - | iex (Free Tier 고정) |
-| sort | string | - | asc (기본) |
-
-**Request 예시**
-
-```
-GET /v2/stocks/AAPL/bars?timeframe=5Min&limit=200&feed=iex&sort=asc
-```
-
-**Response**
-
-```typescript
-interface AlpacaBarsResponse {
-    bars: AlpacaBar[];
-    symbol: string;
-    next_page_token: string | null;
-}
-
-interface AlpacaBar {
-    t: string;    // ISO 8601 timestamp
-    o: number;    // open
-    h: number;    // high
-    l: number;    // low
-    c: number;    // close
-    v: number;    // volume
-    vw: number;   // VWAP (Alpaca 제공)
-    n: number;    // 체결 건수
-}
-```
-
-**주의사항**
-- `next_page_token`이 null이 아니면 페이지네이션 필요
-- Free Tier는 `feed=iex` 고정 (생략 시도 가능하나 명시 권장)
-- 거래량(`v`)은 IEX 기준이므로 전체 시장 대비 낮음
-
----
-
-### 2. Latest Bar (단일 심볼)
-
-```
-GET /v2/stocks/{symbol}/bars/latest
-```
-
-**공식 문서**: https://docs.alpaca.markets/reference/stocklatestbarsingle-1
-
-현재가 확인 또는 실시간 업데이트 시 사용.
-
-**Response**
-
-```typescript
-interface AlpacaLatestBarResponse {
-    bar: AlpacaBar;
-    symbol: string;
-}
-```
-
----
-
-### 3. Snapshot (단일 심볼)
-
-```
-GET /v2/stocks/{symbol}/snapshot
-```
-
-**공식 문서**: https://docs.alpaca.markets/reference/stocksnapshotsingle
-
-현재가, 당일 봉, 전일 봉을 한 번에 조회.
-
-**Response**
-
-```typescript
-interface AlpacaSnapshotResponse {
-    latestTrade: AlpacaTrade;
-    latestQuote: AlpacaQuote;
-    minuteBar: AlpacaBar;
-    dailyBar: AlpacaBar;
-    prevDailyBar: AlpacaBar;
-}
-```
-
----
-
 ---
 
 ## FMP (Financial Modeling Prep) Market Data API
@@ -209,7 +79,7 @@ interface FmpBar {
 **주의사항**
 - 응답은 newest-first 정렬 → `toReversed()` 하여 ascending order 반환
 - `date` 필드는 timezone 정보 없음 → UTC로 간주 (`+ ' UTC'` 파싱)
-- `vwap` 필드 없음 (Alpaca 전용)
+- `vwap` 필드 없음
 - `before` 파라미터 → `to` 쿼리 파라미터로 변환 (ISO string → "YYYY-MM-DD")
 
 ---
@@ -293,50 +163,62 @@ interface FmpQuote {
 
 ---
 
-## Market Data Provider 선택
-
-```bash
-# MARKET_DATA_PROVIDER 환경변수로 provider 선택
-# 미설정 또는 unknown 값이면 기본값 fmp 사용
-MARKET_DATA_PROVIDER=fmp     # fmp | alpaca (기본값: fmp)
-```
-
-`createMarketDataProvider()` 팩토리 함수가 환경변수를 읽어 적절한 Provider 인스턴스를 반환한다.
-
----
-
 ## 환경변수 전체 목록
 
 ```bash
-# Market Data Provider (선택 — 기본값: fmp)
-MARKET_DATA_PROVIDER=        # fmp | alpaca
-
-# FMP API (MARKET_DATA_PROVIDER=fmp 시 필수)
+# Market Data
 FMP_API_KEY=
 
-# Alpaca API (MARKET_DATA_PROVIDER=alpaca 시 필수)
-ALPACA_API_KEY=
-ALPACA_API_SECRET=
+# AI
+GEMINI_CHAT_API_KEY=
+ANTHROPIC_CHAT_API_KEY=
+OPENAI_CHAT_API_KEY=
+GEMINI_CHAT_FREE_API_KEY=
+TRANSLATE_API_KEY=
+TRANSLATE_FREE_API_KEY=
+TRANSLATE_MODEL=
 
-# Worker — Briefing 전용 provider 선택
-AI_PROVIDER=gemini          # claude | gemini (기본값: gemini)
-                            # /analyze 라우팅과는 무관 — analyze는 client가 보낸 model로 결정됨
+# Cache
+UPSTASH_REDIS_REST_URL=
+UPSTASH_REDIS_REST_TOKEN=
+UPSTASH_REDIS_REST_READONLY_TOKEN=
 
-# Worker — 모든 server-side AI provider key (필수)
-# /analyze에서 SIGLENS_PROVIDED_MODELS 호출 시 + briefing에서 사용
-ANTHROPIC_API_KEY=          # 필수
-GEMINI_CHAT_API_KEY=             # 필수
-GEMINI_FREE_API_KEY=        # 선택 — Gemini free tier 우선 시도 (없으면 유료 키 단독 사용)
-OPENAI_API_KEY=             # 필수 — gpt-5-mini 무료 제공 등 유료 키 호출 위해
+# Database
+DATABASE_URL=
 
-# Worker — Briefing model 기본값 (선택)
-BRIEFING_CLAUDE_MODEL=claude-haiku-4-5      # 기본값
-BRIEFING_GEMINI_MODEL=gemini-2.5-flash-lite # 기본값
+# Authentication
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+KAKAO_REST_API_KEY=
+KAKAO_CLIENT_SECRET=
+OAUTH_REDIRECT_BASE_URL=
+OAUTH_TOKEN_ENCRYPTION_KEY=
+LLM_API_KEY_ENCRYPTION_KEY=
+OAUTH_STATE_HMAC_SECRET=
+CRON_SECRET=
 
-# Upstash Redis (선택 — 미설정 시 캐시 없이 동작)
-UPSTASH_REDIS_REST_URL=             # Upstash Redis REST URL
-UPSTASH_REDIS_REST_TOKEN=           # master 토큰 (읽기/쓰기)
-UPSTASH_REDIS_REST_READONLY_TOKEN=  # readonly 토큰 (읽기 전용, 없으면 master 토큰 사용)
+# Email
+RESEND_API_KEY=
+EMAIL_FROM=
+
+# Site
+NEXT_PUBLIC_SITE_URL=
+
+# AdSense
+NEXT_PUBLIC_ADSENSE_PUBLISHER_ID=
+NEXT_PUBLIC_ADSENSE_SLOT_PROGRESS=
+NEXT_PUBLIC_ADSENSE_SLOT_PANEL_BOTTOM=
+NEXT_PUBLIC_ADSENSE_ENABLED=false
+
+# Package Registry
+SIGLENS_GITHUB_TOKEN=
+
+# Worker
+WORKER_URL=
+WORKER_SECRET=
+
+# Debug
+DEBUG_VERBOSE_LOGS=
 ```
 
 `.env.local`에 작성. 절대 커밋하지 않는다.

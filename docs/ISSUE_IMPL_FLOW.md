@@ -47,7 +47,7 @@ Always read (targeted):
 | Accessibility / ARIA | Accessibility (WAI-ARIA) |
 | All other changes | Coding Paradigm (general) |
 
-Determine the area by reading the diff content — do not match on concrete directory paths (src/domain/, src/infrastructure/). FSD migration is in progress.
+Determine the area by reading the diff content — use the active FSD layers (`app`, `widgets`, `features`, `entities`, `shared`) rather than legacy directory names.
 
 Multiple areas → read the union of their sections.
 
@@ -60,8 +60,8 @@ Additional documents by scope:
 Read existing similar implementations first for pattern recognition:
 ```bash
 # e.g. When implementing MA, check EMA first
-# src/domain/indicators/ema.ts
-# src/__tests__/domain/indicators/ema.test.ts
+# @y0ngha/siglens-core public exports for indicator logic
+# src/widgets/chart/__tests__/... for chart integration examples
 ```
 
 #### 1-3. Understand the Issue
@@ -73,7 +73,7 @@ gh issue view {number} --repo y0ngha/siglens
 **If the issue cannot be found, stop and report to user.**
 
 Verify:
-- Implementation scope: which layers are touched (domain, infrastructure, app, components)
+- Implementation scope: which FSD layers are touched (app, widgets, features, entities, shared)
 - File paths to create or modify
 - Function signatures and feature specifications
 - Reference docs: read only items checked (`[x]`) in the issue body
@@ -99,33 +99,34 @@ Branch naming: `feat/2/도메인-공통-타입-정의`, `refactor/32/candlestick
 
 #### 1-5. Implement Code + Tests
 
-**Domain Layer Checklist** — verify after implementation:
+**Pure Logic / Core Boundary Checklist** — verify after implementation:
 - [ ] No external library imports (technicalindicators, lodash, etc. are all prohibited)
 - [ ] Pure functions only (no fetch, console.log, Date.now())
 - [ ] Return types must be explicitly declared
 - [ ] Initial period values must be null (never 0 or NaN — 0 renders as invalid data in charts)
 - [ ] No for/while loops → use map, filter, reduce, flatMap
 - [ ] Maintain immutability (no bars.push → use [...bars, newBar])
-- [ ] Use path aliases (@/domain/... format)
-- [ ] No hardcoded literals → extract to constants (domain/indicators/constants.ts)
+- [ ] Use path aliases or `@y0ngha/siglens-core` public exports only
+- [ ] No hardcoded literals → extract to local constants or shared config
 
-**Component Layer Checklist** — verify after implementation:
+**UI Layer Checklist** — verify after implementation:
 - [ ] Hook declaration order: useState → useRef → useQuery/useMutation → derived (useMemo/const) → handlers → useLayoutEffect → useEffect → return
 - [ ] Props interface directly above component function
 - [ ] 'use client' only when hooks, handlers, or browser APIs are used
-- [ ] No infrastructure imports in .tsx files (hooks/ may import fetch functions only)
-- [ ] No lightweight-charts imports outside components/chart/
+- [ ] No server-only imports in client components
+- [ ] No lightweight-charts imports outside chart widgets/components
 
 **Test Layer Checklist** — verify after implementation:
-- [ ] Test file exists for every new domain/infrastructure file
-- [ ] 100% branch coverage for infrastructure (all ?., ??, if/else paths)
+- [ ] Test file exists for every new behavior that affects measured FSD layers
+- [ ] Coverage remains aligned with the project target: 90% across measured FSD layers
+- [ ] New conditional branches (`?.`, `??`, if/else, error paths) have dedicated test cases
 - [ ] describe/it text is human-readable, not code expressions
 - [ ] Period-based indicators include all 5 required test cases
 - [ ] No if-guarded assertions (unconditional expect only)
 
-**Infrastructure Layer Checklist** — verify after implementation:
-- [ ] No reverse imports (infrastructure → app or domain → infrastructure)
-- [ ] Type imports from @/domain/types only
+**Data / API Adapter Checklist** — verify after implementation:
+- [ ] No reverse imports against FSD dependency direction
+- [ ] Server-only code stays in actions/api/shared server utilities, not client components
 - [ ] No console.log or debug artifacts
 - [ ] All conditional branches have dedicated test cases
 
@@ -133,8 +134,9 @@ Only check the checklists for file types you actually modified or created.
 
 **Test writing** — file locations:
 ```
-src/__tests__/domain/indicators/rsi.test.ts
-src/__tests__/infrastructure/market/alpaca.test.ts
+src/entities/bars/__tests__/getBarsAction.test.ts
+src/widgets/chart/__tests__/ChartPanel.test.tsx
+src/shared/lib/__tests__/formatPrice.test.ts
 ```
 
 Required test cases for period-based indicators:
@@ -144,7 +146,7 @@ Required test cases for period-based indicators:
 - Valid value range → non-null numbers after the period-th index
 - Calculation accuracy → first computed value matches specification
 
-When creating new files under `domain/indicators/`, add export to `src/domain/indicators/index.ts`.
+When adding exports to an FSD slice, expose production imports through the slice barrel (`index.ts`) unless the local conventions mark the path as internal-only.
 
 **Documentation updates** — if the change falls into:
 
@@ -164,8 +166,8 @@ For each modified file, verify every rule in the matching section(s):
 | File type | Sections to verify |
 |---|---|
 | .tsx (component) | Components, Coding Paradigm |
-| .ts (domain/) | Domain Functions, TypeScript, Coding Paradigm |
-| .ts (infrastructure/) | TypeScript, Coding Paradigm |
+| .ts pure logic | Domain Functions, TypeScript, Coding Paradigm |
+| .ts action/api/adapter | TypeScript, Coding Paradigm |
 | .test.ts | Tests |
 | .tsx (chart/) | Components, Lightweight Charts |
 

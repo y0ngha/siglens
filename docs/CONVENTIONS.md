@@ -178,7 +178,7 @@ interface Signal { strength: SignalStrength; }
 
 // ✅ No hardcoded literals — extract to constants
 // ❌ period = 14
-// ✅ period = RSI_DEFAULT_PERIOD  (domain/indicators/constants.ts)
+// ✅ period = RSI_DEFAULT_PERIOD  (@y0ngha/siglens-core public constant or shared/config)
 
 // ✅ Types must be declared at the top of the file, not inside functions
 // ❌ function process() { interface Item { id: string; } ... }
@@ -307,7 +307,7 @@ Add `'use client'` **only** when the component meets at least one of the followi
 | Condition | Examples |
 |---|---|
 | Uses React state or lifecycle hooks | `useState`, `useReducer`, `useContext`, `useEffect`, `useLayoutEffect` |
-| Uses custom hooks from `components/*/hooks/` | `useBars`, `useAnalysis`, `useTimeframeChange` |
+| Uses custom hooks from `widgets/*/hooks/` or `features/*/hooks/` | `useBars`, `useAnalysis`, `useTimeframeChange` |
 | Registers event handlers | `onClick`, `onChange`, `onSubmit` |
 | Accesses browser APIs | `window`, `document`, `localStorage` |
 | Is a `FallbackComponent` for `ErrorBoundary` | receives `resetErrorBoundary` and calls it |
@@ -425,18 +425,22 @@ src/__tests__/utils/makeFormData.ts
 ### Coverage Targets
 
 ```
-entities/       90% (필수)
-features/lib/   90% (필수)
-features/api/   90% (필수)
-shared/lib/     90% (필수)
-widgets/        optional
-pages/          optional
-app/            optional
+entities/       90%
+features/       90%
+shared/         90%
+widgets/        90%
+app/            90%
+src/proxy.ts    90%
 ```
 
-`entities/`, `features/lib/`, `features/api/`, `shared/lib/` require 90% coverage.
-`widgets/`, `pages/`, `app/` are not required to have tests, but writing tests for them is allowed.
-Pure utility functions and other units that benefit from testing may be freely tested.
+The project target is 90% coverage across all measured FSD layers.
+Current Vitest coverage includes `src/entities/**`, `src/features/**`, `src/shared/**`,
+`src/widgets/**`, `src/app/**`, and `src/proxy.ts`, excluding declaration files,
+barrel files, type/model-only files, and test utilities.
+
+UI layers are part of the coverage target. Prefer unit tests for pure view utilities,
+hook tests for stateful UI behavior, component tests for user-visible states, and
+integration tests for critical cross-layer flows.
 
 ### Test Structure
 
@@ -497,8 +501,9 @@ Test structure allows **2 to 5 levels**. Choose the appropriate depth based on m
 ### External API Mocking
 
 ```typescript
-jest.mock('node-fetch');
-import { mockAlpacaBarsResponse } from '@/__tests__/fixtures/alpaca';
+vi.mock('@/shared/api/fmp/httpClient');
+
+const mockFmpBarsResponse = [{ date: '2026-05-25', open: 100, high: 101, low: 99, close: 100.5, volume: 1000 }];
 ```
 
 ---
@@ -507,10 +512,11 @@ import { mockAlpacaBarsResponse } from '@/__tests__/fixtures/alpaca';
 
 ```typescript
 // ✅ Use path aliases
-import { calculateRSI } from '@/domain/indicators/rsi';
+import { cn } from '@/shared/lib/cn';
+import { useBars } from '@/widgets/symbol-page/hooks/useBars';
 
 // ❌ No relative paths
-import { calculateRSI } from '../../../domain/indicators/rsi';
+import { cn } from '../../../shared/lib/cn';
 ```
 
 ### FSD Slice Internal Imports
@@ -695,13 +701,13 @@ Use JavaScript's iteration protocol (`Symbol.iterator`) and generators to compos
 |---|---|
 | Applying multiple transforms in a single pass over an array | Generator pipeline |
 | Making a custom data structure consumable with `for...of` | Implement `Symbol.iterator` |
-| Exposing domain data as an iterable to external consumers | `Iterable` interface |
+| Exposing pure calculation data as an iterable to external consumers | `Iterable` interface |
 | Processing thousands of Bar records step by step | Lazy evaluation (see section below) |
 
 ### Symbol.iterator — Custom Iterables
 
 ```typescript
-// ✅ Custom iterable — expose results as an iterable from pure domain/indicators/ functions
+// ✅ Custom iterable — expose results as an iterable from pure calculation utilities
 class SlidingWindow<T> implements Iterable<T[]> {
     constructor(private items: T[], private size: number) {}
 
@@ -726,7 +732,7 @@ for (const window of new SlidingWindow(closes, 14)) {
 ### Generator Functions
 
 ```typescript
-// ✅ Express a sliding window as a generator — used purely in the domain layer
+// ✅ Express a sliding window as a generator — used purely in calculation helpers
 function* slidingWindow<T>(items: T[], size: number): Generator<T[]> {
     for (let i = 0; i + size <= items.length; i++) {
         yield items.slice(i, i + size);
@@ -752,8 +758,8 @@ const gains = filter(
 ### Pitfalls
 
 ```typescript
-// ❌ Do not define generators directly in infrastructure/ or components/
-//    Generator-based iterables belong in domain/ pure functions only.
+// ❌ Do not define generators directly in Server Actions or UI components.
+//    Generator-based iterables belong in pure calculation utilities only.
 
 // ❌ Do not consume a generator more than once — iterators are one-shot
 const gen = slidingWindow(closes, 14);
@@ -788,7 +794,7 @@ Use lazy evaluation when data is large (thousands of Bars or more) or when multi
 ### Pattern 1 — Generator Pipeline
 
 ```typescript
-// ✅ domain/indicators/utils.ts — reusable lazy utilities
+// ✅ shared/lib or @y0ngha/siglens-core — reusable lazy utilities
 function* lazyMap<T, U>(iter: Iterable<T>, fn: (v: T) => U): Generator<U> {
     for (const item of iter) yield fn(item);
 }
@@ -879,7 +885,7 @@ export async function getBarsAction(
     symbol: string,
     timeframe: Timeframe
 ): Promise<BarsData> {
-    // FMP/Alpaca 호출 + @y0ngha/siglens-core indicator 계산
+    // FMP 호출 + @y0ngha/siglens-core indicator 계산
     // ...
 }
 
@@ -915,7 +921,7 @@ and passes the result as `initialTimeframe` prop to `SymbolPageClient`.
 **Writing (client):** `useTimeframeChange` calls `router.replace(...?tf=<value>, { scroll: false })`
 inside `startTransition` whenever the user changes the timeframe.
 
-**Validation:** `isValidTimeframe()` lives in `domain/constants/market.ts` and uses the `TIMEFRAMES` constant
+**Validation:** `isValidTimeframe()` is exported by `@y0ngha/siglens-core` and uses the `TIMEFRAMES` constant
 as the source of truth for valid values. Never validate against hardcoded string literals at the call site.
 
 ```typescript

@@ -215,16 +215,16 @@ The more consistently rules are followed, the higher the predictability.
 
 ```typescript
 // ❌ Same name used in different contexts
-// infrastructure/market/alpaca.ts
-export const http = axios.create({ baseURL: 'https://data.alpaca.markets' });
+// shared/api/fmp/httpClient.ts
+export const http = createFmpHttpClient();
 
-// infrastructure/ai/claude.ts
-export const http = axios.create({ baseURL: 'https://api.anthropic.com' });
+// entities/llm-provider/api/anthropic.ts
+export const http = createAnthropicHttpClient();
 // → import collision
 
 // ✅ Include context in the name
-export const alpacaHttp = axios.create({ baseURL: 'https://data.alpaca.markets' });
-export const claudeHttp = axios.create({ baseURL: 'https://api.anthropic.com' });
+export const fmpHttp = createFmpHttpClient();
+export const anthropicHttp = createAnthropicHttpClient();
 ```
 
 ### 2-B. Unify return types across functions of the same family
@@ -276,19 +276,19 @@ High cohesion means modifying one place doesn't cause unexpected errors elsewher
 ```
 // ❌ Related files scattered across the project
 src/
-├── components/StockChart.tsx
-├── hooks/useStockChart.ts
-├── types/stockChart.ts
-└── utils/stockChartHelpers.ts
+├── widgets/chart/StockChart.tsx
+├── shared/hooks/useStockChart.ts
+├── shared/lib/stockChartTypes.ts
+└── shared/lib/stockChartHelpers.ts
 
 // ✅ Files that change together placed in the same directory
 src/
-└── components/
+└── widgets/
     └── chart/
-        ├── StockChart.tsx        ← component
-        ├── useStockChart.ts      ← dedicated hook
-        ├── types.ts              ← dedicated types
-        └── helpers.ts            ← dedicated utils
+        ├── StockChart.tsx        ← widget component
+        ├── hooks/                ← dedicated hooks
+        ├── utils/                ← dedicated utils
+        └── __tests__/            ← colocated tests
 ```
 
 ### 3-B. Centralize magic numbers as constants
@@ -302,7 +302,7 @@ const result = new Array(14).fill(null);
 if (closes.length < 14) return null;
 
 // ✅ Managed in one place
-// domain/indicators/constants.ts
+// @y0ngha/siglens-core public constant
 export const RSI_DEFAULT_PERIOD = 14;
 
 // rsi.ts
@@ -442,12 +442,12 @@ Coupling vs Cohesion
 **Priority in the Siglens context**
 
 ```
-domain/indicators   → Predictability first
-                      (unified return types across same-family functions, consistent null handling)
+siglens-core calculations → Predictability first
+                            (unified return types across same-family functions, consistent null handling)
 
-components/         → Readability first
-                      (chart components should be easy to read, minimize conditional branching)
+widgets/features UI        → Readability first
+                            (chart components should be easy to read, minimize conditional branching)
 
-infrastructure/     → Cohesion first
-                      (replacing a Provider should require modifying only one file)
+entity/shared adapters     → Cohesion first
+                            (replacing a provider should require modifying only one slice)
 ```

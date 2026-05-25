@@ -3,7 +3,7 @@
 ## 개요
 
 Feature-Sliced Design (FSD) 6-layer 아키텍처를 기반으로 한다.
-외부 의존성(Alpaca, AI, Skills 파일 I/O)은 entity/feature 슬라이스 내부에서 캡슐화하고,
+외부 의존성(FMP, yahoo-finance2, AI, Skills 파일 I/O)은 entity/shared 슬라이스 내부에서 캡슐화하고,
 순수 로직은 shared/lib 또는 `@y0ngha/siglens-core`에 위치한다.
 
 ---

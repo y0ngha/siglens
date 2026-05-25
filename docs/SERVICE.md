@@ -73,8 +73,20 @@ yarn        4.12.0
 Charts      lightweight-charts
 Styles      Tailwind CSS
 Linting     ESLint + Stylelint + Prettier
-Tests       Jest (domain and infrastructure only — no UI tests)
+Tests       Vitest + Testing Library + jsdom
 ```
+
+External infrastructure dependencies:
+
+```
+Vercel      Next.js deployment and serverless/edge runtime
+Upstash     Redis cache, analysis job state, email tokens
+Neon        PostgreSQL database
+Resend      Email verification and password reset delivery
+Cloudflare  DNS, edge security, cache/traffic controls
+```
+
+Coverage target: 90% across all measured FSD layers (`entities/`, `features/`, `shared/`, `widgets/`, `app/`, and `src/proxy.ts`).
 
 ---
 
@@ -105,21 +117,21 @@ skills/                        ← project root (not src/)
 
 ### Layer Responsibility
 
-Skills files are **not** read by `domain/` — domain has no file I/O.
-Reading and parsing skills `.md` files is the responsibility of **`infrastructure/skills/loader.ts`** (`FileSkillsLoader`).
-The parsed `Skill[]` is passed into `domain/analysis/prompt.ts` as a plain data structure.
+Skills files are loaded by the siglens app through the `entities/skill` slice.
+The parsed `Skill[]` is passed to `@y0ngha/siglens-core` as plain data.
+Core prompt builders consume the data structure only; file I/O stays in siglens.
 
 ```
-infrastructure/skills/loader.ts (FileSkillsLoader)
+entities/skill/api.ts
   → recursively scans skills/ subdirectories for .md files (file I/O — allowed in infrastructure layer)
   → parses frontmatter + body
   → returns Skill[]
 
-app/api/analyze/route.ts (or app/[symbol]/page.tsx)
-  → calls FileSkillsLoader.loadSkills()
-  → passes Skill[] to domain/analysis/prompt.ts
+entities/analysis/actions/*
+  → loads Skill[] through the entity slice
+  → passes Skill[] to @y0ngha/siglens-core submit functions
 
-domain/analysis/prompt.ts
+@y0ngha/siglens-core prompt builder
   → buildAnalysisPrompt(symbol, bars, indicators, skills)
   → filters by confidenceWeight (< 0.5 excluded)
   → builds the prompt     (pure function, no file access)

@@ -232,7 +232,7 @@ Invoke the listed skills **before** writing code in each category. Do not skip.
 2. Define interfaces (`types.ts`) before writing implementations.
 3. Always write test files alongside implementation files.
 4. Never violate layer dependency directions.
-5. Never import external libraries inside `domain/`.
+5. Never import external libraries inside pure logic modules; wrap providers in FSD entity/shared adapters.
 
 ---
 
@@ -282,7 +282,7 @@ yarn format
 | `docs/SERVICE.md` | Product overview, target users, tech stack, Skills system |
 | `docs/ARCHITECTURE.md` | Layer structure, dependency direction rules, folder layout |
 | `docs/DOMAIN.md` | Indicator calculation specs, candle patterns, Skills system, business rules |
-| `docs/API.md` | Alpaca and Claude API endpoints, request/response schemas |
+| `docs/API.md` | FMP, AI, worker API endpoints, environment variables |
 | `docs/CONVENTIONS.md` | Coding conventions, naming rules, paradigm guidelines |
 | `docs/FF.md` | FF 4 principles in detail (Readability, Predictability, Cohesion, Coupling) |
 | `docs/DESIGN.md` | Color system, Tailwind config, chart color constants |

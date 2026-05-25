@@ -29,7 +29,7 @@ chore/1/프로젝트-초기-환경-설정
 | `fix` | 버그 수정 | `fix: RSI 초기 구간 null 처리 오류` |
 | `chore` | 빌드, 설정, 패키지 | `chore: vitest 설정 업데이트` |
 | `style` | 코드 포맷, 스타일 | `style: MA 오버레이 컬러 수정` |
-| `refactor` | 리팩토링 | `refactor: AlpacaProvider 에러 처리 개선` |
+| `refactor` | 리팩토링 | `refactor: FMP 클라이언트 에러 처리 개선` |
 | `test` | 테스트 추가/수정 | `test: calculateMACD 엣지 케이스 추가` |
 | `docs` | 문서 수정 | `docs: DOMAIN.md RSI 명세 업데이트` |
 

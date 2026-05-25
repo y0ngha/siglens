@@ -44,7 +44,7 @@ Always read (targeted):
 | Accessibility / ARIA | Accessibility (WAI-ARIA) |
 | All other changes | Coding Paradigm (general) |
 
-Determine the area by reading the diff content — do not match on concrete directory paths (src/domain/, src/infrastructure/). FSD migration is in progress.
+Determine the area by reading the diff content — use the active FSD layers (`app`, `widgets`, `features`, `entities`, `shared`) rather than legacy directory names.
 
 Multiple areas → read the union of their sections.
 
@@ -158,33 +158,34 @@ Read all comments first, then apply all fixes in a single pass.
 
 After applying, verify against the checklist matching each modified file type:
 
-**Domain Layer Checklist:**
+**Pure Logic / Core Boundary Checklist:**
 - [ ] No external library imports (technicalindicators, lodash, etc.)
 - [ ] Pure functions only (no fetch, console.log, Date.now())
 - [ ] Return types explicitly declared
 - [ ] Initial period values must be null (never 0 or NaN)
 - [ ] No for/while loops → use map, filter, reduce, flatMap
 - [ ] Maintain immutability (no push, reverse, sort — use spread, toReversed)
-- [ ] Path aliases (@/domain/... format)
+- [ ] Use path aliases or `@y0ngha/siglens-core` public exports only
 - [ ] No hardcoded literals → extract to constants
 
-**Component Layer Checklist:**
+**UI Layer Checklist:**
 - [ ] Hook declaration order: useState → useRef → useQuery/useMutation → derived (useMemo/const) → handlers → useLayoutEffect → useEffect → return
 - [ ] Props interface directly above component function
 - [ ] 'use client' only when hooks, handlers, or browser APIs are used
-- [ ] No infrastructure imports in .tsx files (hooks/ may import fetch functions only)
-- [ ] No lightweight-charts imports outside components/chart/
+- [ ] No server-only imports in client components
+- [ ] No lightweight-charts imports outside chart widgets/components
 
 **Test Layer Checklist:**
-- [ ] Test file exists for every new domain/infrastructure file
-- [ ] 100% branch coverage for infrastructure (all ?., ??, if/else paths)
+- [ ] Test file exists for every new behavior that affects measured FSD layers
+- [ ] Coverage remains aligned with the project target: 90% across measured FSD layers
+- [ ] New conditional branches (`?.`, `??`, if/else, error paths) have dedicated test cases
 - [ ] describe/it text is human-readable, not code expressions
 - [ ] Period-based indicators include all 5 required test cases
 - [ ] No if-guarded assertions (unconditional expect only)
 
-**Infrastructure Layer Checklist:**
-- [ ] No reverse imports (infrastructure → app or domain → infrastructure)
-- [ ] Type imports from @/domain/types only
+**Data / API Adapter Checklist:**
+- [ ] No reverse imports against FSD dependency direction
+- [ ] Server-only code stays in actions/api/shared server utilities, not client components
 - [ ] No console.log or debug artifacts
 - [ ] All conditional branches have dedicated test cases
 
@@ -199,8 +200,8 @@ For each file modified during the fix:
    | File type | Sections to read |
    |---|---|
    | .tsx (component) | Components, Coding Paradigm |
-   | .ts (domain/) | Domain Functions, TypeScript, Coding Paradigm |
-   | .ts (infrastructure/) | TypeScript, Coding Paradigm |
+   | .ts pure logic | Domain Functions, TypeScript, Coding Paradigm |
+   | .ts action/api/adapter | TypeScript, Coding Paradigm |
    | .test.ts | Tests |
    | .tsx (chart/) | Components, Lightweight Charts |
 

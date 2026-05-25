@@ -50,7 +50,7 @@ This file contains only **recurring gotchas** that agents keep missing despite e
 0.8. Concurrent fetch without respecting provider rate limits
    → Always use fetchInChunks or sequential await for multiple API calls
    → Never use Promise.all/Promise.allSettled when calls exceed FETCH_CONCURRENCY threshold
-   → Rate limits: FMP=250/min, Alpaca=various, Gemini=API-tier dependent
+   → Rate limits: FMP=plan-dependent, yahoo-finance2=unofficial/provider-dependent, Gemini=API-tier dependent
    ❌ Promise.allSettled(SECTOR_STOCKS.map(fetchQuote))  // parallel, exceeds rate limit
    ❌ Promise.all([fetchInChunks(...), fetchInChunks(...)])  // doubles concurrency to 20 when limit is 10
    ✅ Use fetchInChunks(items, FETCH_CONCURRENCY) for sequential chunked execution
@@ -59,7 +59,7 @@ This file contains only **recurring gotchas** that agents keep missing despite e
 1. Reimplementing the same algorithm
    → Check for existing helpers before writing a new function
    → Separate number[]-based helpers from Bar[]-based wrappers for reuse
-   → Across provider pairs: extract shared logic to infrastructure/ai/utils.ts
+   → Across provider pairs: extract shared logic to `entities/llm-provider/lib/` or `shared/lib/`
 
 1.1. Creating type aliases without independent expansion plans
    → Do not create new type aliases for values that are structurally identical to existing types
@@ -133,9 +133,9 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    ❌ import { Component } from './'
    ❌ import { util } from '../../../utils/someUtil'
    ❌ import { type } from './types'
-   ✅ import { Component } from '@/components/contact'
-   ✅ import { util } from '@/utils/someUtil'
-   ✅ import { type } from '@/domain/types'
+   ✅ import { Component } from '@/features/contact-form'
+   ✅ import { util } from '@/shared/lib/someUtil'
+   ✅ import type { Bar } from '@y0ngha/siglens-core'
    ✅ // FSD 슬라이스 내부 (src/features/auth/ui/LoginForm.tsx)
       import type { AuthFormState } from '../model/types';  // 슬라이스 내부 relative OK
    ❌ import type { AuthFormState } from '@/features/auth/model/types';  // 같은 슬라이스라도 no-restricted-imports 위반
@@ -179,7 +179,7 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     → All magic numbers and constant values must be extracted to module-level constants
     → Function names must remain accurate when the underlying constant value changes
     → String literals (event names, storage keys, magic strings) must be extracted to constants, not duplicated across files
-    → Time calculations (milliseconds per second, hour, day) must use imported time constants from @/domain/constants/time
+    → Time calculations (milliseconds per second, hour, day) must use imported constants from `shared/config` or `@y0ngha/siglens-core`
     → **Drift trap**: when a constant exists in a file, every literal use of the same value in that file (including JSX text, error messages, JSDoc, and tests) must reference the constant. Forgetting one creates silent divergence.
     ❌ function computeSecondsUntilKst17() { ... } where 17 is hardcoded; renaming breaks if constant changes
     ❌ Math.round(rawPrice * 100) / 100 with no constant for decimal factor
@@ -190,7 +190,7 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     ✅ const CACHE_EXPIRY_HOUR_KST = 17; function computeSecondsUntilCacheExpiry() { ... }
     ✅ const PRICE_DECIMAL_FACTOR = 100; Math.round(rawPrice * PRICE_DECIMAL_FACTOR) / PRICE_DECIMAL_FACTOR
     ✅ const PWA_TRIGGER_EVENT = 'siglens:pwa-trigger'; import in all files using the event
-    ✅ import { MS_PER_HOUR, KST_OFFSET_HOURS, MS_PER_SECOND } from '@/domain/constants/time'; use hours * MS_PER_HOUR
+    ✅ import { MS_PER_HOUR, KST_OFFSET_HOURS, MS_PER_SECOND } from '@/shared/config/time'; use hours * MS_PER_HOUR
     ✅ <p>{`최근 ${SPARKLINE_DAYS}거래일 섹터 수익률`}</p>  // 상수와 JSX가 항상 일치
 
 15.3. Inline comments explaining WHAT code does instead of WHY
@@ -252,21 +252,21 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     ✅ <NewsAiSummary />  // component name is self-explanatory
     → Recurring: 3 instances in PR #413 (R7 NewsAugment, R10 news/page, plus component removal)
 
-21. Domain functions using imperative for-loop + push instead of higher-order functions
-    → Domain functions must use map, filter, flatMap, reduce — never direct mutation with push/splice
-    → Applies to all domain/ implementations; violation of functional programming paradigm
+21. Pure calculation functions using imperative for-loop + push instead of higher-order functions
+    → Pure calculation functions must use map, filter, flatMap, reduce — never direct mutation with push/splice
+    → Applies to siglens-core calculations and local pure helpers; violation of functional programming paradigm
     ❌ const result = []; for (const item of data) { result.push(transform(item)); } return result;
     ✅ const result = data.map(transform); return result;
     ❌ const lines = []; for (const rec of reconciled) { lines.push(...extractLines(rec)); } return lines;
     ✅ const lines = reconciled.flatMap(extractLines); return lines;
 
-22. Domain functions incomplete test coverage — missing unit tests entirely or covering below the project threshold
-    → Every new domain function must have dedicated unit tests achieving the project's coverage threshold (90%)
-    → Test infrastructure functions similarly; coverage checks catch missing edge cases
-    ❌ callGeminiWithKeyFallback added to infrastructure/ai/gemini.ts without src/__tests__/infrastructure/ test file
-    ❌ extractReconciledActionLines added to domain/analysis/ without corresponding unit tests for 8+ cases
-    ✅ src/__tests__/domain/analysis/actionRecommendation.test.ts with cases: undefined rec, missing levels, duplicates, zero values, empty result
-    ✅ New infrastructure functions tested in parallel src/__tests__/infrastructure/ test file with all branches covered
+22. Pure/helper functions incomplete test coverage — missing unit tests entirely or covering below the project threshold
+    → Every new pure helper must have dedicated unit tests achieving the project's coverage target (90% measured layers)
+    → Test action/api/adapter functions similarly; coverage checks catch missing edge cases
+    ❌ callGeminiWithKeyFallback added to entities/llm-provider/api/gemini.ts without a colocated test file
+    ❌ extractReconciledActionLines added to a pure helper without corresponding unit tests for 8+ cases
+    ✅ entities/analysis/__tests__/actionRecommendation.test.ts with cases: undefined rec, missing levels, duplicates, zero values, empty result
+    ✅ New action/api/adapter functions tested in colocated `__tests__/` files with all branches covered
 
 23. Domain functions inadequate defensive checks on financial data (division by zero, negative values, bounds)
     → Financial values require explicit guards before use — null/undefined checks insufficient
@@ -344,7 +344,7 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    → Type assertion required: Object.fromEntries(pairs) as Record<K, V>
 
 2. Missing fields in domain interface that exist in data source
-   → When parsing new fields in infrastructure, add them to the domain interface immediately
+   → When parsing new fields in adapters, add them to the owning interface immediately
 
 3. Unused/missing type imports
    → Remove unused type imports; add missing ones for explicit annotations
@@ -362,7 +362,7 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    ❌ TocItem defined identically in both PolicySection.tsx and lib/legal-toc.ts
    ❌ NewsDbRow defined separately in database module and API response module (different shapes)
    ✅ Define TocItem in lib/legal-toc.ts once; PolicySection.tsx imports: `import { TocItem } from '@/lib/legal-toc'`
-   ✅ Use named interfaces/types from centralized barrel (lib/ for UI types, domain/types.ts for domain types)
+   ✅ Use named interfaces/types from the relevant FSD slice barrel or `@y0ngha/siglens-core` public exports
 
 5.2. Inline type annotations used instead of named type aliases
    → Extract repeated or reusable type patterns to named type aliases
@@ -372,7 +372,7 @@ This file contains only **recurring gotchas** that agents keep missing despite e
 
 5.3. Function return types using inline object literals instead of named types — recurring (appears 2+ times per PR)
    → All function return types must use named interfaces/types, not inline object shapes
-   → Applies especially to Promise<{ field, field }> patterns in Server Actions, utilities, and infrastructure functions
+   → Applies especially to Promise<{ field, field }> patterns in Server Actions, utilities, and adapter functions
    → Improves type reusability, API clarity, and readability
    → This pattern persists across feature branches; enforce extraction during code review
    ❌ async function createAuthSession(data): Promise<{ session: Session; cookie: string }> { ... }
@@ -385,7 +385,7 @@ This file contains only **recurring gotchas** that agents keep missing despite e
 
 6. Union literals with 3+ occurrences in different files → not extracted to named type
    → Domain indicators frequently repeat trend/direction unions across result types
-   → When a union appears in 2+ result types, extract to domain/types.ts
+   → When a union appears in 2+ result types, extract to the relevant slice model or shared/core type
    ❌ ParabolicSARResult { trend: 'up' | 'down' | null }; SupertrendResult { trend: 'up' | 'down' | null }
    ✅ type TrendDirection = 'up' | 'down' | null; ParabolicSARResult { trend: TrendDirection }; SupertrendResult { trend: TrendDirection }
 
@@ -430,12 +430,12 @@ This file contains only **recurring gotchas** that agents keep missing despite e
 0.1. Relative path imports instead of path aliases
    → All imports must use @/ path aliases, never relative paths (./, ../)
    → 예외: FSD 슬라이스 내부 segment 간 참조는 relative import 허용 (CONVENTIONS.md §FSD Slice Internal Imports 참조)
-   → Applies to all layers: components, domain, infrastructure, lib
+   → Applies to all FSD layers: app, widgets, features, entities, shared
    → Path aliases enable safe refactoring and improve code clarity across layers
    ❌ import { formatPrice } from '../../lib/priceFormat'
    ❌ import { validateInput } from './validation'
    ✅ import { formatPrice } from '@/lib/priceFormat'
-   ✅ import { validateInput } from '@/domain/contact/validation'
+   ✅ import { validateInput } from '@/features/contact-form'
    ✅ // FSD 슬라이스 내부
       import type { AuthFormState } from '../model/types';  // 슬라이스 내부 relative OK
 
@@ -583,7 +583,7 @@ This file contains only **recurring gotchas** that agents keep missing despite e
 
 4. Boundary test constant redefined locally instead of imported from source
    ❌ const TEST_PERIOD = 14;
-   ✅ import { RSI_DEFAULT_PERIOD } from '@/domain/indicators/constants';
+    ✅ import { RSI_DEFAULT_PERIOD } from '@y0ngha/siglens-core';
 
 5. Missing edge case coverage when refactoring or moving functions
    → Each module must test its own edge cases directly
@@ -613,11 +613,11 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     → All mock/fixture objects must match the updated interface
 
 11. External dependencies in production code without corresponding test mocks
-    → When adding external packages (e.g., @vercel/functions) to infrastructure files, mock them in all corresponding test files
+    → When adding external packages (e.g., @vercel/functions) to adapter/action files, mock them in all corresponding test files
     → vi.mock('@package-name', ...) must be added to every test file that tests the module with the external dependency
 
-12. New infrastructure Server Action wrapper files created without unit tests
-    → Every new infrastructure function must have a corresponding unit test file
+12. New Server Action wrapper files created without unit tests
+    → Every new action/api/adapter function must have a corresponding unit test file
     → Thin wrappers delegating to siglens-core require equivalent forwarding tests (e.g., getBarsAction.test.ts model)
     → Test coverage must match or exceed the original implementation coverage
 
@@ -631,7 +631,7 @@ This file contains only **recurring gotchas** that agents keep missing despite e
 13. Redefining production functions/constants locally in tests
     → Tests must import and verify production code directly; local redefinitions become tautological
     ❌ test('shouldShowAd', () => { const shouldShowAd = (x) => x.enabled; expect(shouldShowAd(mock)).toBe(true); })
-    ✅ import { shouldShowAd } from '@/domain/ads'; test('shouldShowAd', () => { expect(shouldShowAd(mock)).toBe(true); })
+    ✅ import { shouldShowAd } from '@/shared/lib/ads'; test('shouldShowAd', () => { expect(shouldShowAd(mock)).toBe(true); })
     → Expected values from module exports must also be imported, not hardcoded
     ❌ expect(label).toBe('STRONG'); // STRONG_LABEL imported from same module as function
     ✅ import { SIGNAL_STRENGTH_LABEL } from '@/utils'; expect(label).toBe(SIGNAL_STRENGTH_LABEL.strong);
@@ -640,7 +640,7 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     → Functions using Date.now(), new Date() must be mocked in test files
     → Hard-coded expected values (e.g., TTL seconds) without mocking time sources cause flaky tests
     ❌ analyzeAction test: expect(ttl).toBe(86400); without mocking new Date()
-    ✅ vi.mock('@/infrastructure/cache/config', ...); mock Date to fixed timestamp before assertions
+    ✅ vi.mock('@/shared/cache/redis', ...); mock Date to fixed timestamp before assertions
 
 15. vi.spyOn created without assertion, or assertion uses expect.any() for new dependencies
     → Every spy must have a corresponding assertion that validates the spy was called and with correct arguments
@@ -658,10 +658,10 @@ This file contains only **recurring gotchas** that agents keep missing despite e
 
 17. `vi.mock(...)` placed between static imports — `import/first` ESLint violation
     → All static `import` statements must be contiguous at the very top of the file
-    → `vi.mock(...)` is hoisted by Vitest's transform, so placing it ABOVE imports is safe and idiomatic
+    → `vi.mock(...)` is hoisted by Vitest's transform, so placing it above imports is safe and idiomatic
     → Never sandwich `vi.mock(...)` between two `import` statements — splits the import block and trips `import/first`
-    ❌ `import { withRetry } from '...'; vi.mock('@/lib/sleep', ...); import { sleep } from '@/lib/sleep';`
-    ✅ `vi.mock('@/lib/sleep', ...); import { withRetry } from '...'; import { sleep } from '@/lib/sleep';`
+    ❌ `import { withRetry } from '...'; vi.mock('@/shared/lib/sleep', ...); import { sleep } from '@/shared/lib/sleep';`
+    ✅ `vi.mock('@/shared/lib/sleep', ...); import { withRetry } from '...'; import { sleep } from '@/shared/lib/sleep';`
 
 18. New threshold/conditional branch introduced without test cases covering both true and false paths
     → When a function adds a new `if (value < THRESHOLD)` check, tests must explicitly verify the branch-taken case (value below threshold) and branch-not-taken case (value at/above threshold)
@@ -831,8 +831,8 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    → Remove 'use client' and convert to 'use cache' async functions instead
    → Client Components cannot use Date.now() during prerender; use Cache Components for time-dependent logic
 
-3. Missing 'use cache' directive on infrastructure functions
-   → infrastructure/ functions accessed during prerender must include 'use cache' directive
+3. Missing 'use cache' directive on cacheable server functions
+   → server functions accessed during prerender must include 'use cache' directive when they are intended to participate in Cache Components
    → Explicitly marks the function as safe to cache and enables caching at build time
 ```
 
@@ -866,7 +866,7 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    → When tests import and test a function, remove @internal annotation (inconsistency signals poor testing API design)
    ❌ export function computeCutoff(…) { } with @internal JSDoc, yet newsClient.test.ts imports and tests it
    ✅ Remove @internal; function is part of the public test interface
-   → Applies to: infrastructure utilities, domain helpers used in tests
+   → Applies to: adapter utilities, pure helpers used in tests
 
 4. @internal annotation on non-exported symbols (redundant) — recurring 4+ times
    → @internal JSDoc tag is semantically redundant on non-exported (private) symbols
@@ -928,14 +928,14 @@ This file contains only **recurring gotchas** that agents keep missing despite e
       Background job: cache.set(symbol, { symbol, name, koreanName })  // fmpSymbol missing
    ✅ Both paths: cache.set(symbol, { symbol, name, koreanName, fmpSymbol })
 
-2. Infrastructure functions must have 90% branch coverage
+2. Action/API/adapter functions must keep coverage aligned with the 90% measured-layer target
    → All if/else, optional chaining (?.), nullish coalescing (??) paths tested
    → Test edge cases like subsecond boundaries, zero values, Math.max guard behavior
    ❌ Math.max(1, Math.floor(diffMs / 1000)) guard that converts 0→1 untested
    ✅ Add test case: diffMs = 500ms covers the Math.max(1, 0) = 1 path
 
-3. No debug artifacts (console.log) in infrastructure files
-   → Infrastructure functions are utilities; logging belongs in higher layers
+3. No debug artifacts (console.log) in action/API/adapter files
+   → Server utilities and adapters should avoid debug artifacts; logging belongs at explicit boundary handling points
    ❌ getBars() { console.log(...timing...); return bars; }
    ✅ Remove logging; expose metrics via return type if needed
 
@@ -1032,11 +1032,11 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    ✅ Example: "current price 168, support 167" to show support holding for long entry
    ✅ Description: "UTAD signals distribution complete; defer entry (downside risk)"
 
-5. Test infrastructure changes applied to production tsconfig instead of test-only configuration
-   → Test-specific settings (module resolution overrides) must be isolated to test configuration
+5. Test configuration changes applied to production TypeScript config instead of test-only configuration
+   → Test-specific settings (environment, globals, module resolution overrides) must stay in Vitest/test-only config
    → Production tsconfig.json must remain stable to prevent ESM-only dependency failures at runtime
    ❌ tsconfig.json module changed from ESM to CJS for test compatibility, breaking ESM-only imports
-   ✅ vitest.config.ts handles test-specific settings; tsconfig.json unchanged
+   ✅ vitest.config.ts carries test environment settings, tsconfig.json unchanged
 
 6. Interface parameter names diverge from implementation across call chain
    → Parameter names for the same logical value must be consistent across external interface and internal implementation
@@ -1044,7 +1044,7 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    ❌ callGeminiWithRetry accepts abortIfDelayExceedsMs, internally maps to abortIfCumulativeDelayReachesMs
    ✅ Interface and implementation use identical parameter names; mapping logic is transparent
 
-7. YAGNI: infrastructure methods landed pre-emptively without a production caller in the same PR
+7. YAGNI: adapter methods landed pre-emptively without a production caller in the same PR
    → New repository / adapter methods must land in the PR that consumes them, not "for future use"
    → Premature methods accumulate maintenance cost (tests, mock helpers, type churn) for zero current benefit; if requirements change before use, the design is wrong anyway.
    → R19 example: `earningsCalendarRepository.listForRange(from, to)` defined + tested but never called from production. Removed (method, 2 test cases, `between` import, mock helper).
@@ -1101,9 +1101,9 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    ❌ src/lib/seo.ts contains both SEO metadata (ogTitle, ogDescription) and legal disclaimers
    ✅ Separate: src/lib/seo.ts for SEO, src/lib/legal.ts for legal constants
 
-7. Business domain constants placed in lib/ (violation of lib/CLAUDE.md scope)
-   → lib/ may contain only utility wrappers, React Query key factories, config constants, chart colors
-   → Business domain knowledge (POPULAR_TICKERS, legal disclaimers) must go to domain/ or sitemap-specific modules
+7. Business domain constants placed in generic shared utilities
+   → `shared/lib` may contain utility wrappers, formatters, React Query key factories, and generic helpers
+   → Business domain knowledge (POPULAR_TICKERS, legal disclaimers) must go to the owning entity/feature/widget or sitemap-specific module
    ❌ POPULAR_TICKERS defined in src/lib/seo.ts
    ✅ Inline at usage site (src/app/sitemap.ts) or domain-specific module
 
