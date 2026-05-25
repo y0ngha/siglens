@@ -10,7 +10,6 @@ const { mockFinalMessage, mockStream, MockAnthropic } = vi.hoisted(() => {
 });
 
 vi.mock('@anthropic-ai/sdk', () => ({
-    __esModule: true,
     default: MockAnthropic,
 }));
 

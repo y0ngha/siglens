@@ -5,14 +5,8 @@
  * generateMetadata에서 직접 호출하는 외부 의존성만 최소한으로 모킹한다.
  */
 
-// release-it 경유 실행 시 `.env.local`의 NEXT_PUBLIC_SITE_URL(=dev URL)이 부모 프로세스에
-// 주입되어 generateMetadata가 'http://localhost:4200/...'을 canonical로 만들 수 있다.
-// production URL 회귀가드 의도를 보존하기 위해 import 평가 전에 강제 세팅한다.
-//
-// 이 패턴의 안전성은 vitest의 ESM 처리에 의존한다 — ES `import`가 `require()`로
-// lowering되어 코드 순서대로 평가되므로, 이 줄이 page module evaluation 전에 실행된다.
-// Babel 전환·`isolatedModules`+ESM output으로 바꾸면 import hoisting이 깨질 수 있으니
-// 그때는 vi.mock 패턴으로 옮겨야 한다.
+// generateMetadata는 함수 호출 시점에 process.env.NEXT_PUBLIC_SITE_URL을 읽으므로(lazy read),
+// 테스트 전에 세팅하면 production URL 회귀가드가 동작한다.
 process.env.NEXT_PUBLIC_SITE_URL = 'https://siglens.io';
 
 // 'server-only'는 Next 런타임 sentinel이라 Jest 환경에서 해석 불가 — virtual mock

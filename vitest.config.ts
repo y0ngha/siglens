@@ -39,7 +39,7 @@ const coverageConfig = {
         // widgets/, app/, features/hooks/, features/ui/, shared/hooks/, shared/ui/ layers.
         // These new layers currently have <50% coverage.
         // Ramp-up plan: 50% → 60% (Phase 1+2) → 70% (Phase 3) → 80% (Phase 4) → 90% (Phase 6+7)
-        // See docs/superpowers/plans/2026-05-25-test-coverage-full-layers.md §Threshold Ramp-Up
+
         // Previously tested layers (entities, features/lib, shared/lib) maintain 90%+ individually.
         statements: 50,
         branches: 50,

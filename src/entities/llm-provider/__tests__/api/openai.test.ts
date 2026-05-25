@@ -7,7 +7,6 @@ const { mockCreate, MockOpenAI } = vi.hoisted(() => {
 });
 
 vi.mock('openai', () => ({
-    __esModule: true,
     default: MockOpenAI,
 }));
 
