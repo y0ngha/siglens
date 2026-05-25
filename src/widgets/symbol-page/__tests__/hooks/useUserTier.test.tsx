@@ -1,8 +1,3 @@
-import { renderHook, waitFor } from '@testing-library/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import type { ReactNode } from 'react';
-import { useUserTier } from '@/widgets/symbol-page/hooks/useUserTier';
-
 vi.mock('@/entities/user-tier/actions', () => ({
     getUserTierAction: vi.fn(),
 }));
@@ -11,7 +6,11 @@ vi.mock('@y0ngha/siglens-core', () => ({
     DEFAULT_TIER: 'free',
 }));
 
+import { renderHook, waitFor } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import type { ReactNode } from 'react';
 import { getUserTierAction } from '@/entities/user-tier/actions';
+import { useUserTier } from '@/widgets/symbol-page/hooks/useUserTier';
 
 const queryClients: QueryClient[] = [];
 

@@ -126,6 +126,10 @@ vi.mock('@/widgets/symbol-page/FearGreedCardMounted', () => ({
 }));
 
 describe('ChartContent', () => {
+    afterEach(() => {
+        vi.clearAllMocks();
+    });
+
     const defaultProps = {
         symbol: 'AAPL',
         companyName: 'Apple Inc.',

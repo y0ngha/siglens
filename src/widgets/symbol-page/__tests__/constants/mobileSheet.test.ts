@@ -31,9 +31,10 @@ describe('mobileSheet constants', () => {
 
     it('SNAP_POINTS_MUTABLE is a mutable copy of MOBILE_SNAP_POINTS', () => {
         expect(SNAP_POINTS_MUTABLE).toEqual([...MOBILE_SNAP_POINTS]);
-        SNAP_POINTS_MUTABLE.push(0.99);
-        expect(SNAP_POINTS_MUTABLE).toHaveLength(4);
-        SNAP_POINTS_MUTABLE.pop();
+        const copy = [...SNAP_POINTS_MUTABLE];
+        copy.push(0.99);
+        expect(copy).toHaveLength(MOBILE_SNAP_POINTS.length + 1);
+        expect(SNAP_POINTS_MUTABLE).toHaveLength(MOBILE_SNAP_POINTS.length);
     });
 
     it('VAUL_EASING is a valid CSS cubic-bezier string', () => {

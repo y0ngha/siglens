@@ -1,6 +1,3 @@
-import { render, screen } from '@testing-library/react';
-import { SymbolTabs } from '@/widgets/symbol-page/SymbolTabs';
-
 vi.mock('next/navigation', () => ({
     usePathname: vi.fn(() => '/AAPL'),
 }));
@@ -37,7 +34,9 @@ vi.mock('@/widgets/symbol-page/utils/symbolTabsConfig', () => ({
     ],
 }));
 
+import { render, screen } from '@testing-library/react';
 import { usePathname } from 'next/navigation';
+import { SymbolTabs } from '@/widgets/symbol-page/SymbolTabs';
 
 describe('SymbolTabs', () => {
     beforeEach(() => {

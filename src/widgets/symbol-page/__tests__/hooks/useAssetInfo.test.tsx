@@ -1,14 +1,13 @@
-import { renderHook, waitFor } from '@testing-library/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import type { ReactNode } from 'react';
-import { useAssetInfo } from '@/widgets/symbol-page/hooks/useAssetInfo';
-import type { AssetInfo } from '@/shared/lib/types';
-
 vi.mock('@/entities/ticker/actions', () => ({
     getAssetInfoAction: vi.fn(),
 }));
 
+import { renderHook, waitFor } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import type { ReactNode } from 'react';
 import { getAssetInfoAction } from '@/entities/ticker/actions';
+import { useAssetInfo } from '@/widgets/symbol-page/hooks/useAssetInfo';
+import type { AssetInfo } from '@/shared/lib/types';
 
 const MOCK_ASSET_INFO: AssetInfo = {
     name: 'Apple Inc.',

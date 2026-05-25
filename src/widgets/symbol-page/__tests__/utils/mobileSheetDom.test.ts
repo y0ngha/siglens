@@ -16,15 +16,14 @@ class DOMMatrixStub {
     }
 }
 
-beforeAll(() => {
-    (globalThis as Record<string, unknown>).DOMMatrix = DOMMatrixStub;
-});
-
-afterAll(() => {
-    delete (globalThis as Record<string, unknown>).DOMMatrix;
-});
-
 describe('captureTransformY', () => {
+    beforeAll(() => {
+        (globalThis as Record<string, unknown>).DOMMatrix = DOMMatrixStub;
+    });
+
+    afterAll(() => {
+        delete (globalThis as Record<string, unknown>).DOMMatrix;
+    });
     it('returns 0 when transform is "none"', () => {
         const el = document.createElement('div');
         document.body.appendChild(el);
