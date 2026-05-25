@@ -4,10 +4,7 @@ import { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { getNewsCardsAction } from '@/entities/news-article/actions';
 import type { NewsDisplayItem } from '@/shared/lib/types';
 import { MS_PER_MINUTE } from '@/shared/config/time';
-import {
-    POLL_INTERVAL_MS,
-    MAX_CONSECUTIVE_FAILURES,
-} from '../constants';
+import { POLL_INTERVAL_MS, MAX_CONSECUTIVE_FAILURES } from '../constants';
 
 /**
  * Called once when polling terminates normally (all cards enriched, or timeout

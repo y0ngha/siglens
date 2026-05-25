@@ -32,10 +32,7 @@ import { AUGMENT_AND_OVERALL_POLL_INTERVAL_MS } from '@/shared/config/pollingCon
 import type { CancelJobEntry } from '@/shared/lib/types';
 import { usePageHideCancel } from '@/shared/hooks/usePageHideCancel';
 import { BotBlockedError } from '@/widgets/symbol-page';
-import type {
-    OverallAnalysisState,
-    ProgressState,
-} from '../types';
+import type { OverallAnalysisState, ProgressState } from '../types';
 
 export interface UseOverallAnalysisReturn {
     state: OverallAnalysisState;

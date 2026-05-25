@@ -1,9 +1,6 @@
 import { HeaderNav } from './HeaderNav';
 import { HeaderNavStatic } from './HeaderNavStatic';
-import {
-    HeaderUserMenu,
-    type HeaderUserMenuUser,
-} from './HeaderUserMenu';
+import { HeaderUserMenu, type HeaderUserMenuUser } from './HeaderUserMenu';
 import { TickerAutocomplete } from '@/features/ticker-search';
 import { SITE_NAME } from '@/shared/lib/seo';
 import Image from 'next/image';

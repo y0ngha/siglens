@@ -1,10 +1,6 @@
 'use client';
 
-import {
-    SNAP_FULL,
-    SNAP_PEEK,
-    type SnapPoint,
-} from '../constants/mobileSheet';
+import { SNAP_FULL, SNAP_PEEK, type SnapPoint } from '../constants/mobileSheet';
 import {
     type RefObject,
     useCallback,

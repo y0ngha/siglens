@@ -1,10 +1,7 @@
 'use client';
 
 import { useCallback, useMemo, useState } from 'react';
-import {
-    FIRST_INDICATOR_PANE_INDEX,
-    INACTIVE_PANE_INDEX,
-} from '../constants';
+import { FIRST_INDICATOR_PANE_INDEX, INACTIVE_PANE_INDEX } from '../constants';
 import type { PaneIndices } from '../types';
 
 interface UseIndicatorVisibilityReturn {
