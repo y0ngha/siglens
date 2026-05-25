@@ -40,6 +40,28 @@ describe('ProfileCard', () => {
         expect(screen.getByText(EMPTY_MESSAGE)).toBeInTheDocument();
     });
 
+    it('omits industry separator when industry is empty string', () => {
+        const profile: FundamentalProfile = {
+            ...SAMPLE_PROFILE,
+            industry: '',
+        };
+        render(<ProfileCard profile={profile} descriptionSlot={<p>설명</p>} />);
+        // Should show sector without trailing " / ..."
+        expect(screen.getByText('Technology')).toBeInTheDocument();
+        expect(screen.queryByText(/\//)).not.toBeInTheDocument();
+    });
+
+    it('hides CEO and website when they are null', () => {
+        const profile: FundamentalProfile = {
+            ...SAMPLE_PROFILE,
+            ceo: null,
+            website: null,
+        };
+        render(<ProfileCard profile={profile} descriptionSlot={<p>설명</p>} />);
+        expect(screen.queryByText('Tim Cook')).not.toBeInTheDocument();
+        expect(screen.queryByText('apple.com')).not.toBeInTheDocument();
+    });
+
     it('still renders descriptionSlot in empty state (tree shape stability)', () => {
         render(
             <ProfileCard

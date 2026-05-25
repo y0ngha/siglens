@@ -2,10 +2,6 @@
 import { renderHook } from '@testing-library/react';
 import { useApiKeyForms } from '@/features/api-key-management/hooks/useApiKeyForms';
 
-vi.mock('@/shared/db/client', () => ({
-    getDatabaseClient: vi.fn(() => ({ db: {}, sql: () => null })),
-}));
-
 const mockInvalidateQueries = vi.fn();
 
 vi.mock('@tanstack/react-query', () => ({

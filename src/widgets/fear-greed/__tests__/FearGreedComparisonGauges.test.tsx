@@ -35,6 +35,25 @@ describe('FearGreedComparisonGauges', () => {
         });
     });
 
+    describe('with null label', () => {
+        it('falls back to classifyScore when point.label is null', () => {
+            const history: FearGreedHistoryPoint[] = Array.from(
+                { length: 300 },
+                (_, i) => ({
+                    date: `2026-${String(Math.floor(i / 30) + 1).padStart(2, '0')}-${String((i % 30) + 1).padStart(2, '0')}`,
+                    score: 50 + (i % 20),
+                    label: null,
+                })
+            );
+            const { container } = render(
+                <FearGreedComparisonGauges history={history} />
+            );
+            // Should still render gauges — classifyScore provides fallback label
+            const svgs = container.querySelectorAll('svg[role="img"]');
+            expect(svgs).toHaveLength(4);
+        });
+    });
+
     describe('with insufficient history', () => {
         it('clamps to first valid entry when daysBack exceeds available data', () => {
             const history = makeHistory(

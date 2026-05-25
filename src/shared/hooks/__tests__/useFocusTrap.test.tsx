@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { useRef } from 'react';
 import { useFocusTrap } from '@/shared/hooks/useFocusTrap';
 
@@ -60,5 +60,98 @@ describe('useFocusTrap', () => {
         render(<Harness active={false} />);
         expect(document.activeElement).toBe(trigger);
         document.body.removeChild(trigger);
+    });
+
+    it('Tab wraps from last to first focusable element', () => {
+        render(<Harness active={true} />);
+
+        const closeBtn = screen.getByTestId('dialog-close');
+        const actionBtn = screen.getByTestId('dialog-action');
+
+        // Focus is on first (close). Move to action.
+        actionBtn.focus();
+        expect(document.activeElement).toBe(actionBtn);
+
+        // Tab from last element should wrap to first
+        fireEvent.keyDown(document, { key: 'Tab' });
+        expect(document.activeElement).toBe(closeBtn);
+    });
+
+    it('Shift+Tab wraps from first to last focusable element', () => {
+        render(<Harness active={true} />);
+
+        const closeBtn = screen.getByTestId('dialog-close');
+        const actionBtn = screen.getByTestId('dialog-action');
+
+        // Focus should be on first (close) after mount
+        expect(document.activeElement).toBe(closeBtn);
+
+        // Shift+Tab from first element should wrap to last
+        fireEvent.keyDown(document, { key: 'Tab', shiftKey: true });
+        expect(document.activeElement).toBe(actionBtn);
+    });
+
+    it('Tab does nothing when non-Tab key is pressed', () => {
+        render(<Harness active={true} />);
+
+        const closeBtn = screen.getByTestId('dialog-close');
+        expect(document.activeElement).toBe(closeBtn);
+
+        fireEvent.keyDown(document, { key: 'Escape' });
+        // Focus should not change
+        expect(document.activeElement).toBe(closeBtn);
+    });
+
+    it('focuses container with tabindex when no focusable children exist', () => {
+        function EmptyDialog({ active }: DialogProps) {
+            const ref = useRef<HTMLDivElement>(null);
+            useFocusTrap(ref, active);
+            return (
+                <div
+                    ref={ref}
+                    role="dialog"
+                    tabIndex={-1}
+                    data-testid="empty-dialog"
+                >
+                    <p>No focusable elements here</p>
+                </div>
+            );
+        }
+
+        render(<EmptyDialog active={true} />);
+        expect(document.activeElement).toBe(screen.getByTestId('empty-dialog'));
+    });
+
+    it('does not restore focus when previouslyFocused is no longer in DOM', () => {
+        const trigger = document.createElement('button');
+        trigger.setAttribute('data-testid', 'removable');
+        document.body.appendChild(trigger);
+        trigger.focus();
+        expect(document.activeElement).toBe(trigger);
+
+        const { rerender } = render(<Harness active={true} />);
+        expect(document.activeElement).toBe(screen.getByTestId('dialog-close'));
+
+        // Remove the trigger from DOM before deactivating trap
+        document.body.removeChild(trigger);
+
+        rerender(<Harness active={false} />);
+        // Should not throw, focus stays wherever it is
+        expect(document.activeElement).not.toBe(trigger);
+    });
+
+    it('Shift+Tab wraps when focus is on the container itself', () => {
+        render(<Harness active={true} />);
+
+        const dialog = screen.getByTestId('dialog');
+        const actionBtn = screen.getByTestId('dialog-action');
+
+        // Manually focus the container
+        dialog.focus();
+        expect(document.activeElement).toBe(dialog);
+
+        // Shift+Tab from container should wrap to last
+        fireEvent.keyDown(document, { key: 'Tab', shiftKey: true });
+        expect(document.activeElement).toBe(actionBtn);
     });
 });
