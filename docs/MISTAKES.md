@@ -409,8 +409,8 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    ✅ // Object.keys widens to string[], but SKILL_STAT_CONFIG: Record<SkillType, …> guarantees keys
       const SKILL_TYPES = Object.keys(SKILL_STAT_CONFIG) as SkillType[];  // TS limitation, not runtime risk
    → Mandatory: every safe-cast `as` must be accompanied by a comment explaining the guarantee.
-   → Test file exception: Jest mocking patterns are self-documenting and do NOT require a guarantee comment.
-      `callGemini as jest.MockedFunction<typeof callGemini>` — the cast purpose is evident from the pattern itself.
+   → Test file exception: Vitest mocking patterns are self-documenting and do NOT require a guarantee comment.
+      `callGemini as MockedFunction<typeof callGemini>` — the cast purpose is evident from the pattern itself.
       This exemption applies only to `.test.ts` files; production code `as` casts always require a comment.
 ```
 
@@ -600,8 +600,8 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    → When mocking a dependency (repository, service, client), the mock must implement ALL methods called by the code under test
    → Missing methods cause runtime errors or incomplete test coverage
    → Update mock implementations whenever the action adds a new dependency method call
-   ❌ MockNewsRepository.mockImplementation({ fetch: jest.fn() }) but ensureNewsCardsAnalyzedAction calls both fetch + listBySymbol
-   ✅ MockNewsRepository.mockImplementation({ fetch: jest.fn(), listBySymbol: jest.fn() }) with all methods tested
+   ❌ MockNewsRepository.mockImplementation({ fetch: vi.fn() }) but ensureNewsCardsAnalyzedAction calls both fetch + listBySymbol
+   ✅ MockNewsRepository.mockImplementation({ fetch: vi.fn(), listBySymbol: vi.fn() }) with all methods tested
 
 9. Test describe text promises assertions not verified by its it() cases
    → describe() block name must describe only the preconditions/feature shared by all its it() cases
@@ -614,7 +614,7 @@ This file contains only **recurring gotchas** that agents keep missing despite e
 
 11. External dependencies in production code without corresponding test mocks
     → When adding external packages (e.g., @vercel/functions) to infrastructure files, mock them in all corresponding test files
-    → jest.mock('@package-name', ...) must be added to every test file that tests the module with the external dependency
+    → vi.mock('@package-name', ...) must be added to every test file that tests the module with the external dependency
 
 12. New infrastructure Server Action wrapper files created without unit tests
     → Every new infrastructure function must have a corresponding unit test file
@@ -640,12 +640,12 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     → Functions using Date.now(), new Date() must be mocked in test files
     → Hard-coded expected values (e.g., TTL seconds) without mocking time sources cause flaky tests
     ❌ analyzeAction test: expect(ttl).toBe(86400); without mocking new Date()
-    ✅ jest.mock('@/infrastructure/cache/config', ...); mock Date to fixed timestamp before assertions
+    ✅ vi.mock('@/infrastructure/cache/config', ...); mock Date to fixed timestamp before assertions
 
-15. jest.spyOn created without assertion, or assertion uses expect.any() for new dependencies
+15. vi.spyOn created without assertion, or assertion uses expect.any() for new dependencies
     → Every spy must have a corresponding assertion that validates the spy was called and with correct arguments
     → When dependencies are added, replace generic expect.any(Object) with expect.objectContaining({...}) to verify new fields
-    ❌ jest.spyOn(console, 'warn'); /* code that never calls console.warn */; spy.mockRestore()
+    ❌ vi.spyOn(console, 'warn'); /* code that never calls console.warn */; spy.mockRestore()
     ❌ expect(mockDelete).toHaveBeenCalledWith(expect.any(Object))  // new deps oauthAccounts/oauthRevoker not verified
     ✅ Remove spy if assertion is missing or code path never executes
     ✅ expect(mockDelete).toHaveBeenCalledWith(expect.objectContaining({ oauthAccounts: {...}, oauthRevoker: {...} }))
@@ -656,12 +656,12 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     ❌ deleteAccountAction(oauthAccounts, oauthRevoker) added, but test asserts deleteAccountAction called without verifying deps passed
     ✅ Assertion explicitly checks both oauthAccounts and oauthRevoker are included in the deps passed
 
-17. `jest.mock(...)` placed between static imports — `import/first` ESLint violation
+17. `vi.mock(...)` placed between static imports — `import/first` ESLint violation
     → All static `import` statements must be contiguous at the very top of the file
-    → `jest.mock(...)` is hoisted by Jest's babel transform, so placing it ABOVE imports is safe and idiomatic
-    → Never sandwich `jest.mock(...)` between two `import` statements — splits the import block and trips `import/first`
-    ❌ `import { withRetry } from '...'; jest.mock('@/lib/sleep', ...); import { sleep } from '@/lib/sleep';`
-    ✅ `jest.mock('@/lib/sleep', ...); import { withRetry } from '...'; import { sleep } from '@/lib/sleep';`
+    → `vi.mock(...)` is hoisted by Vitest's transform, so placing it ABOVE imports is safe and idiomatic
+    → Never sandwich `vi.mock(...)` between two `import` statements — splits the import block and trips `import/first`
+    ❌ `import { withRetry } from '...'; vi.mock('@/lib/sleep', ...); import { sleep } from '@/lib/sleep';`
+    ✅ `vi.mock('@/lib/sleep', ...); import { withRetry } from '...'; import { sleep } from '@/lib/sleep';`
 
 18. New threshold/conditional branch introduced without test cases covering both true and false paths
     → When a function adds a new `if (value < THRESHOLD)` check, tests must explicitly verify the branch-taken case (value below threshold) and branch-not-taken case (value at/above threshold)
@@ -1033,10 +1033,10 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    ✅ Description: "UTAD signals distribution complete; defer entry (downside risk)"
 
 5. Test infrastructure changes applied to production tsconfig instead of test-only configuration
-   → Test-specific settings (ts-jest CJS mode, module resolution overrides) must be isolated to tsconfig.test.json
+   → Test-specific settings (module resolution overrides) must be isolated to test configuration
    → Production tsconfig.json must remain stable to prevent ESM-only dependency failures at runtime
-   ❌ tsconfig.json module changed from ESM to CJS for ts-jest compatibility, breaking ESM-only imports
-   ✅ tsconfig.test.json overrides only module/moduleResolution for test environment, tsconfig.json unchanged
+   ❌ tsconfig.json module changed from ESM to CJS for test compatibility, breaking ESM-only imports
+   ✅ vitest.config.ts handles test-specific settings; tsconfig.json unchanged
 
 6. Interface parameter names diverge from implementation across call chain
    → Parameter names for the same logical value must be consistent across external interface and internal implementation

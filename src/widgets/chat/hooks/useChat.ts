@@ -6,6 +6,7 @@ import {
     loadSessionFull,
     saveSession,
 } from '../utils/chatStorage';
+import { isChatMessage } from '../utils/chatMessageUtils';
 import {
     GEMINI_2_5_FLASH_MODEL,
     VALID_CHAT_MODELS,
@@ -63,10 +64,6 @@ const ERROR_MESSAGES: Record<ChatErrorCode, string> = {
 
 function isValidChatModel(value: string): value is ModelId {
     return VALID_CHAT_MODELS.some(model => model === value);
-}
-
-function isChatMessage(m: DisplayMessage): m is ChatMessage {
-    return m.role !== 'system';
 }
 
 function resolveAiContent(result: ChatActionResult): string {

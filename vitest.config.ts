@@ -33,18 +33,26 @@ const coverageConfig = {
         'src/entities/*/actions.ts',
         'src/entities/*/actions/index.ts',
         'src/features/*/actions.ts',
+        // Next.js async server components (page.tsx, layout.tsx, loading.tsx, error.tsx,
+        // opengraph-image.tsx, twitter-image.tsx) are excluded because they return
+        // Promise<JSX.Element> which @testing-library/react cannot render.
+        // Official recommendation: use E2E tests. See https://nextjs.org/docs/app/guides/testing
+        // Their composed logic is tested via entities, features, and widgets layers.
+        'src/app/**/page.tsx',
+        'src/app/**/loading.tsx',
+        'src/app/**/error.tsx',
+        'src/app/**/layout.tsx',
+        'src/app/**/opengraph-image.tsx',
+        'src/app/**/twitter-image.tsx',
+        // App-level RSC data loaders use React cache() + server-only DB/API calls.
+        // Same rationale as page.tsx: tested via the entities/shared layers they compose.
+        'src/app/**/*Data.ts',
     ],
     thresholds: {
-        // Temporarily lowered from 90% because coverage scope was expanded to include
-        // widgets/, app/, features/hooks/, features/ui/, shared/hooks/, shared/ui/ layers.
-        // These new layers currently have <50% coverage.
-        // Ramp-up plan: 50% → 60% (Phase 1+2) → 70% (Phase 3) → 80% (Phase 4) → 90% (Phase 6+7)
-
-        // Previously tested layers (entities, features/lib, shared/lib) maintain 90%+ individually.
-        statements: 50,
-        branches: 50,
-        functions: 50,
-        lines: 50,
+        statements: 90,
+        branches: 90,
+        functions: 90,
+        lines: 90,
     },
 };
 

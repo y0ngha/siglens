@@ -9,12 +9,13 @@ const VALID_SECRET = 'a'.repeat(32);
 
 describe('OAuth state validation edge cases', () => {
     afterEach(() => {
-        delete process.env.OAUTH_STATE_HMAC_SECRET;
+        vi.unstubAllEnvs();
     });
 
     describe('HMAC misconfiguration', () => {
         it('throws OAuthStateSecretMisconfiguredError when secret is missing', () => {
-            delete process.env.OAUTH_STATE_HMAC_SECRET;
+            // 빈 문자열은 프로덕션의 !raw (falsy) 체크에서 undefined와 동치로 처리됨
+            vi.stubEnv('OAUTH_STATE_HMAC_SECRET', '');
 
             expect(() => issueOAuthState('google', '/')).toThrow(
                 OAuthStateSecretMisconfiguredError
@@ -22,7 +23,7 @@ describe('OAuth state validation edge cases', () => {
         });
 
         it('throws when secret is too short', () => {
-            process.env.OAUTH_STATE_HMAC_SECRET = 'short';
+            vi.stubEnv('OAUTH_STATE_HMAC_SECRET', 'short');
 
             expect(() => issueOAuthState('google', '/')).toThrow(
                 'at least 32 bytes'
@@ -30,7 +31,7 @@ describe('OAuth state validation edge cases', () => {
         });
 
         it('verify also throws on missing secret', () => {
-            delete process.env.OAUTH_STATE_HMAC_SECRET;
+            vi.stubEnv('OAUTH_STATE_HMAC_SECRET', '');
 
             expect(() => verifyOAuthState('google', 'state', 'cookie')).toThrow(
                 OAuthStateSecretMisconfiguredError
@@ -40,7 +41,7 @@ describe('OAuth state validation edge cases', () => {
 
     describe('Missing state cookie', () => {
         it('returns ok: false when cookie value is undefined', () => {
-            process.env.OAUTH_STATE_HMAC_SECRET = VALID_SECRET;
+            vi.stubEnv('OAUTH_STATE_HMAC_SECRET', VALID_SECRET);
 
             const result = verifyOAuthState('google', 'some-state', undefined);
 
@@ -48,7 +49,7 @@ describe('OAuth state validation edge cases', () => {
         });
 
         it('returns ok: false when cookie value is empty string', () => {
-            process.env.OAUTH_STATE_HMAC_SECRET = VALID_SECRET;
+            vi.stubEnv('OAUTH_STATE_HMAC_SECRET', VALID_SECRET);
 
             const result = verifyOAuthState('google', 'state', '');
 
@@ -58,7 +59,7 @@ describe('OAuth state validation edge cases', () => {
 
     describe('Tampered cookie', () => {
         it('returns ok: false when signature is tampered', () => {
-            process.env.OAUTH_STATE_HMAC_SECRET = VALID_SECRET;
+            vi.stubEnv('OAUTH_STATE_HMAC_SECRET', VALID_SECRET);
             const { state, cookie } = issueOAuthState('google', '/dashboard');
 
             const tampered = cookie.value.replace(/.$/, 'X');
@@ -68,7 +69,7 @@ describe('OAuth state validation edge cases', () => {
         });
 
         it('returns ok: false when payload is tampered', () => {
-            process.env.OAUTH_STATE_HMAC_SECRET = VALID_SECRET;
+            vi.stubEnv('OAUTH_STATE_HMAC_SECRET', VALID_SECRET);
             const { state, cookie } = issueOAuthState('google', '/dashboard');
 
             const [, sig] = cookie.value.split('.');
@@ -81,7 +82,7 @@ describe('OAuth state validation edge cases', () => {
 
     describe('Provider mismatch', () => {
         it('returns ok: false when provider does not match', () => {
-            process.env.OAUTH_STATE_HMAC_SECRET = VALID_SECRET;
+            vi.stubEnv('OAUTH_STATE_HMAC_SECRET', VALID_SECRET);
             const { state, cookie } = issueOAuthState('google', '/');
 
             const result = verifyOAuthState(
@@ -96,7 +97,7 @@ describe('OAuth state validation edge cases', () => {
 
     describe('Expired state', () => {
         it('returns ok: false when state has expired', () => {
-            process.env.OAUTH_STATE_HMAC_SECRET = VALID_SECRET;
+            vi.stubEnv('OAUTH_STATE_HMAC_SECRET', VALID_SECRET);
             const issuedAt = new Date('2025-01-01T00:00:00Z');
             const { state, cookie } = issueOAuthState('google', '/', issuedAt);
 
@@ -114,7 +115,7 @@ describe('OAuth state validation edge cases', () => {
 
     describe('Valid flow', () => {
         it('succeeds with correct state and cookie', () => {
-            process.env.OAUTH_STATE_HMAC_SECRET = VALID_SECRET;
+            vi.stubEnv('OAUTH_STATE_HMAC_SECRET', VALID_SECRET);
             const now = new Date();
             const { state, cookie } = issueOAuthState(
                 'google',
@@ -131,7 +132,7 @@ describe('OAuth state validation edge cases', () => {
         });
 
         it('cookie has correct name', () => {
-            process.env.OAUTH_STATE_HMAC_SECRET = VALID_SECRET;
+            vi.stubEnv('OAUTH_STATE_HMAC_SECRET', VALID_SECRET);
             const { cookie } = issueOAuthState('google', '/');
 
             expect(cookie.name).toBe(OAUTH_STATE_COOKIE_NAME);
@@ -142,7 +143,7 @@ describe('OAuth state validation edge cases', () => {
 
     describe('Malformed cookie format', () => {
         it('returns ok: false when cookie has no separator', () => {
-            process.env.OAUTH_STATE_HMAC_SECRET = VALID_SECRET;
+            vi.stubEnv('OAUTH_STATE_HMAC_SECRET', VALID_SECRET);
 
             const result = verifyOAuthState(
                 'google',

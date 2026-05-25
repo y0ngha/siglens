@@ -10,14 +10,6 @@ vi.mock('@/widgets/chart/hooks/useOverlayGroups', () => ({
     },
 }));
 
-vi.mock('@/widgets/chart/utils/overlayLegendFormat', async importOriginal => {
-    const original =
-        await importOriginal<
-            typeof import('@/widgets/chart/utils/overlayLegendFormat')
-        >();
-    return { ...original };
-});
-
 describe('OverlayLegend', () => {
     it('returns null when items is empty', () => {
         const { container } = render(<OverlayLegend items={[]} />);

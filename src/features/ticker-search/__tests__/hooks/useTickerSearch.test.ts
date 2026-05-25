@@ -4,10 +4,6 @@ import { useTickerSearch } from '@/features/ticker-search/hooks/useTickerSearch'
 import type { TickerSearchResult } from '@/shared/lib/types';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
 
-vi.mock('@/shared/db/client', () => ({
-    getDatabaseClient: vi.fn(() => ({ db: {}, sql: () => null })),
-}));
-
 const mockResults: TickerSearchResult[] = [
     {
         symbol: 'AAPL',

@@ -59,6 +59,123 @@ function mockDoneState(result: OverallAnalysisResponse, trigger = vi.fn()) {
     });
 }
 
+describe('OverallContent non-done branches', () => {
+    beforeEach(() => {
+        mockUseOverallAnalysis.mockReset();
+    });
+
+    it('renders trigger CTA in idle state', () => {
+        mockUseOverallAnalysis.mockReturnValue({
+            state: { status: 'idle' },
+            trigger: vi.fn(),
+        });
+        render(
+            <OverallContent
+                symbol="AAPL"
+                companyName="Apple Inc."
+                timeframe="1Day"
+            />
+        );
+        expect(
+            screen.getByRole('button', { name: /AI 종합 분석 받기/ })
+        ).toBeInTheDocument();
+    });
+
+    it('renders submitting loading state', () => {
+        mockUseOverallAnalysis.mockReturnValue({
+            state: { status: 'submitting' },
+            trigger: vi.fn(),
+        });
+        render(
+            <OverallContent
+                symbol="AAPL"
+                companyName="Apple Inc."
+                timeframe="1Day"
+            />
+        );
+        expect(screen.getByText('AI 종합 분석 요청 중…')).toBeInTheDocument();
+    });
+
+    it('renders polling loading state', () => {
+        mockUseOverallAnalysis.mockReturnValue({
+            state: { status: 'polling' },
+            trigger: vi.fn(),
+        });
+        render(
+            <OverallContent
+                symbol="AAPL"
+                companyName="Apple Inc."
+                timeframe="1Day"
+            />
+        );
+        expect(screen.getByText('AI 종합 분석 생성 중…')).toBeInTheDocument();
+    });
+
+    it('renders error state with default message', () => {
+        mockUseOverallAnalysis.mockReturnValue({
+            state: { status: 'error', error: '분석 중 오류가 발생했습니다.' },
+            trigger: vi.fn(),
+        });
+        render(
+            <OverallContent
+                symbol="AAPL"
+                companyName="Apple Inc."
+                timeframe="1Day"
+            />
+        );
+        expect(
+            screen.getByText(/분석 중 오류가 발생했습니다/)
+        ).toBeInTheDocument();
+    });
+
+    it('renders error state with custom error message', () => {
+        mockUseOverallAnalysis.mockReturnValue({
+            state: { status: 'error', error: '커스텀 에러' },
+            trigger: vi.fn(),
+        });
+        render(
+            <OverallContent
+                symbol="AAPL"
+                companyName="Apple Inc."
+                timeframe="1Day"
+            />
+        );
+        expect(screen.getByText(/커스텀 에러/)).toBeInTheDocument();
+    });
+
+    it('renders error state with axis info', () => {
+        mockUseOverallAnalysis.mockReturnValue({
+            state: { status: 'error', error: '분석 오류', axis: 'technical' },
+            trigger: vi.fn(),
+        });
+        render(
+            <OverallContent
+                symbol="AAPL"
+                companyName="Apple Inc."
+                timeframe="1Day"
+            />
+        );
+        expect(screen.getByText(/technical 축 실패/)).toBeInTheDocument();
+    });
+
+    it('renders retry button in error state that calls trigger', () => {
+        const trigger = vi.fn();
+        mockUseOverallAnalysis.mockReturnValue({
+            state: { status: 'error', error: '오류' },
+            trigger,
+        });
+        render(
+            <OverallContent
+                symbol="AAPL"
+                companyName="Apple Inc."
+                timeframe="1Day"
+            />
+        );
+        fireEvent.click(screen.getByText('다시 시도'));
+        expect(trigger).toHaveBeenCalled();
+    });
+});
+
 describe('OverallContent done branch', () => {
     beforeEach(() => {
         mockUseOverallAnalysis.mockReset();

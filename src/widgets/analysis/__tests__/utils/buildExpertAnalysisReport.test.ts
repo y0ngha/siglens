@@ -159,6 +159,141 @@ describe('buildExpertAnalysisReport', () => {
         expect(result).not.toContain('돌파 진입 시 (…');
     });
 
+    it('bearish trend with resistance levels produces bearish stance', () => {
+        const bearishAnalysis: AnalysisResponse = {
+            ...baseAnalysis,
+            trend: 'bearish',
+            riskLevel: 'low',
+            actionRecommendation: undefined,
+        };
+
+        const result = buildExpertAnalysisReport({
+            symbol: 'tsla',
+            analysis: bearishAnalysis,
+            keyLevels: baseKeyLevels,
+        });
+
+        expect(result).toContain('보수적 관리가 더 적절합니다');
+        expect(result).toContain(
+            '현재 해석이 유지되려면 핵심 지지와 저항 구간 확인이 필요합니다.'
+        );
+    });
+
+    it('bullish trend with support levels and no actionRecommendation produces bullish stance', () => {
+        const bullishNoAction: AnalysisResponse = {
+            ...baseAnalysis,
+            trend: 'bullish',
+            actionRecommendation: undefined,
+        };
+
+        const result = buildExpertAnalysisReport({
+            symbol: 'nvda',
+            analysis: bullishNoAction,
+            keyLevels: baseKeyLevels,
+        });
+
+        expect(result).toContain('지지 확인 이후의 분할 접근 여부를 검토');
+    });
+
+    it('entryRecommendation "enter" produces enter stance', () => {
+        const enterAnalysis: AnalysisResponse = {
+            ...baseAnalysis,
+            actionRecommendation: {
+                ...baseAnalysis.actionRecommendation!,
+                entryRecommendation: 'enter',
+            },
+        };
+
+        const result = buildExpertAnalysisReport({
+            symbol: 'aapl',
+            analysis: enterAnalysis,
+            keyLevels: baseKeyLevels,
+        });
+
+        expect(result).toContain(
+            '핵심 지지 확인 이후 분할 접근 가능성을 검토할 수 있습니다.'
+        );
+    });
+
+    it('entryRecommendation "avoid" produces avoid stance', () => {
+        const avoidAnalysis: AnalysisResponse = {
+            ...baseAnalysis,
+            actionRecommendation: {
+                ...baseAnalysis.actionRecommendation!,
+                entryRecommendation: 'avoid',
+                entryPrices: [],
+                stopLoss: undefined,
+            },
+        };
+
+        const result = buildExpertAnalysisReport({
+            symbol: 'aapl',
+            analysis: avoidAnalysis,
+            keyLevels: baseKeyLevels,
+        });
+
+        expect(result).toContain(
+            '공격적 대응보다 보수적 관리와 비중 점검이 우선되는 구간입니다.'
+        );
+    });
+
+    it('includes target reference prices when takeProfitPrices are present', () => {
+        const result = buildExpertAnalysisReport({
+            symbol: 'aapl',
+            analysis: baseAnalysis,
+            keyLevels: baseKeyLevels,
+        });
+
+        expect(result).toContain('목표 참고 구간:');
+        expect(result).toContain('212.50');
+    });
+
+    it('includes indicator results with empty indicator name filtered out', () => {
+        const analysisWithEmptyIndicator: AnalysisResponse = {
+            ...baseAnalysis,
+            indicatorResults: [
+                ...baseAnalysis.indicatorResults,
+                {
+                    indicatorName: '',
+                    signals: [
+                        {
+                            type: 'skill',
+                            trend: 'neutral',
+                            description: 'should be filtered',
+                        },
+                    ],
+                },
+            ],
+        };
+
+        const result = buildExpertAnalysisReport({
+            symbol: 'aapl',
+            analysis: analysisWithEmptyIndicator,
+            keyLevels: baseKeyLevels,
+        });
+
+        expect(result).not.toContain('should be filtered');
+    });
+
+    it('only includes bearish scenario line when bullish has empty targets', () => {
+        const onlyBearish: AnalysisResponse = {
+            ...baseAnalysis,
+            priceTargets: {
+                bullish: { condition: '', targets: [] },
+                bearish: baseAnalysis.priceTargets.bearish!,
+            },
+        };
+
+        const result = buildExpertAnalysisReport({
+            symbol: 'aapl',
+            analysis: onlyBearish,
+            keyLevels: baseKeyLevels,
+        });
+
+        expect(result).toContain('하방:');
+        expect(result).not.toContain('상방:');
+    });
+
     it('데이터가 희소해도 빈 섹션 없이 보수적인 기본 문구로 마무리한다', () => {
         const sparseAnalysis: AnalysisResponse = {
             ...baseAnalysis,

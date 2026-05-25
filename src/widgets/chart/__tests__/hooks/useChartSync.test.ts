@@ -114,4 +114,151 @@ describe('useChartSync', () => {
         expect(() => result.current.handleStockChartRemove()).not.toThrow();
         expect(() => result.current.handleVolumeChartRemove()).not.toThrow();
     });
+
+    it('stock handler syncs volume chart range when both are ready', () => {
+        const { result } = renderHook(() => useChartSync());
+        const stockChart = makeMockChart();
+        const volumeChart = makeMockChart();
+
+        result.current.handleStockChartReady(
+            stockChart as unknown as Parameters<
+                typeof result.current.handleStockChartReady
+            >[0]
+        );
+        result.current.handleVolumeChartReady(
+            volumeChart as unknown as Parameters<
+                typeof result.current.handleVolumeChartReady
+            >[0]
+        );
+
+        // Get the handler that was subscribed on the stock chart
+        const handler =
+            stockChart._timeScaleMock.subscribeVisibleLogicalRangeChange.mock
+                .calls[0][0];
+
+        // Simulate range change on stock chart
+        const range = { from: 0, to: 100 };
+        handler(range);
+
+        expect(
+            volumeChart._timeScaleMock.setVisibleLogicalRange
+        ).toHaveBeenCalledWith(range);
+    });
+
+    it('stock handler does nothing when range is null', () => {
+        const { result } = renderHook(() => useChartSync());
+        const stockChart = makeMockChart();
+        const volumeChart = makeMockChart();
+
+        result.current.handleStockChartReady(
+            stockChart as unknown as Parameters<
+                typeof result.current.handleStockChartReady
+            >[0]
+        );
+        result.current.handleVolumeChartReady(
+            volumeChart as unknown as Parameters<
+                typeof result.current.handleVolumeChartReady
+            >[0]
+        );
+
+        const handler =
+            stockChart._timeScaleMock.subscribeVisibleLogicalRangeChange.mock
+                .calls[0][0];
+
+        handler(null);
+
+        expect(
+            volumeChart._timeScaleMock.setVisibleLogicalRange
+        ).not.toHaveBeenCalled();
+    });
+
+    it('stock handler does nothing when volume chart is not ready', () => {
+        const { result } = renderHook(() => useChartSync());
+        const stockChart = makeMockChart();
+
+        result.current.handleStockChartReady(
+            stockChart as unknown as Parameters<
+                typeof result.current.handleStockChartReady
+            >[0]
+        );
+
+        const handler =
+            stockChart._timeScaleMock.subscribeVisibleLogicalRangeChange.mock
+                .calls[0][0];
+
+        // Volume chart not ready, should not throw
+        expect(() => handler({ from: 0, to: 100 })).not.toThrow();
+    });
+
+    it('volume handler syncs stock chart range when both are ready', () => {
+        const { result } = renderHook(() => useChartSync());
+        const stockChart = makeMockChart();
+        const volumeChart = makeMockChart();
+
+        result.current.handleStockChartReady(
+            stockChart as unknown as Parameters<
+                typeof result.current.handleStockChartReady
+            >[0]
+        );
+        result.current.handleVolumeChartReady(
+            volumeChart as unknown as Parameters<
+                typeof result.current.handleVolumeChartReady
+            >[0]
+        );
+
+        const handler =
+            volumeChart._timeScaleMock.subscribeVisibleLogicalRangeChange.mock
+                .calls[0][0];
+
+        const range = { from: 10, to: 50 };
+        handler(range);
+
+        expect(
+            stockChart._timeScaleMock.setVisibleLogicalRange
+        ).toHaveBeenCalledWith(range);
+    });
+
+    it('volume handler does nothing when range is null', () => {
+        const { result } = renderHook(() => useChartSync());
+        const stockChart = makeMockChart();
+        const volumeChart = makeMockChart();
+
+        result.current.handleStockChartReady(
+            stockChart as unknown as Parameters<
+                typeof result.current.handleStockChartReady
+            >[0]
+        );
+        result.current.handleVolumeChartReady(
+            volumeChart as unknown as Parameters<
+                typeof result.current.handleVolumeChartReady
+            >[0]
+        );
+
+        const handler =
+            volumeChart._timeScaleMock.subscribeVisibleLogicalRangeChange.mock
+                .calls[0][0];
+
+        handler(null);
+
+        expect(
+            stockChart._timeScaleMock.setVisibleLogicalRange
+        ).not.toHaveBeenCalled();
+    });
+
+    it('volume handler does nothing when stock chart is not ready', () => {
+        const { result } = renderHook(() => useChartSync());
+        const volumeChart = makeMockChart();
+
+        result.current.handleVolumeChartReady(
+            volumeChart as unknown as Parameters<
+                typeof result.current.handleVolumeChartReady
+            >[0]
+        );
+
+        const handler =
+            volumeChart._timeScaleMock.subscribeVisibleLogicalRangeChange.mock
+                .calls[0][0];
+
+        expect(() => handler({ from: 0, to: 100 })).not.toThrow();
+    });
 });

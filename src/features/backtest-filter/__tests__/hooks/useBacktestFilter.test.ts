@@ -11,12 +11,6 @@ vi.mock('@/shared/hooks/useQueryParamState', () => ({
         [mockRawTicker, mockSetTicker] as const,
 }));
 
-vi.mock('next/navigation', () => ({
-    useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
-    usePathname: () => '/backtest',
-    useSearchParams: () => new URLSearchParams(),
-}));
-
 function createCase(ticker: string): BacktestCase {
     return { ticker } as BacktestCase;
 }
