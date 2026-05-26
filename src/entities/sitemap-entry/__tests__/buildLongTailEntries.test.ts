@@ -2,7 +2,12 @@ vi.mock('@/shared/lib/seo', () => ({
     SITE_URL: 'https://siglens.io',
 }));
 
-import { buildLongTailEntries } from '../lib/buildLongTailEntries';
+import {
+    buildLongTailEntries,
+    LONGTAIL_CHART_PRIORITY,
+    LONGTAIL_LOW_PRIORITY,
+    LONGTAIL_SUB_PRIORITY,
+} from '../lib/buildLongTailEntries';
 import { LONGTAIL_ENTRIES_PER_TICKER } from '../model';
 
 const BUILD_DATE = new Date('2026-01-15T00:00:00.000Z');
@@ -39,23 +44,23 @@ describe('buildLongTailEntries', () => {
         const entries = buildLongTailEntries(['AAPL'], BUILD_DATE);
 
         const chart = entries.find(e => e.url.endsWith('/AAPL'))!;
-        expect(chart.priority).toBe(0.5);
+        expect(chart.priority).toBe(LONGTAIL_CHART_PRIORITY);
         expect(chart.changeFrequency).toBe('weekly');
 
         const news = entries.find(e => e.url.endsWith('/news'))!;
-        expect(news.priority).toBe(0.45);
+        expect(news.priority).toBe(LONGTAIL_SUB_PRIORITY);
         expect(news.changeFrequency).toBe('weekly');
 
         const fundamental = entries.find(e => e.url.endsWith('/fundamental'))!;
-        expect(fundamental.priority).toBe(0.4);
+        expect(fundamental.priority).toBe(LONGTAIL_LOW_PRIORITY);
         expect(fundamental.changeFrequency).toBe('monthly');
 
         const overall = entries.find(e => e.url.endsWith('/overall'))!;
-        expect(overall.priority).toBe(0.45);
+        expect(overall.priority).toBe(LONGTAIL_SUB_PRIORITY);
         expect(overall.changeFrequency).toBe('weekly');
 
         const fearGreed = entries.find(e => e.url.endsWith('/fear-greed'))!;
-        expect(fearGreed.priority).toBe(0.4);
+        expect(fearGreed.priority).toBe(LONGTAIL_LOW_PRIORITY);
         expect(fearGreed.changeFrequency).toBe('weekly');
     });
 

@@ -21,7 +21,7 @@ export const dynamic = 'force-dynamic';
  * 구성:
  *   - /sitemap-static.xml  : home/market/backtesting/legal (5 URL)
  *   - /sitemap-popular.xml : POPULAR_TICKERS × 5~6 routes (~1,000 URL)
- *   - /sitemap-longtail-{n}.xml : long-tail × 5 routes (chart/news/fundamental/overall/fear-greed), page당 10,000 tickers
+ *   - /sitemap-longtail-{n}.xml : long-tail × LONGTAIL_ENTRIES_PER_TICKER routes (chart/news/fundamental/overall/fear-greed), page당 LONGTAIL_TICKERS_PER_PAGE tickers
  *
  * (Next.js rewrite는 next.config.ts에서 /sitemap-*.xml → /api/sitemap/* 으로 매핑)
  */
