@@ -71,56 +71,66 @@ const eslintConfig = defineConfig([
             ],
         },
         rules: {
-            'boundaries/element-types': [
+            'boundaries/dependencies': [
                 'error',
                 {
                     default: 'disallow',
                     rules: [
                         {
-                            from: 'pages',
+                            from: { type: 'pages' },
                             allow: [
-                                'widgets',
-                                'features',
-                                'entities',
-                                'shared',
+                                { to: { type: 'widgets' } },
+                                { to: { type: 'features' } },
+                                { to: { type: 'entities' } },
+                                { to: { type: 'shared' } },
                             ],
                         },
                         {
                             // widgets 간 cross-import 허용: symbol-page가 chart/analysis/fear-greed 위젯을 조합하고,
                             // fundamental/news/options/overall이 symbol-page barrel에서 공통 hook(useDefaultModelId 등)을 소비.
-                            from: 'widgets',
+                            from: { type: 'widgets' },
                             allow: [
-                                'widgets',
-                                'features',
-                                'entities',
-                                'shared',
+                                { to: { type: 'widgets' } },
+                                { to: { type: 'features' } },
+                                { to: { type: 'entities' } },
+                                { to: { type: 'shared' } },
                             ],
                         },
                         {
                             // auth 슬라이스 간 cross-import 허용.
                             // 허용 쌍: auth-signup → auth-email-verification, auth-oauth-consent → auth-signup
-                            from: 'features',
-                            allow: ['features', 'entities', 'shared'],
+                            from: { type: 'features' },
+                            allow: [
+                                { to: { type: 'features' } },
+                                { to: { type: 'entities' } },
+                                { to: { type: 'shared' } },
+                            ],
                         },
                         {
                             // entities 간 cross-import 허용. submitOverallAnalysisAction (analysis)이
                             // news-article, earnings-report 데이터를 조합하는 등 entity 간 의존이 불가피.
-                            from: 'entities',
-                            allow: ['entities', 'shared'],
-                        },
-                        {
-                            from: 'shared',
-                            // byokGate가 shared/lib/에서 entities(api-key, user)를 참조.
-                            allow: ['shared', 'entities'],
-                        },
-                        {
-                            from: 'app',
+                            from: { type: 'entities' },
                             allow: [
-                                'pages',
-                                'widgets',
-                                'features',
-                                'entities',
-                                'shared',
+                                { to: { type: 'entities' } },
+                                { to: { type: 'shared' } },
+                            ],
+                        },
+                        {
+                            from: { type: 'shared' },
+                            // byokGate가 shared/lib/에서 entities(api-key, user)를 참조.
+                            allow: [
+                                { to: { type: 'shared' } },
+                                { to: { type: 'entities' } },
+                            ],
+                        },
+                        {
+                            from: { type: 'app' },
+                            allow: [
+                                { to: { type: 'pages' } },
+                                { to: { type: 'widgets' } },
+                                { to: { type: 'features' } },
+                                { to: { type: 'entities' } },
+                                { to: { type: 'shared' } },
                             ],
                         },
                     ],
