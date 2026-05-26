@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import {
     loadLongTailTickers,
+    LONGTAIL_ENTRIES_PER_TICKER,
     type SitemapIndexEntry,
     SITEMAP_MAX_URLS_PER_FILE,
     toSitemapIndexXml,
@@ -21,16 +22,17 @@ export const dynamic = 'force-dynamic';
  * 구성:
  *   - /sitemap-static.xml  : home/market/backtesting/legal (5 URL)
  *   - /sitemap-popular.xml : POPULAR_TICKERS × 5~6 routes (~1,000 URL)
- *   - /sitemap-longtail-{n}.xml : long-tail × 1 route, page당 50,000 URL chunk
+ *   - /sitemap-longtail-{n}.xml : long-tail × 5 routes (chart/news/fundamental/overall/fear-greed), page당 10,000 tickers
  *
  * (Next.js rewrite는 next.config.ts에서 /sitemap-*.xml → /api/sitemap/* 으로 매핑)
  */
 export async function GET(): Promise<Response> {
     const now = new Date();
     const longTailTickers = await loadLongTailTickers();
-    const longTailPages = Math.ceil(
-        longTailTickers.length / SITEMAP_MAX_URLS_PER_FILE
+    const tickersPerPage = Math.floor(
+        SITEMAP_MAX_URLS_PER_FILE / LONGTAIL_ENTRIES_PER_TICKER
     );
+    const longTailPages = Math.ceil(longTailTickers.length / tickersPerPage);
 
     // long-tail이 비어 있을 수 있다(DB 미설정/실패 시 graceful fallback).
     // 그 경우 longTailPages = 0이라 sub-sitemap 항목 자체가 빠지므로,

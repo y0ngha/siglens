@@ -6,6 +6,7 @@ vi.mock('next/server', async () => {
 vi.mock('@/entities/sitemap-entry', () => ({
     loadLongTailTickers: vi.fn(),
     SITEMAP_MAX_URLS_PER_FILE: 50000,
+    LONGTAIL_ENTRIES_PER_TICKER: 5,
     toSitemapIndexXml: vi
         .fn()
         .mockReturnValue('<?xml version="1.0"?><sitemapindex/>'),
@@ -57,13 +58,14 @@ describe('GET /api/sitemap (index)', () => {
     });
 
     it('generates long-tail sub-sitemap entries based on ticker count', async () => {
-        const tickers = Array.from({ length: 100001 }, (_, i) => `T${i}`);
+        // tickersPerPage = Math.floor(50000 / 5) = 10000
+        // ceil(25001 / 10000) = 3 longtail pages → 2 + 3 = 5 total entries
+        const tickers = Array.from({ length: 25001 }, (_, i) => `T${i}`);
         mockLoadLongTailTickers.mockResolvedValue(tickers);
 
         await GET();
 
         const entries = mockToSitemapIndexXml.mock.calls[0][0];
-        // 2 (static + popular) + ceil(100001/50000) = 2 + 3 = 5
         expect(entries).toHaveLength(5);
         expect(entries[2].url).toContain('sitemap-longtail-1.xml');
         expect(entries[3].url).toContain('sitemap-longtail-2.xml');
