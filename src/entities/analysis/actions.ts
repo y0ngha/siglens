@@ -1,5 +1,3 @@
-'use server';
-
 export { submitAnalysisAction } from './actions/submitAnalysisAction';
 export type { SubmitAnalysisActionResult } from './actions/submitAnalysisAction';
 export { pollAnalysisAction } from './actions/pollAnalysisAction';

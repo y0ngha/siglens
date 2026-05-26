@@ -1,5 +1,6 @@
 export { DrizzleSessionRepository } from './api';
-export { getCurrentUser } from './lib/getCurrentUser';
+// getCurrentUser는 barrel에서 제외 — next/headers 의존이 client 번들에 포함되는 문제 방지.
+// 서버 소비자는 @/entities/session/lib/getCurrentUser에서 직접 import.
 export { getAuthDatabaseClient } from './lib/db';
 export {
     AUTH_SESSION_COOKIE_NAME,

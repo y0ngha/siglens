@@ -1,5 +1,3 @@
-'use server';
-
 export {
     submitOptionsAnalysisAction,
     pollOptionsAnalysisAction,

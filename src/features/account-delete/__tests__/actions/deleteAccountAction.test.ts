@@ -21,12 +21,14 @@ vi.mock('@/entities/session', () => ({
     }),
     applyAuthCookie: vi.fn((c: unknown) => c),
     getAuthDatabaseClient: vi.fn(() => ({ db: {}, sql: () => null })),
-    getCurrentUser: vi.fn(),
     isSecureCookieEnv: vi.fn(() => false),
     createExpiredAuthHintCookie: vi.fn(() => ({
         name: 'auth_hint',
         value: '',
     })),
+}));
+vi.mock('@/entities/session/lib/getCurrentUser', () => ({
+    getCurrentUser: vi.fn(),
 }));
 vi.mock('@/entities/oauth-account', () => ({
     DrizzleOAuthAccountRepository: vi.fn().mockImplementation(function () {
@@ -38,7 +40,7 @@ vi.mock('@/entities/oauth-account', () => ({
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { deleteAccount } from '@/entities/user';
-import { getCurrentUser } from '@/entities/session';
+import { getCurrentUser } from '@/entities/session/lib/getCurrentUser';
 import { deleteAccountAction } from '@/features/account-delete/actions/deleteAccountAction';
 import { resetAuthDatabaseClientForTests } from '@/entities/session/lib/db';
 import { makeFormData } from '@/shared/test-utils/makeFormData';

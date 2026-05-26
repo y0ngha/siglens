@@ -1,16 +1,7 @@
-export {
-    hasOptionsMarket,
-    fetchOptionsSnapshot,
-    HAS_OPTIONS_MARKET_TTL_SECONDS,
-    OPTIONS_SNAPSHOT_TTL_SECONDS,
-} from './lib/optionsDataCache';
-export {
-    getOptionsCacheLifeProfile,
-    type OptionsCacheLifeProfile,
-} from './lib/optionsCacheLife';
-export { optionsSymbolTag } from './lib/optionsCacheTags';
-// Yahoo adapter 구현 세부사항(normalizeYahoo*, YahooOptionsAdapter 등)은
-// optionsDataCache 내부에서만 사용. 외부 노출 불필요 — 테스트만 직접 import.
+// server-only exports (hasOptionsMarket, fetchOptionsSnapshot, optionsDataCache 등)는
+// barrel에서 제외 — client component가 barrel import 시 yahoo-finance2의
+// Node.js 전용 의존성(child_process, dns)이 번들에 포함되는 문제 방지.
+// 서버 소비자는 @/entities/options-chain/lib/optionsDataCache에서 직접 import.
 
 export { findNearestStrikeIndex } from './lib/findNearestStrike';
 export { pickActiveChain } from './lib/pickActiveChain';

@@ -54,7 +54,7 @@ vi.mock('@/shared/lib/byokGate', () => ({
     })),
 }));
 
-vi.mock('@/entities/options-chain', () => ({
+vi.mock('@/entities/options-chain/lib/optionsDataCache', () => ({
     fetchOptionsSnapshot: vi.fn(),
 }));
 
@@ -77,7 +77,7 @@ import { DrizzleNewsRepository } from '@/entities/news-article';
 import { getNextEarningsReport } from '@/entities/earnings-report';
 import { getCurrentUser } from '@/entities/session/lib/getCurrentUser';
 import { resolveTierAndByok } from '@/shared/lib/byokGate';
-import { fetchOptionsSnapshot } from '@/entities/options-chain';
+import { fetchOptionsSnapshot } from '@/entities/options-chain/lib/optionsDataCache';
 import {
     isUsOptionsRegularSession,
     isOpenInterestSnapshotStale,

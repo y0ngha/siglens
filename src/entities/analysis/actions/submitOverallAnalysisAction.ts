@@ -23,7 +23,7 @@ import { getCurrentUser } from '@/entities/session/lib/getCurrentUser';
 import { resolveTierAndByok, buildGateError } from '@/shared/lib/byokGate';
 import { isBot } from '@/shared/api/isBot';
 // Cross-entity: options-chain fetchOptionsSnapshot 필요. Phase 9에서 features 레이어 도입 시 해소.
-import { fetchOptionsSnapshot } from '@/entities/options-chain';
+import { fetchOptionsSnapshot } from '@/entities/options-chain/lib/optionsDataCache';
 import {
     isOpenInterestSnapshotStale,
     isUsOptionsRegularSession,
