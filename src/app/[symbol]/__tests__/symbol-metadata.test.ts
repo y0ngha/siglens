@@ -5,10 +5,6 @@
  * generateMetadata에서 직접 호출하는 외부 의존성만 최소한으로 모킹한다.
  */
 
-// generateMetadata는 함수 호출 시점에 process.env.NEXT_PUBLIC_SITE_URL을 읽으므로(lazy read),
-// 테스트 전에 세팅하면 production URL 회귀가드가 동작한다.
-process.env.NEXT_PUBLIC_SITE_URL = 'https://siglens.io';
-
 // 'server-only'는 Next 런타임 sentinel이라 Jest 환경에서 해석 불가 — virtual mock
 vi.mock('server-only', () => ({}));
 

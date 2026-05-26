@@ -18,6 +18,11 @@ process.env.GEMINI_CHAT_API_KEY = 'test-gemini-key';
 process.env.ANTHROPIC_CHAT_API_KEY = 'test-anthropic-key';
 process.env.OPENAI_CHAT_API_KEY = 'test-openai-key';
 process.env.DATABASE_URL = 'test-database-url';
+// Vite의 dotenv가 .env.local(NEXT_PUBLIC_SITE_URL="http://localhost:4200")을
+// 자동 로드한다. vmThreads + fsModuleCache에서 seo.ts의 SITE_URL은 모듈 캐시에
+// 한 번만 평가되므로, 개별 테스트 파일의 process.env 오버라이드보다 이 setup이
+// 먼저 실행되어야 canonical URL 회귀가드가 production URL로 동작한다.
+process.env.NEXT_PUBLIC_SITE_URL = 'https://siglens.io';
 
 if (
     typeof globalThis.localStorage === 'undefined' ||
