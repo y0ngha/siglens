@@ -29,3 +29,10 @@ export interface SitemapIndexEntry {
  * 50,000으로 잡되, 운영 중 cap에 도달하면 추후 더 작은 chunk로 분할 검토.
  */
 export const SITEMAP_MAX_URLS_PER_FILE = 50_000;
+
+/**
+ * long-tail 티커당 sitemap 엔트리 수.
+ * chart + news + fundamental + overall + fear-greed = 5.
+ * sitemap index 페이지네이션과 longtail route handler 양쪽에서 참조한다.
+ */
+export const LONGTAIL_ENTRIES_PER_TICKER = 5;
