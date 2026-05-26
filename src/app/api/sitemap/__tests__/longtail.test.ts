@@ -3,9 +3,17 @@ vi.mock('next/server', async () => {
         await vi.importActual<typeof import('next/server')>('next/server');
     return { ...actual };
 });
+
+/**
+ * SITEMAP_MAX_URLS_PER_FILE=15, LONGTAIL_ENTRIES_PER_TICKER=5 이므로
+ * TICKERS_PER_PAGE = Math.floor(15/5) = 3.
+ * 티커 5개(AAA~EEE): page1=[AAA,BBB,CCC], page2=[DDD,EEE].
+ */
 vi.mock('@/entities/sitemap-entry', () => ({
     loadLongTailTickers: vi.fn(),
-    SITEMAP_MAX_URLS_PER_FILE: 3,
+    SITEMAP_MAX_URLS_PER_FILE: 15,
+    LONGTAIL_ENTRIES_PER_TICKER: 5,
+    buildLongTailEntries: vi.fn(),
     toUrlSetXml: vi.fn().mockReturnValue('<?xml version="1.0"?><urlset/>'),
 }));
 vi.mock('@/shared/lib/seo', () => ({
@@ -14,13 +22,29 @@ vi.mock('@/shared/lib/seo', () => ({
 }));
 
 import { GET } from '@/app/api/sitemap/longtail/[page]/route';
-import { loadLongTailTickers, toUrlSetXml } from '@/entities/sitemap-entry';
+import {
+    buildLongTailEntries,
+    loadLongTailTickers,
+    toUrlSetXml,
+} from '@/entities/sitemap-entry';
 import type { MockedFunction } from 'vitest';
 
 const mockLoadLongTailTickers = loadLongTailTickers as MockedFunction<
     typeof loadLongTailTickers
 >;
+const mockBuildLongTailEntries = buildLongTailEntries as MockedFunction<
+    typeof buildLongTailEntries
+>;
 const mockToUrlSetXml = toUrlSetXml as MockedFunction<typeof toUrlSetXml>;
+
+const FAKE_ENTRIES = [
+    {
+        url: 'https://siglens.io/AAA',
+        lastModified: new Date('2025-01-01'),
+        changeFrequency: 'weekly' as const,
+        priority: 0.5,
+    },
+];
 
 function callGET(page: string): Promise<Response> {
     return GET(new Request('http://localhost/api/sitemap/longtail/' + page), {
@@ -38,6 +62,7 @@ describe('GET /api/sitemap/longtail/[page]', () => {
             'DDD',
             'EEE',
         ]);
+        mockBuildLongTailEntries.mockReturnValue(FAKE_ENTRIES);
     });
 
     it('returns 404 for non-numeric page', async () => {
@@ -69,30 +94,27 @@ describe('GET /api/sitemap/longtail/[page]', () => {
         );
     });
 
-    it('passes correct chunk of tickers to toUrlSetXml for page 1', async () => {
+    it('calls buildLongTailEntries with the first 3-ticker chunk for page 1', async () => {
         await callGET('1');
 
-        const entries = mockToUrlSetXml.mock.calls[0][0];
-        expect(entries).toHaveLength(3);
-        expect(entries[0].url).toBe('https://siglens.io/AAA');
-        expect(entries[1].url).toBe('https://siglens.io/BBB');
-        expect(entries[2].url).toBe('https://siglens.io/CCC');
+        expect(mockBuildLongTailEntries).toHaveBeenCalledWith(
+            ['AAA', 'BBB', 'CCC'],
+            new Date('2025-01-01')
+        );
     });
 
-    it('returns the second chunk for page 2', async () => {
+    it('calls buildLongTailEntries with the remaining 2-ticker chunk for page 2', async () => {
         await callGET('2');
 
-        const entries = mockToUrlSetXml.mock.calls[0][0];
-        expect(entries).toHaveLength(2);
-        expect(entries[0].url).toBe('https://siglens.io/DDD');
-        expect(entries[1].url).toBe('https://siglens.io/EEE');
+        expect(mockBuildLongTailEntries).toHaveBeenCalledWith(
+            ['DDD', 'EEE'],
+            new Date('2025-01-01')
+        );
     });
 
-    it('sets changeFrequency to weekly and priority to 0.5', async () => {
+    it('passes buildLongTailEntries result to toUrlSetXml', async () => {
         await callGET('1');
 
-        const entries = mockToUrlSetXml.mock.calls[0][0];
-        expect(entries[0].changeFrequency).toBe('weekly');
-        expect(entries[0].priority).toBe(0.5);
+        expect(mockToUrlSetXml).toHaveBeenCalledWith(FAKE_ENTRIES);
     });
 });
