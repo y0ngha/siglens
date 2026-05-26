@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.13.2](https://github.com/y0ngha/siglens/compare/v0.13.1...v0.13.2) (2026-05-26)
+
+
+### Bug Fixes
+
+* QUERY_KEYS 호출부에서 ticker → symbol로 통일 (upper()가 내부 정규화) ([c0aee75](https://github.com/y0ngha/siglens/commit/c0aee755974198139e986f3ee57cbc6e33545c24))
+
+
+### Features
+
+* queryKey symbol을 toUpperCase()로 정규화하여 대소문자 캐시 미스 방지 ([c01ec12](https://github.com/y0ngha/siglens/commit/c01ec122f0a9ccd0cb8091fa17045203ccef6fde))
+
 ## [0.13.1](https://github.com/y0ngha/siglens/compare/v0.13.0...v0.13.1) (2026-05-26)
 
 
