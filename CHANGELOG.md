@@ -1,5 +1,59 @@
 # Changelog
 
+# [0.13.0](https://github.com/y0ngha/siglens/compare/v0.12.9...v0.13.0) (2026-05-26)
+
+
+### Bug Fixes
+
+* add WHY comment for stubEnv falsy equivalence (Claude Q1) ([85fc90a](https://github.com/y0ngha/siglens/commit/85fc90a50e33acf70e8ddc8a7bf8c17ff92d7c83))
+* address Gemini review feedback from PRs [#494](https://github.com/y0ngha/siglens/issues/494)-[#507](https://github.com/y0ngha/siglens/issues/507) ([47fa08e](https://github.com/y0ngha/siglens/commit/47fa08e7579787ad504feb5685befde979756e7f))
+* address PR [#493](https://github.com/y0ngha/siglens/issues/493) review — thresholds, eslint-disable, vi globals, scripts, coverage dedup ([15b0594](https://github.com/y0ngha/siglens/commit/15b0594089ec611ad5dd5246b9f406863b8f53c1))
+* address PR [#493](https://github.com/y0ngha/siglens/issues/493) suggestions — comment accuracy, esModule flag, dead ref ([eb461a9](https://github.com/y0ngha/siglens/commit/eb461a9e8b3ba2695e71bd8679cd344e7d09b53e))
+* address PR [#494](https://github.com/y0ngha/siglens/issues/494) review — B1 test title, S1-S3 suggestions ([2a8b4c8](https://github.com/y0ngha/siglens/commit/2a8b4c89dca621270e4ba44693ab6e2f52113c1e))
+* address PR [#495](https://github.com/y0ngha/siglens/issues/495) review — eslint-disable, duplicate test, WHAT comments ([24b5372](https://github.com/y0ngha/siglens/commit/24b5372c618d391eb62e3bafcbe65b11c1583945))
+* address PR [#496](https://github.com/y0ngha/siglens/issues/496) review — source import for re-export, WHAT comments, test title ([7bfa50f](https://github.com/y0ngha/siglens/commit/7bfa50fb417dbc207e5c70def1a98f6d3b9ad7b3))
+* address PR [#497](https://github.com/y0ngha/siglens/issues/497) review — import order, WHAT comments, magic number ([d2688ea](https://github.com/y0ngha/siglens/commit/d2688ea085bc7c1968ae3cf2367c27bddfe6a1a7))
+* address PR [#498](https://github.com/y0ngha/siglens/issues/498) review — B1 unused import, B2 event constant, S1-S4 dedup/keys ([af18dd3](https://github.com/y0ngha/siglens/commit/af18dd367d62e14407a81f24a106de21919a490c))
+* address PR [#502](https://github.com/y0ngha/siglens/issues/502) review — import order, beforeAll scope, test isolation ([52ac8d8](https://github.com/y0ngha/siglens/commit/52ac8d8e7f560d3f7433e86deb0a428d7403e5c5))
+* address PR [#503](https://github.com/y0ngha/siglens/issues/503) review — duplicate mock, test titles, type casts ([86ce23f](https://github.com/y0ngha/siglens/commit/86ce23f06a888600fb6091e61035055ea7ee473f))
+* address PR [#504](https://github.com/y0ngha/siglens/issues/504) review — mock paths, constant export, fake timers, boundary values ([e8e7cd8](https://github.com/y0ngha/siglens/commit/e8e7cd86d0bff193bf7ef72fe7ed271dda6e7968))
+* address PR [#506](https://github.com/y0ngha/siglens/issues/506) review — real components, tautological tests, shared mocks ([445029a](https://github.com/y0ngha/siglens/commit/445029ae70878962c3d8c0b2b319a82abae34660))
+* address PR [#508](https://github.com/y0ngha/siglens/issues/508) review — stubEnv, describe labels, exports, return types ([3ac6e86](https://github.com/y0ngha/siglens/commit/3ac6e86e1757d2a0326ed077c9aff1c82aab7a70))
+* address PR [#509](https://github.com/y0ngha/siglens/issues/509) review — spy cleanup, clipboard restore, focus assertions ([f064690](https://github.com/y0ngha/siglens/commit/f0646902fa8560412796fab724a8bb480be3548e))
+* address PR [#509](https://github.com/y0ngha/siglens/issues/509) review — spy cleanup, clipboard restore, focus assertions, isChatMessage utils extraction ([bff4de8](https://github.com/y0ngha/siglens/commit/bff4de8da28cfc4a1611d41c96b122dc08092d80))
+* address PR review — spy assertions, return types, dedup ([c3c5b85](https://github.com/y0ngha/siglens/commit/c3c5b85af451e3cd9da78f1e8d51a43d8298923b))
+* format + lint cleanup — unused imports, empty interface suppression ([f303962](https://github.com/y0ngha/siglens/commit/f303962075e575847a9e4b0d98569291f23773d2))
+* format + toHaveBeenCalledOnce type fix ([6974cff](https://github.com/y0ngha/siglens/commit/6974cffd199700376fcee2d5eb6f22c2981cf29c))
+* popular tickers 오류 수정 ([e8c307e](https://github.com/y0ngha/siglens/commit/e8c307ede530a28e8058c779febaf224cdfa6f46))
+* remove redundant pattern tests per review S1-S4 (MISTAKES.md §Tests.6) ([4f35121](https://github.com/y0ngha/siglens/commit/4f35121deedc16e665819ebef2da237abe5f7066))
+* remove WHAT comment in useCopyToClipboard test (S3) ([958e72a](https://github.com/y0ngha/siglens/commit/958e72a65ee33cfe01d1b549a879e459b2ffd30a))
+* resolve no-empty-object-type via eslint config for .d.ts files ([5650a25](https://github.com/y0ngha/siglens/commit/5650a25d7206fc794a1fb7f9778a99f265c5733a))
+* **sitemap:** import LONGTAIL_ENTRIES_PER_TICKER in test, fix inaccurate JSDoc ([e0aaba6](https://github.com/y0ngha/siglens/commit/e0aaba6c8e0be5ea146081fcfe88c267d9a78901))
+* **test:** complete Vitest migration — vi.hoisted, importActual, constructor mocks, jsdom env ([3a42507](https://github.com/y0ngha/siglens/commit/3a42507d2abdfcbb0b3c92d62ccfb53fe936276f))
+* **test:** replace `as any` with proper type casts in useChartSync tests ([90b7b86](https://github.com/y0ngha/siglens/commit/90b7b8665e213c198986c31bdf423d5d6175341b))
+* **ticker:** expand US_EXCHANGES to include CBOE, OTC, PNK, CNQ ([1545607](https://github.com/y0ngha/siglens/commit/154560717d4b08ce8d16f4c50375ef9853ee0feb))
+* vitest 4 poolOptions migration and restore console filtering ([81f4d33](https://github.com/y0ngha/siglens/commit/81f4d33625c3f95e179853cf393975f0b9906f9b))
+
+
+### Features
+
+* **sitemap:** add buildLongTailEntries with 5-route expansion ([697ef86](https://github.com/y0ngha/siglens/commit/697ef86d2869cf95e0b3d56339acc25d5b440cd0))
+* **sitemap:** add LONGTAIL_ENTRIES_PER_TICKER constant ([dbd4af1](https://github.com/y0ngha/siglens/commit/dbd4af1594356a4aa6663e8c28160c2225e9da17))
+* **sitemap:** expand longtail route to 5 entries per ticker ([d2b119a](https://github.com/y0ngha/siglens/commit/d2b119a9869f807485b44cc12244ac89f1e6c303))
+* **sitemap:** update index pagination for 5x longtail entries ([5b3c386](https://github.com/y0ngha/siglens/commit/5b3c386e6ec84723eb94aee27c9eabe965625310))
+
+
+### Performance Improvements
+
+* enable experimental fsModuleCache for faster warm reruns ([aae3c6d](https://github.com/y0ngha/siglens/commit/aae3c6def102101dd3d33b18a4441d723d0123cd))
+* switch vitest pool to vmThreads for faster test execution ([be3a4ca](https://github.com/y0ngha/siglens/commit/be3a4ca0148194299981163fdcc3c756824dee9e))
+
+
+### Reverts
+
+* Revert "refactor(tests): replace barrel imports with deep imports in 16 test files" ([2971447](https://github.com/y0ngha/siglens/commit/29714478e6aed0261bb1448fe7036e80a423533b))
+* Revert "Merge pull request #508 from y0ngha/docs/vitest-final" ([2a61cbc](https://github.com/y0ngha/siglens/commit/2a61cbceaa9d42450a73698a6be6af028b7fae3e)), closes [#508](https://github.com/y0ngha/siglens/issues/508)
+
 ## [0.12.9](https://github.com/y0ngha/siglens/compare/v0.12.8...v0.12.9) (2026-05-24)
 
 
