@@ -1,6 +1,6 @@
 import type { WithRetryOptions } from '@/shared/lib/withRetry';
 import { MS_PER_SECOND } from '@/shared/config/time';
-import { FmpHttpError } from './FmpHttpError';
+import { FmpHttpError } from '@/shared/api/fmp/FmpHttpError';
 
 /**
  * True for transient HTTP errors worth retrying:

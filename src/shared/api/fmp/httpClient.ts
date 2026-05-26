@@ -1,7 +1,7 @@
 import { readFmpConfig } from '@y0ngha/siglens-core';
 import { withRetry } from '@/shared/lib/withRetry';
-import { FmpHttpError } from './FmpHttpError';
-import { FMP_TRANSIENT_RETRY } from './fmpRetry';
+import { FmpHttpError } from '@/shared/api/fmp/FmpHttpError';
+import { FMP_TRANSIENT_RETRY } from '@/shared/api/fmp/fmpRetry';
 
 /** Base URL for all FMP `/stable/*` endpoints. */
 export const FMP_STABLE_BASE = 'https://financialmodelingprep.com/stable';
