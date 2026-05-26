@@ -266,4 +266,20 @@ describe('withRetry', () => {
             expect(sleepMock).not.toHaveBeenCalled();
         });
     });
+
+    it('maxRetries=0 이면 재시도 없이 즉시 에러를 던진다', async () => {
+        const error = new Error('only-once');
+        const fn = vi.fn().mockRejectedValue(error);
+
+        await expect(
+            withRetry(fn, {
+                maxRetries: 0,
+                baseDelayMs: 200,
+                isRetryable: () => true,
+            })
+        ).rejects.toBe(error);
+
+        expect(fn).toHaveBeenCalledTimes(1);
+        expect(sleepMock).not.toHaveBeenCalled();
+    });
 });

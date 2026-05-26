@@ -274,5 +274,32 @@ describe('fmpGet', () => {
             const error = await fmpGet('profile').catch((e: unknown) => e);
             expect((error as FmpHttpError).retryAfterSeconds).toBeNull();
         });
+
+        it.each(['', 'Infinity', 'NaN', 'tomorrow'])(
+            '유효하지 않은 Retry-After "%s" → null 반환',
+            async value => {
+                mockError(429, { 'Retry-After': value });
+                mockError(429);
+                mockError(429);
+                mockError(429);
+
+                const error = await fmpGet('profile').catch((e: unknown) => e);
+                expect((error as FmpHttpError).retryAfterSeconds).toBeNull();
+            }
+        );
+    });
+
+    describe('malformed JSON body', () => {
+        it('SyntaxError는 retryable이 아니므로 즉시 던진다', async () => {
+            mockFetch.mockResolvedValueOnce({
+                ok: true,
+                json: async () => {
+                    throw new SyntaxError('Unexpected token');
+                },
+            });
+
+            await expect(fmpGet('profile')).rejects.toThrow(SyntaxError);
+            expect(mockFetch).toHaveBeenCalledTimes(1);
+        });
     });
 });

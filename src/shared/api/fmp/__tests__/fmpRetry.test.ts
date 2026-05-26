@@ -48,6 +48,10 @@ describe('isFmpTransientError', () => {
     it('string은 false를 반환한다', () => {
         expect(isFmpTransientError('error')).toBe(false);
     });
+
+    it('undefined는 false를 반환한다', () => {
+        expect(isFmpTransientError(undefined)).toBe(false);
+    });
 });
 
 describe('extractRetryAfterMs', () => {
@@ -65,6 +69,10 @@ describe('extractRetryAfterMs', () => {
         expect(extractRetryAfterMs(new Error('oops'))).toBeNull();
         expect(extractRetryAfterMs(new TypeError('fetch failed'))).toBeNull();
         expect(extractRetryAfterMs(null)).toBeNull();
+    });
+
+    it('undefined를 전달하면 null을 반환한다', () => {
+        expect(extractRetryAfterMs(undefined)).toBeNull();
     });
 });
 
