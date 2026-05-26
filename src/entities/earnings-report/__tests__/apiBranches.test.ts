@@ -9,7 +9,6 @@ vi.mock('@/shared/lib/sleep', () => ({
     sleep: vi.fn().mockResolvedValue(undefined),
 }));
 
-import type { Mock } from 'vitest';
 import type { SiglensDatabase } from '@/shared/db/types';
 import {
     DrizzleEarningsReportsRepository,

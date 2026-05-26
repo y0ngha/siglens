@@ -7,15 +7,11 @@
 import { confirmPasswordReset } from '@/entities/user/lib/confirmPasswordReset';
 import type { ConfirmPasswordResetDependencies } from '@/entities/user/lib/authUseCaseTypes';
 import { hashEmailToken } from '@/entities/session/lib/tokenUtils';
-import type {
-    EmailTokenPurpose,
-    EmailTokenValue,
-} from '@/entities/email-token';
+import type { EmailTokenValue } from '@/entities/email-token';
 import type { EmailAuthUserRecord } from '@/shared/db/types';
 
 const RAW_TOKEN = 'raw-token-value';
 const STORED_TOKEN_HASH = hashEmailToken(RAW_TOKEN);
-const SUBMITTED_HASH = hashEmailToken(RAW_TOKEN);
 const NEW_PASSWORD = 'NewSecret1';
 
 const user: EmailAuthUserRecord = {

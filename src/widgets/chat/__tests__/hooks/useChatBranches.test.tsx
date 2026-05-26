@@ -280,10 +280,9 @@ describe('useChat — branch coverage', () => {
                 .mockReturnValueOnce(storedMessages); // after key change
 
             const { Wrapper } = makeWrapper();
-            const { result, rerender } = renderHook(
-                () => useChat({ symbol: 'AAPL' }),
-                { wrapper: Wrapper }
-            );
+            const { rerender } = renderHook(() => useChat({ symbol: 'AAPL' }), {
+                wrapper: Wrapper,
+            });
 
             // Wait for initial load
             await act(async () => {});

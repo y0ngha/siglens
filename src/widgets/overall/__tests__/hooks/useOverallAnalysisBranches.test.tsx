@@ -12,14 +12,10 @@ import {
     submitOverallAnalysisAction,
     pollOverallAnalysisAction,
     pollAnalysisAction,
-    pollFundamentalAnalysisAction,
 } from '@/entities/analysis/actions';
-import { pollNewsAnalysisAction } from '@/entities/news-article/actions';
-import { pollOptionsAnalysisAction } from '@/entities/options-chain/actions';
 import { isGateBlockedResult } from '@/entities/analysis';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook, waitFor } from '@testing-library/react';
-import type { OverallAnalysisResponse } from '@y0ngha/siglens-core';
 import type { ReactNode } from 'react';
 
 vi.mock('@/entities/analysis/actions', () => ({
@@ -56,17 +52,6 @@ const mockPollOverall = pollOverallAnalysisAction as MockedFunction<
     typeof pollOverallAnalysisAction
 >;
 const mockIsGateBlocked = isGateBlockedResult as unknown as Mock;
-
-const OVERALL_RESULT: OverallAnalysisResponse = {
-    headlineKo: 'AAPL 종합 분석',
-    technicalBulletsKo: [],
-    fundamentalBulletsKo: [],
-    newsBulletsKo: [],
-    optionsBulletsKo: [],
-    integratedConclusionKo: '중립',
-    scenarios: [],
-    riskFactorsKo: [],
-};
 
 const queryClients: QueryClient[] = [];
 

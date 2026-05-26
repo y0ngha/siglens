@@ -336,7 +336,7 @@ describe('useAnalysis — branch coverage', () => {
                 });
             mockPoll.mockImplementation(() => new Promise(() => {}));
 
-            const { result, rerender } = renderHook(
+            const { rerender } = renderHook(
                 ({ timeframeChangeCount }: { timeframeChangeCount: number }) =>
                     useAnalysis(
                         makeOptions({
