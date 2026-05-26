@@ -3,13 +3,14 @@ vi.mock('@/shared/lib/seo', () => ({
 }));
 
 import { buildLongTailEntries } from '../lib/buildLongTailEntries';
+import { LONGTAIL_ENTRIES_PER_TICKER } from '../model';
 
 const BUILD_DATE = new Date('2026-01-15T00:00:00.000Z');
 
 describe('buildLongTailEntries', () => {
     it('티커 1개 → 5개 엔트리(chart, news, fundamental, overall, fear-greed)를 반환한다', () => {
         const entries = buildLongTailEntries(['AAPL'], BUILD_DATE);
-        expect(entries).toHaveLength(5);
+        expect(entries).toHaveLength(LONGTAIL_ENTRIES_PER_TICKER);
 
         const urls = entries.map(e => e.url);
         expect(urls).toEqual([
@@ -26,7 +27,7 @@ describe('buildLongTailEntries', () => {
             ['AAPL', 'MSFT', 'GOOG'],
             BUILD_DATE
         );
-        expect(entries).toHaveLength(15);
+        expect(entries).toHaveLength(LONGTAIL_ENTRIES_PER_TICKER * 3);
     });
 
     it('빈 배열 → 빈 배열을 반환한다', () => {

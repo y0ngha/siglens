@@ -4,8 +4,6 @@ import type { SitemapEntry } from '../model';
 /**
  * long-tail 티커에 대한 sitemap 엔트리를 생성한다.
  * popular과 달리 옵션 라우트 제외, 낮은 priority, 고정 lastmod(SITE_BUILD_DATE).
- *
- * 순수 함수라 테스트에서 시간/외부 의존 mock 없이 결정적 검증 가능.
  */
 export function buildLongTailEntries(
     tickers: readonly string[],
