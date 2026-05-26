@@ -1050,6 +1050,16 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    → R19 example: `earningsCalendarRepository.listForRange(from, to)` defined + tested but never called from production. Removed (method, 2 test cases, `between` import, mock helper).
    ❌ Add `repo.listForRange()` because "we might need it for monthly reports"
    ✅ Add `repo.listForRange()` in the PR that introduces the monthly report consumer
+
+8. Non-obvious operational choices and temporary workarounds without lifecycle documentation
+   → If behavior intentionally differs from nearby code or default expectations, document WHY at the decision point
+   → If a workaround exists only until an upstream/library change, link the tracking issue and state the removal condition
+   → Applies to status codes, cacheability decisions, tree-shaking/import workarounds, and local mirrors kept for environment constraints
+   ❌ `NextResponse.redirect(url)` uses the default 307 while adjacent redirects explicitly use 301, with no reason documented
+   ❌ Inline local constant mirror kept to avoid importing a heavy barrel, with no issue link or removal trigger
+   ✅ JSDoc explains temporary 307 prevents permanent browser caching of search-query redirects
+   ✅ Workaround comment links the upstream barrel-splitting issue and says to remove the mirror after the export is fixed
+   → Recurring: PR #461 `?q=` redirect status rationale; PR #467 `HIGH_CONFIDENCE_WEIGHT` local mirror removal tracking
 ```
 
 ---
