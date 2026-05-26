@@ -5,14 +5,12 @@ vi.mock('next/server', async () => {
 });
 
 /**
- * SITEMAP_MAX_URLS_PER_FILE=15, LONGTAIL_ENTRIES_PER_TICKER=5 이므로
- * TICKERS_PER_PAGE = Math.floor(15/5) = 3.
+ * LONGTAIL_TICKERS_PER_PAGE=3이므로
  * 티커 5개(AAA~EEE): page1=[AAA,BBB,CCC], page2=[DDD,EEE].
  */
 vi.mock('@/entities/sitemap-entry', () => ({
     loadLongTailTickers: vi.fn(),
-    SITEMAP_MAX_URLS_PER_FILE: 15,
-    LONGTAIL_ENTRIES_PER_TICKER: 5,
+    LONGTAIL_TICKERS_PER_PAGE: 3,
     buildLongTailEntries: vi.fn(),
     toUrlSetXml: vi.fn().mockReturnValue('<?xml version="1.0"?><urlset/>'),
 }));

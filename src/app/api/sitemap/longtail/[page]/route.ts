@@ -2,22 +2,13 @@ import { NextResponse } from 'next/server';
 import {
     buildLongTailEntries,
     loadLongTailTickers,
-    LONGTAIL_ENTRIES_PER_TICKER,
-    SITEMAP_MAX_URLS_PER_FILE,
+    LONGTAIL_TICKERS_PER_PAGE,
     toUrlSetXml,
 } from '@/entities/sitemap-entry';
 import { SITE_BUILD_DATE } from '@/shared/lib/seo';
 
+// DB 의존(no-store fetch)이라 force-dynamic. traffic 보호는 CDN cache에 위임.
 export const dynamic = 'force-dynamic';
-
-/**
- * 한 sitemap 파일에 담을 수 있는 티커 수.
- * 티커당 LONGTAIL_ENTRIES_PER_TICKER개 URL을 생성하므로,
- * SITEMAP_MAX_URLS_PER_FILE을 넘지 않도록 역산한다.
- */
-const TICKERS_PER_PAGE = Math.floor(
-    SITEMAP_MAX_URLS_PER_FILE / LONGTAIL_ENTRIES_PER_TICKER
-);
 
 interface RouteContext {
     params: Promise<{ page: string }>;
@@ -34,9 +25,10 @@ export async function GET(
     }
 
     const all = await loadLongTailTickers();
-    const start = (pageNum - 1) * TICKERS_PER_PAGE;
-    const chunk = all.slice(start, start + TICKERS_PER_PAGE);
+    const start = (pageNum - 1) * LONGTAIL_TICKERS_PER_PAGE;
+    const chunk = all.slice(start, start + LONGTAIL_TICKERS_PER_PAGE);
 
+    // 빈 chunk = sitemap index가 노출한 페이지 수를 초과한 요청. 404로 명시.
     if (chunk.length === 0) {
         return new NextResponse('Page out of range', { status: 404 });
     }

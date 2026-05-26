@@ -36,3 +36,12 @@ export const SITEMAP_MAX_URLS_PER_FILE = 50_000;
  * sitemap index 페이지네이션과 longtail route handler 양쪽에서 참조한다.
  */
 export const LONGTAIL_ENTRIES_PER_TICKER = 5;
+
+/**
+ * 한 sitemap 파일에 담을 수 있는 long-tail 티커 수.
+ * 티커당 LONGTAIL_ENTRIES_PER_TICKER개 URL을 생성하므로,
+ * SITEMAP_MAX_URLS_PER_FILE을 넘지 않도록 역산한다.
+ */
+export const LONGTAIL_TICKERS_PER_PAGE = Math.floor(
+    SITEMAP_MAX_URLS_PER_FILE / LONGTAIL_ENTRIES_PER_TICKER
+);

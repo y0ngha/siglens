@@ -5,8 +5,7 @@ vi.mock('next/server', async () => {
 });
 vi.mock('@/entities/sitemap-entry', () => ({
     loadLongTailTickers: vi.fn(),
-    SITEMAP_MAX_URLS_PER_FILE: 50000,
-    LONGTAIL_ENTRIES_PER_TICKER: 5,
+    LONGTAIL_TICKERS_PER_PAGE: 10000,
     toSitemapIndexXml: vi
         .fn()
         .mockReturnValue('<?xml version="1.0"?><sitemapindex/>'),

@@ -6,6 +6,7 @@ export type {
 export {
     SITEMAP_MAX_URLS_PER_FILE,
     LONGTAIL_ENTRIES_PER_TICKER,
+    LONGTAIL_TICKERS_PER_PAGE,
 } from './model';
 
 export { toUrlSetXml, toSitemapIndexXml } from './lib/xml';

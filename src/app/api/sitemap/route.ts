@@ -1,9 +1,8 @@
 import { NextResponse } from 'next/server';
 import {
     loadLongTailTickers,
-    LONGTAIL_ENTRIES_PER_TICKER,
+    LONGTAIL_TICKERS_PER_PAGE,
     type SitemapIndexEntry,
-    SITEMAP_MAX_URLS_PER_FILE,
     toSitemapIndexXml,
 } from '@/entities/sitemap-entry';
 import { SITE_BUILD_DATE, SITE_URL } from '@/shared/lib/seo';
@@ -29,10 +28,9 @@ export const dynamic = 'force-dynamic';
 export async function GET(): Promise<Response> {
     const now = new Date();
     const longTailTickers = await loadLongTailTickers();
-    const tickersPerPage = Math.floor(
-        SITEMAP_MAX_URLS_PER_FILE / LONGTAIL_ENTRIES_PER_TICKER
+    const longTailPages = Math.ceil(
+        longTailTickers.length / LONGTAIL_TICKERS_PER_PAGE
     );
-    const longTailPages = Math.ceil(longTailTickers.length / tickersPerPage);
 
     // long-tail이 비어 있을 수 있다(DB 미설정/실패 시 graceful fallback).
     // 그 경우 longTailPages = 0이라 sub-sitemap 항목 자체가 빠지므로,
