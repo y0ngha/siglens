@@ -1,13 +1,13 @@
 import { NextResponse } from 'next/server';
 import {
+    buildLongTailEntries,
     loadLongTailTickers,
-    SITEMAP_MAX_URLS_PER_FILE,
-    type SitemapEntry,
+    LONGTAIL_TICKERS_PER_PAGE,
     toUrlSetXml,
 } from '@/entities/sitemap-entry';
-import { SITE_BUILD_DATE, SITE_URL } from '@/shared/lib/seo';
+import { SITE_BUILD_DATE } from '@/shared/lib/seo';
 
-// DB 의존(no-store fetch)이라 force-dynamic. trafic 보호는 CDN cache에 위임.
+// DB 의존(no-store fetch)이라 force-dynamic. traffic 보호는 CDN cache에 위임.
 export const dynamic = 'force-dynamic';
 
 interface RouteContext {
@@ -25,23 +25,15 @@ export async function GET(
     }
 
     const all = await loadLongTailTickers();
-    const start = (pageNum - 1) * SITEMAP_MAX_URLS_PER_FILE;
-    const chunk = all.slice(start, start + SITEMAP_MAX_URLS_PER_FILE);
+    const start = (pageNum - 1) * LONGTAIL_TICKERS_PER_PAGE;
+    const chunk = all.slice(start, start + LONGTAIL_TICKERS_PER_PAGE);
 
     // 빈 chunk = sitemap index가 노출한 페이지 수를 초과한 요청. 404로 명시.
     if (chunk.length === 0) {
         return new NextResponse('Page out of range', { status: 404 });
     }
 
-    // long-tail은 weekly changeFreq + 빌드 시점 lastmod로 충분. POPULAR과 달리
-    // 일·시간 단위 슬라이딩 시그널이 필요할 만큼 갱신 빈도가 높지 않다.
-    const entries: SitemapEntry[] = chunk.map(ticker => ({
-        url: `${SITE_URL}/${ticker}`,
-        lastModified: SITE_BUILD_DATE,
-        changeFrequency: 'weekly',
-        priority: 0.5,
-    }));
-
+    const entries = buildLongTailEntries(chunk, SITE_BUILD_DATE);
     const xml = toUrlSetXml(entries);
     return new NextResponse(xml, {
         headers: {

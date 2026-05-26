@@ -41,11 +41,11 @@ describe('filterUsExchanges', () => {
         expect(filterUsExchanges(results)).toEqual([apple]);
     });
 
-    it('NYSE/NASDAQ/AMEX/NYSEArca를 모두 인식한다', () => {
+    it('NYSE/NASDAQ/AMEX/CBOE/OTC/PNK/CNQ를 모두 인식한다', () => {
         const inputs: FmpSearchResult[] = (
-            ['NYSE', 'NASDAQ', 'AMEX', 'NYSEArca'] as const
+            ['NYSE', 'NASDAQ', 'AMEX', 'CBOE', 'OTC', 'PNK', 'CNQ'] as const
         ).map(exchange => ({ ...apple, exchange }));
-        expect(filterUsExchanges(inputs)).toHaveLength(4);
+        expect(filterUsExchanges(inputs)).toHaveLength(7);
     });
 });
 
