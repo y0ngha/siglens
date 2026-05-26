@@ -9,7 +9,7 @@ vi.mock('@/shared/lib/sleep', () => ({
 
 import type { NewsCardAnalysis, NewsItem } from '@y0ngha/siglens-core';
 import type { SiglensDatabase } from '@/shared/db/types';
-import { DrizzleNewsRepository, type NewsRow } from '@/entities/news-article';
+import { DrizzleNewsRepository, type NewsRow } from '@/entities/news-article/api';
 
 const baseItem: NewsItem = {
     id: 'abc123',

@@ -1,4 +1,4 @@
-import { buildPasswordResetEmail } from '@/entities/email-token';
+import { buildPasswordResetEmail } from '@/entities/email-token/templates/passwordResetEmail';
 import { DEFAULT_SITE_URL } from '../../templates/passwordResetEmail';
 
 describe('buildPasswordResetEmail', () => {

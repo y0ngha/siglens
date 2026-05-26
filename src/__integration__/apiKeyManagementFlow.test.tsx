@@ -1,7 +1,8 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ApiKeySection } from '@/features/api-key-management/ui/ApiKeySection';
-import type { ApiKeyActionState, LlmProvider } from '@/entities/api-key';
+import type { ApiKeyActionState } from '@/entities/api-key/lib/types';
+import type { LlmProvider } from '@/entities/api-key/lib/constants';
 
 vi.mock('next/navigation', () => ({
     useRouter: () => ({ push: vi.fn(), prefetch: vi.fn() }),

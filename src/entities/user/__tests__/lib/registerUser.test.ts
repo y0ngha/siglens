@@ -4,7 +4,7 @@ import type { RegisterUserDependencies } from '@/entities/user/lib/authUseCaseTy
 import type {
     EmailTokenPurpose,
     EmailTokenValue,
-} from '@/entities/email-token';
+} from '@/entities/email-token/api';
 import type { AuthUserRecord } from '@/shared/lib/auth/types';
 
 const createdAt = new Date('2026-04-26T00:00:00.000Z');

@@ -1,4 +1,4 @@
-import { DrizzleOAuthAccountRepository } from '@/entities/oauth-account';
+import { DrizzleOAuthAccountRepository } from '@/entities/oauth-account/api';
 import { encryptToken } from '@/shared/db/tokenEncryption';
 import type { SiglensDatabase } from '@/shared/db/types';
 
