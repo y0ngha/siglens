@@ -15,7 +15,7 @@ vi.mock('@/widgets/layout/Header', () => ({
         </header>
     ),
 }));
-vi.mock('@/entities/session', () => ({
+vi.mock('@/entities/session/lib/getCurrentUser', () => ({
     getCurrentUser: vi.fn(),
 }));
 vi.mock('@/shared/config/cookieNames', () => ({
@@ -23,7 +23,7 @@ vi.mock('@/shared/config/cookieNames', () => ({
 }));
 
 import { cookies } from 'next/headers';
-import { getCurrentUser } from '@/entities/session';
+import { getCurrentUser } from '@/entities/session/lib/getCurrentUser';
 import { AuthSessionHeader } from '@/app/_components/AuthSessionHeader';
 import type { MockedFunction } from 'vitest';
 

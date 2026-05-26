@@ -11,7 +11,7 @@ import { mapExpirationsToSlots } from '@y0ngha/siglens-core';
 import {
     fetchOptionsSnapshot,
     hasOptionsMarket,
-} from '@/entities/options-chain';
+} from '@/entities/options-chain/lib/optionsDataCache';
 import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/shared/config/queryConfig';
 import {
     buildBreadcrumbJsonLd,
