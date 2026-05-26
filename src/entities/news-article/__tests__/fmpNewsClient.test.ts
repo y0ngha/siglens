@@ -1,3 +1,7 @@
+vi.mock('@/shared/lib/sleep', () => ({
+    sleep: vi.fn().mockResolvedValue(undefined),
+}));
+
 import {
     FmpNewsClient,
     computeCutoff,
@@ -138,7 +142,11 @@ describe('FmpNewsClient', () => {
 
     /** Helper — resolve fetch with a non-2xx status. */
     function mockError(status: number): void {
-        mockFetch.mockResolvedValueOnce({ ok: false, status });
+        mockFetch.mockResolvedValueOnce({
+            ok: false,
+            status,
+            headers: new Headers(),
+        });
     }
 
     // ------------------------------------------------------------------ //
@@ -161,9 +169,9 @@ describe('FmpNewsClient', () => {
 
     describe('non-2xx HTTP response', () => {
         it('fetchNews throws with status in message', async () => {
-            mockError(429);
+            mockError(404);
             const client = new FmpNewsClient();
-            await expect(client.fetchNews('AAPL', '7d')).rejects.toThrow('429');
+            await expect(client.fetchNews('AAPL', '7d')).rejects.toThrow('404');
         });
     });
 

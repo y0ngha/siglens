@@ -41,6 +41,22 @@ export interface WithRetryOptions {
      * cap (legacy behavior).
      */
     backoffBudgetMs?: number;
+    /**
+     * Override the computed exponential+jitter delay for a specific retry.
+     *
+     * Called with the caught error before each retry sleep. When it returns
+     * a non-null number, that value is used as the sleep duration instead of
+     * the exponential+jitter computation. Returning `null` falls back to the
+     * normal backoff schedule.
+     *
+     * Intended use-case: HTTP clients that receive a `Retry-After` response
+     * header can extract the server-suggested delay from the error object and
+     * return it here so `withRetry` honors it instead of guessing.
+     *
+     * The returned delay still participates in the `backoffBudgetMs` check —
+     * if `Date.now() + delay >= deadline`, the error is re-thrown immediately.
+     */
+    getRetryDelayMs?: (error: unknown) => number | null;
 }
 
 /**
@@ -54,7 +70,13 @@ export async function withRetry<T>(
     fn: () => Promise<T>,
     options: WithRetryOptions
 ): Promise<T> {
-    const { maxRetries, baseDelayMs, isRetryable, backoffBudgetMs } = options;
+    const {
+        maxRetries,
+        baseDelayMs,
+        isRetryable,
+        backoffBudgetMs,
+        getRetryDelayMs,
+    } = options;
     const deadline =
         backoffBudgetMs !== undefined ? Date.now() + backoffBudgetMs : Infinity;
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
@@ -67,7 +89,9 @@ export async function withRetry<T>(
             }
             const exponential = baseDelayMs * 2 ** attempt;
             const jitter = Math.random() * exponential;
-            const sleepMs = exponential + jitter;
+            const customDelay = getRetryDelayMs?.(error) ?? null;
+            const sleepMs =
+                customDelay !== null ? customDelay : exponential + jitter;
             // 다음 backoff sleep을 마치는 시점이 deadline을 넘어서면 더 기다리지
             // 않고 즉시 마지막 에러를 던진다. fn() 자체의 진행 중인 호출은 멈출
             // 수 없지만, 적어도 retry sleep 으로 인한 추가 지연이 예상 예산을

@@ -184,4 +184,102 @@ describe('withRetry', () => {
         // 첫 실패에 대한 sleep 1회만 발생.
         expect(sleepMock).toHaveBeenCalledTimes(1);
     });
+
+    describe('getRetryDelayMs', () => {
+        it('non-null을 반환하면 지수 백오프 대신 해당 값으로 sleep을 호출한다', async () => {
+            const fn = vi
+                .fn()
+                .mockRejectedValueOnce(new Error('rate-limited'))
+                .mockResolvedValueOnce('ok');
+            // Server says wait 5000ms regardless of backoff schedule.
+            const getRetryDelayMs = vi.fn().mockReturnValue(5000);
+
+            await withRetry(fn, {
+                maxRetries: 3,
+                baseDelayMs: 200,
+                isRetryable: () => true,
+                getRetryDelayMs,
+            });
+
+            // Math.random=0 ⇒ exponential would be 200ms; but override wins.
+            expect(sleepMock).toHaveBeenCalledTimes(1);
+            expect(sleepMock).toHaveBeenCalledWith(5000);
+        });
+
+        it('null을 반환하면 지수 백오프로 폴백한다', async () => {
+            const fn = vi
+                .fn()
+                .mockRejectedValueOnce(new Error('transient'))
+                .mockResolvedValueOnce('ok');
+            // No Retry-After header on this error → return null.
+            const getRetryDelayMs = vi.fn().mockReturnValue(null);
+
+            await withRetry(fn, {
+                maxRetries: 3,
+                baseDelayMs: 200,
+                isRetryable: () => true,
+                getRetryDelayMs,
+            });
+
+            // Math.random=0 ⇒ jitter=0, so pure exponential: 200ms.
+            expect(sleepMock).toHaveBeenCalledTimes(1);
+            expect(sleepMock).toHaveBeenCalledWith(200);
+        });
+
+        it('getRetryDelayMs가 없으면 기존 동작이 그대로 유지된다', async () => {
+            const fn = vi
+                .fn()
+                .mockRejectedValueOnce(new Error('a'))
+                .mockRejectedValueOnce(new Error('b'))
+                .mockResolvedValueOnce('done');
+
+            await withRetry(fn, {
+                maxRetries: 3,
+                baseDelayMs: 200,
+                isRetryable: () => true,
+                // no getRetryDelayMs
+            });
+
+            // Math.random=0 ⇒ 200ms then 400ms.
+            expect(sleepMock).toHaveBeenNthCalledWith(1, 200);
+            expect(sleepMock).toHaveBeenNthCalledWith(2, 400);
+        });
+
+        it('getRetryDelayMs가 반환한 값도 backoffBudgetMs 체크를 통과해야 sleep한다', async () => {
+            // backoffBudgetMs=50ms이면 deadline이 곧 지나므로, 커스텀 딜레이 5000ms는
+            // Date.now() + 5000 >= deadline을 만족해 sleep 없이 에러를 던진다.
+            const firstError = new Error('rate-limited');
+            const fn = vi.fn().mockRejectedValueOnce(firstError);
+            const getRetryDelayMs = vi.fn().mockReturnValue(5000);
+
+            await expect(
+                withRetry(fn, {
+                    maxRetries: 3,
+                    baseDelayMs: 200,
+                    isRetryable: () => true,
+                    backoffBudgetMs: 50,
+                    getRetryDelayMs,
+                })
+            ).rejects.toBe(firstError);
+
+            expect(fn).toHaveBeenCalledTimes(1);
+            expect(sleepMock).not.toHaveBeenCalled();
+        });
+    });
+
+    it('maxRetries=0 이면 재시도 없이 즉시 에러를 던진다', async () => {
+        const error = new Error('only-once');
+        const fn = vi.fn().mockRejectedValue(error);
+
+        await expect(
+            withRetry(fn, {
+                maxRetries: 0,
+                baseDelayMs: 200,
+                isRetryable: () => true,
+            })
+        ).rejects.toBe(error);
+
+        expect(fn).toHaveBeenCalledTimes(1);
+        expect(sleepMock).not.toHaveBeenCalled();
+    });
 });
