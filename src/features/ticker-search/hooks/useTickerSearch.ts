@@ -26,7 +26,7 @@ export function useTickerSearch(query: string): UseTickerSearchResult {
 
     const { data, isFetching } = useQuery({
         queryKey: QUERY_KEYS.tickerSearch(debouncedQuery),
-        queryFn: () => searchTickerAction(debouncedQuery),
+        queryFn: ({ queryKey: [, qQuery] }) => searchTickerAction(qQuery),
         enabled: isDebouncedQueryReady,
         // FMP catalogue updates daily — long staleTime is safe and protects
         // the FMP free-tier rate limit during typing sessions.

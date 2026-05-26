@@ -35,11 +35,22 @@ export const CURRENT_USER_STALE_TIME_MS = 5 * MS_PER_MINUTE;
 /** Registered LLM providers list refreshes only after the user adds/removes a key — short stale is fine. */
 export const REGISTERED_PROVIDERS_STALE_TIME_MS = MS_PER_MINUTE;
 
+const upper = (s: string): string => s.toUpperCase();
+
 export const QUERY_KEYS = {
-    bars: (symbol: string, timeframe: Timeframe) =>
-        ['bars', symbol, timeframe] as const,
+    bars: (symbol: string, timeframe: Timeframe, fmpSymbol?: string) =>
+        ['bars', upper(symbol), timeframe, fmpSymbol] as const,
+    /** Prefix key — cancels/invalidates all fmpSymbol variants for a symbol+timeframe. */
+    barsPrefix: (
+        symbol: string,
+        timeframe: Timeframe
+    ): readonly ['bars', string, Timeframe] => [
+        'bars',
+        upper(symbol),
+        timeframe,
+    ],
     tickerSearch: (query: string) => ['ticker-search', query] as const,
-    assetInfo: (symbol: string) => ['asset-info', symbol] as const,
+    assetInfo: (symbol: string) => ['asset-info', upper(symbol)] as const,
     briefing: (jobId: string) => ['briefing', jobId] as const,
     marketSummary: () => ['market-summary'] as const,
     currentUser: () => ['current-user'] as const,
@@ -47,24 +58,32 @@ export const QUERY_KEYS = {
     remainingTokens: () => ['chat', 'remaining-tokens'] as const,
     registeredProviders: () => ['llm', 'registered-providers'] as const,
     fundamentalAnalysis: (symbol: string, modelId: ModelId) =>
-        ['fundamental-analysis', symbol, modelId] as const,
+        ['fundamental-analysis', upper(symbol), modelId] as const,
     // News augment (chart page) and news analysis (news page) share this key so
     // a single React Query entry serves both pages within a session — preventing
     // a duplicate fetch when the user navigates between /AAPL and /AAPL/news.
     // Augment consumers may use `select` to project to a narrower shape.
-    newsAnalysis: (symbol: string, modelId: ModelId) =>
-        ['news-analysis', symbol, modelId] as const,
+    newsAnalysis: (symbol: string, companyName: string, modelId: ModelId) =>
+        ['news-analysis', upper(symbol), companyName, modelId] as const,
     /** Prefix key — invalidates all modelId variants for a symbol at once. */
     newsAnalysisPrefix: (
         symbol: string
-    ): readonly ['news-analysis', string] => ['news-analysis', symbol],
+    ): readonly ['news-analysis', string] => ['news-analysis', upper(symbol)],
     overallAnalysis: (
         symbol: string,
         companyName: string,
         timeframe: Timeframe,
         modelId: ModelId
-    ) => ['overall-analysis', symbol, companyName, timeframe, modelId] as const,
-    optionsSnapshot: (symbol: string) => ['options-snapshot', symbol] as const,
+    ) =>
+        [
+            'overall-analysis',
+            upper(symbol),
+            companyName,
+            timeframe,
+            modelId,
+        ] as const,
+    optionsSnapshot: (symbol: string) =>
+        ['options-snapshot', upper(symbol)] as const,
     /**
      * Options analysis cache scope. Expiration date is part of the key because
      * the AI analysis output differs per expiration — the chip selector should
@@ -72,7 +91,15 @@ export const QUERY_KEYS = {
      */
     optionsAnalysis: (
         symbol: string,
+        companyName: string,
         expirationDate: OptionsExpirationSelector,
         modelId: ModelId
-    ) => ['options-analysis', symbol, expirationDate, modelId] as const,
+    ) =>
+        [
+            'options-analysis',
+            upper(symbol),
+            companyName,
+            expirationDate,
+            modelId,
+        ] as const,
 } as const;

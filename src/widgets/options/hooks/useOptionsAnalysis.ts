@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { OptionsAnalysisResponse, ModelId } from '@y0ngha/siglens-core';
 import {
@@ -104,15 +104,22 @@ export function useOptionsAnalysis({
 }: UseOptionsAnalysisInput): OptionsAnalysisState {
     const currentJobIdRef = useRef<string | null>(null);
     const queryClient = useQueryClient();
+    const queryKey = useMemo(
+        () => QUERY_KEYS.optionsAnalysis(symbol, companyName, expirationDate, modelId),
+        [symbol, companyName, expirationDate, modelId]
+    );
 
     const query = useQuery({
-        queryKey: QUERY_KEYS.optionsAnalysis(symbol, expirationDate, modelId),
-        queryFn: ({ signal }) =>
+        queryKey,
+        queryFn: ({
+            signal,
+            queryKey: [, qSymbol, qCompanyName, qExpiration, qModelId],
+        }) =>
             fetchOptionsAnalysis(
-                symbol,
-                companyName,
-                expirationDate,
-                modelId,
+                qSymbol,
+                qCompanyName,
+                qExpiration,
+                qModelId,
                 signal,
                 (jobId, expectedCurrent) => {
                     if (
@@ -151,15 +158,10 @@ export function useOptionsAnalysis({
     usePageHideCancel(getPageHideJobs);
 
     useEffect(() => {
-        const queryKey = QUERY_KEYS.optionsAnalysis(
-            symbol,
-            expirationDate,
-            modelId
-        );
         if (queryClient.getQueryData(queryKey) === undefined) {
             void refetch();
         }
-    }, [queryClient, symbol, expirationDate, modelId, refetch]);
+    }, [queryClient, queryKey, refetch]);
 
     useEffect(() => {
         return () => {
@@ -171,7 +173,7 @@ export function useOptionsAnalysis({
                 });
             }
         };
-    }, [symbol, expirationDate, modelId]);
+    }, [queryKey]);
 
     if (query.isError) {
         if (query.error instanceof BotBlockedError) {

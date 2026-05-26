@@ -101,17 +101,17 @@ export function useNewsAnalysis(
 ): NewsAnalysisState {
     const currentJobIdRef = useRef<string | null>(null);
     const queryKey = useMemo(
-        () => QUERY_KEYS.newsAnalysis(symbol, modelId),
-        [symbol, modelId]
+        () => QUERY_KEYS.newsAnalysis(symbol, companyName, modelId),
+        [symbol, companyName, modelId]
     );
 
     const query = useQuery({
         queryKey,
-        queryFn: ({ signal }) =>
+        queryFn: ({ signal, queryKey: [, qSymbol, qCompanyName, qModelId] }) =>
             fetchNewsAnalysis(
-                symbol,
-                companyName,
-                modelId,
+                qSymbol,
+                qCompanyName,
+                qModelId,
                 signal,
                 (jobId, expectedCurrent) => {
                     if (

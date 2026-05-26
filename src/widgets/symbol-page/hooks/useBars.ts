@@ -1,12 +1,7 @@
 'use client';
 
 import { useSuspenseQuery } from '@tanstack/react-query';
-import type {
-    Bar,
-    BarsData,
-    IndicatorResult,
-    Timeframe,
-} from '@y0ngha/siglens-core';
+import type { Bar, IndicatorResult, Timeframe } from '@y0ngha/siglens-core';
 import { getBarsAction } from '@/entities/bars/actions';
 import { BARS_STALE_TIME_MS, QUERY_KEYS } from '@/shared/config/queryConfig';
 
@@ -26,9 +21,10 @@ export function useBars({
     timeframe,
     fmpSymbol,
 }: UseBarsOptions): UseBarsResult {
-    const { data } = useSuspenseQuery<BarsData, Error>({
-        queryKey: QUERY_KEYS.bars(symbol, timeframe),
-        queryFn: () => getBarsAction(symbol, timeframe, fmpSymbol),
+    const { data } = useSuspenseQuery({
+        queryKey: QUERY_KEYS.bars(symbol, timeframe, fmpSymbol),
+        queryFn: ({ queryKey: [, qSymbol, qTimeframe, qFmpSymbol] }) =>
+            getBarsAction(qSymbol, qTimeframe, qFmpSymbol),
         // OHLCV bars update on the order of seconds during market hours; a
         // short staleTime keeps repaints fresh without thrashing the API.
         staleTime: BARS_STALE_TIME_MS,
