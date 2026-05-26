@@ -13,6 +13,7 @@ const sharedTestConfig = {
     globals: true as const,
     pool: 'vmThreads' as const,
     maxThreads: 8,
+    experimental: { fsModuleCache: true },
 };
 
 const coverageConfig = {
