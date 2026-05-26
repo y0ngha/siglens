@@ -170,6 +170,12 @@ export default async function SymbolPage({ params, searchParams }: Props) {
 
     queryClient.setQueryData(QUERY_KEYS.assetInfo(symbol), assetInfo);
 
+    const barsQueryFn = ({
+        queryKey: [, qSymbol, qTimeframe, qFmpSymbol],
+    }: {
+        queryKey: ReturnType<typeof QUERY_KEYS.bars>;
+    }) => getBarsAction(qSymbol, qTimeframe, qFmpSymbol);
+
     await Promise.all([
         queryClient.prefetchQuery({
             queryKey: QUERY_KEYS.bars(
@@ -177,8 +183,7 @@ export default async function SymbolPage({ params, searchParams }: Props) {
                 initialTimeframe,
                 assetInfo.fmpSymbol
             ),
-            queryFn: ({ queryKey: [, qSymbol, qTimeframe, qFmpSymbol] }) =>
-                getBarsAction(qSymbol, qTimeframe, qFmpSymbol),
+            queryFn: barsQueryFn,
         }),
         ...(initialTimeframe !== DEFAULT_TIMEFRAME
             ? [
@@ -188,9 +193,7 @@ export default async function SymbolPage({ params, searchParams }: Props) {
                           DEFAULT_TIMEFRAME,
                           assetInfo.fmpSymbol
                       ),
-                      queryFn: ({
-                          queryKey: [, qSymbol, qTimeframe, qFmpSymbol],
-                      }) => getBarsAction(qSymbol, qTimeframe, qFmpSymbol),
+                      queryFn: barsQueryFn,
                   }),
               ]
             : []),

@@ -15,7 +15,7 @@ describe('FearGreedPageError', () => {
         ).toBeInTheDocument();
     });
 
-    it('has accessible alert role', () => {
+    it('alert role을 가진다', () => {
         render(
             <FearGreedPageError
                 error={new Error('test')}
