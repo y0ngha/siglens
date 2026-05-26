@@ -1,4 +1,6 @@
 import { FearGreedPage } from '@/widgets/fear-greed/FearGreedPage';
+import { ErrorBoundary } from 'react-error-boundary';
+import { FearGreedPageError } from '@/widgets/fear-greed/FearGreedPageError';
 import { CrossLinkCards } from '@/widgets/symbol-page';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { DEFAULT_TIMEFRAME, VALID_TICKER_RE } from '@/shared/config/market';
@@ -151,7 +153,11 @@ export default async function SymbolFearGreedPage({ params }: Props) {
     });
     queryClient.setQueryData(QUERY_KEYS.assetInfo(symbol), assetInfo);
     await queryClient.prefetchQuery({
-        queryKey: QUERY_KEYS.bars(symbol, DEFAULT_TIMEFRAME, assetInfo.fmpSymbol),
+        queryKey: QUERY_KEYS.bars(
+            symbol,
+            DEFAULT_TIMEFRAME,
+            assetInfo.fmpSymbol
+        ),
         queryFn: ({ queryKey: [, qSymbol, qTimeframe, qFmpSymbol] }) =>
             getBarsAction(qSymbol, qTimeframe, qFmpSymbol),
     });
@@ -207,10 +213,12 @@ export default async function SymbolFearGreedPage({ params }: Props) {
                     </p>
                 </section>
                 <HydrationBoundary state={dehydrate(queryClient)}>
-                    <FearGreedPage
-                        symbol={ticker}
-                        fmpSymbol={assetInfo.fmpSymbol}
-                    />
+                    <ErrorBoundary FallbackComponent={FearGreedPageError}>
+                        <FearGreedPage
+                            symbol={ticker}
+                            fmpSymbol={assetInfo.fmpSymbol}
+                        />
+                    </ErrorBoundary>
                 </HydrationBoundary>
                 <CrossLinkCards symbol={ticker} current="fear-greed" />
             </main>

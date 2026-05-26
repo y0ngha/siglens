@@ -1,3 +1,7 @@
+vi.mock('@/shared/lib/sleep', () => ({
+    sleep: vi.fn().mockResolvedValue(undefined),
+}));
+
 import { FmpFundamentalClient } from '../fundamentalClient';
 
 const mockFetch = vi.fn();
@@ -29,7 +33,11 @@ describe('FmpFundamentalClient', () => {
 
     /** Helper — resolve fetch with a non-2xx status. */
     function mockError(status: number): void {
-        mockFetch.mockResolvedValueOnce({ ok: false, status });
+        mockFetch.mockResolvedValueOnce({
+            ok: false,
+            status,
+            headers: new Headers(),
+        });
     }
 
     // ------------------------------------------------------------------ //
@@ -58,8 +66,8 @@ describe('FmpFundamentalClient', () => {
         });
 
         it('getKeyMetricsTtm returns null when both optional endpoints fail', async () => {
-            mockError(500);
-            mockError(500);
+            mockError(400);
+            mockError(400);
             const client = new FmpFundamentalClient();
             await expect(client.getKeyMetricsTtm('AAPL')).resolves.toBeNull();
         });

@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { Suspense } from 'react';
+import { ErrorBoundary } from 'react-error-boundary';
 import { SymbolTabs } from './SymbolTabs';
 import { SymbolTabsSkeleton } from './SymbolTabsSkeleton';
 import { useAssetInfo } from './hooks/useAssetInfo';
@@ -77,14 +78,16 @@ export function SymbolLayoutHeader({ symbol }: SymbolLayoutHeaderProps) {
                         두 인스턴스는 동일 React Query 캐시를 공유하므로 fetch는 한 번만 발생하지만,
                         FearGreedHeaderChipMounted에 mount-time side effect(analytics, ref 등)를
                         추가할 때는 두 번 실행되는 점에 유의한다. */}
-                    <Suspense fallback={null}>
-                        <span className="hidden sm:contents">
-                            <FearGreedHeaderChipMounted
-                                symbol={ticker}
-                                fmpSymbol={assetInfo?.fmpSymbol}
-                            />
-                        </span>
-                    </Suspense>
+                    <ErrorBoundary fallback={null}>
+                        <Suspense fallback={null}>
+                            <span className="hidden sm:contents">
+                                <FearGreedHeaderChipMounted
+                                    symbol={ticker}
+                                    fmpSymbol={assetInfo?.fmpSymbol}
+                                />
+                            </span>
+                        </Suspense>
+                    </ErrorBoundary>
                 </div>
 
                 <div className="flex items-center gap-2 sm:order-3 sm:shrink-0">
@@ -101,14 +104,16 @@ export function SymbolLayoutHeader({ symbol }: SymbolLayoutHeaderProps) {
                     />
                 </div>
 
-                <Suspense fallback={null}>
-                    <div className="sm:hidden">
-                        <FearGreedHeaderChipMounted
-                            symbol={ticker}
-                            fmpSymbol={assetInfo?.fmpSymbol}
-                        />
-                    </div>
-                </Suspense>
+                <ErrorBoundary fallback={null}>
+                    <Suspense fallback={null}>
+                        <div className="sm:hidden">
+                            <FearGreedHeaderChipMounted
+                                symbol={ticker}
+                                fmpSymbol={assetInfo?.fmpSymbol}
+                            />
+                        </div>
+                    </Suspense>
+                </ErrorBoundary>
             </div>
 
             <div className="-mx-4 mt-3">

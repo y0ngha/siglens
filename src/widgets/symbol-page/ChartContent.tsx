@@ -2,6 +2,7 @@
 
 import type { ReactNode } from 'react';
 import React, { Suspense, useEffect, useEffectEvent, useMemo } from 'react';
+import { ErrorBoundary } from 'react-error-boundary';
 import dynamic from 'next/dynamic';
 import { type AnalysisResponse, type Timeframe } from '@y0ngha/siglens-core';
 import { cn } from '@/shared/lib/cn';
@@ -185,12 +186,14 @@ export function ChartContent({
                         actionPricesVisible={actionPricesVisible}
                         onActionPricesVisibilityChange={setActionPricesVisible}
                     />
-                    <Suspense fallback={null}>
-                        <FearGreedCardMounted
-                            symbol={symbol}
-                            fmpSymbol={fmpSymbol}
-                        />
-                    </Suspense>
+                    <ErrorBoundary fallback={null}>
+                        <Suspense fallback={null}>
+                            <FearGreedCardMounted
+                                symbol={symbol}
+                                fmpSymbol={fmpSymbol}
+                            />
+                        </Suspense>
+                    </ErrorBoundary>
                 </>
             ),
         [
