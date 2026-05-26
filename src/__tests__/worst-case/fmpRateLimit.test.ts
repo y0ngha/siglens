@@ -64,11 +64,14 @@ describe('FMP API error responses', () => {
     });
 
     it('network timeout (DOMException): 재시도 후 결국 던진다', async () => {
-        vi.spyOn(globalThis, 'fetch').mockRejectedValue(
-            new DOMException('The operation was aborted', 'AbortError')
-        );
+        const fetchSpy = vi
+            .spyOn(globalThis, 'fetch')
+            .mockRejectedValue(
+                new DOMException('The operation was aborted', 'AbortError')
+            );
 
         await expect(fmpGet('news/stock')).rejects.toThrow(DOMException);
+        expect(fetchSpy).toHaveBeenCalledTimes(4);
     });
 
     it('429 followed by success on retry: 결과를 반환하고 fetch가 2번 호출된다', async () => {
