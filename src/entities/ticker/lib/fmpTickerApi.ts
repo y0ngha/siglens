@@ -10,7 +10,10 @@ const US_EXCHANGES: ReadonlySet<string> = new Set([
     'NYSE',
     'NASDAQ',
     'AMEX',
-    'NYSEArca',
+    'CBOE',
+    'OTC',
+    'PNK',
+    'CNQ',
 ]);
 
 type FmpEndpoint = 'search-symbol' | 'search-name';
