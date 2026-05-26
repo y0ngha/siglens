@@ -14,7 +14,7 @@ type BriefingResult =
 export function useBriefing(jobId: string): BriefingResult {
     const { data } = useQuery({
         queryKey: QUERY_KEYS.briefing(jobId),
-        queryFn: () => pollBriefingAction(jobId),
+        queryFn: ({ queryKey: [, qJobId] }) => pollBriefingAction(qJobId),
         refetchInterval: query => {
             const status = query.state.data?.status;
 

@@ -36,8 +36,13 @@ export const CURRENT_USER_STALE_TIME_MS = 5 * MS_PER_MINUTE;
 export const REGISTERED_PROVIDERS_STALE_TIME_MS = MS_PER_MINUTE;
 
 export const QUERY_KEYS = {
-    bars: (symbol: string, timeframe: Timeframe) =>
-        ['bars', symbol, timeframe] as const,
+    bars: (symbol: string, timeframe: Timeframe, fmpSymbol?: string) =>
+        ['bars', symbol, timeframe, fmpSymbol] as const,
+    /** Prefix key — cancels/invalidates all fmpSymbol variants for a symbol+timeframe. */
+    barsPrefix: (
+        symbol: string,
+        timeframe: Timeframe
+    ): readonly ['bars', string, Timeframe] => ['bars', symbol, timeframe],
     tickerSearch: (query: string) => ['ticker-search', query] as const,
     assetInfo: (symbol: string) => ['asset-info', symbol] as const,
     briefing: (jobId: string) => ['briefing', jobId] as const,
@@ -52,8 +57,8 @@ export const QUERY_KEYS = {
     // a single React Query entry serves both pages within a session — preventing
     // a duplicate fetch when the user navigates between /AAPL and /AAPL/news.
     // Augment consumers may use `select` to project to a narrower shape.
-    newsAnalysis: (symbol: string, modelId: ModelId) =>
-        ['news-analysis', symbol, modelId] as const,
+    newsAnalysis: (symbol: string, companyName: string, modelId: ModelId) =>
+        ['news-analysis', symbol, companyName, modelId] as const,
     /** Prefix key — invalidates all modelId variants for a symbol at once. */
     newsAnalysisPrefix: (
         symbol: string
@@ -72,7 +77,8 @@ export const QUERY_KEYS = {
      */
     optionsAnalysis: (
         symbol: string,
+        companyName: string,
         expirationDate: OptionsExpirationSelector,
         modelId: ModelId
-    ) => ['options-analysis', symbol, expirationDate, modelId] as const,
+    ) => ['options-analysis', symbol, companyName, expirationDate, modelId] as const,
 } as const;

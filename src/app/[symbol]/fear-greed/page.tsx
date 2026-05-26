@@ -151,9 +151,9 @@ export default async function SymbolFearGreedPage({ params }: Props) {
     });
     queryClient.setQueryData(QUERY_KEYS.assetInfo(ticker), assetInfo);
     await queryClient.prefetchQuery({
-        queryKey: QUERY_KEYS.bars(ticker, DEFAULT_TIMEFRAME),
-        queryFn: () =>
-            getBarsAction(ticker, DEFAULT_TIMEFRAME, assetInfo.fmpSymbol),
+        queryKey: QUERY_KEYS.bars(ticker, DEFAULT_TIMEFRAME, assetInfo.fmpSymbol),
+        queryFn: ({ queryKey: [, qSymbol, qTimeframe, qFmpSymbol] }) =>
+            getBarsAction(qSymbol, qTimeframe, qFmpSymbol),
     });
 
     return (

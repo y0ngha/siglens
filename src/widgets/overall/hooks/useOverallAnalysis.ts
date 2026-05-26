@@ -349,14 +349,17 @@ export function useOverallAnalysis(
 
     const query = useQuery({
         queryKey,
-        queryFn: ({ signal }) => {
+        queryFn: ({
+            signal,
+            queryKey: [, qSymbol, qCompanyName, qTimeframe, qModelId],
+        }) => {
             const force = queryFnForceRef.current;
             queryFnForceRef.current = false;
             return fetchOverallAnalysis(
-                symbol,
-                companyName,
-                timeframe,
-                modelId,
+                qSymbol,
+                qCompanyName,
+                qTimeframe,
+                qModelId,
                 signal,
                 setProgress,
                 (jobs, expectedCurrent) => {

@@ -88,10 +88,10 @@ export function useFundamentalAnalysis(
 
     const query = useQuery({
         queryKey,
-        queryFn: ({ signal }) =>
+        queryFn: ({ signal, queryKey: [, qSymbol, qModelId] }) =>
             fetchFundamentalAnalysis(
-                symbol,
-                modelId,
+                qSymbol,
+                qModelId,
                 signal,
                 (jobId, expectedCurrent) => {
                     if (
