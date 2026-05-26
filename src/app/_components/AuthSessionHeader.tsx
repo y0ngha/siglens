@@ -3,7 +3,7 @@ import { cookies } from 'next/headers';
 import type { ReactNode } from 'react';
 import { Header } from '@/widgets/layout/Header';
 import type { HeaderUserMenuUser } from '@/widgets/layout/HeaderUserMenu';
-import { getCurrentUser } from '@/entities/session';
+import { getCurrentUser } from '@/entities/session/lib/getCurrentUser';
 import { AUTH_HINT_COOKIE_NAME } from '@/shared/config/cookieNames';
 
 /**

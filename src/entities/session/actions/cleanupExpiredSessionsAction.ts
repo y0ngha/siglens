@@ -4,20 +4,10 @@ import { timingSafeEqual } from 'crypto';
 import { headers } from 'next/headers';
 import { DrizzleSessionRepository } from '../api';
 import { getAuthDatabaseClient } from '../lib/db';
-
-/** Result of {@link cleanupExpiredSessionsAction}. */
-export interface CleanupExpiredSessionsResult {
-    /** Number of session rows actually deleted. */
-    deleted: number;
-}
-
-/** Thrown when the action is invoked without a valid CRON_SECRET bearer. */
-export class CleanupUnauthorizedError extends Error {
-    constructor() {
-        super('cleanup_unauthorized');
-        this.name = 'CleanupUnauthorizedError';
-    }
-}
+import {
+    CleanupUnauthorizedError,
+    type CleanupExpiredSessionsResult,
+} from './cleanupTypes';
 
 /** Authorization Bearer 토큰을 타이밍-세이프하게 비교 (verifyOAuthState 패턴과 일치). */
 function safeBearerCompare(actual: string | null, expected: string): boolean {

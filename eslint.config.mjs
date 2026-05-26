@@ -149,8 +149,11 @@ const eslintConfig = defineConfig([
             'src/entities/*/actions/**',
             // entities 내부 lib 간 cross-import는 barrel 순환을 피하기 위해 deep path 사용.
             'src/entities/*/lib/**',
-            // Route handlers는 서버 전용 코드로 entity/feature 내부 구현 접근 필요.
-            'src/app/api/**',
+            // Route handlers와 RSC pages는 서버 전용 코드로 entity/feature 내부 구현 접근 필요.
+            // RSC pages가 server-only lib 경로를 import해야 하므로 ('use server' 파일이 아닌)
+            // 예: getCurrentUser, optionsDataCache 등 server-only 마킹된 함수들
+            'src/app/**/!(api)/**',
+            'src/app/*.tsx',
             // widgets 간 cross-import: hook에 server-side 의존이 있어 barrel re-export 시
             // Jest ESM 해석 실패. deep path 허용으로 우회 (Phase 7).
             'src/widgets/**',

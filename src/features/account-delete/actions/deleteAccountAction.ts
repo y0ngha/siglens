@@ -12,10 +12,10 @@ import { normalizeEmail } from '@/shared/lib/auth/validation';
 import {
     applyAuthCookie,
     getAuthDatabaseClient,
-    getCurrentUser,
     isSecureCookieEnv,
     createExpiredAuthHintCookie,
 } from '@/entities/session';
+import { getCurrentUser } from '@/entities/session/lib/getCurrentUser';
 
 const NOT_AUTHENTICATED_MESSAGE = '로그인이 필요합니다.';
 const EMAIL_MISMATCH_MESSAGE =

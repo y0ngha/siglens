@@ -1,7 +1,5 @@
-import {
-    cleanupExpiredSessionsAction,
-    CleanupUnauthorizedError,
-} from '@/entities/session/actions/cleanupExpiredSessionsAction';
+import { cleanupExpiredSessionsAction } from '@/entities/session/actions/cleanupExpiredSessionsAction';
+import { CleanupUnauthorizedError } from '@/entities/session/actions/cleanupTypes';
 
 const { mockDeleteExpiredSessions, mockHeadersGet } = vi.hoisted(() => ({
     mockDeleteExpiredSessions: vi.fn(),

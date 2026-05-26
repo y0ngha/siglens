@@ -1,11 +1,11 @@
 import type { MockedFunction } from 'vitest';
-vi.mock('@/entities/options-chain', () => ({
+vi.mock('@/entities/options-chain/lib/optionsDataCache', () => ({
     hasOptionsMarket: vi.fn(),
 }));
 
 import { POPULAR_TICKERS } from '@/shared/config/popular-tickers';
 import { MS_PER_HOUR } from '@/shared/config/time';
-import { hasOptionsMarket } from '@/entities/options-chain';
+import { hasOptionsMarket } from '@/entities/options-chain/lib/optionsDataCache';
 import { buildPopularEntries } from '../lib/buildPopularEntries';
 import { SITE_URL } from '@/shared/lib/seo';
 
