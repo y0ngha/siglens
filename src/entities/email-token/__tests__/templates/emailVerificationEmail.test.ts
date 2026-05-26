@@ -1,4 +1,4 @@
-import { buildEmailVerificationEmail } from '@/entities/email-token/templates/emailVerificationEmail';
+import { buildEmailVerificationEmail } from '@/entities/email-token';
 
 describe('buildEmailVerificationEmail', () => {
     const baseInput = {

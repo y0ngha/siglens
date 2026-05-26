@@ -10,7 +10,7 @@ import { hashEmailToken } from '@/entities/session/lib/tokenUtils';
 import type {
     EmailTokenPurpose,
     EmailTokenValue,
-} from '@/entities/email-token/api';
+} from '@/entities/email-token';
 import type { EmailAuthUserRecord } from '@/shared/db/types';
 
 const RAW_TOKEN = 'raw-token-value';

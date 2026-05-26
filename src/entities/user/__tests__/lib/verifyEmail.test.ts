@@ -5,7 +5,7 @@ import { hashEmailToken } from '@/entities/session/lib/tokenUtils';
 import type {
     EmailTokenPurpose,
     EmailTokenValue,
-} from '@/entities/email-token/api';
+} from '@/entities/email-token';
 
 const VALID_CODE = '123456';
 const STORED_HASH = hashEmailToken(VALID_CODE);

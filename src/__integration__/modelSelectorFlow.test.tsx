@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { PremiumModelGateModal } from '@/features/premium-gate/ui/PremiumModelGateModal';
-import type { GateMode } from '@/entities/api-key/lib/types';
+import type { GateMode } from '@/entities/api-key';
 
 vi.mock('next/navigation', () => ({
     useRouter: () => ({ push: vi.fn(), prefetch: vi.fn() }),
