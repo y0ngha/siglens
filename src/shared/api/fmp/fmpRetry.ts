@@ -1,4 +1,5 @@
 import type { WithRetryOptions } from '@/shared/lib/withRetry';
+import { MS_PER_SECOND } from '@/shared/config/time';
 import { FmpHttpError } from './FmpHttpError';
 
 /**
@@ -25,7 +26,7 @@ export function isFmpTransientError(error: unknown): boolean {
  */
 export function extractRetryAfterMs(error: unknown): number | null {
     if (error instanceof FmpHttpError && error.retryAfterSeconds !== null) {
-        return error.retryAfterSeconds * 1000;
+        return error.retryAfterSeconds * MS_PER_SECOND;
     }
     return null;
 }
