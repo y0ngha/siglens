@@ -17,10 +17,10 @@
  *   수동 정리가 필요하면 해당 섹션의 티커를 테마별 섹션으로 이동하거나 삭제하세요.
  */
 
+import { execSync } from 'child_process';
+import { config } from 'dotenv';
 import { readFileSync, writeFileSync } from 'fs';
 import { resolve } from 'path';
-import { config } from 'dotenv';
-import { execSync } from 'child_process';
 
 // --- Constants ---
 
@@ -37,7 +37,7 @@ const EOD_FETCH_CAP = 30;
 
 const POPULAR_TICKERS_PATH = resolve(
     process.cwd(),
-    'src/domain/constants/popular-tickers.ts'
+    'src/shared/config/popular-tickers.ts'
 );
 const POPULAR_TICKERS_DECLARATION = 'export const POPULAR_TICKERS = [';
 const POPULAR_TICKERS_END = '] as const;';
