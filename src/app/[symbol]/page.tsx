@@ -168,10 +168,10 @@ export default async function SymbolPage({ params, searchParams }: Props) {
         },
     });
 
-    queryClient.setQueryData(QUERY_KEYS.assetInfo(ticker), assetInfo);
+    queryClient.setQueryData(QUERY_KEYS.assetInfo(symbol), assetInfo);
 
     await queryClient.prefetchQuery({
-        queryKey: QUERY_KEYS.bars(ticker, initialTimeframe, assetInfo.fmpSymbol),
+        queryKey: QUERY_KEYS.bars(symbol, initialTimeframe, assetInfo.fmpSymbol),
         queryFn: ({ queryKey: [, qSymbol, qTimeframe, qFmpSymbol] }) =>
             getBarsAction(qSymbol, qTimeframe, qFmpSymbol),
     });

@@ -76,11 +76,11 @@ async function SymbolLayoutChrome({ params }: SymbolLayoutSegmentProps) {
     });
 
     if (assetInfo) {
-        queryClient.setQueryData(QUERY_KEYS.assetInfo(ticker), assetInfo);
+        queryClient.setQueryData(QUERY_KEYS.assetInfo(symbol), assetInfo);
     }
 
     await queryClient.prefetchQuery({
-        queryKey: QUERY_KEYS.bars(ticker, DEFAULT_TIMEFRAME, assetInfo?.fmpSymbol),
+        queryKey: QUERY_KEYS.bars(symbol, DEFAULT_TIMEFRAME, assetInfo?.fmpSymbol),
         queryFn: ({ queryKey: [, qSymbol, qTimeframe, qFmpSymbol] }) =>
             getBarsAction(qSymbol, qTimeframe, qFmpSymbol),
     });
