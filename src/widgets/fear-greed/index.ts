@@ -3,6 +3,7 @@
 // not re-exported here, to keep the barrel tree-shake-friendly for tests.
 
 export { FearGreedGauge } from './FearGreedGauge';
+export { FearGreedPageError } from './FearGreedPageError';
 export { SelfNormWarningBadge } from './SelfNormWarningBadge';
 
 // Hooks re-exported for cross-widget consumption

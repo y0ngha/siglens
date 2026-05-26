@@ -2,9 +2,7 @@
 
 import type { FallbackProps } from 'react-error-boundary';
 
-export function FearGreedPageError({
-    resetErrorBoundary,
-}: FallbackProps) {
+export function FearGreedPageError({ resetErrorBoundary }: FallbackProps) {
     return (
         <section
             aria-labelledby="fear-greed-error-heading"
@@ -16,10 +14,10 @@ export function FearGreedPageError({
             >
                 공포 탐욕 지수
             </h2>
-            <p className="text-ui-danger text-sm" role="alert">
+            <div className="text-ui-danger text-sm" role="alert">
                 공포 탐욕 지수를 불러오는 중 오류가 발생했습니다. 잠시 후 다시
                 시도해주세요.
-            </p>
+            </div>
             <button
                 type="button"
                 onClick={resetErrorBoundary}

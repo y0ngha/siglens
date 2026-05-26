@@ -31,14 +31,10 @@ export function extractRetryAfterMs(error: unknown): number | null {
 }
 
 /**
- * Shared retry policy for FMP HTTP client transient errors. Three retries with
- * 500/1000/2000ms exponential backoff + jitter handle rate-limit windows and
- * intermittent server errors while staying within serverless-function budgets.
- *
- * `backoffBudgetMs: 8000` caps cumulative backoff sleep — if the function
- * itself runs slow and approaches the budget, `withRetry` bails out rather
- * than queueing more sleeps. `getRetryDelayMs` honors any `Retry-After`
- * header value the FMP API returns via `FmpHttpError.retryAfterSeconds`.
+ * Shared retry policy for FMP HTTP client transient errors. Exponential
+ * backoff + jitter handles rate-limit windows and intermittent server errors
+ * while staying within serverless-function budgets. `getRetryDelayMs` honors
+ * any `Retry-After` header value via `FmpHttpError.retryAfterSeconds`.
  */
 export const FMP_TRANSIENT_RETRY: WithRetryOptions = {
     maxRetries: 3,

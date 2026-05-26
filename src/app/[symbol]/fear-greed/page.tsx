@@ -1,6 +1,6 @@
 import { FearGreedPage } from '@/widgets/fear-greed/FearGreedPage';
 import { ErrorBoundary } from 'react-error-boundary';
-import { FearGreedPageError } from '@/widgets/fear-greed/FearGreedPageError';
+import { FearGreedPageError } from '@/widgets/fear-greed';
 import { CrossLinkCards } from '@/widgets/symbol-page';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { DEFAULT_TIMEFRAME, VALID_TICKER_RE } from '@/shared/config/market';
