@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.13.3](https://github.com/y0ngha/siglens/compare/v0.13.2...v0.13.3) (2026-05-26)
+
+
+### Bug Fixes
+
+* 리뷰 피드백 반영 (배럴 import 통일, 접근성 개선, JSDoc 정리) ([ee7c86a](https://github.com/y0ngha/siglens/commit/ee7c86afb66b09d9913f588afbd250a4a45180cf))
+* Fear-Greed SSR 오류 및 FMP 429 재시도 로직 추가 ([c457c72](https://github.com/y0ngha/siglens/commit/c457c720cc69f910bb96cdf1810824e977bed8d9))
+* FMP shared API 상대 경로 → 절대 경로 alias로 통일 ([029a87b](https://github.com/y0ngha/siglens/commit/029a87b26472428d411fa78955a52ec2f7189057))
+* PR [#513](https://github.com/y0ngha/siglens/issues/513) 리뷰 코멘트 반영 (push→spread, 테스트 단언, 한글 에러 메시지) ([9343c42](https://github.com/y0ngha/siglens/commit/9343c42f3edb6882040d2909b519a673d8d8855c))
+
 ## [0.13.2](https://github.com/y0ngha/siglens/compare/v0.13.1...v0.13.2) (2026-05-26)
 
 
