@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.13.1](https://github.com/y0ngha/siglens/compare/v0.13.0...v0.13.1) (2026-05-26)
+
+
+### Bug Fixes
+
+* Next.js 16 Turbopack 빌드 오류 수정 ([9f1c3ab](https://github.com/y0ngha/siglens/commit/9f1c3abba32798cdda88a777c98313b566601b97))
+
 # [0.13.0](https://github.com/y0ngha/siglens/compare/v0.12.9...v0.13.0) (2026-05-26)
 
 
