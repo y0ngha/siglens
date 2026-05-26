@@ -9,7 +9,9 @@ vi.mock('next/image', () => ({
                 data-testid="mock-image"
                 data-src={props.src as string}
                 data-alt={props.alt as string}
-                {...props}
+                data-width={props.width as number}
+                data-height={props.height as number}
+                className={props.className as string}
             />
         );
     },

@@ -1,12 +1,8 @@
-// release-it 경유 실행 시 `.env.local`의 NEXT_PUBLIC_SITE_URL(=dev URL)이 부모 프로세스에
-// 주입되어 home 엔트리 URL이 'http://localhost:4200'(`siglens.io$` 정규식 미매치)으로
-// 평가될 수 있다. production URL 회귀가드 의도 보존을 위해 import 평가 전에 강제 세팅한다.
-//
-// 이 패턴의 안전성은 vitest의 ESM 처리에 의존한다 — ES `import`가 `require()`로
-// lowering되어 코드 순서대로 평가되므로, 이 줄이 `@/lib/seo` evaluation 전에 실행된다.
-// Babel 전환·`isolatedModules`+ESM output으로 바꾸면 import hoisting이 깨질 수 있으니
-// 그때는 vi.mock 패턴으로 옮겨야 한다.
-process.env.NEXT_PUBLIC_SITE_URL = 'https://siglens.io';
+vi.mock('@/shared/lib/seo', () => ({
+    SITE_BUILD_DATE: new Date('2025-01-01T00:00:00.000Z'),
+    SITE_NAME: 'Siglens',
+    SITE_URL: 'https://siglens.io',
+}));
 
 import { buildStaticEntries } from '../lib/buildStaticEntries';
 import { MS_PER_HOUR } from '@/shared/config/time';
