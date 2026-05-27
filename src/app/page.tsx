@@ -256,17 +256,18 @@ export default async function Home() {
                                 추가 줄바꿈돼 3줄이 된다.)
                             */}
                             <h1 className="text-secondary-100 mx-auto max-w-sm text-[2.2rem] leading-[1.1] font-bold tracking-tight text-balance sm:max-w-2xl sm:text-5xl lg:mx-0 lg:text-[2.25rem] xl:text-5xl">
-                                미국 주식 분석의 새로운 기준,
+                                주식 분석의 새로운 기준,
                                 <br />
                                 <span className="text-primary-300">
                                     AI가 완성하는 SIGLENS
                                 </span>
                             </h1>
-                            <p className="text-secondary-400 mx-auto mt-5 max-w-sm text-base leading-relaxed sm:max-w-2xl sm:text-lg lg:mx-0">
-                                차트와 지표를 하나의 선명한 결론으로, 보조지표{' '}
-                                {skillCounts.indicators}종 기반 차트 흐름,
-                                실적과 뉴스, 옵션 시장 해석까지 AI의 리포트를
-                                확인하세요
+                            <p className="text-secondary-400 mx-auto mt-5 max-w-md text-base leading-relaxed sm:max-w-2xl sm:text-lg lg:mx-0">
+                                {skillCounts.indicators}종의 지표와 다양한 투자
+                                전략 기반의 차트 흐름,&nbsp;
+                                <br className="hidden sm:block" />
+                                옵션·뉴스·펀더멘털을 분석한 AI 리포트를 쉽고
+                                편하게 확인하세요.
                             </p>
                             <div
                                 id="search"
