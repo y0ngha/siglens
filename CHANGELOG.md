@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.13.4](https://github.com/y0ngha/siglens/compare/v0.13.3...v0.13.4) (2026-05-27)
+
+
+### Features
+
+* SSR Server Action enabled 게이트 추가 ([4e81161](https://github.com/y0ngha/siglens/commit/4e8116186afafc45535d24f4f52aa20d35086b24))
+
 ## [0.13.3](https://github.com/y0ngha/siglens/compare/v0.13.2...v0.13.3) (2026-05-26)
 
 
