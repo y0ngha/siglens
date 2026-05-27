@@ -6,7 +6,7 @@ export function isCoreFmpTransientError(error: unknown): boolean {
     const status = getFmpErrorStatus(error);
     if (status !== null) return status === 429 || status >= 500;
 
-    return error instanceof TypeError;
+    return error instanceof TypeError || error instanceof DOMException;
 }
 
 export function getCoreFmpRetryDelayMs(

@@ -1,5 +1,3 @@
-import type { MockedFunction } from 'vitest';
-
 // `sleep` is the only side-effect inside `withRetry`. Stubbing it prevents
 // real wall-clock delays and keeps tests synchronous.
 vi.mock('@/shared/lib/sleep', () => ({
@@ -10,6 +8,7 @@ vi.mock('@y0ngha/siglens-core', () => ({
     readFmpConfig: vi.fn(() => ({ apiKey: 'test-fmp-key' })),
 }));
 
+import type { MockedFunction } from 'vitest';
 import { readFmpConfig } from '@y0ngha/siglens-core';
 import { FMP_STABLE_BASE, fmpGet } from '@/shared/api/fmp/httpClient';
 import { FmpHttpError } from '@/shared/api/fmp/FmpHttpError';

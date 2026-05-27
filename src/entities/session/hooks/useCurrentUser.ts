@@ -8,13 +8,14 @@ import {
     QUERY_KEYS,
     QUERY_STALE_TIME_MS,
 } from '@/shared/config/queryConfig';
-import { isClientRendering } from '@/shared/lib/isClientRendering';
+import { useHydrated } from '@/shared/hooks/useHydrated';
 
 export function useCurrentUser(): UseQueryResult<AuthUserRecord | null> {
+    const isHydrated = useHydrated();
     return useQuery<AuthUserRecord | null>({
         queryKey: QUERY_KEYS.currentUser(),
         queryFn: () => currentUserAction(),
-        enabled: isClientRendering(),
+        enabled: isHydrated,
         staleTime: QUERY_STALE_TIME_MS,
         gcTime: QUERY_GC_TIME_MS,
     });

@@ -16,7 +16,7 @@ import { sleep } from '@/shared/lib/sleep';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
 import { ANALYSIS_POLL_INTERVAL_MS } from '@/shared/config/pollingConfig';
 import { usePageHideCancel } from '@/shared/hooks/usePageHideCancel';
-import { isClientRendering } from '@/shared/lib/isClientRendering';
+import { useHydrated } from '@/shared/hooks/useHydrated';
 import { BotBlockedError } from '@/widgets/symbol-page';
 import type { CancelJobEntry } from '@/shared/lib/types';
 
@@ -81,7 +81,7 @@ export function useFundamentalAnalysis(
     modelId: ModelId
 ): FundamentalAnalysisState {
     const queryClient = useQueryClient();
-    const isClient = isClientRendering();
+    const isHydrated = useHydrated();
     const currentJobIdRef = useRef<string | null>(null);
     const queryKey = useMemo(
         () => QUERY_KEYS.fundamentalAnalysis(symbol, modelId),
@@ -130,11 +130,11 @@ export function useFundamentalAnalysis(
     usePageHideCancel(getPageHideJobs);
 
     useEffect(() => {
-        if (!isClient) return;
+        if (!isHydrated) return;
         if (queryClient.getQueryData(queryKey) === undefined) {
             void refetch();
         }
-    }, [isClient, queryClient, queryKey, refetch]);
+    }, [isHydrated, queryClient, queryKey, refetch]);
 
     // symbol 또는 modelId 변경(queryKey 교체) 시, unmount 시 진행 중인 job을 cancel한다.
     // fire-and-forget이므로 useMutation 없이 직접 호출한다.

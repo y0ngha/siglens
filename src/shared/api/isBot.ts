@@ -13,6 +13,7 @@ const AI_BOT_RE =
  */
 export function isBot(headers: Headers): boolean {
     const userAgentHeader = headers.get('user-agent') ?? '';
+    if (AI_BOT_RE.test(userAgentHeader)) return true;
     const ua = userAgent({ headers });
-    return Boolean(ua.isBot) || AI_BOT_RE.test(userAgentHeader);
+    return Boolean(ua.isBot);
 }

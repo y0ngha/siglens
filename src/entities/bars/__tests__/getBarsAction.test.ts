@@ -1,5 +1,3 @@
-import type { MockedFunction } from 'vitest';
-
 vi.mock('@/shared/lib/sleep', () => ({
     sleep: vi.fn().mockResolvedValue(undefined),
 }));
@@ -9,6 +7,7 @@ vi.mock('@y0ngha/siglens-core', async () => ({
     fetchBarsWithIndicators: vi.fn(),
 }));
 
+import type { MockedFunction } from 'vitest';
 import { getBarsAction } from '../actions/getBarsAction';
 import {
     EMPTY_SMC_RESULT,
@@ -17,6 +16,7 @@ import {
 import type { BarsData } from '@y0ngha/siglens-core';
 import { sleep } from '@/shared/lib/sleep';
 import { FMP_TEMPORARY_UNAVAILABLE_MESSAGE } from '@/shared/api/fmp/fmpUserMessage';
+import { FMP_RATE_LIMIT_RETRY_DELAYS_MS } from '@/shared/api/fmp/fmpRetry';
 
 const mockFetchBarsWithIndicators = fetchBarsWithIndicators as MockedFunction<
     typeof fetchBarsWithIndicators
@@ -140,9 +140,18 @@ describe('getBarsAction 함수는', () => {
             );
 
             expect(mockFetchBarsWithIndicators).toHaveBeenCalledTimes(4);
-            expect(sleepMock).toHaveBeenNthCalledWith(1, 10_000);
-            expect(sleepMock).toHaveBeenNthCalledWith(2, 15_000);
-            expect(sleepMock).toHaveBeenNthCalledWith(3, 20_000);
+            expect(sleepMock).toHaveBeenNthCalledWith(
+                1,
+                FMP_RATE_LIMIT_RETRY_DELAYS_MS[0]
+            );
+            expect(sleepMock).toHaveBeenNthCalledWith(
+                2,
+                FMP_RATE_LIMIT_RETRY_DELAYS_MS[1]
+            );
+            expect(sleepMock).toHaveBeenNthCalledWith(
+                3,
+                FMP_RATE_LIMIT_RETRY_DELAYS_MS[2]
+            );
             expect(warnSpy).not.toHaveBeenCalled();
             expect(errorSpy).not.toHaveBeenCalled();
         });
@@ -158,7 +167,9 @@ describe('getBarsAction 함수는', () => {
 
             expect(result).toBe(mockBarsData);
             expect(mockFetchBarsWithIndicators).toHaveBeenCalledTimes(2);
-            expect(sleepMock).toHaveBeenCalledWith(10_000);
+            expect(sleepMock).toHaveBeenCalledWith(
+                FMP_RATE_LIMIT_RETRY_DELAYS_MS[0]
+            );
         });
 
         it('FMP 402는 재시도하지 않는다', async () => {

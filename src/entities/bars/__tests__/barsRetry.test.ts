@@ -35,6 +35,14 @@ describe('isCoreFmpTransientError 함수는', () => {
                 true
             );
         });
+
+        it('DOMException은 true를 반환한다', () => {
+            expect(
+                isCoreFmpTransientError(
+                    new DOMException('The operation was aborted', 'AbortError')
+                )
+            ).toBe(true);
+        });
     });
 
     describe('기타 값을 받을 때', () => {
