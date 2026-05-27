@@ -226,7 +226,7 @@ async function fetchScreenerResults(
         marketCapMoreThan: String(SCREENER_MIN_MARKET_CAP),
         volumeMoreThan: String(SCREENER_MIN_VOLUME),
         priceMoreThan: String(MIN_PRICE),
-        exchange: 'NASDAQ,NYSE',
+        exchange: 'NASDAQ,NYSE,AMEX,CBOE,OTC,PNK',
         isFund: 'false',
         isActivelyTrading: 'true',
         limit: String(SCREENER_LIMIT),

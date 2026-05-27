@@ -1,6 +1,6 @@
 import { MS_PER_SECOND } from '@/shared/config/time';
-import { tryReadFmpConfig } from '@y0ngha/siglens-core';
 import type { TickerSearchResult } from '@/shared/lib/types';
+import { tryReadFmpConfig } from '@y0ngha/siglens-core';
 import type { FmpSearchResult } from '../model';
 
 const FMP_BASE_URL = 'https://financialmodelingprep.com/stable';
@@ -13,7 +13,6 @@ const US_EXCHANGES: ReadonlySet<string> = new Set([
     'CBOE',
     'OTC',
     'PNK',
-    'CNQ',
 ]);
 
 type FmpEndpoint = 'search-symbol' | 'search-name';
