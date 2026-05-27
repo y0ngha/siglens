@@ -1,3 +1,7 @@
+import { countSkillFiles, FileSkillsLoader } from '@/entities/skill';
+import { SymbolSearchPanel } from '@/features/ticker-search';
+import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from '@/shared/lib/seo';
+import { JsonLd } from '@/shared/ui/JsonLd';
 import { HeroIllustration } from '@/widgets/home/HeroIllustration';
 import { HowItWorks } from '@/widgets/home/HowItWorks';
 import {
@@ -6,10 +10,6 @@ import {
 } from '@/widgets/home/SkillsShowcase';
 import { StatsBar, StatsBarSkeleton } from '@/widgets/home/StatsBar';
 import { TickerCategories } from '@/widgets/home/TickerCategories';
-import { SymbolSearchPanel } from '@/features/ticker-search';
-import { JsonLd } from '@/shared/ui/JsonLd';
-import { countSkillFiles, FileSkillsLoader } from '@/entities/skill';
-import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from '@/shared/lib/seo';
 import Link from 'next/link';
 import { cache, Suspense } from 'react';
 
@@ -85,7 +85,7 @@ export default async function Home() {
                 name: `${SITE_NAME}는 어떤 서비스인가요?`,
                 acceptedAnswer: {
                     '@type': 'Answer',
-                    text: '미국 주식 티커를 입력하면 차트(보조지표와 캔들 패턴, 지지선과 저항선), 실적과 밸류에이션, 최근 뉴스 흐름, 그리고 단기 매수 분위기(공포 탐욕 지수)까지 각각 정리하고 이걸 묶은 종합 결론까지 보여주는 무료 웹 서비스입니다. 회원가입 없이 바로 이용할 수 있습니다.',
+                    text: '미국 주식 티커를 입력하면 차트(보조지표와 캔들 패턴, 지지선과 저항선), 실적과 밸류에이션, 최근 뉴스 흐름, 옵션 시장 데이터, 그리고 단기 매수 분위기(공포 탐욕 지수)까지 각각 정리하고 이걸 묶은 종합 결론까지 보여주는 무료 웹 서비스입니다. 회원가입 없이 바로 이용할 수 있습니다.',
                 },
             },
             {
@@ -130,10 +130,18 @@ export default async function Home() {
             },
             {
                 '@type': 'Question',
-                name: '차트와 실적, 뉴스를 합친 결론은 어디서 볼 수 있나요?',
+                name: '옵션 시장에서 기관이나 큰손들이 어디에 베팅하고 있는지 알 수 있나요?',
                 acceptedAnswer: {
                     '@type': 'Answer',
-                    text: '종목 페이지의 종합 분석 탭에서 차트, 실적, 뉴스, 공포 탐욕 지수를 묶어 강세와 약세 시나리오, 핵심 점검 포인트, 위험 요인을 함께 정리한 결론을 확인할 수 있습니다. 예를 들어 엔비디아는 /NVDA/overall 경로입니다.',
+                    text: '각 종목 페이지의 옵션 분석 탭(예: /AAPL/options)에서 만기별 Max Pain, Put/Call Ratio, ATM IV, Implied Move와 Strike별 Open Interest 분포를 확인할 수 있습니다. AI가 이 복잡한 옵션 데이터를 한국어로 해석해 시장의 베팅 방향을 설명해 줍니다.',
+                },
+            },
+            {
+                '@type': 'Question',
+                name: '차트와 실적, 뉴스, 옵션을 합친 결론은 어디서 볼 수 있나요?',
+                acceptedAnswer: {
+                    '@type': 'Answer',
+                    text: '종목 페이지의 종합 분석 탭에서 차트, 실적, 뉴스, 옵션 시장, 공포 탐욕 지수를 묶어 강세와 약세 시나리오, 핵심 점검 포인트, 위험 요인을 함께 정리한 결론을 확인할 수 있습니다. 예를 들어 엔비디아는 /NVDA/overall 경로입니다.',
                 },
             },
             {
@@ -158,8 +166,8 @@ export default async function Home() {
     const howToJsonLd = {
         '@context': 'https://schema.org',
         '@type': 'HowTo',
-        name: `${SITE_NAME}로 미국 주식을 차트와 실적, 뉴스, 공포 탐욕 지수로 살펴보고 종합 결론까지 받는 방법`,
-        description: `${SITE_NAME}에서 한 종목을 차트, 실적, 뉴스, 공포 탐욕 지수 네 축으로 살펴보고, 넷을 묶은 종합 결론과 시나리오를 받는 흐름입니다.`,
+        name: `${SITE_NAME}로 미국 주식을 차트, 실적, 뉴스, 옵션, 공포 탐욕 지수로 살펴보고 종합 결론까지 받는 방법`,
+        description: `${SITE_NAME}에서 한 종목을 차트, 실적, 뉴스, 옵션 시장, 공포 탐욕 지수 다섯 축으로 살펴보고, 다섯을 묶은 종합 결론과 시나리오를 받는 흐름입니다.`,
         step: [
             {
                 '@type': 'HowToStep',
@@ -181,6 +189,12 @@ export default async function Home() {
             },
             {
                 '@type': 'HowToStep',
+                name: '옵션 시장 베팅 확인',
+                text: '옵션 분석 탭(예: /AAPL/options)에서 Max Pain, Put/Call Ratio와 Open Interest 분포를 확인해 기관이나 큰손 투자자들이 향후 주가를 어떻게 예상하고 있는지 확인합니다.',
+                url: `${SITE_URL}/AAPL/options`,
+            },
+            {
+                '@type': 'HowToStep',
                 name: '단기 매수 분위기 확인',
                 text: '공포 탐욕 지수 탭(예: /AAPL/fear-greed)에서 단기 매수세가 강한지 약한지를 0~100 점수와 5단계 분위기로 확인합니다. 차트가 좋아 보여도 분위기가 너무 과열이면 진입 타이밍을 한 번 더 따져볼 수 있습니다.',
                 url: `${SITE_URL}/AAPL/fear-greed`,
@@ -188,7 +202,7 @@ export default async function Home() {
             {
                 '@type': 'HowToStep',
                 name: '종합 결론 확인',
-                text: '종합 분석 탭(예: /AAPL/overall)에서 차트, 실적, 뉴스, 공포 탐욕 지수를 묶은 종합 결론과 강세, 약세 시나리오, 점검 포인트, 위험 요인을 함께 확인합니다.',
+                text: '종합 분석 탭(예: /AAPL/overall)에서 차트, 실적, 뉴스, 옵션, 공포 탐욕 지수를 묶은 종합 결론과 강세, 약세 시나리오, 점검 포인트, 위험 요인을 함께 확인합니다.',
                 url: `${SITE_URL}/AAPL/overall`,
             },
             {
@@ -232,7 +246,7 @@ export default async function Home() {
                         </div>
                         <div className="text-center lg:text-left">
                             <p className="text-secondary-400 mb-5 font-mono text-[0.68rem] leading-relaxed tracking-[0.18em] uppercase sm:text-xs">
-                                미국 주식 AI 분석 플랫폼, SIGLENS
+                                투자의 확신을 더하는 AI 분석
                             </p>
                             {/*
                                 H1 크기 단계 — split column 폭에 맞춰 두 줄 구조 유지.
@@ -242,18 +256,17 @@ export default async function Home() {
                                 추가 줄바꿈돼 3줄이 된다.)
                             */}
                             <h1 className="text-secondary-100 mx-auto max-w-sm text-[2.2rem] leading-[1.1] font-bold tracking-tight text-balance sm:max-w-2xl sm:text-5xl lg:mx-0 lg:text-[2.25rem] xl:text-5xl">
-                                복잡한 미국 주식 분석을
+                                미국 주식 분석의 새로운 기준,
                                 <br />
                                 <span className="text-primary-300">
-                                    읽기 좋게 정리합니다
+                                    AI가 완성하는 SIGLENS
                                 </span>
                             </h1>
                             <p className="text-secondary-400 mx-auto mt-5 max-w-sm text-base leading-relaxed sm:max-w-2xl sm:text-lg lg:mx-0">
-                                티커를 입력하면 보조지표{' '}
+                                차트와 지표를 하나의 선명한 결론으로, 보조지표{' '}
                                 {skillCounts.indicators}종 기반 차트 흐름,
-                                실적과 밸류에이션, 최근 뉴스, 그리고 단기 매수
-                                분위기까지 정리하고, 이걸 합친 종합 결론을 함께
-                                보여줍니다.
+                                실적과 뉴스, 옵션 시장 해석까지 AI의 리포트를
+                                확인하세요
                             </p>
                             <div
                                 id="search"
