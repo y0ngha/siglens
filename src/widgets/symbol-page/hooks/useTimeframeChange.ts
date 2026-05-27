@@ -42,7 +42,11 @@ export function useTimeframeChange(symbol: string): UseTimeframeChangeResult {
             // Next.js 내부 Router 상태 업데이트와 충돌하므로,
             // 렌더 전에 쿼리 캐시에 데이터(또는 진행 중인 Promise)를 넣어둔다.
             void queryClient.prefetchQuery({
-                queryKey: QUERY_KEYS.bars(symbol, nextTimeframe, assetInfo?.fmpSymbol),
+                queryKey: QUERY_KEYS.bars(
+                    symbol,
+                    nextTimeframe,
+                    assetInfo?.fmpSymbol
+                ),
                 queryFn: ({ queryKey: [, qSymbol, qTimeframe, qFmpSymbol] }) =>
                     getBarsAction(qSymbol, qTimeframe, qFmpSymbol),
             });

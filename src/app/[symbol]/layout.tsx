@@ -80,7 +80,11 @@ async function SymbolLayoutChrome({ params }: SymbolLayoutSegmentProps) {
     }
 
     await queryClient.prefetchQuery({
-        queryKey: QUERY_KEYS.bars(symbol, DEFAULT_TIMEFRAME, assetInfo?.fmpSymbol),
+        queryKey: QUERY_KEYS.bars(
+            symbol,
+            DEFAULT_TIMEFRAME,
+            assetInfo?.fmpSymbol
+        ),
         queryFn: ({ queryKey: [, qSymbol, qTimeframe, qFmpSymbol] }) =>
             getBarsAction(qSymbol, qTimeframe, qFmpSymbol),
     });
