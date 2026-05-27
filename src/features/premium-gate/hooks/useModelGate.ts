@@ -16,6 +16,7 @@ import {
     QUERY_KEYS,
     REGISTERED_PROVIDERS_STALE_TIME_MS,
 } from '@/shared/config/queryConfig';
+import { useHydrated } from '@/shared/hooks/useHydrated';
 
 export interface ModelGateState {
     mode: GateMode;
@@ -53,16 +54,19 @@ export function useModelGate({
     onAllow,
 }: UseModelGateOptions): UseModelGateReturn {
     const [gateModal, setGateModal] = useState<ModelGateState | null>(null);
+    const isHydrated = useHydrated();
 
     const { data: currentUser } = useQuery({
         queryKey: QUERY_KEYS.currentUser(),
         queryFn: currentUserAction,
+        enabled: isHydrated,
         staleTime: CURRENT_USER_STALE_TIME_MS,
     });
 
     const { data: registeredProviders = [] } = useQuery({
         queryKey: QUERY_KEYS.registeredProviders(),
         queryFn: getRegisteredProvidersAction,
+        enabled: isHydrated,
         staleTime: REGISTERED_PROVIDERS_STALE_TIME_MS,
     });
 

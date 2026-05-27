@@ -2,6 +2,7 @@ import { readFmpConfig } from '@y0ngha/siglens-core';
 import { withRetry } from '@/shared/lib/withRetry';
 import { FmpHttpError } from '@/shared/api/fmp/FmpHttpError';
 import { FMP_TRANSIENT_RETRY } from '@/shared/api/fmp/fmpRetry';
+import { logFmpPaymentRequiredError } from '@/shared/api/fmp/fmpUserMessage';
 
 /** Base URL for all FMP `/stable/*` endpoints. */
 export const FMP_STABLE_BASE = 'https://financialmodelingprep.com/stable';
@@ -47,7 +48,9 @@ export async function fmpGet<T>(
             const retryAfter = parseRetryAfterSeconds(
                 res.headers.get('Retry-After')
             );
-            throw new FmpHttpError(path, res.status, retryAfter);
+            const error = new FmpHttpError(path, res.status, retryAfter);
+            logFmpPaymentRequiredError(error);
+            throw error;
         }
         // Malformation surfaces as TypeError in the adapter mapper, not silently.
         return (await res.json()) as T;

@@ -5,6 +5,12 @@ import {
     type Timeframe,
     fetchBarsWithIndicators,
 } from '@y0ngha/siglens-core';
+import { withRetry } from '@/shared/lib/withRetry';
+import {
+    getFmpUserFacingMessage,
+    logFmpPaymentRequiredError,
+} from '@/shared/api/fmp/fmpUserMessage';
+import { BARS_FMP_RETRY } from '../lib/barsRetry';
 
 // cacheComponents 비활성 기간 동안 'use cache' / cacheLife / cacheTag 제거.
 // bars API 호출은 매 요청마다 fresh — 캐싱 손실은 일시적이며 향후 PPR 재활성화
@@ -19,5 +25,17 @@ export async function getBarsAction(
     timeframe: Timeframe,
     fmpSymbol?: string
 ): Promise<BarsData> {
-    return fetchBarsWithIndicators(symbol, timeframe, fmpSymbol);
+    try {
+        return await withRetry(
+            () => fetchBarsWithIndicators(symbol, timeframe, fmpSymbol),
+            BARS_FMP_RETRY
+        );
+    } catch (error) {
+        logFmpPaymentRequiredError(error);
+        const message = getFmpUserFacingMessage(error);
+        if (message !== null) {
+            throw new Error(message, { cause: error });
+        }
+        throw error;
+    }
 }

@@ -145,46 +145,64 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
         });
     });
 
-    it('FMP에서 6개월치 뉴스를 가져온다', async () => {
-        mockFetchNewsForPeriod.mockResolvedValue([NEWS_ITEM_1]);
-        mockSubmitNewsCardAnalysis.mockResolvedValue(SUBMITTED_RESULT);
-        mockPollNewsCardAnalysis.mockResolvedValue(POLL_DONE);
+    describe('정상 흐름에서', () => {
+        it('FMP에서 6개월치 뉴스를 가져온다', async () => {
+            mockFetchNewsForPeriod.mockResolvedValue([NEWS_ITEM_1]);
+            mockSubmitNewsCardAnalysis.mockResolvedValue(SUBMITTED_RESULT);
+            mockPollNewsCardAnalysis.mockResolvedValue(POLL_DONE);
 
-        await ensureNewsCardsAnalyzedAction('AAPL');
+            await ensureNewsCardsAnalyzedAction('AAPL');
 
-        expect(mockFetchNewsForPeriod).toHaveBeenCalledWith(
-            'AAPL',
-            NEWS_LOOKBACK_MS
-        );
-    });
-
-    it('각 뉴스 아이템을 DB에 upsert한다', async () => {
-        mockFetchNewsForPeriod.mockResolvedValue([NEWS_ITEM_1, NEWS_ITEM_2]);
-        mockSubmitNewsCardAnalysis.mockResolvedValue(SUBMITTED_RESULT);
-        mockPollNewsCardAnalysis.mockResolvedValue(POLL_DONE);
-
-        await ensureNewsCardsAnalyzedAction('AAPL');
-
-        expect(mockUpsertNewsItem).toHaveBeenCalledTimes(2);
-        expect(mockUpsertNewsItem).toHaveBeenCalledWith(NEWS_ITEM_1);
-        expect(mockUpsertNewsItem).toHaveBeenCalledWith(NEWS_ITEM_2);
-    });
-
-    it('각 뉴스 아이템에 대해 submitNewsCardAnalysis를 호출한다', async () => {
-        mockFetchNewsForPeriod.mockResolvedValue([NEWS_ITEM_1, NEWS_ITEM_2]);
-        mockSubmitNewsCardAnalysis.mockResolvedValue(SUBMITTED_RESULT);
-        mockPollNewsCardAnalysis.mockResolvedValue(POLL_DONE);
-
-        await ensureNewsCardsAnalyzedAction('AAPL');
-
-        expect(mockSubmitNewsCardAnalysis).toHaveBeenCalledTimes(2);
-        expect(mockSubmitNewsCardAnalysis).toHaveBeenCalledWith({
-            item: NEWS_ITEM_1,
-            thinkingBudget: DISABLED_THINKING_BUDGET,
+            expect(mockFetchNewsForPeriod).toHaveBeenCalledWith(
+                'AAPL',
+                NEWS_LOOKBACK_MS
+            );
         });
-        expect(mockSubmitNewsCardAnalysis).toHaveBeenCalledWith({
-            item: NEWS_ITEM_2,
-            thinkingBudget: DISABLED_THINKING_BUDGET,
+
+        it('각 뉴스 아이템을 DB에 upsert한다', async () => {
+            mockFetchNewsForPeriod.mockResolvedValue([
+                NEWS_ITEM_1,
+                NEWS_ITEM_2,
+            ]);
+            mockSubmitNewsCardAnalysis.mockResolvedValue(SUBMITTED_RESULT);
+            mockPollNewsCardAnalysis.mockResolvedValue(POLL_DONE);
+
+            await ensureNewsCardsAnalyzedAction('AAPL');
+
+            expect(mockUpsertNewsItem).toHaveBeenCalledTimes(2);
+            expect(mockUpsertNewsItem).toHaveBeenCalledWith(NEWS_ITEM_1);
+            expect(mockUpsertNewsItem).toHaveBeenCalledWith(NEWS_ITEM_2);
+        });
+
+        it('각 뉴스 아이템에 대해 submitNewsCardAnalysis를 호출한다', async () => {
+            mockFetchNewsForPeriod.mockResolvedValue([
+                NEWS_ITEM_1,
+                NEWS_ITEM_2,
+            ]);
+            mockSubmitNewsCardAnalysis.mockResolvedValue(SUBMITTED_RESULT);
+            mockPollNewsCardAnalysis.mockResolvedValue(POLL_DONE);
+
+            await ensureNewsCardsAnalyzedAction('AAPL');
+
+            expect(mockSubmitNewsCardAnalysis).toHaveBeenCalledTimes(2);
+            expect(mockSubmitNewsCardAnalysis).toHaveBeenCalledWith({
+                item: NEWS_ITEM_1,
+                thinkingBudget: DISABLED_THINKING_BUDGET,
+            });
+            expect(mockSubmitNewsCardAnalysis).toHaveBeenCalledWith({
+                item: NEWS_ITEM_2,
+                thinkingBudget: DISABLED_THINKING_BUDGET,
+            });
+        });
+
+        it('뉴스가 없으면 upsert와 카드 분석을 호출하지 않는다', async () => {
+            mockFetchNewsForPeriod.mockResolvedValue([]);
+
+            await ensureNewsCardsAnalyzedAction('AAPL');
+
+            expect(mockUpsertNewsItem).not.toHaveBeenCalled();
+            expect(mockListBySymbol).not.toHaveBeenCalled();
+            expect(mockSubmitNewsCardAnalysis).not.toHaveBeenCalled();
         });
     });
 
@@ -244,60 +262,87 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
         });
     });
 
-    it('FMP fetch 실패 시 reject하지 않고 조용히 리턴한다', async () => {
-        mockFetchNewsForPeriod.mockRejectedValue(
-            new Error('FMP network error')
-        );
+    describe('오류 처리에서', () => {
+        it('FMP fetch 실패 시 reject하지 않고 조용히 리턴한다', async () => {
+            mockFetchNewsForPeriod.mockRejectedValue(
+                new Error('FMP network error')
+            );
 
-        await expect(
-            ensureNewsCardsAnalyzedAction('AAPL')
-        ).resolves.toBeUndefined();
+            await expect(
+                ensureNewsCardsAnalyzedAction('AAPL')
+            ).resolves.toBeUndefined();
 
-        expect(mockUpsertNewsItem).not.toHaveBeenCalled();
-    });
+            expect(mockUpsertNewsItem).not.toHaveBeenCalled();
+        });
 
-    it('upsert 실패해도 모든 아이템의 카드 분석을 시도한다', async () => {
-        mockFetchNewsForPeriod.mockResolvedValue([NEWS_ITEM_1, NEWS_ITEM_2]);
-        mockUpsertNewsItem
-            .mockRejectedValueOnce(new Error('DB constraint error'))
-            .mockResolvedValueOnce(undefined);
-        mockSubmitNewsCardAnalysis.mockResolvedValue(SUBMITTED_RESULT);
-        mockPollNewsCardAnalysis.mockResolvedValue(POLL_DONE);
+        it('FMP 429 fetch 실패 시 서버 로그를 남기지 않고 조용히 리턴한다', async () => {
+            const errorSpy = vi
+                .spyOn(console, 'error')
+                .mockImplementation(() => undefined);
+            mockFetchNewsForPeriod.mockRejectedValue(
+                new Error('FMP news/stock 429')
+            );
 
-        await expect(
-            ensureNewsCardsAnalyzedAction('AAPL')
-        ).resolves.toBeUndefined();
+            await expect(
+                ensureNewsCardsAnalyzedAction('AAPL')
+            ).resolves.toBeUndefined();
 
-        expect(mockSubmitNewsCardAnalysis).toHaveBeenCalledTimes(2);
-    });
+            expect(mockUpsertNewsItem).not.toHaveBeenCalled();
+            expect(errorSpy).not.toHaveBeenCalled();
+        });
 
-    it('upsert 과반 실패 시 에러를 throw한다', async () => {
-        mockFetchNewsForPeriod.mockResolvedValue([NEWS_ITEM_1, NEWS_ITEM_2]);
-        // Both upserts fail → 2/2 > 50%, triggers majority-failure throw.
-        mockUpsertNewsItem
-            .mockRejectedValueOnce(new Error('DB down'))
-            .mockRejectedValueOnce(new Error('DB down'));
+        it('upsert 실패해도 모든 아이템의 카드 분석을 시도한다', async () => {
+            mockFetchNewsForPeriod.mockResolvedValue([
+                NEWS_ITEM_1,
+                NEWS_ITEM_2,
+            ]);
+            mockUpsertNewsItem
+                .mockRejectedValueOnce(new Error('DB constraint error'))
+                .mockResolvedValueOnce(undefined);
+            mockSubmitNewsCardAnalysis.mockResolvedValue(SUBMITTED_RESULT);
+            mockPollNewsCardAnalysis.mockResolvedValue(POLL_DONE);
 
-        await expect(ensureNewsCardsAnalyzedAction('AAPL')).rejects.toThrow(
-            'majority upsert failure'
-        );
+            await expect(
+                ensureNewsCardsAnalyzedAction('AAPL')
+            ).resolves.toBeUndefined();
 
-        expect(mockSubmitNewsCardAnalysis).not.toHaveBeenCalled();
-    });
+            expect(mockSubmitNewsCardAnalysis).toHaveBeenCalledTimes(2);
+        });
 
-    it('카드 분석 실패 시 reject하지 않고 계속 진행한다', async () => {
-        mockFetchNewsForPeriod.mockResolvedValue([NEWS_ITEM_1, NEWS_ITEM_2]);
-        mockSubmitNewsCardAnalysis
-            .mockRejectedValueOnce(new Error('LLM timeout'))
-            .mockResolvedValueOnce(SUBMITTED_RESULT);
-        mockPollNewsCardAnalysis.mockResolvedValue(POLL_DONE);
+        it('upsert 과반 실패 시 에러를 throw한다', async () => {
+            mockFetchNewsForPeriod.mockResolvedValue([
+                NEWS_ITEM_1,
+                NEWS_ITEM_2,
+            ]);
+            // Both upserts fail → 2/2 > 50%, triggers majority-failure throw.
+            mockUpsertNewsItem
+                .mockRejectedValueOnce(new Error('DB down'))
+                .mockRejectedValueOnce(new Error('DB down'));
 
-        await expect(
-            ensureNewsCardsAnalyzedAction('AAPL')
-        ).resolves.toBeUndefined();
+            await expect(ensureNewsCardsAnalyzedAction('AAPL')).rejects.toThrow(
+                'majority upsert failure'
+            );
 
-        expect(mockSubmitNewsCardAnalysis).toHaveBeenCalledTimes(2);
-        expect(mockAttachAnalysis).toHaveBeenCalledTimes(1);
+            expect(mockSubmitNewsCardAnalysis).not.toHaveBeenCalled();
+        });
+
+        it('카드 분석 실패 시 reject하지 않고 계속 진행한다', async () => {
+            mockFetchNewsForPeriod.mockResolvedValue([
+                NEWS_ITEM_1,
+                NEWS_ITEM_2,
+            ]);
+            mockSubmitNewsCardAnalysis
+                .mockRejectedValueOnce(new Error('LLM timeout'))
+                .mockResolvedValueOnce(SUBMITTED_RESULT);
+            mockPollNewsCardAnalysis.mockResolvedValue(POLL_DONE);
+
+            await expect(
+                ensureNewsCardsAnalyzedAction('AAPL')
+            ).resolves.toBeUndefined();
+
+            expect(mockSubmitNewsCardAnalysis).toHaveBeenCalledTimes(2);
+            expect(mockAttachAnalysis).toHaveBeenCalledTimes(1);
+        });
     });
 
     describe('DB-first 필터링은', () => {
@@ -381,15 +426,5 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
 
             expect(mockSubmitNewsCardAnalysis).toHaveBeenCalledTimes(1);
         });
-    });
-
-    it('뉴스가 없으면 upsert와 카드 분석을 호출하지 않는다', async () => {
-        mockFetchNewsForPeriod.mockResolvedValue([]);
-
-        await ensureNewsCardsAnalyzedAction('AAPL');
-
-        expect(mockUpsertNewsItem).not.toHaveBeenCalled();
-        expect(mockListBySymbol).not.toHaveBeenCalled();
-        expect(mockSubmitNewsCardAnalysis).not.toHaveBeenCalled();
     });
 });

@@ -13,6 +13,7 @@ import { sleep } from '@/shared/lib/sleep';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
 import { ANALYSIS_POLL_INTERVAL_MS } from '@/shared/config/pollingConfig';
 import { usePageHideCancel } from '@/shared/hooks/usePageHideCancel';
+import { useHydrated } from '@/shared/hooks/useHydrated';
 import { BotBlockedError } from '@/widgets/symbol-page';
 import type { CancelJobEntry } from '@/shared/lib/types';
 
@@ -100,6 +101,7 @@ export function useNewsAnalysis(
     { enabled = true }: UseNewsAnalysisOptions = {}
 ): NewsAnalysisState {
     const currentJobIdRef = useRef<string | null>(null);
+    const isHydrated = useHydrated();
     const queryKey = useMemo(
         () => QUERY_KEYS.newsAnalysis(symbol, companyName, modelId),
         [symbol, companyName, modelId]
@@ -123,7 +125,7 @@ export function useNewsAnalysis(
                     currentJobIdRef.current = jobId;
                 }
             ),
-        enabled,
+        enabled: isHydrated && enabled,
         retry: false,
         staleTime: Infinity,
     });

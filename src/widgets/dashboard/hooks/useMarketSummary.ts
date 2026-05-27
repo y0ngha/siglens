@@ -9,6 +9,7 @@ import {
     MARKET_SUMMARY_STALE_TIME_MS,
     QUERY_KEYS,
 } from '@/shared/config/queryConfig';
+import { useHydrated } from '@/shared/hooks/useHydrated';
 
 interface UseMarketSummaryReturn {
     data: MarketSummaryActionResult | undefined;
@@ -24,9 +25,11 @@ function hasSummary(
 }
 
 export function useMarketSummary(): UseMarketSummaryReturn {
+    const isHydrated = useHydrated();
     const { data, isPending } = useQuery({
         queryKey: QUERY_KEYS.marketSummary(),
         queryFn: getMarketSummaryAction,
+        enabled: isHydrated,
         staleTime: MARKET_SUMMARY_STALE_TIME_MS,
     });
 

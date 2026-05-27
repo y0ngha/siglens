@@ -21,6 +21,7 @@ import {
 import { ensureNewsCardsAnalyzedAction } from '@/entities/news-article/actions';
 import { getTodayIsoDay } from '@/shared/lib/getTodayIsoDay';
 import { todayKstIsoDate } from '@/shared/lib/dateKey';
+import { getFmpUserFacingMessage } from '@/shared/api/fmp/fmpUserMessage';
 import {
     buildBreadcrumbJsonLd,
     buildSymbolNewsSeoContent,
@@ -91,13 +92,53 @@ async function NewsListSection({ symbol }: SymbolSectionProps) {
 
 async function EventCalendarSection({ symbol }: SymbolSectionProps) {
     const today = todayKstIsoDate();
-    const earningsReports = await getEarningsReportComparison(symbol, today);
+    let earningsReports: Awaited<
+        ReturnType<typeof getEarningsReportComparison>
+    >;
+    try {
+        earningsReports = await getEarningsReportComparison(symbol, today);
+    } catch (error) {
+        const message = getFmpUserFacingMessage(error);
+        if (message === null) throw error;
+        return <NewsDataServerAlert title="실적 일정" message={message} />;
+    }
     return <EventCalendar earningsReports={earningsReports} />;
 }
 
 async function AnalystActionsSection({ symbol }: SymbolSectionProps) {
-    const events = await getGradeEvents(symbol);
+    let events: Awaited<ReturnType<typeof getGradeEvents>>;
+    try {
+        events = await getGradeEvents(symbol);
+    } catch (error) {
+        const message = getFmpUserFacingMessage(error);
+        if (message === null) throw error;
+        return (
+            <NewsDataServerAlert
+                title="애널리스트 등급 변경"
+                message={message}
+            />
+        );
+    }
     return <AnalystActions events={events} />;
+}
+
+interface NewsDataServerAlertProps {
+    title: string;
+    message: string;
+}
+
+function NewsDataServerAlert({ title, message }: NewsDataServerAlertProps) {
+    return (
+        <section
+            className="border-ui-danger/30 bg-secondary-800 rounded-xl border p-6"
+            role="alert"
+        >
+            <h2 className="mb-2 text-lg font-semibold tracking-tight">
+                {title}
+            </h2>
+            <p className="text-ui-danger text-sm">{message}</p>
+        </section>
+    );
 }
 
 export default async function NewsPage({ params }: Props) {

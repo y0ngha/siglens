@@ -8,6 +8,7 @@ import {
     QUERY_KEYS,
     USER_TIER_STALE_TIME_MS,
 } from '@/shared/config/queryConfig';
+import { useHydrated } from '@/shared/hooks/useHydrated';
 
 interface UseUserTierResult {
     /** Resolved tier for the current user, or {@link DEFAULT_TIER} during fetch. */
@@ -18,15 +19,17 @@ interface UseUserTierResult {
 
 /** 현재 사용자의 구독 tier 해석 — 게스트/미저장 사용자는 DEFAULT_TIER로 폴백. */
 export function useUserTier(): UseUserTierResult {
+    const isHydrated = useHydrated();
     const query = useQuery<Tier>({
         queryKey: QUERY_KEYS.userTier(),
         queryFn: () => getUserTierAction(),
+        enabled: isHydrated,
         staleTime: USER_TIER_STALE_TIME_MS,
         gcTime: QUERY_GC_TIME_MS,
     });
 
     return {
         tier: query.data ?? DEFAULT_TIER,
-        isLoading: query.isLoading,
+        isLoading: !isHydrated || query.isLoading,
     };
 }

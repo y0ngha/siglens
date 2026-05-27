@@ -13,6 +13,7 @@ import { sleep } from '@/shared/lib/sleep';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
 import { ANALYSIS_POLL_INTERVAL_MS } from '@/shared/config/pollingConfig';
 import { usePageHideCancel } from '@/shared/hooks/usePageHideCancel';
+import { useHydrated } from '@/shared/hooks/useHydrated';
 import { BotBlockedError } from '@/widgets/symbol-page';
 import type {
     CancelJobEntry,
@@ -104,8 +105,15 @@ export function useOptionsAnalysis({
 }: UseOptionsAnalysisInput): OptionsAnalysisState {
     const currentJobIdRef = useRef<string | null>(null);
     const queryClient = useQueryClient();
+    const isHydrated = useHydrated();
     const queryKey = useMemo(
-        () => QUERY_KEYS.optionsAnalysis(symbol, companyName, expirationDate, modelId),
+        () =>
+            QUERY_KEYS.optionsAnalysis(
+                symbol,
+                companyName,
+                expirationDate,
+                modelId
+            ),
         [symbol, companyName, expirationDate, modelId]
     );
 
@@ -158,10 +166,11 @@ export function useOptionsAnalysis({
     usePageHideCancel(getPageHideJobs);
 
     useEffect(() => {
+        if (!isHydrated) return;
         if (queryClient.getQueryData(queryKey) === undefined) {
             void refetch();
         }
-    }, [queryClient, queryKey, refetch]);
+    }, [isHydrated, queryClient, queryKey, refetch]);
 
     useEffect(() => {
         return () => {

@@ -3,6 +3,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { pollBriefingAction } from '@/entities/analysis/actions';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
+import { useHydrated } from '@/shared/hooks/useHydrated';
 import type { MarketBriefingResponse } from '@y0ngha/siglens-core';
 
 const POLL_INTERVAL_MS = 5_000;
@@ -12,9 +13,11 @@ type BriefingResult =
     | { status: 'done'; briefing: MarketBriefingResponse; generatedAt: string };
 
 export function useBriefing(jobId: string): BriefingResult {
+    const isHydrated = useHydrated();
     const { data } = useQuery({
         queryKey: QUERY_KEYS.briefing(jobId),
         queryFn: ({ queryKey: [, qJobId] }) => pollBriefingAction(qJobId),
+        enabled: isHydrated,
         refetchInterval: query => {
             const status = query.state.data?.status;
 
