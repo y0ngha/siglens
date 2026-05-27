@@ -44,10 +44,10 @@ export interface WithRetryOptions {
     /**
      * Override the computed exponential+jitter delay for a specific retry.
      *
-     * Called with the caught error before each retry sleep. When it returns
-     * a non-null number, that value is used as the sleep duration instead of
-     * the exponential+jitter computation. Returning `null` falls back to the
-     * normal backoff schedule.
+     * Called with the caught error and zero-based failed attempt index before
+     * each retry sleep. When it returns a non-null number, that value is used
+     * as the sleep duration instead of the exponential+jitter computation.
+     * Returning `null` falls back to the normal backoff schedule.
      *
      * Intended use-case: HTTP clients that receive a `Retry-After` response
      * header can extract the server-suggested delay from the error object and
@@ -56,7 +56,7 @@ export interface WithRetryOptions {
      * The returned delay still participates in the `backoffBudgetMs` check —
      * if `Date.now() + delay >= deadline`, the error is re-thrown immediately.
      */
-    getRetryDelayMs?: (error: unknown) => number | null;
+    getRetryDelayMs?: (error: unknown, attempt: number) => number | null;
 }
 
 /**
@@ -89,7 +89,7 @@ export async function withRetry<T>(
             }
             const exponential = baseDelayMs * 2 ** attempt;
             const jitter = Math.random() * exponential;
-            const customDelay = getRetryDelayMs?.(error) ?? null;
+            const customDelay = getRetryDelayMs?.(error, attempt) ?? null;
             const sleepMs =
                 customDelay !== null ? customDelay : exponential + jitter;
             // 다음 backoff sleep을 마치는 시점이 deadline을 넘어서면 더 기다리지

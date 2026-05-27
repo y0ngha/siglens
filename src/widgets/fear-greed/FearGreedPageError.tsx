@@ -1,8 +1,16 @@
 'use client';
 
 import type { FallbackProps } from 'react-error-boundary';
+import { getFmpUserFacingMessage } from '@/shared/api/fmp/fmpUserMessage';
 
-export function FearGreedPageError({ resetErrorBoundary }: FallbackProps) {
+export function FearGreedPageError({
+    error,
+    resetErrorBoundary,
+}: FallbackProps) {
+    const message =
+        getFmpUserFacingMessage(error) ??
+        '공포 탐욕 지수를 불러오는 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
+
     return (
         <section
             aria-labelledby="fear-greed-error-heading"
@@ -15,8 +23,7 @@ export function FearGreedPageError({ resetErrorBoundary }: FallbackProps) {
                 공포 탐욕 지수
             </h2>
             <div className="text-ui-danger text-sm" role="alert">
-                공포 탐욕 지수를 불러오는 중 오류가 발생했습니다. 잠시 후 다시
-                시도해주세요.
+                {message}
             </div>
             <button
                 type="button"

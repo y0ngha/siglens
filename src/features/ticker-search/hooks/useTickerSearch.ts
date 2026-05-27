@@ -9,6 +9,7 @@ import {
 } from '@/shared/config/queryConfig';
 import { searchTickerAction } from '@/entities/ticker/actions';
 import type { TickerSearchResult } from '@/shared/lib/types';
+import { isClientRendering } from '@/shared/lib/isClientRendering';
 
 const DEBOUNCE_MS = 300;
 const MIN_QUERY_LENGTH = 1;
@@ -27,7 +28,7 @@ export function useTickerSearch(query: string): UseTickerSearchResult {
     const { data, isFetching } = useQuery({
         queryKey: QUERY_KEYS.tickerSearch(debouncedQuery),
         queryFn: ({ queryKey: [, qQuery] }) => searchTickerAction(qQuery),
-        enabled: isDebouncedQueryReady,
+        enabled: isClientRendering() && isDebouncedQueryReady,
         // FMP catalogue updates daily — long staleTime is safe and protects
         // the FMP free-tier rate limit during typing sessions.
         staleTime: TICKER_SEARCH_STALE_TIME_MS,

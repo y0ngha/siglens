@@ -9,6 +9,7 @@ import {
     MARKET_SUMMARY_STALE_TIME_MS,
     QUERY_KEYS,
 } from '@/shared/config/queryConfig';
+import { isClientRendering } from '@/shared/lib/isClientRendering';
 
 interface UseMarketSummaryReturn {
     data: MarketSummaryActionResult | undefined;
@@ -27,6 +28,7 @@ export function useMarketSummary(): UseMarketSummaryReturn {
     const { data, isPending } = useQuery({
         queryKey: QUERY_KEYS.marketSummary(),
         queryFn: getMarketSummaryAction,
+        enabled: isClientRendering(),
         staleTime: MARKET_SUMMARY_STALE_TIME_MS,
     });
 

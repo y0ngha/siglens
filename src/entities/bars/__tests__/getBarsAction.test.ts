@@ -1,19 +1,27 @@
 import type { MockedFunction } from 'vitest';
-import { getBarsAction } from '../actions/getBarsAction';
-import {
-    EMPTY_SMC_RESULT,
-    fetchBarsWithIndicators,
-} from '@y0ngha/siglens-core';
-import type { BarsData } from '@y0ngha/siglens-core';
+
+vi.mock('@/shared/lib/sleep', () => ({
+    sleep: vi.fn().mockResolvedValue(undefined),
+}));
 
 vi.mock('@y0ngha/siglens-core', async () => ({
     ...(await vi.importActual('@y0ngha/siglens-core')),
     fetchBarsWithIndicators: vi.fn(),
 }));
 
+import { getBarsAction } from '../actions/getBarsAction';
+import {
+    EMPTY_SMC_RESULT,
+    fetchBarsWithIndicators,
+} from '@y0ngha/siglens-core';
+import type { BarsData } from '@y0ngha/siglens-core';
+import { sleep } from '@/shared/lib/sleep';
+import { FMP_TEMPORARY_UNAVAILABLE_MESSAGE } from '@/shared/api/fmp/fmpUserMessage';
+
 const mockFetchBarsWithIndicators = fetchBarsWithIndicators as MockedFunction<
     typeof fetchBarsWithIndicators
 >;
+const sleepMock = sleep as MockedFunction<typeof sleep>;
 
 const mockBarsData: BarsData = {
     bars: [
@@ -57,6 +65,12 @@ const mockBarsData: BarsData = {
 describe('getBarsAction 함수는', () => {
     beforeEach(() => {
         mockFetchBarsWithIndicators.mockReset();
+        sleepMock.mockClear();
+        vi.spyOn(Math, 'random').mockReturnValue(0);
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
     });
     describe('정상 응답일 때', () => {
         it('fetchBarsWithIndicators에 올바른 인자를 전달하고 결과를 그대로 반환한다', async () => {
@@ -72,7 +86,7 @@ describe('getBarsAction 함수는', () => {
             expect(result).toBe(mockBarsData);
         });
 
-        it('다른 symbol과 timeframe으로도 올바르게 위임한다', async () => {
+        it('다른 종목과 타임프레임으로도 올바르게 위임한다', async () => {
             mockFetchBarsWithIndicators.mockResolvedValueOnce(mockBarsData);
 
             await getBarsAction('TSLA', '5Min');
@@ -106,6 +120,57 @@ describe('getBarsAction 함수는', () => {
             await expect(getBarsAction('AAPL', '1Day')).rejects.toThrow(
                 'Fetch failed'
             );
+            expect(mockFetchBarsWithIndicators).toHaveBeenCalledTimes(1);
+            expect(sleepMock).not.toHaveBeenCalled();
+        });
+
+        it('FMP 429는 10초, 15초, 20초 대기 후 최종 사용자 문구로 실패한다', async () => {
+            const warnSpy = vi
+                .spyOn(console, 'warn')
+                .mockImplementation(() => undefined);
+            const errorSpy = vi
+                .spyOn(console, 'error')
+                .mockImplementation(() => undefined);
+            mockFetchBarsWithIndicators.mockRejectedValue(
+                new Error('FMP API error: 429 Too Many Requests')
+            );
+
+            await expect(getBarsAction('AAPL', '1Day')).rejects.toThrow(
+                FMP_TEMPORARY_UNAVAILABLE_MESSAGE
+            );
+
+            expect(mockFetchBarsWithIndicators).toHaveBeenCalledTimes(4);
+            expect(sleepMock).toHaveBeenNthCalledWith(1, 10_000);
+            expect(sleepMock).toHaveBeenNthCalledWith(2, 15_000);
+            expect(sleepMock).toHaveBeenNthCalledWith(3, 20_000);
+            expect(warnSpy).not.toHaveBeenCalled();
+            expect(errorSpy).not.toHaveBeenCalled();
+        });
+
+        it('FMP 429가 재시도 중 성공하면 결과를 반환한다', async () => {
+            mockFetchBarsWithIndicators
+                .mockRejectedValueOnce(
+                    new Error('FMP API error: 429 Too Many Requests')
+                )
+                .mockResolvedValueOnce(mockBarsData);
+
+            const result = await getBarsAction('AAPL', '1Day');
+
+            expect(result).toBe(mockBarsData);
+            expect(mockFetchBarsWithIndicators).toHaveBeenCalledTimes(2);
+            expect(sleepMock).toHaveBeenCalledWith(10_000);
+        });
+
+        it('FMP 402는 재시도하지 않는다', async () => {
+            mockFetchBarsWithIndicators.mockRejectedValueOnce(
+                new Error('FMP API error: 402 Payment Required')
+            );
+
+            await expect(getBarsAction('AAPL', '1Day')).rejects.toThrow(
+                'FMP API error: 402 Payment Required'
+            );
+            expect(mockFetchBarsWithIndicators).toHaveBeenCalledTimes(1);
+            expect(sleepMock).not.toHaveBeenCalled();
         });
     });
 });

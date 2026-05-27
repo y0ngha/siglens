@@ -3,6 +3,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { pollBriefingAction } from '@/entities/analysis/actions';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
+import { isClientRendering } from '@/shared/lib/isClientRendering';
 import type { MarketBriefingResponse } from '@y0ngha/siglens-core';
 
 const POLL_INTERVAL_MS = 5_000;
@@ -15,6 +16,7 @@ export function useBriefing(jobId: string): BriefingResult {
     const { data } = useQuery({
         queryKey: QUERY_KEYS.briefing(jobId),
         queryFn: ({ queryKey: [, qJobId] }) => pollBriefingAction(qJobId),
+        enabled: isClientRendering(),
         refetchInterval: query => {
             const status = query.state.data?.status;
 

@@ -16,6 +16,7 @@ import {
     QUERY_KEYS,
     REGISTERED_PROVIDERS_STALE_TIME_MS,
 } from '@/shared/config/queryConfig';
+import { isClientRendering } from '@/shared/lib/isClientRendering';
 
 export interface ModelGateState {
     mode: GateMode;
@@ -53,16 +54,19 @@ export function useModelGate({
     onAllow,
 }: UseModelGateOptions): UseModelGateReturn {
     const [gateModal, setGateModal] = useState<ModelGateState | null>(null);
+    const isClient = isClientRendering();
 
     const { data: currentUser } = useQuery({
         queryKey: QUERY_KEYS.currentUser(),
         queryFn: currentUserAction,
+        enabled: isClient,
         staleTime: CURRENT_USER_STALE_TIME_MS,
     });
 
     const { data: registeredProviders = [] } = useQuery({
         queryKey: QUERY_KEYS.registeredProviders(),
         queryFn: getRegisteredProvidersAction,
+        enabled: isClient,
         staleTime: REGISTERED_PROVIDERS_STALE_TIME_MS,
     });
 

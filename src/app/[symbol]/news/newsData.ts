@@ -3,6 +3,11 @@ import { getDatabaseClient } from '@/shared/db/client';
 import { DrizzleNewsRepository } from '@/entities/news-article';
 import { DrizzleEarningsReportsRepository } from '@/entities/earnings-report';
 import { FmpFundamentalClient } from '@/shared/api/fmp/fundamentalClient';
+import {
+    getFmpUserFacingMessage,
+    isFmpPaymentRequiredError,
+    logFmpPaymentRequiredError,
+} from '@/shared/api/fmp/fmpUserMessage';
 import { MS_PER_DAY } from '@/shared/config/time';
 import { NEWS_LOOKBACK_MS } from '@/entities/news-article';
 import type { NewsRow } from '@/entities/news-article';
@@ -48,10 +53,17 @@ export async function getEarningsReportComparison(
             );
             await repo.upsertMany(reports);
         } catch (error: unknown) {
-            console.warn(
-                `[newsData] failed to refresh earnings reports for ${symbol}:`,
-                error
-            );
+            logFmpPaymentRequiredError(error);
+            if (
+                getFmpUserFacingMessage(error) === null &&
+                !isFmpPaymentRequiredError(error)
+            ) {
+                console.warn(
+                    `[newsData] failed to refresh earnings reports for ${symbol}:`,
+                    error
+                );
+            }
+            if (comparisonItems.length === 0) throw error;
             return comparisonItems;
         }
 

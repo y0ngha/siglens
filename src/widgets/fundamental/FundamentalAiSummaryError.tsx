@@ -1,13 +1,17 @@
 'use client';
 
 import type { FallbackProps } from 'react-error-boundary';
+import { getFmpUserFacingMessage } from '@/shared/api/fmp/fmpUserMessage';
 
 export function FundamentalAiSummaryError({
     error,
     resetErrorBoundary,
 }: FallbackProps) {
     const message =
-        error instanceof Error ? error.message : '분석 중 오류가 발생했습니다.';
+        getFmpUserFacingMessage(error) ??
+        (error instanceof Error
+            ? error.message
+            : '분석 중 오류가 발생했습니다.');
 
     return (
         <section

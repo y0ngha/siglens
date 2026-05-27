@@ -30,6 +30,7 @@ import { sleep } from '@/shared/lib/sleep';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
 import { AUGMENT_AND_OVERALL_POLL_INTERVAL_MS } from '@/shared/config/pollingConfig';
 import type { CancelJobEntry } from '@/shared/lib/types';
+import { isClientRendering } from '@/shared/lib/isClientRendering';
 import { usePageHideCancel } from '@/shared/hooks/usePageHideCancel';
 import { BotBlockedError } from '@/widgets/symbol-page';
 import type { OverallAnalysisState, ProgressState } from '../types';
@@ -330,6 +331,7 @@ export function useOverallAnalysis(
     modelId: ModelId
 ): UseOverallAnalysisReturn {
     const queryClient = useQueryClient();
+    const isClient = isClientRendering();
     const [triggered, setTriggered] = useState(false);
     const [progress, setProgress] = useState<ProgressState | null>(null);
     const currentJobsRef = useRef<CurrentJobs>(null);
@@ -374,7 +376,7 @@ export function useOverallAnalysis(
                 { force }
             );
         },
-        enabled: triggered,
+        enabled: isClient && triggered,
         retry: false,
         staleTime: Infinity,
     });

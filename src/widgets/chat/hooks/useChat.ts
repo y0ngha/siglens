@@ -30,6 +30,7 @@ import { usePageContextLabel } from './usePageContextLabel';
 import { useSymbolChat } from '@/features/symbol-chat';
 import { useAssetInfo } from '@/widgets/symbol-page/hooks/useAssetInfo';
 import { useModelGate, type ModelGateState } from '@/features/premium-gate';
+import { isClientRendering } from '@/shared/lib/isClientRendering';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
     startTransition,
@@ -181,6 +182,7 @@ export function useChat({ symbol }: UseChatOptions): UseChatReturn {
     const { data: remainingTokensData } = useQuery({
         queryKey: QUERY_KEYS.remainingTokens(),
         queryFn: getRemainingTokensAction,
+        enabled: isClientRendering(),
         staleTime: 0,
     });
 
