@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.14.1](https://github.com/y0ngha/siglens/compare/v0.14.0...v0.14.1) (2026-05-27)
+
+
+### Bug Fixes
+
+* cnq 시장에서 제외 ([c8b1771](https://github.com/y0ngha/siglens/commit/c8b1771f3066db5d0a1025b9dfc6ee6a0be2797a))
+
 # [0.14.0](https://github.com/y0ngha/siglens/compare/v0.13.4...v0.14.0) (2026-05-27)
 
 
