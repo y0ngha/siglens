@@ -1,5 +1,13 @@
 # Changelog
 
+# [0.14.0](https://github.com/y0ngha/siglens/compare/v0.13.4...v0.14.0) (2026-05-27)
+
+
+### Features
+
+* 메인 브랜딩 변경 ([1a90564](https://github.com/y0ngha/siglens/commit/1a90564485eba50e8648d4bffdf96f9eab75d24d))
+* 메인 브랜딩중 subtitle 변경 ([5654dd8](https://github.com/y0ngha/siglens/commit/5654dd8e289e27762289859a67eb9fbc2778b36f))
+
 ## [0.13.4](https://github.com/y0ngha/siglens/compare/v0.13.3...v0.13.4) (2026-05-27)
 
 
