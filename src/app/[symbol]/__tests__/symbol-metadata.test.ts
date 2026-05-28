@@ -104,10 +104,6 @@ vi.mock('@/shared/lib/dateKey', () => ({
     todayKstIsoDate: vi.fn(() => '2026-05-21'),
 }));
 
-vi.mock('@/entities/fear-greed/lib/classifier', () => ({
-    FEAR_GREED_SCORE_BOUNDARIES: {},
-}));
-
 const { mockGetAssetInfoCached } = vi.hoisted(() => ({
     mockGetAssetInfoCached: vi.fn(),
 }));

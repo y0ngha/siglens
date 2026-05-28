@@ -1,13 +1,13 @@
 import type { ReactNode } from 'react';
 import type { FearGreedLabel } from '@y0ngha/siglens-core';
+import { FEAR_GREED_LABEL_CUTOFFS } from '@y0ngha/siglens-core';
 import type { SnapshotConfidence } from '@/shared/lib/types';
 import { SENTIMENT_LABEL_TEXT } from '@/shared/lib/fearGreedLabels';
-import { FEAR_GREED_SCORE_BOUNDARIES } from '@/entities/fear-greed';
 import { cn } from '@/shared/lib/cn';
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
 
 const { EXTREME_FEAR_MAX, FEAR_MAX, NEUTRAL_MAX, GREED_MAX } =
-    FEAR_GREED_SCORE_BOUNDARIES;
+    FEAR_GREED_LABEL_CUTOFFS;
 
 /** Visual variant — Hero is the focal stack; mini is for comparison tiles. */
 type FearGreedGaugeSize = 'hero' | 'mini';

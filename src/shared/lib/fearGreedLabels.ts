@@ -1,5 +1,6 @@
 import type { SnapshotConfidence } from '@/shared/lib/types';
 import type { FearGreedFactorKey, FearGreedLabel } from '@y0ngha/siglens-core';
+import { POC_WINDOW_DEFAULT } from '@y0ngha/siglens-core';
 
 /** confidence === 'normal' 표시 라벨 — Hero/Card footer 양쪽에서 동일 사용. */
 export const CONFIDENCE_NORMAL_LABEL = '정상 산출';
@@ -9,15 +10,13 @@ export const CONFIDENCE_LIMITED_LABEL = '신뢰도 제한';
 /**
  * Factor key → 한글 표시 라벨. UI는 이 객체로 일관 표시한다.
  *
- * `poc_distance: 'POC 거리(60bar)'`의 `60`은 `@y0ngha/siglens-core`의
- * `POC_WINDOW_DEFAULT`(`fearGreed/factors.ts`)와 동기 유지가 필요한 값. core가
- * 이 창 크기를 변경하면 이 라벨도 동반 업데이트. core가 public barrel에서
- * 상수를 export하면 직접 import로 치환.
+ * `poc_distance` 라벨의 창 크기는 `@y0ngha/siglens-core`의 `POC_WINDOW_DEFAULT`를
+ * 직접 보간하므로 core가 값을 바꾸면 자동으로 반영된다.
  */
 export const FACTOR_LABEL: Record<FearGreedFactorKey, string> = {
     volume_z: '거래량 z (방향성)',
     buysell_imbalance: 'Buy/Sell 불균형',
-    poc_distance: 'POC 거리(60bar)',
+    poc_distance: `POC 거리(${POC_WINDOW_DEFAULT}bar)`,
     ma200_distance: 'MA200 거리',
     range_position: '52주 위치',
 };

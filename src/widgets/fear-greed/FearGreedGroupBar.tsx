@@ -1,7 +1,7 @@
 import type { CSSProperties } from 'react';
 import type { FearGreedGroup, FearGreedLabel } from '@y0ngha/siglens-core';
+import { scoreToLabel } from '@y0ngha/siglens-core';
 import { FACTOR_LABEL, formatFactorRaw } from '@/shared/lib/fearGreedLabels';
-import { classifyScore } from '@/entities/fear-greed';
 import { cn } from '@/shared/lib/cn';
 
 interface FearGreedGroupBarProps {
@@ -43,7 +43,7 @@ export function FearGreedGroupBar({ group }: FearGreedGroupBarProps) {
                 <div
                     className={cn(
                         'h-full w-(--bar-width)',
-                        BAR_FILL_COLOR[classifyScore(score)]
+                        BAR_FILL_COLOR[scoreToLabel(score)]
                     )}
                     style={{ '--bar-width': `${score}%` } as CSSProperties}
                 />
