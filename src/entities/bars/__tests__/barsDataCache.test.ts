@@ -18,6 +18,8 @@ vi.mock('@y0ngha/siglens-core', async () => ({
     computeBarsEffectiveTtl: vi.fn(() => 60),
 }));
 
+const mockProvider = {} as import('@y0ngha/siglens-core').MarketDataProvider;
+
 vi.mock('@upstash/redis', () => ({
     Redis: vi.fn().mockImplementation(function (opts: unknown) {
         mockRedisCtor(opts);
@@ -54,9 +56,18 @@ describe('getCachedBarsWithIndicators', () => {
     it('Redis env 없으면 fetch 직행', async () => {
         mockFetch.mockResolvedValue(sampleBars);
         const mod = await loadWithEnv({});
-        const r = await mod.getCachedBarsWithIndicators('AAPL', '1Day');
+        const r = await mod.getCachedBarsWithIndicators(
+            mockProvider,
+            'AAPL',
+            '1Day'
+        );
         expect(mockRedisCtor).not.toHaveBeenCalled();
-        expect(mockFetch).toHaveBeenCalledWith('AAPL', '1Day', undefined);
+        expect(mockFetch).toHaveBeenCalledWith(
+            mockProvider,
+            'AAPL',
+            '1Day',
+            undefined
+        );
         expect(r).toEqual(sampleBars);
     });
 
@@ -66,7 +77,11 @@ describe('getCachedBarsWithIndicators', () => {
             url: 'https://x.upstash.io',
             token: 't',
         });
-        const r = await mod.getCachedBarsWithIndicators('AAPL', '1Day');
+        const r = await mod.getCachedBarsWithIndicators(
+            mockProvider,
+            'AAPL',
+            '1Day'
+        );
         expect(mockRedisGet).toHaveBeenCalledWith('bars:AAPL:1Day');
         expect(mockFetch).not.toHaveBeenCalled();
         expect(r).toEqual(sampleBars);
@@ -80,7 +95,7 @@ describe('getCachedBarsWithIndicators', () => {
             url: 'https://x.upstash.io',
             token: 't',
         });
-        await mod.getCachedBarsWithIndicators('AAPL', '1Day');
+        await mod.getCachedBarsWithIndicators(mockProvider, 'AAPL', '1Day');
         expect(mockRedisSet).toHaveBeenCalledWith(
             'bars:AAPL:1Day',
             sampleBars,
@@ -95,7 +110,12 @@ describe('getCachedBarsWithIndicators', () => {
             url: 'https://x.upstash.io',
             token: 't',
         });
-        await mod.getCachedBarsWithIndicators('SPX', '1Day', '^SPX');
+        await mod.getCachedBarsWithIndicators(
+            mockProvider,
+            'SPX',
+            '1Day',
+            '^SPX'
+        );
         expect(mockRedisGet).toHaveBeenCalledWith('bars:SPX:1Day:^SPX');
     });
 
@@ -106,7 +126,7 @@ describe('getCachedBarsWithIndicators', () => {
             url: 'https://x.upstash.io',
             token: 't',
         });
-        await mod.getCachedBarsWithIndicators('AAPL', '1Day');
+        await mod.getCachedBarsWithIndicators(mockProvider, 'AAPL', '1Day');
         expect(mockRedisSet).not.toHaveBeenCalled();
     });
 
@@ -118,7 +138,11 @@ describe('getCachedBarsWithIndicators', () => {
             url: 'https://x.upstash.io',
             token: 't',
         });
-        const r = await mod.getCachedBarsWithIndicators('AAPL', '1Day');
+        const r = await mod.getCachedBarsWithIndicators(
+            mockProvider,
+            'AAPL',
+            '1Day'
+        );
         expect(errSpy).toHaveBeenCalled();
         expect(r).toEqual(sampleBars);
         errSpy.mockRestore();
@@ -133,7 +157,11 @@ describe('getCachedBarsWithIndicators', () => {
             url: 'https://x.upstash.io',
             token: 't',
         });
-        const r = await mod.getCachedBarsWithIndicators('AAPL', '1Day');
+        const r = await mod.getCachedBarsWithIndicators(
+            mockProvider,
+            'AAPL',
+            '1Day'
+        );
         expect(errSpy).toHaveBeenCalled();
         expect(r).toEqual(sampleBars);
         errSpy.mockRestore();
@@ -146,8 +174,8 @@ describe('getCachedBarsWithIndicators', () => {
             url: 'https://x.upstash.io',
             token: 't',
         });
-        await mod.getCachedBarsWithIndicators('AAPL', '1Day');
-        await mod.getCachedBarsWithIndicators('AAPL', '1Day');
+        await mod.getCachedBarsWithIndicators(mockProvider, 'AAPL', '1Day');
+        await mod.getCachedBarsWithIndicators(mockProvider, 'AAPL', '1Day');
         // Redis constructor must have been called exactly once (singleton reused)
         expect(mockRedisCtor).toHaveBeenCalledTimes(1);
     });

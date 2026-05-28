@@ -12,6 +12,7 @@ import { getCurrentUser } from '@/entities/session/lib/getCurrentUser';
 import { resolveTierAndByok, buildGateError } from '@/shared/lib/byokGate';
 import { isBot } from '@/shared/api/isBot';
 import type { AnalysisGateBlockedResult } from '@/shared/lib/types';
+import { getMarketDataProvider } from '@/shared/api/market/getMarketDataProvider';
 
 /** Final return type — core's gated result + our siglens-side gate errors. */
 export type SubmitAnalysisActionResult =
@@ -30,6 +31,7 @@ export async function submitAnalysisAction(
     try {
         const requestHeaders = await headers();
         const skipEnqueueIfMiss = isBot(requestHeaders);
+        const marketDataProvider = getMarketDataProvider();
 
         // no user lookup needed when modelId is absent
         if (modelId === undefined) {
@@ -39,7 +41,12 @@ export async function submitAnalysisAction(
                 timeframe,
                 force,
                 fmpSymbol,
-                { waitUntil, modelId, skipEnqueueIfMiss }
+                {
+                    waitUntil,
+                    modelId,
+                    skipEnqueueIfMiss,
+                    marketDataProvider,
+                }
             );
         }
 
@@ -61,6 +68,7 @@ export async function submitAnalysisAction(
                 waitUntil,
                 modelId,
                 skipEnqueueIfMiss,
+                marketDataProvider,
                 tierContext: { userId, tier: gate.tier },
                 ...(gate.userApiKey !== undefined
                     ? { userApiKey: gate.userApiKey }

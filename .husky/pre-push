@@ -44,7 +44,7 @@ wait "$pid_lint" || status=1
 
 run_check "3/5 typecheck" "$tmp_dir/typecheck.log" yarn typecheck || status=1
 run_check "4/5 test" "$tmp_dir/test.log" yarn test:quiet || status=1
-run_check "5/5 build" "$tmp_dir/build.log" yarn build || status=1
+run_check "5/5 build" "$tmp_dir/build.log" yarn build:local || status=1
 
 if [ "$status" -ne 0 ]; then
     echo ""

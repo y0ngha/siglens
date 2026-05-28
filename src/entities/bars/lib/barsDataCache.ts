@@ -3,12 +3,11 @@ import { cache } from 'react';
 import { Redis } from '@upstash/redis';
 import {
     type BarsData,
+    type MarketDataProvider,
     type Timeframe,
     fetchBarsWithIndicators,
     computeBarsEffectiveTtl,
 } from '@y0ngha/siglens-core';
-import { withRetry } from '@/shared/lib/withRetry';
-import { BARS_FMP_RETRY } from './barsRetry';
 
 // Redis 미설정 환경(로컬 dev 등)에서도 graceful fallback이 가능하도록 연결을 lazy 초기화로 지연한다.
 let cachedRedis: Redis | null | undefined;
@@ -42,13 +41,14 @@ function buildBarsKey(
  *   1. React.cache — 요청 내 dedup(layout/page가 같은 TF prefetch 시 1회).
  *   2. Upstash Redis — cross-request, 시장 세션별 TTL(core `computeBarsEffectiveTtl`).
  *      봇이 한 종목의 여러 탭을 연속 크롤링해도 fetch가 1회로 수렴.
- *      Redis 미설정 시 graceful fallback으로 FMP 직접 호출.
+ *      Redis 미설정 시 graceful fallback으로 주입된 provider를 직접 호출.
  *
  * 에러는 캐시하지 않는다(throw가 set 이전에 전파). 빈 봉도 캐시하지 않는다
  * (transient 장애를 TTL 동안 굳히지 않도록 — optionsDataCache의 null-caution과 동일).
  */
 export const getCachedBarsWithIndicators = cache(
     async (
+        provider: MarketDataProvider,
         symbol: string,
         timeframe: Timeframe,
         fmpSymbol?: string
@@ -68,9 +68,12 @@ export const getCachedBarsWithIndicators = cache(
             }
         }
 
-        const fresh = await withRetry(
-            () => fetchBarsWithIndicators(symbol, timeframe, fmpSymbol),
-            BARS_FMP_RETRY
+        // Retry (429/5xx + network TypeError/DOMException) is handled inside the provider's fmpGet (FMP_TRANSIENT_RETRY).
+        const fresh = await fetchBarsWithIndicators(
+            provider,
+            symbol,
+            timeframe,
+            fmpSymbol
         );
 
         if (fresh.bars.length > 0 && redis !== null) {

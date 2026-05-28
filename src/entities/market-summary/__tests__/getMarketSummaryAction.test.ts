@@ -22,6 +22,11 @@ vi.mock('@/shared/api/isBot', () => ({
     isBot: vi.fn(),
 }));
 
+const mockProvider = {} as import('@y0ngha/siglens-core').MarketDataProvider;
+vi.mock('@/shared/api/market/getMarketDataProvider', () => ({
+    getMarketDataProvider: vi.fn(() => mockProvider),
+}));
+
 const mockGetSummaryWithBriefing =
     getMarketSummaryWithBriefing as MockedFunction<
         typeof getMarketSummaryWithBriefing
@@ -55,7 +60,9 @@ describe('getMarketSummaryAction 함수는', () => {
 
             await getMarketSummaryAction();
 
-            expect(mockGetSummaryWithBriefing).toHaveBeenCalled();
+            expect(mockGetSummaryWithBriefing).toHaveBeenCalledWith(
+                mockProvider
+            );
             expect(mockGetSummary).not.toHaveBeenCalled();
         });
 
@@ -83,7 +90,7 @@ describe('getMarketSummaryAction 함수는', () => {
 
             await getMarketSummaryAction();
 
-            expect(mockGetSummary).toHaveBeenCalled();
+            expect(mockGetSummary).toHaveBeenCalledWith(mockProvider);
             expect(mockGetSummaryWithBriefing).not.toHaveBeenCalled();
         });
 

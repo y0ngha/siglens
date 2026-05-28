@@ -12,6 +12,7 @@ import {
     type Timeframe,
 } from '@y0ngha/siglens-core';
 import { FmpFundamentalClient } from '@/shared/api/fmp/fundamentalClient';
+import { getMarketDataProvider } from '@/shared/api/market/getMarketDataProvider';
 import { getDatabaseClient } from '@/shared/db/client';
 import {
     DrizzleNewsRepository,
@@ -104,6 +105,7 @@ export async function submitOverallAnalysisAction(
             timeframe,
             modelId,
             fundamentalProvider: new FmpFundamentalClient(),
+            marketDataProvider: getMarketDataProvider(),
             newsItems: enrichedNews,
             upcomingCalendar: next !== null ? [next] : [],
             technical: { tierContext: { userId, tier: gate.tier } },
