@@ -18,6 +18,11 @@ import type {
 // Module mocks
 // ---------------------------------------------------------------------------
 
+vi.mock('../lib/newsRefreshFlag', () => ({
+    isRecentlyFetched: vi.fn(),
+    markFetched: vi.fn(),
+}));
+
 vi.mock('@y0ngha/siglens-core', async () => ({
     ...(await vi.importActual('@y0ngha/siglens-core')),
     submitNewsCardAnalysis: vi.fn(),
@@ -55,10 +60,13 @@ vi.mock('@/entities/news-article', () => ({
 // ---------------------------------------------------------------------------
 
 import { DrizzleNewsRepository } from '@/entities/news-article';
+import { isRecentlyFetched, markFetched } from '../lib/newsRefreshFlag';
 
 const MockNewsRepository = DrizzleNewsRepository as MockedClass<
     typeof DrizzleNewsRepository
 >;
+const mockIsRecentlyFetched = isRecentlyFetched as Mock;
+const mockMarkFetched = markFetched as Mock;
 const MockFmpNewsClient = FmpNewsClient as MockedClass<typeof FmpNewsClient>;
 
 const mockSubmitNewsCardAnalysis = submitNewsCardAnalysis as MockedFunction<
@@ -127,6 +135,8 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
         vi.clearAllMocks();
         mockSubmitNewsCardAnalysis.mockReset();
         mockPollNewsCardAnalysis.mockReset();
+        mockIsRecentlyFetched.mockReset();
+        mockMarkFetched.mockResolvedValue(undefined);
 
         mockFetchNewsForPeriod = vi.fn();
         mockUpsertNewsItem = vi.fn().mockResolvedValue(undefined);
@@ -397,6 +407,7 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
 
     describe('skipAnalysis 옵션은', () => {
         it('true이면 FMP fetch와 DB upsert는 수행하지만 LLM 분석은 건너뛴다', async () => {
+            mockIsRecentlyFetched.mockResolvedValue(false);
             mockFetchNewsForPeriod.mockResolvedValue([
                 NEWS_ITEM_1,
                 NEWS_ITEM_2,
@@ -416,6 +427,7 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
         });
 
         it('false이면 기존과 동일하게 LLM 분석까지 수행한다', async () => {
+            mockIsRecentlyFetched.mockResolvedValue(false);
             mockFetchNewsForPeriod.mockResolvedValue([NEWS_ITEM_1]);
             mockSubmitNewsCardAnalysis.mockResolvedValue(SUBMITTED_RESULT);
             mockPollNewsCardAnalysis.mockResolvedValue(POLL_DONE);
@@ -425,6 +437,67 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
             });
 
             expect(mockSubmitNewsCardAnalysis).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    describe('봇 경로 refresh 가드는', () => {
+        it('봇 + 최근 fetch됨 → FMP fetch와 DB upsert를 스킵한다', async () => {
+            mockIsRecentlyFetched.mockResolvedValue(true);
+
+            await ensureNewsCardsAnalyzedAction('AAPL', {
+                skipAnalysis: true,
+            });
+
+            expect(mockFetchNewsForPeriod).not.toHaveBeenCalled();
+            expect(mockUpsertNewsItem).not.toHaveBeenCalled();
+        });
+
+        it('봇 + 미fetch → fetch + upsert + markFetched 호출', async () => {
+            mockIsRecentlyFetched.mockResolvedValue(false);
+            mockFetchNewsForPeriod.mockResolvedValue([NEWS_ITEM_1]);
+
+            await ensureNewsCardsAnalyzedAction('AAPL', {
+                skipAnalysis: true,
+            });
+
+            expect(mockFetchNewsForPeriod).toHaveBeenCalledWith(
+                'AAPL',
+                NEWS_LOOKBACK_MS
+            );
+            expect(mockUpsertNewsItem).toHaveBeenCalledTimes(1);
+            expect(mockMarkFetched).toHaveBeenCalledWith('AAPL');
+        });
+
+        it('사람 경로 → 최근 fetch됐어도 항상 fetch한다(가드 무시)', async () => {
+            mockIsRecentlyFetched.mockResolvedValue(true);
+            mockFetchNewsForPeriod.mockResolvedValue([NEWS_ITEM_1]);
+            mockSubmitNewsCardAnalysis.mockResolvedValue(SUBMITTED_RESULT);
+            mockPollNewsCardAnalysis.mockResolvedValue(POLL_DONE);
+
+            await ensureNewsCardsAnalyzedAction('AAPL');
+
+            expect(mockFetchNewsForPeriod).toHaveBeenCalledWith(
+                'AAPL',
+                NEWS_LOOKBACK_MS
+            );
+        });
+
+        it('upsert 과반 실패 시 markFetched를 호출하지 않는다', async () => {
+            mockIsRecentlyFetched.mockResolvedValue(false);
+            mockFetchNewsForPeriod.mockResolvedValue([
+                NEWS_ITEM_1,
+                NEWS_ITEM_2,
+            ]);
+            // Both upserts fail → majority failure → action throws before markFetched.
+            mockUpsertNewsItem
+                .mockRejectedValueOnce(new Error('DB down'))
+                .mockRejectedValueOnce(new Error('DB down'));
+
+            await expect(
+                ensureNewsCardsAnalyzedAction('AAPL', { skipAnalysis: true })
+            ).rejects.toThrow('majority upsert failure');
+
+            expect(mockMarkFetched).not.toHaveBeenCalled();
         });
     });
 });
