@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.14.2](https://github.com/y0ngha/siglens/compare/v0.14.1...v0.14.2) (2026-05-28)
+
+
+### Bug Fixes
+
+* 종목 차트 페이지에서 AI 분석이 길어도 차트 높이 고정 ([e6dca37](https://github.com/y0ngha/siglens/commit/e6dca373776661ea918a649430aa0c79333d547a))
+* PR [#515](https://github.com/y0ngha/siglens/issues/515) 리뷰 코멘트 반영 (매직넘버 상수화, 주석 WHAT-라벨 제거, scrollbar-none 일반 클래스 전환 + stylelint 정리) ([3ede2ba](https://github.com/y0ngha/siglens/commit/3ede2ba895875ca752bce142f99a98707457de00))
+
 ## [0.14.1](https://github.com/y0ngha/siglens/compare/v0.14.0...v0.14.1) (2026-05-27)
 
 

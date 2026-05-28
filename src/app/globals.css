@@ -76,6 +76,7 @@
        조합해 `calc(100dvh - var(--header-h) - var(--pwa-banner-h, 0px))`로 viewport
        잔여 영역을 정확히 계산한다. */
     --header-h: 3.5rem;
+
     /* font stack 순서: Geist(라틴)가 한글 글리프를 못 가지므로 자동으로
        다음 폰트(Pretendard, self-host)로 fallback된다. next/font/local이
        --font-pretendard CSS 변수를 주입하고 size-adjust를 자동 측정해
@@ -84,7 +85,7 @@
        디바이스마다 typography가 달라지고 CLS도 발생했다. */
     --font-sans:
         var(--font-geist-sans), var(--font-pretendard), -apple-system,
-        BlinkMacSystemFont, system-ui, 'Helvetica Neue', Arial, sans-serif;
+        blinkmacsystemfont, system-ui, 'Helvetica Neue', arial, sans-serif;
     --font-mono: var(--font-geist-mono);
 }
 
@@ -109,6 +110,20 @@
 :where(.sr-only):not(:focus-visible) {
     top: 0 !important;
     left: 0 !important;
+}
+
+/* 스크롤은 유지하되 시각적 스크롤바만 감춘다. 차트 페이지 AI 분석 패널처럼
+   페이지 스크롤(footer 도달용)과 패널 내부 스크롤이 공존할 때, 내부 스크롤바가
+   같이 보이면 스크롤바가 둘로 겹쳐 보여 산만하다. 패널은 여전히 내부 스크롤로
+   콘텐츠를 담아 차트 높이를 고정하므로 overflow-y-auto는 그대로 두고 바만 숨긴다.
+   (Tailwind v4 @utility 대신 일반 클래스로 둔다 — 변형 조합이 필요 없고
+   stylelint의 @utility 미인식 + & 스코핑 경고를 피한다.) */
+.scrollbar-none {
+    scrollbar-width: none; /* Firefox */
+}
+
+.scrollbar-none::-webkit-scrollbar {
+    display: none; /* WebKit (Chrome/Safari/Edge) */
 }
 
 body {
