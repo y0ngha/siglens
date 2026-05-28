@@ -6,6 +6,7 @@ import {
 } from '@tanstack/react-query';
 import {
     SymbolLayoutFloatingChat,
+    SymbolLayoutJail,
     SymbolLayoutProviders,
 } from '@/app/[symbol]/SymbolLayoutClient';
 import { SymbolLayoutHeader } from '@/widgets/symbol-page/SymbolLayoutHeader';
@@ -23,12 +24,16 @@ interface SymbolLayoutProps {
 // Layout shell stays as an RSC: it composes a shared provider subtree (chat/model
 // contexts) around the chrome (header) and the active page subtree.
 //
-// Sticky-footer jail: SymbolLayoutHeader + page main(`flex-1`)을 viewport 잔여 영역에
-// 맞춘 컨테이너로 감싼다. viewport에서 site Header(`var(--header-h)` = 3.5rem) + PwaBanner
-// (`var(--pwa-banner-h, 0px)`, banner 표시 중일 때만 3rem)를 빼면 jail이 첫 화면의 잔여
-// 영역을 정확히 차지하고, 그 안에서 layout header가 자기 자리 + page main(flex-1)이
-// viewport 잔여를 차지해 차트 페이지의 chart+AI가 한 화면을 가득 채운다. footer는 root
-// layout에서 jail의 형제로 위치하므로 자연스럽게 jail 아래로 push되어 스크롤해야 보인다.
+// Sticky-footer jail (SymbolLayoutJail): SymbolLayoutHeader + page main을 viewport
+// 잔여 영역에 맞춘 컨테이너로 감싼다. viewport에서 site Header(`var(--header-h)` = 3.5rem)
+// + PwaBanner(`var(--pwa-banner-h, 0px)`, banner 표시 중일 때만 3rem)를 빼면 jail이 첫
+// 화면의 잔여 영역을 정확히 차지하고, 그 안에서 layout header가 자기 자리 + page main이
+// 나머지를 차지한다. footer는 root layout에서 jail의 형제로 위치하므로 자연스럽게 jail
+// 아래로 push되어 스크롤해야 보인다.
+//
+// jail 높이는 라우트별로 다르다 (SymbolLayoutJail JSDoc 참조). 차트(index) 라우트는
+// definite `h-[calc(...)]` + overflow-hidden으로 chart+AI를 첫 viewport에 고정해 AI 패널이
+// 내부 스크롤되게 하고, sibling 탭은 `min-h-[calc(...)]`으로 콘텐츠 길이에 따라 자란다.
 //
 // `--header-h`는 globals.css의 @theme에서 3.5rem 기본값으로 정의되어 site Header h-14와
 // 동기화된다. `--pwa-banner-h`는 PwaBanner mount 시점에 3rem으로 set, dismiss/unmount
@@ -42,12 +47,12 @@ interface SymbolLayoutProps {
 export default function SymbolLayout({ children, params }: SymbolLayoutProps) {
     return (
         <SymbolLayoutProviders>
-            <div className="flex min-h-[calc(100dvh-var(--header-h,3.5rem)-var(--pwa-banner-h,0px))] flex-col">
+            <SymbolLayoutJail>
                 <Suspense fallback={<SymbolHeaderShellFallback />}>
                     <SymbolLayoutChrome params={params} />
                 </Suspense>
                 {children}
-            </div>
+            </SymbolLayoutJail>
             <Suspense fallback={null}>
                 <SymbolFloatingChat params={params} />
             </Suspense>
