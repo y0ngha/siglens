@@ -150,5 +150,16 @@ describe('getBarsAction 함수는', () => {
             expect(mockFetchBarsWithIndicators).toHaveBeenCalledTimes(1);
             expect(sleepMock).not.toHaveBeenCalled();
         });
+
+        it('FMP 일시 오류(429)는 사용자 문구로 변환해 전파한다', async () => {
+            mockFetchBarsWithIndicators.mockRejectedValueOnce(
+                new Error('FMP API error: 429 Too Many Requests')
+            );
+
+            await expect(getBarsAction('AAPL', '1Day')).rejects.toThrow(
+                FMP_TEMPORARY_UNAVAILABLE_MESSAGE
+            );
+            expect(mockFetchBarsWithIndicators).toHaveBeenCalledTimes(1);
+        });
     });
 });
