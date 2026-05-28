@@ -9,11 +9,13 @@ vi.mock('@vercel/functions', () => ({
     waitUntil: vi.fn(),
 }));
 
-// 이 테스트는 action이 core로 forwarding하는 인자 shape만 검증하므로
-// `submitOverallAnalysis` 한 export만 mocking하면 충분하다. 반환값 chain까지
-// assert하지 않아 `requireActual`로 전체 surface를 합칠 필요가 없다.
+// 이 테스트는 action이 core로 forwarding하는 인자 shape와 OI-stale 게이팅만
+// 검증하므로 `submitOverallAnalysis`와 `isEtRegularSessionOpen` 두 export만
+// mocking하면 충분하다. 반환값 chain까지 assert하지 않아 `requireActual`로
+// 전체 surface를 합칠 필요가 없다.
 vi.mock('@y0ngha/siglens-core', () => ({
     submitOverallAnalysis: vi.fn(),
+    isEtRegularSessionOpen: vi.fn(),
 }));
 
 vi.mock('@/shared/api/fmp/fundamentalClient', () => ({
@@ -58,13 +60,13 @@ vi.mock('@/entities/options-chain/lib/optionsDataCache', () => ({
     fetchOptionsSnapshot: vi.fn(),
 }));
 
-vi.mock('@/shared/lib/marketSession', () => ({
-    isUsOptionsRegularSession: vi.fn(),
+vi.mock('@/shared/lib/options/openInterestStale', () => ({
     isOpenInterestSnapshotStale: vi.fn(),
 }));
 
 import { submitOverallAnalysisAction } from '../actions/submitOverallAnalysisAction';
 import {
+    isEtRegularSessionOpen,
     submitOverallAnalysis,
     type ModelId,
     type OptionsSnapshot,
@@ -78,10 +80,7 @@ import { getNextEarningsReport } from '@/entities/earnings-report';
 import { getCurrentUser } from '@/entities/session/lib/getCurrentUser';
 import { resolveTierAndByok } from '@/shared/lib/byokGate';
 import { fetchOptionsSnapshot } from '@/entities/options-chain/lib/optionsDataCache';
-import {
-    isUsOptionsRegularSession,
-    isOpenInterestSnapshotStale,
-} from '@/shared/lib/marketSession';
+import { isOpenInterestSnapshotStale } from '@/shared/lib/options/openInterestStale';
 import type { AnalysisGateError } from '@/shared/lib/types';
 
 const mockHeaders = headers as MockedFunction<typeof headers>;
@@ -104,8 +103,8 @@ const mockResolveTierAndByok = resolveTierAndByok as MockedFunction<
 const mockFetchSnapshot = fetchOptionsSnapshot as MockedFunction<
     typeof fetchOptionsSnapshot
 >;
-const mockIsRegularSession = isUsOptionsRegularSession as MockedFunction<
-    typeof isUsOptionsRegularSession
+const mockIsRegularSession = isEtRegularSessionOpen as MockedFunction<
+    typeof isEtRegularSessionOpen
 >;
 const mockIsOiStale = isOpenInterestSnapshotStale as MockedFunction<
     typeof isOpenInterestSnapshotStale
@@ -318,7 +317,6 @@ describe('submitOverallAnalysisAction 함수는', () => {
         );
 
         expect(result).toEqual({ status: 'error', error: gateError });
-        // Gate fires before expensive DB fetch
         expect(mockSubmitOverallAnalysis).not.toHaveBeenCalled();
     });
 
