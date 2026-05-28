@@ -28,3 +28,14 @@
   - Rule: Infrastructure Functions — validate all inputs at API boundaries; invalid values must return 400
   - Context: Added `VALID_JOB_TYPES` Set check so unrecognized job types are rejected with 400 rather than logged as a warning and treated as success
 
+## [feat/fundamental-redis-cache Round 2 | feat/fundamental-redis-cache | 2026-05-29]
+- Violation: `beforeEach/afterEach` hooks declared at module level instead of inside describe block in src/shared/cache/__tests__/getOrSetCache.test.ts
+  - Rule: MISTAKES.md Tests #3 — Test lifecycle hooks must be inside describe block
+  - Context: Moved beforeEach/afterEach into describe block to group with test cases
+- Violation: TTL value duplicated inline (SECONDS_PER_HOUR) in src/app/[symbol]/news/newsData.ts instead of sharing with fundamentalData.ts
+  - Rule: MISTAKES.md #16.5 / FF Cohesion — Shared constants must use single named constant
+  - Context: Exported FMP_FUNDAMENTAL_REVALIDATE_SECONDS from fundamentalClient.ts and imported in both newsData and fundamentalData
+- Violation: `shouldCache` predicate wrongly withheld caching of empty arrays in src/app/[symbol]/fundamental/fundamentalData.ts + news/newsData.ts
+  - Rule: Caching behavior — empty arrays are stable results and should be cached
+  - Context: Changed `v => v.length > 0` to `v => v !== null`, allowing empty arrays to be cached as valid results
+

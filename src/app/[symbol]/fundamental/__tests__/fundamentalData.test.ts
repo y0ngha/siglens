@@ -10,7 +10,10 @@ vi.mock('@/entities/ticker', () => ({
         })),
     translateCompanyDescription: vi.fn().mockResolvedValue('translated desc'),
 }));
-vi.mock('@/shared/api/fmp/fundamentalClient', () => ({
+vi.mock('@/shared/api/fmp/fundamentalClient', async importOriginal => ({
+    ...(await importOriginal<
+        typeof import('@/shared/api/fmp/fundamentalClient')
+    >()),
     FmpFundamentalClient: class MockFmpFundamentalClient {
         getProfile = vi.fn().mockResolvedValue(null);
         getStockPeers = vi.fn().mockResolvedValue([]);
