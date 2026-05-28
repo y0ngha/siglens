@@ -26,9 +26,18 @@ vi.mock('@/widgets/chart', () => ({
     }),
 }));
 
+// The mock renders one paragraph per `analysis.paragraphCount` so the scroll
+// tests below can drive a genuinely long vs. short panel and assert where that
+// content lands (inside the scroll container, not the chart column).
 vi.mock('@/widgets/analysis', () => ({
-    AnalysisPanel: (_props: Record<string, unknown>) => (
-        <div data-testid="analysis-panel" />
+    AnalysisPanel: ({ analysis }: { analysis?: { paragraphCount?: number } }) => (
+        <div data-testid="analysis-panel">
+            {Array.from({ length: analysis?.paragraphCount ?? 0 }, (_, i) => (
+                <p data-testid="analysis-paragraph" key={i}>
+                    분석 문단 {i}
+                </p>
+            ))}
+        </div>
     ),
 }));
 
@@ -191,6 +200,68 @@ describe('ChartContent', () => {
             handleReanalyze: vi.fn(),
             reanalyzeCooldownMs: 0,
             cooldownNotice: null,
+        });
+    });
+
+    // "AI 분석이 길어지면 차트도 길어진다" 회귀 가드 — AI 분석 패널 스크롤 부분.
+    //
+    // jsdom에는 레이아웃 엔진이 없어 패널이 실제로 스크롤되는지 측정할 수 없다. 대신
+    // 그 동작을 만드는 CSS 계약을 검증한다: 데스크톱 분석 패널(aside)은 md:h-full로 차트
+    // 행 높이에 바운드되고 overflow-y-auto로 자체 스크롤하므로, 긴 분석이 행(=차트)을
+    // 늘리지 못하고 패널 안에서만 스크롤된다. scrollbar-none으로 스크롤바는 감춰
+    // 페이지 스크롤과 시각적으로 겹치지 않게 한다. 이 계약은 분석 길이와 무관하게
+    // 유지되어야 한다 — 그 불변성이 회귀 가드다.
+    describe('AI 분석 패널 스크롤', () => {
+        // 분석 문단 수를 주입해 긴/짧은 패널을 실제로 다르게 렌더한 뒤, 그 콘텐츠가
+        // 차트 컬럼이 아니라 스크롤 컨테이너(aside) 안에 위치하는지 확인한다.
+        const renderAsideWithParagraphs = async (paragraphCount: number) => {
+            const { useAnalysis } =
+                await import('@/widgets/symbol-page/hooks/useAnalysis');
+            (useAnalysis as ReturnType<typeof vi.fn>).mockReturnValue({
+                analysis: { paragraphCount } as unknown as AnalysisResponse,
+                analysisResult: null,
+                isAnalyzing: false,
+                analysisError: null,
+                isBotBlocked: false,
+                handleReanalyze: vi.fn(),
+                reanalyzeCooldownMs: 0,
+                cooldownNotice: null,
+            });
+            const { container } = render(<ChartContent {...defaultProps} />);
+            const aside = container.querySelector('aside');
+            expect(aside).not.toBeNull();
+            return aside as HTMLElement;
+        };
+
+        const paragraphsInside = (aside: HTMLElement) =>
+            aside.querySelectorAll('[data-testid="analysis-paragraph"]').length;
+
+        describe('AI 분석 패널이 길 때', () => {
+            it('긴 분석이 aside(overflow-y-auto + md:h-full) 안에 담겨 패널 내부에서 스크롤되고 차트 행을 늘리지 않는다', async () => {
+                const aside = await renderAsideWithParagraphs(80);
+
+                // 긴 콘텐츠가 스크롤 컨테이너(aside) 안에 위치 = 차트가 아니라 패널이 스크롤된다.
+                expect(paragraphsInside(aside)).toBe(80);
+                expect(aside.className).toContain('overflow-y-auto');
+                expect(aside.className).toContain('md:h-full');
+            });
+
+            it('scrollbar-none으로 스크롤바를 감춰 페이지 스크롤과 겹쳐 보이지 않게 한다', async () => {
+                const aside = await renderAsideWithParagraphs(80);
+
+                expect(aside.className).toContain('scrollbar-none');
+            });
+        });
+
+        describe('AI 분석 패널이 짧을 때', () => {
+            it('짧은 분석도 같은 aside 안에 담기며 overflow-y-auto + md:h-full + scrollbar-none 계약을 그대로 유지한다', async () => {
+                const aside = await renderAsideWithParagraphs(1);
+
+                expect(paragraphsInside(aside)).toBe(1);
+                expect(aside.className).toContain('overflow-y-auto');
+                expect(aside.className).toContain('md:h-full');
+                expect(aside.className).toContain('scrollbar-none');
+            });
         });
     });
 });

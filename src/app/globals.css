@@ -111,6 +111,17 @@
     left: 0 !important;
 }
 
+/* 스크롤은 유지하되 시각적 스크롤바만 감춘다. 차트 페이지 AI 분석 패널처럼
+   페이지 스크롤(footer 도달용)과 패널 내부 스크롤이 공존할 때, 내부 스크롤바가
+   같이 보이면 스크롤바가 둘로 겹쳐 보여 산만하다. 패널은 여전히 내부 스크롤로
+   콘텐츠를 담아 차트 높이를 고정하므로 overflow-y-auto는 그대로 두고 바만 숨긴다. */
+@utility scrollbar-none {
+    scrollbar-width: none; /* Firefox */
+    &::-webkit-scrollbar {
+        display: none; /* WebKit (Chrome/Safari/Edge) */
+    }
+}
+
 body {
     /* Tailwind v4 preflight가 --font-sans를 자동 매핑하지만, 한글 폰트 fallback이
        실제로 발동되는지 시각 확인이 어려워 명시적으로 한 번 더 박는다. var() 체인

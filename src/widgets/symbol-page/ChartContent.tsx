@@ -318,9 +318,11 @@ export function ChartContent({
                 onKeyDown={handleKeyDown}
             />
 
-            {/* AI 분석 패널 — 데스크톱 */}
+            {/* AI 분석 패널 — 데스크톱. overflow-y-auto로 내부 스크롤을 유지해
+                긴 분석이 차트 높이를 밀어내지 않게 하되, scrollbar-none으로 스크롤바
+                자체는 감춰 페이지 스크롤과 시각적으로 겹쳐 보이지 않게 한다. */}
             <aside
-                className="border-secondary-700 relative hidden min-h-0 flex-none overflow-y-auto border-l p-4 md:flex md:h-full md:w-(--panel-width) md:flex-col"
+                className="border-secondary-700 scrollbar-none relative hidden min-h-0 flex-none overflow-y-auto border-l p-4 md:flex md:h-full md:w-(--panel-width) md:flex-col"
                 style={
                     {
                         // panelWidth는 드래그 상태에서 런타임에 결정되므로 정적 Tailwind 클래스로 표현 불가
