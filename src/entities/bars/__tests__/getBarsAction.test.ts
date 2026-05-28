@@ -14,6 +14,10 @@ vi.mock('@y0ngha/siglens-core', async () => ({
     fetchBarsWithIndicators: vi.fn(),
 }));
 
+vi.mock('@/shared/api/market/getMarketDataProvider', () => ({
+    getMarketDataProvider: vi.fn(() => mockMarketProvider),
+}));
+
 import type { MockedFunction } from 'vitest';
 import { getBarsAction } from '../actions/getBarsAction';
 import {
@@ -23,7 +27,9 @@ import {
 import type { BarsData } from '@y0ngha/siglens-core';
 import { sleep } from '@/shared/lib/sleep';
 import { FMP_TEMPORARY_UNAVAILABLE_MESSAGE } from '@/shared/api/fmp/fmpUserMessage';
-import { FMP_RATE_LIMIT_RETRY_DELAYS_MS } from '@/shared/api/fmp/fmpRetry';
+
+const mockMarketProvider =
+    {} as import('@y0ngha/siglens-core').MarketDataProvider;
 
 const mockFetchBarsWithIndicators = fetchBarsWithIndicators as MockedFunction<
     typeof fetchBarsWithIndicators
@@ -86,6 +92,7 @@ describe('getBarsAction 함수는', () => {
             const result = await getBarsAction('AAPL', '1Day');
 
             expect(mockFetchBarsWithIndicators).toHaveBeenCalledWith(
+                mockMarketProvider,
                 'AAPL',
                 '1Day',
                 undefined
@@ -99,6 +106,7 @@ describe('getBarsAction 함수는', () => {
             await getBarsAction('TSLA', '5Min');
 
             expect(mockFetchBarsWithIndicators).toHaveBeenCalledWith(
+                mockMarketProvider,
                 'TSLA',
                 '5Min',
                 undefined
@@ -111,6 +119,7 @@ describe('getBarsAction 함수는', () => {
             await getBarsAction('SPX', '1Day', '^SPX');
 
             expect(mockFetchBarsWithIndicators).toHaveBeenCalledWith(
+                mockMarketProvider,
                 'SPX',
                 '1Day',
                 '^SPX'
@@ -131,61 +140,25 @@ describe('getBarsAction 함수는', () => {
             expect(sleepMock).not.toHaveBeenCalled();
         });
 
-        it('FMP 429는 10초, 15초, 20초 대기 후 최종 사용자 문구로 실패한다', async () => {
-            const warnSpy = vi
-                .spyOn(console, 'warn')
-                .mockImplementation(() => undefined);
-            const errorSpy = vi
-                .spyOn(console, 'error')
-                .mockImplementation(() => undefined);
-            mockFetchBarsWithIndicators.mockRejectedValue(
-                new Error('FMP API error: 429 Too Many Requests')
-            );
-
-            await expect(getBarsAction('AAPL', '1Day')).rejects.toThrow(
-                FMP_TEMPORARY_UNAVAILABLE_MESSAGE
-            );
-
-            expect(mockFetchBarsWithIndicators).toHaveBeenCalledTimes(4);
-            expect(sleepMock).toHaveBeenNthCalledWith(
-                1,
-                FMP_RATE_LIMIT_RETRY_DELAYS_MS[0]
-            );
-            expect(sleepMock).toHaveBeenNthCalledWith(
-                2,
-                FMP_RATE_LIMIT_RETRY_DELAYS_MS[1]
-            );
-            expect(sleepMock).toHaveBeenNthCalledWith(
-                3,
-                FMP_RATE_LIMIT_RETRY_DELAYS_MS[2]
-            );
-            expect(warnSpy).not.toHaveBeenCalled();
-            expect(errorSpy).not.toHaveBeenCalled();
-        });
-
-        it('FMP 429가 재시도 중 성공하면 결과를 반환한다', async () => {
-            mockFetchBarsWithIndicators
-                .mockRejectedValueOnce(
-                    new Error('FMP API error: 429 Too Many Requests')
-                )
-                .mockResolvedValueOnce(mockBarsData);
-
-            const result = await getBarsAction('AAPL', '1Day');
-
-            expect(result).toBe(mockBarsData);
-            expect(mockFetchBarsWithIndicators).toHaveBeenCalledTimes(2);
-            expect(sleepMock).toHaveBeenCalledWith(
-                FMP_RATE_LIMIT_RETRY_DELAYS_MS[0]
-            );
-        });
-
-        it('FMP 402는 재시도하지 않는다', async () => {
+        it('FMP 402는 원본 에러를 그대로 전파한다', async () => {
             mockFetchBarsWithIndicators.mockRejectedValueOnce(
                 new Error('FMP API error: 402 Payment Required')
             );
 
             await expect(getBarsAction('AAPL', '1Day')).rejects.toThrow(
                 'FMP API error: 402 Payment Required'
+            );
+            expect(mockFetchBarsWithIndicators).toHaveBeenCalledTimes(1);
+            expect(sleepMock).not.toHaveBeenCalled();
+        });
+
+        it('FMP 일시 오류(429)는 사용자 문구로 변환해 전파한다', async () => {
+            mockFetchBarsWithIndicators.mockRejectedValueOnce(
+                new Error('FMP API error: 429 Too Many Requests')
+            );
+
+            await expect(getBarsAction('AAPL', '1Day')).rejects.toThrow(
+                FMP_TEMPORARY_UNAVAILABLE_MESSAGE
             );
             expect(mockFetchBarsWithIndicators).toHaveBeenCalledTimes(1);
             expect(sleepMock).not.toHaveBeenCalled();

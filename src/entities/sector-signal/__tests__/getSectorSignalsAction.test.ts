@@ -8,6 +8,12 @@ vi.mock('@y0ngha/siglens-core', async () => ({
     getSectorSignals: vi.fn(),
 }));
 
+const mockMarketProvider =
+    {} as import('@y0ngha/siglens-core').MarketDataProvider;
+vi.mock('@/shared/api/market/getMarketDataProvider', () => ({
+    getMarketDataProvider: vi.fn(() => mockMarketProvider),
+}));
+
 const mockGetSectorSignals = getSectorSignals as MockedFunction<
     typeof getSectorSignals
 >;
@@ -27,7 +33,10 @@ describe('getSectorSignalsAction 함수는', () => {
 
         await getSectorSignalsAction();
 
-        expect(mockGetSectorSignals).toHaveBeenCalledWith(undefined);
+        expect(mockGetSectorSignals).toHaveBeenCalledWith(
+            mockMarketProvider,
+            undefined
+        );
     });
 
     it('timeframe 인자를 siglens-core getSectorSignals에 그대로 전달한다', async () => {
@@ -35,7 +44,10 @@ describe('getSectorSignalsAction 함수는', () => {
 
         await getSectorSignalsAction('1Day');
 
-        expect(mockGetSectorSignals).toHaveBeenCalledWith('1Day');
+        expect(mockGetSectorSignals).toHaveBeenCalledWith(
+            mockMarketProvider,
+            '1Day'
+        );
     });
 
     it('underlying 함수의 결과를 그대로 반환한다', async () => {

@@ -64,6 +64,10 @@ vi.mock('@/shared/lib/options/openInterestStale', () => ({
     isOpenInterestSnapshotStale: vi.fn(),
 }));
 
+vi.mock('@/shared/api/market/getMarketDataProvider', () => ({
+    getMarketDataProvider: vi.fn(() => mockProvider),
+}));
+
 import { submitOverallAnalysisAction } from '../actions/submitOverallAnalysisAction';
 import {
     isEtRegularSessionOpen,
@@ -82,6 +86,8 @@ import { resolveTierAndByok } from '@/shared/lib/byokGate';
 import { fetchOptionsSnapshot } from '@/entities/options-chain/lib/optionsDataCache';
 import { isOpenInterestSnapshotStale } from '@/shared/lib/options/openInterestStale';
 import type { AnalysisGateError } from '@/shared/lib/types';
+
+const mockProvider = {} as import('@y0ngha/siglens-core').MarketDataProvider;
 
 const mockHeaders = headers as MockedFunction<typeof headers>;
 const MockNewsRepository = DrizzleNewsRepository as MockedClass<
@@ -219,6 +225,7 @@ describe('submitOverallAnalysisAction 함수는', () => {
                 symbol: 'AAPL',
                 timeframe: '1Day',
                 modelId: MODEL_ID,
+                marketDataProvider: mockProvider,
             })
         );
     });

@@ -2,6 +2,7 @@
 
 import { type BarsData, type Timeframe } from '@y0ngha/siglens-core';
 import { getCachedBarsWithIndicators } from '../lib/barsDataCache';
+import { getMarketDataProvider } from '@/shared/api/market/getMarketDataProvider';
 import {
     getFmpUserFacingMessage,
     logFmpPaymentRequiredError,
@@ -13,7 +14,12 @@ export async function getBarsAction(
     fmpSymbol?: string
 ): Promise<BarsData> {
     try {
-        return await getCachedBarsWithIndicators(symbol, timeframe, fmpSymbol);
+        return await getCachedBarsWithIndicators(
+            getMarketDataProvider(),
+            symbol,
+            timeframe,
+            fmpSymbol
+        );
     } catch (error) {
         logFmpPaymentRequiredError(error);
         const message = getFmpUserFacingMessage(error);
