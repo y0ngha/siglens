@@ -10,6 +10,11 @@ export const FMP_STABLE_BASE = 'https://financialmodelingprep.com/stable';
 /** Timeout for all FMP fetch calls (ms). */
 const FMP_FETCH_TIMEOUT_MS = 10_000;
 
+/** Options for {@link fmpGet}. */
+export interface FmpGetOptions {
+    revalidate?: number;
+}
+
 /**
  * Parse the `Retry-After` response header value (seconds as integer).
  * Returns null if the header is absent, non-numeric, zero, or negative.
@@ -36,7 +41,7 @@ function parseRetryAfterSeconds(header: string | null): number | null {
 export async function fmpGet<T>(
     path: string,
     query: Record<string, string> = {},
-    opts: { revalidate?: number } = {}
+    opts: FmpGetOptions = {}
 ): Promise<T> {
     const { apiKey } = readFmpConfig();
     const params = new URLSearchParams({ ...query, apikey: apiKey });

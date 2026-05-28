@@ -125,7 +125,7 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
         vi.clearAllMocks();
         mockSubmitNewsCardAnalysis.mockReset();
         mockPollNewsCardAnalysis.mockReset();
-        mockIsRecentlyFetched.mockReset();
+        mockIsRecentlyFetched.mockResolvedValue(false);
         mockMarkFetched.mockResolvedValue(undefined);
 
         mockFetchNewsForPeriod = vi.fn();
