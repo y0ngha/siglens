@@ -123,4 +123,32 @@ describe('getCachedBarsWithIndicators', () => {
         expect(r).toEqual(sampleBars);
         errSpy.mockRestore();
     });
+
+    it('Redis set 예외는 흡수하고 fresh 값을 정상 반환', async () => {
+        const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+        mockRedisGet.mockResolvedValue(null);
+        mockFetch.mockResolvedValue(sampleBars);
+        mockRedisSet.mockRejectedValue(new Error('redis write fail'));
+        const mod = await loadWithEnv({
+            url: 'https://x.upstash.io',
+            token: 't',
+        });
+        const r = await mod.getCachedBarsWithIndicators('AAPL', '1Day');
+        expect(errSpy).toHaveBeenCalled();
+        expect(r).toEqual(sampleBars);
+        errSpy.mockRestore();
+    });
+
+    it('getRedis 싱글턴 캐시 — 두 번째 호출은 재생성 없이 반환', async () => {
+        mockRedisGet.mockResolvedValue(sampleBars);
+        // Load the module once, then call twice — second call hits cachedRedis fast-path
+        const mod = await loadWithEnv({
+            url: 'https://x.upstash.io',
+            token: 't',
+        });
+        await mod.getCachedBarsWithIndicators('AAPL', '1Day');
+        await mod.getCachedBarsWithIndicators('AAPL', '1Day');
+        // Redis constructor must have been called exactly once (singleton reused)
+        expect(mockRedisCtor).toHaveBeenCalledTimes(1);
+    });
 });
