@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { MS_PER_SECOND } from '@/shared/config/time';
 
 vi.mock('@/shared/api/fmp/httpClient', () => ({
     fmpGet: vi.fn(),
@@ -48,8 +49,6 @@ describe('FmpMarketProvider', () => {
     const provider = new FmpMarketProvider();
     beforeEach(() => mockFmpGet.mockReset());
 
-    // ── existing tests ─────────────────────────────────────────────────────────
-
     it('maps intraday bars and reverses to ascending time', async () => {
         mockFmpGet.mockResolvedValueOnce([
             {
@@ -77,6 +76,16 @@ describe('FmpMarketProvider', () => {
         expect(await provider.getQuote('AAPL')).toBeNull();
     });
 
+    it('getQuote: 빈 배열 응답 → null', async () => {
+        mockFmpGet.mockResolvedValueOnce([]);
+        expect(await provider.getQuote('AAPL')).toBeNull();
+    });
+
+    it('getQuote: 비배열 응답 → null', async () => {
+        mockFmpGet.mockResolvedValueOnce({} as never);
+        expect(await provider.getQuote('AAPL')).toBeNull();
+    });
+
     it('maps a quote', async () => {
         mockFmpGet.mockResolvedValueOnce([
             {
@@ -99,8 +108,6 @@ describe('FmpMarketProvider', () => {
         });
     });
 
-    // ── B5: daily getBars ───────────────────────────────────────────────────────
-
     describe('getBars("1Day")', () => {
         it('happy path: EOD bars mapped + sorted ascending, UTC midnight time', async () => {
             // endDate provided → today-quote skipped
@@ -120,8 +127,8 @@ describe('FmpMarketProvider', () => {
             // ascending order (oldest first)
             expect(bars[0]!.time).toBeLessThan(bars[1]!.time);
             // UTC midnight assertion (TZ fix)
-            expect(bars[0]!.time).toBe(Date.UTC(2026, 3, 14) / 1000); // 2026-04-14
-            expect(bars[1]!.time).toBe(Date.UTC(2026, 3, 15) / 1000); // 2026-04-15
+            expect(bars[0]!.time).toBe(Date.UTC(2026, 3, 14) / MS_PER_SECOND); // 2026-04-14
+            expect(bars[1]!.time).toBe(Date.UTC(2026, 3, 15) / MS_PER_SECOND); // 2026-04-15
         });
 
         it('today-quote MERGE: no endDate, EOD last bar older than today-quote → today bar appended last', async () => {
@@ -129,7 +136,7 @@ describe('FmpMarketProvider', () => {
             const eodDateStr = '2026-04-14';
             // today quote timestamp is 2026-04-15T14:00:00Z
             const todayTimestampSec = Math.floor(
-                Date.UTC(2026, 3, 15, 14, 0, 0) / 1000
+                Date.UTC(2026, 3, 15, 14, 0, 0) / MS_PER_SECOND
             );
 
             mockFmpGet
@@ -143,16 +150,16 @@ describe('FmpMarketProvider', () => {
 
             expect(bars).toHaveLength(2);
             // first bar is the EOD bar at UTC midnight of eodDateStr
-            expect(bars[0]!.time).toBe(Date.UTC(2026, 3, 14) / 1000);
+            expect(bars[0]!.time).toBe(Date.UTC(2026, 3, 14) / MS_PER_SECOND);
             // last bar is the today-quote bar at UTC midnight of 2026-04-15
-            expect(bars[1]!.time).toBe(Date.UTC(2026, 3, 15) / 1000);
+            expect(bars[1]!.time).toBe(Date.UTC(2026, 3, 15) / MS_PER_SECOND);
         });
 
         it('today-quote SKIP: last EOD bar.time >= today bar.time → not appended', async () => {
             // EOD's last bar is same day as the today-quote
             const sameDayStr = '2026-04-15';
             const todayTimestampSec = Math.floor(
-                Date.UTC(2026, 3, 15, 14, 0, 0) / 1000
+                Date.UTC(2026, 3, 15, 14, 0, 0) / MS_PER_SECOND
             );
 
             mockFmpGet
@@ -166,7 +173,7 @@ describe('FmpMarketProvider', () => {
 
             // today-quote has same time as last EOD bar → not appended
             expect(bars).toHaveLength(1);
-            expect(bars[0]!.time).toBe(Date.UTC(2026, 3, 15) / 1000);
+            expect(bars[0]!.time).toBe(Date.UTC(2026, 3, 15) / MS_PER_SECOND);
         });
 
         it('endDate provided → today-quote NOT requested (fmpGet called once for daily)', async () => {
@@ -205,11 +212,9 @@ describe('FmpMarketProvider', () => {
 
             // Today-quote fetch failed → degrades to null, only EOD bars returned
             expect(bars).toHaveLength(1);
-            expect(bars[0]!.time).toBe(Date.UTC(2026, 3, 14) / 1000);
+            expect(bars[0]!.time).toBe(Date.UTC(2026, 3, 14) / MS_PER_SECOND);
         });
     });
-
-    // ── B5: intraday getBars ────────────────────────────────────────────────────
 
     describe('getBars(intraday)', () => {
         it('empty array → [] returned', async () => {
@@ -263,11 +268,11 @@ describe('FmpMarketProvider', () => {
 
             // EDT: 2024-07-01 09:30 ET = 13:30 UTC
             expect(edtTime).toBe(
-                Math.floor(Date.UTC(2024, 6, 1, 13, 30, 0) / 1000)
+                Math.floor(Date.UTC(2024, 6, 1, 13, 30, 0) / MS_PER_SECOND)
             );
             // EST: 2024-01-15 09:30 ET = 14:30 UTC
             expect(estTime).toBe(
-                Math.floor(Date.UTC(2024, 0, 15, 14, 30, 0) / 1000)
+                Math.floor(Date.UTC(2024, 0, 15, 14, 30, 0) / MS_PER_SECOND)
             );
 
             // The UTC offsets differ by exactly 3600 seconds (DST rule)
@@ -275,8 +280,46 @@ describe('FmpMarketProvider', () => {
                 Math.floor(
                     (Date.UTC(2024, 6, 1, 13, 30, 0) -
                         Date.UTC(2024, 0, 15, 14, 30, 0)) /
-                        1000
+                        MS_PER_SECOND
                 )
+            );
+        });
+    });
+
+    describe('getBars query construction', () => {
+        it('getBars daily: from/before → from/to query (YYYY-MM-DD 10자리)', async () => {
+            mockFmpGet.mockResolvedValueOnce([]);
+            await provider.getBars({
+                symbol: 'AAPL',
+                timeframe: '1Day',
+                from: '2026-04-14T00:00:00Z',
+                before: '2026-04-16T00:00:00Z',
+            });
+            expect(mockFmpGet).toHaveBeenCalledWith(
+                'historical-price-eod/full',
+                expect.objectContaining({
+                    symbol: 'AAPL',
+                    from: '2026-04-14',
+                    to: '2026-04-16',
+                })
+            );
+        });
+
+        it('getBars intraday: from/before → from/to query (YYYY-MM-DD 10자리)', async () => {
+            mockFmpGet.mockResolvedValueOnce([]);
+            await provider.getBars({
+                symbol: 'AAPL',
+                timeframe: '5Min',
+                from: '2026-04-14T09:30:00Z',
+                before: '2026-04-16T16:00:00Z',
+            });
+            expect(mockFmpGet).toHaveBeenCalledWith(
+                'historical-chart/5min',
+                expect.objectContaining({
+                    symbol: 'AAPL',
+                    from: '2026-04-14',
+                    to: '2026-04-16',
+                })
             );
         });
     });

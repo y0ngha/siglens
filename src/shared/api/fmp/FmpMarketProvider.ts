@@ -11,6 +11,9 @@ import { fmpGet } from '@/shared/api/fmp/httpClient';
 const ISO_DATE_PREFIX_LENGTH = 10; // "YYYY-MM-DD"
 const ISO_DATE_PART_INDEX = 0;
 
+// FMP ET→UTC timestamp conversion. Canonical home after the market-provider
+// ejection: siglens-core no longer fetches market data (it owns only the
+// MarketDataProvider port), so this logic permanently lives in siglens.
 const EDT_OFFSET_HOURS = -4;
 const EST_OFFSET_HOURS = -5;
 const DST_START_MONTH = 3;
