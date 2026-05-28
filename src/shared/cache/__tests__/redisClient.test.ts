@@ -1,5 +1,3 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-
 const { mockRedisConstructor } = vi.hoisted(() => ({
     mockRedisConstructor: vi.fn(),
 }));

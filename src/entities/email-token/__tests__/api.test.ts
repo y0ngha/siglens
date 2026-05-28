@@ -208,10 +208,10 @@ describe('createEmailTokenStore', () => {
         // Reset the shared singleton so that the env change is picked up on the next call.
         __resetRedisClientForTests();
 
-        // Now configure a readonly token equal to the empty string. With the
-        // old `?? ''` sentinel, this would collide with the unset case (config
-        // key identical: "...:master-token:"). After the fix, the keys differ:
-        // "url:master-token" vs "url:master-token:somevalue".
+        // After the reset, configure a real readonly token. getRedisReaderWriter
+        // builds a fresh writer plus a separate reader (the readonly token differs
+        // from the writer token), so more Redis instances are constructed than the
+        // earlier empty/unset-token case where the reader reused the writer.
         setEnv({
             UPSTASH_REDIS_REST_URL: 'https://example.upstash.io',
             UPSTASH_REDIS_REST_TOKEN: 'master-token',
