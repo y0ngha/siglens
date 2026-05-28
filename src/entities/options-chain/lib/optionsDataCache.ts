@@ -1,6 +1,6 @@
 import 'server-only';
 import { cache } from 'react';
-import { Redis } from '@upstash/redis';
+import { getRedisClient } from '@/shared/cache/redisClient';
 import { SECONDS_PER_HOUR, SECONDS_PER_MINUTE } from '@/shared/config/time';
 import { YahooOptionsAdapter } from './YahooOptionsAdapter';
 import {
@@ -38,22 +38,6 @@ export const OPTIONS_SNAPSHOT_TTL_SECONDS: Record<
     'options-weekend': 4 * SECONDS_PER_HOUR,
 };
 
-// tokenStore.ts / pendingOAuthSignupStore.ts와 같은 lazy-singleton 패턴.
-let cachedRedis: Redis | null | undefined;
-
-function getRedis(): Redis | null {
-    if (cachedRedis !== undefined) return cachedRedis;
-    const url = process.env.UPSTASH_REDIS_REST_URL;
-    const token = process.env.UPSTASH_REDIS_REST_TOKEN;
-    if (!url || !token) {
-        // Redis 미설정(로컬 dev 등)에서는 fetch 직행 — graceful fallback.
-        cachedRedis = null;
-        return null;
-    }
-    cachedRedis = new Redis({ url, token });
-    return cachedRedis;
-}
-
 function buildHasOptionsKey(symbol: string): string {
     return `options:has-market:${symbol.toUpperCase()}`;
 }
@@ -74,7 +58,7 @@ function buildSnapshotKey(symbol: string): string {
 export const hasOptionsMarket = cache(
     async (symbol: string): Promise<boolean> => {
         const key = buildHasOptionsKey(symbol);
-        const redis = getRedis();
+        const redis = getRedisClient();
         if (redis !== null) {
             try {
                 const cached = await redis.get<boolean>(key);
@@ -140,7 +124,7 @@ export const hasOptionsMarket = cache(
 export const fetchOptionsSnapshot = cache(
     async (symbol: string): Promise<OptionsSnapshot | null> => {
         const key = buildSnapshotKey(symbol);
-        const redis = getRedis();
+        const redis = getRedisClient();
         if (redis !== null) {
             try {
                 const cached = await redis.get<OptionsSnapshot>(key);

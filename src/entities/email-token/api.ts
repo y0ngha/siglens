@@ -1,4 +1,4 @@
-import { Redis } from '@upstash/redis';
+import { getRedisReaderWriter } from '@/shared/cache/redisClient';
 
 /** Purpose tag namespacing email-token Redis keys so password-reset and email-verification tokens for the same email never collide. */
 export type EmailTokenPurpose = 'password_reset' | 'email_verification';
@@ -38,39 +38,6 @@ export interface EmailTokenStore {
 
 const KEY_PREFIX = 'email_token';
 
-interface UpstashConfig {
-    url: string;
-    token: string;
-    /** Optional read-only token; null when the env var is unset (no separate reader is created in that case). */
-    readonlyToken: string | null;
-}
-
-interface RedisPair {
-    writer: Redis;
-    reader: Redis;
-}
-
-let cachedRedisPair: RedisPair | null = null;
-let cachedConfigKey: string | null = null;
-
-function readUpstashConfig(): UpstashConfig | null {
-    const url = process.env.UPSTASH_REDIS_REST_URL;
-    const token = process.env.UPSTASH_REDIS_REST_TOKEN;
-    if (!url || !token) return null;
-    // Treat empty string as "unset" so a literal empty env var doesn't collide
-    // with a real readonly token in the cache key below.
-    const rawReadonly = process.env.UPSTASH_REDIS_REST_READONLY_TOKEN;
-    const readonlyToken =
-        rawReadonly === undefined || rawReadonly === '' ? null : rawReadonly;
-    return { url, token, readonlyToken };
-}
-
-/** Test-only reset of the cached Redis client pair. */
-export function __resetEmailTokenStoreCacheForTests(): void {
-    cachedRedisPair = null;
-    cachedConfigKey = null;
-}
-
 /** Build the Redis key for an email-token entry. */
 export function buildEmailTokenKey(
     purpose: EmailTokenPurpose,
@@ -79,34 +46,11 @@ export function buildEmailTokenKey(
     return `${KEY_PREFIX}:${purpose}:${email}`;
 }
 
-function getRedisPair(config: UpstashConfig): RedisPair {
-    // Encode "no readonly token" distinctly from "configured empty string" so a
-    // future change in env handling can never collide identities. The 2-segment
-    // form is reserved for the unset case; the 3-segment form for configured.
-    const configKey =
-        config.readonlyToken === null
-            ? `${config.url}:${config.token}`
-            : `${config.url}:${config.token}:${config.readonlyToken}`;
-    if (cachedRedisPair !== null && cachedConfigKey === configKey) {
-        return cachedRedisPair;
-    }
-
-    const writer = new Redis({ url: config.url, token: config.token });
-    const reader =
-        config.readonlyToken !== null
-            ? new Redis({ url: config.url, token: config.readonlyToken })
-            : writer;
-    cachedRedisPair = { writer, reader };
-    cachedConfigKey = configKey;
-    return cachedRedisPair;
-}
-
 /** Upstash Redis 기반 EmailTokenStore 생성 — 환경변수 부재 시 null (caller가 graceful degrade 결정). */
 export function createEmailTokenStore(): EmailTokenStore | null {
-    const config = readUpstashConfig();
-    if (!config) return null;
-
-    const { writer, reader } = getRedisPair(config);
+    const pair = getRedisReaderWriter();
+    if (pair === null) return null;
+    const { writer, reader } = pair;
 
     return {
         async set(purpose, email, value, ttlSeconds) {

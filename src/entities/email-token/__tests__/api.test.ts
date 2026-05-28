@@ -1,18 +1,19 @@
-import type { Mock } from 'vitest';
 vi.mock('@upstash/redis', () => {
     const MockRedis = vi.fn(function () {
         return {
             get: vi.fn(),
             set: vi.fn(),
             del: vi.fn(),
+            getdel: vi.fn(),
         };
     });
     return { Redis: MockRedis };
 });
 
+import type { Mock } from 'vitest';
 import { Redis } from '@upstash/redis';
+import { __resetRedisClientForTests } from '@/shared/cache/redisClient';
 import {
-    __resetEmailTokenStoreCacheForTests,
     buildEmailTokenKey,
     createEmailTokenStore,
     type EmailTokenValue,
@@ -50,13 +51,14 @@ describe('createEmailTokenStore', () => {
         delete process.env.UPSTASH_REDIS_REST_URL;
         delete process.env.UPSTASH_REDIS_REST_TOKEN;
         delete process.env.UPSTASH_REDIS_REST_READONLY_TOKEN;
-        __resetEmailTokenStoreCacheForTests();
+        __resetRedisClientForTests();
         MockRedis.mockReset();
         MockRedis.mockImplementation(function () {
             return {
                 get: vi.fn(),
                 set: vi.fn(),
                 del: vi.fn(),
+                getdel: vi.fn(),
             };
         });
     });
@@ -193,6 +195,32 @@ describe('createEmailTokenStore', () => {
                 'email_token:password_reset:user@example.com'
             );
         });
+
+        it('consume delegates to writer.getdel with the namespaced key and returns the value', async () => {
+            const stored: EmailTokenValue = {
+                status: 'pending',
+                tokenHash: 'hash',
+            };
+            const mockGetdel = vi.fn().mockResolvedValue(stored);
+            MockRedis.mockImplementation(function () {
+                return {
+                    get: vi.fn(),
+                    set: vi.fn(),
+                    del: vi.fn(),
+                    getdel: mockGetdel,
+                };
+            });
+
+            const store = createEmailTokenStore()!;
+            const result = await store.consume(
+                'password_reset',
+                'user@example.com'
+            );
+            expect(mockGetdel).toHaveBeenCalledWith(
+                'email_token:password_reset:user@example.com'
+            );
+            expect(result).toEqual(stored);
+        });
     });
 
     it('cache key disambiguates "readonly token unset" from a configured value', () => {
@@ -205,10 +233,12 @@ describe('createEmailTokenStore', () => {
         createEmailTokenStore();
         const callsAfterUnset = MockRedis.mock.calls.length;
 
-        // Now configure a readonly token equal to the empty string. With the
-        // old `?? ''` sentinel, this would collide with the unset case (config
-        // key identical: "...:master-token:"). After the fix, the keys differ:
-        // "url:master-token" vs "url:master-token:somevalue".
+        __resetRedisClientForTests();
+
+        // After the reset, configure a real readonly token. getRedisReaderWriter
+        // builds a fresh writer plus a separate reader (the readonly token differs
+        // from the writer token), so more Redis instances are constructed than the
+        // earlier empty/unset-token case where the reader reused the writer.
         setEnv({
             UPSTASH_REDIS_REST_URL: 'https://example.upstash.io',
             UPSTASH_REDIS_REST_TOKEN: 'master-token',

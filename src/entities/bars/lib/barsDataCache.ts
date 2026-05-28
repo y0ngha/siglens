@@ -1,6 +1,6 @@
 import 'server-only';
 import { cache } from 'react';
-import { Redis } from '@upstash/redis';
+import { getRedisClient } from '@/shared/cache/redisClient';
 import {
     type BarsData,
     type MarketDataProvider,
@@ -8,21 +8,6 @@ import {
     fetchBarsWithIndicators,
     computeBarsEffectiveTtl,
 } from '@y0ngha/siglens-core';
-
-// Redis 미설정 환경(로컬 dev 등)에서도 graceful fallback이 가능하도록 연결을 lazy 초기화로 지연한다.
-let cachedRedis: Redis | null | undefined;
-
-function getRedis(): Redis | null {
-    if (cachedRedis !== undefined) return cachedRedis;
-    const url = process.env.UPSTASH_REDIS_REST_URL;
-    const token = process.env.UPSTASH_REDIS_REST_TOKEN;
-    if (!url || !token) {
-        cachedRedis = null;
-        return null;
-    }
-    cachedRedis = new Redis({ url, token });
-    return cachedRedis;
-}
 
 /** fmpSymbol이 OHLCV 결과를 바꾸므로(예: '^SPX' vs 'SPX') 키에 포함. */
 function buildBarsKey(
@@ -54,7 +39,7 @@ export const getCachedBarsWithIndicators = cache(
         fmpSymbol?: string
     ): Promise<BarsData> => {
         const key = buildBarsKey(symbol, timeframe, fmpSymbol);
-        const redis = getRedis();
+        const redis = getRedisClient();
         if (redis !== null) {
             try {
                 const hit = await redis.get<BarsData>(key);
