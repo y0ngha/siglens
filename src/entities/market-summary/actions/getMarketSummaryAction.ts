@@ -12,15 +12,14 @@ import { getMarketDataProvider } from '@/shared/api/market/getMarketDataProvider
 export async function getMarketSummaryAction(): Promise<MarketSummaryActionResult> {
     try {
         const requestHeaders = await headers();
+        const provider = getMarketDataProvider();
 
         if (isBot(requestHeaders)) {
-            const summary = await getMarketSummary(getMarketDataProvider());
+            const summary = await getMarketSummary(provider);
             return { summary, briefing: null, botBlocked: true };
         }
 
-        const result = await getMarketSummaryWithBriefing(
-            getMarketDataProvider()
-        );
+        const result = await getMarketSummaryWithBriefing(provider);
         return { ...result, botBlocked: false };
     } catch (e) {
         console.error('[getMarketSummaryAction] failed:', e);

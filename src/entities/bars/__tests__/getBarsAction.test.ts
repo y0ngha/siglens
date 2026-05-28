@@ -160,6 +160,7 @@ describe('getBarsAction 함수는', () => {
                 FMP_TEMPORARY_UNAVAILABLE_MESSAGE
             );
             expect(mockFetchBarsWithIndicators).toHaveBeenCalledTimes(1);
+            expect(sleepMock).not.toHaveBeenCalled();
         });
     });
 });
