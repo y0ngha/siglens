@@ -13,6 +13,7 @@ import { readFmpConfig } from '@y0ngha/siglens-core';
 import { FMP_STABLE_BASE, fmpGet } from '@/shared/api/fmp/httpClient';
 import { FmpHttpError } from '@/shared/api/fmp/FmpHttpError';
 import { sleep } from '@/shared/lib/sleep';
+import { SECONDS_PER_HOUR } from '@/shared/config/time';
 
 const mockFetch = vi.fn();
 const sleepMock = sleep as MockedFunction<typeof sleep>;
@@ -325,9 +326,9 @@ describe('fmpGet 함수는', () => {
                 .mockResolvedValue(
                     new Response(JSON.stringify([]), { status: 200 })
                 );
-            await fmpGet('profile', { symbol: 'AAPL' }, { revalidate: 3600 });
+            await fmpGet('profile', { symbol: 'AAPL' }, { revalidate: SECONDS_PER_HOUR });
             expect(fetchMock.mock.calls[0]![1]).toMatchObject({
-                next: { revalidate: 3600 },
+                next: { revalidate: SECONDS_PER_HOUR },
             });
         });
     });

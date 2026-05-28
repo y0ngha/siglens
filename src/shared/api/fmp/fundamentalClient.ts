@@ -386,7 +386,8 @@ export class FmpFundamentalClient implements FundamentalDataProvider {
         symbol: string,
         limit = EARNINGS_REPORT_LIMIT
     ): Promise<FmpEarningsReportItem[]> {
-        const arr = await fmpGet<RawFmpEarningsReport[]>('earnings', {
+        // earnings는 실적 발표 시점 실시간성이 중요 → 1h 캐시 대신 no-store(fmpGetRaw).
+        const arr = await fmpGetRaw<RawFmpEarningsReport[]>('earnings', {
             symbol,
             limit: String(limit),
         });

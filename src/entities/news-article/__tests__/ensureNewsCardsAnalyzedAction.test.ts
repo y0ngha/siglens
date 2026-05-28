@@ -1,22 +1,3 @@
-import type { MockedFunction, MockedClass, Mock } from 'vitest';
-import { ensureNewsCardsAnalyzedAction } from '../actions/ensureNewsCardsAnalyzedAction';
-import {
-    DISABLED_THINKING_BUDGET,
-    POLL_MAX_ATTEMPTS,
-} from '../lib/newsAnalysisConstants';
-import { NEWS_LOOKBACK_MS } from '../lib/newsLookback';
-import {
-    submitNewsCardAnalysis,
-    pollNewsCardAnalysis,
-} from '@y0ngha/siglens-core';
-import { FmpNewsClient } from '../lib/fmpNewsClient';
-import type {
-    NewsItem,
-    NewsCardAnalysis,
-    SubmitNewsCardAnalysisResult,
-    PollNewsCardAnalysisResult,
-} from '@y0ngha/siglens-core';
-
 vi.mock('../lib/newsRefreshFlag', () => ({
     isRecentlyFetched: vi.fn(),
     markFetched: vi.fn(),
@@ -54,6 +35,24 @@ vi.mock('@/entities/news-article', () => ({
     }),
 }));
 
+import type { MockedFunction, MockedClass, Mock } from 'vitest';
+import { ensureNewsCardsAnalyzedAction } from '../actions/ensureNewsCardsAnalyzedAction';
+import {
+    DISABLED_THINKING_BUDGET,
+    POLL_MAX_ATTEMPTS,
+} from '../lib/newsAnalysisConstants';
+import { NEWS_LOOKBACK_MS } from '../lib/newsLookback';
+import {
+    submitNewsCardAnalysis,
+    pollNewsCardAnalysis,
+} from '@y0ngha/siglens-core';
+import { FmpNewsClient } from '../lib/fmpNewsClient';
+import type {
+    NewsItem,
+    NewsCardAnalysis,
+    SubmitNewsCardAnalysisResult,
+    PollNewsCardAnalysisResult,
+} from '@y0ngha/siglens-core';
 import { DrizzleNewsRepository } from '@/entities/news-article';
 import { isRecentlyFetched, markFetched } from '../lib/newsRefreshFlag';
 
@@ -489,6 +488,13 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
                 NEWS_LOOKBACK_MS
             );
             expect(mockUpsertNewsItem).toHaveBeenCalledTimes(1);
+            expect(mockMarkFetched).toHaveBeenCalledWith('AAPL');
+        });
+
+        it('봇 경로 + 뉴스 없음(fresh=[]) → markFetched는 여전히 호출된다', async () => {
+            mockIsRecentlyFetched.mockResolvedValue(false);
+            mockFetchNewsForPeriod.mockResolvedValue([]);
+            await ensureNewsCardsAnalyzedAction('AAPL', { skipAnalysis: true });
             expect(mockMarkFetched).toHaveBeenCalledWith('AAPL');
         });
 
