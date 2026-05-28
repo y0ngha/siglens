@@ -6,8 +6,8 @@ interface CacheEnvelope<T> {
 }
 
 /**
- * Read-through Redis 캐시 헬퍼. `barsDataCache`/`marketSummaryCache`의 인라인
- * get→fetch→set 패턴을 일반화한 것으로, 여러 호출부의 보일러플레이트를 줄인다.
+ * Read-through Redis 캐시 헬퍼. get→fetch→set 패턴을 일반화해 호출부의
+ * 보일러플레이트를 줄인다.
  *
  * 값은 `{ data: T }` envelope으로 감싸 저장한다. Upstash `get`은 cache miss와
  * 저장된 `null`을 모두 `null`로 돌려주는데, envelope이 있으면 miss는 `null`,

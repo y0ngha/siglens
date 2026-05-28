@@ -1,14 +1,20 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { getOrSetCache } from '@/shared/cache/getOrSetCache';
-import { getRedisClient } from '@/shared/cache/redisClient';
-
 vi.mock('@/shared/cache/redisClient', () => ({
     getRedisClient: vi.fn(),
 }));
 
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { getOrSetCache } from '@/shared/cache/getOrSetCache';
+import { getRedisClient } from '@/shared/cache/redisClient';
+
 const mockedGetRedisClient = vi.mocked(getRedisClient);
 
-function createRedisStub() {
+interface RedisStub {
+    store: Map<string, unknown>;
+    get: ReturnType<typeof vi.fn>;
+    set: ReturnType<typeof vi.fn>;
+}
+
+function createRedisStub(): RedisStub {
     const store = new Map<string, unknown>();
     return {
         store,
