@@ -2,7 +2,6 @@ import 'server-only';
 import { getRedisClient } from '@/shared/cache/redisClient';
 import { SECONDS_PER_MINUTE } from '@/shared/config/time';
 
-/** 봇 재크롤링 가드 TTL — 분 단위 정책값. */
 const NEWS_REFRESH_FLAG_TTL_MINUTES = 10;
 
 /** 뉴스 refresh 플래그 TTL — 이 시간 내 재크롤링(봇)은 FMP fetch+upsert를 스킵. */
