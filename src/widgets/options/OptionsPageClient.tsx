@@ -20,10 +20,11 @@ import { OptionsMetricsRow } from './OptionsMetricsRow';
 import { OptionsStaleDataBanner } from './OptionsStaleDataBanner';
 import { useOptionsChainMetrics } from './hooks/useOptionsChainMetrics';
 import {
-    isUsOptionsRegularSession,
-    isOpenInterestSnapshotStale,
-} from '@/shared/lib/marketSession';
-import type { OptionsSnapshot, SlotMapping } from '@y0ngha/siglens-core';
+    isEtRegularSessionOpen,
+    type OptionsSnapshot,
+    type SlotMapping,
+} from '@y0ngha/siglens-core';
+import { isOpenInterestSnapshotStale } from '@/shared/lib/options/openInterestStale';
 import type { OptionsExpirationSelector } from '@/shared/lib/types';
 
 interface OptionsPageClientProps {
@@ -74,7 +75,7 @@ export function OptionsPageClient({
     const oiStale = useMemo(
         () =>
             now !== null &&
-            !isUsOptionsRegularSession(now) &&
+            !isEtRegularSessionOpen(now) &&
             isOpenInterestSnapshotStale(snapshot),
         [now, snapshot]
     );

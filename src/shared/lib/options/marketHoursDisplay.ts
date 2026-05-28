@@ -2,14 +2,13 @@ import {
     MARKET_OPEN_HOUR,
     MARKET_OPEN_MINUTE,
     MARKET_CLOSE_HOUR,
-} from '@/shared/lib/marketSession';
+    MARKET_CLOSE_MINUTE,
+} from '@y0ngha/siglens-core';
 
 // UTC offset gap from ET to KST: EDT(-4) → KST(+9) = 13h, EST(-5) → KST(+9) = 14h.
 const EDT_TO_KST_OFFSET_HOURS = 13;
 const EST_TO_KST_OFFSET_HOURS = 14;
 const HOURS_PER_DAY = 24;
-// US options regular session close time has no minute component (16:00 sharp).
-const MARKET_CLOSE_MINUTE = 0;
 
 function pad2(n: number): string {
     return String(n).padStart(2, '0');
