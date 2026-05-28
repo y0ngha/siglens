@@ -317,7 +317,6 @@ describe('submitOverallAnalysisAction 함수는', () => {
         );
 
         expect(result).toEqual({ status: 'error', error: gateError });
-        // Gate fires before expensive DB fetch
         expect(mockSubmitOverallAnalysis).not.toHaveBeenCalled();
     });
 
