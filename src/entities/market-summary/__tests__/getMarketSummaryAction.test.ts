@@ -1,17 +1,22 @@
 import type { MockedFunction } from 'vitest';
 import { getMarketSummaryAction } from '../actions/getMarketSummaryAction';
 import {
-    getMarketSummary,
-    getMarketSummaryWithBriefing,
+    submitBriefing,
     type MarketSummaryData,
-    type MarketSummaryWithBriefing,
+    type SubmitBriefingResult,
 } from '@y0ngha/siglens-core';
 import { isBot } from '@/shared/api/isBot';
+import { getCachedMarketSummary } from '../lib/marketSummaryCache';
+
+vi.mock('server-only', () => ({}));
+
+vi.mock('../lib/marketSummaryCache', () => ({
+    getCachedMarketSummary: vi.fn(),
+}));
 
 vi.mock('@y0ngha/siglens-core', async () => ({
     ...(await vi.importActual('@y0ngha/siglens-core')),
-    getMarketSummaryWithBriefing: vi.fn(),
-    getMarketSummary: vi.fn(),
+    submitBriefing: vi.fn(),
 }));
 
 vi.mock('next/headers', () => ({
@@ -27,57 +32,45 @@ vi.mock('@/shared/api/market/getMarketDataProvider', () => ({
     getMarketDataProvider: vi.fn(() => mockProvider),
 }));
 
-const mockGetSummaryWithBriefing =
-    getMarketSummaryWithBriefing as MockedFunction<
-        typeof getMarketSummaryWithBriefing
-    >;
-const mockGetSummary = getMarketSummary as MockedFunction<
-    typeof getMarketSummary
+const mockGetCachedMarketSummary = getCachedMarketSummary as MockedFunction<
+    typeof getCachedMarketSummary
+>;
+const mockSubmitBriefing = submitBriefing as MockedFunction<
+    typeof submitBriefing
 >;
 const mockIsBot = isBot as MockedFunction<typeof isBot>;
 
-const summaryData: MarketSummaryData = { indices: [], sectors: [] };
+const summaryData: MarketSummaryData = {
+    indices: [
+        {
+            symbol: 'SPY',
+            fmpSymbol: '^GSPC',
+            displayName: 'S&P 500',
+            koreanName: 'S&P 500',
+            price: 5000,
+            changesPercentage: 0.5,
+        },
+    ],
+    sectors: [
+        {
+            symbol: 'XLK',
+            sectorName: 'Technology',
+            koreanName: '기술',
+            price: 200,
+            changesPercentage: 1.2,
+        },
+    ],
+};
 
-const summaryWithBriefing: MarketSummaryWithBriefing = {
-    summary: summaryData,
-    briefing: { status: 'submitted', jobId: 'test-job-id' },
+const briefingResult: SubmitBriefingResult = {
+    status: 'submitted',
+    jobId: 'test-job-id',
 };
 
 describe('getMarketSummaryAction 함수는', () => {
     beforeEach(() => {
         vi.clearAllMocks();
-    });
-
-    describe('일반 사용자 요청 시', () => {
-        beforeEach(() => {
-            mockIsBot.mockReturnValue(false);
-        });
-
-        it('getMarketSummaryWithBriefing을 호출한다', async () => {
-            mockGetSummaryWithBriefing.mockResolvedValueOnce(
-                summaryWithBriefing
-            );
-
-            await getMarketSummaryAction();
-
-            expect(mockGetSummaryWithBriefing).toHaveBeenCalledWith(
-                mockProvider
-            );
-            expect(mockGetSummary).not.toHaveBeenCalled();
-        });
-
-        it('briefing과 botBlocked: false를 포함한 결과를 반환한다', async () => {
-            mockGetSummaryWithBriefing.mockResolvedValueOnce(
-                summaryWithBriefing
-            );
-
-            const result = await getMarketSummaryAction();
-
-            expect(result).toEqual({
-                ...summaryWithBriefing,
-                botBlocked: false,
-            });
-        });
+        mockGetCachedMarketSummary.mockResolvedValue(summaryData);
     });
 
     describe('봇 요청 시', () => {
@@ -85,18 +78,21 @@ describe('getMarketSummaryAction 함수는', () => {
             mockIsBot.mockReturnValue(true);
         });
 
-        it('getMarketSummary만 호출한다 (briefing 없이)', async () => {
-            mockGetSummary.mockResolvedValueOnce(summaryData);
-
+        it('getCachedMarketSummary를 호출한다', async () => {
             await getMarketSummaryAction();
 
-            expect(mockGetSummary).toHaveBeenCalledWith(mockProvider);
-            expect(mockGetSummaryWithBriefing).not.toHaveBeenCalled();
+            expect(mockGetCachedMarketSummary).toHaveBeenCalledWith(
+                mockProvider
+            );
+        });
+
+        it('submitBriefing을 호출하지 않는다', async () => {
+            await getMarketSummaryAction();
+
+            expect(mockSubmitBriefing).not.toHaveBeenCalled();
         });
 
         it('briefing: null과 botBlocked: true를 반환한다', async () => {
-            mockGetSummary.mockResolvedValueOnce(summaryData);
-
             const result = await getMarketSummaryAction();
 
             expect(result).toEqual({
@@ -107,10 +103,36 @@ describe('getMarketSummaryAction 함수는', () => {
         });
     });
 
-    describe('API 에러 발생 시', () => {
-        it('일반 사용자 요청에서 예외가 발생하면 에러 결과를 반환한다', async () => {
+    describe('일반 사용자 요청 시', () => {
+        beforeEach(() => {
             mockIsBot.mockReturnValue(false);
-            mockGetSummaryWithBriefing.mockRejectedValueOnce(
+            mockSubmitBriefing.mockResolvedValue(briefingResult);
+        });
+
+        it('getCachedMarketSummary와 submitBriefing(summary)를 호출한다', async () => {
+            await getMarketSummaryAction();
+
+            expect(mockGetCachedMarketSummary).toHaveBeenCalledWith(
+                mockProvider
+            );
+            expect(mockSubmitBriefing).toHaveBeenCalledWith(summaryData);
+        });
+
+        it('briefing과 botBlocked: false를 포함한 결과를 반환한다', async () => {
+            const result = await getMarketSummaryAction();
+
+            expect(result).toEqual({
+                summary: summaryData,
+                briefing: briefingResult,
+                botBlocked: false,
+            });
+        });
+    });
+
+    describe('API 에러 발생 시', () => {
+        it('getCachedMarketSummary 예외 시 에러 결과를 반환한다', async () => {
+            mockIsBot.mockReturnValue(false);
+            mockGetCachedMarketSummary.mockRejectedValueOnce(
                 new Error('network timeout')
             );
 
@@ -119,9 +141,22 @@ describe('getMarketSummaryAction 함수는', () => {
             expect(result).toEqual({ ok: false, error: 'server_error' });
         });
 
-        it('봇 요청에서 예외가 발생하면 에러 결과를 반환한다', async () => {
+        it('submitBriefing 예외 시 에러 결과를 반환한다', async () => {
+            mockIsBot.mockReturnValue(false);
+            mockSubmitBriefing.mockRejectedValueOnce(
+                new Error('briefing failed')
+            );
+
+            const result = await getMarketSummaryAction();
+
+            expect(result).toEqual({ ok: false, error: 'server_error' });
+        });
+
+        it('봇 요청에서 getCachedMarketSummary 예외 시 에러 결과를 반환한다', async () => {
             mockIsBot.mockReturnValue(true);
-            mockGetSummary.mockRejectedValueOnce(new Error('API unavailable'));
+            mockGetCachedMarketSummary.mockRejectedValueOnce(
+                new Error('API unavailable')
+            );
 
             const result = await getMarketSummaryAction();
 
