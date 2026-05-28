@@ -1,3 +1,10 @@
+delete process.env.UPSTASH_REDIS_REST_URL;
+delete process.env.UPSTASH_REDIS_REST_TOKEN;
+vi.mock('server-only', () => ({}));
+vi.mock('@upstash/redis', () => ({
+    Redis: vi.fn().mockImplementation(() => ({ get: vi.fn(), set: vi.fn() })),
+}));
+
 vi.mock('@/shared/lib/sleep', () => ({
     sleep: vi.fn().mockResolvedValue(undefined),
 }));

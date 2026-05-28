@@ -45,6 +45,12 @@ if (
     });
 }
 
+// @upstash/redis는 실제 Redis 연결이 없으므로 전역 stub.
+// 개별 테스트가 Redis 동작을 검증할 때는 vi.mock('@upstash/redis', ...)으로 덮어쓸 수 있다.
+vi.mock('@upstash/redis', () => ({
+    Redis: vi.fn().mockImplementation(() => ({ get: vi.fn(), set: vi.fn() })),
+}));
+
 vi.mock('next/cache', () => ({
     cacheLife: () => {},
     cacheTag: () => {},
