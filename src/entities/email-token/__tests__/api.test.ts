@@ -205,6 +205,9 @@ describe('createEmailTokenStore', () => {
         createEmailTokenStore();
         const callsAfterUnset = MockRedis.mock.calls.length;
 
+        // Reset the shared singleton so that the env change is picked up on the next call.
+        __resetEmailTokenStoreCacheForTests();
+
         // Now configure a readonly token equal to the empty string. With the
         // old `?? ''` sentinel, this would collide with the unset case (config
         // key identical: "...:master-token:"). After the fix, the keys differ:
