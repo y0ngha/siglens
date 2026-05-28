@@ -1,5 +1,6 @@
 import crypto from 'crypto';
-import { Redis } from '@upstash/redis';
+import type { Redis } from '@upstash/redis';
+import { getRedisClient } from '@/shared/cache/redisClient';
 import type { SupportedOAuthProvider } from '@/shared/lib/types';
 
 const NAMESPACE = 'pending_oauth_signup';
@@ -74,9 +75,7 @@ export function createPendingOAuthSignupStore(
 
 /** Factory that reads Redis env vars and returns a store, or null if unavailable. */
 export function createPendingOAuthSignupStoreFromEnv(): PendingOAuthSignupStore | null {
-    const url = process.env.UPSTASH_REDIS_REST_URL;
-    const token = process.env.UPSTASH_REDIS_REST_TOKEN;
-    if (!url || !token) return null;
-    const client = new Redis({ url, token });
+    const client = getRedisClient();
+    if (client === null) return null;
     return createPendingOAuthSignupStore(client);
 }
