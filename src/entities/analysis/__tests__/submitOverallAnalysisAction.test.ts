@@ -67,8 +67,6 @@ vi.mock('@/shared/api/market/getMarketDataProvider', () => ({
     getMarketDataProvider: vi.fn(() => mockProvider),
 }));
 
-const mockProvider = {} as import('@y0ngha/siglens-core').MarketDataProvider;
-
 import { submitOverallAnalysisAction } from '../actions/submitOverallAnalysisAction';
 import {
     submitOverallAnalysis,
@@ -89,6 +87,8 @@ import {
     isOpenInterestSnapshotStale,
 } from '@/shared/lib/marketSession';
 import type { AnalysisGateError } from '@/shared/lib/types';
+
+const mockProvider = {} as import('@y0ngha/siglens-core').MarketDataProvider;
 
 const mockHeaders = headers as MockedFunction<typeof headers>;
 const MockNewsRepository = DrizzleNewsRepository as MockedClass<

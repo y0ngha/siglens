@@ -14,8 +14,6 @@ vi.mock('@y0ngha/siglens-core', async () => ({
     fetchBarsWithIndicators: vi.fn(),
 }));
 
-const mockMarketProvider =
-    {} as import('@y0ngha/siglens-core').MarketDataProvider;
 vi.mock('@/shared/api/market/getMarketDataProvider', () => ({
     getMarketDataProvider: vi.fn(() => mockMarketProvider),
 }));
@@ -29,6 +27,9 @@ import {
 import type { BarsData } from '@y0ngha/siglens-core';
 import { sleep } from '@/shared/lib/sleep';
 import { FMP_TEMPORARY_UNAVAILABLE_MESSAGE } from '@/shared/api/fmp/fmpUserMessage';
+
+const mockMarketProvider =
+    {} as import('@y0ngha/siglens-core').MarketDataProvider;
 
 const mockFetchBarsWithIndicators = fetchBarsWithIndicators as MockedFunction<
     typeof fetchBarsWithIndicators

@@ -27,8 +27,6 @@ vi.mock('@/shared/api/market/getMarketDataProvider', () => ({
     getMarketDataProvider: vi.fn(() => mockProvider),
 }));
 
-const mockProvider = {} as import('@y0ngha/siglens-core').MarketDataProvider;
-
 import { headers } from 'next/headers';
 import { resolveTierAndByok } from '@/shared/lib/byokGate';
 import type { AnalysisGateError } from '@/shared/lib/types';
@@ -39,6 +37,8 @@ import {
     type SubmitAnalysisGatedResult,
 } from '@y0ngha/siglens-core';
 import { getCurrentUser } from '@/entities/session/lib/getCurrentUser';
+
+const mockProvider = {} as import('@y0ngha/siglens-core').MarketDataProvider;
 
 const mockHeaders = headers as MockedFunction<typeof headers>;
 

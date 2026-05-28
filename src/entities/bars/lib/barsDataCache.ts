@@ -68,6 +68,7 @@ export const getCachedBarsWithIndicators = cache(
             }
         }
 
+        // Retry (429/5xx + network TypeError/DOMException) is handled inside the provider's fmpGet (FMP_TRANSIENT_RETRY).
         const fresh = await fetchBarsWithIndicators(
             provider,
             symbol,

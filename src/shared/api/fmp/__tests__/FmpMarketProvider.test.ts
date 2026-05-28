@@ -10,7 +10,6 @@ import { FmpMarketProvider } from '@/shared/api/fmp/FmpMarketProvider';
 
 const mockFmpGet = fmpGet as unknown as ReturnType<typeof vi.fn>;
 
-/** Build a minimal FmpOhlcvBar shape for mocks. */
 function makeOhlcvBar(
     date: string,
     overrides?: Partial<{
@@ -31,7 +30,6 @@ function makeOhlcvBar(
     };
 }
 
-/** Build a minimal FmpQuote shape for mocks. */
 function makeQuote(timestampSec: number) {
     return {
         price: 150,
