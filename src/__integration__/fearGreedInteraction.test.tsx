@@ -62,7 +62,7 @@ describe('Fear & Greed Interaction', () => {
             const snapshot = {
                 score: 50,
                 label: 'NEUTRAL',
-                confidence: 'high',
+                confidence: 'normal',
                 groups: [],
                 sampleSize: 100,
                 warning: null,
