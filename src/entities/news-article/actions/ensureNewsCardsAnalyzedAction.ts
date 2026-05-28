@@ -8,21 +8,19 @@ import {
     isFmpPaymentRequiredError,
     logFmpPaymentRequiredError,
 } from '@/shared/api/fmp/fmpUserMessage';
-import { DISABLED_THINKING_BUDGET } from '../lib/newsAnalysisConstants';
+import {
+    DISABLED_THINKING_BUDGET,
+    POLL_INTERVAL_MS,
+    POLL_MAX_ATTEMPTS,
+} from '../lib/newsAnalysisConstants';
 import { NEWS_LOOKBACK_MS } from '../lib/newsLookback';
+import { isRecentlyFetched, markFetched } from '../lib/newsRefreshFlag';
 import { sleep } from '@/shared/lib/sleep';
 import {
     pollNewsCardAnalysis,
     submitNewsCardAnalysis,
     type NewsItem,
 } from '@y0ngha/siglens-core';
-
-const POLL_INTERVAL_MS = 2_000;
-/**
- * Flash-lite typical wall-clock: <10 s. 30 attempts × 2 s = 60 s ceiling,
- * well within waitUntil's serverless budget.
- */
-const POLL_MAX_ATTEMPTS = 30;
 
 /**
  * Submit card analysis for a single item and wait for the worker to finish,
@@ -76,6 +74,12 @@ export async function ensureNewsCardsAnalyzedAction(
     symbol: string,
     options?: { skipAnalysis?: boolean }
 ): Promise<void> {
+    // 봇 경로만 가드: 최근 TTL 내 fetch했으면 FMP fetch + N건 DB upsert를 스킵한다.
+    // 봇은 DB의 기존 뉴스를 그대로 읽으므로 SEO 무해. 사람 경로는 항상 fresh.
+    if (options?.skipAnalysis && (await isRecentlyFetched(symbol))) {
+        return;
+    }
+
     const newsClient = new FmpNewsClient();
     const { db } = getDatabaseClient();
     const repo = new DrizzleNewsRepository(db);
@@ -123,6 +127,7 @@ export async function ensureNewsCardsAnalyzedAction(
             `[ensureNewsCardsAnalyzedAction] majority upsert failure (${upsertFailures.length}/${fresh.length})`
         );
     }
+    await markFetched(symbol);
 
     if (fresh.length === 0) return;
 

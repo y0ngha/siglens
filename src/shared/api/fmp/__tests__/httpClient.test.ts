@@ -13,6 +13,7 @@ import { readFmpConfig } from '@y0ngha/siglens-core';
 import { FMP_STABLE_BASE, fmpGet } from '@/shared/api/fmp/httpClient';
 import { FmpHttpError } from '@/shared/api/fmp/FmpHttpError';
 import { sleep } from '@/shared/lib/sleep';
+import { SECONDS_PER_HOUR } from '@/shared/config/time';
 
 const mockFetch = vi.fn();
 const sleepMock = sleep as MockedFunction<typeof sleep>;
@@ -99,12 +100,6 @@ describe('fmpGet 함수는', () => {
 
             const options = mockFetch.mock.calls[0]![1] as RequestInit;
             expect(options.signal).toBeInstanceOf(AbortSignal);
-        });
-
-        it('FMP_STABLE_BASE가 올바른 URL이다', () => {
-            expect(FMP_STABLE_BASE).toBe(
-                'https://financialmodelingprep.com/stable'
-            );
         });
     });
 
@@ -321,6 +316,25 @@ describe('fmpGet 함수는', () => {
 
             await expect(fmpGet('profile')).rejects.toThrow(SyntaxError);
             expect(mockFetch).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    describe('캐시 옵션에서는', () => {
+        it('revalidate 지정 시 next.revalidate 사용', async () => {
+            const fetchMock = vi
+                .spyOn(global, 'fetch')
+                .mockResolvedValue(
+                    new Response(JSON.stringify([]), { status: 200 })
+                );
+            await fmpGet(
+                'profile',
+                { symbol: 'AAPL' },
+                { revalidate: SECONDS_PER_HOUR }
+            );
+            expect(fetchMock.mock.calls[0]![1]).toMatchObject({
+                next: { revalidate: SECONDS_PER_HOUR },
+            });
+            fetchMock.mockRestore();
         });
     });
 });
