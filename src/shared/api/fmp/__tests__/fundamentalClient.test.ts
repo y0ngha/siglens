@@ -3,6 +3,7 @@ vi.mock('@/shared/lib/sleep', () => ({
 }));
 
 import { FmpFundamentalClient } from '../fundamentalClient';
+import { SECONDS_PER_HOUR } from '@/shared/config/time';
 
 const mockFetch = vi.fn();
 
@@ -809,6 +810,40 @@ describe('FmpFundamentalClient', () => {
             expect(url).toContain('symbol=MSFT');
             expect(url).toContain('limit=5');
             expect(url).toContain(`apikey=${TEST_API_KEY}`);
+        });
+    });
+
+    // ------------------------------------------------------------------ //
+    // 캐시 옵션
+    // ------------------------------------------------------------------ //
+
+    describe('캐시 옵션', () => {
+        it('fundamental fetch는 1h next.revalidate로 캐싱된다', async () => {
+            mockOk([
+                {
+                    symbol: 'AAPL',
+                    companyName: 'Apple Inc.',
+                    sector: 'Technology',
+                    industry: 'Consumer Electronics',
+                    marketCap: 3_000_000_000_000,
+                    ceo: 'Tim Cook',
+                    website: 'https://apple.com',
+                    description: 'Apple designs consumer electronics.',
+                },
+            ]);
+            await new FmpFundamentalClient().getProfile('AAPL');
+            const opts = mockFetch.mock.calls[0]![1] as RequestInit & {
+                next?: { revalidate?: number };
+            };
+            expect(opts.next?.revalidate).toBe(SECONDS_PER_HOUR);
+        });
+
+        it('earnings fetch는 no-store(캐시 안 함)다', async () => {
+            mockOk([]);
+            await new FmpFundamentalClient().getEarningsReports('AAPL');
+            const opts = mockFetch.mock.calls[0]![1] as RequestInit;
+            expect(opts.cache).toBe('no-store');
+            expect(opts).not.toHaveProperty('next');
         });
     });
 });

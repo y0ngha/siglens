@@ -431,7 +431,7 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
     });
 
     describe('poll 타임아웃은', () => {
-        it('POLL_MAX_ATTEMPTS(30)번 모두 processing이면 console.warn을 호출하고 attachAnalysis는 호출하지 않는다', async () => {
+        it(`POLL_MAX_ATTEMPTS(${POLL_MAX_ATTEMPTS})번 모두 processing이면 console.warn을 호출하고 attachAnalysis는 호출하지 않는다`, async () => {
             const warnSpy = vi
                 .spyOn(console, 'warn')
                 .mockImplementation(() => undefined);

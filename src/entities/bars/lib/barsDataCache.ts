@@ -10,7 +10,7 @@ import {
 import { withRetry } from '@/shared/lib/withRetry';
 import { BARS_FMP_RETRY } from './barsRetry';
 
-// optionsDataCache.ts와 같은 lazy-singleton 패턴.
+// Redis 미설정 환경(로컬 dev 등)에서도 graceful fallback이 가능하도록 연결을 lazy 초기화로 지연한다.
 let cachedRedis: Redis | null | undefined;
 
 function getRedis(): Redis | null {
