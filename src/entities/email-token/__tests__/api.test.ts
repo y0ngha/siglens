@@ -11,8 +11,8 @@ vi.mock('@upstash/redis', () => {
 });
 
 import { Redis } from '@upstash/redis';
+import { __resetRedisClientForTests } from '@/shared/cache/redisClient';
 import {
-    __resetEmailTokenStoreCacheForTests,
     buildEmailTokenKey,
     createEmailTokenStore,
     type EmailTokenValue,
@@ -50,7 +50,7 @@ describe('createEmailTokenStore', () => {
         delete process.env.UPSTASH_REDIS_REST_URL;
         delete process.env.UPSTASH_REDIS_REST_TOKEN;
         delete process.env.UPSTASH_REDIS_REST_READONLY_TOKEN;
-        __resetEmailTokenStoreCacheForTests();
+        __resetRedisClientForTests();
         MockRedis.mockReset();
         MockRedis.mockImplementation(function () {
             return {
@@ -206,7 +206,7 @@ describe('createEmailTokenStore', () => {
         const callsAfterUnset = MockRedis.mock.calls.length;
 
         // Reset the shared singleton so that the env change is picked up on the next call.
-        __resetEmailTokenStoreCacheForTests();
+        __resetRedisClientForTests();
 
         // Now configure a readonly token equal to the empty string. With the
         // old `?? ''` sentinel, this would collide with the unset case (config

@@ -1,4 +1,10 @@
+import 'server-only';
 import { Redis } from '@upstash/redis';
+
+interface RedisClientPair {
+    writer: Redis;
+    reader: Redis;
+}
 
 interface UpstashEnv {
     url: string;
@@ -41,10 +47,7 @@ export function getRedisClient(): Redis | null {
  * `writer` is the same instance returned by {@link getRedisClient}. Returns
  * `null` when Redis env is not configured.
  */
-export function getRedisReaderWriter(): {
-    writer: Redis;
-    reader: Redis;
-} | null {
+export function getRedisReaderWriter(): RedisClientPair | null {
     const writer = getRedisClient();
     if (writer === null) return null;
     if (cachedReader === undefined) {
@@ -59,7 +62,7 @@ export function getRedisReaderWriter(): {
     return { writer, reader: cachedReader! };
 }
 
-/** @internal Reset the cached singletons between test runs. */
+/** Reset the cached singletons between test runs. */
 export function __resetRedisClientForTests(): void {
     cachedWriter = undefined;
     cachedReader = undefined;

@@ -1,7 +1,4 @@
-import {
-    getRedisReaderWriter,
-    __resetRedisClientForTests,
-} from '@/shared/cache/redisClient';
+import { getRedisReaderWriter } from '@/shared/cache/redisClient';
 
 /** Purpose tag namespacing email-token Redis keys so password-reset and email-verification tokens for the same email never collide. */
 export type EmailTokenPurpose = 'password_reset' | 'email_verification';
@@ -40,11 +37,6 @@ export interface EmailTokenStore {
 }
 
 const KEY_PREFIX = 'email_token';
-
-/** Test-only reset of the cached Redis client. Delegates to the shared module. */
-export function __resetEmailTokenStoreCacheForTests(): void {
-    __resetRedisClientForTests();
-}
 
 /** Build the Redis key for an email-token entry. */
 export function buildEmailTokenKey(
