@@ -2,10 +2,10 @@ import type {
     ChatMessage,
     FearGreedConfidence,
     MarketSummaryData,
-    MarketSummaryWithBriefing,
     NewsCategory,
     NewsImpact,
     NewsSentiment,
+    SubmitBriefingResult,
 } from '@y0ngha/siglens-core';
 
 /**
@@ -230,7 +230,11 @@ export interface ContextSwitchMessage {
 export type DisplayMessage = ChatMessage | ContextSwitchMessage;
 
 export type MarketSummaryActionResult =
-    | (MarketSummaryWithBriefing & { botBlocked: false })
+    | {
+          summary: MarketSummaryData;
+          briefing: SubmitBriefingResult | null;
+          botBlocked: false;
+      }
     | { summary: MarketSummaryData; briefing: null; botBlocked: true }
     | { ok: false; error: string };
 
