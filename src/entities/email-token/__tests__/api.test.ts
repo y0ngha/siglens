@@ -4,6 +4,7 @@ vi.mock('@upstash/redis', () => {
             get: vi.fn(),
             set: vi.fn(),
             del: vi.fn(),
+            getdel: vi.fn(),
         };
     });
     return { Redis: MockRedis };
@@ -57,6 +58,7 @@ describe('createEmailTokenStore', () => {
                 get: vi.fn(),
                 set: vi.fn(),
                 del: vi.fn(),
+                getdel: vi.fn(),
             };
         });
     });
@@ -192,6 +194,32 @@ describe('createEmailTokenStore', () => {
             expect(mockDel).toHaveBeenCalledWith(
                 'email_token:password_reset:user@example.com'
             );
+        });
+
+        it('consume delegates to writer.getdel with the namespaced key and returns the value', async () => {
+            const stored: EmailTokenValue = {
+                status: 'pending',
+                tokenHash: 'hash',
+            };
+            const mockGetdel = vi.fn().mockResolvedValue(stored);
+            MockRedis.mockImplementation(function () {
+                return {
+                    get: vi.fn(),
+                    set: vi.fn(),
+                    del: vi.fn(),
+                    getdel: mockGetdel,
+                };
+            });
+
+            const store = createEmailTokenStore()!;
+            const result = await store.consume(
+                'password_reset',
+                'user@example.com'
+            );
+            expect(mockGetdel).toHaveBeenCalledWith(
+                'email_token:password_reset:user@example.com'
+            );
+            expect(result).toEqual(stored);
         });
     });
 

@@ -16,7 +16,8 @@ interface UpstashEnv {
 // undefined = not yet initialized; null = env not configured (graceful fallback).
 let cachedWriter: Redis | null | undefined;
 let cachedEnv: UpstashEnv | null | undefined;
-// undefined until first getRedisReaderWriter() call; then the writer or a readonly client.
+// No null state: once initialized, reader is always a Redis instance
+// (either the writer itself or a dedicated readonly client).
 let cachedReader: Redis | undefined;
 
 function getUpstashEnv(): UpstashEnv | null {
