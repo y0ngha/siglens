@@ -30,7 +30,11 @@ vi.mock('@/widgets/chart', () => ({
 // tests below can drive a genuinely long vs. short panel and assert where that
 // content lands (inside the scroll container, not the chart column).
 vi.mock('@/widgets/analysis', () => ({
-    AnalysisPanel: ({ analysis }: { analysis?: { paragraphCount?: number } }) => (
+    AnalysisPanel: ({
+        analysis,
+    }: {
+        analysis?: { paragraphCount?: number };
+    }) => (
         <div data-testid="analysis-panel">
             {Array.from({ length: analysis?.paragraphCount ?? 0 }, (_, i) => (
                 <p data-testid="analysis-paragraph" key={i}>
@@ -243,7 +247,8 @@ describe('ChartContent', () => {
 
         describe('AI 분석 패널이 길 때', () => {
             it('긴 분석이 aside(overflow-y-auto + md:h-full) 안에 담겨 패널 내부에서 스크롤되고 차트 행을 늘리지 않는다', async () => {
-                const aside = await renderAsideWithParagraphs(LONG_PARAGRAPH_COUNT);
+                const aside =
+                    await renderAsideWithParagraphs(LONG_PARAGRAPH_COUNT);
 
                 // 긴 콘텐츠가 스크롤 컨테이너(aside) 안에 위치 = 차트가 아니라 패널이 스크롤된다.
                 expect(paragraphsInside(aside)).toBe(LONG_PARAGRAPH_COUNT);
@@ -252,7 +257,8 @@ describe('ChartContent', () => {
             });
 
             it('scrollbar-none으로 스크롤바를 감춰 페이지 스크롤과 겹쳐 보이지 않게 한다', async () => {
-                const aside = await renderAsideWithParagraphs(LONG_PARAGRAPH_COUNT);
+                const aside =
+                    await renderAsideWithParagraphs(LONG_PARAGRAPH_COUNT);
 
                 expect(aside.className).toContain('scrollbar-none');
             });
@@ -260,7 +266,9 @@ describe('ChartContent', () => {
 
         describe('AI 분석 패널이 짧을 때', () => {
             it('짧은 분석도 같은 aside 안에 담기며 overflow-y-auto + md:h-full + scrollbar-none 계약을 그대로 유지한다', async () => {
-                const aside = await renderAsideWithParagraphs(SHORT_PARAGRAPH_COUNT);
+                const aside = await renderAsideWithParagraphs(
+                    SHORT_PARAGRAPH_COUNT
+                );
 
                 expect(paragraphsInside(aside)).toBe(SHORT_PARAGRAPH_COUNT);
                 expect(aside.className).toContain('overflow-y-auto');
