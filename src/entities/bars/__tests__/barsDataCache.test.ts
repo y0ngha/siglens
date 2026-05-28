@@ -43,13 +43,13 @@ async function loadWithEnv(opts: { url?: string; token?: string }) {
     return import('../lib/barsDataCache');
 }
 
-afterEach(() => {
-    delete process.env.UPSTASH_REDIS_REST_URL;
-    delete process.env.UPSTASH_REDIS_REST_TOKEN;
-});
-
 describe('getCachedBarsWithIndicators', () => {
     beforeEach(() => vi.clearAllMocks());
+
+    afterEach(() => {
+        delete process.env.UPSTASH_REDIS_REST_URL;
+        delete process.env.UPSTASH_REDIS_REST_TOKEN;
+    });
 
     it('Redis env 없으면 fetch 직행', async () => {
         mockFetch.mockResolvedValue(sampleBars);

@@ -20,13 +20,13 @@ async function loadWithEnv(opts: { url?: string; token?: string }) {
     vi.resetModules();
     return import('../lib/newsRefreshFlag');
 }
-afterEach(() => {
-    delete process.env.UPSTASH_REDIS_REST_URL;
-    delete process.env.UPSTASH_REDIS_REST_TOKEN;
-});
-
 describe('newsRefreshFlag', () => {
     beforeEach(() => vi.clearAllMocks());
+
+    afterEach(() => {
+        delete process.env.UPSTASH_REDIS_REST_URL;
+        delete process.env.UPSTASH_REDIS_REST_TOKEN;
+    });
 
     it('Redis 없으면 isRecentlyFetched=false, markFetched noop', async () => {
         const mod = await loadWithEnv({});

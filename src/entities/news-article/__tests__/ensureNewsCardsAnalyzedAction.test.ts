@@ -172,6 +172,7 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
             expect(mockUpsertNewsItem).toHaveBeenCalledTimes(2);
             expect(mockUpsertNewsItem).toHaveBeenCalledWith(NEWS_ITEM_1);
             expect(mockUpsertNewsItem).toHaveBeenCalledWith(NEWS_ITEM_2);
+            expect(mockMarkFetched).toHaveBeenCalledWith('AAPL');
         });
 
         it('각 뉴스 아이템에 대해 submitNewsCardAnalysis를 호출한다', async () => {

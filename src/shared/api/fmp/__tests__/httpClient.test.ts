@@ -326,10 +326,15 @@ describe('fmpGet 함수는', () => {
                 .mockResolvedValue(
                     new Response(JSON.stringify([]), { status: 200 })
                 );
-            await fmpGet('profile', { symbol: 'AAPL' }, { revalidate: SECONDS_PER_HOUR });
+            await fmpGet(
+                'profile',
+                { symbol: 'AAPL' },
+                { revalidate: SECONDS_PER_HOUR }
+            );
             expect(fetchMock.mock.calls[0]![1]).toMatchObject({
                 next: { revalidate: SECONDS_PER_HOUR },
             });
+            fetchMock.mockRestore();
         });
     });
 });
