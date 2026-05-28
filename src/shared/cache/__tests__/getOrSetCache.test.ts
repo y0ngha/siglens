@@ -106,6 +106,22 @@ describe('getOrSetCache 함수는', () => {
         expect(fetcher).not.toHaveBeenCalled();
     });
 
+    it('shouldCache가 false면 fresh 값은 반환하되 저장하지 않는다', async () => {
+        const redis = createRedisStub();
+        mockedGetRedisClient.mockReturnValue(redis as never);
+        const fetcher = vi.fn().mockResolvedValue({ bars: [] });
+
+        const result = await getOrSetCache<{ bars: unknown[] }>(
+            'k',
+            60,
+            fetcher,
+            value => value.bars.length > 0
+        );
+
+        expect(result).toEqual({ bars: [] });
+        expect(redis.set).not.toHaveBeenCalled();
+    });
+
     it('get 실패 시 fetcher로 graceful fallback하고 에러를 로깅한다', async () => {
         const redis = createRedisStub();
         redis.get.mockRejectedValueOnce(new Error('boom'));
