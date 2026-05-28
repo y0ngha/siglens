@@ -1,7 +1,7 @@
 import 'server-only';
 import { Redis } from '@upstash/redis';
 
-interface RedisClientPair {
+export interface RedisClientPair {
     writer: Redis;
     reader: Redis;
 }

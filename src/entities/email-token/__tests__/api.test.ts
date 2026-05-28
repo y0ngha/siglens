@@ -205,7 +205,6 @@ describe('createEmailTokenStore', () => {
         createEmailTokenStore();
         const callsAfterUnset = MockRedis.mock.calls.length;
 
-        // Reset the shared singleton so that the env change is picked up on the next call.
         __resetRedisClientForTests();
 
         // After the reset, configure a real readonly token. getRedisReaderWriter
