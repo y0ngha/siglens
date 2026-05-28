@@ -1,4 +1,5 @@
-import { fmpGet } from './httpClient';
+import { fmpGet as fmpGetRaw } from './httpClient';
+import { SECONDS_PER_HOUR } from '@/shared/config/time';
 import type {
     RawFmpAnalystEstimate,
     RawFmpCashFlowStatement,
@@ -34,6 +35,18 @@ import type {
     GradesAction,
     GradesEvent,
 } from '@y0ngha/siglens-core';
+
+/** 펀더멘털 데이터는 장중에도 거의 불변 → 1시간 cross-request 캐시. */
+const FMP_FUNDAMENTAL_REVALIDATE_SECONDS = SECONDS_PER_HOUR;
+
+function fmpGet<T>(
+    path: string,
+    query: Record<string, string> = {}
+): Promise<T> {
+    return fmpGetRaw<T>(path, query, {
+        revalidate: FMP_FUNDAMENTAL_REVALIDATE_SECONDS,
+    });
+}
 
 const ANALYST_ESTIMATES_PERIOD = 'annual';
 const ANALYST_ESTIMATES_PAGE = '0';
@@ -373,7 +386,8 @@ export class FmpFundamentalClient implements FundamentalDataProvider {
         symbol: string,
         limit = EARNINGS_REPORT_LIMIT
     ): Promise<FmpEarningsReportItem[]> {
-        const arr = await fmpGet<RawFmpEarningsReport[]>('earnings', {
+        // earnings는 실적 발표 시점 실시간성이 중요 → 1h 캐시 대신 no-store(fmpGetRaw).
+        const arr = await fmpGetRaw<RawFmpEarningsReport[]>('earnings', {
             symbol,
             limit: String(limit),
         });

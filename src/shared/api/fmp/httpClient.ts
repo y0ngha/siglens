@@ -10,6 +10,11 @@ export const FMP_STABLE_BASE = 'https://financialmodelingprep.com/stable';
 /** Timeout for all FMP fetch calls (ms). */
 const FMP_FETCH_TIMEOUT_MS = 10_000;
 
+/** Options for {@link fmpGet}. */
+export interface FmpGetOptions {
+    revalidate?: number;
+}
+
 /**
  * Parse the `Retry-After` response header value (seconds as integer).
  * Returns null if the header is absent, non-numeric, zero, or negative.
@@ -28,10 +33,15 @@ function parseRetryAfterSeconds(header: string | null): number | null {
  * immediately as `FmpHttpError`. `readFmpConfig()` and `URLSearchParams` run
  * once per call — only `fetch()` is inside the retry loop so each attempt gets
  * a fresh `AbortSignal` timeout.
+ *
+ * Pass `opts.revalidate` (seconds) to opt into Next.js Data Cache instead of
+ * the default `cache: 'no-store'`. Callers that handle caching at a higher
+ * level (e.g. Redis) should omit `opts` to keep the per-request bypass.
  */
 export async function fmpGet<T>(
     path: string,
-    query: Record<string, string> = {}
+    query: Record<string, string> = {},
+    opts: FmpGetOptions = {}
 ): Promise<T> {
     const { apiKey } = readFmpConfig();
     const params = new URLSearchParams({ ...query, apikey: apiKey });
@@ -40,7 +50,9 @@ export async function fmpGet<T>(
         const res = await fetch(
             `${FMP_STABLE_BASE}/${path}?${params.toString()}`,
             {
-                cache: 'no-store',
+                ...(opts.revalidate !== undefined
+                    ? { next: { revalidate: opts.revalidate } }
+                    : { cache: 'no-store' }),
                 signal: AbortSignal.timeout(FMP_FETCH_TIMEOUT_MS),
             }
         );

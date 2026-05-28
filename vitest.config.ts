@@ -5,6 +5,12 @@ const sharedConfig = {
     resolve: {
         alias: {
             '@': path.resolve(__dirname, 'src'),
+            // server-only는 Next.js 전용 guard 패키지로 실제 설치 불필요.
+            // Vitest 환경에서는 빈 stub으로 resolve해 transform 오류를 방지한다.
+            'server-only': path.resolve(
+                __dirname,
+                'src/__tests__/server-only-stub.ts'
+            ),
         },
     },
 };
