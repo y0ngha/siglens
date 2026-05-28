@@ -323,4 +323,31 @@ describe('fmpGet 함수는', () => {
             expect(mockFetch).toHaveBeenCalledTimes(1);
         });
     });
+
+    describe('캐시 옵션에서는', () => {
+        it('revalidate 미지정 시 cache:no-store', async () => {
+            const fetchMock = vi
+                .spyOn(global, 'fetch')
+                .mockResolvedValue(
+                    new Response(JSON.stringify([]), { status: 200 })
+                );
+            await fmpGet('profile', { symbol: 'AAPL' });
+            expect(fetchMock.mock.calls[0]![1]).toMatchObject({
+                cache: 'no-store',
+            });
+            expect(fetchMock.mock.calls[0]![1]).not.toHaveProperty('next');
+        });
+
+        it('revalidate 지정 시 next.revalidate 사용', async () => {
+            const fetchMock = vi
+                .spyOn(global, 'fetch')
+                .mockResolvedValue(
+                    new Response(JSON.stringify([]), { status: 200 })
+                );
+            await fmpGet('profile', { symbol: 'AAPL' }, { revalidate: 3600 });
+            expect(fetchMock.mock.calls[0]![1]).toMatchObject({
+                next: { revalidate: 3600 },
+            });
+        });
+    });
 });

@@ -28,10 +28,15 @@ function parseRetryAfterSeconds(header: string | null): number | null {
  * immediately as `FmpHttpError`. `readFmpConfig()` and `URLSearchParams` run
  * once per call — only `fetch()` is inside the retry loop so each attempt gets
  * a fresh `AbortSignal` timeout.
+ *
+ * Pass `opts.revalidate` (seconds) to opt into Next.js Data Cache instead of
+ * the default `cache: 'no-store'`. Callers that handle caching at a higher
+ * level (e.g. Redis) should omit `opts` to keep the per-request bypass.
  */
 export async function fmpGet<T>(
     path: string,
-    query: Record<string, string> = {}
+    query: Record<string, string> = {},
+    opts: { revalidate?: number } = {}
 ): Promise<T> {
     const { apiKey } = readFmpConfig();
     const params = new URLSearchParams({ ...query, apikey: apiKey });
@@ -40,7 +45,9 @@ export async function fmpGet<T>(
         const res = await fetch(
             `${FMP_STABLE_BASE}/${path}?${params.toString()}`,
             {
-                cache: 'no-store',
+                ...(opts.revalidate !== undefined
+                    ? { next: { revalidate: opts.revalidate } }
+                    : { cache: 'no-store' }),
                 signal: AbortSignal.timeout(FMP_FETCH_TIMEOUT_MS),
             }
         );
