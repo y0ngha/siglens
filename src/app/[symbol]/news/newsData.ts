@@ -35,6 +35,9 @@ export const getNewsList = cache(async (symbol: string): Promise<NewsRow[]> => {
 // 애널리스트 등급 이벤트는 펀더멘탈 데이터와 동일한 freshness 상수를 공유해 Redis에
 // cross-region 캐싱한다. 빈 배열도 캐싱한다 — getGrades는 FMP 장애 시 throw하므로
 // (getOptionalArray 미경유) 빈 배열은 "등급 이벤트 없음"이라는 정상·안정 결과다.
+//
+// Redis 키 `fundamental:grades:*`는 fundamentalData.ts가 소유한 `fundamental:*`
+// 네임스페이스를 공유한다. 키를 rename할 때는 두 파일을 함께 수정할 것.
 export const getGradeEvents = cache(
     async (symbol: string): Promise<GradesEvent[]> =>
         getOrSetCache(

@@ -30,6 +30,10 @@ import type {
 // 봇 트래픽이 같은 티커를 반복 fetch하던 문제를 해결한다(이슈 #439). getOrSetCache가 값을
 // envelope으로 감싸므로 null·빈 배열("데이터 없음")도 캐싱돼 데이터 없는 티커도 재호출되지
 // 않는다 — fmpGet은 장애 시 throw하므로 일시 실패가 캐싱될 일은 없다.
+//
+// Redis 키 네임스페이스 `fundamental:*` — 이 파일이 11개 키를 소유하고,
+// newsData.ts의 `fundamental:grades:*`(getGradeEvents)도 같은 네임스페이스를 공유한다.
+// 키를 rename할 때는 두 파일을 함께 수정할 것.
 const fundamentalClient = new FmpFundamentalClient();
 
 export const getProfile = cache(

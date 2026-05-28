@@ -195,4 +195,11 @@ describe('getGradeEvents 함수는', () => {
         await expect(getGradeEvents('AAPL')).resolves.toEqual(events);
         expect(mockGetGrades).toHaveBeenCalledWith('AAPL');
     });
+
+    it('getGrades가 빈 배열을 반환하면 그대로 위임한다', async () => {
+        mockGetGrades.mockResolvedValue([]);
+
+        await expect(getGradeEvents('AAPL')).resolves.toEqual([]);
+        expect(mockGetGrades).toHaveBeenCalledWith('AAPL');
+    });
 });
