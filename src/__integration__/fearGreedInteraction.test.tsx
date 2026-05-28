@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { FearGreedHero } from '@/widgets/fear-greed/FearGreedHero';
 import { FearGreedGauge } from '@/widgets/fear-greed/FearGreedGauge';
-import type { FearGreedLabel, FearGreedSnapshot } from '@y0ngha/siglens-core';
+import type { FearGreedSnapshot } from '@y0ngha/siglens-core';
 
 vi.mock('next/navigation', () => ({
     useRouter: () => ({ push: vi.fn(), prefetch: vi.fn() }),
@@ -19,35 +19,20 @@ vi.mock('@/shared/ui/InfoTooltip', () => ({
     ),
 }));
 
-vi.mock('@/entities/fear-greed', () => ({
-    FEAR_GREED_SCORE_BOUNDARIES: {
-        EXTREME_FEAR_MAX: 25,
-        FEAR_MAX: 45,
-        NEUTRAL_MAX: 55,
-        GREED_MAX: 75,
-    },
-}));
-
 vi.mock('@/shared/lib/fearGreedLabels', () => ({
     SENTIMENT_LABEL_TEXT: {
-        extreme_fear: '극도의 공포',
-        fear: '공포',
-        neutral: '중립',
-        greed: '탐욕',
-        extreme_greed: '극도의 탐욕',
+        EXTREME_FEAR: '극심한 공포',
+        FEAR: '공포',
+        NEUTRAL: '중립',
+        GREED: '탐욕',
+        EXTREME_GREED: '극심한 탐욕',
     },
 }));
 
 describe('Fear & Greed Interaction', () => {
     describe('FearGreedGauge', () => {
         it('renders gauge with score value', () => {
-            render(
-                <FearGreedGauge
-                    score={45}
-                    label={'fear' as FearGreedLabel}
-                    size="hero"
-                />
-            );
+            render(<FearGreedGauge score={45} label="FEAR" size="hero" />);
             expect(screen.getByText('45')).toBeInTheDocument();
         });
 
@@ -55,7 +40,7 @@ describe('Fear & Greed Interaction', () => {
             render(
                 <FearGreedGauge
                     score={75}
-                    label={'greed' as FearGreedLabel}
+                    label="GREED"
                     size="mini"
                     periodLabel="1주"
                 />
@@ -66,11 +51,7 @@ describe('Fear & Greed Interaction', () => {
 
         it('renders extreme fear score', () => {
             render(
-                <FearGreedGauge
-                    score={10}
-                    label={'extreme_fear' as FearGreedLabel}
-                    size="hero"
-                />
+                <FearGreedGauge score={10} label="EXTREME_FEAR" size="hero" />
             );
             expect(screen.getByText('10')).toBeInTheDocument();
         });
@@ -80,8 +61,8 @@ describe('Fear & Greed Interaction', () => {
         it('renders hero with snapshot data', () => {
             const snapshot = {
                 score: 50,
-                label: 'neutral' as FearGreedLabel,
-                confidence: 'high',
+                label: 'NEUTRAL',
+                confidence: 'normal',
                 groups: [],
                 sampleSize: 100,
                 warning: null,

@@ -38,4 +38,11 @@
 - Violation: `shouldCache` predicate wrongly withheld caching of empty arrays in src/app/[symbol]/fundamental/fundamentalData.ts + news/newsData.ts
   - Rule: Caching behavior — empty arrays are stable results and should be cached
   - Context: Changed `v => v.length > 0` to `v => v !== null`, allowing empty arrays to be cached as valid results
+## [refactor/fear-greed-import-core Round 2 | refactor/fear-greed-import-core | 2026-05-28]
+- Violation: Test mock `SENTIMENT_LABEL_TEXT` object used lowercase keys (`extreme_fear`, `extreme_greed`, `fear`, `greed`, `neutral`, `optimism`) while production `FearGreedLabel` union is uppercase (`EXTREME_FEAR`, `EXTREME_GREED`, `FEAR`, `GREED`, `NEUTRAL`, `OPTIMISM`)
+  - Rule: MISTAKES.md §Tests 13 — Test mock must faithfully replicate production interface; divergent key casing breaks type safety and tests silently return undefined lookups
+  - Context: Mock did not match production casing; also had 4 lowercase `label={'x' as FearGreedLabel}` casts. Corrected mock keys and removed unsafe casts.
+- Violation: Test comment/title referenced deleted `classifyScore` identifier (renamed to `scoreToLabel` from siglens-core import)
+  - Rule: MISTAKES.md §15.6 — Comments/JSDoc must match current code reality; stale identifier names after renames mislead readers
+  - Context: After importing `scoreToLabel` from `@y0ngha/siglens-core@0.15.0`, test title still referenced old `classifyScore` name. Updated to reflect actual import.
 
