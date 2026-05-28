@@ -1,10 +1,9 @@
 import type { MockedFunction, MockedClass, Mock } from 'vitest';
+import { ensureNewsCardsAnalyzedAction } from '../actions/ensureNewsCardsAnalyzedAction';
 import {
-    ensureNewsCardsAnalyzedAction,
-    POLL_INTERVAL_MS,
+    DISABLED_THINKING_BUDGET,
     POLL_MAX_ATTEMPTS,
-} from '../actions/ensureNewsCardsAnalyzedAction';
-import { DISABLED_THINKING_BUDGET } from '../lib/newsAnalysisConstants';
+} from '../lib/newsAnalysisConstants';
 import { NEWS_LOOKBACK_MS } from '../lib/newsLookback';
 import {
     submitNewsCardAnalysis,

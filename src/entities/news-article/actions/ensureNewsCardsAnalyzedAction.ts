@@ -8,7 +8,11 @@ import {
     isFmpPaymentRequiredError,
     logFmpPaymentRequiredError,
 } from '@/shared/api/fmp/fmpUserMessage';
-import { DISABLED_THINKING_BUDGET } from '../lib/newsAnalysisConstants';
+import {
+    DISABLED_THINKING_BUDGET,
+    POLL_INTERVAL_MS,
+    POLL_MAX_ATTEMPTS,
+} from '../lib/newsAnalysisConstants';
 import { NEWS_LOOKBACK_MS } from '../lib/newsLookback';
 import { isRecentlyFetched, markFetched } from '../lib/newsRefreshFlag';
 import { sleep } from '@/shared/lib/sleep';
@@ -17,13 +21,6 @@ import {
     submitNewsCardAnalysis,
     type NewsItem,
 } from '@y0ngha/siglens-core';
-
-export const POLL_INTERVAL_MS = 2_000;
-/**
- * Flash-lite typical wall-clock: <10 s. 30 attempts × 2 s = 60 s ceiling,
- * well within waitUntil's serverless budget.
- */
-export const POLL_MAX_ATTEMPTS = 30;
 
 /**
  * Submit card analysis for a single item and wait for the worker to finish,
