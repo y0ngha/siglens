@@ -141,7 +141,7 @@ describe('getMarketSummaryAction 함수는', () => {
             expect(result).toEqual({ ok: false, error: 'server_error' });
         });
 
-        it('submitBriefing 예외 시 에러 결과를 반환한다', async () => {
+        it('submitBriefing 예외 시 briefing: null을 반환하고 에러를 발생시키지 않는다', async () => {
             mockIsBot.mockReturnValue(false);
             mockSubmitBriefing.mockRejectedValueOnce(
                 new Error('briefing failed')
@@ -149,7 +149,11 @@ describe('getMarketSummaryAction 함수는', () => {
 
             const result = await getMarketSummaryAction();
 
-            expect(result).toEqual({ ok: false, error: 'server_error' });
+            expect(result).toEqual({
+                summary: summaryData,
+                briefing: null,
+                botBlocked: false,
+            });
         });
 
         it('봇 요청에서 getCachedMarketSummary 예외 시 에러 결과를 반환한다', async () => {

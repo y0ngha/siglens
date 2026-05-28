@@ -4,11 +4,15 @@ import { getRedisClient } from '@/shared/cache/redisClient';
 import {
     type MarketDataProvider,
     type MarketSummaryData,
+    type Timeframe,
     getMarketSummary,
     computeBarsEffectiveTtl,
 } from '@y0ngha/siglens-core';
 
 const MARKET_SUMMARY_CACHE_KEY = 'market:summary';
+
+/** 시장 요약은 bars 일봉 TTL 정책을 재사용 — 실제 timeframe과 무관한 placeholder. */
+const SUMMARY_TTL_TIMEFRAME = '1Day' as const satisfies Timeframe;
 
 /**
  * 대시보드 시장 요약(지수 + 섹터 ETF 현재 시세)을 cache→provider로 가져온다.
@@ -39,13 +43,16 @@ export const getCachedMarketSummary = cache(
 
         const fresh = await getMarketSummary(provider);
 
-        const hasQuote = [...fresh.indices, ...fresh.sectors].some(
-            q => q.price !== 0
-        );
+        const hasQuote =
+            fresh.indices.some(q => q.price !== 0) ||
+            fresh.sectors.some(q => q.price !== 0);
         if (hasQuote && redis !== null) {
             try {
                 await redis.set(MARKET_SUMMARY_CACHE_KEY, fresh, {
-                    ex: computeBarsEffectiveTtl('1Day', new Date()),
+                    ex: computeBarsEffectiveTtl(
+                        SUMMARY_TTL_TIMEFRAME,
+                        new Date()
+                    ),
                 });
             } catch (error) {
                 console.error('[marketSummaryCache] Redis set failed', error);

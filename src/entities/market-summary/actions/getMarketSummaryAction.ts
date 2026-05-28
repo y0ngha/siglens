@@ -17,7 +17,15 @@ export async function getMarketSummaryAction(): Promise<MarketSummaryActionResul
             return { summary, briefing: null, botBlocked: true };
         }
 
-        const briefing = await submitBriefing(summary);
+        let briefing = null;
+        try {
+            briefing = await submitBriefing(summary);
+        } catch (briefingError) {
+            console.error(
+                '[getMarketSummaryAction] briefing submission failed:',
+                briefingError
+            );
+        }
         return { summary, briefing, botBlocked: false };
     } catch (e) {
         console.error('[getMarketSummaryAction] failed:', e);
