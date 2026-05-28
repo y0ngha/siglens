@@ -73,9 +73,11 @@ describe('SymbolLayoutJail (차트 높이 고정)', () => {
 
     // 긴 AI 분석 패널과 짧은 패널의 대역. 콘텐츠 길이는 의도적으로 단언 결과에 영향을
     // 주지 않는다 — 그 무관함(불변성)이 바로 이 테스트가 지키려는 핵심이다.
+    // 긴 패널을 시뮬레이션하기에 충분한 문단 수.
+    const LONG_PARAGRAPH_COUNT = 80;
     const LONG_ANALYSIS = (
         <div data-testid="analysis">
-            {Array.from({ length: 80 }, (_, i) => (
+            {Array.from({ length: LONG_PARAGRAPH_COUNT }, (_, i) => (
                 <p key={i}>분석 문단 {i}</p>
             ))}
         </div>

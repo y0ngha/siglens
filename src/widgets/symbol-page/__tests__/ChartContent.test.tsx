@@ -212,6 +212,11 @@ describe('ChartContent', () => {
     // 페이지 스크롤과 시각적으로 겹치지 않게 한다. 이 계약은 분석 길이와 무관하게
     // 유지되어야 한다 — 그 불변성이 회귀 가드다.
     describe('AI 분석 패널 스크롤', () => {
+        // 패널을 길게/짧게 시뮬레이션하기 위한 문단 수. 입력값과 단언값에서 함께
+        // 쓰이므로 이름 있는 상수로 묶어 한쪽만 바뀌는 drift를 막는다.
+        const LONG_PARAGRAPH_COUNT = 80;
+        const SHORT_PARAGRAPH_COUNT = 1;
+
         // 분석 문단 수를 주입해 긴/짧은 패널을 실제로 다르게 렌더한 뒤, 그 콘텐츠가
         // 차트 컬럼이 아니라 스크롤 컨테이너(aside) 안에 위치하는지 확인한다.
         const renderAsideWithParagraphs = async (paragraphCount: number) => {
@@ -238,16 +243,16 @@ describe('ChartContent', () => {
 
         describe('AI 분석 패널이 길 때', () => {
             it('긴 분석이 aside(overflow-y-auto + md:h-full) 안에 담겨 패널 내부에서 스크롤되고 차트 행을 늘리지 않는다', async () => {
-                const aside = await renderAsideWithParagraphs(80);
+                const aside = await renderAsideWithParagraphs(LONG_PARAGRAPH_COUNT);
 
                 // 긴 콘텐츠가 스크롤 컨테이너(aside) 안에 위치 = 차트가 아니라 패널이 스크롤된다.
-                expect(paragraphsInside(aside)).toBe(80);
+                expect(paragraphsInside(aside)).toBe(LONG_PARAGRAPH_COUNT);
                 expect(aside.className).toContain('overflow-y-auto');
                 expect(aside.className).toContain('md:h-full');
             });
 
             it('scrollbar-none으로 스크롤바를 감춰 페이지 스크롤과 겹쳐 보이지 않게 한다', async () => {
-                const aside = await renderAsideWithParagraphs(80);
+                const aside = await renderAsideWithParagraphs(LONG_PARAGRAPH_COUNT);
 
                 expect(aside.className).toContain('scrollbar-none');
             });
@@ -255,9 +260,9 @@ describe('ChartContent', () => {
 
         describe('AI 분석 패널이 짧을 때', () => {
             it('짧은 분석도 같은 aside 안에 담기며 overflow-y-auto + md:h-full + scrollbar-none 계약을 그대로 유지한다', async () => {
-                const aside = await renderAsideWithParagraphs(1);
+                const aside = await renderAsideWithParagraphs(SHORT_PARAGRAPH_COUNT);
 
-                expect(paragraphsInside(aside)).toBe(1);
+                expect(paragraphsInside(aside)).toBe(SHORT_PARAGRAPH_COUNT);
                 expect(aside.className).toContain('overflow-y-auto');
                 expect(aside.className).toContain('md:h-full');
                 expect(aside.className).toContain('scrollbar-none');
