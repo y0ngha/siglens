@@ -289,6 +289,30 @@ describe('FmpFundamentalClient', () => {
                 currentRatioTTM: 0.94,
             });
         });
+
+        it('currentRatioTTM falls back to metrics when ratios row omits it', async () => {
+            // ratios row has no currentRatioTTM → `ratios?.currentRatioTTM` is
+            // undefined → the ?? right-hand branch reads metrics?.currentRatioTTM.
+            mockOk([
+                {
+                    // ratios-ttm row — omits currentRatioTTM
+                    returnOnEquityTTM: 1.0,
+                    returnOnAssetsTTM: 0.2,
+                    operatingProfitMarginTTM: 0.3,
+                    netProfitMarginTTM: 0.25,
+                    debtToAssetsRatioTTM: 0.31,
+                },
+            ]);
+            mockOk([
+                {
+                    // key-metrics-ttm row — provides currentRatioTTM
+                    currentRatioTTM: 1.85,
+                },
+            ]);
+            const client = new FmpFundamentalClient();
+            const result = await client.getRatiosTtm('AAPL');
+            expect(result?.currentRatioTTM).toBe(1.85);
+        });
     });
 
     // ------------------------------------------------------------------ //
@@ -420,6 +444,21 @@ describe('FmpFundamentalClient', () => {
             mockOk([]);
             const client = new FmpFundamentalClient();
             expect(await client.getAnalystEstimates('X')).toBeNull();
+        });
+
+        it('uses estimatedEpsAvg / estimatedRevenueAvg alias fields when primary epsAvg / revenueAvg are absent', async () => {
+            // Row has the alias field names only — epsAvg/revenueAvg are absent so
+            // the ?? right-hand branch in the mapping is exercised.
+            mockOk([
+                {
+                    estimatedEpsAvg: 2.34,
+                    estimatedRevenueAvg: 120_000_000_000,
+                },
+            ]);
+            const client = new FmpFundamentalClient();
+            const result = await client.getAnalystEstimates('AAPL');
+            expect(result?.estimatedEpsAvg).toBe(2.34);
+            expect(result?.estimatedRevenueAvg).toBe(120_000_000_000);
         });
     });
 
@@ -660,6 +699,37 @@ describe('FmpFundamentalClient', () => {
             expect(
                 await client.getSectorPerformanceSnapshot('2024-01-15')
             ).toEqual([]);
+        });
+    });
+
+    // ------------------------------------------------------------------ //
+    // getHistoricalSectorPerformance — unconditional stub
+    // ------------------------------------------------------------------ //
+
+    describe('getHistoricalSectorPerformance', () => {
+        it('always resolves to [] without making any HTTP request', async () => {
+            const client = new FmpFundamentalClient();
+            await expect(
+                client.getHistoricalSectorPerformance('Technology')
+            ).resolves.toEqual([]);
+            // The stub never calls fetch — no mock call should have been made.
+            expect(mockFetch).not.toHaveBeenCalled();
+        });
+    });
+
+    // ------------------------------------------------------------------ //
+    // getEarningsReports — malformed row (no date fields)
+    // ------------------------------------------------------------------ //
+
+    describe('getEarningsReports — malformed rows', () => {
+        it('drops a row that has neither date nor earningsDate → returns []', async () => {
+            // Row has a symbol but no string date / earningsDate → toEarningsDate
+            // returns null → toFmpEarningsReportItem returns [] → flatMap drops it.
+            mockOk([{ symbol: 'AAPL', epsActual: 1.5 }]);
+            const client = new FmpFundamentalClient();
+            await expect(client.getEarningsReports('AAPL')).resolves.toEqual(
+                []
+            );
         });
     });
 

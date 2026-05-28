@@ -440,6 +440,37 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
         });
     });
 
+    describe('poll 타임아웃은', () => {
+        it('POLL_MAX_ATTEMPTS(30)번 모두 processing이면 console.warn을 호출하고 attachAnalysis는 호출하지 않는다', async () => {
+            const warnSpy = vi
+                .spyOn(console, 'warn')
+                .mockImplementation(() => undefined);
+
+            mockIsRecentlyFetched.mockResolvedValue(false);
+            mockFetchNewsForPeriod.mockResolvedValue([NEWS_ITEM_1]);
+            mockUpsertNewsItem.mockResolvedValue(undefined);
+            mockListBySymbol.mockResolvedValue([
+                { id: NEWS_ITEM_1.id, analyzedAt: null },
+            ]);
+            mockSubmitNewsCardAnalysis.mockResolvedValue({
+                status: 'submitted',
+                jobId: 'job-1',
+            } satisfies SubmitNewsCardAnalysisResult);
+            // Always returns 'processing' — worker never finishes.
+            mockPollNewsCardAnalysis.mockResolvedValue({
+                status: 'processing',
+            });
+
+            await ensureNewsCardsAnalyzedAction('AAPL');
+
+            expect(warnSpy).toHaveBeenCalled();
+            expect(mockPollNewsCardAnalysis).toHaveBeenCalledTimes(30);
+            expect(mockAttachAnalysis).not.toHaveBeenCalled();
+
+            warnSpy.mockRestore();
+        });
+    });
+
     describe('봇 경로 refresh 가드는', () => {
         it('봇 + 최근 fetch됨 → FMP fetch와 DB upsert를 스킵한다', async () => {
             mockIsRecentlyFetched.mockResolvedValue(true);
