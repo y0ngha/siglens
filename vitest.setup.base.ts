@@ -10,8 +10,6 @@ if (typeof globalThis.TextEncoder === 'undefined') {
         TextEncoder;
 }
 
-process.env.ALPACA_API_KEY = 'test-alpaca-key';
-process.env.ALPACA_API_SECRET = 'test-alpaca-secret';
 process.env.AI_PROVIDER = 'claude';
 process.env.GEMINI_CHAT_FREE_API_KEY = 'test-gemini-user-api-key';
 process.env.GEMINI_CHAT_API_KEY = 'test-gemini-key';
