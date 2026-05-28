@@ -1,6 +1,5 @@
-import type { FearGreedHistoryPoint } from '@y0ngha/siglens-core';
+import { scoreToLabel, type FearGreedHistoryPoint } from '@y0ngha/siglens-core';
 import { FearGreedGauge } from './FearGreedGauge';
-import { classifyScore } from '@/entities/fear-greed';
 import { cn } from '@/shared/lib/cn';
 
 interface FearGreedComparisonGaugesProps {
@@ -43,7 +42,7 @@ export function FearGreedComparisonGauges({
                 const idx = Math.max(0, lastIdx - p.daysBack);
                 const point = valid[idx];
                 const score = Math.round(point.score);
-                const label = point.label ?? classifyScore(score);
+                const label = point.label ?? scoreToLabel(score);
                 return (
                     <li
                         key={p.key}

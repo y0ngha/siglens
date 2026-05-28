@@ -14,14 +14,6 @@ vi.mock('@/shared/lib/fearGreedLabels', () => ({
         EXTREME_GREED: '극심한 탐욕',
     },
 }));
-vi.mock('@/entities/fear-greed', () => ({
-    FEAR_GREED_SCORE_BOUNDARIES: {
-        EXTREME_FEAR_MAX: 25,
-        FEAR_MAX: 45,
-        NEUTRAL_MAX: 55,
-        GREED_MAX: 75,
-    },
-}));
 vi.mock('@/shared/ui/InfoTooltip', () => ({
     InfoTooltip: ({ children }: { children: React.ReactNode }) => (
         <span data-testid="info-tooltip">{children}</span>

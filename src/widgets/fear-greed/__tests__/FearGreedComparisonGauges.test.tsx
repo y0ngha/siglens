@@ -36,7 +36,7 @@ describe('FearGreedComparisonGauges', () => {
     });
 
     describe('with null label', () => {
-        it('falls back to classifyScore when point.label is null', () => {
+        it('falls back to scoreToLabel when point.label is null', () => {
             const history: FearGreedHistoryPoint[] = Array.from(
                 { length: 300 },
                 (_, i) => ({
@@ -48,7 +48,7 @@ describe('FearGreedComparisonGauges', () => {
             const { container } = render(
                 <FearGreedComparisonGauges history={history} />
             );
-            // Should still render gauges — classifyScore provides fallback label
+            // Should still render gauges — scoreToLabel provides fallback label
             const svgs = container.querySelectorAll('svg[role="img"]');
             expect(svgs).toHaveLength(4);
         });
