@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react';
-import type { FearGreedLabel } from '@y0ngha/siglens-core';
-import { FEAR_GREED_LABEL_CUTOFFS } from '@y0ngha/siglens-core';
+import {
+    FEAR_GREED_LABEL_CUTOFFS,
+    type FearGreedLabel,
+} from '@y0ngha/siglens-core';
 import type { SnapshotConfidence } from '@/shared/lib/types';
 import { SENTIMENT_LABEL_TEXT } from '@/shared/lib/fearGreedLabels';
 import { cn } from '@/shared/lib/cn';
@@ -76,8 +78,8 @@ const NEEDLE_PIVOT_RADIUS = 4;
 /** Tick label radial offset outside the arc, in SVG units. */
 const TICK_LABEL_OFFSET = 16;
 const TICK_LABEL_RADIUS = GAUGE_RADIUS + TICK_LABEL_OFFSET;
-// 0과 100은 게이지 양 끝, 50은 시각적 중심선. 25/75는 EXTREME 경계로 boundary
-// 상수와 동기 — boundary가 바뀌면 눈금도 따라 움직여야 함.
+// 0과 100은 게이지 양 끝, 50은 시각적 중심선. EXTREME_FEAR_MAX/GREED_MAX 눈금은
+// FEAR_GREED_LABEL_CUTOFFS에서 가져오므로 core가 경계를 바꾸면 눈금도 따라 움직인다.
 const TICK_VALUES: ReadonlyArray<number> = [
     0,
     EXTREME_FEAR_MAX,

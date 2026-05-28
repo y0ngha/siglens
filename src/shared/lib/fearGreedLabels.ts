@@ -1,6 +1,9 @@
 import type { SnapshotConfidence } from '@/shared/lib/types';
-import type { FearGreedFactorKey, FearGreedLabel } from '@y0ngha/siglens-core';
-import { POC_WINDOW_DEFAULT } from '@y0ngha/siglens-core';
+import {
+    POC_WINDOW_DEFAULT,
+    type FearGreedFactorKey,
+    type FearGreedLabel,
+} from '@y0ngha/siglens-core';
 
 /** confidence === 'normal' 표시 라벨 — Hero/Card footer 양쪽에서 동일 사용. */
 export const CONFIDENCE_NORMAL_LABEL = '정상 산출';

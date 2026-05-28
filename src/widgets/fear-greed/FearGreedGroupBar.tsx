@@ -1,6 +1,9 @@
 import type { CSSProperties } from 'react';
-import type { FearGreedGroup, FearGreedLabel } from '@y0ngha/siglens-core';
-import { scoreToLabel } from '@y0ngha/siglens-core';
+import {
+    scoreToLabel,
+    type FearGreedGroup,
+    type FearGreedLabel,
+} from '@y0ngha/siglens-core';
 import { FACTOR_LABEL, formatFactorRaw } from '@/shared/lib/fearGreedLabels';
 import { cn } from '@/shared/lib/cn';
 

@@ -1,5 +1,4 @@
-import type { FearGreedHistoryPoint } from '@y0ngha/siglens-core';
-import { scoreToLabel } from '@y0ngha/siglens-core';
+import { scoreToLabel, type FearGreedHistoryPoint } from '@y0ngha/siglens-core';
 import { FearGreedGauge } from './FearGreedGauge';
 import { cn } from '@/shared/lib/cn';
 
