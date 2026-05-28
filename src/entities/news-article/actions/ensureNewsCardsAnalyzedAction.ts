@@ -18,12 +18,12 @@ import {
     type NewsItem,
 } from '@y0ngha/siglens-core';
 
-const POLL_INTERVAL_MS = 2_000;
+export const POLL_INTERVAL_MS = 2_000;
 /**
  * Flash-lite typical wall-clock: <10 s. 30 attempts × 2 s = 60 s ceiling,
  * well within waitUntil's serverless budget.
  */
-const POLL_MAX_ATTEMPTS = 30;
+export const POLL_MAX_ATTEMPTS = 30;
 
 /**
  * Submit card analysis for a single item and wait for the worker to finish,

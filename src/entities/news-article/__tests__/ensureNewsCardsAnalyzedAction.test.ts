@@ -1,5 +1,9 @@
 import type { MockedFunction, MockedClass, Mock } from 'vitest';
-import { ensureNewsCardsAnalyzedAction } from '../actions/ensureNewsCardsAnalyzedAction';
+import {
+    ensureNewsCardsAnalyzedAction,
+    POLL_INTERVAL_MS,
+    POLL_MAX_ATTEMPTS,
+} from '../actions/ensureNewsCardsAnalyzedAction';
 import { DISABLED_THINKING_BUDGET } from '../lib/newsAnalysisConstants';
 import { NEWS_LOOKBACK_MS } from '../lib/newsLookback';
 import {
@@ -13,10 +17,6 @@ import type {
     SubmitNewsCardAnalysisResult,
     PollNewsCardAnalysisResult,
 } from '@y0ngha/siglens-core';
-
-// ---------------------------------------------------------------------------
-// Module mocks
-// ---------------------------------------------------------------------------
 
 vi.mock('../lib/newsRefreshFlag', () => ({
     isRecentlyFetched: vi.fn(),
@@ -54,10 +54,6 @@ vi.mock('@/entities/news-article', () => ({
         };
     }),
 }));
-
-// ---------------------------------------------------------------------------
-// Typed mocks & fixtures
-// ---------------------------------------------------------------------------
 
 import { DrizzleNewsRepository } from '@/entities/news-article';
 import { isRecentlyFetched, markFetched } from '../lib/newsRefreshFlag';
@@ -120,10 +116,6 @@ const POLL_ERROR: PollNewsCardAnalysisResult = {
     status: 'error',
     error: 'LLM worker failed',
 };
-
-// ---------------------------------------------------------------------------
-// Tests
-// ---------------------------------------------------------------------------
 
 describe('ensureNewsCardsAnalyzedAction 함수는', () => {
     let mockFetchNewsForPeriod: Mock;
@@ -464,7 +456,9 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
             await ensureNewsCardsAnalyzedAction('AAPL');
 
             expect(warnSpy).toHaveBeenCalled();
-            expect(mockPollNewsCardAnalysis).toHaveBeenCalledTimes(30);
+            expect(mockPollNewsCardAnalysis).toHaveBeenCalledTimes(
+                POLL_MAX_ATTEMPTS
+            );
             expect(mockAttachAnalysis).not.toHaveBeenCalled();
 
             warnSpy.mockRestore();

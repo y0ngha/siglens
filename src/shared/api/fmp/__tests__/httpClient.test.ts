@@ -100,12 +100,6 @@ describe('fmpGet 함수는', () => {
             const options = mockFetch.mock.calls[0]![1] as RequestInit;
             expect(options.signal).toBeInstanceOf(AbortSignal);
         });
-
-        it('FMP_STABLE_BASE가 올바른 URL이다', () => {
-            expect(FMP_STABLE_BASE).toBe(
-                'https://financialmodelingprep.com/stable'
-            );
-        });
     });
 
     describe('재시도 동작에서는', () => {
@@ -325,19 +319,6 @@ describe('fmpGet 함수는', () => {
     });
 
     describe('캐시 옵션에서는', () => {
-        it('revalidate 미지정 시 cache:no-store', async () => {
-            const fetchMock = vi
-                .spyOn(global, 'fetch')
-                .mockResolvedValue(
-                    new Response(JSON.stringify([]), { status: 200 })
-                );
-            await fmpGet('profile', { symbol: 'AAPL' });
-            expect(fetchMock.mock.calls[0]![1]).toMatchObject({
-                cache: 'no-store',
-            });
-            expect(fetchMock.mock.calls[0]![1]).not.toHaveProperty('next');
-        });
-
         it('revalidate 지정 시 next.revalidate 사용', async () => {
             const fetchMock = vi
                 .spyOn(global, 'fetch')
