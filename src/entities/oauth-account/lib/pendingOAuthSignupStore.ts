@@ -1,10 +1,11 @@
 import crypto from 'crypto';
 import type { Redis } from '@upstash/redis';
 import { getRedisClient } from '@/shared/cache/redisClient';
+import { SECONDS_PER_MINUTE } from '@/shared/config/time';
 import type { SupportedOAuthProvider } from '@/shared/lib/types';
 
 const NAMESPACE = 'pending_oauth_signup';
-const TTL_SECONDS = 600;
+const TTL_SECONDS = 10 * SECONDS_PER_MINUTE;
 
 export interface PendingOAuthSignup {
     provider: SupportedOAuthProvider;

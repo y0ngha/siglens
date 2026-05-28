@@ -16,6 +16,12 @@ interface UpstashEnv {
 // undefined = not yet initialized; null = env not configured (graceful fallback).
 let cachedWriter: Redis | null | undefined;
 let cachedReader: Redis | null | undefined;
+let cachedEnv: UpstashEnv | null | undefined;
+
+function getUpstashEnv(): UpstashEnv | null {
+    if (cachedEnv === undefined) cachedEnv = readUpstashEnv();
+    return cachedEnv;
+}
 
 function readUpstashEnv(): UpstashEnv | null {
     const url = process.env.UPSTASH_REDIS_REST_URL;
@@ -36,7 +42,7 @@ function readUpstashEnv(): UpstashEnv | null {
  */
 export function getRedisClient(): Redis | null {
     if (cachedWriter !== undefined) return cachedWriter;
-    const env = readUpstashEnv();
+    const env = getUpstashEnv();
     cachedWriter = env ? new Redis({ url: env.url, token: env.token }) : null;
     return cachedWriter;
 }
@@ -51,8 +57,8 @@ export function getRedisReaderWriter(): RedisClientPair | null {
     const writer = getRedisClient();
     if (writer === null) return null;
     if (cachedReader === undefined) {
-        // writer is non-null here, so readUpstashEnv() is also non-null.
-        const env = readUpstashEnv()!;
+        // writer is non-null here, so getUpstashEnv() is also non-null.
+        const env = getUpstashEnv()!;
         cachedReader =
             env.readonlyToken !== null
                 ? new Redis({ url: env.url, token: env.readonlyToken })
@@ -66,4 +72,5 @@ export function getRedisReaderWriter(): RedisClientPair | null {
 export function __resetRedisClientForTests(): void {
     cachedWriter = undefined;
     cachedReader = undefined;
+    cachedEnv = undefined;
 }

@@ -1,4 +1,3 @@
-import type { Mock } from 'vitest';
 vi.mock('@upstash/redis', () => {
     const MockRedis = vi.fn(function () {
         return {
@@ -10,6 +9,7 @@ vi.mock('@upstash/redis', () => {
     return { Redis: MockRedis };
 });
 
+import type { Mock } from 'vitest';
 import { Redis } from '@upstash/redis';
 import { __resetRedisClientForTests } from '@/shared/cache/redisClient';
 import {
