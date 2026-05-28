@@ -3,6 +3,7 @@
 import { waitUntil } from '@vercel/functions';
 import { headers } from 'next/headers';
 import {
+    isEtRegularSessionOpen,
     submitOverallAnalysis,
     type EnrichedNewsItem,
     type OptionsSnapshot,
@@ -24,10 +25,7 @@ import { resolveTierAndByok, buildGateError } from '@/shared/lib/byokGate';
 import { isBot } from '@/shared/api/isBot';
 // Cross-entity: options-chain fetchOptionsSnapshot 필요. Phase 9에서 features 레이어 도입 시 해소.
 import { fetchOptionsSnapshot } from '@/entities/options-chain/lib/optionsDataCache';
-import {
-    isOpenInterestSnapshotStale,
-    isUsOptionsRegularSession,
-} from '@/shared/lib/marketSession';
+import { isOpenInterestSnapshotStale } from '@/shared/lib/options/openInterestStale';
 import type { AnalysisGateBlockedResult } from '@/shared/lib/types';
 
 /** Final return type — core's overall result + our siglens-side gate errors. */
@@ -97,7 +95,7 @@ export async function submitOverallAnalysisAction(
         // OI 0이 흔하므로 false positive 위험. 정규장 외에서만 stale 휴리스틱 적용.
         const optionsOiStale =
             optionsSnapshot !== null &&
-            !isUsOptionsRegularSession(new Date()) &&
+            !isEtRegularSessionOpen(new Date()) &&
             isOpenInterestSnapshotStale(optionsSnapshot);
 
         return await submitOverallAnalysis({

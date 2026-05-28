@@ -53,8 +53,12 @@ vi.mock('@/widgets/options/hooks/useOptionsChainMetrics', () => ({
     useOptionsChainMetrics: () => ({ chain: null, metrics: null }),
 }));
 
-vi.mock('@/shared/lib/marketSession', () => ({
-    isUsOptionsRegularSession: () => true,
+vi.mock('@y0ngha/siglens-core', async () => ({
+    ...(await vi.importActual('@y0ngha/siglens-core')),
+    isEtRegularSessionOpen: () => true,
+}));
+
+vi.mock('@/shared/lib/options/openInterestStale', () => ({
     isOpenInterestSnapshotStale: () => false,
 }));
 

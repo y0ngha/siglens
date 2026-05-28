@@ -45,12 +45,6 @@ describe('getOptionsCacheLifeProfile — market open (EDT)', () => {
         expect(getOptionsCacheLifeProfile(date)).toBe('options-market-open');
     });
 
-    it('returns options-market-open at 16:00 ET (closing boundary inclusive, EDT)', () => {
-        // 2026-05-14 Thu. 16:00 EDT = 20:00 UTC.
-        const date = new Date('2026-05-14T20:00:00Z');
-        expect(getOptionsCacheLifeProfile(date)).toBe('options-market-open');
-    });
-
     it('returns options-market-open at 12:00 ET (midday / lunch, EDT)', () => {
         // 2026-05-14 Thu. 12:00 EDT = 16:00 UTC.
         const date = new Date('2026-05-14T16:00:00Z');
@@ -62,12 +56,6 @@ describe('getOptionsCacheLifeProfile — market open (EST)', () => {
     it('returns options-market-open at 09:30 ET (opening boundary, EST)', () => {
         // 2026-01-14 Wed. 09:30 EST = 14:30 UTC.
         const date = new Date('2026-01-14T14:30:00Z');
-        expect(getOptionsCacheLifeProfile(date)).toBe('options-market-open');
-    });
-
-    it('returns options-market-open at 16:00 ET (closing boundary inclusive, EST)', () => {
-        // 2026-01-14 Wed. 16:00 EST = 21:00 UTC.
-        const date = new Date('2026-01-14T21:00:00Z');
         expect(getOptionsCacheLifeProfile(date)).toBe('options-market-open');
     });
 
@@ -85,9 +73,9 @@ describe('getOptionsCacheLifeProfile — market closed', () => {
         expect(getOptionsCacheLifeProfile(date)).toBe('options-market-closed');
     });
 
-    it('returns options-market-closed at 16:01 ET (just after close, EDT)', () => {
-        // 2026-05-14 Thu. 16:01 EDT = 20:01 UTC.
-        const date = new Date('2026-05-14T20:01:00Z');
+    it('returns options-market-closed at 16:00 ET (closing boundary exclusive, EDT)', () => {
+        // 2026-05-14 Thu. 16:00 EDT = 20:00 UTC. 마감 정각은 closed (exclusive).
+        const date = new Date('2026-05-14T20:00:00Z');
         expect(getOptionsCacheLifeProfile(date)).toBe('options-market-closed');
     });
 
@@ -103,9 +91,9 @@ describe('getOptionsCacheLifeProfile — market closed', () => {
         expect(getOptionsCacheLifeProfile(date)).toBe('options-market-closed');
     });
 
-    it('returns options-market-closed at 16:01 ET (just after close, EST)', () => {
-        // 2026-01-14 Wed. 16:01 EST = 21:01 UTC.
-        const date = new Date('2026-01-14T21:01:00Z');
+    it('returns options-market-closed at 16:00 ET (closing boundary exclusive, EST)', () => {
+        // 2026-01-14 Wed. 16:00 EST = 21:00 UTC. 마감 정각은 closed (exclusive).
+        const date = new Date('2026-01-14T21:00:00Z');
         expect(getOptionsCacheLifeProfile(date)).toBe('options-market-closed');
     });
 
