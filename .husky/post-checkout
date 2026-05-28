@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+# post-checkout — emulate Claude Code's .worktreeinclude for raw `git worktree add`.
+# On a fresh worktree, copy the gitignored assets listed in .worktreeinclude
+# from the main worktree so the new tree behaves like a full checkout and skips
+# a fresh `yarn install`. No-op on ordinary branch checkouts.
+old=$1; flag=$3
+
+[ "$flag" = "1" ] || exit 0                                       # branch checkout only
+[ "$old" = "0000000000000000000000000000000000000000" ] || exit 0 # fresh worktree only (no prior HEAD)
+
+main_root=$(cd "$(dirname "$(git rev-parse --git-common-dir)")" && pwd) || exit 0
+wt_root=$(git rev-parse --show-toplevel) || exit 0
+[ "$wt_root" = "$main_root" ] && exit 0                           # never the main worktree
+
+inc="$main_root/.worktreeinclude"
+[ -f "$inc" ] || exit 0
+
+while IFS= read -r p; do
+  case "$p" in ''|'#'*) continue ;; esac    # skip blanks / comments
+  [ -e "$main_root/$p" ] || continue        # must exist in main
+  [ -e "$wt_root/$p" ] && continue          # already present -> skip
+  mkdir -p "$(dirname "$wt_root/$p")"
+  cp -R "$main_root/$p" "$wt_root/$p"
+done < "$inc"
