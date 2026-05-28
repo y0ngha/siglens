@@ -3,12 +3,11 @@ import { cache } from 'react';
 import { Redis } from '@upstash/redis';
 import {
     type BarsData,
+    type MarketDataProvider,
     type Timeframe,
     fetchBarsWithIndicators,
     computeBarsEffectiveTtl,
 } from '@y0ngha/siglens-core';
-import { withRetry } from '@/shared/lib/withRetry';
-import { BARS_FMP_RETRY } from './barsRetry';
 
 // Redis 미설정 환경(로컬 dev 등)에서도 graceful fallback이 가능하도록 연결을 lazy 초기화로 지연한다.
 let cachedRedis: Redis | null | undefined;
@@ -49,6 +48,7 @@ function buildBarsKey(
  */
 export const getCachedBarsWithIndicators = cache(
     async (
+        provider: MarketDataProvider,
         symbol: string,
         timeframe: Timeframe,
         fmpSymbol?: string
@@ -68,9 +68,11 @@ export const getCachedBarsWithIndicators = cache(
             }
         }
 
-        const fresh = await withRetry(
-            () => fetchBarsWithIndicators(symbol, timeframe, fmpSymbol),
-            BARS_FMP_RETRY
+        const fresh = await fetchBarsWithIndicators(
+            provider,
+            symbol,
+            timeframe,
+            fmpSymbol
         );
 
         if (fresh.bars.length > 0 && redis !== null) {
