@@ -1,0 +1,7 @@
+# Gitignored assets copied into each new worktree (.gitignore syntax).
+# A worktree is a fresh checkout, so these would otherwise be missing and
+# require a full `yarn install`. Only paths that are also gitignored are copied.
+node_modules
+.husky/_
+.yarn/install-state.gz
+.env.local

@@ -152,7 +152,14 @@ interface SubmitOverallAnalysisOptions {
 ### 5.2 server action 주입 (5곳)
 
 - `entities/bars/actions/getBarsAction.ts`:
-  `fetchBarsWithIndicators(getMarketDataProvider(), symbol, timeframe, fmpSymbol)`
+  `fetchBarsWithIndicators(getMarketDataProvider(), symbol, timeframe, fmpSymbol)`.
+  **추가로**: 기존 `withRetry(..., BARS_FMP_RETRY)` 래퍼 **제거** — `fmpGet`이 동일 정책
+  (`FMP_TRANSIENT_RETRY`)으로 provider 레이어에서 retry하므로 액션 레이어 retry는 중복(이중
+  retry 회귀 방지). FMP user-message 매핑(`getFmpUserFacingMessage`/`logFmpPaymentRequiredError`)은
+  유지. `lib/barsRetry.ts`(`isCoreFmpTransientError`/`getCoreFmpRetryDelayMs`/`BARS_FMP_RETRY`)와
+  `__tests__/barsRetry.test.ts` **삭제**(getBarsAction 외 사용처 없음). 이 shim들은 애초에
+  core `FmpProvider`가 retry 없이 generic Error를 던졌기 때문에 둔 것이라, FMP가 siglens로
+  오면 존재 이유가 사라진다.
 - `entities/market-summary/actions/getMarketSummaryAction.ts`:
   `getMarketSummary(getMarketDataProvider())`,
   `getMarketSummaryWithBriefing(getMarketDataProvider())`
@@ -179,8 +186,13 @@ provider는 `shared/api`에 위치 — 모든 레이어 import 가능, entity ac
 
 ## 7. 동작 델타 (의도된 변경)
 
-- bars/quote fetch에 **retry 3회**(429/5xx/네트워크/timeout) 추가 — 기존 core `FmpProvider`엔
-  없던 rate-limit 내성. `fmpGet` 재사용 결과.
+- **bars 경로**: retry가 **추가되는 게 아니라 이동**한다. 기존엔 `getBarsAction`이
+  `withRetry(BARS_FMP_RETRY)`로 감쌌고(core FmpProvider는 retry 없음), 이전 후엔 `fmpGet`의
+  `FMP_TRANSIENT_RETRY`가 담당. 두 정책은 사실상 동일(maxRetries 3, baseDelay 500ms, budget
+  60s, 429→10/15/20s)이라 동작 보존. 단 retry 위치가 fetch 단위로 더 세분화(인디케이터 재계산
+  없이 fetch만 재시도) + `Retry-After` 헤더 우선 적용으로 개선.
+- **quote / market-summary / sector-signals / submit\* 경로**: 기존에 retry가 전혀 없던 경로라
+  **retry 3회가 신규 추가**된다(`fmpGet` 재사용 결과). rate-limit 내성 향상.
 - bars/quote 실패 에러 타입: generic `Error` → 구조화된 `FmpHttpError`. 다운스트림
   `getFmpErrorStatus`/`fmpUserMessage`가 이미 양쪽을 파싱하므로 호환.
 - 타임아웃: 10s 동일(core `FETCH_DEFAULT_TIME_OUT`=10s, siglens `FMP_FETCH_TIMEOUT_MS`=10s).
@@ -195,3 +207,7 @@ provider는 `shared/api`에 위치 — 모든 레이어 import 가능, entity ac
   null-on-failure 계약을 유지.
 - **daily 병합**: `Promise.all([eod fetch, fetchTodayQuoteBar])`에서 eod 실패는 throw(retry 후
   전파), today-quote 실패는 null 흡수 — 기존 분기 동작 유지.
+- **이중 retry 회귀 방지**: getBarsAction의 `BARS_FMP_RETRY` 래퍼를 제거하지 않으면 액션
+  retry(3) × provider retry(3)로 최대 9회 재시도되어 latency·API 호출이 증폭된다. 반드시
+  §5.2대로 액션 래퍼를 제거해 retry 단일화. (brainstorming 단계 이후 코드 정독 중 발견된 spec
+  보정 사항.)
