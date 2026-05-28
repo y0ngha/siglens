@@ -89,5 +89,16 @@ describe('redisClient', () => {
             const pair = getRedisReaderWriter();
             expect(pair!.reader).toBe(pair!.writer);
         });
+
+        it('두 번 호출해도 Redis constructor가 추가로 호출되지 않는다(reader 싱글톤 히트)', () => {
+            process.env.UPSTASH_REDIS_REST_URL = URL;
+            process.env.UPSTASH_REDIS_REST_TOKEN = TOKEN;
+            process.env.UPSTASH_REDIS_REST_READONLY_TOKEN = RO;
+            const first = getRedisReaderWriter();
+            const second = getRedisReaderWriter();
+            expect(mockRedisConstructor).toHaveBeenCalledTimes(2); // writer + reader, once each
+            expect(first!.reader).toBe(second!.reader);
+            expect(first!.writer).toBe(second!.writer);
+        });
     });
 });

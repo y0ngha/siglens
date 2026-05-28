@@ -15,8 +15,9 @@ interface UpstashEnv {
 
 // undefined = not yet initialized; null = env not configured (graceful fallback).
 let cachedWriter: Redis | null | undefined;
-let cachedReader: Redis | null | undefined;
 let cachedEnv: UpstashEnv | null | undefined;
+// undefined until first getRedisReaderWriter() call; then the writer or a readonly client.
+let cachedReader: Redis | undefined;
 
 function getUpstashEnv(): UpstashEnv | null {
     if (cachedEnv === undefined) cachedEnv = readUpstashEnv();
@@ -64,8 +65,7 @@ export function getRedisReaderWriter(): RedisClientPair | null {
                 ? new Redis({ url: env.url, token: env.readonlyToken })
                 : writer;
     }
-    // cachedReader is always set to a Redis instance above (never null); assert non-null.
-    return { writer, reader: cachedReader! };
+    return { writer, reader: cachedReader };
 }
 
 /** Reset the cached singletons between test runs. */
