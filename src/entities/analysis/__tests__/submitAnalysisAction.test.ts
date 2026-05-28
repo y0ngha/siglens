@@ -23,6 +23,12 @@ vi.mock('@/shared/lib/byokGate', () => ({
     })),
 }));
 
+vi.mock('@/shared/api/market/getMarketDataProvider', () => ({
+    getMarketDataProvider: vi.fn(() => mockProvider),
+}));
+
+const mockProvider = {} as import('@y0ngha/siglens-core').MarketDataProvider;
+
 import { headers } from 'next/headers';
 import { resolveTierAndByok } from '@/shared/lib/byokGate';
 import type { AnalysisGateError } from '@/shared/lib/types';
@@ -110,6 +116,7 @@ describe('submitAnalysisAction tier + BYOK gate', () => {
             '^AAPL',
             expect.objectContaining({
                 tierContext: { userId: 'u1', tier: 'member' },
+                marketDataProvider: mockProvider,
             })
         );
     });
@@ -175,6 +182,14 @@ describe('submitAnalysisAction tier + BYOK gate', () => {
         const opts = lastCall![5] as Record<string, unknown>;
         expect(opts).not.toHaveProperty('tierContext');
         expect(opts).not.toHaveProperty('userApiKey');
+        expect(mockSubmitAnalysis).toHaveBeenCalledWith(
+            'AAPL',
+            'Apple',
+            '1Day',
+            true,
+            '^AAPL',
+            expect.objectContaining({ marketDataProvider: mockProvider })
+        );
     });
 
     it('passes null userId when getCurrentUser returns null', async () => {

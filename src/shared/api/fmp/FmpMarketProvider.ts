@@ -9,6 +9,7 @@ import { MS_PER_SECOND } from '@/shared/config/time';
 import { fmpGet } from '@/shared/api/fmp/httpClient';
 
 const ISO_DATE_PREFIX_LENGTH = 10; // "YYYY-MM-DD"
+const ISO_DATE_PART_INDEX = 0;
 
 const EDT_OFFSET_HOURS = -4;
 const EST_OFFSET_HOURS = -5;
@@ -86,15 +87,7 @@ const FMP_INTRADAY_TIMEFRAME_MAP: Record<Exclude<Timeframe, '1Day'>, string> = {
     '4Hour': '4hour',
 };
 
-interface FmpBar {
-    date: string;
-    open: number;
-    high: number;
-    low: number;
-    close: number;
-    volume: number;
-}
-interface FmpDailyBar {
+interface FmpOhlcvBar {
     date: string;
     open: number;
     high: number;
@@ -113,7 +106,7 @@ interface FmpQuote {
     name: string;
 }
 
-function toFmpBar(raw: FmpBar): Bar {
+function toFmpBar(raw: FmpOhlcvBar): Bar {
     return {
         time: fmpIntradayDateToUtcSeconds(raw.date),
         open: raw.open,
@@ -124,10 +117,12 @@ function toFmpBar(raw: FmpBar): Bar {
     };
 }
 
-function toFmpDailyBar(raw: FmpDailyBar): Bar {
+function toFmpDailyBar(raw: FmpOhlcvBar): Bar {
+    // UTC midnight (Z): deterministic regardless of server TZ and consistent with the
+    // intraday path's ET→UTC conversion. (lightweight-charts expects UTC.)
     return {
         time: Math.floor(
-            new Date(raw.date + 'T00:00:00').getTime() / MS_PER_SECOND
+            new Date(raw.date + 'T00:00:00Z').getTime() / MS_PER_SECOND
         ),
         open: raw.open,
         high: raw.high,
@@ -142,10 +137,11 @@ function buildBarsQuery(
     fromDate: string | undefined,
     endDate: string | undefined
 ): Record<string, string> {
-    const query: Record<string, string> = { symbol };
-    if (fromDate !== undefined) query.from = fromDate;
-    if (endDate !== undefined) query.to = endDate;
-    return query;
+    return {
+        symbol,
+        ...(fromDate !== undefined ? { from: fromDate } : {}),
+        ...(endDate !== undefined ? { to: endDate } : {}),
+    };
 }
 
 /**
@@ -162,9 +158,10 @@ export class FmpMarketProvider implements MarketDataProvider {
         if (timeframe === '1Day') {
             return this.getDailyBars(symbol, fromDate, endDate);
         }
+        // Safe: the '1Day' branch returned above, so timeframe is guaranteed non-'1Day' here.
         const fmpTimeframe =
             FMP_INTRADAY_TIMEFRAME_MAP[timeframe as Exclude<Timeframe, '1Day'>];
-        const raw = await fmpGet<FmpBar[]>(
+        const raw = await fmpGet<FmpOhlcvBar[]>(
             `historical-chart/${fmpTimeframe}`,
             buildBarsQuery(symbol, fromDate, endDate)
         );
@@ -178,7 +175,7 @@ export class FmpMarketProvider implements MarketDataProvider {
         endDate: string | undefined
     ): Promise<Bar[]> {
         const [raw, todayBar] = await Promise.all([
-            fmpGet<FmpDailyBar[]>(
+            fmpGet<FmpOhlcvBar[]>(
                 'historical-price-eod/full',
                 buildBarsQuery(symbol, fromDate, endDate)
             ),
@@ -218,10 +215,10 @@ export class FmpMarketProvider implements MarketDataProvider {
             if (!Array.isArray(raw) || raw.length === 0) return null;
             const quote = raw[0]!;
             const d = new Date(quote.timestamp * MS_PER_SECOND);
-            const dateStr = d.toISOString().split('T')[0]!;
+            const dateStr = d.toISOString().split('T')[ISO_DATE_PART_INDEX]!;
             return {
                 time: Math.floor(
-                    new Date(dateStr + 'T00:00:00').getTime() / MS_PER_SECOND
+                    new Date(dateStr + 'T00:00:00Z').getTime() / MS_PER_SECOND
                 ),
                 open: quote.open,
                 high: quote.dayHigh,

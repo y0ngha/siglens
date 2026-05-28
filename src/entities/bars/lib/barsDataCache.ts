@@ -41,7 +41,7 @@ function buildBarsKey(
  *   1. React.cache — 요청 내 dedup(layout/page가 같은 TF prefetch 시 1회).
  *   2. Upstash Redis — cross-request, 시장 세션별 TTL(core `computeBarsEffectiveTtl`).
  *      봇이 한 종목의 여러 탭을 연속 크롤링해도 fetch가 1회로 수렴.
- *      Redis 미설정 시 graceful fallback으로 FMP 직접 호출.
+ *      Redis 미설정 시 graceful fallback으로 주입된 provider를 직접 호출.
  *
  * 에러는 캐시하지 않는다(throw가 set 이전에 전파). 빈 봉도 캐시하지 않는다
  * (transient 장애를 TTL 동안 굳히지 않도록 — optionsDataCache의 null-caution과 동일).

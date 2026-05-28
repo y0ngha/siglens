@@ -63,6 +63,12 @@ vi.mock('@/shared/lib/marketSession', () => ({
     isOpenInterestSnapshotStale: vi.fn(),
 }));
 
+vi.mock('@/shared/api/market/getMarketDataProvider', () => ({
+    getMarketDataProvider: vi.fn(() => mockProvider),
+}));
+
+const mockProvider = {} as import('@y0ngha/siglens-core').MarketDataProvider;
+
 import { submitOverallAnalysisAction } from '../actions/submitOverallAnalysisAction';
 import {
     submitOverallAnalysis,
@@ -220,6 +226,7 @@ describe('submitOverallAnalysisAction 함수는', () => {
                 symbol: 'AAPL',
                 timeframe: '1Day',
                 modelId: MODEL_ID,
+                marketDataProvider: mockProvider,
             })
         );
     });

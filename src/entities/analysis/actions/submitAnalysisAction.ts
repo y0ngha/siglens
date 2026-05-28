@@ -31,6 +31,7 @@ export async function submitAnalysisAction(
     try {
         const requestHeaders = await headers();
         const skipEnqueueIfMiss = isBot(requestHeaders);
+        const marketDataProvider = getMarketDataProvider();
 
         // no user lookup needed when modelId is absent
         if (modelId === undefined) {
@@ -44,7 +45,7 @@ export async function submitAnalysisAction(
                     waitUntil,
                     modelId,
                     skipEnqueueIfMiss,
-                    marketDataProvider: getMarketDataProvider(),
+                    marketDataProvider,
                 }
             );
         }
@@ -67,7 +68,7 @@ export async function submitAnalysisAction(
                 waitUntil,
                 modelId,
                 skipEnqueueIfMiss,
-                marketDataProvider: getMarketDataProvider(),
+                marketDataProvider,
                 tierContext: { userId, tier: gate.tier },
                 ...(gate.userApiKey !== undefined
                     ? { userApiKey: gate.userApiKey }
