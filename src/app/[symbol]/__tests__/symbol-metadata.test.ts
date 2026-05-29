@@ -310,4 +310,18 @@ describe('generateMetadata — canonical URL 회귀 가드', () => {
             }
         );
     });
+
+    describe('variant noindex 제거 — clean canonical 통합', () => {
+        // 최상위 beforeEach가 assetInfo=null로 설정 → buildDisplayName 미호출
+        // (ticker fallback). variant noindex 제거 검증에는 assetInfo 유무가 무관하다.
+        it('overall: tf variant여도 noindex 없음, canonical은 clean', async () => {
+            const metadata = await generateOverallMetadata(
+                makeParamsWithSearch('aapl', { tf: '1Hour' })
+            );
+            expect(metadata.robots).toBeUndefined();
+            expect(metadata.alternates?.canonical).toBe(
+                'https://siglens.io/AAPL/overall'
+            );
+        });
+    });
 });

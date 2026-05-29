@@ -53,37 +53,21 @@ import { generateMetadata } from '@/app/market/page';
 describe('Market page', () => {
     describe('generateMetadata', () => {
         it('returns metadata with market title', async () => {
-            const metadata = await generateMetadata({
-                searchParams: Promise.resolve({}),
-            });
+            const metadata = await generateMetadata();
 
             expect(metadata.title).toContain('미국 주식');
         });
 
         it('sets canonical to /market', async () => {
-            const metadata = await generateMetadata({
-                searchParams: Promise.resolve({}),
-            });
+            const metadata = await generateMetadata();
 
             expect(metadata.alternates?.canonical).toBe(
                 'https://siglens.io/market'
             );
         });
 
-        it('adds noindex for query variant pages', async () => {
-            const metadata = await generateMetadata({
-                searchParams: Promise.resolve({ sector: 'XLK' }),
-            });
-
-            expect(metadata.robots).toEqual(
-                expect.objectContaining({ index: false })
-            );
-        });
-
-        it('does not add noindex for canonical page', async () => {
-            const metadata = await generateMetadata({
-                searchParams: Promise.resolve({}),
-            });
+        it('does not set noindex — variant URLs consolidate via clean canonical', async () => {
+            const metadata = await generateMetadata();
 
             expect(metadata.robots).toBeUndefined();
         });
