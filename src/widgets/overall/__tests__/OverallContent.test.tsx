@@ -81,6 +81,54 @@ describe('OverallContent non-done branches', () => {
         ).toBeInTheDocument();
     });
 
+    it('renders BotBlockedNotice in bot_blocked state', () => {
+        mockUseOverallAnalysis.mockReturnValue({
+            state: { status: 'bot_blocked' },
+            trigger: vi.fn(),
+        });
+        render(
+            <OverallContent
+                symbol="AAPL"
+                companyName="Apple Inc."
+                timeframe="1Day"
+            />
+        );
+        expect(
+            screen.getByText(/봇 트래픽으로 보여 분석 결과를 표시하지 않았어요/)
+        ).toBeInTheDocument();
+    });
+
+    it('renders DependencyProgress in pending_dependencies state', () => {
+        mockUseOverallAnalysis.mockReturnValue({
+            state: {
+                status: 'pending_dependencies',
+                pendingJobs: {
+                    technical: 'job-t',
+                    fundamental: undefined,
+                    news: 'job-n',
+                    options: undefined,
+                },
+                retryCount: 2,
+            },
+            trigger: vi.fn(),
+        });
+        render(
+            <OverallContent
+                symbol="AAPL"
+                companyName="Apple Inc."
+                timeframe="1Day"
+            />
+        );
+        // DependencyProgress 헤딩(완료/총합 카운트)으로 렌더 확인. 2개 axis가
+        // pending이므로 완료 2/4.
+        expect(
+            screen.getByRole('region', {
+                name: /종합 분석에 필요한 데이터 수집 중/,
+            })
+        ).toBeInTheDocument();
+        expect(screen.getByText(/2\/4/)).toBeInTheDocument();
+    });
+
     it('renders submitting loading state', () => {
         mockUseOverallAnalysis.mockReturnValue({
             state: { status: 'submitting' },
