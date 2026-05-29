@@ -29,6 +29,8 @@ import { usePublishSymbolChat } from '@/features/symbol-chat';
 import { buildChatState } from './utils/buildChatState';
 import { PWA_TRIGGER_EVENT } from '@/shared/lib/pwaEvents';
 import { FearGreedCardMounted } from './FearGreedCardMounted';
+import { isFallbackAnalysis } from '@/entities/chat-message';
+import { TechnicalFactsSummary } from './TechnicalFactsSummary';
 
 const StockChart = dynamic(
     () => import('@/widgets/chart/StockChart').then(mod => mod.StockChart),
@@ -161,60 +163,80 @@ export function ChartContent({
     const { clusteredKeyLevels, validatedActionPrices, reconciledActionLines } =
         useAnalysisDerivedData(analysis, bars);
 
-    const analysisContent = useMemo(
-        () =>
-            isBotBlocked ? (
-                <BotBlockedNotice />
-            ) : (
-                <>
-                    <AnalysisStatusBanner
-                        status={analysisStatus}
-                        className="mb-3"
-                    />
-                    <AnalysisPanel
+    const analysisContent = useMemo(() => {
+        const hasNarrative = !isFallbackAnalysis(analysis);
+        const fearGreedCard = (
+            <ErrorBoundary fallback={null}>
+                <Suspense fallback={null}>
+                    <FearGreedCardMounted
                         symbol={symbol}
-                        analysis={analysis}
-                        keyLevels={clusteredKeyLevels}
-                        timeframe={timeframe}
-                        isAnalyzing={isAnalyzing}
-                        showProgress={displayAnalyzing}
-                        progressPhaseIndex={progressPhaseIndex}
-                        progressTipIndex={progressTipIndex}
-                        onReanalyze={handleReanalyze}
-                        reanalyzeCooldownMs={reanalyzeCooldownMs}
-                        cooldownNotice={cooldownNotice}
-                        actionPricesVisible={actionPricesVisible}
-                        onActionPricesVisibilityChange={setActionPricesVisible}
+                        fmpSymbol={fmpSymbol}
                     />
-                    <ErrorBoundary fallback={null}>
-                        <Suspense fallback={null}>
-                            <FearGreedCardMounted
-                                symbol={symbol}
-                                fmpSymbol={fmpSymbol}
-                            />
-                        </Suspense>
-                    </ErrorBoundary>
-                </>
-            ),
-        [
-            isBotBlocked,
-            isAnalyzing,
-            symbol,
-            analysisStatus,
-            analysis,
-            clusteredKeyLevels,
-            timeframe,
-            displayAnalyzing,
-            progressPhaseIndex,
-            progressTipIndex,
-            handleReanalyze,
-            reanalyzeCooldownMs,
-            cooldownNotice,
-            actionPricesVisible,
-            setActionPricesVisible,
-            fmpSymbol,
-        ]
-    );
+                </Suspense>
+            </ErrorBoundary>
+        );
+
+        return isBotBlocked ? (
+            <BotBlockedNotice />
+        ) : !hasNarrative ? (
+            // 서사 없음(cold-miss/생성 전) → 결정적 사실 층 + 진행 배너.
+            // 봇은 이 사실 텍스트를 색인하고, 사람은 생성 대기 중 실측값을 본다.
+            <>
+                <AnalysisStatusBanner
+                    status={analysisStatus}
+                    className="mb-3"
+                />
+                <TechnicalFactsSummary
+                    symbol={symbol}
+                    bars={bars}
+                    indicators={indicators}
+                />
+                {fearGreedCard}
+            </>
+        ) : (
+            <>
+                <AnalysisStatusBanner
+                    status={analysisStatus}
+                    className="mb-3"
+                />
+                <AnalysisPanel
+                    symbol={symbol}
+                    analysis={analysis}
+                    keyLevels={clusteredKeyLevels}
+                    timeframe={timeframe}
+                    isAnalyzing={isAnalyzing}
+                    showProgress={displayAnalyzing}
+                    progressPhaseIndex={progressPhaseIndex}
+                    progressTipIndex={progressTipIndex}
+                    onReanalyze={handleReanalyze}
+                    reanalyzeCooldownMs={reanalyzeCooldownMs}
+                    cooldownNotice={cooldownNotice}
+                    actionPricesVisible={actionPricesVisible}
+                    onActionPricesVisibilityChange={setActionPricesVisible}
+                />
+                {fearGreedCard}
+            </>
+        );
+    }, [
+        isBotBlocked,
+        bars,
+        indicators,
+        isAnalyzing,
+        symbol,
+        analysisStatus,
+        analysis,
+        clusteredKeyLevels,
+        timeframe,
+        displayAnalyzing,
+        progressPhaseIndex,
+        progressTipIndex,
+        handleReanalyze,
+        reanalyzeCooldownMs,
+        cooldownNotice,
+        actionPricesVisible,
+        setActionPricesVisible,
+        fmpSymbol,
+    ]);
 
     // timeframe을 React.Fragment key로 전달 — Suspense 경계 밖에서 timeframe 변경 시 자식 트리를 강제 remount한다.
     // timeframe이 useMemo dep에 포함되어 있으므로 mobileContent는 timeframe 변경 시 어차피 재생성되지만, Suspense 재진입은 key 경유로만 트리거된다.
