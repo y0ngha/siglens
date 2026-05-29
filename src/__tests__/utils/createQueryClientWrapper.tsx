@@ -1,6 +1,11 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactElement, ReactNode } from 'react';
 
+interface QueryClientWrapperResult {
+    wrapper: (props: { children: ReactNode }) => ReactElement;
+    client: QueryClient;
+}
+
 /**
  * 테스트용 QueryClient와 그것을 주입하는 Provider wrapper를 함께 생성한다.
  *
@@ -9,10 +14,7 @@ import type { ReactElement, ReactNode } from 'react';
  *   정리해 describe 간 query 상태가 누수되지 않게 하려면 인스턴스 핸들이 필요하다.
  *   wrapper만 필요한 컴포넌트 테스트는 `.wrapper`만 구조분해해 쓰면 된다.
  */
-export function createQueryClientWrapper(): {
-    wrapper: (props: { children: ReactNode }) => ReactElement;
-    client: QueryClient;
-} {
+export function createQueryClientWrapper(): QueryClientWrapperResult {
     const client = new QueryClient({
         defaultOptions: { queries: { retry: false } },
     });

@@ -76,6 +76,9 @@ const DONE_RESULT: OverallAnalysisResponse = {
 };
 
 function renderOverall() {
+    // 매 호출이 격리된 새 QueryClient를 만들어 테스트 간 캐시 공유가 없다. 그래서
+    // hook 테스트(useOverallAnalysis.test.tsx)처럼 client를 추적해 afterEach에서
+    // clear할 필요가 없다 — 컴포넌트는 RTL cleanup이 unmount하고 client는 GC된다.
     return render(
         <OverallContent
             symbol="AAPL"
@@ -104,26 +107,22 @@ describe('OverallContent 사용자 분석 플로우 (userEvent)', () => {
 
         renderOverall();
 
-        // 초기 상태: idle CTA.
         const cta = await screen.findByRole('button', {
             name: /AI 종합 분석 받기/,
         });
         await user.click(cta);
 
-        // polling을 거쳐 done 서사(headline)가 화면에 나타난다.
         expect(
             await screen.findByText('AAPL 종합 분석 헤드라인')
         ).toBeInTheDocument();
 
-        // 첫 분석이므로 submit은 1번, force=false로 호출된다(재분석이 아님).
         // 훅은 첫 trigger에서 queryFnForceRef(false)를 그대로 options로 넘기므로
         // 5번째 인자는 정확히 { force: false }다 — done 상태에서의 재분석만 force:true.
         expect(mockSubmit).toHaveBeenCalledTimes(1);
-        const firstArgs = mockSubmit.mock.calls[0];
-        expect(firstArgs?.[0]).toBe('AAPL');
-        expect(firstArgs?.[4]).toEqual({ force: false });
+        const firstArgs = mockSubmit.mock.calls[0]!;
+        expect(firstArgs[0]).toBe('AAPL');
+        expect(firstArgs[4]).toEqual({ force: false });
 
-        // overall job을 polling해 processing → done까지 2번 호출됐다.
         expect(mockPollOverall).toHaveBeenCalledWith('overall-job');
         expect(mockPollOverall).toHaveBeenCalledTimes(2);
     });
@@ -147,14 +146,12 @@ describe('OverallContent 사용자 분석 플로우 (userEvent)', () => {
             await screen.findByRole('button', { name: /AI 종합 분석 받기/ })
         );
 
-        // 에러 메시지 + axis 정보가 노출되고 "다시 시도" 버튼이 보인다.
         expect(
             await screen.findByText(/일시적 오류 \(technical 축 실패\)/)
         ).toBeInTheDocument();
         const retry = screen.getByRole('button', { name: '다시 시도' });
         await user.click(retry);
 
-        // 재시도 → cached → done 서사로 전환된다.
         expect(
             await screen.findByText('AAPL 종합 분석 헤드라인')
         ).toBeInTheDocument();

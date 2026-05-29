@@ -111,155 +111,162 @@ function getSeparator(): HTMLElement {
     return screen.getByRole('separator', { name: '패널 너비 조절' });
 }
 
-beforeEach(() => {
-    vi.clearAllMocks();
-    // 기본값: idle(분석 중 아님·에러 없음), 서사 없는 FALLBACK.
-    displayMock.mockReturnValue({
-        displayAnalyzing: false,
-        handleProgressFinished: vi.fn(),
-    });
-    analysisMock.mockReturnValue(analysisReturn());
-});
-
-describe('ChartContent 상태 배너', () => {
-    it('분석 중이면 "AI 분석 중…" 배너를 렌더한다', () => {
+describe('ChartContent', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        // 기본값: idle(분석 중 아님·에러 없음), 서사 없는 FALLBACK.
         displayMock.mockReturnValue({
-            displayAnalyzing: true,
+            displayAnalyzing: false,
             handleProgressFinished: vi.fn(),
         });
-        renderChart();
-        expect(screen.getByText('AI 분석 중…')).toBeInTheDocument();
+        analysisMock.mockReturnValue(analysisReturn());
     });
 
-    it('분석 에러가 있으면 에러 메시지 배너를 렌더한다', () => {
-        analysisMock.mockReturnValue(
-            analysisReturn({
-                analysisError: '네트워크 오류로 분석에 실패했습니다.',
-            })
-        );
-        renderChart();
-        expect(
-            screen.getByText('네트워크 오류로 분석에 실패했습니다.')
-        ).toBeInTheDocument();
-    });
-
-    it('idle(분석 중 아님·에러 없음)이면 상태 배너를 렌더하지 않는다', () => {
-        renderChart();
-        // 사실 층은 정확히 한 번 보이되 진행/에러 배너는 없어야 한다.
-        // (mobileContent는 콜백으로만 전달되고 DOM에 렌더되지 않으므로 1회.)
-        expect(screen.getAllByText(/기술적 지표 요약/)).toHaveLength(1);
-        expect(screen.queryByText('AI 분석 중…')).toBeNull();
-    });
-
-    it('봇 차단 시 BotBlockedNotice를 렌더하고 사실 층·배너는 렌더하지 않는다', () => {
-        analysisMock.mockReturnValue(analysisReturn({ isBotBlocked: true }));
-        renderChart();
-        expect(
-            screen.getByText(/봇 트래픽으로 보여 분석 결과를 표시하지 않았어요/)
-        ).toBeInTheDocument();
-        expect(screen.queryByText('AI 분석 중…')).toBeNull();
-        expect(screen.queryByText(/기술적 지표 요약/)).toBeNull();
-    });
-});
-
-describe('ChartContent 패널 리사이즈 상호작용', () => {
-    it('초기 패널 너비는 PANEL_MAX_WIDTH다', () => {
-        renderChart();
-        expect(getSeparator()).toHaveAttribute(
-            'aria-valuenow',
-            String(PANEL_MAX_WIDTH)
-        );
-    });
-
-    it('키보드 ArrowLeft/ArrowRight로 패널 너비를 한 스텝씩 조절한다', async () => {
-        const user = userEvent.setup();
-        renderChart();
-        getSeparator().focus();
-
-        await user.keyboard('{ArrowLeft}');
-        expect(getSeparator()).toHaveAttribute(
-            'aria-valuenow',
-            String(PANEL_MAX_WIDTH - 10)
-        );
-
-        await user.keyboard('{ArrowRight}');
-        expect(getSeparator()).toHaveAttribute(
-            'aria-valuenow',
-            String(PANEL_MAX_WIDTH)
-        );
-    });
-
-    it('화살표가 아닌 키는 패널 너비를 바꾸지 않는다', async () => {
-        const user = userEvent.setup();
-        renderChart();
-        getSeparator().focus();
-
-        await user.keyboard('{Enter}');
-        expect(getSeparator()).toHaveAttribute(
-            'aria-valuenow',
-            String(PANEL_MAX_WIDTH)
-        );
-    });
-
-    it('ArrowLeft를 하한 이하로 눌러도 PANEL_MIN_WIDTH에서 멈춘다', async () => {
-        const user = userEvent.setup();
-        renderChart();
-        getSeparator().focus();
-
-        // (MAX-MIN)/10 보다 충분히 많이 눌러 하한 클램프를 확인한다.
-        const presses = Math.ceil((PANEL_MAX_WIDTH - PANEL_MIN_WIDTH) / 10) + 5;
-        await user.keyboard('{ArrowLeft}'.repeat(presses));
-
-        expect(getSeparator()).toHaveAttribute(
-            'aria-valuenow',
-            String(PANEL_MIN_WIDTH)
-        );
-    });
-
-    it('마우스 드래그로 패널 너비를 줄이고 드래그 중 오버레이를 표시한다', () => {
-        const { container } = renderChart();
-
-        // 드래그 시작 — clientX 기준점 500.
-        fireEvent.mouseDown(getSeparator(), { button: 0, clientX: 500 });
-        // isDragging → separator 활성 보더 + 전체 화면 오버레이.
-        expect(getSeparator().className).toMatch(/border-primary-500/);
-        expect(container.querySelector('.fixed.inset-0')).not.toBeNull();
-
-        // separator는 오른쪽 분석 패널(aside) 왼쪽 경계다. 오른쪽으로 끌면 패널이
-        // 줄어든다 — usePanelResize는 nextWidth = startWidth - deltaX로 계산하고
-        // deltaX = moveX - startX다. 500→560(+60) → 640 - 60 = 580.
-        fireEvent.mouseMove(document, { clientX: 560 });
-        expect(getSeparator()).toHaveAttribute(
-            'aria-valuenow',
-            String(PANEL_MAX_WIDTH - 60)
-        );
-
-        // 드래그 종료 → 오버레이 제거.
-        fireEvent.mouseUp(document);
-        expect(getSeparator().className).not.toMatch(/border-primary-500/);
-        expect(container.querySelector('.fixed.inset-0')).toBeNull();
-    });
-
-    it('드래그로 하한 아래까지 끌어도 PANEL_MIN_WIDTH에서 클램프된다', () => {
-        renderChart();
-
-        fireEvent.mouseDown(getSeparator(), { button: 0, clientX: 0 });
-        // 오른쪽으로 (MAX-MIN+200)px 이동 → 하한 이하 요구 → MIN으로 클램프.
-        fireEvent.mouseMove(document, {
-            clientX: PANEL_MAX_WIDTH - PANEL_MIN_WIDTH + 200,
+    describe('상태 배너', () => {
+        it('분석 중이면 "AI 분석 중…" 배너를 렌더한다', () => {
+            displayMock.mockReturnValue({
+                displayAnalyzing: true,
+                handleProgressFinished: vi.fn(),
+            });
+            renderChart();
+            expect(screen.getByText('AI 분석 중…')).toBeInTheDocument();
         });
-        expect(getSeparator()).toHaveAttribute(
-            'aria-valuenow',
-            String(PANEL_MIN_WIDTH)
-        );
-        fireEvent.mouseUp(document);
+
+        it('분석 에러가 있으면 에러 메시지 배너를 렌더한다', () => {
+            analysisMock.mockReturnValue(
+                analysisReturn({
+                    analysisError: '네트워크 오류로 분석에 실패했습니다.',
+                })
+            );
+            renderChart();
+            expect(
+                screen.getByText('네트워크 오류로 분석에 실패했습니다.')
+            ).toBeInTheDocument();
+        });
+
+        it('idle(분석 중 아님·에러 없음)이면 상태 배너를 렌더하지 않는다', () => {
+            renderChart();
+            // 사실 층은 정확히 한 번 보이되 진행/에러 배너는 없어야 한다.
+            // (mobileContent는 콜백으로만 전달되고 DOM에 렌더되지 않으므로 1회.)
+            expect(screen.getAllByText(/기술적 지표 요약/)).toHaveLength(1);
+            expect(screen.queryByText('AI 분석 중…')).toBeNull();
+        });
+
+        it('봇 차단 시 BotBlockedNotice를 렌더하고 사실 층·배너는 렌더하지 않는다', () => {
+            analysisMock.mockReturnValue(
+                analysisReturn({ isBotBlocked: true })
+            );
+            renderChart();
+            expect(
+                screen.getByText(
+                    /봇 트래픽으로 보여 분석 결과를 표시하지 않았어요/
+                )
+            ).toBeInTheDocument();
+            expect(screen.queryByText('AI 분석 중…')).toBeNull();
+            expect(screen.queryByText(/기술적 지표 요약/)).toBeNull();
+        });
     });
 
-    it('우클릭(button≠0)은 드래그를 시작하지 않는다', () => {
-        const { container } = renderChart();
+    describe('패널 리사이즈 상호작용', () => {
+        it('초기 패널 너비는 PANEL_MAX_WIDTH다', () => {
+            renderChart();
+            expect(getSeparator()).toHaveAttribute(
+                'aria-valuenow',
+                String(PANEL_MAX_WIDTH)
+            );
+        });
 
-        fireEvent.mouseDown(getSeparator(), { button: 2, clientX: 500 });
-        expect(container.querySelector('.fixed.inset-0')).toBeNull();
-        expect(getSeparator().className).not.toMatch(/border-primary-500/);
+        it('키보드 ArrowLeft/ArrowRight로 패널 너비를 한 스텝씩 조절한다', async () => {
+            const user = userEvent.setup();
+            renderChart();
+            getSeparator().focus();
+
+            await user.keyboard('{ArrowLeft}');
+            expect(getSeparator()).toHaveAttribute(
+                'aria-valuenow',
+                String(PANEL_MAX_WIDTH - 10)
+            );
+
+            await user.keyboard('{ArrowRight}');
+            expect(getSeparator()).toHaveAttribute(
+                'aria-valuenow',
+                String(PANEL_MAX_WIDTH)
+            );
+        });
+
+        it('화살표가 아닌 키는 패널 너비를 바꾸지 않는다', async () => {
+            const user = userEvent.setup();
+            renderChart();
+            getSeparator().focus();
+
+            await user.keyboard('{Enter}');
+            expect(getSeparator()).toHaveAttribute(
+                'aria-valuenow',
+                String(PANEL_MAX_WIDTH)
+            );
+        });
+
+        it('ArrowLeft를 하한 이하로 눌러도 PANEL_MIN_WIDTH에서 멈춘다', async () => {
+            const user = userEvent.setup();
+            renderChart();
+            getSeparator().focus();
+
+            // (MAX-MIN)/10 보다 충분히 많이 눌러 하한 클램프를 확인한다.
+            const presses =
+                Math.ceil((PANEL_MAX_WIDTH - PANEL_MIN_WIDTH) / 10) + 5;
+            await user.keyboard('{ArrowLeft}'.repeat(presses));
+
+            expect(getSeparator()).toHaveAttribute(
+                'aria-valuenow',
+                String(PANEL_MIN_WIDTH)
+            );
+        });
+
+        it('마우스 드래그로 패널 너비를 줄이고 드래그 중 오버레이를 표시한다', () => {
+            const { container } = renderChart();
+
+            // 드래그 시작 — clientX 기준점 500.
+            fireEvent.mouseDown(getSeparator(), { button: 0, clientX: 500 });
+            // isDragging → separator 활성 보더 + 전체 화면 오버레이.
+            expect(getSeparator()).toHaveClass('border-primary-500');
+            expect(container.querySelector('.fixed.inset-0')).not.toBeNull();
+
+            // separator는 오른쪽 분석 패널(aside) 왼쪽 경계다. 오른쪽으로 끌면 패널이
+            // 줄어든다 — usePanelResize는 nextWidth = startWidth - deltaX로 계산하고
+            // deltaX = moveX - startX다. 500→560(+60) → 640 - 60 = 580.
+            fireEvent.mouseMove(document, { clientX: 560 });
+            expect(getSeparator()).toHaveAttribute(
+                'aria-valuenow',
+                String(PANEL_MAX_WIDTH - 60)
+            );
+
+            // 드래그 종료 → 오버레이 제거.
+            fireEvent.mouseUp(document);
+            expect(getSeparator()).not.toHaveClass('border-primary-500');
+            expect(container.querySelector('.fixed.inset-0')).toBeNull();
+        });
+
+        it('드래그로 하한 아래까지 끌어도 PANEL_MIN_WIDTH에서 클램프된다', () => {
+            renderChart();
+
+            fireEvent.mouseDown(getSeparator(), { button: 0, clientX: 0 });
+            // 오른쪽으로 (MAX-MIN+200)px 이동 → 하한 이하 요구 → MIN으로 클램프.
+            fireEvent.mouseMove(document, {
+                clientX: PANEL_MAX_WIDTH - PANEL_MIN_WIDTH + 200,
+            });
+            expect(getSeparator()).toHaveAttribute(
+                'aria-valuenow',
+                String(PANEL_MIN_WIDTH)
+            );
+            fireEvent.mouseUp(document);
+        });
+
+        it('우클릭(button≠0)은 드래그를 시작하지 않는다', () => {
+            const { container } = renderChart();
+
+            fireEvent.mouseDown(getSeparator(), { button: 2, clientX: 500 });
+            expect(container.querySelector('.fixed.inset-0')).toBeNull();
+            expect(getSeparator()).not.toHaveClass('border-primary-500');
+        });
     });
 });
