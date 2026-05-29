@@ -59,6 +59,28 @@ describe('TechnicalFactsSummary', () => {
         expect(screen.getByText(/과매도/)).toBeInTheDocument();
     });
 
+    it('RSI가 정확히 70이면 과매수로 렌더한다 (경계값)', () => {
+        render(
+            <TechnicalFactsSummary
+                symbol="AAPL"
+                bars={[bar(100), bar(110)]}
+                indicators={{ ...emptyIndicators, rsi: [null, 70] }}
+            />
+        );
+        expect(screen.getByText(/과매수/)).toBeInTheDocument();
+    });
+
+    it('RSI가 정확히 30이면 과매도로 렌더한다 (경계값)', () => {
+        render(
+            <TechnicalFactsSummary
+                symbol="AAPL"
+                bars={[bar(100), bar(110)]}
+                indicators={{ ...emptyIndicators, rsi: [null, 30] }}
+            />
+        );
+        expect(screen.getByText(/과매도/)).toBeInTheDocument();
+    });
+
     it('RSI가 중간 구간이면 중립으로 렌더한다', () => {
         render(
             <TechnicalFactsSummary

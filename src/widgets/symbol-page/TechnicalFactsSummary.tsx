@@ -1,10 +1,11 @@
 import type { Bar, IndicatorResult } from '@y0ngha/siglens-core';
+import { RSI_OVERBOUGHT_LEVEL, RSI_OVERSOLD_LEVEL } from '@y0ngha/siglens-core';
 import { formatUsdCurrency, formatPriceChange } from '@/shared/lib/priceFormat';
 import { buildTechnicalFacts } from './utils/technicalFacts';
 
 function rsiZone(rsi: number): string {
-    if (rsi >= 70) return '과매수';
-    if (rsi <= 30) return '과매도';
+    if (rsi >= RSI_OVERBOUGHT_LEVEL) return '과매수';
+    if (rsi <= RSI_OVERSOLD_LEVEL) return '과매도';
     return '중립';
 }
 

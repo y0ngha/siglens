@@ -82,4 +82,16 @@ describe('buildTechnicalFacts', () => {
         );
         expect(facts!.rsi).toBeNull();
     });
+
+    it('52주 저점이 0이면 pctAbove52wLow를 0으로 안전 처리한다', () => {
+        // low <= close이므로 close>0인 봉도 low:0을 가질 수 있다. 따라서 prev.close가
+        // 0이 아니어도(위 가드 통과) low52w === 0은 도달 가능하다.
+        const facts = buildTechnicalFacts(
+            [bar(5, 10, 0), bar(5, 10, 5)], // low52w = min(0,5) = 0, prev.close = 5
+            indicators({})
+        );
+        expect(facts).not.toBeNull();
+        expect(facts!.low52w).toBe(0);
+        expect(facts!.pctAbove52wLow).toBe(0);
+    });
 });
