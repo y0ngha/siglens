@@ -6,6 +6,7 @@
 
 import type { MockedFunction, Mock } from 'vitest';
 import { useOptionsAnalysis } from '@/widgets/options/hooks/useOptionsAnalysis';
+import { useHydrated } from '@/shared/hooks/useHydrated';
 import {
     pollOptionsAnalysisAction,
     submitOptionsAnalysisAction,
@@ -43,6 +44,12 @@ vi.mock('@/widgets/symbol-page', () => ({
     },
 }));
 
+// SSR hydration gate — default hydrated so existing tests fetch on mount; the
+// gate-closed test flips it to false to assert the auto-trigger is suppressed.
+vi.mock('@/shared/hooks/useHydrated', () => ({
+    useHydrated: vi.fn(() => true),
+}));
+
 const mockSubmit = submitOptionsAnalysisAction as MockedFunction<
     typeof submitOptionsAnalysisAction
 >;
@@ -50,6 +57,7 @@ const mockPoll = pollOptionsAnalysisAction as MockedFunction<
     typeof pollOptionsAnalysisAction
 >;
 const mockIsGateBlocked = isGateBlockedResult as unknown as Mock;
+const mockUseHydrated = useHydrated as Mock;
 
 const RESULT: OptionsAnalysisResponse = {
     summary: 'Bullish outlook',
@@ -86,6 +94,7 @@ describe('useOptionsAnalysis — branch coverage', () => {
         mockSubmit.mockReset();
         mockPoll.mockReset();
         mockIsGateBlocked.mockReturnValue(false);
+        mockUseHydrated.mockReturnValue(true);
     });
 
     afterEach(() => {
@@ -248,6 +257,25 @@ describe('useOptionsAnalysis — branch coverage', () => {
         if (result.current.status !== 'error')
             throw new Error('expected error');
         expect(result.current.error).toBeInstanceOf(Error);
+    });
+
+    it('does not fetch while the SSR hydration gate is closed', async () => {
+        mockUseHydrated.mockReturnValue(false);
+        mockSubmit.mockResolvedValue({
+            status: 'submitted',
+            jobId: 'gate-closed',
+        } as never);
+
+        const { result } = renderHook(() => useOptionsAnalysis(DEFAULT_PROPS), {
+            wrapper: makeWrapper(),
+        });
+
+        // Flush any (incorrectly) queued async work — if the gate leaked, the
+        // auto-trigger effect would have called submit within this tick.
+        await new Promise(resolve => setTimeout(resolve, 0));
+
+        expect(mockSubmit).not.toHaveBeenCalled();
+        expect(result.current.status).toBe('loading');
     });
 
     it('cancels job on unmount when polling', async () => {

@@ -1,8 +1,25 @@
+const { mockRedisConstructor } = vi.hoisted(() => ({
+    mockRedisConstructor: vi.fn(),
+}));
+
+// createPendingOAuthSignupStoreFromEnv builds a real `new Redis(...)` via the
+// shared client; stub the constructor so the env-driven path is observable
+// without a live Upstash connection. The direct-client tests below pass their
+// own mock and never hit this constructor.
+vi.mock('@upstash/redis', () => ({
+    Redis: vi.fn().mockImplementation(function (opts: unknown) {
+        mockRedisConstructor(opts);
+        return { __opts: opts };
+    }),
+}));
+
 import type { Mock } from 'vitest';
 import {
     createPendingOAuthSignupStore,
     type PendingOAuthSignup,
 } from '@/entities/oauth-account/lib/pendingOAuthSignupStore';
+import { __resetRedisClientForTests } from '@/shared/cache/redisClient';
+import { SECONDS_PER_MINUTE } from '@/shared/config/time';
 import type { Redis } from '@upstash/redis';
 
 describe('PendingOAuthSignupStore', () => {
@@ -45,7 +62,7 @@ describe('PendingOAuthSignupStore', () => {
         expect(client.set as Mock).toHaveBeenCalledWith(
             `pending_oauth_signup:${token}`,
             JSON.stringify(sample),
-            expect.objectContaining({ ex: 600 })
+            expect.objectContaining({ ex: 10 * SECONDS_PER_MINUTE })
         );
     });
 
@@ -146,7 +163,17 @@ describe('createPendingOAuthSignupStoreFromEnv', () => {
     const originalUrl = process.env.UPSTASH_REDIS_REST_URL;
     const originalToken = process.env.UPSTASH_REDIS_REST_TOKEN;
 
+    beforeEach(() => {
+        // The shared Redis client is a module-level singleton. Without a reset,
+        // the first test's null result would be cached and later tests would
+        // pass against that cache instead of their own env — masking real
+        // behavior (and never exercising the non-null construction path).
+        __resetRedisClientForTests();
+        mockRedisConstructor.mockClear();
+    });
+
     afterEach(() => {
+        __resetRedisClientForTests();
         if (originalUrl !== undefined) {
             process.env.UPSTASH_REDIS_REST_URL = originalUrl;
         } else {
@@ -157,6 +184,24 @@ describe('createPendingOAuthSignupStoreFromEnv', () => {
         } else {
             delete process.env.UPSTASH_REDIS_REST_TOKEN;
         }
+    });
+
+    it('returns a store and constructs the client once when both env vars are set', async () => {
+        process.env.UPSTASH_REDIS_REST_URL = 'https://redis.upstash.io';
+        process.env.UPSTASH_REDIS_REST_TOKEN = 'token';
+
+        const { createPendingOAuthSignupStoreFromEnv } =
+            await import('@/entities/oauth-account/lib/pendingOAuthSignupStore');
+        const store = createPendingOAuthSignupStoreFromEnv();
+
+        expect(store).not.toBeNull();
+        expect(typeof store?.save).toBe('function');
+        expect(typeof store?.consume).toBe('function');
+        expect(mockRedisConstructor).toHaveBeenCalledTimes(1);
+        expect(mockRedisConstructor).toHaveBeenCalledWith({
+            url: 'https://redis.upstash.io',
+            token: 'token',
+        });
     });
 
     it('returns null when UPSTASH_REDIS_REST_URL is not set', async () => {

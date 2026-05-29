@@ -428,6 +428,10 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
             });
 
             expect(mockSubmitNewsCardAnalysis).toHaveBeenCalledTimes(1);
+            // markFetched must fire on the human path too (it sits before the
+            // skipAnalysis short-circuit). Guards against regressions that move
+            // the call into the bot-only branch.
+            expect(mockMarkFetched).toHaveBeenCalledWith('AAPL');
         });
     });
 

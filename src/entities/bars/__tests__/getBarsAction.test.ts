@@ -26,7 +26,10 @@ import {
 } from '@y0ngha/siglens-core';
 import type { BarsData } from '@y0ngha/siglens-core';
 import { sleep } from '@/shared/lib/sleep';
-import { FMP_TEMPORARY_UNAVAILABLE_MESSAGE } from '@/shared/api/fmp/fmpUserMessage';
+import {
+    FMP_DATA_UNAVAILABLE_MESSAGE,
+    FMP_TEMPORARY_UNAVAILABLE_MESSAGE,
+} from '@/shared/api/fmp/fmpUserMessage';
 
 const mockMarketProvider =
     {} as import('@y0ngha/siglens-core').MarketDataProvider;
@@ -140,12 +143,20 @@ describe('getBarsAction 함수는', () => {
             expect(sleepMock).not.toHaveBeenCalled();
         });
 
-        it('FMP 402는 원본 에러를 그대로 전파한다', async () => {
+        it('FMP 402는 사용자 안내 문구로 변환해 전파하되 원본 에러를 cause로 보존한다', async () => {
             mockFetchBarsWithIndicators.mockRejectedValueOnce(
                 new Error('FMP API error: 402 Payment Required')
             );
 
-            await expect(getBarsAction('AAPL', '1Day')).rejects.toThrow(
+            const err = await getBarsAction('AAPL', '1Day').catch(
+                (e: unknown) => e
+            );
+
+            expect(err).toBeInstanceOf(Error);
+            expect((err as Error).message).toBe(FMP_DATA_UNAVAILABLE_MESSAGE);
+            // 사용자에겐 친화 문구를 보이되, 원본 FMP 에러는 진단용으로 cause에 남긴다.
+            expect((err as Error).cause).toBeInstanceOf(Error);
+            expect(((err as Error).cause as Error).message).toBe(
                 'FMP API error: 402 Payment Required'
             );
             expect(mockFetchBarsWithIndicators).toHaveBeenCalledTimes(1);

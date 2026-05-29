@@ -5,6 +5,9 @@ const FMP_ERROR_STATUS_RE = /^FMP(?: API error:|\s+\S+)\s+(\d{3})\b/i;
 export const FMP_TEMPORARY_UNAVAILABLE_MESSAGE =
     '미국 증시 데이터 서버에 요청이 많아 지금은 처리하기 어렵습니다. 수 분 후 다시 시도해 주세요.';
 
+export const FMP_DATA_UNAVAILABLE_MESSAGE =
+    '현재 이 데이터를 일시적으로 제공할 수 없습니다. 잠시 후 다시 시도해 주세요.';
+
 export const FMP_PAYMENT_REQUIRED_LOG_PREFIX =
     '비용 예외가 필요한 API가 호출되었습니다.';
 
@@ -30,9 +33,18 @@ export function getFmpUserFacingMessage(error: unknown): string | null {
     const status = getFmpErrorStatus(error);
     if (status === null) return null;
 
-    return status === 429 || status >= 500
-        ? FMP_TEMPORARY_UNAVAILABLE_MESSAGE
-        : null;
+    if (status === 429 || status >= 500) {
+        return FMP_TEMPORARY_UNAVAILABLE_MESSAGE;
+    }
+    // 402 (payment required) means an FMP plan/quota limit was hit — an operator
+    // problem the user can't act on. Surface a neutral message instead of
+    // leaking the raw "FMP <path> 402" internal string through the client error
+    // fallbacks (ChartErrorFallback 등은 message가 null이면 error.message를 그대로
+    // 노출). Operators are still alerted separately via logFmpPaymentRequiredError.
+    if (status === 402) {
+        return FMP_DATA_UNAVAILABLE_MESSAGE;
+    }
+    return null;
 }
 
 export function isFmpPaymentRequiredError(error: unknown): boolean {

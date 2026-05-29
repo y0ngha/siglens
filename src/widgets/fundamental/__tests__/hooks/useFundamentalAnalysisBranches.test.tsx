@@ -6,6 +6,7 @@
 
 import type { MockedFunction, Mock } from 'vitest';
 import { useFundamentalAnalysis } from '@/widgets/fundamental/hooks/useFundamentalAnalysis';
+import { useHydrated } from '@/shared/hooks/useHydrated';
 import {
     pollFundamentalAnalysisAction,
     submitFundamentalAnalysisAction,
@@ -43,6 +44,12 @@ vi.mock('@/widgets/symbol-page', () => ({
     },
 }));
 
+// SSR hydration gate — default hydrated so existing tests fetch on mount; the
+// gate-closed test flips it to false to assert the auto-trigger is suppressed.
+vi.mock('@/shared/hooks/useHydrated', () => ({
+    useHydrated: vi.fn(() => true),
+}));
+
 const mockSubmit = submitFundamentalAnalysisAction as MockedFunction<
     typeof submitFundamentalAnalysisAction
 >;
@@ -50,6 +57,7 @@ const mockPoll = pollFundamentalAnalysisAction as MockedFunction<
     typeof pollFundamentalAnalysisAction
 >;
 const mockIsGateBlocked = isGateBlockedResult as unknown as Mock;
+const mockUseHydrated = useHydrated as Mock;
 
 const RESULT: FundamentalAnalysisResponse = {
     financialHealth: { score: 8 },
@@ -79,6 +87,7 @@ describe('useFundamentalAnalysis — branch coverage', () => {
         mockSubmit.mockReset();
         mockPoll.mockReset();
         mockIsGateBlocked.mockReturnValue(false);
+        mockUseHydrated.mockReturnValue(true);
     });
 
     afterEach(() => {
@@ -295,6 +304,26 @@ describe('useFundamentalAnalysis — branch coverage', () => {
         if (result.current.status !== 'error')
             throw new Error('expected error');
         expect(result.current.error).toBeInstanceOf(Error);
+    });
+
+    it('does not fetch while the SSR hydration gate is closed', async () => {
+        mockUseHydrated.mockReturnValue(false);
+        mockSubmit.mockResolvedValue({
+            status: 'submitted',
+            jobId: 'gate-closed',
+        } as never);
+
+        const { result } = renderHook(
+            () => useFundamentalAnalysis('AAPL', 'gemini-2.5-flash-lite'),
+            { wrapper: makeWrapper() }
+        );
+
+        // Flush any (incorrectly) queued async work — if the gate leaked, the
+        // auto-trigger effect would have called submit within this tick.
+        await new Promise(resolve => setTimeout(resolve, 0));
+
+        expect(mockSubmit).not.toHaveBeenCalled();
+        expect(result.current.status).toBe('loading');
     });
 
     it('skips refetch when query data already exists', async () => {

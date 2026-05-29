@@ -154,6 +154,10 @@ function buildBarsQuery(
  */
 export class FmpMarketProvider implements MarketDataProvider {
     async getBars(options: GetBarsOptions): Promise<Bar[]> {
+        // `options.limit` is intentionally not forwarded: this adapter bounds
+        // results by the `from`/`before` date window, because the FMP historical
+        // endpoints used here (`historical-chart/*`, `historical-price-eod/full`)
+        // are date-ranged, not count-limited. Callers must scope by date window.
         const { symbol, timeframe, before, from } = options;
         const fromDate = from?.substring(0, ISO_DATE_PREFIX_LENGTH);
         const endDate = before?.substring(0, ISO_DATE_PREFIX_LENGTH);
