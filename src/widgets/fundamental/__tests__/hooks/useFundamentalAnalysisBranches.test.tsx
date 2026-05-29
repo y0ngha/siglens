@@ -57,7 +57,7 @@ const mockPoll = pollFundamentalAnalysisAction as MockedFunction<
     typeof pollFundamentalAnalysisAction
 >;
 const mockIsGateBlocked = isGateBlockedResult as unknown as Mock;
-const mockUseHydrated = useHydrated as Mock;
+const mockUseHydrated = vi.mocked(useHydrated);
 
 const RESULT: FundamentalAnalysisResponse = {
     financialHealth: { score: 8 },

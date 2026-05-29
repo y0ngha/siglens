@@ -180,13 +180,20 @@ describe('ChartContent', () => {
             throw new Error('bars fetch failed');
         });
 
-        const { container } = render(<ChartContent {...defaultProps} />);
+        // try/finally so a failed assertion still restores the spy and doesn't
+        // leak the console.error mock into sibling tests.
+        try {
+            const { container } = render(<ChartContent {...defaultProps} />);
 
-        expect(screen.queryByTestId('fear-greed-card')).toBeNull();
-        expect(container.firstElementChild).toBeDefined();
-        expect(screen.getByRole('separator')).toBeDefined();
-
-        consoleSpy.mockRestore();
+            expect(screen.queryByTestId('fear-greed-card')).toBeNull();
+            expect(container.firstElementChild).not.toBeNull();
+            expect(screen.getByRole('separator')).toBeDefined();
+            // ErrorBoundary가 에러를 잡으면 React가 console.error로 보고한다 —
+            // 에러 경로가 실제로 실행됐음을 검증(테스트가 공허하게 통과하지 않도록).
+            expect(consoleSpy).toHaveBeenCalled();
+        } finally {
+            consoleSpy.mockRestore();
+        }
     });
 
     it('renders the drag handle separator', () => {

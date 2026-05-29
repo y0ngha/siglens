@@ -5,8 +5,11 @@ const FMP_ERROR_STATUS_RE = /^FMP(?: API error:|\s+\S+)\s+(\d{3})\b/i;
 export const FMP_TEMPORARY_UNAVAILABLE_MESSAGE =
     '미국 증시 데이터 서버에 요청이 많아 지금은 처리하기 어렵습니다. 수 분 후 다시 시도해 주세요.';
 
+// 402(결제/쿼터 한도)는 사용자가 재시도로 해결할 수 없는 운영자 측 문제다.
+// "일시적/다시 시도"로 헛된 재시도를 유도하지 않도록 중립적으로 안내한다 — 내부
+// 청구 사유는 노출하지 않고, 복구 여부는 운영자(logFmpPaymentRequiredError 알림)에 달려 있다.
 export const FMP_DATA_UNAVAILABLE_MESSAGE =
-    '현재 이 데이터를 일시적으로 제공할 수 없습니다. 잠시 후 다시 시도해 주세요.';
+    '현재 이 데이터를 제공할 수 없습니다.';
 
 export const FMP_PAYMENT_REQUIRED_LOG_PREFIX =
     '비용 예외가 필요한 API가 호출되었습니다.';

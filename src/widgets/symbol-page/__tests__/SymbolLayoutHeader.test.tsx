@@ -124,12 +124,19 @@ describe('SymbolLayoutHeader', () => {
             throw new Error('bars fetch failed');
         });
 
-        render(<SymbolLayoutHeader symbol="aapl" />);
+        // try/finally so a failed assertion still restores the spy and doesn't
+        // leak the console.error mock into sibling tests.
+        try {
+            render(<SymbolLayoutHeader symbol="aapl" />);
 
-        expect(screen.queryByTestId('fear-greed-chip')).toBeNull();
-        expect(screen.getByRole('banner')).toBeDefined();
-        expect(screen.getByText('(AAPL)')).toBeDefined();
-
-        consoleSpy.mockRestore();
+            expect(screen.queryByTestId('fear-greed-chip')).toBeNull();
+            expect(screen.getByRole('banner')).toBeDefined();
+            expect(screen.getByText('(AAPL)')).toBeDefined();
+            // ErrorBoundary가 에러를 잡으면 React가 console.error로 보고한다 —
+            // 에러 경로가 실제로 실행됐음을 검증.
+            expect(consoleSpy).toHaveBeenCalled();
+        } finally {
+            consoleSpy.mockRestore();
+        }
     });
 });

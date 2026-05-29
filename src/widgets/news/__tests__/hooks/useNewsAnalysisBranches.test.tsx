@@ -57,7 +57,7 @@ const mockPoll = pollNewsAnalysisAction as MockedFunction<
     typeof pollNewsAnalysisAction
 >;
 const mockIsGateBlocked = isGateBlockedResult as unknown as Mock;
-const mockUseHydrated = useHydrated as Mock;
+const mockUseHydrated = vi.mocked(useHydrated);
 
 const queryClients: QueryClient[] = [];
 

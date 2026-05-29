@@ -57,7 +57,7 @@ const mockPoll = pollOptionsAnalysisAction as MockedFunction<
     typeof pollOptionsAnalysisAction
 >;
 const mockIsGateBlocked = isGateBlockedResult as unknown as Mock;
-const mockUseHydrated = useHydrated as Mock;
+const mockUseHydrated = vi.mocked(useHydrated);
 
 const RESULT: OptionsAnalysisResponse = {
     summary: 'Bullish outlook',

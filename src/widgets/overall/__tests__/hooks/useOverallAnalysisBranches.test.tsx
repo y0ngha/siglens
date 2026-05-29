@@ -58,7 +58,7 @@ const mockPollOverall = pollOverallAnalysisAction as MockedFunction<
     typeof pollOverallAnalysisAction
 >;
 const mockIsGateBlocked = isGateBlockedResult as unknown as Mock;
-const mockUseHydrated = useHydrated as Mock;
+const mockUseHydrated = vi.mocked(useHydrated);
 
 const queryClients: QueryClient[] = [];
 
@@ -124,7 +124,8 @@ describe('useOverallAnalysis — branch coverage', () => {
             result.current.trigger();
         });
 
-        // enabled = isHydrated && triggered → false while the gate is closed.
+        // Flush any (incorrectly) queued async work — if the gate leaked, the
+        // trigger would have caused submit to fire within this tick.
         await new Promise(resolve => setTimeout(resolve, 0));
 
         expect(mockSubmit).not.toHaveBeenCalled();
