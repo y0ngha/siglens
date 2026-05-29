@@ -236,6 +236,7 @@ export default async function SymbolPage({ params, searchParams }: Props) {
                 측면에서도 SymbolTabs는 anchor 기반이라 crawler가 follow 가능. */}
             <main className="flex min-h-0 flex-1 flex-col">
                 <section className="sr-only">
+                    <h2>{displayName} 차트 분석 개요</h2>
                     <p>
                         {displayName}({ticker})의 기술적 분석 페이지입니다.
                         보조지표 {skillCounts.indicators}종, 캔들 패턴{' '}

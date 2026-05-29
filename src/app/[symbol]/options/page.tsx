@@ -184,6 +184,7 @@ export default async function OptionsPage({ params }: Props) {
                     {displayName} 옵션 시장 분석
                 </SymbolPageHeading>
                 <section className="sr-only">
+                    <h2>{displayName} 옵션 분석 개요</h2>
                     <p>
                         {displayName} 옵션 시장을 AI가 한국어로 해석합니다.
                         만기별 Max Pain, Put/Call Ratio, ATM IV, Implied Move 등
