@@ -160,6 +160,30 @@ describe('useOverallAnalysis', () => {
         });
     });
 
+    describe('SSR seed (initialResult)', () => {
+        it('initialResult가 주어지면 마운트 즉시 done 상태이고 그 결과를 노출한다', () => {
+            const { result } = renderHook(
+                () => useOverallAnalysis(...hookArgs(), OVERALL_RESULT),
+                { wrapper: makeWrapper() }
+            );
+
+            expect(result.current.state.status).toBe('done');
+            const state = result.current.state;
+            if (state.status !== 'done') throw new Error('expected done');
+            expect(state.result).toEqual(OVERALL_RESULT);
+            expect(mockSubmit).not.toHaveBeenCalled();
+        });
+
+        it('initialResult가 없으면 idle 상태를 유지한다', () => {
+            const { result } = renderHook(
+                () => useOverallAnalysis(...hookArgs()),
+                { wrapper: makeWrapper() }
+            );
+
+            expect(result.current.state.status).toBe('idle');
+        });
+    });
+
     describe('cached', () => {
         it('submit이 cached를 반환하면 즉시 done 상태가 된다', async () => {
             mockSubmit.mockResolvedValue({
@@ -594,6 +618,47 @@ describe('useOverallAnalysis', () => {
         });
     });
 
+    describe('submit retry depth guard', () => {
+        it('pending_dependencies가 반복되면 MAX_SUBMIT_RETRY_DEPTH에서 error로 멈춘다', async () => {
+            // submit이 매번 pending_dependencies를 반환하고, 모든 axis poll이 즉시
+            // done이라 재submit이 계속 일어난다 → depth >= 3에서 안전망이 발동.
+            mockSubmit.mockResolvedValue(PENDING_DEPS);
+            mockPollTechnical.mockResolvedValue({
+                status: 'done',
+                result: {} as never,
+            });
+            mockPollFundamental.mockResolvedValue({
+                status: 'done',
+                result: {} as never,
+            });
+            mockPollNews.mockResolvedValue({
+                status: 'done',
+                result: {} as never,
+            });
+            mockPollOptions.mockResolvedValue({
+                status: 'done',
+                result: {} as never,
+            });
+
+            const { result } = renderHook(
+                () => useOverallAnalysis(...hookArgs()),
+                { wrapper: makeWrapper() }
+            );
+
+            act(() => {
+                result.current.trigger();
+            });
+
+            await waitFor(() => {
+                expect(result.current.state.status).toBe('error');
+            });
+
+            const state = result.current.state;
+            if (state.status !== 'error') throw new Error('expected error');
+            expect(state.error).toContain('반복적으로 지연');
+        });
+    });
+
     describe('retry', () => {
         it('error 후 trigger를 재호출하면 분석을 재시도한다', async () => {
             mockSubmit
@@ -688,6 +753,96 @@ describe('useOverallAnalysis', () => {
             expect(mockCancelNews).toHaveBeenCalledWith('job-n');
             expect(mockCancelOptions).toHaveBeenCalledWith('job-o');
             expect(mockCancelOverall).not.toHaveBeenCalled();
+        });
+
+        it('dependencies phase cancel이 reject되면 각 axis마다 console.warn으로 로깅한다', async () => {
+            const warnSpy = vi
+                .spyOn(console, 'warn')
+                .mockImplementation(() => {});
+            try {
+                mockSubmit.mockResolvedValue(PENDING_DEPS);
+                mockPollTechnical.mockImplementation(
+                    () => new Promise(() => {})
+                );
+                mockPollFundamental.mockImplementation(
+                    () => new Promise(() => {})
+                );
+                mockPollNews.mockImplementation(() => new Promise(() => {}));
+                mockPollOptions.mockImplementation(() => new Promise(() => {}));
+                mockCancelTechnical.mockRejectedValue(new Error('t fail'));
+                mockCancelFundamental.mockRejectedValue(new Error('f fail'));
+                mockCancelNews.mockRejectedValue(new Error('n fail'));
+                mockCancelOptions.mockRejectedValue(new Error('o fail'));
+
+                const { result, unmount } = renderHook(
+                    () => useOverallAnalysis(...hookArgs()),
+                    { wrapper: makeWrapper() }
+                );
+
+                act(() => {
+                    result.current.trigger();
+                });
+
+                await waitFor(() => {
+                    expect(mockPollTechnical).toHaveBeenCalled();
+                });
+
+                unmount();
+
+                // 4개 cancel rejection이 각각 .catch에서 console.warn으로 처리된다.
+                await waitFor(() => {
+                    expect(warnSpy).toHaveBeenCalledTimes(4);
+                });
+                const warnedMessages = warnSpy.mock.calls.map(c => c[0]);
+                expect(warnedMessages).toEqual(
+                    expect.arrayContaining([
+                        '[useOverallAnalysis] cancel technical failed',
+                        '[useOverallAnalysis] cancel fundamental failed',
+                        '[useOverallAnalysis] cancel news failed',
+                        '[useOverallAnalysis] cancel options failed',
+                    ])
+                );
+            } finally {
+                warnSpy.mockRestore();
+            }
+        });
+
+        it('overall phase cancel이 reject되면 console.warn으로 로깅한다', async () => {
+            const warnSpy = vi
+                .spyOn(console, 'warn')
+                .mockImplementation(() => {});
+            try {
+                mockSubmit.mockResolvedValue({
+                    status: 'submitted',
+                    jobId: 'overall-job-123',
+                });
+                mockPollOverall.mockImplementation(() => new Promise(() => {}));
+                mockCancelOverall.mockRejectedValue(new Error('overall fail'));
+
+                const { result, unmount } = renderHook(
+                    () => useOverallAnalysis(...hookArgs()),
+                    { wrapper: makeWrapper() }
+                );
+
+                act(() => {
+                    result.current.trigger();
+                });
+
+                await waitFor(() => {
+                    expect(mockPollOverall).toHaveBeenCalled();
+                });
+
+                unmount();
+
+                await waitFor(() => {
+                    expect(warnSpy).toHaveBeenCalledWith(
+                        '[useOverallAnalysis] cancel overall failed',
+                        expect.any(Error)
+                    );
+                });
+            } finally {
+                warnSpy.mockRestore();
+            }
         });
 
         it('timeframe 변경(queryKey 교체) 시 진행 중인 overall job을 cancel한다', async () => {
@@ -847,6 +1002,54 @@ describe('useOverallAnalysis', () => {
                     ])
                 );
                 expect(body.jobs).toHaveLength(4);
+            });
+
+            it('일부 axis만 pending일 때 pagehide는 pending axis의 cancel만 전송한다', async () => {
+                // technical, news만 pending. fundamental/options는 undefined라
+                // getPageHideJobs 삼항의 "false" 가지를 탄다.
+                const partialPending = {
+                    status: 'pending_dependencies' as const,
+                    pendingJobs: {
+                        technical: 'job-t' as string | undefined,
+                        fundamental: undefined,
+                        news: 'job-n' as string | undefined,
+                        options: undefined,
+                    },
+                };
+                mockSubmit.mockResolvedValue(partialPending);
+                mockPollTechnical.mockImplementation(
+                    () => new Promise(() => {})
+                );
+                mockPollNews.mockImplementation(() => new Promise(() => {}));
+
+                const { result } = renderHook(
+                    () => useOverallAnalysis(...hookArgs()),
+                    { wrapper: makeWrapper() }
+                );
+
+                act(() => {
+                    result.current.trigger();
+                });
+
+                await waitFor(() => {
+                    expect(mockPollTechnical).toHaveBeenCalled();
+                });
+
+                window.dispatchEvent(new Event('pagehide'));
+
+                expect(sendBeaconMock).toHaveBeenCalledTimes(1);
+                const [, blob] = sendBeaconMock.mock.calls[0] as [string, Blob];
+                const text = await readBlobText(blob);
+                const body = JSON.parse(text) as {
+                    jobs: { jobId: string; type: string }[];
+                };
+                expect(body.jobs).toEqual(
+                    expect.arrayContaining([
+                        { jobId: 'job-t', type: 'analysis' },
+                        { jobId: 'job-n', type: 'news' },
+                    ])
+                );
+                expect(body.jobs).toHaveLength(2);
             });
 
             it('job 없을 때 pagehide 발화해도 sendBeacon을 호출하지 않는다', async () => {

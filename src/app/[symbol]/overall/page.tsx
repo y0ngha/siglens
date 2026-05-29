@@ -18,7 +18,11 @@ import {
     SITE_NAME,
     SITE_URL,
 } from '@/shared/lib/seo';
-import type { Timeframe } from '@y0ngha/siglens-core';
+import {
+    GEMINI_2_5_FLASH_LITE_MODEL,
+    peekOverallAnalysisCache,
+    type Timeframe,
+} from '@y0ngha/siglens-core';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
@@ -90,6 +94,28 @@ export default async function OverallPage({ params, searchParams }: Props) {
 
     const { tf } = await searchParams;
     const timeframe: Timeframe = isValidTimeframe(tf) ? tf : DEFAULT_TIMEFRAME;
+
+    // peek은 읽기 전용 — enqueue/생성 없음. MISS·corrupt·read 실패는 모두 null로
+    // degrade하므로 OverallContent는 idle CTA로 자연 폴백한다(렌더를 깨지 않음).
+    // read 실패는 삼키지 않고 로깅한 뒤 degrade한다.
+    //
+    // modelId: chart 페이지와 동일하게 익명/SSR 기본 방문자가 캐시를 쓰는 키와
+    // 정렬한다. OverallContent → useDefaultModelId → SymbolModelContext의 DEFAULT_MODEL
+    // (GEMINI_2_5_FLASH_LITE_MODEL)이 submitOverallAnalysisAction에 그대로 전달되므로
+    // writer는 lite 모델 키로 캐시한다. peek도 동일 모델을 넘겨야 HIT한다.
+    //
+    // 시그니처가 chart의 peekAnalysisCache(symbol, timeframe, fmpSymbol?, modelId?)와
+    // 다른 건 의도적이다 — overall은 2번째 인자로 companyName을 받는다. 각 core peek
+    // 함수가 자기 캐시 키 구성에 맞춰 서로 다른 시그니처를 갖는다.
+    const cachedOverall = await peekOverallAnalysisCache(
+        upper,
+        assetInfo.name,
+        timeframe,
+        GEMINI_2_5_FLASH_LITE_MODEL
+    ).catch((error: unknown) => {
+        console.error('[OverallPage] peekOverallAnalysisCache failed:', error);
+        return null;
+    });
 
     const displayName = buildDisplayName(assetInfo, upper);
     const { fullTitle, description, url } = buildSymbolOverallSeoContent(
@@ -206,6 +232,7 @@ export default async function OverallPage({ params, searchParams }: Props) {
                     symbol={upper}
                     companyName={assetInfo.name}
                     timeframe={timeframe}
+                    initialAnalysis={cachedOverall ?? undefined}
                 />
                 <CrossLinkCards symbol={upper} current="overall" />
             </main>
