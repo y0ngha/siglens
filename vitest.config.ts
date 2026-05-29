@@ -1,4 +1,4 @@
-import { defineConfig } from 'vitest/config';
+import { configDefaults, defineConfig } from 'vitest/config';
 import path from 'node:path';
 
 const sharedConfig = {
@@ -20,6 +20,12 @@ const sharedTestConfig = {
     pool: 'vmThreads' as const,
     maxThreads: 8,
     experimental: { fsModuleCache: true },
+    // Keep Vitest and Playwright runners disjoint. The Playwright suite lives in
+    // `e2e/**` (`.spec.ts`), so it already falls outside our `src/**` include
+    // patterns — but excluding it explicitly is belt-and-suspenders against any
+    // future include widening, and documents the boundary. Spread Vitest's own
+    // defaults so node_modules / dist / etc. stay excluded.
+    exclude: [...configDefaults.exclude, 'e2e/**'],
 };
 
 const coverageConfig = {
