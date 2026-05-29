@@ -7,6 +7,7 @@ export { SymbolPageProvider, useSymbolPageContext } from './SymbolPageContext';
 export { SymbolModelProvider, useSymbolModel } from './SymbolModelContext';
 
 export { CrossLinkCards } from './CrossLinkCards';
+export { SymbolPageHeading } from './ui/SymbolPageHeading';
 
 // Types re-exported for cross-widget consumption
 export type { CooldownNotice } from './types';
