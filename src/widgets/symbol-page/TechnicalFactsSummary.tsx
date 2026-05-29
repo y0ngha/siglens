@@ -1,5 +1,10 @@
-import type { Bar, IndicatorResult } from '@y0ngha/siglens-core';
-import { RSI_OVERBOUGHT_LEVEL, RSI_OVERSOLD_LEVEL } from '@y0ngha/siglens-core';
+import { useId } from 'react';
+import {
+    RSI_OVERBOUGHT_LEVEL,
+    RSI_OVERSOLD_LEVEL,
+    type Bar,
+    type IndicatorResult,
+} from '@y0ngha/siglens-core';
 import { formatUsdCurrency, formatPriceChange } from '@/shared/lib/priceFormat';
 import { buildTechnicalFacts } from './utils/technicalFacts';
 
@@ -25,6 +30,7 @@ export function TechnicalFactsSummary({
     bars,
     indicators,
 }: TechnicalFactsSummaryProps) {
+    const headingId = useId();
     const facts = buildTechnicalFacts(bars, indicators);
     if (!facts) return null;
 
@@ -32,11 +38,11 @@ export function TechnicalFactsSummary({
 
     return (
         <section
-            aria-labelledby="tech-facts-heading"
+            aria-labelledby={headingId}
             className="bg-secondary-800 flex flex-col gap-3 rounded-lg p-4"
         >
             <h2
-                id="tech-facts-heading"
+                id={headingId}
                 className="text-secondary-200 text-sm font-semibold"
             >
                 {symbol} 기술적 지표 요약

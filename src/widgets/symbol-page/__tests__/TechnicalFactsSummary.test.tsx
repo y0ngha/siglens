@@ -1,6 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import type { Bar, IndicatorResult } from '@y0ngha/siglens-core';
+import {
+    RSI_OVERBOUGHT_LEVEL,
+    RSI_OVERSOLD_LEVEL,
+    type Bar,
+    type IndicatorResult,
+} from '@y0ngha/siglens-core';
 import { TechnicalFactsSummary } from '../TechnicalFactsSummary';
 
 function bar(close: number, high = close, low = close): Bar {
@@ -59,23 +64,29 @@ describe('TechnicalFactsSummary', () => {
         expect(screen.getByText(/과매도/)).toBeInTheDocument();
     });
 
-    it('RSI가 정확히 70이면 과매수로 렌더한다 (경계값)', () => {
+    it('RSI가 정확히 과매수 임계값이면 과매수로 렌더한다 (경계값)', () => {
         render(
             <TechnicalFactsSummary
                 symbol="AAPL"
                 bars={[bar(100), bar(110)]}
-                indicators={{ ...emptyIndicators, rsi: [null, 70] }}
+                indicators={{
+                    ...emptyIndicators,
+                    rsi: [null, RSI_OVERBOUGHT_LEVEL],
+                }}
             />
         );
         expect(screen.getByText(/과매수/)).toBeInTheDocument();
     });
 
-    it('RSI가 정확히 30이면 과매도로 렌더한다 (경계값)', () => {
+    it('RSI가 정확히 과매도 임계값이면 과매도로 렌더한다 (경계값)', () => {
         render(
             <TechnicalFactsSummary
                 symbol="AAPL"
                 bars={[bar(100), bar(110)]}
-                indicators={{ ...emptyIndicators, rsi: [null, 30] }}
+                indicators={{
+                    ...emptyIndicators,
+                    rsi: [null, RSI_OVERSOLD_LEVEL],
+                }}
             />
         );
         expect(screen.getByText(/과매도/)).toBeInTheDocument();

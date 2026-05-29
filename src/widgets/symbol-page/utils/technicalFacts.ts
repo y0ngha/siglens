@@ -18,6 +18,8 @@ export interface TechnicalFacts {
 }
 
 // 미국 정규장 1년 ≈ 252 거래일. 일봉 기준 52주 윈도.
+// @y0ngha/siglens-core에는 동일한 "연간 거래일/52주 봉 개수" 상수가 없어(확인: core
+// 숫자 export 목록에 TRADING/252/YEAR/52 매칭 없음) 로컬에 유지한다. core가 추가하면 교체.
 const TRADING_DAYS_52W = 252;
 
 // 등락률 계산에 직전 봉(prev)과 마지막 봉(last)이 필요하므로 최소 2개 봉이 있어야 한다.
