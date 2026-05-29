@@ -49,7 +49,7 @@ import { default as OverallPage } from '@/app/[symbol]/overall/page';
 import { getAssetInfoCached } from '@/entities/ticker';
 import { peekOverallAnalysisCache } from '@y0ngha/siglens-core';
 import { OverallContent } from '@/widgets/overall/OverallContent';
-import { isValidElement, type ReactElement, type ReactNode } from 'react';
+import { findElementByType } from '@/shared/test-utils/findElementByType';
 import type { MockedFunction } from 'vitest';
 
 const mockGetAssetInfoCached = getAssetInfoCached as MockedFunction<
@@ -58,24 +58,6 @@ const mockGetAssetInfoCached = getAssetInfoCached as MockedFunction<
 const mockPeekOverall = peekOverallAnalysisCache as MockedFunction<
     typeof peekOverallAnalysisCache
 >;
-
-/** 렌더 없이 RSC element 트리를 재귀 순회해 주어진 타입의 첫 element를 찾는다. */
-function findElementByType(
-    node: ReactNode,
-    type: unknown
-): ReactElement | null {
-    if (Array.isArray(node)) {
-        for (const child of node) {
-            const found = findElementByType(child, type);
-            if (found !== null) return found;
-        }
-        return null;
-    }
-    if (!isValidElement(node)) return null;
-    if (node.type === type) return node;
-    const childProps = node.props as { children?: ReactNode };
-    return findElementByType(childProps.children, type);
-}
 
 interface OverallSeedProps {
     initialAnalysis: unknown;

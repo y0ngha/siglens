@@ -171,7 +171,6 @@ describe('useOverallAnalysis', () => {
             const state = result.current.state;
             if (state.status !== 'done') throw new Error('expected done');
             expect(state.result).toEqual(OVERALL_RESULT);
-            // seed는 LLM 생성을 트리거하지 않는다 (순수 additive).
             expect(mockSubmit).not.toHaveBeenCalled();
         });
 

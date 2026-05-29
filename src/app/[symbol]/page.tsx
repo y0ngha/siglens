@@ -180,9 +180,9 @@ export default async function SymbolPage({ params, searchParams }: Props) {
         queryKey: ReturnType<typeof QUERY_KEYS.bars>;
     }) => getBarsAction(qSymbol, qTimeframe, qFmpSymbol);
 
-    // 캐시 HIT가 있으면 서버에서 AI 분석 서사를 초기 HTML에 주입한다(LLM 비용 0).
-    // peek은 읽기 전용 — enqueue/생성 없음. MISS·corrupt·read 실패는 모두 null로
-    // degrade하므로 FALLBACK_ANALYSIS로 폴백한다(렌더를 절대 깨지 않음).
+    // SEO: 캐시 HIT면 봇이 LLM 비용 0으로 분석 서사를 초기 HTML에서 받는다.
+    // peek은 읽기 전용 — enqueue/생성 없음. MISS·corrupt·read 실패는 .catch(()=>null)로
+    // 모두 MISS로 degrade해 FALLBACK_ANALYSIS로 폴백한다(렌더를 절대 깨지 않음).
     //
     // modelId: 익명/SSR 기본 방문자가 캐시를 쓰는 키와 정렬한다. SymbolModelContext의
     // DEFAULT_MODEL이 GEMINI_2_5_FLASH_LITE_MODEL이고, useAnalysis가 그 값을
