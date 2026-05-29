@@ -9,7 +9,7 @@ import { NewsAiSummarySkeleton } from '@/widgets/news/NewsAiSummarySkeleton';
 import { AnalystActions } from '@/widgets/news/sections/AnalystActions';
 import { EventCalendar } from '@/widgets/news/sections/EventCalendar';
 import { NewsList } from '@/widgets/news/sections/NewsList';
-import { CrossLinkCards } from '@/widgets/symbol-page';
+import { CrossLinkCards, SymbolPageHeading } from '@/widgets/symbol-page';
 import { SectionSkeleton } from '@/widgets/symbol-page/SectionSkeleton';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { VALID_TICKER_RE } from '@/shared/config/market';
@@ -268,7 +268,9 @@ export default async function NewsPage({ params }: Props) {
             <JsonLd data={aiArticleJsonLd} />
             {newsListJsonLd ? <JsonLd data={newsListJsonLd} /> : null}
             <main className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8">
-                <h1 className="sr-only">{displayName} 최신 뉴스와 어닝 일정</h1>
+                <SymbolPageHeading>
+                    {displayName} 최신 뉴스와 어닝 일정
+                </SymbolPageHeading>
                 <section className="sr-only">
                     <h2>{displayName} 뉴스 분석 개요</h2>
                     <p>

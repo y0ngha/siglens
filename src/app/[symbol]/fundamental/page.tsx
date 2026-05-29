@@ -23,7 +23,7 @@ import { PeersTable } from '@/widgets/fundamental/sections/PeersTable';
 import { ProfileCard } from '@/widgets/fundamental/sections/ProfileCard';
 import { ProfitabilityCard } from '@/widgets/fundamental/sections/ProfitabilityCard';
 import { ValuationCard } from '@/widgets/fundamental/sections/ValuationCard';
-import { CrossLinkCards } from '@/widgets/symbol-page';
+import { CrossLinkCards, SymbolPageHeading } from '@/widgets/symbol-page';
 import { SectionSkeleton } from '@/widgets/symbol-page/SectionSkeleton';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { VALID_TICKER_RE } from '@/shared/config/market';
@@ -348,9 +348,9 @@ export default async function FundamentalPage({ params }: Props) {
             <JsonLd data={breadcrumbJsonLd} />
             <JsonLd data={faqJsonLd} />
             <main className="mx-auto max-w-5xl space-y-6 px-4 py-8">
-                <h1 className="sr-only">
+                <SymbolPageHeading>
                     {displayName} 재무지표와 애널리스트 의견
-                </h1>
+                </SymbolPageHeading>
                 <section className="sr-only">
                     <h2>{displayName} 펀더멘털 분석 개요</h2>
                     <p>

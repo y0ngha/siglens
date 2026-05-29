@@ -1,5 +1,5 @@
 import { OverallContent } from '@/widgets/overall/OverallContent';
-import { CrossLinkCards } from '@/widgets/symbol-page';
+import { CrossLinkCards, SymbolPageHeading } from '@/widgets/symbol-page';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import {
     DEFAULT_TIMEFRAME,
@@ -31,12 +31,8 @@ interface Props {
     searchParams: Promise<{ tf?: string }>;
 }
 
-export async function generateMetadata({
-    params,
-    searchParams,
-}: Props): Promise<Metadata> {
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { symbol } = await params;
-    const { tf } = await searchParams;
     const upper = symbol.toUpperCase();
     // 본문 notFound()와 일관: 잘못된 ticker는 메타데이터를 비우고 noindex로 응답한다.
     if (!VALID_TICKER_RE.test(upper)) {
@@ -49,8 +45,6 @@ export async function generateMetadata({
             displayName,
             koreanName: assetInfo?.koreanName,
         });
-
-    const hasTfVariant = tf !== undefined;
 
     return {
         title,
@@ -72,9 +66,6 @@ export async function generateMetadata({
             title: fullTitle,
             description,
         },
-        ...(hasTfVariant && {
-            robots: { index: false, follow: true },
-        }),
     };
 }
 
@@ -187,9 +178,9 @@ export default async function OverallPage({ params, searchParams }: Props) {
             <JsonLd data={breadcrumbJsonLd} />
             <JsonLd data={faqJsonLd} />
             <main className="mx-auto max-w-5xl space-y-6 px-4 py-8">
-                <h1 className="sr-only">
+                <SymbolPageHeading>
                     {displayName} 차트와 옵션 시장, 실적, 뉴스 종합 분석
-                </h1>
+                </SymbolPageHeading>
                 <section className="sr-only">
                     <h2>{displayName} AI 종합 분석 개요</h2>
                     <p>
