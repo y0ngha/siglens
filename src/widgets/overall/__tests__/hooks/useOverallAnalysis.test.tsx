@@ -160,6 +160,31 @@ describe('useOverallAnalysis', () => {
         });
     });
 
+    describe('SSR seed (initialResult)', () => {
+        it('initialResult가 주어지면 마운트 즉시 done 상태이고 그 결과를 노출한다', () => {
+            const { result } = renderHook(
+                () => useOverallAnalysis(...hookArgs(), OVERALL_RESULT),
+                { wrapper: makeWrapper() }
+            );
+
+            expect(result.current.state.status).toBe('done');
+            const state = result.current.state;
+            if (state.status !== 'done') throw new Error('expected done');
+            expect(state.result).toEqual(OVERALL_RESULT);
+            // seed는 LLM 생성을 트리거하지 않는다 (순수 additive).
+            expect(mockSubmit).not.toHaveBeenCalled();
+        });
+
+        it('initialResult가 없으면 idle 상태를 유지한다', () => {
+            const { result } = renderHook(
+                () => useOverallAnalysis(...hookArgs()),
+                { wrapper: makeWrapper() }
+            );
+
+            expect(result.current.state.status).toBe('idle');
+        });
+    });
+
     describe('cached', () => {
         it('submit이 cached를 반환하면 즉시 done 상태가 된다', async () => {
             mockSubmit.mockResolvedValue({
