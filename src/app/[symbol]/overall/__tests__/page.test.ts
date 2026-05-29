@@ -62,23 +62,25 @@ const mockPeekOverall = peekOverallAnalysisCache as MockedFunction<
     typeof peekOverallAnalysisCache
 >;
 
-interface OverallSeedProps {
-    initialAnalysis: unknown;
-}
-
-async function getOverallProps(): Promise<OverallSeedProps> {
-    const tree = await OverallPage({
-        params: Promise.resolve({ symbol: 'aapl' }),
-        searchParams: Promise.resolve({}),
-    });
-    const content = findElementByType(tree, OverallContent);
-    if (content === null) {
-        throw new Error('OverallContent not found in tree');
-    }
-    return content.props as OverallSeedProps;
-}
-
 describe('Overall page (narrative seed)', () => {
+    interface OverallSeedProps {
+        initialAnalysis: unknown;
+    }
+
+    // describe 내부에 두어 beforeEach가 설정하는 mock 의존성과 co-locate한다
+    // (모듈 최상위에 두면 setup 의존이 암묵적이라는 리뷰 제안 반영).
+    async function getOverallProps(): Promise<OverallSeedProps> {
+        const tree = await OverallPage({
+            params: Promise.resolve({ symbol: 'aapl' }),
+            searchParams: Promise.resolve({}),
+        });
+        const content = findElementByType(tree, OverallContent);
+        if (content === null) {
+            throw new Error('OverallContent not found in tree');
+        }
+        return content.props as OverallSeedProps;
+    }
+
     beforeEach(() => {
         mockGetAssetInfoCached.mockReset();
         mockPeekOverall.mockReset();

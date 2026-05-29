@@ -103,6 +103,10 @@ export default async function OverallPage({ params, searchParams }: Props) {
     // 정렬한다. OverallContent → useDefaultModelId → SymbolModelContext의 DEFAULT_MODEL
     // (GEMINI_2_5_FLASH_LITE_MODEL)이 submitOverallAnalysisAction에 그대로 전달되므로
     // writer는 lite 모델 키로 캐시한다. peek도 동일 모델을 넘겨야 HIT한다.
+    //
+    // 시그니처가 chart의 peekAnalysisCache(symbol, timeframe, fmpSymbol?, modelId?)와
+    // 다른 건 의도적이다 — overall은 2번째 인자로 companyName을 받는다. 각 core peek
+    // 함수가 자기 캐시 키 구성에 맞춰 서로 다른 시그니처를 갖는다.
     const cachedOverall = await peekOverallAnalysisCache(
         upper,
         assetInfo.name,

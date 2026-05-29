@@ -333,6 +333,11 @@ export function useOverallAnalysis(
      * 서버에서 peek로 미리 읽은 캐시 분석 서사(SSR seed). 주어지면 마운트 즉시
      * done 상태로 보여 준다. staleTime: Infinity가 자동 재요청을 막으므로
      * seed가 있어도 LLM 생성은 트리거되지 않는다(순수 additive).
+     *
+     * staleTime: Infinity라 seed된 query는 자동 갱신되지 않는다. 그러나 timeframe
+     * 변경 시 queryKey가 바뀌어 이 initialData(seed)는 옛 key에만 적용되고 새 key는
+     * 빈 상태에서 시작하므로, "절대 갱신 안 됨" 사각지대는 생기지 않는다. 동일
+     * 세션·동일 timeframe에서의 명시적 갱신은 재분석(trigger force)으로 처리된다.
      */
     initialResult?: OverallAnalysisResponse
 ): UseOverallAnalysisReturn {
