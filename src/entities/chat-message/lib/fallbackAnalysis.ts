@@ -24,6 +24,16 @@ export const FALLBACK_ANALYSIS: AnalysisResponse = {
 };
 
 /**
+ * `analysis`가 chart 페이지의 "AI 서사 없음" placeholder인지 판정한다.
+ * SSR cache-miss 경로(`[symbol]/page.tsx`)는 `FALLBACK_ANALYSIS` 상수를 참조
+ * 그대로 `initialAnalysis`로 전달하므로 reference equality로 안전하게 판정한다.
+ * 클라이언트가 실제 분석을 받으면 별도 객체로 교체되어 false가 된다.
+ */
+export function isFallbackAnalysis(analysis: AnalysisResponse): boolean {
+    return analysis === FALLBACK_ANALYSIS;
+}
+
+/**
  * Baseline AnalysisResponse passed to core's `requestChatCompletion` when the user
  * is on a non-chart page (fundamental / news / overall). Core's `buildChatPrompt`
  * unconditionally embeds the `analysis` parameter as the prompt's primary
