@@ -55,23 +55,13 @@ interface SearchParams {
     timeframe?: string;
 }
 
-interface GenerateMetadataProps {
-    searchParams: Promise<SearchParams>;
-}
-
-export async function generateMetadata({
-    searchParams,
-}: GenerateMetadataProps): Promise<Metadata> {
-    const params = await searchParams;
-    const hasQueryVariant =
-        params.sector !== undefined || params.timeframe !== undefined;
-
+export async function generateMetadata(): Promise<Metadata> {
     return {
         title: MARKET_TITLE,
         description: MARKET_DESCRIPTION,
         keywords: MARKET_KEYWORDS,
-        // canonical은 variant 여부와 무관하게 항상 /market로 고정한다 — variant URL이
-        // 자기참조 canonical을 가지면 Google이 별개 페이지로 색인하므로 일관성 깨짐.
+        // variant URL(?sector=, ?timeframe=)은 noindex 대신 clean canonical(/market)로
+        // 색인 통합한다 — canonical과 noindex를 동시에 거는 신호 충돌을 제거.
         alternates: { canonical: MARKET_URL },
         openGraph: {
             title: MARKET_FULL_TITLE,
@@ -95,9 +85,6 @@ export async function generateMetadata({
             description: MARKET_DESCRIPTION,
             images: ['/og-image.png'],
         },
-        ...(hasQueryVariant && {
-            robots: { index: false, follow: true },
-        }),
     };
 }
 
