@@ -99,9 +99,9 @@ const props = {
     fmpSymbol: 'AAPL',
 };
 
-beforeEach(() => vi.clearAllMocks());
-
 describe('ChartContent 슬롯 규칙', () => {
+    beforeEach(() => vi.clearAllMocks());
+
     it('FALLBACK(서사 없음)이면 사실 층을 렌더한다', () => {
         baseAnalysis.mockReturnValue(analysisReturn(FALLBACK_ANALYSIS));
         render(

@@ -57,6 +57,7 @@ describe('buildTechnicalFacts', () => {
         expect(facts!.high52w).toBe(120);
         expect(facts!.low52w).toBe(90);
         expect(facts!.pctFrom52wHigh).toBeCloseTo(((110 - 120) / 120) * 100);
+        expect(facts!.pctAbove52wLow).toBeCloseTo(((110 - 90) / 90) * 100);
     });
 
     it('RSI·MACD histogram은 마지막 non-null 값을 쓴다', () => {
