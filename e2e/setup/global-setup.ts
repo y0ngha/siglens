@@ -4,8 +4,8 @@ import { execSync } from 'node:child_process';
  * Playwright global setup — runs ONCE before the whole suite.
  *
  * Responsibility: prepare the LOCAL e2e Postgres (migrate + seed). The Docker
- * backend (Postgres on 5433, Redis, SRH) is assumed already up — locally via
- * `yarn e2e:up`, in CI via service containers. This file does NOT start
+ * backend (Postgres on 5433, Redis, SRH) is assumed already up — both locally
+ * and in CI via docker compose (`yarn e2e:up`). This file does NOT start
  * containers. Playwright's `webServer` builds & starts the Next app afterward.
  *
  * Three gotchas (discovered in Task 3) are handled here:
