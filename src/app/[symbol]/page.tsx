@@ -2,6 +2,10 @@ import { SymbolPageClient } from '@/widgets/symbol-page/SymbolPageClient';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { FALLBACK_ANALYSIS } from '@/entities/chat-message';
 import {
+    GEMINI_2_5_FLASH_LITE_MODEL,
+    peekAnalysisCache,
+} from '@y0ngha/siglens-core';
+import {
     DEFAULT_TIMEFRAME,
     isValidTimeframe,
     VALID_TICKER_RE,
@@ -176,28 +180,46 @@ export default async function SymbolPage({ params, searchParams }: Props) {
         queryKey: ReturnType<typeof QUERY_KEYS.bars>;
     }) => getBarsAction(qSymbol, qTimeframe, qFmpSymbol);
 
-    await Promise.all([
-        queryClient.prefetchQuery({
-            queryKey: QUERY_KEYS.bars(
-                symbol,
-                initialTimeframe,
-                assetInfo.fmpSymbol
-            ),
-            queryFn: barsQueryFn,
-        }),
-        ...(initialTimeframe !== DEFAULT_TIMEFRAME
-            ? [
-                  queryClient.prefetchQuery({
-                      queryKey: QUERY_KEYS.bars(
-                          symbol,
-                          DEFAULT_TIMEFRAME,
-                          assetInfo.fmpSymbol
-                      ),
-                      queryFn: barsQueryFn,
-                  }),
-              ]
-            : []),
+    // 캐시 HIT가 있으면 서버에서 AI 분석 서사를 초기 HTML에 주입한다(LLM 비용 0).
+    // peek은 읽기 전용 — enqueue/생성 없음. MISS·corrupt·read 실패는 모두 null로
+    // degrade하므로 FALLBACK_ANALYSIS로 폴백한다(렌더를 절대 깨지 않음).
+    //
+    // modelId: 익명/SSR 기본 방문자가 캐시를 쓰는 키와 정렬한다. SymbolModelContext의
+    // DEFAULT_MODEL이 GEMINI_2_5_FLASH_LITE_MODEL이고, useAnalysis가 그 값을
+    // submitAnalysisAction에 그대로 전달하므로 writer는 lite 모델 키로 캐시한다.
+    // peek도 동일 모델을 넘겨야 HIT한다.
+    // bars prefetch와 독립이므로 함께 await해 병렬화한다.
+    const [, cachedAnalysis] = await Promise.all([
+        Promise.all([
+            queryClient.prefetchQuery({
+                queryKey: QUERY_KEYS.bars(
+                    symbol,
+                    initialTimeframe,
+                    assetInfo.fmpSymbol
+                ),
+                queryFn: barsQueryFn,
+            }),
+            ...(initialTimeframe !== DEFAULT_TIMEFRAME
+                ? [
+                      queryClient.prefetchQuery({
+                          queryKey: QUERY_KEYS.bars(
+                              symbol,
+                              DEFAULT_TIMEFRAME,
+                              assetInfo.fmpSymbol
+                          ),
+                          queryFn: barsQueryFn,
+                      }),
+                  ]
+                : []),
+        ]),
+        peekAnalysisCache(
+            ticker,
+            initialTimeframe,
+            assetInfo.fmpSymbol,
+            GEMINI_2_5_FLASH_LITE_MODEL
+        ).catch(() => null),
     ]);
+    const initialAnalysis = cachedAnalysis ?? FALLBACK_ANALYSIS;
 
     return (
         <>
@@ -241,9 +263,12 @@ export default async function SymbolPage({ params, searchParams }: Props) {
                     <SymbolPageClient
                         symbol={symbol}
                         companyName={assetInfo.name}
-                        initialAnalysis={FALLBACK_ANALYSIS}
-                        // SSR 단계에서 AI 분석을 의도적으로 생략하고 클라이언트로 위임한다.
-                        // 마운트 시 useAnalysis가 자동으로 재분석을 트리거하도록 true로 설정한다.
+                        // 캐시 HIT면 서버에서 미리 읽은 AI 분석 서사를, MISS면
+                        // FALLBACK_ANALYSIS를 초기 분석으로 주입한다.
+                        initialAnalysis={initialAnalysis}
+                        // 순수 additive: 캐시 seed 여부와 무관하게 클라이언트는
+                        // 마운트 시 useAnalysis가 자동으로 재분석을 트리거하도록
+                        // 항상 true를 유지한다(봇은 enqueue가 skip되어 생성 안 됨).
                         initialAnalysisFailed={true}
                         indicatorCount={skillCounts.indicators}
                     />
