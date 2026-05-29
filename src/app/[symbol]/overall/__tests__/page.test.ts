@@ -52,7 +52,7 @@ import {
     peekOverallAnalysisCache,
 } from '@y0ngha/siglens-core';
 import { OverallContent } from '@/widgets/overall/OverallContent';
-import { findElementByType } from '@/shared/test-utils/findElementByType';
+import { findElementByType } from '@/__tests__/utils/findElementByType';
 import type { MockedFunction } from 'vitest';
 
 const mockGetAssetInfoCached = getAssetInfoCached as MockedFunction<

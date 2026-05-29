@@ -71,7 +71,7 @@ import {
     peekAnalysisCache,
 } from '@y0ngha/siglens-core';
 import { SymbolPageClient } from '@/widgets/symbol-page/SymbolPageClient';
-import { findElementByType } from '@/shared/test-utils/findElementByType';
+import { findElementByType } from '@/__tests__/utils/findElementByType';
 import type { MockedFunction } from 'vitest';
 
 const mockGetAssetInfoCached = getAssetInfoCached as MockedFunction<
