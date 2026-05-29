@@ -77,7 +77,11 @@ function findElementByType(
     return findElementByType(childProps.children, type);
 }
 
-async function getOverallProps(): Promise<{ initialAnalysis: unknown }> {
+interface OverallSeedProps {
+    initialAnalysis: unknown;
+}
+
+async function getOverallProps(): Promise<OverallSeedProps> {
     const tree = await OverallPage({
         params: Promise.resolve({ symbol: 'aapl' }),
         searchParams: Promise.resolve({}),
@@ -86,7 +90,7 @@ async function getOverallProps(): Promise<{ initialAnalysis: unknown }> {
     if (content === null) {
         throw new Error('OverallContent not found in tree');
     }
-    return content.props as { initialAnalysis: unknown };
+    return content.props as OverallSeedProps;
 }
 
 describe('Overall page (narrative seed)', () => {

@@ -101,6 +101,11 @@ function findElementByType(
     return findElementByType(childProps.children, type);
 }
 
+interface ClientSeedProps {
+    initialAnalysis: unknown;
+    initialAnalysisFailed: unknown;
+}
+
 describe('Symbol page', () => {
     describe('generateMetadata', () => {
         beforeEach(() => {
@@ -180,10 +185,7 @@ describe('Symbol page', () => {
             } as never);
         });
 
-        async function getClientProps(): Promise<{
-            initialAnalysis: unknown;
-            initialAnalysisFailed: unknown;
-        }> {
+        async function getClientProps(): Promise<ClientSeedProps> {
             const tree = await SymbolPage({
                 params: Promise.resolve({ symbol: 'aapl' }),
                 searchParams: Promise.resolve({}),
@@ -192,10 +194,7 @@ describe('Symbol page', () => {
             if (client === null) {
                 throw new Error('SymbolPageClient not found in tree');
             }
-            return client.props as {
-                initialAnalysis: unknown;
-                initialAnalysisFailed: unknown;
-            };
+            return client.props as ClientSeedProps;
         }
 
         it('peek HIT 시 캐시된 분석을 initialAnalysis로 전달한다', async () => {
@@ -233,6 +232,14 @@ describe('Symbol page', () => {
             mockPeekAnalysisCache.mockResolvedValue({
                 summary: 'cached analysis',
             } as never);
+
+            const props = await getClientProps();
+
+            expect(props.initialAnalysisFailed).toBe(true);
+        });
+
+        it('peek MISS 시에도 initialAnalysisFailed=true를 유지한다', async () => {
+            mockPeekAnalysisCache.mockResolvedValue(null);
 
             const props = await getClientProps();
 
