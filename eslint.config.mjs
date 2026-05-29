@@ -40,6 +40,15 @@ const eslintConfig = defineConfig([
         },
     },
     {
+        // Playwright E2E support/specs are not React. The `react-hooks/rules-of-hooks`
+        // rule misfires on Playwright's fixture `use()` callback (it treats the
+        // parameter named `use` as a React Hook). Disable React-specific rules here.
+        files: ['e2e/**/*.{ts,tsx}'],
+        rules: {
+            'react-hooks/rules-of-hooks': 'off',
+        },
+    },
+    {
         // Variables and parameters prefixed with _ are intentionally unused
         // (kept for future use, documented with TODO comments).
         rules: {
