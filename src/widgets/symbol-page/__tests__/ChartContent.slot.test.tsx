@@ -2,8 +2,11 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import type { AnalysisResponse } from '@y0ngha/siglens-core';
 import { FALLBACK_ANALYSIS } from '@/entities/chat-message';
+import { ChartContent } from '../ChartContent';
 
 // 무거운 차트/하위 훅은 stub. 슬롯 분기에 필요한 useBars/useAnalysis만 제어.
+// vi.mock은 vitest가 import보다 위로 호이스팅하므로, import/first를 만족시키기
+// 위해 모든 import를 상단에 두고 mock 선언을 그 뒤에 배치한다.
 vi.mock('@/widgets/chart', () => ({
     ChartErrorFallback: () => null,
     ChartSkeleton: () => null,
@@ -71,8 +74,6 @@ vi.mock('../FearGreedCardMounted', () => ({
 vi.mock('@/widgets/analysis', () => ({
     AnalysisPanel: () => <div data-testid="analysis-panel" />,
 }));
-
-import { ChartContent } from '../ChartContent';
 
 function analysisReturn(analysis: AnalysisResponse) {
     return {

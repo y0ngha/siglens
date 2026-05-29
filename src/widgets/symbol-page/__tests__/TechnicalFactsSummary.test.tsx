@@ -48,6 +48,43 @@ describe('TechnicalFactsSummary', () => {
         expect(screen.getByText(/과매수/)).toBeInTheDocument();
     });
 
+    it('RSI가 30 이하이면 과매도로 렌더한다', () => {
+        render(
+            <TechnicalFactsSummary
+                symbol="AAPL"
+                bars={[bar(100), bar(110)]}
+                indicators={{ ...emptyIndicators, rsi: [null, 25] }}
+            />
+        );
+        expect(screen.getByText(/과매도/)).toBeInTheDocument();
+    });
+
+    it('RSI가 중간 구간이면 중립으로 렌더한다', () => {
+        render(
+            <TechnicalFactsSummary
+                symbol="AAPL"
+                bars={[bar(100), bar(110)]}
+                indicators={{ ...emptyIndicators, rsi: [null, 50] }}
+            />
+        );
+        expect(screen.getByText(/중립/)).toBeInTheDocument();
+    });
+
+    it('MACD histogram이 양수이면 MACD 모멘텀을 상승으로 렌더한다', () => {
+        render(
+            <TechnicalFactsSummary
+                symbol="AAPL"
+                bars={[bar(100), bar(110)]}
+                indicators={{
+                    ...emptyIndicators,
+                    macd: [{ macd: 1, signal: 0.5, histogram: 0.3 }],
+                }}
+            />
+        );
+        expect(screen.getByText(/MACD 모멘텀/)).toBeInTheDocument();
+        expect(screen.getByText(/상승/)).toBeInTheDocument();
+    });
+
     it('데이터 부족 시 아무것도 렌더하지 않는다', () => {
         const { container } = render(
             <TechnicalFactsSummary

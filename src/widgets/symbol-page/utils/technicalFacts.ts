@@ -20,6 +20,9 @@ export interface TechnicalFacts {
 // 미국 정규장 1년 ≈ 252 거래일. 일봉 기준 52주 윈도.
 const TRADING_DAYS_52W = 252;
 
+// 등락률 계산에 직전 봉(prev)과 마지막 봉(last)이 필요하므로 최소 2개 봉이 있어야 한다.
+const MIN_BARS_FOR_FACTS = 2;
+
 function lastNonNull(arr: readonly (number | null)[]): number | null {
     for (let i = arr.length - 1; i >= 0; i--) {
         const v = arr[i];
@@ -37,15 +40,15 @@ export function buildTechnicalFacts(
     bars: readonly Bar[],
     indicators: IndicatorResult
 ): TechnicalFacts | null {
-    if (bars.length < 2) return null;
+    if (bars.length < MIN_BARS_FOR_FACTS) return null;
     const last = bars[bars.length - 1];
     const prev = bars[bars.length - 2];
     if (prev.close === 0) return null;
 
     const changePercent = ((last.close - prev.close) / prev.close) * 100;
-    const window = bars.slice(-TRADING_DAYS_52W);
-    const high52w = Math.max(...window.map(b => b.high));
-    const low52w = Math.min(...window.map(b => b.low));
+    const bars52w = bars.slice(-TRADING_DAYS_52W);
+    const high52w = Math.max(...bars52w.map(b => b.high));
+    const low52w = Math.min(...bars52w.map(b => b.low));
 
     return {
         lastClose: last.close,

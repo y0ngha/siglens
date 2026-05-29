@@ -42,6 +42,12 @@ describe('buildTechnicalFacts', () => {
         expect(buildTechnicalFacts([bar(100)], indicators({}))).toBeNull();
     });
 
+    it('직전 봉 종가가 0이면 null을 반환한다 (등락률 분모 0 방어)', () => {
+        expect(
+            buildTechnicalFacts([bar(0), bar(110)], indicators({}))
+        ).toBeNull();
+    });
+
     it('현재가·등락률·52주 위치를 산출한다', () => {
         const bars = [bar(100, 120, 90), bar(110, 115, 100)];
         const facts = buildTechnicalFacts(bars, indicators({}));

@@ -1,19 +1,17 @@
-'use client';
-
 import type { Bar, IndicatorResult } from '@y0ngha/siglens-core';
 import { formatUsdCurrency, formatPriceChange } from '@/shared/lib/priceFormat';
 import { buildTechnicalFacts } from './utils/technicalFacts';
-
-interface TechnicalFactsSummaryProps {
-    symbol: string;
-    bars: readonly Bar[];
-    indicators: IndicatorResult;
-}
 
 function rsiZone(rsi: number): string {
     if (rsi >= 70) return '과매수';
     if (rsi <= 30) return '과매도';
     return '중립';
+}
+
+interface TechnicalFactsSummaryProps {
+    symbol: string;
+    bars: readonly Bar[];
+    indicators: IndicatorResult;
 }
 
 /**
@@ -49,7 +47,7 @@ export function TechnicalFactsSummary({
                         {formatUsdCurrency(facts.lastClose)}{' '}
                         <span className={change.colorClass}>
                             {change.arrow} {change.sign}
-                            {facts.changePercent.toFixed(2)}%
+                            {Math.abs(facts.changePercent).toFixed(2)}%
                         </span>
                     </dd>
                 </div>
