@@ -76,6 +76,7 @@ describe('SymbolPageClient', () => {
     const defaultProps = {
         symbol: 'AAPL',
         companyName: 'Apple Inc.',
+        displayName: '애플, Apple Inc. (AAPL)',
         initialAnalysis: {} as AnalysisResponse,
         initialAnalysisFailed: false,
         indicatorCount: 20,
