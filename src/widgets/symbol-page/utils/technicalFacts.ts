@@ -55,8 +55,9 @@ export function buildTechnicalFacts(
         macdHistogram: lastNonNull(indicators.macd.map(m => m.histogram)),
         high52w,
         low52w,
-        // high52w === 0 분기는 실무상 도달 불가한 방어 코드다: high >= close이고
-        // 위에서 prev.close === 0을 이미 걸렀으므로 close>0 ⇒ high52w>0. (방어 유지)
+        // high52w === 0 분기는 도달 불가능한 방어 가드다: prev 봉은 52주 윈도(bars52w)에
+        // 포함되고 prev.high >= prev.close이며, 위에서 prev.close === 0을 이미 걸러
+        // prev.close > 0이므로 high52w >= prev.high >= prev.close > 0. (방어 유지)
         pctFrom52wHigh:
             high52w === 0 ? 0 : ((last.close - high52w) / high52w) * 100,
         pctAbove52wLow:

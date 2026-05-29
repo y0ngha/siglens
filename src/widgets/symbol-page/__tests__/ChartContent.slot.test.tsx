@@ -3,6 +3,7 @@ import { render, screen } from '@testing-library/react';
 import type { AnalysisResponse } from '@y0ngha/siglens-core';
 import { FALLBACK_ANALYSIS } from '@/entities/chat-message';
 import { ChartContent } from '../ChartContent';
+import type { UseAnalysisResult } from '../hooks/useAnalysis';
 
 // 무거운 차트/하위 훅은 stub. 슬롯 분기에 필요한 useBars/useAnalysis만 제어.
 // vitest가 vi.mock 호출을 파일 최상단으로 호이스팅하므로, 선언 위치와 무관하게
@@ -76,7 +77,7 @@ vi.mock('@/widgets/analysis', () => ({
     AnalysisPanel: () => <div data-testid="analysis-panel" />,
 }));
 
-function analysisReturn(analysis: AnalysisResponse) {
+function analysisReturn(analysis: AnalysisResponse): UseAnalysisResult {
     return {
         analysis,
         analysisResult: analysis === FALLBACK_ANALYSIS ? null : analysis,

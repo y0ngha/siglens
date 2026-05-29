@@ -118,6 +118,21 @@ describe('TechnicalFactsSummary', () => {
         expect(screen.getByText(/상승/)).toBeInTheDocument();
     });
 
+    it('MACD histogram이 음수이면 하락을 렌더한다', () => {
+        render(
+            <TechnicalFactsSummary
+                symbol="AAPL"
+                bars={[bar(100), bar(110)]}
+                indicators={{
+                    ...emptyIndicators,
+                    macd: [{ macd: -1, signal: -0.5, histogram: -0.3 }],
+                }}
+            />
+        );
+        expect(screen.getByText(/MACD 모멘텀/)).toBeInTheDocument();
+        expect(screen.getByText(/하락/)).toBeInTheDocument();
+    });
+
     it('데이터 부족 시 아무것도 렌더하지 않는다', () => {
         const { container } = render(
             <TechnicalFactsSummary
