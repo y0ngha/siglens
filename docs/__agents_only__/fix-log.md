@@ -28,6 +28,10 @@
   - Rule: Infrastructure Functions — validate all inputs at API boundaries; invalid values must return 400
   - Context: Added `VALID_JOB_TYPES` Set check so unrecognized job types are rejected with 400 rather than logged as a warning and treated as success
 
+## [feat/fundamental-redis-cache Round 2 | feat/fundamental-redis-cache | 2026-05-29]
+- Violation: `beforeEach/afterEach` hooks declared at module level instead of inside describe block in src/shared/cache/__tests__/getOrSetCache.test.ts
+  - Rule: MISTAKES.md Tests #3 — Test lifecycle hooks must be inside describe block
+  - Context: Moved beforeEach/afterEach into describe block to group with test cases
 ## [refactor/fear-greed-import-core Round 2 | refactor/fear-greed-import-core | 2026-05-28]
 - Violation: Test mock `SENTIMENT_LABEL_TEXT` object used lowercase keys (`extreme_fear`, `extreme_greed`, `fear`, `greed`, `neutral`, `optimism`) while production `FearGreedLabel` union is uppercase (`EXTREME_FEAR`, `EXTREME_GREED`, `FEAR`, `GREED`, `NEUTRAL`, `OPTIMISM`)
   - Rule: MISTAKES.md §Tests 13 — Test mock must faithfully replicate production interface; divergent key casing breaks type safety and tests silently return undefined lookups

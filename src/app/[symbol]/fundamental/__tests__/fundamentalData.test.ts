@@ -10,7 +10,10 @@ vi.mock('@/entities/ticker', () => ({
         })),
     translateCompanyDescription: vi.fn().mockResolvedValue('translated desc'),
 }));
-vi.mock('@/shared/api/fmp/fundamentalClient', () => ({
+vi.mock('@/shared/api/fmp/fundamentalClient', async importOriginal => ({
+    ...(await importOriginal<
+        typeof import('@/shared/api/fmp/fundamentalClient')
+    >()),
     FmpFundamentalClient: class MockFmpFundamentalClient {
         getProfile = vi.fn().mockResolvedValue(null);
         getStockPeers = vi.fn().mockResolvedValue([]);
@@ -24,6 +27,14 @@ vi.mock('@/shared/api/fmp/fundamentalClient', () => ({
         getPriceTargetConsensus = vi.fn().mockResolvedValue(null);
         getPriceTargetSummary = vi.fn().mockResolvedValue(null);
     },
+}));
+// Redis 레이어는 getOrSetCache.test.ts에서 독립적으로 커버한다. 여기서는 fetcher로
+// 위임만 시켜, Redis 환경변수가 설정된 CI에서도 실제 I/O 없이 격리되게 한다.
+vi.mock('@/shared/cache/getOrSetCache', () => ({
+    getOrSetCache: vi.fn(
+        (_key: string, _ttl: number, fetcher: () => Promise<unknown>) =>
+            fetcher()
+    ),
 }));
 vi.mock('react', async () => {
     const actual = await vi.importActual<typeof import('react')>('react');

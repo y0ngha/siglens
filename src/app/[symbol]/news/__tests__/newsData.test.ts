@@ -6,12 +6,14 @@ const {
     mockGetComparisonItems,
     mockUpsertMany,
     mockGetEarningsReports,
+    mockGetGrades,
 } = vi.hoisted(() => ({
     mockDb: {} as Record<string, unknown>,
     mockGetLatestFetchedAt: vi.fn(),
     mockGetComparisonItems: vi.fn(),
     mockUpsertMany: vi.fn(),
     mockGetEarningsReports: vi.fn(),
+    mockGetGrades: vi.fn(),
 }));
 
 vi.mock('@/shared/db/client', () => ({
@@ -28,16 +30,32 @@ vi.mock('@/entities/earnings-report', () => ({
     }),
 }));
 
-vi.mock('@/shared/api/fmp/fundamentalClient', () => ({
+vi.mock('@/shared/api/fmp/fundamentalClient', async importOriginal => ({
+    ...(await importOriginal<
+        typeof import('@/shared/api/fmp/fundamentalClient')
+    >()),
     FmpFundamentalClient: vi.fn().mockImplementation(function () {
         return {
             getEarningsReports: mockGetEarningsReports,
-            getGrades: vi.fn(),
+            getGrades: mockGetGrades,
         };
     }),
 }));
 
-import { getEarningsReportComparison } from '@/app/[symbol]/news/newsData';
+// Redis 레이어는 getOrSetCache.test.ts에서 독립적으로 커버한다. 여기서는 fetcher로
+// 위임만 시켜, Redis 환경변수가 설정된 CI에서도 실제 I/O 없이 격리되게 한다.
+vi.mock('@/shared/cache/getOrSetCache', () => ({
+    getOrSetCache: vi.fn(
+        (_key: string, _ttl: number, fetcher: () => Promise<unknown>) =>
+            fetcher()
+    ),
+}));
+
+import {
+    getEarningsReportComparison,
+    getGradeEvents,
+} from '@/app/[symbol]/news/newsData';
+import type { GradesEvent } from '@y0ngha/siglens-core';
 
 const COMPARISON_ITEM: EarningsReportComparisonItem = {
     symbol: 'AAPL',
@@ -153,5 +171,35 @@ describe('getEarningsReportComparison 함수는', () => {
             expect(mockUpsertMany).not.toHaveBeenCalled();
             expect(console.warn).not.toHaveBeenCalled();
         });
+    });
+});
+
+describe('getGradeEvents 함수는', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    it('fundamentalClient.getGrades에 위임해 등급 이벤트를 반환한다', async () => {
+        const events: GradesEvent[] = [
+            {
+                symbol: 'AAPL',
+                date: '2026-05-01',
+                gradingCompany: 'Morgan Stanley',
+                previousGrade: 'Hold',
+                newGrade: 'Buy',
+                action: 'upgrade',
+            },
+        ];
+        mockGetGrades.mockResolvedValue(events);
+
+        await expect(getGradeEvents('AAPL')).resolves.toEqual(events);
+        expect(mockGetGrades).toHaveBeenCalledWith('AAPL');
+    });
+
+    it('getGrades가 빈 배열을 반환하면 그대로 위임한다', async () => {
+        mockGetGrades.mockResolvedValue([]);
+
+        await expect(getGradeEvents('AAPL')).resolves.toEqual([]);
+        expect(mockGetGrades).toHaveBeenCalledWith('AAPL');
     });
 });

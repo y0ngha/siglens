@@ -36,8 +36,12 @@ import type {
     GradesEvent,
 } from '@y0ngha/siglens-core';
 
-/** 펀더멘털 데이터는 장중에도 거의 불변 → 1시간 cross-request 캐시. */
-const FMP_FUNDAMENTAL_REVALIDATE_SECONDS = SECONDS_PER_HOUR;
+/**
+ * 펀더멘털 데이터는 장중에도 거의 불변 → 1시간 freshness 창. Next Data Cache
+ * `revalidate`와 호출부의 Redis TTL이 이 단일 상수를 공유해, 두 캐시 계층의
+ * 신선도가 절대 어긋나지 않는다.
+ */
+export const FMP_FUNDAMENTAL_REVALIDATE_SECONDS = SECONDS_PER_HOUR;
 
 function fmpGet<T>(
     path: string,

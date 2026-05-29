@@ -97,7 +97,7 @@ describe('getCachedMarketSummary', () => {
     });
 
     it('Redis hit 시 getMarketSummary 미호출, 캐시값 반환, key market:summary', async () => {
-        mockRedisGet.mockResolvedValue(sampleSummary);
+        mockRedisGet.mockResolvedValue({ data: sampleSummary });
         const mod = await loadWithEnv({
             url: 'https://x.upstash.io',
             token: 't',
@@ -119,7 +119,7 @@ describe('getCachedMarketSummary', () => {
         await mod.getCachedMarketSummary(mockProvider);
         expect(mockRedisSet).toHaveBeenCalledWith(
             'market:summary',
-            sampleSummary,
+            { data: sampleSummary },
             { ex: 60 }
         );
     });
