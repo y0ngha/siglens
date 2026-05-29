@@ -149,4 +149,26 @@ describe('ChartContent 슬롯 규칙', () => {
         // 봇 안내도 정확히 1개 additive로 함께 노출돼 오판된 실사용자에게 hint를 유지한다.
         expect(screen.getAllByText(/봇 트래픽으로 보여/).length).toBe(1);
     });
+
+    // PR #530 Gemini 리뷰: 서사가 있어도(캐시 분석 표시 중) 봇 판정이면 AnalysisPanel을
+    // 유지하고 봇 안내를 additive로 함께 노출해야 한다 — 재분석이 봇으로 오판돼 차단된
+    // 사실을 stale 분석만 보던 실사용자가 인지하도록. (no-narrative 분기와 동일 규칙)
+    it('봇 차단이지만 서사가 있으면 AnalysisPanel과 봇 안내를 함께 노출한다', () => {
+        const real = { ...FALLBACK_ANALYSIS, summary: 'AAPL 상승' };
+        baseAnalysis.mockReturnValue({
+            ...analysisReturn(real),
+            isBotBlocked: true,
+        });
+        render(
+            <ChartContent
+                {...props}
+                initialAnalysis={real}
+                initialAnalysisFailed={false}
+            />
+        );
+        // 캐시된 분석(AnalysisPanel)이 그대로 유지된다(안내문으로 교체되지 않음).
+        expect(screen.getAllByTestId('analysis-panel').length).toBe(1);
+        // 봇 안내는 그 아래 additive로 정확히 1개 노출된다.
+        expect(screen.getAllByText(/봇 트래픽으로 보여/).length).toBe(1);
+    });
 });

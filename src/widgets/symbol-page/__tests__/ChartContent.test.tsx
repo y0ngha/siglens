@@ -258,35 +258,42 @@ describe('ChartContent', () => {
             cooldownNotice: null,
         });
 
-        render(<ChartContent {...defaultProps} />);
-        // 봇 안내(additive)와 종목 고유 사실 층이 함께 존재 — 교체가 아니라 병존이다.
-        expect(screen.getByTestId('bot-blocked-notice')).toBeDefined();
-        expect(screen.getByText(/기술적 지표 요약/)).toBeDefined();
-
-        // 후속 테스트로 누수되지 않도록 파일 기본 mock(봉 1개 / 서사 있음)으로 복원.
-        (useBars as ReturnType<typeof vi.fn>).mockReturnValue({
-            bars: [
-                {
-                    time: 1,
-                    open: 100,
-                    high: 110,
-                    low: 90,
-                    close: 105,
-                    volume: 500,
-                },
-            ],
-            indicators: { buySellVolume: [] },
-        });
-        (useAnalysis as ReturnType<typeof vi.fn>).mockReturnValue({
-            analysis: {} as AnalysisResponse,
-            analysisResult: null,
-            isAnalyzing: false,
-            analysisError: null,
-            isBotBlocked: false,
-            handleReanalyze: vi.fn(),
-            reanalyzeCooldownMs: 0,
-            cooldownNotice: null,
-        });
+        // try/finally: 앞선 어설션이 실패해도 후속 테스트로 mock(2봉/서사 없음)이
+        // 누수되지 않게 파일 기본 mock(봉 1개 / 서사 있음) 복원을 보장한다. afterEach의
+        // vi.clearAllMocks()는 vi.mock 팩토리가 vi.fn(() => ({...}))로 심은 기본 반환값을
+        // 되돌리지 않으므로(그래서 resetAllMocks로 바꾸면 다른 테스트가 깨진다) 수동
+        // 복원이 필요하고, 그 복원을 finally로 감싼다.
+        try {
+            render(<ChartContent {...defaultProps} />);
+            // 봇 안내(additive)와 종목 고유 사실 층이 함께 존재 — 교체가 아니라 병존이다.
+            // getByTestId/getByText는 부재 시 throw하므로 not.toBeNull로 존재를 명시 검증.
+            expect(screen.getByTestId('bot-blocked-notice')).not.toBeNull();
+            expect(screen.getByText(/기술적 지표 요약/)).not.toBeNull();
+        } finally {
+            (useBars as ReturnType<typeof vi.fn>).mockReturnValue({
+                bars: [
+                    {
+                        time: 1,
+                        open: 100,
+                        high: 110,
+                        low: 90,
+                        close: 105,
+                        volume: 500,
+                    },
+                ],
+                indicators: { buySellVolume: [] },
+            });
+            (useAnalysis as ReturnType<typeof vi.fn>).mockReturnValue({
+                analysis: {} as AnalysisResponse,
+                analysisResult: null,
+                isAnalyzing: false,
+                analysisError: null,
+                isBotBlocked: false,
+                handleReanalyze: vi.fn(),
+                reanalyzeCooldownMs: 0,
+                cooldownNotice: null,
+            });
+        }
     });
 
     // "AI 분석이 길어지면 차트도 길어진다" 회귀 가드 — AI 분석 패널 스크롤 부분.

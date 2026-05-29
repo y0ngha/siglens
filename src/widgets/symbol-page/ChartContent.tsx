@@ -219,6 +219,11 @@ export function ChartContent({
                     actionPricesVisible={actionPricesVisible}
                     onActionPricesVisibilityChange={setActionPricesVisible}
                 />
+                {/* 서사가 있어도(캐시된 분석을 표시 중) 봇 판정이면 안내를 additive로
+                    덧붙인다 — 자동 트리거/수동 재분석이 봇으로 오판돼 차단된 사실을
+                    stale 분석만 보던 실사용자가 인지하도록(PR #530 리뷰 반영). 두 분기가
+                    동일하게 `isBotBlocked`일 때만 안내를 노출해 일관된다. */}
+                {isBotBlocked && <BotBlockedNotice className="mt-3" />}
                 {fearGreedCard}
             </>
         );
