@@ -236,7 +236,10 @@ export default async function SymbolPage({ params, searchParams }: Props) {
                 측면에서도 SymbolTabs는 anchor 기반이라 crawler가 follow 가능. */}
             <main className="flex min-h-0 flex-1 flex-col">
                 <section className="sr-only">
-                    <h2>{displayName} 차트 분석 개요</h2>
+                    {/* 차트 h1은 SymbolPageClient(이 section보다 DOM 뒤)에 있어,
+                        여기에 heading을 두면 h1보다 먼저 나와 위계가 역전된다
+                        (WCAG 1.3.1). 보조 설명은 heading 없이 p로만 노출한다. */}
+                    <p>{displayName} 차트 분석 개요</p>
                     <p>
                         {displayName}({ticker})의 기술적 분석 페이지입니다.
                         보조지표 {skillCounts.indicators}종, 캔들 패턴{' '}

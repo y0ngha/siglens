@@ -29,7 +29,7 @@ const MobileAnalysisSheet = dynamic(
 interface SymbolPageClientProps {
     symbol: string;
     companyName: string;
-    /** 한국어명·회사명을 합친 표시용 이름. 차트 페이지의 가시 h1에 사용한다. */
+    /** 한국어명 + 영문사명을 합친 표시 문자열 (예: "애플, Apple Inc. (AAPL)"). */
     displayName: string;
     initialAnalysis: AnalysisResponse;
     initialAnalysisFailed: boolean;

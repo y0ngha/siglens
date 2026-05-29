@@ -1,6 +1,5 @@
 // vi.mock 호출은 vitest가 자동 호이스팅하지만, import/first 일관성을 위해
-// 모든 import보다 위(파일 최상단)에 모아 둔다. 차트/시트 등 무거운 자식은
-// stub — 가시 h1은 SymbolPageClient 자체가 렌더한다.
+// 모든 import보다 위(파일 최상단)에 모아 둔다.
 vi.mock('@/widgets/chart', () => ({
     ChartErrorFallback: () => null,
     ChartSkeleton: () => null,
