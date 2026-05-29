@@ -6,11 +6,11 @@ import {
     DrizzleSessionRepository,
     bcryptPasswordVerifier,
     applyAuthCookie,
-    getAuthDatabaseClient,
     isSecureCookieEnv,
     createAuthHintCookie,
     DEFAULT_SESSION_TTL_SECONDS,
 } from '@/entities/session';
+import { getAuthDatabaseClient } from '@/entities/session/lib/db';
 import { DrizzleUserRepository, loginUser } from '@/entities/user';
 import type { LoginFormState } from '@/shared/lib/auth/formTypes';
 import { sanitizeNextPath } from '@/shared/lib/auth/redirect';

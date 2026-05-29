@@ -7,13 +7,13 @@ import {
     createAuthHintCookie,
     bcryptPasswordHasher,
     bcryptPasswordVerifier,
-    getAuthDatabaseClient,
     AUTH_SERVICE_UNAVAILABLE_MESSAGE,
     CONSENT_REQUIRED_MESSAGE,
     DEFAULT_SESSION_TTL_SECONDS,
     isSecureCookieEnv,
     DrizzleSessionRepository,
 } from '@/entities/session';
+import { getAuthDatabaseClient } from '@/entities/session/lib/db';
 import {
     loginUser,
     registerUser,

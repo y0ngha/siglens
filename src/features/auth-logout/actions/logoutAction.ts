@@ -6,10 +6,10 @@ import {
     DrizzleSessionRepository,
     AUTH_SESSION_COOKIE_NAME,
     applyAuthCookie,
-    getAuthDatabaseClient,
     isSecureCookieEnv,
     createExpiredAuthHintCookie,
 } from '@/entities/session';
+import { getAuthDatabaseClient } from '@/entities/session/lib/db';
 import { logoutUser } from '@/entities/user';
 
 export async function logoutAction(): Promise<void> {

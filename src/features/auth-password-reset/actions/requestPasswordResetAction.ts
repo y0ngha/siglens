@@ -8,7 +8,7 @@ import {
 import type { ForgotPasswordFormState } from '@/shared/lib/auth/formTypes';
 import { normalizeEmail } from '@/shared/lib/auth/validation';
 import { createEmailDispatcher } from '@/shared/email';
-import { getAuthDatabaseClient } from '@/entities/session';
+import { getAuthDatabaseClient } from '@/entities/session/lib/db';
 
 export async function requestPasswordResetAction(
     _prev: ForgotPasswordFormState,

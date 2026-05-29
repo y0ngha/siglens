@@ -11,10 +11,10 @@ import type { DeleteAccountFormState } from '@/shared/lib/auth/formTypes';
 import { normalizeEmail } from '@/shared/lib/auth/validation';
 import {
     applyAuthCookie,
-    getAuthDatabaseClient,
     isSecureCookieEnv,
     createExpiredAuthHintCookie,
 } from '@/entities/session';
+import { getAuthDatabaseClient } from '@/entities/session/lib/db';
 import { getCurrentUser } from '@/entities/session/lib/getCurrentUser';
 
 const NOT_AUTHENTICATED_MESSAGE = '로그인이 필요합니다.';
