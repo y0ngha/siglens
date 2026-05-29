@@ -29,6 +29,8 @@ import { usePublishSymbolChat } from '@/features/symbol-chat';
 import { buildChatState } from './utils/buildChatState';
 import { PWA_TRIGGER_EVENT } from '@/shared/lib/pwaEvents';
 import { FearGreedCardMounted } from './FearGreedCardMounted';
+import { isFallbackAnalysis } from '@/entities/chat-message';
+import { TechnicalFactsSummary } from './TechnicalFactsSummary';
 
 const StockChart = dynamic(
     () => import('@/widgets/chart/StockChart').then(mod => mod.StockChart),
@@ -161,10 +163,34 @@ export function ChartContent({
     const { clusteredKeyLevels, validatedActionPrices, reconciledActionLines } =
         useAnalysisDerivedData(analysis, bars);
 
+    const hasNarrative = !isFallbackAnalysis(analysis);
+
     const analysisContent = useMemo(
         () =>
             isBotBlocked ? (
                 <BotBlockedNotice />
+            ) : !hasNarrative ? (
+                // 서사 없음(cold-miss/생성 전) → 결정적 사실 층 + 진행 배너.
+                // 봇은 이 사실 텍스트를 색인하고, 사람은 생성 대기 중 실측값을 본다.
+                <>
+                    <AnalysisStatusBanner
+                        status={analysisStatus}
+                        className="mb-3"
+                    />
+                    <TechnicalFactsSummary
+                        symbol={symbol}
+                        bars={bars}
+                        indicators={indicators}
+                    />
+                    <ErrorBoundary fallback={null}>
+                        <Suspense fallback={null}>
+                            <FearGreedCardMounted
+                                symbol={symbol}
+                                fmpSymbol={fmpSymbol}
+                            />
+                        </Suspense>
+                    </ErrorBoundary>
+                </>
             ) : (
                 <>
                     <AnalysisStatusBanner
@@ -198,6 +224,9 @@ export function ChartContent({
             ),
         [
             isBotBlocked,
+            hasNarrative,
+            bars,
+            indicators,
             isAnalyzing,
             symbol,
             analysisStatus,
