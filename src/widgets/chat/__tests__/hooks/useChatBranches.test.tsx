@@ -9,6 +9,7 @@ import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MODEL_STORAGE_KEY, useChat } from '@/widgets/chat/hooks/useChat';
 import { isChatMessage } from '@/widgets/chat/utils/chatMessageUtils';
+import { useHydrated } from '@/shared/hooks/useHydrated';
 
 // --- Controllable mocks ---
 
@@ -65,6 +66,14 @@ vi.mock('@/widgets/chat/utils/chatStorage', () => ({
     saveSession: (...args: unknown[]) => mockSaveSession(...args),
 }));
 
+// SSR hydration gate — default hydrated so the remainingTokens query fires as
+// usual; the gate-closed test flips it to false to assert the query is disabled.
+vi.mock('@/shared/hooks/useHydrated', () => ({
+    useHydrated: vi.fn(() => true),
+}));
+
+const mockUseHydrated = vi.mocked(useHydrated);
+
 function makeWrapper() {
     const client = new QueryClient({
         defaultOptions: {
@@ -96,10 +105,24 @@ describe('useChat — branch coverage', () => {
         mockPageContextLabel = null;
         mockLoadSession.mockReturnValue([]);
         mockLoadSessionFull.mockReturnValue({ messages: [], savedAt: null });
+        mockUseHydrated.mockReturnValue(true);
     });
 
     afterEach(() => {
         vi.restoreAllMocks();
+    });
+
+    it('does not fetch remaining tokens while the SSR hydration gate is closed', async () => {
+        mockUseHydrated.mockReturnValue(false);
+
+        const { Wrapper } = makeWrapper();
+        renderHook(() => useChat({ symbol: 'AAPL' }), { wrapper: Wrapper });
+
+        await new Promise(resolve => setTimeout(resolve, 0));
+
+        // enabled: isHydrated → the remainingTokens query stays disabled, so the
+        // server action never runs during the SSR/first-render window.
+        expect(mockGetRemainingTokens).not.toHaveBeenCalled();
     });
 
     describe('resolveAiContent branches (L73-81)', () => {

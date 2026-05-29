@@ -134,11 +134,22 @@ vi.mock('@/shared/lib/pwaEvents', () => ({
     PWA_TRIGGER_EVENT: 'pwa-trigger',
 }));
 
+// Throw-capable so the ErrorBoundary fallback={null} path can be exercised.
+const { mockFearGreedCard } = vi.hoisted(() => ({
+    mockFearGreedCard: vi.fn(),
+}));
+
 vi.mock('@/widgets/symbol-page/FearGreedCardMounted', () => ({
-    FearGreedCardMounted: () => <div data-testid="fear-greed-card" />,
+    FearGreedCardMounted: () => mockFearGreedCard(),
 }));
 
 describe('ChartContent', () => {
+    beforeEach(() => {
+        mockFearGreedCard.mockImplementation(() => (
+            <div data-testid="fear-greed-card" />
+        ));
+    });
+
     afterEach(() => {
         vi.clearAllMocks();
     });
@@ -156,6 +167,33 @@ describe('ChartContent', () => {
     it('renders without crashing', () => {
         const { container } = render(<ChartContent {...defaultProps} />);
         expect(container.firstElementChild).toBeDefined();
+    });
+
+    it('swallows a thrown fear-greed card error via ErrorBoundary and still renders the chart', () => {
+        // FearGreedCardMounted uses useSuspenseQuery; if its bars fetch throws
+        // (the SSR failure mode #513 guards), the ErrorBoundary fallback={null}
+        // must contain it so the chart shell keeps rendering.
+        const consoleSpy = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => undefined);
+        mockFearGreedCard.mockImplementation(() => {
+            throw new Error('bars fetch failed');
+        });
+
+        // try/finally so a failed assertion still restores the spy and doesn't
+        // leak the console.error mock into sibling tests.
+        try {
+            const { container } = render(<ChartContent {...defaultProps} />);
+
+            expect(screen.queryByTestId('fear-greed-card')).toBeNull();
+            expect(container.firstElementChild).not.toBeNull();
+            expect(screen.getByRole('separator')).toBeDefined();
+            // ErrorBoundary가 에러를 잡으면 React가 console.error로 보고한다 —
+            // 에러 경로가 실제로 실행됐음을 검증(테스트가 공허하게 통과하지 않도록).
+            expect(consoleSpy).toHaveBeenCalled();
+        } finally {
+            consoleSpy.mockRestore();
+        }
     });
 
     it('renders the drag handle separator', () => {

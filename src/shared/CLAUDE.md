@@ -7,7 +7,7 @@
 
 | Path | Purpose |
 |---|---|
-| `shared/lib/` | 순수 유틸리티 함수: cn, chartColors, priceFormat, seo, og, a11y, timeFormat, eastern, marketSession 등 |
+| `shared/lib/` | 순수 유틸리티 함수: cn, chartColors, priceFormat, seo, og, a11y, timeFormat, eastern 등 (장 세션 판정은 `@y0ngha/siglens-core`로 단일화됨) |
 | `shared/config/` | 설정 상수: queryKeys (QUERY_KEYS), pollingConfig, cookieNames, market, time |
 | `shared/ui/` | Primitive UI 컴포넌트: DotSeparator, EyeIcon, InfoTooltip, JsonLd, MarkdownText, tabs/ |
 | `shared/hooks/` | React 의존 일반 hook: useDialog, useEscapeKey, useFocusTrap, useHydrated, useIsMobileViewport 등 |

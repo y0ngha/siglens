@@ -6,6 +6,7 @@
 
 import type { MockedFunction, Mock } from 'vitest';
 import { useNewsAnalysis } from '@/widgets/news/hooks/useNewsAnalysis';
+import { useHydrated } from '@/shared/hooks/useHydrated';
 import {
     pollNewsAnalysisAction,
     submitNewsAnalysisAction,
@@ -43,6 +44,12 @@ vi.mock('@/widgets/symbol-page', () => ({
     },
 }));
 
+// SSR hydration gate — default hydrated so existing tests fetch on mount; the
+// gate-closed test flips it to false to assert the auto-trigger is suppressed.
+vi.mock('@/shared/hooks/useHydrated', () => ({
+    useHydrated: vi.fn(() => true),
+}));
+
 const mockSubmit = submitNewsAnalysisAction as MockedFunction<
     typeof submitNewsAnalysisAction
 >;
@@ -50,6 +57,7 @@ const mockPoll = pollNewsAnalysisAction as MockedFunction<
     typeof pollNewsAnalysisAction
 >;
 const mockIsGateBlocked = isGateBlockedResult as unknown as Mock;
+const mockUseHydrated = vi.mocked(useHydrated);
 
 const queryClients: QueryClient[] = [];
 
@@ -72,6 +80,7 @@ describe('useNewsAnalysis — branch coverage', () => {
         mockSubmit.mockReset();
         mockPoll.mockReset();
         mockIsGateBlocked.mockReturnValue(false);
+        mockUseHydrated.mockReturnValue(true);
     });
 
     afterEach(() => {
@@ -294,6 +303,25 @@ describe('useNewsAnalysis — branch coverage', () => {
         if (result.current.status !== 'error')
             throw new Error('expected error');
         expect(result.current.error).toBeInstanceOf(Error);
+    });
+
+    it('does not fetch while the SSR hydration gate is closed (enabled defaults true)', async () => {
+        mockUseHydrated.mockReturnValue(false);
+        mockSubmit.mockResolvedValue({
+            status: 'submitted',
+            jobId: 'gate-closed',
+        } as never);
+
+        const { result } = renderHook(
+            () =>
+                useNewsAnalysis('AAPL', 'Apple Inc.', 'gemini-2.5-flash-lite'),
+            { wrapper: makeWrapper() }
+        );
+
+        await new Promise(resolve => setTimeout(resolve, 0));
+
+        expect(mockSubmit).not.toHaveBeenCalled();
+        expect(result.current.status).toBe('loading');
     });
 
     it('enabled=false prevents fetching', async () => {

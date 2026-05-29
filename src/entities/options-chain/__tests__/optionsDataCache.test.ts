@@ -3,7 +3,7 @@
  *
  * The `'use cache'` directive is a Next.js compiler directive — in the vitest
  * runtime it has no effect, and `cacheLife` / `cacheTag` from `next/cache`
- * are already mocked to noops in `vitest.setup.ts`. We therefore verify the
+ * are already mocked to noops in `vitest.setup.base.ts`. We therefore verify the
  * functions' *forwarding* contract: that arguments and return values flow
  * unchanged through the wrapper to the underlying `YahooOptionsAdapter`.
  */

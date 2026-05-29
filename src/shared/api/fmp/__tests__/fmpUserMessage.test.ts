@@ -1,5 +1,6 @@
 import { FmpHttpError } from '@/shared/api/fmp/FmpHttpError';
 import {
+    FMP_DATA_UNAVAILABLE_MESSAGE,
     FMP_PAYMENT_REQUIRED_LOG_PREFIX,
     FMP_TEMPORARY_UNAVAILABLE_MESSAGE,
     getFmpPaymentRequiredLogMessage,
@@ -51,8 +52,16 @@ describe('getFmpUserFacingMessage 함수는', () => {
         );
     });
 
-    describe('비 일시 장애 상태 코드에서', () => {
-        it.each([400, 402, 404])('상태 코드 %i는 null을 반환한다', status => {
+    describe('402(비용 한도) 상태 코드에서', () => {
+        it('데이터 미제공 안내 문구로 매핑한다(raw 내부 문자열 노출 방지)', () => {
+            expect(
+                getFmpUserFacingMessage(new FmpHttpError('profile', 402, null))
+            ).toBe(FMP_DATA_UNAVAILABLE_MESSAGE);
+        });
+    });
+
+    describe('그 외 비 일시 장애 상태 코드에서', () => {
+        it.each([400, 404])('상태 코드 %i는 null을 반환한다', status => {
             expect(
                 getFmpUserFacingMessage(
                     new FmpHttpError('profile', status, null)

@@ -53,10 +53,13 @@ vi.mock('@/widgets/analysis', () => ({
     }) => <div data-testid="model-selector">{selectedModel}</div>,
 }));
 
+// Throw-capable so the ErrorBoundary fallback={null} path can be exercised.
+const { mockFearGreedChip } = vi.hoisted(() => ({
+    mockFearGreedChip: vi.fn(),
+}));
+
 vi.mock('@/widgets/symbol-page/FearGreedHeaderChipMounted', () => ({
-    FearGreedHeaderChipMounted: () => (
-        <span data-testid="fear-greed-chip">FG</span>
-    ),
+    FearGreedHeaderChipMounted: () => mockFearGreedChip(),
 }));
 
 vi.mock('@/features/premium-gate', () => ({
@@ -68,6 +71,12 @@ vi.mock('@/shared/lib/llmProviderLabels', () => ({
 }));
 
 describe('SymbolLayoutHeader', () => {
+    beforeEach(() => {
+        mockFearGreedChip.mockImplementation(() => (
+            <span data-testid="fear-greed-chip">FG</span>
+        ));
+    });
+
     it('renders a header element', () => {
         render(<SymbolLayoutHeader symbol="aapl" />);
         expect(screen.getByRole('banner')).toBeDefined();
@@ -102,5 +111,32 @@ describe('SymbolLayoutHeader', () => {
     it('renders AI model label text', () => {
         render(<SymbolLayoutHeader symbol="aapl" />);
         expect(screen.getByText('AI 분석 모델')).toBeDefined();
+    });
+
+    it('swallows a thrown fear-greed chip error via ErrorBoundary and still renders the header', () => {
+        // FearGreedHeaderChipMounted uses useSuspenseQuery; if its bars fetch
+        // throws (the SSR failure mode #513 guards), the ErrorBoundary
+        // fallback={null} must contain it so the header shell survives.
+        const consoleSpy = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => undefined);
+        mockFearGreedChip.mockImplementation(() => {
+            throw new Error('bars fetch failed');
+        });
+
+        // try/finally so a failed assertion still restores the spy and doesn't
+        // leak the console.error mock into sibling tests.
+        try {
+            render(<SymbolLayoutHeader symbol="aapl" />);
+
+            expect(screen.queryByTestId('fear-greed-chip')).toBeNull();
+            expect(screen.getByRole('banner')).toBeDefined();
+            expect(screen.getByText('(AAPL)')).toBeDefined();
+            // ErrorBoundary가 에러를 잡으면 React가 console.error로 보고한다 —
+            // 에러 경로가 실제로 실행됐음을 검증.
+            expect(consoleSpy).toHaveBeenCalled();
+        } finally {
+            consoleSpy.mockRestore();
+        }
     });
 });

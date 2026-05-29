@@ -5,7 +5,15 @@ interface CacheEnvelope<T> {
     data: T;
 }
 
-/** envelope 포맷인지 검증 — 레거시 raw 엔트리(`.data` 없음)를 가려내기 위함. */
+/**
+ * envelope 포맷인지 검증 — 레거시 raw 엔트리(`.data` 없음)를 가려내기 위함.
+ *
+ * 제약: `'data' in value`만 확인하므로 최상위에 `data` 키를 가진 임의 객체는
+ * envelope으로 간주된다. 현재는 모든 쓰기가 이 헬퍼를 거쳐 항상 `{ data }`로
+ * 이중 래핑하므로 안전하지만, 향후 자체적으로 `data` 필드를 갖는 도메인 객체를
+ * raw로 저장하는 호출부가 생기면 오인될 수 있다 — 그 경우 envelope에 brand/version
+ * 필드를 추가해 포맷을 명확히 할 것.
+ */
 function isCacheEnvelope<T>(value: unknown): value is CacheEnvelope<T> {
     return typeof value === 'object' && value !== null && 'data' in value;
 }

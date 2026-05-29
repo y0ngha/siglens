@@ -8,6 +8,7 @@
 
 import type { MockedFunction, Mock } from 'vitest';
 import { useOverallAnalysis } from '@/widgets/overall/hooks/useOverallAnalysis';
+import { useHydrated } from '@/shared/hooks/useHydrated';
 import {
     submitOverallAnalysisAction,
     pollOverallAnalysisAction,
@@ -44,6 +45,11 @@ vi.mock('@/shared/lib/sleep', () => ({
 vi.mock('@/shared/hooks/usePageHideCancel', () => ({
     usePageHideCancel: vi.fn(),
 }));
+// SSR hydration gate — default hydrated so existing tests fetch on trigger; the
+// gate-closed test flips it to false to assert the query stays disabled.
+vi.mock('@/shared/hooks/useHydrated', () => ({
+    useHydrated: vi.fn(() => true),
+}));
 
 const mockSubmit = submitOverallAnalysisAction as MockedFunction<
     typeof submitOverallAnalysisAction
@@ -52,6 +58,7 @@ const mockPollOverall = pollOverallAnalysisAction as MockedFunction<
     typeof pollOverallAnalysisAction
 >;
 const mockIsGateBlocked = isGateBlockedResult as unknown as Mock;
+const mockUseHydrated = vi.mocked(useHydrated);
 
 const queryClients: QueryClient[] = [];
 
@@ -77,6 +84,7 @@ describe('useOverallAnalysis — branch coverage', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         mockIsGateBlocked.mockReturnValue(false);
+        mockUseHydrated.mockReturnValue(true);
     });
 
     afterEach(() => {
@@ -99,6 +107,29 @@ describe('useOverallAnalysis — branch coverage', () => {
         await waitFor(() => {
             expect(result.current.state.status).toBe('bot_blocked');
         });
+    });
+
+    it('does not submit while the SSR hydration gate is closed even after trigger', async () => {
+        mockUseHydrated.mockReturnValue(false);
+        mockSubmit.mockResolvedValue({
+            status: 'submitted',
+            jobId: 'gate-closed',
+        } as never);
+
+        const { result } = renderHook(() => useOverallAnalysis(...hookArgs()), {
+            wrapper: makeWrapper(),
+        });
+
+        act(() => {
+            result.current.trigger();
+        });
+
+        // Flush any (incorrectly) queued async work — if the gate leaked, the
+        // trigger would have caused submit to fire within this tick.
+        await new Promise(resolve => setTimeout(resolve, 0));
+
+        expect(mockSubmit).not.toHaveBeenCalled();
+        expect(result.current.state.status).toBe('submitting');
     });
 
     it('returns error for gate-blocked result', async () => {
