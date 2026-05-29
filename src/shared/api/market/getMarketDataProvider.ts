@@ -8,10 +8,8 @@ export function getMarketDataProvider(): MarketDataProvider {
     if (cached !== null) return cached;
     if (process.env.E2E_TEST === '1') {
         // require keeps the fake + fixture out of the production bundle.
-        /* eslint-disable @typescript-eslint/no-require-imports */
         const { FakeMarketProvider } =
             require('./FakeMarketProvider') as typeof import('./FakeMarketProvider');
-        /* eslint-enable @typescript-eslint/no-require-imports */
         cached = new FakeMarketProvider();
         return cached;
     }

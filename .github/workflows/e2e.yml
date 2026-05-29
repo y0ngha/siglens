@@ -6,11 +6,12 @@ on:
         branches:
             - feat/e2e-playwright-foundation
 
-# Least privilege: checkout + upload artifacts + read GitHub Packages
-# (@y0ngha/siglens-core installs from npm.pkg.github.com — see .yarnrc.yml).
+# Least privilege: checkout + upload artifacts. @y0ngha/siglens-core installs
+# from npm.pkg.github.com (see .yarnrc.yml) using the SIGLENS_GITHUB_TOKEN
+# secret below, NOT the built-in GITHUB_TOKEN — the built-in token cannot read
+# this user-scoped GitHub Packages package, so `packages: read` is unused here.
 permissions:
     contents: read
-    packages: read
 
 # Cancel superseded runs on the same ref to save CI minutes.
 concurrency:
@@ -22,12 +23,11 @@ jobs:
         runs-on: ubuntu-latest
         # .yarnrc.yml authenticates the @y0ngha scope to GitHub Packages via
         # ${SIGLENS_GITHUB_TOKEN}; yarn (even `yarn --version`) fails without it.
-        # The built-in GITHUB_TOKEN can read same-owner packages with
-        # `packages: read`. If it cannot read @y0ngha/siglens-core, add a
-        # SIGLENS_GITHUB_TOKEN repo secret (a PAT with read:packages) and
-        # reference it here instead.
+        # The built-in GITHUB_TOKEN cannot read this user-scoped GitHub Packages
+        # package (it 403s), so the repo MUST define a SIGLENS_GITHUB_TOKEN secret
+        # (a PAT with read:packages) for CI to install @y0ngha/siglens-core.
         env:
-            SIGLENS_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            SIGLENS_GITHUB_TOKEN: ${{ secrets.SIGLENS_GITHUB_TOKEN }}
         # Single job is sufficient for this foundation PR (one smoke spec).
         # When the spec count grows, add Playwright sharding via a matrix
         # (e.g. strategy.matrix.shard: [1, 2] + `--shard=${{ matrix.shard }}/2`).

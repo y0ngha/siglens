@@ -5,6 +5,10 @@ const sharedConfig = {
     resolve: {
         alias: {
             '@': path.resolve(__dirname, 'src'),
+            // Mirrors tsconfig's "@e2e/*" alias so src files that consume E2E
+            // fixtures (e.g. FakeMarketProvider importing e2e/fixtures/bars.json)
+            // resolve identically under Vitest, tsc, and the Next build.
+            '@e2e': path.resolve(__dirname, 'e2e'),
             // server-only는 Next.js 전용 guard 패키지로 실제 설치 불필요.
             // Vitest 환경에서는 빈 stub으로 resolve해 transform 오류를 방지한다.
             'server-only': path.resolve(

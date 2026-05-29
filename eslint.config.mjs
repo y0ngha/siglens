@@ -49,6 +49,17 @@ const eslintConfig = defineConfig([
         },
     },
     {
+        // These two factories use a runtime require() to keep the E2E-only
+        // postgres-js client / fake market provider out of the production bundle
+        // (a static import would bundle them; async import would force every
+        // synchronous getDatabaseClient/getMarketDataProvider caller to await).
+        files: [
+            'src/shared/db/client.ts',
+            'src/shared/api/market/getMarketDataProvider.ts',
+        ],
+        rules: { '@typescript-eslint/no-require-imports': 'off' },
+    },
+    {
         // Variables and parameters prefixed with _ are intentionally unused
         // (kept for future use, documented with TODO comments).
         rules: {

@@ -66,7 +66,8 @@ async function waitForPostgres(retries = 30, delayMs = 1000): Promise<void> {
 }
 
 export default async function globalSetup(): Promise<void> {
-    // 0. Ensure Postgres is actually accepting connections.
+    // 0. The docker compose healthcheck can report "healthy" before postgres
+    //    finishes accepting connections, so poll pg_isready before migrating.
     await waitForPostgres();
 
     // 1. Bootstrap the drizzle migrations table (gotcha #2). Idempotent.

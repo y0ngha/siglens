@@ -27,6 +27,7 @@
             "@/entities/*": ["./src/entities/*"],
             "@/pages/*": ["./src/pages/*"],
             "@/shared/*": ["./src/shared/*"],
+            "@e2e/*": ["./e2e/*"],
             "@/*": ["./src/*"]
         }
     },

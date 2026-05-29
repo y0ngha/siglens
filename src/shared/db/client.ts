@@ -23,10 +23,9 @@ const isE2E = (): boolean => process.env.E2E_TEST === '1';
  */
 function buildClient(config: DatabaseConfig): DatabaseClient {
     if (isE2E()) {
-        /* eslint-disable @typescript-eslint/no-require-imports */
+        // require keeps postgres-js out of the production bundle.
         const clientTest =
             require('./clientTest') as typeof import('./clientTest');
-        /* eslint-enable @typescript-eslint/no-require-imports */
         return clientTest.createTestDatabaseClient(config);
     }
     return createDatabaseClient(config);
