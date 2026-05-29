@@ -42,7 +42,7 @@ function run(cmd: string): void {
  * been issued (container reported up but Postgres still booting). Uses the
  * container's bundled `pg_isready` so no host-side client is required.
  */
-function waitForPostgres(retries = 30, delayMs = 1000): void {
+async function waitForPostgres(retries = 30, delayMs = 1000): Promise<void> {
     for (let attempt = 1; attempt <= retries; attempt++) {
         try {
             execSync(
@@ -58,14 +58,16 @@ function waitForPostgres(retries = 30, delayMs = 1000): void {
                     `Postgres not ready after ${retries} attempts. Is the e2e backend up (yarn e2e:up)?`
                 );
             }
-            execSync(`node -e "setTimeout(()=>{}, ${delayMs})"`);
+            // globalSetup is async, so await a timer Promise instead of spawning
+            // a Node process per retry (avoids process-creation overhead).
+            await new Promise(resolve => setTimeout(resolve, delayMs));
         }
     }
 }
 
 export default async function globalSetup(): Promise<void> {
     // 0. Ensure Postgres is actually accepting connections.
-    waitForPostgres();
+    await waitForPostgres();
 
     // 1. Bootstrap the drizzle migrations table (gotcha #2). Idempotent.
     run(
