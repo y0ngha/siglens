@@ -111,9 +111,7 @@ describe('ChartContent 슬롯 규칙', () => {
                 initialAnalysisFailed={true}
             />
         );
-        expect(screen.getAllByText(/기술적 지표 요약/).length).toBeGreaterThan(
-            0
-        );
+        expect(screen.getAllByText(/기술적 지표 요약/).length).toBe(1);
         expect(screen.queryByTestId('analysis-panel')).toBeNull();
     });
 
@@ -127,8 +125,28 @@ describe('ChartContent 슬롯 규칙', () => {
                 initialAnalysisFailed={false}
             />
         );
-        expect(screen.getAllByTestId('analysis-panel').length).toBeGreaterThan(
-            0
+        expect(screen.getAllByTestId('analysis-panel').length).toBe(1);
+    });
+
+    // C1.a 회귀 가드: 봇으로 판정돼(isBotBlocked) 서사가 없을 때, 봇 안내문이
+    // 사실 층을 '교체'하면 JS 렌더링 크롤러의 DOM에 종목 고유 텍스트가 사라진다.
+    // 사실 층은 유지하고 안내문은 additive로만 덧붙어야 한다.
+    it('봇 차단이고 서사가 없으면 사실 층을 유지하고 안내문으로 덮어쓰지 않는다', () => {
+        baseAnalysis.mockReturnValue({
+            ...analysisReturn(FALLBACK_ANALYSIS),
+            isBotBlocked: true,
+        });
+        render(
+            <ChartContent
+                {...props}
+                initialAnalysis={FALLBACK_ANALYSIS}
+                initialAnalysisFailed={true}
+            />
         );
+        // 종목 고유 실측(사실 층)이 정확히 1개 존재 — 이전엔 BotBlockedNotice가 통째로 교체했다.
+        // toBe(1)로 '교체 안 됨'과 '중복 렌더' 양쪽을 모두 falsify한다.
+        expect(screen.getAllByText(/기술적 지표 요약/).length).toBe(1);
+        // 봇 안내도 정확히 1개 additive로 함께 노출돼 오판된 실사용자에게 hint를 유지한다.
+        expect(screen.getAllByText(/봇 트래픽으로 보여/).length).toBe(1);
     });
 });
