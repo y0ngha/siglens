@@ -225,6 +225,7 @@ siglens/
 | [DOMAIN.md](./docs/DOMAIN.md) | 인디케이터 계산 명세, 캔들 패턴, Skills 시스템 |
 | [API.md](./docs/API.md) | 데이터/AI API와 환경변수 |
 | [CONVENTIONS.md](./docs/CONVENTIONS.md) | 코딩 컨벤션, 네이밍, 테스트 정책 |
+| [E2E.md](./docs/E2E.md) | Playwright E2E 하니스 구조, 로컬/CI 실행, 스펙 작성 가이드 |
 | [DESIGN.md](./docs/DESIGN.md) | 컬러 시스템, Tailwind 설정, 차트 컬러 상수 |
 | [GIT_CONVENTIONS.md](./docs/GIT_CONVENTIONS.md) | 브랜치, 커밋 메시지, PR 규칙 |
 | [MISTAKES.md](./docs/MISTAKES.md) | 반복 실수와 방지 규칙 |
@@ -239,6 +240,8 @@ yarn test-coverage-report    # 상세 커버리지 리포트
 ```
 
 커버리지 목표는 전체 FSD 레이어 기준 90%입니다. 현재 Vitest 설정은 `entities/`, `features/`, `shared/`, `widgets/`, `app/`, `src/proxy.ts`를 커버리지 측정 대상으로 포함합니다.
+
+실제 브라우저로 사용자 여정을 검증하는 Playwright E2E 스위트는 Vitest 위에 별도로 올라갑니다. 하니스 구조와 로컬/CI 실행 방법은 [E2E.md](./docs/E2E.md)를 참고하세요.
 
 ## Commands
 
