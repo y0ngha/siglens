@@ -628,7 +628,23 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     ❌ test('trend is positive', () => expect(values[idx]).toBeGreaterThan(0))  // no actual value verification
     ✅ test('first value matches reference', () => expect(values[minBarsIdx]).toBeCloseTo(expectedValue))  // precise reference comparison
 
-13. Redefining production functions/constants locally in tests
+13. Non-falsifiable test assertions — imprecise matchers & partial invariant coverage
+    → **Imprecise matchers (.toBeGreaterThan(0), .toBeDefined(), etc.) when exact values are deterministic.**
+       Imprecise matchers allow multiple failure modes (0, 2, 10) to pass when the count/value is known (e.g., always 1).
+       ❌ expect(getAllByText(...).length).toBeGreaterThan(0)  // passes for length 1, 2, 10, …
+       ✅ expect(getAllByText(...).length).toBe(1)  // precise; fails if count changes
+    → **Compound boolean expressions that pass even when behavior regresses.**
+       Assertions using (||, &&, ternary) allow multiple failure modes to slip through; tautological expressions hide regressions.
+       ❌ expect(forceArg === undefined || forceArg.force !== true).toBe(true)  // green if arg absent OR has wrong value
+       ✅ expect(firstArgs?.[4]).toEqual({ force: false })  // explicit call signature verification
+    → **Partial invariant coverage — asserting only one half of an additive or compound guarantee.**
+       Tests verifying additive behavior (layer A persists + layer B appended) must assert BOTH, not just presence of B.
+       ❌ describe('bot-blocked layer') { it('notice appended', () => expect(getByText('blocked')).toBeInTheDocument()); }  // doesn't verify facts layer persisted
+       ✅ it('notice appended additively', () => { expect(getByText('facts')).toBeInTheDocument(); expect(getByText('notice')).toBeInTheDocument(); });
+    → **Recurring: 5+ occurrences across 2 PR cycles** (OverallContent + useOverallAnalysis + ChartContent bot-blocked + slot tests)
+    → When assertion is compound (||/&&), split into direct checks; when matcher is imprecise, replace with exact value; when invariant is additive, assert all parts
+
+13.5. Redefining production functions/constants locally in tests
     → Tests must import and verify production code directly; local redefinitions become tautological
     ❌ test('shouldShowAd', () => { const shouldShowAd = (x) => x.enabled; expect(shouldShowAd(mock)).toBe(true); })
     ✅ import { shouldShowAd } from '@/shared/lib/ads'; test('shouldShowAd', () => { expect(shouldShowAd(mock)).toBe(true); })
