@@ -90,7 +90,7 @@ function analysisReturn(analysis: AnalysisResponse) {
 const props = {
     symbol: 'AAPL',
     companyName: 'Apple',
-    timeframe: '1D' as const,
+    timeframe: '1Day' as const,
     timeframeChangeCount: 0,
     onMobileSheetContent: vi.fn(),
     fmpSymbol: 'AAPL',
