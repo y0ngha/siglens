@@ -212,6 +212,9 @@ export default async function SymbolPage({ params, searchParams }: Props) {
                   ]
                 : []),
         ]),
+        // ticker(표시 심볼)와 assetInfo.fmpSymbol(FMP 제공자 심볼)은 별개 값이다.
+        // peek은 submitAnalysis와의 호출부 parity를 위해 fmpSymbol을 받지만, 분석
+        // 캐시 키는 symbol+timeframe+modelId만 사용하므로 fmpSymbol은 조회에 무시된다.
         peekAnalysisCache(
             ticker,
             initialTimeframe,

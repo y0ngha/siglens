@@ -11,11 +11,10 @@ export function findElementByType(
     type: unknown
 ): ReactElement | null {
     if (Array.isArray(node)) {
-        for (const child of node) {
-            const found = findElementByType(child, type);
-            if (found !== null) return found;
-        }
-        return null;
+        return node.reduce<ReactElement | null>(
+            (found, child) => found ?? findElementByType(child, type),
+            null
+        );
     }
     if (!isValidElement(node)) return null;
     if (node.type === type) return node;
