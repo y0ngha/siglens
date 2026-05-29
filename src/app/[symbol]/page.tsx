@@ -180,9 +180,9 @@ export default async function SymbolPage({ params, searchParams }: Props) {
         queryKey: ReturnType<typeof QUERY_KEYS.bars>;
     }) => getBarsAction(qSymbol, qTimeframe, qFmpSymbol);
 
-    // SEO: 캐시 HIT면 봇이 LLM 비용 0으로 분석 서사를 초기 HTML에서 받는다.
-    // peek은 읽기 전용 — enqueue/생성 없음. MISS·corrupt·read 실패는 .catch(()=>null)로
-    // 모두 MISS로 degrade해 FALLBACK_ANALYSIS로 폴백한다(렌더를 절대 깨지 않음).
+    // peek은 읽기 전용 — enqueue/생성 없음. MISS·corrupt·read 실패는 모두 MISS로
+    // degrade해 FALLBACK_ANALYSIS로 폴백한다(렌더를 절대 깨지 않음). read 실패는
+    // 삼키지 않고 로깅한 뒤 degrade한다.
     //
     // modelId: 익명/SSR 기본 방문자가 캐시를 쓰는 키와 정렬한다. SymbolModelContext의
     // DEFAULT_MODEL이 GEMINI_2_5_FLASH_LITE_MODEL이고, useAnalysis가 그 값을
@@ -217,7 +217,10 @@ export default async function SymbolPage({ params, searchParams }: Props) {
             initialTimeframe,
             assetInfo.fmpSymbol,
             GEMINI_2_5_FLASH_LITE_MODEL
-        ).catch(() => null),
+        ).catch((error: unknown) => {
+            console.error('[SymbolPage] peekAnalysisCache failed:', error);
+            return null;
+        }),
     ]);
     const initialAnalysis = cachedAnalysis ?? FALLBACK_ANALYSIS;
 
@@ -263,8 +266,6 @@ export default async function SymbolPage({ params, searchParams }: Props) {
                     <SymbolPageClient
                         symbol={symbol}
                         companyName={assetInfo.name}
-                        // 캐시 HIT면 서버에서 미리 읽은 AI 분석 서사를, MISS면
-                        // FALLBACK_ANALYSIS를 초기 분석으로 주입한다.
                         initialAnalysis={initialAnalysis}
                         // 순수 additive: 캐시 seed 여부와 무관하게 클라이언트는
                         // 마운트 시 useAnalysis가 자동으로 재분석을 트리거하도록

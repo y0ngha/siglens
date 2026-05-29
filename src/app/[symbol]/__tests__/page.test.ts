@@ -66,7 +66,10 @@ vi.mock('next/navigation', () => ({
 
 import { generateMetadata, default as SymbolPage } from '@/app/[symbol]/page';
 import { getAssetInfoCached } from '@/entities/ticker';
-import { peekAnalysisCache } from '@y0ngha/siglens-core';
+import {
+    GEMINI_2_5_FLASH_LITE_MODEL,
+    peekAnalysisCache,
+} from '@y0ngha/siglens-core';
 import { SymbolPageClient } from '@/widgets/symbol-page/SymbolPageClient';
 import { findElementByType } from '@/shared/test-utils/findElementByType';
 import type { MockedFunction } from 'vitest';
@@ -184,7 +187,7 @@ describe('Symbol page', () => {
                 'AAPL',
                 '1Day',
                 'AAPL',
-                'gemini-2.5-flash-lite'
+                GEMINI_2_5_FLASH_LITE_MODEL
             );
             expect(props.initialAnalysis).toEqual(cached);
         });

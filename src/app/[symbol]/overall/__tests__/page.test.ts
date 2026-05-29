@@ -47,7 +47,10 @@ vi.mock('next/navigation', () => ({
 
 import { default as OverallPage } from '@/app/[symbol]/overall/page';
 import { getAssetInfoCached } from '@/entities/ticker';
-import { peekOverallAnalysisCache } from '@y0ngha/siglens-core';
+import {
+    GEMINI_2_5_FLASH_LITE_MODEL,
+    peekOverallAnalysisCache,
+} from '@y0ngha/siglens-core';
 import { OverallContent } from '@/widgets/overall/OverallContent';
 import { findElementByType } from '@/shared/test-utils/findElementByType';
 import type { MockedFunction } from 'vitest';
@@ -96,7 +99,7 @@ describe('Overall page (narrative seed)', () => {
             'AAPL',
             'Apple Inc.',
             '1Day',
-            'gemini-2.5-flash-lite'
+            GEMINI_2_5_FLASH_LITE_MODEL
         );
         expect(props.initialAnalysis).toEqual(cached);
     });
