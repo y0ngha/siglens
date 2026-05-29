@@ -94,6 +94,23 @@ describe('getOrSetCache 함수는', () => {
         expect(redis.set).toHaveBeenCalledWith('k', { data: null }, { ex: 60 });
     });
 
+    it('레거시 raw 엔트리(envelope 아님)는 miss로 취급해 fetch 후 envelope으로 갱신한다', async () => {
+        const redis = createRedisStub();
+        redis.store.set('k', { bars: [] }); // 이전 포맷 — `.data` 필드 없음
+        mockedGetRedisClient.mockReturnValue(redis as never);
+        const fetcher = vi.fn().mockResolvedValue('fresh');
+
+        const result = await getOrSetCache('k', 60, fetcher);
+
+        expect(result).toBe('fresh');
+        expect(fetcher).toHaveBeenCalledTimes(1);
+        expect(redis.set).toHaveBeenCalledWith(
+            'k',
+            { data: 'fresh' },
+            { ex: 60 }
+        );
+    });
+
     it('저장된 null envelope은 캐시 히트로 처리해 fetcher를 호출하지 않는다', async () => {
         const redis = createRedisStub();
         redis.store.set('k', { data: null });
@@ -104,6 +121,22 @@ describe('getOrSetCache 함수는', () => {
 
         expect(result).toBeNull();
         expect(fetcher).not.toHaveBeenCalled();
+    });
+
+    it('shouldCache가 false면 fresh 값은 반환하되 저장하지 않는다', async () => {
+        const redis = createRedisStub();
+        mockedGetRedisClient.mockReturnValue(redis as never);
+        const fetcher = vi.fn().mockResolvedValue({ bars: [] });
+
+        const result = await getOrSetCache<{ bars: unknown[] }>(
+            'k',
+            60,
+            fetcher,
+            value => value.bars.length > 0
+        );
+
+        expect(result).toEqual({ bars: [] });
+        expect(redis.set).not.toHaveBeenCalled();
     });
 
     it('get 실패 시 fetcher로 graceful fallback하고 에러를 로깅한다', async () => {

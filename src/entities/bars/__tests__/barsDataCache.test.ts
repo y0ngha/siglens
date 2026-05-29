@@ -72,7 +72,7 @@ describe('getCachedBarsWithIndicators', () => {
     });
 
     it('Redis hit 시 fetch 안 함', async () => {
-        mockRedisGet.mockResolvedValue(sampleBars);
+        mockRedisGet.mockResolvedValue({ data: sampleBars });
         const mod = await loadWithEnv({
             url: 'https://x.upstash.io',
             token: 't',
@@ -98,7 +98,7 @@ describe('getCachedBarsWithIndicators', () => {
         await mod.getCachedBarsWithIndicators(mockProvider, 'AAPL', '1Day');
         expect(mockRedisSet).toHaveBeenCalledWith(
             'bars:AAPL:1Day',
-            sampleBars,
+            { data: sampleBars },
             { ex: 60 }
         );
     });
@@ -168,7 +168,7 @@ describe('getCachedBarsWithIndicators', () => {
     });
 
     it('getRedis 싱글턴 캐시 — 두 번째 호출은 재생성 없이 반환', async () => {
-        mockRedisGet.mockResolvedValue(sampleBars);
+        mockRedisGet.mockResolvedValue({ data: sampleBars });
         // Load the module once, then call twice — second call hits cachedRedis fast-path
         const mod = await loadWithEnv({
             url: 'https://x.upstash.io',
