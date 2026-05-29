@@ -176,7 +176,7 @@ export default function MarketPage({ searchParams }: MarketPageProps) {
         { name: '시장 현황', url: MARKET_URL },
     ]);
 
-    // ItemList 항목 URL은 noindex되는 ?sector= 변형이 아니라 canonical /market 으로 통일.
+    // ItemList 항목 URL은 ?sector= 변형이 아닌 canonical /market으로 통일한다.
     // 섹터 식별자는 ListItem 내 name 필드(괄호 안 sector.symbol)에 표기한다.
     const itemListJsonLd = {
         '@context': 'https://schema.org',
