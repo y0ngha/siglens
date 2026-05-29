@@ -1,4 +1,5 @@
 import { OptionsPageClient } from '@/widgets/options/OptionsPageClient';
+import { SymbolPageHeading } from '@/widgets/symbol-page';
 import { OptionsEmptyState } from '@/widgets/options/OptionsEmptyState';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { VALID_TICKER_RE } from '@/shared/config/market';
@@ -179,8 +180,11 @@ export default async function OptionsPage({ params }: Props) {
                 데이터가 있는 정상 path도 동일하게 main으로 감싸야 sibling 일관성
                 과 a11y landmark navigation이 유지된다. */}
             <main className="mx-auto w-full max-w-5xl px-4 py-8">
+                <SymbolPageHeading>
+                    {displayName} 옵션 시장 분석
+                </SymbolPageHeading>
                 <section className="sr-only">
-                    <h1>{displayName} 옵션 시장 분석</h1>
+                    <h2>{displayName} 옵션 분석 개요</h2>
                     <p>
                         {displayName} 옵션 시장을 AI가 한국어로 해석합니다.
                         만기별 Max Pain, Put/Call Ratio, ATM IV, Implied Move 등

@@ -37,12 +37,8 @@ interface Props {
     searchParams: Promise<{ tf?: string }>;
 }
 
-export async function generateMetadata({
-    params,
-    searchParams,
-}: Props): Promise<Metadata> {
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { symbol } = await params;
-    const { tf } = await searchParams;
     const ticker = symbol.toUpperCase();
     // 본문 notFound()와 일관: 잘못된 ticker는 메타데이터를 비우고 noindex로 응답한다.
     if (!VALID_TICKER_RE.test(ticker)) {
@@ -57,8 +53,6 @@ export async function generateMetadata({
             displayName,
             koreanName: assetInfo?.koreanName,
         });
-
-    const hasTfVariant = tf !== undefined;
 
     return {
         title,
@@ -80,9 +74,6 @@ export async function generateMetadata({
             title: fullTitle,
             description,
         },
-        ...(hasTfVariant && {
-            robots: { index: false, follow: true },
-        }),
     };
 }
 
@@ -235,7 +226,8 @@ export default async function SymbolPage({ params, searchParams }: Props) {
             {/* main 랜드마크: 다른 5개 sibling 페이지는 본문에 <main>이 있는데
                 차트 페이지만 빠져 있어 의미론적 일관성이 깨졌었다. SymbolPageClient
                 outer div는 flex-1로 viewport를 채우는 구조라 그 위 한 단을 main으로
-                감싸 sr-only h1과 chart 본문을 하나의 랜드마크로 묶는다. */}
+                감싸 sr-only 보조 설명과 chart 본문을 하나의 랜드마크로 묶는다.
+                가시 h1은 jail 제약상 SymbolPageClient의 timeframe bar 안에 둔다. */}
             {/* 차트 페이지는 CrossLinkCards를 본문에 두지 않는다 — SymbolLayout의
                 sticky-footer jail이 main(flex-1) 안에서 chart+AI가 첫 viewport를
                 채우게 하므로, 카드를 추가하면 jail 안 flex 분배가 깨져 chart 가시
@@ -244,7 +236,10 @@ export default async function SymbolPage({ params, searchParams }: Props) {
                 측면에서도 SymbolTabs는 anchor 기반이라 crawler가 follow 가능. */}
             <main className="flex min-h-0 flex-1 flex-col">
                 <section className="sr-only">
-                    <h1>{displayName} 차트 분석과 매매 신호</h1>
+                    {/* 차트 h1은 SymbolPageClient(이 section보다 DOM 뒤)에 있어,
+                        여기에 heading을 두면 h1보다 먼저 나와 위계가 역전된다
+                        (WCAG 1.3.1). 보조 설명은 heading 없이 p로만 노출한다. */}
+                    <p>{displayName} 차트 분석 개요</p>
                     <p>
                         {displayName}({ticker})의 기술적 분석 페이지입니다.
                         보조지표 {skillCounts.indicators}종, 캔들 패턴{' '}
@@ -269,6 +264,7 @@ export default async function SymbolPage({ params, searchParams }: Props) {
                     <SymbolPageClient
                         symbol={symbol}
                         companyName={assetInfo.name}
+                        displayName={displayName}
                         initialAnalysis={initialAnalysis}
                         // 순수 additive: 캐시 seed 여부와 무관하게 클라이언트는
                         // 마운트 시 useAnalysis가 자동으로 재분석을 트리거하도록

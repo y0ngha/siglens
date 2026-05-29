@@ -118,7 +118,7 @@ describe('Symbol page', () => {
             expect(metadata.title).toBe('AAPL 차트');
         });
 
-        it('adds noindex when tf query param is present', async () => {
+        it('does not add noindex when tf query param is present (canonical consolidates)', async () => {
             mockGetAssetInfoCached.mockResolvedValue({
                 name: 'Apple Inc.',
                 koreanName: '애플',
@@ -130,8 +130,10 @@ describe('Symbol page', () => {
                 searchParams: Promise.resolve({ tf: '1Hour' }),
             });
 
-            expect(metadata.robots).toEqual(
-                expect.objectContaining({ index: false })
+            // variant URL은 noindex 대신 clean canonical로 색인 통합 (SEO 신호 충돌 제거)
+            expect(metadata.robots).toBeUndefined();
+            expect(metadata.alternates?.canonical).toBe(
+                'https://siglens.io/AAPL'
             );
         });
 

@@ -1,7 +1,7 @@
 import { FearGreedPage } from '@/widgets/fear-greed/FearGreedPage';
 import { ErrorBoundary } from 'react-error-boundary';
 import { FearGreedPageError } from '@/widgets/fear-greed';
-import { CrossLinkCards } from '@/widgets/symbol-page';
+import { CrossLinkCards, SymbolPageHeading } from '@/widgets/symbol-page';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { DEFAULT_TIMEFRAME, VALID_TICKER_RE } from '@/shared/config/market';
 import {
@@ -168,9 +168,9 @@ export default async function SymbolFearGreedPage({ params }: Props) {
             <JsonLd data={breadcrumbJsonLd} />
             <JsonLd data={faqJsonLd} />
             <main className="mx-auto max-w-5xl space-y-6 px-4 py-8">
-                <h1 className="sr-only">
+                <SymbolPageHeading>
                     {displayName} ({ticker}) 공포 탐욕 지수와 단기 매수 분위기
-                </h1>
+                </SymbolPageHeading>
                 <section className="sr-only">
                     <h2>{displayName} 공포 탐욕 지수 개요</h2>
                     <p>

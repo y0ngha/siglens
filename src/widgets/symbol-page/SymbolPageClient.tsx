@@ -29,6 +29,8 @@ const MobileAnalysisSheet = dynamic(
 interface SymbolPageClientProps {
     symbol: string;
     companyName: string;
+    /** 한국어명 + 영문사명을 합친 표시 문자열 (예: "애플, Apple Inc. (AAPL)"). */
+    displayName: string;
     initialAnalysis: AnalysisResponse;
     initialAnalysisFailed: boolean;
     indicatorCount: number;
@@ -37,6 +39,7 @@ interface SymbolPageClientProps {
 export function SymbolPageClient({
     symbol,
     companyName,
+    displayName,
     initialAnalysis,
     initialAnalysisFailed,
     indicatorCount,
@@ -64,7 +67,15 @@ export function SymbolPageClient({
                 {/* Chart-only timeframe controls live inside this overflow-hidden chart
                     container so the layout header can stay free of useSearchParams
                     (which would force PPR to mark the whole route as dynamic). */}
-                <div className="border-secondary-700 flex items-center justify-end border-b px-4 py-2 sm:py-1.5">
+                <div className="border-secondary-700 flex items-center justify-between gap-3 border-b px-4 py-2 sm:py-1.5">
+                    {/* 차트 페이지 가시 h1: jail(first-viewport 고정 + overflow-hidden)이라
+                        본문에 별도 블록을 얹으면 chart 가시 영역이 침범된다. 그래서
+                        timeframe bar 행에 짧은 한 줄로 둔다. truncate로 좁은 화면에서
+                        TimeframeSelector와 한 줄 공존하고, SSR 렌더되어 크롤러가
+                        가시 텍스트로 읽는다(기존 sr-only h1을 대체). */}
+                    <h1 className="text-secondary-100 min-w-0 truncate text-sm font-semibold sm:text-base">
+                        {displayName} 차트 분석
+                    </h1>
                     <TimeframeSelector
                         value={timeframe}
                         onChange={handleTimeframeChange}
