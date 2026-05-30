@@ -8,7 +8,9 @@ describe('FakeFundamentalDataProvider', () => {
         const profile = await provider.getProfile('aapl');
 
         expect(profile).not.toBeNull();
-        expect(profile!.symbol).toBe('aapl');
+        // Symbol is normalized to uppercase, matching FakeNewsClient /
+        // FakeOptionsDataProvider (§6.5 fake-symbol consistency).
+        expect(profile!.symbol).toBe('AAPL');
         expect(profile).toMatchObject({
             companyName: expect.any(String),
             sector: expect.any(String),

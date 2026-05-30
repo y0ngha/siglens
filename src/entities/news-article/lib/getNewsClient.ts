@@ -1,22 +1,5 @@
-import type {
-    EarningsReport,
-    NewsItem,
-    NewsTimeRange,
-} from '@y0ngha/siglens-core';
 import { FmpNewsClient } from './fmpNewsClient';
-
-/**
- * App-facing news client surface (the methods callers depend on). `FmpNewsClient`
- * is a siglens class, not a core port, so this explicit interface names the
- * contract both the real client and `FakeNewsClient` must satisfy — mirroring the
- * `FundamentalProvider` interface in getFundamentalDataProvider.ts. Signatures
- * match `FmpNewsClient` exactly.
- */
-export interface NewsClientPort {
-    fetchNews(symbol: string, range: NewsTimeRange): Promise<NewsItem[]>;
-    fetchNewsForPeriod(symbol: string, lookbackMs: number): Promise<NewsItem[]>;
-    fetchEarningsReport(symbol: string): Promise<EarningsReport | null>;
-}
+import type { NewsClientPort } from './newsClientPort';
 
 let cached: NewsClientPort | null = null;
 

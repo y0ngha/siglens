@@ -32,7 +32,7 @@ import type { FmpEarningsReportItem } from './fundamentalClient';
 export class FakeFundamentalDataProvider implements FundamentalDataProvider {
     async getProfile(symbol: string): Promise<FundamentalProfile | null> {
         return {
-            symbol,
+            symbol: symbol.toUpperCase(),
             companyName: `${symbol} Test Corp`,
             sector: 'Technology',
             industry: 'Consumer Electronics',

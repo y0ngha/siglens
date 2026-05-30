@@ -3,7 +3,7 @@ import type {
     NewsItem,
     NewsTimeRange,
 } from '@y0ngha/siglens-core';
-import type { NewsClientPort } from './getNewsClient';
+import type { NewsClientPort } from './newsClientPort';
 
 /**
  * E2E-only news client mirroring `FmpNewsClient`'s public surface, returning

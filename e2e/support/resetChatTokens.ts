@@ -25,6 +25,8 @@ const CHAT_TOKEN_KEY_PATTERN = 'chat:tokens:*';
 
 /** Deletes every `chat:tokens:*` key so the chat daily budget starts full. */
 export async function resetChatTokens(): Promise<void> {
+    // Safe cast: the SRH/Redis `KEYS` command always returns an array of string
+    // keys (empty array when no key matches the pattern), never another shape.
     const keys = (await srhCommand([
         'KEYS',
         CHAT_TOKEN_KEY_PATTERN,
