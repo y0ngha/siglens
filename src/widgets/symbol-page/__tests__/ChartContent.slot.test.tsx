@@ -115,7 +115,7 @@ describe('ChartContent 슬롯 규칙', () => {
         expect(screen.queryByTestId('analysis-panel')).toBeNull();
     });
 
-    it('실제 분석(서사 있음)이면 AnalysisPanel을 렌더한다', () => {
+    it('실제 분석(서사 있음)이면 AnalysisPanel과 사실 층을 함께 렌더한다', () => {
         const real = { ...FALLBACK_ANALYSIS, summary: 'AAPL 상승' };
         baseAnalysis.mockReturnValue(analysisReturn(real));
         render(
@@ -126,6 +126,9 @@ describe('ChartContent 슬롯 규칙', () => {
             />
         );
         expect(screen.getAllByTestId('analysis-panel').length).toBe(1);
+        // 서사가 있어도 사실 층을 함께 노출한다 — 차트가 그리는 실측값을 크롤 가능한
+        // 텍스트로 항상 유지하고, AnalysisPanel은 그 위에 서사를 additive로 얹는다.
+        expect(screen.getAllByText(/기술적 지표 요약/).length).toBe(1);
     });
 
     // C1.a 회귀 가드: 봇으로 판정돼(isBotBlocked) 서사가 없을 때, 봇 안내문이
@@ -168,6 +171,8 @@ describe('ChartContent 슬롯 규칙', () => {
         );
         // 캐시된 분석(AnalysisPanel)이 그대로 유지된다(안내문으로 교체되지 않음).
         expect(screen.getAllByTestId('analysis-panel').length).toBe(1);
+        // 사실 층도 함께 유지된다 — 서사 분기에서도 실측 텍스트는 항상 노출된다.
+        expect(screen.getAllByText(/기술적 지표 요약/).length).toBe(1);
         // 봇 안내는 그 아래 additive로 정확히 1개 노출된다.
         expect(screen.getAllByText(/봇 트래픽으로 보여/).length).toBe(1);
     });
