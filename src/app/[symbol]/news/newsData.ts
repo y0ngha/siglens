@@ -2,10 +2,8 @@ import { cache } from 'react';
 import { getDatabaseClient } from '@/shared/db/client';
 import { DrizzleNewsRepository } from '@/entities/news-article';
 import { DrizzleEarningsReportsRepository } from '@/entities/earnings-report';
-import {
-    FmpFundamentalClient,
-    FMP_FUNDAMENTAL_REVALIDATE_SECONDS,
-} from '@/shared/api/fmp/fundamentalClient';
+import { FMP_FUNDAMENTAL_REVALIDATE_SECONDS } from '@/shared/api/fmp/fundamentalClient';
+import { getFundamentalDataProvider } from '@/shared/api/fmp/getFundamentalDataProvider';
 import {
     getFmpUserFacingMessage,
     isFmpPaymentRequiredError,
@@ -22,7 +20,7 @@ import type { EarningsReportComparisonItem } from '@/shared/lib/types';
 // 동일 요청 내 중복 호출(예: NewsPage 본문 + NewsListSection 내부)은 React.cache로
 // per-request memoization을 적용해 DB/FMP 중복 조회를 막는다. cross-request 캐싱은
 // 손실 — 이슈 #439 참조.
-const fundamentalClient = new FmpFundamentalClient();
+const fundamentalClient = getFundamentalDataProvider();
 const EARNINGS_REPORT_FMP_LIMIT = 5;
 const EARNINGS_REPORT_STALE_MS = MS_PER_DAY;
 

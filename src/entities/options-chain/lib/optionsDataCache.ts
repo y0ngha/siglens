@@ -2,14 +2,14 @@ import 'server-only';
 import { cache } from 'react';
 import { getRedisClient } from '@/shared/cache/redisClient';
 import { SECONDS_PER_HOUR, SECONDS_PER_MINUTE } from '@/shared/config/time';
-import { YahooOptionsAdapter } from './YahooOptionsAdapter';
+import { getOptionsProvider } from './getOptionsProvider';
 import {
     getOptionsCacheLifeProfile,
     type OptionsCacheLifeProfile,
 } from './optionsCacheLife';
 import type { OptionsSnapshot } from '@y0ngha/siglens-core';
 
-const adapter = new YahooOptionsAdapter();
+const adapter = getOptionsProvider();
 
 // hasOptionsMarket cross-request 캐시 TTL — 옵션 신규 상장/폐지가 즉시
 // 반영될 필요는 없고, sitemap 빌드가 매 시간 ~300 ticker × Yahoo probe로

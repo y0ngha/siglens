@@ -11,7 +11,7 @@ import {
     type SubmitOverallAnalysisResult,
     type Timeframe,
 } from '@y0ngha/siglens-core';
-import { FmpFundamentalClient } from '@/shared/api/fmp/fundamentalClient';
+import { getFundamentalDataProvider } from '@/shared/api/fmp/getFundamentalDataProvider';
 import { getMarketDataProvider } from '@/shared/api/market/getMarketDataProvider';
 import { getDatabaseClient } from '@/shared/db/client';
 import {
@@ -114,7 +114,7 @@ export async function submitOverallAnalysisAction(
             companyName,
             timeframe,
             modelId,
-            fundamentalProvider: new FmpFundamentalClient(),
+            fundamentalProvider: getFundamentalDataProvider(),
             marketDataProvider: getMarketDataProvider(),
             newsItems: enrichedNews,
             upcomingCalendar: next !== null ? [next] : [],

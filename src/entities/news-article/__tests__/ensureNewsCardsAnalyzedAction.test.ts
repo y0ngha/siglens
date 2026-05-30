@@ -13,12 +13,11 @@ vi.mock('@/shared/lib/sleep', () => ({
     sleep: vi.fn().mockResolvedValue(undefined),
 }));
 
-vi.mock('../lib/fmpNewsClient', () => ({
-    FmpNewsClient: vi.fn().mockImplementation(function () {
-        return {
-            fetchNewsForPeriod: vi.fn(),
-        };
-    }),
+// The action resolves its client through the getNewsClient factory (FMP in
+// prod, fake under E2E_TEST). We mock the factory directly so each test injects
+// a fresh client without fighting the factory's module-level singleton cache.
+vi.mock('../lib/getNewsClient', () => ({
+    getNewsClient: vi.fn(),
 }));
 
 vi.mock('@/shared/db/client', () => ({
@@ -46,7 +45,7 @@ import {
     submitNewsCardAnalysis,
     pollNewsCardAnalysis,
 } from '@y0ngha/siglens-core';
-import { FmpNewsClient } from '../lib/fmpNewsClient';
+import { getNewsClient } from '../lib/getNewsClient';
 import type {
     NewsItem,
     NewsCardAnalysis,
@@ -61,7 +60,7 @@ const MockNewsRepository = DrizzleNewsRepository as MockedClass<
 >;
 const mockIsRecentlyFetched = isRecentlyFetched as Mock;
 const mockMarkFetched = markFetched as Mock;
-const MockFmpNewsClient = FmpNewsClient as MockedClass<typeof FmpNewsClient>;
+const mockGetNewsClient = getNewsClient as Mock;
 
 const mockSubmitNewsCardAnalysis = submitNewsCardAnalysis as MockedFunction<
     typeof submitNewsCardAnalysis
@@ -133,8 +132,8 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
         mockAttachAnalysis = vi.fn().mockResolvedValue(undefined);
         mockListBySymbol = vi.fn().mockResolvedValue([]);
 
-        MockFmpNewsClient.mockImplementation(function () {
-            return { fetchNewsForPeriod: mockFetchNewsForPeriod } as never;
+        mockGetNewsClient.mockReturnValue({
+            fetchNewsForPeriod: mockFetchNewsForPeriod,
         });
         MockNewsRepository.mockImplementation(function () {
             return {

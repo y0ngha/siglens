@@ -2,7 +2,7 @@
 
 import { getDatabaseClient } from '@/shared/db/client';
 import { DrizzleNewsRepository } from '@/entities/news-article';
-import { FmpNewsClient } from '../lib/fmpNewsClient';
+import { getNewsClient } from '../lib/getNewsClient';
 import {
     getFmpUserFacingMessage,
     isFmpPaymentRequiredError,
@@ -80,7 +80,7 @@ export async function ensureNewsCardsAnalyzedAction(
         return;
     }
 
-    const newsClient = new FmpNewsClient();
+    const newsClient = getNewsClient();
     const { db } = getDatabaseClient();
     const repo = new DrizzleNewsRepository(db);
 

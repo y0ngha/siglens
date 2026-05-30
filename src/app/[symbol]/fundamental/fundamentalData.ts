@@ -4,10 +4,8 @@ import {
     DrizzleProfileDescriptionTranslationRepository,
     translateCompanyDescription,
 } from '@/entities/ticker';
-import {
-    FmpFundamentalClient,
-    FMP_FUNDAMENTAL_REVALIDATE_SECONDS,
-} from '@/shared/api/fmp/fundamentalClient';
+import { FMP_FUNDAMENTAL_REVALIDATE_SECONDS } from '@/shared/api/fmp/fundamentalClient';
+import { getFundamentalDataProvider } from '@/shared/api/fmp/getFundamentalDataProvider';
 import { getOrSetCache } from '@/shared/cache/getOrSetCache';
 import type {
     FundamentalProfile,
@@ -34,7 +32,7 @@ import type {
 // Redis 키 네임스페이스 `fundamental:*` — 이 파일이 11개 키를 소유하고,
 // newsData.ts의 `fundamental:grades:*`(getGradeEvents)도 같은 네임스페이스를 공유한다.
 // 키를 rename할 때는 두 파일을 함께 수정할 것.
-const fundamentalClient = new FmpFundamentalClient();
+const fundamentalClient = getFundamentalDataProvider();
 
 export const getProfile = cache(
     async (symbol: string): Promise<FundamentalProfile | null> =>

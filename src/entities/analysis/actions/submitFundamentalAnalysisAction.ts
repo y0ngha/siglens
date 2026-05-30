@@ -7,7 +7,7 @@ import {
     type SubmitFundamentalAnalysisOptions,
     type SubmitFundamentalAnalysisResult,
 } from '@y0ngha/siglens-core';
-import { FmpFundamentalClient } from '@/shared/api/fmp/fundamentalClient';
+import { getFundamentalDataProvider } from '@/shared/api/fmp/getFundamentalDataProvider';
 import { getCurrentUser } from '@/entities/session/lib/getCurrentUser';
 import { resolveTierAndByok, buildGateError } from '@/shared/lib/byokGate';
 import { isBot } from '@/shared/api/isBot';
@@ -48,7 +48,7 @@ export async function submitFundamentalAnalysisAction(
         return await submitFundamentalAnalysis({
             symbol,
             modelId,
-            dataProvider: new FmpFundamentalClient(),
+            dataProvider: getFundamentalDataProvider(),
             waitUntil,
             tier: gate.tier,
             skipEnqueueIfMiss,
