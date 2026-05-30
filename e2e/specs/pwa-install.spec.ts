@@ -13,8 +13,14 @@ import { test, expect } from '../support/fixtures';
  * The home page (`/`) carries no MobileAnalysisSheet, so unlike symbol pages
  * there is no Radix aria-hidden trap and role queries resolve normally.
  *
+ * The `@webkit` tag is repeated on BOTH the describe and the test title because
+ * the webkit Playwright project selects specs via `grep: /@webkit/` against the
+ * full test title — matching the existing convention in symbol-tabs/symbol-chat.
+ *
  * Flow: banner appears → tap 설치하기 → the iOS "add to home screen" modal opens
- * → close it → dismiss the banner.
+ * → close it → dismiss the banner. (Dismiss is in-memory only — usePwaInstall's
+ * handleDismiss does not persist to localStorage — so we assert the immediate
+ * hide and deliberately do NOT assert survival across a reload.)
  */
 test.describe('@webkit pwa install', () => {
     test('@webkit shows the install banner, opens the iOS guide, dismisses', async ({
@@ -35,7 +41,6 @@ test.describe('@webkit pwa install', () => {
 
         await installButton.click();
 
-        // iOS "홈 화면에 추가" 안내 모달이 열린다.
         const iosModal = page.getByRole('dialog');
         await expect(iosModal).toBeVisible();
         await expect(
@@ -45,7 +50,6 @@ test.describe('@webkit pwa install', () => {
         await iosModal.getByRole('button', { name: '닫기' }).click();
         await expect(iosModal).toHaveCount(0);
 
-        // 배너 닫기 → 설치 배너가 사라진다.
         await page.getByRole('button', { name: '배너 닫기' }).click();
         await expect(installButton).toHaveCount(0);
     });

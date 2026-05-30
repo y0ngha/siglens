@@ -7,9 +7,9 @@ import { test, expect } from '../support/fixtures';
  * that opens a role="dialog" containing the ContactForm (title/email/content).
  * The submit action (submitContactAction) persists via DrizzleContactRepository
  * to the LOCAL e2e Postgres — no external service, so nothing extra to fake. A
- * successful submit swaps the form for ContactSubmittedNotice ("문의가 접수되었
- *습니다"). We assert that user outcome, plus that an invalid (empty) submit does
- * NOT succeed (the form stays open).
+ * successful submit swaps the form for ContactSubmittedNotice (success text +
+ * the submit button gone), which we assert as the user outcome — plus that an
+ * invalid (empty) submit does NOT succeed (the form stays open).
  *
  * Chromium-only: a desktop interaction check.
  */
@@ -33,6 +33,10 @@ test.describe('contact dialog', () => {
         await dialog.getByRole('button', { name: '문의 보내기' }).click();
 
         await expect(page.getByText('문의가 접수되었습니다')).toBeVisible();
+        // 성공 안내가 오버레이가 아니라 form을 실제로 대체했음을 보장.
+        await expect(
+            dialog.getByRole('button', { name: '문의 보내기' })
+        ).toHaveCount(0);
     });
 
     test('an empty submit does not succeed', async ({ page }) => {
@@ -45,7 +49,6 @@ test.describe('contact dialog', () => {
 
         await dialog.getByRole('button', { name: '문의 보내기' }).click();
 
-        // 검증 실패 시 폼이 유지되며 성공 안내로 전환되지 않는다.
         await expect(page.getByText('문의가 접수되었습니다')).toHaveCount(0);
         await expect(
             dialog.getByRole('button', { name: '문의 보내기' })
