@@ -18,7 +18,6 @@ import type {
     AnalysisGateBlockedResult,
     OptionsExpirationSelector,
 } from '@/shared/lib/types';
-import { isE2E, e2eCachedOptions } from '@/shared/lib/e2eAnalysisStub';
 
 /** Final return type — core's options result + our siglens-side gate errors. */
 export type SubmitOptionsAnalysisActionResult =
@@ -36,8 +35,15 @@ export async function submitOptionsAnalysisAction(
     expirationDate: OptionsExpirationSelector,
     modelId: ModelId
 ): Promise<SubmitOptionsAnalysisActionResult> {
-    // E2E short-circuits the LLM/worker; returns a deterministic cached fixture (see e2eAnalysisStub).
-    if (isE2E()) return e2eCachedOptions();
+    // E2E short-circuits the LLM/worker; returns a deterministic cached fixture
+    // (see e2eAnalysisStub). The stub + JSON fixture are require'd (not statically
+    // imported) under the inline E2E guard so they stay out of the production
+    // bundle (matches getMarketDataProvider).
+    if (process.env.E2E_TEST === '1') {
+        const { e2eCachedOptions } =
+            require('@/shared/api/e2eAnalysisStub') as typeof import('@/shared/api/e2eAnalysisStub');
+        return e2eCachedOptions();
+    }
     try {
         const requestHeaders = await headers();
         const skipEnqueueIfMiss = isBot(requestHeaders);

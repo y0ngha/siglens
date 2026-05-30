@@ -1,4 +1,6 @@
 import { test, expect } from '../support/fixtures';
+import { ANALYSIS_FIXTURE_SUMMARY_PREFIX } from '../support/constants';
+import { srhCommand } from '../support/srhClient';
 
 /**
  * Analysis-jobs E2E: the two job-lifecycle branches that the cached-fixture
@@ -21,8 +23,6 @@ import { test, expect } from '../support/fixtures';
  * the clock). For a bot UA it returns `miss_no_trigger`, and `useAnalysis`
  * flips `isBotBlocked` so `ChartContent` renders `BotBlockedNotice` instead.
  */
-
-const ANALYSIS_FIXTURE_SUMMARY_PREFIX = 'E2E 고정 분석 결과';
 
 // BotBlockedNotice (src/shared/ui/BotBlockedNotice.tsx) — role="status",
 // first line of its explanatory copy.
@@ -55,26 +55,15 @@ const REANALYZE_ENABLED_TIMEOUT_MS = 45_000;
  * 저장된다(@y0ngha/siglens-core reanalyzeCooldown). 컨테이너가 테스트 런 사이에
  * 유지되므로 직전 force 클릭의 락이 남아 `tryAcquireReanalyzeCooldown`이 실패하면
  * 클릭이 mutation을 발동하지 못한다. force 테스트가 결정적이도록 해당 키를 미리
- * 비운다. 이 fetch는 Node(테스트 프로세스)에서 SRH로 직접 보내므로 page 네트워크
- * 가드(브라우저 요청만 감시)에 걸리지 않는다.
+ * 비운다. 공유 SRH 클라이언트(`../support/srhClient`)를 통해 Node(테스트 프로세스)
+ * 에서 SRH로 직접 보내므로 page 네트워크 가드(브라우저 요청만 감시)에 걸리지 않고,
+ * env 폴백(UPSTASH_REDIS_REST_URL/TOKEN)도 resetChatTokens와 동일하게 공유한다.
  */
-const SRH_URL = 'http://localhost:8079';
-const SRH_TOKEN = 'e2e-token';
 async function clearReanalyzeCooldown(
     symbol: string,
     timeframe: string
 ): Promise<void> {
-    await fetch(SRH_URL, {
-        method: 'POST',
-        headers: {
-            Authorization: `Bearer ${SRH_TOKEN}`,
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify([
-            'DEL',
-            `analysis:cooldown:${symbol}:${timeframe}`,
-        ]),
-    });
+    await srhCommand(['DEL', `analysis:cooldown:${symbol}:${timeframe}`]);
 }
 
 test.describe('analysis jobs: bot-block + force re-analysis', () => {

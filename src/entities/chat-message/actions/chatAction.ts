@@ -1,6 +1,6 @@
 'use server';
 
-import { getLlmProvider } from '@/entities/llm-provider/api/getLlmProvider';
+import { getLlmProvider } from '@/entities/llm-provider';
 import { getCurrentUser } from '@/entities/session/lib/getCurrentUser';
 import { getDatabaseClient } from '@/shared/db/client';
 import { DrizzleUserApiKeyRepository } from '@/entities/api-key';

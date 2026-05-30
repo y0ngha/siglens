@@ -49,13 +49,20 @@ const eslintConfig = defineConfig([
         },
     },
     {
-        // These two factories use a runtime require() to keep the E2E-only
-        // postgres-js client / fake market provider out of the production bundle
-        // (a static import would bundle them; async import would force every
-        // synchronous getDatabaseClient/getMarketDataProvider caller to await).
+        // These factories / actions use a runtime require() to keep the E2E-only
+        // postgres-js client / fake market provider / analysis stub + JSON fixture
+        // out of the production bundle (a static import would bundle them; async
+        // import would force every synchronous caller to await). The submit
+        // actions require('@/shared/api/e2eAnalysisStub') only under the inline
+        // E2E_TEST guard, matching getMarketDataProvider's require-gate.
         files: [
             'src/shared/db/client.ts',
             'src/shared/api/market/getMarketDataProvider.ts',
+            'src/entities/analysis/actions/submitAnalysisAction.ts',
+            'src/entities/analysis/actions/submitOverallAnalysisAction.ts',
+            'src/entities/analysis/actions/submitFundamentalAnalysisAction.ts',
+            'src/entities/news-article/actions/submitNewsAnalysisAction.ts',
+            'src/entities/options-chain/actions/optionsActions.ts',
         ],
         rules: { '@typescript-eslint/no-require-imports': 'off' },
     },
@@ -241,7 +248,7 @@ const eslintConfig = defineConfig([
         // @e2e 그룹만 빼고 재명시).
         files: [
             'src/shared/api/market/FakeMarketProvider.ts',
-            'src/shared/lib/e2eAnalysisStub.ts',
+            'src/shared/api/e2eAnalysisStub.ts',
         ],
         rules: {
             'no-restricted-imports': [

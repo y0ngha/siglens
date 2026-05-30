@@ -13,7 +13,6 @@ import { resolveTierAndByok, buildGateError } from '@/shared/lib/byokGate';
 import { isBot } from '@/shared/api/isBot';
 import type { AnalysisGateBlockedResult } from '@/shared/lib/types';
 import { getMarketDataProvider } from '@/shared/api/market/getMarketDataProvider';
-import { isE2E, e2eCachedTechnical } from '@/shared/lib/e2eAnalysisStub';
 
 /** Final return type — core's gated result + our siglens-side gate errors. */
 export type SubmitAnalysisActionResult =
@@ -29,17 +28,23 @@ export async function submitAnalysisAction(
     fmpSymbol?: string,
     modelId?: ModelId
 ): Promise<SubmitAnalysisActionResult> {
-    // E2E short-circuits the LLM/worker (see e2eAnalysisStub). The short-circuit
-    // stays bot-aware so the crawler path (miss_no_trigger → BotBlockedNotice)
-    // remains reachable under E2E: a bot User-Agent yields the core MissNoTrigger
-    // shape just like prod's skipEnqueueIfMiss + cache miss, while a normal UA
-    // gets the deterministic cached fixture.
-    if (isE2E()) {
-        const requestHeaders = await headers();
-        if (isBot(requestHeaders)) return { status: 'miss_no_trigger' };
-        return e2eCachedTechnical();
-    }
     try {
+        // E2E short-circuits the LLM/worker (see e2eAnalysisStub). The
+        // short-circuit stays bot-aware so the crawler path (miss_no_trigger →
+        // BotBlockedNotice) remains reachable under E2E: a bot User-Agent yields
+        // the core MissNoTrigger shape just like prod's skipEnqueueIfMiss + cache
+        // miss, while a normal UA gets the deterministic cached fixture. Lives
+        // inside try so `await headers()` can't propagate a throw to the client.
+        // The stub + JSON fixture are require'd (not statically imported) so they
+        // stay out of the production bundle (matches getMarketDataProvider).
+        if (process.env.E2E_TEST === '1') {
+            const requestHeaders = await headers();
+            if (isBot(requestHeaders)) return { status: 'miss_no_trigger' };
+            const { e2eCachedTechnical } =
+                require('@/shared/api/e2eAnalysisStub') as typeof import('@/shared/api/e2eAnalysisStub');
+            return e2eCachedTechnical();
+        }
+
         const requestHeaders = await headers();
         const skipEnqueueIfMiss = isBot(requestHeaders);
         const marketDataProvider = getMarketDataProvider();

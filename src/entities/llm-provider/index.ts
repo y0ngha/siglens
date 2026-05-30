@@ -4,6 +4,7 @@ export { callAnthropicChat } from './api/anthropic';
 export { callGeminiChat } from './api/gemini';
 export { callOpenaiChat } from './api/openai';
 export { callAiProviderRouter } from './api/router';
+export { getLlmProvider } from './api/getLlmProvider';
 export {
     parseJsonResponse,
     stripMarkdownCodeBlock,

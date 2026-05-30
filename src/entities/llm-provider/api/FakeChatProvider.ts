@@ -30,13 +30,13 @@ function lastUserMessage(contents: AiContents): string {
  * the assistant message) and references the requested model plus the last user
  * turn so a chat spec can assert the answer rendered.
  */
-export const fakeCallAiProvider: CallAiProvider = (
+export const fakeCallAiProvider: CallAiProvider = async (
     options: CallAiProviderOptions
 ): Promise<string> => {
     const userText = lastUserMessage(options.contents);
     const quoted = userText.length > 0 ? `"${userText}"` : '방금 질문';
-    return Promise.resolve(
+    return (
         `[E2E ${options.model}] ${quoted}에 대한 테스트 답변입니다. ` +
-            '이 응답은 실제 LLM 호출 없이 생성된 결정적 응답입니다.'
+        '이 응답은 실제 LLM 호출 없이 생성된 결정적 응답입니다.'
     );
 };

@@ -24,17 +24,21 @@ export function isE2E(): boolean {
 }
 
 /**
- * The fixture is authored by hand to match each core `*AnalysisResponse`
- * shape, but JSON literal types widen on import (e.g. `trend: string` instead
- * of `Trend`, array tones as `string`). This typed view re-narrows the fixture
- * to the exact core response types so the per-type getters below return the
- * correct discriminated cached-result union without per-field casts.
+ * The fixture is authored by hand to match each core `*AnalysisResponse` shape.
+ * This typed view re-narrows the imported JSON to the exact core response types
+ * so the per-type getters below return the correct discriminated cached-result
+ * union without per-field casts.
  *
- * Guarantee: every value in `e2e/fixtures/analysis.json` is a literal drawn
- * from the corresponding core union (`'neutral'`, `'medium'`, `'cached'`-side
- * shapes, etc.) and every required field is present — verified by the keys in
- * this map matching the response interfaces. The cast only erases JSON literal
- * widening; it does not assert structure that isn't physically in the file.
+ * Why an `as` assertion and NOT a plain type annotation: with
+ * `resolveJsonModule`, TS infers every JSON string value at its WIDENED type
+ * (`trend: string`, not `'neutral'`), even though the literal is a valid member
+ * of the core union (`Trend = 'bullish' | 'bearish' | 'neutral'`). A type
+ * annotation (`const x: {...} = fixture`) — or `satisfies`, or a per-field
+ * annotation — therefore fails to compile (`string` not assignable to `Trend`)
+ * for ANY fixture content, so it cannot be used here. The single assertion only
+ * erases that JSON literal-widening; structural drift (a missing/renamed
+ * required field, or a wrong-typed field) is still caught at compile time
+ * because the assertion target is the real core interface set.
  */
 const typedFixture = fixture as {
     technical: AnalysisResponse;

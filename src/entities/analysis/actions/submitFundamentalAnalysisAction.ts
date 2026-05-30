@@ -12,7 +12,6 @@ import { getCurrentUser } from '@/entities/session/lib/getCurrentUser';
 import { resolveTierAndByok, buildGateError } from '@/shared/lib/byokGate';
 import { isBot } from '@/shared/api/isBot';
 import type { AnalysisGateBlockedResult } from '@/shared/lib/types';
-import { isE2E, e2eCachedFundamental } from '@/shared/lib/e2eAnalysisStub';
 
 /** Final return type — core's fundamental result + our siglens-side gate errors. */
 export type SubmitFundamentalAnalysisActionResult =
@@ -24,8 +23,15 @@ export async function submitFundamentalAnalysisAction(
     symbol: string,
     modelId: SubmitFundamentalAnalysisOptions['modelId']
 ): Promise<SubmitFundamentalAnalysisActionResult> {
-    // E2E short-circuits the LLM/worker; returns a deterministic cached fixture (see e2eAnalysisStub).
-    if (isE2E()) return e2eCachedFundamental();
+    // E2E short-circuits the LLM/worker; returns a deterministic cached fixture
+    // (see e2eAnalysisStub). The stub + JSON fixture are require'd (not statically
+    // imported) under the inline E2E guard so they stay out of the production
+    // bundle (matches getMarketDataProvider).
+    if (process.env.E2E_TEST === '1') {
+        const { e2eCachedFundamental } =
+            require('@/shared/api/e2eAnalysisStub') as typeof import('@/shared/api/e2eAnalysisStub');
+        return e2eCachedFundamental();
+    }
     try {
         const requestHeaders = await headers();
         const skipEnqueueIfMiss = isBot(requestHeaders);
