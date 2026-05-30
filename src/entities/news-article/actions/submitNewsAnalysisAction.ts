@@ -12,6 +12,7 @@ import { getDatabaseClient } from '@/shared/db/client';
 import { DrizzleNewsRepository } from '@/entities/news-article';
 import { NEWS_ANALYSIS_LOOKBACK_MS } from '../lib/newsLookback';
 import { isEnrichedRow, toEnrichedNewsItem } from '../lib/newsEnrichment';
+import { selectAggregateNewsItems } from '../lib/newsAnalysisSelection';
 import { getNextEarningsReport } from '@/entities/earnings-report';
 import { getCurrentUser } from '@/entities/session/lib/getCurrentUser';
 import { resolveTierAndByok, buildGateError } from '@/shared/lib/byokGate';
@@ -59,9 +60,12 @@ export async function submitNewsAnalysisAction(
             getNextEarningsReport(symbol, db),
         ]);
 
-        const enrichedNews: ReadonlyArray<EnrichedNewsItem> = rows
-            .filter(isEnrichedRow)
-            .map(toEnrichedNewsItem);
+        // The per-card stage and 30-day window above are untouched — this only
+        // bounds what the aggregate prompt sees.
+        const enrichedNews: ReadonlyArray<EnrichedNewsItem> =
+            selectAggregateNewsItems(
+                rows.filter(isEnrichedRow).map(toEnrichedNewsItem)
+            );
 
         return await submitNewsAnalysis({
             symbol,

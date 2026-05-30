@@ -152,7 +152,7 @@ describe('ChartContent', () => {
             expect(screen.queryByText('AI 분석 중…')).toBeNull();
         });
 
-        it('봇 차단 시 BotBlockedNotice를 사실 층 위에 additive로 렌더한다 (SSR 사실 층 유지)', () => {
+        it('봇 차단(서사 없음) 시 사실 층을 유지한 채 BotBlockedNotice를 additive로 함께 렌더하고 진행 배너는 내지 않는다', () => {
             analysisMock.mockReturnValue(
                 analysisReturn({ isBotBlocked: true })
             );
@@ -162,12 +162,12 @@ describe('ChartContent', () => {
                     /봇 트래픽으로 보여 분석 결과를 표시하지 않았어요/
                 )
             ).toBeInTheDocument();
+            // 봇 안내는 사실 층을 '교체'하지 않고 그 아래 additive로 덧붙는다(PR #530).
+            // 종목 고유 실측 텍스트가 렌더 DOM에 남아야 JS 렌더링 크롤러의 색인 의도가
+            // 유지된다 — 봇으로 오판된 실사용자에게도 actionable hint가 남는다.
+            expect(screen.getByText(/기술적 지표 요약/)).toBeInTheDocument();
+            // idle(분석 중 아님)이므로 진행 배너는 없다.
             expect(screen.queryByText('AI 분석 중…')).toBeNull();
-            // additive 동작: 봇 차단 시 서사가 없으면 SSR 색인을 위해
-            // TechnicalFactsSummary(사실 층)를 그대로 유지하고 BotBlockedNotice를
-            // 그 아래 덧붙이기만 한다(사실 층을 '교체'하지 않는다). idle 테스트와
-            // 동일하게 사실 층은 정확히 한 번만 렌더돼야 한다.
-            expect(screen.getAllByText(/기술적 지표 요약/)).toHaveLength(1);
         });
     });
 

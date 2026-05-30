@@ -1,36 +1,35 @@
 'use client';
 
+import { isFallbackAnalysis } from '@/entities/chat-message';
+import { usePublishSymbolChat } from '@/features/symbol-chat';
+import { cn } from '@/shared/lib/cn';
+import { PWA_TRIGGER_EVENT } from '@/shared/lib/pwaEvents';
+import { BotBlockedNotice } from '@/shared/ui/BotBlockedNotice';
+import { AnalysisPanel } from '@/widgets/analysis';
+import { ChartSkeleton, useChartSync } from '@/widgets/chart';
+import { type AnalysisResponse, type Timeframe } from '@y0ngha/siglens-core';
+import dynamic from 'next/dynamic';
 import type { ReactNode } from 'react';
 import React, { Suspense, useEffect, useEffectEvent, useMemo } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
-import dynamic from 'next/dynamic';
-import { type AnalysisResponse, type Timeframe } from '@y0ngha/siglens-core';
-import { cn } from '@/shared/lib/cn';
-import { ChartSkeleton } from '@/widgets/chart';
-import { AnalysisPanel } from '@/widgets/analysis';
-import { BotBlockedNotice } from '@/shared/ui/BotBlockedNotice';
-import { useBars } from './hooks/useBars';
+import { SNAP_PEEK } from './constants/mobileSheet';
+import { FearGreedCardMounted } from './FearGreedCardMounted';
+import { useActionPricesVisibility } from './hooks/useActionPricesVisibility';
 import { useAnalysis } from './hooks/useAnalysis';
 import { useAnalysisDerivedData } from './hooks/useAnalysisDerivedData';
 import { useAnalysisDisplay } from './hooks/useAnalysisDisplay';
-import { useActionPricesVisibility } from './hooks/useActionPricesVisibility';
-import { useSymbolModel } from './SymbolModelContext';
+import { useAnalysisProgress } from './hooks/useAnalysisProgress';
+import { useBars } from './hooks/useBars';
 import {
     PANEL_MAX_WIDTH,
     PANEL_MIN_WIDTH,
     usePanelResize,
 } from './hooks/usePanelResize';
-import { useChartSync } from '@/widgets/chart';
+import { useSymbolModel } from './SymbolModelContext';
+import { TechnicalFactsSummary } from './TechnicalFactsSummary';
 import type { AnalysisStatus } from './utils/analysisStatus';
 import { getAnalysisStatus } from './utils/analysisStatus';
-import { SNAP_PEEK } from './constants/mobileSheet';
-import { useAnalysisProgress } from './hooks/useAnalysisProgress';
-import { usePublishSymbolChat } from '@/features/symbol-chat';
 import { buildChatState } from './utils/buildChatState';
-import { PWA_TRIGGER_EVENT } from '@/shared/lib/pwaEvents';
-import { FearGreedCardMounted } from './FearGreedCardMounted';
-import { isFallbackAnalysis } from '@/entities/chat-message';
-import { TechnicalFactsSummary } from './TechnicalFactsSummary';
 
 const StockChart = dynamic(
     () => import('@/widgets/chart/StockChart').then(mod => mod.StockChart),
@@ -185,24 +184,27 @@ export function ChartContent({
         // 유지하고, 봇 안내는 그 아래 additive로만 덧붙인다 — 종목별 실측 텍스트가 렌더
         // DOM에도 항상 남고, 봇으로 오판된 실사용자에게도 actionable hint가 유지된다.
         return !hasNarrative ? (
-            <>
+            <div className="flex flex-col gap-3">
                 <AnalysisStatusBanner
                     status={analysisStatus}
-                    className="mb-3"
                 />
                 <TechnicalFactsSummary
                     symbol={symbol}
                     bars={bars}
                     indicators={indicators}
                 />
-                {isBotBlocked && <BotBlockedNotice className="mt-3" />}
+                {isBotBlocked && <BotBlockedNotice />}
                 {fearGreedCard}
-            </>
+            </div>
         ) : (
-            <>
+            <div className="flex flex-col gap-3">
                 <AnalysisStatusBanner
                     status={analysisStatus}
-                    className="mb-3"
+                />
+                <TechnicalFactsSummary
+                    symbol={symbol}
+                    bars={bars}
+                    indicators={indicators}
                 />
                 <AnalysisPanel
                     symbol={symbol}
@@ -225,7 +227,7 @@ export function ChartContent({
                     동일하게 `isBotBlocked`일 때만 안내를 노출해 일관된다. */}
                 {isBotBlocked && <BotBlockedNotice className="mt-3" />}
                 {fearGreedCard}
-            </>
+            </div>
         );
     }, [
         isBotBlocked,

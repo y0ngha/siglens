@@ -178,6 +178,42 @@ describe('submitNewsAnalysisAction 함수는', () => {
         expect(item.card.titleKo).toBe('애플 실적 예상치 상회');
     });
 
+    it('25개를 초과하는 분석 뉴스는 priceImpact 상위 25개(impact 높은 순)만 prompt에 전달한다', async () => {
+        // 30 low-impact rows + 5 high-impact rows = 35 enriched rows.
+        // Only the top 25 by priceImpact should reach siglens-core, with the
+        // 5 high-impact articles first.
+        const lowRows = Array.from({ length: 30 }, (_, i) => ({
+            ...ANALYZED_ROW,
+            id: `low-${i}`,
+            priceImpact: 'low',
+        }));
+        const highRows = Array.from({ length: 5 }, (_, i) => ({
+            ...ANALYZED_ROW,
+            id: `high-${i}`,
+            priceImpact: 'high',
+        }));
+        mockListBySymbol.mockResolvedValue([...lowRows, ...highRows]);
+        mockGetNextEarningsReport.mockResolvedValue(null);
+        mockSubmitNewsAnalysis.mockResolvedValueOnce(SUBMITTED_RESULT);
+
+        await submitNewsAnalysisAction('NVDA', 'Nvidia Corp.', MODEL_ID);
+
+        const callArg = mockSubmitNewsAnalysis.mock.calls[0]?.[0];
+        const news = callArg?.news as EnrichedNewsItem[];
+        expect(news).toHaveLength(25);
+        // All 5 high-impact articles survive and lead the list.
+        expect(news.slice(0, 5).map(n => n.id)).toEqual(
+            highRows.map(r => r.id)
+        );
+        // 상위 5개는 모두 high, 남은 20개는 모두 low (selection 정렬 검증).
+        expect(news.slice(0, 5).every(n => n.card.priceImpact === 'high')).toBe(
+            true
+        );
+        expect(news.slice(5).every(n => n.card.priceImpact === 'low')).toBe(
+            true
+        );
+    });
+
     it('다음 실적 발표가 있으면 upcomingCalendar에 포함한다', async () => {
         mockListBySymbol.mockResolvedValue([ANALYZED_ROW]);
         mockGetNextEarningsReport.mockResolvedValue(NEXT_EARNINGS);

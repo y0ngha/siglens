@@ -1,11 +1,11 @@
-import { useId } from 'react';
+import { formatPriceChange, formatUsdCurrency } from '@/shared/lib/priceFormat';
 import {
     RSI_OVERBOUGHT_LEVEL,
     RSI_OVERSOLD_LEVEL,
     type Bar,
     type IndicatorResult,
 } from '@y0ngha/siglens-core';
-import { formatUsdCurrency, formatPriceChange } from '@/shared/lib/priceFormat';
+import { useId } from 'react';
 import { buildTechnicalFacts } from './utils/technicalFacts';
 
 function rsiZone(rsi: number): string {
@@ -81,8 +81,7 @@ export function TechnicalFactsSummary({
                 </div>
             </dl>
             <p className="text-secondary-500 text-xs">
-                AI 종합 분석은 곧 생성됩니다. 위 지표는 실시간 시세 기반 자동
-                계산값입니다.
+                위 지표는 실시간 시세 기반 자동 계산값입니다.
             </p>
         </section>
     );
