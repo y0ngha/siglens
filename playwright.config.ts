@@ -29,6 +29,17 @@ export default defineConfig({
     globalSetup: './e2e/setup/global-setup.ts',
     fullyParallel: true,
     retries: process.env.CI ? 2 : 0,
+    // CI 러너(2코어 ubuntu)는 단일 콜드빌드 Next 서버 1개를 공유한다. 기본
+    // fullyParallel 다중 워커로 chromium+webkit 컨텍스트가 동시에 그 서버를
+    // 때리면 RSC 네비/하이드레이션이 경합으로 수 초씩 느려지고(관측: 동일 런이
+    // 2.4m→5.3m로 부풀고 webkit 탭 순회가 타임아웃) 스펙이 산발적으로 깨진다.
+    // CI에서는 워커를 1로 직렬화해 경합을 제거한다(속도보다 신뢰성 우선 — 무인
+    // 머지 루프를 막는 flake가 더 비싸다). 로컬은 기본 병렬 유지.
+    workers: process.env.CI ? 1 : undefined,
+    // CI에서는 콜드빌드+제약 러너 지연을 흡수하도록 단언/액션/네비 타임아웃을
+    // 넉넉히 잡는다. 로컬은 빠른 기본값 유지.
+    timeout: process.env.CI ? 60_000 : 30_000,
+    expect: { timeout: process.env.CI ? 15_000 : 5_000 },
     reporter: process.env.CI
         ? [['github'], ['html', { open: 'never' }]]
         : 'list',
@@ -38,6 +49,8 @@ export default defineConfig({
         video: 'retain-on-failure',
         screenshot: 'only-on-failure',
         serviceWorkers: 'block',
+        actionTimeout: process.env.CI ? 20_000 : 0,
+        navigationTimeout: process.env.CI ? 30_000 : 0,
     },
     projects: [
         {
