@@ -91,31 +91,39 @@ test.describe('@webkit symbol tabs', () => {
     test('@webkit navigates through all 6 tabs and renders each tab marker', async ({
         page,
     }) => {
+        // 모바일 webkit + CI 콜드빌드 병렬 부하에서 6탭 순회(RSC 네비 + 하이드레이션)는
+        // 탭당 수 초가 걸릴 수 있어 기본 30s를 넘길 수 있다. 넉넉히 상향한다.
+        test.setTimeout(90_000);
+
         await page.goto('/AAPL');
 
         const tabNav = page.getByRole('navigation', { name: TAB_NAV_NAME });
         await expect(tabNav).toBeVisible();
 
         for (const tab of TABS) {
-            // 탭 링크 클릭으로 이동(차트→...→종합). 탭 nav가 가로 스크롤되므로
-            // 클릭 전 scrollIntoView가 필요할 수 있으나 Playwright click이 자동 처리.
-            await tabNav
-                .getByRole('link', { name: tab.label, exact: true })
-                .click();
+            // 탭 nav는 모바일에서 가로 스크롤되므로 클릭 전 명시적으로 가시 영역에
+            // 들여온다(webkit click auto-scroll 타이밍 flake 방지).
+            const link = tabNav.getByRole('link', {
+                name: tab.label,
+                exact: true,
+            });
+            await link.scrollIntoViewIfNeeded();
+            await link.click();
 
-            // 1) URL이 해당 탭으로 바뀐다 (의미 있는 네비게이션 결과).
-            await expect(page).toHaveURL(tab.urlRe);
+            // 1) 먼저 네비게이션이 커밋될 때까지 기다린다 — 이후 활성 상태/h1
+            //    단언이 정착된 페이지에서 실행되도록 (webkit/CI 지연 대비).
+            await page.waitForURL(tab.urlRe, { timeout: 15_000 });
 
             // 2) 활성 탭이 aria-current="page"를 갖는다 (URL 기반 활성 상태).
             await expect(
                 tabNav.getByRole('link', { name: tab.label, exact: true })
-            ).toHaveAttribute('aria-current', 'page');
+            ).toHaveAttribute('aria-current', 'page', { timeout: 15_000 });
 
             // 3) 탭별 가시 h1 마커가 보인다 (RSC SSR, 뷰포트 독립, 데이터 비의존).
             //    차트 h1은 여러 후보(브레드크럼 등)와 충돌하지 않도록 level=1로 한정.
             await expect(
                 page.getByRole('heading', { level: 1, name: tab.heading })
-            ).toBeVisible();
+            ).toBeVisible({ timeout: 15_000 });
         }
     });
 
