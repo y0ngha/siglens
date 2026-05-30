@@ -1,5 +1,75 @@
 # Changelog
 
+# [0.15.0](https://github.com/y0ngha/siglens/compare/v0.14.2...v0.15.0) (2026-05-30)
+
+
+### Bug Fixes
+
+* address PR [#516](https://github.com/y0ngha/siglens/issues/516) review — test import order, magic number, empty-news coverage, earnings no-store ([f6759bb](https://github.com/y0ngha/siglens/commit/f6759bba36268b010657b23c2d93d1a51dec70a2))
+* address PR [#516](https://github.com/y0ngha/siglens/issues/516) round 2 — drift-trap literal, WHY comment, revalidate-passing tests ([02111a2](https://github.com/y0ngha/siglens/commit/02111a2af098b30f3df9c9ef0c639319063f5652))
+* address PR [#517](https://github.com/y0ngha/siglens/issues/517) review (immutability, dedup interfaces, JSDoc, UTC daily bars, test coverage) ([86062af](https://github.com/y0ngha/siglens/commit/86062afc9ba05d522dffc83f5afae51079bd9910))
+* address PR [#517](https://github.com/y0ngha/siglens/issues/517) round-2 review (getMarketSummaryAction test + provider dedup + 429 assertion) ([57ca9c5](https://github.com/y0ngha/siglens/commit/57ca9c5c30ec92357b7eb0a95e0ba2c9f488c15c))
+* address PR [#517](https://github.com/y0ngha/siglens/issues/517) round-3 review (MS_PER_SECOND, dividers, getQuote/getBars test coverage, ownership comment) ([c4bca96](https://github.com/y0ngha/siglens/commit/c4bca96b96f154e08142cb742daa1c9a387c060a))
+* bump siglens-core to 0.13.0; address PR [#516](https://github.com/y0ngha/siglens/issues/516) round 3 (FmpGetOptions type, symmetric test default) ([be5b99e](https://github.com/y0ngha/siglens/commit/be5b99e58fb2f704b3838621186f4cc03a27c513))
+* **e2e:** address PR [#531](https://github.com/y0ngha/siglens/issues/531) review — config-level lint override, [@e2e](https://github.com/e2e) alias, unit tests, comments, CI token ([e56c9a6](https://github.com/y0ngha/siglens/commit/e56c9a6009fceca7102c736b7ece7f39ca3ef297))
+* **e2e:** address PR [#532](https://github.com/y0ngha/siglens/issues/532) review — barrel import, unit tests, try-catch, DRY helpers, stub→shared/api + require-gate ([e0a78d2](https://github.com/y0ngha/siglens/commit/e0a78d2f021d9090f40fb4f1bd6e559ec74addd6))
+* **e2e:** CI GitHub Packages auth + async waitForPostgres (PR [#531](https://github.com/y0ngha/siglens/issues/531) review) ([05e4106](https://github.com/y0ngha/siglens/commit/05e41068296a3d55eff4774fe1225f52ea5acc90))
+* **e2e:** migrate+seed before CI build; seed active terms so /privacy,/terms prerender ([bff1d83](https://github.com/y0ngha/siglens/commit/bff1d833d0d9b9e80294921b799850801b8460ce))
+* **e2e:** pin readonly Upstash token so .env.local prod token can't leak into cache reads ([3f4b74d](https://github.com/y0ngha/siglens/commit/3f4b74d9db62bf8975858dff44bd56fe86c50b34))
+* **e2e:** PR [#532](https://github.com/y0ngha/siglens/issues/532) review round 2 — E2E blocks into try-catch, toReversed, named fixture type ([5b99089](https://github.com/y0ngha/siglens/commit/5b990891c6f0e4208cc3868a28aa0926d4b22613))
+* **e2e:** PR [#532](https://github.com/y0ngha/siglens/issues/532) round 3 — hermetic ticker autocomplete + factory/fake unit tests + NewsClientPort + comment fix ([0be857d](https://github.com/y0ngha/siglens/commit/0be857d945c435d347874c69751a32b6f623f8ce))
+* **e2e:** PR [#532](https://github.com/y0ngha/siglens/issues/532) round 4 — break NewsClientPort import cycle, normalize fake symbol, cast comment ([159d198](https://github.com/y0ngha/siglens/commit/159d1986ce0d3f3390ff51101b7090d2bfcad497))
+* keep server-only getAuthDatabaseClient off the client graph (drop from session barrel) ([fbaee94](https://github.com/y0ngha/siglens/commit/fbaee9402db0795dfc7fe60d97602e289f0f9423))
+* move poll constants out of 'use server' file to satisfy Next.js export rule ([be9e58d](https://github.com/y0ngha/siglens/commit/be9e58d55ccb2b932abec199c4d6273fc02a82f2))
+* remove variant-URL noindex, rely on canonical ([82b3212](https://github.com/y0ngha/siglens/commit/82b32122647f324cc251566d8cecae1cd9e029ec))
+* **seo:** 봇 차단 시 SSR 사실 층 유지(BotBlockedNotice를 additive로) ([880131d](https://github.com/y0ngha/siglens/commit/880131d36d3764ecd1246de702c23c1e198e5e24))
+* **seo:** 중복 apple-touch-icon 메타데이터 제거 ([9697f12](https://github.com/y0ngha/siglens/commit/9697f122a41af8f24dd2c78c2f90cfc0cf35822a))
+* **seo:** 차트 페이지 sr-only heading 위계 역전 수정 ([f912b4a](https://github.com/y0ngha/siglens/commit/f912b4aa01d4deaa7f5e55982a268f2dbff707ec))
+* **seo:** address PR [#528](https://github.com/y0ngha/siglens/issues/528) review (section headings, JSDoc accuracy, test mock order) ([48ba568](https://github.com/y0ngha/siglens/commit/48ba5681a37622f90758adc655c0aec461f0e275))
+* **seo:** address PR [#528](https://github.com/y0ngha/siglens/issues/528) round 2 review (chart sr-only heading, comment cleanup) ([c550609](https://github.com/y0ngha/siglens/commit/c550609f3000537393c9aec0d756bab1ed056195))
+* **seo:** PR [#530](https://github.com/y0ngha/siglens/issues/530) 리뷰 반영 — 봇 안내 has-narrative 분기에도 additive, 테스트 매처·복원 보강 ([ce0e8c3](https://github.com/y0ngha/siglens/commit/ce0e8c3f99582d6100547b03bd000407f986ef01))
+* **ssr:** use model constant in test assertions; log peek failures before MISS degrade (PR [#527](https://github.com/y0ngha/siglens/issues/527) review) ([4e28867](https://github.com/y0ngha/siglens/commit/4e28867978197fae3f8c7759be043ad8cb60ab8c))
+* **symbol-page:** address PR [#526](https://github.com/y0ngha/siglens/issues/526) review (window shadow, import/first, hook order, test coverage, cleanups) ([da344ce](https://github.com/y0ngha/siglens/commit/da344ceea510bb94e62ccff882d9bcdc53bdead9))
+* **symbol-page:** address PR [#526](https://github.com/y0ngha/siglens/issues/526) round-2 review (RSI level constants, findLast, boundary/zero-guard tests, comment) ([65dfb5d](https://github.com/y0ngha/siglens/commit/65dfb5dc10e4c94a2dc28eaf426528618a41aa69))
+* **symbol-page:** address PR [#526](https://github.com/y0ngha/siglens/issues/526) round-3 review (merge core imports, RSI level constants in test, useId) ([69ebe11](https://github.com/y0ngha/siglens/commit/69ebe1153b5e8e425ee4d3dca6c5b44a91dfb4b7))
+* treat legacy non-envelope cache entries as misses in getOrSetCache (PR [#524](https://github.com/y0ngha/siglens/issues/524) review) ([2158cb3](https://github.com/y0ngha/siglens/commit/2158cb35c428fc1ef9f675c32989f8743912bcc5))
+* typecheck 오류 수정 ([14aed89](https://github.com/y0ngha/siglens/commit/14aed8964f07562c3cdc8220b715cc3ee02852b1))
+
+
+### Features
+
+* add bars Redis cache (cross-request, session-aware TTL) ([73147f0](https://github.com/y0ngha/siglens/commit/73147f00dabcaf89756181d348403ec5bb9dedbb))
+* add FmpMarketProvider implementing core MarketDataProvider over fmpGet ([fa91b5c](https://github.com/y0ngha/siglens/commit/fa91b5cabcb03bd5b6b2e8e6b7c8096a90ee48a4))
+* add getMarketDataProvider single construction point ([60df45b](https://github.com/y0ngha/siglens/commit/60df45b32bc0775fe1b67c011e21ef60124fbcea))
+* add per-symbol news refresh Redis flag (10min TTL) ([684d514](https://github.com/y0ngha/siglens/commit/684d5148318b756b679fb553c4b4e3e95403fee7))
+* add shared Upstash Redis client (getRedisClient + getRedisReaderWriter) ([c2b3763](https://github.com/y0ngha/siglens/commit/c2b3763f74d798a111c7f1210b2be5fed0cd4406))
+* add SymbolPageHeading visible h1 component ([85c42cf](https://github.com/y0ngha/siglens/commit/85c42cf648b7112fa5bb30709ea2938d11e9e697))
+* cache dashboard market summary to cut bot-driven FMP quote cost ([94c1597](https://github.com/y0ngha/siglens/commit/94c159756b9e07c351ea0066af30bb3f961242de))
+* cache FMP fundamental fetches via Next Data Cache (1h revalidate) ([babe17f](https://github.com/y0ngha/siglens/commit/babe17fbd38f37d964c641cfb43e28fd9c90cd56))
+* **chat-message:** add isFallbackAnalysis predicate for SSR slot rule ([aa35df1](https://github.com/y0ngha/siglens/commit/aa35df1d0fc84cfd81990e0ad8000fd2f161d27c))
+* **e2e:** analysis fixtures + shared E2E cached-result stub ([696bac4](https://github.com/y0ngha/siglens/commit/696bac49578e5730d4c17466c9108ed96d1c26f4))
+* **e2e:** fake chat callAiProvider under E2E_TEST ([720d9d7](https://github.com/y0ngha/siglens/commit/720d9d7503dc8e61705f8b7f5ccb6a8af5287302))
+* **e2e:** fake FMP fundamental/news + Yahoo options providers under E2E_TEST (hermetic) ([05bee66](https://github.com/y0ngha/siglens/commit/05bee66b513e455aa56c6c7cb2730d59e50287be))
+* **e2e:** fixture-backed FakeMarketProvider behind E2E_TEST ([d69a0cc](https://github.com/y0ngha/siglens/commit/d69a0cc3942aeb7583bf31606f1dc78f68c00a88))
+* **e2e:** global setup runs migrate + seed ([0094c2a](https://github.com/y0ngha/siglens/commit/0094c2a96a537e122cd0d270c33841efba02fa92))
+* **e2e:** migrate + minimal AAPL ticker seed ([5f0ae0c](https://github.com/y0ngha/siglens/commit/5f0ae0c3de3db7232c011a0c42723f80bd8fdecd))
+* **e2e:** network guard fixture + clock helper ([3676826](https://github.com/y0ngha/siglens/commit/367682610b2d5a7d740803ec6a5e89434408fb2d))
+* **e2e:** postgres-js DatabaseClient swap behind E2E_TEST ([223796b](https://github.com/y0ngha/siglens/commit/223796b9e693ac67d8025bd896ed96d20a72b199))
+* **e2e:** short-circuit analysis submit actions to cached fixture under E2E_TEST ([55c0cb4](https://github.com/y0ngha/siglens/commit/55c0cb450b9a83af5b3efa8d8a8afe1e7faa24af))
+* skip news FMP fetch + DB upsert for recently-fetched bot crawls ([a4a9dab](https://github.com/y0ngha/siglens/commit/a4a9daba7cbc4c92bfd59bf6d88e1268d8335d9e))
+* **ssr:** seed cached chart analysis into SymbolPage (Phase B) ([9975a3c](https://github.com/y0ngha/siglens/commit/9975a3c631f80e4a046ce2c4f1943f0898ba38c7))
+* **ssr:** seed cached overall analysis into OverallPage (Phase C) ([a9dcd58](https://github.com/y0ngha/siglens/commit/a9dcd58e164f61d01ca732be504a040e09a3ffaa))
+* surface visible h1 across 6 symbol routes ([a82619a](https://github.com/y0ngha/siglens/commit/a82619a84f104a260a9247e1e4eb4b00b5282a52))
+* **symbol-page:** add buildTechnicalFacts deterministic extractor ([cf19995](https://github.com/y0ngha/siglens/commit/cf1999551333448ccabc27c88378891dffefd250))
+* **symbol-page:** add TechnicalFactsSummary SSR facts component ([68389fd](https://github.com/y0ngha/siglens/commit/68389fd8e95dfab726d83981f25c7b9db2c82da4))
+* **symbol-page:** render TechnicalFactsSummary in analysis slot when no AI narrative ([5f49008](https://github.com/y0ngha/siglens/commit/5f4900816a4ae2a413dcd31b85aba0d135aa2abb))
+
+
+### Performance Improvements
+
+* cache fundamental + analyst-grade data in Redis across regions ([d16cf82](https://github.com/y0ngha/siglens/commit/d16cf8243256e8e10ef6a0111dc67bccae1381d1))
+* **seo:** og-image.png 재압축 (-56%) ([721d6c5](https://github.com/y0ngha/siglens/commit/721d6c5c673d8a8ee12182b95ba54cf7112df88d)), closes [#0f172a](https://github.com/y0ngha/siglens/issues/0f172a)
+
 ## [0.14.2](https://github.com/y0ngha/siglens/compare/v0.14.1...v0.14.2) (2026-05-28)
 
 
