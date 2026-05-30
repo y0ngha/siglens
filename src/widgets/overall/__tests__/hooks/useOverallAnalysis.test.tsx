@@ -22,11 +22,11 @@ import {
     pollOptionsAnalysisAction,
 } from '@/entities/options-chain/actions';
 import { CANCEL_JOBS_API_PATH } from '@/shared/lib/cancelJobsApi';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import type { QueryClient } from '@tanstack/react-query';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import type { OverallAnalysisResponse } from '@y0ngha/siglens-core';
-import type { ReactNode } from 'react';
 import { readBlobText } from '@/shared/test-utils/readBlobText';
+import { createQueryClientWrapper } from '@/__tests__/utils/createQueryClientWrapper';
 
 vi.mock('@/entities/analysis/actions', () => ({
     submitOverallAnalysisAction: vi.fn(),
@@ -108,17 +108,10 @@ const PENDING_DEPS = {
 const queryClients: QueryClient[] = [];
 
 function makeWrapper() {
-    const client = new QueryClient({
-        defaultOptions: { queries: { retry: false } },
-    });
+    // client를 추적해 afterEach에서 clear한다 — describe 간 query 캐시 누수 방지.
+    const { wrapper, client } = createQueryClientWrapper();
     queryClients.push(client);
-    return function Wrapper({ children }: { children: ReactNode }) {
-        return (
-            <QueryClientProvider client={client}>
-                {children}
-            </QueryClientProvider>
-        );
-    };
+    return wrapper;
 }
 
 function hookArgs() {
@@ -477,7 +470,7 @@ describe('useOverallAnalysis', () => {
             });
         });
 
-        it('첫 trigger에는 force를 전달하지 않는다 (options 인자 생략 또는 force=false)', async () => {
+        it('첫 trigger에는 force=false를 전달한다 (재분석이 아님)', async () => {
             mockSubmit.mockResolvedValue({
                 status: 'cached',
                 result: OVERALL_RESULT,
@@ -495,12 +488,10 @@ describe('useOverallAnalysis', () => {
                 expect(result.current.state.status).toBe('done')
             );
 
+            // 첫 trigger는 queryFnForceRef(false)를 그대로 options로 넘기므로
+            // 5번째 인자는 정확히 { force: false }다. done 상태 재분석만 force:true.
             const firstCall = mockSubmit.mock.calls[0];
-            // 5번째 인자가 없거나 { force: false } 형태여야 한다.
-            const fifthArg = firstCall?.[4];
-            expect(fifthArg === undefined || fifthArg.force !== true).toBe(
-                true
-            );
+            expect(firstCall?.[4]).toEqual({ force: false });
         });
     });
 

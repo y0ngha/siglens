@@ -50,13 +50,13 @@ vi.mock('@/entities/options-chain/actions', () => ({
 }));
 
 import { render, screen, fireEvent } from '@testing-library/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 import type { OverallAnalysisResponse } from '@y0ngha/siglens-core';
 
 import { OverallContent } from '@/widgets/overall/OverallContent';
 import { useOverallAnalysis } from '@/widgets/overall/hooks/useOverallAnalysis';
 import { submitOverallAnalysisAction } from '@/entities/analysis/actions';
+import { createQueryClientWrapper } from '@/__tests__/utils/createQueryClientWrapper';
 
 const mockUseOverallAnalysis = useOverallAnalysis as MockedFunction<
     typeof useOverallAnalysis
@@ -378,19 +378,6 @@ const SEED_RESULT: OverallAnalysisResponse = {
     riskFactorsKo: [],
 };
 
-function makeWrapper() {
-    const client = new QueryClient({
-        defaultOptions: { queries: { retry: false } },
-    });
-    return function Wrapper({ children }: { children: ReactNode }) {
-        return (
-            <QueryClientProvider client={client}>
-                {children}
-            </QueryClientProvider>
-        );
-    };
-}
-
 describe('OverallContent SSR seed', () => {
     beforeEach(async () => {
         mockSubmit.mockReset();
@@ -415,7 +402,7 @@ describe('OverallContent SSR seed', () => {
                 timeframe="1Day"
                 initialAnalysis={SEED_RESULT}
             />,
-            { wrapper: makeWrapper() }
+            { wrapper: createQueryClientWrapper().wrapper }
         );
 
         expect(screen.getByText('AAPL 시드 헤드라인')).toBeInTheDocument();
@@ -429,7 +416,7 @@ describe('OverallContent SSR seed', () => {
                 companyName="Apple Inc."
                 timeframe="1Day"
             />,
-            { wrapper: makeWrapper() }
+            { wrapper: createQueryClientWrapper().wrapper }
         );
 
         expect(
