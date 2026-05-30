@@ -57,8 +57,11 @@ function toAnthropicMessages(contents: AiContents): Anthropic.MessageParam[] {
  * Returns a new array — never mutates the caller's messages — and is a no-op when
  * there is no history yet (fewer than 2 messages). Anthropic silently ignores
  * prefixes below the model's min-cacheable size, so no token counting is needed.
+ *
+ * @internal Exported only for unit-testing the already-block-content branch,
+ * which `toAnthropicMessages` never produces in normal flow.
  */
-function withHistoryCacheBreakpoint(
+export function withHistoryCacheBreakpoint(
     messages: Anthropic.MessageParam[]
 ): Anthropic.MessageParam[] {
     if (messages.length < 2) {
@@ -72,18 +75,20 @@ function withHistoryCacheBreakpoint(
         // Already block content (shouldn't happen for our string turns); leave as-is.
         return messages;
     }
-    const next = [...messages];
-    next[breakpointIdx] = {
-        role: target.role,
-        content: [
-            {
-                type: 'text',
-                text,
-                cache_control: EPHEMERAL_CACHE_CONTROL,
-            },
-        ],
-    };
-    return next;
+    return messages.map((message, index) =>
+        index === breakpointIdx
+            ? {
+                  role: message.role,
+                  content: [
+                      {
+                          type: 'text',
+                          text,
+                          cache_control: EPHEMERAL_CACHE_CONTROL,
+                      },
+                  ],
+              }
+            : message
+    );
 }
 
 export async function callAnthropicChat({
