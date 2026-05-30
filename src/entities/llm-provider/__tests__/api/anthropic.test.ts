@@ -23,8 +23,12 @@ vi.mock('@y0ngha/siglens-core', async () => {
     };
 });
 
-import { callAnthropicChat } from '@/entities/llm-provider/api/anthropic';
+import {
+    callAnthropicChat,
+    withHistoryCacheBreakpoint,
+} from '@/entities/llm-provider/api/anthropic';
 import { MODEL_SPECS } from '@y0ngha/siglens-core';
+import type Anthropic from '@anthropic-ai/sdk';
 
 const BASE_OPTIONS = {
     serverApiKey: 'server-key',
@@ -179,7 +183,7 @@ describe('callAnthropicChat', () => {
     });
 
     describe('systemInstruction', () => {
-        it('systemInstruction이 있으면 system 파라미터로 전달한다', async () => {
+        it('systemInstruction이 있으면 ephemeral 캐시 브레이크포인트가 붙은 text 블록 배열로 전달한다', async () => {
             mockFinalMessage.mockResolvedValue({
                 content: [{ type: 'text', text: 'ok' }],
                 stop_reason: 'end_turn',
@@ -191,7 +195,13 @@ describe('callAnthropicChat', () => {
             });
 
             const call = mockStream.mock.calls[0][0];
-            expect(call.system).toBe('Be concise');
+            expect(call.system).toEqual([
+                {
+                    type: 'text',
+                    text: 'Be concise',
+                    cache_control: { type: 'ephemeral' },
+                },
+            ]);
         });
 
         it('systemInstruction이 없으면 system 파라미터를 포함하지 않는다', async () => {
@@ -204,6 +214,132 @@ describe('callAnthropicChat', () => {
 
             const call = mockStream.mock.calls[0][0];
             expect(call).not.toHaveProperty('system');
+        });
+    });
+
+    describe('prompt caching — history 브레이크포인트', () => {
+        it('멀티턴(>=2)이면 마지막 직전 history 메시지에 ephemeral 캐시 브레이크포인트를 붙이고 마지막 turn은 plain string으로 둔다', async () => {
+            mockFinalMessage.mockResolvedValue({
+                content: [{ type: 'text', text: 'ok' }],
+                stop_reason: 'end_turn',
+            });
+
+            await callAnthropicChat({
+                ...BASE_OPTIONS,
+                contents: [
+                    { role: 'user', text: 'first' },
+                    { role: 'assistant', text: 'reply' },
+                    { role: 'user', text: 'second' },
+                ],
+            });
+
+            const call = mockStream.mock.calls[0][0];
+            const msgs = call.messages;
+            expect(msgs).toHaveLength(3);
+
+            expect(msgs[0]).toEqual({ role: 'user', content: 'first' });
+
+            expect(msgs[1]).toEqual({
+                role: 'assistant',
+                content: [
+                    {
+                        type: 'text',
+                        text: 'reply',
+                        cache_control: { type: 'ephemeral' },
+                    },
+                ],
+            });
+
+            expect(msgs[2]).toEqual({ role: 'user', content: 'second' });
+        });
+
+        it('정확히 2턴이면 첫 메시지(breakpointIdx === 0)에 캐시 브레이크포인트를 붙이고 마지막 turn은 plain string으로 둔다', async () => {
+            mockFinalMessage.mockResolvedValue({
+                content: [{ type: 'text', text: 'ok' }],
+                stop_reason: 'end_turn',
+            });
+
+            await callAnthropicChat({
+                ...BASE_OPTIONS,
+                contents: [
+                    { role: 'user', text: 'first' },
+                    { role: 'assistant', text: 'reply' },
+                ],
+            });
+
+            const call = mockStream.mock.calls[0][0];
+            const msgs = call.messages;
+            expect(msgs).toHaveLength(2);
+
+            expect(msgs[0]).toEqual({
+                role: 'user',
+                content: [
+                    {
+                        type: 'text',
+                        text: 'first',
+                        cache_control: { type: 'ephemeral' },
+                    },
+                ],
+            });
+
+            expect(msgs[1]).toEqual({ role: 'assistant', content: 'reply' });
+        });
+
+        it('단일 메시지면 history 브레이크포인트를 추가하지 않고 system 브레이크포인트만 적용한다', async () => {
+            mockFinalMessage.mockResolvedValue({
+                content: [{ type: 'text', text: 'ok' }],
+                stop_reason: 'end_turn',
+            });
+
+            await callAnthropicChat({
+                ...BASE_OPTIONS,
+                contents: [{ role: 'user', text: 'only message' }],
+                systemInstruction: 'Be concise',
+            });
+
+            const call = mockStream.mock.calls[0][0];
+            expect(call.messages).toHaveLength(1);
+            expect(call.messages[0]).toEqual({
+                role: 'user',
+                content: 'only message',
+            });
+            expect(call.system).toEqual([
+                {
+                    type: 'text',
+                    text: 'Be concise',
+                    cache_control: { type: 'ephemeral' },
+                },
+            ]);
+        });
+
+        it('string contents(단일 user 메시지)면 history 브레이크포인트가 없다', async () => {
+            mockFinalMessage.mockResolvedValue({
+                content: [{ type: 'text', text: 'ok' }],
+                stop_reason: 'end_turn',
+            });
+
+            await callAnthropicChat(BASE_OPTIONS);
+
+            const call = mockStream.mock.calls[0][0];
+            expect(call.messages).toEqual([{ role: 'user', content: 'Hello' }]);
+        });
+
+        it('반환값은 캐싱 변경과 무관하게 동일하다', async () => {
+            mockFinalMessage.mockResolvedValue({
+                content: [{ type: 'text', text: 'final answer' }],
+                stop_reason: 'end_turn',
+            });
+
+            const result = await callAnthropicChat({
+                ...BASE_OPTIONS,
+                contents: [
+                    { role: 'user', text: 'first' },
+                    { role: 'assistant', text: 'reply' },
+                    { role: 'user', text: 'second' },
+                ],
+            });
+
+            expect(result).toBe('final answer');
         });
     });
 
@@ -242,5 +378,39 @@ describe('callAnthropicChat', () => {
                 specs['claude-sonnet-4-6'] = original;
             }
         });
+    });
+});
+
+describe('withHistoryCacheBreakpoint', () => {
+    it('메시지가 2개 미만이면 원본을 그대로 반환한다 (히스토리 없음)', () => {
+        const messages: Anthropic.MessageParam[] = [
+            { role: 'user', content: 'only turn' },
+        ];
+
+        const result = withHistoryCacheBreakpoint(messages);
+
+        expect(result).toBe(messages);
+        expect(result).toEqual([{ role: 'user', content: 'only turn' }]);
+    });
+
+    it('second-to-last 메시지가 이미 block content면 그대로 반환한다 (중복 래핑 없음)', () => {
+        const messages: Anthropic.MessageParam[] = [
+            {
+                role: 'user',
+                content: [{ type: 'text', text: 'already block' }],
+            },
+            { role: 'assistant', content: 'reply' },
+        ];
+
+        const result = withHistoryCacheBreakpoint(messages);
+
+        expect(result).toBe(messages);
+        expect(result).toEqual([
+            {
+                role: 'user',
+                content: [{ type: 'text', text: 'already block' }],
+            },
+            { role: 'assistant', content: 'reply' },
+        ]);
     });
 });

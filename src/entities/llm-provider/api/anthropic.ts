@@ -37,9 +37,60 @@ function findSpecByApiModelId(apiModelId: string): ModelSpec | undefined {
     );
 }
 
+/**
+ * Ephemeral prompt-cache breakpoint. Reused for the stable system prefix and the
+ * conversation-history breakpoint so repeated chat turns reuse the cached prefix
+ * instead of re-billing it as fresh input tokens.
+ */
+const EPHEMERAL_CACHE_CONTROL = { type: 'ephemeral' } as const;
+
 function toAnthropicMessages(contents: AiContents): Anthropic.MessageParam[] {
     // Safe cast: ProviderTurn is structurally compatible with MessageParam (role literals + string content).
     return toProviderTurns(contents) as Anthropic.MessageParam[];
+}
+
+/**
+ * Marks the last *history* message (second-to-last overall) with an ephemeral
+ * cache breakpoint, so the conversation prefix up to the previous turn is cached
+ * and only the new (final) user turn is uncached.
+ *
+ * Returns the original `messages` unchanged (same reference) when there is no
+ * history yet (fewer than 2 messages) or the second-to-last message already has
+ * block content; otherwise returns a new array and never mutates the caller's
+ * messages. Anthropic silently ignores prefixes below the model's min-cacheable
+ * size, so no token counting is needed.
+ *
+ * Exported for unit-testing the already-block-content branch, which
+ * `toAnthropicMessages` never produces in normal flow.
+ */
+export function withHistoryCacheBreakpoint(
+    messages: Anthropic.MessageParam[]
+): Anthropic.MessageParam[] {
+    if (messages.length < 2) {
+        return messages;
+    }
+    const breakpointIdx = messages.length - 2;
+    const target = messages[breakpointIdx];
+    const text =
+        typeof target.content === 'string' ? target.content : undefined;
+    if (text === undefined) {
+        // Already block content (shouldn't happen for our string turns); leave as-is.
+        return messages;
+    }
+    return messages.map((message, index) =>
+        index === breakpointIdx
+            ? {
+                  role: message.role,
+                  content: [
+                      {
+                          type: 'text',
+                          text,
+                          cache_control: EPHEMERAL_CACHE_CONTROL,
+                      },
+                  ],
+              }
+            : message
+    );
 }
 
 export async function callAnthropicChat({
@@ -59,12 +110,25 @@ export async function callAnthropicChat({
     const maxTokens = spec.maxOutputTokens;
 
     const client = new Anthropic({ apiKey: serverApiKey });
+    // Two prompt-cache breakpoints keep repeated chat turns cheap: the stable
+    // system prefix (persona + analysis context + few-shot) and the conversation
+    // prefix up to the previous turn are cached, so each new turn only bills the
+    // latest user message as fresh input tokens.
+    const messages = withHistoryCacheBreakpoint(toAnthropicMessages(contents));
     const stream = client.messages.stream({
         model,
         max_tokens: maxTokens,
-        messages: toAnthropicMessages(contents),
+        messages,
         ...(systemInstruction !== undefined
-            ? { system: systemInstruction }
+            ? {
+                  system: [
+                      {
+                          type: 'text',
+                          text: systemInstruction,
+                          cache_control: EPHEMERAL_CACHE_CONTROL,
+                      },
+                  ],
+              }
             : {}),
         ...(adaptiveThinking
             ? {
