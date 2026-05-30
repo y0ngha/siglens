@@ -165,5 +165,5 @@ src/shared/api/market/getMarketDataProvider.ts  # E2E_TEST 분기
 
 - **`yarn e2e:down`은 `-v`로 볼륨을 삭제합니다.** 즉 DB 데이터가 리셋되며, 다음 실행 시 globalSetup이 다시 migrate/seed합니다. (컨테이너를 유지한 채 재실행하면 데이터가 남아 있고 seed는 `onConflictDoNothing`이라 멱등.)
 - **E2E에는 절대 `yarn db:migrate`를 쓰지 마세요.** 그 스크립트는 `dotenv -e .env.local`로 감싸져 있고, `.env.local`에는 실제 프로덕션 Neon(`DIRECT_DATABASE_URL`)이 들어 있습니다. `migrate.ts`는 `DIRECT_DATABASE_URL || DATABASE_URL`을 우선하므로 프로덕션을 마이그레이션하게 됩니다. 반드시 `yarn e2e:db` 또는 globalSetup(둘 다 `.env.e2e`로만 실행)을 사용하세요.
-- **서버사이드 SRH 로그** — 실행 중 `Invalid token` 또는 `[Peek] cache read failed` 같은 양성(benign) 서버사이드 로그가 보일 수 있습니다. 테스트를 실패시키지 않으며 무시해도 됩니다.
+- **Redis readonly 토큰을 `.env.e2e`에 명시한 이유** — `siglens-core`의 캐시 provider는 읽기에 `UPSTASH_REDIS_REST_READONLY_TOKEN`을 사용합니다. 이 값을 `.env.e2e`가 주지 않으면, Next가 자동 로드하는 `.env.local`의 **프로덕션 readonly 토큰**이 주입되어 캐시 reader가 로컬 SRH에 그 토큰을 보내고 모든 캐시 GET이 `Invalid token`으로 실패합니다(writer는 `e2e-token`이라 쓰기는 정상 → 읽기만 깨짐). 그래서 `.env.e2e`가 `UPSTASH_REDIS_REST_READONLY_TOKEN=e2e-token`을 명시해 `.env.local` 주입을 차단합니다. (`dotenv -e .env.e2e`가 process.env를 먼저 세팅하고 Next는 이미 설정된 변수를 덮어쓰지 않습니다.)
 - **`.env.e2e`는 커밋되어 있습니다.** 로컬에서만 쓰이는 throwaway 자격증명(`siglens:siglens`, `e2e-token`)만 담고 있어 비밀이 아닙니다.
