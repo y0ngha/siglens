@@ -8,8 +8,11 @@ vi.mock('next/headers', () => ({
     cookies: vi.fn(),
 }));
 
-// E2E 쿠키 seam 분기 테스트용 — 액션이 require하는 stub을 결정적 mock으로 대체.
+// E2E 쿠키 seam 분기 테스트용 — 액션이 동적 import하는 stub을 결정적 mock으로 대체.
 vi.mock('@/shared/api/e2eAnalysisStub', () => ({
+    // Mirrors E2E_FORCE_ANALYSIS_ERROR_COOKIE in @/shared/api/e2eAnalysisStub.
+    // vi.mock factories are hoisted above imports, so the constant can't be
+    // imported here — keep this literal in sync if the source value changes.
     E2E_FORCE_ANALYSIS_ERROR_COOKIE: 'e2e_force_analysis_error',
     e2eForcedOptionsError: vi.fn(() => ({
         status: 'no_chains_error',
@@ -328,6 +331,9 @@ describe('submitOptionsAnalysisAction — E2E force-error cookie seam', () => {
 
     beforeEach(() => {
         mockCookies.mockReset();
+        // 누적 call count를 초기화 — not.toHaveBeenCalled()가 외부 describe의
+        // 테스트 실행 순서에 묵시적으로 의존하지 않도록 한다(resetMocks 미설정).
+        mockSubmitOptionsAnalysis.mockReset();
         process.env.E2E_TEST = '1';
     });
 

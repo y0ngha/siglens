@@ -80,7 +80,9 @@ export function e2eCachedOptions(): SubmitOptionsAnalysisCached {
  * return a transient failure instead of the cached fixture. Read server-side by
  * `submitOptionsAnalysisAction` (only under `E2E_TEST=1`). The resilience spec
  * sets it, asserts the error fallback, then clears it so the retry recovers.
- * The e2e spec mirrors this literal — keep them in sync.
+ * The e2e spec imports this constant directly; the only literal copy is the
+ * vi.mock factory in optionsActions.test.ts (hoisted before imports) — keep that
+ * one in sync if this value changes.
  */
 export const E2E_FORCE_ANALYSIS_ERROR_COOKIE = 'e2e_force_analysis_error';
 
