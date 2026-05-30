@@ -13,6 +13,7 @@ import { resolveTierAndByok, buildGateError } from '@/shared/lib/byokGate';
 import { isBot } from '@/shared/api/isBot';
 import type { AnalysisGateBlockedResult } from '@/shared/lib/types';
 import { getMarketDataProvider } from '@/shared/api/market/getMarketDataProvider';
+import { isE2E, e2eCachedTechnical } from '@/shared/lib/e2eAnalysisStub';
 
 /** Final return type — core's gated result + our siglens-side gate errors. */
 export type SubmitAnalysisActionResult =
@@ -28,6 +29,8 @@ export async function submitAnalysisAction(
     fmpSymbol?: string,
     modelId?: ModelId
 ): Promise<SubmitAnalysisActionResult> {
+    // E2E short-circuits the LLM/worker; returns a deterministic cached fixture (see e2eAnalysisStub).
+    if (isE2E()) return e2eCachedTechnical();
     try {
         const requestHeaders = await headers();
         const skipEnqueueIfMiss = isBot(requestHeaders);
