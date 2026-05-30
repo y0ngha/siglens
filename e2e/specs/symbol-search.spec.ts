@@ -27,12 +27,12 @@ import { test, expect } from '../support/fixtures';
  *     accessible name = the ticker) inside the `#search` hero region, alongside
  *     a "최근 검색" header.
  *
- *   - AUTOCOMPLETE IS AVAILABLE under E2E (verified by probe): typing `aapl`
- *     returns a populated role="listbox" (#ticker-autocomplete-listbox) with
- *     real options (AAPL + AAPL-derivative ETFs), so we can exercise the
- *     dropdown-click path, not only Enter-navigate. The brief's worry that the
- *     dropdown would be empty under E2E did not materialize — the search action
- *     resolves enough to return matches in this environment.
+ *   - AUTOCOMPLETE under E2E is fed by a deterministic fixture: searchTickerAction
+ *     short-circuits on E2E_TEST=1 and returns an AAPL-family set (AAPL + AAPU/AAPD)
+ *     WITHOUT calling FMP, so typing `aapl` populates the role="listbox"
+ *     (#ticker-autocomplete-listbox) and we can exercise the dropdown-click path,
+ *     not only Enter-navigate. (The live FMP path needs FMP_API_KEY, which CI
+ *     does not have — the fixture keeps this spec hermetic.)
  *
  *   - The seeded AAPL symbol page's visible h1 is `${displayName} 차트 분석`,
  *     where displayName contains "AAPL", so `name: /AAPL/` matches.

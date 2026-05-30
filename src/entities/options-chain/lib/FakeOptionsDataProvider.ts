@@ -15,7 +15,7 @@ import type {
  */
 
 const UNDERLYING_PRICE = 195.7;
-// 7 calendar days out from the frozen E2E clock (2026-05-30) — a Friday weekly.
+// 6 calendar days out from the frozen E2E clock (2026-05-30) — a Friday weekly.
 const EXPIRATION_DATE = '2026-06-05';
 const DAYS_TO_EXPIRATION = 6;
 const STRIKES = [185, 190, 195, 200, 205] as const;

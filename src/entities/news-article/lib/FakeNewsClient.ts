@@ -3,6 +3,7 @@ import type {
     NewsItem,
     NewsTimeRange,
 } from '@y0ngha/siglens-core';
+import type { NewsClientPort } from './getNewsClient';
 
 /**
  * E2E-only news client mirroring `FmpNewsClient`'s public surface, returning
@@ -13,6 +14,9 @@ import type {
  * news page renders without crashing. Timestamps are anchored near the frozen
  * E2E clock (2026-05-30) so they survive any lookback-window filtering.
  */
+
+/** Deterministic earnings date returned by the fake (well past the frozen E2E clock). */
+const FAKE_EARNINGS_DATE = '2026-07-30';
 
 const FAKE_NEWS: ReadonlyArray<NewsItem> = [
     {
@@ -40,7 +44,7 @@ function withSymbol(symbol: string): NewsItem[] {
     return FAKE_NEWS.map(item => ({ ...item, symbol: upper }));
 }
 
-export class FakeNewsClient {
+export class FakeNewsClient implements NewsClientPort {
     async fetchNews(
         symbol: string,
         _range: NewsTimeRange
@@ -58,7 +62,7 @@ export class FakeNewsClient {
     async fetchEarningsReport(symbol: string): Promise<EarningsReport | null> {
         return {
             symbol: symbol.toUpperCase(),
-            earningsDate: '2026-07-30',
+            earningsDate: FAKE_EARNINGS_DATE,
         };
     }
 }
