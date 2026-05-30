@@ -91,9 +91,9 @@ export const metadata: Metadata = {
         description: SITE_DESCRIPTION,
         images: ['/og-image.png'],
     },
-    icons: {
-        apple: [{ url: '/apple-touch-icon.png', sizes: '180x180' }],
-    },
+    // apple-touch-icon은 file-based 규약(src/app/apple-icon.png)이 <link rel="apple-touch-icon">
+    // 을 자동 생성하므로 metadata.icons로 중복 선언하지 않는다. 이전엔 둘이 공존해 동일
+    // 이미지(184×180)가 두 번 링크됐고, 수동 선언의 sizes='180x180'도 실제와 불일치했다.
     robots: {
         index: true,
         follow: true,

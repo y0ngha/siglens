@@ -253,7 +253,7 @@ export default async function SymbolPage({ params, searchParams }: Props) {
                         패턴을 자동으로 감지합니다. 주요 지지선과 저항선 레벨,
                         매매 전략도 함께 확인할 수 있습니다.
                     </p>
-                    <h2>AI와 대화로 분석 결과 확인</h2>
+                    <p>AI와 대화로 분석 결과 확인</p>
                     <p>
                         분석된 차트 데이터를 근거로 AI와 대화할 수 있습니다.
                         추세 판단, 지표 의미, 진입 타이밍 등 궁금한 점을

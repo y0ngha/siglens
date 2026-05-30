@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import type { AnalysisResponse, Timeframe } from '@y0ngha/siglens-core';
+import { FALLBACK_ANALYSIS } from '@/entities/chat-message';
 import { ChartContent } from '@/widgets/symbol-page/ChartContent';
 
 vi.mock('next/dynamic', () => ({
@@ -216,11 +217,38 @@ describe('ChartContent', () => {
         expect(screen.getByTestId('analysis-panel')).toBeDefined();
     });
 
-    it('renders bot blocked notice when bot is blocked', async () => {
+    it('keeps the facts layer and appends (does not replace with) the bot notice when bot is blocked and there is no narrative', async () => {
         const { useAnalysis } =
             await import('@/widgets/symbol-page/hooks/useAnalysis');
+        const { useBars } = await import('@/widgets/symbol-page/hooks/useBars');
+        // 사실 층이 실제로 렌더되려면 봉 2개 + rsi/macd 지표가 필요하다(buildTechnicalFacts는
+        // 봉이 2개 미만이면 null). 파일 기본 useBars mock은 봉 1개라 facts가 null이 되므로
+        // 이 테스트에 한해 2봉으로 override해 '교체가 아니라 병존'을 검증한다.
+        (useBars as ReturnType<typeof vi.fn>).mockReturnValue({
+            bars: [
+                {
+                    time: 0,
+                    open: 100,
+                    high: 120,
+                    low: 90,
+                    close: 100,
+                    volume: 1,
+                },
+                {
+                    time: 1,
+                    open: 100,
+                    high: 115,
+                    low: 100,
+                    close: 110,
+                    volume: 1,
+                },
+            ],
+            indicators: { rsi: [null, 55], macd: [], buySellVolume: [] },
+        });
+        // 서사 없음(FALLBACK) + 봇 차단 → 사실 층 분기. (참조 동등 FALLBACK이라야
+        // hasNarrative=false가 되어 사실 층 분기를 탄다 — `{}`는 hasNarrative=true.)
         (useAnalysis as ReturnType<typeof vi.fn>).mockReturnValue({
-            analysis: {} as AnalysisResponse,
+            analysis: FALLBACK_ANALYSIS,
             analysisResult: null,
             isAnalyzing: false,
             analysisError: null,
@@ -230,19 +258,42 @@ describe('ChartContent', () => {
             cooldownNotice: null,
         });
 
-        render(<ChartContent {...defaultProps} />);
-        expect(screen.getByTestId('bot-blocked-notice')).toBeDefined();
-
-        (useAnalysis as ReturnType<typeof vi.fn>).mockReturnValue({
-            analysis: {} as AnalysisResponse,
-            analysisResult: null,
-            isAnalyzing: false,
-            analysisError: null,
-            isBotBlocked: false,
-            handleReanalyze: vi.fn(),
-            reanalyzeCooldownMs: 0,
-            cooldownNotice: null,
-        });
+        // try/finally: 앞선 어설션이 실패해도 후속 테스트로 mock(2봉/서사 없음)이
+        // 누수되지 않게 파일 기본 mock(봉 1개 / 서사 있음) 복원을 보장한다. afterEach의
+        // vi.clearAllMocks()는 vi.mock 팩토리가 vi.fn(() => ({...}))로 심은 기본 반환값을
+        // 되돌리지 않으므로(그래서 resetAllMocks로 바꾸면 다른 테스트가 깨진다) 수동
+        // 복원이 필요하고, 그 복원을 finally로 감싼다.
+        try {
+            render(<ChartContent {...defaultProps} />);
+            // 봇 안내(additive)와 종목 고유 사실 층이 함께 존재 — 교체가 아니라 병존이다.
+            // getByTestId/getByText는 부재 시 throw하므로 not.toBeNull로 존재를 명시 검증.
+            expect(screen.getByTestId('bot-blocked-notice')).not.toBeNull();
+            expect(screen.getByText(/기술적 지표 요약/)).not.toBeNull();
+        } finally {
+            (useBars as ReturnType<typeof vi.fn>).mockReturnValue({
+                bars: [
+                    {
+                        time: 1,
+                        open: 100,
+                        high: 110,
+                        low: 90,
+                        close: 105,
+                        volume: 500,
+                    },
+                ],
+                indicators: { buySellVolume: [] },
+            });
+            (useAnalysis as ReturnType<typeof vi.fn>).mockReturnValue({
+                analysis: {} as AnalysisResponse,
+                analysisResult: null,
+                isAnalyzing: false,
+                analysisError: null,
+                isBotBlocked: false,
+                handleReanalyze: vi.fn(),
+                reanalyzeCooldownMs: 0,
+                cooldownNotice: null,
+            });
+        }
     });
 
     // "AI 분석이 길어지면 차트도 길어진다" 회귀 가드 — AI 분석 패널 스크롤 부분.

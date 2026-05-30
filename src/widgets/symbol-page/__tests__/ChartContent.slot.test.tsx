@@ -111,9 +111,7 @@ describe('ChartContent 슬롯 규칙', () => {
                 initialAnalysisFailed={true}
             />
         );
-        expect(screen.getAllByText(/기술적 지표 요약/).length).toBeGreaterThan(
-            0
-        );
+        expect(screen.getAllByText(/기술적 지표 요약/).length).toBe(1);
         expect(screen.queryByTestId('analysis-panel')).toBeNull();
     });
 
@@ -127,8 +125,50 @@ describe('ChartContent 슬롯 규칙', () => {
                 initialAnalysisFailed={false}
             />
         );
-        expect(screen.getAllByTestId('analysis-panel').length).toBeGreaterThan(
-            0
+        expect(screen.getAllByTestId('analysis-panel').length).toBe(1);
+    });
+
+    // C1.a 회귀 가드: 봇으로 판정돼(isBotBlocked) 서사가 없을 때, 봇 안내문이
+    // 사실 층을 '교체'하면 JS 렌더링 크롤러의 DOM에 종목 고유 텍스트가 사라진다.
+    // 사실 층은 유지하고 안내문은 additive로만 덧붙어야 한다.
+    it('봇 차단이고 서사가 없으면 사실 층을 유지하고 안내문으로 덮어쓰지 않는다', () => {
+        baseAnalysis.mockReturnValue({
+            ...analysisReturn(FALLBACK_ANALYSIS),
+            isBotBlocked: true,
+        });
+        render(
+            <ChartContent
+                {...props}
+                initialAnalysis={FALLBACK_ANALYSIS}
+                initialAnalysisFailed={true}
+            />
         );
+        // 종목 고유 실측(사실 층)이 정확히 1개 존재 — 이전엔 BotBlockedNotice가 통째로 교체했다.
+        // toBe(1)로 '교체 안 됨'과 '중복 렌더' 양쪽을 모두 falsify한다.
+        expect(screen.getAllByText(/기술적 지표 요약/).length).toBe(1);
+        // 봇 안내도 정확히 1개 additive로 함께 노출돼 오판된 실사용자에게 hint를 유지한다.
+        expect(screen.getAllByText(/봇 트래픽으로 보여/).length).toBe(1);
+    });
+
+    // PR #530 Gemini 리뷰: 서사가 있어도(캐시 분석 표시 중) 봇 판정이면 AnalysisPanel을
+    // 유지하고 봇 안내를 additive로 함께 노출해야 한다 — 재분석이 봇으로 오판돼 차단된
+    // 사실을 stale 분석만 보던 실사용자가 인지하도록. (no-narrative 분기와 동일 규칙)
+    it('봇 차단이지만 서사가 있으면 AnalysisPanel과 봇 안내를 함께 노출한다', () => {
+        const real = { ...FALLBACK_ANALYSIS, summary: 'AAPL 상승' };
+        baseAnalysis.mockReturnValue({
+            ...analysisReturn(real),
+            isBotBlocked: true,
+        });
+        render(
+            <ChartContent
+                {...props}
+                initialAnalysis={real}
+                initialAnalysisFailed={false}
+            />
+        );
+        // 캐시된 분석(AnalysisPanel)이 그대로 유지된다(안내문으로 교체되지 않음).
+        expect(screen.getAllByTestId('analysis-panel').length).toBe(1);
+        // 봇 안내는 그 아래 additive로 정확히 1개 노출된다.
+        expect(screen.getAllByText(/봇 트래픽으로 보여/).length).toBe(1);
     });
 });
