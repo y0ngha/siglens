@@ -50,7 +50,7 @@ describe('selectAggregateNewsItems 함수는', () => {
         expect(result.map(i => i.id)).toEqual(['first', 'second', 'third']);
     });
 
-    it('25개를 초과하면 priceImpact 상위 25개만 남긴다', () => {
+    it(`${MAX_AGGREGATE_NEWS_ITEMS}개를 초과하면 priceImpact 상위 ${MAX_AGGREGATE_NEWS_ITEMS}개만 남긴다`, () => {
         // 30 low-impact + 5 high-impact. The 5 high must survive; only 20 of
         // the lows fill the remaining slots (25 - 5).
         const lows = Array.from({ length: 30 }, (_, i) =>
@@ -80,7 +80,7 @@ describe('selectAggregateNewsItems 함수는', () => {
         expect(result.some(i => i.id === 'low-29')).toBe(false);
     });
 
-    it('25개 이하이면 모두 유지한다(정렬만 적용)', () => {
+    it(`${MAX_AGGREGATE_NEWS_ITEMS}개 이하이면 모두 유지한다(정렬만 적용)`, () => {
         const items = Array.from({ length: 10 }, (_, i) =>
             makeItem(`x-${i}`, 'medium')
         );
@@ -88,6 +88,12 @@ describe('selectAggregateNewsItems 함수는', () => {
         const result = selectAggregateNewsItems(items);
 
         expect(result).toHaveLength(10);
+    });
+
+    it('빈 배열이 들어오면 빈 배열을 반환한다', () => {
+        const result = selectAggregateNewsItems([]);
+
+        expect(result).toEqual([]);
     });
 
     it('입력 배열을 변형하지 않는다', () => {
