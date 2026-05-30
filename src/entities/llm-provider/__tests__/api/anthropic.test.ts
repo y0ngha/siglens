@@ -179,7 +179,7 @@ describe('callAnthropicChat', () => {
     });
 
     describe('systemInstruction', () => {
-        it('systemInstruction이 있으면 system 파라미터로 전달한다', async () => {
+        it('systemInstruction이 있으면 ephemeral 캐시 브레이크포인트가 붙은 text 블록 배열로 전달한다', async () => {
             mockFinalMessage.mockResolvedValue({
                 content: [{ type: 'text', text: 'ok' }],
                 stop_reason: 'end_turn',
@@ -191,7 +191,13 @@ describe('callAnthropicChat', () => {
             });
 
             const call = mockStream.mock.calls[0][0];
-            expect(call.system).toBe('Be concise');
+            expect(call.system).toEqual([
+                {
+                    type: 'text',
+                    text: 'Be concise',
+                    cache_control: { type: 'ephemeral' },
+                },
+            ]);
         });
 
         it('systemInstruction이 없으면 system 파라미터를 포함하지 않는다', async () => {
@@ -204,6 +210,102 @@ describe('callAnthropicChat', () => {
 
             const call = mockStream.mock.calls[0][0];
             expect(call).not.toHaveProperty('system');
+        });
+    });
+
+    describe('prompt caching — history 브레이크포인트', () => {
+        it('멀티턴(>=2)이면 마지막 직전 history 메시지에 ephemeral 캐시 브레이크포인트를 붙이고 마지막 turn은 plain string으로 둔다', async () => {
+            mockFinalMessage.mockResolvedValue({
+                content: [{ type: 'text', text: 'ok' }],
+                stop_reason: 'end_turn',
+            });
+
+            await callAnthropicChat({
+                ...BASE_OPTIONS,
+                contents: [
+                    { role: 'user', text: 'first' },
+                    { role: 'assistant', text: 'reply' },
+                    { role: 'user', text: 'second' },
+                ],
+            });
+
+            const call = mockStream.mock.calls[0][0];
+            const msgs = call.messages;
+            expect(msgs).toHaveLength(3);
+
+            // second-to-last (history) message: block content with cache_control
+            expect(msgs[1]).toEqual({
+                role: 'assistant',
+                content: [
+                    {
+                        type: 'text',
+                        text: 'reply',
+                        cache_control: { type: 'ephemeral' },
+                    },
+                ],
+            });
+
+            // last (new) user turn: plain string, no cache_control
+            expect(msgs[2]).toEqual({ role: 'user', content: 'second' });
+        });
+
+        it('단일 메시지면 history 브레이크포인트를 추가하지 않고 system 브레이크포인트만 적용한다', async () => {
+            mockFinalMessage.mockResolvedValue({
+                content: [{ type: 'text', text: 'ok' }],
+                stop_reason: 'end_turn',
+            });
+
+            await callAnthropicChat({
+                ...BASE_OPTIONS,
+                contents: [{ role: 'user', text: 'only message' }],
+                systemInstruction: 'Be concise',
+            });
+
+            const call = mockStream.mock.calls[0][0];
+            expect(call.messages).toHaveLength(1);
+            // only/last message stays plain string (no cache_control)
+            expect(call.messages[0]).toEqual({
+                role: 'user',
+                content: 'only message',
+            });
+            // system breakpoint still present
+            expect(call.system).toEqual([
+                {
+                    type: 'text',
+                    text: 'Be concise',
+                    cache_control: { type: 'ephemeral' },
+                },
+            ]);
+        });
+
+        it('string contents(단일 user 메시지)면 history 브레이크포인트가 없다', async () => {
+            mockFinalMessage.mockResolvedValue({
+                content: [{ type: 'text', text: 'ok' }],
+                stop_reason: 'end_turn',
+            });
+
+            await callAnthropicChat(BASE_OPTIONS);
+
+            const call = mockStream.mock.calls[0][0];
+            expect(call.messages).toEqual([{ role: 'user', content: 'Hello' }]);
+        });
+
+        it('반환값은 캐싱 변경과 무관하게 동일하다', async () => {
+            mockFinalMessage.mockResolvedValue({
+                content: [{ type: 'text', text: 'final answer' }],
+                stop_reason: 'end_turn',
+            });
+
+            const result = await callAnthropicChat({
+                ...BASE_OPTIONS,
+                contents: [
+                    { role: 'user', text: 'first' },
+                    { role: 'assistant', text: 'reply' },
+                    { role: 'user', text: 'second' },
+                ],
+            });
+
+            expect(result).toBe('final answer');
         });
     });
 
