@@ -46,8 +46,8 @@ test.describe('auth oauth (google, fake adapter)', () => {
     // clear the fixture user up front: the first test then reliably hits the
     // "new user → consent" branch, and the second test re-provisions + exercises
     // the existing-account login branch within this serial block.
-    test.beforeAll(async () => {
-        await resetOAuthFixtureUser();
+    test.beforeAll(() => {
+        resetOAuthFixtureUser();
     });
 
     /**
@@ -62,12 +62,12 @@ test.describe('auth oauth (google, fake adapter)', () => {
     ): Promise<string> {
         const startUrl = `/api/auth/google/start?next=${encodeURIComponent(next)}`;
         const res = await page.request.get(startUrl, { maxRedirects: 0 });
-        // NextResponse.redirect defaults to a 307 (temporary) redirect.
+        // NextResponse.redirect defaults to a 307 (temporary) redirect — assert
+        // the exact deterministic status rather than the whole 3xx range.
         expect(
             res.status(),
             'start route should redirect to the (fake) authorize URL'
-        ).toBeGreaterThanOrEqual(300);
-        expect(res.status()).toBeLessThan(400);
+        ).toBe(307);
         const location = res.headers()['location'];
         expect(
             location,

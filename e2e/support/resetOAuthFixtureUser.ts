@@ -26,18 +26,20 @@
  */
 
 import { execSync } from 'node:child_process';
+// Single source of truth lives on the adapter; re-exported below so existing
+// importers of this support module keep working. The spec asserts this exact
+// email is shown on the consent page.
+import { OAUTH_FIXTURE_EMAIL } from '@/features/auth-oauth/lib/E2eFakeOAuthAdapter';
 
-/**
- * Fixture identity returned by E2eFakeOAuthAdapter's FIXTURE_PROFILE. MUST stay
- * in sync with src/features/auth-oauth/lib/E2eFakeOAuthAdapter.ts — the spec
- * asserts this exact email is shown on the consent page.
- */
-export const OAUTH_FIXTURE_EMAIL = 'e2e.oauth@test.com';
+export { OAUTH_FIXTURE_EMAIL };
 
 const COMPOSE = 'docker compose -f docker-compose.e2e.yml';
 
-/** Removes the fixture OAuth user (cascading to oauth_accounts + sessions). */
-export async function resetOAuthFixtureUser(): Promise<void> {
+/**
+ * Removes the fixture OAuth user (cascading to oauth_accounts + sessions).
+ * Synchronous: `execSync` blocks until psql exits, so there is nothing to await.
+ */
+export function resetOAuthFixtureUser(): void {
     // Single-quoted SQL literal; the fixture email is a fixed constant with no
     // quote characters, so no escaping is needed. ON_ERROR_STOP surfaces any
     // failure as a non-zero exit (thrown by execSync) rather than a silent no-op.

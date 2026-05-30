@@ -42,11 +42,32 @@ function buildKey(email: string): string {
  */
 function parseDebugResult(result: unknown): EmailDebug | null {
     if (result === null || result === undefined) return null;
+    // After the typeof guard `result` is an object, but TS cannot narrow it to
+    // EmailDebug — the SRH GET response always returns a serialized
+    // EmailDebugRecord (only E2eEmailDispatcher writes this key), so the shape
+    // is guaranteed by the producer.
     if (typeof result === 'object') return result as EmailDebug;
     if (typeof result === 'string') {
-        return JSON.parse(result) as EmailDebug;
+        try {
+            // JSON.parse returns `any`; the value originates solely from
+            // E2eEmailDispatcher writing an EmailDebugRecord under
+            // `email_debug:{recipient}`, so the parsed structure is guaranteed.
+            return JSON.parse(result) as EmailDebug;
+        } catch {
+            // Corrupt / non-JSON payload — treat as "nothing captured" rather
+            // than crashing the test runner with a SyntaxError.
+            return null;
+        }
     }
     return null;
+}
+
+/** Polling knobs for {@link getEmailDebug}. */
+export interface GetEmailDebugOptions {
+    /** How many times to poll before giving up (default {@link DEFAULT_POLL_ATTEMPTS}). */
+    attempts?: number;
+    /** Delay between polls in ms (default {@link DEFAULT_POLL_INTERVAL_MS}). */
+    intervalMs?: number;
 }
 
 /**
@@ -56,7 +77,7 @@ function parseDebugResult(result: unknown): EmailDebug | null {
  */
 export async function getEmailDebug(
     email: string,
-    options: { attempts?: number; intervalMs?: number } = {}
+    options: GetEmailDebugOptions = {}
 ): Promise<EmailDebug | null> {
     const attempts = options.attempts ?? DEFAULT_POLL_ATTEMPTS;
     const intervalMs = options.intervalMs ?? DEFAULT_POLL_INTERVAL_MS;

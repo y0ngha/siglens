@@ -44,7 +44,9 @@ setup('authenticate via /login UI', async ({ page }) => {
     // proxy.ts also reverse-guards /login for an authenticated request, so the
     // post-login navigation lands off /login regardless.
     await page.waitForURL(url => !url.pathname.startsWith('/login'));
-    await expect(page).toHaveURL(/localhost:4300\/$/);
+    // Relative to the configured baseURL (http://localhost:4300) so this is
+    // port/env-independent rather than hardcoding the host:port.
+    await expect(page).toHaveURL('/');
 
     await page.context().storageState({ path: AUTH_STORAGE_STATE });
 });

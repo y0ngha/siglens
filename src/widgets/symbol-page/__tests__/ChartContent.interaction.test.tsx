@@ -163,11 +163,10 @@ describe('ChartContent', () => {
                 )
             ).toBeInTheDocument();
             expect(screen.queryByText('AI 분석 중…')).toBeNull();
-            // PR #530 additive 동작: 서사가 없으면 봇 차단이어도 SSR 색인 의도를
-            // 위해 TechnicalFactsSummary(사실 층)를 그대로 유지하고, BotBlockedNotice는
-            // 그 아래 덧붙이기만 한다. (이전 #529 테스트는 사실 층 '교체'를 가정해
-            // toBeNull로 단언했으나 #530 머지 후 stale 상태였다.) idle 테스트와 동일하게
-            // 사실 층은 정확히 한 번만 렌더돼야 한다.
+            // additive 동작: 봇 차단 시 서사가 없으면 SSR 색인을 위해
+            // TechnicalFactsSummary(사실 층)를 그대로 유지하고 BotBlockedNotice를
+            // 그 아래 덧붙이기만 한다(사실 층을 '교체'하지 않는다). idle 테스트와
+            // 동일하게 사실 층은 정확히 한 번만 렌더돼야 한다.
             expect(screen.getAllByText(/기술적 지표 요약/)).toHaveLength(1);
         });
     });

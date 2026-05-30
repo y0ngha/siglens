@@ -62,7 +62,14 @@ export function extractEmailDebugRecord(
 
     const tokenMatch = haystack.match(RESET_TOKEN_RE);
     if (tokenMatch) {
-        record.token = decodeURIComponent(tokenMatch[1]);
+        try {
+            record.token = decodeURIComponent(tokenMatch[1]);
+        } catch {
+            // Malformed %-encoding would make decodeURIComponent throw a
+            // URIError; fall back to the raw matched value so the dispatcher
+            // never crashes mid-send.
+            record.token = tokenMatch[1];
+        }
     }
 
     const codeMatch =

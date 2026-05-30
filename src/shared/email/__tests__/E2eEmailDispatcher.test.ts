@@ -77,10 +77,12 @@ describe('extractEmailDebugRecord', () => {
 });
 
 describe('E2eEmailDispatcher', () => {
-    function createRedisStub(): {
+    interface RedisStub {
         redis: Redis;
         setMock: ReturnType<typeof vi.fn>;
-    } {
+    }
+
+    function createRedisStub(): RedisStub {
         const setMock = vi.fn().mockResolvedValue('OK');
         const redis = { set: setMock } as unknown as Redis;
         return { redis, setMock };
