@@ -1,5 +1,11 @@
+import { bcryptPasswordHasher } from '@/entities/session';
 import { getDatabaseClient } from '@/shared/db/client';
-import { assetTranslations, terms } from '@/shared/db/schema';
+import { assetTranslations, terms, users } from '@/shared/db/schema';
+import {
+    AUTH_USER_EMAIL,
+    AUTH_USER_NAME,
+    AUTH_USER_PASSWORD,
+} from '../support/authUser';
 
 /**
  * Minimal E2E seed: inserts a single AAPL row into `asset_translations`, plus
@@ -30,11 +36,28 @@ import { assetTranslations, terms } from '@/shared/db/schema';
  *   kind, version (integer), effectiveDate (past so it is "active"), body.
  * `id` defaults to a random uuid; `createdAt` has a defaultNow().
  *
+ * users (authenticated E2E account)
+ * ----------------------------------
+ * `/account` and `/account/delete` require a session — proxy.ts forward-guards
+ * unauthenticated requests to /login, and the page itself re-checks via
+ * getCurrentUser. So the authed Playwright project (storageState) needs a real
+ * user to log in as. We upsert one known account (credentials live in
+ * `e2e/support/authUser.ts`, shared with the auth-setup project) and store a
+ * bcrypt hash via the repo's own `bcryptPasswordHasher` so the real loginUser
+ * → bcryptPasswordVerifier path accepts it.
+ *
+ * Columns set match every NOT-NULL column without a default:
+ *   email (unique, NOT NULL). passwordHash/name are nullable but required for
+ *   login to succeed and for /account to show a display name. emailVerified is
+ *   set true (login does not require it, but it mirrors a real account).
+ *   id/tier/createdAt/updatedAt all have defaults.
+ *
  * Idempotency
  * -----------
  * The Task 1 containers persist data across runs, so every insert uses
  * `onConflictDoNothing` (asset_translations on its PK; terms on the
- * (kind, version) unique index) to stay safely re-runnable.
+ * (kind, version) unique index; users on the email unique index) to stay
+ * safely re-runnable.
  *
  * Runs with E2E_TEST=1 + the .env.e2e DATABASE_URL so the postgres-js swap
  * (Task 2) writes to the local Postgres.
@@ -72,6 +95,18 @@ async function seed(): Promise<void> {
             },
         ])
         .onConflictDoNothing({ target: [terms.kind, terms.version] });
+
+    const passwordHash =
+        await bcryptPasswordHasher.hashPassword(AUTH_USER_PASSWORD);
+    await db
+        .insert(users)
+        .values({
+            email: AUTH_USER_EMAIL,
+            passwordHash,
+            name: AUTH_USER_NAME,
+            emailVerified: true,
+        })
+        .onConflictDoNothing({ target: users.email });
 
     console.log('e2e seed: ok');
 }
