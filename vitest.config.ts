@@ -1,10 +1,14 @@
-import { defineConfig } from 'vitest/config';
+import { configDefaults, defineConfig } from 'vitest/config';
 import path from 'node:path';
 
 const sharedConfig = {
     resolve: {
         alias: {
             '@': path.resolve(__dirname, 'src'),
+            // Mirrors tsconfig's "@e2e/*" alias so src files that consume E2E
+            // fixtures (e.g. FakeMarketProvider importing e2e/fixtures/bars.json)
+            // resolve identically under Vitest, tsc, and the Next build.
+            '@e2e': path.resolve(__dirname, 'e2e'),
             // server-only는 Next.js 전용 guard 패키지로 실제 설치 불필요.
             // Vitest 환경에서는 빈 stub으로 resolve해 transform 오류를 방지한다.
             'server-only': path.resolve(
@@ -20,6 +24,12 @@ const sharedTestConfig = {
     pool: 'vmThreads' as const,
     maxThreads: 8,
     experimental: { fsModuleCache: true },
+    // Keep Vitest and Playwright runners disjoint. The Playwright suite lives in
+    // `e2e/**` (`.spec.ts`), so it already falls outside our `src/**` include
+    // patterns — but excluding it explicitly is belt-and-suspenders against any
+    // future include widening, and documents the boundary. Spread Vitest's own
+    // defaults so node_modules / dist / etc. stay excluded.
+    exclude: [...configDefaults.exclude, 'e2e/**'],
 };
 
 const coverageConfig = {

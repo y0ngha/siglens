@@ -23,12 +23,17 @@ vi.mock('@/entities/session', () => ({
         name: 'auth_hint',
         value: 'true',
     })),
-    getAuthDatabaseClient: vi.fn(() => ({ db: {}, sql: () => null })),
     AUTH_SERVICE_UNAVAILABLE_MESSAGE:
         '서비스에 일시적인 문제가 발생했습니다. 잠시 후 다시 시도해주세요.',
     CONSENT_REQUIRED_MESSAGE: '서비스 이용을 위해 필수 약관에 동의해 주세요.',
     DEFAULT_SESSION_TTL_SECONDS: 7776000,
     isSecureCookieEnv: vi.fn(() => false),
+}));
+// getAuthDatabaseClient는 barrel이 아닌 @/entities/session/lib/db에서 직접 import되므로
+// (server-only 체인을 client 번들에서 분리) 해당 경로를 별도로 mock한다.
+vi.mock('@/entities/session/lib/db', () => ({
+    getAuthDatabaseClient: vi.fn(() => ({ db: {}, sql: () => null })),
+    resetAuthDatabaseClientForTests: vi.fn(),
 }));
 vi.mock('@/entities/user', () => ({
     DrizzleUserRepository: vi.fn().mockImplementation(function () {
@@ -53,12 +58,12 @@ import { loginUser, registerUser } from '@/entities/user';
 import { createEmailTokenStore } from '@/entities/email-token';
 import { DrizzleAgreementRepository } from '@/entities/agreement';
 import { DrizzleTermsRepository } from '@/entities/terms';
-import {
-    AUTH_SERVICE_UNAVAILABLE_MESSAGE,
-    getAuthDatabaseClient,
-} from '@/entities/session';
+import { AUTH_SERVICE_UNAVAILABLE_MESSAGE } from '@/entities/session';
 import { registerAction } from '@/features/auth-signup/actions/registerAction';
-import { resetAuthDatabaseClientForTests } from '@/entities/session/lib/db';
+import {
+    getAuthDatabaseClient,
+    resetAuthDatabaseClientForTests,
+} from '@/entities/session/lib/db';
 import { makeFormData } from '@/shared/test-utils/makeFormData';
 
 const mockCookies = cookies as MockedFunction<typeof cookies>;

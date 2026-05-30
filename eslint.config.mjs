@@ -40,6 +40,26 @@ const eslintConfig = defineConfig([
         },
     },
     {
+        // Playwright E2E support/specs are not React. The `react-hooks/rules-of-hooks`
+        // rule misfires on Playwright's fixture `use()` callback (it treats the
+        // parameter named `use` as a React Hook). Disable React-specific rules here.
+        files: ['e2e/**/*.{ts,tsx}'],
+        rules: {
+            'react-hooks/rules-of-hooks': 'off',
+        },
+    },
+    {
+        // These two factories use a runtime require() to keep the E2E-only
+        // postgres-js client / fake market provider out of the production bundle
+        // (a static import would bundle them; async import would force every
+        // synchronous getDatabaseClient/getMarketDataProvider caller to await).
+        files: [
+            'src/shared/db/client.ts',
+            'src/shared/api/market/getMarketDataProvider.ts',
+        ],
+        rules: { '@typescript-eslint/no-require-imports': 'off' },
+    },
+    {
         // Variables and parameters prefixed with _ are intentionally unused
         // (kept for future use, documented with TODO comments).
         rules: {
@@ -162,39 +182,104 @@ const eslintConfig = defineConfig([
             'no-restricted-imports': [
                 'error',
                 {
+                    // patterns entries must be uniform (all objects here): mixing
+                    // plain strings with { group } objects is rejected by the schema.
                     patterns: [
-                        // features — barrel + deep path
-                        '@/features/*/model',
-                        '@/features/*/model/*',
-                        '@/features/*/hooks',
-                        '@/features/*/hooks/*',
-                        '@/features/*/ui',
-                        '@/features/*/ui/*',
-                        '@/features/*/lib',
-                        '@/features/*/lib/*',
-                        '@/features/*/api',
-                        '@/features/*/api/*',
-                        // widgets — barrel + deep path
-                        '@/widgets/*/ui',
-                        '@/widgets/*/ui/*',
-                        '@/widgets/*/hooks',
-                        '@/widgets/*/hooks/*',
-                        '@/widgets/*/lib',
-                        '@/widgets/*/lib/*',
-                        '@/widgets/*/model', // widgets 설계에 model 없음, 방어적 차단
-                        '@/widgets/*/model/*',
-                        // entities — barrel + deep path (actions 제외: 'use server')
-                        '@/entities/*/api',
-                        '@/entities/*/api/*',
-                        '@/entities/*/model',
-                        '@/entities/*/model/*',
-                        '@/entities/*/lib',
-                        '@/entities/*/lib/*',
-                        '@/entities/*/ui',
-                        '@/entities/*/ui/*',
-                        // siglens-core deep import 차단 (CLAUDE.md / ARCHITECTURE.md 정책)
-                        '@y0ngha/siglens-core/dist',
-                        '@y0ngha/siglens-core/dist/*',
+                        {
+                            group: [
+                                // features — barrel + deep path
+                                '@/features/*/model',
+                                '@/features/*/model/*',
+                                '@/features/*/hooks',
+                                '@/features/*/hooks/*',
+                                '@/features/*/ui',
+                                '@/features/*/ui/*',
+                                '@/features/*/lib',
+                                '@/features/*/lib/*',
+                                '@/features/*/api',
+                                '@/features/*/api/*',
+                                // widgets — barrel + deep path
+                                '@/widgets/*/ui',
+                                '@/widgets/*/ui/*',
+                                '@/widgets/*/hooks',
+                                '@/widgets/*/hooks/*',
+                                '@/widgets/*/lib',
+                                '@/widgets/*/lib/*',
+                                '@/widgets/*/model', // widgets 설계에 model 없음, 방어적 차단
+                                '@/widgets/*/model/*',
+                                // entities — barrel + deep path (actions 제외: 'use server')
+                                '@/entities/*/api',
+                                '@/entities/*/api/*',
+                                '@/entities/*/model',
+                                '@/entities/*/model/*',
+                                '@/entities/*/lib',
+                                '@/entities/*/lib/*',
+                                '@/entities/*/ui',
+                                '@/entities/*/ui/*',
+                                // siglens-core deep import 차단 (CLAUDE.md / ARCHITECTURE.md 정책)
+                                '@y0ngha/siglens-core/dist',
+                                '@y0ngha/siglens-core/dist/*',
+                            ],
+                        },
+                        // E2E-only fixtures/helpers (@e2e/*) must not leak into the
+                        // production src bundle. Sole exception: FakeMarketProvider.ts
+                        // (E2E_TEST-gated fake provider) — overridden below.
+                        {
+                            group: ['@e2e/*'],
+                            message:
+                                'src/는 E2E 전용 모듈(@e2e/*)을 import할 수 없습니다. 프로덕션 번들 유출 방지. (예외: FakeMarketProvider.ts)',
+                        },
+                    ],
+                },
+            ],
+        },
+    },
+    {
+        // FakeMarketProvider는 E2E_TEST 게이트 뒤에서 @e2e/fixtures/bars.json을
+        // 소비하는 유일한 합법 consumer. @e2e/* 금지만 제외하고 나머지 FSD/deep-import
+        // 제한은 그대로 유지한다 (위 src/** 블록의 patterns를 @e2e 그룹만 빼고 재명시).
+        files: ['src/shared/api/market/FakeMarketProvider.ts'],
+        rules: {
+            'no-restricted-imports': [
+                'error',
+                {
+                    patterns: [
+                        {
+                            group: [
+                                // features — barrel + deep path
+                                '@/features/*/model',
+                                '@/features/*/model/*',
+                                '@/features/*/hooks',
+                                '@/features/*/hooks/*',
+                                '@/features/*/ui',
+                                '@/features/*/ui/*',
+                                '@/features/*/lib',
+                                '@/features/*/lib/*',
+                                '@/features/*/api',
+                                '@/features/*/api/*',
+                                // widgets — barrel + deep path
+                                '@/widgets/*/ui',
+                                '@/widgets/*/ui/*',
+                                '@/widgets/*/hooks',
+                                '@/widgets/*/hooks/*',
+                                '@/widgets/*/lib',
+                                '@/widgets/*/lib/*',
+                                '@/widgets/*/model',
+                                '@/widgets/*/model/*',
+                                // entities — barrel + deep path (actions 제외: 'use server')
+                                '@/entities/*/api',
+                                '@/entities/*/api/*',
+                                '@/entities/*/model',
+                                '@/entities/*/model/*',
+                                '@/entities/*/lib',
+                                '@/entities/*/lib/*',
+                                '@/entities/*/ui',
+                                '@/entities/*/ui/*',
+                                // siglens-core deep import 차단 (CLAUDE.md / ARCHITECTURE.md 정책)
+                                '@y0ngha/siglens-core/dist',
+                                '@y0ngha/siglens-core/dist/*',
+                            ],
+                        },
                     ],
                 },
             ],

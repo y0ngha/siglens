@@ -5,7 +5,6 @@ import { sanitizeNextPath } from '@/shared/lib/auth/redirect';
 import {
     applyAuthCookie,
     createAuthHintCookie,
-    getAuthDatabaseClient,
     CONSENT_REQUIRED_MESSAGE,
     OAUTH_ERROR_REDIRECT,
     createAuthSession,
@@ -13,6 +12,7 @@ import {
     isSecureCookieEnv,
     DrizzleSessionRepository,
 } from '@/entities/session';
+import { getAuthDatabaseClient } from '@/entities/session/lib/db';
 import { createPendingOAuthSignupStoreFromEnv } from '@/entities/oauth-account';
 import { DrizzleAgreementRepository } from '@/entities/agreement';
 import { DrizzleTermsRepository } from '@/entities/terms';

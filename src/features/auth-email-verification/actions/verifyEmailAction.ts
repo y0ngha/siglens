@@ -3,10 +3,8 @@
 import { DrizzleUserRepository, verifyEmail } from '@/entities/user';
 import { createEmailTokenStore } from '@/entities/email-token';
 import type { VerifyEmailFormState } from '@/shared/lib/auth/formTypes';
-import {
-    AUTH_SERVICE_UNAVAILABLE_MESSAGE,
-    getAuthDatabaseClient,
-} from '@/entities/session';
+import { AUTH_SERVICE_UNAVAILABLE_MESSAGE } from '@/entities/session';
+import { getAuthDatabaseClient } from '@/entities/session/lib/db';
 import { normalizeEmail } from '@/shared/lib/auth/validation';
 
 export async function verifyEmailAction(

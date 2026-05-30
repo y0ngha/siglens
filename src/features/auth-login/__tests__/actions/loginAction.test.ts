@@ -15,13 +15,18 @@ vi.mock('@/entities/session', () => ({
     }),
     bcryptPasswordVerifier: { verifyPassword: vi.fn() },
     applyAuthCookie: vi.fn((c: unknown) => c),
-    getAuthDatabaseClient: vi.fn(() => ({ db: {}, sql: () => null })),
     isSecureCookieEnv: vi.fn(() => false),
     createAuthHintCookie: vi.fn(() => ({
         name: 'auth_hint',
         value: 'true',
     })),
     DEFAULT_SESSION_TTL_SECONDS: 7776000,
+}));
+// getAuthDatabaseClient는 barrel이 아닌 @/entities/session/lib/db에서 직접 import되므로
+// (server-only 체인을 client 번들에서 분리) 해당 경로를 별도로 mock한다.
+vi.mock('@/entities/session/lib/db', () => ({
+    getAuthDatabaseClient: vi.fn(() => ({ db: {}, sql: () => null })),
+    resetAuthDatabaseClientForTests: vi.fn(),
 }));
 vi.mock('@/entities/user', () => ({
     DrizzleUserRepository: vi.fn().mockImplementation(function () {

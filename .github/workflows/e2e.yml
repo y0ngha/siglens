@@ -1,0 +1,107 @@
+name: E2E
+
+on:
+    pull_request:
+    push:
+        branches:
+            - feat/e2e-playwright-foundation
+
+# Least privilege: checkout + upload artifacts. @y0ngha/siglens-core installs
+# from npm.pkg.github.com (see .yarnrc.yml) using the SIGLENS_GITHUB_TOKEN
+# secret below, NOT the built-in GITHUB_TOKEN — the built-in token cannot read
+# this user-scoped GitHub Packages package, so `packages: read` is unused here.
+permissions:
+    contents: read
+
+# Cancel superseded runs on the same ref to save CI minutes.
+concurrency:
+    group: e2e-${{ github.ref }}
+    cancel-in-progress: true
+
+jobs:
+    e2e:
+        runs-on: ubuntu-latest
+        # .yarnrc.yml authenticates the @y0ngha scope to GitHub Packages via
+        # ${SIGLENS_GITHUB_TOKEN}; yarn (even `yarn --version`) fails without it.
+        # The built-in GITHUB_TOKEN cannot read this user-scoped GitHub Packages
+        # package (it 403s), so the repo MUST define a SIGLENS_GITHUB_TOKEN secret
+        # (a PAT with read:packages) for CI to install @y0ngha/siglens-core.
+        env:
+            SIGLENS_GITHUB_TOKEN: ${{ secrets.SIGLENS_GITHUB_TOKEN }}
+        # Single job is sufficient for this foundation PR (one smoke spec).
+        # When the spec count grows, add Playwright sharding via a matrix
+        # (e.g. strategy.matrix.shard: [1, 2] + `--shard=${{ matrix.shard }}/2`).
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+
+            # Yarn 4 ships via Corepack; enable it before setup-node so the
+            # yarn cache resolves against the project's pinned packageManager.
+            - name: Enable Corepack
+              run: corepack enable
+
+            - name: Setup Node
+              uses: actions/setup-node@v4
+              with:
+                  node-version-file: '.nvmrc'
+                  cache: yarn
+
+            - name: Install dependencies
+              run: yarn install --immutable
+
+            - name: Install Playwright browsers
+              run: yarn playwright install --with-deps chromium webkit
+
+            # Start the Docker backend with Compose (NOT GitHub `services:`).
+            # global-setup.ts runs migrate/seed via `docker compose exec`, which
+            # requires a Compose project to exist — `services:` containers have
+            # none, so they would break global-setup. This reuses the exact
+            # local `e2e:up` path (DRY) and keeps global-setup unmodified.
+            - name: Start backend (Docker Compose)
+              run: yarn e2e:up
+
+            # Explicit readiness gate before handing off to global-setup's own
+            # pg_isready poll — fail fast with logs if a container never goes
+            # healthy, rather than timing out deep inside the test run.
+            - name: Wait for backend health
+              run: |
+                  echo "Waiting for Postgres and Redis to report healthy..."
+                  for i in $(seq 1 60); do
+                      pg_status="$(docker compose -f docker-compose.e2e.yml ps postgres --format '{{.Health}}')"
+                      redis_status="$(docker compose -f docker-compose.e2e.yml ps redis --format '{{.Health}}')"
+                      echo "attempt $i: postgres=$pg_status redis=$redis_status"
+                      if [ "$pg_status" = "healthy" ] && [ "$redis_status" = "healthy" ]; then
+                          echo "Backend is healthy."
+                          exit 0
+                      fi
+                      sleep 2
+                  done
+                  echo "Backend did not become healthy in time. Dumping status + logs:"
+                  docker compose -f docker-compose.e2e.yml ps
+                  docker compose -f docker-compose.e2e.yml logs
+                  exit 1
+
+            # CI=1 → reuseExistingServer is false (always cold prod build) and
+            # retries: 2. globalSetup runs migrate+seed via compose exec, then
+            # the webServer cold-builds the prod app with E2E_TEST=1 sourced from
+            # .env.e2e (there is intentionally no .env.local in CI), then runs the
+            # chromium + webkit projects.
+            - name: Run E2E tests
+              run: yarn test:e2e
+              env:
+                  CI: '1'
+
+            - name: Upload Playwright report
+              if: failure()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: playwright-report
+                  path: |
+                      playwright-report/
+                      test-results/
+                  retention-days: 7
+
+            # Clean up Docker volumes/containers regardless of outcome.
+            - name: Tear down backend
+              if: always()
+              run: yarn e2e:down

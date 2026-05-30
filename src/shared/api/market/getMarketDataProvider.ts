@@ -3,8 +3,16 @@ import { FmpMarketProvider } from '@/shared/api/fmp/FmpMarketProvider';
 
 let cached: MarketDataProvider | null = null;
 
-/** Returns the app's market data provider (FMP), constructed once and reused. */
+/** Returns the app's market data provider (FMP in prod, fake under E2E_TEST). */
 export function getMarketDataProvider(): MarketDataProvider {
-    cached ??= new FmpMarketProvider();
+    if (cached !== null) return cached;
+    if (process.env.E2E_TEST === '1') {
+        // require keeps the fake + fixture out of the production bundle.
+        const { FakeMarketProvider } =
+            require('./FakeMarketProvider') as typeof import('./FakeMarketProvider');
+        cached = new FakeMarketProvider();
+        return cached;
+    }
+    cached = new FmpMarketProvider();
     return cached;
 }
