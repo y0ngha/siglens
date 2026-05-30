@@ -15,7 +15,7 @@ permissions:
 
 # Cancel superseded runs on the same ref to save CI minutes.
 concurrency:
-    group: e2e-${{ github.ref }}
+    group: e2e-${{ github.event.pull_request.number }}
     cancel-in-progress: true
 
 jobs:
