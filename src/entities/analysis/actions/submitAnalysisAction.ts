@@ -29,8 +29,16 @@ export async function submitAnalysisAction(
     fmpSymbol?: string,
     modelId?: ModelId
 ): Promise<SubmitAnalysisActionResult> {
-    // E2E short-circuits the LLM/worker; returns a deterministic cached fixture (see e2eAnalysisStub).
-    if (isE2E()) return e2eCachedTechnical();
+    // E2E short-circuits the LLM/worker (see e2eAnalysisStub). The short-circuit
+    // stays bot-aware so the crawler path (miss_no_trigger → BotBlockedNotice)
+    // remains reachable under E2E: a bot User-Agent yields the core MissNoTrigger
+    // shape just like prod's skipEnqueueIfMiss + cache miss, while a normal UA
+    // gets the deterministic cached fixture.
+    if (isE2E()) {
+        const requestHeaders = await headers();
+        if (isBot(requestHeaders)) return { status: 'miss_no_trigger' };
+        return e2eCachedTechnical();
+    }
     try {
         const requestHeaders = await headers();
         const skipEnqueueIfMiss = isBot(requestHeaders);
