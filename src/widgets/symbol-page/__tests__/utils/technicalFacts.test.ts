@@ -1,6 +1,6 @@
-import { describe, it, expect } from 'vitest';
 import type { Bar, IndicatorResult } from '@y0ngha/siglens-core';
-import { buildTechnicalFacts } from '../utils/technicalFacts';
+import { describe, expect, it } from 'vitest';
+import { buildTechnicalFacts } from '../../utils/technicalFacts';
 
 function bar(close: number, high = close, low = close): Bar {
     return { time: 0, open: close, high, low, close, volume: 100 };
