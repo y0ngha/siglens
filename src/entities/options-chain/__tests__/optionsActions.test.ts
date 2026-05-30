@@ -5,6 +5,18 @@ vi.mock('@vercel/functions', () => ({
 
 vi.mock('next/headers', () => ({
     headers: vi.fn(() => Promise.resolve(new Headers())),
+    cookies: vi.fn(),
+}));
+
+// E2E 쿠키 seam 분기 테스트용 — 액션이 require하는 stub을 결정적 mock으로 대체.
+vi.mock('@/shared/api/e2eAnalysisStub', () => ({
+    E2E_FORCE_ANALYSIS_ERROR_COOKIE: 'e2e_force_analysis_error',
+    e2eForcedOptionsError: vi.fn(() => ({
+        status: 'no_chains_error',
+        code: 'no_options_chains',
+        error: 'E2E 강제 분석 실패 (resilience 테스트용)',
+    })),
+    e2eCachedOptions: vi.fn(() => ({ status: 'cached', result: {} })),
 }));
 
 vi.mock('@y0ngha/siglens-core', async () => ({
@@ -39,6 +51,7 @@ import {
     type OptionsSnapshot,
     type OptionsChain,
 } from '@y0ngha/siglens-core';
+import { cookies } from 'next/headers';
 import { fetchOptionsSnapshot } from '../lib/optionsDataCache';
 import { getCurrentUser } from '@/entities/session/lib/getCurrentUser';
 import { resolveTierAndByok } from '@/shared/lib/byokGate';
@@ -65,6 +78,7 @@ const mockResolveTierAndByok = resolveTierAndByok as MockedFunction<
     typeof resolveTierAndByok
 >;
 const mockCancelJob = cancelJob as MockedFunction<typeof cancelJob>;
+const mockCookies = cookies as MockedFunction<typeof cookies>;
 
 const MODEL_ID = 'gemini-2.5-flash' as ModelId;
 const PREMIUM_MODEL = 'claude-opus-4-7' as ModelId;
@@ -306,5 +320,58 @@ describe('cancelOptionsAnalysisJobAction', () => {
         );
 
         consoleWarnSpy.mockRestore();
+    });
+});
+
+describe('submitOptionsAnalysisAction — E2E force-error cookie seam', () => {
+    const originalE2E = process.env.E2E_TEST;
+
+    beforeEach(() => {
+        mockCookies.mockReset();
+        process.env.E2E_TEST = '1';
+    });
+
+    afterEach(() => {
+        if (originalE2E === undefined) {
+            delete process.env.E2E_TEST;
+        } else {
+            process.env.E2E_TEST = originalE2E;
+        }
+    });
+
+    it('returns the forced error result when the force-error cookie is present', async () => {
+        mockCookies.mockResolvedValue({
+            get: vi.fn(() => ({
+                name: 'e2e_force_analysis_error',
+                value: '1',
+            })),
+        } as never);
+
+        const result = await submitOptionsAnalysisAction(
+            'AAPL',
+            'Apple Inc.',
+            'all',
+            MODEL_ID
+        );
+
+        expect(result.status).toBe('no_chains_error');
+        // 강제 에러 경로는 core 제출을 건드리지 않는다.
+        expect(mockSubmitOptionsAnalysis).not.toHaveBeenCalled();
+    });
+
+    it('returns the cached fixture when the force-error cookie is absent', async () => {
+        mockCookies.mockResolvedValue({
+            get: vi.fn(() => undefined),
+        } as never);
+
+        const result = await submitOptionsAnalysisAction(
+            'AAPL',
+            'Apple Inc.',
+            'all',
+            MODEL_ID
+        );
+
+        expect(result.status).toBe('cached');
+        expect(mockSubmitOptionsAnalysis).not.toHaveBeenCalled();
     });
 });

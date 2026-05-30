@@ -96,6 +96,6 @@ describe('e2eForcedOptionsError (resilience seam)', () => {
         // useOptionsAnalysis throws on this status → OptionsAiAnalysisError ("다시 시도").
         expect(result.status).toBe('no_chains_error');
         expect(result.code).toBe('no_options_chains');
-        expect(result.error).toContain('E2E 강제 분석 실패');
+        expect(result.error).toBe('E2E 강제 분석 실패 (resilience 테스트용)');
     });
 });
