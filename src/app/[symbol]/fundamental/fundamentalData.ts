@@ -76,15 +76,6 @@ export const getProfileDescriptionKo = cache(
     }
 );
 
-export const getStockPeers = cache(
-    async (symbol: string): Promise<FundamentalPeerInput[]> =>
-        getOrSetCache(
-            `fundamental:peers:${symbol.toUpperCase()}`,
-            FMP_FUNDAMENTAL_REVALIDATE_SECONDS,
-            () => fundamentalClient.getStockPeers(symbol)
-        )
-);
-
 export const getKeyMetricsTtm = cache(
     async (symbol: string): Promise<FundamentalValuationMetrics | null> =>
         getOrSetCache(
@@ -92,6 +83,33 @@ export const getKeyMetricsTtm = cache(
             FMP_FUNDAMENTAL_REVALIDATE_SECONDS,
             () => fundamentalClient.getKeyMetricsTtm(symbol)
         )
+);
+
+// 메트릭은 primary 심볼과 동일하게 getKeyMetricsTtm의 캐시
+// (`fundamental:key-metrics:<SYM>`)를 그대로 재사용하므로 새로운 캐시 키 스킴을
+// 도입하지 않는다. 외부 `fundamental:peers:<SYM>` 캐시에는 원본 peer 목록만
+// 저장되고, enrich는 요청마다 수행되지만 각 메트릭 호출은 캐싱된다. 메트릭이 없는
+// peer는 throw하지 않고 per/psr을 null로 둔다(core 프롬프트가 N/A로 렌더). 콜드
+// 캐시에서 peer당 FMP 요청이 동시 발사되면 rate-limit 위험이 있어 enrich는 순차로
+// 수행한다(warm 캐시에서는 getKeyMetricsTtm 캐시 히트로 비용이 낮다).
+export const getStockPeers = cache(
+    async (symbol: string): Promise<FundamentalPeerInput[]> => {
+        const peers = await getOrSetCache(
+            `fundamental:peers:${symbol.toUpperCase()}`,
+            FMP_FUNDAMENTAL_REVALIDATE_SECONDS,
+            () => fundamentalClient.getStockPeers(symbol)
+        );
+        const enriched: FundamentalPeerInput[] = [];
+        for (const peer of peers) {
+            const metrics = await getKeyMetricsTtm(peer.symbol);
+            enriched.push({
+                ...peer,
+                per: metrics?.peRatioTTM ?? null,
+                psr: metrics?.priceToSalesRatioTTM ?? null,
+            });
+        }
+        return enriched;
+    }
 );
 
 export const getRatiosTtm = cache(
