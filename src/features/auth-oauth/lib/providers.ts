@@ -1,5 +1,6 @@
 import type { SupportedOAuthProvider } from '@/shared/lib/types';
 import { googleOAuthAdapter } from './google';
+import { e2eFakeOAuthAdapter } from './E2eFakeOAuthAdapter';
 import type { OAuthProviderAdapter } from './types';
 
 // NOTE: Kakao login is currently disabled — its adapter is intentionally excluded
@@ -15,6 +16,11 @@ const ADAPTERS: Record<SupportedOAuthProvider, OAuthProviderAdapter> = {
 export function getOAuthAdapter(
     provider: SupportedOAuthProvider
 ): OAuthProviderAdapter {
+    // Under E2E_TEST the fake adapter returns a deterministic fixture profile
+    // for any code and contacts no real OAuth provider (see E2eFakeOAuthAdapter).
+    // Static-imported (not require-gated) so this branch stays unit-testable —
+    // mirrors getLlmProvider's FakeChatProvider rationale.
+    if (process.env.E2E_TEST === '1') return e2eFakeOAuthAdapter;
     return ADAPTERS[provider];
 }
 

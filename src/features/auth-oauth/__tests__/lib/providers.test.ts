@@ -1,8 +1,11 @@
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
     buildOAuthRedirectUri,
     getOAuthAdapter,
     isOAuthProvider,
 } from '@/features/auth-oauth/lib/providers';
+import { e2eFakeOAuthAdapter } from '@/features/auth-oauth/lib/E2eFakeOAuthAdapter';
+import { googleOAuthAdapter } from '@/features/auth-oauth/lib/google';
 
 describe('isOAuthProvider', () => {
     it('활성화된 provider 문자열은 true를 반환한다', () => {
@@ -20,8 +23,36 @@ describe('isOAuthProvider', () => {
 });
 
 describe('getOAuthAdapter', () => {
+    const originalE2E = process.env.E2E_TEST;
+
+    beforeEach(() => {
+        delete process.env.E2E_TEST;
+    });
+
+    afterEach(() => {
+        if (originalE2E === undefined) {
+            delete process.env.E2E_TEST;
+        } else {
+            process.env.E2E_TEST = originalE2E;
+        }
+    });
+
     it('각 provider id에 대응하는 어댑터를 반환한다', () => {
         expect(getOAuthAdapter('google').id).toBe('google');
+    });
+
+    it('E2E_TEST가 미설정이면 실제 google 어댑터를 반환한다', () => {
+        expect(getOAuthAdapter('google')).toBe(googleOAuthAdapter);
+    });
+
+    it('E2E_TEST=1이면 fake OAuth 어댑터를 반환한다', () => {
+        process.env.E2E_TEST = '1';
+        expect(getOAuthAdapter('google')).toBe(e2eFakeOAuthAdapter);
+    });
+
+    it('E2E_TEST가 "1"이 아닌 값이면 실제 어댑터를 반환한다', () => {
+        process.env.E2E_TEST = '0';
+        expect(getOAuthAdapter('google')).toBe(googleOAuthAdapter);
     });
 });
 
