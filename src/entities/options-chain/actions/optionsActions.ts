@@ -1,7 +1,7 @@
 'use server';
 
 import { waitUntil } from '@vercel/functions';
-import { headers } from 'next/headers';
+import { headers, cookies } from 'next/headers';
 import {
     submitOptionsAnalysis,
     pollOptionsAnalysis,
@@ -42,9 +42,16 @@ export async function submitOptionsAnalysisAction(
         // bundle (matches getMarketDataProvider). Lives inside try so a require()
         // throw can't propagate to the client (mirrors submitAnalysisAction).
         if (process.env.E2E_TEST === '1') {
-            const { e2eCachedOptions } =
+            const stub =
                 require('@/shared/api/e2eAnalysisStub') as typeof import('@/shared/api/e2eAnalysisStub');
-            return e2eCachedOptions();
+            // resilience 스펙이 설정하는 force-error 쿠키가 있으면 일시적 실패를
+            // 결정적으로 주입해 에러 바운더리 → 재시도 → 복구를 검증할 수 있게 한다.
+            const forceError = (await cookies()).get(
+                stub.E2E_FORCE_ANALYSIS_ERROR_COOKIE
+            );
+            return forceError
+                ? stub.e2eForcedOptionsError()
+                : stub.e2eCachedOptions();
         }
         const requestHeaders = await headers();
         const skipEnqueueIfMiss = isBot(requestHeaders);

@@ -6,6 +6,8 @@ import {
     e2eCachedFundamental,
     e2eCachedNews,
     e2eCachedOptions,
+    e2eForcedOptionsError,
+    E2E_FORCE_ANALYSIS_ERROR_COOKIE,
 } from '@/shared/api/e2eAnalysisStub';
 
 describe('isE2E', () => {
@@ -86,5 +88,21 @@ describe('e2eCached* fixture getters', () => {
             throw new Error('unreachable: stub always returns cached');
         }
         expect(a.result).toBe(b.result);
+    });
+});
+
+describe('e2eForcedOptionsError (resilience seam)', () => {
+    it('exposes a stable cookie name the e2e spec mirrors', () => {
+        expect(E2E_FORCE_ANALYSIS_ERROR_COOKIE).toBe(
+            'e2e_force_analysis_error'
+        );
+    });
+
+    it('returns a no_chains_error result that drives the options error boundary', () => {
+        const result = e2eForcedOptionsError();
+        // useOptionsAnalysis throws on this status → OptionsAiAnalysisError ("다시 시도").
+        expect(result.status).toBe('no_chains_error');
+        expect(result.code).toBe('no_options_chains');
+        expect(result.error).toContain('E2E 강제 분석 실패');
     });
 });
