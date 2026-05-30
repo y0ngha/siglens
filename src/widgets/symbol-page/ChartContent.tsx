@@ -185,9 +185,7 @@ export function ChartContent({
         // DOM에도 항상 남고, 봇으로 오판된 실사용자에게도 actionable hint가 유지된다.
         return !hasNarrative ? (
             <div className="flex flex-col gap-3">
-                <AnalysisStatusBanner
-                    status={analysisStatus}
-                />
+                <AnalysisStatusBanner status={analysisStatus} />
                 <TechnicalFactsSummary
                     symbol={symbol}
                     bars={bars}
@@ -198,9 +196,7 @@ export function ChartContent({
             </div>
         ) : (
             <div className="flex flex-col gap-3">
-                <AnalysisStatusBanner
-                    status={analysisStatus}
-                />
+                <AnalysisStatusBanner status={analysisStatus} />
                 <TechnicalFactsSummary
                     symbol={symbol}
                     bars={bars}

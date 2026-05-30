@@ -8,6 +8,7 @@ import type {
     SubmitFundamentalAnalysisCached,
     SubmitNewsAnalysisCached,
     SubmitOptionsAnalysisCached,
+    SubmitOptionsAnalysisNoChainsError,
     SubmitOverallAnalysisCached,
 } from '@y0ngha/siglens-core';
 import fixture from '@e2e/fixtures/analysis.json';
@@ -72,4 +73,30 @@ export function e2eCachedNews(): SubmitNewsAnalysisCached {
 /** Fixed `{ status: 'cached' }` options analysis result for E2E runs. */
 export function e2eCachedOptions(): SubmitOptionsAnalysisCached {
     return { status: 'cached', result: typedFixture.options };
+}
+
+/**
+ * Cookie name an E2E test sets to force the next options-analysis submit to
+ * return a transient failure instead of the cached fixture. Read server-side by
+ * `submitOptionsAnalysisAction` (only under `E2E_TEST=1`). The resilience spec
+ * sets it, asserts the error fallback, then clears it so the retry recovers.
+ * The e2e spec imports this constant directly; the only literal copy is the
+ * vi.mock factory in optionsActions.test.ts (hoisted before imports) — keep that
+ * one in sync if this value changes.
+ */
+export const E2E_FORCE_ANALYSIS_ERROR_COOKIE = 'e2e_force_analysis_error';
+
+/**
+ * Deterministic transient-failure result for E2E resilience tests. Returned by
+ * the options submit action (under E2E_TEST) when the force-error cookie is
+ * present, so `useOptionsAnalysis` throws and surfaces OptionsAiAnalysisError
+ * ("다시 시도"). Reuses the real `no_chains_error` variant — any error-producing
+ * status drives the same error boundary, and this one needs no jobId/poll.
+ */
+export function e2eForcedOptionsError(): SubmitOptionsAnalysisNoChainsError {
+    return {
+        status: 'no_chains_error',
+        code: 'no_options_chains',
+        error: 'E2E 강제 분석 실패 (resilience 테스트용)',
+    };
 }

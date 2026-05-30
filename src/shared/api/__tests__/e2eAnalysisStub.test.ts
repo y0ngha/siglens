@@ -6,6 +6,7 @@ import {
     e2eCachedFundamental,
     e2eCachedNews,
     e2eCachedOptions,
+    e2eForcedOptionsError,
 } from '@/shared/api/e2eAnalysisStub';
 
 describe('isE2E', () => {
@@ -86,5 +87,15 @@ describe('e2eCached* fixture getters', () => {
             throw new Error('unreachable: stub always returns cached');
         }
         expect(a.result).toBe(b.result);
+    });
+});
+
+describe('e2eForcedOptionsError (resilience seam)', () => {
+    it('returns a no_chains_error result that drives the options error boundary', () => {
+        const result = e2eForcedOptionsError();
+        // useOptionsAnalysis throws on this status → OptionsAiAnalysisError ("다시 시도").
+        expect(result.status).toBe('no_chains_error');
+        expect(result.code).toBe('no_options_chains');
+        expect(result.error).toBe('E2E 강제 분석 실패 (resilience 테스트용)');
     });
 });

@@ -1,7 +1,7 @@
 'use server';
 
 import { waitUntil } from '@vercel/functions';
-import { headers } from 'next/headers';
+import { headers, cookies } from 'next/headers';
 import {
     submitOptionsAnalysis,
     pollOptionsAnalysis,
@@ -36,15 +36,22 @@ export async function submitOptionsAnalysisAction(
     modelId: ModelId
 ): Promise<SubmitOptionsAnalysisActionResult> {
     try {
-        // E2E short-circuits the LLM/worker; returns a deterministic cached fixture
-        // (see e2eAnalysisStub). The stub + JSON fixture are require'd (not statically
-        // imported) under the inline E2E guard so they stay out of the production
-        // bundle (matches getMarketDataProvider). Lives inside try so a require()
-        // throw can't propagate to the client (mirrors submitAnalysisAction).
+        // E2E short-circuits the LLM/worker with a deterministic fixture (see
+        // e2eAnalysisStub). Loaded via a DYNAMIC import under the inline E2E guard
+        // so the stub + JSON fixture sit in a lazy chunk (never in the prod main
+        // bundle; the branch is dead when E2E_TEST is unset). Dynamic import (vs a
+        // bare require) is also resolvable by the vitest runner, so this branch is
+        // unit-tested. Inside try so a load failure can't propagate to the client.
         if (process.env.E2E_TEST === '1') {
-            const { e2eCachedOptions } =
-                require('@/shared/api/e2eAnalysisStub') as typeof import('@/shared/api/e2eAnalysisStub');
-            return e2eCachedOptions();
+            const stub = await import('@/shared/api/e2eAnalysisStub');
+            // resilience 스펙이 설정하는 force-error 쿠키가 있으면 일시적 실패를
+            // 결정적으로 주입해 에러 바운더리 → 재시도 → 복구를 검증할 수 있게 한다.
+            const forceError = (await cookies()).get(
+                stub.E2E_FORCE_ANALYSIS_ERROR_COOKIE
+            );
+            return forceError
+                ? stub.e2eForcedOptionsError()
+                : stub.e2eCachedOptions();
         }
         const requestHeaders = await headers();
         const skipEnqueueIfMiss = isBot(requestHeaders);
