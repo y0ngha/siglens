@@ -60,9 +60,7 @@ export async function submitNewsAnalysisAction(
             getNextEarningsReport(symbol, db),
         ]);
 
-        // Cap the aggregate-analysis input: sort the enriched rows by per-card
-        // priceImpact and keep only the top-N most market-moving articles. The
-        // per-card stage and 30-day window above are untouched — this only
+        // The per-card stage and 30-day window above are untouched — this only
         // bounds what the aggregate prompt sees.
         const enrichedNews: ReadonlyArray<EnrichedNewsItem> =
             selectAggregateNewsItems(

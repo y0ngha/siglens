@@ -205,7 +205,13 @@ describe('submitNewsAnalysisAction 함수는', () => {
         expect(news.slice(0, 5).map(n => n.id)).toEqual(
             highRows.map(r => r.id)
         );
-        expect(news.every(n => n.card.priceImpact !== undefined)).toBe(true);
+        // 상위 5개는 모두 high, 남은 20개는 모두 low (selection 정렬 검증).
+        expect(news.slice(0, 5).every(n => n.card.priceImpact === 'high')).toBe(
+            true
+        );
+        expect(news.slice(5).every(n => n.card.priceImpact === 'low')).toBe(
+            true
+        );
     });
 
     it('다음 실적 발표가 있으면 upcomingCalendar에 포함한다', async () => {

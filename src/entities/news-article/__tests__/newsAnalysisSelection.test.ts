@@ -66,10 +66,17 @@ describe('selectAggregateNewsItems 함수는', () => {
         expect(result).toHaveLength(MAX_AGGREGATE_NEWS_ITEMS);
         // All 5 high-impact items are kept and come first.
         expect(result.slice(0, 5).map(i => i.id)).toEqual(highs.map(i => i.id));
-        expect(result.every(i => i.card.priceImpact !== 'negligible')).toBe(
-            true
-        );
-        // A negligible item that lost its slot is excluded.
+        // low 항목 중 슬롯을 잃은 것(low-20..low-29)은 결과에 포함되지 않는다.
+        expect(
+            result.every(
+                i =>
+                    !(
+                        i.id.startsWith('low-') &&
+                        Number(i.id.split('-')[1]) >= 20
+                    )
+            )
+        ).toBe(true);
+        // low-29 는 20번 슬롯을 초과하므로(5 high + 20 low = 25) 제외된다.
         expect(result.some(i => i.id === 'low-29')).toBe(false);
     });
 
