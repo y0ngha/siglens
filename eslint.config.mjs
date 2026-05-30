@@ -235,10 +235,14 @@ const eslintConfig = defineConfig([
         },
     },
     {
-        // FakeMarketProvider는 E2E_TEST 게이트 뒤에서 @e2e/fixtures/bars.json을
-        // 소비하는 유일한 합법 consumer. @e2e/* 금지만 제외하고 나머지 FSD/deep-import
-        // 제한은 그대로 유지한다 (위 src/** 블록의 patterns를 @e2e 그룹만 빼고 재명시).
-        files: ['src/shared/api/market/FakeMarketProvider.ts'],
+        // FakeMarketProvider / e2eAnalysisStub는 E2E_TEST 게이트 뒤에서
+        // @e2e/fixtures/*.json을 소비하는 합법 consumer다. @e2e/* 금지만 제외하고
+        // 나머지 FSD/deep-import 제한은 그대로 유지한다 (위 src/** 블록의 patterns를
+        // @e2e 그룹만 빼고 재명시).
+        files: [
+            'src/shared/api/market/FakeMarketProvider.ts',
+            'src/shared/lib/e2eAnalysisStub.ts',
+        ],
         rules: {
             'no-restricted-imports': [
                 'error',
