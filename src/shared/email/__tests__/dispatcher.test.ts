@@ -1,13 +1,20 @@
 import type { MockedClass } from 'vitest';
-const { sendMock } = vi.hoisted(() => ({ sendMock: vi.fn() }));
+const { sendMock, getRedisClientMock } = vi.hoisted(() => ({
+    sendMock: vi.fn(),
+    getRedisClientMock: vi.fn(),
+}));
 vi.mock('resend', () => ({
     Resend: vi.fn().mockImplementation(function () {
         return { emails: { send: sendMock } };
     }),
 }));
+vi.mock('@/shared/cache/redisClient', () => ({
+    getRedisClient: getRedisClientMock,
+}));
 
 import { Resend } from 'resend';
 import { ResendEmailDispatcher, createEmailDispatcher } from '../dispatcher';
+import { E2eEmailDispatcher } from '../E2eEmailDispatcher';
 
 const ResendCtor = Resend as MockedClass<typeof Resend>;
 
@@ -76,11 +83,15 @@ describe('createEmailDispatcher', () => {
     let originalApiKey: string | undefined;
     let originalFrom: string | undefined;
 
+    let originalE2e: string | undefined;
+
     beforeEach(() => {
         originalApiKey = process.env.RESEND_API_KEY;
         originalFrom = process.env.EMAIL_FROM;
+        originalE2e = process.env.E2E_TEST;
         delete process.env.RESEND_API_KEY;
         delete process.env.EMAIL_FROM;
+        delete process.env.E2E_TEST;
         ResendCtor.mockClear();
     });
 
@@ -89,6 +100,8 @@ describe('createEmailDispatcher', () => {
         else process.env.RESEND_API_KEY = originalApiKey;
         if (originalFrom === undefined) delete process.env.EMAIL_FROM;
         else process.env.EMAIL_FROM = originalFrom;
+        if (originalE2e === undefined) delete process.env.E2E_TEST;
+        else process.env.E2E_TEST = originalE2e;
     });
 
     it('RESEND_API_KEY가 없으면 noop dispatcher를 반환하여 항상 false', async () => {
@@ -123,5 +136,43 @@ describe('createEmailDispatcher', () => {
         expect(sendMock).toHaveBeenCalledWith(
             expect.objectContaining({ from: 'custom@siglens.io' })
         );
+    });
+});
+
+describe('createEmailDispatcher under E2E_TEST', () => {
+    let originalE2e: string | undefined;
+
+    beforeEach(() => {
+        originalE2e = process.env.E2E_TEST;
+        process.env.E2E_TEST = '1';
+        getRedisClientMock.mockReset();
+        ResendCtor.mockClear();
+    });
+
+    afterEach(() => {
+        if (originalE2e === undefined) delete process.env.E2E_TEST;
+        else process.env.E2E_TEST = originalE2e;
+    });
+
+    it('E2E_TEST=1이고 Redis가 있으면 E2eEmailDispatcher를 반환한다', () => {
+        getRedisClientMock.mockReturnValue({ set: vi.fn() });
+        const dispatcher = createEmailDispatcher();
+        expect(dispatcher).toBeInstanceOf(E2eEmailDispatcher);
+        expect(ResendCtor).not.toHaveBeenCalled();
+    });
+
+    it('E2E_TEST=1이지만 Redis가 없으면 noop dispatcher로 폴백한다 (false 반환)', async () => {
+        getRedisClientMock.mockReturnValue(null);
+        const dispatcher = createEmailDispatcher();
+        expect(dispatcher).not.toBeInstanceOf(E2eEmailDispatcher);
+        await expect(
+            dispatcher.sendEmail({
+                to: 't@t.com',
+                subject: 's',
+                html: 'h',
+                text: 't',
+            })
+        ).resolves.toBe(false);
+        expect(ResendCtor).not.toHaveBeenCalled();
     });
 });
