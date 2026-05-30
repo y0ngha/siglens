@@ -16,6 +16,8 @@
 # playwright (e2e) output artifacts
 /test-results/
 /playwright-report/
+# Authed storageState produced by the e2e `setup` project (contains a session cookie)
+/.auth/
 
 # next.js
 /.next/
