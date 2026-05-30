@@ -343,29 +343,6 @@ describe('callAnthropicChat', () => {
         });
     });
 
-    describe('withHistoryCacheBreakpoint', () => {
-        it('second-to-last 메시지가 이미 block content면 그대로 반환한다 (중복 래핑 없음)', () => {
-            const messages: Anthropic.MessageParam[] = [
-                {
-                    role: 'user',
-                    content: [{ type: 'text', text: 'already block' }],
-                },
-                { role: 'assistant', content: 'reply' },
-            ];
-
-            const result = withHistoryCacheBreakpoint(messages);
-
-            expect(result).toBe(messages);
-            expect(result).toEqual([
-                {
-                    role: 'user',
-                    content: [{ type: 'text', text: 'already block' }],
-                },
-                { role: 'assistant', content: 'reply' },
-            ]);
-        });
-    });
-
     describe('effort 검증', () => {
         it('유효한 effort(medium)는 통과한다', async () => {
             mockFinalMessage.mockResolvedValue({
@@ -401,5 +378,28 @@ describe('callAnthropicChat', () => {
                 specs['claude-sonnet-4-6'] = original;
             }
         });
+    });
+});
+
+describe('withHistoryCacheBreakpoint', () => {
+    it('second-to-last 메시지가 이미 block content면 그대로 반환한다 (중복 래핑 없음)', () => {
+        const messages: Anthropic.MessageParam[] = [
+            {
+                role: 'user',
+                content: [{ type: 'text', text: 'already block' }],
+            },
+            { role: 'assistant', content: 'reply' },
+        ];
+
+        const result = withHistoryCacheBreakpoint(messages);
+
+        expect(result).toBe(messages);
+        expect(result).toEqual([
+            {
+                role: 'user',
+                content: [{ type: 'text', text: 'already block' }],
+            },
+            { role: 'assistant', content: 'reply' },
+        ]);
     });
 });

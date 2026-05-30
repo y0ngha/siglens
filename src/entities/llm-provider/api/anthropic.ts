@@ -58,8 +58,8 @@ function toAnthropicMessages(contents: AiContents): Anthropic.MessageParam[] {
  * there is no history yet (fewer than 2 messages). Anthropic silently ignores
  * prefixes below the model's min-cacheable size, so no token counting is needed.
  *
- * @internal Exported only for unit-testing the already-block-content branch,
- * which `toAnthropicMessages` never produces in normal flow.
+ * Exported for unit-testing the already-block-content branch, which
+ * `toAnthropicMessages` never produces in normal flow.
  */
 export function withHistoryCacheBreakpoint(
     messages: Anthropic.MessageParam[]
