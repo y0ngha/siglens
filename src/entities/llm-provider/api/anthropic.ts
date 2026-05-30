@@ -54,9 +54,11 @@ function toAnthropicMessages(contents: AiContents): Anthropic.MessageParam[] {
  * cache breakpoint, so the conversation prefix up to the previous turn is cached
  * and only the new (final) user turn is uncached.
  *
- * Returns a new array — never mutates the caller's messages — and is a no-op when
- * there is no history yet (fewer than 2 messages). Anthropic silently ignores
- * prefixes below the model's min-cacheable size, so no token counting is needed.
+ * Returns the original `messages` unchanged (same reference) when there is no
+ * history yet (fewer than 2 messages) or the second-to-last message already has
+ * block content; otherwise returns a new array and never mutates the caller's
+ * messages. Anthropic silently ignores prefixes below the model's min-cacheable
+ * size, so no token counting is needed.
  *
  * Exported for unit-testing the already-block-content branch, which
  * `toAnthropicMessages` never produces in normal flow.

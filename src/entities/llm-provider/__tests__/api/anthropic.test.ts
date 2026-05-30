@@ -382,6 +382,17 @@ describe('callAnthropicChat', () => {
 });
 
 describe('withHistoryCacheBreakpoint', () => {
+    it('메시지가 2개 미만이면 원본을 그대로 반환한다 (히스토리 없음)', () => {
+        const messages: Anthropic.MessageParam[] = [
+            { role: 'user', content: 'only turn' },
+        ];
+
+        const result = withHistoryCacheBreakpoint(messages);
+
+        expect(result).toBe(messages);
+        expect(result).toEqual([{ role: 'user', content: 'only turn' }]);
+    });
+
     it('second-to-last 메시지가 이미 block content면 그대로 반환한다 (중복 래핑 없음)', () => {
         const messages: Anthropic.MessageParam[] = [
             {
