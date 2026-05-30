@@ -1,4 +1,5 @@
 import { test, expect } from '../support/fixtures';
+import { E2E_FORCE_ANALYSIS_ERROR_COOKIE } from '@/shared/api/e2eAnalysisStub';
 
 /**
  * Widget resilience (`/AAPL/options`) — error boundary → retry → recovery.
@@ -16,10 +17,9 @@ import { test, expect } from '../support/fixtures';
  * non-zero-OI snapshot → never oiStale), so this is deterministic without a
  * frozen clock. Chromium-only desktop interaction check.
  *
- * Cookie literal mirrors E2E_FORCE_ANALYSIS_ERROR_COOKIE in
- * src/shared/api/e2eAnalysisStub.ts — keep in sync.
+ * The force-error cookie name is imported from the stub (single source of truth)
+ * rather than mirrored as a literal.
  */
-const FORCE_ERROR_COOKIE = 'e2e_force_analysis_error';
 const OPTIONS_ANALYSIS_ERROR =
     '옵션 분석을 가져오지 못했어요. 잠시 후 다시 시도해주세요.';
 
@@ -30,7 +30,7 @@ test.describe('widget resilience', () => {
     }) => {
         await context.addCookies([
             {
-                name: FORCE_ERROR_COOKIE,
+                name: E2E_FORCE_ANALYSIS_ERROR_COOKIE,
                 value: '1',
                 url: 'http://localhost:4300',
             },
@@ -47,7 +47,7 @@ test.describe('widget resilience', () => {
         ).toBeVisible();
 
         // 2) 쿠키 제거 → 재시도하면 캐시 픽스처로 복구된다.
-        await context.clearCookies({ name: FORCE_ERROR_COOKIE });
+        await context.clearCookies({ name: E2E_FORCE_ANALYSIS_ERROR_COOKIE });
         await page.getByRole('button', { name: '다시 시도' }).click();
 
         await expect(page.getByText(OPTIONS_ANALYSIS_ERROR)).toHaveCount(0);

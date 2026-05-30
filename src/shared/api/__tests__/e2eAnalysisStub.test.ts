@@ -7,7 +7,6 @@ import {
     e2eCachedNews,
     e2eCachedOptions,
     e2eForcedOptionsError,
-    E2E_FORCE_ANALYSIS_ERROR_COOKIE,
 } from '@/shared/api/e2eAnalysisStub';
 
 describe('isE2E', () => {
@@ -92,12 +91,6 @@ describe('e2eCached* fixture getters', () => {
 });
 
 describe('e2eForcedOptionsError (resilience seam)', () => {
-    it('exposes a stable cookie name the e2e spec mirrors', () => {
-        expect(E2E_FORCE_ANALYSIS_ERROR_COOKIE).toBe(
-            'e2e_force_analysis_error'
-        );
-    });
-
     it('returns a no_chains_error result that drives the options error boundary', () => {
         const result = e2eForcedOptionsError();
         // useOptionsAnalysis throws on this status → OptionsAiAnalysisError ("다시 시도").
