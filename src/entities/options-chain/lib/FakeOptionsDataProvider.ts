@@ -20,21 +20,32 @@ const EXPIRATION_DATE = '2026-06-05';
 const DAYS_TO_EXPIRATION = 6;
 const STRIKES = [185, 190, 195, 200, 205] as const;
 
+// Synthetic per-contract metrics. Values are arbitrary-but-plausible so the
+// options page can render deterministic metric cards under E2E.
+const FAKE_MIN_LAST_PRICE = 0.5; // floor so deep-ITM/OTM legs never price at 0
+const FAKE_SPREAD = 0.1; // bid/ask offset around lastPrice
+const FAKE_VOLUME = 1_000;
+const FAKE_OPEN_INTEREST = 5_000;
+const FAKE_IMPLIED_VOL = 0.3;
+
 function makeContract(
     strike: number,
     side: 'C' | 'P',
     inTheMoney: boolean
 ): OptionsContract {
-    const lastPrice = Math.max(0.5, Math.abs(UNDERLYING_PRICE - strike));
+    const lastPrice = Math.max(
+        FAKE_MIN_LAST_PRICE,
+        Math.abs(UNDERLYING_PRICE - strike)
+    );
     return {
         contractSymbol: `AAPL260605${side}${String(strike * 1000).padStart(8, '0')}`,
         strike,
         lastPrice,
-        bid: lastPrice - 0.1,
-        ask: lastPrice + 0.1,
-        volume: 1_000,
-        openInterest: 5_000,
-        impliedVolatility: 0.3,
+        bid: lastPrice - FAKE_SPREAD,
+        ask: lastPrice + FAKE_SPREAD,
+        volume: FAKE_VOLUME,
+        openInterest: FAKE_OPEN_INTEREST,
+        impliedVolatility: FAKE_IMPLIED_VOL,
         inTheMoney,
     };
 }
