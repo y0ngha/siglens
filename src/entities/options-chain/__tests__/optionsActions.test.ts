@@ -340,11 +340,9 @@ describe('submitOptionsAnalysisAction — E2E force-error cookie seam', () => {
     });
 
     it('returns the forced error result when the force-error cookie is present', async () => {
+        // 액션은 .get(name)의 truthy 여부만 보므로 value만 있으면 충분하다.
         mockCookies.mockResolvedValue({
-            get: vi.fn(() => ({
-                name: 'e2e_force_analysis_error',
-                value: '1',
-            })),
+            get: vi.fn(() => ({ value: '1' })),
         } as never);
 
         const result = await submitOptionsAnalysisAction(

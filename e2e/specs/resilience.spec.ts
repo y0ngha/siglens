@@ -38,7 +38,6 @@ test.describe('widget resilience', () => {
 
         await page.goto('/AAPL/options');
 
-        // 1) 강제 실패 → 격리된 에러 fallback이 노출된다.
         await expect(page.getByText(OPTIONS_ANALYSIS_ERROR)).toBeVisible();
 
         // 에러는 한 위젯에 격리된다 — 페이지 탭 네비게이션은 여전히 살아 있다.
@@ -46,7 +45,7 @@ test.describe('widget resilience', () => {
             page.getByRole('navigation', { name: '분석 종류' })
         ).toBeVisible();
 
-        // 2) 쿠키 제거 → 재시도하면 캐시 픽스처로 복구된다.
+        // 쿠키를 비워야 재시도가 강제 에러 대신 캐시 픽스처로 복구된다.
         await context.clearCookies({ name: E2E_FORCE_ANALYSIS_ERROR_COOKIE });
         await page.getByRole('button', { name: '다시 시도' }).click();
 
