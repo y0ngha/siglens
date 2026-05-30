@@ -29,6 +29,12 @@ export default defineConfig({
     globalSetup: './e2e/setup/global-setup.ts',
     fullyParallel: true,
     retries: process.env.CI ? 2 : 0,
+    // CI에서는 워커를 1로 직렬화한다. 제약된 러너에서 단일 Next 서버 1개를 여러
+    // 워커가 공유하면, DB 쓰기 서버 액션(예: account-api-key 저장)이 Postgres/풀
+    // 경합으로 무한 pending("저장 중…")에 빠져 산발적으로 깨진다(관측: 병렬 런에서
+    // account-api-key가 15s+ 멈춤, 직렬 런에서는 통과). 속도보다 신뢰성 우선 —
+    // 무인 머지 루프를 막는 flake가 더 비싸다. 로컬은 기본 병렬 유지.
+    workers: process.env.CI ? 1 : undefined,
     // CI에서는 콜드빌드+제약 러너 지연을 흡수하도록 단언/액션/네비 타임아웃을
     // 넉넉히 잡는다(저렴한 보험). 로컬은 빠른 기본값 유지.
     timeout: process.env.CI ? 60_000 : 30_000,
