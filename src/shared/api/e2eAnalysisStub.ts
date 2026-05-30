@@ -40,13 +40,14 @@ export function isE2E(): boolean {
  * required field, or a wrong-typed field) is still caught at compile time
  * because the assertion target is the real core interface set.
  */
-const typedFixture = fixture as {
+interface E2eAnalysisFixture {
     technical: AnalysisResponse;
     overall: OverallAnalysisResponse;
     fundamental: FundamentalAnalysisResponse;
     news: NewsAnalysisResponse;
     options: OptionsAnalysisResponse;
-};
+}
+const typedFixture = fixture as E2eAnalysisFixture;
 
 /** Fixed `{ status: 'cached' }` technical analysis result for E2E runs. */
 export function e2eCachedTechnical(): SubmitAnalysisGatedResult {

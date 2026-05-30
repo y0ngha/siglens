@@ -54,22 +54,29 @@ describe('e2eCached* fixture getters', () => {
     it('e2eCachedFundamental returns a cached fundamental result', () => {
         const result = e2eCachedFundamental();
         expect(result.status).toBe('cached');
-        expect(typeof result.result).toBe('object');
-        expect(result.result).not.toBeNull();
+        if (result.status !== 'cached') throw new Error('unreachable');
+        // fundamental FundamentalAnalysisResponse anchor fields.
+        expect(result.result.overallConclusionKo).toContain(
+            'E2E 고정 분석 결과'
+        );
+        expect(result.result.overallSentiment).toBe('neutral');
     });
 
     it('e2eCachedNews returns a cached news result', () => {
         const result = e2eCachedNews();
         expect(result.status).toBe('cached');
-        expect(typeof result.result).toBe('object');
-        expect(result.result).not.toBeNull();
+        if (result.status !== 'cached') throw new Error('unreachable');
+        // news NewsAnalysisResponse anchor fields.
+        expect(result.result.currentDriverKo).toContain('E2E 고정 분석 결과');
+        expect(result.result.overallSentiment).toBe('neutral');
     });
 
     it('e2eCachedOptions returns a cached options result', () => {
         const result = e2eCachedOptions();
         expect(result.status).toBe('cached');
-        expect(typeof result.result).toBe('object');
-        expect(result.result).not.toBeNull();
+        if (result.status !== 'cached') throw new Error('unreachable');
+        // options OptionsAnalysisResponse anchor field.
+        expect(result.result.summary).toContain('E2E 고정 분석 결과');
     });
 
     it('returns a stable fixture reference across calls (no per-call rebuild)', () => {

@@ -15,8 +15,8 @@ import type {
  */
 function lastUserMessage(contents: AiContents): string {
     if (typeof contents === 'string') return contents;
-    const lastUserTurn = [...contents]
-        .reverse()
+    const lastUserTurn = contents
+        .toReversed()
         .find((turn: ConversationTurn) => turn.role === 'user');
     return lastUserTurn?.text ?? '';
 }

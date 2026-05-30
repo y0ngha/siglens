@@ -1,5 +1,8 @@
 import { test, expect } from '../support/fixtures';
-import { ANALYSIS_FIXTURE_SUMMARY_PREFIX } from '../support/constants';
+import {
+    ANALYSIS_FIXTURE_SUMMARY_PREFIX,
+    ANALYSIS_RENDER_TIMEOUT_MS,
+} from '../support/constants';
 
 /**
  * End-to-end validation of the analysis short-circuit infra (Tasks A/B).
@@ -34,9 +37,6 @@ import { ANALYSIS_FIXTURE_SUMMARY_PREFIX } from '../support/constants';
  *   - `fixture.technical.summary` starts with "E2E 고정 분석 결과" — a stable
  *     literal that only appears once the fixture-backed analysis renders.
  */
-
-// 진행 마무리 애니메이션(~9s)이 끝난 뒤에야 summary가 드러나므로 넉넉히 잡는다.
-const ANALYSIS_RENDER_TIMEOUT_MS = 20_000;
 
 test.describe('symbol analysis: cached-fixture short-circuit renders', () => {
     test('renders the AI analysis from the cached fixture', async ({

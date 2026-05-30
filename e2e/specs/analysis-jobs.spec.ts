@@ -1,5 +1,8 @@
 import { test, expect } from '../support/fixtures';
-import { ANALYSIS_FIXTURE_SUMMARY_PREFIX } from '../support/constants';
+import {
+    ANALYSIS_FIXTURE_SUMMARY_PREFIX,
+    ANALYSIS_RENDER_TIMEOUT_MS,
+} from '../support/constants';
 import { srhCommand } from '../support/srhClient';
 
 /**
@@ -39,9 +42,6 @@ const STALE_BANNER_TEXT = 'AI 분석 결과가 오래됐어요';
 // flagged as a bot and the E2E short-circuit returns `miss_no_trigger`.
 const GOOGLEBOT_UA =
     'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)';
-
-// 진행 마무리 애니메이션(~9s)이 끝난 뒤에야 fixture summary가 드러나므로 넉넉히 잡는다.
-const ANALYSIS_RENDER_TIMEOUT_MS = 20_000;
 
 // 첫 캐시 히트(force=false) 직후 useAnalysis가 30s 캐시-히트 쿨다운을 걸어 재분석
 // 버튼이 비활성화된다. 렌더(~9s) + 쿨다운 해제(~30s) + force 재렌더(~9s)를 모두

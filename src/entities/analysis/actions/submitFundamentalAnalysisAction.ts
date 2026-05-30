@@ -23,16 +23,17 @@ export async function submitFundamentalAnalysisAction(
     symbol: string,
     modelId: SubmitFundamentalAnalysisOptions['modelId']
 ): Promise<SubmitFundamentalAnalysisActionResult> {
-    // E2E short-circuits the LLM/worker; returns a deterministic cached fixture
-    // (see e2eAnalysisStub). The stub + JSON fixture are require'd (not statically
-    // imported) under the inline E2E guard so they stay out of the production
-    // bundle (matches getMarketDataProvider).
-    if (process.env.E2E_TEST === '1') {
-        const { e2eCachedFundamental } =
-            require('@/shared/api/e2eAnalysisStub') as typeof import('@/shared/api/e2eAnalysisStub');
-        return e2eCachedFundamental();
-    }
     try {
+        // E2E short-circuits the LLM/worker; returns a deterministic cached fixture
+        // (see e2eAnalysisStub). The stub + JSON fixture are require'd (not statically
+        // imported) under the inline E2E guard so they stay out of the production
+        // bundle (matches getMarketDataProvider). Lives inside try so a require()
+        // throw can't propagate to the client (mirrors submitAnalysisAction).
+        if (process.env.E2E_TEST === '1') {
+            const { e2eCachedFundamental } =
+                require('@/shared/api/e2eAnalysisStub') as typeof import('@/shared/api/e2eAnalysisStub');
+            return e2eCachedFundamental();
+        }
         const requestHeaders = await headers();
         const skipEnqueueIfMiss = isBot(requestHeaders);
 
