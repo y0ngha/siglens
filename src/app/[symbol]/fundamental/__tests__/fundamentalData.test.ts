@@ -130,6 +130,34 @@ describe('fundamentalData', () => {
                 psr: null,
             },
         ]);
+        expect(fundamentalClient.getKeyMetricsTtm).toHaveBeenCalledWith('GOOG');
+    });
+
+    it('getStockPeers defaults per/psr to null when key-metrics fields are null', async () => {
+        fundamentalClient.getStockPeers.mockResolvedValueOnce([
+            { symbol: 'AMZN', companyName: 'Amazon', marketCap: 1_500_000 },
+        ]);
+        fundamentalClient.getKeyMetricsTtm.mockResolvedValueOnce({
+            peRatioTTM: null,
+            priceToSalesRatioTTM: null,
+            pbRatioTTM: null,
+            pegRatioTTM: null,
+            enterpriseValueOverEBITDATTM: null,
+            epsTTM: null,
+        });
+
+        const result = await getStockPeers('AAPL');
+
+        expect(result).toEqual([
+            {
+                symbol: 'AMZN',
+                companyName: 'Amazon',
+                marketCap: 1_500_000,
+                per: null,
+                psr: null,
+            },
+        ]);
+        expect(fundamentalClient.getKeyMetricsTtm).toHaveBeenCalledWith('AMZN');
     });
 
     it('getKeyMetricsTtm returns null', async () => {
