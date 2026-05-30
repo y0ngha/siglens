@@ -29,6 +29,27 @@ export async function submitAnalysisAction(
     modelId?: ModelId
 ): Promise<SubmitAnalysisActionResult> {
     try {
+        // E2E short-circuits the LLM/worker (see e2eAnalysisStub). The
+        // short-circuit stays bot-aware so the crawler path (miss_no_trigger →
+        // BotBlockedNotice) remains reachable under E2E: a bot User-Agent yields
+        // the core MissNoTrigger shape just like prod's skipEnqueueIfMiss + cache
+        // miss, while a normal UA gets the deterministic cached fixture. Lives
+        // inside try so `await headers()` can't propagate a throw to the client.
+        // Only this (chart/technical) action does the E2E bot check: it's the
+        // sole analysis surface that renders BotBlockedNotice, so it's the only
+        // miss_no_trigger path worth exercising. The fundamental/news/options/
+        // overall submit actions have no bot-block UI, so they intentionally skip
+        // the check and always return their cached fixture.
+        // The stub + JSON fixture are require'd (not statically imported) so they
+        // stay out of the production bundle (matches getMarketDataProvider).
+        if (process.env.E2E_TEST === '1') {
+            const requestHeaders = await headers();
+            if (isBot(requestHeaders)) return { status: 'miss_no_trigger' };
+            const { e2eCachedTechnical } =
+                require('@/shared/api/e2eAnalysisStub') as typeof import('@/shared/api/e2eAnalysisStub');
+            return e2eCachedTechnical();
+        }
+
         const requestHeaders = await headers();
         const skipEnqueueIfMiss = isBot(requestHeaders);
         const marketDataProvider = getMarketDataProvider();

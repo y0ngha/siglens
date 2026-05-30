@@ -1,7 +1,7 @@
 import type { EarningsCalendarItem } from '@y0ngha/siglens-core';
 import { MS_PER_DAY } from '@/shared/config/time';
 import { DrizzleEarningsReportsRepository } from '@/entities/earnings-report';
-import { FmpFundamentalClient } from '@/shared/api/fmp/fundamentalClient';
+import { getFundamentalDataProvider } from '@/shared/api/fmp/getFundamentalDataProvider';
 import { todayKstIsoDate } from '@/shared/lib/dateKey';
 import type { SiglensDatabase } from '@/shared/db/types';
 
@@ -26,7 +26,7 @@ export async function getNextEarningsReport(
 
     if (isStale) {
         try {
-            const client = new FmpFundamentalClient();
+            const client = getFundamentalDataProvider();
             const reports = await client.getEarningsReports(
                 symbol,
                 EARNINGS_REPORT_FMP_LIMIT

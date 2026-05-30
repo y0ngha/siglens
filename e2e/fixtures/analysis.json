@@ -1,0 +1,99 @@
+{
+    "technical": {
+        "summary": "E2E 고정 분석 결과: 기술적 분석 요약입니다.\n추세는 중립이며 변동성은 보통입니다.",
+        "trend": "neutral",
+        "indicatorResults": [
+            {
+                "indicatorName": "RSI",
+                "signals": [
+                    {
+                        "type": "skill",
+                        "description": "RSI 50으로 중립 구간입니다.",
+                        "strength": "weak",
+                        "trend": "neutral"
+                    }
+                ]
+            }
+        ],
+        "riskLevel": "medium",
+        "keyLevels": {
+            "support": [{ "price": 190.0, "reason": "E2E 고정 지지선" }],
+            "resistance": [{ "price": 200.0, "reason": "E2E 고정 저항선" }]
+        },
+        "priceTargets": {
+            "bullish": {
+                "targets": [
+                    { "price": 205.0, "basis": "E2E 고정 상방 목표가" }
+                ],
+                "condition": "200 돌파 시"
+            },
+            "bearish": {
+                "targets": [
+                    { "price": 185.0, "basis": "E2E 고정 하방 목표가" }
+                ],
+                "condition": "190 이탈 시"
+            }
+        },
+        "patternSummaries": [],
+        "strategyResults": [],
+        "candlePatterns": [],
+        "trendlines": [],
+        "analyzedAt": "2026-01-01T00:00:00.000Z"
+    },
+    "overall": {
+        "headlineKo": "E2E 고정 분석 결과: 종합 분석 헤드라인입니다.",
+        "technicalBulletsKo": ["기술적: 중립 추세 유지"],
+        "fundamentalBulletsKo": ["펀더멘털: 밸류에이션 적정"],
+        "newsBulletsKo": ["뉴스: 특이 이슈 없음"],
+        "optionsBulletsKo": ["옵션: 포지셔닝 중립"],
+        "integratedConclusionKo": "E2E 고정 분석 결과: 4축 종합 결론은 중립입니다.",
+        "scenarios": [
+            {
+                "name": "neutral",
+                "triggerConditionKo": "현 구간 유지",
+                "priceRangeKo": "190 ~ 200"
+            }
+        ],
+        "riskFactorsKo": ["E2E 고정 리스크 요인"],
+        "optionsOiStale": false
+    },
+    "fundamental": {
+        "overallConclusionKo": "E2E 고정 분석 결과: 펀더멘털 종합 결론입니다.",
+        "categoryAssessments": [
+            {
+                "category": "valuation",
+                "sentiment": "neutral",
+                "rationaleKo": "밸류에이션은 적정 수준입니다."
+            }
+        ],
+        "riskFactorsKo": ["E2E 고정 펀더멘털 리스크"],
+        "overallSentiment": "neutral"
+    },
+    "news": {
+        "currentDriverKo": "E2E 고정 분석 결과: 현재 가격을 움직이는 뉴스 동인입니다.",
+        "keyEventsKo": [
+            "E2E 고정 주요 이벤트 1",
+            "E2E 고정 주요 이벤트 2",
+            "E2E 고정 주요 이벤트 3"
+        ],
+        "upcomingEventsKo": ["E2E 고정 예정 이벤트"],
+        "overallSentiment": "neutral"
+    },
+    "options": {
+        "summary": "E2E 고정 분석 결과: 옵션 분석 요약입니다.",
+        "perExpiration": [
+            {
+                "expirationDate": "2026-01-16",
+                "commentary": "E2E 고정 만기별 코멘터리입니다.",
+                "tone": "neutral"
+            }
+        ],
+        "signals": [
+            {
+                "kind": "neutral",
+                "message": "E2E 고정 옵션 시그널입니다."
+            }
+        ],
+        "analyzedAt": "2026-01-01T00:00:00.000Z"
+    }
+}

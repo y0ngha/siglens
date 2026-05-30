@@ -35,9 +35,17 @@ vi.mock('@y0ngha/siglens-core', async () => {
     };
 });
 
-vi.mock('@/entities/llm-provider', () => ({
-    callAiProviderRouter: vi.fn(),
-}));
+vi.mock('@/entities/llm-provider', () => {
+    // chatAction resolves the provider via getLlmProvider() (barrel re-export).
+    // Outside E2E it returns callAiProviderRouter, so the mocked getLlmProvider
+    // returns the same mocked router instance the assertions reference by
+    // identity ({ callAiProvider: callAiProviderRouter }).
+    const callAiProviderRouter = vi.fn();
+    return {
+        callAiProviderRouter,
+        getLlmProvider: vi.fn(() => callAiProviderRouter),
+    };
+});
 
 vi.mock('@/entities/session/lib/getCurrentUser', () => ({
     getCurrentUser: vi.fn(),

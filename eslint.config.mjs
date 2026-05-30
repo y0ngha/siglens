@@ -49,13 +49,23 @@ const eslintConfig = defineConfig([
         },
     },
     {
-        // These two factories use a runtime require() to keep the E2E-only
-        // postgres-js client / fake market provider out of the production bundle
-        // (a static import would bundle them; async import would force every
-        // synchronous getDatabaseClient/getMarketDataProvider caller to await).
+        // These factories / actions use a runtime require() to keep the E2E-only
+        // postgres-js client / fake market provider / analysis stub + JSON fixture
+        // out of the production bundle (a static import would bundle them; async
+        // import would force every synchronous caller to await). The submit
+        // actions require('@/shared/api/e2eAnalysisStub') only under the inline
+        // E2E_TEST guard, matching getMarketDataProvider's require-gate.
         files: [
             'src/shared/db/client.ts',
             'src/shared/api/market/getMarketDataProvider.ts',
+            'src/shared/api/fmp/getFundamentalDataProvider.ts',
+            'src/entities/analysis/actions/submitAnalysisAction.ts',
+            'src/entities/analysis/actions/submitOverallAnalysisAction.ts',
+            'src/entities/analysis/actions/submitFundamentalAnalysisAction.ts',
+            'src/entities/news-article/actions/submitNewsAnalysisAction.ts',
+            'src/entities/news-article/lib/getNewsClient.ts',
+            'src/entities/options-chain/actions/optionsActions.ts',
+            'src/entities/options-chain/lib/getOptionsProvider.ts',
         ],
         rules: { '@typescript-eslint/no-require-imports': 'off' },
     },
@@ -235,10 +245,14 @@ const eslintConfig = defineConfig([
         },
     },
     {
-        // FakeMarketProvider는 E2E_TEST 게이트 뒤에서 @e2e/fixtures/bars.json을
-        // 소비하는 유일한 합법 consumer. @e2e/* 금지만 제외하고 나머지 FSD/deep-import
-        // 제한은 그대로 유지한다 (위 src/** 블록의 patterns를 @e2e 그룹만 빼고 재명시).
-        files: ['src/shared/api/market/FakeMarketProvider.ts'],
+        // FakeMarketProvider / e2eAnalysisStub는 E2E_TEST 게이트 뒤에서
+        // @e2e/fixtures/*.json을 소비하는 합법 consumer다. @e2e/* 금지만 제외하고
+        // 나머지 FSD/deep-import 제한은 그대로 유지한다 (위 src/** 블록의 patterns를
+        // @e2e 그룹만 빼고 재명시).
+        files: [
+            'src/shared/api/market/FakeMarketProvider.ts',
+            'src/shared/api/e2eAnalysisStub.ts',
+        ],
         rules: {
             'no-restricted-imports': [
                 'error',

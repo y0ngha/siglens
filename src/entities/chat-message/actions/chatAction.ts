@@ -1,6 +1,6 @@
 'use server';
 
-import { callAiProviderRouter } from '@/entities/llm-provider';
+import { getLlmProvider } from '@/entities/llm-provider';
 import { getCurrentUser } from '@/entities/session/lib/getCurrentUser';
 import { getDatabaseClient } from '@/shared/db/client';
 import { DrizzleUserApiKeyRepository } from '@/entities/api-key';
@@ -152,7 +152,7 @@ export async function chatAction(
                     : {}),
             },
             {
-                callAiProvider: callAiProviderRouter,
+                callAiProvider: getLlmProvider(),
             }
         );
         return r;
