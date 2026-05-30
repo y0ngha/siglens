@@ -81,6 +81,16 @@ jobs:
                   docker compose -f docker-compose.e2e.yml logs
                   exit 1
 
+            # Migrate + seed the e2e DB BEFORE the cold prod build runs. The
+            # webServer build statically prerenders /privacy and /terms, which
+            # query the `terms` table — so the schema AND active seed rows must
+            # exist before `next build`, or the build worker dies with
+            # `relation "terms" does not exist` (42P01). This runs the SAME
+            # idempotent global-setup (bootstrap + migrate + seed) that
+            # test:e2e's globalSetup runs again later; the second run is a no-op.
+            - name: Migrate + seed e2e DB
+              run: yarn e2e:db
+
             # CI=1 → reuseExistingServer is false (always cold prod build) and
             # retries: 2. globalSetup runs migrate+seed via compose exec, then
             # the webServer cold-builds the prod app with E2E_TEST=1 sourced from
