@@ -1096,8 +1096,8 @@ describe('AnalysisPanel — missing/partial field resilience', () => {
         ).not.toThrow();
 
         // 알 수 없는 방향은 중립 fallback 라벨('추세선')로 degrade한다.
-        // 섹션 헤더 '추세선' + fallback 라벨 '추세선' = 최소 2개.
+        // 섹션 헤더 '추세선' 1 + fallback 라벨 '추세선' 1 = 정확히 2개.
         const trendlineTexts = screen.getAllByText('추세선');
-        expect(trendlineTexts.length).toBeGreaterThanOrEqual(2);
+        expect(trendlineTexts.length).toBe(2);
     });
 });

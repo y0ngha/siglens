@@ -22,6 +22,9 @@ const EMPTY_KEY_LEVELS: KeyLevels = {
 export function normalizeAnalysisResponse(
     analysis: AnalysisResponse
 ): AnalysisResponse {
+    // `AnalysisResponse` types keyLevels as required, but an LLM partial response
+    // can omit it at runtime — widen to optional so the null/undefined guard below
+    // is reachable (the whole point of this normalizer).
     const rawKeyLevels = analysis.keyLevels as KeyLevels | undefined;
     const keyLevels: KeyLevels =
         rawKeyLevels === undefined || rawKeyLevels === null
