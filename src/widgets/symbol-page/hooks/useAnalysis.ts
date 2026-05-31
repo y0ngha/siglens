@@ -5,6 +5,7 @@ import {
     useCallback,
     useEffect,
     useLayoutEffect,
+    useMemo,
     useRef,
     useState,
 } from 'react';
@@ -26,6 +27,7 @@ import {
     tryAcquireReanalyzeCooldown,
 } from '@/entities/analysis';
 import { sleep } from '@/shared/lib/sleep';
+import { normalizeAnalysisResponse } from '@/widgets/analysis/utils/normalizeAnalysisResponse';
 import { CHART_ANALYSIS_POLL_INTERVAL_MS } from '@/shared/config/pollingConfig';
 import { usePageHideCancel } from '@/shared/hooks/usePageHideCancel';
 import type { CancelJobEntry } from '@/shared/lib/types';
@@ -247,7 +249,14 @@ export function useAnalysis({
     });
 
     // 5. Derived variables
-    const analysis = analysisResult ?? initialAnalysis;
+    // `@y0ngha/siglens-core`가 부분 응답(누락된 배열/객체)을 돌려줄 수 있으므로
+    // 소스에서 1회 정규화해 타입 계약을 런타임에서 다시 보장한다. 이 결과를
+    // AnalysisPanel·buildExpertAnalysisReport·useAnalysisDerivedData가 공유한다.
+    const rawAnalysis = analysisResult ?? initialAnalysis;
+    const analysis = useMemo(
+        () => normalizeAnalysisResponse(rawAnalysis),
+        [rawAnalysis]
+    );
     const isAnalyzing =
         isSubmitting ||
         isPolling ||

@@ -138,7 +138,7 @@ function buildKeyLevelsBlock(
 function buildEvidenceBlock(analysis: AnalysisResponse): string | null {
     const lines: string[] = [];
 
-    const indicatorLines = analysis.indicatorResults
+    const indicatorLines = (analysis.indicatorResults ?? [])
         .flatMap(result =>
             result.signals.map(signal => ({
                 title: result.indicatorName,
@@ -152,7 +152,7 @@ function buildEvidenceBlock(analysis: AnalysisResponse): string | null {
         );
     lines.push(...indicatorLines);
 
-    const patternLines = analysis.patternSummaries
+    const patternLines = (analysis.patternSummaries ?? [])
         .filter(pattern => pattern.detected)
         .map(
             pattern =>
@@ -162,7 +162,7 @@ function buildEvidenceBlock(analysis: AnalysisResponse): string | null {
         );
     lines.push(...patternLines);
 
-    const strategyLines = analysis.strategyResults.map(
+    const strategyLines = (analysis.strategyResults ?? []).map(
         strategy =>
             `- ${strategy.strategyName}\n  - ${normalizeWhitespace(
                 strategy.summary
@@ -176,33 +176,28 @@ function buildEvidenceBlock(analysis: AnalysisResponse): string | null {
 
 function buildScenarioBlock(analysis: AnalysisResponse): string | null {
     const lines: string[] = [];
+    // priceTargets는 부분 응답에서 누락될 수 있으므로 방어적으로 기본값을 둔다.
+    const priceTargets = analysis.priceTargets ?? {
+        bullish: null,
+        bearish: null,
+    };
 
-    if (
-        analysis.priceTargets.bullish &&
-        analysis.priceTargets.bullish.targets.length > 0
-    ) {
+    if (priceTargets.bullish && priceTargets.bullish.targets.length > 0) {
         lines.push(
             `- 상방: ${normalizeWhitespace(
-                analysis.priceTargets.bullish.condition
+                priceTargets.bullish.condition
             )} → ${formatPriceList(
-                analysis.priceTargets.bullish.targets.map(
-                    target => target.price
-                )
+                priceTargets.bullish.targets.map(target => target.price)
             )}`
         );
     }
 
-    if (
-        analysis.priceTargets.bearish &&
-        analysis.priceTargets.bearish.targets.length > 0
-    ) {
+    if (priceTargets.bearish && priceTargets.bearish.targets.length > 0) {
         lines.push(
             `- 하방: ${normalizeWhitespace(
-                analysis.priceTargets.bearish.condition
+                priceTargets.bearish.condition
             )} → ${formatPriceList(
-                analysis.priceTargets.bearish.targets.map(
-                    target => target.price
-                )
+                priceTargets.bearish.targets.map(target => target.price)
             )}`
         );
     }
@@ -273,20 +268,29 @@ export function buildExpertAnalysisReport({
     analysis,
     keyLevels,
 }: BuildExpertAnalysisReportInput): string {
-    const supportLevels = keyLevels.support.toSorted((a, b) => {
+    // keyLevels(ClusteredKeyLevels)는 부분 객체로 전달될 수 있으므로 support/
+    // resistance 배열을 입구에서 1회 정규화한다 — 이후 helper들이 안전한 배열을
+    // 공유한다.
+    const safeKeyLevels: ClusteredKeyLevels = {
+        support: keyLevels.support ?? [],
+        resistance: keyLevels.resistance ?? [],
+        poc: keyLevels.poc,
+    };
+
+    const supportLevels = safeKeyLevels.support.toSorted((a, b) => {
         return a.price - b.price;
     });
-    const resistanceLevels = keyLevels.resistance.toSorted((a, b) => {
+    const resistanceLevels = safeKeyLevels.resistance.toSorted((a, b) => {
         return b.price - a.price;
     });
 
     const sections = [
         buildTitle(symbol),
         buildInterpretation(analysis, supportLevels, resistanceLevels),
-        buildKeyLevelsBlock(analysis, keyLevels),
+        buildKeyLevelsBlock(analysis, safeKeyLevels),
         buildEvidenceBlock(analysis),
         buildScenarioBlock(analysis),
-        `대응 관점:\n${buildResponseStance(analysis, keyLevels)}`,
+        `대응 관점:\n${buildResponseStance(analysis, safeKeyLevels)}`,
         `리스크:\n${buildRiskNote(analysis)}`,
         '' + `[출처] 기술적 주가 분석 > siglens.io/${symbol}`,
     ].filter(
