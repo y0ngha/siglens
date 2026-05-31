@@ -1,3 +1,5 @@
+name: siglens-e2e
+
 services:
     postgres:
         image: postgres:17
