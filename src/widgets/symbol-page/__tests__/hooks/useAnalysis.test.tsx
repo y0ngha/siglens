@@ -287,4 +287,43 @@ describe('useAnalysis', () => {
             expect(mockCancel).not.toHaveBeenCalled();
         });
     });
+
+    // 소스 정규화 — useAnalysis는 부분 initialAnalysis(누락된 배열/객체)를
+    // normalizeAnalysisResponse로 정규화해 다운스트림(AnalysisPanel 등)에
+    // 타입 계약을 보장한다.
+    describe('정규화', () => {
+        it('부분 initialAnalysis의 누락 배열/객체 필드를 기본값으로 채워 노출한다', () => {
+            const partialInitial = {
+                summary: '요약',
+                trend: 'bullish',
+                riskLevel: 'medium',
+                // 모든 배열/객체 필드 누락
+            } as unknown as AnalysisResponse;
+
+            const { result } = renderHook(
+                () =>
+                    useAnalysis({
+                        ...makeOptions(),
+                        initialAnalysis: partialInitial,
+                    }),
+                { wrapper: makeWrapper() }
+            );
+
+            expect(result.current.analysis.indicatorResults).toEqual([]);
+            expect(result.current.analysis.patternSummaries).toEqual([]);
+            expect(result.current.analysis.strategyResults).toEqual([]);
+            expect(result.current.analysis.trendlines).toEqual([]);
+            expect(result.current.analysis.keyLevels).toEqual({
+                support: [],
+                resistance: [],
+            });
+            expect(result.current.analysis.priceTargets).toEqual({
+                bullish: null,
+                bearish: null,
+            });
+            // 잘 형성된 필드는 그대로 보존된다.
+            expect(result.current.analysis.summary).toBe('요약');
+            expect(result.current.analysis.trend).toBe('bullish');
+        });
+    });
 });
