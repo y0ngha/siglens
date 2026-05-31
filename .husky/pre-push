@@ -5,6 +5,11 @@ echo "🔍 Running pre-push checks..."
 
 tmp_dir=$(mktemp -d)
 status=0
+total_checks=5
+
+if [ "${SIGLENS_RELEASE_E2E:-}" = "1" ]; then
+    total_checks=6
+fi
 
 cleanup() {
     rm -rf "$tmp_dir"
@@ -33,18 +38,22 @@ run_check() {
     return "$code"
 }
 
-run_check "1/5 format:check" "$tmp_dir/format-check.log" yarn format:check &
+run_check "1/$total_checks format:check" "$tmp_dir/format-check.log" yarn format:check &
 pid_format=$!
 
-run_check "2/5 lint" "$tmp_dir/lint.log" yarn lint &
+run_check "2/$total_checks lint" "$tmp_dir/lint.log" yarn lint &
 pid_lint=$!
 
 wait "$pid_format" || status=1
 wait "$pid_lint" || status=1
 
-run_check "3/5 typecheck" "$tmp_dir/typecheck.log" yarn typecheck || status=1
-run_check "4/5 test" "$tmp_dir/test.log" yarn test:quiet || status=1
-run_check "5/5 build" "$tmp_dir/build.log" yarn build || status=1
+run_check "3/$total_checks typecheck" "$tmp_dir/typecheck.log" yarn typecheck || status=1
+run_check "4/$total_checks test" "$tmp_dir/test.log" yarn test:quiet || status=1
+run_check "5/$total_checks build" "$tmp_dir/build.log" yarn build || status=1
+
+if [ "${SIGLENS_RELEASE_E2E:-}" = "1" ]; then
+    run_check "6/$total_checks e2e" "$tmp_dir/e2e.log" yarn e2e || status=1
+fi
 
 if [ "$status" -ne 0 ]; then
     echo ""

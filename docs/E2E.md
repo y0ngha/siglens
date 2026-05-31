@@ -48,6 +48,9 @@
 `package.json`에 정의된 스크립트만 사용합니다.
 
 ```bash
+# CI/release pre-push와 같은 전체 순서로 실행
+yarn e2e
+
 # 1. Docker 백엔드 기동 (Postgres 5433, Redis 6380, SRH 8079)
 yarn e2e:up
 
@@ -68,6 +71,7 @@ yarn e2e:down
 
 | 스크립트         | 명령                                                                | 역할                                                          |
 | ---------------- | ------------------------------------------------------------------- | ------------------------------------------------------------- |
+| `e2e`            | `e2e/run-e2e.sh`                                                    | Docker 실행 확인 후 CI 순서대로 전체 E2E 실행                 |
 | `e2e:up`         | `docker compose -f docker-compose.e2e.yml up -d`                    | Postgres/Redis/SRH 컨테이너 기동                              |
 | `e2e:down`       | `docker compose -f docker-compose.e2e.yml down -v`                  | 컨테이너 + **볼륨** 제거 (데이터 리셋)                        |
 | `e2e:db`         | `tsx e2e/setup/run-global-setup.ts`                                 | Playwright 없이 migrate + seed만 실행                         |
