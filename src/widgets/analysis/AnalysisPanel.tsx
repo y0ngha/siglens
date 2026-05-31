@@ -579,14 +579,25 @@ const TRENDLINE_BG_COLOR: Record<TrendlineDirection, string> = {
     descending: 'bg-chart-bearish',
 };
 
+// 방향 enum이 미래에 확장돼 ascending|descending 밖의 값이 들어오면 Record
+// 조회는 undefined를 돌려준다. 라벨/색상에 fallback을 둬 undefined-class
+// 크래시 없이 중립 표시로 degrade한다.
+const TRENDLINE_FALLBACK_LABEL = '추세선';
+const TRENDLINE_FALLBACK_COLOR = 'text-secondary-400';
+const TRENDLINE_FALLBACK_BG = 'bg-secondary-500';
+
 interface TrendlineItemProps {
     trendline: Trendline;
 }
 
 function TrendlineItem({ trendline }: TrendlineItemProps) {
-    const label = TRENDLINE_DIRECTION_LABEL[trendline.direction];
-    const colorClass = TRENDLINE_COLOR[trendline.direction];
-    const bgClass = TRENDLINE_BG_COLOR[trendline.direction];
+    const label =
+        TRENDLINE_DIRECTION_LABEL[trendline.direction] ??
+        TRENDLINE_FALLBACK_LABEL;
+    const colorClass =
+        TRENDLINE_COLOR[trendline.direction] ?? TRENDLINE_FALLBACK_COLOR;
+    const bgClass =
+        TRENDLINE_BG_COLOR[trendline.direction] ?? TRENDLINE_FALLBACK_BG;
 
     return (
         <div className="bg-secondary-700/40 flex items-center gap-2 rounded px-3 py-2">
@@ -778,20 +789,36 @@ export function AnalysisPanel({
     // useAnalysisProgress 훅이 타이머/상태를 소유하므로, 데스크톱·모바일 두 인스턴스가
     // 동일한 진행 상태를 표시하고 모바일 시트의 remount에도 상태가 유지된다.
 
-    const detectedPatterns = analysis.patternSummaries.filter(p => p.detected);
+    // 방어적 기본값 — analysis는 useAnalysis에서 normalizeAnalysisResponse로
+    // 정규화되지만, AnalysisPanel은 barrel(index.ts)로 외부에 단독 노출되므로
+    // 부분 응답이 직접 전달되는 경우까지 컴포넌트에서 한 번 더 방어한다.
+    const patternSummaries = analysis.patternSummaries ?? [];
+    const strategyResults = analysis.strategyResults ?? [];
+    const indicatorResults = analysis.indicatorResults ?? [];
+    const trendlines = analysis.trendlines ?? [];
+    const priceTargets = analysis.priceTargets ?? {
+        bullish: null,
+        bearish: null,
+    };
+
+    // keyLevels prop은 ClusteredKeyLevels(analysis 외부 값)이므로 위 정규화로
+    // 보장되지 않는다. 컴포넌트 경계에서 support/resistance 배열을 기본값으로
+    // 채워 무방비 .length / .map 접근으로 인한 렌더 크래시를 방지한다.
+    const supportLevels = keyLevels.support ?? [];
+    const resistanceLevels = keyLevels.resistance ?? [];
+
+    const detectedPatterns = patternSummaries.filter(p => p.detected);
     const hasDetectedPatterns = detectedPatterns.length > 0;
 
-    const patternSkillNames = new Set(
-        analysis.patternSummaries.map(p => p.skillName)
-    );
+    const patternSkillNames = new Set(patternSummaries.map(p => p.skillName));
 
-    const detectedStrategyResults = analysis.strategyResults.filter(
+    const detectedStrategyResults = strategyResults.filter(
         s =>
             s.confidenceWeight >= MIN_CONFIDENCE_WEIGHT &&
             !patternSkillNames.has(s.strategyName)
     );
 
-    const displayedIndicatorResults = analysis.indicatorResults.filter(
+    const displayedIndicatorResults = indicatorResults.filter(
         r => r.indicatorName !== '' && !patternSkillNames.has(r.indicatorName)
     );
 
@@ -956,8 +983,8 @@ export function AnalysisPanel({
                         />
                     )}
 
-                    {(keyLevels.support.length > 0 ||
-                        keyLevels.resistance.length > 0 ||
+                    {(supportLevels.length > 0 ||
+                        resistanceLevels.length > 0 ||
                         keyLevels.poc !== undefined) && (
                         <div className="flex flex-col gap-2">
                             <div className="flex items-center">
@@ -967,12 +994,12 @@ export function AnalysisPanel({
                                 <KeyLevelsHeaderInfo />
                             </div>
                             <div className="grid grid-cols-2 gap-3">
-                                {keyLevels.resistance.length > 0 && (
+                                {resistanceLevels.length > 0 && (
                                     <div className="flex flex-col gap-1">
                                         <span className="text-secondary-500 text-xs">
                                             저항
                                         </span>
-                                        {keyLevels.resistance.map(level => (
+                                        {resistanceLevels.map(level => (
                                             <div
                                                 key={`resistance-${level.price}`}
                                                 className="flex flex-col"
@@ -996,12 +1023,12 @@ export function AnalysisPanel({
                                         ))}
                                     </div>
                                 )}
-                                {keyLevels.support.length > 0 && (
+                                {supportLevels.length > 0 && (
                                     <div className="flex flex-col gap-1">
                                         <span className="text-secondary-500 text-xs">
                                             지지
                                         </span>
-                                        {keyLevels.support.map(level => (
+                                        {supportLevels.map(level => (
                                             <div
                                                 key={`support-${level.price}`}
                                                 className="flex flex-col"
@@ -1048,7 +1075,7 @@ export function AnalysisPanel({
                         </div>
                     )}
 
-                    {analysis.trendlines.length > 0 && (
+                    {trendlines.length > 0 && (
                         <div className="flex flex-col gap-2">
                             <div className="flex items-center justify-between">
                                 <span className="text-secondary-500 text-xs font-semibold tracking-wide uppercase">
@@ -1056,7 +1083,7 @@ export function AnalysisPanel({
                                 </span>
                             </div>
                             <div className="flex flex-col gap-1.5">
-                                {analysis.trendlines.map(trendline => (
+                                {trendlines.map(trendline => (
                                     <TrendlineItem
                                         key={`trendline-${trendline.direction}-${trendline.start.time}-${trendline.end.time}`}
                                         trendline={trendline}
@@ -1066,10 +1093,8 @@ export function AnalysisPanel({
                         </div>
                     )}
 
-                    {((analysis.priceTargets.bullish?.targets.length ?? 0) >
-                        0 ||
-                        (analysis.priceTargets.bearish?.targets.length ?? 0) >
-                            0) && (
+                    {((priceTargets.bullish?.targets.length ?? 0) > 0 ||
+                        (priceTargets.bearish?.targets.length ?? 0) > 0) && (
                         <div className="flex flex-col gap-2">
                             <span className="text-secondary-500 text-xs font-semibold tracking-wide uppercase">
                                 가격 목표
@@ -1077,12 +1102,12 @@ export function AnalysisPanel({
                             <div className="grid grid-cols-2 gap-3">
                                 <PriceScenarioSection
                                     label="상승"
-                                    scenario={analysis.priceTargets.bullish}
+                                    scenario={priceTargets.bullish}
                                     colorClass="text-chart-bullish"
                                 />
                                 <PriceScenarioSection
                                     label="하락"
-                                    scenario={analysis.priceTargets.bearish}
+                                    scenario={priceTargets.bearish}
                                     colorClass="text-chart-bearish"
                                 />
                             </div>

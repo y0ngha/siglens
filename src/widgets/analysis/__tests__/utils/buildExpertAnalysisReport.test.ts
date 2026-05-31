@@ -333,4 +333,33 @@ describe('buildExpertAnalysisReport', () => {
         expect(result).not.toContain('시나리오:');
         expect(result).not.toContain('진입 추천');
     });
+
+    // 부분/누락 입력 방어 — analysis의 배열 필드 누락과 keyLevels의 support/
+    // resistance 누락에도 throw 없이 리포트를 생성해야 한다.
+    it('생성 시 누락된 배열 필드와 부분 keyLevels를 안전하게 처리한다', () => {
+        const partialAnalysis = {
+            summary: '요약',
+            trend: 'neutral',
+            riskLevel: 'medium',
+            // indicatorResults / patternSummaries / strategyResults / priceTargets 누락
+        } as unknown as AnalysisResponse;
+
+        const partialKeyLevels = {
+            poc: { price: 210, reason: '거래량 중심' },
+            // support / resistance 누락
+        } as unknown as ClusteredKeyLevels;
+
+        const result = buildExpertAnalysisReport({
+            symbol: 'nvda',
+            analysis: partialAnalysis,
+            keyLevels: partialKeyLevels,
+        });
+
+        expect(result).toContain('[NVDA] 기술적 분석 리포트');
+        // PoC만 존재하므로 주요 가격 구간에 PoC 라인이 포함된다.
+        expect(result).toContain('PoC: 210.00');
+        // 근거/시나리오 블록은 비어 생략된다.
+        expect(result).not.toContain('기술적 근거:');
+        expect(result).not.toContain('시나리오:');
+    });
 });

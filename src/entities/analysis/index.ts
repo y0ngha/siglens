@@ -28,4 +28,6 @@ export {
 
 export { resolveConflicts } from './lib/resolveConflicts';
 
+export { normalizeAnalysisResponse } from './lib/normalizeAnalysisResponse';
+
 // actions are imported from @/entities/analysis/actions
