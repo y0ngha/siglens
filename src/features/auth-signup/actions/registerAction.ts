@@ -134,11 +134,11 @@ export async function registerAction(
         );
         redirect(next);
     } catch (err) {
-        console.error('Error in registerAction:', err);
         // Re-throw Next.js redirect (not an error — it's a control-flow signal).
         if (err instanceof Error && err.message.startsWith('NEXT_REDIRECT')) {
             throw err;
         }
+        console.error('Error in registerAction:', err);
         return {
             error: {
                 code: 'service_unavailable',

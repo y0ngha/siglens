@@ -14,6 +14,7 @@ import { fetchOptionsSnapshot } from '../lib/optionsDataCache';
 import { getCurrentUser } from '@/entities/session/lib/getCurrentUser';
 import { resolveTierAndByok, buildGateError } from '@/shared/lib/byokGate';
 import { isBot } from '@/shared/api/isBot';
+import { isE2E } from '@/shared/api/e2eEnv';
 import type {
     AnalysisGateBlockedResult,
     OptionsExpirationSelector,
@@ -42,7 +43,7 @@ export async function submitOptionsAnalysisAction(
         // bundle; the branch is dead when E2E_TEST is unset). Dynamic import (vs a
         // bare require) is also resolvable by the vitest runner, so this branch is
         // unit-tested. Inside try so a load failure can't propagate to the client.
-        if (process.env.E2E_TEST === '1') {
+        if (isE2E()) {
             const stub = await import('@/shared/api/e2eAnalysisStub');
             // resilience 스펙이 설정하는 force-error 쿠키가 있으면 일시적 실패를
             // 결정적으로 주입해 에러 바운더리 → 재시도 → 복구를 검증할 수 있게 한다.

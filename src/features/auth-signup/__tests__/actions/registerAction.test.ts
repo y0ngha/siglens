@@ -495,5 +495,25 @@ describe('registerAction', () => {
                 expect.objectContaining({ value: 'tok' })
             );
         });
+
+        it('redirect 제어 신호는 에러 로그로 기록하지 않는다', async () => {
+            const errorSpy = vi
+                .spyOn(console, 'error')
+                .mockImplementation(() => undefined);
+            mockRegister.mockResolvedValue({ ok: true, user: FAKE_USER });
+            mockLogin.mockResolvedValue({
+                ok: true,
+                user: FAKE_USER,
+                session: { id: 's1' } as never,
+                cookie: FAKE_COOKIE,
+            });
+
+            await expect(
+                registerAction({ error: null }, makeConsentFormData())
+            ).rejects.toThrow('NEXT_REDIRECT:/');
+
+            expect(errorSpy).not.toHaveBeenCalled();
+            errorSpy.mockRestore();
+        });
     });
 });

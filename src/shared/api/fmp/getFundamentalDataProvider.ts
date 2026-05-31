@@ -3,6 +3,7 @@ import {
     FmpFundamentalClient,
     type FmpEarningsReportItem,
 } from './fundamentalClient';
+import { isE2E } from '@/shared/api/e2eEnv';
 
 /**
  * App-facing fundamental provider surface: the core `FundamentalDataProvider`
@@ -24,7 +25,7 @@ let cached: FundamentalProvider | null = null;
 /** Returns the app's fundamental data provider (FMP in prod, fake under E2E_TEST). */
 export function getFundamentalDataProvider(): FundamentalProvider {
     if (cached !== null) return cached;
-    if (process.env.E2E_TEST === '1') {
+    if (isE2E()) {
         // require keeps the fake out of the production bundle.
         const { FakeFundamentalDataProvider } =
             require('./FakeFundamentalDataProvider') as typeof import('./FakeFundamentalDataProvider');

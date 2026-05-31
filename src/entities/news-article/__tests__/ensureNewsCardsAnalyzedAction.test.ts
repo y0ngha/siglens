@@ -13,6 +13,10 @@ vi.mock('@/shared/lib/sleep', () => ({
     sleep: vi.fn().mockResolvedValue(undefined),
 }));
 
+vi.mock('@/shared/api/e2eEnv', () => ({
+    isE2E: vi.fn(),
+}));
+
 // The action resolves its client through the getNewsClient factory (FMP in
 // prod, fake under E2E_TEST). We mock the factory directly so each test injects
 // a fresh client without fighting the factory's module-level singleton cache.
@@ -46,6 +50,7 @@ import {
     pollNewsCardAnalysis,
 } from '@y0ngha/siglens-core';
 import { getNewsClient } from '../lib/getNewsClient';
+import { isE2E } from '@/shared/api/e2eEnv';
 import type {
     NewsItem,
     NewsCardAnalysis,
@@ -61,6 +66,7 @@ const MockNewsRepository = DrizzleNewsRepository as MockedClass<
 const mockIsRecentlyFetched = isRecentlyFetched as Mock;
 const mockMarkFetched = markFetched as Mock;
 const mockGetNewsClient = getNewsClient as Mock;
+const mockIsE2E = isE2E as MockedFunction<typeof isE2E>;
 
 const mockSubmitNewsCardAnalysis = submitNewsCardAnalysis as MockedFunction<
     typeof submitNewsCardAnalysis
@@ -126,6 +132,7 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
         mockPollNewsCardAnalysis.mockReset();
         mockIsRecentlyFetched.mockResolvedValue(false);
         mockMarkFetched.mockResolvedValue(undefined);
+        mockIsE2E.mockReturnValue(false);
 
         mockFetchNewsForPeriod = vi.fn();
         mockUpsertNewsItem = vi.fn().mockResolvedValue(undefined);
@@ -431,6 +438,28 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
             // skipAnalysis short-circuit). Guards against regressions that move
             // the call into the bot-only branch.
             expect(mockMarkFetched).toHaveBeenCalledWith('AAPL');
+        });
+    });
+
+    describe('E2E 모드에서는', () => {
+        it('FMP fetch와 DB upsert는 수행하지만 카드 worker 분석은 건너뛴다', async () => {
+            mockIsE2E.mockReturnValue(true);
+            mockFetchNewsForPeriod.mockResolvedValue([
+                NEWS_ITEM_1,
+                NEWS_ITEM_2,
+            ]);
+
+            await ensureNewsCardsAnalyzedAction('AAPL');
+
+            expect(mockFetchNewsForPeriod).toHaveBeenCalledWith(
+                'AAPL',
+                NEWS_LOOKBACK_MS
+            );
+            expect(mockUpsertNewsItem).toHaveBeenCalledTimes(2);
+            expect(mockMarkFetched).toHaveBeenCalledWith('AAPL');
+            expect(mockListBySymbol).not.toHaveBeenCalled();
+            expect(mockSubmitNewsCardAnalysis).not.toHaveBeenCalled();
+            expect(mockPollNewsCardAnalysis).not.toHaveBeenCalled();
         });
     });
 

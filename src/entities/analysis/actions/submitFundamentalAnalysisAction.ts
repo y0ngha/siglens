@@ -11,6 +11,7 @@ import { getFundamentalDataProvider } from '@/shared/api/fmp/getFundamentalDataP
 import { getCurrentUser } from '@/entities/session/lib/getCurrentUser';
 import { resolveTierAndByok, buildGateError } from '@/shared/lib/byokGate';
 import { isBot } from '@/shared/api/isBot';
+import { isE2E } from '@/shared/api/e2eEnv';
 import type { AnalysisGateBlockedResult } from '@/shared/lib/types';
 
 /** Final return type — core's fundamental result + our siglens-side gate errors. */
@@ -29,7 +30,7 @@ export async function submitFundamentalAnalysisAction(
         // imported) under the inline E2E guard so they stay out of the production
         // bundle (matches getMarketDataProvider). Lives inside try so a require()
         // throw can't propagate to the client (mirrors submitAnalysisAction).
-        if (process.env.E2E_TEST === '1') {
+        if (isE2E()) {
             const { e2eCachedFundamental } =
                 require('@/shared/api/e2eAnalysisStub') as typeof import('@/shared/api/e2eAnalysisStub');
             return e2eCachedFundamental();

@@ -2,6 +2,7 @@
 
 import { waitUntil } from '@vercel/functions';
 import { searchTicker } from '../lib/searchTicker';
+import { isE2E } from '@/shared/api/e2eEnv';
 import type { TickerSearchResult } from '@/shared/lib/types';
 
 /**
@@ -38,7 +39,7 @@ export async function searchTickerAction(
     const trimmed = query.trim();
     if (!trimmed) return [];
 
-    if (process.env.E2E_TEST === '1') {
+    if (isE2E()) {
         // Hermetic E2E path: never touch FMP. Filter the fixture by the typed
         // query (symbol or name, case-insensitive); fall back to the full
         // AAPL-family set so the listbox is never empty.

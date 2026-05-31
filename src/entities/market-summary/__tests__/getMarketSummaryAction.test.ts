@@ -6,6 +6,7 @@ import {
     type SubmitBriefingResult,
 } from '@y0ngha/siglens-core';
 import { isBot } from '@/shared/api/isBot';
+import { isE2E } from '@/shared/api/e2eEnv';
 import { getCachedMarketSummary } from '../lib/marketSummaryCache';
 
 vi.mock('server-only', () => ({}));
@@ -27,6 +28,10 @@ vi.mock('@/shared/api/isBot', () => ({
     isBot: vi.fn(),
 }));
 
+vi.mock('@/shared/api/e2eEnv', () => ({
+    isE2E: vi.fn(),
+}));
+
 const mockProvider = {} as import('@y0ngha/siglens-core').MarketDataProvider;
 vi.mock('@/shared/api/market/getMarketDataProvider', () => ({
     getMarketDataProvider: vi.fn(() => mockProvider),
@@ -39,6 +44,7 @@ const mockSubmitBriefing = submitBriefing as MockedFunction<
     typeof submitBriefing
 >;
 const mockIsBot = isBot as MockedFunction<typeof isBot>;
+const mockIsE2E = isE2E as MockedFunction<typeof isE2E>;
 
 const summaryData: MarketSummaryData = {
     indices: [
@@ -71,6 +77,7 @@ describe('getMarketSummaryAction 함수는', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         mockGetCachedMarketSummary.mockResolvedValue(summaryData);
+        mockIsE2E.mockReturnValue(false);
     });
 
     describe('봇 요청 시', () => {
@@ -124,6 +131,27 @@ describe('getMarketSummaryAction 함수는', () => {
             expect(result).toEqual({
                 summary: summaryData,
                 briefing: briefingResult,
+                botBlocked: false,
+            });
+        });
+    });
+
+    describe('E2E 모드에서는', () => {
+        beforeEach(() => {
+            mockIsBot.mockReturnValue(false);
+            mockIsE2E.mockReturnValue(true);
+        });
+
+        it('summary는 가져오되 submitBriefing은 호출하지 않는다', async () => {
+            const result = await getMarketSummaryAction();
+
+            expect(mockGetCachedMarketSummary).toHaveBeenCalledWith(
+                mockProvider
+            );
+            expect(mockSubmitBriefing).not.toHaveBeenCalled();
+            expect(result).toEqual({
+                summary: summaryData,
+                briefing: null,
                 botBlocked: false,
             });
         });

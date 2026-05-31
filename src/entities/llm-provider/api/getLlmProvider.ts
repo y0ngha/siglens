@@ -4,6 +4,7 @@ import type { CallAiProvider } from '@y0ngha/siglens-core';
 // create a circular dependency (barrel → getLlmProvider → barrel).
 import { callAiProviderRouter } from './router';
 import { fakeCallAiProvider } from './FakeChatProvider';
+import { isE2E } from '@/shared/api/e2eEnv';
 
 /**
  * Returns the chat AI provider: the deterministic fake under E2E_TEST, else the
@@ -23,7 +24,7 @@ import { fakeCallAiProvider } from './FakeChatProvider';
  * factory. Switching to require-gating would break that unit test.
  */
 export function getLlmProvider(): CallAiProvider {
-    if (process.env.E2E_TEST === '1') {
+    if (isE2E()) {
         return fakeCallAiProvider;
     }
     return callAiProviderRouter;

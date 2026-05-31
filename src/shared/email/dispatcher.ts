@@ -2,6 +2,7 @@ import type { EmailDispatcher, EmailMessage } from './types';
 import { Resend } from 'resend';
 import { E2eEmailDispatcher } from './E2eEmailDispatcher';
 import { getRedisClient } from '@/shared/cache/redisClient';
+import { isE2E } from '@/shared/api/e2eEnv';
 
 const RESEND_API_KEY_ENV = 'RESEND_API_KEY';
 const EMAIL_SEND_TIMEOUT_MS = 10_000;
@@ -84,7 +85,7 @@ class NoopEmailDispatcher implements EmailDispatcher {
  * import. The prod path is unchanged when `E2E_TEST` is unset.
  */
 export function createEmailDispatcher(): EmailDispatcher {
-    if (process.env.E2E_TEST === '1') {
+    if (isE2E()) {
         const redis = getRedisClient();
         // Falls back to noop when Redis is not configured (the fake needs a
         // client to write the captured code/token to).

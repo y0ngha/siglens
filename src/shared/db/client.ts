@@ -3,6 +3,7 @@ import { drizzle } from 'drizzle-orm/neon-http';
 import { readDatabaseConfig, tryReadDatabaseConfig } from './config';
 import * as schema from './schema';
 import type { DatabaseClient, DatabaseConfig } from './types';
+import { isE2E } from '@/shared/api/e2eEnv';
 
 let cachedClient: DatabaseClient | null = null;
 
@@ -12,9 +13,6 @@ export function createDatabaseClient(config: DatabaseConfig): DatabaseClient {
     const db = drizzle(sql, { schema });
     return { db, sql };
 }
-
-/** True only during E2E runs (Task 1 sets E2E_TEST=1), gating the postgres-js swap. */
-const isE2E = (): boolean => process.env.E2E_TEST === '1';
 
 /**
  * Builds a `DatabaseClient` for the active environment: the local postgres-js

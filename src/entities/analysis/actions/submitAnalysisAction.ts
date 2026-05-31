@@ -11,6 +11,7 @@ import {
 import { getCurrentUser } from '@/entities/session/lib/getCurrentUser';
 import { resolveTierAndByok, buildGateError } from '@/shared/lib/byokGate';
 import { isBot } from '@/shared/api/isBot';
+import { isE2E } from '@/shared/api/e2eEnv';
 import type { AnalysisGateBlockedResult } from '@/shared/lib/types';
 import { getMarketDataProvider } from '@/shared/api/market/getMarketDataProvider';
 
@@ -42,7 +43,7 @@ export async function submitAnalysisAction(
         // the check and always return their cached fixture.
         // The stub + JSON fixture are require'd (not statically imported) so they
         // stay out of the production bundle (matches getMarketDataProvider).
-        if (process.env.E2E_TEST === '1') {
+        if (isE2E()) {
             const requestHeaders = await headers();
             if (isBot(requestHeaders)) return { status: 'miss_no_trigger' };
             const { e2eCachedTechnical } =

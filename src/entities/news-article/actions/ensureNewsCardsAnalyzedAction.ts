@@ -16,6 +16,7 @@ import {
 import { NEWS_LOOKBACK_MS } from '../lib/newsLookback';
 import { isRecentlyFetched, markFetched } from '../lib/newsRefreshFlag';
 import { sleep } from '@/shared/lib/sleep';
+import { isE2E } from '@/shared/api/e2eEnv';
 import {
     pollNewsCardAnalysis,
     submitNewsCardAnalysis,
@@ -130,6 +131,8 @@ export async function ensureNewsCardsAnalyzedAction(
     await markFetched(symbol);
 
     if (fresh.length === 0) return;
+
+    if (isE2E()) return;
 
     if (options?.skipAnalysis) return;
 

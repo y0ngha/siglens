@@ -2,6 +2,7 @@ import type { SupportedOAuthProvider } from '@/shared/lib/types';
 import { googleOAuthAdapter } from './google';
 import { e2eFakeOAuthAdapter } from './E2eFakeOAuthAdapter';
 import type { OAuthProviderAdapter } from './types';
+import { isE2E } from '@/shared/api/e2eEnv';
 
 // NOTE: Kakao login is currently disabled — its adapter is intentionally excluded
 // from SUPPORTED_PROVIDERS and ADAPTERS so that /api/auth/kakao/start and the
@@ -20,7 +21,7 @@ export function getOAuthAdapter(
     // for any code and contacts no real OAuth provider (see E2eFakeOAuthAdapter).
     // Static-imported (not require-gated) so this branch stays unit-testable —
     // mirrors getLlmProvider's FakeChatProvider rationale.
-    if (process.env.E2E_TEST === '1') return e2eFakeOAuthAdapter;
+    if (isE2E()) return e2eFakeOAuthAdapter;
     return ADAPTERS[provider];
 }
 

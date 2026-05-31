@@ -24,6 +24,7 @@ import { getNextEarningsReport } from '@/entities/earnings-report';
 import { getCurrentUser } from '@/entities/session/lib/getCurrentUser';
 import { resolveTierAndByok, buildGateError } from '@/shared/lib/byokGate';
 import { isBot } from '@/shared/api/isBot';
+import { isE2E } from '@/shared/api/e2eEnv';
 // Cross-entity: options-chain fetchOptionsSnapshot 필요. Phase 9에서 features 레이어 도입 시 해소.
 import { fetchOptionsSnapshot } from '@/entities/options-chain/lib/optionsDataCache';
 import { isOpenInterestSnapshotStale } from '@/shared/lib/options/openInterestStale';
@@ -56,7 +57,7 @@ export async function submitOverallAnalysisAction(
         // imported) under the inline E2E guard so they stay out of the production
         // bundle (matches getMarketDataProvider). Lives inside try so a require()
         // throw can't propagate to the client (mirrors submitAnalysisAction).
-        if (process.env.E2E_TEST === '1') {
+        if (isE2E()) {
             const { e2eCachedOverall } =
                 require('@/shared/api/e2eAnalysisStub') as typeof import('@/shared/api/e2eAnalysisStub');
             return e2eCachedOverall();

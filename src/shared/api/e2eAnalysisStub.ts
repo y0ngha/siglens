@@ -12,17 +12,7 @@ import type {
     SubmitOverallAnalysisCached,
 } from '@y0ngha/siglens-core';
 import fixture from '@e2e/fixtures/analysis.json';
-
-/**
- * E2E test-mode guard. Server-side actions short-circuit their analysis
- * submit path to a fixed cached result only when this returns `true`, so the
- * Playwright suite never reaches the real worker / LLM. Mirrors the
- * `E2E_TEST === '1'` gate already used by `getMarketDataProvider` and the db
- * client.
- */
-export function isE2E(): boolean {
-    return process.env.E2E_TEST === '1';
-}
+export { isE2E } from './e2eEnv';
 
 /**
  * The fixture is authored by hand to match each core `*AnalysisResponse` shape.
