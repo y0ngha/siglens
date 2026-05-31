@@ -25,9 +25,9 @@ import {
     getReanalyzeCooldownMs as fetchReanalyzeCooldownMs,
     releaseReanalyzeCooldown,
     tryAcquireReanalyzeCooldown,
+    normalizeAnalysisResponse,
 } from '@/entities/analysis';
 import { sleep } from '@/shared/lib/sleep';
-import { normalizeAnalysisResponse } from '@/widgets/analysis/utils/normalizeAnalysisResponse';
 import { CHART_ANALYSIS_POLL_INTERVAL_MS } from '@/shared/config/pollingConfig';
 import { usePageHideCancel } from '@/shared/hooks/usePageHideCancel';
 import type { CancelJobEntry } from '@/shared/lib/types';

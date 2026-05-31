@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import type { AnalysisResponse } from '@y0ngha/siglens-core';
-import { normalizeAnalysisResponse } from '@/widgets/analysis/utils/normalizeAnalysisResponse';
+import { normalizeAnalysisResponse } from '@/entities/analysis/lib/normalizeAnalysisResponse';
 
 // 정적 타입은 모든 배열을 required로 선언하므로, 런타임 누락을 재현하려면
 // 의도적으로 타입을 우회한 부분 객체를 만든다.

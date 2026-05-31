@@ -19,11 +19,16 @@ vi.mock('@/entities/analysis/actions', () => ({
     cancelAnalysisJobAction: vi.fn().mockResolvedValue(undefined),
 }));
 
-vi.mock('@/entities/analysis', () => ({
-    getReanalyzeCooldownMs: vi.fn().mockResolvedValue(0),
-    releaseReanalyzeCooldown: vi.fn().mockResolvedValue(undefined),
-    tryAcquireReanalyzeCooldown: vi.fn().mockResolvedValue({ ok: true }),
-}));
+vi.mock('@/entities/analysis', async importOriginal => {
+    const actual = await importOriginal<typeof import('@/entities/analysis')>();
+    return {
+        // 쿨다운 I/O만 스텁하고, normalizeAnalysisResponse 등 순수 함수는 실제 구현을 사용한다.
+        ...actual,
+        getReanalyzeCooldownMs: vi.fn().mockResolvedValue(0),
+        releaseReanalyzeCooldown: vi.fn().mockResolvedValue(undefined),
+        tryAcquireReanalyzeCooldown: vi.fn().mockResolvedValue({ ok: true }),
+    };
+});
 
 vi.mock('@/shared/lib/sleep', () => ({
     sleep: vi.fn().mockResolvedValue(undefined),

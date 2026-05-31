@@ -10,9 +10,9 @@ import type { AnalysisResponse, KeyLevels } from '@y0ngha/siglens-core';
  * 다시 보장한다. 잘 형성된 응답은 그대로 통과하므로 정상 렌더링 동작은 변하지
  * 않는다(필드 값을 덮어쓰지 않고 누락 시에만 기본값을 채운다).
  *
- * `analysis`를 소비하는 모든 경로(AnalysisPanel · buildExpertAnalysisReport ·
- * useAnalysisDerivedData의 validateKeyLevels)가 한 곳의 정규화 결과를 공유하도록
- * 소스(useAnalysis)에서 1회 적용한다.
+ * 데이터 소스(useAnalysis)에서 1회 적용해 배열/객체 계약을 복원한다. 단,
+ * AnalysisPanel·buildExpertAnalysisReport는 정규화되지 않은 부분 응답을 직접
+ * 받을 수도 있으므로 각자 독립적인 `?? []` 방어 기본값을 유지한다(방어 심층화).
  */
 const EMPTY_KEY_LEVELS: KeyLevels = {
     support: [],

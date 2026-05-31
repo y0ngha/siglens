@@ -27,13 +27,8 @@ vi.mock('@y0ngha/siglens-core', async importOriginal => {
     };
 });
 
-vi.mock('@/shared/hooks/usePopoverToggle', () => ({
-    usePopoverToggle: () => ({
-        isOpen: false,
-        toggle: vi.fn(),
-        close: vi.fn(),
-    }),
-}));
+// usePopoverToggle는 mock하지 않고 실제 구현을 통과시킨다 — 드롭다운이
+// 실제로 열려야 옵션 클릭이 onModelChange를 트리거할 수 있기 때문이다.
 
 // AnalysisPanel을 실제로 렌더하기 위한 인프라 mock. trendUtils·
 // buildExpertAnalysisReport·MarkdownText·@/shared/lib/trendline 등 핵심
@@ -172,13 +167,26 @@ describe('Analysis Flow', () => {
             <ModelSelector
                 selectedModel={'gemini-2.5-flash-lite' as ModelId}
                 onModelChange={onModelChange}
-                allowedModels={['gemini-2.5-flash-lite' as ModelId]}
+                allowedModels={[
+                    'gemini-2.5-flash-lite' as ModelId,
+                    'gemini-2.5-flash' as ModelId,
+                ]}
             />
         );
         const user = userEvent.setup();
         await user.click(screen.getByLabelText('AI 분석 모델 선택'));
-        // 셀렉터 인터랙션이 throw 없이 동작한다.
-        expect(screen.getByLabelText('AI 분석 모델 선택')).toBeInTheDocument();
+
+        const flashOption = screen
+            .getAllByRole('option')
+            .find(
+                o =>
+                    o.textContent?.includes('Flash') &&
+                    !o.textContent?.includes('Lite')
+            );
+        await user.click(flashOption!);
+
+        expect(onModelChange).toHaveBeenCalledTimes(1);
+        expect(onModelChange).toHaveBeenCalledWith('gemini-2.5-flash');
     });
 
     // 실제 AnalysisPanel을 완전한 응답으로 렌더해 코어 출력 계약을
