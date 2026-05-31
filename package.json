@@ -11,7 +11,6 @@
         "prebuild": "yarn clear:backtesting && yarn copy:backtesting",
         "dev": "yarn predev && next dev --turbopack -p 4200",
         "build": "yarn prebuild && rm -rf .next && next build",
-        "build:local": "dotenv -e .env.local -- yarn build",
         "analyze": "ANALYZE=true yarn build",
         "start": "next start",
         "lint": "eslint --cache --cache-strategy content --cache-location node_modules/.cache/eslint/",
