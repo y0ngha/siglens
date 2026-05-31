@@ -5,6 +5,7 @@ import {
     useCallback,
     useEffect,
     useLayoutEffect,
+    useMemo,
     useRef,
     useState,
 } from 'react';
@@ -24,6 +25,7 @@ import {
     getReanalyzeCooldownMs as fetchReanalyzeCooldownMs,
     releaseReanalyzeCooldown,
     tryAcquireReanalyzeCooldown,
+    normalizeAnalysisResponse,
 } from '@/entities/analysis';
 import { sleep } from '@/shared/lib/sleep';
 import { CHART_ANALYSIS_POLL_INTERVAL_MS } from '@/shared/config/pollingConfig';
@@ -246,8 +248,16 @@ export function useAnalysis({
         },
     });
 
+    // `@y0ngha/siglens-core`가 부분 응답(누락된 배열/객체)을 돌려줄 수 있으므로
+    // 소스에서 1회 정규화해 타입 계약을 런타임에서 다시 보장한다. 이 결과를
+    // AnalysisPanel·buildExpertAnalysisReport·useAnalysisDerivedData가 공유한다.
+    // (훅은 파생 변수보다 먼저 선언 — MISTAKES §17)
+    const analysis = useMemo(
+        () => normalizeAnalysisResponse(analysisResult ?? initialAnalysis),
+        [analysisResult, initialAnalysis]
+    );
+
     // 5. Derived variables
-    const analysis = analysisResult ?? initialAnalysis;
     const isAnalyzing =
         isSubmitting ||
         isPolling ||

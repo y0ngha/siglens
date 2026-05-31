@@ -984,3 +984,120 @@ describe('AnalysisPanel', () => {
         expect(screen.queryByText('가격 목표')).not.toBeInTheDocument();
     });
 });
+
+// HIGH-2 — 부분/누락 필드 계약을 고정한다.
+// `@y0ngha/siglens-core`가 배열/객체 필드를 누락한 부분 응답을 돌려줄 수 있고,
+// AnalysisPanel은 barrel로 단독 노출되므로 무방비 .filter/.map/.length 접근이
+// 렌더 중 throw하면 안 된다. 아래 케이스들은 HIGH-1 가드 이전엔 실패하고
+// 이후엔 빈 섹션으로 렌더된다.
+describe('AnalysisPanel — missing/partial field resilience', () => {
+    // 정적 타입은 모든 배열을 required로 선언하므로, 런타임 누락을 재현하려면
+    // 타입을 의도적으로 우회해야 한다. 부분 객체를 AnalysisResponse로 캐스트한다.
+    function makePartialAnalysis(
+        overrides: Record<string, unknown> = {}
+    ): AnalysisResponse {
+        return {
+            summary: '요약 텍스트',
+            trend: 'bullish',
+            riskLevel: 'medium',
+            analyzedAt: '2025-01-01T00:00:00Z',
+            ...overrides,
+        } as unknown as AnalysisResponse;
+    }
+
+    it('renders without throwing when array fields are undefined', () => {
+        expect(() =>
+            render(
+                <AnalysisPanel
+                    symbol="AAPL"
+                    analysis={makePartialAnalysis({
+                        trendlines: undefined,
+                        patternSummaries: undefined,
+                        strategyResults: undefined,
+                        indicatorResults: undefined,
+                        priceTargets: undefined,
+                    })}
+                    keyLevels={EMPTY_KEY_LEVELS}
+                    timeframe="1Day"
+                />
+            )
+        ).not.toThrow();
+
+        // 무방비 섹션은 비고 패턴 섹션은 빈 상태(감지된 패턴 없음)로 렌더된다.
+        expect(screen.getByText('요약 텍스트')).toBeInTheDocument();
+        expect(screen.getByText('감지된 패턴 없음')).toBeInTheDocument();
+        expect(screen.queryByText('추세선')).not.toBeInTheDocument();
+        expect(screen.queryByText('보조지표')).not.toBeInTheDocument();
+        expect(screen.queryByText('전략')).not.toBeInTheDocument();
+        expect(screen.queryByText('가격 목표')).not.toBeInTheDocument();
+    });
+
+    it('renders without throwing when keyLevels is missing support/resistance', () => {
+        const partialKeyLevels = {
+            poc: { price: 210, reason: '거래량 중심' },
+        } as unknown as ClusteredKeyLevels;
+
+        expect(() =>
+            render(
+                <AnalysisPanel
+                    symbol="AAPL"
+                    analysis={makeAnalysis()}
+                    keyLevels={partialKeyLevels}
+                    timeframe="1Day"
+                />
+            )
+        ).not.toThrow();
+
+        // support/resistance가 없어도 PoC만으로 주요 레벨 섹션이 렌더된다.
+        expect(screen.getByText('주요 레벨')).toBeInTheDocument();
+        expect(screen.getByText('PoC')).toBeInTheDocument();
+        expect(screen.queryByText('저항')).not.toBeInTheDocument();
+        expect(screen.queryByText('지지')).not.toBeInTheDocument();
+    });
+
+    it('renders without throwing when keyLevels is an empty object', () => {
+        const emptyKeyLevels = {} as unknown as ClusteredKeyLevels;
+
+        expect(() =>
+            render(
+                <AnalysisPanel
+                    symbol="AAPL"
+                    analysis={makeAnalysis()}
+                    keyLevels={emptyKeyLevels}
+                    timeframe="1Day"
+                />
+            )
+        ).not.toThrow();
+
+        // 모든 레벨이 비어 주요 레벨 섹션 자체가 렌더되지 않는다.
+        expect(screen.queryByText('주요 레벨')).not.toBeInTheDocument();
+    });
+
+    it('handles an unknown TrendlineDirection value gracefully', () => {
+        expect(() =>
+            render(
+                <AnalysisPanel
+                    symbol="AAPL"
+                    analysis={makeAnalysis({
+                        trendlines: [
+                            {
+                                // ascending|descending 밖의 미래 enum 값을 가정한다.
+                                direction:
+                                    'horizontal' as unknown as 'ascending',
+                                start: { time: 1000, price: 180 },
+                                end: { time: 2000, price: 200 },
+                            },
+                        ],
+                    })}
+                    keyLevels={EMPTY_KEY_LEVELS}
+                    timeframe="1Day"
+                />
+            )
+        ).not.toThrow();
+
+        // 알 수 없는 방향은 중립 fallback 라벨('추세선')로 degrade한다.
+        // 섹션 헤더 '추세선' 1 + fallback 라벨 '추세선' 1 = 정확히 2개.
+        const trendlineTexts = screen.getAllByText('추세선');
+        expect(trendlineTexts.length).toBe(2);
+    });
+});
