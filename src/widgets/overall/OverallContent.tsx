@@ -19,8 +19,7 @@ import { useDefaultModelId } from '@/widgets/symbol-page/hooks/useDefaultModelId
 import { cn } from '@/shared/lib/cn';
 import { type OverallAnalysisResponse } from '@y0ngha/siglens-core';
 import { type CSSProperties, useMemo } from 'react';
-import { useSearchParams } from 'next/navigation';
-import { DEFAULT_TIMEFRAME, isValidTimeframe } from '@/shared/config/market';
+import { useTimeframeFromUrl } from './hooks/useTimeframeFromUrl';
 
 const SKELETON_LINE_COUNT = 3;
 const SKELETON_WIDTH_START_PCT = 85;
@@ -41,16 +40,10 @@ export function OverallContent({
     companyName,
     initialAnalysis,
 }: OverallContentProps) {
-    // ISR 정적 렌더 — tf는 서버가 아니라 client가 URL에서 읽는다(차트와 동일 소스).
-    // MISTAKES.md §17: 모든 훅 호출은 파생 변수보다 먼저 선언한다.
-    const searchParams = useSearchParams();
+    // tf는 서버가 아니라 client가 URL에서 읽어 [symbol] ISR(정적 렌더)을 유지한다.
+    // timeframe도 useTimeframeFromUrl 훅의 반환값이라 모든 선언이 훅으로 유지된다(§17).
+    const timeframe = useTimeframeFromUrl();
     const modelId = useDefaultModelId();
-
-    const tfParam = searchParams.get('tf');
-    const timeframe = isValidTimeframe(tfParam) ? tfParam : DEFAULT_TIMEFRAME;
-
-    // 훅 선언 순서 예외(MISTAKES.md §17): useOverallAnalysis는 파생 변수 timeframe을
-    // 인자로 받아야 해 부득이 파생 변수 뒤에 위치한다(아래 usePublishSymbolChat과 동일 맥락).
     const { state, trigger } = useOverallAnalysis(
         symbol,
         companyName,
@@ -59,8 +52,7 @@ export function OverallContent({
         initialAnalysis
     );
 
-    // 훅 선언 순서 예외(MISTAKES.md #17): usePublishSymbolChat은 chatState(파생 변수)를
-    // 인자로 받기 때문에 useMemo 뒤에 위치해야 한다.
+    // usePublishSymbolChat은 chatState(useMemo 반환값)를 인자로 받으므로 useMemo 뒤에 둔다(§17 의존 순서).
     const chatState = useMemo(
         () => buildChatState(state, timeframe),
         [state, timeframe]

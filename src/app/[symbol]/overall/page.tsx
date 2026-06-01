@@ -31,6 +31,9 @@ export async function generateStaticParams(): Promise<{ symbol: string }[]> {
     return [];
 }
 
+// Suspense fallback 스켈레톤 박스 개수 (CLS 방지용 placeholder).
+const SUSPENSE_SKELETON_COUNT = 3;
+
 interface Props {
     params: Promise<{ symbol: string }>;
 }
@@ -227,12 +230,15 @@ export default async function OverallPage({ params }: Props) {
                 <Suspense
                     fallback={
                         <div className="space-y-6" aria-hidden="true">
-                            {[0, 1, 2].map(i => (
-                                <div
-                                    key={i}
-                                    className="bg-secondary-700 h-32 animate-pulse rounded-xl"
-                                />
-                            ))}
+                            {Array.from(
+                                { length: SUSPENSE_SKELETON_COUNT },
+                                (_, i) => (
+                                    <div
+                                        key={i}
+                                        className="bg-secondary-700 h-32 animate-pulse rounded-xl"
+                                    />
+                                )
+                            )}
                         </div>
                     }
                 >
