@@ -1,4 +1,5 @@
 import { SymbolPageClient } from '@/widgets/symbol-page/SymbolPageClient';
+import { TechnicalFactsSummary } from '@/widgets/symbol-page/TechnicalFactsSummary';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { FALLBACK_ANALYSIS } from '@/entities/chat-message';
 import {
@@ -16,6 +17,7 @@ import {
     getAssetInfoResilient,
 } from '@/entities/ticker';
 import { getBarsAction } from '@/entities/bars/actions';
+import { getBarsStatic } from '@/entities/bars/lib/barsStaticCache';
 import { countSkillFiles } from '@/entities/skill';
 import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/shared/config/queryConfig';
 import {
@@ -100,6 +102,18 @@ export default async function SymbolPage({ params }: Props) {
         countSkillFiles(),
     ]);
     if (!assetInfo) return notFound();
+
+    // default-tf bars를 정적화로 가져온다. 실패(인프라 다운 등)는 null로 degrade해
+    // 페이지가 깨지지 않도록 한다. 이 bars는 Suspense fallback의 FactLayer SSR에만 쓰이며,
+    // 클라이언트 hydration 후에는 SymbolPageClient가 인터랙티브 상태로 교체된다.
+    const factBars = await getBarsStatic(
+        ticker,
+        DEFAULT_TIMEFRAME,
+        assetInfo.fmpSymbol
+    ).catch((e: unknown) => {
+        console.error('[SymbolPage] getBarsStatic failed:', e);
+        return null;
+    });
 
     const displayName = buildDisplayName(assetInfo, ticker);
     const { fullTitle, description, url } = buildSymbolSeoContent(ticker, {
@@ -257,14 +271,26 @@ export default async function SymbolPage({ params }: Props) {
                     </p>
                 </section>
                 <HydrationBoundary state={dehydrate(queryClient)}>
-                    {/* fallback은 차트 영역(flex-1)을 미리 차지해, useSearchParams CSR-bailout
-                        서브트리가 hydration 전 비어 보이는 flash/CLS를 방지한다. */}
+                    {/* fallback은 두 역할을 겸한다:
+                        1. CLS 방지 — 차트 영역(flex-1)을 미리 차지해 useSearchParams
+                           CSR-bailout 서브트리가 hydration 전 비어 보이는 flash를 막는다.
+                        2. FactLayer SSR — bars가 있으면 TechnicalFactsSummary를 fallback으로
+                           렌더해 크롤러(JS 미실행)가 기술적 지표 요약 텍스트를 SSR HTML로
+                           받는다. 사용자는 hydration 후 인터랙티브 SymbolPageClient로 교체된다. */}
                     <Suspense
                         fallback={
-                            <div
-                                className="bg-secondary-900 flex min-h-0 flex-1 flex-col overflow-hidden"
-                                aria-hidden="true"
-                            />
+                            factBars && factBars.bars.length > 0 ? (
+                                <TechnicalFactsSummary
+                                    symbol={ticker}
+                                    bars={factBars.bars}
+                                    indicators={factBars.indicators}
+                                />
+                            ) : (
+                                <div
+                                    className="bg-secondary-900 flex min-h-0 flex-1 flex-col overflow-hidden"
+                                    aria-hidden="true"
+                                />
+                            )
                         }
                     >
                         <SymbolPageClient
