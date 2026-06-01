@@ -47,7 +47,10 @@ vi.mock('next/navigation', () => ({
     notFound: vi.fn(),
 }));
 
-import { generateMetadata, default as OverallPage } from '@/app/[symbol]/overall/page';
+import {
+    generateMetadata,
+    default as OverallPage,
+} from '@/app/[symbol]/overall/page';
 import { getAssetInfoResilient } from '@/entities/ticker';
 import {
     GEMINI_2_5_FLASH_LITE_MODEL,
@@ -104,9 +107,7 @@ describe('generateMetadata', () => {
             params: Promise.resolve({ symbol: '!!!invalid' }),
         });
 
-        expect(metadata.robots).toEqual(
-            expect.objectContaining({ index: false })
-        );
+        expect(metadata.robots).toEqual({ index: false, follow: false });
     });
 });
 
