@@ -57,8 +57,10 @@ vi.mock('../../lib/fmpTickerApi', async () => {
     const actual = await vi.importActual('../../lib/fmpTickerApi');
     return {
         ...actual,
-        searchBySymbol: (q: string, options?: { strict?: boolean }) =>
-            searchBySymbolMock(q, options),
+        searchBySymbol: (
+            q: string,
+            options?: { throwOnInfraFailure?: boolean }
+        ) => searchBySymbolMock(q, options),
     };
 });
 vi.mock('../../lib/koreanNameStore', () => ({
@@ -417,7 +419,7 @@ describe('getAssetInfo', () => {
         await expect(getAssetInfo('AAPL')).rejects.toThrow('FMP HTTP 429');
     });
 
-    it('getAssetInfo가 searchBySymbol을 strict로 호출한다', async () => {
+    it('getAssetInfo가 searchBySymbol을 throwOnInfraFailure로 호출한다', async () => {
         createCacheProviderMock.mockReturnValue(null);
         tryGetTickerDatabaseClientMock.mockReturnValue(null);
         searchBySymbolMock.mockResolvedValue([]); // 200 빈 결과 → null
@@ -425,7 +427,7 @@ describe('getAssetInfo', () => {
         await getAssetInfo('NOPE');
 
         expect(searchBySymbolMock).toHaveBeenCalledWith('NOPE', {
-            strict: true,
+            throwOnInfraFailure: true,
         });
     });
 });

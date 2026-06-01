@@ -17,9 +17,9 @@ const US_EXCHANGES: ReadonlySet<string> = new Set([
 
 type FmpEndpoint = 'search-symbol' | 'search-name';
 
-/** getAssetInfo의 strict 경로(인프라 에러 throw) vs 검색 UI의 lenient(빈 배열 degrade)를 가르는 옵션. */
+/** getAssetInfo가 쓰는 throwOnInfraFailure(인프라 에러 throw) vs 검색 UI 기본(빈 배열 degrade)을 가르는 옵션. */
 interface FmpSearchOptions {
-    strict?: boolean;
+    throwOnInfraFailure?: boolean;
 }
 
 /** Type guard validating per-element FMP response shape before trusting it as `FmpSearchResult`. */
@@ -67,13 +67,14 @@ async function fetchFmpEndpoint(
     query: string,
     options?: FmpSearchOptions
 ): Promise<FmpSearchResult[]> {
-    const strict = options?.strict ?? false;
+    const throwOnInfraFailure = options?.throwOnInfraFailure ?? false;
 
     const config = tryReadFmpConfig();
     if (!config) {
-        // strict(getAssetInfo): 미설정은 인프라 문제 — null→404 캐싱을 막기 위해 throw.
-        // lenient(검색 UI): 기존대로 빈 결과로 degrade.
-        if (strict) throw new Error('[fmpTickerApi] FMP config missing');
+        // throwOnInfraFailure(getAssetInfo): 미설정은 인프라 문제 — null→404 캐싱을 막기 위해 throw.
+        // 기본(검색 UI): 빈 결과로 degrade.
+        if (throwOnInfraFailure)
+            throw new Error('[fmpTickerApi] FMP config missing');
         return [];
     }
 
@@ -90,7 +91,7 @@ async function fetchFmpEndpoint(
             signal: AbortSignal.timeout(FMP_FETCH_TIMEOUT_MS),
         });
     } catch (e) {
-        if (strict)
+        if (throwOnInfraFailure)
             throw new Error(`[fmpTickerApi] ${endpoint} fetch failed`, {
                 cause: e,
             });
@@ -98,7 +99,7 @@ async function fetchFmpEndpoint(
     }
 
     if (!res.ok) {
-        if (strict)
+        if (throwOnInfraFailure)
             throw new Error(`[fmpTickerApi] ${endpoint} HTTP ${res.status}`);
         return [];
     }
@@ -107,16 +108,16 @@ async function fetchFmpEndpoint(
     try {
         raw = await res.json();
     } catch (e) {
-        if (strict)
+        if (throwOnInfraFailure)
             throw new Error(`[fmpTickerApi] ${endpoint} JSON parse failed`, {
                 cause: e,
             });
         return [];
     }
 
-    // 비배열 응답은 신뢰할 수 없는 형태 — strict에선 throw해 no-match 오인/캐싱 방지.
+    // 비배열 응답은 신뢰할 수 없는 형태 — throwOnInfraFailure면 throw해 no-match 오인/캐싱 방지.
     if (!Array.isArray(raw)) {
-        if (strict)
+        if (throwOnInfraFailure)
             throw new Error(
                 `[fmpTickerApi] ${endpoint} unexpected non-array response`
             );
@@ -127,7 +128,7 @@ async function fetchFmpEndpoint(
     // We validate per-element shape with `toFmpSearchResults` so malformed rows
     // (missing required fields) are dropped before reaching downstream consumers
     // (`filterUsExchanges`, `toTickerSearchResult`).
-    // 200 + 빈 배열은 정상적인 "매칭 없음"이므로 strict에서도 throw하지 않는다.
+    // 200 + 빈 배열은 정상적인 "매칭 없음"이므로 throwOnInfraFailure여도 throw하지 않는다.
     return toFmpSearchResults(raw);
 }
 

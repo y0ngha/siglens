@@ -46,7 +46,7 @@ export function OverallContent({
     const searchParams = useSearchParams();
     const modelId = useDefaultModelId();
 
-    const tfParam = searchParams.get('tf'); // 훅 아님 — 단순 메서드 호출
+    const tfParam = searchParams.get('tf');
     const timeframe = isValidTimeframe(tfParam) ? tfParam : DEFAULT_TIMEFRAME;
 
     // 훅 선언 순서 예외(MISTAKES.md §17): useOverallAnalysis는 파생 변수 timeframe을

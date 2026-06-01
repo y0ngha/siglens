@@ -135,18 +135,18 @@ describe('searchBySymbol/searchByName', () => {
         warnSpy.mockRestore();
     });
 
-    describe('strict mode (getAssetInfo 경로)', () => {
+    describe('throwOnInfraFailure 모드 (getAssetInfo 경로)', () => {
         it('!res.ok(429/5xx)면 throw한다', async () => {
             mockFetch.mockResolvedValue({ ok: false, status: 429 });
             await expect(
-                searchBySymbol('AAPL', { strict: true })
+                searchBySymbol('AAPL', { throwOnInfraFailure: true })
             ).rejects.toThrow();
         });
 
         it('network/timeout 예외면 throw한다', async () => {
             mockFetch.mockRejectedValue(new Error('network down'));
             await expect(
-                searchBySymbol('AAPL', { strict: true })
+                searchBySymbol('AAPL', { throwOnInfraFailure: true })
             ).rejects.toThrow();
         });
 
@@ -156,7 +156,7 @@ describe('searchBySymbol/searchByName', () => {
                 json: async () => [],
             });
             await expect(
-                searchBySymbol('NOPE', { strict: true })
+                searchBySymbol('NOPE', { throwOnInfraFailure: true })
             ).resolves.toEqual([]);
         });
 
@@ -165,25 +165,25 @@ describe('searchBySymbol/searchByName', () => {
             await expect(searchBySymbol('AAPL')).resolves.toEqual([]);
         });
 
-        it('FMP config 없음(strict)이면 throw하고 fetch하지 않는다', async () => {
+        it('FMP config 없음이면 throw하고 fetch하지 않는다', async () => {
             delete process.env.FMP_API_KEY;
             await expect(
-                searchBySymbol('AAPL', { strict: true })
+                searchBySymbol('AAPL', { throwOnInfraFailure: true })
             ).rejects.toThrow();
             expect(mockFetch).not.toHaveBeenCalled();
         });
 
-        it('200 + 비배열 응답(strict)이면 throw한다', async () => {
+        it('200 + 비배열 응답이면 throw한다', async () => {
             mockFetch.mockResolvedValue({
                 ok: true,
                 json: async () => ({ error: 'invalid' }),
             });
             await expect(
-                searchBySymbol('AAPL', { strict: true })
+                searchBySymbol('AAPL', { throwOnInfraFailure: true })
             ).rejects.toThrow();
         });
 
-        it('JSON 파싱 실패(strict)면 throw한다', async () => {
+        it('JSON 파싱 실패면 throw한다', async () => {
             mockFetch.mockResolvedValue({
                 ok: true,
                 json: async () => {
@@ -191,7 +191,7 @@ describe('searchBySymbol/searchByName', () => {
                 },
             });
             await expect(
-                searchBySymbol('AAPL', { strict: true })
+                searchBySymbol('AAPL', { throwOnInfraFailure: true })
             ).rejects.toThrow();
         });
     });
