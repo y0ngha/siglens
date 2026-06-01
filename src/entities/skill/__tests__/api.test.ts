@@ -1,5 +1,6 @@
 import { countSkillFiles, FileSkillsLoader } from '@/entities/skill';
-import { parseGating } from '../api';
+import type { Skill } from '@y0ngha/siglens-core';
+import { dedupeByName, parseGating } from '../api';
 import path from 'node:path';
 
 const { mockReaddir, mockReadFile } = vi.hoisted(() => ({
@@ -1106,5 +1107,36 @@ describe('countSkillFiles', () => {
         );
 
         await expect(countSkillFiles()).rejects.toThrow('ENOENT');
+    });
+});
+
+describe('dedupeByName', () => {
+    const skill = (name: string, description = 'd'): Skill => ({
+        name,
+        description,
+        indicators: [],
+        confidenceWeight: 0,
+        content: '',
+        smcFullGuide: false,
+    });
+
+    it('이름 중복 시 첫 번째만 남기고 이후 중복을 제거한다', () => {
+        const out = dedupeByName([
+            skill('A', 'first'),
+            skill('B'),
+            skill('A', 'dup'),
+            skill('C'),
+        ]);
+        expect(out.map(s => s.name)).toEqual(['A', 'B', 'C']);
+        expect(out[0].description).toBe('first');
+    });
+
+    it('빈 입력은 빈 배열을 반환한다', () => {
+        expect(dedupeByName([])).toEqual([]);
+    });
+
+    it('이름이 모두 고유하면 순서를 유지한 채 그대로 반환한다', () => {
+        const out = dedupeByName([skill('A'), skill('B'), skill('C')]);
+        expect(out.map(s => s.name)).toEqual(['A', 'B', 'C']);
     });
 });
