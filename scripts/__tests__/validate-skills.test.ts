@@ -124,7 +124,10 @@ describe('validateSkillData', () => {
                 gating: {
                     tier: 'gated',
                     signal_kind: 'state',
-                    state: { feature: 'bollinger', predicate: 'bogus_predicate' },
+                    state: {
+                        feature: 'bollinger',
+                        predicate: 'bogus_predicate',
+                    },
                 },
             });
             expect(errors[0]).toMatch(/state\.predicate/);
