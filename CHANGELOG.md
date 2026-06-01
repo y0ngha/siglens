@@ -1,5 +1,50 @@
 # Changelog
 
+# [0.16.0](https://github.com/y0ngha/siglens/compare/v0.15.0...v0.16.0) (2026-06-01)
+
+
+### Bug Fixes
+
+* address PR [#543](https://github.com/y0ngha/siglens/issues/543) review — §17 hook order, §18 tf branch tests, FmpSearchOptions, URL-state doc, Suspense skeleton fallbacks ([b04aa0e](https://github.com/y0ngha/siglens/commit/b04aa0ef127aac2ed2e8f1413d85c40cc7cd56e4))
+* address PR3 review round 1 — drop divider comments, cast guarantees, sync notes, pair check ([44f244b](https://github.com/y0ngha/siglens/commit/44f244b20091c2216b19eee55e8f457aa5722eba))
+* **analysis:** harden analysis render path against partial responses ([0bdbf75](https://github.com/y0ngha/siglens/commit/0bdbf75c9b7688d5bc24f0958c075dc6f89849dc))
+* drop serverExternalPackages('postgres') — broke E2E prerender of clientTest ([9cfb4ea](https://github.com/y0ngha/siglens/commit/9cfb4ea7d7b213e729cdab590ba78a7f6a82321a))
+* **e2e:** add OAUTH_TOKEN_ENCRYPTION_KEY to .env.e2e so OAuth finalize succeeds in CI (no .env.local) ([545e3f8](https://github.com/y0ngha/siglens/commit/545e3f8e2200231b09d39c083adbafbb8c306de1))
+* FileSkillsLoader dedupe by skill name ([5512049](https://github.com/y0ngha/siglens/commit/55120495ab81d95d04c4cc18eb0ab59f06638a24))
+* PR [#543](https://github.com/y0ngha/siglens/issues/543) re-review — drop WHAT-comment, rename strict→throwOnInfraFailure, doc revalidate-literal rule ([2651e29](https://github.com/y0ngha/siglens/commit/2651e299b726306e29e7a9d48070a9bc24d4f4e7))
+* PR [#543](https://github.com/y0ngha/siglens/issues/543) re-review (round 4) — extract useTimeframeFromUrl hook (§17), const skeleton count (§15) ([d4fb21d](https://github.com/y0ngha/siglens/commit/d4fb21db9d5a1a82a21d3219f33aeee0efcefe8b))
+* PR [#543](https://github.com/y0ngha/siglens/issues/543) re-review (round 5) — drop WHAT-comment line on tfParam read (§15.3) ([ff5aaa6](https://github.com/y0ngha/siglens/commit/ff5aaa69ee0e36a0a9b73096e6467dae7a5f77ce))
+* PR3 review round 2 — branch tests, script path, drop what-comments; docs: skills authoring guide ([9051996](https://github.com/y0ngha/siglens/commit/9051996cefa81a3964ba2d245190daf70d0d0f33))
+* PR3 review round 3 — non-string-trigger test, declarative validateGating, correct YAML-coerce docs ([e9c96bc](https://github.com/y0ngha/siglens/commit/e9c96bc43f642f4b77ac2958e893db94ca180538))
+* PR3 review round 4 — safe error handling, cast guarantees, exhaustiveness guards, branch tests (swept) ([4d983bc](https://github.com/y0ngha/siglens/commit/4d983bcaf48f99f9eeee5f0313b63e70d757e7c3))
+* PR3 review round 5 — non-mutating sort, drop what-comment (swept) ([763d721](https://github.com/y0ngha/siglens/commit/763d7215b1334036b5ba4b999e71375a1d16662d))
+* PR3 review round 6 — reciprocal sync comments, drop what-comment, document spread-sort (swept) ([f12ff20](https://github.com/y0ngha/siglens/commit/f12ff20b10dc7811518a9ff5394169d33deb6974))
+* prettier formatting in validate-skills.test.ts ([a6c74e5](https://github.com/y0ngha/siglens/commit/a6c74e58febabf5578c640201ae76360ad1f7ee6))
+* **scripts:** use spread+sort instead of toSorted (scripts lib lacks es2023) ([fec470b](https://github.com/y0ngha/siglens/commit/fec470be9dc00db0b80a101abf74caa29a3d284e))
+* **symbol-page:** align bot-block test with [#530](https://github.com/y0ngha/siglens/issues/530) additive facts-layer behavior (stale [#529](https://github.com/y0ngha/siglens/issues/529) test) ([a9b3181](https://github.com/y0ngha/siglens/commit/a9b3181bcba210ea71a3dfdb31f2e10d76943cf5))
+
+
+### Features
+
+* 뉴스 종합 분석 기사 수 상한 ([d817eba](https://github.com/y0ngha/siglens/commit/d817ebac7b9a11f13046230d542f3df439d1db35))
+* **chat:** Anthropic prompt caching for multi-turn chat ([56bae19](https://github.com/y0ngha/siglens/commit/56bae1916657b71422a6c05e89bed3e657fb058a))
+* **ci:** skill frontmatter validation gate ([db6c7c0](https://github.com/y0ngha/siglens/commit/db6c7c00d60cc4d809f6517bdf8e04de3487113b))
+* **dashboard:** add bearish signal badge labels ([7b3798b](https://github.com/y0ngha/siglens/commit/7b3798bb4138c630d2911e059b0a6b045783edd1))
+* **e2e:** authed storageState (login setup project) + account project routing ([bb948c1](https://github.com/y0ngha/siglens/commit/bb948c11548710cbba6c17a3e0d354949d0ad6b6))
+* **e2e:** fake OAuth adapter returns fixture profile under E2E_TEST ([f9348b1](https://github.com/y0ngha/siglens/commit/f9348b1f84a2555ce20dae0ffff8730edaba70f4))
+* **e2e:** tier2 infra — auth secrets in .env.e2e + fake email dispatcher (code/token via Redis) ([5693c26](https://github.com/y0ngha/siglens/commit/5693c26b273a1d74b44b8dcb8b56d86ee91e7739))
+* **fundamental:** populate peer PER/PSR from cached key-metrics ([183d2ff](https://github.com/y0ngha/siglens/commit/183d2ffdbc722fc725b06179402bdc922a93c3e4))
+* popular tickers update ([44a376f](https://github.com/y0ngha/siglens/commit/44a376facce765df40722e01dbbc62853efbc0bf))
+* **skill:** parse snake_case gating frontmatter, unify with core loader ([07ad7d1](https://github.com/y0ngha/siglens/commit/07ad7d11a8e994e99a9a2cc3337befa3ac22fabf))
+* **skills:** add compressed indicator core + candle primer ([4979a97](https://github.com/y0ngha/siglens/commit/4979a97b61fe416f8f76f019003ad1f632dfbea7))
+* **skills:** tag all skill frontmatter with gating blocks ([23cf938](https://github.com/y0ngha/siglens/commit/23cf9385c098a0a5f2849f2c0873ea2130b57fb8))
+
+
+### Performance Improvements
+
+* **bundle:** mark E2E-only postgres driver as serverExternalPackages ([a09d946](https://github.com/y0ngha/siglens/commit/a09d946fe0e99e08cefcfb26ce77709357f7418b))
+* **vercel:** cut Fast Origin/Data Transfer — bot block, page+OG ISR, FMP 404 safety ([b3c220d](https://github.com/y0ngha/siglens/commit/b3c220dc134d6df01db8bda18b00edbacf158c83))
+
 # [0.15.0](https://github.com/y0ngha/siglens/compare/v0.14.2...v0.15.0) (2026-05-30)
 
 
