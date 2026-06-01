@@ -38,3 +38,4 @@ export type {
 } from './lib/types';
 export { bcryptPasswordHasher, bcryptPasswordVerifier } from './lib/bcrypt';
 export { useCurrentUser } from './hooks/useCurrentUser';
+export { useAuthHint } from './hooks/useAuthHint';
