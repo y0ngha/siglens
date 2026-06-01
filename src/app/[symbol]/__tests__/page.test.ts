@@ -96,14 +96,13 @@ describe('Symbol page', () => {
                 params: Promise.resolve({ symbol: '!!!invalid' }),
             });
 
-            expect(metadata.robots).toEqual(
-                expect.objectContaining({ index: false })
-            );
+            expect(metadata.robots).toEqual({ index: false, follow: false });
         });
 
         it('returns metadata with title for valid ticker', async () => {
             mockGetAssetInfoResilient.mockResolvedValue({
                 assetInfo: {
+                    symbol: 'AAPL',
                     name: 'Apple Inc.',
                     koreanName: '애플',
                     fmpSymbol: 'AAPL',
@@ -121,6 +120,7 @@ describe('Symbol page', () => {
         it('canonical excludes tf — ISR page uses clean canonical regardless of query params', async () => {
             mockGetAssetInfoResilient.mockResolvedValue({
                 assetInfo: {
+                    symbol: 'AAPL',
                     name: 'Apple Inc.',
                     koreanName: '애플',
                     fmpSymbol: 'AAPL',
@@ -142,6 +142,7 @@ describe('Symbol page', () => {
         it('does not add noindex when no tf param', async () => {
             mockGetAssetInfoResilient.mockResolvedValue({
                 assetInfo: {
+                    symbol: 'AAPL',
                     name: 'Apple Inc.',
                     koreanName: '애플',
                     fmpSymbol: 'AAPL',
@@ -180,6 +181,7 @@ describe('Symbol page', () => {
             mockPeekAnalysisCache.mockReset();
             mockGetAssetInfoResilient.mockResolvedValue({
                 assetInfo: {
+                    symbol: 'AAPL',
                     name: 'Apple Inc.',
                     koreanName: '애플',
                     fmpSymbol: 'AAPL',

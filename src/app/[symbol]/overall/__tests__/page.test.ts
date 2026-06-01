@@ -69,6 +69,7 @@ describe('generateMetadata', () => {
         vi.clearAllMocks();
         mockGetAssetInfoResilient.mockResolvedValue({
             assetInfo: {
+                symbol: 'AAPL',
                 name: 'Apple Inc.',
                 koreanName: '애플',
                 fmpSymbol: 'AAPL',
@@ -132,6 +133,7 @@ describe('Overall page (narrative seed)', () => {
         mockPeekOverall.mockReset();
         mockGetAssetInfoResilient.mockResolvedValue({
             assetInfo: {
+                symbol: 'AAPL',
                 name: 'Apple Inc.',
                 koreanName: '애플',
                 fmpSymbol: 'AAPL',

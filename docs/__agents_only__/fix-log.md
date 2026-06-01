@@ -1,6 +1,19 @@
 
 # Fix Log
 
+
+## [PR #545 Round 4 | fix/symbol-infra-fallback | 2026-06-02]
+- Violation: `expect.objectContaining({ index: false })` 부정확한 매처 사용
+  - Rule: MISTAKES.md §Tests §13 — 값이 결정론적(deterministic)일 때는 정확한 matcher 사용해야 함
+  - Context: `overall/__tests__/page.test.ts` line 99-101에서 invalid ticker 경로의 robots 값이 항상 `{ index: false, follow: false }`인데 `objectContaining`으로 부정확하게 테스트해 `follow: true` 회귀를 감지하지 못함
+- Violation: 테스트 mock 객체에서 AssetInfo required 필드 `symbol` 누락
+  - Rule: MISTAKES.md §TypeScript §2 — Mock 객체는 실제 타입 계약과 일치해야 함
+  - Context: `page.test.ts`와 `overall/__tests__/page.test.ts`의 mockGetAssetInfoResilient 모든 assetInfo 객체에 symbol 필드 누락
+- Violation: `ResilientAssetInfo` 타입이 barrel에서 export되지 않음
+  - Rule: CONVENTIONS.md FSD — production 코드는 슬라이스 barrel만 import
+  - Context: 함수 반환 타입인 `ResilientAssetInfo`를 직접 type annotation해야 할 때 barrel에 없으면 deep import 강제
+
+
 ## [PR #545 Round 3 | fix/symbol-infra-fallback | 2026-06-02]
 - Violation: JSDoc "세 가지로 끝난다" 서술이 실제 네 가지 경로(DYNAMIC_SERVER_USAGE rethrow 포함)와 불일치
   - Rule: MISTAKES.md §15.6 — 주석/JSDoc의 모든 서술은 실제 런타임/코드 현실과 일치해야 한다
