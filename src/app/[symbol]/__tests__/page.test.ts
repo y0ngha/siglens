@@ -73,7 +73,7 @@ import { SymbolPageClient } from '@/widgets/symbol-page/SymbolPageClient';
 import { findElementByType } from '@/__tests__/utils/findElementByType';
 import type { MockedFunction } from 'vitest';
 
-const mockGetAssetInfoCached = getAssetInfoResilient as MockedFunction<
+const mockGetAssetInfoResilient = getAssetInfoResilient as MockedFunction<
     typeof getAssetInfoResilient
 >;
 const mockPeekAnalysisCache = peekAnalysisCache as MockedFunction<
@@ -102,7 +102,7 @@ describe('Symbol page', () => {
         });
 
         it('returns metadata with title for valid ticker', async () => {
-            mockGetAssetInfoCached.mockResolvedValue({
+            mockGetAssetInfoResilient.mockResolvedValue({
                 assetInfo: {
                     name: 'Apple Inc.',
                     koreanName: '애플',
@@ -119,7 +119,7 @@ describe('Symbol page', () => {
         });
 
         it('canonical excludes tf — ISR page uses clean canonical regardless of query params', async () => {
-            mockGetAssetInfoCached.mockResolvedValue({
+            mockGetAssetInfoResilient.mockResolvedValue({
                 assetInfo: {
                     name: 'Apple Inc.',
                     koreanName: '애플',
@@ -140,7 +140,7 @@ describe('Symbol page', () => {
         });
 
         it('does not add noindex when no tf param', async () => {
-            mockGetAssetInfoCached.mockResolvedValue({
+            mockGetAssetInfoResilient.mockResolvedValue({
                 assetInfo: {
                     name: 'Apple Inc.',
                     koreanName: '애플',
@@ -158,7 +158,7 @@ describe('Symbol page', () => {
 
         it('returns noindex when getAssetInfoResilient degrades on infra failure', async () => {
             // 인프라 실패 시 fallback의 종목 실재 여부가 불명하므로 검색 노출을 막는다.
-            mockGetAssetInfoCached.mockResolvedValue({
+            mockGetAssetInfoResilient.mockResolvedValue({
                 assetInfo: { symbol: 'AAPL', name: 'AAPL' },
                 degraded: true,
             } as never);
@@ -176,9 +176,9 @@ describe('Symbol page', () => {
             // vi.clearAllMocks()를 쓰지 않는 이유: QueryClient 등 mockImplementation
             // 으로 구성한 모듈 모킹의 구현까지 지워져 생성자 모킹이 깨진다. 이 블록이
             // 의존하는 두 mock만 선택적으로 초기화한다.
-            mockGetAssetInfoCached.mockReset();
+            mockGetAssetInfoResilient.mockReset();
             mockPeekAnalysisCache.mockReset();
-            mockGetAssetInfoCached.mockResolvedValue({
+            mockGetAssetInfoResilient.mockResolvedValue({
                 assetInfo: {
                     name: 'Apple Inc.',
                     koreanName: '애플',

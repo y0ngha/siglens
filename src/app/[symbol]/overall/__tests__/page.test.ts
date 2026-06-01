@@ -47,7 +47,7 @@ vi.mock('next/navigation', () => ({
     notFound: vi.fn(),
 }));
 
-import { default as OverallPage } from '@/app/[symbol]/overall/page';
+import { generateMetadata, default as OverallPage } from '@/app/[symbol]/overall/page';
 import { getAssetInfoResilient } from '@/entities/ticker';
 import {
     GEMINI_2_5_FLASH_LITE_MODEL,
@@ -57,12 +57,57 @@ import { OverallContent } from '@/widgets/overall/OverallContent';
 import { findElementByType } from '@/__tests__/utils/findElementByType';
 import type { MockedFunction } from 'vitest';
 
-const mockGetAssetInfoCached = getAssetInfoResilient as MockedFunction<
+const mockGetAssetInfoResilient = getAssetInfoResilient as MockedFunction<
     typeof getAssetInfoResilient
 >;
 const mockPeekOverall = peekOverallAnalysisCache as MockedFunction<
     typeof peekOverallAnalysisCache
 >;
+
+describe('generateMetadata', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mockGetAssetInfoResilient.mockResolvedValue({
+            assetInfo: {
+                name: 'Apple Inc.',
+                koreanName: '애플',
+                fmpSymbol: 'AAPL',
+            },
+            degraded: false,
+        } as never);
+    });
+
+    it('returns noindex when degraded on infra failure', async () => {
+        mockGetAssetInfoResilient.mockResolvedValue({
+            assetInfo: { symbol: 'AAPL', name: 'AAPL' },
+            degraded: true,
+        } as never);
+
+        const metadata = await generateMetadata({
+            params: Promise.resolve({ symbol: 'aapl' }),
+        });
+
+        expect(metadata.robots).toEqual({ index: false, follow: false });
+    });
+
+    it('returns normal metadata when not degraded', async () => {
+        const metadata = await generateMetadata({
+            params: Promise.resolve({ symbol: 'aapl' }),
+        });
+
+        expect(metadata.robots).toBeUndefined();
+    });
+
+    it('returns noindex for invalid ticker', async () => {
+        const metadata = await generateMetadata({
+            params: Promise.resolve({ symbol: '!!!invalid' }),
+        });
+
+        expect(metadata.robots).toEqual(
+            expect.objectContaining({ index: false })
+        );
+    });
+});
 
 describe('Overall page (narrative seed)', () => {
     interface OverallSeedProps {
@@ -83,9 +128,9 @@ describe('Overall page (narrative seed)', () => {
     }
 
     beforeEach(() => {
-        mockGetAssetInfoCached.mockReset();
+        mockGetAssetInfoResilient.mockReset();
         mockPeekOverall.mockReset();
-        mockGetAssetInfoCached.mockResolvedValue({
+        mockGetAssetInfoResilient.mockResolvedValue({
             assetInfo: {
                 name: 'Apple Inc.',
                 koreanName: '애플',

@@ -1,6 +1,14 @@
 
 # Fix Log
 
+## [PR #545 Round 1 | fix/symbol-infra-fallback | 2026-06-02]
+- Violation: 변수명 `mockGetAssetInfoCached`가 실제로는 `getAssetInfoResilient`를 참조 (2개 파일)
+  - Rule: MISTAKES.md §11 — 함수/변수명은 실제 참조 대상과 정확하게 일치해야 한다
+  - Context: PR #545에서 `getAssetInfoCached` → `getAssetInfoResilient`로 교체 후 테스트 변수명 rename이 누락됨
+- Violation: `if (degraded)` 신규 분기에 대한 테스트 케이스 미커버 (5개 페이지: overall/news/fundamental/options/fear-greed)
+  - Rule: MISTAKES.md §18 — 새로운 조건 분기는 true/false 두 경로 모두 테스트 케이스가 필요하다
+  - Context: `getAssetInfoResilient` 교체 시 degraded 분기를 7개 라우트에 추가했지만 overall 외 5개 페이지 generateMetadata 테스트 누락
+
 ## [feat/bot-cost-caching Round 1 | feat/bot-cost-caching | 2026-05-28]
 - Violation: 'use server' file exported non-async-function constants `POLL_INTERVAL_MS`, `POLL_MAX_ATTEMPTS`
   - Rule: entities/CONVENTIONS.md — 'use server' files may only export async functions; constants must live in separate modules

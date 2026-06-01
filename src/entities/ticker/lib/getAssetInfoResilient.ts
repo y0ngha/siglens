@@ -34,6 +34,16 @@ export async function getAssetInfoResilient(
     try {
         return { assetInfo: await getAssetInfoCached(ticker), degraded: false };
     } catch (e) {
+        // Next.js가 static generation / ISR 중 dynamic API를 만나면 DynamicServerError를
+        // 제어 흐름 수단으로 throw한다. 이를 인프라 실패로 오인하면 불필요한 에러 로그가
+        // 남고 fallback degrade 응답이 반환된다. 제어 흐름 에러는 그대로 rethrow한다.
+        if (
+            e instanceof Error &&
+            ((e as { digest?: string }).digest === 'DYNAMIC_SERVER_USAGE' ||
+                e.message.includes('Dynamic server usage'))
+        ) {
+            throw e;
+        }
         console.error(
             '[getAssetInfoResilient] infra failure, ticker fallback:',
             e
