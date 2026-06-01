@@ -56,6 +56,21 @@ const data = await fetch(url, {
 > 임시로 꺼 둔 상태이며, 추후 재활성화 시 `'use cache'` / `cacheLife` / `cacheTag` 패턴과
 > dynamic metadata 처리 방식을 함께 재설계해야 한다.
 
+### ISR / Route Segment Config (⚠️ 리터럴 강제)
+
+`export const revalidate` / `dynamic` 등 route segment config는 **반드시 정적 분석 가능한
+리터럴**이어야 한다. import한 상수나 식(`SECONDS_PER_HOUR`, `60 * 60`)으로 추출하면 Next.js가
+값을 정적 분석하지 못해 `⨯ Invalid segment configuration export detected ... configs not being
+applied`로 **config를 조용히 무시 → ISR이 깨진다**. 따라서 **`docs/MISTAKES.md` §15(매직넘버
+상수 추출)은 route segment config에 적용하지 않는다** — 리터럴을 유지하고 `// 1h` / `// 30d`
+인라인 코멘트로 의미만 표기한다. (`app/page.tsx`도 이미 `revalidate = 3600` 리터럴.)
+
+동적 세그먼트(`[symbol]`) 라우트는 `revalidate`만으로 ISR이 걸리지 않는다 — `ƒ (Dynamic)`로
+남아 매 요청 렌더된다. **`export async function generateStaticParams() { return [] }`**(빈 배열 =
+on-demand ISR)를 함께 export해야 빌드에서 `● (SSG)`로 전환된다. 메타데이터 이미지
+(opengraph/twitter)는 `export const dynamic = 'force-static'`로 정적화한다 — `force-static`은
+`cookies()/headers()/searchParams`만 비우고 `params`는 유지하므로 종목별로 정상 렌더된다.
+
 ---
 
 ## Server Actions

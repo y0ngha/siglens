@@ -17,11 +17,9 @@ import { buildChatState } from './utils/buildChatState';
 import { BotBlockedNotice } from '@/shared/ui/BotBlockedNotice';
 import { useDefaultModelId } from '@/widgets/symbol-page/hooks/useDefaultModelId';
 import { cn } from '@/shared/lib/cn';
-import {
-    type OverallAnalysisResponse,
-    type Timeframe,
-} from '@y0ngha/siglens-core';
+import { type OverallAnalysisResponse } from '@y0ngha/siglens-core';
 import { type CSSProperties, useMemo } from 'react';
+import { useTimeframeFromUrl } from './hooks/useTimeframeFromUrl';
 
 const SKELETON_LINE_COUNT = 3;
 const SKELETON_WIDTH_START_PCT = 85;
@@ -30,7 +28,6 @@ const SKELETON_WIDTH_STEP_PCT = 12;
 interface OverallContentProps {
     symbol: string;
     companyName: string;
-    timeframe: Timeframe;
     /**
      * 서버에서 peek로 미리 읽은 캐시 종합 분석 서사(SSR seed). 주어지면
      * useOverallAnalysis가 마운트 즉시 done 상태로 렌더한다(LLM 비용 0).
@@ -41,9 +38,10 @@ interface OverallContentProps {
 export function OverallContent({
     symbol,
     companyName,
-    timeframe,
     initialAnalysis,
 }: OverallContentProps) {
+    // tf는 서버가 아니라 client가 URL에서 읽어 [symbol] ISR(정적 렌더)을 유지한다.
+    const timeframe = useTimeframeFromUrl();
     const modelId = useDefaultModelId();
     const { state, trigger } = useOverallAnalysis(
         symbol,
@@ -53,8 +51,7 @@ export function OverallContent({
         initialAnalysis
     );
 
-    // 훅 선언 순서 예외(MISTAKES.md #17): usePublishSymbolChat은 chatState(파생 변수)를
-    // 인자로 받기 때문에 useMemo 뒤에 위치해야 한다.
+    // usePublishSymbolChat은 chatState(useMemo 반환값)를 인자로 받으므로 useMemo 뒤에 둔다(§17 의존 순서).
     const chatState = useMemo(
         () => buildChatState(state, timeframe),
         [state, timeframe]

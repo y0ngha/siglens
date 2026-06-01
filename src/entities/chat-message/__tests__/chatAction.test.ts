@@ -151,7 +151,6 @@ describe('chatAction 함수는', () => {
                 { callAiProvider: callAiProviderRouter }
             );
         });
-
     });
 
     describe('Anthropic 모델을 사용할 때', () => {

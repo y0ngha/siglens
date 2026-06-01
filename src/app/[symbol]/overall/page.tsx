@@ -3,9 +3,10 @@ import { CrossLinkCards, SymbolPageHeading } from '@/widgets/symbol-page';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import {
     DEFAULT_TIMEFRAME,
-    isValidTimeframe,
+    SymbolRouteParams,
     VALID_TICKER_RE,
 } from '@/shared/config/market';
+import { Suspense } from 'react';
 import {
     buildAssetAboutNode,
     buildDisplayName,
@@ -21,14 +22,24 @@ import {
 import {
     GEMINI_2_5_FLASH_LITE_MODEL,
     peekOverallAnalysisCache,
-    type Timeframe,
 } from '@y0ngha/siglens-core';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
+export const revalidate = 3600; // 1h — ISR
+
+// generateStaticParams가 없으면 동적 라우트는 매 요청 동적 렌더돼 revalidate가
+// 무력화된다(Next.js). 빈 배열 = 빌드 prebuild 없이 첫 요청에 렌더+캐시하는 on-demand
+// ISR. (cacheComponents 비활성이라 빈 배열 허용)
+export async function generateStaticParams(): Promise<SymbolRouteParams[]> {
+    return [];
+}
+
+// Suspense fallback 스켈레톤 박스 개수 (CLS 방지용 placeholder).
+const SUSPENSE_SKELETON_COUNT = 3;
+
 interface Props {
     params: Promise<{ symbol: string }>;
-    searchParams: Promise<{ tf?: string }>;
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -69,8 +80,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     };
 }
 
-// `?tf=` is read into a Client prop; canonical URL excludes it so search engines see one URL per page.
-export default async function OverallPage({ params, searchParams }: Props) {
+// `?tf=` is read by the client component (useSearchParams); canonical URL excludes it so search engines see one URL per page.
+export default async function OverallPage({ params }: Props) {
     const { symbol } = await params;
     const upper = symbol.toUpperCase();
 
@@ -82,9 +93,6 @@ export default async function OverallPage({ params, searchParams }: Props) {
     if (!assetInfo) {
         notFound();
     }
-
-    const { tf } = await searchParams;
-    const timeframe: Timeframe = isValidTimeframe(tf) ? tf : DEFAULT_TIMEFRAME;
 
     // peek은 읽기 전용 — enqueue/생성 없음. MISS·corrupt·read 실패는 모두 null로
     // degrade하므로 OverallContent는 idle CTA로 자연 폴백한다(렌더를 깨지 않음).
@@ -98,10 +106,12 @@ export default async function OverallPage({ params, searchParams }: Props) {
     // 시그니처가 chart의 peekAnalysisCache(symbol, timeframe, fmpSymbol?, modelId?)와
     // 다른 건 의도적이다 — overall은 2번째 인자로 companyName을 받는다. 각 core peek
     // 함수가 자기 캐시 키 구성에 맞춰 서로 다른 시그니처를 갖는다.
+    //
+    // ISR: tf는 client가 URL에서 읽으므로 서버는 DEFAULT_TIMEFRAME으로 peek한다.
     const cachedOverall = await peekOverallAnalysisCache(
         upper,
         assetInfo.name,
-        timeframe,
+        DEFAULT_TIMEFRAME,
         GEMINI_2_5_FLASH_LITE_MODEL
     ).catch((error: unknown) => {
         console.error('[OverallPage] peekOverallAnalysisCache failed:', error);
@@ -219,12 +229,29 @@ export default async function OverallPage({ params, searchParams }: Props) {
                         한 번 훑어보면 도움이 됩니다.
                     </p>
                 </section>
-                <OverallContent
-                    symbol={upper}
-                    companyName={assetInfo.name}
-                    timeframe={timeframe}
-                    initialAnalysis={cachedOverall ?? undefined}
-                />
+                {/* fallback은 종합 분석 섹션 높이를 미리 차지해, useSearchParams CSR-bailout
+                    서브트리가 hydration 전 비어 보이는 flash/CLS를 방지한다(overall/loading.tsx와 동일 룩). */}
+                <Suspense
+                    fallback={
+                        <div className="space-y-6" aria-hidden="true">
+                            {Array.from(
+                                { length: SUSPENSE_SKELETON_COUNT },
+                                (_, i) => (
+                                    <div
+                                        key={i}
+                                        className="bg-secondary-700 h-32 animate-pulse rounded-xl"
+                                    />
+                                )
+                            )}
+                        </div>
+                    }
+                >
+                    <OverallContent
+                        symbol={upper}
+                        companyName={assetInfo.name}
+                        initialAnalysis={cachedOverall ?? undefined}
+                    />
+                </Suspense>
                 <CrossLinkCards symbol={upper} current="overall" />
             </main>
         </>

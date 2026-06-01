@@ -134,4 +134,65 @@ describe('searchBySymbol/searchByName', () => {
         );
         warnSpy.mockRestore();
     });
+
+    describe('throwOnInfraFailure 모드 (getAssetInfo 경로)', () => {
+        it('!res.ok(429/5xx)면 throw한다', async () => {
+            mockFetch.mockResolvedValue({ ok: false, status: 429 });
+            await expect(
+                searchBySymbol('AAPL', { throwOnInfraFailure: true })
+            ).rejects.toThrow();
+        });
+
+        it('network/timeout 예외면 throw한다', async () => {
+            mockFetch.mockRejectedValue(new Error('network down'));
+            await expect(
+                searchBySymbol('AAPL', { throwOnInfraFailure: true })
+            ).rejects.toThrow();
+        });
+
+        it('200 + 빈 배열은 throw하지 않고 [] 반환 (legit no-match)', async () => {
+            mockFetch.mockResolvedValue({
+                ok: true,
+                json: async () => [],
+            });
+            await expect(
+                searchBySymbol('NOPE', { throwOnInfraFailure: true })
+            ).resolves.toEqual([]);
+        });
+
+        it('lenient(기본값)는 에러 시 여전히 []로 degrade한다', async () => {
+            mockFetch.mockResolvedValue({ ok: false, status: 500 });
+            await expect(searchBySymbol('AAPL')).resolves.toEqual([]);
+        });
+
+        it('FMP config 없음이면 throw하고 fetch하지 않는다', async () => {
+            delete process.env.FMP_API_KEY;
+            await expect(
+                searchBySymbol('AAPL', { throwOnInfraFailure: true })
+            ).rejects.toThrow();
+            expect(mockFetch).not.toHaveBeenCalled();
+        });
+
+        it('200 + 비배열 응답이면 throw한다', async () => {
+            mockFetch.mockResolvedValue({
+                ok: true,
+                json: async () => ({ error: 'invalid' }),
+            });
+            await expect(
+                searchBySymbol('AAPL', { throwOnInfraFailure: true })
+            ).rejects.toThrow();
+        });
+
+        it('JSON 파싱 실패면 throw한다', async () => {
+            mockFetch.mockResolvedValue({
+                ok: true,
+                json: async () => {
+                    throw new Error('invalid json');
+                },
+            });
+            await expect(
+                searchBySymbol('AAPL', { throwOnInfraFailure: true })
+            ).rejects.toThrow();
+        });
+    });
 });

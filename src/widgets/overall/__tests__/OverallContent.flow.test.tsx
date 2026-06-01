@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { MockedFunction } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -42,6 +42,13 @@ vi.mock('@/features/symbol-chat', () => ({
 vi.mock('@/widgets/symbol-page/hooks/useDefaultModelId', () => ({
     useDefaultModelId: vi.fn(() => 'gemini-2.5-flash-lite'),
 }));
+// useSearchParams를 테스트별로 바꿀 수 있도록 mutable ref로 모킹한다(고정 빈 값 X).
+const { searchParamsRef } = vi.hoisted(() => ({
+    searchParamsRef: { value: new URLSearchParams() },
+}));
+vi.mock('next/navigation', () => ({
+    useSearchParams: () => searchParamsRef.value,
+}));
 // react-markdown은 ESM-only라 테스트 환경에서 직접 로드하면 실패한다. 본 테스트는
 // 서사 텍스트 노출 여부만 보므로 MarkdownText를 단순 wrapper로 대체한다.
 vi.mock('@/shared/ui/MarkdownText', () => ({
@@ -79,20 +86,49 @@ function renderOverall() {
     // 매 호출이 격리된 새 QueryClient를 만들어 테스트 간 캐시 공유가 없다. 그래서
     // hook 테스트(useOverallAnalysis.test.tsx)처럼 client를 추적해 afterEach에서
     // clear할 필요가 없다 — 컴포넌트는 RTL cleanup이 unmount하고 client는 GC된다.
-    return render(
-        <OverallContent
-            symbol="AAPL"
-            companyName="Apple Inc."
-            timeframe="1Day"
-        />,
-        { wrapper: createQueryClientWrapper().wrapper }
-    );
+    return render(<OverallContent symbol="AAPL" companyName="Apple Inc." />, {
+        wrapper: createQueryClientWrapper().wrapper,
+    });
 }
 
 describe('OverallContent 사용자 분석 플로우 (userEvent)', () => {
     beforeEach(() => {
         mockSubmit.mockReset();
         mockPollOverall.mockReset();
+        searchParamsRef.value = new URLSearchParams();
+    });
+
+    afterEach(() => {
+        searchParamsRef.value = new URLSearchParams();
+    });
+
+    // tf 분기의 단위 검증(참/거짓 양쪽)은 OverallContent.test.tsx에 있고, 여기서는
+    // 실제 useOverallAnalysis를 통해 유효 tf가 submit까지 전파되는지(참 분기)를 확인한다.
+    it('유효한 tf 쿼리가 있으면 그 timeframe으로 submit한다 (§18 참 분기)', async () => {
+        const user = userEvent.setup();
+        searchParamsRef.value = new URLSearchParams('tf=1Hour');
+        mockSubmit.mockResolvedValue({
+            status: 'submitted',
+            jobId: 'overall-job',
+        });
+        mockPollOverall.mockResolvedValueOnce({
+            status: 'done',
+            result: DONE_RESULT,
+        });
+
+        renderOverall();
+        await user.click(
+            await screen.findByRole('button', { name: /AI 종합 분석 받기/ })
+        );
+        await screen.findByText('AAPL 종합 분석 헤드라인');
+
+        expect(mockSubmit).toHaveBeenCalledWith(
+            'AAPL',
+            'Apple Inc.',
+            '1Hour',
+            expect.anything(),
+            expect.anything()
+        );
     });
 
     it('CTA 클릭 → submit → polling → done 서사를 렌더한다', async () => {

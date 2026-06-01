@@ -17,6 +17,11 @@ const US_EXCHANGES: ReadonlySet<string> = new Set([
 
 type FmpEndpoint = 'search-symbol' | 'search-name';
 
+/** getAssetInfo가 쓰는 throwOnInfraFailure(인프라 에러 throw) vs 검색 UI 기본(빈 배열 degrade)을 가르는 옵션. */
+interface FmpSearchOptions {
+    throwOnInfraFailure?: boolean;
+}
+
 /** Type guard validating per-element FMP response shape before trusting it as `FmpSearchResult`. */
 function isFmpSearchResultLike(value: unknown): value is FmpSearchResult {
     if (value === null || typeof value !== 'object') return false;
@@ -59,39 +64,79 @@ export function filterUsExchanges(
 
 async function fetchFmpEndpoint(
     endpoint: FmpEndpoint,
-    query: string
+    query: string,
+    options?: FmpSearchOptions
 ): Promise<FmpSearchResult[]> {
+    const throwOnInfraFailure = options?.throwOnInfraFailure ?? false;
+
     const config = tryReadFmpConfig();
-    if (!config) return [];
+    if (!config) {
+        // throwOnInfraFailure(getAssetInfo): 미설정은 인프라 문제 — null→404 캐싱을 막기 위해 throw.
+        // 기본(검색 UI): 빈 결과로 degrade.
+        if (throwOnInfraFailure)
+            throw new Error('[fmpTickerApi] FMP config missing');
+        return [];
+    }
 
     const params = new URLSearchParams({
         query,
         limit: String(FMP_SEARCH_LIMIT),
         apikey: config.apiKey,
     });
-
     const url = `${FMP_BASE_URL}/${endpoint}?${params}`;
 
+    let res: Response;
     try {
-        const res = await fetch(url, {
+        res = await fetch(url, {
             signal: AbortSignal.timeout(FMP_FETCH_TIMEOUT_MS),
         });
-        if (!res.ok) return [];
-        const raw: unknown = await res.json();
-        // FMP search endpoints return a JSON array of records matching FmpSearchResult.
-        // We validate per-element shape with `toFmpSearchResults` so malformed rows
-        // (missing required fields) are dropped before reaching downstream consumers
-        // (`filterUsExchanges`, `toTickerSearchResult`).
-        return Array.isArray(raw) ? toFmpSearchResults(raw) : [];
-    } catch {
+    } catch (e) {
+        if (throwOnInfraFailure)
+            throw new Error(`[fmpTickerApi] ${endpoint} fetch failed`, {
+                cause: e,
+            });
         return [];
     }
+
+    if (!res.ok) {
+        if (throwOnInfraFailure)
+            throw new Error(`[fmpTickerApi] ${endpoint} HTTP ${res.status}`);
+        return [];
+    }
+
+    let raw: unknown;
+    try {
+        raw = await res.json();
+    } catch (e) {
+        if (throwOnInfraFailure)
+            throw new Error(`[fmpTickerApi] ${endpoint} JSON parse failed`, {
+                cause: e,
+            });
+        return [];
+    }
+
+    // 비배열 응답은 신뢰할 수 없는 형태 — throwOnInfraFailure면 throw해 no-match 오인/캐싱 방지.
+    if (!Array.isArray(raw)) {
+        if (throwOnInfraFailure)
+            throw new Error(
+                `[fmpTickerApi] ${endpoint} unexpected non-array response`
+            );
+        return [];
+    }
+
+    // FMP search endpoints return a JSON array of records matching FmpSearchResult.
+    // We validate per-element shape with `toFmpSearchResults` so malformed rows
+    // (missing required fields) are dropped before reaching downstream consumers
+    // (`filterUsExchanges`, `toTickerSearchResult`).
+    // 200 + 빈 배열은 정상적인 "매칭 없음"이므로 throwOnInfraFailure여도 throw하지 않는다.
+    return toFmpSearchResults(raw);
 }
 
 export async function searchBySymbol(
-    query: string
+    query: string,
+    options?: FmpSearchOptions
 ): Promise<FmpSearchResult[]> {
-    return fetchFmpEndpoint('search-symbol', query);
+    return fetchFmpEndpoint('search-symbol', query, options);
 }
 
 export async function searchByName(query: string): Promise<FmpSearchResult[]> {

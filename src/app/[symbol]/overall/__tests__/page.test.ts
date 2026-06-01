@@ -74,7 +74,6 @@ describe('Overall page (narrative seed)', () => {
     async function getOverallProps(): Promise<OverallSeedProps> {
         const tree = await OverallPage({
             params: Promise.resolve({ symbol: 'aapl' }),
-            searchParams: Promise.resolve({}),
         });
         const content = findElementByType(tree, OverallContent);
         if (content === null) {

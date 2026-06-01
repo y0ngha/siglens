@@ -183,7 +183,9 @@ export async function getAssetInfo(symbol: string): Promise<AssetInfo | null> {
         return fromDb;
     }
 
-    const fmpResults = await searchBySymbol(upper);
+    const fmpResults = await searchBySymbol(upper, {
+        throwOnInfraFailure: true,
+    });
     const usResults = filterUsExchanges(fmpResults);
     const match = usResults.find(r => r.symbol === upper) ?? usResults[0];
     if (!match) return null;

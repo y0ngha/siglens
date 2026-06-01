@@ -7,7 +7,7 @@ import {
 } from '@y0ngha/siglens-core';
 import {
     DEFAULT_TIMEFRAME,
-    isValidTimeframe,
+    SymbolRouteParams,
     VALID_TICKER_RE,
 } from '@/shared/config/market';
 import {
@@ -31,10 +31,19 @@ import {
 } from '@tanstack/react-query';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { Suspense } from 'react';
+
+export const revalidate = 3600; // 1h — ISR
+
+// generateStaticParams가 없으면 동적 라우트는 매 요청 동적 렌더돼 revalidate가
+// 무력화된다(Next.js). 빈 배열 = 빌드 시 prebuild 없이, 첫 요청에 렌더+캐시 후
+// revalidate 주기로 재생성하는 on-demand ISR. (cacheComponents 비활성이라 빈 배열 허용)
+export async function generateStaticParams(): Promise<SymbolRouteParams[]> {
+    return [];
+}
 
 interface Props {
     params: Promise<{ symbol: string }>;
-    searchParams: Promise<{ tf?: string }>;
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -77,10 +86,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     };
 }
 
-export default async function SymbolPage({ params, searchParams }: Props) {
+export default async function SymbolPage({ params }: Props) {
     const { symbol } = await params;
-    const { tf } = await searchParams;
-    const initialTimeframe = isValidTimeframe(tf) ? tf : DEFAULT_TIMEFRAME;
     const ticker = symbol.toUpperCase();
     // 다른 5개 sibling 페이지(news/fundamental/options/overall/fear-greed)와 일관:
     // 잘못된 ticker 형식은 본문에서도 notFound로 즉시 차단한다 (generateMetadata 가드와 짝).
@@ -181,34 +188,20 @@ export default async function SymbolPage({ params, searchParams }: Props) {
     // peek도 동일 모델을 넘겨야 HIT한다.
     // bars prefetch와 독립이므로 함께 await해 병렬화한다.
     const [, cachedAnalysis] = await Promise.all([
-        Promise.all([
-            queryClient.prefetchQuery({
-                queryKey: QUERY_KEYS.bars(
-                    symbol,
-                    initialTimeframe,
-                    assetInfo.fmpSymbol
-                ),
-                queryFn: barsQueryFn,
-            }),
-            ...(initialTimeframe !== DEFAULT_TIMEFRAME
-                ? [
-                      queryClient.prefetchQuery({
-                          queryKey: QUERY_KEYS.bars(
-                              symbol,
-                              DEFAULT_TIMEFRAME,
-                              assetInfo.fmpSymbol
-                          ),
-                          queryFn: barsQueryFn,
-                      }),
-                  ]
-                : []),
-        ]),
-        // ticker(표시 심볼)와 assetInfo.fmpSymbol(FMP 제공자 심볼)은 별개 값이다.
-        // peek은 submitAnalysis와의 호출부 parity를 위해 fmpSymbol을 받지만, 분석
-        // 캐시 키는 symbol+timeframe+modelId만 사용하므로 fmpSymbol은 조회에 무시된다.
+        // 차트 페이지는 ISR로 캐시되므로 prefetch는 기본 timeframe만 seed한다.
+        // ?tf= 딥링크는 클라(useTimeframeChange→useSearchParams)가 마운트 시 읽어
+        // 해당 timeframe bars를 fetch한다.
+        queryClient.prefetchQuery({
+            queryKey: QUERY_KEYS.bars(
+                symbol,
+                DEFAULT_TIMEFRAME,
+                assetInfo.fmpSymbol
+            ),
+            queryFn: barsQueryFn,
+        }),
         peekAnalysisCache(
             ticker,
-            initialTimeframe,
+            DEFAULT_TIMEFRAME,
             assetInfo.fmpSymbol,
             GEMINI_2_5_FLASH_LITE_MODEL
         ).catch((error: unknown) => {
@@ -261,17 +254,28 @@ export default async function SymbolPage({ params, searchParams }: Props) {
                     </p>
                 </section>
                 <HydrationBoundary state={dehydrate(queryClient)}>
-                    <SymbolPageClient
-                        symbol={symbol}
-                        companyName={assetInfo.name}
-                        displayName={displayName}
-                        initialAnalysis={initialAnalysis}
-                        // 순수 additive: 캐시 seed 여부와 무관하게 클라이언트는
-                        // 마운트 시 useAnalysis가 자동으로 재분석을 트리거하도록
-                        // 항상 true를 유지한다(봇은 enqueue가 skip되어 생성 안 됨).
-                        initialAnalysisFailed={true}
-                        indicatorCount={skillCounts.indicators}
-                    />
+                    {/* fallback은 차트 영역(flex-1)을 미리 차지해, useSearchParams CSR-bailout
+                        서브트리가 hydration 전 비어 보이는 flash/CLS를 방지한다. */}
+                    <Suspense
+                        fallback={
+                            <div
+                                className="bg-secondary-900 flex min-h-0 flex-1 flex-col overflow-hidden"
+                                aria-hidden="true"
+                            />
+                        }
+                    >
+                        <SymbolPageClient
+                            symbol={symbol}
+                            companyName={assetInfo.name}
+                            displayName={displayName}
+                            initialAnalysis={initialAnalysis}
+                            // 순수 additive: 캐시 seed 여부와 무관하게 클라이언트는
+                            // 마운트 시 useAnalysis가 자동으로 재분석을 트리거하도록
+                            // 항상 true를 유지한다(봇은 enqueue가 skip되어 생성 안 됨).
+                            initialAnalysisFailed={true}
+                            indicatorCount={skillCounts.indicators}
+                        />
+                    </Suspense>
                 </HydrationBoundary>
             </main>
         </>
