@@ -155,68 +155,58 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
  * messages (empty when the skill is valid or intentionally untagged). Exported
  * for unit testing without spawning the CLI.
  */
-export const validateSkillData = (data: Record<string, unknown>): string[] => {
-    const messages: string[] = [];
+export const validateSkillData = (data: Record<string, unknown>): string[] =>
     // A skill with no `gating` block is intentionally untagged (the core
     // selector fail-opens it). Only validate when a block is present.
-    if ('gating' in data) {
-        validateGating(data.gating, message => messages.push(message));
-    }
-    return messages;
-};
+    'gating' in data ? validateGating(data.gating) : [];
 
-function validateGating(
-    gating: unknown,
-    push: (message: string) => void
-): void {
+function validateGating(gating: unknown): string[] {
     if (!isRecord(gating)) {
-        push('`gating` must be a mapping.');
-        return;
+        return ['`gating` must be a mapping.'];
     }
 
     const tier = gating.tier;
     if (tier !== 'always_on' && tier !== 'gated') {
-        push(
-            `\`gating.tier\` must be 'always_on' or 'gated' (got ${String(tier)}).`
-        );
-        return;
+        return [
+            `\`gating.tier\` must be 'always_on' or 'gated' (got ${String(tier)}).`,
+        ];
     }
-    if (tier === 'always_on') return;
+    if (tier === 'always_on') return [];
 
     const signalKind = gating.signal_kind;
     if (signalKind !== 'event' && signalKind !== 'state') {
-        push(
-            `gated skill requires \`signal_kind\` of 'event' or 'state' (got ${String(signalKind)}).`
-        );
-        return;
+        return [
+            `gated skill requires \`signal_kind\` of 'event' or 'state' (got ${String(signalKind)}).`,
+        ];
     }
 
     if (signalKind === 'event') {
         const triggers = gating.triggers;
         if (!Array.isArray(triggers) || triggers.length === 0) {
-            push(
-                'event-gated skill is unreachable: `triggers` is missing or empty.'
-            );
-            return;
+            return [
+                'event-gated skill is unreachable: `triggers` is missing or empty.',
+            ];
         }
-        for (const trigger of triggers) {
+        return triggers.flatMap(trigger => {
             if (typeof trigger !== 'string') {
-                push(`\`triggers\` entry is not a string: ${String(trigger)}.`);
-                continue;
+                return [
+                    `\`triggers\` entry is not a string: ${String(trigger)}.`,
+                ];
             }
             if (!isKnownTrigger(trigger)) {
-                push(
-                    `unknown trigger "${trigger}" — not a detectSignals catalog entry or candle pattern.`
-                );
+                return [
+                    `unknown trigger "${trigger}" — not a detectSignals catalog entry or candle pattern.`,
+                ];
             }
-        }
-        return;
+            return [];
+        });
     }
 
     const state = gating.state;
     if (!isRecord(state)) {
-        push('state-gated skill is unreachable: `state` predicate is missing.');
-        return;
+        return [
+            'state-gated skill is unreachable: `state` predicate is missing.',
+        ];
     }
     const feature = state.feature;
     const predicate = state.predicate;
@@ -224,51 +214,66 @@ function validateGating(
         typeof feature !== 'string' ||
         !(STATE_FEATURES as readonly string[]).includes(feature)
     ) {
-        push(`invalid \`state.feature\`: ${String(feature)}.`);
-        return;
+        return [`invalid \`state.feature\`: ${String(feature)}.`];
     }
     if (
         typeof predicate !== 'string' ||
         !(STATE_PREDICATE_KINDS as readonly string[]).includes(predicate)
     ) {
-        push(`invalid \`state.predicate\`: ${String(predicate)}.`);
-        return;
+        return [`invalid \`state.predicate\`: ${String(predicate)}.`];
     }
     if (!VALID_STATE_PAIRS.has(`${feature}:${predicate}`)) {
-        push(
-            `unreachable state predicate: (${feature}, ${predicate}) is never evaluated by the core — use the supported predicate for this feature.`
-        );
+        return [
+            `unreachable state predicate: (${feature}, ${predicate}) is never evaluated by the core — use the supported predicate for this feature.`,
+        ];
     }
+    return [];
 }
+
+interface FileResult {
+    hasGating: boolean;
+    errors: SkillError[];
+}
+
+/** Read + validate one skill file. Returns its errors (with file context) and whether it carries a gating block. */
+const parseSkillFile = (file: string): FileResult => {
+    const rel = relative(REPO_ROOT, file);
+    const withFile = (message: string): SkillError => ({ file: rel, message });
+
+    let data: Record<string, unknown>;
+    try {
+        const parsed = matter(readFileSync(file, 'utf-8'));
+        if (!isRecord(parsed.data)) {
+            return {
+                hasGating: false,
+                errors: [withFile('frontmatter is missing or not a mapping.')],
+            };
+        }
+        data = parsed.data;
+    } catch (error) {
+        return {
+            hasGating: false,
+            errors: [
+                withFile(
+                    `failed to parse frontmatter: ${(error as Error).message}`
+                ),
+            ],
+        };
+    }
+
+    return {
+        hasGating: 'gating' in data,
+        errors: validateSkillData(data).map(withFile),
+    };
+};
 
 const main = async (): Promise<void> => {
     const files = await glob('**/*.md', { cwd: SKILLS_DIR, absolute: true });
     files.sort();
 
-    const errors: SkillError[] = [];
-    let withGating = 0;
-
-    for (const file of files) {
-        const rel = relative(REPO_ROOT, file);
-        const push = (message: string) => errors.push({ file: rel, message });
-
-        let data: Record<string, unknown>;
-        try {
-            const raw = readFileSync(file, 'utf-8');
-            const parsed = matter(raw);
-            if (!isRecord(parsed.data)) {
-                push('frontmatter is missing or not a mapping.');
-                continue;
-            }
-            data = parsed.data;
-        } catch (error) {
-            push(`failed to parse frontmatter: ${(error as Error).message}`);
-            continue;
-        }
-
-        if ('gating' in data) withGating += 1;
-        for (const message of validateSkillData(data)) push(message);
-    }
+    const parsed = files.map(file => parseSkillFile(file));
+    const withGating = parsed.filter(p => p.hasGating).length;
+    const errors: SkillError[] = parsed.flatMap(p => p.errors);
 
     if (errors.length > 0) {
         console.error(

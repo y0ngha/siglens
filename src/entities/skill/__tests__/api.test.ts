@@ -911,6 +911,24 @@ ${gatingYaml}${extra}
             });
         });
 
+        it('state predicate의 hi/lo 숫자 임계값을 함께 파싱한다', async () => {
+            const skill = await loadOne(
+                withGating(
+                    'gating:\n  tier: gated\n  signal_kind: state\n  state:\n    feature: williamsR\n    predicate: level\n    hi: -20\n    lo: -80'
+                )
+            );
+            expect(skill.gating).toEqual({
+                tier: 'gated',
+                signalKind: 'state',
+                state: {
+                    feature: 'williamsR',
+                    predicate: 'level',
+                    hi: -20,
+                    lo: -80,
+                },
+            });
+        });
+
         it('token_cost와 smc_full_guide를 camelCase로 매핑한다', async () => {
             const skill = await loadOne(
                 withGating(
@@ -923,8 +941,7 @@ ${gatingYaml}${extra}
         });
 
         it('따옴표 문자열 smc_full_guide: "true"도 smcFullGuide=true로 매핑한다', async () => {
-            // 최소 YAML 파서는 따옴표 없는 true를 문자열 'true'로 남기므로
-            // isYamlTrue가 문자열 'true' 분기도 처리해야 한다.
+            // 일부 YAML 저자가 boolean 대신 quoted string 'true'를 쓸 수 있으므로 두 형태 모두 처리하는지 확인
             const skill = await loadOne(
                 withGating(
                     'gating:\n  tier: always_on',
@@ -944,6 +961,13 @@ ${gatingYaml}${extra}
         it('잘못된 tier는 gating undefined로 fail-open한다', async () => {
             const skill = await loadOne(
                 withGating('gating:\n  tier: nonsense')
+            );
+            expect(skill.gating).toBeUndefined();
+        });
+
+        it('gated인데 signal_kind가 유효하지 않으면 gating undefined로 fail-open한다', async () => {
+            const skill = await loadOne(
+                withGating('gating:\n  tier: gated\n  signal_kind: bogus')
             );
             expect(skill.gating).toBeUndefined();
         });

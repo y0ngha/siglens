@@ -306,8 +306,9 @@ const parseGating = (raw: unknown): SkillGating | undefined => {
 };
 
 /**
- * Coerce a frontmatter boolean. The minimal YAML parser keeps an unquoted
- * `true` as the string `'true'`, so a flag must accept both forms.
+ * Coerce a frontmatter boolean. Some authors write `smc_full_guide: 'true'`
+ * (quoted string) instead of the correct `smc_full_guide: true` (boolean);
+ * accept both forms defensively.
  */
 const isYamlTrue = (value: unknown): boolean =>
     value === true || value === 'true';

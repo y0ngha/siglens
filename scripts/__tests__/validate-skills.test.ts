@@ -80,6 +80,18 @@ describe('validateSkillData', () => {
             expect(errors).toHaveLength(1);
             expect(errors[0]).toMatch(/unknown trigger "totally_fake_signal"/);
         });
+
+        it('triggers 배열에 비문자열 항목이 있으면 에러를 반환한다', () => {
+            const errors = validateSkillData({
+                gating: {
+                    tier: 'gated',
+                    signal_kind: 'event',
+                    triggers: ['rsi_oversold', 42],
+                },
+            });
+            expect(errors).toHaveLength(1);
+            expect(errors[0]).toMatch(/triggers.*entry is not a string/);
+        });
     });
 
     describe('unreachable skills', () => {
