@@ -33,8 +33,8 @@ const FIXTURE_PROFILE = {
  * contacting Google.
  *
  * DELIBERATE — Plan §4 exception (static import, NOT require-gated):
- * The plan defaults to require-gating fakes out of the prod bundle (as with
- * FakeMarketProvider / FakeNewsClient, which pull in heavy postgres/fixtures).
+ * The plan defaults to loading fakes via a gated require (as with
+ * FakeMarketProvider / FakeNewsClient, which pull in heavier postgres/fixtures).
  * This adapter is intentionally exempt and statically imported in
  * getOAuthAdapter, mirroring FakeChatProvider and E2eEmailDispatcher, because:
  *   (1) it has no heavy deps (only type-only imports), so its bundle footprint

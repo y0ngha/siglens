@@ -17,11 +17,13 @@ export function createDatabaseClient(config: DatabaseConfig): DatabaseClient {
 /**
  * Builds a `DatabaseClient` for the active environment: the local postgres-js
  * adapter under E2E_TEST, otherwise the production Neon serverless client.
- * The `require` (not `import`) keeps postgres-js out of the production bundle.
+ * This is a sync factory, so the E2E adapter loads via a gated `require` (a
+ * dynamic import isn't possible here). The branch is dead when E2E_TEST is unset
+ * and the adapter is server-only.
  */
 function buildClient(config: DatabaseConfig): DatabaseClient {
     if (isE2E()) {
-        // require keeps postgres-js out of the production bundle.
+        // Gated require — see the function doc. Dead branch when E2E_TEST is unset.
         const clientTest =
             require('./clientTest') as typeof import('./clientTest');
         return clientTest.createTestDatabaseClient(config);

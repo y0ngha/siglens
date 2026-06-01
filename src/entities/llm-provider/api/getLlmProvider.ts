@@ -15,8 +15,8 @@ import { isE2E } from '@/shared/api/e2eEnv';
  * without real LLM keys while leaving the prod path unchanged.
  *
  * DELIBERATE: unlike the other E2E fakes (FakeMarketProvider / FakeNewsClient /
- * FakeOptionsDataProvider / FakeFundamentalDataProvider), which are require-gated
- * to keep them out of the prod bundle, FakeChatProvider is intentionally a static
+ * FakeOptionsDataProvider / FakeFundamentalDataProvider), which load via a gated
+ * require, FakeChatProvider is intentionally a static
  * import because (a) it has no heavy deps (no postgres / JSON fixtures), so its
  * bundle footprint is negligible, and (b) the static import keeps this function's
  * E2E branch unit-testable — getLlmProvider.test.ts can mock the static module,

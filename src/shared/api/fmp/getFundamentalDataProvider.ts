@@ -26,7 +26,9 @@ let cached: FundamentalProvider | null = null;
 export function getFundamentalDataProvider(): FundamentalProvider {
     if (cached !== null) return cached;
     if (isE2E()) {
-        // require keeps the fake out of the production bundle.
+        // Sync factory — no dynamic import possible here, so the fake loads via a
+        // gated require. Server-only and dead when E2E_TEST is unset (Turbopack
+        // still bundles it into the server output).
         const { FakeFundamentalDataProvider } =
             require('./FakeFundamentalDataProvider') as typeof import('./FakeFundamentalDataProvider');
         cached = new FakeFundamentalDataProvider();
