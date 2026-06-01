@@ -16,7 +16,7 @@ import { VALID_TICKER_RE } from '@/shared/config/market';
 import {
     buildAssetAboutNode,
     buildDisplayName,
-    getAssetInfoCached,
+    getAssetInfoResilient,
 } from '@/entities/ticker';
 import { ensureNewsCardsAnalyzedAction } from '@/entities/news-article/actions';
 import { getTodayIsoDay } from '@/shared/lib/getTodayIsoDay';
@@ -50,7 +50,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     if (!VALID_TICKER_RE.test(upper)) {
         return { robots: { index: false, follow: false } };
     }
-    const assetInfo = await getAssetInfoCached(upper);
+    const { assetInfo, degraded } = await getAssetInfoResilient(upper);
+    if (degraded) {
+        return { robots: { index: false, follow: false } };
+    }
     const displayName = assetInfo ? buildDisplayName(assetInfo, upper) : upper;
     const { title, fullTitle, description, url, keywords } =
         buildSymbolNewsSeoContent(upper, {
@@ -149,7 +152,7 @@ export default async function NewsPage({ params }: Props) {
         notFound();
     }
 
-    const assetInfo = await getAssetInfoCached(upper);
+    const { assetInfo } = await getAssetInfoResilient(upper);
     if (!assetInfo) {
         notFound();
     }

@@ -13,7 +13,7 @@ import {
 import {
     buildAssetAboutNode,
     buildDisplayName,
-    getAssetInfoCached,
+    getAssetInfoResilient,
 } from '@/entities/ticker';
 import { getBarsAction } from '@/entities/bars/actions';
 import { countSkillFiles } from '@/entities/skill';
@@ -53,7 +53,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     if (!VALID_TICKER_RE.test(ticker)) {
         return { robots: { index: false, follow: false } };
     }
-    const assetInfo = await getAssetInfoCached(ticker);
+    const { assetInfo, degraded } = await getAssetInfoResilient(ticker);
+    if (degraded) {
+        return { robots: { index: false, follow: false } };
+    }
     const displayName = assetInfo
         ? buildDisplayName(assetInfo, ticker)
         : ticker;
@@ -92,8 +95,8 @@ export default async function SymbolPage({ params }: Props) {
     // 다른 5개 sibling 페이지(news/fundamental/options/overall/fear-greed)와 일관:
     // 잘못된 ticker 형식은 본문에서도 notFound로 즉시 차단한다 (generateMetadata 가드와 짝).
     if (!VALID_TICKER_RE.test(ticker)) notFound();
-    const [assetInfo, skillCounts] = await Promise.all([
-        getAssetInfoCached(ticker),
+    const [{ assetInfo }, skillCounts] = await Promise.all([
+        getAssetInfoResilient(ticker),
         countSkillFiles(),
     ]);
     if (!assetInfo) return notFound();

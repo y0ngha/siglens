@@ -79,6 +79,17 @@ vi.mock('@/widgets/fear-greed/FearGreedPage', () => ({
     FearGreedPage: () => null,
 }));
 
+vi.mock('@/widgets/options/OptionsPageClient', () => ({
+    OptionsPageClient: () => null,
+}));
+vi.mock('@/widgets/options/OptionsEmptyState', () => ({
+    OptionsEmptyState: () => null,
+}));
+vi.mock('@/entities/options-chain/lib/optionsDataCache', () => ({
+    hasOptionsMarket: vi.fn().mockResolvedValue(true),
+    fetchOptionsSnapshot: vi.fn().mockResolvedValue(null),
+}));
+
 vi.mock('@/app/[symbol]/fundamental/fundamentalData', () => ({
     getAnalystEstimates: vi.fn(),
     getCashFlowStatement: vi.fn(),
@@ -104,12 +115,12 @@ vi.mock('@/shared/lib/dateKey', () => ({
     todayKstIsoDate: vi.fn(() => '2026-05-21'),
 }));
 
-const { mockGetAssetInfoCached } = vi.hoisted(() => ({
-    mockGetAssetInfoCached: vi.fn(),
+const { mockGetAssetInfoResilient } = vi.hoisted(() => ({
+    mockGetAssetInfoResilient: vi.fn(),
 }));
 
 vi.mock('@/entities/ticker', () => ({
-    getAssetInfoCached: (...args: unknown[]) => mockGetAssetInfoCached(...args),
+    getAssetInfoResilient: mockGetAssetInfoResilient,
 }));
 
 // react.cache는 Node 환경에서 identity wrapper로 대체
@@ -159,6 +170,7 @@ import { generateMetadata as generateFundamentalMetadata } from '@/app/[symbol]/
 import { generateMetadata as generateNewsMetadata } from '@/app/[symbol]/news/page';
 import { generateMetadata as generateOverallMetadata } from '@/app/[symbol]/overall/page';
 import { generateMetadata as generateFearGreedMetadata } from '@/app/[symbol]/fear-greed/page';
+import { generateMetadata as generateOptionsMetadata } from '@/app/[symbol]/options/page';
 
 function makeParams(symbol: string): { params: Promise<{ symbol: string }> } {
     return { params: Promise.resolve({ symbol }) };
@@ -181,7 +193,7 @@ describe('generateMetadata — canonical URL 회귀 가드', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         // assetInfo null 반환 → ticker fallback 경로 검증
-        mockGetAssetInfoCached.mockResolvedValue(null);
+        mockGetAssetInfoResilient.mockResolvedValue({ assetInfo: null, degraded: false });
     });
 
     describe('[symbol] 루트 페이지 (/AAPL)', () => {
@@ -323,5 +335,57 @@ describe('generateMetadata — canonical URL 회귀 가드', () => {
                 'https://siglens.io/AAPL/overall'
             );
         });
+    });
+
+    describe('degraded fallback — noindex 전 라우트', () => {
+        /**
+         * 인프라 실패로 getAssetInfoResilient가 degraded:true를 반환할 때,
+         * 각 라우트의 generateMetadata가 noindex로 응답하는지 검증한다.
+         * (MISTAKES.md §18: 신규 조건 분기는 true/false 두 경로 모두 커버)
+         */
+        const degradedCases = [
+            {
+                name: '[symbol] 루트',
+                fn: () => generateSymbolMetadata(makeParamsWithSearch('aapl')),
+            },
+            {
+                name: 'news',
+                fn: () => generateNewsMetadata(makeParams('aapl')),
+            },
+            {
+                name: 'fundamental',
+                fn: () => generateFundamentalMetadata(makeParams('aapl')),
+            },
+            {
+                name: 'options',
+                fn: () => generateOptionsMetadata(makeParams('aapl')),
+            },
+            {
+                name: 'fear-greed',
+                fn: () => generateFearGreedMetadata(makeParams('aapl')),
+            },
+            {
+                name: 'overall',
+                fn: () => generateOverallMetadata(makeParamsWithSearch('aapl')),
+            },
+        ] as const;
+
+        beforeEach(() => {
+            mockGetAssetInfoResilient.mockResolvedValue({
+                assetInfo: { symbol: 'AAPL', name: 'AAPL' },
+                degraded: true,
+            });
+        });
+
+        it.each(degradedCases)(
+            '$name — degraded 시 noindex 반환',
+            async ({ fn }) => {
+                const metadata = await fn();
+                expect(metadata.robots).toEqual({
+                    index: false,
+                    follow: false,
+                });
+            }
+        );
     });
 });

@@ -30,7 +30,7 @@ import { SymbolRouteParams, VALID_TICKER_RE } from '@/shared/config/market';
 import {
     buildAssetAboutNode,
     buildDisplayName,
-    getAssetInfoCached,
+    getAssetInfoResilient,
 } from '@/entities/ticker';
 import {
     buildBreadcrumbJsonLd,
@@ -66,7 +66,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     if (!VALID_TICKER_RE.test(upper)) {
         return { robots: { index: false, follow: false } };
     }
-    const assetInfo = await getAssetInfoCached(upper);
+    const { assetInfo, degraded } = await getAssetInfoResilient(upper);
+    if (degraded) {
+        return { robots: { index: false, follow: false } };
+    }
     const displayName = assetInfo ? buildDisplayName(assetInfo, upper) : upper;
     // sector는 의도적으로 generateMetadata에서 사용하지 않는다. sector는 FMP getProfile 응답에만 있고
     // generateMetadata에서 별도 fetch하면 페이지 본문과 합쳐 round-trip이 두 배가 된다(SEO 메타에 sector 한 줄 더
@@ -271,9 +274,9 @@ export default async function FundamentalPage({ params }: Props) {
 
     // notFound guard + sector resolution을 위해 profile을 먼저 가져온다.
     // assetInfo는 한국어 종목명을 displayName에 합치기 위해 병렬로 가져온다.
-    const [profile, assetInfo] = await Promise.all([
+    const [profile, { assetInfo }] = await Promise.all([
         getProfile(upper),
-        getAssetInfoCached(upper),
+        getAssetInfoResilient(upper),
     ]);
     if (profile === null) {
         notFound();

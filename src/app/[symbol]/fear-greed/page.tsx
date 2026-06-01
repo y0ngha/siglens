@@ -11,7 +11,7 @@ import {
 import {
     buildAssetAboutNode,
     buildDisplayName,
-    getAssetInfoCached,
+    getAssetInfoResilient,
 } from '@/entities/ticker';
 import { getBarsAction } from '@/entities/bars/actions';
 import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/shared/config/queryConfig';
@@ -52,7 +52,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     if (!VALID_TICKER_RE.test(ticker)) {
         return { robots: { index: false, follow: false } };
     }
-    const assetInfo = await getAssetInfoCached(ticker);
+    const { assetInfo, degraded } = await getAssetInfoResilient(ticker);
+    if (degraded) {
+        return { robots: { index: false, follow: false } };
+    }
     const displayName = assetInfo
         ? buildDisplayName(assetInfo, ticker)
         : ticker;
@@ -90,7 +93,7 @@ export default async function SymbolFearGreedPage({ params }: Props) {
         notFound();
     }
 
-    const assetInfo = await getAssetInfoCached(ticker);
+    const { assetInfo } = await getAssetInfoResilient(ticker);
     if (!assetInfo) {
         notFound();
     }

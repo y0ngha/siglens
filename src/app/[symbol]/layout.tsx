@@ -13,7 +13,7 @@ import { SymbolLayoutHeader } from '@/widgets/symbol-page/SymbolLayoutHeader';
 import { SymbolTabsSkeleton } from '@/widgets/symbol-page/SymbolTabsSkeleton';
 import { DEFAULT_TIMEFRAME } from '@/shared/config/market';
 import { getBarsAction } from '@/entities/bars/actions';
-import { getAssetInfoCached } from '@/entities/ticker';
+import { getAssetInfoResilient } from '@/entities/ticker';
 import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/shared/config/queryConfig';
 
 interface SymbolLayoutProps {
@@ -43,7 +43,7 @@ interface SymbolLayoutProps {
 // `params` is async (Next.js 16) and the chrome depends on it + a bars prefetch,
 // so the chrome lives behind Suspense with a header-shaped skeleton. `children`
 // (the active page subtree) is kept outside that Suspense so a page's LCP never
-// waits on the layout chrome's async work (getAssetInfoCached + prefetchQuery(bars)).
+// waits on the layout chrome's async work (getAssetInfoResilient + prefetchQuery(bars)).
 export default function SymbolLayout({ children, params }: SymbolLayoutProps) {
     return (
         <SymbolLayoutProviders>
@@ -69,7 +69,7 @@ interface SymbolLayoutSegmentProps {
 async function SymbolLayoutChrome({ params }: SymbolLayoutSegmentProps) {
     const { symbol } = await params;
     const ticker = symbol.toUpperCase();
-    const assetInfo = await getAssetInfoCached(ticker);
+    const { assetInfo } = await getAssetInfoResilient(ticker);
 
     // FearGreedHeaderChipMounted (in SymbolLayoutHeader) calls useBars with DEFAULT_TIMEFRAME
     // via useSuspenseQuery + getBarsAction (a Server Action). Server Actions cannot be invoked

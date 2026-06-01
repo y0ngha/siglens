@@ -16,7 +16,7 @@ vi.mock('@/shared/config/market', () => ({
 vi.mock('@/entities/ticker', () => ({
     buildAssetAboutNode: vi.fn().mockReturnValue(undefined),
     buildDisplayName: vi.fn().mockReturnValue('Apple Inc.'),
-    getAssetInfoCached: vi.fn(),
+    getAssetInfoResilient: vi.fn(),
 }));
 vi.mock('@/entities/bars/actions', () => ({
     getBarsAction: vi.fn().mockResolvedValue({ bars: [] }),
@@ -64,7 +64,7 @@ vi.mock('next/navigation', () => ({
 }));
 
 import { generateMetadata, default as SymbolPage } from '@/app/[symbol]/page';
-import { getAssetInfoCached } from '@/entities/ticker';
+import { getAssetInfoResilient } from '@/entities/ticker';
 import {
     GEMINI_2_5_FLASH_LITE_MODEL,
     peekAnalysisCache,
@@ -73,8 +73,8 @@ import { SymbolPageClient } from '@/widgets/symbol-page/SymbolPageClient';
 import { findElementByType } from '@/__tests__/utils/findElementByType';
 import type { MockedFunction } from 'vitest';
 
-const mockGetAssetInfoCached = getAssetInfoCached as MockedFunction<
-    typeof getAssetInfoCached
+const mockGetAssetInfoResilient = getAssetInfoResilient as MockedFunction<
+    typeof getAssetInfoResilient
 >;
 const mockPeekAnalysisCache = peekAnalysisCache as MockedFunction<
     typeof peekAnalysisCache
@@ -96,16 +96,18 @@ describe('Symbol page', () => {
                 params: Promise.resolve({ symbol: '!!!invalid' }),
             });
 
-            expect(metadata.robots).toEqual(
-                expect.objectContaining({ index: false })
-            );
+            expect(metadata.robots).toEqual({ index: false, follow: false });
         });
 
         it('returns metadata with title for valid ticker', async () => {
-            mockGetAssetInfoCached.mockResolvedValue({
-                name: 'Apple Inc.',
-                koreanName: '애플',
-                fmpSymbol: 'AAPL',
+            mockGetAssetInfoResilient.mockResolvedValue({
+                assetInfo: {
+                    symbol: 'AAPL',
+                    name: 'Apple Inc.',
+                    koreanName: '애플',
+                    fmpSymbol: 'AAPL',
+                },
+                degraded: false,
             } as never);
 
             const metadata = await generateMetadata({
@@ -116,10 +118,14 @@ describe('Symbol page', () => {
         });
 
         it('canonical excludes tf — ISR page uses clean canonical regardless of query params', async () => {
-            mockGetAssetInfoCached.mockResolvedValue({
-                name: 'Apple Inc.',
-                koreanName: '애플',
-                fmpSymbol: 'AAPL',
+            mockGetAssetInfoResilient.mockResolvedValue({
+                assetInfo: {
+                    symbol: 'AAPL',
+                    name: 'Apple Inc.',
+                    koreanName: '애플',
+                    fmpSymbol: 'AAPL',
+                },
+                degraded: false,
             } as never);
 
             const metadata = await generateMetadata({
@@ -134,10 +140,14 @@ describe('Symbol page', () => {
         });
 
         it('does not add noindex when no tf param', async () => {
-            mockGetAssetInfoCached.mockResolvedValue({
-                name: 'Apple Inc.',
-                koreanName: '애플',
-                fmpSymbol: 'AAPL',
+            mockGetAssetInfoResilient.mockResolvedValue({
+                assetInfo: {
+                    symbol: 'AAPL',
+                    name: 'Apple Inc.',
+                    koreanName: '애플',
+                    fmpSymbol: 'AAPL',
+                },
+                degraded: false,
             } as never);
 
             const metadata = await generateMetadata({
@@ -146,6 +156,20 @@ describe('Symbol page', () => {
 
             expect(metadata.robots).toBeUndefined();
         });
+
+        it('returns noindex when getAssetInfoResilient degrades on infra failure', async () => {
+            // 인프라 실패 시 fallback의 종목 실재 여부가 불명하므로 검색 노출을 막는다.
+            mockGetAssetInfoResilient.mockResolvedValue({
+                assetInfo: { symbol: 'AAPL', name: 'AAPL' },
+                degraded: true,
+            } as never);
+
+            const metadata = await generateMetadata({
+                params: Promise.resolve({ symbol: 'aapl' }),
+            });
+
+            expect(metadata.robots).toEqual({ index: false, follow: false });
+        });
     });
 
     describe('SymbolPage (narrative seed)', () => {
@@ -153,12 +177,16 @@ describe('Symbol page', () => {
             // vi.clearAllMocks()를 쓰지 않는 이유: QueryClient 등 mockImplementation
             // 으로 구성한 모듈 모킹의 구현까지 지워져 생성자 모킹이 깨진다. 이 블록이
             // 의존하는 두 mock만 선택적으로 초기화한다.
-            mockGetAssetInfoCached.mockReset();
+            mockGetAssetInfoResilient.mockReset();
             mockPeekAnalysisCache.mockReset();
-            mockGetAssetInfoCached.mockResolvedValue({
-                name: 'Apple Inc.',
-                koreanName: '애플',
-                fmpSymbol: 'AAPL',
+            mockGetAssetInfoResilient.mockResolvedValue({
+                assetInfo: {
+                    symbol: 'AAPL',
+                    name: 'Apple Inc.',
+                    koreanName: '애플',
+                    fmpSymbol: 'AAPL',
+                },
+                degraded: false,
             } as never);
         });
 
