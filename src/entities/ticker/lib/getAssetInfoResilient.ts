@@ -39,6 +39,8 @@ export async function getAssetInfoResilient(
         // 남고 fallback degrade 응답이 반환된다. 제어 흐름 에러는 그대로 rethrow한다.
         if (
             e instanceof Error &&
+            // e가 Error인 것은 위에서 확인됨; Next.js DynamicServerError는 digest 필드를 추가하므로
+            // unknown → { digest? } 캐스팅은 안전 — digest가 없으면 undefined → 비교 false.
             ((e as { digest?: string }).digest === 'DYNAMIC_SERVER_USAGE' ||
                 e.message.includes('Dynamic server usage'))
         ) {
