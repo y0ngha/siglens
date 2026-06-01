@@ -45,6 +45,13 @@ PR #543(b3c220dc, "FMP 404 safety")이 `getAssetInfo`의 FMP 조회를 바꿨다
 | **throw** | 인프라 일시 실패 | catch → 캐시 회피 + ticker fallback 렌더 |
 | `null` 반환 | 실재하지 않는 종목 (FMP 200 + 빈 결과) | `notFound()` 404 |
 
+> **구현 중 보강 (noindex):** 사용자 결정으로, throw(존재 불명) 시 body는 fallback 200을 렌더하되
+> `generateMetadata`는 noindex(`{ robots: { index: false, follow: false } }`)를 반환해 가짜 티커가
+> 검색에 노출되지 않게 한다. 이를 위해 헬퍼는 아래 코드 블록의 `AssetInfo | null` 대신
+> `{ assetInfo: AssetInfo | null; degraded: boolean }`(`ResilientAssetInfo`)를 반환한다. body 호출부는
+> `const { assetInfo } = ...`로 `degraded`를 무시(fallback 렌더), `generateMetadata`는
+> `const { assetInfo, degraded } = ...` 후 `if (degraded) return { robots: { index: false, follow: false } }`.
+
 ## 컴포넌트
 
 ### 새 헬퍼: `getAssetInfoResilient(ticker)`

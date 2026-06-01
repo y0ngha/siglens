@@ -109,7 +109,10 @@ const { mockGetAssetInfoCached } = vi.hoisted(() => ({
 }));
 
 vi.mock('@/entities/ticker', () => ({
-    getAssetInfoCached: (...args: unknown[]) => mockGetAssetInfoCached(...args),
+    getAssetInfoResilient: async (...args: unknown[]) => ({
+        assetInfo: await mockGetAssetInfoCached(...args),
+        degraded: false,
+    }),
 }));
 
 // react.cache는 Node 환경에서 identity wrapper로 대체

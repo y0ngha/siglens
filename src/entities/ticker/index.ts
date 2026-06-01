@@ -4,7 +4,7 @@ export {
     DrizzleProfileDescriptionTranslationRepository,
 } from './api';
 
-export { getAssetInfoCached } from './lib/getAssetInfoCached';
+export { getAssetInfoResilient } from './lib/getAssetInfoResilient';
 
 export {
     translateCompanyNames,

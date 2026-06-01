@@ -22,7 +22,7 @@ vi.mock('@/shared/config/market', () => ({
 vi.mock('@/entities/ticker', () => ({
     buildAssetAboutNode: vi.fn().mockReturnValue(undefined),
     buildDisplayName: vi.fn().mockReturnValue('Apple Inc.'),
-    getAssetInfoCached: vi.fn(),
+    getAssetInfoResilient: vi.fn(),
 }));
 vi.mock('@/shared/lib/seo', () => ({
     buildBreadcrumbJsonLd: vi.fn().mockReturnValue({}),
@@ -48,7 +48,7 @@ vi.mock('next/navigation', () => ({
 }));
 
 import { default as OverallPage } from '@/app/[symbol]/overall/page';
-import { getAssetInfoCached } from '@/entities/ticker';
+import { getAssetInfoResilient } from '@/entities/ticker';
 import {
     GEMINI_2_5_FLASH_LITE_MODEL,
     peekOverallAnalysisCache,
@@ -57,8 +57,8 @@ import { OverallContent } from '@/widgets/overall/OverallContent';
 import { findElementByType } from '@/__tests__/utils/findElementByType';
 import type { MockedFunction } from 'vitest';
 
-const mockGetAssetInfoCached = getAssetInfoCached as MockedFunction<
-    typeof getAssetInfoCached
+const mockGetAssetInfoCached = getAssetInfoResilient as MockedFunction<
+    typeof getAssetInfoResilient
 >;
 const mockPeekOverall = peekOverallAnalysisCache as MockedFunction<
     typeof peekOverallAnalysisCache
@@ -86,9 +86,12 @@ describe('Overall page (narrative seed)', () => {
         mockGetAssetInfoCached.mockReset();
         mockPeekOverall.mockReset();
         mockGetAssetInfoCached.mockResolvedValue({
-            name: 'Apple Inc.',
-            koreanName: '애플',
-            fmpSymbol: 'AAPL',
+            assetInfo: {
+                name: 'Apple Inc.',
+                koreanName: '애플',
+                fmpSymbol: 'AAPL',
+            },
+            degraded: false,
         } as never);
     });
 

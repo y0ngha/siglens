@@ -16,7 +16,7 @@ vi.mock('@/shared/config/market', () => ({
 vi.mock('@/entities/ticker', () => ({
     buildAssetAboutNode: vi.fn().mockReturnValue(undefined),
     buildDisplayName: vi.fn().mockReturnValue('Apple Inc.'),
-    getAssetInfoCached: vi.fn(),
+    getAssetInfoResilient: vi.fn(),
 }));
 vi.mock('@/entities/bars/actions', () => ({
     getBarsAction: vi.fn().mockResolvedValue({ bars: [] }),
@@ -64,7 +64,7 @@ vi.mock('next/navigation', () => ({
 }));
 
 import { generateMetadata, default as SymbolPage } from '@/app/[symbol]/page';
-import { getAssetInfoCached } from '@/entities/ticker';
+import { getAssetInfoResilient } from '@/entities/ticker';
 import {
     GEMINI_2_5_FLASH_LITE_MODEL,
     peekAnalysisCache,
@@ -73,8 +73,8 @@ import { SymbolPageClient } from '@/widgets/symbol-page/SymbolPageClient';
 import { findElementByType } from '@/__tests__/utils/findElementByType';
 import type { MockedFunction } from 'vitest';
 
-const mockGetAssetInfoCached = getAssetInfoCached as MockedFunction<
-    typeof getAssetInfoCached
+const mockGetAssetInfoCached = getAssetInfoResilient as MockedFunction<
+    typeof getAssetInfoResilient
 >;
 const mockPeekAnalysisCache = peekAnalysisCache as MockedFunction<
     typeof peekAnalysisCache
@@ -103,9 +103,12 @@ describe('Symbol page', () => {
 
         it('returns metadata with title for valid ticker', async () => {
             mockGetAssetInfoCached.mockResolvedValue({
-                name: 'Apple Inc.',
-                koreanName: '애플',
-                fmpSymbol: 'AAPL',
+                assetInfo: {
+                    name: 'Apple Inc.',
+                    koreanName: '애플',
+                    fmpSymbol: 'AAPL',
+                },
+                degraded: false,
             } as never);
 
             const metadata = await generateMetadata({
@@ -117,9 +120,12 @@ describe('Symbol page', () => {
 
         it('canonical excludes tf — ISR page uses clean canonical regardless of query params', async () => {
             mockGetAssetInfoCached.mockResolvedValue({
-                name: 'Apple Inc.',
-                koreanName: '애플',
-                fmpSymbol: 'AAPL',
+                assetInfo: {
+                    name: 'Apple Inc.',
+                    koreanName: '애플',
+                    fmpSymbol: 'AAPL',
+                },
+                degraded: false,
             } as never);
 
             const metadata = await generateMetadata({
@@ -135,9 +141,12 @@ describe('Symbol page', () => {
 
         it('does not add noindex when no tf param', async () => {
             mockGetAssetInfoCached.mockResolvedValue({
-                name: 'Apple Inc.',
-                koreanName: '애플',
-                fmpSymbol: 'AAPL',
+                assetInfo: {
+                    name: 'Apple Inc.',
+                    koreanName: '애플',
+                    fmpSymbol: 'AAPL',
+                },
+                degraded: false,
             } as never);
 
             const metadata = await generateMetadata({
@@ -145,6 +154,20 @@ describe('Symbol page', () => {
             });
 
             expect(metadata.robots).toBeUndefined();
+        });
+
+        it('returns noindex when getAssetInfoResilient degrades on infra failure', async () => {
+            // 인프라 실패 시 fallback의 종목 실재 여부가 불명하므로 검색 노출을 막는다.
+            mockGetAssetInfoCached.mockResolvedValue({
+                assetInfo: { symbol: 'AAPL', name: 'AAPL' },
+                degraded: true,
+            } as never);
+
+            const metadata = await generateMetadata({
+                params: Promise.resolve({ symbol: 'aapl' }),
+            });
+
+            expect(metadata.robots).toEqual({ index: false, follow: false });
         });
     });
 
@@ -156,9 +179,12 @@ describe('Symbol page', () => {
             mockGetAssetInfoCached.mockReset();
             mockPeekAnalysisCache.mockReset();
             mockGetAssetInfoCached.mockResolvedValue({
-                name: 'Apple Inc.',
-                koreanName: '애플',
-                fmpSymbol: 'AAPL',
+                assetInfo: {
+                    name: 'Apple Inc.',
+                    koreanName: '애플',
+                    fmpSymbol: 'AAPL',
+                },
+                degraded: false,
             } as never);
         });
 

@@ -6,7 +6,7 @@ import { SymbolRouteParams, VALID_TICKER_RE } from '@/shared/config/market';
 import {
     buildAssetAboutNode,
     buildDisplayName,
-    getAssetInfoCached,
+    getAssetInfoResilient,
 } from '@/entities/ticker';
 import { mapExpirationsToSlots } from '@y0ngha/siglens-core';
 import {
@@ -51,10 +51,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     if (!VALID_TICKER_RE.test(upper)) {
         return { robots: { index: false, follow: false } };
     }
-    const [assetInfo, hasOptions] = await Promise.all([
-        getAssetInfoCached(upper),
+    const [{ assetInfo, degraded }, hasOptions] = await Promise.all([
+        getAssetInfoResilient(upper),
         hasOptionsMarket(upper),
     ]);
+    if (degraded) {
+        return { robots: { index: false, follow: false } };
+    }
     const displayName = assetInfo ? buildDisplayName(assetInfo, upper) : upper;
     const { title, fullTitle, description, url, keywords } =
         buildSymbolOptionsSeoContent(upper, {
@@ -94,8 +97,8 @@ export default async function OptionsPage({ params }: Props) {
 
     if (!VALID_TICKER_RE.test(upper)) notFound();
 
-    const [assetInfo, hasOptions] = await Promise.all([
-        getAssetInfoCached(upper),
+    const [{ assetInfo }, hasOptions] = await Promise.all([
+        getAssetInfoResilient(upper),
         hasOptionsMarket(upper),
     ]);
 

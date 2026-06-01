@@ -10,7 +10,7 @@ import { Suspense } from 'react';
 import {
     buildAssetAboutNode,
     buildDisplayName,
-    getAssetInfoCached,
+    getAssetInfoResilient,
 } from '@/entities/ticker';
 import {
     buildBreadcrumbJsonLd,
@@ -49,7 +49,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     if (!VALID_TICKER_RE.test(upper)) {
         return { robots: { index: false, follow: false } };
     }
-    const assetInfo = await getAssetInfoCached(upper);
+    const { assetInfo, degraded } = await getAssetInfoResilient(upper);
+    if (degraded) {
+        return { robots: { index: false, follow: false } };
+    }
     const displayName = assetInfo ? buildDisplayName(assetInfo, upper) : upper;
     const { title, fullTitle, description, url, keywords } =
         buildSymbolOverallSeoContent(upper, {
@@ -89,7 +92,7 @@ export default async function OverallPage({ params }: Props) {
         notFound();
     }
 
-    const assetInfo = await getAssetInfoCached(upper);
+    const { assetInfo } = await getAssetInfoResilient(upper);
     if (!assetInfo) {
         notFound();
     }
