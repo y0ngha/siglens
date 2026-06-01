@@ -250,7 +250,16 @@ export default async function SymbolPage({ params }: Props) {
                     </p>
                 </section>
                 <HydrationBoundary state={dehydrate(queryClient)}>
-                    <Suspense fallback={null}>
+                    {/* fallback은 차트 영역(flex-1)을 미리 차지해, useSearchParams CSR-bailout
+                        서브트리가 hydration 전 비어 보이는 flash/CLS를 방지한다. */}
+                    <Suspense
+                        fallback={
+                            <div
+                                className="bg-secondary-900 flex min-h-0 flex-1 flex-col overflow-hidden"
+                                aria-hidden="true"
+                            />
+                        }
+                    >
                         <SymbolPageClient
                             symbol={symbol}
                             companyName={assetInfo.name}

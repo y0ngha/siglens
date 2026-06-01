@@ -17,6 +17,11 @@ const US_EXCHANGES: ReadonlySet<string> = new Set([
 
 type FmpEndpoint = 'search-symbol' | 'search-name';
 
+/** getAssetInfo의 strict 경로(인프라 에러 throw) vs 검색 UI의 lenient(빈 배열 degrade)를 가르는 옵션. */
+interface FmpSearchOptions {
+    strict?: boolean;
+}
+
 /** Type guard validating per-element FMP response shape before trusting it as `FmpSearchResult`. */
 function isFmpSearchResultLike(value: unknown): value is FmpSearchResult {
     if (value === null || typeof value !== 'object') return false;
@@ -60,7 +65,7 @@ export function filterUsExchanges(
 async function fetchFmpEndpoint(
     endpoint: FmpEndpoint,
     query: string,
-    options?: { strict?: boolean }
+    options?: FmpSearchOptions
 ): Promise<FmpSearchResult[]> {
     const strict = options?.strict ?? false;
 
@@ -128,7 +133,7 @@ async function fetchFmpEndpoint(
 
 export async function searchBySymbol(
     query: string,
-    options?: { strict?: boolean }
+    options?: FmpSearchOptions
 ): Promise<FmpSearchResult[]> {
     return fetchFmpEndpoint('search-symbol', query, options);
 }

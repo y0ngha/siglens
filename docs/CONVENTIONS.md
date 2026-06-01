@@ -915,8 +915,11 @@ UI state that should survive page refresh or be shareable via link must be refle
 
 The selected timeframe is synchronized to the `tf` query parameter.
 
-**Reading (server):** `app/[symbol]/page.tsx` reads `searchParams.tf`, validates with `isValidTimeframe()`,
-and passes the result as `initialTimeframe` prop to `SymbolPageClient`.
+**Reading (client):** to keep `[symbol]` routes ISR-cacheable, `tf` is read on the **client**, never on the
+server (a server `searchParams` read forces dynamic rendering and disables ISR). The chart page uses
+`useTimeframeChange` (`useSearchParams().get('tf')`); `OverallContent` reads it inline the same way. Server
+components seed `DEFAULT_TIMEFRAME` and let the client reconcile to the URL value on mount. The canonical URL
+excludes `tf`, so the client-only read does not affect SEO/indexing.
 
 **Writing (client):** `useTimeframeChange` calls `router.replace(...?tf=<value>, { scroll: false })`
 inside `startTransition` whenever the user changes the timeframe.
@@ -925,9 +928,12 @@ inside `startTransition` whenever the user changes the timeframe.
 as the source of truth for valid values. Never validate against hardcoded string literals at the call site.
 
 ```typescript
-// ✅ Server reads initial timeframe from URL
-const { tf } = await searchParams;
-const initialTimeframe = isValidTimeframe(tf) ? tf : DEFAULT_TIMEFRAME;
+// ✅ Client reads timeframe from URL (keeps the route static/ISR)
+const tfParam = useSearchParams().get('tf');
+const timeframe = isValidTimeframe(tfParam) ? tfParam : DEFAULT_TIMEFRAME;
+
+// ❌ Server reading searchParams.tf — forces dynamic rendering, breaks ISR
+// const { tf } = await searchParams;
 
 // ✅ Client updates URL on change (inside startTransition)
 router.replace(`/${symbol}?tf=${nextTimeframe}`, { scroll: false });

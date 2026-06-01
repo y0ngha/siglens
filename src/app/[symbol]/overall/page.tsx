@@ -222,7 +222,20 @@ export default async function OverallPage({ params }: Props) {
                         한 번 훑어보면 도움이 됩니다.
                     </p>
                 </section>
-                <Suspense fallback={null}>
+                {/* fallback은 종합 분석 섹션 높이를 미리 차지해, useSearchParams CSR-bailout
+                    서브트리가 hydration 전 비어 보이는 flash/CLS를 방지한다(overall/loading.tsx와 동일 룩). */}
+                <Suspense
+                    fallback={
+                        <div className="space-y-6" aria-hidden="true">
+                            {[0, 1, 2].map(i => (
+                                <div
+                                    key={i}
+                                    className="bg-secondary-700 h-32 animate-pulse rounded-xl"
+                                />
+                            ))}
+                        </div>
+                    }
+                >
                     <OverallContent
                         symbol={upper}
                         companyName={assetInfo.name}

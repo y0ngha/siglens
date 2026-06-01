@@ -42,9 +42,15 @@ export function OverallContent({
     initialAnalysis,
 }: OverallContentProps) {
     // ISR 정적 렌더 — tf는 서버가 아니라 client가 URL에서 읽는다(차트와 동일 소스).
-    const tfParam = useSearchParams().get('tf');
-    const timeframe = isValidTimeframe(tfParam) ? tfParam : DEFAULT_TIMEFRAME;
+    // MISTAKES.md §17: 모든 훅 호출은 파생 변수보다 먼저 선언한다.
+    const searchParams = useSearchParams();
     const modelId = useDefaultModelId();
+
+    const tfParam = searchParams.get('tf'); // 훅 아님 — 단순 메서드 호출
+    const timeframe = isValidTimeframe(tfParam) ? tfParam : DEFAULT_TIMEFRAME;
+
+    // 훅 선언 순서 예외(MISTAKES.md §17): useOverallAnalysis는 파생 변수 timeframe을
+    // 인자로 받아야 해 부득이 파생 변수 뒤에 위치한다(아래 usePublishSymbolChat과 동일 맥락).
     const { state, trigger } = useOverallAnalysis(
         symbol,
         companyName,

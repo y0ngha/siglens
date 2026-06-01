@@ -48,8 +48,12 @@ vi.mock('@/entities/options-chain/actions', () => ({
     pollOptionsAnalysisAction: vi.fn(),
     cancelOptionsAnalysisJobAction: vi.fn().mockResolvedValue(undefined),
 }));
+// useSearchParams를 테스트별로 바꿀 수 있도록 mutable ref로 모킹한다(§18 tf 분기 검증용).
+const { searchParamsRef } = vi.hoisted(() => ({
+    searchParamsRef: { value: new URLSearchParams() },
+}));
 vi.mock('next/navigation', () => ({
-    useSearchParams: () => new URLSearchParams(),
+    useSearchParams: () => searchParamsRef.value,
 }));
 
 import { render, screen, fireEvent } from '@testing-library/react';
@@ -57,6 +61,7 @@ import type { ReactNode } from 'react';
 import type { OverallAnalysisResponse } from '@y0ngha/siglens-core';
 
 import { OverallContent } from '@/widgets/overall/OverallContent';
+import { DEFAULT_TIMEFRAME } from '@/shared/config/market';
 import { useOverallAnalysis } from '@/widgets/overall/hooks/useOverallAnalysis';
 import { submitOverallAnalysisAction } from '@/entities/analysis/actions';
 import { createQueryClientWrapper } from '@/__tests__/utils/createQueryClientWrapper';
@@ -90,6 +95,45 @@ function mockDoneState(result: OverallAnalysisResponse, trigger = vi.fn()) {
         trigger,
     });
 }
+
+describe('OverallContent tf 쿼리 파라미터 처리 (§18 분기)', () => {
+    beforeEach(() => {
+        mockUseOverallAnalysis.mockReset();
+        mockUseOverallAnalysis.mockReturnValue({
+            state: { status: 'idle' },
+            trigger: vi.fn(),
+        });
+        searchParamsRef.value = new URLSearchParams();
+    });
+
+    afterEach(() => {
+        searchParamsRef.value = new URLSearchParams();
+    });
+
+    it('유효한 tf가 있으면 그 timeframe으로 useOverallAnalysis를 호출한다 (참 분기)', () => {
+        searchParamsRef.value = new URLSearchParams('tf=1Hour');
+        render(<OverallContent symbol="AAPL" companyName="Apple Inc." />);
+        expect(mockUseOverallAnalysis).toHaveBeenCalledWith(
+            'AAPL',
+            'Apple Inc.',
+            '1Hour',
+            'gemini-2.5-flash-lite',
+            undefined
+        );
+    });
+
+    it('유효하지 않은 tf는 DEFAULT_TIMEFRAME(1Day)으로 폴백한다 (거짓 분기)', () => {
+        searchParamsRef.value = new URLSearchParams('tf=not-a-timeframe');
+        render(<OverallContent symbol="AAPL" companyName="Apple Inc." />);
+        expect(mockUseOverallAnalysis).toHaveBeenCalledWith(
+            'AAPL',
+            'Apple Inc.',
+            DEFAULT_TIMEFRAME,
+            'gemini-2.5-flash-lite',
+            undefined
+        );
+    });
+});
 
 describe('OverallContent non-done branches', () => {
     beforeEach(() => {
