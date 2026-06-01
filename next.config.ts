@@ -35,6 +35,13 @@ const nextConfig: NextConfig = {
         '/**': ['./skills/**/*'],
     },
 
+    // `postgres` 드라이버는 E2E_TEST 경로(clientTest.ts)에서만 쓰이고 prod는
+    // Neon serverless(@neondatabase/serverless)를 쓴다. 정적 `require('./clientTest')`
+    // 때문에 Turbopack이 380K 드라이버를 prod 서버 번들에 인라인하므로(prod에선
+    // isE2E=false라 dead code), external 처리해 번들 인라인을 막는다. E2E는 devDep이
+    // 설치된 환경에서 prod build로 돌아 런타임 require가 정상 resolve된다.
+    serverExternalPackages: ['postgres'],
+
     // cacheComponents (Next.js 16 PPR + 'use cache' directive)는 임시 비활성.
     // 활성 상태에서 모든 [symbol] 라우트가 "Couldn't find all resumable slots"
     // 에러로 client fallback rendering으로 떨어져 SEO bot이 metadata를 못 보는
