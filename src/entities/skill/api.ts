@@ -6,6 +6,10 @@ import type {
     SkillCategory,
     SkillCounts,
     SkillDisplay,
+    SkillGating,
+    SkillStateFeature,
+    SkillStatePredicate,
+    SkillStatePredicateKind,
     SkillType,
 } from '@y0ngha/siglens-core';
 import type { SkillsProvider } from './model';
@@ -175,6 +179,112 @@ const isSkillType = (value: unknown): value is SkillType =>
     // SKILL_TYPES is `as const` literal tuple; widening to readonly string[] for .includes() is safe.
     (SKILL_TYPES as readonly string[]).includes(value);
 
+// Gating frontmatter — unified with the core loader's contract
+// (@y0ngha/siglens-core infrastructure/skills/loader). Keys are snake_case by
+// repo convention (matching `confidence_weight`); `signal_kind` / `token_cost` /
+// `smc_full_guide` map to the camelCase Skill fields the selector reads.
+
+const SKILL_GATING_TIERS = ['always_on', 'gated'] as const;
+const SIGNAL_KINDS = ['event', 'state'] as const;
+const SKILL_STATE_FEATURES = [
+    'bollinger',
+    'keltner',
+    'williamsR',
+    'stochastic',
+    'stochRsi',
+    'donchian',
+    'vwap',
+    'buySellVolume',
+] as const satisfies readonly SkillStateFeature[];
+const SKILL_STATE_PREDICATE_KINDS = [
+    'pctB',
+    'bandDistAtr',
+    'level',
+    'ratio',
+    'channelProximity',
+] as const satisfies readonly SkillStatePredicateKind[];
+
+/** Parse a state predicate; returns undefined when any required field is invalid. */
+const parseStatePredicate = (raw: unknown): SkillStatePredicate | undefined => {
+    if (typeof raw !== 'object' || raw === null) return undefined;
+
+    // typeof + non-null guard above ensures raw is a non-null object; widening
+    // to Record<string, unknown> is a safe structural up-cast.
+    const obj = raw as Record<string, unknown>;
+    const { feature, predicate, hi, lo } = obj;
+
+    if (
+        typeof feature !== 'string' ||
+        // Tuple `.includes` is typed to its own members; widen to readonly string[].
+        !(SKILL_STATE_FEATURES as readonly string[]).includes(feature) ||
+        typeof predicate !== 'string' ||
+        !(SKILL_STATE_PREDICATE_KINDS as readonly string[]).includes(predicate)
+    ) {
+        return undefined;
+    }
+
+    return {
+        // .includes() guards above proved membership in the literal unions at
+        // runtime; TS cannot narrow `string` through them, hence the casts.
+        feature: feature as SkillStateFeature,
+        predicate: predicate as SkillStatePredicateKind,
+        ...(typeof hi === 'number' ? { hi } : {}),
+        ...(typeof lo === 'number' ? { lo } : {}),
+    };
+};
+
+/**
+ * Validate and normalize a `gating` frontmatter block, mirroring the core
+ * loader. Returns undefined (skill treated as untagged → selector fail-opens)
+ * when the block is malformed or unreachable.
+ */
+const parseGating = (raw: unknown): SkillGating | undefined => {
+    if (typeof raw !== 'object' || raw === null) return undefined;
+
+    const obj = raw as Record<string, unknown>;
+    const tier = obj.tier;
+    if (
+        typeof tier !== 'string' ||
+        !(SKILL_GATING_TIERS as readonly string[]).includes(tier)
+    ) {
+        return undefined;
+    }
+    if (tier === 'always_on') return { tier: 'always_on' };
+
+    // tier === 'gated' → snake_case `signal_kind` maps to camelCase `signalKind`.
+    const signalKind = obj.signal_kind;
+    if (
+        typeof signalKind !== 'string' ||
+        !(SIGNAL_KINDS as readonly string[]).includes(signalKind)
+    ) {
+        return undefined;
+    }
+
+    if (signalKind === 'event') {
+        const triggers = obj.triggers;
+        if (
+            !Array.isArray(triggers) ||
+            triggers.length === 0 ||
+            !triggers.every((t): t is string => typeof t === 'string')
+        ) {
+            return undefined;
+        }
+        return { tier: 'gated', signalKind: 'event', triggers };
+    }
+
+    // signalKind === 'state'
+    const state = parseStatePredicate(obj.state);
+    if (state === undefined) return undefined;
+    return { tier: 'gated', signalKind: 'state', state };
+};
+
+/**
+ * Coerce a frontmatter boolean. The minimal YAML parser keeps an unquoted
+ * `true` as the string `'true'`, so a flag must accept both forms.
+ */
+const isYamlTrue = (value: unknown): boolean =>
+    value === true || value === 'true';
+
 const toSkill = (data: Record<string, unknown>, content: string): Skill => ({
     name: String(data.name ?? ''),
     description: String(data.description ?? ''),
@@ -188,6 +298,10 @@ const toSkill = (data: Record<string, unknown>, content: string): Skill => ({
         typeof data.confidence_weight === 'number' ? data.confidence_weight : 0,
     content,
     display: parseSkillDisplay(data.display),
+    gating: parseGating(data.gating),
+    tokenCost:
+        typeof data.token_cost === 'number' ? data.token_cost : undefined,
+    smcFullGuide: isYamlTrue(data.smc_full_guide),
 });
 
 const collectMdFiles = async (dir: string): Promise<string[]> => {
