@@ -953,6 +953,17 @@ ${gatingYaml}${extra}
             );
             expect(skill.gating).toBeUndefined();
         });
+
+        it('도달 불가능한 (feature, predicate) 쌍은 gating undefined로 fail-open한다', async () => {
+            // bollinger + channelProximity: 각 절반은 유효하지만 core의
+            // isStateNotable이 절대 평가하지 않는 쌍 → 도달 불가.
+            const skill = await loadOne(
+                withGating(
+                    'gating:\n  tier: gated\n  signal_kind: state\n  state:\n    feature: bollinger\n    predicate: channelProximity'
+                )
+            );
+            expect(skill.gating).toBeUndefined();
+        });
     });
 });
 

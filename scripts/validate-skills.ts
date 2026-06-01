@@ -36,8 +36,6 @@ const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = join(SCRIPT_DIR, '..');
 const SKILLS_DIR = join(REPO_ROOT, 'skills');
 
-// ── Catalogs (bound to the core's exported types at compile time) ────────────
-
 /**
  * Every detectSignals catalog entry (post-PR1, bidirectional). Declared
  * `satisfies readonly SignalType[]` so a drift between this list and the core's
@@ -92,6 +90,12 @@ const SIGNAL_SET = new Set<string>(SIGNAL_CATALOG);
 
 /** A trigger is a valid candle pattern when the core has a label for it. */
 const isCandlePattern = (name: string): boolean =>
+    // (a) why cast: the label getters are typed to accept only the
+    // CandlePattern / MultiCandlePattern unions, but `name` is an arbitrary
+    // frontmatter string we are probing for membership.
+    // (b) why safe: both getters return `undefined` for any unknown key, and we
+    // use only the truthiness of the result — we never treat `name` as a real
+    // pattern — so casting an out-of-union string is runtime-safe.
     getCandlePatternLabel(name as CandlePattern) !== undefined ||
     getMultiCandlePatternLabel(name as MultiCandlePattern) !== undefined;
 
@@ -99,6 +103,11 @@ const isKnownTrigger = (name: string): boolean =>
     SIGNAL_SET.has(name) || isCandlePattern(name);
 
 // Mirror the core loader's accepted state-predicate vocabulary.
+// Duplicates `SKILL_STATE_FEATURES` / `SKILL_STATE_PREDICATE_KINDS` in
+// src/entities/skill/api.ts — a build script can't import from app `src/`, so
+// the lists are kept in sync by hand. Update both when the core's
+// SkillStateFeature / SkillStatePredicateKind unions change (the
+// `satisfies` clause fails the build here if this copy drifts).
 const STATE_FEATURES = [
     'bollinger',
     'keltner',
@@ -132,8 +141,6 @@ const VALID_STATE_PAIRS = new Set<string>([
     'vwap:bandDistAtr',
     'buySellVolume:ratio',
 ]);
-
-// ── Validation ───────────────────────────────────────────────────────────────
 
 interface SkillError {
     file: string;

@@ -186,6 +186,11 @@ const isSkillType = (value: unknown): value is SkillType =>
 
 const SKILL_GATING_TIERS = ['always_on', 'gated'] as const;
 const SIGNAL_KINDS = ['event', 'state'] as const;
+// Duplicated as `STATE_FEATURES` / `STATE_PREDICATE_KINDS` in
+// scripts/validate-skills.ts — the CI validator is a build script and can't
+// import from app `src/`, so the lists are kept in sync by hand. Update both
+// when the core's SkillStateFeature / SkillStatePredicateKind unions change
+// (the `satisfies` clause fails the build here if this copy drifts).
 const SKILL_STATE_FEATURES = [
     'bollinger',
     'keltner',
@@ -203,6 +208,22 @@ const SKILL_STATE_PREDICATE_KINDS = [
     'ratio',
     'channelProximity',
 ] as const satisfies readonly SkillStatePredicateKind[];
+
+// (feature, predicate) pairs the core's `isStateNotable` actually evaluates;
+// any other pairing returns `false` for every chart, so the gated skill is
+// unreachable. Validating the pair here (not just each half) keeps the runtime
+// parser fail-open robust instead of leaning on the CI validator alone.
+// Mirrors `VALID_STATE_PAIRS` in scripts/validate-skills.ts — keep both in sync.
+const VALID_STATE_PAIRS = new Set<string>([
+    'bollinger:pctB',
+    'keltner:bandDistAtr',
+    'williamsR:level',
+    'stochastic:level',
+    'stochRsi:level',
+    'donchian:channelProximity',
+    'vwap:bandDistAtr',
+    'buySellVolume:ratio',
+]);
 
 /** Parse a state predicate; returns undefined when any required field is invalid. */
 const parseStatePredicate = (raw: unknown): SkillStatePredicate | undefined => {
@@ -223,6 +244,11 @@ const parseStatePredicate = (raw: unknown): SkillStatePredicate | undefined => {
         return undefined;
     }
 
+    // Each half is valid above, but an unreachable pair (e.g. bollinger +
+    // channelProximity) would parse into a SkillGating the core never fires on.
+    // Fail-open: treat such a predicate as untagged so the selector loads it.
+    if (!VALID_STATE_PAIRS.has(`${feature}:${predicate}`)) return undefined;
+
     return {
         // .includes() guards above proved membership in the literal unions at
         // runtime; TS cannot narrow `string` through them, hence the casts.
@@ -241,6 +267,8 @@ const parseStatePredicate = (raw: unknown): SkillStatePredicate | undefined => {
 const parseGating = (raw: unknown): SkillGating | undefined => {
     if (typeof raw !== 'object' || raw === null) return undefined;
 
+    // typeof + non-null guard above ensures raw is a non-null object; widening
+    // to Record<string, unknown> is a safe structural up-cast.
     const obj = raw as Record<string, unknown>;
     const tier = obj.tier;
     if (
