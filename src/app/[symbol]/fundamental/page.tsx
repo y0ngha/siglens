@@ -44,6 +44,17 @@ import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
 
+// 종목당 SEO 콘텐츠는 고정이고 동적 데이터는 클라가 재hydrate한다. 엣지 캐시로
+// compute 호출을 줄인다. (일시 인프라 장애의 404 캐싱은 getAssetInfo strict로 차단)
+export const revalidate = 3600; // 1h
+
+// generateStaticParams가 없으면 동적 라우트는 매 요청 동적 렌더돼 revalidate가
+// 무력화된다(Next.js). 빈 배열 = 빌드 시 prebuild 없이, 첫 요청에 렌더+캐시 후
+// revalidate 주기로 재생성하는 on-demand ISR. (cacheComponents 비활성이라 빈 배열 허용)
+export async function generateStaticParams(): Promise<{ symbol: string }[]> {
+    return [];
+}
+
 interface Props {
     params: Promise<{ symbol: string }>;
 }

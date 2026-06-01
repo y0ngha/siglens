@@ -57,7 +57,8 @@ vi.mock('../../lib/fmpTickerApi', async () => {
     const actual = await vi.importActual('../../lib/fmpTickerApi');
     return {
         ...actual,
-        searchBySymbol: (q: string) => searchBySymbolMock(q),
+        searchBySymbol: (q: string, options?: { strict?: boolean }) =>
+            searchBySymbolMock(q, options),
     };
 });
 vi.mock('../../lib/koreanNameStore', () => ({
@@ -406,5 +407,25 @@ describe('getAssetInfo', () => {
         mockRepository.findBySymbol.mockResolvedValue(null);
         searchBySymbolMock.mockRejectedValue(new Error('FMP timeout'));
         await expect(getAssetInfo('AAPL')).rejects.toThrow('FMP timeout');
+    });
+
+    it('FMP 인프라 에러를 throw로 전파한다 (null로 degrade하지 않음)', async () => {
+        createCacheProviderMock.mockReturnValue(null); // 캐시 미스
+        tryGetTickerDatabaseClientMock.mockReturnValue(null); // DB 미가용 → FMP fall-through
+        searchBySymbolMock.mockRejectedValue(new Error('FMP HTTP 429'));
+
+        await expect(getAssetInfo('AAPL')).rejects.toThrow('FMP HTTP 429');
+    });
+
+    it('getAssetInfo가 searchBySymbol을 strict로 호출한다', async () => {
+        createCacheProviderMock.mockReturnValue(null);
+        tryGetTickerDatabaseClientMock.mockReturnValue(null);
+        searchBySymbolMock.mockResolvedValue([]); // 200 빈 결과 → null
+
+        await getAssetInfo('NOPE');
+
+        expect(searchBySymbolMock).toHaveBeenCalledWith('NOPE', {
+            strict: true,
+        });
     });
 });

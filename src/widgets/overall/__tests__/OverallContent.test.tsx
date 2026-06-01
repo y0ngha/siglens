@@ -48,6 +48,9 @@ vi.mock('@/entities/options-chain/actions', () => ({
     pollOptionsAnalysisAction: vi.fn(),
     cancelOptionsAnalysisJobAction: vi.fn().mockResolvedValue(undefined),
 }));
+vi.mock('next/navigation', () => ({
+    useSearchParams: () => new URLSearchParams(),
+}));
 
 import { render, screen, fireEvent } from '@testing-library/react';
 import type { ReactNode } from 'react';
@@ -98,13 +101,7 @@ describe('OverallContent non-done branches', () => {
             state: { status: 'idle' },
             trigger: vi.fn(),
         });
-        render(
-            <OverallContent
-                symbol="AAPL"
-                companyName="Apple Inc."
-                timeframe="1Day"
-            />
-        );
+        render(<OverallContent symbol="AAPL" companyName="Apple Inc." />);
         expect(
             screen.getByRole('button', { name: /AI 종합 분석 받기/ })
         ).toBeInTheDocument();
@@ -115,13 +112,7 @@ describe('OverallContent non-done branches', () => {
             state: { status: 'bot_blocked' },
             trigger: vi.fn(),
         });
-        render(
-            <OverallContent
-                symbol="AAPL"
-                companyName="Apple Inc."
-                timeframe="1Day"
-            />
-        );
+        render(<OverallContent symbol="AAPL" companyName="Apple Inc." />);
         expect(
             screen.getByText(/봇 트래픽으로 보여 분석 결과를 표시하지 않았어요/)
         ).toBeInTheDocument();
@@ -141,13 +132,7 @@ describe('OverallContent non-done branches', () => {
             },
             trigger: vi.fn(),
         });
-        render(
-            <OverallContent
-                symbol="AAPL"
-                companyName="Apple Inc."
-                timeframe="1Day"
-            />
-        );
+        render(<OverallContent symbol="AAPL" companyName="Apple Inc." />);
         // DependencyProgress 헤딩(완료/총합 카운트)으로 렌더 확인. 2개 axis가
         // pending이므로 완료 2/4.
         expect(
@@ -163,13 +148,7 @@ describe('OverallContent non-done branches', () => {
             state: { status: 'submitting' },
             trigger: vi.fn(),
         });
-        render(
-            <OverallContent
-                symbol="AAPL"
-                companyName="Apple Inc."
-                timeframe="1Day"
-            />
-        );
+        render(<OverallContent symbol="AAPL" companyName="Apple Inc." />);
         expect(screen.getByText('AI 종합 분석 요청 중…')).toBeInTheDocument();
     });
 
@@ -178,13 +157,7 @@ describe('OverallContent non-done branches', () => {
             state: { status: 'polling' },
             trigger: vi.fn(),
         });
-        render(
-            <OverallContent
-                symbol="AAPL"
-                companyName="Apple Inc."
-                timeframe="1Day"
-            />
-        );
+        render(<OverallContent symbol="AAPL" companyName="Apple Inc." />);
         expect(screen.getByText('AI 종합 분석 생성 중…')).toBeInTheDocument();
     });
 
@@ -193,13 +166,7 @@ describe('OverallContent non-done branches', () => {
             state: { status: 'error', error: '분석 중 오류가 발생했습니다.' },
             trigger: vi.fn(),
         });
-        render(
-            <OverallContent
-                symbol="AAPL"
-                companyName="Apple Inc."
-                timeframe="1Day"
-            />
-        );
+        render(<OverallContent symbol="AAPL" companyName="Apple Inc." />);
         expect(
             screen.getByText(/분석 중 오류가 발생했습니다/)
         ).toBeInTheDocument();
@@ -210,13 +177,7 @@ describe('OverallContent non-done branches', () => {
             state: { status: 'error', error: '커스텀 에러' },
             trigger: vi.fn(),
         });
-        render(
-            <OverallContent
-                symbol="AAPL"
-                companyName="Apple Inc."
-                timeframe="1Day"
-            />
-        );
+        render(<OverallContent symbol="AAPL" companyName="Apple Inc." />);
         expect(screen.getByText(/커스텀 에러/)).toBeInTheDocument();
     });
 
@@ -225,13 +186,7 @@ describe('OverallContent non-done branches', () => {
             state: { status: 'error', error: '분석 오류', axis: 'technical' },
             trigger: vi.fn(),
         });
-        render(
-            <OverallContent
-                symbol="AAPL"
-                companyName="Apple Inc."
-                timeframe="1Day"
-            />
-        );
+        render(<OverallContent symbol="AAPL" companyName="Apple Inc." />);
         expect(screen.getByText(/technical 축 실패/)).toBeInTheDocument();
     });
 
@@ -241,13 +196,7 @@ describe('OverallContent non-done branches', () => {
             state: { status: 'error', error: '오류' },
             trigger,
         });
-        render(
-            <OverallContent
-                symbol="AAPL"
-                companyName="Apple Inc."
-                timeframe="1Day"
-            />
-        );
+        render(<OverallContent symbol="AAPL" companyName="Apple Inc." />);
         fireEvent.click(screen.getByText('다시 시도'));
         expect(trigger).toHaveBeenCalled();
     });
@@ -260,13 +209,7 @@ describe('OverallContent done branch', () => {
 
     it('TechnicalSummary와 FundamentalSummary 사이에 OptionsSummary를 렌더한다', () => {
         mockDoneState(makeDoneResult());
-        render(
-            <OverallContent
-                symbol="AAPL"
-                companyName="Apple Inc."
-                timeframe="1Day"
-            />
-        );
+        render(<OverallContent symbol="AAPL" companyName="Apple Inc." />);
         // 헤딩 텍스트 순서를 DOM 순서로 비교
         const headings = screen
             .getAllByRole('heading')
@@ -281,13 +224,7 @@ describe('OverallContent done branch', () => {
 
     it('IntegratedConclusion("통합 결론") 헤딩을 렌더한다 (3축 종합 결론 X)', () => {
         mockDoneState(makeDoneResult());
-        render(
-            <OverallContent
-                symbol="AAPL"
-                companyName="Apple Inc."
-                timeframe="1Day"
-            />
-        );
+        render(<OverallContent symbol="AAPL" companyName="Apple Inc." />);
         expect(
             screen.getByRole('heading', { name: /통합 결론/ })
         ).toBeInTheDocument();
@@ -298,13 +235,7 @@ describe('OverallContent done branch', () => {
 
     it('ReanalyzeButton(재분석)이 done 상태에서 노출된다', () => {
         mockDoneState(makeDoneResult());
-        render(
-            <OverallContent
-                symbol="AAPL"
-                companyName="Apple Inc."
-                timeframe="1Day"
-            />
-        );
+        render(<OverallContent symbol="AAPL" companyName="Apple Inc." />);
         expect(
             screen.getByRole('button', { name: /재분석/ })
         ).toBeInTheDocument();
@@ -317,13 +248,7 @@ describe('OverallContent done branch', () => {
                 optionsOiStale: true,
             })
         );
-        render(
-            <OverallContent
-                symbol="AAPL"
-                companyName="Apple Inc."
-                timeframe="1Day"
-            />
-        );
+        render(<OverallContent symbol="AAPL" companyName="Apple Inc." />);
         const btn = screen.getByRole('button', { name: /재분석/ });
         expect(btn.className).toMatch(/ui-warning/);
     });
@@ -335,13 +260,7 @@ describe('OverallContent done branch', () => {
                 optionsOiStale: true,
             })
         );
-        render(
-            <OverallContent
-                symbol="AAPL"
-                companyName="Apple Inc."
-                timeframe="1Day"
-            />
-        );
+        render(<OverallContent symbol="AAPL" companyName="Apple Inc." />);
         const btn = screen.getByRole('button', { name: /재분석/ });
         expect(btn.className).not.toMatch(/ui-warning/);
     });
@@ -349,13 +268,7 @@ describe('OverallContent done branch', () => {
     it('ReanalyzeButton 클릭 시 trigger를 호출한다', () => {
         const trigger = vi.fn();
         mockDoneState(makeDoneResult(), trigger);
-        render(
-            <OverallContent
-                symbol="AAPL"
-                companyName="Apple Inc."
-                timeframe="1Day"
-            />
-        );
+        render(<OverallContent symbol="AAPL" companyName="Apple Inc." />);
         fireEvent.click(screen.getByRole('button', { name: /재분석/ }));
         expect(trigger).toHaveBeenCalledTimes(1);
     });
@@ -399,7 +312,6 @@ describe('OverallContent SSR seed', () => {
             <OverallContent
                 symbol="AAPL"
                 companyName="Apple Inc."
-                timeframe="1Day"
                 initialAnalysis={SEED_RESULT}
             />,
             { wrapper: createQueryClientWrapper().wrapper }
@@ -410,14 +322,9 @@ describe('OverallContent SSR seed', () => {
     });
 
     it('initialAnalysis가 없으면 idle CTA(분석 받기)를 렌더한다', () => {
-        render(
-            <OverallContent
-                symbol="AAPL"
-                companyName="Apple Inc."
-                timeframe="1Day"
-            />,
-            { wrapper: createQueryClientWrapper().wrapper }
-        );
+        render(<OverallContent symbol="AAPL" companyName="Apple Inc." />, {
+            wrapper: createQueryClientWrapper().wrapper,
+        });
 
         expect(
             screen.getByRole('button', { name: /AI 종합 분석 받기/ })

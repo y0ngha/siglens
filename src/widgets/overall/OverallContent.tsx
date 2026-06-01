@@ -17,11 +17,10 @@ import { buildChatState } from './utils/buildChatState';
 import { BotBlockedNotice } from '@/shared/ui/BotBlockedNotice';
 import { useDefaultModelId } from '@/widgets/symbol-page/hooks/useDefaultModelId';
 import { cn } from '@/shared/lib/cn';
-import {
-    type OverallAnalysisResponse,
-    type Timeframe,
-} from '@y0ngha/siglens-core';
+import { type OverallAnalysisResponse } from '@y0ngha/siglens-core';
 import { type CSSProperties, useMemo } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { DEFAULT_TIMEFRAME, isValidTimeframe } from '@/shared/config/market';
 
 const SKELETON_LINE_COUNT = 3;
 const SKELETON_WIDTH_START_PCT = 85;
@@ -30,7 +29,6 @@ const SKELETON_WIDTH_STEP_PCT = 12;
 interface OverallContentProps {
     symbol: string;
     companyName: string;
-    timeframe: Timeframe;
     /**
      * 서버에서 peek로 미리 읽은 캐시 종합 분석 서사(SSR seed). 주어지면
      * useOverallAnalysis가 마운트 즉시 done 상태로 렌더한다(LLM 비용 0).
@@ -41,9 +39,11 @@ interface OverallContentProps {
 export function OverallContent({
     symbol,
     companyName,
-    timeframe,
     initialAnalysis,
 }: OverallContentProps) {
+    // ISR 정적 렌더 — tf는 서버가 아니라 client가 URL에서 읽는다(차트와 동일 소스).
+    const tfParam = useSearchParams().get('tf');
+    const timeframe = isValidTimeframe(tfParam) ? tfParam : DEFAULT_TIMEFRAME;
     const modelId = useDefaultModelId();
     const { state, trigger } = useOverallAnalysis(
         symbol,

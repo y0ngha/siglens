@@ -11,7 +11,6 @@ vi.mock('@y0ngha/siglens-core', () => ({
 }));
 vi.mock('@/shared/config/market', () => ({
     DEFAULT_TIMEFRAME: '1Day',
-    isValidTimeframe: vi.fn().mockReturnValue(false),
     VALID_TICKER_RE: /^[A-Z]{1,5}$/,
 }));
 vi.mock('@/entities/ticker', () => ({
@@ -95,7 +94,6 @@ describe('Symbol page', () => {
         it('returns noindex for invalid ticker', async () => {
             const metadata = await generateMetadata({
                 params: Promise.resolve({ symbol: '!!!invalid' }),
-                searchParams: Promise.resolve({}),
             });
 
             expect(metadata.robots).toEqual(
@@ -112,13 +110,12 @@ describe('Symbol page', () => {
 
             const metadata = await generateMetadata({
                 params: Promise.resolve({ symbol: 'aapl' }),
-                searchParams: Promise.resolve({}),
             });
 
             expect(metadata.title).toBe('AAPL 차트');
         });
 
-        it('does not add noindex when tf query param is present (canonical consolidates)', async () => {
+        it('canonical excludes tf — ISR page uses clean canonical regardless of query params', async () => {
             mockGetAssetInfoCached.mockResolvedValue({
                 name: 'Apple Inc.',
                 koreanName: '애플',
@@ -127,10 +124,9 @@ describe('Symbol page', () => {
 
             const metadata = await generateMetadata({
                 params: Promise.resolve({ symbol: 'aapl' }),
-                searchParams: Promise.resolve({ tf: '1Hour' }),
             });
 
-            // variant URL은 noindex 대신 clean canonical로 색인 통합 (SEO 신호 충돌 제거)
+            // ISR 페이지: searchParams 없이 렌더되므로 canonical은 clean URL
             expect(metadata.robots).toBeUndefined();
             expect(metadata.alternates?.canonical).toBe(
                 'https://siglens.io/AAPL'
@@ -146,7 +142,6 @@ describe('Symbol page', () => {
 
             const metadata = await generateMetadata({
                 params: Promise.resolve({ symbol: 'aapl' }),
-                searchParams: Promise.resolve({}),
             });
 
             expect(metadata.robots).toBeUndefined();
@@ -170,7 +165,6 @@ describe('Symbol page', () => {
         async function getClientProps(): Promise<ClientSeedProps> {
             const tree = await SymbolPage({
                 params: Promise.resolve({ symbol: 'aapl' }),
-                searchParams: Promise.resolve({}),
             });
             const client = findElementByType(tree, SymbolPageClient);
             if (client === null) {

@@ -42,6 +42,9 @@ vi.mock('@/features/symbol-chat', () => ({
 vi.mock('@/widgets/symbol-page/hooks/useDefaultModelId', () => ({
     useDefaultModelId: vi.fn(() => 'gemini-2.5-flash-lite'),
 }));
+vi.mock('next/navigation', () => ({
+    useSearchParams: () => new URLSearchParams(),
+}));
 // react-markdown은 ESM-only라 테스트 환경에서 직접 로드하면 실패한다. 본 테스트는
 // 서사 텍스트 노출 여부만 보므로 MarkdownText를 단순 wrapper로 대체한다.
 vi.mock('@/shared/ui/MarkdownText', () => ({
@@ -79,14 +82,9 @@ function renderOverall() {
     // 매 호출이 격리된 새 QueryClient를 만들어 테스트 간 캐시 공유가 없다. 그래서
     // hook 테스트(useOverallAnalysis.test.tsx)처럼 client를 추적해 afterEach에서
     // clear할 필요가 없다 — 컴포넌트는 RTL cleanup이 unmount하고 client는 GC된다.
-    return render(
-        <OverallContent
-            symbol="AAPL"
-            companyName="Apple Inc."
-            timeframe="1Day"
-        />,
-        { wrapper: createQueryClientWrapper().wrapper }
-    );
+    return render(<OverallContent symbol="AAPL" companyName="Apple Inc." />, {
+        wrapper: createQueryClientWrapper().wrapper,
+    });
 }
 
 describe('OverallContent 사용자 분석 플로우 (userEvent)', () => {
