@@ -10,7 +10,8 @@ import type { DatabaseClient, DatabaseConfig } from './types';
  * Production uses Neon serverless (see client.ts). The drizzle query API is
  * runtime-compatible across both adapters; the cast bridges the driver-specific
  * TS types (NeonHttpDatabase vs PostgresJsDatabase) at this single boundary.
- * Reached only when E2E_TEST=1 so postgres-js never enters the prod bundle.
+ * Reached only when E2E_TEST=1 via the gated require in client.ts; the branch is
+ * dead in production and this server-only module never reaches the client bundle.
  */
 export function createTestDatabaseClient(
     config: DatabaseConfig

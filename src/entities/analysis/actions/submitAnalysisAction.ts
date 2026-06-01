@@ -41,13 +41,14 @@ export async function submitAnalysisAction(
         // miss_no_trigger path worth exercising. The fundamental/news/options/
         // overall submit actions have no bot-block UI, so they intentionally skip
         // the check and always return their cached fixture.
-        // The stub + JSON fixture are require'd (not statically imported) so they
-        // stay out of the production bundle (matches getMarketDataProvider).
+        // The stub + JSON fixture load via a DYNAMIC import under the E2E guard, so
+        // they sit in a lazy chunk (not the prod main bundle) and the branch stays
+        // resolvable by the vitest runner. Dead when E2E_TEST is unset.
         if (isE2E()) {
             const requestHeaders = await headers();
             if (isBot(requestHeaders)) return { status: 'miss_no_trigger' };
             const { e2eCachedTechnical } =
-                require('@/shared/api/e2eAnalysisStub') as typeof import('@/shared/api/e2eAnalysisStub');
+                await import('@/shared/api/e2eAnalysisStub');
             return e2eCachedTechnical();
         }
 

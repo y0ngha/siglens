@@ -8,7 +8,9 @@ let cached: MarketDataProvider | null = null;
 export function getMarketDataProvider(): MarketDataProvider {
     if (cached !== null) return cached;
     if (isE2E()) {
-        // require keeps the fake + fixture out of the production bundle.
+        // Sync factory — no dynamic import possible here, so the fake + fixture load
+        // via a gated require. Server-only and dead when E2E_TEST is unset
+        // (Turbopack still bundles them into the server output).
         const { FakeMarketProvider } =
             require('./FakeMarketProvider') as typeof import('./FakeMarketProvider');
         cached = new FakeMarketProvider();

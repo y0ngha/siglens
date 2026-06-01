@@ -12,8 +12,10 @@ import type { EmailDispatcher, EmailMessage } from './types';
  * Redis key (`email_debug:{recipient}`). The spec then reads that key via
  * `e2e/support/emailHelper.ts`. No Resend key is read; nothing leaves the box.
  *
- * This dispatcher is require-gated out of the production bundle (see
- * `createEmailDispatcher` in `dispatcher.ts`).
+ * This dispatcher is a STATIC import in `createEmailDispatcher` (dispatcher.ts),
+ * constructed only under the `E2E_TEST=1` guard, so it's server-only and the
+ * branch is dead in production. (See that factory's doc for why static, not
+ * gated: it keeps the E2E branch unit-testable.)
  */
 
 /** Redis key prefix for the captured code/token payload, keyed by recipient. */

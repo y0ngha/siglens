@@ -8,7 +8,9 @@ let cached: NewsClientPort | null = null;
 export function getNewsClient(): NewsClientPort {
     if (cached !== null) return cached;
     if (isE2E()) {
-        // require keeps the fake out of the production bundle.
+        // Sync factory — no dynamic import possible here, so the fake loads via a
+        // gated require. Server-only and dead when E2E_TEST is unset (Turbopack
+        // still bundles it into the server output).
         const { FakeNewsClient } =
             require('./FakeNewsClient') as typeof import('./FakeNewsClient');
         cached = new FakeNewsClient();
