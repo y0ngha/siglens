@@ -14,15 +14,17 @@ export interface ResilientAssetInfo {
 }
 
 /**
- * `getAssetInfoCached`의 graceful 래퍼. `getAssetInfo`는 세 가지로 끝난다:
- *   - AssetInfo 반환 → `{ assetInfo, degraded: false }`(정상, ISR 캐시 대상).
- *   - throw         → FMP 인프라 일시 실패(throwOnInfraFailure). 여기서 흡수해
- *                     `{symbol, name: ticker}` fallback으로 degrade하고, 이 degrade
- *                     응답이 ISR(revalidate=3600)로 굳지 않도록 `connection()`으로
- *                     해당 렌더만 동적화한다 — 인프라 복구 즉시 다음 요청부터 정상화.
- *                     `degraded: true`로 표시해 metadata가 noindex 처리할 수 있게 한다.
- *   - null 반환     → FMP 200 + 빈 결과 = 실재하지 않는 종목. `{ assetInfo: null }`로
- *                     통과시켜 호출부의 `notFound()`(404)가 동작하게 한다.
+ * `getAssetInfoCached`의 graceful 래퍼. `getAssetInfo`는 네 가지로 끝난다:
+ *   - AssetInfo 반환         → `{ assetInfo, degraded: false }`(정상, ISR 캐시 대상).
+ *   - null 반환              → FMP 200 + 빈 결과 = 실재하지 않는 종목. `{ assetInfo: null }`로
+ *                              통과시켜 호출부의 `notFound()`(404)가 동작하게 한다.
+ *   - DYNAMIC_SERVER_USAGE throw → Next.js 제어 흐름 에러이므로 그대로 rethrow한다.
+ *                              인프라 실패로 오인 시 불필요한 에러 로그 + fallback degrade가 발생한다.
+ *   - 기타 throw             → FMP 인프라 일시 실패(throwOnInfraFailure). 여기서 흡수해
+ *                              `{symbol, name: ticker}` fallback으로 degrade하고, 이 degrade
+ *                              응답이 ISR(revalidate=3600)로 굳지 않도록 `connection()`으로
+ *                              해당 렌더만 동적화한다 — 인프라 복구 즉시 다음 요청부터 정상화.
+ *                              `degraded: true`로 표시해 metadata가 noindex 처리할 수 있게 한다.
  *
  * fallback 객체는 symbol/name만 채운다. fmpSymbol은 생략하는데, AssetInfo에서
  * 이미 optional("일반 주식은 undefined")이라 다운스트림(getBarsAction/peekAnalysisCache)이

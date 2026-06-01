@@ -54,6 +54,14 @@ describe('getAssetInfoResilient', () => {
         expect(mockConnection).not.toHaveBeenCalled();
     });
 
+    it('rethrows when only message matches (no digest field)', async () => {
+        const dynamicErr = new Error('Dynamic server usage');
+        mockGet.mockRejectedValue(dynamicErr);
+
+        await expect(getAssetInfoResilient('AAPL')).rejects.toBe(dynamicErr);
+        expect(mockConnection).not.toHaveBeenCalled();
+    });
+
     it('on infra failure (throw) returns a ticker fallback with degraded: true and opts the render out of the ISR cache', async () => {
         mockGet.mockRejectedValue(
             new Error('[fmpTickerApi] search-symbol fetch failed')

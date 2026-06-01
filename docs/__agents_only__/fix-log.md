@@ -1,6 +1,11 @@
 
 # Fix Log
 
+## [PR #545 Round 3 | fix/symbol-infra-fallback | 2026-06-02]
+- Violation: JSDoc "세 가지로 끝난다" 서술이 실제 네 가지 경로(DYNAMIC_SERVER_USAGE rethrow 포함)와 불일치
+  - Rule: MISTAKES.md §15.6 — 주석/JSDoc의 모든 서술은 실제 런타임/코드 현실과 일치해야 한다
+  - Context: Round 1에서 DYNAMIC_SERVER_USAGE rethrow 경로를 추가했지만 JSDoc 요약은 "세 가지"로 유지되어 "throw → 여기서 흡수해"라는 표현이 rethrow 경로를 숨김
+
 ## [PR #545 Round 2 | fix/symbol-infra-fallback | 2026-06-02]
 - Violation: `DYNAMIC_SERVER_USAGE` rethrow 분기(catch 내 if 블록 true 경로)에 대한 테스트 케이스 누락
   - Rule: MISTAKES.md Tests §18 — 신규 조건 분기는 true/false 두 경로 모두 테스트 케이스가 필요하다
