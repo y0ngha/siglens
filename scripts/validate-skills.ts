@@ -291,12 +291,11 @@ const parseSkillFile = (file: string): FileResult => {
 };
 
 const main = async (): Promise<void> => {
-    const files = [
-        ...(await glob('**/*.md', { cwd: SKILLS_DIR, absolute: true })),
-        // Spread-copy + sort (not toSorted): scripts/ isn't covered by the main
-        // tsconfig's esnext lib, so Array.prototype.toSorted isn't available to
-        // the type-checker.
-    ].sort();
+    const allFiles = await glob('**/*.md', { cwd: SKILLS_DIR, absolute: true });
+    // `.sort()` not `.toSorted()`: scripts/ isn't covered by the main tsconfig's
+    // esnext lib, so Array.prototype.toSorted isn't available; the spread copies
+    // the array first so the original is not mutated.
+    const files = [...allFiles].sort();
 
     const parsed = files.map(file => parseSkillFile(file));
     const withGating = parsed.filter(p => p.hasGating).length;

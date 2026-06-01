@@ -386,6 +386,7 @@ const toSkill = (data: Record<string, unknown>, content: string): Skill => ({
     content,
     display: parseSkillDisplay(data.display),
     gating: parseGating(data.gating),
+    // Reserved for build-time tokenizer baking; currently unused (placeholder 0). See skills/CLAUDE.md.
     tokenCost:
         typeof data.token_cost === 'number' ? data.token_cost : undefined,
     smcFullGuide: isYamlTrue(data.smc_full_guide),
