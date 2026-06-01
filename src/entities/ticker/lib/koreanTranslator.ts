@@ -23,26 +23,13 @@ function isStringRecord(value: unknown): value is Record<string, string> {
 }
 
 /**
- * Calls Gemini with freeApiKey first; falls back to apiKey on failure.
+ * Calls Gemini with the server translation key.
  * Always uses thinkingBudget: 0 — these are simple translation tasks.
  */
-async function callGeminiWithKeyFallback(
+async function callTranslateGemini(
     config: TranslatorConfig,
     contents: string
 ): Promise<string> {
-    if (config.freeApiKey) {
-        try {
-            return await callGeminiChat({
-                serverApiKey: config.freeApiKey,
-                userApiKey: undefined,
-                model: config.model,
-                contents,
-                thinkingBudget: 0,
-            });
-        } catch {
-            // freeApiKey failed — fall through to primary key
-        }
-    }
     return callGeminiChat({
         serverApiKey: config.apiKey,
         userApiKey: undefined,
@@ -61,7 +48,7 @@ export async function translateCompanyNames(
     if (!config) return {};
 
     try {
-        const text = await callGeminiWithKeyFallback(
+        const text = await callTranslateGemini(
             config,
             buildTranslatePrompt(entries)
         );
@@ -79,7 +66,7 @@ export async function translateCompanyDescription(
     if (!config) return null;
 
     try {
-        const text = await callGeminiWithKeyFallback(
+        const text = await callTranslateGemini(
             config,
             buildDescriptionTranslatePrompt(description)
         );

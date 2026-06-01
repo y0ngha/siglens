@@ -32,16 +32,15 @@ async function getClientIp(): Promise<string> {
 }
 
 /**
- * Server-owned key per provider forwarded to core as `freeApiKey`.
- * Used for free models (any tier) and pro-tier premium models.
+ * Server-owned key per provider, forwarded to core as `serverApiKey` on
+ * every request. Core charges it for free models (any tier) and pro-tier
+ * premium models; non-pro premium requests are charged to the user's BYOK
+ * key (`userApiKey`) instead.
  */
 function getServerPrimaryKey(provider: LlmProvider): string | undefined {
     switch (provider) {
         case 'google':
-            return (
-                process.env.GEMINI_CHAT_FREE_API_KEY ??
-                process.env.GEMINI_CHAT_API_KEY
-            );
+            return process.env.GEMINI_CHAT_API_KEY;
         case 'anthropic':
             return process.env.ANTHROPIC_CHAT_API_KEY;
         case 'openai':
@@ -56,11 +55,11 @@ function getServerPrimaryKey(provider: LlmProvider): string | undefined {
 /**
  * Resolve the user's tier and BYOK key for the given model.
  *
- * - Free models: no user context needed → default tier, no paidApiKey.
- * - Premium models + no session: default tier, no paidApiKey → core
+ * - Free models: no user context needed → default tier, no userApiKey.
+ * - Premium models + no session: default tier, no userApiKey → core
  *   returns `user_api_key_required`.
  * - Premium models + pro tier: server covers the cost → tier returned,
- *   no paidApiKey (BYOK is ignored even if registered).
+ *   no userApiKey (BYOK is ignored even if registered).
  * - Premium models + non-pro tier: BYOK looked up from DB.
  */
 interface UserContext {

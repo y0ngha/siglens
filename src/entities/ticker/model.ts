@@ -13,9 +13,8 @@ export interface TranslatorEntry {
     name: string;
 }
 
-/** Resolved Gemini-translator config. `freeApiKey` is preferred when present. */
+/** Resolved Gemini-translator config. */
 export interface TranslatorConfig {
     apiKey: string;
-    freeApiKey: string | undefined;
     model: string;
 }

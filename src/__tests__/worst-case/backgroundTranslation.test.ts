@@ -20,7 +20,6 @@ const mockReadConfig = tryReadTranslatorConfig as ReturnType<typeof vi.fn>;
 
 const CONFIG = {
     apiKey: 'test-key',
-    freeApiKey: 'free-key',
     model: 'gemini-2.5-flash',
 };
 
@@ -79,21 +78,6 @@ describe('Background translation failure handling', () => {
             ]);
 
             expect(result).toEqual({});
-        });
-
-        it('falls back to primary key when free key fails', async () => {
-            mockReadConfig.mockReturnValue(CONFIG);
-            mockCallGemini
-                .mockRejectedValueOnce(new Error('Free key quota exceeded'))
-                .mockResolvedValueOnce('{"AAPL":"애플"}');
-            mockParseJson.mockReturnValue({ AAPL: '애플' });
-
-            const result = await translateCompanyNames([
-                { symbol: 'AAPL', name: 'Apple Inc.' },
-            ]);
-
-            expect(result).toEqual({ AAPL: '애플' });
-            expect(mockCallGemini).toHaveBeenCalledTimes(2);
         });
     });
 

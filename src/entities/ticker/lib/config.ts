@@ -7,7 +7,6 @@ export function tryReadTranslatorConfig(): TranslatorConfig | null {
     if (!apiKey) return null;
     return {
         apiKey,
-        freeApiKey: process.env.TRANSLATE_FREE_API_KEY,
         model: process.env.TRANSLATE_MODEL ?? DEFAULT_TRANSLATE_MODEL,
     };
 }

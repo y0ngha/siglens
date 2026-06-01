@@ -32,8 +32,3 @@
 - Violation: `beforeEach/afterEach` hooks declared at module level instead of inside describe block in src/shared/cache/__tests__/getOrSetCache.test.ts
   - Rule: MISTAKES.md Tests #3 — Test lifecycle hooks must be inside describe block
   - Context: Moved beforeEach/afterEach into describe block to group with test cases
-## [refactor/fear-greed-import-core Round 2 | refactor/fear-greed-import-core | 2026-05-28]
-- Violation: Test comment/title referenced deleted `classifyScore` identifier (renamed to `scoreToLabel` from siglens-core import)
-  - Rule: MISTAKES.md §15.6 — Comments/JSDoc must match current code reality; stale identifier names after renames mislead readers
-  - Context: After importing `scoreToLabel` from `@y0ngha/siglens-core@0.15.0`, test title still referenced old `classifyScore` name. Updated to reflect actual import.
-

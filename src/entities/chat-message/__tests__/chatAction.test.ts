@@ -108,7 +108,6 @@ describe('chatAction 함수는', () => {
     beforeEach(async () => {
         vi.clearAllMocks();
         process.env.GEMINI_CHAT_API_KEY = 'gemini-server-key';
-        delete process.env.GEMINI_CHAT_FREE_API_KEY;
         delete process.env.ANTHROPIC_CHAT_API_KEY;
         delete process.env.OPENAI_CHAT_API_KEY;
         mockHeaders.mockResolvedValue(
@@ -126,7 +125,6 @@ describe('chatAction 함수는', () => {
 
     afterEach(() => {
         delete process.env.GEMINI_CHAT_API_KEY;
-        delete process.env.GEMINI_CHAT_FREE_API_KEY;
         delete process.env.ANTHROPIC_CHAT_API_KEY;
         delete process.env.OPENAI_CHAT_API_KEY;
     });
@@ -154,27 +152,6 @@ describe('chatAction 함수는', () => {
             );
         });
 
-        it('GEMINI_CHAT_FREE_API_KEY가 설정되면 serverApiKey로 우선 사용한다', async () => {
-            process.env.GEMINI_CHAT_FREE_API_KEY = 'gemini-user-api-key';
-
-            await chatAction(
-                'AAPL',
-                'Apple Inc.',
-                '1Day',
-                MINIMAL_ANALYSIS,
-                [],
-                '질문',
-                'gemini-2.5-flash'
-            );
-
-            expect(mockRequestChatCompletion).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    serverApiKey: 'gemini-user-api-key',
-                    userApiKey: undefined,
-                }),
-                expect.anything()
-            );
-        });
     });
 
     describe('Anthropic 모델을 사용할 때', () => {

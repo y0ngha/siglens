@@ -11,7 +11,6 @@ if (typeof globalThis.TextEncoder === 'undefined') {
 }
 
 process.env.AI_PROVIDER = 'claude';
-process.env.GEMINI_CHAT_FREE_API_KEY = 'test-gemini-user-api-key';
 process.env.GEMINI_CHAT_API_KEY = 'test-gemini-key';
 process.env.ANTHROPIC_CHAT_API_KEY = 'test-anthropic-key';
 process.env.OPENAI_CHAT_API_KEY = 'test-openai-key';
