@@ -152,6 +152,8 @@ void _predicateKindsAreExhaustive;
  * (feature, predicate) pairs the core's `isStateNotable` actually evaluates.
  * Any other pairing returns `false` for every chart → the skill is unreachable,
  * so the validator rejects it even though each half is individually valid.
+ *
+ * Mirrors `VALID_STATE_PAIRS` in src/entities/skill/api.ts — keep both in sync.
  */
 const VALID_STATE_PAIRS = new Set<string>([
     'bollinger:pctB',
@@ -291,6 +293,9 @@ const parseSkillFile = (file: string): FileResult => {
 const main = async (): Promise<void> => {
     const files = [
         ...(await glob('**/*.md', { cwd: SKILLS_DIR, absolute: true })),
+        // Spread-copy + sort (not toSorted): scripts/ isn't covered by the main
+        // tsconfig's esnext lib, so Array.prototype.toSorted isn't available to
+        // the type-checker.
     ].sort();
 
     const parsed = files.map(file => parseSkillFile(file));
