@@ -26,6 +26,15 @@ const SIGNAL_BADGE_LABELS: Record<SignalType, string> = {
     parabolic_sar_flip: 'Parabolic SAR 전환',
     keltner_upper_breakout: 'Keltner 상단 돌파',
     squeeze_momentum_bullish: 'Squeeze 양전환',
+    keltner_lower_breakout: 'Keltner 하단 돌파',
+    supertrend_bearish_flip: 'Supertrend 하락 전환',
+    ichimoku_cloud_breakdown: 'Ichimoku 구름 이탈',
+    cci_bearish_cross: 'CCI 하락 교차',
+    dmi_bearish_cross: 'DMI 데드크로스',
+    cmf_bearish_flip: 'CMF 분산 전환',
+    mfi_overbought_reversal: 'MFI 과매수 반전',
+    parabolic_sar_bearish_flip: 'Parabolic SAR 하락 전환',
+    squeeze_momentum_bearish: 'Squeeze 음전환',
 };
 
 interface SignalBadgeProps {
