@@ -89,6 +89,10 @@ export default defineConfig({
                     include: [
                         'src/**/__tests__/**/*.test.ts',
                         'src/__integration__/**/*.test.ts',
+                        // Build-tooling tests (skill validation gate) live under
+                        // scripts/ — scripts/ is tsconfig-excluded but its unit
+                        // tests still run here so CI's `yarn test` covers them.
+                        'scripts/**/__tests__/**/*.test.ts',
                     ],
                     environment: 'node',
                 },

@@ -29,6 +29,9 @@ jobs:
             - name: Type check
               run: yarn typecheck
 
+            - name: Validate skills
+              run: yarn validate:skills
+
             - name: Lint
               run: yarn lint
 
