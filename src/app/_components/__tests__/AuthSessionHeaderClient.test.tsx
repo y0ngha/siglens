@@ -55,6 +55,8 @@ describe('AuthSessionHeaderClient', () => {
         render(<AuthSessionHeaderClient />);
         expect(lastHeaderProps().currentUser).toMatchObject({
             email: 'a@b.com',
+            name: 'Alice',
+            avatarUrl: null,
             tier: 'member',
         });
     });

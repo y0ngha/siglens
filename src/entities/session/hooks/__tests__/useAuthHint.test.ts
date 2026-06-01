@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, afterEach, vi } from 'vitest';
-import { renderHook, act, cleanup } from '@testing-library/react';
+import { renderHook, cleanup } from '@testing-library/react';
 import { AUTH_HINT_COOKIE_NAME } from '@/shared/config/cookieNames';
 
 // useHydrated는 jsdom에서 renderHook 직후 true를 반환하므로
@@ -34,26 +34,23 @@ describe('useAuthHint', () => {
         expect(result.current).toBe(false);
     });
 
-    it('hydration 후 hint 쿠키 값이 있으면 true', async () => {
+    it('hydration 후 hint 쿠키 값이 있으면 true', () => {
         mockUseHydrated.mockReturnValue(true);
         document.cookie = `${AUTH_HINT_COOKIE_NAME}=1; path=/`;
         const { result } = renderHook(() => useAuthHint());
-        await act(async () => {}); // effect flush → hydrated
         expect(result.current).toBe(true);
     });
 
-    it('hydration 후 hint 쿠키 없으면 false', async () => {
+    it('hydration 후 hint 쿠키 없으면 false', () => {
         mockUseHydrated.mockReturnValue(true);
         const { result } = renderHook(() => useAuthHint());
-        await act(async () => {});
         expect(result.current).toBe(false);
     });
 
-    it('hint 쿠키가 빈 값(siglens_auth=)이면 false (로그아웃으로 clear된 경우)', async () => {
+    it('hint 쿠키가 빈 값(siglens_auth=)이면 false (로그아웃으로 clear된 경우)', () => {
         mockUseHydrated.mockReturnValue(true);
         document.cookie = `${AUTH_HINT_COOKIE_NAME}=; path=/`;
         const { result } = renderHook(() => useAuthHint());
-        await act(async () => {});
         expect(result.current).toBe(false);
     });
 });
