@@ -1128,7 +1128,6 @@ describe('dedupeByName', () => {
             skill('C'),
         ]);
         expect(out.map(s => s.name)).toEqual(['A', 'B', 'C']);
-        // 첫 번째 A가 유지되고 이후 동명 항목은 버려진다.
         expect(out[0].description).toBe('first');
     });
 

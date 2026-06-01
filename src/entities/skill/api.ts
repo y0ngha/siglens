@@ -421,6 +421,10 @@ const countMdFiles = async (subdir: string): Promise<number> => {
 
 // cacheComponents 비활성 기간 동안 'use cache' 제거.
 // skills 디렉토리는 빌드 산출물이라 매 요청 fs.readdir이 사실상 OS page cache hit.
+//
+// 디스크 .md 파일 개수를 카테고리별로 집계한다(카탈로그 규모 표시용). loadSkills는
+// dedupeByName으로 동명 스킬을 제거하지만, 이 카운트는 파일 수를 그대로 반영한다
+// — 목적이 달라 의도적으로 dedup하지 않는다.
 export async function countSkillFiles(): Promise<SkillCounts> {
     const [
         indicators,
