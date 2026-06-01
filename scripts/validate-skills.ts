@@ -213,7 +213,6 @@ function validateGating(
         return;
     }
 
-    // signal_kind === 'state'
     const state = gating.state;
     if (!isRecord(state)) {
         push('state-gated skill is unreachable: `state` predicate is missing.');

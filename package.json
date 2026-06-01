@@ -38,7 +38,7 @@
         "format": "prettier --write . --cache",
         "format:staged": "prettier --write --cache --ignore-unknown",
         "typecheck": "tsc --noEmit",
-        "validate:skills": "node_modules/.bin/tsx scripts/validate-skills.ts",
+        "validate:skills": "tsx scripts/validate-skills.ts",
         "format:check": "prettier --check . --cache",
         "prepare": "husky",
         "release": "SIGLENS_RELEASE_E2E=1 dotenv -e .env.local -- release-it",

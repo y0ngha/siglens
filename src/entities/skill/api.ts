@@ -300,7 +300,6 @@ const parseGating = (raw: unknown): SkillGating | undefined => {
         return { tier: 'gated', signalKind: 'event', triggers };
     }
 
-    // signalKind === 'state'
     const state = parseStatePredicate(obj.state);
     if (state === undefined) return undefined;
     return { tier: 'gated', signalKind: 'state', state };

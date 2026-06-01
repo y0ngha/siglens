@@ -119,6 +119,17 @@ describe('validateSkillData', () => {
             expect(errors[0]).toMatch(/state\.feature/);
         });
 
+        it('rejects a valid feature paired with an invalid predicate', () => {
+            const errors = validateSkillData({
+                gating: {
+                    tier: 'gated',
+                    signal_kind: 'state',
+                    state: { feature: 'bollinger', predicate: 'bogus_predicate' },
+                },
+            });
+            expect(errors[0]).toMatch(/state\.predicate/);
+        });
+
         it('rejects a (feature, predicate) pair the core never evaluates', () => {
             // bollinger only supports pctB; channelProximity is never evaluated
             // for it → the skill would be unreachable.

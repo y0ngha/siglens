@@ -922,6 +922,18 @@ ${gatingYaml}${extra}
             expect(skill.smcFullGuide).toBe(true);
         });
 
+        it('따옴표 문자열 smc_full_guide: "true"도 smcFullGuide=true로 매핑한다', async () => {
+            // 최소 YAML 파서는 따옴표 없는 true를 문자열 'true'로 남기므로
+            // isYamlTrue가 문자열 'true' 분기도 처리해야 한다.
+            const skill = await loadOne(
+                withGating(
+                    'gating:\n  tier: always_on',
+                    "\nsmc_full_guide: 'true'"
+                )
+            );
+            expect(skill.smcFullGuide).toBe(true);
+        });
+
         it('gating이 없으면 undefined, smcFullGuide는 false이다', async () => {
             const skill = await loadOne(VALID_SKILL_MD);
             expect(skill.gating).toBeUndefined();
@@ -949,6 +961,15 @@ ${gatingYaml}${extra}
             const skill = await loadOne(
                 withGating(
                     'gating:\n  tier: gated\n  signal_kind: state\n  state:\n    feature: bogus\n    predicate: pctB'
+                )
+            );
+            expect(skill.gating).toBeUndefined();
+        });
+
+        it('유효한 feature라도 predicate가 유효하지 않으면 gating undefined로 fail-open한다', async () => {
+            const skill = await loadOne(
+                withGating(
+                    'gating:\n  tier: gated\n  signal_kind: state\n  state:\n    feature: bollinger\n    predicate: bogus_predicate'
                 )
             );
             expect(skill.gating).toBeUndefined();
