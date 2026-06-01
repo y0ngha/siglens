@@ -81,7 +81,7 @@ describe('validateSkillData', () => {
             expect(errors[0]).toMatch(/unknown trigger "totally_fake_signal"/);
         });
 
-        it('triggers 배열에 비문자열 항목이 있으면 에러를 반환한다', () => {
+        it('rejects a non-string entry in the triggers array', () => {
             const errors = validateSkillData({
                 gating: {
                     tier: 'gated',

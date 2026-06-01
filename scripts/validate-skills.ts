@@ -126,6 +126,28 @@ const STATE_PREDICATE_KINDS = [
     'channelProximity',
 ] as const satisfies readonly SkillStatePredicateKind[];
 
+// Exhaustiveness guards: if the core grows a new SkillStateFeature /
+// SkillStatePredicateKind member not mirrored above, the corresponding type
+// becomes a non-`never` union and tsc fails here — so a core drift fails the
+// build instead of silently rejecting otherwise-valid skills.
+type MissingStateFeature = Exclude<
+    SkillStateFeature,
+    (typeof STATE_FEATURES)[number]
+>;
+const _stateFeaturesAreExhaustive: MissingStateFeature extends never
+    ? true
+    : never = true;
+void _stateFeaturesAreExhaustive;
+
+type MissingPredicateKind = Exclude<
+    SkillStatePredicateKind,
+    (typeof STATE_PREDICATE_KINDS)[number]
+>;
+const _predicateKindsAreExhaustive: MissingPredicateKind extends never
+    ? true
+    : never = true;
+void _predicateKindsAreExhaustive;
+
 /**
  * (feature, predicate) pairs the core's `isStateNotable` actually evaluates.
  * Any other pairing returns `false` for every chart → the skill is unreachable,
@@ -212,12 +234,14 @@ function validateGating(gating: unknown): string[] {
     const predicate = state.predicate;
     if (
         typeof feature !== 'string' ||
+        // Tuple `.includes` is typed to its own members; widen to readonly string[].
         !(STATE_FEATURES as readonly string[]).includes(feature)
     ) {
         return [`invalid \`state.feature\`: ${String(feature)}.`];
     }
     if (
         typeof predicate !== 'string' ||
+        // Tuple `.includes` is typed to its own members; widen to readonly string[].
         !(STATE_PREDICATE_KINDS as readonly string[]).includes(predicate)
     ) {
         return [`invalid \`state.predicate\`: ${String(predicate)}.`];
@@ -251,13 +275,10 @@ const parseSkillFile = (file: string): FileResult => {
         }
         data = parsed.data;
     } catch (error) {
+        const reason = error instanceof Error ? error.message : String(error);
         return {
             hasGating: false,
-            errors: [
-                withFile(
-                    `failed to parse frontmatter: ${(error as Error).message}`
-                ),
-            ],
+            errors: [withFile(`failed to parse frontmatter: ${reason}`)],
         };
     }
 
@@ -299,7 +320,8 @@ const executedDirectly =
 
 if (executedDirectly) {
     main().catch((error: unknown) => {
-        console.error(`✖ validate-skills crashed: ${(error as Error).message}`);
+        const reason = error instanceof Error ? error.message : String(error);
+        console.error(`✖ validate-skills crashed: ${reason}`);
         process.exit(1);
     });
 }

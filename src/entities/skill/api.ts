@@ -184,8 +184,40 @@ const isSkillType = (value: unknown): value is SkillType =>
 // repo convention (matching `confidence_weight`); `signal_kind` / `token_cost` /
 // `smc_full_guide` map to the camelCase Skill fields the selector reads.
 
-const SKILL_GATING_TIERS = ['always_on', 'gated'] as const;
-const SIGNAL_KINDS = ['event', 'state'] as const;
+// `tier` / `signalKind` are inlined literals on the core's `SkillGating`
+// discriminated union (no standalone exported union), so we derive the closed
+// sets from that union — `satisfies` + the exhaustiveness guards below fail the
+// build if the core ever adds a tier or a gated signal kind.
+type SkillGatingTier = SkillGating['tier'];
+type SkillSignalKind = Extract<SkillGating, { tier: 'gated' }>['signalKind'];
+
+const SKILL_GATING_TIERS = [
+    'always_on',
+    'gated',
+] as const satisfies readonly SkillGatingTier[];
+const SIGNAL_KINDS = [
+    'event',
+    'state',
+] as const satisfies readonly SkillSignalKind[];
+
+type MissingGatingTier = Exclude<
+    SkillGatingTier,
+    (typeof SKILL_GATING_TIERS)[number]
+>;
+const _gatingTiersAreExhaustive: MissingGatingTier extends never
+    ? true
+    : never = true;
+void _gatingTiersAreExhaustive;
+
+type MissingSignalKind = Exclude<
+    SkillSignalKind,
+    (typeof SIGNAL_KINDS)[number]
+>;
+const _signalKindsAreExhaustive: MissingSignalKind extends never
+    ? true
+    : never = true;
+void _signalKindsAreExhaustive;
+
 // Duplicated as `STATE_FEATURES` / `STATE_PREDICATE_KINDS` in
 // scripts/validate-skills.ts — the CI validator is a build script and can't
 // import from app `src/`, so the lists are kept in sync by hand. Update both
@@ -208,6 +240,28 @@ const SKILL_STATE_PREDICATE_KINDS = [
     'ratio',
     'channelProximity',
 ] as const satisfies readonly SkillStatePredicateKind[];
+
+// Exhaustiveness guards: if the core grows a new SkillStateFeature /
+// SkillStatePredicateKind member not mirrored above, the corresponding type
+// becomes a non-`never` union and tsc fails here — so a core drift fails the
+// build instead of silently dropping the gating of otherwise-valid skills.
+type MissingStateFeature = Exclude<
+    SkillStateFeature,
+    (typeof SKILL_STATE_FEATURES)[number]
+>;
+const _stateFeaturesAreExhaustive: MissingStateFeature extends never
+    ? true
+    : never = true;
+void _stateFeaturesAreExhaustive;
+
+type MissingPredicateKind = Exclude<
+    SkillStatePredicateKind,
+    (typeof SKILL_STATE_PREDICATE_KINDS)[number]
+>;
+const _predicateKindsAreExhaustive: MissingPredicateKind extends never
+    ? true
+    : never = true;
+void _predicateKindsAreExhaustive;
 
 // (feature, predicate) pairs the core's `isStateNotable` actually evaluates;
 // any other pairing returns `false` for every chart, so the gated skill is
@@ -263,8 +317,12 @@ const parseStatePredicate = (raw: unknown): SkillStatePredicate | undefined => {
  * Validate and normalize a `gating` frontmatter block, mirroring the core
  * loader. Returns undefined (skill treated as untagged → selector fail-opens)
  * when the block is malformed or unreachable.
+ *
+ * Exported for unit testing of branches the inline-array YAML parser cannot
+ * reach (e.g. a non-string trigger element) — not re-exported via the entity
+ * barrel, so it stays module-internal to consumers.
  */
-const parseGating = (raw: unknown): SkillGating | undefined => {
+export const parseGating = (raw: unknown): SkillGating | undefined => {
     if (typeof raw !== 'object' || raw === null) return undefined;
 
     // typeof + non-null guard above ensures raw is a non-null object; widening
@@ -273,6 +331,7 @@ const parseGating = (raw: unknown): SkillGating | undefined => {
     const tier = obj.tier;
     if (
         typeof tier !== 'string' ||
+        // Tuple `.includes` is typed to its own members; widen to readonly string[].
         !(SKILL_GATING_TIERS as readonly string[]).includes(tier)
     ) {
         return undefined;
@@ -283,6 +342,7 @@ const parseGating = (raw: unknown): SkillGating | undefined => {
     const signalKind = obj.signal_kind;
     if (
         typeof signalKind !== 'string' ||
+        // Tuple `.includes` is typed to its own members; widen to readonly string[].
         !(SIGNAL_KINDS as readonly string[]).includes(signalKind)
     ) {
         return undefined;

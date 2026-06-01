@@ -1,4 +1,5 @@
 import { countSkillFiles, FileSkillsLoader } from '@/entities/skill';
+import { parseGating } from '../api';
 import path from 'node:path';
 
 const { mockReaddir, mockReadFile } = vi.hoisted(() => ({
@@ -979,6 +980,19 @@ ${gatingYaml}${extra}
                 )
             );
             expect(skill.gating).toBeUndefined();
+        });
+
+        // The inline-array YAML parser coerces every element to a string, so a
+        // non-string trigger can't reach parseGating's guard through loadSkills.
+        // Exercise that fail-open branch directly with a raw object instead.
+        it('triggers에 비문자열 항목이 섞이면 gating undefined로 fail-open한다', () => {
+            expect(
+                parseGating({
+                    tier: 'gated',
+                    signal_kind: 'event',
+                    triggers: ['rsi_oversold', 42],
+                })
+            ).toBeUndefined();
         });
 
         it('state predicate의 feature가 유효하지 않으면 gating undefined', async () => {
