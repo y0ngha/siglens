@@ -5,6 +5,9 @@ type: support_resistance
 category: neutral
 indicators: []
 confidence_weight: 0.75
+gating:
+  tier: always_on
+token_cost: 0
 ---
 
 ## Overview

@@ -6,6 +6,10 @@ import type {
     SkillCategory,
     SkillCounts,
     SkillDisplay,
+    SkillGating,
+    SkillStateFeature,
+    SkillStatePredicate,
+    SkillStatePredicateKind,
     SkillType,
 } from '@y0ngha/siglens-core';
 import type { SkillsProvider } from './model';
@@ -175,6 +179,199 @@ const isSkillType = (value: unknown): value is SkillType =>
     // SKILL_TYPES is `as const` literal tuple; widening to readonly string[] for .includes() is safe.
     (SKILL_TYPES as readonly string[]).includes(value);
 
+// Gating frontmatter — unified with the core loader's contract
+// (@y0ngha/siglens-core infrastructure/skills/loader). Keys are snake_case by
+// repo convention (matching `confidence_weight`); `signal_kind` / `token_cost` /
+// `smc_full_guide` map to the camelCase Skill fields the selector reads.
+
+// `tier` / `signalKind` are inlined literals on the core's `SkillGating`
+// discriminated union (no standalone exported union), so we derive the closed
+// sets from that union — `satisfies` + the exhaustiveness guards below fail the
+// build if the core ever adds a tier or a gated signal kind.
+type SkillGatingTier = SkillGating['tier'];
+type SkillSignalKind = Extract<SkillGating, { tier: 'gated' }>['signalKind'];
+
+const SKILL_GATING_TIERS = [
+    'always_on',
+    'gated',
+] as const satisfies readonly SkillGatingTier[];
+const SIGNAL_KINDS = [
+    'event',
+    'state',
+] as const satisfies readonly SkillSignalKind[];
+
+type MissingGatingTier = Exclude<
+    SkillGatingTier,
+    (typeof SKILL_GATING_TIERS)[number]
+>;
+const _gatingTiersAreExhaustive: MissingGatingTier extends never
+    ? true
+    : never = true;
+void _gatingTiersAreExhaustive;
+
+type MissingSignalKind = Exclude<
+    SkillSignalKind,
+    (typeof SIGNAL_KINDS)[number]
+>;
+const _signalKindsAreExhaustive: MissingSignalKind extends never
+    ? true
+    : never = true;
+void _signalKindsAreExhaustive;
+
+// Duplicated as `STATE_FEATURES` / `STATE_PREDICATE_KINDS` in
+// scripts/validate-skills.ts — the CI validator is a build script and can't
+// import from app `src/`, so the lists are kept in sync by hand. Update both
+// when the core's SkillStateFeature / SkillStatePredicateKind unions change
+// (the `satisfies` clause fails the build here if this copy drifts).
+const SKILL_STATE_FEATURES = [
+    'bollinger',
+    'keltner',
+    'williamsR',
+    'stochastic',
+    'stochRsi',
+    'donchian',
+    'vwap',
+    'buySellVolume',
+] as const satisfies readonly SkillStateFeature[];
+const SKILL_STATE_PREDICATE_KINDS = [
+    'pctB',
+    'bandDistAtr',
+    'level',
+    'ratio',
+    'channelProximity',
+] as const satisfies readonly SkillStatePredicateKind[];
+
+// Exhaustiveness guards: if the core grows a new SkillStateFeature /
+// SkillStatePredicateKind member not mirrored above, the corresponding type
+// becomes a non-`never` union and tsc fails here — so a core drift fails the
+// build instead of silently dropping the gating of otherwise-valid skills.
+type MissingStateFeature = Exclude<
+    SkillStateFeature,
+    (typeof SKILL_STATE_FEATURES)[number]
+>;
+const _stateFeaturesAreExhaustive: MissingStateFeature extends never
+    ? true
+    : never = true;
+void _stateFeaturesAreExhaustive;
+
+type MissingPredicateKind = Exclude<
+    SkillStatePredicateKind,
+    (typeof SKILL_STATE_PREDICATE_KINDS)[number]
+>;
+const _predicateKindsAreExhaustive: MissingPredicateKind extends never
+    ? true
+    : never = true;
+void _predicateKindsAreExhaustive;
+
+// (feature, predicate) pairs the core's `isStateNotable` actually evaluates;
+// any other pairing returns `false` for every chart, so the gated skill is
+// unreachable. Validating the pair here (not just each half) keeps the runtime
+// parser fail-open robust instead of leaning on the CI validator alone.
+// Mirrors `VALID_STATE_PAIRS` in scripts/validate-skills.ts — keep both in sync.
+const VALID_STATE_PAIRS = new Set<string>([
+    'bollinger:pctB',
+    'keltner:bandDistAtr',
+    'williamsR:level',
+    'stochastic:level',
+    'stochRsi:level',
+    'donchian:channelProximity',
+    'vwap:bandDistAtr',
+    'buySellVolume:ratio',
+]);
+
+/** Parse a state predicate; returns undefined when any required field is invalid. */
+const parseStatePredicate = (raw: unknown): SkillStatePredicate | undefined => {
+    if (typeof raw !== 'object' || raw === null) return undefined;
+
+    // typeof + non-null guard above ensures raw is a non-null object; widening
+    // to Record<string, unknown> is a safe structural up-cast.
+    const obj = raw as Record<string, unknown>;
+    const { feature, predicate, hi, lo } = obj;
+
+    if (
+        typeof feature !== 'string' ||
+        // Tuple `.includes` is typed to its own members; widen to readonly string[].
+        !(SKILL_STATE_FEATURES as readonly string[]).includes(feature) ||
+        typeof predicate !== 'string' ||
+        !(SKILL_STATE_PREDICATE_KINDS as readonly string[]).includes(predicate)
+    ) {
+        return undefined;
+    }
+
+    // Each half is valid above, but an unreachable pair (e.g. bollinger +
+    // channelProximity) would parse into a SkillGating the core never fires on.
+    // Fail-open: treat such a predicate as untagged so the selector loads it.
+    if (!VALID_STATE_PAIRS.has(`${feature}:${predicate}`)) return undefined;
+
+    return {
+        // .includes() guards above proved membership in the literal unions at
+        // runtime; TS cannot narrow `string` through them, hence the casts.
+        feature: feature as SkillStateFeature,
+        predicate: predicate as SkillStatePredicateKind,
+        ...(typeof hi === 'number' ? { hi } : {}),
+        ...(typeof lo === 'number' ? { lo } : {}),
+    };
+};
+
+/**
+ * Validate and normalize a `gating` frontmatter block, mirroring the core
+ * loader. Returns undefined (skill treated as untagged → selector fail-opens)
+ * when the block is malformed or unreachable.
+ *
+ * Exported for unit testing of branches the inline-array YAML parser cannot
+ * reach (e.g. a non-string trigger element) — not re-exported via the entity
+ * barrel, so it stays module-internal to consumers.
+ */
+export const parseGating = (raw: unknown): SkillGating | undefined => {
+    if (typeof raw !== 'object' || raw === null) return undefined;
+
+    // typeof + non-null guard above ensures raw is a non-null object; widening
+    // to Record<string, unknown> is a safe structural up-cast.
+    const obj = raw as Record<string, unknown>;
+    const tier = obj.tier;
+    if (
+        typeof tier !== 'string' ||
+        // Tuple `.includes` is typed to its own members; widen to readonly string[].
+        !(SKILL_GATING_TIERS as readonly string[]).includes(tier)
+    ) {
+        return undefined;
+    }
+    if (tier === 'always_on') return { tier: 'always_on' };
+
+    const signalKind = obj.signal_kind;
+    if (
+        typeof signalKind !== 'string' ||
+        // Tuple `.includes` is typed to its own members; widen to readonly string[].
+        !(SIGNAL_KINDS as readonly string[]).includes(signalKind)
+    ) {
+        return undefined;
+    }
+
+    if (signalKind === 'event') {
+        const triggers = obj.triggers;
+        if (
+            !Array.isArray(triggers) ||
+            triggers.length === 0 ||
+            !triggers.every((t): t is string => typeof t === 'string')
+        ) {
+            return undefined;
+        }
+        return { tier: 'gated', signalKind: 'event', triggers };
+    }
+
+    const state = parseStatePredicate(obj.state);
+    if (state === undefined) return undefined;
+    return { tier: 'gated', signalKind: 'state', state };
+};
+
+/**
+ * Coerce a frontmatter boolean. Some authors write `smc_full_guide: 'true'`
+ * (quoted string) instead of the correct `smc_full_guide: true` (boolean);
+ * accept both forms defensively.
+ */
+const isYamlTrue = (value: unknown): boolean =>
+    value === true || value === 'true';
+
 const toSkill = (data: Record<string, unknown>, content: string): Skill => ({
     name: String(data.name ?? ''),
     description: String(data.description ?? ''),
@@ -188,6 +385,11 @@ const toSkill = (data: Record<string, unknown>, content: string): Skill => ({
         typeof data.confidence_weight === 'number' ? data.confidence_weight : 0,
     content,
     display: parseSkillDisplay(data.display),
+    gating: parseGating(data.gating),
+    // Reserved for build-time tokenizer baking; currently unused (placeholder 0). See skills/CLAUDE.md.
+    tokenCost:
+        typeof data.token_cost === 'number' ? data.token_cost : undefined,
+    smcFullGuide: isYamlTrue(data.smc_full_guide),
 });
 
 const collectMdFiles = async (dir: string): Promise<string[]> => {

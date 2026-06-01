@@ -4,6 +4,13 @@ description: Donchian Channel(20) 신호 해석 가이드 — 브레이크아웃
 type: indicator_guide
 indicators: ['donchianChannel']
 confidence_weight: 0.8
+gating:
+  tier: gated
+  signal_kind: state
+  state:
+    feature: donchian
+    predicate: channelProximity
+token_cost: 0
 ---
 
 ## Overview

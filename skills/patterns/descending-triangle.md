@@ -12,6 +12,9 @@ display:
     type: line
     color: "#ef5350"
     label: "지지선"
+gating:
+  tier: always_on
+token_cost: 0
 ---
 
 ## Detection Criteria

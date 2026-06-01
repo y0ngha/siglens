@@ -4,6 +4,11 @@ description: RSI(14) 신호 해석 가이드 — 과매수/과매도 기준선, 
 type: indicator_guide
 indicators: ['rsi']
 confidence_weight: 0.9
+gating:
+  tier: gated
+  signal_kind: event
+  triggers: [rsi_oversold, rsi_overbought, rsi_bullish_divergence, rsi_bearish_divergence]
+token_cost: 0
 ---
 
 ## Overview

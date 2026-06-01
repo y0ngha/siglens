@@ -4,6 +4,11 @@ description: DMI 신호 해석 가이드 — +DI/-DI 방향성 압력, 크로스
 type: indicator_guide
 indicators: ['dmi']
 confidence_weight: 0.85
+gating:
+  tier: gated
+  signal_kind: event
+  triggers: [dmi_bullish_cross, dmi_bearish_cross]
+token_cost: 0
 ---
 
 ## Overview

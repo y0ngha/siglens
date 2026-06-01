@@ -5,6 +5,11 @@ type: strategy
 category: neutral
 indicators: ['rsi', 'macd', 'stochastic']
 confidence_weight: 0.78
+gating:
+  tier: gated
+  signal_kind: event
+  triggers: [rsi_bullish_divergence, rsi_bearish_divergence, macd_histogram_bullish_convergence, macd_histogram_bearish_convergence]
+token_cost: 0
 ---
 
 ## Overview

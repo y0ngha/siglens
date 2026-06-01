@@ -5,6 +5,9 @@ type: strategy
 category: neutral
 indicators: ['ma', 'rsi', 'macd']
 confidence_weight: 0.8
+gating:
+  tier: always_on
+token_cost: 0
 ---
 
 ## Overview

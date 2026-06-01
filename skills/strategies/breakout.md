@@ -5,6 +5,11 @@ type: strategy
 category: neutral
 indicators: ['atr']
 confidence_weight: 0.72
+gating:
+  tier: gated
+  signal_kind: event
+  triggers: [bollinger_upper_breakout, keltner_upper_breakout, keltner_lower_breakout, ichimoku_cloud_breakout, ichimoku_cloud_breakdown]
+token_cost: 0
 ---
 
 ## Overview

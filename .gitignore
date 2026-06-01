@@ -76,6 +76,10 @@ next-env.d.ts
 **node_modules**
 
 /scripts/**
+# Tracked tooling that must run in CI (skill frontmatter validation gate).
+!/scripts/validate-skills.ts
+!/scripts/__tests__/
+!/scripts/__tests__/**
 
 # Local Lighthouse audit outputs (psi_*.json, desktop.json, mobile.json, headers.txt)
 /lighthouse/

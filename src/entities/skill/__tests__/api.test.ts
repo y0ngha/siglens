@@ -1,4 +1,5 @@
 import { countSkillFiles, FileSkillsLoader } from '@/entities/skill';
+import { parseGating } from '../api';
 import path from 'node:path';
 
 const { mockReaddir, mockReadFile } = vi.hoisted(() => ({
@@ -162,6 +163,9 @@ describe('FileSkillsLoader', () => {
                 category: undefined,
                 pattern: undefined,
                 display: undefined,
+                gating: undefined,
+                tokenCost: undefined,
+                smcFullGuide: false,
             });
         });
 
@@ -853,6 +857,171 @@ display:
 
             expect(skills).toHaveLength(1);
             expect(skills[0].name).toBe('테스트 스킬');
+        });
+    });
+
+    describe('gating 파싱 (core 로더와 통일)', () => {
+        const withGating = (gatingYaml: string, extra = '') => `---
+name: 게이팅 스킬
+description: 게이팅 테스트
+type: indicator_guide
+indicators: []
+confidence_weight: 0.8
+${gatingYaml}${extra}
+---
+
+내용`;
+
+        const loadOne = async (md: string) => {
+            mockReaddir.mockResolvedValue([fileDirent('skill.md')]);
+            mockReadFile.mockResolvedValue(md);
+            const skills = await loader.loadSkills();
+            return skills[0];
+        };
+
+        it('tier: always_on을 파싱한다', async () => {
+            const skill = await loadOne(
+                withGating('gating:\n  tier: always_on')
+            );
+            expect(skill.gating).toEqual({ tier: 'always_on' });
+        });
+
+        it('gated event(triggers)를 파싱한다', async () => {
+            const skill = await loadOne(
+                withGating(
+                    'gating:\n  tier: gated\n  signal_kind: event\n  triggers: [rsi_oversold, rsi_overbought]'
+                )
+            );
+            expect(skill.gating).toEqual({
+                tier: 'gated',
+                signalKind: 'event',
+                triggers: ['rsi_oversold', 'rsi_overbought'],
+            });
+        });
+
+        it('gated state(feature/predicate)를 파싱한다', async () => {
+            const skill = await loadOne(
+                withGating(
+                    'gating:\n  tier: gated\n  signal_kind: state\n  state:\n    feature: bollinger\n    predicate: pctB'
+                )
+            );
+            expect(skill.gating).toEqual({
+                tier: 'gated',
+                signalKind: 'state',
+                state: { feature: 'bollinger', predicate: 'pctB' },
+            });
+        });
+
+        it('state predicate의 hi/lo 숫자 임계값을 함께 파싱한다', async () => {
+            const skill = await loadOne(
+                withGating(
+                    'gating:\n  tier: gated\n  signal_kind: state\n  state:\n    feature: williamsR\n    predicate: level\n    hi: -20\n    lo: -80'
+                )
+            );
+            expect(skill.gating).toEqual({
+                tier: 'gated',
+                signalKind: 'state',
+                state: {
+                    feature: 'williamsR',
+                    predicate: 'level',
+                    hi: -20,
+                    lo: -80,
+                },
+            });
+        });
+
+        it('token_cost와 smc_full_guide를 camelCase로 매핑한다', async () => {
+            const skill = await loadOne(
+                withGating(
+                    'gating:\n  tier: always_on',
+                    '\ntoken_cost: 850\nsmc_full_guide: true'
+                )
+            );
+            expect(skill.tokenCost).toBe(850);
+            expect(skill.smcFullGuide).toBe(true);
+        });
+
+        it('따옴표 문자열 smc_full_guide: "true"도 smcFullGuide=true로 매핑한다', async () => {
+            // 일부 YAML 저자가 boolean 대신 quoted string 'true'를 쓸 수 있으므로 두 형태 모두 처리하는지 확인
+            const skill = await loadOne(
+                withGating(
+                    'gating:\n  tier: always_on',
+                    "\nsmc_full_guide: 'true'"
+                )
+            );
+            expect(skill.smcFullGuide).toBe(true);
+        });
+
+        it('gating이 없으면 undefined, smcFullGuide는 false이다', async () => {
+            const skill = await loadOne(VALID_SKILL_MD);
+            expect(skill.gating).toBeUndefined();
+            expect(skill.tokenCost).toBeUndefined();
+            expect(skill.smcFullGuide).toBe(false);
+        });
+
+        it('잘못된 tier는 gating undefined로 fail-open한다', async () => {
+            const skill = await loadOne(
+                withGating('gating:\n  tier: nonsense')
+            );
+            expect(skill.gating).toBeUndefined();
+        });
+
+        it('gated인데 signal_kind가 유효하지 않으면 gating undefined로 fail-open한다', async () => {
+            const skill = await loadOne(
+                withGating('gating:\n  tier: gated\n  signal_kind: bogus')
+            );
+            expect(skill.gating).toBeUndefined();
+        });
+
+        it('gated인데 triggers가 비면 unreachable → gating undefined', async () => {
+            const skill = await loadOne(
+                withGating(
+                    'gating:\n  tier: gated\n  signal_kind: event\n  triggers: []'
+                )
+            );
+            expect(skill.gating).toBeUndefined();
+        });
+
+        // The inline-array YAML parser coerces every element to a string, so a
+        // non-string trigger can't reach parseGating's guard through loadSkills.
+        // Exercise that fail-open branch directly with a raw object instead.
+        it('triggers에 비문자열 항목이 섞이면 gating undefined로 fail-open한다', () => {
+            expect(
+                parseGating({
+                    tier: 'gated',
+                    signal_kind: 'event',
+                    triggers: ['rsi_oversold', 42],
+                })
+            ).toBeUndefined();
+        });
+
+        it('state predicate의 feature가 유효하지 않으면 gating undefined', async () => {
+            const skill = await loadOne(
+                withGating(
+                    'gating:\n  tier: gated\n  signal_kind: state\n  state:\n    feature: bogus\n    predicate: pctB'
+                )
+            );
+            expect(skill.gating).toBeUndefined();
+        });
+
+        it('유효한 feature라도 predicate가 유효하지 않으면 gating undefined로 fail-open한다', async () => {
+            const skill = await loadOne(
+                withGating(
+                    'gating:\n  tier: gated\n  signal_kind: state\n  state:\n    feature: bollinger\n    predicate: bogus_predicate'
+                )
+            );
+            expect(skill.gating).toBeUndefined();
+        });
+
+        it('도달 불가능한 (feature, predicate) 쌍은 gating undefined로 fail-open한다', async () => {
+            // bollinger + channelProximity: 각 절반은 유효하지만 core의
+            // isStateNotable이 절대 평가하지 않는 쌍 → 도달 불가.
+            const skill = await loadOne(
+                withGating(
+                    'gating:\n  tier: gated\n  signal_kind: state\n  state:\n    feature: bollinger\n    predicate: channelProximity'
+                )
+            );
+            expect(skill.gating).toBeUndefined();
         });
     });
 });

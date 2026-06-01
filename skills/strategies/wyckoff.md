@@ -5,6 +5,9 @@ type: strategy
 category: neutral
 indicators: []
 confidence_weight: 0.0
+gating:
+  tier: always_on
+token_cost: 0
 ---
 
 ## Overview

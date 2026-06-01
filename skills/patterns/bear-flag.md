@@ -12,6 +12,9 @@ display:
     type: line
     color: "#ef5350"
     label: "깃발 하단"
+gating:
+  tier: always_on
+token_cost: 0
 ---
 
 ## Detection Criteria

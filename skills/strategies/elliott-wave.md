@@ -5,6 +5,9 @@ type: strategy
 category: neutral
 indicators: []
 confidence_weight: 0.68
+gating:
+  tier: always_on
+token_cost: 0
 ---
 
 ## Absolute Rules

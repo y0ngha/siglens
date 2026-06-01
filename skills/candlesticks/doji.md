@@ -5,6 +5,11 @@ type: candlestick
 category: neutral
 indicators: []
 confidence_weight: 0.75
+gating:
+  tier: gated
+  signal_kind: event
+  triggers: [doji, gravestone_doji, dragonfly_doji]
+token_cost: 0
 ---
 
 ## Overview
