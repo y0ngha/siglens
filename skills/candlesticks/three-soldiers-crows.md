@@ -5,6 +5,11 @@ type: candlestick
 category: neutral
 indicators: []
 confidence_weight: 0.82
+gating:
+  tier: gated
+  signal_kind: event
+  triggers: [three_white_soldiers, three_black_crows]
+token_cost: 0
 ---
 
 ## Overview

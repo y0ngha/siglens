@@ -5,6 +5,10 @@ type: indicator_guide
 category: neutral
 indicators: ['atr', 'smc']
 confidence_weight: 0.8
+gating:
+  tier: always_on
+token_cost: 0
+smc_full_guide: true
 ---
 
 ## Overview

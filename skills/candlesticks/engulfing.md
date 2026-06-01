@@ -5,6 +5,11 @@ type: candlestick
 category: neutral
 indicators: []
 confidence_weight: 0.8
+gating:
+  tier: gated
+  signal_kind: event
+  triggers: [bullish_engulfing, bearish_engulfing]
+token_cost: 0
 ---
 
 ## Overview

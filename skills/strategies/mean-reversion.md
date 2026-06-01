@@ -5,6 +5,11 @@ type: strategy
 category: neutral
 indicators: ['rsi', 'bollinger', 'atr']
 confidence_weight: 0.74
+gating:
+  tier: gated
+  signal_kind: event
+  triggers: [rsi_oversold, rsi_overbought, bollinger_lower_bounce]
+token_cost: 0
 ---
 
 ## Overview

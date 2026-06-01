@@ -4,6 +4,9 @@ description: 일목균형표(9,26,52) 신호 해석 가이드 — 구름 위치,
 type: indicator_guide
 indicators: ['ichimoku']
 confidence_weight: 0.85
+gating:
+  tier: always_on
+token_cost: 0
 ---
 
 ## Overview

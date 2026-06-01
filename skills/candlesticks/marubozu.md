@@ -5,6 +5,11 @@ type: candlestick
 category: neutral
 indicators: []
 confidence_weight: 0.75
+gating:
+  tier: gated
+  signal_kind: event
+  triggers: [bullish_marubozu, bearish_marubozu]
+token_cost: 0
 ---
 
 ## Overview

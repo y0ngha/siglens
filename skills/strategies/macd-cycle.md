@@ -5,6 +5,11 @@ type: strategy
 category: neutral
 indicators: ['macd', 'ema']
 confidence_weight: 0.75
+gating:
+  tier: gated
+  signal_kind: event
+  triggers: [macd_bullish_cross, macd_bearish_cross]
+token_cost: 0
 ---
 
 ## Overview

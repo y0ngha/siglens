@@ -12,6 +12,9 @@ display:
     type: line
     color: "#26a69a"
     label: "림 저항선"
+gating:
+  tier: always_on
+token_cost: 0
 ---
 
 ## Detection Criteria

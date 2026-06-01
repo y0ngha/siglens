@@ -5,6 +5,11 @@ type: candlestick
 category: neutral
 indicators: []
 confidence_weight: 0.82
+gating:
+  tier: gated
+  signal_kind: event
+  triggers: [morning_star, evening_star, morning_doji_star, evening_doji_star]
+token_cost: 0
 ---
 
 ## Overview

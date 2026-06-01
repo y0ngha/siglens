@@ -12,6 +12,9 @@ display:
     type: line
     color: "#26a69a"
     label: "깃발 상단"
+gating:
+  tier: always_on
+token_cost: 0
 ---
 
 ## Detection Criteria

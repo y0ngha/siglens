@@ -4,6 +4,13 @@ description: Buy/Sell Volume 신호 해석 가이드 — 캔들 내 매수/매�
 type: indicator_guide
 indicators: ['buySellVolume']
 confidence_weight: 0.75
+gating:
+  tier: gated
+  signal_kind: state
+  state:
+    feature: buySellVolume
+    predicate: ratio
+token_cost: 0
 ---
 
 ## Overview

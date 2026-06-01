@@ -5,6 +5,11 @@ type: candlestick
 category: neutral
 indicators: []
 confidence_weight: 0.72
+gating:
+  tier: gated
+  signal_kind: event
+  triggers: [bullish_harami, bearish_harami, bullish_harami_cross, bearish_harami_cross]
+token_cost: 0
 ---
 
 ## Overview

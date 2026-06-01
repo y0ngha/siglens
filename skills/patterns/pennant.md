@@ -12,6 +12,9 @@ display:
     type: line
     color: "#78909c"
     label: "페넌트"
+gating:
+  tier: always_on
+token_cost: 0
 ---
 
 ## Detection Criteria
