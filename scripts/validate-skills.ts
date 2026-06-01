@@ -289,8 +289,9 @@ const parseSkillFile = (file: string): FileResult => {
 };
 
 const main = async (): Promise<void> => {
-    const files = await glob('**/*.md', { cwd: SKILLS_DIR, absolute: true });
-    files.sort();
+    const files = (
+        await glob('**/*.md', { cwd: SKILLS_DIR, absolute: true })
+    ).toSorted();
 
     const parsed = files.map(file => parseSkillFile(file));
     const withGating = parsed.filter(p => p.hasGating).length;

@@ -338,7 +338,7 @@ export const parseGating = (raw: unknown): SkillGating | undefined => {
     }
     if (tier === 'always_on') return { tier: 'always_on' };
 
-    // tier === 'gated' → snake_case `signal_kind` maps to camelCase `signalKind`.
+    // snake_case `signal_kind` maps to camelCase `signalKind`.
     const signalKind = obj.signal_kind;
     if (
         typeof signalKind !== 'string' ||
