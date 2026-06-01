@@ -41,7 +41,6 @@ export function OverallContent({
     initialAnalysis,
 }: OverallContentProps) {
     // tf는 서버가 아니라 client가 URL에서 읽어 [symbol] ISR(정적 렌더)을 유지한다.
-    // timeframe도 useTimeframeFromUrl 훅의 반환값이라 모든 선언이 훅으로 유지된다(§17).
     const timeframe = useTimeframeFromUrl();
     const modelId = useDefaultModelId();
     const { state, trigger } = useOverallAnalysis(
