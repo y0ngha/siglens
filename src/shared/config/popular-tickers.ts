@@ -325,4 +325,16 @@ export const POPULAR_TICKERS = [
     'VST',
     'DASH',
     'PGR',
+
+    // --- Trending (2026-06-01) ---
+    'AAL',
+    'IREN',
+    'HPQ',
+    'HPE',
+    'JOBY',
+    'AUR',
+    'BMNR',
+    'CCL',
+    'HBAN',
+    'TTD',
 ] as const;
