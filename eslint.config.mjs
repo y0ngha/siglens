@@ -1,7 +1,7 @@
-import { defineConfig, globalIgnores } from 'eslint/config';
 import nextVitals from 'eslint-config-next/core-web-vitals';
 import nextTs from 'eslint-config-next/typescript';
 import boundaries from 'eslint-plugin-boundaries';
+import { defineConfig, globalIgnores } from 'eslint/config';
 
 const eslintConfig = defineConfig([
     ...nextVitals,
@@ -23,6 +23,7 @@ const eslintConfig = defineConfig([
         '.superpowers/**',
         'worker/.pnp.cjs',
         'coverage/**',
+        'playwright-report/**',
     ]),
     {
         // JSON-LD structured data injection via dangerouslySetInnerHTML on <script> elements
