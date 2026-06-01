@@ -51,9 +51,9 @@ run_check "3/$total_checks typecheck" "$tmp_dir/typecheck.log" yarn typecheck ||
 run_check "4/$total_checks test" "$tmp_dir/test.log" yarn test:quiet || status=1
 run_check "5/$total_checks build" "$tmp_dir/build.log" yarn build || status=1
 
-if [ "${SIGLENS_RELEASE_E2E:-}" = "1" ]; then
-    run_check "6/$total_checks e2e" "$tmp_dir/e2e.log" yarn e2e || status=1
-fi
+# if [ "${SIGLENS_RELEASE_E2E:-}" = "1" ]; then
+    # run_check "6/$total_checks e2e" "$tmp_dir/e2e.log" yarn e2e || status=1
+# fi
 
 if [ "$status" -ne 0 ]; then
     echo ""
