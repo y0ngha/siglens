@@ -450,6 +450,24 @@ export async function countSkillFiles(): Promise<SkillCounts> {
     };
 }
 
+/**
+ * Drop skills whose `name` already appeared (first occurrence wins). Mirrors the
+ * core loader's `dedupeByName`: the production prompt path is core-fed, but
+ * `FileSkillsLoader` is also consumed directly (e.g. the backtest script), so two
+ * `.md` files sharing a `name` must not inject the same skill twice or make
+ * selection order-dependent.
+ *
+ * Exported for unit testing; not re-exported via the entity barrel.
+ */
+export const dedupeByName = (skills: Skill[]): Skill[] => {
+    const seen = new Set<string>();
+    return skills.filter(skill => {
+        if (seen.has(skill.name)) return false;
+        seen.add(skill.name);
+        return true;
+    });
+};
+
 export class FileSkillsLoader implements SkillsProvider {
     async loadSkills(): Promise<Skill[]> {
         const mdFiles = await collectMdFiles(SKILLS_DIR);
@@ -463,6 +481,6 @@ export class FileSkillsLoader implements SkillsProvider {
             })
         );
 
-        return skills.filter((s): s is Skill => s !== null);
+        return dedupeByName(skills.filter((s): s is Skill => s !== null));
     }
 }
