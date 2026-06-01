@@ -10,6 +10,9 @@ export const VALID_TICKER_RE = TICKER_RE;
 
 export const DEFAULT_TIMEFRAME: Timeframe = '1Day';
 
+/** `[symbol]` 동적 라우트의 params 형태 (generateStaticParams 반환 타입 등에 사용). */
+export type SymbolRouteParams = { symbol: string };
+
 export const TIMEFRAMES: readonly Timeframe[] = [
     '5Min',
     '15Min',

@@ -3,7 +3,11 @@ import { ErrorBoundary } from 'react-error-boundary';
 import { FearGreedPageError } from '@/widgets/fear-greed';
 import { CrossLinkCards, SymbolPageHeading } from '@/widgets/symbol-page';
 import { JsonLd } from '@/shared/ui/JsonLd';
-import { DEFAULT_TIMEFRAME, VALID_TICKER_RE } from '@/shared/config/market';
+import {
+    DEFAULT_TIMEFRAME,
+    SymbolRouteParams,
+    VALID_TICKER_RE,
+} from '@/shared/config/market';
 import {
     buildAssetAboutNode,
     buildDisplayName,
@@ -33,7 +37,7 @@ export const revalidate = 3600; // 1h
 // generateStaticParams가 없으면 동적 라우트는 매 요청 동적 렌더돼 revalidate가
 // 무력화된다(Next.js). 빈 배열 = 빌드 시 prebuild 없이, 첫 요청에 렌더+캐시 후
 // revalidate 주기로 재생성하는 on-demand ISR. (cacheComponents 비활성이라 빈 배열 허용)
-export async function generateStaticParams(): Promise<{ symbol: string }[]> {
+export async function generateStaticParams(): Promise<SymbolRouteParams[]> {
     return [];
 }
 
