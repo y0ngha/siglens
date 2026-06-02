@@ -120,6 +120,9 @@ const DEFAULT_ASSET_INFO = {
 function findSuspenseFallback(tree: ReactNode): ReactNode {
     const suspenseEl = findElementByType(tree, Suspense);
     if (!suspenseEl) return null;
+    // 보장: suspenseEl은 findElementByType(tree, Suspense)가 반환한 Suspense 엘리먼트이므로
+    // props는 SuspenseProps이고 fallback?: ReactNode를 가진다. ReactElement.props가 unknown(React 19)
+    // 이라 좁히기 위한 cast이며, 키는 실재한다.
     return (suspenseEl.props as { fallback?: ReactNode }).fallback ?? null;
 }
 

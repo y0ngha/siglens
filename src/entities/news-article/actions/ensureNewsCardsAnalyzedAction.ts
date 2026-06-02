@@ -15,6 +15,7 @@ import {
 } from '../lib/newsAnalysisConstants';
 import { NEWS_LOOKBACK_MS } from '../lib/newsLookback';
 import { isRecentlyFetched, markFetched } from '../lib/newsRefreshFlag';
+import { revalidateTag } from 'next/cache';
 import { sleep } from '@/shared/lib/sleep';
 import { isE2E } from '@/shared/api/e2eEnv';
 import {
@@ -131,6 +132,12 @@ export async function ensureNewsCardsAnalyzedAction(
     await markFetched(symbol);
 
     if (fresh.length === 0) return;
+
+    // fresh 기사가 있어 DB가 갱신됐으니 news ISR 캐시(news:${symbol} 그룹)를 무효화한다.
+    // → 다음 요청부터 news 리스트/JSON-LD가 fresh. bars/peek/profile 캐시는 보존.
+    // "max" profile: 캐시 항목을 즉시 만료시켜 다음 요청에서 재생성하게 한다.
+    // (fresh.length === 0이면 DB 변경이 없어 위 guard에서 먼저 리턴 — 불필요한 무효화 스킵.)
+    revalidateTag(`news:${symbol.toUpperCase()}`, 'max');
 
     if (isE2E()) return;
 

@@ -12,13 +12,13 @@ import { NewsList } from '@/widgets/news/sections/NewsList';
 import { CrossLinkCards, SymbolPageHeading } from '@/widgets/symbol-page';
 import { SectionSkeleton } from '@/widgets/symbol-page/SectionSkeleton';
 import { JsonLd } from '@/shared/ui/JsonLd';
-import { VALID_TICKER_RE } from '@/shared/config/market';
+import { SymbolRouteParams, VALID_TICKER_RE } from '@/shared/config/market';
 import {
     buildAssetAboutNode,
     buildDisplayName,
     getAssetInfoResilient,
 } from '@/entities/ticker';
-import { ensureNewsCardsAnalyzedAction } from '@/entities/news-article/actions';
+import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
 import { getTodayIsoDay } from '@/shared/lib/getTodayIsoDay';
 import { todayKstIsoDate } from '@/shared/lib/dateKey';
 import { getFmpUserFacingMessage } from '@/shared/api/fmp/fmpUserMessage';
@@ -29,12 +29,18 @@ import {
     SITE_NAME,
     SITE_URL,
 } from '@/shared/lib/seo';
-import { isBot } from '@/shared/api/isBot';
-import { waitUntil } from '@vercel/functions';
 import type { Metadata } from 'next';
-import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
+
+export const revalidate = 3600; // 1h
+
+// generateStaticParams가 없으면 동적 라우트는 매 요청 동적 렌더돼 revalidate가
+// 무력화된다(Next.js). 빈 배열 = 빌드 시 prebuild 없이, 첫 요청에 렌더+캐시 후
+// revalidate 주기로 재생성하는 on-demand ISR. (cacheComponents 비활성이라 빈 배열 허용)
+export async function generateStaticParams(): Promise<SymbolRouteParams[]> {
+    return [];
+}
 
 // JSON-LD ItemList 최대 노출 — Google ItemList 가이드라인의 "주요 항목"만 노출하라는 권고에 맞춤.
 const JSON_LD_NEWS_MAX_ITEMS = 10;
@@ -89,7 +95,12 @@ interface SymbolSectionProps {
 }
 
 async function NewsListSection({ symbol }: SymbolSectionProps) {
-    const items = await getNewsList(symbol);
+    const items = await staticSymbolCache(
+        ['news:list', symbol],
+        symbol,
+        () => getNewsList(symbol),
+        [`news:${symbol}`]
+    );
     return <NewsList items={items} symbol={symbol} />;
 }
 
@@ -99,7 +110,12 @@ async function EventCalendarSection({ symbol }: SymbolSectionProps) {
         ReturnType<typeof getEarningsReportComparison>
     >;
     try {
-        earningsReports = await getEarningsReportComparison(symbol, today);
+        earningsReports = await staticSymbolCache(
+            ['news:earnings', symbol, today],
+            symbol,
+            () => getEarningsReportComparison(symbol, today),
+            [`news:${symbol}`]
+        );
     } catch (error) {
         const message = getFmpUserFacingMessage(error);
         if (message === null) throw error;
@@ -111,7 +127,12 @@ async function EventCalendarSection({ symbol }: SymbolSectionProps) {
 async function AnalystActionsSection({ symbol }: SymbolSectionProps) {
     let events: Awaited<ReturnType<typeof getGradeEvents>>;
     try {
-        events = await getGradeEvents(symbol);
+        events = await staticSymbolCache(
+            ['news:grades', symbol],
+            symbol,
+            () => getGradeEvents(symbol),
+            [`news:${symbol}`]
+        );
     } catch (error) {
         const message = getFmpUserFacingMessage(error);
         if (message === null) throw error;
@@ -162,21 +183,6 @@ export default async function NewsPage({ params }: Props) {
         displayName,
         koreanName: assetInfo.koreanName,
     });
-
-    // waitUntil keeps the serverless function alive past response completion so the analysis settles without blocking the stream.
-    // Bot/crawler traffic still fetches + upserts news but skips LLM analysis to avoid unnecessary worker dispatch cost.
-    const requestHeaders = await headers();
-    const skipAnalysis = isBot(requestHeaders);
-    waitUntil(
-        ensureNewsCardsAnalyzedAction(upper, { skipAnalysis }).catch(
-            (error: unknown) => {
-                console.error(
-                    '[NewsPage] ensureNewsCardsAnalyzedAction failed:',
-                    error
-                );
-            }
-        )
-    );
 
     // about 노드는 stock으로 분류된 경우만 채워지고, ETF/Index/모호한 종목은
     // undefined로 자연 생략된다 (assetClassification 모듈 doc 참고).
@@ -239,7 +245,12 @@ export default async function NewsPage({ params }: Props) {
         },
     };
 
-    const newsItems = await getNewsList(upper);
+    const newsItems = await staticSymbolCache(
+        ['news:list', upper],
+        upper,
+        () => getNewsList(upper),
+        [`news:${upper}`]
+    );
     // At least one AI-enriched card means aggregate analysis can start immediately.
     const hasEnrichedNews = newsItems.some(item => item.sentiment !== null);
 

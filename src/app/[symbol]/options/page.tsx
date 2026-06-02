@@ -14,6 +14,7 @@ import {
     hasOptionsMarket,
 } from '@/entities/options-chain/lib/optionsDataCache';
 import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/shared/config/queryConfig';
+import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
 import {
     buildBreadcrumbJsonLd,
     buildSymbolOptionsSeoContent,
@@ -53,7 +54,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     }
     const [{ assetInfo, degraded }, hasOptions] = await Promise.all([
         getAssetInfoResilient(upper),
-        hasOptionsMarket(upper),
+        staticSymbolCache(['options:has', upper], upper, () =>
+            hasOptionsMarket(upper)
+        ),
     ]);
     if (degraded) {
         return { robots: { index: false, follow: false } };
@@ -99,14 +102,20 @@ export default async function OptionsPage({ params }: Props) {
 
     const [{ assetInfo }, hasOptions] = await Promise.all([
         getAssetInfoResilient(upper),
-        hasOptionsMarket(upper),
+        staticSymbolCache(['options:has', upper], upper, () =>
+            hasOptionsMarket(upper)
+        ),
     ]);
 
     if (!assetInfo) notFound();
     if (!hasOptions) return <OptionsEmptyState symbol={upper} />;
 
     const displayName = buildDisplayName(assetInfo, upper);
-    const snapshot = await fetchOptionsSnapshot(upper);
+    const snapshot = await staticSymbolCache(
+        ['options:snapshot', upper],
+        upper,
+        () => fetchOptionsSnapshot(upper)
+    );
     if (snapshot === null) return <OptionsEmptyState symbol={upper} />;
 
     const expirations = snapshot.chains.map(c => c.expirationDate);

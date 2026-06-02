@@ -1,7 +1,11 @@
 'use client';
 
+import { useEffect, useRef } from 'react';
+import { usePathname } from 'next/navigation';
+import { useQueryClient } from '@tanstack/react-query';
 import { Header, type HeaderUserMenuUser } from '@/widgets/layout';
 import { useCurrentUser, useAuthHint } from '@/entities/session';
+import { QUERY_KEYS } from '@/shared/config/queryConfig';
 
 /**
  * Root layout 헤더를 클라이언트에서 렌더한다.
@@ -21,8 +25,27 @@ import { useCurrentUser, useAuthHint } from '@/entities/session';
  * 전적으로 httpOnly 세션 + DB로만 이뤄지므로 클라가 hint를 읽어도 표면이 넓어지지 않는다.
  */
 export function AuthSessionHeaderClient() {
+    const syncedPathRef = useRef<string | null>(null);
     const hasHint = useAuthHint();
     const { data: user, isPending } = useCurrentUser();
+    const queryClient = useQueryClient();
+    const pathname = usePathname();
+
+    // 정적 ISR 셸 헤더 자가치유: login/signup/oauth/delete는 서버 redirect()로 끝나
+    // (soft navigation) 클라 currentUser 쿼리가 갱신되지 않으면 헤더가 직전 상태로 남는다.
+    // 매 navigation(경로 변경)마다 currentUser를 1회 refetch해 세션과 재동기화한다 —
+    // 서버 렌더 시절 매 페이지 getCurrentUser와 동등한 비용이며, redirect 기반 인증
+    // 플로우(클라 success hook 없음)에서도 헤더가 확실히 최신 상태를 반영한다. (경로 단위
+    // ref 가드로 같은 경로 내 중복 refetch를 막는다.) 최초 마운트 시점엔 useCurrentUser가
+    // 아직 enabled(isHydrated)=false라 이 refetchQueries는 no-op이 되고, hydration 후
+    // 쿼리 자체 최초 fetch와 합쳐지므로 마운트 중복 요청은 발생하지 않는다.
+    useEffect(() => {
+        if (syncedPathRef.current === pathname) return;
+        syncedPathRef.current = pathname;
+        void queryClient.refetchQueries({
+            queryKey: QUERY_KEYS.currentUser(),
+        });
+    }, [pathname, queryClient]);
 
     if (isPending) {
         // server action 확정 전: hint로 skeleton(로그인 추정) 또는 게스트 셸.

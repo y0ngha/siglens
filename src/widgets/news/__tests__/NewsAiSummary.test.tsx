@@ -2,8 +2,15 @@ import { render, screen } from '@testing-library/react';
 import { NewsAiSummary } from '@/widgets/news/NewsAiSummary';
 import type { NewsAnalysisResponse } from '@y0ngha/siglens-core';
 
+const ensureNewsCardsAnalyzedActionSpy = vi.hoisted(() =>
+    vi.fn().mockResolvedValue(undefined)
+);
 const mockWaitResult = vi.fn();
 const mockAnalysisResult = vi.fn();
+
+vi.mock('@/entities/news-article/actions', () => ({
+    ensureNewsCardsAnalyzedAction: ensureNewsCardsAnalyzedActionSpy,
+}));
 
 vi.mock('@/widgets/news/hooks/useWaitForNewsCards', () => ({
     useWaitForNewsCards: () => mockWaitResult(),
@@ -169,5 +176,25 @@ describe('NewsAiSummary', () => {
                 />
             )
         ).toThrow('Poll failure');
+    });
+});
+
+describe('NewsAiSummary mount trigger', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mockWaitResult.mockReturnValue({ isReady: false, pollError: null });
+        mockAnalysisResult.mockReturnValue({ status: 'loading' });
+    });
+
+    it('마운트 시 ensureNewsCardsAnalyzedAction을 symbol로 1회 호출한다', () => {
+        render(
+            <NewsAiSummary
+                symbol="AAPL"
+                companyName="Apple"
+                hasEnrichedNews={false}
+            />
+        );
+        expect(ensureNewsCardsAnalyzedActionSpy).toHaveBeenCalledWith('AAPL');
+        expect(ensureNewsCardsAnalyzedActionSpy).toHaveBeenCalledTimes(1);
     });
 });

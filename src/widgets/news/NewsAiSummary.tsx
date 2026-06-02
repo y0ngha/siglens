@@ -5,6 +5,7 @@ import {
     type SymbolChatState,
 } from '@/features/symbol-chat';
 import { useNewsAnalysis } from './hooks/useNewsAnalysis';
+import { useNewsAnalysisTrigger } from './hooks/useNewsAnalysisTrigger';
 import { useWaitForNewsCards } from './hooks/useWaitForNewsCards';
 import { buildChatState } from './utils/buildChatState';
 import { BotBlockedNotice } from '@/shared/ui/BotBlockedNotice';
@@ -244,6 +245,8 @@ export function NewsAiSummary({
     companyName,
     hasEnrichedNews,
 }: NewsAiSummaryProps) {
+    useNewsAnalysisTrigger(symbol);
+
     const { isReady: isCardsReady, pollError } = useWaitForNewsCards(
         symbol,
         hasEnrichedNews
