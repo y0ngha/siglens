@@ -71,6 +71,35 @@ on-demand ISR)를 함께 export해야 빌드에서 `● (SSG)`로 전환된다. 
 (opengraph/twitter)는 `export const dynamic = 'force-static'`로 정적화한다 — `force-static`은
 `cookies()/headers()/searchParams`만 비우고 `params`는 유지하므로 종목별로 정상 렌더된다.
 
+### ISR 4축 규약 (`[symbol]` ISR+SEO, 2026-06-02)
+
+PPR(`cacheComponents`) 비활성 상태에서 동적 세그먼트를 ISR로 정상 캐시하려면 4가지를 모두 지켜야 한다:
+
+1. **(축 0) 공유 셸에서 `cookies()`/`headers()` 금지.** root layout 등 모든 라우트가
+   공유하는 셸이 `cookies()`/`headers()`를 직접 호출하면(Suspense 안이라도) PPR-off에선
+   전 라우트가 dynamic으로 강제돼 ISR이 깨진다. 인증 헤더는 클라이언트화(hint 쿠키
+   `document.cookie` + `currentUserAction`)로 처리한다 — `AuthSessionHeaderClient` 참조.
+   라우트 본문의 `headers()`(예: 봇 판정)도 같은 이유로 제거하고 클라 트리거로 이전한다
+   (news `NewsAiSummary` 참조).
+2. **(축 1) 동적 데이터(redis/DB/FMP)는 `staticSymbolCache`로 정적화.** `@upstash/redis`
+   HTTP는 no-store fetch라 static generate가 `DYNAMIC_SERVER_USAGE`를 throw한다.
+   `unstable_cache`(= `staticSymbolCache`, revalidate 1h + `symbol:` tag)로 감싸야 ISR이
+   데이터를 HTML에 박고 정적 캐시한다. (단 축 0이 선결돼야 효과가 있다.) 신선도가 민감한
+   라우트(news)는 `news:${symbol}` 그룹 태그를 추가로 달고, 데이터 변경(뉴스 ingestion) 직후
+   `revalidateTag('news:${symbol}', 'max')`로 **on-demand 무효화**해 1h를 기다리지 않고 갱신한다
+   (Next 16의 `revalidateTag`는 2번째 profile 인자 필수 — 단일 인자는 deprecated).
+3. **(축 2) `useSearchParams` CSR bailout 밖으로 SEO 콘텐츠 분리.** `useSearchParams`(예:
+   timeframe)를 쓰는 클라 위젯은 SSR HTML이 비므로, 크롤 가능 텍스트(FactLayer)는
+   Suspense fallback에 서버 컴포넌트로 박는다(`TechnicalFactsSummary`/`OverallFactsSummary`).
+   경량 순수 컴포넌트라 widget barrel로 노출 가능; server-only 정적화 헬퍼(`staticSymbolCache` 등)는
+   barrel 제외하고 lib/deep 경로로 import한다(client 번들 누출 방지).
+4. **(축 3) `generateStaticParams=[]` + `revalidate=3600`(리터럴) 유지.**
+
+> ⚠️ 빌드 output의 `●`(SSG) 표시 ≠ 런타임 동작. 반드시 `prod build && start` 후
+> 런타임 로그의 `DYNAMIC_SERVER_USAGE` 0 + `x-nextjs-cache` HIT로 실측 검증한다.
+> (설계: `docs/superpowers/specs/2026-06-02-symbol-isr-seo-design.md`,
+> 플랜: `docs/superpowers/plans/2026-06-02-symbol-isr-seo-phase0-1.md` · `…-phase2-4.md`)
+
 ---
 
 ## Server Actions
