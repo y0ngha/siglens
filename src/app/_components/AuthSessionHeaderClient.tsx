@@ -1,5 +1,6 @@
 'use client';
 
+import type { ReactElement } from 'react';
 import { Header, type HeaderUserMenuUser } from '@/widgets/layout';
 import { useCurrentUser, useAuthHint } from '@/entities/session';
 
@@ -20,7 +21,7 @@ import { useCurrentUser, useAuthHint } from '@/entities/session';
  * 보안: hint 쿠키는 값이 '1' 플래그뿐(PII 없음)이고 이미 non-httpOnly다. 권한 판단은
  * 전적으로 httpOnly 세션 + DB로만 이뤄지므로 클라가 hint를 읽어도 표면이 넓어지지 않는다.
  */
-export function AuthSessionHeaderClient() {
+export function AuthSessionHeaderClient(): ReactElement {
     const hasHint = useAuthHint();
     const { data: user, isPending } = useCurrentUser();
 

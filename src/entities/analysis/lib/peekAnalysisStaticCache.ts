@@ -18,7 +18,7 @@ import { SECONDS_PER_HOUR } from '@/shared/config/time';
  * 호출 자체를 `unstable_cache`로 감싸 정적화하고, 호출부의 `.catch(()=>null)`은 genuine read
  * 실패(provider 부재/네트워크) degrade용으로 유지한다.
  *
- * 전제(축 0): root layout cookies() 제거가 선결돼야 정적화가 유효하다(Task 2).
+ * 전제(축 0): root layout cookies() 제거가 선결돼야 정적화가 유효하다.
  *
  * ticker는 대문자로 정규화해 unstable_cache 키·태그를 canonical하게 유지한다(호출부 대소문자
  * 혼용 시 캐시 분기 방지). 키: ticker + timeframe + modelId. fmpSymbol은 peekAnalysisCache의

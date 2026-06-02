@@ -9,7 +9,7 @@ import { SECONDS_PER_HOUR } from '@/shared/config/time';
  * revalidate=1h로 주기 갱신한다. 호출부는 본 함수만 쓴다.
  *
  * 전제: 이 정적화는 root layout cookies() 제거(축 0)가 선결돼야 효과가 있다 — PoC에서
- * layout이 전 라우트를 dynamic으로 강제하면 unstable_cache 래핑도 무력했다(PoC 1 vs 7).
+ * layout이 전 라우트를 dynamic으로 강제하면 unstable_cache 래핑도 무력하다.
  *
  * symbol은 대문자로 정규화한다 — 호출부가 라우트 param(소문자 'aapl')과 ticker(대문자
  * 'AAPL') 양쪽으로 호출하므로, 정규화하지 않으면 같은 종목이 'AAPL'/'aapl' 두 unstable_cache

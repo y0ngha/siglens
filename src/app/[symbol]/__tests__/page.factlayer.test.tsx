@@ -20,7 +20,6 @@ vi.mock('@/entities/chat-message', () => ({
 }));
 vi.mock('@y0ngha/siglens-core', () => ({
     GEMINI_2_5_FLASH_LITE_MODEL: 'gemini-2.5-flash-lite',
-    peekAnalysisCache: vi.fn(),
     // TechnicalFactsSummary deps (RSI thresholds)
     RSI_OVERBOUGHT_LEVEL: 70,
     RSI_OVERSOLD_LEVEL: 30,

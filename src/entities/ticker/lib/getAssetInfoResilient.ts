@@ -30,7 +30,7 @@ export interface ResilientAssetInfo {
  * 이미 optional("일반 주식은 undefined")이라 다운스트림(getBarsAction/peekAnalysisCache)이
  * symbol로 degrade하는 기존 정상 경로와 동일하다. koreanName 생략 시 표시명이 영문 ticker.
  *
- * ISR 정적화(Task 5): inner 데이터 호출을 `getAssetInfoStatic`(=unstable_cache(getAssetInfo))으로
+ * ISR 정적화: inner 데이터 호출을 `getAssetInfoStatic`(=unstable_cache(getAssetInfo))으로
  * 정적화해 static gen 중 redis no-store fetch가 `DYNAMIC_SERVER_USAGE`를 throw하지 않게 한다.
  * `connection()`(catch 내)은 의도적으로 `unstable_cache` 밖에 둔다 — 인프라 실패 시 degrade
  * 렌더만 동적화하는 escape이며, `unstable_cache` 안에서 호출하면 throw하기 때문이다.

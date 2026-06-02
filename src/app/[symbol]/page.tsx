@@ -3,7 +3,7 @@ import { TechnicalFactsSummary } from '@/widgets/symbol-page/TechnicalFactsSumma
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { FALLBACK_ANALYSIS } from '@/entities/chat-message';
 import { GEMINI_2_5_FLASH_LITE_MODEL } from '@y0ngha/siglens-core';
-import { peekAnalysisStatic } from '@/entities/analysis/lib/peekAnalysisStaticCache';
+import { peekAnalysisStatic } from '@/entities/analysis';
 import {
     DEFAULT_TIMEFRAME,
     SymbolRouteParams,
@@ -14,7 +14,7 @@ import {
     buildDisplayName,
     getAssetInfoResilient,
 } from '@/entities/ticker';
-import { getBarsStatic } from '@/entities/bars/lib/barsStaticCache';
+import { getBarsStatic } from '@/entities/bars';
 import { countSkillFiles } from '@/entities/skill';
 import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/shared/config/queryConfig';
 import {

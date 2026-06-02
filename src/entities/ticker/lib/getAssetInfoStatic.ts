@@ -24,7 +24,7 @@ import { SECONDS_PER_HOUR } from '@/shared/config/time';
  * 호출뿐이라 dynamic API가 없어 DSU 정적화 의도는 그대로 충족된다.
  *
  * 전제(축 0): 이 정적화는 root layout cookies() 제거가 선결돼야 효과가 있다 — layout이 전
- * 라우트를 dynamic으로 강제하면 unstable_cache 래핑도 무력하다(Task 2).
+ * 라우트를 dynamic으로 강제하면 unstable_cache 래핑도 무력하다.
  *
  * 정적 분석 확인: `getAssetInfo` 체인(cache/DB/FMP/koreanNameStore)에 cookies()/headers()/
  * connection() 없음 → `unstable_cache` 래핑 안전. null=실재하지 않는 종목, throw=인프라 실패.
