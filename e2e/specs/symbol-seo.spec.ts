@@ -88,8 +88,11 @@ test.describe('symbol SEO + ISR (crawler-facing)', () => {
         const response = await page.request.get('/AAPL');
 
         expect(response.status()).toBe(200);
+        // `x-nextjs-cache: HIT` is the falsifiable ISR-serving signal. We
+        // intentionally do NOT also assert the s-maxage seconds — that would
+        // duplicate the production `revalidate` literal here and drift if it
+        // changes (the cache-being-hit is the property under test, not its TTL).
         expect(response.headers()['x-nextjs-cache']).toBe('HIT');
-        expect(response.headers()['cache-control']).toContain('s-maxage=3600');
     });
 
     test('an unseeded but well-formed ticker degrades to 200 + noindex (never 500)', async ({

@@ -39,14 +39,13 @@ test.describe('account logout (isolated throwaway user)', () => {
         const banner = page.getByRole('banner');
         const userMenu = banner.getByRole('button', { name: /사용자 메뉴/ });
 
-        // Authenticated: the avatar user-menu button is present.
         await expect(userMenu).toBeVisible();
         await userMenu.click();
 
         await banner.getByRole('menuitem', { name: '로그아웃' }).click();
 
-        // Guest: the signup link is part of the unauthenticated header nav, and
-        // the user-menu button is gone.
+        // 회원가입 belongs to the guest header nav, so its presence (and the
+        // user-menu button's absence) is the post-logout guest-state proof.
         await expect(
             banner.getByRole('link', { name: '회원가입' })
         ).toBeVisible();
