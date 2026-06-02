@@ -570,6 +570,24 @@ This file contains only **recurring gotchas** that agents keep missing despite e
 
 ---
 
+## E2E & Playwright
+
+```
+1. Authed-by-filename E2E spec mutates or destroys shared seeded session
+   → Playwright `authed` project file-routing (e.g., account-*.spec.ts) inherits SHARED storageState from setup/user.json
+   → This single seeded session is reused by all sibling authed specs; if one spec logs out or deletes the user, downstream specs fail with 302 → /login
+   → Any destructive auth action (logout, account deletion) MUST override storageState to anonymous + self-provision a throwaway user before the destructive call
+   → Never mutate the shared seeded session; always create a throwaway
+   → Spec run order is nondeterministic — even if a spec passed when run alone, it will fail when run with siblings if it destroys shared state
+   ❌ account-logout.spec.ts uses shared storageState, then calls logoutAction which deletes the session row; account-auth-smoke.spec.ts later fails with 302
+   ❌ account-delete.spec.ts originally destroyed shared user; fixed by test.use({ storageState: { cookies: [], origins: [] } })
+   ✅ account-logout.spec.ts now uses test.use({ storageState: { cookies: [], origins: [] } }); performs signup; logs out the throwaway user only
+   ✅ Shared seeded session remains valid for account-auth-smoke and account-api-key
+   → Recurring: account-delete (R1 discovered), account-logout (reintroduced)
+```
+
+---
+
 ## Tests
 
 ```

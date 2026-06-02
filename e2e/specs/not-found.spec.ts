@@ -7,13 +7,14 @@ import { test, expect } from '../support/fixtures';
  *   - an unknown route segment (no matching page), and
  *   - a malformed ticker: `/[symbol]/page.tsx` calls `notFound()` when the
  *     segment fails VALID_TICKER_RE (/^[A-Z][A-Z.-]{0,7}$/). A well-FORMED but
- *     unseeded ticker would instead render (FakeMarketProvider serves any symbol
- *     under E2E), so we deliberately use a regex-failing ticker here.
+ *     unseeded ticker does NOT notFound — getAssetInfoResilient returns a
+ *     degraded fallback (never null), so the page renders 200 + noindex (see
+ *     symbol-seo.spec.ts). So we deliberately use a regex-failing ticker here.
  *
  * We assert the user-facing OUTCOME — the not-found page renders with a working
- * home link — rather than the raw HTTP status: `/[symbol]` renders dynamically,
- * so notFound() lands inside an already-committed (streamed) shell, which makes
- * the response status an unreliable implementation detail here.
+ * home link — rather than the raw HTTP status: even under ISR, notFound() lands
+ * inside an already-committed (streamed) shell, so the route still responds 200
+ * (verified) and the status is an unreliable implementation detail here.
  */
 const NOT_FOUND_URLS = [
     '/this-route-does-not-exist-zzz',

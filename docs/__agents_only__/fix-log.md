@@ -55,3 +55,11 @@
 - Violation: `beforeEach/afterEach` hooks declared at module level instead of inside describe block in src/shared/cache/__tests__/getOrSetCache.test.ts
   - Rule: MISTAKES.md Tests #3 — Test lifecycle hooks must be inside describe block
   - Context: Moved beforeEach/afterEach into describe block to group with test cases
+
+## [feat/symbol-seo-e2e-gaps Round 1 | feat/symbol-seo-e2e-gaps | 2026-06-03]
+- Violation: E2E authed spec (account-logout.spec.ts) performed destructive auth action on shared seeded session
+  - Rule: E2E — Authed-by-filename specs must override storageState + self-provision throwaway user before destructive auth actions
+  - Context: account-logout.spec.ts inherits SHARED storageState from setup/user.json, then logs out and destroys that single seeded session. Siblings (account-auth-smoke, account-api-key) fail afterward (nondeterministic order). Pattern already solved in account-delete.spec.ts (test.use({ storageState: { cookies: [], origins: [] } }) + 3-phase signup). This is the second occurrence of the same isolation hazard.
+- Violation: Non-falsifiable test assertions in symbol-seo.spec.ts (toBeGreaterThanOrEqual, weak substring matching)
+  - Rule: MISTAKES.md §Tests §13 — Imprecise matchers when exact values deterministic; require whole-token matching on extracted content
+  - Context: Changed `toBeGreaterThanOrEqual(3)` to `.toBe(3)` with comment explaining why floor is known; changed `toContain('MSFT')` on html to exact h1 text match for falsifiability
