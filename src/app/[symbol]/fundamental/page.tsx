@@ -12,6 +12,7 @@ import {
     getRatiosTtm,
     getStockPeers,
 } from '@/app/[symbol]/fundamental/fundamentalData';
+import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
 
 import { FundamentalAiSummary } from '@/widgets/fundamental/FundamentalAiSummary';
 import { FundamentalAiSummaryError } from '@/widgets/fundamental/FundamentalAiSummaryError';
@@ -189,7 +190,11 @@ async function ProfileDescriptionSection({
     symbol,
     fallback,
 }: ProfileDescriptionSectionProps) {
-    const descriptionKo = await getProfileDescriptionKo(symbol);
+    const descriptionKo = await staticSymbolCache(
+        ['fundamental:desc-ko', symbol],
+        symbol,
+        () => getProfileDescriptionKo(symbol)
+    );
     return (
         <p className="text-secondary-400 mt-4 line-clamp-4 text-sm leading-relaxed">
             {descriptionKo ?? fallback}
@@ -198,7 +203,12 @@ async function ProfileDescriptionSection({
 }
 
 async function ProfileSection({ symbol }: SymbolSectionProps) {
-    const profile = await getProfile(symbol);
+    // Shares the same key as the notFound guard in the page body — cross-request ISR cache is shared.
+    const profile = await staticSymbolCache(
+        ['fundamental:profile', symbol],
+        symbol,
+        () => getProfile(symbol)
+    );
 
     const descriptionSlot = (
         <Suspense fallback={<ProfileDescriptionSkeleton />}>
@@ -213,30 +223,52 @@ async function ProfileSection({ symbol }: SymbolSectionProps) {
 }
 
 async function ValuationSection({ symbol }: SymbolSectionProps) {
-    const metrics = await getKeyMetricsTtm(symbol);
+    const metrics = await staticSymbolCache(
+        ['fundamental:metrics', symbol],
+        symbol,
+        () => getKeyMetricsTtm(symbol)
+    );
     return <ValuationCard metrics={metrics} />;
 }
 
 async function PeersSection({ symbol }: SymbolSectionProps) {
-    const peers = await getStockPeers(symbol);
+    const peers = await staticSymbolCache(
+        ['fundamental:peers', symbol],
+        symbol,
+        () => getStockPeers(symbol)
+    );
     return <PeersTable peers={peers} />;
 }
 
 async function ProfitabilitySection({ symbol }: SymbolSectionProps) {
-    const ratios = await getRatiosTtm(symbol);
+    const ratios = await staticSymbolCache(
+        ['fundamental:ratios', symbol],
+        symbol,
+        () => getRatiosTtm(symbol)
+    );
     return <ProfitabilityCard ratios={ratios} />;
 }
 
 async function GrowthSection({ symbol }: SymbolSectionProps) {
-    const growth = await getIncomeStatementGrowth(symbol);
+    const growth = await staticSymbolCache(
+        ['fundamental:growth', symbol],
+        symbol,
+        () => getIncomeStatementGrowth(symbol)
+    );
     return <GrowthChart growth={growth} />;
 }
 
 async function FinancialHealthSection({ symbol }: SymbolSectionProps) {
     const [ratios, scores, cashFlow] = await Promise.all([
-        getRatiosTtm(symbol),
-        getFinancialScores(symbol),
-        getCashFlowStatement(symbol),
+        staticSymbolCache(['fundamental:ratios', symbol], symbol, () =>
+            getRatiosTtm(symbol)
+        ),
+        staticSymbolCache(['fundamental:scores', symbol], symbol, () =>
+            getFinancialScores(symbol)
+        ),
+        staticSymbolCache(['fundamental:cashflow', symbol], symbol, () =>
+            getCashFlowStatement(symbol)
+        ),
     ]);
     return (
         <FinancialHealthCard
@@ -249,10 +281,20 @@ async function FinancialHealthSection({ symbol }: SymbolSectionProps) {
 
 async function FutureDirectionSection({ symbol }: SymbolSectionProps) {
     const [estimates, grades, ptConsensus, ptSummary] = await Promise.all([
-        getAnalystEstimates(symbol),
-        getGradesConsensus(symbol),
-        getPriceTargetConsensus(symbol),
-        getPriceTargetSummary(symbol),
+        staticSymbolCache(['fundamental:estimates', symbol], symbol, () =>
+            getAnalystEstimates(symbol)
+        ),
+        staticSymbolCache(
+            ['fundamental:grades-consensus', symbol],
+            symbol,
+            () => getGradesConsensus(symbol)
+        ),
+        staticSymbolCache(['fundamental:pt-consensus', symbol], symbol, () =>
+            getPriceTargetConsensus(symbol)
+        ),
+        staticSymbolCache(['fundamental:pt-summary', symbol], symbol, () =>
+            getPriceTargetSummary(symbol)
+        ),
     ]);
     return (
         <FutureDirectionCard
@@ -274,8 +316,11 @@ export default async function FundamentalPage({ params }: Props) {
 
     // notFound guard + sector resolution을 위해 profile을 먼저 가져온다.
     // assetInfo는 한국어 종목명을 displayName에 합치기 위해 병렬로 가져온다.
+    // ['fundamental:profile', upper] 키를 ProfileSection과 공유 → cross-request ISR 캐시 공유.
     const [profile, { assetInfo }] = await Promise.all([
-        getProfile(upper),
+        staticSymbolCache(['fundamental:profile', upper], upper, () =>
+            getProfile(upper)
+        ),
         getAssetInfoResilient(upper),
     ]);
     if (profile === null) {
