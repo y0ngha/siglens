@@ -1,5 +1,5 @@
 import { SymbolPageClient } from '@/widgets/symbol-page/SymbolPageClient';
-import { TechnicalFactsSummary } from '@/widgets/symbol-page/TechnicalFactsSummary';
+import { TechnicalFactsSummary } from '@/widgets/symbol-page';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { FALLBACK_ANALYSIS } from '@/entities/chat-message';
 import { GEMINI_2_5_FLASH_LITE_MODEL } from '@y0ngha/siglens-core';
