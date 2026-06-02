@@ -30,12 +30,11 @@ const LD_JSON_RE = /<script type="application\/ld\+json">([\s\S]*?)<\/script>/g;
  * root @type of each block.
  */
 function rootJsonLdTypes(html: string): string[] {
-    const types: string[] = [];
-    for (const match of html.matchAll(LD_JSON_RE)) {
+    return Array.from(html.matchAll(LD_JSON_RE), match => {
+        // JSON.parse returns `any`; the cast just narrows it for the @type read.
         const parsed = JSON.parse(match[1]) as Record<string, unknown>;
-        types.push(String(parsed['@type']));
-    }
-    return types;
+        return String(parsed['@type']);
+    });
 }
 
 function countH1(html: string): number {
@@ -50,11 +49,11 @@ test.describe('symbol SEO + ISR (crawler-facing)', () => {
         expect(response.status()).toBe(200);
 
         const types = rootJsonLdTypes(await response.text());
-        // The page-level @types are asserted individually below — those are the
-        // falsifiable guard (dropping any one fails the test). The length is only
-        // a floor, not an exact total, because the global SiteJsonLd blocks are
-        // out of this page's scope and free to change independently.
-        expect(types.length).toBeGreaterThanOrEqual(3);
+        // Assert the specific page-level @types — each presence check is the
+        // falsifiable guard (dropping any one fails). We deliberately do NOT
+        // pin the total block count: the page sits alongside the global
+        // SiteJsonLd blocks, whose count is out of this page's scope and free
+        // to change independently.
         expect(types).toContain('WebPage');
         expect(types).toContain('BreadcrumbList');
         expect(types).toContain('FAQPage');
@@ -67,10 +66,8 @@ test.describe('symbol SEO + ISR (crawler-facing)', () => {
         expect(response.status()).toBe(200);
 
         const types = rootJsonLdTypes(await response.text());
-        // Floor + explicit page-level @types (see the /AAPL test): the global
-        // SiteJsonLd total is out of scope, so the Article/BreadcrumbList
-        // presence checks are the falsifiable guard.
-        expect(types.length).toBeGreaterThanOrEqual(3);
+        // Same rationale as the /AAPL test: assert the specific page-level
+        // @types (the falsifiable guard), not the global block total.
         expect(types).toContain('Article');
         expect(types).toContain('BreadcrumbList');
     });
@@ -112,10 +109,11 @@ test.describe('symbol SEO + ISR (crawler-facing)', () => {
         );
         expect(countH1(html)).toBe(1);
         // The single SSR h1 is buildChartPageHeading(displayName). When degraded,
-        // the display name falls back to the bare ticker, so the heading text
-        // itself must carry "MSFT" — proving the fallback, not merely that the
-        // symbol appears somewhere incidental (a canonical URL, an OG tag).
+        // buildDisplayName falls back to the bare ticker, so the heading resolves
+        // to exactly "MSFT 차트 분석". Asserting that full phrase (not just the
+        // bare symbol, which also appears in canonical/OG tags) proves the
+        // degraded display-name fallback specifically.
         const h1Text = html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/)?.[1] ?? '';
-        expect(h1Text).toContain('MSFT');
+        expect(h1Text).toContain('MSFT 차트 분석');
     });
 });
