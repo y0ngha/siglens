@@ -12,8 +12,8 @@ import { SECONDS_PER_HOUR } from '@/shared/config/time';
  * `DYNAMIC_SERVER_USAGE`를 그대로 rethrow한다. inner redis 호출이 정적화되지 않으면 static
  * gen 중 no-store fetch가 `DYNAMIC_SERVER_USAGE`를 throw → resilient가 faithfully rethrow →
  * 라우트가 dynamic으로 떨어진다. 그래서 데이터 호출 자체를 `unstable_cache`로 감싸 정적화한다.
- * resilient의 `connection()`/rethrow는 이 래퍼 밖에 그대로 남아(인프라 실패 시 의도된
- * dynamic-escape) `unstable_cache` 안에서 throw하지 않는다.
+ * resilient의 DSU rethrow는 이 래퍼 밖에 그대로 남아 `unstable_cache` 안에서 throw하지 않는다
+ * (인프라 실패는 degrade fallback으로 흡수 — resilient JSDoc의 #545 connection() 제거 배경 참조).
  *
  * 왜 clean lib `getAssetInfo`가 아니라 `getAssetInfoAction`('use server')을 감싸는가:
  * `getAssetInfoResilient`는 ticker barrel(index.ts)에서 export되고, 그 barrel은 client
