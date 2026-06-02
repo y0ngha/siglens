@@ -1,13 +1,11 @@
 import type { Metadata, Viewport } from 'next';
 import type { ReactNode } from 'react';
-import { Suspense } from 'react';
 import Script from 'next/script';
 import { Geist, Geist_Mono } from 'next/font/google';
 import localFont from 'next/font/local';
 import { Analytics } from '@vercel/analytics/next';
-import { AuthSessionHeader } from '@/app/_components/AuthSessionHeader';
+import { AuthSessionHeaderClient } from '@/app/_components/AuthSessionHeaderClient';
 import { Footer } from '@/widgets/layout/Footer';
-import { Header } from '@/widgets/layout/Header';
 import { SiteJsonLd } from '@/widgets/layout/SiteJsonLd';
 import { PwaBanner } from '@/features/pwa-install';
 import { ReactQueryProvider } from '@/app/providers';
@@ -139,14 +137,9 @@ export default function RootLayout({ children }: RootLayoutProps) {
                 <SiteJsonLd />
                 <ReactQueryProvider>
                     <PwaBanner />
-                    {/* cookies() 격리용 Suspense — 상세 동작은 AuthSessionHeader의 JSDoc 참조.
-                        fallback은 동일한 Header shell + skeleton user menu라 DOM 구조가
-                        일치해 CLS / hydration mismatch가 없다. */}
-                    <Suspense
-                        fallback={<Header currentUser={null} loadingUserMenu />}
-                    >
-                        <AuthSessionHeader />
-                    </Suspense>
+                    {/* 인증 헤더는 클라이언트에서 렌더된다(cookies()를 static render
+                        트리에서 제거 → 전 라우트 ISR 가능). 상세는 AuthSessionHeaderClient JSDoc. */}
+                    <AuthSessionHeaderClient />
                     {children}
                     {/* Footer를 root layout에 두는 이유: home/404/legal 페이지에만
                         footer가 있어 /market, /backtesting, /[symbol]/* 등 대부분 라우트

@@ -8,6 +8,9 @@ export { SymbolModelProvider, useSymbolModel } from './SymbolModelContext';
 
 export { CrossLinkCards } from './CrossLinkCards';
 export { SymbolPageHeading } from './ui/SymbolPageHeading';
+// 경량 순수 컴포넌트(priceFormat/technicalFacts util만 의존) — heavy 컴포넌트 deep-import
+// 정책에 해당하지 않아 barrel로 노출한다. app route의 FactLayer SSR fallback이 소비.
+export { TechnicalFactsSummary } from './TechnicalFactsSummary';
 
 // Types re-exported for cross-widget consumption
 export type { CooldownNotice } from './types';

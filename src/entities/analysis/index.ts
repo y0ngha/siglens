@@ -30,4 +30,6 @@ export { resolveConflicts } from './lib/resolveConflicts';
 
 export { normalizeAnalysisResponse } from './lib/normalizeAnalysisResponse';
 
+export { peekAnalysisStatic } from './lib/peekAnalysisStaticCache';
+
 // actions are imported from @/entities/analysis/actions

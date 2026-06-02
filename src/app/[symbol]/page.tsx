@@ -1,10 +1,9 @@
 import { SymbolPageClient } from '@/widgets/symbol-page/SymbolPageClient';
+import { TechnicalFactsSummary } from '@/widgets/symbol-page';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { FALLBACK_ANALYSIS } from '@/entities/chat-message';
-import {
-    GEMINI_2_5_FLASH_LITE_MODEL,
-    peekAnalysisCache,
-} from '@y0ngha/siglens-core';
+import { GEMINI_2_5_FLASH_LITE_MODEL } from '@y0ngha/siglens-core';
+import { peekAnalysisStatic } from '@/entities/analysis';
 import {
     DEFAULT_TIMEFRAME,
     SymbolRouteParams,
@@ -15,7 +14,7 @@ import {
     buildDisplayName,
     getAssetInfoResilient,
 } from '@/entities/ticker';
-import { getBarsAction } from '@/entities/bars/actions';
+import { getBarsStatic } from '@/entities/bars';
 import { countSkillFiles } from '@/entities/skill';
 import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/shared/config/queryConfig';
 import {
@@ -101,6 +100,18 @@ export default async function SymbolPage({ params }: Props) {
     ]);
     if (!assetInfo) return notFound();
 
+    // default-tf bars를 정적화로 가져온다. 실패(인프라 다운 등)는 null로 degrade해
+    // 페이지가 깨지지 않도록 한다. 이 bars는 Suspense fallback의 FactLayer SSR에만 쓰이며,
+    // 클라이언트 hydration 후에는 SymbolPageClient가 인터랙티브 상태로 교체된다.
+    const factBars = await getBarsStatic(
+        ticker,
+        DEFAULT_TIMEFRAME,
+        assetInfo.fmpSymbol
+    ).catch((e: unknown) => {
+        console.error('[SymbolPage] getBarsStatic failed:', e);
+        return null;
+    });
+
     const displayName = buildDisplayName(assetInfo, ticker);
     const { fullTitle, description, url } = buildSymbolSeoContent(ticker, {
         displayName,
@@ -175,11 +186,13 @@ export default async function SymbolPage({ params }: Props) {
 
     queryClient.setQueryData(QUERY_KEYS.assetInfo(symbol), assetInfo);
 
+    // bars prefetch는 ISR static-safe 경로(getBarsStatic = unstable_cache(getBarsAction))로
+    // 통일한다 — static gen 중 redis no-store fetch가 DYNAMIC_SERVER_USAGE를 throw하지 않게.
     const barsQueryFn = ({
         queryKey: [, qSymbol, qTimeframe, qFmpSymbol],
     }: {
         queryKey: ReturnType<typeof QUERY_KEYS.bars>;
-    }) => getBarsAction(qSymbol, qTimeframe, qFmpSymbol);
+    }) => getBarsStatic(qSymbol, qTimeframe, qFmpSymbol);
 
     // peek은 읽기 전용 — enqueue/생성 없음. MISS·corrupt·read 실패는 모두 MISS로
     // degrade해 FALLBACK_ANALYSIS로 폴백한다(렌더를 절대 깨지 않음). read 실패는
@@ -202,13 +215,13 @@ export default async function SymbolPage({ params }: Props) {
             ),
             queryFn: barsQueryFn,
         }),
-        peekAnalysisCache(
+        peekAnalysisStatic(
             ticker,
             DEFAULT_TIMEFRAME,
             assetInfo.fmpSymbol,
             GEMINI_2_5_FLASH_LITE_MODEL
         ).catch((error: unknown) => {
-            console.error('[SymbolPage] peekAnalysisCache failed:', error);
+            console.error('[SymbolPage] peekAnalysisStatic failed:', error);
             return null;
         }),
     ]);
@@ -257,14 +270,26 @@ export default async function SymbolPage({ params }: Props) {
                     </p>
                 </section>
                 <HydrationBoundary state={dehydrate(queryClient)}>
-                    {/* fallback은 차트 영역(flex-1)을 미리 차지해, useSearchParams CSR-bailout
-                        서브트리가 hydration 전 비어 보이는 flash/CLS를 방지한다. */}
+                    {/* fallback은 두 역할을 겸한다:
+                        1. CLS 방지 — 차트 영역(flex-1)을 미리 차지해 useSearchParams
+                           CSR-bailout 서브트리가 hydration 전 비어 보이는 flash를 막는다.
+                        2. FactLayer SSR — bars가 있으면 TechnicalFactsSummary를 fallback으로
+                           렌더해 크롤러(JS 미실행)가 기술적 지표 요약 텍스트를 SSR HTML로
+                           받는다. 사용자는 hydration 후 인터랙티브 SymbolPageClient로 교체된다. */}
                     <Suspense
                         fallback={
-                            <div
-                                className="bg-secondary-900 flex min-h-0 flex-1 flex-col overflow-hidden"
-                                aria-hidden="true"
-                            />
+                            factBars && factBars.bars.length > 0 ? (
+                                <TechnicalFactsSummary
+                                    symbol={ticker}
+                                    bars={factBars.bars}
+                                    indicators={factBars.indicators}
+                                />
+                            ) : (
+                                <div
+                                    className="bg-secondary-900 flex min-h-0 flex-1 flex-col overflow-hidden"
+                                    aria-hidden="true"
+                                />
+                            )
                         }
                     >
                         <SymbolPageClient

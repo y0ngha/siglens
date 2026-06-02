@@ -12,7 +12,7 @@ import {
 import { SymbolLayoutHeader } from '@/widgets/symbol-page/SymbolLayoutHeader';
 import { SymbolTabsSkeleton } from '@/widgets/symbol-page/SymbolTabsSkeleton';
 import { DEFAULT_TIMEFRAME } from '@/shared/config/market';
-import { getBarsAction } from '@/entities/bars/actions';
+import { getBarsStatic } from '@/entities/bars';
 import { getAssetInfoResilient } from '@/entities/ticker';
 import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/shared/config/queryConfig';
 
@@ -76,6 +76,9 @@ async function SymbolLayoutChrome({ params }: SymbolLayoutSegmentProps) {
     // during SSR rendering. Prefetching here and dehydrating into HydrationBoundary ensures
     // the header chip satisfies the query from cache instead of calling getBarsAction
     // during initial render.
+    //
+    // ISR static-safe: prefetch는 getBarsStatic(=unstable_cache(getBarsAction))으로
+    // 통일한다 — static gen 중 redis no-store fetch가 DYNAMIC_SERVER_USAGE를 throw하지 않게.
     const queryClient = new QueryClient({
         defaultOptions: { queries: { staleTime: QUERY_STALE_TIME_MS } },
     });
@@ -91,7 +94,7 @@ async function SymbolLayoutChrome({ params }: SymbolLayoutSegmentProps) {
             assetInfo?.fmpSymbol
         ),
         queryFn: ({ queryKey: [, qSymbol, qTimeframe, qFmpSymbol] }) =>
-            getBarsAction(qSymbol, qTimeframe, qFmpSymbol),
+            getBarsStatic(qSymbol, qTimeframe, qFmpSymbol),
     });
 
     return (
