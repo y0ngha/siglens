@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { SignupForm } from '@/features/auth-signup/ui/SignupForm';
 import { useSignupForm } from '@/features/auth-signup/hooks/useSignupForm';
@@ -274,6 +274,198 @@ describe('SignupForm', () => {
             ) as HTMLInputElement;
             expect(hidden).not.toBeNull();
             expect(hidden.value).toBe('/premium');
+        });
+
+        // Branch coverage: signupEmailError truthy → email error alert shown
+        it('shows email field error alert when signup error has field=email', () => {
+            setupPhase3WithGuardBypass({
+                error: {
+                    code: 'email_already_exists',
+                    field: 'email',
+                    message: '이미 사용 중인 이메일입니다.',
+                },
+            });
+            const { rerender } = render(<SignupForm />);
+            rerender(<SignupForm />);
+            expect(screen.getByRole('alert')).toHaveTextContent(
+                '이미 사용 중인 이메일입니다.'
+            );
+        });
+
+        // Branch coverage: signupPasswordError truthy
+        it('shows password field error in PasswordField when signup error has field=password', () => {
+            setupPhase3WithGuardBypass({
+                error: {
+                    code: 'weak_password',
+                    field: 'password',
+                    message: '비밀번호가 너무 약합니다.',
+                },
+            });
+            const { rerender } = render(<SignupForm />);
+            rerender(<SignupForm />);
+            // The error is passed to PasswordField which renders it inline
+            expect(
+                screen.getByText('비밀번호가 너무 약합니다.')
+            ).toBeInTheDocument();
+        });
+
+        // Branch coverage: consentErrorMessage truthy → consent error propagated
+        it('shows consent error when signup error code is consent_required', () => {
+            setupPhase3WithGuardBypass({
+                error: {
+                    code: 'consent_required',
+                    message: '약관에 동의해 주세요.',
+                },
+            });
+            const { rerender } = render(<SignupForm />);
+            rerender(<SignupForm />);
+            expect(
+                screen.getByText('약관에 동의해 주세요.')
+            ).toBeInTheDocument();
+        });
+
+        // Branch coverage: privacyChecked=true → agreed_privacy hidden input value 'true'
+        it('updates agreed_privacy hidden input when privacy checkbox is clicked in phase 3', async () => {
+            setupPhase3WithGuardBypass();
+            const user = userEvent.setup();
+            const { rerender, container } = render(<SignupForm />);
+            rerender(<SignupForm />);
+            const privacyCheckbox =
+                screen.getByLabelText(/개인정보 수집·이용 동의/);
+            await user.click(privacyCheckbox);
+            const hiddenInput = container.querySelector(
+                'input[name="agreed_privacy"]'
+            ) as HTMLInputElement;
+            expect(hiddenInput.value).toBe('true');
+        });
+
+        // Branch coverage: tosChecked=true → agreed_tos hidden input value 'true'
+        it('updates agreed_tos hidden input when tos checkbox is clicked in phase 3', async () => {
+            setupPhase3WithGuardBypass();
+            const user = userEvent.setup();
+            const { rerender, container } = render(<SignupForm />);
+            rerender(<SignupForm />);
+            const tosCheckbox = screen.getByLabelText(/서비스 이용약관 동의/);
+            await user.click(tosCheckbox);
+            const hiddenInput = container.querySelector(
+                'input[name="agreed_tos"]'
+            ) as HTMLInputElement;
+            expect(hiddenInput.value).toBe('true');
+        });
+
+        // Function coverage: fn 14 — onChange handler for the name field
+        it('allows typing in the name field in phase 3', async () => {
+            setupPhase3WithGuardBypass();
+            const user = userEvent.setup();
+            const { rerender } = render(<SignupForm />);
+            rerender(<SignupForm />);
+            const nameInput = screen.getByLabelText('표시 이름 (선택)');
+            await user.clear(nameInput);
+            await user.type(nameInput, 'Test User');
+            expect(nameInput).toHaveValue('Test User');
+        });
+    });
+
+    // Branch coverage: restoredFromCacheRef.current === true → onRestart() called from useLayoutEffect
+    describe('cache-restore guard', () => {
+        it('resets to phase 1 (increments resetKey) when component mounts with submitted=true', () => {
+            // Mounting with submitted=true triggers the cache-restore guard in
+            // SignupFormFlow's useLayoutEffect, which calls onRestart() →
+            // handleRestart() → setResetKey(c => c + 1). After remount, the
+            // hooks return initial state (submitted=false), so phase 1 is shown.
+            let callCount = 0;
+            mockUseRequestEmailVerification.mockImplementation(() => {
+                callCount++;
+                // First mount returns submitted=true → guard fires, increments resetKey
+                if (callCount <= 1) {
+                    return [
+                        { submitted: true, error: null },
+                        mockEmailFormAction,
+                        false,
+                    ];
+                }
+                // After reset, returns initial state
+                return [
+                    { submitted: false, error: null },
+                    mockEmailFormAction,
+                    false,
+                ];
+            });
+            mockUseVerifyEmail.mockReturnValue([
+                { verified: false, error: null },
+                mockCodeFormAction,
+                false,
+            ]);
+            mockUseSignupForm.mockReturnValue([
+                { error: null },
+                mockSignupFormAction,
+                false,
+            ]);
+
+            render(<SignupForm />);
+            // After the layout effect fires and resets the key, the component
+            // shows phase 1 (email step).
+            expect(
+                screen.getByText('1단계: 이메일 인증 요청')
+            ).toBeInTheDocument();
+        });
+    });
+
+    // Function coverage: fn 4 (handleRestart), fn 5 (setResetKey updater),
+    // fn 7 (handlePageShow), and branch 2 (if event.persisted)
+    describe('SignupForm event handlers', () => {
+        beforeEach(() => {
+            setupPhase(
+                { submitted: false, error: null },
+                { verified: false, error: null }
+            );
+        });
+
+        // 가시 phase 전환으로는 검증할 수 없다(훅이 mock이라 remount 후에도 같은 state를
+        // 돌려줌). 대신 reset의 실제 메커니즘 — handleRestart → setResetKey → SignupFormFlow
+        // remount(key 변경) → 훅 재호출 — 을 호출 횟수 증가로 검증한다. reset이 동작하지
+        // 않으면 remount가 없어 호출 횟수가 그대로라 테스트가 실패한다(falsifiable).
+        it('popstate 발생 시 SignupFormFlow를 remount해 리셋한다', () => {
+            render(<SignupForm />);
+            const before = mockUseRequestEmailVerification.mock.calls.length;
+
+            act(() => {
+                window.dispatchEvent(new PopStateEvent('popstate'));
+            });
+
+            expect(
+                mockUseRequestEmailVerification.mock.calls.length
+            ).toBeGreaterThan(before);
+        });
+
+        it('pageshow persisted=true 발생 시 remount해 리셋한다', () => {
+            render(<SignupForm />);
+            const before = mockUseRequestEmailVerification.mock.calls.length;
+
+            act(() => {
+                window.dispatchEvent(
+                    new PageTransitionEvent('pageshow', { persisted: true })
+                );
+            });
+
+            expect(
+                mockUseRequestEmailVerification.mock.calls.length
+            ).toBeGreaterThan(before);
+        });
+
+        it('pageshow persisted=false 발생 시 리셋하지 않는다 (remount 없음 → 호출 횟수 불변)', () => {
+            render(<SignupForm />);
+            const before = mockUseRequestEmailVerification.mock.calls.length;
+
+            act(() => {
+                window.dispatchEvent(
+                    new PageTransitionEvent('pageshow', { persisted: false })
+                );
+            });
+
+            expect(mockUseRequestEmailVerification.mock.calls.length).toBe(
+                before
+            );
         });
     });
 });

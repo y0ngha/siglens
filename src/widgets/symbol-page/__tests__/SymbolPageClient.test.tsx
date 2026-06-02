@@ -1,9 +1,26 @@
 import { render, screen } from '@testing-library/react';
+import type { ComponentType } from 'react';
 import type { AnalysisResponse, Timeframe } from '@y0ngha/siglens-core';
 import { SymbolPageClient } from '@/widgets/symbol-page/SymbolPageClient';
+import { useHydrated } from '@/shared/hooks/useHydrated';
+import { useIsMobileViewport } from '@/shared/hooks/useIsMobileViewport';
+
+// Mock MobileAnalysisSheet so the dynamic() factory's import resolves cheaply.
+vi.mock('@/widgets/symbol-page/MobileAnalysisSheet', () => ({
+    MobileAnalysisSheet: () => <div data-testid="mobile-analysis-sheet" />,
+}));
 
 vi.mock('next/dynamic', () => ({
-    default: () => {
+    /**
+     * Invoke the loader factory synchronously so the dynamic-import loader
+     * (`() => import('./MobileAnalysisSheet')`) and its `.then` mapper actually
+     * execute (and are thus covered). The returned component is a simple stub
+     * renderable in tests.
+     */
+    default: (loader: () => Promise<{ default: ComponentType }>) => {
+        // Fire-and-forget: coverage only needs the factory to be called once.
+        // .catch swallows any rejection so a failed import can't destabilize the run.
+        void loader().catch(() => {});
         const Stub = () => <div data-testid="mobile-sheet" />;
         Stub.displayName = 'MobileSheetStub';
         return Stub;
@@ -107,5 +124,26 @@ describe('SymbolPageClient', () => {
     it('passes symbol to ChartContent', () => {
         render(<SymbolPageClient {...defaultProps} />);
         expect(screen.getByTestId('chart-content').textContent).toBe('AAPL');
+    });
+
+    it('does not render MobileAnalysisSheet when isMobileViewport is false', () => {
+        vi.mocked(useIsMobileViewport).mockReturnValue(false);
+        vi.mocked(useHydrated).mockReturnValue(true);
+        render(<SymbolPageClient {...defaultProps} />);
+        expect(screen.queryByTestId('mobile-sheet')).toBeNull();
+    });
+
+    it('renders MobileAnalysisSheet when hydrated and isMobileViewport is true', () => {
+        vi.mocked(useHydrated).mockReturnValue(true);
+        vi.mocked(useIsMobileViewport).mockReturnValue(true);
+        render(<SymbolPageClient {...defaultProps} />);
+        expect(screen.getByTestId('mobile-sheet')).toBeInTheDocument();
+    });
+
+    it('does not render MobileAnalysisSheet when not hydrated even if mobile', () => {
+        vi.mocked(useHydrated).mockReturnValue(false);
+        vi.mocked(useIsMobileViewport).mockReturnValue(true);
+        render(<SymbolPageClient {...defaultProps} />);
+        expect(screen.queryByTestId('mobile-sheet')).toBeNull();
     });
 });
