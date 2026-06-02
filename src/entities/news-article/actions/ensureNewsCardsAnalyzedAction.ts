@@ -15,6 +15,7 @@ import {
 } from '../lib/newsAnalysisConstants';
 import { NEWS_LOOKBACK_MS } from '../lib/newsLookback';
 import { isRecentlyFetched, markFetched } from '../lib/newsRefreshFlag';
+import { revalidateTag } from 'next/cache';
 import { sleep } from '@/shared/lib/sleep';
 import { isE2E } from '@/shared/api/e2eEnv';
 import {
@@ -129,6 +130,10 @@ export async function ensureNewsCardsAnalyzedAction(
         );
     }
     await markFetched(symbol);
+    // fresh 뉴스가 DB에 반영됐으니 news ISR 캐시(news:${symbol} 그룹)를 무효화한다.
+    // → 다음 요청부터 news 리스트/JSON-LD가 fresh. bars/peek/profile 캐시는 보존.
+    // "max" profile: 캐시 항목을 즉시 만료시켜 다음 요청에서 재생성하게 한다.
+    revalidateTag(`news:${symbol.toUpperCase()}`, 'max');
 
     if (fresh.length === 0) return;
 

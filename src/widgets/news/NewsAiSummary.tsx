@@ -4,6 +4,7 @@ import {
     usePublishSymbolChat,
     type SymbolChatState,
 } from '@/features/symbol-chat';
+import { ensureNewsCardsAnalyzedAction } from '@/entities/news-article/actions';
 import { useNewsAnalysis } from './hooks/useNewsAnalysis';
 import { useWaitForNewsCards } from './hooks/useWaitForNewsCards';
 import { buildChatState } from './utils/buildChatState';
@@ -14,7 +15,7 @@ import {
     type NewsAnalysisResponse,
     type NewsSentiment,
 } from '@y0ngha/siglens-core';
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { NEWS_ANALYSIS_PERIOD_LABEL } from '@/shared/lib/news/periodLabels';
 
 const SENTIMENT_LABEL: Record<NewsSentiment, string> = {
@@ -244,6 +245,21 @@ export function NewsAiSummary({
     companyName,
     hasEnrichedNews,
 }: NewsAiSummaryProps) {
+    // Trigger fresh news fetch + card analysis on client mount (fire-and-forget).
+    // Bots don't run JS so they naturally skip this trigger — no skipAnalysis option needed.
+    // triggeredRef guards against StrictMode double-mount firing the action twice.
+    const triggeredRef = useRef(false);
+    useEffect(() => {
+        if (triggeredRef.current) return;
+        triggeredRef.current = true;
+        void ensureNewsCardsAnalyzedAction(symbol).catch((e: unknown) => {
+            console.error(
+                '[NewsAiSummary] ensureNewsCardsAnalyzedAction failed:',
+                e
+            );
+        });
+    }, [symbol]);
+
     const { isReady: isCardsReady, pollError } = useWaitForNewsCards(
         symbol,
         hasEnrichedNews
