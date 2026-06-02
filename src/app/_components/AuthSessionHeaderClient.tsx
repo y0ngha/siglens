@@ -1,7 +1,6 @@
 'use client';
 
-import { Header } from '@/widgets/layout/Header';
-import type { HeaderUserMenuUser } from '@/widgets/layout/HeaderUserMenu';
+import { Header, type HeaderUserMenuUser } from '@/widgets/layout';
 import { useCurrentUser, useAuthHint } from '@/entities/session';
 
 /**

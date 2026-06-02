@@ -5,6 +5,7 @@ export { Footer } from './Footer';
 export { HeaderNav } from './HeaderNav';
 export { HeaderNavStatic } from './HeaderNavStatic';
 export { HeaderUserMenu } from './HeaderUserMenu';
+export type { HeaderUserMenuUser } from './HeaderUserMenu';
 export { ContactDialog } from './ContactDialog';
 export { CurrentYear } from './CurrentYear';
 export { SiteJsonLd } from './SiteJsonLd';

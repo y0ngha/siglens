@@ -1,6 +1,7 @@
 import { unstable_cache } from 'next/cache';
 import type { AssetInfo } from '@/shared/lib/types';
 import { getAssetInfoAction } from '../actions/getAssetInfoAction';
+import { SECONDS_PER_HOUR } from '@/shared/config/time';
 
 /**
  * ISR static-safe asset-info fetch. `getAssetInfoAction`(='use server' → getAssetInfo:
@@ -37,6 +38,6 @@ export function getAssetInfoStatic(ticker: string): Promise<AssetInfo | null> {
     return unstable_cache(
         () => getAssetInfoAction(upper),
         ['asset-info-static', upper],
-        { revalidate: 3600, tags: [`symbol:${upper}`] }
+        { revalidate: SECONDS_PER_HOUR, tags: [`symbol:${upper}`] }
     )();
 }

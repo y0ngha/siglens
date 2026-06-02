@@ -1,15 +1,15 @@
 // @vitest-environment jsdom
-import { describe, it, expect, afterEach, vi } from 'vitest';
-import { renderHook, cleanup } from '@testing-library/react';
-import { AUTH_HINT_COOKIE_NAME } from '@/shared/config/cookieNames';
-
-// useHydrated는 jsdom에서 renderHook 직후 true를 반환하므로
-// SSR 셸 일관성(false 반환) 테스트에선 hydration 전 상태를 직접 주입한다.
-const mockUseHydrated = vi.fn<() => boolean>();
+// useHydrated는 jsdom에서 renderHook 직후 true를 반환하므로 SSR 셸 일관성(false 반환)
+// 테스트에선 hydration 전 상태를 직접 주입한다. mockUseHydrated는 vi.mock factory가 참조하므로
+// vi.hoisted로 끌어올린다.
+const mockUseHydrated = vi.hoisted(() => vi.fn<() => boolean>());
 vi.mock('@/shared/hooks/useHydrated', () => ({
     useHydrated: () => mockUseHydrated(),
 }));
 
+import { describe, it, expect, afterEach, vi } from 'vitest';
+import { renderHook, cleanup } from '@testing-library/react';
+import { AUTH_HINT_COOKIE_NAME } from '@/shared/config/cookieNames';
 import { useAuthHint } from '@/entities/session/hooks/useAuthHint';
 
 function clearCookies() {

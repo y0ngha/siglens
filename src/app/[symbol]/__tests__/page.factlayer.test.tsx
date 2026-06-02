@@ -11,8 +11,6 @@
  * `children`, so we first locate the Suspense element then inspect its fallback.
  */
 
-// ── Mock setup (reuses page.test.ts base set + adds getBarsStatic override) ──
-
 vi.mock('@/widgets/symbol-page/SymbolPageClient', () => ({
     SymbolPageClient: () => null,
 }));
@@ -94,8 +92,6 @@ vi.mock('@/entities/analysis/lib/peekAnalysisStaticCache', () => ({
     peekAnalysisStatic: vi.fn().mockResolvedValue(null),
 }));
 
-// ── Imports (after vi.mock hoisting) ──
-
 import { Suspense, type ReactNode } from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { default as SymbolPage } from '@/app/[symbol]/page';
@@ -127,8 +123,6 @@ function findSuspenseFallback(tree: ReactNode): ReactNode {
     if (!suspenseEl) return null;
     return (suspenseEl.props as { fallback?: ReactNode }).fallback ?? null;
 }
-
-// ── Tests ──
 
 describe('SymbolPage — FactLayer SSR integration', () => {
     beforeEach(() => {

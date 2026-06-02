@@ -5,6 +5,7 @@ import {
     type ModelId,
     type Timeframe,
 } from '@y0ngha/siglens-core';
+import { SECONDS_PER_HOUR } from '@/shared/config/time';
 
 /**
  * ISR static-safe peek of the cached technical analysis. `peekAnalysisCache`(redis 읽기
@@ -34,6 +35,6 @@ export function peekAnalysisStatic(
     return unstable_cache(
         () => peekAnalysisCache(upper, timeframe, fmpSymbol, modelId),
         ['peek-analysis-static', upper, timeframe, modelId],
-        { revalidate: 3600, tags: [`symbol:${upper}`] }
+        { revalidate: SECONDS_PER_HOUR, tags: [`symbol:${upper}`] }
     )();
 }

@@ -1,9 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render } from '@testing-library/react';
-import type { AuthUserRecord } from '@/shared/lib/auth/types';
-
-// Header(presentational)를 스파이로 대체해 전달 props를 검증한다.
-const headerSpy = vi.fn();
+// Header(presentational)를 스파이로 대체해 전달 props를 검증한다. (스파이는 vi.mock factory가
+// 참조하므로 vi.hoisted로 끌어올린다 — vitest가 vi.mock과 함께 import 위로 호이스팅한다.)
+const headerSpy = vi.hoisted(() => vi.fn());
 vi.mock('@/widgets/layout/Header', () => ({
     Header: (props: unknown) => {
         headerSpy(props);
@@ -15,6 +12,9 @@ vi.mock('@/entities/session', () => ({
     useAuthHint: vi.fn(),
 }));
 
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render } from '@testing-library/react';
+import type { AuthUserRecord } from '@/shared/lib/auth/types';
 import { AuthSessionHeaderClient } from '@/app/_components/AuthSessionHeaderClient';
 import { useCurrentUser, useAuthHint } from '@/entities/session';
 

@@ -51,7 +51,6 @@ vi.mock('next/cache', () => ({
 }));
 
 const expectedConsolePrefixes = [
-    '[OverallPage]',
     '[ReanalyzeCooldown]',
     '[SymbolPage]',
     '[PWA]',

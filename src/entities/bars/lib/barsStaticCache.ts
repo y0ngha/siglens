@@ -1,6 +1,7 @@
 import { unstable_cache } from 'next/cache';
 import type { BarsData, Timeframe } from '@y0ngha/siglens-core';
 import { getBarsAction } from '../actions';
+import { SECONDS_PER_HOUR } from '@/shared/config/time';
 
 /**
  * ISR static-safe bars fetch. `getBarsAction`(redis getOrSetCache + FMP)을 Next data
@@ -24,6 +25,6 @@ export function getBarsStatic(
     return unstable_cache(
         () => getBarsAction(ticker, timeframe, fmpSymbol),
         ['bars-static', ticker, timeframe, fmpSymbol ?? ''],
-        { revalidate: 3600, tags: [`symbol:${ticker}`] }
+        { revalidate: SECONDS_PER_HOUR, tags: [`symbol:${ticker}`] }
     )();
 }
