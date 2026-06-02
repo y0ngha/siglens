@@ -67,7 +67,7 @@ vi.mock('@/shared/cache/staticSymbolCache', () => ({
 import { Suspense, type ReactNode } from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { default as OverallPage } from '@/app/[symbol]/overall/page';
-import { OverallFactsSummary } from '@/widgets/overall/OverallFactsSummary';
+import { OverallFactsSummary } from '@/widgets/overall';
 import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
 import { findElementByType } from '@/__tests__/utils/findElementByType';
 

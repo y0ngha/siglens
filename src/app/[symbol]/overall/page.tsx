@@ -1,5 +1,5 @@
 import { OverallContent } from '@/widgets/overall/OverallContent';
-import { OverallFactsSummary } from '@/widgets/overall/OverallFactsSummary';
+import { OverallFactsSummary } from '@/widgets/overall';
 import { CrossLinkCards, SymbolPageHeading } from '@/widgets/symbol-page';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import {
