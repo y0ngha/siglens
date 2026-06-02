@@ -1,19 +1,20 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { AssetInfo } from '@/shared/lib/types';
 import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
-import { getAssetInfoCached } from '@/entities/ticker/lib/getAssetInfoCached';
+import { getAssetInfoStatic } from '@/entities/ticker/lib/getAssetInfoStatic';
 import { connection } from 'next/server';
 
 // `connection()`은 렌더를 동적화하는 Next 16 dynamic API — 유닛에서는 호출 여부만 검증한다.
 vi.mock('next/server', () => ({
     connection: vi.fn().mockResolvedValue(undefined),
 }));
-// 헬퍼가 감싸는 캐시 함수를 mock해 정상/throw/null 세 경로를 직접 제어한다.
-vi.mock('@/entities/ticker/lib/getAssetInfoCached', () => ({
-    getAssetInfoCached: vi.fn(),
+// 헬퍼가 감싸는 정적화 함수를 mock해 정상/throw/null 세 경로를 직접 제어한다.
+// (Task 5: resilient가 getAssetInfoCached 대신 getAssetInfoStatic을 호출하도록 변경됨.)
+vi.mock('@/entities/ticker/lib/getAssetInfoStatic', () => ({
+    getAssetInfoStatic: vi.fn(),
 }));
 
-const mockGet = vi.mocked(getAssetInfoCached);
+const mockGet = vi.mocked(getAssetInfoStatic);
 const mockConnection = vi.mocked(connection);
 
 describe('getAssetInfoResilient', () => {

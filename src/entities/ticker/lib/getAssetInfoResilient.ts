@@ -1,6 +1,6 @@
 import { connection } from 'next/server';
 import type { AssetInfo } from '@/shared/lib/types';
-import { getAssetInfoCached } from './getAssetInfoCached';
+import { getAssetInfoStatic } from './getAssetInfoStatic';
 
 export interface ResilientAssetInfo {
     /** 정상 AssetInfo, 인프라 실패 시 fallback ticker 객체, 또는 실재하지 않는 종목일 때 null. */
@@ -14,7 +14,7 @@ export interface ResilientAssetInfo {
 }
 
 /**
- * `getAssetInfoCached`의 graceful 래퍼. `getAssetInfo`는 네 가지로 끝난다:
+ * `getAssetInfoStatic`의 graceful 래퍼. `getAssetInfo`는 네 가지로 끝난다:
  *   - AssetInfo 반환         → `{ assetInfo, degraded: false }`(정상, ISR 캐시 대상).
  *   - null 반환              → FMP 200 + 빈 결과 = 실재하지 않는 종목. `{ assetInfo: null }`로
  *                              통과시켜 호출부의 `notFound()`(404)가 동작하게 한다.
@@ -29,12 +29,17 @@ export interface ResilientAssetInfo {
  * fallback 객체는 symbol/name만 채운다. fmpSymbol은 생략하는데, AssetInfo에서
  * 이미 optional("일반 주식은 undefined")이라 다운스트림(getBarsAction/peekAnalysisCache)이
  * symbol로 degrade하는 기존 정상 경로와 동일하다. koreanName 생략 시 표시명이 영문 ticker.
+ *
+ * ISR 정적화(Task 5): inner 데이터 호출을 `getAssetInfoStatic`(=unstable_cache(getAssetInfo))으로
+ * 정적화해 static gen 중 redis no-store fetch가 `DYNAMIC_SERVER_USAGE`를 throw하지 않게 한다.
+ * `connection()`(catch 내)은 의도적으로 `unstable_cache` 밖에 둔다 — 인프라 실패 시 degrade
+ * 렌더만 동적화하는 escape이며, `unstable_cache` 안에서 호출하면 throw하기 때문이다.
  */
 export async function getAssetInfoResilient(
     ticker: string
 ): Promise<ResilientAssetInfo> {
     try {
-        return { assetInfo: await getAssetInfoCached(ticker), degraded: false };
+        return { assetInfo: await getAssetInfoStatic(ticker), degraded: false };
     } catch (e) {
         // Next.js가 static generation / ISR 중 dynamic API를 만나면 DynamicServerError를
         // 제어 흐름 수단으로 throw한다. 이를 인프라 실패로 오인하면 불필요한 에러 로그가

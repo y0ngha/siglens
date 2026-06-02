@@ -2,10 +2,8 @@ import { SymbolPageClient } from '@/widgets/symbol-page/SymbolPageClient';
 import { TechnicalFactsSummary } from '@/widgets/symbol-page/TechnicalFactsSummary';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { FALLBACK_ANALYSIS } from '@/entities/chat-message';
-import {
-    GEMINI_2_5_FLASH_LITE_MODEL,
-    peekAnalysisCache,
-} from '@y0ngha/siglens-core';
+import { GEMINI_2_5_FLASH_LITE_MODEL } from '@y0ngha/siglens-core';
+import { peekAnalysisStatic } from '@/entities/analysis/lib/peekAnalysisStaticCache';
 import {
     DEFAULT_TIMEFRAME,
     SymbolRouteParams,
@@ -16,7 +14,6 @@ import {
     buildDisplayName,
     getAssetInfoResilient,
 } from '@/entities/ticker';
-import { getBarsAction } from '@/entities/bars/actions';
 import { getBarsStatic } from '@/entities/bars/lib/barsStaticCache';
 import { countSkillFiles } from '@/entities/skill';
 import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/shared/config/queryConfig';
@@ -189,11 +186,13 @@ export default async function SymbolPage({ params }: Props) {
 
     queryClient.setQueryData(QUERY_KEYS.assetInfo(symbol), assetInfo);
 
+    // bars prefetch는 ISR static-safe 경로(getBarsStatic = unstable_cache(getBarsAction))로
+    // 통일한다 — static gen 중 redis no-store fetch가 DYNAMIC_SERVER_USAGE를 throw하지 않게.
     const barsQueryFn = ({
         queryKey: [, qSymbol, qTimeframe, qFmpSymbol],
     }: {
         queryKey: ReturnType<typeof QUERY_KEYS.bars>;
-    }) => getBarsAction(qSymbol, qTimeframe, qFmpSymbol);
+    }) => getBarsStatic(qSymbol, qTimeframe, qFmpSymbol);
 
     // peek은 읽기 전용 — enqueue/생성 없음. MISS·corrupt·read 실패는 모두 MISS로
     // degrade해 FALLBACK_ANALYSIS로 폴백한다(렌더를 절대 깨지 않음). read 실패는
@@ -216,13 +215,13 @@ export default async function SymbolPage({ params }: Props) {
             ),
             queryFn: barsQueryFn,
         }),
-        peekAnalysisCache(
+        peekAnalysisStatic(
             ticker,
             DEFAULT_TIMEFRAME,
             assetInfo.fmpSymbol,
             GEMINI_2_5_FLASH_LITE_MODEL
         ).catch((error: unknown) => {
-            console.error('[SymbolPage] peekAnalysisCache failed:', error);
+            console.error('[SymbolPage] peekAnalysisStatic failed:', error);
             return null;
         }),
     ]);
