@@ -19,6 +19,7 @@ import {
     buildBreadcrumbJsonLd,
     buildSymbolFearGreedSeoContent,
     buildSymbolSeoContent,
+    NOINDEX_SYMBOL_METADATA,
     SITE_NAME,
     SITE_URL,
 } from '@/shared/lib/seo';
@@ -50,11 +51,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const ticker = symbol.toUpperCase();
     // 본문 notFound()와 일관: 잘못된 ticker는 메타데이터를 비우고 noindex로 응답한다.
     if (!VALID_TICKER_RE.test(ticker)) {
-        return { robots: { index: false, follow: false } };
+        return NOINDEX_SYMBOL_METADATA;
     }
     const { assetInfo, degraded } = await getAssetInfoResilient(ticker);
     if (degraded) {
-        return { robots: { index: false, follow: false } };
+        return NOINDEX_SYMBOL_METADATA;
     }
     const displayName = assetInfo
         ? buildDisplayName(assetInfo, ticker)

@@ -37,7 +37,10 @@ vi.mock('@/shared/config/queryConfig', () => ({
     },
     QUERY_STALE_TIME_MS: 5000,
 }));
-vi.mock('@/shared/lib/seo', () => ({
+vi.mock('@/shared/lib/seo', async importOriginal => ({
+    // 실제 seo 모듈을 스프레드해 NOINDEX_SYMBOL_METADATA 같은 정적 export를 그대로
+    // 가져온다(상수 인라인 복제 → drift 방지). 빌더만 아래에서 결정적으로 오버라이드한다.
+    ...(await importOriginal<typeof import('@/shared/lib/seo')>()),
     buildBreadcrumbJsonLd: vi.fn().mockReturnValue({}),
     buildSymbolSeoContent: vi.fn().mockReturnValue({
         title: 'AAPL 차트',
