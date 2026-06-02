@@ -23,7 +23,7 @@ export function staticSymbolCache<R>(
     extraTags: readonly string[] = []
 ): Promise<R> {
     return unstable_cache(fetcher, [...keyParts], {
-        // revalidate=1h. Phase 1 정적화 wrapper들과 동일한 공유 상수를 쓴다(매직넘버 중복 방지).
+        // 매직넘버 중복 방지 — 라우트별 정적화 wrapper가 공유하는 공통 TTL.
         revalidate: SECONDS_PER_HOUR,
         tags: [`symbol:${symbol}`, ...extraTags],
     })();

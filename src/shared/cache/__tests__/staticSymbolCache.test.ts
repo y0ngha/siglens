@@ -1,6 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-
-const unstableCacheSpy = vi.fn();
+// spy → vi.mock → imports 순서 (MISTAKES.md Tests §17: vi.mock을 import 사이에 끼우지
+// 않고, 팩토리가 참조하는 spy는 vi.hoisted로 끌어올린다).
+const unstableCacheSpy = vi.hoisted(() => vi.fn());
 vi.mock('next/cache', () => ({
     // unstable_cache(fn, keyParts, opts) → returns a function that calls fn.
     unstable_cache: (fn: () => unknown, keyParts: string[], opts: unknown) => {
@@ -9,6 +9,8 @@ vi.mock('next/cache', () => ({
     },
 }));
 
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { SECONDS_PER_HOUR } from '@/shared/config/time';
 import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
 
 describe('staticSymbolCache', () => {
@@ -23,7 +25,7 @@ describe('staticSymbolCache', () => {
         expect(result).toEqual({ ok: true });
         expect(unstableCacheSpy).toHaveBeenCalledWith(
             ['fundamental:profile', 'AAPL'],
-            { revalidate: 3600, tags: ['symbol:AAPL'] }
+            { revalidate: SECONDS_PER_HOUR, tags: ['symbol:AAPL'] }
         );
     });
 
@@ -35,7 +37,7 @@ describe('staticSymbolCache', () => {
             ['news:AAPL']
         );
         expect(unstableCacheSpy).toHaveBeenCalledWith(['news:list', 'AAPL'], {
-            revalidate: 3600,
+            revalidate: SECONDS_PER_HOUR,
             tags: ['symbol:AAPL', 'news:AAPL'],
         });
     });

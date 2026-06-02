@@ -54,8 +54,8 @@ export function OverallFactsSummary({
             )}
             {analysis.riskFactorsKo.length > 0 && (
                 <ul className="space-y-1">
-                    {analysis.riskFactorsKo.map((risk, i) => (
-                        <li key={i} className="text-secondary-400 text-sm">
+                    {analysis.riskFactorsKo.map(risk => (
+                        <li key={risk} className="text-secondary-400 text-sm">
                             {risk}
                         </li>
                     ))}

@@ -81,6 +81,9 @@ const mockStatic = vi.mocked(staticSymbolCache);
 function findSuspenseFallback(tree: ReactNode): ReactNode {
     const suspenseEl = findElementByType(tree, Suspense);
     if (!suspenseEl) return null;
+    // 보장: suspenseEl은 findElementByType(tree, Suspense)가 반환한 Suspense 엘리먼트이므로
+    // props는 SuspenseProps이고 fallback?: ReactNode를 가진다. ReactElement.props가 unknown(React 19)
+    // 이라 좁히기 위한 cast이며, 키는 실재한다.
     return (suspenseEl.props as { fallback?: ReactNode }).fallback ?? null;
 }
 
@@ -113,6 +116,8 @@ describe('OverallPage — FactLayer SSR integration', () => {
         const factLayer = findElementByType(fallback, OverallFactsSummary);
 
         expect(factLayer).not.toBeNull();
+        // 보장: findElementByType이 OverallFactsSummary 엘리먼트를 반환했으므로 props는
+        // OverallFactsSummaryProps(symbol: string 필수)를 가진다 — React 19 unknown 좁히기.
         expect((factLayer?.props as { symbol: string }).symbol).toBe('AAPL');
     });
 

@@ -1,3 +1,10 @@
+// action은 fresh upsert 후 revalidateTag로 news ISR 캐시를 무효화한다. 테스트 환경엔
+// Next.js 런타임이 없으므로 next/cache를 mock해 호출만 관측한다(실제 revalidate는 no-op).
+const revalidateTagSpy = vi.hoisted(() => vi.fn());
+vi.mock('next/cache', () => ({
+    revalidateTag: revalidateTagSpy,
+}));
+
 vi.mock('../lib/newsRefreshFlag', () => ({
     isRecentlyFetched: vi.fn(),
     markFetched: vi.fn(),
@@ -210,6 +217,26 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
             expect(mockUpsertNewsItem).not.toHaveBeenCalled();
             expect(mockListBySymbol).not.toHaveBeenCalled();
             expect(mockSubmitNewsCardAnalysis).not.toHaveBeenCalled();
+        });
+
+        it('fresh 뉴스 upsert 후 news ISR 캐시를 대문자 태그로 revalidateTag한다', async () => {
+            mockFetchNewsForPeriod.mockResolvedValue([NEWS_ITEM_1]);
+            mockSubmitNewsCardAnalysis.mockResolvedValue(SUBMITTED_RESULT);
+            mockPollNewsCardAnalysis.mockResolvedValue(POLL_DONE);
+
+            // 소문자 입력 → 태그는 대문자 정규화(news:AAPL), profile은 'max'.
+            await ensureNewsCardsAnalyzedAction('aapl');
+
+            expect(revalidateTagSpy).toHaveBeenCalledWith('news:AAPL', 'max');
+        });
+
+        it('fresh 기사가 없으면(fresh.length === 0) revalidateTag를 호출하지 않는다', async () => {
+            // DB 변경이 없으므로 news ISR 캐시를 무효화하지 않는다(불필요한 재빌드 방지).
+            mockFetchNewsForPeriod.mockResolvedValue([]);
+
+            await ensureNewsCardsAnalyzedAction('AAPL');
+
+            expect(revalidateTagSpy).not.toHaveBeenCalled();
         });
     });
 
