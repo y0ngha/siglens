@@ -28,4 +28,15 @@ describe('getBarsStatic', () => {
         expect(result).toBe(data);
         expect(mockBars).toHaveBeenCalledWith('AAPL', '1Day', 'AAPL');
     });
+
+    it('fmpSymbol 없을 때 getBarsAction을 undefined로 호출하고 캐시 키는 빈 문자열 사용', async () => {
+        const data = { bars: [], indicators: {} } as unknown as BarsData;
+        mockBars.mockResolvedValue(data);
+
+        // fmpSymbol 미제공 — ?? '' 분기 커버리지
+        const result = await getBarsStatic('AAPL', '1Day');
+
+        expect(result).toBe(data);
+        expect(mockBars).toHaveBeenCalledWith('AAPL', '1Day', undefined);
+    });
 });

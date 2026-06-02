@@ -51,7 +51,9 @@ vi.mock('next/cache', () => ({
 }));
 
 const expectedConsolePrefixes = [
+    '[OverallPage]',
     '[ReanalyzeCooldown]',
+    '[SymbolPage]',
     '[PWA]',
     '[YahooOptionsAdapter]',
     '[cancel route]',
@@ -64,6 +66,7 @@ const expectedConsolePrefixes = [
     '[deleteAccountAction]',
     '[ensureNewsCardsAnalyzedAction]',
     '[getAssetInfo]',
+    '[getAssetInfoResilient]',
     '[getMarketSummaryAction]',
     '[getRegisteredProvidersAction]',
     '[getSectorSignalsAction]',
