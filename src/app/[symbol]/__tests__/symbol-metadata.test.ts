@@ -115,12 +115,20 @@ vi.mock('@/shared/lib/dateKey', () => ({
     todayKstIsoDate: vi.fn(() => '2026-05-21'),
 }));
 
-const { mockGetAssetInfoResilient } = vi.hoisted(() => ({
-    mockGetAssetInfoResilient: vi.fn(),
-}));
+const { mockGetAssetInfoResilient, mockGetProfileResilient } = vi.hoisted(
+    () => ({
+        mockGetAssetInfoResilient: vi.fn(),
+        mockGetProfileResilient: vi.fn(),
+    })
+);
 
 vi.mock('@/entities/ticker', () => ({
     getAssetInfoResilient: mockGetAssetInfoResilient,
+}));
+
+// fundamental generateMetadata는 noindex 게이트로 getProfileResilient를 호출한다.
+vi.mock('@/app/[symbol]/fundamental/getProfileResilient', () => ({
+    getProfileResilient: mockGetProfileResilient,
 }));
 
 // react.cache는 Node 환경에서 identity wrapper로 대체
@@ -195,6 +203,11 @@ describe('generateMetadata — canonical URL 회귀 가드', () => {
         // assetInfo null 반환 → ticker fallback 경로 검증
         mockGetAssetInfoResilient.mockResolvedValue({
             assetInfo: null,
+            degraded: false,
+        });
+        // fundamental의 noindex 게이트 기본값: profile 존재 + 비-degraded(정상 happy-path).
+        mockGetProfileResilient.mockResolvedValue({
+            profile: { symbol: 'AAPL' },
             degraded: false,
         });
     });
@@ -388,7 +401,36 @@ describe('generateMetadata — canonical URL 회귀 가드', () => {
                     index: false,
                     follow: false,
                 });
+                // M1: degraded/invalid noindex는 루트 레이아웃의 home canonical을
+                // 상속하지 않는다(canonical: null로 omit).
+                expect(metadata.alternates?.canonical).toBeNull();
             }
         );
+    });
+
+    describe('fundamental — profile 인프라 실패/부재 시 noindex (본문 결과와 일치)', () => {
+        it('profile degraded(FMP 인프라 실패) → noindex + canonical null', async () => {
+            mockGetProfileResilient.mockResolvedValue({
+                profile: null,
+                degraded: true,
+            });
+            const metadata = await generateFundamentalMetadata(
+                makeParams('aapl')
+            );
+            expect(metadata.robots).toEqual({ index: false, follow: false });
+            expect(metadata.alternates?.canonical).toBeNull();
+        });
+
+        it('profile null(실존하지 않는 종목) → noindex (본문 notFound와 짝)', async () => {
+            mockGetProfileResilient.mockResolvedValue({
+                profile: null,
+                degraded: false,
+            });
+            const metadata = await generateFundamentalMetadata(
+                makeParams('aapl')
+            );
+            expect(metadata.robots).toEqual({ index: false, follow: false });
+            expect(metadata.alternates?.canonical).toBeNull();
+        });
     });
 });
