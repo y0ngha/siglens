@@ -48,6 +48,9 @@ export async function getAssetInfoResilient(
             e instanceof Error &&
             // e가 Error인 것은 위에서 확인됨; Next.js DynamicServerError는 digest 필드를 추가하므로
             // unknown → { digest? } 캐스팅은 안전 — digest가 없으면 undefined → 비교 false.
+            // message.includes(부분 일치, === 아님)는 의도적이다: DynamicServerError 메시지는
+            // "Dynamic server usage: Route ... couldn't be rendered statically ..." 처럼 가변 접미부를
+            // 가져 정확 일치(===)로는 매치되지 않는다. digest(1차 검출)가 빠진 케이스용 방어적 폴백이다.
             ((e as { digest?: string }).digest === 'DYNAMIC_SERVER_USAGE' ||
                 e.message.includes('Dynamic server usage'))
         ) {

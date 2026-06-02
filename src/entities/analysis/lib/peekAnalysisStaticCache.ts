@@ -19,8 +19,10 @@ import {
  *
  * 전제(축 0): root layout cookies() 제거가 선결돼야 정적화가 유효하다(Task 2).
  *
- * 키: ticker + timeframe + fmpSymbol + modelId. (참고: peek의 cache 키 자체는 fmpSymbol을
- * 쓰지 않지만, 시그니처 정렬과 향후 키 분리를 위해 unstable_cache 키에 포함한다.)
+ * ticker는 대문자로 정규화해 unstable_cache 키·태그를 canonical하게 유지한다(호출부 대소문자
+ * 혼용 시 캐시 분기 방지). 키: ticker + timeframe + modelId. fmpSymbol은 peekAnalysisCache의
+ * 내부 cache 키가 쓰지 않으므로 unstable_cache 키에서 제외한다 — 포함하면 같은 데이터가
+ * fmpSymbol 유무로 중복 엔트리에 저장된다. 시그니처 정렬을 위해 인자로는 받아 그대로 전달한다.
  */
 export function peekAnalysisStatic(
     ticker: string,
@@ -28,9 +30,10 @@ export function peekAnalysisStatic(
     fmpSymbol: string | undefined,
     modelId: ModelId
 ): Promise<AnalysisResponse | null> {
+    const upper = ticker.toUpperCase();
     return unstable_cache(
-        () => peekAnalysisCache(ticker, timeframe, fmpSymbol, modelId),
-        ['peek-analysis-static', ticker, timeframe, fmpSymbol ?? '', modelId],
-        { revalidate: 3600, tags: [`symbol:${ticker}`] }
+        () => peekAnalysisCache(upper, timeframe, fmpSymbol, modelId),
+        ['peek-analysis-static', upper, timeframe, modelId],
+        { revalidate: 3600, tags: [`symbol:${upper}`] }
     )();
 }

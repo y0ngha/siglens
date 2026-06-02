@@ -40,4 +40,12 @@ describe('getAssetInfoStatic', () => {
         expect(result).toBeNull();
         expect(mockGetAssetInfo).toHaveBeenCalledWith('ZZZZ');
     });
+
+    it('대소문자 정규화: 소문자 ticker를 대문자로 canonical화해 getAssetInfoAction에 전달', async () => {
+        mockGetAssetInfo.mockResolvedValue(null);
+
+        await getAssetInfoStatic('aapl');
+
+        expect(mockGetAssetInfo).toHaveBeenCalledWith('AAPL');
+    });
 });

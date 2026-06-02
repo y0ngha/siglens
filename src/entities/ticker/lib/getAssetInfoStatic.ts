@@ -27,11 +27,16 @@ import { getAssetInfoAction } from '../actions/getAssetInfoAction';
  *
  * 정적 분석 확인: `getAssetInfo` 체인(cache/DB/FMP/koreanNameStore)에 cookies()/headers()/
  * connection() 없음 → `unstable_cache` 래핑 안전. null=실재하지 않는 종목, throw=인프라 실패.
+ *
+ * ticker는 대문자로 정규화해 unstable_cache 키·태그를 canonical하게 유지한다(호출부 대소문자
+ * 혼용 시 캐시 분기·revalidateTag 누락 방지). getAssetInfoAction이 내부적으로도 대문자화하므로
+ * 데이터는 동일하고, 정규화는 캐시 키/태그의 일관성만 보장한다.
  */
 export function getAssetInfoStatic(ticker: string): Promise<AssetInfo | null> {
+    const upper = ticker.toUpperCase();
     return unstable_cache(
-        () => getAssetInfoAction(ticker),
-        ['asset-info-static', ticker],
-        { revalidate: 3600, tags: [`symbol:${ticker}`] }
+        () => getAssetInfoAction(upper),
+        ['asset-info-static', upper],
+        { revalidate: 3600, tags: [`symbol:${upper}`] }
     )();
 }

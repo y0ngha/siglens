@@ -32,11 +32,13 @@ const user: AuthUserRecord = {
     updatedAt: new Date(0),
 };
 
-function lastHeaderProps() {
-    return headerSpy.mock.calls.at(-1)?.[0] as {
-        currentUser: unknown;
-        loadingUserMenu?: boolean;
-    };
+interface CapturedHeaderProps {
+    currentUser: unknown;
+    loadingUserMenu?: boolean;
+}
+
+function lastHeaderProps(): CapturedHeaderProps {
+    return headerSpy.mock.calls.at(-1)?.[0] as CapturedHeaderProps;
 }
 
 describe('AuthSessionHeaderClient', () => {

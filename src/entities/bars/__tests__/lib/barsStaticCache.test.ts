@@ -39,4 +39,14 @@ describe('getBarsStatic', () => {
         expect(result).toBe(data);
         expect(mockBars).toHaveBeenCalledWith('AAPL', '1Day', undefined);
     });
+
+    it('대소문자 정규화: 소문자 symbol을 대문자로 canonical화해 getBarsAction에 전달 (캐시 키 분기 방지)', async () => {
+        const data = { bars: [], indicators: {} } as unknown as BarsData;
+        mockBars.mockResolvedValue(data);
+
+        await getBarsStatic('aapl', '1Day', 'aapl');
+
+        // symbol은 대문자화, fmpSymbol(FMP 고유 심볼)은 보존
+        expect(mockBars).toHaveBeenCalledWith('AAPL', '1Day', 'aapl');
+    });
 });

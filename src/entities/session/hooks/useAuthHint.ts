@@ -15,6 +15,10 @@ export function useAuthHint(): boolean {
     const isHydrated = useHydrated();
     if (!isHydrated) return false;
     const prefix = `${AUTH_HINT_COOKIE_NAME}=`;
-    const entry = document.cookie.split('; ').find(c => c.startsWith(prefix));
+    // `;`로만 분할 후 각 항목을 trim — 브라우저별로 `; ` 구분자 뒤 공백이 0개거나 여러 개일 수 있다.
+    const entry = document.cookie
+        .split(';')
+        .map(c => c.trim())
+        .find(c => c.startsWith(prefix));
     return !!entry && entry.slice(prefix.length).length > 0;
 }

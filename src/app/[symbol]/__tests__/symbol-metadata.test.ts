@@ -193,7 +193,10 @@ describe('generateMetadata — canonical URL 회귀 가드', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         // assetInfo null 반환 → ticker fallback 경로 검증
-        mockGetAssetInfoResilient.mockResolvedValue({ assetInfo: null, degraded: false });
+        mockGetAssetInfoResilient.mockResolvedValue({
+            assetInfo: null,
+            degraded: false,
+        });
     });
 
     describe('[symbol] 루트 페이지 (/AAPL)', () => {
