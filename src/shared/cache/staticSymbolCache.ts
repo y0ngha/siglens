@@ -1,7 +1,5 @@
 import { unstable_cache } from 'next/cache';
-
-/** ISR revalidate 주기(1h). route segment config 리터럴(3600)과 동일 의미. */
-const SYMBOL_REVALIDATE_SECONDS = 3600;
+import { SECONDS_PER_HOUR } from '@/shared/config/time';
 
 /**
  * per-symbol 동적 호출(redis getOrSetCache / DB / FMP)을 Next data cache로 감싸 ISR
@@ -25,7 +23,8 @@ export function staticSymbolCache<R>(
     extraTags: readonly string[] = []
 ): Promise<R> {
     return unstable_cache(fetcher, [...keyParts], {
-        revalidate: SYMBOL_REVALIDATE_SECONDS,
+        // revalidate=1h. Phase 1 정적화 wrapper들과 동일한 공유 상수를 쓴다(매직넘버 중복 방지).
+        revalidate: SECONDS_PER_HOUR,
         tags: [`symbol:${symbol}`, ...extraTags],
     })();
 }
