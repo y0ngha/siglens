@@ -12,6 +12,7 @@ import { useAssetInfo } from './hooks/useAssetInfo';
 import { useMobileSheet } from './hooks/useMobileSheet';
 import { useTimeframeChange } from './hooks/useTimeframeChange';
 import { SymbolPageProvider } from './SymbolPageContext';
+import { buildChartPageHeading } from './utils/chartPageHeading';
 import type { AnalysisResponse } from '@y0ngha/siglens-core';
 import dynamic from 'next/dynamic';
 import { Suspense } from 'react';
@@ -70,11 +71,13 @@ export function SymbolPageClient({
                 <div className="border-secondary-700 flex items-center justify-between gap-3 border-b px-4 py-2 sm:py-1.5">
                     {/* 차트 페이지 가시 h1: jail(first-viewport 고정 + overflow-hidden)이라
                         본문에 별도 블록을 얹으면 chart 가시 영역이 침범된다. 그래서
-                        timeframe bar 행에 짧은 한 줄로 둔다. truncate로 좁은 화면에서
-                        TimeframeSelector와 한 줄 공존하고, SSR 렌더되어 크롤러가
-                        가시 텍스트로 읽는다(기존 sr-only h1을 대체). */}
+                        timeframe bar 행에 짧은 한 줄로 둔다(truncate로 좁은 화면에서
+                        TimeframeSelector와 한 줄 공존). 단 이 컴포넌트는 useSearchParams로
+                        CSR-bailout되므로 이 가시 h1은 SSR HTML엔 박히지 않는다 — JS 미실행
+                        크롤러용 h1은 page.tsx의 Suspense fallback에 동일 텍스트 sr-only h1으로
+                        제공하고, hydration 후 이 가시 h1이 fallback을 대체한다. */}
                     <h1 className="text-secondary-100 min-w-0 truncate text-sm font-semibold sm:text-base">
-                        {displayName} 차트 분석
+                        {buildChartPageHeading(displayName)}
                     </h1>
                     <TimeframeSelector
                         value={timeframe}

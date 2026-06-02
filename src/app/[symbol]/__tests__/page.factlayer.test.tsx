@@ -159,6 +159,53 @@ describe('SymbolPage — FactLayer SSR integration', () => {
         expect((fact?.props as { symbol: string }).symbol).toBe('AAPL');
     });
 
+    it('SSR 크롤용 h1: fallback에 sr-only h1(회사명 + 차트 분석)이 있어 JS 미실행 크롤러가 메인 h1을 받는다', async () => {
+        mockBarsStatic.mockResolvedValue({
+            bars: [
+                {
+                    time: 1,
+                    open: 1,
+                    high: 2,
+                    low: 0.5,
+                    close: 1.5,
+                    volume: 100,
+                },
+            ],
+            indicators: {},
+        } as never);
+
+        const tree = await SymbolPage({
+            params: Promise.resolve({ symbol: 'aapl' }),
+        });
+        const fallback = findSuspenseFallback(tree);
+        const h1 = findElementByType(fallback, 'h1');
+
+        expect(h1).not.toBeNull();
+        // 보장: findElementByType이 host element 'h1'을 반환했으므로 props.children은
+        // buildChartPageHeading(displayName) 결과 문자열이다. displayName mock = 'Apple Inc.'
+        // → 결정적 값이므로 toBe로 정밀 검증.
+        const children = (h1?.props as { children?: ReactNode }).children;
+        const text = Array.isArray(children)
+            ? children.join('')
+            : String(children);
+        expect(text).toBe('Apple Inc. 차트 분석');
+        // sr-only라 가시 레이아웃(jail) 영향 없음 — 크롤 전용.
+        expect((h1?.props as { className?: string }).className).toContain(
+            'sr-only'
+        );
+    });
+
+    it('SSR 크롤용 h1: bars 빈 결과(cold)에서도 fallback h1은 존재한다(데이터 유무와 무관)', async () => {
+        mockBarsStatic.mockResolvedValue({ bars: [], indicators: {} } as never);
+
+        const tree = await SymbolPage({
+            params: Promise.resolve({ symbol: 'aapl' }),
+        });
+        const fallback = findSuspenseFallback(tree);
+
+        expect(findElementByType(fallback, 'h1')).not.toBeNull();
+    });
+
     it('Worst: bars 빈 결과면 FactLayer 대신 빈 fallback(div) — 크래시 없이 페이지 정상', async () => {
         mockBarsStatic.mockResolvedValue({ bars: [], indicators: {} } as never);
 
