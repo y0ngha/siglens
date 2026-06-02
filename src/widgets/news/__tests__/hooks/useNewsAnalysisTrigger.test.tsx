@@ -5,6 +5,7 @@ vi.mock('@/entities/news-article/actions', () => ({
 }));
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { StrictMode } from 'react';
 import { renderHook, waitFor } from '@testing-library/react';
 import { useNewsAnalysisTrigger } from '@/widgets/news/hooks/useNewsAnalysisTrigger';
 
@@ -53,5 +54,15 @@ describe('useNewsAnalysisTrigger', () => {
 
         await waitFor(() => expect(errorSpy).toHaveBeenCalled());
         errorSpy.mockRestore();
+    });
+
+    it('StrictMode 이중 invoke에서도 1회만 호출한다 (effect 재실행 시 ref===symbol → early-return 가드)', () => {
+        // StrictMode(dev)는 같은 인스턴스에서 effect setup→cleanup→setup을 한 번 더 돌린다.
+        // 두 번째 setup 시 ref.current가 이미 'AAPL'이라 early-return으로 중복 트리거를 막는다.
+        renderHook(() => useNewsAnalysisTrigger('AAPL'), {
+            wrapper: StrictMode,
+        });
+
+        expect(ensureSpy).toHaveBeenCalledTimes(1);
     });
 });
