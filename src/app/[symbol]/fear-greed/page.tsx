@@ -13,7 +13,7 @@ import {
     buildDisplayName,
     getAssetInfoResilient,
 } from '@/entities/ticker';
-import { getBarsAction } from '@/entities/bars/actions';
+import { getBarsStatic } from '@/entities/bars';
 import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/shared/config/queryConfig';
 import {
     buildBreadcrumbJsonLd,
@@ -176,8 +176,8 @@ export default async function SymbolFearGreedPage({ params }: Props) {
             DEFAULT_TIMEFRAME,
             assetInfo.fmpSymbol
         ),
-        queryFn: ({ queryKey: [, qSymbol, qTimeframe, qFmpSymbol] }) =>
-            getBarsAction(qSymbol, qTimeframe, qFmpSymbol),
+        queryFn: () =>
+            getBarsStatic(symbol, DEFAULT_TIMEFRAME, assetInfo.fmpSymbol),
     });
 
     return (
