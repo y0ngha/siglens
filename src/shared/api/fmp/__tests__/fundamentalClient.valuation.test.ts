@@ -1,22 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-// React.cache를 동기 메모이즈 stub으로 대체 — 비-RSC(vitest) 컨텍스트에서도
-// same-request dedup을 검증하기 위함. 인스턴스별 격리는 각 it()에서 새 client로 보장.
-vi.mock('react', async importOriginal => {
-    const actual = await importOriginal<typeof import('react')>();
-    return {
-        ...actual,
-        cache: <A extends unknown[], R>(fn: (...args: A) => R) => {
-            const store = new Map<string, R>();
-            return (...args: A): R => {
-                const key = JSON.stringify(args);
-                if (!store.has(key)) store.set(key, fn(...args));
-                return store.get(key) as R;
-            };
-        },
-    };
-});
-
 const fmpGet = vi.fn();
 vi.mock('@/shared/api/fmp/httpClient', () => ({
     fmpGet: (...args: unknown[]) => fmpGet(...args),
@@ -59,6 +42,20 @@ describe('FmpFundamentalClient valuation fetch sharing', () => {
         const rCalls = fmpGet.mock.calls.filter(c => c[0] === 'ratios-ttm');
         expect(kmCalls).toHaveLength(1);
         expect(rCalls).toHaveLength(1);
+    });
+
+    it('sequential calls do not share in-flight (cross-request is Redis job)', async () => {
+        fmpGet.mockImplementation((path: string) => {
+            if (path === 'key-metrics-ttm')
+                return Promise.resolve([{ peRatioTTM: 10 }]);
+            if (path === 'ratios-ttm')
+                return Promise.resolve([{ netProfitMarginTTM: 0.15 }]);
+            return Promise.resolve([]);
+        });
+        const client = new FmpFundamentalClient();
+        await client.getKeyMetricsTtm('AAPL'); // completes, clears in-flight
+        await client.getRatiosTtm('AAPL'); // fresh fetch
+        expect(fmpGet.mock.calls.filter(c => c[0] === 'key-metrics-ttm')).toHaveLength(2);
     });
 
     it('returns null when both endpoints are empty (worst case)', async () => {

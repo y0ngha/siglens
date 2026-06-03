@@ -1,4 +1,3 @@
-import { cache } from 'react';
 import { fmpGet as fmpGetRaw } from './httpClient';
 import { SECONDS_PER_HOUR } from '@/shared/config/time';
 import type {
@@ -128,27 +127,51 @@ export class FmpFundamentalClient implements FundamentalDataProvider {
     }
 
     /**
-     * key-metrics-ttm + ratios-ttm을 한 번에 fetch해 raw 쌍을 반환한다.
-     * `React.cache`로 요청 스코프 메모이즈하므로, 같은 요청에서 getKeyMetricsTtm과
-     * getRatiosTtm이 모두 호출돼도(분석 Promise.all) 각 엔드포인트 fetch는 1회로
-     * 수렴한다. 두 메서드가 서로의 필드를 fallback으로 쓰므로 raw 쌍을 공유한다.
+     * 진행 중인 valuation fetch를 심볼별로 공유하는 in-flight 메모이즈 맵.
+     * 완료(성공·실패) 시 finally로 제거하므로 누수 없이 "같은 요청에서 동시에
+     * 들어온 호출"만 합쳐진다. cross-request 캐싱은 CachedFundamentalProvider(Redis)가
+     * 담당한다.
      */
-    private getValuationRaw = cache(
-        async (
-            symbol: string
-        ): Promise<{
+    private valuationInflight = new Map<
+        string,
+        Promise<{
             metrics: RawFmpKeyMetricsTtm | null;
             ratios: RawFmpRatiosTtm | null;
-        }> => {
-            const [arr, ratiosArr] = await Promise.all([
+        }>
+    >();
+
+    /**
+     * key-metrics-ttm + ratios-ttm을 한 번에 fetch해 raw 쌍을 반환한다.
+     * getKeyMetricsTtm과 getRatiosTtm이 같은 요청에서 동시에 호출돼도(core의
+     * Promise.all) in-flight 공유로 각 엔드포인트 fetch가 1회로 수렴한다. React.cache는
+     * RSC 렌더 스코프 전용이라 Server Action(분석 경로)에서는 dedup되지 않으므로
+     * 인스턴스 in-flight 맵을 쓴다. Next Data Cache(fmpGet revalidate)는 cross-request
+     * 2차 방어선이지만 region/배포마다 초기화되므로 신선도 보장에 의존하지 않는다.
+     */
+    private getValuationRaw(symbol: string): Promise<{
+        metrics: RawFmpKeyMetricsTtm | null;
+        ratios: RawFmpRatiosTtm | null;
+    }> {
+        const inflight = this.valuationInflight.get(symbol);
+        if (inflight !== undefined) return inflight;
+
+        const pending = (async () => {
+            const [metricsArr, ratiosArr] = await Promise.all([
                 getOptionalArray<RawFmpKeyMetricsTtm>('key-metrics-ttm', {
                     symbol,
                 }),
                 getOptionalArray<RawFmpRatiosTtm>('ratios-ttm', { symbol }),
             ]);
-            return { metrics: arr[0] ?? null, ratios: ratiosArr[0] ?? null };
-        }
-    );
+            return {
+                metrics: metricsArr[0] ?? null,
+                ratios: ratiosArr[0] ?? null,
+            };
+        })();
+
+        this.valuationInflight.set(symbol, pending);
+        void pending.finally(() => this.valuationInflight.delete(symbol));
+        return pending;
+    }
 
     /** Fetch TTM key metrics (valuation multiples + EPS); returns `null` when unavailable. */
     async getKeyMetricsTtm(
