@@ -63,7 +63,7 @@ describe('DrizzleNoticeRepository.findActive', () => {
         expect(orderBySpy.mock.calls[0]).toHaveLength(2);
     });
 
-    it('where 절(활성 + 시간창)이 적용된다', async () => {
+    it('where 절이 한 번 호출된다', async () => {
         const { db, whereSpy } = makeMockDb([baseRow]);
         const repo = new DrizzleNoticeRepository(db);
         await repo.findActive();
