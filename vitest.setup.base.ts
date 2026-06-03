@@ -1,15 +1,18 @@
-import { afterEach, vi } from 'vitest';
+import { afterAll, vi } from 'vitest';
 import { TextDecoder, TextEncoder } from 'util';
 
 // E2E_TEST 누수 가드. `vmThreads` 풀은 워커 한 개 안에서 여러 테스트 파일이
 // process.env를 공유하므로, 한 파일이 raw로 설정한 `process.env.E2E_TEST='1'`이
 // 같은 워커의 뒤 파일로 새면 isE2E()가 켜져 factory들의 `require('./Fake*')`
-// dead-branch가 활성화돼 "Cannot find module" flake가 난다. 워커 시작 시점의 값으로
-// 매 테스트 후 복원해 어떤 파일이 어떻게 바꿔도 누수를 원천 차단한다(`vi.stubEnv`
-// 누수는 config의 `unstubEnvs:true`가 담당; 이건 raw 할당까지 덮는 belt-and-suspenders).
-// 전역 hook은 LIFO라 각 파일의 자체 afterEach 뒤에 마지막으로 실행돼 최종 상태를 정리한다.
+// dead-branch가 활성화돼 "Cannot find module" flake가 난다. 파일 단위로(=afterAll)
+// 워커 시작 시점의 값으로 복원해, 그 파일이 env를 어떻게 바꿨든 다음 파일로의 누수를
+// 차단한다. `afterEach`가 아니라 `afterAll`인 이유: 같은 파일이 `beforeAll`로
+// E2E_TEST를 설정하고 여러 테스트를 돌리는 경우 afterEach면 첫 테스트 후 값이 사라져
+// 나머지가 깨진다 — 파일 격리만 보장하면 충분하므로 afterAll로 그 위험을 없앤다.
+// (`vi.stubEnv` 누수는 config의 `unstubEnvs:true`가 테스트 단위로 담당; 이건 raw
+// 할당까지 덮는 belt-and-suspenders.)
 const ORIGINAL_E2E_TEST = process.env.E2E_TEST;
-afterEach(() => {
+afterAll(() => {
     if (ORIGINAL_E2E_TEST === undefined) delete process.env.E2E_TEST;
     else process.env.E2E_TEST = ORIGINAL_E2E_TEST;
 });
