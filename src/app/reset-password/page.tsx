@@ -1,9 +1,9 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Suspense } from 'react';
-import { AuthCardShell } from '@/shared/ui/auth/AuthCardShell';
-import { ResetPasswordForm } from '@/features/auth-password-reset';
+import { AuthCardShell, AuthFormSkeleton } from '@/shared/ui/auth';
 import { SITE_NAME, SITE_URL } from '@/shared/lib/seo';
+import { ResetPasswordContent } from './ResetPasswordContent';
 
 // noindex 페이지에도 canonical/openGraph.url을 명시한다. 자세한 근거는 src/app/login/page.tsx 주석 참조.
 export const metadata: Metadata = {
@@ -14,34 +14,8 @@ export const metadata: Metadata = {
     robots: { index: false, follow: true },
 };
 
-interface ResetPasswordPageProps {
-    searchParams: Promise<{ email?: string; token?: string }>;
-}
-
-const MISSING_PARAMS_MESSAGE =
-    '재설정 링크가 올바르지 않습니다. 비밀번호 찾기를 다시 시도해주세요.';
-
-// Awaits searchParams (dynamic) — must be inside Suspense for PPR.
-async function ResetPasswordContent({ searchParams }: ResetPasswordPageProps) {
-    const params = await searchParams;
-    const email = params.email ?? '';
-    const token = params.token ?? '';
-    const ready = email.length > 0 && token.length > 0;
-    return ready ? (
-        <ResetPasswordForm email={email} token={token} />
-    ) : (
-        <div
-            role="alert"
-            className="border-ui-danger/30 bg-ui-danger/5 text-ui-danger rounded-md border p-3 text-sm"
-        >
-            {MISSING_PARAMS_MESSAGE}
-        </div>
-    );
-}
-
-export default function ResetPasswordPage({
-    searchParams,
-}: ResetPasswordPageProps) {
+// searchParams 읽기를 ResetPasswordContent('use client')로 격리해 이 라우트는 full-static(○)으로 prerender된다.
+export default function ResetPasswordPage() {
     return (
         <AuthCardShell
             title="새 비밀번호 설정"
@@ -57,8 +31,8 @@ export default function ResetPasswordPage({
                 </p>
             }
         >
-            <Suspense>
-                <ResetPasswordContent searchParams={searchParams} />
+            <Suspense fallback={<AuthFormSkeleton rows={2} />}>
+                <ResetPasswordContent />
             </Suspense>
         </AuthCardShell>
     );

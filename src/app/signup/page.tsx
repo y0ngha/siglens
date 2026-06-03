@@ -1,12 +1,10 @@
 import { Suspense } from 'react';
 
-import { AuthCardShell } from '@/shared/ui/auth/AuthCardShell';
-import { SignupForm } from '@/features/auth-signup';
-import { SocialLoginButtons } from '@/features/auth-oauth';
-import { sanitizeNextPath } from '@/shared/lib/auth/redirect';
+import { AuthCardShell, AuthFormSkeleton } from '@/shared/ui/auth';
 import { SITE_NAME, SITE_URL } from '@/shared/lib/seo';
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { SignupContent } from './SignupContent';
 
 // noindex 페이지에도 canonical/openGraph.url을 명시한다. 자세한 근거는 src/app/login/page.tsx 주석 참조.
 export const metadata: Metadata = {
@@ -17,27 +15,8 @@ export const metadata: Metadata = {
     robots: { index: false, follow: true },
 };
 
-interface SignupPageProps {
-    searchParams: Promise<{ next?: string }>;
-}
-
-// Awaits searchParams (dynamic) — must be inside Suspense for PPR.
-async function SignupContent({ searchParams }: SignupPageProps) {
-    const params = await searchParams;
-    const next = sanitizeNextPath(params.next);
-    const nextParam = next === '/' ? undefined : next;
-    return (
-        <>
-            <SignupForm next={nextParam} />
-            <p className="text-secondary-500 mt-6 mb-2 text-xs">
-                소셜 로그인 시작 후 약관 동의 단계가 있습니다.
-            </p>
-            <SocialLoginButtons next={nextParam} />
-        </>
-    );
-}
-
-export default function SignupPage({ searchParams }: SignupPageProps) {
+// searchParams 읽기를 SignupContent('use client')로 격리해 이 라우트는 full-static(○)으로 prerender된다.
+export default function SignupPage() {
     return (
         <AuthCardShell
             title="회원이 되면 더 많은 걸 볼 수 있어요"
@@ -54,8 +33,8 @@ export default function SignupPage({ searchParams }: SignupPageProps) {
                 </p>
             }
         >
-            <Suspense>
-                <SignupContent searchParams={searchParams} />
+            <Suspense fallback={<AuthFormSkeleton rows={3} />}>
+                <SignupContent />
             </Suspense>
         </AuthCardShell>
     );
