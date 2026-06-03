@@ -74,6 +74,52 @@ describe('useMarketSummary', () => {
         expect(result.current.sectorMap.get('XLK')).toBeDefined();
         expect(result.current.indices).toHaveLength(1);
         expect(result.current.indices[0]?.symbol).toBe('SPY');
+        expect(result.current.hasMissingQuotes).toBe(false);
+        // briefing이 null이면 undefined로 합쳐 노출한다.
+        expect(result.current.briefing).toBeUndefined();
+        client.clear();
+    });
+
+    it('briefing 결과를 그대로 노출한다(cached)', async () => {
+        const cached = {
+            status: 'cached',
+            briefing: 'AI briefing',
+            generatedAt: '2025-01-01T00:00:00Z',
+        };
+        mockAction.mockResolvedValue({ ...SUMMARY_DATA, briefing: cached });
+        const { client, wrapper } = makeWrapper();
+        const { result } = renderHook(() => useMarketSummary(), { wrapper });
+
+        await waitFor(() => {
+            expect(result.current.isPending).toBe(false);
+        });
+
+        expect(result.current.briefing).toEqual(cached);
+        client.clear();
+    });
+
+    it('일부 종목 price=0이면 hasMissingQuotes=true', async () => {
+        mockAction.mockResolvedValue({
+            summary: {
+                indices: SUMMARY_DATA.summary.indices,
+                sectors: [
+                    {
+                        ...SUMMARY_DATA.summary.sectors[0],
+                        price: 0,
+                        changesPercentage: 0,
+                    },
+                ],
+            },
+            briefing: null,
+        });
+        const { client, wrapper } = makeWrapper();
+        const { result } = renderHook(() => useMarketSummary(), { wrapper });
+
+        await waitFor(() => {
+            expect(result.current.isPending).toBe(false);
+        });
+
+        expect(result.current.hasMissingQuotes).toBe(true);
         client.clear();
     });
 
@@ -88,6 +134,7 @@ describe('useMarketSummary', () => {
 
         expect(result.current.sectorMap.size).toBe(0);
         expect(result.current.indices).toHaveLength(0);
+        expect(result.current.hasMissingQuotes).toBe(false);
         client.clear();
     });
 });

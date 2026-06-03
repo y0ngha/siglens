@@ -20,8 +20,10 @@ vi.mock('@y0ngha/siglens-core', async () => ({
     submitBriefing: vi.fn(),
 }));
 
+const { mockCookieGet } = vi.hoisted(() => ({ mockCookieGet: vi.fn() }));
 vi.mock('next/headers', () => ({
     headers: vi.fn().mockResolvedValue(new Headers()),
+    cookies: vi.fn().mockResolvedValue({ get: mockCookieGet }),
 }));
 
 vi.mock('@/shared/api/isBot', () => ({
@@ -78,6 +80,7 @@ describe('getMarketSummaryAction 함수는', () => {
         vi.clearAllMocks();
         mockGetCachedMarketSummary.mockResolvedValue(summaryData);
         mockIsE2E.mockReturnValue(false);
+        mockCookieGet.mockReturnValue(undefined);
     });
 
     describe('봇 요청 시', () => {
@@ -153,6 +156,36 @@ describe('getMarketSummaryAction 함수는', () => {
                 summary: summaryData,
                 briefing: null,
                 botBlocked: false,
+            });
+        });
+
+        it('force-partial 쿠키가 없으면 summary를 그대로 반환한다', async () => {
+            const result = await getMarketSummaryAction();
+
+            expect(result).toEqual({
+                summary: summaryData,
+                briefing: null,
+                botBlocked: false,
+            });
+        });
+
+        it('force-partial 쿠키가 있으면 첫 섹터 quote를 0으로 만들어 반환한다', async () => {
+            mockCookieGet.mockReturnValue({
+                name: 'e2e_force_market_partial',
+                value: '1',
+            });
+
+            const result = await getMarketSummaryAction();
+
+            expect('ok' in result).toBe(false);
+            if ('ok' in result) return;
+            expect(result.botBlocked).toBe(false);
+            // 지수는 그대로, 첫 섹터만 price/change가 0으로 강제된다.
+            expect(result.summary.indices).toEqual(summaryData.indices);
+            expect(result.summary.sectors[0]).toMatchObject({
+                symbol: 'XLK',
+                price: 0,
+                changesPercentage: 0,
             });
         });
     });
