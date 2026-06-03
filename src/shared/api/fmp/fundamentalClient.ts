@@ -137,6 +137,11 @@ export class FmpFundamentalClient implements FundamentalDataProvider {
      * 인스턴스 in-flight 맵을 쓴다. Next Data Cache(fmpGet revalidate)는 cross-request
      * 2차 방어선이지만 region/배포마다 초기화되므로 신선도 보장에 의존하지 않는다.
      *
+     * in-flight 맵 키는 대문자로 정규화한다(예: 'aapl' → 'AAPL'). Redis 계층은
+     * 이미 대문자 키를 사용하며, 혼합 케이스 동시 호출('aapl' + 'AAPL')이 각각 별도
+     * in-flight 항목으로 취급되는 중복 fetch 결함을 방지한다. 실제 FMP fetch에는 원래
+     * `symbol` 인수를 그대로 전달한다(FMP는 케이스 무관).
+     *
      * FMP 장애(429/5xx/timeout)는 `fmpGet`을 통해 그대로 throw된다 — 다른 9개
      * 메서드와 동일한 계약. 이전엔 `getOptionalArray`로 에러를 `[]`로 삼켜 null을
      * 반환했는데, 그 null이 Redis 데코레이터(CachedFundamentalProvider)에 1h TTL로
@@ -149,7 +154,8 @@ export class FmpFundamentalClient implements FundamentalDataProvider {
         metrics: RawFmpKeyMetricsTtm | null;
         ratios: RawFmpRatiosTtm | null;
     }> {
-        const inflight = this.valuationInflight.get(symbol);
+        const key = symbol.toUpperCase();
+        const inflight = this.valuationInflight.get(key);
         if (inflight !== undefined) return inflight;
 
         const pending = (async () => {
@@ -163,13 +169,13 @@ export class FmpFundamentalClient implements FundamentalDataProvider {
             };
         })();
 
-        this.valuationInflight.set(symbol, pending);
+        this.valuationInflight.set(key, pending);
         // 정리(in-flight 제거)는 성공·실패 모두에서 수행한다. `pending`이 reject되면
         // 이 derived 체인도 reject되는데, 호출부는 반환된 `pending`을 직접 await/catch하지
         // 이 정리 체인을 관찰하지 않으므로 .catch(() => {})로 별도 흡수해 unhandled
         // rejection을 막는다(실제 에러는 호출부가 그대로 받는다).
         void pending
-            .finally(() => this.valuationInflight.delete(symbol))
+            .finally(() => this.valuationInflight.delete(key))
             .catch(() => {});
         return pending;
     }

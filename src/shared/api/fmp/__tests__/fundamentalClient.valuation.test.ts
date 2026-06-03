@@ -77,6 +77,35 @@ describe('FmpFundamentalClient valuation fetch sharing', () => {
         await expect(client.getRatiosTtm('AAPL')).rejects.toThrow('FMP 503');
     });
 
+    it('mixed-case concurrent calls share the same in-flight fetch (uppercase key coalesces)', async () => {
+        fmpGet.mockImplementation((path: string) => {
+            if (path === 'key-metrics-ttm')
+                return Promise.resolve([{ peRatioTTM: 20 }]);
+            if (path === 'ratios-ttm')
+                return Promise.resolve([{ netProfitMarginTTM: 0.25 }]);
+            return Promise.resolve([]);
+        });
+
+        const client = new FmpFundamentalClient();
+        // 'aapl' and 'AAPL' must coalesce to a single in-flight entry
+        const [km, ratios] = await Promise.all([
+            client.getKeyMetricsTtm('aapl'),
+            client.getRatiosTtm('AAPL'),
+        ]);
+
+        expect(km?.peRatioTTM).toBe(20);
+        expect(ratios?.netProfitMarginTTM).toBe(0.25);
+
+        // Each FMP endpoint must have been fetched exactly once despite the mixed
+        // case — proving the uppercase key coalesced the two concurrent callers.
+        expect(
+            fmpGet.mock.calls.filter(c => c[0] === 'key-metrics-ttm')
+        ).toHaveLength(1);
+        expect(
+            fmpGet.mock.calls.filter(c => c[0] === 'ratios-ttm')
+        ).toHaveLength(1);
+    });
+
     it('falls back to key-metrics fields when ratios endpoint is empty', async () => {
         fmpGet.mockImplementation((path: string) =>
             path === 'key-metrics-ttm'
