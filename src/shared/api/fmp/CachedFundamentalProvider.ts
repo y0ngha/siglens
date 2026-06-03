@@ -125,9 +125,34 @@ export class CachedFundamentalProvider implements FundamentalProvider {
             )
     );
 
-    // Task 3에서 캐싱+enrich로 교체할 pass-through stub.
-    getStockPeers = (symbol: string): Promise<FundamentalPeerInput[]> =>
-        this.inner.getStockPeers(symbol);
+    /**
+     * raw peer 목록을 `fundamental:peers:<SYM>`에 캐싱한 뒤, 각 peer를 캐싱된
+     * `getKeyMetricsTtm`으로 enrich해 per/psr을 채운다. 페이지·분석이 동일한
+     * enrich된 peer를 받아 core 프롬프트의 PER/PSR이 정상 채워진다(기존엔 분석
+     * 경로가 enrich되지 않은 raw peer를 받아 PER/PSR이 N/A였다).
+     *
+     * enrich는 콜드 캐시 시 peer당 동시 FMP 요청 폭증(rate-limit)을 피하려 순차
+     * 실행한다 — warm 캐시에서는 getKeyMetricsTtm(Redis) 히트로 비용이 낮다.
+     */
+    getStockPeers = cache(
+        async (symbol: string): Promise<FundamentalPeerInput[]> => {
+            const peers = await getOrSetCache(
+                `fundamental:peers:${sym(symbol)}`,
+                TTL,
+                () => this.inner.getStockPeers(symbol)
+            );
+            const enriched: FundamentalPeerInput[] = [];
+            for (const peer of peers) {
+                const metrics = await this.getKeyMetricsTtm(peer.symbol);
+                enriched.push({
+                    ...peer,
+                    per: metrics?.peRatioTTM ?? null,
+                    psr: metrics?.priceToSalesRatioTTM ?? null,
+                });
+            }
+            return enriched;
+        }
+    );
 
     // Task 4에서 캐싱으로 교체할 pass-through stub.
     getSectorPerformanceSnapshot = (
@@ -135,14 +160,17 @@ export class CachedFundamentalProvider implements FundamentalProvider {
     ): Promise<FundamentalSectorPerformanceInput[]> =>
         this.inner.getSectorPerformanceSnapshot(date);
 
+    // pass-through (no-store + DB 영속 / 빈 stub)
     getHistoricalSectorPerformance = (
         sector: string
     ): Promise<FundamentalSectorHistoricalInput[]> =>
         this.inner.getHistoricalSectorPerformance(sector);
 
+    // pass-through (no-store + DB 영속 / 빈 stub)
     getEarningsReport = (symbol: string): Promise<EarningsReport | null> =>
         this.inner.getEarningsReport(symbol);
 
+    // pass-through (no-store + DB 영속 / 빈 stub)
     getEarningsReports = (
         symbol: string,
         limit?: number

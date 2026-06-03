@@ -150,3 +150,80 @@ describe('CachedFundamentalProvider — simple cached methods', () => {
         expect(store.has('fundamental:price-target-summary:AAPL')).toBe(true);
     });
 });
+
+describe('CachedFundamentalProvider — getStockPeers enrich', () => {
+    it('caches raw peers and enriches per/psr from getKeyMetricsTtm', async () => {
+        const inner = makeInner({
+            getStockPeers: vi.fn(async () => [
+                { symbol: 'MSFT', companyName: 'Microsoft', marketCap: 2e12 },
+                { symbol: 'GOOG', companyName: 'Alphabet', marketCap: 1.5e12 },
+            ]),
+            getKeyMetricsTtm: vi.fn(async (s: string) =>
+                s === 'MSFT'
+                    ? {
+                          peRatioTTM: 30,
+                          priceToSalesRatioTTM: 11,
+                          pbRatioTTM: null,
+                          pegRatioTTM: null,
+                          enterpriseValueOverEBITDATTM: null,
+                          epsTTM: null,
+                      }
+                    : null
+            ),
+        });
+        const provider = new CachedFundamentalProvider(inner);
+
+        const peers = await provider.getStockPeers('AAPL');
+
+        expect(peers).toEqual([
+            {
+                symbol: 'MSFT',
+                companyName: 'Microsoft',
+                marketCap: 2e12,
+                per: 30,
+                psr: 11,
+            },
+            {
+                symbol: 'GOOG',
+                companyName: 'Alphabet',
+                marketCap: 1.5e12,
+                per: null,
+                psr: null,
+            },
+        ]);
+        expect(store.has('fundamental:peers:AAPL')).toBe(true);
+        // raw peer 목록 캐싱: 두 번째 호출 시 inner.getStockPeers 재호출 없음
+        await provider.getStockPeers('AAPL');
+        expect(inner.getStockPeers).toHaveBeenCalledTimes(1);
+    });
+
+    it('returns empty array for a symbol with no peers (worst case)', async () => {
+        const inner = makeInner({ getStockPeers: vi.fn(async () => []) });
+        const provider = new CachedFundamentalProvider(inner);
+        expect(await provider.getStockPeers('NONE')).toEqual([]);
+    });
+
+    it('enriches each peer sequentially via cached getKeyMetricsTtm', async () => {
+        const inner = makeInner({
+            getStockPeers: vi.fn(async () => [
+                { symbol: 'MSFT', companyName: 'Microsoft', marketCap: 2e12 },
+                { symbol: 'MSFT', companyName: 'Microsoft', marketCap: 2e12 },
+            ]),
+            getKeyMetricsTtm: vi.fn(async () => ({
+                peRatioTTM: 30,
+                priceToSalesRatioTTM: 11,
+                pbRatioTTM: null,
+                pegRatioTTM: null,
+                enterpriseValueOverEBITDATTM: null,
+                epsTTM: null,
+            })),
+        });
+        const provider = new CachedFundamentalProvider(inner);
+        const peers = await provider.getStockPeers('AAPL');
+        // 동일 peer 심볼 → getKeyMetricsTtm 결과가 Redis(fundamental:key-metrics:MSFT)로 캐싱돼
+        // 두 번째 peer는 캐시 히트(inner.getKeyMetricsTtm 1회)
+        expect(inner.getKeyMetricsTtm).toHaveBeenCalledTimes(1);
+        expect(peers).toHaveLength(2);
+        expect(peers[0].per).toBe(30);
+    });
+});
