@@ -74,7 +74,10 @@ export async function seedNotices(
     const ids = rows.map(r => r.id);
 
     return async () => {
-        await sql`DELETE FROM notices WHERE id = ANY(${ids}::uuid[])`;
-        await sql.end();
+        try {
+            await sql`DELETE FROM notices WHERE id = ANY(${ids}::uuid[])`;
+        } finally {
+            await sql.end();
+        }
     };
 }
