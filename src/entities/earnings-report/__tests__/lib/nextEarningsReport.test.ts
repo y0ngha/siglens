@@ -21,7 +21,10 @@ vi.mock('@/entities/earnings-report', () => ({
     },
 }));
 
-vi.mock('@/shared/api/fmp/fundamentalClient', () => ({
+vi.mock('@/shared/api/fmp/fundamentalClient', async importOriginal => ({
+    ...(await importOriginal<
+        typeof import('@/shared/api/fmp/fundamentalClient')
+    >()),
     FmpFundamentalClient: class {
         getEarningsReports = mockGetEarningsReports;
     },

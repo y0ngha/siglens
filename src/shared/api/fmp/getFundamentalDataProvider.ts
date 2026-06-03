@@ -3,6 +3,7 @@ import {
     FmpFundamentalClient,
     type FmpEarningsReportItem,
 } from './fundamentalClient';
+import { CachedFundamentalProvider } from './CachedFundamentalProvider';
 import { isE2E } from '@/shared/api/e2eEnv';
 
 /**
@@ -34,6 +35,6 @@ export function getFundamentalDataProvider(): FundamentalProvider {
         cached = new FakeFundamentalDataProvider();
         return cached;
     }
-    cached = new FmpFundamentalClient();
+    cached = new CachedFundamentalProvider(new FmpFundamentalClient());
     return cached;
 }
