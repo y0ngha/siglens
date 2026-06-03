@@ -23,6 +23,7 @@ import type {
 } from '@y0ngha/siglens-core';
 
 const TTL = FMP_FUNDAMENTAL_REVALIDATE_SECONDS;
+const PEER_LIMIT = 10;
 const sym = (s: string): string => s.toUpperCase();
 
 /**
@@ -136,32 +137,29 @@ export class CachedFundamentalProvider implements FundamentalProvider {
     );
 
     /**
-     * raw peer 목록을 `fundamental:peers:<SYM>`에 캐싱한 뒤, 각 peer를 캐싱된
-     * `getKeyMetricsTtm`으로 enrich해 per/psr을 채운다. 페이지·분석이 동일한
-     * enrich된 peer를 받아 core 프롬프트의 PER/PSR이 정상 채워진다(기존엔 분석
-     * 경로가 enrich되지 않은 raw peer를 받아 PER/PSR이 N/A였다).
-     *
-     * enrich는 콜드 캐시 시 peer당 동시 FMP 요청 폭증(rate-limit)을 피하려 순차
-     * 실행한다 — warm 캐시에서는 getKeyMetricsTtm(Redis) 히트로 비용이 낮다.
+     * peer 목록을 fetch→top-N cap→per/psr enrich한 결과 전체를 `fundamental:peers:<SYM>`에
+     * 캐싱한다. enrich를 캐시 fetcher 안에 두므로 warm 호출은 enriched 목록을 단일 Redis
+     * GET으로 돌려받고(peer당 round-trip 0), cold 호출만 enrich한다. per/psr은 캐싱된
+     * getKeyMetricsTtm(`fundamental:key-metrics:<peer>`)에서 가져오며, 그 메서드는 FMP
+     * 장애 시 throw하지 않고 null을 돌려주므로(catch→null) 한 peer 실패가 전체를 중단시키지
+     * 않는다. cold 캐시 시 peer당 동시 FMP 폭증(rate-limit)을 피해 순차 enrich하고, 비정상적
+     * 으로 큰 peer 목록은 PEER_LIMIT으로 제한한다.
      */
     getStockPeers = cache(
-        async (symbol: string): Promise<FundamentalPeerInput[]> => {
-            const peers = await getOrSetCache(
-                `fundamental:peers:${sym(symbol)}`,
-                TTL,
-                () => this.inner.getStockPeers(symbol)
-            );
-            const enriched: FundamentalPeerInput[] = [];
-            for (const peer of peers) {
-                const metrics = await this.getKeyMetricsTtm(peer.symbol);
-                enriched.push({
-                    ...peer,
-                    per: metrics?.peRatioTTM ?? null,
-                    psr: metrics?.priceToSalesRatioTTM ?? null,
-                });
-            }
-            return enriched;
-        }
+        (symbol: string): Promise<FundamentalPeerInput[]> =>
+            getOrSetCache(`fundamental:peers:${sym(symbol)}`, TTL, async () => {
+                const raw = await this.inner.getStockPeers(symbol);
+                const enriched: FundamentalPeerInput[] = [];
+                for (const peer of raw.slice(0, PEER_LIMIT)) {
+                    const metrics = await this.getKeyMetricsTtm(peer.symbol);
+                    enriched.push({
+                        ...peer,
+                        per: metrics?.peRatioTTM ?? null,
+                        psr: metrics?.priceToSalesRatioTTM ?? null,
+                    });
+                }
+                return enriched;
+            })
     );
 
     /**

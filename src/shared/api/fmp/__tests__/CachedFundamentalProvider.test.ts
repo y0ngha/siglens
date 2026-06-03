@@ -181,7 +181,7 @@ describe('CachedFundamentalProvider — simple cached methods', () => {
 });
 
 describe('CachedFundamentalProvider — getStockPeers enrich', () => {
-    it('caches raw peers and enriches per/psr from getKeyMetricsTtm', async () => {
+    it('caches the ENRICHED list as a whole; warm call does zero round-trips', async () => {
         const inner = makeInner({
             getStockPeers: vi.fn(async () => [
                 { symbol: 'MSFT', companyName: 'Microsoft', marketCap: 2e12 },
@@ -204,6 +204,7 @@ describe('CachedFundamentalProvider — getStockPeers enrich', () => {
 
         const peers = await provider.getStockPeers('AAPL');
 
+        // MSFT has metrics → per/psr set; GOOG has null metrics → per/psr null
         expect(peers).toEqual([
             {
                 symbol: 'MSFT',
@@ -220,10 +221,31 @@ describe('CachedFundamentalProvider — getStockPeers enrich', () => {
                 psr: null,
             },
         ]);
-        expect(store.has('fundamental:peers:AAPL')).toBe(true);
-        // raw peer 목록 캐싱: 두 번째 호출 시 inner.getStockPeers 재호출 없음
-        await provider.getStockPeers('AAPL');
-        expect(inner.getStockPeers).toHaveBeenCalledTimes(1);
+
+        // the ENRICHED list (incl. per/psr) is what's cached under the peers key,
+        // not the raw peer list — the cached envelope carries per/psr.
+        const cached = store.get('fundamental:peers:AAPL') as {
+            data: typeof peers;
+        };
+        expect(cached.data).toEqual(peers);
+
+        const innerStockPeers = inner.getStockPeers as ReturnType<typeof vi.fn>;
+        const innerKeyMetrics = inner.getKeyMetricsTtm as ReturnType<
+            typeof vi.fn
+        >;
+        const stockPeersCallsAfterCold = innerStockPeers.mock.calls.length;
+        const keyMetricsCallsAfterCold = innerKeyMetrics.mock.calls.length;
+
+        // warm call: single Redis GET on the peers key, zero per-peer round-trips
+        const second = await provider.getStockPeers('AAPL');
+        expect(second).toEqual(peers);
+        expect(innerStockPeers.mock.calls.length).toBe(
+            stockPeersCallsAfterCold
+        );
+        expect(innerKeyMetrics.mock.calls.length).toBe(
+            keyMetricsCallsAfterCold
+        );
+        expect(innerStockPeers).toHaveBeenCalledTimes(1);
     });
 
     it('returns empty array for a symbol with no peers (worst case)', async () => {
@@ -254,6 +276,83 @@ describe('CachedFundamentalProvider — getStockPeers enrich', () => {
         expect(inner.getKeyMetricsTtm).toHaveBeenCalledTimes(1);
         expect(peers).toHaveLength(2);
         expect(peers[0].per).toBe(30);
+    });
+
+    it('caps the peer list to PEER_LIMIT (10) before enriching', async () => {
+        const rawPeers = Array.from({ length: 12 }, (_, i) => ({
+            symbol: `P${i}`,
+            companyName: `Company ${i}`,
+            marketCap: 1e9,
+        }));
+        const inner = makeInner({
+            getStockPeers: vi.fn(async () => rawPeers),
+            getKeyMetricsTtm: vi.fn(async () => ({
+                peRatioTTM: 15,
+                priceToSalesRatioTTM: 4,
+                pbRatioTTM: null,
+                pegRatioTTM: null,
+                enterpriseValueOverEBITDATTM: null,
+                epsTTM: null,
+            })),
+        });
+        const provider = new CachedFundamentalProvider(inner);
+
+        const peers = await provider.getStockPeers('AAPL');
+
+        // 12 raw peers → capped to 10
+        expect(peers).toHaveLength(10);
+        expect(peers.map(p => p.symbol)).toEqual(
+            rawPeers.slice(0, 10).map(p => p.symbol)
+        );
+        // each enriched peer carries per/psr from getKeyMetricsTtm
+        expect(peers.every(p => p.per === 15 && p.psr === 4)).toBe(true);
+        // enrich loop runs at most PEER_LIMIT (10) times, distinct symbols → 10 inner calls
+        expect(
+            (inner.getKeyMetricsTtm as ReturnType<typeof vi.fn>).mock.calls
+                .length
+        ).toBeLessThanOrEqual(10);
+        expect(inner.getKeyMetricsTtm).toHaveBeenCalledTimes(10);
+    });
+
+    it('one peer with null metrics does NOT break enrichment of the rest', async () => {
+        const inner = makeInner({
+            getStockPeers: vi.fn(async () => [
+                { symbol: 'MSFT', companyName: 'Microsoft', marketCap: 2e12 },
+                { symbol: 'BAD', companyName: 'Broken', marketCap: 1e9 },
+                { symbol: 'GOOG', companyName: 'Alphabet', marketCap: 1.5e12 },
+            ]),
+            // BAD returns null (e.g. getKeyMetricsTtm caught an FMP failure → null)
+            getKeyMetricsTtm: vi.fn(async (s: string) =>
+                s === 'BAD'
+                    ? null
+                    : {
+                          peRatioTTM: 20,
+                          priceToSalesRatioTTM: 5,
+                          pbRatioTTM: null,
+                          pegRatioTTM: null,
+                          enterpriseValueOverEBITDATTM: null,
+                          epsTTM: null,
+                      }
+            ),
+        });
+        const provider = new CachedFundamentalProvider(inner);
+
+        const peers = await provider.getStockPeers('AAPL');
+
+        expect(peers).toHaveLength(3);
+        // the null-metrics peer just gets per/psr null
+        expect(peers[1]).toEqual({
+            symbol: 'BAD',
+            companyName: 'Broken',
+            marketCap: 1e9,
+            per: null,
+            psr: null,
+        });
+        // the rest still enrich normally
+        expect(peers[0].per).toBe(20);
+        expect(peers[0].psr).toBe(5);
+        expect(peers[2].per).toBe(20);
+        expect(peers[2].psr).toBe(5);
     });
 });
 
