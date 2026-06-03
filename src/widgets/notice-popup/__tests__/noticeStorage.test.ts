@@ -77,6 +77,10 @@ describe('noticeStorage', () => {
                     throw new Error('QuotaExceededError');
                 });
             expect(() => dismissNotice('z')).not.toThrow();
+            expect(storageSpy).toHaveBeenCalledWith(
+                DISMISSED_NOTICES_STORAGE_KEY,
+                expect.any(String)
+            );
         });
     });
 });

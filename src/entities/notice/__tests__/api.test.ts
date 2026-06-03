@@ -48,7 +48,7 @@ describe('DrizzleNoticeRepository.findActive', () => {
         expect(await repo.findActive()).toEqual([]);
     });
 
-    it('priority DESC, created_at DESC 순으로 정렬을 요청한다', async () => {
+    it('orderBy가 2개 인수(priority, createdAt)로 호출된다 — 실제 정렬 방향은 E2E가 검증', async () => {
         const { db, orderBySpy } = makeMockDb([baseRow]);
         const repo = new DrizzleNoticeRepository(db);
         await repo.findActive();

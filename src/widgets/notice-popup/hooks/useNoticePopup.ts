@@ -26,16 +26,6 @@ export function useNoticePopup(pathname: string): UseNoticePopupResult {
     const [allNotices, setAllNotices] = useState<NoticeRecord[]>([]);
     const [queue, setQueue] = useState<NoticeRecord[]>([]);
 
-    const advance = useCallback(() => setQueue(prev => prev.slice(1)), []);
-
-    // B1: setState 업데이터 내부에서 사이드이펙트(dismissNotice) 호출 금지.
-    // 업데이터 밖에서 현재 공지를 dismiss한 뒤 큐를 진행한다.
-    const dontShowAgain = useCallback(() => {
-        const cur = queue[0];
-        if (cur) dismissNotice(cur.id);
-        setQueue(prev => prev.slice(1));
-    }, [queue]);
-
     const rebuildQueue = useEffectEvent(() => {
         const dismissed = loadDismissedNoticeIds();
         startTransition(() => {
@@ -48,6 +38,16 @@ export function useNoticePopup(pathname: string): UseNoticePopupResult {
             );
         });
     });
+
+    const advance = useCallback(() => setQueue(prev => prev.slice(1)), []);
+
+    // B1: setState 업데이터 내부에서 사이드이펙트(dismissNotice) 호출 금지.
+    // 업데이터 밖에서 현재 공지를 dismiss한 뒤 큐를 진행한다.
+    const dontShowAgain = useCallback(() => {
+        const cur = queue[0];
+        if (cur) dismissNotice(cur.id);
+        setQueue(prev => prev.slice(1));
+    }, [queue]);
 
     useEffect(() => {
         let cancelled = false;
