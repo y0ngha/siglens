@@ -17,6 +17,7 @@ vi.mock('@/shared/cache/redisClient', () => ({
 
 import { CachedFundamentalProvider } from '@/shared/api/fmp/CachedFundamentalProvider';
 import type { FundamentalProvider } from '@/shared/api/fmp/getFundamentalDataProvider';
+import type { FundamentalPeerInput } from '@y0ngha/siglens-core';
 
 function makeInner(
     overrides: Partial<FundamentalProvider> = {}
@@ -301,11 +302,15 @@ describe('CachedFundamentalProvider — getStockPeers enrich', () => {
 
         // 12 raw peers → capped to 10
         expect(peers).toHaveLength(10);
-        expect(peers.map(p => p.symbol)).toEqual(
+        expect(peers.map((p: FundamentalPeerInput) => p.symbol)).toEqual(
             rawPeers.slice(0, 10).map(p => p.symbol)
         );
         // each enriched peer carries per/psr from getKeyMetricsTtm
-        expect(peers.every(p => p.per === 15 && p.psr === 4)).toBe(true);
+        expect(
+            peers.every(
+                (p: FundamentalPeerInput) => p.per === 15 && p.psr === 4
+            )
+        ).toBe(true);
         // enrich loop runs at most PEER_LIMIT (10) times, distinct symbols → 10 inner calls
         expect(
             (inner.getKeyMetricsTtm as ReturnType<typeof vi.fn>).mock.calls
