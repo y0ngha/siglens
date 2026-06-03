@@ -118,6 +118,35 @@ describe('CachedFundamentalProvider — simple cached methods', () => {
         expect(boom).toHaveBeenCalledTimes(2);
     });
 
+    it('getKeyMetricsTtm: inner throw → null, NOT cached (valuation poison fix)', async () => {
+        const boom = vi.fn(async () => {
+            throw new Error('FMP 503');
+        });
+        const inner = makeInner({ getKeyMetricsTtm: boom });
+        const provider = new CachedFundamentalProvider(inner);
+
+        // decorator catches the throw and returns graceful null
+        expect(await provider.getKeyMetricsTtm('ERR')).toBeNull();
+        // the failure is NOT cached
+        expect(store.has('fundamental:key-metrics:ERR')).toBe(false);
+        // 2nd call re-invokes inner (no poisoned null served from cache)
+        expect(await provider.getKeyMetricsTtm('ERR')).toBeNull();
+        expect(boom).toHaveBeenCalledTimes(2);
+    });
+
+    it('getRatiosTtm: inner throw → null, NOT cached (valuation poison fix)', async () => {
+        const boom = vi.fn(async () => {
+            throw new Error('FMP 503');
+        });
+        const inner = makeInner({ getRatiosTtm: boom });
+        const provider = new CachedFundamentalProvider(inner);
+
+        expect(await provider.getRatiosTtm('ERR')).toBeNull();
+        expect(store.has('fundamental:ratios:ERR')).toBe(false);
+        expect(await provider.getRatiosTtm('ERR')).toBeNull();
+        expect(boom).toHaveBeenCalledTimes(2);
+    });
+
     it('falls back to inner when Redis is unavailable (worst case)', async () => {
         redisEnabled = false;
         const inner = makeInner();

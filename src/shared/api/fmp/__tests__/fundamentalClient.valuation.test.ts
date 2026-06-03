@@ -55,14 +55,26 @@ describe('FmpFundamentalClient valuation fetch sharing', () => {
         const client = new FmpFundamentalClient();
         await client.getKeyMetricsTtm('AAPL'); // completes, clears in-flight
         await client.getRatiosTtm('AAPL'); // fresh fetch
-        expect(fmpGet.mock.calls.filter(c => c[0] === 'key-metrics-ttm')).toHaveLength(2);
+        expect(
+            fmpGet.mock.calls.filter(c => c[0] === 'key-metrics-ttm')
+        ).toHaveLength(2);
     });
 
-    it('returns null when both endpoints are empty (worst case)', async () => {
+    it('returns null when both endpoints are empty (no throw on empty 200)', async () => {
         fmpGet.mockResolvedValue([]);
         const client = new FmpFundamentalClient();
         expect(await client.getKeyMetricsTtm('ZZZZ')).toBeNull();
         expect(await client.getRatiosTtm('ZZZZ')).toBeNull();
+    });
+
+    it('propagates (throws) FMP errors instead of swallowing to null (poison fix)', async () => {
+        fmpGet.mockRejectedValue(new Error('FMP 503'));
+        const client = new FmpFundamentalClient();
+        await expect(client.getKeyMetricsTtm('AAPL')).rejects.toThrow(
+            'FMP 503'
+        );
+        // 새 in-flight(finally로 제거됨)로 다시 fetch → 동일하게 throw
+        await expect(client.getRatiosTtm('AAPL')).rejects.toThrow('FMP 503');
     });
 
     it('falls back to key-metrics fields when ratios endpoint is empty', async () => {

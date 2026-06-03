@@ -47,18 +47,28 @@ export class CachedFundamentalProvider implements FundamentalProvider {
             )
     );
 
+    /**
+     * inner(`getValuationRaw`)는 FMP 장애 시 throw한다 — 그 throw는 getOrSetCache의
+     * `set` 단계 전에 전파되므로 장애 결과가 캐싱되지 않는다(poison 방지). 바깥의
+     * `.catch(() => null)`이 throw를 graceful null로 변환해, ErrorBoundary 없이
+     * Suspense로만 감싼 `ValuationSection`(fundamental/page.tsx)과 분석 경로가
+     * 종전처럼 N/A를 렌더하게 한다. 에러는 fmpGet 경로의 logFmpPaymentRequiredError로
+     * 이미 로깅되므로 여기서 중복 로깅하지 않는다. 빈 200(데이터 없는 티커)은 정상
+     * null로 캐싱돼 롱테일 트래픽의 재호출을 막는다.
+     */
     getKeyMetricsTtm = cache(
         (symbol: string): Promise<FundamentalValuationMetrics | null> =>
             getOrSetCache(`fundamental:key-metrics:${sym(symbol)}`, TTL, () =>
                 this.inner.getKeyMetricsTtm(symbol)
-            )
+            ).catch(() => null)
     );
 
+    /** valuation 장애를 캐싱 없이 graceful null로 변환 — 사유는 getKeyMetricsTtm JSDoc 참고. */
     getRatiosTtm = cache(
         (symbol: string): Promise<FundamentalRatiosInput | null> =>
             getOrSetCache(`fundamental:ratios:${sym(symbol)}`, TTL, () =>
                 this.inner.getRatiosTtm(symbol)
-            )
+            ).catch(() => null)
     );
 
     getCashFlowStatement = cache(

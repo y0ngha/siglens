@@ -94,17 +94,6 @@ function toEarningsDate(value: RawFmpEarningsReport): string | null {
           : null;
 }
 
-async function getOptionalArray<T>(
-    path: string,
-    query: Record<string, string>
-): Promise<T[]> {
-    try {
-        return await fmpGet<T[]>(path, query);
-    } catch {
-        return [];
-    }
-}
-
 /** FMP adapter implementing `FundamentalDataProvider`. Uses `fmpGet` for all HTTP calls. */
 export class FmpFundamentalClient implements FundamentalDataProvider {
     /** Fetch company profile; returns `null` when FMP returns an empty array. */
@@ -147,6 +136,14 @@ export class FmpFundamentalClient implements FundamentalDataProvider {
      * RSC 렌더 스코프 전용이라 Server Action(분석 경로)에서는 dedup되지 않으므로
      * 인스턴스 in-flight 맵을 쓴다. Next Data Cache(fmpGet revalidate)는 cross-request
      * 2차 방어선이지만 region/배포마다 초기화되므로 신선도 보장에 의존하지 않는다.
+     *
+     * FMP 장애(429/5xx/timeout)는 `fmpGet`을 통해 그대로 throw된다 — 다른 9개
+     * 메서드와 동일한 계약. 이전엔 `getOptionalArray`로 에러를 `[]`로 삼켜 null을
+     * 반환했는데, 그 null이 Redis 데코레이터(CachedFundamentalProvider)에 1h TTL로
+     * 캐싱돼 일시적 blip이 "valuation 데이터 없음"으로 fleet-wide 고정되는 cache
+     * poisoning 버그가 있었다. 이제 throw가 전파되므로 getOrSetCache가 장애 결과를
+     * 캐싱하지 못한다(빈 200 → `[]` → null 캐싱은 정상 동작으로 유지). 데코레이터가
+     * 이 throw를 catch해 graceful null로 변환하는 책임을 진다.
      */
     private getValuationRaw(symbol: string): Promise<{
         metrics: RawFmpKeyMetricsTtm | null;
@@ -157,10 +154,8 @@ export class FmpFundamentalClient implements FundamentalDataProvider {
 
         const pending = (async () => {
             const [metricsArr, ratiosArr] = await Promise.all([
-                getOptionalArray<RawFmpKeyMetricsTtm>('key-metrics-ttm', {
-                    symbol,
-                }),
-                getOptionalArray<RawFmpRatiosTtm>('ratios-ttm', { symbol }),
+                fmpGet<RawFmpKeyMetricsTtm[]>('key-metrics-ttm', { symbol }),
+                fmpGet<RawFmpRatiosTtm[]>('ratios-ttm', { symbol }),
             ]);
             return {
                 metrics: metricsArr[0] ?? null,
@@ -169,7 +164,13 @@ export class FmpFundamentalClient implements FundamentalDataProvider {
         })();
 
         this.valuationInflight.set(symbol, pending);
-        void pending.finally(() => this.valuationInflight.delete(symbol));
+        // 정리(in-flight 제거)는 성공·실패 모두에서 수행한다. `pending`이 reject되면
+        // 이 derived 체인도 reject되는데, 호출부는 반환된 `pending`을 직접 await/catch하지
+        // 이 정리 체인을 관찰하지 않으므로 .catch(() => {})로 별도 흡수해 unhandled
+        // rejection을 막는다(실제 에러는 호출부가 그대로 받는다).
+        void pending
+            .finally(() => this.valuationInflight.delete(symbol))
+            .catch(() => {});
         return pending;
     }
 
