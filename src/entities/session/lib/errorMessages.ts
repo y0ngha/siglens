@@ -6,7 +6,7 @@ export const AUTH_SERVICE_UNAVAILABLE_MESSAGE =
 export const CONSENT_REQUIRED_MESSAGE =
     '개인정보처리방침과 이용약관에 동의해주세요.';
 
-/** OAuth consent-flow redirect targets — must match keys in login/page.tsx OAUTH_ERROR_MESSAGES. */
+/** OAuth consent-flow redirect targets — must match keys in login/LoginContent.tsx OAUTH_ERROR_MESSAGES. */
 export const OAUTH_ERROR_REDIRECT = {
     consentInvalid: '/login?error=oauth_consent_invalid',
     consentExpired: '/login?error=oauth_consent_expired',
