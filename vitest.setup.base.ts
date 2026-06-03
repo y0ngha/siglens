@@ -1,5 +1,18 @@
-import { vi } from 'vitest';
+import { afterEach, vi } from 'vitest';
 import { TextDecoder, TextEncoder } from 'util';
+
+// E2E_TEST 누수 가드. `vmThreads` 풀은 워커 한 개 안에서 여러 테스트 파일이
+// process.env를 공유하므로, 한 파일이 raw로 설정한 `process.env.E2E_TEST='1'`이
+// 같은 워커의 뒤 파일로 새면 isE2E()가 켜져 factory들의 `require('./Fake*')`
+// dead-branch가 활성화돼 "Cannot find module" flake가 난다. 워커 시작 시점의 값으로
+// 매 테스트 후 복원해 어떤 파일이 어떻게 바꿔도 누수를 원천 차단한다(`vi.stubEnv`
+// 누수는 config의 `unstubEnvs:true`가 담당; 이건 raw 할당까지 덮는 belt-and-suspenders).
+// 전역 hook은 LIFO라 각 파일의 자체 afterEach 뒤에 마지막으로 실행돼 최종 상태를 정리한다.
+const ORIGINAL_E2E_TEST = process.env.E2E_TEST;
+afterEach(() => {
+    if (ORIGINAL_E2E_TEST === undefined) delete process.env.E2E_TEST;
+    else process.env.E2E_TEST = ORIGINAL_E2E_TEST;
+});
 
 if (typeof globalThis.TextDecoder === 'undefined') {
     (globalThis as unknown as { TextDecoder: typeof TextDecoder }).TextDecoder =
