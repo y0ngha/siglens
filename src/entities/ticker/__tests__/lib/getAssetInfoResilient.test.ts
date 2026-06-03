@@ -13,6 +13,7 @@ const mockGet = vi.mocked(getAssetInfoStatic);
 describe('getAssetInfoResilient', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        vi.unstubAllEnvs();
     });
 
     it('passes a successful AssetInfo through (degraded: false)', async () => {
@@ -66,5 +67,42 @@ describe('getAssetInfoResilient', () => {
             assetInfo: { symbol: 'IONQ', name: 'IONQ' },
             degraded: true,
         });
+    });
+
+    it('logs the degrade in non-E2E mode (production observability is preserved)', async () => {
+        const errorSpy = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => undefined);
+        mockGet.mockRejectedValue(
+            new Error('[fmpTickerApi] search-symbol fetch failed')
+        );
+
+        await getAssetInfoResilient('IONQ');
+
+        expect(errorSpy).toHaveBeenCalledWith(
+            '[getAssetInfoResilient] infra failure, ticker fallback:',
+            expect.any(Error)
+        );
+        errorSpy.mockRestore();
+    });
+
+    it('in E2E mode (no FMP key) the same infra failure degrades SILENTLY — no console.error noise', async () => {
+        vi.stubEnv('E2E_TEST', '1');
+        const errorSpy = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => undefined);
+        mockGet.mockRejectedValue(
+            new Error('[fmpTickerApi] search-symbol fetch failed')
+        );
+
+        const result = await getAssetInfoResilient('IONQ');
+
+        expect(result).toEqual({
+            assetInfo: { symbol: 'IONQ', name: 'IONQ' },
+            degraded: true,
+        });
+        expect(errorSpy).not.toHaveBeenCalled();
+
+        errorSpy.mockRestore();
     });
 });

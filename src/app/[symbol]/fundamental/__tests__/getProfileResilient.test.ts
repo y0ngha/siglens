@@ -17,6 +17,7 @@ const mockCache = vi.mocked(staticSymbolCache);
 describe('getProfileResilient', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        vi.unstubAllEnvs();
     });
 
     it('passes a resolved profile through (degraded: false)', async () => {
@@ -64,6 +65,24 @@ describe('getProfileResilient', () => {
             '[getProfileResilient] FMP profile infra failure, degrading:',
             expect.any(Error)
         );
+        errorSpy.mockRestore();
+    });
+
+    it('in E2E mode (no FMP key) the same FMP infra throw degrades SILENTLY — no console.error noise', async () => {
+        vi.stubEnv('E2E_TEST', '1');
+        const errorSpy = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => undefined);
+        mockCache.mockRejectedValue(new Error('[fmpGet] profile HTTP 429'));
+
+        // 반환값(degrade)은 비-E2E와 동일하되, E2E에선 로그만 침묵한다 — 비시드
+        // ticker마다 FMP 키 부재로 정상 발생하는 degrade가 테스트 출력을 뒤덮지 않게.
+        expect(await getProfileResilient('AAPL')).toEqual({
+            profile: null,
+            degraded: true,
+        });
+        expect(errorSpy).not.toHaveBeenCalled();
+
         errorSpy.mockRestore();
     });
 });
