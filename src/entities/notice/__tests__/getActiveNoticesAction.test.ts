@@ -54,7 +54,10 @@ describe('getActiveNoticesAction', () => {
         mockedTryGet.mockReturnValue({ db: throwingDb, sql: {} as never });
         const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
         expect(await getActiveNoticesAction()).toEqual([]);
-        expect(errSpy).toHaveBeenCalled();
+        expect(errSpy).toHaveBeenCalledWith(
+            expect.stringContaining('[getActiveNoticesAction]'),
+            expect.any(Error)
+        );
         errSpy.mockRestore();
     });
 });

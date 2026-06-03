@@ -76,11 +76,19 @@ describe('noticeStorage', () => {
                 .mockImplementation(() => {
                     throw new Error('QuotaExceededError');
                 });
+            const warnSpy = vi
+                .spyOn(console, 'warn')
+                .mockImplementation(() => {});
             expect(() => dismissNotice('z')).not.toThrow();
             expect(storageSpy).toHaveBeenCalledWith(
                 DISMISSED_NOTICES_STORAGE_KEY,
                 expect.any(String)
             );
+            expect(warnSpy).toHaveBeenCalledWith(
+                '[dismissNotice] storage write failed:',
+                expect.any(Error)
+            );
+            warnSpy.mockRestore();
         });
     });
 });

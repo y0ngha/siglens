@@ -1,13 +1,13 @@
 // @vitest-environment jsdom
+vi.mock('@/entities/notice/actions', () => ({
+    getActiveNoticesAction: vi.fn(),
+}));
+
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { useNoticePopup } from '@/widgets/notice-popup/hooks/useNoticePopup';
 import { getActiveNoticesAction } from '@/entities/notice/actions';
 import type { NoticeRecord } from '@/entities/notice';
 import { DISMISSED_NOTICES_STORAGE_KEY } from '../utils/noticeStorage';
-
-vi.mock('@/entities/notice/actions', () => ({
-    getActiveNoticesAction: vi.fn(),
-}));
 
 const mockedAction = vi.mocked(getActiveNoticesAction);
 
@@ -86,5 +86,14 @@ describe('useNoticePopup', () => {
         const { result } = renderHook(() => useNoticePopup('/'));
         await waitFor(() => expect(mockedAction).toHaveBeenCalledTimes(1));
         expect(result.current.queue).toHaveLength(0);
+    });
+
+    it('공지 fetch 실패 시 빈 큐를 유지한다', async () => {
+        mockedAction.mockRejectedValue(new Error('network error'));
+        const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        const { result } = renderHook(() => useNoticePopup('/'));
+        await waitFor(() => expect(mockedAction).toHaveBeenCalledTimes(1));
+        expect(result.current.queue).toHaveLength(0);
+        warnSpy.mockRestore();
     });
 });

@@ -55,8 +55,9 @@ export function useNoticePopup(pathname: string): UseNoticePopupResult {
             .then(notices => {
                 if (!cancelled) setAllNotices(notices);
             })
-            .catch(() => {
-                // 공지 fetch 실패는 무시(부가 기능)
+            .catch(err => {
+                // 공지 fetch 실패는 무시(부가 기능)하되 디버깅 가능하도록 warn
+                console.warn('[useNoticePopup] fetch notices failed:', err);
             });
         return () => {
             cancelled = true;
