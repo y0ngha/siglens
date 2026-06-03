@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import type { MarketIndexData, MarketSectorData } from '@y0ngha/siglens-core';
 import type { MarketSummaryActionResult } from '@/shared/lib/types';
 import { getMarketSummaryAction } from '@/entities/market-summary/actions';
+import { hasMissingQuotes as detectMissingQuotes } from '@/entities/market-summary';
 import {
     MARKET_SUMMARY_STALE_TIME_MS,
     QUERY_KEYS,
@@ -16,6 +17,11 @@ interface UseMarketSummaryReturn {
     isPending: boolean;
     sectorMap: Map<string, MarketSectorData>;
     indices: readonly MarketIndexData[];
+    /**
+     * summary가 있고 0(=FMP fetch 실패)인 종목이 하나라도 있으면 true. 캐시 가드
+     * (`allQuotesPresent`)와 동일 기준 — 부분/전면 실패를 안내로 알리는 데 쓴다.
+     */
+    hasMissingQuotes: boolean;
 }
 
 function hasSummary(
@@ -48,5 +54,10 @@ export function useMarketSummary(): UseMarketSummaryReturn {
         [resolved?.summary.indices]
     );
 
-    return { data, isPending, sectorMap, indices };
+    const hasMissingQuotes = useMemo(
+        () => (resolved ? detectMissingQuotes(resolved.summary) : false),
+        [resolved]
+    );
+
+    return { data, isPending, sectorMap, indices, hasMissingQuotes };
 }

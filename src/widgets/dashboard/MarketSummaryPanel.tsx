@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense } from 'react';
+import { Suspense, useState } from 'react';
 import { cn } from '@/shared/lib/cn';
 import { ErrorBoundary } from 'react-error-boundary';
 import { IndexCard } from './IndexCard';
@@ -9,6 +9,7 @@ import {
     BriefingErrorCard,
     BriefingLoadingCard,
 } from './BriefingCard';
+import { MarketDataErrorNotice } from './MarketDataErrorNotice';
 import { useBriefing } from './hooks/useBriefing';
 import { useMarketSummary } from './hooks/useMarketSummary';
 import { MarketSummaryPanelSkeleton } from './MarketSummaryPanelSkeleton';
@@ -59,21 +60,48 @@ function BriefingRegion({ input }: BriefingRegionProps) {
 }
 
 export function MarketSummaryPanel() {
-    const { data, isPending, sectorMap, indices } = useMarketSummary();
+    const { data, isPending, sectorMap, indices, hasMissingQuotes } =
+        useMarketSummary();
+    const [noticeDismissed, setNoticeDismissed] = useState(false);
 
     if (isPending) return <MarketSummaryPanelSkeleton />;
-    if (data && 'ok' in data) return null;
 
+    const isTotalFailure = data !== undefined && 'ok' in data;
+    const showNotice = !noticeDismissed && (isTotalFailure || hasMissingQuotes);
+    const dismissNotice = () => setNoticeDismissed(true);
+
+    // 완전 실패(server_error)는 summary 자체가 없다 — 안내만 띄우고, 닫으면 기존처럼
+    // 아무것도 렌더하지 않는다(빈 화면).
+    if (isTotalFailure) {
+        if (!showNotice) return null;
+        return (
+            <section
+                aria-label="오늘의 미국 시장"
+                className="px-6 py-10 lg:px-[15vw]"
+            >
+                <MarketDataErrorNotice onClose={dismissNotice} />
+            </section>
+        );
+    }
+
+    // aria-live="polite"는 카드/브리핑 갱신 announce용으로 데이터 div에만 둔다.
+    // role="alert"(assertive)인 안내를 그 안에 중첩하면 라이브리전이 경쟁하므로,
+    // 안내는 polite 영역 밖(제목 아래·그리드 위)에 렌더한다.
     return (
         <section
             aria-label="오늘의 미국 시장"
-            aria-live="polite"
             className="px-6 py-10 lg:px-[15vw]"
         >
             <h2 className="text-secondary-200 mb-6 text-sm font-semibold tracking-[0.15em] uppercase">
                 오늘의 미국 시장
             </h2>
-            <div className="flex flex-col gap-6">
+            {showNotice && (
+                <MarketDataErrorNotice
+                    onClose={dismissNotice}
+                    className="mb-6"
+                />
+            )}
+            <div className="flex flex-col gap-6" aria-live="polite">
                 {/* 주요 지수 */}
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                     {indices.map(idx => (
