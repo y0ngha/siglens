@@ -2,11 +2,13 @@ import { DrizzleNoticeRepository } from '@/entities/notice/api';
 import type { SiglensDatabase } from '@/shared/db/types';
 import type { NoticeRecord } from '@/entities/notice/model/types';
 
-function makeMockDb(rows: NoticeRecord[]): {
+interface MockDbResult {
     db: SiglensDatabase;
     whereSpy: ReturnType<typeof vi.fn>;
     orderBySpy: ReturnType<typeof vi.fn>;
-} {
+}
+
+function makeMockDb(rows: NoticeRecord[]): MockDbResult {
     const orderBySpy = vi.fn().mockResolvedValue(rows);
     const whereSpy = vi.fn().mockReturnValue({ orderBy: orderBySpy });
     const builder = {

@@ -6,8 +6,15 @@ import {
 } from '@/entities/notice/lib/noticeStorage';
 
 describe('noticeStorage', () => {
+    let storageSpy: ReturnType<typeof vi.spyOn> | undefined;
+
     beforeEach(() => {
         localStorage.clear();
+    });
+
+    afterEach(() => {
+        storageSpy?.mockRestore();
+        storageSpy = undefined;
     });
 
     describe('loadDismissedNoticeIds', () => {
@@ -64,13 +71,12 @@ describe('noticeStorage', () => {
         });
 
         it('setItem이 throw해도(quota 초과 등) 예외를 전파하지 않는다', () => {
-            const spy = vi
+            storageSpy = vi
                 .spyOn(Storage.prototype, 'setItem')
                 .mockImplementation(() => {
                     throw new Error('QuotaExceededError');
                 });
             expect(() => dismissNotice('z')).not.toThrow();
-            spy.mockRestore();
         });
     });
 });

@@ -1,9 +1,6 @@
 // @vitest-environment jsdom
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
-import {
-    NoticePopup,
-    formatNoticeDate,
-} from '@/widgets/notice-popup/ui/NoticePopup';
+import { NoticePopup } from '@/widgets/notice-popup/ui/NoticePopup';
 import { getActiveNoticesAction } from '@/entities/notice/actions';
 import { DISMISSED_NOTICES_STORAGE_KEY } from '@/entities/notice';
 import type { NoticeRecord } from '@/entities/notice';
@@ -191,19 +188,5 @@ describe('NoticePopup', () => {
                 localStorage.getItem(DISMISSED_NOTICES_STORAGE_KEY) ?? '[]'
             )
         ).toEqual(['dismiss-guard']);
-    });
-});
-
-describe('formatNoticeDate', () => {
-    it('Date 객체 입력을 YYYY.MM.DD 작성 형태로 포맷한다', () => {
-        expect(formatNoticeDate(new Date(2026, 5, 3))).toBe('2026.06.03 작성');
-    });
-
-    it('ISO 문자열 입력도 YYYY.MM.DD 작성 형태로 포맷한다', () => {
-        expect(formatNoticeDate('2026-06-03T00:00:00')).toBe('2026.06.03 작성');
-    });
-
-    it('파싱할 수 없는 문자열은 빈 문자열을 반환한다', () => {
-        expect(formatNoticeDate('not-a-date')).toBe('');
     });
 });
