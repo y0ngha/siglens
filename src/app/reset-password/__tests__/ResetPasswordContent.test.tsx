@@ -46,6 +46,15 @@ describe('ResetPasswordContent', () => {
         );
     });
 
+    it('shows the missing-params alert when email is absent', () => {
+        searchParamsRef.value = new URLSearchParams({ token: 'tok123' });
+        render(<ResetPasswordContent />);
+        expect(resetFormSpy).not.toHaveBeenCalled();
+        expect(screen.getByRole('alert')).toHaveTextContent(
+            '재설정 링크가 올바르지 않습니다. 비밀번호 찾기를 다시 시도해주세요.'
+        );
+    });
+
     it('shows the missing-params alert when both absent', () => {
         render(<ResetPasswordContent />);
         expect(screen.getByRole('alert')).toBeInTheDocument();
