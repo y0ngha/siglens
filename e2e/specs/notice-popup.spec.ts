@@ -25,9 +25,11 @@ import { seedNotices } from '../support/noticeSeeder';
 const GLOBAL_NOTICE_ID = '11111111-e2e1-4000-8000-000000000001';
 const PATH_NOTICE_ID = '22222222-e2e2-4000-8000-000000000002';
 
-// NOTE: src/entities/notice/lib/noticeStorage.ts의 DISMISSED_NOTICES_STORAGE_KEY와
-// 동일해야 한다. Playwright 스펙은 src의 server-only 체인을 import할 수 없어 리터럴을
-// 복제한다. noticeStorage.ts에서 키를 바꾸면 이 값도 함께 갱신할 것.
+/**
+ * Matches DISMISSED_NOTICES_STORAGE_KEY in src/entities/notice/lib/noticeStorage.ts.
+ * Playwright 스펙은 src의 server-only 체인을 import할 수 없어 리터럴을 복제한다.
+ * noticeStorage.ts에서 키를 바꾸면 이 값도 함께 갱신할 것 (update both if changed).
+ */
 const DISMISSED_KEY = 'siglens_dismissed_notices';
 
 test.describe('공지 팝업', () => {

@@ -67,6 +67,9 @@ export function useNoticePopup(pathname: string): UseNoticePopupResult {
         };
     }, []);
 
+    // rebuildQueue는 useEffectEvent 결과(stable 참조)이므로 deps 배열에서 의도적으로
+    // 제외한다. react-hooks/exhaustive-deps가 이 패턴을 인식해 경고하지 않는다(lint 통과).
+    // MISTAKES.md Predictability §3.
     useEffect(() => {
         rebuildQueue();
     }, [pathname, allNotices]);

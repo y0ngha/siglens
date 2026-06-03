@@ -61,6 +61,10 @@ describe('DrizzleNoticeRepository.findActive', () => {
         const repo = new DrizzleNoticeRepository(db);
         await repo.findActive();
         expect(whereSpy).toHaveBeenCalledTimes(1);
+        // Drizzle 조건 객체(and(...))는 PgTable 순환 참조를 포함해 JSON 직렬화/AST
+        // 비교가 불가능하다. 여기서는 where 절이 truthy 조건과 함께 호출됐는지만 확인하고,
+        // 실제 필터 의미론(is_active + 시간창)은 e2e/specs/notice-popup.spec.ts의
+        // '비노출 조건'(is_active=false / 미래 starts_at / 과거 ends_at) 테스트가 실 DB로 검증한다.
         expect(whereSpy.mock.calls[0][0]).toBeTruthy();
     });
 });
