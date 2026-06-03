@@ -28,8 +28,8 @@ export interface ResilientProfile {
  *
  * The cache call is byte-identical to the one `ProfileSection` issues
  * (`['fundamental:profile', upper]`), so both share one `unstable_cache` entry
- * (and `getProfile`'s React `cache()` dedups within a request) — wrapping it
- * here adds no extra FMP round-trip.
+ * (and the provider's `React.cache`-wrapped `getProfile` dedups within a request)
+ * — wrapping it here adds no extra FMP round-trip.
  */
 export async function getProfileResilient(
     upper: string

@@ -33,10 +33,10 @@ export const getProfile = (
  * 회사 설명의 한국어 번역을 반환하고, 최초 호출 시 DB에 저장해 배포 간에도
  * 유지한다. Read: DB 조회(히트 시 즉시). Write: Gemini 번역 → DB upsert(심볼당 최초 1회).
  *
- * Nested `cache()` 호출 의도: 이 함수와 내부에서 호출하는 `getProfile`이 둘 다
- * 별도 per-request memoization을 갖는다. 같은 요청에서 description-Ko 미스이지만
- * profile은 이미 다른 호출자가 캐싱한 경우, 내부 `getProfile(symbol)`이 추가 FMP
- * 호출을 발생시키지 않는다.
+ * `cache()` 래핑 의도: 같은 요청에서 description-Ko를 여러 번 조회해도 DB lookup·
+ * 번역을 1회로 묶는다. 내부 `getProfile(symbol)`은 이제 단순 위임이지만, 프로바이더
+ * (CachedFundamentalProvider)의 `getProfile`이 `React.cache`로 per-request dedup하므로,
+ * 같은 요청에서 profile을 이미 다른 호출자가 가져왔다면 추가 FMP 호출이 발생하지 않는다.
  */
 export const getProfileDescriptionKo = cache(
     async (symbol: string): Promise<string | null> => {
