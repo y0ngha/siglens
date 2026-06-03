@@ -141,4 +141,36 @@ describe('NoticePopup', () => {
         fireEvent.keyDown(document, { key: 'Escape' });
         expect(await screen.findByText('두 번째')).toBeInTheDocument();
     });
+
+    it('fetch 완료 전에 언마운트하면 상태 업데이트를 건너뛴다(cancelled guard)', async () => {
+        let resolveNotices!: (v: NoticeRecord[]) => void;
+        mockedAction.mockReturnValue(
+            new Promise<NoticeRecord[]>(res => {
+                resolveNotices = res;
+            })
+        );
+        const { unmount } = render(<NoticePopup />);
+        // 아직 fetch가 resolve되지 않은 상태에서 언마운트
+        unmount();
+        // 그 후 resolve — cancelled 플래그가 set을 막아야 한다
+        resolveNotices([notice()]);
+        // 에러 없이 조용히 종료되어야 한다
+        await new Promise(r => setTimeout(r, 0));
+    });
+
+    it('"다시 보지 않기" 클릭 시 current가 있을 때만 dismissNotice를 호출한다', async () => {
+        mockedAction.mockResolvedValue([notice({ id: 'dismiss-guard' })]);
+        render(<NoticePopup />);
+        await screen.findByRole('dialog');
+        // 큐에 공지가 있는 상태에서 클릭 → id가 저장됨
+        fireEvent.click(screen.getByRole('button', { name: '다시 보지 않기' }));
+        await waitFor(() =>
+            expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+        );
+        expect(
+            JSON.parse(
+                localStorage.getItem(DISMISSED_NOTICES_STORAGE_KEY) ?? '[]'
+            )
+        ).toEqual(['dismiss-guard']);
+    });
 });
