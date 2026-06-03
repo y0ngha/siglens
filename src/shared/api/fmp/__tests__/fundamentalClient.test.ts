@@ -294,22 +294,23 @@ describe('FmpFundamentalClient', () => {
         });
 
         it('currentRatioTTM falls back to metrics when ratios row omits it', async () => {
+            // getValuationRaw fetches key-metrics-ttm FIRST, then ratios-ttm.
             // ratios row has no currentRatioTTM → `ratios?.currentRatioTTM` is
             // undefined → the ?? right-hand branch reads metrics?.currentRatioTTM.
             mockOk([
                 {
-                    // ratios-ttm row — omits currentRatioTTM
+                    // key-metrics-ttm row (consumed first) — provides currentRatioTTM
+                    currentRatioTTM: 1.85,
+                },
+            ]);
+            mockOk([
+                {
+                    // ratios-ttm row (consumed second) — omits currentRatioTTM
                     returnOnEquityTTM: 1.0,
                     returnOnAssetsTTM: 0.2,
                     operatingProfitMarginTTM: 0.3,
                     netProfitMarginTTM: 0.25,
                     debtToAssetsRatioTTM: 0.31,
-                },
-            ]);
-            mockOk([
-                {
-                    // key-metrics-ttm row — provides currentRatioTTM
-                    currentRatioTTM: 1.85,
                 },
             ]);
             const client = new FmpFundamentalClient();
