@@ -1,3 +1,5 @@
+import type { Metadata } from 'next';
+
 export interface BreadcrumbItem {
     name: string;
     url: string;
@@ -7,6 +9,20 @@ export const SITE_URL =
     process.env.NEXT_PUBLIC_SITE_URL ?? 'https://siglens.io';
 
 export const SITE_NAME = 'Siglens';
+
+/**
+ * Shared metadata for the noindex early-returns on the `[symbol]` routes
+ * (invalid ticker, infra-degraded asset, FMP-degraded profile).
+ *
+ * `canonical: null` is the important part: it OVERRIDES the root layout's
+ * `alternates.canonical: SITE_URL`, so a noindexed symbol page does not falsely
+ * advertise the homepage as its canonical. Without it these early-returns
+ * inherit the layout canonical (a wrong cross-page signal).
+ */
+export const NOINDEX_SYMBOL_METADATA: Metadata = {
+    robots: { index: false, follow: false },
+    alternates: { canonical: null },
+};
 
 // 빌드 시각 — 매 요청마다 변동되면 안 되는 schema.org datePublished 등에 사용.
 // NEXT_BUILD_DATE env가 있으면 우선, 없으면 모듈 로드 시각(deploy 시점)을 한 번만 캐시.

@@ -14,10 +14,12 @@ import {
     hasOptionsMarket,
 } from '@/entities/options-chain/lib/optionsDataCache';
 import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/shared/config/queryConfig';
+import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
 import {
     buildBreadcrumbJsonLd,
     buildSymbolOptionsSeoContent,
     buildSymbolSeoContent,
+    NOINDEX_SYMBOL_METADATA,
     SITE_NAME,
     SITE_URL,
 } from '@/shared/lib/seo';
@@ -49,14 +51,28 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const upper = symbol.toUpperCase();
     // 본문 notFound()와 일관: 잘못된 ticker는 메타데이터를 비우고 noindex로 응답한다.
     if (!VALID_TICKER_RE.test(upper)) {
-        return { robots: { index: false, follow: false } };
+        return NOINDEX_SYMBOL_METADATA;
     }
     const [{ assetInfo, degraded }, hasOptions] = await Promise.all([
         getAssetInfoResilient(upper),
-        hasOptionsMarket(upper),
+        // hasOptionsMarket는 Yahoo 인프라 실패 시 throw한다. getAssetInfoResilient와
+        // 함께 Promise.all로 묶여 있어, 여기서 흡수하지 않으면 throw가 degraded 조기 반환
+        // 전에 Promise.all을 reject시켜 generateMetadata가 ISR cold-gen에서 500을 낸다.
+        // 옵션 시장 여부를 모르면 false(노출 안 함)로 degrade → noindex로 안전하게 처리한다.
+        // (이 fetch는 staticSymbolCache로 감싸져 DSU를 throw하지 않고, DSU가 발생하더라도
+        // 같은 Promise.all의 getAssetInfoResilient가 rethrow하므로 제어 흐름은 보존된다.)
+        staticSymbolCache(['options:has', upper], upper, () =>
+            hasOptionsMarket(upper)
+        ).catch((e: unknown) => {
+            console.error(
+                '[generateMetadata:options] hasOptionsMarket infra failure, degrading to false:',
+                e
+            );
+            return false;
+        }),
     ]);
     if (degraded) {
-        return { robots: { index: false, follow: false } };
+        return NOINDEX_SYMBOL_METADATA;
     }
     const displayName = assetInfo ? buildDisplayName(assetInfo, upper) : upper;
     const { title, fullTitle, description, url, keywords } =
@@ -99,14 +115,20 @@ export default async function OptionsPage({ params }: Props) {
 
     const [{ assetInfo }, hasOptions] = await Promise.all([
         getAssetInfoResilient(upper),
-        hasOptionsMarket(upper),
+        staticSymbolCache(['options:has', upper], upper, () =>
+            hasOptionsMarket(upper)
+        ),
     ]);
 
     if (!assetInfo) notFound();
     if (!hasOptions) return <OptionsEmptyState symbol={upper} />;
 
     const displayName = buildDisplayName(assetInfo, upper);
-    const snapshot = await fetchOptionsSnapshot(upper);
+    const snapshot = await staticSymbolCache(
+        ['options:snapshot', upper],
+        upper,
+        () => fetchOptionsSnapshot(upper)
+    );
     if (snapshot === null) return <OptionsEmptyState symbol={upper} />;
 
     const expirations = snapshot.chains.map(c => c.expirationDate);

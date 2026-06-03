@@ -1,4 +1,5 @@
 import { OverallContent } from '@/widgets/overall/OverallContent';
+import { OverallFactsSummary } from '@/widgets/overall';
 import { CrossLinkCards, SymbolPageHeading } from '@/widgets/symbol-page';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import {
@@ -16,6 +17,7 @@ import {
     buildBreadcrumbJsonLd,
     buildSymbolOverallSeoContent,
     buildSymbolSeoContent,
+    NOINDEX_SYMBOL_METADATA,
     SITE_NAME,
     SITE_URL,
 } from '@/shared/lib/seo';
@@ -23,6 +25,7 @@ import {
     GEMINI_2_5_FLASH_LITE_MODEL,
     peekOverallAnalysisCache,
 } from '@y0ngha/siglens-core';
+import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
@@ -47,11 +50,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const upper = symbol.toUpperCase();
     // 본문 notFound()와 일관: 잘못된 ticker는 메타데이터를 비우고 noindex로 응답한다.
     if (!VALID_TICKER_RE.test(upper)) {
-        return { robots: { index: false, follow: false } };
+        return NOINDEX_SYMBOL_METADATA;
     }
     const { assetInfo, degraded } = await getAssetInfoResilient(upper);
     if (degraded) {
-        return { robots: { index: false, follow: false } };
+        return NOINDEX_SYMBOL_METADATA;
     }
     const displayName = assetInfo ? buildDisplayName(assetInfo, upper) : upper;
     const { title, fullTitle, description, url, keywords } =
@@ -111,11 +114,18 @@ export default async function OverallPage({ params }: Props) {
     // 함수가 자기 캐시 키 구성에 맞춰 서로 다른 시그니처를 갖는다.
     //
     // ISR: tf는 client가 URL에서 읽으므로 서버는 DEFAULT_TIMEFRAME으로 peek한다.
-    const cachedOverall = await peekOverallAnalysisCache(
+    // assetInfo.name은 symbol에 종속(1:1)이므로 캐시 키에서 제외한다 — symbol 태그
+    // 무효화로 name 변동 시에도 갱신된다.
+    const cachedOverall = await staticSymbolCache(
+        ['peek:overall', upper, GEMINI_2_5_FLASH_LITE_MODEL],
         upper,
-        assetInfo.name,
-        DEFAULT_TIMEFRAME,
-        GEMINI_2_5_FLASH_LITE_MODEL
+        () =>
+            peekOverallAnalysisCache(
+                upper,
+                assetInfo.name,
+                DEFAULT_TIMEFRAME,
+                GEMINI_2_5_FLASH_LITE_MODEL
+            )
     ).catch((error: unknown) => {
         console.error('[OverallPage] peekOverallAnalysisCache failed:', error);
         return null;
@@ -232,21 +242,30 @@ export default async function OverallPage({ params }: Props) {
                         한 번 훑어보면 도움이 됩니다.
                     </p>
                 </section>
-                {/* fallback은 종합 분석 섹션 높이를 미리 차지해, useSearchParams CSR-bailout
-                    서브트리가 hydration 전 비어 보이는 flash/CLS를 방지한다(overall/loading.tsx와 동일 룩). */}
+                {/* fallback은 두 역할을 겸한다: (1) useSearchParams CSR-bailout 서브트리가
+                    hydration 전 비어 보이는 flash/CLS 방지, (2) cached 종합 분석이 있으면
+                    크롤러가 JS 없이도 분석 텍스트를 읽을 수 있도록 SSR HTML에 박는다.
+                    캐시 MISS 시에는 기존 스켈레톤으로 폴백한다. */}
                 <Suspense
                     fallback={
-                        <div className="space-y-6" aria-hidden="true">
-                            {Array.from(
-                                { length: SUSPENSE_SKELETON_COUNT },
-                                (_, i) => (
-                                    <div
-                                        key={i}
-                                        className="bg-secondary-700 h-32 animate-pulse rounded-xl"
-                                    />
-                                )
-                            )}
-                        </div>
+                        cachedOverall ? (
+                            <OverallFactsSummary
+                                symbol={upper}
+                                analysis={cachedOverall}
+                            />
+                        ) : (
+                            <div className="space-y-6" aria-hidden="true">
+                                {Array.from(
+                                    { length: SUSPENSE_SKELETON_COUNT },
+                                    (_, i) => (
+                                        <div
+                                            key={i}
+                                            className="bg-secondary-700 h-32 animate-pulse rounded-xl"
+                                        />
+                                    )
+                                )}
+                            </div>
+                        )
                     }
                 >
                     <OverallContent

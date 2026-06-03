@@ -2,11 +2,28 @@
 # Fix Log
 
 
+## [PR #545 Round 4 | fix/symbol-infra-fallback | 2026-06-02]
+- Violation: `expect.objectContaining({ index: false })` 부정확한 매처 사용
+  - Rule: MISTAKES.md §Tests §13 — 값이 결정론적(deterministic)일 때는 정확한 matcher 사용해야 함
+  - Context: `overall/__tests__/page.test.ts` line 99-101에서 invalid ticker 경로의 robots 값이 항상 `{ index: false, follow: false }`인데 `objectContaining`으로 부정확하게 테스트해 `follow: true` 회귀를 감지하지 못함
+- Violation: 테스트 mock 객체에서 AssetInfo required 필드 `symbol` 누락
+  - Rule: MISTAKES.md §TypeScript §2 — Mock 객체는 실제 타입 계약과 일치해야 함
+  - Context: `page.test.ts`와 `overall/__tests__/page.test.ts`의 mockGetAssetInfoResilient 모든 assetInfo 객체에 symbol 필드 누락
+- Violation: `ResilientAssetInfo` 타입이 barrel에서 export되지 않음
+  - Rule: CONVENTIONS.md FSD — production 코드는 슬라이스 barrel만 import
+  - Context: 함수 반환 타입인 `ResilientAssetInfo`를 직접 type annotation해야 할 때 barrel에 없으면 deep import 강제
+
+
+## [PR #545 Round 3 | fix/symbol-infra-fallback | 2026-06-02]
+- Violation: JSDoc "세 가지로 끝난다" 서술이 실제 네 가지 경로(DYNAMIC_SERVER_USAGE rethrow 포함)와 불일치
+  - Rule: MISTAKES.md §15.6 — 주석/JSDoc의 모든 서술은 실제 런타임/코드 현실과 일치해야 한다
+  - Context: Round 1에서 DYNAMIC_SERVER_USAGE rethrow 경로를 추가했지만 JSDoc 요약은 "세 가지"로 유지되어 "throw → 여기서 흡수해"라는 표현이 rethrow 경로를 숨김
 
 ## [PR #545 Round 1 | fix/symbol-infra-fallback | 2026-06-02]
 - Violation: 변수명 `mockGetAssetInfoCached`가 실제로는 `getAssetInfoResilient`를 참조 (2개 파일)
   - Rule: MISTAKES.md §11 — 함수/변수명은 실제 참조 대상과 정확하게 일치해야 한다
   - Context: PR #545에서 `getAssetInfoCached` → `getAssetInfoResilient`로 교체 후 테스트 변수명 rename이 누락됨
+
 ## [feat/bot-cost-caching Round 1 | feat/bot-cost-caching | 2026-05-28]
 - Violation: 'use server' file exported non-async-function constants `POLL_INTERVAL_MS`, `POLL_MAX_ATTEMPTS`
   - Rule: entities/CONVENTIONS.md — 'use server' files may only export async functions; constants must live in separate modules
@@ -43,3 +60,10 @@
 - Status: APPROVED (both rounds, zero findings)
   - Review: Removed duplicate ticker in h1 (`AAPL` duplicated because displayName + explicit ticker append) across 4 spots (fear-greed/page.tsx: h1, FAQ JSON-LD, guide; [symbol]/page.tsx: sr-only)
   - Result: Clean merge — no violations logged
+## [feat/symbol-seo-e2e-gaps Round 1 | feat/symbol-seo-e2e-gaps | 2026-06-03]
+- Violation: E2E authed spec (account-logout.spec.ts) performed destructive auth action on shared seeded session
+  - Rule: E2E — Authed-by-filename specs must override storageState + self-provision throwaway user before destructive auth actions
+  - Context: account-logout.spec.ts inherits SHARED storageState from setup/user.json, then logs out and destroys that single seeded session. Siblings (account-auth-smoke, account-api-key) fail afterward (nondeterministic order). Pattern already solved in account-delete.spec.ts (test.use({ storageState: { cookies: [], origins: [] } }) + 3-phase signup). This is the second occurrence of the same isolation hazard.
+- Violation: Non-falsifiable test assertions in symbol-seo.spec.ts (toBeGreaterThanOrEqual, weak substring matching)
+  - Rule: MISTAKES.md §Tests §13 — Imprecise matchers when exact values deterministic; require whole-token matching on extracted content
+  - Context: Changed `toBeGreaterThanOrEqual(3)` to `.toBe(3)` with comment explaining why floor is known; changed `toContain('MSFT')` on html to exact h1 text match for falsifiability

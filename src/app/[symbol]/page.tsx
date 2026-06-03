@@ -1,5 +1,8 @@
 import { SymbolPageClient } from '@/widgets/symbol-page/SymbolPageClient';
-import { TechnicalFactsSummary } from '@/widgets/symbol-page';
+import {
+    TechnicalFactsSummary,
+    buildChartPageHeading,
+} from '@/widgets/symbol-page';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { FALLBACK_ANALYSIS } from '@/entities/chat-message';
 import { GEMINI_2_5_FLASH_LITE_MODEL } from '@y0ngha/siglens-core';
@@ -22,6 +25,7 @@ import {
     buildSymbolSeoContent,
     SITE_NAME,
     SITE_URL,
+    NOINDEX_SYMBOL_METADATA,
 } from '@/shared/lib/seo';
 import {
     dehydrate,
@@ -50,11 +54,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const ticker = symbol.toUpperCase();
     // 본문 notFound()와 일관: 잘못된 ticker는 메타데이터를 비우고 noindex로 응답한다.
     if (!VALID_TICKER_RE.test(ticker)) {
-        return { robots: { index: false, follow: false } };
+        return NOINDEX_SYMBOL_METADATA;
     }
     const { assetInfo, degraded } = await getAssetInfoResilient(ticker);
     if (degraded) {
-        return { robots: { index: false, follow: false } };
+        return NOINDEX_SYMBOL_METADATA;
     }
     const displayName = assetInfo
         ? buildDisplayName(assetInfo, ticker)
@@ -250,8 +254,8 @@ export default async function SymbolPage({ params }: Props) {
                         (WCAG 1.3.1). 보조 설명은 heading 없이 p로만 노출한다. */}
                     <p>{displayName} 차트 분석 개요</p>
                     <p>
-                        {displayName}({ticker})의 기술적 분석 페이지입니다.
-                        보조지표 {skillCounts.indicators}종, 캔들 패턴{' '}
+                        {displayName}의 기술적 분석 페이지입니다. 보조지표{' '}
+                        {skillCounts.indicators}종, 캔들 패턴{' '}
                         {skillCounts.candlesticks}종, 차트 패턴{' '}
                         {skillCounts.patterns}종을 활용해 추세, 진입 구간,
                         지지선과 저항선을 분석합니다.
@@ -278,18 +282,30 @@ export default async function SymbolPage({ params }: Props) {
                            받는다. 사용자는 hydration 후 인터랙티브 SymbolPageClient로 교체된다. */}
                     <Suspense
                         fallback={
-                            factBars && factBars.bars.length > 0 ? (
-                                <TechnicalFactsSummary
-                                    symbol={ticker}
-                                    bars={factBars.bars}
-                                    indicators={factBars.indicators}
-                                />
-                            ) : (
-                                <div
-                                    className="bg-secondary-900 flex min-h-0 flex-1 flex-col overflow-hidden"
-                                    aria-hidden="true"
-                                />
-                            )
+                            <>
+                                {/* SSR 크롤용 h1: 가시 h1은 SymbolPageClient(useSearchParams
+                                    CSR-bailout)에 있어 SSR HTML에 박히지 않는다. hydration 후
+                                    그 가시 h1으로 교체되는 이 fallback에 동일 텍스트의 sr-only
+                                    h1을 둬, JS 미실행 크롤러(Naver Yeti 등)가 메인 페이지 h1을
+                                    받게 한다(나머지 5라우트의 SymbolPageHeading h1과 정합). fallback이
+                                    hydration 시 교체되므로 가시 클라 h1과 동시 존재하지 않아 h1 중복은
+                                    없고, 텍스트가 동일해 cloaking도 아니다. */}
+                                <h1 className="sr-only">
+                                    {buildChartPageHeading(displayName)}
+                                </h1>
+                                {factBars && factBars.bars.length > 0 ? (
+                                    <TechnicalFactsSummary
+                                        symbol={ticker}
+                                        bars={factBars.bars}
+                                        indicators={factBars.indicators}
+                                    />
+                                ) : (
+                                    <div
+                                        className="bg-secondary-900 flex min-h-0 flex-1 flex-col overflow-hidden"
+                                        aria-hidden="true"
+                                    />
+                                )}
+                            </>
                         }
                     >
                         <SymbolPageClient

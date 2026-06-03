@@ -12,6 +12,7 @@ import {
     getRatiosTtm,
     getStockPeers,
 } from '@/app/[symbol]/fundamental/fundamentalData';
+import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
 
 import { FundamentalAiSummary } from '@/widgets/fundamental/FundamentalAiSummary';
 import { FundamentalAiSummaryError } from '@/widgets/fundamental/FundamentalAiSummaryError';
@@ -36,9 +37,12 @@ import {
     buildBreadcrumbJsonLd,
     buildSymbolFundamentalSeoContent,
     buildSymbolSeoContent,
+    NOINDEX_SYMBOL_METADATA,
     SITE_NAME,
     SITE_URL,
 } from '@/shared/lib/seo';
+import { getProfileResilient } from './getProfileResilient';
+import { FundamentalDegraded } from './FundamentalDegraded';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
@@ -64,17 +68,26 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const upper = symbol.toUpperCase();
     // 본문 notFound()와 일관: 잘못된 ticker는 메타데이터를 비우고 noindex로 응답한다.
     if (!VALID_TICKER_RE.test(upper)) {
-        return { robots: { index: false, follow: false } };
+        return NOINDEX_SYMBOL_METADATA;
     }
     const { assetInfo, degraded } = await getAssetInfoResilient(upper);
     if (degraded) {
-        return { robots: { index: false, follow: false } };
+        return NOINDEX_SYMBOL_METADATA;
+    }
+    // 펀더멘털 페이지는 FMP profile이 있어야 렌더된다. profile을 본문/ProfileSection과
+    // 동일한 정적 캐시 키로 미리 확인한다(같은 요청 내 React.cache + unstable_cache 공유라
+    // 추가 FMP round-trip 없음). 그래서 본문 렌더 결과와 metadata noindex 판단이 일치한다:
+    //   - profileDegraded(FMP 인프라 실패) → 본문은 degrade(200)를 렌더하므로 noindex.
+    //   - profile === null(실존하지 않는 종목) → 본문은 notFound()이므로 noindex.
+    const { profile, degraded: profileDegraded } =
+        await getProfileResilient(upper);
+    if (profileDegraded || profile === null) {
+        return NOINDEX_SYMBOL_METADATA;
     }
     const displayName = assetInfo ? buildDisplayName(assetInfo, upper) : upper;
-    // sector는 의도적으로 generateMetadata에서 사용하지 않는다. sector는 FMP getProfile 응답에만 있고
-    // generateMetadata에서 별도 fetch하면 페이지 본문과 합쳐 round-trip이 두 배가 된다(SEO 메타에 sector 한 줄 더
-    // 넣는 비용이 비대칭으로 큼). 결과적으로 <meta description>은 sector 없는 base 카피, 페이지 본문 JSON-LD는
-    // sector 보강 카피라는 차이가 있지만, 두 description 모두 동일 함수에서 파생되므로 핵심 의미는 일치한다.
+    // sector는 의도적으로 <meta description>에 쓰지 않는다(description은 sector 없는 base
+    // 카피, 페이지 본문 JSON-LD만 sector 보강 카피). 위 profile 조회는 noindex 게이트 용도이며
+    // 두 description 모두 동일 함수에서 파생되므로 핵심 의미는 일치한다.
     const { title, fullTitle, description, url, keywords } =
         buildSymbolFundamentalSeoContent(upper, {
             displayName,
@@ -189,7 +202,11 @@ async function ProfileDescriptionSection({
     symbol,
     fallback,
 }: ProfileDescriptionSectionProps) {
-    const descriptionKo = await getProfileDescriptionKo(symbol);
+    const descriptionKo = await staticSymbolCache(
+        ['fundamental:desc-ko', symbol],
+        symbol,
+        () => getProfileDescriptionKo(symbol)
+    );
     return (
         <p className="text-secondary-400 mt-4 line-clamp-4 text-sm leading-relaxed">
             {descriptionKo ?? fallback}
@@ -198,7 +215,12 @@ async function ProfileDescriptionSection({
 }
 
 async function ProfileSection({ symbol }: SymbolSectionProps) {
-    const profile = await getProfile(symbol);
+    // Shares the same key as the notFound guard in the page body — cross-request ISR cache is shared.
+    const profile = await staticSymbolCache(
+        ['fundamental:profile', symbol],
+        symbol,
+        () => getProfile(symbol)
+    );
 
     const descriptionSlot = (
         <Suspense fallback={<ProfileDescriptionSkeleton />}>
@@ -213,30 +235,52 @@ async function ProfileSection({ symbol }: SymbolSectionProps) {
 }
 
 async function ValuationSection({ symbol }: SymbolSectionProps) {
-    const metrics = await getKeyMetricsTtm(symbol);
+    const metrics = await staticSymbolCache(
+        ['fundamental:metrics', symbol],
+        symbol,
+        () => getKeyMetricsTtm(symbol)
+    );
     return <ValuationCard metrics={metrics} />;
 }
 
 async function PeersSection({ symbol }: SymbolSectionProps) {
-    const peers = await getStockPeers(symbol);
+    const peers = await staticSymbolCache(
+        ['fundamental:peers', symbol],
+        symbol,
+        () => getStockPeers(symbol)
+    );
     return <PeersTable peers={peers} />;
 }
 
 async function ProfitabilitySection({ symbol }: SymbolSectionProps) {
-    const ratios = await getRatiosTtm(symbol);
+    const ratios = await staticSymbolCache(
+        ['fundamental:ratios', symbol],
+        symbol,
+        () => getRatiosTtm(symbol)
+    );
     return <ProfitabilityCard ratios={ratios} />;
 }
 
 async function GrowthSection({ symbol }: SymbolSectionProps) {
-    const growth = await getIncomeStatementGrowth(symbol);
+    const growth = await staticSymbolCache(
+        ['fundamental:growth', symbol],
+        symbol,
+        () => getIncomeStatementGrowth(symbol)
+    );
     return <GrowthChart growth={growth} />;
 }
 
 async function FinancialHealthSection({ symbol }: SymbolSectionProps) {
     const [ratios, scores, cashFlow] = await Promise.all([
-        getRatiosTtm(symbol),
-        getFinancialScores(symbol),
-        getCashFlowStatement(symbol),
+        staticSymbolCache(['fundamental:ratios', symbol], symbol, () =>
+            getRatiosTtm(symbol)
+        ),
+        staticSymbolCache(['fundamental:scores', symbol], symbol, () =>
+            getFinancialScores(symbol)
+        ),
+        staticSymbolCache(['fundamental:cashflow', symbol], symbol, () =>
+            getCashFlowStatement(symbol)
+        ),
     ]);
     return (
         <FinancialHealthCard
@@ -249,10 +293,20 @@ async function FinancialHealthSection({ symbol }: SymbolSectionProps) {
 
 async function FutureDirectionSection({ symbol }: SymbolSectionProps) {
     const [estimates, grades, ptConsensus, ptSummary] = await Promise.all([
-        getAnalystEstimates(symbol),
-        getGradesConsensus(symbol),
-        getPriceTargetConsensus(symbol),
-        getPriceTargetSummary(symbol),
+        staticSymbolCache(['fundamental:estimates', symbol], symbol, () =>
+            getAnalystEstimates(symbol)
+        ),
+        staticSymbolCache(
+            ['fundamental:grades-consensus', symbol],
+            symbol,
+            () => getGradesConsensus(symbol)
+        ),
+        staticSymbolCache(['fundamental:pt-consensus', symbol], symbol, () =>
+            getPriceTargetConsensus(symbol)
+        ),
+        staticSymbolCache(['fundamental:pt-summary', symbol], symbol, () =>
+            getPriceTargetSummary(symbol)
+        ),
     ]);
     return (
         <FutureDirectionCard
@@ -274,10 +328,21 @@ export default async function FundamentalPage({ params }: Props) {
 
     // notFound guard + sector resolution을 위해 profile을 먼저 가져온다.
     // assetInfo는 한국어 종목명을 displayName에 합치기 위해 병렬로 가져온다.
-    const [profile, { assetInfo }] = await Promise.all([
-        getProfile(upper),
-        getAssetInfoResilient(upper),
-    ]);
+    // getProfileResilient는 ['fundamental:profile', upper] 키를 ProfileSection과 공유한다
+    // → cross-request ISR 캐시 + 같은 요청 React.cache 공유(추가 FMP round-trip 없음).
+    const [{ profile, degraded: profileDegraded }, { assetInfo }] =
+        await Promise.all([
+            getProfileResilient(upper),
+            getAssetInfoResilient(upper),
+        ]);
+    const displayName = assetInfo ? buildDisplayName(assetInfo, upper) : upper;
+    // FMP 인프라 일시 실패: 500 대신 degrade 안내(200)를 렌더한다. generateMetadata가
+    // 동일 조건을 noindex 처리하므로 이 thin 페이지는 색인되지 않고, 다음 revalidate에
+    // 인프라가 복구되면 정상 데이터로 자동 갱신된다.
+    if (profileDegraded) {
+        return <FundamentalDegraded displayName={displayName} symbol={upper} />;
+    }
+    // profile === null = FMP 200 + 빈 결과 = 실존하지 않는 종목 → 404.
     if (profile === null) {
         notFound();
     }
@@ -286,7 +351,6 @@ export default async function FundamentalPage({ params }: Props) {
     // 않은 종목도 PER/ROE/애널리스트 컨센서스를 보여줄 수 있어야 한다. 따라서 news/overall과 달리
     // assetInfo null을 notFound()로 막지 않고 ticker fallback을 허용한다 (generateMetadata와 동일 패턴).
     const sector = profile.sector ?? '';
-    const displayName = assetInfo ? buildDisplayName(assetInfo, upper) : upper;
     const { fullTitle, description, url } = buildSymbolFundamentalSeoContent(
         upper,
         {
