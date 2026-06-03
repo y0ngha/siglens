@@ -9,10 +9,7 @@ import {
 } from 'react';
 import { getActiveNoticesAction } from '@/entities/notice/actions';
 import { matchPath, type NoticeRecord } from '@/entities/notice';
-import {
-    loadDismissedNoticeIds,
-    dismissNotice,
-} from '../utils/noticeStorage';
+import { loadDismissedNoticeIds, dismissNotice } from '../utils/noticeStorage';
 
 /** useNoticePopup의 반환 형태 — 노출 큐와 큐 진행 핸들러. */
 export interface UseNoticePopupResult {
