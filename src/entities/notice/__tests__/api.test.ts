@@ -59,6 +59,6 @@ describe('DrizzleNoticeRepository.findActive', () => {
         const repo = new DrizzleNoticeRepository(db);
         await repo.findActive();
         expect(whereSpy).toHaveBeenCalledTimes(1);
-        expect(whereSpy.mock.calls[0][0]).toBeDefined();
+        expect(whereSpy.mock.calls[0][0]).toBeTruthy();
     });
 });

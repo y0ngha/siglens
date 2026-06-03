@@ -19,6 +19,10 @@ describe('matchPath', () => {
             expect(matchPath('/about', '/about/team')).toBe(false);
             expect(matchPath('/about', '/')).toBe(false);
         });
+
+        it('trailing slash는 정규화되어 매칭된다', () => {
+            expect(matchPath('/about', '/about/')).toBe(true);
+        });
     });
 
     describe('접두 와일드카드', () => {
@@ -28,6 +32,10 @@ describe('matchPath', () => {
             expect(matchPath('/symbol/*', '/symbol/AAPL/news')).toBe(true);
         });
 
+        it('trailing slash가 붙은 접두 경로에도 매칭된다', () => {
+            expect(matchPath('/symbol/*', '/symbol/')).toBe(true);
+        });
+
         it('접두가 부분 문자열로만 겹치는 경로에는 매칭되지 않는다', () => {
             expect(matchPath('/symbol/*', '/symbolize')).toBe(false);
             expect(matchPath('/symbol/*', '/market')).toBe(false);
@@ -35,10 +43,6 @@ describe('matchPath', () => {
     });
 
     describe('worst case', () => {
-        it('trailing slash는 정확 일치에서 다른 경로로 취급된다', () => {
-            expect(matchPath('/about', '/about/')).toBe(false);
-        });
-
         it('빈 문자열 pattern은 빈 경로에만 매칭된다', () => {
             expect(matchPath('', '')).toBe(true);
             expect(matchPath('', '/')).toBe(false);
