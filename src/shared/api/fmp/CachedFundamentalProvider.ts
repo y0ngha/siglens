@@ -154,11 +154,16 @@ export class CachedFundamentalProvider implements FundamentalProvider {
         }
     );
 
-    // Task 4에서 캐싱으로 교체할 pass-through stub.
-    getSectorPerformanceSnapshot = (
-        date: string
-    ): Promise<FundamentalSectorPerformanceInput[]> =>
-        this.inner.getSectorPerformanceSnapshot(date);
+    /**
+     * 섹터 스냅샷은 날짜 단위 데이터이므로 키를 `<DATE>`로 잡는다(심볼 무관).
+     * 분석 경로에서만 호출되며 기존엔 무캐시였다 — 캐싱으로 분석마다의 FMP 호출을 막는다.
+     */
+    getSectorPerformanceSnapshot = cache(
+        (date: string): Promise<FundamentalSectorPerformanceInput[]> =>
+            getOrSetCache(`fundamental:sector-performance:${date}`, TTL, () =>
+                this.inner.getSectorPerformanceSnapshot(date)
+            )
+    );
 
     // pass-through (no-store + DB 영속 / 빈 stub)
     getHistoricalSectorPerformance = (

@@ -227,3 +227,67 @@ describe('CachedFundamentalProvider — getStockPeers enrich', () => {
         expect(peers[0].per).toBe(30);
     });
 });
+
+describe('CachedFundamentalProvider — sector + pass-through', () => {
+    it('caches sector performance under fundamental:sector-performance:<DATE>', async () => {
+        const inner = makeInner({
+            getSectorPerformanceSnapshot: vi.fn(async () => [
+                { sector: 'Technology', changesPercentage: 1.2 },
+            ]),
+        });
+        const provider = new CachedFundamentalProvider(inner);
+
+        const out = await provider.getSectorPerformanceSnapshot('2026-06-04');
+        expect(out).toEqual([{ sector: 'Technology', changesPercentage: 1.2 }]);
+        expect(store.has('fundamental:sector-performance:2026-06-04')).toBe(
+            true
+        );
+
+        await provider.getSectorPerformanceSnapshot('2026-06-04');
+        expect(inner.getSectorPerformanceSnapshot).toHaveBeenCalledTimes(1);
+    });
+
+    it('keys sector snapshot by date, not symbol (different dates miss separately)', async () => {
+        const inner = makeInner({
+            getSectorPerformanceSnapshot: vi.fn(async () => [
+                { sector: 'Energy', changesPercentage: -0.5 },
+            ]),
+        });
+        const provider = new CachedFundamentalProvider(inner);
+        await provider.getSectorPerformanceSnapshot('2026-06-04');
+        await provider.getSectorPerformanceSnapshot('2026-06-05');
+        expect(inner.getSectorPerformanceSnapshot).toHaveBeenCalledTimes(2);
+        expect(store.has('fundamental:sector-performance:2026-06-04')).toBe(
+            true
+        );
+        expect(store.has('fundamental:sector-performance:2026-06-05')).toBe(
+            true
+        );
+    });
+
+    it('does NOT cache earnings (pass-through, fresh each call)', async () => {
+        const inner = makeInner({
+            getEarningsReports: vi.fn(async () => []),
+            getEarningsReport: vi.fn(async () => null),
+        });
+        const provider = new CachedFundamentalProvider(inner);
+
+        await provider.getEarningsReports('AAPL', 5);
+        await provider.getEarningsReports('AAPL', 5);
+        await provider.getEarningsReport('AAPL');
+        await provider.getEarningsReport('AAPL');
+
+        expect(inner.getEarningsReports).toHaveBeenCalledTimes(2);
+        expect(inner.getEarningsReport).toHaveBeenCalledTimes(2);
+        expect(store.size).toBe(0);
+    });
+
+    it('passes through historical sector performance without caching', async () => {
+        const inner = makeInner();
+        const provider = new CachedFundamentalProvider(inner);
+        expect(
+            await provider.getHistoricalSectorPerformance('Technology')
+        ).toEqual([]);
+        expect(store.size).toBe(0);
+    });
+});
