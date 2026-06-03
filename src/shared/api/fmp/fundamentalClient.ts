@@ -1,3 +1,4 @@
+import { cache } from 'react';
 import { fmpGet as fmpGetRaw } from './httpClient';
 import { SECONDS_PER_HOUR } from '@/shared/config/time';
 import type {
@@ -126,18 +127,34 @@ export class FmpFundamentalClient implements FundamentalDataProvider {
         };
     }
 
+    /**
+     * key-metrics-ttm + ratios-ttm을 한 번에 fetch해 raw 쌍을 반환한다.
+     * `React.cache`로 요청 스코프 메모이즈하므로, 같은 요청에서 getKeyMetricsTtm과
+     * getRatiosTtm이 모두 호출돼도(분석 Promise.all) 각 엔드포인트 fetch는 1회로
+     * 수렴한다. 두 메서드가 서로의 필드를 fallback으로 쓰므로 raw 쌍을 공유한다.
+     */
+    private getValuationRaw = cache(
+        async (
+            symbol: string
+        ): Promise<{
+            metrics: RawFmpKeyMetricsTtm | null;
+            ratios: RawFmpRatiosTtm | null;
+        }> => {
+            const [arr, ratiosArr] = await Promise.all([
+                getOptionalArray<RawFmpKeyMetricsTtm>('key-metrics-ttm', {
+                    symbol,
+                }),
+                getOptionalArray<RawFmpRatiosTtm>('ratios-ttm', { symbol }),
+            ]);
+            return { metrics: arr[0] ?? null, ratios: ratiosArr[0] ?? null };
+        }
+    );
+
     /** Fetch TTM key metrics (valuation multiples + EPS); returns `null` when unavailable. */
     async getKeyMetricsTtm(
         symbol: string
     ): Promise<FundamentalValuationMetrics | null> {
-        const [arr, ratiosArr] = await Promise.all([
-            getOptionalArray<RawFmpKeyMetricsTtm>('key-metrics-ttm', {
-                symbol,
-            }),
-            getOptionalArray<RawFmpRatiosTtm>('ratios-ttm', { symbol }),
-        ]);
-        const metrics = arr[0] ?? null;
-        const ratios = ratiosArr[0] ?? null;
+        const { metrics, ratios } = await this.getValuationRaw(symbol);
         if (metrics === null && ratios === null) return null;
         return {
             peRatioTTM: toFiniteNumber(
@@ -165,14 +182,7 @@ export class FmpFundamentalClient implements FundamentalDataProvider {
 
     /** Fetch TTM profitability and financial health ratios; returns `null` when unavailable. */
     async getRatiosTtm(symbol: string): Promise<FundamentalRatiosInput | null> {
-        const [arr, metricsArr] = await Promise.all([
-            getOptionalArray<RawFmpRatiosTtm>('ratios-ttm', { symbol }),
-            getOptionalArray<RawFmpKeyMetricsTtm>('key-metrics-ttm', {
-                symbol,
-            }),
-        ]);
-        const ratios = arr[0] ?? null;
-        const metrics = metricsArr[0] ?? null;
+        const { metrics, ratios } = await this.getValuationRaw(symbol);
         if (ratios === null && metrics === null) return null;
         return {
             returnOnEquityTTM: toFiniteNumber(

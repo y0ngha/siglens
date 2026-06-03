@@ -240,18 +240,19 @@ describe('FmpFundamentalClient', () => {
 
     describe('getRatiosTtm', () => {
         it('returns mapped TTM ratios', async () => {
+            // getValuationRaw fetches key-metrics-ttm first, then ratios-ttm.
+            mockOk([
+                {
+                    returnOnEquityTTM: 1.47,
+                    returnOnAssetsTTM: 0.28,
+                },
+            ]);
             mockOk([
                 {
                     operatingProfitMarginTTM: 0.3,
                     netProfitMarginTTM: 0.25,
                     debtToAssetsRatioTTM: 0.31,
                     currentRatioTTM: 0.94,
-                },
-            ]);
-            mockOk([
-                {
-                    returnOnEquityTTM: 1.47,
-                    returnOnAssetsTTM: 0.28,
                 },
             ]);
             const client = new FmpFundamentalClient();
@@ -269,6 +270,8 @@ describe('FmpFundamentalClient', () => {
         });
 
         it('uses ratios when key metrics fallback request fails', async () => {
+            // getValuationRaw fetches key-metrics-ttm first (errors), then ratios-ttm.
+            mockError(400);
             mockOk([
                 {
                     returnOnEquityTTM: 1.47,
@@ -279,7 +282,6 @@ describe('FmpFundamentalClient', () => {
                     currentRatioTTM: 0.94,
                 },
             ]);
-            mockError(400);
             const client = new FmpFundamentalClient();
             expect(await client.getRatiosTtm('AAPL')).toEqual({
                 returnOnEquityTTM: 1.47,
