@@ -26,6 +26,7 @@ const EMAIL_MAX_LENGTH = 320;
 const SYMBOL_MAX_LENGTH = 32;
 const EXCHANGE_MAX_LENGTH = 32;
 const FMP_SYMBOL_MAX_LENGTH = 64;
+const NOTICE_TITLE_MAX_LENGTH = 200;
 
 // Repositories also set updated_at explicitly via `sql`now()`` in their
 // `update()` / `onConflictDoUpdate()` calls; this $onUpdateFn(nowFn) hook is
@@ -333,5 +334,40 @@ export const agreements = pgTable(
         ),
         index('agreements_user_id_idx').on(table.userId),
         index('agreements_terms_id_idx').on(table.termsId),
+    ]
+);
+
+/** 사이트 공지 팝업 — DB 직접 입력으로 운영. 활성 공지 =
+ *  WHERE is_active AND (starts_at IS NULL OR starts_at <= NOW())
+ *                  AND (ends_at   IS NULL OR ends_at   >= NOW())
+ *  ORDER BY priority DESC, created_at DESC. */
+export const notices = pgTable(
+    'notices',
+    {
+        id: uuid('id').primaryKey().defaultRandom(),
+        title: varchar('title', { length: NOTICE_TITLE_MAX_LENGTH }).notNull(),
+        body: text('body').notNull(),
+        linkUrl: text('link_url'),
+        linkLabel: text('link_label'),
+        // null = 전역. 예: '/', '/symbol/*'. 매칭 규칙은 entities/notice/lib/matchPath.ts.
+        pathPattern: text('path_pattern'),
+        priority: integer('priority').notNull().default(0),
+        isActive: boolean('is_active').notNull().default(true),
+        startsAt: timestamp('starts_at', { withTimezone: true }),
+        endsAt: timestamp('ends_at', { withTimezone: true }),
+        createdAt: timestamp('created_at', { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+        updatedAt: timestamp('updated_at', { withTimezone: true })
+            .notNull()
+            .defaultNow()
+            .$onUpdateFn(nowFn),
+    },
+    table => [
+        index('notices_active_window_idx').on(
+            table.isActive,
+            table.startsAt,
+            table.endsAt
+        ),
     ]
 );
