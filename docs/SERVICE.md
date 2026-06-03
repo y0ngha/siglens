@@ -49,6 +49,17 @@ Investors who want a single, consolidated interpretation of multiple indicators.
 5. On-demand AI re-analysis
 ```
 
+## 운영 기능
+
+```
+긴급 공지 팝업 — notices DB 테이블에 row를 직접 INSERT/UPDATE해 운영.
+  - 노출 제어: is_active 토글, starts_at/ends_at 시간창, path_pattern 경로 타게팅
+    (null=전역, /about 정확 일치, /symbol/* 접두 일치), priority(클수록 먼저)
+  - 콘텐츠: title, body(마크다운), 선택 link_url/link_label(http(s)만 허용)
+  - 클라이언트: 마운트 시 1회 fetch → 경로 매칭 + localStorage dismiss 필터 → 모달 표시
+    "다시 보지 않기" = localStorage 영구 저장 / "닫기"/Esc/배경 = 임시(다음 방문 재노출)
+```
+
 ## What This Does NOT Provide
 
 ```

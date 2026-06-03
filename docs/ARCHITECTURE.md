@@ -118,6 +118,7 @@ import { DrizzleUserRepository } from '@/entities/user';
     │   ├── fear-greed/   # 공포탐욕지수
     │   ├── llm-provider/ # AI provider 어댑터 (Anthropic, Gemini, OpenAI)
     │   ├── news-article/ # 뉴스 fetch + AI 분석
+    │   ├── notice/       # 사이트 공지 팝업 (notices DB 테이블, matchPath, storage)
     │   ├── oauth-account/ # OAuth 계정 관리
     │   ├── og-image/     # OG 이미지 생성
     │   ├── options-chain/ # 옵션 체인 데이터
@@ -151,6 +152,7 @@ import { DrizzleUserRepository } from '@/entities/user';
     │   ├── fear-greed/
     │   ├── fundamental/
     │   ├── news/
+    │   ├── notice-popup/ # 긴급 공지 모달 (경로 매칭, localStorage dismiss, 우선순위)
     │   ├── options/
     │   ├── overall/
     │   ├── symbol-page/
