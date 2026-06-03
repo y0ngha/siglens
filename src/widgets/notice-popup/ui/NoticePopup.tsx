@@ -23,9 +23,16 @@ function formatNoticeDate(date: Date): string {
     return `${year}.${month}.${day} 작성`;
 }
 
+/** http(s) URL만 허용한다. javascript:/data: 등 위험 스킴은 링크를 렌더하지 않아 방어한다. */
+function toSafeHttpUrl(url: string | null): string | null {
+    if (url === null) return null;
+    return /^https?:\/\//i.test(url) ? url : null;
+}
+
 /**
- * 사이트 공지 팝업. 마운트 시 활성 공지를 fetch해 현재 경로 매칭 + dismiss
- * 필터를 적용하고, 남은 공지를 우선순위 순(서버 정렬)으로 하나씩 모달로 띄운다.
+ * 사이트 공지 팝업. 마운트 시 및 경로(pathname) 변경 시 활성 공지를 fetch해
+ * 현재 경로 매칭 + dismiss 필터를 적용하고, 남은 공지를 우선순위 순으로 하나씩
+ * 모달로 띄운다. (경로 변경 시 큐는 새로 구성된다.)
  * - X / 배경 클릭 / Esc = 임시 닫기(다음 방문 시 재노출)
  * - "다시 보지 않기" = localStorage에 ID 영구 저장
  */
@@ -58,6 +65,7 @@ export function NoticePopup() {
 
     const current = queue[0] ?? null;
     const isOpen = current !== null;
+    const safeLinkUrl = toSafeHttpUrl(current?.linkUrl ?? null);
 
     const advance = () => setQueue(prev => prev.slice(1));
     const handleDontShowAgain = () => {
@@ -110,14 +118,14 @@ export function NoticePopup() {
                 <MarkdownText className="text-secondary-300 text-sm">
                     {current.body}
                 </MarkdownText>
-                {current.linkUrl !== null && (
+                {safeLinkUrl !== null && (
                     <a
-                        href={current.linkUrl}
+                        href={safeLinkUrl}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="bg-primary-600 hover:bg-primary-500 mt-4 inline-block rounded-lg px-4 py-2 text-sm font-semibold text-white transition-colors"
                     >
-                        {current.linkLabel ?? current.linkUrl}
+                        {current.linkLabel ?? safeLinkUrl}
                     </a>
                 )}
                 <div className="mt-5 flex items-center justify-end gap-3">

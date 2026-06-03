@@ -142,6 +142,17 @@ describe('NoticePopup', () => {
         expect(await screen.findByText('두 번째')).toBeInTheDocument();
     });
 
+    it('javascript: linkUrl은 링크를 렌더하지 않지만 모달·제목은 표시된다', async () => {
+        mockedAction.mockResolvedValue([
+            notice({ linkUrl: 'javascript:alert(1)', linkLabel: '클릭' }),
+        ]);
+        render(<NoticePopup />);
+        // 제목은 표시되어야 함
+        expect(await screen.findByText('긴급 점검 안내')).toBeInTheDocument();
+        // 위험한 스킴이므로 링크는 렌더되지 않아야 함
+        expect(screen.queryByRole('link')).toBeNull();
+    });
+
     it('fetch 완료 전에 언마운트하면 상태 업데이트를 건너뛴다(cancelled guard)', async () => {
         let resolveNotices!: (v: NoticeRecord[]) => void;
         mockedAction.mockReturnValue(

@@ -1,17 +1,8 @@
 import { DrizzleNoticeRepository } from '@/entities/notice/api';
 import type { SiglensDatabase } from '@/shared/db/types';
+import type { NoticeRecord } from '@/entities/notice/model/types';
 
-interface SelectedRow {
-    id: string;
-    title: string;
-    body: string;
-    linkUrl: string | null;
-    linkLabel: string | null;
-    pathPattern: string | null;
-    createdAt: Date;
-}
-
-function makeMockDb(rows: SelectedRow[]): {
+function makeMockDb(rows: NoticeRecord[]): {
     db: SiglensDatabase;
     whereSpy: ReturnType<typeof vi.fn>;
     orderBySpy: ReturnType<typeof vi.fn>;
@@ -29,7 +20,7 @@ function makeMockDb(rows: SelectedRow[]): {
 }
 
 describe('DrizzleNoticeRepository.findActive', () => {
-    const baseRow: SelectedRow = {
+    const baseRow: NoticeRecord = {
         id: 'n1',
         title: '점검 안내',
         body: '## 점검',
