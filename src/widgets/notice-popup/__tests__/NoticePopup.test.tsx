@@ -2,8 +2,8 @@
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { NoticePopup } from '@/widgets/notice-popup/ui/NoticePopup';
 import { getActiveNoticesAction } from '@/entities/notice/actions';
-import { DISMISSED_NOTICES_STORAGE_KEY } from '@/entities/notice';
 import type { NoticeRecord } from '@/entities/notice';
+import { DISMISSED_NOTICES_STORAGE_KEY } from '../utils/noticeStorage';
 
 vi.mock('next/navigation', () => ({
     usePathname: () => '/',

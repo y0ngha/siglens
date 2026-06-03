@@ -5,9 +5,9 @@ import { usePathname } from 'next/navigation';
 import { MarkdownText } from '@/shared/ui/MarkdownText';
 import { useEscapeKey } from '@/shared/hooks/useEscapeKey';
 import { useFocusTrap } from '@/shared/hooks/useFocusTrap';
+import { formatNoticeDate } from '@/entities/notice';
+import { toSafeHttpUrl } from '@/shared/lib/safeUrl';
 import { useNoticePopup } from '../hooks/useNoticePopup';
-import { formatNoticeDate } from '../utils/formatNoticeDate';
-import { toSafeHttpUrl } from '../utils/toSafeHttpUrl';
 
 const MODAL_TITLE_ID = 'notice-modal-title';
 
@@ -19,8 +19,8 @@ const MODAL_TITLE_ID = 'notice-modal-title';
  */
 export function NoticePopup() {
     const pathname = usePathname();
-    const { queue, advance, dontShowAgain } = useNoticePopup(pathname);
     const dialogRef = useRef<HTMLDivElement>(null);
+    const { queue, advance, dontShowAgain } = useNoticePopup(pathname);
 
     useEscapeKey(advance, queue.length > 0);
     useFocusTrap(dialogRef, queue.length > 0);

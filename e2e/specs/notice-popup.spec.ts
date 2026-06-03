@@ -26,27 +26,26 @@ const GLOBAL_NOTICE_ID = '11111111-e2e1-4000-8000-000000000001';
 const PATH_NOTICE_ID = '22222222-e2e2-4000-8000-000000000002';
 
 /**
- * Matches DISMISSED_NOTICES_STORAGE_KEY in src/entities/notice/lib/noticeStorage.ts.
+ * Matches DISMISSED_NOTICES_STORAGE_KEY in src/widgets/notice-popup/utils/noticeStorage.ts.
  * Playwright 스펙은 src의 server-only 체인을 import할 수 없어 리터럴을 복제한다.
  * noticeStorage.ts에서 키를 바꾸면 이 값도 함께 갱신할 것 (update both if changed).
  */
 const DISMISSED_KEY = 'siglens_dismissed_notices';
 
 test.describe('공지 팝업', () => {
+    // localStorage를 초기화해 이전 테스트의 dismiss 상태가 남지 않도록 함.
+    test.beforeEach(async ({ page }) => {
+        await page.goto('/');
+        await page.evaluate(key => localStorage.removeItem(key), DISMISSED_KEY);
+    });
+
     /**
      * 1. 활성 전역 공지 시딩 → `notice-modal-content` 표시
      */
     test.describe('활성 공지 표시', () => {
         let cleanup: () => Promise<void>;
 
-        test.beforeEach(async ({ page }) => {
-            // localStorage를 초기화해 이전 테스트의 dismiss 상태가 남지 않도록 함.
-            await page.goto('/');
-            await page.evaluate(
-                key => localStorage.removeItem(key),
-                DISMISSED_KEY
-            );
-
+        test.beforeEach(async () => {
             cleanup = await seedNotices([
                 {
                     id: GLOBAL_NOTICE_ID,
@@ -79,13 +78,7 @@ test.describe('공지 팝업', () => {
     test.describe('다시 보지 않기 영구 dismiss', () => {
         let cleanup: () => Promise<void>;
 
-        test.beforeEach(async ({ page }) => {
-            await page.goto('/');
-            await page.evaluate(
-                key => localStorage.removeItem(key),
-                DISMISSED_KEY
-            );
-
+        test.beforeEach(async () => {
             cleanup = await seedNotices([
                 {
                     id: GLOBAL_NOTICE_ID,
@@ -137,13 +130,7 @@ test.describe('공지 팝업', () => {
     test.describe('닫기 임시 dismiss', () => {
         let cleanup: () => Promise<void>;
 
-        test.beforeEach(async ({ page }) => {
-            await page.goto('/');
-            await page.evaluate(
-                key => localStorage.removeItem(key),
-                DISMISSED_KEY
-            );
-
+        test.beforeEach(async () => {
             cleanup = await seedNotices([
                 {
                     id: GLOBAL_NOTICE_ID,
@@ -197,13 +184,7 @@ test.describe('공지 팝업', () => {
     test.describe('경로 타겟팅', () => {
         let cleanup: () => Promise<void>;
 
-        test.beforeEach(async ({ page }) => {
-            await page.goto('/');
-            await page.evaluate(
-                key => localStorage.removeItem(key),
-                DISMISSED_KEY
-            );
-
+        test.beforeEach(async () => {
             cleanup = await seedNotices([
                 {
                     id: PATH_NOTICE_ID,
@@ -250,14 +231,6 @@ test.describe('공지 팝업', () => {
         const EXPIRED_ID = '55555555-e2e5-4000-8000-000000000005';
 
         let cleanup: () => Promise<void>;
-
-        test.beforeEach(async ({ page }) => {
-            await page.goto('/');
-            await page.evaluate(
-                key => localStorage.removeItem(key),
-                DISMISSED_KEY
-            );
-        });
 
         test.afterEach(async () => {
             await cleanup?.();

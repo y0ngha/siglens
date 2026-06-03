@@ -3,7 +3,7 @@ import {
     DISMISSED_NOTICES_STORAGE_KEY,
     loadDismissedNoticeIds,
     dismissNotice,
-} from '@/entities/notice/lib/noticeStorage';
+} from '../utils/noticeStorage';
 
 describe('noticeStorage', () => {
     let storageSpy: ReturnType<typeof vi.spyOn> | undefined;

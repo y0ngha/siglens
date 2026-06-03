@@ -48,4 +48,11 @@ describe('matchPath', () => {
             expect(matchPath('', '/')).toBe(false);
         });
     });
+
+    describe('패턴 측 trailing slash 정규화', () => {
+        it('pattern에 trailing slash가 있어도 정규화되어 매칭된다', () => {
+            expect(matchPath('/about/', '/about')).toBe(true);
+            expect(matchPath('/symbol/*/', '/symbol/AAPL')).toBe(true);
+        });
+    });
 });

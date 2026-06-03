@@ -2,8 +2,8 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { useNoticePopup } from '@/widgets/notice-popup/hooks/useNoticePopup';
 import { getActiveNoticesAction } from '@/entities/notice/actions';
-import { DISMISSED_NOTICES_STORAGE_KEY } from '@/entities/notice';
 import type { NoticeRecord } from '@/entities/notice';
+import { DISMISSED_NOTICES_STORAGE_KEY } from '../utils/noticeStorage';
 
 vi.mock('@/entities/notice/actions', () => ({
     getActiveNoticesAction: vi.fn(),

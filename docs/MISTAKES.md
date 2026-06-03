@@ -293,10 +293,14 @@ This file contains only **recurring gotchas** that agents keep missing despite e
 
 17. Custom hooks declared after derived variables in component/hook code
     → All hook calls must be declared before derived variables (const x = ...), handlers, or effects
-    ❌ const timeframe = computeTimeframe(); useQuery(...)
-    ✅ useQuery(...); const timeframe = computeTimeframe();
-    → Ordering: useState/useRef → useQuery/useMutation → useCallback/useMemo → derived variables → handlers → useEffect
+    → Strict ordering: useState/useRef → useQuery/useMutation/custom hooks → useCallback/useMemo → derived variables → handlers → useEffect
     → useCallback and useMemo must be declared before any useEffect that depends on them
+    → This rule recurs 4+ times per feature; enforce even for apparently minor violations
+    ❌ const timeframe = computeTimeframe(); useQuery(...)
+    ❌ useQuery(...); const rebuildQueue = rebuildQueueSrc; custom hook useNoticePopup(...)  // derived const breaks hook order
+    ❌ useQuery(...); useCallback(...); const derived = ...; useRef(...)  // useRef after derived violates ordering
+    ✅ useQuery(...); const rebuildQueue = rebuildQueueSrc; useNoticePopup(...);  // derived const between query + custom hook is OK; custom hook last
+    ✅ useState(...); useRef(...); useQuery(...); useCallback(...); useMemo(...); const derived = ...; handlers; useEffect(...)  // complete strict order
 
 17.5. for loop with .push() inside useMemo, reduce, or other functional expressions
     → Loop accumulation must use spread, map, filter, flatMap, or reduce — never direct mutation
@@ -1195,6 +1199,16 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    ❌ src/widgets/symbol-page/SymbolTabsConfig.ts (utility at widget level)
    ✅ src/widgets/symbol-page/hooks/useSymbolChat.ts (hooks in dedicated subfolder)
    ✅ src/widgets/symbol-page/utils/symbolTabsConfig.ts (utilities in dedicated subfolder)
+
+0.7. Layering violations: side effects in entities/lib or generic utilities in widgets/utils
+    → entities/{slice}/lib/ restricted to PURE functions only (no side effects, no external I/O)
+    → Generic utilities (no React, no domain dependency) must go to shared/lib/, never widgets/utils
+    → Side-effect utilities (localStorage, sessionStorage, Date.now()) belong in widgets/utils or shared/lib/adapters if widget-specific; shared/db or shared/api if cross-cutting
+    ❌ entities/notice/lib/noticeStorage.ts with localStorage.getItem() calls
+    ❌ widgets/notice-popup/utils/safeUrl.ts for generic URL protocol validation (no widget dependency)
+    ✅ Side effects → widgets/notice-popup/utils/noticeStorage.ts (widget-scoped side effect)
+    ✅ Generic pure utilities → shared/lib/safeUrl.ts (reusable across widgets/features)
+    → Recurring: both patterns detected together in feat/notice-popup R4
 
 1. Pure utility functions placed in widgets/ instead of proper layers
    → Pure functions with no React dependencies must be in shared/lib/ (utilities) or entity/lib/ (business logic)

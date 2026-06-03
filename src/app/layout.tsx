@@ -8,7 +8,7 @@ import { AuthSessionHeaderClient } from '@/app/_components/AuthSessionHeaderClie
 import { Footer } from '@/widgets/layout/Footer';
 import { SiteJsonLd } from '@/widgets/layout/SiteJsonLd';
 import { PwaBanner } from '@/features/pwa-install';
-import { NoticePopup } from '@/widgets/notice-popup';
+import { NoticePopupLoader } from '@/widgets/notice-popup';
 import { ReactQueryProvider } from '@/app/providers';
 import { ADSENSE_ENABLED } from '@/shared/lib/adsense';
 import {
@@ -138,7 +138,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
                 <SiteJsonLd />
                 <ReactQueryProvider>
                     <PwaBanner />
-                    <NoticePopup />
+                    <NoticePopupLoader />
                     {/* 인증 헤더는 클라이언트에서 렌더된다(cookies()를 static render
                         트리에서 제거 → 전 라우트 ISR 가능). 상세는 AuthSessionHeaderClient JSDoc. */}
                     <AuthSessionHeaderClient />
