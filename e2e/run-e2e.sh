@@ -54,6 +54,14 @@ cleanup() {
     echo "Tearing down e2e backend..."
     yarn e2e:down || true
 
+    # 스크롤 맨 아래에 vitest처럼 명확한 결론 한 줄을 남긴다. echo만 하므로 종료 코드는
+    # 보존되어 e2e.yml의 job 성공/실패 판정에는 영향이 없다.
+    if [ "$code" -eq 0 ]; then
+        echo "✅ E2E PASSED"
+    else
+        echo "❌ E2E FAILED (exit $code)"
+    fi
+
     exit "$code"
 }
 

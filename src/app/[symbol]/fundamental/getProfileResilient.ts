@@ -1,6 +1,7 @@
 import type { FundamentalProfile } from '@y0ngha/siglens-core';
 import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
 import { isDynamicServerError } from '@/shared/lib/isDynamicServerError';
+import { isE2E } from '@/shared/api/e2eEnv';
 import { getProfile } from './fundamentalData';
 
 export interface ResilientProfile {
@@ -43,10 +44,14 @@ export async function getProfileResilient(
     } catch (e) {
         // Next's static/ISR control-flow error must propagate untouched.
         if (isDynamicServerError(e)) throw e;
-        console.error(
-            '[getProfileResilient] FMP profile infra failure, degrading:',
-            e
-        );
+        // 프로덕션에선 로깅하되, FMP 키가 없는 E2E에선 이 degrade가 정상이라 침묵시킨다
+        // (E2E_TEST는 prod에 없으므로 prod 로깅은 그대로). getAssetInfoResilient와 동일 정책.
+        if (!isE2E()) {
+            console.error(
+                '[getProfileResilient] FMP profile infra failure, degrading:',
+                e
+            );
+        }
         return { profile: null, degraded: true };
     }
 }

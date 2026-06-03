@@ -1,5 +1,6 @@
 import type { AssetInfo } from '@/shared/lib/types';
 import { isDynamicServerError } from '@/shared/lib/isDynamicServerError';
+import { isE2E } from '@/shared/api/e2eEnv';
 import { getAssetInfoStatic } from './getAssetInfoStatic';
 
 export interface ResilientAssetInfo {
@@ -53,10 +54,15 @@ export async function getAssetInfoResilient(
         if (isDynamicServerError(e)) {
             throw e;
         }
-        console.error(
-            '[getAssetInfoResilient] infra failure, ticker fallback:',
-            e
-        );
+        // E2E는 FMP 키가 없어 비시드 ticker마다 이 degrade가 정상적으로 발생하므로,
+        // 로그가 테스트 출력을 뒤덮는다. E2E에서만 침묵시키고 프로덕션 로깅은 유지한다
+        // (E2E_TEST는 프로덕션에 설정되지 않으므로 prod 동작은 그대로다).
+        if (!isE2E()) {
+            console.error(
+                '[getAssetInfoResilient] infra failure, ticker fallback:',
+                e
+            );
+        }
         return { assetInfo: { symbol: ticker, name: ticker }, degraded: true };
     }
 }
