@@ -2,36 +2,11 @@
 # Fix Log
 
 
-## [PR #545 Round 4 | fix/symbol-infra-fallback | 2026-06-02]
-- Violation: `expect.objectContaining({ index: false })` 부정확한 매처 사용
-  - Rule: MISTAKES.md §Tests §13 — 값이 결정론적(deterministic)일 때는 정확한 matcher 사용해야 함
-  - Context: `overall/__tests__/page.test.ts` line 99-101에서 invalid ticker 경로의 robots 값이 항상 `{ index: false, follow: false }`인데 `objectContaining`으로 부정확하게 테스트해 `follow: true` 회귀를 감지하지 못함
-- Violation: 테스트 mock 객체에서 AssetInfo required 필드 `symbol` 누락
-  - Rule: MISTAKES.md §TypeScript §2 — Mock 객체는 실제 타입 계약과 일치해야 함
-  - Context: `page.test.ts`와 `overall/__tests__/page.test.ts`의 mockGetAssetInfoResilient 모든 assetInfo 객체에 symbol 필드 누락
-- Violation: `ResilientAssetInfo` 타입이 barrel에서 export되지 않음
-  - Rule: CONVENTIONS.md FSD — production 코드는 슬라이스 barrel만 import
-  - Context: 함수 반환 타입인 `ResilientAssetInfo`를 직접 type annotation해야 할 때 barrel에 없으면 deep import 강제
-
-
-## [PR #545 Round 3 | fix/symbol-infra-fallback | 2026-06-02]
-- Violation: JSDoc "세 가지로 끝난다" 서술이 실제 네 가지 경로(DYNAMIC_SERVER_USAGE rethrow 포함)와 불일치
-  - Rule: MISTAKES.md §15.6 — 주석/JSDoc의 모든 서술은 실제 런타임/코드 현실과 일치해야 한다
-  - Context: Round 1에서 DYNAMIC_SERVER_USAGE rethrow 경로를 추가했지만 JSDoc 요약은 "세 가지"로 유지되어 "throw → 여기서 흡수해"라는 표현이 rethrow 경로를 숨김
-
-## [PR #545 Round 2 | fix/symbol-infra-fallback | 2026-06-02]
-- Violation: `DYNAMIC_SERVER_USAGE` rethrow 분기(catch 내 if 블록 true 경로)에 대한 테스트 케이스 누락
-  - Rule: MISTAKES.md Tests §18 — 신규 조건 분기는 true/false 두 경로 모두 테스트 케이스가 필요하다
-  - Context: Round 1에서 DynamicServerError rethrow 분기를 추가했지만 rethrow가 실제로 동작하는 경우(DYNAMIC_SERVER_USAGE digest)를 검증하는 테스트 누락
 
 ## [PR #545 Round 1 | fix/symbol-infra-fallback | 2026-06-02]
 - Violation: 변수명 `mockGetAssetInfoCached`가 실제로는 `getAssetInfoResilient`를 참조 (2개 파일)
   - Rule: MISTAKES.md §11 — 함수/변수명은 실제 참조 대상과 정확하게 일치해야 한다
   - Context: PR #545에서 `getAssetInfoCached` → `getAssetInfoResilient`로 교체 후 테스트 변수명 rename이 누락됨
-- Violation: `if (degraded)` 신규 분기에 대한 테스트 케이스 미커버 (5개 페이지: overall/news/fundamental/options/fear-greed)
-  - Rule: MISTAKES.md §18 — 새로운 조건 분기는 true/false 두 경로 모두 테스트 케이스가 필요하다
-  - Context: `getAssetInfoResilient` 교체 시 degraded 분기를 7개 라우트에 추가했지만 overall 외 5개 페이지 generateMetadata 테스트 누락
-
 ## [feat/bot-cost-caching Round 1 | feat/bot-cost-caching | 2026-05-28]
 - Violation: 'use server' file exported non-async-function constants `POLL_INTERVAL_MS`, `POLL_MAX_ATTEMPTS`
   - Rule: entities/CONVENTIONS.md — 'use server' files may only export async functions; constants must live in separate modules
@@ -63,3 +38,8 @@
 - Violation: `beforeEach/afterEach` hooks declared at module level instead of inside describe block in src/shared/cache/__tests__/getOrSetCache.test.ts
   - Rule: MISTAKES.md Tests #3 — Test lifecycle hooks must be inside describe block
   - Context: Moved beforeEach/afterEach into describe block to group with test cases
+
+## [PR #546 Round 2 | fix/fear-greed-h1-dup | 2026-06-03]
+- Status: APPROVED (both rounds, zero findings)
+  - Review: Removed duplicate ticker in h1 (`AAPL` duplicated because displayName + explicit ticker append) across 4 spots (fear-greed/page.tsx: h1, FAQ JSON-LD, guide; [symbol]/page.tsx: sr-only)
+  - Result: Clean merge — no violations logged
