@@ -57,4 +57,12 @@ describe('SignupContent', () => {
             expect.objectContaining({ next: undefined })
         );
     });
+
+    it('collapses an explicit root next to undefined', () => {
+        searchParamsRef.value = new URLSearchParams({ next: '/' });
+        render(<SignupContent />);
+        expect(signupFormSpy).toHaveBeenCalledWith(
+            expect.objectContaining({ next: undefined })
+        );
+    });
 });

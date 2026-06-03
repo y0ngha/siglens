@@ -53,6 +53,14 @@ describe('LoginContent', () => {
         );
     });
 
+    it('collapses an explicit root next to undefined', () => {
+        searchParamsRef.value = new URLSearchParams({ next: '/' });
+        render(<LoginContent />);
+        expect(loginFormSpy).toHaveBeenCalledWith(
+            expect.objectContaining({ next: undefined })
+        );
+    });
+
     it('maps a known oauth error code to its message', () => {
         searchParamsRef.value = new URLSearchParams({
             error: 'oauth_email_conflict',
