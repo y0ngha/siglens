@@ -69,7 +69,7 @@ export function NoticePopup() {
     useFocusTrap(dialogRef, isOpen);
     useEffect(() => {
         if (isOpen) dialogRef.current?.focus();
-    }, [isOpen]);
+    }, [isOpen, current?.id]);
 
     if (current === null) return null;
 

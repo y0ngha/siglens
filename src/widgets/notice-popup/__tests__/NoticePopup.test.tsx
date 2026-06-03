@@ -23,7 +23,7 @@ function notice(overrides: Partial<NoticeRecord> = {}): NoticeRecord {
         linkUrl: null,
         linkLabel: null,
         pathPattern: null,
-        createdAt: new Date('2026-06-03T00:00:00+09:00'),
+        createdAt: new Date(2026, 5, 3),
         ...overrides,
     };
 }
@@ -129,5 +129,16 @@ describe('NoticePopup', () => {
         const { container } = render(<NoticePopup />);
         await waitFor(() => expect(mockedAction).toHaveBeenCalled());
         expect(container).toBeEmptyDOMElement();
+    });
+
+    it('Esc로 닫으면 다음 공지로 넘어간다', async () => {
+        mockedAction.mockResolvedValue([
+            notice({ id: 'n1', title: '첫 번째' }),
+            notice({ id: 'n2', title: '두 번째' }),
+        ]);
+        render(<NoticePopup />);
+        expect(await screen.findByText('첫 번째')).toBeInTheDocument();
+        fireEvent.keyDown(document, { key: 'Escape' });
+        expect(await screen.findByText('두 번째')).toBeInTheDocument();
     });
 });
