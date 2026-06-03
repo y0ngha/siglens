@@ -5,7 +5,7 @@ import { LoginForm } from '@/features/auth-login';
 import { SocialLoginButtons } from '@/features/auth-oauth';
 import { sanitizeNextPath } from '@/shared/lib/auth/redirect';
 
-export const OAUTH_ERROR_MESSAGES: Record<string, string> = {
+export const OAUTH_ERROR_MESSAGES: Partial<Record<string, string>> = {
     oauth_email_conflict:
         '이미 비밀번호로 가입된 이메일입니다. 비밀번호로 로그인해주세요.',
     oauth_profile_invalid: '소셜 로그인 정보를 확인할 수 없습니다.',

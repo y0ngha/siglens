@@ -1,6 +1,5 @@
 import { Suspense } from 'react';
-import { AuthCardShell } from '@/shared/ui/auth/AuthCardShell';
-import { AuthFormSkeleton } from '@/shared/ui/auth/AuthFormSkeleton';
+import { AuthCardShell, AuthFormSkeleton } from '@/shared/ui/auth';
 import { SITE_NAME, SITE_URL } from '@/shared/lib/seo';
 import type { Metadata } from 'next';
 import Link from 'next/link';
