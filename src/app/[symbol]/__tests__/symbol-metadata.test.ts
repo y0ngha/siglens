@@ -124,6 +124,14 @@ const { mockGetAssetInfoResilient, mockGetProfileResilient } = vi.hoisted(
 
 vi.mock('@/entities/ticker', () => ({
     getAssetInfoResilient: mockGetAssetInfoResilient,
+    // assetInfo가 존재하는 happy-path에서 generateMetadata가 호출한다. canonical은
+    // ticker(params) 기반이라 displayName 정확도는 회귀 검증과 무관 — 간단 stub으로 충분.
+    buildDisplayName: (
+        info: { name?: string; koreanName?: string } | null,
+        ticker: string
+    ) => info?.koreanName ?? info?.name ?? ticker,
+    // page.tsx 본문이 import(generateMetadata 경로에선 미사용)하므로 stub만 제공.
+    buildAssetAboutNode: vi.fn(() => undefined),
 }));
 
 // fundamental generateMetadata는 noindex 게이트로 getProfileResilient를 호출한다.
@@ -200,9 +208,12 @@ function makeParamsWithSearch(
 describe('generateMetadata — canonical URL 회귀 가드', () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        // assetInfo null 반환 → ticker fallback 경로 검증
+        // happy-path 기본값: 실존하는 종목(assetInfo 존재, 비-degraded).
+        // canonical은 ticker(params) 기반이라 assetInfo 유무와 무관하므로,
+        // 회귀 가드(플레이스홀더 누출)에는 generic assetInfo로 충분하다.
+        // 실존하지 않는 ticker(assetInfo: null) 경로는 아래 별도 describe에서 검증.
         mockGetAssetInfoResilient.mockResolvedValue({
-            assetInfo: null,
+            assetInfo: { symbol: 'AAPL', name: 'Apple Inc.' },
             degraded: false,
         });
         // fundamental의 noindex 게이트 기본값: profile 존재 + 비-degraded(정상 happy-path).
@@ -340,8 +351,8 @@ describe('generateMetadata — canonical URL 회귀 가드', () => {
     });
 
     describe('variant noindex 제거 — clean canonical 통합', () => {
-        // 최상위 beforeEach가 assetInfo=null로 설정 → buildDisplayName 미호출
-        // (ticker fallback). variant noindex 제거 검증에는 assetInfo 유무가 무관하다.
+        // 최상위 beforeEach가 실존 종목(assetInfo 존재)으로 설정 → 정상 index 메타데이터.
+        // variant noindex 제거 검증에는 tf searchParam이 robots를 바꾸지 않음만 보면 된다.
         it('overall: tf variant여도 noindex 없음, canonical은 clean', async () => {
             const metadata = await generateOverallMetadata(
                 makeParamsWithSearch('aapl', { tf: '1Hour' })
@@ -403,6 +414,61 @@ describe('generateMetadata — canonical URL 회귀 가드', () => {
                 });
                 // M1: degraded/invalid noindex는 루트 레이아웃의 home canonical을
                 // 상속하지 않는다(canonical: null로 omit).
+                expect(metadata.alternates?.canonical).toBeNull();
+            }
+        );
+    });
+
+    describe('실존하지 않는 ticker (assetInfo null) — noindex 전 라우트', () => {
+        /**
+         * 형식은 유효하나 FMP에 실재하지 않는 ticker는 getAssetInfoResilient가
+         * { assetInfo: null, degraded: false }를 반환한다. 본문은 `if (!assetInfo)
+         * notFound()`로 404/not-found(noindex)를 렌더하므로, generateMetadata도 noindex +
+         * canonical null로 맞춰야 한다. 가드가 없으면 한 페이지에 robots index(메타)와
+         * noindex(not-found)가 충돌하고 존재하지 않는 URL을 canonical로 자기참조하는
+         * soft-404가 발생한다 (실측: HTTP 200 + robots ['index, follow', 'noindex']).
+         *
+         * fundamental은 제외 — 실재성 게이트가 assetInfo가 아닌 getProfileResilient의
+         * profile===null이며, 아래 별도 describe에서 검증한다.
+         */
+        const nonExistentCases = [
+            {
+                name: '[symbol] 루트',
+                fn: () => generateSymbolMetadata(makeParamsWithSearch('zzzq')),
+            },
+            {
+                name: 'news',
+                fn: () => generateNewsMetadata(makeParams('zzzq')),
+            },
+            {
+                name: 'options',
+                fn: () => generateOptionsMetadata(makeParams('zzzq')),
+            },
+            {
+                name: 'fear-greed',
+                fn: () => generateFearGreedMetadata(makeParams('zzzq')),
+            },
+            {
+                name: 'overall',
+                fn: () => generateOverallMetadata(makeParamsWithSearch('zzzq')),
+            },
+        ] as const;
+
+        beforeEach(() => {
+            mockGetAssetInfoResilient.mockResolvedValue({
+                assetInfo: null,
+                degraded: false,
+            });
+        });
+
+        it.each(nonExistentCases)(
+            '$name — assetInfo null 시 noindex + canonical null',
+            async ({ fn }) => {
+                const metadata = await fn();
+                expect(metadata.robots).toEqual({
+                    index: false,
+                    follow: false,
+                });
                 expect(metadata.alternates?.canonical).toBeNull();
             }
         );
