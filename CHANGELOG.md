@@ -1,5 +1,40 @@
 # Changelog
 
+# [0.17.0](https://github.com/y0ngha/siglens/compare/v0.16.0...v0.17.0) (2026-06-03)
+
+
+### Bug Fixes
+
+* **[symbol]:** add DYNAMIC_SERVER_USAGE rethrow test + inline cast comment ([c841c81](https://github.com/y0ngha/siglens/commit/c841c817765084912805dc410ad57db6bad0eac3))
+* **[symbol]:** address PR [#546](https://github.com/y0ngha/siglens/issues/546) approved-review suggestions (S1/S2) ([45370e9](https://github.com/y0ngha/siglens/commit/45370e97fec4194523ec48636ad6054dbbed2cbe))
+* **[symbol]:** address PR [#546](https://github.com/y0ngha/siglens/issues/546) review — casing normalization + slice-relative import ([fed766e](https://github.com/y0ngha/siglens/commit/fed766e861e6876b64df0fbb45bb57bf3b3f99ad))
+* **[symbol]:** address PR [#546](https://github.com/y0ngha/siglens/issues/546) review round 2 (B1-B3, S1-S2, Q1) ([8f5cd51](https://github.com/y0ngha/siglens/commit/8f5cd51b38a7d16e225bb323104e767df6843453))
+* **[symbol]:** address PR [#546](https://github.com/y0ngha/siglens/issues/546) review round 3 — barrel exports (B1/B2) + S1-S3 ([0bde3a4](https://github.com/y0ngha/siglens/commit/0bde3a493e39da97cf29498349eb1f0fefcd7ece))
+* **[symbol]:** address review comments — rethrow DynamicServerError, rename mock vars, add degraded noindex tests ([4b939a9](https://github.com/y0ngha/siglens/commit/4b939a9d1a67a758a556909d8e9c3c31ccab196b))
+* **[symbol]:** fix imprecise matcher in overall generateMetadata test ([9f418cc](https://github.com/y0ngha/siglens/commit/9f418ccf15beecd1d17e7633c942a0e46193990a))
+* **[symbol]:** fix imprecise matcher, add symbol to mocks, export ResilientAssetInfo ([9d7d9c1](https://github.com/y0ngha/siglens/commit/9d7d9c1e3599a277a12dd4d5f6966a9c38ef5fca))
+* **[symbol]:** fix JSDoc path count + add message-only rethrow test ([5444aa7](https://github.com/y0ngha/siglens/commit/5444aa7c3cf4c180bd1bd6acfcb5c82f2420025d))
+* **[symbol]:** graceful ticker fallback on getAssetInfo infra failure + noindex ([03bc5c7](https://github.com/y0ngha/siglens/commit/03bc5c7d7585c376722d57fda641339da1202dba))
+* **[symbol]:** pre-deploy hardening — error boundary + resilient fundamental + canonical ([499a976](https://github.com/y0ngha/siglens/commit/499a9766694c159e5a12779977d852091b28fc58))
+* **[symbol]:** remove duplicate ticker in fear-greed / chart headings ([8918983](https://github.com/y0ngha/siglens/commit/891898334c632f10de221da60fd3c68baa5b29f4))
+* **auth:** client-ize root header with nav-based self-heal (axis-0 ISR regression) ([e4a66ce](https://github.com/y0ngha/siglens/commit/e4a66ce369ca1423f247b8ebe5f697848dff2480))
+* **seo:** SSR-render chart route h1 in Suspense fallback (crawlable for JS-less bots) ([81947c8](https://github.com/y0ngha/siglens/commit/81947c8aa9bcb4b0fb2fbceb8fa46e7f185805f1))
+* **symbol:** remove connection() from getAssetInfoResilient — fixes ISR cold-gen 500 on FMP infra failure ([0a59e92](https://github.com/y0ngha/siglens/commit/0a59e92a48c741c802967b7c3864e81ac870b96e)), closes [#545](https://github.com/y0ngha/siglens/issues/545) [#543](https://github.com/y0ngha/siglens/issues/543)
+
+
+### Features
+
+* **[symbol]:** SSR FactLayer via Suspense fallback (default-tf static bars) ([6fcf1a8](https://github.com/y0ngha/siglens/commit/6fcf1a82761161c5185aaaa96e0003f0b420b23f))
+* **[symbol]:** static-safe assetInfo/peek/bars for ISR (no DYNAMIC_SERVER_USAGE) ([836e7ea](https://github.com/y0ngha/siglens/commit/836e7eafc05c06ac6f2837dbda12fc1c71c7fdb4))
+* **auth:** client-side AuthSessionHeader — remove root layout cookies() to unblock ISR (axis 0) ([1f9ff95](https://github.com/y0ngha/siglens/commit/1f9ff95dafbfa2519ad577882278a8c8f17af10b))
+* **bars:** add getBarsStatic — ISR static-safe bars cache ([fce6ff8](https://github.com/y0ngha/siglens/commit/fce6ff862251b4e2f203f222399cc22e5f18c362))
+* **cache:** add staticSymbolCache — generic per-symbol ISR cache wrapper ([c09f938](https://github.com/y0ngha/siglens/commit/c09f938c5104a36afd081d2bf74b1e1405dde61b))
+* **fear-greed:** static bars prefetch for ISR ([38c1b9f](https://github.com/y0ngha/siglens/commit/38c1b9f6e6202e2cb80fc1fddd6a216db260a4c4))
+* **fundamental:** static-fy profile/metrics/ratios/... section fetches for ISR ([6f03ebe](https://github.com/y0ngha/siglens/commit/6f03ebe66fb56803e5a9235445330a57da869b65))
+* **news:** static-fy news data + client analysis trigger + on-demand revalidateTag (remove headers() ISR blocker) ([39b0d7b](https://github.com/y0ngha/siglens/commit/39b0d7b79965c86913fea2aaf937f4462618751b))
+* **options:** static hasOptions/snapshot for ISR ([11e512e](https://github.com/y0ngha/siglens/commit/11e512e2b7dcccb565bf984425543fb07dfcb5d7))
+* **overall:** static peekOverall + SSR overall facts via Suspense fallback ([46515b2](https://github.com/y0ngha/siglens/commit/46515b2bb5b589b8eb6112dd99af11f09e6c0dba))
+
 # [0.16.0](https://github.com/y0ngha/siglens/compare/v0.15.0...v0.16.0) (2026-06-01)
 
 
