@@ -15,7 +15,10 @@ vi.mock('@/features/auth-password-reset', () => ({
     },
 }));
 
-import { ResetPasswordContent } from '../ResetPasswordContent';
+import {
+    ResetPasswordContent,
+    MISSING_PARAMS_MESSAGE,
+} from '../ResetPasswordContent';
 
 describe('ResetPasswordContent', () => {
     beforeEach(() => {
@@ -42,7 +45,7 @@ describe('ResetPasswordContent', () => {
         render(<ResetPasswordContent />);
         expect(resetFormSpy).not.toHaveBeenCalled();
         expect(screen.getByRole('alert')).toHaveTextContent(
-            '재설정 링크가 올바르지 않습니다. 비밀번호 찾기를 다시 시도해주세요.'
+            MISSING_PARAMS_MESSAGE
         );
     });
 
@@ -51,12 +54,14 @@ describe('ResetPasswordContent', () => {
         render(<ResetPasswordContent />);
         expect(resetFormSpy).not.toHaveBeenCalled();
         expect(screen.getByRole('alert')).toHaveTextContent(
-            '재설정 링크가 올바르지 않습니다. 비밀번호 찾기를 다시 시도해주세요.'
+            MISSING_PARAMS_MESSAGE
         );
     });
 
     it('shows the missing-params alert when both absent', () => {
         render(<ResetPasswordContent />);
-        expect(screen.getByRole('alert')).toBeInTheDocument();
+        expect(screen.getByRole('alert')).toHaveTextContent(
+            MISSING_PARAMS_MESSAGE
+        );
     });
 });

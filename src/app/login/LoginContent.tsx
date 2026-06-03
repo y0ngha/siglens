@@ -5,7 +5,7 @@ import { LoginForm } from '@/features/auth-login';
 import { SocialLoginButtons } from '@/features/auth-oauth';
 import { sanitizeNextPath } from '@/shared/lib/auth/redirect';
 
-const OAUTH_ERROR_MESSAGES: Record<string, string> = {
+export const OAUTH_ERROR_MESSAGES: Record<string, string> = {
     oauth_email_conflict:
         '이미 비밀번호로 가입된 이메일입니다. 비밀번호로 로그인해주세요.',
     oauth_profile_invalid: '소셜 로그인 정보를 확인할 수 없습니다.',
@@ -17,7 +17,7 @@ const OAUTH_ERROR_MESSAGES: Record<string, string> = {
         '서비스를 일시적으로 이용할 수 없습니다. 잠시 후 다시 시도해주세요.',
 };
 
-const PASSWORD_RESET_SUCCESS_MESSAGE =
+export const PASSWORD_RESET_SUCCESS_MESSAGE =
     '비밀번호가 성공적으로 변경되었습니다. 새 비밀번호로 로그인해주세요.';
 
 // useSearchParams를 읽어 이 subtree만 CSR로 떨군다(라우트는 static 유지).

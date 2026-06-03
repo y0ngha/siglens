@@ -22,7 +22,11 @@ vi.mock('@/features/auth-oauth', () => ({
     },
 }));
 
-import { LoginContent } from '../LoginContent';
+import {
+    LoginContent,
+    OAUTH_ERROR_MESSAGES,
+    PASSWORD_RESET_SUCCESS_MESSAGE,
+} from '../LoginContent';
 
 describe('LoginContent', () => {
     beforeEach(() => {
@@ -56,8 +60,7 @@ describe('LoginContent', () => {
         render(<LoginContent />);
         expect(loginFormSpy).toHaveBeenCalledWith(
             expect.objectContaining({
-                initialError:
-                    '이미 비밀번호로 가입된 이메일입니다. 비밀번호로 로그인해주세요.',
+                initialError: OAUTH_ERROR_MESSAGES.oauth_email_conflict,
             })
         );
     });
@@ -66,7 +69,7 @@ describe('LoginContent', () => {
         searchParamsRef.value = new URLSearchParams({ password_reset: '1' });
         render(<LoginContent />);
         expect(screen.getByRole('status')).toHaveTextContent(
-            '비밀번호가 성공적으로 변경되었습니다. 새 비밀번호로 로그인해주세요.'
+            PASSWORD_RESET_SUCCESS_MESSAGE
         );
     });
 

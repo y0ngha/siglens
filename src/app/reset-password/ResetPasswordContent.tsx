@@ -3,7 +3,7 @@
 import { useSearchParams } from 'next/navigation';
 import { ResetPasswordForm } from '@/features/auth-password-reset';
 
-const MISSING_PARAMS_MESSAGE =
+export const MISSING_PARAMS_MESSAGE =
     '재설정 링크가 올바르지 않습니다. 비밀번호 찾기를 다시 시도해주세요.';
 
 // useSearchParams를 읽어 이 subtree만 CSR로 떨군다(라우트는 static 유지).
