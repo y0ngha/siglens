@@ -18,17 +18,19 @@ const MODAL_TITLE_ID = 'notice-modal-title';
  * - "다시 보지 않기" = localStorage에 ID 영구 저장
  */
 export function NoticePopup() {
-    const pathname = usePathname();
     const dialogRef = useRef<HTMLDivElement>(null);
+    const pathname = usePathname();
     const { queue, advance, dontShowAgain } = useNoticePopup(pathname);
 
     useEscapeKey(advance, queue.length > 0);
     useFocusTrap(dialogRef, queue.length > 0);
+
+    const current = queue[0] ?? null;
+
     useEffect(() => {
         if (queue.length > 0) dialogRef.current?.focus();
     }, [queue]);
 
-    const current = queue[0] ?? null;
     if (current === null) return null;
 
     const safeLinkUrl = toSafeHttpUrl(current.linkUrl);

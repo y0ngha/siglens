@@ -27,7 +27,8 @@ export function dismissNotice(id: string): void {
             DISMISSED_NOTICES_STORAGE_KEY,
             JSON.stringify([...current, id])
         );
-    } catch {
-        // 스토리지 용량 초과 등 무시
+    } catch (err) {
+        // localStorage 용량 초과 등 — 조용히 무시하되 디버깅 가능하도록 warn
+        console.warn('[dismissNotice] storage write failed:', err);
     }
 }
