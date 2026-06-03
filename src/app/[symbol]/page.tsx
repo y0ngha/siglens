@@ -254,8 +254,8 @@ export default async function SymbolPage({ params }: Props) {
                         (WCAG 1.3.1). 보조 설명은 heading 없이 p로만 노출한다. */}
                     <p>{displayName} 차트 분석 개요</p>
                     <p>
-                        {displayName}({ticker})의 기술적 분석 페이지입니다.
-                        보조지표 {skillCounts.indicators}종, 캔들 패턴{' '}
+                        {displayName}의 기술적 분석 페이지입니다. 보조지표{' '}
+                        {skillCounts.indicators}종, 캔들 패턴{' '}
                         {skillCounts.candlesticks}종, 차트 패턴{' '}
                         {skillCounts.patterns}종을 활용해 추세, 진입 구간,
                         지지선과 저항선을 분석합니다.
