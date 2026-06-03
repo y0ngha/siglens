@@ -1,4 +1,5 @@
 import { test, expect } from '../support/fixtures';
+import { E2E_FORCE_MARKET_PARTIAL_COOKIE } from '@/shared/api/e2eMarketStub';
 
 /**
  * Market overview (`/market`) — Tier 3 render outcomes.
@@ -26,5 +27,35 @@ test.describe('market overview', () => {
         await expect(
             page.getByRole('region', { name: '섹터별 신호 모아보기' })
         ).toBeVisible();
+    });
+
+    /**
+     * 부분 로드 실패 안내. FakeMarketProvider는 항상 비-0 시세를 주므로 안내가 뜨지
+     * 않는다 — force-partial 쿠키(E2E_TEST 한정, getMarketSummaryAction이 해석)로 첫
+     * 섹터 quote를 0으로 만들어 server action → useMarketSummary(hasMissingQuotes)
+     * → 패널 안내까지 전 경로를 결정적으로 검증한다. 닫으면(일시적) 사라진다.
+     */
+    test('partial data-load failure shows a dismissible notice', async ({
+        page,
+        context,
+    }) => {
+        await context.addCookies([
+            {
+                name: E2E_FORCE_MARKET_PARTIAL_COOKIE,
+                value: '1',
+                url: 'http://localhost:4300',
+            },
+        ]);
+
+        await page.goto('/market');
+
+        const notice = page.getByRole('alert').filter({
+            hasText: '미국 증시 데이터를 불러오는 중 일부를 가져오지 못했어요.',
+        });
+        await expect(notice).toBeVisible();
+
+        await notice.getByRole('button', { name: '안내 닫기' }).click();
+
+        await expect(notice).toHaveCount(0);
     });
 });

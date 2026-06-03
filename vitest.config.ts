@@ -24,6 +24,12 @@ const sharedTestConfig = {
     pool: 'vmThreads' as const,
     maxThreads: 8,
     experimental: { fsModuleCache: true },
+    // `vmThreads`는 워커 한 개 안에서 여러 테스트 파일이 process.env를 공유한다.
+    // `vi.stubEnv`가 파일의 마지막 테스트 뒤 자동 복원되지 않으면(기본 unstubEnvs=false)
+    // 스텁된 env가 같은 워커의 다음 파일로 새어, isE2E()를 켜 factory들의
+    // `require('./Fake*')` dead-branch를 활성화 → "Cannot find module" flake를 일으킨다.
+    // 매 테스트 후 자동 unstub해 누수를 차단한다(전역 afterEach의 raw E2E_TEST 복원과 함께).
+    unstubEnvs: true as const,
     // Keep Vitest and Playwright runners disjoint. The Playwright suite lives in
     // `e2e/**` (`.spec.ts`), so it already falls outside our `src/**` include
     // patterns — but excluding it explicitly is belt-and-suspenders against any

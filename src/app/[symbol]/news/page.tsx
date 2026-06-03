@@ -61,11 +61,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     if (degraded) {
         return NOINDEX_SYMBOL_METADATA;
     }
-    const displayName = assetInfo ? buildDisplayName(assetInfo, upper) : upper;
+    // 본문 `if (!assetInfo) notFound()`와 일관: 실재하지 않는 ticker(assetInfo: null,
+    // degraded: false)는 메타데이터도 noindex로 맞춘다. 가드가 없으면 본문 not-found(noindex)와
+    // 메타데이터 index가 충돌하는 soft-404가 만들어진다.
+    if (!assetInfo) {
+        return NOINDEX_SYMBOL_METADATA;
+    }
+    const displayName = buildDisplayName(assetInfo, upper);
     const { title, fullTitle, description, url, keywords } =
         buildSymbolNewsSeoContent(upper, {
             displayName,
-            koreanName: assetInfo?.koreanName,
+            koreanName: assetInfo.koreanName,
         });
 
     return {
@@ -297,7 +303,7 @@ export default async function NewsPage({ params }: Props) {
                     <Suspense fallback={<NewsAiSummarySkeleton />}>
                         <NewsAiSummary
                             symbol={upper}
-                            companyName={assetInfo?.name ?? upper}
+                            companyName={assetInfo.name}
                             hasEnrichedNews={hasEnrichedNews}
                         />
                     </Suspense>

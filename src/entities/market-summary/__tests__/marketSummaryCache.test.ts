@@ -50,6 +50,28 @@ const sampleSummary: MarketSummaryData = {
     ],
 };
 
+const partialSummary: MarketSummaryData = {
+    indices: [
+        {
+            symbol: 'SPY',
+            fmpSymbol: '^GSPC',
+            displayName: 'S&P 500',
+            koreanName: 'S&P 500',
+            price: 5000,
+            changesPercentage: 0.5,
+        },
+    ],
+    sectors: [
+        {
+            symbol: 'XLK',
+            sectorName: 'Technology',
+            koreanName: '기술',
+            price: 0,
+            changesPercentage: 0,
+        },
+    ],
+};
+
 const zeroSummary: MarketSummaryData = {
     indices: [
         {
@@ -127,6 +149,17 @@ describe('getCachedMarketSummary', () => {
     it('전 종목 price=0 번들은 set 미호출', async () => {
         mockRedisGet.mockResolvedValue(null);
         mockGetMarketSummary.mockResolvedValue(zeroSummary);
+        const mod = await loadWithEnv({
+            url: 'https://x.upstash.io',
+            token: 't',
+        });
+        await mod.getCachedMarketSummary(mockProvider);
+        expect(mockRedisSet).not.toHaveBeenCalled();
+    });
+
+    it('일부 종목 price=0인 부분 실패 번들도 set 미호출', async () => {
+        mockRedisGet.mockResolvedValue(null);
+        mockGetMarketSummary.mockResolvedValue(partialSummary);
         const mod = await loadWithEnv({
             url: 'https://x.upstash.io',
             token: 't',
