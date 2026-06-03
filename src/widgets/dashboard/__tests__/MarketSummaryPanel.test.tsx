@@ -70,6 +70,8 @@ describe('MarketSummaryPanel', () => {
             isPending: true,
             sectorMap: new Map(),
             indices: [],
+            hasMissingQuotes: false,
+            briefing: undefined,
         });
         render(<MarketSummaryPanel />);
         expect(screen.getByTestId('skeleton')).toBeInTheDocument();
@@ -201,6 +203,8 @@ describe('MarketSummaryPanel', () => {
                     changesPercentage: 1,
                 },
             ],
+            hasMissingQuotes: false,
+            briefing: undefined,
         });
         render(<MarketSummaryPanel />);
         expect(screen.getByText('오늘의 미국 시장')).toBeInTheDocument();
@@ -259,6 +263,8 @@ describe('MarketSummaryPanel', () => {
             isPending: false,
             sectorMap,
             indices: [],
+            hasMissingQuotes: false,
+            briefing: undefined,
         });
         render(<MarketSummaryPanel />);
         expect(screen.getByText('Tech')).toBeInTheDocument();
@@ -270,14 +276,12 @@ describe('MarketSummaryPanel', () => {
     it('briefing이 submitted면 처리 중에는 로딩 카드를 렌더한다', () => {
         mockUseBriefing.mockReturnValue({ status: 'processing' });
         mockUseMarketSummary.mockReturnValue({
-            data: {
-                summary: { indices: [], sectors: [] },
-                briefing: { status: 'submitted', jobId: 'job-1' },
-            },
+            data: { summary: { indices: [], sectors: [] } },
             isPending: false,
             sectorMap: new Map(),
             indices: [],
             hasMissingQuotes: false,
+            briefing: { status: 'submitted', jobId: 'job-1' },
         });
         render(<MarketSummaryPanel />);
         expect(screen.getByTestId('briefing-loading')).toBeInTheDocument();
@@ -290,14 +294,12 @@ describe('MarketSummaryPanel', () => {
             generatedAt: '2025-01-01T00:00:00Z',
         });
         mockUseMarketSummary.mockReturnValue({
-            data: {
-                summary: { indices: [], sectors: [] },
-                briefing: { status: 'submitted', jobId: 'job-1' },
-            },
+            data: { summary: { indices: [], sectors: [] } },
             isPending: false,
             sectorMap: new Map(),
             indices: [],
             hasMissingQuotes: false,
+            briefing: { status: 'submitted', jobId: 'job-1' },
         });
         render(<MarketSummaryPanel />);
         expect(screen.getByTestId('briefing')).toBeInTheDocument();
@@ -305,47 +307,29 @@ describe('MarketSummaryPanel', () => {
 
     it('renders cached briefing when briefing status is cached', () => {
         mockUseMarketSummary.mockReturnValue({
-            data: {
-                summary: { indices: [], sectors: [] },
-                briefing: {
-                    status: 'cached',
-                    briefing: 'AI briefing text',
-                    generatedAt: '2025-01-01T00:00:00Z',
-                },
-            },
+            data: { summary: { indices: [], sectors: [] } },
             isPending: false,
             sectorMap: new Map(),
             indices: [],
+            hasMissingQuotes: false,
+            briefing: {
+                status: 'cached',
+                briefing: 'AI briefing text',
+                generatedAt: '2025-01-01T00:00:00Z',
+            },
         });
         render(<MarketSummaryPanel />);
         expect(screen.getByTestId('briefing')).toBeInTheDocument();
     });
 
-    it('renders nothing for BriefingRegion when briefing is null (converted to undefined by ??)', () => {
-        // data.briefing=null → data?.briefing ?? undefined → input=undefined → renders null
+    it('briefing이 undefined면 BriefingRegion이 아무것도 렌더하지 않는다', () => {
         mockUseMarketSummary.mockReturnValue({
-            data: {
-                summary: { indices: [], sectors: [] },
-                briefing: null,
-            },
+            data: { summary: { indices: [], sectors: [] } },
             isPending: false,
             sectorMap: new Map(),
             indices: [],
-        });
-        render(<MarketSummaryPanel />);
-        expect(screen.queryByTestId('bot-blocked')).not.toBeInTheDocument();
-        expect(screen.queryByTestId('briefing')).not.toBeInTheDocument();
-    });
-
-    it('does not show briefing region when briefing is undefined', () => {
-        mockUseMarketSummary.mockReturnValue({
-            data: {
-                summary: { indices: [], sectors: [] },
-                briefing: undefined,
-            },
-            isPending: false,
-            sectorMap: new Map(),
-            indices: [],
+            hasMissingQuotes: false,
+            briefing: undefined,
         });
         render(<MarketSummaryPanel />);
         expect(screen.queryByTestId('briefing')).not.toBeInTheDocument();
@@ -387,13 +371,12 @@ describe('MarketSummaryPanel', () => {
         ]);
 
         mockUseMarketSummary.mockReturnValue({
-            data: {
-                summary: { indices: [], sectors: [] },
-                briefing: undefined,
-            },
+            data: { summary: { indices: [], sectors: [] } },
             isPending: false,
             sectorMap,
             indices: [],
+            hasMissingQuotes: false,
+            briefing: undefined,
         });
         const { container } = render(<MarketSummaryPanel />);
         // Finance group has 3 symbols, so it should use grid-cols-3

@@ -2,7 +2,11 @@
 
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import type { MarketIndexData, MarketSectorData } from '@y0ngha/siglens-core';
+import type {
+    MarketIndexData,
+    MarketSectorData,
+    SubmitBriefingResult,
+} from '@y0ngha/siglens-core';
 import type { MarketSummaryActionResult } from '@/shared/lib/types';
 import { getMarketSummaryAction } from '@/entities/market-summary/actions';
 import { hasMissingQuotes as detectMissingQuotes } from '@/entities/market-summary';
@@ -22,6 +26,13 @@ interface UseMarketSummaryReturn {
      * (`allQuotesPresent`)와 동일 기준 — 부분/전면 실패를 안내로 알리는 데 쓴다.
      */
     hasMissingQuotes: boolean;
+    /**
+     * AI 브리핑 결과. 소비자(MarketSummaryPanel)가 raw `data` 구조를 파헤치지 않도록
+     * 훅에서 추출해 노출한다(sectorMap/indices와 동일 패턴). 결과가 없거나 error/bot
+     * 케이스면 `undefined` — 기존 `data?.briefing ?? undefined`와 동일하게 null도
+     * undefined로 합친다(BriefingRegion의 undefined 분기 = 렌더 안 함).
+     */
+    briefing: SubmitBriefingResult | undefined;
 }
 
 function hasSummary(
@@ -59,5 +70,7 @@ export function useMarketSummary(): UseMarketSummaryReturn {
         [resolved]
     );
 
-    return { data, isPending, sectorMap, indices, hasMissingQuotes };
+    const briefing = resolved?.briefing ?? undefined;
+
+    return { data, isPending, sectorMap, indices, hasMissingQuotes, briefing };
 }

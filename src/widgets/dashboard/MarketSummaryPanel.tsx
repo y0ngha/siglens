@@ -60,7 +60,7 @@ function BriefingRegion({ input }: BriefingRegionProps) {
 }
 
 export function MarketSummaryPanel() {
-    const { data, isPending, sectorMap, indices, hasMissingQuotes } =
+    const { data, isPending, sectorMap, indices, hasMissingQuotes, briefing } =
         useMarketSummary();
     const [noticeDismissed, setNoticeDismissed] = useState(false);
 
@@ -102,7 +102,6 @@ export function MarketSummaryPanel() {
                 />
             )}
             <div className="flex flex-col gap-6" aria-live="polite">
-                {/* 주요 지수 */}
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                     {indices.map(idx => (
                         <IndexCard key={idx.fmpSymbol} data={idx} />
@@ -144,8 +143,7 @@ export function MarketSummaryPanel() {
                     })}
                 </div>
 
-                {/* AI 브리핑 */}
-                <BriefingRegion input={data?.briefing ?? undefined} />
+                <BriefingRegion input={briefing} />
             </div>
         </section>
     );
