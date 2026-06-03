@@ -1,11 +1,9 @@
 import { Suspense } from 'react';
-import { AuthCardShell } from '@/shared/ui/auth/AuthCardShell';
-import { LoginForm } from '@/features/auth-login';
-import { SocialLoginButtons } from '@/features/auth-oauth';
-import { sanitizeNextPath } from '@/shared/lib/auth/redirect';
+import { AuthCardShell, AuthFormSkeleton } from '@/shared/ui/auth';
 import { SITE_NAME, SITE_URL } from '@/shared/lib/seo';
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { LoginContent } from './LoginContent';
 
 // noindex 페이지에도 canonical을 두는 이유: ?next=/path 같은 쿼리 변형 URL이 외부에 공유되더라도
 // "원본은 /login 하나"라는 신호를 명확히 해 두면 일부 크롤러/공유 도구가 변형을 강조하지 않게 된다.
@@ -19,56 +17,9 @@ export const metadata: Metadata = {
     robots: { index: false, follow: true },
 };
 
-const OAUTH_ERROR_MESSAGES: Record<string, string> = {
-    oauth_email_conflict:
-        '이미 비밀번호로 가입된 이메일입니다. 비밀번호로 로그인해주세요.',
-    oauth_profile_invalid: '소셜 로그인 정보를 확인할 수 없습니다.',
-    oauth_unknown: '소셜 로그인 중 알 수 없는 오류가 발생했습니다.',
-    oauth_consent_invalid:
-        '잘못된 가입 요청입니다. 처음부터 다시 시작해주세요.',
-    oauth_consent_expired: '가입 시간이 만료되었습니다. 다시 시도해주세요.',
-    service_unavailable:
-        '서비스를 일시적으로 이용할 수 없습니다. 잠시 후 다시 시도해주세요.',
-};
-
-const PASSWORD_RESET_SUCCESS_MESSAGE =
-    '비밀번호가 성공적으로 변경되었습니다. 새 비밀번호로 로그인해주세요.';
-
-interface LoginPageProps {
-    searchParams: Promise<{
-        next?: string;
-        error?: string;
-        password_reset?: string;
-    }>;
-}
-
-// Awaits searchParams (dynamic) — must be inside Suspense for PPR.
-async function LoginContent({ searchParams }: LoginPageProps) {
-    const params = await searchParams;
-    const next = sanitizeNextPath(params.next);
-    const nextParam = next === '/' ? undefined : next;
-    const initialError = params.error
-        ? OAUTH_ERROR_MESSAGES[params.error]
-        : undefined;
-    const passwordResetSuccess = params.password_reset === '1';
-    return (
-        <>
-            {passwordResetSuccess ? (
-                <div
-                    role="status"
-                    aria-live="polite"
-                    className="border-ui-success/30 bg-ui-success/5 text-ui-success mb-4 rounded-md border p-3 text-sm"
-                >
-                    {PASSWORD_RESET_SUCCESS_MESSAGE}
-                </div>
-            ) : null}
-            <LoginForm next={nextParam} initialError={initialError} />
-            <SocialLoginButtons next={nextParam} />
-        </>
-    );
-}
-
-export default function LoginPage({ searchParams }: LoginPageProps) {
+// searchParams 읽기를 LoginContent('use client')로 격리해 이 라우트는 full-static(○)으로 prerender된다.
+// shell/footer/metadata는 정적, 쿼리 의존부만 Suspense 아래에서 CSR.
+export default function LoginPage() {
     return (
         <AuthCardShell
             title="다시 만나서 반가워요"
@@ -95,8 +46,8 @@ export default function LoginPage({ searchParams }: LoginPageProps) {
                 </div>
             }
         >
-            <Suspense>
-                <LoginContent searchParams={searchParams} />
+            <Suspense fallback={<AuthFormSkeleton rows={2} />}>
+                <LoginContent />
             </Suspense>
         </AuthCardShell>
     );

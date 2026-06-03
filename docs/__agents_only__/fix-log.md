@@ -3,9 +3,6 @@
 
 
 ## [PR #545 Round 4 | fix/symbol-infra-fallback | 2026-06-02]
-- Violation: `expect.objectContaining({ index: false })` 부정확한 매처 사용
-  - Rule: MISTAKES.md §Tests §13 — 값이 결정론적(deterministic)일 때는 정확한 matcher 사용해야 함
-  - Context: `overall/__tests__/page.test.ts` line 99-101에서 invalid ticker 경로의 robots 값이 항상 `{ index: false, follow: false }`인데 `objectContaining`으로 부정확하게 테스트해 `follow: true` 회귀를 감지하지 못함
 - Violation: 테스트 mock 객체에서 AssetInfo required 필드 `symbol` 누락
   - Rule: MISTAKES.md §TypeScript §2 — Mock 객체는 실제 타입 계약과 일치해야 함
   - Context: `page.test.ts`와 `overall/__tests__/page.test.ts`의 mockGetAssetInfoResilient 모든 assetInfo 객체에 symbol 필드 누락
@@ -70,6 +67,8 @@
 - Violation: E2E authed spec (account-logout.spec.ts) performed destructive auth action on shared seeded session
   - Rule: E2E — Authed-by-filename specs must override storageState + self-provision throwaway user before destructive auth actions
   - Context: account-logout.spec.ts inherits SHARED storageState from setup/user.json, then logs out and destroys that single seeded session. Siblings (account-auth-smoke, account-api-key) fail afterward (nondeterministic order). Pattern already solved in account-delete.spec.ts (test.use({ storageState: { cookies: [], origins: [] } }) + 3-phase signup). This is the second occurrence of the same isolation hazard.
-- Violation: Non-falsifiable test assertions in symbol-seo.spec.ts (toBeGreaterThanOrEqual, weak substring matching)
-  - Rule: MISTAKES.md §Tests §13 — Imprecise matchers when exact values deterministic; require whole-token matching on extracted content
-  - Context: Changed `toBeGreaterThanOrEqual(3)` to `.toBe(3)` with comment explaining why floor is known; changed `toContain('MSFT')` on html to exact h1 text match for falsifiability
+
+## [test/vitest-e2e-env-leak-cleanup Round 1 | test/vitest-e2e-env-leak-cleanup | 2026-06-03]
+- Status: APPROVED (zero findings)
+  - Review: Fixed non-deterministic CI vitest flake under `pool: 'vmThreads'`. vi.stubEnv() with default `unstubEnvs: false` leaked `E2E_TEST=1` into env-agnostic factory tests. Fix: `unstubEnvs: true` in vitest.config + global `afterEach` in vitest.setup.base.ts restoring `process.env.E2E_TEST` to its worker-start value.
+  - Result: Clean merge — no violations logged
