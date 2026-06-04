@@ -10,8 +10,7 @@ import { MarketSummaryPanelSkeleton } from '@/widgets/dashboard/MarketSummaryPan
 import { SectorSignalPanel } from '@/widgets/dashboard/SectorSignalPanel';
 import { SectorSignalPanelSkeleton } from '@/widgets/dashboard/SectorSignalPanelSkeleton';
 import { SignalTypeGuide } from '@/widgets/dashboard/SignalTypeGuide';
-import { getSectorSignalsAction } from '@/entities/sector-signal/actions';
-import { getMarketSummaryAction } from '@/entities/market-summary/actions';
+import { getMarketSummaryClientAction } from '@/entities/market-summary/actions';
 import type { DashboardTimeframe } from '@y0ngha/siglens-core';
 import {
     DASHBOARD_TIMEFRAMES,
@@ -100,14 +99,12 @@ interface SectorSignalSectionProps {
     initialTimeframe: DashboardTimeframe;
 }
 
-async function SectorSignalSection({
+function SectorSignalSection({
     initialSector,
     initialTimeframe,
 }: SectorSignalSectionProps) {
-    const data = await getSectorSignalsAction(initialTimeframe);
     return (
         <SectorSignalPanel
-            data={data}
             initialSector={initialSector}
             initialTimeframe={initialTimeframe}
         />
@@ -136,7 +133,7 @@ async function MarketContent({ searchParams }: MarketPageProps) {
     const queryClient = new QueryClient();
     await queryClient.prefetchQuery({
         queryKey: QUERY_KEYS.marketSummary(),
-        queryFn: () => getMarketSummaryAction(),
+        queryFn: () => getMarketSummaryClientAction(),
     });
 
     return (
