@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { MarketSummaryData } from '@y0ngha/siglens-core';
+import { SECONDS_PER_HOUR } from '@/shared/config/time';
 
 vi.mock('server-only', () => ({}));
 
@@ -72,7 +73,7 @@ describe('getMarketSummaryStatic', () => {
         expect(
             (globalThis as Record<string, unknown>).__lastUnstableCacheOpts
         ).toEqual({
-            revalidate: 3600,
+            revalidate: SECONDS_PER_HOUR,
             tags: ['market-summary'],
         });
     });

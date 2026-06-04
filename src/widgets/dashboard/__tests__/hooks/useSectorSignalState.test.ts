@@ -4,10 +4,11 @@ import { useSectorSignalState } from '@/widgets/dashboard/hooks/useSectorSignalS
 import type { SectorSignalsResult } from '@y0ngha/siglens-core';
 
 const mockReplace = vi.fn();
+let mockSearchParamsString = '';
 vi.mock('next/navigation', () => ({
     useRouter: () => ({ replace: mockReplace }),
     usePathname: () => '/dashboard',
-    useSearchParams: () => new URLSearchParams(),
+    useSearchParams: () => new URLSearchParams(mockSearchParamsString),
 }));
 
 vi.mock('@/entities/analysis', () => ({
@@ -34,6 +35,9 @@ vi.mock('@/shared/config/dashboard-tickers', () => ({
         { symbol: 'XLF', koreanName: '금융' },
     ],
     DEFAULT_DASHBOARD_TIMEFRAME: '1Day',
+    DASHBOARD_TIMEFRAMES: ['15Min', '1Hour', '1Day'],
+    isDashboardTimeframe: (value: unknown) =>
+        ['15Min', '1Hour', '1Day'].includes(value as string),
 }));
 
 const SECTOR_DATA: SectorSignalsResult = {
@@ -60,6 +64,7 @@ vi.mock('@/widgets/dashboard/hooks/useSectorSignals', () => ({
 describe('useSectorSignalState', () => {
     afterEach(() => {
         mockReplace.mockClear();
+        mockSearchParamsString = '';
     });
 
     it('returns initial sector and timeframe', () => {
@@ -142,5 +147,48 @@ describe('useSectorSignalState', () => {
         const url = mockReplace.mock.calls[0]?.[0] as string;
         expect(url).not.toContain('sector=');
         expect(url).toContain('timeframe=1Hour');
+    });
+
+    it('(B6) restores sector and timeframe from URL on mount', () => {
+        mockSearchParamsString = 'sector=XLF&timeframe=1Hour';
+
+        const { result } = renderHook(() =>
+            useSectorSignalState({
+                initialSector: 'XLK',
+                initialTimeframe: '1Day',
+            })
+        );
+
+        expect(result.current.activeSector).toBe('XLF');
+        expect(result.current.activeTimeframe).toBe('1Hour');
+    });
+
+    it('(B6) falls back to prop defaults when URL timeframe is invalid', () => {
+        mockSearchParamsString = 'sector=XLF&timeframe=1Week';
+
+        const { result } = renderHook(() =>
+            useSectorSignalState({
+                initialSector: 'XLK',
+                initialTimeframe: '1Day',
+            })
+        );
+
+        // sector=XLF is valid → restored; timeframe=1Week is invalid → fallback
+        expect(result.current.activeSector).toBe('XLF');
+        expect(result.current.activeTimeframe).toBe('1Day');
+    });
+
+    it('(B6) falls back to prop defaults when URL params are absent', () => {
+        mockSearchParamsString = '';
+
+        const { result } = renderHook(() =>
+            useSectorSignalState({
+                initialSector: 'XLK',
+                initialTimeframe: '1Day',
+            })
+        );
+
+        expect(result.current.activeSector).toBe('XLK');
+        expect(result.current.activeTimeframe).toBe('1Day');
     });
 });

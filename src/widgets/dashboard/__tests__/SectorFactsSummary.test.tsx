@@ -34,8 +34,6 @@ function makeResult(stocks: StockSignalResult[]): SectorSignalsResult {
 }
 
 describe('SectorFactsSummary', () => {
-    // ── Happy paths ──────────────────────────────────────────────────────────
-
     it('(Happy) 빈 stocks → null (DOM 비어 있음)', () => {
         const { container } = render(
             <SectorFactsSummary data={makeResult([])} />
@@ -110,8 +108,6 @@ describe('SectorFactsSummary', () => {
         expect(screen.getByText('XLK')).toBeInTheDocument();
         expect(screen.getByText('XLF')).toBeInTheDocument();
     });
-
-    // ── Worst-case paths ──────────────────────────────────────────────────────
 
     it('(Worst) signals가 빈 배열인 종목만 있으면 → 섹션 렌더되나 카운트 0', () => {
         const stock: StockSignalResult = {

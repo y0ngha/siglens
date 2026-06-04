@@ -55,17 +55,18 @@ export function buildSectorFacts(
     );
 
     const facts = [...grouped].map(([sectorSymbol, stocks]) => {
-        const bullishCount = stocks.filter(isBullish).length;
-        const bearishCount = stocks.filter(isBearish).length;
+        const bullishStocks = stocks.filter(isBullish);
+        const bearishStocks = stocks.filter(isBearish);
+        const bullishCount = bullishStocks.length;
+        const bearishCount = bearishStocks.length;
 
         // Top symbols: bullish first, then bearish-only, both sorted alphabetically within group.
         // Locale pinned to 'en' for environment-independent stable ordering.
-        const bullishSymbols = stocks
-            .filter(isBullish)
+        const bullishSymbols = bullishStocks
             .map(s => s.symbol)
             .toSorted((a, b) => a.localeCompare(b, 'en'));
-        const bearishOnlySymbols = stocks
-            .filter(s => !isBullish(s) && isBearish(s))
+        const bearishOnlySymbols = bearishStocks
+            .filter(s => !isBullish(s))
             .map(s => s.symbol)
             .toSorted((a, b) => a.localeCompare(b, 'en'));
         const topSymbols = [...bullishSymbols, ...bearishOnlySymbols].slice(

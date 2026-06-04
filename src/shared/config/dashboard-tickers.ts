@@ -157,6 +157,13 @@ export const DASHBOARD_TIMEFRAMES: readonly DashboardTimeframe[] = [
 
 export const DEFAULT_DASHBOARD_TIMEFRAME: DashboardTimeframe = '1Day';
 
+/** Type guard — returns true if `value` is a valid `DashboardTimeframe`. */
+export function isDashboardTimeframe(
+    value: unknown
+): value is DashboardTimeframe {
+    return DASHBOARD_TIMEFRAMES.includes(value as DashboardTimeframe);
+}
+
 export const DASHBOARD_TIMEFRAME_LABELS: Record<DashboardTimeframe, string> = {
     '15Min': '15분',
     '1Hour': '1시간',

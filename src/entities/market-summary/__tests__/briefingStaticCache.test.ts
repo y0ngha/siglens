@@ -3,6 +3,7 @@ import type {
     MarketBriefingResponse,
     MarketSummaryData,
 } from '@y0ngha/siglens-core';
+import { SECONDS_PER_HOUR } from '@/shared/config/time';
 
 vi.mock('next/cache', () => ({
     unstable_cache: (
@@ -65,7 +66,7 @@ describe('peekBriefingStatic', () => {
         expect(
             (globalThis as Record<string, unknown>).__lastUnstableCacheOpts
         ).toEqual({
-            revalidate: 3600,
+            revalidate: SECONDS_PER_HOUR,
             tags: ['market-summary'],
         });
     });

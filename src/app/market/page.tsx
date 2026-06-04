@@ -29,10 +29,10 @@ import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
 import { JsonLd } from '@/shared/ui/JsonLd';
 
 // 1h — ISR (literal required — importing a constant breaks Next's static analysis, see src/app/CLAUDE.md)
-export const revalidate = 3600; // 1h — ISR
+export const revalidate = 3600;
 
 /** 'YYYY-MM-DDTHH' prefix length — used to bucket ISR renders into 1-hour date-hour keys. */
-const ISO_DATE_HOUR_SLICE_END = 13; // 'YYYY-MM-DDTHH' prefix length
+const ISO_DATE_HOUR_SLICE_END = 13;
 
 // Root layout template appends "| Siglens" — exclude brand name to prevent duplication.
 const MARKET_TITLE = '오늘의 미국 주식, 섹터별 기술적 신호';
