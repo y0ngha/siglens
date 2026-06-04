@@ -2,19 +2,16 @@
 
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import type {
-    MarketIndexData,
-    MarketSectorData,
-    SubmitBriefingResult,
-} from '@y0ngha/siglens-core';
+import type { MarketIndexData, MarketSectorData } from '@y0ngha/siglens-core';
 import type { MarketSummaryActionResult } from '@/shared/lib/types';
-import { getMarketSummaryAction } from '@/entities/market-summary/actions';
+import { getMarketSummaryClientAction } from '@/entities/market-summary/actions';
 import { hasMissingQuotes as detectMissingQuotes } from '@/entities/market-summary';
 import {
     MARKET_SUMMARY_STALE_TIME_MS,
     QUERY_KEYS,
 } from '@/shared/config/queryConfig';
 import { useHydrated } from '@/shared/hooks/useHydrated';
+import { isE2EClient } from '@/shared/api/e2eClientEnv';
 
 interface UseMarketSummaryReturn {
     data: MarketSummaryActionResult | undefined;
@@ -26,28 +23,23 @@ interface UseMarketSummaryReturn {
      * (`allQuotesPresent`)와 동일 기준 — 부분/전면 실패를 안내로 알리는 데 쓴다.
      */
     hasMissingQuotes: boolean;
-    /**
-     * AI 브리핑 결과. 소비자(MarketSummaryPanel)가 raw `data` 구조를 파헤치지 않도록
-     * 훅에서 추출해 노출한다(sectorMap/indices와 동일 패턴). 결과가 없거나 error/bot
-     * 케이스면 `undefined` — 기존 `data?.briefing ?? undefined`와 동일하게 null도
-     * undefined로 합친다(BriefingRegion의 undefined 분기 = 렌더 안 함).
-     */
-    briefing: SubmitBriefingResult | undefined;
 }
 
 function hasSummary(
     data: MarketSummaryActionResult | undefined
-): data is Exclude<MarketSummaryActionResult, { ok: false }> {
+): data is Extract<MarketSummaryActionResult, { summary: unknown }> {
     return data !== undefined && !('ok' in data);
 }
 
 export function useMarketSummary(): UseMarketSummaryReturn {
     const isHydrated = useHydrated();
-    const { data, isPending } = useQuery({
+    const e2e = isE2EClient();
+    const { data, isPending } = useQuery<MarketSummaryActionResult>({
         queryKey: QUERY_KEYS.marketSummary(),
-        queryFn: getMarketSummaryAction,
+        queryFn: getMarketSummaryClientAction,
         enabled: isHydrated,
-        staleTime: MARKET_SUMMARY_STALE_TIME_MS,
+        staleTime: e2e ? 0 : MARKET_SUMMARY_STALE_TIME_MS,
+        refetchOnMount: e2e ? 'always' : undefined,
     });
 
     const resolved = hasSummary(data) ? data : undefined;
@@ -55,7 +47,10 @@ export function useMarketSummary(): UseMarketSummaryReturn {
     const sectorMap = useMemo(
         () =>
             new Map<string, MarketSectorData>(
-                (resolved?.summary.sectors ?? []).map(s => [s.symbol, s])
+                (resolved?.summary.sectors ?? []).map((s: MarketSectorData) => [
+                    s.symbol,
+                    s,
+                ])
             ),
         [resolved?.summary.sectors]
     );
@@ -70,7 +65,5 @@ export function useMarketSummary(): UseMarketSummaryReturn {
         [resolved]
     );
 
-    const briefing = resolved?.briefing ?? undefined;
-
-    return { data, isPending, sectorMap, indices, hasMissingQuotes, briefing };
+    return { data, isPending, sectorMap, indices, hasMissingQuotes };
 }
