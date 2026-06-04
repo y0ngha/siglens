@@ -19,7 +19,7 @@ export async function getNextEarningsReport(
     const repo = new DrizzleEarningsReportsRepository(db);
     const fetchedAt = await repo.getLatestFetchedAt(symbol);
 
-    if (isEarningsReportStale(fetchedAt)) {
+    if (isEarningsReportStale(fetchedAt, Date.now())) {
         try {
             const client = getFundamentalDataProvider();
             const reports = await client.getEarningsReports(

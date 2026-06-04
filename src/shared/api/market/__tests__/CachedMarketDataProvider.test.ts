@@ -68,7 +68,7 @@ describe('CachedMarketDataProvider', () => {
         const first = await p.getBars(barsOpts());
         expect(first).toEqual(SAMPLE_BARS);
         expect(inner.getBars).toHaveBeenCalledTimes(1);
-        expect(store.has('bars:raw:AAPL:1Day:2026-01-01:')).toBe(true);
+        expect(store.has('bars:raw:AAPL:1Day:2026-01-01::')).toBe(true);
 
         const second = await p.getBars(barsOpts());
         expect(second).toEqual(SAMPLE_BARS);
@@ -81,7 +81,7 @@ describe('CachedMarketDataProvider', () => {
         expect(await p.getBars(barsOpts())).toEqual([]);
         expect(await p.getBars(barsOpts())).toEqual([]);
         expect(inner.getBars).toHaveBeenCalledTimes(2);
-        expect(store.has('bars:raw:AAPL:1Day:2026-01-01:')).toBe(false);
+        expect(store.has('bars:raw:AAPL:1Day:2026-01-01::')).toBe(false);
     });
 
     it('getBars: from/before가 다르면 키가 분리된다', async () => {
@@ -91,11 +91,21 @@ describe('CachedMarketDataProvider', () => {
         await p.getBars(barsOpts({ from: '2026-02-01' }));
         await p.getBars(barsOpts({ from: '2026-01-01', before: '2026-03-01' }));
         expect(inner.getBars).toHaveBeenCalledTimes(3);
-        expect(store.has('bars:raw:AAPL:1Day:2026-01-01:')).toBe(true);
-        expect(store.has('bars:raw:AAPL:1Day:2026-02-01:')).toBe(true);
-        expect(store.has('bars:raw:AAPL:1Day:2026-01-01:2026-03-01')).toBe(
+        expect(store.has('bars:raw:AAPL:1Day:2026-01-01::')).toBe(true);
+        expect(store.has('bars:raw:AAPL:1Day:2026-02-01::')).toBe(true);
+        expect(store.has('bars:raw:AAPL:1Day:2026-01-01:2026-03-01:')).toBe(
             true
         );
+    });
+
+    it('getBars: limit이 다르면 키가 분리된다 (옵션 확장 시 캐시 충돌 방지)', async () => {
+        const inner = makeInner();
+        const p = new CachedMarketDataProvider(inner);
+        await p.getBars(barsOpts({ limit: 100 }));
+        await p.getBars(barsOpts({ limit: 200 }));
+        expect(inner.getBars).toHaveBeenCalledTimes(2);
+        expect(store.has('bars:raw:AAPL:1Day:2026-01-01::100')).toBe(true);
+        expect(store.has('bars:raw:AAPL:1Day:2026-01-01::200')).toBe(true);
     });
 
     it('getBars: inner throw는 전파되고 캐싱되지 않는다(worst case)', async () => {

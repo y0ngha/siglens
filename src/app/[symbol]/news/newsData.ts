@@ -46,7 +46,7 @@ export async function getEarningsReportComparison(
         repo.getComparisonItems(symbol, today),
     ]);
 
-    if (isEarningsReportStale(fetchedAt)) {
+    if (isEarningsReportStale(fetchedAt, Date.now())) {
         try {
             const reports = await fundamentalClient.getEarningsReports(
                 symbol,

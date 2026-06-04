@@ -125,10 +125,11 @@ import { getOrSetCache } from '@/shared/cache/getOrSetCache';
 
 const QUOTE_TTL_TIMEFRAME = '1Day' as const satisfies Timeframe;
 
-// FmpMarketProvider가 limit을 URL에 쓰지 않으므로(date-window 기반) 키에서 제외.
-// from/before/timeframe/symbol만으로 결과가 결정된다.
+// 결과-영향 필드를 모두 키에 포함(symbol/timeframe/from/before/limit). FmpMarketProvider는
+// 현재 limit을 URL에 안 쓰지만, 캐시 호출부가 limit을 timeframe별 상수로 고정(종속)하므로
+// 키에 넣어도 분할이 없고, 옵션 확장 시 충돌을 방지한다(PR #564 Gemini 리뷰 반영).
 function buildBarsRawKey(o: GetBarsOptions): string {
-    return `bars:raw:${o.symbol.toUpperCase()}:${o.timeframe}:${o.from ?? ''}:${o.before ?? ''}`;
+    return `bars:raw:${o.symbol.toUpperCase()}:${o.timeframe}:${o.from ?? ''}:${o.before ?? ''}:${o.limit ?? ''}`;
 }
 
 export class CachedMarketDataProvider implements MarketDataProvider {
