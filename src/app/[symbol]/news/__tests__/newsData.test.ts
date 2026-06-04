@@ -106,8 +106,10 @@ describe('getEarningsReportComparison 함수는', () => {
             expect(mockGetEarningsReports).not.toHaveBeenCalled();
             expect(mockUpsertMany).not.toHaveBeenCalled();
         });
+    });
 
-        it('stale 상태에서 비교 데이터가 비어 있으면 FMP 로 정규화 데이터를 채운다', async () => {
+    describe('DB 캐시가 만료됐을 때 (stale)', () => {
+        it('비교 데이터가 비어 있으면 FMP 로 정규화 데이터를 채운다', async () => {
             const staleFetchedAt = new Date(
                 Date.now() - (EARNINGS_REPORT_STALE_MS + MS_PER_HOUR)
             );
