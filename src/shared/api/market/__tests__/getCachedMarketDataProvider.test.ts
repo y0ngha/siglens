@@ -1,7 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { MarketDataProvider } from '@y0ngha/siglens-core';
+import type { Bar, MarketDataProvider } from '@y0ngha/siglens-core';
 
-const { mockIsE2E } = vi.hoisted(() => ({ mockIsE2E: vi.fn(() => false) }));
+const { mockIsE2E, fakeRawProvider } = vi.hoisted(() => ({
+    mockIsE2E: vi.fn(() => false),
+    fakeRawProvider: {
+        getBars: vi.fn(async () => [] as Bar[]),
+        getQuote: vi.fn(async () => null),
+    } as MarketDataProvider,
+}));
 vi.mock('@/shared/api/e2eEnv', () => ({ isE2E: mockIsE2E }));
 
 // getMarketDataProvider는 isE2E()=true 시 require('./FakeMarketProvider')를 CJS로
@@ -10,10 +16,6 @@ vi.mock('@/shared/api/e2eEnv', () => ({ isE2E: mockIsE2E }));
 // 내부 구현(FakeMarketProvider require)은 필요 없으므로 getMarketDataProvider 자체를
 // stub해 raw provider 객체만 돌려준다 — 테스트 목적(getCachedMarketDataProvider가
 // isE2E=true 시 같은 인스턴스를 반환하는 것)에 충분하다.
-const fakeRawProvider: MarketDataProvider = {
-    getBars: vi.fn(async () => []),
-    getQuote: vi.fn(async () => null),
-};
 vi.mock('@/shared/api/market/getMarketDataProvider', () => ({
     getMarketDataProvider: () => fakeRawProvider,
 }));
