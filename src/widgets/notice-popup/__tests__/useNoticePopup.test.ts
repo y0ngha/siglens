@@ -47,6 +47,10 @@ describe('useNoticePopup', () => {
         act(() => result.current.advance());
         expect(result.current.queue).toHaveLength(1);
         expect(result.current.queue[0].id).toBe('b');
+        // advance("닫기")는 세션 한정 소비이므로 localStorage(dismissed)에 쓰지 않는다 —
+        // 새로고침/재접속 시 재노출된다. 영구 저장은 dontShowAgain만 수행하며, 이 분기가
+        // 본 변경의 핵심이다(회귀 시 advance가 잘못 영구 저장되는 것을 잡는다).
+        expect(localStorage.getItem(DISMISSED_NOTICES_STORAGE_KEY)).toBeNull();
     });
 
     it('dontShowAgain은 dismiss 저장 후 큐에서 제거한다', async () => {
