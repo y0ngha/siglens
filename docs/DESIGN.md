@@ -261,89 +261,29 @@ flex-[3]      → 동일 (임의값 문법도 허용되지만 불필요)
 
 ---
 
-## Tailwind 설정
+## Tailwind 설정 (v4 `@theme`)
 
-`tailwind.config.ts`에 커스텀 컬러로 등록한다.
+Tailwind v4를 사용하므로 별도의 `tailwind.config.ts`(JS 설정) 파일은 **없다**. 모든 커스텀 토큰은
+`src/app/globals.css`의 `@theme { }` 블록에 CSS 커스텀 프로퍼티로 등록한다.
 
-```typescript
-import type { Config } from 'tailwindcss';
-
-const config: Config = {
-    content: ['./src/**/*.{ts,tsx}'],
-    theme: {
-        extend: {
-            colors: {
-                primary: {
-                    50:  '#eff6ff',
-                    100: '#dbeafe',
-                    200: '#bfdbfe',
-                    300: '#93c5fd',
-                    400: '#60a5fa',
-                    500: '#3b82f6',
-                    600: '#2563eb',
-                    700: '#1d4ed8',
-                    800: '#1e40af',
-                    900: '#1e3a8a',
-                    950: '#172554',
-                },
-                secondary: {
-                    50:  '#f8fafc',
-                    100: '#f1f5f9',
-                    200: '#e2e8f0',
-                    300: '#cbd5e1',
-                    400: '#94a3b8',
-                    500: '#64748b',
-                    600: '#475569',
-                    700: '#334155',
-                    800: '#1e293b',
-                    900: '#0f172a',
-                    950: '#020617',
-                },
-                chart: {
-                    // 상승/하락/중립
-                    bullish: '#26a69a',
-                    bearish: '#ef5350',
-                    neutral: '#94a3b8',
-                    // MA / EMA (기간별, 실선=MA / 점선=EMA 공용 색상)
-                    period5:   '#ef4444',
-                    period10:  '#f97316',
-                    period20:  '#eab308',
-                    period60:  '#22c55e',
-                    period120: '#3b82f6',
-                    period200: '#a855f7',
-                    // 볼린저 밴드
-                    bollinger: '#818cf8',
-                    // MACD
-                    macd:      '#3b82f6',
-                    signal:    '#f59e0b',
-                    // RSI
-                    rsi:       '#a78bfa',
-                    // DMI
-                    dmiPlus:   '#26a69a',
-                    dmiMinus:  '#ef5350',
-                    dmiAdx:    '#f59e0b',
-                    // Stochastic
-                    stochasticK: '#f472b6',
-                    stochasticD: '#38bdf8',
-                    // Stochastic RSI
-                    stochRsiK: '#facc15',
-                    stochRsiD: '#60a5fa',
-                    // VWAP
-                    vwap:      '#e879f9',
-                },
-                ui: {
-                    success: '#26a69a',
-                    warning: '#f59e0b',
-                    danger:  '#ef5350',
-                },
-            },
-        },
-    },
-    plugins: [],
-};
-
-export default config;
+```css
+/* src/app/globals.css */
+@theme {
+    --color-primary-500: #3b82f6;
+    --color-secondary-900: #0f172a;
+    --color-chart-bullish: #26a69a;
+    --color-chart-bearish: #ef5350;
+    /* MA/EMA, 볼린저, MACD, RSI, DMI, Stochastic, Stochastic RSI, CCI, Ichimoku,
+       VWAP, trendline, support/resistance, UI(success/warning/danger) ... */
+    --color-brand-kakao: #fee500;
+}
 ```
+
+- `--color-<name>`을 등록하면 `bg-<name>` / `text-<name>` 등 유틸리티가 자동 생성된다.
+- 차트·지표 색상 값의 **정본은 `src/shared/lib/chartColors.ts`**이며, `globals.css`의 `@theme`에 동일 값으로
+  미러링한다. 토큰을 추가/변경할 때 두 곳(`@theme` + `chartColors.ts`)을 함께 갱신한다.
+- **전체 토큰 목록은 `src/app/globals.css`를 source of truth로 본다** — drift 방지를 위해 이 문서에 전부
+  나열하지 않는다.
 
 ---
 
@@ -354,7 +294,7 @@ export default config;
 <div className="bg-secondary-900 text-primary-400">
 
 ✅ 차트 컬러는 상수로 관리
-import { CHART_COLORS } from '@/lib/chartColors';
+import { CHART_COLORS } from '@/shared/lib/chartColors';
 
 ❌ 하드코딩 금지
 <div style={{ backgroundColor: '#0f172a' }}>

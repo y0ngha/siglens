@@ -58,7 +58,7 @@ GET /stable/historical-chart/{timeframe}?symbol={symbol}&apikey={key}
 **Request 예시**
 
 ```
-GET /stable/historical-chart/1min?symbol=AAPL&apikey={key}&from=2024-01-01&to=2024-01-15
+GET /stable/historical-chart/5min?symbol=AAPL&apikey={key}&from=2024-01-01&to=2024-01-15
 ```
 
 **Response**

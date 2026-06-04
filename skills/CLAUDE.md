@@ -6,7 +6,7 @@ Read this before adding a skill or editing any `gating` frontmatter.
 ## Why gating exists
 
 The chart prompt selects skills **dynamically by chart state** instead of injecting
-all ~66 of them every time. Tagging a skill with `gating` tells the selector *when*
+all ~70 of them every time. Tagging a skill with `gating` tells the selector *when*
 to include it (e.g. only when RSI is oversold, or Bollinger %B is extreme). This
 removes irrelevant distraction for floor models and cuts tokens.
 

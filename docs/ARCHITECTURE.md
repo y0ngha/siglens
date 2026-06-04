@@ -109,14 +109,17 @@ import { DrizzleUserRepository } from '@/entities/user';
     │   ├── reset-password
     │   └── signup
     ├── entities
+    │   ├── agreement/    # 약관 동의 상태
     │   ├── analysis/     # AI 분석 submit/poll/cancel, 쿨다운, quadrants
     │   ├── api-key/      # BYOK API key CRUD
+    │   ├── backtest-case/ # 백테스트 케이스
     │   ├── bars/         # 주가 데이터 fetch + indicators
     │   ├── chat-message/ # AI 채팅
     │   ├── earnings-report/ # 실적 데이터
     │   ├── email-token/  # 이메일 인증/비밀번호 토큰
-    │   ├── fear-greed/   # 공포탐욕지수
+    │   ├── inquiry/      # 문의(contact) 저장
     │   ├── llm-provider/ # AI provider 어댑터 (Anthropic, Gemini, OpenAI)
+    │   ├── market-summary/ # 시장 요약
     │   ├── news-article/ # 뉴스 fetch + AI 분석
     │   ├── notice/       # 사이트 공지 팝업 (notices DB 테이블, matchPath, storage)
     │   ├── oauth-account/ # OAuth 계정 관리
@@ -124,9 +127,14 @@ import { DrizzleUserRepository } from '@/entities/user';
     │   ├── options-chain/ # 옵션 체인 데이터
     │   ├── sector-signal/ # 섹터 시그널
     │   ├── session/      # 세션/인증 쿠키
+    │   ├── sitemap-entry/ # 사이트맵 엔트리
+    │   ├── skill/        # Skills 파일 로드 (.md 분석 룰)
+    │   ├── terms/        # 약관 본문
     │   ├── ticker/       # 종목 검색/정보
     │   ├── user/         # 사용자 CRUD
     │   └── user-tier/    # 사용자 등급
+    │
+    │   (fear-greed는 entity가 아니라 widget이다 — widgets/ 참조)
     ├── features
     │   ├── auth-*/       # 인증 관련 features (login, signup, oauth, password-reset 등)
     │   ├── account-delete/
@@ -144,20 +152,22 @@ import { DrizzleUserRepository } from '@/entities/user';
     │   ├── hooks/        # 범용 React hooks (useDialog, useEscapeKey 등)
     │   ├── lib/          # 순수 유틸리티 (cn, chartColors, priceFormat, seo 등)
     │   └── ui/           # Primitive UI 컴포넌트 (tabs, tooltip 등)
-    ├── widgets
-    │   ├── analysis/
-    │   ├── chart/
-    │   ├── chat/
-    │   ├── dashboard/
-    │   ├── fear-greed/
-    │   ├── fundamental/
-    │   ├── news/
-    │   ├── notice-popup/ # 긴급 공지 모달 (경로 매칭, localStorage dismiss, 우선순위)
-    │   ├── options/
-    │   ├── overall/
-    │   ├── symbol-page/
-    │   └── layout/
-    └── lib               # legacy (잔여 파일 — Phase 10에서 shared로 이동 예정)
+    └── widgets
+        ├── analysis/
+        ├── backtesting/
+        ├── chart/
+        ├── chat/
+        ├── dashboard/
+        ├── fear-greed/   # 공포탐욕지수 위젯
+        ├── fundamental/
+        ├── home/
+        ├── layout/
+        ├── legal/
+        ├── news/
+        ├── notice-popup/ # 긴급 공지 모달 (경로 매칭, localStorage dismiss, 우선순위)
+        ├── options/
+        ├── overall/
+        └── symbol-page/
 ```
 
 > 각 슬라이스(entity, feature, widget)는 `__tests__/` 서브폴더에 테스트를 colocate한다.
@@ -201,7 +211,7 @@ import { DrizzleUserRepository } from '@/entities/user';
     → entities/bars → fetchBarsWithIndicators (서버 재구성)
     → entities/skill → Skills 파일 로드
     → @y0ngha/siglens-core → 프롬프트 구성
-    → Cloud Run worker (fire-and-forget via waitUntil)
+    → 내부 worker 처리 트리거 (fire-and-forget via Vercel `waitUntil` — @vercel/functions)
   → useAnalysis 훅 → pollAnalysisAction (10초 간격 polling)
     → Redis에서 완료된 분석 결과 반환
   → AnalysisPanel 업데이트

@@ -41,7 +41,7 @@ Investors who want a single, consolidated interpretation of multiple indicators.
 2. Chart + indicators render automatically
 3. AI comprehensive analysis report generated automatically
    - Indicator interpretation (RSI overbought/oversold, MACD cross, etc.)
-   - Candle pattern detection (15 types of single candles + 30 types of multi candles)
+   - Candle pattern detection (15 types of single candles + 34 types of multi candles)
    - Pattern detection via Skills (head and shoulders, wedge, etc.)
    - Support/resistance levels
    - Overall market direction (bullish / bearish / neutral)

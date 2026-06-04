@@ -10,7 +10,7 @@ widgets는 `features/`, `entities/`, `shared/`를 import 가능. **상위 레이
 
 | from | to | 사유 |
 |---|---|---|
-| `widgets/symbol-page` | `widgets/chart`, `widgets/analysis`, `widgets/fear-greed` 등 | symbol-page는 종목 페이지의 composition widget으로, 여러 위젯의 hook/컴포넌트를 조합. FSD 정석으로는 pages 레이어가 담당하지만, Next.js App Router에서 src/pages/ 사용 시 Pages Router 충돌 위험으로 widget에 유지 |
+| `widgets/symbol-page` | `widgets/chart`, `widgets/analysis`, `widgets/fear-greed` 등 | symbol-page는 종목 페이지의 composition widget으로, 여러 위젯의 hook/컴포넌트를 조합. FSD 정석으로는 pages 레이어가 담당한다. 현재는 composition을 `widgets/symbol-page`에 잠정 유지하지만, FSD `pages` 레이어(`src/pages/*`, 라우팅은 `src/app/`에 잔류)는 `eslint.config.mjs`에 정식 element로 이미 예약돼 있어 향후 이관 가능 |
 | 각 위젯 | `widgets/symbol-page` | useAssetInfo, useBars 등 symbol-page 공용 hook 소비. barrel 제외 대상(server-side 의존성 이슈)은 deep import 유지 |
 
 이 예외는 ESLint `from: 'widgets', allow: ['widgets', ...]`로 관리됨.

@@ -226,7 +226,7 @@
 | # | 액션 | 예상 효과 | 난이도 |
 |---|---|---|---|
 | 4 | **A. root layout의 `cookies()`를 별도 `<Suspense>` 경계로 격리** — `src/app/layout.tsx:137`의 `cookies()`가 모든 라우트를 dynamic으로 강제 중. cookie 사용 컴포넌트만 분리하면 root 셸이 정적화 가능. **모든 라우트 TTFB 개선의 기반** | TTFB 430 → 50~100 ms, **bf-cache 통과** | M |
-| 5 | **B. 랜딩 `?q=` 리다이렉트를 middleware로 이전 + `export const revalidate = 3600`** — 랜딩 `page.tsx`의 `searchParams: Promise<{q?}>` 핸들링을 `src/middleware.ts`로 옮겨 랜딩 자체는 ISR 정적 페이지로 전환 | `x-vercel-cache: HIT`, 랜딩 TTFB 추가 개선 | M |
+| 5 | **B. 랜딩 `?q=` 리다이렉트를 proxy로 이전 + `export const revalidate = 3600`** — 랜딩 `page.tsx`의 `searchParams: Promise<{q?}>` 핸들링을 `src/proxy.ts`(Next.js 16은 middleware 대신 proxy)로 옮겨 랜딩 자체는 ISR 정적 페이지로 전환 | `x-vercel-cache: HIT`, 랜딩 TTFB 추가 개선 | M |
 | 6 | **RSC payload 슬림화**: hero 아래 컴포넌트 `<Suspense>` + `dynamic()` 분리 — 459 KB → ≤ 150 KB | LCP −400~700 ms, TBT/INP | M |
 | 7 | **legacy-javascript 폴리필 제거**: `browserslist`를 modern targets로 좁혀 Array.at/flat/flatMap/Object.fromEntries/hasOwn 제거 | JS −14 KB, TBT | S |
 | 8 | **`05nmpzrzrka_~.js` (53 KB, 61% unused) lazy 분리** (`@next/bundle-analyzer`) | TBT, TTI | M |

@@ -195,7 +195,7 @@ yarn format 2>&1 | grep -v "unchanged"
 # Run only if .ts or .tsx files were modified
 # Use --passWithNoTests to avoid failure when no matching test files exist
 git diff --name-only HEAD | grep -E '\.(ts|tsx)$' | xargs -I{} \
-  yarn test --testPathPattern={} --passWithNoTests 2>&1 | tail -30
+  yarn test {} --passWithNoTests 2>&1 | tail -30
 ```
 
 ```bash
