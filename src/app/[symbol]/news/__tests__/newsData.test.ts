@@ -1,4 +1,6 @@
 import type { EarningsReportComparisonItem } from '@/shared/lib/types';
+import { EARNINGS_REPORT_STALE_MS } from '@/entities/earnings-report';
+import { MS_PER_HOUR } from '@/shared/config/time';
 
 const {
     mockDb,
@@ -106,7 +108,9 @@ describe('getEarningsReportComparison 함수는', () => {
         });
 
         it('stale 상태에서 비교 데이터가 비어 있으면 FMP 로 정규화 데이터를 채운다', async () => {
-            const staleFetchedAt = new Date(Date.now() - 25 * 60 * 60 * 1000);
+            const staleFetchedAt = new Date(
+                Date.now() - (EARNINGS_REPORT_STALE_MS + MS_PER_HOUR)
+            );
             mockGetLatestFetchedAt.mockResolvedValue(staleFetchedAt);
             mockGetComparisonItems
                 .mockResolvedValueOnce([])
@@ -124,7 +128,9 @@ describe('getEarningsReportComparison 함수는', () => {
 
     describe('갱신 실패 시 기존 DB 데이터가 있으면', () => {
         it('비일시 실패는 DB 데이터를 반환하고 서버 로그를 남긴다', async () => {
-            const staleFetchedAt = new Date(Date.now() - 25 * 60 * 60 * 1000);
+            const staleFetchedAt = new Date(
+                Date.now() - (EARNINGS_REPORT_STALE_MS + MS_PER_HOUR)
+            );
             mockGetLatestFetchedAt.mockResolvedValue(staleFetchedAt);
             mockGetEarningsReports.mockRejectedValue(new Error('rate limited'));
             vi.spyOn(console, 'warn').mockImplementation(() => undefined);
@@ -138,7 +144,9 @@ describe('getEarningsReportComparison 함수는', () => {
         });
 
         it('FMP 429 실패는 DB 데이터를 반환하고 서버 로그를 남기지 않는다', async () => {
-            const staleFetchedAt = new Date(Date.now() - 25 * 60 * 60 * 1000);
+            const staleFetchedAt = new Date(
+                Date.now() - (EARNINGS_REPORT_STALE_MS + MS_PER_HOUR)
+            );
             mockGetLatestFetchedAt.mockResolvedValue(staleFetchedAt);
             mockGetEarningsReports.mockRejectedValue(
                 new Error('FMP earnings 429')
@@ -156,7 +164,9 @@ describe('getEarningsReportComparison 함수는', () => {
 
     describe('갱신 실패 시 기존 DB 데이터가 없으면', () => {
         it('비일시 실패는 로그를 남기고 예외를 전파한다', async () => {
-            const staleFetchedAt = new Date(Date.now() - 25 * 60 * 60 * 1000);
+            const staleFetchedAt = new Date(
+                Date.now() - (EARNINGS_REPORT_STALE_MS + MS_PER_HOUR)
+            );
             const error = new Error('network down');
             mockGetLatestFetchedAt.mockResolvedValue(staleFetchedAt);
             mockGetComparisonItems.mockResolvedValue([]);
@@ -172,7 +182,9 @@ describe('getEarningsReportComparison 함수는', () => {
         });
 
         it('FMP 429 실패는 로그 없이 예외를 전파한다', async () => {
-            const staleFetchedAt = new Date(Date.now() - 25 * 60 * 60 * 1000);
+            const staleFetchedAt = new Date(
+                Date.now() - (EARNINGS_REPORT_STALE_MS + MS_PER_HOUR)
+            );
             const error = new Error('FMP earnings 429');
             mockGetLatestFetchedAt.mockResolvedValue(staleFetchedAt);
             mockGetComparisonItems.mockResolvedValue([]);
