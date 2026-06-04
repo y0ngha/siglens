@@ -13,9 +13,6 @@ export interface UseNoticePopupResult {
 }
 
 /**
- * 공지 팝업 데이터 훅. 마운트 시 1회 활성 공지를 fetch하고, 경로 매칭 + localStorage
- * dismiss + 세션 내 소비(consumed) 필터로 노출 큐를 **렌더 중 파생**한다.
- *
  * 큐를 effect+setState가 아니라 `useMemo`로 파생하는 이유: 이전 구현은 effect에서
  * `setQueue`를 호출했고, lint(`react-hooks/set-state-in-effect`)를 피하려 `startTransition`
  * 으로 감쌌다. 그 낮은 우선순위 업데이트가 무거운 client 페이지(종목 차트/AI 스트리밍)의
@@ -65,7 +62,7 @@ export function useNoticePopup(pathname: string): UseNoticePopupResult {
     }, [queue, consume]);
 
     // 활성 공지 fetch는 외부 시스템 동기화 effect. canonical hook order(effects last)에 따라
-    // useMemo/useCallback 뒤에 둔다. deps `[]` — 마운트 시 1회만 실행.
+    // useMemo/useCallback 뒤에 둔다.
     useEffect(() => {
         let cancelled = false;
         getActiveNoticesAction()
