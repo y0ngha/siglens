@@ -9,6 +9,9 @@ export const QUERY_GC_TIME_MS = 300_000;
 /** Market summary refreshes during U.S. market hours; 1 minute fits FMP free-tier rate limits. */
 export const MARKET_SUMMARY_STALE_TIME_MS = MS_PER_MINUTE;
 
+/** Sector signals share the same market-hours cadence as the market summary. */
+export const SECTOR_SIGNALS_STALE_TIME_MS = MS_PER_MINUTE;
+
 /** FMP ticker catalogue updates daily; 5 min avoids re-querying during a typing session. */
 export const TICKER_SEARCH_STALE_TIME_MS = 5 * MS_PER_MINUTE;
 

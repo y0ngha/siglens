@@ -13,6 +13,12 @@ import {
 import { useHydrated } from '@/shared/hooks/useHydrated';
 import { isE2EClient } from '@/shared/api/e2eClientEnv';
 
+/**
+ * Build-time-static E2E flag — evaluated once at module import.
+ * NEXT_PUBLIC_E2E_TEST is inlined at build time so this is safe as a const.
+ */
+const IS_E2E_MODE = isE2EClient();
+
 interface UseMarketSummaryReturn {
     data: MarketSummaryActionResult | undefined;
     isPending: boolean;
@@ -33,13 +39,12 @@ function hasSummary(
 
 export function useMarketSummary(): UseMarketSummaryReturn {
     const isHydrated = useHydrated();
-    const e2e = isE2EClient();
     const { data, isPending } = useQuery<MarketSummaryActionResult>({
         queryKey: QUERY_KEYS.marketSummary(),
         queryFn: getMarketSummaryClientAction,
         enabled: isHydrated,
-        staleTime: e2e ? 0 : MARKET_SUMMARY_STALE_TIME_MS,
-        refetchOnMount: e2e ? 'always' : undefined,
+        staleTime: IS_E2E_MODE ? 0 : MARKET_SUMMARY_STALE_TIME_MS,
+        refetchOnMount: IS_E2E_MODE ? 'always' : undefined,
     });
 
     const resolved = hasSummary(data) ? data : undefined;

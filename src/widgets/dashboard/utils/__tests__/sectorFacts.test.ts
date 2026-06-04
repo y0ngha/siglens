@@ -31,8 +31,6 @@ function makeResult(stocks: StockSignalResult[]): SectorSignalsResult {
 }
 
 describe('buildSectorFacts', () => {
-    // ── Happy paths ──────────────────────────────────────────────────────────
-
     it('(Happy) 빈 입력 → 빈 배열', () => {
         const result = buildSectorFacts(makeResult([]));
         expect(result).toEqual([]);
@@ -103,8 +101,6 @@ describe('buildSectorFacts', () => {
         const b = buildSectorFacts(data);
         expect(a).toEqual(b);
     });
-
-    // ── Worst-case paths ──────────────────────────────────────────────────────
 
     it('(Worst) stocks=[{}] 처럼 signals 없는 종목 → 카운트 0, topSymbols에는 포함', () => {
         // A stock with no signals: can appear if upstream allows 0-signal entries,

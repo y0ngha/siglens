@@ -33,7 +33,7 @@ export function useMarketBriefing(
         // hydration 전: peek seed가 있으면 cached처럼 노출, 없으면 undefined(렌더 안 함)
         if (peekSeed) {
             // peek seed는 briefing 본문만 보유하므로 generatedAt이 빈 문자열이다.
-            // BriefingCard는 비어있거나 유효하지 않은 타임스탬프를 가드해 렌더링하지 않으므로(R1 참조).
+            // BriefingCard가 빈 generatedAt을 조건부 렌더로 가드한다.
             const seed: SubmitBriefingResult = {
                 status: 'cached',
                 briefing: peekSeed,

@@ -8,7 +8,7 @@ import type {
 import { getSectorSignalsAction } from '@/entities/sector-signal/actions';
 import {
     QUERY_KEYS,
-    MARKET_SUMMARY_STALE_TIME_MS,
+    SECTOR_SIGNALS_STALE_TIME_MS,
 } from '@/shared/config/queryConfig';
 import { useHydrated } from '@/shared/hooks/useHydrated';
 import { DEFAULT_DASHBOARD_TIMEFRAME } from '@/shared/config/dashboard-tickers';
@@ -29,7 +29,7 @@ export function useSectorSignals(
         queryKey: QUERY_KEYS.sectorSignals(timeframe),
         queryFn: () => getSectorSignalsAction(timeframe),
         enabled: isHydrated,
-        staleTime: MARKET_SUMMARY_STALE_TIME_MS,
+        staleTime: SECTOR_SIGNALS_STALE_TIME_MS,
         // SectorSignalsResult에 timeframe 필드가 없으므로 default tf의 seed만 연결한다.
         initialData:
             timeframe === DEFAULT_DASHBOARD_TIMEFRAME ? initialData : undefined,

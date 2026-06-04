@@ -31,6 +31,9 @@ import { JsonLd } from '@/shared/ui/JsonLd';
 // 1h — ISR (literal required — importing a constant breaks Next's static analysis, see src/app/CLAUDE.md)
 export const revalidate = 3600; // 1h — ISR
 
+/** 'YYYY-MM-DDTHH' prefix length — used to bucket ISR renders into 1-hour date-hour keys. */
+const ISO_DATE_HOUR_SLICE_END = 13; // 'YYYY-MM-DDTHH' prefix length
+
 // Root layout template appends "| Siglens" — exclude brand name to prevent duplication.
 const MARKET_TITLE = '오늘의 미국 주식, 섹터별 기술적 신호';
 const MARKET_FULL_TITLE = `${MARKET_TITLE} | ${SITE_NAME}`;
@@ -99,7 +102,7 @@ export async function generateMetadata(): Promise<Metadata> {
 export async function MarketContent() {
     // ISR date-hour key: same hour = same cached briefing peek. Avoids hashing
     // the full summary object on every ISR render.
-    const dateHour = new Date().toISOString().slice(0, 13);
+    const dateHour = new Date().toISOString().slice(0, ISO_DATE_HOUR_SLICE_END);
 
     const summary = await getMarketSummaryStatic();
     const sectorData = await getSectorSignalsStatic(

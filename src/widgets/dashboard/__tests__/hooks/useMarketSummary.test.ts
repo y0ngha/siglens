@@ -121,21 +121,40 @@ describe('useMarketSummary', () => {
     });
 
     it('(Worst-E2E) isE2EClient=true → staleTime 0 적용 (즉시 refetch)', async () => {
-        const { isE2EClient } = await import('@/shared/api/e2eClientEnv');
-        (isE2EClient as ReturnType<typeof vi.fn>).mockReturnValue(true);
+        // IS_E2E_MODE is a module-level const — use vi.doMock (non-hoisted) + vi.resetModules
+        // + dynamic import so the module is re-evaluated with isE2EClient returning true.
+        vi.resetModules();
+        vi.doMock('@/shared/api/e2eClientEnv', () => ({
+            isE2EClient: vi.fn(() => true),
+        }));
+        vi.doMock('@/entities/market-summary/actions', () => ({
+            getMarketSummaryClientAction: vi.fn(),
+        }));
+        // Also re-mock useHydrated so the query is enabled in the reloaded module context.
+        vi.doMock('@/shared/hooks/useHydrated', () => ({
+            useHydrated: vi.fn(() => true),
+        }));
 
-        mockAction.mockResolvedValue(SUMMARY_DATA);
+        const { useMarketSummary: useMarketSummaryE2E } =
+            await import('@/widgets/dashboard/hooks/useMarketSummary');
+        const { getMarketSummaryClientAction: e2eMockAction } =
+            await import('@/entities/market-summary/actions');
+        (e2eMockAction as ReturnType<typeof vi.fn>).mockResolvedValue(
+            SUMMARY_DATA
+        );
+
         const { client, wrapper } = makeWrapper();
-        renderHook(() => useMarketSummary(), { wrapper });
+        renderHook(() => useMarketSummaryE2E(), { wrapper });
 
         // When staleTime=0 and refetchOnMount='always', data immediately becomes stale
         // so the query refetches. Action called at least once.
         await waitFor(() => {
-            expect(mockAction).toHaveBeenCalled();
+            expect(e2eMockAction).toHaveBeenCalled();
         });
 
         client.clear();
-        // Reset mock
-        (isE2EClient as ReturnType<typeof vi.fn>).mockReturnValue(false);
+        vi.doUnmock('@/shared/api/e2eClientEnv');
+        vi.doUnmock('@/entities/market-summary/actions');
+        vi.doUnmock('@/shared/hooks/useHydrated');
     });
 });
