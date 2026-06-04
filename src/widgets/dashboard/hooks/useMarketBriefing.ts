@@ -31,19 +31,17 @@ export function useMarketBriefing(
 
     if (!data) {
         // hydration 전: peek seed가 있으면 cached처럼 노출, 없으면 undefined(렌더 안 함)
-        return {
-            input: peekSeed
-                ? // peek seed는 briefing 본문만 보유하므로 generatedAt이 빈 문자열이다.
-                  // BriefingCard는 비어있거나 유효하지 않은 타임스탬프를 가드해 렌더링하지
-                  // 않으므로(R1 참조), 'cached' 모양의 객체는 BriefingRegion에 구조적으로
-                  // 유효하다. action 응답이 도착하면 정상 SubmitBriefingResult로 교체된다.
-                  ({
-                      status: 'cached',
-                      briefing: peekSeed,
-                      generatedAt: '',
-                  } as SubmitBriefingResult)
-                : undefined,
-        };
+        if (peekSeed) {
+            // peek seed는 briefing 본문만 보유하므로 generatedAt이 빈 문자열이다.
+            // BriefingCard는 비어있거나 유효하지 않은 타임스탬프를 가드해 렌더링하지 않으므로(R1 참조).
+            const seed: SubmitBriefingResult = {
+                status: 'cached',
+                briefing: peekSeed,
+                generatedAt: '',
+            };
+            return { input: seed };
+        }
+        return { input: undefined };
     }
     if ('ok' in data) return { input: undefined };
     if (data.botBlocked) return { input: null };

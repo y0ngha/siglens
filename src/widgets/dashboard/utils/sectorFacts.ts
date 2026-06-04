@@ -63,11 +63,11 @@ export function buildSectorFacts(
         const bullishSymbols = stocks
             .filter(isBullish)
             .map(s => s.symbol)
-            .sort((a, b) => a.localeCompare(b, 'en'));
+            .toSorted((a, b) => a.localeCompare(b, 'en'));
         const bearishOnlySymbols = stocks
             .filter(s => !isBullish(s) && isBearish(s))
             .map(s => s.symbol)
-            .sort((a, b) => a.localeCompare(b, 'en'));
+            .toSorted((a, b) => a.localeCompare(b, 'en'));
         const topSymbols = [...bullishSymbols, ...bearishOnlySymbols].slice(
             0,
             MAX_TOP_SYMBOLS
@@ -77,7 +77,7 @@ export function buildSectorFacts(
     });
 
     // Sort sectors alphabetically for stable output (locale pinned to 'en')
-    return facts.sort((a, b) =>
+    return facts.toSorted((a, b) =>
         a.sectorSymbol.localeCompare(b.sectorSymbol, 'en')
     );
 }

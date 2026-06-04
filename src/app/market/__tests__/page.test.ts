@@ -172,22 +172,16 @@ describe('Market page', () => {
 
         it('peekBriefingStatic returns null → graceful fallback (client triggers submit)', async () => {
             mockPeekBriefingStatic.mockResolvedValue(null);
-            const result = await mockPeekBriefingStatic(
-                { indices: [], sectors: [] },
-                '2026-06-04T10'
-            );
-            expect(result).toBeNull();
+            // MarketContent must render without throwing when peekSeed is null
+            await expect(MarketContent()).resolves.toBeDefined();
         });
 
         it('peekBriefingStatic throwing → .catch(() => null) prevents page crash', async () => {
             // The page uses .catch(() => null) — even if peekBriefingStatic throws,
-            // peekSeed = null and the page continues to render
+            // peekSeed = null and the page continues to render. This test would FAIL
+            // if the page's own .catch were removed, because MarketContent() would reject.
             mockPeekBriefingStatic.mockRejectedValue(new Error('redis down'));
-            const peekSeed = await mockPeekBriefingStatic(
-                { indices: [], sectors: [] },
-                '2026-06-04T10'
-            ).catch(() => null);
-            expect(peekSeed).toBeNull();
+            await expect(MarketContent()).resolves.toBeDefined();
         });
     });
 
