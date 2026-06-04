@@ -81,6 +81,16 @@ describe('BriefingCard', () => {
         expect(screen.getByText(/기준/)).toBeInTheDocument();
     });
 
+    it('hides timestamp when generatedAt is empty string', () => {
+        render(<BriefingCard briefing={BRIEFING} generatedAt="" />);
+        expect(screen.queryByText(/기준/)).not.toBeInTheDocument();
+    });
+
+    it('hides timestamp when generatedAt is invalid date string', () => {
+        render(<BriefingCard briefing={BRIEFING} generatedAt="not-a-date" />);
+        expect(screen.queryByText(/기준/)).not.toBeInTheDocument();
+    });
+
     it('hides summary when empty', () => {
         const briefing: MarketBriefingResponse = {
             ...BRIEFING,

@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import type {
     MarketBriefingResponse,
@@ -29,19 +30,22 @@ export function useMarketBriefing(
         staleTime: Infinity,
     });
 
+    /**
+     * Pre-hydration seed: peek seed가 있으면 cached처럼 노출, 없으면 undefined(렌더 안 함).
+     * peek seed는 briefing 본문만 보유하므로 generatedAt이 빈 문자열이다.
+     * BriefingCard가 빈 generatedAt을 조건부 렌더로 가드한다.
+     * useMemo로 peekSeed 참조가 바뀌지 않는 한 매 렌더마다 새 객체 생성을 막는다.
+     */
+    const seedInput = useMemo<SubmitBriefingResult | undefined>(
+        () =>
+            peekSeed
+                ? { status: 'cached', briefing: peekSeed, generatedAt: '' }
+                : undefined,
+        [peekSeed]
+    );
+
     if (!data) {
-        // hydration 전: peek seed가 있으면 cached처럼 노출, 없으면 undefined(렌더 안 함)
-        if (peekSeed) {
-            // peek seed는 briefing 본문만 보유하므로 generatedAt이 빈 문자열이다.
-            // BriefingCard가 빈 generatedAt을 조건부 렌더로 가드한다.
-            const seed: SubmitBriefingResult = {
-                status: 'cached',
-                briefing: peekSeed,
-                generatedAt: '',
-            };
-            return { input: seed };
-        }
-        return { input: undefined };
+        return { input: seedInput };
     }
     if ('ok' in data) return { input: undefined };
     if (data.botBlocked) return { input: null };

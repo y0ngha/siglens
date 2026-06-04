@@ -50,6 +50,19 @@ const eslintConfig = defineConfig([
         },
     },
     {
+        // eslint-plugin-react-hooks v7.1.1 (React Compiler lint mode) propagates
+        // setState tracking through useEffectEvent, causing set-state-in-effect to
+        // fire on the canonical `useEffect(() => { effectEventFn(); }, [])` pattern.
+        // This is a false positive: useEffectEvent is the React 19 blessed way to read
+        // latest state/props in a mount-only effect without adding reactive deps.
+        // The URL-restore-on-mount pattern here is a legitimate external-system sync
+        // (URLSearchParams → React state), not a cascading-render anti-pattern.
+        files: ['src/widgets/dashboard/hooks/useSectorSignalState.ts'],
+        rules: {
+            'react-hooks/set-state-in-effect': 'off',
+        },
+    },
+    {
         // These factories / actions use a runtime require() to keep the E2E-only
         // postgres-js client / fake market provider / analysis stub + JSON fixture
         // out of the production bundle (a static import would bundle them; async

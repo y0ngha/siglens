@@ -1,6 +1,12 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+    useCallback,
+    useEffect,
+    useEffectEvent,
+    useMemo,
+    useState,
+} from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import type {
     DashboardTimeframe,
@@ -56,18 +62,19 @@ export function useSectorSignalState({
 
     /**
      * Restore sector/timeframe from URL once on mount (deep-link support).
-     * searchParamsRef captures the initial value so the mount-only effect [] satisfies
-     * exhaustive-deps while still reading the correct initial URL state.
+     * useEffectEvent reads the current searchParams at call time without making
+     * it a reactive dependency of the mount-only effect [].
      * Default state from props is shown during SSR/hydration (Suspense fallback covers the swap).
      */
-    const searchParamsRef = useRef(searchParams);
-    useEffect(() => {
-        const params = searchParamsRef.current;
-        const fromUrl = params.get('sector');
+    const restoreFromUrl = useEffectEvent(() => {
+        const fromUrl = searchParams.get('sector');
         if (fromUrl && SIGNAL_SECTORS.some(s => s.symbol === fromUrl))
             setActiveSector(fromUrl);
-        const tfFromUrl = params.get('timeframe');
+        const tfFromUrl = searchParams.get('timeframe');
         if (isDashboardTimeframe(tfFromUrl)) setActiveTimeframe(tfFromUrl);
+    });
+    useEffect(() => {
+        restoreFromUrl();
     }, []);
 
     const filtered = useMemo(

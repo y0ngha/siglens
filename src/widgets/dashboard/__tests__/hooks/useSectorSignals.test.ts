@@ -97,7 +97,7 @@ describe('useSectorSignals', () => {
             () => useSectorSignals(TF_HOUR, SECTOR_RESULT),
             { wrapper }
         );
-        // 1Week는 default(1Day)가 아니므로 initialData 무시 → 빈 배열
+        // 1Hour는 default(1Day)가 아니므로 initialData 무시 → 빈 배열
         expect(result.current.stocks).toHaveLength(0);
         client.clear();
     });
