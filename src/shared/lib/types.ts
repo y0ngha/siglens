@@ -229,13 +229,15 @@ export interface ContextSwitchMessage {
 /** Chat display history union — `ChatMessage` (LLM-bound) + UI-only `ContextSwitchMessage`. */
 export type DisplayMessage = ChatMessage | ContextSwitchMessage;
 
+/** summary 전용 결과 — briefing/botBlocked는 별도 경로(MarketBriefingActionResult). */
 export type MarketSummaryActionResult =
-    | {
-          summary: MarketSummaryData;
-          briefing: SubmitBriefingResult | null;
-          botBlocked: false;
-      }
-    | { summary: MarketSummaryData; briefing: null; botBlocked: true }
+    | { summary: MarketSummaryData }
+    | { ok: false; error: string };
+
+/** briefing 클라 경로 결과 — 봇 차단 또는 submit/cached. */
+export type MarketBriefingActionResult =
+    | { briefing: SubmitBriefingResult; botBlocked: false }
+    | { briefing: null; botBlocked: true }
     | { ok: false; error: string };
 
 export type JobType =
