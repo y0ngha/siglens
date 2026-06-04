@@ -12,10 +12,12 @@ import {
 import { MarketDataErrorNotice } from './MarketDataErrorNotice';
 import { useBriefing } from './hooks/useBriefing';
 import { useMarketSummary } from './hooks/useMarketSummary';
+import { useMarketBriefing } from './hooks/useMarketBriefing';
 import { MarketSummaryPanelSkeleton } from './MarketSummaryPanelSkeleton';
 import { BotBlockedNotice } from '@/shared/ui/BotBlockedNotice';
 import { SECTOR_GROUPS } from '@/shared/config/dashboard-tickers';
 import type {
+    MarketBriefingResponse,
     MarketSectorData,
     SubmitBriefingResult,
 } from '@y0ngha/siglens-core';
@@ -59,9 +61,14 @@ function BriefingRegion({ input }: BriefingRegionProps) {
     );
 }
 
-export function MarketSummaryPanel() {
-    const { data, isPending, sectorMap, indices, hasMissingQuotes, briefing } =
+interface MarketSummaryPanelProps {
+    peekSeed?: MarketBriefingResponse | null;
+}
+
+export function MarketSummaryPanel({ peekSeed }: MarketSummaryPanelProps = {}) {
+    const { data, isPending, sectorMap, indices, hasMissingQuotes } =
         useMarketSummary();
+    const { input: briefing } = useMarketBriefing(peekSeed);
     const [noticeDismissed, setNoticeDismissed] = useState(false);
 
     if (isPending) return <MarketSummaryPanelSkeleton />;
