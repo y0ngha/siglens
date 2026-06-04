@@ -32,7 +32,7 @@ Use this value directly in all `gh` commands.
 #### 1-2. Load Required Documents
 
 Always read (targeted):
-- `docs/MISTAKES.md` — read only the sections relevant to the fix scope:
+- `docs/workflows/MISTAKES.md` — read only the sections relevant to the fix scope:
 
 | Modified area | MISTAKES.md sections to read |
 |---|---|
@@ -49,9 +49,9 @@ Determine the area by reading the diff content — use the active FSD layers (`a
 Multiple areas → read the union of their sections.
 
 Additional documents based on fix scope:
-- Indicator / signal / candle pattern / prompt logic → `docs/DOMAIN.md`
-- External API integration → `docs/API.md`
-- UI components → `docs/DESIGN.md`
+- Indicator / signal / candle pattern / prompt logic → `docs/product/DOMAIN.md`
+- External API integration → `docs/reference/API.md`
+- UI components → `docs/conventions/DESIGN.md`
 
 #### 1-3. Understand PR Context
 
@@ -107,8 +107,8 @@ Reject a comment (do not apply the fix) if any of the following is true:
 
 1. **Conflicts with CONVENTIONS.md** — Convention takes precedence.
 2. **Violates FF Principles** — Applying the change would degrade Readability, Predictability, Cohesion, or Coupling.
-3. **Breaks Layer Architecture** — Violates dependency rules in `docs/ARCHITECTURE.md`.
-4. **Matches a Known Mistake Pattern** — Already documented in `docs/MISTAKES.md` as a pattern to avoid.
+3. **Breaks Layer Architecture** — Violates dependency rules in `docs/architecture/ARCHITECTURE.md`.
+4. **Matches a Known Mistake Pattern** — Already documented in `docs/workflows/MISTAKES.md` as a pattern to avoid.
 5. **Reviewer Lacks Project Context** — Unaware of an intentional design decision or constraint.
 
 For every rejected comment, post a reply on GitHub:
@@ -238,7 +238,7 @@ If any step fails, fix the issue and re-run.
 
 Append each fix to `docs/__agents_only__/fix-log.md`. Create the file if it does not exist.
 
-**Before recording any entry, check `docs/MISTAKES.md` first.**
+**Before recording any entry, check `docs/workflows/MISTAKES.md` first.**
 If the violation is already documented there, **skip that entry entirely**.
 
 Format:

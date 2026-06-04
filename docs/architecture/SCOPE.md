@@ -137,7 +137,7 @@ siglens (Next.js 앱 + 일반 백엔드)
 siglens-core (npm 패키지 — 분석 도메인 + 분석 직결 인프라 + Skills)
     │
     └── domain → infrastructure → application
-        (레이어 의존 규칙은 docs/ARCHITECTURE.md 참고)
+        (레이어 의존 규칙은 docs/architecture/ARCHITECTURE.md 참고)
 ```
 
 **규칙**
@@ -146,7 +146,7 @@ siglens-core (npm 패키지 — 분석 도메인 + 분석 직결 인프라 + Ski
 - `siglens-core`는 `siglens`의 존재를 모른다. core 안에 "siglens에서는 …" 같은
   분기 코드가 들어가면 안 된다.
 - `siglens`는 **`src/index.ts`에서 export된 심볼만** import한다. deep import
-  (`@y0ngha/siglens-core/dist/...`)는 금지. 자세한 정책은 `docs/PUBLIC_API.md`.
+  (`@y0ngha/siglens-core/dist/...`)는 금지. 자세한 정책은 `siglens-core/docs/PUBLIC_API.md`.
 - 분석에 영향 없는 기능(인증·이메일·BYOK 등)은 core에 추가하지 않는다.
   이미 들어가 있는 것은 §7 ejection 로드맵으로 환원한다.
 - core가 `usage_logs` 같은 DB에 직접 쓰는 use-case가 필요하면, repository
@@ -310,7 +310,7 @@ i18n 메시지, 로딩 UI, 에러 토스트, 분석 결과 화면 포맷팅
 | 인증·세션·OAuth·이메일·BYOK·문의·한국어 티커·`usage_logs` DB | ❌ | ✅ | siglens only |
 | 새 페이지/라우트/컴포넌트 | ❌ | ✅ | siglens only |
 | Tailwind/디자인 토큰/SEO | ❌ | ✅ | siglens only |
-| 환경변수 추가 (분석용 실제 값) | ❌ (`docs/API.md` 명세만 갱신) | ✅ (`.env`에 값) | core 명세 → siglens 주입 |
+| 환경변수 추가 (분석용 실제 값) | ❌ (`docs/reference/API.md` 명세만 갱신) | ✅ (`.env`에 값) | core 명세 → siglens 주입 |
 
 ---
 
@@ -371,12 +371,12 @@ core를 분석 도메인으로 다시 좁히기 위한 단계별 작업.
 
 | 문서 | 역할 |
 |---|---|
-| `docs/SERVICE.md` | core 라이브러리 전체 개요, 소비자 모델, Skills 시스템 |
-| `docs/ARCHITECTURE.md` | core 내부의 layer 구조와 의존 규칙 |
-| `docs/PUBLIC_API.md` | Tier 분류, 인벤토리, semver 정책 |
-| `docs/API.md` | core가 호출하는 외부 서비스 명세, 전체 환경변수 목록 |
-| `docs/DOMAIN.md` | 지표/패턴/신호/Skills의 비즈니스 규칙 |
-| `docs/CONVENTIONS.md` | 네이밍, JSDoc, 코딩 규약 |
+| `docs/product/SERVICE.md` | core 라이브러리 전체 개요, 소비자 모델, Skills 시스템 |
+| `docs/architecture/ARCHITECTURE.md` | core 내부의 layer 구조와 의존 규칙 |
+| `siglens-core/docs/PUBLIC_API.md` | Tier 분류, 인벤토리, semver 정책 |
+| `docs/reference/API.md` | core가 호출하는 외부 서비스 명세, 전체 환경변수 목록 |
+| `docs/product/DOMAIN.md` | 지표/패턴/신호/Skills의 비즈니스 규칙 |
+| `docs/conventions/CONVENTIONS.md` | 네이밍, JSDoc, 코딩 규약 |
 
 ---
 

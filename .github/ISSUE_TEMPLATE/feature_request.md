@@ -28,12 +28,12 @@ assignees: y0ngha
 
 <!-- 관련 docs/ 문서 링크 -->
 
-- [ ] `docs/ARCHITECTURE.md`
-- [ ] `docs/DOMAIN.md`
-- [ ] `docs/API.md`
-- [ ] `docs/CONVENTIONS.md`
-- [ ] `docs/FF.md`
-- [ ] `docs/DESIGN.md`
+- [ ] `docs/architecture/ARCHITECTURE.md`
+- [ ] `docs/product/DOMAIN.md`
+- [ ] `docs/reference/API.md`
+- [ ] `docs/conventions/CONVENTIONS.md`
+- [ ] `docs/conventions/FF.md`
+- [ ] `docs/conventions/DESIGN.md`
 
 ## 완료 조건
 

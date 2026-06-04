@@ -35,7 +35,7 @@ Use this value directly in all `gh` commands.
 #### 1-2. Load Required Documents
 
 Always read (targeted):
-- `docs/MISTAKES.md` — read only the sections relevant to the task scope:
+- `docs/workflows/MISTAKES.md` — read only the sections relevant to the task scope:
 
 | Modified area | MISTAKES.md sections to read |
 |---|---|
@@ -52,10 +52,10 @@ Determine the area by reading the diff content — use the active FSD layers (`a
 Multiple areas → read the union of their sections.
 
 Additional documents by scope:
-- Indicator / signal / candle pattern / prompt logic → `docs/DOMAIN.md` + `docs/ARCHITECTURE.md`
-- External API integration → `docs/API.md` + `docs/ARCHITECTURE.md`
-- UI components → `docs/DESIGN.md` + `docs/ARCHITECTURE.md`
-- Layer structure check needed → `docs/ARCHITECTURE.md`
+- Indicator / signal / candle pattern / prompt logic → `docs/product/DOMAIN.md` + `docs/architecture/ARCHITECTURE.md`
+- External API integration → `docs/reference/API.md` + `docs/architecture/ARCHITECTURE.md`
+- UI components → `docs/conventions/DESIGN.md` + `docs/architecture/ARCHITECTURE.md`
+- Layer structure check needed → `docs/architecture/ARCHITECTURE.md`
 
 Read existing similar implementations first for pattern recognition:
 ```bash
@@ -152,11 +152,11 @@ When adding exports to an FSD slice, expose production imports through the slice
 
 | Change Type | Document to Update |
 |---|---|
-| New type or interface added | `docs/DOMAIN.md` |
-| New indicator implemented | `docs/DOMAIN.md` |
-| External API usage changed | `docs/API.md` |
-| Layer structure or folder layout changed | `docs/ARCHITECTURE.md` |
-| New coding convention established | `docs/CONVENTIONS.md` |
+| New type or interface added | `docs/product/DOMAIN.md` |
+| New indicator implemented | `docs/product/DOMAIN.md` |
+| External API usage changed | `docs/reference/API.md` |
+| Layer structure or folder layout changed | `docs/architecture/ARCHITECTURE.md` |
+| New coding convention established | `docs/conventions/CONVENTIONS.md` |
 
 #### 1-6. MISTAKES.md Targeted Self-Review
 
@@ -237,7 +237,7 @@ status: loop_limit_reached → stop, report to user
 
 Append each fix to `docs/__agents_only__/fix-log.md`. Create the file if it does not exist.
 
-**Before recording any entry, check `docs/MISTAKES.md` first.**
+**Before recording any entry, check `docs/workflows/MISTAKES.md` first.**
 If the violation is already documented there (same rule, same pattern), **skip that entry entirely**.
 Only record violations that are not yet covered by an existing MISTAKES.md rule.
 

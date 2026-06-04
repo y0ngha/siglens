@@ -883,11 +883,11 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    ❌ mean-reversion.md body uses 2×ATR but frontmatter indicators omits atr
    ✅ Frontmatter includes all body references; update AI instructions to match actual RECENT_BARS_COUNT=30
 
-2. API endpoint or parameter changes not reflected in docs/API.md
-   → When external API schema or timeframe/parameter options change, update docs/API.md reference tables
+2. API endpoint or parameter changes not reflected in docs/reference/API.md
+   → When external API schema or timeframe/parameter options change, update docs/reference/API.md reference tables
    → Include all provider names, endpoint paths, and parameter enums in documentation
-   ❌ FMP_INTRADAY_TIMEFRAME_MAP extended to include 30min, 4hour; docs/API.md still lists only 1Min-1Hour
-   ✅ docs/API.md Timeframe table updated to include all current mappings
+   ❌ FMP_INTRADAY_TIMEFRAME_MAP extended to include 30min, 4hour; docs/reference/API.md still lists only 1Min-1Hour
+   ✅ docs/reference/API.md Timeframe table updated to include all current mappings
 
 2.5. Comments describing TypeScript narrowing or type-system behavior already evident from code
     → Don't write comments restating what the type system already proves: "narrowed to ChatMessage past this point", "type is non-null here after the guard", etc.

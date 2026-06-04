@@ -47,7 +47,7 @@ The orchestrator passes both a PR number and a branch name from pr-fix-agent's e
 ### 2. Read Git Conventions
 
 ```bash
-cat docs/GIT_CONVENTIONS.md
+cat docs/conventions/GIT_CONVENTIONS.md
 ```
 
 This file is the authoritative source for branch naming, commit types, message format, and PR rules.
@@ -97,7 +97,7 @@ Split commits when multiple concerns are mixed:
 git add src/domain/indicators/rsi.ts src/__tests__/domain/indicators/rsi.test.ts
 git commit -m "feat: RSI 인디케이터 구현"
 
-git add docs/DOMAIN.md
+git add docs/product/DOMAIN.md
 git commit -m "docs: DOMAIN.md RSI 명세 업데이트"
 ```
 

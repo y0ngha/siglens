@@ -61,7 +61,7 @@ const data = await fetch(url, {
 `export const revalidate` / `dynamic` 등 route segment config는 **반드시 정적 분석 가능한
 리터럴**이어야 한다. import한 상수나 식(`SECONDS_PER_HOUR`, `60 * 60`)으로 추출하면 Next.js가
 값을 정적 분석하지 못해 `⨯ Invalid segment configuration export detected ... configs not being
-applied`로 **config를 조용히 무시 → ISR이 깨진다**. 따라서 **`docs/MISTAKES.md` §15(매직넘버
+applied`로 **config를 조용히 무시 → ISR이 깨진다**. 따라서 **`docs/workflows/MISTAKES.md` §15(매직넘버
 상수 추출)은 route segment config에 적용하지 않는다** — 리터럴을 유지하고 `// 1h` / `// 30d`
 인라인 코멘트로 의미만 표기한다. (`app/page.tsx`도 이미 `revalidate = 3600` 리터럴.)
 
@@ -125,7 +125,7 @@ Server Actions are defined within FSD slices (entities/*/actions/, features/*/ac
 
 ## Design Rules
 
-See `docs/DESIGN.md` for the full color system and Tailwind CSS rules.
+See `docs/conventions/DESIGN.md` for the full color system and Tailwind CSS rules.
 
 ---
 

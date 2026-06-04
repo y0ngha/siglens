@@ -8,10 +8,10 @@ Do not start implementation, run commands, or invoke agents until you have read 
 
 | User request pattern            | Examples                                                            | FIRST action                   |
 |---------------------------------|---------------------------------------------------------------------|--------------------------------|
-| Issue number + implementation   | "이슈 #42 설계해줘 > (설계 후 승인되면)" "이슈 #42 구현해줘", #42 구현해줘", "이슈 15번 작업해줘" | Read `docs/ISSUE_IMPL_FLOW.md` |
-| PR number + fix/review comments | "PR #216 수정해줘", "#200 코멘트 반영해줘"                                     | Read `docs/PR_FIX_FLOW.md`     |
+| Issue number + implementation   | "이슈 #42 설계해줘 > (설계 후 승인되면)" "이슈 #42 구현해줘", #42 구현해줘", "이슈 15번 작업해줘" | Read `docs/workflows/ISSUE_IMPL_FLOW.md` |
+| PR number + fix/review comments | "PR #216 수정해줘", "#200 코멘트 반영해줘"                                     | Read `docs/workflows/PR_FIX_FLOW.md`     |
 | Issue creation                  | "이슈 만들어줘", "버그 리포트 생성해줘"                                            | Invoke `issue-agent`           |
-| Analysis-domain change          | "지표 추가해줘", "RSI 계산식 변경", "캔들 패턴 추가", "AI 프롬프트 수정", "Skills 추가/변경", "신호 임계값 조정", "분석 결과 정규화 변경", "대시보드 신호 스캐너 알고리즘", "티어 제한 정책 변경" | **STOP**. Read `docs/SCOPE.md` §0 (작업-경계 체크리스트) and §3 (결정 트리). If task belongs to siglens-core, halt and inform the user; do not implement locally. |
+| Analysis-domain change          | "지표 추가해줘", "RSI 계산식 변경", "캔들 패턴 추가", "AI 프롬프트 수정", "Skills 추가/변경", "신호 임계값 조정", "분석 결과 정규화 변경", "대시보드 신호 스캐너 알고리즘", "티어 제한 정책 변경" | **STOP**. Read `docs/architecture/SCOPE.md` §0 (작업-경계 체크리스트) and §3 (결정 트리). If task belongs to siglens-core, halt and inform the user; do not implement locally. |
 
 If the request does not match any pattern above, proceed normally.
 
@@ -38,7 +38,7 @@ stop and confirm the work doesn't belong in `@y0ngha/siglens-core`.
 
 **What you must do when triggered**:
 
-1. Read `docs/SCOPE.md` §0 and §3 (decision tree).
+1. Read `docs/architecture/SCOPE.md` §0 and §3 (decision tree).
 2. If the task fits any "→ core" row in §0, **stop and tell the user**:
    "이 작업은 `@y0ngha/siglens-core`에서 처리하는 게 맞아 보입니다.
    siglens-core 레포에서 진행할까요? (아니면 siglens 측 어댑터 변경만
@@ -278,13 +278,13 @@ yarn format
 
 | Document | Contents |
 |---|---|
-| `docs/SCOPE.md` | **siglens vs siglens-core 분담** — 결정 트리, 의존 방향, 안티 패턴 (양쪽 레포 공통 source-of-truth) |
-| `docs/SERVICE.md` | Product overview, target users, tech stack, Skills system |
-| `docs/ARCHITECTURE.md` | Layer structure, dependency direction rules, folder layout |
-| `docs/DOMAIN.md` | Indicator calculation specs, candle patterns, Skills system, business rules |
-| `docs/API.md` | FMP, AI, worker API endpoints, environment variables |
-| `docs/CONVENTIONS.md` | Coding conventions, naming rules, paradigm guidelines |
-| `docs/FF.md` | FF 4 principles in detail (Readability, Predictability, Cohesion, Coupling) |
-| `docs/DESIGN.md` | Color system, Tailwind config, chart color constants |
-| `docs/GIT_CONVENTIONS.md` | Branch naming, commit message format, PR rules |
-| `docs/MISTAKES.md` | Common mistakes Claude Code repeatedly makes — review before and after implementing |
+| `docs/architecture/SCOPE.md` | **siglens vs siglens-core 분담** — 결정 트리, 의존 방향, 안티 패턴 (양쪽 레포 공통 source-of-truth) |
+| `docs/product/SERVICE.md` | Product overview, target users, tech stack, Skills system |
+| `docs/architecture/ARCHITECTURE.md` | Layer structure, dependency direction rules, folder layout |
+| `docs/product/DOMAIN.md` | Indicator calculation specs, candle patterns, Skills system, business rules |
+| `docs/reference/API.md` | FMP, AI, worker API endpoints, environment variables |
+| `docs/conventions/CONVENTIONS.md` | Coding conventions, naming rules, paradigm guidelines |
+| `docs/conventions/FF.md` | FF 4 principles in detail (Readability, Predictability, Cohesion, Coupling) |
+| `docs/conventions/DESIGN.md` | Color system, Tailwind config, chart color constants |
+| `docs/conventions/GIT_CONVENTIONS.md` | Branch naming, commit message format, PR rules |
+| `docs/workflows/MISTAKES.md` | Common mistakes Claude Code repeatedly makes — review before and after implementing |

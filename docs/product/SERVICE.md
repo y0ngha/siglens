@@ -153,5 +153,5 @@ entities/analysis/actions/*
 - Read all `.md` files in the `skills/` directory
 - Check the `indicators` field in each file's frontmatter to identify required indicators
 - Skills with `confidence_weight < 0.5` are excluded from the prompt entirely
-- Refer to the Skills System section in `docs/DOMAIN.md` for the full file format spec,
+- Refer to the Skills System section in `docs/product/DOMAIN.md` for the full file format spec,
   type definitions, and `Skill` interface

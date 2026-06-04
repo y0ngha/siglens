@@ -192,7 +192,7 @@ siglens/
 
 분석 도메인 로직의 본체는 `@y0ngha/siglens-core` 패키지에 있습니다. 이 패키지는 일반 외부 라이브러리가 아니라 Siglens 분석 로직을 분리한 코어 패키지이므로 모든 FSD 레이어에서 직접 import할 수 있습니다.
 
-자세한 규칙은 [ARCHITECTURE.md](./docs/ARCHITECTURE.md)와 [SCOPE.md](./docs/SCOPE.md)를 참고하세요.
+자세한 규칙은 [ARCHITECTURE.md](./docs/architecture/ARCHITECTURE.md)와 [SCOPE.md](./docs/architecture/SCOPE.md)를 참고하세요.
 
 ## Skills System
 
@@ -218,17 +218,17 @@ siglens/
 
 | 문서 | 내용 |
 |---|---|
-| [SERVICE.md](./docs/SERVICE.md) | 서비스 개요, 대상 사용자, 기술 스택, Skills 시스템 |
-| [ARCHITECTURE.md](./docs/ARCHITECTURE.md) | FSD 레이어 구조, 의존성 규칙, 데이터 흐름 |
-| [SCOPE.md](./docs/SCOPE.md) | siglens와 siglens-core의 책임 분리 |
-| [AUTH.md](./docs/AUTH.md) | 인증, 세션, OAuth, 이메일 토큰 흐름 |
-| [DOMAIN.md](./docs/DOMAIN.md) | 인디케이터 계산 명세, 캔들 패턴, Skills 시스템 |
-| [API.md](./docs/API.md) | 데이터/AI API와 환경변수 |
-| [CONVENTIONS.md](./docs/CONVENTIONS.md) | 코딩 컨벤션, 네이밍, 테스트 정책 |
-| [E2E.md](./docs/E2E.md) | Playwright E2E 하니스 구조, 로컬/CI 실행, 스펙 작성 가이드 |
-| [DESIGN.md](./docs/DESIGN.md) | 컬러 시스템, Tailwind 설정, 차트 컬러 상수 |
-| [GIT_CONVENTIONS.md](./docs/GIT_CONVENTIONS.md) | 브랜치, 커밋 메시지, PR 규칙 |
-| [MISTAKES.md](./docs/MISTAKES.md) | 반복 실수와 방지 규칙 |
+| [SERVICE.md](./docs/product/SERVICE.md) | 서비스 개요, 대상 사용자, 기술 스택, Skills 시스템 |
+| [ARCHITECTURE.md](./docs/architecture/ARCHITECTURE.md) | FSD 레이어 구조, 의존성 규칙, 데이터 흐름 |
+| [SCOPE.md](./docs/architecture/SCOPE.md) | siglens와 siglens-core의 책임 분리 |
+| [AUTH.md](./docs/product/AUTH.md) | 인증, 세션, OAuth, 이메일 토큰 흐름 |
+| [DOMAIN.md](./docs/product/DOMAIN.md) | 인디케이터 계산 명세, 캔들 패턴, Skills 시스템 |
+| [API.md](./docs/reference/API.md) | 데이터/AI API와 환경변수 |
+| [CONVENTIONS.md](./docs/conventions/CONVENTIONS.md) | 코딩 컨벤션, 네이밍, 테스트 정책 |
+| [E2E.md](./docs/qa/E2E.md) | Playwright E2E 하니스 구조, 로컬/CI 실행, 스펙 작성 가이드 |
+| [DESIGN.md](./docs/conventions/DESIGN.md) | 컬러 시스템, Tailwind 설정, 차트 컬러 상수 |
+| [GIT_CONVENTIONS.md](./docs/conventions/GIT_CONVENTIONS.md) | 브랜치, 커밋 메시지, PR 규칙 |
+| [MISTAKES.md](./docs/workflows/MISTAKES.md) | 반복 실수와 방지 규칙 |
 
 ## Testing
 
@@ -241,7 +241,7 @@ yarn test-coverage-report    # 상세 커버리지 리포트
 
 커버리지 목표는 전체 FSD 레이어 기준 90%입니다. 현재 Vitest 설정은 `entities/`, `features/`, `shared/`, `widgets/`, `app/`, `src/proxy.ts`를 커버리지 측정 대상으로 포함합니다.
 
-실제 브라우저로 사용자 여정을 검증하는 Playwright E2E 스위트는 Vitest 위에 별도로 올라갑니다. 하니스 구조와 로컬/CI 실행 방법은 [E2E.md](./docs/E2E.md)를 참고하세요.
+실제 브라우저로 사용자 여정을 검증하는 Playwright E2E 스위트는 Vitest 위에 별도로 올라갑니다. 하니스 구조와 로컬/CI 실행 방법은 [E2E.md](./docs/qa/E2E.md)를 참고하세요.
 
 ## Commands
 

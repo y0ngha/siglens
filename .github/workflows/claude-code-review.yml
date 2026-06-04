@@ -72,16 +72,16 @@ jobs:
                         2. Run: gh pr diff ${{ github.event.pull_request.number }} --repo ${{ github.repository }} to analyze the changes.
                         3. **Contextual Reading**: Always read the following core documents:
                            - CLAUDE.md
-                           - /docs/MISTAKES.md (highest priority — known repeated patterns)
-                           - /docs/ARCHITECTURE.md
-                           - /docs/CONVENTIONS.md
-                           - /docs/FF.md
+                           - /docs/workflows/MISTAKES.md (highest priority — known repeated patterns)
+                           - /docs/architecture/ARCHITECTURE.md
+                           - /docs/conventions/CONVENTIONS.md
+                           - /docs/conventions/FF.md
 
                            Additionally read **only** the documents relevant to the changed files:
-                           - If the diff touches indicator calculations, signal logic, candle patterns, or prompt builders → read /docs/DOMAIN.md
-                           - If the diff touches UI components (.tsx files) → read /docs/DESIGN.md
-                           - If the diff touches external API integrations (AI providers, market data) → read /docs/API.md
-                           - If the diff touches authentication flows or session management → read /docs/AUTH.md
+                           - If the diff touches indicator calculations, signal logic, candle patterns, or prompt builders → read /docs/product/DOMAIN.md
+                           - If the diff touches UI components (.tsx files) → read /docs/conventions/DESIGN.md
+                           - If the diff touches external API integrations (AI providers, market data) → read /docs/reference/API.md
+                           - If the diff touches authentication flows or session management → read /docs/product/AUTH.md
                            - If the diff touches FSD layer boundaries or cross-layer imports → read the relevant src/<layer>/CLAUDE.md (if it exists)
 
                            Do NOT use concrete legacy directory paths (src/domain/, src/infrastructure/) as triggers — the FSD migration is complete and those paths were removed. Trigger on file content / responsibility instead.
@@ -112,13 +112,13 @@ jobs:
                         ## Project Principle Documents (Reference Pool)
                         Always derive review criteria from these files rather than general knowledge.
                         - CLAUDE.md: Project overview, layer dependency rules.
-                        - /docs/MISTAKES.md: Common mistakes to flag (Highest Priority).
-                        - /docs/CONVENTIONS.md: Coding conventions, FP paradigms, TypeScript rules.
-                        - /docs/FF.md: Frontend principles (Readability, Predictability, Cohesion, Coupling).
-                        - /docs/ARCHITECTURE.md: Layer structure, folder layout, dependency directions.
-                        - /docs/DOMAIN.md: Indicator specs, domain rules, IndicatorResult structure.
-                        - /docs/AUTH.md: Authentication flows, session management.
-                        - /docs/DESIGN.md: Color system, chart color constants.
+                        - /docs/workflows/MISTAKES.md: Common mistakes to flag (Highest Priority).
+                        - /docs/conventions/CONVENTIONS.md: Coding conventions, FP paradigms, TypeScript rules.
+                        - /docs/conventions/FF.md: Frontend principles (Readability, Predictability, Cohesion, Coupling).
+                        - /docs/architecture/ARCHITECTURE.md: Layer structure, folder layout, dependency directions.
+                        - /docs/product/DOMAIN.md: Indicator specs, domain rules, IndicatorResult structure.
+                        - /docs/product/AUTH.md: Authentication flows, session management.
+                        - /docs/conventions/DESIGN.md: Color system, chart color constants.
 
                         ## Documentation Policy (Override — DO NOT FLAG)
                         This project explicitly allows multi-line JSDoc and multi-line comment blocks.

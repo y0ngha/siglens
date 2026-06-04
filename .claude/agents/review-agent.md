@@ -83,23 +83,23 @@ Files and directories listed in `.gitignore` are also excluded.
 ### 2. Load Required Documents
 
 FF principles and coding conventions are already loaded from memory (Step 0) as condensed summaries.
-Do not re-read the full `docs/FF.md` or `docs/CONVENTIONS.md`.
+Do not re-read the full `docs/conventions/FF.md` or `docs/conventions/CONVENTIONS.md`.
 The memory versions contain all rules; only verbose code examples are omitted.
 
 Always read:
 ```
-docs/MISTAKES.md
-docs/ARCHITECTURE.md
+docs/workflows/MISTAKES.md
+docs/architecture/ARCHITECTURE.md
 ```
 
 Additionally, based on changed file locations:
 
 | Condition | Also read |
 |---|---|
-| Diff touches indicator calculations, signal logic, candle patterns, or prompt builders | `docs/DOMAIN.md` |
-| Diff touches `.tsx` files (UI components) | `docs/DESIGN.md` |
-| Diff touches AI provider calls or market data fetches | `docs/API.md` |
-| Diff touches authentication flows or session management | `docs/AUTH.md` |
+| Diff touches indicator calculations, signal logic, candle patterns, or prompt builders | `docs/product/DOMAIN.md` |
+| Diff touches `.tsx` files (UI components) | `docs/conventions/DESIGN.md` |
+| Diff touches AI provider calls or market data fetches | `docs/reference/API.md` |
+| Diff touches authentication flows or session management | `docs/product/AUTH.md` |
 | Only test files changed, no source files | Skip all conditional docs |
 
 Determine the trigger by reading the actual file content of the diff — do NOT match on directory paths (`src/domain/`, `src/infrastructure/`). FSD migration is in progress; concrete layer paths are unstable.
@@ -142,7 +142,7 @@ Evaluate each item silently. Do not output results — violations go into findin
 
 Evaluate silently. Do not output reasoning — violations go into findings only.
 
-Using the 4 principles from docs/FF.md, look for **code that will become hard to change**.
+Using the 4 principles from docs/conventions/FF.md, look for **code that will become hard to change**.
 
 - **Readability**: Can someone reading this code for the first time immediately understand the intent?
 - **Predictability**: Can behavior be predicted from the name, parameters, and return type alone?
@@ -155,7 +155,7 @@ Using the 4 principles from docs/FF.md, look for **code that will become hard to
 
 Evaluate silently. Do not output reasoning — violations go into findings only.
 
-Check docs/MISTAKES.md against the changed code for known repeated patterns.
+Check docs/workflows/MISTAKES.md against the changed code for known repeated patterns.
 
 ---
 

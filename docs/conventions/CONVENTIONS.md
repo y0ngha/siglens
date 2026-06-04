@@ -687,7 +687,7 @@ return NextResponse.json({ error: '...' }, { status: 400 });
 
 ## Layer Dependency Rules
 
-`→ see docs/ARCHITECTURE.md` for the authoritative layer dependency rules and folder structure.
+`→ see docs/architecture/ARCHITECTURE.md` for the authoritative layer dependency rules and folder structure.
 
 ---
 
