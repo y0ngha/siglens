@@ -14,8 +14,8 @@ vi.mock('@y0ngha/siglens-core', async () => ({
     fetchBarsWithIndicators: vi.fn(),
 }));
 
-vi.mock('@/shared/api/market/getMarketDataProvider', () => ({
-    getMarketDataProvider: vi.fn(() => mockMarketProvider),
+vi.mock('@/shared/api/market/getCachedMarketDataProvider', () => ({
+    getCachedMarketDataProvider: vi.fn(() => mockMarketProvider),
 }));
 
 import type { MockedFunction } from 'vitest';

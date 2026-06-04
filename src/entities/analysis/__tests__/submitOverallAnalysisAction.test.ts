@@ -67,8 +67,8 @@ vi.mock('@/shared/lib/options/openInterestStale', () => ({
     isOpenInterestSnapshotStale: vi.fn(),
 }));
 
-vi.mock('@/shared/api/market/getMarketDataProvider', () => ({
-    getMarketDataProvider: vi.fn(() => mockProvider),
+vi.mock('@/shared/api/market/getCachedMarketDataProvider', () => ({
+    getCachedMarketDataProvider: vi.fn(() => mockProvider),
 }));
 
 import { submitOverallAnalysisAction } from '../actions/submitOverallAnalysisAction';

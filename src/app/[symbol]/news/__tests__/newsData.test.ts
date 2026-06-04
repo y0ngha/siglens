@@ -20,7 +20,8 @@ vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: vi.fn(() => ({ db: mockDb })),
 }));
 
-vi.mock('@/entities/earnings-report', () => ({
+vi.mock('@/entities/earnings-report', async importOriginal => ({
+    ...(await importOriginal<typeof import('@/entities/earnings-report')>()),
     DrizzleEarningsReportsRepository: vi.fn().mockImplementation(function () {
         return {
             getLatestFetchedAt: mockGetLatestFetchedAt,
@@ -92,7 +93,21 @@ describe('getEarningsReportComparison 함수는', () => {
             expect(mockUpsertMany).not.toHaveBeenCalled();
         });
 
-        it('비교 데이터가 비어 있으면 FMP 로 정규화 데이터를 채운다', async () => {
+        it('fetchedAt이 fresh면 비교 데이터가 비어 있어도 FMP를 재호출하지 않는다 (24h gate 우회 방지)', async () => {
+            mockGetComparisonItems.mockResolvedValue([]);
+            // beforeEach: mockGetLatestFetchedAt = new Date() (fresh)
+
+            await expect(
+                getEarningsReportComparison('AAPL', '2026-05-10')
+            ).resolves.toEqual([]);
+
+            expect(mockGetEarningsReports).not.toHaveBeenCalled();
+            expect(mockUpsertMany).not.toHaveBeenCalled();
+        });
+
+        it('stale 상태에서 비교 데이터가 비어 있으면 FMP 로 정규화 데이터를 채운다', async () => {
+            const staleFetchedAt = new Date(Date.now() - 25 * 60 * 60 * 1000);
+            mockGetLatestFetchedAt.mockResolvedValue(staleFetchedAt);
             mockGetComparisonItems
                 .mockResolvedValueOnce([])
                 .mockResolvedValueOnce([COMPARISON_ITEM]);

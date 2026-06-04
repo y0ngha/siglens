@@ -1,12 +1,11 @@
 import type { EarningsCalendarItem } from '@y0ngha/siglens-core';
-import { MS_PER_DAY } from '@/shared/config/time';
 import { DrizzleEarningsReportsRepository } from '@/entities/earnings-report';
+import { isEarningsReportStale } from './isEarningsReportStale';
 import { getFundamentalDataProvider } from '@/shared/api/fmp/getFundamentalDataProvider';
 import { todayKstIsoDate } from '@/shared/lib/dateKey';
 import type { SiglensDatabase } from '@/shared/db/types';
 
 const EARNINGS_REPORT_FMP_LIMIT = 5;
-const EARNINGS_REPORT_STALE_MS = MS_PER_DAY;
 
 /**
  * Returns the next upcoming earnings entry for `symbol`, refreshing from FMP if
@@ -20,11 +19,7 @@ export async function getNextEarningsReport(
     const repo = new DrizzleEarningsReportsRepository(db);
     const fetchedAt = await repo.getLatestFetchedAt(symbol);
 
-    const isStale =
-        fetchedAt === null ||
-        Date.now() - fetchedAt.getTime() > EARNINGS_REPORT_STALE_MS;
-
-    if (isStale) {
+    if (isEarningsReportStale(fetchedAt)) {
         try {
             const client = getFundamentalDataProvider();
             const reports = await client.getEarningsReports(

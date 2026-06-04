@@ -1,14 +1,16 @@
 import { cache } from 'react';
 import { getDatabaseClient } from '@/shared/db/client';
 import { DrizzleNewsRepository } from '@/entities/news-article';
-import { DrizzleEarningsReportsRepository } from '@/entities/earnings-report';
+import {
+    DrizzleEarningsReportsRepository,
+    isEarningsReportStale,
+} from '@/entities/earnings-report';
 import { getFundamentalDataProvider } from '@/shared/api/fmp/getFundamentalDataProvider';
 import {
     getFmpUserFacingMessage,
     isFmpPaymentRequiredError,
     logFmpPaymentRequiredError,
 } from '@/shared/api/fmp/fmpUserMessage';
-import { MS_PER_DAY } from '@/shared/config/time';
 import { NEWS_LOOKBACK_MS } from '@/entities/news-article';
 import type { NewsRow } from '@/entities/news-article';
 import type { GradesEvent } from '@y0ngha/siglens-core';
@@ -20,7 +22,6 @@ import type { EarningsReportComparisonItem } from '@/shared/lib/types';
 // 손실 — 이슈 #439 참조.
 const fundamentalClient = getFundamentalDataProvider();
 const EARNINGS_REPORT_FMP_LIMIT = 5;
-const EARNINGS_REPORT_STALE_MS = MS_PER_DAY;
 
 export const getNewsList = cache(async (symbol: string): Promise<NewsRow[]> => {
     const { db } = getDatabaseClient();
@@ -45,7 +46,7 @@ export async function getEarningsReportComparison(
         repo.getComparisonItems(symbol, today),
     ]);
 
-    if (shouldRefreshEarningsReports(fetchedAt, comparisonItems)) {
+    if (isEarningsReportStale(fetchedAt)) {
         try {
             const reports = await fundamentalClient.getEarningsReports(
                 symbol,
@@ -71,15 +72,4 @@ export async function getEarningsReportComparison(
     }
 
     return comparisonItems;
-}
-
-function shouldRefreshEarningsReports(
-    fetchedAt: Date | null,
-    comparisonItems: EarningsReportComparisonItem[]
-): boolean {
-    return (
-        comparisonItems.length === 0 ||
-        fetchedAt === null ||
-        Date.now() - fetchedAt.getTime() > EARNINGS_REPORT_STALE_MS
-    );
 }

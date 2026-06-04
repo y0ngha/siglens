@@ -1,0 +1,141 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { CachedMarketDataProvider } from '@/shared/api/market/CachedMarketDataProvider';
+import type {
+    Bar,
+    GetBarsOptions,
+    MarketDataProvider,
+    MarketQuote,
+} from '@y0ngha/siglens-core';
+
+const { store, fakeRedis } = vi.hoisted(() => {
+    const store = new Map<string, unknown>();
+    const fakeRedis = {
+        get: vi.fn(async (key: string) =>
+            store.has(key) ? store.get(key) : null
+        ),
+        set: vi.fn(async (key: string, value: unknown) => {
+            store.set(key, value);
+        }),
+    };
+    return { store, fakeRedis };
+});
+let redisEnabled = true;
+vi.mock('@/shared/cache/redisClient', () => ({
+    getRedisClient: () => (redisEnabled ? fakeRedis : null),
+}));
+
+const SAMPLE_BARS: Bar[] = [
+    { time: 1, open: 1, high: 2, low: 0.5, close: 1.5, volume: 100 },
+];
+const SAMPLE_QUOTE: MarketQuote = {
+    symbol: 'AAPL',
+    price: 1.5,
+    changesPercentage: 1.2,
+    name: 'Apple',
+};
+
+function makeInner(
+    overrides: Partial<MarketDataProvider> = {}
+): MarketDataProvider {
+    return {
+        getBars: vi.fn(async () => SAMPLE_BARS),
+        getQuote: vi.fn(async () => SAMPLE_QUOTE),
+        ...overrides,
+    } as MarketDataProvider;
+}
+
+const barsOpts = (o: Partial<GetBarsOptions> = {}): GetBarsOptions => ({
+    symbol: 'aapl',
+    timeframe: '1Day',
+    from: '2026-01-01',
+    ...o,
+});
+
+function reset() {
+    store.clear();
+    redisEnabled = true;
+    fakeRedis.get.mockClear();
+    fakeRedis.set.mockClear();
+}
+
+describe('CachedMarketDataProvider', () => {
+    beforeEach(reset);
+
+    it('getBars: miss→fetch→set, hit→캐시값(키 bars:raw:SYM:TF:from:before)', async () => {
+        const inner = makeInner();
+        const p = new CachedMarketDataProvider(inner);
+
+        const first = await p.getBars(barsOpts());
+        expect(first).toEqual(SAMPLE_BARS);
+        expect(inner.getBars).toHaveBeenCalledTimes(1);
+        expect(store.has('bars:raw:AAPL:1Day:2026-01-01:')).toBe(true);
+
+        const second = await p.getBars(barsOpts());
+        expect(second).toEqual(SAMPLE_BARS);
+        expect(inner.getBars).toHaveBeenCalledTimes(1);
+    });
+
+    it('getBars: 빈 배열은 캐싱하지 않는다(transient 가드)', async () => {
+        const inner = makeInner({ getBars: vi.fn(async () => []) });
+        const p = new CachedMarketDataProvider(inner);
+        expect(await p.getBars(barsOpts())).toEqual([]);
+        expect(await p.getBars(barsOpts())).toEqual([]);
+        expect(inner.getBars).toHaveBeenCalledTimes(2);
+        expect(store.has('bars:raw:AAPL:1Day:2026-01-01:')).toBe(false);
+    });
+
+    it('getBars: from/before가 다르면 키가 분리된다', async () => {
+        const inner = makeInner();
+        const p = new CachedMarketDataProvider(inner);
+        await p.getBars(barsOpts({ from: '2026-01-01' }));
+        await p.getBars(barsOpts({ from: '2026-02-01' }));
+        await p.getBars(barsOpts({ from: '2026-01-01', before: '2026-03-01' }));
+        expect(inner.getBars).toHaveBeenCalledTimes(3);
+        expect(store.has('bars:raw:AAPL:1Day:2026-01-01:')).toBe(true);
+        expect(store.has('bars:raw:AAPL:1Day:2026-02-01:')).toBe(true);
+        expect(store.has('bars:raw:AAPL:1Day:2026-01-01:2026-03-01')).toBe(
+            true
+        );
+    });
+
+    it('getBars: inner throw는 전파되고 캐싱되지 않는다(worst case)', async () => {
+        const boom = vi.fn(async () => {
+            throw new Error('FMP 502');
+        });
+        const inner = makeInner({ getBars: boom });
+        const p = new CachedMarketDataProvider(inner);
+        await expect(p.getBars(barsOpts())).rejects.toThrow('FMP 502');
+        expect(store.size).toBe(0);
+        await expect(p.getBars(barsOpts())).rejects.toThrow('FMP 502');
+        expect(boom).toHaveBeenCalledTimes(2);
+    });
+
+    it('getQuote: miss→fetch→set(quote:SYM), hit→캐시값, 심볼 대문자화', async () => {
+        const inner = makeInner();
+        const p = new CachedMarketDataProvider(inner);
+        const first = await p.getQuote('aapl');
+        expect(first).toEqual(SAMPLE_QUOTE);
+        expect(inner.getQuote).toHaveBeenCalledTimes(1);
+        expect(store.has('quote:AAPL')).toBe(true);
+        await p.getQuote('aapl');
+        expect(inner.getQuote).toHaveBeenCalledTimes(1);
+    });
+
+    it('getQuote: null(미가용)은 캐싱하지 않는다', async () => {
+        const inner = makeInner({ getQuote: vi.fn(async () => null) });
+        const p = new CachedMarketDataProvider(inner);
+        expect(await p.getQuote('NODATA')).toBeNull();
+        expect(await p.getQuote('NODATA')).toBeNull();
+        expect(inner.getQuote).toHaveBeenCalledTimes(2);
+        expect(store.has('quote:NODATA')).toBe(false);
+    });
+
+    it('Redis 부재 시 inner로 fallback(worst case)', async () => {
+        redisEnabled = false;
+        const inner = makeInner();
+        const p = new CachedMarketDataProvider(inner);
+        expect(await p.getBars(barsOpts())).toEqual(SAMPLE_BARS);
+        expect(await p.getQuote('AAPL')).toEqual(SAMPLE_QUOTE);
+        expect(store.size).toBe(0);
+    });
+});
