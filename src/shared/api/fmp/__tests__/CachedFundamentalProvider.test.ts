@@ -1,23 +1,35 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { CachedFundamentalProvider } from '@/shared/api/fmp/CachedFundamentalProvider';
+import type { FundamentalProvider } from '@/shared/api/fmp/fundamentalProvider.types';
+import type { FundamentalPeerInput } from '@y0ngha/siglens-core';
 
 // 인메모리 fake Redis. envelope 포맷({data})을 그대로 저장/반환.
 // NOTE: react는 mock하지 않는다 — vitest에서 React.cache는 pass-through이므로
 // 두 번째 호출도 실제로 getOrSetCache에 재진입해 fake redis 히트를 검증하게 된다.
-const store = new Map<string, unknown>();
-const fakeRedis = {
-    get: vi.fn(async (key: string) => (store.has(key) ? store.get(key) : null)),
-    set: vi.fn(async (key: string, value: unknown) => {
-        store.set(key, value);
-    }),
-};
+const { store, fakeRedis } = vi.hoisted(() => {
+    const store = new Map<string, unknown>();
+    const fakeRedis = {
+        get: vi.fn(async (key: string) =>
+            store.has(key) ? store.get(key) : null
+        ),
+        set: vi.fn(async (key: string, value: unknown) => {
+            store.set(key, value);
+        }),
+    };
+    return { store, fakeRedis };
+});
+// `let` because tests reassign it; the mock factory closes over the mutable binding.
 let redisEnabled = true;
 vi.mock('@/shared/cache/redisClient', () => ({
     getRedisClient: () => (redisEnabled ? fakeRedis : null),
 }));
 
-import { CachedFundamentalProvider } from '@/shared/api/fmp/CachedFundamentalProvider';
-import type { FundamentalProvider } from '@/shared/api/fmp/getFundamentalDataProvider';
-import type { FundamentalPeerInput } from '@y0ngha/siglens-core';
+function resetSharedState() {
+    store.clear();
+    redisEnabled = true;
+    fakeRedis.get.mockClear();
+    fakeRedis.set.mockClear();
+}
 
 function makeInner(
     overrides: Partial<FundamentalProvider> = {}
@@ -59,14 +71,9 @@ function makeInner(
     } as FundamentalProvider;
 }
 
-beforeEach(() => {
-    store.clear();
-    redisEnabled = true;
-    fakeRedis.get.mockClear();
-    fakeRedis.set.mockClear();
-});
-
 describe('CachedFundamentalProvider — simple cached methods', () => {
+    beforeEach(resetSharedState);
+
     it('caches getProfile under fundamental:profile:<SYM> and uppercases symbol', async () => {
         const inner = makeInner();
         const provider = new CachedFundamentalProvider(inner);
@@ -182,6 +189,8 @@ describe('CachedFundamentalProvider — simple cached methods', () => {
 });
 
 describe('CachedFundamentalProvider — getStockPeers enrich', () => {
+    beforeEach(resetSharedState);
+
     it('caches the ENRICHED list as a whole; warm call does zero round-trips', async () => {
         const inner = makeInner({
             getStockPeers: vi.fn(async () => [
@@ -362,6 +371,8 @@ describe('CachedFundamentalProvider — getStockPeers enrich', () => {
 });
 
 describe('CachedFundamentalProvider — sector + pass-through', () => {
+    beforeEach(resetSharedState);
+
     it('caches sector performance under fundamental:sector-performance:<DATE>', async () => {
         const inner = makeInner({
             getSectorPerformanceSnapshot: vi.fn(async () => [

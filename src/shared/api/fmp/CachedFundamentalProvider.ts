@@ -3,7 +3,7 @@ import { cache } from 'react';
 import { getOrSetCache } from '@/shared/cache/getOrSetCache';
 import { FMP_FUNDAMENTAL_REVALIDATE_SECONDS } from './fundamentalClient';
 import type { FmpEarningsReportItem } from './fundamentalClient';
-import type { FundamentalProvider } from './getFundamentalDataProvider';
+import type { FundamentalProvider } from './fundamentalProvider.types';
 import type {
     EarningsReport,
     FundamentalAnalystEstimateInput,
@@ -51,25 +51,40 @@ export class CachedFundamentalProvider implements FundamentalProvider {
     /**
      * inner(`getValuationRaw`)는 FMP 장애 시 throw한다 — 그 throw는 getOrSetCache의
      * `set` 단계 전에 전파되므로 장애 결과가 캐싱되지 않는다(poison 방지). 바깥의
-     * `.catch(() => null)`이 throw를 graceful null로 변환해, ErrorBoundary 없이
-     * Suspense로만 감싼 `ValuationSection`(fundamental/page.tsx)과 분석 경로가
-     * 종전처럼 N/A를 렌더하게 한다. 에러는 fmpGet 경로의 logFmpPaymentRequiredError로
-     * 이미 로깅되므로 여기서 중복 로깅하지 않는다. 빈 200(데이터 없는 티커)은 정상
-     * null로 캐싱돼 롱테일 트래픽의 재호출을 막는다.
+     * `.catch`가 throw를 graceful null로 변환해, ErrorBoundary 없이 Suspense로만 감싼
+     * `ValuationSection`(fundamental/page.tsx)과 분석 경로가 종전처럼 N/A를 렌더하게 한다.
+     * 빈 200(데이터 없는 티커)은 정상 null로 캐싱돼 롱테일 트래픽의 재호출을 막는다.
+     *
+     * 에러는 여기서 직접 로깅한다. fmpGet 경로의 logFmpPaymentRequiredError는 HTTP 402만
+     * 처리하므로 5xx/429/timeout은 그 경로에서 로깅되지 않는다 — 로깅하지 않으면 일시적
+     * FMP 장애가 `.catch`에서 흔적 없이 사라진다. 캐싱 결정(throw=no-cache)은 inner가,
+     * 관측성(로깅)과 graceful null 변환은 이 데코레이터가 책임진다.
      */
     getKeyMetricsTtm = cache(
         (symbol: string): Promise<FundamentalValuationMetrics | null> =>
             getOrSetCache(`fundamental:key-metrics:${sym(symbol)}`, TTL, () =>
                 this.inner.getKeyMetricsTtm(symbol)
-            ).catch(() => null)
+            ).catch(error => {
+                console.error(
+                    '[CachedFundamentalProvider] key-metrics fetch failed (not cached):',
+                    error
+                );
+                return null;
+            })
     );
 
-    /** valuation 장애를 캐싱 없이 graceful null로 변환 — 사유는 getKeyMetricsTtm JSDoc 참고. */
+    /** valuation 장애를 로깅 후 캐싱 없이 graceful null로 변환 — 사유는 getKeyMetricsTtm JSDoc 참고. */
     getRatiosTtm = cache(
         (symbol: string): Promise<FundamentalRatiosInput | null> =>
             getOrSetCache(`fundamental:ratios:${sym(symbol)}`, TTL, () =>
                 this.inner.getRatiosTtm(symbol)
-            ).catch(() => null)
+            ).catch(error => {
+                console.error(
+                    '[CachedFundamentalProvider] ratios fetch failed (not cached):',
+                    error
+                );
+                return null;
+            })
     );
 
     getCashFlowStatement = cache(
@@ -142,23 +157,34 @@ export class CachedFundamentalProvider implements FundamentalProvider {
      * GET으로 돌려받고(peer당 round-trip 0), cold 호출만 enrich한다. per/psr은 캐싱된
      * getKeyMetricsTtm(`fundamental:key-metrics:<peer>`)에서 가져오며, 그 메서드는 FMP
      * 장애 시 throw하지 않고 null을 돌려주므로(catch→null) 한 peer 실패가 전체를 중단시키지
-     * 않는다. cold 캐시 시 peer당 동시 FMP 폭증(rate-limit)을 피해 순차 enrich하고, 비정상적
-     * 으로 큰 peer 목록은 PEER_LIMIT으로 제한한다.
+     * 않는다. cold 캐시 시 peer당 동시 FMP 폭증(rate-limit)을 피해 순차 enrich하고(await된
+     * accumulator를 잇는 async reduce — 다음 peer fetch는 직전 peer 완료 후에만 시작), 비정상
+     * 적으로 큰 peer 목록은 PEER_LIMIT으로 제한한다.
      */
     getStockPeers = cache(
         (symbol: string): Promise<FundamentalPeerInput[]> =>
             getOrSetCache(`fundamental:peers:${sym(symbol)}`, TTL, async () => {
                 const raw = await this.inner.getStockPeers(symbol);
-                const enriched: FundamentalPeerInput[] = [];
-                for (const peer of raw.slice(0, PEER_LIMIT)) {
-                    const metrics = await this.getKeyMetricsTtm(peer.symbol);
-                    enriched.push({
-                        ...peer,
-                        per: metrics?.peRatioTTM ?? null,
-                        psr: metrics?.priceToSalesRatioTTM ?? null,
-                    });
-                }
-                return enriched;
+                return raw.slice(0, PEER_LIMIT).reduce(
+                    async (
+                        accPromise: Promise<FundamentalPeerInput[]>,
+                        peer
+                    ) => {
+                        const acc = await accPromise;
+                        const metrics = await this.getKeyMetricsTtm(
+                            peer.symbol
+                        );
+                        return [
+                            ...acc,
+                            {
+                                ...peer,
+                                per: metrics?.peRatioTTM ?? null,
+                                psr: metrics?.priceToSalesRatioTTM ?? null,
+                            },
+                        ];
+                    },
+                    Promise.resolve([] as FundamentalPeerInput[])
+                );
             })
     );
 

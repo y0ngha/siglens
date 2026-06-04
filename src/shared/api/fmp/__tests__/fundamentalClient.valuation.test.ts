@@ -1,18 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { FmpFundamentalClient } from '@/shared/api/fmp/fundamentalClient';
 
-const fmpGet = vi.fn();
+const fmpGet = vi.hoisted(() => vi.fn());
 vi.mock('@/shared/api/fmp/httpClient', () => ({
     fmpGet: (...args: unknown[]) => fmpGet(...args),
     FMP_STABLE_BASE: 'https://example.test/stable',
 }));
 
-import { FmpFundamentalClient } from '@/shared/api/fmp/fundamentalClient';
-
-beforeEach(() => {
-    fmpGet.mockReset();
-});
-
 describe('FmpFundamentalClient valuation fetch sharing', () => {
+    beforeEach(() => {
+        fmpGet.mockReset();
+    });
+
     it('getKeyMetricsTtm + getRatiosTtm in same request fetch each endpoint once', async () => {
         fmpGet.mockImplementation((path: string) => {
             if (path === 'key-metrics-ttm')

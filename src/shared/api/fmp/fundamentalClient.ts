@@ -57,6 +57,12 @@ const ANALYST_ESTIMATES_PAGE = '0';
 const ANALYST_ESTIMATES_LIMIT = '10';
 const EARNINGS_REPORT_LIMIT = 5;
 
+/** Raw TTM valuation pair fetched together (key-metrics-ttm + ratios-ttm); either side may be `null`. */
+interface ValuationRaw {
+    metrics: RawFmpKeyMetricsTtm | null;
+    ratios: RawFmpRatiosTtm | null;
+}
+
 export interface FmpEarningsReportItem {
     symbol: string;
     earningsDate: string;
@@ -121,13 +127,7 @@ export class FmpFundamentalClient implements FundamentalDataProvider {
      * 들어온 호출"만 합쳐진다. cross-request 캐싱은 CachedFundamentalProvider(Redis)가
      * 담당한다.
      */
-    private valuationInflight = new Map<
-        string,
-        Promise<{
-            metrics: RawFmpKeyMetricsTtm | null;
-            ratios: RawFmpRatiosTtm | null;
-        }>
-    >();
+    private valuationInflight = new Map<string, Promise<ValuationRaw>>();
 
     /**
      * key-metrics-ttm + ratios-ttm을 한 번에 fetch해 raw 쌍을 반환한다.
@@ -150,10 +150,7 @@ export class FmpFundamentalClient implements FundamentalDataProvider {
      * 캐싱하지 못한다(빈 200 → `[]` → null 캐싱은 정상 동작으로 유지). 데코레이터가
      * 이 throw를 catch해 graceful null로 변환하는 책임을 진다.
      */
-    private getValuationRaw(symbol: string): Promise<{
-        metrics: RawFmpKeyMetricsTtm | null;
-        ratios: RawFmpRatiosTtm | null;
-    }> {
+    private getValuationRaw(symbol: string): Promise<ValuationRaw> {
         const key = symbol.toUpperCase();
         const inflight = this.valuationInflight.get(key);
         if (inflight !== undefined) return inflight;
