@@ -26,12 +26,26 @@ const GLOBAL_NOTICE_ID = '11111111-e2e1-4000-8000-000000000001';
 const PATH_NOTICE_ID = '22222222-e2e2-4000-8000-000000000002';
 const LONG_NOTICE_ID = '66666666-e2e6-4000-8000-000000000006';
 
+/** 시드 공지를 실 공지보다 항상 먼저 띄우기 위한 높은 우선순위. */
+const E2E_HIGH_PRIORITY = 99;
+/** 85dvh를 확실히 초과시키는 섹션 수 — 본문이 모달 높이를 넘겨 회귀를 재현할 만큼 길어야 한다. */
+const LONG_BODY_SECTION_COUNT = 40;
+/**
+ * 모달 높이가 뷰포트 대비 이 비율 이하인지 본다. CSS 제약은 `max-h-[85dvh]`(0.85)이지만,
+ * `dvh`(동적 뷰포트)와 `window.innerHeight`의 의미가 모바일에서 달라(주소창 노출 시 dvh <
+ * innerHeight) 0.85로 단언하면 거짓 실패가 날 수 있다. 약간의 버퍼(0.87)로 "뷰포트를 넘지
+ * 않는다"는 본질을 안정적으로 검증한다.
+ */
+const VIEWPORT_FIT_RATIO = 0.87;
+/** scrollHeight > clientHeight 판정 시 서브픽셀 반올림 오차를 흡수하는 임계값(px). */
+const SCROLL_THRESHOLD_PX = 5;
+
 /**
  * 85dvh를 확실히 초과하도록 충분히 긴 마크다운 본문(헤딩/단락/리스트/코드 반복).
  * 이 길이가 핵심 — 본문이 모달 높이를 넘겨 푸터가 밀려나는 회귀를 재현할 수 있어야 한다.
  */
 const LONG_BODY = Array.from(
-    { length: 40 },
+    { length: LONG_BODY_SECTION_COUNT },
     (_, i) =>
         `### 섹션 ${i + 1}\n\n매우 긴 공지 본문의 ${i + 1}번째 문단입니다. 본문만 스크롤되고 푸터 버튼은 고정되어야 합니다.\n\n- 항목 A-${i + 1}\n- 항목 B-${i + 1}\n\n\`code-${i + 1}\``
 ).join('\n\n');
@@ -63,7 +77,7 @@ test.describe('공지 팝업', () => {
                     title: 'E2E 공지 테스트 제목',
                     body: 'E2E 공지 본문입니다.',
                     pathPattern: null, // 전역
-                    priority: 99,
+                    priority: E2E_HIGH_PRIORITY,
                 },
             ]);
         });
@@ -96,7 +110,7 @@ test.describe('공지 팝업', () => {
                     title: 'E2E 공지 테스트 제목',
                     body: 'E2E 공지 본문입니다.',
                     pathPattern: null,
-                    priority: 99,
+                    priority: E2E_HIGH_PRIORITY,
                 },
             ]);
         });
@@ -148,7 +162,7 @@ test.describe('공지 팝업', () => {
                     title: 'E2E 공지 테스트 제목',
                     body: 'E2E 공지 본문입니다.',
                     pathPattern: null,
-                    priority: 99,
+                    priority: E2E_HIGH_PRIORITY,
                 },
             ]);
         });
@@ -202,7 +216,7 @@ test.describe('공지 팝업', () => {
                     title: 'E2E 마켓 전용 공지',
                     body: '마켓 페이지에서만 보이는 공지입니다.',
                     pathPattern: '/market',
-                    priority: 99,
+                    priority: E2E_HIGH_PRIORITY,
                 },
             ]);
         });
@@ -256,7 +270,7 @@ test.describe('공지 팝업', () => {
                     title: 'E2E 비활성 공지',
                     body: '비활성 공지입니다.',
                     pathPattern: null,
-                    priority: 99,
+                    priority: E2E_HIGH_PRIORITY,
                     isActive: false,
                 },
             ]);
@@ -276,7 +290,7 @@ test.describe('공지 팝업', () => {
                     title: 'E2E 미래 시작 공지',
                     body: '아직 시작 전인 공지입니다.',
                     pathPattern: null,
-                    priority: 99,
+                    priority: E2E_HIGH_PRIORITY,
                     startsAt: new Date(Date.now() + 86400000).toISOString(),
                 },
             ]);
@@ -296,7 +310,7 @@ test.describe('공지 팝업', () => {
                     title: 'E2E 만료된 공지',
                     body: '이미 종료된 공지입니다.',
                     pathPattern: null,
-                    priority: 99,
+                    priority: E2E_HIGH_PRIORITY,
                     endsAt: new Date(Date.now() - 86400000).toISOString(),
                 },
             ]);
@@ -325,7 +339,7 @@ test.describe('공지 팝업', () => {
                     title: 'E2E 긴 공지',
                     body: LONG_BODY,
                     pathPattern: null,
-                    priority: 99,
+                    priority: E2E_HIGH_PRIORITY,
                 },
             ]);
         });
@@ -345,20 +359,22 @@ test.describe('공지 팝업', () => {
             await expect(modal).toBeVisible();
 
             // 1) 본문이 아무리 길어도 모달은 뷰포트(85dvh 제약)를 넘지 않는다.
-            const fitsViewport = await modal.evaluate(el => {
+            const fitsViewport = await modal.evaluate((el, ratio) => {
                 const r = el.getBoundingClientRect();
                 return (
-                    r.height <= window.innerHeight * 0.87 &&
+                    r.height <= window.innerHeight * ratio &&
                     r.top >= -1 &&
                     r.bottom <= window.innerHeight + 1
                 );
-            });
+            }, VIEWPORT_FIT_RATIO);
             expect(fitsViewport).toBe(true);
 
             // 2) 본문 스크롤 영역이 내부적으로 스크롤 가능하다(콘텐츠가 잘리지 않고 스크롤로 접근).
             const scroller = page.getByTestId('notice-body-scroller');
             const canScrollBody = await scroller.evaluate(
-                el => el.scrollHeight > el.clientHeight + 5
+                (el, threshold) =>
+                    el.scrollHeight > el.clientHeight + threshold,
+                SCROLL_THRESHOLD_PX
             );
             expect(canScrollBody).toBe(true);
 

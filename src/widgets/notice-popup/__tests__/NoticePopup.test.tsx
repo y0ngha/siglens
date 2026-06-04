@@ -186,6 +186,11 @@ describe('NoticePopup', () => {
         ]);
         render(<NoticePopup />);
         expect(await screen.findByText('첫 번째')).toBeInTheDocument();
+        // useEscapeKey의 keydown 리스너는 passive effect로 등록된다(버튼 클릭과 달리 직접
+        // 핸들러가 아니다). CI(vmThreads + 부하)에서는 모달 렌더 직후 리스너 부착 전에 keyDown이
+        // 발사되면 Esc가 유실돼 다음 공지로 넘어가지 않는다. dialog 포커스는 같은 effect 배치에서
+        // 실행되므로, 포커스를 기다리면 리스너 부착이 보장된다 — 그 후 Esc를 발사한다.
+        await waitFor(() => expect(screen.getByRole('dialog')).toHaveFocus());
         fireEvent.keyDown(document, { key: 'Escape' });
         expect(await screen.findByText('두 번째')).toBeInTheDocument();
     });
