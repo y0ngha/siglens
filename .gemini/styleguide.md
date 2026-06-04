@@ -21,5 +21,6 @@ Do not rely on general knowledge — always derive criteria from the documents a
 
 ## Test Scope
 
-`components/` and `app/` are explicitly excluded from test coverage.
-Do not request or write test files for them.
+All measured FSD layers — including `src/app/**` and `src/proxy.ts` — are part of the
+~90% coverage target. Apply the coverage rules in `docs/CONVENTIONS.md` (§Coverage Targets).
+Do NOT treat `app/` as test-exempt. (`components/` is a pre-FSD path that no longer exists.)

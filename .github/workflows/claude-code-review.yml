@@ -84,7 +84,7 @@ jobs:
                            - If the diff touches authentication flows or session management → read /docs/AUTH.md
                            - If the diff touches FSD layer boundaries or cross-layer imports → read the relevant src/<layer>/CLAUDE.md (if it exists)
 
-                           Do NOT use concrete directory paths (src/domain/, src/infrastructure/) as triggers — those layers are being migrated to FSD and may not exist mid-migration. Use file content / responsibility as the trigger instead.
+                           Do NOT use concrete legacy directory paths (src/domain/, src/infrastructure/) as triggers — the FSD migration is complete and those paths were removed. Trigger on file content / responsibility instead.
                         4. Review the diff strictly against the loaded rules.
 
                         ## Completeness Rule (CRITICAL — Never Omit)
@@ -136,7 +136,7 @@ jobs:
                         - **Tests**: Coverage, null initial period cases (CONVENTIONS.md).
                         - **Common mistakes**: All patterns in MISTAKES.md.
                         
-                        *Note on Test Environment*: If `jest.setup.ts` exists, do not flag missing environment variables as a bug. They are set globally.
+                        *Note on Test Environment*: The project uses Vitest. Its setup files (`vitest.setup.base.ts` / `vitest.config.ts`) set env globally, so do not flag missing environment variables as a bug.
 
             - name: Post failure comment if review fails
               if: failure()
