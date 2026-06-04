@@ -17,7 +17,7 @@ function makeStock(
         sectorSymbol,
         price: 100,
         changePercent: 1.5,
-        trend: 'up',
+        trend: 'uptrend',
         signals: [
             {
                 type: 'golden_cross',
@@ -120,7 +120,7 @@ describe('SectorFactsSummary', () => {
             sectorSymbol: 'XLK',
             price: 100,
             changePercent: 0,
-            trend: 'neutral',
+            trend: 'sideways',
             signals: [],
         };
         render(<SectorFactsSummary data={makeResult([stock])} />);
@@ -143,7 +143,7 @@ describe('SectorFactsSummary', () => {
             sectorSymbol: 'XLK',
             price: 100,
             changePercent: 0,
-            trend: 'neutral',
+            trend: 'sideways',
             signals: [], // no signals → no direction → not in topSymbols
         };
         render(<SectorFactsSummary data={makeResult([stock])} />);

@@ -16,7 +16,7 @@ function makeStock(
         sectorSymbol,
         price: 100,
         changePercent: 1.5,
-        trend: 'up',
+        trend: 'uptrend',
         signals: directions.map(direction => ({
             type: 'golden_cross' as const,
             direction,
@@ -115,7 +115,7 @@ describe('buildSectorFacts', () => {
             sectorSymbol: 'XLK',
             price: 100,
             changePercent: 0,
-            trend: 'neutral',
+            trend: 'sideways',
             signals: [],
         };
         const data = makeResult([stock]);
