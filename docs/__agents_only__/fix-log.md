@@ -11,11 +11,6 @@
   - Context: 함수 반환 타입인 `ResilientAssetInfo`를 직접 type annotation해야 할 때 barrel에 없으면 deep import 강제
 
 
-## [PR #545 Round 3 | fix/symbol-infra-fallback | 2026-06-02]
-- Violation: JSDoc "세 가지로 끝난다" 서술이 실제 네 가지 경로(DYNAMIC_SERVER_USAGE rethrow 포함)와 불일치
-  - Rule: MISTAKES.md §15.6 — 주석/JSDoc의 모든 서술은 실제 런타임/코드 현실과 일치해야 한다
-  - Context: Round 1에서 DYNAMIC_SERVER_USAGE rethrow 경로를 추가했지만 JSDoc 요약은 "세 가지"로 유지되어 "throw → 여기서 흡수해"라는 표현이 rethrow 경로를 숨김
-
 ## [PR #545 Round 1 | fix/symbol-infra-fallback | 2026-06-02]
 - Violation: 변수명 `mockGetAssetInfoCached`가 실제로는 `getAssetInfoResilient`를 참조 (2개 파일)
   - Rule: MISTAKES.md §11 — 함수/변수명은 실제 참조 대상과 정확하게 일치해야 한다
@@ -74,12 +69,17 @@
   - Result: Clean merge — no violations logged
 
 ## [PR #562 Round 2 | worktree-verify-0.15-current | 2026-06-04]
-- Violation: WHY comment claimed "overflow는 Playwright로 검증" but no committed E2E case existed (ad-hoc script only)
-  - Rule: MISTAKES.md §15.6 — every comment claim must match runtime/code reality (false WHY worse than none)
-  - Context: Added committed e2e/specs/notice-popup.spec.ts "긴 본문 오버플로우" case (@webkit → chromium+webkit) and corrected the unit-test comment to reference it.
 - Violation: Manual markdown-notice seeds (priority 100) left in shared docker e2e DB masked 3 existing notice specs (priority 99) → wrong-data failures
   - Rule: MISTAKES.md E2E #2 — delete manual seeds after verification; leftover high-priority rows hide per-test seeds
   - Context: Deleted leftover seeds; re-run passed. Added cleanup step to docs/qa/QA_ENV_SETUP.md §7.
 - Violation: Esc-advances-notice unit test flaked only on CI (vmThreads) — keyDown fired before useEscapeKey passive-effect listener attached
   - Rule: MISTAKES.md Tests #19 — await a same-effect-batch sibling (dialog focus) before dispatching; do not blind-bump timeouts
   - Context: Added `waitFor(() => dialog toHaveFocus)` before `fireEvent.keyDown`. Local single + full suite (4887 tests) already green; targeted the race, not the timeout.
+
+## [PR #564 | fix/fmp-cache-and-earnings-gate | 2026-06-04]
+- Violation: Redis 캐시 키(buildBarsRawKey)가 GetBarsOptions의 일부 필드만 포함(limit 누락) → 옵션 확장 시 서로 다른 요청이 같은 캐시를 반환할 충돌 위험
+  - Rule: (신규) 캐시 키는 결과에 영향을 줄 수 있는 모든 입력 필드를 포함해야 한다 (cache key must cover every result-affecting input field)
+  - Context: CachedMarketDataProvider.buildBarsRawKey에 limit 포함(Gemini 리뷰 반영). limit은 timeframe 종속이라 분할 없이 미래 충돌만 방지. (B1 entities/lib Date.now() 순수함수 위반은 MISTAKES §Architecture #0.7 / Tests #14에 이미 문서화되어 기록 생략.)
+- Violation: getNextEarningsReport가 entities/lib에서 side effect(Date.now/DB/FMP) 포함 — 순수 함수 레이어 위반 (pre-existing, R3 Blocker)
+  - Rule: MISTAKES §Architecture #0.7 — entities/{slice}/lib/는 순수 함수 전용
+  - Context: PR #564 R3 claude 리뷰에서 Blocker로 지적. pre-existing이라 별도 PR로 분리(이슈 #565). nextEarningsReport.ts JSDoc에 TODO(#565) 링크를 남겨 추적. 이번 PR diff엔 미수정(scope = 캐시/gate).

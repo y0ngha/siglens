@@ -23,8 +23,8 @@ vi.mock('@/shared/lib/byokGate', () => ({
     })),
 }));
 
-vi.mock('@/shared/api/market/getMarketDataProvider', () => ({
-    getMarketDataProvider: vi.fn(() => mockProvider),
+vi.mock('@/shared/api/market/getCachedMarketDataProvider', () => ({
+    getCachedMarketDataProvider: vi.fn(() => mockProvider),
 }));
 
 import { headers } from 'next/headers';

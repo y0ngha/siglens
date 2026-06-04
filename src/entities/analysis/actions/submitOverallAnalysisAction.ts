@@ -12,7 +12,7 @@ import {
     type Timeframe,
 } from '@y0ngha/siglens-core';
 import { getFundamentalDataProvider } from '@/shared/api/fmp/getFundamentalDataProvider';
-import { getMarketDataProvider } from '@/shared/api/market/getMarketDataProvider';
+import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { getDatabaseClient } from '@/shared/db/client';
 import {
     DrizzleNewsRepository,
@@ -117,7 +117,7 @@ export async function submitOverallAnalysisAction(
             timeframe,
             modelId,
             fundamentalProvider: getFundamentalDataProvider(),
-            marketDataProvider: getMarketDataProvider(),
+            marketDataProvider: getCachedMarketDataProvider(),
             newsItems: enrichedNews,
             upcomingCalendar: next !== null ? [next] : [],
             technical: { tierContext: { userId, tier: gate.tier } },
