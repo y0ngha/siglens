@@ -49,10 +49,10 @@ export function NoticePopup() {
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby={MODAL_TITLE_ID}
-                className="border-secondary-700 bg-secondary-800 w-full max-w-md rounded-2xl border p-5"
+                className="border-secondary-700 bg-secondary-800 flex max-h-[85dvh] w-full max-w-md flex-col rounded-2xl border p-5"
                 onClick={e => e.stopPropagation()}
             >
-                <div className="mb-3 flex items-start justify-between gap-3">
+                <div className="mb-3 flex shrink-0 items-start justify-between gap-3">
                     <h2
                         id={MODAL_TITLE_ID}
                         className="text-secondary-100 text-base font-bold"
@@ -67,23 +67,28 @@ export function NoticePopup() {
                         ✕
                     </button>
                 </div>
-                <p className="text-secondary-500 mb-3 text-xs">
-                    {formatNoticeDate(current.createdAt)}
-                </p>
-                <MarkdownText className="text-secondary-300 text-sm">
-                    {current.body}
-                </MarkdownText>
-                {safeLinkUrl !== null && (
-                    <a
-                        href={safeLinkUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="bg-primary-600 hover:bg-primary-500 focus-visible:ring-primary-500 focus-visible:ring-offset-secondary-800 mt-4 inline-block rounded-lg px-4 py-2 text-sm font-semibold text-white transition-colors focus-visible:ring-1 focus-visible:ring-offset-2 focus-visible:outline-none"
-                    >
-                        {current.linkLabel ?? safeLinkUrl}
-                    </a>
-                )}
-                <div className="mt-5 flex items-center justify-end gap-3">
+                {/* 긴 마크다운이 푸터(버튼)를 화면 밖으로 밀지 않도록 본문만 스크롤시킨다.
+                    min-h-0은 flex 자식이 기본 min-height:auto여서, 없으면 overflow가 동작하지
+                    않아(자식이 콘텐츠 높이만큼 늘어남) 반드시 필요하다. */}
+                <div className="-mr-2 min-h-0 flex-1 overflow-y-auto pr-2">
+                    <p className="text-secondary-500 mb-3 text-xs">
+                        {formatNoticeDate(current.createdAt)}
+                    </p>
+                    <MarkdownText className="text-secondary-300 text-sm">
+                        {current.body}
+                    </MarkdownText>
+                    {safeLinkUrl !== null && (
+                        <a
+                            href={safeLinkUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="bg-primary-600 hover:bg-primary-500 focus-visible:ring-primary-500 focus-visible:ring-offset-secondary-800 mt-4 inline-block rounded-lg px-4 py-2 text-sm font-semibold text-white transition-colors focus-visible:ring-1 focus-visible:ring-offset-2 focus-visible:outline-none"
+                        >
+                            {current.linkLabel ?? safeLinkUrl}
+                        </a>
+                    )}
+                </div>
+                <div className="mt-5 flex shrink-0 items-center justify-end gap-3">
                     <button
                         onClick={dontShowAgain}
                         className="text-secondary-400 hover:text-secondary-200 focus-visible:ring-primary-500 text-sm transition-colors focus-visible:ring-1 focus-visible:outline-none"

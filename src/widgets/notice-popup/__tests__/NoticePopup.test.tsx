@@ -53,6 +53,28 @@ describe('NoticePopup', () => {
         expect(screen.getByText('2026.06.03 작성')).toBeInTheDocument();
     });
 
+    it('푸터 버튼은 스크롤 본문(overflow-y-auto) 밖에 위치한다 — 긴 본문에도 버튼 고정', async () => {
+        mockedAction.mockResolvedValue([notice()]);
+        const { container } = render(<NoticePopup />);
+        await screen.findByText('긴급 점검 안내');
+        const scroller = container.querySelector('.overflow-y-auto');
+        expect(scroller).not.toBeNull();
+        // 푸터가 스크롤 영역의 자손이 되면(=footer가 스크롤 안으로 들어가면) 긴 본문에서
+        // 버튼이 화면 밖으로 밀리는 원래 버그가 재발한다. 항상 스크롤 밖(sibling)이어야 한다.
+        // (overflow의 실제 동작/높이는 jsdom이 측정 못 하므로 Playwright로 검증 — 여기서는
+        //  회귀를 잡는 구조 불변식만 단언한다.)
+        expect(
+            scroller?.contains(
+                screen.getByRole('button', { name: '다시 보지 않기' })
+            )
+        ).toBe(false);
+        expect(
+            scroller?.contains(screen.getByRole('button', { name: '닫기' }))
+        ).toBe(false);
+        // 모달 content는 뷰포트 초과를 막는 max-h 제약을 가진다.
+        expect(screen.getByRole('dialog').className).toContain('max-h-');
+    });
+
     it('linkUrl이 있으면 링크를 렌더하고, label이 없으면 url을 표시한다', async () => {
         mockedAction.mockResolvedValue([
             notice({ linkUrl: 'https://siglens.io/blog', linkLabel: null }),
