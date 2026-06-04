@@ -18,7 +18,10 @@ vi.mock('@y0ngha/siglens-core', () => ({
     isEtRegularSessionOpen: vi.fn(),
 }));
 
-vi.mock('@/shared/api/fmp/fundamentalClient', () => ({
+vi.mock('@/shared/api/fmp/fundamentalClient', async importOriginal => ({
+    ...(await importOriginal<
+        typeof import('@/shared/api/fmp/fundamentalClient')
+    >()),
     FmpFundamentalClient: vi.fn().mockImplementation(function () {
         return {};
     }),

@@ -1,24 +1,12 @@
-import type { FundamentalDataProvider } from '@y0ngha/siglens-core';
-import {
-    FmpFundamentalClient,
-    type FmpEarningsReportItem,
-} from './fundamentalClient';
+import { FmpFundamentalClient } from './fundamentalClient';
+import { CachedFundamentalProvider } from './CachedFundamentalProvider';
+import type { FundamentalProvider } from './fundamentalProvider.types';
 import { isE2E } from '@/shared/api/e2eEnv';
 
-/**
- * App-facing fundamental provider surface: the core `FundamentalDataProvider`
- * port plus the two siglens-specific extras that some injection points call
- * directly (`getGrades` is widened from the port's optional method to required,
- * and `getEarningsReports` is not on the port at all). Both the real
- * `FmpFundamentalClient` and the E2E `FakeFundamentalDataProvider` satisfy it.
- */
-export interface FundamentalProvider extends FundamentalDataProvider {
-    getGrades: NonNullable<FundamentalDataProvider['getGrades']>;
-    getEarningsReports(
-        symbol: string,
-        limit?: number
-    ): Promise<FmpEarningsReportItem[]>;
-}
+// Re-exported so existing importers (`@/shared/api/fmp/getFundamentalDataProvider`)
+// keep resolving; the interface itself lives in `fundamentalProvider.types` to
+// avoid a type-level cycle with the `CachedFundamentalProvider` class import above.
+export type { FundamentalProvider } from './fundamentalProvider.types';
 
 let cached: FundamentalProvider | null = null;
 
@@ -34,6 +22,6 @@ export function getFundamentalDataProvider(): FundamentalProvider {
         cached = new FakeFundamentalDataProvider();
         return cached;
     }
-    cached = new FmpFundamentalClient();
+    cached = new CachedFundamentalProvider(new FmpFundamentalClient());
     return cached;
 }

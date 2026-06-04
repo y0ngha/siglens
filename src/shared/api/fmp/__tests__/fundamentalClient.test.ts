@@ -66,11 +66,13 @@ describe('FmpFundamentalClient', () => {
             await expect(client.getProfile('AAPL')).rejects.toThrow('404');
         });
 
-        it('getKeyMetricsTtm returns null when both optional endpoints fail', async () => {
+        it('getKeyMetricsTtm THROWS when an endpoint fails (poison fix: no swallow-to-null)', async () => {
             mockError(400);
             mockError(400);
             const client = new FmpFundamentalClient();
-            await expect(client.getKeyMetricsTtm('AAPL')).resolves.toBeNull();
+            await expect(client.getKeyMetricsTtm('AAPL')).rejects.toThrow(
+                '400'
+            );
         });
     });
 
@@ -210,7 +212,11 @@ describe('FmpFundamentalClient', () => {
             expect(await client.getKeyMetricsTtm('X')).toBeNull();
         });
 
-        it('uses key metrics when ratios fallback request fails', async () => {
+        it('THROWS when the ratios endpoint fails even if key-metrics succeeds (poison fix: no partial swallow)', async () => {
+            // key-metrics-ttm OK, ratios-ttm errors. Previously getOptionalArray
+            // swallowed the ratios error → key-metrics data was used. Now the
+            // Promise.all rejects so a transient FMP failure propagates instead of
+            // being cached as partial valuation by the Redis decorator.
             mockOk([
                 {
                     peRatioTTM: 28.5,
@@ -223,14 +229,9 @@ describe('FmpFundamentalClient', () => {
             ]);
             mockError(400);
             const client = new FmpFundamentalClient();
-            expect(await client.getKeyMetricsTtm('AAPL')).toEqual({
-                peRatioTTM: 28.5,
-                priceToSalesRatioTTM: 7.2,
-                pbRatioTTM: 45.1,
-                pegRatioTTM: 2.3,
-                enterpriseValueOverEBITDATTM: 22,
-                epsTTM: 6.11,
-            });
+            await expect(client.getKeyMetricsTtm('AAPL')).rejects.toThrow(
+                '400'
+            );
         });
     });
 
@@ -240,18 +241,19 @@ describe('FmpFundamentalClient', () => {
 
     describe('getRatiosTtm', () => {
         it('returns mapped TTM ratios', async () => {
+            // getValuationRaw fetches key-metrics-ttm first, then ratios-ttm.
+            mockOk([
+                {
+                    returnOnEquityTTM: 1.47,
+                    returnOnAssetsTTM: 0.28,
+                },
+            ]);
             mockOk([
                 {
                     operatingProfitMarginTTM: 0.3,
                     netProfitMarginTTM: 0.25,
                     debtToAssetsRatioTTM: 0.31,
                     currentRatioTTM: 0.94,
-                },
-            ]);
-            mockOk([
-                {
-                    returnOnEquityTTM: 1.47,
-                    returnOnAssetsTTM: 0.28,
                 },
             ]);
             const client = new FmpFundamentalClient();
@@ -268,7 +270,11 @@ describe('FmpFundamentalClient', () => {
             expect(await client.getRatiosTtm('X')).toBeNull();
         });
 
-        it('uses ratios when key metrics fallback request fails', async () => {
+        it('THROWS when the key-metrics endpoint fails even if ratios succeeds (poison fix: no partial swallow)', async () => {
+            // key-metrics-ttm errors, ratios-ttm OK. Previously the key-metrics
+            // error was swallowed and ratios data was used; now the Promise.all
+            // rejects so the transient failure propagates (decorator → null, uncached).
+            mockError(400);
             mockOk([
                 {
                     returnOnEquityTTM: 1.47,
@@ -279,35 +285,28 @@ describe('FmpFundamentalClient', () => {
                     currentRatioTTM: 0.94,
                 },
             ]);
-            mockError(400);
             const client = new FmpFundamentalClient();
-            expect(await client.getRatiosTtm('AAPL')).toEqual({
-                returnOnEquityTTM: 1.47,
-                returnOnAssetsTTM: 0.28,
-                operatingProfitMarginTTM: 0.3,
-                netProfitMarginTTM: 0.25,
-                debtRatioTTM: 0.31,
-                currentRatioTTM: 0.94,
-            });
+            await expect(client.getRatiosTtm('AAPL')).rejects.toThrow('400');
         });
 
         it('currentRatioTTM falls back to metrics when ratios row omits it', async () => {
+            // getValuationRaw fetches key-metrics-ttm FIRST, then ratios-ttm.
             // ratios row has no currentRatioTTM → `ratios?.currentRatioTTM` is
             // undefined → the ?? right-hand branch reads metrics?.currentRatioTTM.
             mockOk([
                 {
-                    // ratios-ttm row — omits currentRatioTTM
+                    // key-metrics-ttm row (consumed first) — provides currentRatioTTM
+                    currentRatioTTM: 1.85,
+                },
+            ]);
+            mockOk([
+                {
+                    // ratios-ttm row (consumed second) — omits currentRatioTTM
                     returnOnEquityTTM: 1.0,
                     returnOnAssetsTTM: 0.2,
                     operatingProfitMarginTTM: 0.3,
                     netProfitMarginTTM: 0.25,
                     debtToAssetsRatioTTM: 0.31,
-                },
-            ]);
-            mockOk([
-                {
-                    // key-metrics-ttm row — provides currentRatioTTM
-                    currentRatioTTM: 1.85,
                 },
             ]);
             const client = new FmpFundamentalClient();

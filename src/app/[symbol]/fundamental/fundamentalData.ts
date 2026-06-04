@@ -4,9 +4,7 @@ import {
     DrizzleProfileDescriptionTranslationRepository,
     translateCompanyDescription,
 } from '@/entities/ticker';
-import { FMP_FUNDAMENTAL_REVALIDATE_SECONDS } from '@/shared/api/fmp/fundamentalClient';
 import { getFundamentalDataProvider } from '@/shared/api/fmp/getFundamentalDataProvider';
-import { getOrSetCache } from '@/shared/cache/getOrSetCache';
 import type {
     FundamentalProfile,
     FundamentalPeerInput,
@@ -21,39 +19,24 @@ import type {
     FundamentalPriceTargetSummaryInput,
 } from '@y0ngha/siglens-core';
 
-// 동일 요청 내 중복 호출은 React.cache로 per-request memoization을 적용해 FMP HTTP
-// 호출 중복을 막는다(예: 페이지 본문 + metadata). cross-request 캐싱은 getOrSetCache
-// (Upstash Redis, TTL = FMP_FUNDAMENTAL_REVALIDATE_SECONDS — Next Data Cache `revalidate`와
-// 같은 단일 freshness 상수)가 담당한다. Next Data Cache는 region별/배포마다 초기화되어
-// 봇 트래픽이 같은 티커를 반복 fetch하던 문제를 해결한다(이슈 #439). getOrSetCache가 값을
-// envelope으로 감싸므로 null·빈 배열("데이터 없음")도 캐싱돼 데이터 없는 티커도 재호출되지
-// 않는다 — fmpGet은 장애 시 throw하므로 일시 실패가 캐싱될 일은 없다.
-//
-// Redis 키 네임스페이스 `fundamental:*` — 이 파일이 11개 키를 소유하고,
-// newsData.ts의 `fundamental:grades:*`(getGradeEvents)도 같은 네임스페이스를 공유한다.
-// 키를 rename할 때는 두 파일을 함께 수정할 것.
+// Redis 캐싱(`fundamental:*` 키)·per/psr enrich는 CachedFundamentalProvider
+// (getFundamentalDataProvider가 반환)로 이관됐다. 페이지·core 분석 경로가 동일
+// provider를 통과해 같은 캐시를 공유한다. 이 파일은 provider 위임 + DB 번역
+// (getProfileDescriptionKo)만 담당한다.
 const fundamentalClient = getFundamentalDataProvider();
 
-export const getProfile = cache(
-    async (symbol: string): Promise<FundamentalProfile | null> =>
-        getOrSetCache(
-            `fundamental:profile:${symbol.toUpperCase()}`,
-            FMP_FUNDAMENTAL_REVALIDATE_SECONDS,
-            () => fundamentalClient.getProfile(symbol)
-        )
-);
+export const getProfile = (
+    symbol: string
+): Promise<FundamentalProfile | null> => fundamentalClient.getProfile(symbol);
 
 /**
- * Returns the Korean translation of the company description, storing it in
- * the DB on first call so it persists across deployments.
+ * 회사 설명의 한국어 번역을 반환하고, 최초 호출 시 DB에 저장해 배포 간에도
+ * 유지한다. Read: DB 조회(히트 시 즉시). Write: Gemini 번역 → DB upsert(심볼당 최초 1회).
  *
- * Read path: DB lookup (instant on cache hit).
- * Write path: Gemini translation → DB upsert (first visit per symbol only).
- *
- * Nested `cache()` 호출 의도: 이 함수와 내부에서 호출하는 `getProfile`이 둘 다
- * 별도 per-request memoization을 갖는다. 같은 요청에서 description-Ko 미스이지만
- * profile은 이미 다른 호출자가 캐싱한 경우, 내부 `getProfile(symbol)`이 추가 FMP
- * 호출을 발생시키지 않는다.
+ * `cache()` 래핑 의도: 같은 요청에서 description-Ko를 여러 번 조회해도 DB lookup·
+ * 번역을 1회로 묶는다. 내부 `getProfile(symbol)`은 이제 단순 위임이지만, 프로바이더
+ * (CachedFundamentalProvider)의 `getProfile`이 `React.cache`로 per-request dedup하므로,
+ * 같은 요청에서 profile을 이미 다른 호출자가 가져왔다면 추가 FMP 호출이 발생하지 않는다.
  */
 export const getProfileDescriptionKo = cache(
     async (symbol: string): Promise<string | null> => {
@@ -76,114 +59,52 @@ export const getProfileDescriptionKo = cache(
     }
 );
 
-export const getKeyMetricsTtm = cache(
-    async (symbol: string): Promise<FundamentalValuationMetrics | null> =>
-        getOrSetCache(
-            `fundamental:key-metrics:${symbol.toUpperCase()}`,
-            FMP_FUNDAMENTAL_REVALIDATE_SECONDS,
-            () => fundamentalClient.getKeyMetricsTtm(symbol)
-        )
-);
+export const getKeyMetricsTtm = (
+    symbol: string
+): Promise<FundamentalValuationMetrics | null> =>
+    fundamentalClient.getKeyMetricsTtm(symbol);
 
-// 메트릭은 primary 심볼과 동일하게 getKeyMetricsTtm의 캐시
-// (`fundamental:key-metrics:<SYM>`)를 그대로 재사용하므로 새로운 캐시 키 스킴을
-// 도입하지 않는다. 외부 `fundamental:peers:<SYM>` 캐시에는 원본 peer 목록만
-// 저장되고, enrich는 요청마다 수행되지만 각 메트릭 호출은 캐싱된다. 메트릭이 없는
-// peer는 throw하지 않고 per/psr을 null로 둔다(core 프롬프트가 N/A로 렌더). 콜드
-// 캐시에서 peer당 FMP 요청이 동시 발사되면 rate-limit 위험이 있어 enrich는 순차로
-// 수행한다(warm 캐시에서는 getKeyMetricsTtm 캐시 히트로 비용이 낮다).
-export const getStockPeers = cache(
-    async (symbol: string): Promise<FundamentalPeerInput[]> => {
-        const peers = await getOrSetCache(
-            `fundamental:peers:${symbol.toUpperCase()}`,
-            FMP_FUNDAMENTAL_REVALIDATE_SECONDS,
-            () => fundamentalClient.getStockPeers(symbol)
-        );
-        const enriched: FundamentalPeerInput[] = [];
-        for (const peer of peers) {
-            const metrics = await getKeyMetricsTtm(peer.symbol);
-            enriched.push({
-                ...peer,
-                per: metrics?.peRatioTTM ?? null,
-                psr: metrics?.priceToSalesRatioTTM ?? null,
-            });
-        }
-        return enriched;
-    }
-);
+// 캐싱·enrich가 CachedFundamentalProvider로 이관됐으므로 이중 처리 없이 위임한다.
+export const getStockPeers = (
+    symbol: string
+): Promise<FundamentalPeerInput[]> => fundamentalClient.getStockPeers(symbol);
 
-export const getRatiosTtm = cache(
-    async (symbol: string): Promise<FundamentalRatiosInput | null> =>
-        getOrSetCache(
-            `fundamental:ratios:${symbol.toUpperCase()}`,
-            FMP_FUNDAMENTAL_REVALIDATE_SECONDS,
-            () => fundamentalClient.getRatiosTtm(symbol)
-        )
-);
+export const getRatiosTtm = (
+    symbol: string
+): Promise<FundamentalRatiosInput | null> =>
+    fundamentalClient.getRatiosTtm(symbol);
 
-export const getIncomeStatementGrowth = cache(
-    async (symbol: string): Promise<FundamentalGrowthInput | null> =>
-        getOrSetCache(
-            `fundamental:growth:${symbol.toUpperCase()}`,
-            FMP_FUNDAMENTAL_REVALIDATE_SECONDS,
-            () => fundamentalClient.getIncomeStatementGrowth(symbol)
-        )
-);
+export const getIncomeStatementGrowth = (
+    symbol: string
+): Promise<FundamentalGrowthInput | null> =>
+    fundamentalClient.getIncomeStatementGrowth(symbol);
 
-export const getFinancialScores = cache(
-    async (symbol: string): Promise<FundamentalFinancialScoresInput | null> =>
-        getOrSetCache(
-            `fundamental:scores:${symbol.toUpperCase()}`,
-            FMP_FUNDAMENTAL_REVALIDATE_SECONDS,
-            () => fundamentalClient.getFinancialScores(symbol)
-        )
-);
+export const getFinancialScores = (
+    symbol: string
+): Promise<FundamentalFinancialScoresInput | null> =>
+    fundamentalClient.getFinancialScores(symbol);
 
-export const getCashFlowStatement = cache(
-    async (symbol: string): Promise<FundamentalCashFlowInput | null> =>
-        getOrSetCache(
-            `fundamental:cash-flow:${symbol.toUpperCase()}`,
-            FMP_FUNDAMENTAL_REVALIDATE_SECONDS,
-            () => fundamentalClient.getCashFlowStatement(symbol)
-        )
-);
+export const getCashFlowStatement = (
+    symbol: string
+): Promise<FundamentalCashFlowInput | null> =>
+    fundamentalClient.getCashFlowStatement(symbol);
 
-export const getAnalystEstimates = cache(
-    async (symbol: string): Promise<FundamentalAnalystEstimateInput | null> =>
-        getOrSetCache(
-            `fundamental:estimates:${symbol.toUpperCase()}`,
-            FMP_FUNDAMENTAL_REVALIDATE_SECONDS,
-            () => fundamentalClient.getAnalystEstimates(symbol)
-        )
-);
+export const getAnalystEstimates = (
+    symbol: string
+): Promise<FundamentalAnalystEstimateInput | null> =>
+    fundamentalClient.getAnalystEstimates(symbol);
 
-export const getGradesConsensus = cache(
-    async (symbol: string): Promise<FundamentalGradesConsensusInput | null> =>
-        getOrSetCache(
-            `fundamental:grades-consensus:${symbol.toUpperCase()}`,
-            FMP_FUNDAMENTAL_REVALIDATE_SECONDS,
-            () => fundamentalClient.getGradesConsensus(symbol)
-        )
-);
+export const getGradesConsensus = (
+    symbol: string
+): Promise<FundamentalGradesConsensusInput | null> =>
+    fundamentalClient.getGradesConsensus(symbol);
 
-export const getPriceTargetConsensus = cache(
-    async (
-        symbol: string
-    ): Promise<FundamentalPriceTargetConsensusInput | null> =>
-        getOrSetCache(
-            `fundamental:price-target-consensus:${symbol.toUpperCase()}`,
-            FMP_FUNDAMENTAL_REVALIDATE_SECONDS,
-            () => fundamentalClient.getPriceTargetConsensus(symbol)
-        )
-);
+export const getPriceTargetConsensus = (
+    symbol: string
+): Promise<FundamentalPriceTargetConsensusInput | null> =>
+    fundamentalClient.getPriceTargetConsensus(symbol);
 
-export const getPriceTargetSummary = cache(
-    async (
-        symbol: string
-    ): Promise<FundamentalPriceTargetSummaryInput | null> =>
-        getOrSetCache(
-            `fundamental:price-target-summary:${symbol.toUpperCase()}`,
-            FMP_FUNDAMENTAL_REVALIDATE_SECONDS,
-            () => fundamentalClient.getPriceTargetSummary(symbol)
-        )
-);
+export const getPriceTargetSummary = (
+    symbol: string
+): Promise<FundamentalPriceTargetSummaryInput | null> =>
+    fundamentalClient.getPriceTargetSummary(symbol);
