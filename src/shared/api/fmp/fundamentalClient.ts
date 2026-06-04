@@ -150,21 +150,20 @@ export class FmpFundamentalClient implements FundamentalDataProvider {
      * 캐싱하지 못한다(빈 200 → `[]` → null 캐싱은 정상 동작으로 유지). 데코레이터가
      * 이 throw를 catch해 graceful null로 변환하는 책임을 진다.
      */
+    private async fetchValuationFromFmp(symbol: string): Promise<ValuationRaw> {
+        const [metricsArr, ratiosArr] = await Promise.all([
+            fmpGet<RawFmpKeyMetricsTtm[]>('key-metrics-ttm', { symbol }),
+            fmpGet<RawFmpRatiosTtm[]>('ratios-ttm', { symbol }),
+        ]);
+        return { metrics: metricsArr[0] ?? null, ratios: ratiosArr[0] ?? null };
+    }
+
     private getValuationRaw(symbol: string): Promise<ValuationRaw> {
         const key = symbol.toUpperCase();
         const inflight = this.valuationInflight.get(key);
         if (inflight !== undefined) return inflight;
 
-        const pending = (async () => {
-            const [metricsArr, ratiosArr] = await Promise.all([
-                fmpGet<RawFmpKeyMetricsTtm[]>('key-metrics-ttm', { symbol }),
-                fmpGet<RawFmpRatiosTtm[]>('ratios-ttm', { symbol }),
-            ]);
-            return {
-                metrics: metricsArr[0] ?? null,
-                ratios: ratiosArr[0] ?? null,
-            };
-        })();
+        const pending = this.fetchValuationFromFmp(symbol);
 
         this.valuationInflight.set(key, pending);
         // 정리(in-flight 제거)는 성공·실패 모두에서 수행한다. `pending`이 reject되면

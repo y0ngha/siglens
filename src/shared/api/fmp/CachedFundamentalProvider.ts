@@ -55,6 +55,11 @@ export class CachedFundamentalProvider implements FundamentalProvider {
      * `ValuationSection`(fundamental/page.tsx)과 분석 경로가 종전처럼 N/A를 렌더하게 한다.
      * 빈 200(데이터 없는 티커)은 정상 null로 캐싱돼 롱테일 트래픽의 재호출을 막는다.
      *
+     * Redis 인프라 장애(get/set)는 이 `.catch`에 도달하지 않는다 — `getOrSetCache`가
+     * Redis get/set 에러를 내부에서 catch해 graceful fallback(fetcher 직접 호출 또는
+     * fresh 값 그대로 반환)하므로, `getOrSetCache`는 오직 fetcher(inner FMP)가 throw할
+     * 때만 throw한다. 따라서 이 `.catch`는 내부 FMP 장애만 처리한다.
+     *
      * 에러는 여기서 직접 로깅한다. fmpGet 경로의 logFmpPaymentRequiredError는 HTTP 402만
      * 처리하므로 5xx/429/timeout은 그 경로에서 로깅되지 않는다 — 로깅하지 않으면 일시적
      * FMP 장애가 `.catch`에서 흔적 없이 사라진다. 캐싱 결정(throw=no-cache)은 inner가,
@@ -165,26 +170,28 @@ export class CachedFundamentalProvider implements FundamentalProvider {
         (symbol: string): Promise<FundamentalPeerInput[]> =>
             getOrSetCache(`fundamental:peers:${sym(symbol)}`, TTL, async () => {
                 const raw = await this.inner.getStockPeers(symbol);
-                return raw.slice(0, PEER_LIMIT).reduce(
-                    async (
-                        accPromise: Promise<FundamentalPeerInput[]>,
-                        peer
-                    ) => {
-                        const acc = await accPromise;
-                        const metrics = await this.getKeyMetricsTtm(
-                            peer.symbol
-                        );
-                        return [
-                            ...acc,
-                            {
-                                ...peer,
-                                per: metrics?.peRatioTTM ?? null,
-                                psr: metrics?.priceToSalesRatioTTM ?? null,
-                            },
-                        ];
-                    },
-                    Promise.resolve([] as FundamentalPeerInput[])
-                );
+                return raw
+                    .slice(0, PEER_LIMIT)
+                    .reduce(
+                        async (
+                            accPromise: Promise<FundamentalPeerInput[]>,
+                            peer
+                        ) => {
+                            const acc = await accPromise;
+                            const metrics = await this.getKeyMetricsTtm(
+                                peer.symbol
+                            );
+                            return [
+                                ...acc,
+                                {
+                                    ...peer,
+                                    per: metrics?.peRatioTTM ?? null,
+                                    psr: metrics?.priceToSalesRatioTTM ?? null,
+                                },
+                            ];
+                        },
+                        Promise.resolve<FundamentalPeerInput[]>([])
+                    );
             })
     );
 

@@ -2,11 +2,11 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/shared/api/e2eEnv', () => ({ isE2E: () => false }));
 
-afterEach(() => {
-    vi.resetModules();
-});
-
 describe('getFundamentalDataProvider (prod)', () => {
+    afterEach(() => {
+        vi.resetModules();
+    });
+
     it('returns a CachedFundamentalProvider instance in prod', async () => {
         const { getFundamentalDataProvider } =
             await import('@/shared/api/fmp/getFundamentalDataProvider');
