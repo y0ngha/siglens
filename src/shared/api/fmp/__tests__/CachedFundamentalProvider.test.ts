@@ -1,5 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { CachedFundamentalProvider } from '@/shared/api/fmp/CachedFundamentalProvider';
+import {
+    CachedFundamentalProvider,
+    PEER_LIMIT,
+} from '@/shared/api/fmp/CachedFundamentalProvider';
 import type { FundamentalProvider } from '@/shared/api/fmp/fundamentalProvider.types';
 import type { FundamentalPeerInput } from '@y0ngha/siglens-core';
 
@@ -309,10 +312,10 @@ describe('CachedFundamentalProvider — getStockPeers enrich', () => {
 
         const peers = await provider.getStockPeers('AAPL');
 
-        // 12 raw peers → capped to 10
-        expect(peers).toHaveLength(10);
+        // 12 raw peers → capped to PEER_LIMIT
+        expect(peers).toHaveLength(PEER_LIMIT);
         expect(peers.map((p: FundamentalPeerInput) => p.symbol)).toEqual(
-            rawPeers.slice(0, 10).map(p => p.symbol)
+            rawPeers.slice(0, PEER_LIMIT).map(p => p.symbol)
         );
         // each enriched peer carries per/psr from getKeyMetricsTtm
         expect(
@@ -320,12 +323,12 @@ describe('CachedFundamentalProvider — getStockPeers enrich', () => {
                 (p: FundamentalPeerInput) => p.per === 15 && p.psr === 4
             )
         ).toBe(true);
-        // enrich loop runs at most PEER_LIMIT (10) times, distinct symbols → 10 inner calls
+        // enrich loop runs at most PEER_LIMIT times, distinct symbols → PEER_LIMIT inner calls
         expect(
             (inner.getKeyMetricsTtm as ReturnType<typeof vi.fn>).mock.calls
                 .length
-        ).toBeLessThanOrEqual(10);
-        expect(inner.getKeyMetricsTtm).toHaveBeenCalledTimes(10);
+        ).toBeLessThanOrEqual(PEER_LIMIT);
+        expect(inner.getKeyMetricsTtm).toHaveBeenCalledTimes(PEER_LIMIT);
     });
 
     it('one peer with null metrics does NOT break enrichment of the rest', async () => {

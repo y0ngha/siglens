@@ -23,7 +23,7 @@ import type {
 } from '@y0ngha/siglens-core';
 
 const TTL = FMP_FUNDAMENTAL_REVALIDATE_SECONDS;
-const PEER_LIMIT = 10;
+export const PEER_LIMIT = 10;
 const sym = (s: string): string => s.toUpperCase();
 
 /**
@@ -199,20 +199,19 @@ export class CachedFundamentalProvider implements FundamentalProvider {
             )
     );
 
-    // pass-through (no-store + DB 영속 / 빈 stub)
-    getHistoricalSectorPerformance = (
-        sector: string
-    ): Promise<FundamentalSectorHistoricalInput[]> =>
-        this.inner.getHistoricalSectorPerformance(sector);
-
-    // pass-through (no-store + DB 영속 / 빈 stub)
+    // earnings: DB-영속이라 Redis 캐시 대상 아님
     getEarningsReport = (symbol: string): Promise<EarningsReport | null> =>
         this.inner.getEarningsReport(symbol);
 
-    // pass-through (no-store + DB 영속 / 빈 stub)
     getEarningsReports = (
         symbol: string,
         limit?: number
     ): Promise<FmpEarningsReportItem[]> =>
         this.inner.getEarningsReports(symbol, limit);
+
+    // historical-sector: 현재 빈 stub이라 캐싱 불필요
+    getHistoricalSectorPerformance = (
+        sector: string
+    ): Promise<FundamentalSectorHistoricalInput[]> =>
+        this.inner.getHistoricalSectorPerformance(sector);
 }

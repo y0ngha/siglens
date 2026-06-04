@@ -64,9 +64,7 @@ export const getKeyMetricsTtm = (
 ): Promise<FundamentalValuationMetrics | null> =>
     fundamentalClient.getKeyMetricsTtm(symbol);
 
-// CachedFundamentalProvider.getStockPeers가 peers 캐싱 + per/psr enrich를 일괄
-// 처리한다(peers fetch → key-metrics enrich → Redis 캐시). 이 레이어는 이중
-// enrich 없이 프로바이더에 위임한다.
+// 캐싱·enrich가 CachedFundamentalProvider로 이관됐으므로 이중 처리 없이 위임한다.
 export const getStockPeers = (
     symbol: string
 ): Promise<FundamentalPeerInput[]> => fundamentalClient.getStockPeers(symbol);
