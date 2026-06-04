@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildSectorFacts } from '../sectorFacts';
+import { buildSectorFacts } from '../lib/sectorFacts';
 import type {
     SectorSignalsResult,
     StockSignalResult,

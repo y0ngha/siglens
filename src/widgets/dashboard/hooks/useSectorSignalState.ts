@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import type {
     DashboardTimeframe,
@@ -52,21 +52,23 @@ export function useSectorSignalState({
     const pathname = usePathname();
     const searchParams = useSearchParams();
 
-    // Restore sector/timeframe from URL once on mount (deep-link support). Default state
-    // from props is shown during SSR/hydration (Suspense fallback covers the swap).
-    useEffect(() => {
-        const fromUrl = searchParams.get('sector');
-        if (fromUrl && SIGNAL_SECTORS.some(s => s.symbol === fromUrl))
-            // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional mount-only URL init
-            setActiveSector(fromUrl);
-        const tfFromUrl = searchParams.get('timeframe');
-
-        if (isDashboardTimeframe(tfFromUrl)) setActiveTimeframe(tfFromUrl);
-        // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only URL restore
-    }, []);
-
-    // activeTimeframe이 데이터 fetch를 직접 구동 — tf 전환이 클라에서 즉시 반영
     const data = useSectorSignals(activeTimeframe, initialData);
+
+    /**
+     * Restore sector/timeframe from URL once on mount (deep-link support).
+     * searchParamsRef captures the initial value so the mount-only effect [] satisfies
+     * exhaustive-deps while still reading the correct initial URL state.
+     * Default state from props is shown during SSR/hydration (Suspense fallback covers the swap).
+     */
+    const searchParamsRef = useRef(searchParams);
+    useEffect(() => {
+        const params = searchParamsRef.current;
+        const fromUrl = params.get('sector');
+        if (fromUrl && SIGNAL_SECTORS.some(s => s.symbol === fromUrl))
+            setActiveSector(fromUrl);
+        const tfFromUrl = params.get('timeframe');
+        if (isDashboardTimeframe(tfFromUrl)) setActiveTimeframe(tfFromUrl);
+    }, []);
 
     const filtered = useMemo(
         () => filterStrictAnticipation(data.stocks),

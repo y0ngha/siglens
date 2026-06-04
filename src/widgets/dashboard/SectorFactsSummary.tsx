@@ -1,5 +1,5 @@
 import type { SectorSignalsResult } from '@y0ngha/siglens-core';
-import { buildSectorFacts } from './utils/sectorFacts';
+import { buildSectorFacts } from '@/entities/sector-signal/lib/sectorFacts';
 
 interface SectorFactsSummaryProps {
     data: SectorSignalsResult;
