@@ -7,6 +7,7 @@ import type {
 } from '@y0ngha/siglens-core';
 import { submitMarketBriefingAction } from '@/entities/market-summary/actions';
 import { useHydrated } from '@/shared/hooks/useHydrated';
+import { QUERY_KEYS } from '@/shared/config/queryConfig';
 
 export interface UseMarketBriefingReturn {
     /** BriefingRegion input — undefined=미정, null=봇, cached/submitted=정상. */
@@ -22,7 +23,7 @@ export function useMarketBriefing(
 ): UseMarketBriefingReturn {
     const isHydrated = useHydrated();
     const { data } = useQuery({
-        queryKey: ['market-briefing'],
+        queryKey: QUERY_KEYS.marketBriefing(),
         queryFn: submitMarketBriefingAction,
         enabled: isHydrated,
         staleTime: Infinity,
@@ -32,7 +33,11 @@ export function useMarketBriefing(
         // hydration 전: peek seed가 있으면 cached처럼 노출, 없으면 undefined(렌더 안 함)
         return {
             input: peekSeed
-                ? ({
+                ? // peek seed는 briefing 본문만 보유하므로 generatedAt이 빈 문자열이다.
+                  // BriefingCard는 비어있거나 유효하지 않은 타임스탬프를 가드해 렌더링하지
+                  // 않으므로(R1 참조), 'cached' 모양의 객체는 BriefingRegion에 구조적으로
+                  // 유효하다. action 응답이 도착하면 정상 SubmitBriefingResult로 교체된다.
+                  ({
                       status: 'cached',
                       briefing: peekSeed,
                       generatedAt: '',

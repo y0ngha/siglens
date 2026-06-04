@@ -1,10 +1,16 @@
 // Mock all server/client dependencies before any imports
+
+const mockSetQueryData = vi.fn();
+// QueryClient must remain a proper constructor (class/function) so `new QueryClient()` in
+// MarketContent does not throw "not a constructor". An arrow function in vi.mock would break this.
+function MockQueryClientClass() {
+    return { setQueryData: mockSetQueryData };
+}
+
 vi.mock('@tanstack/react-query', () => ({
     dehydrate: vi.fn(() => ({})),
     HydrationBoundary: () => null,
-    QueryClient: vi.fn().mockImplementation(() => ({
-        setQueryData: vi.fn(),
-    })),
+    QueryClient: MockQueryClientClass,
 }));
 
 vi.mock('@/widgets/dashboard/MarketSummaryPanel', () => ({
@@ -60,6 +66,7 @@ vi.mock('@/shared/config/queryConfig', () => ({
     QUERY_KEYS: {
         marketSummary: () => ['market-summary'],
         sectorSignals: (tf: string) => ['sector-signals', tf],
+        marketBriefing: () => ['market-briefing'],
     },
 }));
 
@@ -78,8 +85,7 @@ vi.mock('@/shared/lib/og', () => ({
 vi.mock('@/shared/ui/JsonLd', () => ({ JsonLd: () => null }));
 
 import * as pageModule from '@/app/market/page';
-import { generateMetadata } from '@/app/market/page';
-import { QueryClient } from '@tanstack/react-query'; // used in seeds test below
+import { generateMetadata, MarketContent } from '@/app/market/page';
 
 describe('Market page', () => {
     describe('ISR route config', () => {
@@ -126,47 +132,42 @@ describe('Market page', () => {
                 stocks: [],
             });
             mockPeekBriefingStatic.mockResolvedValue(null);
+            mockSetQueryData.mockClear();
         });
 
         it('calls getMarketSummaryStatic (no args — static route)', async () => {
-            // Import MarketContent via the named export in page module —
-            // it's not exported by default, so we test behavior through the mocks
-            const { MarketContent } = pageModule as unknown as {
-                MarketContent: () => Promise<unknown>;
-            };
-            if (typeof MarketContent === 'function') {
-                await MarketContent();
-                expect(mockGetMarketSummaryStatic).toHaveBeenCalled();
-            } else {
-                // MarketContent is an internal async function — verify via QueryClient mock
-                expect(mockGetMarketSummaryStatic).toBeDefined();
-            }
+            await MarketContent();
+            expect(mockGetMarketSummaryStatic).toHaveBeenCalled();
         });
 
         it('calls getSectorSignalsStatic with DEFAULT_DASHBOARD_TIMEFRAME', async () => {
-            expect(mockGetSectorSignalsStatic).toBeDefined();
-            // The function is called with '1Day' in MarketContent
-            // We verify the mock shape is correct
-            const result = await mockGetSectorSignalsStatic('1Day');
-            expect(result.stocks).toEqual([]);
+            await MarketContent();
+            expect(mockGetSectorSignalsStatic).toHaveBeenCalledWith('1Day');
         });
 
-        it('seeds QueryClient with setQueryData configured in the mock', () => {
-            // The top-level vi.mock configures QueryClient to return { setQueryData: vi.fn() }.
-            // Verify the mock instance has setQueryData — page.tsx calls it for both
-            // marketSummary and sectorSignals keys during ISR render.
-            const MockQueryClient = QueryClient as unknown as {
-                mock: { results: Array<{ value: { setQueryData: unknown } }> };
-            };
-            // If page.tsx has already constructed a QueryClient instance, check it.
-            // Otherwise, just verify the mock shape is correct for the production code.
-            const firstResult = MockQueryClient.mock?.results?.[0]?.value;
-            if (firstResult) {
-                expect(typeof firstResult.setQueryData).toBe('function');
-            } else {
-                // Mock not yet called in this test — verify mock module is correct shape
-                expect(QueryClient).toBeDefined();
-            }
+        it('seeds QueryClient with setQueryData for both marketSummary and sectorSignals keys', async () => {
+            await MarketContent();
+
+            // MarketContent calls queryClient.setQueryData twice: once for marketSummary
+            // and once for sectorSignals. mockSetQueryData is shared across all QueryClient
+            // instances created by MockQueryClientClass.
+            // page.tsx: queryClient.setQueryData(QUERY_KEYS.marketSummary(), { summary })
+            // → data shape is { summary: { indices, sectors } }
+            expect(mockSetQueryData).toHaveBeenCalledWith(
+                ['market-summary'],
+                expect.objectContaining({
+                    summary: expect.objectContaining({
+                        indices: [],
+                        sectors: [],
+                    }),
+                })
+            );
+            // page.tsx: queryClient.setQueryData(QUERY_KEYS.sectorSignals(...), sectorData)
+            // → data shape is { computedAt, stocks }
+            expect(mockSetQueryData).toHaveBeenCalledWith(
+                ['sector-signals', '1Day'],
+                expect.objectContaining({ stocks: [] })
+            );
         });
 
         it('peekBriefingStatic returns null → graceful fallback (client triggers submit)', async () => {

@@ -96,7 +96,7 @@ export async function generateMetadata(): Promise<Metadata> {
  *   3. QueryClient.setQueryData — seeds React Query for instant hydration
  *   4. SectorFactsSummary — SSR crawl text (axis 2: useSearchParams bailout workaround)
  */
-async function MarketContent() {
+export async function MarketContent() {
     // ISR date-hour key: same hour = same cached briefing peek. Avoids hashing
     // the full summary object on every ISR render.
     const dateHour = new Date().toISOString().slice(0, 13);

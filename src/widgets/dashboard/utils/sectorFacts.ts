@@ -45,39 +45,39 @@ export function buildSectorFacts(
 ): readonly SectorFact[] {
     if (data.stocks.length === 0) return [];
 
-    // Group stocks by sectorSymbol
-    const grouped = new Map<string, StockSignalResult[]>();
-    for (const stock of data.stocks) {
-        const bucket = grouped.get(stock.sectorSymbol);
-        if (bucket) {
-            bucket.push(stock);
-        } else {
-            grouped.set(stock.sectorSymbol, [stock]);
-        }
-    }
+    // Group stocks by sectorSymbol using reduce — no imperative push/set mutation
+    const grouped = data.stocks.reduce<Map<string, StockSignalResult[]>>(
+        (acc, stock) => {
+            const bucket = acc.get(stock.sectorSymbol) ?? [];
+            return acc.set(stock.sectorSymbol, [...bucket, stock]);
+        },
+        new Map()
+    );
 
-    const facts: SectorFact[] = [];
-    for (const [sectorSymbol, stocks] of grouped) {
+    const facts = [...grouped].map(([sectorSymbol, stocks]) => {
         const bullishCount = stocks.filter(isBullish).length;
         const bearishCount = stocks.filter(isBearish).length;
 
-        // Top symbols: bullish first, then bearish-only, both sorted alphabetically within group
+        // Top symbols: bullish first, then bearish-only, both sorted alphabetically within group.
+        // Locale pinned to 'en' for environment-independent stable ordering.
         const bullishSymbols = stocks
             .filter(isBullish)
             .map(s => s.symbol)
-            .sort();
+            .sort((a, b) => a.localeCompare(b, 'en'));
         const bearishOnlySymbols = stocks
             .filter(s => !isBullish(s) && isBearish(s))
             .map(s => s.symbol)
-            .sort();
+            .sort((a, b) => a.localeCompare(b, 'en'));
         const topSymbols = [...bullishSymbols, ...bearishOnlySymbols].slice(
             0,
             MAX_TOP_SYMBOLS
         );
 
-        facts.push({ sectorSymbol, bullishCount, bearishCount, topSymbols });
-    }
+        return { sectorSymbol, bullishCount, bearishCount, topSymbols };
+    });
 
-    // Sort sectors alphabetically for stable output
-    return facts.sort((a, b) => a.sectorSymbol.localeCompare(b.sectorSymbol));
+    // Sort sectors alphabetically for stable output (locale pinned to 'en')
+    return facts.sort((a, b) =>
+        a.sectorSymbol.localeCompare(b.sectorSymbol, 'en')
+    );
 }
