@@ -336,8 +336,10 @@ export async function getNextEarningsReport(
                 EARNINGS_REPORT_FMP_LIMIT
             );
             await repo.upsertMany(reports);
-        } catch {
-            // Best-effort: analysis proceeds without earnings context if FMP fails
+        } catch (err) {
+            // Best-effort: analysis proceeds without earnings context if FMP fails.
+            // 로깅은 남겨 운영자가 FMP 키 만료/타임아웃 등 장애를 감지할 수 있게 한다.
+            console.warn('[getNextEarningsReport] FMP refresh failed:', err);
         }
     }
 
