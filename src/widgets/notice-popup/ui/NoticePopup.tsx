@@ -69,8 +69,17 @@ export function NoticePopup() {
                 </div>
                 {/* 긴 마크다운이 푸터(버튼)를 화면 밖으로 밀지 않도록 본문만 스크롤시킨다.
                     min-h-0은 flex 자식이 기본 min-height:auto여서, 없으면 overflow가 동작하지
-                    않아(자식이 콘텐츠 높이만큼 늘어남) 반드시 필요하다. */}
-                <div className="-mr-2 min-h-0 flex-1 overflow-y-auto pr-2">
+                    않아(자식이 콘텐츠 높이만큼 늘어남) 반드시 필요하다.
+                    tabIndex/role/aria-label은 키보드 접근성용: 본문에 포커스 가능한 자손(링크)이
+                    없으면 키보드 사용자가 스크롤 영역에 진입할 수 없어 방향키/PageUp·Down으로
+                    긴 본문을 스크롤할 수 없다(WCAG 2.1.1). 컨테이너를 포커스 가능하게 만든다. */}
+                <div
+                    tabIndex={0}
+                    role="region"
+                    aria-label="공지 본문"
+                    data-testid="notice-body-scroller"
+                    className="focus-visible:ring-primary-500 -mr-2 min-h-0 flex-1 overflow-y-auto rounded pr-2 focus-visible:ring-1 focus-visible:outline-none"
+                >
                     <p className="text-secondary-500 mb-3 text-xs">
                         {formatNoticeDate(current.createdAt)}
                     </p>
