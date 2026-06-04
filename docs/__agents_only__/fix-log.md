@@ -72,3 +72,14 @@
 - Status: APPROVED (zero findings)
   - Review: Fixed non-deterministic CI vitest flake under `pool: 'vmThreads'`. vi.stubEnv() with default `unstubEnvs: false` leaked `E2E_TEST=1` into env-agnostic factory tests. Fix: `unstubEnvs: true` in vitest.config + global `afterEach` in vitest.setup.base.ts restoring `process.env.E2E_TEST` to its worker-start value.
   - Result: Clean merge — no violations logged
+
+## [PR #562 Round 2 | worktree-verify-0.15-current | 2026-06-04]
+- Violation: WHY comment claimed "overflow는 Playwright로 검증" but no committed E2E case existed (ad-hoc script only)
+  - Rule: MISTAKES.md §15.6 — every comment claim must match runtime/code reality (false WHY worse than none)
+  - Context: Added committed e2e/specs/notice-popup.spec.ts "긴 본문 오버플로우" case (@webkit → chromium+webkit) and corrected the unit-test comment to reference it.
+- Violation: Manual markdown-notice seeds (priority 100) left in shared docker e2e DB masked 3 existing notice specs (priority 99) → wrong-data failures
+  - Rule: MISTAKES.md E2E #2 — delete manual seeds after verification; leftover high-priority rows hide per-test seeds
+  - Context: Deleted leftover seeds; re-run passed. Added cleanup step to docs/qa/QA_ENV_SETUP.md §7.
+- Violation: Esc-advances-notice unit test flaked only on CI (vmThreads) — keyDown fired before useEscapeKey passive-effect listener attached
+  - Rule: MISTAKES.md Tests #19 — await a same-effect-batch sibling (dialog focus) before dispatching; do not blind-bump timeouts
+  - Context: Added `waitFor(() => dialog toHaveFocus)` before `fireEvent.keyDown`. Local single + full suite (4887 tests) already green; targeted the race, not the timeout.

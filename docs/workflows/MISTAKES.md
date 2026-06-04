@@ -222,8 +222,9 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     ❌ // isOAuthProvider narrows profile.provider — actually narrows the URL param, not a profile field
     ❌ /** AuthSessionHeader는 flash 없음 */ — guest users still see skeleton → CTA swap once
     ❌ {/* hidden으로 숨겨 스크린리더가 대상을 찾되 시각적으로만 숨김 */} — `hidden` removes from a11y tree entirely
+    ❌ // overflow 동작/높이는 Playwright로 검증 — 실제로는 e2e/specs에 해당 케이스가 없었음(미커밋 ad-hoc 스크립트). 방법 A: 주석을 "아직 E2E 미커버"로 사실화 / 방법 B: 실제 E2E 케이스를 추가하고 주석 유지
     ✅ Comments either match reality exactly, or are removed and the WHY moved to commit/PR description
-    → Recurring: PR #420 Phase 7 R1, PR #428 R16 S1, PR #442 R5 S1, PR #453 R3/R4, PR #459, feat/seo-followup B5
+    → Recurring: PR #420 Phase 7 R1, PR #428 R16 S1, PR #442 R5 S1, PR #453 R3/R4, PR #459, feat/seo-followup B5, PR #562 R2
 
 15.4. Visual section separator comments (`// ─── Title ───────────`) inside source files
     → Box-drawing characters used to "organize" sections in code are WHAT-comments in disguise (they label what's below).
@@ -588,6 +589,13 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    ✅ account-logout.spec.ts now uses test.use({ storageState: { cookies: [], origins: [] } }); performs signup; logs out the throwaway user only
    ✅ Shared seeded session remains valid for account-auth-smoke and account-api-key
    → Recurring: account-delete (R1 discovered), account-logout (reintroduced)
+
+2. Leftover manually-seeded data in the shared docker DB masks existing E2E expectations
+   → Manual verification that seeds rows into the shared e2e Postgres MUST delete them afterward
+   → A leftover high-priority row is picked up first by the app and hides the row each test seeds → unrelated existing specs fail showing the wrong data (not a code regression)
+   ❌ Manual markdown-notice seed (priority 100) left in DB; 3 existing notice specs (seed priority 99) fail seeing the wrong notice
+   ✅ Delete manual seeds after verification; re-run → specs pass (see docs/qa/QA_ENV_SETUP.md §7 cleanup)
+   → Recurring risk whenever manual verification shares the e2e DB (PR #562 R2)
 ```
 
 ---
@@ -708,6 +716,14 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     ❌ formatImpliedMove(0.04) adds `if (pct < PERCENT_DISPLAY_FLOOR)`, but tests only verify value <= 0 case, not the 0 < value < floor case
     ✅ Add explicit test cases: formatImpliedMove(0.0004) for below-floor, formatImpliedMove(0.05) for above-floor, plus boundary values
     → Applies to all conditional branches (time thresholds, percentage boundaries, count limits) added in a PR
+
+19. CI-only flake: firing an event before a passive-effect listener attaches
+    → A document listener registered via useEffect/useEffectEvent attaches in the passive-effect phase (unlike a direct onClick handler)
+    → Under CI load (vitest pool: vmThreads), dispatching the event right after render can fire BEFORE the listener attaches → event lost → assertion times out (findByText hits the full default 1000ms)
+    → Fix targets the race, not the timeout: await a sibling of the same effect batch (e.g. the dialog receiving focus), THEN dispatch
+    ❌ render(); await findByText('first'); fireEvent.keyDown(document, { key: 'Escape' }); await findByText('second')  // Esc lost on CI
+    ✅ await waitFor(() => expect(getByRole('dialog')).toHaveFocus()); fireEvent.keyDown(...)  // listener guaranteed attached
+    → Passes locally (single + full suite), fails only on CI; never blind-bump timeouts (see docs/qa/EMPIRICAL_VERIFICATION.md §4) (PR #562)
 ```
 
 ---
