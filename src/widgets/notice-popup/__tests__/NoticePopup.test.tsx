@@ -62,8 +62,9 @@ describe('NoticePopup', () => {
         const scroller = screen.getByTestId('notice-body-scroller');
         // 푸터가 스크롤 영역의 자손이 되면(=footer가 스크롤 안으로 들어가면) 긴 본문에서
         // 버튼이 화면 밖으로 밀리는 원래 버그가 재발한다. 항상 스크롤 밖(sibling)이어야 한다.
-        // (overflow의 실제 동작/높이는 jsdom이 측정 못 하므로 Playwright로 검증 — 여기서는
-        //  회귀를 잡는 구조 불변식만 단언한다.)
+        // (overflow의 실제 시각 동작/높이는 jsdom이 측정 못 하므로 여기서는 회귀를 잡는 구조
+        //  불변식만 단언한다. 모달이 뷰포트를 넘지 않고 본문만 스크롤되며 푸터가 뷰포트에 남는
+        //  실제 동작은 e2e/specs/notice-popup.spec.ts "긴 본문 오버플로우" 케이스에서 검증한다.)
         expect(
             scroller.contains(
                 screen.getByRole('button', { name: '다시 보지 않기' })
