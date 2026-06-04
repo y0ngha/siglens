@@ -32,7 +32,7 @@ function makeWrapper() {
 }
 
 const TF_DAY: DashboardTimeframe = '1Day';
-const TF_WEEK: DashboardTimeframe = '1Week';
+const TF_HOUR: DashboardTimeframe = '1Hour';
 
 const SECTOR_RESULT: SectorSignalsResult = {
     computedAt: '2025-01-01T00:00:00Z',
@@ -71,17 +71,20 @@ describe('useSectorSignals', () => {
         const { client, wrapper } = makeWrapper();
         const { rerender } = renderHook(
             ({ tf }: { tf: DashboardTimeframe }) => useSectorSignals(tf),
-            { wrapper, initialProps: { tf: TF_DAY } }
+            {
+                wrapper,
+                initialProps: { tf: TF_DAY as DashboardTimeframe },
+            }
         );
 
         await waitFor(() => {
             expect(mockAction).toHaveBeenCalledWith(TF_DAY);
         });
 
-        rerender({ tf: TF_WEEK });
+        rerender({ tf: TF_HOUR });
 
         await waitFor(() => {
-            expect(mockAction).toHaveBeenCalledWith(TF_WEEK);
+            expect(mockAction).toHaveBeenCalledWith(TF_HOUR);
         });
 
         client.clear();
@@ -91,7 +94,7 @@ describe('useSectorSignals', () => {
         mockAction.mockImplementation(() => new Promise(() => {}));
         const { client, wrapper } = makeWrapper();
         const { result } = renderHook(
-            () => useSectorSignals(TF_WEEK, SECTOR_RESULT),
+            () => useSectorSignals(TF_HOUR, SECTOR_RESULT),
             { wrapper }
         );
         // 1Week는 default(1Day)가 아니므로 initialData 무시 → 빈 배열
