@@ -33,9 +33,12 @@ const sampleResult: SectorSignalsResult = {
     stocks: [
         {
             symbol: 'AAPL',
+            koreanName: '애플',
             sectorSymbol: 'XLK',
+            price: 100,
+            changePercent: 1.5,
+            trend: 'uptrend',
             signals: [],
-            summary: { bullish: 0, bearish: 0, neutral: 0 },
         },
     ],
 };
