@@ -10,8 +10,8 @@ import { MS_PER_DAY } from '@/shared/config/time';
  * 가능 여부는 staleness와 무관하므로 fetchedAt만으로 판정한다.
  *
  * 순수 함수 유지를 위해 `now`(epoch ms)를 인자로 받는다 — `Date.now()`는 호출부
- * (infrastructure 경계: newsData / nextEarningsReport)에서 주입한다. entities/lib는
- * 순수 함수 레이어라 내부 사이드 이펙트(Date.now())를 두지 않는다.
+ * (infrastructure 경계)에서 주입한다. entities/lib는 순수 함수 레이어라 내부
+ * 사이드 이펙트(Date.now())를 두지 않는다.
  */
 export const EARNINGS_REPORT_STALE_MS = MS_PER_DAY;
 

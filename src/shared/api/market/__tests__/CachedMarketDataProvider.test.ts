@@ -61,7 +61,7 @@ function reset() {
 describe('CachedMarketDataProvider', () => {
     beforeEach(reset);
 
-    it('getBars: miss→fetch→set, hit→캐시값(키 bars:raw:SYM:TF:from:before)', async () => {
+    it('getBars: miss→fetch→set, hit→캐시값(키 bars:raw:SYM:TF:from:before:limit)', async () => {
         const inner = makeInner();
         const p = new CachedMarketDataProvider(inner);
 
