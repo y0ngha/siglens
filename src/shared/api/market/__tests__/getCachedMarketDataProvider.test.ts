@@ -18,12 +18,12 @@ vi.mock('@/shared/api/market/getMarketDataProvider', () => ({
     getMarketDataProvider: () => fakeRawProvider,
 }));
 
-beforeEach(() => {
-    vi.resetModules();
-    mockIsE2E.mockReturnValue(false);
-});
-
 describe('getCachedMarketDataProvider', () => {
+    beforeEach(() => {
+        vi.resetModules();
+        mockIsE2E.mockReturnValue(false);
+    });
+
     it('같은 인스턴스를 반환한다(singleton)', async () => {
         const { getCachedMarketDataProvider } =
             await import('@/shared/api/market/getCachedMarketDataProvider');
