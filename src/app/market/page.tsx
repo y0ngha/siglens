@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import type { ReactElement } from 'react';
 import { Suspense } from 'react';
 import {
     dehydrate,
@@ -11,9 +12,9 @@ import { SectorFactsSummary } from '@/widgets/dashboard/SectorFactsSummary';
 import { SectorSignalPanel } from '@/widgets/dashboard/SectorSignalPanel';
 import { SectorSignalPanelSkeleton } from '@/widgets/dashboard/SectorSignalPanelSkeleton';
 import { SignalTypeGuide } from '@/widgets/dashboard/SignalTypeGuide';
-import { getMarketSummaryStatic } from '@/entities/market-summary/lib/marketSummaryStaticCache';
-import { peekBriefingStatic } from '@/entities/market-summary/lib/briefingStaticCache';
-import { getSectorSignalsStatic } from '@/entities/sector-signal/lib/sectorSignalsStaticCache';
+import { getMarketSummaryStatic } from '@/entities/market-summary/api/marketSummaryStaticCache';
+import { peekBriefingStatic } from '@/entities/market-summary/api/briefingStaticCache';
+import { getSectorSignalsStatic } from '@/entities/sector-signal/api/sectorSignalsStaticCache';
 import {
     DEFAULT_DASHBOARD_TIMEFRAME,
     SIGNAL_SECTORS,
@@ -31,7 +32,10 @@ import { JsonLd } from '@/shared/ui/JsonLd';
 // 1h — ISR (literal required — importing a constant breaks Next's static analysis, see src/app/CLAUDE.md)
 export const revalidate = 3600;
 
-/** 'YYYY-MM-DDTHH' prefix length — used to bucket ISR renders into 1-hour date-hour keys. */
+/**
+ * 'YYYY-MM-DDTHH' prefix length — used to bucket ISR renders into 1-hour date-hour keys.
+ * Mirrors ISO_DATE_HOUR_PREFIX_LENGTH in @y0ngha/siglens-core (internal, not exported) — must stay in sync.
+ */
 const ISO_DATE_HOUR_SLICE_END = 13;
 
 // Root layout template appends "| Siglens" — exclude brand name to prevent duplication.
@@ -99,7 +103,7 @@ export async function generateMetadata(): Promise<Metadata> {
  *   3. QueryClient.setQueryData — seeds React Query for instant hydration
  *   4. SectorFactsSummary — SSR crawl text (axis 2: useSearchParams bailout workaround)
  */
-export async function MarketContent() {
+export async function MarketContent(): Promise<ReactElement> {
     // ISR date-hour key: same hour = same cached briefing peek. Avoids hashing
     // the full summary object on every ISR render.
     const dateHour = new Date().toISOString().slice(0, ISO_DATE_HOUR_SLICE_END);

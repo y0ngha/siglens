@@ -4,7 +4,7 @@ import type { MarketSummaryActionResult } from '@/shared/lib/types';
 import { isE2E } from '@/shared/api/e2eEnv';
 import { cookies } from 'next/headers';
 import { getMarketDataProvider } from '@/shared/api/market/getMarketDataProvider';
-import { getCachedMarketSummary } from '../lib/marketSummaryCache';
+import { getCachedMarketSummary } from '../api/marketSummaryCache';
 
 /**
  * 클라(useMarketSummary) 전용 summary fetch. RSC prefetch는 getMarketSummaryStatic

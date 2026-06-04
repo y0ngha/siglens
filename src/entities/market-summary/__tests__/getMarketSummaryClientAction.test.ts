@@ -2,11 +2,11 @@ import type { MockedFunction } from 'vitest';
 import { getMarketSummaryClientAction } from '../actions/getMarketSummaryClientAction';
 import { type MarketSummaryData } from '@y0ngha/siglens-core';
 import { isE2E } from '@/shared/api/e2eEnv';
-import { getCachedMarketSummary } from '../lib/marketSummaryCache';
+import { getCachedMarketSummary } from '../api/marketSummaryCache';
 
 vi.mock('server-only', () => ({}));
 
-vi.mock('../lib/marketSummaryCache', () => ({
+vi.mock('../api/marketSummaryCache', () => ({
     getCachedMarketSummary: vi.fn(),
 }));
 

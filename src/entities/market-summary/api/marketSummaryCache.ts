@@ -8,7 +8,7 @@ import {
     getMarketSummary,
     computeBarsEffectiveTtl,
 } from '@y0ngha/siglens-core';
-import { allQuotesPresent } from './marketSummaryCompleteness';
+import { allQuotesPresent } from '../lib/marketSummaryCompleteness';
 
 const MARKET_SUMMARY_CACHE_KEY = 'market:summary';
 

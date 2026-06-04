@@ -36,13 +36,13 @@ const mockGetMarketSummaryStatic = vi.fn().mockResolvedValue({
     indices: [],
     sectors: [],
 });
-vi.mock('@/entities/market-summary/lib/marketSummaryStaticCache', () => ({
+vi.mock('@/entities/market-summary/api/marketSummaryStaticCache', () => ({
     getMarketSummaryStatic: (...args: unknown[]) =>
         mockGetMarketSummaryStatic(...args),
 }));
 
 const mockPeekBriefingStatic = vi.fn().mockResolvedValue(null);
-vi.mock('@/entities/market-summary/lib/briefingStaticCache', () => ({
+vi.mock('@/entities/market-summary/api/briefingStaticCache', () => ({
     peekBriefingStatic: (...args: unknown[]) => mockPeekBriefingStatic(...args),
 }));
 
@@ -50,7 +50,7 @@ const mockGetSectorSignalsStatic = vi.fn().mockResolvedValue({
     computedAt: '2026-06-04T00:00:00Z',
     stocks: [],
 });
-vi.mock('@/entities/sector-signal/lib/sectorSignalsStaticCache', () => ({
+vi.mock('@/entities/sector-signal/api/sectorSignalsStaticCache', () => ({
     getSectorSignalsStatic: (...args: unknown[]) =>
         mockGetSectorSignalsStatic(...args),
 }));

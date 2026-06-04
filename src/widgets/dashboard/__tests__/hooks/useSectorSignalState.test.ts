@@ -149,7 +149,7 @@ describe('useSectorSignalState', () => {
         expect(url).toContain('timeframe=1Hour');
     });
 
-    it('(B6) restores sector and timeframe from URL on mount', () => {
+    it('(B6) restores sector and timeframe from URL on mount', async () => {
         mockSearchParamsString = 'sector=XLF&timeframe=1Hour';
 
         const { result } = renderHook(() =>
@@ -159,11 +159,14 @@ describe('useSectorSignalState', () => {
             })
         );
 
+        // useEffect runs after mount — act() ensures the state update is flushed
+        await act(async () => {});
+
         expect(result.current.activeSector).toBe('XLF');
         expect(result.current.activeTimeframe).toBe('1Hour');
     });
 
-    it('(B6) falls back to prop defaults when URL timeframe is invalid', () => {
+    it('(B6) falls back to prop defaults when URL timeframe is invalid', async () => {
         mockSearchParamsString = 'sector=XLF&timeframe=1Week';
 
         const { result } = renderHook(() =>
@@ -174,11 +177,13 @@ describe('useSectorSignalState', () => {
         );
 
         // sector=XLF is valid → restored; timeframe=1Week is invalid → fallback
+        await act(async () => {});
+
         expect(result.current.activeSector).toBe('XLF');
         expect(result.current.activeTimeframe).toBe('1Day');
     });
 
-    it('(B6) falls back to prop defaults when URL params are absent', () => {
+    it('(B6) falls back to prop defaults when URL params are absent', async () => {
         mockSearchParamsString = '';
 
         const { result } = renderHook(() =>
@@ -187,6 +192,8 @@ describe('useSectorSignalState', () => {
                 initialTimeframe: '1Day',
             })
         );
+
+        await act(async () => {});
 
         expect(result.current.activeSector).toBe('XLK');
         expect(result.current.activeTimeframe).toBe('1Day');

@@ -27,7 +27,7 @@ vi.mock('@y0ngha/siglens-core', async () => ({
     peekBriefingCache: mockPeekBriefingCache,
 }));
 
-import { peekBriefingStatic } from '../lib/briefingStaticCache';
+import { peekBriefingStatic } from '../api/briefingStaticCache';
 
 const sampleSummary: MarketSummaryData = {
     indices: [],

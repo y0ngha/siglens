@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import type {
     DashboardTimeframe,
@@ -45,26 +45,25 @@ export function useSectorSignalState({
     initialTimeframe,
     initialData,
 }: UseSectorSignalStateOptions): UseSectorSignalStateReturn {
+    const [activeSector, setActiveSector] = useState(initialSector);
+    const [activeTimeframe, setActiveTimeframe] =
+        useState<DashboardTimeframe>(initialTimeframe);
     const router = useRouter();
     const pathname = usePathname();
     const searchParams = useSearchParams();
 
-    // Restore sector/timeframe from URL on mount so deep-links like
-    // /market?sector=XLF&timeframe=1Hour initialize the correct UI state.
-    // Validates against known values; falls back to the prop defaults when
-    // the URL param is absent or invalid.
-    const [activeSector, setActiveSector] = useState(() => {
+    // Restore sector/timeframe from URL once on mount (deep-link support). Default state
+    // from props is shown during SSR/hydration (Suspense fallback covers the swap).
+    useEffect(() => {
         const fromUrl = searchParams.get('sector');
-        return fromUrl && SIGNAL_SECTORS.some(s => s.symbol === fromUrl)
-            ? fromUrl
-            : initialSector;
-    });
-    const [activeTimeframe, setActiveTimeframe] = useState<DashboardTimeframe>(
-        () => {
-            const fromUrl = searchParams.get('timeframe');
-            return isDashboardTimeframe(fromUrl) ? fromUrl : initialTimeframe;
-        }
-    );
+        if (fromUrl && SIGNAL_SECTORS.some(s => s.symbol === fromUrl))
+            // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional mount-only URL init
+            setActiveSector(fromUrl);
+        const tfFromUrl = searchParams.get('timeframe');
+
+        if (isDashboardTimeframe(tfFromUrl)) setActiveTimeframe(tfFromUrl);
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only URL restore
+    }, []);
 
     // activeTimeframe이 데이터 fetch를 직접 구동 — tf 전환이 클라에서 즉시 반영
     const data = useSectorSignals(activeTimeframe, initialData);

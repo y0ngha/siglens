@@ -15,7 +15,7 @@ vi.mock('next/cache', () => ({
     },
 }));
 
-vi.mock('../lib/marketSummaryCache', () => ({
+vi.mock('../api/marketSummaryCache', () => ({
     getCachedMarketSummary: vi.fn(),
 }));
 
@@ -23,8 +23,8 @@ vi.mock('@/shared/api/market/getMarketDataProvider', () => ({
     getMarketDataProvider: vi.fn(() => ({})),
 }));
 
-import { getMarketSummaryStatic } from '../lib/marketSummaryStaticCache';
-import { getCachedMarketSummary } from '../lib/marketSummaryCache';
+import { getMarketSummaryStatic } from '../api/marketSummaryStaticCache';
+import { getCachedMarketSummary } from '../api/marketSummaryCache';
 
 const mockGetCachedMarketSummary = vi.mocked(getCachedMarketSummary);
 

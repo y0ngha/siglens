@@ -5,7 +5,7 @@ import { isBot } from '@/shared/api/isBot';
 import { submitBriefing } from '@y0ngha/siglens-core';
 import { headers } from 'next/headers';
 import { getMarketDataProvider } from '@/shared/api/market/getMarketDataProvider';
-import { getCachedMarketSummary } from '../lib/marketSummaryCache';
+import { getCachedMarketSummary } from '../api/marketSummaryCache';
 
 /**
  * briefing 클라 트리거. 봇이면 차단(job 미제출), 아니면 submitBriefing(내부에서

@@ -1,11 +1,11 @@
 import type { MockedFunction } from 'vitest';
 import { getSectorSignalsAction } from '../actions/getSectorSignalsAction';
-import { getCachedSectorSignals } from '../lib/sectorSignalsCache';
+import { getCachedSectorSignals } from '../api/sectorSignalsCache';
 import type { SectorSignalsResult } from '@y0ngha/siglens-core';
 
 vi.mock('server-only', () => ({}));
 
-vi.mock('../lib/sectorSignalsCache', () => ({
+vi.mock('../api/sectorSignalsCache', () => ({
     getCachedSectorSignals: vi.fn(),
 }));
 

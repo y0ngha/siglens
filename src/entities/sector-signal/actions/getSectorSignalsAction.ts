@@ -5,7 +5,7 @@ import type {
     SectorSignalsResult,
 } from '@y0ngha/siglens-core';
 import { getMarketDataProvider } from '@/shared/api/market/getMarketDataProvider';
-import { getCachedSectorSignals } from '../lib/sectorSignalsCache';
+import { getCachedSectorSignals } from '../api/sectorSignalsCache';
 import { DEFAULT_DASHBOARD_TIMEFRAME } from '@/shared/config/dashboard-tickers';
 
 export async function getSectorSignalsAction(
