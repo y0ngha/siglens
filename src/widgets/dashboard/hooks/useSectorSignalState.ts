@@ -18,11 +18,16 @@ import {
     groupStockIntoQuadrants,
     resolveConflicts,
 } from '@/entities/analysis';
+import { useSectorSignals } from './useSectorSignals';
 
 interface UseSectorSignalStateOptions {
-    data: SectorSignalsResult;
     initialSector: string;
     initialTimeframe: DashboardTimeframe;
+    /**
+     * SSR seed for the default timeframe. SectorSignalsResult에 timeframe 필드가
+     * 없으므로 useSectorSignals는 DEFAULT_DASHBOARD_TIMEFRAME일 때만 seed를 쓴다.
+     */
+    initialData?: SectorSignalsResult;
 }
 
 interface UseSectorSignalStateReturn {
@@ -35,9 +40,9 @@ interface UseSectorSignalStateReturn {
 }
 
 export function useSectorSignalState({
-    data,
     initialSector,
     initialTimeframe,
+    initialData,
 }: UseSectorSignalStateOptions): UseSectorSignalStateReturn {
     const [activeSector, setActiveSector] = useState(initialSector);
     const [activeTimeframe, setActiveTimeframe] = useState(initialTimeframe);
@@ -45,6 +50,9 @@ export function useSectorSignalState({
     const router = useRouter();
     const pathname = usePathname();
     const searchParams = useSearchParams();
+
+    // activeTimeframe이 데이터 fetch를 직접 구동 — tf 전환이 클라에서 즉시 반영
+    const data = useSectorSignals(activeTimeframe, initialData);
 
     const filtered = useMemo(
         () => filterStrictAnticipation(data.stocks),

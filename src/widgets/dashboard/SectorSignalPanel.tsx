@@ -10,15 +10,20 @@ import { TimeframeSelector } from './TimeframeSelector';
 import { SignalSubsection } from './SignalSubsection';
 
 interface SectorSignalPanelProps {
-    data: SectorSignalsResult;
     initialSector: string;
     initialTimeframe: DashboardTimeframe;
+    /**
+     * SSR prefetch seed for the default timeframe. page.tsx에서 queryClient seed로
+     * 넣어도 되지만, panel이 직접 받아 useSectorSignalState → useSectorSignals로 전달해
+     * 초기 hydration 전 데이터를 즉시 렌더한다.
+     */
+    initialData?: SectorSignalsResult;
 }
 
 export function SectorSignalPanel({
-    data,
     initialSector,
     initialTimeframe,
+    initialData,
 }: SectorSignalPanelProps) {
     const {
         activeSector,
@@ -28,9 +33,9 @@ export function SectorSignalPanel({
         handleSectorChange,
         handleTimeframeChange,
     } = useSectorSignalState({
-        data,
         initialSector,
         initialTimeframe,
+        initialData,
     });
 
     return (

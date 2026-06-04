@@ -82,6 +82,8 @@ export const QUERY_KEYS = {
             timeframe,
             modelId,
         ] as const,
+    sectorSignals: (timeframe: string) =>
+        ['sector-signals', timeframe] as const,
     optionsSnapshot: (symbol: string) =>
         ['options-snapshot', upper(symbol)] as const,
     /**

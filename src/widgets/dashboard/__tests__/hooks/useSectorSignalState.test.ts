@@ -36,7 +36,7 @@ vi.mock('@/shared/config/dashboard-tickers', () => ({
     DEFAULT_DASHBOARD_TIMEFRAME: '1Day',
 }));
 
-const DATA: SectorSignalsResult = {
+const SECTOR_DATA: SectorSignalsResult = {
     stocks: [
         {
             symbol: 'AAPL',
@@ -51,6 +51,12 @@ const DATA: SectorSignalsResult = {
     computedAt: '2025-01-01T00:00:00Z',
 };
 
+// useSectorSignals 내부 훅을 mock 처리 — React Query 의존 제거
+vi.mock('@/widgets/dashboard/hooks/useSectorSignals', () => ({
+    useSectorSignals: (_tf: unknown, initialData?: SectorSignalsResult) =>
+        initialData ?? SECTOR_DATA,
+}));
+
 describe('useSectorSignalState', () => {
     afterEach(() => {
         mockReplace.mockClear();
@@ -59,7 +65,6 @@ describe('useSectorSignalState', () => {
     it('returns initial sector and timeframe', () => {
         const { result } = renderHook(() =>
             useSectorSignalState({
-                data: DATA,
                 initialSector: 'XLK',
                 initialTimeframe: '1Day',
             })
@@ -71,7 +76,6 @@ describe('useSectorSignalState', () => {
     it('handleSectorChange updates sector and calls router.replace', () => {
         const { result } = renderHook(() =>
             useSectorSignalState({
-                data: DATA,
                 initialSector: 'XLK',
                 initialTimeframe: '1Day',
             })
@@ -88,7 +92,6 @@ describe('useSectorSignalState', () => {
     it('handleTimeframeChange updates timeframe and calls router.replace', () => {
         const { result } = renderHook(() =>
             useSectorSignalState({
-                data: DATA,
                 initialSector: 'XLK',
                 initialTimeframe: '1Day',
             })
@@ -105,7 +108,6 @@ describe('useSectorSignalState', () => {
     it('uses pathname without query when both sector and timeframe are defaults', () => {
         const { result } = renderHook(() =>
             useSectorSignalState({
-                data: DATA,
                 initialSector: 'XLF',
                 initialTimeframe: '1Hour',
             })
@@ -128,7 +130,6 @@ describe('useSectorSignalState', () => {
     it('omits default sector and timeframe from query string', () => {
         const { result } = renderHook(() =>
             useSectorSignalState({
-                data: DATA,
                 initialSector: 'XLF',
                 initialTimeframe: '1Hour',
             })

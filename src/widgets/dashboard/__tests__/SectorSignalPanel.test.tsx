@@ -1,6 +1,5 @@
 import { render, screen } from '@testing-library/react';
 import { SectorSignalPanel } from '@/widgets/dashboard/SectorSignalPanel';
-import type { SectorSignalsResult } from '@y0ngha/siglens-core';
 
 const mockReturn = {
     activeSector: 'XLK',
@@ -34,30 +33,17 @@ vi.mock('@/widgets/dashboard/SignalSubsection', () => ({
     ),
 }));
 
-const DATA: SectorSignalsResult = {
-    stocks: [],
-    computedAt: '2025-01-01T00:00:00Z',
-};
-
 describe('SectorSignalPanel', () => {
     it('renders the section heading', () => {
         render(
-            <SectorSignalPanel
-                data={DATA}
-                initialSector="XLK"
-                initialTimeframe="1Day"
-            />
+            <SectorSignalPanel initialSector="XLK" initialTimeframe="1Day" />
         );
         expect(screen.getByText('섹터별 신호 모아보기')).toBeInTheDocument();
     });
 
     it('renders SectorTabs and TimeframeSelector', () => {
         render(
-            <SectorSignalPanel
-                data={DATA}
-                initialSector="XLK"
-                initialTimeframe="1Day"
-            />
+            <SectorSignalPanel initialSector="XLK" initialTimeframe="1Day" />
         );
         expect(screen.getByTestId('sector-tabs')).toBeInTheDocument();
         expect(screen.getByTestId('timeframe-selector')).toBeInTheDocument();
@@ -65,11 +51,7 @@ describe('SectorSignalPanel', () => {
 
     it('renders all five signal subsections', () => {
         render(
-            <SectorSignalPanel
-                data={DATA}
-                initialSector="XLK"
-                initialTimeframe="1Day"
-            />
+            <SectorSignalPanel initialSector="XLK" initialTimeframe="1Day" />
         );
         expect(screen.getByText('상승 신호')).toBeInTheDocument();
         expect(screen.getByText('상승 조짐')).toBeInTheDocument();
@@ -80,11 +62,7 @@ describe('SectorSignalPanel', () => {
 
     it('renders tabpanel with correct aria attributes', () => {
         render(
-            <SectorSignalPanel
-                data={DATA}
-                initialSector="XLK"
-                initialTimeframe="1Day"
-            />
+            <SectorSignalPanel initialSector="XLK" initialTimeframe="1Day" />
         );
         const panel = screen.getByRole('tabpanel');
         expect(panel).toHaveAttribute('aria-labelledby', 'sector-tab-XLK');
