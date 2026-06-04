@@ -53,6 +53,43 @@ describe('NoticePopup', () => {
         expect(screen.getByText('2026.06.03 작성')).toBeInTheDocument();
     });
 
+    it('푸터 버튼은 스크롤 본문(overflow-y-auto) 밖에 위치한다 — 긴 본문에도 버튼 고정', async () => {
+        mockedAction.mockResolvedValue([notice()]);
+        render(<NoticePopup />);
+        await screen.findByText('긴급 점검 안내');
+        // CSS 클래스가 아니라 data-testid로 조회한다: 스크롤 구현(overflow-y-auto 클래스)을
+        // 바꿔도 이 구조 불변식 검증이 무음으로 깨지지 않도록.
+        const scroller = screen.getByTestId('notice-body-scroller');
+        // 푸터가 스크롤 영역의 자손이 되면(=footer가 스크롤 안으로 들어가면) 긴 본문에서
+        // 버튼이 화면 밖으로 밀리는 원래 버그가 재발한다. 항상 스크롤 밖(sibling)이어야 한다.
+        // (overflow의 실제 시각 동작/높이는 jsdom이 측정 못 하므로 여기서는 회귀를 잡는 구조
+        //  불변식만 단언한다. 모달이 뷰포트를 넘지 않고 본문만 스크롤되며 푸터가 뷰포트에 남는
+        //  실제 동작은 e2e/specs/notice-popup.spec.ts "긴 본문 오버플로우" 케이스에서 검증한다.)
+        expect(
+            scroller.contains(
+                screen.getByRole('button', { name: '다시 보지 않기' })
+            )
+        ).toBe(false);
+        expect(
+            scroller.contains(screen.getByRole('button', { name: '닫기' }))
+        ).toBe(false);
+        // 모달 content는 뷰포트 초과를 막는 max-h 제약을 가진다. 적용 값은 max-h-[85dvh]로
+        // 고정(deterministic)이므로 정확히 단언한다(max-h-* 아무거나 통과하는 것을 방지).
+        expect(screen.getByRole('dialog').className).toContain('max-h-[85dvh]');
+    });
+
+    it('스크롤 본문은 키보드 포커스 가능하다 — 링크 없는 본문도 방향키로 스크롤(WCAG 2.1.1)', async () => {
+        mockedAction.mockResolvedValue([notice()]);
+        render(<NoticePopup />);
+        await screen.findByText('긴급 점검 안내');
+        const scroller = screen.getByTestId('notice-body-scroller');
+        // 본문에 포커스 가능한 자손(링크)이 없을 때도 키보드 사용자가 스크롤 영역에 진입해
+        // 방향키/PageUp·Down으로 스크롤할 수 있어야 한다.
+        expect(scroller).toHaveAttribute('tabindex', '0');
+        expect(scroller).toHaveAttribute('role', 'region');
+        expect(scroller).toHaveAccessibleName('공지 본문');
+    });
+
     it('linkUrl이 있으면 링크를 렌더하고, label이 없으면 url을 표시한다', async () => {
         mockedAction.mockResolvedValue([
             notice({ linkUrl: 'https://siglens.io/blog', linkLabel: null }),
@@ -149,6 +186,11 @@ describe('NoticePopup', () => {
         ]);
         render(<NoticePopup />);
         expect(await screen.findByText('첫 번째')).toBeInTheDocument();
+        // useEscapeKey의 keydown 리스너는 passive effect로 등록된다(버튼 클릭과 달리 직접
+        // 핸들러가 아니다). CI(vmThreads + 부하)에서는 모달 렌더 직후 리스너 부착 전에 keyDown이
+        // 발사되면 Esc가 유실돼 다음 공지로 넘어가지 않는다. dialog 포커스는 같은 effect 배치에서
+        // 실행되므로, 포커스를 기다리면 리스너 부착이 보장된다 — 그 후 Esc를 발사한다.
+        await waitFor(() => expect(screen.getByRole('dialog')).toHaveFocus());
         fireEvent.keyDown(document, { key: 'Escape' });
         expect(await screen.findByText('두 번째')).toBeInTheDocument();
     });
