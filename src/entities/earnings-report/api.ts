@@ -9,6 +9,11 @@ import { NEON_TRANSIENT_RETRY } from '@/shared/db/isNeonTransientError';
 import { earningsReports } from '@/shared/db/schema';
 import type { SiglensDatabase } from '@/shared/db/types';
 import { withRetry } from '@/shared/lib/withRetry';
+import { getFundamentalDataProvider } from '@/shared/api/fmp/getFundamentalDataProvider';
+import { todayKstIsoDate } from '@/shared/lib/dateKey';
+import { isEarningsReportStale } from './lib/isEarningsReportStale';
+
+export const EARNINGS_REPORT_FMP_LIMIT = 5;
 
 export interface EarningsReportUpsertInput {
     symbol: string;
@@ -304,4 +309,43 @@ function isPresent(value: number | null): boolean {
 
 function hasEstimateValue(row: EarningsReportDataRow): boolean {
     return row.epsEstimated !== null || row.revenueEstimated !== null;
+}
+
+/**
+ * Returns the next upcoming earnings entry for `symbol`, refreshing from FMP if
+ * the DB has no data or the last fetch is older than 24 hours.
+ * Used by analysis actions that run independently of the news page visit.
+ *
+ * DB·FMP·`Date.now()` side effect를 포함하는 use-case이므로 순수 함수 전용 레이어
+ * (lib/)가 아니라 api.ts(server-only repository/API 계층)에 둔다. staleness 판정은
+ * 순수 함수 `isEarningsReportStale`(lib/)에 위임하고, `Date.now()`는 여기
+ * (infrastructure 경계)에서 주입한다.
+ *
+ * I/O 보호는 의도적으로 비대칭이다: FMP refresh만 best-effort(try-catch로 삼켜 분석이
+ * earnings 없이 진행)이고, DB I/O(getLatestFetchedAt/getNextForSymbol) 오류는 호출자
+ * (Server Action)의 try-catch에 위임한다.
+ */
+export async function getNextEarningsReport(
+    symbol: string,
+    db: SiglensDatabase
+): Promise<EarningsCalendarItem | null> {
+    const repo = new DrizzleEarningsReportsRepository(db);
+    const fetchedAt = await repo.getLatestFetchedAt(symbol);
+
+    if (isEarningsReportStale(fetchedAt, Date.now())) {
+        try {
+            const client = getFundamentalDataProvider();
+            const reports = await client.getEarningsReports(
+                symbol,
+                EARNINGS_REPORT_FMP_LIMIT
+            );
+            await repo.upsertMany(reports);
+        } catch (err) {
+            // Best-effort: analysis proceeds without earnings context if FMP fails.
+            // 로깅은 남겨 운영자가 FMP 키 만료/타임아웃 등 장애를 감지할 수 있게 한다.
+            console.warn('[getNextEarningsReport] FMP refresh failed:', err);
+        }
+    }
+
+    return repo.getNextForSymbol(symbol, todayKstIsoDate());
 }
