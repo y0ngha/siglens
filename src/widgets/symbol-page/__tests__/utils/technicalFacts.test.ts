@@ -33,6 +33,18 @@ function indicators(partial: Partial<IndicatorResult>): IndicatorResult {
         buySellVolume: [],
         smc: {} as IndicatorResult['smc'],
         squeezeMomentum: [],
+        macdV: [],
+        connorsRsi: [],
+        forceIndex: [],
+        elderRay: [],
+        elderImpulse: [],
+        bollingerDerived: [],
+        chandelierExit: [],
+        yangZhang: [],
+        ewmaVolatility: [],
+        hurst: [],
+        varianceRatio: [],
+        regression: [],
         ...partial,
     };
 }

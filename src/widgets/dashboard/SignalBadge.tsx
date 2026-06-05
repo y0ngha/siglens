@@ -9,6 +9,8 @@ const SIGNAL_BADGE_LABELS: Record<SignalType, string> = {
     macd_bearish_cross: 'MACD 하락교차',
     bollinger_lower_bounce: '볼린저 하단 반등',
     bollinger_upper_breakout: '볼린저 상단 돌파',
+    bollinger_percentb_oversold: '볼린저 %B 과매도 반등',
+    bollinger_percentb_overbought: '볼린저 %B 과매수 반전',
     rsi_bullish_divergence: 'RSI 상승 다이버전스',
     rsi_bearish_divergence: 'RSI 하락 다이버전스',
     macd_histogram_bullish_convergence: 'MACD 히스토그램 수렴(↑)',

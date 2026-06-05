@@ -55,6 +55,8 @@ const SIGNAL_CATALOG = [
     'macd_histogram_bearish_convergence',
     'bollinger_lower_bounce',
     'bollinger_upper_breakout',
+    'bollinger_percentb_oversold',
+    'bollinger_percentb_overbought',
     'bollinger_squeeze_bullish',
     'bollinger_squeeze_bearish',
     'supertrend_bullish_flip',
@@ -102,12 +104,15 @@ const isCandlePattern = (name: string): boolean =>
 const isKnownTrigger = (name: string): boolean =>
     SIGNAL_SET.has(name) || isCandlePattern(name);
 
-// Mirror the core loader's accepted state-predicate vocabulary.
-// Duplicates `SKILL_STATE_FEATURES` / `SKILL_STATE_PREDICATE_KINDS` in
-// src/entities/skill/api.ts — a build script can't import from app `src/`, so
-// the lists are kept in sync by hand. Update both when the core's
-// SkillStateFeature / SkillStatePredicateKind unions change (the
-// `satisfies` clause fails the build here if this copy drifts).
+/**
+ * Mirror of `SKILL_STATE_FEATURES` / `SKILL_STATE_PREDICATE_KINDS` in
+ * src/entities/skill/api.ts. These two must stay in sync — when siglens-core's
+ * SkillStateFeature / SkillStatePredicateKind union gains a member, update BOTH.
+ * (scripts/ is a build-time validator; src/ is the runtime parser — a build
+ * script can't import from app `src/`, so there is no shared import. The
+ * `satisfies` clause + exhaustiveness guards below fail the build here if this
+ * copy drifts from the core unions.)
+ */
 const STATE_FEATURES = [
     'bollinger',
     'keltner',
@@ -117,6 +122,18 @@ const STATE_FEATURES = [
     'donchian',
     'vwap',
     'buySellVolume',
+    // Pro-indicators (Phase 3) — all evaluated by the core on the 'level' kind.
+    'macdV',
+    'connorsRsi',
+    'forceIndex',
+    'elderRay',
+    'elderImpulse',
+    'chandelier',
+    'hurst',
+    'varianceRatio',
+    'regression',
+    'yangZhang',
+    'ewma',
 ] as const satisfies readonly SkillStateFeature[];
 const STATE_PREDICATE_KINDS = [
     'pctB',
@@ -153,7 +170,10 @@ void _predicateKindsAreExhaustive;
  * Any other pairing returns `false` for every chart → the skill is unreachable,
  * so the validator rejects it even though each half is individually valid.
  *
- * Mirrors `VALID_STATE_PAIRS` in src/entities/skill/api.ts — keep both in sync.
+ * Mirror of `VALID_STATE_PAIRS` in src/entities/skill/api.ts. These two must
+ * stay in sync — when the core's set of evaluated (feature, predicate) pairs
+ * changes, update BOTH. (scripts/ is a build-time validator; src/ is the
+ * runtime parser — no shared import.)
  */
 const VALID_STATE_PAIRS = new Set<string>([
     'bollinger:pctB',
@@ -164,6 +184,18 @@ const VALID_STATE_PAIRS = new Set<string>([
     'donchian:channelProximity',
     'vwap:bandDistAtr',
     'buySellVolume:ratio',
+    // Pro-indicators (Phase 3) — the core's isStateNotable evaluates each on 'level'.
+    'macdV:level',
+    'connorsRsi:level',
+    'forceIndex:level',
+    'elderRay:level',
+    'elderImpulse:level',
+    'chandelier:level',
+    'hurst:level',
+    'varianceRatio:level',
+    'regression:level',
+    'yangZhang:level',
+    'ewma:level',
 ]);
 
 interface SkillError {
