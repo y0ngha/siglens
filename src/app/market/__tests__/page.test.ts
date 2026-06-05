@@ -72,6 +72,7 @@ vi.mock('@/shared/config/queryConfig', () => ({
 
 vi.mock('@/shared/lib/seo', () => ({
     buildBreadcrumbJsonLd: vi.fn().mockReturnValue({}),
+    clampSeoDescription: (text: string) => text,
     ROOT_KEYWORDS: ['주식'],
     SITE_NAME: 'Siglens',
     SITE_URL: 'https://siglens.io',

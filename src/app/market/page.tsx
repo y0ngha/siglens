@@ -22,6 +22,7 @@ import {
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
 import {
     buildBreadcrumbJsonLd,
+    clampSeoDescription,
     ROOT_KEYWORDS,
     SITE_NAME,
     SITE_URL,
@@ -41,10 +42,12 @@ const ISO_DATE_HOUR_SLICE_END = 13;
 // Root layout template appends "| Siglens" — exclude brand name to prevent duplication.
 const MARKET_TITLE = '오늘의 미국 주식, 섹터별 기술적 신호';
 const MARKET_FULL_TITLE = `${MARKET_TITLE} | ${SITE_NAME}`;
-// ≤120 codepoints (SEO_DESCRIPTION_MAX_LENGTH) — 한글 SERP 절단 방지. 섹터 개수는
-// 표기하지 않는다(11 GICS ETF + 양자 테마라 단일 숫자가 모호 → ItemList도 동일 정책).
-const MARKET_DESCRIPTION =
-    '오늘 미국 주식 시장을 섹터별로 나눠 봅니다. AI 반도체·빅테크·헬스케어 등에서 골든크로스, RSI 다이버전스, 볼린저 스퀴즈 신호가 잡힌 종목을 추려 AI 분석으로 연결합니다.';
+// clampSeoDescription으로 SEO_DESCRIPTION_MAX_LENGTH(120자)를 출력단에서 강제 — 한글 SERP
+// 절단 방지 + 향후 텍스트 수정 시 한도 초과 drift 차단(MISTAKES §15). 현재 100자라 no-op.
+// 섹터 개수는 표기하지 않는다(11 GICS ETF + 양자 테마라 단일 숫자가 모호 → ItemList도 동일 정책).
+const MARKET_DESCRIPTION = clampSeoDescription(
+    '오늘 미국 주식 시장을 섹터별로 나눠 봅니다. AI 반도체·빅테크·헬스케어 등에서 골든크로스, RSI 다이버전스, 볼린저 스퀴즈 신호가 잡힌 종목을 추려 AI 분석으로 연결합니다.'
+);
 const MARKET_URL = `${SITE_URL}/market`;
 const MARKET_KEYWORDS = [
     ...ROOT_KEYWORDS,
