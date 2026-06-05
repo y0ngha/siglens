@@ -66,10 +66,10 @@ interface MarketSummaryPanelProps {
 }
 
 export function MarketSummaryPanel({ peekSeed }: MarketSummaryPanelProps = {}) {
+    const [noticeDismissed, setNoticeDismissed] = useState(false);
     const { data, isPending, sectorMap, indices, hasMissingQuotes } =
         useMarketSummary();
     const { input: briefing } = useMarketBriefing(peekSeed);
-    const [noticeDismissed, setNoticeDismissed] = useState(false);
 
     if (isPending) return <MarketSummaryPanelSkeleton />;
 

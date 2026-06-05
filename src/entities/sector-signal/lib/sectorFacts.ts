@@ -45,11 +45,16 @@ export function buildSectorFacts(
 ): readonly SectorFact[] {
     if (data.stocks.length === 0) return [];
 
-    // Group stocks by sectorSymbol using reduce — no imperative push/set mutation
+    // Group stocks by sectorSymbol using a mutable accumulator for O(N) performance.
     const grouped = data.stocks.reduce<Map<string, StockSignalResult[]>>(
         (acc, stock) => {
-            const bucket = acc.get(stock.sectorSymbol) ?? [];
-            return acc.set(stock.sectorSymbol, [...bucket, stock]);
+            const existing = acc.get(stock.sectorSymbol);
+            if (existing) {
+                existing.push(stock);
+            } else {
+                acc.set(stock.sectorSymbol, [stock]);
+            }
+            return acc;
         },
         new Map()
     );

@@ -60,23 +60,6 @@ export function useSectorSignalState({
 
     const data = useSectorSignals(activeTimeframe, initialData);
 
-    /**
-     * Restore sector/timeframe from URL once on mount (deep-link support).
-     * useEffectEvent reads the current searchParams at call time without making
-     * it a reactive dependency of the mount-only effect [].
-     * Default state from props is shown during SSR/hydration (Suspense fallback covers the swap).
-     */
-    const restoreFromUrl = useEffectEvent(() => {
-        const fromUrl = searchParams.get('sector');
-        if (fromUrl && SIGNAL_SECTORS.some(s => s.symbol === fromUrl))
-            setActiveSector(fromUrl);
-        const tfFromUrl = searchParams.get('timeframe');
-        if (isDashboardTimeframe(tfFromUrl)) setActiveTimeframe(tfFromUrl);
-    });
-    useEffect(() => {
-        restoreFromUrl();
-    }, []);
-
     const filtered = useMemo(
         () => filterStrictAnticipation(data.stocks),
         [data.stocks]
@@ -126,6 +109,23 @@ export function useSectorSignalState({
         },
         [updateUrl, activeSector]
     );
+
+    /**
+     * Restore sector/timeframe from URL once on mount (deep-link support).
+     * useEffectEvent reads the current searchParams at call time without making
+     * it a reactive dependency of the mount-only effect [].
+     * Default state from props is shown during SSR/hydration (Suspense fallback covers the swap).
+     */
+    const restoreFromUrl = useEffectEvent(() => {
+        const fromUrl = searchParams.get('sector');
+        if (fromUrl && SIGNAL_SECTORS.some(s => s.symbol === fromUrl))
+            setActiveSector(fromUrl);
+        const tfFromUrl = searchParams.get('timeframe');
+        if (isDashboardTimeframe(tfFromUrl)) setActiveTimeframe(tfFromUrl);
+    });
+    useEffect(() => {
+        restoreFromUrl();
+    }, []);
 
     return {
         activeSector,

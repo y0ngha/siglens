@@ -1,4 +1,8 @@
-import type { ModelId, Timeframe } from '@y0ngha/siglens-core';
+import type {
+    DashboardTimeframe,
+    ModelId,
+    Timeframe,
+} from '@y0ngha/siglens-core';
 import { MS_PER_MINUTE } from './time';
 import type { OptionsExpirationSelector } from '@/shared/lib/types';
 
@@ -86,7 +90,7 @@ export const QUERY_KEYS = {
             timeframe,
             modelId,
         ] as const,
-    sectorSignals: (timeframe: string) =>
+    sectorSignals: (timeframe: DashboardTimeframe) =>
         ['sector-signals', timeframe] as const,
     optionsSnapshot: (symbol: string) =>
         ['options-snapshot', upper(symbol)] as const,
