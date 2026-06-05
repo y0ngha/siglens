@@ -181,6 +181,19 @@ describe('getEarningsReportComparison 함수는', () => {
             );
             expect(markerStore.has('earnings:empty:XLK')).toBe(true);
         });
+
+        it('FMP가 데이터를 주면 빈 마커를 set하지 않는다', async () => {
+            const staleFetchedAt = new Date(
+                Date.now() - (EARNINGS_REPORT_STALE_MS + MS_PER_HOUR)
+            );
+            mockGetLatestFetchedAt.mockResolvedValue(staleFetchedAt);
+            mockGetComparisonItems.mockResolvedValue([COMPARISON_ITEM]);
+            mockGetEarningsReports.mockResolvedValue([COMPARISON_ITEM]);
+
+            await getEarningsReportComparison('AAPL', '2026-05-10');
+
+            expect(markerStore.has('earnings:empty:AAPL')).toBe(false);
+        });
     });
 
     describe('갱신 실패 시 기존 DB 데이터가 있으면', () => {

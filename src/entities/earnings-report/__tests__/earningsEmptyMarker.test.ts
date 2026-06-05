@@ -23,18 +23,18 @@ vi.mock('@/shared/cache/redisClient', () => ({
     getRedisClient: () => (redisEnabled ? fakeRedis : null),
 }));
 
-beforeEach(() => {
-    store.clear();
-    redisEnabled = true;
-    fakeRedis.get.mockClear();
-    fakeRedis.set.mockClear();
-});
-
-afterEach(() => {
-    vi.restoreAllMocks();
-});
-
 describe('earnings empty marker', () => {
+    beforeEach(() => {
+        store.clear();
+        redisEnabled = true;
+        fakeRedis.get.mockClear();
+        fakeRedis.set.mockClear();
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
     it('TTL 상수는 24시간(SECONDS_PER_DAY)', () => {
         expect(EARNINGS_EMPTY_MARKER_TTL_SECONDS).toBe(SECONDS_PER_DAY);
     });
@@ -62,13 +62,25 @@ describe('earnings empty marker', () => {
 
     it('redis.get throw 시 false로 degrade', async () => {
         fakeRedis.get.mockRejectedValueOnce(new Error('redis down'));
-        vi.spyOn(console, 'error').mockImplementation(() => undefined);
+        const spy = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => undefined);
         expect(await isEarningsKnownEmpty('AAPL')).toBe(false);
+        expect(spy).toHaveBeenCalledWith(
+            '[isEarningsKnownEmpty] redis get failed:',
+            expect.any(Error)
+        );
     });
 
     it('redis.set throw 시 조용히 무시(throw 안 함)', async () => {
         fakeRedis.set.mockRejectedValueOnce(new Error('redis down'));
-        vi.spyOn(console, 'error').mockImplementation(() => undefined);
+        const spy = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => undefined);
         await expect(markEarningsEmpty('AAPL')).resolves.toBeUndefined();
+        expect(spy).toHaveBeenCalledWith(
+            '[markEarningsEmpty] redis set failed:',
+            expect.any(Error)
+        );
     });
 });
