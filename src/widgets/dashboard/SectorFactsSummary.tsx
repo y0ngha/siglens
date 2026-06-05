@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import type { SectorSignalsResult } from '@y0ngha/siglens-core';
 import { buildSectorFacts } from '@/entities/sector-signal';
 
@@ -18,6 +19,11 @@ interface SectorFactsSummaryProps {
  * On a no-signal snapshot (`facts` empty) it renders a minimal sentence instead
  * of `null`, so the prerendered HTML is never text-empty for crawlers (the
  * SSR crawl-text guarantee shouldn't be data-dependent).
+ *
+ * `topSymbols` render as real `<Link href="/{symbol}">` anchors (not plain text)
+ * so this server-rendered hub page passes crawlable internal links into the
+ * per-symbol pages — the interactive `SectorSignalPanel` (CSR) is invisible to
+ * crawlers, so without these this page would ship zero server-side `/{symbol}` links.
  */
 export function SectorFactsSummary({ data }: SectorFactsSummaryProps) {
     const facts = buildSectorFacts(data);
@@ -47,7 +53,19 @@ export function SectorFactsSummary({ data }: SectorFactsSummaryProps) {
                                 {fact.bearishCount}종목
                                 {fact.topSymbols.length > 0 && (
                                     <span className="text-secondary-500 ml-2">
-                                        ({fact.topSymbols.join(', ')})
+                                        (
+                                        {fact.topSymbols.map((symbol, i) => (
+                                            <span key={symbol}>
+                                                {i > 0 && ', '}
+                                                <Link
+                                                    href={`/${symbol}`}
+                                                    className="hover:text-secondary-300 underline-offset-2 hover:underline"
+                                                >
+                                                    {symbol}
+                                                </Link>
+                                            </span>
+                                        ))}
+                                        )
                                     </span>
                                 )}
                             </dd>

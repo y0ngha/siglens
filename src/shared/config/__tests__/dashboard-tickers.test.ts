@@ -2,6 +2,7 @@ import {
     DASHBOARD_TIMEFRAME_LABELS,
     DASHBOARD_TIMEFRAMES,
     DEFAULT_DASHBOARD_TIMEFRAME,
+    isDashboardTimeframe,
     MARKET_INDICES,
     MARKET_SUMMARY_FMP_SYMBOLS,
     SECTOR_ETFS,
@@ -182,5 +183,23 @@ describe('SIGNAL_SECTORS', () => {
         const quantum = SIGNAL_SECTORS.find(s => s.symbol === 'QNTM');
         expect(quantum).toBeDefined();
         expect(quantum!.sectorName).toBe('Quantum');
+    });
+});
+
+describe('isDashboardTimeframe', () => {
+    it('(Happy) 유효한 DashboardTimeframe이면 true', () => {
+        expect(isDashboardTimeframe('15Min')).toBe(true);
+        expect(isDashboardTimeframe('1Hour')).toBe(true);
+        expect(isDashboardTimeframe('1Day')).toBe(true);
+    });
+
+    it('(Edge) 대소문자/미지원/빈값/non-string이면 false', () => {
+        expect(isDashboardTimeframe('1day')).toBe(false); // 대소문자 구분
+        expect(isDashboardTimeframe('1Week')).toBe(false); // 미지원 tf
+        expect(isDashboardTimeframe('5Min')).toBe(false);
+        expect(isDashboardTimeframe('')).toBe(false);
+        expect(isDashboardTimeframe(null)).toBe(false);
+        expect(isDashboardTimeframe(undefined)).toBe(false);
+        expect(isDashboardTimeframe(123)).toBe(false);
     });
 });
