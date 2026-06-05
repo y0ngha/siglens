@@ -1,6 +1,12 @@
 'use client';
 
-import { useCallback, useMemo, useState } from 'react';
+import {
+    useCallback,
+    useEffect,
+    useEffectEvent,
+    useMemo,
+    useState,
+} from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import type {
     DashboardTimeframe,
@@ -10,6 +16,7 @@ import type {
 } from '@y0ngha/siglens-core';
 import {
     DEFAULT_DASHBOARD_TIMEFRAME,
+    isDashboardTimeframe,
     SIGNAL_SECTORS,
 } from '@/shared/config/dashboard-tickers';
 import {
@@ -18,11 +25,16 @@ import {
     groupStockIntoQuadrants,
     resolveConflicts,
 } from '@/entities/analysis';
+import { useSectorSignals } from './useSectorSignals';
 
 interface UseSectorSignalStateOptions {
-    data: SectorSignalsResult;
     initialSector: string;
     initialTimeframe: DashboardTimeframe;
+    /**
+     * SSR seed for the default timeframe. SectorSignalsResult에 timeframe 필드가
+     * 없으므로 useSectorSignals는 DEFAULT_DASHBOARD_TIMEFRAME일 때만 seed를 쓴다.
+     */
+    initialData?: SectorSignalsResult;
 }
 
 interface UseSectorSignalStateReturn {
@@ -35,16 +47,18 @@ interface UseSectorSignalStateReturn {
 }
 
 export function useSectorSignalState({
-    data,
     initialSector,
     initialTimeframe,
+    initialData,
 }: UseSectorSignalStateOptions): UseSectorSignalStateReturn {
     const [activeSector, setActiveSector] = useState(initialSector);
-    const [activeTimeframe, setActiveTimeframe] = useState(initialTimeframe);
-
+    const [activeTimeframe, setActiveTimeframe] =
+        useState<DashboardTimeframe>(initialTimeframe);
     const router = useRouter();
     const pathname = usePathname();
     const searchParams = useSearchParams();
+
+    const data = useSectorSignals(activeTimeframe, initialData);
 
     const filtered = useMemo(
         () => filterStrictAnticipation(data.stocks),
@@ -95,6 +109,23 @@ export function useSectorSignalState({
         },
         [updateUrl, activeSector]
     );
+
+    /**
+     * Restore sector/timeframe from URL once on mount (deep-link support).
+     * useEffectEvent reads the current searchParams at call time without making
+     * it a reactive dependency of the mount-only effect [].
+     * Default state from props is shown during SSR/hydration (Suspense fallback covers the swap).
+     */
+    const restoreFromUrl = useEffectEvent(() => {
+        const fromUrl = searchParams.get('sector');
+        if (fromUrl && SIGNAL_SECTORS.some(s => s.symbol === fromUrl))
+            setActiveSector(fromUrl);
+        const tfFromUrl = searchParams.get('timeframe');
+        if (isDashboardTimeframe(tfFromUrl)) setActiveTimeframe(tfFromUrl);
+    });
+    useEffect(() => {
+        restoreFromUrl();
+    }, []);
 
     return {
         activeSector,

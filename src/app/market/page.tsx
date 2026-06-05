@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import type { ReactElement } from 'react';
 import { Suspense } from 'react';
 import {
     dehydrate,
@@ -7,14 +8,14 @@ import {
 } from '@tanstack/react-query';
 import { MarketSummaryPanel } from '@/widgets/dashboard/MarketSummaryPanel';
 import { MarketSummaryPanelSkeleton } from '@/widgets/dashboard/MarketSummaryPanelSkeleton';
+import { SectorFactsSummary } from '@/widgets/dashboard';
 import { SectorSignalPanel } from '@/widgets/dashboard/SectorSignalPanel';
 import { SectorSignalPanelSkeleton } from '@/widgets/dashboard/SectorSignalPanelSkeleton';
 import { SignalTypeGuide } from '@/widgets/dashboard/SignalTypeGuide';
-import { getSectorSignalsAction } from '@/entities/sector-signal/actions';
-import { getMarketSummaryAction } from '@/entities/market-summary/actions';
-import type { DashboardTimeframe } from '@y0ngha/siglens-core';
+import { getMarketSummaryStatic } from '@/entities/market-summary/api/marketSummaryStaticCache';
+import { peekBriefingStatic } from '@/entities/market-summary/api/briefingStaticCache';
+import { getSectorSignalsStatic } from '@/entities/sector-signal/api/sectorSignalsStaticCache';
 import {
-    DASHBOARD_TIMEFRAMES,
     DEFAULT_DASHBOARD_TIMEFRAME,
     SIGNAL_SECTORS,
 } from '@/shared/config/dashboard-tickers';
@@ -27,6 +28,15 @@ import {
 } from '@/shared/lib/seo';
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
 import { JsonLd } from '@/shared/ui/JsonLd';
+
+// 1h — ISR (literal required — importing a constant breaks Next's static analysis, see src/app/CLAUDE.md)
+export const revalidate = 3600;
+
+/**
+ * 'YYYY-MM-DDTHH' prefix length — used to bucket ISR renders into 1-hour date-hour keys.
+ * Mirrors ISO_DATE_HOUR_PREFIX_LENGTH in @y0ngha/siglens-core (internal, not exported) — must stay in sync.
+ */
+const ISO_DATE_HOUR_SLICE_END = 13;
 
 // Root layout template appends "| Siglens" — exclude brand name to prevent duplication.
 const MARKET_TITLE = '오늘의 미국 주식, 섹터별 기술적 신호';
@@ -49,11 +59,6 @@ const MARKET_KEYWORDS = [
     'RSI 다이버전스',
     '볼린저 스퀴즈',
 ];
-
-interface SearchParams {
-    sector?: string;
-    timeframe?: string;
-}
 
 export async function generateMetadata(): Promise<Metadata> {
     return {
@@ -88,71 +93,62 @@ export async function generateMetadata(): Promise<Metadata> {
     };
 }
 
-function isDashboardTimeframe(v: string | undefined): v is DashboardTimeframe {
-    return (
-        v !== undefined &&
-        (DASHBOARD_TIMEFRAMES as readonly string[]).includes(v)
+/**
+ * ISR-safe market content. No searchParams — timeframe/sector are purely
+ * client-side via useSearchParams in SectorSignalPanel (CSR).
+ *
+ * Static data flow:
+ *   1. getMarketSummaryStatic / getSectorSignalsStatic — unstable_cache (1h)
+ *   2. peekBriefingStatic — read cached briefing for SSR seed (no side effects)
+ *   3. QueryClient.setQueryData — seeds React Query for instant hydration
+ *   4. SectorFactsSummary — SSR crawl text (axis 2: useSearchParams bailout workaround)
+ */
+export async function MarketContent(): Promise<ReactElement> {
+    // ISR date-hour key: same hour = same cached briefing peek. Avoids hashing
+    // the full summary object on every ISR render.
+    const dateHour = new Date().toISOString().slice(0, ISO_DATE_HOUR_SLICE_END);
+
+    const summary = await getMarketSummaryStatic();
+    const sectorData = await getSectorSignalsStatic(
+        DEFAULT_DASHBOARD_TIMEFRAME
     );
-}
-
-interface SectorSignalSectionProps {
-    initialSector: string;
-    initialTimeframe: DashboardTimeframe;
-}
-
-async function SectorSignalSection({
-    initialSector,
-    initialTimeframe,
-}: SectorSignalSectionProps) {
-    const data = await getSectorSignalsAction(initialTimeframe);
-    return (
-        <SectorSignalPanel
-            data={data}
-            initialSector={initialSector}
-            initialTimeframe={initialTimeframe}
-        />
+    // peekBriefingStatic is read-only — null on cache miss (client will trigger submit)
+    const peekSeed = await peekBriefingStatic(summary, dateHour).catch(
+        () => null
     );
-}
 
-interface MarketPageProps {
-    searchParams: Promise<SearchParams>;
-}
-
-// Awaits searchParams (dynamic) and prefetches market data — must be inside Suspense for PPR.
-async function MarketContent({ searchParams }: MarketPageProps) {
-    const params = await searchParams;
-    const initialTimeframe: DashboardTimeframe = isDashboardTimeframe(
-        params.timeframe
-    )
-        ? params.timeframe
-        : DEFAULT_DASHBOARD_TIMEFRAME;
-    const fallbackSector = SIGNAL_SECTORS[0].symbol;
-    const initialSector =
-        params.sector !== undefined &&
-        SIGNAL_SECTORS.some(e => e.symbol === params.sector)
-            ? params.sector
-            : fallbackSector;
-
+    // Seed React Query so client-side hydration skips the first network round-trip
     const queryClient = new QueryClient();
-    await queryClient.prefetchQuery({
-        queryKey: QUERY_KEYS.marketSummary(),
-        queryFn: () => getMarketSummaryAction(),
-    });
+    queryClient.setQueryData(QUERY_KEYS.marketSummary(), { summary });
+    queryClient.setQueryData(
+        QUERY_KEYS.sectorSignals(DEFAULT_DASHBOARD_TIMEFRAME),
+        sectorData
+    );
 
     return (
         <>
             <HydrationBoundary state={dehydrate(queryClient)}>
                 <Suspense fallback={<MarketSummaryPanelSkeleton />}>
-                    <MarketSummaryPanel />
+                    <MarketSummaryPanel peekSeed={peekSeed} />
                 </Suspense>
             </HydrationBoundary>
             <Suspense
-                key={initialTimeframe}
-                fallback={<SectorSignalPanelSkeleton />}
+                fallback={
+                    <>
+                        {/* Axis 2: SSR crawl text while SectorSignalPanel (CSR) hydrates.
+                            SectorSignalPanel uses useSearchParams → CSR bailout → empty SSR HTML.
+                            SectorFactsSummary renders the same data as static server-rendered text
+                            so crawlers see actual signal content without JS. Not cloaking — users
+                            see the same data once JS loads. */}
+                        <SectorFactsSummary data={sectorData} />
+                        <SectorSignalPanelSkeleton />
+                    </>
+                }
             >
-                <SectorSignalSection
-                    initialSector={initialSector}
-                    initialTimeframe={initialTimeframe}
+                <SectorSignalPanel
+                    initialSector={SIGNAL_SECTORS[0].symbol}
+                    initialTimeframe={DEFAULT_DASHBOARD_TIMEFRAME}
+                    initialData={sectorData}
                 />
             </Suspense>
             <SignalTypeGuide />
@@ -160,7 +156,7 @@ async function MarketContent({ searchParams }: MarketPageProps) {
     );
 }
 
-export default function MarketPage({ searchParams }: MarketPageProps) {
+export default function MarketPage() {
     const jsonLd = {
         '@context': 'https://schema.org',
         '@type': 'WebPage',
@@ -211,7 +207,7 @@ export default function MarketPage({ searchParams }: MarketPageProps) {
                         </>
                     }
                 >
-                    <MarketContent searchParams={searchParams} />
+                    <MarketContent />
                 </Suspense>
             </main>
         </>

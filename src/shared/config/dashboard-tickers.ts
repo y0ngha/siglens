@@ -157,6 +157,17 @@ export const DASHBOARD_TIMEFRAMES: readonly DashboardTimeframe[] = [
 
 export const DEFAULT_DASHBOARD_TIMEFRAME: DashboardTimeframe = '1Day';
 
+/** Type guard — returns true if `value` is a valid `DashboardTimeframe`. */
+export function isDashboardTimeframe(
+    value: unknown
+): value is DashboardTimeframe {
+    // The `as DashboardTimeframe` cast is safe here: the `.includes()` membership check
+    // is the actual runtime validation. The cast only satisfies TypeScript's strict
+    // `Array<T>.includes(searchElement: T)` parameter type — it does not bypass any
+    // runtime check or assume the input is already a valid timeframe.
+    return DASHBOARD_TIMEFRAMES.includes(value as DashboardTimeframe);
+}
+
 export const DASHBOARD_TIMEFRAME_LABELS: Record<DashboardTimeframe, string> = {
     '15Min': '15분',
     '1Hour': '1시간',

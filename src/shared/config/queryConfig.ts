@@ -1,4 +1,8 @@
-import type { ModelId, Timeframe } from '@y0ngha/siglens-core';
+import type {
+    DashboardTimeframe,
+    ModelId,
+    Timeframe,
+} from '@y0ngha/siglens-core';
 import { MS_PER_MINUTE } from './time';
 import type { OptionsExpirationSelector } from '@/shared/lib/types';
 
@@ -8,6 +12,9 @@ export const QUERY_GC_TIME_MS = 300_000;
 
 /** Market summary refreshes during U.S. market hours; 1 minute fits FMP free-tier rate limits. */
 export const MARKET_SUMMARY_STALE_TIME_MS = MS_PER_MINUTE;
+
+/** Sector signals share the same market-hours cadence as the market summary. */
+export const SECTOR_SIGNALS_STALE_TIME_MS = MS_PER_MINUTE;
 
 /** FMP ticker catalogue updates daily; 5 min avoids re-querying during a typing session. */
 export const TICKER_SEARCH_STALE_TIME_MS = 5 * MS_PER_MINUTE;
@@ -53,6 +60,7 @@ export const QUERY_KEYS = {
     assetInfo: (symbol: string) => ['asset-info', upper(symbol)] as const,
     briefing: (jobId: string) => ['briefing', jobId] as const,
     marketSummary: () => ['market-summary'] as const,
+    marketBriefing: () => ['market-briefing'] as const,
     currentUser: () => ['current-user'] as const,
     userTier: () => ['user-tier'] as const,
     remainingTokens: () => ['chat', 'remaining-tokens'] as const,
@@ -82,6 +90,8 @@ export const QUERY_KEYS = {
             timeframe,
             modelId,
         ] as const,
+    sectorSignals: (timeframe: DashboardTimeframe) =>
+        ['sector-signals', timeframe] as const,
     optionsSnapshot: (symbol: string) =>
         ['options-snapshot', upper(symbol)] as const,
     /**

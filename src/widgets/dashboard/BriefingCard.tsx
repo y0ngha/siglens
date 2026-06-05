@@ -82,19 +82,24 @@ export function BriefingCard({ briefing, generatedAt }: BriefingCardProps) {
                 <p className="text-secondary-500 text-xs">{riskSentiment}</p>
             )}
 
-            <p className="text-secondary-600 text-xs">
-                {/* timeZone을 'Asia/Seoul'로 고정해 SSR(Node 서버)와 CSR(브라우저)
-                    사이 timezone mismatch로 인한 hydration 오류를 막는다. 본
-                    프로덕트는 한국어 사용자 대상이라 KST 표기가 의미에도 부합. */}
-                {new Date(generatedAt).toLocaleString('ko-KR', {
-                    timeZone: 'Asia/Seoul',
-                    month: 'long',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                })}{' '}
-                기준
-            </p>
+            {/* peek seed는 generatedAt이 빈 문자열이라 new Date('') = Invalid Date.
+                BriefingCard는 action 응답으로 교체되기 전까지 타임스탬프 줄을
+                숨겨 "Invalid Date 기준"이 노출되는 것을 막는다. */}
+            {generatedAt && !Number.isNaN(new Date(generatedAt).getTime()) && (
+                <p className="text-secondary-600 text-xs">
+                    {/* timeZone을 'Asia/Seoul'로 고정해 SSR(Node 서버)와 CSR(브라우저)
+                        사이 timezone mismatch로 인한 hydration 오류를 막는다. 본
+                        프로덕트는 한국어 사용자 대상이라 KST 표기가 의미에도 부합. */}
+                    {new Date(generatedAt).toLocaleString('ko-KR', {
+                        timeZone: 'Asia/Seoul',
+                        month: 'long',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                    })}{' '}
+                    기준
+                </p>
+            )}
         </div>
     );
 }

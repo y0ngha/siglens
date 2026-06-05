@@ -1,1 +1,2 @@
-export { getMarketSummaryAction } from './actions/getMarketSummaryAction';
+export { getMarketSummaryClientAction } from './actions/getMarketSummaryClientAction';
+export { submitMarketBriefingAction } from './actions/submitMarketBriefingAction';

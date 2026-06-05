@@ -1,5 +1,6 @@
 // dashboard widget barrel — public API for external consumers.
 
+export { SectorFactsSummary } from './SectorFactsSummary';
 export { MarketSummaryPanel } from './MarketSummaryPanel';
 export { MarketSummaryPanelSkeleton } from './MarketSummaryPanelSkeleton';
 export { SectorSignalPanel } from './SectorSignalPanel';
