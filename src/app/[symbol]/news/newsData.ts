@@ -3,7 +3,9 @@ import { getDatabaseClient } from '@/shared/db/client';
 import { DrizzleNewsRepository } from '@/entities/news-article';
 import {
     DrizzleEarningsReportsRepository,
+    isEarningsKnownEmpty,
     isEarningsReportStale,
+    markEarningsEmpty,
 } from '@/entities/earnings-report';
 import { getFundamentalDataProvider } from '@/shared/api/fmp/getFundamentalDataProvider';
 import {
@@ -46,13 +48,18 @@ export async function getEarningsReportComparison(
         repo.getComparisonItems(symbol, today),
     ]);
 
-    if (isEarningsReportStale(fetchedAt, Date.now())) {
+    if (
+        isEarningsReportStale(fetchedAt, Date.now()) &&
+        !(await isEarningsKnownEmpty(symbol))
+    ) {
         try {
             const reports = await fundamentalClient.getEarningsReports(
                 symbol,
                 EARNINGS_REPORT_FMP_LIMIT
             );
             await repo.upsertMany(reports);
+            // FMP가 빈 응답(데이터 없는 심볼)을 주면 TTL 동안 재호출을 막는다(#567).
+            if (reports.length === 0) await markEarningsEmpty(symbol);
         } catch (error: unknown) {
             logFmpPaymentRequiredError(error);
             if (

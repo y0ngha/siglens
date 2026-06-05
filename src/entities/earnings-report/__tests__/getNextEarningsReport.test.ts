@@ -23,6 +23,22 @@ vi.mock('@/shared/lib/dateKey', () => ({
     todayKstIsoDate: () => '2026-05-25',
 }));
 
+const { store, fakeRedis } = vi.hoisted(() => {
+    const store = new Map<string, unknown>();
+    const fakeRedis = {
+        get: vi.fn(async (key: string) =>
+            store.has(key) ? store.get(key) : null
+        ),
+        set: vi.fn(async (key: string, value: unknown) => {
+            store.set(key, value);
+        }),
+    };
+    return { store, fakeRedis };
+});
+vi.mock('@/shared/cache/redisClient', () => ({
+    getRedisClient: () => fakeRedis,
+}));
+
 const fakeDb = {} as SiglensDatabase;
 
 // getNextEarningsReport 내부 Date.now()를 고정해 staleness 경계를 결정적으로 만든다
@@ -48,6 +64,7 @@ describe('getNextEarningsReport', () => {
     let getNextForSymbol: ReturnType<typeof vi.spyOn>;
 
     beforeEach(() => {
+        store.clear();
         vi.clearAllMocks();
         vi.spyOn(Date, 'now').mockReturnValue(NOW);
         vi.spyOn(console, 'warn').mockImplementation(() => undefined);
@@ -162,5 +179,52 @@ describe('getNextEarningsReport', () => {
         await getNextEarningsReport('TSLA', fakeDb);
 
         expect(getNextForSymbol).toHaveBeenCalledWith('TSLA', '2026-05-25');
+    });
+
+    it('빈 마커가 있으면 stale이어도 FMP를 호출하지 않는다 (cache-miss 루프 방지)', async () => {
+        store.set('earnings:empty:XLK', 1);
+        getLatestFetchedAt.mockResolvedValue(null);
+        getNextForSymbol.mockResolvedValue(null);
+
+        const result = await getNextEarningsReport('XLK', fakeDb);
+
+        expect(result).toBeNull();
+        expect(mockGetEarningsReports).not.toHaveBeenCalled();
+        expect(upsertMany).not.toHaveBeenCalled();
+    });
+
+    it('FMP가 빈 응답을 주면 빈 마커를 set한다', async () => {
+        getLatestFetchedAt.mockResolvedValue(null);
+        mockGetEarningsReports.mockResolvedValue([]);
+        getNextForSymbol.mockResolvedValue(null);
+
+        await getNextEarningsReport('XLK', fakeDb);
+
+        expect(mockGetEarningsReports).toHaveBeenCalledWith(
+            'XLK',
+            EARNINGS_REPORT_FMP_LIMIT
+        );
+        expect(store.has('earnings:empty:XLK')).toBe(true);
+    });
+
+    it('FMP가 데이터를 주면 빈 마커를 set하지 않는다', async () => {
+        getLatestFetchedAt.mockResolvedValue(null);
+        mockGetEarningsReports.mockResolvedValue([
+            {
+                symbol: 'AAPL',
+                earningsDate: '2026-07-30',
+                epsActual: null,
+                epsEstimated: 1.86,
+                revenueActual: null,
+                revenueEstimated: 107_618_800_000,
+                lastUpdated: '2026-05-10',
+                rawPayload: {},
+            },
+        ]);
+        getNextForSymbol.mockResolvedValue(nextEarnings);
+
+        await getNextEarningsReport('AAPL', fakeDb);
+
+        expect(store.has('earnings:empty:AAPL')).toBe(false);
     });
 });

@@ -1,5 +1,8 @@
 import type { EarningsReportComparisonItem } from '@/shared/lib/types';
-import { EARNINGS_REPORT_STALE_MS } from '@/entities/earnings-report';
+import {
+    EARNINGS_REPORT_FMP_LIMIT,
+    EARNINGS_REPORT_STALE_MS,
+} from '@/entities/earnings-report';
 import { MS_PER_HOUR } from '@/shared/config/time';
 
 const {
@@ -54,6 +57,22 @@ vi.mock('@/shared/cache/getOrSetCache', () => ({
     ),
 }));
 
+const { markerStore, fakeRedis } = vi.hoisted(() => {
+    const markerStore = new Map<string, unknown>();
+    const fakeRedis = {
+        get: vi.fn(async (key: string) =>
+            markerStore.has(key) ? markerStore.get(key) : null
+        ),
+        set: vi.fn(async (key: string, value: unknown) => {
+            markerStore.set(key, value);
+        }),
+    };
+    return { markerStore, fakeRedis };
+});
+vi.mock('@/shared/cache/redisClient', () => ({
+    getRedisClient: () => fakeRedis,
+}));
+
 import {
     getEarningsReportComparison,
     getGradeEvents,
@@ -74,6 +93,7 @@ const COMPARISON_ITEM: EarningsReportComparisonItem = {
 
 describe('getEarningsReportComparison 함수는', () => {
     beforeEach(() => {
+        markerStore.clear();
         vi.clearAllMocks();
         mockGetLatestFetchedAt.mockResolvedValue(new Date());
         mockGetComparisonItems.mockResolvedValue([COMPARISON_ITEM]);
@@ -125,6 +145,41 @@ describe('getEarningsReportComparison 함수는', () => {
             expect(mockGetEarningsReports).toHaveBeenCalledWith('AAPL', 5);
             expect(mockUpsertMany).toHaveBeenCalledWith([COMPARISON_ITEM]);
             expect(mockGetComparisonItems).toHaveBeenCalledTimes(2);
+        });
+    });
+
+    describe('빈-응답 마커 (#567)', () => {
+        it('빈 마커가 있으면 stale이어도 FMP를 호출하지 않고 기존 비교 데이터를 반환한다', async () => {
+            markerStore.set('earnings:empty:XLK', 1);
+            const staleFetchedAt = new Date(
+                Date.now() - (EARNINGS_REPORT_STALE_MS + MS_PER_HOUR)
+            );
+            mockGetLatestFetchedAt.mockResolvedValue(staleFetchedAt);
+            mockGetComparisonItems.mockResolvedValue([COMPARISON_ITEM]);
+
+            await expect(
+                getEarningsReportComparison('XLK', '2026-05-10')
+            ).resolves.toEqual([COMPARISON_ITEM]);
+
+            expect(mockGetEarningsReports).not.toHaveBeenCalled();
+            expect(mockUpsertMany).not.toHaveBeenCalled();
+        });
+
+        it('FMP가 빈 응답을 주면 빈 마커를 set한다', async () => {
+            const staleFetchedAt = new Date(
+                Date.now() - (EARNINGS_REPORT_STALE_MS + MS_PER_HOUR)
+            );
+            mockGetLatestFetchedAt.mockResolvedValue(staleFetchedAt);
+            mockGetComparisonItems.mockResolvedValue([]);
+            mockGetEarningsReports.mockResolvedValue([]);
+
+            await getEarningsReportComparison('XLK', '2026-05-10');
+
+            expect(mockGetEarningsReports).toHaveBeenCalledWith(
+                'XLK',
+                EARNINGS_REPORT_FMP_LIMIT
+            );
+            expect(markerStore.has('earnings:empty:XLK')).toBe(true);
         });
     });
 
