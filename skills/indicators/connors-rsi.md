@@ -1,6 +1,6 @@
 ---
 name: Connors RSI Signal Guide
-description: Connors RSI(3,2,100) 신호 해석 가이드 — <10/>90 극단, 단기 평균 회귀 풀백 품질, 청산 게이지
+description: Connors RSI(3,2,100) 신호 해석 가이드 — 10 미만 / 90 초과 극단, 단기 평균 회귀 풀백 품질, 청산 게이지
 type: indicator_guide
 indicators: ['connorsRsi']
 confidence_weight: 0.4

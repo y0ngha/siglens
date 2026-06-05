@@ -218,11 +218,20 @@ const _signalKindsAreExhaustive: MissingSignalKind extends never
     : never = true;
 void _signalKindsAreExhaustive;
 
-// Duplicated as `STATE_FEATURES` / `STATE_PREDICATE_KINDS` in
-// scripts/validate-skills.ts — the CI validator is a build script and can't
-// import from app `src/`, so the lists are kept in sync by hand. Update both
-// when the core's SkillStateFeature / SkillStatePredicateKind unions change
-// (the `satisfies` clause fails the build here if this copy drifts).
+/**
+ * Mirror of `STATE_FEATURES` / `STATE_PREDICATE_KINDS` in
+ * scripts/validate-skills.ts. These two must stay in sync — when siglens-core's
+ * SkillStateFeature / SkillStatePredicateKind union gains a member, update BOTH.
+ * (src/ is the runtime parser; scripts/ is a build-time validator that can't
+ * import from app `src/` — no shared import. The `satisfies` clause +
+ * exhaustiveness guards below fail the build here if this copy drifts.)
+ *
+ * Note: `chandelier` and `ewma` are siglens-core's canonical `SkillStateFeature`
+ * gating keys (short form) — deliberately distinct from the
+ * `chandelierExit` / `ewmaVolatility` IndicatorResult field names. The
+ * `satisfies readonly SkillStateFeature[]` check below enforces these exact
+ * keys, so do not rename them to match the IndicatorResult fields.
+ */
 const SKILL_STATE_FEATURES = [
     'bollinger',
     'keltner',
@@ -275,11 +284,17 @@ const _predicateKindsAreExhaustive: MissingPredicateKind extends never
     : never = true;
 void _predicateKindsAreExhaustive;
 
-// (feature, predicate) pairs the core's `isStateNotable` actually evaluates;
-// any other pairing returns `false` for every chart, so the gated skill is
-// unreachable. Validating the pair here (not just each half) keeps the runtime
-// parser fail-open robust instead of leaning on the CI validator alone.
-// Mirrors `VALID_STATE_PAIRS` in scripts/validate-skills.ts — keep both in sync.
+/**
+ * (feature, predicate) pairs the core's `isStateNotable` actually evaluates;
+ * any other pairing returns `false` for every chart, so the gated skill is
+ * unreachable. Validating the pair here (not just each half) keeps the runtime
+ * parser fail-open robust instead of leaning on the CI validator alone.
+ *
+ * Mirror of `VALID_STATE_PAIRS` in scripts/validate-skills.ts. These two must
+ * stay in sync — when the core's set of evaluated (feature, predicate) pairs
+ * changes, update BOTH. (src/ is the runtime parser; scripts/ is a build-time
+ * validator — no shared import.)
+ */
 const VALID_STATE_PAIRS = new Set<string>([
     'bollinger:pctB',
     'keltner:bandDistAtr',

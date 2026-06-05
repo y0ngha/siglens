@@ -140,6 +140,27 @@ describe('getBarsAction 함수는', () => {
                 '^SPX'
             );
         });
+
+        it('Phase 3 프로 보조지표 12개 필드를 그대로 반환한다', async () => {
+            mockFetchBarsWithIndicators.mockResolvedValueOnce(mockBarsData);
+
+            const result = await getBarsAction('AAPL', '1Day');
+
+            expect(result.indicators).toMatchObject({
+                macdV: expect.any(Array),
+                connorsRsi: expect.any(Array),
+                forceIndex: expect.any(Array),
+                elderRay: expect.any(Array),
+                elderImpulse: expect.any(Array),
+                bollingerDerived: expect.any(Array),
+                chandelierExit: expect.any(Array),
+                yangZhang: expect.any(Array),
+                ewmaVolatility: expect.any(Array),
+                hurst: expect.any(Array),
+                varianceRatio: expect.any(Array),
+                regression: expect.any(Array),
+            });
+        });
     });
 
     describe('fetchBarsWithIndicators가 에러를 던질 때', () => {

@@ -3,11 +3,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { MS_PER_MINUTE } from '@/shared/config/time';
 
+const PRO_INDICATOR_COUNT = 30;
+const SKILL_COUNT = 60;
+
 export const ANALYSIS_PHASES = [
     '시장 데이터 정렬 중',
-    '30개 이상의 보조지표 시그널 분석 중',
+    `${PRO_INDICATOR_COUNT}개 이상의 보조지표 시그널 분석 중`,
     '캔들 패턴 및 차트 패턴 탐지 중',
-    '60개 이상의 스킬을 조합하여 시그널 매칭 중',
+    `${SKILL_COUNT}개 이상의 스킬을 조합하여 시그널 매칭 중`,
     '매수·매도 전략 및 리스크 평가 중',
     'AI 종합 해석 작성 중',
 ] as const;
@@ -15,7 +18,7 @@ export const ANALYSIS_PHASES = [
 const PHASE_INTERVAL_MS = MS_PER_MINUTE;
 
 export const ANALYSIS_TIPS = [
-    '30개 이상의 보조지표와 60개 이상의 스킬을 조합해 분석합니다.',
+    `${PRO_INDICATOR_COUNT}개 이상의 보조지표와 ${SKILL_COUNT}개 이상의 스킬을 조합해 분석합니다.`,
     'AI 분석은 보통 5분 정도 걸려요. 길어지면 최대 15분까지 걸릴 수 있어요.',
     '화면을 띄워 놓고 다른 작업을 하셔도 됩니다. 분석이 완료되면 자동으로 결과가 표시돼요.',
     'RSI, MACD, 볼린저 밴드 등 보조지표의 시그널을 종합하여 추세를 판단하고 있어요.',
