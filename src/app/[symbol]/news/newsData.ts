@@ -3,7 +3,10 @@ import { getDatabaseClient } from '@/shared/db/client';
 import { DrizzleNewsRepository } from '@/entities/news-article';
 import {
     DrizzleEarningsReportsRepository,
+    EARNINGS_REPORT_FMP_LIMIT,
+    isEarningsKnownEmpty,
     isEarningsReportStale,
+    markEarningsEmpty,
 } from '@/entities/earnings-report';
 import { getFundamentalDataProvider } from '@/shared/api/fmp/getFundamentalDataProvider';
 import {
@@ -21,7 +24,6 @@ import type { EarningsReportComparisonItem } from '@/shared/lib/types';
 // per-request memoization을 적용해 DB/FMP 중복 조회를 막는다. cross-request 캐싱은
 // 손실 — 이슈 #439 참조.
 const fundamentalClient = getFundamentalDataProvider();
-const EARNINGS_REPORT_FMP_LIMIT = 5;
 
 export const getNewsList = cache(async (symbol: string): Promise<NewsRow[]> => {
     const { db } = getDatabaseClient();
@@ -46,13 +48,22 @@ export async function getEarningsReportComparison(
         repo.getComparisonItems(symbol, today),
     ]);
 
-    if (isEarningsReportStale(fetchedAt, Date.now())) {
+    if (
+        isEarningsReportStale(fetchedAt, Date.now()) &&
+        !(await isEarningsKnownEmpty(symbol))
+    ) {
         try {
             const reports = await fundamentalClient.getEarningsReports(
                 symbol,
                 EARNINGS_REPORT_FMP_LIMIT
             );
             await repo.upsertMany(reports);
+            // FMP가 빈 응답(데이터 없는 심볼)을 주면 TTL 동안 재호출을 막고(#567),
+            // upsert로 DB가 바뀌지 않았으므로 재조회 없이 기존 비교 데이터를 반환한다.
+            if (reports.length === 0) {
+                await markEarningsEmpty(symbol);
+                return comparisonItems;
+            }
         } catch (error: unknown) {
             logFmpPaymentRequiredError(error);
             if (

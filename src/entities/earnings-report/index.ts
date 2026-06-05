@@ -1,8 +1,11 @@
 export {
     DrizzleEarningsReportsRepository,
+    EARNINGS_EMPTY_MARKER_TTL_SECONDS,
     EARNINGS_REPORT_FMP_LIMIT,
     dedupeEarningsReportInputs,
     getNextEarningsReport,
+    isEarningsKnownEmpty,
+    markEarningsEmpty,
     toComparisonItems,
     type EarningsReportUpsertInput,
 } from './api';
