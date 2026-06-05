@@ -22,6 +22,7 @@ import {
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
 import {
     buildBreadcrumbJsonLd,
+    clampSeoDescription,
     ROOT_KEYWORDS,
     SITE_NAME,
     SITE_URL,
@@ -41,8 +42,12 @@ const ISO_DATE_HOUR_SLICE_END = 13;
 // Root layout template appends "| Siglens" — exclude brand name to prevent duplication.
 const MARKET_TITLE = '오늘의 미국 주식, 섹터별 기술적 신호';
 const MARKET_FULL_TITLE = `${MARKET_TITLE} | ${SITE_NAME}`;
-const MARKET_DESCRIPTION =
-    '오늘 미국 주식 시장이 어떻게 움직였는지 11개 섹터로 나눠 보여줍니다. AI 반도체, 빅테크, 헬스케어, 핀테크 같은 섹터에서 골든크로스, RSI 다이버전스, 볼린저 스퀴즈 신호가 잡힌 종목을 추리고, 누르면 해당 종목의 AI 분석으로 넘어갑니다.';
+// clampSeoDescription으로 SEO_DESCRIPTION_MAX_LENGTH(120자)를 출력단에서 강제 — 한글 SERP
+// 절단 방지 + 향후 텍스트 수정 시 한도 초과 drift 차단(MISTAKES §15). 현재 100자라 no-op.
+// 섹터 개수는 표기하지 않는다(11 GICS ETF + 양자 테마라 단일 숫자가 모호 → ItemList도 동일 정책).
+const MARKET_DESCRIPTION = clampSeoDescription(
+    '오늘 미국 주식 시장을 섹터별로 나눠 봅니다. AI 반도체·빅테크·헬스케어 등에서 골든크로스, RSI 다이버전스, 볼린저 스퀴즈 신호가 잡힌 종목을 추려 AI 분석으로 연결합니다.'
+);
 const MARKET_URL = `${SITE_URL}/market`;
 const MARKET_KEYWORDS = [
     ...ROOT_KEYWORDS,
@@ -172,17 +177,19 @@ export default function MarketPage() {
         { name: '시장 현황', url: MARKET_URL },
     ]);
 
-    // ItemList 항목 URL은 ?sector= 변형이 아닌 canonical /market으로 통일한다.
-    // 섹터 식별자는 ListItem 내 name 필드(괄호 안 sector.symbol)에 표기한다.
+    // ItemList 항목에는 url을 두지 않는다 — 모든 항목이 동일 /market을 가리키면
+    // (변형 ?sector=는 비-canonical) 구조화데이터로서 가치가 낮고 sitelink 후보에서
+    // 불리하다. 섹터/심볼 식별은 ListItem name(괄호 안 sector.symbol)으로 표기하며,
+    // 실제 크롤 가능 딥링크(→ /{symbol})는 MarketSummaryPanel 섹터 카드가 제공한다.
+    // name도 개수를 표기하지 않는다(11 GICS ETF + 양자 테마 = 12 항목이라 "11개"는 부정확).
     const itemListJsonLd = {
         '@context': 'https://schema.org',
         '@type': 'ItemList',
-        name: '미국 주식 11개 섹터 신호 스캐너',
+        name: '미국 주식 섹터·테마별 신호 스캐너',
         itemListElement: SIGNAL_SECTORS.map((sector, idx) => ({
             '@type': 'ListItem',
             position: idx + 1,
             name: `${sector.koreanName} (${sector.sectorName} · ${sector.symbol})`,
-            url: MARKET_URL,
         })),
     };
 

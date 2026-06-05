@@ -58,7 +58,7 @@ describe('getSectorSignalsStatic', () => {
         expect(mockGetCachedSectorSignals).toHaveBeenCalledTimes(1);
     });
 
-    it('(Happy) unstable_cache opts: revalidate=3600, tags=[market-summary]', async () => {
+    it('(Happy) unstable_cache opts: revalidate=3600, tags=[sector:signals]', async () => {
         mockGetCachedSectorSignals.mockResolvedValue(sampleResult);
 
         await getSectorSignalsStatic('1Hour');
@@ -67,7 +67,7 @@ describe('getSectorSignalsStatic', () => {
             (globalThis as Record<string, unknown>).__lastUnstableCacheOpts
         ).toEqual({
             revalidate: SECONDS_PER_HOUR,
-            tags: ['market-summary'],
+            tags: ['sector:signals'],
         });
     });
 

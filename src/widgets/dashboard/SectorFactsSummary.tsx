@@ -15,11 +15,12 @@ interface SectorFactsSummaryProps {
  * When JS hydrates, `SectorSignalPanel` takes over with the interactive UI.
  * Both render the same factual data → no cloaking.
  *
- * Returns `null` when there are no signals (avoids an empty section in HTML).
+ * On a no-signal snapshot (`facts` empty) it renders a minimal sentence instead
+ * of `null`, so the prerendered HTML is never text-empty for crawlers (the
+ * SSR crawl-text guarantee shouldn't be data-dependent).
  */
 export function SectorFactsSummary({ data }: SectorFactsSummaryProps) {
     const facts = buildSectorFacts(data);
-    if (facts.length === 0) return null;
 
     return (
         <section
@@ -29,24 +30,31 @@ export function SectorFactsSummary({ data }: SectorFactsSummaryProps) {
             <h2 className="text-secondary-200 mb-6 text-sm font-semibold tracking-[0.15em] uppercase">
                 섹터별 신호 모아보기
             </h2>
-            <dl className="text-secondary-300 flex flex-col gap-4 text-sm">
-                {facts.map(fact => (
-                    <div key={fact.sectorSymbol}>
-                        <dt className="text-secondary-400 mb-1 font-medium">
-                            {fact.sectorSymbol}
-                        </dt>
-                        <dd>
-                            상승 신호 {fact.bullishCount}종목, 하락 신호{' '}
-                            {fact.bearishCount}종목
-                            {fact.topSymbols.length > 0 && (
-                                <span className="text-secondary-500 ml-2">
-                                    ({fact.topSymbols.join(', ')})
-                                </span>
-                            )}
-                        </dd>
-                    </div>
-                ))}
-            </dl>
+            {facts.length === 0 ? (
+                <p className="text-secondary-300 text-sm">
+                    현재 기술적 신호가 잡힌 종목이 없습니다. 잠시 후 다시 확인해
+                    보세요.
+                </p>
+            ) : (
+                <dl className="text-secondary-300 flex flex-col gap-4 text-sm">
+                    {facts.map(fact => (
+                        <div key={fact.sectorSymbol}>
+                            <dt className="text-secondary-400 mb-1 font-medium">
+                                {fact.sectorSymbol}
+                            </dt>
+                            <dd>
+                                상승 신호 {fact.bullishCount}종목, 하락 신호{' '}
+                                {fact.bearishCount}종목
+                                {fact.topSymbols.length > 0 && (
+                                    <span className="text-secondary-500 ml-2">
+                                        ({fact.topSymbols.join(', ')})
+                                    </span>
+                                )}
+                            </dd>
+                        </div>
+                    ))}
+                </dl>
+            )}
         </section>
     );
 }

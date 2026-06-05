@@ -1,5 +1,11 @@
 import { render, screen } from '@testing-library/react';
 import { SectorSignalPanel } from '@/widgets/dashboard/SectorSignalPanel';
+import type { SectorSignalsResult } from '@y0ngha/siglens-core';
+
+// spy로 두어 initialData/initialSector/initialTimeframe가 훅으로 전달되는지(panel 배선) 검증.
+const { mockUseSectorSignalState } = vi.hoisted(() => ({
+    mockUseSectorSignalState: vi.fn(),
+}));
 
 const mockReturn = {
     activeSector: 'XLK',
@@ -16,7 +22,7 @@ const mockReturn = {
 };
 
 vi.mock('@/widgets/dashboard/hooks/useSectorSignalState', () => ({
-    useSectorSignalState: () => mockReturn,
+    useSectorSignalState: mockUseSectorSignalState,
 }));
 
 vi.mock('@/widgets/dashboard/SectorTabs', () => ({
@@ -34,6 +40,11 @@ vi.mock('@/widgets/dashboard/SignalSubsection', () => ({
 }));
 
 describe('SectorSignalPanel', () => {
+    beforeEach(() => {
+        mockUseSectorSignalState.mockReset();
+        mockUseSectorSignalState.mockReturnValue(mockReturn);
+    });
+
     it('renders the section heading', () => {
         render(
             <SectorSignalPanel initialSector="XLK" initialTimeframe="1Day" />
@@ -66,5 +77,24 @@ describe('SectorSignalPanel', () => {
         );
         const panel = screen.getByRole('tabpanel');
         expect(panel).toHaveAttribute('aria-labelledby', 'sector-tab-XLK');
+    });
+
+    it('initialData/initialSector/initialTimeframe를 useSectorSignalState로 전달한다', () => {
+        const initialData: SectorSignalsResult = {
+            computedAt: '2026-06-04T00:00:00Z',
+            stocks: [],
+        };
+        render(
+            <SectorSignalPanel
+                initialSector="XLF"
+                initialTimeframe="1Hour"
+                initialData={initialData}
+            />
+        );
+        expect(mockUseSectorSignalState).toHaveBeenCalledWith({
+            initialSector: 'XLF',
+            initialTimeframe: '1Hour',
+            initialData,
+        });
     });
 });

@@ -34,11 +34,14 @@ function makeResult(stocks: StockSignalResult[]): SectorSignalsResult {
 }
 
 describe('SectorFactsSummary', () => {
-    it('(Happy) 빈 stocks → null (DOM 비어 있음)', () => {
-        const { container } = render(
-            <SectorFactsSummary data={makeResult([])} />
-        );
-        expect(container).toBeEmptyDOMElement();
+    it('(Happy) 빈 stocks → 섹션 + 빈-신호 안내 텍스트를 렌더한다 (크롤 텍스트 보장)', () => {
+        render(<SectorFactsSummary data={makeResult([])} />);
+        expect(
+            screen.getByRole('region', { name: '섹터별 신호 요약' })
+        ).toBeInTheDocument();
+        expect(
+            screen.getByText(/현재 기술적 신호가 잡힌 종목이 없습니다/)
+        ).toBeInTheDocument();
     });
 
     it('(Happy) 섹터별 신호 요약 섹션을 렌더한다', () => {
@@ -125,11 +128,11 @@ describe('SectorFactsSummary', () => {
         expect(screen.getByText(/상승 신호 0종목/)).toBeInTheDocument();
     });
 
-    it('(Worst) 완전 빈 SectorSignalsResult → 아무것도 렌더하지 않는다', () => {
-        const { container } = render(
-            <SectorFactsSummary data={{ computedAt: '', stocks: [] }} />
-        );
-        expect(container).toBeEmptyDOMElement();
+    it('(Worst) 완전 빈 SectorSignalsResult → 빈-신호 안내 텍스트를 렌더한다', () => {
+        render(<SectorFactsSummary data={{ computedAt: '', stocks: [] }} />);
+        expect(
+            screen.getByText(/현재 기술적 신호가 잡힌 종목이 없습니다/)
+        ).toBeInTheDocument();
     });
 
     it('(Worst) 심볼이 없는 경우(topSymbols=[]) → 괄호 텍스트 없음', () => {

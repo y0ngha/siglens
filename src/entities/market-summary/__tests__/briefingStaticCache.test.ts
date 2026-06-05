@@ -58,7 +58,7 @@ describe('peekBriefingStatic', () => {
         expect(mockPeekBriefingCache).toHaveBeenCalledWith(sampleSummary);
     });
 
-    it('(Happy) unstable_cache opts: revalidate=3600, tags=[market-summary]', async () => {
+    it('(Happy) unstable_cache opts: revalidate=3600, tags=[market:briefing]', async () => {
         mockPeekBriefingCache.mockResolvedValue(sampleBriefing);
 
         await peekBriefingStatic(sampleSummary, '2026-06-04T10');
@@ -67,7 +67,7 @@ describe('peekBriefingStatic', () => {
             (globalThis as Record<string, unknown>).__lastUnstableCacheOpts
         ).toEqual({
             revalidate: SECONDS_PER_HOUR,
-            tags: ['market-summary'],
+            tags: ['market:briefing'],
         });
     });
 
