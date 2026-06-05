@@ -72,6 +72,20 @@ describe('buildSectorFacts', () => {
         expect(fact.topSymbols).toEqual(['AAPL', 'NVDA', 'MSFT']);
     });
 
+    it('(Edge) bearish-only 종목이 2개 이상이면 알파벳 순으로 정렬된다 (comparator 구동)', () => {
+        // bullish가 없어 topSymbols가 bearish-only 그룹만으로 채워지고, 입력 역순으로
+        // 넣어 bearishOnlySymbols.toSorted 비교 콜백이 실제 실행되는지 검증한다.
+        const data = makeResult([
+            makeStock('ZZZ', 'XLK', ['bearish']),
+            makeStock('MMM', 'XLK', ['bearish']),
+            makeStock('AAA', 'XLK', ['bearish']),
+        ]);
+        const [fact] = buildSectorFacts(data);
+        expect(fact.bullishCount).toBe(0);
+        expect(fact.bearishCount).toBe(3);
+        expect(fact.topSymbols).toEqual(['AAA', 'MMM', 'ZZZ']);
+    });
+
     it('(Happy) topSymbols는 최대 3개까지만', () => {
         const data = makeResult([
             makeStock('A', 'XLK', ['bullish']),

@@ -10,7 +10,8 @@ import { SECONDS_PER_HOUR } from '@/shared/config/time';
 /**
  * ISR static-safe peek of the cached briefing. core peekBriefingCache(읽기전용)를 Next
  * data cache로 감싼다. 키는 date-hour(매시 자연 무효화)로 충분 — 같은 시간대면 같은
- * cached briefing. revalidate=1h, market-summary tag.
+ * cached briefing. revalidate=1h, `market:briefing` tag.
+ * 태그는 summary/sector와 분리한다(공유 시 한 무효화가 셋 다 날리는 blast-radius 방지).
  */
 export function peekBriefingStatic(
     summary: MarketSummaryData,
@@ -19,6 +20,6 @@ export function peekBriefingStatic(
     return unstable_cache(
         () => peekBriefingCache(summary),
         ['briefing-peek-static', dateHour],
-        { revalidate: SECONDS_PER_HOUR, tags: ['market-summary'] }
+        { revalidate: SECONDS_PER_HOUR, tags: ['market:briefing'] }
     )();
 }

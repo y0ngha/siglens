@@ -45,19 +45,10 @@ export function buildSectorFacts(
 ): readonly SectorFact[] {
     if (data.stocks.length === 0) return [];
 
-    // Group stocks by sectorSymbol using a mutable accumulator for O(N) performance.
-    const grouped = data.stocks.reduce<Map<string, StockSignalResult[]>>(
-        (acc, stock) => {
-            const existing = acc.get(stock.sectorSymbol);
-            if (existing) {
-                existing.push(stock);
-            } else {
-                acc.set(stock.sectorSymbol, [stock]);
-            }
-            return acc;
-        },
-        new Map()
-    );
+    // Group stocks by sectorSymbol. Map.groupBy is O(N) and immutable (no mutable
+    // push accumulator) — matches the entities/lib functional-style requirement
+    // while avoiding O(N²) spread-based grouping. (lib: esnext; runtime: Node 21+.)
+    const grouped = Map.groupBy(data.stocks, stock => stock.sectorSymbol);
 
     const facts = [...grouped].map(([sectorSymbol, stocks]) => {
         const bullishStocks = stocks.filter(isBullish);

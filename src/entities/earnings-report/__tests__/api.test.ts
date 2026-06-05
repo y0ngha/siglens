@@ -300,6 +300,38 @@ describe('DrizzleEarningsReportsRepository', () => {
             expect(result[0].slot).toBe('recent-or-future');
         });
 
+        it('미래 항목이 2개 이상이면 가장 이른 미래를 future로 반환한다 (compareEarningsDateAsc 구동)', () => {
+            // 입력을 날짜 내림차순으로 넣어 upcoming.toSorted(asc) 비교 콜백이 실제 실행되는지 검증.
+            const result = toComparisonItems(
+                [
+                    {
+                        symbol: 'AAPL',
+                        earningsDate: '2026-10-29',
+                        epsActual: null,
+                        epsEstimated: '2.10',
+                        revenueActual: null,
+                        revenueEstimated: '120000000000',
+                        lastUpdated: '2026-05-10',
+                    },
+                    {
+                        symbol: 'AAPL',
+                        earningsDate: '2026-07-30',
+                        epsActual: null,
+                        epsEstimated: '1.86',
+                        revenueActual: null,
+                        revenueEstimated: '107618800000',
+                        lastUpdated: '2026-05-10',
+                    },
+                ],
+                '2026-05-10'
+            );
+            // 오름차순 정렬 → 가장 이른 2026-07-30이 선택된다(내림차순 입력이어도).
+            expect(result).toHaveLength(1);
+            expect(result[0].earningsDate).toBe('2026-07-30');
+            expect(result[0].period).toBe('future');
+            expect(result[0].slot).toBe('recent-or-future');
+        });
+
         it('미래 항목 중 estimate 없으면 제외된다', () => {
             const result = toComparisonItems(
                 [

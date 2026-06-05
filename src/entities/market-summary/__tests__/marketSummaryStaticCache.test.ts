@@ -65,7 +65,7 @@ describe('getMarketSummaryStatic', () => {
         expect(mockGetCachedMarketSummary).toHaveBeenCalledTimes(1);
     });
 
-    it('(Happy) unstable_cache opts: revalidate=3600, tags=[market-summary]', async () => {
+    it('(Happy) unstable_cache opts: revalidate=3600, tags=[market:summary]', async () => {
         mockGetCachedMarketSummary.mockResolvedValue(sampleSummary);
 
         await getMarketSummaryStatic();
@@ -74,7 +74,7 @@ describe('getMarketSummaryStatic', () => {
             (globalThis as Record<string, unknown>).__lastUnstableCacheOpts
         ).toEqual({
             revalidate: SECONDS_PER_HOUR,
-            tags: ['market-summary'],
+            tags: ['market:summary'],
         });
     });
 
