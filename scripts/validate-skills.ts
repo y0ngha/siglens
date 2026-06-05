@@ -55,6 +55,8 @@ const SIGNAL_CATALOG = [
     'macd_histogram_bearish_convergence',
     'bollinger_lower_bounce',
     'bollinger_upper_breakout',
+    'bollinger_percentb_oversold',
+    'bollinger_percentb_overbought',
     'bollinger_squeeze_bullish',
     'bollinger_squeeze_bearish',
     'supertrend_bullish_flip',
@@ -117,6 +119,18 @@ const STATE_FEATURES = [
     'donchian',
     'vwap',
     'buySellVolume',
+    // Pro-indicators (Phase 3) — all evaluated by the core on the 'level' kind.
+    'macdV',
+    'connorsRsi',
+    'forceIndex',
+    'elderRay',
+    'elderImpulse',
+    'chandelier',
+    'hurst',
+    'varianceRatio',
+    'regression',
+    'yangZhang',
+    'ewma',
 ] as const satisfies readonly SkillStateFeature[];
 const STATE_PREDICATE_KINDS = [
     'pctB',
@@ -164,6 +178,18 @@ const VALID_STATE_PAIRS = new Set<string>([
     'donchian:channelProximity',
     'vwap:bandDistAtr',
     'buySellVolume:ratio',
+    // Pro-indicators (Phase 3) — the core's isStateNotable evaluates each on 'level'.
+    'macdV:level',
+    'connorsRsi:level',
+    'forceIndex:level',
+    'elderRay:level',
+    'elderImpulse:level',
+    'chandelier:level',
+    'hurst:level',
+    'varianceRatio:level',
+    'regression:level',
+    'yangZhang:level',
+    'ewma:level',
 ]);
 
 interface SkillError {

@@ -232,6 +232,18 @@ const SKILL_STATE_FEATURES = [
     'donchian',
     'vwap',
     'buySellVolume',
+    // Pro-indicators (Phase 3) — all evaluated by the core on the 'level' kind.
+    'macdV',
+    'connorsRsi',
+    'forceIndex',
+    'elderRay',
+    'elderImpulse',
+    'chandelier',
+    'hurst',
+    'varianceRatio',
+    'regression',
+    'yangZhang',
+    'ewma',
 ] as const satisfies readonly SkillStateFeature[];
 const SKILL_STATE_PREDICATE_KINDS = [
     'pctB',
@@ -277,6 +289,18 @@ const VALID_STATE_PAIRS = new Set<string>([
     'donchian:channelProximity',
     'vwap:bandDistAtr',
     'buySellVolume:ratio',
+    // Pro-indicators (Phase 3) — the core's isStateNotable evaluates each on 'level'.
+    'macdV:level',
+    'connorsRsi:level',
+    'forceIndex:level',
+    'elderRay:level',
+    'elderImpulse:level',
+    'chandelier:level',
+    'hurst:level',
+    'varianceRatio:level',
+    'regression:level',
+    'yangZhang:level',
+    'ewma:level',
 ]);
 
 /** Parse a state predicate; returns undefined when any required field is invalid. */
