@@ -9,9 +9,9 @@ import { NEON_TRANSIENT_RETRY } from '@/shared/db/isNeonTransientError';
 import { earningsReports } from '@/shared/db/schema';
 import type { SiglensDatabase } from '@/shared/db/types';
 import { withRetry } from '@/shared/lib/withRetry';
-import { isEarningsReportStale } from './lib/isEarningsReportStale';
 import { getFundamentalDataProvider } from '@/shared/api/fmp/getFundamentalDataProvider';
 import { todayKstIsoDate } from '@/shared/lib/dateKey';
+import { isEarningsReportStale } from './lib/isEarningsReportStale';
 
 export const EARNINGS_REPORT_FMP_LIMIT = 5;
 
@@ -320,6 +320,10 @@ function hasEstimateValue(row: EarningsReportDataRow): boolean {
  * (lib/)가 아니라 api.ts(server-only repository/API 계층)에 둔다. staleness 판정은
  * 순수 함수 `isEarningsReportStale`(lib/)에 위임하고, `Date.now()`는 여기
  * (infrastructure 경계)에서 주입한다.
+ *
+ * I/O 보호는 의도적으로 비대칭이다: FMP refresh만 best-effort(try-catch로 삼켜 분석이
+ * earnings 없이 진행)이고, DB I/O(getLatestFetchedAt/getNextForSymbol) 오류는 호출자
+ * (Server Action)의 try-catch에 위임한다.
  */
 export async function getNextEarningsReport(
     symbol: string,

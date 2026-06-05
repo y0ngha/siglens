@@ -50,6 +50,7 @@ describe('getNextEarningsReport', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         vi.spyOn(Date, 'now').mockReturnValue(NOW);
+        vi.spyOn(console, 'warn').mockImplementation(() => undefined);
         getLatestFetchedAt = vi.spyOn(
             DrizzleEarningsReportsRepository.prototype,
             'getLatestFetchedAt'
@@ -139,6 +140,10 @@ describe('getNextEarningsReport', () => {
 
         expect(result).toEqual(nextEarnings);
         expect(upsertMany).not.toHaveBeenCalled();
+        expect(console.warn).toHaveBeenCalledWith(
+            '[getNextEarningsReport] FMP refresh failed:',
+            expect.any(Error)
+        );
     });
 
     it('returns null when DB has no upcoming earnings', async () => {
