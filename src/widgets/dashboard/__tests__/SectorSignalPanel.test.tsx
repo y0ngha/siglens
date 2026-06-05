@@ -25,11 +25,6 @@ vi.mock('@/widgets/dashboard/hooks/useSectorSignalState', () => ({
     useSectorSignalState: mockUseSectorSignalState,
 }));
 
-beforeEach(() => {
-    mockUseSectorSignalState.mockReset();
-    mockUseSectorSignalState.mockReturnValue(mockReturn);
-});
-
 vi.mock('@/widgets/dashboard/SectorTabs', () => ({
     SectorTabs: () => <div data-testid="sector-tabs" />,
 }));
@@ -45,6 +40,11 @@ vi.mock('@/widgets/dashboard/SignalSubsection', () => ({
 }));
 
 describe('SectorSignalPanel', () => {
+    beforeEach(() => {
+        mockUseSectorSignalState.mockReset();
+        mockUseSectorSignalState.mockReturnValue(mockReturn);
+    });
+
     it('renders the section heading', () => {
         render(
             <SectorSignalPanel initialSector="XLK" initialTimeframe="1Day" />
