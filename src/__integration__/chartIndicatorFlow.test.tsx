@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { IndicatorSettingsModal } from '@/widgets/chart/ui/IndicatorSettingsModal';
 import {
@@ -101,7 +101,11 @@ describe('Chart Indicator Flow (settings modal, real useDialog)', () => {
             <IndicatorSettingsModal bindings={makeBindings(makeCallbacks())} />
         );
         await user.click(screen.getByRole('button', { name: '보조지표 설정' }));
-        expect(screen.getByRole('dialog')).toBeInTheDocument();
+        // useDialog의 Escape 리스너는 useEffect(passive-effect)에서 document에
+        // 등록된다. dialog가 focus를 받을 때까지 기다려 리스너 부착을 보장한 뒤
+        // Escape를 발화한다 — 부착 전 발화 시 CI(vmThreads)에서 이벤트 유실
+        // flake가 발생한다 (MISTAKES.md §19).
+        await waitFor(() => expect(screen.getByRole('dialog')).toHaveFocus());
         await user.keyboard('{Escape}');
         expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     });
