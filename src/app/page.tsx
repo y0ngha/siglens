@@ -15,7 +15,7 @@ import { cache, Suspense } from 'react';
 
 // 랜딩은 ISR 정적 페이지로 운영 — proxy.ts가 ?q= 쿼리를 처리해 redirect하므로
 // 이 페이지 자체는 dynamic 의존성이 없다. revalidate로 skills 파일 변경 반영.
-export const revalidate = 3600;
+export const revalidate = 86400; // 24h — skills는 배포 시 갱신되므로 장중 신선도와 무관
 
 const loadSkills = cache(() => new FileSkillsLoader().loadSkills());
 

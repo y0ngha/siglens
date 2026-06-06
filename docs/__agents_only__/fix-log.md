@@ -16,6 +16,11 @@
   - Rule: MISTAKES.md §11 — 함수/변수명은 실제 참조 대상과 정확하게 일치해야 한다
   - Context: PR #545에서 `getAssetInfoCached` → `getAssetInfoResilient`로 교체 후 테스트 변수명 rename이 누락됨
 
+## [feat/isr-revalidate Round 1 | feat/isr-revalidate | 2026-06-06]
+- Violation: `src/app/CLAUDE.md` line 117 (ISR 축 3 규약) still hardcoded `revalidate=3600` after PR added per-page revalidate table (6h–24h values) above it
+  - Rule: MISTAKES.md §15.6 — Comments/JSDoc making factually inaccurate claims about the code they describe
+  - Context: In-file documentation drift: 축 3 claims hardcoded 3600, but the per-page policy table above lists actual per-route tuned values. Reader following 축 3 would override tuning. Fixed by pointing 축 3 to the per-page table + new design doc ISR_REVALIDATE.md instead of restating hardcoded value.
+
 ## [feat/bot-cost-caching Round 1 | feat/bot-cost-caching | 2026-05-28]
 - Violation: 'use server' file exported non-async-function constants `POLL_INTERVAL_MS`, `POLL_MAX_ATTEMPTS`
   - Rule: entities/CONVENTIONS.md — 'use server' files may only export async functions; constants must live in separate modules

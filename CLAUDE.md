@@ -283,6 +283,7 @@ yarn format
 | `docs/architecture/SCOPE.md` | **siglens vs siglens-core 분담** — 결정 트리, 의존 방향, 안티 패턴 (양쪽 레포 공통 source-of-truth) |
 | `docs/architecture/ARCHITECTURE.md` | Layer structure, dependency direction rules, folder layout |
 | `docs/architecture/PERFORMANCE_BASELINE.md` | 성능 baseline & 개선 액션 플랜 |
+| `docs/architecture/ISR_REVALIDATE.md` | ISR `revalidate` 정책 — 페이지별 값·근거, Fast Origin Transfer 절감, cron 미도입 결정 |
 | `docs/product/SERVICE.md` | Product overview, target users, tech stack, Skills system |
 | `docs/product/DOMAIN.md` | Indicator calculation specs, candle patterns, Skills system, business rules |
 | `docs/product/AUTH.md` | 인증·세션·OAuth·이메일 토큰 흐름 (인증은 옵션) |
