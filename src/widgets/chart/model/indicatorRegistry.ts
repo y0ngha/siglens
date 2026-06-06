@@ -41,7 +41,9 @@ export type IndicatorKey =
     | 'obv'
     | 'atr'
     | 'yangZhang'
-    | 'ewmaVolatility';
+    | 'ewmaVolatility'
+    | 'keltnerChannel'
+    | 'donchianChannel';
 
 export interface IndicatorMeta {
     key: IndicatorKey;
@@ -162,6 +164,18 @@ export const INDICATOR_REGISTRY: readonly IndicatorMeta[] = [
         label: 'EWMA Vol',
         category: 'volatility',
         kind: 'pane',
+    },
+    {
+        key: 'keltnerChannel',
+        label: 'Keltner',
+        category: 'volatility',
+        kind: 'overlay',
+    },
+    {
+        key: 'donchianChannel',
+        label: 'Donchian',
+        category: 'volatility',
+        kind: 'overlay',
     },
 ];
 
