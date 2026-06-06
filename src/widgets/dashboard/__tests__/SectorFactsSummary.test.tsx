@@ -102,6 +102,20 @@ describe('SectorFactsSummary', () => {
         expect(screen.getByText(/AAPL/)).toBeInTheDocument();
     });
 
+    it('(Happy) topSymbols가 /{symbol} href를 가진 크롤 가능 링크로 렌더된다', () => {
+        // SEO 회귀 가드: topSymbols가 일반 텍스트로 되돌아가거나 href 포맷이
+        // 바뀌면(이 PR 핵심 = 크롤러용 서버사이드 내부 링크) 이 단언이 깨진다.
+        render(
+            <SectorFactsSummary
+                data={makeResult([makeStock('AAPL', 'XLK', 'bullish')])}
+            />
+        );
+        expect(screen.getByRole('link', { name: 'AAPL' })).toHaveAttribute(
+            'href',
+            '/AAPL'
+        );
+    });
+
     it('(Happy) 여러 섹터가 모두 렌더된다', () => {
         const stocks = [
             makeStock('AAPL', 'XLK', 'bullish'),

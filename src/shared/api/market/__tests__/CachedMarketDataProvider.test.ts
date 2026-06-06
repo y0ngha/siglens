@@ -89,7 +89,6 @@ describe('CachedMarketDataProvider', () => {
         const p = new CachedMarketDataProvider(inner);
         await p.getBars(barsOpts({ from: undefined }));
         expect(inner.getBars).toHaveBeenCalledTimes(1);
-        // from/before/limit 모두 미지정 → `?? ''`로 빈 문자열, 트레일링 콜론만 남는다.
         expect(store.has('bars:raw:AAPL:1Day:::')).toBe(true);
     });
 
