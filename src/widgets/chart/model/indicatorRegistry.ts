@@ -16,8 +16,21 @@ export type IndicatorCategory =
 
 export type IndicatorKind = 'overlay' | 'pane';
 
+export type IndicatorKey =
+    | 'ma'
+    | 'ema'
+    | 'ichimoku'
+    | 'rsi'
+    | 'macd'
+    | 'dmi'
+    | 'stochastic'
+    | 'stochRsi'
+    | 'cci'
+    | 'bollinger'
+    | 'volumeProfile';
+
 export interface IndicatorMeta {
-    key: string;
+    key: IndicatorKey;
     label: string;
     category: IndicatorCategory;
     kind: IndicatorKind;
@@ -87,9 +100,10 @@ export const INDICATOR_REGISTRY: readonly IndicatorMeta[] = [
 ];
 
 /** key → meta 조회 맵. StockChart binding 조립에서 사용. */
-export const INDICATOR_META: Record<string, IndicatorMeta> = Object.fromEntries(
-    INDICATOR_REGISTRY.map(meta => [meta.key, meta])
-);
+export const INDICATOR_META: Record<IndicatorKey, IndicatorMeta> =
+    Object.fromEntries(
+        INDICATOR_REGISTRY.map(meta => [meta.key, meta])
+    ) as Record<IndicatorKey, IndicatorMeta>;
 
 /**
  * binding을 카테고리별로 묶되 CATEGORY_ORDER 순서를 유지하고,

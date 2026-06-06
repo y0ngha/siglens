@@ -173,17 +173,18 @@ vi.mock('@/widgets/chart/hooks/useIndicatorVisibility', () => ({
     }),
 }));
 
-vi.mock('@/widgets/chart/hooks/useIndicatorDropdown', () => ({
-    useIndicatorDropdown: () => ({
-        isExpanded: false,
-        openDropdown: null,
-        dropdownPosition: null,
-        toolbarRef: { current: null },
-        portalRef: { current: null },
-        buttonRefs: { ma: { current: null }, ema: { current: null } },
-        toggleExpanded: vi.fn(),
-        toggleDropdown: vi.fn(),
-    }),
+vi.mock('@/widgets/chart/ui/IndicatorSettingsModal', () => ({
+    IndicatorSettingsModal: ({
+        bindings,
+    }: {
+        bindings: { meta: { key: string } }[];
+    }) => (
+        <div
+            data-testid="indicator-settings-modal"
+            data-count={bindings.length}
+            data-keys={bindings.map(b => b.meta.key).join(',')}
+        />
+    ),
 }));
 
 vi.mock('@/widgets/chart/utils/paneLabelUtils', () => ({
@@ -301,6 +302,16 @@ describe('StockChart', () => {
         expect(screen.getByRole('img')).toHaveAttribute(
             'aria-label',
             '가격 차트'
+        );
+    });
+
+    it('renders IndicatorSettingsModal with 11 indicator bindings', () => {
+        render(<StockChart bars={mockBars} timeframe="1Day" />);
+        const modal = screen.getByTestId('indicator-settings-modal');
+        expect(modal).toHaveAttribute('data-count', '11');
+        expect(modal).toHaveAttribute(
+            'data-keys',
+            'ma,ema,ichimoku,rsi,macd,dmi,stochastic,stochRsi,cci,bollinger,volumeProfile'
         );
     });
 
