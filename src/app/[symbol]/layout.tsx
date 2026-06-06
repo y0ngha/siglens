@@ -12,9 +12,10 @@ import {
 import { SymbolLayoutHeader } from '@/widgets/symbol-page/SymbolLayoutHeader';
 import { SymbolTabsSkeleton } from '@/widgets/symbol-page/SymbolTabsSkeleton';
 import { DEFAULT_TIMEFRAME } from '@/shared/config/market';
-import { getBarsStatic } from '@/entities/bars';
+import { getBarsStatic, quantizeBarsDataToLastClosed } from '@/entities/bars';
 import { getAssetInfoResilient } from '@/entities/ticker';
 import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/shared/config/queryConfig';
+import { MS_PER_SECOND } from '@/shared/config/time';
 
 interface SymbolLayoutProps {
     children: ReactNode;
@@ -66,7 +67,8 @@ interface SymbolLayoutSegmentProps {
     params: Promise<{ symbol: string }>;
 }
 
-async function SymbolLayoutChrome({ params }: SymbolLayoutSegmentProps) {
+// Exported for unit testing — verifies ISR seed quantization. Not used outside layout.
+export async function SymbolLayoutChrome({ params }: SymbolLayoutSegmentProps) {
     const { symbol } = await params;
     const ticker = symbol.toUpperCase();
     const { assetInfo } = await getAssetInfoResilient(ticker);
@@ -84,18 +86,36 @@ async function SymbolLayoutChrome({ params }: SymbolLayoutSegmentProps) {
     });
 
     if (assetInfo) {
-        queryClient.setQueryData(QUERY_KEYS.assetInfo(symbol), assetInfo);
+        // assetInfo는 fundamental data로 거의 불변 — updatedAt 0으로 고정해 ISR HTML 결정성 보장.
+        // Date.now() 기본값은 매 ISR 재생성마다 다른 timestamp가 dehydrated state에 박혀 write churn 유발.
+        queryClient.setQueryData(QUERY_KEYS.assetInfo(symbol), assetInfo, {
+            updatedAt: 0,
+        });
     }
 
-    await queryClient.prefetchQuery({
-        queryKey: QUERY_KEYS.bars(
-            symbol,
-            DEFAULT_TIMEFRAME,
-            assetInfo?.fmpSymbol
-        ),
-        queryFn: ({ queryKey: [, qSymbol, qTimeframe, qFmpSymbol] }) =>
-            getBarsStatic(qSymbol, qTimeframe, qFmpSymbol),
+    // ISR write churn 차단: quantize로 forming 봉을 제거 + setQueryData에 안정 updatedAt
+    // 명시. prefetchQuery는 dataUpdatedAt 옵션이 없어 매 ISR 재생성마다 다른 timestamp가
+    // dehydrate 상태에 박혀 HTML hash가 달라진다(2026-06-06 실측). setQueryData는
+    // updatedAt 옵션 지원 → 마지막 완료 봉의 timestamp로 고정해 ISR HTML 결정성 보장.
+    const headerBars = await getBarsStatic(
+        symbol,
+        DEFAULT_TIMEFRAME,
+        assetInfo?.fmpSymbol
+    ).catch((e: unknown) => {
+        console.error('[SymbolLayout] getBarsStatic failed:', e);
+        return null;
     });
+    if (headerBars !== null) {
+        const quantized = quantizeBarsDataToLastClosed(headerBars, new Date());
+        // Bar.time은 seconds (epoch) — RQ dataUpdatedAt은 milliseconds 기대.
+        const lastBarSec = quantized.bars.at(-1)?.time ?? 0;
+        const stableUpdatedAt = lastBarSec * MS_PER_SECOND;
+        queryClient.setQueryData(
+            QUERY_KEYS.bars(symbol, DEFAULT_TIMEFRAME, assetInfo?.fmpSymbol),
+            quantized,
+            { updatedAt: stableUpdatedAt }
+        );
+    }
 
     return (
         <HydrationBoundary state={dehydrate(queryClient)}>

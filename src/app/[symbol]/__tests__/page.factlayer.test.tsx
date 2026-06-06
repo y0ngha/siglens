@@ -43,8 +43,12 @@ vi.mock('@/entities/ticker', () => ({
 }));
 // getBarsStatic is the subject under test — mocked directly so each case can
 // return different bars data without going through the unstable_cache chain.
-vi.mock('@/entities/bars/lib/barsStaticCache', () => ({
+// quantizeBarsDataToLastClosed는 별도 unit 테스트에서 완전 커버된다.
+// 이 스위트는 FactLayer SSR 배선을 검증하므로, 시장 시간 의존을 제거해 결정론적으로 유지한다.
+// production page.tsx와 동일하게 barrel `@/entities/bars`를 mock해 경로 일관성 유지.
+vi.mock('@/entities/bars', () => ({
     getBarsStatic: vi.fn(),
+    quantizeBarsDataToLastClosed: (d: unknown) => d,
 }));
 vi.mock('@/entities/skill', () => ({
     countSkillFiles: vi.fn().mockResolvedValue({
@@ -97,7 +101,7 @@ import { Suspense, type ReactNode } from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { default as SymbolPage } from '@/app/[symbol]/page';
 import { TechnicalFactsSummary } from '@/widgets/symbol-page/TechnicalFactsSummary';
-import { getBarsStatic } from '@/entities/bars/lib/barsStaticCache';
+import { getBarsStatic } from '@/entities/bars';
 import { getAssetInfoResilient } from '@/entities/ticker';
 import { findElementByType } from '@/__tests__/utils/findElementByType';
 

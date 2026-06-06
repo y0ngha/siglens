@@ -17,9 +17,10 @@ import {
     buildDisplayName,
     getAssetInfoResilient,
 } from '@/entities/ticker';
-import { getBarsStatic } from '@/entities/bars';
+import { getBarsStatic, quantizeBarsDataToLastClosed } from '@/entities/bars';
 import { countSkillFiles } from '@/entities/skill';
 import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/shared/config/queryConfig';
+import { MS_PER_SECOND } from '@/shared/config/time';
 import {
     buildBreadcrumbJsonLd,
     buildSymbolSeoContent,
@@ -113,6 +114,10 @@ export default async function SymbolPage({ params }: Props) {
     // default-tf bars를 정적화로 가져온다. 실패(인프라 다운 등)는 null로 degrade해
     // 페이지가 깨지지 않도록 한다. 이 bars는 Suspense fallback의 FactLayer SSR에만 쓰이며,
     // 클라이언트 hydration 후에는 SymbolPageClient가 인터랙티브 상태로 교체된다.
+    //
+    // SSR seed에 forming 봉을 박으면 ISR write churn 유발 — quantize로 마지막 완료 봉까지만.
+    // new Date()는 ISR-safe: quantize는 isEtRegularSessionOpen(now) boolean으로만 분기하므로
+    // 정규장 안에서는 분/초 차이가 결과에 영향 없음(cache content 동일).
     const factBars = await getBarsStatic(
         ticker,
         DEFAULT_TIMEFRAME,
@@ -121,6 +126,10 @@ export default async function SymbolPage({ params }: Props) {
         console.error('[SymbolPage] getBarsStatic failed:', e);
         return null;
     });
+    const quantizedFactBars =
+        factBars === null
+            ? null
+            : quantizeBarsDataToLastClosed(factBars, new Date());
 
     const displayName = buildDisplayName(assetInfo, ticker);
     const { fullTitle, description, url } = buildSymbolSeoContent(ticker, {
@@ -194,15 +203,33 @@ export default async function SymbolPage({ params }: Props) {
         },
     });
 
-    queryClient.setQueryData(QUERY_KEYS.assetInfo(symbol), assetInfo);
+    queryClient.setQueryData(QUERY_KEYS.assetInfo(symbol), assetInfo, {
+        updatedAt: 0,
+    });
 
-    // bars prefetch는 ISR static-safe 경로(getBarsStatic = unstable_cache(getBarsAction))로
-    // 통일한다 — static gen 중 redis no-store fetch가 DYNAMIC_SERVER_USAGE를 throw하지 않게.
-    const barsQueryFn = ({
-        queryKey: [, qSymbol, qTimeframe, qFmpSymbol],
-    }: {
-        queryKey: ReturnType<typeof QUERY_KEYS.bars>;
-    }) => getBarsStatic(qSymbol, qTimeframe, qFmpSymbol);
+    // prefetchQuery(getBarsStatic 재호출)는 제거 — forming 봉이 포함된 라이브 bars가
+    // dehydrate seed로 박히면 ISR write churn이 발생하므로, quantize 후 동기 주입으로 대체.
+    // 차트 페이지는 ISR로 캐시되므로 기본 timeframe만 seed한다.
+    // ?tf= 딥링크는 클라(useTimeframeChange→useSearchParams)가 마운트 시 읽어
+    // 해당 timeframe bars를 fetch한다.
+    //
+    // null guard: getBarsStatic 실패 시 quantizedFactBars는 null이다. null을 setQueryData에
+    // 넘기면 null "success" 값이 dehydrate 캐시에 박혀 클라 useSuspenseQuery가 data.bars를
+    // null에서 읽으려다 crash하고, null은 stale 트리거가 아니므로 재fetch도 안 된다.
+    // null인 경우는 seed를 생략해 클라 useBars/getBarsAction이 라이브로 fetch하게 한다.
+    if (quantizedFactBars !== null) {
+        // updatedAt 명시: RQ dehydrate 기본은 Date.now()라 매 ISR 재생성마다 다른 timestamp가
+        // HTML에 박혀 ISR write churn 발생(2026-06-06 실측). 마지막 완료 봉의 time으로 고정해
+        // 같은 봉이 계속 마지막인 한 dehydrated state 결정성 보장.
+        // Bar.time은 seconds (epoch) — RQ dataUpdatedAt은 milliseconds.
+        const lastBarSec = quantizedFactBars.bars.at(-1)?.time ?? 0;
+        const stableUpdatedAt = lastBarSec * MS_PER_SECOND;
+        queryClient.setQueryData(
+            QUERY_KEYS.bars(symbol, DEFAULT_TIMEFRAME, assetInfo.fmpSymbol),
+            quantizedFactBars,
+            { updatedAt: stableUpdatedAt }
+        );
+    }
 
     // peek은 읽기 전용 — enqueue/생성 없음. MISS·corrupt·read 실패는 모두 MISS로
     // degrade해 FALLBACK_ANALYSIS로 폴백한다(렌더를 절대 깨지 않음). read 실패는
@@ -212,29 +239,15 @@ export default async function SymbolPage({ params }: Props) {
     // DEFAULT_MODEL이 GEMINI_2_5_FLASH_LITE_MODEL이고, useAnalysis가 그 값을
     // submitAnalysisAction에 그대로 전달하므로 writer는 lite 모델 키로 캐시한다.
     // peek도 동일 모델을 넘겨야 HIT한다.
-    // bars prefetch와 독립이므로 함께 await해 병렬화한다.
-    const [, cachedAnalysis] = await Promise.all([
-        // 차트 페이지는 ISR로 캐시되므로 prefetch는 기본 timeframe만 seed한다.
-        // ?tf= 딥링크는 클라(useTimeframeChange→useSearchParams)가 마운트 시 읽어
-        // 해당 timeframe bars를 fetch한다.
-        queryClient.prefetchQuery({
-            queryKey: QUERY_KEYS.bars(
-                symbol,
-                DEFAULT_TIMEFRAME,
-                assetInfo.fmpSymbol
-            ),
-            queryFn: barsQueryFn,
-        }),
-        peekAnalysisStatic(
-            ticker,
-            DEFAULT_TIMEFRAME,
-            assetInfo.fmpSymbol,
-            GEMINI_2_5_FLASH_LITE_MODEL
-        ).catch((error: unknown) => {
-            console.error('[SymbolPage] peekAnalysisStatic failed:', error);
-            return null;
-        }),
-    ]);
+    const cachedAnalysis = await peekAnalysisStatic(
+        ticker,
+        DEFAULT_TIMEFRAME,
+        assetInfo.fmpSymbol,
+        GEMINI_2_5_FLASH_LITE_MODEL
+    ).catch((error: unknown) => {
+        console.error('[SymbolPage] peekAnalysisStatic failed:', error);
+        return null;
+    });
     const initialAnalysis = cachedAnalysis ?? FALLBACK_ANALYSIS;
 
     return (
@@ -299,11 +312,14 @@ export default async function SymbolPage({ params }: Props) {
                                 <h1 className="sr-only">
                                     {buildChartPageHeading(displayName)}
                                 </h1>
-                                {factBars && factBars.bars.length > 0 ? (
+                                {quantizedFactBars &&
+                                quantizedFactBars.bars.length > 0 ? (
                                     <TechnicalFactsSummary
                                         symbol={ticker}
-                                        bars={factBars.bars}
-                                        indicators={factBars.indicators}
+                                        bars={quantizedFactBars.bars}
+                                        indicators={
+                                            quantizedFactBars.indicators
+                                        }
                                     />
                                 ) : (
                                     <div

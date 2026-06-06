@@ -142,7 +142,10 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
         mockIsE2E.mockReturnValue(false);
 
         mockFetchNewsForPeriod = vi.fn();
-        mockUpsertNewsItem = vi.fn().mockResolvedValue(undefined);
+        // upsertNewsItem은 Task 4에서 Promise<boolean>으로 변경됨:
+        // true = 신규 삽입 또는 내용 변경, false = no-op(동일 기사 재fetch).
+        // 기본값 true: 기존 테스트 대부분이 "변경 있음" 시나리오를 검증하므로.
+        mockUpsertNewsItem = vi.fn().mockResolvedValue(true);
         mockAttachAnalysis = vi.fn().mockResolvedValue(undefined);
         mockListBySymbol = vi.fn().mockResolvedValue([]);
 
@@ -210,12 +213,14 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
         });
 
         it('뉴스가 없으면 upsert와 카드 분석을 호출하지 않는다', async () => {
+            // if (fresh.length === 0) return으로 early return —
+            // changedCount/revalidateTag/analyze 단계에 도달하지 않음.
+            // unanalyzed가 fresh.filter(...)로 파생되므로 fresh=[]이면 analyze는 항상 no-op이라 안전.
             mockFetchNewsForPeriod.mockResolvedValue([]);
 
             await ensureNewsCardsAnalyzedAction('AAPL');
 
             expect(mockUpsertNewsItem).not.toHaveBeenCalled();
-            expect(mockListBySymbol).not.toHaveBeenCalled();
             expect(mockSubmitNewsCardAnalysis).not.toHaveBeenCalled();
         });
 
@@ -230,13 +235,165 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
             expect(revalidateTagSpy).toHaveBeenCalledWith('news:AAPL', 'max');
         });
 
-        it('fresh 기사가 없으면(fresh.length === 0) revalidateTag를 호출하지 않는다', async () => {
-            // DB 변경이 없으므로 news ISR 캐시를 무효화하지 않는다(불필요한 재빌드 방지).
-            mockFetchNewsForPeriod.mockResolvedValue([]);
+        // fresh.length === 0 시나리오는 아래 'revalidateTag 게이팅은' describe의
+        // 'empty-fresh' 케이스에서 markFetched 단언까지 함께 검증한다.
+        it('모든 upsert가 false(no-op)이면 revalidateTag를 호출하지 않는다', async () => {
+            // 같은 기사 재fetch: DB에 변경 없음 → changedCount=0 → 스킵.
+            mockFetchNewsForPeriod.mockResolvedValue([
+                NEWS_ITEM_1,
+                NEWS_ITEM_2,
+            ]);
+            mockUpsertNewsItem.mockResolvedValue(false);
 
             await ensureNewsCardsAnalyzedAction('AAPL');
 
             expect(revalidateTagSpy).not.toHaveBeenCalled();
+            // markFetched는 changedCount 게이트와 무관하게 항상 호출된다.
+            expect(mockMarkFetched).toHaveBeenCalledWith('AAPL');
+        });
+    });
+
+    describe('revalidateTag 게이팅은', () => {
+        // no-change(모든 upsert=false → revalidateTag 미호출 + markFetched 호출)는
+        // 위 describe의 "모든 upsert가 false(no-op)" 케이스에서 검증.
+        it('some-change: 1건 이상 true → revalidateTag 1회 호출(news:AAPL, max)', async () => {
+            mockFetchNewsForPeriod.mockResolvedValue([
+                NEWS_ITEM_1,
+                NEWS_ITEM_2,
+            ]);
+            mockUpsertNewsItem
+                .mockResolvedValueOnce(false) // NEWS_ITEM_1: no-op
+                .mockResolvedValueOnce(true); // NEWS_ITEM_2: 새 기사
+            // changedCount=1 → revalidateTag 호출.
+
+            await ensureNewsCardsAnalyzedAction('aapl');
+
+            expect(revalidateTagSpy).toHaveBeenCalledTimes(1);
+            expect(revalidateTagSpy).toHaveBeenCalledWith('news:AAPL', 'max');
+        });
+
+        it('partial-failure(minority) + 1건 true → revalidateTag 호출', async () => {
+            mockFetchNewsForPeriod.mockResolvedValue([
+                NEWS_ITEM_1,
+                NEWS_ITEM_2,
+            ]);
+            mockUpsertNewsItem
+                .mockRejectedValueOnce(new Error('DB constraint')) // reject: minority
+                .mockResolvedValueOnce(true); // fulfilled true
+            // upsertFailures.length=1 ≤ 2/2(=1), 과반 미달 → throw 안 함.
+            // changedCount=1 → revalidateTag 호출.
+            mockSubmitNewsCardAnalysis.mockResolvedValue(SUBMITTED_RESULT);
+            mockPollNewsCardAnalysis.mockResolvedValue(POLL_DONE);
+
+            await ensureNewsCardsAnalyzedAction('AAPL');
+
+            expect(revalidateTagSpy).toHaveBeenCalledWith('news:AAPL', 'max');
+        });
+
+        it('partial-failure(minority) + 모두 false → revalidateTag 미호출', async () => {
+            mockFetchNewsForPeriod.mockResolvedValue([
+                NEWS_ITEM_1,
+                NEWS_ITEM_2,
+            ]);
+            mockUpsertNewsItem
+                .mockRejectedValueOnce(new Error('DB constraint')) // reject: minority
+                .mockResolvedValueOnce(false); // fulfilled false → changedCount=0
+            // upsertFailures.length=1 ≤ 1(=2/2), 과반 미달.
+            // changedCount=0 → revalidateTag 미호출.
+
+            await ensureNewsCardsAnalyzedAction('AAPL');
+
+            expect(revalidateTagSpy).not.toHaveBeenCalled();
+            expect(mockMarkFetched).toHaveBeenCalledWith('AAPL');
+        });
+
+        it('majority-failure: 과반 reject → throw, revalidateTag 미도달', async () => {
+            mockFetchNewsForPeriod.mockResolvedValue([
+                NEWS_ITEM_1,
+                NEWS_ITEM_2,
+            ]);
+            mockUpsertNewsItem
+                .mockRejectedValueOnce(new Error('DB down'))
+                .mockRejectedValueOnce(new Error('DB down'));
+
+            await expect(ensureNewsCardsAnalyzedAction('AAPL')).rejects.toThrow(
+                'majority upsert failure'
+            );
+
+            expect(revalidateTagSpy).not.toHaveBeenCalled();
+        });
+
+        it('empty-fresh: upsertSettled 비어 changedCount=0 → markFetched 호출, revalidateTag 미호출', async () => {
+            mockFetchNewsForPeriod.mockResolvedValue([]);
+
+            await ensureNewsCardsAnalyzedAction('AAPL');
+
+            expect(mockMarkFetched).toHaveBeenCalledWith('AAPL');
+            expect(revalidateTagSpy).not.toHaveBeenCalled();
+        });
+
+        it('fresh.length === 0 early-return은 DB에 미분석 기사가 있어도 안전하다', async () => {
+            // fresh=[]이면 unanalyzed는 항상 빈 배열이 된다(unanalyzed = fresh.filter(...)).
+            // 따라서 listBySymbol로 DB를 조회할 필요가 없고, submitNewsCardAnalysis도
+            // 호출할 필요가 없다 — 분석 대상이 fresh에서 파생되므로 fresh가 비면 항상 빈다.
+            // DB에 analyzedAt=null 행이 남아 있더라도 이번 호출에서 가져온 fresh가 없으면
+            // 그 행을 참조할 방법이 없으므로 early-return은 안전하다.
+            mockFetchNewsForPeriod.mockResolvedValue([]);
+            // DB에 미분석 기사가 있다고 가정한다(next call에서 구제됨).
+            mockListBySymbol.mockResolvedValue([
+                { id: 'stale-item-001', analyzedAt: null },
+            ]);
+
+            await ensureNewsCardsAnalyzedAction('AAPL');
+
+            expect(mockListBySymbol).not.toHaveBeenCalled();
+            expect(mockSubmitNewsCardAnalysis).not.toHaveBeenCalled();
+        });
+
+        it('[회귀] changedCount=0이어도 analyzedAt=null 기존 기사가 있으면 분석 단계를 실행한다', async () => {
+            // 시나리오: 이전 호출에서 분석 워커가 실패해 NEWS_ITEM_1이 DB에 upsert되었지만
+            // analyzedAt=null로 남아 있다. 이번 fetch에서 같은 기사가 재fetch되어
+            // upsertNewsItem → false(no-op). changedCount=0이지만 listBySymbol이 반환한
+            // 행의 analyzedAt=null → 분석 단계를 건너뛰면 그 기사는 영구적으로 미분석 상태가 된다.
+            mockFetchNewsForPeriod.mockResolvedValue([NEWS_ITEM_1]);
+            // 모든 upsert가 false → changedCount=0 (재fetch, 내용 동일)
+            mockUpsertNewsItem.mockResolvedValue(false);
+            // DB에는 해당 기사가 있으나 아직 분석 안 됨(analyzedAt=null)
+            mockListBySymbol.mockResolvedValue([
+                { id: NEWS_ITEM_1.id, analyzedAt: null },
+            ]);
+            mockSubmitNewsCardAnalysis.mockResolvedValue(SUBMITTED_RESULT);
+            mockPollNewsCardAnalysis.mockResolvedValue(POLL_DONE);
+
+            await ensureNewsCardsAnalyzedAction('AAPL');
+
+            // revalidateTag는 changedCount=0이므로 호출되지 않아야 한다.
+            expect(revalidateTagSpy).not.toHaveBeenCalled();
+            // 그러나 분석 단계는 반드시 실행되어야 한다 — 미분석 기사를 구제해야 하므로.
+            expect(mockSubmitNewsCardAnalysis).toHaveBeenCalledTimes(1);
+            expect(mockSubmitNewsCardAnalysis).toHaveBeenCalledWith(
+                expect.objectContaining({ item: NEWS_ITEM_1 })
+            );
+            expect(mockAttachAnalysis).toHaveBeenCalledWith(
+                NEWS_ITEM_1.id,
+                CARD_ANALYSIS,
+                expect.any(Date)
+            );
+        });
+
+        it('[회귀] changedCount=0이고 미분석 기사도 없으면 분석 단계를 호출하지 않는다', async () => {
+            // changedCount=0이지만 listBySymbol이 모든 기사가 이미 분석 완료 상태임을 반환.
+            // 분석 단계는 unanalyzed=[]이므로 실제 submit 호출이 없어야 한다.
+            mockFetchNewsForPeriod.mockResolvedValue([NEWS_ITEM_1]);
+            mockUpsertNewsItem.mockResolvedValue(false);
+            mockListBySymbol.mockResolvedValue([
+                { id: NEWS_ITEM_1.id, analyzedAt: new Date('2025-07-01') },
+            ]);
+
+            await ensureNewsCardsAnalyzedAction('AAPL');
+
+            expect(revalidateTagSpy).not.toHaveBeenCalled();
+            expect(mockSubmitNewsCardAnalysis).not.toHaveBeenCalled();
         });
     });
 
@@ -332,7 +489,7 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
             ]);
             mockUpsertNewsItem
                 .mockRejectedValueOnce(new Error('DB constraint error'))
-                .mockResolvedValueOnce(undefined);
+                .mockResolvedValueOnce(true); // NEWS_ITEM_2는 실제 변경
             mockSubmitNewsCardAnalysis.mockResolvedValue(SUBMITTED_RESULT);
             mockPollNewsCardAnalysis.mockResolvedValue(POLL_DONE);
 
@@ -498,7 +655,7 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
 
             mockIsRecentlyFetched.mockResolvedValue(false);
             mockFetchNewsForPeriod.mockResolvedValue([NEWS_ITEM_1]);
-            mockUpsertNewsItem.mockResolvedValue(undefined);
+            mockUpsertNewsItem.mockResolvedValue(true); // 변경 있음 → revalidateTag 통과
             mockListBySymbol.mockResolvedValue([
                 { id: NEWS_ITEM_1.id, analyzedAt: null },
             ]);
