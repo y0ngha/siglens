@@ -138,7 +138,7 @@ export function IndicatorSettingsModal({
             {isOpen &&
                 createPortal(
                     <div
-                        className="bg-secondary-950/80 fixed inset-0 z-[60] flex items-center justify-center overscroll-contain p-4 backdrop-blur-sm"
+                        className="bg-secondary-950/80 fixed inset-0 z-60 flex items-center justify-center overscroll-contain p-4 backdrop-blur-sm"
                         role="presentation"
                     >
                         <div

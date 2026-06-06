@@ -34,7 +34,7 @@ export function useBollingerPercentBChart({
     const prevPaneIndexRef = useRef<number>(paneIndex);
     const seriesRef = useRef<ISeriesApi<'Line'> | null>(null);
 
-    // chart 인스턴스 교체 시 ref만 초기화 (removeSeries 불필요 — 이전 chart는 부모가 소멸)
+    // 이전 chart는 부모가 소멸시키므로 removeSeries 없이 ref만 초기화하면 충분.
     const clearSeriesRefs = useEffectEvent(() => {
         seriesRef.current = null;
     });
@@ -46,7 +46,7 @@ export function useBollingerPercentBChart({
         }
     });
 
-    // 시리즈 lifecycle 관리 (생성/제거) — 데이터 세팅은 아래 effect가 단독 담당
+    // 데이터 세팅은 아래 effect에서 단독 처리하므로 이 effect는 lifecycle(생성·제거)만 담당.
     useEffect(() => {
         const chart = chartRef.current;
 
