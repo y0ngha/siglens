@@ -90,6 +90,38 @@ export const CHART_COLORS = {
     ichimokuChikou: '#9c27b0',
     ichimokuCloudBullish: '#26a69a20',
     ichimokuCloudBearish: '#ef535020',
+
+    // MFI
+    mfiLine: '#22d3ee',
+    mfiOverbought: '#ef535060',
+    mfiOversold: '#26a69a60',
+
+    // Williams %R
+    williamsRLine: '#c084fc',
+    williamsROverbought: '#ef535060',
+    williamsROversold: '#26a69a60',
+
+    // Connors RSI
+    connorsRsiLine: '#f472b6',
+    connorsRsiOverbought: '#ef535060',
+    connorsRsiOversold: '#26a69a60',
+
+    // CMF
+    cmfLine: '#34d399',
+    cmfZero: '#94a3b860',
+
+    // Bollinger %B
+    bollingerPercentBLine: '#818cf8',
+    bollingerPercentBUpper: '#ef535060',
+    bollingerPercentBLower: '#26a69a60',
+
+    // Hurst Exponent
+    hurstLine: '#fbbf24',
+    hurstReference: '#94a3b860',
+
+    // Variance Ratio
+    varianceRatioLine: '#fb923c',
+    varianceRatioReference: '#94a3b860',
 } as const;
 
 const PERIOD_COLOR_MAP: Record<number, string> = {
