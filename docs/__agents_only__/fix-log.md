@@ -95,6 +95,20 @@
   - Review: Addressed 3 blocker findings (§17, TS §7, missing early return). Rejected B3 (market/page sectorData null cast) as false-positive (getSectorSignalsStatic is non-nullable with no catch).
   - Result: Clean merge — violations logged for future pattern detection
 
+## [PR #573 Round 8 (post-APPROVED) | feat/isr-writes-opt | 2026-06-06]
+- Violation: layout.tsx의 `prefetchQuery(getBarsStatic)`이 forming 봉 그대로 dehydrate seed에 박아 ISR write churn을 부분 무력화 (page.tsx만 quantize 적용한 회귀)
+  - Rule: 신규 — ISR seed는 RSC가 직접 quantize한 결과만 dehydrate
+  - Context: page.tsx에서만 quantize를 적용해도 layout이 nested HydrationBoundary로 forming 봉 bars를 박으면 HTML hash가 매 ISR 재생성마다 다름. layout에도 동일 quantize 적용.
+- Violation: RQ `prefetchQuery` 사용 시 dehydrate state의 `dataUpdatedAt: Date.now()`가 매 ISR 재생성마다 다른 ms timestamp를 HTML에 박아 ISR write churn 발생(2026-06-06 실측: 서버 재시작 후 `1780746132068` → `1780746217857`)
+  - Rule: 신규 — RQ dehydrate 사용 ISR seed는 `setQueryData(..., { updatedAt: STABLE })` 패턴 필수. `prefetchQuery`는 `updatedAt` 옵션 없어 ISR 결정성 보장 불가
+  - Context: layout/page/fear-greed/market/options 5개 페이지 전수 점검. bars seed는 `lastBar.time * 1000` (seconds→ms 변환), assetInfo seed는 `0`(불변), market은 `dateHour:00:00` ms, options는 `snapshot.capturedAt` ms. 빌드 후 두 서버 인스턴스 ISR cache 파일 byte 비교: 사이즈 100% 동일 + dataUpdatedAt 모든 값 IDENTICAL. 잔존 6줄 차이는 React Suspense streaming script로 PR scope 밖.
+- Violation: Bar.time이 seconds인데 RQ dataUpdatedAt에 그대로 사용 → 1970년대로 인식 (stale check 어긋남)
+  - Rule: 신규 — RQ dataUpdatedAt은 milliseconds. epoch seconds 필드 사용 시 `* 1000` 변환 필수
+  - Context: 실측에서 `dataUpdatedAt:1780617600` (10자리 seconds) 박혀 발견. `lastBar.time * 1000`으로 수정.
+- Violation: layout.tsx에 [symbol] 차트 페이지 SSR seed 단위 테스트 부재
+  - Rule: 신규 — RSC 함수 단위 테스트 (SymbolLayoutChrome named export + quantize/updatedAt mock 검증)
+  - Context: 신규 layout.test.tsx 4 케이스(Happy/Worst/degraded/empty-bars). prefetchQuery 회귀 가드 포함.
+
 ## [PR #573 Round 7 | feat/isr-writes-opt | 2026-06-06]
 - Violation: market/page.test.ts에서 비정밀 단언 `toHaveLength(13) + not.toBe(rawValue)`
   - Rule: MISTAKES.md §13 — exact values are deterministic → use exact assertion

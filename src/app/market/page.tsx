@@ -131,12 +131,21 @@ export async function MarketContent(): Promise<ReactElement> {
      */
     const sectorDataSeed = { ...sectorData, computedAt: dateHour };
 
-    // Seed React Query so client-side hydration skips the first network round-trip
+    // Seed React Query so client-side hydration skips the first network round-trip.
+    // updatedAt 명시: RQ dehydrate 기본은 Date.now()라 매 ISR 재생성마다 다른 timestamp가
+    // HTML에 박혀 ISR write churn 발생. dateHour 버킷의 시작 timestamp로 고정 →
+    // 같은 시간 안에서는 dehydrated state 결정성 보장.
+    const stableUpdatedAt = new Date(`${dateHour}:00:00.000Z`).getTime();
     const queryClient = new QueryClient();
-    queryClient.setQueryData(QUERY_KEYS.marketSummary(), { summary });
+    queryClient.setQueryData(
+        QUERY_KEYS.marketSummary(),
+        { summary },
+        { updatedAt: stableUpdatedAt }
+    );
     queryClient.setQueryData(
         QUERY_KEYS.sectorSignals(DEFAULT_DASHBOARD_TIMEFRAME),
-        sectorDataSeed
+        sectorDataSeed,
+        { updatedAt: stableUpdatedAt }
     );
 
     return (

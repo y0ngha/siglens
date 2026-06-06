@@ -113,6 +113,10 @@ export default async function SymbolPage({ params }: Props) {
     // default-tf bars를 정적화로 가져온다. 실패(인프라 다운 등)는 null로 degrade해
     // 페이지가 깨지지 않도록 한다. 이 bars는 Suspense fallback의 FactLayer SSR에만 쓰이며,
     // 클라이언트 hydration 후에는 SymbolPageClient가 인터랙티브 상태로 교체된다.
+    //
+    // SSR seed에 forming 봉을 박으면 ISR write churn 유발 — quantize로 마지막 완료 봉까지만.
+    // new Date()는 ISR-safe: quantize는 isEtRegularSessionOpen(now) boolean으로만 분기하므로
+    // 정규장 안에서는 분/초 차이가 결과에 영향 없음(cache content 동일).
     const factBars = await getBarsStatic(
         ticker,
         DEFAULT_TIMEFRAME,
@@ -121,14 +125,10 @@ export default async function SymbolPage({ params }: Props) {
         console.error('[SymbolPage] getBarsStatic failed:', e);
         return null;
     });
-
-    // SSR seed는 forming 당일 봉과 지표 배열 마지막 원소를 lockstep으로 제외해
-    // ISR write churn을 막는다(클라는 라이브 유지).
-    const ssrNow = new Date();
     const quantizedFactBars =
         factBars === null
             ? null
-            : quantizeBarsDataToLastClosed(factBars, ssrNow);
+            : quantizeBarsDataToLastClosed(factBars, new Date());
 
     const displayName = buildDisplayName(assetInfo, ticker);
     const { fullTitle, description, url } = buildSymbolSeoContent(ticker, {
@@ -202,7 +202,9 @@ export default async function SymbolPage({ params }: Props) {
         },
     });
 
-    queryClient.setQueryData(QUERY_KEYS.assetInfo(symbol), assetInfo);
+    queryClient.setQueryData(QUERY_KEYS.assetInfo(symbol), assetInfo, {
+        updatedAt: 0,
+    });
 
     // prefetchQuery(getBarsStatic 재호출)는 제거 — forming 봉이 포함된 라이브 bars가
     // dehydrate seed로 박히면 ISR write churn이 발생하므로, quantize 후 동기 주입으로 대체.
@@ -215,9 +217,16 @@ export default async function SymbolPage({ params }: Props) {
     // null에서 읽으려다 crash하고, null은 stale 트리거가 아니므로 재fetch도 안 된다.
     // null인 경우는 seed를 생략해 클라 useBars/getBarsAction이 라이브로 fetch하게 한다.
     if (quantizedFactBars !== null) {
+        // updatedAt 명시: RQ dehydrate 기본은 Date.now()라 매 ISR 재생성마다 다른 timestamp가
+        // HTML에 박혀 ISR write churn 발생(2026-06-06 실측). 마지막 완료 봉의 t로 고정해
+        // 같은 봉이 계속 마지막인 한 dehydrated state 결정성 보장.
+        // Bar.time은 seconds (epoch) — RQ dataUpdatedAt은 milliseconds.
+        const lastBarSec = quantizedFactBars.bars.at(-1)?.time ?? 0;
+        const stableUpdatedAt = lastBarSec * 1000;
         queryClient.setQueryData(
             QUERY_KEYS.bars(symbol, DEFAULT_TIMEFRAME, assetInfo.fmpSymbol),
-            quantizedFactBars
+            quantizedFactBars,
+            { updatedAt: stableUpdatedAt }
         );
     }
 

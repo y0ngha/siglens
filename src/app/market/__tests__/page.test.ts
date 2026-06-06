@@ -154,8 +154,8 @@ describe('Market page', () => {
             // MarketContent calls queryClient.setQueryData twice: once for marketSummary
             // and once for sectorSignals. mockSetQueryData is shared across all QueryClient
             // instances created by MockQueryClientClass.
-            // page.tsx: queryClient.setQueryData(QUERY_KEYS.marketSummary(), { summary })
-            // → data shape is { summary: { indices, sectors } }
+            // page.tsx: queryClient.setQueryData(QUERY_KEYS.marketSummary(), { summary }, { updatedAt })
+            // updatedAt 옵션은 dehydrate 시 ISR HTML 결정성 보장용(2026-06-06 PR #573 R8 fix).
             expect(mockSetQueryData).toHaveBeenCalledWith(
                 ['market-summary'],
                 expect.objectContaining({
@@ -163,13 +163,14 @@ describe('Market page', () => {
                         indices: [],
                         sectors: [],
                     }),
-                })
+                }),
+                expect.objectContaining({ updatedAt: expect.any(Number) })
             );
-            // page.tsx: queryClient.setQueryData(QUERY_KEYS.sectorSignals(...), sectorData)
-            // → data shape is { computedAt, stocks }
+            // page.tsx: queryClient.setQueryData(QUERY_KEYS.sectorSignals(...), sectorData, { updatedAt })
             expect(mockSetQueryData).toHaveBeenCalledWith(
                 ['sector-signals', '1Day'],
-                expect.objectContaining({ stocks: [] })
+                expect.objectContaining({ stocks: [] }),
+                expect.objectContaining({ updatedAt: expect.any(Number) })
             );
         });
 
