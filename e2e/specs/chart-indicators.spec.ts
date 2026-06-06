@@ -70,11 +70,12 @@ test.describe('chart indicator settings modal', () => {
             .getByRole('checkbox', { name: 'MFI', exact: true })
             .check();
         await page.getByRole('button', { name: '닫기' }).click();
-        // 페인 라벨('● MFI')은 차트 캔버스 컨테이너(role=img) 안에 주입된다.
-        // 대시보드 SignalBadge('MFI 과매도 반등' 등)와의 substring 충돌을 피하려고
-        // 차트 영역으로 스코프한다.
+        // 페인 라벨('● MFI')은 usePaneLabels가 .pane-indicator-label div로 차트
+        // wrapper에 주입한다(role=img canvas의 형제, 그 안이 아님). 이 클래스로
+        // 스코프하면 대시보드 SignalBadge('MFI 과매도 반등' 등)와의 substring
+        // 충돌도 피한다.
         await expect(
-            page.getByRole('img', { name: /캔들 차트/ }).getByText('MFI')
+            page.locator('.pane-indicator-label').filter({ hasText: 'MFI' })
         ).toBeVisible();
     });
 });
