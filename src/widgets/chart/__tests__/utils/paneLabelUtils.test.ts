@@ -160,29 +160,32 @@ describe('buildPaneLabels', () => {
             stochastic: 4,
             stochRsi: 5,
             cci: 6,
+            mfi: 7,
+            williamsR: 8,
+            connorsRsi: 9,
+            cmf: 10,
+            bollingerPercentB: 11,
+            hurst: 12,
+            varianceRatio: 13,
         });
 
-        it('RSI, MACD, DMI, Stochastic, StochRSI, CCI 순서로 6개의 pane 라벨을 반환한다', () => {
+        it('등록 순서대로 13개의 pane 라벨을 1~13 index로 반환한다', () => {
             const result = buildPaneLabels(paneIndices);
 
-            expect(result).toHaveLength(6);
-            expect(result[0].paneIndex).toBe(1);
-            expect(result[1].paneIndex).toBe(2);
-            expect(result[2].paneIndex).toBe(3);
-            expect(result[3].paneIndex).toBe(4);
-            expect(result[4].paneIndex).toBe(5);
-            expect(result[5].paneIndex).toBe(6);
+            // pane 키 13개 → PaneLabelConfig 13개 (subLabel 수와 무관하게 pane당 1 entry).
+            expect(result).toHaveLength(13);
+            expect(result.map(label => label.paneIndex)).toEqual([
+                1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13,
+            ]);
         });
 
-        it('각 pane의 서브 라벨 개수가 올바르다 (RSI:1, MACD:3, DMI:3, Stochastic:2, StochRSI:2, CCI:1)', () => {
+        it('각 pane의 서브 라벨 개수가 올바르다 (RSI:1, MACD:3, DMI:3, Stochastic:2, StochRSI:2, CCI:1, group-B 각 1)', () => {
             const result = buildPaneLabels(paneIndices);
 
-            expect(result[0].subLabels).toHaveLength(1);
-            expect(result[1].subLabels).toHaveLength(3);
-            expect(result[2].subLabels).toHaveLength(3);
-            expect(result[3].subLabels).toHaveLength(2);
-            expect(result[4].subLabels).toHaveLength(2);
-            expect(result[5].subLabels).toHaveLength(1);
+            // rsi macd dmi stoch stochRsi cci | mfi wR cRsi cmf %B hurst vr
+            expect(result.map(label => label.subLabels.length)).toEqual([
+                1, 3, 3, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1,
+            ]);
         });
     });
 
@@ -245,7 +248,7 @@ describe('buildPaneLabels', () => {
     });
 
     describe('각 서브 라벨의 색상이 CHART_COLORS와 일치하는지 확인', () => {
-        it('모든 서브 라벨의 색상이 올바르다', () => {
+        it('모든 서브 라벨의 색상이 올바르다 (13개 pane 전부)', () => {
             const paneIndices = makePaneIndices({
                 rsi: 1,
                 macd: 2,
@@ -253,6 +256,13 @@ describe('buildPaneLabels', () => {
                 stochastic: 4,
                 stochRsi: 5,
                 cci: 6,
+                mfi: 7,
+                williamsR: 8,
+                connorsRsi: 9,
+                cmf: 10,
+                bollingerPercentB: 11,
+                hurst: 12,
+                varianceRatio: 13,
             });
             const result = buildPaneLabels(paneIndices);
 
@@ -273,6 +283,13 @@ describe('buildPaneLabels', () => {
                 CHART_COLORS.stochRsiK,
                 CHART_COLORS.stochRsiD,
                 CHART_COLORS.cciLine,
+                CHART_COLORS.mfiLine,
+                CHART_COLORS.williamsRLine,
+                CHART_COLORS.connorsRsiLine,
+                CHART_COLORS.cmfLine,
+                CHART_COLORS.bollingerPercentBLine,
+                CHART_COLORS.hurstLine,
+                CHART_COLORS.varianceRatioLine,
             ]);
         });
     });
@@ -319,6 +336,9 @@ describe('buildPaneLabels', () => {
             expect(labels).toHaveLength(2);
             const names = labels.flatMap(l => l.subLabels.map(s => s.name));
             expect(names).toEqual(['MFI', 'Hurst']);
+            // MFI·Hurst 색상도 명시 검증 (group-B 색상 미검증 pane 없도록).
+            expect(labels[0].subLabels[0].color).toBe(CHART_COLORS.mfiLine);
+            expect(labels[1].subLabels[0].color).toBe(CHART_COLORS.hurstLine);
         });
 
         it('builds single-subLabel labels for each group-B pane', () => {
