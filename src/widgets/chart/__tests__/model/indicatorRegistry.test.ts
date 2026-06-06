@@ -14,8 +14,16 @@ function bindingFor(key: IndicatorKey, active = false): IndicatorBinding {
 }
 
 describe('indicatorRegistry', () => {
-    it('registers exactly the 26 modal-target indicators', () => {
-        expect(INDICATOR_REGISTRY).toHaveLength(26);
+    it('registers exactly the 27 modal-target indicators', () => {
+        expect(INDICATOR_REGISTRY).toHaveLength(27);
+    });
+
+    it('registers supertrend as a trend overlay', () => {
+        const meta = INDICATOR_REGISTRY.find(m => m.key === 'supertrend');
+        expect(meta).toBeDefined();
+        expect(meta?.category).toBe('trend');
+        expect(meta?.kind).toBe('overlay');
+        expect(meta?.hasPeriods).toBeUndefined();
     });
 
     it('registers keltner/donchian as volatility overlays', () => {

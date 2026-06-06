@@ -43,7 +43,8 @@ export type IndicatorKey =
     | 'yangZhang'
     | 'ewmaVolatility'
     | 'keltnerChannel'
-    | 'donchianChannel';
+    | 'donchianChannel'
+    | 'supertrend';
 
 export interface IndicatorMeta {
     key: IndicatorKey;
@@ -175,6 +176,12 @@ export const INDICATOR_REGISTRY: readonly IndicatorMeta[] = [
         key: 'donchianChannel',
         label: 'Donchian',
         category: 'volatility',
+        kind: 'overlay',
+    },
+    {
+        key: 'supertrend',
+        label: 'Supertrend',
+        category: 'trend',
         kind: 'overlay',
     },
 ];
