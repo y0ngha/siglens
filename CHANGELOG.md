@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.18.1](https://github.com/y0ngha/siglens/compare/v0.18.0...v0.18.1) (2026-06-06)
+
+
+### Bug Fixes
+
+* **analysis:** /news와 /overall news axis cache 공유 (buildAnalysisNewsItems) ([2f15462](https://github.com/y0ngha/siglens/commit/2f15462deabebc6050e6cf11273d7eba7dac721d))
+
 # [0.18.0](https://github.com/y0ngha/siglens/compare/v0.17.0...v0.18.0) (2026-06-06)
 
 
