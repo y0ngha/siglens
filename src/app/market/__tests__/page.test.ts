@@ -183,7 +183,7 @@ describe('Market page', () => {
                 await MarketContent();
 
                 const sectorSignalsCall = (
-                    mockSetQueryData.mock.calls as [unknown[], unknown][]
+                    mockSetQueryData.mock.calls as [unknown[], unknown, unknown][]
                 ).find(
                     ([key]) => Array.isArray(key) && key[0] === 'sector-signals'
                 );
@@ -194,6 +194,14 @@ describe('Market page', () => {
 
                 // Exact: 고정된 system time → '2026-06-04T14' (13 chars, no minutes)
                 expect(seededData.computedAt).toBe('2026-06-04T14');
+
+                // updatedAt 옵션도 결정론적: dateHour:00:00 ms = '2026-06-04T14:00:00.000Z'
+                const expectedUpdatedAt = new Date(
+                    '2026-06-04T14:00:00.000Z'
+                ).getTime();
+                expect(sectorSignalsCall![2]).toEqual({
+                    updatedAt: expectedUpdatedAt,
+                });
             } finally {
                 vi.useRealTimers();
             }

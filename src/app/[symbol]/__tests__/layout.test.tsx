@@ -13,20 +13,31 @@
  * - bars seed에는 prefetchQuery 사용 금지 (회귀 가드 — updatedAt 옵션 없음)
  */
 
-const mockSetQueryData = vi.fn();
-const mockPrefetchQuery = vi.fn();
-
-function MockQueryClientClass() {
-    return {
-        setQueryData: mockSetQueryData,
-        prefetchQuery: mockPrefetchQuery,
-    };
-}
+// MISTAKES §17: 모든 vi.mock + 변수 선언은 import 위로(import/first 규칙).
+// vi.hoisted로 mock 변수를 호이스트해 vi.mock 콜백에서 참조 가능하게 한다.
+const {
+    mockSetQueryData,
+    mockPrefetchQuery,
+    mockGetAssetInfoResilient,
+    mockGetBarsStatic,
+    mockQuantize,
+} = vi.hoisted(() => ({
+    mockSetQueryData: vi.fn(),
+    mockPrefetchQuery: vi.fn(),
+    mockGetAssetInfoResilient: vi.fn(),
+    mockGetBarsStatic: vi.fn(),
+    mockQuantize: vi.fn(),
+}));
 
 vi.mock('@tanstack/react-query', () => ({
     dehydrate: () => ({}),
     HydrationBoundary: () => null,
-    QueryClient: MockQueryClientClass,
+    QueryClient: function MockQueryClientClass() {
+        return {
+            setQueryData: mockSetQueryData,
+            prefetchQuery: mockPrefetchQuery,
+        };
+    },
 }));
 
 vi.mock('@/app/[symbol]/SymbolLayoutClient', () => ({
@@ -57,14 +68,11 @@ vi.mock('@/shared/config/queryConfig', () => ({
     QUERY_STALE_TIME_MS: 60_000,
 }));
 
-const mockGetAssetInfoResilient = vi.fn();
 vi.mock('@/entities/ticker', () => ({
     getAssetInfoResilient: (ticker: string) =>
         mockGetAssetInfoResilient(ticker),
 }));
 
-const mockGetBarsStatic = vi.fn();
-const mockQuantize = vi.fn();
 vi.mock('@/entities/bars', () => ({
     getBarsStatic: (symbol: string, timeframe: string, fmpSymbol?: string) =>
         mockGetBarsStatic(symbol, timeframe, fmpSymbol),

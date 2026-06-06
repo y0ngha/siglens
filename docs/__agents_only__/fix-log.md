@@ -95,6 +95,13 @@
   - Review: Addressed 3 blocker findings (§17, TS §7, missing early return). Rejected B3 (market/page sectorData null cast) as false-positive (getSectorSignalsStatic is non-nullable with no catch).
   - Result: Clean merge — violations logged for future pattern detection
 
+## [PR #573 Round 10 | feat/isr-writes-opt | 2026-06-06]
+- Violation: layout.test.tsx에서 mock 변수 + 함수 선언이 import 위에 있어 `import/first` 위반 (§17 재발)
+  - Rule: MISTAKES.md §17 — 모든 vi.mock + 변수 선언은 import 위로, `vi.hoisted()` 사용
+  - Context: 신규 layout.test.tsx 생성 시 R2의 quantizeBars.test.ts 패턴을 재발생. `vi.hoisted(() => ({...}))` 패턴으로 mock 5개 호이스트한 뒤 vi.mock → import → 본문 순서로 재배치.
+- S1 (market/page.test.ts updatedAt 단언 누락): vi.setSystemTime 고정 케이스에서 stableUpdatedAt도 결정론적이므로 정밀 단언 추가 (`expectedUpdatedAt = new Date('2026-06-04T14:00:00.000Z').getTime()`).
+- Status: APPROVED → merged (예정)
+
 ## [PR #573 Round 9 | feat/isr-writes-opt | 2026-06-06]
 - Violation: `lastBarSec * 1000` 매직 넘버 (4곳)
   - Rule: MISTAKES §15 — Time calculations (milliseconds per second 등)은 `@/shared/config/time`의 상수 사용
