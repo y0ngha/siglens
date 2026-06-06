@@ -2,6 +2,7 @@
 
 import type { CSSProperties } from 'react';
 import { useId, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { useDialog } from '@/shared/hooks/useDialog';
 import { cn } from '@/shared/lib/cn';
 import { getPeriodColor } from '@/shared/lib/chartColors';
@@ -134,76 +135,78 @@ export function IndicatorSettingsModal({
                 <GearIcon />
             </button>
 
-            {isOpen && (
-                <div
-                    className="bg-secondary-950/80 fixed inset-0 z-50 flex items-center justify-center overscroll-contain p-4 backdrop-blur-sm"
-                    role="presentation"
-                >
+            {isOpen &&
+                createPortal(
                     <div
-                        ref={dialogRef}
-                        role="dialog"
-                        aria-modal="true"
-                        aria-labelledby={titleId}
-                        tabIndex={-1}
-                        className="border-secondary-700 bg-secondary-800 max-h-[calc(100vh-2rem)] w-full max-w-md overflow-y-auto rounded-xl border text-left shadow-2xl outline-none"
+                        className="bg-secondary-950/80 fixed inset-0 z-[60] flex items-center justify-center overscroll-contain p-4 backdrop-blur-sm"
+                        role="presentation"
                     >
-                        <div className="border-secondary-700 flex items-start justify-between border-b px-5 py-4">
-                            <h2
-                                id={titleId}
-                                className="text-secondary-100 text-base font-semibold"
-                            >
-                                보조지표 설정
-                            </h2>
-                            <button
-                                type="button"
-                                onClick={close}
-                                aria-label="닫기"
-                                className="text-secondary-500 hover:text-secondary-300 focus-visible:ring-primary-500 -mt-1 -mr-1 rounded p-1 transition-colors focus-visible:ring-1 focus-visible:outline-none"
-                            >
-                                <svg
-                                    width="16"
-                                    height="16"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    strokeWidth="2"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    aria-hidden="true"
+                        <div
+                            ref={dialogRef}
+                            role="dialog"
+                            aria-modal="true"
+                            aria-labelledby={titleId}
+                            tabIndex={-1}
+                            className="border-secondary-700 bg-secondary-800 max-h-[calc(100vh-2rem)] w-full max-w-md overflow-y-auto rounded-xl border text-left shadow-2xl outline-none"
+                        >
+                            <div className="border-secondary-700 flex items-start justify-between border-b px-5 py-4">
+                                <h2
+                                    id={titleId}
+                                    className="text-secondary-100 text-base font-semibold"
                                 >
-                                    <line x1="18" y1="6" x2="6" y2="18" />
-                                    <line x1="6" y1="6" x2="18" y2="18" />
-                                </svg>
-                            </button>
-                        </div>
+                                    보조지표 설정
+                                </h2>
+                                <button
+                                    type="button"
+                                    onClick={close}
+                                    aria-label="닫기"
+                                    className="text-secondary-500 hover:text-secondary-300 focus-visible:ring-primary-500 -mt-1 -mr-1 rounded p-1 transition-colors focus-visible:ring-1 focus-visible:outline-none"
+                                >
+                                    <svg
+                                        width="16"
+                                        height="16"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        aria-hidden="true"
+                                    >
+                                        <line x1="18" y1="6" x2="6" y2="18" />
+                                        <line x1="6" y1="6" x2="18" y2="18" />
+                                    </svg>
+                                </button>
+                            </div>
 
-                        <div className="flex flex-col gap-4 p-5">
-                            {groups.map(group => (
-                                <section key={group.category}>
-                                    <h3 className="text-secondary-500 mb-1 text-xs font-semibold tracking-wide uppercase">
-                                        {group.label}
-                                    </h3>
-                                    <div className="flex flex-col gap-0.5">
-                                        {group.items.map(binding =>
-                                            binding.meta.hasPeriods ? (
-                                                <PeriodRow
-                                                    key={binding.meta.key}
-                                                    binding={binding}
-                                                />
-                                            ) : (
-                                                <ToggleRow
-                                                    key={binding.meta.key}
-                                                    binding={binding}
-                                                />
-                                            )
-                                        )}
-                                    </div>
-                                </section>
-                            ))}
+                            <div className="flex flex-col gap-4 p-5">
+                                {groups.map(group => (
+                                    <section key={group.category}>
+                                        <h3 className="text-secondary-500 mb-1 text-xs font-semibold tracking-wide uppercase">
+                                            {group.label}
+                                        </h3>
+                                        <div className="flex flex-col gap-0.5">
+                                            {group.items.map(binding =>
+                                                binding.meta.hasPeriods ? (
+                                                    <PeriodRow
+                                                        key={binding.meta.key}
+                                                        binding={binding}
+                                                    />
+                                                ) : (
+                                                    <ToggleRow
+                                                        key={binding.meta.key}
+                                                        binding={binding}
+                                                    />
+                                                )
+                                            )}
+                                        </div>
+                                    </section>
+                                ))}
+                            </div>
                         </div>
-                    </div>
-                </div>
-            )}
+                    </div>,
+                    document.body
+                )}
         </>
     );
 }
