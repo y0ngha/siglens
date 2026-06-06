@@ -179,7 +179,10 @@ export default async function SymbolFearGreedPage({ params }: Props) {
         symbol,
         DEFAULT_TIMEFRAME,
         assetInfo.fmpSymbol
-    ).catch(() => null);
+    ).catch((e: unknown) => {
+        console.error('[FearGreedPage] getBarsStatic failed:', e);
+        return null;
+    });
     if (fgBars !== null) {
         queryClient.setQueryData(
             QUERY_KEYS.bars(symbol, DEFAULT_TIMEFRAME, assetInfo.fmpSymbol),

@@ -95,6 +95,16 @@
   - Review: Addressed 3 blocker findings (§17, TS §7, missing early return). Rejected B3 (market/page sectorData null cast) as false-positive (getSectorSignalsStatic is non-nullable with no catch).
   - Result: Clean merge — violations logged for future pattern detection
 
+## [PR #573 Round 4 | feat/isr-writes-opt | 2026-06-06]
+- Violation: `.catch(() => null)` 에러 인자 없이 오류 완전 은닉 (fear-greed/page.tsx)
+  - Rule: MISTAKES.md §Accessibility §0.5 — `.catch` returning null must log err for diagnostic visibility
+  - Context: [symbol]/page.tsx의 동일 `getBarsStatic` 패턴은 console.error 포함했는데 fear-greed/page.tsx만 누락. 진단 가시성 불일치. err 인자 + console.error('[FearGreedPage] getBarsStatic failed:', e) 추가.
+- Violation: 테스트 주석 사실 오류 — "analyze 단계는 진입하지만" 주장이 실제 코드와 반대
+  - Rule: MISTAKES.md §15.6 — Comments/JSDoc making factually inaccurate claims about the code they describe
+  - Context: `fresh.length === 0` early return으로 analyze 단계는 진입하지 않음. 주석을 "if (fresh.length === 0) return으로 early return — analyze 단계에 도달하지 않음"으로 정정. 동시에 MISTAKES.md §Code Review §1 룰을 현재 fresh-derive 설계 기준으로 명확화(safe iff downstream is fresh-derived, unsafe if DB-derived).
+- Status: APPROVED → merged
+  - Review: 2 Blocker(에러 로깅, 주석 사실오류) 반영. Suggestion(휴리스틱 화이트리스트)은 JSDoc CAVEAT 추가로 대응. Question은 MISTAKES.md 룰 명확화로 해소.
+
 ## [feat/polling-intervals Round 1 | feat/polling-intervals | 2026-06-06]
 - Violation: DependencyProgress.test.tsx mock had hardcoded constant 3000 instead of importing the updated AUGMENT_AND_OVERALL polling interval value 5000
   - Rule: MISTAKES.md Tests §4 / §13.5 — Boundary test constant redefined locally instead of imported from source; redefining production functions/constants locally in tests (production constant redefined in test)
