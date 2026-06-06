@@ -12,6 +12,7 @@ import type {
     SkillStatePredicateKind,
     SkillType,
 } from '@y0ngha/siglens-core';
+import { countSkillsByType } from '@/shared/lib/skillUtils';
 import type { SkillsProvider } from './model';
 
 const SKILLS_DIR = join(process.cwd(), 'skills');
@@ -453,46 +454,6 @@ const collectMdFiles = async (dir: string): Promise<string[]> => {
     return results.flat();
 };
 
-const countMdFiles = async (subdir: string): Promise<number> => {
-    const files = await collectMdFiles(join(SKILLS_DIR, subdir));
-    return files.length;
-};
-
-// cacheComponents 비활성 기간 동안 'use cache' 제거.
-// skills 디렉토리는 빌드 산출물이라 매 요청 fs.readdir이 사실상 OS page cache hit.
-//
-// 디스크 .md 파일 개수를 카테고리별로 집계한다(카탈로그 규모 표시용). loadSkills는
-// dedupeByName으로 동명 스킬을 제거하지만, 이 카운트는 파일 수를 그대로 반영한다
-// — 목적이 달라 의도적으로 dedup하지 않는다.
-export async function countSkillFiles(): Promise<SkillCounts> {
-    const [
-        indicators,
-        candlesticks,
-        patterns,
-        strategies,
-        supportResistance,
-        fundamental,
-        news,
-    ] = await Promise.all([
-        countMdFiles('indicators'),
-        countMdFiles('candlesticks'),
-        countMdFiles('patterns'),
-        countMdFiles('strategies'),
-        countMdFiles('support-resistance'),
-        countMdFiles('fundamental'),
-        countMdFiles('news'),
-    ]);
-    return {
-        indicators,
-        candlesticks,
-        patterns,
-        strategies,
-        supportResistance,
-        fundamental,
-        news,
-    };
-}
-
 /**
  * Drop skills whose `name` already appeared (first occurrence wins). Mirrors the
  * core loader's `dedupeByName`: the production prompt path is core-fed, but
@@ -526,4 +487,36 @@ export class FileSkillsLoader implements SkillsProvider {
 
         return dedupeByName(skills.filter((s): s is Skill => s !== null));
     }
+}
+
+// cacheComponents 비활성 기간 동안 'use cache' 제거.
+// skills 디렉토리는 빌드 산출물이라 매 요청 fs.readdir이 사실상 OS page cache hit.
+//
+// 스킬 카탈로그 규모를 frontmatter 기준으로 집계한다.
+// 디렉터리 기준이 아닌 `type`/`category` 필드 기준이라, `_core/` 등 보조 디렉터리에
+// 위치한 스킬도 본래 분류(indicator_guide/candlestick 등)로 잡힌다.
+// StatsBar(`buildSkillStats`)와 동일 소스를 사용해 hero 카피와 StatsBar 수치가
+// 어긋나지 않도록 한다.
+export async function countSkillFiles(): Promise<SkillCounts> {
+    const skills = await new FileSkillsLoader().loadSkills();
+    const byType = countSkillsByType(skills);
+    const byCategory = skills.reduce<Partial<Record<SkillCategory, number>>>(
+        (acc, skill) => {
+            if (skill.category == null) return acc;
+            return {
+                ...acc,
+                [skill.category]: (acc[skill.category] ?? 0) + 1,
+            };
+        },
+        {}
+    );
+    return {
+        indicators: byType.indicator_guide ?? 0,
+        candlesticks: byType.candlestick ?? 0,
+        patterns: byType.pattern ?? 0,
+        strategies: byType.strategy ?? 0,
+        supportResistance: byType.support_resistance ?? 0,
+        fundamental: byCategory.fundamental ?? 0,
+        news: byCategory.news ?? 0,
+    };
 }

@@ -125,18 +125,12 @@
 - Violation: setWhere 단언이 `toBeDefined()`만으로 약함
   - Rule: MISTAKES.md §13 — Drizzle sql 태그드 객체의 queryChunks 보유 검증으로 강화
   - Context: `toEqual(expect.objectContaining({ queryChunks: expect.any(Array) }))`로 정밀화.
-- Violation: WHAT 코멘트 (§15.3)
-  - Rule: MISTAKES.md §15.3
-  - Context: ensureNewsCardsAnalyzedAction.ts:149 "→ 다음 요청부터 news 리스트/JSON-LD가 fresh." WHAT 라인을 WHY("news 태그만 무효화하므로 bars/peek/profile 캐시는 보존")로 통합.
 - Status: APPROVED → merged (예정)
 
 ## [PR #573 Round 6 | feat/isr-writes-opt | 2026-06-06]
 - Violation: 테스트 인라인 주석 사실 오류 (§15.6)
   - Rule: MISTAKES.md §15.6 — Comments making factually inaccurate claims about code paths
   - Context: ensureNewsCardsAnalyzedAction.test.ts:216 "fresh=[] → upsertSettled 비어 changedCount=0 → revalidateTag 스킵" 첫 줄이 잘못 — 실제로는 `if (fresh.length === 0) return`으로 changedCount 계산 전 early return. 첫 줄 제거하고 단일 설명으로 통합.
-- Violation: WHAT 코멘트 (§15.3)
-  - Rule: MISTAKES.md §15.3 — Comments should explain WHY, not WHAT
-  - Context: `[symbol]/page.tsx:207` "bars seed: quantize된 bars를 동기 setQueryData로 주입한다." 제거. 나머지 WHY 라인 유지.
 - Violation: 인라인 반환 타입 (§TypeScript #5.3)
   - Rule: MISTAKES.md §TypeScript #5.3 — Named interface preferred over inline object literal return types
   - Context: api.test.ts:39 makeUpsertDb 인라인 반환 타입을 `interface UpsertDbMock`로 추출.

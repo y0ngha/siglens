@@ -1030,32 +1030,105 @@ ${gatingYaml}${extra}
 describe('countSkillFiles', () => {
     const SKILLS_DIR = path.join(process.cwd(), 'skills');
 
+    const skillMd = (name: string, frontmatter: string) => `---
+name: ${name}
+description: 설명
+${frontmatter}
+indicators: []
+confidence_weight: 0.5
+---
+
+## 내용
+
+내용`;
+
     beforeEach(() => {
         mockReaddir.mockReset();
+        mockReadFile.mockReset();
     });
 
-    it('각 서브디렉토리의 .md 파일 수를 병렬로 카운트한다', async () => {
+    it('frontmatter의 type/category 기준으로 카운트한다', async () => {
+        const files: Record<string, string> = {
+            [path.join(SKILLS_DIR, 'indicators/rsi.md')]: skillMd(
+                'RSI',
+                'type: indicator_guide'
+            ),
+            [path.join(SKILLS_DIR, 'indicators/macd.md')]: skillMd(
+                'MACD',
+                'type: indicator_guide'
+            ),
+            [path.join(SKILLS_DIR, 'candlesticks/engulfing.md')]: skillMd(
+                '장악형',
+                'type: candlestick'
+            ),
+            [path.join(SKILLS_DIR, 'patterns/head.md')]: skillMd(
+                '헤드앤숄더',
+                'type: pattern'
+            ),
+            [path.join(SKILLS_DIR, 'patterns/double-top.md')]: skillMd(
+                '이중천장',
+                'type: pattern'
+            ),
+            [path.join(SKILLS_DIR, 'patterns/double-bottom.md')]: skillMd(
+                '이중바닥',
+                'type: pattern'
+            ),
+            [path.join(SKILLS_DIR, 'strategies/fib.md')]: skillMd(
+                '피보나치',
+                'type: strategy'
+            ),
+            [path.join(SKILLS_DIR, 'support-resistance/pivot.md')]: skillMd(
+                '피봇',
+                'type: support_resistance'
+            ),
+            [path.join(SKILLS_DIR, 'support-resistance/fib-retr.md')]: skillMd(
+                '피보나치 되돌림',
+                'type: support_resistance'
+            ),
+            [path.join(SKILLS_DIR, 'fundamental/earnings.md')]: skillMd(
+                '실적',
+                'category: fundamental'
+            ),
+            [path.join(SKILLS_DIR, 'news/sentiment.md')]: skillMd(
+                '뉴스 센티먼트',
+                'category: news'
+            ),
+            [path.join(SKILLS_DIR, 'news/catalyst.md')]: skillMd(
+                '뉴스 촉매',
+                'category: news'
+            ),
+        };
+
         mockReaddir.mockImplementation((dir: string) => {
+            if (dir === SKILLS_DIR)
+                return Promise.resolve([
+                    dirDirent('indicators'),
+                    dirDirent('candlesticks'),
+                    dirDirent('patterns'),
+                    dirDirent('strategies'),
+                    dirDirent('support-resistance'),
+                    dirDirent('fundamental'),
+                    dirDirent('news'),
+                ]);
             if (dir === path.join(SKILLS_DIR, 'indicators'))
                 return Promise.resolve([
                     fileDirent('rsi.md'),
                     fileDirent('macd.md'),
-                    fileDirent('readme.txt'),
                 ]);
             if (dir === path.join(SKILLS_DIR, 'candlesticks'))
                 return Promise.resolve([fileDirent('engulfing.md')]);
             if (dir === path.join(SKILLS_DIR, 'patterns'))
                 return Promise.resolve([
-                    fileDirent('head-and-shoulders.md'),
+                    fileDirent('head.md'),
                     fileDirent('double-top.md'),
                     fileDirent('double-bottom.md'),
                 ]);
             if (dir === path.join(SKILLS_DIR, 'strategies'))
-                return Promise.resolve([fileDirent('fibonacci.md')]);
+                return Promise.resolve([fileDirent('fib.md')]);
             if (dir === path.join(SKILLS_DIR, 'support-resistance'))
                 return Promise.resolve([
-                    fileDirent('pivot-points.md'),
-                    fileDirent('fibonacci-retracement.md'),
+                    fileDirent('pivot.md'),
+                    fileDirent('fib-retr.md'),
                 ]);
             if (dir === path.join(SKILLS_DIR, 'fundamental'))
                 return Promise.resolve([fileDirent('earnings.md')]);
@@ -1066,6 +1139,9 @@ describe('countSkillFiles', () => {
                 ]);
             return Promise.resolve([]);
         });
+        mockReadFile.mockImplementation((file: string) =>
+            Promise.resolve(files[file] ?? '')
+        );
 
         const counts = await countSkillFiles();
 
@@ -1078,35 +1154,100 @@ describe('countSkillFiles', () => {
         expect(counts.news).toBe(2);
     });
 
-    it('서브디렉토리의 .md 파일을 재귀적으로 카운트한다', async () => {
-        const indicatorsDir = path.join(SKILLS_DIR, 'indicators');
-        const subDir = path.join(indicatorsDir, 'oscillators');
+    it('서브디렉토리 외부의 _core/* 스킬도 type 기준으로 합산된다', async () => {
+        const files: Record<string, string> = {
+            [path.join(SKILLS_DIR, 'indicators/rsi.md')]: skillMd(
+                'RSI',
+                'type: indicator_guide'
+            ),
+            [path.join(SKILLS_DIR, '_core/indicator-core.md')]: skillMd(
+                '지표 코어',
+                'type: indicator_guide'
+            ),
+            [path.join(SKILLS_DIR, '_core/candle-primer.md')]: skillMd(
+                '캔들 프라이머',
+                'type: candlestick'
+            ),
+        };
 
         mockReaddir.mockImplementation((dir: string) => {
-            if (dir === indicatorsDir)
+            if (dir === SKILLS_DIR)
                 return Promise.resolve([
-                    dirDirent('oscillators'),
-                    fileDirent('ma.md'),
+                    dirDirent('indicators'),
+                    dirDirent('_core'),
                 ]);
-            if (dir === subDir)
+            if (dir === path.join(SKILLS_DIR, 'indicators'))
+                return Promise.resolve([fileDirent('rsi.md')]);
+            if (dir === path.join(SKILLS_DIR, '_core'))
                 return Promise.resolve([
-                    fileDirent('rsi.md'),
-                    fileDirent('macd.md'),
+                    fileDirent('indicator-core.md'),
+                    fileDirent('candle-primer.md'),
                 ]);
             return Promise.resolve([]);
         });
+        mockReadFile.mockImplementation((file: string) =>
+            Promise.resolve(files[file] ?? '')
+        );
 
         const counts = await countSkillFiles();
 
-        expect(counts.indicators).toBe(3);
+        // _core/indicator-core.md가 type=indicator_guide라 indicators에 합산
+        expect(counts.indicators).toBe(2);
+        // _core/candle-primer.md가 type=candlestick이라 candlesticks에 합산
+        expect(counts.candlesticks).toBe(1);
+        // 다른 버킷이 누설/오집계되지 않음을 보장
+        expect(counts.patterns).toBe(0);
+        expect(counts.strategies).toBe(0);
+        expect(counts.supportResistance).toBe(0);
+        expect(counts.fundamental).toBe(0);
+        expect(counts.news).toBe(0);
     });
 
-    it('readdir가 실패하면 에러를 전파한다', async () => {
-        mockReaddir.mockRejectedValue(
-            new Error('ENOENT: no such file or directory')
+    it('type과 category가 동시 지정된 스킬은 두 버킷에 독립 집계된다', async () => {
+        // byType과 byCategory는 독립 accumulator. category=fundamental + type=pattern인
+        // (가상의) 스킬은 patterns에 1, fundamental에 1로 모두 잡혀야 한다.
+        // 둘을 합쳐 한쪽만 카운트하는 회귀를 막는다.
+        const files: Record<string, string> = {
+            [path.join(SKILLS_DIR, 'mixed/hybrid.md')]: skillMd(
+                '하이브리드',
+                'type: pattern\ncategory: fundamental'
+            ),
+        };
+
+        mockReaddir.mockImplementation((dir: string) => {
+            if (dir === SKILLS_DIR)
+                return Promise.resolve([dirDirent('mixed')]);
+            if (dir === path.join(SKILLS_DIR, 'mixed'))
+                return Promise.resolve([fileDirent('hybrid.md')]);
+            return Promise.resolve([]);
+        });
+        mockReadFile.mockImplementation((file: string) =>
+            Promise.resolve(files[file] ?? '')
         );
 
-        await expect(countSkillFiles()).rejects.toThrow('ENOENT');
+        const counts = await countSkillFiles();
+
+        expect(counts.patterns).toBe(1);
+        expect(counts.fundamental).toBe(1);
+        // 다른 버킷에 누설되지 않음
+        expect(counts.indicators).toBe(0);
+        expect(counts.candlesticks).toBe(0);
+        expect(counts.strategies).toBe(0);
+        expect(counts.supportResistance).toBe(0);
+        expect(counts.news).toBe(0);
+    });
+
+    it('non-ENOENT 파일시스템 에러는 전파된다', async () => {
+        // collectMdFiles는 .code === 'ENOENT'만 swallow하므로,
+        // 다른 코드(예: EACCES)는 그대로 throw되어야 한다.
+        // 이전에는 plain Error를 던졌는데, 그 경우 code === undefined !== 'ENOENT'라
+        // 우연히 통과해 실제 분기를 검증하지 못했다.
+        const error = Object.assign(new Error('EACCES: permission denied'), {
+            code: 'EACCES',
+        });
+        mockReaddir.mockRejectedValue(error);
+
+        await expect(countSkillFiles()).rejects.toThrow('EACCES');
     });
 });
 
