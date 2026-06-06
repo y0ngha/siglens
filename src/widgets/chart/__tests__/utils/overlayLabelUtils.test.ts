@@ -66,6 +66,8 @@ describe('buildOverlayLabelConfigs', () => {
                 bollingerVisible: false,
                 ichimokuVisible: false,
                 vpVisible: false,
+                keltnerVisible: false,
+                donchianVisible: false,
             });
 
             expect(result).toEqual([]);
@@ -80,6 +82,8 @@ describe('buildOverlayLabelConfigs', () => {
                 bollingerVisible: false,
                 ichimokuVisible: false,
                 vpVisible: false,
+                keltnerVisible: false,
+                donchianVisible: false,
             });
 
             expect(result).toHaveLength(2);
@@ -96,6 +100,8 @@ describe('buildOverlayLabelConfigs', () => {
                 bollingerVisible: false,
                 ichimokuVisible: false,
                 vpVisible: false,
+                keltnerVisible: false,
+                donchianVisible: false,
             });
 
             expect(result).toHaveLength(1);
@@ -111,6 +117,8 @@ describe('buildOverlayLabelConfigs', () => {
                 bollingerVisible: true,
                 ichimokuVisible: false,
                 vpVisible: false,
+                keltnerVisible: false,
+                donchianVisible: false,
             });
 
             expect(result).toHaveLength(3);
@@ -128,6 +136,8 @@ describe('buildOverlayLabelConfigs', () => {
                 bollingerVisible: false,
                 ichimokuVisible: true,
                 vpVisible: false,
+                keltnerVisible: false,
+                donchianVisible: false,
             });
 
             expect(result).toHaveLength(5);
@@ -147,6 +157,8 @@ describe('buildOverlayLabelConfigs', () => {
                 bollingerVisible: false,
                 ichimokuVisible: false,
                 vpVisible: true,
+                keltnerVisible: false,
+                donchianVisible: false,
             });
 
             expect(result).toHaveLength(3);
@@ -164,6 +176,8 @@ describe('buildOverlayLabelConfigs', () => {
                 bollingerVisible: true,
                 ichimokuVisible: false,
                 vpVisible: false,
+                keltnerVisible: false,
+                donchianVisible: false,
             });
 
             expect(result).toHaveLength(4);
@@ -182,6 +196,8 @@ describe('buildOverlayLabelConfigs', () => {
                 bollingerVisible: false,
                 ichimokuVisible: false,
                 vpVisible: false,
+                keltnerVisible: false,
+                donchianVisible: false,
             });
 
             expect(result[0].color).toBe(getPeriodColor(5));
@@ -194,10 +210,45 @@ describe('buildOverlayLabelConfigs', () => {
                 bollingerVisible: true,
                 ichimokuVisible: false,
                 vpVisible: false,
+                keltnerVisible: false,
+                donchianVisible: false,
             });
 
             expect(result[0].color).toBe(CHART_COLORS.bollingerUpper);
         });
+    });
+
+    it('builds Keltner/Donchian legend configs when visible', () => {
+        const configs = buildOverlayLabelConfigs({
+            maVisiblePeriods: [],
+            emaVisiblePeriods: [],
+            bollingerVisible: false,
+            ichimokuVisible: false,
+            vpVisible: false,
+            keltnerVisible: true,
+            donchianVisible: true,
+        });
+        const names = configs.map(c => c.name);
+        expect(names).toEqual(
+            expect.arrayContaining([
+                'KC Upper',
+                'KC Middle',
+                'KC Lower',
+                'DC Upper',
+                'DC Middle',
+                'DC Lower',
+            ])
+        );
+        const ind = {
+            keltnerChannel: [{ upper: 11, middle: 10, lower: 9 }],
+            donchianChannel: [{ upper: 21, middle: 20, lower: 19 }],
+        } as unknown as Parameters<(typeof configs)[number]['getValue']>[0];
+        expect(configs.find(c => c.name === 'KC Upper')?.getValue(ind, 0)).toBe(
+            11
+        );
+        expect(configs.find(c => c.name === 'DC Lower')?.getValue(ind, 0)).toBe(
+            19
+        );
     });
 });
 
@@ -249,6 +300,8 @@ describe('resolveOverlayValues', () => {
         bollingerVisible: true,
         ichimokuVisible: false,
         vpVisible: false,
+        keltnerVisible: false,
+        donchianVisible: false,
     });
 
     describe('barIndex가 -1일 때', () => {
@@ -334,6 +387,8 @@ describe('buildOverlayLabelConfigs — getValue 콜백', () => {
             bollingerVisible: false,
             ichimokuVisible: false,
             vpVisible: false,
+            keltnerVisible: false,
+            donchianVisible: false,
         });
 
         expect(configs[0].getValue(mockIndicators, 0)).toBe(100);
@@ -348,6 +403,8 @@ describe('buildOverlayLabelConfigs — getValue 콜백', () => {
             bollingerVisible: false,
             ichimokuVisible: false,
             vpVisible: false,
+            keltnerVisible: false,
+            donchianVisible: false,
         });
 
         expect(configs[0].getValue(mockIndicators, 0)).toBeNull();
@@ -360,6 +417,8 @@ describe('buildOverlayLabelConfigs — getValue 콜백', () => {
             bollingerVisible: true,
             ichimokuVisible: false,
             vpVisible: false,
+            keltnerVisible: false,
+            donchianVisible: false,
         });
 
         expect(configs[0].getValue(mockIndicators, 0)).toBe(105);
@@ -375,6 +434,8 @@ describe('buildOverlayLabelConfigs — getValue 콜백', () => {
             bollingerVisible: false,
             ichimokuVisible: true,
             vpVisible: false,
+            keltnerVisible: false,
+            donchianVisible: false,
         });
 
         expect(configs[0].getValue(mockIndicators, 0)).toBe(101); // tenkan
@@ -392,6 +453,8 @@ describe('buildOverlayLabelConfigs — getValue 콜백', () => {
             bollingerVisible: false,
             ichimokuVisible: false,
             vpVisible: true,
+            keltnerVisible: false,
+            donchianVisible: false,
         });
 
         expect(configs[0].getValue(mockIndicators, 0)).toBe(100); // poc
@@ -411,6 +474,8 @@ describe('buildOverlayLabelConfigs — getValue 콜백', () => {
             bollingerVisible: false,
             ichimokuVisible: false,
             vpVisible: true,
+            keltnerVisible: false,
+            donchianVisible: false,
         });
 
         expect(configs[0].getValue(emptyIndicators, 0)).toBeNull();
