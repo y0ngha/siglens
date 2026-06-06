@@ -201,7 +201,7 @@ describe('Overall page (narrative seed)', () => {
         expect(props.hasEnrichedNews).toBe(false);
     });
 
-    it('hasEnrichedNews=true: 모든 row가 미분석(sentiment=null)이면 false 전달', async () => {
+    it('모든 row가 미분석(sentiment=null)이면 hasEnrichedNews=false 전달', async () => {
         mockPeekOverall.mockResolvedValue(null);
         const { getNewsList } = await import('@/entities/news-article');
         (
@@ -228,7 +228,7 @@ describe('Overall page (narrative seed)', () => {
         expect(props.hasEnrichedNews).toBe(true);
     });
 
-    it('hasEnrichedNews=true: getNewsList가 throw해도 ISR-safe하게 false로 degrade한다', async () => {
+    it('getNewsList가 throw해도 ISR-safe하게 hasEnrichedNews=false로 degrade한다', async () => {
         mockPeekOverall.mockResolvedValue(null);
         const { getNewsList } = await import('@/entities/news-article');
         (
