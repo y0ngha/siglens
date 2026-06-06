@@ -23,10 +23,10 @@ vi.mock('@/widgets/symbol-page/hooks/useDefaultModelId', () => ({
 // /news와 동일 게이트 적용 — 두 훅을 단순화해 효과만 검증한다.
 // useNewsAnalysisTrigger는 fire-and-forget mount effect이므로 no-op.
 // useWaitForNewsCards는 prop으로 받은 initialReady를 그대로 isReady로 노출한다.
-vi.mock('@/widgets/news/hooks/useNewsAnalysisTrigger', () => ({
+// barrel(@/widgets/news)을 mock — production이 barrel을 import하므로 일치 필요.
+vi.mock('@/widgets/news', async importOriginal => ({
+    ...(await importOriginal<typeof import('@/widgets/news')>()),
     useNewsAnalysisTrigger: vi.fn(),
-}));
-vi.mock('@/widgets/news/hooks/useWaitForNewsCards', () => ({
     useWaitForNewsCards: vi.fn((_symbol: string, initiallyReady: boolean) => ({
         isReady: initiallyReady,
         pollError: null,
@@ -518,10 +518,8 @@ describe('OverallContent — /news와 동일 순차 게이트 (useNewsAnalysisTr
             state: { status: 'idle' },
             trigger: vi.fn(),
         });
-        const { useNewsAnalysisTrigger } =
-            await import('@/widgets/news/hooks/useNewsAnalysisTrigger');
-        const { useWaitForNewsCards } =
-            await import('@/widgets/news/hooks/useWaitForNewsCards');
+        const { useNewsAnalysisTrigger } = await import('@/widgets/news');
+        const { useWaitForNewsCards } = await import('@/widgets/news');
         (
             useNewsAnalysisTrigger as MockedFunction<
                 typeof useNewsAnalysisTrigger
@@ -537,8 +535,7 @@ describe('OverallContent — /news와 동일 순차 게이트 (useNewsAnalysisTr
     });
 
     it('마운트 시 useNewsAnalysisTrigger가 symbol과 함께 호출된다 (/news와 동일 fire-and-forget trigger)', async () => {
-        const { useNewsAnalysisTrigger } =
-            await import('@/widgets/news/hooks/useNewsAnalysisTrigger');
+        const { useNewsAnalysisTrigger } = await import('@/widgets/news');
         render(
             <OverallContent
                 symbol="AAPL"
@@ -599,8 +596,7 @@ describe('OverallContent — /news와 동일 순차 게이트 (useNewsAnalysisTr
     });
 
     it('useWaitForNewsCards가 pollError를 반환하면 error boundary로 전파 (throw)', async () => {
-        const { useWaitForNewsCards } =
-            await import('@/widgets/news/hooks/useWaitForNewsCards');
+        const { useWaitForNewsCards } = await import('@/widgets/news');
         (
             useWaitForNewsCards as MockedFunction<typeof useWaitForNewsCards>
         ).mockReturnValue({

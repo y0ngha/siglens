@@ -1,8 +1,7 @@
 'use client';
 
 import { usePublishSymbolChat } from '@/features/symbol-chat';
-import { useNewsAnalysisTrigger } from '@/widgets/news/hooks/useNewsAnalysisTrigger';
-import { useWaitForNewsCards } from '@/widgets/news/hooks/useWaitForNewsCards';
+import { useNewsAnalysisTrigger, useWaitForNewsCards } from '@/widgets/news';
 import { DependencyProgress } from './DependencyProgress';
 import { useOverallAnalysis } from './hooks/useOverallAnalysis';
 import { OverallTriggerCta } from './OverallTriggerCta';

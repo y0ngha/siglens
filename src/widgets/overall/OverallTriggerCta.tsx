@@ -34,7 +34,6 @@ export function OverallTriggerCta({
                 type="button"
                 onClick={onTrigger}
                 disabled={disabled}
-                aria-busy={disabled}
                 className={cn(
                     'mt-6 inline-flex items-center rounded-md px-6 py-3 text-sm font-medium text-white transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
                     disabled

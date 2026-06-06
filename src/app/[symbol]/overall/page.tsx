@@ -136,11 +136,11 @@ export default async function OverallPage({ params }: Props) {
         [`news:${upper}`]
     ).catch((error: unknown) => {
         console.error('[OverallPage] getNewsList failed:', error);
+        // safe: 빈 배열은 NewsRow[]와 구조적 호환(`.some` 호출 가능). TS는 []의 element
+        // type을 never로 추론하므로 staticSymbolCache 반환 타입에 맞추기 위한 cast.
         return [] as Awaited<ReturnType<typeof getNewsList>>;
     });
-    const hasEnrichedNews =
-        Array.isArray(newsItems) &&
-        newsItems.some(item => item.sentiment !== null);
+    const hasEnrichedNews = newsItems.some(item => item.sentiment !== null);
 
     const cachedOverall = await staticSymbolCache(
         ['peek:overall', upper, GEMINI_2_5_FLASH_LITE_MODEL],
