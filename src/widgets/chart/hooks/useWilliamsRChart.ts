@@ -39,7 +39,6 @@ export function useWilliamsRChart({
         seriesRef.current = null;
     });
 
-    // isVisible false 또는 paneIndex 변경 시 시리즈 제거 및 ref 초기화
     const removeAllSeries = useEffectEvent((chart: IChartApi) => {
         if (seriesRef.current) {
             chart.removeSeries(seriesRef.current);
@@ -63,7 +62,6 @@ export function useWilliamsRChart({
             return;
         }
 
-        // paneIndex 변경 시 시리즈 제거 후 재생성
         if (prevPaneIndexRef.current !== paneIndex && seriesRef.current) {
             removeAllSeries(chart);
         }
@@ -102,7 +100,6 @@ export function useWilliamsRChart({
         seriesRef.current.applyOptions({ lineWidth });
     }, [chartRef, isVisible, lineWidth, paneIndex]);
 
-    // 데이터 동기화: 시리즈가 보이는 동안 bars/indicators 변경 시 업데이트
     useEffect(() => {
         if (!isVisible) return;
 
