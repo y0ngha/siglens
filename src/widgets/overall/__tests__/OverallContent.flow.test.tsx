@@ -42,6 +42,14 @@ vi.mock('@/features/symbol-chat', () => ({
 vi.mock('@/widgets/symbol-page/hooks/useDefaultModelId', () => ({
     useDefaultModelId: vi.fn(() => 'gemini-2.5-flash-lite'),
 }));
+// /news와 동일 게이트 적용 후 mock 필요. flow 테스트는 hasEnrichedNews=true 전제로
+// 게이트를 즉시 통과시키고 본래 검증(submit→polling→done 서사)을 그대로 유지한다.
+vi.mock('@/widgets/news/hooks/useNewsAnalysisTrigger', () => ({
+    useNewsAnalysisTrigger: vi.fn(),
+}));
+vi.mock('@/widgets/news/hooks/useWaitForNewsCards', () => ({
+    useWaitForNewsCards: vi.fn(() => ({ isReady: true, pollError: null })),
+}));
 // useSearchParams를 테스트별로 바꿀 수 있도록 mutable ref로 모킹한다(고정 빈 값 X).
 const { searchParamsRef } = vi.hoisted(() => ({
     searchParamsRef: { value: new URLSearchParams() },
@@ -86,9 +94,16 @@ function renderOverall() {
     // 매 호출이 격리된 새 QueryClient를 만들어 테스트 간 캐시 공유가 없다. 그래서
     // hook 테스트(useOverallAnalysis.test.tsx)처럼 client를 추적해 afterEach에서
     // clear할 필요가 없다 — 컴포넌트는 RTL cleanup이 unmount하고 client는 GC된다.
-    return render(<OverallContent symbol="AAPL" companyName="Apple Inc." />, {
-        wrapper: createQueryClientWrapper().wrapper,
-    });
+    return render(
+        <OverallContent
+            symbol="AAPL"
+            companyName="Apple Inc."
+            hasEnrichedNews={true}
+        />,
+        {
+            wrapper: createQueryClientWrapper().wrapper,
+        }
+    );
 }
 
 describe('OverallContent 사용자 분석 플로우 (userEvent)', () => {

@@ -48,6 +48,11 @@ vi.mock('@y0ngha/siglens-core', () => ({
 vi.mock('next/navigation', () => ({
     notFound: vi.fn(),
 }));
+// /news와 동일 게이트(useWaitForNewsCards) 적용을 위해 newsItems를 SSR에서 조회한다.
+// 테스트는 enriched flag 흐름만 검증하므로 단순한 mock으로 충분.
+vi.mock('@/app/[symbol]/news/newsData', () => ({
+    getNewsList: vi.fn().mockResolvedValue([]),
+}));
 
 import {
     generateMetadata,

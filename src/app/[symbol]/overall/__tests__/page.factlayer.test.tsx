@@ -109,7 +109,15 @@ describe('OverallPage — FactLayer SSR integration', () => {
             optionsBulletsKo: [],
             riskFactorsKo: [],
         };
-        mockStatic.mockResolvedValue(cached as never);
+        // staticSymbolCache는 두 번 호출된다 — news:list(enrichment 게이트용)와
+        // peek:overall(SSR seed). key 기반 분기로 첫 호출(newsItems)은 빈 배열,
+        // 두 번째(peek)는 cached 반환을 시뮬레이션한다.
+        mockStatic.mockImplementation(async (key: readonly unknown[]) => {
+            if (Array.isArray(key) && key[0] === 'news:list') {
+                return [] as never;
+            }
+            return cached as never;
+        });
 
         const tree = await OverallPage({
             params: Promise.resolve({ symbol: 'aapl' }),
@@ -124,7 +132,12 @@ describe('OverallPage — FactLayer SSR integration', () => {
     });
 
     it('Worst: peek MISS(null)면 OverallFactsSummary 미렌더 — 크래시 없이 페이지 정상', async () => {
-        mockStatic.mockResolvedValue(null as never);
+        mockStatic.mockImplementation(async (key: readonly unknown[]) => {
+            if (Array.isArray(key) && key[0] === 'news:list') {
+                return [] as never;
+            }
+            return null as never;
+        });
 
         const tree = await OverallPage({
             params: Promise.resolve({ symbol: 'aapl' }),
@@ -137,7 +150,8 @@ describe('OverallPage — FactLayer SSR integration', () => {
         expect(factLayer).toBeNull();
     });
 
-    it('Worst: staticSymbolCache 실패(throw)해도 페이지가 깨지지 않는다(null degrade)', async () => {
+    it('Worst: staticSymbolCache 실패(throw)해도 페이지가 깨지지 않는다(null degrade) — newsItems + peek 둘 다 catch fallback', async () => {
+        // ISR safety: 두 staticSymbolCache 호출 모두 인프라 실패 시에도 페이지가 throw 안 한다.
         mockStatic.mockRejectedValue(new Error('redis infra down'));
 
         await expect(
