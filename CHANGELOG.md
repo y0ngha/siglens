@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.19.1](https://github.com/y0ngha/siglens/compare/v0.19.0...v0.19.1) (2026-06-06)
+
+
+### Bug Fixes
+
+* **home:** 보조지표 카운트 hero/StatsBar 일치 (_core/* 포함) ([4f6dc4d](https://github.com/y0ngha/siglens/commit/4f6dc4d79a57b4aa5071be130a54e871b6d1a3de))
+
 # [0.19.0](https://github.com/y0ngha/siglens/compare/v0.18.1...v0.19.0) (2026-06-06)
 
 
