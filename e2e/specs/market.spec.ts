@@ -30,10 +30,25 @@ test.describe('market overview', () => {
     });
 
     /**
+     * SSR 크롤 텍스트 보장. 인터랙티브 SectorSignalPanel은 useSearchParams CSR
+     * bailout이라 no-JS HTML이 비어 있다. SectorFactsSummary가 Suspense fallback에
+     * 같은 데이터를 서버 렌더하므로, JS 없이 받은 raw HTML에 섹션 헤딩이 있어야 한다.
+     */
+    test('SSR HTML exposes the SectorFactsSummary crawl-text (no-JS crawlers)', async ({
+        page,
+    }) => {
+        const res = await page.request.get('/market');
+        expect(res.status()).toBe(200);
+        const html = await res.text();
+        expect(html).toContain('섹터별 신호 모아보기');
+    });
+
+    /**
      * 부분 로드 실패 안내. FakeMarketProvider는 항상 비-0 시세를 주므로 안내가 뜨지
-     * 않는다 — force-partial 쿠키(E2E_TEST 한정, getMarketSummaryAction이 해석)로 첫
-     * 섹터 quote를 0으로 만들어 server action → useMarketSummary(hasMissingQuotes)
-     * → 패널 안내까지 전 경로를 결정적으로 검증한다. 닫으면(일시적) 사라진다.
+     * 않는다 — force-partial 쿠키(E2E_TEST 한정, getMarketSummaryClientAction이 해석;
+     * 클라는 NEXT_PUBLIC_E2E_TEST=1일 때 force-partial을 결정적으로 refetch)로 첫 섹터
+     * quote를 0으로 만들어 server action → useMarketSummary(hasMissingQuotes) → 패널
+     * 안내까지 전 경로를 결정적으로 검증한다. 닫으면(일시적) 사라진다.
      */
     test('partial data-load failure shows a dismissible notice', async ({
         page,
