@@ -595,7 +595,7 @@ describe('OverallContent — /news와 동일 순차 게이트 (useNewsAnalysisTr
         expect(trigger).not.toHaveBeenCalled();
     });
 
-    it('useWaitForNewsCards가 pollError를 반환하면 error boundary로 전파 (throw)', async () => {
+    it('useWaitForNewsCards가 pollError를 반환하면 inline alert fallback을 렌더한다', async () => {
         const { useWaitForNewsCards } = await import('@/widgets/news');
         (
             useWaitForNewsCards as MockedFunction<typeof useWaitForNewsCards>
@@ -603,20 +603,19 @@ describe('OverallContent — /news와 동일 순차 게이트 (useNewsAnalysisTr
             isReady: false,
             pollError: new Error('polling exhausted'),
         });
-        // React error boundary 대신 console.error suppress + throw 확인
-        const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-        try {
-            expect(() =>
-                render(
-                    <OverallContent
-                        symbol="AAPL"
-                        companyName="Apple Inc."
-                        hasEnrichedNews={false}
-                    />
-                )
-            ).toThrow('polling exhausted');
-        } finally {
-            errSpy.mockRestore();
-        }
+        render(
+            <OverallContent
+                symbol="AAPL"
+                companyName="Apple Inc."
+                hasEnrichedNews={false}
+            />
+        );
+        // role="alert" + 안내 문구로 사용자에게 회복 메시지 노출.
+        // ErrorBoundary로 감싸지 않으므로 자체 fallback을 렌더해 페이지 crash를 막는다.
+        const alert = screen.getByRole('alert');
+        expect(alert).toBeInTheDocument();
+        expect(
+            screen.getByText(/뉴스 카드 분석 준비 중 오류가 발생했어요/)
+        ).toBeInTheDocument();
     });
 });

@@ -21,7 +21,8 @@ vi.mock('@/shared/db/client', () => ({
 }));
 
 import { DrizzleNewsRepository, getNewsList } from '@/entities/news-article';
-import { NEWS_LOOKBACK_MS } from '@/entities/news-article/lib/newsLookback';
+// 같은 슬라이스 내부 segment는 relative import (CONVENTIONS.md §FSD Slice Internal Imports).
+import { NEWS_LOOKBACK_MS } from '../../lib/newsLookback';
 
 const listBySymbolSpy = vi.spyOn(
     DrizzleNewsRepository.prototype,

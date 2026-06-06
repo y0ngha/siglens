@@ -75,10 +75,28 @@ export function OverallContent({
     );
     usePublishSymbolChat(chatState);
 
-    // 상위 NewsAiSummaryErrorBoundary 형제와 동일하게 누적 polling 실패는 boundary로 위임한다 —
-    // hook-local retry/UI 분기를 만들지 않고 단일 fallback 경로로 회복한다.
+    // useWaitForNewsCards가 누적 polling 실패 임계를 넘으면 inline fallback으로 회복한다 —
+    // OverallContent는 ErrorBoundary로 감싸지 않으므로(throw하면 페이지 전체 crash),
+    // 자체 fallback UI로 사용자에게 안내하고 새로고침 기회를 준다.
     if (pollError !== null) {
-        throw pollError;
+        return (
+            <section
+                aria-labelledby="overall-cta-poll-error-heading"
+                role="alert"
+                className="border-ui-danger/30 bg-secondary-800 rounded-xl border p-6 text-center"
+            >
+                <h2
+                    id="overall-cta-poll-error-heading"
+                    className="mb-2 text-lg font-semibold text-balance"
+                >
+                    AI 종합 분석
+                </h2>
+                <p className="text-ui-danger text-sm">
+                    뉴스 카드 분석 준비 중 오류가 발생했어요. 잠시 후 다시
+                    시도해 주세요.
+                </p>
+            </section>
+        );
     }
 
     if (state.status === 'idle') {

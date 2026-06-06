@@ -18,6 +18,7 @@ export function OverallTriggerCta({
     return (
         <section
             aria-labelledby="overall-cta-heading"
+            aria-busy={disabled}
             className="border-secondary-700 bg-secondary-800 rounded-xl border p-12 text-center"
         >
             <h2
@@ -37,7 +38,7 @@ export function OverallTriggerCta({
                 className={cn(
                     'mt-6 inline-flex items-center rounded-md px-6 py-3 text-sm font-medium text-white transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
                     disabled
-                        ? 'bg-secondary-600 cursor-not-allowed opacity-60'
+                        ? 'bg-secondary-600 focus-visible:ring-secondary-500 cursor-not-allowed opacity-60'
                         : 'bg-primary-600 hover:bg-primary-700 focus-visible:ring-primary-500'
                 )}
             >
