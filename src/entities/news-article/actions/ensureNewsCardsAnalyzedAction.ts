@@ -131,13 +131,25 @@ export async function ensureNewsCardsAnalyzedAction(
     }
     await markFetched(symbol);
 
+    // FMP에서 새 뉴스가 하나도 없으면(fresh 빈) 무효화·분석 모두 불필요하다 — unanalyzed도
+    // 항상 빈 배열이 되므로 listBySymbol DB 쿼리를 스킵한다. (fresh.length>0이지만 모두 no-op인
+    // 경우는 아래로 진행해 미분석 기존 기사를 분석한다 — 회귀 가드.)
     if (fresh.length === 0) return;
 
-    // fresh 기사가 있어 DB가 갱신됐으니 news ISR 캐시(news:${symbol} 그룹)를 무효화한다.
-    // → 다음 요청부터 news 리스트/JSON-LD가 fresh. bars/peek/profile 캐시는 보존.
-    // "max" profile: 캐시 항목을 즉시 만료시켜 다음 요청에서 재생성하게 한다.
-    // (fresh.length === 0이면 DB 변경이 없어 위 guard에서 먼저 리턴 — 불필요한 무효화 스킵.)
-    revalidateTag(`news:${symbol.toUpperCase()}`, 'max');
+    // 실제로 신규 삽입/내용 변경된 기사가 1건 이상일 때만 news ISR 캐시를 무효화한다.
+    // upsertNewsItem은 값이 바뀐 행만 RETURNING하므로(setWhere), 같은 기사 재fetch는
+    // changedCount=0 → revalidateTag 스킵. 방문마다 무효화하던 빈도 폭풍을 차단한다.
+    // 단, 분석(analyze) 단계는 changedCount와 무관하게 진행한다 — 이전 호출에서
+    // 분석 실패로 analyzedAt=null로 남은 기존 기사를 재fetch(no-op)에서도 다시 분석해야
+    // 하므로(analyze는 listBySymbol로 DB의 모든 미분석 행을 대상으로 함).
+    const changedCount = upsertSettled.filter(
+        r => r.status === 'fulfilled' && r.value === true
+    ).length;
+    if (changedCount > 0) {
+        // news 태그만 무효화하므로 bars/peek/profile 캐시는 보존(범위 제한).
+        // "max" profile: 캐시 항목을 즉시 만료시켜 다음 요청에서 재생성하게 한다.
+        revalidateTag(`news:${symbol.toUpperCase()}`, 'max');
+    }
 
     if (isE2E()) return;
 

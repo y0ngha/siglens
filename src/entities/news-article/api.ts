@@ -25,13 +25,21 @@ export interface NewsRow extends NewsDisplayItem {
 export class DrizzleNewsRepository {
     constructor(private readonly db: SiglensDatabase) {}
 
-    // Identity fields only on conflict — analysis columns (titleKo, sentiment, etc.) are written by attachAnalysis.
-    async upsertNewsItem(item: NewsItem): Promise<void> {
+    /**
+     * Upserts a news item and returns whether the row was actually inserted or
+     * its content actually changed. Returns `false` when a re-fetch produces
+     * identical content (so the caller can skip a `revalidateTag` call).
+     *
+     * Identity fields only on conflict — analysis columns (titleKo, sentiment,
+     * etc.) are written by attachAnalysis() and intentionally excluded from the
+     * conflict `set` to avoid overwriting LLM-translated content on every fetch.
+     */
+    async upsertNewsItem(item: NewsItem): Promise<boolean> {
         // Wrapped in withRetry: the Neon HTTP driver intermittently throws
         // `fetch failed` on connection recycling; retrying transparently
         // keeps single-item dropouts from leaving news cards permanently
         // un-upserted in the 250-item batch.
-        await withRetry(
+        const changed = await withRetry(
             () =>
                 this.db
                     .insert(news)
@@ -45,12 +53,19 @@ export class DrizzleNewsRepository {
                         bodyEn: item.bodyEn ?? null,
                     })
                     /**
-                     * bodyKo intentionally NOT in the conflict update — it is
+                     * bodyKo intentionally NOT in the conflict `set` — it is
                      * write-once via attachAnalysis() (the LLM translation step) to
                      * avoid overwriting LLM-translated content with raw English on
                      * every FMP refetch. The same reasoning applies to titleKo,
                      * summaryKo, sentiment, category, priceImpact, and analyzedAt:
                      * those columns belong to the analysis step, not the fetch step.
+                     *
+                     * `setWhere` makes the UPDATE fire only when at least one of the
+                     * five fetch-owned columns actually differs from the stored row.
+                     * Combined with `.returning({ id })`, a row is returned only on
+                     * a genuine insert or a real update; an unchanged re-fetch
+                     * returns an empty array, allowing the caller to skip ISR
+                     * `revalidateTag` when nothing changed.
                      */
                     .onConflictDoUpdate({
                         target: news.id,
@@ -61,9 +76,18 @@ export class DrizzleNewsRepository {
                             titleEn: sql`excluded.title_en`,
                             bodyEn: sql`excluded.body_en`,
                         },
-                    }),
+                        setWhere: sql`
+                            ${news.symbol} IS DISTINCT FROM excluded.symbol OR
+                            ${news.source} IS DISTINCT FROM excluded.source OR
+                            ${news.publishedAt} IS DISTINCT FROM excluded.published_at OR
+                            ${news.titleEn} IS DISTINCT FROM excluded.title_en OR
+                            ${news.bodyEn} IS DISTINCT FROM excluded.body_en
+                        `,
+                    })
+                    .returning({ id: news.id }),
             NEON_TRANSIENT_RETRY
         );
+        return changed.length > 0;
     }
 
     async attachAnalysis(

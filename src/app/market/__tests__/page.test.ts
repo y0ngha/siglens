@@ -46,8 +46,9 @@ vi.mock('@/entities/market-summary/api/briefingStaticCache', () => ({
     peekBriefingStatic: (...args: unknown[]) => mockPeekBriefingStatic(...args),
 }));
 
+// Intentionally includes minutes/seconds to verify quantization strips them off
 const mockGetSectorSignalsStatic = vi.fn().mockResolvedValue({
-    computedAt: '2026-06-04T00:00:00Z',
+    computedAt: '2026-06-04T14:37:22.000Z',
     stocks: [],
 });
 vi.mock('@/entities/sector-signal/api/sectorSignalsStaticCache', () => ({
@@ -129,7 +130,8 @@ describe('Market page', () => {
                 sectors: [],
             });
             mockGetSectorSignalsStatic.mockResolvedValue({
-                computedAt: '2026-06-04T00:00:00Z',
+                // Intentionally includes minutes/seconds to verify quantization strips them off
+                computedAt: '2026-06-04T14:37:22.000Z',
                 stocks: [],
             });
             mockPeekBriefingStatic.mockResolvedValue(null);
@@ -152,8 +154,8 @@ describe('Market page', () => {
             // MarketContent calls queryClient.setQueryData twice: once for marketSummary
             // and once for sectorSignals. mockSetQueryData is shared across all QueryClient
             // instances created by MockQueryClientClass.
-            // page.tsx: queryClient.setQueryData(QUERY_KEYS.marketSummary(), { summary })
-            // → data shape is { summary: { indices, sectors } }
+            // page.tsx: queryClient.setQueryData(QUERY_KEYS.marketSummary(), { summary }, { updatedAt })
+            // updatedAt 옵션은 dehydrate 시 ISR HTML 결정성 보장용(2026-06-06 PR #573 R8 fix).
             expect(mockSetQueryData).toHaveBeenCalledWith(
                 ['market-summary'],
                 expect.objectContaining({
@@ -161,14 +163,81 @@ describe('Market page', () => {
                         indices: [],
                         sectors: [],
                     }),
-                })
+                }),
+                expect.objectContaining({ updatedAt: expect.any(Number) })
             );
-            // page.tsx: queryClient.setQueryData(QUERY_KEYS.sectorSignals(...), sectorData)
-            // → data shape is { computedAt, stocks }
+            // page.tsx: queryClient.setQueryData(QUERY_KEYS.sectorSignals(...), sectorData, { updatedAt })
             expect(mockSetQueryData).toHaveBeenCalledWith(
                 ['sector-signals', '1Day'],
-                expect.objectContaining({ stocks: [] })
+                expect.objectContaining({ stocks: [] }),
+                expect.objectContaining({ updatedAt: expect.any(Number) })
             );
+        });
+
+        it('SSR seed quantizes sectorData.computedAt to hour bucket — raw minutes/seconds are stripped', async () => {
+            // page.tsx는 raw computedAt이 아니라 `new Date().toISOString().slice(0, 13)` 즉
+            // SSR 렌더 시점의 시간 버킷으로 교체한다 — vi.setSystemTime으로 시간 고정 후 exact 검증.
+            vi.useFakeTimers();
+            vi.setSystemTime(new Date('2026-06-04T14:37:22.000Z'));
+            try {
+                await MarketContent();
+
+                const sectorSignalsCall = (
+                    mockSetQueryData.mock.calls as [
+                        unknown[],
+                        unknown,
+                        unknown,
+                    ][]
+                ).find(
+                    ([key]) => Array.isArray(key) && key[0] === 'sector-signals'
+                );
+                expect(sectorSignalsCall).toBeDefined();
+                const seededData = sectorSignalsCall![1] as {
+                    computedAt: string;
+                };
+
+                // Exact: 고정된 system time → '2026-06-04T14' (13 chars, no minutes)
+                expect(seededData.computedAt).toBe('2026-06-04T14');
+
+                // updatedAt 옵션도 결정론적: dateHour:00:00 ms = '2026-06-04T14:00:00.000Z'
+                const expectedUpdatedAt = new Date(
+                    '2026-06-04T14:00:00.000Z'
+                ).getTime();
+                expect(sectorSignalsCall![2]).toEqual({
+                    updatedAt: expectedUpdatedAt,
+                });
+            } finally {
+                vi.useRealTimers();
+            }
+        });
+
+        it('SSR seed quantization works when stocks is empty', async () => {
+            mockGetSectorSignalsStatic.mockResolvedValue({
+                computedAt: '2026-06-04T09:52:11.000Z',
+                stocks: [],
+            });
+            vi.useFakeTimers();
+            vi.setSystemTime(new Date('2026-06-04T09:52:11.000Z'));
+            try {
+                await MarketContent();
+
+                const sectorSignalsCall = (
+                    mockSetQueryData.mock.calls as [unknown[], unknown][]
+                ).find(
+                    ([key]) => Array.isArray(key) && key[0] === 'sector-signals'
+                );
+                expect(sectorSignalsCall).toBeDefined();
+                const seededData = sectorSignalsCall![1] as {
+                    computedAt: string;
+                    stocks: unknown[];
+                };
+
+                expect(seededData.stocks).toEqual([]);
+                // Exact: fixed system time → '2026-06-04T09'
+                expect(seededData.computedAt).toBe('2026-06-04T09');
+            } finally {
+                vi.useRealTimers();
+            }
         });
 
         it('peekBriefingStatic returns null → graceful fallback (client triggers submit)', async () => {

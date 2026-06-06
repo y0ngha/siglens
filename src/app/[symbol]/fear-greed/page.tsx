@@ -13,8 +13,9 @@ import {
     buildDisplayName,
     getAssetInfoResilient,
 } from '@/entities/ticker';
-import { getBarsStatic } from '@/entities/bars';
+import { getBarsStatic, quantizeBarsDataToLastClosed } from '@/entities/bars';
 import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/shared/config/queryConfig';
+import { MS_PER_SECOND } from '@/shared/config/time';
 import {
     buildBreadcrumbJsonLd,
     buildSymbolFearGreedSeoContent,
@@ -174,16 +175,30 @@ export default async function SymbolFearGreedPage({ params }: Props) {
     const queryClient = new QueryClient({
         defaultOptions: { queries: { staleTime: QUERY_STALE_TIME_MS } },
     });
-    queryClient.setQueryData(QUERY_KEYS.assetInfo(symbol), assetInfo);
-    await queryClient.prefetchQuery({
-        queryKey: QUERY_KEYS.bars(
-            symbol,
-            DEFAULT_TIMEFRAME,
-            assetInfo.fmpSymbol
-        ),
-        queryFn: () =>
-            getBarsStatic(symbol, DEFAULT_TIMEFRAME, assetInfo.fmpSymbol),
+    queryClient.setQueryData(QUERY_KEYS.assetInfo(symbol), assetInfo, {
+        updatedAt: 0,
     });
+    const fgBars = await getBarsStatic(
+        symbol,
+        DEFAULT_TIMEFRAME,
+        assetInfo.fmpSymbol
+    ).catch((e: unknown) => {
+        console.error('[FearGreedPage] getBarsStatic failed:', e);
+        return null;
+    });
+    if (fgBars !== null) {
+        // updatedAt 명시: RQ dehydrate 기본은 Date.now()라 매 ISR 재생성마다 다른 timestamp가
+        // HTML에 박혀 ISR write churn 발생. 마지막 완료 봉의 time으로 고정.
+        const quantized = quantizeBarsDataToLastClosed(fgBars, new Date());
+        // Bar.time은 seconds (epoch) — RQ dataUpdatedAt은 milliseconds.
+        const lastBarSec = quantized.bars.at(-1)?.time ?? 0;
+        const stableUpdatedAt = lastBarSec * MS_PER_SECOND;
+        queryClient.setQueryData(
+            QUERY_KEYS.bars(symbol, DEFAULT_TIMEFRAME, assetInfo.fmpSymbol),
+            quantized,
+            { updatedAt: stableUpdatedAt }
+        );
+    }
 
     return (
         <>

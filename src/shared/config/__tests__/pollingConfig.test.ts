@@ -11,8 +11,8 @@ describe('ANALYSIS_POLL_INTERVAL_MS', () => {
         expect(ANALYSIS_POLL_INTERVAL_MS).toBeGreaterThan(0);
     });
 
-    it('2500ms로 설정되어 있다', () => {
-        expect(ANALYSIS_POLL_INTERVAL_MS).toBe(2500);
+    it('10000ms로 설정되어 있다', () => {
+        expect(ANALYSIS_POLL_INTERVAL_MS).toBe(10_000);
     });
 });
 
@@ -25,8 +25,8 @@ describe('AUGMENT_AND_OVERALL_POLL_INTERVAL_MS', () => {
         expect(AUGMENT_AND_OVERALL_POLL_INTERVAL_MS).toBeGreaterThan(0);
     });
 
-    it('3000ms로 설정되어 있다', () => {
-        expect(AUGMENT_AND_OVERALL_POLL_INTERVAL_MS).toBe(3000);
+    it('5000ms로 설정되어 있다', () => {
+        expect(AUGMENT_AND_OVERALL_POLL_INTERVAL_MS).toBe(5000);
     });
 });
 
@@ -37,17 +37,18 @@ describe('CHART_ANALYSIS_POLL_INTERVAL_MS', () => {
         expect(CHART_ANALYSIS_POLL_INTERVAL_MS).toBeGreaterThan(0);
     });
 
-    it('10000ms로 설정되어 있다', () => {
-        expect(CHART_ANALYSIS_POLL_INTERVAL_MS).toBe(10_000);
+    it('30000ms로 설정되어 있다', () => {
+        expect(CHART_ANALYSIS_POLL_INTERVAL_MS).toBe(30_000);
     });
 });
 
 describe('폴링 간격 순서', () => {
-    it('ANALYSIS < AUGMENT_AND_OVERALL < CHART_ANALYSIS 순서로 커진다', () => {
-        expect(ANALYSIS_POLL_INTERVAL_MS).toBeLessThan(
-            AUGMENT_AND_OVERALL_POLL_INTERVAL_MS
-        );
+    // 작업 응답 시간 비례: overall(캐시 적중률 높아 빨리 끝남) < 단일 LLM 분석 < 차트 다단계 워커.
+    it('AUGMENT_AND_OVERALL < ANALYSIS < CHART_ANALYSIS 순서로 커진다', () => {
         expect(AUGMENT_AND_OVERALL_POLL_INTERVAL_MS).toBeLessThan(
+            ANALYSIS_POLL_INTERVAL_MS
+        );
+        expect(ANALYSIS_POLL_INTERVAL_MS).toBeLessThan(
             CHART_ANALYSIS_POLL_INTERVAL_MS
         );
     });

@@ -1188,6 +1188,21 @@ This file contains only **recurring gotchas** that agents keep missing despite e
 
 ---
 
+## Code Review
+
+```
+1. Early return / gate guards skip unrelated downstream side-effects that must always run
+   → When adding an early return or guard (e.g., if (x.length === 0) return), verify it does not skip mandatory downstream operations
+   → The gate should protect only the specific side-effect (cache invalidation) that depends on the condition; other downstream operations whose work is NOT derivable from the gated value must fall through
+   → Safe to early-return iff every downstream value is derivable from the gated input (e.g., unanalyzed = fresh.filter(...) → fresh=[] makes unanalyzed=[] always)
+   → Unsafe if downstream re-queries DB or external source for state independent of the gated input (e.g., listBySymbol fetches ALL un-analyzed rows, not just from fresh)
+   ❌ if (changedCount === 0) return;  // also skips analyze step that processes ALL un-analyzed DB rows
+   ✅ if (changedCount === 0) return;  // only gates revalidateTag; control falls through to analyze
+   ✅ if (fresh.length === 0) return;  // safe: unanalyzed = fresh.filter(...) is also empty, so analyze is no-op
+   → Recurring: feat/isr-writes-opt (R1), PR #573 R2 (regression from earlier round)
+   → Updated PR #573 R4: clarified fresh.length===0 early return is safe when downstream is fresh-derived (not DB-derived)
+```
+
 ## Architecture
 
 ```

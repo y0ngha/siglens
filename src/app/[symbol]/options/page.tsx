@@ -143,7 +143,13 @@ export default async function OptionsPage({ params }: Props) {
     const queryClient = new QueryClient({
         defaultOptions: { queries: { staleTime: QUERY_STALE_TIME_MS } },
     });
-    queryClient.setQueryData(QUERY_KEYS.optionsSnapshot(upper), snapshot);
+    // updatedAt 명시: RQ dehydrate 기본은 Date.now()라 매 ISR 재생성마다 다른 timestamp가
+    // HTML에 박혀 ISR write churn 발생. snapshot의 capturedAt(provider 시점)로 고정 —
+    // staticSymbolCache 윈도우 안에서는 동일 snapshot이라 capturedAt도 동일.
+    const stableUpdatedAt = new Date(snapshot.capturedAt).getTime();
+    queryClient.setQueryData(QUERY_KEYS.optionsSnapshot(upper), snapshot, {
+        updatedAt: stableUpdatedAt,
+    });
 
     // hasOptions: true 하드코딩은 의도적 — 위 OptionsEmptyState 분기(line 79, 83)를
     // 통과한 시점이라 옵션 시장이 존재함이 보장된다. generateMetadata와 달리 본문
