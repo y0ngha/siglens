@@ -13,6 +13,7 @@ import {
     buildDisplayName,
     getAssetInfoResilient,
 } from '@/entities/ticker';
+import { getNewsList } from '@/app/[symbol]/news/newsData';
 import {
     buildBreadcrumbJsonLd,
     buildSymbolOverallSeoContent,
@@ -122,6 +123,25 @@ export default async function OverallPage({ params }: Props) {
     // ISR: tf는 client가 URL에서 읽으므로 서버는 DEFAULT_TIMEFRAME으로 peek한다.
     // assetInfo.name은 symbol에 종속(1:1)이므로 캐시 키에서 제외한다 — symbol 태그
     // 무효화로 name 변동 시에도 갱신된다.
+    // 종합 분석은 enriched news cards가 1개라도 있을 때만 의미가 있다 —
+    // `/news`와 동일하게 SSR 시점 enrichment 여부를 prop으로 전달해 client에서
+    // 폴링 게이트(useWaitForNewsCards)를 즉시 통과시키거나 폴링 시작하도록 한다.
+    //
+    // ISR safety: 캐시/DB 실패는 false로 degrade해 페이지 자체가 throw하지 않게 한다 —
+    // 그 경우 client의 useWaitForNewsCards가 폴링으로 ready 상태를 회복한다.
+    const newsItems = await staticSymbolCache(
+        ['news:list', upper],
+        upper,
+        () => getNewsList(upper),
+        [`news:${upper}`]
+    ).catch((error: unknown) => {
+        console.error('[OverallPage] getNewsList failed:', error);
+        return [] as Awaited<ReturnType<typeof getNewsList>>;
+    });
+    const hasEnrichedNews =
+        Array.isArray(newsItems) &&
+        newsItems.some(item => item.sentiment !== null);
+
     const cachedOverall = await staticSymbolCache(
         ['peek:overall', upper, GEMINI_2_5_FLASH_LITE_MODEL],
         upper,
@@ -278,6 +298,7 @@ export default async function OverallPage({ params }: Props) {
                         symbol={upper}
                         companyName={assetInfo.name}
                         initialAnalysis={cachedOverall ?? undefined}
+                        hasEnrichedNews={hasEnrichedNews}
                     />
                 </Suspense>
                 <CrossLinkCards symbol={upper} current="overall" />
