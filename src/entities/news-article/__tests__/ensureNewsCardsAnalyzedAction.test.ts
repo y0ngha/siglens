@@ -213,8 +213,8 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
         });
 
         it('뉴스가 없으면 upsert와 카드 분석을 호출하지 않는다', async () => {
-            // fresh=[] → upsertSettled 비어 changedCount=0 → revalidateTag 스킵.
-            // if (fresh.length === 0) return으로 early return — analyze 단계에 도달하지 않음.
+            // if (fresh.length === 0) return으로 early return —
+            // changedCount/revalidateTag/analyze 단계에 도달하지 않음.
             // unanalyzed가 fresh.filter(...)로 파생되므로 fresh=[]이면 analyze는 항상 no-op이라 안전.
             mockFetchNewsForPeriod.mockResolvedValue([]);
 

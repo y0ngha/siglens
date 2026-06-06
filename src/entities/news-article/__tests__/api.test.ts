@@ -36,13 +36,17 @@ const analysis: NewsCardAnalysis = {
  * Build a mock `db` that handles insert→values→onConflictDoUpdate→returning chains.
  * `returningRows` controls what `.returning()` resolves to, enabling boolean-return tests.
  */
-function makeUpsertDb(returningRows: unknown[] = [{ id: 'abc123' }]): {
+interface UpsertDbMock {
     db: SiglensDatabase;
     insert: Mock;
     values: Mock;
     onConflictDoUpdate: Mock;
     returning: Mock;
-} {
+}
+
+function makeUpsertDb(
+    returningRows: unknown[] = [{ id: 'abc123' }]
+): UpsertDbMock {
     const returning = vi.fn().mockResolvedValue(returningRows);
     const onConflictDoUpdate = vi.fn(() => ({ returning }));
     const values = vi.fn(() => ({ onConflictDoUpdate }));

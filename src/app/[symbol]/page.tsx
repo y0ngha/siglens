@@ -204,7 +204,6 @@ export default async function SymbolPage({ params }: Props) {
 
     queryClient.setQueryData(QUERY_KEYS.assetInfo(symbol), assetInfo);
 
-    // bars seed: quantize된 bars를 동기 setQueryData로 주입한다.
     // prefetchQuery(getBarsStatic 재호출)는 제거 — forming 봉이 포함된 라이브 bars가
     // dehydrate seed로 박히면 ISR write churn이 발생하므로, quantize 후 동기 주입으로 대체.
     // 차트 페이지는 ISR로 캐시되므로 기본 timeframe만 seed한다.

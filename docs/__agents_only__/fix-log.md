@@ -95,6 +95,18 @@
   - Review: Addressed 3 blocker findings (§17, TS §7, missing early return). Rejected B3 (market/page sectorData null cast) as false-positive (getSectorSignalsStatic is non-nullable with no catch).
   - Result: Clean merge — violations logged for future pattern detection
 
+## [PR #573 Round 6 | feat/isr-writes-opt | 2026-06-06]
+- Violation: 테스트 인라인 주석 사실 오류 (§15.6)
+  - Rule: MISTAKES.md §15.6 — Comments making factually inaccurate claims about code paths
+  - Context: ensureNewsCardsAnalyzedAction.test.ts:216 "fresh=[] → upsertSettled 비어 changedCount=0 → revalidateTag 스킵" 첫 줄이 잘못 — 실제로는 `if (fresh.length === 0) return`으로 changedCount 계산 전 early return. 첫 줄 제거하고 단일 설명으로 통합.
+- Violation: WHAT 코멘트 (§15.3)
+  - Rule: MISTAKES.md §15.3 — Comments should explain WHY, not WHAT
+  - Context: `[symbol]/page.tsx:207` "bars seed: quantize된 bars를 동기 setQueryData로 주입한다." 제거. 나머지 WHY 라인 유지.
+- Violation: 인라인 반환 타입 (§TypeScript #5.3)
+  - Rule: MISTAKES.md §TypeScript #5.3 — Named interface preferred over inline object literal return types
+  - Context: api.test.ts:39 makeUpsertDb 인라인 반환 타입을 `interface UpsertDbMock`로 추출.
+- Status: APPROVED → merged (예정)
+
 ## [PR #573 Round 5 | feat/isr-writes-opt | 2026-06-06]
 - Violation: `value as Record<string, unknown>` 캐스트 안전성 주석 누락
   - Rule: MISTAKES.md §TypeScript #7 — every safe-cast must have inline comment explaining the guarantee
