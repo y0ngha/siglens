@@ -20,21 +20,24 @@ import { INACTIVE_PANE_INDEX } from '../constants';
 const MACD_SIGNAL_LABEL = 'Signal';
 const MACD_HISTOGRAM_LABEL = 'Histogram';
 
+// subLabel이 하나뿐인 pane 라벨(RSI·CCI·MFI·Williams %R·CRSI·CMF·%B·Hurst·VR)의
+// 공통 패턴. 비활성 pane은 빈 배열을 반환해 spread 시 사라진다.
+function buildSinglePaneLabel(
+    paneIndex: number,
+    name: string,
+    color: string
+): PaneLabelConfig[] {
+    return paneIndex !== INACTIVE_PANE_INDEX
+        ? [{ paneIndex, subLabels: [{ name, color }] }]
+        : [];
+}
+
 export function buildPaneLabels(paneIndices: PaneIndices): PaneLabelConfig[] {
-    const rsiLabel: PaneLabelConfig[] =
-        paneIndices.rsi !== INACTIVE_PANE_INDEX
-            ? [
-                  {
-                      paneIndex: paneIndices.rsi,
-                      subLabels: [
-                          {
-                              name: `RSI(${RSI_DEFAULT_PERIOD})`,
-                              color: CHART_COLORS.rsiLine,
-                          },
-                      ],
-                  },
-              ]
-            : [];
+    const rsiLabel = buildSinglePaneLabel(
+        paneIndices.rsi,
+        `RSI(${RSI_DEFAULT_PERIOD})`,
+        CHART_COLORS.rsiLine
+    );
 
     const macdLabel: PaneLabelConfig[] =
         paneIndices.macd !== INACTIVE_PANE_INDEX
@@ -120,112 +123,53 @@ export function buildPaneLabels(paneIndices: PaneIndices): PaneLabelConfig[] {
               ]
             : [];
 
-    const cciLabel: PaneLabelConfig[] =
-        paneIndices.cci !== INACTIVE_PANE_INDEX
-            ? [
-                  {
-                      paneIndex: paneIndices.cci,
-                      subLabels: [
-                          {
-                              name: `CCI(${CCI_DEFAULT_PERIOD})`,
-                              color: CHART_COLORS.cciLine,
-                          },
-                      ],
-                  },
-              ]
-            : [];
+    const cciLabel = buildSinglePaneLabel(
+        paneIndices.cci,
+        `CCI(${CCI_DEFAULT_PERIOD})`,
+        CHART_COLORS.cciLine
+    );
 
-    const mfiLabel: PaneLabelConfig[] =
-        paneIndices.mfi !== INACTIVE_PANE_INDEX
-            ? [
-                  {
-                      paneIndex: paneIndices.mfi,
-                      subLabels: [{ name: 'MFI', color: CHART_COLORS.mfiLine }],
-                  },
-              ]
-            : [];
+    const mfiLabel = buildSinglePaneLabel(
+        paneIndices.mfi,
+        'MFI',
+        CHART_COLORS.mfiLine
+    );
 
-    const williamsRLabel: PaneLabelConfig[] =
-        paneIndices.williamsR !== INACTIVE_PANE_INDEX
-            ? [
-                  {
-                      paneIndex: paneIndices.williamsR,
-                      subLabels: [
-                          {
-                              name: 'Williams %R',
-                              color: CHART_COLORS.williamsRLine,
-                          },
-                      ],
-                  },
-              ]
-            : [];
+    const williamsRLabel = buildSinglePaneLabel(
+        paneIndices.williamsR,
+        'Williams %R',
+        CHART_COLORS.williamsRLine
+    );
 
-    const connorsRsiLabel: PaneLabelConfig[] =
-        paneIndices.connorsRsi !== INACTIVE_PANE_INDEX
-            ? [
-                  {
-                      paneIndex: paneIndices.connorsRsi,
-                      subLabels: [
-                          {
-                              name: 'CRSI',
-                              color: CHART_COLORS.connorsRsiLine,
-                          },
-                      ],
-                  },
-              ]
-            : [];
+    const connorsRsiLabel = buildSinglePaneLabel(
+        paneIndices.connorsRsi,
+        'CRSI',
+        CHART_COLORS.connorsRsiLine
+    );
 
-    const cmfLabel: PaneLabelConfig[] =
-        paneIndices.cmf !== INACTIVE_PANE_INDEX
-            ? [
-                  {
-                      paneIndex: paneIndices.cmf,
-                      subLabels: [{ name: 'CMF', color: CHART_COLORS.cmfLine }],
-                  },
-              ]
-            : [];
+    const cmfLabel = buildSinglePaneLabel(
+        paneIndices.cmf,
+        'CMF',
+        CHART_COLORS.cmfLine
+    );
 
-    const bollingerPercentBLabel: PaneLabelConfig[] =
-        paneIndices.bollingerPercentB !== INACTIVE_PANE_INDEX
-            ? [
-                  {
-                      paneIndex: paneIndices.bollingerPercentB,
-                      subLabels: [
-                          {
-                              name: '%B',
-                              color: CHART_COLORS.bollingerPercentBLine,
-                          },
-                      ],
-                  },
-              ]
-            : [];
+    const bollingerPercentBLabel = buildSinglePaneLabel(
+        paneIndices.bollingerPercentB,
+        '%B',
+        CHART_COLORS.bollingerPercentBLine
+    );
 
-    const hurstLabel: PaneLabelConfig[] =
-        paneIndices.hurst !== INACTIVE_PANE_INDEX
-            ? [
-                  {
-                      paneIndex: paneIndices.hurst,
-                      subLabels: [
-                          { name: 'Hurst', color: CHART_COLORS.hurstLine },
-                      ],
-                  },
-              ]
-            : [];
+    const hurstLabel = buildSinglePaneLabel(
+        paneIndices.hurst,
+        'Hurst',
+        CHART_COLORS.hurstLine
+    );
 
-    const varianceRatioLabel: PaneLabelConfig[] =
-        paneIndices.varianceRatio !== INACTIVE_PANE_INDEX
-            ? [
-                  {
-                      paneIndex: paneIndices.varianceRatio,
-                      subLabels: [
-                          {
-                              name: 'VR',
-                              color: CHART_COLORS.varianceRatioLine,
-                          },
-                      ],
-                  },
-              ]
-            : [];
+    const varianceRatioLabel = buildSinglePaneLabel(
+        paneIndices.varianceRatio,
+        'VR',
+        CHART_COLORS.varianceRatioLine
+    );
 
     return [
         ...rsiLabel,
