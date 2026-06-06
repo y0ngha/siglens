@@ -1,7 +1,7 @@
 'use client';
 
 import type { CSSProperties } from 'react';
-import { useMemo } from 'react';
+import { useId, useMemo } from 'react';
 import { useDialog } from '@/shared/hooks/useDialog';
 import { cn } from '@/shared/lib/cn';
 import { getPeriodColor } from '@/shared/lib/chartColors';
@@ -116,6 +116,9 @@ export function IndicatorSettingsModal({
     bindings,
 }: IndicatorSettingsModalProps) {
     const { isOpen, open, close, dialogRef, triggerRef } = useDialog();
+    // 같은 페이지에 여러 차트가 렌더되어도 dialog title id가 충돌하지 않도록
+    // 인스턴스별 고유 id를 생성한다 (aria-labelledby 무결성 보장).
+    const titleId = useId();
     const groups = useMemo(() => groupBindingsByCategory(bindings), [bindings]);
 
     return (
@@ -140,13 +143,13 @@ export function IndicatorSettingsModal({
                         ref={dialogRef}
                         role="dialog"
                         aria-modal="true"
-                        aria-labelledby="indicator-settings-title"
+                        aria-labelledby={titleId}
                         tabIndex={-1}
                         className="border-secondary-700 bg-secondary-800 max-h-[calc(100vh-2rem)] w-full max-w-md overflow-y-auto rounded-xl border text-left shadow-2xl outline-none"
                     >
                         <div className="border-secondary-700 flex items-start justify-between border-b px-5 py-4">
                             <h2
-                                id="indicator-settings-title"
+                                id={titleId}
                                 className="text-secondary-100 text-base font-semibold"
                             >
                                 보조지표 설정

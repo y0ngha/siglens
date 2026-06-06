@@ -28,7 +28,7 @@ import {
     type IndicatorBinding,
 } from '../../model/indicatorRegistry';
 
-function openDialog() {
+function openDialog(): void {
     vi.mocked(useDialog).mockReturnValue({
         isOpen: true,
         open: vi.fn(),
