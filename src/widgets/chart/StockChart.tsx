@@ -448,6 +448,8 @@ export function StockChart({
                 onToggle: () => toggle('varianceRatio'),
             },
         ],
+        // deps에 visible 객체 전체를 둔다 — 한 지표 토글 시 18개 binding 전체가 재조립되지만
+        // 항목 수가 적어 비용은 무시할 만하며, 개별 visible 키를 나열하는 것보다 명료하다.
         [
             maVisiblePeriods,
             emaVisiblePeriods,
