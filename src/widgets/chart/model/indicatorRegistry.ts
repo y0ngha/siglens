@@ -57,14 +57,13 @@ export interface IndicatorCategoryGroup {
     items: IndicatorBinding[];
 }
 
-export const CATEGORY_ORDER: readonly IndicatorCategory[] = [
-    'trend',
-    'momentum',
-    'volatility',
-    'volume',
-    'smc',
-];
-
+/**
+ * 카테고리 라벨 — 표시 순서의 단일 소스이기도 하다.
+ *
+ * `Record<IndicatorCategory, string>` 타입이라 새 카테고리 추가 시 키 누락은
+ * 컴파일 에러로 잡힌다. CATEGORY_ORDER를 이 객체에서 파생하므로(별도 배열 X)
+ * 정렬 목록에서 카테고리가 조용히 빠지는 일이 없다.
+ */
 export const CATEGORY_LABELS: Record<IndicatorCategory, string> = {
     trend: '추세',
     momentum: '모멘텀',
@@ -72,6 +71,15 @@ export const CATEGORY_LABELS: Record<IndicatorCategory, string> = {
     volume: '볼륨',
     smc: 'SMC',
 };
+
+/**
+ * 카테고리 표시 순서. CATEGORY_LABELS의 키 정의 순서를 따른다(JS 문자열 키는
+ * 삽입 순서를 보존). Object.keys는 string[]을 반환하지만 키는 IndicatorCategory
+ * 멤버임이 CATEGORY_LABELS 타입으로 보장되므로 안전한 캐스트다.
+ */
+export const CATEGORY_ORDER: readonly IndicatorCategory[] = Object.keys(
+    CATEGORY_LABELS
+) as IndicatorCategory[];
 
 export const INDICATOR_REGISTRY: readonly IndicatorMeta[] = [
     {
