@@ -46,8 +46,9 @@ vi.mock('@/entities/market-summary/api/briefingStaticCache', () => ({
     peekBriefingStatic: (...args: unknown[]) => mockPeekBriefingStatic(...args),
 }));
 
+// Intentionally includes minutes/seconds to verify quantization strips them off
 const mockGetSectorSignalsStatic = vi.fn().mockResolvedValue({
-    computedAt: '2026-06-04T00:00:00Z',
+    computedAt: '2026-06-04T14:37:22.000Z',
     stocks: [],
 });
 vi.mock('@/entities/sector-signal/api/sectorSignalsStaticCache', () => ({
@@ -129,7 +130,8 @@ describe('Market page', () => {
                 sectors: [],
             });
             mockGetSectorSignalsStatic.mockResolvedValue({
-                computedAt: '2026-06-04T00:00:00Z',
+                // Intentionally includes minutes/seconds to verify quantization strips them off
+                computedAt: '2026-06-04T14:37:22.000Z',
                 stocks: [],
             });
             mockPeekBriefingStatic.mockResolvedValue(null);
@@ -169,6 +171,49 @@ describe('Market page', () => {
                 ['sector-signals', '1Day'],
                 expect.objectContaining({ stocks: [] })
             );
+        });
+
+        it('SSR seed quantizes sectorData.computedAt to hour bucket — raw minutes/seconds are stripped', async () => {
+            // getSectorSignalsStatic returns a full ISO with minutes ('2026-06-04T14:37:22.000Z').
+            // MarketContent must NOT propagate that raw value into the SSR seed; it must replace it
+            // with the dateHour bucket ('YYYY-MM-DDTHH' — 13 chars, no minutes).
+            // This prevents /market ISR writes every 5-15 min when core refreshes computedAt.
+            await MarketContent();
+
+            const sectorSignalsCall = mockSetQueryData.mock.calls.find(
+                ([key]: [unknown[]]) =>
+                    Array.isArray(key) && key[0] === 'sector-signals'
+            );
+            expect(sectorSignalsCall).toBeDefined();
+            const seededData = sectorSignalsCall![1] as { computedAt: string };
+
+            // Must be exactly 13 chars ('YYYY-MM-DDTHH') — no minutes/seconds
+            expect(seededData.computedAt).toHaveLength(13);
+            // Must NOT be the raw value with minutes
+            expect(seededData.computedAt).not.toBe('2026-06-04T14:37:22.000Z');
+        });
+
+        it('SSR seed quantization works when stocks is empty', async () => {
+            mockGetSectorSignalsStatic.mockResolvedValue({
+                computedAt: '2026-06-04T09:52:11.000Z',
+                stocks: [],
+            });
+            await MarketContent();
+
+            const sectorSignalsCall = mockSetQueryData.mock.calls.find(
+                ([key]: [unknown[]]) =>
+                    Array.isArray(key) && key[0] === 'sector-signals'
+            );
+            expect(sectorSignalsCall).toBeDefined();
+            const seededData = sectorSignalsCall![1] as {
+                computedAt: string;
+                stocks: unknown[];
+            };
+
+            // Seed is still valid (stocks intact) with quantized computedAt
+            expect(seededData.stocks).toEqual([]);
+            expect(seededData.computedAt).toHaveLength(13);
+            expect(seededData.computedAt).not.toBe('2026-06-04T09:52:11.000Z');
         });
 
         it('peekBriefingStatic returns null → graceful fallback (client triggers submit)', async () => {

@@ -124,12 +124,19 @@ export async function MarketContent(): Promise<ReactElement> {
         () => null
     );
 
+    /**
+     * SSR seed의 computedAt만 시간 단위로 quantize한다 — 5~15분 churn이 ISR write를
+     * 유발하므로. 클라 refetch가 실제 computedAt을 공급해 화면 표시는 불변.
+     * dateHour는 이미 'YYYY-MM-DDTHH' 형식의 string이므로 타입 호환 유지.
+     */
+    const sectorDataSeed = { ...sectorData, computedAt: dateHour };
+
     // Seed React Query so client-side hydration skips the first network round-trip
     const queryClient = new QueryClient();
     queryClient.setQueryData(QUERY_KEYS.marketSummary(), { summary });
     queryClient.setQueryData(
         QUERY_KEYS.sectorSignals(DEFAULT_DASHBOARD_TIMEFRAME),
-        sectorData
+        sectorDataSeed
     );
 
     return (
@@ -147,7 +154,7 @@ export async function MarketContent(): Promise<ReactElement> {
                             SectorFactsSummary renders the same data as static server-rendered text
                             so crawlers see actual signal content without JS. Not cloaking — users
                             see the same data once JS loads. */}
-                        <SectorFactsSummary data={sectorData} />
+                        <SectorFactsSummary data={sectorDataSeed} />
                         <SectorSignalPanelSkeleton />
                     </>
                 }
@@ -155,7 +162,7 @@ export async function MarketContent(): Promise<ReactElement> {
                 <SectorSignalPanel
                     initialSector={SIGNAL_SECTORS[0].symbol}
                     initialTimeframe={DEFAULT_DASHBOARD_TIMEFRAME}
-                    initialData={sectorData}
+                    initialData={sectorDataSeed}
                 />
             </Suspense>
             <SignalTypeGuide />
