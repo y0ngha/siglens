@@ -56,4 +56,25 @@ test.describe('chart indicator settings modal', () => {
         await page.keyboard.press('Escape');
         await expect(page.getByRole('dialog')).toHaveCount(0);
     });
+
+    test('shows the statistical category and toggles MFI into a pane', async ({
+        page,
+    }) => {
+        await page.goto('/AAPL');
+        await page.getByRole('button', { name: GEAR }).click();
+        const dialog = page.getByRole('dialog');
+        // hurst/varianceRatio가 'statistical' 카테고리를 등록하므로 '통계' 그룹이 보인다.
+        await expect(dialog.getByText('통계')).toBeVisible();
+        // MFI는 모멘텀 카테고리의 체크박스(label 'MFI'). exact로 다른 라벨 substring 회피.
+        await dialog
+            .getByRole('checkbox', { name: 'MFI', exact: true })
+            .check();
+        await page.getByRole('button', { name: '닫기' }).click();
+        // 페인 라벨('● MFI')은 차트 캔버스 컨테이너(role=img) 안에 주입된다.
+        // 대시보드 SignalBadge('MFI 과매도 반등' 등)와의 substring 충돌을 피하려고
+        // 차트 영역으로 스코프한다.
+        await expect(
+            page.getByRole('img', { name: /캔들 차트/ }).getByText('MFI')
+        ).toBeVisible();
+    });
 });
