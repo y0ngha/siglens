@@ -53,19 +53,20 @@ export function SectorFactsSummary({ data }: SectorFactsSummaryProps) {
                                 {fact.bearishCount}종목
                                 {fact.topSymbols.length > 0 && (
                                     <span className="text-secondary-500 ml-2">
-                                        (
+                                        {/* parens as JSX expressions → no stray whitespace around them */}
+                                        {'('}
                                         {fact.topSymbols.map((symbol, i) => (
                                             <span key={symbol}>
                                                 {i > 0 && ', '}
                                                 <Link
                                                     href={`/${symbol}`}
-                                                    className="hover:text-secondary-300 underline-offset-2 hover:underline"
+                                                    className="hover:text-secondary-300 focus-visible:ring-primary-500 rounded-sm underline-offset-2 hover:underline focus-visible:ring-1 focus-visible:outline-none"
                                                 >
                                                     {symbol}
                                                 </Link>
                                             </span>
                                         ))}
-                                        )
+                                        {')'}
                                     </span>
                                 )}
                             </dd>
