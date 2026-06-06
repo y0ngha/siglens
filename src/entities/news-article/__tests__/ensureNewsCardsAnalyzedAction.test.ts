@@ -349,6 +349,24 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
             expect(revalidateTagSpy).not.toHaveBeenCalled();
         });
 
+        it('fresh.length === 0 early-return은 DB에 미분석 기사가 있어도 안전하다', async () => {
+            // fresh=[]이면 unanalyzed는 항상 빈 배열이 된다(unanalyzed = fresh.filter(...)).
+            // 따라서 listBySymbol로 DB를 조회할 필요가 없고, submitNewsCardAnalysis도
+            // 호출할 필요가 없다 — 분석 대상이 fresh에서 파생되므로 fresh가 비면 항상 빈다.
+            // DB에 analyzedAt=null 행이 남아 있더라도 이번 호출에서 가져온 fresh가 없으면
+            // 그 행을 참조할 방법이 없으므로 early-return은 안전하다.
+            mockFetchNewsForPeriod.mockResolvedValue([]);
+            // DB에 미분석 기사가 있다고 가정한다(next call에서 구제됨).
+            mockListBySymbol.mockResolvedValue([
+                { id: 'stale-item-001', analyzedAt: null },
+            ]);
+
+            await ensureNewsCardsAnalyzedAction('AAPL');
+
+            expect(mockListBySymbol).not.toHaveBeenCalled();
+            expect(mockSubmitNewsCardAnalysis).not.toHaveBeenCalled();
+        });
+
         it('[회귀] changedCount=0이어도 analyzedAt=null 기존 기사가 있으면 분석 단계를 실행한다', async () => {
             // 시나리오: 이전 호출에서 분석 워커가 실패해 NEWS_ITEM_1이 DB에 upsert되었지만
             // analyzedAt=null로 남아 있다. 이번 fetch에서 같은 기사가 재fetch되어

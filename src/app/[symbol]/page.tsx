@@ -210,10 +210,17 @@ export default async function SymbolPage({ params }: Props) {
     // 차트 페이지는 ISR로 캐시되므로 기본 timeframe만 seed한다.
     // ?tf= 딥링크는 클라(useTimeframeChange→useSearchParams)가 마운트 시 읽어
     // 해당 timeframe bars를 fetch한다.
-    queryClient.setQueryData(
-        QUERY_KEYS.bars(symbol, DEFAULT_TIMEFRAME, assetInfo.fmpSymbol),
-        quantizedFactBars
-    );
+    //
+    // null guard: getBarsStatic 실패 시 quantizedFactBars는 null이다. null을 setQueryData에
+    // 넘기면 null "success" 값이 dehydrate 캐시에 박혀 클라 useSuspenseQuery가 data.bars를
+    // null에서 읽으려다 crash하고, null은 stale 트리거가 아니므로 재fetch도 안 된다.
+    // null인 경우는 seed를 생략해 클라 useBars/getBarsAction이 라이브로 fetch하게 한다.
+    if (quantizedFactBars !== null) {
+        queryClient.setQueryData(
+            QUERY_KEYS.bars(symbol, DEFAULT_TIMEFRAME, assetInfo.fmpSymbol),
+            quantizedFactBars
+        );
+    }
 
     // peek은 읽기 전용 — enqueue/생성 없음. MISS·corrupt·read 실패는 모두 MISS로
     // degrade해 FALLBACK_ANALYSIS로 폴백한다(렌더를 절대 깨지 않음). read 실패는

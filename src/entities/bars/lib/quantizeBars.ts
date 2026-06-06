@@ -20,35 +20,41 @@ import { isEtRegularSessionOpen } from '@y0ngha/siglens-core';
  *   - volumeProfile: it is `null` or a single object with non-array props → skip.
  */
 function dropLastIndicatorBar(indicators: IndicatorResult): IndicatorResult {
-    const out: Record<string, unknown> = {};
-    for (const [key, value] of Object.entries(indicators)) {
-        if (Array.isArray(value)) {
-            // Plain per-bar array (rsi, macd, bollinger, dmi, stochastic, …)
-            out[key] = value.slice(0, -1);
-        } else if (value !== null && typeof value === 'object') {
-            // Could be Record<number, array> (ma/ema) or a snapshot object (volumeProfile/smc).
-            // Distinguish by checking whether ALL values of this object are arrays.
-            const entries = Object.entries(value as Record<string, unknown>);
-            const allArrays =
-                entries.length > 0 &&
-                entries.every(([, v]) => Array.isArray(v));
-            out[key] = allArrays
-                ? Object.fromEntries(
-                      // safe: allArrays(=true) verified Array.isArray(v) for every entry above.
-                      entries.map(([k, v]) => [
-                          k,
-                          (v as unknown[]).slice(0, -1),
-                      ])
-                  )
-                : value;
-        } else {
+    // safe: Object.fromEntries preserves every key of `indicators`, only removing
+    // the last element from per-bar arrays — runtime shape is structurally identical
+    // to IndicatorResult.
+    return Object.fromEntries(
+        Object.entries(indicators).map(([key, value]) => {
+            if (Array.isArray(value)) {
+                return [key, value.slice(0, -1)];
+            }
+            if (value !== null && typeof value === 'object') {
+                // Could be Record<number, array> (ma/ema) or a snapshot object (volumeProfile/smc).
+                // Distinguish by checking whether ALL values of this object are arrays.
+                const entries = Object.entries(
+                    value as Record<string, unknown>
+                );
+                const allArrays =
+                    entries.length > 0 &&
+                    entries.every(([, v]) => Array.isArray(v));
+                if (allArrays) {
+                    return [
+                        key,
+                        Object.fromEntries(
+                            // safe: allArrays(=true) verified Array.isArray(v) for every entry above.
+                            entries.map(([k, v]) => [
+                                k,
+                                (v as unknown[]).slice(0, -1),
+                            ])
+                        ),
+                    ];
+                }
+                return [key, value];
+            }
             // null, primitive, undefined — pass through (handles volumeProfile: null)
-            out[key] = value;
-        }
-    }
-    // safe: `out` preserves every key of `indicators`, only removing the last element
-    // from per-bar arrays — runtime shape is structurally identical to IndicatorResult.
-    return out as unknown as IndicatorResult;
+            return [key, value];
+        })
+    ) as unknown as IndicatorResult;
 }
 
 /**
