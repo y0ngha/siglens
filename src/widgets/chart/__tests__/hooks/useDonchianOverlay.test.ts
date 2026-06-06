@@ -138,7 +138,7 @@ describe('useDonchianOverlay', () => {
             result.current.toggle();
         });
 
-        expect(mockRemoveSeries).toHaveBeenCalled();
+        expect(mockRemoveSeries).toHaveBeenCalledTimes(3);
     });
 
     it('sets data on three series when visible with data', () => {

@@ -43,6 +43,14 @@
     /* Chart — 볼린저 밴드 */
     --color-chart-bollinger: #818cf8;
 
+    /* Chart — 켈트너 채널 */
+    --color-chart-keltner-upper: #5eead4;
+    --color-chart-keltner-middle: #14b8a6;
+
+    /* Chart — 돈치안 채널 */
+    --color-chart-donchian-upper: #fcd34d;
+    --color-chart-donchian-middle: #d97706;
+
     /* Chart — MACD */
     --color-chart-macd: #3b82f6;
     --color-chart-signal: #f59e0b;
