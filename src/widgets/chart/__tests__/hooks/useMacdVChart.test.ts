@@ -39,6 +39,10 @@ const FILLED_INDICATORS = {
     macdV: [-1, 0.5, 2],
 } as unknown as IndicatorResult;
 
+const ALL_NULL_INDICATORS = {
+    macdV: [null, null, null],
+} as unknown as IndicatorResult;
+
 const FAKE_BARS: Bar[] = [
     { time: 1000, open: 100, high: 110, low: 90, close: 105, volume: 1000 },
 ];
@@ -103,6 +107,9 @@ describe('useMacdVChart', () => {
 
         expect(mockAddSeries).toHaveBeenCalled();
         expect(mockCreatePriceLine).toHaveBeenCalledTimes(1);
+        expect(mockCreatePriceLine).toHaveBeenCalledWith(
+            expect.objectContaining({ price: 0 })
+        );
     });
 
     it('sets data when visible with filled indicators', () => {
@@ -131,6 +138,21 @@ describe('useMacdVChart', () => {
         );
 
         expect(mockSetData).not.toHaveBeenCalled();
+    });
+
+    it('sets data once when indicator array is all-null (length > 0 passes guard)', () => {
+        renderHook(() =>
+            useMacdVChart({
+                chartRef: makeChartRef(makeChart()),
+                bars: FAKE_BARS,
+                indicators: ALL_NULL_INDICATORS,
+                isVisible: true,
+                paneIndex: 2,
+            })
+        );
+
+        expect(mockAddSeries).toHaveBeenCalled();
+        expect(mockSetData).toHaveBeenCalledTimes(1);
     });
 
     it('recreates series when paneIndex changes', () => {

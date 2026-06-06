@@ -95,21 +95,19 @@ describe('indicatorRegistry', () => {
         expect(byKey.ewmaVolatility).toBe('volatility');
     });
 
-    it('all group-C-simple indicators are pane kind', () => {
-        const groupC = [
-            'macdV',
-            'forceIndex',
-            'obv',
-            'atr',
-            'yangZhang',
-            'ewmaVolatility',
-        ];
-        expect(
-            groupC.every(
-                key => INDICATOR_META[key as IndicatorKey].kind === 'pane'
-            )
-        ).toBe(true);
-    });
+    it.each([
+        'macdV',
+        'forceIndex',
+        'obv',
+        'atr',
+        'yangZhang',
+        'ewmaVolatility',
+    ] as const satisfies readonly IndicatorKey[])(
+        '%s is a pane-kind indicator',
+        key => {
+            expect(INDICATOR_META[key].kind).toBe('pane');
+        }
+    );
 });
 
 describe('groupBindingsByCategory', () => {

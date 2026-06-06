@@ -367,22 +367,20 @@ describe('buildPaneLabels', () => {
     });
 
     describe('group-C-simple pane가 활성일 때', () => {
-        it('builds single-subLabel labels for each group-C-simple pane', () => {
-            const cases: Array<[keyof PaneIndices, string, string]> = [
-                ['macdV', 'MACD-V', CHART_COLORS.macdVLine],
-                ['forceIndex', 'Force Index', CHART_COLORS.forceIndexLine],
-                ['obv', 'OBV', CHART_COLORS.obvLine],
-                ['atr', 'ATR', CHART_COLORS.atrLine],
-                ['yangZhang', 'Yang-Zhang', CHART_COLORS.yangZhangLine],
-                ['ewmaVolatility', 'EWMA Vol', CHART_COLORS.ewmaVolatilityLine],
-            ];
+        it.each([
+            ['macdV', 'MACD-V', CHART_COLORS.macdVLine],
+            ['forceIndex', 'Force Index', CHART_COLORS.forceIndexLine],
+            ['obv', 'OBV', CHART_COLORS.obvLine],
+            ['atr', 'ATR', CHART_COLORS.atrLine],
+            ['yangZhang', 'Yang-Zhang', CHART_COLORS.yangZhangLine],
+            ['ewmaVolatility', 'EWMA Vol', CHART_COLORS.ewmaVolatilityLine],
+        ] as const satisfies ReadonlyArray<
+            [keyof PaneIndices, string, string]
+        >)('builds %s pane label', (key, name, color) => {
+            const labels = buildPaneLabels(makePaneIndices({ [key]: 1 }));
 
-            for (const [key, name, color] of cases) {
-                const labels = buildPaneLabels(makePaneIndices({ [key]: 1 }));
-
-                expect(labels).toHaveLength(1);
-                expect(labels[0].subLabels).toEqual([{ name, color }]);
-            }
+            expect(labels).toHaveLength(1);
+            expect(labels[0].subLabels).toEqual([{ name, color }]);
         });
     });
 
