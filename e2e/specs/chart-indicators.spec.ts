@@ -29,9 +29,11 @@ test.describe('chart indicator settings modal', () => {
     test('toggles the RSI checkbox on', async ({ page }) => {
         await page.goto('/AAPL');
         await page.getByRole('button', { name: GEAR }).click();
+        // exact: true — 'RSI'와 'StochRSI'가 모두 /RSI/에 매칭돼 strict mode를
+        // 위반하므로 정확히 'RSI'만 선택한다.
         const rsi = page
             .getByRole('dialog')
-            .getByRole('checkbox', { name: /RSI/ });
+            .getByRole('checkbox', { name: 'RSI', exact: true });
         await rsi.check();
         await expect(rsi).toBeChecked();
     });

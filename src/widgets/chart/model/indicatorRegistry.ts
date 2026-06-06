@@ -99,7 +99,14 @@ export const INDICATOR_REGISTRY: readonly IndicatorMeta[] = [
     { key: 'volumeProfile', label: 'VP', category: 'volume', kind: 'overlay' },
 ];
 
-/** key → meta 조회 맵. StockChart binding 조립에서 사용. */
+/**
+ * key → meta 조회 맵. StockChart binding 조립에서 사용.
+ *
+ * `Object.fromEntries`의 반환 타입은 `Record<string, IndicatorMeta>`로 넓어지므로
+ * `as` 캐스트가 필요하다. INDICATOR_REGISTRY가 IndicatorKey 11개 멤버를 정확히
+ * 선언하므로(누락 시 `key: IndicatorKey` 타입에서 컴파일 에러) 런타임에 빠지는
+ * 키가 없어 안전한 캐스트다.
+ */
 export const INDICATOR_META: Record<IndicatorKey, IndicatorMeta> =
     Object.fromEntries(
         INDICATOR_REGISTRY.map(meta => [meta.key, meta])
