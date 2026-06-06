@@ -10,7 +10,7 @@ import type { OverallAnalysisResponse } from '@y0ngha/siglens-core';
  * state를 강제 주입해 개별 분기를 보는 것과 달리, 이 파일은 CTA 클릭 → submit →
  * polling → done(또는 error → 재시도) 전이가 사용자 상호작용으로 실제 일어나는지
  * 본다. 그래서 Server Action과 sleep만 mock한다: 네트워크 호출을 결정적으로
- * 만들고, 3초 polling 대기(AUGMENT_AND_OVERALL_POLL_INTERVAL_MS)를 즉시 resolve해
+ * 만들고, polling 대기(AUGMENT_AND_OVERALL_POLL_INTERVAL_MS)를 즉시 resolve해
  * 테스트가 done까지 빠르게 진행되게 하기 위함이다.
  *
  * vi.mock은 hoist되지만 ESLint(import/first)와 가독성을 위해 import 위에 둔다.
@@ -32,7 +32,7 @@ vi.mock('@/entities/options-chain/actions', () => ({
     pollOptionsAnalysisAction: vi.fn(),
     cancelOptionsAnalysisJobAction: vi.fn().mockResolvedValue(undefined),
 }));
-// polling 루프의 3초 sleep을 즉시 resolve해 테스트가 done까지 빠르게 진행되게 한다.
+// polling 루프의 sleep을 즉시 resolve해 테스트가 done까지 빠르게 진행되게 한다.
 vi.mock('@/shared/lib/sleep', () => ({
     sleep: vi.fn().mockResolvedValue(undefined),
 }));

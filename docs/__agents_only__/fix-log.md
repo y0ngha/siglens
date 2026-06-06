@@ -94,3 +94,11 @@
 - Status: APPROVED (claude round 2, gemini comments addressed, B3 false-positive rejected)
   - Review: Addressed 3 blocker findings (§17, TS §7, missing early return). Rejected B3 (market/page sectorData null cast) as false-positive (getSectorSignalsStatic is non-nullable with no catch).
   - Result: Clean merge — violations logged for future pattern detection
+
+## [feat/polling-intervals Round 1 | feat/polling-intervals | 2026-06-06]
+- Violation: DependencyProgress.test.tsx mock had hardcoded constant 3000 instead of importing the updated AUGMENT_AND_OVERALL polling interval value 5000
+  - Rule: MISTAKES.md Tests §4 / §13.5 — Boundary test constant redefined locally instead of imported from source; redefining production functions/constants locally in tests (production constant redefined in test)
+  - Context: Polling interval constant changed from 3000 to 5000 in production file, but test mock continued using hardcoded 3000. Test now imports the actual constant from the source module.
+- Violation: OverallContent.flow.test.tsx JSDoc comment stated "3초" (3 seconds) describing the polling interval; when constant changed to 5000ms, comment became factually inaccurate
+  - Rule: MISTAKES.md §15.6 — Comments/JSDoc making factually inaccurate claims about the code they describe (drift trap: constant changes, comment or literal not updated)
+  - Context: Polling interval JSDoc referencing hardcoded "3초" removed; code now self-documents through the imported constant name AUGMENT_AND_OVERALL_ANALYSIS_POLLING_INTERVAL_MS.

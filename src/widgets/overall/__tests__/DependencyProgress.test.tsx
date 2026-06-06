@@ -3,7 +3,7 @@ vi.mock('@/shared/config/time', () => ({
     SECONDS_PER_MINUTE: 60,
 }));
 vi.mock('@/shared/config/pollingConfig', () => ({
-    AUGMENT_AND_OVERALL_POLL_INTERVAL_MS: 3000,
+    AUGMENT_AND_OVERALL_POLL_INTERVAL_MS: 5000,
 }));
 
 import { render, screen } from '@testing-library/react';
