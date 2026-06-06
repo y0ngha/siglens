@@ -117,6 +117,34 @@ vi.mock('@/widgets/chart/hooks/useCCIChart', () => ({
     useCCIChart: vi.fn(),
 }));
 
+vi.mock('@/widgets/chart/hooks/useMfiChart', () => ({
+    useMfiChart: vi.fn(),
+}));
+
+vi.mock('@/widgets/chart/hooks/useWilliamsRChart', () => ({
+    useWilliamsRChart: vi.fn(),
+}));
+
+vi.mock('@/widgets/chart/hooks/useConnorsRsiChart', () => ({
+    useConnorsRsiChart: vi.fn(),
+}));
+
+vi.mock('@/widgets/chart/hooks/useCmfChart', () => ({
+    useCmfChart: vi.fn(),
+}));
+
+vi.mock('@/widgets/chart/hooks/useBollingerPercentBChart', () => ({
+    useBollingerPercentBChart: vi.fn(),
+}));
+
+vi.mock('@/widgets/chart/hooks/useHurstChart', () => ({
+    useHurstChart: vi.fn(),
+}));
+
+vi.mock('@/widgets/chart/hooks/useVarianceRatioChart', () => ({
+    useVarianceRatioChart: vi.fn(),
+}));
+
 vi.mock('@/widgets/chart/hooks/useVolumeProfileOverlay', () => ({
     useVolumeProfileOverlay: () => ({
         isVisible: false,
@@ -325,13 +353,13 @@ describe('StockChart', () => {
         );
     });
 
-    it('renders IndicatorSettingsModal with 11 indicator bindings', () => {
+    it('renders IndicatorSettingsModal with 18 indicator bindings', () => {
         render(<StockChart bars={mockBars} timeframe="1Day" />);
         const modal = screen.getByTestId('indicator-settings-modal');
-        expect(modal).toHaveAttribute('data-count', '11');
+        expect(modal).toHaveAttribute('data-count', '18');
         expect(modal).toHaveAttribute(
             'data-keys',
-            'ma,ema,ichimoku,rsi,macd,dmi,stochastic,stochRsi,cci,bollinger,volumeProfile'
+            'ma,ema,ichimoku,rsi,macd,dmi,stochastic,stochRsi,cci,bollinger,volumeProfile,mfi,williamsR,connorsRsi,cmf,bollingerPercentB,hurst,varianceRatio'
         );
     });
 
