@@ -23,6 +23,7 @@ import { isEtRegularSessionOpen } from '@y0ngha/siglens-core';
  * one non-array value. If `@y0ngha/siglens-core` adds a new snapshot field where every
  * value happens to be an array (e.g. `{ segments: [], zones: [] }`), it will be wrongly
  * sliced. When upgrading siglens-core, audit any new IndicatorResult fields for this case.
+ * Tracked: https://github.com/y0ngha/siglens/issues/576 (whitelist-based hardening).
  */
 function dropLastIndicatorBar(indicators: IndicatorResult): IndicatorResult {
     // safe: Object.fromEntries preserves every key of `indicators`, only removing

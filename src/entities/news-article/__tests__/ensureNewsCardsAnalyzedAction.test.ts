@@ -235,15 +235,8 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
             expect(revalidateTagSpy).toHaveBeenCalledWith('news:AAPL', 'max');
         });
 
-        it('fresh 기사가 없으면(fresh.length === 0) revalidateTag를 호출하지 않는다', async () => {
-            // upsertSettled가 비어 changedCount=0 → 동일하게 스킵.
-            mockFetchNewsForPeriod.mockResolvedValue([]);
-
-            await ensureNewsCardsAnalyzedAction('AAPL');
-
-            expect(revalidateTagSpy).not.toHaveBeenCalled();
-        });
-
+        // fresh.length === 0 시나리오는 아래 'revalidateTag 게이팅은' describe의
+        // 'empty-fresh' 케이스에서 markFetched 단언까지 함께 검증한다.
         it('모든 upsert가 false(no-op)이면 revalidateTag를 호출하지 않는다', async () => {
             // 같은 기사 재fetch: DB에 변경 없음 → changedCount=0 → 스킵.
             mockFetchNewsForPeriod.mockResolvedValue([
