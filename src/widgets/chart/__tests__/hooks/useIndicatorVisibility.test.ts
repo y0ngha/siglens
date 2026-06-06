@@ -2,7 +2,10 @@
 import { describe, it, expect } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useIndicatorVisibility } from '../../hooks/useIndicatorVisibility';
-import { INACTIVE_PANE_INDEX } from '../../constants';
+import {
+    FIRST_INDICATOR_PANE_INDEX,
+    INACTIVE_PANE_INDEX,
+} from '../../constants';
 
 describe('useIndicatorVisibility', () => {
     it('starts with all pane indicators hidden (INACTIVE)', () => {
@@ -20,9 +23,13 @@ describe('useIndicatorVisibility', () => {
         act(() => result.current.toggle('rsi'));
         act(() => result.current.toggle('mfi'));
         act(() => result.current.toggle('hurst'));
-        expect(result.current.paneIndices.rsi).toBe(1);
-        expect(result.current.paneIndices.mfi).toBe(2);
-        expect(result.current.paneIndices.hurst).toBe(3);
+        expect(result.current.paneIndices.rsi).toBe(FIRST_INDICATOR_PANE_INDEX);
+        expect(result.current.paneIndices.mfi).toBe(
+            FIRST_INDICATOR_PANE_INDEX + 1
+        );
+        expect(result.current.paneIndices.hurst).toBe(
+            FIRST_INDICATOR_PANE_INDEX + 2
+        );
         expect(result.current.paneIndices.macd).toBe(INACTIVE_PANE_INDEX);
     });
 
@@ -32,9 +39,11 @@ describe('useIndicatorVisibility', () => {
         act(() => result.current.toggle('macd'));
         act(() => result.current.toggle('cci'));
         act(() => result.current.toggle('macd'));
-        expect(result.current.paneIndices.rsi).toBe(1);
+        expect(result.current.paneIndices.rsi).toBe(FIRST_INDICATOR_PANE_INDEX);
         expect(result.current.paneIndices.macd).toBe(INACTIVE_PANE_INDEX);
-        expect(result.current.paneIndices.cci).toBe(2);
+        expect(result.current.paneIndices.cci).toBe(
+            FIRST_INDICATOR_PANE_INDEX + 1
+        );
     });
 
     it('exposes a paneIndices entry for every pane indicator', () => {

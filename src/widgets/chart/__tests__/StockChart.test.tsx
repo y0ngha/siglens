@@ -1,6 +1,30 @@
 import { render, screen } from '@testing-library/react';
 import type { Bar } from '@y0ngha/siglens-core';
 import { StockChart } from '@/widgets/chart/StockChart';
+import { INACTIVE_PANE_INDEX } from '@/widgets/chart/constants';
+
+const INACTIVE_PANES = Object.fromEntries(
+    [
+        'ma',
+        'ema',
+        'ichimoku',
+        'rsi',
+        'macd',
+        'dmi',
+        'stochastic',
+        'stochRsi',
+        'cci',
+        'bollinger',
+        'volumeProfile',
+        'mfi',
+        'williamsR',
+        'connorsRsi',
+        'cmf',
+        'bollingerPercentB',
+        'hurst',
+        'varianceRatio',
+    ].map(k => [k, INACTIVE_PANE_INDEX])
+);
 
 const { mockCreateChart, mockAddSeries, mockSetData, mockFitContent } =
     vi.hoisted(() => {
@@ -198,26 +222,7 @@ vi.mock('@/widgets/chart/hooks/useIndicatorVisibility', () => ({
             varianceRatio: false,
         },
         toggle: vi.fn(),
-        paneIndices: {
-            ma: -1,
-            ema: -1,
-            ichimoku: -1,
-            rsi: -1,
-            macd: -1,
-            dmi: -1,
-            stochastic: -1,
-            stochRsi: -1,
-            cci: -1,
-            bollinger: -1,
-            volumeProfile: -1,
-            mfi: -1,
-            williamsR: -1,
-            connorsRsi: -1,
-            cmf: -1,
-            bollingerPercentB: -1,
-            hurst: -1,
-            varianceRatio: -1,
-        },
+        paneIndices: INACTIVE_PANES,
     }),
 }));
 
