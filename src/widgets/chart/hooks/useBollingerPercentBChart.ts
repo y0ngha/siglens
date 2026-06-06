@@ -39,7 +39,6 @@ export function useBollingerPercentBChart({
         seriesRef.current = null;
     });
 
-    // isVisible false 또는 paneIndex 변경 시 시리즈 제거 및 ref 초기화
     const removeAllSeries = useEffectEvent((chart: IChartApi) => {
         if (seriesRef.current) {
             chart.removeSeries(seriesRef.current);
@@ -63,7 +62,6 @@ export function useBollingerPercentBChart({
             return;
         }
 
-        // paneIndex 변경 시 시리즈 제거 후 재생성
         if (prevPaneIndexRef.current !== paneIndex && seriesRef.current) {
             removeAllSeries(chart);
         }
@@ -102,7 +100,6 @@ export function useBollingerPercentBChart({
         seriesRef.current.applyOptions({ lineWidth });
     }, [chartRef, isVisible, lineWidth, paneIndex]);
 
-    // 데이터 동기화: 시리즈가 보이는 동안 bars/indicators 변경 시 업데이트
     // bollingerDerived는 객체 배열이므로 pctB 값만 추출해 단순 값 배열로 변환
     useEffect(() => {
         if (!isVisible) return;

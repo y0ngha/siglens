@@ -312,11 +312,31 @@ describe('buildPaneLabels', () => {
 
     describe('group-B pane가 활성일 때', () => {
         it('builds labels for active group-B panes', () => {
-            const paneIndices = makePaneIndices({ mfi: 1, hurst: 2 });
-            const labels = buildPaneLabels(paneIndices);
+            const labels = buildPaneLabels(
+                makePaneIndices({ mfi: 1, hurst: 2 })
+            );
+
+            expect(labels).toHaveLength(2);
             const names = labels.flatMap(l => l.subLabels.map(s => s.name));
-            expect(names.some(n => n.startsWith('MFI'))).toBe(true);
-            expect(names.some(n => n.startsWith('Hurst'))).toBe(true);
+            expect(names).toEqual(['MFI', 'Hurst']);
+        });
+
+        it('builds single-subLabel labels for each group-B pane', () => {
+            const cases: Array<[keyof PaneIndices, string, string]> = [
+                ['williamsR', 'Williams %R', CHART_COLORS.williamsRLine],
+                ['connorsRsi', 'CRSI', CHART_COLORS.connorsRsiLine],
+                ['cmf', 'CMF', CHART_COLORS.cmfLine],
+                ['bollingerPercentB', '%B', CHART_COLORS.bollingerPercentBLine],
+                ['varianceRatio', 'VR', CHART_COLORS.varianceRatioLine],
+            ];
+
+            for (const [key, name, color] of cases) {
+                const labels = buildPaneLabels(makePaneIndices({ [key]: 1 }));
+
+                expect(labels).toHaveLength(1);
+                expect(labels[0].paneIndex).toBe(1);
+                expect(labels[0].subLabels).toEqual([{ name, color }]);
+            }
         });
     });
 
