@@ -1,3 +1,5 @@
+import type { IndicatorKey } from './model/indicatorRegistry';
+
 export interface OverlayItemBase {
     name: string;
     color: string;
@@ -17,11 +19,4 @@ export interface PaneLabelConfig {
     subLabels: PaneSubLabel[];
 }
 
-export interface PaneIndices {
-    rsi: number;
-    macd: number;
-    dmi: number;
-    stochastic: number;
-    stochRsi: number;
-    cci: number;
-}
+export type PaneIndices = Record<IndicatorKey, number>;

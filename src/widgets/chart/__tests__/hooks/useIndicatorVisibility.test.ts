@@ -1,108 +1,61 @@
 // @vitest-environment jsdom
-import { act, renderHook } from '@testing-library/react';
+import { describe, it, expect } from 'vitest';
+import { renderHook, act } from '@testing-library/react';
 import { useIndicatorVisibility } from '../../hooks/useIndicatorVisibility';
-import {
-    FIRST_INDICATOR_PANE_INDEX,
-    INACTIVE_PANE_INDEX,
-} from '../../constants';
+import { INACTIVE_PANE_INDEX } from '../../constants';
 
 describe('useIndicatorVisibility', () => {
-    it('returns all indicators hidden initially', () => {
+    it('starts with all pane indicators hidden (INACTIVE)', () => {
         const { result } = renderHook(() => useIndicatorVisibility());
-
-        expect(result.current.rsiVisible).toBe(false);
-        expect(result.current.macdVisible).toBe(false);
-        expect(result.current.dmiVisible).toBe(false);
-        expect(result.current.stochasticVisible).toBe(false);
-        expect(result.current.stochRsiVisible).toBe(false);
-        expect(result.current.cciVisible).toBe(false);
+        expect(result.current.visible.rsi).toBe(false);
+        expect(result.current.visible.mfi).toBe(false);
+        expect(result.current.paneIndices.rsi).toBe(INACTIVE_PANE_INDEX);
+        expect(result.current.paneIndices.varianceRatio).toBe(
+            INACTIVE_PANE_INDEX
+        );
     });
 
-    it('sets all paneIndices to inactive when no indicators visible', () => {
+    it('assigns compacted pane indices in registry order to active panes', () => {
         const { result } = renderHook(() => useIndicatorVisibility());
-
-        expect(result.current.paneIndices.rsi).toBe(INACTIVE_PANE_INDEX);
+        act(() => result.current.toggle('rsi'));
+        act(() => result.current.toggle('mfi'));
+        act(() => result.current.toggle('hurst'));
+        expect(result.current.paneIndices.rsi).toBe(1);
+        expect(result.current.paneIndices.mfi).toBe(2);
+        expect(result.current.paneIndices.hurst).toBe(3);
         expect(result.current.paneIndices.macd).toBe(INACTIVE_PANE_INDEX);
-        expect(result.current.paneIndices.dmi).toBe(INACTIVE_PANE_INDEX);
-        expect(result.current.paneIndices.stochastic).toBe(INACTIVE_PANE_INDEX);
-        expect(result.current.paneIndices.stochRsi).toBe(INACTIVE_PANE_INDEX);
-        expect(result.current.paneIndices.cci).toBe(INACTIVE_PANE_INDEX);
     });
 
-    it('toggles RSI and assigns first pane index', () => {
+    it('toggle off reassigns indices (worst case: middle removed)', () => {
         const { result } = renderHook(() => useIndicatorVisibility());
-
-        act(() => {
-            result.current.toggleRSI();
-        });
-
-        expect(result.current.rsiVisible).toBe(true);
-        expect(result.current.paneIndices.rsi).toBe(FIRST_INDICATOR_PANE_INDEX);
+        act(() => result.current.toggle('rsi'));
+        act(() => result.current.toggle('macd'));
+        act(() => result.current.toggle('cci'));
+        act(() => result.current.toggle('macd'));
+        expect(result.current.paneIndices.rsi).toBe(1);
+        expect(result.current.paneIndices.macd).toBe(INACTIVE_PANE_INDEX);
+        expect(result.current.paneIndices.cci).toBe(2);
     });
 
-    it('assigns sequential pane indices for multiple active indicators', () => {
+    it('exposes a paneIndices entry for every pane indicator', () => {
         const { result } = renderHook(() => useIndicatorVisibility());
-
-        act(() => {
-            result.current.toggleRSI();
-        });
-        act(() => {
-            result.current.toggleMACD();
-        });
-
-        expect(result.current.paneIndices.rsi).toBe(FIRST_INDICATOR_PANE_INDEX);
-        expect(result.current.paneIndices.macd).toBe(
-            FIRST_INDICATOR_PANE_INDEX + 1
-        );
-    });
-
-    it('recalculates pane indices when an indicator is toggled off', () => {
-        const { result } = renderHook(() => useIndicatorVisibility());
-
-        act(() => {
-            result.current.toggleRSI();
-        });
-        act(() => {
-            result.current.toggleMACD();
-        });
-        act(() => {
-            result.current.toggleDMI();
-        });
-
-        act(() => {
-            result.current.toggleRSI();
-        });
-
-        expect(result.current.paneIndices.rsi).toBe(INACTIVE_PANE_INDEX);
-        expect(result.current.paneIndices.macd).toBe(
-            FIRST_INDICATOR_PANE_INDEX
-        );
-        expect(result.current.paneIndices.dmi).toBe(
-            FIRST_INDICATOR_PANE_INDEX + 1
-        );
-    });
-
-    it('toggles all six indicators', () => {
-        const { result } = renderHook(() => useIndicatorVisibility());
-
-        act(() => {
-            result.current.toggleRSI();
-            result.current.toggleMACD();
-            result.current.toggleDMI();
-            result.current.toggleStochastic();
-            result.current.toggleStochRSI();
-            result.current.toggleCCI();
-        });
-
-        expect(result.current.rsiVisible).toBe(true);
-        expect(result.current.macdVisible).toBe(true);
-        expect(result.current.dmiVisible).toBe(true);
-        expect(result.current.stochasticVisible).toBe(true);
-        expect(result.current.stochRsiVisible).toBe(true);
-        expect(result.current.cciVisible).toBe(true);
-
-        expect(result.current.paneIndices.cci).toBe(
-            FIRST_INDICATOR_PANE_INDEX + 5
-        );
+        const paneKeys = [
+            'rsi',
+            'macd',
+            'dmi',
+            'stochastic',
+            'stochRsi',
+            'cci',
+            'mfi',
+            'williamsR',
+            'connorsRsi',
+            'cmf',
+            'bollingerPercentB',
+            'hurst',
+            'varianceRatio',
+        ] as const;
+        for (const k of paneKeys) {
+            expect(result.current.paneIndices[k]).toBe(INACTIVE_PANE_INDEX);
+        }
     });
 });

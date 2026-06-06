@@ -18,14 +18,33 @@ import {
 import type { PaneIndices } from '@/widgets/chart/types';
 import { INACTIVE_PANE_INDEX } from '@/widgets/chart/constants';
 
-const ALL_INACTIVE: PaneIndices = {
-    rsi: INACTIVE_PANE_INDEX,
-    macd: INACTIVE_PANE_INDEX,
-    dmi: INACTIVE_PANE_INDEX,
-    stochastic: INACTIVE_PANE_INDEX,
-    stochRsi: INACTIVE_PANE_INDEX,
-    cci: INACTIVE_PANE_INDEX,
-};
+// PaneIndices는 이제 모든 IndicatorKey(18개)를 가진 Record다. buildPaneLabels가
+// 읽는 건 6개 pane 키뿐이므로, 나머지를 INACTIVE로 채운 base에 해당 키만 덮어쓴다.
+function makePaneIndices(overrides: Partial<PaneIndices> = {}): PaneIndices {
+    const base = {
+        ma: INACTIVE_PANE_INDEX,
+        ema: INACTIVE_PANE_INDEX,
+        ichimoku: INACTIVE_PANE_INDEX,
+        rsi: INACTIVE_PANE_INDEX,
+        macd: INACTIVE_PANE_INDEX,
+        dmi: INACTIVE_PANE_INDEX,
+        stochastic: INACTIVE_PANE_INDEX,
+        stochRsi: INACTIVE_PANE_INDEX,
+        cci: INACTIVE_PANE_INDEX,
+        bollinger: INACTIVE_PANE_INDEX,
+        volumeProfile: INACTIVE_PANE_INDEX,
+        mfi: INACTIVE_PANE_INDEX,
+        williamsR: INACTIVE_PANE_INDEX,
+        connorsRsi: INACTIVE_PANE_INDEX,
+        cmf: INACTIVE_PANE_INDEX,
+        bollingerPercentB: INACTIVE_PANE_INDEX,
+        hurst: INACTIVE_PANE_INDEX,
+        varianceRatio: INACTIVE_PANE_INDEX,
+    } satisfies PaneIndices;
+    return { ...base, ...overrides };
+}
+
+const ALL_INACTIVE: PaneIndices = makePaneIndices();
 
 describe('buildPaneLabels', () => {
     describe('모든 지표가 비활성일 때', () => {
@@ -38,14 +57,7 @@ describe('buildPaneLabels', () => {
 
     describe('RSI만 활성일 때', () => {
         const RSI_PANE_INDEX = 1;
-        const paneIndices: PaneIndices = {
-            rsi: RSI_PANE_INDEX,
-            macd: INACTIVE_PANE_INDEX,
-            dmi: INACTIVE_PANE_INDEX,
-            stochastic: INACTIVE_PANE_INDEX,
-            stochRsi: INACTIVE_PANE_INDEX,
-            cci: INACTIVE_PANE_INDEX,
-        };
+        const paneIndices = makePaneIndices({ rsi: RSI_PANE_INDEX });
 
         it('RSI pane 라벨 1개와 서브 라벨 1개를 반환한다', () => {
             const result = buildPaneLabels(paneIndices);
@@ -62,14 +74,7 @@ describe('buildPaneLabels', () => {
 
     describe('MACD만 활성일 때', () => {
         const MACD_PANE_INDEX = 1;
-        const paneIndices: PaneIndices = {
-            rsi: INACTIVE_PANE_INDEX,
-            macd: MACD_PANE_INDEX,
-            dmi: INACTIVE_PANE_INDEX,
-            stochastic: INACTIVE_PANE_INDEX,
-            stochRsi: INACTIVE_PANE_INDEX,
-            cci: INACTIVE_PANE_INDEX,
-        };
+        const paneIndices = makePaneIndices({ macd: MACD_PANE_INDEX });
 
         it('MACD pane 라벨 1개와 서브 라벨 3개를 반환한다', () => {
             const result = buildPaneLabels(paneIndices);
@@ -99,14 +104,7 @@ describe('buildPaneLabels', () => {
 
     describe('DMI만 활성일 때', () => {
         const DMI_PANE_INDEX = 1;
-        const paneIndices: PaneIndices = {
-            rsi: INACTIVE_PANE_INDEX,
-            macd: INACTIVE_PANE_INDEX,
-            dmi: DMI_PANE_INDEX,
-            stochastic: INACTIVE_PANE_INDEX,
-            stochRsi: INACTIVE_PANE_INDEX,
-            cci: INACTIVE_PANE_INDEX,
-        };
+        const paneIndices = makePaneIndices({ dmi: DMI_PANE_INDEX });
 
         it('DMI pane 라벨 1개와 서브 라벨 3개를 반환한다', () => {
             const result = buildPaneLabels(paneIndices);
@@ -133,14 +131,7 @@ describe('buildPaneLabels', () => {
     });
 
     describe('RSI+MACD+DMI 활성일 때', () => {
-        const paneIndices: PaneIndices = {
-            rsi: 1,
-            macd: 2,
-            dmi: 3,
-            stochastic: INACTIVE_PANE_INDEX,
-            stochRsi: INACTIVE_PANE_INDEX,
-            cci: INACTIVE_PANE_INDEX,
-        };
+        const paneIndices = makePaneIndices({ rsi: 1, macd: 2, dmi: 3 });
 
         it('RSI, MACD, DMI 순서로 3개의 pane 라벨을 반환한다', () => {
             const result = buildPaneLabels(paneIndices);
@@ -161,14 +152,14 @@ describe('buildPaneLabels', () => {
     });
 
     describe('모든 지표가 활성일 때', () => {
-        const paneIndices: PaneIndices = {
+        const paneIndices = makePaneIndices({
             rsi: 1,
             macd: 2,
             dmi: 3,
             stochastic: 4,
             stochRsi: 5,
             cci: 6,
-        };
+        });
 
         it('RSI, MACD, DMI, Stochastic, StochRSI, CCI 순서로 6개의 pane 라벨을 반환한다', () => {
             const result = buildPaneLabels(paneIndices);
@@ -196,14 +187,9 @@ describe('buildPaneLabels', () => {
 
     describe('Stochastic만 활성일 때', () => {
         const STOCHASTIC_PANE_INDEX = 1;
-        const paneIndices: PaneIndices = {
-            rsi: INACTIVE_PANE_INDEX,
-            macd: INACTIVE_PANE_INDEX,
-            dmi: INACTIVE_PANE_INDEX,
+        const paneIndices = makePaneIndices({
             stochastic: STOCHASTIC_PANE_INDEX,
-            stochRsi: INACTIVE_PANE_INDEX,
-            cci: INACTIVE_PANE_INDEX,
-        };
+        });
 
         it('Stochastic pane 라벨 1개와 서브 라벨 2개를 반환한다', () => {
             const result = buildPaneLabels(paneIndices);
@@ -230,14 +216,9 @@ describe('buildPaneLabels', () => {
 
     describe('StochRSI만 활성일 때', () => {
         const STOCH_RSI_PANE_INDEX = 1;
-        const paneIndices: PaneIndices = {
-            rsi: INACTIVE_PANE_INDEX,
-            macd: INACTIVE_PANE_INDEX,
-            dmi: INACTIVE_PANE_INDEX,
-            stochastic: INACTIVE_PANE_INDEX,
+        const paneIndices = makePaneIndices({
             stochRsi: STOCH_RSI_PANE_INDEX,
-            cci: INACTIVE_PANE_INDEX,
-        };
+        });
 
         it('StochRSI pane 라벨 1개와 서브 라벨 2개를 반환한다', () => {
             const result = buildPaneLabels(paneIndices);
@@ -264,14 +245,14 @@ describe('buildPaneLabels', () => {
 
     describe('각 서브 라벨의 색상이 CHART_COLORS와 일치하는지 확인', () => {
         it('모든 서브 라벨의 색상이 올바르다', () => {
-            const paneIndices: PaneIndices = {
+            const paneIndices = makePaneIndices({
                 rsi: 1,
                 macd: 2,
                 dmi: 3,
                 stochastic: 4,
                 stochRsi: 5,
                 cci: 6,
-            };
+            });
             const result = buildPaneLabels(paneIndices);
 
             const allColors = result.flatMap(label =>
@@ -297,14 +278,7 @@ describe('buildPaneLabels', () => {
 
     describe('부분 활성 조합일 때', () => {
         it('RSI+DMI만 활성이면 연속적인 pane index를 사용한다', () => {
-            const paneIndices: PaneIndices = {
-                rsi: 1,
-                macd: INACTIVE_PANE_INDEX,
-                dmi: 2,
-                stochastic: INACTIVE_PANE_INDEX,
-                stochRsi: INACTIVE_PANE_INDEX,
-                cci: INACTIVE_PANE_INDEX,
-            };
+            const paneIndices = makePaneIndices({ rsi: 1, dmi: 2 });
             const result = buildPaneLabels(paneIndices);
 
             expect(result).toHaveLength(2);
@@ -313,14 +287,7 @@ describe('buildPaneLabels', () => {
         });
 
         it('MACD+DMI만 활성이면 pane 1, 2에 할당된다', () => {
-            const paneIndices: PaneIndices = {
-                rsi: INACTIVE_PANE_INDEX,
-                macd: 1,
-                dmi: 2,
-                stochastic: INACTIVE_PANE_INDEX,
-                stochRsi: INACTIVE_PANE_INDEX,
-                cci: INACTIVE_PANE_INDEX,
-            };
+            const paneIndices = makePaneIndices({ macd: 1, dmi: 2 });
             const result = buildPaneLabels(paneIndices);
 
             expect(result).toHaveLength(2);
@@ -331,14 +298,7 @@ describe('buildPaneLabels', () => {
         });
 
         it('RSI+MACD만 활성이면 pane 1, 2에 할당된다', () => {
-            const paneIndices: PaneIndices = {
-                rsi: 1,
-                macd: 2,
-                dmi: INACTIVE_PANE_INDEX,
-                stochastic: INACTIVE_PANE_INDEX,
-                stochRsi: INACTIVE_PANE_INDEX,
-                cci: INACTIVE_PANE_INDEX,
-            };
+            const paneIndices = makePaneIndices({ rsi: 1, macd: 2 });
             const result = buildPaneLabels(paneIndices);
 
             expect(result).toHaveLength(2);
@@ -351,14 +311,7 @@ describe('buildPaneLabels', () => {
 
     describe('CCI만 활성일 때', () => {
         const CCI_PANE_INDEX = 1;
-        const paneIndices: PaneIndices = {
-            rsi: INACTIVE_PANE_INDEX,
-            macd: INACTIVE_PANE_INDEX,
-            dmi: INACTIVE_PANE_INDEX,
-            stochastic: INACTIVE_PANE_INDEX,
-            stochRsi: INACTIVE_PANE_INDEX,
-            cci: CCI_PANE_INDEX,
-        };
+        const paneIndices = makePaneIndices({ cci: CCI_PANE_INDEX });
 
         it('CCI pane 라벨 1개와 서브 라벨 1개를 반환한다', () => {
             const result = buildPaneLabels(paneIndices);
