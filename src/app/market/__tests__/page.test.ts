@@ -183,7 +183,11 @@ describe('Market page', () => {
                 await MarketContent();
 
                 const sectorSignalsCall = (
-                    mockSetQueryData.mock.calls as [unknown[], unknown, unknown][]
+                    mockSetQueryData.mock.calls as [
+                        unknown[],
+                        unknown,
+                        unknown,
+                    ][]
                 ).find(
                     ([key]) => Array.isArray(key) && key[0] === 'sector-signals'
                 );
