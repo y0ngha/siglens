@@ -184,8 +184,7 @@ describe('Market page', () => {
                 const sectorSignalsCall = (
                     mockSetQueryData.mock.calls as [unknown[], unknown][]
                 ).find(
-                    ([key]) =>
-                        Array.isArray(key) && key[0] === 'sector-signals'
+                    ([key]) => Array.isArray(key) && key[0] === 'sector-signals'
                 );
                 expect(sectorSignalsCall).toBeDefined();
                 const seededData = sectorSignalsCall![1] as {
@@ -212,8 +211,7 @@ describe('Market page', () => {
                 const sectorSignalsCall = (
                     mockSetQueryData.mock.calls as [unknown[], unknown][]
                 ).find(
-                    ([key]) =>
-                        Array.isArray(key) && key[0] === 'sector-signals'
+                    ([key]) => Array.isArray(key) && key[0] === 'sector-signals'
                 );
                 expect(sectorSignalsCall).toBeDefined();
                 const seededData = sectorSignalsCall![1] as {
