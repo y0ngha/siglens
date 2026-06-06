@@ -34,6 +34,12 @@ import { useCmfChart } from './hooks/useCmfChart';
 import { useBollingerPercentBChart } from './hooks/useBollingerPercentBChart';
 import { useHurstChart } from './hooks/useHurstChart';
 import { useVarianceRatioChart } from './hooks/useVarianceRatioChart';
+import { useMacdVChart } from './hooks/useMacdVChart';
+import { useForceIndexChart } from './hooks/useForceIndexChart';
+import { useObvChart } from './hooks/useObvChart';
+import { useAtrChart } from './hooks/useAtrChart';
+import { useYangZhangChart } from './hooks/useYangZhangChart';
+import { useEwmaVolatilityChart } from './hooks/useEwmaVolatilityChart';
 import { useVolumeProfileOverlay } from './hooks/useVolumeProfileOverlay';
 import { useIchimokuOverlay } from './hooks/useIchimokuOverlay';
 import { useCandlePatternMarkers } from './hooks/useCandlePatternMarkers';
@@ -272,6 +278,42 @@ export function StockChart({
         paneIndex: paneIndices.varianceRatio,
     });
 
+    useMacdVChart({
+        ...commonHookParams,
+        isVisible: visible.macdV,
+        paneIndex: paneIndices.macdV,
+    });
+
+    useForceIndexChart({
+        ...commonHookParams,
+        isVisible: visible.forceIndex,
+        paneIndex: paneIndices.forceIndex,
+    });
+
+    useObvChart({
+        ...commonHookParams,
+        isVisible: visible.obv,
+        paneIndex: paneIndices.obv,
+    });
+
+    useAtrChart({
+        ...commonHookParams,
+        isVisible: visible.atr,
+        paneIndex: paneIndices.atr,
+    });
+
+    useYangZhangChart({
+        ...commonHookParams,
+        isVisible: visible.yangZhang,
+        paneIndex: paneIndices.yangZhang,
+    });
+
+    useEwmaVolatilityChart({
+        ...commonHookParams,
+        isVisible: visible.ewmaVolatility,
+        paneIndex: paneIndices.ewmaVolatility,
+    });
+
     useCandlePatternMarkers({ seriesRef, bars });
 
     useActionRecommendationOverlay({
@@ -447,8 +489,38 @@ export function StockChart({
                 active: visible.varianceRatio,
                 onToggle: () => toggle('varianceRatio'),
             },
+            {
+                meta: INDICATOR_META.macdV,
+                active: visible.macdV,
+                onToggle: () => toggle('macdV'),
+            },
+            {
+                meta: INDICATOR_META.forceIndex,
+                active: visible.forceIndex,
+                onToggle: () => toggle('forceIndex'),
+            },
+            {
+                meta: INDICATOR_META.obv,
+                active: visible.obv,
+                onToggle: () => toggle('obv'),
+            },
+            {
+                meta: INDICATOR_META.atr,
+                active: visible.atr,
+                onToggle: () => toggle('atr'),
+            },
+            {
+                meta: INDICATOR_META.yangZhang,
+                active: visible.yangZhang,
+                onToggle: () => toggle('yangZhang'),
+            },
+            {
+                meta: INDICATOR_META.ewmaVolatility,
+                active: visible.ewmaVolatility,
+                onToggle: () => toggle('ewmaVolatility'),
+            },
         ],
-        // deps에 visible 객체 전체를 둔다 — 한 지표 토글 시 18개 binding 전체가 재조립되지만
+        // deps에 visible 객체 전체를 둔다 — 한 지표 토글 시 24개 binding 전체가 재조립되지만
         // 항목 수가 적어 비용은 무시할 만하며, 개별 visible 키를 나열하는 것보다 명료하다.
         [
             maVisiblePeriods,

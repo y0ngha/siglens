@@ -23,6 +23,12 @@ const INACTIVE_PANES = Object.fromEntries(
         'bollingerPercentB',
         'hurst',
         'varianceRatio',
+        'macdV',
+        'forceIndex',
+        'obv',
+        'atr',
+        'yangZhang',
+        'ewmaVolatility',
     ].map(k => [k, INACTIVE_PANE_INDEX])
 );
 
@@ -169,6 +175,30 @@ vi.mock('@/widgets/chart/hooks/useVarianceRatioChart', () => ({
     useVarianceRatioChart: vi.fn(),
 }));
 
+vi.mock('@/widgets/chart/hooks/useMacdVChart', () => ({
+    useMacdVChart: vi.fn(),
+}));
+
+vi.mock('@/widgets/chart/hooks/useForceIndexChart', () => ({
+    useForceIndexChart: vi.fn(),
+}));
+
+vi.mock('@/widgets/chart/hooks/useObvChart', () => ({
+    useObvChart: vi.fn(),
+}));
+
+vi.mock('@/widgets/chart/hooks/useAtrChart', () => ({
+    useAtrChart: vi.fn(),
+}));
+
+vi.mock('@/widgets/chart/hooks/useYangZhangChart', () => ({
+    useYangZhangChart: vi.fn(),
+}));
+
+vi.mock('@/widgets/chart/hooks/useEwmaVolatilityChart', () => ({
+    useEwmaVolatilityChart: vi.fn(),
+}));
+
 vi.mock('@/widgets/chart/hooks/useVolumeProfileOverlay', () => ({
     useVolumeProfileOverlay: () => ({
         isVisible: false,
@@ -220,6 +250,12 @@ vi.mock('@/widgets/chart/hooks/useIndicatorVisibility', () => ({
             bollingerPercentB: false,
             hurst: false,
             varianceRatio: false,
+            macdV: false,
+            forceIndex: false,
+            obv: false,
+            atr: false,
+            yangZhang: false,
+            ewmaVolatility: false,
         },
         toggle: vi.fn(),
         paneIndices: INACTIVE_PANES,
@@ -358,13 +394,13 @@ describe('StockChart', () => {
         );
     });
 
-    it('renders IndicatorSettingsModal with 18 indicator bindings', () => {
+    it('renders IndicatorSettingsModal with 24 indicator bindings', () => {
         render(<StockChart bars={mockBars} timeframe="1Day" />);
         const modal = screen.getByTestId('indicator-settings-modal');
-        expect(modal).toHaveAttribute('data-count', '18');
+        expect(modal).toHaveAttribute('data-count', '24');
         expect(modal).toHaveAttribute(
             'data-keys',
-            'ma,ema,ichimoku,rsi,macd,dmi,stochastic,stochRsi,cci,bollinger,volumeProfile,mfi,williamsR,connorsRsi,cmf,bollingerPercentB,hurst,varianceRatio'
+            'ma,ema,ichimoku,rsi,macd,dmi,stochastic,stochRsi,cci,bollinger,volumeProfile,mfi,williamsR,connorsRsi,cmf,bollingerPercentB,hurst,varianceRatio,macdV,forceIndex,obv,atr,yangZhang,ewmaVolatility'
         );
     });
 
