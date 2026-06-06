@@ -160,7 +160,7 @@ export class DrizzleNewsRepository {
  * 필요해지면 별도 함수로 분리해야 한다. cross-request 캐싱은 손실 — 이슈 #439 참조.
  *
  * 사이드 이펙트(DB I/O)가 있으므로 entities/news-article/api.ts에 배치
- * (entities/{slice}/lib/은 순수 함수 전용 — ARCHITECTURE §0.7).
+ * (entities/{slice}/lib/은 순수 함수 전용 — MISTAKES.md Architecture §0.7).
  */
 export const getNewsList = cache(async (symbol: string): Promise<NewsRow[]> => {
     const { db } = getDatabaseClient();

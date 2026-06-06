@@ -49,7 +49,7 @@ vi.mock('next/navigation', () => ({
     notFound: vi.fn(),
 }));
 // /news와 동일 게이트(useWaitForNewsCards) 적용을 위해 newsItems를 SSR에서 조회한다.
-// getNewsList는 entities/news-article로 이동(B1 fix) — barrel mock.
+// getNewsList는 entities/news-article로 이동 — barrel mock.
 vi.mock('@/entities/news-article', async importOriginal => ({
     ...(await importOriginal<typeof import('@/entities/news-article')>()),
     getNewsList: vi.fn().mockResolvedValue([]),
