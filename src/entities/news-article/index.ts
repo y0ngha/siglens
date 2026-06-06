@@ -1,4 +1,4 @@
-export { DrizzleNewsRepository, type NewsRow } from './api';
+export { DrizzleNewsRepository, getNewsList, type NewsRow } from './api';
 
 // lib
 export {
@@ -15,6 +15,5 @@ export {
 // selectAggregateNewsItems는 buildAnalysisNewsItems 안에서 캡슐화되어 외부 노출 불필요.
 export { MAX_AGGREGATE_NEWS_ITEMS } from './lib/newsAnalysisSelection';
 export { buildAnalysisNewsItems } from './lib/buildAnalysisNewsItems';
-export { getNewsList } from './lib/getNewsList';
 
 // actions are imported from @/entities/news-article/actions

@@ -1,3 +1,4 @@
+import { cache } from 'react';
 import { and, desc, eq, gte, sql } from 'drizzle-orm';
 import type {
     NewsCardAnalysis,
@@ -7,10 +8,12 @@ import type {
     NewsSentiment,
 } from '@y0ngha/siglens-core';
 import { NEON_TRANSIENT_RETRY } from '@/shared/db/isNeonTransientError';
+import { getDatabaseClient } from '@/shared/db/client';
 import { news } from '@/shared/db/schema';
 import type { SiglensDatabase } from '@/shared/db/types';
 import type { NewsDisplayItem } from '@/shared/lib/types';
 import { withRetry } from '@/shared/lib/withRetry';
+import { NEWS_LOOKBACK_MS } from './lib/newsLookback';
 
 /** Domain-level row returned from the `news` table; extends the display projection with persistence-only fields. */
 export interface NewsRow extends NewsDisplayItem {
@@ -143,6 +146,22 @@ export class DrizzleNewsRepository {
         return rows.map(toNewsRow);
     }
 }
+
+/**
+ * 같은 요청 안의 중복 호출(예: NewsPage 본문 + NewsListSection + OverallPage의 enrichment
+ * 게이트 prop)을 `React.cache`로 per-request memoize해 DB 중복 조회를 막는다.
+ *
+ * 같은 lookback window(NEWS_LOOKBACK_MS)로 listBySymbol을 감싸므로 호출자별 다른 윈도우가
+ * 필요해지면 별도 함수로 분리해야 한다. cross-request 캐싱은 손실 — 이슈 #439 참조.
+ *
+ * 사이드 이펙트(DB I/O)가 있으므로 entities/news-article/api.ts에 배치
+ * (entities/{slice}/lib/은 순수 함수 전용 — ARCHITECTURE §0.7).
+ */
+export const getNewsList = cache(async (symbol: string): Promise<NewsRow[]> => {
+    const { db } = getDatabaseClient();
+    const repo = new DrizzleNewsRepository(db);
+    return repo.listBySymbol(symbol, NEWS_LOOKBACK_MS);
+});
 
 /** Shape of a single row read from the `news` table. */
 interface NewsDbRow {
