@@ -134,15 +134,17 @@ export async function ensureNewsCardsAnalyzedAction(
     // 실제로 신규 삽입/내용 변경된 기사가 1건 이상일 때만 news ISR 캐시를 무효화한다.
     // upsertNewsItem은 값이 바뀐 행만 RETURNING하므로(setWhere), 같은 기사 재fetch는
     // changedCount=0 → revalidateTag 스킵. 방문마다 무효화하던 빈도 폭풍을 차단한다.
-    // (fresh.length === 0이면 upsertSettled가 비어 changedCount=0 → 동일하게 스킵.)
+    // 단, 분석(analyze) 단계는 changedCount와 무관하게 진행한다 — 이전 호출에서
+    // 분석 실패로 analyzedAt=null로 남은 기존 기사를 재fetch(no-op)에서도 다시 분석해야
+    // 하므로(analyze는 listBySymbol로 DB의 모든 미분석 행을 대상으로 함).
     const changedCount = upsertSettled.filter(
         r => r.status === 'fulfilled' && r.value === true
     ).length;
-    if (changedCount === 0) return;
-
-    // → 다음 요청부터 news 리스트/JSON-LD가 fresh. bars/peek/profile 캐시는 보존.
-    // "max" profile: 캐시 항목을 즉시 만료시켜 다음 요청에서 재생성하게 한다.
-    revalidateTag(`news:${symbol.toUpperCase()}`, 'max');
+    if (changedCount > 0) {
+        // → 다음 요청부터 news 리스트/JSON-LD가 fresh. bars/peek/profile 캐시는 보존.
+        // "max" profile: 캐시 항목을 즉시 만료시켜 다음 요청에서 재생성하게 한다.
+        revalidateTag(`news:${symbol.toUpperCase()}`, 'max');
+    }
 
     if (isE2E()) return;
 

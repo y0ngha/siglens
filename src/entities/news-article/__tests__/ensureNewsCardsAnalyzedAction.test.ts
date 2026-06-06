@@ -213,12 +213,13 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
         });
 
         it('뉴스가 없으면 upsert와 카드 분석을 호출하지 않는다', async () => {
+            // fresh=[] → upsertSettled 비어 changedCount=0 → revalidateTag 스킵.
+            // analyze 단계는 진입하지만 unanalyzed=[]이므로 submitNewsCardAnalysis 미호출.
             mockFetchNewsForPeriod.mockResolvedValue([]);
 
             await ensureNewsCardsAnalyzedAction('AAPL');
 
             expect(mockUpsertNewsItem).not.toHaveBeenCalled();
-            expect(mockListBySymbol).not.toHaveBeenCalled();
             expect(mockSubmitNewsCardAnalysis).not.toHaveBeenCalled();
         });
 
@@ -346,6 +347,52 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
 
             expect(mockMarkFetched).toHaveBeenCalledWith('AAPL');
             expect(revalidateTagSpy).not.toHaveBeenCalled();
+        });
+
+        it('[회귀] changedCount=0이어도 analyzedAt=null 기존 기사가 있으면 분석 단계를 실행한다', async () => {
+            // 시나리오: 이전 호출에서 분석 워커가 실패해 NEWS_ITEM_1이 DB에 upsert되었지만
+            // analyzedAt=null로 남아 있다. 이번 fetch에서 같은 기사가 재fetch되어
+            // upsertNewsItem → false(no-op). changedCount=0이지만 listBySymbol이 반환한
+            // 행의 analyzedAt=null → 분석 단계를 건너뛰면 그 기사는 영구적으로 미분석 상태가 된다.
+            mockFetchNewsForPeriod.mockResolvedValue([NEWS_ITEM_1]);
+            // 모든 upsert가 false → changedCount=0 (재fetch, 내용 동일)
+            mockUpsertNewsItem.mockResolvedValue(false);
+            // DB에는 해당 기사가 있으나 아직 분석 안 됨(analyzedAt=null)
+            mockListBySymbol.mockResolvedValue([
+                { id: NEWS_ITEM_1.id, analyzedAt: null },
+            ]);
+            mockSubmitNewsCardAnalysis.mockResolvedValue(SUBMITTED_RESULT);
+            mockPollNewsCardAnalysis.mockResolvedValue(POLL_DONE);
+
+            await ensureNewsCardsAnalyzedAction('AAPL');
+
+            // revalidateTag는 changedCount=0이므로 호출되지 않아야 한다.
+            expect(revalidateTagSpy).not.toHaveBeenCalled();
+            // 그러나 분석 단계는 반드시 실행되어야 한다 — 미분석 기사를 구제해야 하므로.
+            expect(mockSubmitNewsCardAnalysis).toHaveBeenCalledTimes(1);
+            expect(mockSubmitNewsCardAnalysis).toHaveBeenCalledWith(
+                expect.objectContaining({ item: NEWS_ITEM_1 })
+            );
+            expect(mockAttachAnalysis).toHaveBeenCalledWith(
+                NEWS_ITEM_1.id,
+                CARD_ANALYSIS,
+                expect.any(Date)
+            );
+        });
+
+        it('[회귀] changedCount=0이고 미분석 기사도 없으면 분석 단계를 호출하지 않는다', async () => {
+            // changedCount=0이지만 listBySymbol이 모든 기사가 이미 분석 완료 상태임을 반환.
+            // 분석 단계는 unanalyzed=[]이므로 실제 submit 호출이 없어야 한다.
+            mockFetchNewsForPeriod.mockResolvedValue([NEWS_ITEM_1]);
+            mockUpsertNewsItem.mockResolvedValue(false);
+            mockListBySymbol.mockResolvedValue([
+                { id: NEWS_ITEM_1.id, analyzedAt: new Date('2025-07-01') },
+            ]);
+
+            await ensureNewsCardsAnalyzedAction('AAPL');
+
+            expect(revalidateTagSpy).not.toHaveBeenCalled();
+            expect(mockSubmitNewsCardAnalysis).not.toHaveBeenCalled();
         });
     });
 
