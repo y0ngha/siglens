@@ -102,7 +102,9 @@ function ToggleRow({ binding }: IndicatorRowProps) {
             <input
                 type="checkbox"
                 checked={binding.active}
-                onChange={binding.onToggle}
+                // onToggle은 타입상 optional이라 undefined면 controlled input이
+                // read-only가 되고 React 경고가 난다. no-op으로 controlled 유지.
+                onChange={() => binding.onToggle?.()}
                 className="accent-primary-500 h-4 w-4"
             />
             <span>{binding.meta.label}</span>

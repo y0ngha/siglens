@@ -42,10 +42,14 @@ describe('indicatorRegistry', () => {
         }
     });
 
-    it('every category has a label', () => {
-        for (const category of CATEGORY_ORDER) {
-            expect(CATEGORY_LABELS[category]).toBeTruthy();
-        }
+    it('maps every category to its exact label', () => {
+        expect(CATEGORY_LABELS).toStrictEqual({
+            trend: '추세',
+            momentum: '모멘텀',
+            volatility: '변동성',
+            volume: '볼륨',
+            smc: 'SMC',
+        });
     });
 });
 
