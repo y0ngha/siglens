@@ -408,13 +408,13 @@ describe('StockChart', () => {
         );
     });
 
-    it('renders IndicatorSettingsModal with 26 indicator bindings', () => {
+    it('renders IndicatorSettingsModal with 27 indicator bindings', () => {
         render(<StockChart bars={mockBars} timeframe="1Day" />);
         const modal = screen.getByTestId('indicator-settings-modal');
-        expect(modal).toHaveAttribute('data-count', '26');
+        expect(modal).toHaveAttribute('data-count', '27');
         expect(modal).toHaveAttribute(
             'data-keys',
-            'ma,ema,ichimoku,rsi,macd,dmi,stochastic,stochRsi,cci,bollinger,volumeProfile,mfi,williamsR,connorsRsi,cmf,bollingerPercentB,hurst,varianceRatio,macdV,forceIndex,obv,atr,yangZhang,ewmaVolatility,keltnerChannel,donchianChannel'
+            'ma,ema,ichimoku,rsi,macd,dmi,stochastic,stochRsi,cci,bollinger,volumeProfile,mfi,williamsR,connorsRsi,cmf,bollingerPercentB,hurst,varianceRatio,macdV,forceIndex,obv,atr,yangZhang,ewmaVolatility,keltnerChannel,donchianChannel,supertrend'
         );
     });
 
