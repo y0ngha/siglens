@@ -1,8 +1,8 @@
 import {
     getEarningsReportComparison,
     getGradeEvents,
-    getNewsList,
 } from '@/app/[symbol]/news/newsData';
+import { getNewsList } from '@/entities/news-article';
 import { NewsAiSummary } from '@/widgets/news/NewsAiSummary';
 import { NewsAiSummaryErrorBoundary } from '@/widgets/news/NewsAiSummaryErrorBoundary';
 import { NewsAiSummarySkeleton } from '@/widgets/news/NewsAiSummarySkeleton';

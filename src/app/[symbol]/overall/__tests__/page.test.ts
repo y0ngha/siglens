@@ -49,8 +49,9 @@ vi.mock('next/navigation', () => ({
     notFound: vi.fn(),
 }));
 // /news와 동일 게이트(useWaitForNewsCards) 적용을 위해 newsItems를 SSR에서 조회한다.
-// 테스트는 enriched flag 흐름만 검증하므로 단순한 mock으로 충분.
-vi.mock('@/app/[symbol]/news/newsData', () => ({
+// getNewsList는 entities/news-article로 이동(B1 fix) — barrel mock.
+vi.mock('@/entities/news-article', async importOriginal => ({
+    ...(await importOriginal<typeof import('@/entities/news-article')>()),
     getNewsList: vi.fn().mockResolvedValue([]),
 }));
 
@@ -129,6 +130,7 @@ describe('generateMetadata', () => {
 describe('Overall page (narrative seed)', () => {
     interface OverallSeedProps {
         initialAnalysis: unknown;
+        hasEnrichedNews: boolean;
     }
 
     // describe 내부에 두어 beforeEach가 설정하는 mock 의존성과 co-locate한다
@@ -187,5 +189,53 @@ describe('Overall page (narrative seed)', () => {
         const props = await getOverallProps();
 
         expect(props.initialAnalysis).toBeUndefined();
+    });
+
+    // hasEnrichedNews 분기 (MISTAKES.md §Tests 18): true/false 두 경로 모두 검증.
+    // /news와 동일 게이트로 client(useWaitForNewsCards)가 SSR snapshot의 enrichment
+    // 여부를 보고 즉시 ready 결정하거나 폴링을 시작해야 한다.
+    it('hasEnrichedNews=false: getNewsList가 빈 배열이면 false 전달 (게이트 폴링 시작)', async () => {
+        mockPeekOverall.mockResolvedValue(null);
+        // 모듈 상단 vi.mock 기본값(빈 배열)을 그대로 사용해 false 경로를 검증.
+        const props = await getOverallProps();
+        expect(props.hasEnrichedNews).toBe(false);
+    });
+
+    it('hasEnrichedNews=true: 모든 row가 미분석(sentiment=null)이면 false 전달', async () => {
+        mockPeekOverall.mockResolvedValue(null);
+        const { getNewsList } = await import('@/entities/news-article');
+        (
+            getNewsList as MockedFunction<typeof getNewsList>
+        ).mockResolvedValueOnce([
+            { id: 'r1', sentiment: null } as never,
+            { id: 'r2', sentiment: null } as never,
+        ]);
+        const props = await getOverallProps();
+        expect(props.hasEnrichedNews).toBe(false);
+    });
+
+    it('hasEnrichedNews=true: enriched row(sentiment!==null)가 1개라도 있으면 true 전달 (게이트 즉시 통과)', async () => {
+        mockPeekOverall.mockResolvedValue(null);
+        const { getNewsList } = await import('@/entities/news-article');
+        (
+            getNewsList as MockedFunction<typeof getNewsList>
+        ).mockResolvedValueOnce([
+            { id: 'r1', sentiment: null } as never,
+            { id: 'r2', sentiment: 'bullish' } as never,
+            { id: 'r3', sentiment: null } as never,
+        ]);
+        const props = await getOverallProps();
+        expect(props.hasEnrichedNews).toBe(true);
+    });
+
+    it('hasEnrichedNews=true: getNewsList가 throw해도 ISR-safe하게 false로 degrade한다', async () => {
+        mockPeekOverall.mockResolvedValue(null);
+        const { getNewsList } = await import('@/entities/news-article');
+        (
+            getNewsList as MockedFunction<typeof getNewsList>
+        ).mockRejectedValueOnce(new Error('db down'));
+        const props = await getOverallProps();
+        // 페이지가 throw 안 함 + hasEnrichedNews=false로 client가 폴링 시작
+        expect(props.hasEnrichedNews).toBe(false);
     });
 });

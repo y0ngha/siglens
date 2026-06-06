@@ -76,14 +76,15 @@ export function OverallContent({
     );
     usePublishSymbolChat(chatState);
 
-    // useWaitForNewsCards가 누적 polling 실패 임계를 넘으면 error boundary로 전달.
+    // 상위 NewsAiSummaryErrorBoundary 형제와 동일하게 누적 polling 실패는 boundary로 위임한다 —
+    // hook-local retry/UI 분기를 만들지 않고 단일 fallback 경로로 회복한다.
     if (pollError !== null) {
         throw pollError;
     }
 
     if (state.status === 'idle') {
-        // /news와 동일 게이트: 개별 카드 분석이 완료(isCardsReady=true)될 때까지 버튼 비활성.
-        // 비활성 동안에도 useNewsAnalysisTrigger가 백그라운드로 fetch+분석을 진행 중이다.
+        // /news와 동일 게이트 — 새 뉴스 fetch+분석을 백그라운드에서 끝낸 뒤 submit이 일어나야
+        // submitNewsAnalysis cache key가 /news와 일치(axis hit)한다.
         return (
             <OverallTriggerCta onTrigger={trigger} disabled={!isCardsReady} />
         );

@@ -13,7 +13,7 @@ import {
     buildDisplayName,
     getAssetInfoResilient,
 } from '@/entities/ticker';
-import { getNewsList } from '@/app/[symbol]/news/newsData';
+import { getNewsList } from '@/entities/news-article';
 import {
     buildBreadcrumbJsonLd,
     buildSymbolOverallSeoContent,
