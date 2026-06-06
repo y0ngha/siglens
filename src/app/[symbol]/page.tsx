@@ -219,7 +219,7 @@ export default async function SymbolPage({ params }: Props) {
     // null인 경우는 seed를 생략해 클라 useBars/getBarsAction이 라이브로 fetch하게 한다.
     if (quantizedFactBars !== null) {
         // updatedAt 명시: RQ dehydrate 기본은 Date.now()라 매 ISR 재생성마다 다른 timestamp가
-        // HTML에 박혀 ISR write churn 발생(2026-06-06 실측). 마지막 완료 봉의 t로 고정해
+        // HTML에 박혀 ISR write churn 발생(2026-06-06 실측). 마지막 완료 봉의 time으로 고정해
         // 같은 봉이 계속 마지막인 한 dehydrated state 결정성 보장.
         // Bar.time은 seconds (epoch) — RQ dataUpdatedAt은 milliseconds.
         const lastBarSec = quantizedFactBars.bars.at(-1)?.time ?? 0;
