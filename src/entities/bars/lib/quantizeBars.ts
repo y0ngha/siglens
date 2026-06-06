@@ -36,6 +36,8 @@ function dropLastIndicatorBar(indicators: IndicatorResult): IndicatorResult {
             if (value !== null && typeof value === 'object') {
                 // Could be Record<number, array> (ma/ema) or a snapshot object (volumeProfile/smc).
                 // Distinguish by checking whether ALL values of this object are arrays.
+                // safe: guarded by `typeof value === 'object' && value !== null` above —
+                // any non-null object is string-indexable, so Object.entries accepts it.
                 const entries = Object.entries(
                     value as Record<string, unknown>
                 );
@@ -56,7 +58,6 @@ function dropLastIndicatorBar(indicators: IndicatorResult): IndicatorResult {
                 }
                 return [key, value];
             }
-            // null, primitive, undefined — pass through (handles volumeProfile: null)
             return [key, value];
         })
     ) as unknown as IndicatorResult;

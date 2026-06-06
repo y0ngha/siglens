@@ -261,19 +261,8 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
     });
 
     describe('revalidateTag 게이팅은', () => {
-        it('no-change: 모든 upsert가 false → revalidateTag 미호출', async () => {
-            mockFetchNewsForPeriod.mockResolvedValue([
-                NEWS_ITEM_1,
-                NEWS_ITEM_2,
-            ]);
-            // 두 기사 모두 재fetch(내용 동일) → false 반환.
-            mockUpsertNewsItem.mockResolvedValue(false);
-
-            await ensureNewsCardsAnalyzedAction('AAPL');
-
-            expect(revalidateTagSpy).not.toHaveBeenCalled();
-        });
-
+        // no-change(모든 upsert=false → revalidateTag 미호출 + markFetched 호출)는
+        // 위 describe의 "모든 upsert가 false(no-op)" 케이스에서 검증.
         it('some-change: 1건 이상 true → revalidateTag 1회 호출(news:AAPL, max)', async () => {
             mockFetchNewsForPeriod.mockResolvedValue([
                 NEWS_ITEM_1,

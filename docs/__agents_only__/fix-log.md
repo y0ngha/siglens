@@ -95,6 +95,19 @@
   - Review: Addressed 3 blocker findings (§17, TS §7, missing early return). Rejected B3 (market/page sectorData null cast) as false-positive (getSectorSignalsStatic is non-nullable with no catch).
   - Result: Clean merge — violations logged for future pattern detection
 
+## [PR #573 Round 5 | feat/isr-writes-opt | 2026-06-06]
+- Violation: `value as Record<string, unknown>` 캐스트 안전성 주석 누락
+  - Rule: MISTAKES.md §TypeScript #7 — every safe-cast must have inline comment explaining the guarantee
+  - Context: typeof value === 'object' && value !== null 가드는 있지만 인라인 주석 없음. "safe: guarded by `typeof value === 'object' && value !== null` above — any non-null object is string-indexable, so Object.entries accepts it." 추가.
+- Violation: "null, primitive, undefined — pass through" WHAT 주석 (§15.3)
+  - Rule: MISTAKES.md §15.3 — Comments should explain WHY, not WHAT
+  - Context: 분기 흐름이 의도를 이미 표현 — 주석 제거.
+- Violation: 근중복 테스트 케이스 2개 (§Tests #6)
+  - Rule: MISTAKES.md §Tests #6 — duplicate test cases with same scenario
+  - Context: `revalidateTag 게이팅은` describe 안의 "no-change" 케이스가 위 describe의 "모든 upsert가 false(no-op)" 케이스와 동일 시나리오. 후자 제거(전자가 markFetched 단언 포함해 더 완전), 위치 주석으로 cross-reference.
+- Status: APPROVED → merged (예정)
+  - Review: 1 Blocker(B1 캐스트 주석) + 2 Suggestion(S1/S2) 반영. Q1 (computedAt 노출 경로 없음) + Q2 (fear-greed page 단위 테스트 한계 — quantize 단위 함수 테스트로 커버) 코멘트 답변.
+
 ## [PR #573 Round 4 | feat/isr-writes-opt | 2026-06-06]
 - Violation: `.catch(() => null)` 에러 인자 없이 오류 완전 은닉 (fear-greed/page.tsx)
   - Rule: MISTAKES.md §Accessibility §0.5 — `.catch` returning null must log err for diagnostic visibility
