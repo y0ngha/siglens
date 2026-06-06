@@ -66,7 +66,11 @@ vi.mock('next/navigation', () => ({
     notFound: vi.fn(),
 }));
 
-import { generateMetadata, default as SymbolPage } from '@/app/[symbol]/page';
+import {
+    generateMetadata,
+    default as SymbolPage,
+    revalidate,
+} from '@/app/[symbol]/page';
 import { getAssetInfoResilient } from '@/entities/ticker';
 import {
     GEMINI_2_5_FLASH_LITE_MODEL,
@@ -89,6 +93,13 @@ interface ClientSeedProps {
 }
 
 describe('Symbol page', () => {
+    describe('ISR route config', () => {
+        it('exports revalidate = 21600 (literal — required for Next.js static analysis)', () => {
+            // MISTAKES §15: route segment config must be a literal, not an imported constant
+            expect(revalidate).toBe(21600);
+        });
+    });
+
     describe('generateMetadata', () => {
         beforeEach(() => {
             vi.clearAllMocks();

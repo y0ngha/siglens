@@ -83,7 +83,7 @@ Transfer/ISR 비용** 기준으로 정한다(Fast Data Transfer는 줄지 않음
 | `/[symbol]/overall` | 43200 (12h) | | `/[symbol]/options` | 43200 (12h) |
 | `/[symbol]/fundamental` | 86400 (24h) | | `/market` | 3600 (1h) |
 
-\* news는 `ensureNewsCardsAnalyzedAction`이 새 기사 fetch 시 `revalidateTag('news:${sym}')`로 on-demand
+\* news는 `ensureNewsCardsAnalyzedAction`이 새 기사 fetch 시 `revalidateTag('news:${symbol}', 'max')`로 on-demand
 무효화하므로 시간 기반은 상한선일 뿐. 종목 페이지 전수 cron은 도입하지 않는다(전수 재생성 = Fast Origin
 Transfer 폭증). 자세한 근거는 위 문서 참조.
 
