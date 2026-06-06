@@ -17,8 +17,7 @@ import { getDatabaseClient } from '@/shared/db/client';
 import {
     DrizzleNewsRepository,
     NEWS_ANALYSIS_LOOKBACK_MS,
-    isEnrichedRow,
-    toEnrichedNewsItem,
+    buildAnalysisNewsItems,
 } from '@/entities/news-article';
 import { getNextEarningsReport } from '@/entities/earnings-report';
 import { getCurrentUser } from '@/entities/session/lib/getCurrentUser';
@@ -100,9 +99,12 @@ export async function submitOverallAnalysisAction(
             optionsSnapshotPromise,
         ]);
 
-        const enrichedNews: ReadonlyArray<EnrichedNewsItem> = rows
-            .filter(isEnrichedRow)
-            .map(toEnrichedNewsItem);
+        // Overall news axis는 core 안에서 동일한 `submitNewsAnalysis`를 호출한다
+        // (dependencyResolver → submitNewsAnalysis). `/news` 페이지의 호출과 동일한
+        // news input을 보내야 cache key가 일치해 axis 분석을 그대로 hit한다 —
+        // 두 호출자 모두 `buildAnalysisNewsItems`를 통과해 input pipeline을 통일한다.
+        const enrichedNews: ReadonlyArray<EnrichedNewsItem> =
+            buildAnalysisNewsItems(rows);
 
         // 정규장 시간대에는 OI=0 비율이 높아도 stale로 보지 않는다 — deep OTM strike
         // OI 0이 흔하므로 false positive 위험. 정규장 외에서만 stale 휴리스틱 적용.

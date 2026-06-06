@@ -11,8 +11,7 @@ import {
 import { getDatabaseClient } from '@/shared/db/client';
 import { DrizzleNewsRepository } from '@/entities/news-article';
 import { NEWS_ANALYSIS_LOOKBACK_MS } from '../lib/newsLookback';
-import { isEnrichedRow, toEnrichedNewsItem } from '../lib/newsEnrichment';
-import { selectAggregateNewsItems } from '../lib/newsAnalysisSelection';
+import { buildAnalysisNewsItems } from '../lib/buildAnalysisNewsItems';
 import { getNextEarningsReport } from '@/entities/earnings-report';
 import { getCurrentUser } from '@/entities/session/lib/getCurrentUser';
 import { resolveTierAndByok, buildGateError } from '@/shared/lib/byokGate';
@@ -62,12 +61,11 @@ export async function submitNewsAnalysisAction(
             getNextEarningsReport(symbol, db),
         ]);
 
-        // The per-card stage and 30-day window above are untouched — this only
-        // bounds what the aggregate prompt sees.
+        // The per-card stage and 30-day window above are untouched — buildAnalysisNewsItems
+        // bounds what the aggregate prompt sees(top 25 by priceImpact). 동일 pipeline을
+        // submitOverallAnalysisAction이 공유해 news axis cache가 같은 키로 hit한다.
         const enrichedNews: ReadonlyArray<EnrichedNewsItem> =
-            selectAggregateNewsItems(
-                rows.filter(isEnrichedRow).map(toEnrichedNewsItem)
-            );
+            buildAnalysisNewsItems(rows);
 
         return await submitNewsAnalysis({
             symbol,
