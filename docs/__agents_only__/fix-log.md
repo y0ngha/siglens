@@ -83,3 +83,11 @@
 - Violation: getNextEarningsReport가 entities/lib에서 side effect(Date.now/DB/FMP) 포함 — 순수 함수 레이어 위반 (pre-existing, R3 Blocker)
   - Rule: MISTAKES §Architecture #0.7 — entities/{slice}/lib/는 순수 함수 전용
   - Context: PR #564 R3 claude 리뷰에서 Blocker로 지적. pre-existing이라 별도 PR로 분리(이슈 #565). nextEarningsReport.ts JSDoc에 TODO(#565) 링크를 남겨 추적. 이번 PR diff엔 미수정(scope = 캐시/gate).
+
+## [feat/isr-writes-opt | 2026-06-06]
+- Violation: Over-broad early-return skipped required downstream logic
+  - Rule: MISTAKES.md Code Review #3 — when adding early return / gate, verify it does not skip unrelated downstream side-effects that must always run
+  - Context: Task 5 gated both `revalidateTag` AND the analyze step behind `if (changedCount === 0) return;`. The analyze step processes ALL un-analyzed DB rows (via listBySymbol), not just newly-changed ones, so the early return would strand previously-failed analyses permanently. Fixed by gating only revalidateTag and letting control fall through to analyze.
+- Violation: Partial quantization left parallel data structure churning
+  - Rule: MISTAKES.md Code Review #4 — when transforming paired/parallel data structures (bars ↔ indicators), transform BOTH in lockstep, or the fix is partial
+  - Context: Price quantize sliced bars (drop forming daily bar) but left parallel IndicatorResult per-bar arrays (rsi/macd/etc.) un-sliced. buildTechnicalFacts read forming-bar RSI/MACD and dehydrated seed serialized churning indicators, re-introducing ISR-write driver. Fixed by slicing bars AND all per-bar indicator arrays in lockstep.
