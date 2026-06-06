@@ -1,8 +1,10 @@
-import type { Bar } from '@y0ngha/siglens-core';
+import { describe, it, expect } from 'vitest';
+import type { Bar, SupertrendResult } from '@y0ngha/siglens-core';
 import type { UTCTimestamp } from 'lightweight-charts';
 import {
     buildSeriesData,
     buildSeriesDataFromValues,
+    buildTrendSplitData,
 } from '@/widgets/chart/utils/seriesDataUtils';
 
 const mockBars: Bar[] = [
@@ -131,5 +133,61 @@ describe('buildSeriesDataFromValues', () => {
         result.forEach(point => {
             expect(point).not.toHaveProperty('value');
         });
+    });
+});
+
+function bar(time: number): Bar {
+    return { time, open: 1, high: 2, low: 0, close: 1, volume: 10 };
+}
+
+describe('buildTrendSplitData', () => {
+    const bars: Bar[] = [bar(1), bar(2), bar(3)];
+    const data: SupertrendResult[] = [
+        { supertrend: 10, trend: 'up' },
+        { supertrend: 11, trend: 'down' },
+        { supertrend: null, trend: null },
+    ];
+
+    it("returns value only on bars whose trend matches 'up', whitespace otherwise", () => {
+        expect(buildTrendSplitData(bars, data, 'up')).toEqual([
+            { time: 1, value: 10 },
+            { time: 2 },
+            { time: 3 },
+        ]);
+    });
+
+    it("returns value only on bars whose trend matches 'down', whitespace otherwise", () => {
+        expect(buildTrendSplitData(bars, data, 'down')).toEqual([
+            { time: 1 },
+            { time: 2, value: 11 },
+            { time: 3 },
+        ]);
+    });
+
+    it('up and down outputs are complementary on matched bars (never both have value)', () => {
+        const up = buildTrendSplitData(bars, data, 'up');
+        const down = buildTrendSplitData(bars, data, 'down');
+        up.forEach((u, i) => {
+            const bothHaveValue = 'value' in u && 'value' in down[i];
+            expect(bothHaveValue).toBe(false);
+        });
+    });
+
+    it('emits whitespace when supertrend is null even if trend matches dir', () => {
+        const nullVal: SupertrendResult[] = [{ supertrend: null, trend: 'up' }];
+        expect(buildTrendSplitData([bar(1)], nullVal, 'up')).toEqual([
+            { time: 1 },
+        ]);
+    });
+
+    it('clamps to the shorter of bars / data length (worst case)', () => {
+        const longBars = [bar(1), bar(2), bar(3), bar(4)];
+        const shortData: SupertrendResult[] = [{ supertrend: 5, trend: 'up' }];
+        const out = buildTrendSplitData(longBars, shortData, 'up');
+        expect(out).toEqual([{ time: 1, value: 5 }]);
+    });
+
+    it('returns empty array for empty inputs', () => {
+        expect(buildTrendSplitData([], [], 'up')).toEqual([]);
     });
 });
