@@ -94,4 +94,22 @@ test.describe('chart indicator settings modal', () => {
             page.locator('.pane-indicator-label').filter({ hasText: 'ATR' })
         ).toBeVisible();
     });
+
+    test('toggles the Keltner channel overlay via the modal', async ({
+        page,
+    }) => {
+        await page.goto('/AAPL');
+        await page.getByRole('button', { name: GEAR }).click();
+        const dialog = page.getByRole('dialog');
+        // Keltner는 가격 OVERLAY(페인 아님) — OverlayLegend 라벨이 crosshair
+        // hover에만 나타나 E2E에서 fragile하다. 안정적인 모달 체크박스 상태로
+        // 검증한다. 'Keltner'는 변동성 카테고리 체크박스이며 exact로 substring
+        // 충돌을 피한다.
+        const keltner = dialog.getByRole('checkbox', {
+            name: 'Keltner',
+            exact: true,
+        });
+        await keltner.check();
+        await expect(keltner).toBeChecked();
+    });
 });
