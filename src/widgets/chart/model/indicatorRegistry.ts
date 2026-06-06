@@ -12,6 +12,7 @@ export type IndicatorCategory =
     | 'momentum'
     | 'volatility'
     | 'volume'
+    | 'statistical'
     | 'smc';
 
 export type IndicatorKind = 'overlay' | 'pane';
@@ -27,7 +28,14 @@ export type IndicatorKey =
     | 'stochRsi'
     | 'cci'
     | 'bollinger'
-    | 'volumeProfile';
+    | 'volumeProfile'
+    | 'mfi'
+    | 'williamsR'
+    | 'connorsRsi'
+    | 'cmf'
+    | 'bollingerPercentB'
+    | 'hurst'
+    | 'varianceRatio';
 
 export interface IndicatorMeta {
     key: IndicatorKey;
@@ -69,6 +77,7 @@ export const CATEGORY_LABELS: Record<IndicatorCategory, string> = {
     momentum: '모멘텀',
     volatility: '변동성',
     volume: '볼륨',
+    statistical: '통계',
     smc: 'SMC',
 };
 
@@ -105,13 +114,35 @@ export const INDICATOR_REGISTRY: readonly IndicatorMeta[] = [
     { key: 'cci', label: 'CCI', category: 'momentum', kind: 'pane' },
     { key: 'bollinger', label: 'BB', category: 'volatility', kind: 'overlay' },
     { key: 'volumeProfile', label: 'VP', category: 'volume', kind: 'overlay' },
+    { key: 'mfi', label: 'MFI', category: 'momentum', kind: 'pane' },
+    {
+        key: 'williamsR',
+        label: 'Williams %R',
+        category: 'momentum',
+        kind: 'pane',
+    },
+    { key: 'connorsRsi', label: 'CRSI', category: 'momentum', kind: 'pane' },
+    { key: 'cmf', label: 'CMF', category: 'momentum', kind: 'pane' },
+    {
+        key: 'bollingerPercentB',
+        label: '%B',
+        category: 'volatility',
+        kind: 'pane',
+    },
+    { key: 'hurst', label: 'Hurst', category: 'statistical', kind: 'pane' },
+    {
+        key: 'varianceRatio',
+        label: 'VR',
+        category: 'statistical',
+        kind: 'pane',
+    },
 ];
 
 /**
  * key → meta 조회 맵. StockChart binding 조립에서 사용.
  *
  * `Object.fromEntries`의 반환 타입은 `Record<string, IndicatorMeta>`로 넓어지므로
- * `as` 캐스트가 필요하다. INDICATOR_REGISTRY가 IndicatorKey 11개 멤버를 정확히
+ * `as` 캐스트가 필요하다. INDICATOR_REGISTRY가 IndicatorKey 멤버를 정확히
  * 선언하므로(누락 시 `key: IndicatorKey` 타입에서 컴파일 에러) 런타임에 빠지는
  * 키가 없어 안전한 캐스트다.
  */
