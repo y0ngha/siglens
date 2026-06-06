@@ -188,9 +188,9 @@ describe('SIGNAL_SECTORS', () => {
 
 describe('isDashboardTimeframe', () => {
     it('(Happy) 모든 DASHBOARD_TIMEFRAMES 값에 대해 true (하드코딩 대신 모듈 export 순회)', () => {
-        for (const tf of DASHBOARD_TIMEFRAMES) {
-            expect(isDashboardTimeframe(tf)).toBe(true);
-        }
+        DASHBOARD_TIMEFRAMES.forEach(tf =>
+            expect(isDashboardTimeframe(tf)).toBe(true)
+        );
     });
 
     it('(Edge) 대소문자/미지원/빈값/non-string이면 false', () => {
