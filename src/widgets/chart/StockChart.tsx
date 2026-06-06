@@ -93,21 +93,7 @@ export function StockChart({
     // paneIndices effect의 첫 mount skip 마커 (아래 useEffect 참조).
     const isInitialPaneRenderRef = useRef(true);
 
-    const {
-        rsiVisible,
-        macdVisible,
-        dmiVisible,
-        stochasticVisible,
-        stochRsiVisible,
-        cciVisible,
-        toggleRSI,
-        toggleMACD,
-        toggleDMI,
-        toggleStochastic,
-        toggleStochRSI,
-        toggleCCI,
-        paneIndices,
-    } = useIndicatorVisibility();
+    const { visible, toggle, paneIndices } = useIndicatorVisibility();
 
     const commonHookParams: CommonHookParams = {
         chartRef,
@@ -203,37 +189,37 @@ export function StockChart({
 
     useRSIChart({
         ...commonHookParams,
-        isVisible: rsiVisible,
+        isVisible: visible.rsi,
         paneIndex: paneIndices.rsi,
     });
 
     useMACDChart({
         ...commonHookParams,
-        isVisible: macdVisible,
+        isVisible: visible.macd,
         paneIndex: paneIndices.macd,
     });
 
     useDMIChart({
         ...commonHookParams,
-        isVisible: dmiVisible,
+        isVisible: visible.dmi,
         paneIndex: paneIndices.dmi,
     });
 
     useStochasticChart({
         ...commonHookParams,
-        isVisible: stochasticVisible,
+        isVisible: visible.stochastic,
         paneIndex: paneIndices.stochastic,
     });
 
     useStochRSIChart({
         ...commonHookParams,
-        isVisible: stochRsiVisible,
+        isVisible: visible.stochRsi,
         paneIndex: paneIndices.stochRsi,
     });
 
     useCCIChart({
         ...commonHookParams,
-        isVisible: cciVisible,
+        isVisible: visible.cci,
         paneIndex: paneIndices.cci,
     });
 
@@ -339,33 +325,33 @@ export function StockChart({
             },
             {
                 meta: INDICATOR_META.rsi,
-                active: rsiVisible,
-                onToggle: toggleRSI,
+                active: visible.rsi,
+                onToggle: () => toggle('rsi'),
             },
             {
                 meta: INDICATOR_META.macd,
-                active: macdVisible,
-                onToggle: toggleMACD,
+                active: visible.macd,
+                onToggle: () => toggle('macd'),
             },
             {
                 meta: INDICATOR_META.dmi,
-                active: dmiVisible,
-                onToggle: toggleDMI,
+                active: visible.dmi,
+                onToggle: () => toggle('dmi'),
             },
             {
                 meta: INDICATOR_META.stochastic,
-                active: stochasticVisible,
-                onToggle: toggleStochastic,
+                active: visible.stochastic,
+                onToggle: () => toggle('stochastic'),
             },
             {
                 meta: INDICATOR_META.stochRsi,
-                active: stochRsiVisible,
-                onToggle: toggleStochRSI,
+                active: visible.stochRsi,
+                onToggle: () => toggle('stochRsi'),
             },
             {
                 meta: INDICATOR_META.cci,
-                active: cciVisible,
-                onToggle: toggleCCI,
+                active: visible.cci,
+                onToggle: () => toggle('cci'),
             },
             {
                 meta: INDICATOR_META.bollinger,
@@ -382,23 +368,13 @@ export function StockChart({
             maVisiblePeriods,
             emaVisiblePeriods,
             ichimokuVisible,
-            rsiVisible,
-            macdVisible,
-            dmiVisible,
-            stochasticVisible,
-            stochRsiVisible,
-            cciVisible,
+            visible,
+            toggle,
             bollingerVisible,
             vpVisible,
             toggleMAPeriod,
             toggleEMAPeriod,
             toggleIchimoku,
-            toggleRSI,
-            toggleMACD,
-            toggleDMI,
-            toggleStochastic,
-            toggleStochRSI,
-            toggleCCI,
             toggleBollinger,
             toggleVP,
         ]

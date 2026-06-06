@@ -1,7 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import type { Bar } from '@y0ngha/siglens-core';
 import { StockChart } from '@/widgets/chart/StockChart';
-import { INACTIVE_PANE_INDEX } from '@/widgets/chart/constants';
 
 const { mockCreateChart, mockAddSeries, mockSetData, mockFitContent } =
     vi.hoisted(() => {
@@ -150,25 +149,46 @@ vi.mock('@/widgets/chart/hooks/useOverlayLegend', () => ({
 
 vi.mock('@/widgets/chart/hooks/useIndicatorVisibility', () => ({
     useIndicatorVisibility: () => ({
-        rsiVisible: false,
-        macdVisible: false,
-        dmiVisible: false,
-        stochasticVisible: false,
-        stochRsiVisible: false,
-        cciVisible: false,
-        toggleRSI: vi.fn(),
-        toggleMACD: vi.fn(),
-        toggleDMI: vi.fn(),
-        toggleStochastic: vi.fn(),
-        toggleStochRSI: vi.fn(),
-        toggleCCI: vi.fn(),
+        visible: {
+            ma: false,
+            ema: false,
+            ichimoku: false,
+            rsi: false,
+            macd: false,
+            dmi: false,
+            stochastic: false,
+            stochRsi: false,
+            cci: false,
+            bollinger: false,
+            volumeProfile: false,
+            mfi: false,
+            williamsR: false,
+            connorsRsi: false,
+            cmf: false,
+            bollingerPercentB: false,
+            hurst: false,
+            varianceRatio: false,
+        },
+        toggle: vi.fn(),
         paneIndices: {
-            rsi: INACTIVE_PANE_INDEX,
-            macd: INACTIVE_PANE_INDEX,
-            dmi: INACTIVE_PANE_INDEX,
-            stochastic: INACTIVE_PANE_INDEX,
-            stochRsi: INACTIVE_PANE_INDEX,
-            cci: INACTIVE_PANE_INDEX,
+            ma: -1,
+            ema: -1,
+            ichimoku: -1,
+            rsi: -1,
+            macd: -1,
+            dmi: -1,
+            stochastic: -1,
+            stochRsi: -1,
+            cci: -1,
+            bollinger: -1,
+            volumeProfile: -1,
+            mfi: -1,
+            williamsR: -1,
+            connorsRsi: -1,
+            cmf: -1,
+            bollingerPercentB: -1,
+            hurst: -1,
+            varianceRatio: -1,
         },
     }),
 }));
