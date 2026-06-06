@@ -146,7 +146,7 @@ export async function ensureNewsCardsAnalyzedAction(
         r => r.status === 'fulfilled' && r.value === true
     ).length;
     if (changedCount > 0) {
-        // → 다음 요청부터 news 리스트/JSON-LD가 fresh. bars/peek/profile 캐시는 보존.
+        // news 태그만 무효화하므로 bars/peek/profile 캐시는 보존(범위 제한).
         // "max" profile: 캐시 항목을 즉시 만료시켜 다음 요청에서 재생성하게 한다.
         revalidateTag(`news:${symbol.toUpperCase()}`, 'max');
     }

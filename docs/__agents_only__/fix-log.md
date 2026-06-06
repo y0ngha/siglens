@@ -95,6 +95,18 @@
   - Review: Addressed 3 blocker findings (§17, TS §7, missing early return). Rejected B3 (market/page sectorData null cast) as false-positive (getSectorSignalsStatic is non-nullable with no catch).
   - Result: Clean merge — violations logged for future pattern detection
 
+## [PR #573 Round 7 | feat/isr-writes-opt | 2026-06-06]
+- Violation: market/page.test.ts에서 비정밀 단언 `toHaveLength(13) + not.toBe(rawValue)`
+  - Rule: MISTAKES.md §13 — exact values are deterministic → use exact assertion
+  - Context: dateHour는 `new Date()` 기반 비결정론적이라 vi.setSystemTime으로 시간 고정한 뒤 `toBe('2026-06-04T14')` exact 단언으로 교체. 리뷰는 raw mock value가 quantize 입력이라 오인했지만 실제 quantize는 system time 기반.
+- Violation: setWhere 단언이 `toBeDefined()`만으로 약함
+  - Rule: MISTAKES.md §13 — Drizzle sql 태그드 객체의 queryChunks 보유 검증으로 강화
+  - Context: `toEqual(expect.objectContaining({ queryChunks: expect.any(Array) }))`로 정밀화.
+- Violation: WHAT 코멘트 (§15.3)
+  - Rule: MISTAKES.md §15.3
+  - Context: ensureNewsCardsAnalyzedAction.ts:149 "→ 다음 요청부터 news 리스트/JSON-LD가 fresh." WHAT 라인을 WHY("news 태그만 무효화하므로 bars/peek/profile 캐시는 보존")로 통합.
+- Status: APPROVED → merged (예정)
+
 ## [PR #573 Round 6 | feat/isr-writes-opt | 2026-06-06]
 - Violation: 테스트 인라인 주석 사실 오류 (§15.6)
   - Rule: MISTAKES.md §15.6 — Comments making factually inaccurate claims about code paths

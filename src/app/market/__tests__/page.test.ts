@@ -174,24 +174,29 @@ describe('Market page', () => {
         });
 
         it('SSR seed quantizes sectorData.computedAt to hour bucket — raw minutes/seconds are stripped', async () => {
-            // getSectorSignalsStatic returns a full ISO with minutes ('2026-06-04T14:37:22.000Z').
-            // MarketContent must NOT propagate that raw value into the SSR seed; it must replace it
-            // with the dateHour bucket ('YYYY-MM-DDTHH' — 13 chars, no minutes).
-            // This prevents /market ISR writes every 5-15 min when core refreshes computedAt.
-            await MarketContent();
+            // page.tsx는 raw computedAt이 아니라 `new Date().toISOString().slice(0, 13)` 즉
+            // SSR 렌더 시점의 시간 버킷으로 교체한다 — vi.setSystemTime으로 시간 고정 후 exact 검증.
+            vi.useFakeTimers();
+            vi.setSystemTime(new Date('2026-06-04T14:37:22.000Z'));
+            try {
+                await MarketContent();
 
-            const sectorSignalsCall = (
-                mockSetQueryData.mock.calls as [unknown[], unknown][]
-            ).find(
-                ([key]) => Array.isArray(key) && key[0] === 'sector-signals'
-            );
-            expect(sectorSignalsCall).toBeDefined();
-            const seededData = sectorSignalsCall![1] as { computedAt: string };
+                const sectorSignalsCall = (
+                    mockSetQueryData.mock.calls as [unknown[], unknown][]
+                ).find(
+                    ([key]) =>
+                        Array.isArray(key) && key[0] === 'sector-signals'
+                );
+                expect(sectorSignalsCall).toBeDefined();
+                const seededData = sectorSignalsCall![1] as {
+                    computedAt: string;
+                };
 
-            // Must be exactly 13 chars ('YYYY-MM-DDTHH') — no minutes/seconds
-            expect(seededData.computedAt).toHaveLength(13);
-            // Must NOT be the raw value with minutes
-            expect(seededData.computedAt).not.toBe('2026-06-04T14:37:22.000Z');
+                // Exact: 고정된 system time → '2026-06-04T14' (13 chars, no minutes)
+                expect(seededData.computedAt).toBe('2026-06-04T14');
+            } finally {
+                vi.useRealTimers();
+            }
         });
 
         it('SSR seed quantization works when stocks is empty', async () => {
@@ -199,23 +204,29 @@ describe('Market page', () => {
                 computedAt: '2026-06-04T09:52:11.000Z',
                 stocks: [],
             });
-            await MarketContent();
+            vi.useFakeTimers();
+            vi.setSystemTime(new Date('2026-06-04T09:52:11.000Z'));
+            try {
+                await MarketContent();
 
-            const sectorSignalsCall = (
-                mockSetQueryData.mock.calls as [unknown[], unknown][]
-            ).find(
-                ([key]) => Array.isArray(key) && key[0] === 'sector-signals'
-            );
-            expect(sectorSignalsCall).toBeDefined();
-            const seededData = sectorSignalsCall![1] as {
-                computedAt: string;
-                stocks: unknown[];
-            };
+                const sectorSignalsCall = (
+                    mockSetQueryData.mock.calls as [unknown[], unknown][]
+                ).find(
+                    ([key]) =>
+                        Array.isArray(key) && key[0] === 'sector-signals'
+                );
+                expect(sectorSignalsCall).toBeDefined();
+                const seededData = sectorSignalsCall![1] as {
+                    computedAt: string;
+                    stocks: unknown[];
+                };
 
-            // Seed is still valid (stocks intact) with quantized computedAt
-            expect(seededData.stocks).toEqual([]);
-            expect(seededData.computedAt).toHaveLength(13);
-            expect(seededData.computedAt).not.toBe('2026-06-04T09:52:11.000Z');
+                expect(seededData.stocks).toEqual([]);
+                // Exact: fixed system time → '2026-06-04T09'
+                expect(seededData.computedAt).toBe('2026-06-04T09');
+            } finally {
+                vi.useRealTimers();
+            }
         });
 
         it('peekBriefingStatic returns null → graceful fallback (client triggers submit)', async () => {

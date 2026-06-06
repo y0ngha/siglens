@@ -149,8 +149,11 @@ describe('DrizzleNewsRepository', () => {
                 setWhere: unknown;
             };
             expect(conflictArg.set).toHaveProperty('publishedAt');
-            // setWhere는 SQL 객체여야 한다 (변경 여부 필터링용)
-            expect(conflictArg.setWhere).toBeDefined();
+            // setWhere는 Drizzle `sql` 태그드 객체(`queryChunks` 보유)여야 한다 — 변경 여부 필터링용.
+            // toBeDefined()만으론 setWhere 미전달과 빈 객체 차이를 잡지 못해 정밀 단언으로 보강.
+            expect(conflictArg.setWhere).toEqual(
+                expect.objectContaining({ queryChunks: expect.any(Array) })
+            );
         });
 
         it('Neon transient 에러 발생 후 재시도해 성공하면 boolean을 반환한다', async () => {
