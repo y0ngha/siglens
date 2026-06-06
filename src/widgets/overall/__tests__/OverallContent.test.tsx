@@ -556,12 +556,13 @@ describe('OverallContent — /news와 동일 순차 게이트 (useNewsAnalysisTr
         );
         const btn = screen.getByRole('button', { name: /뉴스 카드 분석 중/ });
         expect(btn).toBeDisabled();
-        // 안내 문구도 노출돼야 한다 — 사용자 경험 보장 (회귀 가드)
+        // 안내 문구 + 예상 대기 시간 힌트 노출 — 사용자 경험 보장 (회귀 가드)
         expect(
             screen.getByText(
-                /개별 뉴스 분석이 완료되면 종합 분석을 받을 수 있어요/
+                /개별 뉴스 분석이 완료되면 자동으로 종합 분석을 받을 수 있어요/
             )
         ).toBeInTheDocument();
+        expect(screen.getByText(/30초~1분 소요/)).toBeInTheDocument();
     });
 
     it('hasEnrichedNews=true(이미 enriched card 있음)면 CTA 버튼이 즉시 활성 (회귀 가드: 게이트가 정상 통과)', () => {
@@ -595,7 +596,7 @@ describe('OverallContent — /news와 동일 순차 게이트 (useNewsAnalysisTr
         expect(trigger).not.toHaveBeenCalled();
     });
 
-    it('useWaitForNewsCards가 pollError를 반환하면 inline alert fallback을 렌더한다', async () => {
+    it('useWaitForNewsCards가 pollError를 반환하면 inline alert fallback + 다시 시도 버튼을 렌더한다', async () => {
         const { useWaitForNewsCards } = await import('@/widgets/news');
         (
             useWaitForNewsCards as MockedFunction<typeof useWaitForNewsCards>
@@ -616,6 +617,10 @@ describe('OverallContent — /news와 동일 순차 게이트 (useNewsAnalysisTr
         expect(alert).toBeInTheDocument();
         expect(
             screen.getByText(/뉴스 카드 분석 준비 중 오류가 발생했어요/)
+        ).toBeInTheDocument();
+        // 사용자 복구 동선: "다시 시도" 버튼이 노출돼야 한다 (회귀 가드)
+        expect(
+            screen.getByRole('button', { name: /다시 시도/ })
         ).toBeInTheDocument();
     });
 });

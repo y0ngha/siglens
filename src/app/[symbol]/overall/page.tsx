@@ -127,35 +127,42 @@ export default async function OverallPage({ params }: Props) {
     // `/news`와 동일하게 SSR 시점 enrichment 여부를 prop으로 전달해 client에서
     // 폴링 게이트(useWaitForNewsCards)를 즉시 통과시키거나 폴링 시작하도록 한다.
     //
-    // ISR safety: 캐시/DB 실패는 false로 degrade해 페이지 자체가 throw하지 않게 한다 —
+    // ISR safety: 캐시/DB 실패는 false/null로 degrade해 페이지 자체가 throw하지 않게 한다 —
     // 그 경우 client의 useWaitForNewsCards가 폴링으로 ready 상태를 회복한다.
-    const newsItems = await staticSymbolCache(
-        ['news:list', upper],
-        upper,
-        () => getNewsList(upper),
-        [`news:${upper}`]
-    ).catch((error: unknown) => {
-        console.error('[OverallPage] getNewsList failed:', error);
-        // safe: 빈 배열은 NewsRow[]와 구조적 호환(`.some` 호출 가능). TS는 []의 element
-        // type을 never로 추론하므로 staticSymbolCache 반환 타입에 맞추기 위한 cast.
-        return [] as Awaited<ReturnType<typeof getNewsList>>;
-    });
+    //
+    // Promise.all로 병렬화 — 두 호출은 서로 독립이라 직렬 await할 이유가 없다.
+    // cold path(둘 다 캐시 miss)에서 TTFB가 ~max(t1, t2) 수준으로 줄어든다.
+    const [newsItems, cachedOverall] = await Promise.all([
+        staticSymbolCache(
+            ['news:list', upper],
+            upper,
+            () => getNewsList(upper),
+            [`news:${upper}`]
+        ).catch((error: unknown) => {
+            console.error('[OverallPage] getNewsList failed:', error);
+            // safe: 빈 배열은 NewsRow[]와 구조적 호환(`.some` 호출 가능). TS는 []의 element
+            // type을 never로 추론하므로 staticSymbolCache 반환 타입에 맞추기 위한 cast.
+            return [] as Awaited<ReturnType<typeof getNewsList>>;
+        }),
+        staticSymbolCache(
+            ['peek:overall', upper, GEMINI_2_5_FLASH_LITE_MODEL],
+            upper,
+            () =>
+                peekOverallAnalysisCache(
+                    upper,
+                    assetInfo.name,
+                    DEFAULT_TIMEFRAME,
+                    GEMINI_2_5_FLASH_LITE_MODEL
+                )
+        ).catch((error: unknown) => {
+            console.error(
+                '[OverallPage] peekOverallAnalysisCache failed:',
+                error
+            );
+            return null;
+        }),
+    ]);
     const hasEnrichedNews = newsItems.some(item => item.sentiment !== null);
-
-    const cachedOverall = await staticSymbolCache(
-        ['peek:overall', upper, GEMINI_2_5_FLASH_LITE_MODEL],
-        upper,
-        () =>
-            peekOverallAnalysisCache(
-                upper,
-                assetInfo.name,
-                DEFAULT_TIMEFRAME,
-                GEMINI_2_5_FLASH_LITE_MODEL
-            )
-    ).catch((error: unknown) => {
-        console.error('[OverallPage] peekOverallAnalysisCache failed:', error);
-        return null;
-    });
 
     const displayName = buildDisplayName(assetInfo, upper);
     const { fullTitle, description, url } = buildSymbolOverallSeoContent(

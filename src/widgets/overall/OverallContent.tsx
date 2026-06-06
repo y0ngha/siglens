@@ -92,9 +92,15 @@ export function OverallContent({
                     AI 종합 분석
                 </h2>
                 <p className="text-ui-danger text-sm">
-                    뉴스 카드 분석 준비 중 오류가 발생했어요. 잠시 후 다시
-                    시도해 주세요.
+                    뉴스 카드 분석 준비 중 오류가 발생했어요.
                 </p>
+                <button
+                    type="button"
+                    onClick={() => window.location.reload()}
+                    className="bg-primary-600 hover:bg-primary-700 focus-visible:ring-primary-500 mt-4 inline-flex items-center rounded-md px-4 py-2 text-sm font-medium text-white transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+                >
+                    다시 시도
+                </button>
             </section>
         );
     }

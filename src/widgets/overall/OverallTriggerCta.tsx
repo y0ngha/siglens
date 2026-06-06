@@ -49,7 +49,8 @@ export function OverallTriggerCta({
                     className="text-secondary-500 mt-3 text-xs"
                     aria-live="polite"
                 >
-                    개별 뉴스 분석이 완료되면 종합 분석을 받을 수 있어요.
+                    개별 뉴스 분석이 완료되면 자동으로 종합 분석을 받을 수
+                    있어요 (보통 30초~1분 소요).
                 </p>
             )}
         </section>
