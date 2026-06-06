@@ -20,6 +20,18 @@ vi.mock('@/features/symbol-chat', () => ({
 vi.mock('@/widgets/symbol-page/hooks/useDefaultModelId', () => ({
     useDefaultModelId: vi.fn(() => 'gemini-2.5-flash-lite'),
 }));
+// /news와 동일 게이트 적용 — 두 훅을 단순화해 효과만 검증한다.
+// useNewsAnalysisTrigger는 fire-and-forget mount effect이므로 no-op.
+// useWaitForNewsCards는 prop으로 받은 initialReady를 그대로 isReady로 노출한다.
+// barrel(@/widgets/news)을 mock — production이 barrel을 import하므로 일치 필요.
+vi.mock('@/widgets/news', async importOriginal => ({
+    ...(await importOriginal<typeof import('@/widgets/news')>()),
+    useNewsAnalysisTrigger: vi.fn(),
+    useWaitForNewsCards: vi.fn((_symbol: string, initiallyReady: boolean) => ({
+        isReady: initiallyReady,
+        pollError: null,
+    })),
+}));
 // react-markdown은 ESM-only라 Jest 환경에서 직접 로드하면 실패한다. 본 테스트는
 // markdown rendering이 아니라 OverallContent의 layout과 trigger 동작을 검증하므로
 // MarkdownText를 단순 wrapper로 대체한다.
@@ -112,7 +124,13 @@ describe('OverallContent tf 쿼리 파라미터 처리 (§18 분기)', () => {
 
     it('유효한 tf가 있으면 그 timeframe으로 useOverallAnalysis를 호출한다 (참 분기)', () => {
         searchParamsRef.value = new URLSearchParams('tf=1Hour');
-        render(<OverallContent symbol="AAPL" companyName="Apple Inc." />);
+        render(
+            <OverallContent
+                symbol="AAPL"
+                companyName="Apple Inc."
+                hasEnrichedNews={true}
+            />
+        );
         expect(mockUseOverallAnalysis).toHaveBeenCalledWith(
             'AAPL',
             'Apple Inc.',
@@ -124,7 +142,13 @@ describe('OverallContent tf 쿼리 파라미터 처리 (§18 분기)', () => {
 
     it('유효하지 않은 tf는 DEFAULT_TIMEFRAME(1Day)으로 폴백한다 (거짓 분기)', () => {
         searchParamsRef.value = new URLSearchParams('tf=not-a-timeframe');
-        render(<OverallContent symbol="AAPL" companyName="Apple Inc." />);
+        render(
+            <OverallContent
+                symbol="AAPL"
+                companyName="Apple Inc."
+                hasEnrichedNews={true}
+            />
+        );
         expect(mockUseOverallAnalysis).toHaveBeenCalledWith(
             'AAPL',
             'Apple Inc.',
@@ -145,7 +169,13 @@ describe('OverallContent non-done branches', () => {
             state: { status: 'idle' },
             trigger: vi.fn(),
         });
-        render(<OverallContent symbol="AAPL" companyName="Apple Inc." />);
+        render(
+            <OverallContent
+                symbol="AAPL"
+                companyName="Apple Inc."
+                hasEnrichedNews={true}
+            />
+        );
         expect(
             screen.getByRole('button', { name: /AI 종합 분석 받기/ })
         ).toBeInTheDocument();
@@ -156,7 +186,13 @@ describe('OverallContent non-done branches', () => {
             state: { status: 'bot_blocked' },
             trigger: vi.fn(),
         });
-        render(<OverallContent symbol="AAPL" companyName="Apple Inc." />);
+        render(
+            <OverallContent
+                symbol="AAPL"
+                companyName="Apple Inc."
+                hasEnrichedNews={true}
+            />
+        );
         expect(
             screen.getByText(/봇 트래픽으로 보여 분석 결과를 표시하지 않았어요/)
         ).toBeInTheDocument();
@@ -176,7 +212,13 @@ describe('OverallContent non-done branches', () => {
             },
             trigger: vi.fn(),
         });
-        render(<OverallContent symbol="AAPL" companyName="Apple Inc." />);
+        render(
+            <OverallContent
+                symbol="AAPL"
+                companyName="Apple Inc."
+                hasEnrichedNews={true}
+            />
+        );
         // DependencyProgress 헤딩(완료/총합 카운트)으로 렌더 확인. 2개 axis가
         // pending이므로 완료 2/4.
         expect(
@@ -192,7 +234,13 @@ describe('OverallContent non-done branches', () => {
             state: { status: 'submitting' },
             trigger: vi.fn(),
         });
-        render(<OverallContent symbol="AAPL" companyName="Apple Inc." />);
+        render(
+            <OverallContent
+                symbol="AAPL"
+                companyName="Apple Inc."
+                hasEnrichedNews={true}
+            />
+        );
         expect(screen.getByText('AI 종합 분석 요청 중…')).toBeInTheDocument();
     });
 
@@ -201,7 +249,13 @@ describe('OverallContent non-done branches', () => {
             state: { status: 'polling' },
             trigger: vi.fn(),
         });
-        render(<OverallContent symbol="AAPL" companyName="Apple Inc." />);
+        render(
+            <OverallContent
+                symbol="AAPL"
+                companyName="Apple Inc."
+                hasEnrichedNews={true}
+            />
+        );
         expect(screen.getByText('AI 종합 분석 생성 중…')).toBeInTheDocument();
     });
 
@@ -210,7 +264,13 @@ describe('OverallContent non-done branches', () => {
             state: { status: 'error', error: '분석 중 오류가 발생했습니다.' },
             trigger: vi.fn(),
         });
-        render(<OverallContent symbol="AAPL" companyName="Apple Inc." />);
+        render(
+            <OverallContent
+                symbol="AAPL"
+                companyName="Apple Inc."
+                hasEnrichedNews={true}
+            />
+        );
         expect(
             screen.getByText(/분석 중 오류가 발생했습니다/)
         ).toBeInTheDocument();
@@ -221,7 +281,13 @@ describe('OverallContent non-done branches', () => {
             state: { status: 'error', error: '커스텀 에러' },
             trigger: vi.fn(),
         });
-        render(<OverallContent symbol="AAPL" companyName="Apple Inc." />);
+        render(
+            <OverallContent
+                symbol="AAPL"
+                companyName="Apple Inc."
+                hasEnrichedNews={true}
+            />
+        );
         expect(screen.getByText(/커스텀 에러/)).toBeInTheDocument();
     });
 
@@ -230,7 +296,13 @@ describe('OverallContent non-done branches', () => {
             state: { status: 'error', error: '분석 오류', axis: 'technical' },
             trigger: vi.fn(),
         });
-        render(<OverallContent symbol="AAPL" companyName="Apple Inc." />);
+        render(
+            <OverallContent
+                symbol="AAPL"
+                companyName="Apple Inc."
+                hasEnrichedNews={true}
+            />
+        );
         expect(screen.getByText(/technical 축 실패/)).toBeInTheDocument();
     });
 
@@ -240,7 +312,13 @@ describe('OverallContent non-done branches', () => {
             state: { status: 'error', error: '오류' },
             trigger,
         });
-        render(<OverallContent symbol="AAPL" companyName="Apple Inc." />);
+        render(
+            <OverallContent
+                symbol="AAPL"
+                companyName="Apple Inc."
+                hasEnrichedNews={true}
+            />
+        );
         fireEvent.click(screen.getByText('다시 시도'));
         expect(trigger).toHaveBeenCalled();
     });
@@ -253,7 +331,13 @@ describe('OverallContent done branch', () => {
 
     it('TechnicalSummary와 FundamentalSummary 사이에 OptionsSummary를 렌더한다', () => {
         mockDoneState(makeDoneResult());
-        render(<OverallContent symbol="AAPL" companyName="Apple Inc." />);
+        render(
+            <OverallContent
+                symbol="AAPL"
+                companyName="Apple Inc."
+                hasEnrichedNews={true}
+            />
+        );
         // 헤딩 텍스트 순서를 DOM 순서로 비교
         const headings = screen
             .getAllByRole('heading')
@@ -268,7 +352,13 @@ describe('OverallContent done branch', () => {
 
     it('IntegratedConclusion("통합 결론") 헤딩을 렌더한다 (3축 종합 결론 X)', () => {
         mockDoneState(makeDoneResult());
-        render(<OverallContent symbol="AAPL" companyName="Apple Inc." />);
+        render(
+            <OverallContent
+                symbol="AAPL"
+                companyName="Apple Inc."
+                hasEnrichedNews={true}
+            />
+        );
         expect(
             screen.getByRole('heading', { name: /통합 결론/ })
         ).toBeInTheDocument();
@@ -279,7 +369,13 @@ describe('OverallContent done branch', () => {
 
     it('ReanalyzeButton(재분석)이 done 상태에서 노출된다', () => {
         mockDoneState(makeDoneResult());
-        render(<OverallContent symbol="AAPL" companyName="Apple Inc." />);
+        render(
+            <OverallContent
+                symbol="AAPL"
+                companyName="Apple Inc."
+                hasEnrichedNews={true}
+            />
+        );
         expect(
             screen.getByRole('button', { name: /재분석/ })
         ).toBeInTheDocument();
@@ -292,7 +388,13 @@ describe('OverallContent done branch', () => {
                 optionsOiStale: true,
             })
         );
-        render(<OverallContent symbol="AAPL" companyName="Apple Inc." />);
+        render(
+            <OverallContent
+                symbol="AAPL"
+                companyName="Apple Inc."
+                hasEnrichedNews={true}
+            />
+        );
         const btn = screen.getByRole('button', { name: /재분석/ });
         expect(btn.className).toMatch(/ui-warning/);
     });
@@ -304,7 +406,13 @@ describe('OverallContent done branch', () => {
                 optionsOiStale: true,
             })
         );
-        render(<OverallContent symbol="AAPL" companyName="Apple Inc." />);
+        render(
+            <OverallContent
+                symbol="AAPL"
+                companyName="Apple Inc."
+                hasEnrichedNews={true}
+            />
+        );
         const btn = screen.getByRole('button', { name: /재분석/ });
         expect(btn.className).not.toMatch(/ui-warning/);
     });
@@ -312,7 +420,13 @@ describe('OverallContent done branch', () => {
     it('ReanalyzeButton 클릭 시 trigger를 호출한다', () => {
         const trigger = vi.fn();
         mockDoneState(makeDoneResult(), trigger);
-        render(<OverallContent symbol="AAPL" companyName="Apple Inc." />);
+        render(
+            <OverallContent
+                symbol="AAPL"
+                companyName="Apple Inc."
+                hasEnrichedNews={true}
+            />
+        );
         fireEvent.click(screen.getByRole('button', { name: /재분석/ }));
         expect(trigger).toHaveBeenCalledTimes(1);
     });
@@ -357,6 +471,7 @@ describe('OverallContent SSR seed', () => {
                 symbol="AAPL"
                 companyName="Apple Inc."
                 initialAnalysis={SEED_RESULT}
+                hasEnrichedNews={true}
             />,
             { wrapper: createQueryClientWrapper().wrapper }
         );
@@ -366,12 +481,146 @@ describe('OverallContent SSR seed', () => {
     });
 
     it('initialAnalysis가 없으면 idle CTA(분석 받기)를 렌더한다', () => {
-        render(<OverallContent symbol="AAPL" companyName="Apple Inc." />, {
-            wrapper: createQueryClientWrapper().wrapper,
-        });
+        render(
+            <OverallContent
+                symbol="AAPL"
+                companyName="Apple Inc."
+                hasEnrichedNews={true}
+            />,
+            {
+                wrapper: createQueryClientWrapper().wrapper,
+            }
+        );
 
         expect(
             screen.getByRole('button', { name: /AI 종합 분석 받기/ })
+        ).toBeInTheDocument();
+    });
+});
+
+/**
+ * /news와 동일한 순차 게이트(useNewsAnalysisTrigger + useWaitForNewsCards) 검증.
+ *
+ * 의도: 사용자가 /overall 첫 방문 시 새 뉴스가 fetch+개별 분석 진행 중에 종합 분석을
+ * trigger하면 새 뉴스가 누락된 부분 결과로 종합 분석이 진행된다. /news는 이 race를
+ * 막기 위해 enabled gate로 개별 완료를 기다리는데, /overall도 동일 패턴이 적용됐는지
+ * 보장한다.
+ *
+ * - 마운트 시 useNewsAnalysisTrigger가 호출돼 백그라운드 fetch 시작
+ * - useWaitForNewsCards(initially=false) 폴링 동안 CTA 버튼 disabled
+ * - hasEnrichedNews=true(SSR이 1개라도 enriched로 본 경우) → 즉시 활성
+ * - polling 중 pollError 발생 → error boundary로 전파(throw)
+ */
+describe('OverallContent — /news와 동일 순차 게이트 (useNewsAnalysisTrigger + useWaitForNewsCards)', () => {
+    beforeEach(async () => {
+        mockUseOverallAnalysis.mockReset();
+        mockUseOverallAnalysis.mockReturnValue({
+            state: { status: 'idle' },
+            trigger: vi.fn(),
+        });
+        const { useNewsAnalysisTrigger, useWaitForNewsCards } =
+            await import('@/widgets/news');
+        (
+            useNewsAnalysisTrigger as MockedFunction<
+                typeof useNewsAnalysisTrigger
+            >
+        ).mockClear();
+        // 기본 동작: prop으로 들어온 initialReady를 그대로 isReady로 반환
+        (
+            useWaitForNewsCards as MockedFunction<typeof useWaitForNewsCards>
+        ).mockImplementation((_symbol: string, initiallyReady: boolean) => ({
+            isReady: initiallyReady,
+            pollError: null,
+        }));
+    });
+
+    it('마운트 시 useNewsAnalysisTrigger가 symbol과 함께 호출된다 (/news와 동일 fire-and-forget trigger)', async () => {
+        const { useNewsAnalysisTrigger } = await import('@/widgets/news');
+        render(
+            <OverallContent
+                symbol="AAPL"
+                companyName="Apple Inc."
+                hasEnrichedNews={false}
+            />
+        );
+        expect(useNewsAnalysisTrigger).toHaveBeenCalledWith('AAPL');
+    });
+
+    it('hasEnrichedNews=false(개별 분석 미완료)면 CTA 버튼이 disabled', () => {
+        render(
+            <OverallContent
+                symbol="AAPL"
+                companyName="Apple Inc."
+                hasEnrichedNews={false}
+            />
+        );
+        const btn = screen.getByRole('button', { name: /뉴스 카드 분석 중/ });
+        expect(btn).toBeDisabled();
+        // 안내 문구 + 예상 대기 시간 힌트 노출 — 사용자 경험 보장 (회귀 가드)
+        expect(
+            screen.getByText(
+                /개별 뉴스 분석이 완료되면 자동으로 종합 분석을 받을 수 있어요/
+            )
+        ).toBeInTheDocument();
+        expect(screen.getByText(/30초~1분 소요/)).toBeInTheDocument();
+    });
+
+    it('hasEnrichedNews=true(이미 enriched card 있음)면 CTA 버튼이 즉시 활성 (회귀 가드: 게이트가 정상 통과)', () => {
+        render(
+            <OverallContent
+                symbol="AAPL"
+                companyName="Apple Inc."
+                hasEnrichedNews={true}
+            />
+        );
+        const btn = screen.getByRole('button', { name: /AI 종합 분석 받기/ });
+        expect(btn).not.toBeDisabled();
+    });
+
+    it('disabled 상태에서 버튼 클릭해도 useOverallAnalysis.trigger가 호출되지 않는다 (race 차단)', () => {
+        const trigger = vi.fn();
+        mockUseOverallAnalysis.mockReturnValue({
+            state: { status: 'idle' },
+            trigger,
+        });
+        render(
+            <OverallContent
+                symbol="AAPL"
+                companyName="Apple Inc."
+                hasEnrichedNews={false}
+            />
+        );
+        const btn = screen.getByRole('button', { name: /뉴스 카드 분석 중/ });
+        fireEvent.click(btn);
+        // HTML disabled — 브라우저가 click event를 dispatch 안 함
+        expect(trigger).not.toHaveBeenCalled();
+    });
+
+    it('useWaitForNewsCards가 pollError를 반환하면 inline alert fallback + 다시 시도 버튼을 렌더한다', async () => {
+        const { useWaitForNewsCards } = await import('@/widgets/news');
+        (
+            useWaitForNewsCards as MockedFunction<typeof useWaitForNewsCards>
+        ).mockReturnValue({
+            isReady: false,
+            pollError: new Error('polling exhausted'),
+        });
+        render(
+            <OverallContent
+                symbol="AAPL"
+                companyName="Apple Inc."
+                hasEnrichedNews={false}
+            />
+        );
+        // role="alert" + 안내 문구로 사용자에게 회복 메시지 노출.
+        // ErrorBoundary로 감싸지 않으므로 자체 fallback을 렌더해 페이지 crash를 막는다.
+        const alert = screen.getByRole('alert');
+        expect(alert).toBeInTheDocument();
+        expect(
+            screen.getByText(/뉴스 카드 분석 준비 중 오류가 발생했어요/)
+        ).toBeInTheDocument();
+        // 사용자 복구 동선: "다시 시도" 버튼이 노출돼야 한다 (회귀 가드)
+        expect(
+            screen.getByRole('button', { name: /다시 시도/ })
         ).toBeInTheDocument();
     });
 });

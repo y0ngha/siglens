@@ -1,4 +1,4 @@
-export { DrizzleNewsRepository, type NewsRow } from './api';
+export { DrizzleNewsRepository, getNewsList, type NewsRow } from './api';
 
 // lib
 export {
@@ -11,6 +11,7 @@ export {
     NEWS_LOOKBACK_MS,
     NEWS_ANALYSIS_LOOKBACK_MS,
 } from './lib/newsLookback';
+export { NEWS_LIST_CACHE_KEY } from './lib/cacheKeys';
 // MAX_AGGREGATE_NEWS_ITEMS는 테스트가 expected length 단언에 import해 사용한다.
 // selectAggregateNewsItems는 buildAnalysisNewsItems 안에서 캡슐화되어 외부 노출 불필요.
 export { MAX_AGGREGATE_NEWS_ITEMS } from './lib/newsAnalysisSelection';

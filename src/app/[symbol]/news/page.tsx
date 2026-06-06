@@ -1,8 +1,8 @@
 import {
     getEarningsReportComparison,
     getGradeEvents,
-    getNewsList,
 } from '@/app/[symbol]/news/newsData';
+import { getNewsList, NEWS_LIST_CACHE_KEY } from '@/entities/news-article';
 import { NewsAiSummary } from '@/widgets/news/NewsAiSummary';
 import { NewsAiSummaryErrorBoundary } from '@/widgets/news/NewsAiSummaryErrorBoundary';
 import { NewsAiSummarySkeleton } from '@/widgets/news/NewsAiSummarySkeleton';
@@ -103,7 +103,7 @@ interface SymbolSectionProps {
 
 async function NewsListSection({ symbol }: SymbolSectionProps) {
     const items = await staticSymbolCache(
-        ['news:list', symbol],
+        [NEWS_LIST_CACHE_KEY, symbol],
         symbol,
         () => getNewsList(symbol),
         [`news:${symbol}`]
@@ -253,7 +253,7 @@ export default async function NewsPage({ params }: Props) {
     };
 
     const newsItems = await staticSymbolCache(
-        ['news:list', upper],
+        [NEWS_LIST_CACHE_KEY, upper],
         upper,
         () => getNewsList(upper),
         [`news:${upper}`]

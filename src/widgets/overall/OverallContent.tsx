@@ -1,6 +1,7 @@
 'use client';
 
 import { usePublishSymbolChat } from '@/features/symbol-chat';
+import { useNewsAnalysisTrigger, useWaitForNewsCards } from '@/widgets/news';
 import { DependencyProgress } from './DependencyProgress';
 import { useOverallAnalysis } from './hooks/useOverallAnalysis';
 import { OverallTriggerCta } from './OverallTriggerCta';
@@ -33,13 +34,29 @@ interface OverallContentProps {
      * useOverallAnalysis가 마운트 즉시 done 상태로 렌더한다(LLM 비용 0).
      */
     initialAnalysis?: OverallAnalysisResponse;
+    /**
+     * SSR snapshot에서 enriched news card가 1개라도 있는지. `true`면 useWaitForNewsCards가
+     * 폴링 없이 즉시 ready로 결정한다. `/news`와 동일 게이트 — 종합 분석 input과
+     * /news submitNewsAnalysis 호출의 input이 동기화돼야 axis cache가 공유된다.
+     */
+    hasEnrichedNews: boolean;
 }
 
 export function OverallContent({
     symbol,
     companyName,
     initialAnalysis,
+    hasEnrichedNews,
 }: OverallContentProps) {
+    // /news와 동일 패턴: 마운트 시 개별 카드 분석 fire-and-forget trigger + cards ready 폴링.
+    // 새 뉴스 fetch+분석을 사용자 클릭 전에 시작해두면 trigger 시점엔 분석 완료 row만
+    // input으로 들어가 submitNewsAnalysis cache key가 /news와 일치한다(axis hit).
+    useNewsAnalysisTrigger(symbol);
+    const { isReady: isCardsReady, pollError } = useWaitForNewsCards(
+        symbol,
+        hasEnrichedNews
+    );
+
     // tf는 서버가 아니라 client가 URL에서 읽어 [symbol] ISR(정적 렌더)을 유지한다.
     const timeframe = useTimeframeFromUrl();
     const modelId = useDefaultModelId();
@@ -58,8 +75,42 @@ export function OverallContent({
     );
     usePublishSymbolChat(chatState);
 
+    // useWaitForNewsCards가 누적 polling 실패 임계를 넘으면 inline fallback으로 회복한다 —
+    // OverallContent는 ErrorBoundary로 감싸지 않으므로(throw하면 페이지 전체 crash),
+    // 자체 fallback UI로 사용자에게 안내하고 새로고침 기회를 준다.
+    if (pollError !== null) {
+        return (
+            <section
+                aria-labelledby="overall-cta-poll-error-heading"
+                role="alert"
+                className="border-ui-danger/30 bg-secondary-800 rounded-xl border p-6 text-center"
+            >
+                <h2
+                    id="overall-cta-poll-error-heading"
+                    className="mb-2 text-lg font-semibold text-balance"
+                >
+                    AI 종합 분석
+                </h2>
+                <p className="text-ui-danger text-sm">
+                    뉴스 카드 분석 준비 중 오류가 발생했어요.
+                </p>
+                <button
+                    type="button"
+                    onClick={() => window.location.reload()}
+                    className="bg-primary-600 hover:bg-primary-700 focus-visible:ring-primary-500 focus-visible:ring-offset-secondary-800 mt-4 inline-flex items-center rounded-md px-4 py-2 text-sm font-medium text-white transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+                >
+                    다시 시도
+                </button>
+            </section>
+        );
+    }
+
     if (state.status === 'idle') {
-        return <OverallTriggerCta onTrigger={trigger} />;
+        // /news와 동일 게이트 — 새 뉴스 fetch+분석을 백그라운드에서 끝낸 뒤 submit이 일어나야
+        // submitNewsAnalysis cache key가 /news와 일치(axis hit)한다.
+        return (
+            <OverallTriggerCta onTrigger={trigger} disabled={!isCardsReady} />
+        );
     }
 
     if (state.status === 'bot_blocked') {

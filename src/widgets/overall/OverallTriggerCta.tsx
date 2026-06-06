@@ -1,13 +1,24 @@
 'use client';
 
+import { cn } from '@/shared/lib/cn';
+
 interface OverallTriggerCtaProps {
     onTrigger: () => void;
+    /**
+     * `true`면 버튼 비활성. 보통 개별 뉴스 카드 분석이 진행 중이라 종합 분석이
+     * 새 뉴스 누락 부분 결과로 진행되는 걸 막을 때 사용한다(/news와 동일 게이트).
+     */
+    disabled?: boolean;
 }
 
-export function OverallTriggerCta({ onTrigger }: OverallTriggerCtaProps) {
+export function OverallTriggerCta({
+    onTrigger,
+    disabled = false,
+}: OverallTriggerCtaProps) {
     return (
         <section
             aria-labelledby="overall-cta-heading"
+            aria-busy={disabled}
             className="border-secondary-700 bg-secondary-800 rounded-xl border p-12 text-center"
         >
             <h2
@@ -23,10 +34,25 @@ export function OverallTriggerCta({ onTrigger }: OverallTriggerCtaProps) {
             <button
                 type="button"
                 onClick={onTrigger}
-                className="bg-primary-600 hover:bg-primary-700 focus-visible:ring-primary-500 mt-6 inline-flex items-center rounded-md px-6 py-3 text-sm font-medium text-white transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+                disabled={disabled}
+                className={cn(
+                    'mt-6 inline-flex items-center rounded-md px-6 py-3 text-sm font-medium text-white transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
+                    disabled
+                        ? 'bg-secondary-600 focus-visible:ring-secondary-500 cursor-not-allowed opacity-60'
+                        : 'bg-primary-600 hover:bg-primary-700 focus-visible:ring-primary-500'
+                )}
             >
-                AI 종합 분석 받기
+                {disabled ? '뉴스 카드 분석 중…' : 'AI 종합 분석 받기'}
             </button>
+            {disabled && (
+                <p
+                    className="text-secondary-500 mt-3 text-xs"
+                    aria-live="polite"
+                >
+                    개별 뉴스 분석이 완료되면 자동으로 종합 분석을 받을 수
+                    있어요 (보통 30초~1분 소요).
+                </p>
+            )}
         </section>
     );
 }

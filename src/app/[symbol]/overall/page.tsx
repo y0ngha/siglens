@@ -13,6 +13,7 @@ import {
     buildDisplayName,
     getAssetInfoResilient,
 } from '@/entities/ticker';
+import { getNewsList, NEWS_LIST_CACHE_KEY } from '@/entities/news-article';
 import {
     buildBreadcrumbJsonLd,
     buildSymbolOverallSeoContent,
@@ -122,20 +123,46 @@ export default async function OverallPage({ params }: Props) {
     // ISR: tf는 client가 URL에서 읽으므로 서버는 DEFAULT_TIMEFRAME으로 peek한다.
     // assetInfo.name은 symbol에 종속(1:1)이므로 캐시 키에서 제외한다 — symbol 태그
     // 무효화로 name 변동 시에도 갱신된다.
-    const cachedOverall = await staticSymbolCache(
-        ['peek:overall', upper, GEMINI_2_5_FLASH_LITE_MODEL],
-        upper,
-        () =>
-            peekOverallAnalysisCache(
-                upper,
-                assetInfo.name,
-                DEFAULT_TIMEFRAME,
-                GEMINI_2_5_FLASH_LITE_MODEL
-            )
-    ).catch((error: unknown) => {
-        console.error('[OverallPage] peekOverallAnalysisCache failed:', error);
-        return null;
-    });
+    // 종합 분석은 enriched news cards가 1개라도 있을 때만 의미가 있다 —
+    // `/news`와 동일하게 SSR 시점 enrichment 여부를 prop으로 전달해 client에서
+    // 폴링 게이트(useWaitForNewsCards)를 즉시 통과시키거나 폴링 시작하도록 한다.
+    //
+    // ISR safety: 캐시/DB 실패는 false/null로 degrade해 페이지 자체가 throw하지 않게 한다 —
+    // 그 경우 client의 useWaitForNewsCards가 폴링으로 ready 상태를 회복한다.
+    //
+    // Promise.all로 병렬화 — 두 호출은 서로 독립이라 직렬 await할 이유가 없다.
+    // cold path(둘 다 캐시 miss)에서 TTFB가 ~max(t1, t2) 수준으로 줄어든다.
+    const [newsItems, cachedOverall] = await Promise.all([
+        staticSymbolCache(
+            [NEWS_LIST_CACHE_KEY, upper],
+            upper,
+            () => getNewsList(upper),
+            [`news:${upper}`]
+        ).catch((error: unknown) => {
+            console.error('[OverallPage] getNewsList failed:', error);
+            // safe: 빈 배열은 NewsRow[]와 구조적 호환(`.some` 호출 가능). TS는 []의 element
+            // type을 never로 추론하므로 staticSymbolCache 반환 타입에 맞추기 위한 cast.
+            return [] as Awaited<ReturnType<typeof getNewsList>>;
+        }),
+        staticSymbolCache(
+            ['peek:overall', upper, GEMINI_2_5_FLASH_LITE_MODEL],
+            upper,
+            () =>
+                peekOverallAnalysisCache(
+                    upper,
+                    assetInfo.name,
+                    DEFAULT_TIMEFRAME,
+                    GEMINI_2_5_FLASH_LITE_MODEL
+                )
+        ).catch((error: unknown) => {
+            console.error(
+                '[OverallPage] peekOverallAnalysisCache failed:',
+                error
+            );
+            return null;
+        }),
+    ]);
+    const hasEnrichedNews = newsItems.some(item => item.sentiment !== null);
 
     const displayName = buildDisplayName(assetInfo, upper);
     const { fullTitle, description, url } = buildSymbolOverallSeoContent(
@@ -278,6 +305,7 @@ export default async function OverallPage({ params }: Props) {
                         symbol={upper}
                         companyName={assetInfo.name}
                         initialAnalysis={cachedOverall ?? undefined}
+                        hasEnrichedNews={hasEnrichedNews}
                     />
                 </Suspense>
                 <CrossLinkCards symbol={upper} current="overall" />
