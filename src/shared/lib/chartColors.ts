@@ -27,6 +27,15 @@ export const CHART_COLORS = {
     bollingerLower: '#818cf8',
     bollingerBackground: '#818cf820',
 
+    keltnerUpper: '#5eead4',
+    keltnerMiddle: '#14b8a6',
+    keltnerLower: '#5eead4',
+    keltnerBackground: '#5eead420',
+    donchianUpper: '#fcd34d',
+    donchianMiddle: '#d97706',
+    donchianLower: '#fcd34d',
+    donchianBackground: '#fcd34d20',
+
     // MACD
     macdLine: '#3b82f6',
     macdSignal: '#f59e0b',
