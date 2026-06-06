@@ -82,7 +82,10 @@ import {
     type EarningsCalendarItem,
 } from '@y0ngha/siglens-core';
 import { headers } from 'next/headers';
-import { DrizzleNewsRepository } from '@/entities/news-article';
+import {
+    DrizzleNewsRepository,
+    MAX_AGGREGATE_NEWS_ITEMS,
+} from '@/entities/news-article';
 import { getNextEarningsReport } from '@/entities/earnings-report';
 import { getCurrentUser } from '@/entities/session/lib/getCurrentUser';
 import { resolveTierAndByok } from '@/shared/lib/byokGate';
@@ -250,14 +253,16 @@ describe('submitOverallAnalysisAction 함수는', () => {
         expect(item.card.titleKo).toBe('애플 실적 예상치 상회');
     });
 
-    it('news input은 buildAnalysisNewsItems pipeline을 거쳐 cap 25개로 제한된다', async () => {
-        // 30개 row를 보내도 buildAnalysisNewsItems가 25개로 cap.
+    it('news input은 buildAnalysisNewsItems pipeline을 거쳐 MAX_AGGREGATE_NEWS_ITEMS로 cap된다', async () => {
         // pipeline 자체 검증은 buildAnalysisNewsItems.test.ts에서 망라.
         // 여기는 통합 — overall action이 그 함수를 통과시키는지만 확인.
-        const rows = Array.from({ length: 30 }, (_, i) => ({
-            ...ANALYZED_ROW,
-            id: `id-${i}`,
-        }));
+        const rows = Array.from(
+            { length: MAX_AGGREGATE_NEWS_ITEMS + 5 },
+            (_, i) => ({
+                ...ANALYZED_ROW,
+                id: `id-${i}`,
+            })
+        );
         mockListBySymbol.mockResolvedValue(rows);
         mockSubmitOverallAnalysis.mockResolvedValueOnce(SUBMITTED_RESULT);
 
@@ -269,7 +274,7 @@ describe('submitOverallAnalysisAction 함수는', () => {
         );
 
         const callArg = mockSubmitOverallAnalysis.mock.calls[0]?.[0];
-        expect(callArg?.newsItems).toHaveLength(25);
+        expect(callArg?.newsItems).toHaveLength(MAX_AGGREGATE_NEWS_ITEMS);
     });
 
     it('다음 실적 발표가 있으면 upcomingCalendar에 포함한다', async () => {

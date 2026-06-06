@@ -76,13 +76,13 @@ describe('buildAnalysisNewsItems', () => {
         expect(items.map(i => i.id).sort()).toEqual(['a1', 'a2']);
     });
 
-    it('30개 row → MAX_AGGREGATE_NEWS_ITEMS(25)로 cap', () => {
-        const rows = Array.from({ length: 30 }, (_, i) =>
-            makeAnalyzedRow(`id-${i}`)
+    it('MAX_AGGREGATE_NEWS_ITEMS 초과 row는 그 값까지 cap', () => {
+        const rows = Array.from(
+            { length: MAX_AGGREGATE_NEWS_ITEMS + 5 },
+            (_, i) => makeAnalyzedRow(`id-${i}`)
         );
         const items = buildAnalysisNewsItems(rows);
         expect(items).toHaveLength(MAX_AGGREGATE_NEWS_ITEMS);
-        expect(items).toHaveLength(25);
     });
 
     it('priceImpact 우선: high > medium > low > negligible 순서로 cap', () => {
@@ -101,7 +101,7 @@ describe('buildAnalysisNewsItems', () => {
             ),
         ];
         const items = buildAnalysisNewsItems(rows);
-        expect(items).toHaveLength(25);
+        expect(items).toHaveLength(MAX_AGGREGATE_NEWS_ITEMS);
         // 상위 5개: high, 다음 5개: medium, 다음 10개: low, 마지막 5개: negligible(10개 중 5개만 들어감)
         expect(
             items.slice(0, 5).every(i => i.card.priceImpact === 'high')
