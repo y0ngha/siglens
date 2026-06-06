@@ -14,6 +14,7 @@ import {
     getAssetInfoResilient,
 } from '@/entities/ticker';
 import { getBarsStatic } from '@/entities/bars';
+import { quantizeBarsToLastClosed } from '@/entities/bars/lib/quantizeBars';
 import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/shared/config/queryConfig';
 import {
     buildBreadcrumbJsonLd,
@@ -175,15 +176,20 @@ export default async function SymbolFearGreedPage({ params }: Props) {
         defaultOptions: { queries: { staleTime: QUERY_STALE_TIME_MS } },
     });
     queryClient.setQueryData(QUERY_KEYS.assetInfo(symbol), assetInfo);
-    await queryClient.prefetchQuery({
-        queryKey: QUERY_KEYS.bars(
-            symbol,
-            DEFAULT_TIMEFRAME,
-            assetInfo.fmpSymbol
-        ),
-        queryFn: () =>
-            getBarsStatic(symbol, DEFAULT_TIMEFRAME, assetInfo.fmpSymbol),
-    });
+    const fgBars = await getBarsStatic(
+        symbol,
+        DEFAULT_TIMEFRAME,
+        assetInfo.fmpSymbol
+    ).catch(() => null);
+    if (fgBars !== null) {
+        queryClient.setQueryData(
+            QUERY_KEYS.bars(symbol, DEFAULT_TIMEFRAME, assetInfo.fmpSymbol),
+            {
+                ...fgBars,
+                bars: quantizeBarsToLastClosed(fgBars.bars, new Date()),
+            }
+        );
+    }
 
     return (
         <>
