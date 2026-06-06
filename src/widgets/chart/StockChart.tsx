@@ -43,7 +43,11 @@ import {
     EMPTY_INDICATOR_RESULT,
     MA_DEFAULT_PERIODS,
 } from '@y0ngha/siglens-core';
-import { IndicatorToolbar } from './IndicatorToolbar';
+import { IndicatorSettingsModal } from './ui/IndicatorSettingsModal';
+import {
+    INDICATOR_META,
+    type IndicatorBinding,
+} from './model/indicatorRegistry';
 
 interface CommonHookParams {
     chartRef: RefObject<IChartApi | null>;
@@ -312,6 +316,94 @@ export function StockChart({
         labels: paneLabels,
     });
 
+    const indicatorBindings = useMemo<IndicatorBinding[]>(
+        () => [
+            {
+                meta: INDICATOR_META.ma,
+                active: maVisiblePeriods.length > 0,
+                availablePeriods: MA_DEFAULT_PERIODS,
+                visiblePeriods: maVisiblePeriods,
+                onTogglePeriod: toggleMAPeriod,
+            },
+            {
+                meta: INDICATOR_META.ema,
+                active: emaVisiblePeriods.length > 0,
+                availablePeriods: EMA_DEFAULT_PERIODS,
+                visiblePeriods: emaVisiblePeriods,
+                onTogglePeriod: toggleEMAPeriod,
+            },
+            {
+                meta: INDICATOR_META.ichimoku,
+                active: ichimokuVisible,
+                onToggle: toggleIchimoku,
+            },
+            {
+                meta: INDICATOR_META.rsi,
+                active: rsiVisible,
+                onToggle: toggleRSI,
+            },
+            {
+                meta: INDICATOR_META.macd,
+                active: macdVisible,
+                onToggle: toggleMACD,
+            },
+            {
+                meta: INDICATOR_META.dmi,
+                active: dmiVisible,
+                onToggle: toggleDMI,
+            },
+            {
+                meta: INDICATOR_META.stochastic,
+                active: stochasticVisible,
+                onToggle: toggleStochastic,
+            },
+            {
+                meta: INDICATOR_META.stochRsi,
+                active: stochRsiVisible,
+                onToggle: toggleStochRSI,
+            },
+            {
+                meta: INDICATOR_META.cci,
+                active: cciVisible,
+                onToggle: toggleCCI,
+            },
+            {
+                meta: INDICATOR_META.bollinger,
+                active: bollingerVisible,
+                onToggle: toggleBollinger,
+            },
+            {
+                meta: INDICATOR_META.volumeProfile,
+                active: vpVisible,
+                onToggle: toggleVP,
+            },
+        ],
+        [
+            maVisiblePeriods,
+            emaVisiblePeriods,
+            ichimokuVisible,
+            rsiVisible,
+            macdVisible,
+            dmiVisible,
+            stochasticVisible,
+            stochRsiVisible,
+            cciVisible,
+            bollingerVisible,
+            vpVisible,
+            toggleMAPeriod,
+            toggleEMAPeriod,
+            toggleIchimoku,
+            toggleRSI,
+            toggleMACD,
+            toggleDMI,
+            toggleStochastic,
+            toggleStochRSI,
+            toggleCCI,
+            toggleBollinger,
+            toggleVP,
+        ]
+    );
+
     if (bars.length === 0) {
         return (
             <div className="flex h-full w-full items-center justify-center">
@@ -323,7 +415,7 @@ export function StockChart({
     }
 
     // Lightweight Charts 캔버스 자체는 스크린 리더가 읽을 수 없으므로 캔버스 컨테이너에
-    // role/aria-label을 부여한다. wrapperRef에 붙이면 자식으로 들어가는 IndicatorToolbar·
+    // role/aria-label을 부여한다. wrapperRef에 붙이면 자식으로 들어가는 IndicatorSettingsModal·
     // OverlayLegend의 인터랙티브 요소가 일부 스크린리더에서 presentational로 취급될 수 있어
     // 캔버스만 들어가는 containerRef에 둔다.
     const chartAriaLabel =
@@ -339,41 +431,10 @@ export function StockChart({
                 role="img"
                 aria-label={chartAriaLabel}
             />
+            <div className="absolute top-2 right-2 z-10">
+                <IndicatorSettingsModal bindings={indicatorBindings} />
+            </div>
             <div className="pointer-events-none absolute top-2 left-2 z-10 flex flex-col gap-1">
-                <div className="pointer-events-auto">
-                    <IndicatorToolbar
-                        maVisiblePeriods={maVisiblePeriods}
-                        maAvailablePeriods={MA_DEFAULT_PERIODS}
-                        onMAToggle={toggleMAPeriod}
-                        emaVisiblePeriods={emaVisiblePeriods}
-                        emaAvailablePeriods={EMA_DEFAULT_PERIODS}
-                        onEMAToggle={toggleEMAPeriod}
-                        bollinger={{
-                            visible: bollingerVisible,
-                            onToggle: toggleBollinger,
-                        }}
-                        macd={{ visible: macdVisible, onToggle: toggleMACD }}
-                        rsi={{ visible: rsiVisible, onToggle: toggleRSI }}
-                        dmi={{ visible: dmiVisible, onToggle: toggleDMI }}
-                        stochastic={{
-                            visible: stochasticVisible,
-                            onToggle: toggleStochastic,
-                        }}
-                        stochRsi={{
-                            visible: stochRsiVisible,
-                            onToggle: toggleStochRSI,
-                        }}
-                        cci={{ visible: cciVisible, onToggle: toggleCCI }}
-                        volumeProfile={{
-                            visible: vpVisible,
-                            onToggle: toggleVP,
-                        }}
-                        ichimoku={{
-                            visible: ichimokuVisible,
-                            onToggle: toggleIchimoku,
-                        }}
-                    />
-                </div>
                 <OverlayLegend items={overlayLegendItems} />
             </div>
         </div>

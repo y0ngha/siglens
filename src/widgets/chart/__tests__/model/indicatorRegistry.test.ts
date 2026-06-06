@@ -6,10 +6,11 @@ import {
     CATEGORY_LABELS,
     groupBindingsByCategory,
     type IndicatorBinding,
+    type IndicatorKey,
 } from '../../model/indicatorRegistry';
 
-function bindingFor(key: string, active = false): IndicatorBinding {
-    return { meta: INDICATOR_META[key]!, active };
+function bindingFor(key: IndicatorKey, active = false): IndicatorBinding {
+    return { meta: INDICATOR_META[key], active };
 }
 
 describe('indicatorRegistry', () => {
