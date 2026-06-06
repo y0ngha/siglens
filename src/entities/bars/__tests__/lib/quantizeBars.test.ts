@@ -1,11 +1,12 @@
-import { describe, expect, it, vi } from 'vitest';
-import type { Bar, BarsData } from '@y0ngha/siglens-core';
-
+// vi.mock은 Vitest transform이 모든 static import 위로 호이스트하므로 import 블록 위에 둔다.
+// import 사이에 끼우면 import/first 위반(MISTAKES §17).
 vi.mock('@y0ngha/siglens-core', async () => ({
     ...(await vi.importActual('@y0ngha/siglens-core')),
     isEtRegularSessionOpen: vi.fn(),
 }));
 
+import { describe, expect, it, vi } from 'vitest';
+import type { Bar, BarsData } from '@y0ngha/siglens-core';
 import { isEtRegularSessionOpen } from '@y0ngha/siglens-core';
 import { quantizeBarsDataToLastClosed } from '@/entities/bars/lib/quantizeBars';
 

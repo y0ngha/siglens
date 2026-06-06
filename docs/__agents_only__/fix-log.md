@@ -84,10 +84,13 @@
   - Rule: MISTAKES §Architecture #0.7 — entities/{slice}/lib/는 순수 함수 전용
   - Context: PR #564 R3 claude 리뷰에서 Blocker로 지적. pre-existing이라 별도 PR로 분리(이슈 #565). nextEarningsReport.ts JSDoc에 TODO(#565) 링크를 남겨 추적. 이번 PR diff엔 미수정(scope = 캐시/gate).
 
-## [feat/isr-writes-opt | 2026-06-06]
-- Violation: Over-broad early-return skipped required downstream logic
-  - Rule: MISTAKES.md Code Review #3 — when adding early return / gate, verify it does not skip unrelated downstream side-effects that must always run
-  - Context: Task 5 gated both `revalidateTag` AND the analyze step behind `if (changedCount === 0) return;`. The analyze step processes ALL un-analyzed DB rows (via listBySymbol), not just newly-changed ones, so the early return would strand previously-failed analyses permanently. Fixed by gating only revalidateTag and letting control fall through to analyze.
-- Violation: Partial quantization left parallel data structure churning
-  - Rule: MISTAKES.md Code Review #4 — when transforming paired/parallel data structures (bars ↔ indicators), transform BOTH in lockstep, or the fix is partial
-  - Context: Price quantize sliced bars (drop forming daily bar) but left parallel IndicatorResult per-bar arrays (rsi/macd/etc.) un-sliced. buildTechnicalFacts read forming-bar RSI/MACD and dehydrated seed serialized churning indicators, re-introducing ISR-write driver. Fixed by slicing bars AND all per-bar indicator arrays in lockstep.
+## [PR #573 Round 2 | feat/isr-writes-opt | 2026-06-06]
+- Violation: vi.mock() declaration sandwiched between import statements (before + after)
+  - Rule: MISTAKES.md §17 — vi.mock() must sit above all contiguous import block, not split it. Hoisting rules apply
+  - Context: quantizeBars.test.ts had imports → vi.mock → imports → vi.mock pattern. Restructured: all vi.mock calls moved above the contiguous import block
+- Violation: Unannotated type casts without safety explanation
+  - Rule: MISTAKES.md TypeScript §7 — Type casts (as unknown, as Type) must include inline JSDoc explaining why the cast is safe
+  - Context: quantizeBars.ts had `(v as unknown[]).slice` (all elements predicate-verified as arrays) and `out as unknown as IndicatorResult` (structural identity). Added explanatory comments for each cast.
+- Status: APPROVED (claude round 2, gemini comments addressed, B3 false-positive rejected)
+  - Review: Addressed 3 blocker findings (§17, TS §7, missing early return). Rejected B3 (market/page sectorData null cast) as false-positive (getSectorSignalsStatic is non-nullable with no catch).
+  - Result: Clean merge — violations logged for future pattern detection

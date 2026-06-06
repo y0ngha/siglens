@@ -1188,6 +1188,20 @@ This file contains only **recurring gotchas** that agents keep missing despite e
 
 ---
 
+## Code Review
+
+```
+1. Early return / gate guards skip unrelated downstream side-effects that must always run
+   → When adding an early return or guard (e.g., if (x.length === 0) return), verify it does not skip mandatory downstream operations
+   → Example: database query for un-analyzed rows must run even if no new rows were changed in this request
+   → The gate should protect only the specific side-effect (cache invalidation) that depends on the condition; other operations must fall through
+   ❌ if (changedCount === 0) return;  // also skips analyze step that processes ALL un-analyzed DB rows
+   ❌ if (fresh.length === 0) return;  // skips listBySymbol query to find previously-failed un-analyzed rows
+   ✅ if (changedCount === 0) return;  // only gates revalidateTag; control falls through to analyze
+   ✅ if (fresh.length === 0) return;  // gates markFetched; control falls through to analyze un-analyzed rows
+   → Recurring: feat/isr-writes-opt (R1), PR #573 R2 (regression from earlier round)
+```
+
 ## Architecture
 
 ```

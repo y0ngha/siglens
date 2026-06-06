@@ -131,6 +131,11 @@ export async function ensureNewsCardsAnalyzedAction(
     }
     await markFetched(symbol);
 
+    // FMP에서 새 뉴스가 하나도 없으면(fresh 빈) 무효화·분석 모두 불필요하다 — unanalyzed도
+    // 항상 빈 배열이 되므로 listBySymbol DB 쿼리를 스킵한다. (fresh.length>0이지만 모두 no-op인
+    // 경우는 아래로 진행해 미분석 기존 기사를 분석한다 — 회귀 가드.)
+    if (fresh.length === 0) return;
+
     // 실제로 신규 삽입/내용 변경된 기사가 1건 이상일 때만 news ISR 캐시를 무효화한다.
     // upsertNewsItem은 값이 바뀐 행만 RETURNING하므로(setWhere), 같은 기사 재fetch는
     // changedCount=0 → revalidateTag 스킵. 방문마다 무효화하던 빈도 폭풍을 차단한다.

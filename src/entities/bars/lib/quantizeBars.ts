@@ -34,6 +34,7 @@ function dropLastIndicatorBar(indicators: IndicatorResult): IndicatorResult {
                 entries.every(([, v]) => Array.isArray(v));
             out[key] = allArrays
                 ? Object.fromEntries(
+                      // safe: allArrays(=true) verified Array.isArray(v) for every entry above.
                       entries.map(([k, v]) => [
                           k,
                           (v as unknown[]).slice(0, -1),
@@ -45,6 +46,8 @@ function dropLastIndicatorBar(indicators: IndicatorResult): IndicatorResult {
             out[key] = value;
         }
     }
+    // safe: `out` preserves every key of `indicators`, only removing the last element
+    // from per-bar arrays — runtime shape is structurally identical to IndicatorResult.
     return out as unknown as IndicatorResult;
 }
 
