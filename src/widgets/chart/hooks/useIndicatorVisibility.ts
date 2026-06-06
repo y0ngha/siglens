@@ -34,25 +34,23 @@ export function useIndicatorVisibility(): UseIndicatorVisibilityReturn {
         setVisible(prev => ({ ...prev, [key]: !prev[key] }));
     }, []);
 
-    // 활성 pane에 등록 순서대로 1,2,3… 배정, 비활성 pane과 모든 overlay 키는
-    // INACTIVE_PANE_INDEX.
     const paneIndices: PaneIndices = useMemo(() => {
-        // 활성 pane만 등록 순서로 추려 1,2,3… 위치를 부여한다(순수 — 가변 카운터 없음).
+        // 가변 카운터 없이 순수하게 계산 — 활성 pane을 등록 순서로 추려 Map으로 위치를 부여.
         const activePaneKeys = INDICATOR_REGISTRY.filter(
             m => m.kind === 'pane' && visible[m.key]
         ).map(m => m.key);
-        // INDICATOR_REGISTRY 전체 키(18개)를 채우므로 Record<IndicatorKey, number>가
-        // 런타임에 완전히 충족된다 — 안전한 캐스트.
+        const activePaneIndexMap = new Map(
+            activePaneKeys.map((key, i) => [
+                key,
+                FIRST_INDICATOR_PANE_INDEX + i,
+            ])
+        );
+        // INDICATOR_REGISTRY 전체 키(18개)를 채우므로 Record<IndicatorKey,number>가 런타임에 완전히 충족 — 안전한 캐스트.
         return Object.fromEntries(
-            INDICATOR_REGISTRY.map(m => {
-                const pos = activePaneKeys.indexOf(m.key);
-                return [
-                    m.key,
-                    pos === -1
-                        ? INACTIVE_PANE_INDEX
-                        : FIRST_INDICATOR_PANE_INDEX + pos,
-                ];
-            })
+            INDICATOR_REGISTRY.map(m => [
+                m.key,
+                activePaneIndexMap.get(m.key) ?? INACTIVE_PANE_INDEX,
+            ])
         ) as PaneIndices;
     }, [visible]);
 

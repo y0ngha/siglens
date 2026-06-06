@@ -76,9 +76,11 @@ describe('indicatorRegistry', () => {
             'hurst',
             'varianceRatio',
         ];
-        for (const key of groupB) {
-            expect(INDICATOR_META[key as IndicatorKey].kind).toBe('pane');
-        }
+        expect(
+            groupB.every(
+                key => INDICATOR_META[key as IndicatorKey].kind === 'pane'
+            )
+        ).toBe(true);
     });
 });
 
