@@ -73,6 +73,7 @@ vi.mock('@/entities/bars', () => ({
 }));
 
 import { SymbolLayoutChrome } from '@/app/[symbol]/layout';
+import { MS_PER_SECOND } from '@/shared/config/time';
 
 const ASSET_INFO = {
     symbol: 'AAPL',
@@ -80,7 +81,7 @@ const ASSET_INFO = {
     fmpSymbol: 'AAPL',
 };
 const LAST_BAR_TIME = 1717718400; // 2024-06-07T00:00:00Z (epoch seconds)
-const LAST_BAR_TIME_MS = LAST_BAR_TIME * 1000; // RQ dataUpdatedAt은 milliseconds
+const LAST_BAR_TIME_MS = LAST_BAR_TIME * MS_PER_SECOND; // RQ dataUpdatedAt은 milliseconds
 const RAW_BARS = {
     bars: [{ time: 1717632000 }, { time: 1717718400 }],
     indicators: {},

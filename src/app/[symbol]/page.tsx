@@ -20,6 +20,7 @@ import {
 import { getBarsStatic, quantizeBarsDataToLastClosed } from '@/entities/bars';
 import { countSkillFiles } from '@/entities/skill';
 import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/shared/config/queryConfig';
+import { MS_PER_SECOND } from '@/shared/config/time';
 import {
     buildBreadcrumbJsonLd,
     buildSymbolSeoContent,
@@ -222,7 +223,7 @@ export default async function SymbolPage({ params }: Props) {
         // 같은 봉이 계속 마지막인 한 dehydrated state 결정성 보장.
         // Bar.time은 seconds (epoch) — RQ dataUpdatedAt은 milliseconds.
         const lastBarSec = quantizedFactBars.bars.at(-1)?.time ?? 0;
-        const stableUpdatedAt = lastBarSec * 1000;
+        const stableUpdatedAt = lastBarSec * MS_PER_SECOND;
         queryClient.setQueryData(
             QUERY_KEYS.bars(symbol, DEFAULT_TIMEFRAME, assetInfo.fmpSymbol),
             quantizedFactBars,

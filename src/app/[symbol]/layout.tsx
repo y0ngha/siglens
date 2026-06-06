@@ -15,6 +15,7 @@ import { DEFAULT_TIMEFRAME } from '@/shared/config/market';
 import { getBarsStatic, quantizeBarsDataToLastClosed } from '@/entities/bars';
 import { getAssetInfoResilient } from '@/entities/ticker';
 import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/shared/config/queryConfig';
+import { MS_PER_SECOND } from '@/shared/config/time';
 
 interface SymbolLayoutProps {
     children: ReactNode;
@@ -108,7 +109,7 @@ export async function SymbolLayoutChrome({ params }: SymbolLayoutSegmentProps) {
         const quantized = quantizeBarsDataToLastClosed(headerBars, new Date());
         // Bar.time은 seconds (epoch) — RQ dataUpdatedAt은 milliseconds 기대.
         const lastBarSec = quantized.bars.at(-1)?.time ?? 0;
-        const stableUpdatedAt = lastBarSec * 1000;
+        const stableUpdatedAt = lastBarSec * MS_PER_SECOND;
         queryClient.setQueryData(
             QUERY_KEYS.bars(symbol, DEFAULT_TIMEFRAME, assetInfo?.fmpSymbol),
             quantized,

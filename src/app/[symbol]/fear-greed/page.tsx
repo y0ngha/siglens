@@ -15,6 +15,7 @@ import {
 } from '@/entities/ticker';
 import { getBarsStatic, quantizeBarsDataToLastClosed } from '@/entities/bars';
 import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/shared/config/queryConfig';
+import { MS_PER_SECOND } from '@/shared/config/time';
 import {
     buildBreadcrumbJsonLd,
     buildSymbolFearGreedSeoContent,
@@ -191,7 +192,7 @@ export default async function SymbolFearGreedPage({ params }: Props) {
         const quantized = quantizeBarsDataToLastClosed(fgBars, new Date());
         // Bar.time은 seconds (epoch) — RQ dataUpdatedAt은 milliseconds.
         const lastBarSec = quantized.bars.at(-1)?.time ?? 0;
-        const stableUpdatedAt = lastBarSec * 1000;
+        const stableUpdatedAt = lastBarSec * MS_PER_SECOND;
         queryClient.setQueryData(
             QUERY_KEYS.bars(symbol, DEFAULT_TIMEFRAME, assetInfo.fmpSymbol),
             quantized,

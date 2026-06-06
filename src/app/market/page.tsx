@@ -128,6 +128,11 @@ export async function MarketContent(): Promise<ReactElement> {
      * SSR seed의 computedAt만 시간 단위로 quantize한다 — 5~15분 churn이 ISR write를
      * 유발하므로. 클라 refetch가 실제 computedAt을 공급해 화면 표시는 불변.
      * dateHour는 이미 'YYYY-MM-DDTHH' 형식의 string이므로 타입 호환 유지.
+     *
+     * ⚠️ SectorFactsSummary/SectorSignalPanel은 현재 `computedAt`을 사용자/크롤러에게
+     * 직접 렌더링하지 않는다(`buildSectorFacts`도 사용 안 함). 향후 SSR 표시 경로가
+     * 추가되면 truncated 'YYYY-MM-DDTHH' 13자 형식이 노출되므로 그 시점에 표시 형식
+     * 변환을 함께 검토해야 한다.
      */
     const sectorDataSeed = { ...sectorData, computedAt: dateHour };
 

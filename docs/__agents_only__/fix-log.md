@@ -95,6 +95,13 @@
   - Review: Addressed 3 blocker findings (§17, TS §7, missing early return). Rejected B3 (market/page sectorData null cast) as false-positive (getSectorSignalsStatic is non-nullable with no catch).
   - Result: Clean merge — violations logged for future pattern detection
 
+## [PR #573 Round 9 | feat/isr-writes-opt | 2026-06-06]
+- Violation: `lastBarSec * 1000` 매직 넘버 (4곳)
+  - Rule: MISTAKES §15 — Time calculations (milliseconds per second 등)은 `@/shared/config/time`의 상수 사용
+  - Context: layout/page/fear-greed의 stableUpdatedAt 계산 + layout.test.tsx의 LAST_BAR_TIME_MS — 모두 `MS_PER_SECOND` import해 사용으로 교체.
+- Status: APPROVED → merged (예정)
+  - S1 (market sectorDataSeed computedAt SSR 렌더링 가드): 명시 주석 추가로 미래 SSR 표시 경로 추가 시 검토 의무 보존.
+
 ## [PR #573 Round 8 (post-APPROVED) | feat/isr-writes-opt | 2026-06-06]
 - Violation: layout.tsx의 `prefetchQuery(getBarsStatic)`이 forming 봉 그대로 dehydrate seed에 박아 ISR write churn을 부분 무력화 (page.tsx만 quantize 적용한 회귀)
   - Rule: 신규 — ISR seed는 RSC가 직접 quantize한 결과만 dehydrate
