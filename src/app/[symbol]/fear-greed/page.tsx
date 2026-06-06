@@ -13,7 +13,7 @@ import {
     buildDisplayName,
     getAssetInfoResilient,
 } from '@/entities/ticker';
-import { getBarsStatic, quantizeBarsToLastClosed } from '@/entities/bars';
+import { getBarsStatic, quantizeBarsDataToLastClosed } from '@/entities/bars';
 import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/shared/config/queryConfig';
 import {
     buildBreadcrumbJsonLd,
@@ -183,10 +183,7 @@ export default async function SymbolFearGreedPage({ params }: Props) {
     if (fgBars !== null) {
         queryClient.setQueryData(
             QUERY_KEYS.bars(symbol, DEFAULT_TIMEFRAME, assetInfo.fmpSymbol),
-            {
-                ...fgBars,
-                bars: quantizeBarsToLastClosed(fgBars.bars, new Date()),
-            }
+            quantizeBarsDataToLastClosed(fgBars, new Date())
         );
     }
 

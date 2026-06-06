@@ -17,7 +17,7 @@ import {
     buildDisplayName,
     getAssetInfoResilient,
 } from '@/entities/ticker';
-import { getBarsStatic, quantizeBarsToLastClosed } from '@/entities/bars';
+import { getBarsStatic, quantizeBarsDataToLastClosed } from '@/entities/bars';
 import { countSkillFiles } from '@/entities/skill';
 import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/shared/config/queryConfig';
 import {
@@ -122,15 +122,13 @@ export default async function SymbolPage({ params }: Props) {
         return null;
     });
 
-    // SSR seed는 forming 당일 봉을 제외해 ISR write churn을 막는다(클라는 라이브 유지).
+    // SSR seed는 forming 당일 봉과 지표 배열 마지막 원소를 lockstep으로 제외해
+    // ISR write churn을 막는다(클라는 라이브 유지).
     const ssrNow = new Date();
     const quantizedFactBars =
         factBars === null
             ? null
-            : {
-                  ...factBars,
-                  bars: quantizeBarsToLastClosed(factBars.bars, ssrNow),
-              };
+            : quantizeBarsDataToLastClosed(factBars, ssrNow);
 
     const displayName = buildDisplayName(assetInfo, ticker);
     const { fullTitle, description, url } = buildSymbolSeoContent(ticker, {
