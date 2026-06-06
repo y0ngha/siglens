@@ -14,8 +14,19 @@ function bindingFor(key: IndicatorKey, active = false): IndicatorBinding {
 }
 
 describe('indicatorRegistry', () => {
-    it('registers exactly the 24 modal-target indicators', () => {
-        expect(INDICATOR_REGISTRY).toHaveLength(24);
+    it('registers exactly the 26 modal-target indicators', () => {
+        expect(INDICATOR_REGISTRY).toHaveLength(26);
+    });
+
+    it('registers keltner/donchian as volatility overlays', () => {
+        expect(INDICATOR_META.keltnerChannel).toMatchObject({
+            category: 'volatility',
+            kind: 'overlay',
+        });
+        expect(INDICATOR_META.donchianChannel).toMatchObject({
+            category: 'volatility',
+            kind: 'overlay',
+        });
     });
 
     it('has no duplicate keys', () => {
