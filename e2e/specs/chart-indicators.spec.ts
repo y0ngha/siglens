@@ -78,4 +78,20 @@ test.describe('chart indicator settings modal', () => {
             page.locator('.pane-indicator-label').filter({ hasText: 'MFI' })
         ).toBeVisible();
     });
+
+    test('toggles ATR into a pane via the modal', async ({ page }) => {
+        await page.goto('/AAPL');
+        await page.getByRole('button', { name: GEAR }).click();
+        const dialog = page.getByRole('dialog');
+        // ATR은 변동성 카테고리의 체크박스(label 'ATR'). exact로 다른 라벨 substring 회피.
+        await dialog
+            .getByRole('checkbox', { name: 'ATR', exact: true })
+            .check();
+        await page.getByRole('button', { name: '닫기' }).click();
+        // MFI 케이스와 동일하게 .pane-indicator-label로 스코프 — 대시보드 SignalBadge
+        // 등 차트 외부의 'ATR' substring과의 충돌을 피한다.
+        await expect(
+            page.locator('.pane-indicator-label').filter({ hasText: 'ATR' })
+        ).toBeVisible();
+    });
 });
