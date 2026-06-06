@@ -117,6 +117,15 @@ export const CHART_COLORS = {
     // Variance Ratio (CCI #fb923c와 구별되는 라임)
     varianceRatioLine: '#a3e635',
     varianceRatioReference: '#94a3b860',
+
+    macdVLine: '#2dd4bf',
+    macdVZero: '#94a3b860',
+    forceIndexLine: '#fb7185',
+    forceIndexZero: '#94a3b860',
+    obvLine: '#7dd3fc',
+    atrLine: '#fdba74',
+    yangZhangLine: '#d8b4fe',
+    ewmaVolatilityLine: '#6ee7b7',
 } as const;
 
 const PERIOD_COLOR_MAP: Record<number, string> = {

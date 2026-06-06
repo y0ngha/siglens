@@ -11,6 +11,8 @@ import {
     BOLLINGER_PERCENT_B_LOWER_LEVEL,
     HURST_RANDOM_WALK_LEVEL,
     VARIANCE_RATIO_RANDOM_WALK_LEVEL,
+    MACD_V_ZERO_LEVEL,
+    FORCE_INDEX_ZERO_LEVEL,
 } from '../../constants/indicatorLevels';
 
 describe('indicatorLevels', () => {
@@ -38,5 +40,9 @@ describe('indicatorLevels', () => {
     it('random-walk reference levels', () => {
         expect(HURST_RANDOM_WALK_LEVEL).toBe(0.5);
         expect(VARIANCE_RATIO_RANDOM_WALK_LEVEL).toBe(1);
+    });
+    it('group-C zero levels', () => {
+        expect(MACD_V_ZERO_LEVEL).toBe(0);
+        expect(FORCE_INDEX_ZERO_LEVEL).toBe(0);
     });
 });

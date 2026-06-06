@@ -33,3 +33,9 @@ export const HURST_RANDOM_WALK_LEVEL = 0.5;
 
 // Variance Ratio: 1.0 = 랜덤워크 기준(>1 추세, <1 평균회귀).
 export const VARIANCE_RATIO_RANDOM_WALK_LEVEL = 1;
+
+// MACD-V: 0선 교차가 강세/약세 기준 (volatility-normalized MACD, 부호 있음).
+export const MACD_V_ZERO_LEVEL = 0;
+
+// Force Index: 0선 교차가 매수/매도 압력 전환 기준.
+export const FORCE_INDEX_ZERO_LEVEL = 0;
