@@ -27,6 +27,13 @@ import { useDMIChart } from './hooks/useDMIChart';
 import { useStochasticChart } from './hooks/useStochasticChart';
 import { useStochRSIChart } from './hooks/useStochRSIChart';
 import { useCCIChart } from './hooks/useCCIChart';
+import { useMfiChart } from './hooks/useMfiChart';
+import { useWilliamsRChart } from './hooks/useWilliamsRChart';
+import { useConnorsRsiChart } from './hooks/useConnorsRsiChart';
+import { useCmfChart } from './hooks/useCmfChart';
+import { useBollingerPercentBChart } from './hooks/useBollingerPercentBChart';
+import { useHurstChart } from './hooks/useHurstChart';
+import { useVarianceRatioChart } from './hooks/useVarianceRatioChart';
 import { useVolumeProfileOverlay } from './hooks/useVolumeProfileOverlay';
 import { useIchimokuOverlay } from './hooks/useIchimokuOverlay';
 import { useCandlePatternMarkers } from './hooks/useCandlePatternMarkers';
@@ -223,6 +230,48 @@ export function StockChart({
         paneIndex: paneIndices.cci,
     });
 
+    useMfiChart({
+        ...commonHookParams,
+        isVisible: visible.mfi,
+        paneIndex: paneIndices.mfi,
+    });
+
+    useWilliamsRChart({
+        ...commonHookParams,
+        isVisible: visible.williamsR,
+        paneIndex: paneIndices.williamsR,
+    });
+
+    useConnorsRsiChart({
+        ...commonHookParams,
+        isVisible: visible.connorsRsi,
+        paneIndex: paneIndices.connorsRsi,
+    });
+
+    useCmfChart({
+        ...commonHookParams,
+        isVisible: visible.cmf,
+        paneIndex: paneIndices.cmf,
+    });
+
+    useBollingerPercentBChart({
+        ...commonHookParams,
+        isVisible: visible.bollingerPercentB,
+        paneIndex: paneIndices.bollingerPercentB,
+    });
+
+    useHurstChart({
+        ...commonHookParams,
+        isVisible: visible.hurst,
+        paneIndex: paneIndices.hurst,
+    });
+
+    useVarianceRatioChart({
+        ...commonHookParams,
+        isVisible: visible.varianceRatio,
+        paneIndex: paneIndices.varianceRatio,
+    });
+
     useCandlePatternMarkers({ seriesRef, bars });
 
     useActionRecommendationOverlay({
@@ -362,6 +411,41 @@ export function StockChart({
                 meta: INDICATOR_META.volumeProfile,
                 active: vpVisible,
                 onToggle: toggleVP,
+            },
+            {
+                meta: INDICATOR_META.mfi,
+                active: visible.mfi,
+                onToggle: () => toggle('mfi'),
+            },
+            {
+                meta: INDICATOR_META.williamsR,
+                active: visible.williamsR,
+                onToggle: () => toggle('williamsR'),
+            },
+            {
+                meta: INDICATOR_META.connorsRsi,
+                active: visible.connorsRsi,
+                onToggle: () => toggle('connorsRsi'),
+            },
+            {
+                meta: INDICATOR_META.cmf,
+                active: visible.cmf,
+                onToggle: () => toggle('cmf'),
+            },
+            {
+                meta: INDICATOR_META.bollingerPercentB,
+                active: visible.bollingerPercentB,
+                onToggle: () => toggle('bollingerPercentB'),
+            },
+            {
+                meta: INDICATOR_META.hurst,
+                active: visible.hurst,
+                onToggle: () => toggle('hurst'),
+            },
+            {
+                meta: INDICATOR_META.varianceRatio,
+                active: visible.varianceRatio,
+                onToggle: () => toggle('varianceRatio'),
             },
         ],
         [
