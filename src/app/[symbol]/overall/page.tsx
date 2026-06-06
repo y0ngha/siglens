@@ -29,7 +29,7 @@ import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
-export const revalidate = 3600; // 1h — ISR
+export const revalidate = 43200; // 12h — ISR. AI 분석은 느리게 변하고 클라가 마운트 시 재요청
 
 // generateStaticParams가 없으면 동적 라우트는 매 요청 동적 렌더돼 revalidate가
 // 무력화된다(Next.js). 빈 배열 = 빌드 prebuild 없이 첫 요청에 렌더+캐시하는 on-demand

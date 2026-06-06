@@ -52,6 +52,7 @@ vi.mock('next/navigation', () => ({
 import {
     generateMetadata,
     default as OverallPage,
+    revalidate,
 } from '@/app/[symbol]/overall/page';
 import { getAssetInfoResilient } from '@/entities/ticker';
 import {
@@ -68,6 +69,13 @@ const mockGetAssetInfoResilient = getAssetInfoResilient as MockedFunction<
 const mockPeekOverall = peekOverallAnalysisCache as MockedFunction<
     typeof peekOverallAnalysisCache
 >;
+
+describe('Overall page ISR route config', () => {
+    it('exports revalidate = 43200 (literal — required for Next.js static analysis)', () => {
+        // MISTAKES §15: route segment config must be a literal, not an imported constant
+        expect(revalidate).toBe(43200);
+    });
+});
 
 describe('generateMetadata', () => {
     beforeEach(() => {

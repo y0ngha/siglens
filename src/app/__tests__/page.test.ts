@@ -37,7 +37,7 @@ vi.mock('next/link', () => ({ default: () => null }));
 import { revalidate } from '@/app/page';
 
 describe('Home page', () => {
-    it('exports revalidate as 3600 for ISR', () => {
-        expect(revalidate).toBe(3600);
+    it('exports revalidate as 86400 for ISR', () => {
+        expect(revalidate).toBe(86400);
     });
 });

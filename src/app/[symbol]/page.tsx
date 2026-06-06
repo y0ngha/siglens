@@ -36,7 +36,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 
-export const revalidate = 3600; // 1h — ISR
+export const revalidate = 21600; // 6h — ISR. 사용자 신선도는 클라 refetch(useBars 30s)가 보장하므로 상한만 길게
 
 // generateStaticParams가 없으면 동적 라우트는 매 요청 동적 렌더돼 revalidate가
 // 무력화된다(Next.js). 빈 배열 = 빌드 시 prebuild 없이, 첫 요청에 렌더+캐시 후

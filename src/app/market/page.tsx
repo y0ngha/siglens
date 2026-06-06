@@ -30,7 +30,9 @@ import {
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
 import { JsonLd } from '@/shared/ui/JsonLd';
 
-// 1h — ISR (literal required — importing a constant breaks Next's static analysis, see src/app/CLAUDE.md)
+// 1h — ISR. 단일 페이지라 재생성 비용이 작아, 장중 섹터 신호 신선도를 위해 짧게 유지한다
+// (종목 페이지는 6~24h로 길게 — 거긴 종목 수가 많고 클라 refetch가 신선도를 책임짐).
+// literal required — importing a constant breaks Next's static analysis, see src/app/CLAUDE.md
 export const revalidate = 3600;
 
 /**

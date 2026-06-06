@@ -33,7 +33,7 @@ import { notFound } from 'next/navigation';
 
 // 종목당 SEO 콘텐츠는 고정이고 동적 데이터는 클라가 재hydrate한다. 엣지 캐시로
 // compute 호출을 줄인다. (일시 인프라 장애의 404 캐싱은 getAssetInfo strict로 차단)
-export const revalidate = 3600; // 1h
+export const revalidate = 43200; // 12h — SSR은 만기일뿐(Max Pain/IV/OI는 클라)
 
 // generateStaticParams가 없으면 동적 라우트는 매 요청 동적 렌더돼 revalidate가
 // 무력화된다(Next.js). 빈 배열 = 빌드 시 prebuild 없이, 첫 요청에 렌더+캐시 후
