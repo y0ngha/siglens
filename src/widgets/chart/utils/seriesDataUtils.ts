@@ -1,4 +1,4 @@
-import type { Bar } from '@y0ngha/siglens-core';
+import type { Bar, SupertrendResult } from '@y0ngha/siglens-core';
 import type { UTCTimestamp } from 'lightweight-charts';
 
 export type SeriesPoint =
@@ -54,5 +54,24 @@ export function buildSeriesDataFromValues(
             return { time: bar.time as UTCTimestamp };
         }
         return { time: bar.time as UTCTimestamp, value };
+    });
+}
+
+/**
+ * trend 방향이 dir과 일치하는 bar만 supertrend 값을, 나머지는 WhitespaceData({ time })를 반환한다.
+ * up/down 2개 LineSeries로 trend별 색을 표현하기 위함 (LineSeries는 per-point 색 미지원).
+ */
+export function buildTrendSplitData(
+    bars: Bar[],
+    data: SupertrendResult[],
+    dir: 'up' | 'down'
+): SeriesPoint[] {
+    const count = Math.min(bars.length, data.length);
+    return bars.slice(0, count).map((bar, i) => {
+        const r = data[i];
+        if (r && r.trend === dir && r.supertrend !== null) {
+            return { time: bar.time as UTCTimestamp, value: r.supertrend };
+        }
+        return { time: bar.time as UTCTimestamp };
     });
 }
