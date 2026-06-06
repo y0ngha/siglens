@@ -18,6 +18,7 @@ import {
     getAssetInfoResilient,
 } from '@/entities/ticker';
 import { getBarsStatic } from '@/entities/bars';
+import { quantizeBarsToLastClosed } from '@/entities/bars/lib/quantizeBars';
 import { countSkillFiles } from '@/entities/skill';
 import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/shared/config/queryConfig';
 import {
@@ -122,6 +123,16 @@ export default async function SymbolPage({ params }: Props) {
         return null;
     });
 
+    // SSR seed는 forming 당일 봉을 제외해 ISR write churn을 막는다(클라는 라이브 유지).
+    const ssrNow = new Date();
+    const quantizedFactBars =
+        factBars === null
+            ? null
+            : {
+                  ...factBars,
+                  bars: quantizeBarsToLastClosed(factBars.bars, ssrNow),
+              };
+
     const displayName = buildDisplayName(assetInfo, ticker);
     const { fullTitle, description, url } = buildSymbolSeoContent(ticker, {
         displayName,
@@ -196,13 +207,16 @@ export default async function SymbolPage({ params }: Props) {
 
     queryClient.setQueryData(QUERY_KEYS.assetInfo(symbol), assetInfo);
 
-    // bars prefetch는 ISR static-safe 경로(getBarsStatic = unstable_cache(getBarsAction))로
-    // 통일한다 — static gen 중 redis no-store fetch가 DYNAMIC_SERVER_USAGE를 throw하지 않게.
-    const barsQueryFn = ({
-        queryKey: [, qSymbol, qTimeframe, qFmpSymbol],
-    }: {
-        queryKey: ReturnType<typeof QUERY_KEYS.bars>;
-    }) => getBarsStatic(qSymbol, qTimeframe, qFmpSymbol);
+    // bars seed: quantize된 bars를 동기 setQueryData로 주입한다.
+    // prefetchQuery(getBarsStatic 재호출)는 제거 — forming 봉이 포함된 라이브 bars가
+    // dehydrate seed로 박히면 ISR write churn이 발생하므로, quantize 후 동기 주입으로 대체.
+    // 차트 페이지는 ISR로 캐시되므로 기본 timeframe만 seed한다.
+    // ?tf= 딥링크는 클라(useTimeframeChange→useSearchParams)가 마운트 시 읽어
+    // 해당 timeframe bars를 fetch한다.
+    queryClient.setQueryData(
+        QUERY_KEYS.bars(symbol, DEFAULT_TIMEFRAME, assetInfo.fmpSymbol),
+        quantizedFactBars
+    );
 
     // peek은 읽기 전용 — enqueue/생성 없음. MISS·corrupt·read 실패는 모두 MISS로
     // degrade해 FALLBACK_ANALYSIS로 폴백한다(렌더를 절대 깨지 않음). read 실패는
@@ -212,29 +226,15 @@ export default async function SymbolPage({ params }: Props) {
     // DEFAULT_MODEL이 GEMINI_2_5_FLASH_LITE_MODEL이고, useAnalysis가 그 값을
     // submitAnalysisAction에 그대로 전달하므로 writer는 lite 모델 키로 캐시한다.
     // peek도 동일 모델을 넘겨야 HIT한다.
-    // bars prefetch와 독립이므로 함께 await해 병렬화한다.
-    const [, cachedAnalysis] = await Promise.all([
-        // 차트 페이지는 ISR로 캐시되므로 prefetch는 기본 timeframe만 seed한다.
-        // ?tf= 딥링크는 클라(useTimeframeChange→useSearchParams)가 마운트 시 읽어
-        // 해당 timeframe bars를 fetch한다.
-        queryClient.prefetchQuery({
-            queryKey: QUERY_KEYS.bars(
-                symbol,
-                DEFAULT_TIMEFRAME,
-                assetInfo.fmpSymbol
-            ),
-            queryFn: barsQueryFn,
-        }),
-        peekAnalysisStatic(
-            ticker,
-            DEFAULT_TIMEFRAME,
-            assetInfo.fmpSymbol,
-            GEMINI_2_5_FLASH_LITE_MODEL
-        ).catch((error: unknown) => {
-            console.error('[SymbolPage] peekAnalysisStatic failed:', error);
-            return null;
-        }),
-    ]);
+    const cachedAnalysis = await peekAnalysisStatic(
+        ticker,
+        DEFAULT_TIMEFRAME,
+        assetInfo.fmpSymbol,
+        GEMINI_2_5_FLASH_LITE_MODEL
+    ).catch((error: unknown) => {
+        console.error('[SymbolPage] peekAnalysisStatic failed:', error);
+        return null;
+    });
     const initialAnalysis = cachedAnalysis ?? FALLBACK_ANALYSIS;
 
     return (
@@ -299,11 +299,14 @@ export default async function SymbolPage({ params }: Props) {
                                 <h1 className="sr-only">
                                     {buildChartPageHeading(displayName)}
                                 </h1>
-                                {factBars && factBars.bars.length > 0 ? (
+                                {quantizedFactBars &&
+                                quantizedFactBars.bars.length > 0 ? (
                                     <TechnicalFactsSummary
                                         symbol={ticker}
-                                        bars={factBars.bars}
-                                        indicators={factBars.indicators}
+                                        bars={quantizedFactBars.bars}
+                                        indicators={
+                                            quantizedFactBars.indicators
+                                        }
                                     />
                                 ) : (
                                     <div

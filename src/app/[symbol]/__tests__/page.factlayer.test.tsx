@@ -46,6 +46,11 @@ vi.mock('@/entities/ticker', () => ({
 vi.mock('@/entities/bars/lib/barsStaticCache', () => ({
     getBarsStatic: vi.fn(),
 }));
+// quantizeBarsToLastClosed는 별도 unit 테스트(Task 1)에서 완전 커버된다.
+// 이 스위트는 FactLayer SSR 배선을 검증하므로, 시장 시간 의존을 제거해 결정론적으로 유지한다.
+vi.mock('@/entities/bars/lib/quantizeBars', () => ({
+    quantizeBarsToLastClosed: (bars: unknown[]) => bars,
+}));
 vi.mock('@/entities/skill', () => ({
     countSkillFiles: vi.fn().mockResolvedValue({
         indicators: 13,
