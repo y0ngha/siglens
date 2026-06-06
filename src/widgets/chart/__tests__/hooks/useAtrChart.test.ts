@@ -39,6 +39,10 @@ const FILLED_INDICATORS = {
     atr: [1.5, 2.3, 1.9],
 } as unknown as IndicatorResult;
 
+const ALL_NULL_INDICATORS = {
+    atr: [null, null, null],
+} as unknown as IndicatorResult;
+
 const FAKE_BARS: Bar[] = [
     { time: 1000, open: 100, high: 110, low: 90, close: 105, volume: 1000 },
 ];
@@ -131,6 +135,21 @@ describe('useAtrChart', () => {
         );
 
         expect(mockSetData).not.toHaveBeenCalled();
+    });
+
+    it('sets data once when indicator array is all-null (length > 0 passes guard)', () => {
+        renderHook(() =>
+            useAtrChart({
+                chartRef: makeChartRef(makeChart()),
+                bars: FAKE_BARS,
+                indicators: ALL_NULL_INDICATORS,
+                isVisible: true,
+                paneIndex: 2,
+            })
+        );
+
+        expect(mockAddSeries).toHaveBeenCalled();
+        expect(mockSetData).toHaveBeenCalledTimes(1);
     });
 
     it('recreates series when paneIndex changes', () => {
