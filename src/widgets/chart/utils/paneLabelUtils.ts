@@ -135,6 +135,98 @@ export function buildPaneLabels(paneIndices: PaneIndices): PaneLabelConfig[] {
               ]
             : [];
 
+    const mfiLabel: PaneLabelConfig[] =
+        paneIndices.mfi !== INACTIVE_PANE_INDEX
+            ? [
+                  {
+                      paneIndex: paneIndices.mfi,
+                      subLabels: [{ name: 'MFI', color: CHART_COLORS.mfiLine }],
+                  },
+              ]
+            : [];
+
+    const williamsRLabel: PaneLabelConfig[] =
+        paneIndices.williamsR !== INACTIVE_PANE_INDEX
+            ? [
+                  {
+                      paneIndex: paneIndices.williamsR,
+                      subLabels: [
+                          {
+                              name: 'Williams %R',
+                              color: CHART_COLORS.williamsRLine,
+                          },
+                      ],
+                  },
+              ]
+            : [];
+
+    const connorsRsiLabel: PaneLabelConfig[] =
+        paneIndices.connorsRsi !== INACTIVE_PANE_INDEX
+            ? [
+                  {
+                      paneIndex: paneIndices.connorsRsi,
+                      subLabels: [
+                          {
+                              name: 'CRSI',
+                              color: CHART_COLORS.connorsRsiLine,
+                          },
+                      ],
+                  },
+              ]
+            : [];
+
+    const cmfLabel: PaneLabelConfig[] =
+        paneIndices.cmf !== INACTIVE_PANE_INDEX
+            ? [
+                  {
+                      paneIndex: paneIndices.cmf,
+                      subLabels: [{ name: 'CMF', color: CHART_COLORS.cmfLine }],
+                  },
+              ]
+            : [];
+
+    const bollingerPercentBLabel: PaneLabelConfig[] =
+        paneIndices.bollingerPercentB !== INACTIVE_PANE_INDEX
+            ? [
+                  {
+                      paneIndex: paneIndices.bollingerPercentB,
+                      subLabels: [
+                          {
+                              name: '%B',
+                              color: CHART_COLORS.bollingerPercentBLine,
+                          },
+                      ],
+                  },
+              ]
+            : [];
+
+    const hurstLabel: PaneLabelConfig[] =
+        paneIndices.hurst !== INACTIVE_PANE_INDEX
+            ? [
+                  {
+                      paneIndex: paneIndices.hurst,
+                      subLabels: [
+                          { name: 'Hurst', color: CHART_COLORS.hurstLine },
+                      ],
+                  },
+              ]
+            : [];
+
+    const varianceRatioLabel: PaneLabelConfig[] =
+        paneIndices.varianceRatio !== INACTIVE_PANE_INDEX
+            ? [
+                  {
+                      paneIndex: paneIndices.varianceRatio,
+                      subLabels: [
+                          {
+                              name: 'VR',
+                              color: CHART_COLORS.varianceRatioLine,
+                          },
+                      ],
+                  },
+              ]
+            : [];
+
     return [
         ...rsiLabel,
         ...macdLabel,
@@ -142,5 +234,12 @@ export function buildPaneLabels(paneIndices: PaneIndices): PaneLabelConfig[] {
         ...stochasticLabel,
         ...stochRsiLabel,
         ...cciLabel,
+        ...mfiLabel,
+        ...williamsRLabel,
+        ...connorsRsiLabel,
+        ...cmfLabel,
+        ...bollingerPercentBLabel,
+        ...hurstLabel,
+        ...varianceRatioLabel,
     ];
 }
