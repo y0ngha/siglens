@@ -135,6 +135,9 @@ export const CHART_COLORS = {
     atrLine: '#fdba74',
     yangZhangLine: '#d8b4fe',
     ewmaVolatilityLine: '#6ee7b7',
+    // Supertrend (trend 색 라인 — up=초록, down=빨강)
+    supertrendUp: '#16a34a',
+    supertrendDown: '#dc2626',
 } as const;
 
 const PERIOD_COLOR_MAP: Record<number, string> = {
