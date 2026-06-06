@@ -32,14 +32,19 @@ const analysis: NewsCardAnalysis = {
 
 // --- DB mock helpers ---
 
-/** Build a mock `db` that handles insert→onConflictDoUpdate chains. */
-function makeUpsertDb(): {
+/**
+ * Build a mock `db` that handles insert→values→onConflictDoUpdate→returning chains.
+ * `returningRows` controls what `.returning()` resolves to, enabling boolean-return tests.
+ */
+function makeUpsertDb(returningRows: unknown[] = [{ id: 'abc123' }]): {
     db: SiglensDatabase;
     insert: Mock;
     values: Mock;
     onConflictDoUpdate: Mock;
+    returning: Mock;
 } {
-    const onConflictDoUpdate = vi.fn().mockResolvedValue(undefined);
+    const returning = vi.fn().mockResolvedValue(returningRows);
+    const onConflictDoUpdate = vi.fn(() => ({ returning }));
     const values = vi.fn(() => ({ onConflictDoUpdate }));
     const insert = vi.fn(() => ({ values }));
     return {
@@ -47,6 +52,7 @@ function makeUpsertDb(): {
         insert,
         values,
         onConflictDoUpdate,
+        returning,
     };
 }
 
@@ -89,14 +95,30 @@ function makeSelectDb(rows: unknown[]): {
 
 describe('DrizzleNewsRepository', () => {
     describe('upsertNewsItem', () => {
-        it('insert 경로: insert + onConflictDoUpdate 를 호출한다', async () => {
-            const { db, insert, values, onConflictDoUpdate } = makeUpsertDb();
+        it('신규 삽입(returning 행 있음) 시 true를 반환한다', async () => {
+            const { db } = makeUpsertDb([{ id: 'abc123' }]);
+            const repo = new DrizzleNewsRepository(db);
+            const result = await repo.upsertNewsItem(baseItem);
+            expect(result).toBe(true);
+        });
+
+        it('동일 내용 재fetch(returning 빈 배열) 시 false를 반환한다', async () => {
+            const { db } = makeUpsertDb([]);
+            const repo = new DrizzleNewsRepository(db);
+            const result = await repo.upsertNewsItem(baseItem);
+            expect(result).toBe(false);
+        });
+
+        it('insert + onConflictDoUpdate + returning 체인을 호출한다', async () => {
+            const { db, insert, values, onConflictDoUpdate, returning } =
+                makeUpsertDb();
             const repo = new DrizzleNewsRepository(db);
             await repo.upsertNewsItem(baseItem);
 
             expect(insert).toHaveBeenCalledTimes(1);
             expect(values).toHaveBeenCalledTimes(1);
             expect(onConflictDoUpdate).toHaveBeenCalledTimes(1);
+            expect(returning).toHaveBeenCalledTimes(1);
 
             const row = values.mock.calls[0][0] as Record<string, unknown>;
             expect(row['id']).toBe('abc123');
@@ -113,36 +135,39 @@ describe('DrizzleNewsRepository', () => {
             expect(row['bodyEn']).toBeNull();
         });
 
-        it('conflict 경로에서 publishedAt도 갱신한다', async () => {
+        it('conflict 경로에서 publishedAt도 갱신하고 setWhere를 포함한다', async () => {
             const { db, onConflictDoUpdate } = makeUpsertDb();
             const repo = new DrizzleNewsRepository(db);
             await repo.upsertNewsItem(baseItem);
 
             const conflictArg = onConflictDoUpdate.mock.calls[0][0] as {
                 set: Record<string, unknown>;
+                setWhere: unknown;
             };
             expect(conflictArg.set).toHaveProperty('publishedAt');
+            // setWhere는 SQL 객체여야 한다 (변경 여부 필터링용)
+            expect(conflictArg.setWhere).toBeDefined();
         });
 
-        it('Neon transient 에러 발생 시 재시도해 결국 성공한다', async () => {
-            // 첫 chain은 onConflictDoUpdate에서 transient NeonDbError를 던지고,
+        it('Neon transient 에러 발생 후 재시도해 성공하면 boolean을 반환한다', async () => {
+            // 첫 chain은 returning에서 transient NeonDbError를 던지고,
             // 두 번째 chain은 성공해야 retry 정책이 의도대로 동작함을 보장한다.
             const neonTransient = Object.assign(
                 new Error('Error connecting to database: fetch failed'),
                 { name: 'NeonDbError' }
             );
-            const onConflictDoUpdate = vi
+            const returning = vi
                 .fn()
                 .mockRejectedValueOnce(neonTransient)
-                .mockResolvedValueOnce(undefined);
+                .mockResolvedValueOnce([{ id: 'abc123' }]);
+            const onConflictDoUpdate = vi.fn(() => ({ returning }));
             const values = vi.fn(() => ({ onConflictDoUpdate }));
             const insert = vi.fn(() => ({ values }));
             const db = { insert } as unknown as SiglensDatabase;
 
             const repo = new DrizzleNewsRepository(db);
-            await expect(
-                repo.upsertNewsItem(baseItem)
-            ).resolves.toBeUndefined();
+            // transient 에러 후 retry → boolean(true) 반환
+            await expect(repo.upsertNewsItem(baseItem)).resolves.toBe(true);
 
             // insert chain이 두 번 재구성됐는지 확인 — 동일 promise를 await 한 것이 아니라
             // 매 retry마다 새 query builder를 만들고 있다는 증거.
@@ -150,18 +175,17 @@ describe('DrizzleNewsRepository', () => {
             expect(onConflictDoUpdate).toHaveBeenCalledTimes(2);
         });
 
-        it('non-transient 에러는 재시도 없이 즉시 전파한다', async () => {
+        it('non-transient 에러는 재시도 없이 즉시 전파한다 (false가 아닌 reject)', async () => {
             // Constraint 위반 같은 영구 에러는 retry 해도 동일하게 실패할 뿐이므로
-            // 첫 시도에서 즉시 throw 되어야 한다.
+            // 첫 시도에서 즉시 throw 되어야 하며, false로 삼키면 안 된다.
             const constraintError = Object.assign(
                 new Error(
                     'duplicate key value violates unique constraint "news_pkey"'
                 ),
                 { name: 'NeonDbError' }
             );
-            const onConflictDoUpdate = vi
-                .fn()
-                .mockRejectedValueOnce(constraintError);
+            const returning = vi.fn().mockRejectedValueOnce(constraintError);
+            const onConflictDoUpdate = vi.fn(() => ({ returning }));
             const values = vi.fn(() => ({ onConflictDoUpdate }));
             const insert = vi.fn(() => ({ values }));
             const db = { insert } as unknown as SiglensDatabase;
