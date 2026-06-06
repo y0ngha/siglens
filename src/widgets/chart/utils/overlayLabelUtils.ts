@@ -12,6 +12,8 @@ interface BuildOverlayLabelConfigsParams {
     bollingerVisible: boolean;
     ichimokuVisible: boolean;
     vpVisible: boolean;
+    keltnerVisible: boolean;
+    donchianVisible: boolean;
 }
 
 export function buildOverlayLabelConfigs({
@@ -20,6 +22,8 @@ export function buildOverlayLabelConfigs({
     bollingerVisible,
     ichimokuVisible,
     vpVisible,
+    keltnerVisible,
+    donchianVisible,
 }: BuildOverlayLabelConfigsParams): OverlayLabelConfig[] {
     const maConfigs: OverlayLabelConfig[] = maVisiblePeriods.map(period => ({
         name: `MA(${period})`,
@@ -116,12 +120,60 @@ export function buildOverlayLabelConfigs({
           ]
         : [];
 
+    const keltnerConfigs: OverlayLabelConfig[] = keltnerVisible
+        ? [
+              {
+                  name: 'KC Upper',
+                  color: CHART_COLORS.keltnerUpper,
+                  getValue: (ind: IndicatorResult, i: number): number | null =>
+                      ind.keltnerChannel[i]?.upper ?? null,
+              },
+              {
+                  name: 'KC Middle',
+                  color: CHART_COLORS.keltnerMiddle,
+                  getValue: (ind: IndicatorResult, i: number): number | null =>
+                      ind.keltnerChannel[i]?.middle ?? null,
+              },
+              {
+                  name: 'KC Lower',
+                  color: CHART_COLORS.keltnerLower,
+                  getValue: (ind: IndicatorResult, i: number): number | null =>
+                      ind.keltnerChannel[i]?.lower ?? null,
+              },
+          ]
+        : [];
+
+    const donchianConfigs: OverlayLabelConfig[] = donchianVisible
+        ? [
+              {
+                  name: 'DC Upper',
+                  color: CHART_COLORS.donchianUpper,
+                  getValue: (ind: IndicatorResult, i: number): number | null =>
+                      ind.donchianChannel[i]?.upper ?? null,
+              },
+              {
+                  name: 'DC Middle',
+                  color: CHART_COLORS.donchianMiddle,
+                  getValue: (ind: IndicatorResult, i: number): number | null =>
+                      ind.donchianChannel[i]?.middle ?? null,
+              },
+              {
+                  name: 'DC Lower',
+                  color: CHART_COLORS.donchianLower,
+                  getValue: (ind: IndicatorResult, i: number): number | null =>
+                      ind.donchianChannel[i]?.lower ?? null,
+              },
+          ]
+        : [];
+
     return [
         ...maConfigs,
         ...emaConfigs,
         ...bollingerConfigs,
         ...ichimokuConfigs,
         ...vpConfigs,
+        ...keltnerConfigs,
+        ...donchianConfigs,
     ];
 }
 

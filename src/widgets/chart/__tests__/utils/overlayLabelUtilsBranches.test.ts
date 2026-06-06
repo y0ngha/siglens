@@ -64,6 +64,8 @@ describe('overlayLabelUtils — branch coverage', () => {
                 bollingerVisible: true,
                 ichimokuVisible: false,
                 vpVisible: false,
+                keltnerVisible: false,
+                donchianVisible: false,
             });
 
             expect(configs[0].getValue(indicators, 0)).toBeNull(); // upper
@@ -84,6 +86,8 @@ describe('overlayLabelUtils — branch coverage', () => {
                 bollingerVisible: false,
                 ichimokuVisible: true,
                 vpVisible: false,
+                keltnerVisible: false,
+                donchianVisible: false,
             });
 
             expect(configs[0].getValue(indicators, 0)).toBeNull(); // tenkan
@@ -108,6 +112,8 @@ describe('overlayLabelUtils — branch coverage', () => {
                 bollingerVisible: false,
                 ichimokuVisible: false,
                 vpVisible: true,
+                keltnerVisible: false,
+                donchianVisible: false,
             });
 
             expect(configs[0].getValue(indicators, 0)).toBeNull(); // poc
