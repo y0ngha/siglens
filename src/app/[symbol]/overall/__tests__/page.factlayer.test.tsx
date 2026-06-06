@@ -71,6 +71,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { default as OverallPage } from '@/app/[symbol]/overall/page';
 import { OverallFactsSummary } from '@/widgets/overall';
 import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
+import { NEWS_LIST_CACHE_KEY } from '@/entities/news-article';
 import { findElementByType } from '@/__tests__/utils/findElementByType';
 
 const mockStatic = vi.mocked(staticSymbolCache);
@@ -113,7 +114,7 @@ describe('OverallPage — FactLayer SSR integration', () => {
         // peek:overall(SSR seed). key 기반 분기로 첫 호출(newsItems)은 빈 배열,
         // 두 번째(peek)는 cached 반환을 시뮬레이션한다.
         mockStatic.mockImplementation(async (key: readonly unknown[]) => {
-            if (Array.isArray(key) && key[0] === 'news:list') {
+            if (key[0] === NEWS_LIST_CACHE_KEY) {
                 return [] as never;
             }
             return cached as never;
@@ -133,7 +134,7 @@ describe('OverallPage — FactLayer SSR integration', () => {
 
     it('Worst: peek MISS(null)면 OverallFactsSummary 미렌더 — 크래시 없이 페이지 정상', async () => {
         mockStatic.mockImplementation(async (key: readonly unknown[]) => {
-            if (Array.isArray(key) && key[0] === 'news:list') {
+            if (key[0] === NEWS_LIST_CACHE_KEY) {
                 return [] as never;
             }
             return null as never;

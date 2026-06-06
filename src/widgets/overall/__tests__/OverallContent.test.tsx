@@ -518,8 +518,8 @@ describe('OverallContent — /news와 동일 순차 게이트 (useNewsAnalysisTr
             state: { status: 'idle' },
             trigger: vi.fn(),
         });
-        const { useNewsAnalysisTrigger } = await import('@/widgets/news');
-        const { useWaitForNewsCards } = await import('@/widgets/news');
+        const { useNewsAnalysisTrigger, useWaitForNewsCards } =
+            await import('@/widgets/news');
         (
             useNewsAnalysisTrigger as MockedFunction<
                 typeof useNewsAnalysisTrigger

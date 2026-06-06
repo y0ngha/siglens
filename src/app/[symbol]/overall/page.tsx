@@ -13,7 +13,7 @@ import {
     buildDisplayName,
     getAssetInfoResilient,
 } from '@/entities/ticker';
-import { getNewsList } from '@/entities/news-article';
+import { getNewsList, NEWS_LIST_CACHE_KEY } from '@/entities/news-article';
 import {
     buildBreadcrumbJsonLd,
     buildSymbolOverallSeoContent,
@@ -134,7 +134,7 @@ export default async function OverallPage({ params }: Props) {
     // cold path(둘 다 캐시 miss)에서 TTFB가 ~max(t1, t2) 수준으로 줄어든다.
     const [newsItems, cachedOverall] = await Promise.all([
         staticSymbolCache(
-            ['news:list', upper],
+            [NEWS_LIST_CACHE_KEY, upper],
             upper,
             () => getNewsList(upper),
             [`news:${upper}`]

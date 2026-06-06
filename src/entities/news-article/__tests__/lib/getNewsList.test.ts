@@ -44,11 +44,11 @@ describe('getNewsList', () => {
         expect(result).toBe(rows);
     });
 
-    it('동일 symbol 호출은 idempotent — 같은 result를 반환한다 (purity 보장)', async () => {
+    it('vitest 환경에서는 React.cache가 작동하지 않아 두 번 모두 listBySymbol을 호출한다 (RSC scope 없음 명시 검증)', async () => {
         // 주의: React.cache의 per-request memoization은 RSC AsyncLocalStorage scope에
         // 의존하므로 vitest 단위 테스트(Node, RSC scope 없음)에서는 두 호출 모두
-        // listBySymbol을 거친다. 단위 테스트는 purity(같은 input → 같은 output)만
-        // 검증하고, cache 효과는 통합/E2E에서 검증한다.
+        // listBySymbol을 거친다. cache 효과는 통합/E2E에서 검증한다.
+        // 본 케이스는 cache가 미작동 = 두 번 호출됨을 명시적으로 보장해 환경 가정을 고정한다.
         const rows = [{ id: 'r1' }] as never;
         listBySymbolSpy.mockResolvedValue(rows);
 
@@ -57,6 +57,8 @@ describe('getNewsList', () => {
 
         expect(a).toEqual(b);
         expect(a).toEqual(rows);
+        // RSC scope 없음 → 캐시 미작동 → listBySymbol 2회 호출 (회귀 가드)
+        expect(listBySymbolSpy).toHaveBeenCalledTimes(2);
     });
 
     it('다른 symbol은 cache key가 분리돼 각각 listBySymbol을 호출한다 (회귀 가드)', async () => {
