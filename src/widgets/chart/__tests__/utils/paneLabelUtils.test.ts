@@ -309,6 +309,16 @@ describe('buildPaneLabels', () => {
         });
     });
 
+    describe('group-B pane가 활성일 때', () => {
+        it('builds labels for active group-B panes', () => {
+            const paneIndices = makePaneIndices({ mfi: 1, hurst: 2 });
+            const labels = buildPaneLabels(paneIndices);
+            const names = labels.flatMap(l => l.subLabels.map(s => s.name));
+            expect(names.some(n => n.startsWith('MFI'))).toBe(true);
+            expect(names.some(n => n.startsWith('Hurst'))).toBe(true);
+        });
+    });
+
     describe('CCI만 활성일 때', () => {
         const CCI_PANE_INDEX = 1;
         const paneIndices = makePaneIndices({ cci: CCI_PANE_INDEX });
