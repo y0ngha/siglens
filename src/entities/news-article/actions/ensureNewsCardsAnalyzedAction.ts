@@ -131,12 +131,17 @@ export async function ensureNewsCardsAnalyzedAction(
     }
     await markFetched(symbol);
 
-    if (fresh.length === 0) return;
+    // 실제로 신규 삽입/내용 변경된 기사가 1건 이상일 때만 news ISR 캐시를 무효화한다.
+    // upsertNewsItem은 값이 바뀐 행만 RETURNING하므로(setWhere), 같은 기사 재fetch는
+    // changedCount=0 → revalidateTag 스킵. 방문마다 무효화하던 빈도 폭풍을 차단한다.
+    // (fresh.length === 0이면 upsertSettled가 비어 changedCount=0 → 동일하게 스킵.)
+    const changedCount = upsertSettled.filter(
+        r => r.status === 'fulfilled' && r.value === true
+    ).length;
+    if (changedCount === 0) return;
 
-    // fresh 기사가 있어 DB가 갱신됐으니 news ISR 캐시(news:${symbol} 그룹)를 무효화한다.
     // → 다음 요청부터 news 리스트/JSON-LD가 fresh. bars/peek/profile 캐시는 보존.
     // "max" profile: 캐시 항목을 즉시 만료시켜 다음 요청에서 재생성하게 한다.
-    // (fresh.length === 0이면 DB 변경이 없어 위 guard에서 먼저 리턴 — 불필요한 무효화 스킵.)
     revalidateTag(`news:${symbol.toUpperCase()}`, 'max');
 
     if (isE2E()) return;
