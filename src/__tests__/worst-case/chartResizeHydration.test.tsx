@@ -115,17 +115,8 @@ vi.mock('@/widgets/chart/hooks/useIndicatorVisibility', () => ({
         },
     }),
 }));
-vi.mock('@/widgets/chart/hooks/useIndicatorDropdown', () => ({
-    useIndicatorDropdown: () => ({
-        isExpanded: false,
-        openDropdown: null,
-        dropdownPosition: null,
-        toolbarRef: { current: null },
-        portalRef: { current: null },
-        buttonRefs: { ma: { current: null }, ema: { current: null } },
-        toggleExpanded: vi.fn(),
-        toggleDropdown: vi.fn(),
-    }),
+vi.mock('@/widgets/chart/ui/IndicatorSettingsModal', () => ({
+    IndicatorSettingsModal: () => null,
 }));
 vi.mock('@/widgets/chart/utils/paneLabelUtils', () => ({
     buildPaneLabels: () => [],
