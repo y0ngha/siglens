@@ -17,8 +17,7 @@ import {
     buildDisplayName,
     getAssetInfoResilient,
 } from '@/entities/ticker';
-import { getBarsStatic } from '@/entities/bars';
-import { quantizeBarsToLastClosed } from '@/entities/bars/lib/quantizeBars';
+import { getBarsStatic, quantizeBarsToLastClosed } from '@/entities/bars';
 import { countSkillFiles } from '@/entities/skill';
 import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/shared/config/queryConfig';
 import {
