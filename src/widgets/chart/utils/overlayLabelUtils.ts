@@ -14,6 +14,7 @@ interface BuildOverlayLabelConfigsParams {
     vpVisible: boolean;
     keltnerVisible: boolean;
     donchianVisible: boolean;
+    supertrendVisible: boolean;
 }
 
 export function buildOverlayLabelConfigs({
@@ -24,6 +25,7 @@ export function buildOverlayLabelConfigs({
     vpVisible,
     keltnerVisible,
     donchianVisible,
+    supertrendVisible,
 }: BuildOverlayLabelConfigsParams): OverlayLabelConfig[] {
     const maConfigs: OverlayLabelConfig[] = maVisiblePeriods.map(period => ({
         name: `MA(${period})`,
@@ -166,6 +168,17 @@ export function buildOverlayLabelConfigs({
           ]
         : [];
 
+    const supertrendConfigs: OverlayLabelConfig[] = supertrendVisible
+        ? [
+              {
+                  name: 'Supertrend',
+                  color: CHART_COLORS.supertrendUp,
+                  getValue: (ind: IndicatorResult, i: number): number | null =>
+                      ind.supertrend[i]?.supertrend ?? null,
+              },
+          ]
+        : [];
+
     return [
         ...maConfigs,
         ...emaConfigs,
@@ -174,6 +187,7 @@ export function buildOverlayLabelConfigs({
         ...vpConfigs,
         ...keltnerConfigs,
         ...donchianConfigs,
+        ...supertrendConfigs,
     ];
 }
 
