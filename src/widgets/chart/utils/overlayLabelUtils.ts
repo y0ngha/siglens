@@ -4,6 +4,12 @@ import type { OverlayItemBase, OverlayLegendItem } from '../types';
 
 export interface OverlayLabelConfig extends OverlayItemBase {
     getValue: (indicators: IndicatorResult, barIndex: number) => number | null;
+    /**
+     * 크로스헤어 막대마다 범례 점 색을 동적으로 결정한다(선택). 라인 색이 막대별로
+     * 바뀌는 지표(예: Supertrend는 추세별 초록/빨강)에서, 범례 색이 실제 그려진
+     * 라인 색과 어긋나지 않도록 한다. 미지정 시 정적 color를 사용한다.
+     */
+    getColor?: (indicators: IndicatorResult, barIndex: number) => string;
 }
 
 interface BuildOverlayLabelConfigsParams {
@@ -175,6 +181,14 @@ export function buildOverlayLabelConfigs({
                   color: CHART_COLORS.supertrendUp,
                   getValue: (ind: IndicatorResult, i: number): number | null =>
                       ind.supertrend[i]?.supertrend ?? null,
+                  // 라인은 추세별 초록(up)/빨강(down) — 범례 점도 현재 막대 추세를 따라간다.
+                  // 추세 미정(warm-up)은 neutral로, 라인과 어긋나지 않게 한다.
+                  getColor: (ind: IndicatorResult, i: number): string => {
+                      const trend = ind.supertrend[i]?.trend;
+                      if (trend === 'down') return CHART_COLORS.supertrendDown;
+                      if (trend === 'up') return CHART_COLORS.supertrendUp;
+                      return CHART_COLORS.neutral;
+                  },
               },
           ]
         : [];
@@ -229,7 +243,9 @@ export function resolveOverlayValues(
 
     return configs.map(config => ({
         name: config.name,
-        color: config.color,
+        color: config.getColor
+            ? config.getColor(indicators, barIndex)
+            : config.color,
         value: config.getValue(indicators, barIndex),
     }));
 }

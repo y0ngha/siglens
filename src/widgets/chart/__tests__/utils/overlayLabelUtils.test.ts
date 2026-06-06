@@ -280,6 +280,33 @@ describe('buildOverlayLabelConfigs', () => {
         expect(st?.getValue(ind, 5)).toBeNull();
     });
 
+    it('Supertrend getColor follows the bar trend (up=green, down=red, null=neutral)', () => {
+        const configs = buildOverlayLabelConfigs({
+            maVisiblePeriods: [],
+            emaVisiblePeriods: [],
+            bollingerVisible: false,
+            ichimokuVisible: false,
+            vpVisible: false,
+            keltnerVisible: false,
+            donchianVisible: false,
+            supertrendVisible: true,
+        });
+        const st = configs.find(c => c.name === 'Supertrend');
+        expect(st?.getColor).toBeDefined();
+        const ind = {
+            supertrend: [
+                { supertrend: 10, trend: 'up' },
+                { supertrend: 11, trend: 'down' },
+                { supertrend: null, trend: null },
+            ],
+        } as never;
+        expect(st?.getColor?.(ind, 0)).toBe(CHART_COLORS.supertrendUp);
+        expect(st?.getColor?.(ind, 1)).toBe(CHART_COLORS.supertrendDown);
+        expect(st?.getColor?.(ind, 2)).toBe(CHART_COLORS.neutral);
+        // 범위를 벗어난 인덱스(warm-up 이전)도 neutral로 안전 처리
+        expect(st?.getColor?.(ind, 9)).toBe(CHART_COLORS.neutral);
+    });
+
     it('omits Supertrend config when supertrendVisible is false', () => {
         const configs = buildOverlayLabelConfigs({
             maVisiblePeriods: [],
@@ -381,6 +408,27 @@ describe('resolveOverlayValues', () => {
             const result = resolveOverlayValues([], mockIndicators, 0);
 
             expect(result).toEqual([]);
+        });
+    });
+
+    describe('config.getColor가 있을 때', () => {
+        it('정적 color 대신 getColor(indicators, barIndex) 결과를 색으로 사용한다', () => {
+            const dynamicConfigs = [
+                {
+                    name: 'Dyn',
+                    color: '#000000',
+                    getValue: (): number | null => 1,
+                    getColor: (_i: never, barIndex: number): string =>
+                        barIndex === 0 ? '#111111' : '#222222',
+                },
+            ] as unknown as Parameters<typeof resolveOverlayValues>[0];
+
+            expect(
+                resolveOverlayValues(dynamicConfigs, mockIndicators, 0)[0].color
+            ).toBe('#111111');
+            expect(
+                resolveOverlayValues(dynamicConfigs, mockIndicators, 1)[0].color
+            ).toBe('#222222');
         });
     });
 });
