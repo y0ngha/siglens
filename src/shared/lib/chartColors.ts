@@ -110,8 +110,8 @@ export const CHART_COLORS = {
     cmfLine: '#34d399',
     cmfZero: '#94a3b860',
 
-    // Bollinger %B
-    bollingerPercentBLine: '#818cf8',
+    // Bollinger %B (BB 밴드 #818cf8와 구별되는 밝은 인디고)
+    bollingerPercentBLine: '#a5b4fc',
     bollingerPercentBUpper: '#ef535060',
     bollingerPercentBLower: '#26a69a60',
 
@@ -119,8 +119,8 @@ export const CHART_COLORS = {
     hurstLine: '#fbbf24',
     hurstReference: '#94a3b860',
 
-    // Variance Ratio
-    varianceRatioLine: '#fb923c',
+    // Variance Ratio (CCI #fb923c와 구별되는 라임)
+    varianceRatioLine: '#a3e635',
     varianceRatioReference: '#94a3b860',
 } as const;
 
