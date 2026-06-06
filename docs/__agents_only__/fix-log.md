@@ -83,3 +83,11 @@
 - Violation: getNextEarningsReport가 entities/lib에서 side effect(Date.now/DB/FMP) 포함 — 순수 함수 레이어 위반 (pre-existing, R3 Blocker)
   - Rule: MISTAKES §Architecture #0.7 — entities/{slice}/lib/는 순수 함수 전용
   - Context: PR #564 R3 claude 리뷰에서 Blocker로 지적. pre-existing이라 별도 PR로 분리(이슈 #565). nextEarningsReport.ts JSDoc에 TODO(#565) 링크를 남겨 추적. 이번 PR diff엔 미수정(scope = 캐시/gate).
+
+## [feat/polling-intervals Round 1 | feat/polling-intervals | 2026-06-06]
+- Violation: DependencyProgress.test.tsx mock had hardcoded constant 3000 instead of importing the updated AUGMENT_AND_OVERALL polling interval value 5000
+  - Rule: MISTAKES.md Tests §4 / §13.5 — Boundary test constant redefined locally instead of imported from source; redefining production functions/constants locally in tests (production constant redefined in test)
+  - Context: Polling interval constant changed from 3000 to 5000 in production file, but test mock continued using hardcoded 3000. Test now imports the actual constant from the source module.
+- Violation: OverallContent.flow.test.tsx JSDoc comment stated "3초" (3 seconds) describing the polling interval; when constant changed to 5000ms, comment became factually inaccurate
+  - Rule: MISTAKES.md §15.6 — Comments/JSDoc making factually inaccurate claims about the code they describe (drift trap: constant changes, comment or literal not updated)
+  - Context: Polling interval JSDoc referencing hardcoded "3초" removed; code now self-documents through the imported constant name AUGMENT_AND_OVERALL_ANALYSIS_POLLING_INTERVAL_MS.
