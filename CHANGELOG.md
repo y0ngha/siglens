@@ -1,5 +1,22 @@
 # Changelog
 
+# [0.19.0](https://github.com/y0ngha/siglens/compare/v0.18.1...v0.19.0) (2026-06-06)
+
+
+### Bug Fixes
+
+* **overall:** /news와 동일한 순차 게이트 적용 — 개별 카드 분석 후 종합 trigger ([c7041c8](https://github.com/y0ngha/siglens/commit/c7041c89c68ae4864af45d1df78843dae5fe65b0))
+* **review:** PR [#579](https://github.com/y0ngha/siglens/issues/579) R1 B1/B2/S1/S2 ([afa5c3f](https://github.com/y0ngha/siglens/commit/afa5c3f9a4694e86b68abcb7e02524d64101f469))
+* **review:** PR [#579](https://github.com/y0ngha/siglens/issues/579) R2 B1/B2/S1/S2/S3 ([279b9a0](https://github.com/y0ngha/siglens/commit/279b9a0679650bdf091352fbb3fb1c67da564908))
+* **review:** PR [#579](https://github.com/y0ngha/siglens/issues/579) R3 B1 — getNewsList를 entities/lib에서 api로 이동 ([7e3a33d](https://github.com/y0ngha/siglens/commit/7e3a33d14da94c4b5fee92bf6b73d82f7f51d1ed))
+* **review:** PR [#579](https://github.com/y0ngha/siglens/issues/579) R4 B1/S1/S2/Q1 ([dfbb6fc](https://github.com/y0ngha/siglens/commit/dfbb6fca2096c509d8003365bac7a272bae8d3f1))
+* **review:** PR [#579](https://github.com/y0ngha/siglens/issues/579) R6 B1/B2/S1/S2/S3/S4 ([0e9de1d](https://github.com/y0ngha/siglens/commit/0e9de1dba1082e1cac40ec0b6bab975ff4e30f16))
+
+
+### Features
+
+* **overall:** R5 감사 후속 — pollError retry 버튼 + page TTFB 병렬화 + CTA 대기시간 안내 ([a86e5c2](https://github.com/y0ngha/siglens/commit/a86e5c2fddaaa9a8beaff1a35711cdd43e01d53a))
+
 ## [0.18.1](https://github.com/y0ngha/siglens/compare/v0.18.0...v0.18.1) (2026-06-06)
 
 
