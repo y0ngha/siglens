@@ -180,9 +180,10 @@ describe('Market page', () => {
             // This prevents /market ISR writes every 5-15 min when core refreshes computedAt.
             await MarketContent();
 
-            const sectorSignalsCall = mockSetQueryData.mock.calls.find(
-                ([key]: [unknown[]]) =>
-                    Array.isArray(key) && key[0] === 'sector-signals'
+            const sectorSignalsCall = (
+                mockSetQueryData.mock.calls as [unknown[], unknown][]
+            ).find(
+                ([key]) => Array.isArray(key) && key[0] === 'sector-signals'
             );
             expect(sectorSignalsCall).toBeDefined();
             const seededData = sectorSignalsCall![1] as { computedAt: string };
@@ -200,9 +201,10 @@ describe('Market page', () => {
             });
             await MarketContent();
 
-            const sectorSignalsCall = mockSetQueryData.mock.calls.find(
-                ([key]: [unknown[]]) =>
-                    Array.isArray(key) && key[0] === 'sector-signals'
+            const sectorSignalsCall = (
+                mockSetQueryData.mock.calls as [unknown[], unknown][]
+            ).find(
+                ([key]) => Array.isArray(key) && key[0] === 'sector-signals'
             );
             expect(sectorSignalsCall).toBeDefined();
             const seededData = sectorSignalsCall![1] as {
