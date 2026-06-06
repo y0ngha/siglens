@@ -1,6 +1,7 @@
 'use client';
 
 import type { CSSProperties } from 'react';
+import { useMemo } from 'react';
 import { useDialog } from '@/shared/hooks/useDialog';
 import { cn } from '@/shared/lib/cn';
 import { getPeriodColor } from '@/shared/lib/chartColors';
@@ -11,6 +12,10 @@ import {
 
 interface IndicatorSettingsModalProps {
     bindings: IndicatorBinding[];
+}
+
+interface IndicatorRowProps {
+    binding: IndicatorBinding;
 }
 
 const ROW_CLASS =
@@ -35,7 +40,7 @@ function GearIcon() {
     );
 }
 
-function PeriodChips({ binding }: { binding: IndicatorBinding }) {
+function PeriodChips({ binding }: IndicatorRowProps) {
     const {
         availablePeriods = [],
         visiblePeriods = [],
@@ -75,7 +80,7 @@ function PeriodChips({ binding }: { binding: IndicatorBinding }) {
     );
 }
 
-function PeriodRow({ binding }: { binding: IndicatorBinding }) {
+function PeriodRow({ binding }: IndicatorRowProps) {
     return (
         <div className={ROW_CLASS}>
             <span
@@ -91,7 +96,7 @@ function PeriodRow({ binding }: { binding: IndicatorBinding }) {
     );
 }
 
-function ToggleRow({ binding }: { binding: IndicatorBinding }) {
+function ToggleRow({ binding }: IndicatorRowProps) {
     return (
         <label className={cn(ROW_CLASS, 'cursor-pointer')}>
             <input
@@ -109,7 +114,7 @@ export function IndicatorSettingsModal({
     bindings,
 }: IndicatorSettingsModalProps) {
     const { isOpen, open, close, dialogRef, triggerRef } = useDialog();
-    const groups = groupBindingsByCategory(bindings);
+    const groups = useMemo(() => groupBindingsByCategory(bindings), [bindings]);
 
     return (
         <>

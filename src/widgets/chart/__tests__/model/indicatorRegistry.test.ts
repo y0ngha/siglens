@@ -33,7 +33,7 @@ describe('indicatorRegistry', () => {
         const periodKeys = INDICATOR_REGISTRY.filter(m => m.hasPeriods).map(
             m => m.key
         );
-        expect(periodKeys.sort()).toEqual(['ema', 'ma']);
+        expect(periodKeys.toSorted()).toEqual(['ema', 'ma']);
     });
 
     it('INDICATOR_META maps every key back to its meta', () => {
