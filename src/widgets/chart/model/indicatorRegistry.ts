@@ -35,7 +35,13 @@ export type IndicatorKey =
     | 'cmf'
     | 'bollingerPercentB'
     | 'hurst'
-    | 'varianceRatio';
+    | 'varianceRatio'
+    | 'macdV'
+    | 'forceIndex'
+    | 'obv'
+    | 'atr'
+    | 'yangZhang'
+    | 'ewmaVolatility';
 
 export interface IndicatorMeta {
     key: IndicatorKey;
@@ -134,6 +140,27 @@ export const INDICATOR_REGISTRY: readonly IndicatorMeta[] = [
         key: 'varianceRatio',
         label: 'VR',
         category: 'statistical',
+        kind: 'pane',
+    },
+    { key: 'macdV', label: 'MACD-V', category: 'momentum', kind: 'pane' },
+    {
+        key: 'forceIndex',
+        label: 'Force Index',
+        category: 'momentum',
+        kind: 'pane',
+    },
+    { key: 'obv', label: 'OBV', category: 'volume', kind: 'pane' },
+    { key: 'atr', label: 'ATR', category: 'volatility', kind: 'pane' },
+    {
+        key: 'yangZhang',
+        label: 'Yang-Zhang',
+        category: 'volatility',
+        kind: 'pane',
+    },
+    {
+        key: 'ewmaVolatility',
+        label: 'EWMA Vol',
+        category: 'volatility',
         kind: 'pane',
     },
 ];
