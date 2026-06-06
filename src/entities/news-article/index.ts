@@ -11,5 +11,10 @@ export {
     NEWS_LOOKBACK_MS,
     NEWS_ANALYSIS_LOOKBACK_MS,
 } from './lib/newsLookback';
+export {
+    selectAggregateNewsItems,
+    MAX_AGGREGATE_NEWS_ITEMS,
+} from './lib/newsAnalysisSelection';
+export { buildAnalysisNewsItems } from './lib/buildAnalysisNewsItems';
 
 // actions are imported from @/entities/news-article/actions
