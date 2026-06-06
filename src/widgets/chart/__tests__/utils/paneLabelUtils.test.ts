@@ -49,6 +49,7 @@ function makePaneIndices(overrides: Partial<PaneIndices> = {}): PaneIndices {
         ewmaVolatility: INACTIVE_PANE_INDEX,
         keltnerChannel: INACTIVE_PANE_INDEX,
         donchianChannel: INACTIVE_PANE_INDEX,
+        supertrend: INACTIVE_PANE_INDEX,
     } satisfies PaneIndices;
     return { ...base, ...overrides };
 }
