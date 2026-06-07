@@ -196,6 +196,16 @@ const USAGE_ROLE_ORDER = [
     'risk',
 ] as const satisfies readonly SkillUsageRole[];
 
+// Exhaustiveness guard: if the core grows a new SkillUsageRole not mirrored
+// above, MissingUsageRole becomes a non-never union and tsc fails here.
+type MissingUsageRole = Exclude<
+    SkillUsageRole,
+    (typeof USAGE_ROLE_ORDER)[number]
+>;
+const _usageRolesAreExhaustive: MissingUsageRole extends never ? true : never =
+    true;
+void _usageRolesAreExhaustive;
+
 const USAGE_ROLE_SET: ReadonlySet<string> = new Set(USAGE_ROLE_ORDER);
 
 /**

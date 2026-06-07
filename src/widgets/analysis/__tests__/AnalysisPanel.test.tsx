@@ -335,6 +335,26 @@ describe('AnalysisPanel', () => {
         expect(screen.queryByText('전략')).not.toBeInTheDocument();
     });
 
+    it('낮은 confidence 전략이 패턴 중복이 아니면 전략 섹션에 표시된다', () => {
+        render(
+            <AnalysisPanel
+                symbol="AAPL"
+                analysis={makeAnalysis({
+                    strategyResults: [
+                        makeStrategy({
+                            strategyName: 'UniqueStrategy',
+                            confidenceWeight: 0.2,
+                        }),
+                    ],
+                })}
+                keyLevels={EMPTY_KEY_LEVELS}
+                timeframe="1Day"
+            />
+        );
+        // confidence 0.2 (< old MIN 0.5) but NOT a pattern duplicate → still shown
+        expect(screen.getByText('UniqueStrategy')).toBeInTheDocument();
+    });
+
     it('renders ActionRecommendationSection with entry recommendation', () => {
         render(
             <AnalysisPanel

@@ -45,6 +45,7 @@ vi.mock('../hooks/useSkillsShowcase', () => ({
 }));
 
 import { render, screen } from '@testing-library/react';
+import { HIGH_CONFIDENCE_WEIGHT } from '@y0ngha/siglens-core';
 import type { SkillShowcaseItem } from '@y0ngha/siglens-core';
 
 import { SkillsShowcase, SkillsShowcaseSkeleton } from '../SkillsShowcase';
@@ -154,7 +155,7 @@ describe('SkillCard confidence bar color', () => {
     });
 
     it.each([
-        [0.8, 'bg-chart-bullish'],
+        [HIGH_CONFIDENCE_WEIGHT, 'bg-chart-bullish'],
         [1.0, 'bg-chart-bullish'],
     ])('weight %f → bg-chart-bullish (high tier)', (weight, expected) => {
         const { container } = render(

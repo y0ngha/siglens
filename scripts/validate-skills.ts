@@ -30,6 +30,7 @@ import type {
     SignalType,
     SkillStateFeature,
     SkillStatePredicateKind,
+    SkillUsageRole,
 } from '@y0ngha/siglens-core';
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
@@ -206,13 +207,28 @@ interface SkillError {
 const isRecord = (value: unknown): value is Record<string, unknown> =>
     typeof value === 'object' && value !== null && !Array.isArray(value);
 
+/**
+ * Mirror of USAGE_ROLE_ORDER in src/entities/skill/api.ts and siglens-core's
+ * confidenceLevel module. Keep all three in sync: when the core adds a new
+ * SkillUsageRole, update this array and the api.ts copy (+ its satisfies
+ * clause) in the same commit. The satisfies + exhaustiveness guard below fail
+ * the build here if this copy drifts behind the core union.
+ */
 const USAGE_ROLE_ORDER = [
     'signal',
     'confirmation',
     'regime',
     'measurement',
     'risk',
-] as const;
+] as const satisfies readonly SkillUsageRole[];
+
+type MissingUsageRole = Exclude<
+    SkillUsageRole,
+    (typeof USAGE_ROLE_ORDER)[number]
+>;
+const _usageRolesAreExhaustive: MissingUsageRole extends never ? true : never =
+    true;
+void _usageRolesAreExhaustive;
 
 /**
  * Validate the `usage_roles` field for a skill.
@@ -244,7 +260,8 @@ function validateUsageRoles(
     if (!Array.isArray(raw) || raw.length === 0) {
         return 'indicator_guide requires a non-empty usage_roles array';
     }
-    const seen: string[] = [];
+    const seen = new Set<string>();
+    const seenOrdered: string[] = [];
     for (const r of raw) {
         if (
             typeof r !== 'string' ||
@@ -252,11 +269,12 @@ function validateUsageRoles(
         ) {
             return `invalid usage_role: ${String(r)}`;
         }
-        if (seen.includes(r)) return `duplicate usage_role: ${r}`;
-        seen.push(r);
+        if (seen.has(r)) return `duplicate usage_role: ${r}`;
+        seen.add(r);
+        seenOrdered.push(r);
     }
-    const canonical = USAGE_ROLE_ORDER.filter(o => seen.includes(o));
-    if (canonical.join(',') !== seen.join(',')) {
+    const canonical = USAGE_ROLE_ORDER.filter(o => seen.has(o));
+    if (canonical.join(',') !== seenOrdered.join(',')) {
         return `usage_roles must be in canonical order: [${canonical.join(', ')}]`;
     }
     return null;
