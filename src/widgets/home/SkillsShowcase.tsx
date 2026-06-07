@@ -80,6 +80,11 @@ const TYPE_BADGE: Record<SkillType, TypeBadgeConfig> = {
     },
 };
 
+// 툴팁 카피용 경계 퍼센트 — 모듈 레벨에서 1회 계산(컴포넌트 내 매 렌더 재생성 방지).
+// Math.round로 0.8 * 100 = 80.00000000000001 같은 부동소수점 잔차를 흡수.
+const MEDIUM_PCT = Math.round(MEDIUM_CONFIDENCE_WEIGHT * 100);
+const HIGH_PCT = Math.round(HIGH_CONFIDENCE_WEIGHT * 100);
+
 function barColorClass(weight: number): string {
     if (weight >= HIGH_CONFIDENCE_WEIGHT) return 'bg-chart-bullish';
     if (weight >= MEDIUM_CONFIDENCE_WEIGHT) return 'bg-ui-warning';
@@ -90,11 +95,6 @@ function ConfidenceInfoTooltip() {
     const containerRef = useRef<HTMLDivElement>(null);
     const tooltipId = useId();
     const { isOpen, toggle } = usePopoverToggle(containerRef);
-
-    // 경계 퍼센트를 상수에서 파생 — 임계값 변경 시 카피가 자동으로 따라간다(drift 방지).
-    // Math.round로 0.8 * 100 = 80.00000000000001 같은 부동소수점 잔차를 흡수.
-    const mediumPct = Math.round(MEDIUM_CONFIDENCE_WEIGHT * 100);
-    const highPct = Math.round(HIGH_CONFIDENCE_WEIGHT * 100);
 
     return (
         <div ref={containerRef} className="group relative">
@@ -121,8 +121,8 @@ function ConfidenceInfoTooltip() {
                 <div className="text-secondary-300 leading-relaxed">
                     <p>분석 기법의 신뢰도 점수예요.</p>
                     <p>
-                        {mediumPct}% 미만 낮음 · {mediumPct}~{highPct}% 보통 ·{' '}
-                        {highPct}% 이상 높음.
+                        {MEDIUM_PCT}% 미만 낮음 · {MEDIUM_PCT}~{HIGH_PCT}% 보통
+                        · {HIGH_PCT}% 이상 높음.
                     </p>
                     <p>낮은 점수도 분석에 보조적으로 반영돼요.</p>
                 </div>
