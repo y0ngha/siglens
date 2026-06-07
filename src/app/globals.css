@@ -54,6 +54,12 @@
     /* Chart — Supertrend (추세 색 고정값: bullish teal / bearish red) */
     --color-chart-supertrend-up: #26a69a;
     --color-chart-supertrend-down: #ef5350;
+    /* Chart — Parabolic SAR (추세 색 점) */
+    --color-chart-parabolic-sar-up: #26a69a;
+    --color-chart-parabolic-sar-down: #ef5350;
+    /* Chart — Chandelier Exit (추세 색 점선 stop) */
+    --color-chart-chandelier-long: #26a69a;
+    --color-chart-chandelier-short: #ef5350;
 
     /* Chart — MACD */
     --color-chart-macd: #3b82f6;
