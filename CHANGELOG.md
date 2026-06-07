@@ -1,5 +1,26 @@
 # Changelog
 
+# [0.20.0](https://github.com/y0ngha/siglens/compare/v0.19.1...v0.20.0) (2026-06-07)
+
+
+### Bug Fixes
+
+* **analysis:** remove confidence floor filter in AnalysisPanel ([48aeef7](https://github.com/y0ngha/siglens/commit/48aeef75f6c514773afc6a6747d0ad7ca2093844))
+* **home:** derive tooltip percentages from confidence boundary constants ([328cbe8](https://github.com/y0ngha/siglens/commit/328cbe81801c62ba173d3e768398c607d6a16d82))
+* **home:** hoist tooltip percentage constants to module level ([d4a2837](https://github.com/y0ngha/siglens/commit/d4a28377fcf3f8925aeaf1aae2a6a0edd03b38e2))
+* **home:** polish SkillsShowcase badge wrapping + tooltip copy ([74dcb4b](https://github.com/y0ngha/siglens/commit/74dcb4b4c50a8f1339f0fd41e85f1e48a503ea97))
+* **review:** PR [#583](https://github.com/y0ngha/siglens/issues/583) — usage_roles exhaustiveness guards, validator sync/Set, branch + boundary tests ([c8464eb](https://github.com/y0ngha/siglens/commit/c8464eb6c208b1e69217d31b91f2f3c8332ebfef))
+* **review:** PR [#583](https://github.com/y0ngha/siglens/issues/583) round 2 — functional validator, dedupe import, comment fixes ([b05fe5e](https://github.com/y0ngha/siglens/commit/b05fe5e2ca47e1ed91825abede67228be813690a))
+
+
+### Features
+
+* **home:** 3-tier confidence tooltip and bar color in SkillsShowcase ([b7e2cc2](https://github.com/y0ngha/siglens/commit/b7e2cc2fe1e769c063751b47633d724c631f200d))
+* **skill:** map usage_roles to usageRoles in runtime parser ([b1ce546](https://github.com/y0ngha/siglens/commit/b1ce5463bd8d2dcf64928be46586a1f17262fe8f))
+* **skills:** add usage_roles to all 37 indicator guides ([feb14ad](https://github.com/y0ngha/siglens/commit/feb14adda58462030e7a09c9ae41e626d2fef345))
+* **skills:** remove Wyckoff strategy and its progress-copy mention ([4b025f2](https://github.com/y0ngha/siglens/commit/4b025f27940ab55b50ff84f8f6e3f540722e1a63))
+* **validate:** enforce usage_roles rules on indicator_guide skills ([e1e59e3](https://github.com/y0ngha/siglens/commit/e1e59e378321309abc4cbf13b174577218fc38fb))
+
 ## [0.19.1](https://github.com/y0ngha/siglens/compare/v0.19.0...v0.19.1) (2026-06-06)
 
 
