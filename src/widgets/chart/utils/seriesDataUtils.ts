@@ -72,11 +72,11 @@ export function buildTrendSplitData<
     getValue: (r: T) => number | null
 ): SeriesPoint[] {
     const count = Math.min(bars.length, data.length);
+    // Bar.time은 epoch seconds 정수 — LWC UTCTimestamp(branded number)와 런타임 형태 동일하므로 아래 두 cast 모두 안전.
     return bars.slice(0, count).map((bar, i) => {
         const r = data[i];
         if (r && r.trend === dir) {
             const value = getValue(r);
-            // Bar.time은 epoch seconds 정수 — LWC UTCTimestamp(branded number)와 런타임 형태 동일하므로 safe-cast.
             if (value !== null) {
                 return { time: bar.time as UTCTimestamp, value };
             }
