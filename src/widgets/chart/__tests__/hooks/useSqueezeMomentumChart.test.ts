@@ -1,7 +1,13 @@
 // @vitest-environment jsdom
 import { renderHook } from '@testing-library/react';
 import type { Bar, IndicatorResult } from '@y0ngha/siglens-core';
+import { CHART_COLORS } from '@/shared/lib/chartColors';
 import { useSqueezeMomentumChart } from '../../hooks/useSqueezeMomentumChart';
+import {
+    buildSeriesData,
+    buildZeroLineDots,
+} from '../../utils/seriesDataUtils';
+import { squeezeStateColor } from '../../utils/histogramColorUtils';
 
 const mockSetData = vi.fn();
 const mockApplyOptions = vi.fn();
@@ -109,6 +115,32 @@ describe('useSqueezeMomentumChart', () => {
             })
         );
         expect(mockSetData).toHaveBeenCalledTimes(2);
+    });
+
+    it('wires momentum colorFn to row.increasing and passes squeezeStateColor for dots', () => {
+        renderHook(() =>
+            useSqueezeMomentumChart({
+                chartRef: makeChartRef(makeChart()),
+                bars: FAKE_BARS,
+                indicators: FILLED_INDICATORS,
+                isVisible: true,
+                paneIndex: 1,
+            })
+        );
+        // 모멘텀 colorFn은 row.increasing을 squeezeMomentumColor로 forward해야 한다.
+        const momentumColorFn = vi
+            .mocked(buildSeriesData)
+            .mock.calls.find(c => c[2] === 'momentum')?.[3];
+        expect(momentumColorFn?.(3, { increasing: true } as never, 0)).toBe(
+            CHART_COLORS.squeezeMomentumUp
+        );
+        expect(momentumColorFn?.(3, { increasing: false } as never, 0)).toBe(
+            CHART_COLORS.squeezeMomentumUpWeak
+        );
+        // 상태 점은 squeezeStateColor 함수 자체를 buildZeroLineDots에 넘긴다.
+        expect(vi.mocked(buildZeroLineDots).mock.calls[0][2]).toBe(
+            squeezeStateColor
+        );
     });
 
     it('does not set data when squeezeMomentum is empty', () => {

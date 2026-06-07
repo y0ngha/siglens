@@ -2,6 +2,8 @@
 import { renderHook } from '@testing-library/react';
 import type { Bar, IndicatorResult } from '@y0ngha/siglens-core';
 import { useRegressionChart } from '../../hooks/useRegressionChart';
+import { buildSeriesData } from '../../utils/seriesDataUtils';
+import { regressionBarColor } from '../../utils/histogramColorUtils';
 
 const mockSetData = vi.fn();
 const mockApplyOptions = vi.fn();
@@ -99,6 +101,27 @@ describe('useRegressionChart', () => {
             })
         );
         expect(mockSetData).toHaveBeenCalledTimes(1);
+    });
+
+    it('wires the slope colorFn to regressionBarColor(value, row.r2)', () => {
+        renderHook(() =>
+            useRegressionChart({
+                chartRef: makeChartRef(makeChart()),
+                bars: FAKE_BARS,
+                indicators: FILLED_INDICATORS,
+                isVisible: true,
+                paneIndex: 1,
+            })
+        );
+        const colorFn = vi
+            .mocked(buildSeriesData)
+            .mock.calls.find(c => c[2] === 'slope')?.[3];
+        expect(colorFn?.(0.4, { r2: 0.8 } as never, 0)).toBe(
+            regressionBarColor(0.4, 0.8)
+        );
+        expect(colorFn?.(-0.4, { r2: null } as never, 0)).toBe(
+            regressionBarColor(-0.4, null)
+        );
     });
 
     it('does not set data when regression is empty', () => {

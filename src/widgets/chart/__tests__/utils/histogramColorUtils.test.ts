@@ -1,10 +1,24 @@
 import { describe, expect, it } from 'vitest';
 import { CHART_COLORS } from '@/shared/lib/chartColors';
 import {
+    elderRayBarColor,
     regressionBarColor,
     squeezeMomentumColor,
     squeezeStateColor,
 } from '@/widgets/chart/utils/histogramColorUtils';
+
+describe('elderRayBarColor', () => {
+    it('bull side: positive (incl. 0) → bull color, negative → neutral', () => {
+        expect(elderRayBarColor(2, 'bull')).toBe(CHART_COLORS.elderBullPower);
+        expect(elderRayBarColor(0, 'bull')).toBe(CHART_COLORS.elderBullPower);
+        expect(elderRayBarColor(-2, 'bull')).toBe(CHART_COLORS.neutral);
+    });
+    it('bear side: negative (incl. 0) → bear color, positive → neutral', () => {
+        expect(elderRayBarColor(-2, 'bear')).toBe(CHART_COLORS.elderBearPower);
+        expect(elderRayBarColor(0, 'bear')).toBe(CHART_COLORS.elderBearPower);
+        expect(elderRayBarColor(2, 'bear')).toBe(CHART_COLORS.neutral);
+    });
+});
 
 describe('squeezeMomentumColor', () => {
     it('positive + increasing → strong up', () => {
