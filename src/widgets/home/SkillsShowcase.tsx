@@ -91,6 +91,11 @@ function ConfidenceInfoTooltip() {
     const tooltipId = useId();
     const { isOpen, toggle } = usePopoverToggle(containerRef);
 
+    // 경계 퍼센트를 상수에서 파생 — 임계값 변경 시 카피가 자동으로 따라간다(drift 방지).
+    // Math.round로 0.8 * 100 = 80.00000000000001 같은 부동소수점 잔차를 흡수.
+    const mediumPct = Math.round(MEDIUM_CONFIDENCE_WEIGHT * 100);
+    const highPct = Math.round(HIGH_CONFIDENCE_WEIGHT * 100);
+
     return (
         <div ref={containerRef} className="group relative">
             <button
@@ -115,7 +120,10 @@ function ConfidenceInfoTooltip() {
             >
                 <div className="text-secondary-300 leading-relaxed">
                     <p>분석 기법의 신뢰도 점수예요.</p>
-                    <p>50% 미만 낮음 · 50~80% 보통 · 80% 이상 높음.</p>
+                    <p>
+                        {mediumPct}% 미만 낮음 · {mediumPct}~{highPct}% 보통 ·{' '}
+                        {highPct}% 이상 높음.
+                    </p>
                     <p>낮은 점수도 분석에 보조적으로 반영돼요.</p>
                 </div>
             </div>
