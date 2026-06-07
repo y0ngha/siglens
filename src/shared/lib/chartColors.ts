@@ -138,6 +138,12 @@ export const CHART_COLORS = {
     // Supertrend (trend 색 라인 — up/down) — DESIGN.md 추세 색 고정값(bullish teal / bearish red) 재사용
     supertrendUp: '#26a69a',
     supertrendDown: '#ef5350',
+    // Parabolic SAR (trend 색 점) — DESIGN.md 추세 고정값 재사용
+    parabolicSarUp: '#26a69a',
+    parabolicSarDown: '#ef5350',
+    // Chandelier Exit (trend 색 점선 stop) — DESIGN.md 추세 고정값 재사용
+    chandelierLong: '#26a69a',
+    chandelierShort: '#ef5350',
 } as const;
 
 const PERIOD_COLOR_MAP: Record<number, string> = {
