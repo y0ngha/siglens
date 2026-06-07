@@ -406,6 +406,13 @@ describe('buildOverlayLabelConfigs', () => {
         expect(ch?.getColor?.(ind, 0)).toBe(CHART_COLORS.chandelierLong);
         expect(ch?.getColor?.(ind, 1)).toBe(CHART_COLORS.chandelierShort);
         expect(ch?.getColor?.(ind, 2)).toBe(CHART_COLORS.neutral);
+        // 타입 경계: trend는 확정됐지만 stop 값이 아직 null인 warm-up 조합도 null 반환.
+        const trendOnly = {
+            chandelierExit: [
+                { longStop: null, shortStop: null, trend: 'long' },
+            ],
+        } as never;
+        expect(ch?.getValue(trendOnly, 0)).toBeNull();
     });
 
     it('omits PSAR and Chandelier configs when their flags are false', () => {
