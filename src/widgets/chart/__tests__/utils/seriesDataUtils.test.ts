@@ -1,4 +1,3 @@
-import { describe, it, expect } from 'vitest';
 import type { Bar, SupertrendResult } from '@y0ngha/siglens-core';
 import type { UTCTimestamp } from 'lightweight-charts';
 import {
