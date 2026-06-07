@@ -136,6 +136,66 @@ describe('useParabolicSarOverlay', () => {
         );
     });
 
+    it('both up and short selectors read r.sar', () => {
+        const chart = makeChart();
+        const { result } = renderHook(() =>
+            useParabolicSarOverlay({
+                chartRef: makeChartRef(chart),
+                bars: FAKE_BARS,
+                indicators: FILLED_INDICATORS,
+            })
+        );
+        act(() => result.current.toggle());
+        const calls = vi.mocked(buildTrendSplitData).mock.calls;
+        const upCall = calls.find(c => c[2] === 'up');
+        const downCall = calls.find(c => c[2] === 'down');
+        const row = { sar: 99, trend: 'up' as const };
+        expect(upCall?.[3](row)).toBe(99);
+        expect(downCall?.[3](row)).toBe(99);
+    });
+
+    it('re-sets data on both series when bars change while visible', () => {
+        const chart = makeChart();
+        const { result, rerender } = renderHook(
+            ({ bars }) =>
+                useParabolicSarOverlay({
+                    chartRef: makeChartRef(chart),
+                    bars,
+                    indicators: FILLED_INDICATORS,
+                }),
+            { initialProps: { bars: FAKE_BARS } }
+        );
+        act(() => result.current.toggle());
+        vi.clearAllMocks();
+
+        const newBars: Bar[] = [
+            {
+                time: 2000,
+                open: 200,
+                high: 220,
+                low: 180,
+                close: 210,
+                volume: 2000,
+            },
+        ];
+        rerender({ bars: newBars });
+
+        expect(mockSetData).toHaveBeenCalledTimes(2);
+        const splitMock = vi.mocked(buildTrendSplitData);
+        expect(splitMock).toHaveBeenCalledWith(
+            newBars,
+            FILLED_INDICATORS.parabolicSar,
+            'up',
+            expect.any(Function)
+        );
+        expect(splitMock).toHaveBeenCalledWith(
+            newBars,
+            FILLED_INDICATORS.parabolicSar,
+            'down',
+            expect.any(Function)
+        );
+    });
+
     it('does not set data when parabolicSar is empty', () => {
         const chart = makeChart();
         const { result } = renderHook(() =>

@@ -155,6 +155,48 @@ describe('useChandelierOverlay', () => {
         expect(shortCall?.[3](row)).toBe(110);
     });
 
+    it('re-sets data on both series when bars change while visible', () => {
+        const chart = makeChart();
+        const { result, rerender } = renderHook(
+            ({ bars }) =>
+                useChandelierOverlay({
+                    chartRef: makeChartRef(chart),
+                    bars,
+                    indicators: FILLED_INDICATORS,
+                }),
+            { initialProps: { bars: FAKE_BARS } }
+        );
+        act(() => result.current.toggle());
+        vi.clearAllMocks();
+
+        const newBars: Bar[] = [
+            {
+                time: 2000,
+                open: 200,
+                high: 220,
+                low: 180,
+                close: 210,
+                volume: 2000,
+            },
+        ];
+        rerender({ bars: newBars });
+
+        expect(mockSetData).toHaveBeenCalledTimes(2);
+        const splitMock = vi.mocked(buildTrendSplitData);
+        expect(splitMock).toHaveBeenCalledWith(
+            newBars,
+            FILLED_INDICATORS.chandelierExit,
+            'long',
+            expect.any(Function)
+        );
+        expect(splitMock).toHaveBeenCalledWith(
+            newBars,
+            FILLED_INDICATORS.chandelierExit,
+            'short',
+            expect.any(Function)
+        );
+    });
+
     it('does not set data when chandelierExit is empty', () => {
         const chart = makeChart();
         const { result } = renderHook(() =>
