@@ -207,6 +207,37 @@ export function buildPaneLabels(paneIndices: PaneIndices): PaneLabelConfig[] {
         CHART_COLORS.ewmaVolatilityLine
     );
 
+    const elderRayLabel: PaneLabelConfig[] =
+        paneIndices.elderRay !== INACTIVE_PANE_INDEX
+            ? [
+                  {
+                      paneIndex: paneIndices.elderRay,
+                      subLabels: [
+                          {
+                              name: 'Bull Power',
+                              color: CHART_COLORS.elderBullPower,
+                          },
+                          {
+                              name: 'Bear Power',
+                              color: CHART_COLORS.elderBearPower,
+                          },
+                      ],
+                  },
+              ]
+            : [];
+
+    const squeezeLabel = buildSinglePaneLabel(
+        paneIndices.squeezeMomentum,
+        'Squeeze',
+        CHART_COLORS.squeezeMomentumUp
+    );
+
+    const regressionLabel = buildSinglePaneLabel(
+        paneIndices.regression,
+        'Regression',
+        CHART_COLORS.regressionUp
+    );
+
     return [
         ...rsiLabel,
         ...macdLabel,
@@ -227,5 +258,8 @@ export function buildPaneLabels(paneIndices: PaneIndices): PaneLabelConfig[] {
         ...atrLabel,
         ...yangZhangLabel,
         ...ewmaVolatilityLabel,
+        ...elderRayLabel,
+        ...squeezeLabel,
+        ...regressionLabel,
     ];
 }

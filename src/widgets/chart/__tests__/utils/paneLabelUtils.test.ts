@@ -392,6 +392,33 @@ describe('buildPaneLabels', () => {
         });
     });
 
+    describe('group-C-complex pane가 활성일 때', () => {
+        it('builds Elder Ray sub-labels (Bull Power, Bear Power) when active', () => {
+            const labels = buildPaneLabels(makePaneIndices({ elderRay: 2 }));
+            const elder = labels.find(l => l.paneIndex === 2);
+            expect(elder?.subLabels.map(s => s.name)).toEqual([
+                'Bull Power',
+                'Bear Power',
+            ]);
+        });
+
+        it('builds a Squeeze pane label when active', () => {
+            const labels = buildPaneLabels(
+                makePaneIndices({ squeezeMomentum: 3 })
+            );
+            expect(labels.find(l => l.paneIndex === 3)?.subLabels[0].name).toBe(
+                'Squeeze'
+            );
+        });
+
+        it('builds a Regression pane label when active', () => {
+            const labels = buildPaneLabels(makePaneIndices({ regression: 4 }));
+            expect(labels.find(l => l.paneIndex === 4)?.subLabels[0].name).toBe(
+                'Regression'
+            );
+        });
+    });
+
     describe('CCI만 활성일 때', () => {
         const CCI_PANE_INDEX = 1;
         const paneIndices = makePaneIndices({ cci: CCI_PANE_INDEX });
