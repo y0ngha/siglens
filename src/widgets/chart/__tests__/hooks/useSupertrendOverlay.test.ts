@@ -2,6 +2,7 @@
 import { act, renderHook } from '@testing-library/react';
 import type { Bar, IndicatorResult } from '@y0ngha/siglens-core';
 import { useSupertrendOverlay } from '../../hooks/useSupertrendOverlay';
+import { buildTrendSplitData } from '../../utils/seriesDataUtils';
 
 const mockSetData = vi.fn();
 const mockApplyOptions = vi.fn();
@@ -120,6 +121,62 @@ describe('useSupertrendOverlay', () => {
         );
         act(() => result.current.toggle());
         expect(mockSetData).toHaveBeenCalledTimes(2);
+
+        // 두 시리즈가 각각 올바른 방향('up'/'down')으로 분리 호출되는지 명시 검증
+        // — 호출 횟수만 보면 둘 다 'up'으로 잘못 호출돼도 통과하므로 인자까지 고정한다.
+        const splitMock = vi.mocked(buildTrendSplitData);
+        expect(splitMock).toHaveBeenCalledWith(
+            FAKE_BARS,
+            FILLED_INDICATORS.supertrend,
+            'up'
+        );
+        expect(splitMock).toHaveBeenCalledWith(
+            FAKE_BARS,
+            FILLED_INDICATORS.supertrend,
+            'down'
+        );
+    });
+
+    it('re-sets data on both series when bars change while visible', () => {
+        const chart = makeChart();
+        const { result, rerender } = renderHook(
+            ({ bars }) =>
+                useSupertrendOverlay({
+                    chartRef: makeChartRef(chart),
+                    bars,
+                    indicators: FILLED_INDICATORS,
+                }),
+            { initialProps: { bars: FAKE_BARS } }
+        );
+        act(() => result.current.toggle());
+        vi.clearAllMocks();
+
+        const newBars: Bar[] = [
+            {
+                time: 2000,
+                open: 200,
+                high: 220,
+                low: 180,
+                close: 210,
+                volume: 2000,
+            },
+        ];
+        rerender({ bars: newBars });
+
+        // 데이터-싱크 effect 의존성([indicators, bars, isVisible])이 bars 변경에 반응해
+        // up/down 두 시리즈를 모두 다시 setData 하는지 검증.
+        expect(mockSetData).toHaveBeenCalledTimes(2);
+        const splitMock = vi.mocked(buildTrendSplitData);
+        expect(splitMock).toHaveBeenCalledWith(
+            newBars,
+            FILLED_INDICATORS.supertrend,
+            'up'
+        );
+        expect(splitMock).toHaveBeenCalledWith(
+            newBars,
+            FILLED_INDICATORS.supertrend,
+            'down'
+        );
     });
 
     it('does not set data when supertrend is empty', () => {

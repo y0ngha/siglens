@@ -124,6 +124,7 @@ test.describe('chart indicator settings modal', () => {
             name: 'Supertrend',
             exact: true,
         });
+        await expect(supertrend).not.toBeChecked();
         await supertrend.check();
         await expect(supertrend).toBeChecked();
     });
