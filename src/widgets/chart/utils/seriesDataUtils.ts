@@ -5,7 +5,7 @@ import type {
 } from '@y0ngha/siglens-core';
 import type { UTCTimestamp } from 'lightweight-charts';
 
-/** 추세 방향 중 확정된 값(warm-up의 null 제외). buildTrendSplitData의 dir 인자에 사용. */
+/** 추세 방향 중 확정된 값(warm-up의 null 제외). */
 type TrendDir = Exclude<TrendDirection, null>;
 
 export type SeriesPoint =
