@@ -128,4 +128,34 @@ test.describe('chart indicator settings modal', () => {
         await supertrend.check();
         await expect(supertrend).toBeChecked();
     });
+
+    test('toggles the Parabolic SAR overlay via the modal', async ({
+        page,
+    }) => {
+        await page.goto('/AAPL');
+        await page.getByRole('button', { name: GEAR }).click();
+        const dialog = page.getByRole('dialog');
+        // Parabolic SAR는 가격 OVERLAY(점 마커) — Keltner/Supertrend와 동일하게
+        // 모달 체크박스 상태로 검증한다. exact로 substring 충돌 방지.
+        const psar = dialog.getByRole('checkbox', {
+            name: 'Parabolic SAR',
+            exact: true,
+        });
+        await expect(psar).not.toBeChecked();
+        await psar.check();
+        await expect(psar).toBeChecked();
+    });
+
+    test('toggles the Chandelier overlay via the modal', async ({ page }) => {
+        await page.goto('/AAPL');
+        await page.getByRole('button', { name: GEAR }).click();
+        const dialog = page.getByRole('dialog');
+        const chandelier = dialog.getByRole('checkbox', {
+            name: 'Chandelier',
+            exact: true,
+        });
+        await expect(chandelier).not.toBeChecked();
+        await chandelier.check();
+        await expect(chandelier).toBeChecked();
+    });
 });
