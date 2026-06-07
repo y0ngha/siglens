@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { act, renderHook } from '@testing-library/react';
+import type { LineWidth } from 'lightweight-charts';
 import type { Bar, IndicatorResult } from '@y0ngha/siglens-core';
 import { useChandelierOverlay } from '../../hooks/useChandelierOverlay';
 import { buildTrendSplitData } from '../../utils/seriesDataUtils';
@@ -109,6 +110,27 @@ describe('useChandelierOverlay', () => {
         );
         act(() => result.current.toggle());
         // chandelier는 PSAR과 달리 lineWidth를 실제 반영한다(applyOptions). 계약을 고정한다.
+        expect(mockApplyOptions).toHaveBeenCalledWith({ lineWidth: 3 });
+        expect(mockApplyOptions).toHaveBeenCalledTimes(2);
+    });
+
+    it('re-applies lineWidth when the lineWidth prop changes while visible', () => {
+        const chart = makeChart();
+        const { result, rerender } = renderHook(
+            ({ lineWidth }) =>
+                useChandelierOverlay({
+                    chartRef: makeChartRef(chart),
+                    bars: FAKE_BARS,
+                    indicators: FILLED_INDICATORS,
+                    lineWidth,
+                }),
+            { initialProps: { lineWidth: 1 as LineWidth } }
+        );
+        act(() => result.current.toggle());
+        vi.clearAllMocks();
+
+        // lifecycle effect deps에 lineWidth가 있어 prop 변경 시 재실행 → 두 시리즈에 applyOptions 재호출.
+        rerender({ lineWidth: 3 as LineWidth });
         expect(mockApplyOptions).toHaveBeenCalledWith({ lineWidth: 3 });
         expect(mockApplyOptions).toHaveBeenCalledTimes(2);
     });
