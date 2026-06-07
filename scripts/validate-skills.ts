@@ -30,6 +30,7 @@ import type {
     SignalType,
     SkillStateFeature,
     SkillStatePredicateKind,
+    SkillUsageRole,
 } from '@y0ngha/siglens-core';
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
@@ -207,14 +208,98 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
     typeof value === 'object' && value !== null && !Array.isArray(value);
 
 /**
+ * Mirror of USAGE_ROLE_ORDER in src/entities/skill/api.ts and siglens-core's
+ * confidenceLevel module. Keep all three in sync: when the core adds a new
+ * SkillUsageRole, update this array and the api.ts copy (+ its satisfies
+ * clause) in the same commit. The satisfies + exhaustiveness guard below fail
+ * the build here if this copy drifts behind the core union.
+ */
+const USAGE_ROLE_ORDER = [
+    'signal',
+    'confirmation',
+    'regime',
+    'measurement',
+    'risk',
+] as const satisfies readonly SkillUsageRole[];
+
+type MissingUsageRole = Exclude<
+    SkillUsageRole,
+    (typeof USAGE_ROLE_ORDER)[number]
+>;
+const _usageRolesAreExhaustive: MissingUsageRole extends never ? true : never =
+    true;
+void _usageRolesAreExhaustive;
+
+// O(1) membership that accepts an arbitrary `string` directly — mirrors the
+// USAGE_ROLE_SET in src/entities/skill/api.ts and avoids a widening cast.
+const USAGE_ROLE_SET: ReadonlySet<string> = new Set<string>(USAGE_ROLE_ORDER);
+
+/**
+ * Validate the `usage_roles` field for a skill.
+ *
+ * Rules:
+ * - `type: indicator_guide` with `gating.tier: always_on` → `usage_roles` is
+ *   optional (always-on skills are injected unconditionally; role-based routing
+ *   does not apply). If present, it must still be a valid array.
+ * - `type: indicator_guide` (all other cases) → `usage_roles` REQUIRED,
+ *   non-empty array of known roles in canonical order, no duplicates.
+ * - any other type → `usage_roles` MUST be absent (build error if present).
+ *
+ * Returns a single error string, or null when the field is valid.
+ */
+function validateUsageRoles(
+    type: unknown,
+    raw: unknown,
+    gating: unknown
+): string | null {
+    if (type !== 'indicator_guide') {
+        return raw !== undefined
+            ? 'usage_roles is only allowed on type: indicator_guide'
+            : null;
+    }
+    // always_on indicator_guide skills are injected unconditionally — usage_roles
+    // is optional. Skip the required-field check but still validate content if present.
+    const isAlwaysOn = isRecord(gating) && gating.tier === 'always_on';
+    if (raw === undefined && isAlwaysOn) return null;
+    if (!Array.isArray(raw) || raw.length === 0) {
+        return 'indicator_guide requires a non-empty usage_roles array';
+    }
+    // A Set preserves insertion order in JS, so iterating `seen` reflects the
+    // input order — no parallel array needed for the canonical-order check.
+    const seen = new Set<string>();
+    for (const r of raw) {
+        if (typeof r !== 'string' || !USAGE_ROLE_SET.has(r)) {
+            return `invalid usage_role: ${String(r)}`;
+        }
+        if (seen.has(r)) return `duplicate usage_role: ${r}`;
+        seen.add(r);
+    }
+    const canonical = USAGE_ROLE_ORDER.filter(o => seen.has(o));
+    if (canonical.join(',') !== [...seen].join(',')) {
+        return `usage_roles must be in canonical order: [${canonical.join(', ')}]`;
+    }
+    return null;
+}
+
+/**
  * Validate a single skill's frontmatter `data`. Returns the list of error
  * messages (empty when the skill is valid or intentionally untagged). Exported
  * for unit testing without spawning the CLI.
  */
-export const validateSkillData = (data: Record<string, unknown>): string[] =>
+export const validateSkillData = (data: Record<string, unknown>): string[] => {
+    const usageRolesError = validateUsageRoles(
+        data.type,
+        data.usage_roles,
+        data.gating
+    );
+
     // A skill with no `gating` block is intentionally untagged (the core
     // selector fail-opens it). Only validate when a block is present.
-    'gating' in data ? validateGating(data.gating) : [];
+    return [
+        ...(usageRolesError !== null ? [usageRolesError] : []),
+        ...('gating' in data ? validateGating(data.gating) : []),
+    ];
+};
 
 function validateGating(gating: unknown): string[] {
     if (!isRecord(gating)) {

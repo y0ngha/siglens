@@ -27,6 +27,11 @@ const SKELETON_CARD_COUNT = 12;
  * `HIGH_CONFIDENCE_WEIGHT`와 함께 일관되게 갱신할 것 (현재 양쪽 모두 0.8).
  */
 const HIGH_CONFIDENCE_WEIGHT = 0.8;
+// 등급 경계는 @y0ngha/siglens-core의 confidence helper와 동일 값(0.5/0.8).
+// SkillsShowcase는 client component이고 lcp-discovery 의존성 절단을 위해 인라인 유지.
+// 제거 조건: core가 client entrypoint(index.client)에 confidence 경계/helper를
+// 노출하면 이 미러를 삭제하고 import로 통합한다. `HIGH_CONFIDENCE_WEIGHT`와 함께 갱신.
+const MEDIUM_CONFIDENCE_WEIGHT = 0.5;
 
 interface TabConfig {
     value: SkillsActiveTab;
@@ -75,6 +80,17 @@ const TYPE_BADGE: Record<SkillType, TypeBadgeConfig> = {
     },
 };
 
+// 툴팁 카피용 경계 퍼센트 — 모듈 레벨에서 1회 계산(컴포넌트 내 매 렌더 재생성 방지).
+// Math.round로 0.8 * 100 = 80.00000000000001 같은 부동소수점 잔차를 흡수.
+const MEDIUM_PCT = Math.round(MEDIUM_CONFIDENCE_WEIGHT * 100);
+const HIGH_PCT = Math.round(HIGH_CONFIDENCE_WEIGHT * 100);
+
+function barColorClass(weight: number): string {
+    if (weight >= HIGH_CONFIDENCE_WEIGHT) return 'bg-chart-bullish';
+    if (weight >= MEDIUM_CONFIDENCE_WEIGHT) return 'bg-ui-warning';
+    return 'bg-secondary-500';
+}
+
 function ConfidenceInfoTooltip() {
     const containerRef = useRef<HTMLDivElement>(null);
     const tooltipId = useId();
@@ -104,8 +120,11 @@ function ConfidenceInfoTooltip() {
             >
                 <div className="text-secondary-300 leading-relaxed">
                     <p>분석 기법의 신뢰도 점수예요.</p>
-                    <p>50% 미만이면 분석에서 제외돼요.</p>
-                    <p>80% 이상이면 높은 신뢰도로 분류해요.</p>
+                    <p>
+                        {MEDIUM_PCT}% 미만 낮음 · {MEDIUM_PCT}~{HIGH_PCT}% 보통
+                        · {HIGH_PCT}% 이상 높음.
+                    </p>
+                    <p>낮은 점수도 분석에 보조적으로 반영돼요.</p>
                 </div>
             </div>
         </div>
@@ -118,7 +137,7 @@ interface SkillCardProps {
 
 function SkillCard({ skill }: SkillCardProps) {
     const badge = skill.type != null ? TYPE_BADGE[skill.type] : null;
-    const isHighConfidence = skill.confidenceWeight >= HIGH_CONFIDENCE_WEIGHT;
+    const barColor = barColorClass(skill.confidenceWeight);
 
     return (
         <div className="bg-secondary-800/50 border-secondary-700 rounded-lg border p-4">
@@ -143,11 +162,10 @@ function SkillCard({ skill }: SkillCardProps) {
             <div className="flex items-center gap-2">
                 <div className="bg-secondary-700 h-1.5 flex-1 overflow-hidden rounded-full">
                     <div
+                        data-testid="confidence-bar"
                         className={cn(
                             'h-full w-(--confidence-w) rounded-full',
-                            isHighConfidence
-                                ? 'bg-chart-bullish'
-                                : 'bg-ui-warning'
+                            barColor
                         )}
                         style={
                             {

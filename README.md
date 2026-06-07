@@ -208,7 +208,7 @@ siglens/
 
 - `skills/patterns/`: 차트 패턴
 - `skills/indicators/`: 보조지표 시그널 해석
-- `skills/strategies/`: 엘리어트 파동, 와이코프, 대순환 분석 등
+- `skills/strategies/`: 엘리어트 파동, 대순환 분석 등
 - `skills/support-resistance/`: 피보나치, 피봇포인트
 - `skills/candlesticks/`: 캔들 패턴 교육
 - `skills/fundamental/`: 가치, 성장, 퀄리티 투자 관점

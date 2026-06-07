@@ -74,7 +74,6 @@ import type {
     PatternResult,
     StrategyResult,
 } from '@y0ngha/siglens-core';
-import { MIN_CONFIDENCE_WEIGHT } from '@y0ngha/siglens-core';
 
 import { AnalysisPanel } from '../AnalysisPanel';
 
@@ -132,7 +131,7 @@ const makeStrategy = (
     strategyName: 'Breakout',
     trend: 'bullish',
     summary: '전략 설명',
-    confidenceWeight: MIN_CONFIDENCE_WEIGHT,
+    confidenceWeight: 0.85,
     ...overrides,
 });
 
@@ -331,8 +330,30 @@ describe('AnalysisPanel', () => {
             />
         );
 
-        // Strategy section header should not appear since all strategies filtered
+        // The only strategy duplicates a detected pattern name ('Breakout'), so it
+        // is de-duplicated out — confidence no longer gates inclusion.
         expect(screen.queryByText('전략')).not.toBeInTheDocument();
+    });
+
+    it('낮은 confidence 전략이 패턴 중복이 아니면 전략 섹션에 표시된다', () => {
+        render(
+            <AnalysisPanel
+                symbol="AAPL"
+                analysis={makeAnalysis({
+                    strategyResults: [
+                        makeStrategy({
+                            strategyName: 'UniqueStrategy',
+                            confidenceWeight: 0.2,
+                        }),
+                    ],
+                })}
+                keyLevels={EMPTY_KEY_LEVELS}
+                timeframe="1Day"
+            />
+        );
+        // A low-confidence strategy that does not duplicate a detected pattern is
+        // shown — confidence is a display weight and never gates inclusion.
+        expect(screen.getByText('UniqueStrategy')).toBeInTheDocument();
     });
 
     it('renders ActionRecommendationSection with entry recommendation', () => {

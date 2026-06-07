@@ -29,13 +29,65 @@ All keys are **snake_case**; the loader maps them to camelCase `Skill` fields.
 | `token_cost` | top-level | number | **currently unused placeholder — set `0`** (reserved for build-time tokenizer baking) |
 | `smc_full_guide` | top-level | `true` | **SMC full-guide skill only** — identifies it so a compressed note can replace it |
 
+## confidence_weight
+
+`confidence_weight` (0.0–1.0) is a **display weight** — it maps to a Low / Medium / High
+label shown in the Skills UI. It does **not** exclude a skill from the analysis prompt;
+all skills are injected regardless of value.
+
+| Range | Label | Prompt treatment |
+|---|---|---|
+| `< 0.5` | Low | Included, shown with `[낮은 신뢰도]` label |
+| `0.5 – 0.8` | Medium | Included, shown with `[중간 신뢰도]` label |
+| `>= 0.8` | High | Included, shown with `[높은 신뢰도]` label |
+
+Note: `confidence_weight` represents an *analysis weight*, not a hit-rate or probability.
+
+## usage_roles (indicator_guide skills only)
+
+`usage_roles` is **required** on every `type: indicator_guide` skill that is not
+`gating.tier: always_on`. Set it to a non-empty subset of the allowed roles:
+
+```
+signal        # primary entry/exit signal generator
+confirmation  # confirms signals from other indicators
+regime        # identifies market regime / trend context
+measurement   # quantitative measurement (momentum level, volatility, etc.)
+risk          # risk assessment or stop-loss guidance
+```
+
+**Rules enforced by `yarn validate:skills` (CI gate):**
+
+- Non-empty array required on `indicator_guide` with `tier != always_on`.
+- Forbidden on all other skill types (`pattern`, `strategy`, `candlestick`, `support_resistance`).
+- Values must be the exact enum above — no free-form strings.
+- Must follow canonical order: `signal → confirmation → regime → measurement → risk`.
+- No duplicates.
+
+**Exception — `gating.tier: always_on` indicator_guide:** exempt from `usage_roles`.
+The only current example is `skills/_core/indicator-core.md`, which is a compressed
+all-indicator reference injected unconditionally. Because it summarises every indicator
+rather than routing a single one, per-role tagging does not apply. The validator
+enforces this exemption explicitly.
+
+**Example:**
+
+```yaml
+type: indicator_guide
+usage_roles: [signal, confirmation]
+gating:
+  tier: gated
+  signal_kind: event
+  triggers: [rsi_oversold, rsi_overbought]
+```
+
 ## tier: always_on vs untagged
 
 Both end up always-injected, but they mean different things:
 
 - **`always_on`** — chart-relevant, deliberately ungated (no detector or used as an
   analysis lens): chart-patterns, theory strategies
-  (elliott-wave / wyckoff / fibonacci / multi-timeframe), S/R, Ichimoku, SMC.
+  (elliott-wave / fibonacci / multi-timeframe), S/R, Ichimoku, SMC.
 - **untagged (no `gating`)** — fail-open inclusion: non-chart fundamental/news skills,
   or indicators with no meaningful trigger.
 

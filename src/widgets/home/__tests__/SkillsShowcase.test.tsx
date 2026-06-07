@@ -44,9 +44,11 @@ vi.mock('../hooks/useSkillsShowcase', () => ({
     }),
 }));
 
-import React from 'react';
 import { render, screen } from '@testing-library/react';
-import type { SkillShowcaseItem } from '@y0ngha/siglens-core';
+import {
+    HIGH_CONFIDENCE_WEIGHT,
+    type SkillShowcaseItem,
+} from '@y0ngha/siglens-core';
 
 import { SkillsShowcase, SkillsShowcaseSkeleton } from '../SkillsShowcase';
 
@@ -104,5 +106,65 @@ describe('SkillsShowcaseSkeleton', () => {
 
         const section = screen.getByLabelText(/AI 분석 스킬 불러오는 중/);
         expect(section).toHaveAttribute('aria-busy', 'true');
+    });
+});
+
+describe('ConfidenceInfoTooltip copy', () => {
+    it('does NOT say low-confidence skills are excluded', () => {
+        render(<SkillsShowcase skills={[makeSkill('RSI')]} />);
+
+        expect(document.body.textContent).not.toMatch(/분석에서 제외/);
+    });
+
+    it('says low-confidence skills are still reflected as supplementary', () => {
+        render(<SkillsShowcase skills={[makeSkill('RSI')]} />);
+
+        expect(document.body.textContent).toMatch(
+            /낮은 점수도 분석에 보조적으로 반영/
+        );
+    });
+});
+
+describe('SkillCard confidence bar color', () => {
+    function getBarEl(container: HTMLElement): HTMLElement {
+        const bar = container.querySelector('[data-testid="confidence-bar"]');
+        if (!bar) throw new Error('confidence-bar testid not found');
+        return bar as HTMLElement;
+    }
+
+    it.each([
+        [0.2, 'bg-secondary-500'],
+        [0.49, 'bg-secondary-500'],
+    ])('weight %f → bg-secondary-500 (low tier)', (weight, expected) => {
+        const { container } = render(
+            <SkillsShowcase
+                skills={[makeSkill('X', 'indicator_guide', weight)]}
+            />
+        );
+        expect(getBarEl(container).className).toContain(expected);
+    });
+
+    it.each([
+        [0.5, 'bg-ui-warning'],
+        [0.79, 'bg-ui-warning'],
+    ])('weight %f → bg-ui-warning (medium tier)', (weight, expected) => {
+        const { container } = render(
+            <SkillsShowcase
+                skills={[makeSkill('X', 'indicator_guide', weight)]}
+            />
+        );
+        expect(getBarEl(container).className).toContain(expected);
+    });
+
+    it.each([
+        [HIGH_CONFIDENCE_WEIGHT, 'bg-chart-bullish'],
+        [1.0, 'bg-chart-bullish'],
+    ])('weight %f → bg-chart-bullish (high tier)', (weight, expected) => {
+        const { container } = render(
+            <SkillsShowcase
+                skills={[makeSkill('X', 'indicator_guide', weight)]}
+            />
+        );
+        expect(getBarEl(container).className).toContain(expected);
     });
 });

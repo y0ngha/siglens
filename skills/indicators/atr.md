@@ -4,6 +4,7 @@ description: ATR(14) 신호 해석 가이드 — 변동성 측정, 손절 설정
 type: indicator_guide
 indicators: ['atr']
 confidence_weight: 0.8
+usage_roles: [confirmation, measurement, risk]
 ---
 
 ## Overview

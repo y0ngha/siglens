@@ -4,6 +4,7 @@ description: 엘더-레이(Bull Power/Bear Power) 신호 해석 가이드 — �
 type: indicator_guide
 indicators: ['elderRay']
 confidence_weight: 0.45
+usage_roles: [signal, confirmation]
 gating:
   tier: gated
   signal_kind: state

@@ -4,6 +4,7 @@ description: Connors RSI(3,2,100) 신호 해석 가이드 — 10 미만 / 90 초
 type: indicator_guide
 indicators: ['connorsRsi']
 confidence_weight: 0.4
+usage_roles: [signal, confirmation]
 gating:
   tier: gated
   signal_kind: state

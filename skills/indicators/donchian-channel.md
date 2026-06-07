@@ -4,6 +4,7 @@ description: Donchian Channel(20) 신호 해석 가이드 — 브레이크아웃
 type: indicator_guide
 indicators: ['donchianChannel']
 confidence_weight: 0.8
+usage_roles: [signal, confirmation, measurement]
 gating:
   tier: gated
   signal_kind: state

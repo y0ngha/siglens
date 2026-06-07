@@ -4,6 +4,7 @@ description: ADX 신호 해석 가이드 — 추세 강도 수준, 상승/하락
 type: indicator_guide
 indicators: ['dmi']
 confidence_weight: 0.85
+usage_roles: [confirmation, regime]
 ---
 
 ## Overview

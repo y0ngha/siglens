@@ -943,7 +943,6 @@ IN_NECK_RATIO = 0.05        — 인넥 허용 비율
 | `strategies/mean-reversion.md` | 평균 회귀 전략 | 0.7 |
 | `strategies/elliott-wave.md` | 엘리어트 파동 | 0.7 |
 | `strategies/fibonacci.md` | 피보나치 전략 | 0.65 |
-| `strategies/wyckoff.md` | 와이코프 방법론 | 0.0 (비활성) |
 
 ---
 
@@ -973,10 +972,10 @@ function buildAnalysisPrompt(
 3. 최근 봉 데이터 (최근 30봉) — 각 봉에 캔들 패턴 태깅 + 다봉 패턴 감지
 4. 거래량 분석 (평균 대비 비율)
 5. 인디케이터 수치 (RSI, MACD, 볼린저, DMI, Stochastic, StochRSI, CCI, Volume Profile POC/VAH/VAL, Ichimoku 전환선/기준선/SpanA/SpanB/후행스팬)
-6. 인디케이터 신호 가이드 (type='indicator_guide' skills, confidence >= 0.5)
-7. 패턴 분석 (type='pattern' skills, confidence >= 0.5)
-8. 전략 분석 (type='strategy' skills, confidence >= 0.5)
-9. 활성화된 Skills (type 없는 skills, confidence >= 0.5)
+6. 인디케이터 신호 가이드 (type='indicator_guide' skills)
+7. 패턴 분석 (type='pattern' skills)
+8. 전략 분석 (type='strategy' skills)
+9. 활성화된 Skills (type 없는 skills)
 10. 분석 가이드라인 (지지/저항 판단 기준, 가격 목표 산출 기준)
 11. 분석 요청 및 JSON 응답 형식 지시
 ```
@@ -1298,7 +1297,7 @@ type: pattern | indicator_guide | strategy | candlestick | support_resistance  #
 category: string              # 선택. reversal_bullish | reversal_bearish | continuation_bullish | continuation_bearish | neutral
 pattern: string               # type: pattern일 때 패턴 식별자
 indicators: string[]          # 이 skill이 필요로 하는 인디케이터 목록
-confidence_weight: number     # 0.0 ~ 1.0. 프롬프트 포함 여부와 강조도 결정
+confidence_weight: number     # 0.0 ~ 1.0. 표시 가중치 — Low/Medium/High 라벨 결정 (제외 게이트 없음)
 display:                      # 선택. 차트 표시 설정
   chart:
     show: boolean             # 기본 show/hide 여부 (기본값: false)
@@ -1324,15 +1323,30 @@ type 필드: 'pattern' | 'indicator_guide' | 'strategy' | 'candlestick' | 'suppo
 
 필수 필드: name, description, indicators, confidence_weight
   → 누락 시 파싱 에러. 모든 필수 필드가 frontmatter와 body에 존재해야 함
+
+usage_roles 필드 (type='indicator_guide' 전용):
+  → type='indicator_guide'이면서 gating.tier != 'always_on'인 skill은 비어있지 않은
+    usage_roles 배열 필수 (누락·빈 배열 시 validator 에러).
+  → 다른 type(pattern, strategy 등)에는 사용 금지.
+  → 허용 값(enum): signal | confirmation | regime | measurement | risk
+  → 정규 순서(canonical order): signal → confirmation → regime → measurement → risk
+    (이 순서로 작성, 중복 불가)
+  → 예외: gating.tier: always_on인 indicator_guide (예: skills/_core/indicator-core.md)는
+    usage_roles 불필요. 개별 인디케이터가 아닌 전체 인디케이터 압축 참조를 제공하므로
+    per-role 태깅이 적용되지 않는다. validator가 이 예외를 강제한다.
 ```
 
 ### confidence_weight 적용 규칙
 
-| 범위 | 프롬프트 처리 |
-|---|---|
-| `< 0.5` | 프롬프트에서 **완전 제외** |
-| `0.5 ~ 0.8` | 프롬프트에 포함, `[중간 신뢰도]` 라벨 |
-| `>= 0.8` | 프롬프트에 포함, `[높은 신뢰도]` 라벨로 강조 |
+`confidence_weight` (0.0–1.0)는 **표시 가중치(display weight)**다.
+값의 크기에 따라 UI 라벨이 결정되며, **낮은 값이라도 프롬프트에서 제외되지 않는다**.
+("분석 가중치"이지 적중률·확률이 아님에 유의.)
+
+| 범위 | 표시 라벨 | 프롬프트 처리 |
+|---|---|---|
+| `< 0.5` | Low | 프롬프트에 포함, `[낮은 신뢰도]` 라벨 |
+| `0.5 ~ 0.8` | Medium | 프롬프트에 포함, `[중간 신뢰도]` 라벨 |
+| `>= 0.8` | High | 프롬프트에 포함, `[높은 신뢰도]` 라벨로 강조 |
 
 ### Skill 타입 (core)
 
@@ -1400,7 +1414,6 @@ entities/analysis/actions/*
 
 @y0ngha/siglens-core prompt builder
   → buildAnalysisPrompt(symbol, bars, indicators, skills)
-  → confidenceWeight < 0.5인 항목 필터링
   → type='indicator_guide' skills → "Indicator Signal Guides" 섹션
   → type='pattern' skills → "Pattern Analysis" 섹션
   → type='candlestick' skills → "Candlestick Pattern Guides" 섹션
@@ -1423,9 +1436,8 @@ skill의 `indicators` 필드는 **해당 skill이 분석에 필요로 하는 인
 인디케이터 값은 `IndicatorResult` 전체가 프롬프트에 포함되어 AI가 참조한다.
 
 ```typescript
-// 예시 (향후 최적화 용도)
-const activeSkills = allSkills.filter(s => s.confidenceWeight >= 0.5);
-const requiredIndicators = new Set(activeSkills.flatMap(s => s.indicators));
+// 예시 (향후 최적화 용도 — confidenceWeight로 필터링하지 않음)
+const requiredIndicators = new Set(allSkills.flatMap(s => s.indicators));
 
 // requiredIndicators에 없는 인디케이터는 계산 생략 가능
 // (현재는 전체 계산 후 전달하는 단순 구현)

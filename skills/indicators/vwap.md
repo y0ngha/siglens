@@ -4,6 +4,7 @@ description: VWAP 신호 해석 가이드 — 장중 공정가치, 지지/저항
 type: indicator_guide
 indicators: ['vwap']
 confidence_weight: 0.8
+usage_roles: [signal, confirmation, measurement]
 gating:
   tier: gated
   signal_kind: state

@@ -4,6 +4,7 @@ description: 분산비율(Lo-MacKinlay) 신호 해석 가이드 — 통계적으
 type: indicator_guide
 indicators: ['varianceRatio']
 confidence_weight: 0.5
+usage_roles: [regime]
 gating:
   tier: gated
   signal_kind: state
