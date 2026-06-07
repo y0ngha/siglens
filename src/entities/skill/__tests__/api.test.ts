@@ -1251,6 +1251,91 @@ confidence_weight: 0.5
     });
 });
 
+describe('usage_roles 파싱 (parseUsageRoles)', () => {
+    let loader: FileSkillsLoader;
+
+    const withUsageRoles = (usageRolesYaml: string) => `---
+name: 역할 스킬
+description: 역할 테스트
+type: indicator_guide
+indicators: []
+confidence_weight: 0.8
+${usageRolesYaml}
+---
+
+내용`;
+
+    const loadOne = async (md: string) => {
+        mockReaddir.mockResolvedValue([fileDirent('skill.md')]);
+        mockReadFile.mockResolvedValue(md);
+        const skills = await loader.loadSkills();
+        return skills[0];
+    };
+
+    beforeEach(() => {
+        loader = new FileSkillsLoader();
+        mockReaddir.mockReset();
+        mockReadFile.mockReset();
+    });
+
+    it('valid usage_roles [confirmation, signal] → usageRoles 정규 순서 [signal, confirmation]', async () => {
+        const skill = await loadOne(
+            withUsageRoles('usage_roles: [confirmation, signal]')
+        );
+        expect(skill.usageRoles).toEqual(['signal', 'confirmation']);
+    });
+
+    it('모든 5개 역할 → 정규 순서로 정렬된다', async () => {
+        const skill = await loadOne(
+            withUsageRoles(
+                'usage_roles: [risk, regime, confirmation, measurement, signal]'
+            )
+        );
+        expect(skill.usageRoles).toEqual([
+            'signal',
+            'confirmation',
+            'regime',
+            'measurement',
+            'risk',
+        ]);
+    });
+
+    it('알 수 없는 역할이 포함되면 usageRoles === undefined (fail-open)', async () => {
+        const skill = await loadOne(
+            withUsageRoles('usage_roles: [signal, unknown_role]')
+        );
+        expect(skill.usageRoles).toBeUndefined();
+    });
+
+    it('빈 배열 [] → usageRoles === undefined', async () => {
+        const skill = await loadOne(withUsageRoles('usage_roles: []'));
+        expect(skill.usageRoles).toBeUndefined();
+    });
+
+    it('중복 역할이 있으면 usageRoles === undefined', async () => {
+        // The inline YAML parser produces a string[] from [signal, signal];
+        // parseUsageRoles must detect the duplicate and return undefined.
+        const skill = await loadOne(
+            withUsageRoles('usage_roles: [signal, signal]')
+        );
+        expect(skill.usageRoles).toBeUndefined();
+    });
+
+    it('usage_roles 필드 없음 → usageRoles === undefined', async () => {
+        const skill = await loadOne(
+            withUsageRoles('') // no usage_roles line
+        );
+        expect(skill.usageRoles).toBeUndefined();
+    });
+
+    it('scalar(비배열) usage_roles → usageRoles === undefined', async () => {
+        // parseYamlValue returns a string for a bare scalar,
+        // so parseUsageRoles receives a non-array → undefined.
+        const skill = await loadOne(withUsageRoles('usage_roles: signal'));
+        expect(skill.usageRoles).toBeUndefined();
+    });
+});
+
 describe('dedupeByName', () => {
     const skill = (name: string, description = 'd'): Skill => ({
         name,

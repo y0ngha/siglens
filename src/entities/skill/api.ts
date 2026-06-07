@@ -11,6 +11,7 @@ import type {
     SkillStatePredicate,
     SkillStatePredicateKind,
     SkillType,
+    SkillUsageRole,
 } from '@y0ngha/siglens-core';
 import { countSkillsByType } from '@/shared/lib/skillUtils';
 import type { SkillsProvider } from './model';
@@ -174,6 +175,53 @@ const SKILL_TYPES = [
     'candlestick',
     'support_resistance',
 ] as const satisfies readonly SkillType[];
+
+/**
+ * Canonical ordering of usage roles — mirrors `USAGE_ROLE_ORDER` in
+ * siglens-core's confidenceLevel module. This parser re-sorts any frontmatter
+ * array into this order so consumers always see a deterministic sequence
+ * regardless of authoring order (e.g. `[confirmation, signal]` → `['signal',
+ * 'confirmation']`).
+ *
+ * Mirror contract: this constant must stay identical to the core's
+ * `USAGE_ROLE_ORDER`. If the core adds a new role, add it here too and update
+ * the `satisfies` clause (which enforces SkillUsageRole membership at
+ * compile time).
+ */
+const USAGE_ROLE_ORDER = [
+    'signal',
+    'confirmation',
+    'regime',
+    'measurement',
+    'risk',
+] as const satisfies readonly SkillUsageRole[];
+
+const USAGE_ROLE_SET: ReadonlySet<string> = new Set(USAGE_ROLE_ORDER);
+
+/**
+ * Validate and normalize a `usage_roles` frontmatter value.
+ *
+ * Returns `undefined` (fail-open) when:
+ * - `raw` is not an array, or the array is empty
+ * - any element is not a string, is not a known role, or is a duplicate
+ *
+ * When valid, re-orders entries into `USAGE_ROLE_ORDER` so the returned array
+ * is always deterministic (canonical order) regardless of authoring sequence.
+ *
+ * Mirror of `parseUsageRoles` in siglens-core's infrastructure/skills/loader.
+ * Keep these two implementations in sync.
+ */
+const parseUsageRoles = (raw: unknown): SkillUsageRole[] | undefined => {
+    if (!Array.isArray(raw) || raw.length === 0) return undefined;
+    const seen = new Set<string>();
+    for (const r of raw) {
+        if (typeof r !== 'string') return undefined;
+        if (seen.has(r)) return undefined;
+        if (!USAGE_ROLE_SET.has(r)) return undefined;
+        seen.add(r);
+    }
+    return USAGE_ROLE_ORDER.filter(r => seen.has(r));
+};
 
 const isSkillType = (value: unknown): value is SkillType =>
     typeof value === 'string' &&
@@ -430,6 +478,7 @@ const toSkill = (data: Record<string, unknown>, content: string): Skill => ({
     tokenCost:
         typeof data.token_cost === 'number' ? data.token_cost : undefined,
     smcFullGuide: isYamlTrue(data.smc_full_guide),
+    usageRoles: parseUsageRoles(data.usage_roles),
 });
 
 const collectMdFiles = async (dir: string): Promise<string[]> => {
