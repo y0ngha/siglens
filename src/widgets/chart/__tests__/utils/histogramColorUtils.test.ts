@@ -89,11 +89,17 @@ describe('regressionBarColor', () => {
     it('negative slope → red rgba with r2 alpha', () => {
         expect(regressionBarColor(-2, 0.5)).toBe('rgba(239, 83, 80, 0.5)');
     });
+    it('zero slope counts as non-negative → teal', () => {
+        expect(regressionBarColor(0, 0.5)).toBe('rgba(38, 166, 154, 0.5)');
+    });
     it('clamps r2 into [0,1]', () => {
         expect(regressionBarColor(1, 1.7)).toBe('rgba(38, 166, 154, 1)');
         expect(regressionBarColor(1, -0.4)).toBe('rgba(38, 166, 154, 0)');
     });
-    it('null r2 → fallback alpha 0.25', () => {
+    it('null or undefined r2 → fallback alpha 0.25 (no NaN)', () => {
         expect(regressionBarColor(1, null)).toBe('rgba(38, 166, 154, 0.25)');
+        expect(regressionBarColor(1, undefined)).toBe(
+            'rgba(38, 166, 154, 0.25)'
+        );
     });
 });
