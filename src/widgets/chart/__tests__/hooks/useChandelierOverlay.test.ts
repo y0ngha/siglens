@@ -97,6 +97,22 @@ describe('useChandelierOverlay', () => {
         expect(mockAddSeries).toHaveBeenCalledTimes(2);
     });
 
+    it('applies lineWidth to both series after creation', () => {
+        const chart = makeChart();
+        const { result } = renderHook(() =>
+            useChandelierOverlay({
+                chartRef: makeChartRef(chart),
+                bars: FAKE_BARS,
+                indicators: FILLED_INDICATORS,
+                lineWidth: 3,
+            })
+        );
+        act(() => result.current.toggle());
+        // chandelier는 PSAR과 달리 lineWidth를 실제 반영한다(applyOptions). 계약을 고정한다.
+        expect(mockApplyOptions).toHaveBeenCalledWith({ lineWidth: 3 });
+        expect(mockApplyOptions).toHaveBeenCalledTimes(2);
+    });
+
     it('removes both series when toggled off', () => {
         const chart = makeChart();
         const { result } = renderHook(() =>

@@ -366,12 +366,15 @@ describe('buildOverlayLabelConfigs', () => {
             parabolicSar: [
                 { sar: 99, trend: 'up' },
                 { sar: 98, trend: 'down' },
+                { sar: null, trend: null },
             ],
         } as never;
         expect(psar?.getValue(ind, 0)).toBe(99);
+        expect(psar?.getValue(ind, 2)).toBeNull(); // warm-up 구간(sar null)
         expect(psar?.getValue(ind, 9)).toBeNull();
         expect(psar?.getColor?.(ind, 0)).toBe(CHART_COLORS.parabolicSarUp);
         expect(psar?.getColor?.(ind, 1)).toBe(CHART_COLORS.parabolicSarDown);
+        expect(psar?.getColor?.(ind, 2)).toBe(CHART_COLORS.neutral);
         expect(psar?.getColor?.(ind, 9)).toBe(CHART_COLORS.neutral);
     });
 

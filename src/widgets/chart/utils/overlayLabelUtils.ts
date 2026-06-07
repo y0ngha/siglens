@@ -220,7 +220,7 @@ export function buildOverlayLabelConfigs({
               {
                   name: 'Chandelier',
                   color: CHART_COLORS.chandelierLong,
-                  // active stop만 표시: long 추세→longStop, short 추세→shortStop.
+                  // long/short stop 두 값을 동시에 띄우면 범례가 혼란스럽다 — 현재 추세의 active stop 하나만 노출한다.
                   getValue: (
                       ind: IndicatorResult,
                       i: number
