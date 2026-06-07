@@ -35,7 +35,7 @@ Both end up always-injected, but they mean different things:
 
 - **`always_on`** — chart-relevant, deliberately ungated (no detector or used as an
   analysis lens): chart-patterns, theory strategies
-  (elliott-wave / wyckoff / fibonacci / multi-timeframe), S/R, Ichimoku, SMC.
+  (elliott-wave / fibonacci / multi-timeframe), S/R, Ichimoku, SMC.
 - **untagged (no `gating`)** — fail-open inclusion: non-chart fundamental/news skills,
   or indicators with no meaningful trigger.
 

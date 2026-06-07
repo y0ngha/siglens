@@ -132,7 +132,9 @@ const makeStrategy = (
     strategyName: 'Breakout',
     trend: 'bullish',
     summary: '전략 설명',
-    confidenceWeight: MIN_CONFIDENCE_WEIGHT,
+    // MIN_CONFIDENCE_WEIGHT가 core에서 아직 export되지 않은 경우(undefined) 0으로 fallback.
+    // 컴포넌트의 minConfidence fallback과 대칭: fail-open으로 전략을 표시.
+    confidenceWeight: MIN_CONFIDENCE_WEIGHT ?? 0,
     ...overrides,
 });
 

@@ -943,7 +943,6 @@ IN_NECK_RATIO = 0.05        — 인넥 허용 비율
 | `strategies/mean-reversion.md` | 평균 회귀 전략 | 0.7 |
 | `strategies/elliott-wave.md` | 엘리어트 파동 | 0.7 |
 | `strategies/fibonacci.md` | 피보나치 전략 | 0.65 |
-| `strategies/wyckoff.md` | 와이코프 방법론 | 0.0 (비활성) |
 
 ---
 

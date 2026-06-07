@@ -812,9 +812,12 @@ export function AnalysisPanel({
 
     const patternSkillNames = new Set(patternSummaries.map(p => p.skillName));
 
+    // MIN_CONFIDENCE_WEIGHT가 아직 core에서 export되지 않은 경우(undefined) fail-open:
+    // 모든 전략을 통과시킨다. core가 상수를 export하면 자동으로 필터가 활성화된다.
+    const minConfidence = MIN_CONFIDENCE_WEIGHT ?? 0;
     const detectedStrategyResults = strategyResults.filter(
         s =>
-            s.confidenceWeight >= MIN_CONFIDENCE_WEIGHT &&
+            s.confidenceWeight >= minConfidence &&
             !patternSkillNames.has(s.strategyName)
     );
 
