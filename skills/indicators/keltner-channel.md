@@ -4,6 +4,7 @@ description: Keltner Channel(20, 10, 2.0) 신호 해석 가이드 — ATR 기반
 type: indicator_guide
 indicators: ['keltnerChannel']
 confidence_weight: 0.8
+usage_roles: [signal, confirmation, measurement]
 gating:
   tier: gated
   signal_kind: state

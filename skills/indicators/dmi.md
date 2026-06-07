@@ -4,6 +4,7 @@ description: DMI 신호 해석 가이드 — +DI/-DI 방향성 압력, 크로스
 type: indicator_guide
 indicators: ['dmi']
 confidence_weight: 0.85
+usage_roles: [signal, confirmation, regime]
 gating:
   tier: gated
   signal_kind: event

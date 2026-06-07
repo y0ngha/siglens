@@ -4,6 +4,7 @@ description: RSI(14) 신호 해석 가이드 — 과매수/과매도 기준선, 
 type: indicator_guide
 indicators: ['rsi']
 confidence_weight: 0.9
+usage_roles: [signal, confirmation]
 gating:
   tier: gated
   signal_kind: event

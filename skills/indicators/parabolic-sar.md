@@ -4,6 +4,7 @@ description: Parabolic SAR(0.02, 0.20) 신호 해석 가이드 — 추세 방향
 type: indicator_guide
 indicators: ['parabolicSar']
 confidence_weight: 0.8
+usage_roles: [signal, confirmation, risk]
 gating:
   tier: gated
   signal_kind: event

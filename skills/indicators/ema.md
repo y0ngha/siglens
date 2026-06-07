@@ -4,6 +4,7 @@ description: EMA 신호 해석 가이드 — 지지/저항, 기울기, 크로스
 type: indicator_guide
 indicators: ['ema']
 confidence_weight: 0.8
+usage_roles: [signal, confirmation, regime]
 ---
 
 ## Overview
