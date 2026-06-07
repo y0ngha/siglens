@@ -45,6 +45,9 @@ import { useObvChart } from './hooks/useObvChart';
 import { useAtrChart } from './hooks/useAtrChart';
 import { useYangZhangChart } from './hooks/useYangZhangChart';
 import { useEwmaVolatilityChart } from './hooks/useEwmaVolatilityChart';
+import { useElderRayChart } from './hooks/useElderRayChart';
+import { useSqueezeMomentumChart } from './hooks/useSqueezeMomentumChart';
+import { useRegressionChart } from './hooks/useRegressionChart';
 import { useVolumeProfileOverlay } from './hooks/useVolumeProfileOverlay';
 import { useIchimokuOverlay } from './hooks/useIchimokuOverlay';
 import { useCandlePatternMarkers } from './hooks/useCandlePatternMarkers';
@@ -334,6 +337,24 @@ export function StockChart({
         paneIndex: paneIndices.ewmaVolatility,
     });
 
+    useElderRayChart({
+        ...commonHookParams,
+        isVisible: visible.elderRay,
+        paneIndex: paneIndices.elderRay,
+    });
+
+    useSqueezeMomentumChart({
+        ...commonHookParams,
+        isVisible: visible.squeezeMomentum,
+        paneIndex: paneIndices.squeezeMomentum,
+    });
+
+    useRegressionChart({
+        ...commonHookParams,
+        isVisible: visible.regression,
+        paneIndex: paneIndices.regression,
+    });
+
     useCandlePatternMarkers({ seriesRef, bars });
 
     useActionRecommendationOverlay({
@@ -573,6 +594,21 @@ export function StockChart({
                 meta: INDICATOR_META.chandelierExit,
                 active: chandelierVisible,
                 onToggle: toggleChandelier,
+            },
+            {
+                meta: INDICATOR_META.elderRay,
+                active: visible.elderRay,
+                onToggle: () => toggle('elderRay'),
+            },
+            {
+                meta: INDICATOR_META.squeezeMomentum,
+                active: visible.squeezeMomentum,
+                onToggle: () => toggle('squeezeMomentum'),
+            },
+            {
+                meta: INDICATOR_META.regression,
+                active: visible.regression,
+                onToggle: () => toggle('regression'),
             },
         ],
         // deps에 visible 객체 전체를 둔다 — 한 지표 토글 시 전체 binding이 재조립되지만
