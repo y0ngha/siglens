@@ -146,9 +146,10 @@ describe('buildTrendSplitData', () => {
         { supertrend: 11, trend: 'down' },
         { supertrend: null, trend: null },
     ];
+    const getSt = (r: SupertrendResult): number | null => r.supertrend;
 
     it("returns value only on bars whose trend matches 'up', whitespace otherwise", () => {
-        expect(buildTrendSplitData(bars, data, 'up')).toEqual([
+        expect(buildTrendSplitData(bars, data, 'up', getSt)).toEqual([
             { time: 1, value: 10 },
             { time: 2 },
             { time: 3 },
@@ -156,7 +157,7 @@ describe('buildTrendSplitData', () => {
     });
 
     it("returns value only on bars whose trend matches 'down', whitespace otherwise", () => {
-        expect(buildTrendSplitData(bars, data, 'down')).toEqual([
+        expect(buildTrendSplitData(bars, data, 'down', getSt)).toEqual([
             { time: 1 },
             { time: 2, value: 11 },
             { time: 3 },
@@ -164,17 +165,17 @@ describe('buildTrendSplitData', () => {
     });
 
     it('up and down outputs are complementary on matched bars (never both have value)', () => {
-        const up = buildTrendSplitData(bars, data, 'up');
-        const down = buildTrendSplitData(bars, data, 'down');
+        const up = buildTrendSplitData(bars, data, 'up', getSt);
+        const down = buildTrendSplitData(bars, data, 'down', getSt);
         up.forEach((u, i) => {
             const bothHaveValue = 'value' in u && 'value' in down[i];
             expect(bothHaveValue).toBe(false);
         });
     });
 
-    it('emits whitespace when supertrend is null even if trend matches dir', () => {
+    it('emits whitespace when the selected value is null even if trend matches dir', () => {
         const nullVal: SupertrendResult[] = [{ supertrend: null, trend: 'up' }];
-        expect(buildTrendSplitData([bar(1)], nullVal, 'up')).toEqual([
+        expect(buildTrendSplitData([bar(1)], nullVal, 'up', getSt)).toEqual([
             { time: 1 },
         ]);
     });
@@ -182,11 +183,25 @@ describe('buildTrendSplitData', () => {
     it('clamps to the shorter of bars / data length (worst case)', () => {
         const longBars = [bar(1), bar(2), bar(3), bar(4)];
         const shortData: SupertrendResult[] = [{ supertrend: 5, trend: 'up' }];
-        const out = buildTrendSplitData(longBars, shortData, 'up');
+        const out = buildTrendSplitData(longBars, shortData, 'up', getSt);
         expect(out).toEqual([{ time: 1, value: 5 }]);
     });
 
     it('returns empty array for empty inputs', () => {
-        expect(buildTrendSplitData([], [], 'up')).toEqual([]);
+        expect(buildTrendSplitData([], [], 'up', getSt)).toEqual([]);
+    });
+
+    it("supports a 'long'/'short' trend literal with a per-side selector (chandelier shape)", () => {
+        const ch = [
+            { longStop: 90, shortStop: 110, trend: 'long' as const },
+            { longStop: 91, shortStop: 111, trend: 'short' as const },
+        ];
+        const longBars = [bar(1), bar(2)];
+        expect(
+            buildTrendSplitData(longBars, ch, 'long', r => r.longStop)
+        ).toEqual([{ time: 1, value: 90 }, { time: 2 }]);
+        expect(
+            buildTrendSplitData(longBars, ch, 'short', r => r.shortStop)
+        ).toEqual([{ time: 1 }, { time: 2, value: 111 }]);
     });
 });
