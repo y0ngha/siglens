@@ -206,15 +206,83 @@ interface SkillError {
 const isRecord = (value: unknown): value is Record<string, unknown> =>
     typeof value === 'object' && value !== null && !Array.isArray(value);
 
+const USAGE_ROLE_ORDER = [
+    'signal',
+    'confirmation',
+    'regime',
+    'measurement',
+    'risk',
+] as const;
+
+/**
+ * Validate the `usage_roles` field for a skill.
+ *
+ * Rules:
+ * - `type: indicator_guide` with `gating.tier: always_on` → `usage_roles` is
+ *   optional (always-on skills are injected unconditionally; role-based routing
+ *   does not apply). If present, it must still be a valid array.
+ * - `type: indicator_guide` (all other cases) → `usage_roles` REQUIRED,
+ *   non-empty array of known roles in canonical order, no duplicates.
+ * - any other type → `usage_roles` MUST be absent (build error if present).
+ *
+ * Returns a single error string, or null when the field is valid.
+ */
+function validateUsageRoles(
+    type: unknown,
+    raw: unknown,
+    gating: unknown
+): string | null {
+    if (type !== 'indicator_guide') {
+        return raw !== undefined
+            ? 'usage_roles is only allowed on type: indicator_guide'
+            : null;
+    }
+    // always_on indicator_guide skills are injected unconditionally — usage_roles
+    // is optional. Skip the required-field check but still validate content if present.
+    const isAlwaysOn = isRecord(gating) && gating.tier === 'always_on';
+    if (raw === undefined && isAlwaysOn) return null;
+    if (!Array.isArray(raw) || raw.length === 0) {
+        return 'indicator_guide requires a non-empty usage_roles array';
+    }
+    const seen: string[] = [];
+    for (const r of raw) {
+        if (
+            typeof r !== 'string' ||
+            !(USAGE_ROLE_ORDER as readonly string[]).includes(r)
+        ) {
+            return `invalid usage_role: ${String(r)}`;
+        }
+        if (seen.includes(r)) return `duplicate usage_role: ${r}`;
+        seen.push(r);
+    }
+    const canonical = USAGE_ROLE_ORDER.filter(o => seen.includes(o));
+    if (canonical.join(',') !== seen.join(',')) {
+        return `usage_roles must be in canonical order: [${canonical.join(', ')}]`;
+    }
+    return null;
+}
+
 /**
  * Validate a single skill's frontmatter `data`. Returns the list of error
  * messages (empty when the skill is valid or intentionally untagged). Exported
  * for unit testing without spawning the CLI.
  */
-export const validateSkillData = (data: Record<string, unknown>): string[] =>
+export const validateSkillData = (data: Record<string, unknown>): string[] => {
+    const errors: string[] = [];
+
+    const usageRolesError = validateUsageRoles(
+        data.type,
+        data.usage_roles,
+        data.gating
+    );
+    if (usageRolesError !== null) errors.push(usageRolesError);
+
     // A skill with no `gating` block is intentionally untagged (the core
     // selector fail-opens it). Only validate when a block is present.
-    'gating' in data ? validateGating(data.gating) : [];
+    if ('gating' in data) errors.push(...validateGating(data.gating));
+
+    return errors;
+};
 
 function validateGating(gating: unknown): string[] {
     if (!isRecord(gating)) {

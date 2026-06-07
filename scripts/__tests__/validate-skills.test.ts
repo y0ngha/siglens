@@ -94,6 +94,77 @@ describe('validateSkillData', () => {
         });
     });
 
+    describe('usage_roles', () => {
+        it('indicator_guide with valid [signal, confirmation] passes', () => {
+            expect(
+                validateSkillData({
+                    type: 'indicator_guide',
+                    usage_roles: ['signal', 'confirmation'],
+                })
+            ).toEqual([]);
+        });
+
+        it('indicator_guide missing usage_roles fails', () => {
+            const errors = validateSkillData({ type: 'indicator_guide' });
+            expect(errors).toHaveLength(1);
+            expect(errors[0]).toMatch(/usage_roles/);
+        });
+
+        it('indicator_guide with empty [] fails', () => {
+            const errors = validateSkillData({
+                type: 'indicator_guide',
+                usage_roles: [],
+            });
+            expect(errors).toHaveLength(1);
+            expect(errors[0]).toMatch(/usage_roles/);
+        });
+
+        it('indicator_guide with non-array scalar fails', () => {
+            const errors = validateSkillData({
+                type: 'indicator_guide',
+                usage_roles: 'signal',
+            });
+            expect(errors).toHaveLength(1);
+            expect(errors[0]).toMatch(/usage_roles/);
+        });
+
+        it('indicator_guide with unknown role fails', () => {
+            const errors = validateSkillData({
+                type: 'indicator_guide',
+                usage_roles: ['signal', 'bogus_role'],
+            });
+            expect(errors).toHaveLength(1);
+            expect(errors[0]).toMatch(/invalid usage_role/);
+        });
+
+        it('indicator_guide with duplicate role fails', () => {
+            const errors = validateSkillData({
+                type: 'indicator_guide',
+                usage_roles: ['signal', 'signal'],
+            });
+            expect(errors).toHaveLength(1);
+            expect(errors[0]).toMatch(/duplicate usage_role/);
+        });
+
+        it('indicator_guide with wrong order [confirmation, signal] fails', () => {
+            const errors = validateSkillData({
+                type: 'indicator_guide',
+                usage_roles: ['confirmation', 'signal'],
+            });
+            expect(errors).toHaveLength(1);
+            expect(errors[0]).toMatch(/canonical order/);
+        });
+
+        it('non-indicator skill (type: pattern) with usage_roles fails', () => {
+            const errors = validateSkillData({
+                type: 'pattern',
+                usage_roles: ['signal'],
+            });
+            expect(errors).toHaveLength(1);
+            expect(errors[0]).toMatch(/usage_roles/);
+        });
+    });
+
     describe('unreachable skills', () => {
         it('rejects an event-gated skill with empty triggers', () => {
             const errors = validateSkillData({
