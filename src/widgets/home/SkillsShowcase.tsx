@@ -29,6 +29,8 @@ const SKELETON_CARD_COUNT = 12;
 const HIGH_CONFIDENCE_WEIGHT = 0.8;
 // 등급 경계는 @y0ngha/siglens-core의 confidence helper와 동일 값(0.5/0.8).
 // SkillsShowcase는 client component이고 lcp-discovery 의존성 절단을 위해 인라인 유지.
+// 제거 조건: core가 client entrypoint(index.client)에 confidence 경계/helper를
+// 노출하면 이 미러를 삭제하고 import로 통합한다. `HIGH_CONFIDENCE_WEIGHT`와 함께 갱신.
 const MEDIUM_CONFIDENCE_WEIGHT = 0.5;
 
 interface TabConfig {

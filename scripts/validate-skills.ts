@@ -260,8 +260,9 @@ function validateUsageRoles(
     if (!Array.isArray(raw) || raw.length === 0) {
         return 'indicator_guide requires a non-empty usage_roles array';
     }
+    // A Set preserves insertion order in JS, so iterating `seen` reflects the
+    // input order — no parallel array needed for the canonical-order check.
     const seen = new Set<string>();
-    const seenOrdered: string[] = [];
     for (const r of raw) {
         if (
             typeof r !== 'string' ||
@@ -271,10 +272,9 @@ function validateUsageRoles(
         }
         if (seen.has(r)) return `duplicate usage_role: ${r}`;
         seen.add(r);
-        seenOrdered.push(r);
     }
     const canonical = USAGE_ROLE_ORDER.filter(o => seen.has(o));
-    if (canonical.join(',') !== seenOrdered.join(',')) {
+    if (canonical.join(',') !== [...seen].join(',')) {
         return `usage_roles must be in canonical order: [${canonical.join(', ')}]`;
     }
     return null;
@@ -286,20 +286,18 @@ function validateUsageRoles(
  * for unit testing without spawning the CLI.
  */
 export const validateSkillData = (data: Record<string, unknown>): string[] => {
-    const errors: string[] = [];
-
     const usageRolesError = validateUsageRoles(
         data.type,
         data.usage_roles,
         data.gating
     );
-    if (usageRolesError !== null) errors.push(usageRolesError);
 
     // A skill with no `gating` block is intentionally untagged (the core
     // selector fail-opens it). Only validate when a block is present.
-    if ('gating' in data) errors.push(...validateGating(data.gating));
-
-    return errors;
+    return [
+        ...(usageRolesError !== null ? [usageRolesError] : []),
+        ...('gating' in data ? validateGating(data.gating) : []),
+    ];
 };
 
 function validateGating(gating: unknown): string[] {

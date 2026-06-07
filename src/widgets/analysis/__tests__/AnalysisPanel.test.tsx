@@ -351,7 +351,8 @@ describe('AnalysisPanel', () => {
                 timeframe="1Day"
             />
         );
-        // confidence 0.2 (< old MIN 0.5) but NOT a pattern duplicate → still shown
+        // A low-confidence strategy that does not duplicate a detected pattern is
+        // shown — confidence is a display weight and never gates inclusion.
         expect(screen.getByText('UniqueStrategy')).toBeInTheDocument();
     });
 

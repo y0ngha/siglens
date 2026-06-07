@@ -45,8 +45,10 @@ vi.mock('../hooks/useSkillsShowcase', () => ({
 }));
 
 import { render, screen } from '@testing-library/react';
-import { HIGH_CONFIDENCE_WEIGHT } from '@y0ngha/siglens-core';
-import type { SkillShowcaseItem } from '@y0ngha/siglens-core';
+import {
+    HIGH_CONFIDENCE_WEIGHT,
+    type SkillShowcaseItem,
+} from '@y0ngha/siglens-core';
 
 import { SkillsShowcase, SkillsShowcaseSkeleton } from '../SkillsShowcase';
 
