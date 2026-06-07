@@ -51,9 +51,9 @@
     --color-chart-donchian-upper: #fcd34d;
     --color-chart-donchian-middle: #d97706;
 
-    /* Chart — Supertrend */
-    --color-chart-supertrend-up: #16a34a;
-    --color-chart-supertrend-down: #dc2626;
+    /* Chart — Supertrend (추세 색 고정값: bullish teal / bearish red) */
+    --color-chart-supertrend-up: #26a69a;
+    --color-chart-supertrend-down: #ef5350;
 
     /* Chart — MACD */
     --color-chart-macd: #3b82f6;
