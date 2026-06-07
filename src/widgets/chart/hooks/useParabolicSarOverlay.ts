@@ -8,18 +8,17 @@ import {
     useRef,
     useState,
 } from 'react';
-import type { IChartApi, ISeriesApi, LineWidth } from 'lightweight-charts';
+import type { IChartApi, ISeriesApi } from 'lightweight-charts';
 import { LineSeries } from 'lightweight-charts';
 import { CHART_COLORS } from '@/shared/lib/chartColors';
 import type { Bar, IndicatorResult } from '@y0ngha/siglens-core';
-import { DEFAULT_LINE_WIDTH } from '../constants';
+import { DEFAULT_POINT_MARKERS_RADIUS } from '../constants';
 import { buildTrendSplitData } from '../utils/seriesDataUtils';
 
 interface UseParabolicSarOverlayParams {
     chartRef: RefObject<IChartApi | null>;
     bars: Bar[];
     indicators: IndicatorResult;
-    lineWidth?: LineWidth;
 }
 
 interface UseParabolicSarOverlayReturn {
@@ -31,7 +30,6 @@ export function useParabolicSarOverlay({
     chartRef,
     bars,
     indicators,
-    lineWidth = DEFAULT_LINE_WIDTH,
 }: UseParabolicSarOverlayParams): UseParabolicSarOverlayReturn {
     const [isVisible, setIsVisible] = useState(false);
     const prevChartRef = useRef<IChartApi | null>(null);
@@ -80,7 +78,7 @@ export function useParabolicSarOverlay({
                 color: CHART_COLORS.parabolicSarUp,
                 lineVisible: false,
                 pointMarkersVisible: true,
-                pointMarkersRadius: 2,
+                pointMarkersRadius: DEFAULT_POINT_MARKERS_RADIUS,
                 priceLineVisible: false,
                 lastValueVisible: false,
             });
@@ -91,12 +89,12 @@ export function useParabolicSarOverlay({
                 color: CHART_COLORS.parabolicSarDown,
                 lineVisible: false,
                 pointMarkersVisible: true,
-                pointMarkersRadius: 2,
+                pointMarkersRadius: DEFAULT_POINT_MARKERS_RADIUS,
                 priceLineVisible: false,
                 lastValueVisible: false,
             });
         }
-    }, [chartRef, isVisible, lineWidth]);
+    }, [chartRef, isVisible]);
 
     // isVisible이 true로 바뀔 때도 실행되어 새로 생성된 시리즈에 초기 데이터를 세팅함
     useEffect(() => {

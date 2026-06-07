@@ -1,4 +1,5 @@
 export const DEFAULT_LINE_WIDTH = 1;
+export const DEFAULT_POINT_MARKERS_RADIUS = 2; // 점 마커(Parabolic SAR 등) 반지름
 export const INACTIVE_PANE_INDEX = -1;
 export const FIRST_INDICATOR_PANE_INDEX = 1;
 export const LABEL_SERIES_INDEX = 0; // 첫 번째 시리즈에만 label을 표시한다

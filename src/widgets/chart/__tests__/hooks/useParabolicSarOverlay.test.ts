@@ -136,7 +136,7 @@ describe('useParabolicSarOverlay', () => {
         );
     });
 
-    it('both up and short selectors read r.sar', () => {
+    it('both up and down selectors read r.sar', () => {
         const chart = makeChart();
         const { result } = renderHook(() =>
             useParabolicSarOverlay({
