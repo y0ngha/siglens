@@ -809,9 +809,9 @@ export function AnalysisPanel({
 
     const patternSkillNames = new Set(patternSummaries.map(p => p.skillName));
 
-    // confidence는 표시 가중치이지 포함 게이트가 아니다(정책 §8.2: consumer는
-    // 표시에 confidence를 쓸 수 있으나 데이터 손실 금지). 따라서 confidence 하한으로
-    // 거르지 않고, 패턴으로 이미 표시되는 전략만 중복 제거한다.
+    // confidence는 표시 가중치이지 포함 게이트가 아니다 — consumer는 표시에
+    // confidence를 쓸 수 있으나 그 값으로 결과를 제거(데이터 손실)해서는 안 된다.
+    // 따라서 confidence 하한으로 거르지 않고, 패턴으로 이미 표시되는 전략만 중복 제거한다.
     const detectedStrategyResults = strategyResults.filter(
         s => !patternSkillNames.has(s.strategyName)
     );

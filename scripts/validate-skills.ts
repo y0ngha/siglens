@@ -232,7 +232,7 @@ void _usageRolesAreExhaustive;
 
 // O(1) membership that accepts an arbitrary `string` directly — mirrors the
 // USAGE_ROLE_SET in src/entities/skill/api.ts and avoids a widening cast.
-const USAGE_ROLE_SET = new Set<string>(USAGE_ROLE_ORDER);
+const USAGE_ROLE_SET: ReadonlySet<string> = new Set<string>(USAGE_ROLE_ORDER);
 
 /**
  * Validate the `usage_roles` field for a skill.
