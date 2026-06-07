@@ -230,6 +230,10 @@ const _usageRolesAreExhaustive: MissingUsageRole extends never ? true : never =
     true;
 void _usageRolesAreExhaustive;
 
+// O(1) membership that accepts an arbitrary `string` directly — mirrors the
+// USAGE_ROLE_SET in src/entities/skill/api.ts and avoids a widening cast.
+const USAGE_ROLE_SET = new Set<string>(USAGE_ROLE_ORDER);
+
 /**
  * Validate the `usage_roles` field for a skill.
  *
@@ -264,10 +268,7 @@ function validateUsageRoles(
     // input order — no parallel array needed for the canonical-order check.
     const seen = new Set<string>();
     for (const r of raw) {
-        if (
-            typeof r !== 'string' ||
-            !(USAGE_ROLE_ORDER as readonly string[]).includes(r)
-        ) {
+        if (typeof r !== 'string' || !USAGE_ROLE_SET.has(r)) {
             return `invalid usage_role: ${String(r)}`;
         }
         if (seen.has(r)) return `duplicate usage_role: ${r}`;
