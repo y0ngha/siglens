@@ -1297,7 +1297,7 @@ type: pattern | indicator_guide | strategy | candlestick | support_resistance  #
 category: string              # 선택. reversal_bullish | reversal_bearish | continuation_bullish | continuation_bearish | neutral
 pattern: string               # type: pattern일 때 패턴 식별자
 indicators: string[]          # 이 skill이 필요로 하는 인디케이터 목록
-confidence_weight: number     # 0.0 ~ 1.0. 프롬프트 포함 여부와 강조도 결정
+confidence_weight: number     # 0.0 ~ 1.0. 표시 가중치 — Low/Medium/High 라벨 결정 (제외 게이트 없음)
 display:                      # 선택. 차트 표시 설정
   chart:
     show: boolean             # 기본 show/hide 여부 (기본값: false)
