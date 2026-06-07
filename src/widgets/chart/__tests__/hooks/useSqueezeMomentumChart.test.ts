@@ -127,7 +127,6 @@ describe('useSqueezeMomentumChart', () => {
                 paneIndex: 1,
             })
         );
-        // 모멘텀 colorFn은 row.increasing을 squeezeMomentumColor로 forward해야 한다.
         const momentumColorFn = vi
             .mocked(buildSeriesData)
             .mock.calls.find(c => c[2] === 'momentum')?.[3];

@@ -103,7 +103,6 @@ test.describe('chart indicator settings modal', () => {
             .getByRole('checkbox', { name: 'Elder Ray', exact: true })
             .check();
         await page.getByRole('button', { name: '닫기' }).click();
-        // Elder Ray pane의 첫 sub-label은 'Bull Power'. .pane-indicator-label로 스코프.
         await expect(
             page
                 .locator('.pane-indicator-label')

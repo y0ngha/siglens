@@ -117,7 +117,6 @@ describe('useElderRayChart', () => {
         const calls = vi.mocked(buildSeriesData).mock.calls;
         const bullColorFn = calls.find(c => c[2] === 'bullPower')?.[3];
         const bearColorFn = calls.find(c => c[2] === 'bearPower')?.[3];
-        // buildSeriesData colorFn signature: (value, row, index). row/index은 색 결정과 무관.
         expect(bullColorFn?.(2, {} as never, 0)).toBe(
             CHART_COLORS.elderBullPower
         );

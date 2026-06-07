@@ -31,7 +31,7 @@ export function buildSeriesData<
             value,
         };
         if (colorFn !== undefined) {
-            point.color = colorFn(value, indicatorData[i] as T, i);
+            point.color = colorFn(value, indicatorData[i], i);
         }
         return point;
     });

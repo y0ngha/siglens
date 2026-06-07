@@ -52,11 +52,14 @@ export function squeezeStateColor(row: {
 
 /**
  * Regression slope 막대 색: 부호로 teal/red, 투명도 = r2(적합도) 클램프.
- * r2 null이면 fallback alpha로 "신뢰도 미확정"을 흐리게 표현.
+ * r2 null/undefined이면 fallback alpha로 "신뢰도 미확정"을 흐리게 표현(`== null`로 둘 다 방어 → NaN alpha 방지).
  */
-export function regressionBarColor(slope: number, r2: number | null): string {
+export function regressionBarColor(
+    slope: number,
+    r2: number | null | undefined
+): string {
     const alpha =
-        r2 === null ? REGRESSION_FALLBACK_ALPHA : Math.min(1, Math.max(0, r2));
+        r2 == null ? REGRESSION_FALLBACK_ALPHA : Math.min(1, Math.max(0, r2));
     const rgb = slope >= 0 ? REGRESSION_UP_RGB : REGRESSION_DOWN_RGB;
     return `rgba(${rgb}, ${alpha})`;
 }
