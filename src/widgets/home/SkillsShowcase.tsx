@@ -27,6 +27,9 @@ const SKELETON_CARD_COUNT = 12;
  * `HIGH_CONFIDENCE_WEIGHT`와 함께 일관되게 갱신할 것 (현재 양쪽 모두 0.8).
  */
 const HIGH_CONFIDENCE_WEIGHT = 0.8;
+// 등급 경계는 @y0ngha/siglens-core의 confidence helper와 동일 값(0.5/0.8).
+// SkillsShowcase는 client component이고 lcp-discovery 의존성 절단을 위해 인라인 유지.
+const MEDIUM_CONFIDENCE_WEIGHT = 0.5;
 
 interface TabConfig {
     value: SkillsActiveTab;
@@ -75,6 +78,12 @@ const TYPE_BADGE: Record<SkillType, TypeBadgeConfig> = {
     },
 };
 
+function barColorClass(weight: number): string {
+    if (weight >= HIGH_CONFIDENCE_WEIGHT) return 'bg-chart-bullish';
+    if (weight >= MEDIUM_CONFIDENCE_WEIGHT) return 'bg-ui-warning';
+    return 'bg-secondary-500';
+}
+
 function ConfidenceInfoTooltip() {
     const containerRef = useRef<HTMLDivElement>(null);
     const tooltipId = useId();
@@ -104,8 +113,8 @@ function ConfidenceInfoTooltip() {
             >
                 <div className="text-secondary-300 leading-relaxed">
                     <p>분석 기법의 신뢰도 점수예요.</p>
-                    <p>50% 미만이면 분석에서 제외돼요.</p>
-                    <p>80% 이상이면 높은 신뢰도로 분류해요.</p>
+                    <p>50% 미만 낮음 · 50~80% 보통 · 80% 이상 높음.</p>
+                    <p>낮은 점수도 분석에 보조적으로 반영돼요.</p>
                 </div>
             </div>
         </div>
@@ -118,7 +127,7 @@ interface SkillCardProps {
 
 function SkillCard({ skill }: SkillCardProps) {
     const badge = skill.type != null ? TYPE_BADGE[skill.type] : null;
-    const isHighConfidence = skill.confidenceWeight >= HIGH_CONFIDENCE_WEIGHT;
+    const barColor = barColorClass(skill.confidenceWeight);
 
     return (
         <div className="bg-secondary-800/50 border-secondary-700 rounded-lg border p-4">
@@ -143,11 +152,10 @@ function SkillCard({ skill }: SkillCardProps) {
             <div className="flex items-center gap-2">
                 <div className="bg-secondary-700 h-1.5 flex-1 overflow-hidden rounded-full">
                     <div
+                        data-testid="confidence-bar"
                         className={cn(
                             'h-full w-(--confidence-w) rounded-full',
-                            isHighConfidence
-                                ? 'bg-chart-bullish'
-                                : 'bg-ui-warning'
+                            barColor
                         )}
                         style={
                             {
