@@ -28,10 +28,7 @@ import type {
     Trendline,
     TrendlineDirection,
 } from '@y0ngha/siglens-core';
-import {
-    HIGH_CONFIDENCE_WEIGHT,
-    MIN_CONFIDENCE_WEIGHT,
-} from '@y0ngha/siglens-core';
+import { HIGH_CONFIDENCE_WEIGHT } from '@y0ngha/siglens-core';
 import { cn } from '@/shared/lib/cn';
 import { useSymbolPageContext } from '@/widgets/symbol-page';
 import {
@@ -812,13 +809,11 @@ export function AnalysisPanel({
 
     const patternSkillNames = new Set(patternSummaries.map(p => p.skillName));
 
-    // MIN_CONFIDENCE_WEIGHT가 아직 core에서 export되지 않은 경우(undefined) fail-open:
-    // 모든 전략을 통과시킨다. core가 상수를 export하면 자동으로 필터가 활성화된다.
-    const minConfidence = MIN_CONFIDENCE_WEIGHT ?? 0;
+    // confidence는 표시 가중치이지 포함 게이트가 아니다(정책 §8.2: consumer는
+    // 표시에 confidence를 쓸 수 있으나 데이터 손실 금지). 따라서 confidence 하한으로
+    // 거르지 않고, 패턴으로 이미 표시되는 전략만 중복 제거한다.
     const detectedStrategyResults = strategyResults.filter(
-        s =>
-            s.confidenceWeight >= minConfidence &&
-            !patternSkillNames.has(s.strategyName)
+        s => !patternSkillNames.has(s.strategyName)
     );
 
     const displayedIndicatorResults = indicatorResults.filter(

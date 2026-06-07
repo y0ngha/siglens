@@ -24,9 +24,6 @@ vi.mock('@y0ngha/siglens-core', async importOriginal => {
     return {
         ...actual,
         isFreeModel: vi.fn(() => true),
-        // core가 아직 export하지 않은 상수를 명시적으로 undefined로 노출.
-        // AnalysisPanel이 `?? 0` fallback으로 처리하므로 fail-open 동작.
-        MIN_CONFIDENCE_WEIGHT: undefined,
     };
 });
 

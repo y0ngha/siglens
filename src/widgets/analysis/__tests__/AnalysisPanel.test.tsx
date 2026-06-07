@@ -74,7 +74,6 @@ import type {
     PatternResult,
     StrategyResult,
 } from '@y0ngha/siglens-core';
-import { MIN_CONFIDENCE_WEIGHT } from '@y0ngha/siglens-core';
 
 import { AnalysisPanel } from '../AnalysisPanel';
 
@@ -132,9 +131,7 @@ const makeStrategy = (
     strategyName: 'Breakout',
     trend: 'bullish',
     summary: '전략 설명',
-    // MIN_CONFIDENCE_WEIGHT가 core에서 아직 export되지 않은 경우(undefined) 0으로 fallback.
-    // 컴포넌트의 minConfidence fallback과 대칭: fail-open으로 전략을 표시.
-    confidenceWeight: MIN_CONFIDENCE_WEIGHT ?? 0,
+    confidenceWeight: 0.85,
     ...overrides,
 });
 
@@ -333,7 +330,8 @@ describe('AnalysisPanel', () => {
             />
         );
 
-        // Strategy section header should not appear since all strategies filtered
+        // The only strategy duplicates a detected pattern name ('Breakout'), so it
+        // is de-duplicated out — confidence no longer gates inclusion.
         expect(screen.queryByText('전략')).not.toBeInTheDocument();
     });
 
