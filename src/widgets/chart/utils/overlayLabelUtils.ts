@@ -21,6 +21,8 @@ interface BuildOverlayLabelConfigsParams {
     keltnerVisible: boolean;
     donchianVisible: boolean;
     supertrendVisible: boolean;
+    parabolicSarVisible: boolean;
+    chandelierVisible: boolean;
 }
 
 export function buildOverlayLabelConfigs({
@@ -32,6 +34,8 @@ export function buildOverlayLabelConfigs({
     keltnerVisible,
     donchianVisible,
     supertrendVisible,
+    parabolicSarVisible,
+    chandelierVisible,
 }: BuildOverlayLabelConfigsParams): OverlayLabelConfig[] {
     const maConfigs: OverlayLabelConfig[] = maVisiblePeriods.map(period => ({
         name: `MA(${period})`,
@@ -193,6 +197,50 @@ export function buildOverlayLabelConfigs({
           ]
         : [];
 
+    const parabolicSarConfigs: OverlayLabelConfig[] = parabolicSarVisible
+        ? [
+              {
+                  name: 'PSAR',
+                  color: CHART_COLORS.parabolicSarUp,
+                  getValue: (ind: IndicatorResult, i: number): number | null =>
+                      ind.parabolicSar[i]?.sar ?? null,
+                  getColor: (ind: IndicatorResult, i: number): string => {
+                      const trend = ind.parabolicSar[i]?.trend;
+                      if (trend === 'down')
+                          return CHART_COLORS.parabolicSarDown;
+                      if (trend === 'up') return CHART_COLORS.parabolicSarUp;
+                      return CHART_COLORS.neutral;
+                  },
+              },
+          ]
+        : [];
+
+    const chandelierConfigs: OverlayLabelConfig[] = chandelierVisible
+        ? [
+              {
+                  name: 'Chandelier',
+                  color: CHART_COLORS.chandelierLong,
+                  // active stop만 표시: long 추세→longStop, short 추세→shortStop.
+                  getValue: (
+                      ind: IndicatorResult,
+                      i: number
+                  ): number | null => {
+                      const r = ind.chandelierExit[i];
+                      if (r?.trend === 'long') return r.longStop;
+                      if (r?.trend === 'short') return r.shortStop;
+                      return null;
+                  },
+                  getColor: (ind: IndicatorResult, i: number): string => {
+                      const trend = ind.chandelierExit[i]?.trend;
+                      if (trend === 'short')
+                          return CHART_COLORS.chandelierShort;
+                      if (trend === 'long') return CHART_COLORS.chandelierLong;
+                      return CHART_COLORS.neutral;
+                  },
+              },
+          ]
+        : [];
+
     return [
         ...maConfigs,
         ...emaConfigs,
@@ -202,6 +250,8 @@ export function buildOverlayLabelConfigs({
         ...keltnerConfigs,
         ...donchianConfigs,
         ...supertrendConfigs,
+        ...parabolicSarConfigs,
+        ...chandelierConfigs,
     ];
 }
 

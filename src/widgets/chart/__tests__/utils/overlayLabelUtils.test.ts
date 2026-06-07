@@ -69,6 +69,8 @@ describe('buildOverlayLabelConfigs', () => {
                 keltnerVisible: false,
                 donchianVisible: false,
                 supertrendVisible: false,
+                parabolicSarVisible: false,
+                chandelierVisible: false,
             });
 
             expect(result).toEqual([]);
@@ -86,6 +88,8 @@ describe('buildOverlayLabelConfigs', () => {
                 keltnerVisible: false,
                 donchianVisible: false,
                 supertrendVisible: false,
+                parabolicSarVisible: false,
+                chandelierVisible: false,
             });
 
             expect(result).toHaveLength(2);
@@ -105,6 +109,8 @@ describe('buildOverlayLabelConfigs', () => {
                 keltnerVisible: false,
                 donchianVisible: false,
                 supertrendVisible: false,
+                parabolicSarVisible: false,
+                chandelierVisible: false,
             });
 
             expect(result).toHaveLength(1);
@@ -123,6 +129,8 @@ describe('buildOverlayLabelConfigs', () => {
                 keltnerVisible: false,
                 donchianVisible: false,
                 supertrendVisible: false,
+                parabolicSarVisible: false,
+                chandelierVisible: false,
             });
 
             expect(result).toHaveLength(3);
@@ -143,6 +151,8 @@ describe('buildOverlayLabelConfigs', () => {
                 keltnerVisible: false,
                 donchianVisible: false,
                 supertrendVisible: false,
+                parabolicSarVisible: false,
+                chandelierVisible: false,
             });
 
             expect(result).toHaveLength(5);
@@ -165,6 +175,8 @@ describe('buildOverlayLabelConfigs', () => {
                 keltnerVisible: false,
                 donchianVisible: false,
                 supertrendVisible: false,
+                parabolicSarVisible: false,
+                chandelierVisible: false,
             });
 
             expect(result).toHaveLength(3);
@@ -185,6 +197,8 @@ describe('buildOverlayLabelConfigs', () => {
                 keltnerVisible: false,
                 donchianVisible: false,
                 supertrendVisible: false,
+                parabolicSarVisible: false,
+                chandelierVisible: false,
             });
 
             expect(result).toHaveLength(4);
@@ -206,6 +220,8 @@ describe('buildOverlayLabelConfigs', () => {
                 keltnerVisible: false,
                 donchianVisible: false,
                 supertrendVisible: false,
+                parabolicSarVisible: false,
+                chandelierVisible: false,
             });
 
             expect(result[0].color).toBe(getPeriodColor(5));
@@ -221,6 +237,8 @@ describe('buildOverlayLabelConfigs', () => {
                 keltnerVisible: false,
                 donchianVisible: false,
                 supertrendVisible: false,
+                parabolicSarVisible: false,
+                chandelierVisible: false,
             });
 
             expect(result[0].color).toBe(CHART_COLORS.bollingerUpper);
@@ -237,6 +255,8 @@ describe('buildOverlayLabelConfigs', () => {
             keltnerVisible: true,
             donchianVisible: true,
             supertrendVisible: false,
+            parabolicSarVisible: false,
+            chandelierVisible: false,
         });
         const names = configs.map(c => c.name);
         expect(names).toEqual(
@@ -271,6 +291,8 @@ describe('buildOverlayLabelConfigs', () => {
             keltnerVisible: false,
             donchianVisible: false,
             supertrendVisible: true,
+            parabolicSarVisible: false,
+            chandelierVisible: false,
         });
         const st = configs.find(c => c.name === 'Supertrend');
         expect(st).toBeDefined();
@@ -290,6 +312,8 @@ describe('buildOverlayLabelConfigs', () => {
             keltnerVisible: false,
             donchianVisible: false,
             supertrendVisible: true,
+            parabolicSarVisible: false,
+            chandelierVisible: false,
         });
         const st = configs.find(c => c.name === 'Supertrend');
         expect(st?.getColor).toBeDefined();
@@ -317,8 +341,85 @@ describe('buildOverlayLabelConfigs', () => {
             keltnerVisible: false,
             donchianVisible: false,
             supertrendVisible: false,
+            parabolicSarVisible: false,
+            chandelierVisible: false,
         });
         expect(configs.find(c => c.name === 'Supertrend')).toBeUndefined();
+    });
+
+    it('includes a PSAR config (value + trend getColor) when parabolicSarVisible', () => {
+        const configs = buildOverlayLabelConfigs({
+            maVisiblePeriods: [],
+            emaVisiblePeriods: [],
+            bollingerVisible: false,
+            ichimokuVisible: false,
+            vpVisible: false,
+            keltnerVisible: false,
+            donchianVisible: false,
+            supertrendVisible: false,
+            parabolicSarVisible: true,
+            chandelierVisible: false,
+        });
+        const psar = configs.find(c => c.name === 'PSAR');
+        expect(psar).toBeDefined();
+        const ind = {
+            parabolicSar: [
+                { sar: 99, trend: 'up' },
+                { sar: 98, trend: 'down' },
+            ],
+        } as never;
+        expect(psar?.getValue(ind, 0)).toBe(99);
+        expect(psar?.getValue(ind, 9)).toBeNull();
+        expect(psar?.getColor?.(ind, 0)).toBe(CHART_COLORS.parabolicSarUp);
+        expect(psar?.getColor?.(ind, 1)).toBe(CHART_COLORS.parabolicSarDown);
+        expect(psar?.getColor?.(ind, 9)).toBe(CHART_COLORS.neutral);
+    });
+
+    it('includes a Chandelier config (active stop by trend + trend getColor) when chandelierVisible', () => {
+        const configs = buildOverlayLabelConfigs({
+            maVisiblePeriods: [],
+            emaVisiblePeriods: [],
+            bollingerVisible: false,
+            ichimokuVisible: false,
+            vpVisible: false,
+            keltnerVisible: false,
+            donchianVisible: false,
+            supertrendVisible: false,
+            parabolicSarVisible: false,
+            chandelierVisible: true,
+        });
+        const ch = configs.find(c => c.name === 'Chandelier');
+        expect(ch).toBeDefined();
+        const ind = {
+            chandelierExit: [
+                { longStop: 90, shortStop: 110, trend: 'long' },
+                { longStop: 91, shortStop: 111, trend: 'short' },
+                { longStop: null, shortStop: null, trend: null },
+            ],
+        } as never;
+        expect(ch?.getValue(ind, 0)).toBe(90);
+        expect(ch?.getValue(ind, 1)).toBe(111);
+        expect(ch?.getValue(ind, 2)).toBeNull();
+        expect(ch?.getColor?.(ind, 0)).toBe(CHART_COLORS.chandelierLong);
+        expect(ch?.getColor?.(ind, 1)).toBe(CHART_COLORS.chandelierShort);
+        expect(ch?.getColor?.(ind, 2)).toBe(CHART_COLORS.neutral);
+    });
+
+    it('omits PSAR and Chandelier configs when their flags are false', () => {
+        const configs = buildOverlayLabelConfigs({
+            maVisiblePeriods: [],
+            emaVisiblePeriods: [],
+            bollingerVisible: false,
+            ichimokuVisible: false,
+            vpVisible: false,
+            keltnerVisible: false,
+            donchianVisible: false,
+            supertrendVisible: false,
+            parabolicSarVisible: false,
+            chandelierVisible: false,
+        });
+        expect(configs.find(c => c.name === 'PSAR')).toBeUndefined();
+        expect(configs.find(c => c.name === 'Chandelier')).toBeUndefined();
     });
 });
 
@@ -373,6 +474,8 @@ describe('resolveOverlayValues', () => {
         keltnerVisible: false,
         donchianVisible: false,
         supertrendVisible: false,
+        parabolicSarVisible: false,
+        chandelierVisible: false,
     });
 
     describe('barIndex가 -1일 때', () => {
@@ -482,6 +585,8 @@ describe('buildOverlayLabelConfigs — getValue 콜백', () => {
             keltnerVisible: false,
             donchianVisible: false,
             supertrendVisible: false,
+            parabolicSarVisible: false,
+            chandelierVisible: false,
         });
 
         expect(configs[0].getValue(mockIndicators, 0)).toBe(100);
@@ -499,6 +604,8 @@ describe('buildOverlayLabelConfigs — getValue 콜백', () => {
             keltnerVisible: false,
             donchianVisible: false,
             supertrendVisible: false,
+            parabolicSarVisible: false,
+            chandelierVisible: false,
         });
 
         expect(configs[0].getValue(mockIndicators, 0)).toBeNull();
@@ -514,6 +621,8 @@ describe('buildOverlayLabelConfigs — getValue 콜백', () => {
             keltnerVisible: false,
             donchianVisible: false,
             supertrendVisible: false,
+            parabolicSarVisible: false,
+            chandelierVisible: false,
         });
 
         expect(configs[0].getValue(mockIndicators, 0)).toBe(105);
@@ -532,6 +641,8 @@ describe('buildOverlayLabelConfigs — getValue 콜백', () => {
             keltnerVisible: false,
             donchianVisible: false,
             supertrendVisible: false,
+            parabolicSarVisible: false,
+            chandelierVisible: false,
         });
 
         expect(configs[0].getValue(mockIndicators, 0)).toBe(101); // tenkan
@@ -552,6 +663,8 @@ describe('buildOverlayLabelConfigs — getValue 콜백', () => {
             keltnerVisible: false,
             donchianVisible: false,
             supertrendVisible: false,
+            parabolicSarVisible: false,
+            chandelierVisible: false,
         });
 
         expect(configs[0].getValue(mockIndicators, 0)).toBe(100); // poc
@@ -574,6 +687,8 @@ describe('buildOverlayLabelConfigs — getValue 콜백', () => {
             keltnerVisible: false,
             donchianVisible: false,
             supertrendVisible: false,
+            parabolicSarVisible: false,
+            chandelierVisible: false,
         });
 
         expect(configs[0].getValue(emptyIndicators, 0)).toBeNull();
