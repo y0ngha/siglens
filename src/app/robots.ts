@@ -1,6 +1,10 @@
 import type { MetadataRoute } from 'next';
 import { SITE_URL } from '@/shared/lib/seo';
 
+const ANTHROPIC_CRAWL_DELAY_SECONDS = 60;
+// Claude-User는 사용자 요청에 따른 단발성 조회이므로 백그라운드 크롤러만 제한한다.
+const ANTHROPIC_CRAWLER_USER_AGENTS = ['ClaudeBot', 'Claude-SearchBot'];
+
 // 검색엔진이 아닌 기생 SEO 크롤러(백링크/순위 분석 SaaS). 포털 랭킹에 기여하지 않으면서
 // 트래픽만 유발하므로 전면 Disallow한다 — Googlebot/Yeti/Bingbot/Daumoa 등 실제
 // 검색엔진은 절대 포함하지 않는다. 이 봇들은 robots.txt를 준수한다.
@@ -30,6 +34,11 @@ export default function robots(): MetadataRoute.Robots {
                 // blocked by robots.txt" 상태로 SERP에 빈 카드로 노출될 위험.
                 // noindex가 더 강한 신호이므로 그쪽만 유지하고 Disallow는 제거.
                 disallow: ['/api/'],
+            },
+            {
+                userAgent: ANTHROPIC_CRAWLER_USER_AGENTS,
+                allow: '/',
+                crawlDelay: ANTHROPIC_CRAWL_DELAY_SECONDS,
             },
             {
                 userAgent: PARASITE_BOT_USER_AGENTS,

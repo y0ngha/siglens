@@ -5,12 +5,6 @@ vi.mock('@/shared/lib/seo', () => ({
 import robots from '@/app/robots';
 
 describe('robots', () => {
-    it('returns a valid robots config', () => {
-        const result = robots();
-        expect(result).toBeDefined();
-        expect(Array.isArray(result.rules)).toBe(true);
-    });
-
     it('allows all paths for the default user agent but disallows /api/', () => {
         const result = robots();
         expect(result.rules).toContainEqual(
@@ -37,6 +31,15 @@ describe('robots', () => {
                 disallow: '/',
             })
         );
+    });
+
+    it('limits Anthropic automated crawlers to one crawl every 60 seconds', () => {
+        const result = robots();
+        expect(result.rules).toContainEqual({
+            userAgent: ['ClaudeBot', 'Claude-SearchBot'],
+            allow: '/',
+            crawlDelay: 60,
+        });
     });
 
     it('points sitemap to the correct URL', () => {
