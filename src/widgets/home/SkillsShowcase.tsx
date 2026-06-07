@@ -121,8 +121,8 @@ function ConfidenceInfoTooltip() {
                 <div className="text-secondary-300 leading-relaxed">
                     <p>분석 기법의 신뢰도 점수예요.</p>
                     <p>
-                        {MEDIUM_PCT}% 미만 낮음 · {MEDIUM_PCT}~{HIGH_PCT}% 보통
-                        · {HIGH_PCT}% 이상 높음.
+                        {MEDIUM_PCT}% 미만은 낮음, {MEDIUM_PCT}~{HIGH_PCT}%는
+                        보통, {HIGH_PCT}% 이상은 높음이에요.
                     </p>
                     <p>낮은 점수도 분석에 보조적으로 반영돼요.</p>
                 </div>
@@ -141,14 +141,14 @@ function SkillCard({ skill }: SkillCardProps) {
 
     return (
         <div className="bg-secondary-800/50 border-secondary-700 rounded-lg border p-4">
-            <div className="mb-2 flex items-center gap-2">
-                <span className="text-secondary-200 text-sm font-medium">
+            <div className="mb-2 flex items-start gap-2">
+                <span className="text-secondary-200 min-w-0 text-sm font-medium">
                     {skill.name}
                 </span>
                 {badge != null && (
                     <span
                         className={cn(
-                            'rounded px-1.5 py-0.5 text-xs font-medium',
+                            'shrink-0 rounded px-1.5 py-0.5 text-xs font-medium whitespace-nowrap',
                             badge.className
                         )}
                     >
