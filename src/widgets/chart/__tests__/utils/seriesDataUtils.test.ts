@@ -4,6 +4,7 @@ import {
     buildSeriesData,
     buildSeriesDataFromValues,
     buildTrendSplitData,
+    buildZeroLineDots,
 } from '@/widgets/chart/utils/seriesDataUtils';
 
 const mockBars: Bar[] = [
@@ -203,5 +204,65 @@ describe('buildTrendSplitData', () => {
         expect(
             buildTrendSplitData(longBars, ch, 'short', r => r.shortStop)
         ).toEqual([{ time: 1 }, { time: 2, value: 111 }]);
+    });
+});
+
+describe('buildSeriesData colorFn row arg', () => {
+    const bars: Bar[] = [bar(1), bar(2)];
+    const data = [
+        { v: 5, flag: true },
+        { v: -3, flag: false },
+    ];
+
+    it('passes (value, row, index) to colorFn', () => {
+        const seen: Array<[number, unknown, number]> = [];
+        buildSeriesData(bars, data, 'v', (value, row, index) => {
+            seen.push([value, row, index]);
+            return '#fff';
+        });
+        expect(seen[0]).toEqual([5, { v: 5, flag: true }, 0]);
+        expect(seen[1]).toEqual([-3, { v: -3, flag: false }, 1]);
+    });
+
+    it('still supports a value-only colorFn (backward compatible)', () => {
+        const out = buildSeriesData(bars, data, 'v', value =>
+            value >= 0 ? '#0f0' : '#f00'
+        );
+        expect(out).toEqual([
+            { time: 1, value: 5, color: '#0f0' },
+            { time: 2, value: -3, color: '#f00' },
+        ]);
+    });
+});
+
+describe('buildZeroLineDots', () => {
+    const bars: Bar[] = [bar(1), bar(2), bar(3)];
+
+    it('emits a zero-value point with the colorFn color per row', () => {
+        const data = [{ s: 'a' }, { s: 'b' }, { s: 'c' }];
+        const out = buildZeroLineDots(bars, data, row =>
+            row.s === 'b' ? '#abc' : null
+        );
+        expect(out).toEqual([
+            { time: 1 },
+            { time: 2, value: 0, color: '#abc' },
+            { time: 3 },
+        ]);
+    });
+
+    it('emits whitespace when the row is null/undefined', () => {
+        const data = [null, { s: 'x' }] as unknown as Array<{ s: string }>;
+        const out = buildZeroLineDots(bars.slice(0, 2), data, () => '#fff');
+        expect(out).toEqual([
+            { time: 1 },
+            { time: 2, value: 0, color: '#fff' },
+        ]);
+    });
+
+    it('clamps to the shorter length and returns [] for empty inputs', () => {
+        expect(buildZeroLineDots([], [], () => '#fff')).toEqual([]);
+        expect(buildZeroLineDots(bars, [{ s: 'a' }], () => '#fff')).toEqual([
+            { time: 1, value: 0, color: '#fff' },
+        ]);
     });
 });
