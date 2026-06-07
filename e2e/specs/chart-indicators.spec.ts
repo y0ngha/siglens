@@ -95,6 +95,50 @@ test.describe('chart indicator settings modal', () => {
         ).toBeVisible();
     });
 
+    test('toggles Elder Ray into a pane via the modal', async ({ page }) => {
+        await page.goto('/AAPL');
+        await page.getByRole('button', { name: GEAR }).click();
+        const dialog = page.getByRole('dialog');
+        await dialog
+            .getByRole('checkbox', { name: 'Elder Ray', exact: true })
+            .check();
+        await page.getByRole('button', { name: '닫기' }).click();
+        // Elder Ray pane의 첫 sub-label은 'Bull Power'. .pane-indicator-label로 스코프.
+        await expect(
+            page
+                .locator('.pane-indicator-label')
+                .filter({ hasText: 'Bull Power' })
+        ).toBeVisible();
+    });
+
+    test('toggles Squeeze into a pane via the modal', async ({ page }) => {
+        await page.goto('/AAPL');
+        await page.getByRole('button', { name: GEAR }).click();
+        const dialog = page.getByRole('dialog');
+        await dialog
+            .getByRole('checkbox', { name: 'Squeeze', exact: true })
+            .check();
+        await page.getByRole('button', { name: '닫기' }).click();
+        await expect(
+            page.locator('.pane-indicator-label').filter({ hasText: 'Squeeze' })
+        ).toBeVisible();
+    });
+
+    test('toggles Regression into a pane via the modal', async ({ page }) => {
+        await page.goto('/AAPL');
+        await page.getByRole('button', { name: GEAR }).click();
+        const dialog = page.getByRole('dialog');
+        await dialog
+            .getByRole('checkbox', { name: 'Regression', exact: true })
+            .check();
+        await page.getByRole('button', { name: '닫기' }).click();
+        await expect(
+            page
+                .locator('.pane-indicator-label')
+                .filter({ hasText: 'Regression' })
+        ).toBeVisible();
+    });
+
     test('toggles the Keltner channel overlay via the modal', async ({
         page,
     }) => {
