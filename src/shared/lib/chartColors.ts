@@ -144,6 +144,21 @@ export const CHART_COLORS = {
     // Chandelier Exit (trend 색 점선 stop) — DESIGN.md 추세 고정값 재사용
     chandelierLong: '#26a69a',
     chandelierShort: '#ef5350',
+    // Elder Ray (bull/bear power 히스토그램)
+    elderBullPower: '#26a69a',
+    elderBearPower: '#ef5350',
+    // Squeeze Momentum 히스토그램 (강=solid, 약=50% alpha) — DESIGN.md teal/red 기반
+    squeezeMomentumUp: '#26a69a',
+    squeezeMomentumUpWeak: '#26a69a80',
+    squeezeMomentumDown: '#ef5350',
+    squeezeMomentumDownWeak: '#ef535080',
+    // Squeeze 상태 점 (추세 무관 상태 팔레트)
+    squeezeOn: '#fbbf24',
+    squeezeOff: '#94a3b8',
+    squeezeNone: '#3b82f6',
+    // Regression (alpha는 r2로 런타임 계산)
+    regressionUp: '#26a69a',
+    regressionDown: '#ef5350',
 } as const;
 
 const PERIOD_COLOR_MAP: Record<number, string> = {
