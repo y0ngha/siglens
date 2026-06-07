@@ -14,8 +14,29 @@ function bindingFor(key: IndicatorKey, active = false): IndicatorBinding {
 }
 
 describe('indicatorRegistry', () => {
-    it('registers exactly the 29 modal-target indicators', () => {
-        expect(INDICATOR_REGISTRY).toHaveLength(29);
+    it('registers exactly the 32 modal-target indicators', () => {
+        expect(INDICATOR_REGISTRY).toHaveLength(32);
+    });
+
+    it('registers elderRay as a momentum pane', () => {
+        const meta = INDICATOR_REGISTRY.find(m => m.key === 'elderRay');
+        expect(meta).toBeDefined();
+        expect(meta?.category).toBe('momentum');
+        expect(meta?.kind).toBe('pane');
+    });
+
+    it('registers squeezeMomentum as a momentum pane', () => {
+        const meta = INDICATOR_REGISTRY.find(m => m.key === 'squeezeMomentum');
+        expect(meta).toBeDefined();
+        expect(meta?.category).toBe('momentum');
+        expect(meta?.kind).toBe('pane');
+    });
+
+    it('registers regression as a statistical pane', () => {
+        const meta = INDICATOR_REGISTRY.find(m => m.key === 'regression');
+        expect(meta).toBeDefined();
+        expect(meta?.category).toBe('statistical');
+        expect(meta?.kind).toBe('pane');
     });
 
     it('registers parabolicSar as a trend overlay', () => {
