@@ -52,6 +52,9 @@ function makePaneIndices(overrides: Partial<PaneIndices> = {}): PaneIndices {
         supertrend: INACTIVE_PANE_INDEX,
         parabolicSar: INACTIVE_PANE_INDEX,
         chandelierExit: INACTIVE_PANE_INDEX,
+        elderRay: INACTIVE_PANE_INDEX,
+        squeezeMomentum: INACTIVE_PANE_INDEX,
+        regression: INACTIVE_PANE_INDEX,
     } satisfies PaneIndices;
     return { ...base, ...overrides };
 }
