@@ -50,6 +50,8 @@ function makePaneIndices(overrides: Partial<PaneIndices> = {}): PaneIndices {
         keltnerChannel: INACTIVE_PANE_INDEX,
         donchianChannel: INACTIVE_PANE_INDEX,
         supertrend: INACTIVE_PANE_INDEX,
+        parabolicSar: INACTIVE_PANE_INDEX,
+        chandelierExit: INACTIVE_PANE_INDEX,
     } satisfies PaneIndices;
     return { ...base, ...overrides };
 }

@@ -14,8 +14,24 @@ function bindingFor(key: IndicatorKey, active = false): IndicatorBinding {
 }
 
 describe('indicatorRegistry', () => {
-    it('registers exactly the 27 modal-target indicators', () => {
-        expect(INDICATOR_REGISTRY).toHaveLength(27);
+    it('registers exactly the 29 modal-target indicators', () => {
+        expect(INDICATOR_REGISTRY).toHaveLength(29);
+    });
+
+    it('registers parabolicSar as a trend overlay', () => {
+        const meta = INDICATOR_REGISTRY.find(m => m.key === 'parabolicSar');
+        expect(meta).toBeDefined();
+        expect(meta?.category).toBe('trend');
+        expect(meta?.kind).toBe('overlay');
+        expect(meta?.hasPeriods).toBeUndefined();
+    });
+
+    it('registers chandelierExit as a trend overlay', () => {
+        const meta = INDICATOR_REGISTRY.find(m => m.key === 'chandelierExit');
+        expect(meta).toBeDefined();
+        expect(meta?.category).toBe('trend');
+        expect(meta?.kind).toBe('overlay');
+        expect(meta?.hasPeriods).toBeUndefined();
     });
 
     it('registers supertrend as a trend overlay', () => {

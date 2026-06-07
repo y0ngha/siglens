@@ -44,7 +44,9 @@ export type IndicatorKey =
     | 'ewmaVolatility'
     | 'keltnerChannel'
     | 'donchianChannel'
-    | 'supertrend';
+    | 'supertrend'
+    | 'parabolicSar'
+    | 'chandelierExit';
 
 export interface IndicatorMeta {
     key: IndicatorKey;
@@ -181,6 +183,18 @@ export const INDICATOR_REGISTRY: readonly IndicatorMeta[] = [
     {
         key: 'supertrend',
         label: 'Supertrend',
+        category: 'trend',
+        kind: 'overlay',
+    },
+    {
+        key: 'parabolicSar',
+        label: 'Parabolic SAR',
+        category: 'trend',
+        kind: 'overlay',
+    },
+    {
+        key: 'chandelierExit',
+        label: 'Chandelier',
         category: 'trend',
         kind: 'overlay',
     },
