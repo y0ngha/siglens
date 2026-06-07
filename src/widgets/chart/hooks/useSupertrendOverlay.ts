@@ -107,10 +107,10 @@ export function useSupertrendOverlay({
         if (!upSeriesRef.current || !downSeriesRef.current) return;
 
         upSeriesRef.current.setData(
-            buildTrendSplitData(bars, supertrend, 'up')
+            buildTrendSplitData(bars, supertrend, 'up', r => r.supertrend)
         );
         downSeriesRef.current.setData(
-            buildTrendSplitData(bars, supertrend, 'down')
+            buildTrendSplitData(bars, supertrend, 'down', r => r.supertrend)
         );
     }, [indicators, bars, isVisible]);
 

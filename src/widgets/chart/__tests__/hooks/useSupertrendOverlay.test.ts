@@ -128,12 +128,14 @@ describe('useSupertrendOverlay', () => {
         expect(splitMock).toHaveBeenCalledWith(
             FAKE_BARS,
             FILLED_INDICATORS.supertrend,
-            'up'
+            'up',
+            expect.any(Function)
         );
         expect(splitMock).toHaveBeenCalledWith(
             FAKE_BARS,
             FILLED_INDICATORS.supertrend,
-            'down'
+            'down',
+            expect.any(Function)
         );
     });
 
@@ -170,12 +172,14 @@ describe('useSupertrendOverlay', () => {
         expect(splitMock).toHaveBeenCalledWith(
             newBars,
             FILLED_INDICATORS.supertrend,
-            'up'
+            'up',
+            expect.any(Function)
         );
         expect(splitMock).toHaveBeenCalledWith(
             newBars,
             FILLED_INDICATORS.supertrend,
-            'down'
+            'down',
+            expect.any(Function)
         );
     });
 
