@@ -163,6 +163,32 @@ describe('validateSkillData', () => {
             expect(errors).toHaveLength(1);
             expect(errors[0]).toMatch(/usage_roles/);
         });
+
+        it('always_on indicator_guide without usage_roles passes (exemption taken)', () => {
+            // always_on skills are injected unconditionally — role-based routing
+            // does not apply, so usage_roles is optional.
+            expect(
+                validateSkillData({
+                    type: 'indicator_guide',
+                    gating: { tier: 'always_on' },
+                })
+            ).toEqual([]);
+        });
+
+        it('gated indicator_guide without usage_roles fails (exemption NOT applied)', () => {
+            // The always_on exemption must not extend to gated skills — they still
+            // require a non-empty usage_roles array so role-based routing can fire.
+            const errors = validateSkillData({
+                type: 'indicator_guide',
+                gating: {
+                    tier: 'gated',
+                    signal_kind: 'event',
+                    triggers: ['rsi_oversold'],
+                },
+            });
+            expect(errors).toHaveLength(1);
+            expect(errors[0]).toMatch(/usage_roles/);
+        });
     });
 
     describe('unreachable skills', () => {
