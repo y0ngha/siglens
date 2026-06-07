@@ -1,7 +1,9 @@
 // @vitest-environment jsdom
 import { renderHook } from '@testing-library/react';
 import type { Bar, IndicatorResult } from '@y0ngha/siglens-core';
+import { CHART_COLORS } from '@/shared/lib/chartColors';
 import { useElderRayChart } from '../../hooks/useElderRayChart';
+import { buildSeriesData } from '../../utils/seriesDataUtils';
 
 const mockSetData = vi.fn();
 const mockApplyOptions = vi.fn();
@@ -100,6 +102,30 @@ describe('useElderRayChart', () => {
             })
         );
         expect(mockSetData).toHaveBeenCalledTimes(2);
+    });
+
+    it('wires bull/bear colorFns that color the dominant side and neutralize the other', () => {
+        renderHook(() =>
+            useElderRayChart({
+                chartRef: makeChartRef(makeChart()),
+                bars: FAKE_BARS,
+                indicators: FILLED_INDICATORS,
+                isVisible: true,
+                paneIndex: 1,
+            })
+        );
+        const calls = vi.mocked(buildSeriesData).mock.calls;
+        const bullColorFn = calls.find(c => c[2] === 'bullPower')?.[3];
+        const bearColorFn = calls.find(c => c[2] === 'bearPower')?.[3];
+        // buildSeriesData colorFn signature: (value, row, index). row/index은 색 결정과 무관.
+        expect(bullColorFn?.(2, {} as never, 0)).toBe(
+            CHART_COLORS.elderBullPower
+        );
+        expect(bullColorFn?.(-2, {} as never, 0)).toBe(CHART_COLORS.neutral);
+        expect(bearColorFn?.(-2, {} as never, 0)).toBe(
+            CHART_COLORS.elderBearPower
+        );
+        expect(bearColorFn?.(2, {} as never, 0)).toBe(CHART_COLORS.neutral);
     });
 
     it('does not set data when elderRay is empty', () => {

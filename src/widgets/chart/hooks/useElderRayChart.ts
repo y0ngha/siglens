@@ -4,9 +4,9 @@ import type { RefObject } from 'react';
 import { useEffect, useEffectEvent, useRef } from 'react';
 import type { IChartApi, ISeriesApi } from 'lightweight-charts';
 import { HistogramSeries } from 'lightweight-charts';
-import { CHART_COLORS } from '@/shared/lib/chartColors';
 import type { Bar, IndicatorResult } from '@y0ngha/siglens-core';
 import { buildSeriesData } from '../utils/seriesDataUtils';
+import { elderRayBarColor } from '../utils/histogramColorUtils';
 
 interface UseElderRayChartParams {
     chartRef: RefObject<IChartApi | null>;
@@ -90,12 +90,12 @@ export function useElderRayChart({
 
         bullSeriesRef.current.setData(
             buildSeriesData(bars, elderRay, 'bullPower', value =>
-                value >= 0 ? CHART_COLORS.elderBullPower : CHART_COLORS.neutral
+                elderRayBarColor(value, 'bull')
             )
         );
         bearSeriesRef.current.setData(
             buildSeriesData(bars, elderRay, 'bearPower', value =>
-                value <= 0 ? CHART_COLORS.elderBearPower : CHART_COLORS.neutral
+                elderRayBarColor(value, 'bear')
             )
         );
     }, [indicators, bars, isVisible, paneIndex]);
