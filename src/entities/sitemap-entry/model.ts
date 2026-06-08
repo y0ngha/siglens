@@ -23,10 +23,16 @@ export interface SitemapIndexEntry {
     lastModified: Date;
 }
 
+export interface LongTailTickerSource {
+    count(): Promise<number>;
+    /** pageNumber는 1부터 시작한다. */
+    loadPage(pageNumber: number, pageSize: number): Promise<readonly string[]>;
+}
+
 /**
  * 한 sub-sitemap 파일에 넣을 수 있는 URL 상한. sitemap.org 표준은 50,000이지만
  * 그 한계까지 채우면 단일 실패 비용이 커지고, lastmod 갱신 신호도 무뎌진다.
- * 50,000으로 잡되, 운영 중 cap에 도달하면 추후 더 작은 chunk로 분할 검토.
+ * route handler는 엔트리 생성 이후 이 상한을 초과하지 않는지 검증해야 한다.
  */
 export const SITEMAP_MAX_URLS_PER_FILE = 50_000;
 
@@ -38,10 +44,8 @@ export const SITEMAP_MAX_URLS_PER_FILE = 50_000;
 export const LONGTAIL_ENTRIES_PER_TICKER = 5;
 
 /**
- * 한 sitemap 파일에 담을 수 있는 long-tail 티커 수.
- * 티커당 LONGTAIL_ENTRIES_PER_TICKER개 URL을 생성하므로,
- * SITEMAP_MAX_URLS_PER_FILE을 넘지 않도록 역산한다.
+ * long-tail 페이지네이션의 안정적인 티커 경계.
+ * URL 상한은 엔트리 생성 이후 별도로 검증하므로,
+ * LONGTAIL_ENTRIES_PER_TICKER에서 역산하지 않는다.
  */
-export const LONGTAIL_TICKERS_PER_PAGE = Math.floor(
-    SITEMAP_MAX_URLS_PER_FILE / LONGTAIL_ENTRIES_PER_TICKER
-);
+export const LONGTAIL_TICKERS_PER_PAGE = 2_000;

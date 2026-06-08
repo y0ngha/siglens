@@ -4,7 +4,7 @@ vi.mock('next/server', async () => {
     return { ...actual };
 });
 vi.mock('@/entities/sitemap-entry', () => ({
-    buildPopularEntries: vi.fn().mockResolvedValue([]),
+    buildPopularEntries: vi.fn().mockReturnValue([]),
     toUrlSetXml: vi.fn().mockReturnValue('<?xml version="1.0"?><urlset/>'),
 }));
 
@@ -46,7 +46,7 @@ describe('GET /api/sitemap/popular', () => {
                 priority: 0.8,
             },
         ];
-        mockBuildPopularEntries.mockResolvedValue(entries);
+        mockBuildPopularEntries.mockReturnValue(entries);
 
         await GET();
 
