@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.20.3](https://github.com/y0ngha/siglens/compare/v0.20.2...v0.20.3) (2026-06-08)
+
+
+### Bug Fixes
+
+* harden longtail pages and options probe ([e4f9bc5](https://github.com/y0ngha/siglens/commit/e4f9bc5253281a8e758b02b950eacf6f56fd4b4d))
+
+
+### Performance Improvements
+
+* **sitemap:** cache longtail pages and static popular options ([10e6045](https://github.com/y0ngha/siglens/commit/10e60452ddb0f3a139813ab13f59bf921568ac31))
+
 ## [0.20.2](https://github.com/y0ngha/siglens/compare/v0.20.1...v0.20.2) (2026-06-07)
 
 ## [0.20.1](https://github.com/y0ngha/siglens/compare/v0.20.0...v0.20.1) (2026-06-07)
