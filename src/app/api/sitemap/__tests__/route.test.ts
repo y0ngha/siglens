@@ -1,14 +1,11 @@
-vi.mock('next/server', async () => {
-    const actual =
-        await vi.importActual<typeof import('next/server')>('next/server');
-    return { ...actual };
-});
 vi.mock('@/entities/sitemap-entry', () => ({
-    loadLongTailTickers: vi.fn(),
-    LONGTAIL_TICKERS_PER_PAGE: 10000,
+    LONGTAIL_TICKERS_PER_PAGE: 2_000,
     toSitemapIndexXml: vi
         .fn()
         .mockReturnValue('<?xml version="1.0"?><sitemapindex/>'),
+}));
+vi.mock('@/entities/sitemap-entry/server', () => ({
+    countLongTailTickers: vi.fn(),
 }));
 vi.mock('@/shared/lib/seo', () => ({
     SITE_BUILD_DATE: new Date('2025-01-01'),
@@ -16,26 +13,33 @@ vi.mock('@/shared/lib/seo', () => ({
 }));
 
 import { GET } from '@/app/api/sitemap/route';
-import {
-    loadLongTailTickers,
-    toSitemapIndexXml,
-} from '@/entities/sitemap-entry';
+import { toSitemapIndexXml } from '@/entities/sitemap-entry';
+import { countLongTailTickers } from '@/entities/sitemap-entry/server';
 import type { MockedFunction } from 'vitest';
 
-const mockLoadLongTailTickers = loadLongTailTickers as MockedFunction<
-    typeof loadLongTailTickers
+const mockCountLongTailTickers = countLongTailTickers as MockedFunction<
+    typeof countLongTailTickers
 >;
 const mockToSitemapIndexXml = toSitemapIndexXml as MockedFunction<
     typeof toSitemapIndexXml
 >;
 
 describe('GET /api/sitemap (index)', () => {
+    let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
+
     beforeEach(() => {
         vi.clearAllMocks();
+        consoleErrorSpy = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => undefined);
+    });
+
+    afterEach(() => {
+        consoleErrorSpy.mockRestore();
     });
 
     it('returns XML with correct content-type and cache headers', async () => {
-        mockLoadLongTailTickers.mockResolvedValue([]);
+        mockCountLongTailTickers.mockResolvedValue(0);
 
         const res = await GET();
 
@@ -46,7 +50,7 @@ describe('GET /api/sitemap (index)', () => {
     });
 
     it('passes static and popular entries without long-tail pages when tickers are empty', async () => {
-        mockLoadLongTailTickers.mockResolvedValue([]);
+        mockCountLongTailTickers.mockResolvedValue(0);
 
         await GET();
 
@@ -57,10 +61,7 @@ describe('GET /api/sitemap (index)', () => {
     });
 
     it('generates long-tail sub-sitemap entries based on ticker count', async () => {
-        // tickersPerPage = Math.floor(50000 / 5) = 10000
-        // ceil(25001 / 10000) = 3 longtail pages → 2 + 3 = 5 total entries
-        const tickers = Array.from({ length: 25001 }, (_, i) => `T${i}`);
-        mockLoadLongTailTickers.mockResolvedValue(tickers);
+        mockCountLongTailTickers.mockResolvedValue(4_001);
 
         await GET();
 
@@ -69,5 +70,20 @@ describe('GET /api/sitemap (index)', () => {
         expect(entries[2].url).toContain('sitemap-longtail-1.xml');
         expect(entries[3].url).toContain('sitemap-longtail-2.xml');
         expect(entries[4].url).toContain('sitemap-longtail-3.xml');
+        expect(entries[2].lastModified).toEqual(new Date('2025-01-01'));
+        expect(mockCountLongTailTickers).toHaveBeenCalledOnce();
+    });
+
+    it('returns temporary unavailable response when ticker count fails', async () => {
+        mockCountLongTailTickers.mockRejectedValue(new Error('db failed'));
+
+        const res = await GET();
+
+        expect(res.status).toBe(503);
+        await expect(res.text()).resolves.toBe(
+            'Sitemap data temporarily unavailable'
+        );
+        expect(res.headers.get('Retry-After')).toBe('300');
+        expect(mockToSitemapIndexXml).not.toHaveBeenCalled();
     });
 });

@@ -4,15 +4,14 @@ vi.mock('next/server', async () => {
     return { ...actual };
 });
 
-/**
- * LONGTAIL_TICKERS_PER_PAGE=3이므로
- * 티커 5개(AAA~EEE): page1=[AAA,BBB,CCC], page2=[DDD,EEE].
- */
 vi.mock('@/entities/sitemap-entry', () => ({
-    loadLongTailTickers: vi.fn(),
     LONGTAIL_TICKERS_PER_PAGE: 3,
+    SITEMAP_MAX_URLS_PER_FILE: 3,
     buildLongTailEntries: vi.fn(),
     toUrlSetXml: vi.fn().mockReturnValue('<?xml version="1.0"?><urlset/>'),
+}));
+vi.mock('@/entities/sitemap-entry/server', () => ({
+    loadLongTailTickerPage: vi.fn(),
 }));
 vi.mock('@/shared/lib/seo', () => ({
     SITE_BUILD_DATE: new Date('2025-01-01'),
@@ -22,97 +21,134 @@ vi.mock('@/shared/lib/seo', () => ({
 import { GET } from '@/app/api/sitemap/longtail/[page]/route';
 import {
     buildLongTailEntries,
-    loadLongTailTickers,
+    LONGTAIL_TICKERS_PER_PAGE,
+    SITEMAP_MAX_URLS_PER_FILE,
     toUrlSetXml,
 } from '@/entities/sitemap-entry';
+import { loadLongTailTickerPage } from '@/entities/sitemap-entry/server';
+import { SITE_BUILD_DATE } from '@/shared/lib/seo';
 import type { MockedFunction } from 'vitest';
 
-const mockLoadLongTailTickers = loadLongTailTickers as MockedFunction<
-    typeof loadLongTailTickers
+const mockLoadLongTailTickerPage = loadLongTailTickerPage as MockedFunction<
+    typeof loadLongTailTickerPage
 >;
 const mockBuildLongTailEntries = buildLongTailEntries as MockedFunction<
     typeof buildLongTailEntries
 >;
 const mockToUrlSetXml = toUrlSetXml as MockedFunction<typeof toUrlSetXml>;
 
-const FAKE_ENTRIES = [
-    {
-        url: 'https://siglens.io/AAA',
-        lastModified: new Date('2025-01-01'),
-        changeFrequency: 'weekly' as const,
-        priority: 0.5,
-    },
-];
+const ALL_TICKERS = ['AAA', 'BBB', 'CCC', 'DDD', 'EEE'] as const;
 
 function callGET(page: string): Promise<Response> {
-    return GET(new Request('http://localhost/api/sitemap/longtail/' + page), {
+    return GET(new Request(`http://localhost/api/sitemap/longtail/${page}`), {
         params: Promise.resolve({ page }),
     });
 }
 
 describe('GET /api/sitemap/longtail/[page]', () => {
+    let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
+
     beforeEach(() => {
         vi.clearAllMocks();
-        mockLoadLongTailTickers.mockResolvedValue([
-            'AAA',
-            'BBB',
-            'CCC',
-            'DDD',
-            'EEE',
-        ]);
-        mockBuildLongTailEntries.mockReturnValue(FAKE_ENTRIES);
+        consoleErrorSpy = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => undefined);
+
+        mockLoadLongTailTickerPage.mockImplementation(async pageNum => {
+            const start = (pageNum - 1) * LONGTAIL_TICKERS_PER_PAGE;
+            return ALL_TICKERS.slice(start, start + LONGTAIL_TICKERS_PER_PAGE);
+        });
+
+        mockBuildLongTailEntries.mockImplementation(chunk =>
+            chunk.map(ticker => ({
+                url: `https://siglens.io/${ticker}`,
+                lastModified: SITE_BUILD_DATE,
+                changeFrequency: 'weekly' as const,
+                priority: 0.5,
+            }))
+        );
     });
 
-    it('returns 404 for non-numeric page', async () => {
-        const res = await callGET('abc');
+    afterEach(() => {
+        consoleErrorSpy.mockRestore();
+    });
+
+    it('returns 404 for invalid page strings and nonpositive values', async () => {
+        await expect(callGET('abc')).resolves.toHaveProperty('status', 404);
+        await expect(callGET('1.2')).resolves.toHaveProperty('status', 404);
+        await expect(callGET('0')).resolves.toHaveProperty('status', 404);
+        await expect(callGET('-1')).resolves.toHaveProperty('status', 404);
+    });
+
+    it('returns 404 when the page is empty', async () => {
+        const res = await callGET('3');
+
         expect(res.status).toBe(404);
+        expect(mockLoadLongTailTickerPage).toHaveBeenCalledWith(3);
+        expect(mockBuildLongTailEntries).not.toHaveBeenCalled();
+        expect(mockToUrlSetXml).not.toHaveBeenCalled();
     });
 
-    it('returns 404 for page 0', async () => {
-        const res = await callGET('0');
-        expect(res.status).toBe(404);
-    });
-
-    it('returns 404 for negative page', async () => {
-        const res = await callGET('-1');
-        expect(res.status).toBe(404);
-    });
-
-    it('returns 404 when page exceeds available chunks', async () => {
-        const res = await callGET('100');
-        expect(res.status).toBe(404);
-    });
-
-    it('returns XML for a valid first page', async () => {
+    it('returns XML for page 1 with the first chunk', async () => {
         const res = await callGET('1');
 
         expect(res.status).toBe(200);
         expect(res.headers.get('Content-Type')).toBe(
             'application/xml; charset=utf-8'
         );
-    });
-
-    it('calls buildLongTailEntries with the first 3-ticker chunk for page 1', async () => {
-        await callGET('1');
-
+        expect(res.headers.get('Cache-Control')).toBe(
+            'public, max-age=3600, stale-while-revalidate=3600'
+        );
+        expect(mockLoadLongTailTickerPage).toHaveBeenCalledWith(1);
         expect(mockBuildLongTailEntries).toHaveBeenCalledWith(
             ['AAA', 'BBB', 'CCC'],
-            new Date('2025-01-01')
+            SITE_BUILD_DATE
         );
+        expect(mockToUrlSetXml).toHaveBeenCalled();
     });
 
-    it('calls buildLongTailEntries with the remaining 2-ticker chunk for page 2', async () => {
-        await callGET('2');
+    it('returns XML for page 2 with the remaining chunk', async () => {
+        const res = await callGET('2');
 
+        expect(res.status).toBe(200);
+        expect(mockLoadLongTailTickerPage).toHaveBeenCalledWith(2);
         expect(mockBuildLongTailEntries).toHaveBeenCalledWith(
             ['DDD', 'EEE'],
-            new Date('2025-01-01')
+            SITE_BUILD_DATE
         );
+        expect(mockToUrlSetXml).toHaveBeenCalled();
     });
 
-    it('passes buildLongTailEntries result to toUrlSetXml', async () => {
-        await callGET('1');
+    it('returns 503 with Retry-After 300 when the loader fails', async () => {
+        mockLoadLongTailTickerPage.mockRejectedValueOnce(new Error('db down'));
 
-        expect(mockToUrlSetXml).toHaveBeenCalledWith(FAKE_ENTRIES);
+        const res = await callGET('1');
+
+        expect(res.status).toBe(503);
+        expect(res.headers.get('Retry-After')).toBe('300');
+        await expect(res.text()).resolves.toBe(
+            'Sitemap data temporarily unavailable'
+        );
+        expect(mockBuildLongTailEntries).not.toHaveBeenCalled();
+        expect(mockToUrlSetXml).not.toHaveBeenCalled();
+    });
+
+    it('returns 500 when entry generation exceeds the URL cap', async () => {
+        mockBuildLongTailEntries.mockReturnValueOnce(
+            Array.from(
+                { length: SITEMAP_MAX_URLS_PER_FILE + 1 },
+                (_, index) => ({
+                    url: `https://siglens.io/overflow-${index}`,
+                    lastModified: SITE_BUILD_DATE,
+                    changeFrequency: 'weekly' as const,
+                    priority: 0.5,
+                })
+            )
+        );
+
+        const res = await callGET('1');
+
+        expect(res.status).toBe(500);
+        expect(mockToUrlSetXml).not.toHaveBeenCalled();
     });
 });

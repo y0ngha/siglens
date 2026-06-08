@@ -1,22 +1,13 @@
 import { POPULAR_TICKERS } from '@/shared/config/popular-tickers';
 import { MS_PER_DAY, MS_PER_HOUR } from '@/shared/config/time';
-// Cross-entity: options-chain hasOptionsMarket 필요. Phase 9에서 features 레이어 도입 시 해소.
-import { hasOptionsMarket } from '@/entities/options-chain/lib/optionsDataCache';
+import { POPULAR_OPTIONS_TICKERS } from '../config/popular-options-tickers';
 import { SITE_URL } from '@/shared/lib/seo';
 import type { SitemapEntry } from '../model';
 
 // 미국 주식 시장 마감 시각(UTC). 16:00 ET = 20:00 UTC (DST 미고려).
 const US_MARKET_CLOSE_UTC_HOUR = 20;
 
-// hasOptionsMarket 동시 호출 상한 — Yahoo Finance rate-limit 보호.
-// 한 sitemap 빌드가 POPULAR_TICKERS 전체를 병렬 요청하지 않도록 청크 단위로 묶는다.
-const OPTIONS_PROBE_CONCURRENCY = 5;
-
-function sliceIntoChunks<T>(items: ReadonlyArray<T>, size: number): T[][] {
-    return Array.from({ length: Math.ceil(items.length / size) }, (_, i) =>
-        items.slice(i * size, (i + 1) * size)
-    );
-}
+const POPULAR_OPTIONS_SET = new Set<string>(POPULAR_OPTIONS_TICKERS);
 
 /**
  * 미국 장 마감 직후 시각을 반환한다. 오늘 close가 아직 미래라면 어제 close로
@@ -40,37 +31,14 @@ function computeTodayAtMarketClose(now: Date): Date {
 }
 
 /**
- * POPULAR_TICKERS 각각에 hasOptionsMarket probe를 청크 단위로 호출하여
- * 옵션 시장이 있는 ticker set을 반환한다. 캐시 미스 시에도 동시 호출 수가
- * OPTIONS_PROBE_CONCURRENCY를 넘지 않도록 묶어 Yahoo Finance rate-limit
- * 위험을 방어한다. hasOptionsMarket은 1일 캐시라 두 번째 빌드부터는
- * fetch 없이 메모리에서 해결.
- */
-async function probeOptionsMarket(
-    tickers: ReadonlyArray<string>
-): Promise<Set<string>> {
-    const allChunks = sliceIntoChunks(tickers, OPTIONS_PROBE_CONCURRENCY);
-    const chunkResults: boolean[][] = [];
-    for (const chunk of allChunks) {
-        const result = await Promise.all(
-            chunk.map(ticker => hasOptionsMarket(ticker).catch(() => false))
-        );
-        chunkResults.push(result);
-    }
-    const flat = chunkResults.flat();
-    return new Set(tickers.filter((_, i) => flat[i]));
-}
-
-/**
  * POPULAR_TICKERS의 모든 sub-route(차트/뉴스/펀더멘털/옵션/종합/공포탐욕)에
- * 대한 sitemap 엔트리를 반환한다. 옵션 페이지는 hasOptionsMarket이 true인
- * ticker만 포함 — 옵션 없는 종목 페이지는 noindex라 sitemap에 두면 품질
- * 신호가 약해진다.
+ * 대한 sitemap 엔트리를 반환한다. 옵션 페이지는 generated static list에
+ * 포함된 ticker만 포함 — 옵션 없는 종목 페이지는 noindex라 sitemap에 두면
+ * 품질 신호가 약해진다.
  */
-export async function buildPopularEntries(now: Date): Promise<SitemapEntry[]> {
+export function buildPopularEntries(now: Date): SitemapEntry[] {
     const todayClose = computeTodayAtMarketClose(now);
     const oneHourAgo = new Date(now.getTime() - MS_PER_HOUR);
-    const tickersWithOptions = await probeOptionsMarket(POPULAR_TICKERS);
 
     return POPULAR_TICKERS.flatMap((ticker): SitemapEntry[] => [
         {
@@ -91,7 +59,7 @@ export async function buildPopularEntries(now: Date): Promise<SitemapEntry[]> {
             changeFrequency: 'weekly',
             priority: 0.75,
         },
-        ...(tickersWithOptions.has(ticker)
+        ...(POPULAR_OPTIONS_SET.has(ticker)
             ? [
                   {
                       url: `${SITE_URL}/${ticker}/options`,

@@ -1,35 +1,21 @@
-import type { MockedFunction } from 'vitest';
-vi.mock('@/entities/options-chain/lib/optionsDataCache', () => ({
-    hasOptionsMarket: vi.fn(),
-}));
-
+import { POPULAR_OPTIONS_TICKERS } from '../config/popular-options-tickers';
 import { POPULAR_TICKERS } from '@/shared/config/popular-tickers';
 import { MS_PER_HOUR } from '@/shared/config/time';
-import { hasOptionsMarket } from '@/entities/options-chain/lib/optionsDataCache';
-import { buildPopularEntries } from '../lib/buildPopularEntries';
 import { SITE_URL } from '@/shared/lib/seo';
-
-const mockedHasOptionsMarket = hasOptionsMarket as MockedFunction<
-    typeof hasOptionsMarket
->;
+import { buildPopularEntries } from '../lib/buildPopularEntries';
 
 // 미국 장 마감 직후 시각이라 todayClose가 오늘 close가 되도록 21:00 UTC로 고정
 // (시장 마감 20:00 UTC 직후).
 const NOW = new Date('2026-05-23T21:00:00.000Z');
 
 describe('buildPopularEntries', () => {
-    beforeEach(() => {
-        vi.clearAllMocks();
-    });
+    it('모든 POPULAR_TICKERS에 대해 5축 기본 라우트를 생성하고 options는 generated list에 맞춘다', () => {
+        const entries = buildPopularEntries(NOW);
 
-    it('모든 POPULAR_TICKERS에 대해 chart/news/fundamental/overall/fear-greed 5축 + options(옵션 있을 때) 라우트를 생성한다', async () => {
-        mockedHasOptionsMarket.mockResolvedValue(true);
-        const entries = await buildPopularEntries(NOW);
+        expect(entries).toHaveLength(
+            POPULAR_TICKERS.length * 5 + POPULAR_OPTIONS_TICKERS.length
+        );
 
-        // ticker당 6개 라우트 (옵션 포함)
-        expect(entries).toHaveLength(POPULAR_TICKERS.length * 6);
-
-        // 첫 ticker의 6 라우트 확인 (url을 base와 비교)
         const first = POPULAR_TICKERS[0];
         const base = `${SITE_URL}/${first}`;
         const urls = entries.map(e => e.url);
@@ -38,25 +24,24 @@ describe('buildPopularEntries', () => {
                 base,
                 `${base}/news`,
                 `${base}/fundamental`,
-                `${base}/options`,
                 `${base}/overall`,
                 `${base}/fear-greed`,
             ])
         );
     });
 
-    it('옵션이 없는 ticker는 /options 라우트를 제외한다', async () => {
-        mockedHasOptionsMarket.mockResolvedValue(false);
-        const entries = await buildPopularEntries(NOW);
+    it('옵션 URL은 generated static options list와 정확히 일치한다', () => {
+        const entries = buildPopularEntries(NOW);
+        const optionsSymbols = entries
+            .filter(entry => entry.url.endsWith('/options'))
+            .map(entry => entry.url.split('/')[3])
+            .toSorted();
 
-        // ticker당 5개 라우트 (옵션 제외)
-        expect(entries).toHaveLength(POPULAR_TICKERS.length * 5);
-        expect(entries.find(e => e.url.endsWith('/options'))).toBeUndefined();
+        expect(optionsSymbols).toEqual([...POPULAR_OPTIONS_TICKERS]);
     });
 
-    it('news 페이지는 1시간 슬라이딩 lastmod와 hourly changefreq를 적용한다', async () => {
-        mockedHasOptionsMarket.mockResolvedValue(false);
-        const entries = await buildPopularEntries(NOW);
+    it('news 페이지는 1시간 슬라이딩 lastmod와 hourly changefreq를 적용한다', () => {
+        const entries = buildPopularEntries(NOW);
 
         const newsEntry = entries.find(e => e.url.endsWith('/news'));
         expect(newsEntry).toBeDefined();
@@ -66,9 +51,8 @@ describe('buildPopularEntries', () => {
         expect(newsEntry!.changeFrequency).toBe('hourly');
     });
 
-    it('chart 페이지는 daily, fundamental은 weekly로 우선순위를 둔다', async () => {
-        mockedHasOptionsMarket.mockResolvedValue(false);
-        const entries = await buildPopularEntries(NOW);
+    it('chart 페이지는 daily, fundamental은 weekly로 우선순위를 둔다', () => {
+        const entries = buildPopularEntries(NOW);
 
         const first = POPULAR_TICKERS[0];
         const chart = entries.find(e => e.url === `${SITE_URL}/${first}`);
@@ -79,10 +63,9 @@ describe('buildPopularEntries', () => {
         expect(fundamental?.changeFrequency).toBe('weekly');
     });
 
-    it('하루 중 시장 마감 전(20:00 UTC 이전) 호출이면 어제 close로 클램프된다', async () => {
-        mockedHasOptionsMarket.mockResolvedValue(false);
+    it('하루 중 시장 마감 전(20:00 UTC 이전) 호출이면 어제 close로 클램프된다', () => {
         const beforeClose = new Date('2026-05-23T15:00:00.000Z'); // 미국 장중
-        const entries = await buildPopularEntries(beforeClose);
+        const entries = buildPopularEntries(beforeClose);
 
         const chart = entries.find(
             e => e.url === `${SITE_URL}/${POPULAR_TICKERS[0]}`

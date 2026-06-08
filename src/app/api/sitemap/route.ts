@@ -1,13 +1,16 @@
 import { NextResponse } from 'next/server';
 import {
-    loadLongTailTickers,
     LONGTAIL_TICKERS_PER_PAGE,
     type SitemapIndexEntry,
     toSitemapIndexXml,
 } from '@/entities/sitemap-entry';
+import { countLongTailTickers } from '@/entities/sitemap-entry/server';
 import { SITE_BUILD_DATE, SITE_URL } from '@/shared/lib/seo';
 
-// loadLongTailTickers는 DB 조회(no-store fetch)라 빌드 시점 prerender 불가.
+const SITEMAP_RETRY_AFTER_SECONDS = '300';
+const SITEMAP_UNAVAILABLE_BODY = 'Sitemap data temporarily unavailable';
+
+// long-tail count는 DB 기반 캐시 데이터라 빌드 시점 prerender 대상이 아니다.
 // force-dynamic + CDN 1h cache로 처리.
 export const dynamic = 'force-dynamic';
 
@@ -27,14 +30,24 @@ export const dynamic = 'force-dynamic';
  */
 export async function GET(): Promise<Response> {
     const now = new Date();
-    const longTailTickers = await loadLongTailTickers();
+    let longTailTickerCount: number;
+
+    try {
+        longTailTickerCount = await countLongTailTickers();
+    } catch (error) {
+        console.error('Sitemap count failed', error);
+        return new NextResponse(SITEMAP_UNAVAILABLE_BODY, {
+            status: 503,
+            headers: {
+                'Retry-After': SITEMAP_RETRY_AFTER_SECONDS,
+            },
+        });
+    }
+
     const longTailPages = Math.ceil(
-        longTailTickers.length / LONGTAIL_TICKERS_PER_PAGE
+        longTailTickerCount / LONGTAIL_TICKERS_PER_PAGE
     );
 
-    // long-tail이 비어 있을 수 있다(DB 미설정/실패 시 graceful fallback).
-    // 그 경우 longTailPages = 0이라 sub-sitemap 항목 자체가 빠지므로,
-    // sitemap index는 static/popular 두 개만 참조한다.
     const longTailEntries: SitemapIndexEntry[] = Array.from(
         { length: longTailPages },
         (_, i) => ({
