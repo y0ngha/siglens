@@ -37,6 +37,8 @@ const MIN_PRICE = 5;
 const MAX_DAILY_CHANGE_PCT = 20;
 const MAX_NEW_TICKERS = 10;
 const REQUEST_DELAY_MS = 200;
+const OPTIONS_PROBE_CONCURRENCY = 5;
+const OPTIONS_PROBE_BATCH_DELAY_MS = 100;
 const SCREENER_LIMIT = 100;
 const SCREENER_MIN_MARKET_CAP = 2_000_000_000;
 const SCREENER_MIN_VOLUME = 5_000_000;
@@ -161,15 +163,19 @@ export async function collectPopularOptionsTickers(
     ].sort();
     const collected: string[] = [];
 
-    for (let i = 0; i < normalized.length; i += 5) {
-        const chunk = normalized.slice(i, i + 5);
+    for (let i = 0; i < normalized.length; i += OPTIONS_PROBE_CONCURRENCY) {
+        const chunk = normalized.slice(i, i + OPTIONS_PROBE_CONCURRENCY);
         const results = await Promise.all(chunk.map(ticker => probe(ticker)));
 
-        chunk.forEach((ticker, index) => {
+        for (const [index, ticker] of chunk.entries()) {
             if (results[index]) {
                 collected.push(ticker);
             }
-        });
+        }
+
+        if (i + OPTIONS_PROBE_CONCURRENCY < normalized.length) {
+            await sleep(OPTIONS_PROBE_BATCH_DELAY_MS);
+        }
     }
 
     return collected;
@@ -208,16 +214,24 @@ export function createYahooOptionsProbe(): OptionsMarketProbe {
     const yahooFinance = new YahooFinance({ suppressNotices: ['yahooSurvey'] });
 
     return async (symbol: string): Promise<boolean> => {
-        const response = (await yahooFinance.options(symbol)) as {
-            expirationDates?: unknown;
-        };
-        if (!Array.isArray(response?.expirationDates)) {
+        try {
+            const response = (await yahooFinance.options(symbol)) as {
+                expirationDates?: unknown;
+            };
+            if (!Array.isArray(response.expirationDates)) {
+                throw new Error(
+                    'Yahoo options response missing expirationDates'
+                );
+            }
+
+            return response.expirationDates.length > 0;
+        } catch (error) {
             throw new Error(
-                `Yahoo options response missing expirationDates for ${symbol}`
+                `Failed to probe options for ${symbol}: ${
+                    error instanceof Error ? error.message : String(error)
+                }`
             );
         }
-
-        return response.expirationDates.length > 0;
     };
 }
 

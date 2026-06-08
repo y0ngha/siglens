@@ -80,6 +80,16 @@ describe('GET /api/sitemap/longtail/[page]', () => {
         await expect(callGET('-1')).resolves.toHaveProperty('status', 404);
     });
 
+    it('returns 404 for unsafe or unrealistic page numbers before loading data', async () => {
+        await expect(callGET('999999999999999999')).resolves.toHaveProperty(
+            'status',
+            404
+        );
+        await expect(callGET('10001')).resolves.toHaveProperty('status', 404);
+
+        expect(mockLoadLongTailTickerPage).not.toHaveBeenCalled();
+    });
+
     it('returns 404 when the page is empty', async () => {
         const res = await callGET('3');
 

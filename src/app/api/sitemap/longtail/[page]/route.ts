@@ -10,6 +10,7 @@ import { SITE_BUILD_DATE } from '@/shared/lib/seo';
 const SITEMAP_RETRY_AFTER_SECONDS = '300';
 const SITEMAP_UNAVAILABLE_BODY = 'Sitemap data temporarily unavailable';
 const SITEMAP_PAGE_NOT_FOUND_BODY = 'Sitemap page not found';
+const MAX_LONGTAIL_SITEMAP_PAGE = 10_000;
 
 // DB 의존(no-store fetch)이라 force-dynamic. traffic 보호는 CDN cache에 위임.
 export const dynamic = 'force-dynamic';
@@ -28,6 +29,10 @@ export async function GET(
     }
 
     const pageNum = Number.parseInt(page, 10);
+    if (!Number.isSafeInteger(pageNum) || pageNum > MAX_LONGTAIL_SITEMAP_PAGE) {
+        return new NextResponse(SITEMAP_PAGE_NOT_FOUND_BODY, { status: 404 });
+    }
+
     let chunk: readonly string[];
 
     try {
