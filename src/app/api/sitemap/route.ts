@@ -1,11 +1,11 @@
-import { NextResponse } from 'next/server';
 import {
     LONGTAIL_TICKERS_PER_PAGE,
     type SitemapIndexEntry,
     toSitemapIndexXml,
 } from '@/entities/sitemap-entry';
 import { countLongTailTickers } from '@/entities/sitemap-entry/server';
-import { SITE_BUILD_DATE, SITE_URL } from '@/shared/lib/seo';
+import { SITE_URL } from '@/shared/lib/seo';
+import { NextResponse } from 'next/server';
 
 const SITEMAP_RETRY_AFTER_SECONDS = '300';
 const SITEMAP_UNAVAILABLE_BODY = 'Sitemap data temporarily unavailable';
@@ -52,10 +52,10 @@ export async function GET(): Promise<Response> {
         { length: longTailPages },
         (_, i) => ({
             url: `${SITE_URL}/sitemap-longtail-${i + 1}.xml`,
-            // long-tail sub-sitemap은 SITE_BUILD_DATE 기준 lastmod (chunk 단위에서
-            // 일·시간 단위 freshness 신호가 의미 없음 — 종목 페이지 자체는
-            // changefreq weekly로 둠).
-            lastModified: SITE_BUILD_DATE,
+            // long-tail sub-sitemap은 SITE_BUILD_DATE 기준 lastmod를 쓰면 인스턴스별
+            // Cold Start 시각 차이로 인덱스와 본문 간 불일치가 발생할 수 있다.
+            // static/popular와 동일하게 now를 써서 crawler에 일관된 갱신 신호를 보낸다.
+            lastModified: now,
         })
     );
 

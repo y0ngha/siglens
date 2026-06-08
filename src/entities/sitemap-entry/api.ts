@@ -1,20 +1,21 @@
 import 'server-only';
 
-import { asc, countDistinct, notInArray, sql } from 'drizzle-orm';
 import { POPULAR_TICKERS } from '@/shared/config/popular-tickers';
 import { koreanTickers } from '@/shared/db/schema';
 import type { SiglensDatabase } from '@/shared/db/types';
+import { asc, countDistinct, notInArray } from 'drizzle-orm';
 import type { LongTailTickerSource } from './model';
 
-const normalizedSymbol = sql<string>`upper(${koreanTickers.symbol})`;
-const longTailPredicate = notInArray(normalizedSymbol, [...POPULAR_TICKERS]);
+const longTailPredicate = notInArray(koreanTickers.symbol, [
+    ...POPULAR_TICKERS,
+]);
 
 export class DrizzleLongTailTickerSource implements LongTailTickerSource {
     constructor(private readonly db: SiglensDatabase) {}
 
     async count(): Promise<number> {
         const [row] = await this.db
-            .select({ total: countDistinct(normalizedSymbol) })
+            .select({ total: countDistinct(koreanTickers.symbol) })
             .from(koreanTickers)
             .where(longTailPredicate);
 
@@ -26,10 +27,10 @@ export class DrizzleLongTailTickerSource implements LongTailTickerSource {
         pageSize: number
     ): Promise<readonly string[]> {
         const rows = await this.db
-            .selectDistinct({ symbol: normalizedSymbol })
+            .selectDistinct({ symbol: koreanTickers.symbol })
             .from(koreanTickers)
             .where(longTailPredicate)
-            .orderBy(asc(normalizedSymbol))
+            .orderBy(asc(koreanTickers.symbol))
             .limit(pageSize)
             .offset((pageNumber - 1) * pageSize);
 

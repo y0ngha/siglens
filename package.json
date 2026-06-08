@@ -10,7 +10,7 @@
         "predev": "yarn clear:backtesting && yarn copy:backtesting",
         "prebuild": "yarn clear:backtesting && yarn copy:backtesting",
         "dev": "yarn predev && next dev --turbopack -p 4200",
-        "build": "yarn prebuild && rm -rf .next && next build",
+        "build": "yarn prebuild && rm -rf .next && NEXT_BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ') next build",
         "analyze": "ANALYZE=true yarn build",
         "start": "next start",
         "lint": "eslint --cache --cache-strategy content --cache-location node_modules/.cache/eslint/",

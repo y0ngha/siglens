@@ -28,6 +28,8 @@ describe('GET /api/sitemap (index)', () => {
     let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
 
     beforeEach(() => {
+        vi.useFakeTimers();
+        vi.setSystemTime(new Date('2026-01-01T00:00:00Z'));
         vi.clearAllMocks();
         consoleErrorSpy = vi
             .spyOn(console, 'error')
@@ -35,6 +37,7 @@ describe('GET /api/sitemap (index)', () => {
     });
 
     afterEach(() => {
+        vi.useRealTimers();
         consoleErrorSpy.mockRestore();
     });
 
@@ -70,7 +73,10 @@ describe('GET /api/sitemap (index)', () => {
         expect(entries[2].url).toContain('sitemap-longtail-1.xml');
         expect(entries[3].url).toContain('sitemap-longtail-2.xml');
         expect(entries[4].url).toContain('sitemap-longtail-3.xml');
-        expect(entries[2].lastModified).toEqual(new Date('2025-01-01'));
+        // long-tail entries now use 'now' instead of SITE_BUILD_DATE
+        expect(entries[2].lastModified).toEqual(
+            new Date('2026-01-01T00:00:00Z')
+        );
         expect(mockCountLongTailTickers).toHaveBeenCalledOnce();
     });
 
