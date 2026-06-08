@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.20.4](https://github.com/y0ngha/siglens/compare/v0.20.3...v0.20.4) (2026-06-08)
+
+
+### Performance Improvements
+
+* **sitemap:** 사이트맵 쿼리 성능 이슈 개선 ([58fce1f](https://github.com/y0ngha/siglens/commit/58fce1f801f28b0f641815c81128dbe02470edd3))
+
 ## [0.20.3](https://github.com/y0ngha/siglens/compare/v0.20.2...v0.20.3) (2026-06-08)
 
 
