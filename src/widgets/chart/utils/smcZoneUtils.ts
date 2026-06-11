@@ -14,38 +14,46 @@ export interface SmcZoneLine {
  */
 export function buildSmcZoneLines(smc: SMCResult | undefined): SmcZoneLine[] {
     if (!smc) return [];
-    const lines: SmcZoneLine[] = [];
     const { premiumZone, discountZone, equilibriumZone } = smc;
-    if (premiumZone) {
-        lines.push({
-            price: premiumZone.high,
-            color: CHART_COLORS.smcPremium,
-            title: 'Premium',
-        });
-        lines.push({
-            price: premiumZone.low,
-            color: CHART_COLORS.smcPremium,
-            title: '',
-        });
-    }
-    if (discountZone) {
-        lines.push({
-            price: discountZone.high,
-            color: CHART_COLORS.smcDiscount,
-            title: 'Discount',
-        });
-        lines.push({
-            price: discountZone.low,
-            color: CHART_COLORS.smcDiscount,
-            title: '',
-        });
-    }
-    if (equilibriumZone) {
-        lines.push({
-            price: (equilibriumZone.high + equilibriumZone.low) / 2,
-            color: CHART_COLORS.smcEquilibrium,
-            title: 'Equilibrium',
-        });
-    }
-    return lines;
+    return [
+        // premium·discount는 high/low 밴드(2선, 대표 high선에만 title)
+        ...(premiumZone
+            ? [
+                  {
+                      price: premiumZone.high,
+                      color: CHART_COLORS.smcPremium,
+                      title: 'Premium',
+                  },
+                  {
+                      price: premiumZone.low,
+                      color: CHART_COLORS.smcPremium,
+                      title: '',
+                  },
+              ]
+            : []),
+        ...(discountZone
+            ? [
+                  {
+                      price: discountZone.high,
+                      color: CHART_COLORS.smcDiscount,
+                      title: 'Discount',
+                  },
+                  {
+                      price: discountZone.low,
+                      color: CHART_COLORS.smcDiscount,
+                      title: '',
+                  },
+              ]
+            : []),
+        // equilibrium은 50% 공정가 1선
+        ...(equilibriumZone
+            ? [
+                  {
+                      price: (equilibriumZone.high + equilibriumZone.low) / 2,
+                      color: CHART_COLORS.smcEquilibrium,
+                      title: 'Equilibrium',
+                  },
+              ]
+            : []),
+    ];
 }
