@@ -1,5 +1,12 @@
-import type { Bar } from '@y0ngha/siglens-core';
+import type {
+    Bar,
+    SupertrendResult,
+    TrendDirection,
+} from '@y0ngha/siglens-core';
 import type { UTCTimestamp } from 'lightweight-charts';
+
+/** 추세 방향 중 확정된 값(warm-up의 null 제외). */
+type TrendDir = Exclude<TrendDirection, null>;
 
 export type SeriesPoint =
     | { time: UTCTimestamp; value: number; color?: string }
@@ -54,5 +61,25 @@ export function buildSeriesDataFromValues(
             return { time: bar.time as UTCTimestamp };
         }
         return { time: bar.time as UTCTimestamp, value };
+    });
+}
+
+/**
+ * trend 방향이 dir과 일치하는 bar만 supertrend 값을, 나머지는 WhitespaceData({ time })를 반환한다.
+ * up/down 2개 LineSeries로 trend별 색을 표현하기 위함 (LineSeries는 per-point 색 미지원).
+ */
+export function buildTrendSplitData(
+    bars: Bar[],
+    data: SupertrendResult[],
+    dir: TrendDir
+): SeriesPoint[] {
+    const count = Math.min(bars.length, data.length);
+    return bars.slice(0, count).map((bar, i) => {
+        const r = data[i];
+        // Bar.time은 epoch seconds 정수 — LWC UTCTimestamp(branded number)와 런타임 형태 동일하므로 safe-cast.
+        if (r && r.trend === dir && r.supertrend !== null) {
+            return { time: bar.time as UTCTimestamp, value: r.supertrend };
+        }
+        return { time: bar.time as UTCTimestamp };
     });
 }

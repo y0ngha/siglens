@@ -112,4 +112,20 @@ test.describe('chart indicator settings modal', () => {
         await keltner.check();
         await expect(keltner).toBeChecked();
     });
+
+    test('toggles the Supertrend overlay via the modal', async ({ page }) => {
+        await page.goto('/AAPL');
+        await page.getByRole('button', { name: GEAR }).click();
+        const dialog = page.getByRole('dialog');
+        // Supertrend는 가격 OVERLAY(페인 아님) — Keltner와 동일하게 모달 체크박스
+        // 상태로 검증한다. 'Supertrend'는 추세 카테고리 체크박스이며 exact로
+        // substring 충돌을 피한다.
+        const supertrend = dialog.getByRole('checkbox', {
+            name: 'Supertrend',
+            exact: true,
+        });
+        await expect(supertrend).not.toBeChecked();
+        await supertrend.check();
+        await expect(supertrend).toBeChecked();
+    });
 });

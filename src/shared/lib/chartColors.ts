@@ -135,6 +135,9 @@ export const CHART_COLORS = {
     atrLine: '#fdba74',
     yangZhangLine: '#d8b4fe',
     ewmaVolatilityLine: '#6ee7b7',
+    // Supertrend (trend 색 라인 — up/down) — DESIGN.md 추세 색 고정값(bullish teal / bearish red) 재사용
+    supertrendUp: '#26a69a',
+    supertrendDown: '#ef5350',
 } as const;
 
 const PERIOD_COLOR_MAP: Record<number, string> = {

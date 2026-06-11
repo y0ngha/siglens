@@ -68,6 +68,7 @@ describe('buildOverlayLabelConfigs', () => {
                 vpVisible: false,
                 keltnerVisible: false,
                 donchianVisible: false,
+                supertrendVisible: false,
             });
 
             expect(result).toEqual([]);
@@ -84,6 +85,7 @@ describe('buildOverlayLabelConfigs', () => {
                 vpVisible: false,
                 keltnerVisible: false,
                 donchianVisible: false,
+                supertrendVisible: false,
             });
 
             expect(result).toHaveLength(2);
@@ -102,6 +104,7 @@ describe('buildOverlayLabelConfigs', () => {
                 vpVisible: false,
                 keltnerVisible: false,
                 donchianVisible: false,
+                supertrendVisible: false,
             });
 
             expect(result).toHaveLength(1);
@@ -119,6 +122,7 @@ describe('buildOverlayLabelConfigs', () => {
                 vpVisible: false,
                 keltnerVisible: false,
                 donchianVisible: false,
+                supertrendVisible: false,
             });
 
             expect(result).toHaveLength(3);
@@ -138,6 +142,7 @@ describe('buildOverlayLabelConfigs', () => {
                 vpVisible: false,
                 keltnerVisible: false,
                 donchianVisible: false,
+                supertrendVisible: false,
             });
 
             expect(result).toHaveLength(5);
@@ -159,6 +164,7 @@ describe('buildOverlayLabelConfigs', () => {
                 vpVisible: true,
                 keltnerVisible: false,
                 donchianVisible: false,
+                supertrendVisible: false,
             });
 
             expect(result).toHaveLength(3);
@@ -178,6 +184,7 @@ describe('buildOverlayLabelConfigs', () => {
                 vpVisible: false,
                 keltnerVisible: false,
                 donchianVisible: false,
+                supertrendVisible: false,
             });
 
             expect(result).toHaveLength(4);
@@ -198,6 +205,7 @@ describe('buildOverlayLabelConfigs', () => {
                 vpVisible: false,
                 keltnerVisible: false,
                 donchianVisible: false,
+                supertrendVisible: false,
             });
 
             expect(result[0].color).toBe(getPeriodColor(5));
@@ -212,6 +220,7 @@ describe('buildOverlayLabelConfigs', () => {
                 vpVisible: false,
                 keltnerVisible: false,
                 donchianVisible: false,
+                supertrendVisible: false,
             });
 
             expect(result[0].color).toBe(CHART_COLORS.bollingerUpper);
@@ -227,6 +236,7 @@ describe('buildOverlayLabelConfigs', () => {
             vpVisible: false,
             keltnerVisible: true,
             donchianVisible: true,
+            supertrendVisible: false,
         });
         const names = configs.map(c => c.name);
         expect(names).toEqual(
@@ -249,6 +259,66 @@ describe('buildOverlayLabelConfigs', () => {
         expect(configs.find(c => c.name === 'DC Lower')?.getValue(ind, 0)).toBe(
             19
         );
+    });
+
+    it('includes a Supertrend config when supertrendVisible is true', () => {
+        const configs = buildOverlayLabelConfigs({
+            maVisiblePeriods: [],
+            emaVisiblePeriods: [],
+            bollingerVisible: false,
+            ichimokuVisible: false,
+            vpVisible: false,
+            keltnerVisible: false,
+            donchianVisible: false,
+            supertrendVisible: true,
+        });
+        const st = configs.find(c => c.name === 'Supertrend');
+        expect(st).toBeDefined();
+        expect(st?.color).toBe(CHART_COLORS.supertrendUp);
+        const ind = { supertrend: [{ supertrend: 42, trend: 'up' }] } as never;
+        expect(st?.getValue(ind, 0)).toBe(42);
+        expect(st?.getValue(ind, 5)).toBeNull();
+    });
+
+    it('Supertrend getColor follows the bar trend (up=green, down=red, null=neutral)', () => {
+        const configs = buildOverlayLabelConfigs({
+            maVisiblePeriods: [],
+            emaVisiblePeriods: [],
+            bollingerVisible: false,
+            ichimokuVisible: false,
+            vpVisible: false,
+            keltnerVisible: false,
+            donchianVisible: false,
+            supertrendVisible: true,
+        });
+        const st = configs.find(c => c.name === 'Supertrend');
+        expect(st?.getColor).toBeDefined();
+        const ind = {
+            supertrend: [
+                { supertrend: 10, trend: 'up' },
+                { supertrend: 11, trend: 'down' },
+                { supertrend: null, trend: null },
+            ],
+        } as never;
+        expect(st?.getColor?.(ind, 0)).toBe(CHART_COLORS.supertrendUp);
+        expect(st?.getColor?.(ind, 1)).toBe(CHART_COLORS.supertrendDown);
+        expect(st?.getColor?.(ind, 2)).toBe(CHART_COLORS.neutral);
+        // 범위를 벗어난 인덱스(warm-up 이전)도 neutral로 안전 처리
+        expect(st?.getColor?.(ind, 9)).toBe(CHART_COLORS.neutral);
+    });
+
+    it('omits Supertrend config when supertrendVisible is false', () => {
+        const configs = buildOverlayLabelConfigs({
+            maVisiblePeriods: [],
+            emaVisiblePeriods: [],
+            bollingerVisible: false,
+            ichimokuVisible: false,
+            vpVisible: false,
+            keltnerVisible: false,
+            donchianVisible: false,
+            supertrendVisible: false,
+        });
+        expect(configs.find(c => c.name === 'Supertrend')).toBeUndefined();
     });
 });
 
@@ -302,6 +372,7 @@ describe('resolveOverlayValues', () => {
         vpVisible: false,
         keltnerVisible: false,
         donchianVisible: false,
+        supertrendVisible: false,
     });
 
     describe('barIndex가 -1일 때', () => {
@@ -337,6 +408,27 @@ describe('resolveOverlayValues', () => {
             const result = resolveOverlayValues([], mockIndicators, 0);
 
             expect(result).toEqual([]);
+        });
+    });
+
+    describe('config.getColor가 있을 때', () => {
+        it('정적 color 대신 getColor(indicators, barIndex) 결과를 색으로 사용한다', () => {
+            const dynamicConfigs = [
+                {
+                    name: 'Dyn',
+                    color: '#000000',
+                    getValue: (): number | null => 1,
+                    getColor: (_i: never, barIndex: number): string =>
+                        barIndex === 0 ? '#111111' : '#222222',
+                },
+            ] as unknown as Parameters<typeof resolveOverlayValues>[0];
+
+            expect(
+                resolveOverlayValues(dynamicConfigs, mockIndicators, 0)[0].color
+            ).toBe('#111111');
+            expect(
+                resolveOverlayValues(dynamicConfigs, mockIndicators, 1)[0].color
+            ).toBe('#222222');
         });
     });
 });
@@ -389,6 +481,7 @@ describe('buildOverlayLabelConfigs — getValue 콜백', () => {
             vpVisible: false,
             keltnerVisible: false,
             donchianVisible: false,
+            supertrendVisible: false,
         });
 
         expect(configs[0].getValue(mockIndicators, 0)).toBe(100);
@@ -405,6 +498,7 @@ describe('buildOverlayLabelConfigs — getValue 콜백', () => {
             vpVisible: false,
             keltnerVisible: false,
             donchianVisible: false,
+            supertrendVisible: false,
         });
 
         expect(configs[0].getValue(mockIndicators, 0)).toBeNull();
@@ -419,6 +513,7 @@ describe('buildOverlayLabelConfigs — getValue 콜백', () => {
             vpVisible: false,
             keltnerVisible: false,
             donchianVisible: false,
+            supertrendVisible: false,
         });
 
         expect(configs[0].getValue(mockIndicators, 0)).toBe(105);
@@ -436,6 +531,7 @@ describe('buildOverlayLabelConfigs — getValue 콜백', () => {
             vpVisible: false,
             keltnerVisible: false,
             donchianVisible: false,
+            supertrendVisible: false,
         });
 
         expect(configs[0].getValue(mockIndicators, 0)).toBe(101); // tenkan
@@ -455,6 +551,7 @@ describe('buildOverlayLabelConfigs — getValue 콜백', () => {
             vpVisible: true,
             keltnerVisible: false,
             donchianVisible: false,
+            supertrendVisible: false,
         });
 
         expect(configs[0].getValue(mockIndicators, 0)).toBe(100); // poc
@@ -476,6 +573,7 @@ describe('buildOverlayLabelConfigs — getValue 콜백', () => {
             vpVisible: true,
             keltnerVisible: false,
             donchianVisible: false,
+            supertrendVisible: false,
         });
 
         expect(configs[0].getValue(emptyIndicators, 0)).toBeNull();
