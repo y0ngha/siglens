@@ -8,31 +8,29 @@ import {
     useRef,
     useState,
 } from 'react';
-import type { IChartApi, ISeriesApi, LineWidth } from 'lightweight-charts';
+import type { IChartApi, ISeriesApi } from 'lightweight-charts';
 import { LineSeries } from 'lightweight-charts';
 import { CHART_COLORS } from '@/shared/lib/chartColors';
 import type { Bar, IndicatorResult } from '@y0ngha/siglens-core';
-import { DEFAULT_LINE_WIDTH } from '../constants';
+import { DEFAULT_POINT_MARKERS_RADIUS } from '../constants';
 import { buildTrendSplitData } from '../utils/seriesDataUtils';
 
-interface UseSupertrendOverlayParams {
+interface UseParabolicSarOverlayParams {
     chartRef: RefObject<IChartApi | null>;
     bars: Bar[];
     indicators: IndicatorResult;
-    lineWidth?: LineWidth;
 }
 
-interface UseSupertrendOverlayReturn {
+interface UseParabolicSarOverlayReturn {
     isVisible: boolean;
     toggle: () => void;
 }
 
-export function useSupertrendOverlay({
+export function useParabolicSarOverlay({
     chartRef,
     bars,
     indicators,
-    lineWidth = DEFAULT_LINE_WIDTH,
-}: UseSupertrendOverlayParams): UseSupertrendOverlayReturn {
+}: UseParabolicSarOverlayParams): UseParabolicSarOverlayReturn {
     const [isVisible, setIsVisible] = useState(false);
     const prevChartRef = useRef<IChartApi | null>(null);
     const upSeriesRef = useRef<ISeriesApi<'Line'> | null>(null);
@@ -59,8 +57,7 @@ export function useSupertrendOverlay({
     });
 
     // bars, indicators는 의존하지 않음 — 데이터 세팅은 아래 effect가 단독 담당.
-    // StockChart의 차트 생성 effect가 선언 순서상 앞에 있으므로
-    // 이 effect 실행 시점에 chartRef.current는 이미 설정된 상태.
+    // 가격 위/아래 점(dot)만 렌더하므로 lineVisible:false + pointMarkersVisible:true.
     useEffect(() => {
         const chart = chartRef.current;
 
@@ -78,39 +75,41 @@ export function useSupertrendOverlay({
 
         if (!upSeriesRef.current) {
             upSeriesRef.current = chart.addSeries(LineSeries, {
-                color: CHART_COLORS.supertrendUp,
-                lineWidth,
+                color: CHART_COLORS.parabolicSarUp,
+                lineVisible: false,
+                pointMarkersVisible: true,
+                pointMarkersRadius: DEFAULT_POINT_MARKERS_RADIUS,
                 priceLineVisible: false,
                 lastValueVisible: false,
             });
         }
-        upSeriesRef.current.applyOptions({ lineWidth });
 
         if (!downSeriesRef.current) {
             downSeriesRef.current = chart.addSeries(LineSeries, {
-                color: CHART_COLORS.supertrendDown,
-                lineWidth,
+                color: CHART_COLORS.parabolicSarDown,
+                lineVisible: false,
+                pointMarkersVisible: true,
+                pointMarkersRadius: DEFAULT_POINT_MARKERS_RADIUS,
                 priceLineVisible: false,
                 lastValueVisible: false,
             });
         }
-        downSeriesRef.current.applyOptions({ lineWidth });
-    }, [chartRef, isVisible, lineWidth]);
+    }, [chartRef, isVisible]);
 
     // isVisible이 true로 바뀔 때도 실행되어 새로 생성된 시리즈에 초기 데이터를 세팅함
     useEffect(() => {
         if (!isVisible) return;
 
-        const { supertrend } = indicators;
-        if (!supertrend.length) return;
+        const { parabolicSar } = indicators;
+        if (!parabolicSar.length) return;
 
         if (!upSeriesRef.current || !downSeriesRef.current) return;
 
         upSeriesRef.current.setData(
-            buildTrendSplitData(bars, supertrend, 'up', r => r.supertrend)
+            buildTrendSplitData(bars, parabolicSar, 'up', r => r.sar)
         );
         downSeriesRef.current.setData(
-            buildTrendSplitData(bars, supertrend, 'down', r => r.supertrend)
+            buildTrendSplitData(bars, parabolicSar, 'down', r => r.sar)
         );
     }, [indicators, bars, isVisible]);
 

@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
 import { act, renderHook } from '@testing-library/react';
+import type { LineWidth } from 'lightweight-charts';
 import type { Bar, IndicatorResult } from '@y0ngha/siglens-core';
-import { useSupertrendOverlay } from '../../hooks/useSupertrendOverlay';
+import { useChandelierOverlay } from '../../hooks/useChandelierOverlay';
 import { buildTrendSplitData } from '../../utils/seriesDataUtils';
 
 const mockSetData = vi.fn();
@@ -14,6 +15,7 @@ const mockAddSeries = vi.fn(() => ({
 
 vi.mock('lightweight-charts', () => ({
     LineSeries: 'LineSeries',
+    LineStyle: { Dashed: 2 },
 }));
 
 vi.mock('../../utils/seriesDataUtils', () => ({
@@ -22,7 +24,7 @@ vi.mock('../../utils/seriesDataUtils', () => ({
 
 function makeChartRef(chart: unknown = null) {
     return { current: chart } as Parameters<
-        typeof useSupertrendOverlay
+        typeof useChandelierOverlay
     >[0]['chartRef'];
 }
 
@@ -31,25 +33,25 @@ function makeChart() {
 }
 
 const EMPTY_INDICATORS = {
-    supertrend: [],
+    chandelierExit: [],
 } as unknown as IndicatorResult;
 
 const FILLED_INDICATORS = {
-    supertrend: [{ supertrend: 10, trend: 'up' }],
+    chandelierExit: [{ longStop: 90, shortStop: 110, trend: 'long' }],
 } as unknown as IndicatorResult;
 
 const FAKE_BARS: Bar[] = [
     { time: 1000, open: 100, high: 110, low: 90, close: 105, volume: 1000 },
 ];
 
-describe('useSupertrendOverlay', () => {
+describe('useChandelierOverlay', () => {
     beforeEach(() => {
         vi.clearAllMocks();
     });
 
     it('returns isVisible false initially', () => {
         const { result } = renderHook(() =>
-            useSupertrendOverlay({
+            useChandelierOverlay({
                 chartRef: makeChartRef(),
                 bars: [],
                 indicators: EMPTY_INDICATORS,
@@ -60,7 +62,7 @@ describe('useSupertrendOverlay', () => {
 
     it('toggles isVisible when toggle is called', () => {
         const { result } = renderHook(() =>
-            useSupertrendOverlay({
+            useChandelierOverlay({
                 chartRef: makeChartRef(),
                 bars: [],
                 indicators: EMPTY_INDICATORS,
@@ -74,7 +76,7 @@ describe('useSupertrendOverlay', () => {
 
     it('does not create series when chart is null', () => {
         renderHook(() =>
-            useSupertrendOverlay({
+            useChandelierOverlay({
                 chartRef: makeChartRef(null),
                 bars: FAKE_BARS,
                 indicators: FILLED_INDICATORS,
@@ -83,10 +85,10 @@ describe('useSupertrendOverlay', () => {
         expect(mockAddSeries).not.toHaveBeenCalled();
     });
 
-    it('creates two LineSeries (up, down) when visible and chart exists', () => {
+    it('creates two LineSeries (long, short) when visible and chart exists', () => {
         const chart = makeChart();
         const { result } = renderHook(() =>
-            useSupertrendOverlay({
+            useChandelierOverlay({
                 chartRef: makeChartRef(chart),
                 bars: FAKE_BARS,
                 indicators: FILLED_INDICATORS,
@@ -96,10 +98,47 @@ describe('useSupertrendOverlay', () => {
         expect(mockAddSeries).toHaveBeenCalledTimes(2);
     });
 
+    it('applies lineWidth to both series after creation', () => {
+        const chart = makeChart();
+        const { result } = renderHook(() =>
+            useChandelierOverlay({
+                chartRef: makeChartRef(chart),
+                bars: FAKE_BARS,
+                indicators: FILLED_INDICATORS,
+                lineWidth: 3,
+            })
+        );
+        act(() => result.current.toggle());
+        // chandelier는 PSAR과 달리 lineWidth를 실제 반영한다(applyOptions). 계약을 고정한다.
+        expect(mockApplyOptions).toHaveBeenCalledWith({ lineWidth: 3 });
+        expect(mockApplyOptions).toHaveBeenCalledTimes(2);
+    });
+
+    it('re-applies lineWidth when the lineWidth prop changes while visible', () => {
+        const chart = makeChart();
+        const { result, rerender } = renderHook(
+            ({ lineWidth }) =>
+                useChandelierOverlay({
+                    chartRef: makeChartRef(chart),
+                    bars: FAKE_BARS,
+                    indicators: FILLED_INDICATORS,
+                    lineWidth,
+                }),
+            { initialProps: { lineWidth: 1 as LineWidth } }
+        );
+        act(() => result.current.toggle());
+        vi.clearAllMocks();
+
+        // lifecycle effect deps에 lineWidth가 있어 prop 변경 시 재실행 → 두 시리즈에 applyOptions 재호출.
+        rerender({ lineWidth: 3 as LineWidth });
+        expect(mockApplyOptions).toHaveBeenCalledWith({ lineWidth: 3 });
+        expect(mockApplyOptions).toHaveBeenCalledTimes(2);
+    });
+
     it('removes both series when toggled off', () => {
         const chart = makeChart();
         const { result } = renderHook(() =>
-            useSupertrendOverlay({
+            useChandelierOverlay({
                 chartRef: makeChartRef(chart),
                 bars: FAKE_BARS,
                 indicators: FILLED_INDICATORS,
@@ -110,10 +149,10 @@ describe('useSupertrendOverlay', () => {
         expect(mockRemoveSeries).toHaveBeenCalledTimes(2);
     });
 
-    it('sets data on both series when visible with data', () => {
+    it('sets data with long/short direction and longStop/shortStop selectors', () => {
         const chart = makeChart();
         const { result } = renderHook(() =>
-            useSupertrendOverlay({
+            useChandelierOverlay({
                 chartRef: makeChartRef(chart),
                 bars: FAKE_BARS,
                 indicators: FILLED_INDICATORS,
@@ -121,29 +160,44 @@ describe('useSupertrendOverlay', () => {
         );
         act(() => result.current.toggle());
         expect(mockSetData).toHaveBeenCalledTimes(2);
-
-        // 두 시리즈가 각각 올바른 방향('up'/'down')으로 분리 호출되는지 명시 검증
-        // — 호출 횟수만 보면 둘 다 'up'으로 잘못 호출돼도 통과하므로 인자까지 고정한다.
         const splitMock = vi.mocked(buildTrendSplitData);
         expect(splitMock).toHaveBeenCalledWith(
             FAKE_BARS,
-            FILLED_INDICATORS.supertrend,
-            'up',
+            FILLED_INDICATORS.chandelierExit,
+            'long',
             expect.any(Function)
         );
         expect(splitMock).toHaveBeenCalledWith(
             FAKE_BARS,
-            FILLED_INDICATORS.supertrend,
-            'down',
+            FILLED_INDICATORS.chandelierExit,
+            'short',
             expect.any(Function)
         );
+    });
+
+    it('long selector reads longStop, short selector reads shortStop', () => {
+        const chart = makeChart();
+        const { result } = renderHook(() =>
+            useChandelierOverlay({
+                chartRef: makeChartRef(chart),
+                bars: FAKE_BARS,
+                indicators: FILLED_INDICATORS,
+            })
+        );
+        act(() => result.current.toggle());
+        const calls = vi.mocked(buildTrendSplitData).mock.calls;
+        const longCall = calls.find(c => c[2] === 'long');
+        const shortCall = calls.find(c => c[2] === 'short');
+        const row = { longStop: 90, shortStop: 110, trend: 'long' as const };
+        expect(longCall?.[3](row)).toBe(90);
+        expect(shortCall?.[3](row)).toBe(110);
     });
 
     it('re-sets data on both series when bars change while visible', () => {
         const chart = makeChart();
         const { result, rerender } = renderHook(
             ({ bars }) =>
-                useSupertrendOverlay({
+                useChandelierOverlay({
                     chartRef: makeChartRef(chart),
                     bars,
                     indicators: FILLED_INDICATORS,
@@ -165,28 +219,26 @@ describe('useSupertrendOverlay', () => {
         ];
         rerender({ bars: newBars });
 
-        // 데이터-싱크 effect 의존성([indicators, bars, isVisible])이 bars 변경에 반응해
-        // up/down 두 시리즈를 모두 다시 setData 하는지 검증.
         expect(mockSetData).toHaveBeenCalledTimes(2);
         const splitMock = vi.mocked(buildTrendSplitData);
         expect(splitMock).toHaveBeenCalledWith(
             newBars,
-            FILLED_INDICATORS.supertrend,
-            'up',
+            FILLED_INDICATORS.chandelierExit,
+            'long',
             expect.any(Function)
         );
         expect(splitMock).toHaveBeenCalledWith(
             newBars,
-            FILLED_INDICATORS.supertrend,
-            'down',
+            FILLED_INDICATORS.chandelierExit,
+            'short',
             expect.any(Function)
         );
     });
 
-    it('does not set data when supertrend is empty', () => {
+    it('does not set data when chandelierExit is empty', () => {
         const chart = makeChart();
         const { result } = renderHook(() =>
-            useSupertrendOverlay({
+            useChandelierOverlay({
                 chartRef: makeChartRef(chart),
                 bars: FAKE_BARS,
                 indicators: EMPTY_INDICATORS,
@@ -198,7 +250,7 @@ describe('useSupertrendOverlay', () => {
 
     it('provides stable toggle function reference', () => {
         const { result, rerender } = renderHook(() =>
-            useSupertrendOverlay({
+            useChandelierOverlay({
                 chartRef: makeChartRef(),
                 bars: [],
                 indicators: EMPTY_INDICATORS,

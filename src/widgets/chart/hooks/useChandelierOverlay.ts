@@ -9,58 +9,57 @@ import {
     useState,
 } from 'react';
 import type { IChartApi, ISeriesApi, LineWidth } from 'lightweight-charts';
-import { LineSeries } from 'lightweight-charts';
+import { LineSeries, LineStyle } from 'lightweight-charts';
 import { CHART_COLORS } from '@/shared/lib/chartColors';
 import type { Bar, IndicatorResult } from '@y0ngha/siglens-core';
 import { DEFAULT_LINE_WIDTH } from '../constants';
 import { buildTrendSplitData } from '../utils/seriesDataUtils';
 
-interface UseSupertrendOverlayParams {
+interface UseChandelierOverlayParams {
     chartRef: RefObject<IChartApi | null>;
     bars: Bar[];
     indicators: IndicatorResult;
     lineWidth?: LineWidth;
 }
 
-interface UseSupertrendOverlayReturn {
+interface UseChandelierOverlayReturn {
     isVisible: boolean;
     toggle: () => void;
 }
 
-export function useSupertrendOverlay({
+export function useChandelierOverlay({
     chartRef,
     bars,
     indicators,
     lineWidth = DEFAULT_LINE_WIDTH,
-}: UseSupertrendOverlayParams): UseSupertrendOverlayReturn {
+}: UseChandelierOverlayParams): UseChandelierOverlayReturn {
     const [isVisible, setIsVisible] = useState(false);
     const prevChartRef = useRef<IChartApi | null>(null);
-    const upSeriesRef = useRef<ISeriesApi<'Line'> | null>(null);
-    const downSeriesRef = useRef<ISeriesApi<'Line'> | null>(null);
+    const longSeriesRef = useRef<ISeriesApi<'Line'> | null>(null);
+    const shortSeriesRef = useRef<ISeriesApi<'Line'> | null>(null);
 
     const toggle = useCallback(() => {
         setIsVisible(prev => !prev);
     }, []);
 
     const clearSeriesRefs = useEffectEvent(() => {
-        upSeriesRef.current = null;
-        downSeriesRef.current = null;
+        longSeriesRef.current = null;
+        shortSeriesRef.current = null;
     });
 
     const removeAllSeries = useEffectEvent((chart: IChartApi) => {
-        if (upSeriesRef.current) {
-            chart.removeSeries(upSeriesRef.current);
-            upSeriesRef.current = null;
+        if (longSeriesRef.current) {
+            chart.removeSeries(longSeriesRef.current);
+            longSeriesRef.current = null;
         }
-        if (downSeriesRef.current) {
-            chart.removeSeries(downSeriesRef.current);
-            downSeriesRef.current = null;
+        if (shortSeriesRef.current) {
+            chart.removeSeries(shortSeriesRef.current);
+            shortSeriesRef.current = null;
         }
     });
 
     // bars, indicators는 의존하지 않음 — 데이터 세팅은 아래 effect가 단독 담당.
-    // StockChart의 차트 생성 effect가 선언 순서상 앞에 있으므로
-    // 이 effect 실행 시점에 chartRef.current는 이미 설정된 상태.
+    // supertrend(solid)와 구분되도록 LineStyle.Dashed로 그린다.
     useEffect(() => {
         const chart = chartRef.current;
 
@@ -76,41 +75,43 @@ export function useSupertrendOverlay({
             return;
         }
 
-        if (!upSeriesRef.current) {
-            upSeriesRef.current = chart.addSeries(LineSeries, {
-                color: CHART_COLORS.supertrendUp,
+        if (!longSeriesRef.current) {
+            longSeriesRef.current = chart.addSeries(LineSeries, {
+                color: CHART_COLORS.chandelierLong,
                 lineWidth,
+                lineStyle: LineStyle.Dashed,
                 priceLineVisible: false,
                 lastValueVisible: false,
             });
         }
-        upSeriesRef.current.applyOptions({ lineWidth });
+        longSeriesRef.current.applyOptions({ lineWidth });
 
-        if (!downSeriesRef.current) {
-            downSeriesRef.current = chart.addSeries(LineSeries, {
-                color: CHART_COLORS.supertrendDown,
+        if (!shortSeriesRef.current) {
+            shortSeriesRef.current = chart.addSeries(LineSeries, {
+                color: CHART_COLORS.chandelierShort,
                 lineWidth,
+                lineStyle: LineStyle.Dashed,
                 priceLineVisible: false,
                 lastValueVisible: false,
             });
         }
-        downSeriesRef.current.applyOptions({ lineWidth });
+        shortSeriesRef.current.applyOptions({ lineWidth });
     }, [chartRef, isVisible, lineWidth]);
 
     // isVisible이 true로 바뀔 때도 실행되어 새로 생성된 시리즈에 초기 데이터를 세팅함
     useEffect(() => {
         if (!isVisible) return;
 
-        const { supertrend } = indicators;
-        if (!supertrend.length) return;
+        const { chandelierExit } = indicators;
+        if (!chandelierExit.length) return;
 
-        if (!upSeriesRef.current || !downSeriesRef.current) return;
+        if (!longSeriesRef.current || !shortSeriesRef.current) return;
 
-        upSeriesRef.current.setData(
-            buildTrendSplitData(bars, supertrend, 'up', r => r.supertrend)
+        longSeriesRef.current.setData(
+            buildTrendSplitData(bars, chandelierExit, 'long', r => r.longStop)
         );
-        downSeriesRef.current.setData(
-            buildTrendSplitData(bars, supertrend, 'down', r => r.supertrend)
+        shortSeriesRef.current.setData(
+            buildTrendSplitData(bars, chandelierExit, 'short', r => r.shortStop)
         );
     }, [indicators, bars, isVisible]);
 
