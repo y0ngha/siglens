@@ -201,4 +201,21 @@ test.describe('chart indicator settings modal', () => {
         await chandelier.check();
         await expect(chandelier).toBeChecked();
     });
+
+    test('toggles the Elder Impulse candle paint via the modal', async ({
+        page,
+    }) => {
+        await page.goto('/AAPL');
+        await page.getByRole('button', { name: GEAR }).click();
+        const dialog = page.getByRole('dialog');
+        // Elder Impulse는 메인 캔들을 재색칠(candle-paint) — pane/overlay 라벨이 없어
+        // 모달 체크박스 상태로 검증한다. exact로 substring 충돌 방지.
+        const impulse = dialog.getByRole('checkbox', {
+            name: 'Elder Impulse',
+            exact: true,
+        });
+        await expect(impulse).not.toBeChecked();
+        await impulse.check();
+        await expect(impulse).toBeChecked();
+    });
 });

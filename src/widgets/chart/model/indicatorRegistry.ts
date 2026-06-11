@@ -15,7 +15,7 @@ export type IndicatorCategory =
     | 'statistical'
     | 'smc';
 
-export type IndicatorKind = 'overlay' | 'pane';
+export type IndicatorKind = 'overlay' | 'pane' | 'candle-paint';
 
 export type IndicatorKey =
     | 'ma'
@@ -49,7 +49,8 @@ export type IndicatorKey =
     | 'chandelierExit'
     | 'elderRay'
     | 'squeezeMomentum'
-    | 'regression';
+    | 'regression'
+    | 'elderImpulse';
 
 export interface IndicatorMeta {
     key: IndicatorKey;
@@ -213,6 +214,12 @@ export const INDICATOR_REGISTRY: readonly IndicatorMeta[] = [
         label: 'Regression',
         category: 'statistical',
         kind: 'pane',
+    },
+    {
+        key: 'elderImpulse',
+        label: 'Elder Impulse',
+        category: 'momentum',
+        kind: 'candle-paint',
     },
 ];
 

@@ -59,6 +59,7 @@ import { useIndicatorVisibility } from './hooks/useIndicatorVisibility';
 import { OverlayLegend } from './OverlayLegend';
 import { buildPaneLabels } from './utils/paneLabelUtils';
 import { buildOverlayLabelConfigs } from './utils/overlayLabelUtils';
+import { buildCandlestickData } from './utils/candlestickDataUtils';
 import {
     EMA_DEFAULT_PERIODS,
     EMPTY_INDICATOR_RESULT,
@@ -180,17 +181,18 @@ export function StockChart({
         if (!seriesRef.current || !chartRef.current) return;
 
         seriesRef.current.setData(
-            bars.map(({ time, open, high, low, close }) => ({
-                // Bar.time은 number이지만 LWC setData는 UTCTimestamp(branded number)를 요구한다.
-                time: time as UTCTimestamp,
-                open,
-                high,
-                low,
-                close,
-            }))
+            buildCandlestickData(
+                bars,
+                indicators.elderImpulse,
+                visible.elderImpulse
+            )
         );
+    }, [bars, indicators.elderImpulse, visible.elderImpulse]);
 
-        chartRef.current.timeScale().fitContent();
+    // fitContent는 bars(데이터 로드/심볼·타임프레임 변경) 변화에만 호출 — Elder Impulse 토글로
+    // setData가 재실행돼도 사용자의 줌/스크롤 상태가 초기화되지 않도록 의존성을 분리한다.
+    useEffect(() => {
+        chartRef.current?.timeScale().fitContent();
     }, [bars]);
 
     const { visiblePeriods: maVisiblePeriods, togglePeriod: toggleMAPeriod } =
@@ -609,6 +611,11 @@ export function StockChart({
                 meta: INDICATOR_META.regression,
                 active: visible.regression,
                 onToggle: () => toggle('regression'),
+            },
+            {
+                meta: INDICATOR_META.elderImpulse,
+                active: visible.elderImpulse,
+                onToggle: () => toggle('elderImpulse'),
             },
         ],
         // deps에 visible 객체 전체를 둔다 — 한 지표 토글 시 전체 binding이 재조립되지만

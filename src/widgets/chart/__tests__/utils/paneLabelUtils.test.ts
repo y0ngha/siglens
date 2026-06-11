@@ -18,9 +18,8 @@ import {
 import type { PaneIndices } from '@/widgets/chart/types';
 import { INACTIVE_PANE_INDEX } from '@/widgets/chart/constants';
 
-// PaneIndices는 모든 IndicatorKey(26개)를 가진 Record다. buildPaneLabels가
-// 읽는 건 13개 pane 키뿐이므로, 나머지 overlay 키(ma·ema·ichimoku·bollinger·volumeProfile·keltnerChannel·donchianChannel)와
-// 아직 렌더되지 않는 group-C pane 키를 INACTIVE로 채운 base에 해당 pane 키만 덮어쓴다.
+// PaneIndices는 모든 IndicatorKey를 가진 Record다. buildPaneLabels가 읽는 건 pane 키뿐이므로,
+// 나머지 overlay·candle-paint 키를 INACTIVE로 채운 base에 해당 pane 키만 덮어쓴다.
 function makePaneIndices(overrides: Partial<PaneIndices> = {}): PaneIndices {
     const base = {
         ma: INACTIVE_PANE_INDEX,
@@ -55,6 +54,7 @@ function makePaneIndices(overrides: Partial<PaneIndices> = {}): PaneIndices {
         elderRay: INACTIVE_PANE_INDEX,
         squeezeMomentum: INACTIVE_PANE_INDEX,
         regression: INACTIVE_PANE_INDEX,
+        elderImpulse: INACTIVE_PANE_INDEX,
     } satisfies PaneIndices;
     return { ...base, ...overrides };
 }
