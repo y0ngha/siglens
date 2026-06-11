@@ -59,6 +59,7 @@ import { useIndicatorVisibility } from './hooks/useIndicatorVisibility';
 import { OverlayLegend } from './OverlayLegend';
 import { buildPaneLabels } from './utils/paneLabelUtils';
 import { buildOverlayLabelConfigs } from './utils/overlayLabelUtils';
+import { buildCandlestickData } from './utils/candlestickDataUtils';
 import {
     EMA_DEFAULT_PERIODS,
     EMPTY_INDICATOR_RESULT,
@@ -180,18 +181,15 @@ export function StockChart({
         if (!seriesRef.current || !chartRef.current) return;
 
         seriesRef.current.setData(
-            bars.map(({ time, open, high, low, close }) => ({
-                // Bar.time은 number이지만 LWC setData는 UTCTimestamp(branded number)를 요구한다.
-                time: time as UTCTimestamp,
-                open,
-                high,
-                low,
-                close,
-            }))
+            buildCandlestickData(
+                bars,
+                indicators.elderImpulse,
+                visible.elderImpulse
+            )
         );
 
         chartRef.current.timeScale().fitContent();
-    }, [bars]);
+    }, [bars, indicators.elderImpulse, visible.elderImpulse]);
 
     const { visiblePeriods: maVisiblePeriods, togglePeriod: toggleMAPeriod } =
         useMAOverlay(commonHookParams);
@@ -609,6 +607,11 @@ export function StockChart({
                 meta: INDICATOR_META.regression,
                 active: visible.regression,
                 onToggle: () => toggle('regression'),
+            },
+            {
+                meta: INDICATOR_META.elderImpulse,
+                active: visible.elderImpulse,
+                onToggle: () => toggle('elderImpulse'),
             },
         ],
         // deps에 visible 객체 전체를 둔다 — 한 지표 토글 시 전체 binding이 재조립되지만
