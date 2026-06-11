@@ -36,10 +36,11 @@ function initialVisibility(): VisibilityState {
 const INITIAL_VISIBILITY: VisibilityState = initialVisibility();
 
 export function useIndicatorVisibility(): UseIndicatorVisibilityReturn {
-    const [persistedPartial, setVisible] = usePersistentState<VisibilityState>(
-        STORAGE_KEYS.visible,
-        INITIAL_VISIBILITY
-    );
+    // 복원값은 구 버전 저장 데이터처럼 일부 키만 있을 수 있으므로 Partial로 받는다(타입-런타임 일치).
+    // INITIAL_VISIBILITY(완전한 Record)는 Partial의 상위 타입이므로 초기값으로 그대로 허용된다.
+    const [persistedPartial, setVisible] = usePersistentState<
+        Partial<Record<IndicatorKey, boolean>>
+    >(STORAGE_KEYS.visible, INITIAL_VISIBILITY);
 
     // 레지스트리 성장 대비: 저장된 값에 없는 새 키는 기본값(false)으로 채운다.
     // paneIndices 계산이 모든 등록 키를 필요로 하므로 완전한 Record를 항상 보장한다.

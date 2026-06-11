@@ -143,6 +143,22 @@ describe('useVolumeProfileOverlay', () => {
         expect(mockSetData).toHaveBeenCalledWith([]);
     });
 
+    it('persists isVisible to localStorage on toggle', () => {
+        const { result } = renderHook(() =>
+            useVolumeProfileOverlay({
+                chartRef: makeChartRef(),
+                bars: [],
+                indicators: NO_VP_INDICATORS,
+            })
+        );
+        act(() => {
+            result.current.toggle();
+        });
+        expect(
+            localStorage.getItem(STORAGE_KEYS.overlay('volumeProfile'))
+        ).toBe('true');
+    });
+
     it('restores isVisible true from localStorage on mount', () => {
         localStorage.setItem(STORAGE_KEYS.overlay('volumeProfile'), 'true');
         const { result } = renderHook(() =>

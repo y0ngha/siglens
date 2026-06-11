@@ -20,9 +20,23 @@ export const BASE_PATTERN_SERIES_OPTIONS = {
 // 'siglens.chart.*' 단일 네임스페이스로 모아 오타·충돌을 막고 영속 대상을 한눈에 보이게 한다.
 // 영속 자체는 usePersistentState가 담당하고, 여기서는 키 목록만 단일 소스로 관리한다.
 const STORAGE_PREFIX = 'siglens.chart';
+
+// overlay 토글 영속 키를 가진 훅들. 유니온으로 제약해 오타('bolingger' 등)를 컴파일 타임에 잡고,
+// 향후 overlay 추가/삭제 시 누락된 호출을 타입 에러로 드러낸다.
+export type OverlayStorageKey =
+    | 'bollinger'
+    | 'keltner'
+    | 'donchian'
+    | 'supertrend'
+    | 'parabolicSar'
+    | 'chandelier'
+    | 'ichimoku'
+    | 'volumeProfile';
+
 export const STORAGE_KEYS = {
     visible: `${STORAGE_PREFIX}.visible`,
     maPeriods: `${STORAGE_PREFIX}.ma.periods`,
     emaPeriods: `${STORAGE_PREFIX}.ema.periods`,
-    overlay: (key: string): string => `${STORAGE_PREFIX}.overlay.${key}`,
+    overlay: (key: OverlayStorageKey): string =>
+        `${STORAGE_PREFIX}.overlay.${key}`,
 } as const;

@@ -250,6 +250,22 @@ describe('useChandelierOverlay', () => {
         expect(mockSetData).not.toHaveBeenCalled();
     });
 
+    it('persists isVisible to localStorage on toggle', () => {
+        const { result } = renderHook(() =>
+            useChandelierOverlay({
+                chartRef: makeChartRef(),
+                bars: [],
+                indicators: EMPTY_INDICATORS,
+            })
+        );
+        act(() => {
+            result.current.toggle();
+        });
+        expect(localStorage.getItem(STORAGE_KEYS.overlay('chandelier'))).toBe(
+            'true'
+        );
+    });
+
     it('restores isVisible true from localStorage on mount', () => {
         localStorage.setItem(STORAGE_KEYS.overlay('chandelier'), 'true');
         const { result } = renderHook(() =>

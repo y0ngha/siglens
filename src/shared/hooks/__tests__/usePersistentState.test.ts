@@ -19,6 +19,9 @@ describe('usePersistentState', () => {
             usePersistentState('test.restore', { count: 0 })
         );
         expect(result.current[0]).toEqual({ count: 7 });
+        expect(
+            JSON.parse(localStorage.getItem('test.restore') ?? 'null')
+        ).toEqual({ count: 7 });
     });
 
     it('persists new value to localStorage on setValue change', () => {
@@ -45,15 +48,20 @@ describe('usePersistentState', () => {
         expect(result.current[0]).toBe('fallback');
     });
 
-    it('writes the initial value to localStorage once hydration completes', () => {
-        // The write effect is gated on hydrated.current, which only flips true after the
-        // mount effect runs — so during SSR (no effects) nothing is written, avoiding a
-        // hydration mismatch. renderHook runs effects synchronously, so here we assert the
-        // post-hydration outcome: the initial value lands in storage.
+    it('does not persist the initial value until it changes (writes only user changes)', () => {
+        // 마운트 직후 첫 write effect는 건너뛰므로 initial은 저장되지 않는다 — 저장값을 잠깐
+        // initial로 덮어쓰는 transient를 막고 localStorage엔 사용자 변경만 남긴다.
         localStorage.clear();
-        renderHook(() => usePersistentState('test.nowrite', 99));
+        const { result } = renderHook(() =>
+            usePersistentState('test.nowrite', 99)
+        );
+        expect(localStorage.getItem('test.nowrite')).toBeNull();
+
+        act(() => {
+            result.current[1](100);
+        });
         expect(JSON.parse(localStorage.getItem('test.nowrite') ?? 'null')).toBe(
-            99
+            100
         );
     });
 

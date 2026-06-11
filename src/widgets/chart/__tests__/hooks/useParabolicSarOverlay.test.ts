@@ -211,6 +211,22 @@ describe('useParabolicSarOverlay', () => {
         expect(mockSetData).not.toHaveBeenCalled();
     });
 
+    it('persists isVisible to localStorage on toggle', () => {
+        const { result } = renderHook(() =>
+            useParabolicSarOverlay({
+                chartRef: makeChartRef(),
+                bars: [],
+                indicators: EMPTY_INDICATORS,
+            })
+        );
+        act(() => {
+            result.current.toggle();
+        });
+        expect(localStorage.getItem(STORAGE_KEYS.overlay('parabolicSar'))).toBe(
+            'true'
+        );
+    });
+
     it('restores isVisible true from localStorage on mount', () => {
         localStorage.setItem(STORAGE_KEYS.overlay('parabolicSar'), 'true');
         const { result } = renderHook(() =>

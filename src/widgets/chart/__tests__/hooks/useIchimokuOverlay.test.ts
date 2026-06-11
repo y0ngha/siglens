@@ -153,6 +153,22 @@ describe('useIchimokuOverlay', () => {
         expect(mockRemoveSeries).toHaveBeenCalled();
     });
 
+    it('persists isVisible to localStorage on toggle', () => {
+        const { result } = renderHook(() =>
+            useIchimokuOverlay({
+                chartRef: makeChartRef(),
+                bars: [],
+                indicators: EMPTY_INDICATORS,
+            })
+        );
+        act(() => {
+            result.current.toggle();
+        });
+        expect(localStorage.getItem(STORAGE_KEYS.overlay('ichimoku'))).toBe(
+            'true'
+        );
+    });
+
     it('restores isVisible true from localStorage on mount', () => {
         localStorage.setItem(STORAGE_KEYS.overlay('ichimoku'), 'true');
         const { result } = renderHook(() =>
