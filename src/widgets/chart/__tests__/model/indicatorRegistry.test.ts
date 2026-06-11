@@ -14,8 +14,8 @@ function bindingFor(key: IndicatorKey, active = false): IndicatorBinding {
 }
 
 describe('indicatorRegistry', () => {
-    it('registers exactly the 33 modal-target indicators', () => {
-        expect(INDICATOR_REGISTRY).toHaveLength(33);
+    it('registers exactly the 34 modal-target indicators', () => {
+        expect(INDICATOR_REGISTRY).toHaveLength(34);
     });
 
     it('registers elderImpulse as a candle-paint indicator', () => {
@@ -171,6 +171,20 @@ describe('indicatorRegistry', () => {
             expect(INDICATOR_META[key].kind).toBe('pane');
         }
     );
+
+    it('registers smc as a zone indicator in the smc category', () => {
+        const meta = INDICATOR_REGISTRY.find(m => m.key === 'smc');
+        expect(meta).toBeDefined();
+        expect(meta?.category).toBe('smc');
+        expect(meta?.kind).toBe('zone');
+    });
+
+    it('groupBindingsByCategory surfaces the SMC group once an smc binding exists', () => {
+        const groups = groupBindingsByCategory([
+            { meta: INDICATOR_META.smc, active: false, onToggle: () => {} },
+        ]);
+        expect(groups.find(g => g.category === 'smc')?.label).toBe('SMC');
+    });
 });
 
 describe('groupBindingsByCategory', () => {
