@@ -28,13 +28,13 @@ export function useSupertrendOverlay({
     indicators,
     lineWidth = DEFAULT_LINE_WIDTH,
 }: UseSupertrendOverlayParams): UseSupertrendOverlayReturn {
+    const prevChartRef = useRef<IChartApi | null>(null);
+    const upSeriesRef = useRef<ISeriesApi<'Line'> | null>(null);
+    const downSeriesRef = useRef<ISeriesApi<'Line'> | null>(null);
     const [isVisible, setIsVisible] = usePersistentState(
         STORAGE_KEYS.overlay('supertrend'),
         false
     );
-    const prevChartRef = useRef<IChartApi | null>(null);
-    const upSeriesRef = useRef<ISeriesApi<'Line'> | null>(null);
-    const downSeriesRef = useRef<ISeriesApi<'Line'> | null>(null);
 
     const toggle = useCallback(() => {
         setIsVisible(prev => !prev);

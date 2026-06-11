@@ -28,13 +28,13 @@ export function useChandelierOverlay({
     indicators,
     lineWidth = DEFAULT_LINE_WIDTH,
 }: UseChandelierOverlayParams): UseChandelierOverlayReturn {
+    const prevChartRef = useRef<IChartApi | null>(null);
+    const longSeriesRef = useRef<ISeriesApi<'Line'> | null>(null);
+    const shortSeriesRef = useRef<ISeriesApi<'Line'> | null>(null);
     const [isVisible, setIsVisible] = usePersistentState(
         STORAGE_KEYS.overlay('chandelier'),
         false
     );
-    const prevChartRef = useRef<IChartApi | null>(null);
-    const longSeriesRef = useRef<ISeriesApi<'Line'> | null>(null);
-    const shortSeriesRef = useRef<ISeriesApi<'Line'> | null>(null);
 
     const toggle = useCallback(() => {
         setIsVisible(prev => !prev);

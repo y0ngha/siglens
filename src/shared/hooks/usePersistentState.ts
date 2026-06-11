@@ -13,6 +13,9 @@ import type { Dispatch, SetStateAction } from 'react';
  * MISTAKES §10). 다만 eslint-plugin-react-hooks@7.1.1은 useEffectEvent를 통과해 setState를
  * 추적하므로 set-state-in-effect가 여전히 false-positive로 발생한다 — 이 파일은
  * eslint.config.mjs에서 해당 규칙을 예외 처리한다(useSectorSignalState.ts 선례 동일).
+ *
+ * `key`는 렌더 간 안정적인 상수여야 한다. 복원은 마운트 1회([]) 실행이라 key가 동적으로
+ * 바뀌면 새 key의 저장값이 복원되지 않는다 — 동적 key는 지원 범위 밖이다(현 사용처는 전부 상수).
  */
 export function usePersistentState<T>(
     key: string,
@@ -36,6 +39,11 @@ export function usePersistentState<T>(
 
     useEffect(() => {
         restoreFromStorage();
+        // StrictMode(dev) 시뮬레이션 unmount→remount 시 writeArmed가 true로 남아 재마운트의
+        // 첫 write가 initial을 저장하는 것을 막는다 — 재마운트마다 첫 write 건너뛰기를 복구.
+        return () => {
+            writeArmed.current = false;
+        };
     }, []);
 
     useEffect(() => {

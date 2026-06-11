@@ -26,13 +26,13 @@ export function useParabolicSarOverlay({
     bars,
     indicators,
 }: UseParabolicSarOverlayParams): UseParabolicSarOverlayReturn {
+    const prevChartRef = useRef<IChartApi | null>(null);
+    const upSeriesRef = useRef<ISeriesApi<'Line'> | null>(null);
+    const downSeriesRef = useRef<ISeriesApi<'Line'> | null>(null);
     const [isVisible, setIsVisible] = usePersistentState(
         STORAGE_KEYS.overlay('parabolicSar'),
         false
     );
-    const prevChartRef = useRef<IChartApi | null>(null);
-    const upSeriesRef = useRef<ISeriesApi<'Line'> | null>(null);
-    const downSeriesRef = useRef<ISeriesApi<'Line'> | null>(null);
 
     const toggle = useCallback(() => {
         setIsVisible(prev => !prev);

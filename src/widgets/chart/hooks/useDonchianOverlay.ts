@@ -33,14 +33,14 @@ export function useDonchianOverlay({
     indicators,
     lineWidth = DEFAULT_LINE_WIDTH,
 }: UseDonchianOverlayParams): UseDonchianOverlayReturn {
-    const [isVisible, setIsVisible] = usePersistentState(
-        STORAGE_KEYS.overlay('donchian'),
-        false
-    );
     const prevChartRef = useRef<IChartApi | null>(null);
     const upperSeriesRef = useRef<ISeriesApi<'Area'> | null>(null);
     const middleSeriesRef = useRef<ISeriesApi<'Line'> | null>(null);
     const lowerSeriesRef = useRef<ISeriesApi<'Area'> | null>(null);
+    const [isVisible, setIsVisible] = usePersistentState(
+        STORAGE_KEYS.overlay('donchian'),
+        false
+    );
 
     const toggle = useCallback(() => {
         setIsVisible(prev => !prev);

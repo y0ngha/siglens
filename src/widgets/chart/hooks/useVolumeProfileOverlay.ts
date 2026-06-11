@@ -32,14 +32,14 @@ export function useVolumeProfileOverlay({
     indicators,
     lineWidth = DEFAULT_LINE_WIDTH,
 }: UseVolumeProfileOverlayParams): UseVolumeProfileOverlayReturn {
-    const [isVisible, setIsVisible] = usePersistentState(
-        STORAGE_KEYS.overlay('volumeProfile'),
-        false
-    );
     const prevChartRef = useRef<IChartApi | null>(null);
     const pocSeriesRef = useRef<ISeriesApi<'Line'> | null>(null);
     const vahSeriesRef = useRef<ISeriesApi<'Line'> | null>(null);
     const valSeriesRef = useRef<ISeriesApi<'Line'> | null>(null);
+    const [isVisible, setIsVisible] = usePersistentState(
+        STORAGE_KEYS.overlay('volumeProfile'),
+        false
+    );
 
     const toggle = useCallback(() => {
         setIsVisible(prev => !prev);

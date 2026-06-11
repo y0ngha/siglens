@@ -28,14 +28,14 @@ export function useBollingerOverlay({
     indicators,
     lineWidth = DEFAULT_LINE_WIDTH,
 }: UseBollingerOverlayParams): UseBollingerOverlayReturn {
-    const [isVisible, setIsVisible] = usePersistentState(
-        STORAGE_KEYS.overlay('bollinger'),
-        false
-    );
     const prevChartRef = useRef<IChartApi | null>(null);
     const upperSeriesRef = useRef<ISeriesApi<'Area'> | null>(null);
     const middleSeriesRef = useRef<ISeriesApi<'Line'> | null>(null);
     const lowerSeriesRef = useRef<ISeriesApi<'Area'> | null>(null);
+    const [isVisible, setIsVisible] = usePersistentState(
+        STORAGE_KEYS.overlay('bollinger'),
+        false
+    );
 
     const toggle = useCallback(() => {
         setIsVisible(prev => !prev);

@@ -46,12 +46,12 @@ export function useMovingAverageOverlay({
     lineStyle,
     getIndicatorData,
 }: UseMovingAverageOverlayParams): UseMovingAverageOverlayReturn {
+    const prevChartRef = useRef<IChartApi | null>(null);
+    const seriesRef = useRef<Record<number, ISeriesApi<'Line'>>>({});
     const [visiblePeriods, setVisiblePeriods] = usePersistentState<number[]>(
         storageKey,
         defaultPeriods
     );
-    const prevChartRef = useRef<IChartApi | null>(null);
-    const seriesRef = useRef<Record<number, ISeriesApi<'Line'>>>({});
 
     const togglePeriod = useCallback(
         (period: number) => {

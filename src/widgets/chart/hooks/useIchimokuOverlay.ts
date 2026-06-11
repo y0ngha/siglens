@@ -34,10 +34,6 @@ export function useIchimokuOverlay({
     indicators,
     lineWidth = DEFAULT_LINE_WIDTH,
 }: UseIchimokuOverlayParams): UseIchimokuOverlayReturn {
-    const [isVisible, setIsVisible] = usePersistentState(
-        STORAGE_KEYS.overlay('ichimoku'),
-        false
-    );
     const prevChartRef = useRef<IChartApi | null>(null);
     const tenkanRef = useRef<ISeriesApi<'Line'> | null>(null);
     const kijunRef = useRef<ISeriesApi<'Line'> | null>(null);
@@ -46,6 +42,10 @@ export function useIchimokuOverlay({
     const senkouBRef = useRef<ISeriesApi<'Line'> | null>(null);
     const cloudBullishRef = useRef<ISeriesApi<'Area'> | null>(null);
     const cloudBearishRef = useRef<ISeriesApi<'Area'> | null>(null);
+    const [isVisible, setIsVisible] = usePersistentState(
+        STORAGE_KEYS.overlay('ichimoku'),
+        false
+    );
 
     const toggle = useCallback(() => {
         setIsVisible(prev => !prev);
