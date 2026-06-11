@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useEffectEvent, useRef, useState } from 'react';
+import type { Dispatch, SetStateAction } from 'react';
 
 /**
  * useState와 동일 시그니처의 localStorage 영속 상태. SSR-safe:
@@ -16,7 +17,7 @@ import { useEffect, useEffectEvent, useRef, useState } from 'react';
 export function usePersistentState<T>(
     key: string,
     initial: T
-): [T, React.Dispatch<React.SetStateAction<T>>] {
+): [T, Dispatch<SetStateAction<T>>] {
     const [value, setValue] = useState<T>(initial);
     // 저장 effect의 마운트 첫 실행(아직 initial 값) 1회를 건너뛰기 위한 플래그.
     const writeArmed = useRef(false);

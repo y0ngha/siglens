@@ -34,7 +34,6 @@ describe('usePersistentState', () => {
         });
 
         expect(result.current[0]).toBe('updated');
-        // After value changes (hydrated.current=true after mount effect), it should write
         expect(localStorage.getItem('test.persist')).toBe(
             JSON.stringify('updated')
         );
