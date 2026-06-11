@@ -32,6 +32,7 @@ const INACTIVE_PANES = Object.fromEntries(
         'elderRay',
         'squeezeMomentum',
         'regression',
+        'elderImpulse',
     ].map(k => [k, INACTIVE_PANE_INDEX])
 );
 

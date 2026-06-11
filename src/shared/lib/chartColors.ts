@@ -162,7 +162,7 @@ export const CHART_COLORS = {
     // Elder Impulse (캔들 per-bar 색) — DESIGN.md teal/red + Elder blue 관례
     impulseBullish: '#26a69a', // green — EMA↑ & MACD-hist↑
     impulseBearish: '#ef5350', // red — 둘 다 ↓
-    impulseNeutral: '#3b82f6', // blue — 혼조/전환
+    impulseNeutral: '#3b82f6', // blue — 혼조/전환; Elder 원저자 관례. macdLine과 같은 값이나 별 pane이라 공간상 겹치지 않음
 } as const;
 
 const PERIOD_COLOR_MAP: Record<number, string> = {
