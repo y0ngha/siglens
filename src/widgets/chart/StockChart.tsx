@@ -178,7 +178,7 @@ export function StockChart({
     }, [timeframe]);
 
     useEffect(() => {
-        if (!seriesRef.current) return;
+        if (!seriesRef.current || !chartRef.current) return;
 
         seriesRef.current.setData(
             buildCandlestickData(

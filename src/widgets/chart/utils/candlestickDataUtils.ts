@@ -2,11 +2,20 @@ import type { CandlestickData, UTCTimestamp } from 'lightweight-charts';
 import type { Bar, ImpulseColor } from '@y0ngha/siglens-core';
 import { CHART_COLORS } from '@/shared/lib/chartColors';
 
-/** Elder Impulse 색 매핑: green=강세(teal), red=약세(red), blue=혼조(blue). */
+/**
+ * Elder Impulse 색 매핑: green=강세(teal), red=약세(red), blue=혼조(blue).
+ * switch로 exhaustive하게 둬, core가 ImpulseColor 유니온을 확장하면 컴파일타임에
+ * "not all paths return"으로 잡히게 한다(조용한 neutral fallthrough 방지).
+ */
 export function impulseColor(c: ImpulseColor): string {
-    if (c === 'green') return CHART_COLORS.impulseBullish;
-    if (c === 'red') return CHART_COLORS.impulseBearish;
-    return CHART_COLORS.impulseNeutral;
+    switch (c) {
+        case 'green':
+            return CHART_COLORS.impulseBullish;
+        case 'red':
+            return CHART_COLORS.impulseBearish;
+        case 'blue':
+            return CHART_COLORS.impulseNeutral;
+    }
 }
 
 /**
