@@ -218,4 +218,20 @@ test.describe('chart indicator settings modal', () => {
         await impulse.check();
         await expect(impulse).toBeChecked();
     });
+
+    test('toggles SMC Zones via the modal', async ({ page }) => {
+        await page.goto('/AAPL');
+        await page.getByRole('button', { name: GEAR }).click();
+        const dialog = page.getByRole('dialog');
+        // SMC Zones는 가격선(zone) — pane/overlay 라벨이 없어 모달 체크박스 상태로 검증.
+        // smc 등록으로 'SMC' 카테고리 그룹이 모달에 처음 노출된다.
+        await expect(dialog.getByText('SMC')).toBeVisible();
+        const smc = dialog.getByRole('checkbox', {
+            name: 'SMC Zones',
+            exact: true,
+        });
+        await expect(smc).not.toBeChecked();
+        await smc.check();
+        await expect(smc).toBeChecked();
+    });
 });
