@@ -213,6 +213,20 @@ vi.mock('@/widgets/chart/hooks/useIchimokuOverlay', () => ({
     }),
 }));
 
+vi.mock('@/widgets/chart/hooks/useKeltnerOverlay', () => ({
+    useKeltnerOverlay: () => ({
+        isVisible: false,
+        toggle: vi.fn(),
+    }),
+}));
+
+vi.mock('@/widgets/chart/hooks/useDonchianOverlay', () => ({
+    useDonchianOverlay: () => ({
+        isVisible: false,
+        toggle: vi.fn(),
+    }),
+}));
+
 vi.mock('@/widgets/chart/hooks/useCandlePatternMarkers', () => ({
     useCandlePatternMarkers: vi.fn(),
 }));
@@ -394,13 +408,13 @@ describe('StockChart', () => {
         );
     });
 
-    it('renders IndicatorSettingsModal with 24 indicator bindings', () => {
+    it('renders IndicatorSettingsModal with 26 indicator bindings', () => {
         render(<StockChart bars={mockBars} timeframe="1Day" />);
         const modal = screen.getByTestId('indicator-settings-modal');
-        expect(modal).toHaveAttribute('data-count', '24');
+        expect(modal).toHaveAttribute('data-count', '26');
         expect(modal).toHaveAttribute(
             'data-keys',
-            'ma,ema,ichimoku,rsi,macd,dmi,stochastic,stochRsi,cci,bollinger,volumeProfile,mfi,williamsR,connorsRsi,cmf,bollingerPercentB,hurst,varianceRatio,macdV,forceIndex,obv,atr,yangZhang,ewmaVolatility'
+            'ma,ema,ichimoku,rsi,macd,dmi,stochastic,stochRsi,cci,bollinger,volumeProfile,mfi,williamsR,connorsRsi,cmf,bollingerPercentB,hurst,varianceRatio,macdV,forceIndex,obv,atr,yangZhang,ewmaVolatility,keltnerChannel,donchianChannel'
         );
     });
 

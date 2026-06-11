@@ -21,6 +21,8 @@ import { getTimeFormatter } from '@/shared/lib/timeFormat';
 import { useMAOverlay } from './hooks/useMAOverlay';
 import { useEMAOverlay } from './hooks/useEMAOverlay';
 import { useBollingerOverlay } from './hooks/useBollingerOverlay';
+import { useKeltnerOverlay } from './hooks/useKeltnerOverlay';
+import { useDonchianOverlay } from './hooks/useDonchianOverlay';
 import { useMACDChart } from './hooks/useMACDChart';
 import { useRSIChart } from './hooks/useRSIChart';
 import { useDMIChart } from './hooks/useDMIChart';
@@ -194,6 +196,12 @@ export function StockChart({
     const { isVisible: bollingerVisible, toggle: toggleBollinger } =
         useBollingerOverlay(commonHookParams);
 
+    const { isVisible: keltnerVisible, toggle: toggleKeltner } =
+        useKeltnerOverlay(commonHookParams);
+
+    const { isVisible: donchianVisible, toggle: toggleDonchian } =
+        useDonchianOverlay(commonHookParams);
+
     const { isVisible: vpVisible, toggle: toggleVP } =
         useVolumeProfileOverlay(commonHookParams);
 
@@ -365,6 +373,8 @@ export function StockChart({
                 bollingerVisible,
                 ichimokuVisible,
                 vpVisible,
+                keltnerVisible,
+                donchianVisible,
             }),
         [
             maVisiblePeriods,
@@ -372,6 +382,8 @@ export function StockChart({
             bollingerVisible,
             ichimokuVisible,
             vpVisible,
+            keltnerVisible,
+            donchianVisible,
         ]
     );
 
@@ -519,8 +531,18 @@ export function StockChart({
                 active: visible.ewmaVolatility,
                 onToggle: () => toggle('ewmaVolatility'),
             },
+            {
+                meta: INDICATOR_META.keltnerChannel,
+                active: keltnerVisible,
+                onToggle: toggleKeltner,
+            },
+            {
+                meta: INDICATOR_META.donchianChannel,
+                active: donchianVisible,
+                onToggle: toggleDonchian,
+            },
         ],
-        // deps에 visible 객체 전체를 둔다 — 한 지표 토글 시 24개 binding 전체가 재조립되지만
+        // deps에 visible 객체 전체를 둔다 — 한 지표 토글 시 26개 binding 전체가 재조립되지만
         // 항목 수가 적어 비용은 무시할 만하며, 개별 visible 키를 나열하는 것보다 명료하다.
         [
             maVisiblePeriods,
@@ -530,11 +552,15 @@ export function StockChart({
             toggle,
             bollingerVisible,
             vpVisible,
+            keltnerVisible,
+            donchianVisible,
             toggleMAPeriod,
             toggleEMAPeriod,
             toggleIchimoku,
             toggleBollinger,
             toggleVP,
+            toggleKeltner,
+            toggleDonchian,
         ]
     );
 
