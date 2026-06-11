@@ -33,6 +33,7 @@ const INACTIVE_PANES = Object.fromEntries(
         'squeezeMomentum',
         'regression',
         'elderImpulse',
+        'smc',
     ].map(k => [k, INACTIVE_PANE_INDEX])
 );
 
@@ -251,6 +252,10 @@ vi.mock('@/widgets/chart/hooks/useActionRecommendationOverlay', () => ({
     useActionRecommendationOverlay: vi.fn(),
 }));
 
+vi.mock('@/widgets/chart/hooks/useSmcZones', () => ({
+    useSmcZones: vi.fn(),
+}));
+
 vi.mock('@/widgets/chart/hooks/usePaneLabels', () => ({
     usePaneLabels: vi.fn(),
 }));
@@ -290,6 +295,7 @@ vi.mock('@/widgets/chart/hooks/useIndicatorVisibility', () => ({
             squeezeMomentum: false,
             regression: false,
             elderImpulse: false,
+            smc: false,
         },
         toggle: vi.fn(),
         paneIndices: INACTIVE_PANES,
@@ -429,13 +435,13 @@ describe('StockChart', () => {
         );
     });
 
-    it('renders IndicatorSettingsModal with 33 indicator bindings', () => {
+    it('renders IndicatorSettingsModal with 34 indicator bindings', () => {
         render(<StockChart bars={mockBars} timeframe="1Day" />);
         const modal = screen.getByTestId('indicator-settings-modal');
-        expect(modal).toHaveAttribute('data-count', '33');
+        expect(modal).toHaveAttribute('data-count', '34');
         expect(modal).toHaveAttribute(
             'data-keys',
-            'ma,ema,ichimoku,rsi,macd,dmi,stochastic,stochRsi,cci,bollinger,volumeProfile,mfi,williamsR,connorsRsi,cmf,bollingerPercentB,hurst,varianceRatio,macdV,forceIndex,obv,atr,yangZhang,ewmaVolatility,keltnerChannel,donchianChannel,supertrend,parabolicSar,chandelierExit,elderRay,squeezeMomentum,regression,elderImpulse'
+            'ma,ema,ichimoku,rsi,macd,dmi,stochastic,stochRsi,cci,bollinger,volumeProfile,mfi,williamsR,connorsRsi,cmf,bollingerPercentB,hurst,varianceRatio,macdV,forceIndex,obv,atr,yangZhang,ewmaVolatility,keltnerChannel,donchianChannel,supertrend,parabolicSar,chandelierExit,elderRay,squeezeMomentum,regression,elderImpulse,smc'
         );
     });
 
