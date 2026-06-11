@@ -25,23 +25,26 @@ interface UseIndicatorVisibilityReturn {
 }
 
 function initialVisibility(): VisibilityState {
-    // INDICATOR_REGISTRY 전체 키(18개)를 채우므로 Record<IndicatorKey, boolean>가
+    // INDICATOR_REGISTRY 전체 키를 채우므로 Record<IndicatorKey, boolean>가
     // 런타임에 완전히 충족된다 — 안전한 캐스트.
     return Object.fromEntries(
         INDICATOR_REGISTRY.map(m => [m.key, false])
     ) as VisibilityState;
 }
 
+// INDICATOR_REGISTRY(정적)에서만 파생되는 순수 값 — 매 렌더 재호출 대신 모듈 레벨 상수로 1회 고정.
+const INITIAL_VISIBILITY: VisibilityState = initialVisibility();
+
 export function useIndicatorVisibility(): UseIndicatorVisibilityReturn {
     const [persistedPartial, setVisible] = usePersistentState<VisibilityState>(
         STORAGE_KEYS.visible,
-        initialVisibility()
+        INITIAL_VISIBILITY
     );
 
-    // 레지스트리 성장 대비: 저장된 값에 없는 새 키는 initialVisibility()의 기본값(false)으로 채운다.
+    // 레지스트리 성장 대비: 저장된 값에 없는 새 키는 기본값(false)으로 채운다.
     // paneIndices 계산이 모든 등록 키를 필요로 하므로 완전한 Record를 항상 보장한다.
     const visible = useMemo<VisibilityState>(
-        () => ({ ...initialVisibility(), ...persistedPartial }),
+        () => ({ ...INITIAL_VISIBILITY, ...persistedPartial }),
         [persistedPartial]
     );
 

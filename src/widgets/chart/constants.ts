@@ -24,6 +24,5 @@ export const STORAGE_KEYS = {
     visible: `${STORAGE_PREFIX}.visible`,
     maPeriods: `${STORAGE_PREFIX}.ma.periods`,
     emaPeriods: `${STORAGE_PREFIX}.ema.periods`,
-    // overlay 토글 8종(bollinger·keltner·donchian·supertrend·parabolicSar·chandelier·ichimoku·volumeProfile)
-    overlay: (key: string) => `${STORAGE_PREFIX}.overlay.${key}`,
+    overlay: (key: string): string => `${STORAGE_PREFIX}.overlay.${key}`,
 } as const;

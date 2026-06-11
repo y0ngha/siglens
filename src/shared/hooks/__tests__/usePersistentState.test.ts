@@ -18,7 +18,6 @@ describe('usePersistentState', () => {
         const { result } = renderHook(() =>
             usePersistentState('test.restore', { count: 0 })
         );
-        // After effects run, the stored value should be restored
         expect(result.current[0]).toEqual({ count: 7 });
     });
 
@@ -43,7 +42,6 @@ describe('usePersistentState', () => {
         const { result } = renderHook(() =>
             usePersistentState('test.bad', 'fallback')
         );
-        // Parsing fails silently — should retain initial
         expect(result.current[0]).toBe('fallback');
     });
 
