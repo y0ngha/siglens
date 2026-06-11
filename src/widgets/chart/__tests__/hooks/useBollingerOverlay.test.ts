@@ -2,6 +2,7 @@
 import { act, renderHook } from '@testing-library/react';
 import type { Bar, IndicatorResult } from '@y0ngha/siglens-core';
 import { useBollingerOverlay } from '../../hooks/useBollingerOverlay';
+import { STORAGE_KEYS } from '../../constants';
 
 const mockSetData = vi.fn();
 const mockApplyOptions = vi.fn();
@@ -127,6 +128,18 @@ describe('useBollingerOverlay', () => {
         });
 
         expect(mockRemoveSeries).toHaveBeenCalled();
+    });
+
+    it('restores isVisible true from localStorage on mount', () => {
+        localStorage.setItem(STORAGE_KEYS.overlay('bollinger'), 'true');
+        const { result } = renderHook(() =>
+            useBollingerOverlay({
+                chartRef: makeChartRef(),
+                bars: [],
+                indicators: EMPTY_INDICATORS,
+            })
+        );
+        expect(result.current.isVisible).toBe(true);
     });
 
     it('provides stable toggle function reference', () => {

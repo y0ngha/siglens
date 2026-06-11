@@ -2,6 +2,7 @@
 import { act, renderHook } from '@testing-library/react';
 import type { Bar, IndicatorResult } from '@y0ngha/siglens-core';
 import { useEMAOverlay } from '../../hooks/useEMAOverlay';
+import { STORAGE_KEYS } from '../../constants';
 
 const mockSetData = vi.fn();
 const mockApplyOptions = vi.fn();
@@ -124,5 +125,17 @@ describe('useEMAOverlay', () => {
         });
 
         expect(mockRemoveSeries).toHaveBeenCalled();
+    });
+
+    it('restores visiblePeriods from localStorage (STORAGE_KEYS.emaPeriods)', () => {
+        localStorage.setItem(STORAGE_KEYS.emaPeriods, JSON.stringify([20]));
+        const { result } = renderHook(() =>
+            useEMAOverlay({
+                chartRef: makeChartRef(),
+                bars: [],
+                indicators: INDICATORS,
+            })
+        );
+        expect(result.current.visiblePeriods).toEqual([20]);
     });
 });

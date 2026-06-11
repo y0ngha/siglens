@@ -2,6 +2,7 @@
 import { act, renderHook } from '@testing-library/react';
 import type { Bar, IndicatorResult } from '@y0ngha/siglens-core';
 import { useMAOverlay } from '../../hooks/useMAOverlay';
+import { STORAGE_KEYS } from '../../constants';
 
 const mockSetData = vi.fn();
 const mockApplyOptions = vi.fn();
@@ -125,6 +126,34 @@ describe('useMAOverlay', () => {
         });
 
         expect(mockRemoveSeries).toHaveBeenCalled();
+    });
+
+    it('restores visiblePeriods from localStorage (STORAGE_KEYS.maPeriods)', () => {
+        localStorage.setItem(STORAGE_KEYS.maPeriods, JSON.stringify([20]));
+        const { result } = renderHook(() =>
+            useMAOverlay({
+                chartRef: makeChartRef(),
+                bars: [],
+                indicators: INDICATORS,
+            })
+        );
+        expect(result.current.visiblePeriods).toEqual([20]);
+    });
+
+    it('persists visiblePeriods to localStorage on toggle', () => {
+        const { result } = renderHook(() =>
+            useMAOverlay({
+                chartRef: makeChartRef(),
+                bars: [],
+                indicators: INDICATORS,
+            })
+        );
+        act(() => {
+            result.current.togglePeriod(20);
+        });
+        expect(
+            JSON.parse(localStorage.getItem(STORAGE_KEYS.maPeriods) ?? '[]')
+        ).toContain(20);
     });
 
     it('provides stable togglePeriod reference', () => {

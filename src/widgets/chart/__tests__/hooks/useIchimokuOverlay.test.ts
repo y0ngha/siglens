@@ -2,6 +2,7 @@
 import { act, renderHook } from '@testing-library/react';
 import type { Bar, IndicatorResult } from '@y0ngha/siglens-core';
 import { useIchimokuOverlay } from '../../hooks/useIchimokuOverlay';
+import { STORAGE_KEYS } from '../../constants';
 
 const mockSetData = vi.fn();
 const mockApplyOptions = vi.fn();
@@ -150,6 +151,18 @@ describe('useIchimokuOverlay', () => {
         });
 
         expect(mockRemoveSeries).toHaveBeenCalled();
+    });
+
+    it('restores isVisible true from localStorage on mount', () => {
+        localStorage.setItem(STORAGE_KEYS.overlay('ichimoku'), 'true');
+        const { result } = renderHook(() =>
+            useIchimokuOverlay({
+                chartRef: makeChartRef(),
+                bars: [],
+                indicators: EMPTY_INDICATORS,
+            })
+        );
+        expect(result.current.isVisible).toBe(true);
     });
 
     it('provides stable toggle reference', () => {

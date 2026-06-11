@@ -3,6 +3,7 @@ import { act, renderHook } from '@testing-library/react';
 import type { LineWidth } from 'lightweight-charts';
 import type { Bar, IndicatorResult } from '@y0ngha/siglens-core';
 import { useChandelierOverlay } from '../../hooks/useChandelierOverlay';
+import { STORAGE_KEYS } from '../../constants';
 import { buildTrendSplitData } from '../../utils/seriesDataUtils';
 
 const mockSetData = vi.fn();
@@ -247,6 +248,18 @@ describe('useChandelierOverlay', () => {
         );
         act(() => result.current.toggle());
         expect(mockSetData).not.toHaveBeenCalled();
+    });
+
+    it('restores isVisible true from localStorage on mount', () => {
+        localStorage.setItem(STORAGE_KEYS.overlay('chandelier'), 'true');
+        const { result } = renderHook(() =>
+            useChandelierOverlay({
+                chartRef: makeChartRef(),
+                bars: [],
+                indicators: EMPTY_INDICATORS,
+            })
+        );
+        expect(result.current.isVisible).toBe(true);
     });
 
     it('provides stable toggle function reference', () => {

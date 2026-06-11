@@ -5,8 +5,10 @@ import { useEffect, useEffectEvent, useRef, useState } from 'react';
 /**
  * useState와 동일 시그니처의 localStorage 영속 상태. SSR-safe:
  * 서버/초기 렌더는 initial을 사용해 hydration mismatch를 피하고, 마운트 후 저장값으로 복원하며,
- * 이후 값 변경 시 저장한다. 복원 로직은 useEffectEvent로 감싸 effect 의존성에서 빠지므로
- * set-state-in-effect 린트를 suppress 없이 만족한다 (MISTAKES §10 — React 19 canonical fix).
+ * 이후 값 변경 시 저장한다. 복원 setValue는 useEffectEvent로 감싸 effect 의존성에서 제외한다
+ * (React 19 canonical 패턴, MISTAKES §10). 다만 eslint-plugin-react-hooks@7.1.1은
+ * useEffectEvent를 통과해 setState를 추적하므로 set-state-in-effect가 여전히 false-positive로
+ * 발생한다 — 이 파일은 eslint.config.mjs에서 해당 규칙을 예외 처리한다(useSectorSignalState.ts 선례 동일).
  */
 export function usePersistentState<T>(
     key: string,
