@@ -55,6 +55,7 @@ function makePaneIndices(overrides: Partial<PaneIndices> = {}): PaneIndices {
         elderRay: INACTIVE_PANE_INDEX,
         squeezeMomentum: INACTIVE_PANE_INDEX,
         regression: INACTIVE_PANE_INDEX,
+        elderImpulse: INACTIVE_PANE_INDEX,
     } satisfies PaneIndices;
     return { ...base, ...overrides };
 }
