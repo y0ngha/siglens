@@ -45,6 +45,7 @@ const FAKE_BARS: Bar[] = [
 describe('useKeltnerOverlay', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        localStorage.clear();
     });
 
     it('returns isVisible false initially', () => {

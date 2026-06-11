@@ -1,13 +1,8 @@
 'use client';
 
 import type { RefObject } from 'react';
-import {
-    useCallback,
-    useEffect,
-    useEffectEvent,
-    useRef,
-    useState,
-} from 'react';
+import { useCallback, useEffect, useEffectEvent, useRef } from 'react';
+import { usePersistentState } from '@/shared/hooks/usePersistentState';
 import type {
     IChartApi,
     ISeriesApi,
@@ -29,6 +24,7 @@ interface UseMovingAverageOverlayParams {
     chartRef: RefObject<IChartApi | null>;
     bars: Bar[];
     indicators: IndicatorResult;
+    storageKey: string;
     defaultPeriods?: number[];
     lineWidth?: LineWidth;
     lineStyle: LineStyle;
@@ -44,23 +40,29 @@ export function useMovingAverageOverlay({
     chartRef,
     bars,
     indicators,
+    storageKey,
     defaultPeriods = [],
     lineWidth = DEFAULT_LINE_WIDTH,
     lineStyle,
     getIndicatorData,
 }: UseMovingAverageOverlayParams): UseMovingAverageOverlayReturn {
-    const [visiblePeriods, setVisiblePeriods] =
-        useState<number[]>(defaultPeriods);
+    const [visiblePeriods, setVisiblePeriods] = usePersistentState<number[]>(
+        storageKey,
+        defaultPeriods
+    );
     const prevChartRef = useRef<IChartApi | null>(null);
     const seriesRef = useRef<Record<number, ISeriesApi<'Line'>>>({});
 
-    const togglePeriod = useCallback((period: number) => {
-        setVisiblePeriods(prev =>
-            prev.includes(period)
-                ? prev.filter(p => p !== period)
-                : [...prev, period]
-        );
-    }, []);
+    const togglePeriod = useCallback(
+        (period: number) => {
+            setVisiblePeriods(prev =>
+                prev.includes(period)
+                    ? prev.filter(p => p !== period)
+                    : [...prev, period]
+            );
+        },
+        [setVisiblePeriods]
+    );
 
     // chart 인스턴스 교체 시 ref만 초기화 (removeSeries 불필요 — 이전 chart는 부모가 소멸)
     const clearSeriesRefs = useEffectEvent(() => {

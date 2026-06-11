@@ -58,6 +58,7 @@ const FAKE_BARS: Bar[] = [
 describe('useDonchianOverlay', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        localStorage.clear();
     });
 
     it('returns isVisible false initially', () => {

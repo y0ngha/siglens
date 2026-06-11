@@ -1,18 +1,13 @@
 'use client';
 
 import type { RefObject } from 'react';
-import {
-    useCallback,
-    useEffect,
-    useEffectEvent,
-    useRef,
-    useState,
-} from 'react';
+import { useCallback, useEffect, useEffectEvent, useRef } from 'react';
+import { usePersistentState } from '@/shared/hooks/usePersistentState';
 import type { IChartApi, ISeriesApi, LineWidth } from 'lightweight-charts';
 import { LineSeries } from 'lightweight-charts';
 import { CHART_COLORS } from '@/shared/lib/chartColors';
 import type { Bar, IndicatorResult } from '@y0ngha/siglens-core';
-import { DEFAULT_LINE_WIDTH } from '../constants';
+import { DEFAULT_LINE_WIDTH, STORAGE_KEYS } from '../constants';
 import { buildTrendSplitData } from '../utils/seriesDataUtils';
 
 interface UseSupertrendOverlayParams {
@@ -33,14 +28,17 @@ export function useSupertrendOverlay({
     indicators,
     lineWidth = DEFAULT_LINE_WIDTH,
 }: UseSupertrendOverlayParams): UseSupertrendOverlayReturn {
-    const [isVisible, setIsVisible] = useState(false);
+    const [isVisible, setIsVisible] = usePersistentState(
+        STORAGE_KEYS.overlay('supertrend'),
+        false
+    );
     const prevChartRef = useRef<IChartApi | null>(null);
     const upSeriesRef = useRef<ISeriesApi<'Line'> | null>(null);
     const downSeriesRef = useRef<ISeriesApi<'Line'> | null>(null);
 
     const toggle = useCallback(() => {
         setIsVisible(prev => !prev);
-    }, []);
+    }, [setIsVisible]);
 
     const clearSeriesRefs = useEffectEvent(() => {
         upSeriesRef.current = null;

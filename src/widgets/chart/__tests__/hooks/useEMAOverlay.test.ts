@@ -41,6 +41,7 @@ const FAKE_BARS: Bar[] = [
 describe('useEMAOverlay', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        localStorage.clear();
     });
 
     it('returns empty visiblePeriods by default', () => {

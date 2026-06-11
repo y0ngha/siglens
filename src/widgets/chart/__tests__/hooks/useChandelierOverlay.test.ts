@@ -47,6 +47,7 @@ const FAKE_BARS: Bar[] = [
 describe('useChandelierOverlay', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        localStorage.clear();
     });
 
     it('returns isVisible false initially', () => {

@@ -147,7 +147,7 @@ export function IndicatorSettingsModal({
                             aria-modal="true"
                             aria-labelledby={titleId}
                             tabIndex={-1}
-                            className="border-secondary-700 bg-secondary-800 max-h-[calc(100vh-2rem)] w-full max-w-md overflow-y-auto rounded-xl border text-left shadow-2xl outline-none"
+                            className="border-secondary-700 bg-secondary-800 max-h-[calc(100vh-2rem)] w-full max-w-lg overflow-y-auto rounded-xl border text-left shadow-2xl outline-none"
                         >
                             <div className="border-secondary-700 flex items-start justify-between border-b px-5 py-4">
                                 <h2
@@ -185,13 +185,17 @@ export function IndicatorSettingsModal({
                                         <h3 className="text-secondary-500 mb-1 text-xs font-semibold tracking-wide uppercase">
                                             {group.label}
                                         </h3>
-                                        <div className="flex flex-col gap-0.5">
+                                        <div className="grid grid-cols-2 gap-x-4 gap-y-0.5">
                                             {group.items.map(binding =>
                                                 binding.meta.hasPeriods ? (
-                                                    <PeriodRow
+                                                    <div
                                                         key={binding.meta.key}
-                                                        binding={binding}
-                                                    />
+                                                        className="col-span-2"
+                                                    >
+                                                        <PeriodRow
+                                                            binding={binding}
+                                                        />
+                                                    </div>
                                                 ) : (
                                                     <ToggleRow
                                                         key={binding.meta.key}

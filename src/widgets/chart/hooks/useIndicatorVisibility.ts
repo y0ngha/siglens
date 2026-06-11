@@ -1,7 +1,12 @@
 'use client';
 
-import { useCallback, useMemo, useState } from 'react';
-import { FIRST_INDICATOR_PANE_INDEX, INACTIVE_PANE_INDEX } from '../constants';
+import { useCallback, useMemo } from 'react';
+import { usePersistentState } from '@/shared/hooks/usePersistentState';
+import {
+    FIRST_INDICATOR_PANE_INDEX,
+    INACTIVE_PANE_INDEX,
+    STORAGE_KEYS,
+} from '../constants';
 import {
     INDICATOR_REGISTRY,
     type IndicatorKey,
@@ -28,11 +33,24 @@ function initialVisibility(): VisibilityState {
 }
 
 export function useIndicatorVisibility(): UseIndicatorVisibilityReturn {
-    const [visible, setVisible] = useState<VisibilityState>(initialVisibility);
+    const [persistedPartial, setVisible] = usePersistentState<VisibilityState>(
+        STORAGE_KEYS.visible,
+        initialVisibility()
+    );
 
-    const toggle = useCallback((key: IndicatorKey) => {
-        setVisible(prev => ({ ...prev, [key]: !prev[key] }));
-    }, []);
+    // 레지스트리 성장 대비: 저장된 값에 없는 새 키는 initialVisibility()의 기본값(false)으로 채운다.
+    // paneIndices 계산이 모든 등록 키를 필요로 하므로 완전한 Record를 항상 보장한다.
+    const visible = useMemo<VisibilityState>(
+        () => ({ ...initialVisibility(), ...persistedPartial }),
+        [persistedPartial]
+    );
+
+    const toggle = useCallback(
+        (key: IndicatorKey) => {
+            setVisible(prev => ({ ...prev, [key]: !prev[key] }));
+        },
+        [setVisible]
+    );
 
     const paneIndices: PaneIndices = useMemo(() => {
         // 가변 카운터 없이 순수하게 계산 — 활성 pane을 등록 순서로 추려 Map으로 위치를 부여.

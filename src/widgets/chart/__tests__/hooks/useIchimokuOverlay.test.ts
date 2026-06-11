@@ -68,6 +68,7 @@ const FAKE_BARS: Bar[] = [
 describe('useIchimokuOverlay', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        localStorage.clear();
     });
 
     it('returns isVisible false initially', () => {

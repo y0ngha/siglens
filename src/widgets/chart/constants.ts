@@ -15,3 +15,15 @@ export const BASE_PATTERN_SERIES_OPTIONS = {
     priceLineVisible: false,
     lastValueVisible: false,
 } as const;
+
+// 차트 보조지표 선택을 새로고침 후에도 복원하기 위한 localStorage 키.
+// 'siglens.chart.*' 단일 네임스페이스로 모아 오타·충돌을 막고 영속 대상을 한눈에 보이게 한다.
+// 영속 자체는 usePersistentState가 담당하고, 여기서는 키 목록만 단일 소스로 관리한다.
+const STORAGE_PREFIX = 'siglens.chart';
+export const STORAGE_KEYS = {
+    visible: `${STORAGE_PREFIX}.visible`,
+    maPeriods: `${STORAGE_PREFIX}.ma.periods`,
+    emaPeriods: `${STORAGE_PREFIX}.ema.periods`,
+    // overlay 토글 8종(bollinger·keltner·donchian·supertrend·parabolicSar·chandelier·ichimoku·volumeProfile)
+    overlay: (key: string) => `${STORAGE_PREFIX}.overlay.${key}`,
+} as const;

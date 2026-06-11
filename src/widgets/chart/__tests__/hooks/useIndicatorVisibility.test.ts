@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useIndicatorVisibility } from '../../hooks/useIndicatorVisibility';
 import {
@@ -8,6 +8,10 @@ import {
 } from '../../constants';
 
 describe('useIndicatorVisibility', () => {
+    beforeEach(() => {
+        localStorage.clear();
+    });
+
     it('starts with all pane indicators hidden (INACTIVE)', () => {
         const { result } = renderHook(() => useIndicatorVisibility());
         expect(result.current.visible.rsi).toBe(false);

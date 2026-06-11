@@ -45,6 +45,7 @@ const FAKE_BARS: Bar[] = [
 describe('useParabolicSarOverlay', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        localStorage.clear();
     });
 
     it('returns isVisible false initially', () => {

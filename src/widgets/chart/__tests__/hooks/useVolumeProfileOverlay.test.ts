@@ -41,6 +41,7 @@ const FAKE_BARS: Bar[] = [
 describe('useVolumeProfileOverlay', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        localStorage.clear();
     });
 
     it('returns isVisible false initially', () => {
