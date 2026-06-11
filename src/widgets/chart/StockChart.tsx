@@ -52,6 +52,7 @@ import { useVolumeProfileOverlay } from './hooks/useVolumeProfileOverlay';
 import { useIchimokuOverlay } from './hooks/useIchimokuOverlay';
 import { useCandlePatternMarkers } from './hooks/useCandlePatternMarkers';
 import { useActionRecommendationOverlay } from './hooks/useActionRecommendationOverlay';
+import { useSmcZones } from './hooks/useSmcZones';
 import { usePaneLabels } from './hooks/usePaneLabels';
 import { useOverlayLegend } from './hooks/useOverlayLegend';
 import { DEFAULT_LINE_WIDTH } from './constants';
@@ -367,6 +368,12 @@ export function StockChart({
         lineWidth: DEFAULT_LINE_WIDTH,
     });
 
+    useSmcZones({
+        seriesRef,
+        smc: indicators.smc,
+        isVisible: visible.smc,
+    });
+
     // indicator 제거 시 LWC v5가 빈 pane DOM을 정리하지 않아 autoSize 토글로 layout invalidate를 강제한다.
     // 단, 첫 mount에서는 이 명시 resize를 skip한다 (`isInitialPaneRenderRef`) — hydration /
     // 첫 진입 시 layout 안정화 전에 wrapper.clientHeight를 측정하면 작은 값(예: 30px)이
@@ -616,6 +623,11 @@ export function StockChart({
                 meta: INDICATOR_META.elderImpulse,
                 active: visible.elderImpulse,
                 onToggle: () => toggle('elderImpulse'),
+            },
+            {
+                meta: INDICATOR_META.smc,
+                active: visible.smc,
+                onToggle: () => toggle('smc'),
             },
         ],
         // deps에 visible 객체 전체를 둔다 — 한 지표 토글 시 전체 binding이 재조립되지만
