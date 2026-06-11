@@ -288,6 +288,7 @@ vi.mock('@/widgets/chart/hooks/useIndicatorVisibility', () => ({
             elderRay: false,
             squeezeMomentum: false,
             regression: false,
+            elderImpulse: false,
         },
         toggle: vi.fn(),
         paneIndices: INACTIVE_PANES,
@@ -341,6 +342,7 @@ vi.mock('@y0ngha/siglens-core', () => ({
         donchianChannel: [],
         squeezeMomentum: [],
         buySellVolume: [],
+        elderImpulse: [],
         smc: {
             orderBlocks: [],
             fairValueGaps: [],
@@ -426,13 +428,13 @@ describe('StockChart', () => {
         );
     });
 
-    it('renders IndicatorSettingsModal with 32 indicator bindings', () => {
+    it('renders IndicatorSettingsModal with 33 indicator bindings', () => {
         render(<StockChart bars={mockBars} timeframe="1Day" />);
         const modal = screen.getByTestId('indicator-settings-modal');
-        expect(modal).toHaveAttribute('data-count', '32');
+        expect(modal).toHaveAttribute('data-count', '33');
         expect(modal).toHaveAttribute(
             'data-keys',
-            'ma,ema,ichimoku,rsi,macd,dmi,stochastic,stochRsi,cci,bollinger,volumeProfile,mfi,williamsR,connorsRsi,cmf,bollingerPercentB,hurst,varianceRatio,macdV,forceIndex,obv,atr,yangZhang,ewmaVolatility,keltnerChannel,donchianChannel,supertrend,parabolicSar,chandelierExit,elderRay,squeezeMomentum,regression'
+            'ma,ema,ichimoku,rsi,macd,dmi,stochastic,stochRsi,cci,bollinger,volumeProfile,mfi,williamsR,connorsRsi,cmf,bollingerPercentB,hurst,varianceRatio,macdV,forceIndex,obv,atr,yangZhang,ewmaVolatility,keltnerChannel,donchianChannel,supertrend,parabolicSar,chandelierExit,elderRay,squeezeMomentum,regression,elderImpulse'
         );
     });
 
