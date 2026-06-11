@@ -205,9 +205,8 @@ describe('IndicatorSettingsModal', () => {
             <IndicatorSettingsModal bindings={[rsiBinding(), maBinding()]} />
         );
         // 카테고리별 항목 컨테이너가 2열 그리드여야 모달 길이가 짧아져 모바일에서 안 가려진다.
-        expect(
-            document.querySelectorAll('.grid.grid-cols-2').length
-        ).toBeGreaterThan(0);
+        // rsi(momentum)+ma(trend) = 정확히 2개 카테고리 → 그리드 컨테이너 2개(결정적).
+        expect(document.querySelectorAll('.grid.grid-cols-2').length).toBe(2);
     });
 
     it('wraps period rows with col-span-2 so chips span the full width', () => {
