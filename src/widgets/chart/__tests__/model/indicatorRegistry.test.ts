@@ -14,8 +14,8 @@ function bindingFor(key: IndicatorKey, active = false): IndicatorBinding {
 }
 
 describe('indicatorRegistry', () => {
-    it('registers exactly the 18 modal-target indicators', () => {
-        expect(INDICATOR_REGISTRY).toHaveLength(18);
+    it('registers exactly the 24 modal-target indicators', () => {
+        expect(INDICATOR_REGISTRY).toHaveLength(24);
     });
 
     it('has no duplicate keys', () => {
@@ -82,6 +82,32 @@ describe('indicatorRegistry', () => {
             )
         ).toBe(true);
     });
+
+    it('places group-C-simple indicators in the right categories', () => {
+        const byKey = Object.fromEntries(
+            INDICATOR_REGISTRY.map(m => [m.key, m.category])
+        );
+        expect(byKey.macdV).toBe('momentum');
+        expect(byKey.forceIndex).toBe('momentum');
+        expect(byKey.obv).toBe('volume');
+        expect(byKey.atr).toBe('volatility');
+        expect(byKey.yangZhang).toBe('volatility');
+        expect(byKey.ewmaVolatility).toBe('volatility');
+    });
+
+    it.each([
+        'macdV',
+        'forceIndex',
+        'obv',
+        'atr',
+        'yangZhang',
+        'ewmaVolatility',
+    ] as const satisfies readonly IndicatorKey[])(
+        '%s is a pane-kind indicator',
+        key => {
+            expect(INDICATOR_META[key].kind).toBe('pane');
+        }
+    );
 });
 
 describe('groupBindingsByCategory', () => {

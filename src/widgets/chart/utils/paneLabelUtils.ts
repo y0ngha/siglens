@@ -171,6 +171,42 @@ export function buildPaneLabels(paneIndices: PaneIndices): PaneLabelConfig[] {
         CHART_COLORS.varianceRatioLine
     );
 
+    const macdVLabel = buildSinglePaneLabel(
+        paneIndices.macdV,
+        'MACD-V',
+        CHART_COLORS.macdVLine
+    );
+
+    const forceIndexLabel = buildSinglePaneLabel(
+        paneIndices.forceIndex,
+        'Force Index',
+        CHART_COLORS.forceIndexLine
+    );
+
+    const obvLabel = buildSinglePaneLabel(
+        paneIndices.obv,
+        'OBV',
+        CHART_COLORS.obvLine
+    );
+
+    const atrLabel = buildSinglePaneLabel(
+        paneIndices.atr,
+        'ATR',
+        CHART_COLORS.atrLine
+    );
+
+    const yangZhangLabel = buildSinglePaneLabel(
+        paneIndices.yangZhang,
+        'Yang-Zhang',
+        CHART_COLORS.yangZhangLine
+    );
+
+    const ewmaVolatilityLabel = buildSinglePaneLabel(
+        paneIndices.ewmaVolatility,
+        'EWMA Vol',
+        CHART_COLORS.ewmaVolatilityLine
+    );
+
     return [
         ...rsiLabel,
         ...macdLabel,
@@ -185,5 +221,11 @@ export function buildPaneLabels(paneIndices: PaneIndices): PaneLabelConfig[] {
         ...bollingerPercentBLabel,
         ...hurstLabel,
         ...varianceRatioLabel,
+        ...macdVLabel,
+        ...forceIndexLabel,
+        ...obvLabel,
+        ...atrLabel,
+        ...yangZhangLabel,
+        ...ewmaVolatilityLabel,
     ];
 }
