@@ -20,23 +20,18 @@ export function buildCandlestickData(
     elderImpulse: (ImpulseColor | null)[],
     isImpulseActive: boolean
 ): CandlestickData<UTCTimestamp>[] {
-    return bars
-        .map(bar => {
-            const base: CandlestickData<UTCTimestamp> = {
-                // Bar.time은 epoch seconds 정수 — LWC UTCTimestamp(branded number)와 런타임 형태 동일.
-                time: bar.time as UTCTimestamp,
-                open: bar.open,
-                high: bar.high,
-                low: bar.low,
-                close: bar.close,
-            };
-            return base;
-        })
-        .map((base, i) => {
-            if (!isImpulseActive) return base;
-            const impulse = elderImpulse[i];
-            if (impulse == null) return base;
-            const color = impulseColor(impulse);
-            return { ...base, color, borderColor: color, wickColor: color };
-        });
+    return bars.map((bar, i) => {
+        const base: CandlestickData<UTCTimestamp> = {
+            // Bar.time은 epoch seconds 정수 — LWC UTCTimestamp(branded number)와 런타임 형태 동일.
+            time: bar.time as UTCTimestamp,
+            open: bar.open,
+            high: bar.high,
+            low: bar.low,
+            close: bar.close,
+        };
+        const impulse = isImpulseActive ? elderImpulse[i] : null;
+        if (impulse == null) return base; // 비활성·warm-up·범위 밖 → 시리즈 기본 bull/bear 색
+        const color = impulseColor(impulse);
+        return { ...base, color, borderColor: color, wickColor: color };
+    });
 }
