@@ -1,84 +1,112 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { IndicatorToolbar } from '@/widgets/chart/IndicatorToolbar';
-
-vi.mock('next/navigation', () => ({
-    useRouter: () => ({ push: vi.fn(), prefetch: vi.fn() }),
-    usePathname: () => '/AAPL',
-    useSearchParams: () => new URLSearchParams(),
-}));
-
-vi.mock('@/shared/db/client', () => ({
-    getDatabaseClient: vi.fn(() => ({ db: {}, sql: () => null })),
-}));
+import { IndicatorSettingsModal } from '@/widgets/chart/ui/IndicatorSettingsModal';
+import {
+    INDICATOR_META,
+    type IndicatorBinding,
+} from '@/widgets/chart/model/indicatorRegistry';
 
 vi.mock('@/shared/lib/chartColors', () => ({
     getPeriodColor: (period: number) => `hsl(${period * 10}, 70%, 50%)`,
 }));
 
-function makeToggleGroup(visible = false) {
-    return { visible, onToggle: vi.fn() };
+interface FlowCallbacks {
+    onToggleRsi: ReturnType<typeof vi.fn<() => void>>;
+    onToggleMaPeriod: ReturnType<typeof vi.fn<(period: number) => void>>;
 }
 
-const DEFAULT_PROPS = {
-    maVisiblePeriods: [] as number[],
-    maAvailablePeriods: [5, 10, 20, 50, 100, 200] as const,
-    onMAToggle: vi.fn(),
-    emaVisiblePeriods: [] as number[],
-    emaAvailablePeriods: [5, 10, 20, 50, 100, 200] as const,
-    onEMAToggle: vi.fn(),
-    bollinger: makeToggleGroup(),
-    macd: makeToggleGroup(),
-    rsi: makeToggleGroup(),
-    dmi: makeToggleGroup(),
-    stochastic: makeToggleGroup(),
-    stochRsi: makeToggleGroup(),
-    cci: makeToggleGroup(),
-    volumeProfile: makeToggleGroup(),
-    ichimoku: makeToggleGroup(),
-};
+function makeBindings(cb: FlowCallbacks): IndicatorBinding[] {
+    return [
+        {
+            meta: INDICATOR_META.ma,
+            active: false,
+            availablePeriods: [5, 10, 20, 50, 100, 200],
+            visiblePeriods: [],
+            onTogglePeriod: cb.onToggleMaPeriod,
+        },
+        { meta: INDICATOR_META.rsi, active: false, onToggle: cb.onToggleRsi },
+        { meta: INDICATOR_META.bollinger, active: false, onToggle: vi.fn() },
+        {
+            meta: INDICATOR_META.volumeProfile,
+            active: false,
+            onToggle: vi.fn(),
+        },
+    ];
+}
 
-describe('Chart Indicator Flow', () => {
-    it('renders expand/collapse button initially', () => {
-        render(<IndicatorToolbar {...DEFAULT_PROPS} />);
-        expect(screen.getByLabelText('Show indicators')).toBeInTheDocument();
+function makeCallbacks(): FlowCallbacks {
+    return {
+        onToggleRsi: vi.fn<() => void>(),
+        onToggleMaPeriod: vi.fn<(period: number) => void>(),
+    };
+}
+
+describe('Chart Indicator Flow (settings modal, real useDialog)', () => {
+    it('shows the gear trigger and keeps the dialog closed initially', () => {
+        render(
+            <IndicatorSettingsModal bindings={makeBindings(makeCallbacks())} />
+        );
+        expect(
+            screen.getByRole('button', { name: '보조지표 설정' })
+        ).toBeInTheDocument();
+        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     });
 
-    it('shows indicator buttons after expanding', async () => {
-        render(<IndicatorToolbar {...DEFAULT_PROPS} />);
+    it('opens the dialog and groups indicators by category when the gear is clicked', async () => {
         const user = userEvent.setup();
-        await user.click(screen.getByLabelText('Show indicators'));
-        expect(screen.getByText('RSI')).toBeInTheDocument();
-        expect(screen.getByText('MACD')).toBeInTheDocument();
-        expect(screen.getByText('BB')).toBeInTheDocument();
-        expect(screen.getByText('MA')).toBeInTheDocument();
-        expect(screen.getByText('EMA')).toBeInTheDocument();
+        render(
+            <IndicatorSettingsModal bindings={makeBindings(makeCallbacks())} />
+        );
+        await user.click(screen.getByRole('button', { name: '보조지표 설정' }));
+        expect(screen.getByRole('dialog')).toBeInTheDocument();
+        expect(screen.getByText('추세')).toBeInTheDocument();
+        expect(screen.getByText('모멘텀')).toBeInTheDocument();
+        expect(screen.getByText('변동성')).toBeInTheDocument();
+        expect(screen.getByText('볼륨')).toBeInTheDocument();
+        expect(screen.queryByText('SMC')).not.toBeInTheDocument();
     });
 
-    it('calls RSI toggle when RSI button is clicked', async () => {
-        const rsiToggle = makeToggleGroup();
-        render(<IndicatorToolbar {...DEFAULT_PROPS} rsi={rsiToggle} />);
+    it('calls the RSI toggle when its checkbox is clicked', async () => {
+        const cb = makeCallbacks();
         const user = userEvent.setup();
-        await user.click(screen.getByLabelText('Show indicators'));
-        await user.click(screen.getByText('RSI'));
-        expect(rsiToggle.onToggle).toHaveBeenCalledTimes(1);
+        render(<IndicatorSettingsModal bindings={makeBindings(cb)} />);
+        await user.click(screen.getByRole('button', { name: '보조지표 설정' }));
+        await user.click(screen.getByRole('checkbox', { name: /RSI/ }));
+        expect(cb.onToggleRsi).toHaveBeenCalledTimes(1);
     });
 
-    it('collapses when toggle is clicked again', async () => {
-        render(<IndicatorToolbar {...DEFAULT_PROPS} />);
+    it('calls the MA period toggle when a period chip is clicked', async () => {
+        const cb = makeCallbacks();
         const user = userEvent.setup();
-        await user.click(screen.getByLabelText('Show indicators'));
-        expect(screen.getByText('RSI')).toBeInTheDocument();
-        await user.click(screen.getByLabelText('Hide indicators'));
-        expect(screen.queryByText('RSI')).not.toBeInTheDocument();
+        render(<IndicatorSettingsModal bindings={makeBindings(cb)} />);
+        await user.click(screen.getByRole('button', { name: '보조지표 설정' }));
+        await user.click(screen.getByRole('button', { name: /^20$/ }));
+        expect(cb.onToggleMaPeriod).toHaveBeenCalledWith(20);
     });
 
-    it('shows MA dropdown when MA button is clicked', async () => {
-        render(<IndicatorToolbar {...DEFAULT_PROPS} />);
+    it('closes the dialog when the close button is clicked', async () => {
         const user = userEvent.setup();
-        await user.click(screen.getByLabelText('Show indicators'));
-        await user.click(screen.getByText('MA'));
-        expect(screen.getByText('5')).toBeInTheDocument();
-        expect(screen.getByText('200')).toBeInTheDocument();
+        render(
+            <IndicatorSettingsModal bindings={makeBindings(makeCallbacks())} />
+        );
+        await user.click(screen.getByRole('button', { name: '보조지표 설정' }));
+        expect(screen.getByRole('dialog')).toBeInTheDocument();
+        await user.click(screen.getByRole('button', { name: '닫기' }));
+        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    });
+
+    it('closes the dialog when Escape is pressed (real useDialog)', async () => {
+        const user = userEvent.setup();
+        render(
+            <IndicatorSettingsModal bindings={makeBindings(makeCallbacks())} />
+        );
+        await user.click(screen.getByRole('button', { name: '보조지표 설정' }));
+        // useDialog의 Escape 리스너는 useEffect(passive-effect)에서 document에
+        // 등록된다. dialog가 focus를 받을 때까지 기다려 리스너 부착을 보장한 뒤
+        // Escape를 발화한다 — 부착 전 발화 시 CI(vmThreads)에서 이벤트 유실
+        // flake가 발생한다 (MISTAKES.md §19).
+        await waitFor(() => expect(screen.getByRole('dialog')).toHaveFocus());
+        await user.keyboard('{Escape}');
+        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     });
 });
