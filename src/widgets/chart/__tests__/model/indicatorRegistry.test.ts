@@ -14,8 +14,8 @@ function bindingFor(key: IndicatorKey, active = false): IndicatorBinding {
 }
 
 describe('indicatorRegistry', () => {
-    it('registers exactly the 11 modal-target indicators', () => {
-        expect(INDICATOR_REGISTRY).toHaveLength(11);
+    it('registers exactly the 18 modal-target indicators', () => {
+        expect(INDICATOR_REGISTRY).toHaveLength(18);
     });
 
     it('has no duplicate keys', () => {
@@ -48,8 +48,39 @@ describe('indicatorRegistry', () => {
             momentum: '모멘텀',
             volatility: '변동성',
             volume: '볼륨',
+            statistical: '통계',
             smc: 'SMC',
         });
+    });
+
+    it('places group-B oscillators in the right categories', () => {
+        const byKey = Object.fromEntries(
+            INDICATOR_REGISTRY.map(m => [m.key, m.category])
+        );
+        expect(byKey.mfi).toBe('momentum');
+        expect(byKey.williamsR).toBe('momentum');
+        expect(byKey.connorsRsi).toBe('momentum');
+        expect(byKey.cmf).toBe('momentum');
+        expect(byKey.bollingerPercentB).toBe('volatility');
+        expect(byKey.hurst).toBe('statistical');
+        expect(byKey.varianceRatio).toBe('statistical');
+    });
+
+    it('all group-B indicators are pane kind', () => {
+        const groupB = [
+            'mfi',
+            'williamsR',
+            'connorsRsi',
+            'cmf',
+            'bollingerPercentB',
+            'hurst',
+            'varianceRatio',
+        ];
+        expect(
+            groupB.every(
+                key => INDICATOR_META[key as IndicatorKey].kind === 'pane'
+            )
+        ).toBe(true);
     });
 });
 

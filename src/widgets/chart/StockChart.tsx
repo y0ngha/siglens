@@ -27,6 +27,13 @@ import { useDMIChart } from './hooks/useDMIChart';
 import { useStochasticChart } from './hooks/useStochasticChart';
 import { useStochRSIChart } from './hooks/useStochRSIChart';
 import { useCCIChart } from './hooks/useCCIChart';
+import { useMfiChart } from './hooks/useMfiChart';
+import { useWilliamsRChart } from './hooks/useWilliamsRChart';
+import { useConnorsRsiChart } from './hooks/useConnorsRsiChart';
+import { useCmfChart } from './hooks/useCmfChart';
+import { useBollingerPercentBChart } from './hooks/useBollingerPercentBChart';
+import { useHurstChart } from './hooks/useHurstChart';
+import { useVarianceRatioChart } from './hooks/useVarianceRatioChart';
 import { useVolumeProfileOverlay } from './hooks/useVolumeProfileOverlay';
 import { useIchimokuOverlay } from './hooks/useIchimokuOverlay';
 import { useCandlePatternMarkers } from './hooks/useCandlePatternMarkers';
@@ -93,21 +100,7 @@ export function StockChart({
     // paneIndices effect의 첫 mount skip 마커 (아래 useEffect 참조).
     const isInitialPaneRenderRef = useRef(true);
 
-    const {
-        rsiVisible,
-        macdVisible,
-        dmiVisible,
-        stochasticVisible,
-        stochRsiVisible,
-        cciVisible,
-        toggleRSI,
-        toggleMACD,
-        toggleDMI,
-        toggleStochastic,
-        toggleStochRSI,
-        toggleCCI,
-        paneIndices,
-    } = useIndicatorVisibility();
+    const { visible, toggle, paneIndices } = useIndicatorVisibility();
 
     const commonHookParams: CommonHookParams = {
         chartRef,
@@ -203,38 +196,80 @@ export function StockChart({
 
     useRSIChart({
         ...commonHookParams,
-        isVisible: rsiVisible,
+        isVisible: visible.rsi,
         paneIndex: paneIndices.rsi,
     });
 
     useMACDChart({
         ...commonHookParams,
-        isVisible: macdVisible,
+        isVisible: visible.macd,
         paneIndex: paneIndices.macd,
     });
 
     useDMIChart({
         ...commonHookParams,
-        isVisible: dmiVisible,
+        isVisible: visible.dmi,
         paneIndex: paneIndices.dmi,
     });
 
     useStochasticChart({
         ...commonHookParams,
-        isVisible: stochasticVisible,
+        isVisible: visible.stochastic,
         paneIndex: paneIndices.stochastic,
     });
 
     useStochRSIChart({
         ...commonHookParams,
-        isVisible: stochRsiVisible,
+        isVisible: visible.stochRsi,
         paneIndex: paneIndices.stochRsi,
     });
 
     useCCIChart({
         ...commonHookParams,
-        isVisible: cciVisible,
+        isVisible: visible.cci,
         paneIndex: paneIndices.cci,
+    });
+
+    useMfiChart({
+        ...commonHookParams,
+        isVisible: visible.mfi,
+        paneIndex: paneIndices.mfi,
+    });
+
+    useWilliamsRChart({
+        ...commonHookParams,
+        isVisible: visible.williamsR,
+        paneIndex: paneIndices.williamsR,
+    });
+
+    useConnorsRsiChart({
+        ...commonHookParams,
+        isVisible: visible.connorsRsi,
+        paneIndex: paneIndices.connorsRsi,
+    });
+
+    useCmfChart({
+        ...commonHookParams,
+        isVisible: visible.cmf,
+        paneIndex: paneIndices.cmf,
+    });
+
+    useBollingerPercentBChart({
+        ...commonHookParams,
+        isVisible: visible.bollingerPercentB,
+        paneIndex: paneIndices.bollingerPercentB,
+    });
+
+    useHurstChart({
+        ...commonHookParams,
+        isVisible: visible.hurst,
+        paneIndex: paneIndices.hurst,
+    });
+
+    useVarianceRatioChart({
+        ...commonHookParams,
+        isVisible: visible.varianceRatio,
+        paneIndex: paneIndices.varianceRatio,
     });
 
     useCandlePatternMarkers({ seriesRef, bars });
@@ -339,33 +374,33 @@ export function StockChart({
             },
             {
                 meta: INDICATOR_META.rsi,
-                active: rsiVisible,
-                onToggle: toggleRSI,
+                active: visible.rsi,
+                onToggle: () => toggle('rsi'),
             },
             {
                 meta: INDICATOR_META.macd,
-                active: macdVisible,
-                onToggle: toggleMACD,
+                active: visible.macd,
+                onToggle: () => toggle('macd'),
             },
             {
                 meta: INDICATOR_META.dmi,
-                active: dmiVisible,
-                onToggle: toggleDMI,
+                active: visible.dmi,
+                onToggle: () => toggle('dmi'),
             },
             {
                 meta: INDICATOR_META.stochastic,
-                active: stochasticVisible,
-                onToggle: toggleStochastic,
+                active: visible.stochastic,
+                onToggle: () => toggle('stochastic'),
             },
             {
                 meta: INDICATOR_META.stochRsi,
-                active: stochRsiVisible,
-                onToggle: toggleStochRSI,
+                active: visible.stochRsi,
+                onToggle: () => toggle('stochRsi'),
             },
             {
                 meta: INDICATOR_META.cci,
-                active: cciVisible,
-                onToggle: toggleCCI,
+                active: visible.cci,
+                onToggle: () => toggle('cci'),
             },
             {
                 meta: INDICATOR_META.bollinger,
@@ -377,28 +412,55 @@ export function StockChart({
                 active: vpVisible,
                 onToggle: toggleVP,
             },
+            {
+                meta: INDICATOR_META.mfi,
+                active: visible.mfi,
+                onToggle: () => toggle('mfi'),
+            },
+            {
+                meta: INDICATOR_META.williamsR,
+                active: visible.williamsR,
+                onToggle: () => toggle('williamsR'),
+            },
+            {
+                meta: INDICATOR_META.connorsRsi,
+                active: visible.connorsRsi,
+                onToggle: () => toggle('connorsRsi'),
+            },
+            {
+                meta: INDICATOR_META.cmf,
+                active: visible.cmf,
+                onToggle: () => toggle('cmf'),
+            },
+            {
+                meta: INDICATOR_META.bollingerPercentB,
+                active: visible.bollingerPercentB,
+                onToggle: () => toggle('bollingerPercentB'),
+            },
+            {
+                meta: INDICATOR_META.hurst,
+                active: visible.hurst,
+                onToggle: () => toggle('hurst'),
+            },
+            {
+                meta: INDICATOR_META.varianceRatio,
+                active: visible.varianceRatio,
+                onToggle: () => toggle('varianceRatio'),
+            },
         ],
+        // deps에 visible 객체 전체를 둔다 — 한 지표 토글 시 18개 binding 전체가 재조립되지만
+        // 항목 수가 적어 비용은 무시할 만하며, 개별 visible 키를 나열하는 것보다 명료하다.
         [
             maVisiblePeriods,
             emaVisiblePeriods,
             ichimokuVisible,
-            rsiVisible,
-            macdVisible,
-            dmiVisible,
-            stochasticVisible,
-            stochRsiVisible,
-            cciVisible,
+            visible,
+            toggle,
             bollingerVisible,
             vpVisible,
             toggleMAPeriod,
             toggleEMAPeriod,
             toggleIchimoku,
-            toggleRSI,
-            toggleMACD,
-            toggleDMI,
-            toggleStochastic,
-            toggleStochRSI,
-            toggleCCI,
             toggleBollinger,
             toggleVP,
         ]

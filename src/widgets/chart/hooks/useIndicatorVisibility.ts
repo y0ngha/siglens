@@ -2,92 +2,57 @@
 
 import { useCallback, useMemo, useState } from 'react';
 import { FIRST_INDICATOR_PANE_INDEX, INACTIVE_PANE_INDEX } from '../constants';
+import {
+    INDICATOR_REGISTRY,
+    type IndicatorKey,
+} from '../model/indicatorRegistry';
 import type { PaneIndices } from '../types';
 
+// visible은 INDICATOR_REGISTRY 전체(18키)를 담는다 — Record<IndicatorKey,boolean> 캐스트를
+// 런타임에 완전히 충족시키기 위함이다. overlay 키(ma·bollinger 등)는 별도 훅
+// (useMAOverlay·useBollingerOverlay 등)이 관리하므로 여기선 항상 false이며 pane 토글에만 쓰인다.
+type VisibilityState = Record<IndicatorKey, boolean>;
+
 interface UseIndicatorVisibilityReturn {
-    rsiVisible: boolean;
-    macdVisible: boolean;
-    dmiVisible: boolean;
-    stochasticVisible: boolean;
-    stochRsiVisible: boolean;
-    cciVisible: boolean;
-    toggleRSI: () => void;
-    toggleMACD: () => void;
-    toggleDMI: () => void;
-    toggleStochastic: () => void;
-    toggleStochRSI: () => void;
-    toggleCCI: () => void;
+    visible: VisibilityState;
+    toggle: (key: IndicatorKey) => void;
     paneIndices: PaneIndices;
 }
 
+function initialVisibility(): VisibilityState {
+    // INDICATOR_REGISTRY 전체 키(18개)를 채우므로 Record<IndicatorKey, boolean>가
+    // 런타임에 완전히 충족된다 — 안전한 캐스트.
+    return Object.fromEntries(
+        INDICATOR_REGISTRY.map(m => [m.key, false])
+    ) as VisibilityState;
+}
+
 export function useIndicatorVisibility(): UseIndicatorVisibilityReturn {
-    const [rsiVisible, setRsiVisible] = useState(false);
-    const [macdVisible, setMacdVisible] = useState(false);
-    const [dmiVisible, setDmiVisible] = useState(false);
-    const [stochasticVisible, setStochasticVisible] = useState(false);
-    const [stochRsiVisible, setStochRsiVisible] = useState(false);
-    const [cciVisible, setCciVisible] = useState(false);
+    const [visible, setVisible] = useState<VisibilityState>(initialVisibility);
+
+    const toggle = useCallback((key: IndicatorKey) => {
+        setVisible(prev => ({ ...prev, [key]: !prev[key] }));
+    }, []);
 
     const paneIndices: PaneIndices = useMemo(() => {
-        const visibles = [
-            rsiVisible,
-            macdVisible,
-            dmiVisible,
-            stochasticVisible,
-            stochRsiVisible,
-            cciVisible,
-        ];
-        const indexFor = (pos: number): number => {
-            const precedingActive = visibles
-                .slice(0, pos)
-                .filter(Boolean).length;
-            return visibles[pos]
-                ? FIRST_INDICATOR_PANE_INDEX + precedingActive
-                : INACTIVE_PANE_INDEX;
-        };
-        return {
-            rsi: indexFor(0),
-            macd: indexFor(1),
-            dmi: indexFor(2),
-            stochastic: indexFor(3),
-            stochRsi: indexFor(4),
-            cci: indexFor(5),
-        };
-    }, [
-        rsiVisible,
-        macdVisible,
-        dmiVisible,
-        stochasticVisible,
-        stochRsiVisible,
-        cciVisible,
-    ]);
+        // 가변 카운터 없이 순수하게 계산 — 활성 pane을 등록 순서로 추려 Map으로 위치를 부여.
+        const activePaneKeys = INDICATOR_REGISTRY.filter(
+            m => m.kind === 'pane' && visible[m.key]
+        ).map(m => m.key);
+        const activePaneIndexMap = new Map(
+            activePaneKeys.map((key, i) => [
+                key,
+                FIRST_INDICATOR_PANE_INDEX + i,
+            ])
+        );
+        // INDICATOR_REGISTRY 전체 키(18개)를 채우므로 Record<IndicatorKey,number>가 런타임에 완전히 충족 — 안전한 캐스트.
+        return Object.fromEntries(
+            INDICATOR_REGISTRY.map(m => [
+                m.key,
+                activePaneIndexMap.get(m.key) ?? INACTIVE_PANE_INDEX,
+            ])
+        ) as PaneIndices;
+    }, [visible]);
 
-    const toggleRSI = useCallback(() => setRsiVisible(prev => !prev), []);
-    const toggleMACD = useCallback(() => setMacdVisible(prev => !prev), []);
-    const toggleDMI = useCallback(() => setDmiVisible(prev => !prev), []);
-    const toggleStochastic = useCallback(
-        () => setStochasticVisible(prev => !prev),
-        []
-    );
-    const toggleStochRSI = useCallback(
-        () => setStochRsiVisible(prev => !prev),
-        []
-    );
-    const toggleCCI = useCallback(() => setCciVisible(prev => !prev), []);
-
-    return {
-        rsiVisible,
-        macdVisible,
-        dmiVisible,
-        stochasticVisible,
-        stochRsiVisible,
-        cciVisible,
-        toggleRSI,
-        toggleMACD,
-        toggleDMI,
-        toggleStochastic,
-        toggleStochRSI,
-        toggleCCI,
-        paneIndices,
-    };
+    return { visible, toggle, paneIndices };
 }

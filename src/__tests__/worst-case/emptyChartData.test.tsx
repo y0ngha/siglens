@@ -1,5 +1,3 @@
-import { INACTIVE_PANE_INDEX } from '@/widgets/chart/constants';
-
 const { mockCreateChart } = vi.hoisted(() => {
     const mockCreateChart = vi.fn(() => ({
         addSeries: vi.fn(() => ({
@@ -92,26 +90,49 @@ vi.mock('@/widgets/chart/hooks/useOverlayLegend', () => ({
 }));
 vi.mock('@/widgets/chart/hooks/useIndicatorVisibility', () => ({
     useIndicatorVisibility: () => ({
-        rsiVisible: false,
-        macdVisible: false,
-        dmiVisible: false,
-        stochasticVisible: false,
-        stochRsiVisible: false,
-        cciVisible: false,
-        toggleRSI: vi.fn(),
-        toggleMACD: vi.fn(),
-        toggleDMI: vi.fn(),
-        toggleStochastic: vi.fn(),
-        toggleStochRSI: vi.fn(),
-        toggleCCI: vi.fn(),
-        paneIndices: {
-            rsi: INACTIVE_PANE_INDEX,
-            macd: INACTIVE_PANE_INDEX,
-            dmi: INACTIVE_PANE_INDEX,
-            stochastic: INACTIVE_PANE_INDEX,
-            stochRsi: INACTIVE_PANE_INDEX,
-            cci: INACTIVE_PANE_INDEX,
+        visible: {
+            ma: false,
+            ema: false,
+            ichimoku: false,
+            rsi: false,
+            macd: false,
+            dmi: false,
+            stochastic: false,
+            stochRsi: false,
+            cci: false,
+            bollinger: false,
+            volumeProfile: false,
+            mfi: false,
+            williamsR: false,
+            connorsRsi: false,
+            cmf: false,
+            bollingerPercentB: false,
+            hurst: false,
+            varianceRatio: false,
         },
+        toggle: vi.fn(),
+        paneIndices: Object.fromEntries(
+            [
+                'ma',
+                'ema',
+                'ichimoku',
+                'rsi',
+                'macd',
+                'dmi',
+                'stochastic',
+                'stochRsi',
+                'cci',
+                'bollinger',
+                'volumeProfile',
+                'mfi',
+                'williamsR',
+                'connorsRsi',
+                'cmf',
+                'bollingerPercentB',
+                'hurst',
+                'varianceRatio',
+            ].map(k => [k, INACTIVE_PANE_INDEX])
+        ),
     }),
 }));
 vi.mock('@/widgets/chart/ui/IndicatorSettingsModal', () => ({
@@ -132,6 +153,7 @@ vi.mock('@y0ngha/siglens-core', () => ({
 
 import { render, screen } from '@testing-library/react';
 import { StockChart } from '@/widgets/chart/StockChart';
+import { INACTIVE_PANE_INDEX } from '@/widgets/chart/constants';
 
 describe('StockChart with empty/zero data', () => {
     it('renders empty state message when bars array is empty', () => {
