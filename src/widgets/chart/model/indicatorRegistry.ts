@@ -46,7 +46,10 @@ export type IndicatorKey =
     | 'donchianChannel'
     | 'supertrend'
     | 'parabolicSar'
-    | 'chandelierExit';
+    | 'chandelierExit'
+    | 'elderRay'
+    | 'squeezeMomentum'
+    | 'regression';
 
 export interface IndicatorMeta {
     key: IndicatorKey;
@@ -197,6 +200,19 @@ export const INDICATOR_REGISTRY: readonly IndicatorMeta[] = [
         label: 'Chandelier',
         category: 'trend',
         kind: 'overlay',
+    },
+    { key: 'elderRay', label: 'Elder Ray', category: 'momentum', kind: 'pane' },
+    {
+        key: 'squeezeMomentum',
+        label: 'Squeeze',
+        category: 'momentum',
+        kind: 'pane',
+    },
+    {
+        key: 'regression',
+        label: 'Regression',
+        category: 'statistical',
+        kind: 'pane',
     },
 ];
 

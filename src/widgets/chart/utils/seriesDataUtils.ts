@@ -18,7 +18,7 @@ export function buildSeriesData<
     bars: Bar[],
     indicatorData: T[],
     key: K,
-    colorFn?: (value: number) => string
+    colorFn?: (value: number, row: T, index: number) => string
 ): SeriesPoint[] {
     const count = Math.min(bars.length, indicatorData.length);
     return bars.slice(0, count).map((bar, i) => {
@@ -31,7 +31,7 @@ export function buildSeriesData<
             value,
         };
         if (colorFn !== undefined) {
-            point.color = colorFn(value);
+            point.color = colorFn(value, indicatorData[i], i);
         }
         return point;
     });
@@ -82,5 +82,26 @@ export function buildTrendSplitData<
             }
         }
         return { time: bar.time as UTCTimestamp };
+    });
+}
+
+/**
+ * 각 bar에 0(zero)라인 위 점({ time, value: 0, color })을 만든다. colorFn이 null을
+ * 반환하거나 행이 없으면 해당 bar는 whitespace(점 없음). Squeeze 상태 점처럼 값과
+ * 무관하게 0라인에 상태 색을 찍는 용도.
+ */
+export function buildZeroLineDots<T>(
+    bars: Bar[],
+    data: T[],
+    colorFn: (row: T) => string | null
+): SeriesPoint[] {
+    const count = Math.min(bars.length, data.length);
+    return bars.slice(0, count).map((bar, i) => {
+        const row = data[i];
+        const color = row == null ? null : colorFn(row);
+        if (color === null) {
+            return { time: bar.time as UTCTimestamp };
+        }
+        return { time: bar.time as UTCTimestamp, value: 0, color };
     });
 }

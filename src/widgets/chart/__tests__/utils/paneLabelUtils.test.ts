@@ -52,6 +52,9 @@ function makePaneIndices(overrides: Partial<PaneIndices> = {}): PaneIndices {
         supertrend: INACTIVE_PANE_INDEX,
         parabolicSar: INACTIVE_PANE_INDEX,
         chandelierExit: INACTIVE_PANE_INDEX,
+        elderRay: INACTIVE_PANE_INDEX,
+        squeezeMomentum: INACTIVE_PANE_INDEX,
+        regression: INACTIVE_PANE_INDEX,
     } satisfies PaneIndices;
     return { ...base, ...overrides };
 }
@@ -386,6 +389,33 @@ describe('buildPaneLabels', () => {
 
             expect(labels).toHaveLength(1);
             expect(labels[0].subLabels).toEqual([{ name, color }]);
+        });
+    });
+
+    describe('group-C-complex pane가 활성일 때', () => {
+        it('builds Elder Ray sub-labels (Bull Power, Bear Power) when active', () => {
+            const labels = buildPaneLabels(makePaneIndices({ elderRay: 2 }));
+            const elder = labels.find(l => l.paneIndex === 2);
+            expect(elder?.subLabels.map(s => s.name)).toEqual([
+                'Bull Power',
+                'Bear Power',
+            ]);
+        });
+
+        it('builds a Squeeze pane label when active', () => {
+            const labels = buildPaneLabels(
+                makePaneIndices({ squeezeMomentum: 3 })
+            );
+            expect(labels.find(l => l.paneIndex === 3)?.subLabels[0].name).toBe(
+                'Squeeze'
+            );
+        });
+
+        it('builds a Regression pane label when active', () => {
+            const labels = buildPaneLabels(makePaneIndices({ regression: 4 }));
+            expect(labels.find(l => l.paneIndex === 4)?.subLabels[0].name).toBe(
+                'Regression'
+            );
         });
     });
 
