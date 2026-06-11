@@ -14,8 +14,15 @@ function bindingFor(key: IndicatorKey, active = false): IndicatorBinding {
 }
 
 describe('indicatorRegistry', () => {
-    it('registers exactly the 32 modal-target indicators', () => {
-        expect(INDICATOR_REGISTRY).toHaveLength(32);
+    it('registers exactly the 33 modal-target indicators', () => {
+        expect(INDICATOR_REGISTRY).toHaveLength(33);
+    });
+
+    it('registers elderImpulse as a candle-paint indicator', () => {
+        const meta = INDICATOR_REGISTRY.find(m => m.key === 'elderImpulse');
+        expect(meta).toBeDefined();
+        expect(meta?.category).toBe('momentum');
+        expect(meta?.kind).toBe('candle-paint');
     });
 
     it('registers elderRay as a momentum pane', () => {
