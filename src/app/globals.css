@@ -72,6 +72,10 @@
     /* Chart — Regression */
     --color-chart-regression-up: #26a69a;
     --color-chart-regression-down: #ef5350;
+    /* Chart — Elder Impulse (캔들 색) */
+    --color-chart-impulse-bullish: #26a69a;
+    --color-chart-impulse-bearish: #ef5350;
+    --color-chart-impulse-neutral: #3b82f6;
 
     /* Chart — MACD */
     --color-chart-macd: #3b82f6;

@@ -159,6 +159,10 @@ export const CHART_COLORS = {
     // Regression (alpha는 r2로 런타임 계산)
     regressionUp: '#26a69a',
     regressionDown: '#ef5350',
+    // Elder Impulse (캔들 per-bar 색) — DESIGN.md teal/red + Elder blue 관례
+    impulseBullish: '#26a69a', // green — EMA↑ & MACD-hist↑
+    impulseBearish: '#ef5350', // red — 둘 다 ↓
+    impulseNeutral: '#3b82f6', // blue — 혼조/전환
 } as const;
 
 const PERIOD_COLOR_MAP: Record<number, string> = {
