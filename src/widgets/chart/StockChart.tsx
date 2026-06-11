@@ -178,7 +178,7 @@ export function StockChart({
     }, [timeframe]);
 
     useEffect(() => {
-        if (!seriesRef.current || !chartRef.current) return;
+        if (!seriesRef.current) return;
 
         seriesRef.current.setData(
             buildCandlestickData(
@@ -187,9 +187,13 @@ export function StockChart({
                 visible.elderImpulse
             )
         );
-
-        chartRef.current.timeScale().fitContent();
     }, [bars, indicators.elderImpulse, visible.elderImpulse]);
+
+    // fitContent는 bars(데이터 로드/심볼·타임프레임 변경) 변화에만 호출 — Elder Impulse 토글로
+    // setData가 재실행돼도 사용자의 줌/스크롤 상태가 초기화되지 않도록 의존성을 분리한다.
+    useEffect(() => {
+        chartRef.current?.timeScale().fitContent();
+    }, [bars]);
 
     const { visiblePeriods: maVisiblePeriods, togglePeriod: toggleMAPeriod } =
         useMAOverlay(commonHookParams);
