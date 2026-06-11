@@ -77,6 +77,11 @@
     --color-chart-impulse-bearish: #ef5350;
     --color-chart-impulse-neutral: #3b82f6;
 
+    /* Chart — SMC zones */
+    --color-chart-smc-premium: #ef5350;
+    --color-chart-smc-discount: #26a69a;
+    --color-chart-smc-equilibrium: #94a3b8;
+
     /* Chart — MACD */
     --color-chart-macd: #3b82f6;
     --color-chart-signal: #f59e0b;

@@ -163,6 +163,10 @@ export const CHART_COLORS = {
     impulseBullish: '#26a69a', // green — EMA↑ & MACD-hist↑
     impulseBearish: '#ef5350', // red — 둘 다 ↓
     impulseNeutral: '#3b82f6', // blue — 혼조/전환; Elder 원저자 관례. macdLine과 같은 값이나 별 pane이라 공간상 겹치지 않음
+    // SMC zones (가격 밴드 경계선) — DESIGN.md bearish/bullish/neutral 매핑
+    smcPremium: '#ef5350', // 매도/저항 상단
+    smcDiscount: '#26a69a', // 매수/지지 하단
+    smcEquilibrium: '#94a3b8', // 50% 공정가 (neutral)
 } as const;
 
 const PERIOD_COLOR_MAP: Record<number, string> = {
