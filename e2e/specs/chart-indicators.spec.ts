@@ -9,7 +9,7 @@ import { test, expect } from '../support/fixtures';
 test.describe('chart indicator settings modal', () => {
     const GEAR = '보조지표 설정';
 
-    test('opens the modal from the gear and shows category groups (no SMC)', async ({
+    test('opens the modal from the gear and shows category groups (incl. SMC)', async ({
         page,
     }) => {
         await page.goto('/AAPL');
@@ -23,7 +23,10 @@ test.describe('chart indicator settings modal', () => {
         await expect(dialog.getByText('모멘텀')).toBeVisible();
         await expect(dialog.getByText('변동성')).toBeVisible();
         await expect(dialog.getByText('볼륨')).toBeVisible();
-        await expect(dialog.getByText('SMC')).toHaveCount(0);
+        // smc 지표 등록으로 'SMC' 카테고리 그룹이 이제 모달에 노출된다(heading으로 'SMC Zones' 체크박스와 구별).
+        await expect(
+            dialog.getByRole('heading', { name: 'SMC' })
+        ).toBeVisible();
     });
 
     test('toggles the RSI checkbox on', async ({ page }) => {
@@ -224,8 +227,10 @@ test.describe('chart indicator settings modal', () => {
         await page.getByRole('button', { name: GEAR }).click();
         const dialog = page.getByRole('dialog');
         // SMC Zones는 가격선(zone) — pane/overlay 라벨이 없어 모달 체크박스 상태로 검증.
-        // smc 등록으로 'SMC' 카테고리 그룹이 모달에 처음 노출된다.
-        await expect(dialog.getByText('SMC')).toBeVisible();
+        // smc 등록으로 'SMC' 카테고리 그룹이 모달에 처음 노출된다('SMC Zones' 스팬과 구별 위해 heading).
+        await expect(
+            dialog.getByRole('heading', { name: 'SMC' })
+        ).toBeVisible();
         const smc = dialog.getByRole('checkbox', {
             name: 'SMC Zones',
             exact: true,
