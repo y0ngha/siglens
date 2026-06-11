@@ -49,13 +49,6 @@ export function useIndicatorVisibility(): UseIndicatorVisibilityReturn {
         [persistedPartial]
     );
 
-    const toggle = useCallback(
-        (key: IndicatorKey) => {
-            setVisible(prev => ({ ...prev, [key]: !prev[key] }));
-        },
-        [setVisible]
-    );
-
     const paneIndices: PaneIndices = useMemo(() => {
         // 가변 카운터 없이 순수하게 계산 — 활성 pane을 등록 순서로 추려 Map으로 위치를 부여.
         const activePaneKeys = INDICATOR_REGISTRY.filter(
@@ -67,7 +60,7 @@ export function useIndicatorVisibility(): UseIndicatorVisibilityReturn {
                 FIRST_INDICATOR_PANE_INDEX + i,
             ])
         );
-        // INDICATOR_REGISTRY 전체 키(18개)를 채우므로 Record<IndicatorKey,number>가 런타임에 완전히 충족 — 안전한 캐스트.
+        // INDICATOR_REGISTRY 전체 키를 채우므로 Record<IndicatorKey,number>가 런타임에 완전히 충족 — 안전한 캐스트.
         return Object.fromEntries(
             INDICATOR_REGISTRY.map(m => [
                 m.key,
@@ -75,6 +68,13 @@ export function useIndicatorVisibility(): UseIndicatorVisibilityReturn {
             ])
         ) as PaneIndices;
     }, [visible]);
+
+    const toggle = useCallback(
+        (key: IndicatorKey) => {
+            setVisible(prev => ({ ...prev, [key]: !prev[key] }));
+        },
+        [setVisible]
+    );
 
     return { visible, toggle, paneIndices };
 }

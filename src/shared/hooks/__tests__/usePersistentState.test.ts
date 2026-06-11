@@ -13,7 +13,7 @@ describe('usePersistentState', () => {
         expect(result.current[0]).toBe(42);
     });
 
-    it('restores stored value after mount (useEffect fires in jsdom)', async () => {
+    it('restores stored value after mount (useEffect fires in jsdom)', () => {
         localStorage.setItem('test.restore', JSON.stringify({ count: 7 }));
         const { result } = renderHook(() =>
             usePersistentState('test.restore', { count: 0 })
