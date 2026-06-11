@@ -92,12 +92,11 @@ describe('useIndicatorVisibility', () => {
             JSON.stringify({ rsi: true })
         );
         const { result } = renderHook(() => useIndicatorVisibility());
+        // 저장값에 없던 키는 전부 false로 채워져야 한다(rsi=true는 위 별도 테스트가 검증).
         for (const indicator of INDICATOR_REGISTRY) {
-            expect(typeof result.current.visible[indicator.key]).toBe(
-                'boolean'
-            );
+            if (indicator.key === 'rsi') continue;
+            expect(result.current.visible[indicator.key]).toBe(false);
         }
-        expect(result.current.visible.macd).toBe(false);
     });
 
     it('toggle works correctly after restoring from localStorage', () => {

@@ -50,7 +50,6 @@ describe('usePersistentState', () => {
     it('does not persist the initial value until it changes (writes only user changes)', () => {
         // 마운트 직후 첫 write effect는 건너뛰므로 initial은 저장되지 않는다 — 저장값을 잠깐
         // initial로 덮어쓰는 transient를 막고 localStorage엔 사용자 변경만 남긴다.
-        localStorage.clear();
         const { result } = renderHook(() =>
             usePersistentState('test.nowrite', 99)
         );

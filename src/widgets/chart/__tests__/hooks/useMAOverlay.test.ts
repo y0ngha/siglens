@@ -153,7 +153,7 @@ describe('useMAOverlay', () => {
         });
         expect(
             JSON.parse(localStorage.getItem(STORAGE_KEYS.maPeriods) ?? '[]')
-        ).toContain(20);
+        ).toEqual([20]);
     });
 
     it('provides stable togglePeriod reference', () => {
