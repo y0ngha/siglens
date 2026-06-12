@@ -1268,3 +1268,26 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    ❌ shared/lib/ with fs.readFile  // side effect in shared/lib
    ✅ Move side-effect functions to entity api/ or shared/db/
 ```
+
+---
+
+## ISR & Caching
+
+```
+1. ISR seed HTML changes on every revalidation due to non-deterministic timestamps
+   → When using React Query's `prefetchQuery` + `dehydrate` in RSC (layout/page), the resulting HTML must be byte-identical across server restarts to avoid ISR write churn
+   → `prefetchQuery` produces `dataUpdatedAt: Date.now()` automatically, which changes every generation → HTML hash differs → Vercel bills for ISR Writes even with no data change
+   → Solution: Use `setQueryData(key, data, { updatedAt: STABLE_MS })` instead of `prefetchQuery`
+   → STABLE_MS patterns:
+      - Bar charts: `lastBar.time * 1000` (epoch seconds → milliseconds)
+      - Asset info: `0` (immutable snapshot)
+      - Market data: `dateHour.getTime()` (hour-based stability, e.g., `2026-06-04T14:00:00Z`)
+      - Options: `snapshot.capturedAt` (provider-specific timestamp)
+   → Bar.time is seconds-epoch; RQ dataUpdatedAt expects milliseconds-epoch; missing `* 1000` causes stale-check failure (1970s misinterpretation)
+   ❌ prefetchQuery(getBarsStatic) → HTML contains `dataUpdatedAt:1780617600` (10-digit seconds, wrong units)
+   ❌ layout.tsx quantizes bars but page.tsx doesn't; nested HydrationBoundary seed contains forming bars → HTML differs per ISR gen
+   ✅ setQueryData(key, quantizedBars, { updatedAt: lastBar.time * 1000 }) → stable across servers
+   ✅ Both layout.tsx and page.tsx apply identical quantize transform; RSC prefetch verified deterministic via byte-compare post-build
+   → Requires unit tests for RSC functions verifying quantize + updatedAt logic (e.g., layout.test.tsx with happy/degraded/empty cases)
+   → Recurring: PR #573 R8 (4 separate seed determinism violations); requires end-to-end validation (two server instances post-ISR build)
+```
