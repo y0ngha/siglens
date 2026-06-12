@@ -20,14 +20,14 @@ interface TimeframeSelectorProps {
 
 export function TimeframeSelector({ value, onChange }: TimeframeSelectorProps) {
     return (
-        <div className="flex items-center gap-1">
+        <div className="flex w-full items-center gap-1 sm:w-auto">
             {TIMEFRAMES.map(timeframe => (
                 <button
                     key={timeframe}
                     type="button"
                     onClick={() => onChange(timeframe)}
                     className={cn(
-                        'focus-visible:ring-primary-500 rounded border px-3 py-1 text-sm font-medium transition-colors focus-visible:ring-1',
+                        'focus-visible:ring-primary-500 flex-1 touch-manipulation rounded border px-2 py-1 text-center text-sm font-medium transition-colors focus-visible:ring-1 sm:flex-none sm:px-3',
                         timeframe === value
                             ? 'border-primary-400 text-primary-400'
                             : 'text-secondary-400 hover:text-secondary-200 border-transparent'

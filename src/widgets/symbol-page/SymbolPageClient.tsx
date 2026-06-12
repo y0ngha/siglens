@@ -68,7 +68,7 @@ export function SymbolPageClient({
                 {/* Chart-only timeframe controls live inside this overflow-hidden chart
                     container so the layout header can stay free of useSearchParams
                     (which would force PPR to mark the whole route as dynamic). */}
-                <div className="border-secondary-700 flex items-center justify-between gap-3 border-b px-4 py-2 sm:py-1.5">
+                <div className="border-secondary-700 flex flex-col gap-2 border-b px-4 py-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:py-1.5">
                     {/* 차트 페이지 가시 h1: jail(first-viewport 고정 + overflow-hidden)이라
                         본문에 별도 블록을 얹으면 chart 가시 영역이 침범된다. 그래서
                         timeframe bar 행에 짧은 한 줄로 둔다(truncate로 좁은 화면에서
@@ -76,7 +76,7 @@ export function SymbolPageClient({
                         CSR-bailout되므로 이 가시 h1은 SSR HTML엔 박히지 않는다 — JS 미실행
                         크롤러용 h1은 page.tsx의 Suspense fallback에 동일 텍스트 sr-only h1으로
                         제공하고, hydration 후 이 가시 h1이 fallback을 대체한다. */}
-                    <h1 className="text-secondary-100 min-w-0 truncate text-sm font-semibold sm:text-base">
+                    <h1 className="text-secondary-100 line-clamp-2 min-w-0 text-sm font-semibold sm:line-clamp-none sm:truncate sm:text-base">
                         {buildChartPageHeading(displayName)}
                     </h1>
                     <TimeframeSelector
