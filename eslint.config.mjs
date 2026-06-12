@@ -57,7 +57,14 @@ const eslintConfig = defineConfig([
         // latest state/props in a mount-only effect without adding reactive deps.
         // The URL-restore-on-mount pattern here is a legitimate external-system sync
         // (URLSearchParams → React state), not a cascading-render anti-pattern.
-        files: ['src/widgets/dashboard/hooks/useSectorSignalState.ts'],
+        //
+        // usePersistentState: mount-only effect reads localStorage (external system)
+        // and restores state once. This is the canonical SSR-safe hydration pattern —
+        // server renders initial value, client mount syncs from the external store.
+        files: [
+            'src/widgets/dashboard/hooks/useSectorSignalState.ts',
+            'src/shared/hooks/usePersistentState.ts',
+        ],
         rules: {
             'react-hooks/set-state-in-effect': 'off',
         },

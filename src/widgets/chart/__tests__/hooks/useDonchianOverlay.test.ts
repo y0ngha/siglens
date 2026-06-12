@@ -3,6 +3,7 @@ import { act, renderHook } from '@testing-library/react';
 import type { Bar, IndicatorResult } from '@y0ngha/siglens-core';
 import { LineStyle, LineType } from 'lightweight-charts';
 import { useDonchianOverlay } from '../../hooks/useDonchianOverlay';
+import { STORAGE_KEYS } from '../../constants';
 
 const mockSetData = vi.fn();
 const mockApplyOptions = vi.fn();
@@ -58,6 +59,7 @@ const FAKE_BARS: Bar[] = [
 describe('useDonchianOverlay', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        localStorage.clear();
     });
 
     it('returns isVisible false initially', () => {
@@ -218,6 +220,34 @@ describe('useDonchianOverlay', () => {
                 lineStyle: LineStyle.Dashed,
             })
         );
+    });
+
+    it('persists isVisible to localStorage on toggle', () => {
+        const { result } = renderHook(() =>
+            useDonchianOverlay({
+                chartRef: makeChartRef(),
+                bars: [],
+                indicators: EMPTY_INDICATORS,
+            })
+        );
+        act(() => {
+            result.current.toggle();
+        });
+        expect(localStorage.getItem(STORAGE_KEYS.overlay('donchian'))).toBe(
+            'true'
+        );
+    });
+
+    it('restores isVisible true from localStorage on mount', () => {
+        localStorage.setItem(STORAGE_KEYS.overlay('donchian'), 'true');
+        const { result } = renderHook(() =>
+            useDonchianOverlay({
+                chartRef: makeChartRef(),
+                bars: [],
+                indicators: EMPTY_INDICATORS,
+            })
+        );
+        expect(result.current.isVisible).toBe(true);
     });
 
     it('provides stable toggle function reference', () => {

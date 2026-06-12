@@ -198,4 +198,22 @@ describe('IndicatorSettingsModal', () => {
             screen.queryByRole('button', { name: /20/ })
         ).not.toBeInTheDocument();
     });
+
+    it('renders indicator items in a 2-column grid container (layout regression)', () => {
+        openDialog();
+        render(
+            <IndicatorSettingsModal bindings={[rsiBinding(), maBinding()]} />
+        );
+        // 카테고리별 항목 컨테이너가 2열 그리드여야 모달 길이가 짧아져 모바일에서 안 가려진다.
+        // rsi(momentum)+ma(trend) = 정확히 2개 카테고리 → 그리드 컨테이너 2개(결정적).
+        expect(document.querySelectorAll('.grid.grid-cols-2').length).toBe(2);
+    });
+
+    it('wraps period rows with col-span-2 so chips span the full width', () => {
+        openDialog();
+        render(<IndicatorSettingsModal bindings={[maBinding()]} />);
+        // period 행(MA/EMA)은 칩이 넓어 2열 그리드에서 전체폭(col-span-2)을 차지해야 한다.
+        // ma 바인딩 1개 → col-span-2 래퍼 정확히 1개(결정적).
+        expect(document.querySelectorAll('.col-span-2').length).toBe(1);
+    });
 });

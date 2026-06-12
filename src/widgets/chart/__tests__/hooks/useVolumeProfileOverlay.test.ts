@@ -2,6 +2,7 @@
 import { act, renderHook } from '@testing-library/react';
 import type { Bar, IndicatorResult } from '@y0ngha/siglens-core';
 import { useVolumeProfileOverlay } from '../../hooks/useVolumeProfileOverlay';
+import { STORAGE_KEYS } from '../../constants';
 
 const mockSetData = vi.fn();
 const mockApplyOptions = vi.fn();
@@ -41,6 +42,7 @@ const FAKE_BARS: Bar[] = [
 describe('useVolumeProfileOverlay', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        localStorage.clear();
     });
 
     it('returns isVisible false initially', () => {
@@ -139,6 +141,34 @@ describe('useVolumeProfileOverlay', () => {
         });
 
         expect(mockSetData).toHaveBeenCalledWith([]);
+    });
+
+    it('persists isVisible to localStorage on toggle', () => {
+        const { result } = renderHook(() =>
+            useVolumeProfileOverlay({
+                chartRef: makeChartRef(),
+                bars: [],
+                indicators: NO_VP_INDICATORS,
+            })
+        );
+        act(() => {
+            result.current.toggle();
+        });
+        expect(
+            localStorage.getItem(STORAGE_KEYS.overlay('volumeProfile'))
+        ).toBe('true');
+    });
+
+    it('restores isVisible true from localStorage on mount', () => {
+        localStorage.setItem(STORAGE_KEYS.overlay('volumeProfile'), 'true');
+        const { result } = renderHook(() =>
+            useVolumeProfileOverlay({
+                chartRef: makeChartRef(),
+                bars: [],
+                indicators: NO_VP_INDICATORS,
+            })
+        );
+        expect(result.current.isVisible).toBe(true);
     });
 
     it('provides stable toggle reference', () => {

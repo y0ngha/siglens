@@ -2,6 +2,7 @@
 import { act, renderHook } from '@testing-library/react';
 import type { Bar, IndicatorResult } from '@y0ngha/siglens-core';
 import { useSupertrendOverlay } from '../../hooks/useSupertrendOverlay';
+import { STORAGE_KEYS } from '../../constants';
 import { buildTrendSplitData } from '../../utils/seriesDataUtils';
 
 const mockSetData = vi.fn();
@@ -45,6 +46,7 @@ const FAKE_BARS: Bar[] = [
 describe('useSupertrendOverlay', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        localStorage.clear();
     });
 
     it('returns isVisible false initially', () => {
@@ -194,6 +196,34 @@ describe('useSupertrendOverlay', () => {
         );
         act(() => result.current.toggle());
         expect(mockSetData).not.toHaveBeenCalled();
+    });
+
+    it('persists isVisible to localStorage on toggle', () => {
+        const { result } = renderHook(() =>
+            useSupertrendOverlay({
+                chartRef: makeChartRef(),
+                bars: [],
+                indicators: EMPTY_INDICATORS,
+            })
+        );
+        act(() => {
+            result.current.toggle();
+        });
+        expect(localStorage.getItem(STORAGE_KEYS.overlay('supertrend'))).toBe(
+            'true'
+        );
+    });
+
+    it('restores isVisible true from localStorage on mount', () => {
+        localStorage.setItem(STORAGE_KEYS.overlay('supertrend'), 'true');
+        const { result } = renderHook(() =>
+            useSupertrendOverlay({
+                chartRef: makeChartRef(),
+                bars: [],
+                indicators: EMPTY_INDICATORS,
+            })
+        );
+        expect(result.current.isVisible).toBe(true);
     });
 
     it('provides stable toggle function reference', () => {

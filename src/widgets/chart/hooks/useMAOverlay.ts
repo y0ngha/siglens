@@ -4,6 +4,7 @@ import type { RefObject } from 'react';
 import type { IChartApi, LineWidth } from 'lightweight-charts';
 import { LineStyle } from 'lightweight-charts';
 import type { Bar, IndicatorResult } from '@y0ngha/siglens-core';
+import { STORAGE_KEYS } from '../constants';
 import {
     type IndicatorDataAccessor,
     useMovingAverageOverlay,
@@ -16,6 +17,7 @@ interface UseMAOverlayParams {
     chartRef: RefObject<IChartApi | null>;
     bars: Bar[];
     indicators: IndicatorResult;
+    storageKey?: string;
     defaultPeriods?: number[];
     lineWidth?: LineWidth;
 }
@@ -29,6 +31,7 @@ export function useMAOverlay({
     chartRef,
     bars,
     indicators,
+    storageKey = STORAGE_KEYS.maPeriods,
     defaultPeriods,
     lineWidth,
 }: UseMAOverlayParams): UseMAOverlayReturn {
@@ -36,6 +39,7 @@ export function useMAOverlay({
         chartRef,
         bars,
         indicators,
+        storageKey,
         defaultPeriods,
         lineWidth,
         lineStyle: LineStyle.Solid,

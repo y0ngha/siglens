@@ -1,18 +1,13 @@
 'use client';
 
 import type { RefObject } from 'react';
-import {
-    useCallback,
-    useEffect,
-    useEffectEvent,
-    useRef,
-    useState,
-} from 'react';
+import { useCallback, useEffect, useEffectEvent, useRef } from 'react';
+import { usePersistentState } from '@/shared/hooks/usePersistentState';
 import type { IChartApi, ISeriesApi, LineWidth } from 'lightweight-charts';
 import { LineSeries, LineStyle } from 'lightweight-charts';
 import { CHART_COLORS } from '@/shared/lib/chartColors';
 import type { Bar, IndicatorResult } from '@y0ngha/siglens-core';
-import { DEFAULT_LINE_WIDTH } from '../constants';
+import { DEFAULT_LINE_WIDTH, STORAGE_KEYS } from '../constants';
 import { buildTrendSplitData } from '../utils/seriesDataUtils';
 
 interface UseChandelierOverlayParams {
@@ -33,14 +28,17 @@ export function useChandelierOverlay({
     indicators,
     lineWidth = DEFAULT_LINE_WIDTH,
 }: UseChandelierOverlayParams): UseChandelierOverlayReturn {
-    const [isVisible, setIsVisible] = useState(false);
     const prevChartRef = useRef<IChartApi | null>(null);
     const longSeriesRef = useRef<ISeriesApi<'Line'> | null>(null);
     const shortSeriesRef = useRef<ISeriesApi<'Line'> | null>(null);
+    const [isVisible, setIsVisible] = usePersistentState(
+        STORAGE_KEYS.overlay('chandelier'),
+        false
+    );
 
     const toggle = useCallback(() => {
         setIsVisible(prev => !prev);
-    }, []);
+    }, [setIsVisible]);
 
     const clearSeriesRefs = useEffectEvent(() => {
         longSeriesRef.current = null;

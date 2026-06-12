@@ -1,13 +1,8 @@
 'use client';
 
 import type { RefObject } from 'react';
-import {
-    useCallback,
-    useEffect,
-    useEffectEvent,
-    useRef,
-    useState,
-} from 'react';
+import { useCallback, useEffect, useEffectEvent, useRef } from 'react';
+import { usePersistentState } from '@/shared/hooks/usePersistentState';
 import type {
     IChartApi,
     ISeriesApi,
@@ -17,7 +12,7 @@ import type {
 import { LineSeries } from 'lightweight-charts';
 import type { Bar, IndicatorResult } from '@y0ngha/siglens-core';
 import { CHART_COLORS } from '@/shared/lib/chartColors';
-import { DEFAULT_LINE_WIDTH } from '../constants';
+import { DEFAULT_LINE_WIDTH, STORAGE_KEYS } from '../constants';
 
 interface UseVolumeProfileOverlayParams {
     chartRef: RefObject<IChartApi | null>;
@@ -37,15 +32,18 @@ export function useVolumeProfileOverlay({
     indicators,
     lineWidth = DEFAULT_LINE_WIDTH,
 }: UseVolumeProfileOverlayParams): UseVolumeProfileOverlayReturn {
-    const [isVisible, setIsVisible] = useState(false);
     const prevChartRef = useRef<IChartApi | null>(null);
     const pocSeriesRef = useRef<ISeriesApi<'Line'> | null>(null);
     const vahSeriesRef = useRef<ISeriesApi<'Line'> | null>(null);
     const valSeriesRef = useRef<ISeriesApi<'Line'> | null>(null);
+    const [isVisible, setIsVisible] = usePersistentState(
+        STORAGE_KEYS.overlay('volumeProfile'),
+        false
+    );
 
     const toggle = useCallback(() => {
         setIsVisible(prev => !prev);
-    }, []);
+    }, [setIsVisible]);
 
     // chart 인스턴스 교체 시 ref만 초기화 (removeSeries 불필요 — 이전 chart는 부모가 소멸)
     const clearSeriesRefs = useEffectEvent(() => {

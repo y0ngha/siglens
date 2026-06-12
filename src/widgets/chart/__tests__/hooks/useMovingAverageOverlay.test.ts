@@ -48,6 +48,7 @@ const FAKE_BARS: Bar[] = [
 describe('useMovingAverageOverlay', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        localStorage.clear();
     });
 
     it('returns empty visiblePeriods by default', () => {
@@ -56,6 +57,7 @@ describe('useMovingAverageOverlay', () => {
                 chartRef: makeChartRef(),
                 bars: [],
                 indicators: INDICATORS,
+                storageKey: 'test.ma.default',
                 lineStyle: 0,
                 getIndicatorData: mockAccessor,
             })
@@ -70,6 +72,7 @@ describe('useMovingAverageOverlay', () => {
                 chartRef: makeChartRef(),
                 bars: [],
                 indicators: INDICATORS,
+                storageKey: 'test.ma.defaults',
                 defaultPeriods: [10, 20],
                 lineStyle: 0,
                 getIndicatorData: mockAccessor,
@@ -85,6 +88,7 @@ describe('useMovingAverageOverlay', () => {
                 chartRef: makeChartRef(),
                 bars: [],
                 indicators: INDICATORS,
+                storageKey: 'test.ma.toggle',
                 lineStyle: 0,
                 getIndicatorData: mockAccessor,
             })
@@ -113,6 +117,7 @@ describe('useMovingAverageOverlay', () => {
                 chartRef: makeChartRef(chart),
                 bars: FAKE_BARS,
                 indicators: INDICATORS,
+                storageKey: 'test.ma.creates',
                 defaultPeriods: [10, 20],
                 lineStyle: 0,
                 getIndicatorData: mockAccessor,
@@ -128,6 +133,7 @@ describe('useMovingAverageOverlay', () => {
                 chartRef: makeChartRef(null),
                 bars: FAKE_BARS,
                 indicators: INDICATORS,
+                storageKey: 'test.ma.nonull',
                 defaultPeriods: [10],
                 lineStyle: 0,
                 getIndicatorData: mockAccessor,
@@ -144,6 +150,7 @@ describe('useMovingAverageOverlay', () => {
                 chartRef: makeChartRef(chart),
                 bars: FAKE_BARS,
                 indicators: INDICATORS,
+                storageKey: 'test.ma.removes',
                 defaultPeriods: [10],
                 lineStyle: 0,
                 getIndicatorData: mockAccessor,
@@ -163,6 +170,7 @@ describe('useMovingAverageOverlay', () => {
                 chartRef: makeChartRef(),
                 bars: [],
                 indicators: INDICATORS,
+                storageKey: 'test.ma.stable',
                 lineStyle: 0,
                 getIndicatorData: mockAccessor,
             })
