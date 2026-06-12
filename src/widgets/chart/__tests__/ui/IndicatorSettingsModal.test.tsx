@@ -213,6 +213,7 @@ describe('IndicatorSettingsModal', () => {
         openDialog();
         render(<IndicatorSettingsModal bindings={[maBinding()]} />);
         // period 행(MA/EMA)은 칩이 넓어 2열 그리드에서 전체폭(col-span-2)을 차지해야 한다.
-        expect(document.querySelector('.col-span-2')).toBeInTheDocument();
+        // ma 바인딩 1개 → col-span-2 래퍼 정확히 1개(결정적).
+        expect(document.querySelectorAll('.col-span-2').length).toBe(1);
     });
 });
