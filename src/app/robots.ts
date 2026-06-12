@@ -17,6 +17,18 @@ const PARASITE_BOT_USER_AGENTS = [
     'DataForSeoBot',
 ];
 
+// Google의 비검색 generic 크롤러. 검색 색인(Googlebot)과 IP 대역은 공유하지만 기능적으로
+// 완전히 분리돼 있다 — Google 공식 문서가 "GoogleOther 대상 크롤링 설정은 어떤 특정 제품에도
+// 영향을 주지 않는다"고 명시한다(내부 R&D / one-off 크롤 용도). 따라서 전면 Disallow해도
+// 검색 랭킹·색인·rich result에 페널티가 없으며, origin fetch(낮은 캐시율 환경의 비용 요인)만
+// 줄인다. Image/Video 변형 토큰도 함께 막는다. ⚠️ Googlebot/Googlebot-Image는 절대 포함 금지
+// (검색 색인이 날아간다). AI 학습 opt-out은 별도 토큰 Google-Extended 소관이라 여기 대상 아님.
+const GOOGLE_NON_SEARCH_USER_AGENTS = [
+    'GoogleOther',
+    'GoogleOther-Image',
+    'GoogleOther-Video',
+];
+
 export default function robots(): MetadataRoute.Robots {
     return {
         rules: [
@@ -42,6 +54,10 @@ export default function robots(): MetadataRoute.Robots {
             },
             {
                 userAgent: PARASITE_BOT_USER_AGENTS,
+                disallow: '/',
+            },
+            {
+                userAgent: GOOGLE_NON_SEARCH_USER_AGENTS,
                 disallow: '/',
             },
         ],
