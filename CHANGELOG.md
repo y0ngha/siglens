@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.21.1](https://github.com/y0ngha/siglens/compare/v0.21.0...v0.21.1) (2026-06-12)
+
+
+### Bug Fixes
+
+* 모바일에서 차트 헤더 타임프레임 버튼 잘림 현상 수정 ([5877720](https://github.com/y0ngha/siglens/commit/5877720f12b4c51cf5e54ff73b83622ca21c5bc3))
+
 # [0.21.0](https://github.com/y0ngha/siglens/compare/v0.20.4...v0.21.0) (2026-06-12)
 
 
