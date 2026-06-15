@@ -212,6 +212,64 @@ export const BACKTESTING_KEYWORDS = [
     '미국 주식 백테스트',
 ];
 
+/** Build SEO metadata for the `/[symbol]/financials` page. */
+export function buildSymbolFinancialsSeoContent(
+    symbol: string,
+    opts: BuildSymbolSeoOptions = {}
+): SymbolSeoContent {
+    const upper = symbol.toUpperCase();
+    // Root layout template appends "| Siglens" — exclude brand name to prevent duplication.
+    const title = `${upper} 재무제표 — 매출·이익·현금흐름 5년 추이`;
+    const fullTitle = `${title} | ${SITE_NAME}`;
+    const subject = opts.displayName ?? upper;
+    return {
+        ticker: upper,
+        title,
+        fullTitle,
+        description: clampSeoDescription(
+            buildSymbolFinancialsDescription(subject)
+        ),
+        url: `${SITE_URL}/${upper}/financials`,
+        keywords: buildSymbolFinancialsKeywords(upper, opts.koreanName),
+    };
+}
+
+function buildSymbolFinancialsDescription(subject: string): string {
+    return `${subject}의 손익·재무상태·현금흐름과 성장성·수익성·안정성·현금창출력 점수를 한눈에 확인합니다.`;
+}
+
+function buildSymbolFinancialsKeywords(
+    ticker: string,
+    koreanName?: string
+): string[] {
+    return [
+        ticker,
+        `${ticker} 재무제표`,
+        `${ticker} 손익계산서`,
+        `${ticker} 재무상태표`,
+        `${ticker} 현금흐름표`,
+        `${ticker} 매출 성장`,
+        `${ticker} 영업이익`,
+        `${ticker} 재무 분석`,
+        ...(koreanName
+            ? [
+                  `${koreanName} 재무제표`,
+                  `${koreanName} 손익계산서`,
+                  `${koreanName} 재무 분석`,
+                  `${koreanName} 현금흐름`,
+              ]
+            : []),
+        '재무제표 분석',
+        '손익계산서',
+        '재무상태표',
+        '현금흐름표',
+        '매출 성장',
+        '영업이익',
+        '순이익',
+        '재무 건전성',
+    ];
+}
+
 /** Build SEO metadata for the `/[symbol]/fundamental` page. */
 export function buildSymbolFundamentalSeoContent(
     symbol: string,
