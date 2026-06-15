@@ -59,7 +59,7 @@ describe('loadLongTailTickerPage', () => {
 
         expect(unstable_cache).toHaveBeenLastCalledWith(
             expect.any(Function),
-            ['sitemap:longtail:page:v2:3'],
+            [`sitemap:longtail:page:${LONGTAIL_TICKERS_PER_PAGE}:3`],
             { revalidate: SECONDS_PER_DAY }
         );
     });
@@ -87,13 +87,13 @@ describe('loadLongTailTickerPage', () => {
         expect(unstable_cache).toHaveBeenNthCalledWith(
             1,
             expect.any(Function),
-            ['sitemap:longtail:page:v2:1'],
+            [`sitemap:longtail:page:${LONGTAIL_TICKERS_PER_PAGE}:1`],
             { revalidate: SECONDS_PER_DAY }
         );
         expect(unstable_cache).toHaveBeenNthCalledWith(
             2,
             expect.any(Function),
-            ['sitemap:longtail:page:v2:2'],
+            [`sitemap:longtail:page:${LONGTAIL_TICKERS_PER_PAGE}:2`],
             { revalidate: SECONDS_PER_DAY }
         );
     });
