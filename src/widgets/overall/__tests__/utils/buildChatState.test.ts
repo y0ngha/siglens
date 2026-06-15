@@ -21,6 +21,7 @@ const FOUR_AXIS_RESULT: OverallAnalysisResponse = {
     fundamentalBulletsKo: ['펀더멘털'],
     newsBulletsKo: ['뉴스'],
     optionsBulletsKo: ['감마 상승'],
+    financialsBulletsKo: [],
     integratedConclusionKo: '통합 결론',
     scenarios: [],
     riskFactorsKo: [],

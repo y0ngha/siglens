@@ -90,6 +90,7 @@ const OVERALL_RESULT: OverallAnalysisResponse = {
     fundamentalBulletsKo: [],
     newsBulletsKo: [],
     optionsBulletsKo: [],
+    financialsBulletsKo: [],
     integratedConclusionKo: '중립',
     scenarios: [],
     riskFactorsKo: [],

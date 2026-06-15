@@ -24,12 +24,12 @@ describe('CrossLinkCards', () => {
         expect(section).toBeDefined();
     });
 
-    it('renders 6 cards (all pages)', () => {
+    it('renders 7 cards (all pages including financials)', () => {
         const { container } = render(
             <CrossLinkCards symbol="AAPL" current="chart" />
         );
         const children = container.querySelector('section')!.children;
-        expect(children).toHaveLength(6);
+        expect(children).toHaveLength(7);
     });
 
     it('marks the current page card with aria-current="page"', () => {

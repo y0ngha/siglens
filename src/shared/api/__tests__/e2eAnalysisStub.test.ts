@@ -6,7 +6,10 @@ import {
     e2eCachedFundamental,
     e2eCachedNews,
     e2eCachedOptions,
+    e2eCachedFinancials,
     e2eForcedOptionsError,
+    e2eForcedFinancialsError,
+    E2E_FORCE_FINANCIALS_ERROR_COOKIE,
 } from '@/shared/api/e2eAnalysisStub';
 
 describe('isE2E', () => {
@@ -80,6 +83,24 @@ describe('e2eCached* fixture getters', () => {
         expect(result.result.summary).toContain('E2E 고정 분석 결과');
     });
 
+    it('e2eCachedFinancials returns a cached financials result', () => {
+        const result = e2eCachedFinancials();
+        expect(result.status).toBe('cached');
+        if (result.status !== 'cached') throw new Error('unreachable');
+        // financials FinancialsAnalysisResponse anchor fields.
+        expect(result.result.overallConclusionKo).toContain(
+            'E2E 고정 분석 결과'
+        );
+        expect(result.result.overallSentiment).toBe('neutral');
+        // 4 axis assessments: growth, quality, solvency, cash
+        expect(result.result.axisAssessments).toHaveLength(4);
+        const axes = result.result.axisAssessments.map(a => a.axis);
+        expect(axes).toContain('growth');
+        expect(axes).toContain('quality');
+        expect(axes).toContain('solvency');
+        expect(axes).toContain('cash');
+    });
+
     it('returns a stable fixture reference across calls (no per-call rebuild)', () => {
         const a = e2eCachedTechnical();
         const b = e2eCachedTechnical();
@@ -97,5 +118,19 @@ describe('e2eForcedOptionsError (resilience seam)', () => {
         expect(result.status).toBe('no_chains_error');
         expect(result.code).toBe('no_options_chains');
         expect(result.error).toBe('E2E 강제 분석 실패 (resilience 테스트용)');
+    });
+});
+
+describe('e2eForcedFinancialsError (resilience seam)', () => {
+    it('returns a fetch_failed error result for financials resilience tests', () => {
+        const result = e2eForcedFinancialsError();
+        expect(result.status).toBe('error');
+        expect(result.code).toBe('fetch_failed');
+        expect(result.error).toContain('E2E 강제');
+    });
+
+    it('E2E_FORCE_FINANCIALS_ERROR_COOKIE is a non-empty string constant', () => {
+        expect(typeof E2E_FORCE_FINANCIALS_ERROR_COOKIE).toBe('string');
+        expect(E2E_FORCE_FINANCIALS_ERROR_COOKIE.length).toBeGreaterThan(0);
     });
 });

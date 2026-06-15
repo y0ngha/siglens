@@ -85,6 +85,7 @@ const DONE_RESULT: OverallAnalysisResponse = {
     fundamentalBulletsKo: ['펀더멘털 신호'],
     newsBulletsKo: ['뉴스 신호'],
     optionsBulletsKo: ['옵션 신호'],
+    financialsBulletsKo: [],
     integratedConclusionKo: '통합 결론',
     scenarios: [],
     riskFactorsKo: [],

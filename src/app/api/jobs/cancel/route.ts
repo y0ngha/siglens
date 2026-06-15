@@ -1,6 +1,7 @@
 import { constants } from 'node:http2';
 import {
     cancelAnalysisJob,
+    cancelFinancialsAnalysisJob,
     cancelFundamentalAnalysisJob,
     cancelJob,
     cancelNewsAnalysisJob,
@@ -16,6 +17,7 @@ const { HTTP_STATUS_BAD_REQUEST, HTTP_STATUS_NO_CONTENT } = constants;
 
 const VALID_JOB_TYPES = new Set<JobType>([
     'analysis',
+    'financials',
     'fundamental',
     'news',
     'options',
@@ -49,6 +51,8 @@ export async function POST(request: Request): Promise<Response> {
             switch (type) {
                 case 'analysis':
                     return cancelAnalysisJob(jobId);
+                case 'financials':
+                    return cancelFinancialsAnalysisJob(jobId);
                 case 'fundamental':
                     return cancelFundamentalAnalysisJob(jobId);
                 case 'news':

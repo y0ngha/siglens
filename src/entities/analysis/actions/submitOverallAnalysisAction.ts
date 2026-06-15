@@ -5,7 +5,9 @@ import { headers } from 'next/headers';
 import {
     isEtRegularSessionOpen,
     submitOverallAnalysis,
+    computeFinancialsScorecard,
     type EnrichedNewsItem,
+    type FinancialsScorecard,
     type OptionsSnapshot,
     type SubmitOverallAnalysisOptions,
     type SubmitOverallAnalysisResult,
@@ -14,6 +16,7 @@ import {
 import { getFundamentalDataProvider } from '@/shared/api/fmp/getFundamentalDataProvider';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { getDatabaseClient } from '@/shared/db/client';
+import { getFinancialsSnapshot } from '@/entities/financials-statements/lib/getFinancialsSnapshot';
 import {
     DrizzleNewsRepository,
     NEWS_ANALYSIS_LOOKBACK_MS,
@@ -77,11 +80,11 @@ export async function submitOverallAnalysisAction(
         const newsRepo = new DrizzleNewsRepository(db);
 
         // bot 트래픽은 어차피 enqueue를 skip하므로 (`skipEnqueueIfMiss`) 옵션
-        // 스냅샷을 위해 Yahoo를 두드리지 않는다 — 크롤러가 Yahoo rate-limit을
-        // 소진시키는 시나리오 차단. 일반 유저는 fetchOptionsSnapshot의 cross-
-        // request 캐시(Upstash)로 흡수.
-        // news / earnings / options 세 fetch는 서로 독립이므로 Promise.all로
-        // 병렬화해 직렬 대기 비용 (~1-3s)을 제거한다.
+        // 스냅샷 및 financials 스냅샷을 fetch하지 않는다 — 크롤러가 외부 API
+        // rate-limit을 소진시키는 시나리오 차단. 일반 유저는 각 fetch의 cross-
+        // request 캐시(Upstash / Next data cache)로 흡수.
+        // news / earnings / options / financials 네 fetch는 서로 독립이므로
+        // Promise.all로 병렬화해 직렬 대기 비용 (~1-3s)을 제거한다.
         const optionsSnapshotPromise: Promise<OptionsSnapshot | null> =
             skipEnqueueIfMiss
                 ? Promise.resolve(null)
@@ -93,11 +96,32 @@ export async function submitOverallAnalysisAction(
                       return null;
                   });
 
-        const [rows, next, optionsSnapshot] = await Promise.all([
-            newsRepo.listBySymbol(symbol, NEWS_ANALYSIS_LOOKBACK_MS),
-            getNextEarningsReport(symbol, db),
-            optionsSnapshotPromise,
-        ]);
+        /**
+         * financials scorecard는 봇에선 skip한다(options snapshot과 동일 정책).
+         * fetch/compute 실패 시 undefined로 graceful degradation — financials가
+         * 없어도 나머지 4축으로 종합 분석을 계속 진행한다.
+         */
+        const financialsScorecardPromise: Promise<
+            FinancialsScorecard | undefined
+        > = skipEnqueueIfMiss
+            ? Promise.resolve(undefined)
+            : getFinancialsSnapshot(symbol)
+                  .then(snapshot => computeFinancialsScorecard(snapshot))
+                  .catch(error => {
+                      console.warn(
+                          '[submitOverallAnalysisAction] financials scorecard fetch failed:',
+                          error
+                      );
+                      return undefined;
+                  });
+
+        const [rows, next, optionsSnapshot, financialsScorecard] =
+            await Promise.all([
+                newsRepo.listBySymbol(symbol, NEWS_ANALYSIS_LOOKBACK_MS),
+                getNextEarningsReport(symbol, db),
+                optionsSnapshotPromise,
+                financialsScorecardPromise,
+            ]);
 
         // Overall news axis는 core 안에서 동일한 `submitNewsAnalysis`를 호출한다
         // (dependencyResolver → submitNewsAnalysis). `/news` 페이지의 호출과 동일한
@@ -128,6 +152,7 @@ export async function submitOverallAnalysisAction(
             skipEnqueueIfMiss,
             optionsSnapshot: optionsSnapshot ?? undefined,
             optionsOiStale,
+            financialsScorecard,
             ...(gate.userApiKey !== undefined
                 ? { userApiKey: gate.userApiKey }
                 : {}),
