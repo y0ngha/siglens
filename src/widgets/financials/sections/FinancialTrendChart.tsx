@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useId, useState, type CSSProperties } from 'react';
 import { cn } from '@/shared/lib/cn';
 import { usdFormatter } from '../utils/numberFormat';
 
@@ -120,6 +120,7 @@ export function FinancialTrendChart({
     periods,
 }: FinancialTrendChartProps) {
     const [hover, setHover] = useState<HoverState | null>(null);
+    const tooltipId = useId();
 
     const n = periods.length;
     const seriesCount = series.length;
@@ -227,7 +228,6 @@ export function FinancialTrendChart({
                     })
                 )}
 
-                {/* Transparent full-height hover targets, one per period group. */}
                 {periods.map((p, pi) => (
                     <rect
                         key={`hit-${p}`}
@@ -237,6 +237,9 @@ export function FinancialTrendChart({
                         height={CHART_HEIGHT}
                         fill="transparent"
                         className="cursor-crosshair"
+                        aria-describedby={
+                            hover?.periodIdx === pi ? tooltipId : undefined
+                        }
                         onPointerEnter={e =>
                             setHover({
                                 periodIdx: pi,
@@ -266,12 +269,15 @@ export function FinancialTrendChart({
 
             {hover !== null && (
                 <div
+                    id={tooltipId}
                     role="tooltip"
-                    className="border-secondary-600 bg-secondary-900 pointer-events-none fixed z-50 rounded-md border px-3 py-2 text-xs shadow-lg"
-                    style={{
-                        left: hover.x + 12,
-                        top: hover.y + 12,
-                    }}
+                    className="border-secondary-600 bg-secondary-900 pointer-events-none fixed top-[var(--tip-top)] left-[var(--tip-left)] z-50 rounded-md border px-3 py-2 text-xs shadow-lg"
+                    style={
+                        {
+                            '--tip-left': `${hover.x + 12}px`,
+                            '--tip-top': `${hover.y + 12}px`,
+                        } as CSSProperties
+                    }
                 >
                     <div className="text-secondary-300 mb-1 font-medium">
                         {periods[hover.periodIdx]}

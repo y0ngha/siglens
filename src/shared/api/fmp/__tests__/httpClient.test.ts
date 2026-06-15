@@ -80,7 +80,7 @@ describe('fmpGet 함수는', () => {
             expect(calledUrl).not.toContain('symbol=BRK.B');
         });
 
-        it('aliase가 없는 symbol은 그대로 전달한다', async () => {
+        it('alias가 없는 symbol은 그대로 전달한다', async () => {
             mockOk({ data: 'test' });
             await fmpGet('profile', { symbol: 'AAPL' });
 
