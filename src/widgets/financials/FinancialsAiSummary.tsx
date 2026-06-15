@@ -3,10 +3,10 @@
 import { useMemo } from 'react';
 import type {
     FinancialsAnalysisResponse,
-    FinancialsAxis,
     FinancialsSentiment,
 } from '@y0ngha/siglens-core';
 import { cn } from '@/shared/lib/cn';
+import { AXIS_LABEL_KO } from './axisLabels';
 import { useDefaultModelId } from '@/widgets/symbol-page/hooks/useDefaultModelId';
 import { useFinancialsAnalysis } from './hooks/useFinancialsAnalysis';
 import { usePublishSymbolChat } from '@/features/symbol-chat';
@@ -25,13 +25,6 @@ const SENTIMENT_CLASS: Record<FinancialsSentiment, string> = {
     bullish: 'bg-ui-success/10 text-chart-bullish',
     neutral: 'bg-secondary-700 text-secondary-400',
     bearish: 'bg-ui-danger/10 text-chart-bearish',
-};
-
-const AXIS_LABEL: Record<FinancialsAxis, string> = {
-    growth: '성장성',
-    quality: '수익성·질',
-    solvency: '안정성',
-    cash: '현금창출력',
 };
 
 interface FinancialsAiSummaryViewProps {
@@ -74,7 +67,7 @@ function FinancialsAiSummaryView({ result }: FinancialsAiSummaryViewProps) {
                         >
                             <div className="mb-1 flex items-center gap-2">
                                 <span className="text-sm font-medium">
-                                    {AXIS_LABEL[a.axis]}
+                                    {AXIS_LABEL_KO[a.axis]}
                                 </span>
                                 <span
                                     className={cn(

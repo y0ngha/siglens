@@ -1,22 +1,12 @@
 import type { FinancialsScorecard } from '@y0ngha/siglens-core';
 import { CompositeGradeGauge } from './CompositeGradeGauge';
 import { AxisScoreCard } from './AxisScoreCard';
+import { AXIS_LABEL_KO } from './axisLabels';
 
 interface FinancialsScorecardProps {
     /** The complete 4-axis financials scorecard from computeFinancialsScorecard. */
     scorecard: FinancialsScorecard;
 }
-
-/**
- * Korean axis title map for the four scorecard axes.
- * Matches the product requirements: 성장성/수익성·질/안정성/현금창출력.
- */
-const AXIS_TITLE = {
-    growth: '성장성',
-    quality: '수익성·질',
-    solvency: '안정성',
-    cash: '현금창출력',
-} as const;
 
 /**
  * Full financials scorecard widget — SSR-safe, synchronous, takes a
@@ -31,14 +21,18 @@ export function FinancialsScorecard({ scorecard }: FinancialsScorecardProps) {
     const { composite, growth, quality, solvency, cash } = scorecard;
 
     const axes = [
-        { key: 'growth' as const, title: AXIS_TITLE.growth, axis: growth },
-        { key: 'quality' as const, title: AXIS_TITLE.quality, axis: quality },
+        { key: 'growth' as const, title: AXIS_LABEL_KO.growth, axis: growth },
+        {
+            key: 'quality' as const,
+            title: AXIS_LABEL_KO.quality,
+            axis: quality,
+        },
         {
             key: 'solvency' as const,
-            title: AXIS_TITLE.solvency,
+            title: AXIS_LABEL_KO.solvency,
             axis: solvency,
         },
-        { key: 'cash' as const, title: AXIS_TITLE.cash, axis: cash },
+        { key: 'cash' as const, title: AXIS_LABEL_KO.cash, axis: cash },
     ];
 
     return (

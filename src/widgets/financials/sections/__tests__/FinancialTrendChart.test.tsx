@@ -95,4 +95,27 @@ describe('FinancialTrendChart', () => {
         const rects = container.querySelectorAll('rect');
         expect(rects.length).toBeGreaterThan(0);
     });
+
+    it('applies per-color legend dot classes from COLOR_CLASSES', () => {
+        const { container } = render(
+            <FinancialTrendChart series={BASE_SERIES} periods={BASE_PERIODS} />
+        );
+        const dots = container.querySelectorAll('span.rounded-full');
+        // bullish + bearish series → two legend dots with the mapped bg classes.
+        expect(dots.length).toBe(2);
+        expect(dots[0].className).toContain('bg-chart-bullish');
+        expect(dots[1].className).toContain('bg-chart-bearish');
+    });
+
+    it('falls back to the neutral legend dot when a series omits color', () => {
+        const series = [
+            { labelKo: '매출', values: [100, 200] }, // no color → neutral
+            { labelKo: '순이익', values: [50, 80], color: 'bullish' as const },
+        ];
+        const { container } = render(
+            <FinancialTrendChart series={series} periods={['2023', '2024']} />
+        );
+        const dots = container.querySelectorAll('span.rounded-full');
+        expect(dots[0].className).toContain('bg-primary-500');
+    });
 });

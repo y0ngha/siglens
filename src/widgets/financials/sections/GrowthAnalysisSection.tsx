@@ -1,6 +1,7 @@
 import type { FinancialGrowthRow } from '@y0ngha/siglens-core';
 import { EmptySectionCard } from './EmptySectionCard';
 import { StatementTable } from './StatementTable';
+import { toDisplayOrder } from './toDisplayOrder';
 
 interface GrowthAnalysisSectionProps {
     rows: FinancialGrowthRow[];
@@ -27,7 +28,7 @@ export function GrowthAnalysisSection({ rows }: GrowthAnalysisSectionProps) {
         return <EmptySectionCard title={TITLE} />;
     }
 
-    const displayRows = [...rows].reverse();
+    const displayRows = toDisplayOrder(rows);
     const columns = displayRows.map(r => r.fiscalYear);
 
     /**

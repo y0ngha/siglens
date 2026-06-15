@@ -8,6 +8,7 @@ import {
 import { EmptySectionCard } from './EmptySectionCard';
 import { StatementTable } from './StatementTable';
 import { FinancialTrendChart } from './FinancialTrendChart';
+import { toDisplayOrder } from './toDisplayOrder';
 
 interface CashFlowSectionProps {
     rows: CashFlowRow[];
@@ -32,7 +33,7 @@ export function CashFlowSection({ rows }: CashFlowSectionProps) {
         return <EmptySectionCard title={TITLE} />;
     }
 
-    const displayRows = [...rows].reverse();
+    const displayRows = toDisplayOrder(rows);
     const columns = displayRows.map(r => r.fiscalYear);
 
     const chartSeries = [

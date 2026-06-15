@@ -41,6 +41,17 @@ const makeSnapshot = (tag: string): FinancialsSnapshot => ({
 const ANNUAL_SNAPSHOT = makeSnapshot('annual');
 const QUARTER_SNAPSHOT = makeSnapshot('quarter');
 
+// An all-empty snapshot — the shape the action RESOLVES with when the upstream
+// provider swallows an FMP throw and returns [] for every endpoint.
+const EMPTY_SNAPSHOT: FinancialsSnapshot = {
+    income: [],
+    balance: [],
+    cashFlow: [],
+    incomeGrowth: [],
+    financialGrowth: [],
+    cashFlowGrowth: [],
+};
+
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 // Lazy import so the vi.mock above registers first
@@ -112,6 +123,30 @@ describe('useFinancialsPeriod', () => {
         expect(result.current.period).toBe('annual');
     });
 
+    it('reverts to annual when the action RESOLVES with an all-empty snapshot', async () => {
+        // Provider swallows the FMP throw → action resolves (no rejection) with
+        // an all-empty snapshot. The hook must treat this as a failure too.
+        mockGetFinancialsQuarterAction.mockResolvedValue(EMPTY_SNAPSHOT);
+
+        const useFinancialsPeriod = await importHook();
+        const { result } = renderHook(() =>
+            useFinancialsPeriod('AAPL', ANNUAL_SNAPSHOT)
+        );
+
+        act(() => {
+            result.current.setPeriod('quarter');
+        });
+
+        await waitFor(() => {
+            expect(result.current.isLoading).toBe(false);
+        });
+
+        // The empty snapshot is NOT cached; period reverts to annual and the
+        // annual snapshot is shown.
+        expect(result.current.period).toBe('annual');
+        expect(result.current.snapshot).toBe(ANNUAL_SNAPSHOT);
+    });
+
     it('returns to annual snapshot when period is switched back', async () => {
         mockGetFinancialsQuarterAction.mockResolvedValue(QUARTER_SNAPSHOT);
 
@@ -133,6 +168,37 @@ describe('useFinancialsPeriod', () => {
 
         expect(result.current.period).toBe('annual');
         expect(result.current.snapshot).toBe(ANNUAL_SNAPSHOT);
+    });
+
+    it('swaps cached quarter data instantly without re-fetching on a second switch', async () => {
+        mockGetFinancialsQuarterAction.mockResolvedValue(QUARTER_SNAPSHOT);
+
+        const useFinancialsPeriod = await importHook();
+        const { result } = renderHook(() =>
+            useFinancialsPeriod('AAPL', ANNUAL_SNAPSHOT)
+        );
+
+        // First switch → fetch + cache quarter snapshot.
+        act(() => {
+            result.current.setPeriod('quarter');
+        });
+        await waitFor(() =>
+            expect(result.current.snapshot).toBe(QUARTER_SNAPSHOT)
+        );
+
+        // Back to annual, then to quarter again — second quarter switch must use
+        // the cached snapshot (instant swap) and NOT call the action again.
+        act(() => {
+            result.current.setPeriod('annual');
+        });
+        act(() => {
+            result.current.setPeriod('quarter');
+        });
+
+        expect(result.current.period).toBe('quarter');
+        expect(result.current.snapshot).toBe(QUARTER_SNAPSHOT);
+        expect(result.current.isLoading).toBe(false);
+        expect(mockGetFinancialsQuarterAction).toHaveBeenCalledTimes(1);
     });
 
     it('does not call the action when switching back to annual', async () => {

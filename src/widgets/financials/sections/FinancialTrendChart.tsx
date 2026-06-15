@@ -1,3 +1,5 @@
+import { cn } from '@/shared/lib/cn';
+
 type SeriesColor = 'bullish' | 'bearish' | 'neutral';
 
 interface TrendSeries {
@@ -25,18 +27,24 @@ const SVG_PADDING_LEFT = 4;
 const SVG_PADDING_RIGHT = 4;
 const CHART_HEIGHT = SVG_HEIGHT - SVG_PADDING_TOP - SVG_PADDING_BOTTOM;
 
-const COLOR_CLASSES: Record<SeriesColor, { fill: string; stroke: string }> = {
+const COLOR_CLASSES: Record<
+    SeriesColor,
+    { fill: string; stroke: string; legend: string }
+> = {
     bullish: {
         fill: 'fill-chart-bullish/70',
         stroke: 'stroke-chart-bullish',
+        legend: 'bg-chart-bullish',
     },
     bearish: {
         fill: 'fill-chart-bearish/70',
         stroke: 'stroke-chart-bearish',
+        legend: 'bg-chart-bearish',
     },
     neutral: {
         fill: 'fill-primary-500/70',
         stroke: 'stroke-primary-500',
+        legend: 'bg-primary-500',
     },
 };
 
@@ -108,16 +116,13 @@ export function FinancialTrendChart({
                 <div className="mb-2 flex flex-wrap gap-3">
                     {series.map((s, i) => {
                         const c = s.color ?? 'neutral';
-                        const colorClass =
-                            c === 'bullish'
-                                ? 'bg-chart-bullish'
-                                : c === 'bearish'
-                                  ? 'bg-chart-bearish'
-                                  : 'bg-primary-500';
                         return (
                             <div key={i} className="flex items-center gap-1">
                                 <span
-                                    className={`inline-block h-2 w-2 rounded-full ${colorClass}`}
+                                    className={cn(
+                                        'inline-block h-2 w-2 rounded-full',
+                                        COLOR_CLASSES[c].legend
+                                    )}
                                 />
                                 <span className="text-secondary-400 text-xs">
                                     {s.labelKo}

@@ -4,6 +4,7 @@ import { GrossMarginTooltip } from '@/widgets/financials/financialsTooltips';
 import { EmptySectionCard } from './EmptySectionCard';
 import { StatementTable } from './StatementTable';
 import { FinancialTrendChart } from './FinancialTrendChart';
+import { toDisplayOrder } from './toDisplayOrder';
 
 interface IncomeStatementSectionProps {
     rows: IncomeStatementRow[];
@@ -26,7 +27,7 @@ export function IncomeStatementSection({ rows }: IncomeStatementSectionProps) {
     }
 
     // Reverse for oldest→newest display order
-    const displayRows = [...rows].reverse();
+    const displayRows = toDisplayOrder(rows);
     const columns = displayRows.map(r => r.fiscalYear);
 
     const chartSeries = [
