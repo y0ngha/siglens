@@ -96,5 +96,32 @@
             }
         ],
         "analyzedAt": "2026-01-01T00:00:00.000Z"
+    },
+    "financials": {
+        "overallConclusionKo": "E2E 고정 분석 결과: 재무제표 종합 결론입니다.",
+        "axisAssessments": [
+            {
+                "axis": "growth",
+                "sentiment": "neutral",
+                "rationaleKo": "매출 성장률은 보통 수준입니다."
+            },
+            {
+                "axis": "quality",
+                "sentiment": "bullish",
+                "rationaleKo": "이익 품질은 양호합니다."
+            },
+            {
+                "axis": "solvency",
+                "sentiment": "neutral",
+                "rationaleKo": "부채비율은 적정 수준입니다."
+            },
+            {
+                "axis": "cash",
+                "sentiment": "bullish",
+                "rationaleKo": "잉여현금흐름은 긍정적입니다."
+            }
+        ],
+        "riskFactorsKo": ["E2E 고정 재무 리스크 요인"],
+        "overallSentiment": "neutral"
     }
 }

@@ -1,10 +1,12 @@
 import type {
     AnalysisResponse,
+    FinancialsAnalysisResponse,
     FundamentalAnalysisResponse,
     NewsAnalysisResponse,
     OptionsAnalysisResponse,
     OverallAnalysisResponse,
     SubmitAnalysisGatedResult,
+    SubmitFinancialsAnalysisCached,
     SubmitFundamentalAnalysisCached,
     SubmitNewsAnalysisCached,
     SubmitOptionsAnalysisCached,
@@ -37,6 +39,7 @@ interface E2eAnalysisFixture {
     fundamental: FundamentalAnalysisResponse;
     news: NewsAnalysisResponse;
     options: OptionsAnalysisResponse;
+    financials: FinancialsAnalysisResponse;
 }
 const typedFixture = fixture as E2eAnalysisFixture;
 
@@ -65,6 +68,11 @@ export function e2eCachedOptions(): SubmitOptionsAnalysisCached {
     return { status: 'cached', result: typedFixture.options };
 }
 
+/** Fixed `{ status: 'cached' }` financials analysis result for E2E runs. */
+export function e2eCachedFinancials(): SubmitFinancialsAnalysisCached {
+    return { status: 'cached', result: typedFixture.financials };
+}
+
 /**
  * Cookie name an E2E test sets to force the next options-analysis submit to
  * return a transient failure instead of the cached fixture. Read server-side by
@@ -75,6 +83,13 @@ export function e2eCachedOptions(): SubmitOptionsAnalysisCached {
  * one in sync if this value changes.
  */
 export const E2E_FORCE_ANALYSIS_ERROR_COOKIE = 'e2e_force_analysis_error';
+
+/**
+ * Cookie name an E2E test sets to force the next financials-analysis submit to
+ * return a transient failure instead of the cached fixture. Read server-side by
+ * `submitFinancialsAnalysisAction` (only under `E2E_TEST=1`).
+ */
+export const E2E_FORCE_FINANCIALS_ERROR_COOKIE = 'e2e_force_financials_error';
 
 /**
  * Deterministic transient-failure result for E2E resilience tests. Returned by
@@ -88,5 +103,22 @@ export function e2eForcedOptionsError(): SubmitOptionsAnalysisNoChainsError {
         status: 'no_chains_error',
         code: 'no_options_chains',
         error: 'E2E 강제 분석 실패 (resilience 테스트용)',
+    };
+}
+
+/**
+ * Deterministic transient-failure result for E2E resilience tests targeting the
+ * financials analysis flow. Returned by `submitFinancialsAnalysisAction` (under
+ * `E2E_TEST=1`) when `E2E_FORCE_FINANCIALS_ERROR_COOKIE` is present.
+ */
+export function e2eForcedFinancialsError(): {
+    status: 'error';
+    code: 'fetch_failed';
+    error: string;
+} {
+    return {
+        status: 'error',
+        code: 'fetch_failed',
+        error: 'E2E 강제 재무제표 분석 실패 (resilience 테스트용)',
     };
 }
