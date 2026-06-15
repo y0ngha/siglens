@@ -36,12 +36,11 @@ export interface LongTailTickerSource {
  */
 export const SITEMAP_MAX_URLS_PER_FILE = 50_000;
 
-/**
- * long-tail 티커당 sitemap 엔트리 수.
- * chart + news + fundamental + overall + fear-greed = 5.
- * sitemap index 페이지네이션과 longtail route handler 양쪽에서 참조한다.
- */
-export const LONGTAIL_ENTRIES_PER_TICKER = 5;
+// 롱테일 종목은 메인 차트 라우트(/TICKER) 1개만 sitemap에 광고한다.
+// 서브 라우트(overall/fundamental/news/fear-greed)는 thin/scaled-content 리스크와
+// 봇 first-gen ISR write 비용을 줄이기 위해 미광고(페이지는 on-demand로 존재·내부 링크로 도달).
+// LONGTAIL_TICKERS_PER_PAGE에서 역산하지 않는다(독립 상수).
+export const LONGTAIL_ENTRIES_PER_TICKER = 1;
 
 /**
  * long-tail 페이지네이션의 안정적인 티커 경계.

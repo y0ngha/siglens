@@ -29,6 +29,29 @@ const GOOGLE_NON_SEARCH_USER_AGENTS = [
     'GoogleOther-Video',
 ];
 
+// AI 학습/콘텐츠 스크레이퍼 크롤러. 검색 색인에 기여하지 않으면서 종목 페이지 전수를 크롤해
+// 봇 first-gen ISR write 비용만 유발하므로 전면 Disallow한다. ⚠️ Google-Extended는 Gemini/Vertex
+// '학습' opt-out 토큰으로 검색 색인(Googlebot)과 무관 — GoogleOther 계열과 혼동 금지.
+// 검색 색인 봇(Googlebot/Yeti/Bingbot/Daumoa)은 절대 포함하지 않는다.
+const AI_TRAINING_CRAWLER_USER_AGENTS = [
+    'GPTBot',
+    'Google-Extended',
+    'Applebot-Extended',
+    'Bytespider',
+    'CCBot',
+    'Meta-ExternalAgent',
+    'Amazonbot',
+    'anthropic-ai',
+    'cohere-ai',
+    'Diffbot',
+    'Omgilibot',
+    'ImagesiftBot',
+];
+
+// AI 검색·인용 크롤러. ChatGPT/Perplexity 검색의 인용 가시성을 보존하기 위해 차단 대신
+// crawlDelay로 빈도만 낮춘다(ClaudeBot과 동일 정책).
+const AI_SEARCH_CRAWLER_USER_AGENTS = ['PerplexityBot', 'OAI-SearchBot'];
+
 export default function robots(): MetadataRoute.Robots {
     return {
         rules: [
@@ -59,6 +82,15 @@ export default function robots(): MetadataRoute.Robots {
             {
                 userAgent: GOOGLE_NON_SEARCH_USER_AGENTS,
                 disallow: '/',
+            },
+            {
+                userAgent: AI_TRAINING_CRAWLER_USER_AGENTS,
+                disallow: '/',
+            },
+            {
+                userAgent: AI_SEARCH_CRAWLER_USER_AGENTS,
+                allow: '/',
+                crawlDelay: ANTHROPIC_CRAWL_DELAY_SECONDS,
             },
         ],
         sitemap: `${SITE_URL}/sitemap.xml`,
