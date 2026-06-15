@@ -11,6 +11,12 @@ import { LONGTAIL_ENTRIES_PER_TICKER } from '../model';
 const BUILD_DATE = new Date('2026-01-15T00:00:00.000Z');
 
 describe('buildLongTailEntries', () => {
+    it('LONGTAIL_ENTRIES_PER_TICKER는 1로 고정된다 — 서브 라우트 미광고(비용 절감) 결정 핀', () => {
+        // 다른 테스트는 상수를 symbolic하게 쓰므로, 값이 5로 되돌아가도 조용히 따라간다.
+        // 이 핀이 그 회귀를 즉시 실패시킨다.
+        expect(LONGTAIL_ENTRIES_PER_TICKER).toBe(1);
+    });
+
     it('티커 1개 → 메인 차트 1개 엔트리만 반환한다(서브 라우트 미광고)', () => {
         const entries = buildLongTailEntries(['AAPL'], BUILD_DATE);
         expect(entries).toHaveLength(LONGTAIL_ENTRIES_PER_TICKER);
