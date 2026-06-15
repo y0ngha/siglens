@@ -24,15 +24,25 @@
 |---|---|---|---|
 | R1 | Block scanner paths | `http.request.uri.path contains ".php" or http.request.uri.path contains "/wp-" or http.request.uri.path contains "/.env" or http.request.uri.path contains "/.git"` | Block |
 | R2 | Block abusive ASN | `ip.geoip.asnum in {132203 13220}` | Block |
-| R3 | Challenge non-KR 비검증 봇 | `(ip.geoip.country ne "KR") and (not cf.client.bot) and (not lower(http.user_agent) contains "yeti") and (not lower(http.user_agent) contains "daum") and (not lower(http.user_agent) contains "claudebot") and (not lower(http.user_agent) contains "claude-searchbot") and (not lower(http.user_agent) contains "perplexitybot") and (not lower(http.user_agent) contains "oai-searchbot")` | Managed Challenge |
+| R3 | Challenge non-KR 비검증 봇 (핵심 레버, **배포본**) | `(ip.geoip.country ne "KR") and (not cf.client.bot) and (not starts_with(http.request.uri, "/api"))` | Managed Challenge |
 
-- **R3가 핵심 레버**: 검증 검색봇(`cf.client.bot`=Googlebot/Bingbot)·한국 검색봇(Yeti/Daum)·살린 AI봇(Claude/Perplexity/OAI)은 통과, 나머지 non-KR 비검증 봇은 Managed Challenge → JS 못 풀어 렌더 불가 → first-gen ISR write 0. robots.txt를 무시하는 봇을 잡는 catch-all.
-- **6/6 대비 차이**: R2에서 ClaudeBot AWS 범위(216.73.216.0/24) 제외(하드 Block 해제됨, robots crawlDelay로 완화). R3에 Claude/Perplexity/OAI UA 예외(접근 유지).
-- ⚠️ **적용 시 CF Security Analytics(24h)로 top-offender IP/ASN 재확인** 후 R2의 ASN 현행화(132203·13220은 6/6 식별값).
+- **R3가 핵심 레버**: 검증 검색봇(`cf.client.bot`=Googlebot/Bingbot)·한국 검색봇(geo KR=Yeti/Daum)·**CF-verified AI봇**은 통과, 나머지 non-KR 비검증 봇은 Managed Challenge → JS 못 풀어 렌더 불가 → first-gen ISR write 0. `/api` 제외는 **비KR 사용자의 앱 API 호출이 챌린지되는 걸 막는 올바른 조건**.
+- **R3 무수정 결정(2026-06-15)**: `cf.client.bot`이 ClaudeBot·Claude-SearchBot·OAI-SearchBot·GPTBot을 **verified로 이미 통과**시킴 → UA 예외 불필요. **PerplexityBot은 CF가 de-list**(stealth crawling)라 챌린지되지만, CF가 악성으로 분류한 것이라 그대로 둠. (이 스펙 초안의 UA 예외 행은 "이들이 비검증"이라는 전제 오류 — 실제로는 Perplexity 빼고 다 verified라 **미적용**.)
+- ⚠️ **R2 ASN(132203·13220)은 6/6 식별값** — Security Analytics(24h)로 현행화. ClaudeBot AWS /24는 6/6에 하드 Block 후 사용자가 해제(robots crawlDelay 60s로 완화).
 
-## 3. HTML Cache Rule — 보류
+## 3. HTML Cache Rule — 적용·검증됨 (2026-06-15)
 
-App Router는 같은 URL에서 완전 HTML과 RSC 페이로드를 요청 헤더(`RSC` 등)로 분기 응답하며 `Vary: rsc, next-router-*`를 보낸다. CF는 기본적으로 `Accept-Encoding` 외 Vary를 캐싱에 반영하지 않아, 순진한 "Cache Everything"은 한 변형을 모두에게 제공해 **페이지가 깨질 수 있다**. 안전하게 하려면 `RSC` 헤더 부재 시(완전 HTML)만 캐싱하도록 cache-key/eligibility 커스터마이즈가 필요한데 무료 플랜에선 제한적이다. 비용 직격은 R3(WAF)가 수행하므로 **WAF 효과 측정 후 별도 후속**으로 정밀 설계한다.
+App Router는 같은 URL에서 완전 HTML과 RSC 페이로드를 요청 헤더(`RSC`)로 분기하며 `Vary: rsc, next-router-*`를 보낸다. naive "Cache Everything"은 RSC 페이로드를 브라우저에 서빙해 **페이지를 깨뜨릴 수 있다**. 무료 플랜 Cache Rule에 **"요청 헤더(Request Header)" 필드가 있어 RSC-aware 캐싱이 가능**하다(에지 TTL 무료 최소값=2시간).
+
+**배포된 룰 "Cache HTML documents (non-RSC)"**:
+- 매칭(빌더): `(http.request.method eq "GET" and not len(http.request.headers["rsc"]) > 0 and not starts_with(http.request.uri.path, "/api"))` — GET + RSC 헤더 부재(RSC nav·prefetch 제외) + /api 제외. (/_next·인증경로는 미제외 — 정적자산 캐싱 무해, 인증은 클라 렌더 셸이라 무해.)
+- 캐시 적합성=Eligible · 에지 TTL=override **2h** · 브라우저 TTL=**Respect origin**(max-age=0 → 매 방문 revalidate) · SWR ON · 강한 ETag ON · 원본 오류 패스스루 ON.
+
+**검증(curl)**: `/AAPL` → `cf-cache-status: HIT`(엣지 캐싱) + `cache-control: max-age=0`(브라우저 항상 최신) + 본문 HTML. **`RSC:1` 요청 → `cf-cache-status: DYNAMIC`(우회) + `text/x-component` RSC 페이로드** = footgun 회피(클라 navigation 정상).
+
+⚠️ 무료 플랜은 cache key에 헤더를 못 넣어 RSC 분기는 **매칭 조건에 의존** — 배포 후 RSC 우회를 반드시 실측. 문제 시 룰 비활성화 + "Purge Everything"으로 즉시 원복.
+
+> **Vercel "Invalid Configuration"**: orange 프록시 시 Vercel이 CF IP를 봐서 뜨는 정상/cosmetic 표시(사이트 작동). 인증서 갱신(HTTP-01)은 프록시 통과로 보통 OK — 모니터 대상.
 
 ## 4. 검증
 
