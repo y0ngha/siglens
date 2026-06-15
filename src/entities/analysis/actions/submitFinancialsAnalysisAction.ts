@@ -1,7 +1,7 @@
 'use server';
 
 import { waitUntil } from '@vercel/functions';
-import { headers } from 'next/headers';
+import { headers, cookies } from 'next/headers';
 import {
     submitFinancialsAnalysis,
     type SubmitFinancialsAnalysisOptions,
@@ -32,9 +32,15 @@ export async function submitFinancialsAnalysisAction(
         // try so a load failure can't propagate to the client (mirrors
         // submitAnalysisAction).
         if (isE2E()) {
-            const { e2eCachedFinancials } =
-                await import('@/shared/api/e2eAnalysisStub');
-            return e2eCachedFinancials();
+            const stub = await import('@/shared/api/e2eAnalysisStub');
+            // resilience 스펙이 설정하는 force-error 쿠키가 있으면 일시적 실패를
+            // 결정적으로 주입해 에러 바운더리 → 재시도 → 복구를 검증할 수 있게 한다.
+            const forceError = (await cookies()).get(
+                stub.E2E_FORCE_FINANCIALS_ERROR_COOKIE
+            );
+            return forceError
+                ? stub.e2eForcedFinancialsError()
+                : stub.e2eCachedFinancials();
         }
         const requestHeaders = await headers();
         const skipEnqueueIfMiss = isBot(requestHeaders);

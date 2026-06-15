@@ -5,6 +5,7 @@ vi.mock('@vercel/functions', () => ({
 
 vi.mock('next/headers', () => ({
     headers: vi.fn(() => Promise.resolve(new Headers())),
+    cookies: vi.fn(() => Promise.resolve({ get: vi.fn(() => undefined) })),
 }));
 
 vi.mock('@y0ngha/siglens-core', async () => ({
@@ -18,6 +19,12 @@ vi.mock('@/shared/api/fmp/getFinancialStatementsProvider', () => ({
 
 vi.mock('@/shared/api/e2eAnalysisStub', () => ({
     e2eCachedFinancials: vi.fn(() => ({ status: 'cached', result: {} })),
+    e2eForcedFinancialsError: vi.fn(() => ({
+        status: 'error',
+        code: 'fetch_failed',
+        error: 'E2E forced error',
+    })),
+    E2E_FORCE_FINANCIALS_ERROR_COOKIE: 'e2e_force_financials_error',
 }));
 
 vi.mock('@/entities/session/lib/getCurrentUser', () => ({
