@@ -35,16 +35,12 @@ vi.mock('@/app/[symbol]/financials/financialData', () => ({
 vi.mock('@/app/[symbol]/financials/FinancialsDegraded', () => ({
     FinancialsDegraded: () => null,
 }));
+// isEmptyFinancialsSnapshot는 별도 단위 테스트(isEmptyFinancialsSnapshot.test.ts)에서
+// 실제 로직을 검증한다. 여기서는 vi.fn()으로 두고 케이스별 boolean을 직접 제어해
+// 인라인 재구현(동어반복)을 피한다.
 vi.mock('@/entities/financials-statements', () => ({
     getFinancialsSnapshot: vi.fn(),
-    isEmptyFinancialsSnapshot: (s: {
-        income: unknown[];
-        balance: unknown[];
-        cashFlow: unknown[];
-    }) =>
-        s.income.length === 0 &&
-        s.balance.length === 0 &&
-        s.cashFlow.length === 0,
+    isEmptyFinancialsSnapshot: vi.fn(),
 }));
 vi.mock('@/shared/lib/seo', async importOriginal => ({
     ...(await importOriginal<typeof import('@/shared/lib/seo')>()),
@@ -77,7 +73,10 @@ import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { generateMetadata, revalidate } from '@/app/[symbol]/financials/page';
 import { getAssetInfoResilient } from '@/entities/ticker';
 import { getProfileResilient } from '@/app/[symbol]/fundamental/getProfileResilient';
-import { getFinancialsSnapshot } from '@/entities/financials-statements';
+import {
+    getFinancialsSnapshot,
+    isEmptyFinancialsSnapshot,
+} from '@/entities/financials-statements';
 import type { MockedFunction } from 'vitest';
 
 const mockGetAssetInfoResilient = getAssetInfoResilient as MockedFunction<
@@ -88,6 +87,9 @@ const mockGetProfileResilient = getProfileResilient as MockedFunction<
 >;
 const mockGetFinancialsSnapshot = getFinancialsSnapshot as MockedFunction<
     typeof getFinancialsSnapshot
+>;
+const mockIsEmpty = isEmptyFinancialsSnapshot as MockedFunction<
+    typeof isEmptyFinancialsSnapshot
 >;
 
 const NON_EMPTY_SNAPSHOT = {
@@ -132,6 +134,7 @@ describe('generateMetadata', () => {
             degraded: false,
         } as never);
         mockGetFinancialsSnapshot.mockResolvedValue(NON_EMPTY_SNAPSHOT);
+        mockIsEmpty.mockReturnValue(false);
     });
 
     it('returns noindex for invalid ticker format', async () => {
@@ -187,6 +190,7 @@ describe('generateMetadata', () => {
 
     it('returns noindex when the financial snapshot is all-empty (transient FMP failure)', async () => {
         mockGetFinancialsSnapshot.mockResolvedValue(EMPTY_SNAPSHOT);
+        mockIsEmpty.mockReturnValue(true);
 
         const metadata = await generateMetadata({
             params: Promise.resolve({ symbol: 'aapl' }),

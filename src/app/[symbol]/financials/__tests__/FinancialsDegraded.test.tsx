@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { FinancialsDegraded } from '../FinancialsDegraded';
+import { FinancialsDegraded } from '@/app/[symbol]/financials/FinancialsDegraded';
 
 describe('FinancialsDegraded', () => {
     it('renders the displayName h1, the degrade notice, and cross links', () => {
