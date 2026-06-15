@@ -431,6 +431,40 @@ describe('OverallContent done branch', () => {
         fireEvent.click(screen.getByRole('button', { name: /재분석/ }));
         expect(trigger).toHaveBeenCalledTimes(1);
     });
+
+    it('financialsBulletsKo가 있으면 재무 분석 섹션을 렌더한다', () => {
+        mockDoneState(
+            makeDoneResult({
+                financialsBulletsKo: ['매출 성장 10%', '부채비율 개선'],
+            })
+        );
+        render(
+            <OverallContent
+                symbol="AAPL"
+                companyName="Apple Inc."
+                hasEnrichedNews={true}
+            />
+        );
+        expect(
+            screen.getByRole('heading', { name: /재무 분석/ })
+        ).toBeInTheDocument();
+        expect(screen.getByText('매출 성장 10%')).toBeInTheDocument();
+        expect(screen.getByText('부채비율 개선')).toBeInTheDocument();
+    });
+
+    it('financialsBulletsKo가 비어 있으면 재무 분석 섹션을 렌더하지 않는다', () => {
+        mockDoneState(makeDoneResult({ financialsBulletsKo: [] }));
+        render(
+            <OverallContent
+                symbol="AAPL"
+                companyName="Apple Inc."
+                hasEnrichedNews={true}
+            />
+        );
+        expect(
+            screen.queryByRole('heading', { name: /재무 분석/ })
+        ).not.toBeInTheDocument();
+    });
 });
 
 /**

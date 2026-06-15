@@ -9,14 +9,19 @@ vi.mock('@vercel/functions', () => ({
     waitUntil: vi.fn(),
 }));
 
-// 이 테스트는 action이 core로 forwarding하는 인자 shape와 OI-stale 게이팅만
-// 검증하므로 `submitOverallAnalysis`와 `isEtRegularSessionOpen` 두 export만
-// mocking하면 충분하다. 반환값 chain까지 assert하지 않아 `requireActual`로
-// 전체 surface를 합칠 필요가 없다.
-vi.mock('@y0ngha/siglens-core', () => ({
-    submitOverallAnalysis: vi.fn(),
-    isEtRegularSessionOpen: vi.fn(),
-}));
+// action이 core로 forwarding하는 인자 shape, OI-stale 게이팅, financials scorecard
+// 주입을 검증한다. requireActual로 타입 surface를 합치고 핵심 3개 export를 override한다.
+vi.mock('@y0ngha/siglens-core', async () => {
+    const actual = await vi.importActual<typeof import('@y0ngha/siglens-core')>(
+        '@y0ngha/siglens-core'
+    );
+    return {
+        ...actual,
+        submitOverallAnalysis: vi.fn(),
+        isEtRegularSessionOpen: vi.fn(),
+        computeFinancialsScorecard: vi.fn(),
+    };
+});
 
 vi.mock('@/shared/api/fmp/fundamentalClient', async importOriginal => ({
     ...(await importOriginal<
@@ -71,15 +76,22 @@ vi.mock('@/shared/api/market/getCachedMarketDataProvider', () => ({
     getCachedMarketDataProvider: vi.fn(() => mockProvider),
 }));
 
+vi.mock('@/entities/financials-statements/lib/getFinancialsSnapshot', () => ({
+    getFinancialsSnapshot: vi.fn(),
+}));
+
 import { submitOverallAnalysisAction } from '../actions/submitOverallAnalysisAction';
 import {
     isEtRegularSessionOpen,
     submitOverallAnalysis,
+    computeFinancialsScorecard,
     type ModelId,
     type OptionsSnapshot,
     type SubmitOverallAnalysisResult,
     type EnrichedNewsItem,
     type EarningsCalendarItem,
+    type FinancialsSnapshot,
+    type FinancialsScorecard,
 } from '@y0ngha/siglens-core';
 import { headers } from 'next/headers';
 import {
@@ -92,6 +104,7 @@ import { resolveTierAndByok } from '@/shared/lib/byokGate';
 import { fetchOptionsSnapshot } from '@/entities/options-chain/lib/optionsDataCache';
 import { isOpenInterestSnapshotStale } from '@/shared/lib/options/openInterestStale';
 import type { AnalysisGateError } from '@/shared/lib/types';
+import { getFinancialsSnapshot } from '@/entities/financials-statements/lib/getFinancialsSnapshot';
 
 const mockProvider = {} as import('@y0ngha/siglens-core').MarketDataProvider;
 
@@ -121,6 +134,13 @@ const mockIsRegularSession = isEtRegularSessionOpen as MockedFunction<
 const mockIsOiStale = isOpenInterestSnapshotStale as MockedFunction<
     typeof isOpenInterestSnapshotStale
 >;
+const mockGetFinancialsSnapshot = getFinancialsSnapshot as MockedFunction<
+    typeof getFinancialsSnapshot
+>;
+const mockComputeFinancialsScorecard =
+    computeFinancialsScorecard as MockedFunction<
+        typeof computeFinancialsScorecard
+    >;
 
 function makeSnapshot(): OptionsSnapshot {
     return {
@@ -195,6 +215,8 @@ describe('submitOverallAnalysisAction 함수는', () => {
         mockFetchSnapshot.mockReset();
         mockIsRegularSession.mockReset();
         mockIsOiStale.mockReset();
+        mockGetFinancialsSnapshot.mockReset();
+        mockComputeFinancialsScorecard.mockReset();
 
         mockListBySymbol = vi.fn().mockResolvedValue([]);
         mockGetNextEarningsReport.mockResolvedValue(null);
@@ -214,6 +236,11 @@ describe('submitOverallAnalysisAction 함수는', () => {
         mockIsRegularSession.mockReturnValue(false);
         mockIsOiStale.mockReturnValue(false);
         mockSubmitOverallAnalysis.mockResolvedValue(SUBMITTED_RESULT);
+        // 기본값: financials 스냅샷 없음 + scorecard undefined (기존 테스트 영향 방지)
+        mockGetFinancialsSnapshot.mockResolvedValue({} as FinancialsSnapshot);
+        mockComputeFinancialsScorecard.mockReturnValue(
+            undefined as unknown as FinancialsScorecard
+        );
     });
 
     it('symbol, timeframe, modelId를 submitOverallAnalysis에 전달한다', async () => {
@@ -588,6 +615,88 @@ describe('submitOverallAnalysisAction 함수는', () => {
             );
             // 정상 흐름 유지 — error로 빠지지 않는다.
             expect(result).toBe(SUBMITTED_RESULT);
+        });
+    });
+
+    describe('financials axis integration', () => {
+        function makeFinancialsSnapshot(): FinancialsSnapshot {
+            return {
+                income: [],
+                balance: [],
+                cashFlow: [],
+                incomeGrowth: [],
+                financialGrowth: [],
+                cashFlowGrowth: [],
+            } as unknown as FinancialsSnapshot;
+        }
+
+        function makeFinancialsScorecard(): FinancialsScorecard {
+            return {
+                composite: { grade: 'B' },
+            } as unknown as FinancialsScorecard;
+        }
+
+        it('financials scorecard를 계산해 core에 전달한다', async () => {
+            const snapshot = makeFinancialsSnapshot();
+            const scorecard = makeFinancialsScorecard();
+            mockGetFinancialsSnapshot.mockResolvedValueOnce(snapshot);
+            mockComputeFinancialsScorecard.mockReturnValueOnce(scorecard);
+
+            await submitOverallAnalysisAction(
+                'AAPL',
+                'Apple Inc.',
+                '1Day',
+                MODEL_ID
+            );
+
+            expect(mockGetFinancialsSnapshot).toHaveBeenCalledWith('AAPL');
+            expect(mockComputeFinancialsScorecard).toHaveBeenCalledWith(
+                snapshot
+            );
+            expect(mockSubmitOverallAnalysis).toHaveBeenCalledWith(
+                expect.objectContaining({ financialsScorecard: scorecard })
+            );
+        });
+
+        it('bot 요청(skipEnqueueIfMiss=true)이면 financials fetch를 건너뛴다', async () => {
+            mockHeaders.mockResolvedValueOnce(
+                new Headers({
+                    'user-agent':
+                        'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
+                })
+            );
+
+            await submitOverallAnalysisAction(
+                'AAPL',
+                'Apple Inc.',
+                '1Day',
+                MODEL_ID
+            );
+
+            // bot 트래픽은 financials fetch를 하지 않는다
+            expect(mockGetFinancialsSnapshot).not.toHaveBeenCalled();
+            expect(mockSubmitOverallAnalysis).toHaveBeenCalledWith(
+                expect.objectContaining({ financialsScorecard: undefined })
+            );
+        });
+
+        it('financials fetch 실패 시 scorecard=undefined로 overall을 계속 진행한다', async () => {
+            mockGetFinancialsSnapshot.mockRejectedValueOnce(
+                new Error('financials fetch failed')
+            );
+
+            const result = await submitOverallAnalysisAction(
+                'AAPL',
+                'Apple Inc.',
+                '1Day',
+                MODEL_ID
+            );
+
+            // graceful degradation — error 상태로 빠지지 않는다
+            expect(result).toBe(SUBMITTED_RESULT);
+            expect(mockSubmitOverallAnalysis).toHaveBeenCalledWith(
+                expect.objectContaining({ financialsScorecard: undefined })
+            );
         });
     });
 });
