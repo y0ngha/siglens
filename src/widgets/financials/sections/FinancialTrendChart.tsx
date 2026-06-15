@@ -99,10 +99,42 @@ function fmt(value: number | null): string {
     return value === null ? '—' : usdFormatter.format(value);
 }
 
+// Conservative tooltip footprint used only to decide which side of the cursor to
+// place it on (so it doesn't clip past the viewport edge). Exact size varies with
+// series count; over-estimating just flips a little earlier, which is harmless.
+const TOOLTIP_EST_WIDTH = 200;
+const TOOLTIP_EST_HEIGHT = 140;
+const TOOLTIP_GAP = 12;
+
+/**
+ * Place the tooltip near the cursor, flipping to the opposite side when it would
+ * overflow the right/bottom viewport edge. Runs in a pointer handler, so `window`
+ * is always defined.
+ */
+function placeTooltip(
+    clientX: number,
+    clientY: number
+): { left: number; top: number } {
+    const overflowRight =
+        clientX + TOOLTIP_GAP + TOOLTIP_EST_WIDTH > window.innerWidth;
+    const overflowBottom =
+        clientY + TOOLTIP_GAP + TOOLTIP_EST_HEIGHT > window.innerHeight;
+    const left = overflowRight
+        ? clientX - TOOLTIP_EST_WIDTH - TOOLTIP_GAP
+        : clientX + TOOLTIP_GAP;
+    const top = overflowBottom
+        ? clientY - TOOLTIP_EST_HEIGHT - TOOLTIP_GAP
+        : clientY + TOOLTIP_GAP;
+    return {
+        left: Math.max(TOOLTIP_GAP, left),
+        top: Math.max(TOOLTIP_GAP, top),
+    };
+}
+
 interface HoverState {
     periodIdx: number;
-    x: number;
-    y: number;
+    left: number;
+    top: number;
 }
 
 /**
@@ -243,15 +275,13 @@ export function FinancialTrendChart({
                         onPointerEnter={e =>
                             setHover({
                                 periodIdx: pi,
-                                x: e.clientX,
-                                y: e.clientY,
+                                ...placeTooltip(e.clientX, e.clientY),
                             })
                         }
                         onPointerMove={e =>
                             setHover({
                                 periodIdx: pi,
-                                x: e.clientX,
-                                y: e.clientY,
+                                ...placeTooltip(e.clientX, e.clientY),
                             })
                         }
                         onPointerLeave={() => setHover(null)}
@@ -274,8 +304,8 @@ export function FinancialTrendChart({
                     className="border-secondary-600 bg-secondary-900 pointer-events-none fixed top-[var(--tip-top)] left-[var(--tip-left)] z-50 rounded-md border px-3 py-2 text-xs shadow-lg"
                     style={
                         {
-                            '--tip-left': `${hover.x + 12}px`,
-                            '--tip-top': `${hover.y + 12}px`,
+                            '--tip-left': `${hover.left}px`,
+                            '--tip-top': `${hover.top}px`,
                         } as CSSProperties
                     }
                 >
