@@ -46,6 +46,9 @@
         "fundamentalBulletsKo": ["펀더멘털: 밸류에이션 적정"],
         "newsBulletsKo": ["뉴스: 특이 이슈 없음"],
         "optionsBulletsKo": ["옵션: 포지셔닝 중립"],
+        "financialsBulletsKo": [
+            "E2E 고정 재무 요약: 현금흐름 양호, 부채비율 적정"
+        ],
         "integratedConclusionKo": "E2E 고정 분석 결과: 4축 종합 결론은 중립입니다.",
         "scenarios": [
             {
@@ -95,5 +98,32 @@
             }
         ],
         "analyzedAt": "2026-01-01T00:00:00.000Z"
+    },
+    "financials": {
+        "overallConclusionKo": "E2E 고정 분석 결과: 재무제표 종합 결론입니다.",
+        "axisAssessments": [
+            {
+                "axis": "growth",
+                "sentiment": "neutral",
+                "rationaleKo": "매출 성장률은 보통 수준입니다."
+            },
+            {
+                "axis": "quality",
+                "sentiment": "bullish",
+                "rationaleKo": "이익 품질은 양호합니다."
+            },
+            {
+                "axis": "solvency",
+                "sentiment": "neutral",
+                "rationaleKo": "부채비율은 적정 수준입니다."
+            },
+            {
+                "axis": "cash",
+                "sentiment": "bullish",
+                "rationaleKo": "잉여현금흐름은 긍정적입니다."
+            }
+        ],
+        "riskFactorsKo": ["E2E 고정 재무 리스크 요인"],
+        "overallSentiment": "neutral"
     }
 }

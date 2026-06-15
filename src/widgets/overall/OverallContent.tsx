@@ -6,6 +6,7 @@ import { DependencyProgress } from './DependencyProgress';
 import { useOverallAnalysis } from './hooks/useOverallAnalysis';
 import { OverallTriggerCta } from './OverallTriggerCta';
 import { ReanalyzeButton } from './ReanalyzeButton';
+import { FinancialsSummary } from './sections/FinancialsSummary';
 import { FundamentalSummary } from './sections/FundamentalSummary';
 import { IntegratedConclusion } from './sections/IntegratedConclusion';
 import { NewsSummary } from './sections/NewsSummary';
@@ -223,6 +224,7 @@ export function OverallContent({
                 oiStale={optionsOiStale}
             />
             <FundamentalSummary bullets={r.fundamentalBulletsKo} />
+            <FinancialsSummary bullets={r.financialsBulletsKo} />
             <NewsSummary bullets={r.newsBulletsKo} />
             <IntegratedConclusion text={r.integratedConclusionKo} />
             <ScenarioAnalysis scenarios={r.scenarios} />

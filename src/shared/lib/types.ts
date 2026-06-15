@@ -243,6 +243,7 @@ export type MarketBriefingActionResult =
 
 export type JobType =
     | 'analysis'
+    | 'financials'
     | 'fundamental'
     | 'news'
     | 'options'

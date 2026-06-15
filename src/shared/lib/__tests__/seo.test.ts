@@ -1,6 +1,7 @@
 import {
     buildSymbolSeoContent,
     buildSymbolFundamentalSeoContent,
+    buildSymbolFinancialsSeoContent,
     buildSymbolNewsSeoContent,
     buildSymbolOverallSeoContent,
     buildSymbolFearGreedSeoContent,
@@ -140,6 +141,87 @@ describe('buildSymbolFundamentalSeoContent', () => {
 
     it('[SYMBOL] 플레이스홀더가 결과에 포함되지 않는다', () => {
         const content = buildSymbolFundamentalSeoContent('MSFT');
+        expect(JSON.stringify(content)).not.toContain('[SYMBOL]');
+    });
+});
+
+describe('buildSymbolFinancialsSeoContent', () => {
+    it('소문자 입력을 대문자로 정규화하고 title에 티커와 재무제표 키워드가 포함된다', () => {
+        const content = buildSymbolFinancialsSeoContent('aapl');
+        expect(content.ticker).toBe('AAPL');
+        expect(content.title).toContain('AAPL');
+        expect(content.title).toContain('재무제표');
+    });
+
+    it('title 형식이 일관된다 — 매출·이익·현금흐름 구조', () => {
+        const content = buildSymbolFinancialsSeoContent('TSLA');
+        expect(content.title).toBe(
+            'TSLA 재무제표 — 매출·이익·현금흐름 5년 추이'
+        );
+        expect(content.fullTitle).toBe(`${content.title} | Siglens`);
+    });
+
+    it('title에 브랜드명이 포함되지 않는다 (루트 레이아웃이 자동 추가)', () => {
+        const content = buildSymbolFinancialsSeoContent('TSLA');
+        expect(content.title).not.toContain('Siglens');
+        expect(content.title).not.toContain('|');
+    });
+
+    it('fullTitle에 브랜드명이 포함된다', () => {
+        const content = buildSymbolFinancialsSeoContent('MSFT');
+        expect(content.fullTitle).toContain('Siglens');
+    });
+
+    it('URL이 /[SYMBOL]/financials 형식이다', () => {
+        const content = buildSymbolFinancialsSeoContent('NVDA');
+        expect(content.url).toBe('https://siglens.io/NVDA/financials');
+    });
+
+    it('description은 SEO_DESCRIPTION_MAX_LENGTH(120자) 이하다 — 한글 SERP 안전권', () => {
+        const content = buildSymbolFinancialsSeoContent('AAPL', {
+            displayName: '애플, Apple Inc. (AAPL)',
+        });
+        expect([...content.description].length).toBeLessThanOrEqual(
+            SEO_DESCRIPTION_MAX_LENGTH
+        );
+    });
+
+    it('displayName이 있으면 description에 반영된다', () => {
+        const content = buildSymbolFinancialsSeoContent('AAPL', {
+            displayName: '애플, Apple Inc. (AAPL)',
+        });
+        expect(content.description).toContain('애플');
+    });
+
+    it('description에 재무 핵심 키워드가 포함된다', () => {
+        const content = buildSymbolFinancialsSeoContent('AAPL');
+        expect(content.description).toContain('손익');
+        expect(content.description).toContain('현금흐름');
+    });
+
+    it('keywords 배열에 티커와 재무제표 관련 용어가 포함된다', () => {
+        const content = buildSymbolFinancialsSeoContent('AAPL');
+        expect(content.keywords).toContain('AAPL');
+        expect(content.keywords).toContain('AAPL 재무제표');
+        expect(content.keywords).toContain('AAPL 손익계산서');
+        expect(content.keywords).toContain('AAPL 현금흐름표');
+        expect(content.keywords).toContain('재무제표 분석');
+        expect(content.keywords).toContain('손익계산서');
+        expect(content.keywords).toContain('현금흐름표');
+    });
+
+    it('koreanName이 있으면 keywords에 한글 변형이 추가된다', () => {
+        const content = buildSymbolFinancialsSeoContent('AAPL', {
+            koreanName: '애플',
+        });
+        expect(content.keywords).toContain('애플 재무제표');
+        expect(content.keywords).toContain('애플 손익계산서');
+        expect(content.keywords).toContain('애플 재무 분석');
+        expect(content.keywords).toContain('애플 현금흐름');
+    });
+
+    it('[SYMBOL] 플레이스홀더가 결과에 포함되지 않는다', () => {
+        const content = buildSymbolFinancialsSeoContent('MSFT');
         expect(JSON.stringify(content)).not.toContain('[SYMBOL]');
     });
 });
@@ -310,6 +392,11 @@ describe('Placeholder 회귀 가드 — 어떤 입력에도 [SYMBOL] / [symbol] 
             'buildSymbolFundamentalSeoContent',
             buildSymbolFundamentalSeoContent,
             '/fundamental',
+        ],
+        [
+            'buildSymbolFinancialsSeoContent',
+            buildSymbolFinancialsSeoContent,
+            '/financials',
         ],
         ['buildSymbolNewsSeoContent', buildSymbolNewsSeoContent, '/news'],
         [
@@ -513,6 +600,7 @@ describe('description 길이 가드 — 모든 빌더가 SEO_DESCRIPTION_MAX_LEN
     it.each([
         ['buildSymbolSeoContent', buildSymbolSeoContent],
         ['buildSymbolFundamentalSeoContent', buildSymbolFundamentalSeoContent],
+        ['buildSymbolFinancialsSeoContent', buildSymbolFinancialsSeoContent],
         ['buildSymbolNewsSeoContent', buildSymbolNewsSeoContent],
         ['buildSymbolOverallSeoContent', buildSymbolOverallSeoContent],
         ['buildSymbolFearGreedSeoContent', buildSymbolFearGreedSeoContent],

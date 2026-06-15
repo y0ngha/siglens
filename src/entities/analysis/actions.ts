@@ -14,3 +14,7 @@ export { pollOverallAnalysisAction } from './actions/pollOverallAnalysisAction';
 export { cancelAnalysisJobAction } from './actions/cancelAnalysisJobAction';
 export { cancelFundamentalAnalysisJobAction } from './actions/cancelFundamentalAnalysisJobAction';
 export { cancelOverallAnalysisJobAction } from './actions/cancelOverallAnalysisJobAction';
+export { submitFinancialsAnalysisAction } from './actions/submitFinancialsAnalysisAction';
+export type { SubmitFinancialsAnalysisActionResult } from './actions/submitFinancialsAnalysisAction';
+export { pollFinancialsAnalysisAction } from './actions/pollFinancialsAnalysisAction';
+export { cancelFinancialsAnalysisJobAction } from './actions/cancelFinancialsAnalysisJobAction';

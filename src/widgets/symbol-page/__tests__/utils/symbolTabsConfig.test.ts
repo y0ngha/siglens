@@ -1,8 +1,8 @@
 import { TABS } from '@/widgets/symbol-page/utils/symbolTabsConfig';
 
 describe('TABS (symbolTabsConfig)', () => {
-    it('contains all 6 analysis tabs', () => {
-        expect(TABS).toHaveLength(6);
+    it('contains all 7 analysis tabs', () => {
+        expect(TABS).toHaveLength(7);
     });
 
     it('has unique keys', () => {
@@ -38,6 +38,19 @@ describe('TABS (symbolTabsConfig)', () => {
     it('overall tab href is /{symbol}/overall', () => {
         const tab = TABS.find(t => t.key === 'overall')!;
         expect(tab.hrefBuilder('QQQ')).toBe('/QQQ/overall');
+    });
+
+    it('financials tab exists with correct href', () => {
+        const tab = TABS.find(t => t.key === 'financials')!;
+        expect(tab).toBeDefined();
+        expect(tab.label).toBe('재무제표');
+        expect(tab.hrefBuilder('AAPL')).toBe('/AAPL/financials');
+    });
+
+    it('financials tab is positioned after fundamental tab', () => {
+        const fundamentalIdx = TABS.findIndex(t => t.key === 'fundamental');
+        const financialsIdx = TABS.findIndex(t => t.key === 'financials');
+        expect(financialsIdx).toBe(fundamentalIdx + 1);
     });
 
     it('every tab has a non-empty label', () => {
