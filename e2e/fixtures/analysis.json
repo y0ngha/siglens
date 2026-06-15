@@ -46,6 +46,7 @@
         "fundamentalBulletsKo": ["펀더멘털: 밸류에이션 적정"],
         "newsBulletsKo": ["뉴스: 특이 이슈 없음"],
         "optionsBulletsKo": ["옵션: 포지셔닝 중립"],
+        "financialsBulletsKo": [],
         "integratedConclusionKo": "E2E 고정 분석 결과: 4축 종합 결론은 중립입니다.",
         "scenarios": [
             {
