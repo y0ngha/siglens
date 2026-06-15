@@ -8,9 +8,14 @@ import {
     getMarketSummary,
     computeBarsEffectiveTtl,
 } from '@y0ngha/siglens-core';
+import { MARKET_INDICES, SECTOR_ETFS } from '@/shared/config/dashboard-tickers';
+import { createCacheConfigFingerprint } from '@/shared/cache/configFingerprint';
 import { allQuotesPresent } from '../lib/marketSummaryCompleteness';
 
-const MARKET_SUMMARY_CACHE_KEY = 'market:summary';
+const MARKET_SUMMARY_CONFIG_FINGERPRINT = createCacheConfigFingerprint(
+    JSON.stringify({ marketIndices: MARKET_INDICES, sectorEtfs: SECTOR_ETFS })
+);
+const MARKET_SUMMARY_CACHE_KEY = `market:summary:${MARKET_SUMMARY_CONFIG_FINGERPRINT}`;
 
 /** 시장 요약은 bars 일봉 TTL 정책을 재사용 — 실제 timeframe과 무관한 placeholder. */
 const SUMMARY_TTL_TIMEFRAME = '1Day' as const satisfies Timeframe;
@@ -35,7 +40,7 @@ export const getCachedMarketSummary = cache(
         getOrSetCache(
             MARKET_SUMMARY_CACHE_KEY,
             computeBarsEffectiveTtl(SUMMARY_TTL_TIMEFRAME, new Date()),
-            () => getMarketSummary(provider),
+            () => getMarketSummary(provider, MARKET_INDICES, SECTOR_ETFS),
             allQuotesPresent
         )
 );

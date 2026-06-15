@@ -146,6 +146,14 @@ export const SECTOR_STOCKS: readonly SectorStock[] = [
     { symbol: 'QBTS', koreanName: '디웨이브 퀀텀', sectorSymbol: 'QNTM' },
     { symbol: 'QUBT', koreanName: '퀀텀 컴퓨팅', sectorSymbol: 'QNTM' },
     { symbol: 'IBM', koreanName: '아이비엠', sectorSymbol: 'QNTM' },
+    // Space (SPACE) — 7 (virtual sector, no ETF)
+    { symbol: 'SPCX', koreanName: '스페이스X', sectorSymbol: 'SPACE' },
+    { symbol: 'RKLB', koreanName: '로켓랩', sectorSymbol: 'SPACE' },
+    { symbol: 'ASTS', koreanName: 'AST 스페이스모바일', sectorSymbol: 'SPACE' },
+    { symbol: 'LUNR', koreanName: '인튜이티브 머신스', sectorSymbol: 'SPACE' },
+    { symbol: 'RDW', koreanName: '레드와이어', sectorSymbol: 'SPACE' },
+    { symbol: 'PL', koreanName: '플래닛 랩스', sectorSymbol: 'SPACE' },
+    { symbol: 'SPCE', koreanName: '버진 갤럭틱', sectorSymbol: 'SPACE' },
 ];
 
 // Timeframes supported by Panel C sector signal dashboard
@@ -174,8 +182,9 @@ export const DASHBOARD_TIMEFRAME_LABELS: Record<DashboardTimeframe, string> = {
     '1Day': '1일',
 };
 
-// Panel C sector tabs — SECTOR_ETFS + virtual Quantum sector (no ETF)
+// Panel C sector tabs — SECTOR_ETFS + virtual sectors (no ETF)
 export const SIGNAL_SECTORS: readonly SectorEtf[] = [
     ...SECTOR_ETFS,
     { symbol: 'QNTM', sectorName: 'Quantum', koreanName: '양자' },
+    { symbol: 'SPACE', sectorName: 'Space', koreanName: '우주' },
 ];

@@ -27,6 +27,7 @@ vi.mock('@upstash/redis', () => ({
 }));
 
 import type { SectorSignalsResult } from '@y0ngha/siglens-core';
+import { SECTOR_STOCKS } from '@/shared/config/dashboard-tickers';
 
 const sampleResult: SectorSignalsResult = {
     computedAt: '2026-06-04T00:00:00Z',
@@ -68,23 +69,29 @@ describe('getCachedSectorSignals', () => {
         const mod = await loadWithEnv({});
         const r = await mod.getCachedSectorSignals(mockProvider, '1Day');
         expect(mockRedisCtor).not.toHaveBeenCalled();
-        expect(mockGetSectorSignals).toHaveBeenCalledWith(mockProvider, '1Day');
+        expect(mockGetSectorSignals).toHaveBeenCalledWith(
+            mockProvider,
+            SECTOR_STOCKS,
+            '1Day'
+        );
         expect(r).toEqual(sampleResult);
     });
 
-    it('Redis hit 시 getSectorSignals 미호출, 캐시값 반환, key sector-signals:{tf}', async () => {
+    it('Redis hit 시 getSectorSignals 미호출, 종목 목록 fingerprint 캐시값 반환', async () => {
         mockRedisGet.mockResolvedValue({ data: sampleResult });
         const mod = await loadWithEnv({
             url: 'https://x.upstash.io',
             token: 't',
         });
         const r = await mod.getCachedSectorSignals(mockProvider, '1Hour');
-        expect(mockRedisGet).toHaveBeenCalledWith('sector-signals:1Hour');
+        expect(mockRedisGet).toHaveBeenCalledWith(
+            expect.stringMatching(/^sector-signals:1Hour:[a-f0-9]{12}$/)
+        );
         expect(mockGetSectorSignals).not.toHaveBeenCalled();
         expect(r).toEqual(sampleResult);
     });
 
-    it('Redis miss 시 getSectorSignals 호출 후 redis.set(sector-signals:{tf}, fresh, { ex: 60 })', async () => {
+    it('Redis miss 시 getSectorSignals 호출 후 fingerprint key로 저장', async () => {
         mockRedisGet.mockResolvedValue(null);
         mockGetSectorSignals.mockResolvedValue(sampleResult);
         mockRedisSet.mockResolvedValue('OK');
@@ -94,7 +101,7 @@ describe('getCachedSectorSignals', () => {
         });
         await mod.getCachedSectorSignals(mockProvider, '15Min');
         expect(mockRedisSet).toHaveBeenCalledWith(
-            'sector-signals:15Min',
+            expect.stringMatching(/^sector-signals:15Min:[a-f0-9]{12}$/),
             { data: sampleResult },
             { ex: 60 }
         );
@@ -159,10 +166,14 @@ describe('getCachedSectorSignals', () => {
             token: 't',
         });
         await mod.getCachedSectorSignals(mockProvider, '1Day');
-        expect(mockRedisGet).toHaveBeenCalledWith('sector-signals:1Day');
+        expect(mockRedisGet).toHaveBeenCalledWith(
+            expect.stringMatching(/^sector-signals:1Day:[a-f0-9]{12}$/)
+        );
         vi.clearAllMocks();
         mockRedisGet.mockResolvedValue({ data: sampleResult });
         await mod.getCachedSectorSignals(mockProvider, '15Min');
-        expect(mockRedisGet).toHaveBeenCalledWith('sector-signals:15Min');
+        expect(mockRedisGet).toHaveBeenCalledWith(
+            expect.stringMatching(/^sector-signals:15Min:[a-f0-9]{12}$/)
+        );
     });
 });

@@ -7,9 +7,10 @@ vi.mock('server-only', () => ({}));
 vi.mock('next/cache', () => ({
     unstable_cache: (
         fn: () => Promise<MarketSummaryData>,
-        _keys: unknown,
+        keys: unknown,
         opts: unknown
     ) => {
+        (globalThis as Record<string, unknown>).__lastUnstableCacheKeys = keys;
         (globalThis as Record<string, unknown>).__lastUnstableCacheOpts = opts;
         return fn;
     },
@@ -53,6 +54,7 @@ const sampleSummary: MarketSummaryData = {
 describe('getMarketSummaryStatic', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        delete (globalThis as Record<string, unknown>).__lastUnstableCacheKeys;
         delete (globalThis as Record<string, unknown>).__lastUnstableCacheOpts;
     });
 
@@ -76,6 +78,19 @@ describe('getMarketSummaryStatic', () => {
             revalidate: SECONDS_PER_HOUR,
             tags: ['market:summary'],
         });
+    });
+
+    it('(Happy) static cache key에 dashboard 설정 fingerprint를 포함한다', async () => {
+        mockGetCachedMarketSummary.mockResolvedValue(sampleSummary);
+
+        await getMarketSummaryStatic();
+
+        expect(
+            (globalThis as Record<string, unknown>).__lastUnstableCacheKeys
+        ).toEqual([
+            'market-summary-static',
+            expect.stringMatching(/^[a-f0-9]{12}$/),
+        ]);
     });
 
     it('(Worst) getCachedMarketSummary가 throw하면 에러가 전파된다', async () => {

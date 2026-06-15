@@ -9,16 +9,21 @@ import {
     getSectorSignals,
     computeBarsEffectiveTtl,
 } from '@y0ngha/siglens-core';
+import { SECTOR_STOCKS } from '@/shared/config/dashboard-tickers';
+import { createCacheConfigFingerprint } from '@/shared/cache/configFingerprint';
 
 /** sector signals도 bars 일봉 TTL 정책을 재사용 — timeframe과 무관한 placeholder. */
 const SIGNALS_TTL_TIMEFRAME = '1Day' as const satisfies Timeframe;
+const SECTOR_STOCKS_CONFIG_FINGERPRINT = createCacheConfigFingerprint(
+    JSON.stringify(SECTOR_STOCKS)
+);
 
 /**
  * 섹터 신호를 cache→provider로 가져온다. marketSummaryCache와 동일 3계층:
  *   1. React.cache — 요청 내 dedup.
  *   2. Upstash Redis — cross-request, computeBarsEffectiveTtl(장중 1분 / 장외 동적).
  * stocks가 빈 결과(전면 실패)는 캐시하지 않는다 — transient 장애를 TTL 동안 굳히지 않도록.
- * 키는 timeframe별로 분리(sector-signals:{tf}).
+ * 키는 timeframe과 consumer-owned 종목 목록 fingerprint로 분리한다.
  */
 export const getCachedSectorSignals = cache(
     async (
@@ -26,9 +31,9 @@ export const getCachedSectorSignals = cache(
         timeframe: DashboardTimeframe
     ): Promise<SectorSignalsResult> =>
         getOrSetCache(
-            `sector-signals:${timeframe}`,
+            `sector-signals:${timeframe}:${SECTOR_STOCKS_CONFIG_FINGERPRINT}`,
             computeBarsEffectiveTtl(SIGNALS_TTL_TIMEFRAME, new Date()),
-            () => getSectorSignals(provider, timeframe),
+            () => getSectorSignals(provider, SECTOR_STOCKS, timeframe),
             result => result.stocks.length > 0
         )
 );

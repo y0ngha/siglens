@@ -49,6 +49,11 @@ export const TICKER_CATEGORIES: readonly TickerCategory[] = [
         tickers: ['IONQ', 'LAES', 'RGTI', 'QBTS', 'QUBT', 'IBM'],
     },
     {
+        id: 'space',
+        label: '우주·항공우주',
+        tickers: ['SPCX', 'RKLB', 'ASTS', 'LUNR', 'RDW', 'PL', 'SPCE'],
+    },
+    {
         id: 'ev-mobility',
         label: 'EV·모빌리티',
         // TSLA intentionally duplicated from megacap — it leads both categories
@@ -164,6 +169,7 @@ export const POPULAR_TICKERS = [
     'ABNB',
     'BKNG',
     'LUNR',
+    'PL',
     'SPCE',
 
     // --- [7] Leveraged ETFs ---
@@ -349,4 +355,8 @@ export const POPULAR_TICKERS = [
     'OWL',
     'CDE',
     'CIFR',
+
+    // --- Trending (2026-06-15) ---
+    'SPCX',
+    'ING',
 ] as const;

@@ -27,6 +27,7 @@ vi.mock('@upstash/redis', () => ({
 }));
 
 import type { MarketSummaryData } from '@y0ngha/siglens-core';
+import { MARKET_INDICES, SECTOR_ETFS } from '@/shared/config/dashboard-tickers';
 
 const sampleSummary: MarketSummaryData = {
     indices: [
@@ -114,23 +115,29 @@ describe('getCachedMarketSummary', () => {
         const mod = await loadWithEnv({});
         const r = await mod.getCachedMarketSummary(mockProvider);
         expect(mockRedisCtor).not.toHaveBeenCalled();
-        expect(mockGetMarketSummary).toHaveBeenCalledWith(mockProvider);
+        expect(mockGetMarketSummary).toHaveBeenCalledWith(
+            mockProvider,
+            MARKET_INDICES,
+            SECTOR_ETFS
+        );
         expect(r).toEqual(sampleSummary);
     });
 
-    it('Redis hit 시 getMarketSummary 미호출, 캐시값 반환, key market:summary', async () => {
+    it('Redis hit 시 getMarketSummary 미호출, 설정 fingerprint 캐시값 반환', async () => {
         mockRedisGet.mockResolvedValue({ data: sampleSummary });
         const mod = await loadWithEnv({
             url: 'https://x.upstash.io',
             token: 't',
         });
         const r = await mod.getCachedMarketSummary(mockProvider);
-        expect(mockRedisGet).toHaveBeenCalledWith('market:summary');
+        expect(mockRedisGet).toHaveBeenCalledWith(
+            expect.stringMatching(/^market:summary:[a-f0-9]{12}$/)
+        );
         expect(mockGetMarketSummary).not.toHaveBeenCalled();
         expect(r).toEqual(sampleSummary);
     });
 
-    it('Redis miss 시 getMarketSummary 호출 후 redis.set(market:summary, fresh, { ex: 60 })', async () => {
+    it('Redis miss 시 getMarketSummary 호출 후 fingerprint key로 저장', async () => {
         mockRedisGet.mockResolvedValue(null);
         mockGetMarketSummary.mockResolvedValue(sampleSummary);
         mockRedisSet.mockResolvedValue('OK');
@@ -140,7 +147,7 @@ describe('getCachedMarketSummary', () => {
         });
         await mod.getCachedMarketSummary(mockProvider);
         expect(mockRedisSet).toHaveBeenCalledWith(
-            'market:summary',
+            expect.stringMatching(/^market:summary:[a-f0-9]{12}$/),
             { data: sampleSummary },
             { ex: 60 }
         );

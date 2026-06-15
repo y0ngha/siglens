@@ -4,6 +4,12 @@ import type { MarketSummaryData } from '@y0ngha/siglens-core';
 import { getCachedMarketSummary } from './marketSummaryCache';
 import { getMarketDataProvider } from '@/shared/api/market/getMarketDataProvider';
 import { SECONDS_PER_HOUR } from '@/shared/config/time';
+import { MARKET_INDICES, SECTOR_ETFS } from '@/shared/config/dashboard-tickers';
+import { createCacheConfigFingerprint } from '@/shared/cache/configFingerprint';
+
+const MARKET_SUMMARY_STATIC_CONFIG_FINGERPRINT = createCacheConfigFingerprint(
+    JSON.stringify({ marketIndices: MARKET_INDICES, sectorEtfs: SECTOR_ETFS })
+);
 
 /**
  * ISR static-safe market summary. getCachedMarketSummary(redis getOrSetCache)를 Next
@@ -17,7 +23,7 @@ import { SECONDS_PER_HOUR } from '@/shared/config/time';
 export function getMarketSummaryStatic(): Promise<MarketSummaryData> {
     return unstable_cache(
         () => getCachedMarketSummary(getMarketDataProvider()),
-        ['market-summary-static'],
+        ['market-summary-static', MARKET_SUMMARY_STATIC_CONFIG_FINGERPRINT],
         { revalidate: SECONDS_PER_HOUR, tags: ['market:summary'] }
     )();
 }

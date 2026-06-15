@@ -131,6 +131,21 @@ describe('SECTOR_STOCKS', () => {
         const symbols = SECTOR_STOCKS.map(s => s.symbol);
         expect(new Set(symbols).size).toBe(symbols.length);
     });
+
+    it('SPACE 가상 섹터에 순수 우주 기업 7개를 포함한다', () => {
+        const spaceSymbols = SECTOR_STOCKS.filter(
+            stock => stock.sectorSymbol === 'SPACE'
+        ).map(stock => stock.symbol);
+        expect(spaceSymbols).toEqual([
+            'SPCX',
+            'RKLB',
+            'ASTS',
+            'LUNR',
+            'RDW',
+            'PL',
+            'SPCE',
+        ]);
+    });
 });
 
 describe('DASHBOARD_TIMEFRAMES', () => {
@@ -169,8 +184,8 @@ describe('DASHBOARD_TIMEFRAME_LABELS', () => {
 });
 
 describe('SIGNAL_SECTORS', () => {
-    it('SECTOR_ETFS보다 하나 더 많다 (Quantum 가상 섹터)', () => {
-        expect(SIGNAL_SECTORS.length).toBe(SECTOR_ETFS.length + 1);
+    it('SECTOR_ETFS보다 두 개 더 많다 (Quantum, Space 가상 섹터)', () => {
+        expect(SIGNAL_SECTORS.length).toBe(SECTOR_ETFS.length + 2);
     });
 
     it('모든 SECTOR_ETFS를 포함한다', () => {
@@ -183,6 +198,15 @@ describe('SIGNAL_SECTORS', () => {
         const quantum = SIGNAL_SECTORS.find(s => s.symbol === 'QNTM');
         expect(quantum).toBeDefined();
         expect(quantum!.sectorName).toBe('Quantum');
+    });
+
+    it('Space 가상 섹터를 포함한다', () => {
+        const space = SIGNAL_SECTORS.find(s => s.symbol === 'SPACE');
+        expect(space).toBeDefined();
+        expect(space).toMatchObject({
+            sectorName: 'Space',
+            koreanName: '우주',
+        });
     });
 });
 

@@ -7,9 +7,10 @@ vi.mock('server-only', () => ({}));
 vi.mock('next/cache', () => ({
     unstable_cache: (
         fn: (timeframe: string) => Promise<SectorSignalsResult>,
-        _keys: unknown,
+        keys: unknown,
         opts: unknown
     ) => {
+        (globalThis as Record<string, unknown>).__lastUnstableCacheKeys = keys;
         (globalThis as Record<string, unknown>).__lastUnstableCacheOpts = opts;
         return fn;
     },
@@ -46,6 +47,7 @@ const sampleResult: SectorSignalsResult = {
 describe('getSectorSignalsStatic', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        delete (globalThis as Record<string, unknown>).__lastUnstableCacheKeys;
         delete (globalThis as Record<string, unknown>).__lastUnstableCacheOpts;
     });
 
@@ -69,6 +71,20 @@ describe('getSectorSignalsStatic', () => {
             revalidate: SECONDS_PER_HOUR,
             tags: ['sector:signals'],
         });
+    });
+
+    it('(Happy) static cache key에 sectorStocks 설정 fingerprint를 포함한다', async () => {
+        mockGetCachedSectorSignals.mockResolvedValue(sampleResult);
+
+        await getSectorSignalsStatic('1Day');
+
+        expect(
+            (globalThis as Record<string, unknown>).__lastUnstableCacheKeys
+        ).toEqual([
+            'sector-signals-static',
+            '1Day',
+            expect.stringMatching(/^[a-f0-9]{12}$/),
+        ]);
     });
 
     it('(Happy) 서로 다른 timeframe은 독립적으로 호출된다', async () => {

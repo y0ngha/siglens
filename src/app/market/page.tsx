@@ -204,7 +204,7 @@ export default function MarketPage() {
     // (변형 ?sector=는 비-canonical) 구조화데이터로서 가치가 낮고 sitelink 후보에서
     // 불리하다. 섹터/심볼 식별은 ListItem name(괄호 안 sector.symbol)으로 표기하며,
     // 실제 크롤 가능 딥링크(→ /{symbol})는 MarketSummaryPanel 섹터 카드가 제공한다.
-    // name도 개수를 표기하지 않는다(11 GICS ETF + 양자 테마 = 12 항목이라 "11개"는 부정확).
+    // name도 개수를 표기하지 않는다(11 GICS ETF에 가상 테마가 추가되므로 고정 개수는 쉽게 낡는다).
     const itemListJsonLd = {
         '@context': 'https://schema.org',
         '@type': 'ItemList',

@@ -38,6 +38,10 @@ const CATEGORY_STYLES: Record<CategoryId, CategoryStyle> = {
         borderColor: 'border-l-primary-200',
         textColor: 'text-primary-200',
     },
+    space: {
+        borderColor: 'border-l-primary-100',
+        textColor: 'text-primary-100',
+    },
     'ev-mobility': {
         borderColor: 'border-l-secondary-300',
         textColor: 'text-secondary-300',

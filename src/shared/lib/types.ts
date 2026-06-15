@@ -66,6 +66,7 @@ export type CategoryId =
     | 'leveraged-etf'
     | 'healthcare-bio'
     | 'quantum-computing'
+    | 'space'
     | 'ev-mobility'
     | 'energy-industrial';
 

@@ -46,6 +46,21 @@ describe('TICKER_CATEGORIES', () => {
         expect(megacap!.tickers).toContain('AAPL');
         expect(megacap!.tickers).toContain('MSFT');
     });
+
+    it('순수 우주 기업 카테고리를 포함한다', () => {
+        const space = TICKER_CATEGORIES.find(c => c.id === 'space');
+        expect(space).toBeDefined();
+        expect(space!.label).toBe('우주·항공우주');
+        expect(space!.tickers).toEqual([
+            'SPCX',
+            'RKLB',
+            'ASTS',
+            'LUNR',
+            'RDW',
+            'PL',
+            'SPCE',
+        ]);
+    });
 });
 
 describe('POPULAR_TICKERS', () => {
