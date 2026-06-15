@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.21.2](https://github.com/y0ngha/siglens/compare/v0.21.1...v0.21.2) (2026-06-15)
+
+
+### Bug Fixes
+
+* **review:** PR [#591](https://github.com/y0ngha/siglens/issues/591) — robots /api/ disallow on crawl-delay 그룹, AI crawl-delay 상수 export, longtail page size 10k ([a9b096d](https://github.com/y0ngha/siglens/commit/a9b096d4ea58ca7f49b31e497ecab10412f26ccb))
+* **review:** PR [#593](https://github.com/y0ngha/siglens/issues/593) — 캐시 키에 pageSize 값 직접 임베드(수동 버전 bump 제거) ([0a7b96b](https://github.com/y0ngha/siglens/commit/0a7b96b78187be8b444e90fa9d6bb21e002ff52c))
+* **sitemap:** longtail 캐시 키 v2 — page-size 변경 stale-cache 차단 + 감사 커버리지 보강 ([0f02887](https://github.com/y0ngha/siglens/commit/0f02887aa7c77e3f67ac8c3dbcce73345d1c0b7d)), closes [#591](https://github.com/y0ngha/siglens/issues/591)
+
+
+### Performance Improvements
+
+* **seo:** ISR 비용 절감 + 롱테일 sitemap 최적화 ([e5930b4](https://github.com/y0ngha/siglens/commit/e5930b4276e5dd5db37a0c254b4cef05722499f8))
+
 ## [0.21.1](https://github.com/y0ngha/siglens/compare/v0.21.0...v0.21.1) (2026-06-12)
 
 
