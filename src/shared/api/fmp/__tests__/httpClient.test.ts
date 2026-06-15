@@ -69,6 +69,25 @@ describe('fmpGet 함수는', () => {
             expect(calledUrl).toContain('symbol=AAPL');
         });
 
+        it('symbol 파라미터를 FMP 표기로 정규화한다 (BRK.B → BRK-B)', async () => {
+            mockOk({ data: 'test' });
+            await fmpGet('historical-price-eod/full', { symbol: 'BRK.B' });
+
+            const calledUrl = mockFetch.mock.calls[0]![0] as string;
+            // URLSearchParams percent-encodes the hyphen-bearing value's `-`? No —
+            // `-` is unreserved, so it stays literal; the dot would also be literal.
+            expect(calledUrl).toContain('symbol=BRK-B');
+            expect(calledUrl).not.toContain('symbol=BRK.B');
+        });
+
+        it('aliase가 없는 symbol은 그대로 전달한다', async () => {
+            mockOk({ data: 'test' });
+            await fmpGet('profile', { symbol: 'AAPL' });
+
+            const calledUrl = mockFetch.mock.calls[0]![0] as string;
+            expect(calledUrl).toContain('symbol=AAPL');
+        });
+
         it('쿼리 파라미터 없이도 동작한다', async () => {
             mockOk([]);
             await fmpGet('stock-list');
