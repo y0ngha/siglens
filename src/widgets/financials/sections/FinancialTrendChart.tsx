@@ -100,20 +100,21 @@ export function FinancialTrendChart({
 }: FinancialTrendChartProps) {
     const n = periods.length;
     const seriesCount = series.length;
+    if (n === 0 || seriesCount === 0) return null;
 
     const allValues: number[] = series.flatMap(s =>
         s.values.filter((v): v is number => v !== null)
     );
 
-    const maxAbs =
-        allValues.length > 0 ? Math.max(...allValues.map(Math.abs)) : 1;
+    // reduce keeps this O(n) and stack-safe regardless of array size
+    // (Math.max(...spread) overflows the call stack on very large inputs).
+    const maxAbs = allValues.reduce((m, v) => Math.max(m, Math.abs(v)), 0) || 1;
     const hasNegative = allValues.some(v => v < 0);
 
     const barGroupWidth = (100 - (SVG_PADDING_LEFT + SVG_PADDING_RIGHT)) / n;
     const barPadding = barGroupWidth * 0.1;
     const singleBarWidth = (barGroupWidth - barPadding * 2) / seriesCount;
 
-    // 음수 값이 있으면 baseline을 중앙에 둬 양/음 막대가 위아래로 갈라지게 한다.
     const baselineY = hasNegative
         ? SVG_PADDING_TOP + CHART_HEIGHT / 2
         : SVG_PADDING_TOP + CHART_HEIGHT;

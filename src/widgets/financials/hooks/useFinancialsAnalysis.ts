@@ -23,7 +23,6 @@ export type FinancialsAnalysisState =
     | { status: 'bot_blocked' }
     | { status: 'error'; error: Error; retry: () => void };
 
-// AbortSignal로 unmount 시 폴링을 즉시 종료한다.
 // onJobId는 두 번째 인자(expectedCurrent)를 받으면 ref가 일치할 때만 갱신한다 →
 // retry/queryKey 변경으로 새 실행이 시작된 뒤에도 이전 실행의 finally가
 // 새 jobId를 null로 덮어쓰지 않는다.
