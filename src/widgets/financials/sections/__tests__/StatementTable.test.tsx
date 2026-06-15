@@ -106,4 +106,39 @@ describe('StatementTable', () => {
             expect(row.querySelectorAll('td').length).toBe(4);
         });
     });
+
+    it('applies text-chart-bullish class to positive values', () => {
+        const { container } = render(
+            <StatementTable
+                columns={['2024']}
+                rows={[{ labelKo: '매출', values: [500], format: 'num' }]}
+            />
+        );
+        const td = container.querySelector('td.text-chart-bullish');
+        expect(td).not.toBeNull();
+    });
+
+    it('applies text-chart-bearish class to negative values', () => {
+        const { container } = render(
+            <StatementTable
+                columns={['2024']}
+                rows={[{ labelKo: '손실', values: [-200], format: 'num' }]}
+            />
+        );
+        const td = container.querySelector('td.text-chart-bearish');
+        expect(td).not.toBeNull();
+    });
+
+    it('applies no color class (default) to zero values', () => {
+        const { container } = render(
+            <StatementTable
+                columns={['2024']}
+                rows={[{ labelKo: '손익분기', values: [0], format: 'num' }]}
+            />
+        );
+        const td = container.querySelector('td.font-mono');
+        expect(td).not.toBeNull();
+        expect(td?.className).not.toContain('text-chart-bullish');
+        expect(td?.className).not.toContain('text-chart-bearish');
+    });
 });

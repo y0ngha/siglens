@@ -22,7 +22,7 @@ interface FinancialTrendChartProps {
 
 const SVG_HEIGHT = 120;
 const SVG_PADDING_TOP = 8;
-const SVG_PADDING_BOTTOM = 32; // room for x-axis labels
+const SVG_PADDING_BOTTOM = 8;
 const SVG_PADDING_LEFT = 4;
 const SVG_PADDING_RIGHT = 4;
 const CHART_HEIGHT = SVG_HEIGHT - SVG_PADDING_TOP - SVG_PADDING_BOTTOM;
@@ -197,25 +197,6 @@ export function FinancialTrendChart({
                         );
                     })
                 )}
-
-                {periods.map((p, pi) => {
-                    const groupCenter =
-                        SVG_PADDING_LEFT +
-                        pi * barGroupWidth +
-                        barGroupWidth / 2;
-                    return (
-                        <text
-                            key={p}
-                            x={`${groupCenter}%`}
-                            y={SVG_HEIGHT - 6}
-                            textAnchor="middle"
-                            className="fill-secondary-500 text-[6px]"
-                            fontSize="6"
-                        >
-                            {p}
-                        </text>
-                    );
-                })}
             </svg>
 
             <div className="mt-1 flex justify-between">

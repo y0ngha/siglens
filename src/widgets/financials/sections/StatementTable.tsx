@@ -105,7 +105,7 @@ export function StatementTable({
                                                 : isNegative
                                                   ? 'text-chart-bearish'
                                                   : isPositive
-                                                    ? ''
+                                                    ? 'text-chart-bullish'
                                                     : ''
                                         )}
                                     >

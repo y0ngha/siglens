@@ -23,14 +23,16 @@ describe('FinancialTrendChart', () => {
         expect(container.querySelector('svg')).toBeInTheDocument();
     });
 
-    it('renders period labels', () => {
-        render(
+    it('renders period labels exactly once in the external div (not in SVG)', () => {
+        const { container } = render(
             <FinancialTrendChart series={BASE_SERIES} periods={BASE_PERIODS} />
         );
-        // Period labels appear in both SVG text elements and visible spans below
-        expect(screen.getAllByText('2022').length).toBeGreaterThan(0);
-        expect(screen.getAllByText('2023').length).toBeGreaterThan(0);
-        expect(screen.getAllByText('2024').length).toBeGreaterThan(0);
+        // Each period label appears exactly once — in the external <div>, not in the aria-hidden SVG
+        expect(screen.getAllByText('2022')).toHaveLength(1);
+        expect(screen.getAllByText('2023')).toHaveLength(1);
+        expect(screen.getAllByText('2024')).toHaveLength(1);
+        // SVG must not contain any <text> period labels
+        expect(container.querySelector('svg text')).toBeNull();
     });
 
     it('renders series legend labels', () => {
