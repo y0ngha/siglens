@@ -143,6 +143,19 @@ describe('YahooOptionsAdapter.fetchSnapshot', () => {
         expect(snapshot!.chains[1].expirationDate).toBe('2026-05-22');
     });
 
+    it('uses the Yahoo alias while preserving the requested canonical symbol', async () => {
+        mockOptionsMethod.mockResolvedValue({
+            ...FULL_FIXTURE,
+            underlyingSymbol: 'BRK-B',
+        });
+        const adapter = makeAdapter();
+
+        const snapshot = await adapter.fetchSnapshot('BRK.B');
+
+        expect(mockOptionsMethod).toHaveBeenCalledWith('BRK-B');
+        expect(snapshot!.symbol).toBe('BRK.B');
+    });
+
     it('sorts calls and puts ascending by strike within each chain', async () => {
         mockOptionsMethod.mockResolvedValue(FULL_FIXTURE);
         const adapter = makeAdapter();
@@ -306,6 +319,43 @@ describe('YahooOptionsAdapter.fetchSnapshot', () => {
         ]);
     });
 
+    it('추가 만기 fetch에도 Yahoo alias를 사용한다', async () => {
+        (mapExpirationsToSlots as Mock).mockReturnValue([
+            {
+                slot: { key: '2M', label: '2개월', targetDays: 60 },
+                expirationDate: '2026-07-18',
+            },
+        ]);
+        const initialFixture = {
+            ...FULL_FIXTURE,
+            underlyingSymbol: 'BRK-B',
+            options: [FULL_FIXTURE.options[0]],
+        };
+        const additionalExpDate = new Date('2026-07-18T00:00:00.000Z');
+        const additionalFixture = {
+            ...FULL_FIXTURE,
+            underlyingSymbol: 'BRK-B',
+            options: [
+                {
+                    expirationDate: additionalExpDate,
+                    hasMiniOptions: false,
+                    calls: [makeContract(195, 'C')],
+                    puts: [makeContract(195, 'P')],
+                },
+            ],
+        };
+        mockOptionsMethod
+            .mockResolvedValueOnce(initialFixture)
+            .mockResolvedValueOnce(additionalFixture);
+
+        const adapter = makeAdapter();
+        await adapter.fetchSnapshot('BRK.B');
+
+        expect(mockOptionsMethod).toHaveBeenNthCalledWith(2, 'BRK-B', {
+            date: new Date('2026-07-18T00:00:00.000Z'),
+        });
+    });
+
     it('추가 만기 fetch가 실패해도 그 만기만 누락된 채 스냅샷을 반환한다', async () => {
         const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
         (mapExpirationsToSlots as Mock).mockReturnValue([
@@ -388,6 +438,15 @@ describe('YahooOptionsAdapter.hasOptionsMarket', () => {
         const result = await adapter.hasOptionsMarket('AAPL');
 
         expect(result).toBe(true);
+    });
+
+    it('uses the Yahoo alias for the market probe', async () => {
+        mockOptionsMethod.mockResolvedValue(FULL_FIXTURE);
+        const adapter = makeAdapter();
+
+        await adapter.hasOptionsMarket('BRK.B');
+
+        expect(mockOptionsMethod).toHaveBeenCalledWith('BRK-B');
     });
 
     it('returns false when expirationDates is empty', async () => {

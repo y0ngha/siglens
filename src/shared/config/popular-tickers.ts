@@ -31,7 +31,7 @@ export const TICKER_CATEGORIES: readonly TickerCategory[] = [
     {
         id: 'fintech-crypto',
         label: '핀테크·크립토',
-        tickers: ['COIN', 'MSTR', 'HOOD', 'SQ', 'PYPL', 'SOFI', 'AFRM'],
+        tickers: ['COIN', 'MSTR', 'HOOD', 'XYZ', 'PYPL', 'SOFI', 'AFRM'],
     },
     {
         id: 'leveraged-etf',
@@ -137,7 +137,7 @@ export const POPULAR_TICKERS = [
     'CLSK',
     'WULF',
     'HOOD',
-    'SQ',
+    'XYZ',
     'PYPL',
     'SOFI',
     'AFRM',

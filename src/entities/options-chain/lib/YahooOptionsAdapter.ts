@@ -10,6 +10,7 @@ import {
     mapExpirationsToSlots,
     sanitizeOptionsChain,
 } from '@y0ngha/siglens-core';
+import { toYahooSymbol } from '@/shared/lib/yahooSymbol';
 import type {
     OptionsChain,
     OptionsDataProvider,
@@ -52,7 +53,8 @@ export class YahooOptionsAdapter implements OptionsDataProvider {
      */
     async fetchSnapshot(symbol: string): Promise<OptionsSnapshot | null> {
         try {
-            const initial = await yahooFinance.options(symbol);
+            const yahooSymbol = toYahooSymbol(symbol);
+            const initial = await yahooFinance.options(yahooSymbol);
 
             if (!initial.options || initial.options.length === 0) {
                 return null;
@@ -85,7 +87,7 @@ export class YahooOptionsAdapter implements OptionsDataProvider {
             const additional = await Promise.all(
                 missingIsos.map(iso =>
                     yahooFinance
-                        .options(symbol, {
+                        .options(yahooSymbol, {
                             date: new Date(`${iso}T00:00:00.000Z`),
                         })
                         .then(
@@ -119,6 +121,7 @@ export class YahooOptionsAdapter implements OptionsDataProvider {
             // is present at runtime across all Quote union members.
             const combined = {
                 ...(initial as unknown as YahooOptionsResult),
+                underlyingSymbol: symbol,
                 options: [...mergedByIso.values()],
             } as YahooOptionsResult;
 
@@ -158,7 +161,7 @@ export class YahooOptionsAdapter implements OptionsDataProvider {
      */
     async hasOptionsMarket(symbol: string): Promise<boolean> {
         try {
-            const response = await yahooFinance.options(symbol);
+            const response = await yahooFinance.options(toYahooSymbol(symbol));
             return (response.expirationDates?.length ?? 0) > 0;
         } catch (err) {
             console.warn(

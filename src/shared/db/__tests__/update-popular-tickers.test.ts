@@ -1,9 +1,22 @@
 import {
     collectPopularOptionsTickers,
+    createYahooOptionsProbe,
     deduplicatePopularTickerEntries,
     renderPopularOptionsTickersFile,
     writePopularTickerArtifacts,
 } from '../../../../update-popular-tickers';
+
+describe('createYahooOptionsProbe', () => {
+    it('uses the Yahoo alias before probing options', async () => {
+        const options = vi.fn().mockResolvedValue({
+            expirationDates: [new Date('2026-06-19T00:00:00.000Z')],
+        });
+        const probe = createYahooOptionsProbe({ options });
+
+        await expect(probe('BRK.B')).resolves.toBe(true);
+        expect(options).toHaveBeenCalledWith('BRK-B');
+    });
+});
 
 describe('deduplicatePopularTickerEntries', () => {
     it('POPULAR_TICKERS 배열에서 첫 등장 티커만 유지한다', () => {

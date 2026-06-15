@@ -40,6 +40,7 @@ export const POPULAR_OPTIONS_TICKERS = [
     'BMNR',
     'BMY',
     'BP',
+    'BRK.B',
     'BSX',
     'BTQ',
     'C',
@@ -239,6 +240,7 @@ export const POPULAR_OPTIONS_TICKERS = [
     'WULF',
     'XOM',
     'XPEV',
+    'XYZ',
     'ZM',
     'ZS',
 ] as const;

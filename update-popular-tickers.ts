@@ -28,6 +28,7 @@ import {
     writeFileSync,
 } from 'fs';
 import { dirname, resolve } from 'path';
+import { toYahooSymbol } from '@/shared/lib/yahooSymbol';
 import YahooFinance from 'yahoo-finance2';
 
 // --- Constants ---
@@ -94,6 +95,10 @@ export interface DeduplicatePopularTickersResult {
 }
 
 export type OptionsMarketProbe = (symbol: string) => Promise<boolean>;
+
+export interface YahooOptionsProbeClient {
+    options(symbol: string): Promise<unknown>;
+}
 
 export interface PopularTickerArtifactWriters {
     writeAll: (
@@ -210,12 +215,17 @@ export async function writePopularTickerArtifacts(
     await writers.writeAll(popularContent, optionsContent);
 }
 
-export function createYahooOptionsProbe(): OptionsMarketProbe {
-    const yahooFinance = new YahooFinance({ suppressNotices: ['yahooSurvey'] });
+export function createYahooOptionsProbe(
+    client: YahooOptionsProbeClient = new YahooFinance({
+        suppressNotices: ['yahooSurvey'],
+    })
+): OptionsMarketProbe {
+    const yahooFinance = client;
 
     return async (symbol: string): Promise<boolean> => {
         try {
-            const response = (await yahooFinance.options(symbol)) as {
+            const yahooSymbol = toYahooSymbol(symbol);
+            const response = (await yahooFinance.options(yahooSymbol)) as {
                 expirationDates?: unknown;
             };
             if (!Array.isArray(response.expirationDates)) {
