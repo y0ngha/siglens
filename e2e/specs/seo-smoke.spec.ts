@@ -52,4 +52,29 @@ test.describe('seo smoke', () => {
             expect(response.headers()['content-type']).toMatch(/image\/png/);
         });
     }
+
+    // robots.txt는 unit 테스트가 객체를 검증하지만, 실제 직렬화된 본문(크롤러가 보는 것)이
+    // AI-bot 정책을 담고 있는지는 unit이 못 잡는다. 본문을 직접 probe해 직렬화 회귀를 막는다.
+    test('/robots.txt body advertises the AI-bot policy + /api/ disallow + sitemap', async ({
+        page,
+    }) => {
+        const response = await page.request.get('/robots.txt');
+        expect(response.status()).toBe(200);
+        const body = await response.text();
+        expect(body).toContain('GPTBot'); // AI 학습봇 Disallow 그룹
+        expect(body).toMatch(/Crawl-delay:\s*60/i); // AI 검색/Anthropic crawl-delay
+        expect(body).toContain('Disallow: /api/');
+        expect(body).toMatch(/Sitemap:\s*\S+\/sitemap\.xml/i);
+    });
+
+    // long-tail sub-sitemap 라우트는 unit-mock만 돼 있어 next.config rewrite
+    // (/sitemap-longtail-{n}.xml → /api/sitemap/longtail/{n})가 e2e로 검증된 적이 없다.
+    // 범위 밖 페이지는 DB 시드와 무관하게 핸들러가 자체 404를 반환하므로, rewrite+핸들러
+    // 결선을 결정적으로 검증한다(MAX_LONGTAIL_SITEMAP_PAGE=10000 초과 → 404).
+    test('/sitemap-longtail-99999.xml (out-of-range) routes to the handler and 404s', async ({
+        page,
+    }) => {
+        const response = await page.request.get('/sitemap-longtail-99999.xml');
+        expect(response.status()).toBe(404);
+    });
 });

@@ -155,7 +155,7 @@ Expected: 매치 없음(빌더·테스트에서 모두 제거됨). 매치가 남
 ```
  *   - /sitemap-longtail-{n}.xml : long-tail 종목당 메인 차트(/TICKER) 1 URL, page당 LONGTAIL_TICKERS_PER_PAGE tickers
 ```
-(코드 로직은 불변 — `LONGTAIL_TICKERS_PER_PAGE`=2000 유지, 1 URL/티커라 파일당 2000 URL로 50k 한도 내.)
+(PR #591 리뷰 반영으로 `LONGTAIL_TICKERS_PER_PAGE` 2000→**10000** 상향 — 1 URL/티커라 파일당 10000 URL로 50k 한도 내이며, sub-sitemap 파일 수가 줄어 dynamic `/sitemap-longtail-{n}.xml` 함수 호출이 감소한다.)
 
 - [ ] **Step 7: 인접 테스트 회귀 확인**
 
