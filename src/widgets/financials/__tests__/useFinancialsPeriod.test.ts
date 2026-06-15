@@ -57,7 +57,7 @@ async function importHook() {
 }
 
 async function importStateMachine() {
-    const mod = await import('../hooks/useFinancialsPeriod');
+    const mod = await import('../utils/financialsPeriodUtils');
     return mod.fetchAndApplyQuarterSnapshot;
 }
 

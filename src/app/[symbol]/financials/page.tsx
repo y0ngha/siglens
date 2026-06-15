@@ -156,10 +156,7 @@ export default async function FinancialsPage({ params }: Props) {
 
     const breadcrumbJsonLd = buildBreadcrumbJsonLd([
         { name: upper, url: buildSymbolSeoContent(upper).url },
-        {
-            name: '재무제표',
-            url: buildSymbolFinancialsSeoContent(upper).url,
-        },
+        { name: '재무제표', url },
     ]);
 
     const faqJsonLd = {

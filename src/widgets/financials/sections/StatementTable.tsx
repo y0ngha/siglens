@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { cn } from '@/shared/lib/cn';
+import { usdFormatter } from '../utils/numberFormat';
 
 type FormatType = 'usd' | 'pct' | 'num';
 
@@ -22,14 +23,6 @@ interface StatementTableProps {
     columns: string[];
     rows: TableRow[];
 }
-
-/** Compact USD formatter: $1.2B, $340M, $5K */
-const usdFormatter = new Intl.NumberFormat('en-US', {
-    notation: 'compact',
-    maximumFractionDigits: 1,
-    style: 'currency',
-    currency: 'USD',
-});
 
 /** Format a financial value based on its type. Returns '—' for null. */
 function formatValue(value: number | null, format: FormatType = 'num'): string {

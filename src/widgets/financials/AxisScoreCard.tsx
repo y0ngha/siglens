@@ -9,6 +9,7 @@ import type {
     ScoreMetricUnit,
 } from '@y0ngha/siglens-core';
 import { cn } from '@/shared/lib/cn';
+import { usdFormatter } from './utils/numberFormat';
 
 interface AxisScoreCardProps {
     /** Korean axis title displayed as the card heading. */
@@ -34,15 +35,6 @@ const SIGNAL_CHIP_CLASS: Record<FinancialSignalDirection, string> = {
     negative: 'bg-chart-bearish/10 text-chart-bearish border-chart-bearish/20',
     neutral: 'bg-secondary-700 text-secondary-400 border-secondary-600',
 };
-
-// Module-level to avoid re-creating the (locale-parsing, expensive) formatter on
-// every call — same config as StatementTable.tsx's usdFormatter.
-const usdFormatter = new Intl.NumberFormat('en-US', {
-    notation: 'compact',
-    maximumFractionDigits: 1,
-    style: 'currency',
-    currency: 'USD',
-});
 
 /**
  * Format a ScoreMetric value according to its unit.
