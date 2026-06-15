@@ -1,7 +1,9 @@
 import type { MetadataRoute } from 'next';
 import { SITE_URL } from '@/shared/lib/seo';
 
-const ANTHROPIC_CRAWL_DELAY_SECONDS = 60;
+// AI 크롤러(ClaudeBot·Perplexity·OAI 등) 공통 crawl-delay(초). 차단 대신 빈도만 낮추는
+// 그룹들이 재사용하므로 export해 테스트가 리터럴 대신 이 상수를 참조하도록 한다.
+export const AI_CRAWLER_CRAWL_DELAY_SECONDS = 60;
 // Claude-User는 사용자 요청에 따른 단발성 조회이므로 백그라운드 크롤러만 제한한다.
 const ANTHROPIC_CRAWLER_USER_AGENTS = ['ClaudeBot', 'Claude-SearchBot'];
 
@@ -29,6 +31,29 @@ const GOOGLE_NON_SEARCH_USER_AGENTS = [
     'GoogleOther-Video',
 ];
 
+// AI 학습/콘텐츠 스크레이퍼 크롤러. 검색 색인에 기여하지 않으면서 종목 페이지 전수를 크롤해
+// 봇 first-gen ISR write 비용만 유발하므로 전면 Disallow한다. ⚠️ Google-Extended는 Gemini/Vertex
+// '학습' opt-out 토큰으로 검색 색인(Googlebot)과 무관 — GoogleOther 계열과 혼동 금지.
+// 검색 색인 봇(Googlebot/Yeti/Bingbot/Daumoa)은 절대 포함하지 않는다.
+const AI_TRAINING_CRAWLER_USER_AGENTS = [
+    'GPTBot',
+    'Google-Extended',
+    'Applebot-Extended',
+    'Bytespider',
+    'CCBot',
+    'Meta-ExternalAgent',
+    'Amazonbot',
+    'anthropic-ai',
+    'cohere-ai',
+    'Diffbot',
+    'Omgilibot',
+    'ImagesiftBot',
+];
+
+// AI 검색·인용 크롤러. ChatGPT/Perplexity 검색의 인용 가시성을 보존하기 위해 차단 대신
+// crawlDelay로 빈도만 낮춘다(ClaudeBot과 동일 정책).
+const AI_SEARCH_CRAWLER_USER_AGENTS = ['PerplexityBot', 'OAI-SearchBot'];
+
 export default function robots(): MetadataRoute.Robots {
     return {
         rules: [
@@ -50,7 +75,10 @@ export default function robots(): MetadataRoute.Robots {
             {
                 userAgent: ANTHROPIC_CRAWLER_USER_AGENTS,
                 allow: '/',
-                crawlDelay: ANTHROPIC_CRAWL_DELAY_SECONDS,
+                // robots.txt는 가장 구체적인 그룹만 적용하고 `*` 그룹을 상속하지 않으므로,
+                // crawl-delay 그룹에도 /api/ disallow를 명시해야 한다(미명시 시 API 크롤 허용됨).
+                disallow: ['/api/'],
+                crawlDelay: AI_CRAWLER_CRAWL_DELAY_SECONDS,
             },
             {
                 userAgent: PARASITE_BOT_USER_AGENTS,
@@ -59,6 +87,17 @@ export default function robots(): MetadataRoute.Robots {
             {
                 userAgent: GOOGLE_NON_SEARCH_USER_AGENTS,
                 disallow: '/',
+            },
+            {
+                userAgent: AI_TRAINING_CRAWLER_USER_AGENTS,
+                disallow: '/',
+            },
+            {
+                userAgent: AI_SEARCH_CRAWLER_USER_AGENTS,
+                allow: '/',
+                // 위와 동일: 구체 그룹은 `*`의 /api/ disallow를 상속하지 않으므로 명시한다.
+                disallow: ['/api/'],
+                crawlDelay: AI_CRAWLER_CRAWL_DELAY_SECONDS,
             },
         ],
         sitemap: `${SITE_URL}/sitemap.xml`,

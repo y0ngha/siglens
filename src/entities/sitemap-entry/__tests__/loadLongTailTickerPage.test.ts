@@ -75,7 +75,7 @@ describe('loadLongTailTickerPage', () => {
             3,
             LONGTAIL_TICKERS_PER_PAGE
         );
-        expect(LONGTAIL_TICKERS_PER_PAGE).toBe(2_000);
+        expect(LONGTAIL_TICKERS_PER_PAGE).toBe(10_000);
     });
 
     it('uses different cache keys for different page numbers', async () => {
