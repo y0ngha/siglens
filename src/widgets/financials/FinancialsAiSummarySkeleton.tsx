@@ -33,7 +33,7 @@ export function FinancialsAiSummarySkeleton() {
             <div className="mt-4 space-y-2">
                 {[...Array(SKELETON_LINE_COUNT)].map((_, i) => (
                     <div
-                        key={i}
+                        key={`skeleton-line-${i}`}
                         className="bg-secondary-700 h-4 w-(--skeleton-w) animate-pulse rounded"
                         style={
                             {

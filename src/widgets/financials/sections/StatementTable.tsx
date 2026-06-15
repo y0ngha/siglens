@@ -79,9 +79,9 @@ export function StatementTable({
                     </tr>
                 </thead>
                 <tbody>
-                    {rows.map((row, i) => (
+                    {rows.map(row => (
                         <tr
-                            key={i}
+                            key={row.labelKo}
                             className="hover:bg-secondary-800/40 border-secondary-700/50 border-b transition-colors last:border-b-0"
                         >
                             <td className="text-secondary-300 py-2.5 pr-4 text-xs font-medium whitespace-nowrap">
@@ -97,7 +97,7 @@ export function StatementTable({
 
                                 return (
                                     <td
-                                        key={j}
+                                        key={columns[j]}
                                         className={cn(
                                             'py-2.5 text-right font-mono text-xs tabular-nums',
                                             formatted === '—'

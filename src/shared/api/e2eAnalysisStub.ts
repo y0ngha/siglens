@@ -7,6 +7,7 @@ import type {
     OverallAnalysisResponse,
     SubmitAnalysisGatedResult,
     SubmitFinancialsAnalysisCached,
+    SubmitFinancialsAnalysisFetchError,
     SubmitFundamentalAnalysisCached,
     SubmitNewsAnalysisCached,
     SubmitOptionsAnalysisCached,
@@ -111,11 +112,7 @@ export function e2eForcedOptionsError(): SubmitOptionsAnalysisNoChainsError {
  * financials analysis flow. Returned by `submitFinancialsAnalysisAction` (under
  * `E2E_TEST=1`) when `E2E_FORCE_FINANCIALS_ERROR_COOKIE` is present.
  */
-export function e2eForcedFinancialsError(): {
-    status: 'error';
-    code: 'fetch_failed';
-    error: string;
-} {
+export function e2eForcedFinancialsError(): SubmitFinancialsAnalysisFetchError {
     return {
         status: 'error',
         code: 'fetch_failed',

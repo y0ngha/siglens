@@ -19,7 +19,10 @@ export function FinancialsSummary({ bullets }: FinancialsSummaryProps) {
             </h2>
             <ul aria-label="재무 분석 항목" className="space-y-2">
                 {bullets.map((bullet, i) => (
-                    <li key={i} className="flex gap-2 text-sm">
+                    <li
+                        key={`bullet-${i}-${bullet}`}
+                        className="flex gap-2 text-sm"
+                    >
                         <span
                             aria-hidden="true"
                             className="text-secondary-400 mt-0.5 shrink-0"

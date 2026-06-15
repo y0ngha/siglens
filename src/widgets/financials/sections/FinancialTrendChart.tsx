@@ -124,10 +124,13 @@ export function FinancialTrendChart({
         <div className="w-full">
             {seriesCount > 1 && (
                 <div className="mb-2 flex flex-wrap gap-3">
-                    {series.map((s, i) => {
+                    {series.map(s => {
                         const c = s.color ?? 'neutral';
                         return (
-                            <div key={i} className="flex items-center gap-1">
+                            <div
+                                key={s.labelKo}
+                                className="flex items-center gap-1"
+                            >
                                 <span
                                     className={cn(
                                         'inline-block h-2 w-2 rounded-full',
@@ -215,7 +218,6 @@ export function FinancialTrendChart({
                 })}
             </svg>
 
-            {/* Accessible period labels below (visible text mirrors SVG text) */}
             <div className="mt-1 flex justify-between">
                 {periods.map(p => (
                     <span key={p} className="text-secondary-500 text-xs">

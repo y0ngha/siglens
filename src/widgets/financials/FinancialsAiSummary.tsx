@@ -92,7 +92,7 @@ function FinancialsAiSummaryView({ result }: FinancialsAiSummaryViewProps) {
                     <ul className="space-y-1.5">
                         {result.riskFactorsKo.map((risk, i) => (
                             <li
-                                key={i}
+                                key={`risk-${i}-${risk}`}
                                 className="text-secondary-400 flex gap-2 text-sm"
                             >
                                 <span

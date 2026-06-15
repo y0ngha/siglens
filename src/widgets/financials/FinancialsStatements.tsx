@@ -43,7 +43,7 @@ export function FinancialsStatements({
                         role="status"
                         aria-live="polite"
                     >
-                        <span className="border-secondary-500 h-3 w-3 animate-spin rounded-full border-2 border-t-transparent" />
+                        <span className="border-primary-500 h-3 w-3 animate-spin rounded-full border-2 border-t-transparent" />
                         불러오는 중...
                     </span>
                 )}

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import type { FinancialsSnapshot, StatementPeriod } from '@y0ngha/siglens-core';
 import { getFinancialsQuarterAction } from '@/entities/financials-statements/actions';
 
@@ -57,6 +57,21 @@ export function useFinancialsPeriod(
         useState<FinancialsSnapshot | null>(null);
     const [isLoading, setIsLoading] = useState(false);
 
+    /**
+     * Ref holding the latest `quarterSnapshot` value so that `setPeriod`'s
+     * `useCallback` can read it without listing it as a dependency. This keeps
+     * `setPeriod` stable across quarter-state changes — components receiving it
+     * as a prop (e.g. PeriodToggle) won't re-render solely because a snapshot
+     * arrived.
+     *
+     * Updated via `useEffect` (not inline during render) to satisfy the
+     * react-hooks/refs lint rule that forbids ref mutation during render.
+     */
+    const quarterSnapshotRef = useRef<FinancialsSnapshot | null>(null);
+    useEffect(() => {
+        quarterSnapshotRef.current = quarterSnapshot;
+    }, [quarterSnapshot]);
+
     const setPeriod = useCallback(
         (next: StatementPeriod) => {
             if (next === 'annual') {
@@ -65,7 +80,7 @@ export function useFinancialsPeriod(
             }
 
             // If we already have quarter data cached in state, swap immediately.
-            if (quarterSnapshot !== null) {
+            if (quarterSnapshotRef.current !== null) {
                 setPeriodState('quarter');
                 return;
             }
@@ -93,7 +108,7 @@ export function useFinancialsPeriod(
                     setIsLoading(false);
                 });
         },
-        [symbol, quarterSnapshot]
+        [symbol]
     );
 
     const snapshot =
