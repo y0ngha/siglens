@@ -50,14 +50,14 @@ describe('BalanceSheetSection', () => {
 
     it('renders total assets label', () => {
         render(<BalanceSheetSection rows={SAMPLE_ROWS} />);
-        // 총자산 appears in chart legend and table row
-        expect(screen.getAllByText('총자산').length).toBeGreaterThan(0);
+        // 총자산 appears in chart legend (1) + table row (1)
+        expect(screen.getAllByText('총자산')).toHaveLength(2);
     });
 
     it('renders total liabilities label', () => {
         render(<BalanceSheetSection rows={SAMPLE_ROWS} />);
-        // 총부채 appears in chart legend and table row
-        expect(screen.getAllByText('총부채').length).toBeGreaterThan(0);
+        // 총부채 appears in chart legend (1) + table row (1)
+        expect(screen.getAllByText('총부채')).toHaveLength(2);
     });
 
     it('renders net debt label', () => {
@@ -72,8 +72,8 @@ describe('BalanceSheetSection', () => {
 
     it('renders equity label', () => {
         render(<BalanceSheetSection rows={SAMPLE_ROWS} />);
-        // 자본 appears in chart legend and table row
-        expect(screen.getAllByText('자본').length).toBeGreaterThan(0);
+        // 자본 appears in chart legend (1) + table row (1)
+        expect(screen.getAllByText('자본')).toHaveLength(2);
     });
 
     it('renders current ratio label', () => {
@@ -90,8 +90,8 @@ describe('BalanceSheetSection', () => {
 
     it('renders fiscal year columns oldest→newest', () => {
         render(<BalanceSheetSection rows={SAMPLE_ROWS} />);
-        // Year labels appear in SVG text and visible spans
-        expect(screen.getAllByText('2023').length).toBeGreaterThan(0);
-        expect(screen.getAllByText('2024').length).toBeGreaterThan(0);
+        // Year labels appear in chart axis (1) + table column header (1)
+        expect(screen.getAllByText('2023')).toHaveLength(2);
+        expect(screen.getAllByText('2024')).toHaveLength(2);
     });
 });

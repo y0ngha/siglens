@@ -54,16 +54,14 @@ describe('StatementTable', () => {
 
     it('formats usd values as compact currency', () => {
         render(<StatementTable {...BASE_PROPS} />);
-        // $1B, $2B, $3B compact format
-        const cells = screen.getAllByText(/\$\d/);
-        expect(cells.length).toBeGreaterThan(0);
+        // $1B, $2B, $3B compact format — usd row has exactly 3 values
+        expect(screen.getAllByText(/\$\d/)).toHaveLength(3);
     });
 
     it('formats pct values with percent sign', () => {
         render(<StatementTable {...BASE_PROPS} />);
-        // 10% and 20%
-        const pctCells = screen.getAllByText(/%/);
-        expect(pctCells.length).toBeGreaterThan(0);
+        // 10% and 20% (third value is null → em-dash, not %)
+        expect(screen.getAllByText(/%/)).toHaveLength(2);
     });
 
     it('formats num values as numbers', () => {
@@ -75,14 +73,14 @@ describe('StatementTable', () => {
 
     it('renders em-dash for null values', () => {
         render(<StatementTable {...BASE_PROPS} />);
-        const dashes = screen.getAllByText('—');
-        expect(dashes.length).toBeGreaterThan(0);
+        // only 순이익률 row has a single null value
+        expect(screen.getAllByText('—')).toHaveLength(1);
     });
 
     it('applies font-mono tabular-nums to value cells', () => {
         const { container } = render(<StatementTable {...BASE_PROPS} />);
-        const tds = container.querySelectorAll('td.font-mono');
-        expect(tds.length).toBeGreaterThan(0);
+        // 3 rows × 3 value columns = 9 mono value cells
+        expect(container.querySelectorAll('td.font-mono')).toHaveLength(9);
     });
 
     it('renders tooltip content when provided', () => {

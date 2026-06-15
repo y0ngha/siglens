@@ -58,7 +58,11 @@ export async function fetchAndApplyQuarterSnapshot(
             return;
         }
         ctx.setQuarterSnapshot(data);
-    } catch {
+    } catch (error) {
+        console.warn(
+            '[fetchAndApplyQuarterSnapshot] quarter fetch failed, falling back to annual:',
+            error
+        );
         ctx.setPeriodState('annual');
     } finally {
         ctx.setIsLoading(false);

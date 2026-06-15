@@ -67,12 +67,12 @@ describe('IncomeStatementSection', () => {
 
     it('renders metric labels', () => {
         render(<IncomeStatementSection rows={SAMPLE_ROWS} />);
-        // 매출 appears in both chart legend and table — use getAllByText
-        expect(screen.getAllByText('매출').length).toBeGreaterThan(0);
+        // 매출 appears in chart legend (1) + table row (1)
+        expect(screen.getAllByText('매출')).toHaveLength(2);
         expect(screen.getByText('매출총이익')).toBeInTheDocument();
         expect(screen.getByText('영업이익')).toBeInTheDocument();
-        // 순이익 appears in both chart legend and table — use getAllByText
-        expect(screen.getAllByText('순이익').length).toBeGreaterThan(0);
+        // 순이익 appears in chart legend (1) + table row (1)
+        expect(screen.getAllByText('순이익')).toHaveLength(2);
         expect(screen.getByText('EPS')).toBeInTheDocument();
     });
 
@@ -85,15 +85,15 @@ describe('IncomeStatementSection', () => {
 
     it('renders em-dash for null operating income', () => {
         render(<IncomeStatementSection rows={SAMPLE_ROWS} />);
-        const dashes = screen.getAllByText('—');
-        expect(dashes.length).toBeGreaterThan(0);
+        // 2022 row: operatingIncome + operatingMargin both null → 2 em-dashes
+        expect(screen.getAllByText('—')).toHaveLength(2);
     });
 
     it('renders fiscal year labels as columns (oldest→newest)', () => {
         render(<IncomeStatementSection rows={SAMPLE_ROWS} />);
-        // Year labels appear in both SVG text elements and visible spans
-        expect(screen.getAllByText('2022').length).toBeGreaterThan(0);
-        expect(screen.getAllByText('2024').length).toBeGreaterThan(0);
+        // Year labels appear in chart axis (1) + table column header (1)
+        expect(screen.getAllByText('2022')).toHaveLength(2);
+        expect(screen.getAllByText('2024')).toHaveLength(2);
     });
 
     it('renders trend chart', () => {
