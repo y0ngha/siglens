@@ -163,6 +163,43 @@ interface FmpQuote {
 
 ---
 
+### 4. Financial Statements (재무제표 6종)
+
+`/[symbol]/financials` 탭이 사용. 모두 동일한 query parameter 형태를 가지며,
+`FmpFinancialStatementsClient`(`src/shared/api/fmp/financialStatementsClient.ts`)가
+호출한다.
+
+| # | Endpoint | 메서드 | 설명 |
+|---|---|---|---|
+| 1 | `/stable/income-statement` | GET | 손익계산서 (매출·이익·EPS) |
+| 2 | `/stable/balance-sheet-statement` | GET | 재무상태표 (자산·부채·자본) |
+| 3 | `/stable/cash-flow-statement` | GET | 현금흐름표 (영업·투자·재무 CF) |
+| 4 | `/stable/income-statement-growth` | GET | 손익 성장률 (YoY) |
+| 5 | `/stable/financial-growth` | GET | 재무 성장률 (매출·이익·FCF YoY) |
+| 6 | `/stable/cash-flow-statement-growth` | GET | 현금흐름 성장률 (YoY) |
+
+**Query Parameters (6종 공통)**
+
+| 파라미터 | 타입 | 필수 | 설명 |
+|----------|------|------|------|
+| symbol | string | ✅ | 종목 심볼 |
+| period | string | ✅ | `annual` 또는 `quarter` |
+| limit | number | ✅ | 반환 기간 수 (annual 5, quarter 8). 캐시 오염 방지를 위해 항상 MAX로 fetch 후 slice |
+| apikey | string | ✅ | FMP API 키 |
+
+**Request 예시**
+
+```
+GET /stable/income-statement?symbol=AAPL&period=annual&limit=5&apikey={key}
+```
+
+**주의사항**
+- 6종을 `Promise.all`로 병합해 단일 `FinancialsSnapshot`으로 정규화 (core의 `normalizeFinancialsSnapshot`)
+- 마진·성장률 등 파생값은 client에서 set하지 않고 core 정규화가 계산
+- 2계층 캐시(Next Data Cache `fmpGet` revalidate + Redis `getOrSetCache`)가 단일 TTL 공유
+
+---
+
 ## 환경변수 전체 목록
 
 ```bash

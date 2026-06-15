@@ -1,4 +1,4 @@
-import type { MockedFunction } from 'vitest';
+// vi.mock → imports 순서 (MISTAKES.md Tests §17)
 vi.mock('@vercel/functions', () => ({
     waitUntil: vi.fn(),
 }));
@@ -39,6 +39,7 @@ vi.mock('@/shared/lib/byokGate', () => ({
     })),
 }));
 
+import type { MockedFunction } from 'vitest';
 import { headers } from 'next/headers';
 import {
     submitFinancialsAnalysis,

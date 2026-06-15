@@ -3,10 +3,7 @@ import type {
     FinancialsScorecard,
     FinancialsSnapshot,
 } from '@y0ngha/siglens-core';
-import {
-    getFinancialsSnapshot,
-    QUARTER_LIMIT,
-} from '@/entities/financials-statements/lib/getFinancialsSnapshot';
+import { getFinancialsSnapshot } from '@/entities/financials-statements';
 
 /**
  * 6-fetch+normalize는 entity lib(`entities/financials-statements/lib/getFinancialsSnapshot`)이
@@ -32,6 +29,3 @@ export async function getFinancialsPageData(
     const snapshot = await getFinancialsSnapshot(symbol);
     return { snapshot, scorecard: computeFinancialsScorecard(snapshot) };
 }
-
-/** 분기 데이터를 요청할 때 사용하는 기본 limit (8분기 ≈ 2년). */
-export const QUARTER_STATEMENT_LIMIT = QUARTER_LIMIT;

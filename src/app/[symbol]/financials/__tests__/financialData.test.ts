@@ -59,8 +59,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
     getFinancialsSnapshot,
     getFinancialsPageData,
-    QUARTER_STATEMENT_LIMIT,
 } from '@/app/[symbol]/financials/financialData';
+import { QUARTER_LIMIT } from '@/entities/financials-statements';
 import {
     computeFinancialsScorecard,
     normalizeFinancialsSnapshot,
@@ -199,9 +199,9 @@ describe('financialData', () => {
         });
     });
 
-    describe('QUARTER_STATEMENT_LIMIT', () => {
-        it('QUARTER_STATEMENT_LIMIT은 8이다', () => {
-            expect(QUARTER_STATEMENT_LIMIT).toBe(8);
+    describe('QUARTER_LIMIT', () => {
+        it('QUARTER_LIMIT은 8이다', () => {
+            expect(QUARTER_LIMIT).toBe(8);
         });
     });
 });

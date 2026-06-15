@@ -1,6 +1,6 @@
 import { getFinancialsPageData } from '@/app/[symbol]/financials/financialData';
 import { getProfileResilient } from '@/app/[symbol]/fundamental/getProfileResilient';
-import { FinancialsDegraded } from './FinancialsDegraded';
+import { FinancialsDegraded } from '@/app/[symbol]/financials/FinancialsDegraded';
 import { FinancialsAiSummary } from '@/widgets/financials/FinancialsAiSummary';
 import { FinancialsScorecard } from '@/widgets/financials/FinancialsScorecard';
 import { FinancialsStatements } from '@/widgets/financials/FinancialsStatements';
