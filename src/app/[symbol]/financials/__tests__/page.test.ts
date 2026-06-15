@@ -60,6 +60,8 @@ vi.mock('next/navigation', () => ({
     notFound: vi.fn(),
 }));
 
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { generateMetadata, revalidate } from '@/app/[symbol]/financials/page';
 import { getAssetInfoResilient } from '@/entities/ticker';
@@ -196,14 +198,20 @@ describe('generateMetadata', () => {
 });
 
 describe('Financials page JSON-LD schema types', () => {
-    it('page.tsx contains WebPage schema type', () => {
-        // Structural assertion: verifies '@type': 'WebPage' exists in page source.
-        // The actual JSON-LD objects are constructed in the page component body and
-        // passed to <JsonLd> — we verify the schema strings are present in the module.
-        const pageSource = `
-            '@type': 'WebPage'
-        `;
-        expect(pageSource).toContain("'WebPage'");
+    // The JSON-LD objects are constructed inside the page component body (not
+    // exported), so we assert against the actual page.tsx source on disk rather
+    // than a locally-redeclared string (which would be tautological — §13.5).
+    const pageSource = readFileSync(
+        fileURLToPath(new URL('../page.tsx', import.meta.url)),
+        'utf8'
+    );
+
+    it('page.tsx emits a WebPage schema type', () => {
+        expect(pageSource).toContain("'@type': 'WebPage'");
+    });
+
+    it('page.tsx emits a FAQPage schema type', () => {
+        expect(pageSource).toContain("'@type': 'FAQPage'");
     });
 
     it('buildBreadcrumbJsonLd produces a BreadcrumbList schema', async () => {
@@ -213,13 +221,5 @@ describe('Financials page JSON-LD schema types', () => {
             { name: '재무제표', url: '/AAPL/financials' },
         ]);
         expect(result['@type']).toBe('BreadcrumbList');
-    });
-
-    it('page.tsx contains FAQPage schema type', () => {
-        // Structural assertion for FAQPage presence.
-        const pageSource = `
-            '@type': 'FAQPage'
-        `;
-        expect(pageSource).toContain("'FAQPage'");
     });
 });

@@ -93,4 +93,15 @@ describe('AxisScoreCard', () => {
         render(<AxisScoreCard title="성장성" axis={SAMPLE_AXIS} />);
         expect(screen.getByText('72')).toBeInTheDocument();
     });
+
+    it('drives the progress bar width via the --axis-score-pct CSS variable', () => {
+        const { container } = render(
+            <AxisScoreCard title="성장성" axis={SAMPLE_AXIS} />
+        );
+        const track = container.querySelector<HTMLElement>(
+            '[style*="--axis-score-pct"]'
+        );
+        expect(track).not.toBeNull();
+        expect(track?.style.getPropertyValue('--axis-score-pct')).toBe('72%');
+    });
 });

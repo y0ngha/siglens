@@ -5,13 +5,13 @@ import { EmptySectionCard } from './EmptySectionCard';
 import { StatementTable } from './StatementTable';
 import { FinancialTrendChart } from './FinancialTrendChart';
 import { toDisplayOrder } from './toDisplayOrder';
+import { HEADING_CLASS_NAME } from './constants';
 
 interface BalanceSheetSectionProps {
     rows: BalanceSheetRow[];
 }
 
 const HEADING_ID = 'balance-sheet-heading';
-const HEADING_CLASS_NAME = 'mb-4 text-lg font-semibold tracking-tight';
 const TITLE = '재무상태표';
 
 /**

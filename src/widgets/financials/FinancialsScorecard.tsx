@@ -47,7 +47,6 @@ export function FinancialsScorecard({ scorecard }: FinancialsScorecardProps) {
                 재무 종합 점수
             </h2>
 
-            {/* Composite gauge hero */}
             <div className="mb-8">
                 <CompositeGradeGauge
                     score={composite.score}
@@ -56,7 +55,6 @@ export function FinancialsScorecard({ scorecard }: FinancialsScorecardProps) {
                 />
             </div>
 
-            {/* 4-axis cards: 2-col on mobile, 4-col on desktop */}
             <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
                 {axes.map(({ key, title, axis }) => (
                     <AxisScoreCard key={key} title={title} axis={axis} />

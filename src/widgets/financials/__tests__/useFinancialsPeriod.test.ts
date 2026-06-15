@@ -3,8 +3,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import type { FinancialsSnapshot } from '@y0ngha/siglens-core';
 
-// ── Mocks ────────────────────────────────────────────────────────────────────
-
 const mockGetFinancialsQuarterAction = vi.fn();
 
 vi.mock('@/entities/financials-statements/actions', () => ({
@@ -52,15 +50,11 @@ const EMPTY_SNAPSHOT: FinancialsSnapshot = {
     cashFlowGrowth: [],
 };
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
-
 // Lazy import so the vi.mock above registers first
 async function importHook() {
     const mod = await import('../hooks/useFinancialsPeriod');
     return mod.useFinancialsPeriod;
 }
-
-// ── Tests ────────────────────────────────────────────────────────────────────
 
 describe('useFinancialsPeriod', () => {
     beforeEach(() => {

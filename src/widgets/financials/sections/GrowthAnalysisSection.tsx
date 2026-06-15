@@ -2,14 +2,25 @@ import type { FinancialGrowthRow } from '@y0ngha/siglens-core';
 import { EmptySectionCard } from './EmptySectionCard';
 import { StatementTable } from './StatementTable';
 import { toDisplayOrder } from './toDisplayOrder';
+import { HEADING_CLASS_NAME } from './constants';
 
 interface GrowthAnalysisSectionProps {
     rows: FinancialGrowthRow[];
 }
 
 const HEADING_ID = 'growth-analysis-heading';
-const HEADING_CLASS_NAME = 'mb-4 text-lg font-semibold tracking-tight';
 const TITLE = '성장 분석';
+
+/**
+ * Convert a YoY growth fraction (e.g. 0.5) to a display percentage (50.0).
+ *
+ * `StatementTable format: 'pct'` formats as `value.toFixed(1) + '%'`, so the
+ * fraction must be multiplied by 100 before being handed to the table. Null
+ * propagates unchanged (no data for that period).
+ */
+function toPercent(v: number | null): number | null {
+    return v !== null ? v * 100 : null;
+}
 
 /**
  * Displays financial growth rates as a formatted table.
@@ -30,17 +41,6 @@ export function GrowthAnalysisSection({ rows }: GrowthAnalysisSectionProps) {
 
     const displayRows = toDisplayOrder(rows);
     const columns = displayRows.map(r => r.fiscalYear);
-
-    /**
-     * Growth fractions need to be converted to display percentages.
-     * e.g. 0.5 → 50.0% — we store as fraction but format as pct (×100 first).
-     *
-     * Since StatementTable `format: 'pct'` calls `value.toFixed(1) + '%'`,
-     * we convert fractions to % values here (multiply by 100).
-     */
-    function toPercent(v: number | null): number | null {
-        return v !== null ? v * 100 : null;
-    }
 
     const yoyRows = [
         {
@@ -65,7 +65,6 @@ export function GrowthAnalysisSection({ rows }: GrowthAnalysisSectionProps) {
         },
     ];
 
-    // Latest row (index 0 in original array = most recent) for per-share growth
     const latest = rows[0];
     const perShareRows = [
         {

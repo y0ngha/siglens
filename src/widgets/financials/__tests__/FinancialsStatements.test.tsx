@@ -4,8 +4,6 @@ import type { ReactNode } from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import type { FinancialsSnapshot } from '@y0ngha/siglens-core';
 
-// ── Fixture ──────────────────────────────────────────────────────────────────
-
 const EMPTY_SNAPSHOT: FinancialsSnapshot = {
     income: [],
     balance: [],
@@ -39,8 +37,6 @@ const QUARTER_SNAPSHOT: FinancialsSnapshot = {
     financialGrowth: [],
     cashFlowGrowth: [],
 };
-
-// ── Mocks ────────────────────────────────────────────────────────────────────
 
 const mockGetFinancialsQuarterAction = vi.fn();
 
@@ -91,8 +87,6 @@ vi.mock('@/widgets/financials/PeriodToggle', () => ({
         </div>
     ),
 }));
-
-// ── Tests ────────────────────────────────────────────────────────────────────
 
 describe('FinancialsStatements', () => {
     beforeEach(() => {

@@ -202,12 +202,10 @@ export default async function FinancialsPage({ params }: Props) {
                 {/* Visible h1 — one per page, SEO contract (matches fundamental page pattern) */}
                 <SymbolPageHeading>{upper} 재무제표</SymbolPageHeading>
 
-                {/* Scorecard hero — SSR-only, always annual */}
                 <FinancialsScorecard scorecard={scorecard} />
 
                 <FinancialsAiSummary symbol={upper} />
 
-                {/* Statement sections with annual/quarter toggle (client-driven) */}
                 <FinancialsStatements
                     symbol={upper}
                     annualSnapshot={snapshot}

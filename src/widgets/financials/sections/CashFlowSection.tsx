@@ -9,13 +9,13 @@ import { EmptySectionCard } from './EmptySectionCard';
 import { StatementTable } from './StatementTable';
 import { FinancialTrendChart } from './FinancialTrendChart';
 import { toDisplayOrder } from './toDisplayOrder';
+import { HEADING_CLASS_NAME } from './constants';
 
 interface CashFlowSectionProps {
     rows: CashFlowRow[];
 }
 
 const HEADING_ID = 'cash-flow-heading';
-const HEADING_CLASS_NAME = 'mb-4 text-lg font-semibold tracking-tight';
 const TITLE = '현금흐름표';
 
 /**

@@ -44,4 +44,44 @@ describe('getFinancialsQuarterAction', () => {
         const result = await getFinancialsQuarterAction('TSLA');
         expect(result).toBe(SNAPSHOT);
     });
+
+    describe('lib이 throw할 때 (§0.7)', () => {
+        it('예외를 전파하지 않고 EMPTY snapshot을 반환한다', async () => {
+            const consoleSpy = vi
+                .spyOn(console, 'error')
+                .mockImplementation(() => {});
+            mockGetFinancialsSnapshot.mockRejectedValueOnce(
+                new Error('FMP down')
+            );
+
+            const result = await getFinancialsQuarterAction('AAPL');
+
+            expect(result).toEqual({
+                income: [],
+                balance: [],
+                cashFlow: [],
+                incomeGrowth: [],
+                financialGrowth: [],
+                cashFlowGrowth: [],
+            });
+            consoleSpy.mockRestore();
+        });
+
+        it('catch에서 에러를 로깅한다', async () => {
+            const consoleSpy = vi
+                .spyOn(console, 'error')
+                .mockImplementation(() => {});
+            const error = new Error('FMP down');
+            mockGetFinancialsSnapshot.mockRejectedValueOnce(error);
+
+            await getFinancialsQuarterAction('AAPL');
+
+            expect(consoleSpy).toHaveBeenCalledWith(
+                '[getFinancialsQuarterAction] quarter fetch failed:',
+                'AAPL',
+                error
+            );
+            consoleSpy.mockRestore();
+        });
+    });
 });

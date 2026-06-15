@@ -118,4 +118,28 @@ describe('FinancialTrendChart', () => {
         const dots = container.querySelectorAll('span.rounded-full');
         expect(dots[0].className).toContain('bg-primary-500');
     });
+
+    it('renders no bars when every value is zero (maxAbs === 0 → height 0)', () => {
+        const series = [
+            { labelKo: '매출', values: [0, 0], color: 'neutral' as const },
+        ];
+        const { container } = render(
+            <FinancialTrendChart series={series} periods={['2023', '2024']} />
+        );
+        expect(container.querySelectorAll('rect').length).toBe(0);
+    });
+
+    it('renders no bars when every value is null (empty value set → maxAbs fallback)', () => {
+        const series = [
+            {
+                labelKo: '매출',
+                values: [null, null],
+                color: 'neutral' as const,
+            },
+        ];
+        const { container } = render(
+            <FinancialTrendChart series={series} periods={['2023', '2024']} />
+        );
+        expect(container.querySelectorAll('rect').length).toBe(0);
+    });
 });

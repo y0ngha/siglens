@@ -1,3 +1,4 @@
+import type React from 'react';
 import type {
     AxisScore,
     FinancialsGrade,
@@ -123,7 +124,6 @@ export function AxisScoreCard({ title, axis }: AxisScoreCardProps) {
             aria-labelledby={`axis-${title}-heading`}
             className="border-secondary-700 bg-secondary-800 flex flex-col gap-4 rounded-xl border p-6"
         >
-            {/* Heading row: title + grade badge */}
             <div className="flex items-center justify-between">
                 <h3
                     id={`axis-${title}-heading`}
@@ -141,7 +141,6 @@ export function AxisScoreCard({ title, axis }: AxisScoreCardProps) {
                 </span>
             </div>
 
-            {/* Score progress bar */}
             <div>
                 <div className="mb-1 flex items-baseline justify-between">
                     <span className="text-secondary-400 text-xs">점수</span>
@@ -149,18 +148,23 @@ export function AxisScoreCard({ title, axis }: AxisScoreCardProps) {
                         {score}
                     </span>
                 </div>
-                <div className="bg-secondary-700 h-1.5 w-full overflow-hidden rounded-full">
+                <div
+                    className="bg-secondary-700 h-1.5 w-full overflow-hidden rounded-full"
+                    style={
+                        {
+                            '--axis-score-pct': `${score}%`,
+                        } as React.CSSProperties
+                    }
+                >
                     <div
                         className={cn(
-                            'h-full rounded-full',
+                            'h-full w-[var(--axis-score-pct)] rounded-full',
                             progressColorClass
                         )}
-                        style={{ width: `${score}%` }}
                     />
                 </div>
             </div>
 
-            {/* Signal chips — only rendered when signals are present */}
             {signals.length > 0 && (
                 <div className="flex flex-wrap gap-1.5">
                     {signals.map(signal => (
@@ -169,7 +173,6 @@ export function AxisScoreCard({ title, axis }: AxisScoreCardProps) {
                 </div>
             )}
 
-            {/* Key metrics list */}
             {metrics.length > 0 && (
                 <div>
                     {metrics.map(metric => (

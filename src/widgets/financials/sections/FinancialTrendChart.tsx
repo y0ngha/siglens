@@ -27,10 +27,13 @@ const SVG_PADDING_LEFT = 4;
 const SVG_PADDING_RIGHT = 4;
 const CHART_HEIGHT = SVG_HEIGHT - SVG_PADDING_TOP - SVG_PADDING_BOTTOM;
 
-const COLOR_CLASSES: Record<
-    SeriesColor,
-    { fill: string; stroke: string; legend: string }
-> = {
+interface SeriesColorClasses {
+    fill: string;
+    stroke: string;
+    legend: string;
+}
+
+const COLOR_CLASSES: Record<SeriesColor, SeriesColorClasses> = {
     bullish: {
         fill: 'fill-chart-bullish/70',
         stroke: 'stroke-chart-bullish',
@@ -48,6 +51,41 @@ const COLOR_CLASSES: Record<
     },
 };
 
+function barHeight(
+    value: number,
+    maxAbs: number,
+    availableHeight: number
+): number {
+    if (maxAbs === 0) return 0;
+    return (Math.abs(value) / maxAbs) * availableHeight;
+}
+
+function barX(
+    periodIdx: number,
+    seriesIdx: number,
+    barGroupWidth: number,
+    barPadding: number,
+    singleBarWidth: number
+): string {
+    const groupStart =
+        SVG_PADDING_LEFT + periodIdx * barGroupWidth + barPadding;
+    return `${groupStart + seriesIdx * singleBarWidth}%`;
+}
+
+function barY(value: number, height: number, baselineY: number): number {
+    return value >= 0 ? baselineY - height : baselineY;
+}
+
+function resolveColor(
+    series: TrendSeries[],
+    seriesIdx: number,
+    value: number | null
+): SeriesColorClasses {
+    if (value !== null && value < 0) return COLOR_CLASSES.bearish;
+    const c = series[seriesIdx]?.color ?? 'neutral';
+    return COLOR_CLASSES[c];
+}
+
 /**
  * Inline SVG bar chart for multi-series N-year financial trend data.
  * RSC-safe: no chart library, pure SVG.
@@ -63,7 +101,6 @@ export function FinancialTrendChart({
     const n = periods.length;
     const seriesCount = series.length;
 
-    // Collect all non-null values to determine scale
     const allValues: number[] = series.flatMap(s =>
         s.values.filter((v): v is number => v !== null)
     );
@@ -72,46 +109,19 @@ export function FinancialTrendChart({
         allValues.length > 0 ? Math.max(...allValues.map(Math.abs)) : 1;
     const hasNegative = allValues.some(v => v < 0);
 
-    // Chart area geometry (in SVG viewBox units, using percentages for x)
     const barGroupWidth = (100 - (SVG_PADDING_LEFT + SVG_PADDING_RIGHT)) / n;
     const barPadding = barGroupWidth * 0.1;
     const singleBarWidth = (barGroupWidth - barPadding * 2) / seriesCount;
 
-    // Y baseline: if all positive → baseline at bottom; if mixed → baseline at midpoint
+    // 음수 값이 있으면 baseline을 중앙에 둬 양/음 막대가 위아래로 갈라지게 한다.
     const baselineY = hasNegative
         ? SVG_PADDING_TOP + CHART_HEIGHT / 2
         : SVG_PADDING_TOP + CHART_HEIGHT;
 
     const availableHeight = hasNegative ? CHART_HEIGHT / 2 : CHART_HEIGHT;
 
-    function barHeight(value: number): number {
-        if (maxAbs === 0) return 0;
-        return (Math.abs(value) / maxAbs) * availableHeight;
-    }
-
-    function barX(periodIdx: number, seriesIdx: number): string {
-        const groupStart =
-            SVG_PADDING_LEFT + periodIdx * barGroupWidth + barPadding;
-        return `${groupStart + seriesIdx * singleBarWidth}%`;
-    }
-
-    function barY(value: number): number {
-        const h = barHeight(value);
-        return value >= 0 ? baselineY - h : baselineY;
-    }
-
-    function resolveColor(
-        seriesIdx: number,
-        value: number | null
-    ): { fill: string; stroke: string } {
-        if (value !== null && value < 0) return COLOR_CLASSES.bearish;
-        const c = series[seriesIdx]?.color ?? 'neutral';
-        return COLOR_CLASSES[c];
-    }
-
     return (
         <div className="w-full">
-            {/* Legend */}
             {seriesCount > 1 && (
                 <div className="mb-2 flex flex-wrap gap-3">
                     {series.map((s, i) => {
@@ -149,7 +159,6 @@ export function FinancialTrendChart({
                 viewBox={`0 0 100 ${SVG_HEIGHT}`}
                 preserveAspectRatio="none"
             >
-                {/* Baseline */}
                 <line
                     x1={`${SVG_PADDING_LEFT}%`}
                     y1={baselineY}
@@ -159,19 +168,24 @@ export function FinancialTrendChart({
                     strokeWidth="0.5"
                 />
 
-                {/* Bars */}
                 {series.map((s, si) =>
                     s.values.map((v, pi) => {
                         if (v === null) return null;
-                        const colors = resolveColor(si, v);
-                        const h = barHeight(v);
+                        const colors = resolveColor(series, si, v);
+                        const h = barHeight(v, maxAbs, availableHeight);
                         if (h === 0) return null;
 
                         return (
                             <rect
                                 key={`${si}-${pi}`}
-                                x={barX(pi, si)}
-                                y={barY(v)}
+                                x={barX(
+                                    pi,
+                                    si,
+                                    barGroupWidth,
+                                    barPadding,
+                                    singleBarWidth
+                                )}
+                                y={barY(v, h, baselineY)}
                                 width={`${singleBarWidth}%`}
                                 height={h}
                                 rx="1"
@@ -181,7 +195,6 @@ export function FinancialTrendChart({
                     })
                 )}
 
-                {/* X-axis period labels */}
                 {periods.map((p, pi) => {
                     const groupCenter =
                         SVG_PADDING_LEFT +

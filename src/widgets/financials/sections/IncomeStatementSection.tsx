@@ -5,13 +5,13 @@ import { EmptySectionCard } from './EmptySectionCard';
 import { StatementTable } from './StatementTable';
 import { FinancialTrendChart } from './FinancialTrendChart';
 import { toDisplayOrder } from './toDisplayOrder';
+import { HEADING_CLASS_NAME } from './constants';
 
 interface IncomeStatementSectionProps {
     rows: IncomeStatementRow[];
 }
 
 const HEADING_ID = 'income-statement-heading';
-const HEADING_CLASS_NAME = 'mb-4 text-lg font-semibold tracking-tight';
 const TITLE = '손익계산서';
 
 /**
@@ -26,7 +26,6 @@ export function IncomeStatementSection({ rows }: IncomeStatementSectionProps) {
         return <EmptySectionCard title={TITLE} />;
     }
 
-    // Reverse for oldest→newest display order
     const displayRows = toDisplayOrder(rows);
     const columns = displayRows.map(r => r.fiscalYear);
 
