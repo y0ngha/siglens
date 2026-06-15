@@ -1,4 +1,6 @@
 export { FinancialsScorecard } from './FinancialsScorecard';
+export { FinancialsStatements } from './FinancialsStatements';
+export { PeriodToggle } from './PeriodToggle';
 export { CompositeGradeGauge } from './CompositeGradeGauge';
 export { AxisScoreCard } from './AxisScoreCard';
 export { StatementTable } from './sections/StatementTable';
