@@ -76,7 +76,7 @@ test.describe('financials: happy path', () => {
 
         // h1 is SSR-emitted by SymbolPageHeading — always present before any JS.
         await expect(
-            page.getByRole('heading', { level: 1, name: /AAPL 재무제표/ })
+            page.getByRole('heading', { level: 1, name: /재무제표/ })
         ).toBeVisible();
 
         // Active tab has aria-current="page" on the "재무제표" link.
@@ -398,7 +398,7 @@ test.describe('financials: overall page integration', () => {
 
         // Confirm the financials page h1 renders after navigation.
         await expect(
-            page.getByRole('heading', { level: 1, name: /AAPL 재무제표/ })
+            page.getByRole('heading', { level: 1, name: /재무제표/ })
         ).toBeVisible({ timeout: 10_000 });
     });
 });
