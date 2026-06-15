@@ -1,4 +1,3 @@
-import fixture from '@e2e/fixtures/analysis.json';
 import type {
     AnalysisResponse,
     FundamentalAnalysisResponse,
@@ -12,6 +11,7 @@ import type {
     SubmitOptionsAnalysisNoChainsError,
     SubmitOverallAnalysisCached,
 } from '@y0ngha/siglens-core';
+import fixture from '@e2e/fixtures/analysis.json';
 export { isE2E } from './e2eEnv';
 
 /**
@@ -33,7 +33,7 @@ export { isE2E } from './e2eEnv';
  */
 interface E2eAnalysisFixture {
     technical: AnalysisResponse;
-    overall: Omit<OverallAnalysisResponse, 'financialsBulletsKo'>;
+    overall: OverallAnalysisResponse;
     fundamental: FundamentalAnalysisResponse;
     news: NewsAnalysisResponse;
     options: OptionsAnalysisResponse;
