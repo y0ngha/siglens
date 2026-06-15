@@ -10,7 +10,6 @@ import type {
     SubmitNewsAnalysisCached,
     SubmitOptionsAnalysisCached,
     SubmitOptionsAnalysisNoChainsError,
-    SubmitOverallAnalysisCached,
 } from '@y0ngha/siglens-core';
 export { isE2E } from './e2eEnv';
 
@@ -46,7 +45,10 @@ export function e2eCachedTechnical(): SubmitAnalysisGatedResult {
 }
 
 /** Fixed `{ status: 'cached' }` overall analysis result for E2E runs. */
-export function e2eCachedOverall(): SubmitOverallAnalysisCached {
+export function e2eCachedOverall(): {
+    status: 'cached';
+    result: Omit<OverallAnalysisResponse, 'financialsBulletsKo'>;
+} {
     return { status: 'cached', result: typedFixture.overall };
 }
 
