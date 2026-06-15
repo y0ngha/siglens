@@ -3,8 +3,6 @@ import { FmpFinancialStatementsClient } from './financialStatementsClient';
 import type { FinancialStatementsProvider } from '@y0ngha/siglens-core';
 import { isE2E } from '@/shared/api/e2eEnv';
 
-export type { FinancialStatementsProvider } from '@y0ngha/siglens-core';
-
 let cached: FinancialStatementsProvider | null = null;
 
 /** Returns the app's financial statements provider (FMP in prod, fake under E2E_TEST). */

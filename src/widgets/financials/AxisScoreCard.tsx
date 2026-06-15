@@ -35,6 +35,15 @@ const SIGNAL_CHIP_CLASS: Record<FinancialSignalDirection, string> = {
     neutral: 'bg-secondary-700 text-secondary-400 border-secondary-600',
 };
 
+// Module-level to avoid re-creating the (locale-parsing, expensive) formatter on
+// every call — same config as StatementTable.tsx's usdFormatter.
+const usdFormatter = new Intl.NumberFormat('en-US', {
+    notation: 'compact',
+    maximumFractionDigits: 1,
+    style: 'currency',
+    currency: 'USD',
+});
+
 /**
  * Format a ScoreMetric value according to its unit.
  *
@@ -56,12 +65,7 @@ function formatMetricValue(
         case 'ratio':
             return `${value}x`;
         case 'usd':
-            return new Intl.NumberFormat('en-US', {
-                notation: 'compact',
-                maximumFractionDigits: 1,
-                style: 'currency',
-                currency: 'USD',
-            }).format(value);
+            return usdFormatter.format(value);
         case 'score':
             return String(Math.round(value));
     }

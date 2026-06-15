@@ -199,7 +199,6 @@ export default async function FinancialsPage({ params }: Props) {
             <JsonLd data={breadcrumbJsonLd} />
             <JsonLd data={faqJsonLd} />
             <main className="mx-auto max-w-5xl space-y-6 px-4 py-8">
-                {/* Visible h1 — one per page, SEO contract (matches fundamental page pattern) */}
                 <SymbolPageHeading>{upper} 재무제표</SymbolPageHeading>
 
                 <FinancialsScorecard scorecard={scorecard} />

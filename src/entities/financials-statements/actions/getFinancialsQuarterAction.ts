@@ -4,7 +4,7 @@ import type { FinancialsSnapshot } from '@y0ngha/siglens-core';
 import {
     getFinancialsSnapshot,
     QUARTER_LIMIT,
-} from '@/entities/financials-statements/lib/getFinancialsSnapshot';
+} from '../lib/getFinancialsSnapshot';
 
 /** Structurally complete empty snapshot returned on an unexpected fetch failure. */
 const EMPTY_SNAPSHOT: FinancialsSnapshot = {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { FinancialsAnalysisResponse, ModelId } from '@y0ngha/siglens-core';
 import {
@@ -79,13 +79,12 @@ export function useFinancialsAnalysis(
     const currentJobIdRef = useRef<string | null>(null);
     const queryClient = useQueryClient();
     const isHydrated = useHydrated();
-    const queryKey = useMemo(
-        () => QUERY_KEYS.financialsAnalysis(symbol, modelId),
-        [symbol, modelId]
-    );
 
+    // queryKey는 인라인으로 둔다(§17 훅 순서: useMemo는 useQuery보다 뒤여야 함).
+    // React Query는 queryKey를 deep-equality로 비교하므로 매 렌더 새 배열 참조가
+    // 생성돼도 불필요한 재페치가 발생하지 않는다.
     const query = useQuery({
-        queryKey,
+        queryKey: QUERY_KEYS.financialsAnalysis(symbol, modelId),
         queryFn: ({ signal, queryKey: [, qSymbol, qModelId] }) =>
             fetchFinancialsAnalysis(
                 qSymbol,
@@ -123,10 +122,14 @@ export function useFinancialsAnalysis(
 
     useEffect(() => {
         if (!isHydrated) return;
-        if (queryClient.getQueryData(queryKey) === undefined) {
+        if (
+            queryClient.getQueryData(
+                QUERY_KEYS.financialsAnalysis(symbol, modelId)
+            ) === undefined
+        ) {
             void refetch();
         }
-    }, [isHydrated, queryClient, queryKey, refetch]);
+    }, [isHydrated, queryClient, symbol, modelId, refetch]);
 
     // symbol 또는 modelId 변경(queryKey 교체) 시, unmount 시 진행 중인 job을 cancel한다.
     // fire-and-forget이므로 useMutation 없이 직접 호출한다.
@@ -143,7 +146,7 @@ export function useFinancialsAnalysis(
                 });
             }
         };
-    }, [queryKey]);
+    }, [symbol, modelId]);
 
     if (query.isError) {
         if (query.error instanceof BotBlockedError) {
