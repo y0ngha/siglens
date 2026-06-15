@@ -76,9 +76,9 @@ export function useFinancialsAnalysis(
     symbol: string,
     modelId: ModelId
 ): FinancialsAnalysisState {
+    const currentJobIdRef = useRef<string | null>(null);
     const queryClient = useQueryClient();
     const isHydrated = useHydrated();
-    const currentJobIdRef = useRef<string | null>(null);
     const queryKey = useMemo(
         () => QUERY_KEYS.financialsAnalysis(symbol, modelId),
         [symbol, modelId]
@@ -106,10 +106,6 @@ export function useFinancialsAnalysis(
         staleTime: Infinity,
     });
 
-    // §17 exception: `refetch` is destructured immediately after useQuery
-    // because it feeds the useCallback below — derived values that are
-    // consumed by subsequent hook calls must precede those hooks. The
-    // `refetch` reference is stable across renders (React Query guarantee).
     const { refetch } = query;
 
     const retry = useCallback(() => {

@@ -56,6 +56,94 @@ async function importHook() {
     return mod.useFinancialsPeriod;
 }
 
+async function importStateMachine() {
+    const mod = await import('../hooks/useFinancialsPeriod');
+    return mod.fetchAndApplyQuarterSnapshot;
+}
+
+describe('fetchAndApplyQuarterSnapshot', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    it('calls setQuarterSnapshot on success', async () => {
+        mockGetFinancialsQuarterAction.mockResolvedValue(QUARTER_SNAPSHOT);
+        const fetchAndApplyQuarterSnapshot = await importStateMachine();
+
+        const setPeriodState = vi.fn();
+        const setQuarterSnapshot = vi.fn();
+        const setIsLoading = vi.fn();
+
+        await fetchAndApplyQuarterSnapshot('AAPL', {
+            setPeriodState,
+            setQuarterSnapshot,
+            setIsLoading,
+        });
+
+        expect(setQuarterSnapshot).toHaveBeenCalledWith(QUARTER_SNAPSHOT);
+        expect(setPeriodState).not.toHaveBeenCalled();
+        expect(setIsLoading).toHaveBeenCalledWith(false);
+    });
+
+    it('calls setPeriodState("annual") when action resolves with empty snapshot', async () => {
+        mockGetFinancialsQuarterAction.mockResolvedValue(EMPTY_SNAPSHOT);
+        const fetchAndApplyQuarterSnapshot = await importStateMachine();
+
+        const setPeriodState = vi.fn();
+        const setQuarterSnapshot = vi.fn();
+        const setIsLoading = vi.fn();
+
+        await fetchAndApplyQuarterSnapshot('AAPL', {
+            setPeriodState,
+            setQuarterSnapshot,
+            setIsLoading,
+        });
+
+        expect(setPeriodState).toHaveBeenCalledWith('annual');
+        expect(setQuarterSnapshot).not.toHaveBeenCalled();
+        expect(setIsLoading).toHaveBeenCalledWith(false);
+    });
+
+    it('calls setPeriodState("annual") when action rejects', async () => {
+        mockGetFinancialsQuarterAction.mockRejectedValue(new Error('network'));
+        const fetchAndApplyQuarterSnapshot = await importStateMachine();
+
+        const setPeriodState = vi.fn();
+        const setQuarterSnapshot = vi.fn();
+        const setIsLoading = vi.fn();
+
+        await fetchAndApplyQuarterSnapshot('AAPL', {
+            setPeriodState,
+            setQuarterSnapshot,
+            setIsLoading,
+        });
+
+        expect(setPeriodState).toHaveBeenCalledWith('annual');
+        expect(setQuarterSnapshot).not.toHaveBeenCalled();
+        expect(setIsLoading).toHaveBeenCalledWith(false);
+    });
+
+    it('always calls setIsLoading(false) even when the action rejects mid-fetch', async () => {
+        // Confirms the finally guarantee for an async rejection case where
+        // no data path is entered at all (the try block throws immediately).
+        mockGetFinancialsQuarterAction.mockRejectedValue(new Error('timeout'));
+        const fetchAndApplyQuarterSnapshot = await importStateMachine();
+
+        const setPeriodState = vi.fn();
+        const setQuarterSnapshot = vi.fn();
+        const setIsLoading = vi.fn();
+
+        await fetchAndApplyQuarterSnapshot('AAPL', {
+            setPeriodState,
+            setQuarterSnapshot,
+            setIsLoading,
+        });
+
+        expect(setIsLoading).toHaveBeenCalledWith(false);
+        expect(setIsLoading).toHaveBeenCalledTimes(1);
+    });
+});
+
 describe('useFinancialsPeriod', () => {
     beforeEach(() => {
         vi.clearAllMocks();

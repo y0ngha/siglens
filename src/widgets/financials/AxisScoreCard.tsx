@@ -1,6 +1,7 @@
 import type React from 'react';
 import type {
     AxisScore,
+    FinancialsAxis,
     FinancialsGrade,
     FinancialSignal,
     FinancialSignalDirection,
@@ -12,6 +13,8 @@ import { cn } from '@/shared/lib/cn';
 interface AxisScoreCardProps {
     /** Korean axis title displayed as the card heading. */
     title: string;
+    /** Stable English key for the axis used in DOM ids (avoids Korean in id attributes). */
+    axisKey: FinancialsAxis;
     /** Axis score object from the financials scorecard. */
     axis: AxisScore;
 }
@@ -114,19 +117,19 @@ function MetricRow({ metric }: MetricRowProps) {
  * - Signal chips (each colored by direction: positive/negative/neutral)
  * - Key metrics list (value formatted by unit)
  */
-export function AxisScoreCard({ title, axis }: AxisScoreCardProps) {
+export function AxisScoreCard({ title, axisKey, axis }: AxisScoreCardProps) {
     const { score, grade, signals, metrics } = axis;
     const gradeBadgeClass = GRADE_BADGE_CLASS[grade];
     const progressColorClass = PROGRESS_GRADE_COLOR[grade];
 
     return (
         <section
-            aria-labelledby={`axis-${title}-heading`}
+            aria-labelledby={`axis-${axisKey}-heading`}
             className="border-secondary-700 bg-secondary-800 flex flex-col gap-4 rounded-xl border p-6"
         >
             <div className="flex items-center justify-between">
                 <h3
-                    id={`axis-${title}-heading`}
+                    id={`axis-${axisKey}-heading`}
                     className="text-secondary-100 text-base font-semibold tracking-tight"
                 >
                     {title}

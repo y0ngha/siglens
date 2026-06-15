@@ -57,7 +57,12 @@ export function FinancialsScorecard({ scorecard }: FinancialsScorecardProps) {
 
             <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
                 {axes.map(({ key, title, axis }) => (
-                    <AxisScoreCard key={key} title={title} axis={axis} />
+                    <AxisScoreCard
+                        key={key}
+                        axisKey={key}
+                        title={title}
+                        axis={axis}
+                    />
                 ))}
             </div>
         </section>

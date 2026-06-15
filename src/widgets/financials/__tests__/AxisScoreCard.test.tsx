@@ -29,26 +29,34 @@ const SAMPLE_AXIS: AxisScore = {
 
 describe('AxisScoreCard', () => {
     it('renders the card title', () => {
-        render(<AxisScoreCard title="성장성" axis={SAMPLE_AXIS} />);
+        render(
+            <AxisScoreCard title="성장성" axisKey="growth" axis={SAMPLE_AXIS} />
+        );
         expect(
             screen.getByRole('heading', { name: '성장성' })
         ).toBeInTheDocument();
     });
 
     it('renders the grade badge', () => {
-        render(<AxisScoreCard title="성장성" axis={SAMPLE_AXIS} />);
+        render(
+            <AxisScoreCard title="성장성" axisKey="growth" axis={SAMPLE_AXIS} />
+        );
         expect(screen.getByText('B')).toBeInTheDocument();
     });
 
     it('renders all signal chips with labelKo', () => {
-        render(<AxisScoreCard title="성장성" axis={SAMPLE_AXIS} />);
+        render(
+            <AxisScoreCard title="성장성" axisKey="growth" axis={SAMPLE_AXIS} />
+        );
         expect(screen.getByText('매출 가속화')).toBeInTheDocument();
         expect(screen.getByText('성장 둔화')).toBeInTheDocument();
         expect(screen.getByText('영업 레버리지')).toBeInTheDocument();
     });
 
     it('renders metric labels and formatted values', () => {
-        render(<AxisScoreCard title="성장성" axis={SAMPLE_AXIS} />);
+        render(
+            <AxisScoreCard title="성장성" axisKey="growth" axis={SAMPLE_AXIS} />
+        );
         expect(screen.getByText('매출 성장률')).toBeInTheDocument();
         expect(screen.getByText('매출총이익 배수')).toBeInTheDocument();
         expect(screen.getByText('영업현금흐름')).toBeInTheDocument();
@@ -56,22 +64,30 @@ describe('AxisScoreCard', () => {
     });
 
     it('formats pct values with percent sign', () => {
-        render(<AxisScoreCard title="성장성" axis={SAMPLE_AXIS} />);
+        render(
+            <AxisScoreCard title="성장성" axisKey="growth" axis={SAMPLE_AXIS} />
+        );
         expect(screen.getByText('12.5%')).toBeInTheDocument();
     });
 
     it('formats ratio values with x suffix', () => {
-        render(<AxisScoreCard title="성장성" axis={SAMPLE_AXIS} />);
+        render(
+            <AxisScoreCard title="성장성" axisKey="growth" axis={SAMPLE_AXIS} />
+        );
         expect(screen.getByText('2.1x')).toBeInTheDocument();
     });
 
     it('formats score values as raw number', () => {
-        render(<AxisScoreCard title="성장성" axis={SAMPLE_AXIS} />);
+        render(
+            <AxisScoreCard title="성장성" axisKey="growth" axis={SAMPLE_AXIS} />
+        );
         expect(screen.getByText('85')).toBeInTheDocument();
     });
 
     it('renders null metric value as em-dash', () => {
-        render(<AxisScoreCard title="성장성" axis={SAMPLE_AXIS} />);
+        render(
+            <AxisScoreCard title="성장성" axisKey="growth" axis={SAMPLE_AXIS} />
+        );
         expect(screen.getByText('데이터 없는 지표')).toBeInTheDocument();
         // Should render em-dash for null value
         const dashElements = screen.getAllByText('—');
@@ -83,20 +99,28 @@ describe('AxisScoreCard', () => {
             ...SAMPLE_AXIS,
             signals: [],
         };
-        render(<AxisScoreCard title="수익성·질" axis={emptySignalsAxis} />);
+        render(
+            <AxisScoreCard
+                title="수익성·질"
+                axisKey="quality"
+                axis={emptySignalsAxis}
+            />
+        );
         // None of the signal labels should be present
         expect(screen.queryByText('매출 가속화')).not.toBeInTheDocument();
         expect(screen.queryByText('성장 둔화')).not.toBeInTheDocument();
     });
 
     it('renders the axis score value', () => {
-        render(<AxisScoreCard title="성장성" axis={SAMPLE_AXIS} />);
+        render(
+            <AxisScoreCard title="성장성" axisKey="growth" axis={SAMPLE_AXIS} />
+        );
         expect(screen.getByText('72')).toBeInTheDocument();
     });
 
     it('drives the progress bar width via the --axis-score-pct CSS variable', () => {
         const { container } = render(
-            <AxisScoreCard title="성장성" axis={SAMPLE_AXIS} />
+            <AxisScoreCard title="성장성" axisKey="growth" axis={SAMPLE_AXIS} />
         );
         const track = container.querySelector<HTMLElement>(
             '[style*="--axis-score-pct"]'

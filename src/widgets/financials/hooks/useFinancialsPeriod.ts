@@ -20,12 +20,49 @@ interface UseFinancialsPeriodResult {
  * (same as a rejection) so the toggle can revert to annual instead of showing
  * a page full of EmptySectionCard placeholders.
  */
-function isEmptySnapshot(snapshot: FinancialsSnapshot): boolean {
+export function isEmptySnapshot(snapshot: FinancialsSnapshot): boolean {
     return (
         snapshot.income.length === 0 &&
         snapshot.balance.length === 0 &&
         snapshot.cashFlow.length === 0
     );
+}
+
+interface FetchQuarterContext {
+    setPeriodState: (p: StatementPeriod) => void;
+    setQuarterSnapshot: (s: FinancialsSnapshot) => void;
+    setIsLoading: (v: boolean) => void;
+}
+
+/**
+ * Module-level async state machine for the lazy quarter fetch.
+ *
+ * Extracted from the hook so it can be tested independently and does not
+ * capture setState setters via closure — callers pass an explicit context
+ * object instead, keeping the dependency contract visible at the call site.
+ *
+ * Failure handling (both shapes):
+ * - **Rejection**: action promise rejects → setPeriodState('annual').
+ * - **All-empty resolution**: provider swallows FMP throw and resolves with an
+ *   all-empty snapshot → detected by isEmptySnapshot, setPeriodState('annual').
+ * In both cases setIsLoading(false) is guaranteed via finally.
+ */
+export async function fetchAndApplyQuarterSnapshot(
+    symbol: string,
+    ctx: FetchQuarterContext
+): Promise<void> {
+    try {
+        const data = await getFinancialsQuarterAction(symbol);
+        if (isEmptySnapshot(data)) {
+            ctx.setPeriodState('annual');
+            return;
+        }
+        ctx.setQuarterSnapshot(data);
+    } catch {
+        ctx.setPeriodState('annual');
+    } finally {
+        ctx.setIsLoading(false);
+    }
 }
 
 /**
@@ -68,9 +105,6 @@ export function useFinancialsPeriod(
      * react-hooks/refs lint rule that forbids ref mutation during render.
      */
     const quarterSnapshotRef = useRef<FinancialsSnapshot | null>(null);
-    useEffect(() => {
-        quarterSnapshotRef.current = quarterSnapshot;
-    }, [quarterSnapshot]);
 
     const setPeriod = useCallback(
         (next: StatementPeriod) => {
@@ -79,34 +113,18 @@ export function useFinancialsPeriod(
                 return;
             }
 
-            // If we already have quarter data cached in state, swap immediately.
             if (quarterSnapshotRef.current !== null) {
                 setPeriodState('quarter');
                 return;
             }
 
-            // Lazy fetch — only on first switch to 'quarter'.
             setPeriodState('quarter');
             setIsLoading(true);
-
-            getFinancialsQuarterAction(symbol)
-                .then(data => {
-                    // The action resolves even on an upstream FMP failure (the
-                    // provider swallows the throw and returns []). Treat an
-                    // all-empty snapshot as a failure and revert to annual.
-                    if (isEmptySnapshot(data)) {
-                        setPeriodState('annual');
-                        return;
-                    }
-                    setQuarterSnapshot(data);
-                })
-                .catch(() => {
-                    // Revert to annual on rejection so the user sees valid data.
-                    setPeriodState('annual');
-                })
-                .finally(() => {
-                    setIsLoading(false);
-                });
+            void fetchAndApplyQuarterSnapshot(symbol, {
+                setPeriodState,
+                setQuarterSnapshot,
+                setIsLoading,
+            });
         },
         [symbol]
     );
@@ -115,6 +133,10 @@ export function useFinancialsPeriod(
         period === 'quarter' && quarterSnapshot !== null
             ? quarterSnapshot
             : initialAnnualSnapshot;
+
+    useEffect(() => {
+        quarterSnapshotRef.current = quarterSnapshot;
+    }, [quarterSnapshot]);
 
     return { period, setPeriod, snapshot, isLoading };
 }
