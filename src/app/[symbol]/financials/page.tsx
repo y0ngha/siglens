@@ -1,6 +1,7 @@
 import { getFinancialsPageData } from '@/app/[symbol]/financials/financialData';
 import { getProfileResilient } from '@/app/[symbol]/fundamental/getProfileResilient';
 import { FinancialsDegraded } from './FinancialsDegraded';
+import { FinancialsAiSummary } from '@/widgets/financials/FinancialsAiSummary';
 import { FinancialsScorecard } from '@/widgets/financials/FinancialsScorecard';
 import { FinancialsStatements } from '@/widgets/financials/FinancialsStatements';
 import { CrossLinkCards, SymbolPageHeading } from '@/widgets/symbol-page';
@@ -61,10 +62,7 @@ export default async function FinancialsPage({ params }: Props) {
             {/* Scorecard hero — SSR-only, always annual */}
             <FinancialsScorecard scorecard={scorecard} />
 
-            {/*
-             * Phase 5 placeholder: <FinancialsAiSummary symbol={upper} />
-             * Not imported yet — component does not exist.
-             */}
+            <FinancialsAiSummary symbol={upper} />
 
             {/* Statement sections with annual/quarter toggle (client-driven) */}
             <FinancialsStatements symbol={upper} annualSnapshot={snapshot} />

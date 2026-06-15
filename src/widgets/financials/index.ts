@@ -1,3 +1,4 @@
+export { FinancialsAiSummary } from './FinancialsAiSummary';
 export { FinancialsScorecard } from './FinancialsScorecard';
 export { FinancialsStatements } from './FinancialsStatements';
 export { PeriodToggle } from './PeriodToggle';
