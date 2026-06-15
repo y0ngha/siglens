@@ -44,7 +44,9 @@ export const LONGTAIL_ENTRIES_PER_TICKER = 1;
 
 /**
  * long-tail 페이지네이션의 안정적인 티커 경계.
- * URL 상한은 엔트리 생성 이후 별도로 검증하므로,
- * LONGTAIL_ENTRIES_PER_TICKER에서 역산하지 않는다.
+ * 종목당 1 URL(메인 차트)이므로 파일당 10,000 URL = SITEMAP_MAX_URLS_PER_FILE(50,000) 이내.
+ * 값을 키워 sub-sitemap 파일 수를 줄이면 크롤러가 보내는 dynamic /sitemap-longtail-{n}.xml
+ * 요청(= Vercel 함수 호출·실행시간) 수가 준다 — 이 PR의 비용 절감 목표와 같은 방향.
+ * URL 상한은 엔트리 생성 이후 별도로 검증하므로 LONGTAIL_ENTRIES_PER_TICKER에서 역산하지 않는다.
  */
-export const LONGTAIL_TICKERS_PER_PAGE = 2_000;
+export const LONGTAIL_TICKERS_PER_PAGE = 10_000;

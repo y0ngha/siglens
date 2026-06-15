@@ -2,7 +2,7 @@ vi.mock('@/shared/lib/seo', () => ({
     SITE_URL: 'https://siglens.io',
 }));
 
-import robots from '@/app/robots';
+import robots, { AI_CRAWLER_CRAWL_DELAY_SECONDS } from '@/app/robots';
 
 describe('robots', () => {
     it('allows all paths for the default user agent but disallows /api/', () => {
@@ -79,12 +79,13 @@ describe('robots', () => {
         }
     });
 
-    it('limits Anthropic automated crawlers to one crawl every 60 seconds', () => {
+    it('limits Anthropic automated crawlers to one crawl every 60 seconds (and keeps /api/ disallowed)', () => {
         const result = robots();
         expect(result.rules).toContainEqual({
             userAgent: ['ClaudeBot', 'Claude-SearchBot'],
             allow: '/',
-            crawlDelay: 60,
+            disallow: ['/api/'],
+            crawlDelay: AI_CRAWLER_CRAWL_DELAY_SECONDS,
         });
     });
 
@@ -116,12 +117,13 @@ describe('robots', () => {
         );
     });
 
-    it('AI 검색·인용 크롤러는 crawlDelay로 허용(접근 보존)한다', () => {
+    it('AI 검색·인용 크롤러는 crawlDelay로 허용하되 /api/는 disallow한다(접근 보존)', () => {
         const result = robots();
         expect(result.rules).toContainEqual({
             userAgent: ['PerplexityBot', 'OAI-SearchBot'],
             allow: '/',
-            crawlDelay: 60,
+            disallow: ['/api/'],
+            crawlDelay: AI_CRAWLER_CRAWL_DELAY_SECONDS,
         });
     });
 });
