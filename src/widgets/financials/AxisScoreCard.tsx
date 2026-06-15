@@ -53,9 +53,9 @@ function formatMetricValue(
 
     switch (unit) {
         case 'pct':
-            return `${value}%`;
+            return `${value.toFixed(1)}%`;
         case 'ratio':
-            return `${value}x`;
+            return `${value.toFixed(2)}x`;
         case 'usd':
             return usdFormatter.format(value);
         case 'score':

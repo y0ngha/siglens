@@ -19,8 +19,9 @@ const SAMPLE_AXIS: AxisScore = {
         },
     ],
     metrics: [
-        { labelKo: '매출 성장률', value: 12.5, unit: 'pct' },
-        { labelKo: '매출총이익 배수', value: 2.1, unit: 'ratio' },
+        // long floats (as core computes them) to guard against unrounded display
+        { labelKo: '매출 성장률', value: 12.527431, unit: 'pct' },
+        { labelKo: '매출총이익 배수', value: 2.13682, unit: 'ratio' },
         { labelKo: '영업현금흐름', value: 5_000_000_000, unit: 'usd' },
         { labelKo: '재무 점수', value: 85, unit: 'score' },
         { labelKo: '데이터 없는 지표', value: null, unit: 'pct' },
@@ -63,18 +64,20 @@ describe('AxisScoreCard', () => {
         expect(screen.getByText('재무 점수')).toBeInTheDocument();
     });
 
-    it('formats pct values with percent sign', () => {
+    it('formats pct values rounded to one decimal with percent sign', () => {
         render(
             <AxisScoreCard title="성장성" axisKey="growth" axis={SAMPLE_AXIS} />
         );
+        // 12.527431 → "12.5%" (must round, not render the raw float)
         expect(screen.getByText('12.5%')).toBeInTheDocument();
     });
 
-    it('formats ratio values with x suffix', () => {
+    it('formats ratio values rounded to two decimals with x suffix', () => {
         render(
             <AxisScoreCard title="성장성" axisKey="growth" axis={SAMPLE_AXIS} />
         );
-        expect(screen.getByText('2.1x')).toBeInTheDocument();
+        // 2.13682 → "2.14x"
+        expect(screen.getByText('2.14x')).toBeInTheDocument();
     });
 
     it('formats score values as raw number', () => {
