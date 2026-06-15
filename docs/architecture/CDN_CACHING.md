@@ -3,16 +3,20 @@
 > 적용 주체: 사용자(CF 대시보드). 설계 근거: [`docs/superpowers/specs/2026-06-15-isr-cost-seo-r2-design.md`](../superpowers/specs/2026-06-15-isr-cost-seo-r2-design.md).
 > 관련 메모리: `project_cloudflare_vercel_infra`.
 
-## 0. 현재 상태 (2026-06-15 실측)
+## 0. 현재 상태 (2026-06-15 실측 — 응답 헤더 + CF 대시보드)
 
-siglens.io는 **grey-cloud(DNS only)** — CF 프록시 OFF. 헤더에 `server: Vercel`·`cf-ray` 없음, A 레코드가 Vercel IP 직결(네임서버는 CF). 6/6엔 주황구름 + WAF 봇 차단이 활성이었다. 그 사이 OFF로 바뀌어 WAF·봇 차단이 비활성 → 봇이 Vercel 직격 → ISR Write 비용 증가.
+- **apex `siglens.io` + `www.siglens.io`만 grey-cloud(DNS 전용)** — CF 프록시 OFF (응답 헤더에 `server: Vercel`, `cf-ray` 없음). 둘 다 CNAME → `*.vercel-dns-017.com`.
+- `auto-trade.siglens.io`(CNAME → `vercel-dns-016`)는 **이미 orange(프록시됨)** — orange-over-Vercel CNAME이 이 계정에서 정상 동작한다는 증거.
+- **SSL/TLS 모드 = Full (Strict)** (대시보드 "현재 실행 중: 전체(엄격)") — orange 전환에 안전, 변경 불필요.
+- 6/6엔 apex도 orange + WAF 봇 차단이 활성이었는데 그 사이 apex/www가 grey로 바뀜 → WAF·봇 차단 비활성 → 봇이 Vercel 직격 → ISR Write 비용 증가.
+- 존: account `2462030a7138ffe4be726f78046fd6d7` · zone `siglens.io` (free plan). DNS: `dash.cloudflare.com/<account>/siglens.io/dns/records`.
 
-## 1. 사전 점검 (전환 전 필수)
+## 1. 사전 점검 / 전환 (2026-06-15 현황 반영)
 
-1. grey-cloud가 의도였는지 확인(SSL/리다이렉트 루프 회피 목적이었을 수 있음).
-2. CF SSL/TLS 모드를 **Full (Strict)** 로 설정(Vercel은 유효 인증서 제공; `Flexible`은 루프·혼합콘텐츠 유발).
-3. A/CNAME 레코드를 **주황구름(프록시 ON)** 으로 토글.
-4. `/`·`/AAPL`·`/AAPL/overall`에서 **리다이렉트 루프·SSL 오류 없음 + `cf-ray` 헤더 출현**을 실측 검증.
+1. ✅ **SSL/TLS = Full (Strict) 확인됨** — 변경 불필요(`Flexible`이면 루프·혼합콘텐츠 유발).
+2. **`siglens.io`(apex) → `www.siglens.io` 순서로 프록시 토글**: DNS 레코드 행 "편집" → 프록시 상태 클릭(☁️ "DNS 전용" → 🟠 "프록시됨") → 저장. `auto-trade`는 이미 orange라 대상 아님.
+   - **apex 먼저 토글 후 검증**, 이상 없으면 www. 문제 시 즉시 회색으로 되돌리면 원복(즉시 reversible).
+3. 전환 직후 `/`·`/AAPL`·`/AAPL/overall`에서 **`cf-ray` 출현 + 리다이렉트 루프·SSL 오류 없음**을 실측 검증.
 
 ## 2. WAF 룰 (무료 플랜: custom 5개 한도 중 3개 사용)
 
