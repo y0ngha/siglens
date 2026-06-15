@@ -18,6 +18,7 @@ vi.mock('next/cache', () => ({
 
 vi.mock('../api/marketSummaryCache', () => ({
     getCachedMarketSummary: vi.fn(),
+    MARKET_SUMMARY_CONFIG_FINGERPRINT: 'abcdef012345',
 }));
 
 vi.mock('@/shared/api/market/getMarketDataProvider', () => ({
