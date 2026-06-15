@@ -1,4 +1,6 @@
 import type { BalanceSheetRow } from '@y0ngha/siglens-core';
+import { InfoTooltip } from '@/shared/ui/InfoTooltip';
+import { NetDebtTooltip } from '@/widgets/financials/financialsTooltips';
 import { EmptySectionCard } from './EmptySectionCard';
 import { StatementTable } from './StatementTable';
 import { FinancialTrendChart } from './FinancialTrendChart';
@@ -57,6 +59,7 @@ export function BalanceSheetSection({ rows }: BalanceSheetSectionProps) {
         },
         {
             labelKo: '순부채',
+            tooltip: <InfoTooltip>{NetDebtTooltip}</InfoTooltip>,
             values: displayRows.map(r => r.netDebt),
             format: 'usd' as const,
         },

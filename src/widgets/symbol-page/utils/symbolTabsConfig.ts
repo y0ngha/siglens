@@ -17,6 +17,11 @@ export const TABS = [
         hrefBuilder: (s: string) => `/${s}/fundamental`,
     },
     {
+        key: 'financials',
+        label: '재무제표',
+        hrefBuilder: (s: string) => `/${s}/financials`,
+    },
+    {
         key: 'options',
         label: '옵션',
         hrefBuilder: (s: string) => `/${s}/options`,

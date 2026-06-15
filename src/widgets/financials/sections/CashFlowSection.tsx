@@ -1,4 +1,10 @@
 import type { CashFlowRow } from '@y0ngha/siglens-core';
+import { InfoTooltip } from '@/shared/ui/InfoTooltip';
+import {
+    CapExTooltip,
+    FcfTooltip,
+    FcfMarginTooltip,
+} from '@/widgets/financials/financialsTooltips';
 import { EmptySectionCard } from './EmptySectionCard';
 import { StatementTable } from './StatementTable';
 import { FinancialTrendChart } from './FinancialTrendChart';
@@ -55,16 +61,19 @@ export function CashFlowSection({ rows }: CashFlowSectionProps) {
         },
         {
             labelKo: 'CapEx',
+            tooltip: <InfoTooltip>{CapExTooltip}</InfoTooltip>,
             values: displayRows.map(r => r.capitalExpenditure),
             format: 'usd' as const,
         },
         {
             labelKo: 'FCF',
+            tooltip: <InfoTooltip>{FcfTooltip}</InfoTooltip>,
             values: displayRows.map(r => r.freeCashFlow),
             format: 'usd' as const,
         },
         {
             labelKo: 'FCF마진',
+            tooltip: <InfoTooltip>{FcfMarginTooltip}</InfoTooltip>,
             values: displayRows.map(r => r.fcfMargin),
             format: 'pct' as const,
         },

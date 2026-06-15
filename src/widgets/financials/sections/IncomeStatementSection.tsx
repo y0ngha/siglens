@@ -1,4 +1,6 @@
 import type { IncomeStatementRow } from '@y0ngha/siglens-core';
+import { InfoTooltip } from '@/shared/ui/InfoTooltip';
+import { GrossMarginTooltip } from '@/widgets/financials/financialsTooltips';
 import { EmptySectionCard } from './EmptySectionCard';
 import { StatementTable } from './StatementTable';
 import { FinancialTrendChart } from './FinancialTrendChart';
@@ -68,6 +70,7 @@ export function IncomeStatementSection({ rows }: IncomeStatementSectionProps) {
         },
         {
             labelKo: '매출총이익률',
+            tooltip: <InfoTooltip>{GrossMarginTooltip}</InfoTooltip>,
             values: displayRows.map(r => r.grossMargin),
             format: 'pct' as const,
         },
