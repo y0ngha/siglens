@@ -35,6 +35,17 @@ vi.mock('@/app/[symbol]/financials/financialData', () => ({
 vi.mock('@/app/[symbol]/financials/FinancialsDegraded', () => ({
     FinancialsDegraded: () => null,
 }));
+vi.mock('@/entities/financials-statements', () => ({
+    getFinancialsSnapshot: vi.fn(),
+    isEmptyFinancialsSnapshot: (s: {
+        income: unknown[];
+        balance: unknown[];
+        cashFlow: unknown[];
+    }) =>
+        s.income.length === 0 &&
+        s.balance.length === 0 &&
+        s.cashFlow.length === 0,
+}));
 vi.mock('@/shared/lib/seo', async importOriginal => ({
     ...(await importOriginal<typeof import('@/shared/lib/seo')>()),
     buildBreadcrumbJsonLd: vi.fn().mockReturnValue({
@@ -66,6 +77,7 @@ import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { generateMetadata, revalidate } from '@/app/[symbol]/financials/page';
 import { getAssetInfoResilient } from '@/entities/ticker';
 import { getProfileResilient } from '@/app/[symbol]/fundamental/getProfileResilient';
+import { getFinancialsSnapshot } from '@/entities/financials-statements';
 import type { MockedFunction } from 'vitest';
 
 const mockGetAssetInfoResilient = getAssetInfoResilient as MockedFunction<
@@ -74,6 +86,27 @@ const mockGetAssetInfoResilient = getAssetInfoResilient as MockedFunction<
 const mockGetProfileResilient = getProfileResilient as MockedFunction<
     typeof getProfileResilient
 >;
+const mockGetFinancialsSnapshot = getFinancialsSnapshot as MockedFunction<
+    typeof getFinancialsSnapshot
+>;
+
+const NON_EMPTY_SNAPSHOT = {
+    income: [{}],
+    balance: [],
+    cashFlow: [],
+    incomeGrowth: [],
+    financialGrowth: [],
+    cashFlowGrowth: [],
+} as never;
+
+const EMPTY_SNAPSHOT = {
+    income: [],
+    balance: [],
+    cashFlow: [],
+    incomeGrowth: [],
+    financialGrowth: [],
+    cashFlowGrowth: [],
+} as never;
 
 describe('Financials page ISR route config', () => {
     it('exports revalidate = 86400 (literal — required for Next.js static analysis)', () => {
@@ -98,6 +131,7 @@ describe('generateMetadata', () => {
             profile: { sector: 'Technology', description: '' },
             degraded: false,
         } as never);
+        mockGetFinancialsSnapshot.mockResolvedValue(NON_EMPTY_SNAPSHOT);
     });
 
     it('returns noindex for invalid ticker format', async () => {
@@ -145,6 +179,17 @@ describe('generateMetadata', () => {
 
         const metadata = await generateMetadata({
             params: Promise.resolve({ symbol: 'FAKESYM' }),
+        });
+
+        expect(metadata.robots).toEqual({ index: false, follow: false });
+        expect(metadata.alternates?.canonical).toBeNull();
+    });
+
+    it('returns noindex when the financial snapshot is all-empty (transient FMP failure)', async () => {
+        mockGetFinancialsSnapshot.mockResolvedValue(EMPTY_SNAPSHOT);
+
+        const metadata = await generateMetadata({
+            params: Promise.resolve({ symbol: 'aapl' }),
         });
 
         expect(metadata.robots).toEqual({ index: false, follow: false });

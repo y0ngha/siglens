@@ -84,9 +84,8 @@ describe('FinancialsScorecard widget (empty snapshot)', () => {
 
     it('renders grade F for empty snapshot', () => {
         render(<FinancialsScorecardWidget scorecard={EMPTY_SCORECARD} />);
-        // Multiple 'F' grade elements expected (composite + 4 axes)
-        const fElements = screen.getAllByText('F');
-        expect(fElements.length).toBeGreaterThanOrEqual(1);
+        // composite gauge + 4 axis cards = exactly 5 'F' grade labels
+        expect(screen.getAllByText('F')).toHaveLength(5);
     });
 
     it('renders the composite gauge section', () => {

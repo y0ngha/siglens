@@ -32,6 +32,6 @@ describe('FinancialsSummary', () => {
 
         const list = screen.getByRole('list', { name: /재무 분석 항목/ });
         expect(list).toBeInTheDocument();
-        expect(screen.getAllByRole('listitem')).toHaveLength(bullets.length);
+        expect(screen.getAllByRole('listitem')).toHaveLength(3);
     });
 });

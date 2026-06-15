@@ -56,11 +56,11 @@ vi.mock('next/cache', () => ({
 }));
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { getFinancialsPageData } from '@/app/[symbol]/financials/financialData';
 import {
     getFinancialsSnapshot,
-    getFinancialsPageData,
-} from '@/app/[symbol]/financials/financialData';
-import { QUARTER_LIMIT } from '@/entities/financials-statements';
+    QUARTER_LIMIT,
+} from '@/entities/financials-statements';
 import {
     computeFinancialsScorecard,
     normalizeFinancialsSnapshot,

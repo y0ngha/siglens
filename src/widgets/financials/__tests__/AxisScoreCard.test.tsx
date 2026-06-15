@@ -89,9 +89,8 @@ describe('AxisScoreCard', () => {
             <AxisScoreCard title="성장성" axisKey="growth" axis={SAMPLE_AXIS} />
         );
         expect(screen.getByText('데이터 없는 지표')).toBeInTheDocument();
-        // Should render em-dash for null value
-        const dashElements = screen.getAllByText('—');
-        expect(dashElements.length).toBeGreaterThan(0);
+        // SAMPLE_AXIS has exactly one metric with a null value → one em-dash
+        expect(screen.getAllByText('—')).toHaveLength(1);
     });
 
     it('renders no signal chips when signals array is empty', () => {
