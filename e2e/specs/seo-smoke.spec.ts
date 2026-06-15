@@ -61,8 +61,8 @@ test.describe('seo smoke', () => {
         const response = await page.request.get('/robots.txt');
         expect(response.status()).toBe(200);
         const body = await response.text();
-        expect(body).toContain('GPTBot'); // AI 학습봇 Disallow 그룹
-        expect(body).toMatch(/Crawl-delay:\s*60/i); // AI 검색/Anthropic crawl-delay
+        expect(body).toContain('GPTBot');
+        expect(body).toMatch(/Crawl-delay:\s*60/i);
         expect(body).toContain('Disallow: /api/');
         expect(body).toMatch(/Sitemap:\s*\S+\/sitemap\.xml/i);
     });
