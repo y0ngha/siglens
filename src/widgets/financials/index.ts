@@ -1,3 +1,10 @@
 export { FinancialsScorecard } from './FinancialsScorecard';
 export { CompositeGradeGauge } from './CompositeGradeGauge';
 export { AxisScoreCard } from './AxisScoreCard';
+export { StatementTable } from './sections/StatementTable';
+export { FinancialTrendChart } from './sections/FinancialTrendChart';
+export { IncomeStatementSection } from './sections/IncomeStatementSection';
+export { BalanceSheetSection } from './sections/BalanceSheetSection';
+export { CashFlowSection } from './sections/CashFlowSection';
+export { GrowthAnalysisSection } from './sections/GrowthAnalysisSection';
+export { EmptySectionCard } from './sections/EmptySectionCard';
