@@ -26,10 +26,7 @@ import type {
  * kept null — same contract as `FmpFinancialStatementsClient`.
  */
 export class FakeFinancialStatementsProvider implements FinancialStatementsProvider {
-    // ---------------------------------------------------------------------- //
-    // Fixture data — two full fiscal years, most recent first
-    // ---------------------------------------------------------------------- //
-
+    // Fixture data — two full fiscal years per series, most recent first.
     private static readonly INCOME_FIXTURES: IncomeStatementRow[] = [
         {
             fiscalYear: '2024',
@@ -183,10 +180,6 @@ export class FakeFinancialStatementsProvider implements FinancialStatementsProvi
             growthCapitalExpenditure: -0.0991,
         },
     ];
-
-    // ---------------------------------------------------------------------- //
-    // FinancialStatementsProvider implementation
-    // ---------------------------------------------------------------------- //
 
     async getIncomeStatements(
         _symbol: string,

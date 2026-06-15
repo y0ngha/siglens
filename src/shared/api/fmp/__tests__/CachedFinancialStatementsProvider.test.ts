@@ -1,6 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CachedFinancialStatementsProvider } from '@/shared/api/fmp/CachedFinancialStatementsProvider';
-import type { FinancialStatementsProvider } from '@y0ngha/siglens-core';
+import type {
+    FinancialStatementsProvider,
+    IncomeStatementRow,
+} from '@y0ngha/siglens-core';
 import { FMP_STATEMENTS_REVALIDATE_SECONDS } from '@/shared/config/time';
 
 // In-memory fake Redis mirroring the pattern in CachedFundamentalProvider.test.ts.
@@ -12,9 +15,11 @@ const { store, fakeRedis } = vi.hoisted(() => {
         get: vi.fn(async (key: string) =>
             store.has(key) ? store.get(key) : null
         ),
-        set: vi.fn(async (key: string, value: unknown) => {
-            store.set(key, value);
-        }),
+        set: vi.fn(
+            async (key: string, value: unknown, _options?: { ex?: number }) => {
+                store.set(key, value);
+            }
+        ),
     };
     return { store, fakeRedis };
 });
@@ -359,5 +364,87 @@ describe('CachedFinancialStatementsProvider — Redis unavailable fallback', () 
         expect(rows).toHaveLength(1);
         expect(inner.getIncomeStatements).toHaveBeenCalledTimes(1);
         expect(store.size).toBe(0);
+    });
+});
+
+/**
+ * Regression guard for the limit/cache-key mismatch: the key excludes `limit`,
+ * so the decorator must always fetch the max (MAX_STATEMENT_LIMIT=40) on a cold
+ * cache and slice to the caller's limit at read time. Without this, a cold
+ * `limit=2` call would cache 2 rows and a later `limit=10` call would silently
+ * receive only 2.
+ */
+describe('CachedFinancialStatementsProvider — limit slicing (cache-key/limit mismatch)', () => {
+    beforeEach(resetSharedState);
+
+    /** Inner that returns `min(requested, total)` distinct rows, honoring `limit`. */
+    function makeLimitAwareInner(total = 40): FinancialStatementsProvider {
+        const rows = (limit: number): IncomeStatementRow[] =>
+            Array.from(
+                { length: Math.min(limit, total) },
+                (_unused, i): IncomeStatementRow => ({
+                    fiscalYear: String(2024 - i),
+                    period: 'FY',
+                    date: `${2024 - i}-09-28`,
+                    revenue: (total - i) * 1_000_000_000,
+                    grossProfit: null,
+                    operatingIncome: null,
+                    netIncome: null,
+                    ebitda: null,
+                    eps: null,
+                    epsDiluted: null,
+                    grossMargin: null,
+                    operatingMargin: null,
+                    netMargin: null,
+                })
+            );
+        return makeInner({
+            getIncomeStatements: vi.fn(
+                async (_symbol, _period, limit: number) => rows(limit)
+            ),
+        });
+    }
+
+    it('always fetches MAX_STATEMENT_LIMIT (40) from inner regardless of caller limit', async () => {
+        const inner = makeLimitAwareInner();
+        const provider = new CachedFinancialStatementsProvider(inner);
+
+        await provider.getIncomeStatements('AAPL', 'annual', 2);
+
+        expect(inner.getIncomeStatements).toHaveBeenCalledWith(
+            'AAPL',
+            'annual',
+            40
+        );
+    });
+
+    it('slices the cached max-array to the caller limit', async () => {
+        const inner = makeLimitAwareInner();
+        const provider = new CachedFinancialStatementsProvider(inner);
+
+        const rows = await provider.getIncomeStatements('AAPL', 'annual', 2);
+        expect(rows).toHaveLength(2);
+        // The full 40-row array is what is cached, not just 2.
+        const cached = store.get('financials:income:AAPL:annual') as {
+            data: IncomeStatementRow[];
+        };
+        expect(cached.data).toHaveLength(40);
+    });
+
+    it('a small cold limit does NOT truncate a later larger-limit call (the bug)', async () => {
+        const inner = makeLimitAwareInner();
+        const provider = new CachedFinancialStatementsProvider(inner);
+
+        // Cold call with a small limit
+        const cold = await provider.getIncomeStatements('AAPL', 'annual', 2);
+        expect(cold).toHaveLength(2);
+
+        // A later, larger-limit call (new provider → no React.cache dedup) must
+        // get 10 rows from the cached 40-row entry — not be truncated to 2.
+        const provider2 = new CachedFinancialStatementsProvider(inner);
+        const warm = await provider2.getIncomeStatements('AAPL', 'annual', 10);
+        expect(warm).toHaveLength(10);
+        // The warm call served from Redis — inner not called a second time.
+        expect(inner.getIncomeStatements).toHaveBeenCalledTimes(1);
     });
 });
