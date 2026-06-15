@@ -10869,7 +10869,7 @@ __metadata:
     typescript: "npm:^5"
     vaul: "npm:^1.1.2"
     vitest: "npm:^4.1.7"
-    yahoo-finance2: "npm:^3.15.2"
+    yahoo-finance2: "npm:^3.15.3"
   languageName: unknown
   linkType: soft
 
@@ -12661,9 +12661,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"yahoo-finance2@npm:^3.15.2":
-  version: 3.15.2
-  resolution: "yahoo-finance2@npm:3.15.2"
+"yahoo-finance2@npm:^3.15.3":
+  version: 3.15.3
+  resolution: "yahoo-finance2@npm:3.15.3"
   dependencies:
     "@deno/shim-deno": "npm:~0.18.0"
     "@modelcontextprotocol/sdk": "npm:@modelcontextprotocol/sdk@^1.26.0"
@@ -12676,7 +12676,7 @@ __metadata:
     yahoo-finance: esm/bin/yahoo-finance.js
     yahoo-finance-mcp: esm/bin/yahoo-finance-mcp.js
     yahoo-finance2: esm/bin/yahoo-finance.js
-  checksum: 10c0/46e8df9abe3bc37848ea7f7990f9896d1a8b271b6dcb806492ff6af03079c4d2e8f1fce6a427a058c7a6319d919f4281e7947d8c816bfb32396f4a7958c69cd5
+  checksum: 10c0/6a4cf0300d6b4a7c1bb416e41fab12f0b55b27b2f016e618fc62f1c65d397bf5f9aa1d83a8943c82abd51feff7c4fc3fd0ab870a02445eb060d7abc3973a9b34
   languageName: node
   linkType: hard
 
