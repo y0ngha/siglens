@@ -13,7 +13,7 @@ import { LONGTAIL_ENTRIES_PER_TICKER } from '../model';
 const BUILD_DATE = new Date('2026-01-15T00:00:00.000Z');
 
 describe('buildLongTailEntries', () => {
-    it('티커 1개 → 5개 엔트리(chart, news, fundamental, overall, fear-greed)를 반환한다', () => {
+    it('티커 1개 → 6개 엔트리(chart, news, fundamental, financials, overall, fear-greed)를 반환한다', () => {
         const entries = buildLongTailEntries(['AAPL'], BUILD_DATE);
         expect(entries).toHaveLength(LONGTAIL_ENTRIES_PER_TICKER);
 
@@ -22,6 +22,7 @@ describe('buildLongTailEntries', () => {
             'https://siglens.io/AAPL',
             'https://siglens.io/AAPL/news',
             'https://siglens.io/AAPL/fundamental',
+            'https://siglens.io/AAPL/financials',
             'https://siglens.io/AAPL/overall',
             'https://siglens.io/AAPL/fear-greed',
         ]);
@@ -54,6 +55,10 @@ describe('buildLongTailEntries', () => {
         const fundamental = entries.find(e => e.url.endsWith('/fundamental'))!;
         expect(fundamental.priority).toBe(LONGTAIL_LOW_PRIORITY);
         expect(fundamental.changeFrequency).toBe('monthly');
+
+        const financials = entries.find(e => e.url.endsWith('/financials'))!;
+        expect(financials.priority).toBe(LONGTAIL_LOW_PRIORITY);
+        expect(financials.changeFrequency).toBe('monthly');
 
         const overall = entries.find(e => e.url.endsWith('/overall'))!;
         expect(overall.priority).toBe(LONGTAIL_SUB_PRIORITY);

@@ -38,10 +38,10 @@ export const SITEMAP_MAX_URLS_PER_FILE = 50_000;
 
 /**
  * long-tail 티커당 sitemap 엔트리 수.
- * chart + news + fundamental + overall + fear-greed = 5.
+ * chart + news + fundamental + financials + overall + fear-greed = 6.
  * sitemap index 페이지네이션과 longtail route handler 양쪽에서 참조한다.
  */
-export const LONGTAIL_ENTRIES_PER_TICKER = 5;
+export const LONGTAIL_ENTRIES_PER_TICKER = 6;
 
 /**
  * long-tail 페이지네이션의 안정적인 티커 경계.

@@ -33,6 +33,12 @@ export function buildLongTailEntries(
             priority: LONGTAIL_LOW_PRIORITY,
         },
         {
+            url: `${SITE_URL}/${ticker}/financials`,
+            lastModified: buildDate,
+            changeFrequency: 'monthly',
+            priority: LONGTAIL_LOW_PRIORITY,
+        },
+        {
             url: `${SITE_URL}/${ticker}/overall`,
             lastModified: buildDate,
             changeFrequency: 'weekly',

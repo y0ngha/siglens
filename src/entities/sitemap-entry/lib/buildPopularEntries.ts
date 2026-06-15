@@ -59,6 +59,12 @@ export function buildPopularEntries(now: Date): SitemapEntry[] {
             changeFrequency: 'weekly',
             priority: 0.75,
         },
+        {
+            url: `${SITE_URL}/${ticker}/financials`,
+            lastModified: todayClose,
+            changeFrequency: 'monthly',
+            priority: 0.73,
+        },
         ...(POPULAR_OPTIONS_SET.has(ticker)
             ? [
                   {

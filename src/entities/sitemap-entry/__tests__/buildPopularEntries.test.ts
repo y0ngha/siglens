@@ -9,11 +9,11 @@ import { buildPopularEntries } from '../lib/buildPopularEntries';
 const NOW = new Date('2026-05-23T21:00:00.000Z');
 
 describe('buildPopularEntries', () => {
-    it('모든 POPULAR_TICKERS에 대해 5축 기본 라우트를 생성하고 options는 generated list에 맞춘다', () => {
+    it('모든 POPULAR_TICKERS에 대해 6축 기본 라우트를 생성하고 options는 generated list에 맞춘다', () => {
         const entries = buildPopularEntries(NOW);
 
         expect(entries).toHaveLength(
-            POPULAR_TICKERS.length * 5 + POPULAR_OPTIONS_TICKERS.length
+            POPULAR_TICKERS.length * 6 + POPULAR_OPTIONS_TICKERS.length
         );
 
         const first = POPULAR_TICKERS[0];
@@ -24,6 +24,7 @@ describe('buildPopularEntries', () => {
                 base,
                 `${base}/news`,
                 `${base}/fundamental`,
+                `${base}/financials`,
                 `${base}/overall`,
                 `${base}/fear-greed`,
             ])
