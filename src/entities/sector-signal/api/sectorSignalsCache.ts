@@ -14,7 +14,13 @@ import { createCacheConfigFingerprint } from '@/shared/cache/configFingerprint';
 
 /** sector signals도 bars 일봉 TTL 정책을 재사용 — timeframe과 무관한 placeholder. */
 const SIGNALS_TTL_TIMEFRAME = '1Day' as const satisfies Timeframe;
-const SECTOR_STOCKS_CONFIG_FINGERPRINT = createCacheConfigFingerprint(
+
+/**
+ * 종목 목록 fingerprint — cache 키에 박아 config 변경 시 자동 무효화. static
+ * cache(sectorSignalsStaticCache)도 **이 상수를 import해** 동일 fingerprint를 공유한다.
+ * 옛 fingerprint 키는 TTL(`computeBarsEffectiveTtl`, 최대 24h)로 자연 만료 — 별도 정리 불필요.
+ */
+export const SECTOR_STOCKS_CONFIG_FINGERPRINT = createCacheConfigFingerprint(
     JSON.stringify(SECTOR_STOCKS)
 );
 

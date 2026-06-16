@@ -12,7 +12,16 @@ import { MARKET_INDICES, SECTOR_ETFS } from '@/shared/config/dashboard-tickers';
 import { createCacheConfigFingerprint } from '@/shared/cache/configFingerprint';
 import { allQuotesPresent } from '../lib/marketSummaryCompleteness';
 
-const MARKET_SUMMARY_CONFIG_FINGERPRINT = createCacheConfigFingerprint(
+/**
+ * config(지수+섹터 ETF 목록) fingerprint — cache 키에 박아 config 변경 시 캐시를
+ * 자동 무효화한다. static cache(marketSummaryStaticCache)도 **이 상수를 import해**
+ * 동일 fingerprint를 공유하므로, 직렬화 포맷이 한쪽에서만 바뀌어 키가 어긋나는 일이 없다.
+ *
+ * Redis 키 누적: config가 바뀌면 새 fingerprint 키가 생기고 옛 키는 그대로 남지만,
+ * 모든 엔트리에 TTL(`computeBarsEffectiveTtl`, 최대 24h)이 있어 자연 만료된다 —
+ * 별도 정리 메커니즘 불필요. (config 변경은 배포 단위로 드물어 누적량도 미미.)
+ */
+export const MARKET_SUMMARY_CONFIG_FINGERPRINT = createCacheConfigFingerprint(
     JSON.stringify({ marketIndices: MARKET_INDICES, sectorEtfs: SECTOR_ETFS })
 );
 const MARKET_SUMMARY_CACHE_KEY = `market:summary:${MARKET_SUMMARY_CONFIG_FINGERPRINT}`;

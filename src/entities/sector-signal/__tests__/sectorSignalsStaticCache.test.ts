@@ -18,6 +18,7 @@ vi.mock('next/cache', () => ({
 
 vi.mock('../api/sectorSignalsCache', () => ({
     getCachedSectorSignals: vi.fn(),
+    SECTOR_STOCKS_CONFIG_FINGERPRINT: 'abcdef012345',
 }));
 
 vi.mock('@/shared/api/market/getMarketDataProvider', () => ({
