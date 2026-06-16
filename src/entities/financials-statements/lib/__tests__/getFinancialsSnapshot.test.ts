@@ -227,7 +227,11 @@ describe('getFinancialsSnapshot (entity lib — single source)', () => {
             const result = await getFinancialsSnapshot('AAPL');
 
             // 예기치 못한 에러도 []로 graceful degrade한다(Promise.all 전체 실패 방지).
+            // income은 reject(unexpected), 나머지 섹션은 sentinel(빈 결과) 경로 →
+            // 둘 다 []로 수렴함을 함께 단언해 회귀 진단을 빠르게 한다.
             expect(result.income).toEqual([]);
+            expect(result.balance).toEqual([]);
+            expect(result.cashFlow).toEqual([]);
             expect(errorSpy).toHaveBeenCalledWith(
                 '[cacheNonEmpty] unexpected cache error:',
                 expect.objectContaining({ message: 'FMP 5xx' })
