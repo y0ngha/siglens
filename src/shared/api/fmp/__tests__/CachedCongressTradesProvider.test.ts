@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CachedCongressTradesProvider } from '@/shared/api/fmp/CachedCongressTradesProvider';
 import type {
-    Chamber,
     CongressTradesProvider,
     RawCongressTrade,
 } from '@y0ngha/siglens-core';
@@ -242,5 +241,76 @@ describe('CachedCongressTradesProvider — chamber isolation', () => {
         await provider.getTrades('AAPL', 'senate', 10);
         expect(store.has('congress:senate:AAPL')).toBe(true);
         expect(store.has('congress:house:AAPL')).toBe(false);
+    });
+});
+
+/**
+ * Regression guard for the limit/cache-key mismatch: the key excludes `limit`,
+ * so the decorator must always fetch CONGRESS_MAX_TRADES (100) on a cold cache
+ * and slice to the caller's limit at read time. Without this, a cold `limit=2`
+ * call would cache 2 rows and a later `limit=5` call would silently receive
+ * only 2. Mirrors the analogous guard in CachedFinancialStatementsProvider.
+ */
+describe('CachedCongressTradesProvider — limit slicing (cache-key/limit mismatch)', () => {
+    beforeEach(resetSharedState);
+
+    /** Inner that returns exactly `min(requested, total)` rows, honouring `limit`. */
+    function makeLimitAwareInner(total = 5): CongressTradesProvider {
+        const rows = (limit: number): RawCongressTrade[] =>
+            Array.from({ length: Math.min(limit, total) }, (_unused, i) => ({
+                transactionDate: `2024-01-${String(i + 1).padStart(2, '0')}`,
+                disclosureDate: `2024-03-${String(i + 1).padStart(2, '0')}`,
+                firstName: 'Jane',
+                lastName: 'Doe',
+                type: 'Purchase',
+                amount: '$1,001 - $15,000',
+            }));
+        return {
+            getTrades: vi.fn(async (_symbol, _chamber, limit: number) =>
+                rows(limit)
+            ),
+        } as CongressTradesProvider;
+    }
+
+    it('always fetches CONGRESS_MAX_TRADES (100) from inner regardless of caller limit', async () => {
+        const inner = makeLimitAwareInner();
+        const provider = new CachedCongressTradesProvider(inner);
+
+        await provider.getTrades('AAPL', 'senate', 2);
+
+        expect(inner.getTrades).toHaveBeenCalledWith('AAPL', 'senate', 100);
+    });
+
+    it('slices the cached max-array to the caller limit', async () => {
+        const inner = makeLimitAwareInner(5);
+        const provider = new CachedCongressTradesProvider(inner);
+
+        // Inner returns min(100, 5)=5 rows; slice(0, 2) → 2 rows returned to caller.
+        const rows = await provider.getTrades('AAPL', 'senate', 2);
+        expect(rows).toHaveLength(2);
+
+        // The full 5-row array (all that inner could produce) is cached.
+        const cached = store.get('congress:senate:AAPL') as {
+            data: RawCongressTrade[];
+        };
+        expect(cached.data).toHaveLength(5);
+    });
+
+    it('a small cold limit does NOT truncate a later larger-limit call (the bug)', async () => {
+        const inner = makeLimitAwareInner(5);
+        const provider = new CachedCongressTradesProvider(inner);
+
+        // Cold call with small limit — gets 2 rows back, but cache holds all 5.
+        const cold = await provider.getTrades('AAPL', 'senate', 2);
+        expect(cold).toHaveLength(2);
+
+        // Later, larger-limit call (new provider → new React.cache scope) must
+        // receive 5 rows from the cached 5-row entry — NOT be truncated to 2.
+        const provider2 = new CachedCongressTradesProvider(inner);
+        const warm = await provider2.getTrades('AAPL', 'senate', 5);
+        expect(warm).toHaveLength(5);
+
+        // Warm call served from Redis — inner was not called a second time.
+        expect(inner.getTrades).toHaveBeenCalledTimes(1);
     });
 });
