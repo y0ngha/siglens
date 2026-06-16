@@ -13,8 +13,6 @@ import { MARKET_NEWS_LOOKBACK_DAYS } from '@/entities/market-news';
 import { useMarketNewsCardPolling } from '@/widgets/market-news/hooks/useMarketNewsCardPolling';
 import { MarketNewsList } from '@/widgets/market-news/MarketNewsList';
 
-// ─── Mocks ────────────────────────────────────────────────────────────────────
-
 vi.mock('@/widgets/market-news/hooks/useMarketNewsCardPolling', () => ({
     useMarketNewsCardPolling: vi.fn(),
 }));
@@ -40,8 +38,6 @@ const mockUseMarketNewsCardPolling = useMarketNewsCardPolling as MockedFunction<
     typeof useMarketNewsCardPolling
 >;
 
-// ─── Fixtures ─────────────────────────────────────────────────────────────────
-
 const PAGE_SIZE = 10; // mirrors the const in MarketNewsList.tsx
 
 function makeItem(n: number): MarketNewsCardItem {
@@ -65,8 +61,6 @@ function makeItem(n: number): MarketNewsCardItem {
 function makeItems(count: number): MarketNewsCardItem[] {
     return Array.from({ length: count }, (_, i) => makeItem(i + 1));
 }
-
-// ─── Tests ────────────────────────────────────────────────────────────────────
 
 describe('MarketNewsList', () => {
     beforeEach(() => {

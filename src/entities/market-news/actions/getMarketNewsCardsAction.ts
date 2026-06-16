@@ -2,8 +2,10 @@
 
 import { getMarketNewsList } from '../api';
 import { CATEGORY_CONFIG } from '../lib/categoryConfig';
-import { toMarketNewsCardItem } from '../lib/toCardItem';
-import type { MarketNewsCardItem } from '../lib/toCardItem';
+import {
+    toMarketNewsCardItem,
+    type MarketNewsCardItem,
+} from '../lib/toCardItem';
 import type { NewsFeedCategory } from '@y0ngha/siglens-core';
 
 /**

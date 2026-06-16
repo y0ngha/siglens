@@ -13,8 +13,6 @@ import { useMarketNewsDigest } from '@/widgets/market-news/hooks/useMarketNewsDi
 import { MarketNewsDigest } from '@/widgets/market-news/MarketNewsDigest';
 import { SENTIMENT_CLASS } from '@/widgets/market-news/sentimentConstants';
 
-// ─── Mocks ────────────────────────────────────────────────────────────────────
-
 vi.mock('@/widgets/market-news/hooks/useMarketNewsDigest', () => ({
     useMarketNewsDigest: vi.fn(),
 }));
@@ -23,16 +21,12 @@ const mockUseMarketNewsDigest = useMarketNewsDigest as MockedFunction<
     typeof useMarketNewsDigest
 >;
 
-// ─── Fixtures ─────────────────────────────────────────────────────────────────
-
 const DONE_RESULT: NewsAnalysisResponse = {
     overallSentiment: 'bullish',
     currentDriverKo: '연준의 금리 동결 결정이 시장 심리를 지지하고 있습니다.',
     keyEventsKo: ['FOMC 회의 금리 동결 결정'],
     upcomingEventsKo: ['4분기 실적 시즌 본격 개막'],
 };
-
-// ─── Tests ────────────────────────────────────────────────────────────────────
 
 describe('MarketNewsDigest', () => {
     beforeEach(() => {

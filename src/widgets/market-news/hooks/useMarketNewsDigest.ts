@@ -7,15 +7,13 @@ import type {
     NewsFeedCategory,
 } from '@y0ngha/siglens-core';
 import {
+    cancelMarketNewsDigestAction,
     ensureMarketNewsCardsAnalyzedAction,
     getMarketNewsCardsAction,
 } from '@/entities/market-news/actions';
 import { useHydrated } from '@/shared/hooks/useHydrated';
 import { POLL_INTERVAL_MS, MAX_CONSECUTIVE_FAILURES } from '../constants';
-import {
-    fetchMarketNewsDigest,
-    cancelMarketNewsDigestAction,
-} from './utils/fetchMarketNewsDigest';
+import { fetchMarketNewsDigest } from './utils/fetchMarketNewsDigest';
 
 export type MarketNewsDigestState =
     | { status: 'loading' }

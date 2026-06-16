@@ -55,5 +55,3 @@ export async function fetchMarketNewsDigest(
     }
     throw new Error('aborted');
 }
-
-export { cancelMarketNewsDigestAction };

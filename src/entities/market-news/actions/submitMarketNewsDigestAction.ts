@@ -14,9 +14,9 @@ import { CATEGORY_CONFIG } from '../lib/categoryConfig';
 import { DEFAULT_DIGEST_MODEL_ID } from '../lib/marketNewsConstants';
 import {
     isEnrichedRow,
+    selectAggregateNewsItems,
     toEnrichedNewsItem,
-} from '@/entities/news-article/lib/newsEnrichment';
-import { selectAggregateNewsItems } from '@/entities/news-article/lib/newsAnalysisSelection';
+} from '@/entities/news-article';
 import type { MarketNewsRow } from '../model';
 
 /**

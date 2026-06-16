@@ -180,6 +180,14 @@ export default async function CategoryNewsPage({ params }: Props) {
                               headline: item.titleKo ?? item.titleEn,
                               url: item.url,
                               datePublished: item.publishedAt,
+                              author: {
+                                  '@type': 'Organization',
+                                  name: item.source,
+                              },
+                              publisher: {
+                                  '@type': 'Organization',
+                                  name: item.source,
+                              },
                           },
                       })),
               }
@@ -209,8 +217,6 @@ export default async function CategoryNewsPage({ params }: Props) {
         </>
     );
 }
-
-// ─── Degrade / skeleton sub-components ───────────────────────────────────────
 
 function DigestSkeleton() {
     return (

@@ -17,16 +17,12 @@ import type { NewsAnalysisResponse } from '@y0ngha/siglens-core';
 import type { ReactNode } from 'react';
 import { useHydrated } from '@/shared/hooks/useHydrated';
 import {
+    cancelMarketNewsDigestAction,
     getMarketNewsCardsAction,
     ensureMarketNewsCardsAnalyzedAction,
 } from '@/entities/market-news/actions';
-import {
-    fetchMarketNewsDigest,
-    cancelMarketNewsDigestAction as cancelFromFetchModule,
-} from '@/widgets/market-news/hooks/utils/fetchMarketNewsDigest';
+import { fetchMarketNewsDigest } from '@/widgets/market-news/hooks/utils/fetchMarketNewsDigest';
 import { useMarketNewsDigest } from '@/widgets/market-news/hooks/useMarketNewsDigest';
-
-// ─── Mocks ────────────────────────────────────────────────────────────────────
 
 vi.mock('@/entities/market-news/actions', () => ({
     ensureMarketNewsCardsAnalyzedAction: vi.fn().mockResolvedValue(undefined),
@@ -38,10 +34,6 @@ vi.mock('@/entities/market-news/actions', () => ({
 
 vi.mock('@/widgets/market-news/hooks/utils/fetchMarketNewsDigest', () => ({
     fetchMarketNewsDigest: vi.fn(),
-    // The hook imports cancelMarketNewsDigestAction from this module path
-    // (fetchMarketNewsDigest.ts re-exports it from @/entities/market-news/actions).
-    // We must mock it here so the hook's cleanup effect hits our spy.
-    cancelMarketNewsDigestAction: vi.fn().mockResolvedValue(undefined),
 }));
 
 vi.mock('@/shared/hooks/useHydrated', () => ({
@@ -52,16 +44,14 @@ vi.mock('@/shared/lib/sleep', () => ({
     sleep: vi.fn().mockResolvedValue(undefined),
 }));
 
-// ─── Typed mocks ──────────────────────────────────────────────────────────────
-
 const mockFetchMarketNewsDigest = fetchMarketNewsDigest as MockedFunction<
     typeof fetchMarketNewsDigest
 >;
 const mockUseHydrated = vi.mocked(useHydrated);
-// The hook imports cancelMarketNewsDigestAction from the fetchMarketNewsDigest
-// module path — that is the mock we must assert against.
-const mockCancelFromFetchModule = cancelFromFetchModule as MockedFunction<
-    typeof cancelFromFetchModule
+// The hook imports cancelMarketNewsDigestAction directly from
+// @/entities/market-news/actions — that is the mock we must assert against.
+const mockCancelAction = cancelMarketNewsDigestAction as MockedFunction<
+    typeof cancelMarketNewsDigestAction
 >;
 const mockGetMarketNewsCardsAction = getMarketNewsCardsAction as MockedFunction<
     typeof getMarketNewsCardsAction
@@ -71,16 +61,12 @@ const mockEnsureMarketNewsCardsAnalyzedAction =
         typeof ensureMarketNewsCardsAnalyzedAction
     >;
 
-// ─── Fixtures ─────────────────────────────────────────────────────────────────
-
 const DIGEST_RESULT: NewsAnalysisResponse = {
     overallSentiment: 'bullish',
     currentDriverKo: '연준의 금리 동결 결정이 시장 심리를 지지하고 있습니다.',
     keyEventsKo: ['FOMC 회의 금리 동결 결정'],
     upcomingEventsKo: ['4분기 실적 시즌 본격 개막'],
 };
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const queryClients: QueryClient[] = [];
 
@@ -98,13 +84,11 @@ function makeWrapper() {
     };
 }
 
-// ─── Tests ────────────────────────────────────────────────────────────────────
-
 describe('useMarketNewsDigest', () => {
     beforeEach(() => {
         mockFetchMarketNewsDigest.mockReset();
-        mockCancelFromFetchModule.mockReset();
-        mockCancelFromFetchModule.mockResolvedValue(undefined);
+        mockCancelAction.mockReset();
+        mockCancelAction.mockResolvedValue(undefined);
         mockGetMarketNewsCardsAction.mockReset();
         mockEnsureMarketNewsCardsAnalyzedAction.mockReset();
         mockEnsureMarketNewsCardsAnalyzedAction.mockResolvedValue(undefined);
@@ -247,9 +231,7 @@ describe('useMarketNewsDigest', () => {
             await new Promise(resolve => setTimeout(resolve, 0));
         });
 
-        expect(mockCancelFromFetchModule).toHaveBeenCalledWith(
-            'job-market-456'
-        );
+        expect(mockCancelAction).toHaveBeenCalledWith('job-market-456');
     });
 
     it('retry() calls query.refetch() (triggers a second queryFn call)', async () => {

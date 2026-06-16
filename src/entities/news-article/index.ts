@@ -17,8 +17,12 @@ export {
 } from './lib/newsLookback';
 export { NEWS_LIST_CACHE_KEY } from './lib/cacheKeys';
 // MAX_AGGREGATE_NEWS_ITEMS는 테스트가 expected length 단언에 import해 사용한다.
-// selectAggregateNewsItems는 buildAnalysisNewsItems 안에서 캡슐화되어 외부 노출 불필요.
-export { MAX_AGGREGATE_NEWS_ITEMS } from './lib/newsAnalysisSelection';
+// selectAggregateNewsItems는 submitMarketNewsDigestAction에서 EnrichedNewsItem[]를 cap할 때
+// 직접 사용한다 (buildAnalysisNewsItems가 아닌 경로 — 시그니처가 다름).
+export {
+    MAX_AGGREGATE_NEWS_ITEMS,
+    selectAggregateNewsItems,
+} from './lib/newsAnalysisSelection';
 export { buildAnalysisNewsItems } from './lib/buildAnalysisNewsItems';
 
 // actions are imported from @/entities/news-article/actions
