@@ -111,12 +111,27 @@
 8. **Phase 7 — E2E·실증**: Playwright happy/worst + prod-like build 실측(curl+Chrome+DSU 0).
 > 각 Phase: types 먼저 → 구현 → 테스트 동행. PR별 리뷰 루프. cross-repo는 **core 먼저 작업 → 로컬 build overlay로 siglens 즉시 진행**(정식 publish는 사용자, 병목 최소화).
 
-## 부록 A — FMP endpoint 검증 게이트 (Phase 0)
-실측 후 표로 기록:
-- 카테고리 feed: `news/general-latest`, `news/stock-latest`(시장 전체), `news/crypto-latest`, `news/forex-latest`, `fmp-articles`(또는 실제 경로) — 응답 필드·시장 전체(symbol 무관) 조회·페이지네이션.
-- 플랜 tier 지원(402 여부 — `logFmpPaymentRequiredError`).
-- 기존 `news/stock`(symbol)과의 응답 스키마 차이(정규화 매핑 영향).
-결과로 §5 센티넬 매핑·카테고리 enum을 확정한다.
+## 부록 A — FMP endpoint 검증 게이트 (Phase 0 — 2026-06-16 실측 완료 ✅)
+
+5개 endpoint를 실 API로 호출해 확정했다. **전부 HTTP 200**(플랜 tier 지원, 402 없음).
+
+### A.1 endpoint·스키마
+| 카테고리 | endpoint | 스키마군 | 티커 필드 | 본문 | URL 필드 | 날짜 필드 |
+|---|---|---|---|---|---|---|
+| general | `news/general-latest` | **latest** | `symbol`(=`null`) | `text` | `url` | `publishedDate` |
+| stock | `news/stock-latest` | latest | `symbol`(예 `FRVO`) | `text` | `url` | `publishedDate` |
+| crypto | `news/crypto-latest` | latest | `symbol`(예 `BTCUSD`) | `text` | `url` | `publishedDate` |
+| forex | `news/forex-latest` | latest | `symbol`(예 `USDJPY`) | `text` | `url` | `publishedDate` |
+| articles | `fmp-articles` | **articles**(별도) | `tickers`(예 `"NASDAQ:RR"`) | `content`(HTML) | `link` | `date` |
+
+- **latest 스키마**(general/stock/crypto/forex 공통): `{ symbol, publishedDate, publisher, title, image, site, text, url }`. `publishedDate`는 zoneless `YYYY-MM-DD HH:mm:ss`(ET) → 기존 `normalizeFmpPublishedDate` 그대로 사용. `symbol`은 general에서 `null`, 나머지는 단일 티커 문자열.
+- **articles 스키마**(fmp-articles 전용): `{ title, date, content(HTML), tickers("EXCH:TICKER" 문자열), image, link, author, site }`. URL은 `link`, 날짜는 `date`, 본문은 `content`(HTML — 표시 시 strip 또는 그대로 저장). `tickers`는 `"NASDAQ:RR"` 형태(거래소 prefix; 다중이면 콤마 구분 가능 — 파싱 시 prefix 제거해 bare 티커 추출).
+- **티커 → `tickers` 컬럼**: latest는 `symbol ? [symbol] : []`. articles는 `tickers` 문자열을 `,` split + `EXCH:` prefix 제거. 주식 칩만 `/[ticker]` 딥링크(crypto/forex pair·articles bare는 표시용).
+- `source` 표시값: latest는 `site`(도메인) 또는 `publisher`(발행처명) — 카드에는 `publisher` 우선, 없으면 `site`. articles는 `site`("Financial Modeling Prep").
+
+### A.2 겹침률 → DEDUP_DECISION
+- general↔stock↔crypto 각 100건 URL 교집합 = **0**. FMP feed는 URL 기준 사실상 disjoint.
+- **확정: `id = hashUrlToId(url)`(단순) + 선점고정** — `DrizzleMarketNewsRepository.upsertMarketNewsItem`의 conflict `set`/`setWhere`에서 **`symbol` 제외**(첫 insert가 버킷 고정, 카테고리 ingestion이 타 버킷 row를 훔치지 않음). composite id 불필요(겹침 0). fmp-articles의 `link`도 글로벌 unique이므로 동일 처리.
 
 ---
 

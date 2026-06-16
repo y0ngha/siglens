@@ -856,7 +856,11 @@ Expected: FAIL — module not found.
 
 - [ ] **Step 4: Implement the client**
 
-`fmpMarketNewsClient.ts` (mirror `fmpNewsClient.ts`; use `fmpGet` from `@/shared/api/fmp/httpClient`, `hashUrlToId` + `normalizeFmpPublishedDate` imported from news-article, `CATEGORY_CONFIG` for the endpoint+sentinel). Map each raw row → `MarketNewsItem` with `symbol = CATEGORY_CONFIG[category].sentinel`, `tickers` parsed from the feed's ticker field (split/normalize per Phase 0 shape; `[]` when absent), filter by `publishedAt >= now - lookbackMs`.
+`fmpMarketNewsClient.ts` (mirror `fmpNewsClient.ts`; use `fmpGet` from `@/shared/api/fmp/httpClient`, `hashUrlToId` + `normalizeFmpPublishedDate` imported from news-article, `CATEGORY_CONFIG` for the endpoint+sentinel). Map each raw row → `MarketNewsItem` with `symbol = CATEGORY_CONFIG[category].sentinel`, filter by `publishedAt >= now - lookbackMs`. **Two raw shapes (Phase 0 appendix A):**
+- **latest** (`general`/`stock`/`crypto`/`forex`): `{ symbol, publishedDate, publisher, title, image, site, text, url }`. Map: `url=url`, `publishedAt=normalizeFmpPublishedDate(publishedDate)`, `titleEn=title`, `bodyEn=text ?? null`, `source=publisher ?? site`, `id=hashUrlToId(url)`, `tickers = symbol ? [symbol] : []`.
+- **articles** (`articles`): `{ title, date, content, tickers, image, link, author, site }`. Map: `url=link`, `publishedAt=normalizeFmpPublishedDate(date)`, `titleEn=title`, `bodyEn=content ?? null` (HTML kept as-is; the card strips/escapes at render), `source=site`, `id=hashUrlToId(link)`, `tickers = parseArticleTickers(tickers)` where `parseArticleTickers` splits on `,` and strips any `EXCH:` prefix (`"NASDAQ:RR"` → `"RR"`), `[]` when absent.
+
+Branch on `category === 'articles'` (or a `shape` field on `CategoryConfig`) to pick the mapper. Add a small pure `parseArticleTickers(raw: string | null | undefined): string[]` helper with its own unit test (split + prefix-strip + empty).
 
 - [ ] **Step 5: Run test — passes**
 
@@ -962,7 +966,7 @@ Expected: FAIL — module not found.
 
 - [ ] **Step 4: Implement `api.ts`**
 
-Mirror `DrizzleNewsRepository`. `upsertMarketNewsItem(item: MarketNewsItem)` inserts into `marketNews` including `tickers`. **Per DEDUP_DECISION:** if "accept dedup / first-writer-wins", DROP `symbol` from the conflict `set` and `setWhere` (so a row's bucket is fixed at first insert — category ingestion never steals); keep `source/publishedAt/titleEn/bodyEn/tickers` in `set`/`setWhere`. If "composite id", keep `symbol` in `set` (collisions can't happen because the id embeds the sentinel). `attachAnalysis(id, analysis, analyzedAt)` identical to news. `listByCategory(sentinel, sinceMs): Promise<MarketNewsRow[]>` selects `eq(marketNews.symbol, sentinel)` + `gte(publishedAt, cutoff)` ordered `publishedAt DESC`, mapped through a `toMarketNewsRow` that reuses the same enum-whitelist validation as `toNewsRow` plus `tickers: row.tickers ?? []`. Add the React.cached reader:
+Mirror `DrizzleNewsRepository`. `upsertMarketNewsItem(item: MarketNewsItem)` inserts into `marketNews` including `tickers`. **DEDUP_DECISION (Phase 0 confirmed: feeds disjoint, simple id + first-writer-wins):** `id = hashUrlToId(url)` (set by the FMP client). In the conflict `set` and `setWhere`, **DROP `symbol`** (a row's bucket is fixed at first insert — category ingestion never steals); keep `source/publishedAt/titleEn/bodyEn/tickers` in both `set` and `setWhere` (so a genuine content change still returns the row for revalidate). `attachAnalysis(id, analysis, analyzedAt)` identical to news. `listByCategory(sentinel, sinceMs): Promise<MarketNewsRow[]>` selects `eq(marketNews.symbol, sentinel)` + `gte(publishedAt, cutoff)` ordered `publishedAt DESC`, mapped through a `toMarketNewsRow` that reuses the same enum-whitelist validation as `toNewsRow` plus `tickers: row.tickers ?? []`. Add the React.cached reader:
 ```typescript
 import { cache } from 'react';
 export const getMarketNewsList = cache(async (sentinel: string): Promise<MarketNewsRow[]> => {
