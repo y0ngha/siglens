@@ -1,0 +1,274 @@
+import type { MarketNewsCardItem } from '@/entities/market-news/actions';
+import type { NewsFeedCategory } from '@y0ngha/siglens-core';
+import type { NewsImpact, NewsSentiment } from '@y0ngha/siglens-core';
+import { cn } from '@/shared/lib/cn';
+
+// ─── Style token maps (reuse identical to NewsList.tsx) ─────────────────────
+
+const SENTIMENT_LABEL: Record<NewsSentiment, string> = {
+    bullish: '긍정',
+    neutral: '중립',
+    bearish: '부정',
+};
+
+const SENTIMENT_CLASS: Record<NewsSentiment, string> = {
+    bullish: 'bg-ui-success/10 text-chart-bullish',
+    neutral: 'bg-secondary-700 text-secondary-400',
+    bearish: 'bg-ui-danger/10 text-chart-bearish',
+};
+
+const IMPACT_LABEL: Record<NewsImpact, string> = {
+    high: '주가 영향 큼',
+    medium: '주가 영향 보통',
+    low: '주가 영향 작음',
+    negligible: '주가 영향 거의 없음',
+};
+
+const IMPACT_CLASS: Record<NewsImpact, string> = {
+    high: 'bg-ui-warning/10 text-ui-warning',
+    medium: 'bg-primary-500/10 text-primary-400',
+    low: 'bg-secondary-700 text-secondary-400',
+    negligible: 'bg-secondary-700/50 text-secondary-400',
+};
+
+const VALID_SENTIMENTS = new Set<string>(['bullish', 'bearish', 'neutral']);
+const VALID_IMPACTS = new Set<string>(['high', 'medium', 'low', 'negligible']);
+
+const PUBLISHED_AT_FORMATTER = new Intl.DateTimeFormat('ko-KR', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZone: 'Asia/Seoul',
+});
+
+// ─── Internal helpers ────────────────────────────────────────────────────────
+
+function isNewsSentiment(value: string): value is NewsSentiment {
+    return VALID_SENTIMENTS.has(value);
+}
+
+function isNewsImpact(value: string): value is NewsImpact {
+    return VALID_IMPACTS.has(value);
+}
+
+function isPending(item: MarketNewsCardItem): boolean {
+    return item.sentiment === null || item.priceImpact === null;
+}
+
+function formatPublishedAt(publishedAt: string): string {
+    return `${PUBLISHED_AT_FORMATTER.format(new Date(publishedAt))} KST`;
+}
+
+// ─── Sub-components ──────────────────────────────────────────────────────────
+
+function SentimentBadge({ value }: { value: string }) {
+    if (!isNewsSentiment(value)) return null;
+    return (
+        <span
+            className={cn(
+                'rounded px-2 py-0.5 text-xs font-medium',
+                SENTIMENT_CLASS[value]
+            )}
+        >
+            {SENTIMENT_LABEL[value]}
+        </span>
+    );
+}
+
+function ImpactBadge({ value }: { value: string }) {
+    if (!isNewsImpact(value)) return null;
+    return (
+        <span
+            className={cn(
+                'rounded px-2 py-0.5 text-xs font-medium',
+                IMPACT_CLASS[value]
+            )}
+        >
+            {IMPACT_LABEL[value]}
+        </span>
+    );
+}
+
+/** Skeleton shown while AI analysis is still pending for this card. */
+function AnalysisSkeleton() {
+    return (
+        <div
+            aria-hidden="true"
+            className="mt-1.5 flex flex-wrap items-center gap-2"
+        >
+            <div className="bg-secondary-700 h-5 w-10 animate-pulse rounded motion-reduce:animate-none" />
+            <div className="bg-secondary-700 h-5 w-20 animate-pulse rounded motion-reduce:animate-none" />
+            <span className="text-secondary-500 text-xs">AI 분석 중…</span>
+        </div>
+    );
+}
+
+function SummarySkeletonLine() {
+    return (
+        <div aria-hidden="true" className="mt-2 space-y-1.5">
+            <div className="bg-secondary-700/70 h-3.5 w-full animate-pulse rounded motion-reduce:animate-none" />
+            <div className="bg-secondary-700/70 h-3.5 w-4/5 animate-pulse rounded motion-reduce:animate-none" />
+        </div>
+    );
+}
+
+interface TickerChipsProps {
+    category: NewsFeedCategory;
+    tickers: string[];
+}
+
+/**
+ * Renders ticker chips for market-news cards.
+ *
+ * - `stock` category: each chip is an `<a>` linking to `/${ticker}` so
+ *   users can navigate directly to the symbol page.
+ * - All other categories: each chip is a plain `<span>` (display only —
+ *   no per-symbol page exists for crypto sentinels like `BTCUSD`).
+ * - Empty `tickers`: the container is NOT rendered (callers must guard on
+ *   `tickers.length > 0`).
+ */
+function TickerChips({ category, tickers }: TickerChipsProps) {
+    if (category === 'stock') {
+        return (
+            <div
+                data-testid="ticker-chips"
+                className="mt-1.5 flex flex-wrap gap-1.5"
+            >
+                {tickers.map(ticker => (
+                    <a
+                        key={ticker}
+                        href={`/${ticker}`}
+                        aria-label={`${ticker} 종목 페이지로 이동`}
+                        className="text-primary-400 hover:text-primary-300 focus-visible:ring-primary-500 rounded px-1.5 py-0.5 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                    >
+                        {ticker}
+                    </a>
+                ))}
+            </div>
+        );
+    }
+
+    return (
+        <div
+            data-testid="ticker-chips"
+            className="mt-1.5 flex flex-wrap gap-1.5"
+        >
+            {tickers.map(ticker => (
+                <span
+                    key={ticker}
+                    className="bg-secondary-700 text-secondary-400 rounded px-1.5 py-0.5 text-xs font-medium"
+                >
+                    {ticker}
+                </span>
+            ))}
+        </div>
+    );
+}
+
+// ─── Public component ────────────────────────────────────────────────────────
+
+export interface MarketNewsCardProps {
+    category: NewsFeedCategory;
+    item: MarketNewsCardItem;
+}
+
+/**
+ * Renders a single market-news card with optional AI analysis badges,
+ * ticker chips (stock: deep-link; others: display-only), and a source link.
+ *
+ * `priceImpact === 'high'` adds a left amber accent border matching the
+ * per-symbol NewsCard treatment. Pending (no `sentiment`) cards show
+ * skeleton placeholders while the background LLM pass completes.
+ */
+export function MarketNewsCard({ category, item }: MarketNewsCardProps) {
+    const pending = isPending(item);
+    const isHighImpact = !pending && item.priceImpact === 'high';
+    const publishedDate = formatPublishedAt(item.publishedAt);
+
+    return (
+        <article
+            className={cn(
+                'border-secondary-700 bg-secondary-800 hover:border-primary-500/50 w-full max-w-full min-w-0 overflow-hidden rounded-xl border p-4 transition-[colors,transform] hover:-translate-y-px',
+                isHighImpact && 'border-l-ui-warning border-l-[3px] pl-5'
+            )}
+        >
+            <h3
+                className={cn(
+                    'leading-snug font-semibold text-balance wrap-break-word',
+                    pending && 'opacity-80'
+                )}
+            >
+                {item.titleKo ?? item.titleEn}
+            </h3>
+
+            {pending ? (
+                <AnalysisSkeleton />
+            ) : (
+                <div className="mt-1.5 flex min-w-0 flex-wrap items-center gap-2">
+                    {item.sentiment !== null && (
+                        <SentimentBadge value={item.sentiment} />
+                    )}
+                    {item.priceImpact !== null && (
+                        <ImpactBadge value={item.priceImpact} />
+                    )}
+                    {item.category !== null && (
+                        <span className="bg-secondary-700 text-secondary-400 rounded px-2 py-0.5 text-xs">
+                            {item.category}
+                        </span>
+                    )}
+                    <time
+                        dateTime={item.publishedAt}
+                        className="text-secondary-400 text-xs"
+                    >
+                        {publishedDate}
+                    </time>
+                    <span translate="no" className="text-secondary-400 text-xs">
+                        {item.source}
+                    </span>
+                </div>
+            )}
+
+            {/* Ticker chips: only when tickers are non-empty */}
+            {item.tickers.length > 0 && (
+                <TickerChips category={category} tickers={item.tickers} />
+            )}
+
+            {pending ? (
+                <SummarySkeletonLine />
+            ) : (
+                <>
+                    {item.bodyKo !== null && (
+                        <section className="border-secondary-700/70 mt-3 border-t pt-3">
+                            <h4 className="text-secondary-300 mb-1 text-xs font-semibold">
+                                본문
+                            </h4>
+                            <p className="text-secondary-400 text-sm leading-relaxed wrap-break-word">
+                                {item.bodyKo}
+                            </p>
+                        </section>
+                    )}
+                    {item.summaryKo !== null && (
+                        <section className="border-secondary-700/70 mt-3 border-t pt-3">
+                            <h4 className="text-secondary-300 mb-1 text-xs font-semibold">
+                                요약
+                            </h4>
+                            <p className="text-secondary-400 text-sm leading-relaxed wrap-break-word">
+                                {item.summaryKo}
+                            </p>
+                        </section>
+                    )}
+                    <a
+                        href={item.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary-400 focus-visible:ring-primary-500 mt-2 inline-block text-xs transition-opacity hover:opacity-70 focus-visible:ring-2 focus-visible:outline-none"
+                    >
+                        원문 보기 →
+                    </a>
+                </>
+            )}
+        </article>
+    );
+}

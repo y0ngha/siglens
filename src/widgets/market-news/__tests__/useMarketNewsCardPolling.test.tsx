@@ -137,10 +137,10 @@ describe('useMarketNewsCardPolling', () => {
     it('카테고리 변경 시 상태를 초기화하고 새 카테고리로 폴링한다', async () => {
         mockGetMarketNewsCardsAction.mockResolvedValue([ENRICHED_ITEM]);
 
+        type Props = { category: 'crypto' | 'stock' };
         const { result, rerender } = renderHook(
-            ({ category }: { category: 'crypto' | 'stock' }) =>
-                useMarketNewsCardPolling(category, []),
-            { initialProps: { category: 'crypto' as const } }
+            ({ category }: Props) => useMarketNewsCardPolling(category, []),
+            { initialProps: { category: 'crypto' } as Props }
         );
 
         await advancePolls(1);
