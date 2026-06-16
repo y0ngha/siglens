@@ -1,9 +1,11 @@
+import Link from 'next/link';
 import type { MarketNewsCardItem } from '@/entities/market-news/actions';
-import type { NewsFeedCategory } from '@y0ngha/siglens-core';
-import type { NewsImpact, NewsSentiment } from '@y0ngha/siglens-core';
+import type {
+    NewsFeedCategory,
+    NewsImpact,
+    NewsSentiment,
+} from '@y0ngha/siglens-core';
 import { cn } from '@/shared/lib/cn';
-
-// ─── Style token maps (reuse identical to NewsList.tsx) ─────────────────────
 
 const SENTIMENT_LABEL: Record<NewsSentiment, string> = {
     bullish: '긍정',
@@ -43,8 +45,6 @@ const PUBLISHED_AT_FORMATTER = new Intl.DateTimeFormat('ko-KR', {
     timeZone: 'Asia/Seoul',
 });
 
-// ─── Internal helpers ────────────────────────────────────────────────────────
-
 function isNewsSentiment(value: string): value is NewsSentiment {
     return VALID_SENTIMENTS.has(value);
 }
@@ -60,8 +60,6 @@ function isPending(item: MarketNewsCardItem): boolean {
 function formatPublishedAt(publishedAt: string): string {
     return `${PUBLISHED_AT_FORMATTER.format(new Date(publishedAt))} KST`;
 }
-
-// ─── Sub-components ──────────────────────────────────────────────────────────
 
 function SentimentBadge({ value }: { value: string }) {
     if (!isNewsSentiment(value)) return null;
@@ -137,14 +135,14 @@ function TickerChips({ category, tickers }: TickerChipsProps) {
                 className="mt-1.5 flex flex-wrap gap-1.5"
             >
                 {tickers.map(ticker => (
-                    <a
+                    <Link
                         key={ticker}
                         href={`/${ticker}`}
                         aria-label={`${ticker} 종목 페이지로 이동`}
                         className="text-primary-400 hover:text-primary-300 focus-visible:ring-primary-500 rounded px-1.5 py-0.5 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none"
                     >
                         {ticker}
-                    </a>
+                    </Link>
                 ))}
             </div>
         );
@@ -166,8 +164,6 @@ function TickerChips({ category, tickers }: TickerChipsProps) {
         </div>
     );
 }
-
-// ─── Public component ────────────────────────────────────────────────────────
 
 export interface MarketNewsCardProps {
     category: NewsFeedCategory;
@@ -230,7 +226,6 @@ export function MarketNewsCard({ category, item }: MarketNewsCardProps) {
                 </div>
             )}
 
-            {/* Ticker chips: only when tickers are non-empty */}
             {item.tickers.length > 0 && (
                 <TickerChips category={category} tickers={item.tickers} />
             )}

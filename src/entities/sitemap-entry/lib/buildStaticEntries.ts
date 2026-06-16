@@ -21,7 +21,7 @@ export function buildStaticEntries(now: Date): SitemapEntry[] {
         Object.keys(CATEGORY_CONFIG) as NewsFeedCategory[]
     ).map(cat => ({
         url: `${SITE_URL}/news/${CATEGORY_CONFIG[cat].slug}`,
-        lastModified: SITE_BUILD_DATE,
+        lastModified: now,
         changeFrequency: 'daily' as const,
         priority: 0.8,
     }));
@@ -48,7 +48,7 @@ export function buildStaticEntries(now: Date): SitemapEntry[] {
         // /news hub index
         {
             url: `${SITE_URL}/news`,
-            lastModified: SITE_BUILD_DATE,
+            lastModified: now,
             changeFrequency: 'daily',
             priority: 0.8,
         },

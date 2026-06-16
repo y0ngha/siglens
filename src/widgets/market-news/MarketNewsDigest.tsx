@@ -1,11 +1,12 @@
 'use client';
 
-import type { NewsAnalysisResponse, NewsSentiment } from '@y0ngha/siglens-core';
-import type { NewsFeedCategory } from '@y0ngha/siglens-core';
+import type {
+    NewsAnalysisResponse,
+    NewsFeedCategory,
+    NewsSentiment,
+} from '@y0ngha/siglens-core';
 import { cn } from '@/shared/lib/cn';
 import { useMarketNewsDigest } from './hooks/useMarketNewsDigest';
-
-// ─── Style token maps (mirroring NewsAiSummary.tsx) ─────────────────────────
 
 const SENTIMENT_LABEL: Record<NewsSentiment, string> = {
     bullish: '긍정',
@@ -24,8 +25,6 @@ const VALID_SENTIMENTS = new Set<string>(['bullish', 'neutral', 'bearish']);
 function isNewsSentiment(v: string): v is NewsSentiment {
     return VALID_SENTIMENTS.has(v);
 }
-
-// ─── Sub-components ──────────────────────────────────────────────────────────
 
 /** Loading / generating status card. */
 function DigestStatusCard() {
@@ -69,8 +68,6 @@ interface DigestResultViewProps {
 }
 
 function DigestResultView({ result }: DigestResultViewProps) {
-    const sentimentValid = isNewsSentiment(result.overallSentiment);
-
     return (
         <section
             aria-labelledby="market-news-digest-heading"
@@ -83,20 +80,14 @@ function DigestResultView({ result }: DigestResultViewProps) {
                 >
                     시장 AI 다이제스트
                 </h2>
-                {sentimentValid && (
+                {isNewsSentiment(result.overallSentiment) && (
                     <span
                         className={cn(
                             'rounded px-2 py-0.5 text-xs font-medium',
-                            SENTIMENT_CLASS[
-                                result.overallSentiment as NewsSentiment
-                            ]
+                            SENTIMENT_CLASS[result.overallSentiment]
                         )}
                     >
-                        {
-                            SENTIMENT_LABEL[
-                                result.overallSentiment as NewsSentiment
-                            ]
-                        }
+                        {SENTIMENT_LABEL[result.overallSentiment]}
                     </span>
                 )}
             </div>
@@ -186,8 +177,6 @@ function DigestErrorView({ error, onRetry }: DigestErrorViewProps) {
         </section>
     );
 }
-
-// ─── Public component ────────────────────────────────────────────────────────
 
 export interface MarketNewsDigestProps {
     category: NewsFeedCategory;

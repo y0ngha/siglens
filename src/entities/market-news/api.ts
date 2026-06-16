@@ -169,10 +169,6 @@ export const getMarketNewsList = cache(
     }
 );
 
-// ---------------------------------------------------------------------------
-// DB row shape + enum-whitelist validation
-// ---------------------------------------------------------------------------
-
 interface MarketNewsDbRow {
     id: string;
     symbol: string;
@@ -262,7 +258,7 @@ function toMarketNewsRow(row: MarketNewsDbRow): MarketNewsRow {
         ...displayItem,
         bodyEn: row.bodyEn,
         symbol: row.symbol,
-        tickers: row.tickers ?? [],
+        tickers: row.tickers,
         analyzedAt: row.analyzedAt,
     };
 }

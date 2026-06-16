@@ -9,5 +9,10 @@ import {
 export async function pollMarketNewsDigestAction(
     jobId: string
 ): Promise<PollMarketNewsDigestResult> {
-    return pollMarketNewsDigest(jobId);
+    try {
+        return await pollMarketNewsDigest(jobId);
+    } catch (error) {
+        console.error('[pollMarketNewsDigestAction]', error);
+        return { status: 'error', error: 'Poll failed' };
+    }
 }

@@ -4,9 +4,10 @@ import { waitUntil } from '@vercel/functions';
 import { headers } from 'next/headers';
 import {
     submitMarketNewsDigest,
+    type EnrichedNewsItem,
+    type NewsFeedCategory,
     type SubmitMarketNewsDigestResult,
 } from '@y0ngha/siglens-core';
-import type { EnrichedNewsItem, NewsFeedCategory } from '@y0ngha/siglens-core';
 import { isBot } from '@/shared/api/isBot';
 import { getMarketNewsList } from '../api';
 import { CATEGORY_CONFIG } from '../lib/categoryConfig';
@@ -45,26 +46,30 @@ function toEnrichedMarketNewsItem(row: MarketNewsRow): EnrichedNewsItem | null {
 export async function submitMarketNewsDigestAction(
     category: NewsFeedCategory
 ): Promise<SubmitMarketNewsDigestResult> {
-    const requestHeaders = await headers();
-    const skipEnqueueIfMiss = isBot(requestHeaders);
+    try {
+        const requestHeaders = await headers();
+        const skipEnqueueIfMiss = isBot(requestHeaders);
 
-    const { sentinel, koLabel } = CATEGORY_CONFIG[category];
-    const rows = await getMarketNewsList(sentinel);
+        const { sentinel, koLabel } = CATEGORY_CONFIG[category];
+        const rows = await getMarketNewsList(sentinel);
 
-    // Filter to rows that have been fully enriched by the per-card LLM pass.
-    const enrichedItems: EnrichedNewsItem[] = rows
-        .map(toEnrichedMarketNewsItem)
-        .filter((item): item is EnrichedNewsItem => item !== null);
+        const enrichedItems: EnrichedNewsItem[] = rows
+            .map(toEnrichedMarketNewsItem)
+            .filter((item): item is EnrichedNewsItem => item !== null);
 
-    // Cap to the top market-moving items to keep the digest prompt bounded.
-    const news = selectAggregateNewsItems(enrichedItems);
+        // Cap to the top market-moving items to keep the digest prompt bounded.
+        const news = selectAggregateNewsItems(enrichedItems);
 
-    return submitMarketNewsDigest({
-        category,
-        categoryLabel: koLabel,
-        modelId: DEFAULT_DIGEST_MODEL_ID,
-        news,
-        skipEnqueueIfMiss,
-        waitUntil,
-    });
+        return await submitMarketNewsDigest({
+            category,
+            categoryLabel: koLabel,
+            modelId: DEFAULT_DIGEST_MODEL_ID,
+            news,
+            skipEnqueueIfMiss,
+            waitUntil,
+        });
+    } catch (error) {
+        console.error('[submitMarketNewsDigestAction]', error);
+        return { status: 'no_news' };
+    }
 }

@@ -73,4 +73,13 @@ describe('getMarketNewsCardsAction은', () => {
         const cards = await getMarketNewsCardsAction('forex');
         expect(cards).toEqual([]);
     });
+
+    it('예외 발생 시 throw하지 않고 빈 배열을 반환한다', async () => {
+        const { getMarketNewsList } = await import('../api');
+        vi.mocked(getMarketNewsList).mockRejectedValueOnce(
+            new Error('db error')
+        );
+        const cards = await getMarketNewsCardsAction('crypto');
+        expect(cards).toEqual([]);
+    });
 });

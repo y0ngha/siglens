@@ -71,4 +71,27 @@ describe('buildStaticEntries', () => {
             expect(entry.priority).toBe(0.3);
         }
     });
+
+    it('/news hub과 5개 카테고리 entries는 now를 lastModified로 사용한다', () => {
+        const entries = buildStaticEntries(NOW);
+        const newsHub = entries.find(e => e.url === 'https://siglens.io/news');
+        expect(newsHub).toBeDefined();
+        expect(newsHub!.lastModified).toBeInstanceOf(Date);
+        expect(newsHub!.lastModified.getTime()).toBe(NOW.getTime());
+
+        for (const slug of [
+            'general',
+            'stock',
+            'crypto',
+            'forex',
+            'articles',
+        ]) {
+            const cat = entries.find(
+                e => e.url === `https://siglens.io/news/${slug}`
+            );
+            expect(cat).toBeDefined();
+            expect(cat!.lastModified).toBeInstanceOf(Date);
+            expect(cat!.lastModified.getTime()).toBe(NOW.getTime());
+        }
+    });
 });

@@ -23,7 +23,12 @@ import type { NewsFeedCategory } from '@y0ngha/siglens-core';
 export async function getMarketNewsCardsAction(
     category: NewsFeedCategory
 ): Promise<MarketNewsCardItem[]> {
-    const { sentinel } = CATEGORY_CONFIG[category];
-    const rows = await getMarketNewsList(sentinel);
-    return rows.map(toMarketNewsCardItem);
+    try {
+        const { sentinel } = CATEGORY_CONFIG[category];
+        const rows = await getMarketNewsList(sentinel);
+        return rows.map(toMarketNewsCardItem);
+    } catch (error) {
+        console.error('[getMarketNewsCardsAction]', error);
+        return [];
+    }
 }

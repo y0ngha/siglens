@@ -48,5 +48,6 @@ const VALID_SLUGS: ReadonlySet<string> = new Set(Object.keys(CATEGORY_CONFIG));
 
 /** Narrow an arbitrary route param to a NewsFeedCategory, or null if invalid. */
 export function categoryFromSlug(slug: string): NewsFeedCategory | null {
+    // safe: VALID_SLUGS is Object.keys(CATEGORY_CONFIG), so has(slug) proves slug ∈ NewsFeedCategory
     return VALID_SLUGS.has(slug) ? (slug as NewsFeedCategory) : null;
 }

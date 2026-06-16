@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useLayoutEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { getMarketNewsCardsAction } from '@/entities/market-news/actions';
 import type { MarketNewsCardItem } from '@/entities/market-news/actions';
 import type { NewsFeedCategory } from '@y0ngha/siglens-core';
@@ -33,9 +33,8 @@ export interface UseMarketNewsCardPollingReturn {
  * polling errors, or after `EMPTY_SNAPSHOT_MAX_POLLS` (20) consecutive empty
  * snapshots.
  *
- * NOTE: `initialItems` is compared by reference for state-reset detection.
- * Pass a stable reference (SSR snapshot) to avoid unnecessary state resets.
- * If stability is not guaranteed, memoize at the call site.
+ * Pass a stable `key` on the consuming list to force a fresh-mount reset
+ * when the snapshot array identity must drive a reset (e.g. client navigation).
  */
 export function useMarketNewsCardPolling(
     category: NewsFeedCategory,
@@ -50,7 +49,6 @@ export function useMarketNewsCardPolling(
     // warning and skips a redundant commit cycle.
     // https://react.dev/reference/react/useState#storing-information-from-previous-renders
     const [prevCategory, setPrevCategory] = useState(category);
-    const latestItemsRef = useRef(initialItems);
 
     if (prevCategory !== category) {
         setPrevCategory(category);
@@ -58,14 +56,6 @@ export function useMarketNewsCardPolling(
         setIsPolling(true);
         setPollError(null);
     }
-
-    // Mirror committed `items` into the ref so the polling closure reads the
-    // latest snapshot without depending on stale closure values. Done in
-    // useLayoutEffect (not in render) to satisfy the no-ref-mutation-during-
-    // render rule while still landing before any concurrent reads from setInterval.
-    useLayoutEffect(() => {
-        latestItemsRef.current = items;
-    }, [items]);
 
     useEffect(() => {
         let pollCount = 0;
@@ -83,7 +73,6 @@ export function useMarketNewsCardPolling(
                 const fresh = await getMarketNewsCardsAction(category);
                 pollCount += 1;
                 consecutiveFailures = 0;
-                latestItemsRef.current = fresh;
                 setItems(fresh);
 
                 if (

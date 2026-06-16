@@ -2,8 +2,10 @@
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import type { NewsAnalysisResponse } from '@y0ngha/siglens-core';
-import type { NewsFeedCategory } from '@y0ngha/siglens-core';
+import type {
+    NewsAnalysisResponse,
+    NewsFeedCategory,
+} from '@y0ngha/siglens-core';
 import {
     ensureMarketNewsCardsAnalyzedAction,
     getMarketNewsCardsAction,
@@ -21,6 +23,11 @@ export type MarketNewsDigestState =
     | { status: 'done'; result: NewsAnalysisResponse }
     | { status: 'error'; error: Error; retry: () => void };
 
+interface WaitForMarketNewsCardsResult {
+    isReady: boolean;
+    waitError: Error | null;
+}
+
 /**
  * Poll `getMarketNewsCardsAction` until at least one enriched card (sentiment
  * !== null) is available, then resolve. Returns `isReady = true` immediately
@@ -31,7 +38,7 @@ export type MarketNewsDigestState =
 function useWaitForMarketNewsCards(
     category: NewsFeedCategory,
     initiallyReady: boolean
-): { isReady: boolean; waitError: Error | null } {
+): WaitForMarketNewsCardsResult {
     const [isReady, setIsReady] = useState(initiallyReady);
     const [waitError, setWaitError] = useState<Error | null>(null);
     const [prevCategory, setPrevCategory] = useState(category);
@@ -194,10 +201,9 @@ export function useMarketNewsDigest(
         staleTime: Infinity,
     });
 
-    const { refetch } = query;
     const retry = useCallback(() => {
-        void refetch();
-    }, [refetch]);
+        void query.refetch();
+    }, [query]);
 
     // Cancel in-flight digest job on unmount or queryKey change (category change).
     useEffect(() => {

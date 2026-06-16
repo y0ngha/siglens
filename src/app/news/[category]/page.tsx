@@ -35,6 +35,11 @@ interface Props {
     params: Promise<{ category: string }>;
 }
 
+interface CategorySnapshot {
+    items: MarketNewsCardItem[];
+    isEmpty: boolean;
+}
+
 /**
  * Shared helper: load the category snapshot and determine whether the list is
  * empty. Used by both `generateMetadata` and the page component so noindex
@@ -47,10 +52,9 @@ interface Props {
  * DB-internal columns (bodyEn, symbol, analyzedAt) are stripped before the
  * items reach any client component or RSC payload serialisation.
  */
-async function loadCategorySnapshot(category: NewsFeedCategory): Promise<{
-    items: MarketNewsCardItem[];
-    isEmpty: boolean;
-}> {
+async function loadCategorySnapshot(
+    category: NewsFeedCategory
+): Promise<CategorySnapshot> {
     const cfg = CATEGORY_CONFIG[category];
     const rows = await staticSymbolCache(
         ['market-news:list', cfg.sentinel],

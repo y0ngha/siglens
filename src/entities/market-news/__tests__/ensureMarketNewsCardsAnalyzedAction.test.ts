@@ -154,4 +154,12 @@ describe('ensureMarketNewsCardsAnalyzedAction은', () => {
         });
         expect(getMarketNewsClient).not.toHaveBeenCalled();
     });
+
+    it('예외가 발생해도 throw하지 않고 void를 반환한다', async () => {
+        mockFetchCategoryNews.mockRejectedValue(new Error('network error'));
+        // Should resolve without throwing
+        await expect(
+            ensureMarketNewsCardsAnalyzedAction('crypto')
+        ).resolves.toBeUndefined();
+    });
 });

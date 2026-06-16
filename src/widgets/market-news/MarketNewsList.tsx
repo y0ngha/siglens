@@ -8,7 +8,8 @@ import { MarketNewsCard } from './MarketNewsCard';
 
 const PAGE_SIZE = 10;
 const SKELETON_COUNT = 3;
-const PERIOD_LABEL = '최근 7일';
+const LOOKBACK_DAYS = 7;
+const PERIOD_LABEL = `최근 ${LOOKBACK_DAYS}일`;
 
 function MarketNewsCardSkeleton() {
     return (
@@ -129,7 +130,7 @@ export function MarketNewsList({
                     </span>
                 </div>
                 <p className="text-secondary-400 text-sm">
-                    7일 동안 들어온 뉴스가 없어요.
+                    지난 {LOOKBACK_DAYS}일 동안 들어온 뉴스가 없어요.
                 </p>
             </section>
         );

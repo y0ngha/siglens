@@ -123,7 +123,6 @@ export default async function NewsHubPage() {
                         return (
                             <CategoryCard
                                 key={cat}
-                                category={cat}
                                 koLabel={cfg.koLabel}
                                 slug={cfg.slug}
                                 previewHeadlines={previewsByCategory[i]}

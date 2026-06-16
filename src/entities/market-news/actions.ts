@@ -5,7 +5,6 @@ export { ensureMarketNewsCardsAnalyzedAction } from './actions/ensureMarketNewsC
 export { getMarketNewsCardsAction } from './actions/getMarketNewsCardsAction';
 export type { MarketNewsCardItem } from './lib/toCardItem';
 
-// Phase 4: digest actions
 export { submitMarketNewsDigestAction } from './actions/submitMarketNewsDigestAction';
 export { pollMarketNewsDigestAction } from './actions/pollMarketNewsDigestAction';
 export { cancelMarketNewsDigestAction } from './actions/cancelMarketNewsDigestAction';

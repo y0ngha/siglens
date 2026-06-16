@@ -8,6 +8,7 @@ import {
     pollNewsCardAnalysis,
     submitNewsCardAnalysis,
     type NewsItem,
+    type NewsFeedCategory,
 } from '@y0ngha/siglens-core';
 import { DrizzleMarketNewsRepository } from '../api';
 import { getMarketNewsClient } from '../lib/getMarketNewsClient';
@@ -19,7 +20,6 @@ import {
     POLL_INTERVAL_MS,
     POLL_MAX_ATTEMPTS,
 } from '@/entities/news-article/lib/newsAnalysisConstants';
-import type { NewsFeedCategory } from '@y0ngha/siglens-core';
 
 /**
  * Submit per-card AI analysis for a single item and wait for the worker to
@@ -75,85 +75,99 @@ export async function ensureMarketNewsCardsAnalyzedAction(
     category: NewsFeedCategory,
     options?: { skipAnalysis?: boolean }
 ): Promise<void> {
-    const { sentinel } = CATEGORY_CONFIG[category];
+    try {
+        const { sentinel } = CATEGORY_CONFIG[category];
 
-    // Bot guard: skip FMP fetch+upsert when this sentinel was fetched recently.
-    // Bots read the existing DB rows so this is SEO-safe.
-    if (options?.skipAnalysis && (await isRecentlyFetched(sentinel))) {
-        return;
-    }
+        // Bot guard: skip FMP fetch+upsert when this sentinel was fetched recently.
+        // Bots read the existing DB rows so this is SEO-safe.
+        if (options?.skipAnalysis && (await isRecentlyFetched(sentinel))) {
+            return;
+        }
 
-    const newsClient = getMarketNewsClient();
-    const { db } = getDatabaseClient();
-    const repo = new DrizzleMarketNewsRepository(db);
+        const newsClient = getMarketNewsClient();
+        const { db } = getDatabaseClient();
+        const repo = new DrizzleMarketNewsRepository(db);
 
-    const fresh = await newsClient
-        .fetchCategoryNews(category, MARKET_NEWS_LOOKBACK_MS)
-        .catch((err: unknown) => {
+        const fresh = await newsClient
+            .fetchCategoryNews(category, MARKET_NEWS_LOOKBACK_MS)
+            .catch((err: unknown) => {
+                console.error(
+                    '[ensureMarketNewsCardsAnalyzedAction] FMP fetch failed:',
+                    err
+                );
+                return null;
+            });
+        if (fresh === null) return;
+
+        // Upsert all items first so the DB row exists before attachAnalysis runs.
+        // We do NOT wrap upsert + analyze in a transaction — LLM polling can take
+        // seconds and would hold connection-pool slots (same rationale as per-symbol).
+        const upsertSettled = await Promise.allSettled(
+            fresh.map(item => repo.upsertMarketNewsItem(item))
+        );
+        const upsertFailures = upsertSettled.filter(
+            r => r.status === 'rejected'
+        );
+        if (upsertFailures.length > 0) {
             console.error(
-                '[ensureMarketNewsCardsAnalyzedAction] FMP fetch failed:',
-                err
+                `[ensureMarketNewsCardsAnalyzedAction] ${upsertFailures.length}/${fresh.length} upserts failed`,
+                upsertFailures.map(f =>
+                    f.status === 'rejected' ? f.reason : null
+                )
             );
-            return null;
-        });
-    if (fresh === null) return;
+        }
+        if (upsertFailures.length > fresh.length / 2) {
+            console.error(
+                `[ensureMarketNewsCardsAnalyzedAction] majority upsert failure (${upsertFailures.length}/${fresh.length}) — aborting`
+            );
+            return;
+        }
+        await markFetched(sentinel);
 
-    // Upsert all items first so the DB row exists before attachAnalysis runs.
-    // We do NOT wrap upsert + analyze in a transaction — LLM polling can take
-    // seconds and would hold connection-pool slots (same rationale as per-symbol).
-    const upsertSettled = await Promise.allSettled(
-        fresh.map(item => repo.upsertMarketNewsItem(item))
-    );
-    const upsertFailures = upsertSettled.filter(r => r.status === 'rejected');
-    if (upsertFailures.length > 0) {
-        console.error(
-            `[ensureMarketNewsCardsAnalyzedAction] ${upsertFailures.length}/${fresh.length} upserts failed`,
-            upsertFailures.map(f => (f.status === 'rejected' ? f.reason : null))
+        if (fresh.length === 0) return;
+
+        // Only revalidate when at least one row was actually inserted or changed.
+        // `upsertMarketNewsItem` returns true only on genuine content change (setWhere).
+        const changedCount = upsertSettled.filter(
+            r => r.status === 'fulfilled' && r.value === true
+        ).length;
+        if (changedCount > 0) {
+            // Use 'market-news:<sentinel>' tag so only the category's ISR cache is
+            // busted — bars/profile/analysis caches for per-symbol pages are untouched.
+            revalidateTag(`market-news:${sentinel}`, 'max');
+        }
+
+        if (isE2E()) return;
+
+        if (options?.skipAnalysis) return;
+
+        // Read current DB state after upsert so newly inserted rows are included.
+        const rows = await repo.listByCategory(
+            sentinel,
+            MARKET_NEWS_LOOKBACK_MS
         );
-    }
-    if (upsertFailures.length > fresh.length / 2) {
-        throw new Error(
-            `[ensureMarketNewsCardsAnalyzedAction] majority upsert failure (${upsertFailures.length}/${fresh.length})`
+        const analyzedIds = new Set(
+            rows.filter(r => r.analyzedAt !== null).map(r => r.id)
         );
-    }
-    await markFetched(sentinel);
+        const unanalyzed = fresh.filter(item => !analyzedIds.has(item.id));
 
-    if (fresh.length === 0) return;
+        if (unanalyzed.length === 0) return;
 
-    // Only revalidate when at least one row was actually inserted or changed.
-    // `upsertMarketNewsItem` returns true only on genuine content change (setWhere).
-    const changedCount = upsertSettled.filter(
-        r => r.status === 'fulfilled' && r.value === true
-    ).length;
-    if (changedCount > 0) {
-        // Use 'market-news:<sentinel>' tag so only the category's ISR cache is
-        // busted — bars/profile/analysis caches for per-symbol pages are untouched.
-        revalidateTag(`market-news:${sentinel}`, 'max');
-    }
-
-    if (isE2E()) return;
-
-    if (options?.skipAnalysis) return;
-
-    // Read current DB state after upsert so newly inserted rows are included.
-    const rows = await repo.listByCategory(sentinel, MARKET_NEWS_LOOKBACK_MS);
-    const analyzedIds = new Set(
-        rows.filter(r => r.analyzedAt !== null).map(r => r.id)
-    );
-    const unanalyzed = fresh.filter(item => !analyzedIds.has(item.id));
-
-    if (unanalyzed.length === 0) return;
-
-    const analyzeSettled = await Promise.allSettled(
-        unanalyzed.map(item => analyzeAndPersist(item, repo))
-    );
-    const analyzeFailures = analyzeSettled.filter(r => r.status === 'rejected');
-    if (analyzeFailures.length > 0) {
-        console.error(
-            `[ensureMarketNewsCardsAnalyzedAction] ${analyzeFailures.length}/${unanalyzed.length} analyzeAndPersist failed`,
-            analyzeFailures.map(f =>
-                f.status === 'rejected' ? f.reason : null
-            )
+        const analyzeSettled = await Promise.allSettled(
+            unanalyzed.map(item => analyzeAndPersist(item, repo))
         );
+        const analyzeFailures = analyzeSettled.filter(
+            r => r.status === 'rejected'
+        );
+        if (analyzeFailures.length > 0) {
+            console.error(
+                `[ensureMarketNewsCardsAnalyzedAction] ${analyzeFailures.length}/${unanalyzed.length} analyzeAndPersist failed`,
+                analyzeFailures.map(f =>
+                    f.status === 'rejected' ? f.reason : null
+                )
+            );
+        }
+    } catch (error) {
+        console.error('[ensureMarketNewsCardsAnalyzedAction]', error);
     }
 }

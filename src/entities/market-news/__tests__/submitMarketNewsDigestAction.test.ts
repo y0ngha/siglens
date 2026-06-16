@@ -96,6 +96,19 @@ describe('submitMarketNewsDigestAction은', () => {
 
         expect(r.status).toBe('cached');
     });
+
+    it('예외 발생 시 throw하지 않고 no_news를 반환한다', async () => {
+        const core = await import('@y0ngha/siglens-core');
+        vi.mocked(core.submitMarketNewsDigest).mockRejectedValue(
+            new Error('core error')
+        );
+
+        const { submitMarketNewsDigestAction } =
+            await import('../actions/submitMarketNewsDigestAction');
+        const r = await submitMarketNewsDigestAction('crypto');
+
+        expect(r.status).toBe('no_news');
+    });
 });
 
 describe('pollMarketNewsDigestAction은', () => {
@@ -113,6 +126,22 @@ describe('pollMarketNewsDigestAction은', () => {
 
         expect(core.pollMarketNewsDigest).toHaveBeenCalledWith('job-1');
         expect(r.status).toBe('processing');
+    });
+
+    it('예외 발생 시 throw하지 않고 error 상태를 반환한다', async () => {
+        const core = await import('@y0ngha/siglens-core');
+        vi.mocked(core.pollMarketNewsDigest).mockRejectedValue(
+            new Error('poll network error')
+        );
+
+        const { pollMarketNewsDigestAction } =
+            await import('../actions/pollMarketNewsDigestAction');
+        const r = await pollMarketNewsDigestAction('job-1');
+
+        expect(r.status).toBe('error');
+        expect((r as { status: 'error'; error: string }).error).toBe(
+            'Poll failed'
+        );
     });
 });
 

@@ -1,4 +1,4 @@
-import type { NewsFeedCategory } from '@y0ngha/siglens-core';
+import Link from 'next/link';
 
 /**
  * Maximum number of headline previews to render on the hub card.
@@ -7,7 +7,6 @@ import type { NewsFeedCategory } from '@y0ngha/siglens-core';
 const MAX_PREVIEW_HEADLINES = 3;
 
 export interface CategoryCardProps {
-    category: NewsFeedCategory;
     koLabel: string;
     slug: string;
     /**
@@ -63,13 +62,13 @@ export function CategoryCard({
                 </p>
             )}
 
-            <a
+            <Link
                 href={`/news/${slug}`}
                 className="text-primary-400 hover:text-primary-300 focus-visible:ring-primary-500 mt-auto text-sm transition-colors focus-visible:ring-2 focus-visible:outline-none"
                 aria-label={`${koLabel} 뉴스 더보기`}
             >
                 더보기 →
-            </a>
+            </Link>
         </article>
     );
 }
