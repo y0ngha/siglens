@@ -1,3 +1,4 @@
+import { sql } from 'drizzle-orm';
 import {
     boolean,
     date,
@@ -253,6 +254,52 @@ export const news = pgTable(
             table.publishedAt
         ),
         index('news_published_at_idx').on(table.publishedAt),
+    ]
+);
+
+/**
+ * Market-wide news bucketed by feed category (sentinel symbol), isolated from the
+ * per-symbol `news` table so category ingestion can never overwrite per-symbol rows.
+ * `tickers` holds the article's own ticker(s) for display chips (stock/crypto/forex).
+ */
+export const marketNews = pgTable(
+    'market_news',
+    {
+        id: text('id').primaryKey(),
+        symbol: text('symbol').notNull(), // sentinel bucket, e.g. __NEWS_CRYPTO__
+        source: text('source').notNull(),
+        url: text('url').notNull().unique(),
+        publishedAt: timestamp('published_at', {
+            withTimezone: true,
+        }).notNull(),
+        titleEn: text('title_en').notNull(),
+        titleKo: text('title_ko'),
+        bodyEn: text('body_en'),
+        bodyKo: text('body_ko'),
+        summaryKo: text('summary_ko'),
+        /** LLM-assigned sentiment: 'bullish' | 'neutral' | 'bearish' */
+        sentiment: text('sentiment'),
+        /** LLM-assigned category: NewsCategory value */
+        category: text('category'),
+        /** LLM-assigned price impact magnitude: 'high' | 'medium' | 'low' | 'negligible' */
+        priceImpact: text('price_impact'),
+        /** Article's own tickers (stock/crypto/forex) for display chips; [] when none. */
+        tickers: text('tickers')
+            .array()
+            .notNull()
+            .default(sql`ARRAY[]::text[]`),
+        rawPayload: jsonb('raw_payload'),
+        fetchedAt: timestamp('fetched_at', { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+        analyzedAt: timestamp('analyzed_at', { withTimezone: true }),
+    },
+    table => [
+        index('market_news_symbol_published_at_idx').on(
+            table.symbol,
+            table.publishedAt
+        ),
+        index('market_news_published_at_idx').on(table.publishedAt),
     ]
 );
 
