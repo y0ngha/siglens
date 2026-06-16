@@ -105,8 +105,8 @@ export function isEmptyFinancialsSnapshot(
  * **React.cache로 감싸 per-request 메모이즈**한다(같은 인자 → 1회 실행). 한 요청에서
  * `generateMetadata`와 페이지 렌더가 둘 다 호출해도 두 번째는 즉시 반환된다 — 특히
  * 빈 스냅샷 경로(`cacheNonEmpty`가 Next data cache를 우회)에서도 6개 FMP 엔드포인트
- * × 2회 재시도가 Redis 1회 조회로 줄어든다(빈 경로의 cross-request dedup은 여전히
- * CachedFinancialStatementsProvider의 Redis 계층이 담당).
+ * × 2회 호출(generateMetadata + 페이지 렌더의 정상 흐름)이 Redis 1회 조회로 줄어든다
+ * (빈 경로의 cross-request dedup은 여전히 CachedFinancialStatementsProvider의 Redis 계층이 담당).
  *
  * provider가 빈 배열을 반환하면(데이터 없는 심볼 / FMP throw swallow) 정규화된
  * snapshot의 각 섹션도 빈 배열이 된다 — 호출 측에서 `isEmptyFinancialsSnapshot`로
