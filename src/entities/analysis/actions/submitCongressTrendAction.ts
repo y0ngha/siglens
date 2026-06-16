@@ -47,14 +47,26 @@ export async function submitCongressTrendAction(
             ? stub.e2eForcedCongressError()
             : stub.e2eCachedCongressTrend();
     }
-    const requestHeaders = await headers();
-    const skipEnqueueIfMiss = isBot(requestHeaders);
+    try {
+        const requestHeaders = await headers();
+        const skipEnqueueIfMiss = isBot(requestHeaders);
 
-    return await submitCongressTrend({
-        symbol,
-        modelId,
-        dataProvider: getCongressTradesProvider(),
-        waitUntil,
-        skipEnqueueIfMiss,
-    });
+        return await submitCongressTrend({
+            symbol,
+            modelId,
+            dataProvider: getCongressTradesProvider(),
+            waitUntil,
+            skipEnqueueIfMiss,
+        });
+    } catch (error) {
+        // MISTAKES §0.7: server actions must not propagate raw exceptions to
+        // the client. Map any unexpected failure into the `fetch_failed` result
+        // shape so the widget can render the typed error state.
+        console.error('[submitCongressTrendAction] failed:', error);
+        return {
+            status: 'error',
+            code: 'fetch_failed',
+            error: String(error),
+        };
+    }
 }

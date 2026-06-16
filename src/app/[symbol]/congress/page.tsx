@@ -108,7 +108,6 @@ export default async function CongressPage({ params }: Props) {
         notFound();
     }
 
-    // Gate via profile — same pattern as the financials/fundamental routes.
     // getProfileResilient uses ['fundamental:profile', upper] key, shared with
     // ProfileSection inside the fundamental page, so there is no extra FMP round-trip.
     const [{ profile, degraded: profileDegraded }, { assetInfo }] =
@@ -130,10 +129,9 @@ export default async function CongressPage({ params }: Props) {
         notFound();
     }
 
-    // Fetch the congress trades envelope. `degraded` semantically differs from
-    // financials: ONLY FMP infra failure is degrade. `trades.length === 0` is
-    // a normal indexable state — sparse tickers legitimately have no congress
-    // trades on record.
+    // `degraded` semantically differs from financials: ONLY FMP infra failure
+    // is degrade. `trades.length === 0` is a normal indexable state — sparse
+    // tickers legitimately have no congress trades on record.
     const { trades, degraded: tradesDegraded } =
         await getCongressPageData(upper);
 

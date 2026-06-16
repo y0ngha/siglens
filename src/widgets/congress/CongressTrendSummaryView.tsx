@@ -10,7 +10,6 @@ const SENTIMENT_LABEL: Record<CongressSentiment, string> = {
     bearish: '매도 우위',
 };
 
-// bullish=text-chart-bullish, bearish=text-chart-bearish, neutral=ui-text
 // FinancialsAiSummaryView와 동일한 background/foreground 페어를 사용한다.
 const SENTIMENT_CLASS: Record<CongressSentiment, string> = {
     bullish: 'bg-ui-success/10 text-chart-bullish',

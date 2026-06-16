@@ -11,10 +11,8 @@ import {
  * `getFinancialsPageData` shape — keeping the page body free of direct entity
  * imports for the data layer.
  */
-export type CongressPageData = ResilientCongressTrades;
-
 export async function getCongressPageData(
     symbol: string
-): Promise<CongressPageData> {
+): Promise<ResilientCongressTrades> {
     return getCongressTradesResilient(symbol);
 }

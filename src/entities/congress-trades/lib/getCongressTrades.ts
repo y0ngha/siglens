@@ -36,7 +36,6 @@ export async function getCongressTrades(
         ),
     ]);
 
-    // normalizeCongressTrades merges, tags each trade's chamber, and sorts desc
-    // by transactionDate — it never throws (returns [] on empty input).
+    // never throws — caller relies on [] for empty input
     return normalizeCongressTrades(senate, house);
 }

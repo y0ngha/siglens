@@ -79,7 +79,7 @@ function ChamberBadge({ chamber }: { chamber: Chamber }) {
                 className={cn(
                     'rounded px-1.5 py-0.5 text-xs font-medium',
                     chamber === 'senate'
-                        ? 'bg-ui-info/10 text-chart-bullish'
+                        ? 'bg-primary-500/10 text-chart-bullish'
                         : 'bg-secondary-700 text-secondary-300'
                 )}
             >
@@ -271,8 +271,10 @@ export function CongressTradesTable({ trades }: CongressTradesTableProps) {
                                     <OwnerBadge owner={trade.owner} />
                                 </td>
 
-                                <td className="text-secondary-400 max-w-[12rem] truncate px-4 py-3 text-xs">
-                                    {trade.assetDescription}
+                                <td className="px-4 py-3">
+                                    <div className="text-secondary-400 max-w-[12rem] truncate text-xs">
+                                        {trade.assetDescription}
+                                    </div>
                                 </td>
 
                                 <td className="px-4 py-3 whitespace-nowrap">
