@@ -5,7 +5,6 @@ import type {
 import {
     submitMarketNewsDigestAction,
     pollMarketNewsDigestAction,
-    cancelMarketNewsDigestAction,
     type SubmitMarketNewsDigestActionResult,
 } from '@/entities/market-news/actions';
 import { sleep } from '@/shared/lib/sleep';
