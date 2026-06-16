@@ -97,7 +97,7 @@ describe('submitMarketNewsDigestAction은', () => {
         expect(r.status).toBe('cached');
     });
 
-    it('예외 발생 시 throw하지 않고 no_news를 반환한다', async () => {
+    it('예외 발생 시 throw하지 않고 error 상태를 반환한다', async () => {
         const core = await import('@y0ngha/siglens-core');
         vi.mocked(core.submitMarketNewsDigest).mockRejectedValue(
             new Error('core error')
@@ -107,7 +107,10 @@ describe('submitMarketNewsDigestAction은', () => {
             await import('../actions/submitMarketNewsDigestAction');
         const r = await submitMarketNewsDigestAction('crypto');
 
-        expect(r.status).toBe('no_news');
+        expect(r.status).toBe('error');
+        expect((r as { status: 'error'; error: string }).error).toBe(
+            'Failed to submit digest'
+        );
     });
 });
 

@@ -45,7 +45,11 @@ function formatPublishedAt(publishedAt: string): string {
     return `${PUBLISHED_AT_FORMATTER.format(new Date(publishedAt))} KST`;
 }
 
-function SentimentBadge({ value }: { value: string }) {
+interface SentimentBadgeProps {
+    value: string;
+}
+
+function SentimentBadge({ value }: SentimentBadgeProps) {
     if (!isNewsSentiment(value)) return null;
     return (
         <span
@@ -59,7 +63,11 @@ function SentimentBadge({ value }: { value: string }) {
     );
 }
 
-function ImpactBadge({ value }: { value: string }) {
+interface ImpactBadgeProps {
+    value: string;
+}
+
+function ImpactBadge({ value }: ImpactBadgeProps) {
     if (!isNewsImpact(value)) return null;
     return (
         <span

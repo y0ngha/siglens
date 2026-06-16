@@ -6,5 +6,9 @@ export { getMarketNewsCardsAction } from './actions/getMarketNewsCardsAction';
 export type { MarketNewsCardItem } from './lib/toCardItem';
 
 export { submitMarketNewsDigestAction } from './actions/submitMarketNewsDigestAction';
+export type {
+    SubmitMarketNewsDigestActionResult,
+    SubmitMarketNewsDigestActionError,
+} from './actions/submitMarketNewsDigestActionTypes';
 export { pollMarketNewsDigestAction } from './actions/pollMarketNewsDigestAction';
 export { cancelMarketNewsDigestAction } from './actions/cancelMarketNewsDigestAction';

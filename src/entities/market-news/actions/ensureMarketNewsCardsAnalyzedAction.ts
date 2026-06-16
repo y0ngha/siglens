@@ -15,11 +15,11 @@ import { getMarketNewsClient } from '../lib/getMarketNewsClient';
 import { CATEGORY_CONFIG } from '../lib/categoryConfig';
 import { MARKET_NEWS_LOOKBACK_MS } from '../lib/marketNewsConstants';
 import { isRecentlyFetched, markFetched } from '../lib/marketNewsRefreshFlag';
-import { DISABLED_THINKING_BUDGET } from '@/entities/news-article';
 import {
+    DISABLED_THINKING_BUDGET,
     POLL_INTERVAL_MS,
     POLL_MAX_ATTEMPTS,
-} from '@/entities/news-article/lib/newsAnalysisConstants';
+} from '@/entities/news-article';
 
 /**
  * Submit per-card AI analysis for a single item and wait for the worker to

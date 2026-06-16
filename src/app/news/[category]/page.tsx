@@ -228,7 +228,11 @@ function DigestSkeleton() {
     );
 }
 
-function MarketNewsDegraded({ koLabel }: { koLabel: string }) {
+interface MarketNewsDegradedProps {
+    koLabel: string;
+}
+
+function MarketNewsDegraded({ koLabel }: MarketNewsDegradedProps) {
     return (
         <section
             className="border-secondary-700 bg-secondary-800 rounded-xl border p-6"

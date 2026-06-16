@@ -6,8 +6,8 @@ import {
     submitMarketNewsDigest,
     type EnrichedNewsItem,
     type NewsFeedCategory,
-    type SubmitMarketNewsDigestResult,
 } from '@y0ngha/siglens-core';
+import type { SubmitMarketNewsDigestActionResult } from './submitMarketNewsDigestActionTypes';
 import { isBot } from '@/shared/api/isBot';
 import { getMarketNewsList } from '../api';
 import { CATEGORY_CONFIG } from '../lib/categoryConfig';
@@ -45,7 +45,7 @@ function toEnrichedMarketNewsItem(row: MarketNewsRow): EnrichedNewsItem | null {
  */
 export async function submitMarketNewsDigestAction(
     category: NewsFeedCategory
-): Promise<SubmitMarketNewsDigestResult> {
+): Promise<SubmitMarketNewsDigestActionResult> {
     try {
         const requestHeaders = await headers();
         const skipEnqueueIfMiss = isBot(requestHeaders);
@@ -70,6 +70,6 @@ export async function submitMarketNewsDigestAction(
         });
     } catch (error) {
         console.error('[submitMarketNewsDigestAction]', error);
-        return { status: 'no_news' };
+        return { status: 'error', error: 'Failed to submit digest' };
     }
 }

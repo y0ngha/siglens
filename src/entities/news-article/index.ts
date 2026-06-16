@@ -6,7 +6,11 @@ export {
     isEnrichedRow,
     toEnrichedNewsItem,
 } from './lib/newsEnrichment';
-export { DISABLED_THINKING_BUDGET } from './lib/newsAnalysisConstants';
+export {
+    DISABLED_THINKING_BUDGET,
+    POLL_INTERVAL_MS,
+    POLL_MAX_ATTEMPTS,
+} from './lib/newsAnalysisConstants';
 export {
     NEWS_LOOKBACK_MS,
     NEWS_ANALYSIS_LOOKBACK_MS,
