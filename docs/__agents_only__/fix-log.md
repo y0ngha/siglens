@@ -64,5 +64,14 @@
   - Rule: MISTAKES.md §Tests §13 — DOM assertions on deterministic counts must use exact count matcher, not existence check
   - Context: Modal grid bind test; fixture produces exactly 1 ma binding row → exactly 1 col-span-2 wrapper. Changed to `expect(document.querySelectorAll('.col-span-2').length).toBe(1)` for correctness and future-proofing against accidental duplicates.
 
+## [feat/economy-page Round 2 | feat/economy-page | 2026-06-16]
+- Violation: Two new application helpers `peekMacroBriefingCache`, `macroBriefingInputHash` shipped WITHOUT colocated test files
+  - Rule: MISTAKES.md §Tests §22 — Pure/helper functions incomplete test coverage — missing unit tests entirely
+  - Context: Both helpers were mirrors of market-briefing originals (which have dedicated test suites). New copies lacked tests, leaving graceful-degrade catch paths and calendar-sort tiebreak unexercised. Fixed by adding `__tests__/macbroBriefing.test.ts` with all branches ≥90% coverage.
+- Violation: Coverage verification in pre-review step used `yarn test` (vitest run) which exits 0 even if thresholds fail
+  - Rule: (KEY LESSON) test coverage thresholds (90% lines/functions/branches/statements) only enforced by `yarn test-coverage` (vitest run --coverage); `yarn test` bare run skips gate
+  - Context: Pre-review step reported coverage OK via `yarn test` with no-op exit. Only `test-coverage` applies the gate. Lesson: always verify coverage with `test-coverage` flag before review submission.
+- Status: Round 2 APPROVED (zero findings after test additions)
+
 
 
