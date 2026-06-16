@@ -3,23 +3,12 @@ import {
     FmpMarketNewsClient,
     parseArticleTickers,
 } from '../lib/fmpMarketNewsClient';
+import { MARKET_NEWS_LOOKBACK_MS } from '../lib/marketNewsConstants';
 
 const TEST_API_KEY = 'test-api-key';
 const mockFetch = vi.fn();
 const originalFetch = global.fetch;
 const originalEnv = process.env.FMP_API_KEY;
-
-beforeEach(() => {
-    global.fetch = mockFetch as unknown as typeof fetch;
-    mockFetch.mockReset();
-    process.env.FMP_API_KEY = TEST_API_KEY;
-});
-
-afterEach(() => {
-    global.fetch = originalFetch;
-    process.env.FMP_API_KEY = originalEnv;
-    vi.restoreAllMocks();
-});
 
 function mockFetchOnce(body: unknown) {
     mockFetch.mockResolvedValueOnce({
@@ -30,6 +19,18 @@ function mockFetchOnce(body: unknown) {
 }
 
 describe('FmpMarketNewsClient.fetchCategoryNews는', () => {
+    beforeEach(() => {
+        global.fetch = mockFetch as unknown as typeof fetch;
+        mockFetch.mockReset();
+        process.env.FMP_API_KEY = TEST_API_KEY;
+    });
+
+    afterEach(() => {
+        global.fetch = originalFetch;
+        process.env.FMP_API_KEY = originalEnv;
+        vi.restoreAllMocks();
+    });
+
     it('FMP 응답을 MarketNewsItem으로 매핑하고 sentinel symbol을 부여한다', async () => {
         mockFetchOnce([
             {
@@ -43,7 +44,7 @@ describe('FmpMarketNewsClient.fetchCategoryNews는', () => {
         ]);
         const items = await new FmpMarketNewsClient().fetchCategoryNews(
             'crypto',
-            7 * 24 * 3_600_000
+            MARKET_NEWS_LOOKBACK_MS
         );
         expect(items).toHaveLength(1);
         expect(items[0].symbol).toBe('__NEWS_CRYPTO__');
@@ -67,7 +68,7 @@ describe('FmpMarketNewsClient.fetchCategoryNews는', () => {
         ]);
         const items = await new FmpMarketNewsClient().fetchCategoryNews(
             'crypto',
-            7 * 24 * 3_600_000
+            MARKET_NEWS_LOOKBACK_MS
         );
         expect(items).toHaveLength(0);
     });
@@ -86,7 +87,7 @@ describe('FmpMarketNewsClient.fetchCategoryNews는', () => {
         ]);
         const items = await new FmpMarketNewsClient().fetchCategoryNews(
             'articles',
-            7 * 24 * 3_600_000
+            MARKET_NEWS_LOOKBACK_MS
         );
         expect(items).toHaveLength(1);
         expect(items[0].symbol).toBe('__NEWS_ARTICLES__');
@@ -109,7 +110,7 @@ describe('FmpMarketNewsClient.fetchCategoryNews는', () => {
         ]);
         const items = await new FmpMarketNewsClient().fetchCategoryNews(
             'general',
-            7 * 24 * 3_600_000
+            MARKET_NEWS_LOOKBACK_MS
         );
         expect(items).toHaveLength(1);
         expect(items[0].tickers).toEqual([]);

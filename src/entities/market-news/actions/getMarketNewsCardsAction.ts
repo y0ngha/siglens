@@ -31,6 +31,6 @@ export async function getMarketNewsCardsAction(
         return rows.map(toMarketNewsCardItem);
     } catch (error) {
         console.error('[getMarketNewsCardsAction]', error);
-        return [];
+        throw error;
     }
 }

@@ -76,14 +76,13 @@ function useWaitForMarketNewsCards(
     const [isReady, setIsReady] = useState(initiallyReady);
     const [waitError, setWaitError] = useState<Error | null>(null);
     const [prevCategory, setPrevCategory] = useState(category);
+    const intervalIdRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
     if (prevCategory !== category) {
         setPrevCategory(category);
         setIsReady(initiallyReady);
         setWaitError(null);
     }
-
-    const intervalIdRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
     useEffect(() => {
         if (initiallyReady) return;

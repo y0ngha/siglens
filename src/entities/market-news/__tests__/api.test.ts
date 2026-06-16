@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { DrizzleMarketNewsRepository } from '../api';
+import type { MarketNewsDbRow } from '../api';
 import type { MarketNewsItem } from '../lib/marketNewsClientPort';
 import type { NewsCardAnalysis } from '@y0ngha/siglens-core';
 import type { SiglensDatabase } from '@/shared/db/types';
@@ -107,24 +108,6 @@ describe('DrizzleMarketNewsRepository.attachAnalysis는', () => {
 });
 
 describe('DrizzleMarketNewsRepository.listByCategory는', () => {
-    interface MarketNewsDbRow {
-        id: string;
-        symbol: string;
-        source: string;
-        url: string;
-        publishedAt: Date;
-        titleEn: string;
-        bodyEn: string | null;
-        titleKo: string | null;
-        bodyKo: string | null;
-        summaryKo: string | null;
-        sentiment: string | null;
-        category: string | null;
-        priceImpact: string | null;
-        tickers: string[];
-        analyzedAt: Date | null;
-    }
-
     const baseDbRow: MarketNewsDbRow = {
         id: 'm1',
         symbol: '__NEWS_CRYPTO__',

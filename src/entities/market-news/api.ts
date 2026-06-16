@@ -169,7 +169,7 @@ export const getMarketNewsList = cache(
     }
 );
 
-interface MarketNewsDbRow {
+export interface MarketNewsDbRow {
     id: string;
     symbol: string;
     source: string;

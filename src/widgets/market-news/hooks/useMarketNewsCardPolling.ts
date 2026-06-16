@@ -109,16 +109,16 @@ export function useMarketNewsCardPolling(
     // https://react.dev/reference/react/useState#storing-information-from-previous-renders
     const [prevCategory, setPrevCategory] = useState(category);
 
+    // Keep a ref to the interval ID so the step helper can clear it without
+    // capturing a stale closure value.
+    const intervalIdRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
     if (prevCategory !== category) {
         setPrevCategory(category);
         setItems(initialItems);
         setIsPolling(true);
         setPollError(null);
     }
-
-    // Keep a ref to the interval ID so the step helper can clear it without
-    // capturing a stale closure value.
-    const intervalIdRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
     useEffect(() => {
         const state = {
