@@ -954,6 +954,11 @@ Expected: `normalizeCongressTrades`/`CongressTradesProvider`/`CongressTrade` 등
 
 > 작업 디렉토리: 워크트리 `.claude/worktrees/feat+symbol-congress`. 테스트: `yarn test <file>`(vitest). 린트: `yarn lint`. **`--no-verify` 금지**(메모리). 커밋은 git-agent 라우팅.
 
+> ⚠️ **설계 정정(A7 리뷰, 2026-06-16) — B2/B3/B4 override**: core port `CongressTradesProvider.getTrades`는 **`RawCongressTrade[]`(raw FMP wire)를 반환**한다(정규화 X). 정규화는 core `normalizeCongressTrades(senate, house)`가 **소비자에서 1회** 수행한다(이중 정규화 방지). 따라서:
+> - **B2** `FmpCongressTradesClient.getTrades`: `fmpGet<RawCongressTrade[]>` 결과를 `.slice(0,limit)`만 해서 **raw 그대로 반환**(normalize 호출 제거). 반환 타입 `Promise<RawCongressTrade[]>`.
+> - **B3** `CachedCongressTradesProvider`: **raw `RawCongressTrade[]`를 캐시**(키 `congress:senate:<SYM>`/`congress:house:<SYM>`). 장애 throw 표면화는 그대로.
+> - **B4** `getCongressTrades`: senate/house **raw**를 staticSymbolCache로 받아 `normalizeCongressTrades(senateRaw, houseRaw)`를 **1회** 호출 → 정렬된 `CongressTrade[]`. (별도 merge+sort 불필요 — normalize가 정렬까지 수행.)
+
 ## Task B0: overlay 위에서 Part B 시작 (publish 대기 없음)
 
 > Task A9에서 core dist를 이미 overlay했으므로 Part B는 즉시 시작한다. **버전 핀 갱신 + clean install은 이 태스크가 아니라 Task B12.5(최종 검증 직전)에서** 사용자 publish 후 수행한다.
