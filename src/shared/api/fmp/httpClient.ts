@@ -3,6 +3,7 @@ import { withRetry } from '@/shared/lib/withRetry';
 import { FmpHttpError } from '@/shared/api/fmp/FmpHttpError';
 import { FMP_TRANSIENT_RETRY } from '@/shared/api/fmp/fmpRetry';
 import { logFmpPaymentRequiredError } from '@/shared/api/fmp/fmpUserMessage';
+import { toFmpSymbol } from '@/shared/lib/fmpSymbol';
 
 /** Base URL for all FMP `/stable/*` endpoints. */
 export const FMP_STABLE_BASE = 'https://financialmodelingprep.com/stable';
@@ -44,7 +45,14 @@ export async function fmpGet<T>(
     opts: FmpGetOptions = {}
 ): Promise<T> {
     const { apiKey } = readFmpConfig();
-    const params = new URLSearchParams({ ...query, apikey: apiKey });
+    // Normalize the ticker to FMP notation (e.g. BRK.B → BRK-B) so dual-class
+    // shares resolve. Cache keys upstream still use the app symbol; only the
+    // outbound FMP request is rewritten. Non-aliased symbols pass through.
+    const normalized =
+        query.symbol !== undefined
+            ? { ...query, symbol: toFmpSymbol(query.symbol) }
+            : query;
+    const params = new URLSearchParams({ ...normalized, apikey: apiKey });
 
     return withRetry(async () => {
         const res = await fetch(

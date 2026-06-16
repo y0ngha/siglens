@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { FinancialTrendChart } from '../FinancialTrendChart';
 
 const BASE_SERIES = [
@@ -128,7 +128,11 @@ describe('FinancialTrendChart', () => {
         const { container } = render(
             <FinancialTrendChart series={series} periods={['2023', '2024']} />
         );
-        expect(container.querySelectorAll('rect').length).toBe(0);
+        // bar rects carry a fill-* class; transparent per-period hover targets
+        // (one per period) do not, so count only the bars.
+        expect(container.querySelectorAll('rect[class*="fill-"]').length).toBe(
+            0
+        );
     });
 
     it('renders no bars when every value is null (empty value set → maxAbs fallback)', () => {
@@ -142,6 +146,36 @@ describe('FinancialTrendChart', () => {
         const { container } = render(
             <FinancialTrendChart series={series} periods={['2023', '2024']} />
         );
-        expect(container.querySelectorAll('rect').length).toBe(0);
+        expect(container.querySelectorAll('rect[class*="fill-"]').length).toBe(
+            0
+        );
+    });
+
+    it('shows a hover tooltip with the period label and each series value', () => {
+        const { container } = render(
+            <FinancialTrendChart series={BASE_SERIES} periods={BASE_PERIODS} />
+        );
+        // 툴팁은 마우스 전용이라 aria-hidden(role 없음) — data-testid로 조회한다.
+        // no tooltip until hover
+        expect(screen.queryByTestId('chart-tooltip')).toBeNull();
+
+        // hover the last period's transparent hit target (last rect in the SVG)
+        const hits = container.querySelectorAll('rect.cursor-crosshair');
+        expect(hits.length).toBe(BASE_PERIODS.length);
+        fireEvent.pointerEnter(hits[hits.length - 1]!, {
+            clientX: 100,
+            clientY: 100,
+        });
+
+        const tip = screen.getByTestId('chart-tooltip');
+        expect(tip).toHaveTextContent('2024');
+        expect(tip).toHaveTextContent('매출');
+        expect(tip).toHaveTextContent('순이익');
+        // 2024 values: 매출 3B, 순이익 800M → compact USD
+        expect(tip).toHaveTextContent('$3B');
+        expect(tip).toHaveTextContent('$800M');
+
+        fireEvent.pointerLeave(hits[hits.length - 1]!);
+        expect(screen.queryByTestId('chart-tooltip')).toBeNull();
     });
 });

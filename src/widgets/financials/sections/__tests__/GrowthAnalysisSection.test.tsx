@@ -78,21 +78,22 @@ describe('GrowthAnalysisSection', () => {
 
     it('formats growth fractions as percentages', () => {
         render(<GrowthAnalysisSection rows={SAMPLE_ROWS} />);
-        // 0.5 → 50.0%
-        const pctCells = screen.getAllByText(/%/);
-        expect(pctCells.length).toBeGreaterThan(0);
+        // YoY table: 매출/순이익/EPS = 2 each (6), FCF = 1 (2023 null) → 7;
+        // per-share table: 3Y + 5Y = 2 (10Y null). Total 9 percentage cells.
+        expect(screen.getAllByText(/%/)).toHaveLength(9);
     });
 
     it('renders em-dash for null growth values', () => {
         render(<GrowthAnalysisSection rows={SAMPLE_ROWS} />);
-        const dashes = screen.getAllByText('—');
-        expect(dashes.length).toBeGreaterThan(0);
+        // null FCF growth (2023) + null 10Y per-share → 2 em-dashes
+        expect(screen.getAllByText('—')).toHaveLength(2);
     });
 
     it('renders fiscal year columns', () => {
         render(<GrowthAnalysisSection rows={SAMPLE_ROWS} />);
-        // Year labels may appear multiple times (table headers)
-        expect(screen.getAllByText('2023').length).toBeGreaterThan(0);
-        expect(screen.getAllByText('2024').length).toBeGreaterThan(0);
+        // 2023: YoY table header only (1). 2024: YoY header + per-share table
+        // header (the per-share table's single column is the latest year) → 2.
+        expect(screen.getAllByText('2023')).toHaveLength(1);
+        expect(screen.getAllByText('2024')).toHaveLength(2);
     });
 });

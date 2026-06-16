@@ -35,6 +35,13 @@ vi.mock('@/app/[symbol]/financials/financialData', () => ({
 vi.mock('@/app/[symbol]/financials/FinancialsDegraded', () => ({
     FinancialsDegraded: () => null,
 }));
+// isEmptyFinancialsSnapshot는 별도 단위 테스트(isEmptyFinancialsSnapshot.test.ts)에서
+// 실제 로직을 검증한다. 여기서는 vi.fn()으로 두고 케이스별 boolean을 직접 제어해
+// 인라인 재구현(동어반복)을 피한다.
+vi.mock('@/entities/financials-statements', () => ({
+    getFinancialsSnapshot: vi.fn(),
+    isEmptyFinancialsSnapshot: vi.fn(),
+}));
 vi.mock('@/shared/lib/seo', async importOriginal => ({
     ...(await importOriginal<typeof import('@/shared/lib/seo')>()),
     buildBreadcrumbJsonLd: vi.fn().mockReturnValue({
@@ -66,7 +73,17 @@ import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { generateMetadata, revalidate } from '@/app/[symbol]/financials/page';
 import { getAssetInfoResilient } from '@/entities/ticker';
 import { getProfileResilient } from '@/app/[symbol]/fundamental/getProfileResilient';
+import {
+    getFinancialsSnapshot,
+    isEmptyFinancialsSnapshot,
+} from '@/entities/financials-statements';
 import type { MockedFunction } from 'vitest';
+import type { FinancialsSnapshot } from '@y0ngha/siglens-core';
+
+// resolved 반환 타입 별칭 — mock fixture를 as never(bottom type) 대신 명시 타입으로
+// 캐스팅하기 위함(MISTAKES §7). 부분 객체는 as unknown as <Result>로 통과시킨다.
+type AssetInfoResult = Awaited<ReturnType<typeof getAssetInfoResilient>>;
+type ProfileResult = Awaited<ReturnType<typeof getProfileResilient>>;
 
 const mockGetAssetInfoResilient = getAssetInfoResilient as MockedFunction<
     typeof getAssetInfoResilient
@@ -74,6 +91,30 @@ const mockGetAssetInfoResilient = getAssetInfoResilient as MockedFunction<
 const mockGetProfileResilient = getProfileResilient as MockedFunction<
     typeof getProfileResilient
 >;
+const mockGetFinancialsSnapshot = getFinancialsSnapshot as MockedFunction<
+    typeof getFinancialsSnapshot
+>;
+const mockIsEmpty = isEmptyFinancialsSnapshot as MockedFunction<
+    typeof isEmptyFinancialsSnapshot
+>;
+
+const NON_EMPTY_SNAPSHOT = {
+    income: [{}],
+    balance: [],
+    cashFlow: [],
+    incomeGrowth: [],
+    financialGrowth: [],
+    cashFlowGrowth: [],
+} as unknown as FinancialsSnapshot;
+
+const EMPTY_SNAPSHOT = {
+    income: [],
+    balance: [],
+    cashFlow: [],
+    incomeGrowth: [],
+    financialGrowth: [],
+    cashFlowGrowth: [],
+} as unknown as FinancialsSnapshot;
 
 describe('Financials page ISR route config', () => {
     it('exports revalidate = 86400 (literal — required for Next.js static analysis)', () => {
@@ -93,11 +134,13 @@ describe('generateMetadata', () => {
                 fmpSymbol: 'AAPL',
             },
             degraded: false,
-        } as never);
+        } as unknown as AssetInfoResult);
         mockGetProfileResilient.mockResolvedValue({
             profile: { sector: 'Technology', description: '' },
             degraded: false,
-        } as never);
+        } as unknown as ProfileResult);
+        mockGetFinancialsSnapshot.mockResolvedValue(NON_EMPTY_SNAPSHOT);
+        mockIsEmpty.mockReturnValue(false);
     });
 
     it('returns noindex for invalid ticker format', async () => {
@@ -113,7 +156,7 @@ describe('generateMetadata', () => {
         mockGetAssetInfoResilient.mockResolvedValue({
             assetInfo: null,
             degraded: true,
-        } as never);
+        } as unknown as AssetInfoResult);
 
         const metadata = await generateMetadata({
             params: Promise.resolve({ symbol: 'AAPL' }),
@@ -127,7 +170,7 @@ describe('generateMetadata', () => {
         mockGetProfileResilient.mockResolvedValue({
             profile: null,
             degraded: true,
-        } as never);
+        } as unknown as ProfileResult);
 
         const metadata = await generateMetadata({
             params: Promise.resolve({ symbol: 'AAPL' }),
@@ -141,10 +184,22 @@ describe('generateMetadata', () => {
         mockGetProfileResilient.mockResolvedValue({
             profile: null,
             degraded: false,
-        } as never);
+        } as unknown as ProfileResult);
 
         const metadata = await generateMetadata({
             params: Promise.resolve({ symbol: 'FAKESYM' }),
+        });
+
+        expect(metadata.robots).toEqual({ index: false, follow: false });
+        expect(metadata.alternates?.canonical).toBeNull();
+    });
+
+    it('returns noindex when the financial snapshot is all-empty (transient FMP failure)', async () => {
+        mockGetFinancialsSnapshot.mockResolvedValue(EMPTY_SNAPSHOT);
+        mockIsEmpty.mockReturnValue(true);
+
+        const metadata = await generateMetadata({
+            params: Promise.resolve({ symbol: 'aapl' }),
         });
 
         expect(metadata.robots).toEqual({ index: false, follow: false });

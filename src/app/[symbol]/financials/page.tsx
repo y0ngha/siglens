@@ -1,4 +1,8 @@
 import { getFinancialsPageData } from '@/app/[symbol]/financials/financialData';
+import {
+    getFinancialsSnapshot,
+    isEmptyFinancialsSnapshot,
+} from '@/entities/financials-statements';
 import { getProfileResilient } from '@/app/[symbol]/fundamental/getProfileResilient';
 import { FinancialsDegraded } from '@/app/[symbol]/financials/FinancialsDegraded';
 import { FinancialsAiSummary } from '@/widgets/financials/FinancialsAiSummary';
@@ -60,6 +64,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { profile, degraded: profileDegraded } =
         await getProfileResilient(upper);
     if (profileDegraded || profile === null) {
+        return NOINDEX_SYMBOL_METADATA;
+    }
+    // profile은 있으나 6종 재무 fetch가 모두 비면(FMP 일시 장애 등) 본문은 degrade를
+    // 렌더하므로(아래 default export 참조) 메타도 noindex로 일치시킨다.
+    // 데이터가 있는 경우: staticSymbolCache(unstable_cache) 덕에 generateMetadata와 페이지
+    // 렌더가 동일 캐시 엔트리를 공유한다. 빈 스냅샷(FMP 장애)의 경우: cacheNonEmpty가
+    // Next.js 캐싱을 의도적으로 건너뛰므로 같은 요청 내 두 번 호출되지만, Redis
+    // (CachedFinancialStatementsProvider)가 중복 FMP API 호출을 차단한다(React.cache는 없음).
+    const snapshot = await getFinancialsSnapshot(upper);
+    if (isEmptyFinancialsSnapshot(snapshot)) {
         return NOINDEX_SYMBOL_METADATA;
     }
     const displayName = assetInfo ? buildDisplayName(assetInfo, upper) : upper;
@@ -124,6 +138,13 @@ export default async function FinancialsPage({ params }: Props) {
 
     // Fetch the annual snapshot + scorecard in a single call.
     const { snapshot, scorecard } = await getFinancialsPageData(upper);
+
+    // profile은 정상이나 6종 재무 fetch가 모두 비면(FMP 일시 장애) scorecard가 전 축 F로
+    // 오인 렌더되고 색인된다. all-empty면 degrade UI로 전환하고(메타도 noindex로 일치),
+    // 다음 revalidate에 데이터가 복구되면 자동 정상화된다.
+    if (isEmptyFinancialsSnapshot(snapshot)) {
+        return <FinancialsDegraded displayName={displayName} symbol={upper} />;
+    }
 
     const { fullTitle, description, url } = buildSymbolFinancialsSeoContent(
         upper,
@@ -196,7 +217,17 @@ export default async function FinancialsPage({ params }: Props) {
             <JsonLd data={breadcrumbJsonLd} />
             <JsonLd data={faqJsonLd} />
             <main className="mx-auto max-w-5xl space-y-6 px-4 py-8">
-                <SymbolPageHeading>{upper} 재무제표</SymbolPageHeading>
+                <SymbolPageHeading>{displayName} 재무제표</SymbolPageHeading>
+                <section className="sr-only">
+                    <h2>{displayName} 재무제표 분석 개요</h2>
+                    <p>
+                        {displayName}의 손익계산서(매출·영업이익·순이익·EPS),
+                        재무상태표(자산·부채·자본), 현금흐름표(영업활동현금흐름·
+                        잉여현금흐름)를 5년 추이로 분석합니다. 성장성,
+                        수익성·질, 안정성, 현금창출력 4개 축의 재무 종합 점수와
+                        주요 재무비율을 함께 제공합니다.
+                    </p>
+                </section>
 
                 <FinancialsScorecard scorecard={scorecard} />
 

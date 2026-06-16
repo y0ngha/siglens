@@ -1,4 +1,9 @@
+'use client';
+
+import { useState, type CSSProperties } from 'react';
 import { cn } from '@/shared/lib/cn';
+import { usdFormatter } from '../utils/numberFormat';
+import { placeTooltip, type TooltipPosition } from '../utils/tooltipPosition';
 
 type SeriesColor = 'bullish' | 'bearish' | 'neutral';
 
@@ -31,6 +36,7 @@ interface SeriesColorClasses {
     fill: string;
     stroke: string;
     legend: string;
+    dot: string;
 }
 
 const COLOR_CLASSES: Record<SeriesColor, SeriesColorClasses> = {
@@ -38,16 +44,19 @@ const COLOR_CLASSES: Record<SeriesColor, SeriesColorClasses> = {
         fill: 'fill-chart-bullish/70',
         stroke: 'stroke-chart-bullish',
         legend: 'bg-chart-bullish',
+        dot: 'bg-chart-bullish',
     },
     bearish: {
         fill: 'fill-chart-bearish/70',
         stroke: 'stroke-chart-bearish',
         legend: 'bg-chart-bearish',
+        dot: 'bg-chart-bearish',
     },
     neutral: {
         fill: 'fill-primary-500/70',
         stroke: 'stroke-primary-500',
         legend: 'bg-primary-500',
+        dot: 'bg-primary-500',
     },
 };
 
@@ -86,18 +95,30 @@ function resolveColor(
     return COLOR_CLASSES[c];
 }
 
+function fmt(value: number | null): string {
+    return value === null ? '—' : usdFormatter.format(value);
+}
+
+interface HoverState extends TooltipPosition {
+    periodIdx: number;
+}
+
 /**
  * Inline SVG bar chart for multi-series N-year financial trend data.
- * RSC-safe: no chart library, pure SVG.
+ * No chart library — pure SVG. SSR-rendered bars stay crawlable; the hover
+ * readout (mouse-only progressive enhancement — the StatementTable below is the
+ * accessible value source) shows each series' value for the hovered period,
+ * mirroring the options page charts.
  *
  * Negative values are colored bearish regardless of the series color prop.
  * Responsive: width="100%", height is fixed.
- * Decorative: aria-hidden="true" so screen readers skip the visual.
  */
 export function FinancialTrendChart({
     series,
     periods,
 }: FinancialTrendChartProps) {
+    const [hover, setHover] = useState<HoverState | null>(null);
+
     const n = periods.length;
     const seriesCount = series.length;
     if (n === 0 || seriesCount === 0) return null;
@@ -122,7 +143,7 @@ export function FinancialTrendChart({
     const availableHeight = hasNegative ? CHART_HEIGHT / 2 : CHART_HEIGHT;
 
     return (
-        <div className="w-full">
+        <div className="relative w-full">
             {seriesCount > 1 && (
                 <div className="mb-2 flex flex-wrap gap-3">
                     {series.map(s => {
@@ -193,11 +214,41 @@ export function FinancialTrendChart({
                                 width={`${singleBarWidth}%`}
                                 height={h}
                                 rx="1"
-                                className={colors.fill}
+                                className={cn(
+                                    colors.fill,
+                                    hover !== null &&
+                                        hover.periodIdx !== pi &&
+                                        'opacity-40'
+                                )}
                             />
                         );
                     })
                 )}
+
+                {periods.map((p, pi) => (
+                    <rect
+                        key={`hit-${p}`}
+                        x={`${SVG_PADDING_LEFT + pi * barGroupWidth}%`}
+                        y={SVG_PADDING_TOP}
+                        width={`${barGroupWidth}%`}
+                        height={CHART_HEIGHT}
+                        fill="transparent"
+                        className="cursor-crosshair"
+                        onPointerEnter={e =>
+                            setHover({
+                                periodIdx: pi,
+                                ...placeTooltip(e.clientX, e.clientY),
+                            })
+                        }
+                        onPointerMove={e =>
+                            setHover({
+                                periodIdx: pi,
+                                ...placeTooltip(e.clientX, e.clientY),
+                            })
+                        }
+                        onPointerLeave={() => setHover(null)}
+                    />
+                ))}
             </svg>
 
             <div className="mt-1 flex justify-between">
@@ -207,6 +258,58 @@ export function FinancialTrendChart({
                     </span>
                 ))}
             </div>
+
+            {hover !== null && (
+                <div
+                    data-testid="chart-tooltip"
+                    // 마우스 전용 프로그레시브 인핸스먼트 — 트리거(hit rect)가
+                    // aria-hidden SVG 안에 있어 AT에서 도달 불가하다. role="tooltip"은
+                    // AT 노출이 전제인 위젯 역할이라 aria-hidden과 모순되므로 쓰지 않고,
+                    // 접근성 트리에서 완전히 숨긴다. AT 사용자는 아래 StatementTable에서
+                    // 동일 수치에 접근하고, 테스트는 data-testid로 조회한다.
+                    aria-hidden="true"
+                    className="border-secondary-600 bg-secondary-900 pointer-events-none fixed top-[var(--tip-top)] left-[var(--tip-left)] z-50 rounded-md border px-3 py-2 text-xs shadow-lg"
+                    style={
+                        {
+                            '--tip-left': `${hover.left}px`,
+                            '--tip-top': `${hover.top}px`,
+                        } as CSSProperties
+                    }
+                >
+                    <div className="text-secondary-300 mb-1 font-medium">
+                        {periods[hover.periodIdx]}
+                    </div>
+                    <ul className="space-y-0.5">
+                        {series.map(s => {
+                            const c = s.color ?? 'neutral';
+                            const v = s.values[hover.periodIdx] ?? null;
+                            return (
+                                <li
+                                    key={s.labelKo}
+                                    className="flex items-center justify-between gap-3"
+                                >
+                                    <span className="flex items-center gap-1">
+                                        <span
+                                            className={cn(
+                                                'inline-block h-2 w-2 rounded-full',
+                                                v !== null && v < 0
+                                                    ? COLOR_CLASSES.bearish.dot
+                                                    : COLOR_CLASSES[c].dot
+                                            )}
+                                        />
+                                        <span className="text-secondary-400">
+                                            {s.labelKo}
+                                        </span>
+                                    </span>
+                                    <span className="font-mono tabular-nums">
+                                        {fmt(v)}
+                                    </span>
+                                </li>
+                            );
+                        })}
+                    </ul>
+                </div>
+            )}
         </div>
     );
 }

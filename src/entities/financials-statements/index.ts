@@ -3,6 +3,7 @@
 // tree-shake-friendly and consistent with other entity barrels.
 export {
     getFinancialsSnapshot,
+    isEmptyFinancialsSnapshot,
     ANNUAL_LIMIT,
     QUARTER_LIMIT,
 } from './lib/getFinancialsSnapshot';

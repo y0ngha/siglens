@@ -56,11 +56,12 @@ vi.mock('next/cache', () => ({
 }));
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { getFinancialsPageData } from '@/app/[symbol]/financials/financialData';
 import {
     getFinancialsSnapshot,
-    getFinancialsPageData,
-} from '@/app/[symbol]/financials/financialData';
-import { QUARTER_LIMIT } from '@/entities/financials-statements';
+    ANNUAL_LIMIT,
+    QUARTER_LIMIT,
+} from '@/entities/financials-statements';
 import {
     computeFinancialsScorecard,
     normalizeFinancialsSnapshot,
@@ -85,67 +86,67 @@ describe('financialData', () => {
             expect(mockGetIncomeStatements).toHaveBeenCalledWith(
                 'AAPL',
                 'annual',
-                5
+                ANNUAL_LIMIT
             );
             expect(mockGetBalanceSheets).toHaveBeenCalledWith(
                 'AAPL',
                 'annual',
-                5
+                ANNUAL_LIMIT
             );
             expect(mockGetCashFlowStatements).toHaveBeenCalledWith(
                 'AAPL',
                 'annual',
-                5
+                ANNUAL_LIMIT
             );
             expect(mockGetIncomeStatementGrowths).toHaveBeenCalledWith(
                 'AAPL',
                 'annual',
-                5
+                ANNUAL_LIMIT
             );
             expect(mockGetFinancialGrowths).toHaveBeenCalledWith(
                 'AAPL',
                 'annual',
-                5
+                ANNUAL_LIMIT
             );
             expect(mockGetCashFlowGrowths).toHaveBeenCalledWith(
                 'AAPL',
                 'annual',
-                5
+                ANNUAL_LIMIT
             );
         });
 
         it('period/limit 오버라이드를 6개 provider 메서드에 모두 전달한다', async () => {
-            await getFinancialsSnapshot('TSLA', 'quarter', 8);
+            await getFinancialsSnapshot('TSLA', 'quarter', QUARTER_LIMIT);
 
             expect(mockGetIncomeStatements).toHaveBeenCalledWith(
                 'TSLA',
                 'quarter',
-                8
+                QUARTER_LIMIT
             );
             expect(mockGetBalanceSheets).toHaveBeenCalledWith(
                 'TSLA',
                 'quarter',
-                8
+                QUARTER_LIMIT
             );
             expect(mockGetCashFlowStatements).toHaveBeenCalledWith(
                 'TSLA',
                 'quarter',
-                8
+                QUARTER_LIMIT
             );
             expect(mockGetIncomeStatementGrowths).toHaveBeenCalledWith(
                 'TSLA',
                 'quarter',
-                8
+                QUARTER_LIMIT
             );
             expect(mockGetFinancialGrowths).toHaveBeenCalledWith(
                 'TSLA',
                 'quarter',
-                8
+                QUARTER_LIMIT
             );
             expect(mockGetCashFlowGrowths).toHaveBeenCalledWith(
                 'TSLA',
                 'quarter',
-                8
+                QUARTER_LIMIT
             );
         });
 
@@ -189,19 +190,13 @@ describe('financialData', () => {
             expect(mockGetIncomeStatements).toHaveBeenCalledWith(
                 'NVDA',
                 'annual',
-                5
+                ANNUAL_LIMIT
             );
             expect(mockGetBalanceSheets).toHaveBeenCalledWith(
                 'NVDA',
                 'annual',
-                5
+                ANNUAL_LIMIT
             );
-        });
-    });
-
-    describe('QUARTER_LIMIT', () => {
-        it('QUARTER_LIMIT은 8이다', () => {
-            expect(QUARTER_LIMIT).toBe(8);
         });
     });
 });

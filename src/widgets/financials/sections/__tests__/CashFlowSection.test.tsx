@@ -57,14 +57,14 @@ describe('CashFlowSection', () => {
 
     it('renders capex label', () => {
         render(<CashFlowSection rows={SAMPLE_ROWS} />);
-        // CapEx appears in chart legend and table row
-        expect(screen.getAllByText('CapEx').length).toBeGreaterThan(0);
+        // CapEx appears in chart legend (1) + table row (1)
+        expect(screen.getAllByText('CapEx')).toHaveLength(2);
     });
 
     it('renders FCF label', () => {
         render(<CashFlowSection rows={SAMPLE_ROWS} />);
-        // FCF appears in chart legend and table row
-        expect(screen.getAllByText('FCF').length).toBeGreaterThan(0);
+        // FCF appears in chart legend (1) + table row (1)
+        expect(screen.getAllByText('FCF')).toHaveLength(2);
     });
 
     it('renders FCF margin label', () => {
@@ -79,8 +79,8 @@ describe('CashFlowSection', () => {
 
     it('renders em-dash for null dividendsPaid', () => {
         render(<CashFlowSection rows={SAMPLE_ROWS} />);
-        const dashes = screen.getAllByText('—');
-        expect(dashes.length).toBeGreaterThan(0);
+        // null dividendsPaid (2022) + null fcfMargin (2023) → 2 em-dashes
+        expect(screen.getAllByText('—')).toHaveLength(2);
     });
 
     it('renders trend chart SVG', () => {
@@ -90,9 +90,9 @@ describe('CashFlowSection', () => {
 
     it('renders fiscal year columns', () => {
         render(<CashFlowSection rows={SAMPLE_ROWS} />);
-        // Year labels appear in both SVG text elements and visible spans
-        expect(screen.getAllByText('2022').length).toBeGreaterThan(0);
-        expect(screen.getAllByText('2023').length).toBeGreaterThan(0);
-        expect(screen.getAllByText('2024').length).toBeGreaterThan(0);
+        // Year labels appear in chart axis (1) + table column header (1)
+        expect(screen.getAllByText('2022')).toHaveLength(2);
+        expect(screen.getAllByText('2023')).toHaveLength(2);
+        expect(screen.getAllByText('2024')).toHaveLength(2);
     });
 });

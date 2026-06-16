@@ -80,9 +80,9 @@ describe('CompositeGradeGauge', () => {
                 summaryKo="재무 위험 상태"
             />
         );
-        // '0' appears in both the score display AND as a tick label in the SVG
-        const zeroElements = screen.getAllByText('0');
-        expect(zeroElements.length).toBeGreaterThan(0);
+        // '0' appears exactly twice: the score display + the '0' axis tick label
+        // (other ticks are 25/50/75/100, none match the exact text '0')
+        expect(screen.getAllByText('0')).toHaveLength(2);
         expect(screen.getByText('F')).toBeInTheDocument();
     });
 });
