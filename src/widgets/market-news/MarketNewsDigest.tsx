@@ -3,28 +3,14 @@
 import type {
     NewsAnalysisResponse,
     NewsFeedCategory,
-    NewsSentiment,
 } from '@y0ngha/siglens-core';
 import { cn } from '@/shared/lib/cn';
 import { useMarketNewsDigest } from './hooks/useMarketNewsDigest';
-
-const SENTIMENT_LABEL: Record<NewsSentiment, string> = {
-    bullish: '긍정',
-    neutral: '중립',
-    bearish: '부정',
-};
-
-const SENTIMENT_CLASS: Record<NewsSentiment, string> = {
-    bullish: 'bg-ui-success/10 text-chart-bullish',
-    neutral: 'bg-secondary-700 text-secondary-400',
-    bearish: 'bg-ui-danger/10 text-chart-bearish',
-};
-
-const VALID_SENTIMENTS = new Set<string>(['bullish', 'neutral', 'bearish']);
-
-function isNewsSentiment(v: string): v is NewsSentiment {
-    return VALID_SENTIMENTS.has(v);
-}
+import {
+    SENTIMENT_LABEL,
+    SENTIMENT_CLASS,
+    isNewsSentiment,
+} from './sentimentConstants';
 
 /** Loading / generating status card. */
 function DigestStatusCard() {

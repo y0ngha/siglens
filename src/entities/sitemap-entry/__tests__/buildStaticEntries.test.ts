@@ -12,7 +12,6 @@ const NOW = new Date('2026-05-23T15:30:00.000Z');
 describe('buildStaticEntries', () => {
     it('home / market / backtesting / news hub + 5 categories / privacy / terms 11개 엔트리를 반환한다', () => {
         const entries = buildStaticEntries(NOW);
-        // 5 original + /news hub + 5 /news/[category] = 11
         expect(entries).toHaveLength(11);
 
         const urls = entries.map(e => e.url);

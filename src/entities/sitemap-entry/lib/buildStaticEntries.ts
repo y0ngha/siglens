@@ -45,14 +45,12 @@ export function buildStaticEntries(now: Date): SitemapEntry[] {
             changeFrequency: 'monthly',
             priority: 0.9,
         },
-        // /news hub index
         {
             url: `${SITE_URL}/news`,
             lastModified: now,
             changeFrequency: 'daily',
             priority: 0.8,
         },
-        // /news/[category] — 5 entries, one per NewsFeedCategory
         ...newsCategoryEntries,
         {
             url: `${SITE_URL}${PRIVACY_PATH}`,

@@ -1,23 +1,12 @@
 import Link from 'next/link';
 import type { MarketNewsCardItem } from '@/entities/market-news/actions';
-import type {
-    NewsFeedCategory,
-    NewsImpact,
-    NewsSentiment,
-} from '@y0ngha/siglens-core';
+import type { NewsFeedCategory, NewsImpact } from '@y0ngha/siglens-core';
 import { cn } from '@/shared/lib/cn';
-
-const SENTIMENT_LABEL: Record<NewsSentiment, string> = {
-    bullish: '긍정',
-    neutral: '중립',
-    bearish: '부정',
-};
-
-const SENTIMENT_CLASS: Record<NewsSentiment, string> = {
-    bullish: 'bg-ui-success/10 text-chart-bullish',
-    neutral: 'bg-secondary-700 text-secondary-400',
-    bearish: 'bg-ui-danger/10 text-chart-bearish',
-};
+import {
+    SENTIMENT_LABEL,
+    SENTIMENT_CLASS,
+    isNewsSentiment,
+} from './sentimentConstants';
 
 const IMPACT_LABEL: Record<NewsImpact, string> = {
     high: '주가 영향 큼',
@@ -33,7 +22,6 @@ const IMPACT_CLASS: Record<NewsImpact, string> = {
     negligible: 'bg-secondary-700/50 text-secondary-400',
 };
 
-const VALID_SENTIMENTS = new Set<string>(['bullish', 'bearish', 'neutral']);
 const VALID_IMPACTS = new Set<string>(['high', 'medium', 'low', 'negligible']);
 
 const PUBLISHED_AT_FORMATTER = new Intl.DateTimeFormat('ko-KR', {
@@ -44,10 +32,6 @@ const PUBLISHED_AT_FORMATTER = new Intl.DateTimeFormat('ko-KR', {
     minute: '2-digit',
     timeZone: 'Asia/Seoul',
 });
-
-function isNewsSentiment(value: string): value is NewsSentiment {
-    return VALID_SENTIMENTS.has(value);
-}
 
 function isNewsImpact(value: string): value is NewsImpact {
     return VALID_IMPACTS.has(value);

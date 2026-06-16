@@ -2,14 +2,14 @@
 
 import { useState } from 'react';
 import type { MarketNewsCardItem } from '@/entities/market-news/actions';
+import { MARKET_NEWS_LOOKBACK_DAYS } from '@/entities/market-news';
 import type { NewsFeedCategory } from '@y0ngha/siglens-core';
 import { useMarketNewsCardPolling } from './hooks/useMarketNewsCardPolling';
 import { MarketNewsCard } from './MarketNewsCard';
 
 const PAGE_SIZE = 10;
 const SKELETON_COUNT = 3;
-const LOOKBACK_DAYS = 7;
-const PERIOD_LABEL = `최근 ${LOOKBACK_DAYS}일`;
+const PERIOD_LABEL = `최근 ${MARKET_NEWS_LOOKBACK_DAYS}일`;
 
 function MarketNewsCardSkeleton() {
     return (
@@ -130,7 +130,8 @@ export function MarketNewsList({
                     </span>
                 </div>
                 <p className="text-secondary-400 text-sm">
-                    지난 {LOOKBACK_DAYS}일 동안 들어온 뉴스가 없어요.
+                    지난 {MARKET_NEWS_LOOKBACK_DAYS}일 동안 들어온 뉴스가
+                    없어요.
                 </p>
             </section>
         );

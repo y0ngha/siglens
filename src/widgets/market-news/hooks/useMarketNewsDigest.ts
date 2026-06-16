@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import type {
     NewsAnalysisResponse,
@@ -172,13 +172,8 @@ export function useMarketNewsDigest(
         hasEnrichedNews
     );
 
-    const queryKey = useMemo(
-        () => ['market-news-digest', category] as const,
-        [category]
-    );
-
     const query = useQuery({
-        queryKey,
+        queryKey: ['market-news-digest', category] as const,
         queryFn: ({ signal }) =>
             fetchMarketNewsDigest(
                 category,
@@ -205,7 +200,7 @@ export function useMarketNewsDigest(
         void query.refetch();
     }, [query]);
 
-    // Cancel in-flight digest job on unmount or queryKey change (category change).
+    // Cancel in-flight digest job on unmount or category change.
     useEffect(() => {
         return () => {
             const jobId = currentJobIdRef.current;
@@ -216,7 +211,7 @@ export function useMarketNewsDigest(
                 });
             }
         };
-    }, [queryKey]);
+    }, [category]);
 
     // Surface wait errors (cards enrichment polling failure) as a digest error.
     if (waitError !== null) {

@@ -10,6 +10,7 @@ export type { MarketNewsRow, NewsFeedCategory } from './model';
 export { CATEGORY_CONFIG, categoryFromSlug } from './lib/categoryConfig';
 export type { CategoryConfig } from './lib/categoryConfig';
 export {
+    MARKET_NEWS_LOOKBACK_DAYS,
     MARKET_NEWS_LOOKBACK_MS,
     MAX_MARKET_NEWS_CARDS,
     FMP_NEWS_FETCH_LIMIT,
