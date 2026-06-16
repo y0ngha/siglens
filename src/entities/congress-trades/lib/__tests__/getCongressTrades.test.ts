@@ -27,9 +27,10 @@ vi.mock('@/shared/cache/staticSymbolCache', () => ({
 }));
 
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { getCongressTrades } from '@/entities/congress-trades/lib/getCongressTrades';
-
-const CONGRESS_TRADE_LIMIT = 50;
+import {
+    getCongressTrades,
+    CONGRESS_TRADE_LIMIT,
+} from '@/entities/congress-trades/lib/getCongressTrades';
 
 describe('getCongressTrades', () => {
     beforeEach(() => {

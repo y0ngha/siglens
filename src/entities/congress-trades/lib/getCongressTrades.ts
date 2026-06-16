@@ -4,7 +4,7 @@ import { getCongressTradesProvider } from '@/shared/api/fmp/getCongressTradesPro
 import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
 
 /** Display cap — FMP can return 100+; we cap at 50 for performance (부록 D #4). */
-const CONGRESS_TRADE_LIMIT = 50;
+export const CONGRESS_TRADE_LIMIT = 50;
 
 /**
  * Fetches raw senate + house trades for `symbol` (each via `staticSymbolCache`

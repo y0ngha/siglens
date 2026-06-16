@@ -68,7 +68,11 @@ function assetTypeBadge(assetType: string): string {
     return assetType; // fallback: render as-is
 }
 
-function ChamberBadge({ chamber }: { chamber: Chamber }) {
+interface ChamberBadgeProps {
+    chamber: Chamber;
+}
+
+function ChamberBadge({ chamber }: ChamberBadgeProps) {
     const label = CHAMBER_LABEL[chamber];
     const tooltipContent =
         chamber === 'senate' ? SenateChamberTooltip : HouseChamberTooltip;
@@ -90,7 +94,11 @@ function ChamberBadge({ chamber }: { chamber: Chamber }) {
     );
 }
 
-function SideBadge({ side }: { side: CongressTradeSide }) {
+interface SideBadgeProps {
+    side: CongressTradeSide;
+}
+
+function SideBadge({ side }: SideBadgeProps) {
     const label = SIDE_LABEL[side];
     if (!label) {
         return <span className={cn('text-xs', SIDE_CLASS[side])}>—</span>;
@@ -108,7 +116,11 @@ function SideBadge({ side }: { side: CongressTradeSide }) {
     );
 }
 
-function OwnerBadge({ owner }: { owner: CongressOwner }) {
+interface OwnerBadgeProps {
+    owner: CongressOwner;
+}
+
+function OwnerBadge({ owner }: OwnerBadgeProps) {
     const label = OWNER_LABEL[owner];
     if (!label) return null;
     return (
@@ -118,7 +130,11 @@ function OwnerBadge({ owner }: { owner: CongressOwner }) {
     );
 }
 
-function AssetTypeBadge({ assetType }: { assetType: string }) {
+interface AssetTypeBadgeProps {
+    assetType: string;
+}
+
+function AssetTypeBadge({ assetType }: AssetTypeBadgeProps) {
     const label = assetTypeBadge(assetType);
     return (
         <span className="bg-secondary-700 text-secondary-300 rounded px-1.5 py-0.5 text-xs">

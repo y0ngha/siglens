@@ -116,6 +116,10 @@ export default async function CongressPage({ params }: Props) {
             getAssetInfoResilient(upper),
         ]);
 
+    // assetInfo degraded → generateMetadata returns NOINDEX_SYMBOL_METADATA (above),
+    // while the page body renders a 200 with `displayName = upper` as ticker fallback.
+    // This mirrors the financials/fundamental pages: a soft-200 keeps the user-facing
+    // page navigable while noindex prevents stale/degraded content from being indexed.
     const displayName = assetInfo ? buildDisplayName(assetInfo, upper) : upper;
 
     // FMP 인프라 일시 실패: 500 대신 degrade 안내(200)를 렌더한다. 다음 revalidate에

@@ -144,7 +144,6 @@ export function useCongressTrend(
         }
     }, [isHydrated, queryClient, symbol, modelId, refetch]);
 
-    // symbol 또는 modelId 변경(queryKey 교체) 시, unmount 시 진행 중인 job을 cancel한다.
     useEffect(() => {
         return () => {
             const jobId = currentJobIdRef.current;
