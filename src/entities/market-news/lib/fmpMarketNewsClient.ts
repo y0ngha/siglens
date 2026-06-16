@@ -9,6 +9,7 @@ import type {
     MarketNewsClientPort,
     MarketNewsItem,
 } from './marketNewsClientPort';
+import { FMP_NEWS_FETCH_LIMIT } from './marketNewsConstants';
 
 /** Raw shape returned by FMP `/stable/news/{general,stock,crypto,forex}-latest`. */
 interface RawFmpLatestNews {
@@ -30,6 +31,18 @@ interface RawFmpArticle {
     link: string;
     author?: string | null;
     site: string;
+}
+
+/** A raw FMP latest-news item paired with a successfully normalized date string. */
+interface DatedLatestRaw {
+    raw: RawFmpLatestNews;
+    publishedAt: string;
+}
+
+/** A raw FMP article item paired with a successfully normalized date string. */
+interface DatedArticleRaw {
+    raw: RawFmpArticle;
+    publishedAt: string;
 }
 
 /**
@@ -122,7 +135,7 @@ export class FmpMarketNewsClient implements MarketNewsClientPort {
 
         if (category === 'articles') {
             const raw = await fmpGet<RawFmpArticle[]>(fmpEndpoint, {
-                limit: '50',
+                limit: String(FMP_NEWS_FETCH_LIMIT),
             });
             return raw
                 .map(r => ({
@@ -130,12 +143,7 @@ export class FmpMarketNewsClient implements MarketNewsClientPort {
                     publishedAt: tryNormalizeFmpPublishedDate(r.date),
                 }))
                 .filter(
-                    (
-                        n
-                    ): n is {
-                        raw: RawFmpArticle;
-                        publishedAt: string;
-                    } =>
+                    (n): n is DatedArticleRaw =>
                         n.publishedAt !== null &&
                         new Date(n.publishedAt) >= cutoff
                 )
@@ -145,7 +153,7 @@ export class FmpMarketNewsClient implements MarketNewsClientPort {
         }
 
         const raw = await fmpGet<RawFmpLatestNews[]>(fmpEndpoint, {
-            limit: '50',
+            limit: String(FMP_NEWS_FETCH_LIMIT),
         });
         return raw
             .map(r => ({
@@ -153,12 +161,8 @@ export class FmpMarketNewsClient implements MarketNewsClientPort {
                 publishedAt: tryNormalizeFmpPublishedDate(r.publishedDate),
             }))
             .filter(
-                (
-                    n
-                ): n is {
-                    raw: RawFmpLatestNews;
-                    publishedAt: string;
-                } => n.publishedAt !== null && new Date(n.publishedAt) >= cutoff
+                (n): n is DatedLatestRaw =>
+                    n.publishedAt !== null && new Date(n.publishedAt) >= cutoff
             )
             .map(({ raw, publishedAt }) =>
                 mapLatestRawToItem(raw, publishedAt, sentinel)
