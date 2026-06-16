@@ -54,7 +54,6 @@ async function cacheNonEmpty<T>(
             async () => {
                 const rows = await fetcher();
                 if (rows.length === 0) {
-                    // unstable_cache가 이 빈 결과를 캐싱하지 못하게 throw한다.
                     throw new EmptyResultError();
                 }
                 return rows;

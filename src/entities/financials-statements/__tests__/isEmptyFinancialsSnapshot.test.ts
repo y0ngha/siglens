@@ -21,7 +21,12 @@ const make = (o: Partial<FinancialsSnapshot> = {}): FinancialsSnapshot => ({
     ...o,
 });
 
-const row = {} as never;
+// 빈 객체를 섹션 행 타입으로 캐스팅 — isEmptyFinancialsSnapshot은 array length만
+// 보므로 내용은 무관하다. as never(bottom type) 대신 섹션별 타입을 명시한다(MISTAKES §7).
+const rowOf = <
+    K extends keyof FinancialsSnapshot,
+>(): FinancialsSnapshot[K][number] =>
+    ({}) as unknown as FinancialsSnapshot[K][number];
 
 describe('isEmptyFinancialsSnapshot', () => {
     it('returns true when all three statement sections are empty', () => {
@@ -29,31 +34,41 @@ describe('isEmptyFinancialsSnapshot', () => {
     });
 
     it('returns false when income has data', () => {
-        expect(isEmptyFinancialsSnapshot(make({ income: [row] }))).toBe(false);
+        expect(
+            isEmptyFinancialsSnapshot(make({ income: [rowOf<'income'>()] }))
+        ).toBe(false);
     });
 
     it('returns false when balance has data', () => {
-        expect(isEmptyFinancialsSnapshot(make({ balance: [row] }))).toBe(false);
+        expect(
+            isEmptyFinancialsSnapshot(make({ balance: [rowOf<'balance'>()] }))
+        ).toBe(false);
     });
 
     it('returns false when cashFlow has data', () => {
-        expect(isEmptyFinancialsSnapshot(make({ cashFlow: [row] }))).toBe(
-            false
-        );
+        expect(
+            isEmptyFinancialsSnapshot(make({ cashFlow: [rowOf<'cashFlow'>()] }))
+        ).toBe(false);
     });
 
     it('returns false when all three sections have data', () => {
         expect(
             isEmptyFinancialsSnapshot(
-                make({ income: [row], balance: [row], cashFlow: [row] })
+                make({
+                    income: [rowOf<'income'>()],
+                    balance: [rowOf<'balance'>()],
+                    cashFlow: [rowOf<'cashFlow'>()],
+                })
             )
         ).toBe(false);
     });
 
     it('returns true when only growth sections have data (statements empty)', () => {
         // growth-only is treated as empty — the page degrades without statements
-        expect(isEmptyFinancialsSnapshot(make({ incomeGrowth: [row] }))).toBe(
-            true
-        );
+        expect(
+            isEmptyFinancialsSnapshot(
+                make({ incomeGrowth: [rowOf<'incomeGrowth'>()] })
+            )
+        ).toBe(true);
     });
 });

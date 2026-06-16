@@ -75,8 +75,12 @@ test.describe('financials: happy path', () => {
         await page.goto('/AAPL/financials');
 
         // h1 is SSR-emitted by SymbolPageHeading — always present before any JS.
+        // h1 = `${displayName} 재무제표` and the E2E AAPL fixture's displayName
+        // contains "AAPL" (see smoke/symbol-search specs), so require both tokens —
+        // `/재무제표/` alone would match any symbol's page. Robust to displayName
+        // formatting ("AAPL", "Apple Inc. (AAPL)", …) since AAPL precedes 재무제표.
         await expect(
-            page.getByRole('heading', { level: 1, name: /재무제표/ })
+            page.getByRole('heading', { level: 1, name: /AAPL.*재무제표/ })
         ).toBeVisible();
 
         // Active tab has aria-current="page" on the "재무제표" link.

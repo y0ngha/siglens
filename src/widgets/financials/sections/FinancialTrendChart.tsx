@@ -1,6 +1,6 @@
 'use client';
 
-import { useId, useState, type CSSProperties } from 'react';
+import { useState, type CSSProperties } from 'react';
 import { cn } from '@/shared/lib/cn';
 import { usdFormatter } from '../utils/numberFormat';
 import { placeTooltip, type TooltipPosition } from '../utils/tooltipPosition';
@@ -118,7 +118,6 @@ export function FinancialTrendChart({
     periods,
 }: FinancialTrendChartProps) {
     const [hover, setHover] = useState<HoverState | null>(null);
-    const tooltipId = useId();
 
     const n = periods.length;
     const seriesCount = series.length;
@@ -235,9 +234,6 @@ export function FinancialTrendChart({
                         height={CHART_HEIGHT}
                         fill="transparent"
                         className="cursor-crosshair"
-                        aria-describedby={
-                            hover?.periodIdx === pi ? tooltipId : undefined
-                        }
                         onPointerEnter={e =>
                             setHover({
                                 periodIdx: pi,
@@ -265,12 +261,12 @@ export function FinancialTrendChart({
 
             {hover !== null && (
                 <div
-                    id={tooltipId}
-                    role="tooltip"
+                    data-testid="chart-tooltip"
                     // 마우스 전용 프로그레시브 인핸스먼트 — 트리거(hit rect)가
-                    // aria-hidden SVG 안에 있어 AT에서 도달 불가하므로, 고아
-                    // role="tooltip"이 a11y 트리에 노출되지 않도록 명시적으로 숨긴다.
-                    // AT 사용자는 아래 StatementTable에서 동일 수치에 접근한다.
+                    // aria-hidden SVG 안에 있어 AT에서 도달 불가하다. role="tooltip"은
+                    // AT 노출이 전제인 위젯 역할이라 aria-hidden과 모순되므로 쓰지 않고,
+                    // 접근성 트리에서 완전히 숨긴다. AT 사용자는 아래 StatementTable에서
+                    // 동일 수치에 접근하고, 테스트는 data-testid로 조회한다.
                     aria-hidden="true"
                     className="border-secondary-600 bg-secondary-900 pointer-events-none fixed top-[var(--tip-top)] left-[var(--tip-left)] z-50 rounded-md border px-3 py-2 text-xs shadow-lg"
                     style={

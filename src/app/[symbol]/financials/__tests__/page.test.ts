@@ -78,6 +78,12 @@ import {
     isEmptyFinancialsSnapshot,
 } from '@/entities/financials-statements';
 import type { MockedFunction } from 'vitest';
+import type { FinancialsSnapshot } from '@y0ngha/siglens-core';
+
+// resolved 반환 타입 별칭 — mock fixture를 as never(bottom type) 대신 명시 타입으로
+// 캐스팅하기 위함(MISTAKES §7). 부분 객체는 as unknown as <Result>로 통과시킨다.
+type AssetInfoResult = Awaited<ReturnType<typeof getAssetInfoResilient>>;
+type ProfileResult = Awaited<ReturnType<typeof getProfileResilient>>;
 
 const mockGetAssetInfoResilient = getAssetInfoResilient as MockedFunction<
     typeof getAssetInfoResilient
@@ -99,7 +105,7 @@ const NON_EMPTY_SNAPSHOT = {
     incomeGrowth: [],
     financialGrowth: [],
     cashFlowGrowth: [],
-} as never;
+} as unknown as FinancialsSnapshot;
 
 const EMPTY_SNAPSHOT = {
     income: [],
@@ -108,7 +114,7 @@ const EMPTY_SNAPSHOT = {
     incomeGrowth: [],
     financialGrowth: [],
     cashFlowGrowth: [],
-} as never;
+} as unknown as FinancialsSnapshot;
 
 describe('Financials page ISR route config', () => {
     it('exports revalidate = 86400 (literal — required for Next.js static analysis)', () => {
@@ -128,11 +134,11 @@ describe('generateMetadata', () => {
                 fmpSymbol: 'AAPL',
             },
             degraded: false,
-        } as never);
+        } as unknown as AssetInfoResult);
         mockGetProfileResilient.mockResolvedValue({
             profile: { sector: 'Technology', description: '' },
             degraded: false,
-        } as never);
+        } as unknown as ProfileResult);
         mockGetFinancialsSnapshot.mockResolvedValue(NON_EMPTY_SNAPSHOT);
         mockIsEmpty.mockReturnValue(false);
     });
@@ -150,7 +156,7 @@ describe('generateMetadata', () => {
         mockGetAssetInfoResilient.mockResolvedValue({
             assetInfo: null,
             degraded: true,
-        } as never);
+        } as unknown as AssetInfoResult);
 
         const metadata = await generateMetadata({
             params: Promise.resolve({ symbol: 'AAPL' }),
@@ -164,7 +170,7 @@ describe('generateMetadata', () => {
         mockGetProfileResilient.mockResolvedValue({
             profile: null,
             degraded: true,
-        } as never);
+        } as unknown as ProfileResult);
 
         const metadata = await generateMetadata({
             params: Promise.resolve({ symbol: 'AAPL' }),
@@ -178,7 +184,7 @@ describe('generateMetadata', () => {
         mockGetProfileResilient.mockResolvedValue({
             profile: null,
             degraded: false,
-        } as never);
+        } as unknown as ProfileResult);
 
         const metadata = await generateMetadata({
             params: Promise.resolve({ symbol: 'FAKESYM' }),

@@ -67,10 +67,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         return NOINDEX_SYMBOL_METADATA;
     }
     // profile은 있으나 6종 재무 fetch가 모두 비면(FMP 일시 장애 등) 본문은 degrade를
-    // 렌더하므로(아래 default export 참조) 메타도 noindex로 일치시킨다. getFinancialsSnapshot은
-    // unstable_cache(staticSymbolCache)로 동일 캐시 키에 저장되므로 본문 렌더와 동일
-    // 엔트리를 재사용한다(같은 요청 내 추가 FMP 네트워크 요청 없음). profile 경로와 달리
-    // CachedFinancialStatementsProvider는 Redis dedup만 쓰고 React.cache는 없다.
+    // 렌더하므로(아래 default export 참조) 메타도 noindex로 일치시킨다.
+    // 데이터가 있는 경우: staticSymbolCache(unstable_cache) 덕에 generateMetadata와 페이지
+    // 렌더가 동일 캐시 엔트리를 공유한다. 빈 스냅샷(FMP 장애)의 경우: cacheNonEmpty가
+    // Next.js 캐싱을 의도적으로 건너뛰므로 같은 요청 내 두 번 호출되지만, Redis
+    // (CachedFinancialStatementsProvider)가 중복 FMP API 호출을 차단한다(React.cache는 없음).
     const snapshot = await getFinancialsSnapshot(upper);
     if (isEmptyFinancialsSnapshot(snapshot)) {
         return NOINDEX_SYMBOL_METADATA;
