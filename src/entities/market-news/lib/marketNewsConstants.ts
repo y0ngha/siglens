@@ -1,4 +1,5 @@
 import { MS_PER_DAY } from '@/shared/config/time';
+import type { ModelId } from '@y0ngha/siglens-core';
 
 /**
  * Display lookback window for category feeds.
@@ -12,3 +13,11 @@ export const MAX_MARKET_NEWS_CARDS = 40;
 
 /** Items fetched per category feed from FMP (we render up to MAX_MARKET_NEWS_CARDS=40 of them). */
 export const FMP_NEWS_FETCH_LIMIT = 50;
+
+/**
+ * Fixed server-side model for the public category digest.
+ * No BYOK — the digest is gating-free and uses a single shared model.
+ * `'gemini-2.5-flash'` is a valid {@link ModelId} member (verified against
+ * the installed `@y0ngha/siglens-core` `TierModel` union).
+ */
+export const DEFAULT_DIGEST_MODEL_ID = 'gemini-2.5-flash' satisfies ModelId;
