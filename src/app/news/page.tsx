@@ -81,6 +81,7 @@ async function fetchCategoryPreviews(
 }
 
 export default async function NewsHubPage() {
+    // safe: CATEGORY_CONFIG is Record<NewsFeedCategory, CategoryConfig>, so Object.keys is exactly the union — TS just widens to string[].
     const categories = Object.keys(CATEGORY_CONFIG) as NewsFeedCategory[];
 
     // Fetch all 5 category previews in parallel.

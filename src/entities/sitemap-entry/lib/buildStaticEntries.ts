@@ -17,6 +17,7 @@ import type { SitemapEntry } from '../model';
  */
 export function buildStaticEntries(now: Date): SitemapEntry[] {
     const oneHourAgo = new Date(now.getTime() - MS_PER_HOUR);
+    // safe: CATEGORY_CONFIG is Record<NewsFeedCategory, CategoryConfig>, so Object.keys is exactly the union — TS just widens to string[].
     const newsCategoryEntries: SitemapEntry[] = (
         Object.keys(CATEGORY_CONFIG) as NewsFeedCategory[]
     ).map(cat => ({

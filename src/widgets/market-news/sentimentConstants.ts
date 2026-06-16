@@ -12,15 +12,12 @@ export const SENTIMENT_CLASS: Record<NewsSentiment, string> = {
     bearish: 'bg-ui-danger/10 text-chart-bearish',
 };
 
-export const VALID_SENTIMENTS: readonly NewsSentiment[] = [
-    'bullish',
-    'neutral',
-    'bearish',
-];
-
+/**
+ * Type guard for {@link NewsSentiment}. Uses {@link SENTIMENT_LABEL}
+ * (Record<NewsSentiment, string>) as the exhaustiveness source — if core adds a
+ * new sentiment, the SENTIMENT_LABEL definition fails to compile, preventing
+ * silent drift.
+ */
 export function isNewsSentiment(value: unknown): value is NewsSentiment {
-    return (
-        typeof value === 'string' &&
-        VALID_SENTIMENTS.includes(value as NewsSentiment)
-    );
+    return typeof value === 'string' && value in SENTIMENT_LABEL;
 }

@@ -88,7 +88,7 @@ function DigestResultView({ result }: DigestResultViewProps) {
                     <ul className="space-y-1.5" aria-label="핵심 흐름 목록">
                         {result.keyEventsKo.map((event, i) => (
                             <li
-                                key={i}
+                                key={`${i}-${event.slice(0, 32)}`}
                                 className="text-secondary-400 flex min-w-0 gap-2 text-sm wrap-break-word"
                             >
                                 <span
@@ -112,7 +112,7 @@ function DigestResultView({ result }: DigestResultViewProps) {
                     <ul className="space-y-1.5" aria-label="주목 일정 목록">
                         {result.upcomingEventsKo.map((event, i) => (
                             <li
-                                key={i}
+                                key={`${i}-${event.slice(0, 32)}`}
                                 className="text-secondary-400 flex min-w-0 gap-2 text-sm wrap-break-word"
                             >
                                 <span

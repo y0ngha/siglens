@@ -22,8 +22,6 @@ const IMPACT_CLASS: Record<NewsImpact, string> = {
     negligible: 'bg-secondary-700/50 text-secondary-400',
 };
 
-const VALID_IMPACTS = new Set<string>(['high', 'medium', 'low', 'negligible']);
-
 const PUBLISHED_AT_FORMATTER = new Intl.DateTimeFormat('ko-KR', {
     year: 'numeric',
     month: 'short',
@@ -34,7 +32,7 @@ const PUBLISHED_AT_FORMATTER = new Intl.DateTimeFormat('ko-KR', {
 });
 
 function isNewsImpact(value: string): value is NewsImpact {
-    return VALID_IMPACTS.has(value);
+    return value in IMPACT_CLASS;
 }
 
 function isPending(item: MarketNewsCardItem): boolean {
