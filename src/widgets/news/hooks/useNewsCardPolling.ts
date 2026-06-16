@@ -3,8 +3,12 @@
 import { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { getNewsCardsAction } from '@/entities/news-article/actions';
 import type { NewsDisplayItem } from '@/shared/lib/types';
-import { MS_PER_MINUTE } from '@/shared/config/time';
-import { POLL_INTERVAL_MS, MAX_CONSECUTIVE_FAILURES } from '../constants';
+import {
+    NEWS_CARD_POLL_INTERVAL_MS as POLL_INTERVAL_MS,
+    NEWS_CARD_MAX_CONSECUTIVE_FAILURES as MAX_CONSECUTIVE_FAILURES,
+    NEWS_CARD_EMPTY_SNAPSHOT_MAX_POLLS as EMPTY_SNAPSHOT_MAX_POLLS,
+    NEWS_CARD_MAX_POLL_DURATION_MS as MAX_POLL_DURATION_MS,
+} from '@/shared/config/pollingConfig';
 
 /**
  * Called once when polling terminates normally (all cards enriched, or timeout
@@ -14,16 +18,14 @@ import { POLL_INTERVAL_MS, MAX_CONSECUTIVE_FAILURES } from '../constants';
  */
 export type OnPollingComplete = (finalItems: NewsDisplayItem[]) => void;
 
-export { POLL_INTERVAL_MS, MAX_CONSECUTIVE_FAILURES };
+export {
+    POLL_INTERVAL_MS,
+    MAX_CONSECUTIVE_FAILURES,
+    EMPTY_SNAPSHOT_MAX_POLLS,
+    MAX_POLL_DURATION_MS,
+};
 
-export const EMPTY_SNAPSHOT_MAX_POLLS = 20;
 const REFRESH_SNAPSHOT_MIN_POLLS = 5;
-/**
- * Hard ceiling on overall polling duration. Even if a worker keeps returning
- * pending cards, we never poll beyond 5 minutes to avoid unbounded background
- * work in long-lived tabs.
- */
-export const MAX_POLL_DURATION_MS = 5 * MS_PER_MINUTE;
 
 function hasPendingAnalysis(items: NewsDisplayItem[]): boolean {
     return items.some(

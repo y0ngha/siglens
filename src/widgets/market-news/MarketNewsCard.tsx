@@ -6,7 +6,7 @@ import {
     SENTIMENT_LABEL,
     SENTIMENT_CLASS,
     isNewsSentiment,
-} from './sentimentConstants';
+} from './utils/sentimentConstants';
 
 const IMPACT_LABEL: Record<NewsImpact, string> = {
     high: '주가 영향 큼',

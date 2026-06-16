@@ -13,7 +13,7 @@ import {
 } from '@/entities/market-news/actions';
 import { useHydrated } from '@/shared/hooks/useHydrated';
 import { POLL_INTERVAL_MS, MAX_CONSECUTIVE_FAILURES } from '../constants';
-import { fetchMarketNewsDigest } from './utils/fetchMarketNewsDigest';
+import { fetchMarketNewsDigest } from '../utils/fetchMarketNewsDigest';
 
 export type MarketNewsDigestState =
     | { status: 'loading' }
@@ -23,6 +23,43 @@ export type MarketNewsDigestState =
 interface WaitForMarketNewsCardsResult {
     isReady: boolean;
     waitError: Error | null;
+}
+
+interface WaitForMarketNewsCardsContext {
+    category: NewsFeedCategory;
+    state: {
+        consecutiveFailures: number;
+    };
+    setIsReady: (next: boolean) => void;
+    setWaitError: (next: Error | null) => void;
+    clearInterval: () => void;
+}
+
+/** One wait tick. Pure function of the explicit context object — no closure capture, unit-testable. */
+async function waitForMarketNewsCardsStep(
+    ctx: WaitForMarketNewsCardsContext
+): Promise<'continue' | 'stop'> {
+    try {
+        const fresh = await getMarketNewsCardsAction(ctx.category);
+        ctx.state.consecutiveFailures = 0;
+        if (fresh.some(item => item.sentiment !== null)) {
+            ctx.setIsReady(true);
+            ctx.clearInterval();
+            return 'stop';
+        }
+    } catch (err) {
+        ctx.state.consecutiveFailures += 1;
+        console.error('[useWaitForMarketNewsCards] poll failed:', err);
+        if (ctx.state.consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
+            ctx.setWaitError(
+                err instanceof Error ? err : new Error(String(err))
+            );
+            ctx.clearInterval();
+            return 'stop';
+        }
+    }
+
+    return 'continue';
 }
 
 /**
@@ -46,32 +83,34 @@ function useWaitForMarketNewsCards(
         setWaitError(null);
     }
 
+    const intervalIdRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
     useEffect(() => {
         if (initiallyReady) return;
 
-        let consecutiveFailures = 0;
+        const state = { consecutiveFailures: 0 };
 
-        const intervalId = setInterval(async () => {
-            try {
-                const fresh = await getMarketNewsCardsAction(category);
-                consecutiveFailures = 0;
-                if (fresh.some(item => item.sentiment !== null)) {
-                    setIsReady(true);
-                    clearInterval(intervalId);
-                }
-            } catch (err) {
-                consecutiveFailures += 1;
-                console.error('[useWaitForMarketNewsCards] poll failed:', err);
-                if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
-                    setWaitError(
-                        err instanceof Error ? err : new Error(String(err))
-                    );
-                    clearInterval(intervalId);
-                }
-            }
+        intervalIdRef.current = setInterval(() => {
+            void waitForMarketNewsCardsStep({
+                category,
+                state,
+                setIsReady,
+                setWaitError,
+                clearInterval: () => {
+                    if (intervalIdRef.current !== null) {
+                        clearInterval(intervalIdRef.current);
+                        intervalIdRef.current = null;
+                    }
+                },
+            });
         }, POLL_INTERVAL_MS);
 
-        return () => clearInterval(intervalId);
+        return () => {
+            if (intervalIdRef.current !== null) {
+                clearInterval(intervalIdRef.current);
+                intervalIdRef.current = null;
+            }
+        };
     }, [category, initiallyReady]);
 
     return { isReady, waitError };
@@ -119,9 +158,11 @@ export function useMarketNewsDigest(
     hasEnrichedNews: boolean
 ): MarketNewsDigestState {
     const currentJobIdRef = useRef<string | null>(null);
-    const isHydrated = useHydrated();
 
-    useMarketNewsAnalysisTrigger(category);
+    // §17 explanation: useHydrated and useWaitForMarketNewsCards feed `enabled` on the useQuery below.
+    // Hooks that PROVIDE inputs to a query are allowed to precede it; §17 forbids the opposite
+    // (a derived hook that consumes the query result being placed before useQuery).
+    const isHydrated = useHydrated();
 
     const { isReady: isCardsReady, waitError } = useWaitForMarketNewsCards(
         category,
@@ -151,6 +192,8 @@ export function useMarketNewsDigest(
         retry: false,
         staleTime: Infinity,
     });
+
+    useMarketNewsAnalysisTrigger(category);
 
     const retry = useCallback(() => {
         void query.refetch();

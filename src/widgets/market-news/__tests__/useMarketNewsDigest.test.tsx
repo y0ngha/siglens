@@ -3,7 +3,7 @@
  *
  * Mocks:
  * - @/entities/market-news/actions — all five server actions
- * - @/widgets/market-news/hooks/utils/fetchMarketNewsDigest — the inner async
+ * - @/widgets/market-news/utils/fetchMarketNewsDigest — the inner async
  *   fetcher so we can control queryFn outcomes without running the full submit/
  *   poll loop
  * - @/shared/hooks/useHydrated — to toggle the hydration gate
@@ -21,7 +21,7 @@ import {
     getMarketNewsCardsAction,
     ensureMarketNewsCardsAnalyzedAction,
 } from '@/entities/market-news/actions';
-import { fetchMarketNewsDigest } from '@/widgets/market-news/hooks/utils/fetchMarketNewsDigest';
+import { fetchMarketNewsDigest } from '@/widgets/market-news/utils/fetchMarketNewsDigest';
 import { useMarketNewsDigest } from '@/widgets/market-news/hooks/useMarketNewsDigest';
 
 vi.mock('@/entities/market-news/actions', () => ({
@@ -32,7 +32,7 @@ vi.mock('@/entities/market-news/actions', () => ({
     cancelMarketNewsDigestAction: vi.fn().mockResolvedValue(undefined),
 }));
 
-vi.mock('@/widgets/market-news/hooks/utils/fetchMarketNewsDigest', () => ({
+vi.mock('@/widgets/market-news/utils/fetchMarketNewsDigest', () => ({
     fetchMarketNewsDigest: vi.fn(),
 }));
 

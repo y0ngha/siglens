@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { getMarketNewsCardsAction } from '@/entities/market-news/actions';
 import type { MarketNewsCardItem } from '@/entities/market-news/actions';
 import type { NewsFeedCategory } from '@y0ngha/siglens-core';
@@ -17,6 +17,66 @@ function hasPendingAnalysis(items: MarketNewsCardItem[]): boolean {
     );
 }
 
+interface PollMarketNewsCardsContext {
+    category: NewsFeedCategory;
+    state: {
+        pollCount: number;
+        consecutiveFailures: number;
+        startTime: number;
+    };
+    setItems: (next: MarketNewsCardItem[]) => void;
+    setIsPolling: (next: boolean) => void;
+    setPollError: (next: Error | null) => void;
+    clearInterval: () => void;
+}
+
+/** One polling tick. Pure function of the explicit context object — no closure capture, unit-testable. */
+async function pollMarketNewsCardsStep(
+    ctx: PollMarketNewsCardsContext
+): Promise<'continue' | 'stop'> {
+    if (Date.now() - ctx.state.startTime > MAX_POLL_DURATION_MS) {
+        ctx.setIsPolling(false);
+        ctx.clearInterval();
+        return 'stop';
+    }
+
+    try {
+        const fresh = await getMarketNewsCardsAction(ctx.category);
+        ctx.state.pollCount += 1;
+        ctx.state.consecutiveFailures = 0;
+        ctx.setItems(fresh);
+
+        if (
+            fresh.length === 0 &&
+            ctx.state.pollCount >= EMPTY_SNAPSHOT_MAX_POLLS
+        ) {
+            ctx.setIsPolling(false);
+            ctx.clearInterval();
+            return 'stop';
+        } else if (fresh.length > 0 && !hasPendingAnalysis(fresh)) {
+            // All cards are enriched — no need to keep polling.
+            ctx.setIsPolling(false);
+            ctx.clearInterval();
+            return 'stop';
+        }
+    } catch (err) {
+        ctx.state.pollCount += 1;
+        ctx.state.consecutiveFailures += 1;
+        console.error('[useMarketNewsCardPolling] poll failed:', err);
+
+        if (ctx.state.consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
+            ctx.setPollError(
+                err instanceof Error ? err : new Error(String(err))
+            );
+            ctx.setIsPolling(false);
+            ctx.clearInterval();
+            return 'stop';
+        }
+    }
+
+    return 'continue';
+}
+
 export interface UseMarketNewsCardPollingReturn {
     items: MarketNewsCardItem[];
     isPolling: boolean;
@@ -27,11 +87,10 @@ export interface UseMarketNewsCardPollingReturn {
  * Keeps the market-news card list up-to-date while background analysis is in
  * progress for a given feed category.
  *
- * Polls `getMarketNewsCardsAction(category)` every 3 s and stops when ALL
- * items have `sentiment !== null` (fully enriched), after `MAX_POLL_DURATION_MS`
- * (5-minute hard ceiling), after `MAX_CONSECUTIVE_FAILURES` (3) consecutive
- * polling errors, or after `EMPTY_SNAPSHOT_MAX_POLLS` (20) consecutive empty
- * snapshots.
+ * Polls `getMarketNewsCardsAction(category)` every `POLL_INTERVAL_MS` and stops
+ * when ALL items have `sentiment !== null` (fully enriched), after
+ * `MAX_POLL_DURATION_MS`, after `MAX_CONSECUTIVE_FAILURES` consecutive polling
+ * errors, or after `EMPTY_SNAPSHOT_MAX_POLLS` consecutive empty snapshots.
  *
  * Pass a stable `key` on the consuming list to force a fresh-mount reset
  * when the snapshot array identity must drive a reset (e.g. client navigation).
@@ -57,51 +116,39 @@ export function useMarketNewsCardPolling(
         setPollError(null);
     }
 
+    // Keep a ref to the interval ID so the step helper can clear it without
+    // capturing a stale closure value.
+    const intervalIdRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
     useEffect(() => {
-        let pollCount = 0;
-        let consecutiveFailures = 0;
-        const startTime = Date.now();
+        const state = {
+            pollCount: 0,
+            consecutiveFailures: 0,
+            startTime: Date.now(),
+        };
 
-        const intervalId = setInterval(async () => {
-            if (Date.now() - startTime > MAX_POLL_DURATION_MS) {
-                setIsPolling(false);
-                clearInterval(intervalId);
-                return;
-            }
-
-            try {
-                const fresh = await getMarketNewsCardsAction(category);
-                pollCount += 1;
-                consecutiveFailures = 0;
-                setItems(fresh);
-
-                if (
-                    fresh.length === 0 &&
-                    pollCount >= EMPTY_SNAPSHOT_MAX_POLLS
-                ) {
-                    setIsPolling(false);
-                    clearInterval(intervalId);
-                } else if (fresh.length > 0 && !hasPendingAnalysis(fresh)) {
-                    // All cards are enriched — no need to keep polling.
-                    setIsPolling(false);
-                    clearInterval(intervalId);
-                }
-            } catch (err) {
-                pollCount += 1;
-                consecutiveFailures += 1;
-                console.error('[useMarketNewsCardPolling] poll failed:', err);
-
-                if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
-                    setPollError(
-                        err instanceof Error ? err : new Error(String(err))
-                    );
-                    setIsPolling(false);
-                    clearInterval(intervalId);
-                }
-            }
+        intervalIdRef.current = setInterval(() => {
+            void pollMarketNewsCardsStep({
+                category,
+                state,
+                setItems,
+                setIsPolling,
+                setPollError,
+                clearInterval: () => {
+                    if (intervalIdRef.current !== null) {
+                        clearInterval(intervalIdRef.current);
+                        intervalIdRef.current = null;
+                    }
+                },
+            });
         }, POLL_INTERVAL_MS);
 
-        return () => clearInterval(intervalId);
+        return () => {
+            if (intervalIdRef.current !== null) {
+                clearInterval(intervalIdRef.current);
+                intervalIdRef.current = null;
+            }
+        };
         // Only `category` is in deps. `initialItems` is excluded on purpose —
         // including it would restart polling on every parent render with an
         // unstable array prop, resetting pollCount. The reset-on-category-change

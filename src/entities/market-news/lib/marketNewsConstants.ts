@@ -5,9 +5,11 @@ import type { ModelId } from '@y0ngha/siglens-core';
 export const MARKET_NEWS_LOOKBACK_DAYS = 7;
 
 /**
- * Display lookback window for category feeds.
- * Market news churns fast — 7 days captures relevant context without
- * accumulating stale articles that bloat the digest prompt.
+ * Display lookback window for category feeds, derived from
+ * {@link MARKET_NEWS_LOOKBACK_DAYS}.
+ * Market news churns fast — {@link MARKET_NEWS_LOOKBACK_DAYS} days captures
+ * relevant context without accumulating stale articles that bloat the digest
+ * prompt.
  */
 export const MARKET_NEWS_LOOKBACK_MS = MARKET_NEWS_LOOKBACK_DAYS * MS_PER_DAY;
 

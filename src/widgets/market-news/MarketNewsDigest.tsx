@@ -10,7 +10,7 @@ import {
     SENTIMENT_LABEL,
     SENTIMENT_CLASS,
     isNewsSentiment,
-} from './sentimentConstants';
+} from './utils/sentimentConstants';
 
 /** Loading / generating status card. */
 function DigestStatusCard() {

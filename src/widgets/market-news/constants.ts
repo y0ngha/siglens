@@ -1,12 +1,11 @@
 /**
- * Re-export polling constants from the per-symbol news widget so both
- * useMarketNewsCardPolling and useNewsCardPolling share identical thresholds.
- * Importing the underlying file directly (not the barrel) to avoid any future
- * barrel changes pulling in client-only directives into server build paths.
+ * Re-export card-polling constants from the shared config so both
+ * useMarketNewsCardPolling and useWaitForMarketNewsCards share identical
+ * thresholds without reaching into another widget slice.
  */
 export {
-    POLL_INTERVAL_MS,
-    MAX_CONSECUTIVE_FAILURES,
-    EMPTY_SNAPSHOT_MAX_POLLS,
-    MAX_POLL_DURATION_MS,
-} from '@/widgets/news/hooks/useNewsCardPolling';
+    NEWS_CARD_POLL_INTERVAL_MS as POLL_INTERVAL_MS,
+    NEWS_CARD_MAX_CONSECUTIVE_FAILURES as MAX_CONSECUTIVE_FAILURES,
+    NEWS_CARD_EMPTY_SNAPSHOT_MAX_POLLS as EMPTY_SNAPSHOT_MAX_POLLS,
+    NEWS_CARD_MAX_POLL_DURATION_MS as MAX_POLL_DURATION_MS,
+} from '@/shared/config/pollingConfig';
