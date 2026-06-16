@@ -1,5 +1,54 @@
 # Changelog
 
+# [0.22.0](https://github.com/y0ngha/siglens/compare/v0.21.2...v0.22.0) (2026-06-16)
+
+
+### Bug Fixes
+
+* **cache:** dedupe market-summary/sector-signals config fingerprint ([34f893d](https://github.com/y0ngha/siglens/commit/34f893d53be67a2d6917e08e311519304ff2601e)), closes [#594](https://github.com/y0ngha/siglens/issues/594)
+* **financials:** add financialsBulletsKo to OverallAnalysisResponse fixtures (core overlay) ([a3f795e](https://github.com/y0ngha/siglens/commit/a3f795e6bcd9cbb3e1ab343a9a30e9c9fba8638f))
+* **financials:** address PR [#592](https://github.com/y0ngha/siglens/issues/592) review — remove what-comments, css-var, action try-catch, hoist fns, hook order, a11y, dedup ([bdfae45](https://github.com/y0ngha/siglens/commit/bdfae45ecae83cad5c5b16205d9896bbda5d29c2))
+* **financials:** address PR [#592](https://github.com/y0ngha/siglens/issues/592) round 2 — named type, spinner color, stable keys, stabilize setPeriod, remove JSX comment ([5fe3a6a](https://github.com/y0ngha/siglens/commit/5fe3a6a7389dc7d011c661caa22bac529fb4ee9a))
+* **financials:** address PR [#592](https://github.com/y0ngha/siglens/issues/592) round 3 — toReversed, value colors, remove duplicate chart labels ([ee7b078](https://github.com/y0ngha/siglens/commit/ee7b078a8be3d067bb4c746bd3ad1bb824108b32))
+* **financials:** address PR [#592](https://github.com/y0ngha/siglens/issues/592) round 4 — hook order, extract quarter state machine, aria id, remove what-comments ([46b1aab](https://github.com/y0ngha/siglens/commit/46b1aab256c20bc5e1da7df9fa6fbe6ae2e9f27a))
+* **financials:** address PR [#592](https://github.com/y0ngha/siglens/issues/592) round 5 — precise test matchers (§13), quarter-fetch error logging, safe-cast comment ([16f76da](https://github.com/y0ngha/siglens/commit/16f76da3d6e5c2945a76138ed88fac21e68e1061))
+* **financials:** address PR [#592](https://github.com/y0ngha/siglens/issues/592) round 6 — slice-relative import, hoist Intl formatter, hook order ([3248704](https://github.com/y0ngha/siglens/commit/32487048cfb2c1b4ddeee5193fcccc73d6d1b006))
+* **financials:** address PR [#592](https://github.com/y0ngha/siglens/issues/592) round 7 — barrel import, alias imports, test import order, API docs ([743cf04](https://github.com/y0ngha/siglens/commit/743cf04b7a681c81660f88676c5360b97879a1a7))
+* **financials:** address PR [#592](https://github.com/y0ngha/siglens/issues/592) round 8 — extract utils, dedupe formatter & SEO call ([092a12e](https://github.com/y0ngha/siglens/commit/092a12ef3784f66395abed6f2b6a799827a2db0d))
+* **financials:** address PR [#594](https://github.com/y0ngha/siglens/issues/594) review + hydration + chart hover ([dd0e9d2](https://github.com/y0ngha/siglens/commit/dd0e9d24905d05aad50c0d5996d5ee6eabf6cc8c)), closes [#418](https://github.com/y0ngha/siglens/issues/418)
+* **financials:** address PR [#594](https://github.com/y0ngha/siglens/issues/594) review round 2 (FinancialTrendChart a11y/style) ([e1e6530](https://github.com/y0ngha/siglens/commit/e1e65302ffeb9dd65e759604b9f39f93c63ef43b))
+* **financials:** address review — quarter-empty fallback, dedup snapshot source, entity tests, cn/axis/order helpers ([6f21716](https://github.com/y0ngha/siglens/commit/6f217163fbbc27b5800631158d6a9a3e985dc55c))
+* **financials:** always fetch max limit + slice on read to fix cache-key/limit mismatch ([d7aed33](https://github.com/y0ngha/siglens/commit/d7aed3392e647d0e12095643d182e13b21ab9f90))
+* **financials:** PR [#594](https://github.com/y0ngha/siglens/issues/594) R7 후속 — getFinancialsSnapshot React.cache dedup, 테스트 섹션 단언 보강, fmpSymbol alias 기준 명시 ([3ffaffa](https://github.com/y0ngha/siglens/commit/3ffaffab0a7442b0aef5b3b1094e5b43ea2a782f))
+* **financials:** resolve pre-deploy audit findings (runtime/code/SEO/coverage) ([740a795](https://github.com/y0ngha/siglens/commit/740a795ecc999491ba434416c0ca8662208e93b7))
+* **financials:** round AxisScoreCard pct/ratio metric values ([2514de4](https://github.com/y0ngha/siglens/commit/2514de4db095ffc3c1c91220185071acf357aa9f))
+* **review:** PR [#594](https://github.com/y0ngha/siglens/issues/594) — financialData 테스트 상수화(ANNUAL/QUARTER_LIMIT), 차트 툴팁 뷰포트 경계 처리 ([6e86c85](https://github.com/y0ngha/siglens/commit/6e86c85e85c1318caec2771a53498e3bcdb713f1))
+* **review:** PR [#594](https://github.com/y0ngha/siglens/issues/594) R3 — placeTooltip utils 추출+named 타입+flip 테스트, sr-only 축명 정정, WHAT 주석 제거 ([f9d4c72](https://github.com/y0ngha/siglens/commit/f9d4c7242be67862021d49af7593005009a1268b))
+* **review:** PR [#594](https://github.com/y0ngha/siglens/issues/594) R4 — 캐시 주석 정정, tooltip aria-hidden, sentinel 에러 클래스+테스트, 매직넘버 제거 ([929ea83](https://github.com/y0ngha/siglens/commit/929ea83c511ac5bd8a9fa55ec6e63a939b14273c))
+* **review:** PR [#594](https://github.com/y0ngha/siglens/issues/594) R5 — tooltip role 제거(data-testid), as never 제거, e2e regex 특이성, 주석 정정, 테스트 분리 ([ee42a52](https://github.com/y0ngha/siglens/commit/ee42a526a8aad25c9e943dcb74cc4011ed9b7fb3))
+* **review:** PR [#594](https://github.com/y0ngha/siglens/issues/594) R6 — isEmpty 테스트 lib/__tests__ 이동(relative import), e2e regex 특이성, expect.objectContaining ([9a34357](https://github.com/y0ngha/siglens/commit/9a34357162bbc012df37cb41ebcc7a84fe0b8fe0))
+* **review:** PR [#596](https://github.com/y0ngha/siglens/issues/596) R1 — page.tsx 캐시 주석 정정, JSDoc 재시도→호출, growth 섹션 단언 보강 ([3510036](https://github.com/y0ngha/siglens/commit/35100367be4c548e3cbc55fd6df95c383a820102))
+* **symbol:** normalize dual-class tickers to FMP notation (BRK.B → BRK-B) ([6c9fc1c](https://github.com/y0ngha/siglens/commit/6c9fc1c3b27e830e87ad63008641ab0f371504b5))
+* Yahoo 옵션 심볼 별칭 적용 ([a584786](https://github.com/y0ngha/siglens/commit/a584786b229bd684c25fd0fe35ad5644c19ac124))
+
+
+### Features
+
+* 우주산업 분야 추가 및 siglens-core 브리핑, sectorSignals, marketSummary 계약내용 변경에 따른 대응 ([8bd1448](https://github.com/y0ngha/siglens/commit/8bd1448377866c26b8bd49e2c92bff528c901a72))
+* **financials:** add analysis server actions, E2E stub, query key ([d4bdb87](https://github.com/y0ngha/siglens/commit/d4bdb8771b21f9267a9508f6f0256ab6b01aa4f9))
+* **financials:** add cached provider, factory, E2E fake ([6e2f58b](https://github.com/y0ngha/siglens/commit/6e2f58b17559aa9ed0a2125db981d026e75c0873))
+* **financials:** add financialData page access (6 fetch + scorecard) ([4f1c292](https://github.com/y0ngha/siglens/commit/4f1c292f2c91c54ce1e6516d1543993df9e1f079))
+* **financials:** add FMP raw statement types + TTL constant ([f646850](https://github.com/y0ngha/siglens/commit/f646850276c92c284151d47855e05ae4d3567cd8))
+* **financials:** add FmpFinancialStatementsClient (6 endpoints) ([9785ecd](https://github.com/y0ngha/siglens/commit/9785ecde06cd796780e1b9fb72547a10d992e747))
+* **financials:** add OG image, sitemap entry, ISR doc row ([0c1bb63](https://github.com/y0ngha/siglens/commit/0c1bb63c00f994e108cdd0b36b137588aaf1bf7f))
+* **financials:** add scorecard gauge + axis cards widget ([896e7fb](https://github.com/y0ngha/siglens/commit/896e7fb67ed9338f56ca178569e0c88fa6cb7992))
+* **financials:** add SEO metadata, canonical, JSON-LD ([17927e9](https://github.com/y0ngha/siglens/commit/17927e9ac4dcaefb7cbe34ed324a031a10a0e275))
+* **financials:** add statement viewer sections (tables + trend charts) ([11cc4df](https://github.com/y0ngha/siglens/commit/11cc4df92c5cbf85745239be9759562f01abf613))
+* **financials:** add term tooltips + register financials tab ([a284a42](https://github.com/y0ngha/siglens/commit/a284a426bf0c83f2912a66af34e9f4f8c76e83df))
+* **financials:** add useFinancialsAnalysis, FinancialsAiSummary, chat publish ([28cf6d3](https://github.com/y0ngha/siglens/commit/28cf6d3bf6e10e5ead37f123dec234189303d8f3))
+* **financials:** assemble page + annual/quarter toggle with lazy fetch ([6a5c611](https://github.com/y0ngha/siglens/commit/6a5c61111094ee554d9992b14624dfc82ad469b5))
+* **financials:** integrate scorecard into overall analysis ([a0d0c64](https://github.com/y0ngha/siglens/commit/a0d0c641c0170249008e0c1d26875441147e2a29))
+
 ## [0.21.2](https://github.com/y0ngha/siglens/compare/v0.21.1...v0.21.2) (2026-06-15)
 
 
