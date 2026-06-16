@@ -27,8 +27,6 @@ import type { MarketNewsRow } from '../model';
  * The `tickers` extra field is silently ignored by both helpers.
  */
 function toEnrichedMarketNewsItem(row: MarketNewsRow): EnrichedNewsItem | null {
-    // isEnrichedRow accepts any object with the NewsRow shape fields
-    // MarketNewsRow satisfies that shape structurally.
     const newsRowLike = row as Parameters<typeof isEnrichedRow>[0];
     if (!isEnrichedRow(newsRowLike)) return null;
     return toEnrichedNewsItem(newsRowLike);

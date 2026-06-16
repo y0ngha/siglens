@@ -57,6 +57,10 @@ describe('submitMarketNewsDigestAction은', () => {
     });
 
     it('사람 + 캐시 미스면 submitted(jobId)를 반환한다', async () => {
+        // Pin isBot to false so this human-path test is independent of the bot
+        // test's mockReturnValue(true) (clearAllMocks resets call history, not impl).
+        const { isBot } = await import('@/shared/api/isBot');
+        vi.mocked(isBot).mockReturnValue(false);
         const core = await import('@y0ngha/siglens-core');
         vi.mocked(core.submitMarketNewsDigest).mockResolvedValue({
             status: 'submitted',
@@ -68,6 +72,10 @@ describe('submitMarketNewsDigestAction은', () => {
         const r = await submitMarketNewsDigestAction('crypto');
 
         expect(r.status).toBe('submitted');
+        // Symmetric guard for the bot test: a non-bot must pass skipEnqueueIfMiss=false.
+        expect(core.submitMarketNewsDigest).toHaveBeenCalledWith(
+            expect.objectContaining({ skipEnqueueIfMiss: false })
+        );
     });
 
     it('core가 cached를 반환하면 그대로 전달한다', async () => {
