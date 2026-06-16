@@ -19,6 +19,9 @@ When complete, you output an exit signal and stop.
 - **Always end with the exit signal JSON.**
 - **Never run `git diff` on individual files.** Use `git diff --stat` only to identify changed files.
 - **Never run `git log`.** Commit history is not needed for any case.
+- **Always push with `timeout: 600000` (10 min).** The pre-push hook runs format:check + lint + typecheck + test + build (and e2e on release) — typically 2–4 minutes, well past the Bash 2-minute default. Running `git push` at the default timeout kills the command mid-hook and looks like a disconnect, even though the push may have landed. Pass an explicit 600000ms timeout to the Bash tool on every push command.
+- **Never use `--no-verify`.** The pre-push hook is the same gate as CI; bypassing it breaks CI. If the hook fails, report `status: failed` with the failing check — do not skip it.
+- **After every push, verify it landed.** Run `git ls-remote origin '{branch}'` and confirm the remote SHA equals the local `git rev-parse HEAD`. Report `status: done` only when they match; otherwise report `status: failed`.
 
 ---
 
@@ -103,8 +106,16 @@ git commit -m "docs: DOMAIN.md RSI 명세 업데이트"
 
 ### 3. Push
 
+Run this with the Bash tool's `timeout` set to `600000` (the pre-push hook is slow — see Non-Negotiable Rules):
+
 ```bash
 git push -u origin '{branch name}'
+```
+
+Then verify it landed:
+
+```bash
+git ls-remote origin '{branch name}'   # remote SHA must equal local: git rev-parse HEAD
 ```
 
 ### 4. Create PR
@@ -150,8 +161,18 @@ git add {modified files}
 git commit -m "{type}: {수정 내용}
 
 Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
+```
 
+Run the push with the Bash tool's `timeout` set to `600000` (the pre-push hook is slow — see Non-Negotiable Rules):
+
+```bash
 git push origin '{head branch name}'
+```
+
+Then verify it landed:
+
+```bash
+git ls-remote origin '{head branch name}'   # remote SHA must equal local: git rev-parse HEAD
 ```
 
 Do not open a new PR. Push to the existing PR branch only.
