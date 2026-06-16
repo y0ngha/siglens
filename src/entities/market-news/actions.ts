@@ -3,7 +3,7 @@
 
 export { ensureMarketNewsCardsAnalyzedAction } from './actions/ensureMarketNewsCardsAnalyzedAction';
 export { getMarketNewsCardsAction } from './actions/getMarketNewsCardsAction';
-export type { MarketNewsCardItem } from './actions/getMarketNewsCardsAction';
+export type { MarketNewsCardItem } from './lib/toCardItem';
 
 // Phase 4: digest actions
 export { submitMarketNewsDigestAction } from './actions/submitMarketNewsDigestAction';

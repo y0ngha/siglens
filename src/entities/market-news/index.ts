@@ -14,3 +14,5 @@ export {
     MAX_MARKET_NEWS_CARDS,
     FMP_NEWS_FETCH_LIMIT,
 } from './lib/marketNewsConstants';
+export { toMarketNewsCardItem } from './lib/toCardItem';
+export type { MarketNewsCardItem } from './lib/toCardItem';

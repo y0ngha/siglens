@@ -37,6 +37,7 @@ vi.mock('@/entities/market-news/api', () => ({
 }));
 
 import { generateMetadata } from '../page';
+import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
 
 describe('/news/[category] generateMetadata는', () => {
     it('유효 카테고리면 canonical /news/<slug>를 설정한다', async () => {
@@ -52,5 +53,15 @@ describe('/news/[category] generateMetadata는', () => {
             params: Promise.resolve({ category: 'bogus' }),
         });
         expect(meta.robots).toMatchObject({ index: false });
+    });
+
+    it('유효 카테고리이지만 스냅샷이 비어 있으면 noindex + canonical null을 반환한다', async () => {
+        vi.mocked(staticSymbolCache).mockResolvedValueOnce([]);
+
+        const meta = await generateMetadata({
+            params: Promise.resolve({ category: 'crypto' }),
+        });
+        expect(meta.robots).toMatchObject({ index: false });
+        expect(meta.alternates?.canonical).toBeNull();
     });
 });

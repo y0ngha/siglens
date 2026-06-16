@@ -4,20 +4,17 @@ import { Suspense } from 'react';
 import {
     CATEGORY_CONFIG,
     categoryFromSlug,
+    toMarketNewsCardItem,
+    type MarketNewsCardItem,
     type NewsFeedCategory,
 } from '@/entities/market-news';
 import { getMarketNewsList } from '@/entities/market-news/api';
-import type { MarketNewsCardItem } from '@/entities/market-news/actions';
 import { MarketNewsDigest } from '@/widgets/market-news/MarketNewsDigest';
 import { MarketNewsList } from '@/widgets/market-news/MarketNewsList';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
-import {
-    buildBreadcrumbJsonLd,
-    clampSeoDescription,
-    SITE_NAME,
-    SITE_URL,
-} from '@/shared/lib/seo';
+import { buildBreadcrumbJsonLd, SITE_NAME, SITE_URL } from '@/shared/lib/seo';
+import { buildCategoryPageTitle, buildCategoryPageDescription } from './seo';
 
 // 12h ISR — 신선도는 ensureMarketNewsCardsAnalyzedAction의 on-demand
 // revalidateTag('market-news:<sentinel>', 'max')가 보장, 시간 기반은 상한만.
@@ -45,6 +42,10 @@ interface Props {
  *
  * Uses `staticSymbolCache` (axis 1) to avoid DYNAMIC_SERVER_USAGE from the
  * DB call during ISR cold-gen.
+ *
+ * Projects rows through the shared allowlist (`toMarketNewsCardItem`) so that
+ * DB-internal columns (bodyEn, symbol, analyzedAt) are stripped before the
+ * items reach any client component or RSC payload serialisation.
  */
 async function loadCategorySnapshot(category: NewsFeedCategory): Promise<{
     items: MarketNewsCardItem[];
@@ -57,9 +58,9 @@ async function loadCategorySnapshot(category: NewsFeedCategory): Promise<{
         () => getMarketNewsList(cfg.sentinel),
         [`market-news:${cfg.sentinel}`]
     );
-    // Project to the display card shape expected by MarketNewsList.
-    // (MarketNewsRow is structurally compatible with MarketNewsCardItem.)
-    const items = rows as unknown as MarketNewsCardItem[];
+    // Project to the same allowlist `getMarketNewsCardsAction` uses so the
+    // client component never sees server-only DB columns (bodyEn/symbol/analyzedAt).
+    const items = rows.map(toMarketNewsCardItem);
     return { items, isEmpty: items.length === 0 };
 }
 
@@ -91,11 +92,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     }
 
     const canonicalPath = `/news/${cfg.slug}`;
-    const title = `${cfg.koLabel} 뉴스 — 최신 마켓 흐름과 AI 다이제스트`;
+    const title = buildCategoryPageTitle(cfg.koLabel);
     const fullTitle = `${title} | ${SITE_NAME}`;
-    const description = clampSeoDescription(
-        `${cfg.koLabel} 분야의 최신 뉴스를 한국어로 정리합니다. 각 기사의 호재·악재 분위기를 AI가 분석하고, 카테고리 전반의 흐름을 다이제스트로 요약해 드려요.`
-    );
+    const description = buildCategoryPageDescription(cfg.koLabel);
     const keywords = [
         `${cfg.koLabel} 뉴스`,
         `${cfg.koLabel} 최신 뉴스`,
@@ -148,8 +147,8 @@ export default async function CategoryNewsPage({ params }: Props) {
         '@context': 'https://schema.org',
         '@type': 'WebPage',
         '@id': `${categoryUrl}#webpage`,
-        name: `${cfg.koLabel} 뉴스 — 최신 마켓 흐름과 AI 다이제스트 | ${SITE_NAME}`,
-        description: `${cfg.koLabel} 분야의 최신 뉴스를 한국어로 정리합니다.`,
+        name: `${buildCategoryPageTitle(cfg.koLabel)} | ${SITE_NAME}`,
+        description: buildCategoryPageDescription(cfg.koLabel),
         url: categoryUrl,
         inLanguage: 'ko',
         isPartOf: { '@type': 'WebSite', '@id': `${SITE_URL}#website` },
