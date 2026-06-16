@@ -15,11 +15,11 @@ import { CATEGORY_CONFIG } from '../lib/categoryConfig';
 import { MARKET_NEWS_LOOKBACK_MS } from '../lib/marketNewsConstants';
 import { isRecentlyFetched, markFetched } from '../lib/marketNewsRefreshFlag';
 import { DISABLED_THINKING_BUDGET } from '@/entities/news-article';
+import {
+    POLL_INTERVAL_MS,
+    POLL_MAX_ATTEMPTS,
+} from '@/entities/news-article/lib/newsAnalysisConstants';
 import type { NewsFeedCategory } from '@y0ngha/siglens-core';
-
-/** Per-card poll constants (mirrors news-article's newsAnalysisConstants). */
-const POLL_INTERVAL_MS = 2_000;
-const POLL_MAX_ATTEMPTS = 30;
 
 /**
  * Submit per-card AI analysis for a single item and wait for the worker to

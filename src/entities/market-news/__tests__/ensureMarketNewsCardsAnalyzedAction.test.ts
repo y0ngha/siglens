@@ -135,6 +135,13 @@ describe('ensureMarketNewsCardsAnalyzedAction은', () => {
         );
     });
 
+    it('upsert가 변경 없이 끝나면(false) revalidateTag를 호출하지 않는다', async () => {
+        mockUpsertMarketNewsItem.mockResolvedValue(false);
+        const { revalidateTag } = await import('next/cache');
+        await ensureMarketNewsCardsAnalyzedAction('crypto');
+        expect(revalidateTag).not.toHaveBeenCalled();
+    });
+
     it('봇(skipAnalysis)이고 최근 fetch했으면 FMP fetch를 건너뛴다', async () => {
         const { isRecentlyFetched } =
             await import('../lib/marketNewsRefreshFlag');
