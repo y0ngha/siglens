@@ -64,8 +64,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     }
     // **financials와의 의도적 차이점**: 0건은 정상(sparse 종목)이라 색인 가능.
     // `degraded === true`(FMP 인프라 실패)만 noindex로 떨어뜨린다.
-    // getCongressTradesResilient는 React.cache로 메모이즈되므로 본문과 동일한 호출이
-    // 즉시 반환된다(두 번째 호출은 재실행 없음).
+    // getCongressTradesResilient는 React.cache로 메모이즈되므로 본문과 동일한 호출이 즉시 반환된다.
     const { degraded: tradesDegraded } =
         await getCongressTradesResilient(upper);
     if (tradesDegraded) {

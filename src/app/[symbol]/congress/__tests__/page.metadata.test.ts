@@ -114,8 +114,6 @@ describe('generateMetadata', () => {
         } as unknown as TradesResult);
     });
 
-    // ─── 3 noindex branches ───────────────────────────────────────────
-
     it('returns noindex for invalid ticker format', async () => {
         const metadata = await generateMetadata({
             params: Promise.resolve({ symbol: '!!!invalid' }),
@@ -181,7 +179,6 @@ describe('generateMetadata', () => {
         expect(metadata.alternates?.canonical).toBeNull();
     });
 
-    // ─── 1 indexable branch (the §18 both-direction §B.6 test) ──────────
     // 의도된 financials와의 차이점: 0건은 정상 indexable, infra 실패만 noindex.
 
     it('returns indexable metadata when trades.length === 0 (sparse symbol, NOT noindex)', async () => {

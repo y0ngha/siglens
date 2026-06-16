@@ -4,7 +4,6 @@ import { render, screen } from '@testing-library/react';
 import type { CongressTrade } from '@y0ngha/siglens-core';
 import { CongressTradesTable } from '../CongressTradesTable';
 
-// ─── InfoTooltip stub ────────────────────────────────────────────────────────
 // InfoTooltip uses createPortal + DOM refs. Stub it to a plain <button> so
 // RTL renders without a real DOM and without react-dom/server warnings.
 vi.mock('@/shared/ui/InfoTooltip', () => ({
@@ -12,8 +11,6 @@ vi.mock('@/shared/ui/InfoTooltip', () => ({
         <span data-testid="info-tooltip">{children}</span>
     ),
 }));
-
-// ─── Fixtures ────────────────────────────────────────────────────────────────
 
 const BASE_TRADE: CongressTrade = {
     chamber: 'senate',
@@ -64,8 +61,6 @@ const SELL_FULL_TRADE: CongressTrade = {
     disclosureDate: '2024-04-10',
     link: '',
 };
-
-// ─── Tests ───────────────────────────────────────────────────────────────────
 
 describe('CongressTradesTable', () => {
     describe('header row', () => {

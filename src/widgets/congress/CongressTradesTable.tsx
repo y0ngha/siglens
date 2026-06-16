@@ -17,8 +17,6 @@ import { CongressTradesEmpty } from './CongressTradesEmpty';
 /** Max rows rendered in a single SSR pass (newest-first). */
 const MAX_ROWS = 50;
 
-// ─── Korean label maps ────────────────────────────────────────────────────────
-
 const CHAMBER_LABEL: Record<Chamber, string> = {
     senate: '상원',
     house: '하원',
@@ -56,8 +54,6 @@ const OWNER_LABEL: Record<CongressOwner, string> = {
     unknown: '',
 };
 
-// ─── Asset type badge ─────────────────────────────────────────────────────────
-
 /**
  * Returns a concise Korean badge label for an FMP `assetType` string.
  *
@@ -71,8 +67,6 @@ function assetTypeBadge(assetType: string): string {
     if (lower.includes('stock')) return '주식';
     return assetType; // fallback: render as-is
 }
-
-// ─── Sub-components ───────────────────────────────────────────────────────────
 
 function ChamberBadge({ chamber }: { chamber: Chamber }) {
     const label = CHAMBER_LABEL[chamber];
@@ -132,8 +126,6 @@ function AssetTypeBadge({ assetType }: { assetType: string }) {
         </span>
     );
 }
-
-// ─── Main component ───────────────────────────────────────────────────────────
 
 interface CongressTradesTableProps {
     trades: CongressTrade[];
@@ -236,12 +228,10 @@ export function CongressTradesTable({ trades }: CongressTradesTableProps) {
                                 key={`${trade.office}-${trade.transactionDate}-${i}`}
                                 className="hover:bg-secondary-700/30 border-secondary-700/50 border-b transition-colors last:border-b-0"
                             >
-                                {/* Chamber */}
                                 <td className="px-4 py-3 whitespace-nowrap">
                                     <ChamberBadge chamber={trade.chamber} />
                                 </td>
 
-                                {/* Member name + district */}
                                 <td className="px-4 py-3 whitespace-nowrap">
                                     <div className="text-secondary-100 text-xs font-medium">
                                         {trade.office}
@@ -253,46 +243,38 @@ export function CongressTradesTable({ trades }: CongressTradesTableProps) {
                                     )}
                                 </td>
 
-                                {/* Side badge */}
                                 <td className="px-4 py-3 whitespace-nowrap">
                                     <SideBadge side={trade.side} />
                                 </td>
 
-                                {/* Amount range */}
                                 <td className="px-4 py-3 whitespace-nowrap">
                                     <span className="font-mono text-xs tabular-nums">
                                         {trade.amount.label}
                                     </span>
                                 </td>
 
-                                {/* Asset type badge */}
                                 <td className="px-4 py-3 whitespace-nowrap">
                                     <AssetTypeBadge
                                         assetType={trade.assetType}
                                     />
                                 </td>
 
-                                {/* Transaction date */}
                                 <td className="text-secondary-300 px-4 py-3 font-mono text-xs whitespace-nowrap tabular-nums">
                                     {trade.transactionDate}
                                 </td>
 
-                                {/* Disclosure date */}
                                 <td className="text-secondary-300 px-4 py-3 font-mono text-xs whitespace-nowrap tabular-nums">
                                     {trade.disclosureDate}
                                 </td>
 
-                                {/* Owner badge */}
                                 <td className="px-4 py-3 whitespace-nowrap">
                                     <OwnerBadge owner={trade.owner} />
                                 </td>
 
-                                {/* Asset description */}
                                 <td className="text-secondary-400 max-w-[12rem] truncate px-4 py-3 text-xs">
                                     {trade.assetDescription}
                                 </td>
 
-                                {/* Disclosure link */}
                                 <td className="px-4 py-3 whitespace-nowrap">
                                     {trade.link ? (
                                         <a
