@@ -153,18 +153,22 @@ export async function ensureMarketNewsCardsAnalyzedAction(
 
         if (unanalyzed.length === 0) return;
 
-        const analyzeSettled = await Promise.allSettled(
-            unanalyzed.map(item => analyzeAndPersist(item, repo))
-        );
-        const analyzeFailures = analyzeSettled.filter(
-            r => r.status === 'rejected'
-        );
-        if (analyzeFailures.length > 0) {
+        let analyzeFailures = 0;
+        for (const item of unanalyzed) {
+            try {
+                await analyzeAndPersist(item, repo);
+            } catch (err) {
+                analyzeFailures += 1;
+                console.error(
+                    '[ensureMarketNewsCardsAnalyzedAction] analyzeAndPersist failed for',
+                    item.id,
+                    err
+                );
+            }
+        }
+        if (analyzeFailures > 0) {
             console.error(
-                `[ensureMarketNewsCardsAnalyzedAction] ${analyzeFailures.length}/${unanalyzed.length} analyzeAndPersist failed`,
-                analyzeFailures.map(f =>
-                    f.status === 'rejected' ? f.reason : null
-                )
+                `[ensureMarketNewsCardsAnalyzedAction] ${analyzeFailures}/${unanalyzed.length} analyzeAndPersist failed`
             );
         }
     } catch (error) {

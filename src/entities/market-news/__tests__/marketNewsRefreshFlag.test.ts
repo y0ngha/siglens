@@ -4,9 +4,10 @@ const { mockGet, mockSet, mockRedis } = vi.hoisted(() => {
     const mockGet = vi.fn();
     const mockSet = vi.fn();
     // Partial mock — only the methods used by marketNewsRefreshFlag.
-    // Cast to avoid needing to implement all 180+ Redis methods.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const mockRedis = { get: mockGet, set: mockSet } as any;
+    const mockRedis: Pick<import('@upstash/redis').Redis, 'get' | 'set'> = {
+        get: mockGet,
+        set: mockSet,
+    };
     return { mockGet, mockSet, mockRedis };
 });
 
@@ -27,7 +28,9 @@ const cryptoSentinel = CATEGORY_CONFIG['crypto'].sentinel; // '__NEWS_CRYPTO__'
 describe('marketNewsRefreshFlag', () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        vi.mocked(getRedisClient).mockReturnValue(mockRedis);
+        vi.mocked(getRedisClient).mockReturnValue(
+            mockRedis as unknown as import('@upstash/redis').Redis
+        );
     });
 
     describe('isRecentlyFetched', () => {
