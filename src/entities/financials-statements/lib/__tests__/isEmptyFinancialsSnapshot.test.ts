@@ -9,7 +9,8 @@ vi.mock('@/shared/api/fmp/getFinancialStatementsProvider', () => ({
 
 import { describe, it, expect, vi } from 'vitest';
 import type { FinancialsSnapshot } from '@y0ngha/siglens-core';
-import { isEmptyFinancialsSnapshot } from '@/entities/financials-statements/lib/getFinancialsSnapshot';
+// same-slice internal segment → relative import (sibling getFinancialsSnapshot.test.ts와 동일)
+import { isEmptyFinancialsSnapshot } from '../getFinancialsSnapshot';
 
 const make = (o: Partial<FinancialsSnapshot> = {}): FinancialsSnapshot => ({
     income: [],

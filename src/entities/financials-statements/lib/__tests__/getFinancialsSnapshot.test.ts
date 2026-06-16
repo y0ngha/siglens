@@ -230,7 +230,7 @@ describe('getFinancialsSnapshot (entity lib — single source)', () => {
             expect(result.income).toEqual([]);
             expect(errorSpy).toHaveBeenCalledWith(
                 '[cacheNonEmpty] unexpected cache error:',
-                expect.any(Error)
+                expect.objectContaining({ message: 'FMP 5xx' })
             );
 
             errorSpy.mockRestore();

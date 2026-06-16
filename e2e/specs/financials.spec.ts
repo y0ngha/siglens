@@ -401,8 +401,10 @@ test.describe('financials: overall page integration', () => {
         await page.waitForURL(/\/AAPL\/financials$/);
 
         // Confirm the financials page h1 renders after navigation.
+        // Require both tokens (see the page-render test above) — `/재무제표/` alone
+        // would pass on any symbol's financials page.
         await expect(
-            page.getByRole('heading', { level: 1, name: /재무제표/ })
+            page.getByRole('heading', { level: 1, name: /AAPL.*재무제표/ })
         ).toBeVisible({ timeout: 10_000 });
     });
 });
