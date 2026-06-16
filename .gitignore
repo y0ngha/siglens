@@ -83,3 +83,5 @@ next-env.d.ts
 
 # Local Lighthouse audit outputs (psi_*.json, desktop.json, mobile.json, headers.txt)
 /lighthouse/
+# brainstorming visual companion
+.superpowers/
