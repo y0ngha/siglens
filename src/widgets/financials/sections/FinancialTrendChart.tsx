@@ -267,6 +267,11 @@ export function FinancialTrendChart({
                 <div
                     id={tooltipId}
                     role="tooltip"
+                    // 마우스 전용 프로그레시브 인핸스먼트 — 트리거(hit rect)가
+                    // aria-hidden SVG 안에 있어 AT에서 도달 불가하므로, 고아
+                    // role="tooltip"이 a11y 트리에 노출되지 않도록 명시적으로 숨긴다.
+                    // AT 사용자는 아래 StatementTable에서 동일 수치에 접근한다.
+                    aria-hidden="true"
                     className="border-secondary-600 bg-secondary-900 pointer-events-none fixed top-[var(--tip-top)] left-[var(--tip-left)] z-50 rounded-md border px-3 py-2 text-xs shadow-lg"
                     style={
                         {

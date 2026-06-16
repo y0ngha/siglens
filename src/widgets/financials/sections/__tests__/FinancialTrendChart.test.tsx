@@ -155,8 +155,9 @@ describe('FinancialTrendChart', () => {
         const { container } = render(
             <FinancialTrendChart series={BASE_SERIES} periods={BASE_PERIODS} />
         );
+        // 툴팁은 마우스 전용이라 aria-hidden — { hidden: true }로 조회한다.
         // no tooltip until hover
-        expect(screen.queryByRole('tooltip')).toBeNull();
+        expect(screen.queryByRole('tooltip', { hidden: true })).toBeNull();
 
         // hover the last period's transparent hit target (last rect in the SVG)
         const hits = container.querySelectorAll('rect.cursor-crosshair');
@@ -166,7 +167,7 @@ describe('FinancialTrendChart', () => {
             clientY: 100,
         });
 
-        const tip = screen.getByRole('tooltip');
+        const tip = screen.getByRole('tooltip', { hidden: true });
         expect(tip).toHaveTextContent('2024');
         expect(tip).toHaveTextContent('매출');
         expect(tip).toHaveTextContent('순이익');
@@ -175,6 +176,6 @@ describe('FinancialTrendChart', () => {
         expect(tip).toHaveTextContent('$800M');
 
         fireEvent.pointerLeave(hits[hits.length - 1]!);
-        expect(screen.queryByRole('tooltip')).toBeNull();
+        expect(screen.queryByRole('tooltip', { hidden: true })).toBeNull();
     });
 });

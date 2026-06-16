@@ -196,4 +196,44 @@ describe('getFinancialsSnapshot (entity lib — single source)', () => {
             expect(result.balance).toEqual([]);
         });
     });
+
+    describe('cacheNonEmpty — 빈 결과 graceful degrade (sentinel)', () => {
+        it('provider가 빈 배열을 반환하면 sentinel throw를 삼키고 빈 섹션으로 degrade한다', async () => {
+            const errorSpy = vi
+                .spyOn(console, 'error')
+                .mockImplementation(() => {});
+
+            // 기본 mock이 6종 모두 [] 반환 → 각 fetcher가 EmptyResultError를 throw해
+            // unstable_cache(staticSymbolCache)가 set을 건너뛰고, cacheNonEmpty가
+            // catch해 []로 degrade한다. 함수는 reject하지 않는다.
+            const result = await getFinancialsSnapshot('AAPL');
+
+            expect(result.income).toEqual([]);
+            expect(result.balance).toEqual([]);
+            expect(result.cashFlow).toEqual([]);
+            // sentinel은 의도된 흐름이므로 로깅하지 않는다.
+            expect(errorSpy).not.toHaveBeenCalled();
+
+            errorSpy.mockRestore();
+        });
+
+        it('sentinel이 아닌 예기치 못한 에러는 로깅하고 []로 degrade한다', async () => {
+            const errorSpy = vi
+                .spyOn(console, 'error')
+                .mockImplementation(() => {});
+            // EmptyResultError가 아닌 throw → instanceof 분기에서 로깅 경로로 간다.
+            mockGetIncomeStatements.mockRejectedValue(new Error('FMP 5xx'));
+
+            const result = await getFinancialsSnapshot('AAPL');
+
+            // 예기치 못한 에러도 []로 graceful degrade한다(Promise.all 전체 실패 방지).
+            expect(result.income).toEqual([]);
+            expect(errorSpy).toHaveBeenCalledWith(
+                '[cacheNonEmpty] unexpected cache error:',
+                expect.any(Error)
+            );
+
+            errorSpy.mockRestore();
+        });
+    });
 });

@@ -68,7 +68,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     }
     // profile은 있으나 6종 재무 fetch가 모두 비면(FMP 일시 장애 등) 본문은 degrade를
     // 렌더하므로(아래 default export 참조) 메타도 noindex로 일치시킨다. getFinancialsSnapshot은
-    // React.cache+unstable_cache 공유라 본문 렌더와 동일 엔트리를 재사용(추가 fetch 없음).
+    // unstable_cache(staticSymbolCache)로 동일 캐시 키에 저장되므로 본문 렌더와 동일
+    // 엔트리를 재사용한다(같은 요청 내 추가 FMP 네트워크 요청 없음). profile 경로와 달리
+    // CachedFinancialStatementsProvider는 Redis dedup만 쓰고 React.cache는 없다.
     const snapshot = await getFinancialsSnapshot(upper);
     if (isEmptyFinancialsSnapshot(snapshot)) {
         return NOINDEX_SYMBOL_METADATA;

@@ -21,8 +21,12 @@ export const QUARTER_LIMIT = 8;
  */
 const tag = (s: string): string[] => [`financials:${s.toUpperCase()}`];
 
-/** `cacheNonEmpty`가 빈 결과를 캐싱 우회용으로 throw할 때 쓰는 내부 sentinel 메시지. */
-const EMPTY_RESULT_SENTINEL = 'empty-financials-result';
+/**
+ * `cacheNonEmpty`가 빈 결과를 캐싱 우회용으로 throw할 때 쓰는 내부 sentinel.
+ * 메시지 문자열 비교 대신 전용 클래스를 써서, 외부 라이브러리가 우연히 같은
+ * 메시지로 throw해도 sentinel로 오인하지 않도록 `instanceof`로 분기한다.
+ */
+class EmptyResultError extends Error {}
 
 /**
  * `staticSymbolCache`로 fetch를 정적화하되 **빈 배열 결과는 캐싱하지 않는다.**
@@ -51,7 +55,7 @@ async function cacheNonEmpty<T>(
                 const rows = await fetcher();
                 if (rows.length === 0) {
                     // unstable_cache가 이 빈 결과를 캐싱하지 못하게 throw한다.
-                    throw new Error(EMPTY_RESULT_SENTINEL);
+                    throw new EmptyResultError();
                 }
                 return rows;
             },
@@ -60,7 +64,7 @@ async function cacheNonEmpty<T>(
     } catch (err) {
         // sentinel(의도적 빈 결과)은 무음. 그 외(staticSymbolCache/fetcher의
         // 예상치 못한 throw)는 로깅해 프로덕션 캐시 장애를 추적 가능하게 한다.
-        if (!(err instanceof Error && err.message === EMPTY_RESULT_SENTINEL)) {
+        if (!(err instanceof EmptyResultError)) {
             console.error('[cacheNonEmpty] unexpected cache error:', err);
         }
         return [];
