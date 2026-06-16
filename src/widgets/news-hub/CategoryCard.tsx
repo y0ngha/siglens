@@ -3,8 +3,10 @@ import Link from 'next/link';
 /**
  * Maximum number of headline previews to render on the hub card.
  * Three headlines fit cleanly in the card without requiring scroll.
+ * Exported so the data producer (`app/news/page.tsx`) can slice to this
+ * count before passing the array — single source of truth, no drift.
  */
-const MAX_PREVIEW_HEADLINES = 3;
+export const PREVIEW_HEADLINE_LIMIT = 3;
 
 export interface CategoryCardProps {
     koLabel: string;
@@ -32,7 +34,7 @@ export function CategoryCard({
     slug,
     previewHeadlines,
 }: CategoryCardProps) {
-    const previews = previewHeadlines.slice(0, MAX_PREVIEW_HEADLINES);
+    const previews = previewHeadlines.slice(0, PREVIEW_HEADLINE_LIMIT);
 
     return (
         <article className="border-secondary-700 bg-secondary-800 hover:border-primary-500/50 flex w-full min-w-0 flex-col overflow-hidden rounded-xl border p-5 transition-colors">

@@ -1,7 +1,10 @@
 import type { Metadata } from 'next';
 import { CATEGORY_CONFIG, type NewsFeedCategory } from '@/entities/market-news';
 import { getMarketNewsList } from '@/entities/market-news/api';
-import { CategoryCard } from '@/widgets/news-hub/CategoryCard';
+import {
+    CategoryCard,
+    PREVIEW_HEADLINE_LIMIT,
+} from '@/widgets/news-hub/CategoryCard';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
 import {
@@ -56,9 +59,6 @@ export function generateMetadata(): Metadata {
     };
 }
 
-/** Headline preview count shown on each CategoryCard. */
-const PREVIEW_HEADLINE_COUNT = 3;
-
 /**
  * Fetch the top preview headlines for one category bucket.
  * Uses `staticSymbolCache` (axis 1) to avoid DYNAMIC_SERVER_USAGE from the
@@ -76,7 +76,7 @@ async function fetchCategoryPreviews(
         [`market-news:${cfg.sentinel}`]
     );
     return rows
-        .slice(0, PREVIEW_HEADLINE_COUNT)
+        .slice(0, PREVIEW_HEADLINE_LIMIT)
         .map(row => row.titleKo ?? row.titleEn);
 }
 
