@@ -263,17 +263,15 @@ describe('Congress page JSON-LD schema types', () => {
     });
 
     it('page.tsx emits a FAQPage schema type', () => {
-        expect(pageSource).toContain("'@type': 'FAQPage'");
+        expect(pageSource).toMatch(/['"]@type['"]:\s*['"]FAQPage['"]/);
     });
 
     it('page.tsx FAQPage mainEntity has 3 Question entries', () => {
-        // Count occurrences of '@type': 'Question' to verify 3 entries.
-        const matches = pageSource.match(/'@type': 'Question'/g);
-        expect(matches).toHaveLength(3);
+        const matches = pageSource.match(/['"]@type['"]:\s*['"]Question['"]/g);
+        expect(matches?.length ?? 0).toBe(3);
     });
 
     it('page.tsx FAQPage Question names interpolate displayName', () => {
-        // At least one Question name must use template literal with displayName.
         expect(pageSource).toContain('${displayName}의 의회 거래');
     });
 
