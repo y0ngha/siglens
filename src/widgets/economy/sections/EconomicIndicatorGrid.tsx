@@ -15,6 +15,13 @@ import {
 import { cn } from '@/shared/lib/cn';
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
 
+/**
+ * 국채 수익률·2s10s 스프레드 카드의 표시 소수 자리수.
+ * 레지스트리 지표는 `meta.precision`을 따르지만, 국채 카드는 레지스트리 외 도메인이라
+ * 모듈 상수로 별도 관리한다(MISTAKES §15 매직 넘버 추출).
+ */
+const TREASURY_YIELD_PRECISION = 2;
+
 interface EconomicIndicatorGridProps {
     snapshot: EconomySnapshot;
 }
@@ -180,7 +187,7 @@ function TreasuryYieldCard({ snapshot, maturity }: TreasuryYieldCardProps) {
                 <InfoTooltip>{tooltip}</InfoTooltip>
             </header>
             <div className="text-secondary-100 text-2xl font-semibold">
-                {value.toFixed(2)}
+                {value.toFixed(TREASURY_YIELD_PRECISION)}
                 <span className="text-secondary-400 ml-1 text-sm">%</span>
             </div>
             <p className="text-secondary-500 mt-1 text-xs">{snapshot.date}</p>
@@ -208,7 +215,7 @@ function YieldSpreadCard({ snapshot }: YieldSpreadCardProps) {
                 )}
             >
                 {positive ? '+' : ''}
-                {spread.toFixed(2)}
+                {spread.toFixed(TREASURY_YIELD_PRECISION)}
                 <span className="text-secondary-400 ml-1 text-sm">%p</span>
             </div>
             <p className="text-secondary-500 mt-1 text-xs">{snapshot.date}</p>

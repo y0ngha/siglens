@@ -104,7 +104,12 @@ function MacroBriefingView({ briefing, generatedAt }: MacroBriefingViewProps) {
             {briefing.highlights.length > 0 && (
                 <ul className="text-secondary-300 space-y-1 text-sm">
                     {briefing.highlights.map((h, i) => (
-                        <li key={i} className="flex gap-2">
+                        // briefing 객체가 교체될 때 항목 수가 다르면 index key는
+                        // 잘못된 reconciliation을 유발한다 — content+index 결합으로 stable화.
+                        <li
+                            key={`${h.slice(0, 60)}:${i}`}
+                            className="flex gap-2"
+                        >
                             <span aria-hidden>•</span>
                             <span>{h}</span>
                         </li>
