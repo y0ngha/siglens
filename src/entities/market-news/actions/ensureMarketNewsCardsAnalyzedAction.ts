@@ -11,11 +11,14 @@ import {
     type NewsItem,
     type NewsFeedCategory,
 } from '@y0ngha/siglens-core';
-import { DrizzleMarketNewsRepository } from '../api';
+import {
+    DrizzleMarketNewsRepository,
+    isRecentlyFetched,
+    markFetched,
+} from '../api';
 import { getMarketNewsClient } from '../lib/getMarketNewsClient';
 import { CATEGORY_CONFIG } from '../lib/categoryConfig';
 import { MARKET_NEWS_LOOKBACK_MS } from '../lib/marketNewsConstants';
-import { isRecentlyFetched, markFetched } from '../api';
 import {
     DISABLED_THINKING_BUDGET,
     NEWS_CARD_ANALYSIS_POLL_INTERVAL_MS as POLL_INTERVAL_MS,

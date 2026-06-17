@@ -1,10 +1,7 @@
 import type { Metadata } from 'next';
 import { CATEGORY_CONFIG, type NewsFeedCategory } from '@/entities/market-news';
 import { getMarketNewsList } from '@/entities/market-news/api';
-import {
-    CategoryCard,
-    PREVIEW_HEADLINE_LIMIT,
-} from '@/widgets/news-hub/CategoryCard';
+import { CategoryCard, PREVIEW_HEADLINE_LIMIT } from '@/widgets/news-hub';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
 import {

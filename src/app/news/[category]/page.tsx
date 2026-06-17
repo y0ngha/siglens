@@ -9,8 +9,7 @@ import {
     type NewsFeedCategory,
 } from '@/entities/market-news';
 import { getMarketNewsList } from '@/entities/market-news/api';
-import { MarketNewsDigest } from '@/widgets/market-news/MarketNewsDigest';
-import { MarketNewsList } from '@/widgets/market-news/MarketNewsList';
+import { MarketNewsDigest, MarketNewsList } from '@/widgets/market-news';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
 import { buildBreadcrumbJsonLd, SITE_NAME, SITE_URL } from '@/shared/lib/seo';
@@ -136,7 +135,6 @@ export default async function CategoryNewsPage({ params }: Props) {
     const { category: slug } = await params;
     const cat = categoryFromSlug(slug);
 
-    // 잘못된 slug — Next.js 404 페이지.
     if (!cat) {
         notFound();
     }

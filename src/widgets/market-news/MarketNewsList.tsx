@@ -11,6 +11,22 @@ const PAGE_SIZE = 10;
 const SKELETON_COUNT = 3;
 const PERIOD_LABEL = `최근 ${MARKET_NEWS_LOOKBACK_DAYS}일`;
 
+function MarketNewsListHeader() {
+    return (
+        <>
+            <h2
+                id="market-news-list-heading"
+                className="text-lg font-semibold tracking-tight"
+            >
+                최신 마켓 뉴스
+            </h2>
+            <span className="bg-secondary-700 text-secondary-400 rounded px-2 py-0.5 text-xs">
+                {PERIOD_LABEL}
+            </span>
+        </>
+    );
+}
+
 function MarketNewsCardSkeleton() {
     return (
         <article
@@ -40,15 +56,7 @@ function LoadingState() {
         >
             <div className="flex items-center justify-between gap-3">
                 <div className="flex min-w-0 items-center gap-2">
-                    <h2
-                        id="market-news-list-heading"
-                        className="text-lg font-semibold tracking-tight"
-                    >
-                        최신 마켓 뉴스
-                    </h2>
-                    <span className="bg-secondary-700 text-secondary-400 rounded px-2 py-0.5 text-xs">
-                        {PERIOD_LABEL}
-                    </span>
+                    <MarketNewsListHeader />
                 </div>
                 <span
                     className="text-secondary-400 text-xs"
@@ -117,15 +125,7 @@ export function MarketNewsList({
                 className="border-secondary-700 bg-secondary-800 w-full max-w-full min-w-0 overflow-hidden rounded-xl border p-6"
             >
                 <div className="mb-3 flex items-center gap-2">
-                    <h2
-                        id="market-news-list-heading"
-                        className="text-lg font-semibold tracking-tight"
-                    >
-                        최신 마켓 뉴스
-                    </h2>
-                    <span className="bg-secondary-700 text-secondary-400 rounded px-2 py-0.5 text-xs">
-                        {PERIOD_LABEL}
-                    </span>
+                    <MarketNewsListHeader />
                 </div>
                 <p className="text-secondary-400 text-sm">
                     지난 {MARKET_NEWS_LOOKBACK_DAYS}일 동안 들어온 뉴스가
@@ -145,15 +145,7 @@ export function MarketNewsList({
             className="w-full max-w-full min-w-0 space-y-3 overflow-hidden"
         >
             <div className="flex items-center gap-2">
-                <h2
-                    id="market-news-list-heading"
-                    className="text-lg font-semibold tracking-tight"
-                >
-                    최신 마켓 뉴스
-                </h2>
-                <span className="bg-secondary-700 text-secondary-400 rounded px-2 py-0.5 text-xs">
-                    {PERIOD_LABEL}
-                </span>
+                <MarketNewsListHeader />
             </div>
             <ul className="space-y-3">
                 {visible.map(item => (
