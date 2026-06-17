@@ -148,7 +148,9 @@ export async function ensureNewsCardsAnalyzedAction(
     ).length;
     if (changedCount > 0) {
         // news 태그만 무효화하므로 bars/peek/profile 캐시는 보존(범위 제한).
-        // "max" profile: 캐시 항목을 즉시 만료시켜 다음 요청에서 재생성하게 한다.
+        // Next.js 16.2.0 revalidateTag signature: (tag: string, profile: string | CacheLifeConfig).
+        // 'max' uses the maximum stale-while-revalidate profile so this tag busts immediately.
+        // See: node_modules/next/dist/server/web/spec-extension/revalidate.d.ts
         revalidateTag(`news:${symbol.toUpperCase()}`, 'max');
     }
 

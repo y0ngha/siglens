@@ -138,6 +138,9 @@ export async function ensureMarketNewsCardsAnalyzedAction(
         if (changedCount > 0) {
             // Use 'market-news:<sentinel>' tag so only the category's ISR cache is
             // busted — bars/profile/analysis caches for per-symbol pages are untouched.
+            // Next.js 16.2.0 revalidateTag signature: (tag: string, profile: string | CacheLifeConfig).
+            // 'max' uses the maximum stale-while-revalidate profile so this tag busts immediately.
+            // See: node_modules/next/dist/server/web/spec-extension/revalidate.d.ts
             revalidateTag(`market-news:${sentinel}`, 'max');
         }
 

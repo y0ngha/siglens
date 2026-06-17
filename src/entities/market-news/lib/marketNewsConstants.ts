@@ -16,7 +16,7 @@ export const MARKET_NEWS_LOOKBACK_MS = MARKET_NEWS_LOOKBACK_DAYS * MS_PER_DAY;
 /** Max cards rendered on a category page. */
 export const MAX_MARKET_NEWS_CARDS = 40;
 
-/** Items fetched per category feed from FMP (we render up to MAX_MARKET_NEWS_CARDS=40 of them). */
+/** Items fetched per category feed from FMP (we render up to {@link MAX_MARKET_NEWS_CARDS} of them). */
 export const FMP_NEWS_FETCH_LIMIT = 50;
 
 /**

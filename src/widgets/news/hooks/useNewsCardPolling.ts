@@ -4,11 +4,11 @@ import { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { getNewsCardsAction } from '@/entities/news-article/actions';
 import type { NewsDisplayItem } from '@/shared/lib/types';
 import {
-    NEWS_CARD_POLL_INTERVAL_MS as POLL_INTERVAL_MS,
-    NEWS_CARD_MAX_CONSECUTIVE_FAILURES as MAX_CONSECUTIVE_FAILURES,
-    NEWS_CARD_EMPTY_SNAPSHOT_MAX_POLLS as EMPTY_SNAPSHOT_MAX_POLLS,
-    NEWS_CARD_MAX_POLL_DURATION_MS as MAX_POLL_DURATION_MS,
-} from '@/shared/config/pollingConfig';
+    POLL_INTERVAL_MS,
+    MAX_CONSECUTIVE_FAILURES,
+    EMPTY_SNAPSHOT_MAX_POLLS,
+    MAX_POLL_DURATION_MS,
+} from '../constants';
 
 /**
  * Called once when polling terminates normally (all cards enriched, or timeout
