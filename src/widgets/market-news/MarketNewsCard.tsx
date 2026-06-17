@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import type { MarketNewsCardItem } from '@/entities/market-news/actions';
+import type { MarketNewsCardItem } from '@/entities/market-news';
 import type { NewsFeedCategory } from '@y0ngha/siglens-core';
 import { cn } from '@/shared/lib/cn';
 import {

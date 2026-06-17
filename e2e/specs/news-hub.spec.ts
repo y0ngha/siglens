@@ -10,7 +10,7 @@ import { test, expect } from '../support/fixtures';
  *     Under E2E_TEST=1 the staticSymbolCache preview fetch uses FakeMarketNewsClient,
  *     so headline previews render deterministically without any network I/O.
  *
- *   - `/news/[category]` renders h1 = `미국 ${cfg.koLabel} 뉴스` from the page RSC.
+ *   - `/news/[category]` renders h1 = `${cfg.koLabel} 뉴스` from the page RSC.
  *     The card list is hydrated from SSR initial items (via FakeMarketNewsClient).
  *     MarketNewsDigest is a `'use client'` component that renders a `<section
  *     aria-labelledby="market-news-digest-status-heading">` (loading) or
@@ -60,9 +60,8 @@ test.describe('/news 마켓 뉴스 허브', () => {
     }) => {
         await page.goto('/news/crypto');
 
-        // h1 = "미국 미국 암호화폐 뉴스" (koLabel = '미국 암호화폐')
-        await expect(page.getByRole('heading', { level: 1 })).toContainText(
-            '암호화폐'
+        await expect(page.getByRole('heading', { level: 1 })).toHaveText(
+            '미국 암호화폐 뉴스'
         );
 
         // FakeMarketNewsClient의 crypto fixture 첫 번째 기사 타이틀 (영어)

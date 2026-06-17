@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import type { MarketNewsCardItem } from '@/entities/market-news/actions';
+import type { MarketNewsCardItem } from '@/entities/market-news';
 import type { NewsFeedCategory } from '@y0ngha/siglens-core';
 import { POLL_INTERVAL_MS } from '../constants';
 import { pollMarketNewsCardsStep } from '../utils/pollMarketNewsCardsStep';

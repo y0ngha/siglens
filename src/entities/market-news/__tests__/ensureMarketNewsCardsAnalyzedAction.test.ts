@@ -89,6 +89,22 @@ vi.mock('../lib/getMarketNewsClient', () => ({
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ensureMarketNewsCardsAnalyzedAction } from '../actions/ensureMarketNewsCardsAnalyzedAction';
 
+// 3. Item fixtures for majority-failure test
+function makeItem(id: string) {
+    return {
+        id,
+        symbol: '__NEWS_CRYPTO__',
+        source: 'CoinWire',
+        url: `https://x/${id}`,
+        publishedAt: '2026-06-15T10:00:00.000Z',
+        titleEn: `Headline ${id}`,
+        bodyEn: 'body',
+        tickers: [] as string[],
+    };
+}
+
+const ITEMS = ['m1', 'm2', 'm3', 'm4', 'm5'].map(makeItem);
+
 // 3. Tests
 describe('ensureMarketNewsCardsAnalyzedAction은', () => {
     beforeEach(() => {
@@ -183,5 +199,29 @@ describe('ensureMarketNewsCardsAnalyzedAction은', () => {
         await expect(
             ensureMarketNewsCardsAnalyzedAction('crypto')
         ).resolves.toBeUndefined();
+    });
+
+    it('majority upsert failure이면 console.error 후 early return하고 LLM 분석을 호출하지 않는다', async () => {
+        // 5 fresh items, 3 upsert rejections → majority (3 > 5/2 = 2.5)
+        mockFetchCategoryNews.mockResolvedValueOnce(ITEMS);
+        // fulfilled, rejected, rejected, fulfilled, rejected → 3 failures out of 5
+        mockUpsertMarketNewsItem
+            .mockResolvedValueOnce(true)
+            .mockRejectedValueOnce(new Error('db write error'))
+            .mockRejectedValueOnce(new Error('db write error'))
+            .mockResolvedValueOnce(true)
+            .mockRejectedValueOnce(new Error('db write error'));
+
+        const errorSpy = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => {});
+
+        const { submitNewsCardAnalysis } = await import('@y0ngha/siglens-core');
+        await ensureMarketNewsCardsAnalyzedAction('crypto');
+
+        // Majority branch should fire and abort before LLM analysis
+        expect(submitNewsCardAnalysis).not.toHaveBeenCalled();
+
+        errorSpy.mockRestore();
     });
 });

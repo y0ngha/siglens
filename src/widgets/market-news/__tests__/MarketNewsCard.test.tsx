@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
 import { MarketNewsCard } from '../MarketNewsCard';
 import { SENTIMENT_LABEL, SENTIMENT_CLASS } from '../utils/sentimentConstants';
-import type { MarketNewsCardItem } from '@/entities/market-news/actions';
+import type { MarketNewsCardItem } from '@/entities/market-news';
 
 const BASE: MarketNewsCardItem = {
     id: 'm1',

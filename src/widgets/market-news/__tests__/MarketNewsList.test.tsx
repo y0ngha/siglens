@@ -8,7 +8,7 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { MockedFunction } from 'vitest';
-import type { MarketNewsCardItem } from '@/entities/market-news/actions';
+import type { MarketNewsCardItem } from '@/entities/market-news';
 import { MARKET_NEWS_LOOKBACK_DAYS } from '@/entities/market-news';
 import { useMarketNewsCardPolling } from '@/widgets/market-news/hooks/useMarketNewsCardPolling';
 import { MarketNewsList } from '@/widgets/market-news/MarketNewsList';

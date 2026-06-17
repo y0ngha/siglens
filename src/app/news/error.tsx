@@ -24,7 +24,7 @@ export default function NewsError({ error, reset }: NewsErrorProps) {
 
     return (
         <main className="flex flex-1 flex-col items-center px-6 py-20 text-center">
-            <div role="alert" aria-live="assertive" aria-atomic="true">
+            <div role="alert" aria-atomic="true">
                 <p className="text-primary-400 font-mono text-sm tracking-widest">
                     일시 오류
                 </p>

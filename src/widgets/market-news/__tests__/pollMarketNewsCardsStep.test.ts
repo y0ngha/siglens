@@ -7,7 +7,7 @@
  */
 
 import type { MockedFunction } from 'vitest';
-import type { MarketNewsCardItem } from '@/entities/market-news/actions';
+import type { MarketNewsCardItem } from '@/entities/market-news';
 import { getMarketNewsCardsAction } from '@/entities/market-news/actions';
 import {
     MAX_CONSECUTIVE_FAILURES,

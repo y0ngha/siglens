@@ -5,9 +5,6 @@ import { revalidateTag } from 'next/cache';
 import { isE2E } from '@/shared/api/e2eEnv';
 import { sleep } from '@/shared/lib/sleep';
 import { MS_PER_SECOND } from '@/shared/config/time';
-
-/** Divisor for the upsert-majority-failure threshold: if more than half of fetched items fail to upsert, abort. */
-const MAJORITY_DIVISOR = 2;
 import {
     pollNewsCardAnalysis,
     submitNewsCardAnalysis,
@@ -24,6 +21,9 @@ import {
     NEWS_CARD_ANALYSIS_POLL_INTERVAL_MS as POLL_INTERVAL_MS,
     POLL_MAX_ATTEMPTS,
 } from '@/entities/news-article';
+
+/** Divisor for the upsert-majority-failure threshold: if more than half of fetched items fail to upsert, abort. */
+const MAJORITY_DIVISOR = 2;
 
 /**
  * Submit per-card AI analysis for a single item and wait for the worker to

@@ -200,7 +200,7 @@ export default async function CategoryNewsPage({ params }: Props) {
             {newsListJsonLd ? <JsonLd data={newsListJsonLd} /> : null}
             <main className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8">
                 <h1 className="text-2xl font-bold tracking-tight">
-                    미국 {cfg.koLabel} 뉴스
+                    {cfg.koLabel} 뉴스
                 </h1>
                 <Suspense fallback={<DigestSkeleton />}>
                     <MarketNewsDigest

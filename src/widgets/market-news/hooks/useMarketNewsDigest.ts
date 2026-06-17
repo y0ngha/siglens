@@ -127,9 +127,6 @@ export function useMarketNewsDigest(
 ): MarketNewsDigestState {
     const currentJobIdRef = useRef<string | null>(null);
 
-    // §17 explanation: useHydrated and useWaitForMarketNewsCards feed `enabled` on the useQuery below.
-    // Hooks that PROVIDE inputs to a query are allowed to precede it; §17 forbids the opposite
-    // (a derived hook that consumes the query result being placed before useQuery).
     const isHydrated = useHydrated();
 
     const { isReady: isCardsReady, waitError } = useWaitForMarketNewsCards(
