@@ -1,3 +1,4 @@
+import type { ReactElement } from 'react';
 import {
     computeYieldSpread,
     type EconomicIndicatorSeries,
@@ -58,6 +59,8 @@ export function EconomicIndicatorGrid({
     snapshot,
 }: EconomicIndicatorGridProps) {
     const seriesByName = new Map(
+        // Map 생성자는 [K, V][] 튜플을 요구하지만 map 결과는 (string|Series)[] 배열로
+        // 추론된다 — as const로 튜플 고정해 키/값 타입 보장.
         snapshot.indicators.map(s => [s.name, s] as const)
     );
 
@@ -98,9 +101,8 @@ function CategorySection({
             if (series === undefined || series.latest === null) return null;
             return <IndicatorCard key={m.name} meta={m} series={series} />;
         })
-        .filter(c => c !== null);
+        .filter((c): c is ReactElement => c !== null);
 
-    // 금리 섹션은 treasury → 2s10s 스프레드 카드를 추가로 노출.
     const treasuryCards =
         category === 'rates' && treasury !== null
             ? [

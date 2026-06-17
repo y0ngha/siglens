@@ -1,8 +1,6 @@
-import { vi } from 'vitest';
-
 vi.mock('@/shared/api/fmp/httpClient');
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { FmpEconomyProvider } from '@/shared/api/fmp/FmpEconomyProvider';
 import { fmpGet } from '@/shared/api/fmp/httpClient';
 import { SECONDS_PER_DAY } from '@/shared/config/time';

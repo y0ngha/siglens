@@ -80,10 +80,13 @@ function MacroBriefingView({ briefing, generatedAt }: MacroBriefingViewProps) {
     return (
         <section
             className="border-secondary-700 bg-secondary-800 rounded-xl border p-6"
-            aria-label="거시 경제 브리핑"
+            aria-labelledby="macro-briefing-heading"
         >
             <header className="mb-4 flex items-center gap-3">
-                <h2 className="text-secondary-100 text-xl font-semibold">
+                <h2
+                    id="macro-briefing-heading"
+                    className="text-secondary-100 text-xl font-semibold"
+                >
                     거시 브리핑
                 </h2>
                 <span

@@ -9,7 +9,7 @@ import {
 } from '@/widgets/economy';
 import { getEconomySnapshotStatic } from '@/entities/economy/api/economySnapshotStaticCache';
 import { peekMacroBriefingStatic } from '@/entities/economy/api/macroBriefingStaticCache';
-import { isEmptyEconomySnapshot } from '@/entities/economy/lib/economyCompleteness';
+import { isEmptyEconomySnapshot } from '@/entities/economy';
 import {
     buildBreadcrumbJsonLd,
     clampSeoDescription,
@@ -93,8 +93,15 @@ async function EconomyContent(): Promise<ReactElement> {
 
     // 1-hour date-hour 버킷 키로 macro briefing peek seed 조회. miss는 null → 클라가 submit.
     const dateHour = new Date().toISOString().slice(0, ISO_DATE_HOUR_SLICE_END);
+    // 외부 I/O 오류는 graceful 처리하되 silent하게 삼키지 않는다(MISTAKES §Infra §4).
     const peekSeed = await peekMacroBriefingStatic(snapshot, dateHour).catch(
-        () => null
+        e => {
+            console.error(
+                '[EconomyContent] peekMacroBriefingStatic failed:',
+                e
+            );
+            return null;
+        }
     );
 
     return (

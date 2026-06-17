@@ -40,6 +40,11 @@ function isoDate(d: Date): string {
  *
  * 축별 graceful: provider 실패 시 그 축만 비고(`emptyIndicator` / `null` / `[]`)
  * 다른 축은 살아남는다. 전 축 실패 → 빈 스냅샷 → `shouldCache` 가드가 캐시 차단.
+ *
+ * 동시 호출 수 = 11(9 indicators + treasury + calendar). 결과는 24h Redis 캐시로
+ * 묶이므로 실 호출은 페이지 cold-gen 시점에만 발생한다. financials(6 endpoints
+ * Promise.all)·market(indices+sector ETFs Promise.all) 패턴과 동급이라 FETCH_CONCURRENCY
+ * 임계값을 넘지 않는다 — fetchInChunks 미적용. (지표 수가 늘어 임계값을 넘기면 그때 재검토.)
  */
 async function fetchSnapshot(
     provider: EconomyProvider

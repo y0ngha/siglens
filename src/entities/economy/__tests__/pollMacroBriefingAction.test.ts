@@ -1,5 +1,3 @@
-import { vi } from 'vitest';
-
 vi.mock('server-only', () => ({}));
 vi.mock('@y0ngha/siglens-core', async () => {
     const actual = await vi.importActual<typeof import('@y0ngha/siglens-core')>(
@@ -8,7 +6,7 @@ vi.mock('@y0ngha/siglens-core', async () => {
     return { ...actual, pollMacroBriefing: vi.fn() };
 });
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { pollMacroBriefingAction } from '@/entities/economy/actions/pollMacroBriefingAction';
 import { pollMacroBriefing } from '@y0ngha/siglens-core';
 

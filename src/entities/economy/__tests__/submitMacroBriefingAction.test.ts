@@ -1,5 +1,3 @@
-import { vi } from 'vitest';
-
 vi.mock('server-only', () => ({}));
 vi.mock('next/headers', () => ({
     headers: vi.fn(async () => new Headers()),
@@ -13,7 +11,7 @@ vi.mock('@y0ngha/siglens-core', async () => {
     return { ...actual, submitMacroBriefing: vi.fn() };
 });
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { submitMacroBriefingAction } from '@/entities/economy/actions/submitMacroBriefingAction';
 import { isBot } from '@/shared/api/isBot';
 import { getEconomySnapshot } from '@/entities/economy/api/economySnapshotCache';

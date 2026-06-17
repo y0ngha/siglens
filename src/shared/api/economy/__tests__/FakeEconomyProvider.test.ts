@@ -14,6 +14,12 @@ describe('FakeEconomyProvider', () => {
         }
     });
 
+    it('federalFunds fixture는 결정적 값 반환', async () => {
+        const series = await provider.getIndicator('federalFunds');
+        expect(series.latest).toEqual({ date: '2026-05-01', value: 3.63 });
+        expect(series.previous).toEqual({ date: '2026-04-01', value: 3.58 });
+    });
+
     it('미지정 지표는 빈 시리즈로 graceful', async () => {
         const series = await provider.getIndicator('unknownIndicator');
         expect(series.latest).toBeNull();
@@ -43,7 +49,7 @@ describe('FakeEconomyProvider', () => {
     it('지표 시계열은 최신→과거 정렬', async () => {
         const series = await provider.getIndicator('federalFunds');
         const dates = series.trend.map(p => p.date);
-        const sorted = [...dates].sort((a, b) => (a < b ? 1 : -1));
+        const sorted = dates.toSorted((a, b) => (a < b ? 1 : -1));
         expect(dates).toEqual(sorted);
     });
 });
