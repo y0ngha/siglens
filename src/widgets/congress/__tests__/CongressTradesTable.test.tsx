@@ -178,9 +178,10 @@ describe('CongressTradesTable', () => {
 
         it('senate row: PTR ID prefix is shown, length tied to PTR_ID_PREFIX_LENGTH', () => {
             render(<CongressTradesTable trades={[BASE_TRADE]} />);
-            const expectedPtrPrefix = SENATE_PTR_LINK.match(
-                /\/ptr\/([^/]+)/
-            )?.[1]?.slice(0, PTR_ID_PREFIX_LENGTH);
+            // UUID in SENATE_PTR_LINK: '029f67f3-1234-5678-abcd-ef0123456789'
+            // First PTR_ID_PREFIX_LENGTH (8) chars = '029f67f3'.
+            // If PTR_ID_PREFIX_LENGTH changes, update this literal to match.
+            const expectedPtrPrefix = '029f67f3';
             expect(
                 screen.getByText(new RegExp(`PTR ${expectedPtrPrefix}`))
             ).toBeInTheDocument();

@@ -23,8 +23,6 @@ export const SENATE_EFD_SEARCH_URL = 'https://efdsearch.senate.gov/search/';
 export const PTR_ID_PREFIX_LENGTH = 8;
 
 /**
- * Routes a disclosure href based on chamber.
- *
  * Senate efdsearch deep links return 403/404 outside the disclaimer-accepted
  * session, so senate links always point to the search landing page instead of
  * the original deep link. House PDF links (disclosures-clerk.house.gov) are
@@ -35,10 +33,8 @@ function getDisclosureHref(chamber: Chamber, link: string): string {
 }
 
 /**
- * Extract the PTR UUID from a Senate efdsearch URL like
- * `https://efdsearch.senate.gov/search/view/ptr/<UUID>/`.
  * Returns null if the URL doesn't match the expected shape (defensive fallback —
- * FMP may shape change).
+ * FMP may change the URL structure).
  *
  * The trailing `$` anchor is intentionally omitted so the regex stays robust
  * to future query strings or fragments appended to the URL.
@@ -178,8 +174,6 @@ interface DisclosureCellProps {
 }
 
 /**
- * Renders the disclosure link cell for a trade row.
- *
  * For senate rows, the href routes to the efdsearch landing page (see
  * `getDisclosureHref`) and the PTR UUID prefix is displayed separately so
  * users can copy-paste it into the search form after accepting the disclaimer.
