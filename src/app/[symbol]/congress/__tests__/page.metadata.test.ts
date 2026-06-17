@@ -262,6 +262,21 @@ describe('Congress page JSON-LD schema types', () => {
         expect(pageSource).toContain("'@type': 'WebPage'");
     });
 
+    it('page.tsx emits a FAQPage schema type', () => {
+        expect(pageSource).toContain("'@type': 'FAQPage'");
+    });
+
+    it('page.tsx FAQPage mainEntity has 3 Question entries', () => {
+        // Count occurrences of '@type': 'Question' to verify 3 entries.
+        const matches = pageSource.match(/'@type': 'Question'/g);
+        expect(matches).toHaveLength(3);
+    });
+
+    it('page.tsx FAQPage Question names interpolate displayName', () => {
+        // At least one Question name must use template literal with displayName.
+        expect(pageSource).toContain('${displayName}의 의회 거래');
+    });
+
     it('buildBreadcrumbJsonLd produces a BreadcrumbList schema', async () => {
         const { buildBreadcrumbJsonLd } = await import('@/shared/lib/seo');
         const result = buildBreadcrumbJsonLd([
