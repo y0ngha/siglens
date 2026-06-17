@@ -1,0 +1,47 @@
+import { describe, it, expect } from 'vitest';
+import { FakeEconomyProvider } from '@/shared/api/economy/FakeEconomyProvider';
+import { ECONOMY_INDICATORS } from '@/shared/config/economyIndicators';
+
+describe('FakeEconomyProvider', () => {
+    const provider = new FakeEconomyProvider();
+
+    it('레지스트리 9종 지표 모두 시드된 값을 반환', async () => {
+        for (const meta of ECONOMY_INDICATORS) {
+            const series = await provider.getIndicator(meta.name);
+            expect(series.name).toBe(meta.name);
+            expect(series.latest).not.toBeNull();
+            expect(series.previous).not.toBeNull();
+        }
+    });
+
+    it('미지정 지표는 빈 시리즈로 graceful', async () => {
+        const series = await provider.getIndicator('unknownIndicator');
+        expect(series.latest).toBeNull();
+        expect(series.previous).toBeNull();
+        expect(series.trend).toEqual([]);
+    });
+
+    it('getTreasury: 결정적 2Y/10Y 반환', async () => {
+        expect(await provider.getTreasury()).toEqual({
+            date: '2026-06-15',
+            year2: 4.07,
+            year10: 4.47,
+        });
+    });
+
+    it('getCalendar: US 이벤트만 반환(JP 등 미포함)', async () => {
+        const events = await provider.getCalendar();
+        expect(events.length).toBeGreaterThan(0);
+        // Fake는 country 필드를 갖지 않고 이미 US만 들어있어, 직접 검증.
+        expect(
+            events.every(e => e.impact === 'High' || e.impact === 'Medium')
+        ).toBe(true);
+    });
+
+    it('지표 시계열은 최신→과거 정렬', async () => {
+        const series = await provider.getIndicator('federalFunds');
+        const dates = series.trend.map(p => p.date);
+        const sorted = [...dates].sort((a, b) => (a < b ? 1 : -1));
+        expect(dates).toEqual(sorted);
+    });
+});

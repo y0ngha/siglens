@@ -6,6 +6,7 @@ import type {
     NewsImpact,
     NewsSentiment,
     SubmitBriefingResult,
+    SubmitMacroBriefingResult,
 } from '@y0ngha/siglens-core';
 
 /**
@@ -238,6 +239,12 @@ export type MarketSummaryActionResult =
 /** briefing 클라 경로 결과 — 봇 차단 또는 submit/cached. */
 export type MarketBriefingActionResult =
     | { briefing: SubmitBriefingResult; botBlocked: false }
+    | { briefing: null; botBlocked: true }
+    | { ok: false; error: string };
+
+/** /economy 거시 브리핑 클라 경로 결과 — market briefing 패턴 미러. */
+export type MacroBriefingActionResult =
+    | { briefing: SubmitMacroBriefingResult; botBlocked: false }
     | { briefing: null; botBlocked: true }
     | { ok: false; error: string };
 
