@@ -31,7 +31,6 @@ function emptyIndicator(name: string): EconomicIndicatorSeries {
     return { name, latest: null, previous: null, trend: [] };
 }
 
-/** ISO 'YYYY-MM-DD'로 절단. */
 function isoDate(d: Date): string {
     return d.toISOString().slice(0, 10);
 }

@@ -1,9 +1,11 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { vi } from 'vitest';
 
 vi.mock('@/shared/api/fmp/httpClient');
 
+import { describe, it, expect, beforeEach } from 'vitest';
 import { FmpEconomyProvider } from '@/shared/api/fmp/FmpEconomyProvider';
 import { fmpGet } from '@/shared/api/fmp/httpClient';
+import { SECONDS_PER_DAY } from '@/shared/config/time';
 
 const mockFmpGet = vi.mocked(fmpGet);
 
@@ -31,7 +33,7 @@ describe('FmpEconomyProvider', () => {
         expect(mockFmpGet).toHaveBeenCalledWith(
             'economic-indicators',
             { name: 'CPI' },
-            { revalidate: 86400 }
+            { revalidate: SECONDS_PER_DAY }
         );
     });
 
@@ -49,7 +51,7 @@ describe('FmpEconomyProvider', () => {
         expect(mockFmpGet).toHaveBeenCalledWith(
             'treasury-rates',
             {},
-            { revalidate: 86400 }
+            { revalidate: SECONDS_PER_DAY }
         );
     });
 
@@ -90,7 +92,7 @@ describe('FmpEconomyProvider', () => {
         expect(mockFmpGet).toHaveBeenCalledWith(
             'economic-calendar',
             { from: '2026-06-16', to: '2026-06-30' },
-            { revalidate: 86400 }
+            { revalidate: SECONDS_PER_DAY }
         );
     });
 

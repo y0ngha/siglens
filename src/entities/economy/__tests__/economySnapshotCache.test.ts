@@ -1,9 +1,10 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { vi } from 'vitest';
 
 vi.mock('server-only', () => ({}));
 vi.mock('@/shared/cache/getOrSetCache');
 vi.mock('@/shared/api/economy/getEconomyProvider');
 
+import { describe, it, expect, beforeEach } from 'vitest';
 import { getOrSetCache } from '@/shared/cache/getOrSetCache';
 import { getEconomyProvider } from '@/shared/api/economy/getEconomyProvider';
 import { getEconomySnapshot } from '@/entities/economy/api/economySnapshotCache';

@@ -3,6 +3,8 @@ import type {
     EconomicCalendarEvent,
 } from '@y0ngha/siglens-core';
 
+import { cn } from '@/shared/lib/cn';
+
 interface EconomicCalendarProps {
     events: readonly EconomicCalendarEvent[];
 }
@@ -73,7 +75,10 @@ function CalendarRow({ event }: CalendarRowProps) {
                 </p>
             </div>
             <span
-                className={`rounded-full px-2 py-0.5 text-xs font-medium ${IMPACT_BADGE[event.impact]} h-fit justify-self-start sm:justify-self-end`}
+                className={cn(
+                    'h-fit justify-self-start rounded-full px-2 py-0.5 text-xs font-medium sm:justify-self-end',
+                    IMPACT_BADGE[event.impact]
+                )}
             >
                 {IMPACT_LABELS[event.impact]}
             </span>

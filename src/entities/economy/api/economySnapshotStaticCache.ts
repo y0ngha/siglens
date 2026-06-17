@@ -1,4 +1,5 @@
 import 'server-only';
+import { cache } from 'react';
 import { unstable_cache } from 'next/cache';
 import type { EconomySnapshot } from '@y0ngha/siglens-core';
 
@@ -15,11 +16,16 @@ import {
  *
  * revalidate=86400(24h, `SECONDS_PER_DAY`)으로 페이지 리터럴과 단일 TTL 공유.
  * tag=`economy:snapshot`으로 on-demand `revalidateTag` 가능(향후 즉시 반영용).
+ *
+ * 단일 요청 내 `generateMetadata` + `EconomyContent`가 같은 페이지에서 두 번 호출하므로
+ * `React.cache`로 감싸 요청 내 dedup한다 — `unstable_cache`는 cross-request 정적화는
+ * 처리하지만 in-request memoize는 하지 않는다.
  */
-export function getEconomySnapshotStatic(): Promise<EconomySnapshot> {
-    return unstable_cache(
-        () => getEconomySnapshot(),
-        ['economy-snapshot-static', ECONOMY_CONFIG_FINGERPRINT],
-        { revalidate: SECONDS_PER_DAY, tags: ['economy:snapshot'] }
-    )();
-}
+export const getEconomySnapshotStatic = cache(
+    (): Promise<EconomySnapshot> =>
+        unstable_cache(
+            () => getEconomySnapshot(),
+            ['economy-snapshot-static', ECONOMY_CONFIG_FINGERPRINT],
+            { revalidate: SECONDS_PER_DAY, tags: ['economy:snapshot'] }
+        )()
+);

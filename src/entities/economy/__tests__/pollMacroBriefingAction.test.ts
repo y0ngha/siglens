@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { vi } from 'vitest';
 
 vi.mock('server-only', () => ({}));
 vi.mock('@y0ngha/siglens-core', async () => {
@@ -8,6 +8,7 @@ vi.mock('@y0ngha/siglens-core', async () => {
     return { ...actual, pollMacroBriefing: vi.fn() };
 });
 
+import { describe, it, expect, beforeEach } from 'vitest';
 import { pollMacroBriefingAction } from '@/entities/economy/actions/pollMacroBriefingAction';
 import { pollMacroBriefing } from '@y0ngha/siglens-core';
 
@@ -35,11 +36,15 @@ describe('pollMacroBriefingAction', () => {
         expect(result.status).toBe('done');
     });
 
-    it('throw → server_error로 정규화', async () => {
+    it('throw → server_error + 에러 로깅', async () => {
         const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
         mockPoll.mockRejectedValue(new Error('worker down'));
         const result = await pollMacroBriefingAction('j');
         expect(result).toEqual({ status: 'error', error: 'server_error' });
+        expect(spy).toHaveBeenCalledWith(
+            '[pollMacroBriefingAction] failed:',
+            expect.any(Error)
+        );
         spy.mockRestore();
     });
 });

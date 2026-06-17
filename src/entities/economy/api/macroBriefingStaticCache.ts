@@ -11,8 +11,10 @@ import { SECONDS_PER_HOUR } from '@/shared/config/time';
 /**
  * /economy SSR seed — 캐시된 macro briefing을 read-only로 surface한다.
  *
- * `peekMacroBriefingCache(snapshot)`는 내부에서 dateHour 버킷을 계산하므로 외부에서
- * 따로 전달하지 않는다. 캐시 miss → `null` 반환 → 클라가 submit으로 fallback.
+ * `dateHour`는 외부(`page.tsx`)에서 계산해 `unstable_cache` 키 granularity 용도로
+ * 전달한다. core의 `peekMacroBriefingCache`도 내부에서 자체 dateHour 버킷을 다시
+ * 계산하므로 함수 인자로는 snapshot만 넘긴다(키 버킷과 read 키는 같은 시간으로 정렬됨).
+ * 캐시 miss → `null` 반환 → 클라가 submit으로 fallback.
  * `unstable_cache`로 감싸 ISR 정적 generate 시 DSU(`DYNAMIC_SERVER_USAGE`)를 피한다.
  *
  * 키 prefix `economy-briefing-peek-static`는 시간 단위(`dateHour`)로 버킷팅되며,

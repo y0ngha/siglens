@@ -29,13 +29,15 @@ describe('FakeEconomyProvider', () => {
         });
     });
 
-    it('getCalendar: US 이벤트만 반환(JP 등 미포함)', async () => {
-        const events = await provider.getCalendar();
-        expect(events.length).toBeGreaterThan(0);
-        // Fake는 country 필드를 갖지 않고 이미 US만 들어있어, 직접 검증.
-        expect(
-            events.every(e => e.impact === 'High' || e.impact === 'Medium')
-        ).toBe(true);
+    it('getCalendar: 결정적 US 이벤트 fixture를 반환', async () => {
+        const events = await provider.getCalendar('2026-06-16', '2026-06-30');
+        // Fake는 country 필드 없는 US-only 사전 정규화 데이터로 시드됨.
+        const eventNames = events.map(e => e.event);
+        expect(eventNames).toEqual([
+            'Fed Rate Decision',
+            'CPI YoY',
+            'Initial Jobless Claims',
+        ]);
     });
 
     it('지표 시계열은 최신→과거 정렬', async () => {

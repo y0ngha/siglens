@@ -2,6 +2,8 @@
 
 import type { MacroBriefingResponse } from '@y0ngha/siglens-core';
 
+import { cn } from '@/shared/lib/cn';
+
 import { useMacroBriefing } from '../hooks/useMacroBriefing';
 import { useMacroBriefingPoll } from '../hooks/useMacroBriefingPoll';
 
@@ -85,7 +87,10 @@ function MacroBriefingView({ briefing, generatedAt }: MacroBriefingViewProps) {
                     거시 브리핑
                 </h2>
                 <span
-                    className={`rounded-full px-3 py-0.5 text-sm font-medium ${REGIME_COLORS[briefing.regime]}`}
+                    className={cn(
+                        'rounded-full px-3 py-0.5 text-sm font-medium',
+                        REGIME_COLORS[briefing.regime]
+                    )}
                 >
                     {REGIME_LABELS[briefing.regime]}
                 </span>

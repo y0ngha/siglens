@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { vi } from 'vitest';
 
 vi.mock('server-only', () => ({}));
 vi.mock('next/headers', () => ({
@@ -13,6 +13,7 @@ vi.mock('@y0ngha/siglens-core', async () => {
     return { ...actual, submitMacroBriefing: vi.fn() };
 });
 
+import { describe, it, expect, beforeEach } from 'vitest';
 import { submitMacroBriefingAction } from '@/entities/economy/actions/submitMacroBriefingAction';
 import { isBot } from '@/shared/api/isBot';
 import { getEconomySnapshot } from '@/entities/economy/api/economySnapshotCache';
@@ -58,12 +59,16 @@ describe('submitMacroBriefingAction', () => {
         });
     });
 
-    it('내부 throw는 server_error로 정규화', async () => {
+    it('내부 throw는 server_error + 에러 로깅', async () => {
         const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
         mockIsBot.mockReturnValue(false);
         mockGetSnapshot.mockRejectedValue(new Error('redis down'));
         const result = await submitMacroBriefingAction();
         expect(result).toEqual({ ok: false, error: 'server_error' });
+        expect(spy).toHaveBeenCalledWith(
+            '[submitMacroBriefingAction] failed:',
+            expect.any(Error)
+        );
         spy.mockRestore();
     });
 });

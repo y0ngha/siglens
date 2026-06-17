@@ -11,6 +11,7 @@ import {
     type EconomyCategoryKey,
     type EconomyIndicatorMeta,
 } from '@/shared/config/economyIndicators';
+import { cn } from '@/shared/lib/cn';
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
 
 interface EconomicIndicatorGridProps {
@@ -199,7 +200,10 @@ function YieldSpreadCard({ snapshot }: YieldSpreadCardProps) {
                 </InfoTooltip>
             </header>
             <div
-                className={`text-2xl font-semibold ${positive ? 'text-success-300' : 'text-danger-300'}`}
+                className={cn(
+                    'text-2xl font-semibold',
+                    positive ? 'text-success-300' : 'text-danger-300'
+                )}
             >
                 {positive ? '+' : ''}
                 {spread.toFixed(2)}
@@ -211,7 +215,10 @@ function YieldSpreadCard({ snapshot }: YieldSpreadCardProps) {
 }
 
 function DeltaBadge({ delta, precision, unit }: DeltaBadgeProps) {
-    if (delta === 0) {
+    // 부동소수점 잔차나 표시 정밀도 미만 변화(예: delta=0.003, precision=2)도
+    // 화면에서는 변화 없음이므로 포맷팅된 값을 기준으로 0 판정한다.
+    const formatted = delta.toFixed(precision);
+    if (parseFloat(formatted) === 0) {
         return (
             <span className="text-secondary-400 mt-1 inline-block text-xs">
                 전기 대비 변화 없음
@@ -222,10 +229,13 @@ function DeltaBadge({ delta, precision, unit }: DeltaBadgeProps) {
     const sign = positive ? '+' : '';
     return (
         <span
-            className={`mt-1 inline-block text-xs ${positive ? 'text-success-300' : 'text-danger-300'}`}
+            className={cn(
+                'mt-1 inline-block text-xs',
+                positive ? 'text-success-300' : 'text-danger-300'
+            )}
         >
             전기 대비 {sign}
-            {delta.toFixed(precision)}
+            {formatted}
             {unit}
         </span>
     );

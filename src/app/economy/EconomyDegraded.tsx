@@ -1,3 +1,5 @@
+import { ECONOMY_TITLE } from './constants';
+
 /**
  * /economy degrade UI — 전 축이 비어 있어 의미 있는 정보를 노출할 수 없을 때 200 + noindex로
  * 보여주는 안내. financials `FinancialsDegraded`와 동일 패턴.
@@ -6,7 +8,7 @@ export function EconomyDegraded() {
     return (
         <main className="flex-1">
             <h1 className="text-secondary-100 px-6 pt-10 text-2xl font-bold tracking-tight text-balance sm:text-3xl lg:px-[15vw]">
-                미국 경제 — 지표·캘린더 한눈에
+                {ECONOMY_TITLE}
             </h1>
             <section className="border-secondary-700 bg-secondary-800 mx-6 my-8 rounded-xl border p-6 lg:mx-[15vw]">
                 <h2 className="text-secondary-100 mb-3 text-lg font-semibold">

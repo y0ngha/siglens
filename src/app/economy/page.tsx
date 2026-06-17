@@ -20,6 +20,7 @@ import {
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
 import { JsonLd } from '@/shared/ui/JsonLd';
 
+import { ECONOMY_TITLE } from './constants';
 import { EconomyDegraded } from './EconomyDegraded';
 
 // 24h — ISR. 거시 지표는 월·분기 단위로 변하고 신선도는 클라 refetch가 책임진다.
@@ -33,7 +34,6 @@ export const revalidate = 86400;
 const ISO_DATE_HOUR_SLICE_END = 13;
 
 // Root layout template appends "| Siglens" — 본문 title은 brand 제외.
-const ECONOMY_TITLE = '미국 경제 — 지표·캘린더 한눈에';
 const ECONOMY_FULL_TITLE = `${ECONOMY_TITLE} | ${SITE_NAME}`;
 const ECONOMY_DESCRIPTION = clampSeoDescription(
     '미국 기준금리·물가·고용·성장 지표와 다가오는 경제 발표 일정을 한 페이지에서 봅니다. AI가 현재 거시 국면을 요약해 드려요.'

@@ -85,7 +85,10 @@ export class FakeEconomyProvider implements EconomyProvider {
         return { date: '2026-06-15', year2: 4.07, year10: 4.47 };
     }
 
-    async getCalendar(): Promise<EconomicCalendarEvent[]> {
+    async getCalendar(
+        _from: string,
+        _to: string
+    ): Promise<EconomicCalendarEvent[]> {
         return [
             {
                 date: '2026-06-17 14:00:00',
