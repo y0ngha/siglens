@@ -43,11 +43,10 @@ export function EconomicCalendar({ events }: EconomicCalendarProps) {
                 </p>
             ) : (
                 <ul className="border-secondary-700 divide-secondary-800 divide-y rounded-xl border">
-                    {events.map((e, i) => (
-                        <CalendarRow
-                            key={`${e.date}:${e.event}:${i}`}
-                            event={e}
-                        />
+                    {events.map(e => (
+                        // FMP는 동일 datetime·동일 event 중복을 보내지 않으므로
+                        // `date:event` 결합 키만으로 reconciliation이 안정된다.
+                        <CalendarRow key={`${e.date}:${e.event}`} event={e} />
                     ))}
                 </ul>
             )}

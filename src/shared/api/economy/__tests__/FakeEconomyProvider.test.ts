@@ -1,24 +1,38 @@
 import { describe, it, expect } from 'vitest';
-import { FakeEconomyProvider } from '@/shared/api/economy/FakeEconomyProvider';
+import {
+    FakeEconomyProvider,
+    INDICATOR_SEEDS,
+} from '@/shared/api/economy/FakeEconomyProvider';
 import { ECONOMY_INDICATORS } from '@/shared/config/economyIndicators';
+
+/** SEED.startDate를 1개월 단위로 뒤로 이동(FakeEconomyProvider의 shiftDate와 동일 로직). */
+function shiftMonth(start: string, monthsBack: number): string {
+    const [y, m, d] = start.split('-').map(Number);
+    return new Date(Date.UTC(y, m - 1 - monthsBack, d))
+        .toISOString()
+        .slice(0, 10);
+}
 
 describe('FakeEconomyProvider', () => {
     const provider = new FakeEconomyProvider();
 
-    it('레지스트리 9종 지표 모두 시드된 값을 반환', async () => {
-        for (const meta of ECONOMY_INDICATORS) {
-            const series = await provider.getIndicator(meta.name);
-            expect(series.name).toBe(meta.name);
-            expect(series.latest).not.toBeNull();
-            expect(series.previous).not.toBeNull();
+    it.each(ECONOMY_INDICATORS.map(m => m.name))(
+        '레지스트리 지표 %s — SEED의 정확한 latest/previous 값 반환',
+        async name => {
+            const seed = INDICATOR_SEEDS[name];
+            expect(seed).toBeDefined();
+            const series = await provider.getIndicator(name);
+            expect(series.name).toBe(name);
+            expect(series.latest).toEqual({
+                date: seed.startDate,
+                value: seed.values[0],
+            });
+            expect(series.previous).toEqual({
+                date: shiftMonth(seed.startDate, 1),
+                value: seed.values[1],
+            });
         }
-    });
-
-    it('federalFunds fixture는 결정적 값 반환', async () => {
-        const series = await provider.getIndicator('federalFunds');
-        expect(series.latest).toEqual({ date: '2026-05-01', value: 3.63 });
-        expect(series.previous).toEqual({ date: '2026-04-01', value: 3.58 });
-    });
+    );
 
     it('미지정 지표는 빈 시리즈로 graceful', async () => {
         const series = await provider.getIndicator('unknownIndicator');

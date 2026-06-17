@@ -46,9 +46,13 @@ function isoDate(d: Date): string {
  *
  * 동시 호출 수 = 11(9 indicators + treasury + calendar). 결과는 24h Redis 캐시로
  * 묶이므로 실 호출은 페이지 cold-gen 시점에만 발생한다 — 페이지당 11회/24h 수준.
- * 시장(`getMarketSummary`: 지수+섹터 ETF Promise.all)과 financials(6 endpoint
- * Promise.all)도 동일 패턴이라 본 페이지만 별도 청크 분할이 필요한 근거가 없다.
- * (지표 수가 늘어 평균 cold-gen 부담이 의미 있게 커지면 그때 `fetchInChunks` 재검토.)
+ *
+ * MISTAKES §0.8 검토: 본 레포에는 `FETCH_CONCURRENCY` 상수 자체가 존재하지 않는다.
+ * 가장 가까운 동시성 정책은 peer page들의 Promise.all 패턴이며, market(`getMarketSummary`
+ * — 지수 N + 섹터 ETF M, 통상 11+개), financials(6 endpoint)이 모두 동일 패턴으로
+ * production에서 안정적으로 운영 중이다. FMP starter 플랜 기준 분당 300 req(초당 5)
+ * 한도 대비 11 calls / 24h cold-gen은 무시 가능 수준 — `fetchInChunks` 분할 이득이
+ * 없다. 향후 지표 수가 50+로 늘거나 페이지가 hot-path가 되면 그때 재검토한다.
  */
 async function fetchSnapshot(
     provider: EconomyProvider

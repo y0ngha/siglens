@@ -85,7 +85,7 @@ export async function generateMetadata(): Promise<Metadata> {
     };
 }
 
-/** RSC content — 데이터 조회 + 위젯 composition. cold-gen에서 dynamic API 금지. */
+/** cold-gen(ISR 정적 생성 컨텍스트)에서 dynamic API(`cookies`/`headers`/`connection()`) 금지. */
 async function EconomyContent() {
     const snapshot = await getEconomySnapshotStatic();
     if (isEmptyEconomySnapshot(snapshot)) return <EconomyDegraded />;
