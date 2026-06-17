@@ -8,7 +8,7 @@ export {
 } from './lib/newsEnrichment';
 export {
     DISABLED_THINKING_BUDGET,
-    POLL_INTERVAL_MS,
+    NEWS_CARD_ANALYSIS_POLL_INTERVAL_MS,
     POLL_MAX_ATTEMPTS,
 } from './lib/newsAnalysisConstants';
 export {

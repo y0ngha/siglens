@@ -10,7 +10,7 @@ import {
 } from '@/shared/api/fmp/fmpUserMessage';
 import {
     DISABLED_THINKING_BUDGET,
-    POLL_INTERVAL_MS,
+    NEWS_CARD_ANALYSIS_POLL_INTERVAL_MS as POLL_INTERVAL_MS,
     POLL_MAX_ATTEMPTS,
 } from '../lib/newsAnalysisConstants';
 import { NEWS_LOOKBACK_MS } from '../lib/newsLookback';

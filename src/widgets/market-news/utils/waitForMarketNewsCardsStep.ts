@@ -1,6 +1,7 @@
 import { getMarketNewsCardsAction } from '@/entities/market-news/actions';
 import type { NewsFeedCategory } from '@y0ngha/siglens-core';
 import { MAX_CONSECUTIVE_FAILURES } from '../constants';
+import type { PollStepResult } from './pollStepResult';
 
 export interface WaitState {
     consecutiveFailures: number;
@@ -21,7 +22,7 @@ export interface WaitForMarketNewsCardsContext {
 /** One wait tick. Pure function of the explicit context object — no closure capture, unit-testable. */
 export async function waitForMarketNewsCardsStep(
     ctx: WaitForMarketNewsCardsContext
-): Promise<'continue' | 'stop'> {
+): Promise<PollStepResult> {
     const result = await getMarketNewsCardsAction(ctx.category);
     if (!result.ok) {
         ctx.incrementFailures();

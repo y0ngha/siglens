@@ -6,6 +6,7 @@ import {
     EMPTY_SNAPSHOT_MAX_POLLS,
     MAX_POLL_DURATION_MS,
 } from '../constants';
+import type { PollStepResult } from './pollStepResult';
 
 export interface PollState {
     pollCount: number;
@@ -38,7 +39,7 @@ function hasPendingAnalysis(items: MarketNewsCardItem[]): boolean {
 /** One polling tick. Pure function of the explicit context object — no closure capture, unit-testable. */
 export async function pollMarketNewsCardsStep(
     ctx: PollMarketNewsCardsContext
-): Promise<'continue' | 'stop'> {
+): Promise<PollStepResult> {
     if (Date.now() - ctx.getStartTime() > MAX_POLL_DURATION_MS) {
         ctx.setIsPolling(false);
         ctx.clearInterval();

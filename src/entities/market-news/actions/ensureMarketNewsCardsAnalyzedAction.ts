@@ -4,6 +4,10 @@ import { getDatabaseClient } from '@/shared/db/client';
 import { revalidateTag } from 'next/cache';
 import { isE2E } from '@/shared/api/e2eEnv';
 import { sleep } from '@/shared/lib/sleep';
+import { MS_PER_SECOND } from '@/shared/config/time';
+
+/** Divisor for the upsert-majority-failure threshold: if more than half of fetched items fail to upsert, abort. */
+const MAJORITY_DIVISOR = 2;
 import {
     pollNewsCardAnalysis,
     submitNewsCardAnalysis,
@@ -17,7 +21,7 @@ import { MARKET_NEWS_LOOKBACK_MS } from '../lib/marketNewsConstants';
 import { isRecentlyFetched, markFetched } from '../lib/marketNewsRefreshFlag';
 import {
     DISABLED_THINKING_BUDGET,
-    POLL_INTERVAL_MS,
+    NEWS_CARD_ANALYSIS_POLL_INTERVAL_MS as POLL_INTERVAL_MS,
     POLL_MAX_ATTEMPTS,
 } from '@/entities/news-article';
 
@@ -51,7 +55,7 @@ async function analyzeAndPersist(
         }
     }
     console.warn(
-        `[ensureMarketNewsCardsAnalyzedAction] poll timeout after ${(POLL_MAX_ATTEMPTS * POLL_INTERVAL_MS) / 1000}s — ${item.id}`
+        `[ensureMarketNewsCardsAnalyzedAction] poll timeout after ${(POLL_MAX_ATTEMPTS * POLL_INTERVAL_MS) / MS_PER_SECOND}s — ${item.id}`
     );
 }
 
@@ -116,7 +120,7 @@ export async function ensureMarketNewsCardsAnalyzedAction(
                 )
             );
         }
-        if (upsertFailures.length > fresh.length / 2) {
+        if (upsertFailures.length > fresh.length / MAJORITY_DIVISOR) {
             console.error(
                 `[ensureMarketNewsCardsAnalyzedAction] majority upsert failure (${upsertFailures.length}/${fresh.length}) — aborting`
             );
