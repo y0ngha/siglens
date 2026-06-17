@@ -242,8 +242,8 @@ interface MarketNewsDegradedProps {
 function MarketNewsDegraded({ koLabel }: MarketNewsDegradedProps) {
     return (
         <section
+            aria-label={`${koLabel} 뉴스 없음`}
             className="border-secondary-700 bg-secondary-800 rounded-xl border p-6"
-            role="alert"
         >
             <p className="text-secondary-400 text-sm">
                 {koLabel} 최근 뉴스를 불러오지 못했어요. 잠시 후 다시 확인해

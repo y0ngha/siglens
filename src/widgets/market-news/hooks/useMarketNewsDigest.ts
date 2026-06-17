@@ -9,11 +9,11 @@ import type {
 import {
     cancelMarketNewsDigestAction,
     ensureMarketNewsCardsAnalyzedAction,
-    getMarketNewsCardsAction,
 } from '@/entities/market-news/actions';
 import { useHydrated } from '@/shared/hooks/useHydrated';
-import { POLL_INTERVAL_MS, MAX_CONSECUTIVE_FAILURES } from '../constants';
+import { POLL_INTERVAL_MS } from '../constants';
 import { fetchMarketNewsDigest } from '../utils/fetchMarketNewsDigest';
+import { waitForMarketNewsCardsStep } from '../utils/waitForMarketNewsCardsStep';
 
 export type MarketNewsDigestState =
     | { status: 'loading' }
@@ -23,43 +23,6 @@ export type MarketNewsDigestState =
 interface WaitForMarketNewsCardsResult {
     isReady: boolean;
     waitError: Error | null;
-}
-
-interface WaitState {
-    consecutiveFailures: number;
-}
-
-interface WaitForMarketNewsCardsContext {
-    category: NewsFeedCategory;
-    state: WaitState;
-    setIsReady: (next: boolean) => void;
-    setWaitError: (next: Error | null) => void;
-    clearInterval: () => void;
-}
-
-/** One wait tick. Pure function of the explicit context object — no closure capture, unit-testable. */
-async function waitForMarketNewsCardsStep(
-    ctx: WaitForMarketNewsCardsContext
-): Promise<'continue' | 'stop'> {
-    const result = await getMarketNewsCardsAction(ctx.category);
-    if (!result.ok) {
-        ctx.state.consecutiveFailures += 1;
-        console.error('[useWaitForMarketNewsCards] poll failed:', result.error);
-        if (ctx.state.consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
-            ctx.setWaitError(new Error(result.error));
-            ctx.clearInterval();
-            return 'stop';
-        }
-        return 'continue';
-    }
-    ctx.state.consecutiveFailures = 0;
-    if (result.items.some(item => item.sentiment !== null)) {
-        ctx.setIsReady(true);
-        ctx.clearInterval();
-        return 'stop';
-    }
-
-    return 'continue';
 }
 
 /**
@@ -87,12 +50,18 @@ function useWaitForMarketNewsCards(
     useEffect(() => {
         if (initiallyReady) return;
 
-        const state = { consecutiveFailures: 0 };
+        const stateRef = { consecutiveFailures: 0 };
 
         intervalIdRef.current = setInterval(() => {
             void waitForMarketNewsCardsStep({
                 category,
-                state,
+                incrementFailures: () => {
+                    stateRef.consecutiveFailures += 1;
+                },
+                resetFailures: () => {
+                    stateRef.consecutiveFailures = 0;
+                },
+                getConsecutiveFailures: () => stateRef.consecutiveFailures,
                 setIsReady,
                 setWaitError,
                 clearInterval: () => {

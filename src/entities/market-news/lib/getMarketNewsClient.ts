@@ -15,6 +15,8 @@ let cached: MarketNewsClientPort | null = null;
 export function getMarketNewsClient(): MarketNewsClientPort {
     if (cached !== null) return cached;
     if (isE2E()) {
+        // safe: require() enables conditional loading to exclude FakeMarketNewsClient from
+        // the production bundle; the module path is known-correct at build time.
         const { FakeMarketNewsClient } =
             require('./FakeMarketNewsClient') as typeof import('./FakeMarketNewsClient');
         cached = new FakeMarketNewsClient();

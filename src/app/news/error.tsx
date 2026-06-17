@@ -23,20 +23,19 @@ export default function NewsError({ error, reset }: NewsErrorProps) {
     }, [error]);
 
     return (
-        <main
-            role="alert"
-            className="flex flex-1 flex-col items-center px-6 py-20 text-center"
-        >
-            <p className="text-primary-400 font-mono text-sm tracking-widest">
-                일시 오류
-            </p>
-            <h1 className="text-secondary-100 mt-4 text-2xl font-bold sm:text-3xl">
-                마켓 뉴스를 불러오는 중에 문제가 발생했어요.
-            </h1>
-            <p className="text-secondary-400 mt-3 max-w-md text-sm leading-relaxed">
-                뉴스 데이터를 가져오는 중 일시적인 오류가 생겼어요. 잠시 후 다시
-                시도해 주세요.
-            </p>
+        <main className="flex flex-1 flex-col items-center px-6 py-20 text-center">
+            <div role="alert" aria-live="assertive" aria-atomic="true">
+                <p className="text-primary-400 font-mono text-sm tracking-widest">
+                    일시 오류
+                </p>
+                <h1 className="text-secondary-100 mt-4 text-2xl font-bold sm:text-3xl">
+                    마켓 뉴스를 불러오는 중에 문제가 발생했어요.
+                </h1>
+                <p className="text-secondary-400 mt-3 max-w-md text-sm leading-relaxed">
+                    뉴스 데이터를 가져오는 중 일시적인 오류가 생겼어요. 잠시 후
+                    다시 시도해 주세요.
+                </p>
+            </div>
             <div className="mt-8 flex gap-3">
                 <button
                     type="button"

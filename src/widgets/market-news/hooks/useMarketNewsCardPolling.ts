@@ -1,77 +1,10 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { getMarketNewsCardsAction } from '@/entities/market-news/actions';
 import type { MarketNewsCardItem } from '@/entities/market-news/actions';
 import type { NewsFeedCategory } from '@y0ngha/siglens-core';
-import {
-    POLL_INTERVAL_MS,
-    MAX_CONSECUTIVE_FAILURES,
-    EMPTY_SNAPSHOT_MAX_POLLS,
-    MAX_POLL_DURATION_MS,
-} from '../constants';
-
-function hasPendingAnalysis(items: MarketNewsCardItem[]): boolean {
-    return items.some(
-        item => item.sentiment === null || item.priceImpact === null
-    );
-}
-
-interface PollState {
-    pollCount: number;
-    consecutiveFailures: number;
-    startTime: number;
-}
-
-interface PollMarketNewsCardsContext {
-    category: NewsFeedCategory;
-    state: PollState;
-    setItems: (next: MarketNewsCardItem[]) => void;
-    setIsPolling: (next: boolean) => void;
-    setPollError: (next: Error | null) => void;
-    clearInterval: () => void;
-}
-
-/** One polling tick. Pure function of the explicit context object — no closure capture, unit-testable. */
-async function pollMarketNewsCardsStep(
-    ctx: PollMarketNewsCardsContext
-): Promise<'continue' | 'stop'> {
-    if (Date.now() - ctx.state.startTime > MAX_POLL_DURATION_MS) {
-        ctx.setIsPolling(false);
-        ctx.clearInterval();
-        return 'stop';
-    }
-
-    const result = await getMarketNewsCardsAction(ctx.category);
-    if (!result.ok) {
-        ctx.state.consecutiveFailures += 1;
-        console.error('[useMarketNewsCardPolling] poll failed:', result.error);
-
-        if (ctx.state.consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
-            ctx.setPollError(new Error(result.error));
-            ctx.setIsPolling(false);
-            ctx.clearInterval();
-            return 'stop';
-        }
-        return 'continue';
-    }
-    ctx.state.consecutiveFailures = 0;
-    const fresh = result.items;
-    ctx.state.pollCount += 1;
-    ctx.setItems(fresh);
-
-    if (fresh.length === 0 && ctx.state.pollCount >= EMPTY_SNAPSHOT_MAX_POLLS) {
-        ctx.setIsPolling(false);
-        ctx.clearInterval();
-        return 'stop';
-    } else if (fresh.length > 0 && !hasPendingAnalysis(fresh)) {
-        ctx.setIsPolling(false);
-        ctx.clearInterval();
-        return 'stop';
-    }
-
-    return 'continue';
-}
+import { POLL_INTERVAL_MS } from '../constants';
+import { pollMarketNewsCardsStep } from '../utils/pollMarketNewsCardsStep';
 
 export interface UseMarketNewsCardPollingReturn {
     items: MarketNewsCardItem[];
@@ -117,7 +50,7 @@ export function useMarketNewsCardPolling(
     }
 
     useEffect(() => {
-        const state = {
+        const stateRef = {
             pollCount: 0,
             consecutiveFailures: 0,
             startTime: Date.now(),
@@ -126,7 +59,18 @@ export function useMarketNewsCardPolling(
         intervalIdRef.current = setInterval(() => {
             void pollMarketNewsCardsStep({
                 category,
-                state,
+                incrementFailures: () => {
+                    stateRef.consecutiveFailures += 1;
+                },
+                resetFailures: () => {
+                    stateRef.consecutiveFailures = 0;
+                },
+                incrementPollCount: () => {
+                    stateRef.pollCount += 1;
+                },
+                getStartTime: () => stateRef.startTime,
+                getPollCount: () => stateRef.pollCount,
+                getConsecutiveFailures: () => stateRef.consecutiveFailures,
                 setItems,
                 setIsPolling,
                 setPollError,
