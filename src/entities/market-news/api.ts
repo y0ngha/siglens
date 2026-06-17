@@ -118,32 +118,36 @@ export class DrizzleMarketNewsRepository {
     ): Promise<MarketNewsRow[]> {
         const cutoff = new Date(Date.now() - sinceMs);
 
-        const rows = await this.db
-            .select({
-                id: marketNews.id,
-                symbol: marketNews.symbol,
-                source: marketNews.source,
-                url: marketNews.url,
-                publishedAt: marketNews.publishedAt,
-                titleEn: marketNews.titleEn,
-                bodyEn: marketNews.bodyEn,
-                titleKo: marketNews.titleKo,
-                bodyKo: marketNews.bodyKo,
-                summaryKo: marketNews.summaryKo,
-                sentiment: marketNews.sentiment,
-                category: marketNews.category,
-                priceImpact: marketNews.priceImpact,
-                tickers: marketNews.tickers,
-                analyzedAt: marketNews.analyzedAt,
-            })
-            .from(marketNews)
-            .where(
-                and(
-                    eq(marketNews.symbol, sentinel),
-                    gte(marketNews.publishedAt, cutoff)
-                )
-            )
-            .orderBy(desc(marketNews.publishedAt));
+        const rows = await withRetry(
+            () =>
+                this.db
+                    .select({
+                        id: marketNews.id,
+                        symbol: marketNews.symbol,
+                        source: marketNews.source,
+                        url: marketNews.url,
+                        publishedAt: marketNews.publishedAt,
+                        titleEn: marketNews.titleEn,
+                        bodyEn: marketNews.bodyEn,
+                        titleKo: marketNews.titleKo,
+                        bodyKo: marketNews.bodyKo,
+                        summaryKo: marketNews.summaryKo,
+                        sentiment: marketNews.sentiment,
+                        category: marketNews.category,
+                        priceImpact: marketNews.priceImpact,
+                        tickers: marketNews.tickers,
+                        analyzedAt: marketNews.analyzedAt,
+                    })
+                    .from(marketNews)
+                    .where(
+                        and(
+                            eq(marketNews.symbol, sentinel),
+                            gte(marketNews.publishedAt, cutoff)
+                        )
+                    )
+                    .orderBy(desc(marketNews.publishedAt)),
+            NEON_TRANSIENT_RETRY
+        );
 
         return rows.map(toMarketNewsRow);
     }

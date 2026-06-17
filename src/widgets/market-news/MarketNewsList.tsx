@@ -92,7 +92,6 @@ export function MarketNewsList({
     const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
     const [prevCategory, setPrevCategory] = useState(category);
 
-    // Reset pagination when the category changes (client-side navigation).
     if (prevCategory !== category) {
         setPrevCategory(category);
         setVisibleCount(PAGE_SIZE);
@@ -103,7 +102,6 @@ export function MarketNewsList({
         initialItems
     );
 
-    // Surface persistent polling errors to the nearest error boundary.
     if (pollError !== null) {
         throw pollError;
     }

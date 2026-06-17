@@ -64,23 +64,6 @@ export function parseArticleTickers(raw: string | null | undefined): string[] {
         .filter(t => t.length > 0);
 }
 
-/** Warn log deduplication flag — one warning per process is enough to surface failures. */
-let hasWarnedNormalizeFailure = false;
-
-function tryNormalizeFmpPublishedDate(value: string): string | null {
-    try {
-        return normalizeFmpPublishedDate(value);
-    } catch {
-        if (!hasWarnedNormalizeFailure) {
-            hasWarnedNormalizeFailure = true;
-            console.warn(
-                `[marketNewsClient] failed to normalize date: ${value}`
-            );
-        }
-        return null;
-    }
-}
-
 function mapLatestRawToItem(
     raw: RawFmpLatestNews,
     publishedAt: string,
@@ -117,6 +100,23 @@ function mapArticleRawToItem(
 
 /** FMP adapter for market-wide category news feeds. */
 export class FmpMarketNewsClient implements MarketNewsClientPort {
+    /** Warn log deduplication flag — one warning per instance is enough to surface failures. */
+    private hasWarnedNormalizeFailure = false;
+
+    private tryNormalizeFmpPublishedDate(value: string): string | null {
+        try {
+            return normalizeFmpPublishedDate(value);
+        } catch {
+            if (!this.hasWarnedNormalizeFailure) {
+                this.hasWarnedNormalizeFailure = true;
+                console.warn(
+                    `[FmpMarketNewsClient] failed to normalize date: ${value}`
+                );
+            }
+            return null;
+        }
+    }
+
     /**
      * Fetch the category's market-wide feed and return items published within
      * the given lookback window. The sentinel symbol from `CATEGORY_CONFIG` is
@@ -140,7 +140,7 @@ export class FmpMarketNewsClient implements MarketNewsClientPort {
             return raw
                 .map(r => ({
                     raw: r,
-                    publishedAt: tryNormalizeFmpPublishedDate(r.date),
+                    publishedAt: this.tryNormalizeFmpPublishedDate(r.date),
                 }))
                 .filter(
                     (n): n is DatedArticleRaw =>
@@ -158,7 +158,7 @@ export class FmpMarketNewsClient implements MarketNewsClientPort {
         return raw
             .map(r => ({
                 raw: r,
-                publishedAt: tryNormalizeFmpPublishedDate(r.publishedDate),
+                publishedAt: this.tryNormalizeFmpPublishedDate(r.publishedDate),
             }))
             .filter(
                 (n): n is DatedLatestRaw =>

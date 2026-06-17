@@ -1,5 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-
+// 1. All vi.mock(...) calls — hoisted by Vitest before any static import
 vi.mock('next/cache', () => ({ revalidateTag: vi.fn() }));
 vi.mock('next/headers', () => ({ headers: vi.fn(async () => new Headers()) }));
 vi.mock('@/shared/db/client', () => ({
@@ -86,9 +85,11 @@ vi.mock('../lib/getMarketNewsClient', () => ({
     })),
 }));
 
-// Import action after all mocks are set up
+// 2. Static imports — grouped after all vi.mock() calls
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ensureMarketNewsCardsAnalyzedAction } from '../actions/ensureMarketNewsCardsAnalyzedAction';
 
+// 3. Tests
 describe('ensureMarketNewsCardsAnalyzedAction은', () => {
     beforeEach(() => {
         vi.clearAllMocks();

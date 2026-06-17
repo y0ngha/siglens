@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+// 1. All vi.mock(...) calls — hoisted by Vitest before any static import
 
 // Mock database client
 vi.mock('@/shared/db/client', () => ({
@@ -51,8 +51,11 @@ vi.mock('../api', () => ({
     ]),
 }));
 
+// 2. Static imports — grouped after all vi.mock() calls
+import { describe, it, expect, vi } from 'vitest';
 import { getMarketNewsCardsAction } from '../actions/getMarketNewsCardsAction';
 
+// 3. Tests
 describe('getMarketNewsCardsAction은', () => {
     it('카테고리에 해당하는 매핑된 카드를 반환한다(tickers 포함)', async () => {
         const result = await getMarketNewsCardsAction('crypto');

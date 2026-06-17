@@ -15,7 +15,7 @@ export interface CategoryCardProps {
      * Pre-fetched headline strings for the preview list. The caller is
      * responsible for fetching and passing these — this component does no
      * data fetching, keeping it a pure RSC that renders deterministically.
-     * At most `MAX_PREVIEW_HEADLINES` entries are rendered.
+     * At most `PREVIEW_HEADLINE_LIMIT` entries are rendered.
      */
     previewHeadlines: string[];
 }
