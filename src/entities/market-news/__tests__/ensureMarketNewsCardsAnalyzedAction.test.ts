@@ -155,6 +155,27 @@ describe('ensureMarketNewsCardsAnalyzedAction은', () => {
         expect(getMarketNewsClient).not.toHaveBeenCalled();
     });
 
+    it('skipAnalysis=true이고 최근 fetch가 아니면 FMP fetch와 upsert는 진행하되 LLM 분석은 건너뛴다', async () => {
+        const { isRecentlyFetched, markFetched } =
+            await import('../lib/marketNewsRefreshFlag');
+        vi.mocked(isRecentlyFetched).mockResolvedValue(false);
+
+        const { submitNewsCardAnalysis } = await import('@y0ngha/siglens-core');
+
+        await ensureMarketNewsCardsAnalyzedAction('crypto', {
+            skipAnalysis: true,
+        });
+
+        // FMP fetch proceeded
+        expect(mockFetchCategoryNews).toHaveBeenCalled();
+        // Upsert ran for the fetched items
+        expect(mockUpsertMarketNewsItem).toHaveBeenCalled();
+        // LLM analysis was NOT triggered
+        expect(submitNewsCardAnalysis).not.toHaveBeenCalled();
+        // Refresh flag was still marked (action uses sentinel, not slug)
+        expect(vi.mocked(markFetched)).toHaveBeenCalledWith('__NEWS_CRYPTO__');
+    });
+
     it('예외가 발생해도 throw하지 않고 void를 반환한다', async () => {
         mockFetchCategoryNews.mockRejectedValue(new Error('network error'));
         // Should resolve without throwing
