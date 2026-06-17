@@ -8,7 +8,7 @@ import {
 } from '../constants';
 import type { PollStepResult } from './pollStepResult';
 
-export interface PollState {
+interface PollState {
     pollCount: number;
     consecutiveFailures: number;
     startTime: number;

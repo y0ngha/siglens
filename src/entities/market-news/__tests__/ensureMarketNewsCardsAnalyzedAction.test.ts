@@ -5,10 +5,7 @@ vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: vi.fn(() => ({ db: {} })),
 }));
 vi.mock('@/shared/lib/sleep', () => ({ sleep: vi.fn() }));
-vi.mock('../lib/marketNewsRefreshFlag', () => ({
-    isRecentlyFetched: vi.fn(async () => false),
-    markFetched: vi.fn(async () => undefined),
-}));
+// isRecentlyFetched / markFetched are now in ../api — injected into the api mock below.
 vi.mock('@/shared/api/e2eEnv', () => ({ isE2E: vi.fn(() => false) }));
 
 // Mock submitNewsCardAnalysis / pollNewsCardAnalysis from core
@@ -64,6 +61,8 @@ vi.mock('../api', () => ({
         };
     }),
     getMarketNewsList: vi.fn(),
+    isRecentlyFetched: vi.fn(async () => false),
+    markFetched: vi.fn(async () => undefined),
 }));
 
 const mockFetchCategoryNews = vi.fn(async () => [
@@ -160,8 +159,7 @@ describe('ensureMarketNewsCardsAnalyzedAction은', () => {
     });
 
     it('봇(skipAnalysis)이고 최근 fetch했으면 FMP fetch를 건너뛴다', async () => {
-        const { isRecentlyFetched } =
-            await import('../lib/marketNewsRefreshFlag');
+        const { isRecentlyFetched } = await import('../api');
         vi.mocked(isRecentlyFetched).mockResolvedValue(true);
 
         const { getMarketNewsClient } =
@@ -173,8 +171,7 @@ describe('ensureMarketNewsCardsAnalyzedAction은', () => {
     });
 
     it('skipAnalysis=true이고 최근 fetch가 아니면 FMP fetch와 upsert는 진행하되 LLM 분석은 건너뛴다', async () => {
-        const { isRecentlyFetched, markFetched } =
-            await import('../lib/marketNewsRefreshFlag');
+        const { isRecentlyFetched, markFetched } = await import('../api');
         vi.mocked(isRecentlyFetched).mockResolvedValue(false);
 
         const { submitNewsCardAnalysis } = await import('@y0ngha/siglens-core');

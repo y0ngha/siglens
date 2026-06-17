@@ -3,7 +3,7 @@ import type { NewsFeedCategory } from '@y0ngha/siglens-core';
 import { MAX_CONSECUTIVE_FAILURES } from '../constants';
 import type { PollStepResult } from './pollStepResult';
 
-export interface WaitState {
+interface WaitState {
     consecutiveFailures: number;
 }
 

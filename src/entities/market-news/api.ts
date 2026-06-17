@@ -1,3 +1,4 @@
+import 'server-only';
 import { cache } from 'react';
 import { and, desc, eq, gte, sql } from 'drizzle-orm';
 import type {
@@ -12,6 +13,8 @@ import { marketNews } from '@/shared/db/schema';
 import type { SiglensDatabase } from '@/shared/db/types';
 import type { NewsDisplayItem } from '@/shared/lib/types';
 import { withRetry } from '@/shared/lib/withRetry';
+import { getRedisClient } from '@/shared/cache/redisClient';
+import { SECONDS_PER_MINUTE } from '@/shared/config/time';
 import type { MarketNewsItem } from './lib/marketNewsClientPort';
 import { MARKET_NEWS_LOOKBACK_MS } from './lib/marketNewsConstants';
 import type { MarketNewsRow } from './model';
@@ -221,7 +224,7 @@ const NEWS_IMPACT_RECORD: Record<NewsImpact, true> = {
     negligible: true,
 };
 
-function validateNewsSentiment(value: string): value is NewsSentiment {
+function isNewsSentiment(value: string): value is NewsSentiment {
     return value in NEWS_SENTIMENT_RECORD;
 }
 function isNewsCategory(value: string): value is NewsCategory {
@@ -233,7 +236,7 @@ function isNewsImpact(value: string): value is NewsImpact {
 
 function toNewsSentiment(value: unknown): NewsSentiment | null {
     if (typeof value !== 'string') return null;
-    return validateNewsSentiment(value) ? value : null;
+    return isNewsSentiment(value) ? value : null;
 }
 function toNewsCategory(value: unknown): NewsCategory | null {
     if (typeof value !== 'string') return null;
@@ -265,4 +268,48 @@ function toMarketNewsRow(row: MarketNewsDbRow): MarketNewsRow {
         tickers: row.tickers,
         analyzedAt: row.analyzedAt,
     };
+}
+
+// ---------------------------------------------------------------------------
+// Market-news refresh flag (Redis sentinel) — moved from lib/ per Architecture §0.7
+// (lib/ must be pure; Redis I/O belongs in api.ts alongside other DB/cache I/O).
+// ---------------------------------------------------------------------------
+
+const MARKET_NEWS_REFRESH_FLAG_TTL_MINUTES = 10;
+
+/**
+ * Market-news refresh flag TTL — bots that re-crawl within this window skip
+ * the FMP fetch+upsert to avoid unnecessary API calls. Mirrors `newsRefreshFlag`
+ * in `news-article` but keyed by sentinel symbol to keep slice isolation.
+ */
+export const MARKET_NEWS_REFRESH_FLAG_TTL_SECONDS =
+    MARKET_NEWS_REFRESH_FLAG_TTL_MINUTES * SECONDS_PER_MINUTE;
+
+function buildRefreshFlagKey(sentinel: string): string {
+    return `market-news:refresh:${sentinel}`;
+}
+
+/** Returns true if this sentinel bucket was fetched within the TTL. Redis failure → false (always fetch). */
+export async function isRecentlyFetched(sentinel: string): Promise<boolean> {
+    const redis = getRedisClient();
+    if (redis === null) return false;
+    try {
+        return (await redis.get(buildRefreshFlagKey(sentinel))) !== null;
+    } catch (error) {
+        console.error('[marketNewsRefreshFlag] get failed', error);
+        return false;
+    }
+}
+
+/** Mark this sentinel bucket as "recently fetched". Redis failure → noop. */
+export async function markFetched(sentinel: string): Promise<void> {
+    const redis = getRedisClient();
+    if (redis === null) return;
+    try {
+        await redis.set(buildRefreshFlagKey(sentinel), '1', {
+            ex: MARKET_NEWS_REFRESH_FLAG_TTL_SECONDS,
+        });
+    } catch (error) {
+        console.error('[marketNewsRefreshFlag] set failed', error);
+    }
 }

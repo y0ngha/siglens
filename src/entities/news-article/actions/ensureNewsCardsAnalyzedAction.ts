@@ -17,6 +17,7 @@ import { NEWS_LOOKBACK_MS } from '../lib/newsLookback';
 import { isRecentlyFetched, markFetched } from '../lib/newsRefreshFlag';
 import { revalidateTag } from 'next/cache';
 import { sleep } from '@/shared/lib/sleep';
+import { MS_PER_SECOND } from '@/shared/config/time';
 import { isE2E } from '@/shared/api/e2eEnv';
 import {
     pollNewsCardAnalysis,
@@ -54,7 +55,7 @@ async function analyzeAndPersist(
         }
     }
     console.warn(
-        `[ensureNewsCardsAnalyzedAction] poll timeout after ${(POLL_MAX_ATTEMPTS * POLL_INTERVAL_MS) / 1000}s — ${item.id}`
+        `[ensureNewsCardsAnalyzedAction] poll timeout after ${(POLL_MAX_ATTEMPTS * POLL_INTERVAL_MS) / MS_PER_SECOND}s — ${item.id}`
     );
 }
 
