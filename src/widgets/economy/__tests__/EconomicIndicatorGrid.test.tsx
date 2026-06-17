@@ -75,4 +75,38 @@ describe('EconomicIndicatorGrid', () => {
         expect(screen.queryByText('2년물 국채')).not.toBeInTheDocument();
         expect(screen.queryByText('2s10s 스프레드')).not.toBeInTheDocument();
     });
+
+    it('2s10s 스프레드가 음수일 때 - 부호 + ui-danger 색상', () => {
+        render(
+            <EconomicIndicatorGrid
+                snapshot={snap({
+                    treasury: { date: '2026-06-15', year2: 4.5, year10: 4.3 },
+                })}
+            />
+        );
+        // spread = 4.30 - 4.50 = -0.20
+        const spreadValue = screen.getByText(/-0\.20/);
+        expect(spreadValue).toBeInTheDocument();
+        // The value element carries text-ui-danger class (negative spread)
+        expect(spreadValue).toHaveClass('text-ui-danger');
+    });
+
+    it('전기 대비 변화가 precision 미만일 때 "전기 대비 변화 없음" 표시', () => {
+        // delta = 3.633 - 3.631 = 0.002; toFixed(2) = "0.00" → parsed as 0 → "변화 없음"
+        render(
+            <EconomicIndicatorGrid
+                snapshot={snap({
+                    indicators: [
+                        {
+                            name: 'federalFunds',
+                            latest: { date: '2026-05-01', value: 3.633 },
+                            previous: { date: '2026-04-01', value: 3.631 },
+                            trend: [],
+                        },
+                    ],
+                })}
+            />
+        );
+        expect(screen.getByText(/전기 대비 변화 없음/)).toBeInTheDocument();
+    });
 });

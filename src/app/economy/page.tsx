@@ -4,6 +4,7 @@ import { Suspense } from 'react';
 import {
     EconomicCalendar,
     EconomicIndicatorGrid,
+    EconomyMacroFacts,
     MacroBriefing,
 } from '@/widgets/economy';
 // entities/economy/api/*는 server-only(`@upstash/redis` + `next/cache`) 의존이라
@@ -17,6 +18,7 @@ import {
     buildBreadcrumbJsonLd,
     clampSeoDescription,
     ROOT_KEYWORDS,
+    SITE_BUILD_DATE,
     SITE_NAME,
     SITE_URL,
 } from '@/shared/lib/seo';
@@ -25,6 +27,15 @@ import { JsonLd } from '@/shared/ui/JsonLd';
 
 import { ECONOMY_TITLE } from './constants';
 import { EconomyDegraded } from './EconomyDegraded';
+
+/** 페이지 최상단 h1 — EconomyContent와 Suspense fallback에서 공유한다. */
+function EconomyHeroH1() {
+    return (
+        <h1 className="text-secondary-100 px-6 pt-10 text-2xl font-bold tracking-tight text-balance sm:text-3xl lg:px-[15vw]">
+            {ECONOMY_TITLE}
+        </h1>
+    );
+}
 
 // 24h — ISR. 거시 지표는 월·분기 단위로 변하고 신선도는 클라 refetch가 책임진다.
 // `FmpEconomyProvider`의 `ECONOMY_REVALIDATE_SECONDS`(= `SECONDS_PER_DAY` = 86400)와
@@ -55,6 +66,8 @@ const ECONOMY_KEYWORDS = [
     '경제 캘린더',
     '장단기 금리차',
     '미국 경기침체',
+    '2s10s 스프레드',
+    '10년물 국채 금리',
 ];
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -65,8 +78,10 @@ export async function generateMetadata(): Promise<Metadata> {
         title: ECONOMY_TITLE,
         description: ECONOMY_DESCRIPTION,
         keywords: ECONOMY_KEYWORDS,
-        alternates: { canonical: ECONOMY_URL },
-        robots: degraded ? { index: false } : undefined,
+        // degraded 시 canonical을 null로 비워 크롤러가 임시 상태를 색인하지 않도록 한다.
+        // follow: true는 유지해 링크 주스가 내부 링크로 계속 흐르게 한다.
+        alternates: { canonical: degraded ? null : ECONOMY_URL },
+        robots: degraded ? { index: false, follow: true } : undefined,
         openGraph: {
             title: ECONOMY_FULL_TITLE,
             description: ECONOMY_DESCRIPTION,
@@ -112,10 +127,12 @@ async function EconomyContent() {
 
     return (
         <main className="flex-1">
-            <h1 className="text-secondary-100 px-6 pt-10 text-2xl font-bold tracking-tight text-balance sm:text-3xl lg:px-[15vw]">
-                {ECONOMY_TITLE}
-            </h1>
+            <EconomyHeroH1 />
             <div className="space-y-8 px-6 py-8 lg:px-[15vw]">
+                {/* SSR 크롤 텍스트 — MacroBriefing은 'use client'라 크롤러에 빈 HTML을
+                    반환한다. EconomyMacroFacts가 서버사이드에서 핵심 수치를 텍스트로
+                    노출해 검색 엔진이 수치 데이터를 색인할 수 있도록 한다. */}
+                <EconomyMacroFacts snapshot={snapshot} />
                 <MacroBriefing peekSeed={peekSeed} />
                 <EconomicIndicatorGrid snapshot={snapshot} />
                 <EconomicCalendar events={snapshot.calendar} />
@@ -134,6 +151,7 @@ export default function EconomyPage() {
         url: ECONOMY_URL,
         inLanguage: 'ko',
         isPartOf: { '@type': 'WebSite', '@id': `${SITE_URL}#website` },
+        dateModified: SITE_BUILD_DATE.toISOString(),
     };
 
     const breadcrumbJsonLd = buildBreadcrumbJsonLd([
@@ -147,9 +165,7 @@ export default function EconomyPage() {
             <Suspense
                 fallback={
                     <main className="flex-1">
-                        <h1 className="text-secondary-100 px-6 pt-10 text-2xl font-bold tracking-tight text-balance sm:text-3xl lg:px-[15vw]">
-                            {ECONOMY_TITLE}
-                        </h1>
+                        <EconomyHeroH1 />
                     </main>
                 }
             >

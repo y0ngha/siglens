@@ -33,6 +33,12 @@ export function buildStaticEntries(now: Date): SitemapEntry[] {
             priority: 0.9,
         },
         {
+            url: `${SITE_URL}/economy`,
+            lastModified: SITE_BUILD_DATE,
+            changeFrequency: 'daily',
+            priority: 0.8,
+        },
+        {
             url: `${SITE_URL}${PRIVACY_PATH}`,
             lastModified: SITE_BUILD_DATE,
             changeFrequency: 'yearly',

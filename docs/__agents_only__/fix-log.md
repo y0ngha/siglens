@@ -73,5 +73,41 @@
   - Context: Pre-review step reported coverage OK via `yarn test` with no-op exit. Only `test-coverage` applies the gate. Lesson: always verify coverage with `test-coverage` flag before review submission.
 - Status: Round 2 APPROVED (zero findings after test additions)
 
+## [feat/economy-page Round 3 (Audit Follow-up) | feat/economy-page | 2026-06-17]
+- Status: Post-APPROVED 5-audit deep-dive exposed gaps not caught in 7 review rounds
+- Violations: 11 total fixed
+  - Rule Pattern: **New top-level page routes ship without sitemap + internal-link + SSR-proxy coverage** — recurring across multi-round PRs
+  - P0 Orphan Page Fixes (Audits 1,2):
+    1. `/economy` missing from static sitemap (`buildStaticEntries.ts`) — added entry
+    2. Footer internal link to `/economy` missing — added link in Footer.tsx
+  - P1 Crawl Coverage Fix (Audit 5):
+    3. EconomyMacroFacts component shipped as client-only bridge to MacroBriefing — crawlers see empty skeleton. Added SSR text-proxy (mirrors SectorFactsSummary pattern)
+  - Test Coverage Audit (Audit 5):
+    4. `EconomicIndicatorGrid.test.tsx` missing 2s10s negative spread test case
+    5. `DeltaBadge.test.tsx` missing floating-point 0-case edge test
+    6. NEW `src/app/economy/__tests__/page.test.tsx` integration test: degrade/metadata/peek-throw paths
+  - E2E Gaps (Audit 5):
+    7. `e2e/specs/economy.spec.ts` added: MacroBriefing mount + bot UA + mobile 3-viewport scenarios
+  - P2 SEO/Metadata Refinements (Audit 4):
+    8. JSON-LD `dateModified` missing — added field
+    9. degraded state: `alternates: { canonical: null }` + `robots.follow: true` (was default-missing)
+    10. h1 duplicated in 2 places — refactored to shared `EconomyHeroH1` component
+    11. keywords enhanced with domain-specific terms (`2s10s 스프레드`, `10년물 국채 금리`)
+
+### Recurring Pattern Analysis (for MISTAKES.md promotion)
+
+**Pattern: Multi-audit consensus on top-level page route gaps**
+- Evidence: feat/economy-page (3 audits needed for completeness) + implicit history from fix-log
+- Recurring rule: PR APPROVED + review-agent clean does NOT mean ready-to-merge for new pages
+- Gap classes: (1) sitemap/discoverability, (2) internal navigation, (3) SSR/bot crawl coverage, (4) test integration, (5) SEO metadata
+- Lesson: **Post-APPROVED pages require fresh-context seo-audit + coverage-audit before merge.** Shipping orphan top-level routes is a systemic miss.
+
+**Checking fix-log history for prior sitemap omissions...**
+- PR #546 (fear-greed, 2026-06-03): h1 dedup fix — APPROVED clean, no audit follow-up logged
+- PR #513 (fmp-retry): chart page — no top-level route mentioned
+- No prior sitemap omission explicitly logged (economy-page appears to be first time this specific gap pattern surfaced at scale)
+
+**Decision:** Promote to MISTAKES.md as new rule under Architecture/SEO section: "New pages at top-level routes (app/) must include sitemap entry, internal nav link, SSR-proxy (if component-bridge), SEO metadata, + integrated test before merge. seo-audit + coverage-audit are mandatory post-approval."
+
 
 
