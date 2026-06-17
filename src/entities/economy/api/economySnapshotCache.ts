@@ -26,13 +26,16 @@ const CACHE_KEY = `economy:snapshot:${ECONOMY_CONFIG_FINGERPRINT}`;
 /** 캘린더 윈도(다가오는 ~2주) 일수 — 매직넘버 상수화(MISTAKES §15). */
 const CALENDAR_WINDOW_DAYS = 14;
 
+/** 'YYYY-MM-DD' prefix 길이 — `isoDate` slice 끝(매직넘버 상수화). */
+const ISO_DATE_LENGTH = 10;
+
 /** core EconomicIndicatorSeries의 빈 placeholder — Provider 실패 시 fallback. */
 function emptyIndicator(name: string): EconomicIndicatorSeries {
     return { name, latest: null, previous: null, trend: [] };
 }
 
 function isoDate(d: Date): string {
-    return d.toISOString().slice(0, 10);
+    return d.toISOString().slice(0, ISO_DATE_LENGTH);
 }
 
 /**
@@ -42,9 +45,10 @@ function isoDate(d: Date): string {
  * 다른 축은 살아남는다. 전 축 실패 → 빈 스냅샷 → `shouldCache` 가드가 캐시 차단.
  *
  * 동시 호출 수 = 11(9 indicators + treasury + calendar). 결과는 24h Redis 캐시로
- * 묶이므로 실 호출은 페이지 cold-gen 시점에만 발생한다. financials(6 endpoints
- * Promise.all)·market(indices+sector ETFs Promise.all) 패턴과 동급이라 FETCH_CONCURRENCY
- * 임계값을 넘지 않는다 — fetchInChunks 미적용. (지표 수가 늘어 임계값을 넘기면 그때 재검토.)
+ * 묶이므로 실 호출은 페이지 cold-gen 시점에만 발생한다 — 페이지당 11회/24h 수준.
+ * 시장(`getMarketSummary`: 지수+섹터 ETF Promise.all)과 financials(6 endpoint
+ * Promise.all)도 동일 패턴이라 본 페이지만 별도 청크 분할이 필요한 근거가 없다.
+ * (지표 수가 늘어 평균 cold-gen 부담이 의미 있게 커지면 그때 `fetchInChunks` 재검토.)
  */
 async function fetchSnapshot(
     provider: EconomyProvider

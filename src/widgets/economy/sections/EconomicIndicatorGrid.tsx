@@ -211,7 +211,7 @@ function YieldSpreadCard({ snapshot }: YieldSpreadCardProps) {
             <div
                 className={cn(
                     'text-2xl font-semibold',
-                    positive ? 'text-success-300' : 'text-danger-300'
+                    positive ? 'text-ui-success' : 'text-ui-danger'
                 )}
             >
                 {positive ? '+' : ''}
@@ -240,7 +240,7 @@ function DeltaBadge({ delta, precision, unit }: DeltaBadgeProps) {
         <span
             className={cn(
                 'mt-1 inline-block text-xs',
-                positive ? 'text-success-300' : 'text-danger-300'
+                positive ? 'text-ui-success' : 'text-ui-danger'
             )}
         >
             전기 대비 {sign}

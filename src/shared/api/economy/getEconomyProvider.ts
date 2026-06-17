@@ -10,6 +10,8 @@ export function getEconomyProvider(): EconomyProvider {
     if (isE2E()) {
         // Sync factory + gated require — getMarketDataProvider 패턴 미러.
         // FakeEconomyProvider는 fixture를 들고 있어 prod 번들에서 dead로 남기 위함.
+        // 동일 파일 경로의 named export이므로 typeof import()와 shape 일치가 컴파일
+        // 타임에 보장된다(MISTAKES §TS §7 — `as` 캐스트 안전성 주석).
         const { FakeEconomyProvider } =
             require('./FakeEconomyProvider') as typeof import('./FakeEconomyProvider');
         cached = new FakeEconomyProvider();

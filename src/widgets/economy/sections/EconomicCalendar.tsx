@@ -20,8 +20,8 @@ const IMPACT_LABELS: Record<CalendarImpact, string> = {
 };
 
 const IMPACT_BADGE: Record<CalendarImpact, string> = {
-    High: 'bg-danger-700 text-danger-100',
-    Medium: 'bg-warning-700 text-warning-100',
+    High: 'bg-ui-danger/20 text-ui-danger',
+    Medium: 'bg-ui-warning/20 text-ui-warning',
     Low: 'bg-secondary-700 text-secondary-200',
 };
 

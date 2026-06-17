@@ -47,12 +47,10 @@ describe('getEconomySnapshotStatic', () => {
         expect(mockGetSnapshot).toHaveBeenCalled();
     });
 
-    it('React.cache 래핑 — 같은 요청 내 두 번째 호출은 unstable_cache을 다시 호출하지 않음', async () => {
-        await getEconomySnapshotStatic();
-        await getEconomySnapshotStatic();
-        // React.cache는 모듈 import 시 단일 인스턴스를 만들지만, vitest에선
-        // 매 테스트 fresh 모듈 import가 아니라 정확히 동일 dedup 보장은 어렵다.
-        // 따라서 최소한 unstable_cache가 한 번만 wrap된 후 재사용되는지 확인.
-        expect(mockUnstableCache.mock.calls.length).toBeGreaterThanOrEqual(1);
+    // React.cache는 Next.js 요청 컨텍스트(AsyncLocalStorage)에서만 dedup이 활성화된다 —
+    // vitest의 node 환경에선 매 호출마다 실행돼 mock count가 증가하므로 단위 테스트에서
+    // 직접 검증할 수 없다. 실 환경 dedup은 prod-like 실증(curl/Chrome)으로 확인한다.
+    it.skip('React.cache 래핑 — Next.js 요청 컨텍스트 외부(vitest)에선 dedup 미작동', () => {
+        // intentionally skipped
     });
 });
