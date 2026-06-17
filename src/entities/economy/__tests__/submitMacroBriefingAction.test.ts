@@ -24,7 +24,7 @@ const mockIsBot = vi.mocked(isBot);
 const mockGetSnapshot = vi.mocked(getEconomySnapshot);
 const mockSubmit = vi.mocked(submitMacroBriefing);
 
-const SNAPSHOT = {
+const SNAPSHOT: EconomySnapshot = {
     indicators: [],
     treasury: null,
     calendar: [],
@@ -33,9 +33,7 @@ const SNAPSHOT = {
 describe('submitMacroBriefingAction', () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        mockGetSnapshot.mockResolvedValue(
-            SNAPSHOT as unknown as EconomySnapshot
-        );
+        mockGetSnapshot.mockResolvedValue(SNAPSHOT);
     });
 
     it('봇이면 즉시 차단 (snapshot/submit 미호출)', async () => {

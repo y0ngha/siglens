@@ -44,8 +44,9 @@ export function EconomicCalendar({ events }: EconomicCalendarProps) {
             ) : (
                 <ul className="border-secondary-700 divide-secondary-800 divide-y rounded-xl border">
                     {events.map(e => (
-                        // FMP는 동일 datetime·동일 event 중복을 보내지 않으므로
-                        // `date:event` 결합 키만으로 reconciliation이 안정된다.
+                        // FMP economic-calendar에서 동일 datetime·동일 event 조합은
+                        // 통상 발생하지 않으나 정량 검증된 불변은 아니다. 만약 중복이
+                        // 관측되면 core normalize 단계에 dedup 패스 추가를 검토한다.
                         <CalendarRow key={`${e.date}:${e.event}`} event={e} />
                     ))}
                 </ul>

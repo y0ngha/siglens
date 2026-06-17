@@ -10,51 +10,46 @@ import { INDICATOR_TREND_LENGTH } from '@/shared/config/economyIndicators';
 /**
  * 결정적 fixture: FMP 실측 응답과 같은 형태(name+date+value)로 9종 지표를
  * 시드해 E2E·테스트가 외부 의존 없이 /economy 전 축을 검증할 수 있게 한다.
- *
- * `export` — 테스트가 동일 source-of-truth로 정확한 값을 검증하기 위함
- * (MISTAKES §Tests §13 — 결정적 fixture는 정확한 값으로 어서션).
  */
-export const INDICATOR_SEEDS: Record<
-    string,
-    { values: number[]; startDate: string }
-> = {
-    federalFunds: {
-        values: [3.63, 3.58, 3.55, 3.5, 3.45],
-        startDate: '2026-05-01',
-    },
-    inflationRate: {
-        values: [2.32, 2.4, 2.55, 2.6, 2.7],
-        startDate: '2026-05-15',
-    },
-    CPI: {
-        values: [333.9, 332.4, 331.2, 330.1, 328.9],
-        startDate: '2026-05-01',
-    },
-    GDP: {
-        values: [31819.5, 31500, 31200, 30950, 30700],
-        startDate: '2026-01-01',
-    },
-    industrialProductionTotalIndex: {
-        values: [102.6, 102.3, 102.1, 101.9, 101.7],
-        startDate: '2026-05-01',
-    },
-    smoothedUSRecessionProbabilities: {
-        values: [0.44, 0.5, 0.55, 0.6, 0.62],
-        startDate: '2026-04-01',
-    },
-    unemploymentRate: {
-        values: [4.3, 4.2, 4.1, 4.0, 4.0],
-        startDate: '2026-05-01',
-    },
-    totalNonfarmPayroll: {
-        values: [159001, 158800, 158600, 158450, 158200],
-        startDate: '2026-05-01',
-    },
-    initialClaims: {
-        values: [229000, 232000, 235000, 230000, 228000],
-        startDate: '2026-06-06',
-    },
-};
+const INDICATOR_SEEDS: Record<string, { values: number[]; startDate: string }> =
+    {
+        federalFunds: {
+            values: [3.63, 3.58, 3.55, 3.5, 3.45],
+            startDate: '2026-05-01',
+        },
+        inflationRate: {
+            values: [2.32, 2.4, 2.55, 2.6, 2.7],
+            startDate: '2026-05-15',
+        },
+        CPI: {
+            values: [333.9, 332.4, 331.2, 330.1, 328.9],
+            startDate: '2026-05-01',
+        },
+        GDP: {
+            values: [31819.5, 31500, 31200, 30950, 30700],
+            startDate: '2026-01-01',
+        },
+        industrialProductionTotalIndex: {
+            values: [102.6, 102.3, 102.1, 101.9, 101.7],
+            startDate: '2026-05-01',
+        },
+        smoothedUSRecessionProbabilities: {
+            values: [0.44, 0.5, 0.55, 0.6, 0.62],
+            startDate: '2026-04-01',
+        },
+        unemploymentRate: {
+            values: [4.3, 4.2, 4.1, 4.0, 4.0],
+            startDate: '2026-05-01',
+        },
+        totalNonfarmPayroll: {
+            values: [159001, 158800, 158600, 158450, 158200],
+            startDate: '2026-05-01',
+        },
+        initialClaims: {
+            values: [229000, 232000, 235000, 230000, 228000],
+            startDate: '2026-06-06',
+        },
+    };
 
 function shiftDate(start: string, monthsBack: number): string {
     const [y, m, d] = start.split('-').map(Number);

@@ -9,6 +9,7 @@ vi.mock('@/entities/economy/api/economySnapshotCache', () => ({
 
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { unstable_cache } from 'next/cache';
+import type { EconomySnapshot } from '@y0ngha/siglens-core';
 
 import { getEconomySnapshotStatic } from '@/entities/economy/api/economySnapshotStaticCache';
 import { getEconomySnapshot } from '@/entities/economy/api/economySnapshotCache';
@@ -17,11 +18,11 @@ import { SECONDS_PER_DAY } from '@/shared/config/time';
 const mockUnstableCache = vi.mocked(unstable_cache);
 const mockGetSnapshot = vi.mocked(getEconomySnapshot);
 
-const SNAPSHOT = {
+const SNAPSHOT: EconomySnapshot = {
     indicators: [],
     treasury: null,
     calendar: [],
-} as never;
+};
 
 describe('getEconomySnapshotStatic', () => {
     beforeEach(() => {

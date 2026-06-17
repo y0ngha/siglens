@@ -13,17 +13,19 @@ import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { unstable_cache } from 'next/cache';
 import { peekMacroBriefingCache } from '@y0ngha/siglens-core';
 
+import type { EconomySnapshot } from '@y0ngha/siglens-core';
+
 import { peekMacroBriefingStatic } from '@/entities/economy/api/macroBriefingStaticCache';
 import { SECONDS_PER_HOUR } from '@/shared/config/time';
 
 const mockUnstableCache = vi.mocked(unstable_cache);
 const mockPeek = vi.mocked(peekMacroBriefingCache);
 
-const SNAPSHOT = {
+const SNAPSHOT: EconomySnapshot = {
     indicators: [],
     treasury: null,
     calendar: [],
-} as never;
+};
 
 describe('peekMacroBriefingStatic', () => {
     beforeEach(() => {

@@ -6,6 +6,10 @@ import {
     EconomicIndicatorGrid,
     MacroBriefing,
 } from '@/widgets/economy';
+// entities/economy/api/*는 server-only(`@upstash/redis` + `next/cache`) 의존이라
+// entities/CLAUDE.md "barrel 제외 대상" 일반 규칙대로 슬라이스 barrel(index.ts)에서
+// 의도적으로 제외돼 있다. app 레이어가 server-only 모듈을 직접 import하는 것은
+// 클라이언트 번들 누출 위험이 없으므로 허용된다.
 import { getEconomySnapshotStatic } from '@/entities/economy/api/economySnapshotStaticCache';
 import { peekMacroBriefingStatic } from '@/entities/economy/api/macroBriefingStaticCache';
 import { isEmptyEconomySnapshot } from '@/entities/economy';
@@ -23,7 +27,10 @@ import { ECONOMY_TITLE } from './constants';
 import { EconomyDegraded } from './EconomyDegraded';
 
 // 24h — ISR. 거시 지표는 월·분기 단위로 변하고 신선도는 클라 refetch가 책임진다.
-// literal required — importing a constant breaks Next's static analysis, see src/app/CLAUDE.md
+// `FmpEconomyProvider`의 `ECONOMY_REVALIDATE_SECONDS`(= `SECONDS_PER_DAY` = 86400)와
+// 동일 값으로 양 계층 TTL 일치시킨다. 출처 상수를 import하면 Next의 정적 분석이
+// 깨져 config가 무시되므로(MISTAKES §16.5 단일 출처 + src/app/CLAUDE.md ISR 규약)
+// 리터럴 강제하고, 변경 시 두 곳을 함께 갱신한다.
 export const revalidate = 86400;
 
 /**
