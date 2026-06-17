@@ -54,7 +54,6 @@ async function pollMarketNewsCardsStep(
             ctx.clearInterval();
             return 'stop';
         } else if (fresh.length > 0 && !hasPendingAnalysis(fresh)) {
-            // All cards are enriched — no need to keep polling.
             ctx.setIsPolling(false);
             ctx.clearInterval();
             return 'stop';

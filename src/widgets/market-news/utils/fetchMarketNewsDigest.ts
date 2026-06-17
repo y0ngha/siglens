@@ -33,7 +33,6 @@ export async function fetchMarketNewsDigest(
         throw new Error('분석할 뉴스가 없어요. 잠시 후 다시 시도해 주세요.');
     }
 
-    // submitted.status === 'submitted'
     onJobId(submitted.jobId);
     try {
         const { jobId } = submitted;

@@ -1,26 +1,17 @@
 import Link from 'next/link';
 import type { MarketNewsCardItem } from '@/entities/market-news/actions';
-import type { NewsFeedCategory, NewsImpact } from '@y0ngha/siglens-core';
+import type { NewsFeedCategory } from '@y0ngha/siglens-core';
 import { cn } from '@/shared/lib/cn';
 import {
     SENTIMENT_LABEL,
     SENTIMENT_CLASS,
     isNewsSentiment,
 } from './utils/sentimentConstants';
-
-const IMPACT_LABEL: Record<NewsImpact, string> = {
-    high: '주가 영향 큼',
-    medium: '주가 영향 보통',
-    low: '주가 영향 작음',
-    negligible: '주가 영향 거의 없음',
-};
-
-const IMPACT_CLASS: Record<NewsImpact, string> = {
-    high: 'bg-ui-warning/10 text-ui-warning',
-    medium: 'bg-primary-500/10 text-primary-400',
-    low: 'bg-secondary-700 text-secondary-400',
-    negligible: 'bg-secondary-700/50 text-secondary-400',
-};
+import {
+    IMPACT_LABEL,
+    IMPACT_CLASS,
+    isNewsImpact,
+} from './utils/impactConstants';
 
 const PUBLISHED_AT_FORMATTER = new Intl.DateTimeFormat('ko-KR', {
     year: 'numeric',
@@ -30,10 +21,6 @@ const PUBLISHED_AT_FORMATTER = new Intl.DateTimeFormat('ko-KR', {
     minute: '2-digit',
     timeZone: 'Asia/Seoul',
 });
-
-function isNewsImpact(value: string): value is NewsImpact {
-    return value in IMPACT_CLASS;
-}
 
 function isPending(item: MarketNewsCardItem): boolean {
     return item.sentiment === null || item.priceImpact === null;
