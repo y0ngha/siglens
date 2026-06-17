@@ -3,10 +3,6 @@ import type { NewsFeedCategory } from '@y0ngha/siglens-core';
 import { MAX_CONSECUTIVE_FAILURES } from '../constants';
 import type { PollStepResult } from './pollStepResult';
 
-interface WaitState {
-    consecutiveFailures: number;
-}
-
 export interface WaitForMarketNewsCardsContext {
     category: NewsFeedCategory;
     // setters (encapsulate state mutation so waitForMarketNewsCardsStep is a pure function of the context object):

@@ -8,12 +8,6 @@ import {
 } from '../constants';
 import type { PollStepResult } from './pollStepResult';
 
-interface PollState {
-    pollCount: number;
-    consecutiveFailures: number;
-    startTime: number;
-}
-
 export interface PollMarketNewsCardsContext {
     category: NewsFeedCategory;
     // setters (encapsulate state mutation so pollMarketNewsCardsStep is a pure function of the context object):
