@@ -33,23 +33,29 @@ function snap(overrides: Partial<EconomySnapshot> = {}): EconomySnapshot {
 }
 
 describe('EconomyMacroFacts', () => {
+    it('섹션 heading "거시 경제 한눈에"가 렌더된다', () => {
+        render(<EconomyMacroFacts snapshot={snap()} />);
+        expect(
+            screen.getByRole('heading', { name: /거시 경제 한눈에/ })
+        ).toBeInTheDocument();
+    });
+
     it('기준금리·국채금리·스프레드를 SSR 텍스트로 렌더한다', () => {
         render(<EconomyMacroFacts snapshot={snap()} />);
-        const el = screen.getByText(/현재 미국 기준금리는/);
-        expect(el).toBeInTheDocument();
-        expect(el.textContent).toContain('5.33%');
-        expect(el.textContent).toContain('4.50%');
-        expect(el.textContent).toContain('4.70%');
+        const region = screen.getByRole('region', { name: /거시 경제 한눈에/ });
+        expect(region.textContent).toContain('5.33%');
+        expect(region.textContent).toContain('4.50%');
+        expect(region.textContent).toContain('4.70%');
         // spread = 4.70 - 4.50 = +0.20
-        expect(el.textContent).toContain('+0.20%p');
+        expect(region.textContent).toContain('+0.20%p');
     });
 
     it('CPI·실업률 문장을 렌더한다', () => {
         render(<EconomyMacroFacts snapshot={snap()} />);
-        const el = screen.getByText(/소비자물가지수/);
-        expect(el).toBeInTheDocument();
-        expect(el.textContent).toContain('312.4pt');
-        expect(el.textContent).toContain('3.9%');
+        const region = screen.getByRole('region', { name: /거시 경제 한눈에/ });
+        expect(region.textContent).toContain('소비자물가지수');
+        expect(region.textContent).toContain('312.4pt');
+        expect(region.textContent).toContain('3.9%');
     });
 
     it('treasury가 null이어도 기준금리만 있으면 렌더 (부분 데이터)', () => {
@@ -79,8 +85,8 @@ describe('EconomyMacroFacts', () => {
                 })}
             />
         );
-        const el = screen.getByText(/현재 미국 기준금리는/);
+        const region = screen.getByRole('region', { name: /거시 경제 한눈에/ });
         // spread = 4.50 - 4.80 = -0.30
-        expect(el.textContent).toContain('-0.30%p');
+        expect(region.textContent).toContain('-0.30%p');
     });
 });

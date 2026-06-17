@@ -59,10 +59,18 @@ export function EconomyMacroFacts({ snapshot }: EconomyMacroFactsProps) {
     if (ratesSentence === null && macroSentence === null) return null;
 
     return (
-        <p className="text-secondary-300 text-sm leading-relaxed">
-            {ratesSentence}
-            {ratesSentence !== null && macroSentence !== null ? ' ' : null}
-            {macroSentence}
-        </p>
+        <section aria-labelledby="economy-macro-facts-heading">
+            <h2
+                id="economy-macro-facts-heading"
+                className="text-secondary-100 mb-3 text-xl font-semibold"
+            >
+                거시 경제 한눈에
+            </h2>
+            <p className="text-secondary-300 text-sm leading-relaxed">
+                {ratesSentence}
+                {ratesSentence !== null && macroSentence !== null ? ' ' : null}
+                {macroSentence}
+            </p>
+        </section>
     );
 }

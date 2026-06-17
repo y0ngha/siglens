@@ -126,18 +126,15 @@ async function EconomyContent() {
     );
 
     return (
-        <main className="flex-1">
-            <EconomyHeroH1 />
-            <div className="space-y-8 px-6 py-8 lg:px-[15vw]">
-                {/* SSR 크롤 텍스트 — MacroBriefing은 'use client'라 크롤러에 빈 HTML을
-                    반환한다. EconomyMacroFacts가 서버사이드에서 핵심 수치를 텍스트로
-                    노출해 검색 엔진이 수치 데이터를 색인할 수 있도록 한다. */}
-                <EconomyMacroFacts snapshot={snapshot} />
-                <MacroBriefing peekSeed={peekSeed} />
-                <EconomicIndicatorGrid snapshot={snapshot} />
-                <EconomicCalendar events={snapshot.calendar} />
-            </div>
-        </main>
+        <div className="space-y-8 px-6 py-8 lg:px-[15vw]">
+            {/* SSR 크롤 텍스트 — MacroBriefing은 'use client'라 크롤러에 빈 HTML을
+                반환한다. EconomyMacroFacts가 서버사이드에서 핵심 수치를 텍스트로
+                노출해 검색 엔진이 수치 데이터를 색인할 수 있도록 한다. */}
+            <EconomyMacroFacts snapshot={snapshot} />
+            <MacroBriefing peekSeed={peekSeed} />
+            <EconomicIndicatorGrid snapshot={snapshot} />
+            <EconomicCalendar events={snapshot.calendar} />
+        </div>
     );
 }
 
@@ -162,15 +159,12 @@ export default function EconomyPage() {
         <>
             <JsonLd data={jsonLd} />
             <JsonLd data={breadcrumbJsonLd} />
-            <Suspense
-                fallback={
-                    <main className="flex-1">
-                        <EconomyHeroH1 />
-                    </main>
-                }
-            >
-                <EconomyContent />
-            </Suspense>
+            <main className="flex-1">
+                <EconomyHeroH1 />
+                <Suspense fallback={null}>
+                    <EconomyContent />
+                </Suspense>
+            </main>
         </>
     );
 }

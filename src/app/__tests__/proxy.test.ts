@@ -157,9 +157,16 @@ describe('Ticker 케이스 정규화 — 소문자/혼합 케이스 → 대문�
         expect(mockNext).toHaveBeenCalledTimes(1);
     });
 
+    it('/economy는 대문자화 redirect 대상에서 제외된다', () => {
+        proxy(makeRequest(undefined, '/economy'));
+        expect(mockRedirect).not.toHaveBeenCalled();
+        expect(mockNext).toHaveBeenCalledTimes(1);
+    });
+
     it.each([
         '/login',
         '/signup',
+        '/economy',
         '/market',
         '/backtesting',
         '/terms',
