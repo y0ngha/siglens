@@ -8,9 +8,8 @@ import { InfoTooltip } from '@/shared/ui/InfoTooltip';
 import { cn } from '@/shared/lib/cn';
 import {
     AmountRangeTooltip,
+    ChamberColumnTooltip,
     DisclosureLagTooltip,
-    HouseChamberTooltip,
-    SenateChamberTooltip,
 } from './congressTooltips';
 import { CongressTradesEmpty } from './CongressTradesEmpty';
 
@@ -65,7 +64,7 @@ function assetTypeBadge(assetType: string): string {
     const lower = assetType.toLowerCase();
     if (lower.includes('option')) return '옵션';
     if (lower.includes('stock')) return '주식';
-    return assetType; // fallback: render as-is
+    return '기타'; // fallback: 알 수 없는 자산 유형은 한국어 레이블로 통일
 }
 
 interface ChamberBadgeProps {
@@ -74,22 +73,18 @@ interface ChamberBadgeProps {
 
 function ChamberBadge({ chamber }: ChamberBadgeProps) {
     const label = CHAMBER_LABEL[chamber];
-    const tooltipContent =
-        chamber === 'senate' ? SenateChamberTooltip : HouseChamberTooltip;
 
     return (
-        <span className="inline-flex items-center gap-0.5">
-            <span
-                className={cn(
-                    'rounded px-1.5 py-0.5 text-xs font-medium',
-                    chamber === 'senate'
-                        ? 'bg-primary-500/10 text-chart-bullish'
-                        : 'bg-secondary-700 text-secondary-300'
-                )}
-            >
-                {label}
-            </span>
-            <InfoTooltip>{tooltipContent}</InfoTooltip>
+        <span
+            className={cn(
+                'rounded px-1.5 py-0.5 text-xs font-medium',
+                chamber === 'senate'
+                    ? 'bg-primary-500/10 text-chart-bullish'
+                    : 'bg-secondary-700 text-secondary-300'
+            )}
+            aria-label={chamber === 'senate' ? '상원 (Senate)' : '하원 (House)'}
+        >
+            {label}
         </span>
     );
 }
@@ -177,6 +172,9 @@ export function CongressTradesTable({ trades }: CongressTradesTableProps) {
                                 className="px-4 py-3 text-left font-medium whitespace-nowrap"
                             >
                                 구분
+                                <InfoTooltip>
+                                    {ChamberColumnTooltip}
+                                </InfoTooltip>
                             </th>
                             <th
                                 scope="col"

@@ -36,18 +36,19 @@ export async function submitCongressTrendAction(
     symbol: string,
     modelId: SubmitCongressTrendOptions['modelId']
 ): Promise<SubmitCongressTrendActionResult> {
-    if (isE2E()) {
-        const stub = await import('@/shared/api/e2eAnalysisStub');
-        // resilience 스펙이 설정하는 force-error 쿠키가 있으면 일시적 실패를
-        // 결정적으로 주입해 에러 바운더리 → 재시도 → 복구를 검증할 수 있게 한다.
-        const forceError = (await cookies()).get(
-            stub.E2E_FORCE_CONGRESS_ERROR_COOKIE
-        );
-        return forceError
-            ? stub.e2eForcedCongressError()
-            : stub.e2eCachedCongressTrend();
-    }
     try {
+        if (isE2E()) {
+            const stub = await import('@/shared/api/e2eAnalysisStub');
+            // resilience 스펙이 설정하는 force-error 쿠키가 있으면 일시적 실패를
+            // 결정적으로 주입해 에러 바운더리 → 재시도 → 복구를 검증할 수 있게 한다.
+            const forceError = (await cookies()).get(
+                stub.E2E_FORCE_CONGRESS_ERROR_COOKIE
+            );
+            return forceError
+                ? stub.e2eForcedCongressError()
+                : stub.e2eCachedCongressTrend();
+        }
+
         const requestHeaders = await headers();
         const skipEnqueueIfMiss = isBot(requestHeaders);
 

@@ -72,3 +72,15 @@ export const HouseChamberTooltip = (
         <p>임기는 2년이에요.</p>
     </>
 );
+
+/**
+ * 구분(원) 열 헤더 tooltip — 상원·하원 임기를 한 번에 설명한다.
+ *
+ * 상원(Senate) 임기 6년, 하원(House) 임기 2년을 간결하게 비교해요.
+ */
+export const ChamberColumnTooltip = (
+    <>
+        <p>상원(Senate)은 임기 6년, 하원(House)은 임기 2년이에요.</p>
+        <p>임기가 긴 상원의원의 거래는 장기 투자 관점을 반영할 수 있어요.</p>
+    </>
+);

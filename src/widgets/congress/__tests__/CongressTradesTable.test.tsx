@@ -92,6 +92,41 @@ describe('CongressTradesTable', () => {
             }
         });
 
+        it('renders the chamber tooltip in the "구분" column header (not per-row)', () => {
+            const { container } = render(
+                <CongressTradesTable
+                    trades={[BASE_TRADE, { ...BASE_TRADE, chamber: 'house' }]}
+                />
+            );
+
+            // The chamber tooltip lives in the thead; there should be exactly
+            // one InfoTooltip in the 구분 <th> and none in the tbody rows for chamber.
+            const theadTooltips = Array.from(
+                container.querySelectorAll('thead [data-testid="info-tooltip"]')
+            );
+            const chamberThTooltips = Array.from(
+                container.querySelectorAll(
+                    'thead th:first-child [data-testid="info-tooltip"]'
+                )
+            );
+            expect(chamberThTooltips).toHaveLength(1);
+
+            // tbody rows must NOT contain an InfoTooltip for the chamber cell
+            const tbodyRows = Array.from(
+                container.querySelectorAll('tbody tr')
+            );
+            for (const row of tbodyRows) {
+                const firstCell = row.querySelector('td:first-child');
+                const rowTooltips = firstCell?.querySelectorAll(
+                    '[data-testid="info-tooltip"]'
+                );
+                expect(rowTooltips?.length ?? 0).toBe(0);
+            }
+
+            // At least the 구분 column tooltip is in thead (and possibly amount/disclosure too)
+            expect(theadTooltips.length).toBeGreaterThanOrEqual(1);
+        });
+
         it('renders sr-only caption', () => {
             const { container } = render(
                 <CongressTradesTable trades={[BASE_TRADE]} />
@@ -147,6 +182,17 @@ describe('CongressTradesTable', () => {
         it('renders "옵션" badge for assetType="Stock Option"', () => {
             render(<CongressTradesTable trades={[SELL_PARTIAL_TRADE]} />);
             expect(screen.getByText('옵션')).toBeDefined();
+        });
+
+        it('renders "기타" badge for an unknown assetType (e.g. "Cryptocurrency")', () => {
+            const cryptoTrade: CongressTrade = {
+                ...BASE_TRADE,
+                assetType: 'Cryptocurrency',
+            };
+            render(<CongressTradesTable trades={[cryptoTrade]} />);
+            expect(screen.getByText('기타')).toBeDefined();
+            // Raw assetType string must not appear as a badge
+            expect(screen.queryByText('Cryptocurrency')).toBeNull();
         });
     });
 

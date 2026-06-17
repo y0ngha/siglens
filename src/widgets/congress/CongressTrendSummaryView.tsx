@@ -76,7 +76,7 @@ export function CongressTrendSummaryView({
                 </div>
             )}
 
-            {result.riskNoteKo.length > 0 && (
+            {result.riskNoteKo.trim().length > 0 && (
                 <div>
                     <h3 className="mb-2 text-sm font-semibold">참고 사항</h3>
                     <p className="text-secondary-400 text-sm leading-relaxed">
