@@ -24,5 +24,6 @@ export {
     selectAggregateNewsItems,
 } from './lib/newsAnalysisSelection';
 export { buildAnalysisNewsItems } from './lib/buildAnalysisNewsItems';
+export { hashUrlToId, normalizeFmpPublishedDate } from './lib/fmpNewsClient';
 
 // actions are imported from @/entities/news-article/actions

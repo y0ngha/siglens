@@ -150,9 +150,12 @@ function DigestErrorView({ error, onRetry }: DigestErrorViewProps) {
             >
                 시장 AI 다이제스트
             </h2>
-            <p role="alert" className="text-ui-danger text-sm wrap-break-word">
+            <div
+                role="alert"
+                className="text-ui-danger text-sm wrap-break-word"
+            >
                 {error.message}
-            </p>
+            </div>
             <button
                 type="button"
                 onClick={onRetry}
