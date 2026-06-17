@@ -118,9 +118,11 @@ describe('useMarketNewsDigest', () => {
 
     it('waitError from cards waiter surfaces as status: error', async () => {
         // cards waiter polls getMarketNewsCardsAction on a 3s interval; make it
-        // fail MAX_CONSECUTIVE_FAILURES (3) times so waitError gets set.
-        const cardError = new Error('DB unavailable');
-        mockGetMarketNewsCardsAction.mockRejectedValue(cardError);
+        // return ok: false MAX_CONSECUTIVE_FAILURES (3) times so waitError gets set.
+        mockGetMarketNewsCardsAction.mockResolvedValue({
+            ok: false,
+            error: 'DB unavailable',
+        });
         // Pass hasEnrichedNews=false so the waiter actually starts polling.
         vi.useFakeTimers();
 

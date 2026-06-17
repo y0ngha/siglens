@@ -25,11 +25,13 @@ interface WaitForMarketNewsCardsResult {
     waitError: Error | null;
 }
 
+interface WaitState {
+    consecutiveFailures: number;
+}
+
 interface WaitForMarketNewsCardsContext {
     category: NewsFeedCategory;
-    state: {
-        consecutiveFailures: number;
-    };
+    state: WaitState;
     setIsReady: (next: boolean) => void;
     setWaitError: (next: Error | null) => void;
     clearInterval: () => void;
@@ -39,24 +41,22 @@ interface WaitForMarketNewsCardsContext {
 async function waitForMarketNewsCardsStep(
     ctx: WaitForMarketNewsCardsContext
 ): Promise<'continue' | 'stop'> {
-    try {
-        const fresh = await getMarketNewsCardsAction(ctx.category);
-        ctx.state.consecutiveFailures = 0;
-        if (fresh.some(item => item.sentiment !== null)) {
-            ctx.setIsReady(true);
-            ctx.clearInterval();
-            return 'stop';
-        }
-    } catch (err) {
+    const result = await getMarketNewsCardsAction(ctx.category);
+    if (!result.ok) {
         ctx.state.consecutiveFailures += 1;
-        console.error('[useWaitForMarketNewsCards] poll failed:', err);
+        console.error('[useWaitForMarketNewsCards] poll failed:', result.error);
         if (ctx.state.consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
-            ctx.setWaitError(
-                err instanceof Error ? err : new Error(String(err))
-            );
+            ctx.setWaitError(new Error(result.error));
             ctx.clearInterval();
             return 'stop';
         }
+        return 'continue';
+    }
+    ctx.state.consecutiveFailures = 0;
+    if (result.items.some(item => item.sentiment !== null)) {
+        ctx.setIsReady(true);
+        ctx.clearInterval();
+        return 'stop';
     }
 
     return 'continue';

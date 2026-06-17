@@ -55,9 +55,11 @@ import { getMarketNewsCardsAction } from '../actions/getMarketNewsCardsAction';
 
 describe('getMarketNewsCardsAction은', () => {
     it('카테고리에 해당하는 매핑된 카드를 반환한다(tickers 포함)', async () => {
-        const cards = await getMarketNewsCardsAction('crypto');
-        expect(cards).toHaveLength(1);
-        const card = cards[0]!;
+        const result = await getMarketNewsCardsAction('crypto');
+        expect(result.ok).toBe(true);
+        if (!result.ok) throw new Error('expected ok');
+        expect(result.items).toHaveLength(1);
+        const card = result.items[0]!;
         // Core NewsDisplayItem fields
         expect(card.id).toBe('m1');
         expect(card.titleKo).toBe('BTC 상승');
@@ -67,20 +69,23 @@ describe('getMarketNewsCardsAction은', () => {
         expect(card.tickers).toEqual(['BTCUSD']);
     });
 
-    it('빈 버킷이면 빈 배열을 반환한다', async () => {
+    it('빈 버킷이면 ok: true + 빈 items 배열을 반환한다', async () => {
         const { getMarketNewsList } = await import('../api');
         vi.mocked(getMarketNewsList).mockResolvedValueOnce([]);
-        const cards = await getMarketNewsCardsAction('forex');
-        expect(cards).toEqual([]);
+        const result = await getMarketNewsCardsAction('forex');
+        expect(result.ok).toBe(true);
+        if (!result.ok) throw new Error('expected ok');
+        expect(result.items).toEqual([]);
     });
 
-    it('예외 발생 시 에러를 그대로 throw한다', async () => {
+    it('예외 발생 시 ok: false + error: "db error"를 반환한다', async () => {
         const { getMarketNewsList } = await import('../api');
         vi.mocked(getMarketNewsList).mockRejectedValueOnce(
             new Error('db error')
         );
-        await expect(getMarketNewsCardsAction('crypto')).rejects.toThrow(
-            'db error'
-        );
+        const result = await getMarketNewsCardsAction('crypto');
+        expect(result.ok).toBe(false);
+        if (result.ok) throw new Error('expected not ok');
+        expect(result.error).toBe('db error');
     });
 });

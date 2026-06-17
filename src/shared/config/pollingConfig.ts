@@ -14,11 +14,9 @@ export const AUGMENT_AND_OVERALL_POLL_INTERVAL_MS = 5000;
 /** 차트 페이지 메인 분석 — 워커가 다단계 작업을 수행해 길게 잡는다. */
 export const CHART_ANALYSIS_POLL_INTERVAL_MS = 30000;
 
-// ---------------------------------------------------------------------------
 // Card polling — snapshot fetch while waiting for LLM enrichment.
 // Separate from analysis poll intervals above: card polling is frequent (3 s)
 // because it checks incremental DB writes, not a long-running worker job.
-// ---------------------------------------------------------------------------
 
 /** Card polling — interval between snapshot fetches while waiting for LLM enrichment. */
 export const NEWS_CARD_POLL_INTERVAL_MS = 3_000;

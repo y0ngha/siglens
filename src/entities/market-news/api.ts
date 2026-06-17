@@ -217,7 +217,7 @@ const NEWS_IMPACT_RECORD: Record<NewsImpact, true> = {
     negligible: true,
 };
 
-function isNewsSentiment(value: string): value is NewsSentiment {
+function validateNewsSentiment(value: string): value is NewsSentiment {
     return value in NEWS_SENTIMENT_RECORD;
 }
 function isNewsCategory(value: string): value is NewsCategory {
@@ -229,7 +229,7 @@ function isNewsImpact(value: string): value is NewsImpact {
 
 function toNewsSentiment(value: unknown): NewsSentiment | null {
     if (typeof value !== 'string') return null;
-    return isNewsSentiment(value) ? value : null;
+    return validateNewsSentiment(value) ? value : null;
 }
 function toNewsCategory(value: unknown): NewsCategory | null {
     if (typeof value !== 'string') return null;

@@ -17,13 +17,15 @@ function hasPendingAnalysis(items: MarketNewsCardItem[]): boolean {
     );
 }
 
+interface PollState {
+    pollCount: number;
+    consecutiveFailures: number;
+    startTime: number;
+}
+
 interface PollMarketNewsCardsContext {
     category: NewsFeedCategory;
-    state: {
-        pollCount: number;
-        consecutiveFailures: number;
-        startTime: number;
-    };
+    state: PollState;
     setItems: (next: MarketNewsCardItem[]) => void;
     setIsPolling: (next: boolean) => void;
     setPollError: (next: Error | null) => void;
@@ -40,37 +42,32 @@ async function pollMarketNewsCardsStep(
         return 'stop';
     }
 
-    try {
-        const fresh = await getMarketNewsCardsAction(ctx.category);
-        ctx.state.pollCount += 1;
-        ctx.state.consecutiveFailures = 0;
-        ctx.setItems(fresh);
-
-        if (
-            fresh.length === 0 &&
-            ctx.state.pollCount >= EMPTY_SNAPSHOT_MAX_POLLS
-        ) {
-            ctx.setIsPolling(false);
-            ctx.clearInterval();
-            return 'stop';
-        } else if (fresh.length > 0 && !hasPendingAnalysis(fresh)) {
-            ctx.setIsPolling(false);
-            ctx.clearInterval();
-            return 'stop';
-        }
-    } catch (err) {
-        ctx.state.pollCount += 1;
+    const result = await getMarketNewsCardsAction(ctx.category);
+    if (!result.ok) {
         ctx.state.consecutiveFailures += 1;
-        console.error('[useMarketNewsCardPolling] poll failed:', err);
+        console.error('[useMarketNewsCardPolling] poll failed:', result.error);
 
         if (ctx.state.consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
-            ctx.setPollError(
-                err instanceof Error ? err : new Error(String(err))
-            );
+            ctx.setPollError(new Error(result.error));
             ctx.setIsPolling(false);
             ctx.clearInterval();
             return 'stop';
         }
+        return 'continue';
+    }
+    ctx.state.consecutiveFailures = 0;
+    const fresh = result.items;
+    ctx.state.pollCount += 1;
+    ctx.setItems(fresh);
+
+    if (fresh.length === 0 && ctx.state.pollCount >= EMPTY_SNAPSHOT_MAX_POLLS) {
+        ctx.setIsPolling(false);
+        ctx.clearInterval();
+        return 'stop';
+    } else if (fresh.length > 0 && !hasPendingAnalysis(fresh)) {
+        ctx.setIsPolling(false);
+        ctx.clearInterval();
+        return 'stop';
     }
 
     return 'continue';

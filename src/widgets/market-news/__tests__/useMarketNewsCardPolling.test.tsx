@@ -68,8 +68,8 @@ describe('useMarketNewsCardPolling', () => {
     it('(a) 모든 카드가 enriched 상태가 되면 폴링을 멈춘다', async () => {
         // First poll returns pending, second returns enriched.
         mockGetMarketNewsCardsAction
-            .mockResolvedValueOnce([PENDING_ITEM])
-            .mockResolvedValue([ENRICHED_ITEM]);
+            .mockResolvedValueOnce({ ok: true, items: [PENDING_ITEM] })
+            .mockResolvedValue({ ok: true, items: [ENRICHED_ITEM] });
 
         const { result } = renderHook(() =>
             useMarketNewsCardPolling('crypto', [PENDING_ITEM])
@@ -91,8 +91,10 @@ describe('useMarketNewsCardPolling', () => {
     });
 
     it('(b) 연속 실패 3회 후 폴링을 멈추고 pollError를 노출한다', async () => {
-        const dbError = new Error('db unavailable');
-        mockGetMarketNewsCardsAction.mockRejectedValue(dbError);
+        mockGetMarketNewsCardsAction.mockResolvedValue({
+            ok: false,
+            error: 'db unavailable',
+        });
         const errorSpy = vi
             .spyOn(console, 'error')
             .mockImplementation(() => {});
@@ -104,7 +106,8 @@ describe('useMarketNewsCardPolling', () => {
         await advancePolls(MAX_CONSECUTIVE_FAILURES);
 
         expect(result.current.isPolling).toBe(false);
-        expect(result.current.pollError).toBe(dbError);
+        expect(result.current.pollError).toBeInstanceOf(Error);
+        expect(result.current.pollError?.message).toBe('db unavailable');
         expect(mockGetMarketNewsCardsAction).toHaveBeenCalledTimes(
             MAX_CONSECUTIVE_FAILURES
         );
@@ -119,7 +122,7 @@ describe('useMarketNewsCardPolling', () => {
     });
 
     it('빈 스냅샷 연속 20회 후 폴링을 멈춘다', async () => {
-        mockGetMarketNewsCardsAction.mockResolvedValue([]);
+        mockGetMarketNewsCardsAction.mockResolvedValue({ ok: true, items: [] });
 
         const { result } = renderHook(() =>
             useMarketNewsCardPolling('general', [])
@@ -135,7 +138,10 @@ describe('useMarketNewsCardPolling', () => {
     });
 
     it('카테고리 변경 시 상태를 초기화하고 새 카테고리로 폴링한다', async () => {
-        mockGetMarketNewsCardsAction.mockResolvedValue([ENRICHED_ITEM]);
+        mockGetMarketNewsCardsAction.mockResolvedValue({
+            ok: true,
+            items: [ENRICHED_ITEM],
+        });
 
         type Props = { category: 'crypto' | 'stock' };
         const { result, rerender } = renderHook(

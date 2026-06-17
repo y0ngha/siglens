@@ -154,6 +154,7 @@ export async function ensureMarketNewsCardsAnalyzedAction(
         if (unanalyzed.length === 0) return;
 
         let analyzeFailures = 0;
+        // Sequential: avoid overwhelming the LLM worker with concurrent per-item submissions.
         for (const item of unanalyzed) {
             try {
                 await analyzeAndPersist(item, repo);
