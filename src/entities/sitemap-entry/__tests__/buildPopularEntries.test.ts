@@ -30,6 +30,10 @@ describe('buildPopularEntries', () => {
                 `${base}/congress`,
             ])
         );
+
+        const congressEntry = entries.find(e => e.url === `${base}/congress`);
+        expect(congressEntry?.changeFrequency).toBe('weekly');
+        expect(congressEntry?.priority).toBe(0.75);
     });
 
     it('옵션 URL은 generated static options list와 정확히 일치한다', () => {
