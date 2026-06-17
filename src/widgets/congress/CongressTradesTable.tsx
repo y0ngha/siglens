@@ -17,14 +17,18 @@ import { CongressTradesEmpty } from './CongressTradesEmpty';
 /** Max rows rendered in a single SSR pass (newest-first). */
 const MAX_ROWS = 50;
 
-const SENATE_EFD_SEARCH_URL = 'https://efdsearch.senate.gov/search/';
+export const SENATE_EFD_SEARCH_URL = 'https://efdsearch.senate.gov/search/';
+
+/** Number of PTR UUID characters shown as a prefix hint in the disclosure cell. */
+export const PTR_ID_PREFIX_LENGTH = 8;
 
 /**
- * Senate efdsearch deep links return 403/404 outside the disclaimer-accepted
- * session. Route to the search landing page (where the disclaimer flow happens)
- * and surface the PTR ID separately so users can search after accepting terms.
+ * Routes a disclosure href based on chamber.
  *
- * House PDF links (disclosures-clerk.house.gov) are static and stay direct.
+ * Senate efdsearch deep links return 403/404 outside the disclaimer-accepted
+ * session, so senate links always point to the search landing page instead of
+ * the original deep link. House PDF links (disclosures-clerk.house.gov) are
+ * static and stay direct.
  */
 function getDisclosureHref(chamber: Chamber, link: string): string {
     return chamber === 'senate' ? SENATE_EFD_SEARCH_URL : link;
@@ -35,9 +39,12 @@ function getDisclosureHref(chamber: Chamber, link: string): string {
  * `https://efdsearch.senate.gov/search/view/ptr/<UUID>/`.
  * Returns null if the URL doesn't match the expected shape (defensive fallback —
  * FMP may shape change).
+ *
+ * The trailing `$` anchor is intentionally omitted so the regex stays robust
+ * to future query strings or fragments appended to the URL.
  */
 function extractSenatePtrId(link: string): string | null {
-    const match = link.match(/\/view\/ptr\/([0-9a-f-]+)\/?$/i);
+    const match = link.match(/\/view\/ptr\/([0-9a-f-]+)/i);
     return match ? match[1] : null;
 }
 
@@ -170,6 +177,14 @@ interface DisclosureCellProps {
     transactionDate: string;
 }
 
+/**
+ * Renders the disclosure link cell for a trade row.
+ *
+ * For senate rows, the href routes to the efdsearch landing page (see
+ * `getDisclosureHref`) and the PTR UUID prefix is displayed separately so
+ * users can copy-paste it into the search form after accepting the disclaimer.
+ * House rows link directly to the PDF document — no PTR hint needed.
+ */
 function DisclosureCell({
     chamber,
     link,
@@ -194,7 +209,7 @@ function DisclosureCell({
             {isSenate && <InfoTooltip>{SenateDisclosureTooltip}</InfoTooltip>}
             {isSenate && ptrId && (
                 <span className="text-secondary-500 block font-mono text-[10px] whitespace-nowrap">
-                    PTR {ptrId.slice(0, 8)}…
+                    PTR {ptrId.slice(0, PTR_ID_PREFIX_LENGTH)}…
                 </span>
             )}
         </div>

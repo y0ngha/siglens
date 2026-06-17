@@ -2,7 +2,11 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import type { CongressTrade } from '@y0ngha/siglens-core';
-import { CongressTradesTable } from '../CongressTradesTable';
+import {
+    CongressTradesTable,
+    SENATE_EFD_SEARCH_URL,
+    PTR_ID_PREFIX_LENGTH,
+} from '../CongressTradesTable';
 
 // InfoTooltip uses createPortal + DOM refs. Stub it to a plain <button> so
 // RTL renders without a real DOM and without react-dom/server warnings.
@@ -14,7 +18,6 @@ vi.mock('@/shared/ui/InfoTooltip', () => ({
 
 const SENATE_PTR_LINK =
     'https://efdsearch.senate.gov/search/view/ptr/029f67f3-1234-5678-abcd-ef0123456789/';
-const SENATE_EFD_SEARCH_URL = 'https://efdsearch.senate.gov/search/';
 const HOUSE_PDF_LINK = 'https://disclosures-clerk.house.gov/ptr/example.pdf';
 
 const BASE_TRADE: CongressTrade = {
@@ -145,17 +148,17 @@ describe('CongressTradesTable', () => {
     describe('sample trade row', () => {
         it('renders office text', () => {
             render(<CongressTradesTable trades={[BASE_TRADE]} />);
-            expect(screen.getByText('Jane Smith')).toBeDefined();
+            expect(screen.getByText('Jane Smith')).toBeInTheDocument();
         });
 
         it('renders amount.label', () => {
             render(<CongressTradesTable trades={[BASE_TRADE]} />);
-            expect(screen.getByText('$1,001 - $15,000')).toBeDefined();
+            expect(screen.getByText('$1,001 - $15,000')).toBeInTheDocument();
         });
 
         it('renders transactionDate', () => {
             render(<CongressTradesTable trades={[BASE_TRADE]} />);
-            expect(screen.getByText('2024-01-15')).toBeDefined();
+            expect(screen.getByText('2024-01-15')).toBeInTheDocument();
         });
 
         it('renders a disclosure link with target=_blank and rel including noopener noreferrer', () => {
@@ -173,38 +176,45 @@ describe('CongressTradesTable', () => {
             expect(link.getAttribute('href')).toBe(SENATE_EFD_SEARCH_URL);
         });
 
-        it('senate row: PTR ID prefix (first 8 chars) is shown', () => {
+        it('senate row: PTR ID prefix is shown, length tied to PTR_ID_PREFIX_LENGTH', () => {
             render(<CongressTradesTable trades={[BASE_TRADE]} />);
-            expect(screen.getByText(/PTR 029f67f3/)).toBeDefined();
+            const expectedPtrPrefix = SENATE_PTR_LINK.match(
+                /\/ptr\/([^/]+)/
+            )?.[1]?.slice(0, PTR_ID_PREFIX_LENGTH);
+            expect(
+                screen.getByText(new RegExp(`PTR ${expectedPtrPrefix}`))
+            ).toBeInTheDocument();
         });
 
         it('senate row: link text is "공시 검색"', () => {
             render(<CongressTradesTable trades={[BASE_TRADE]} />);
             expect(
                 screen.getByRole('link', { name: /공시 검색/ })
-            ).toBeDefined();
+            ).toBeInTheDocument();
         });
 
         it('renders district as sub-label under office', () => {
             render(<CongressTradesTable trades={[BASE_TRADE]} />);
-            expect(screen.getByText('CA')).toBeDefined();
+            expect(screen.getByText('CA')).toBeInTheDocument();
         });
 
         it('renders asset description text', () => {
             render(<CongressTradesTable trades={[BASE_TRADE]} />);
-            expect(screen.getByText('Apple Inc. Common Stock')).toBeDefined();
+            expect(
+                screen.getByText('Apple Inc. Common Stock')
+            ).toBeInTheDocument();
         });
     });
 
     describe('asset type badge', () => {
         it('renders "주식" badge for assetType="Stock"', () => {
             render(<CongressTradesTable trades={[BASE_TRADE]} />);
-            expect(screen.getByText('주식')).toBeDefined();
+            expect(screen.getByText('주식')).toBeInTheDocument();
         });
 
         it('renders "옵션" badge for assetType="Stock Option"', () => {
             render(<CongressTradesTable trades={[SELL_PARTIAL_TRADE]} />);
-            expect(screen.getByText('옵션')).toBeDefined();
+            expect(screen.getByText('옵션')).toBeInTheDocument();
         });
 
         it('renders "기타" badge for an unknown assetType (e.g. "Cryptocurrency")', () => {
@@ -213,7 +223,7 @@ describe('CongressTradesTable', () => {
                 assetType: 'Cryptocurrency',
             };
             render(<CongressTradesTable trades={[cryptoTrade]} />);
-            expect(screen.getByText('기타')).toBeDefined();
+            expect(screen.getByText('기타')).toBeInTheDocument();
             // Raw assetType string must not appear as a badge
             expect(screen.queryByText('Cryptocurrency')).toBeNull();
         });
@@ -242,7 +252,7 @@ describe('CongressTradesTable', () => {
     describe('empty state', () => {
         it('renders "거래 내역 없음" text when trades is empty', () => {
             render(<CongressTradesTable trades={[]} />);
-            expect(screen.getByText('거래 내역 없음')).toBeDefined();
+            expect(screen.getByText('거래 내역 없음')).toBeInTheDocument();
         });
 
         it('does NOT render a table element when trades is empty', () => {
@@ -254,12 +264,12 @@ describe('CongressTradesTable', () => {
     describe('owner badge', () => {
         it('renders "본인" badge for owner="self"', () => {
             render(<CongressTradesTable trades={[BASE_TRADE]} />);
-            expect(screen.getByText('본인')).toBeDefined();
+            expect(screen.getByText('본인')).toBeInTheDocument();
         });
 
         it('renders "배우자" badge for owner="spouse"', () => {
             render(<CongressTradesTable trades={[SELL_PARTIAL_TRADE]} />);
-            expect(screen.getByText('배우자')).toBeDefined();
+            expect(screen.getByText('배우자')).toBeInTheDocument();
         });
 
         it('does NOT render a badge for owner="unknown"', () => {
@@ -278,7 +288,7 @@ describe('CongressTradesTable', () => {
                 owner: 'joint',
             };
             render(<CongressTradesTable trades={[jointTrade]} />);
-            expect(screen.getByText('공동')).toBeDefined();
+            expect(screen.getByText('공동')).toBeInTheDocument();
         });
 
         it('renders "자녀" for owner="child"', () => {
@@ -287,7 +297,7 @@ describe('CongressTradesTable', () => {
                 owner: 'child',
             };
             render(<CongressTradesTable trades={[childTrade]} />);
-            expect(screen.getByText('자녀')).toBeDefined();
+            expect(screen.getByText('자녀')).toBeInTheDocument();
         });
     });
 
@@ -304,7 +314,7 @@ describe('CongressTradesTable', () => {
                 screen.getByRole('link', {
                     name: '하원 Bob Jones 2024-02-10 공시 문서',
                 })
-            ).toBeDefined();
+            ).toBeInTheDocument();
         });
 
         it('house row: no PTR ID prefix span shown', () => {
@@ -323,6 +333,22 @@ describe('CongressTradesTable', () => {
             // Tooltip mentions "PTR ID" but the 8-char prefix span (e.g. "PTR 029f67f3…")
             // must not appear when the URL is unparseable.
             expect(screen.queryByText(/^PTR [0-9a-f]/)).toBeNull();
+        });
+
+        it('extracts PTR ID even when URL has query parameters (regex robustness guard)', () => {
+            const linkWithQuery: CongressTrade = {
+                ...BASE_TRADE,
+                link: 'https://efdsearch.senate.gov/search/view/ptr/029f67f3-1234-5678-abcd-ef0123456789/?utm_source=fmp',
+            };
+            render(<CongressTradesTable trades={[linkWithQuery]} />);
+            const expectedPtrPrefix =
+                '029f67f3-1234-5678-abcd-ef0123456789'.slice(
+                    0,
+                    PTR_ID_PREFIX_LENGTH
+                );
+            expect(
+                screen.getByText(new RegExp(`PTR ${expectedPtrPrefix}`))
+            ).toBeInTheDocument();
         });
     });
 
