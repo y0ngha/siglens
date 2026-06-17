@@ -46,10 +46,36 @@ describe('EconomicCalendar', () => {
         expect(screen.getByText(/이전 229,000건/)).toBeInTheDocument();
     });
 
-    it('time 요소에 ISO-8601 dateTime 속성', () => {
+    it('time 요소에 ISO-8601 dateTime 속성 (EDT offset 포함, 6월은 -04:00)', () => {
         const { container } = render(<EconomicCalendar events={[EVENT]} />);
         const time = container.querySelector('time');
-        expect(time?.getAttribute('dateTime')).toBe('2026-06-17T14:00:00');
+        expect(time?.getAttribute('dateTime')).toBe(
+            '2026-06-17T14:00:00-04:00'
+        );
+    });
+
+    it('EDT 구간(6월) 이벤트 → dateTime에 -04:00 offset', () => {
+        const { container } = render(
+            <EconomicCalendar
+                events={[{ ...EVENT, date: '2026-06-17 14:00:00' }]}
+            />
+        );
+        const time = container.querySelector('time');
+        expect(time?.getAttribute('dateTime')).toBe(
+            '2026-06-17T14:00:00-04:00'
+        );
+    });
+
+    it('EST 구간(12월) 이벤트 → dateTime에 -05:00 offset', () => {
+        const { container } = render(
+            <EconomicCalendar
+                events={[{ ...EVENT, date: '2026-12-10 14:00:00' }]}
+            />
+        );
+        const time = container.querySelector('time');
+        expect(time?.getAttribute('dateTime')).toBe(
+            '2026-12-10T14:00:00-05:00'
+        );
     });
 
     it('impact 뱃지 한국어 변환 (High → 높음)', () => {

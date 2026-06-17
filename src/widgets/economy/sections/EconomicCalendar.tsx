@@ -44,10 +44,14 @@ export function EconomicCalendar({ events }: EconomicCalendarProps) {
             ) : (
                 <ul className="border-secondary-700 divide-secondary-800 divide-y rounded-xl border">
                     {events.map(e => (
-                        // FMP economic-calendar에서 동일 datetime·동일 event 조합은
-                        // 통상 발생하지 않으나 정량 검증된 불변은 아니다. 만약 중복이
-                        // 관측되면 core normalize 단계에 dedup 패스 추가를 검토한다.
-                        <CalendarRow key={`${e.date}:${e.event}`} event={e} />
+                        // `actual`을 키에 포함해 같은 datetime·event라도 결과 값이
+                        // 다르면(예: 실시간 업데이트 전후 두 레코드가 공존) 충돌이 없다.
+                        // 여전히 정량 검증된 unique 불변은 아니므로 core normalize 단계에
+                        // dedup 패스가 추가되면 이 키는 단순화할 수 있다.
+                        <CalendarRow
+                            key={`${e.date}:${e.event}:${e.actual ?? ''}`}
+                            event={e}
+                        />
                     ))}
                 </ul>
             )}
@@ -87,12 +91,55 @@ function CalendarRow({ event }: CalendarRowProps) {
 }
 
 /**
+ * ET(Eastern Time) UTC 오프셋을 반환한다.
+ *
+ * DST 전환 규칙(IANA America/New_York):
+ * - EDT: 3월 두 번째 일요일 02:00 ~ 11월 첫 번째 일요일 02:00 → UTC-4
+ * - EST: 그 외 구간 → UTC-5
+ *
+ * `Intl.DateTimeFormat`을 쓰지 않고 ECMAScript 규칙으로 직접 계산해 서버사이드에서도
+ * 일관되게 동작한다.
+ */
+function getEtOffset(date: Date): '-04:00' | '-05:00' {
+    const year = date.getUTCFullYear();
+
+    /**
+     * n번째 일요일(1-indexed)의 UTC ms를 반환한다.
+     * DST 전환은 지역 시각 02:00에 발생하므로 UTC로는 +5h(EST 겨울) 또는 +4h(EDT 여름)
+     * 을 더해야 한다. 전환 방향(EST→EDT, EDT→EST)별 보정을 위해 각 경계에서의
+     * 기준 offset을 사용한다.
+     *
+     * 단순화: 두 전환 모두 UTC 07:00 기준으로 판단한다 — EST 02:00 = UTC 07:00.
+     */
+    function nthSundayUtcMs(
+        month: number,
+        nth: number,
+        baseYear: number
+    ): number {
+        // month는 0-indexed
+        const firstDay = new Date(Date.UTC(baseYear, month, 1));
+        const firstSunday = (7 - firstDay.getUTCDay()) % 7;
+        const day = 1 + firstSunday + (nth - 1) * 7;
+        return Date.UTC(baseYear, month, day, 7, 0, 0);
+    }
+
+    const edtStart = nthSundayUtcMs(2, 2, year); // 3월 두 번째 일요일
+    const edtEnd = nthSundayUtcMs(10, 1, year); // 11월 첫 번째 일요일
+    const ts = date.getTime();
+
+    return ts >= edtStart && ts < edtEnd ? '-04:00' : '-05:00';
+}
+
+/**
  * FMP가 보내는 'YYYY-MM-DD HH:mm:ss'를 HTML `<time dateTime>`이 인식하는 ISO-8601
- * 형식으로 정규화한다. 원본은 ET 기준 시각이지만, 표준 표기로만 변환해
- * (timezone offset 부여는 core 정규화 영역) 크롤러·screen reader가 파싱할 수 있게 한다.
+ * 형식으로 정규화한다. FMP 원본은 ET 기준 시각이므로 DST를 고려한 ET offset을 부여해
+ * 크롤러·screen reader가 정확한 절대 시각을 파싱할 수 있게 한다.
  */
 function toIsoDateTime(date: string): string {
-    return date.replace(' ', 'T');
+    const iso = date.replace(' ', 'T');
+    const parsed = new Date(`${iso}Z`); // UTC로 일시 파싱해 offset 계산에 사용
+    const offset = getEtOffset(parsed);
+    return `${iso}${offset}`;
 }
 
 function formatNum(v: number | null, unit: string): string {

@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { FakeEconomyProvider } from '@/shared/api/economy/FakeEconomyProvider';
+import { INDICATOR_TREND_LENGTH } from '@/shared/config/economyIndicators';
 
 /**
  * 결정적 fixture 검증 — FakeEconomyProvider의 SEED와 동일 값으로 하드코딩한다.
@@ -95,5 +96,34 @@ describe('FakeEconomyProvider', () => {
         const dates = series.trend.map(p => p.date);
         const sorted = dates.toSorted((a, b) => (a < b ? 1 : -1));
         expect(dates).toEqual(sorted);
+    });
+
+    it('trend 배열이 INDICATOR_TREND_LENGTH보다 길면 잘라낸다 — 모든 시드 검증', async () => {
+        /**
+         * FakeEconomyProvider의 `buildSeries`는 `points.slice(0, INDICATOR_TREND_LENGTH)`로
+         * 항상 잘라낸다. 현재 시드는 5개 값이라 슬라이스 자체는 동작하지 않지만,
+         * 이 테스트는 구현 경계를 문서화하고 미래에 시드가 12개 이상으로 늘어났을 때
+         * 회귀를 잡는다.
+         *
+         * 모든 9개 지표를 순회해 trend.length <= INDICATOR_TREND_LENGTH 불변을 검증한다.
+         */
+        const indicatorNames = [
+            'federalFunds',
+            'inflationRate',
+            'CPI',
+            'GDP',
+            'industrialProductionTotalIndex',
+            'smoothedUSRecessionProbabilities',
+            'unemploymentRate',
+            'totalNonfarmPayroll',
+            'initialClaims',
+        ];
+
+        for (const name of indicatorNames) {
+            const series = await provider.getIndicator(name);
+            expect(series.trend.length).toBeLessThanOrEqual(
+                INDICATOR_TREND_LENGTH
+            );
+        }
     });
 });

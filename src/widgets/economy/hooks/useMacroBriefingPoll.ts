@@ -21,7 +21,7 @@ export function useMacroBriefingPoll(jobId: string): PollMacroBriefingResult {
     const { data } = useQuery({
         queryKey: QUERY_KEYS.macroBriefingPoll(jobId),
         queryFn: () => pollMacroBriefingAction(jobId),
-        enabled: isHydrated,
+        enabled: isHydrated && jobId !== '',
         refetchInterval: query => {
             const status = query.state.data?.status;
             return status === 'done' || status === 'error'

@@ -42,7 +42,7 @@ describe('useMacroBriefing', () => {
         mockUseHydrated.mockReturnValue(true);
     });
 
-    it('peekSeed가 있으면 hydrate 이전엔 cached seedInput으로 노출', async () => {
+    it('peekSeed가 있으면 hydrate 이전엔 cached seedInput으로 노출 (generatedAt=null)', async () => {
         mockUseHydrated.mockReturnValueOnce(false);
         const { result } = renderHook(() => useMacroBriefing(PEEK), {
             wrapper: makeWrapper(),
@@ -50,7 +50,7 @@ describe('useMacroBriefing', () => {
         expect(result.current.input).toEqual({
             status: 'cached',
             briefing: PEEK,
-            generatedAt: '',
+            generatedAt: null,
         });
     });
 

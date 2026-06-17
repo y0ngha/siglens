@@ -26,16 +26,25 @@ const CACHE_KEY = `economy:snapshot:${ECONOMY_CONFIG_FINGERPRINT}`;
 /** 캘린더 윈도(다가오는 ~2주) 일수 — 매직넘버 상수화(MISTAKES §15). */
 const CALENDAR_WINDOW_DAYS = 14;
 
-/** 'YYYY-MM-DD' prefix 길이 — `isoDate` slice 끝(매직넘버 상수화). */
-const ISO_DATE_LENGTH = 10;
-
 /** core EconomicIndicatorSeries의 빈 placeholder — Provider 실패 시 fallback. */
 function emptyIndicator(name: string): EconomicIndicatorSeries {
     return { name, latest: null, previous: null, trend: [] };
 }
 
+/**
+ * ET(America/New_York) 기준 날짜를 'YYYY-MM-DD' 형식으로 반환한다.
+ *
+ * UTC `toISOString().slice(0, 10)` 대신 ET 로컬 날짜를 사용하는 이유:
+ * FMP economic-calendar 일정과 국채·지표 데이터가 ET 기준으로 날짜가 매겨지므로,
+ * 서버가 UTC+0에서 00:00~04:59 사이에 캘린더 윈도를 계산하면 "오늘"이 ET 기준으로는
+ * 전날이 되어 1일 빨리 시작하는 윈도 오차가 생긴다.
+ *
+ * `Intl.DateTimeFormat`의 `en-CA` locale은 'YYYY-MM-DD' 형식을 보장한다.
+ */
 function isoDate(d: Date): string {
-    return d.toISOString().slice(0, ISO_DATE_LENGTH);
+    return new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'America/New_York',
+    }).format(d);
 }
 
 /**

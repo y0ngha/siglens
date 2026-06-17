@@ -22,6 +22,28 @@ import { InfoTooltip } from '@/shared/ui/InfoTooltip';
  */
 const TREASURY_YIELD_PRECISION = 2;
 
+/**
+ * 만기별 국채 수익률 카드의 표시 메타.
+ * 인라인 삼항 대신 레코드로 추출해 새 만기 추가 시 단일 위치만 수정한다.
+ */
+const TREASURY_CARD_META: Record<
+    'year2' | 'year10',
+    { label: string; tooltip: string; unit: string }
+> = {
+    year2: {
+        label: '2년물 국채',
+        tooltip:
+            '미국 정부가 발행하는 2년 만기 국채의 수익률이에요. 단기 시장금리의 기준이에요.',
+        unit: '%',
+    },
+    year10: {
+        label: '10년물 국채',
+        tooltip:
+            '미국 정부가 발행하는 10년 만기 국채의 수익률이에요. 장기 시장금리와 모기지 금리의 기준이에요.',
+        unit: '%',
+    },
+};
+
 interface EconomicIndicatorGridProps {
     snapshot: EconomySnapshot;
 }
@@ -175,11 +197,7 @@ function IndicatorCard({ meta, series }: IndicatorCardProps) {
 function TreasuryYieldCard({ snapshot, maturity }: TreasuryYieldCardProps) {
     const value = snapshot[maturity];
     if (value === null) return null;
-    const label = maturity === 'year2' ? '2년물 국채' : '10년물 국채';
-    const tooltip =
-        maturity === 'year2'
-            ? '미국 정부가 발행하는 2년 만기 국채의 수익률이에요. 단기 시장금리의 기준이에요.'
-            : '미국 정부가 발행하는 10년 만기 국채의 수익률이에요. 장기 시장금리와 모기지 금리의 기준이에요.';
+    const { label, tooltip, unit } = TREASURY_CARD_META[maturity];
     return (
         <article className="border-secondary-700 bg-secondary-800 rounded-xl border p-4">
             <header className="text-secondary-300 mb-2 flex items-center gap-1 text-sm">
@@ -188,7 +206,7 @@ function TreasuryYieldCard({ snapshot, maturity }: TreasuryYieldCardProps) {
             </header>
             <div className="text-secondary-100 text-2xl font-semibold">
                 {value.toFixed(TREASURY_YIELD_PRECISION)}
-                <span className="text-secondary-400 ml-1 text-sm">%</span>
+                <span className="text-secondary-400 ml-1 text-sm">{unit}</span>
             </div>
             <p className="text-secondary-500 mt-1 text-xs">{snapshot.date}</p>
         </article>

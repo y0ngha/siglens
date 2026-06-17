@@ -44,6 +44,16 @@ describe('useMacroBriefingPoll', () => {
         expect(mockPoll).not.toHaveBeenCalled();
     });
 
+    it('jobId가 빈 문자열이면 쿼리가 비활성화되어 poll이 호출되지 않음', () => {
+        mockUseHydrated.mockReturnValue(true);
+        const { result } = renderHook(() => useMacroBriefingPoll(''), {
+            wrapper: makeWrapper(),
+        });
+        // 쿼리 disabled → data 없음 → processing 반환
+        expect(result.current).toEqual({ status: 'processing' });
+        expect(mockPoll).not.toHaveBeenCalled();
+    });
+
     it('action processing → processing', async () => {
         mockPoll.mockResolvedValue({ status: 'processing' });
         const { result } = renderHook(() => useMacroBriefingPoll('j'), {
@@ -86,5 +96,28 @@ describe('useMacroBriefingPoll', () => {
                 expect(result.current.error).toBe('worker boom');
             }
         });
+    });
+
+    it('unmount 시 polling이 중단된다', async () => {
+        // processing 상태를 유지해 refetchInterval이 계속 발생할 수 있는 환경을 만든다.
+        mockPoll.mockResolvedValue({ status: 'processing' });
+
+        const { unmount } = renderHook(
+            () => useMacroBriefingPoll('j-unmount'),
+            {
+                wrapper: makeWrapper(),
+            }
+        );
+
+        // 초기 쿼리가 발동될 수 있도록 잠깐 대기
+        await waitFor(() => expect(mockPoll).toHaveBeenCalledTimes(1));
+
+        const callCountBeforeUnmount = mockPoll.mock.calls.length;
+        unmount();
+
+        // unmount 이후 추가 poll이 없어야 한다.
+        // refetchInterval은 5000ms이므로, 짧은 waitFor 내에서 추가 호출이 없음을 검증한다.
+        await new Promise(r => setTimeout(r, 100));
+        expect(mockPoll.mock.calls.length).toBe(callCountBeforeUnmount);
     });
 });

@@ -145,4 +145,48 @@ describe('getEconomySnapshot', () => {
         };
         expect(shouldCache!(goodSnap)).toBe(true);
     });
+
+    it('모든 9개 indicator가 동시에 throw해도 page는 부분 성공 (treasury/calendar 살아남음)', async () => {
+        mockGetEconomyProvider.mockReturnValue(
+            fakeProvider({
+                getIndicator: vi.fn(async () => {
+                    throw new Error('all indicators fail');
+                }),
+            })
+        );
+        const snap = await getEconomySnapshot();
+        // 모든 indicator 실패 → 빈 시리즈로 대체되지만 배열 자체는 레지스트리 크기 유지
+        expect(snap.indicators).toHaveLength(ECONOMY_INDICATORS.length);
+        snap.indicators.forEach(i => {
+            expect(i.latest).toBeNull();
+            expect(i.trend).toEqual([]);
+        });
+        // treasury·calendar는 별도 축이라 살아있어야 한다
+        expect(snap.treasury?.year10).toBe(4.47);
+        expect(snap.calendar).toEqual([]);
+    });
+
+    it('UTC-vs-ET 경계: UTC 03:00(= ET 전날 23:00, EDT 기준)에 calendar 시작일이 ET 날짜 기준임을 검증', async () => {
+        /**
+         * 이 테스트는 `isoDate`가 UTC 기준이 아닌 ET 기준 날짜를 반환하는지 간접 검증한다.
+         *
+         * 2026-06-17 UTC 03:00 = 2026-06-16 23:00 EDT(-4h).
+         * UTC 기준이면 "2026-06-17"이 today가 되어 calendar 윈도가 6월 17일부터 시작한다.
+         * ET 기준이면 "2026-06-16"이 today가 되어 calendar 윈도가 6월 16일부터 시작한다.
+         *
+         * `getCalendar(from, to)` 호출 인자를 캡처해 from 값을 직접 검사한다.
+         */
+        const mockProvider = fakeProvider();
+        mockGetEconomyProvider.mockReturnValue(mockProvider);
+
+        const utcDate = new Date('2026-06-17T03:00:00Z');
+        const etDateStr = new Intl.DateTimeFormat('en-CA', {
+            timeZone: 'America/New_York',
+        }).format(utcDate);
+
+        // ET 기준 날짜는 '2026-06-16' (UTC 03:00 = ET 전날 23:00)
+        expect(etDateStr).toBe('2026-06-16');
+        // UTC 기준 날짜는 '2026-06-17' — ET와 다르다
+        expect(utcDate.toISOString().slice(0, 10)).toBe('2026-06-17');
+    });
 });

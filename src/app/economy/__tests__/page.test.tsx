@@ -100,6 +100,27 @@ describe('/economy page.tsx integration', () => {
                 'https://siglens.io/economy'
             );
         });
+
+        it('snapshot fetch가 throw하면 metadata는 noindex + canonical null (degraded 경로)', async () => {
+            mockGetSnapshot.mockRejectedValue(new Error('redis timeout'));
+
+            const consoleSpy = vi
+                .spyOn(console, 'error')
+                .mockImplementation(() => undefined);
+
+            const meta = await generateMetadata();
+
+            expect(meta.robots).toEqual({ index: false, follow: true });
+            expect(meta.alternates?.canonical).toBeNull();
+            expect(consoleSpy).toHaveBeenCalledWith(
+                expect.stringContaining(
+                    '[economy.generateMetadata] snapshot failed:'
+                ),
+                expect.any(Error)
+            );
+
+            consoleSpy.mockRestore();
+        });
     });
 
     describe('EconomyContent — degrade path', () => {
