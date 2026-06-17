@@ -10,11 +10,36 @@ import {
     AmountRangeTooltip,
     ChamberColumnTooltip,
     DisclosureLagTooltip,
+    SenateDisclosureTooltip,
 } from './congressTooltips';
 import { CongressTradesEmpty } from './CongressTradesEmpty';
 
 /** Max rows rendered in a single SSR pass (newest-first). */
 const MAX_ROWS = 50;
+
+const SENATE_EFD_SEARCH_URL = 'https://efdsearch.senate.gov/search/';
+
+/**
+ * Senate efdsearch deep links return 403/404 outside the disclaimer-accepted
+ * session. Route to the search landing page (where the disclaimer flow happens)
+ * and surface the PTR ID separately so users can search after accepting terms.
+ *
+ * House PDF links (disclosures-clerk.house.gov) are static and stay direct.
+ */
+function getDisclosureHref(chamber: Chamber, link: string): string {
+    return chamber === 'senate' ? SENATE_EFD_SEARCH_URL : link;
+}
+
+/**
+ * Extract the PTR UUID from a Senate efdsearch URL like
+ * `https://efdsearch.senate.gov/search/view/ptr/<UUID>/`.
+ * Returns null if the URL doesn't match the expected shape (defensive fallback —
+ * FMP may shape change).
+ */
+function extractSenatePtrId(link: string): string | null {
+    const match = link.match(/\/view\/ptr\/([0-9a-f-]+)\/?$/i);
+    return match ? match[1] : null;
+}
 
 const CHAMBER_LABEL: Record<Chamber, string> = {
     senate: '상원',
@@ -135,6 +160,44 @@ function AssetTypeBadge({ assetType }: AssetTypeBadgeProps) {
         <span className="bg-secondary-700 text-secondary-300 rounded px-1.5 py-0.5 text-xs">
             {label}
         </span>
+    );
+}
+
+interface DisclosureCellProps {
+    chamber: Chamber;
+    link: string;
+    office: string;
+    transactionDate: string;
+}
+
+function DisclosureCell({
+    chamber,
+    link,
+    office,
+    transactionDate,
+}: DisclosureCellProps) {
+    const isSenate = chamber === 'senate';
+    const href = getDisclosureHref(chamber, link);
+    const ptrId = isSenate ? extractSenatePtrId(link) : null;
+
+    return (
+        <div>
+            <a
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={`${CHAMBER_LABEL[chamber]} ${office} ${transactionDate} 공시 ${isSenate ? '검색' : '문서'}`}
+                className="text-primary-400 hover:text-primary-300 text-xs underline transition-colors"
+            >
+                {isSenate ? '공시 검색' : '공시'}
+            </a>
+            {isSenate && <InfoTooltip>{SenateDisclosureTooltip}</InfoTooltip>}
+            {isSenate && ptrId && (
+                <span className="text-secondary-500 block font-mono text-[10px] whitespace-nowrap">
+                    PTR {ptrId.slice(0, 8)}…
+                </span>
+            )}
+        </div>
     );
 }
 
@@ -293,15 +356,14 @@ export function CongressTradesTable({ trades }: CongressTradesTableProps) {
 
                                 <td className="px-4 py-3 whitespace-nowrap">
                                     {trade.link ? (
-                                        <a
-                                            href={trade.link}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            aria-label={`${CHAMBER_LABEL[trade.chamber]} ${trade.office} ${trade.transactionDate} 공시 문서`}
-                                            className="text-primary-400 hover:text-primary-300 text-xs underline transition-colors"
-                                        >
-                                            공시
-                                        </a>
+                                        <DisclosureCell
+                                            chamber={trade.chamber}
+                                            link={trade.link}
+                                            office={trade.office}
+                                            transactionDate={
+                                                trade.transactionDate
+                                            }
+                                        />
                                     ) : (
                                         <span className="text-secondary-500 text-xs">
                                             —

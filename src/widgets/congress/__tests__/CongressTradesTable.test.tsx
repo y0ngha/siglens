@@ -12,6 +12,11 @@ vi.mock('@/shared/ui/InfoTooltip', () => ({
     ),
 }));
 
+const SENATE_PTR_LINK =
+    'https://efdsearch.senate.gov/search/view/ptr/029f67f3-1234-5678-abcd-ef0123456789/';
+const SENATE_EFD_SEARCH_URL = 'https://efdsearch.senate.gov/search/';
+const HOUSE_PDF_LINK = 'https://disclosures-clerk.house.gov/ptr/example.pdf';
+
 const BASE_TRADE: CongressTrade = {
     chamber: 'senate',
     firstName: 'Jane',
@@ -30,7 +35,7 @@ const BASE_TRADE: CongressTrade = {
     assetDescription: 'Apple Inc. Common Stock',
     transactionDate: '2024-01-15',
     disclosureDate: '2024-02-28',
-    link: 'https://efts.house.gov/example',
+    link: SENATE_PTR_LINK,
     capitalGainsOver200USD: false,
 };
 
@@ -49,7 +54,7 @@ const SELL_PARTIAL_TRADE: CongressTrade = {
     assetDescription: 'Tesla Inc. Options',
     transactionDate: '2024-02-10',
     disclosureDate: '2024-03-20',
-    link: 'https://efts.house.gov/example2',
+    link: HOUSE_PDF_LINK,
 };
 
 const SELL_FULL_TRADE: CongressTrade = {
@@ -162,6 +167,24 @@ describe('CongressTradesTable', () => {
             expect(rel).toContain('noreferrer');
         });
 
+        it('senate row: href routes to efdsearch search page (not the deep link)', () => {
+            render(<CongressTradesTable trades={[BASE_TRADE]} />);
+            const link = screen.getByRole('link', { name: /공시/ });
+            expect(link.getAttribute('href')).toBe(SENATE_EFD_SEARCH_URL);
+        });
+
+        it('senate row: PTR ID prefix (first 8 chars) is shown', () => {
+            render(<CongressTradesTable trades={[BASE_TRADE]} />);
+            expect(screen.getByText(/PTR 029f67f3/)).toBeDefined();
+        });
+
+        it('senate row: link text is "공시 검색"', () => {
+            render(<CongressTradesTable trades={[BASE_TRADE]} />);
+            expect(
+                screen.getByRole('link', { name: /공시 검색/ })
+            ).toBeDefined();
+        });
+
         it('renders district as sub-label under office', () => {
             render(<CongressTradesTable trades={[BASE_TRADE]} />);
             expect(screen.getByText('CA')).toBeDefined();
@@ -265,6 +288,41 @@ describe('CongressTradesTable', () => {
             };
             render(<CongressTradesTable trades={[childTrade]} />);
             expect(screen.getByText('자녀')).toBeDefined();
+        });
+    });
+
+    describe('disclosure link — chamber-aware routing', () => {
+        it('house row: href is the original PDF URL (not redirected)', () => {
+            render(<CongressTradesTable trades={[SELL_PARTIAL_TRADE]} />);
+            const link = screen.getByRole('link', { name: /공시/ });
+            expect(link.getAttribute('href')).toBe(HOUSE_PDF_LINK);
+        });
+
+        it('house row: link text is "공시" (not "공시 검색")', () => {
+            render(<CongressTradesTable trades={[SELL_PARTIAL_TRADE]} />);
+            expect(
+                screen.getByRole('link', {
+                    name: '하원 Bob Jones 2024-02-10 공시 문서',
+                })
+            ).toBeDefined();
+        });
+
+        it('house row: no PTR ID prefix span shown', () => {
+            render(<CongressTradesTable trades={[SELL_PARTIAL_TRADE]} />);
+            expect(screen.queryByText(/^PTR [0-9a-f]/)).toBeNull();
+        });
+
+        it('senate row with unparseable link: routes to efdsearch, no PTR ID prefix span', () => {
+            const unparseableSenate: CongressTrade = {
+                ...BASE_TRADE,
+                link: 'https://efdsearch.senate.gov/oddshape/',
+            };
+            render(<CongressTradesTable trades={[unparseableSenate]} />);
+            const link = screen.getByRole('link', { name: /공시/ });
+            expect(link.getAttribute('href')).toBe(SENATE_EFD_SEARCH_URL);
+            // Tooltip mentions "PTR ID" but the 8-char prefix span (e.g. "PTR 029f67f3…")
+            // must not appear when the URL is unparseable.
+            expect(screen.queryByText(/^PTR [0-9a-f]/)).toBeNull();
         });
     });
 
