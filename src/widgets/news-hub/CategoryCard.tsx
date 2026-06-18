@@ -15,7 +15,7 @@ export interface CategoryCardProps {
      * Pre-fetched headline strings for the preview list. The caller is
      * responsible for fetching and passing these — this component does no
      * data fetching, keeping it a pure RSC that renders deterministically.
-     * At most `PREVIEW_HEADLINE_LIMIT` entries are rendered.
+     * Caller must pass ≤ `PREVIEW_HEADLINE_LIMIT` entries.
      */
     previewHeadlines: string[];
 }
@@ -34,20 +34,18 @@ export function CategoryCard({
     slug,
     previewHeadlines,
 }: CategoryCardProps) {
-    const previews = previewHeadlines.slice(0, PREVIEW_HEADLINE_LIMIT);
-
     return (
         <article className="border-secondary-700 bg-secondary-800 hover:border-primary-500/50 flex w-full min-w-0 flex-col overflow-hidden rounded-xl border p-5 transition-colors">
             <h2 className="mb-3 text-base font-semibold tracking-tight text-balance">
                 {koLabel}
             </h2>
 
-            {previews.length > 0 ? (
+            {previewHeadlines.length > 0 ? (
                 <ul
                     className="mb-4 min-w-0 space-y-2"
                     aria-label={`${koLabel} 최신 뉴스 미리보기`}
                 >
-                    {previews.map((headline, i) => (
+                    {previewHeadlines.map((headline, i) => (
                         <li
                             key={`${i}-${headline.slice(0, 32)}`}
                             className="text-secondary-400 min-w-0 text-sm"

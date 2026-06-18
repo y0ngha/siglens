@@ -116,7 +116,7 @@ function useMarketNewsAnalysisTrigger(category: NewsFeedCategory): void {
  *    unless `hasEnrichedNews` is already true from SSR.
  * 3. When ready, calls `submitMarketNewsDigestAction(category)` and polls via
  *    `pollMarketNewsDigestAction` until done or error.
- * 4. On unmount cancels any in-flight job via `cancelMarketNewsDigestAction`.
+ * 4. On unmount (or category change) cancels any in-flight job via `cancelMarketNewsDigestAction`.
  *
  * Output: discriminated union `loading | done | error`.
  * No `usePublishSymbolChat` — this is a category page, not a per-symbol page.

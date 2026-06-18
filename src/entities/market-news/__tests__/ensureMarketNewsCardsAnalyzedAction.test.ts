@@ -221,4 +221,19 @@ describe('ensureMarketNewsCardsAnalyzedAction은', () => {
 
         errorSpy.mockRestore();
     });
+
+    it('minority upsert failure(2/5)이면 LLM 분석을 계속 진행한다', async () => {
+        mockFetchCategoryNews.mockResolvedValueOnce(ITEMS); // 5 items
+        // 2 failures of 5 → NOT majority (2 ≤ 5/2 = 2.5)
+        mockUpsertMarketNewsItem
+            .mockRejectedValueOnce(new Error('err'))
+            .mockRejectedValueOnce(new Error('err'))
+            .mockResolvedValue(true);
+
+        const { submitNewsCardAnalysis } = await import('@y0ngha/siglens-core');
+        await ensureMarketNewsCardsAnalyzedAction('crypto');
+
+        // minority failure should NOT abort — LLM analysis should still run
+        expect(submitNewsCardAnalysis).toHaveBeenCalled();
+    });
 });

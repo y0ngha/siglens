@@ -24,7 +24,7 @@ export const NEWS_CARD_POLL_INTERVAL_MS = 3_000;
 /** Card polling — bail after N consecutive errors. */
 export const NEWS_CARD_MAX_CONSECUTIVE_FAILURES = 3;
 
-/** Card polling — bail after N consecutive empty snapshots. */
+/** Card polling — bail if snapshot is empty after N total successful polls. */
 export const NEWS_CARD_EMPTY_SNAPSHOT_MAX_POLLS = 20;
 
 /** Card polling — overall hard ceiling. */
