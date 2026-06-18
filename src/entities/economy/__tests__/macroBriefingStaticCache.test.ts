@@ -16,7 +16,7 @@ import { peekMacroBriefingCache } from '@y0ngha/siglens-core';
 import type { EconomySnapshot } from '@y0ngha/siglens-core';
 
 import { peekMacroBriefingStatic } from '@/entities/economy/api/macroBriefingStaticCache';
-import { SECONDS_PER_HOUR } from '@/shared/config/time';
+import { SECONDS_PER_DAY } from '@/shared/config/time';
 
 const mockUnstableCache = vi.mocked(unstable_cache);
 const mockPeek = vi.mocked(peekMacroBriefingCache);
@@ -33,12 +33,12 @@ describe('peekMacroBriefingStatic', () => {
         mockPeek.mockResolvedValue(null);
     });
 
-    it('전달받은 dateHour로 unstable_cache 키를 hourly 버킷팅 + 1h revalidate + briefing 태그', async () => {
+    it('전달받은 dateHour로 unstable_cache 키를 hourly 버킷팅 + 24h revalidate + briefing 태그', async () => {
         await peekMacroBriefingStatic(SNAPSHOT, '2026-06-17T05');
         const [, key, opts] = mockUnstableCache.mock.calls[0];
         expect(key).toEqual(['economy-briefing-peek-static', '2026-06-17T05']);
         expect(opts).toEqual({
-            revalidate: SECONDS_PER_HOUR,
+            revalidate: SECONDS_PER_DAY,
             tags: ['economy:briefing'],
         });
     });

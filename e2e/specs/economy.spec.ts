@@ -134,6 +134,43 @@ test.describe('economy overview', () => {
     });
 
     /**
+     * E2 — 헤더 nav에서 /economy 진입: 홈(/)에서 헤더의 '미국 경제' 링크를
+     * 클릭해 /economy로 이동하고 경제 페이지 h1이 표시되는지 검증한다.
+     *
+     * HeaderNav(client island)와 HeaderNavStatic(PPR fallback) 모두
+     * `aria-label="주요 네비게이션"` 아래 `href="/economy"` 링크를 렌더한다.
+     * 기존 economy 스펙은 모두 `page.goto('/economy')` 직접 이동만 사용하므로,
+     * 이 테스트가 헤더 nav 클릭 경로를 처음으로 검증한다.
+     *
+     * 헤더 nav 링크는 sm(640px) 이상에서만 표시되므로 데스크톱 뷰포트를 명시한다
+     * (playwright.config.ts 기본 프로젝트가 Desktop Chrome이라 별도 설정 불필요).
+     */
+    test('헤더 "미국 경제" 링크 클릭으로 /economy에 도달하고 h1이 표시된다 (E2)', async ({
+        page,
+    }) => {
+        // 데스크톱 뷰포트 보장 — 헤더 nav 링크는 sm(640px) 이상에서만 표시된다.
+        await page.setViewportSize({ width: 1280, height: 800 });
+        await page.goto('/');
+
+        // 헤더 주요 네비게이션의 '미국 경제' 링크를 클릭한다.
+        const header = page.getByRole('banner');
+        await header
+            .getByRole('navigation', { name: '주요 네비게이션' })
+            .getByRole('link', { name: '미국 경제' })
+            .click();
+
+        await page.waitForURL('**/economy');
+
+        // economy 페이지 h1이 보여야 한다.
+        await expect(
+            page.getByRole('heading', {
+                level: 1,
+                name: '미국 경제 — 지표·캘린더 한눈에',
+            })
+        ).toBeVisible();
+    });
+
+    /**
      * 모바일 뷰포트(375px)에서 indicator grid가 1-col 레이아웃으로 표시된다.
      *
      * EconomicIndicatorGrid의 grid 컨테이너는 `grid-cols-1 sm:grid-cols-2 lg:grid-cols-3`.

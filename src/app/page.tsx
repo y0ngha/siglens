@@ -275,12 +275,24 @@ export default async function Home() {
                             >
                                 <SymbolSearchPanel />
                             </div>
-                            <div className="mt-6 flex justify-center lg:justify-start">
+                            <div className="mt-6 flex flex-wrap justify-center gap-x-5 gap-y-2 lg:justify-start">
                                 <Link
                                     href="/market"
                                     className="text-primary-400 hover:text-primary-300 inline-flex items-center gap-1 text-sm font-semibold transition-colors"
                                 >
                                     오늘 주목할 종목 →
+                                </Link>
+                                <Link
+                                    href="/news"
+                                    className="text-primary-400 hover:text-primary-300 inline-flex items-center gap-1 text-sm font-semibold transition-colors"
+                                >
+                                    마켓 뉴스 →
+                                </Link>
+                                <Link
+                                    href="/economy"
+                                    className="text-primary-400 hover:text-primary-300 inline-flex items-center gap-1 text-sm font-semibold transition-colors"
+                                >
+                                    미국 경제 →
                                 </Link>
                             </div>
                         </div>

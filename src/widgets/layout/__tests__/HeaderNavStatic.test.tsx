@@ -18,11 +18,7 @@ import React from 'react';
 import { render, screen } from '@testing-library/react';
 
 import { HeaderNavStatic } from '../HeaderNavStatic';
-
-const NAV_ITEMS = [
-    { href: '/market', label: '시장 분석' },
-    { href: '/news', label: '마켓 뉴스' },
-] as const;
+import { NAV_ITEMS } from '../headerNavItems';
 
 describe('HeaderNavStatic', () => {
     it('renders all nav items as links', () => {
@@ -35,10 +31,13 @@ describe('HeaderNavStatic', () => {
         expect(newsLink).toHaveAttribute('href', '/news');
     });
 
-    it('renders 2 nav items', () => {
+    it('renders 3 nav items', () => {
         render(<HeaderNavStatic items={NAV_ITEMS} />);
 
-        expect(screen.getAllByRole('link')).toHaveLength(2);
+        expect(screen.getAllByRole('link')).toHaveLength(3);
+
+        const economyLink = screen.getByRole('link', { name: /미국 경제/ });
+        expect(economyLink).toHaveAttribute('href', '/economy');
     });
 
     it('does not set aria-current on any item (no active state)', () => {

@@ -3,3 +3,4 @@ export {
     PREVIEW_HEADLINE_LIMIT,
     type CategoryCardProps,
 } from './CategoryCard';
+export { NewsCategoryTabs } from './NewsCategoryTabs';

@@ -7,7 +7,11 @@
 // See entities/CLAUDE.md §barrel 제외 대상 for the general rule.
 
 export type { MarketNewsRow, NewsFeedCategory } from './model';
-export { CATEGORY_CONFIG, categoryFromSlug } from './lib/categoryConfig';
+export {
+    CATEGORY_CONFIG,
+    categoryFromSlug,
+    NEWS_CATEGORY_SLUGS,
+} from './lib/categoryConfig';
 export type { CategoryConfig } from './lib/categoryConfig';
 export {
     MARKET_NEWS_LOOKBACK_DAYS,

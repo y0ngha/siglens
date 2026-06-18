@@ -38,11 +38,7 @@ import { usePathname } from 'next/navigation';
 import { useEscapeKey } from '@/shared/hooks/useEscapeKey';
 
 import { HeaderMobileMenu } from '../HeaderMobileMenu';
-
-const NAV_ITEMS = [
-    { href: '/market', label: '시장 분석' },
-    { href: '/news', label: '마켓 뉴스' },
-] as const;
+import { NAV_ITEMS } from '../headerNavItems';
 
 describe('HeaderMobileMenu', () => {
     it('renders the hamburger button with correct aria-label', () => {
@@ -78,6 +74,7 @@ describe('HeaderMobileMenu', () => {
         const hrefs = links.map(l => l.getAttribute('href'));
         expect(hrefs).toContain('/market');
         expect(hrefs).toContain('/news');
+        expect(hrefs).toContain('/economy');
     });
 
     it('nav links have aria-hidden="true" on the drawer when closed', () => {

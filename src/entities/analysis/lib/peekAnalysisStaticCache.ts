@@ -10,7 +10,10 @@ import { SECONDS_PER_HOUR } from '@/shared/config/time';
 /**
  * ISR static-safe peek of the cached technical analysis. `peekAnalysisCache`(redis 읽기
  * 전용 — enqueue/생성 없음)를 Next data cache로 감싸 static generate가 redis no-store
- * fetch에 막히지 않게 한다. 종목당 캐시이며 revalidate=1h로 주기 갱신한다.
+ * fetch에 막히지 않게 한다. 종목당 캐시이며 revalidate=6h(`SECONDS_PER_HOUR * 6`)로 차트
+ * 페이지(`[symbol]`)의 선언 revalidate(6h)와 정렬한다. 기본 1h는 차트 라우트의 실효
+ * `s-maxage`를 1h로 클램프했다(Next는 렌더 중 읽은 가장 짧은 캐시 TTL을 라우트에 적용).
+ * 사용자 신선도는 클라 `useAnalysis` 재요청이 책임지므로 seed TTL이 길어도 무방하다.
  *
  * 왜 정적화하는가: 차트 page는 SSR에서 cold cache를 peek해 봇에게 초기 분석을 노출한다.
  * static gen 중 redis no-store fetch가 `DYNAMIC_SERVER_USAGE`를 throw하면 `.catch(()=>null)`로
@@ -35,6 +38,6 @@ export function peekAnalysisStatic(
     return unstable_cache(
         () => peekAnalysisCache(upper, timeframe, fmpSymbol, modelId),
         ['peek-analysis-static', upper, timeframe, modelId],
-        { revalidate: SECONDS_PER_HOUR, tags: [`symbol:${upper}`] }
+        { revalidate: SECONDS_PER_HOUR * 6, tags: [`symbol:${upper}`] }
     )();
 }

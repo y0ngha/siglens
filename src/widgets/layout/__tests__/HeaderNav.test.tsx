@@ -29,11 +29,7 @@ import { render, screen } from '@testing-library/react';
 import { usePathname } from 'next/navigation';
 
 import { HeaderNav } from '../HeaderNav';
-
-const NAV_ITEMS = [
-    { href: '/market', label: '시장 분석' },
-    { href: '/news', label: '마켓 뉴스' },
-] as const;
+import { NAV_ITEMS } from '../headerNavItems';
 
 describe('HeaderNav', () => {
     it('renders all nav items', () => {

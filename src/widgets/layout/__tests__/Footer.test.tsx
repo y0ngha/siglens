@@ -86,4 +86,11 @@ describe('Footer', () => {
         const link = screen.getByRole('link', { name: /미국 경제/ });
         expect(link).toHaveAttribute('href', '/economy');
     });
+
+    it('renders the /news link with 마켓 뉴스 label', () => {
+        render(<Footer />);
+
+        const link = screen.getByRole('link', { name: /마켓 뉴스/ });
+        expect(link).toHaveAttribute('href', '/news');
+    });
 });

@@ -31,6 +31,7 @@ import {
     getCongressTrades,
     CONGRESS_TRADE_LIMIT,
 } from '@/entities/congress-trades/lib/getCongressTrades';
+import { SECONDS_PER_DAY } from '@/shared/config/time';
 
 describe('getCongressTrades', () => {
     beforeEach(() => {
@@ -67,18 +68,20 @@ describe('getCongressTrades', () => {
             'house',
             CONGRESS_TRADE_LIMIT
         );
-        // staticSymbolCache의 symbol 인자도 대문자
+        // staticSymbolCache의 symbol 인자도 대문자; 5번째 인자는 24h TTL
         expect(mockStaticSymbolCache).toHaveBeenCalledWith(
             ['congress:senate', 'AAPL'],
             'AAPL',
             expect.any(Function),
-            ['congress:AAPL']
+            ['congress:AAPL'],
+            SECONDS_PER_DAY
         );
         expect(mockStaticSymbolCache).toHaveBeenCalledWith(
             ['congress:house', 'AAPL'],
             'AAPL',
             expect.any(Function),
-            ['congress:AAPL']
+            ['congress:AAPL'],
+            SECONDS_PER_DAY
         );
     });
 

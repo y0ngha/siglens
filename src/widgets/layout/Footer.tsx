@@ -30,6 +30,13 @@ export function Footer() {
                         className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2"
                     >
                         <Link
+                            href="/news"
+                            className="text-secondary-400 hover:text-secondary-200 text-sm transition-colors"
+                        >
+                            마켓 뉴스
+                        </Link>
+                        <DotSeparator />
+                        <Link
                             href="/economy"
                             className="text-secondary-400 hover:text-secondary-200 text-sm transition-colors"
                         >
