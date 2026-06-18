@@ -87,6 +87,7 @@ const eslintConfig = defineConfig([
             'src/entities/analysis/actions/submitFundamentalAnalysisAction.ts',
             'src/entities/news-article/actions/submitNewsAnalysisAction.ts',
             'src/entities/news-article/lib/getNewsClient.ts',
+            'src/entities/market-news/lib/getMarketNewsClient.ts',
             'src/entities/options-chain/actions/optionsActions.ts',
             'src/entities/options-chain/lib/getOptionsProvider.ts',
         ],

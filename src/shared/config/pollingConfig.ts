@@ -1,3 +1,5 @@
+import { MS_PER_MINUTE } from '@/shared/config/time';
+
 // 분석 잡 폴링 간격 모음 — 분석 종류별로 워커 작업 시간/캐시 히트 빈도가 달라 의도적으로 다른 값을 사용한다.
 // 폴링마다 서버 액션(함수)을 호출해 Fast Origin Transfer + Function Invocation을 유발하므로,
 // 분석이 수십 초 걸리는 작업 특성에 맞춰 간격을 넉넉히 잡아 폴링 횟수(=비용)를 줄인다.
@@ -11,3 +13,19 @@ export const AUGMENT_AND_OVERALL_POLL_INTERVAL_MS = 5000;
 
 /** 차트 페이지 메인 분석 — 워커가 다단계 작업을 수행해 길게 잡는다. */
 export const CHART_ANALYSIS_POLL_INTERVAL_MS = 30000;
+
+// Card polling — snapshot fetch while waiting for LLM enrichment.
+// Separate from analysis poll intervals above: card polling is frequent (3 s)
+// because it checks incremental DB writes, not a long-running worker job.
+
+/** Card polling — interval between snapshot fetches while waiting for LLM enrichment. */
+export const NEWS_CARD_POLL_INTERVAL_MS = 3_000;
+
+/** Card polling — bail after N consecutive errors. */
+export const NEWS_CARD_MAX_CONSECUTIVE_FAILURES = 3;
+
+/** Card polling — bail if snapshot is empty after N total successful polls. */
+export const NEWS_CARD_EMPTY_SNAPSHOT_MAX_POLLS = 20;
+
+/** Card polling — overall hard ceiling. */
+export const NEWS_CARD_MAX_POLL_DURATION_MS = 5 * MS_PER_MINUTE;

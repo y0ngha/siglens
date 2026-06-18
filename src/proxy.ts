@@ -14,6 +14,7 @@ const RESERVED_FIRST_SEGMENTS = new Set([
     'reset-password',
     'account',
     'market',
+    'news',
     'backtesting',
     'terms',
     'privacy',

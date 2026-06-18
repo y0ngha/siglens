@@ -5,14 +5,15 @@ vi.mock('@/shared/lib/seo', () => ({
 }));
 
 import { buildStaticEntries } from '../lib/buildStaticEntries';
+import { SITE_URL } from '@/shared/lib/seo';
 import { MS_PER_HOUR } from '@/shared/config/time';
 
 const NOW = new Date('2026-05-23T15:30:00.000Z');
 
 describe('buildStaticEntries', () => {
-    it('home / market / backtesting / privacy / terms 5개 엔트리를 반환한다', () => {
+    it('home / market / backtesting / news hub + 5 categories / privacy / terms 11개 엔트리를 반환한다', () => {
         const entries = buildStaticEntries(NOW);
-        expect(entries).toHaveLength(5);
+        expect(entries).toHaveLength(11);
 
         const urls = entries.map(e => e.url);
         expect(urls).toEqual(
@@ -20,10 +21,26 @@ describe('buildStaticEntries', () => {
                 expect.stringMatching(/\/$|siglens\.io$/), // home
                 expect.stringContaining('/market'),
                 expect.stringContaining('/backtesting'),
+                expect.stringContaining('/news'),
                 expect.stringContaining('/privacy'),
                 expect.stringContaining('/terms'),
             ])
         );
+    });
+
+    it('/news hub + 5 카테고리 entries가 포함된다', () => {
+        const entries = buildStaticEntries(NOW);
+        const urls = entries.map(e => e.url);
+        expect(urls).toContain(`${SITE_URL}/news`);
+        for (const slug of [
+            'general',
+            'stock',
+            'crypto',
+            'forex',
+            'articles',
+        ]) {
+            expect(urls).toContain(`${SITE_URL}/news/${slug}`);
+        }
     });
 
     it('/market은 1시간 슬라이딩 lastmod를 적용한다', () => {
@@ -52,6 +69,27 @@ describe('buildStaticEntries', () => {
         for (const entry of legal) {
             expect(entry.changeFrequency).toBe('yearly');
             expect(entry.priority).toBe(0.3);
+        }
+    });
+
+    it('/news hub과 5개 카테고리 entries는 now를 lastModified로 사용한다', () => {
+        const entries = buildStaticEntries(NOW);
+        const newsHub = entries.find(e => e.url === `${SITE_URL}/news`);
+        expect(newsHub).toBeDefined();
+        expect(newsHub!.lastModified).toBeInstanceOf(Date);
+        expect(newsHub!.lastModified.getTime()).toBe(NOW.getTime());
+
+        for (const slug of [
+            'general',
+            'stock',
+            'crypto',
+            'forex',
+            'articles',
+        ]) {
+            const cat = entries.find(e => e.url === `${SITE_URL}/news/${slug}`);
+            expect(cat).toBeDefined();
+            expect(cat!.lastModified).toBeInstanceOf(Date);
+            expect(cat!.lastModified.getTime()).toBe(NOW.getTime());
         }
     });
 });

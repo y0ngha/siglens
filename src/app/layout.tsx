@@ -132,9 +132,11 @@ export default function RootLayout({ children }: RootLayoutProps) {
     return (
         <html
             lang="ko"
-            className={`${geistSans.variable} ${geistMono.variable} ${pretendard.variable} h-full antialiased scheme-dark`}
+            className={`${geistSans.variable} ${geistMono.variable} ${pretendard.variable} h-full overflow-x-hidden antialiased scheme-dark`}
         >
-            <body className="flex min-h-full flex-col">
+            {/* overflow-x-hidden on both html and body prevents fixed/transformed elements (mobile drawer)
+                from extending the document scrollWidth past the viewport edge. */}
+            <body className="flex min-h-full flex-col overflow-x-hidden">
                 <SiteJsonLd />
                 <ReactQueryProvider>
                     <PwaBanner />
