@@ -1,11 +1,14 @@
 import type {
     AnalysisResponse,
+    CongressTrendResponse,
     FinancialsAnalysisResponse,
     FundamentalAnalysisResponse,
     NewsAnalysisResponse,
     OptionsAnalysisResponse,
     OverallAnalysisResponse,
     SubmitAnalysisGatedResult,
+    SubmitCongressTrendCached,
+    SubmitCongressTrendFetchError,
     SubmitFinancialsAnalysisCached,
     SubmitFinancialsAnalysisFetchError,
     SubmitFundamentalAnalysisCached,
@@ -41,6 +44,7 @@ interface E2eAnalysisFixture {
     news: NewsAnalysisResponse;
     options: OptionsAnalysisResponse;
     financials: FinancialsAnalysisResponse;
+    congressTrend: CongressTrendResponse;
 }
 const typedFixture = fixture as E2eAnalysisFixture;
 
@@ -117,5 +121,31 @@ export function e2eForcedFinancialsError(): SubmitFinancialsAnalysisFetchError {
         status: 'error',
         code: 'fetch_failed',
         error: 'E2E 강제 재무제표 분석 실패 (resilience 테스트용)',
+    };
+}
+
+/**
+ * Cookie name an E2E test sets to force the next congress-trend submit to
+ * return a transient failure instead of the cached fixture. Read server-side by
+ * `submitCongressTrendAction` (only under `E2E_TEST=1`). The resilience spec
+ * sets it, asserts the error fallback, then clears it so the retry recovers.
+ */
+export const E2E_FORCE_CONGRESS_ERROR_COOKIE = 'e2e_force_congress_error';
+
+/** Fixed `{ status: 'cached' }` congress trend result for E2E runs. */
+export function e2eCachedCongressTrend(): SubmitCongressTrendCached {
+    return { status: 'cached', result: typedFixture.congressTrend };
+}
+
+/**
+ * Deterministic transient-failure result for E2E resilience tests targeting the
+ * congress trend analysis flow. Returned by `submitCongressTrendAction` (under
+ * `E2E_TEST=1`) when `E2E_FORCE_CONGRESS_ERROR_COOKIE` is present.
+ */
+export function e2eForcedCongressError(): SubmitCongressTrendFetchError {
+    return {
+        status: 'error',
+        code: 'fetch_failed',
+        error: 'E2E 강제 congress 동향 분석 실패 (resilience 테스트용)',
     };
 }

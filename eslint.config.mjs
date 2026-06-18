@@ -81,6 +81,7 @@ const eslintConfig = defineConfig([
             'src/shared/api/market/getMarketDataProvider.ts',
             'src/shared/api/fmp/getFundamentalDataProvider.ts',
             'src/shared/api/fmp/getFinancialStatementsProvider.ts',
+            'src/shared/api/fmp/getCongressTradesProvider.ts',
             'src/entities/analysis/actions/submitAnalysisAction.ts',
             'src/entities/analysis/actions/submitOverallAnalysisAction.ts',
             'src/entities/analysis/actions/submitFundamentalAnalysisAction.ts',

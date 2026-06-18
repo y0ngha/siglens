@@ -22,6 +22,11 @@ export const TABS = [
         hrefBuilder: (s: string) => `/${s}/financials`,
     },
     {
+        key: 'congress',
+        label: '의회 거래',
+        hrefBuilder: (s: string) => `/${s}/congress`,
+    },
+    {
         key: 'options',
         label: '옵션',
         hrefBuilder: (s: string) => `/${s}/options`,
