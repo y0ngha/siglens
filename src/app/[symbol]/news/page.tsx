@@ -19,7 +19,7 @@ import {
     getAssetInfoResilient,
 } from '@/entities/ticker';
 import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
-import { SECONDS_PER_HOUR } from '@/shared/config/time';
+import { SECONDS_PER_HALF_DAY } from '@/shared/config/time';
 import { getTodayIsoDay } from '@/shared/lib/getTodayIsoDay';
 import { todayKstIsoDate } from '@/shared/lib/dateKey';
 import { getFmpUserFacingMessage } from '@/shared/api/fmp/fmpUserMessage';
@@ -108,7 +108,7 @@ async function NewsListSection({ symbol }: SymbolSectionProps) {
         symbol,
         () => getNewsList(symbol),
         [`news:${symbol}`],
-        SECONDS_PER_HOUR * 12
+        SECONDS_PER_HALF_DAY
     );
     return <NewsList items={items} symbol={symbol} />;
 }
@@ -124,7 +124,7 @@ async function EventCalendarSection({ symbol }: SymbolSectionProps) {
             symbol,
             () => getEarningsReportComparison(symbol, today),
             [`news:${symbol}`],
-            SECONDS_PER_HOUR * 12
+            SECONDS_PER_HALF_DAY
         );
     } catch (error) {
         const message = getFmpUserFacingMessage(error);
@@ -142,7 +142,7 @@ async function AnalystActionsSection({ symbol }: SymbolSectionProps) {
             symbol,
             () => getGradeEvents(symbol),
             [`news:${symbol}`],
-            SECONDS_PER_HOUR * 12
+            SECONDS_PER_HALF_DAY
         );
     } catch (error) {
         const message = getFmpUserFacingMessage(error);
@@ -261,7 +261,7 @@ export default async function NewsPage({ params }: Props) {
         upper,
         () => getNewsList(upper),
         [`news:${upper}`],
-        SECONDS_PER_HOUR * 12
+        SECONDS_PER_HALF_DAY
     );
     // At least one AI-enriched card means aggregate analysis can start immediately.
     const hasEnrichedNews = newsItems.some(item => item.sentiment !== null);

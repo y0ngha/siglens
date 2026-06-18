@@ -139,9 +139,9 @@ test.describe('/news 마켓 뉴스 허브', () => {
      *
      * 모바일(375px)에서 수평 스크롤바가 생기면 레이아웃 회귀다.
      * `scrollWidth - clientWidth > 0`이면 콘텐츠가 뷰포트를 초과해 X 오버플로가 발생한다.
-     * 어서션은 초과 픽셀이 0 이하인지 확인해 레이아웃 안정성을 검증해요.
+     * 어서션은 초과 픽셀이 0 이하인지 확인해 레이아웃 안정성을 검증한다.
      */
-    test('375px 뷰포트에서 가로 오버플로가 없어요', async ({ page }) => {
+    test('375px 뷰포트에서 가로 오버플로가 없다', async ({ page }) => {
         await page.setViewportSize({ width: 375, height: 667 });
 
         for (const path of ['/news', '/news/stock']) {
@@ -165,14 +165,14 @@ test.describe('/news 마켓 뉴스 허브', () => {
     /**
      * E1 — 카테고리 탭바 내비게이션: `nav[aria-label="뉴스 카테고리"]` 탭바가
      * `/news/[category]` 페이지에서 올바른 active 탭을 표시하고,
-     * 다른 탭 클릭 시 해당 카테고리 URL로 이동하는지 검증해요.
+     * 다른 탭 클릭 시 해당 카테고리 URL로 이동하는지 검증한다.
      *
      * NewsCategoryTabs는 서버 컴포넌트 — `activeCategory` prop이 slug에서
-     * 파생되므로 별도 hydration 없이 SSR HTML에서 즉시 aria-current를 확인할 수 있어요.
+     * 파생되므로 별도 hydration 없이 SSR HTML에서 즉시 aria-current를 확인할 수 있다.
      * FakeMarketNewsClient가 stock·crypto fixture를 모두 반환하므로 양쪽 카테고리 페이지가
-     * 데이터 있는 상태(not degrade)로 렌더돼요.
+     * 데이터 있는 상태(not degrade)로 렌더된다.
      */
-    test('카테고리 탭바가 active 탭을 표시하고 다른 탭 클릭 시 URL이 변경돼요 (E1)', async ({
+    test('카테고리 탭바가 active 탭을 표시하고 다른 탭 클릭 시 URL이 변경된다 (E1)', async ({
         page,
     }) => {
         await page.goto('/news/stock');

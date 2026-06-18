@@ -15,7 +15,7 @@ import { MarketNewsDigest, MarketNewsList } from '@/widgets/market-news';
 import { NewsCategoryTabs } from '@/widgets/news-hub';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
-import { SECONDS_PER_HOUR } from '@/shared/config/time';
+import { SECONDS_PER_HALF_DAY } from '@/shared/config/time';
 import { buildBreadcrumbJsonLd, SITE_NAME, SITE_URL } from '@/shared/lib/seo';
 import { buildCategoryPageTitle, buildCategoryPageDescription } from './seo';
 
@@ -62,7 +62,7 @@ async function loadCategorySnapshot(
         cfg.sentinel,
         () => getMarketNewsList(cfg.sentinel),
         [`${MARKET_NEWS_CACHE_TAG_PREFIX}:${cfg.sentinel}`],
-        SECONDS_PER_HOUR * 12
+        SECONDS_PER_HALF_DAY
     );
     // Project to the same allowlist `getMarketNewsCardsAction` uses so the
     // client component never sees server-only DB columns (bodyEn/symbol/analyzedAt).

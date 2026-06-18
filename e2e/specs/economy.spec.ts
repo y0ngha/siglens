@@ -142,8 +142,9 @@ test.describe('economy overview', () => {
      * 기존 economy 스펙은 모두 `page.goto('/economy')` 직접 이동만 사용하므로,
      * 이 테스트가 헤더 nav 클릭 경로를 처음으로 검증한다.
      *
-     * 헤더 nav 링크는 sm(640px) 이상에서만 표시되므로 데스크톱 뷰포트를 명시한다
-     * (playwright.config.ts 기본 프로젝트가 Desktop Chrome이라 별도 설정 불필요).
+     * 헤더 nav 링크는 sm(640px) 이상에서만 표시되므로 데스크톱 뷰포트를 명시한다.
+     * playwright.config.ts 기본 프로젝트(Desktop Chrome)는 이미 데스크톱 크기지만,
+     * 테스트 격리를 위해 뷰포트를 명시적으로 지정한다.
      */
     test('헤더 "미국 경제" 링크 클릭으로 /economy에 도달하고 h1이 표시된다 (E2)', async ({
         page,

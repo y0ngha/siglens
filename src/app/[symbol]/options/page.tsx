@@ -15,7 +15,7 @@ import {
 } from '@/entities/options-chain/lib/optionsDataCache';
 import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/shared/config/queryConfig';
 import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
-import { SECONDS_PER_HOUR } from '@/shared/config/time';
+import { SECONDS_PER_HALF_DAY } from '@/shared/config/time';
 import {
     buildBreadcrumbJsonLd,
     buildSymbolOptionsSeoContent,
@@ -67,7 +67,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
             upper,
             () => hasOptionsMarket(upper),
             [],
-            SECONDS_PER_HOUR * 12
+            SECONDS_PER_HALF_DAY
         ).catch((e: unknown) => {
             console.error(
                 '[generateMetadata:options] hasOptionsMarket infra failure, degrading to false:',
@@ -131,7 +131,7 @@ export default async function OptionsPage({ params }: Props) {
             upper,
             () => hasOptionsMarket(upper),
             [],
-            SECONDS_PER_HOUR * 12
+            SECONDS_PER_HALF_DAY
         ),
     ]);
 
@@ -144,7 +144,7 @@ export default async function OptionsPage({ params }: Props) {
         upper,
         () => fetchOptionsSnapshot(upper),
         [],
-        SECONDS_PER_HOUR * 12
+        SECONDS_PER_HALF_DAY
     );
     if (snapshot === null) return <OptionsEmptyState symbol={upper} />;
 

@@ -9,6 +9,11 @@ export const MS_PER_HOUR = SECONDS_PER_HOUR * MS_PER_SECOND;
 export const MS_PER_DAY = SECONDS_PER_DAY * MS_PER_SECOND;
 export const KST_OFFSET_HOURS = 9;
 
+/** 12h — 뉴스/옵션/종합 페이지 캐시 TTL(페이지 revalidate와 맞춰 s-maxage clamp 방지). */
+export const SECONDS_PER_HALF_DAY = SECONDS_PER_HOUR * 12;
+/** 6h — 종목 차트(bars/analysis peek) 캐시 TTL = 공유 layout이 만드는 symbol 라우트 floor. */
+export const SECONDS_PER_QUARTER_DAY = SECONDS_PER_HOUR * 6;
+
 /**
  * 재무제표는 분기(~45일) 단위라 길게. fmpGet revalidate + Redis TTL이 이 상수를 공유.
  *
