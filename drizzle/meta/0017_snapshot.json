@@ -435,12 +435,6 @@
                     "notNull": true,
                     "default": "ARRAY[]::text[]"
                 },
-                "raw_payload": {
-                    "name": "raw_payload",
-                    "type": "jsonb",
-                    "primaryKey": false,
-                    "notNull": false
-                },
                 "fetched_at": {
                     "name": "fetched_at",
                     "type": "timestamp with time zone",

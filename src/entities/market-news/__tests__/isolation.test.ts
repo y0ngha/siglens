@@ -1,7 +1,7 @@
+vi.mock('@/shared/lib/sleep', () => ({ sleep: vi.fn() }));
+
 import { describe, it, expect, vi } from 'vitest';
 import { DrizzleMarketNewsRepository } from '../api';
-
-vi.mock('@/shared/lib/sleep', () => ({ sleep: vi.fn() }));
 
 describe('market-news 격리', () => {
     it('upsert가 market_news 테이블만 대상으로 한다', async () => {

@@ -288,7 +288,6 @@ export const marketNews = pgTable(
             .array()
             .notNull()
             .default(sql`ARRAY[]::text[]`),
-        rawPayload: jsonb('raw_payload'),
         fetchedAt: timestamp('fetched_at', { withTimezone: true })
             .notNull()
             .defaultNow(),

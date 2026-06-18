@@ -13,7 +13,7 @@ export async function cancelMarketNewsDigestAction(
         return await cancelNewsAnalysisJob(jobId);
     } catch (error) {
         console.warn(
-            '[cancelMarketNewsDigestAction] 취소 신호 전송 실패:',
+            '[cancelMarketNewsDigestAction] cancel failed:',
             jobId,
             error
         );

@@ -13,7 +13,6 @@ CREATE TABLE "market_news" (
 	"category" text,
 	"price_impact" text,
 	"tickers" text[] DEFAULT ARRAY[]::text[] NOT NULL,
-	"raw_payload" jsonb,
 	"fetched_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"analyzed_at" timestamp with time zone,
 	CONSTRAINT "market_news_url_unique" UNIQUE("url")
