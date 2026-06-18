@@ -14,6 +14,7 @@ import {
     OG_SITE_NAME_RIGHT,
     OG_LABEL_FONT_SIZE,
     OG_LABEL_MARGIN_TOP,
+    OG_SUBTITLE_FONT_SIZE,
 } from '@/shared/lib/og';
 import { SITE_NAME } from '@/shared/lib/seo';
 
@@ -77,7 +78,7 @@ export default async function Image({ params }: Props) {
             <div
                 style={{
                     marginTop: OG_LABEL_MARGIN_TOP,
-                    fontSize: 40,
+                    fontSize: OG_SUBTITLE_FONT_SIZE,
                     color: OG_ACCENT,
                     fontWeight: 700,
                     letterSpacing: '-0.01em',

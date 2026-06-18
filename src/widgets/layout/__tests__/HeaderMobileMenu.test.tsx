@@ -261,4 +261,23 @@ describe('HeaderMobileMenu', () => {
         const button = screen.getByRole('button', { name: '메뉴 열기' });
         expect(button).toHaveAttribute('aria-controls', 'mobile-nav-drawer');
     });
+
+    it('clicking the hamburger while open CLOSES the drawer (toggle behaviour)', () => {
+        render(<HeaderMobileMenu items={NAV_ITEMS} />);
+
+        // Open the drawer first
+        fireEvent.click(screen.getByRole('button', { name: '메뉴 열기' }));
+        expect(screen.getByRole('dialog')).toBeInTheDocument();
+
+        // Click the hamburger again (now labelled 메뉴 닫기) — should close
+        fireEvent.click(screen.getByRole('button', { name: '메뉴 닫기' }));
+
+        // Drawer should be hidden again — and the SAME trigger reverts to the
+        // "메뉴 열기" label with aria-expanded=false (resolves only when closed,
+        // so the assertion genuinely depends on the toggle having closed it).
+        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+        expect(
+            screen.getByRole('button', { name: '메뉴 열기' })
+        ).toHaveAttribute('aria-expanded', 'false');
+    });
 });

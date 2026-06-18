@@ -171,11 +171,15 @@ test.describe('economy overview', () => {
     });
 
     /**
-     * 모바일 뷰포트(375px)에서 indicator grid가 1-col 레이아웃으로 표시된다.
+     * 모바일 뷰포트(375px)에서 indicator grid가 1-col 레이아웃으로 표시되고
+     * 가로 오버플로가 없다.
      *
      * EconomicIndicatorGrid의 grid 컨테이너는 `grid-cols-1 sm:grid-cols-2 lg:grid-cols-3`.
      * 375px에서는 sm 브레이크포인트(640px) 미만이라 1열이다.
      * article 카드들의 왼쪽 offset이 모두 동일하면 1열 정렬을 확인할 수 있다.
+     *
+     * 오버플로 어서션: `scrollWidth - clientWidth > 0`이면 콘텐츠가 뷰포트를 초과해
+     * 수평 스크롤이 발생하므로 레이아웃 회귀로 간주한다.
      */
     test('모바일 viewport에서 indicator grid가 1-col으로 정렬', async ({
         page,
@@ -204,6 +208,17 @@ test.describe('economy overview', () => {
             .first();
         await expect(gridContainer).toBeVisible();
         await expect(gridContainer).toHaveClass(/grid-cols-1/);
+
+        // 가로 오버플로 없음 — scrollWidth > clientWidth이면 레이아웃 회귀.
+        const overflow = await page.evaluate(
+            () =>
+                document.documentElement.scrollWidth -
+                document.documentElement.clientWidth
+        );
+        expect(
+            overflow,
+            `/economy 375px: 가로 오버플로 ${overflow}px — 레이아웃 회귀`
+        ).toBeLessThanOrEqual(0);
     });
 });
 

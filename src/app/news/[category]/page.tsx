@@ -227,7 +227,7 @@ export default async function CategoryNewsPage({ params }: Props) {
                     returning to the /news hub. Always rendered (even on the
                     degrade path) so a failed category is never a dead end. */}
                 <NewsCategoryTabs activeCategory={cat} />
-                <h1 className="text-2xl font-bold tracking-tight">
+                <h1 className="text-secondary-100 text-2xl font-bold tracking-tight text-balance sm:text-3xl">
                     {cfg.koLabel} 뉴스
                 </h1>
                 <Suspense fallback={<DigestSkeleton />}>

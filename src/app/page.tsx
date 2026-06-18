@@ -280,19 +280,20 @@ export default async function Home() {
                                     href="/market"
                                     className="text-primary-400 hover:text-primary-300 inline-flex items-center gap-1 text-sm font-semibold transition-colors"
                                 >
-                                    오늘 주목할 종목 →
+                                    오늘 주목할 종목{' '}
+                                    <span aria-hidden="true">→</span>
                                 </Link>
                                 <Link
                                     href="/news"
                                     className="text-primary-400 hover:text-primary-300 inline-flex items-center gap-1 text-sm font-semibold transition-colors"
                                 >
-                                    마켓 뉴스 →
+                                    마켓 뉴스 <span aria-hidden="true">→</span>
                                 </Link>
                                 <Link
                                     href="/economy"
                                     className="text-primary-400 hover:text-primary-300 inline-flex items-center gap-1 text-sm font-semibold transition-colors"
                                 >
-                                    미국 경제 →
+                                    미국 경제 <span aria-hidden="true">→</span>
                                 </Link>
                             </div>
                         </div>

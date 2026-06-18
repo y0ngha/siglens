@@ -27,7 +27,7 @@ export function HeaderMobileMenu({ items }: HeaderMobileMenuProps) {
         triggerRef.current?.focus();
     }, []);
 
-    const open = useCallback(() => setIsOpen(true), []);
+    const toggle = useCallback(() => setIsOpen(v => !v), []);
 
     useEscapeKey(close, isOpen);
     useFocusTrap(drawerRef, isOpen);
@@ -50,7 +50,7 @@ export function HeaderMobileMenu({ items }: HeaderMobileMenuProps) {
                 aria-label={isOpen ? '메뉴 닫기' : '메뉴 열기'}
                 aria-expanded={isOpen}
                 aria-controls="mobile-nav-drawer"
-                onClick={open}
+                onClick={toggle}
                 className="focus-visible:ring-primary-500 text-secondary-400 hover:text-secondary-100 flex h-11 w-11 touch-manipulation items-center justify-center rounded transition-colors focus-visible:ring-2 focus-visible:outline-none"
             >
                 <svg

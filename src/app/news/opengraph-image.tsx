@@ -13,11 +13,15 @@ import {
     OG_SITE_NAME_RIGHT,
     OG_LABEL_FONT_SIZE,
     OG_LABEL_MARGIN_TOP,
+    OG_SUBTITLE_FONT_SIZE,
 } from '@/shared/lib/og';
 import { SITE_NAME } from '@/shared/lib/seo';
 
 export const dynamic = 'force-static';
-export const revalidate = 2592000; // 30d
+// 30d — route segment config는 정적 분석 가능한 리터럴이어야 한다(식/import 상수로 추출하면
+// Next가 값을 분석 못 해 config를 조용히 무시 → ISR 무효화). app/CLAUDE.md ISR §·MISTAKES §15
+// 예외 규칙에 따라 리터럴 유지(기존 `[symbol]/congress/opengraph-image.tsx`와 동일 패턴).
+export const revalidate = 2592000;
 export const size = { width: OG_IMAGE_WIDTH, height: OG_IMAGE_HEIGHT };
 export const contentType = 'image/png';
 export const alt = 'Siglens 마켓 뉴스 허브';
@@ -68,7 +72,7 @@ export default async function Image() {
             <div
                 style={{
                     marginTop: OG_LABEL_MARGIN_TOP,
-                    fontSize: 40,
+                    fontSize: OG_SUBTITLE_FONT_SIZE,
                     color: OG_ACCENT,
                     fontWeight: 700,
                     letterSpacing: '-0.01em',

@@ -1,6 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
-
+// vi.mock → imports 순서 (MISTAKES.md Tests §17)
 vi.mock('next/link', () => ({
     default: ({
         href,
@@ -17,6 +15,8 @@ vi.mock('next/link', () => ({
     ),
 }));
 
+import { describe, it, expect, vi } from 'vitest';
+import { render, screen } from '@testing-library/react';
 import { NewsCategoryTabs } from '../NewsCategoryTabs';
 
 describe('NewsCategoryTabs', () => {

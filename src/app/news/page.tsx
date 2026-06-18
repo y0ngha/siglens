@@ -114,7 +114,7 @@ export default async function NewsHubPage() {
             <JsonLd data={webPageJsonLd} />
             <JsonLd data={breadcrumbJsonLd} />
             <main className="mx-auto w-full max-w-5xl space-y-8 px-4 py-8">
-                <h1 className="text-2xl font-bold tracking-tight">
+                <h1 className="text-secondary-100 text-2xl font-bold tracking-tight text-balance sm:text-3xl">
                     마켓 뉴스 허브
                 </h1>
                 <div className="text-secondary-400 -mt-4 space-y-1 text-sm">

@@ -135,6 +135,34 @@ test.describe('/news 마켓 뉴스 허브', () => {
     });
 
     /**
+     * 375px 뷰포트 가로 오버플로 없음 — `/news`·`/news/stock`.
+     *
+     * 모바일(375px)에서 수평 스크롤바가 생기면 레이아웃 회귀다.
+     * `scrollWidth - clientWidth > 0`이면 콘텐츠가 뷰포트를 초과해 X 오버플로가 발생한다.
+     * 어서션은 초과 픽셀이 0 이하인지 확인해 레이아웃 안정성을 검증해요.
+     */
+    test('375px 뷰포트에서 가로 오버플로가 없어요', async ({ page }) => {
+        await page.setViewportSize({ width: 375, height: 667 });
+
+        for (const path of ['/news', '/news/stock']) {
+            await page.goto(path);
+
+            // 페이지 콘텐츠가 안정될 때까지 h1을 대기한다.
+            await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+
+            const overflow = await page.evaluate(
+                () =>
+                    document.documentElement.scrollWidth -
+                    document.documentElement.clientWidth
+            );
+            expect(
+                overflow,
+                `${path}: 가로 오버플로 ${overflow}px — 레이아웃 회귀`
+            ).toBeLessThanOrEqual(0);
+        }
+    });
+
+    /**
      * E1 — 카테고리 탭바 내비게이션: `nav[aria-label="뉴스 카테고리"]` 탭바가
      * `/news/[category]` 페이지에서 올바른 active 탭을 표시하고,
      * 다른 탭 클릭 시 해당 카테고리 URL로 이동하는지 검증해요.

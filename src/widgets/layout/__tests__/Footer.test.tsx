@@ -93,4 +93,11 @@ describe('Footer', () => {
         const link = screen.getByRole('link', { name: /마켓 뉴스/ });
         expect(link).toHaveAttribute('href', '/news');
     });
+
+    it('renders the /market link with 시장 분석 label', () => {
+        render(<Footer />);
+
+        const link = screen.getByRole('link', { name: /시장 분석/ });
+        expect(link).toHaveAttribute('href', '/market');
+    });
 });

@@ -14,3 +14,5 @@ export const OG_SITE_NAME_FONT_SIZE = 32;
 export const OG_SITE_NAME_TOP = 56;
 export const OG_SITE_NAME_RIGHT = 72;
 export const OG_LABEL_MARGIN_TOP = 32;
+/** Subtitle line below the main label in news OG images (hub and category). */
+export const OG_SUBTITLE_FONT_SIZE = 40;

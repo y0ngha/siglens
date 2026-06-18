@@ -47,9 +47,9 @@ export function NewsCategoryTabs({ activeCategory }: NewsCategoryTabsProps) {
                         href={`/news/${category}`}
                         aria-current={active ? 'page' : undefined}
                         className={cn(
-                            'focus-visible:ring-primary-500 flex min-h-11 touch-manipulation items-center px-4 py-2 text-sm whitespace-nowrap focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
+                            'focus-visible:ring-primary-500 flex min-h-11 touch-manipulation items-center border-b-2 border-transparent px-4 py-2 text-sm whitespace-nowrap focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
                             active
-                                ? 'border-primary-500 text-secondary-100 border-b-2 font-medium'
+                                ? 'border-primary-500 text-secondary-100 font-medium'
                                 : 'text-secondary-400 hover:text-secondary-100'
                         )}
                     >
