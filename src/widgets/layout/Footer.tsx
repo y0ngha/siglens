@@ -1,5 +1,6 @@
 import { ContactDialog } from './ContactDialog';
 import { CurrentYear } from './CurrentYear';
+import { NAV_ITEMS } from './headerNavItems';
 import { DotSeparator } from '@/shared/ui/DotSeparator';
 import {
     INVESTMENT_DISCLAIMER,
@@ -9,6 +10,7 @@ import {
     TERMS_TITLE,
 } from '@/shared/lib/legal';
 import Link from 'next/link';
+import { Fragment } from 'react';
 
 export function Footer() {
     return (
@@ -29,27 +31,17 @@ export function Footer() {
                         aria-label="사이트 정보"
                         className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2"
                     >
-                        <Link
-                            href="/market"
-                            className="text-secondary-400 hover:text-secondary-200 text-sm transition-colors"
-                        >
-                            시장 분석
-                        </Link>
-                        <DotSeparator />
-                        <Link
-                            href="/news"
-                            className="text-secondary-400 hover:text-secondary-200 text-sm transition-colors"
-                        >
-                            마켓 뉴스
-                        </Link>
-                        <DotSeparator />
-                        <Link
-                            href="/economy"
-                            className="text-secondary-400 hover:text-secondary-200 text-sm transition-colors"
-                        >
-                            미국 경제
-                        </Link>
-                        <DotSeparator />
+                        {NAV_ITEMS.map(item => (
+                            <Fragment key={item.href}>
+                                <Link
+                                    href={item.href}
+                                    className="text-secondary-400 hover:text-secondary-200 text-sm transition-colors"
+                                >
+                                    {item.label}
+                                </Link>
+                                <DotSeparator />
+                            </Fragment>
+                        ))}
                         <Link
                             href={PRIVACY_PATH}
                             className="text-secondary-400 hover:text-secondary-200 text-sm transition-colors"

@@ -223,9 +223,7 @@ export default async function CategoryNewsPage({ params }: Props) {
             {breadcrumbJsonLd ? <JsonLd data={breadcrumbJsonLd} /> : null}
             {newsListJsonLd ? <JsonLd data={newsListJsonLd} /> : null}
             <main className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8">
-                {/* Category nav so readers can jump to another feed without
-                    returning to the /news hub. Always rendered (even on the
-                    degrade path) so a failed category is never a dead end. */}
+                {/* Always rendered even on the degrade path so a failed category is never a dead end. */}
                 <NewsCategoryTabs activeCategory={cat} />
                 <h1 className="text-secondary-100 text-2xl font-bold tracking-tight text-balance sm:text-3xl">
                     {cfg.koLabel} 뉴스

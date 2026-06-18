@@ -64,17 +64,16 @@ test.describe('home page', () => {
         await page.goto('/');
         const main = page.getByRole('main');
 
-        // 텍스트에 ' →' 접미사가 포함되므로 exact: false로 매칭한다.
-        await main
-            .getByRole('link', { name: '마켓 뉴스', exact: false })
-            .click();
+        // → is wrapped in <span aria-hidden="true">, so it is excluded from the
+        // accessible name. The exact accessible name is '마켓 뉴스' / '미국 경제'.
+        await main.getByRole('link', { name: '마켓 뉴스' }).click();
         await page.waitForURL('**/news');
 
         // (b) 미국 경제 → /economy
         await page.goto('/');
         await page
             .getByRole('main')
-            .getByRole('link', { name: '미국 경제', exact: false })
+            .getByRole('link', { name: '미국 경제' })
             .click();
         await page.waitForURL('**/economy');
     });

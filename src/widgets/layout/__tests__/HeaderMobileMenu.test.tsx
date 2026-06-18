@@ -69,12 +69,11 @@ describe('HeaderMobileMenu', () => {
     it('nav links are in DOM even when drawer is closed (SSR crawlability)', () => {
         render(<HeaderMobileMenu items={NAV_ITEMS} />);
 
-        // Links should be in the DOM regardless of isOpen — for crawler discoverability
+        // Links should be in the DOM regardless of isOpen — for crawler discoverability.
+        // NAV_ITEMS renders in order: /market → /news → /economy
         const links = screen.getAllByRole('link', { hidden: true });
         const hrefs = links.map(l => l.getAttribute('href'));
-        expect(hrefs).toContain('/market');
-        expect(hrefs).toContain('/news');
-        expect(hrefs).toContain('/economy');
+        expect(hrefs).toEqual(['/market', '/news', '/economy']);
     });
 
     it('nav links have aria-hidden="true" on the drawer when closed', () => {
