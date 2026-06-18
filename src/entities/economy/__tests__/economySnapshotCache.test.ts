@@ -189,8 +189,6 @@ describe('getEconomySnapshot', () => {
             const [from] = vi.mocked(mockProvider.getCalendar).mock.calls[0];
             // ET 기준 날짜는 '2026-06-16' (UTC 03:00 = ET 전날 23:00)
             expect(from).toBe('2026-06-16');
-            // UTC 기준 날짜와는 달라야 한다
-            expect(from).not.toBe('2026-06-17');
         } finally {
             vi.useRealTimers();
         }

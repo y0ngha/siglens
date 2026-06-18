@@ -50,7 +50,6 @@ export function getEtOffset(
     );
     const fallDay = nthSundayDay(year, FALL_BACK_MONTH, FALL_BACK_NTH);
 
-    // Before March or after November → EST
     if (month < SPRING_FORWARD_MONTH || month > FALL_BACK_MONTH)
         return '-05:00';
 
@@ -68,7 +67,6 @@ export function getEtOffset(
         return '-05:00';
     }
 
-    // April through October → EDT
     return '-04:00';
 }
 

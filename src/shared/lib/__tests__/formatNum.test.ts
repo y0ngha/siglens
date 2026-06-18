@@ -24,8 +24,7 @@ describe('formatNum', () => {
     it('NaN → "NaN<unit>" (Intl.NumberFormat은 NaN을 "NaN"으로 직렬화)', () => {
         // NaN은 null이 아니므로 N/A를 반환하지 않고 format(NaN) 결과를 반환한다.
         const result = formatNum(NaN, '원');
-        // 동작 확인: NaN은 null 분기를 타지 않는다
-        expect(result).not.toBe('N/A');
+        expect(result).toBe('NaN원');
     });
 
     it('단위가 빈 문자열이면 숫자만 반환', () => {

@@ -32,20 +32,29 @@ function emptyIndicator(name: string): EconomicIndicatorSeries {
 }
 
 /**
- * ET(America/New_York) 기준 날짜를 'YYYY-MM-DD' 형식으로 반환한다.
+ * ET-zoned date string in YYYY-MM-DD format.
  *
  * UTC `toISOString().slice(0, 10)` 대신 ET 로컬 날짜를 사용하는 이유:
  * FMP economic-calendar 일정과 국채·지표 데이터가 ET 기준으로 날짜가 매겨지므로,
  * 서버가 UTC+0에서 00:00~04:59 사이에 캘린더 윈도를 계산하면 "오늘"이 ET 기준으로는
  * 전날이 되어 1일 빨리 시작하는 윈도 오차가 생긴다.
  *
- * `Intl.DateTimeFormat`의 `en-CA` locale은 V8/Node.js 환경에서 'YYYY-MM-DD' 형식을 생성한다
- * (CLDR 관례, 표준 보장 아님).
+ * `formatToParts`로 year/month/day 파트를 직접 조합해 locale 포맷 관례 의존성을 제거한다.
  */
 function isoDate(d: Date): string {
-    return new Intl.DateTimeFormat('en-CA', {
+    const fmt = new Intl.DateTimeFormat('en-US', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
         timeZone: 'America/New_York',
-    }).format(d);
+    });
+    const parts = Object.fromEntries(
+        fmt
+            .formatToParts(d)
+            .filter(p => p.type !== 'literal')
+            .map(p => [p.type, p.value])
+    );
+    return `${parts.year}-${parts.month}-${parts.day}`;
 }
 
 /**
