@@ -45,7 +45,7 @@ export function CategoryCard({
                     className="mb-4 min-w-0 space-y-2"
                     aria-label={`${koLabel} 최신 뉴스 미리보기`}
                 >
-                    {previewHeadlines.map((headline, i) => (
+                    {previewHeadlines.map(headline => (
                         <li
                             key={headline.slice(0, 64)}
                             className="text-secondary-400 min-w-0 text-sm"
