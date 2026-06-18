@@ -68,16 +68,6 @@ export function Footer() {
                             triggerLabel="문의하기"
                             triggerClassName="text-secondary-400 hover:text-secondary-200 text-sm transition-colors"
                         />
-                        {/* <DotSeparator />
-                        <a
-                            href="https://github.com/y0ngha/siglens"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            aria-label="GitHub에서 기여하기 →"
-                            className="text-secondary-500 hover:text-secondary-300 text-sm transition-colors"
-                        >
-                            GitHub에서 기여하기 →
-                        </a> */}
                     </nav>
                 </div>
             </div>

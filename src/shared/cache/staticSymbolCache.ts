@@ -12,6 +12,10 @@ import { SECONDS_PER_HOUR } from '@/shared/config/time';
  * keyParts는 호출 결과를 유일하게 식별해야 한다(symbol + 추가 인자 모두 포함). fetcher는
  * 인자 없는 closure로 넘긴다(키잉은 keyParts가 담당).
  *
+ * @param symbol 캐시 스코핑 키 — 주식 티커(AAPL, TSLA 등)뿐 아니라 비티커 센티널(예:
+ *   `__NEWS_GENERAL__`)도 허용된다. 뉴스 허브·카테고리 페이지는 이 파라미터를 sentinel로
+ *   넘겨 `symbol:__NEWS_GENERAL__` 태그를 생성한다. 함수는 키 형식을 강제하지 않는다.
+ *
  * extraTags: `symbol:${symbol}`(전체 무효화) 외에 그룹 무효화용 태그를 추가한다. 예: news는
  * `news:${symbol}`을 달아, fresh 뉴스 ingestion 후 news만 골라 revalidateTag할 수 있게 한다
  * (bars/peek/profile 캐시는 보존).

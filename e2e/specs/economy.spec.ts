@@ -153,7 +153,6 @@ test.describe('economy overview', () => {
         await page.setViewportSize({ width: 1280, height: 800 });
         await page.goto('/');
 
-        // 헤더 주요 네비게이션의 '미국 경제' 링크를 클릭한다.
         const header = page.getByRole('banner');
         await header
             .getByRole('navigation', { name: '주요 네비게이션' })
@@ -162,7 +161,6 @@ test.describe('economy overview', () => {
 
         await page.waitForURL('**/economy');
 
-        // economy 페이지 h1이 보여야 한다.
         await expect(
             page.getByRole('heading', {
                 level: 1,

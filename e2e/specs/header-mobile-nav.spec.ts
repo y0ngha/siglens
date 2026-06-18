@@ -41,24 +41,19 @@ test.describe('@webkit 모바일 햄버거 내비게이션', () => {
 
         await page.goto('/');
 
-        // 트리거 — 초기 상태: '메뉴 열기' 레이블, aria-expanded=false.
         const trigger = page.getByRole('button', { name: '메뉴 열기' });
         await expect(trigger).toBeVisible();
         await expect(trigger).toHaveAttribute('aria-expanded', 'false');
 
-        // 햄버거 클릭 → 드로어 열림.
         await trigger.click();
 
-        // 드로어가 접근성 트리에 노출됨 (aria-hidden 제거 + aria-modal=true).
         const drawer = page.getByRole('dialog', { name: '메뉴' });
         await expect(drawer).toBeVisible();
 
-        // 트리거 레이블이 '메뉴 닫기'로 전환되고 aria-expanded=true.
         const closeLabel = page.getByRole('button', { name: '메뉴 닫기' });
         await expect(closeLabel).toBeVisible();
         await expect(closeLabel).toHaveAttribute('aria-expanded', 'true');
 
-        // 드로어 내부에 '미국 경제' → /economy 링크가 있다 (헤더/푸터 사본 방지를 위해 드로어로 범위 제한).
         await expect(
             drawer
                 .getByRole('navigation', { name: '메뉴' })
@@ -77,14 +72,11 @@ test.describe('@webkit 모바일 햄버거 내비게이션', () => {
 
         await page.goto('/');
 
-        // 열기.
         await page.getByRole('button', { name: '메뉴 열기' }).click();
         await expect(page.getByRole('dialog', { name: '메뉴' })).toBeVisible();
 
-        // 토글 — 같은 버튼이 이제 '메뉴 닫기' 레이블.
         await page.getByRole('button', { name: '메뉴 닫기' }).click();
 
-        // 드로어가 접근성 트리에서 숨겨짐 (aria-hidden=true 복귀).
         await expect(page.locator(drawerSelector)).toHaveAttribute(
             'aria-hidden',
             'true'
@@ -102,11 +94,9 @@ test.describe('@webkit 모바일 햄버거 내비게이션', () => {
 
         await page.goto('/');
 
-        // 열기.
         await page.getByRole('button', { name: '메뉴 열기' }).click();
         await expect(page.getByRole('dialog', { name: '메뉴' })).toBeVisible();
 
-        // Escape → 드로어 닫힘.
         await page.keyboard.press('Escape');
 
         await expect(page.locator(drawerSelector)).toHaveAttribute(
@@ -131,12 +121,10 @@ test.describe('@webkit 모바일 햄버거 내비게이션', () => {
 
         await page.goto('/');
 
-        // 열기.
         await page.getByRole('button', { name: '메뉴 열기' }).click();
         const drawer = page.getByRole('dialog', { name: '메뉴' });
         await expect(drawer).toBeVisible();
 
-        // 드로어 내부 '미국 경제' 링크를 클릭한다.
         // Link의 onClick={close} 핸들러가 탐색 전에 드로어를 닫는다.
         await drawer
             .getByRole('navigation', { name: '메뉴' })

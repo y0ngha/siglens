@@ -69,7 +69,6 @@ export function HeaderMobileMenu({ items }: HeaderMobileMenuProps) {
                 </svg>
             </button>
 
-            {/* Backdrop — only visible when open */}
             {isOpen && (
                 <div
                     className="fixed inset-0 z-40 bg-black/50"

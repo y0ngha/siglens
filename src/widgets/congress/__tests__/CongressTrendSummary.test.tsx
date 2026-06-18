@@ -31,6 +31,7 @@ vi.mock('@/shared/ui/BotBlockedNotice', () => ({
     BotBlockedNotice: () => <div data-testid="bot-blocked" />,
 }));
 
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 
 import { CongressTrendSummary } from '../CongressTrendSummary';
@@ -109,6 +110,8 @@ describe('CongressTrendSummary', () => {
 
         // The hook must be called regardless of the status branch so the chatbot
         // does not carry stale context from a previous page (mirrors FinancialsAiSummary).
-        expect(vi.mocked(usePublishSymbolChat)).toHaveBeenCalled();
+        // buildChatState is mocked to return null, so the call must carry null context
+        // (non-done states publish null to clear stale analysis).
+        expect(vi.mocked(usePublishSymbolChat)).toHaveBeenCalledWith(null);
     });
 });
