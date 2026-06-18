@@ -32,6 +32,8 @@ export function EconomyMacroFacts({ snapshot }: EconomyMacroFactsProps) {
 
     const year2 = treasury?.year2 ?? null;
     const year10 = treasury?.year10 ?? null;
+    // core returns null when treasury is null or either yield component (year2/year10) is null —
+    // matches the previous local guard: `year2 === null || year10 === null`.
     const spread = computeYieldSpread(treasury ?? null);
 
     const ratesSentence =

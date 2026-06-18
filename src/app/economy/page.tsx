@@ -164,6 +164,8 @@ async function EconomyContent() {
  * 객체 리터럴 내 `as const`로는 좁혀지지 않는다. JsonLd 사용 측이 타입을 요구하지
  * 않으므로 plain const로 충분하다.
  */
+/** ISO 8601 기간 — 데이터셋의 시간적 범위(1년 lookback). */
+const DATASET_TEMPORAL_COVERAGE = 'P1Y'; // ISO 8601 — 1년 lookback
 // TREASURY_CARD_META의 키 수에서 파생 — EconomicIndicatorGrid와 동기.
 const TREASURY_MATURITY_COUNT = Object.keys(TREASURY_CARD_META).length;
 const DATASET_VARIABLE_MEASURED = `미국 거시 경제 지표 (기준금리·CPI·GDP·실업률 등 ${ECONOMY_INDICATORS.length}종 + 국채금리 ${TREASURY_MATURITY_COUNT}종)`;
@@ -173,7 +175,7 @@ const DATASET_JSON_LD = {
     name: 'US Macroeconomic Indicators — Federal Funds, CPI, Unemployment, etc.',
     description: ECONOMY_DESCRIPTION,
     variableMeasured: DATASET_VARIABLE_MEASURED,
-    temporalCoverage: 'P1Y',
+    temporalCoverage: DATASET_TEMPORAL_COVERAGE,
     creator: { '@type': 'Organization', name: SITE_NAME },
     url: ECONOMY_URL,
 };
