@@ -7,7 +7,13 @@ import { getOrSetCache } from '@/shared/cache/getOrSetCache';
 import { getEconomyProvider } from '@/shared/api/economy/getEconomyProvider';
 import { getEconomySnapshot } from '@/entities/economy/api/economySnapshotCache';
 import { ECONOMY_INDICATORS } from '@/shared/config/economyIndicators';
+import {
+    shouldCacheEconomySnapshot,
+    isEmptyEconomySnapshot,
+    MIN_INDICATORS_FOR_CACHE,
+} from '@/entities/economy/lib/economyCompleteness';
 import type { EconomyProvider } from '@/shared/api/economy/EconomyProvider';
+import type { EconomySnapshot } from '@y0ngha/siglens-core';
 
 const mockGetOrSetCache = vi.mocked(getOrSetCache);
 const mockGetEconomyProvider = vi.mocked(getEconomyProvider);
@@ -132,18 +138,22 @@ describe('getEconomySnapshot', () => {
         expect(shouldCache!(emptySnap)).toBe(false);
     });
 
-    it('shouldCache 가드: 값이 있는 스냅샷은 캐시 허용(true)', async () => {
+    it('shouldCache 가드: quorum(6+) 지표 + treasury 있는 스냅샷은 캐시 허용(true)', async () => {
         mockGetEconomyProvider.mockReturnValue(fakeProvider());
         await getEconomySnapshot();
         const [, , , shouldCache] = mockGetOrSetCache.mock.calls[0];
-        const goodSnap = {
-            indicators: [
-                { name: 'x', latest: POINT, previous: null, trend: [POINT] },
-            ],
+        // 9개 지표 중 6개 populated + treasury 있음 → shouldCacheEconomySnapshot=true
+        const quorumSnap = {
+            indicators: ECONOMY_INDICATORS.map((m, i) => ({
+                name: m.name,
+                latest: i < 6 ? POINT : null,
+                previous: null,
+                trend: i < 6 ? [POINT] : [],
+            })),
             treasury: { date: '2026-06-15', year2: 4.07, year10: 4.47 },
             calendar: [],
         };
-        expect(shouldCache!(goodSnap)).toBe(true);
+        expect(shouldCache!(quorumSnap)).toBe(true);
     });
 
     it('모든 9개 indicator가 동시에 throw해도 page는 부분 성공 (treasury/calendar 살아남음)', async () => {
@@ -192,5 +202,145 @@ describe('getEconomySnapshot', () => {
         } finally {
             vi.useRealTimers();
         }
+    });
+
+    // T1: isoDate DST spring forward 경계 테스트
+    it('isoDate: spring forward 당일 UTC 06:00 → ET 캘린더 from 인자 = 봄 전환일', async () => {
+        /**
+         * 2026-03-08 = 2026년 봄 시간 전환일 (3월 두 번째 일요일).
+         * UTC 06:00 = ET 01:00 (아직 EST -5h). UTC 06:00 - 5h = 01:00 → 여전히 03-08.
+         * UTC 기준과 ET 기준이 같으므로 from='2026-03-08'.
+         */
+        vi.useFakeTimers();
+        vi.setSystemTime(new Date('2026-03-08T06:00:00Z'));
+
+        try {
+            const mockProvider = fakeProvider();
+            mockGetEconomyProvider.mockReturnValue(mockProvider);
+
+            await getEconomySnapshot();
+
+            const [from] = vi.mocked(mockProvider.getCalendar).mock.calls[0];
+            // UTC 06:00 = EST 01:00 → ET 날짜는 2026-03-08
+            expect(from).toBe('2026-03-08');
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
+    it('isoDate: spring forward 전날 ET 경계 — UTC 04:30 = ET 전날 23:30(EST)', async () => {
+        /**
+         * 2026-03-08T04:30:00Z = EST 23:30 2026-03-07 (전날 23:30).
+         * UTC 기준이면 from='2026-03-08', ET 기준이면 from='2026-03-07'.
+         * 이 쌍이 UTC-vs-ET 불일치를 명확하게 드러낸다.
+         */
+        vi.useFakeTimers();
+        vi.setSystemTime(new Date('2026-03-08T04:30:00Z'));
+
+        try {
+            const mockProvider = fakeProvider();
+            mockGetEconomyProvider.mockReturnValue(mockProvider);
+
+            await getEconomySnapshot();
+
+            const [from] = vi.mocked(mockProvider.getCalendar).mock.calls[0];
+            // UTC 04:30 = EST(-5h) 23:30 전날 → ET 날짜는 2026-03-07
+            expect(from).toBe('2026-03-07');
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+});
+
+// M3: shouldCacheEconomySnapshot quorum predicate 테스트
+describe('shouldCacheEconomySnapshot', () => {
+    const POINT = { date: '2026-05-01', value: 3.63 };
+
+    function makeIndicators(
+        populatedCount: number,
+        total = 9
+    ): EconomySnapshot['indicators'] {
+        return Array.from({ length: total }, (_, i) => ({
+            name: `ind${i}`,
+            latest: i < populatedCount ? POINT : null,
+            previous: null,
+            trend: i < populatedCount ? [POINT] : [],
+        }));
+    }
+
+    const TREASURY = { date: '2026-06-15', year2: 4.07, year10: 4.47 };
+
+    it(`지표 ${MIN_INDICATORS_FOR_CACHE - 1}/${ECONOMY_INDICATORS.length}개 populated → 캐시 차단(false)`, () => {
+        const snap: EconomySnapshot = {
+            indicators: makeIndicators(MIN_INDICATORS_FOR_CACHE - 1),
+            treasury: TREASURY,
+            calendar: [],
+        };
+        expect(shouldCacheEconomySnapshot(snap)).toBe(false);
+    });
+
+    it(`지표 ${MIN_INDICATORS_FOR_CACHE}/${ECONOMY_INDICATORS.length}개 populated + treasury → 캐시 허용(true)`, () => {
+        const snap: EconomySnapshot = {
+            indicators: makeIndicators(MIN_INDICATORS_FOR_CACHE),
+            treasury: TREASURY,
+            calendar: [],
+        };
+        expect(shouldCacheEconomySnapshot(snap)).toBe(true);
+    });
+
+    it('지표 6+ populated이지만 treasury null + calendar empty → 캐시 차단(false)', () => {
+        const snap: EconomySnapshot = {
+            indicators: makeIndicators(MIN_INDICATORS_FOR_CACHE),
+            treasury: null,
+            calendar: [],
+        };
+        expect(shouldCacheEconomySnapshot(snap)).toBe(false);
+    });
+
+    it('지표 전부 null이지만 treasury populated → 캐시 차단(false)', () => {
+        const snap: EconomySnapshot = {
+            indicators: makeIndicators(0),
+            treasury: TREASURY,
+            calendar: [],
+        };
+        expect(shouldCacheEconomySnapshot(snap)).toBe(false);
+    });
+
+    it('지표 6+ populated + treasury null + calendar 이벤트 있음 → 캐시 허용(true)', () => {
+        const snap: EconomySnapshot = {
+            indicators: makeIndicators(MIN_INDICATORS_FOR_CACHE),
+            treasury: null,
+            calendar: [
+                {
+                    date: '2026-06-17 14:00:00',
+                    event: 'Fed Rate',
+                    impact: 'High',
+                    actual: null,
+                    estimate: 3.63,
+                    previous: 3.63,
+                    unit: '%',
+                },
+            ],
+        };
+        expect(shouldCacheEconomySnapshot(snap)).toBe(true);
+    });
+
+    // isEmptyEconomySnapshot의 semantics는 변경되지 않았음을 확인
+    it('isEmptyEconomySnapshot: 지표 1개 populated이어도 false(렌더는 허용)', () => {
+        const snap: EconomySnapshot = {
+            indicators: makeIndicators(1),
+            treasury: null,
+            calendar: [],
+        };
+        expect(isEmptyEconomySnapshot(snap)).toBe(false);
+    });
+
+    it('isEmptyEconomySnapshot: 전 축 null이면 true', () => {
+        const snap: EconomySnapshot = {
+            indicators: makeIndicators(0),
+            treasury: null,
+            calendar: [],
+        };
+        expect(isEmptyEconomySnapshot(snap)).toBe(true);
     });
 });

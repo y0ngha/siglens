@@ -36,7 +36,10 @@ export function EconomicCalendar({ events }: EconomicCalendarProps) {
                 id="economy-calendar-heading"
                 className="text-secondary-100 mb-3 text-xl font-semibold"
             >
-                경제 캘린더
+                경제 캘린더{' '}
+                <span className="text-secondary-400 text-sm font-normal">
+                    (미 동부시간)
+                </span>
             </h2>
             {events.length === 0 ? (
                 <p className="text-secondary-400 text-sm">

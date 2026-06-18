@@ -12,7 +12,7 @@ import type {
     EconomySnapshot,
 } from '@y0ngha/siglens-core';
 
-import { isEmptyEconomySnapshot } from '../lib/economyCompleteness';
+import { shouldCacheEconomySnapshot } from '../lib/economyCompleteness';
 
 /**
  * 레지스트리 fingerprint — 지표 목록이 바뀌면 캐시 키도 자동 무효화된다.
@@ -101,9 +101,14 @@ async function fetchSnapshot(
 /**
  * React.cache(요청 dedup) + Redis 2계층 캐시.
  *
- * `shouldCache`로 빈 스냅샷(`isEmptyEconomySnapshot`)을 캐시에 굳히지 않는다 —
- * transient 장애가 24h TTL 동안 빈 결과를 고정하는 사고 차단(financials `cacheNonEmpty`
- * 동등 패턴).
+ * `shouldCache`로 quorum 미달 스냅샷을 캐시에 굳히지 않는다 —
+ * transient 장애가 24h TTL 동안 부분 실패 결과를 고정하는 사고 차단
+ * (financials `cacheNonEmpty` 동등 패턴).
+ *
+ * `isEmptyEconomySnapshot`이 아닌 `shouldCacheEconomySnapshot`을 쓰는 이유:
+ * 렌더는 "완전히 비어있을 때만" degrade(최소한의 데이터가 있으면 noindex만 유지하며 렌더).
+ * 캐시는 더 엄격한 quorum(지표 6/9 + treasury or calendar)을 요구한다.
+ * 8개 지표 실패처럼 "비어있지 않지만 거의 비어있는" 스냅샷이 24h 고정되는 것을 막기 위함.
  */
 export const getEconomySnapshot = cache(
     (): Promise<EconomySnapshot> =>
@@ -111,6 +116,6 @@ export const getEconomySnapshot = cache(
             CACHE_KEY,
             SECONDS_PER_DAY,
             () => fetchSnapshot(getEconomyProvider()),
-            s => !isEmptyEconomySnapshot(s)
+            shouldCacheEconomySnapshot
         )
 );

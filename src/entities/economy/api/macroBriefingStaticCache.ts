@@ -19,8 +19,10 @@ import { SECONDS_PER_HOUR } from '@/shared/config/time';
  *
  * 키 prefix `economy-briefing-peek-static`는 시간 단위(`dateHour`)로 버킷팅되며,
  * 그에 맞춰 `revalidate=SECONDS_PER_HOUR`로 두어 키 granularity와 TTL을 일치시킨다
- * (시장 briefing peek와 같은 패턴). 페이지 `revalidate=86400`(24h)와는 의도적으로
- * 분리된 축 — briefing은 시간 단위 신선도가 필요하지만 지표/캘린더는 일 단위로 충분.
+ * (시장 briefing peek와 같은 패턴). 페이지 `revalidate=86400`(24h)가 신선도의 지배적
+ * 하한선이다 — peek의 1h TTL은 ISR cold-gen / regen 경계에서만 관찰되며, 두 번의
+ * ISR 재생성 사이에는 페이지 HTML이 고정되므로 1h 버킷 분리는 ISR 재생성 시점의
+ * 브리핑 seed 갱신에만 영향을 준다.
  */
 export function peekMacroBriefingStatic(
     snapshot: EconomySnapshot,

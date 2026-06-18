@@ -133,3 +133,30 @@ export class FakeEconomyProvider implements EconomyProvider {
         ];
     }
 }
+
+/**
+ * E2E degrade 시나리오용 fully-empty provider.
+ *
+ * `E2E_ECONOMY_FORCE_EMPTY=1` 환경변수로 활성화된다. 전 축(지표·treasury·calendar)이
+ * 빈 값을 반환해 `isEmptyEconomySnapshot`이 true → `EconomyDegraded` UI가 렌더되며
+ * `generateMetadata`가 `robots: { index: false }`를 반환한다.
+ *
+ * Tier 3 E2E env-seam 패턴 — E2E 빌드 시에만 조건부 require로 번들에 포함되며,
+ * 이 클래스는 E2E 외 prod 번들에서 dead-code로 제거된다.
+ */
+export class EmptyEconomyProvider implements EconomyProvider {
+    async getIndicator(name: string): Promise<EconomicIndicatorSeries> {
+        return { name, latest: null, previous: null, trend: [] };
+    }
+
+    async getTreasury(): Promise<TreasuryRateSnapshot | null> {
+        return null;
+    }
+
+    async getCalendar(
+        _from: string,
+        _to: string
+    ): Promise<EconomicCalendarEvent[]> {
+        return [];
+    }
+}

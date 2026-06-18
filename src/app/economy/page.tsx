@@ -19,7 +19,6 @@ import {
     buildBreadcrumbJsonLd,
     clampSeoDescription,
     ROOT_KEYWORDS,
-    SITE_BUILD_DATE,
     SITE_NAME,
     SITE_URL,
 } from '@/shared/lib/seo';
@@ -32,7 +31,7 @@ import { ECONOMY_INDICATORS } from '@/shared/config/economyIndicators';
 import { ECONOMY_TITLE } from './constants';
 import { EconomyDegraded } from './EconomyDegraded';
 
-/** 페이지 최상단 h1 — EconomyContent와 Suspense fallback에서 공유한다. */
+/** 페이지 최상단 h1 — Suspense 위에 렌더되어 ready와 degraded 양 경로에서 항상 표시된다. */
 function EconomyHeroH1() {
     return (
         <h1 className="text-secondary-100 px-6 pt-10 text-2xl font-bold tracking-tight text-balance sm:text-3xl lg:px-[15vw]">
@@ -233,7 +232,8 @@ export default function EconomyPage() {
         url: ECONOMY_URL,
         inLanguage: 'ko',
         isPartOf: { '@type': 'WebSite', '@id': `${SITE_URL}#website` },
-        dateModified: SITE_BUILD_DATE.toISOString(),
+        // dateModified 제거: SITE_BUILD_DATE는 모듈 로드 시점에 고정되어
+        // 24h ISR 갱신 주기를 반영하지 못한다. /financials 등 peer 페이지와 동일하게 제외.
     };
 
     const breadcrumbJsonLd = buildBreadcrumbJsonLd([
