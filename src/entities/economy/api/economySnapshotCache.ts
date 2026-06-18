@@ -40,20 +40,24 @@ function emptyIndicator(name: string): EconomicIndicatorSeries {
  * 전날이 되어 1일 빨리 시작하는 윈도 오차가 생긴다.
  *
  * `formatToParts`로 year/month/day 파트를 직접 조합해 locale 포맷 관례 의존성을 제거한다.
+ * formatToParts는 호출마다 새 `Intl.DateTimeFormat` 인스턴스를 생성하지 않도록
+ * 모듈 레벨 상수로 호이스팅한다 — `NUMBER_FORMATTER` 패턴(shared/lib/formatNum.ts)과 동일.
  */
+const ET_DATE_FORMAT = new Intl.DateTimeFormat('en-US', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    timeZone: 'America/New_York',
+});
+
 function isoDate(d: Date): string {
-    const fmt = new Intl.DateTimeFormat('en-US', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        timeZone: 'America/New_York',
-    });
+    // formatToParts always emits the {year, month, day} keys configured above —
+    // `as` is a typed projection of the options we set, not a runtime claim.
     const parts = Object.fromEntries(
-        fmt
-            .formatToParts(d)
+        ET_DATE_FORMAT.formatToParts(d)
             .filter(p => p.type !== 'literal')
             .map(p => [p.type, p.value])
-    );
+    ) as Record<'year' | 'month' | 'day', string>;
     return `${parts.year}-${parts.month}-${parts.day}`;
 }
 

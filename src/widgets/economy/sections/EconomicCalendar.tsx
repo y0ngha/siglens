@@ -6,7 +6,7 @@ import type {
 import { cn } from '@/shared/lib/cn';
 import { formatNum } from '@/shared/lib/formatNum';
 
-import { toIsoDateTime } from '../utils/etTimeUtils';
+import { toIsoDateTime } from '@/shared/lib/etTimeUtils';
 
 interface EconomicCalendarProps {
     events: readonly EconomicCalendarEvent[];

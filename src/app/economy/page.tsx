@@ -22,8 +22,11 @@ import {
     SITE_NAME,
     SITE_URL,
 } from '@/shared/lib/seo';
+import { SECONDS_PER_HOUR } from '@/shared/config/time';
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
 import { JsonLd } from '@/shared/ui/JsonLd';
+
+import { ECONOMY_INDICATORS } from '@/shared/config/economyIndicators';
 
 import { ECONOMY_TITLE } from './constants';
 import { EconomyDegraded } from './EconomyDegraded';
@@ -48,7 +51,7 @@ export const revalidate = 86400;
  * FAQ 텍스트에서 사용하는 갱신 주기(시간). `revalidate`에서 파생해
  * revalidate 값이 바뀌면 FAQ 문구도 자동으로 동기화된다.
  */
-const REVALIDATE_HOURS = revalidate / 3600;
+const REVALIDATE_HOURS = revalidate / SECONDS_PER_HOUR;
 
 /**
  * 1-hour bucket tag used as `unstable_cache` key granularity — must align with
@@ -154,19 +157,25 @@ async function EconomyContent() {
 
 /**
  * Dataset 구조화 데이터 — 검색 엔진이 페이지의 데이터셋 성격을 인식할 수 있도록 한다.
- * Schema.org/Dataset 타입으로 주요 거시 지표 9종 + 국채금리 2종을 명시.
+ * Schema.org/Dataset 타입으로 레지스트리 지표 N종 + 국채금리 2종을 명시.
+ *
+ * `as const`를 제거한 이유: 문자열이 런타임에 `ECONOMY_INDICATORS.length`로 파생되므로
+ * 객체 리터럴 내 `as const`로는 좁혀지지 않는다. JsonLd 사용 측이 타입을 요구하지
+ * 않으므로 plain const로 충분하다.
  */
+// 2종 = TREASURY_CARD_META의 'year2' + 'year10' — EconomicIndicatorGrid와 동기.
+const TREASURY_MATURITY_COUNT = 2;
+const DATASET_VARIABLE_MEASURED = `미국 거시 경제 지표 (기준금리·CPI·GDP·실업률 등 ${ECONOMY_INDICATORS.length}종 + 국채금리 ${TREASURY_MATURITY_COUNT}종)`;
 const DATASET_JSON_LD = {
     '@context': 'https://schema.org',
     '@type': 'Dataset',
     name: 'US Macroeconomic Indicators — Federal Funds, CPI, Unemployment, etc.',
     description: ECONOMY_DESCRIPTION,
-    variableMeasured:
-        '미국 거시 경제 지표 (기준금리·CPI·GDP·실업률 등 9종 + 국채금리 2종)',
+    variableMeasured: DATASET_VARIABLE_MEASURED,
     temporalCoverage: 'P1Y',
     creator: { '@type': 'Organization', name: SITE_NAME },
     url: ECONOMY_URL,
-} as const;
+};
 
 /**
  * FAQPage 구조화 데이터 — 자주 묻는 질문 4건. 검색 결과에 FAQ 리치 스니펫으로
