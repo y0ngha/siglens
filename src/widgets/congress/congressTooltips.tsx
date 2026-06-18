@@ -84,3 +84,18 @@ export const ChamberColumnTooltip = (
         <p>임기가 긴 상원의원의 거래는 장기 투자 관점을 반영할 수 있어요.</p>
     </>
 );
+
+/**
+ * 상원 공시 링크 tooltip — efdsearch 동의 페이지 흐름을 안내한다.
+ *
+ * 상원(Senate) 공시는 efdsearch.senate.gov의 disclaimer 동의 세션이 있어야
+ * 열 수 있어요. 세션 없이 deep link를 직접 열면 403 오류가 발생해요.
+ * 검색 페이지에서 PTR ID로 다시 찾을 수 있어요.
+ */
+export const SenateDisclosureTooltip = (
+    <p className="max-w-xs leading-relaxed">
+        상원 공시(efdsearch)는 동의 페이지를 통과해야 열 수 있어요. 검색
+        페이지에서 PTR ID로 다시 찾아주세요. 하원 공시는 PDF 직링크라 바로
+        열려요.
+    </p>
+);
