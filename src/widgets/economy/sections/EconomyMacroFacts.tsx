@@ -32,8 +32,6 @@ export function EconomyMacroFacts({ snapshot }: EconomyMacroFactsProps) {
 
     const year2 = treasury?.year2 ?? null;
     const year10 = treasury?.year10 ?? null;
-    // 단일 소스: `computeYieldSpread`(core)가 10Y−2Y 계산·반올림을 담당.
-    // 인라인 `parseFloat((year10 - year2).toFixed(2))` 중복 제거.
     const spread = computeYieldSpread(treasury ?? null);
 
     const ratesSentence =

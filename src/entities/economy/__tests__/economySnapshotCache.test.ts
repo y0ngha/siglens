@@ -163,30 +163,36 @@ describe('getEconomySnapshot', () => {
         });
         // treasury·calendar는 별도 축이라 살아있어야 한다
         expect(snap.treasury?.year10).toBe(4.47);
+        // fakeProvider()의 기본 getCalendar는 `async () => []`를 반환하므로 [] 맞다.
+        // calendar 축은 provider를 override하지 않았으므로 throw 없이 빈 배열로 정상 반환.
         expect(snap.calendar).toEqual([]);
     });
 
-    it('UTC-vs-ET 경계: UTC 03:00(= ET 전날 23:00, EDT 기준)에 calendar 시작일이 ET 날짜 기준임을 검증', async () => {
+    it('UTC-vs-ET 경계: UTC 03:00(= ET 전날 23:00, EDT 기준)에 getCalendar의 from 인자가 ET 날짜 기준임을 검증', async () => {
         /**
-         * 이 테스트는 `isoDate`가 UTC 기준이 아닌 ET 기준 날짜를 반환하는지 간접 검증한다.
-         *
          * 2026-06-17 UTC 03:00 = 2026-06-16 23:00 EDT(-4h).
-         * UTC 기준이면 "2026-06-17"이 today가 되어 calendar 윈도가 6월 17일부터 시작한다.
-         * ET 기준이면 "2026-06-16"이 today가 되어 calendar 윈도가 6월 16일부터 시작한다.
+         * UTC 기준이면 from='2026-06-17', ET 기준이면 from='2026-06-16'.
          *
-         * `getCalendar(from, to)` 호출 인자를 캡처해 from 값을 직접 검사한다.
+         * vi.useFakeTimers()로 시스템 시각을 UTC 03:00으로 고정한 뒤
+         * getEconomySnapshot()을 호출해 provider.getCalendar에 전달된
+         * from 인자가 ET 기준 전날('2026-06-16')인지 직접 검사한다.
          */
-        const mockProvider = fakeProvider();
-        mockGetEconomyProvider.mockReturnValue(mockProvider);
+        vi.useFakeTimers();
+        vi.setSystemTime(new Date('2026-06-17T03:00:00Z'));
 
-        const utcDate = new Date('2026-06-17T03:00:00Z');
-        const etDateStr = new Intl.DateTimeFormat('en-CA', {
-            timeZone: 'America/New_York',
-        }).format(utcDate);
+        try {
+            const mockProvider = fakeProvider();
+            mockGetEconomyProvider.mockReturnValue(mockProvider);
 
-        // ET 기준 날짜는 '2026-06-16' (UTC 03:00 = ET 전날 23:00)
-        expect(etDateStr).toBe('2026-06-16');
-        // UTC 기준 날짜는 '2026-06-17' — ET와 다르다
-        expect(utcDate.toISOString().slice(0, 10)).toBe('2026-06-17');
+            await getEconomySnapshot();
+
+            const [from] = vi.mocked(mockProvider.getCalendar).mock.calls[0];
+            // ET 기준 날짜는 '2026-06-16' (UTC 03:00 = ET 전날 23:00)
+            expect(from).toBe('2026-06-16');
+            // UTC 기준 날짜와는 달라야 한다
+            expect(from).not.toBe('2026-06-17');
+        } finally {
+            vi.useRealTimers();
+        }
     });
 });

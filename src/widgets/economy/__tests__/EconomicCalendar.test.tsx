@@ -92,4 +92,53 @@ describe('EconomicCalendar', () => {
         render(<EconomicCalendar events={[EVENT]} />);
         expect(screen.queryByText(/실제 /)).not.toBeInTheDocument();
     });
+
+    // ── DST boundary tests ───────────────────────────────────────────────────
+    it.each([
+        // [description, date string, expected offset]
+        // EST구간: 3월 springDay 전날(2월 28일)
+        ['2월 말(EST)', '2026-02-28 14:00:00', '-05:00'],
+        // Spring 당일 springDay 전(3월 8일 01:59)
+        [
+            'spring 당일 전 (3월 8일 01:59, EST)',
+            '2026-03-08 01:59:00',
+            '-05:00',
+        ],
+        // Spring 당일 springDay 후(3월 8일 03:00) — 2026년 3월 두 번째 일요일=3월 8일
+        [
+            'spring 당일 후 (3월 8일 03:00, EDT)',
+            '2026-03-08 03:00:00',
+            '-04:00',
+        ],
+        // Spring forward day 02:00 자체 → EDT (실제 존재하지 않는 시각, EDT 처리)
+        [
+            'spring 02:00(시계가 앞당겨지는 순간, EDT)',
+            '2026-03-08 02:00:00',
+            '-04:00',
+        ],
+        // Spring forward day 다음날 (3월 14일 — 3월 두 번째 일요일=3월 8일이므로 3월 14일은 EDT 구간)
+        ['3월 14일(EDT)', '2026-03-14 14:00:00', '-04:00'],
+        // 7월(EDT 한복판)
+        ['7월(EDT)', '2026-07-01 10:00:00', '-04:00'],
+        // Fall back day 전(11월 1일 01:00) — 2026년 11월 첫 번째 일요일=11월 1일
+        [
+            'fall 당일 01:00(EDT — 중복 구간 첫 발생)',
+            '2026-11-01 01:00:00',
+            '-04:00',
+        ],
+        // Fall back day 02:00 이후(11월 1일 03:00) → EST
+        ['fall 당일 03:00(EST)', '2026-11-01 03:00:00', '-05:00'],
+        // Fall back day 02:00 → EST
+        ['fall 02:00(EST)', '2026-11-01 02:00:00', '-05:00'],
+        // 12월(EST 겨울)
+        ['12월(EST)', '2026-12-01 10:00:00', '-05:00'],
+    ])('DST offset: %s → %s', (_, dateStr, expectedOffset) => {
+        const { container } = render(
+            <EconomicCalendar events={[{ ...EVENT, date: dateStr }]} />
+        );
+        const time = container.querySelector('time');
+        expect(time?.getAttribute('dateTime')).toBe(
+            `${dateStr.replace(' ', 'T')}${expectedOffset}`
+        );
+    });
 });

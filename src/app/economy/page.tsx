@@ -146,6 +146,65 @@ async function EconomyContent() {
     );
 }
 
+/**
+ * Dataset 구조화 데이터 — 검색 엔진이 페이지의 데이터셋 성격을 인식할 수 있도록 한다.
+ * Schema.org/Dataset 타입으로 주요 거시 지표 9종 + 국채금리 2종을 명시.
+ */
+const DATASET_JSON_LD = {
+    '@context': 'https://schema.org',
+    '@type': 'Dataset',
+    name: 'US Macroeconomic Indicators — Federal Funds, CPI, Unemployment, etc.',
+    description: ECONOMY_DESCRIPTION,
+    variableMeasured:
+        '미국 거시 경제 지표 (기준금리·CPI·GDP·실업률 등 9종 + 국채금리 2종)',
+    temporalCoverage: 'P1Y',
+    creator: { '@type': 'Organization', name: SITE_NAME },
+    url: ECONOMY_URL,
+} as const;
+
+/**
+ * FAQPage 구조화 데이터 — 자주 묻는 질문 4건. 검색 결과에 FAQ 리치 스니펫으로
+ * 노출되어 클릭률을 높이고 핵심 개념(2s10s·FOMC·CPI·데이터 출처)을 직접 전달한다.
+ */
+const FAQ_JSON_LD = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: [
+        {
+            '@type': 'Question',
+            name: '2s10s 스프레드란 무엇인가요?',
+            acceptedAnswer: {
+                '@type': 'Answer',
+                text: '2년물과 10년물 미국 국채 수익률의 차이입니다. 10년물에서 2년물을 뺀 값으로, 음수가 되면 장단기 금리가 역전된 것으로 경기침체 신호로 해석되기도 합니다.',
+            },
+        },
+        {
+            '@type': 'Question',
+            name: 'FOMC 발표는 어디서 확인하나요?',
+            acceptedAnswer: {
+                '@type': 'Answer',
+                text: '이 페이지 하단의 경제 캘린더에서 FOMC 회의 및 연방기금금리 결정 일정을 확인할 수 있습니다.',
+            },
+        },
+        {
+            '@type': 'Question',
+            name: 'CPI는 얼마나 자주 발표되나요?',
+            acceptedAnswer: {
+                '@type': 'Answer',
+                text: 'CPI(소비자물가지수)는 월 1회, 매월 중순에 미국 노동통계국(BLS)이 발표합니다.',
+            },
+        },
+        {
+            '@type': 'Question',
+            name: '이 데이터는 어디서 가져오나요?',
+            acceptedAnswer: {
+                '@type': 'Answer',
+                text: 'FMP(Financial Modeling Prep) API를 기준으로 수집하며, 24시간마다 최신 데이터로 갱신됩니다.',
+            },
+        },
+    ],
+} as const;
+
 export default function EconomyPage() {
     const jsonLd = {
         '@context': 'https://schema.org',
@@ -163,71 +222,12 @@ export default function EconomyPage() {
         { name: '미국 경제', url: ECONOMY_URL },
     ]);
 
-    /**
-     * Dataset 구조화 데이터 — 검색 엔진이 페이지의 데이터셋 성격을 인식할 수 있도록 한다.
-     * Schema.org/Dataset 타입으로 주요 거시 지표 9종 + 국채금리 2종을 명시.
-     */
-    const datasetJsonLd = {
-        '@context': 'https://schema.org',
-        '@type': 'Dataset',
-        name: 'US Macroeconomic Indicators — Federal Funds, CPI, Unemployment, etc.',
-        description: ECONOMY_DESCRIPTION,
-        variableMeasured:
-            '미국 거시 경제 지표 (기준금리·CPI·GDP·실업률 등 9종 + 국채금리 2종)',
-        temporalCoverage: 'P1Y',
-        creator: { '@type': 'Organization', name: SITE_NAME },
-        url: ECONOMY_URL,
-    };
-
-    /**
-     * FAQPage 구조화 데이터 — 자주 묻는 질문 4건. 검색 결과에 FAQ 리치 스니펫으로
-     * 노출되어 클릭률을 높이고 핵심 개념(2s10s·FOMC·CPI·데이터 출처)을 직접 전달한다.
-     */
-    const faqJsonLd = {
-        '@context': 'https://schema.org',
-        '@type': 'FAQPage',
-        mainEntity: [
-            {
-                '@type': 'Question',
-                name: '2s10s 스프레드란 무엇인가요?',
-                acceptedAnswer: {
-                    '@type': 'Answer',
-                    text: '2년물과 10년물 미국 국채 수익률의 차이입니다. 10년물에서 2년물을 뺀 값으로, 음수가 되면 장단기 금리가 역전된 것으로 경기침체 신호로 해석되기도 합니다.',
-                },
-            },
-            {
-                '@type': 'Question',
-                name: 'FOMC 발표는 어디서 확인하나요?',
-                acceptedAnswer: {
-                    '@type': 'Answer',
-                    text: '이 페이지 하단의 경제 캘린더에서 FOMC 회의 및 연방기금금리 결정 일정을 확인할 수 있습니다.',
-                },
-            },
-            {
-                '@type': 'Question',
-                name: 'CPI는 얼마나 자주 발표되나요?',
-                acceptedAnswer: {
-                    '@type': 'Answer',
-                    text: 'CPI(소비자물가지수)는 월 1회, 매월 중순에 미국 노동통계국(BLS)이 발표합니다.',
-                },
-            },
-            {
-                '@type': 'Question',
-                name: '이 데이터는 어디서 가져오나요?',
-                acceptedAnswer: {
-                    '@type': 'Answer',
-                    text: 'FMP(Financial Modeling Prep) API를 기준으로 수집하며, 24시간마다 최신 데이터로 갱신됩니다.',
-                },
-            },
-        ],
-    };
-
     return (
         <>
             <JsonLd data={jsonLd} />
             <JsonLd data={breadcrumbJsonLd} />
-            <JsonLd data={datasetJsonLd} />
-            <JsonLd data={faqJsonLd} />
+            <JsonLd data={DATASET_JSON_LD} />
+            <JsonLd data={FAQ_JSON_LD} />
             <main className="flex-1">
                 <EconomyHeroH1 />
                 <Suspense fallback={null}>
