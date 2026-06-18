@@ -8,7 +8,7 @@ import type { EconomyProvider } from '@/shared/api/economy/EconomyProvider';
 import { INDICATOR_TREND_LENGTH } from '@/shared/config/economyIndicators';
 
 /** 지표 시리즈 시드 — 결정적 fixture 생성의 입력 형태. */
-interface IndicatorSeed {
+export interface IndicatorSeed {
     values: number[];
     startDate: string;
 }

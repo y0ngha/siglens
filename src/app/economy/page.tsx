@@ -6,6 +6,7 @@ import {
     EconomicIndicatorGrid,
     EconomyMacroFacts,
     MacroBriefing,
+    TREASURY_CARD_META,
 } from '@/widgets/economy';
 // entities/economy/api/*는 server-only(`@upstash/redis` + `next/cache`) 의존이라
 // entities/CLAUDE.md "barrel 제외 대상" 일반 규칙대로 슬라이스 barrel(index.ts)에서
@@ -163,8 +164,8 @@ async function EconomyContent() {
  * 객체 리터럴 내 `as const`로는 좁혀지지 않는다. JsonLd 사용 측이 타입을 요구하지
  * 않으므로 plain const로 충분하다.
  */
-// 2종 = TREASURY_CARD_META의 'year2' + 'year10' — EconomicIndicatorGrid와 동기.
-const TREASURY_MATURITY_COUNT = 2;
+// TREASURY_CARD_META의 키 수에서 파생 — EconomicIndicatorGrid와 동기.
+const TREASURY_MATURITY_COUNT = Object.keys(TREASURY_CARD_META).length;
 const DATASET_VARIABLE_MEASURED = `미국 거시 경제 지표 (기준금리·CPI·GDP·실업률 등 ${ECONOMY_INDICATORS.length}종 + 국채금리 ${TREASURY_MATURITY_COUNT}종)`;
 const DATASET_JSON_LD = {
     '@context': 'https://schema.org',

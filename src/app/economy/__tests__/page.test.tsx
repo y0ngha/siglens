@@ -40,6 +40,7 @@ vi.mock('@/widgets/economy', () => ({
     EconomicIndicatorGrid: () => <div data-testid="indicator-grid" />,
     EconomicCalendar: () => <div data-testid="calendar" />,
     EconomyMacroFacts: () => <p data-testid="macro-facts" />,
+    TREASURY_CARD_META: { year2: {}, year10: {} },
 }));
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';

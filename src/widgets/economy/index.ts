@@ -1,4 +1,7 @@
 export { MacroBriefing } from './sections/MacroBriefing';
-export { EconomicIndicatorGrid } from './sections/EconomicIndicatorGrid';
+export {
+    EconomicIndicatorGrid,
+    TREASURY_CARD_META,
+} from './sections/EconomicIndicatorGrid';
 export { EconomicCalendar } from './sections/EconomicCalendar';
 export { EconomyMacroFacts } from './sections/EconomyMacroFacts';
