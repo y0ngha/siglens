@@ -1,6 +1,12 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import {
+    useState,
+    startTransition,
+    useEffect,
+    useRef,
+    useCallback,
+} from 'react';
 import { useQuery } from '@tanstack/react-query';
 import type {
     NewsAnalysisResponse,
@@ -10,79 +16,13 @@ import {
     cancelMarketNewsDigestAction,
     ensureMarketNewsCardsAnalyzedAction,
 } from '@/entities/market-news/actions';
-import { useHydrated } from '@/shared/hooks/useHydrated';
-import { POLL_INTERVAL_MS } from '../constants';
 import { fetchMarketNewsDigest } from '../utils/fetchMarketNewsDigest';
-import { waitForMarketNewsCardsStep } from '../utils/waitForMarketNewsCardsStep';
+import { useWaitForMarketNewsCards } from './useWaitForMarketNewsCards';
 
 export type MarketNewsDigestState =
     | { status: 'loading' }
     | { status: 'done'; result: NewsAnalysisResponse }
     | { status: 'error'; error: Error; retry: () => void };
-
-interface WaitForMarketNewsCardsResult {
-    isReady: boolean;
-    waitError: Error | null;
-}
-
-/**
- * Poll `getMarketNewsCardsAction` until at least one enriched card (sentiment
- * !== null) is available, then resolve. Returns `isReady = true` immediately
- * if `initiallyReady` is true.
- *
- * Inline mirror of useWaitForNewsCards adapted for market-news categories.
- */
-function useWaitForMarketNewsCards(
-    category: NewsFeedCategory,
-    initiallyReady: boolean
-): WaitForMarketNewsCardsResult {
-    const [isReady, setIsReady] = useState(initiallyReady);
-    const [waitError, setWaitError] = useState<Error | null>(null);
-    const [prevCategory, setPrevCategory] = useState(category);
-    const intervalIdRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-    if (prevCategory !== category) {
-        setPrevCategory(category);
-        setIsReady(initiallyReady);
-        setWaitError(null);
-    }
-
-    useEffect(() => {
-        if (initiallyReady) return;
-
-        const stateRef = { consecutiveFailures: 0 };
-
-        intervalIdRef.current = setInterval(() => {
-            void waitForMarketNewsCardsStep({
-                category,
-                incrementFailures: () => {
-                    stateRef.consecutiveFailures += 1;
-                },
-                resetFailures: () => {
-                    stateRef.consecutiveFailures = 0;
-                },
-                getConsecutiveFailures: () => stateRef.consecutiveFailures,
-                setIsReady,
-                setWaitError,
-                clearInterval: () => {
-                    if (intervalIdRef.current !== null) {
-                        clearInterval(intervalIdRef.current);
-                        intervalIdRef.current = null;
-                    }
-                },
-            });
-        }, POLL_INTERVAL_MS);
-
-        return () => {
-            if (intervalIdRef.current !== null) {
-                clearInterval(intervalIdRef.current);
-                intervalIdRef.current = null;
-            }
-        };
-    }, [category, initiallyReady]);
-
-    return { isReady, waitError };
-}
 
 /**
  * Fire-and-forget: triggers `ensureMarketNewsCardsAnalyzedAction(category)`
@@ -125,10 +65,11 @@ export function useMarketNewsDigest(
     category: NewsFeedCategory,
     hasEnrichedNews: boolean
 ): MarketNewsDigestState {
+    // useState / useRef block — §17 ordering
+    const [isHydrated, setIsHydrated] = useState(false);
     const currentJobIdRef = useRef<string | null>(null);
 
-    const isHydrated = useHydrated();
-
+    // Single custom hook that drives the `enabled` flag (input-provider pattern).
     const { isReady: isCardsReady, waitError } = useWaitForMarketNewsCards(
         category,
         hasEnrichedNews
@@ -176,6 +117,12 @@ export function useMarketNewsDigest(
             }
         };
     }, [category]);
+
+    // Hydration gate — set after first client render so SSR and client
+    // render match (avoids useQuery firing during hydration).
+    useEffect(() => {
+        startTransition(() => setIsHydrated(true));
+    }, []);
 
     // Surface wait errors (cards enrichment polling failure) as a digest error.
     if (waitError !== null) {

@@ -6,8 +6,10 @@
  * - @/widgets/market-news/utils/fetchMarketNewsDigest — the inner async
  *   fetcher so we can control queryFn outcomes without running the full submit/
  *   poll loop
- * - @/shared/hooks/useHydrated — to toggle the hydration gate
  * - @/shared/lib/sleep — keep tests synchronous where possible
+ *
+ * Note: useHydrated is no longer used by this hook (inlined as useState+useEffect
+ * in B1 fix). The hydration gate is tested via the cards-waiter `enabled` path.
  */
 
 import type { MockedFunction } from 'vitest';
@@ -15,7 +17,6 @@ import { act, renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { NewsAnalysisResponse } from '@y0ngha/siglens-core';
 import type { ReactNode } from 'react';
-import { useHydrated } from '@/shared/hooks/useHydrated';
 import {
     cancelMarketNewsDigestAction,
     getMarketNewsCardsAction,
@@ -36,10 +37,6 @@ vi.mock('@/widgets/market-news/utils/fetchMarketNewsDigest', () => ({
     fetchMarketNewsDigest: vi.fn(),
 }));
 
-vi.mock('@/shared/hooks/useHydrated', () => ({
-    useHydrated: vi.fn(() => true),
-}));
-
 vi.mock('@/shared/lib/sleep', () => ({
     sleep: vi.fn().mockResolvedValue(undefined),
 }));
@@ -47,7 +44,6 @@ vi.mock('@/shared/lib/sleep', () => ({
 const mockFetchMarketNewsDigest = fetchMarketNewsDigest as MockedFunction<
     typeof fetchMarketNewsDigest
 >;
-const mockUseHydrated = vi.mocked(useHydrated);
 // The hook imports cancelMarketNewsDigestAction directly from
 // @/entities/market-news/actions — that is the mock we must assert against.
 const mockCancelAction = cancelMarketNewsDigestAction as MockedFunction<
@@ -92,28 +88,33 @@ describe('useMarketNewsDigest', () => {
         mockGetMarketNewsCardsAction.mockReset();
         mockEnsureMarketNewsCardsAnalyzedAction.mockReset();
         mockEnsureMarketNewsCardsAnalyzedAction.mockResolvedValue(undefined);
-        mockUseHydrated.mockReturnValue(true);
     });
 
     afterEach(() => {
         queryClients.splice(0).forEach(client => client.clear());
     });
 
-    it('isHydrated=false → enabled=false, queryFn is NOT called', async () => {
-        mockUseHydrated.mockReturnValue(false);
+    it('isCardsReady=false → enabled=false, queryFn is NOT called', async () => {
+        // hasEnrichedNews=false means isCardsReady starts false (polls via interval).
+        // The cards waiter keeps isCardsReady=false until enriched cards appear,
+        // so useQuery stays disabled and fetchMarketNewsDigest is not invoked.
+        // Use fake timers so the 3s poll interval never fires during this test.
+        vi.useFakeTimers();
 
         const { result } = renderHook(
-            () => useMarketNewsDigest('general', true),
+            () => useMarketNewsDigest('general', false),
             { wrapper: makeWrapper() }
         );
 
-        // Small tick to let effects flush without calling queryFn.
+        // Let synchronous effects (including hydration setState) flush.
         await act(async () => {
-            await new Promise(resolve => setTimeout(resolve, 0));
+            await Promise.resolve();
         });
 
         expect(mockFetchMarketNewsDigest).not.toHaveBeenCalled();
         expect(result.current.status).toBe('loading');
+
+        vi.useRealTimers();
     });
 
     it('waitError from cards waiter surfaces as status: error', async () => {

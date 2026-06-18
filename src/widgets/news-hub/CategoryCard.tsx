@@ -47,7 +47,7 @@ export function CategoryCard({
                 >
                     {previewHeadlines.map((headline, i) => (
                         <li
-                            key={`${i}-${headline.slice(0, 32)}`}
+                            key={headline.slice(0, 64)}
                             className="text-secondary-400 min-w-0 text-sm"
                         >
                             <span className="line-clamp-1 wrap-break-word">

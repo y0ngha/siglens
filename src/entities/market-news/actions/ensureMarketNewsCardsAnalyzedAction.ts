@@ -151,7 +151,8 @@ export async function ensureMarketNewsCardsAnalyzedAction(
 
         if (options?.skipAnalysis) return;
 
-        // Read current DB state after upsert so newly inserted rows are included.
+        // `fresh` comes from FMP and has no `analyzedAt`; re-read DB to skip items
+        // that a previous run already analyzed — avoids duplicate LLM submissions.
         const rows = await repo.listByCategory(
             sentinel,
             MARKET_NEWS_LOOKBACK_MS
