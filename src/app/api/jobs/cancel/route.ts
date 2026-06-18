@@ -1,6 +1,7 @@
 import { constants } from 'node:http2';
 import {
     cancelAnalysisJob,
+    cancelCongressTrendJob,
     cancelFinancialsAnalysisJob,
     cancelFundamentalAnalysisJob,
     cancelJob,
@@ -22,6 +23,7 @@ const VALID_JOB_TYPES = new Set<JobType>([
     'news',
     'options',
     'overall',
+    'congress',
 ]);
 
 /** Cancel one or more analysis jobs. Called via sendBeacon on pagehide. */
@@ -61,6 +63,8 @@ export async function POST(request: Request): Promise<Response> {
                     return cancelJob(jobId);
                 case 'overall':
                     return cancelOverallAnalysisJob(jobId);
+                case 'congress':
+                    return cancelCongressTrendJob(jobId);
                 default:
                     console.warn('[cancel route] unknown job type:', type);
             }

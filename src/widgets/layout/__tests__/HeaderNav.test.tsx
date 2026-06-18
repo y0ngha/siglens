@@ -32,7 +32,7 @@ import { HeaderNav } from '../HeaderNav';
 
 const NAV_ITEMS = [
     { href: '/market', label: '시장 분석' },
-    { href: '/about', label: '소개' },
+    { href: '/news', label: '마켓 뉴스' },
 ] as const;
 
 describe('HeaderNav', () => {
@@ -42,7 +42,16 @@ describe('HeaderNav', () => {
         expect(
             screen.getByRole('link', { name: /시장 분석/ })
         ).toBeInTheDocument();
-        expect(screen.getByRole('link', { name: /소개/ })).toBeInTheDocument();
+        expect(
+            screen.getByRole('link', { name: /마켓 뉴스/ })
+        ).toBeInTheDocument();
+    });
+
+    it('renders the /news link with correct label', () => {
+        render(<HeaderNav items={NAV_ITEMS} />);
+
+        const newsLink = screen.getByRole('link', { name: /마켓 뉴스/ });
+        expect(newsLink).toHaveAttribute('href', '/news');
     });
 
     it('sets aria-current="page" on the active item', () => {
@@ -55,7 +64,7 @@ describe('HeaderNav', () => {
     it('does not set aria-current on inactive items', () => {
         render(<HeaderNav items={NAV_ITEMS} />);
 
-        const inactiveLink = screen.getByRole('link', { name: /소개/ });
+        const inactiveLink = screen.getByRole('link', { name: /마켓 뉴스/ });
         expect(inactiveLink).not.toHaveAttribute('aria-current');
     });
 

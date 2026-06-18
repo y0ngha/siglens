@@ -125,5 +125,11 @@
         ],
         "riskFactorsKo": ["E2E 고정 재무 리스크 요인"],
         "overallSentiment": "neutral"
+    },
+    "congressTrend": {
+        "summaryKo": "최근 의회 거래는 매수 우세예요.",
+        "notableMembersKo": ["Capito 의원이 매수했어요"],
+        "riskNoteKo": "공시 지연 약 45일을 감안해 해석해야 해요.",
+        "overallSentiment": "bullish"
     }
 }

@@ -254,7 +254,8 @@ export type JobType =
     | 'fundamental'
     | 'news'
     | 'options'
-    | 'overall';
+    | 'overall'
+    | 'congress';
 export interface CancelJobEntry {
     jobId: string;
     type: JobType;

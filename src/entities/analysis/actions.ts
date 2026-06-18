@@ -18,3 +18,7 @@ export { submitFinancialsAnalysisAction } from './actions/submitFinancialsAnalys
 export type { SubmitFinancialsAnalysisActionResult } from './actions/submitFinancialsAnalysisAction';
 export { pollFinancialsAnalysisAction } from './actions/pollFinancialsAnalysisAction';
 export { cancelFinancialsAnalysisJobAction } from './actions/cancelFinancialsAnalysisJobAction';
+export { submitCongressTrendAction } from './actions/submitCongressTrendAction';
+export type { SubmitCongressTrendActionResult } from './actions/submitCongressTrendAction';
+export { pollCongressTrendAction } from './actions/pollCongressTrendAction';
+export { cancelCongressTrendJobAction } from './actions/cancelCongressTrendJobAction';

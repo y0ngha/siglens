@@ -10,13 +10,14 @@ import {
 } from '@/shared/api/fmp/fmpUserMessage';
 import {
     DISABLED_THINKING_BUDGET,
-    POLL_INTERVAL_MS,
+    NEWS_CARD_ANALYSIS_POLL_INTERVAL_MS as POLL_INTERVAL_MS,
     POLL_MAX_ATTEMPTS,
 } from '../lib/newsAnalysisConstants';
 import { NEWS_LOOKBACK_MS } from '../lib/newsLookback';
 import { isRecentlyFetched, markFetched } from '../lib/newsRefreshFlag';
 import { revalidateTag } from 'next/cache';
 import { sleep } from '@/shared/lib/sleep';
+import { MS_PER_SECOND } from '@/shared/config/time';
 import { isE2E } from '@/shared/api/e2eEnv';
 import {
     pollNewsCardAnalysis,
@@ -54,7 +55,7 @@ async function analyzeAndPersist(
         }
     }
     console.warn(
-        `[ensureNewsCardsAnalyzedAction] poll timeout after ${(POLL_MAX_ATTEMPTS * POLL_INTERVAL_MS) / 1000}s — ${item.id}`
+        `[ensureNewsCardsAnalyzedAction] poll timeout after ${(POLL_MAX_ATTEMPTS * POLL_INTERVAL_MS) / MS_PER_SECOND}s — ${item.id}`
     );
 }
 
@@ -147,7 +148,9 @@ export async function ensureNewsCardsAnalyzedAction(
     ).length;
     if (changedCount > 0) {
         // news 태그만 무효화하므로 bars/peek/profile 캐시는 보존(범위 제한).
-        // "max" profile: 캐시 항목을 즉시 만료시켜 다음 요청에서 재생성하게 한다.
+        // Next.js 16.2.0 revalidateTag signature: (tag: string, profile: string | CacheLifeConfig).
+        // 'max' uses the maximum stale-while-revalidate profile so this tag busts immediately.
+        // See: node_modules/next/dist/server/web/spec-extension/revalidate.d.ts
         revalidateTag(`news:${symbol.toUpperCase()}`, 'max');
     }
 

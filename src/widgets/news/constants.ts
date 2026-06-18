@@ -1,9 +1,6 @@
-/** Polling interval shared by useNewsCardPolling and useWaitForNewsCards. */
-export const POLL_INTERVAL_MS = 3_000;
-
-/**
- * Number of consecutive polling failures before the error is surfaced to the
- * surrounding error boundary via `pollError`. Shared by both polling hooks so
- * the failure threshold stays in sync.
- */
-export const MAX_CONSECUTIVE_FAILURES = 3;
+export {
+    NEWS_CARD_POLL_INTERVAL_MS as POLL_INTERVAL_MS,
+    NEWS_CARD_MAX_CONSECUTIVE_FAILURES as MAX_CONSECUTIVE_FAILURES,
+    NEWS_CARD_EMPTY_SNAPSHOT_MAX_POLLS as EMPTY_SNAPSHOT_MAX_POLLS,
+    NEWS_CARD_MAX_POLL_DURATION_MS as MAX_POLL_DURATION_MS,
+} from '@/shared/config/pollingConfig';

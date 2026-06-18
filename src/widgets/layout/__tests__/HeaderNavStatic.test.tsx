@@ -19,21 +19,35 @@ import { render, screen } from '@testing-library/react';
 
 import { HeaderNavStatic } from '../HeaderNavStatic';
 
-const NAV_ITEMS = [{ href: '/market', label: '시장 분석' }] as const;
+const NAV_ITEMS = [
+    { href: '/market', label: '시장 분석' },
+    { href: '/news', label: '마켓 뉴스' },
+] as const;
 
 describe('HeaderNavStatic', () => {
     it('renders all nav items as links', () => {
         render(<HeaderNavStatic items={NAV_ITEMS} />);
 
-        const link = screen.getByRole('link', { name: /시장 분석/ });
-        expect(link).toHaveAttribute('href', '/market');
+        const marketLink = screen.getByRole('link', { name: /시장 분석/ });
+        expect(marketLink).toHaveAttribute('href', '/market');
+
+        const newsLink = screen.getByRole('link', { name: /마켓 뉴스/ });
+        expect(newsLink).toHaveAttribute('href', '/news');
+    });
+
+    it('renders 2 nav items', () => {
+        render(<HeaderNavStatic items={NAV_ITEMS} />);
+
+        expect(screen.getAllByRole('link')).toHaveLength(2);
     });
 
     it('does not set aria-current on any item (no active state)', () => {
         render(<HeaderNavStatic items={NAV_ITEMS} />);
 
-        const link = screen.getByRole('link', { name: /시장 분석/ });
-        expect(link).not.toHaveAttribute('aria-current');
+        const links = screen.getAllByRole('link');
+        links.forEach(link => {
+            expect(link).not.toHaveAttribute('aria-current');
+        });
     });
 
     it('has a navigation landmark', () => {

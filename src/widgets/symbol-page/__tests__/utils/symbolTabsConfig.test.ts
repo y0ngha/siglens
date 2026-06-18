@@ -1,8 +1,8 @@
 import { TABS } from '@/widgets/symbol-page/utils/symbolTabsConfig';
 
 describe('TABS (symbolTabsConfig)', () => {
-    it('contains all 7 analysis tabs', () => {
-        expect(TABS).toHaveLength(7);
+    it('contains all 8 analysis tabs', () => {
+        expect(TABS).toHaveLength(8);
     });
 
     it('has unique keys', () => {
@@ -51,6 +51,19 @@ describe('TABS (symbolTabsConfig)', () => {
         const fundamentalIdx = TABS.findIndex(t => t.key === 'fundamental');
         const financialsIdx = TABS.findIndex(t => t.key === 'financials');
         expect(financialsIdx).toBe(fundamentalIdx + 1);
+    });
+
+    it('congress tab exists with correct href', () => {
+        const tab = TABS.find(t => t.key === 'congress')!;
+        expect(tab).toBeDefined();
+        expect(tab.label).toBe('의회 거래');
+        expect(tab.hrefBuilder('AAPL')).toBe('/AAPL/congress');
+    });
+
+    it('congress tab is positioned after financials tab', () => {
+        const financialsIdx = TABS.findIndex(t => t.key === 'financials');
+        const congressIdx = TABS.findIndex(t => t.key === 'congress');
+        expect(congressIdx).toBe(financialsIdx + 1);
     });
 
     it('every tab has a non-empty label', () => {

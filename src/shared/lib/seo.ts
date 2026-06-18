@@ -270,6 +270,62 @@ function buildSymbolFinancialsKeywords(
     ];
 }
 
+/** Build SEO metadata for the `/[symbol]/congress` page. */
+export function buildSymbolCongressSeoContent(
+    symbol: string,
+    opts: BuildSymbolSeoOptions = {}
+): SymbolSeoContent {
+    const upper = symbol.toUpperCase();
+    // Root layout template appends "| Siglens" — exclude brand name to prevent duplication.
+    const title = `${upper} 의회 거래 — 상원·하원 의원 매매 공시`;
+    const fullTitle = `${title} | ${SITE_NAME}`;
+    const subject = opts.displayName ?? upper;
+    return {
+        ticker: upper,
+        title,
+        fullTitle,
+        description: clampSeoDescription(
+            buildSymbolCongressDescription(subject)
+        ),
+        url: `${SITE_URL}/${upper}/congress`,
+        keywords: buildSymbolCongressKeywords(upper, opts.koreanName),
+    };
+}
+
+function buildSymbolCongressDescription(subject: string): string {
+    // 공시지연 ~45일은 STOCK Act 규정상 거래일로부터 신고 마감까지의 최대치다.
+    return `미국 상원·하원 의원의 ${subject} 매매 공시 내역을 공시지연 약 45일을 감안해 AI가 동향으로 요약합니다.`;
+}
+
+function buildSymbolCongressKeywords(
+    ticker: string,
+    koreanName?: string
+): string[] {
+    return [
+        ticker,
+        `${ticker} 의회 거래`,
+        `${ticker} 의원 매매`,
+        `${ticker} 상원 의원 매매`,
+        `${ticker} 하원 의원 매매`,
+        `${ticker} 정치인 매매`,
+        `${ticker} 공시`,
+        ...(koreanName
+            ? [
+                  `${koreanName} 의회 거래`,
+                  `${koreanName} 의원 매매`,
+                  `${koreanName} 정치인 매매`,
+              ]
+            : []),
+        '의회 거래',
+        '의원 매매',
+        '상원 의원 매매',
+        '하원 의원 매매',
+        '정치인 주식 매매',
+        'STOCK Act',
+        '의회 공시',
+    ];
+}
+
 /** Build SEO metadata for the `/[symbol]/fundamental` page. */
 export function buildSymbolFundamentalSeoContent(
     symbol: string,

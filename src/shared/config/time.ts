@@ -17,3 +17,4 @@ export const KST_OFFSET_HOURS = 9;
  * keeping FMP API call volume manageable.
  */
 export const FMP_STATEMENTS_REVALIDATE_SECONDS = SECONDS_PER_DAY; // 24h
+export const CONGRESS_REVALIDATE_SECONDS = SECONDS_PER_DAY; // 24h — 의회 거래 공시지연 ~45일

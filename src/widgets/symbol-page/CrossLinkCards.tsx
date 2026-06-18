@@ -8,6 +8,7 @@ const ALL_PAGES = [
     'financials',
     'options',
     'fear-greed',
+    'congress',
     'overall',
 ] as const;
 
@@ -21,6 +22,7 @@ const LABEL: Record<PageKey, string> = {
     financials: '재무제표',
     options: '옵션 분석',
     'fear-greed': '공포 탐욕 지수',
+    congress: '의회 거래',
     overall: 'AI 종합 분석',
 };
 
@@ -31,6 +33,7 @@ const DESCRIPTION: Record<PageKey, string> = {
     financials: '손익계산서·재무상태표·현금흐름표',
     options: '옵션 시장이 보는 가격대와 기대 변동성',
     'fear-greed': '단기 매매 심리 0~100 점수',
+    congress: '상원·하원 의원 매매 공시와 AI 동향 해석',
     overall: '4축 통합 AI 결론 + 시나리오',
 };
 
@@ -41,6 +44,7 @@ const HREF: Record<PageKey, (symbol: string) => string> = {
     financials: symbol => `/${symbol}/financials`,
     options: symbol => `/${symbol}/options`,
     'fear-greed': symbol => `/${symbol}/fear-greed`,
+    congress: symbol => `/${symbol}/congress`,
     overall: symbol => `/${symbol}/overall`,
 };
 
