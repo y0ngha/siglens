@@ -31,7 +31,7 @@ function computeTodayAtMarketClose(now: Date): Date {
 }
 
 /**
- * POPULAR_TICKERS의 모든 sub-route(차트/뉴스/펀더멘털/옵션/종합/공포탐욕)에
+ * POPULAR_TICKERS의 모든 sub-route(차트/뉴스/펀더멘털/옵션/종합/공포탐욕/의회거래)에
  * 대한 sitemap 엔트리를 반환한다. 옵션 페이지는 generated static list에
  * 포함된 ticker만 포함 — 옵션 없는 종목 페이지는 noindex라 sitemap에 두면
  * 품질 신호가 약해진다.
@@ -90,6 +90,12 @@ export function buildPopularEntries(now: Date): SitemapEntry[] {
             lastModified: todayClose,
             changeFrequency: 'daily',
             priority: 0.78,
+        },
+        {
+            url: `${SITE_URL}/${ticker}/congress`,
+            lastModified: todayClose,
+            changeFrequency: 'weekly',
+            priority: 0.75,
         },
     ]);
 }

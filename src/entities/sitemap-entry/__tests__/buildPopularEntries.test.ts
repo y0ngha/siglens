@@ -9,11 +9,11 @@ import { buildPopularEntries } from '../lib/buildPopularEntries';
 const NOW = new Date('2026-05-23T21:00:00.000Z');
 
 describe('buildPopularEntries', () => {
-    it('모든 POPULAR_TICKERS에 대해 6축 기본 라우트를 생성하고 options는 generated list에 맞춘다', () => {
+    it('모든 POPULAR_TICKERS에 대해 7축 기본 라우트를 생성하고 options는 generated list에 맞춘다', () => {
         const entries = buildPopularEntries(NOW);
 
         expect(entries).toHaveLength(
-            POPULAR_TICKERS.length * 6 + POPULAR_OPTIONS_TICKERS.length
+            POPULAR_TICKERS.length * 7 + POPULAR_OPTIONS_TICKERS.length
         );
 
         const first = POPULAR_TICKERS[0];
@@ -27,8 +27,13 @@ describe('buildPopularEntries', () => {
                 `${base}/financials`,
                 `${base}/overall`,
                 `${base}/fear-greed`,
+                `${base}/congress`,
             ])
         );
+
+        const congressEntry = entries.find(e => e.url === `${base}/congress`);
+        expect(congressEntry?.changeFrequency).toBe('weekly');
+        expect(congressEntry?.priority).toBe(0.75);
     });
 
     it('옵션 URL은 generated static options list와 정확히 일치한다', () => {
