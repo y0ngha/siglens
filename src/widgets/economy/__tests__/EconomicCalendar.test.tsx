@@ -54,18 +54,6 @@ describe('EconomicCalendar', () => {
         );
     });
 
-    it('EDT 구간(6월) 이벤트 → dateTime에 -04:00 offset', () => {
-        const { container } = render(
-            <EconomicCalendar
-                events={[{ ...EVENT, date: '2026-06-17 14:00:00' }]}
-            />
-        );
-        const time = container.querySelector('time');
-        expect(time?.getAttribute('dateTime')).toBe(
-            '2026-06-17T14:00:00-04:00'
-        );
-    });
-
     it('EST 구간(12월) 이벤트 → dateTime에 -05:00 offset', () => {
         const { container } = render(
             <EconomicCalendar

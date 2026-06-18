@@ -8,7 +8,10 @@ import type { EconomyProvider } from '@/shared/api/economy/EconomyProvider';
 import { INDICATOR_TREND_LENGTH } from '@/shared/config/economyIndicators';
 
 /** 지표 시리즈 시드 — 결정적 fixture 생성의 입력 형태. */
-type IndicatorSeed = { values: number[]; startDate: string };
+interface IndicatorSeed {
+    values: number[];
+    startDate: string;
+}
 
 /**
  * 결정적 fixture: FMP 실측 응답과 같은 형태(name+date+value)로 9종 지표를
