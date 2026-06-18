@@ -114,10 +114,16 @@ export default async function NewsHubPage() {
                 <h1 className="text-2xl font-bold tracking-tight">
                     마켓 뉴스 허브
                 </h1>
-                <p className="text-secondary-400 -mt-4 text-sm">
-                    미국 일반·주식·암호화폐·외환·마켓 아티클 최신 뉴스를 AI가
-                    한국어로 정리해 드려요.
-                </p>
+                <div className="text-secondary-400 -mt-4 space-y-1 text-sm">
+                    <p>
+                        미국 일반·주식·암호화폐·외환·마켓 아티클 최신 뉴스를
+                        AI가 한국어로 정리해 드려요.
+                    </p>
+                    <p>
+                        각 카테고리는 AI 다이제스트와 함께 호재·악재 시그널을
+                        표시하며, 카드 클릭 시 원문 기사로 이동합니다.
+                    </p>
+                </div>
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     {categories.map((cat, i) => {
                         const cfg = CATEGORY_CONFIG[cat];
@@ -126,6 +132,7 @@ export default async function NewsHubPage() {
                                 key={cat}
                                 koLabel={cfg.koLabel}
                                 slug={cfg.slug}
+                                koDescription={cfg.koDescription}
                                 previewHeadlines={previewsByCategory[i]}
                             />
                         );

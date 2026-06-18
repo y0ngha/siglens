@@ -11,6 +11,8 @@ export const PREVIEW_HEADLINE_LIMIT = 3;
 export interface CategoryCardProps {
     koLabel: string;
     slug: string;
+    /** One-sentence category intro shown below the heading. Differentiates each card from thin-duplicate content. */
+    koDescription: string;
     /**
      * Pre-fetched headline strings for the preview list. The caller is
      * responsible for fetching and passing these — this component does no
@@ -32,13 +34,17 @@ export interface CategoryCardProps {
 export function CategoryCard({
     koLabel,
     slug,
+    koDescription,
     previewHeadlines,
 }: CategoryCardProps) {
     return (
         <article className="border-secondary-700 bg-secondary-800 hover:border-primary-500/50 flex w-full min-w-0 flex-col overflow-hidden rounded-xl border p-5 transition-colors">
-            <h2 className="mb-3 text-base font-semibold tracking-tight text-balance">
+            <h2 className="mb-1 text-base font-semibold tracking-tight text-balance">
                 {koLabel}
             </h2>
+            <p className="text-secondary-500 mb-3 text-xs leading-relaxed">
+                {koDescription}
+            </p>
 
             {previewHeadlines.length > 0 ? (
                 <ul

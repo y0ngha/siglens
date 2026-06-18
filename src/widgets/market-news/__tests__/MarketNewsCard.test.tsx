@@ -119,4 +119,17 @@ describe('MarketNewsCard는', () => {
             SENTIMENT_CLASS['bullish'].split(' ')[0]
         );
     });
+
+    it('주식 카드에 tickers=[AAPL, MSFT]이면 두 개의 ticker-chip이 올바른 href로 렌더된다 (S21)', () => {
+        render(
+            <MarketNewsCard
+                category="stock"
+                item={{ ...BASE, tickers: ['AAPL', 'MSFT'] }}
+            />
+        );
+        const chips = screen.getAllByTestId('ticker-chip');
+        expect(chips).toHaveLength(2);
+        expect(chips[0]).toHaveAttribute('href', '/AAPL');
+        expect(chips[1]).toHaveAttribute('href', '/MSFT');
+    });
 });

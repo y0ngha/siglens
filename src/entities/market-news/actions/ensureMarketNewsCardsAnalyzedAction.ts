@@ -21,6 +21,7 @@ import { CATEGORY_CONFIG } from '../lib/categoryConfig';
 import {
     MARKET_NEWS_LOOKBACK_MS,
     MARKET_NEWS_CACHE_TAG_PREFIX,
+    LLM_PARALLEL_LIMIT,
 } from '../lib/marketNewsConstants';
 import {
     DISABLED_THINKING_BUDGET,
@@ -30,6 +31,26 @@ import {
 
 /** Divisor for the upsert-majority-failure threshold: if more than half of fetched items fail to upsert, abort. */
 const MAJORITY_DIVISOR = 2;
+
+/**
+ * Run `fn` over each item in `items`, at most `limit` items concurrently.
+ * Returns settled results in input order, identical to `Promise.allSettled`.
+ *
+ * Avoids adding `p-limit` as a dependency; the loop-slice pattern is
+ * sufficient for the O(50) item sizes seen here.
+ */
+async function withConcurrencyLimit<T, R>(
+    items: T[],
+    limit: number,
+    fn: (item: T) => Promise<R>
+): Promise<PromiseSettledResult<R>[]> {
+    const results: PromiseSettledResult<R>[] = [];
+    for (let i = 0; i < items.length; i += limit) {
+        const chunk = items.slice(i, i + limit);
+        results.push(...(await Promise.allSettled(chunk.map(fn))));
+    }
+    return results;
+}
 
 /**
  * Submit per-card AI analysis for a single item and wait for the worker to
@@ -77,21 +98,20 @@ async function analyzeAndPersist(
  * are logged and never thrown; other items continue normally.
  *
  * Designed to run inside `waitUntil` so it does not block the response stream.
- *
- * @param options.skipAnalysis When true (bot traffic), FMP fetch + DB upsert
- *   still run but LLM card analysis is skipped to avoid unnecessary worker cost.
  */
 export async function ensureMarketNewsCardsAnalyzedAction(
-    category: NewsFeedCategory,
-    options?: { skipAnalysis?: boolean }
+    category: NewsFeedCategory
 ): Promise<void> {
     try {
         const { sentinel } = CATEGORY_CONFIG[category];
 
-        // SEO-safe: bots get existing DB rows, so skipping FMP fetch doesn't cause stale content.
-        if (options?.skipAnalysis && (await isRecentlyFetched(sentinel))) {
+        if (await isRecentlyFetched(sentinel)) {
             return;
         }
+
+        // Mark before the async fetch so that a second concurrent caller that
+        // reads the flag after this point will skip the FMP round-trip.
+        await markFetched(sentinel);
 
         const newsClient = getMarketNewsClient();
         const { db } = getDatabaseClient();
@@ -131,7 +151,6 @@ export async function ensureMarketNewsCardsAnalyzedAction(
             );
             return;
         }
-        await markFetched(sentinel);
 
         if (fresh.length === 0) return;
 
@@ -143,15 +162,11 @@ export async function ensureMarketNewsCardsAnalyzedAction(
         if (changedCount > 0) {
             // Use 'market-news:<sentinel>' tag so only the category's ISR cache is
             // busted — bars/profile/analysis caches for per-symbol pages are untouched.
-            // Next.js 16.2.0 revalidateTag signature: (tag: string, profile: string | CacheLifeConfig).
-            // 'max' uses the maximum stale-while-revalidate profile so this tag busts immediately.
-            // See: node_modules/next/dist/server/web/spec-extension/revalidate.d.ts
+            // See Next.js 16.2 revalidateTag(tag, profile?) signature — 'max' busts immediately.
             revalidateTag(`${MARKET_NEWS_CACHE_TAG_PREFIX}:${sentinel}`, 'max');
         }
 
         if (isE2E()) return;
-
-        if (options?.skipAnalysis) return;
 
         // `fresh` comes from FMP and has no `analyzedAt`; re-read DB to skip items
         // that a previous run already analyzed — avoids duplicate LLM submissions.
@@ -177,23 +192,28 @@ export async function ensureMarketNewsCardsAnalyzedAction(
 
         if (unanalyzed.length === 0) return;
 
-        let analyzeFailures = 0;
-        // Sequential: avoid overwhelming the LLM worker with concurrent per-item submissions.
-        for (const item of unanalyzed) {
-            try {
-                await analyzeAndPersist(item, repo);
-            } catch (err) {
-                analyzeFailures += 1;
-                console.error(
-                    '[ensureMarketNewsCardsAnalyzedAction] analyzeAndPersist failed for',
-                    item.id,
-                    err
-                );
-            }
-        }
-        if (analyzeFailures > 0) {
+        // Chunked-parallel: submit card analyses in batches of LLM_PARALLEL_LIMIT.
+        // Unbounded Promise.allSettled(50 items) risks a worker-queue stampede.
+        // Batching keeps concurrency bounded while still parallelising within each chunk.
+        const analyzeSettled = await withConcurrencyLimit(
+            unanalyzed,
+            LLM_PARALLEL_LIMIT,
+            item => analyzeAndPersist(item, repo)
+        );
+        const analyzeFailures = analyzeSettled.filter(
+            r => r.status === 'rejected'
+        );
+        if (analyzeFailures.length > 0) {
             console.error(
-                `[ensureMarketNewsCardsAnalyzedAction] ${analyzeFailures}/${unanalyzed.length} analyzeAndPersist failed`
+                `[ensureMarketNewsCardsAnalyzedAction] ${analyzeFailures.length}/${unanalyzed.length} analyzeAndPersist failed`,
+                analyzeFailures.map(f =>
+                    f.status === 'rejected' ? f.reason : null
+                )
+            );
+        }
+        if (analyzeFailures.length > unanalyzed.length / MAJORITY_DIVISOR) {
+            console.error(
+                `[ensureMarketNewsCardsAnalyzedAction] majority analyzeAndPersist failure (${analyzeFailures.length}/${unanalyzed.length})`
             );
         }
     } catch (error) {

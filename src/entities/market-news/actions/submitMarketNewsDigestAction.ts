@@ -20,18 +20,35 @@ import {
 import type { MarketNewsRow } from '../model';
 
 /**
- * Coerce a `MarketNewsRow` into the `NewsRow`-compatible shape that
- * `isEnrichedRow` and `toEnrichedNewsItem` expect. `MarketNewsRow` is a
- * structural superset of `NewsRow` (same fields + `tickers`), so only a
- * type assertion is required — no field mapping.
- *
- * The `tickers` extra field is silently ignored by both helpers.
+ * Picks only the fields that `isEnrichedRow` / `toEnrichedNewsItem` inspect.
+ * Explicit mapping surfaces any future shape drift between the two entities
+ * as a compile-time TS error rather than a silent runtime mismatch.
  */
+function toEnrichedRowShape(
+    row: MarketNewsRow
+): Parameters<typeof isEnrichedRow>[0] {
+    return {
+        id: row.id,
+        symbol: row.symbol,
+        source: row.source,
+        url: row.url,
+        publishedAt: row.publishedAt,
+        titleEn: row.titleEn,
+        titleKo: row.titleKo,
+        bodyEn: row.bodyEn,
+        bodyKo: row.bodyKo,
+        summaryKo: row.summaryKo,
+        sentiment: row.sentiment,
+        category: row.category,
+        priceImpact: row.priceImpact,
+        analyzedAt: row.analyzedAt,
+    };
+}
+
 function toEnrichedMarketNewsItem(row: MarketNewsRow): EnrichedNewsItem | null {
-    // safe: MarketNewsRow is a structural superset of NewsRow — same fields + tickers
-    const newsRowLike = row as Parameters<typeof isEnrichedRow>[0];
-    if (!isEnrichedRow(newsRowLike)) return null;
-    return toEnrichedNewsItem(newsRowLike);
+    const shaped = toEnrichedRowShape(row);
+    if (!isEnrichedRow(shaped)) return null;
+    return toEnrichedNewsItem(shaped);
 }
 
 /**

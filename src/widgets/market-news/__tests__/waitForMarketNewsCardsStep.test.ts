@@ -9,7 +9,10 @@
 import type { MockedFunction } from 'vitest';
 import type { MarketNewsCardItem } from '@/entities/market-news';
 import { getMarketNewsCardsAction } from '@/entities/market-news/actions';
-import { MAX_CONSECUTIVE_FAILURES } from '@/widgets/market-news/constants';
+import {
+    MAX_CONSECUTIVE_FAILURES,
+    MAX_POLL_DURATION_MS,
+} from '@/widgets/market-news/constants';
 import {
     waitForMarketNewsCardsStep,
     type WaitForMarketNewsCardsContext,
@@ -56,7 +59,10 @@ const PENDING_ITEM: MarketNewsCardItem = {
  * Build a minimal WaitForMarketNewsCardsContext with all setters as vi.fn()
  * and getters backed by a mutable state object.
  */
-function makeCtx(initialFailures = 0): {
+function makeCtx(
+    initialFailures = 0,
+    startedAt = Date.now()
+): {
     ctx: WaitForMarketNewsCardsContext;
     state: { consecutiveFailures: number };
     mocks: {
@@ -83,6 +89,7 @@ function makeCtx(initialFailures = 0): {
 
     const ctx: WaitForMarketNewsCardsContext = {
         category: 'general',
+        startedAt,
         incrementFailures: mocks.incrementFailures,
         resetFailures: mocks.resetFailures,
         getConsecutiveFailures: () => state.consecutiveFailures,
@@ -194,5 +201,26 @@ describe('waitForMarketNewsCardsStep', () => {
         expect(result).toBe('continue');
         expect(mocks.setIsReady).not.toHaveBeenCalled();
         expect(mocks.clearInterval).not.toHaveBeenCalled();
+    });
+
+    it('empty items list → timeout after MAX_POLL_DURATION_MS → stop with reason=timeout', async () => {
+        mockGetMarketNewsCardsAction.mockResolvedValue({
+            ok: true,
+            items: [],
+        });
+
+        // startedAt is MAX_POLL_DURATION_MS ago — ceiling already exceeded
+        const expiredStartedAt = Date.now() - MAX_POLL_DURATION_MS;
+        const { ctx, mocks } = makeCtx(0, expiredStartedAt);
+        const result = await waitForMarketNewsCardsStep(ctx);
+
+        expect(result).toBe('stop');
+        expect(mocks.setIsReady).not.toHaveBeenCalled();
+        expect(mocks.clearInterval).toHaveBeenCalledOnce();
+        const err = mocks.setWaitError.mock.calls[0][0];
+        expect(err).toBeInstanceOf(Error);
+        expect(err.message).toBe('timeout');
+        // getMarketNewsCardsAction should NOT have been called — timeout exits before the fetch
+        expect(mockGetMarketNewsCardsAction).not.toHaveBeenCalled();
     });
 });

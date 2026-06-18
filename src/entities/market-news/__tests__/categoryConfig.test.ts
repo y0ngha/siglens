@@ -13,13 +13,14 @@ describe('categoryFromSlug 함수는', () => {
 });
 
 describe('CATEGORY_CONFIG는', () => {
-    it('5개 카테고리 전부에 sentinel·endpoint·slug·koLabel을 가진다', () => {
+    it('5개 카테고리 전부에 sentinel·endpoint·slug·koLabel·koDescription을 가진다', () => {
         const keys = Object.keys(CATEGORY_CONFIG);
         expect(keys).toHaveLength(5);
         for (const cfg of Object.values(CATEGORY_CONFIG)) {
             expect(cfg.sentinel.startsWith('__NEWS_')).toBe(true);
             expect(cfg.fmpEndpoint.length).toBeGreaterThan(0);
             expect(cfg.koLabel.length).toBeGreaterThan(0);
+            expect(cfg.koDescription.length).toBeGreaterThan(0);
         }
     });
     it('sentinel은 VALID_TICKER_RE와 충돌하지 않는다(/[symbol] 누수 방지)', () => {

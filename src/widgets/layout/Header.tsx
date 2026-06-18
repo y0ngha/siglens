@@ -1,3 +1,4 @@
+import { HeaderMobileMenu } from './HeaderMobileMenu';
 import { HeaderNav } from './HeaderNav';
 import { HeaderNavStatic } from './HeaderNavStatic';
 import { HeaderUserMenu, type HeaderUserMenuUser } from './HeaderUserMenu';
@@ -7,7 +8,10 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Suspense } from 'react';
 
-const NAV_ITEMS = [{ href: '/market', label: '시장 분석' }] as const;
+const NAV_ITEMS = [
+    { href: '/market', label: '시장 분석' },
+    { href: '/news', label: '마켓 뉴스' },
+] as const;
 
 interface HeaderProps {
     /** Resolved current user (server-fetched in `app/layout.tsx`); null for guests. */
@@ -60,10 +64,12 @@ export function Header({ currentUser, loadingUserMenu }: HeaderProps) {
                         {SITE_NAME}
                     </span>
                 </Link>
-                {/* HeaderNav는 usePathname() 사용 — Suspense로 감싸 PPR prerender shell이 정적 fallback으로 완료되도록 함 */}
-                <Suspense fallback={<HeaderNavStatic items={NAV_ITEMS} />}>
-                    <HeaderNav items={NAV_ITEMS} />
-                </Suspense>
+                {/* Desktop nav — hidden on mobile; PPR: Suspense fallback renders the static version */}
+                <div className="hidden md:flex">
+                    <Suspense fallback={<HeaderNavStatic items={NAV_ITEMS} />}>
+                        <HeaderNav items={NAV_ITEMS} />
+                    </Suspense>
+                </div>
                 <div className="ml-auto flex w-full max-w-40 min-w-0 justify-end sm:max-w-xs">
                     <TickerAutocomplete size="sm" />
                 </div>
@@ -73,6 +79,8 @@ export function Header({ currentUser, loadingUserMenu }: HeaderProps) {
                         loading={loadingUserMenu}
                     />
                 </div>
+                {/* Mobile hamburger — hidden on desktop */}
+                <HeaderMobileMenu items={NAV_ITEMS} />
             </div>
         </header>
     );

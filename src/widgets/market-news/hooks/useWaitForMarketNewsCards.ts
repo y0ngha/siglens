@@ -35,11 +35,12 @@ export function useWaitForMarketNewsCards(
     useEffect(() => {
         if (initiallyReady) return;
 
-        const stateRef = { consecutiveFailures: 0 };
+        const stateRef = { consecutiveFailures: 0, startedAt: Date.now() };
 
         intervalIdRef.current = setInterval(() => {
             void waitForMarketNewsCardsStep({
                 category,
+                startedAt: stateRef.startedAt,
                 incrementFailures: () => {
                     stateRef.consecutiveFailures += 1;
                 },

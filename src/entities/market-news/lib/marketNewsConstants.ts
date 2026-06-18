@@ -13,10 +13,7 @@ export const MARKET_NEWS_LOOKBACK_DAYS = 7;
  */
 export const MARKET_NEWS_LOOKBACK_MS = MARKET_NEWS_LOOKBACK_DAYS * MS_PER_DAY;
 
-/** Max cards rendered on a category page. */
-export const MAX_MARKET_NEWS_CARDS = 40;
-
-/** Items fetched per category feed from FMP (we render up to {@link MAX_MARKET_NEWS_CARDS} of them). */
+/** Items fetched per category feed from FMP. */
 export const FMP_NEWS_FETCH_LIMIT = 50;
 
 /**
@@ -29,3 +26,12 @@ export const DEFAULT_DIGEST_MODEL_ID = 'gemini-2.5-flash' satisfies ModelId;
 
 /** ISR cache-tag prefix for market-news sentinel buckets. Combined with the sentinel as `${prefix}:${sentinel}`. */
 export const MARKET_NEWS_CACHE_TAG_PREFIX = 'market-news';
+
+/**
+ * Max concurrent LLM submissions for per-card analysis.
+ *
+ * Unbounded `Promise.allSettled` over 50 items × 5 categories = 250 concurrent
+ * Gemini requests stampedes the worker queue. This cap throttles throughput while
+ * still keeping latency low for typical category sizes (10–20 items).
+ */
+export const LLM_PARALLEL_LIMIT = 8;

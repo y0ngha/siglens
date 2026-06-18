@@ -104,4 +104,66 @@ describe('MarketNewsDigest', () => {
         await user.click(retryButton);
         expect(retrySpy).toHaveBeenCalledTimes(1);
     });
+
+    it('status: done, bearish stance → bearish 센티먼트 배지를 렌더한다', () => {
+        mockUseMarketNewsDigest.mockReturnValue({
+            status: 'done',
+            result: {
+                ...DONE_RESULT,
+                overallSentiment: 'bearish',
+            },
+        });
+
+        render(<MarketNewsDigest category="stock" hasEnrichedNews={true} />);
+
+        const badge = screen.getByText('부정');
+        expect(badge).toBeInTheDocument();
+        const expectedClass = SENTIMENT_CLASS['bearish'].split(' ')[0];
+        expect(badge.className).toContain(expectedClass);
+    });
+
+    it('status: done, neutral stance → neutral 센티먼트 배지를 렌더한다', () => {
+        mockUseMarketNewsDigest.mockReturnValue({
+            status: 'done',
+            result: {
+                ...DONE_RESULT,
+                overallSentiment: 'neutral',
+            },
+        });
+
+        render(<MarketNewsDigest category="forex" hasEnrichedNews={true} />);
+
+        const badge = screen.getByText('중립');
+        expect(badge).toBeInTheDocument();
+        const expectedClass = SENTIMENT_CLASS['neutral'].split(' ')[0];
+        expect(badge.className).toContain(expectedClass);
+    });
+
+    it('status: done, keyEventsKo 빈 배열이면 "핵심 흐름" 섹션을 렌더하지 않는다', () => {
+        mockUseMarketNewsDigest.mockReturnValue({
+            status: 'done',
+            result: {
+                ...DONE_RESULT,
+                keyEventsKo: [],
+            },
+        });
+
+        render(<MarketNewsDigest category="general" hasEnrichedNews={true} />);
+
+        expect(screen.queryByText('핵심 흐름')).not.toBeInTheDocument();
+    });
+
+    it('status: done, upcomingEventsKo 빈 배열이면 "주목 일정" 섹션을 렌더하지 않는다', () => {
+        mockUseMarketNewsDigest.mockReturnValue({
+            status: 'done',
+            result: {
+                ...DONE_RESULT,
+                upcomingEventsKo: [],
+            },
+        });
+
+        render(<MarketNewsDigest category="crypto" hasEnrichedNews={true} />);
+
+        expect(screen.queryByText('주목 일정')).not.toBeInTheDocument();
+    });
 });

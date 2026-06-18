@@ -116,6 +116,7 @@ function TickerChips({ category, tickers }: TickerChipsProps) {
                         key={ticker}
                         href={`/${ticker}`}
                         aria-label={`${ticker} 종목 페이지로 이동`}
+                        data-testid="ticker-chip"
                         className="text-primary-400 hover:text-primary-300 focus-visible:ring-primary-500 rounded px-1.5 py-0.5 text-xs font-medium transition-colors focus-visible:ring-1 focus-visible:outline-none"
                     >
                         {ticker}
@@ -133,6 +134,7 @@ function TickerChips({ category, tickers }: TickerChipsProps) {
             {tickers.map(ticker => (
                 <span
                     key={ticker}
+                    data-testid="ticker-chip"
                     className="bg-secondary-700 text-secondary-400 rounded px-1.5 py-0.5 text-xs font-medium"
                 >
                     {ticker}
@@ -180,12 +182,8 @@ export function MarketNewsCard({ category, item }: MarketNewsCardProps) {
                 <AnalysisSkeleton />
             ) : (
                 <div className="mt-1.5 flex min-w-0 flex-wrap items-center gap-2">
-                    {item.sentiment !== null && (
-                        <SentimentBadge value={item.sentiment} />
-                    )}
-                    {item.priceImpact !== null && (
-                        <ImpactBadge value={item.priceImpact} />
-                    )}
+                    <SentimentBadge value={item.sentiment!} />
+                    <ImpactBadge value={item.priceImpact!} />
                     {item.category !== null && (
                         <span className="bg-secondary-700 text-secondary-400 rounded px-2 py-0.5 text-xs">
                             {item.category}

@@ -118,6 +118,91 @@ describe('FmpMarketNewsClient.fetchCategoryNews는', () => {
     });
 });
 
+describe('FmpMarketNewsClient.fetchCategoryNews — tryNormalizeFmpPublishedDate 실패 처리는', () => {
+    beforeEach(() => {
+        global.fetch = mockFetch as unknown as typeof fetch;
+        mockFetch.mockReset();
+        process.env.FMP_API_KEY = TEST_API_KEY;
+    });
+
+    afterEach(() => {
+        global.fetch = originalFetch;
+        process.env.FMP_API_KEY = originalEnv;
+        vi.restoreAllMocks();
+    });
+
+    it('날짜 파싱 실패 시 console.warn을 1회 호출하고 해당 아이템을 건너뛴다', async () => {
+        const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+        mockFetchOnce([
+            {
+                symbol: 'BTCUSD',
+                publishedDate: 'INVALID_DATE_STRING',
+                title: 'Bad date item',
+                text: 'body',
+                site: 'CoinWire',
+                url: 'https://x.com/bad-date',
+            },
+            {
+                symbol: 'ETHUSD',
+                publishedDate: '2026-06-15 10:00:00',
+                title: 'Good date item',
+                text: 'body',
+                site: 'CoinWire',
+                url: 'https://x.com/good-date',
+            },
+        ]);
+
+        const items = await new FmpMarketNewsClient().fetchCategoryNews(
+            'crypto',
+            MARKET_NEWS_LOOKBACK_MS
+        );
+
+        // The item with invalid date is skipped
+        expect(items).toHaveLength(1);
+        expect(items[0].titleEn).toBe('Good date item');
+
+        // warn called exactly once (dedup by hasWarnedNormalizeFailure flag)
+        expect(warnSpy).toHaveBeenCalledTimes(1);
+        expect(warnSpy.mock.calls[0][0]).toContain('failed to normalize date');
+
+        warnSpy.mockRestore();
+    });
+
+    it('동일 인스턴스에서 두 번째 실패는 warn을 중복 호출하지 않는다(dedup)', async () => {
+        const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+        const badItems = [
+            {
+                symbol: 'BTCUSD',
+                publishedDate: 'BAD_1',
+                title: 'Bad 1',
+                text: '',
+                site: 's',
+                url: 'https://x.com/b1',
+            },
+            {
+                symbol: 'ETHUSD',
+                publishedDate: 'BAD_2',
+                title: 'Bad 2',
+                text: '',
+                site: 's',
+                url: 'https://x.com/b2',
+            },
+        ];
+
+        // First call
+        mockFetchOnce(badItems);
+        const client = new FmpMarketNewsClient();
+        await client.fetchCategoryNews('crypto', MARKET_NEWS_LOOKBACK_MS);
+
+        // warn should be called once despite 2 failures (dedup on instance)
+        expect(warnSpy).toHaveBeenCalledTimes(1);
+
+        warnSpy.mockRestore();
+    });
+});
+
 describe('parseArticleTickers는', () => {
     it('EXCH: prefix를 제거하고 bare 티커를 반환한다', () => {
         expect(parseArticleTickers('NASDAQ:AAPL,NYSE:MSFT')).toEqual([
