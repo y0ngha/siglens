@@ -4,6 +4,7 @@ import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import type {
     MacroBriefingResponse,
+    SubmitMacroBriefingCached,
     SubmitMacroBriefingResult,
 } from '@y0ngha/siglens-core';
 
@@ -31,11 +32,13 @@ export type MacroBriefingInput =
 
 /**
  * peekSeed 경유의 초기 표시용 cached variant — 서버 generatedAt 없이 briefing만 있다.
- * core의 `SubmitMacroBriefingCached`와 같은 모양이되 `generatedAt`이 null을 허용한다.
+ * core의 `SubmitMacroBriefingCached`를 확장해 `generatedAt`을 null로 오버라이드한다.
+ * (core는 generatedAt을 string으로 강제하지만, seed 단계는 아직 서버 타임스탬프가 없다.)
  */
-export interface SeedMacroBriefingCached {
-    status: 'cached';
-    briefing: MacroBriefingResponse;
+export interface SeedMacroBriefingCached extends Omit<
+    SubmitMacroBriefingCached,
+    'generatedAt'
+> {
     generatedAt: null;
 }
 

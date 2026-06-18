@@ -30,6 +30,7 @@ const NUMBER_FORMATTER = new Intl.NumberFormat('ko-KR');
 // EDT: 3월 두 번째 일요일 02:00 ~ 11월 첫 번째 일요일 02:00 → UTC-4 (IANA America/New_York)
 // EST: 그 외 구간 → UTC-5
 // 월은 JS Date 0-indexed 기준 (0 = January)
+const DAYS_IN_WEEK = 7;
 const SPRING_FORWARD_MONTH = 2;
 const SPRING_FORWARD_NTH = 2;
 const FALL_BACK_MONTH = 10;
@@ -44,8 +45,9 @@ const DST_TRANSITION_LOCAL_HOUR = 2;
  */
 function nthSundayDay(year: number, month: number, nth: number): number {
     const firstDayOfMonth = new Date(Date.UTC(year, month, 1));
-    const firstSundayOffset = (7 - firstDayOfMonth.getUTCDay()) % 7;
-    return 1 + firstSundayOffset + (nth - 1) * 7;
+    const firstSundayOffset =
+        (DAYS_IN_WEEK - firstDayOfMonth.getUTCDay()) % DAYS_IN_WEEK;
+    return 1 + firstSundayOffset + (nth - 1) * DAYS_IN_WEEK;
 }
 
 /**
@@ -171,7 +173,6 @@ function CalendarRow({ event }: CalendarRowProps) {
  * 경유 시 UTC 변환 오차로 DST 경계가 1시간 어긋나는 버그를 방지한다.
  */
 function toIsoDateTime(date: string): string {
-    // 'YYYY-MM-DD HH:mm:ss' → [year, month(0-indexed), day, hour] ET local components
     const [datePart, timePart] = date.split(' ');
     const [year, month, day] = datePart.split('-').map(Number);
     const hour = Number(timePart.split(':')[0]);

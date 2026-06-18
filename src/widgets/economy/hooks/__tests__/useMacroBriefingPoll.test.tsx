@@ -118,7 +118,7 @@ describe('useMacroBriefingPoll', () => {
         // 초기 waitFor 완료 후 fake 타이머로 전환해 결정적으로 시간을 진행시킨다.
         // refetchInterval(5000ms)보다 충분히 크게 진행해도 추가 poll이 없어야 한다.
         vi.useFakeTimers();
-        await vi.advanceTimersByTimeAsync(100);
+        await vi.advanceTimersByTimeAsync(10000);
         expect(mockPoll.mock.calls.length).toBe(callCountBeforeUnmount);
     });
 
