@@ -93,7 +93,6 @@ describe('EconomicCalendar', () => {
         expect(screen.queryByText(/실제 /)).not.toBeInTheDocument();
     });
 
-    // ── DST boundary tests ───────────────────────────────────────────────────
     it.each([
         // [description, date string, expected offset]
         // EST구간: 3월 springDay 전날(2월 28일)

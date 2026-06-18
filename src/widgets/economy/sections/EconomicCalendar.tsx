@@ -27,14 +27,14 @@ const IMPACT_BADGE: Record<CalendarImpact, string> = {
 
 const NUMBER_FORMATTER = new Intl.NumberFormat('ko-KR');
 
-// ─── DST 전환 규칙 (IANA America/New_York) ──────────────────────────────────
-// EDT: 3월 두 번째 일요일 02:00 ~ 11월 첫 번째 일요일 02:00 → UTC-4
+// EDT: 3월 두 번째 일요일 02:00 ~ 11월 첫 번째 일요일 02:00 → UTC-4 (IANA America/New_York)
 // EST: 그 외 구간 → UTC-5
-const SPRING_FORWARD_MONTH = 2; // March (0-indexed)
-const SPRING_FORWARD_NTH = 2; // 2nd Sunday
-const FALL_BACK_MONTH = 10; // November (0-indexed)
-const FALL_BACK_NTH = 1; // 1st Sunday
-const DST_TRANSITION_LOCAL_HOUR = 2; // 02:00 ET on both transitions
+// 월은 JS Date 0-indexed 기준 (0 = January)
+const SPRING_FORWARD_MONTH = 2;
+const SPRING_FORWARD_NTH = 2;
+const FALL_BACK_MONTH = 10;
+const FALL_BACK_NTH = 1;
+const DST_TRANSITION_LOCAL_HOUR = 2;
 
 /**
  * 해당 연도·월의 N번째 일요일의 날짜(day-of-month)를 반환한다.

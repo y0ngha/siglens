@@ -1,5 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { FakeEconomyProvider } from '@/shared/api/economy/FakeEconomyProvider';
+import {
+    FakeEconomyProvider,
+    buildSeries,
+} from '@/shared/api/economy/FakeEconomyProvider';
 import { INDICATOR_TREND_LENGTH } from '@/shared/config/economyIndicators';
 
 /**
@@ -98,32 +101,18 @@ describe('FakeEconomyProvider', () => {
         expect(dates).toEqual(sorted);
     });
 
-    it('trend 배열이 INDICATOR_TREND_LENGTH보다 길면 잘라낸다 — 모든 시드 검증', async () => {
+    it('trend 배열은 INDICATOR_TREND_LENGTH를 초과하면 정확히 잘라낸다', () => {
         /**
-         * FakeEconomyProvider의 `buildSeries`는 `points.slice(0, INDICATOR_TREND_LENGTH)`로
-         * 항상 잘라낸다. 현재 시드는 5개 값이라 슬라이스 자체는 동작하지 않지만,
-         * 이 테스트는 구현 경계를 문서화하고 미래에 시드가 12개 이상으로 늘어났을 때
-         * 회귀를 잡는다.
-         *
-         * 모든 9개 지표를 순회해 trend.length <= INDICATOR_TREND_LENGTH 불변을 검증한다.
+         * buildSeries가 INDICATOR_TREND_LENGTH(12)를 초과하는 값 배열을 받았을 때
+         * 정확히 12개로 잘라내는지 slice 경계를 직접 검증한다.
+         * 현재 시드는 5개 값이라 슬라이스가 동작하지 않으므로, 13개짜리 합성 시드로
+         * 경계를 실측해 회귀를 잡는다.
          */
-        const indicatorNames = [
-            'federalFunds',
-            'inflationRate',
-            'CPI',
-            'GDP',
-            'industrialProductionTotalIndex',
-            'smoothedUSRecessionProbabilities',
-            'unemploymentRate',
-            'totalNonfarmPayroll',
-            'initialClaims',
-        ];
-
-        for (const name of indicatorNames) {
-            const series = await provider.getIndicator(name);
-            expect(series.trend.length).toBeLessThanOrEqual(
-                INDICATOR_TREND_LENGTH
-            );
-        }
+        const syntheticValues = Array.from({ length: 13 }, (_, i) => i + 1);
+        const series = buildSeries('test', {
+            values: syntheticValues,
+            startDate: '2026-01-01',
+        });
+        expect(series.trend.length).toBe(INDICATOR_TREND_LENGTH);
     });
 });

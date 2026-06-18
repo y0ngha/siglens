@@ -57,14 +57,24 @@ function shiftDate(start: string, monthsBack: number): string {
     return date.toISOString().slice(0, 10);
 }
 
-/** 시리즈 한 개를 결정적으로 합성 — core normalize와 동일 형태로 반환. */
-function buildSeries(name: string): EconomicIndicatorSeries {
-    const seed = INDICATOR_SEEDS[name];
-    if (seed === undefined) {
+/**
+ * 시리즈 한 개를 결정적으로 합성 — core normalize와 동일 형태로 반환.
+ *
+ * seed를 직접 전달하면 INDICATOR_SEEDS 외부 데이터로도 호출 가능해
+ * 단위 테스트에서 slice 경계(INDICATOR_TREND_LENGTH)를 직접 검증할 수 있다.
+ *
+ * @internal 테스트에서 slice 경계를 직접 검증하기 위해 export. 프로덕션 코드에서 사용 금지.
+ */
+export function buildSeries(
+    name: string,
+    seed?: { values: number[]; startDate: string }
+): EconomicIndicatorSeries {
+    const resolvedSeed = seed ?? INDICATOR_SEEDS[name];
+    if (resolvedSeed === undefined) {
         return { name, latest: null, previous: null, trend: [] };
     }
-    const points = seed.values.map((value, i) => ({
-        date: shiftDate(seed.startDate, i),
+    const points = resolvedSeed.values.map((value, i) => ({
+        date: shiftDate(resolvedSeed.startDate, i),
         value,
     }));
     return {
