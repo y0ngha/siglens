@@ -5,7 +5,7 @@ import { CATEGORY_CONFIG, type NewsFeedCategory } from '@/entities/market-news';
 import type { SitemapEntry } from '../model';
 
 /**
- * 정적 라우트(home, market, backtesting, legal, news hub + 5 category pages)의 sitemap 엔트리.
+ * 정적 라우트(home, market, backtesting, economy, legal, news hub + 5 category pages)의 sitemap 엔트리.
  * /market은 장중 신호 스캐너를 노출하는 실시간성 페이지라 1시간 슬라이딩
  * lastmod를 적용하고, 그 외는 빌드 시점 고정(SITE_BUILD_DATE)으로 둬
  * Googlebot의 거짓 freshness 신호를 막는다.
@@ -45,6 +45,12 @@ export function buildStaticEntries(now: Date): SitemapEntry[] {
             lastModified: SITE_BUILD_DATE,
             changeFrequency: 'monthly',
             priority: 0.9,
+        },
+        {
+            url: `${SITE_URL}/economy`,
+            lastModified: SITE_BUILD_DATE,
+            changeFrequency: 'daily',
+            priority: 0.8,
         },
         {
             url: `${SITE_URL}/news`,

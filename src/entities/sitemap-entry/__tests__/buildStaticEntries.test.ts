@@ -11,9 +11,9 @@ import { MS_PER_HOUR } from '@/shared/config/time';
 const NOW = new Date('2026-05-23T15:30:00.000Z');
 
 describe('buildStaticEntries', () => {
-    it('home / market / backtesting / news hub + 5 categories / privacy / terms 11개 엔트리를 반환한다', () => {
+    it('home / market / backtesting / economy / news hub + 5 categories / privacy / terms 12개 엔트리를 반환한다', () => {
         const entries = buildStaticEntries(NOW);
-        expect(entries).toHaveLength(11);
+        expect(entries).toHaveLength(12);
 
         const urls = entries.map(e => e.url);
         expect(urls).toEqual(
@@ -21,11 +21,20 @@ describe('buildStaticEntries', () => {
                 expect.stringMatching(/\/$|siglens\.io$/), // home
                 expect.stringContaining('/market'),
                 expect.stringContaining('/backtesting'),
+                expect.stringContaining('/economy'),
                 expect.stringContaining('/news'),
                 expect.stringContaining('/privacy'),
                 expect.stringContaining('/terms'),
             ])
         );
+    });
+
+    it('/economy는 daily·priority 0.8로 둔다', () => {
+        const entries = buildStaticEntries(NOW);
+        const economy = entries.find(e => e.url.endsWith('/economy'));
+        expect(economy).toBeDefined();
+        expect(economy!.changeFrequency).toBe('daily');
+        expect(economy!.priority).toBe(0.8);
     });
 
     it('/news hub + 5 카테고리 entries가 포함된다', () => {

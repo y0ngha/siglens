@@ -79,6 +79,7 @@ const eslintConfig = defineConfig([
         files: [
             'src/shared/db/client.ts',
             'src/shared/api/market/getMarketDataProvider.ts',
+            'src/shared/api/economy/getEconomyProvider.ts',
             'src/shared/api/fmp/getFundamentalDataProvider.ts',
             'src/shared/api/fmp/getFinancialStatementsProvider.ts',
             'src/shared/api/fmp/getCongressTradesProvider.ts',

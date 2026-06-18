@@ -79,4 +79,11 @@ describe('Footer', () => {
             screen.getByRole('navigation', { name: /사이트 정보/ })
         ).toBeInTheDocument();
     });
+
+    it('renders the /economy link with 미국 경제 label', () => {
+        render(<Footer />);
+
+        const link = screen.getByRole('link', { name: /미국 경제/ });
+        expect(link).toHaveAttribute('href', '/economy');
+    });
 });
