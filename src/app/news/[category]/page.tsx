@@ -19,8 +19,7 @@ import { buildCategoryPageTitle, buildCategoryPageDescription } from './seo';
 // revalidateTag('market-news:<sentinel>', 'max')가 보장, 시간 기반은 상한만.
 export const revalidate = 43200;
 
-// Pre-builds all 5 category routes at build time (빈 배열 = on-demand ISR,
-// generateStaticParams 없으면 dynamic으로 남아 ISR이 걸리지 않는다 — app CLAUDE.md 축 3).
+// 빈 배열 = on-demand ISR, generateStaticParams 없으면 dynamic으로 남아 ISR이 걸리지 않는다 — app CLAUDE.md 축 3.
 type CategoryPageParams = { category: string };
 export function generateStaticParams(): CategoryPageParams[] {
     // safe: CATEGORY_CONFIG is Record<NewsFeedCategory, CategoryConfig>, so Object.keys is exactly the union — TS just widens to string[].

@@ -7,7 +7,13 @@ export interface CategoryConfig {
     fmpEndpoint: string;
     /** URL slug at /news/<slug>. */
     slug: NewsFeedCategory;
-    /** Korean display label for headings + the digest prompt. */
+    /**
+     * 한국어 카테고리 라벨. **이중 용도**:
+     * 1. UI 표시 (예: 카테고리 페이지 h1, hub 카드 heading).
+     * 2. AI 다이제스트 프롬프트 입력 — `submitMarketNewsDigestAction`이 `categoryLabel` 인자로 core에 전달.
+     *
+     * AI 도메인 입력 역할 때문에 entity/lib/에 두지만, UI 프레젠테이션 의존성도 있다는 점을 인지할 것.
+     */
     koLabel: string;
 }
 
