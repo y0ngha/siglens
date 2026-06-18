@@ -4,8 +4,9 @@ import type {
 } from '@y0ngha/siglens-core';
 
 import { cn } from '@/shared/lib/cn';
+import { formatNum } from '@/shared/lib/formatNum';
 
-import { toIsoDateTime, formatNum } from '../utils/etTimeUtils';
+import { toIsoDateTime } from '../utils/etTimeUtils';
 
 interface EconomicCalendarProps {
     events: readonly EconomicCalendarEvent[];

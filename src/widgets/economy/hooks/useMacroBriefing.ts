@@ -13,6 +13,18 @@ import { useHydrated } from '@/shared/hooks/useHydrated';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
 
 /**
+ * peekSeed 경유의 초기 표시용 cached variant — 서버 generatedAt 없이 briefing만 있다.
+ * core의 `SubmitMacroBriefingCached`를 확장해 `generatedAt`을 null로 오버라이드한다.
+ * (core는 generatedAt을 string으로 강제하지만, seed 단계는 아직 서버 타임스탬프가 없다.)
+ */
+export interface SeedMacroBriefingCached extends Omit<
+    SubmitMacroBriefingCached,
+    'generatedAt'
+> {
+    generatedAt: null;
+}
+
+/**
  * 브리핑 위젯의 단일 union 상태 — 위젯이 단일 switch로 분기한다.
  * - `undefined`(loading): 트리거 전(미하이드레이션 또는 fetching 중).
  * - `null`(botBlocked): 봇 차단 안내.
@@ -29,18 +41,6 @@ export type MacroBriefingInput =
     | null
     | 'error'
     | undefined;
-
-/**
- * peekSeed 경유의 초기 표시용 cached variant — 서버 generatedAt 없이 briefing만 있다.
- * core의 `SubmitMacroBriefingCached`를 확장해 `generatedAt`을 null로 오버라이드한다.
- * (core는 generatedAt을 string으로 강제하지만, seed 단계는 아직 서버 타임스탬프가 없다.)
- */
-export interface SeedMacroBriefingCached extends Omit<
-    SubmitMacroBriefingCached,
-    'generatedAt'
-> {
-    generatedAt: null;
-}
 
 export interface UseMacroBriefingReturn {
     input: MacroBriefingInput;

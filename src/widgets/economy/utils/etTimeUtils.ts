@@ -1,12 +1,12 @@
 // EDT: 3월 두 번째 일요일 02:00 ~ 11월 첫 번째 일요일 02:00 → UTC-4 (IANA America/New_York)
 // EST: 그 외 구간 → UTC-5
 // 월은 JS Date 0-indexed 기준 (0 = January)
-export const DAYS_IN_WEEK = 7;
-export const SPRING_FORWARD_MONTH = 2;
-export const SPRING_FORWARD_NTH = 2;
-export const FALL_BACK_MONTH = 10;
-export const FALL_BACK_NTH = 1;
-export const DST_TRANSITION_LOCAL_HOUR = 2;
+const DAYS_IN_WEEK = 7;
+const SPRING_FORWARD_MONTH = 2;
+const SPRING_FORWARD_NTH = 2;
+const FALL_BACK_MONTH = 10;
+const FALL_BACK_NTH = 1;
+const DST_TRANSITION_LOCAL_HOUR = 2;
 
 /**
  * 해당 연도·월의 N번째 일요일의 날짜(day-of-month)를 반환한다.
@@ -86,12 +86,4 @@ export function toIsoDateTime(date: string): string {
     const hour = Number(timePart.split(':')[0]);
     const offset = getEtOffset(year, month - 1, day, hour);
     return `${date.replace(' ', 'T')}${offset}`;
-}
-
-const NUMBER_FORMATTER = new Intl.NumberFormat('ko-KR');
-
-/** 숫자·단위를 조합한 표기 문자열 반환. null이면 'N/A'. */
-export function formatNum(v: number | null, unit: string): string {
-    if (v === null) return 'N/A';
-    return `${NUMBER_FORMATTER.format(v)}${unit}`;
 }

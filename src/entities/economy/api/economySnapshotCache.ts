@@ -39,7 +39,8 @@ function emptyIndicator(name: string): EconomicIndicatorSeries {
  * 서버가 UTC+0에서 00:00~04:59 사이에 캘린더 윈도를 계산하면 "오늘"이 ET 기준으로는
  * 전날이 되어 1일 빨리 시작하는 윈도 오차가 생긴다.
  *
- * `Intl.DateTimeFormat`의 `en-CA` locale은 'YYYY-MM-DD' 형식을 보장한다.
+ * `Intl.DateTimeFormat`의 `en-CA` locale은 V8/Node.js 환경에서 'YYYY-MM-DD' 형식을 생성한다
+ * (CLDR 관례, 표준 보장 아님).
  */
 function isoDate(d: Date): string {
     return new Intl.DateTimeFormat('en-CA', {

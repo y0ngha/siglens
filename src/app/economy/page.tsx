@@ -42,11 +42,13 @@ function EconomyHeroH1() {
 // 동일 값으로 양 계층 TTL 일치시킨다. 출처 상수를 import하면 Next의 정적 분석이
 // 깨져 config가 무시되므로(MISTAKES §16.5 단일 출처 + src/app/CLAUDE.md ISR 규약)
 // 리터럴 강제하고, 변경 시 두 곳을 함께 갱신한다.
-//
-// ⚠ FAQ_JSON_LD의 "24시간마다 최신 데이터로 갱신" 문구와 동기화된 값.
-// 변경 시 두 곳 모두 함께 갱신할 것.
-// (상수 추출 불가 — src/app/CLAUDE.md ISR 리터럴 강제 규약 참조)
 export const revalidate = 86400;
+
+/**
+ * FAQ 텍스트에서 사용하는 갱신 주기(시간). `revalidate`에서 파생해
+ * revalidate 값이 바뀌면 FAQ 문구도 자동으로 동기화된다.
+ */
+const REVALIDATE_HOURS = revalidate / 3600;
 
 /**
  * 1-hour bucket tag used as `unstable_cache` key granularity — must align with
@@ -203,9 +205,7 @@ const FAQ_JSON_LD = {
             name: '이 데이터는 어디서 가져오나요?',
             acceptedAnswer: {
                 '@type': 'Answer',
-                // "24시간" 문구는 위의 revalidate = 86400(24h)과 동기화된 값.
-                // revalidate 변경 시 이 문구도 함께 갱신할 것.
-                text: 'FMP(Financial Modeling Prep) API를 기준으로 수집하며, 24시간마다 최신 데이터로 갱신됩니다.',
+                text: `FMP(Financial Modeling Prep) API를 기준으로 수집하며, ${REVALIDATE_HOURS}시간마다 최신 데이터로 갱신됩니다.`,
             },
         },
     ],
