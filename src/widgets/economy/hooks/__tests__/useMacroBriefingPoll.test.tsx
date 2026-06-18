@@ -1,7 +1,7 @@
 vi.mock('@/entities/economy/actions/pollMacroBriefingAction');
 vi.mock('@/shared/hooks/useHydrated');
 
-import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
@@ -40,6 +40,16 @@ describe('useMacroBriefingPoll', () => {
         const { result } = renderHook(() => useMacroBriefingPoll('j'), {
             wrapper: makeWrapper(),
         });
+        expect(result.current).toEqual({ status: 'processing' });
+        expect(mockPoll).not.toHaveBeenCalled();
+    });
+
+    it('jobId가 빈 문자열이면 쿼리가 비활성화되어 poll이 호출되지 않음', () => {
+        mockUseHydrated.mockReturnValue(true);
+        const { result } = renderHook(() => useMacroBriefingPoll(''), {
+            wrapper: makeWrapper(),
+        });
+        // 쿼리 disabled → data 없음 → processing 반환
         expect(result.current).toEqual({ status: 'processing' });
         expect(mockPoll).not.toHaveBeenCalled();
     });
@@ -86,5 +96,33 @@ describe('useMacroBriefingPoll', () => {
                 expect(result.current.error).toBe('worker boom');
             }
         });
+    });
+
+    it('unmount 시 polling이 중단된다', async () => {
+        // processing 상태를 유지해 refetchInterval이 계속 발생할 수 있는 환경을 만든다.
+        mockPoll.mockResolvedValue({ status: 'processing' });
+
+        const { unmount } = renderHook(
+            () => useMacroBriefingPoll('j-unmount'),
+            {
+                wrapper: makeWrapper(),
+            }
+        );
+
+        // 초기 쿼리가 발동될 수 있도록 대기 (실제 타이머 사용 — waitFor 내부가 의존)
+        await waitFor(() => expect(mockPoll).toHaveBeenCalledTimes(1));
+
+        const callCountBeforeUnmount = mockPoll.mock.calls.length;
+        unmount();
+
+        // 초기 waitFor 완료 후 fake 타이머로 전환해 결정적으로 시간을 진행시킨다.
+        // refetchInterval(5000ms)보다 충분히 크게 진행해도 추가 poll이 없어야 한다.
+        vi.useFakeTimers();
+        await vi.advanceTimersByTimeAsync(10000);
+        expect(mockPoll.mock.calls.length).toBe(callCountBeforeUnmount);
+    });
+
+    afterEach(() => {
+        vi.useRealTimers();
     });
 });

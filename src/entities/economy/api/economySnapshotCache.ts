@@ -12,7 +12,7 @@ import type {
     EconomySnapshot,
 } from '@y0ngha/siglens-core';
 
-import { isEmptyEconomySnapshot } from '../lib/economyCompleteness';
+import { shouldCacheEconomySnapshot } from '../lib/economyCompleteness';
 
 /**
  * 레지스트리 fingerprint — 지표 목록이 바뀌면 캐시 키도 자동 무효화된다.
@@ -26,16 +26,39 @@ const CACHE_KEY = `economy:snapshot:${ECONOMY_CONFIG_FINGERPRINT}`;
 /** 캘린더 윈도(다가오는 ~2주) 일수 — 매직넘버 상수화(MISTAKES §15). */
 const CALENDAR_WINDOW_DAYS = 14;
 
-/** 'YYYY-MM-DD' prefix 길이 — `isoDate` slice 끝(매직넘버 상수화). */
-const ISO_DATE_LENGTH = 10;
-
 /** core EconomicIndicatorSeries의 빈 placeholder — Provider 실패 시 fallback. */
 function emptyIndicator(name: string): EconomicIndicatorSeries {
     return { name, latest: null, previous: null, trend: [] };
 }
 
+/**
+ * ET-zoned date string in YYYY-MM-DD format.
+ *
+ * UTC `toISOString().slice(0, 10)` 대신 ET 로컬 날짜를 사용하는 이유:
+ * FMP economic-calendar 일정과 국채·지표 데이터가 ET 기준으로 날짜가 매겨지므로,
+ * 서버가 UTC+0에서 00:00~04:59 사이에 캘린더 윈도를 계산하면 "오늘"이 ET 기준으로는
+ * 전날이 되어 1일 빨리 시작하는 윈도 오차가 생긴다.
+ *
+ * `formatToParts`로 year/month/day 파트를 직접 조합해 locale 포맷 관례 의존성을 제거한다.
+ * `Intl.DateTimeFormat` 인스턴스가 `isoDate` 호출마다 새로 생성되지 않도록
+ * 모듈 레벨 상수로 호이스팅한다 — `NUMBER_FORMATTER` 패턴(shared/lib/formatNum.ts)과 동일.
+ */
+const ET_DATE_FORMAT = new Intl.DateTimeFormat('en-US', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    timeZone: 'America/New_York',
+});
+
 function isoDate(d: Date): string {
-    return d.toISOString().slice(0, ISO_DATE_LENGTH);
+    // formatToParts always emits the {year, month, day} keys configured above —
+    // `as` is a typed projection of the options we set, not a runtime claim.
+    const parts = Object.fromEntries(
+        ET_DATE_FORMAT.formatToParts(d)
+            .filter(p => p.type !== 'literal')
+            .map(p => [p.type, p.value])
+    ) as Record<'year' | 'month' | 'day', string>;
+    return `${parts.year}-${parts.month}-${parts.day}`;
 }
 
 /**
@@ -78,9 +101,14 @@ async function fetchSnapshot(
 /**
  * React.cache(요청 dedup) + Redis 2계층 캐시.
  *
- * `shouldCache`로 빈 스냅샷(`isEmptyEconomySnapshot`)을 캐시에 굳히지 않는다 —
- * transient 장애가 24h TTL 동안 빈 결과를 고정하는 사고 차단(financials `cacheNonEmpty`
- * 동등 패턴).
+ * `shouldCache`로 quorum 미달 스냅샷을 캐시에 굳히지 않는다 —
+ * transient 장애가 24h TTL 동안 부분 실패 결과를 고정하는 사고 차단
+ * (financials `cacheNonEmpty` 동등 패턴).
+ *
+ * `isEmptyEconomySnapshot`이 아닌 `shouldCacheEconomySnapshot`을 쓰는 이유:
+ * 렌더는 "완전히 비어있을 때만" degrade(최소한의 데이터가 있으면 noindex만 유지하며 렌더).
+ * 캐시는 더 엄격한 quorum(지표 6/9 + treasury or calendar)을 요구한다.
+ * 8개 지표 실패처럼 "비어있지 않지만 거의 비어있는" 스냅샷이 24h 고정되는 것을 막기 위함.
  */
 export const getEconomySnapshot = cache(
     (): Promise<EconomySnapshot> =>
@@ -88,6 +116,6 @@ export const getEconomySnapshot = cache(
             CACHE_KEY,
             SECONDS_PER_DAY,
             () => fetchSnapshot(getEconomyProvider()),
-            s => !isEmptyEconomySnapshot(s)
+            shouldCacheEconomySnapshot
         )
 );

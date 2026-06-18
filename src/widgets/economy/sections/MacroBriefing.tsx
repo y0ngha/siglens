@@ -33,7 +33,8 @@ interface MacroBriefingPollingViewProps {
 
 interface MacroBriefingViewProps {
     briefing: MacroBriefingResponse;
-    generatedAt: string;
+    /** null when displaying peekSeed before the real generatedAt is available from the server. */
+    generatedAt: string | null;
 }
 
 /**
@@ -116,7 +117,7 @@ function MacroBriefingView({ briefing, generatedAt }: MacroBriefingViewProps) {
                     ))}
                 </ul>
             )}
-            {generatedAt && (
+            {generatedAt !== null && (
                 <p className="text-secondary-500 mt-3 text-xs">
                     생성 시각: {new Date(generatedAt).toLocaleString('ko-KR')}
                 </p>

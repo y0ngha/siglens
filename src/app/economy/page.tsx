@@ -6,6 +6,7 @@ import {
     EconomicIndicatorGrid,
     EconomyMacroFacts,
     MacroBriefing,
+    TREASURY_CARD_META,
 } from '@/widgets/economy';
 // entities/economy/api/*는 server-only(`@upstash/redis` + `next/cache`) 의존이라
 // entities/CLAUDE.md "barrel 제외 대상" 일반 규칙대로 슬라이스 barrel(index.ts)에서
@@ -18,17 +19,19 @@ import {
     buildBreadcrumbJsonLd,
     clampSeoDescription,
     ROOT_KEYWORDS,
-    SITE_BUILD_DATE,
     SITE_NAME,
     SITE_URL,
 } from '@/shared/lib/seo';
+import { SECONDS_PER_HOUR } from '@/shared/config/time';
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
 import { JsonLd } from '@/shared/ui/JsonLd';
+
+import { ECONOMY_INDICATORS } from '@/shared/config/economyIndicators';
 
 import { ECONOMY_TITLE } from './constants';
 import { EconomyDegraded } from './EconomyDegraded';
 
-/** 페이지 최상단 h1 — EconomyContent와 Suspense fallback에서 공유한다. */
+/** 페이지 최상단 h1 — Suspense 위에 렌더되어 ready와 degraded 양 경로에서 항상 표시된다. */
 function EconomyHeroH1() {
     return (
         <h1 className="text-secondary-100 px-6 pt-10 text-2xl font-bold tracking-tight text-balance sm:text-3xl lg:px-[15vw]">
@@ -45,8 +48,18 @@ function EconomyHeroH1() {
 export const revalidate = 86400;
 
 /**
- * 'YYYY-MM-DDTHH' prefix length — ISR renders를 1-hour date-hour 버킷으로 묶는다.
- * `peekMacroBriefingStatic`이 이 키로 cache를 read한다.
+ * FAQ 텍스트에서 사용하는 갱신 주기(시간). `revalidate`에서 파생해
+ * revalidate 값이 바뀌면 FAQ 문구도 자동으로 동기화된다.
+ */
+const REVALIDATE_HOURS = revalidate / SECONDS_PER_HOUR;
+
+/**
+ * 1-hour bucket tag used as `unstable_cache` key granularity — must align with
+ * the bucket core's `peekMacroBriefingCache` computes internally so the two
+ * caches stay in lockstep.
+ *
+ * `'YYYY-MM-DDTHH'` (length 13) → `new Date().toISOString().slice(0, 13)` gives
+ * the current UTC hour string (e.g. `'2026-06-17T14'`).
  */
 const ISO_DATE_HOUR_SLICE_END = 13;
 
@@ -72,8 +85,12 @@ const ECONOMY_KEYWORDS = [
 
 export async function generateMetadata(): Promise<Metadata> {
     // metadata와 본문이 동일한 isEmpty 판정을 봐서 degrade와 noindex가 일치한다.
-    const snapshot = await getEconomySnapshotStatic();
-    const degraded = isEmptyEconomySnapshot(snapshot);
+    // 외부 I/O 오류(Redis 등)는 graceful 처리 — null이면 degraded 경로로 폴백.
+    const snapshot = await getEconomySnapshotStatic().catch(e => {
+        console.error('[economy.generateMetadata] snapshot failed:', e);
+        return null;
+    });
+    const degraded = snapshot === null || isEmptyEconomySnapshot(snapshot);
     return {
         title: ECONOMY_TITLE,
         description: ECONOMY_DESCRIPTION,
@@ -138,6 +155,73 @@ async function EconomyContent() {
     );
 }
 
+/**
+ * Dataset 구조화 데이터 — 검색 엔진이 페이지의 데이터셋 성격을 인식할 수 있도록 한다.
+ * Schema.org/Dataset 타입으로 레지스트리 지표 N종 + 국채금리 2종을 명시.
+ *
+ * `as const`를 제거한 이유: 문자열이 런타임에 `ECONOMY_INDICATORS.length`로 파생되므로
+ * 객체 리터럴 내 `as const`로는 좁혀지지 않는다. JsonLd 사용 측이 타입을 요구하지
+ * 않으므로 plain const로 충분하다.
+ */
+/** ISO 8601 기간 — 데이터셋의 시간적 범위(1년 lookback). */
+const DATASET_TEMPORAL_COVERAGE = 'P1Y'; // ISO 8601 — 1년 lookback
+// TREASURY_CARD_META의 키 수에서 파생 — EconomicIndicatorGrid와 동기.
+const TREASURY_MATURITY_COUNT = Object.keys(TREASURY_CARD_META).length;
+const DATASET_VARIABLE_MEASURED = `미국 거시 경제 지표 (기준금리·CPI·GDP·실업률 등 ${ECONOMY_INDICATORS.length}종 + 국채금리 ${TREASURY_MATURITY_COUNT}종)`;
+const DATASET_JSON_LD = {
+    '@context': 'https://schema.org',
+    '@type': 'Dataset',
+    name: 'US Macroeconomic Indicators — Federal Funds, CPI, Unemployment, etc.',
+    description: ECONOMY_DESCRIPTION,
+    variableMeasured: DATASET_VARIABLE_MEASURED,
+    temporalCoverage: DATASET_TEMPORAL_COVERAGE,
+    creator: { '@type': 'Organization', name: SITE_NAME },
+    url: ECONOMY_URL,
+};
+
+/**
+ * FAQPage 구조화 데이터 — 자주 묻는 질문 4건. 검색 결과에 FAQ 리치 스니펫으로
+ * 노출되어 클릭률을 높이고 핵심 개념(2s10s·FOMC·CPI·데이터 출처)을 직접 전달한다.
+ */
+const FAQ_JSON_LD = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: [
+        {
+            '@type': 'Question',
+            name: '2s10s 스프레드란 무엇인가요?',
+            acceptedAnswer: {
+                '@type': 'Answer',
+                text: '2년물과 10년물 미국 국채 수익률의 차이입니다. 10년물에서 2년물을 뺀 값으로, 음수가 되면 장단기 금리가 역전된 것으로 경기침체 신호로 해석되기도 합니다.',
+            },
+        },
+        {
+            '@type': 'Question',
+            name: 'FOMC 발표는 어디서 확인하나요?',
+            acceptedAnswer: {
+                '@type': 'Answer',
+                text: '이 페이지 하단의 경제 캘린더에서 FOMC 회의 및 연방기금금리 결정 일정을 확인할 수 있습니다.',
+            },
+        },
+        {
+            '@type': 'Question',
+            name: 'CPI는 얼마나 자주 발표되나요?',
+            acceptedAnswer: {
+                '@type': 'Answer',
+                text: 'CPI(소비자물가지수)는 월 1회, 매월 중순에 미국 노동통계국(BLS)이 발표합니다.',
+            },
+        },
+        {
+            '@type': 'Question',
+            name: '이 데이터는 어디서 가져오나요?',
+            acceptedAnswer: {
+                '@type': 'Answer',
+                text: `FMP(Financial Modeling Prep) API를 기준으로 수집하며, ${REVALIDATE_HOURS}시간마다 최신 데이터로 갱신됩니다.`,
+            },
+        },
+    ],
+} as const;
+
 export default function EconomyPage() {
     const jsonLd = {
         '@context': 'https://schema.org',
@@ -148,7 +232,8 @@ export default function EconomyPage() {
         url: ECONOMY_URL,
         inLanguage: 'ko',
         isPartOf: { '@type': 'WebSite', '@id': `${SITE_URL}#website` },
-        dateModified: SITE_BUILD_DATE.toISOString(),
+        // dateModified 제거: SITE_BUILD_DATE는 모듈 로드 시점에 고정되어
+        // 24h ISR 갱신 주기를 반영하지 못한다. /financials 등 peer 페이지와 동일하게 제외.
     };
 
     const breadcrumbJsonLd = buildBreadcrumbJsonLd([
@@ -159,6 +244,8 @@ export default function EconomyPage() {
         <>
             <JsonLd data={jsonLd} />
             <JsonLd data={breadcrumbJsonLd} />
+            <JsonLd data={DATASET_JSON_LD} />
+            <JsonLd data={FAQ_JSON_LD} />
             <main className="flex-1">
                 <EconomyHeroH1 />
                 <Suspense fallback={null}>

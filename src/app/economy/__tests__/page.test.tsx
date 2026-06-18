@@ -40,6 +40,7 @@ vi.mock('@/widgets/economy', () => ({
     EconomicIndicatorGrid: () => <div data-testid="indicator-grid" />,
     EconomicCalendar: () => <div data-testid="calendar" />,
     EconomyMacroFacts: () => <p data-testid="macro-facts" />,
+    TREASURY_CARD_META: { year2: {}, year10: {} },
 }));
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -99,6 +100,27 @@ describe('/economy page.tsx integration', () => {
             expect(meta.alternates?.canonical).toBe(
                 'https://siglens.io/economy'
             );
+        });
+
+        it('snapshot fetch가 throw하면 metadata는 noindex + canonical null (degraded 경로)', async () => {
+            mockGetSnapshot.mockRejectedValue(new Error('redis timeout'));
+
+            const consoleSpy = vi
+                .spyOn(console, 'error')
+                .mockImplementation(() => undefined);
+
+            const meta = await generateMetadata();
+
+            expect(meta.robots).toEqual({ index: false, follow: true });
+            expect(meta.alternates?.canonical).toBeNull();
+            expect(consoleSpy).toHaveBeenCalledWith(
+                expect.stringContaining(
+                    '[economy.generateMetadata] snapshot failed:'
+                ),
+                expect.any(Error)
+            );
+
+            consoleSpy.mockRestore();
         });
     });
 

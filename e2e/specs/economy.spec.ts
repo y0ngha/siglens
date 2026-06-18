@@ -1,6 +1,18 @@
 import { test, expect } from '../support/fixtures';
 
 /**
+ * T3 degrade 시나리오 분류: Tier 3 env-seam 패턴.
+ *
+ * `E2E_ECONOMY_FORCE_EMPTY=1`을 E2E 빌드 환경변수로 설정하면 `getEconomyProvider`가
+ * `EmptyEconomyProvider`를 반환해 전 축 null 스냅샷 → `EconomyDegraded` UI가 렌더된다.
+ * 일반 E2E 스위트에서는 skip — 별도 "degrade" 시나리오 빌드에서만 활성화된다.
+ *
+ * 스킵 조건: `process.env.E2E_ECONOMY_FORCE_EMPTY !== '1'` (서버 프로세스 환경).
+ * 활성화 방법: E2E_TEST=1 E2E_ECONOMY_FORCE_EMPTY=1 yarn build && yarn start -p 4300
+ */
+const FORCE_EMPTY = process.env['E2E_ECONOMY_FORCE_EMPTY'] === '1';
+
+/**
  * /economy — Tier 3 render outcomes.
  *
  * E2E 환경에서는 `FakeEconomyProvider`가 결정적 fixture를 반환한다(부록 A 검증된 9 지표
@@ -28,9 +40,9 @@ test.describe('economy overview', () => {
             page.getByRole('heading', { level: 3, name: '금리' })
         ).toBeVisible();
 
-        // 캘린더 섹션 헤딩.
+        // 캘린더 섹션 헤딩 — h2 텍스트에 ET 힌트 span이 포함되므로 exact: false.
         await expect(
-            page.getByRole('heading', { level: 2, name: '경제 캘린더' })
+            page.getByRole('heading', { level: 2, name: /경제 캘린더/ })
         ).toBeVisible();
     });
 
@@ -155,5 +167,48 @@ test.describe('economy overview', () => {
             .first();
         await expect(gridContainer).toBeVisible();
         await expect(gridContainer).toHaveClass(/grid-cols-1/);
+    });
+});
+
+/**
+ * T3: EconomyDegraded degrade fallback — Tier 3 env-seam 패턴.
+ *
+ * `E2E_ECONOMY_FORCE_EMPTY=1`으로 빌드된 서버에서만 활성화된다.
+ * 일반 E2E 스위트에서는 자동 skip (FORCE_EMPTY=false).
+ *
+ * 활성화 방법:
+ *   E2E_TEST=1 E2E_ECONOMY_FORCE_EMPTY=1 yarn build && yarn start -p 4300
+ *   E2E_ECONOMY_FORCE_EMPTY=1 yarn playwright test e2e/specs/economy.spec.ts
+ */
+test.describe('economy degrade fallback (E2E_ECONOMY_FORCE_EMPTY)', () => {
+    test.skip(!FORCE_EMPTY, 'E2E_ECONOMY_FORCE_EMPTY=1 이 아니면 skip');
+
+    test('전 축 결측 시 EconomyDegraded 안내 노출 + metadata noindex', async ({
+        page,
+    }) => {
+        const response = await page.request.get('/economy');
+        expect(response.status()).toBe(200);
+
+        // generateMetadata → robots: noindex
+        const html = await response.text();
+        expect(html).toContain('noindex');
+
+        // EconomyDegraded UI — h2 텍스트
+        await page.goto('/economy');
+        await expect(
+            page.getByRole('heading', { name: '잠시 후 다시 시도해 주세요' })
+        ).toBeVisible();
+
+        // EconomyDegraded body copy
+        await expect(
+            page.getByText(/미국 거시 경제 데이터를 불러오지 못했어요/, {
+                exact: false,
+            })
+        ).toBeVisible();
+
+        // 정상 섹션(indicator grid)은 렌더되지 않아야 한다
+        await expect(
+            page.getByRole('heading', { level: 2, name: '경제지표' })
+        ).not.toBeVisible();
     });
 });

@@ -4,6 +4,9 @@ import type {
 } from '@y0ngha/siglens-core';
 
 import { cn } from '@/shared/lib/cn';
+import { formatNum } from '@/shared/lib/formatNum';
+
+import { toIsoDateTime } from '@/shared/lib/etTimeUtils';
 
 interface EconomicCalendarProps {
     events: readonly EconomicCalendarEvent[];
@@ -25,8 +28,6 @@ const IMPACT_BADGE: Record<CalendarImpact, string> = {
     Low: 'bg-secondary-700 text-secondary-200',
 };
 
-const NUMBER_FORMATTER = new Intl.NumberFormat('ko-KR');
-
 /** US 경제 캘린더 — 다가오는 발표 이벤트를 표로 렌더(SSR 텍스트). */
 export function EconomicCalendar({ events }: EconomicCalendarProps) {
     return (
@@ -35,7 +36,10 @@ export function EconomicCalendar({ events }: EconomicCalendarProps) {
                 id="economy-calendar-heading"
                 className="text-secondary-100 mb-3 text-xl font-semibold"
             >
-                경제 캘린더
+                경제 캘린더{' '}
+                <span className="text-secondary-400 text-sm font-normal">
+                    (미 동부시간)
+                </span>
             </h2>
             {events.length === 0 ? (
                 <p className="text-secondary-400 text-sm">
@@ -44,10 +48,14 @@ export function EconomicCalendar({ events }: EconomicCalendarProps) {
             ) : (
                 <ul className="border-secondary-700 divide-secondary-800 divide-y rounded-xl border">
                     {events.map(e => (
-                        // FMP economic-calendar에서 동일 datetime·동일 event 조합은
-                        // 통상 발생하지 않으나 정량 검증된 불변은 아니다. 만약 중복이
-                        // 관측되면 core normalize 단계에 dedup 패스 추가를 검토한다.
-                        <CalendarRow key={`${e.date}:${e.event}`} event={e} />
+                        // `actual`을 키에 포함해 같은 datetime·event라도 결과 값이
+                        // 다르면(예: 실시간 업데이트 전후 두 레코드가 공존) 충돌이 없다.
+                        // 여전히 정량 검증된 unique 불변은 아니므로 core normalize 단계에
+                        // dedup 패스가 추가되면 이 키는 단순화할 수 있다.
+                        <CalendarRow
+                            key={`${e.date}:${e.event}:${e.actual ?? ''}`}
+                            event={e}
+                        />
                     ))}
                 </ul>
             )}
@@ -84,18 +92,4 @@ function CalendarRow({ event }: CalendarRowProps) {
             </span>
         </li>
     );
-}
-
-/**
- * FMP가 보내는 'YYYY-MM-DD HH:mm:ss'를 HTML `<time dateTime>`이 인식하는 ISO-8601
- * 형식으로 정규화한다. 원본은 ET 기준 시각이지만, 표준 표기로만 변환해
- * (timezone offset 부여는 core 정규화 영역) 크롤러·screen reader가 파싱할 수 있게 한다.
- */
-function toIsoDateTime(date: string): string {
-    return date.replace(' ', 'T');
-}
-
-function formatNum(v: number | null, unit: string): string {
-    if (v === null) return 'N/A';
-    return `${NUMBER_FORMATTER.format(v)}${unit}`;
 }

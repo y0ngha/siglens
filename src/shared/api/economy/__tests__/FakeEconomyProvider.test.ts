@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { FakeEconomyProvider } from '@/shared/api/economy/FakeEconomyProvider';
+import {
+    FakeEconomyProvider,
+    buildSeries,
+} from '@/shared/api/economy/FakeEconomyProvider';
+import { INDICATOR_TREND_LENGTH } from '@/shared/config/economyIndicators';
 
 /**
  * 결정적 fixture 검증 — FakeEconomyProvider의 SEED와 동일 값으로 하드코딩한다.
@@ -95,5 +99,20 @@ describe('FakeEconomyProvider', () => {
         const dates = series.trend.map(p => p.date);
         const sorted = dates.toSorted((a, b) => (a < b ? 1 : -1));
         expect(dates).toEqual(sorted);
+    });
+
+    it('trend 배열은 INDICATOR_TREND_LENGTH를 초과하면 정확히 잘라낸다', () => {
+        /**
+         * buildSeries가 INDICATOR_TREND_LENGTH(12)를 초과하는 값 배열을 받았을 때
+         * 정확히 12개로 잘라내는지 slice 경계를 직접 검증한다.
+         * 현재 시드는 5개 값이라 슬라이스가 동작하지 않으므로, 13개짜리 합성 시드로
+         * 경계를 실측해 회귀를 잡는다.
+         */
+        const syntheticValues = Array.from({ length: 13 }, (_, i) => i + 1);
+        const series = buildSeries('test', {
+            values: syntheticValues,
+            startDate: '2026-01-01',
+        });
+        expect(series.trend.length).toBe(INDICATOR_TREND_LENGTH);
     });
 });

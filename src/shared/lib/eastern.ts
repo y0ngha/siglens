@@ -1,9 +1,9 @@
-const MARCH = 2; // 0-indexed
-const NOVEMBER = 10; // 0-indexed
+export const MARCH = 2; // 0-indexed
+export const NOVEMBER = 10; // 0-indexed
 
 const SUNDAY = 0;
-const SECOND_SUNDAY = 2;
-const FIRST_SUNDAY = 1;
+export const SECOND_SUNDAY = 2;
+export const FIRST_SUNDAY = 1;
 
 // DST transitions occur at local time 02:00:
 // Spring (EST → EDT): local 02:00 EST = UTC 07:00
