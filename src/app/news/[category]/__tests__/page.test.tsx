@@ -1,5 +1,3 @@
-import { describe, it, expect, vi } from 'vitest';
-
 vi.mock('next/navigation', () => ({
     notFound: vi.fn(() => {
         throw new Error('NEXT_NOT_FOUND');
@@ -36,6 +34,7 @@ vi.mock('@/entities/market-news/api', () => ({
     getMarketNewsList: vi.fn().mockResolvedValue([]),
 }));
 
+import { describe, it, expect, vi } from 'vitest';
 import { generateMetadata } from '../page';
 import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
 

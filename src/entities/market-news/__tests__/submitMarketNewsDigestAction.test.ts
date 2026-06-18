@@ -1,5 +1,3 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-
 vi.mock('next/headers', () => ({ headers: vi.fn(async () => new Headers()) }));
 vi.mock('@/shared/api/isBot', () => ({ isBot: vi.fn(() => false) }));
 vi.mock('@y0ngha/siglens-core', async orig => ({
@@ -31,6 +29,8 @@ vi.mock('../api', () => ({
         },
     ]),
 }));
+
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 describe('submitMarketNewsDigestAction은', () => {
     beforeEach(() => vi.clearAllMocks());

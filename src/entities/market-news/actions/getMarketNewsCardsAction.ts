@@ -27,8 +27,8 @@ export type GetMarketNewsCardsResult =
  * Intentionally NOT cached — each call must hit the DB to reflect the most
  * recent `attachAnalysis` writes.
  *
- * Uses `getMarketNewsList` (React.cache memoized within a render tree) so
- * concurrent RSC + action calls within the same request share a single DB round-trip.
+ * Uses `getMarketNewsList` (React.cache-memoized) to deduplicate concurrent
+ * calls within the same RSC render pass or the same Server Action invocation.
  *
  * Projects rows through `toMarketNewsCardItem` (allowlist) so DB-internal columns
  * (bodyEn, symbol, analyzedAt) are never serialised into the Server Action response.

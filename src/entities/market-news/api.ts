@@ -1,6 +1,6 @@
 import 'server-only';
 import { cache } from 'react';
-import { and, desc, eq, gte, sql } from 'drizzle-orm';
+import { and, desc, eq, gte, isNull, sql } from 'drizzle-orm';
 import type {
     NewsCardAnalysis,
     NewsCategory,
@@ -85,8 +85,9 @@ export class DrizzleMarketNewsRepository {
     }
 
     /**
-     * Attaches LLM analysis to an existing market-news row. Write-once: does not
-     * overwrite existing analysis (callers gate on `analyzedAt IS NULL`).
+     * Attaches LLM analysis to an existing market-news row. Write-once at the
+     * DB layer: the UPDATE filters on `analyzedAt IS NULL`, so a concurrent
+     * second writer becomes a no-op rather than overwriting the first result.
      */
     async attachAnalysis(
         id: string,
@@ -106,7 +107,12 @@ export class DrizzleMarketNewsRepository {
                         priceImpact: analysis.priceImpact,
                         analyzedAt,
                     })
-                    .where(eq(marketNews.id, id)),
+                    .where(
+                        and(
+                            eq(marketNews.id, id),
+                            isNull(marketNews.analyzedAt)
+                        )
+                    ),
             NEON_TRANSIENT_RETRY
         );
     }
@@ -270,10 +276,8 @@ function toMarketNewsRow(row: MarketNewsDbRow): MarketNewsRow {
     };
 }
 
-// ---------------------------------------------------------------------------
 // Market-news refresh flag (Redis sentinel) — moved from lib/ per Architecture §0.7
-// (lib/ must be pure; Redis I/O belongs in api.ts alongside other DB/cache I/O).
-// ---------------------------------------------------------------------------
+// because lib/ must be pure; Redis I/O belongs in api.ts alongside other DB/cache I/O.
 
 const MARKET_NEWS_REFRESH_FLAG_TTL_MINUTES = 10;
 

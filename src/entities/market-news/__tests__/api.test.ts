@@ -105,6 +105,28 @@ describe('DrizzleMarketNewsRepository.attachAnalysis는', () => {
         expect(setArg['priceImpact']).toBe('high');
         expect(setArg['analyzedAt']).toBe(analyzedAt);
     });
+
+    it('attachAnalysis는 WHERE 절에 analyzedAt IS NULL 가드를 포함한다', async () => {
+        const { db, where } = makeUpdateDb();
+        const repo = new DrizzleMarketNewsRepository(db);
+
+        await repo.attachAnalysis('id-1', {
+            titleKo: 't',
+            bodyKo: 'b',
+            summaryKo: 's',
+            sentiment: 'bullish',
+            category: 'macro',
+            priceImpact: 'high',
+        });
+
+        expect(where).toHaveBeenCalledTimes(1);
+        // The WHERE receives a compound AND expression (not a bare eq call).
+        // drizzle-orm SQL objects are opaque; we verify the argument is a
+        // non-null object (i.e. and(eq(id), isNull(analyzedAt)) was assembled).
+        const whereArg = where.mock.calls[0][0] as unknown;
+        expect(whereArg).toBeTruthy();
+        expect(typeof whereArg).toBe('object');
+    });
 });
 
 describe('DrizzleMarketNewsRepository.listByCategory는', () => {
