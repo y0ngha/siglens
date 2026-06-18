@@ -13,6 +13,7 @@ export {
     MARKET_NEWS_LOOKBACK_DAYS,
     MARKET_NEWS_LOOKBACK_MS,
     MAX_MARKET_NEWS_CARDS,
+    MARKET_NEWS_CACHE_TAG_PREFIX,
 } from './lib/marketNewsConstants';
 export { toMarketNewsCardItem } from './lib/toCardItem';
 export type { MarketNewsCardItem } from './lib/toCardItem';

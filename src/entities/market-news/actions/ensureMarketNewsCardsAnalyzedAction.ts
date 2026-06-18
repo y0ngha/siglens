@@ -18,7 +18,10 @@ import {
 } from '../api';
 import { getMarketNewsClient } from '../lib/getMarketNewsClient';
 import { CATEGORY_CONFIG } from '../lib/categoryConfig';
-import { MARKET_NEWS_LOOKBACK_MS } from '../lib/marketNewsConstants';
+import {
+    MARKET_NEWS_LOOKBACK_MS,
+    MARKET_NEWS_CACHE_TAG_PREFIX,
+} from '../lib/marketNewsConstants';
 import {
     DISABLED_THINKING_BUDGET,
     NEWS_CARD_ANALYSIS_POLL_INTERVAL_MS as POLL_INTERVAL_MS,
@@ -85,8 +88,7 @@ export async function ensureMarketNewsCardsAnalyzedAction(
     try {
         const { sentinel } = CATEGORY_CONFIG[category];
 
-        // Bot guard: skip FMP fetch+upsert when this sentinel was fetched recently.
-        // Bots read the existing DB rows so this is SEO-safe.
+        // SEO-safe: bots get existing DB rows, so skipping FMP fetch doesn't cause stale content.
         if (options?.skipAnalysis && (await isRecentlyFetched(sentinel))) {
             return;
         }
@@ -144,7 +146,7 @@ export async function ensureMarketNewsCardsAnalyzedAction(
             // Next.js 16.2.0 revalidateTag signature: (tag: string, profile: string | CacheLifeConfig).
             // 'max' uses the maximum stale-while-revalidate profile so this tag busts immediately.
             // See: node_modules/next/dist/server/web/spec-extension/revalidate.d.ts
-            revalidateTag(`market-news:${sentinel}`, 'max');
+            revalidateTag(`${MARKET_NEWS_CACHE_TAG_PREFIX}:${sentinel}`, 'max');
         }
 
         if (isE2E()) return;

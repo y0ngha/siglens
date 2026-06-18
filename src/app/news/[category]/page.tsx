@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 import {
     CATEGORY_CONFIG,
+    MARKET_NEWS_CACHE_TAG_PREFIX,
     categoryFromSlug,
     toMarketNewsCardItem,
     type MarketNewsCardItem,
@@ -60,7 +61,7 @@ async function loadCategorySnapshot(
         ['market-news:list', cfg.sentinel],
         cfg.sentinel,
         () => getMarketNewsList(cfg.sentinel),
-        [`market-news:${cfg.sentinel}`]
+        [`${MARKET_NEWS_CACHE_TAG_PREFIX}:${cfg.sentinel}`]
     );
     // Project to the same allowlist `getMarketNewsCardsAction` uses so the
     // client component never sees server-only DB columns (bodyEn/symbol/analyzedAt).

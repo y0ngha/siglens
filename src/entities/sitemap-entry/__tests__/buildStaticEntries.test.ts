@@ -5,6 +5,7 @@ vi.mock('@/shared/lib/seo', () => ({
 }));
 
 import { buildStaticEntries } from '../lib/buildStaticEntries';
+import { SITE_URL } from '@/shared/lib/seo';
 import { MS_PER_HOUR } from '@/shared/config/time';
 
 const NOW = new Date('2026-05-23T15:30:00.000Z');
@@ -30,7 +31,7 @@ describe('buildStaticEntries', () => {
     it('/news hub + 5 카테고리 entries가 포함된다', () => {
         const entries = buildStaticEntries(NOW);
         const urls = entries.map(e => e.url);
-        expect(urls).toContain('https://siglens.io/news');
+        expect(urls).toContain(`${SITE_URL}/news`);
         for (const slug of [
             'general',
             'stock',
@@ -38,7 +39,7 @@ describe('buildStaticEntries', () => {
             'forex',
             'articles',
         ]) {
-            expect(urls).toContain(`https://siglens.io/news/${slug}`);
+            expect(urls).toContain(`${SITE_URL}/news/${slug}`);
         }
     });
 
@@ -73,7 +74,7 @@ describe('buildStaticEntries', () => {
 
     it('/news hub과 5개 카테고리 entries는 now를 lastModified로 사용한다', () => {
         const entries = buildStaticEntries(NOW);
-        const newsHub = entries.find(e => e.url === 'https://siglens.io/news');
+        const newsHub = entries.find(e => e.url === `${SITE_URL}/news`);
         expect(newsHub).toBeDefined();
         expect(newsHub!.lastModified).toBeInstanceOf(Date);
         expect(newsHub!.lastModified.getTime()).toBe(NOW.getTime());
@@ -85,9 +86,7 @@ describe('buildStaticEntries', () => {
             'forex',
             'articles',
         ]) {
-            const cat = entries.find(
-                e => e.url === `https://siglens.io/news/${slug}`
-            );
+            const cat = entries.find(e => e.url === `${SITE_URL}/news/${slug}`);
             expect(cat).toBeDefined();
             expect(cat!.lastModified).toBeInstanceOf(Date);
             expect(cat!.lastModified.getTime()).toBe(NOW.getTime());

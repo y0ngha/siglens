@@ -1,5 +1,9 @@
 import type { Metadata } from 'next';
-import { CATEGORY_CONFIG, type NewsFeedCategory } from '@/entities/market-news';
+import {
+    CATEGORY_CONFIG,
+    MARKET_NEWS_CACHE_TAG_PREFIX,
+    type NewsFeedCategory,
+} from '@/entities/market-news';
 import { getMarketNewsList } from '@/entities/market-news/api';
 import { CategoryCard, PREVIEW_HEADLINE_LIMIT } from '@/widgets/news-hub';
 import { JsonLd } from '@/shared/ui/JsonLd';
@@ -70,7 +74,7 @@ async function fetchCategoryPreviews(
         ['market-news:list', cfg.sentinel],
         cfg.sentinel,
         () => getMarketNewsList(cfg.sentinel),
-        [`market-news:${cfg.sentinel}`]
+        [`${MARKET_NEWS_CACHE_TAG_PREFIX}:${cfg.sentinel}`]
     );
     return rows
         .slice(0, PREVIEW_HEADLINE_LIMIT)

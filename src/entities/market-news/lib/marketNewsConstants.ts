@@ -26,3 +26,6 @@ export const FMP_NEWS_FETCH_LIMIT = 50;
  * the installed `@y0ngha/siglens-core` `TierModel` union).
  */
 export const DEFAULT_DIGEST_MODEL_ID = 'gemini-2.5-flash' satisfies ModelId;
+
+/** ISR cache-tag prefix for market-news sentinel buckets. Combined with the sentinel as `${prefix}:${sentinel}`. */
+export const MARKET_NEWS_CACHE_TAG_PREFIX = 'market-news';

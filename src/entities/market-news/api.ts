@@ -276,11 +276,8 @@ function toMarketNewsRow(row: MarketNewsDbRow): MarketNewsRow {
     };
 }
 
-// Market-news refresh flag (Redis sentinel). Lives in api.ts (not lib/) per
-// Architecture §0.7 — lib/ must be pure (no external I/O). The cohesion argument
-// (FF §3-A) for moving back to lib/ is acknowledged but the rule-book wins;
-// the per-symbol equivalent (news-article/lib/newsRefreshFlag.ts) is historical
-// drift to be unified in a separate cross-cutting refactor PR.
+// Lives in api.ts (not lib/) per Architecture §0.7 — lib/ must be pure.
+// per-symbol news-article/lib/newsRefreshFlag.ts has the same drift, to be unified separately.
 
 const MARKET_NEWS_REFRESH_FLAG_TTL_MINUTES = 10;
 
