@@ -24,7 +24,7 @@ export interface CategoryCardProps {
  * Server component: category hub card linking to `/news/[slug]`.
  *
  * Renders a heading, up to 3 truncated headline previews (or a fallback
- * placeholder when none are available), and a "더보기 →" deep link.
+ * placeholder when none are available), and a "더보기" deep link with a decorative arrow.
  *
  * No `'use client'` — this is an RSC-safe pure presentation component with
  * no client-side state or browser-only APIs.
@@ -45,9 +45,9 @@ export function CategoryCard({
                     className="mb-4 min-w-0 space-y-2"
                     aria-label={`${koLabel} 최신 뉴스 미리보기`}
                 >
-                    {previewHeadlines.map(headline => (
+                    {previewHeadlines.map((headline, i) => (
                         <li
-                            key={headline.slice(0, 64)}
+                            key={i}
                             className="text-secondary-400 min-w-0 text-sm"
                         >
                             <span className="line-clamp-1 wrap-break-word">
@@ -67,7 +67,7 @@ export function CategoryCard({
                 className="text-primary-400 hover:text-primary-300 focus-visible:ring-primary-500 mt-auto text-sm transition-colors focus-visible:ring-1 focus-visible:outline-none"
                 aria-label={`${koLabel} 뉴스 더보기`}
             >
-                더보기 →
+                더보기 <span aria-hidden="true">→</span>
             </Link>
         </article>
     );

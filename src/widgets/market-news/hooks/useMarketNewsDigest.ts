@@ -102,7 +102,7 @@ export function useMarketNewsDigest(
 
     const retry = useCallback(() => {
         void query.refetch();
-    }, [query]);
+    }, [query.refetch]);
 
     // Cancel in-flight digest job on unmount or category change.
     useEffect(() => {

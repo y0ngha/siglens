@@ -237,7 +237,7 @@ export function MarketNewsCard({ category, item }: MarketNewsCardProps) {
                         rel="noopener noreferrer"
                         className="text-primary-400 focus-visible:ring-primary-500 mt-2 inline-block text-xs transition-opacity hover:opacity-70 focus-visible:ring-1 focus-visible:outline-none"
                     >
-                        원문 보기 →
+                        원문 보기 <span aria-hidden="true">→</span>
                     </a>
                 </>
             )}

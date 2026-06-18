@@ -236,4 +236,42 @@ describe('ensureMarketNewsCardsAnalyzedAction은', () => {
         // minority failure should NOT abort — LLM analysis should still run
         expect(submitNewsCardAnalysis).toHaveBeenCalled();
     });
+
+    it('upsert 실패 아이템은 LLM 제출에서 제외된다 — 5개 중 1개 upsert 실패 시 submitNewsCardAnalysis 4회 호출', async () => {
+        // 5 fresh items; item at index 2 (m3) fails upsert
+        mockFetchCategoryNews.mockResolvedValueOnce(ITEMS);
+        mockUpsertMarketNewsItem
+            .mockResolvedValueOnce(true) // m1
+            .mockResolvedValueOnce(true) // m2
+            .mockRejectedValueOnce(new Error('upsert error')) // m3
+            .mockResolvedValueOnce(true) // m4
+            .mockResolvedValueOnce(true); // m5
+
+        // listByCategory returns all 5 as unanalyzed so we can verify the
+        // upsertedIds filter (not the analyzedIds filter) is doing the work.
+        mockListByCategory.mockResolvedValueOnce(
+            ITEMS.map(item => ({
+                ...item,
+                titleKo: null,
+                bodyKo: null,
+                summaryKo: null,
+                sentiment: null,
+                category: null,
+                priceImpact: null,
+                analyzedAt: null,
+            }))
+        );
+
+        const errorSpy = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => {});
+
+        const { submitNewsCardAnalysis } = await import('@y0ngha/siglens-core');
+        await ensureMarketNewsCardsAnalyzedAction('crypto');
+
+        // Only the 4 successfully upserted items should be submitted to LLM
+        expect(submitNewsCardAnalysis).toHaveBeenCalledTimes(4);
+
+        errorSpy.mockRestore();
+    });
 });

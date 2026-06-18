@@ -162,7 +162,18 @@ export async function ensureMarketNewsCardsAnalyzedAction(
         const analyzedIds = new Set(
             rows.filter(r => r.analyzedAt !== null).map(r => r.id)
         );
-        const unanalyzed = fresh.filter(item => !analyzedIds.has(item.id));
+        // Only send items whose DB row was successfully upserted to LLM —
+        // if upsert failed, `attachAnalysis` would error with "row not found",
+        // wasting LLM credits. The majority-failure guard above already handles
+        // bulk failures; this filters the surviving minority rejects.
+        const upsertedIds = new Set(
+            upsertSettled
+                .map((r, i) => (r.status === 'fulfilled' ? fresh[i].id : null))
+                .filter((id): id is string => id !== null)
+        );
+        const unanalyzed = fresh
+            .filter(item => upsertedIds.has(item.id))
+            .filter(item => !analyzedIds.has(item.id));
 
         if (unanalyzed.length === 0) return;
 
