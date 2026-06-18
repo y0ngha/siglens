@@ -13,7 +13,10 @@ vi.mock('@y0ngha/siglens-core', async importOriginal => {
         await importOriginal<typeof import('@y0ngha/siglens-core')>();
     return {
         ...original,
-        submitNewsCardAnalysis: vi.fn(async () => ({ jobId: 'job-1' })),
+        submitNewsCardAnalysis: vi.fn(async () => ({
+            status: 'submitted' as const,
+            jobId: 'job-1',
+        })),
         pollNewsCardAnalysis: vi.fn(async () => ({
             status: 'done',
             result: {
@@ -128,6 +131,7 @@ describe('ensureMarketNewsCardsAnalyzedAction은', () => {
         vi.mocked(api.markFetched).mockResolvedValue(undefined);
         // Reset core mocks
         vi.mocked(core.submitNewsCardAnalysis).mockResolvedValue({
+            status: 'submitted',
             jobId: 'job-1',
         });
         vi.mocked(core.pollNewsCardAnalysis).mockResolvedValue({
@@ -449,7 +453,7 @@ describe('ensureMarketNewsCardsAnalyzedAction은', () => {
             // Simulate async work
             await Promise.resolve();
             currentConcurrent--;
-            return { jobId: 'job-ok' };
+            return { status: 'submitted' as const, jobId: 'job-ok' };
         });
 
         vi.mocked(api.DrizzleMarketNewsRepository).mockImplementation(function (
@@ -489,7 +493,7 @@ describe('ensureMarketNewsCardsAnalyzedAction은', () => {
         vi.mocked(core.submitNewsCardAnalysis).mockImplementation(async () => {
             callCount++;
             if (callCount <= 3) throw new Error('LLM worker error');
-            return { jobId: 'job-ok' };
+            return { status: 'submitted' as const, jobId: 'job-ok' };
         });
 
         vi.mocked(
@@ -585,6 +589,7 @@ describe('analyzeAndPersist polling 분기 (간접 테스트)', () => {
         vi.mocked(api.isRecentlyFetched).mockResolvedValue(false);
         vi.mocked(api.markFetched).mockResolvedValue(undefined);
         vi.mocked(core.submitNewsCardAnalysis).mockResolvedValue({
+            status: 'submitted',
             jobId: 'job-timeout',
         });
         vi.mocked(
