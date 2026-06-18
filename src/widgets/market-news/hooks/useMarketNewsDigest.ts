@@ -65,7 +65,6 @@ export function useMarketNewsDigest(
     category: NewsFeedCategory,
     hasEnrichedNews: boolean
 ): MarketNewsDigestState {
-    // useState / useRef block — §17 ordering
     const [isHydrated, setIsHydrated] = useState(false);
     const currentJobIdRef = useRef<string | null>(null);
 
