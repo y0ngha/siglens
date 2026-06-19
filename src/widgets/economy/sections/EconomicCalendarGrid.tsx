@@ -15,6 +15,7 @@ import type {
 import { cn } from '@/shared/lib/cn';
 import { formatNum } from '@/shared/lib/formatNum';
 import { etDateTimeToKst } from '@/shared/lib/etTimeUtils';
+import { useEconomicCalendarTrigger } from '../hooks/useEconomicCalendarTrigger';
 
 const IMPACT_LABELS: Record<CalendarImpact, string> = {
     High: '높음',
@@ -438,8 +439,29 @@ function MonthCalendar({
     );
 }
 
+/**
+ * 기본 선택 날짜 키를 결정한다 — 결정론적(렌더 중 `Date.now()` 금지).
+ * `today`(KST 'YYYY-MM-DD', 서버 RSC가 ET-오늘에서 1회 계산해 주입)에 그룹이 있으면
+ * 그날, 없으면 `today` 이상인 가장 가까운 미래 그룹, 그것도 없으면 가장 이른 그룹.
+ * groups는 dateKey 오름차순 정렬돼 있다(`groupEventsByKstDay`).
+ */
+function pickDefaultDateKey(groups: DayGroup[], today: string): string {
+    if (groups.length === 0) return '';
+    const exact = groups.find(g => g.dateKey === today);
+    if (exact !== undefined) return exact.dateKey;
+    const upcoming = groups.find(g => g.dateKey >= today);
+    if (upcoming !== undefined) return upcoming.dateKey;
+    return groups[0].dateKey;
+}
+
 interface EconomicCalendarGridProps {
     events: readonly EconomicCalendarEvent[];
+    /**
+     * 기본 선택 기준일 — KST 'YYYY-MM-DD'. 서버 RSC가 ET-오늘 instant를
+     * KST 날짜키로 1회 변환해 주입한다(ISR 안전: 클라에서 `Date.now()` 미사용).
+     * 생략 시 가장 이른 그룹을 기본 선택(기존 동작 유지).
+     */
+    today?: string;
 }
 
 /**
@@ -453,9 +475,14 @@ interface EconomicCalendarGridProps {
  *    SSR 크롤러가 전체 이벤트 텍스트를 색인할 수 있도록 보장한다.
  *
  * ISR 안전: `Date.now()` / `new Date()` (무인수) 호출 없음.
- * 기본 선택 날짜 = 이벤트가 있는 가장 이른 KST 날짜(결정론적).
+ * 기본 선택 날짜 = `today`(KST) → 가장 가까운 미래 → 가장 이른 그룹.
  */
-export function EconomicCalendarGrid({ events }: EconomicCalendarGridProps) {
+export function EconomicCalendarGrid({
+    events,
+    today = '',
+}: EconomicCalendarGridProps) {
+    useEconomicCalendarTrigger();
+
     const [selectedDateKey, setSelectedDateKey] = useState('');
     const groups = useMemo(() => groupEventsByKstDay(events), [events]);
     const groupMap = useMemo(
@@ -465,20 +492,18 @@ export function EconomicCalendarGrid({ events }: EconomicCalendarGridProps) {
     const months = useMemo(() => spannedMonths(groups), [groups]);
 
     /**
-     * events가 바뀔 때 기본 선택 날짜를 가장 이른 그룹으로 재동기화한다.
-     * useEffectEvent로 감싸 syncDefault 자체를 안정적인 참조로 만들어
-     * useEffect 의존성 배열에서 제외할 수 있게 한다.
-     * startTransition으로 감싸 react-hooks/set-state-in-effect 규칙을 만족시킨다
-     * (OptionsPageClient.tsx의 captureNow 패턴과 동일).
+     * events/today가 바뀔 때 기본 선택 날짜를 재동기화한다(오늘 → 가장 가까운 미래 →
+     * 가장 이른 그룹). useEffectEvent로 감싸 안정 참조를 만들고 startTransition으로
+     * react-hooks/set-state-in-effect를 만족시킨다(기존 패턴 유지).
      */
     const syncDefault = useEffectEvent((): void => {
         startTransition(() => {
-            setSelectedDateKey(groups.length > 0 ? groups[0].dateKey : '');
+            setSelectedDateKey(pickDefaultDateKey(groups, today));
         });
     });
     useEffect(() => {
         syncDefault();
-    }, [groups]);
+    }, [groups, today]);
 
     if (events.length === 0) {
         return (
