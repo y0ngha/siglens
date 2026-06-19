@@ -495,6 +495,8 @@ interface EconomicCalendarGridProps {
  * 3. 날짜 셀 클릭 → 상세 패널 표시(useState).
  * 4. 모든 날짜의 상세 패널을 DOM에 렌더하고(`hidden` 속성으로 비선택 숨김)
  *    SSR 크롤러가 전체 이벤트 텍스트를 색인할 수 있도록 보장한다.
+ * 5. 중요도 필터(ImpactFilter) — activeImpacts로 셀 건수·점·미리보기를 시각 한정.
+ *    Low(연 2,919건)를 기본 OFF하여 노이즈 억제; 상세 패널 `<li>`는 DOM에 유지(크롤러).
  *
  * ISR 안전: `Date.now()` / `new Date()` (무인수) 호출 없음.
  * 기본 선택 날짜 = `today`(KST) → 가장 가까운 미래 → 가장 이른 그룹.
