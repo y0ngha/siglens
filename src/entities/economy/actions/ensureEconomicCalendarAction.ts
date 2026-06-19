@@ -57,14 +57,21 @@ export async function ensureEconomicCalendarAction(): Promise<void> {
         const repo = new DrizzleEconomicCalendarRepository(db);
 
         // 같은 id 이벤트의 병렬 upsert는 동일 행 동시 갱신 → deadlock 위험. 먼저 id 기준 dedup.
-        const uniqueEvents = new Map<string, (typeof fresh)[number]>();
-        for (const event of fresh) {
-            uniqueEvents.set(
-                economicCalendarId(CALENDAR_COUNTRY, event.date, event.event),
-                event
-            );
-        }
-        const deduped = [...uniqueEvents.values()];
+        const deduped = [
+            ...new Map(
+                fresh.map(
+                    event =>
+                        [
+                            economicCalendarId(
+                                CALENDAR_COUNTRY,
+                                event.date,
+                                event.event
+                            ),
+                            event,
+                        ] as const
+                )
+            ).values(),
+        ];
 
         const settled = await Promise.allSettled(
             deduped.map(event => repo.upsertEvent(CALENDAR_COUNTRY, event))

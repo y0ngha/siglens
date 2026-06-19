@@ -66,7 +66,8 @@ describe('window bounds', () => {
             addEtDays('2026-06-20', FUTURE_WINDOW_DAYS)
         );
     });
-    it('past window is at least two weeks', () => {
-        expect(PAST_WINDOW_DAYS).toBeGreaterThanOrEqual(14);
+    // spec: 과거 윈도는 최소 2주 — 현재 PAST_WINDOW_DAYS = 14
+    it('PAST_WINDOW_DAYS is 14', () => {
+        expect(PAST_WINDOW_DAYS).toBe(14);
     });
 });

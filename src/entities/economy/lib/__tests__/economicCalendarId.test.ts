@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+// economicCalendarId(country, dateEt, event) — actual은 파라미터가 아니므로 해시에서 구조적으로 제외(발표 후 actual 변경 시 같은 id로 upsert).
 import { economicCalendarId } from '@/entities/economy/lib/economicCalendarId';
 
 describe('economicCalendarId', () => {
@@ -23,22 +24,6 @@ describe('economicCalendarId', () => {
             'Core CPI MoM (Apr)'
         );
         expect(id).toMatch(/^[0-9a-f]{64}$/);
-    });
-
-    it('excludes actual — different actual is irrelevant because actual is not an input', () => {
-        // Same country+dateEt+event must always collide so post-release upserts
-        // land on the same row.
-        const before = economicCalendarId(
-            'US',
-            '2026-05-13 08:30:00',
-            'Core CPI MoM (Apr)'
-        );
-        const after = economicCalendarId(
-            'US',
-            '2026-05-13 08:30:00',
-            'Core CPI MoM (Apr)'
-        );
-        expect(before).toBe(after);
     });
 
     it('differs when any component differs', () => {
