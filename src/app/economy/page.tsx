@@ -15,6 +15,9 @@ import {
 // 클라이언트 번들 누출 위험이 없으므로 허용된다.
 import { getEconomySnapshotStatic } from '@/entities/economy/api/economySnapshotStaticCache';
 import { peekMacroBriefingStatic } from '@/entities/economy/api/macroBriefingStaticCache';
+import { getCalendarFromDb } from '@/entities/economy/api/getCalendarFromDb';
+import { etDateOf } from '@/entities/economy/lib/calendarWindow';
+import { etDateTimeToKst } from '@/shared/lib/etTimeUtils';
 import { isEmptyEconomySnapshot } from '@/entities/economy';
 import {
     buildBreadcrumbJsonLd,
@@ -143,6 +146,19 @@ async function EconomyContent() {
         }
     );
 
+    // 캘린더는 Redis 스냅샷이 아니라 DB-backed 이력 레이어에서 읽는다(SP-A). 지표/treasury는
+    // 스냅샷 그대로. ET-오늘을 1회 계산해 reader 앵커 + 그리드 기본 선택일로 공유한다
+    // (ISR 안전: 결정론적 Intl 변환, dynamic API 미사용).
+    const todayEt = etDateOf(new Date());
+    // 정오 ET → KST 날짜키 — 자정 경계 롤오버 모호성 없이 ET-오늘과 같은 KST 달력일을 얻는다.
+    const todayKstKey = etDateTimeToKst(`${todayEt} 12:00:00`).kstDateKey;
+    const calendarEvents = await getCalendarFromDb(todayEt).catch(
+        (e: unknown) => {
+            console.error('[EconomyContent] getCalendarFromDb failed:', e);
+            return [];
+        }
+    );
+
     return (
         <div className="space-y-6">
             {/* SSR 크롤 텍스트 — MacroBriefing은 'use client'라 크롤러에 빈 HTML을
@@ -151,7 +167,7 @@ async function EconomyContent() {
             <EconomyMacroFacts snapshot={snapshot} />
             <MacroBriefing peekSeed={peekSeed} />
             <EconomicIndicatorGrid snapshot={snapshot} />
-            <EconomicCalendar events={snapshot.calendar} />
+            <EconomicCalendar events={calendarEvents} today={todayKstKey} />
         </div>
     );
 }
