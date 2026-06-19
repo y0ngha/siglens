@@ -202,7 +202,7 @@ function DisclosureCell({
             </a>
             {isSenate && <InfoTooltip>{SenateDisclosureTooltip}</InfoTooltip>}
             {isSenate && ptrId && (
-                <span className="text-secondary-500 block font-mono text-[10px] whitespace-nowrap">
+                <span className="text-secondary-400 block font-mono text-[10px] whitespace-nowrap">
                     PTR {ptrId.slice(0, PTR_ID_PREFIX_LENGTH)}…
                 </span>
             )}
@@ -374,7 +374,7 @@ export function CongressTradesTable({ trades }: CongressTradesTableProps) {
                                             }
                                         />
                                     ) : (
-                                        <span className="text-secondary-500 text-xs">
+                                        <span className="text-secondary-400 text-xs">
                                             —
                                         </span>
                                     )}

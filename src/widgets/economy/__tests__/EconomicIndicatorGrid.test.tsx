@@ -51,10 +51,16 @@ describe('EconomicIndicatorGrid', () => {
         expect(screen.queryByText('GDP')).not.toBeInTheDocument();
     });
 
-    it('전기 대비 변화 — 양수는 + 부호', () => {
+    it('전기 대비 변화 — 양수는 + 부호 + 중립 색상(ui-success/danger 없음)', () => {
         render(<EconomicIndicatorGrid snapshot={snap()} />);
         // 3.63 - 3.58 = 0.05
-        expect(screen.getByText(/\+0\.05/)).toBeInTheDocument();
+        const badge = screen.getByText(/\+0\.05/);
+        expect(badge).toBeInTheDocument();
+        // DeltaBadge는 지표 유형과 무관하게 중립 색상을 사용한다
+        // (상승이 CPI·실업률 등에서는 부정적 의미여서 green/red 표시가 오해를 유발).
+        expect(badge).not.toHaveClass('text-ui-success');
+        expect(badge).not.toHaveClass('text-ui-danger');
+        expect(badge).toHaveClass('text-secondary-300');
     });
 
     it('금리 섹션은 treasury 카드 3종(2Y·10Y·2s10s) 렌더', () => {

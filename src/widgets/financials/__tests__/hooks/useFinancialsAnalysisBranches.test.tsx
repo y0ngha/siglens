@@ -1,7 +1,8 @@
 /**
  * Branch coverage tests for useFinancialsAnalysis — targets uncovered branches in
  * fetchFinancialsAnalysis: miss_no_trigger, gate blocked, fetch_failed, key_error,
- * poll error with/without message, non-Error query error wrapping, query data.
+ * poll error with/without message, non-Error query error wrapping, query data,
+ * and the poll-ceiling path (ANALYSIS_POLL_MAX_DURATION_MS exceeded).
  */
 
 import type { MockedFunction, Mock } from 'vitest';
@@ -12,6 +13,7 @@ import {
     submitFinancialsAnalysisAction,
 } from '@/entities/analysis/actions';
 import { isGateBlockedResult } from '@/entities/analysis';
+import { ANALYSIS_POLL_MAX_DURATION_MS } from '@/shared/config/pollingConfig';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
 import type { FinancialsAnalysisResponse } from '@y0ngha/siglens-core';
@@ -340,5 +342,48 @@ describe('useFinancialsAnalysis — branch coverage', () => {
         rerender();
 
         expect(mockSubmit).toHaveBeenCalledTimes(1);
+    });
+
+    it('poll ceiling → error state when job stalls beyond ANALYSIS_POLL_MAX_DURATION_MS', async () => {
+        // Arrange: job is submitted but poll always returns 'processing'.
+        // Freeze Date.now() past the ceiling on the first check so the loop
+        // breaks immediately without iterating (avoids needing many poll calls).
+        mockSubmit.mockResolvedValue({
+            status: 'submitted',
+            jobId: 'job-stalled',
+        } as never);
+        // poll resolves with 'processing' status (not 'done' / 'error')
+        mockPoll.mockResolvedValue({ status: 'processing' } as never);
+
+        const realNow = Date.now;
+        const frozenStart = realNow();
+        let callCount = 0;
+        vi.spyOn(Date, 'now').mockImplementation(() => {
+            // First call (pollStart = Date.now()) returns current time.
+            // Second call (ceiling check inside while loop) returns time past ceiling.
+            callCount += 1;
+            return callCount === 1
+                ? frozenStart
+                : frozenStart + ANALYSIS_POLL_MAX_DURATION_MS + 1;
+        });
+
+        try {
+            const { result } = renderHook(
+                () => useFinancialsAnalysis('AAPL', 'gemini-2.5-flash-lite'),
+                { wrapper: makeWrapper() }
+            );
+
+            await waitFor(() => {
+                expect(result.current.status).toBe('error');
+            });
+
+            if (result.current.status !== 'error')
+                throw new Error('expected error state');
+            expect(result.current.error.message).toContain(
+                '너무 오래 걸립니다'
+            );
+        } finally {
+            vi.spyOn(Date, 'now').mockRestore();
+        }
     });
 });

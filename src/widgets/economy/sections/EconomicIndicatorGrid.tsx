@@ -193,7 +193,7 @@ function IndicatorCard({ meta, series }: IndicatorCardProps) {
                     unit={meta.unit}
                 />
             )}
-            <p className="text-secondary-500 mt-1 text-xs">{latest.date}</p>
+            <p className="text-secondary-400 mt-1 text-xs">{latest.date}</p>
         </article>
     );
 }
@@ -212,7 +212,7 @@ function TreasuryYieldCard({ snapshot, maturity }: TreasuryYieldCardProps) {
                 {value.toFixed(TREASURY_YIELD_PRECISION)}
                 <span className="text-secondary-400 ml-1 text-sm">{unit}</span>
             </div>
-            <p className="text-secondary-500 mt-1 text-xs">{snapshot.date}</p>
+            <p className="text-secondary-400 mt-1 text-xs">{snapshot.date}</p>
         </article>
     );
 }
@@ -240,7 +240,7 @@ function YieldSpreadCard({ snapshot }: YieldSpreadCardProps) {
                 {spread.toFixed(TREASURY_YIELD_PRECISION)}
                 <span className="text-secondary-400 ml-1 text-sm">%p</span>
             </div>
-            <p className="text-secondary-500 mt-1 text-xs">{snapshot.date}</p>
+            <p className="text-secondary-400 mt-1 text-xs">{snapshot.date}</p>
         </article>
     );
 }
@@ -258,13 +258,23 @@ function DeltaBadge({ delta, precision, unit }: DeltaBadgeProps) {
     }
     const positive = delta > 0;
     const sign = positive ? '+' : '';
+    // Direction chevrons convey movement without implying good/bad valence —
+    // green/red would be semantically wrong for indicators like CPI or
+    // unemployment where rising values are not positive outcomes.
     return (
-        <span
-            className={cn(
-                'mt-1 inline-block text-xs',
-                positive ? 'text-ui-success' : 'text-ui-danger'
-            )}
-        >
+        <span className="text-secondary-300 mt-1 inline-flex items-center gap-1 text-xs">
+            <svg
+                aria-hidden="true"
+                viewBox="0 0 10 10"
+                className="h-2.5 w-2.5 fill-none stroke-current"
+                strokeWidth={1.5}
+            >
+                {positive ? (
+                    <path d="M2 6.5 5 3.5 8 6.5" />
+                ) : (
+                    <path d="M2 3.5 5 6.5 8 3.5" />
+                )}
+            </svg>
             전기 대비 {sign}
             {formatted}
             {unit}

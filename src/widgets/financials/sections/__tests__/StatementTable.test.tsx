@@ -100,8 +100,9 @@ describe('StatementTable', () => {
         const { container } = render(<StatementTable {...BASE_PROPS} />);
         const rows = container.querySelectorAll('tbody tr');
         rows.forEach(row => {
-            // label + 3 value columns
-            expect(row.querySelectorAll('td').length).toBe(4);
+            // 1 th[scope=row] label + 3 value td cells
+            expect(row.querySelectorAll('th[scope="row"]').length).toBe(1);
+            expect(row.querySelectorAll('td').length).toBe(3);
         });
     });
 

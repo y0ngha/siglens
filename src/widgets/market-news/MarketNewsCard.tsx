@@ -76,7 +76,7 @@ function AnalysisSkeleton() {
         >
             <div className="bg-secondary-700 h-5 w-10 animate-pulse rounded motion-reduce:animate-none" />
             <div className="bg-secondary-700 h-5 w-20 animate-pulse rounded motion-reduce:animate-none" />
-            <span className="text-secondary-500 text-xs">AI 분석 중…</span>
+            <span className="text-secondary-400 text-xs">AI 분석 중…</span>
         </div>
     );
 }

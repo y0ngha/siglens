@@ -253,7 +253,7 @@ export function FinancialTrendChart({
 
             <div className="mt-1 flex justify-between">
                 {periods.map(p => (
-                    <span key={p} className="text-secondary-500 text-xs">
+                    <span key={p} className="text-secondary-400 text-xs">
                         {p}
                     </span>
                 ))}

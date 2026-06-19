@@ -100,9 +100,15 @@ export function useMarketNewsDigest(
 
     useMarketNewsAnalysisTrigger(category);
 
+    // §17 exception: `refetch` is destructured immediately after useQuery
+    // because it feeds the useCallback below. The `refetch` reference is
+    // stable across renders (React Query guarantee), so this satisfies
+    // exhaustive-deps without introducing unstable derived values.
+    const { refetch } = query;
+
     const retry = useCallback(() => {
-        void query.refetch();
-    }, [query.refetch]);
+        void refetch();
+    }, [refetch]);
 
     // Cancel in-flight digest job on unmount or category change.
     useEffect(() => {

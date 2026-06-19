@@ -42,7 +42,7 @@ export function CategoryCard({
             <h2 className="mb-1 text-base font-semibold tracking-tight text-balance">
                 {koLabel}
             </h2>
-            <p className="text-secondary-500 mb-3 text-xs leading-relaxed">
+            <p className="text-secondary-400 mb-3 text-xs leading-relaxed">
                 {koDescription}
             </p>
 
@@ -63,7 +63,7 @@ export function CategoryCard({
                     ))}
                 </ul>
             ) : (
-                <p className="text-secondary-500 mb-4 text-sm">
+                <p className="text-secondary-400 mb-4 text-sm">
                     최신 뉴스를 불러오고 있어요.
                 </p>
             )}

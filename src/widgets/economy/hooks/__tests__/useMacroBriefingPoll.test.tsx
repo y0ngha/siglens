@@ -1,5 +1,8 @@
 vi.mock('@/entities/economy/actions/pollMacroBriefingAction');
 vi.mock('@/shared/hooks/useHydrated');
+vi.mock('@/shared/config/pollingConfig', () => ({
+    ANALYSIS_POLL_MAX_DURATION_MS: 50, // 50ms in tests to avoid waiting 5 min
+}));
 
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
@@ -40,7 +43,7 @@ describe('useMacroBriefingPoll', () => {
         const { result } = renderHook(() => useMacroBriefingPoll('j'), {
             wrapper: makeWrapper(),
         });
-        expect(result.current).toEqual({ status: 'processing' });
+        expect(result.current.status).toBe('processing');
         expect(mockPoll).not.toHaveBeenCalled();
     });
 
@@ -50,7 +53,7 @@ describe('useMacroBriefingPoll', () => {
             wrapper: makeWrapper(),
         });
         // 쿼리 disabled → data 없음 → processing 반환
-        expect(result.current).toEqual({ status: 'processing' });
+        expect(result.current.status).toBe('processing');
         expect(mockPoll).not.toHaveBeenCalled();
     });
 
@@ -59,9 +62,7 @@ describe('useMacroBriefingPoll', () => {
         const { result } = renderHook(() => useMacroBriefingPoll('j'), {
             wrapper: makeWrapper(),
         });
-        await waitFor(() =>
-            expect(result.current).toEqual({ status: 'processing' })
-        );
+        await waitFor(() => expect(result.current.status).toBe('processing'));
     });
 
     it('action done → done variant 전달', async () => {
@@ -96,6 +97,84 @@ describe('useMacroBriefingPoll', () => {
                 expect(result.current.error).toBe('worker boom');
             }
         });
+    });
+
+    it('반환값에 항상 refetch 콜백이 포함된다', async () => {
+        mockPoll.mockResolvedValue({ status: 'processing' });
+        const { result } = renderHook(() => useMacroBriefingPoll('j'), {
+            wrapper: makeWrapper(),
+        });
+        await waitFor(() => expect(result.current.status).toBe('processing'));
+        expect(typeof result.current.refetch).toBe('function');
+    });
+
+    it('polling이 ANALYSIS_POLL_MAX_DURATION_MS를 초과하면 error 상태로 전환', async () => {
+        // ANALYSIS_POLL_MAX_DURATION_MS는 이 파일의 vi.mock에서 50ms로 오버라이드됨.
+        // processing을 계속 반환해 타임아웃이 발생할 조건을 만든다.
+        mockPoll.mockResolvedValue({ status: 'processing' });
+
+        const { result } = renderHook(() => useMacroBriefingPoll('j-timeout'), {
+            wrapper: makeWrapper(),
+        });
+
+        // ceiling 타이머(50ms)가 발동될 때까지 대기.
+        await waitFor(
+            () => {
+                expect(result.current.status).toBe('error');
+            },
+            { timeout: 500 }
+        );
+
+        // error 상태일 때도 refetch 콜백이 있어야 한다(재시도 버튼이 의존).
+        if (result.current.status === 'error') {
+            expect(typeof result.current.refetch).toBe('function');
+        }
+    });
+
+    it('retry 후 ceiling이 재무장되어 stall이 지속되면 다시 error로 전환된다', async () => {
+        // ANALYSIS_POLL_MAX_DURATION_MS는 vi.mock에서 50ms로 오버라이드됨.
+        // processing을 계속 반환해 첫 번째 ceiling을 발동시킨 뒤, refetch()를 호출한다.
+        // 버그 코드에서는 isSettled가 false로 유지돼 effect가 재실행되지 않으므로
+        // 두 번째 ceiling이 발동되지 않고 status가 'processing'에 머문다.
+        // 수정 후에는 pollWindow 카운터 증가로 effect가 재실행되어 다시 'error'로 전환된다.
+        mockPoll.mockResolvedValue({ status: 'processing' });
+
+        const { result } = renderHook(
+            () => useMacroBriefingPoll('j-retry-rearm'),
+            { wrapper: makeWrapper() }
+        );
+
+        // 첫 번째 ceiling(50ms) 발동 대기.
+        await waitFor(
+            () => {
+                expect(result.current.status).toBe('error');
+            },
+            { timeout: 500 }
+        );
+
+        // 재시도 — timedOut 초기화 + pollWindow++ + queryRefetch.
+        // 잡은 여전히 processing을 반환하므로 두 번째 ceiling이 발동돼야 한다.
+        result.current.refetch();
+
+        // refetch() 직후 status가 'processing'으로 돌아왔는지 확인.
+        await waitFor(
+            () => {
+                expect(result.current.status).toBe('processing');
+            },
+            { timeout: 200 }
+        );
+
+        // 두 번째 ceiling(50ms) 발동 대기 — 버그 코드에서는 여기서 timeout.
+        await waitFor(
+            () => {
+                expect(result.current.status).toBe('error');
+            },
+            { timeout: 500 }
+        );
+
+        if (result.current.status === 'error') {
+            expect(result.current.error).toBe('poll_timeout');
+        }
     });
 
     it('unmount 시 polling이 중단된다', async () => {

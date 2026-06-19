@@ -50,7 +50,7 @@ export function HeaderUserMenu({ currentUser, loading }: HeaderUserMenuProps) {
             <div
                 role="status"
                 aria-label="로딩 중"
-                className="bg-secondary-800 size-10 animate-pulse rounded-full"
+                className="bg-secondary-800 size-10 animate-pulse rounded-full motion-reduce:animate-none"
             />
         );
     }

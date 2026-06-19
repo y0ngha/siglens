@@ -37,6 +37,10 @@ interface MacroBriefingViewProps {
     generatedAt: string | null;
 }
 
+interface MacroBriefingErrorProps {
+    onRetry: () => void;
+}
+
 /**
  * /economy 상단 거시 AI 브리핑 위젯.
  *
@@ -49,11 +53,11 @@ interface MacroBriefingViewProps {
  * 빠지면 indicator grid·calendar까지 unmount되므로 회피.
  */
 export function MacroBriefing({ peekSeed }: MacroBriefingProps) {
-    const { input } = useMacroBriefing(peekSeed);
+    const { input, refetch } = useMacroBriefing(peekSeed);
 
     if (input === undefined) return <MacroBriefingSkeleton />;
     if (input === null) return <MacroBriefingBotBlocked />;
-    if (input === 'error') return <MacroBriefingError />;
+    if (input === 'error') return <MacroBriefingError onRetry={refetch} />;
     if (input.status === 'cached') {
         return (
             <MacroBriefingView
@@ -68,7 +72,8 @@ export function MacroBriefing({ peekSeed }: MacroBriefingProps) {
 function MacroBriefingPollingView({ jobId }: MacroBriefingPollingViewProps) {
     const poll = useMacroBriefingPoll(jobId);
     if (poll.status === 'processing') return <MacroBriefingSkeleton />;
-    if (poll.status === 'error') return <MacroBriefingError />;
+    if (poll.status === 'error')
+        return <MacroBriefingError onRetry={poll.refetch} />;
     return (
         <MacroBriefingView
             briefing={poll.briefing}
@@ -118,7 +123,7 @@ function MacroBriefingView({ briefing, generatedAt }: MacroBriefingViewProps) {
                 </ul>
             )}
             {generatedAt !== null && (
-                <p className="text-secondary-500 mt-3 text-xs">
+                <p className="text-secondary-400 mt-3 text-xs">
                     생성 시각: {new Date(generatedAt).toLocaleString('ko-KR')}
                 </p>
             )}
@@ -129,7 +134,7 @@ function MacroBriefingView({ briefing, generatedAt }: MacroBriefingViewProps) {
 function MacroBriefingSkeleton() {
     return (
         <section
-            className="border-secondary-700 bg-secondary-800 animate-pulse rounded-xl border p-6"
+            className="border-secondary-700 bg-secondary-800 animate-pulse rounded-xl border p-6 motion-reduce:animate-none"
             aria-busy="true"
             aria-label="거시 경제 브리핑 로딩 중"
         >
@@ -151,14 +156,24 @@ function MacroBriefingBotBlocked() {
     );
 }
 
-function MacroBriefingError() {
+function MacroBriefingError({ onRetry }: MacroBriefingErrorProps) {
     return (
         <section
-            className="border-secondary-700 bg-secondary-800 text-secondary-300 rounded-xl border p-6 text-sm"
+            className="border-secondary-700 bg-secondary-800 rounded-xl border p-6"
             role="alert"
             aria-label="거시 경제 브리핑 안내"
         >
-            지금은 거시 브리핑을 만들지 못했어요. 잠시 후 다시 시도해 주세요.
+            <p className="text-secondary-300 text-sm">
+                지금은 거시 브리핑을 만들지 못했어요. 잠시 후 다시 시도해
+                주세요.
+            </p>
+            <button
+                type="button"
+                onClick={onRetry}
+                className="bg-primary-600 hover:bg-primary-700 focus-visible:ring-primary-500 focus-visible:ring-offset-secondary-800 mt-4 inline-flex min-h-11 items-center rounded px-3 py-2 text-xs text-white transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+            >
+                다시 시도
+            </button>
         </section>
     );
 }

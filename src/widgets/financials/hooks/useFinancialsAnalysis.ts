@@ -11,7 +11,10 @@ import {
 import { isGateBlockedResult } from '@/entities/analysis';
 import { sleep } from '@/shared/lib/sleep';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
-import { ANALYSIS_POLL_INTERVAL_MS } from '@/shared/config/pollingConfig';
+import {
+    ANALYSIS_POLL_INTERVAL_MS,
+    ANALYSIS_POLL_MAX_DURATION_MS,
+} from '@/shared/config/pollingConfig';
 import { usePageHideCancel } from '@/shared/hooks/usePageHideCancel';
 import { useHydrated } from '@/shared/hooks/useHydrated';
 import { BotBlockedError } from '@/widgets/symbol-page';
@@ -53,9 +56,15 @@ async function fetchFinancialsAnalysis(
     }
 
     onJobId(submitted.jobId);
+    const pollStart = Date.now();
     try {
         const { jobId } = submitted;
         while (!signal.aborted) {
+            if (Date.now() - pollStart >= ANALYSIS_POLL_MAX_DURATION_MS) {
+                throw new Error(
+                    '분석이 너무 오래 걸립니다. 잠시 후 다시 시도해 주세요.'
+                );
+            }
             await sleep(ANALYSIS_POLL_INTERVAL_MS);
             if (signal.aborted) break;
             const polled = await pollFinancialsAnalysisAction(jobId);
