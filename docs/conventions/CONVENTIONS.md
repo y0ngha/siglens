@@ -336,6 +336,13 @@ export function ChartSkeleton() {
 }
 ```
 
+> **알려진 오탐: Next.js 경고 71007 ("Props must be serializable … `resetErrorBoundary` is a function")**
+>
+> `FallbackComponent`-형태 컴포넌트(`FallbackProps`를 받아 `onClick={resetErrorBoundary}`를 등록하는 컴포넌트)에 `'use client'`를 붙이면 Next.js 개발 서버 / TS 플러그인이 **71007** 경고를 낼 수 있다.
+> 이는 **알려진 정적 분석 오탐**이다. `resetErrorBoundary`는 클라이언트 부모(예: `FinancialsAiSummary`, `CongressTrendSummary`)에서 생성되어 클라이언트 렌더 트리 안에서만 전달되므로, 실제 Server→Client 직렬화 경계를 넘지 않는다. 프로덕션 빌드·CI·런타임에는 영향이 없다.
+>
+> **경고를 없애기 위해 `'use client'`를 제거해서는 안 된다.** 제거하면 위 표의 두 가지 조건("이벤트 핸들러 등록", "FallbackComponent")을 동시에 위반하며, 해당 컴포넌트가 Server Component 컨텍스트에서 import될 경우 런타임 오류로 이어질 수 있다. `'use client'`를 유지하고 71007은 예상된 오탐으로 무시한다.
+
 ### RSC → Client Boundary: Minimize Serialized Data
 
 When a Server Component passes data to a `'use client'` component, only the props cross the boundary as serialized JSON embedded in the HTML response. Pass only the fields the client component actually uses.
