@@ -38,6 +38,7 @@ function SentimentBadge({ value }: SentimentBadgeProps) {
     if (!isNewsSentiment(value)) return null;
     return (
         <span
+            data-testid="sentiment-badge"
             className={cn(
                 'rounded px-2 py-0.5 text-xs font-medium',
                 SENTIMENT_CLASS[value]

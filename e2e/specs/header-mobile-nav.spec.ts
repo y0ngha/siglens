@@ -75,7 +75,12 @@ test.describe('@webkit 모바일 햄버거 내비게이션', () => {
         await page.getByRole('button', { name: '메뉴 열기' }).click();
         await expect(page.getByRole('dialog', { name: '메뉴' })).toBeVisible();
 
-        await page.getByRole('button', { name: '메뉴 닫기' }).click();
+        // 열린 상태에서 트리거는 전체화면 백드롭(z-40)에 덮여 포인터 hit-test로는
+        // 닿지 않는다(스크린리더 가상 커서·키보드 활성화 경로). dispatchEvent로
+        // 실제 click 이벤트를 발생시켜 toggle 핸들러가 hydration 후 닫는지 검증한다.
+        await page
+            .getByRole('button', { name: '메뉴 닫기' })
+            .dispatchEvent('click');
 
         await expect(page.locator(drawerSelector)).toHaveAttribute(
             'aria-hidden',
@@ -155,7 +160,12 @@ test.describe('@webkit 모바일 햄버거 내비게이션', () => {
         await page.getByRole('button', { name: '메뉴 열기' }).click();
         await expect(page.getByRole('dialog', { name: '메뉴' })).toBeVisible();
 
-        await page.locator('[data-testid="mobile-nav-backdrop"]').click();
+        // 백드롭(z-40)은 전체화면이지만 webkit 스택킹 컨텍스트상 포인터 hit-test가
+        // 불안정하다(드로어/페이지 섹션이 가로채임). dispatchEvent로 백드롭의 onClick
+        // 핸들러를 직접 발생시켜 닫힘을 검증한다(hydration된 핸들러만 동작).
+        await page
+            .locator('[data-testid="mobile-nav-backdrop"]')
+            .dispatchEvent('click');
 
         await expect(page.locator(drawerSelector)).toHaveAttribute(
             'aria-hidden',

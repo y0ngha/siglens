@@ -77,9 +77,17 @@ test.describe('economy overview', () => {
         page,
     }) => {
         await page.goto('/economy');
-        await expect(page.getByText('2년물 국채')).toBeVisible();
-        await expect(page.getByText('10년물 국채')).toBeVisible();
-        await expect(page.getByText('2s10s 스프레드')).toBeVisible();
+        // exact:true — 카드 라벨(<span>)을 정확히 매칭한다. AI 매크로 브리핑 문단이
+        // "2년물·10년물 국채" 같은 문구를 포함해 substring 매칭 시 strict mode 위반이 난다.
+        await expect(
+            page.getByText('2년물 국채', { exact: true })
+        ).toBeVisible();
+        await expect(
+            page.getByText('10년물 국채', { exact: true })
+        ).toBeVisible();
+        await expect(
+            page.getByText('2s10s 스프레드', { exact: true })
+        ).toBeVisible();
     });
 
     /**
