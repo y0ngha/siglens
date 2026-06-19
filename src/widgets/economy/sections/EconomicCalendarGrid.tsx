@@ -1,6 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import {
+    useState,
+    useMemo,
+    useEffect,
+    useEffectEvent,
+    startTransition,
+} from 'react';
 import type {
     CalendarImpact,
     EconomicCalendarEvent,
@@ -9,10 +15,6 @@ import type {
 import { cn } from '@/shared/lib/cn';
 import { formatNum } from '@/shared/lib/formatNum';
 import { etDateTimeToKst } from '@/shared/lib/etTimeUtils';
-
-// ---------------------------------------------------------------------------
-// 상수
-// ---------------------------------------------------------------------------
 
 const IMPACT_LABELS: Record<CalendarImpact, string> = {
     High: '높음',
@@ -55,10 +57,6 @@ const MONTH_LABELS = [
 /** 인라인 이벤트 미리보기 최대 표시 건수 (sm 이상 화면) */
 const INLINE_EVENT_MAX = 2;
 
-// ---------------------------------------------------------------------------
-// 타입
-// ---------------------------------------------------------------------------
-
 interface KstEvent {
     /** ET ISO-8601 문자열 — `<time dateTime>` 용 */
     iso: string;
@@ -86,10 +84,6 @@ interface MonthGrid {
     /** 0-indexed */
     month: number;
 }
-
-// ---------------------------------------------------------------------------
-// 순수 유틸
-// ---------------------------------------------------------------------------
 
 /** `parseDateKey` 반환 타입. */
 interface ParsedDateKey {
@@ -151,17 +145,16 @@ function groupEventsByKstDay(
 
 /**
  * DayGroup 배열에서 스패닝하는 KST 월 목록을 반환한다 (연·월 중복 제거).
+ * Map은 삽입 순서를 보장하므로 groups가 날짜순으로 이미 정렬된 경우 월 순서가 유지된다.
  */
 function spannedMonths(groups: DayGroup[]): MonthGrid[] {
-    const seen = new Set<string>();
-    return groups.reduce<MonthGrid[]>((acc, g) => {
-        const key = `${g.year}-${g.month}`;
-        if (!seen.has(key)) {
-            seen.add(key);
-            return [...acc, { year: g.year, month: g.month }];
-        }
-        return acc;
-    }, []);
+    const monthMap = new Map(
+        groups.map(g => [
+            `${g.year}-${g.month}`,
+            { year: g.year, month: g.month },
+        ])
+    );
+    return [...monthMap.values()];
 }
 
 /**
@@ -171,10 +164,6 @@ function spannedMonths(groups: DayGroup[]): MonthGrid[] {
 function kstDayOfWeekLabel(dateKey: string): string {
     return WEEKDAY_LABELS[dayOfWeekFromKey(dateKey)];
 }
-
-// ---------------------------------------------------------------------------
-// 하위 컴포넌트 — 이벤트 상세 패널
-// ---------------------------------------------------------------------------
 
 interface DayDetailPanelProps {
     group: DayGroup;
@@ -267,10 +256,6 @@ function DayDetailPanel({ group, isSelected }: DayDetailPanelProps) {
     );
 }
 
-// ---------------------------------------------------------------------------
-// 하위 컴포넌트 — 날짜 셀
-// ---------------------------------------------------------------------------
-
 interface DayCellProps {
     /** null이면 선행/후행 공백 셀 */
     group: DayGroup | null;
@@ -312,7 +297,6 @@ function DayCell({ group, isSelected, onSelect }: DayCellProps) {
                         : 'hover:bg-secondary-700/40'
                 )}
             >
-                {/* 일 숫자 */}
                 <span
                     className={cn(
                         'block text-right text-[11px] leading-none tabular-nums',
@@ -324,7 +308,6 @@ function DayCell({ group, isSelected, onSelect }: DayCellProps) {
                     {day}
                 </span>
 
-                {/* 임팩트 점 — 장식용 */}
                 <span
                     aria-hidden="true"
                     className="mt-1 flex flex-wrap gap-0.5"
@@ -340,7 +323,6 @@ function DayCell({ group, isSelected, onSelect }: DayCellProps) {
                     ))}
                 </span>
 
-                {/* 이벤트 건수 */}
                 <span className="text-secondary-300 mt-0.5 block text-[10px] tabular-nums">
                     {count}건
                 </span>
@@ -367,10 +349,6 @@ function DayCell({ group, isSelected, onSelect }: DayCellProps) {
     );
 }
 
-// ---------------------------------------------------------------------------
-// 하위 컴포넌트 — 월 그리드 테이블
-// ---------------------------------------------------------------------------
-
 interface MonthCalendarProps {
     year: number;
     /** 0-indexed */
@@ -391,8 +369,7 @@ function MonthCalendar({
     /** 1일의 요일 (0=일 … 6=토) */
     const firstDow = new Date(Date.UTC(year, month, 1)).getUTCDay();
 
-    // 달력 셀 배열 생성 — 7열 기준 선행 빈 셀 + 날짜 + 후행 빈 셀
-    // 행(week) 단위로 잘라 <tr>로 렌더한다. 불변 선언으로 구성(push 미사용).
+    // 불변 선언으로 구성(push 미사용).
     const rawCells: (DayGroup | null)[] = [
         ...Array<null>(firstDow).fill(null),
         ...Array.from({ length: totalDays }, (_, i) => {
@@ -466,10 +443,6 @@ function MonthCalendar({
     );
 }
 
-// ---------------------------------------------------------------------------
-// 메인 컴포넌트
-// ---------------------------------------------------------------------------
-
 interface EconomicCalendarGridProps {
     events: readonly EconomicCalendarEvent[];
 }
@@ -488,14 +461,23 @@ interface EconomicCalendarGridProps {
  * 기본 선택 날짜 = 이벤트가 있는 가장 이른 KST 날짜(결정론적).
  */
 export function EconomicCalendarGrid({ events }: EconomicCalendarGridProps) {
-    const groups = groupEventsByKstDay(events);
+    const [selectedDateKey, setSelectedDateKey] = useState('');
+    const groups = useMemo(() => groupEventsByKstDay(events), [events]);
 
     /**
-     * 기본 선택 날짜: 그룹 중 가장 이른 날짜키 (이미 오름차순 정렬됨).
-     * Date.now() 미사용 — ISR 정적 생성 환경에서도 결정론적.
+     * events가 바뀔 때 기본 선택 날짜를 가장 이른 그룹으로 재동기화한다.
+     * useEffectEvent로 감싸 setSelectedDateKey를 effect 의존성 배열에서 제외하고,
+     * startTransition으로 감싸 react-hooks/set-state-in-effect 규칙을 만족시킨다
+     * (OptionsPageClient.tsx의 captureNow 패턴과 동일).
      */
-    const defaultDateKey = groups.length > 0 ? groups[0].dateKey : '';
-    const [selectedDateKey, setSelectedDateKey] = useState(defaultDateKey);
+    const syncDefault = useEffectEvent((): void => {
+        startTransition(() => {
+            setSelectedDateKey(groups.length > 0 ? groups[0].dateKey : '');
+        });
+    });
+    useEffect(() => {
+        syncDefault();
+    }, [groups]);
 
     if (events.length === 0) {
         return (
@@ -531,7 +513,6 @@ export function EconomicCalendarGrid({ events }: EconomicCalendarGridProps) {
                 </span>
             </h2>
 
-            {/* 월별 그리드 — 스패닝 월이 2개이면 두 테이블 수직 스택 */}
             <div className="border-secondary-700 space-y-6 rounded-xl border p-3 sm:p-4">
                 {months.map(({ year, month }) => (
                     <MonthCalendar
@@ -545,7 +526,6 @@ export function EconomicCalendarGrid({ events }: EconomicCalendarGridProps) {
                 ))}
             </div>
 
-            {/* 선택된 날짜 상세 패널 영역 — 모든 패널 DOM에 유지(SSR 크롤러용) */}
             <div
                 className="mt-4 space-y-0"
                 aria-live="polite"

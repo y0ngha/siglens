@@ -4,10 +4,6 @@ import type { EconomicCalendarEvent } from '@y0ngha/siglens-core';
 
 import { EconomicCalendarGrid } from '@/widgets/economy/sections/EconomicCalendarGrid';
 
-// ---------------------------------------------------------------------------
-// 픽스처
-// ---------------------------------------------------------------------------
-
 /**
  * 기준 이벤트: 2026-06-19 19:30:00 ET(-04:00) → KST 2026-06-20 오전 8:30
  * (날짜 롤오버 케이스)
@@ -44,10 +40,6 @@ const EVENT_C: EconomicCalendarEvent = {
     unit: '건',
 };
 
-// ---------------------------------------------------------------------------
-// 빈 상태
-// ---------------------------------------------------------------------------
-
 describe('EconomicCalendarGrid — 빈 상태', () => {
     it('events가 0건이면 안내 문구 렌더', () => {
         render(<EconomicCalendarGrid events={[]} />);
@@ -64,10 +56,6 @@ describe('EconomicCalendarGrid — 빈 상태', () => {
         expect(screen.getByText('(한국시간)')).toBeInTheDocument();
     });
 });
-
-// ---------------------------------------------------------------------------
-// KST 그룹핑
-// ---------------------------------------------------------------------------
 
 describe('EconomicCalendarGrid — KST 그룹핑', () => {
     it('ET 날짜가 다르더라도 같은 KST 날이면 한 그룹으로 묶인다', () => {
@@ -92,10 +80,6 @@ describe('EconomicCalendarGrid — KST 그룹핑', () => {
     });
 });
 
-// ---------------------------------------------------------------------------
-// 기본 선택 날짜
-// ---------------------------------------------------------------------------
-
 describe('EconomicCalendarGrid — 기본 선택 날짜', () => {
     it('가장 이른 KST 날짜가 기본 선택된다 (aria-pressed=true)', () => {
         render(<EconomicCalendarGrid events={[EVENT_A, EVENT_C]} />);
@@ -106,10 +90,6 @@ describe('EconomicCalendarGrid — 기본 선택 날짜', () => {
         expect(later).toHaveAttribute('aria-pressed', 'false');
     });
 });
-
-// ---------------------------------------------------------------------------
-// 상호작용 — 날짜 선택
-// ---------------------------------------------------------------------------
 
 describe('EconomicCalendarGrid — 날짜 선택', () => {
     it('날짜 버튼 클릭 시 aria-pressed가 해당 버튼으로 이동한다', () => {
@@ -136,10 +116,6 @@ describe('EconomicCalendarGrid — 날짜 선택', () => {
         expect(screen.getByText('Unemployment Claims')).toBeVisible();
     });
 });
-
-// ---------------------------------------------------------------------------
-// SSR 크롤러 접근성 — 모든 이벤트 DOM에 존재
-// ---------------------------------------------------------------------------
 
 describe('EconomicCalendarGrid — SSR 크롤러 접근성', () => {
     it('선택되지 않은 날짜의 이벤트 텍스트도 DOM에 존재한다 (hidden 속성, 크롤러 색인 가능)', () => {
@@ -178,10 +154,6 @@ describe('EconomicCalendarGrid — SSR 크롤러 접근성', () => {
         expect(selectedPanel).not.toHaveAttribute('hidden');
     });
 });
-
-// ---------------------------------------------------------------------------
-// 상세 패널 — 데이터 표시
-// ---------------------------------------------------------------------------
 
 describe('EconomicCalendarGrid — 상세 패널 데이터', () => {
     it('예상·이전 값 표시', () => {
@@ -229,16 +201,9 @@ describe('EconomicCalendarGrid — 상세 패널 데이터', () => {
 
     it('KST 시각 레이블이 상세 패널에 표시된다 (오전 8:30)', () => {
         render(<EconomicCalendarGrid events={[EVENT_A]} />);
-        // 기본 선택(6/20) 패널 안의 time 텍스트 내용
-        const times = screen.getAllByRole('time');
-        const timeTexts = times.map(t => t.textContent);
-        expect(timeTexts.some(t => t?.includes('오전 8:30'))).toBe(true);
+        expect(screen.getByText('오전 8:30')).toBeInTheDocument();
     });
 });
-
-// ---------------------------------------------------------------------------
-// 그리드 구조
-// ---------------------------------------------------------------------------
 
 describe('EconomicCalendarGrid — 그리드 구조', () => {
     it('테이블 요소가 렌더된다', () => {
