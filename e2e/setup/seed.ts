@@ -1,6 +1,14 @@
+import { like } from 'drizzle-orm';
 import { bcryptPasswordHasher } from '@/entities/session';
 import { getDatabaseClient } from '@/shared/db/client';
-import { assetTranslations, terms, users } from '@/shared/db/schema';
+import {
+    assetTranslations,
+    marketNews,
+    terms,
+    users,
+} from '@/shared/db/schema';
+import { NEWS_CATEGORY_SLUGS } from '@/entities/market-news';
+import { makeFakeItems } from '@/entities/market-news/lib/FakeMarketNewsClient';
 import {
     AUTH_USER_EMAIL,
     AUTH_USER_NAME,
@@ -52,12 +60,23 @@ import {
  *   set true (login does not require it, but it mirrors a real account).
  *   id/tier/createdAt/updatedAt all have defaults.
  *
+ * market_news (news-hub category fixtures)
+ * -----------------------------------------
+ * `/news/[category]` reads cards from the `market_news` table. The only runtime
+ * data source under E2E is the client-triggered ingestion, whose cold-start
+ * race left the first crypto-category spec flaky. We pre-seed the same fixtures
+ * (`makeFakeItems`, shared with `FakeMarketNewsClient`) for all categories so the
+ * pages render cards in SSR deterministically. Timestamps are `Date.now()`-relative
+ * so the rows stay inside the `MARKET_NEWS_LOOKBACK_DAYS` window.
+ *
  * Idempotency
  * -----------
  * The Task 1 containers persist data across runs, so every insert uses
  * `onConflictDoNothing` (asset_translations on its PK; terms on the
  * (kind, version) unique index; users on the email unique index) to stay
- * safely re-runnable.
+ * safely re-runnable. market_news is the exception: it uses delete-then-insert
+ * (scoped to the E2E url prefix) so `publishedAt` is refreshed every run and
+ * never rots out of the lookback window.
  *
  * Runs with E2E_TEST=1 + the .env.e2e DATABASE_URL so the postgres-js swap
  * (Task 2) writes to the local Postgres.
@@ -107,6 +126,44 @@ async function seed(): Promise<void> {
             emailVerified: true,
         })
         .onConflictDoNothing({ target: users.email });
+
+    // market_news E2E fixtures — pre-populate so `/news/[category]` renders cards
+    // in SSR on the FIRST visit. Without this, the only data source is the
+    // client-triggered ingestion (`ensureMarketNewsCardsAnalyzedAction`), whose
+    // cold-start (+ failed AI-worker retries) doesn't finish within the spec's
+    // 15s window, so the first crypto-category test (`news-hub.spec.ts:58`) flaked.
+    // Delete-then-insert (not onConflictDoNothing) keeps `publishedAt` fresh across
+    // persisted-container re-runs — stale rows fall outside the
+    // `MARKET_NEWS_LOOKBACK_DAYS` window and get filtered out (time-rot).
+    const E2E_NEWS_URL_PREFIX = 'http://localhost:4300/e2e/market-news/';
+    await db
+        .delete(marketNews)
+        .where(like(marketNews.url, `${E2E_NEWS_URL_PREFIX}%`));
+    // Seed rows are AI-enriched (sentiment + priceImpact non-null + analyzedAt)
+    // so the cards render the sentiment badge in SSR. The E2E AI worker is
+    // unavailable (WORKER_URL unset), so client-side analysis never completes —
+    // `MarketNewsCard` treats `sentiment === null || priceImpact === null` as
+    // pending (skeleton, no badge), which is what `news-hub.spec.ts:58` asserts
+    // against. `titleKo` is left null so the card shows the English `titleEn`
+    // that the spec matches.
+    const SEED_SENTIMENTS = ['bullish', 'bearish'] as const;
+    const newsRows = NEWS_CATEGORY_SLUGS.flatMap(category =>
+        makeFakeItems(category).map((item, i) => ({
+            id: item.id,
+            symbol: item.symbol,
+            source: item.source,
+            url: item.url,
+            publishedAt: new Date(item.publishedAt),
+            titleEn: item.titleEn,
+            bodyEn: item.bodyEn,
+            tickers: item.tickers,
+            sentiment: SEED_SENTIMENTS[i % SEED_SENTIMENTS.length],
+            priceImpact: 'medium',
+            summaryKo: `${category} 시장 동향 E2E 요약`,
+            analyzedAt: new Date(),
+        }))
+    );
+    await db.insert(marketNews).values(newsRows);
 
     console.log('e2e seed: ok');
 }

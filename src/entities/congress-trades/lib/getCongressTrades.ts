@@ -2,6 +2,7 @@ import { normalizeCongressTrades } from '@y0ngha/siglens-core';
 import type { CongressTrade, RawCongressTrade } from '@y0ngha/siglens-core';
 import { getCongressTradesProvider } from '@/shared/api/fmp/getCongressTradesProvider';
 import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
+import { SECONDS_PER_DAY } from '@/shared/config/time';
 
 /** Display cap — FMP can return 100+; we cap at 50 for performance (부록 D #4). */
 export const CONGRESS_TRADE_LIMIT = 50;
@@ -26,13 +27,15 @@ export async function getCongressTrades(
             ['congress:senate', upper],
             upper,
             () => provider.getTrades(upper, 'senate', CONGRESS_TRADE_LIMIT),
-            [groupTag]
+            [groupTag],
+            SECONDS_PER_DAY
         ),
         staticSymbolCache<RawCongressTrade[]>(
             ['congress:house', upper],
             upper,
             () => provider.getTrades(upper, 'house', CONGRESS_TRADE_LIMIT),
-            [groupTag]
+            [groupTag],
+            SECONDS_PER_DAY
         ),
     ]);
 

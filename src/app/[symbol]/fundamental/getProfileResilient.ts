@@ -1,5 +1,6 @@
 import type { FundamentalProfile } from '@y0ngha/siglens-core';
 import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
+import { SECONDS_PER_DAY } from '@/shared/config/time';
 import { isDynamicServerError } from '@/shared/lib/isDynamicServerError';
 import { isE2E } from '@/shared/api/e2eEnv';
 import { getProfile } from './fundamentalData';
@@ -27,9 +28,15 @@ export interface ResilientProfile {
  * (FMP infra failure / DSU control-flow).
  *
  * The cache call is byte-identical to the one `ProfileSection` issues
- * (`['fundamental:profile', upper]`), so both share one `unstable_cache` entry
- * (and the provider's `React.cache`-wrapped `getProfile` dedups within a request)
- * — wrapping it here adds no extra FMP round-trip.
+ * (`['fundamental:profile', upper]` with the same 24h TTL), so both share one
+ * `unstable_cache` entry (and the provider's `React.cache`-wrapped `getProfile`
+ * dedups within a request) — wrapping it here adds no extra FMP round-trip.
+ *
+ * 24h TTL: the company profile (name/sector/description) is near-immutable, and
+ * this gate is read by the fundamental/congress/financials pages. At the default
+ * 1h it clamped those routes' effective `s-maxage` to 1h (Next takes the shortest
+ * cache TTL read during render); 24h lets the shared bars (6h) be the floor
+ * instead. On-demand `revalidateTag('symbol:X')` still forces a refresh.
  */
 export async function getProfileResilient(
     upper: string
@@ -38,7 +45,9 @@ export async function getProfileResilient(
         const profile = await staticSymbolCache(
             ['fundamental:profile', upper],
             upper,
-            () => getProfile(upper)
+            () => getProfile(upper),
+            [],
+            SECONDS_PER_DAY
         );
         return { profile, degraded: false };
     } catch (e) {

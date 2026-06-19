@@ -1,0 +1,216 @@
+import { test, expect } from '../support/fixtures';
+
+/**
+ * Mobile nav drawer (`@webkit`) — HeaderMobileMenu hydration + interaction guard.
+ *
+ * `HeaderMobileMenu` is a `'use client'` component rendered inside `md:hidden`,
+ * so it only appears on mobile viewports (< md 768px). The webkit project uses
+ * `devices['iPhone 14']` (~390px), so the hamburger renders there.
+ *
+ * The tests act as a hydration guard: a dead / un-hydrated button leaves the
+ * drawer `aria-hidden="true"` permanently — so `getByRole('dialog', {name:'메뉴'})`
+ * would never become visible. A real click that opens the drawer proves React
+ * hydration ran successfully on the client.
+ *
+ * The drawer is always in the DOM (SSR: crawlers see the nav links), but:
+ *   - Closed: `aria-hidden="true"` + `translate-x-full` → hidden from AT and off-screen.
+ *   - Open:   `aria-hidden` removed + `translate-x-0` → in AT, on-screen.
+ *
+ * For open-state assertions we use `getByRole('dialog', {name:'메뉴'})` which is
+ * excluded by aria-hidden when closed.
+ * For closed-state assertions after an interaction we use the raw `[role="dialog"]`
+ * locator and assert `toHaveAttribute('aria-hidden', 'true')` so the check is
+ * independent of CSS geometry.
+ */
+
+/** Raw locator for the drawer — works regardless of aria-hidden state. */
+const drawerSelector = '[role="dialog"][aria-label="메뉴"]';
+
+test.describe('@webkit 모바일 햄버거 내비게이션', () => {
+    /**
+     * 1. 햄버거 클릭 시 드로어가 실제로 열린다.
+     *
+     * Proves hydration ran: a static (un-hydrated) button cannot toggle state,
+     * so `role="dialog"` stays aria-hidden and `getByRole` would time out.
+     */
+    test('@webkit 햄버거 클릭 시 드로어가 실제로 열린다', async ({ page }) => {
+        test.skip(
+            test.info().project.name !== 'webkit',
+            '모바일 햄버거 메뉴는 webkit(모바일) 프로젝트에서만 실행된다'
+        );
+
+        await page.goto('/');
+
+        const trigger = page.getByRole('button', { name: '메뉴 열기' });
+        await expect(trigger).toBeVisible();
+        await expect(trigger).toHaveAttribute('aria-expanded', 'false');
+
+        await trigger.click();
+
+        const drawer = page.getByRole('dialog', { name: '메뉴' });
+        await expect(drawer).toBeVisible();
+
+        const closeLabel = page.getByRole('button', { name: '메뉴 닫기' });
+        await expect(closeLabel).toBeVisible();
+        await expect(closeLabel).toHaveAttribute('aria-expanded', 'true');
+
+        await expect(
+            drawer
+                .getByRole('navigation', { name: '메뉴' })
+                .getByRole('link', { name: '미국 경제' })
+        ).toHaveAttribute('href', '/economy');
+    });
+
+    /**
+     * 2. 햄버거를 다시 누르면 닫힌다 (toggle).
+     */
+    test('@webkit 햄버거를 다시 누르면 닫힌다 (toggle)', async ({ page }) => {
+        test.skip(
+            test.info().project.name !== 'webkit',
+            '모바일 햄버거 메뉴는 webkit(모바일) 프로젝트에서만 실행된다'
+        );
+
+        await page.goto('/');
+
+        await page.getByRole('button', { name: '메뉴 열기' }).click();
+        await expect(page.getByRole('dialog', { name: '메뉴' })).toBeVisible();
+
+        // 열린 상태에서 트리거는 전체화면 백드롭(z-40)에 덮여 포인터 hit-test로는
+        // 닿지 않는다(스크린리더 가상 커서·키보드 활성화 경로). dispatchEvent로
+        // 실제 click 이벤트를 발생시켜 toggle 핸들러가 hydration 후 닫는지 검증한다.
+        await page
+            .getByRole('button', { name: '메뉴 닫기' })
+            .dispatchEvent('click');
+
+        await expect(page.locator(drawerSelector)).toHaveAttribute(
+            'aria-hidden',
+            'true'
+        );
+    });
+
+    /**
+     * 3. Escape로 닫히고 포커스가 트리거로 복귀한다.
+     */
+    test('@webkit Escape로 닫히고 포커스가 트리거로 복귀', async ({ page }) => {
+        test.skip(
+            test.info().project.name !== 'webkit',
+            '모바일 햄버거 메뉴는 webkit(모바일) 프로젝트에서만 실행된다'
+        );
+
+        await page.goto('/');
+
+        await page.getByRole('button', { name: '메뉴 열기' }).click();
+        await expect(page.getByRole('dialog', { name: '메뉴' })).toBeVisible();
+
+        await page.keyboard.press('Escape');
+
+        await expect(page.locator(drawerSelector)).toHaveAttribute(
+            'aria-hidden',
+            'true'
+        );
+
+        // useEscapeKey의 close 콜백이 triggerRef.current?.focus()를 호출하므로
+        // 포커스가 햄버거 트리거로 복귀한다.
+        const trigger = page.getByRole('button', { name: '메뉴 열기' });
+        await expect(trigger).toBeFocused();
+    });
+
+    /**
+     * 4. 드로어 링크 클릭 시 닫히고 해당 URL로 이동한다.
+     */
+    test('@webkit 드로어 링크 클릭 시 닫히고 이동', async ({ page }) => {
+        test.skip(
+            test.info().project.name !== 'webkit',
+            '모바일 햄버거 메뉴는 webkit(모바일) 프로젝트에서만 실행된다'
+        );
+
+        await page.goto('/');
+
+        await page.getByRole('button', { name: '메뉴 열기' }).click();
+        const drawer = page.getByRole('dialog', { name: '메뉴' });
+        await expect(drawer).toBeVisible();
+
+        // Link의 onClick={close} 핸들러가 탐색 전에 드로어를 닫는다.
+        await drawer
+            .getByRole('navigation', { name: '메뉴' })
+            .getByRole('link', { name: '미국 경제' })
+            .click();
+
+        await page.waitForURL('**/economy');
+
+        // 이동 후 드로어가 닫혀 있어야 한다.
+        await expect(page.locator(drawerSelector)).toHaveAttribute(
+            'aria-hidden',
+            'true'
+        );
+    });
+
+    /**
+     * 5. 백드롭 클릭 / X 버튼으로 닫힌다.
+     */
+    test('@webkit 백드롭/X로 닫힌다', async ({ page }) => {
+        test.skip(
+            test.info().project.name !== 'webkit',
+            '모바일 햄버거 메뉴는 webkit(모바일) 프로젝트에서만 실행된다'
+        );
+
+        await page.goto('/');
+
+        // (a) 백드롭 클릭으로 닫기.
+        await page.getByRole('button', { name: '메뉴 열기' }).click();
+        await expect(page.getByRole('dialog', { name: '메뉴' })).toBeVisible();
+
+        // 백드롭(z-40)은 전체화면이지만 webkit 스택킹 컨텍스트상 포인터 hit-test가
+        // 불안정하다(드로어/페이지 섹션이 가로채임). dispatchEvent로 백드롭의 onClick
+        // 핸들러를 직접 발생시켜 닫힘을 검증한다(hydration된 핸들러만 동작).
+        await page
+            .locator('[data-testid="mobile-nav-backdrop"]')
+            .dispatchEvent('click');
+
+        await expect(page.locator(drawerSelector)).toHaveAttribute(
+            'aria-hidden',
+            'true'
+        );
+
+        // (b) X 버튼('메뉴 패널 닫기')으로 닫기.
+        await page.getByRole('button', { name: '메뉴 열기' }).click();
+        await expect(page.getByRole('dialog', { name: '메뉴' })).toBeVisible();
+
+        await page.getByRole('button', { name: '메뉴 패널 닫기' }).click();
+
+        await expect(page.locator(drawerSelector)).toHaveAttribute(
+            'aria-hidden',
+            'true'
+        );
+    });
+
+    /**
+     * 6. 드로어 열림 시 body 스크롤 잠금.
+     *
+     * HeaderMobileMenu의 useEffect가 isOpen=true일 때
+     * `document.body.style.overflow = 'hidden'`을 적용한다.
+     * 이 테스트는 그 side-effect가 실제로 실행됐음을 검증한다.
+     */
+    test('@webkit 드로어 열림 시 body 스크롤 잠금', async ({ page }) => {
+        test.skip(
+            test.info().project.name !== 'webkit',
+            '모바일 햄버거 메뉴는 webkit(모바일) 프로젝트에서만 실행된다'
+        );
+
+        await page.goto('/');
+
+        await page.getByRole('button', { name: '메뉴 열기' }).click();
+        await expect(page.getByRole('dialog', { name: '메뉴' })).toBeVisible();
+
+        // useEffect가 반영될 때까지 재시도한다.
+        await expect
+            .poll(
+                () =>
+                    page.evaluate(
+                        () => getComputedStyle(document.body).overflow
+                    ),
+                { timeout: 5_000 }
+            )
+            .toBe('hidden');
+    });
+});

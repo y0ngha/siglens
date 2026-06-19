@@ -10,7 +10,7 @@ vi.mock('next/cache', () => ({
 }));
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { SECONDS_PER_HOUR } from '@/shared/config/time';
+import { SECONDS_PER_HOUR, SECONDS_PER_DAY } from '@/shared/config/time';
 import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
 
 describe('staticSymbolCache', () => {
@@ -40,5 +40,19 @@ describe('staticSymbolCache', () => {
             revalidate: SECONDS_PER_HOUR,
             tags: ['symbol:AAPL', 'news:AAPL'],
         });
+    });
+
+    it('revalidateSeconds를 명시하면 기본 1h 대신 전달한 값으로 revalidate한다', async () => {
+        await staticSymbolCache(
+            ['financials:income', 'AAPL', 'annual'],
+            'AAPL',
+            () => Promise.resolve([]),
+            [],
+            SECONDS_PER_DAY
+        );
+        expect(unstableCacheSpy).toHaveBeenCalledWith(
+            ['financials:income', 'AAPL', 'annual'],
+            { revalidate: SECONDS_PER_DAY, tags: ['symbol:AAPL'] }
+        );
     });
 });

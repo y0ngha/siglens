@@ -62,6 +62,12 @@ export const CATEGORY_CONFIG: Record<NewsFeedCategory, CategoryConfig> = {
     },
 };
 
+/** Ordered list of all news category slugs — single source for tab order + SSG params. */
+export const NEWS_CATEGORY_SLUGS: readonly NewsFeedCategory[] = Object.freeze(
+    // safe: CATEGORY_CONFIG is Record<NewsFeedCategory, CategoryConfig>, so Object.keys is exactly the union members — TS just widens to string[].
+    Object.keys(CATEGORY_CONFIG) as NewsFeedCategory[]
+);
+
 const VALID_SLUGS: ReadonlySet<string> = new Set(Object.keys(CATEGORY_CONFIG));
 
 /** Narrow an arbitrary route param to a NewsFeedCategory, or null if invalid. */

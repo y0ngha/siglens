@@ -4,6 +4,7 @@ import { Suspense } from 'react';
 import {
     CATEGORY_CONFIG,
     MARKET_NEWS_CACHE_TAG_PREFIX,
+    NEWS_CATEGORY_SLUGS,
     categoryFromSlug,
     toMarketNewsCardItem,
     type MarketNewsCardItem,
@@ -11,8 +12,10 @@ import {
 } from '@/entities/market-news';
 import { getMarketNewsList } from '@/entities/market-news/api';
 import { MarketNewsDigest, MarketNewsList } from '@/widgets/market-news';
+import { NewsCategoryTabs } from '@/widgets/news-hub';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
+import { SECONDS_PER_HALF_DAY } from '@/shared/config/time';
 import { buildBreadcrumbJsonLd, SITE_NAME, SITE_URL } from '@/shared/lib/seo';
 import { buildCategoryPageTitle, buildCategoryPageDescription } from './seo';
 
@@ -23,10 +26,7 @@ export const revalidate = 43200;
 // 빈 배열 = on-demand ISR, generateStaticParams 없으면 dynamic으로 남아 ISR이 걸리지 않는다 — app CLAUDE.md 축 3.
 type CategoryPageParams = { category: string };
 export function generateStaticParams(): CategoryPageParams[] {
-    // safe: CATEGORY_CONFIG is Record<NewsFeedCategory, CategoryConfig>, so Object.keys is exactly the union — TS just widens to string[].
-    return (Object.keys(CATEGORY_CONFIG) as NewsFeedCategory[]).map(
-        category => ({ category })
-    );
+    return NEWS_CATEGORY_SLUGS.map(category => ({ category }));
 }
 
 // JSON-LD ItemList: Google 가이드라인상 "주요 항목"만 노출.
@@ -61,7 +61,8 @@ async function loadCategorySnapshot(
         ['market-news:list', cfg.sentinel],
         cfg.sentinel,
         () => getMarketNewsList(cfg.sentinel),
-        [`${MARKET_NEWS_CACHE_TAG_PREFIX}:${cfg.sentinel}`]
+        [`${MARKET_NEWS_CACHE_TAG_PREFIX}:${cfg.sentinel}`],
+        SECONDS_PER_HALF_DAY
     );
     // Project to the same allowlist `getMarketNewsCardsAction` uses so the
     // client component never sees server-only DB columns (bodyEn/symbol/analyzedAt).
@@ -222,7 +223,9 @@ export default async function CategoryNewsPage({ params }: Props) {
             {breadcrumbJsonLd ? <JsonLd data={breadcrumbJsonLd} /> : null}
             {newsListJsonLd ? <JsonLd data={newsListJsonLd} /> : null}
             <main className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8">
-                <h1 className="text-2xl font-bold tracking-tight">
+                {/* Always rendered even on the degrade path so a failed category is never a dead end. */}
+                <NewsCategoryTabs activeCategory={cat} />
+                <h1 className="text-secondary-100 text-2xl font-bold tracking-tight text-balance sm:text-3xl">
                     {cfg.koLabel} 뉴스
                 </h1>
                 <Suspense fallback={<DigestSkeleton />}>

@@ -1,12 +1,17 @@
 import { unstable_cache } from 'next/cache';
 import type { AssetInfo } from '@/shared/lib/types';
 import { getAssetInfoAction } from '../actions/getAssetInfoAction';
-import { SECONDS_PER_HOUR } from '@/shared/config/time';
+import { SECONDS_PER_DAY } from '@/shared/config/time';
 
 /**
  * ISR static-safe asset-info fetch. `getAssetInfoAction`(='use server' → getAssetInfo:
  * cache → DB → FMP)을 Next data cache로 감싸 static generate가 내부 redis/DB no-store
- * fetch에 막히지 않게 한다. 종목당 캐시이며 revalidate=1h로 주기 갱신한다.
+ * fetch에 막히지 않게 한다. 종목당 캐시이며 revalidate=24h로 주기 갱신한다.
+ *
+ * revalidate=24h 이유: asset metadata(name, fmpSymbol 등)는 사실상 불변이라 24h 상한이
+ * 적절하다. 이전 1h TTL은 shared layout cache가 `/[symbol]/*` 전 서브페이지의 effective
+ * s-maxage를 1h로 의도치 않게 clamp하는 원인이었다. on-demand 강제 갱신은
+ * `revalidateTag('symbol:X')`로 여전히 가능.
  *
  * 왜 inner 데이터 호출을 정적화하는가: `getAssetInfoResilient`는 catch에서
  * `DYNAMIC_SERVER_USAGE`를 그대로 rethrow한다. inner redis 호출이 정적화되지 않으면 static
@@ -38,6 +43,6 @@ export function getAssetInfoStatic(ticker: string): Promise<AssetInfo | null> {
     return unstable_cache(
         () => getAssetInfoAction(upper),
         ['asset-info-static', upper],
-        { revalidate: SECONDS_PER_HOUR, tags: [`symbol:${upper}`] }
+        { revalidate: SECONDS_PER_DAY, tags: [`symbol:${upper}`] }
     )();
 }

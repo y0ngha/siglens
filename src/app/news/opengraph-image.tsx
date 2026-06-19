@@ -1,5 +1,4 @@
 import { ImageResponse } from 'next/og';
-import { CATEGORY_CONFIG, categoryFromSlug } from '@/entities/market-news';
 import { loadKoreanFont } from '@/entities/og-image/lib/loadKoreanFont';
 import {
     OG_BG,
@@ -19,20 +18,15 @@ import {
 import { SITE_NAME } from '@/shared/lib/seo';
 
 export const dynamic = 'force-static';
-export const revalidate = 2592000; // 30d
+// 30d — route segment config는 정적 분석 가능한 리터럴이어야 한다(식/import 상수로 추출하면
+// Next가 값을 분석 못 해 config를 조용히 무시 → ISR 무효화). app/CLAUDE.md ISR §·MISTAKES §15
+// 예외 규칙에 따라 리터럴 유지(기존 `[symbol]/congress/opengraph-image.tsx`와 동일 패턴).
+export const revalidate = 2592000;
 export const size = { width: OG_IMAGE_WIDTH, height: OG_IMAGE_HEIGHT };
 export const contentType = 'image/png';
-export const alt = 'Siglens 마켓 뉴스';
+export const alt = 'Siglens 마켓 뉴스 허브';
 
-interface Props {
-    params: Promise<{ category: string }>;
-}
-
-export default async function Image({ params }: Props) {
-    const { category: slug } = await params;
-    const cat = categoryFromSlug(slug);
-    const label = cat ? CATEGORY_CONFIG[cat].koLabel : '마켓 뉴스';
-
+export default async function Image() {
     const fontData = await loadKoreanFont();
 
     return new ImageResponse(
@@ -73,7 +67,7 @@ export default async function Image({ params }: Props) {
                     textAlign: 'center',
                 }}
             >
-                {label}
+                마켓 뉴스 허브
             </div>
             <div
                 style={{
@@ -85,7 +79,7 @@ export default async function Image({ params }: Props) {
                     display: 'flex',
                 }}
             >
-                뉴스
+                미국 일반·주식·암호화폐·외환·아티클
             </div>
         </div>,
         {

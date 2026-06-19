@@ -77,9 +77,17 @@ test.describe('economy overview', () => {
         page,
     }) => {
         await page.goto('/economy');
-        await expect(page.getByText('2년물 국채')).toBeVisible();
-        await expect(page.getByText('10년물 국채')).toBeVisible();
-        await expect(page.getByText('2s10s 스프레드')).toBeVisible();
+        // exact:true — 카드 라벨(<span>)을 정확히 매칭한다. AI 매크로 브리핑 문단이
+        // "2년물·10년물 국채" 같은 문구를 포함해 substring 매칭 시 strict mode 위반이 난다.
+        await expect(
+            page.getByText('2년물 국채', { exact: true })
+        ).toBeVisible();
+        await expect(
+            page.getByText('10년물 국채', { exact: true })
+        ).toBeVisible();
+        await expect(
+            page.getByText('2s10s 스프레드', { exact: true })
+        ).toBeVisible();
     });
 
     /**
@@ -134,11 +142,51 @@ test.describe('economy overview', () => {
     });
 
     /**
-     * 모바일 뷰포트(375px)에서 indicator grid가 1-col 레이아웃으로 표시된다.
+     * E2 — 헤더 nav에서 /economy 진입: 홈(/)에서 헤더의 '미국 경제' 링크를
+     * 클릭해 /economy로 이동하고 경제 페이지 h1이 표시되는지 검증한다.
+     *
+     * HeaderNav(client island)와 HeaderNavStatic(PPR fallback) 모두
+     * `aria-label="주요 네비게이션"` 아래 `href="/economy"` 링크를 렌더한다.
+     * 기존 economy 스펙은 모두 `page.goto('/economy')` 직접 이동만 사용하므로,
+     * 이 테스트가 헤더 nav 클릭 경로를 처음으로 검증한다.
+     *
+     * 헤더 nav 링크는 sm(640px) 이상에서만 표시되므로 데스크톱 뷰포트를 명시한다.
+     * playwright.config.ts 기본 프로젝트(Desktop Chrome)는 이미 데스크톱 크기지만,
+     * 테스트 격리를 위해 뷰포트를 명시적으로 지정한다.
+     */
+    test('헤더 "미국 경제" 링크 클릭으로 /economy에 도달하고 h1이 표시된다 (E2)', async ({
+        page,
+    }) => {
+        // 데스크톱 뷰포트 보장 — 헤더 nav 링크는 sm(640px) 이상에서만 표시된다.
+        await page.setViewportSize({ width: 1280, height: 800 });
+        await page.goto('/');
+
+        const header = page.getByRole('banner');
+        await header
+            .getByRole('navigation', { name: '주요 네비게이션' })
+            .getByRole('link', { name: '미국 경제' })
+            .click();
+
+        await page.waitForURL('**/economy');
+
+        await expect(
+            page.getByRole('heading', {
+                level: 1,
+                name: '미국 경제 — 지표·캘린더 한눈에',
+            })
+        ).toBeVisible();
+    });
+
+    /**
+     * 모바일 뷰포트(375px)에서 indicator grid가 1-col 레이아웃으로 표시되고
+     * 가로 오버플로가 없다.
      *
      * EconomicIndicatorGrid의 grid 컨테이너는 `grid-cols-1 sm:grid-cols-2 lg:grid-cols-3`.
      * 375px에서는 sm 브레이크포인트(640px) 미만이라 1열이다.
      * article 카드들의 왼쪽 offset이 모두 동일하면 1열 정렬을 확인할 수 있다.
+     *
+     * 오버플로 어서션: `scrollWidth - clientWidth > 0`이면 콘텐츠가 뷰포트를 초과해
+     * 수평 스크롤이 발생하므로 레이아웃 회귀로 간주한다.
      */
     test('모바일 viewport에서 indicator grid가 1-col으로 정렬', async ({
         page,
@@ -167,6 +215,17 @@ test.describe('economy overview', () => {
             .first();
         await expect(gridContainer).toBeVisible();
         await expect(gridContainer).toHaveClass(/grid-cols-1/);
+
+        // 가로 오버플로 없음 — scrollWidth > clientWidth이면 레이아웃 회귀.
+        const overflow = await page.evaluate(
+            () =>
+                document.documentElement.scrollWidth -
+                document.documentElement.clientWidth
+        );
+        expect(
+            overflow,
+            `/economy 375px: 가로 오버플로 ${overflow}px — 레이아웃 회귀`
+        ).toBeLessThanOrEqual(0);
     });
 });
 

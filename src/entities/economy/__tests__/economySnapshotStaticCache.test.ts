@@ -48,10 +48,6 @@ describe('getEconomySnapshotStatic', () => {
         expect(mockGetSnapshot).toHaveBeenCalled();
     });
 
-    // React.cache는 Next.js 요청 컨텍스트(AsyncLocalStorage)에서만 dedup이 활성화된다 —
-    // vitest의 node 환경에선 매 호출마다 실행돼 mock count가 증가하므로 단위 테스트에서
-    // 직접 검증할 수 없다. 실 환경 dedup은 prod-like 실증(curl/Chrome)으로 확인한다.
-    it.skip('React.cache 래핑 — Next.js 요청 컨텍스트 외부(vitest)에선 dedup 미작동', () => {
-        // intentionally skipped
-    });
+    // NOTE: React.cache request-dedup can't be exercised under vitest (needs Next
+    // AsyncLocalStorage); covered by ISR runtime behavior instead.
 });

@@ -1,5 +1,6 @@
 import { cache } from 'react';
 import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
+import { SECONDS_PER_DAY } from '@/shared/config/time';
 import { getFinancialStatementsProvider } from '@/shared/api/fmp/getFinancialStatementsProvider';
 import { normalizeFinancialsSnapshot } from '@y0ngha/siglens-core';
 import type { FinancialsSnapshot, StatementPeriod } from '@y0ngha/siglens-core';
@@ -33,20 +34,24 @@ class EmptyResultError extends Error {}
  * `staticSymbolCache`로 fetch를 정적화하되 **빈 배열 결과는 캐싱하지 않는다.**
  *
  * `CachedFinancialStatementsProvider`는 FMP 일시 장애(throw)를 swallow하고 `[]`를
- * *resolve*한다. 그 `[]`를 그대로 `unstable_cache`에 통과시키면 revalidate(1h)까지
- * 빈 데이터가 고정돼, FMP가 복구된 뒤에도 최대 1h 동안 all-empty 스냅샷을 서빙한다.
+ * *resolve*한다. 그 `[]`를 그대로 `unstable_cache`에 통과시키면 revalidate(24h)까지
+ * 빈 데이터가 고정돼, FMP가 복구된 뒤에도 최대 24h 동안 all-empty 스냅샷을 서빙한다.
  * `unstable_cache`는 fetcher가 throw하면 set을 건너뛰므로, 빈 결과일 때 fetcher 안에서
  * throw해 캐싱을 막고 바깥에서 catch해 `[]`로 graceful degrade한다.
  *
  * 트레이드오프: 실제로 데이터가 없는 심볼(일부 ETF/Index)은 매 요청 재fetch하지만,
- * FMP가 빈 배열을 즉시 반환하므로 비용은 미미하다. 대신 일시 장애가 1h 캐시를
+ * FMP가 빈 배열을 즉시 반환하므로 비용은 미미하다. 대신 일시 장애가 24h 캐시를
  * 오염시키는 문제(self-healing이지만 그 사이 잘못된 색인·표시)를 제거한다.
+ *
+ * revalidateSeconds: 기본값 SECONDS_PER_DAY(24h) — financials 페이지(revalidate=86400)와
+ * TTL을 맞춰 Next 16의 s-maxage clamp를 방지한다.
  */
 async function cacheNonEmpty<T>(
     keyParts: readonly string[],
     symbol: string,
     fetcher: () => Promise<T[]>,
-    extraTags: readonly string[]
+    extraTags: readonly string[],
+    revalidateSeconds: number = SECONDS_PER_DAY
 ): Promise<T[]> {
     try {
         return await staticSymbolCache(
@@ -59,7 +64,8 @@ async function cacheNonEmpty<T>(
                 }
                 return rows;
             },
-            extraTags
+            extraTags,
+            revalidateSeconds
         );
     } catch (err) {
         // sentinel(의도적 빈 결과)은 무음. 그 외(staticSymbolCache/fetcher의
@@ -98,7 +104,7 @@ export function isEmptyFinancialsSnapshot(
  * 등)와 tag(`financials:${SYMBOL}`)가 여기서만 정의되므로 호출 경로와 무관하게
  * 동일한 Next data cache 엔트리를 재사용한다.
  *
- * 각 fetch는 `cacheNonEmpty`로 Next data cache에 저장된다(ISR revalidate=1h,
+ * 각 fetch는 `cacheNonEmpty`로 Next data cache에 저장된다(ISR revalidate=24h,
  * `symbol:${SYMBOL}` + `financials:${SYMBOL}` 태그). 빈 결과는 캐싱하지 않아 FMP
  * 일시 장애가 캐시를 오염시키지 않는다.
  *

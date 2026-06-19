@@ -15,6 +15,7 @@ import {
 } from '@/entities/options-chain/lib/optionsDataCache';
 import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/shared/config/queryConfig';
 import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
+import { SECONDS_PER_HALF_DAY } from '@/shared/config/time';
 import {
     buildBreadcrumbJsonLd,
     buildSymbolOptionsSeoContent,
@@ -61,8 +62,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         // 옵션 시장 여부를 모르면 false(노출 안 함)로 degrade → noindex로 안전하게 처리한다.
         // (이 fetch는 staticSymbolCache로 감싸져 DSU를 throw하지 않고, DSU가 발생하더라도
         // 같은 Promise.all의 getAssetInfoResilient가 rethrow하므로 제어 흐름은 보존된다.)
-        staticSymbolCache(['options:has', upper], upper, () =>
-            hasOptionsMarket(upper)
+        staticSymbolCache(
+            ['options:has', upper],
+            upper,
+            () => hasOptionsMarket(upper),
+            [],
+            SECONDS_PER_HALF_DAY
         ).catch((e: unknown) => {
             console.error(
                 '[generateMetadata:options] hasOptionsMarket infra failure, degrading to false:',
@@ -121,8 +126,12 @@ export default async function OptionsPage({ params }: Props) {
 
     const [{ assetInfo }, hasOptions] = await Promise.all([
         getAssetInfoResilient(upper),
-        staticSymbolCache(['options:has', upper], upper, () =>
-            hasOptionsMarket(upper)
+        staticSymbolCache(
+            ['options:has', upper],
+            upper,
+            () => hasOptionsMarket(upper),
+            [],
+            SECONDS_PER_HALF_DAY
         ),
     ]);
 
@@ -133,7 +142,9 @@ export default async function OptionsPage({ params }: Props) {
     const snapshot = await staticSymbolCache(
         ['options:snapshot', upper],
         upper,
-        () => fetchOptionsSnapshot(upper)
+        () => fetchOptionsSnapshot(upper),
+        [],
+        SECONDS_PER_HALF_DAY
     );
     if (snapshot === null) return <OptionsEmptyState symbol={upper} />;
 

@@ -28,6 +28,7 @@ import { CrossLinkCards, SymbolPageHeading } from '@/widgets/symbol-page';
 import { SectionSkeleton } from '@/widgets/symbol-page/SectionSkeleton';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { SymbolRouteParams, VALID_TICKER_RE } from '@/shared/config/market';
+import { SECONDS_PER_DAY } from '@/shared/config/time';
 import {
     buildAssetAboutNode,
     buildDisplayName,
@@ -205,7 +206,9 @@ async function ProfileDescriptionSection({
     const descriptionKo = await staticSymbolCache(
         ['fundamental:desc-ko', symbol],
         symbol,
-        () => getProfileDescriptionKo(symbol)
+        () => getProfileDescriptionKo(symbol),
+        [],
+        SECONDS_PER_DAY
     );
     return (
         <p className="text-secondary-400 mt-4 line-clamp-4 text-sm leading-relaxed">
@@ -219,7 +222,9 @@ async function ProfileSection({ symbol }: SymbolSectionProps) {
     const profile = await staticSymbolCache(
         ['fundamental:profile', symbol],
         symbol,
-        () => getProfile(symbol)
+        () => getProfile(symbol),
+        [],
+        SECONDS_PER_DAY
     );
 
     const descriptionSlot = (
@@ -238,7 +243,9 @@ async function ValuationSection({ symbol }: SymbolSectionProps) {
     const metrics = await staticSymbolCache(
         ['fundamental:metrics', symbol],
         symbol,
-        () => getKeyMetricsTtm(symbol)
+        () => getKeyMetricsTtm(symbol),
+        [],
+        SECONDS_PER_DAY
     );
     return <ValuationCard metrics={metrics} />;
 }
@@ -247,7 +254,9 @@ async function PeersSection({ symbol }: SymbolSectionProps) {
     const peers = await staticSymbolCache(
         ['fundamental:peers', symbol],
         symbol,
-        () => getStockPeers(symbol)
+        () => getStockPeers(symbol),
+        [],
+        SECONDS_PER_DAY
     );
     return <PeersTable peers={peers} />;
 }
@@ -256,7 +265,9 @@ async function ProfitabilitySection({ symbol }: SymbolSectionProps) {
     const ratios = await staticSymbolCache(
         ['fundamental:ratios', symbol],
         symbol,
-        () => getRatiosTtm(symbol)
+        () => getRatiosTtm(symbol),
+        [],
+        SECONDS_PER_DAY
     );
     return <ProfitabilityCard ratios={ratios} />;
 }
@@ -265,21 +276,35 @@ async function GrowthSection({ symbol }: SymbolSectionProps) {
     const growth = await staticSymbolCache(
         ['fundamental:growth', symbol],
         symbol,
-        () => getIncomeStatementGrowth(symbol)
+        () => getIncomeStatementGrowth(symbol),
+        [],
+        SECONDS_PER_DAY
     );
     return <GrowthChart growth={growth} />;
 }
 
 async function FinancialHealthSection({ symbol }: SymbolSectionProps) {
     const [ratios, scores, cashFlow] = await Promise.all([
-        staticSymbolCache(['fundamental:ratios', symbol], symbol, () =>
-            getRatiosTtm(symbol)
+        staticSymbolCache(
+            ['fundamental:ratios', symbol],
+            symbol,
+            () => getRatiosTtm(symbol),
+            [],
+            SECONDS_PER_DAY
         ),
-        staticSymbolCache(['fundamental:scores', symbol], symbol, () =>
-            getFinancialScores(symbol)
+        staticSymbolCache(
+            ['fundamental:scores', symbol],
+            symbol,
+            () => getFinancialScores(symbol),
+            [],
+            SECONDS_PER_DAY
         ),
-        staticSymbolCache(['fundamental:cashflow', symbol], symbol, () =>
-            getCashFlowStatement(symbol)
+        staticSymbolCache(
+            ['fundamental:cashflow', symbol],
+            symbol,
+            () => getCashFlowStatement(symbol),
+            [],
+            SECONDS_PER_DAY
         ),
     ]);
     return (
@@ -293,19 +318,33 @@ async function FinancialHealthSection({ symbol }: SymbolSectionProps) {
 
 async function FutureDirectionSection({ symbol }: SymbolSectionProps) {
     const [estimates, grades, ptConsensus, ptSummary] = await Promise.all([
-        staticSymbolCache(['fundamental:estimates', symbol], symbol, () =>
-            getAnalystEstimates(symbol)
+        staticSymbolCache(
+            ['fundamental:estimates', symbol],
+            symbol,
+            () => getAnalystEstimates(symbol),
+            [],
+            SECONDS_PER_DAY
         ),
         staticSymbolCache(
             ['fundamental:grades-consensus', symbol],
             symbol,
-            () => getGradesConsensus(symbol)
+            () => getGradesConsensus(symbol),
+            [],
+            SECONDS_PER_DAY
         ),
-        staticSymbolCache(['fundamental:pt-consensus', symbol], symbol, () =>
-            getPriceTargetConsensus(symbol)
+        staticSymbolCache(
+            ['fundamental:pt-consensus', symbol],
+            symbol,
+            () => getPriceTargetConsensus(symbol),
+            [],
+            SECONDS_PER_DAY
         ),
-        staticSymbolCache(['fundamental:pt-summary', symbol], symbol, () =>
-            getPriceTargetSummary(symbol)
+        staticSymbolCache(
+            ['fundamental:pt-summary', symbol],
+            symbol,
+            () => getPriceTargetSummary(symbol),
+            [],
+            SECONDS_PER_DAY
         ),
     ]);
     return (

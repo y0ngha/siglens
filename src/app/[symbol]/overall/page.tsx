@@ -27,6 +27,7 @@ import {
     peekOverallAnalysisCache,
 } from '@y0ngha/siglens-core';
 import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
+import { SECONDS_PER_HALF_DAY } from '@/shared/config/time';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
@@ -137,7 +138,8 @@ export default async function OverallPage({ params }: Props) {
             [NEWS_LIST_CACHE_KEY, upper],
             upper,
             () => getNewsList(upper),
-            [`news:${upper}`]
+            [`news:${upper}`],
+            SECONDS_PER_HALF_DAY
         ).catch((error: unknown) => {
             console.error('[OverallPage] getNewsList failed:', error);
             // safe: 빈 배열은 NewsRow[]와 구조적 호환(`.some` 호출 가능). TS는 []의 element
@@ -153,7 +155,9 @@ export default async function OverallPage({ params }: Props) {
                     assetInfo.name,
                     DEFAULT_TIMEFRAME,
                     GEMINI_2_5_FLASH_LITE_MODEL
-                )
+                ),
+            [],
+            SECONDS_PER_HALF_DAY
         ).catch((error: unknown) => {
             console.error(
                 '[OverallPage] peekOverallAnalysisCache failed:',

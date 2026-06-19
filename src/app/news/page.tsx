@@ -8,6 +8,7 @@ import { getMarketNewsList } from '@/entities/market-news/api';
 import { CategoryCard, PREVIEW_HEADLINE_LIMIT } from '@/widgets/news-hub';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
+import { SECONDS_PER_DAY } from '@/shared/config/time';
 import {
     buildBreadcrumbJsonLd,
     clampSeoDescription,
@@ -16,7 +17,8 @@ import {
 } from '@/shared/lib/seo';
 
 // 24h ISR — 허브 인덱스는 카테고리 구조가 바뀌지 않는 한 신선도가 낮아도 무방.
-// 카드별 헤드라인은 staticSymbolCache(1h TTL)를 통해 최신화됨.
+// 카드별 헤드라인은 staticSymbolCache(24h TTL)를 통해 캐싱된다 — 페이지 revalidate와
+// TTL을 맞춰 s-maxage가 1h로 clamp되지 않도록 한다.
 export const revalidate = 86400;
 
 const NEWS_HUB_PATH = '/news';
@@ -74,7 +76,8 @@ async function fetchCategoryPreviews(
         ['market-news:list', cfg.sentinel],
         cfg.sentinel,
         () => getMarketNewsList(cfg.sentinel),
-        [`${MARKET_NEWS_CACHE_TAG_PREFIX}:${cfg.sentinel}`]
+        [`${MARKET_NEWS_CACHE_TAG_PREFIX}:${cfg.sentinel}`],
+        SECONDS_PER_DAY
     );
     return rows
         .slice(0, PREVIEW_HEADLINE_LIMIT)
@@ -111,7 +114,7 @@ export default async function NewsHubPage() {
             <JsonLd data={webPageJsonLd} />
             <JsonLd data={breadcrumbJsonLd} />
             <main className="mx-auto w-full max-w-5xl space-y-8 px-4 py-8">
-                <h1 className="text-2xl font-bold tracking-tight">
+                <h1 className="text-secondary-100 text-2xl font-bold tracking-tight text-balance sm:text-3xl">
                     마켓 뉴스 허브
                 </h1>
                 <div className="text-secondary-400 -mt-4 space-y-1 text-sm">

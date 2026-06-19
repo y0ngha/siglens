@@ -27,7 +27,7 @@ export function HeaderMobileMenu({ items }: HeaderMobileMenuProps) {
         triggerRef.current?.focus();
     }, []);
 
-    const open = useCallback(() => setIsOpen(true), []);
+    const toggle = useCallback(() => setIsOpen(v => !v), []);
 
     useEscapeKey(close, isOpen);
     useFocusTrap(drawerRef, isOpen);
@@ -50,7 +50,7 @@ export function HeaderMobileMenu({ items }: HeaderMobileMenuProps) {
                 aria-label={isOpen ? '메뉴 닫기' : '메뉴 열기'}
                 aria-expanded={isOpen}
                 aria-controls="mobile-nav-drawer"
-                onClick={open}
+                onClick={toggle}
                 className="focus-visible:ring-primary-500 text-secondary-400 hover:text-secondary-100 flex h-11 w-11 touch-manipulation items-center justify-center rounded transition-colors focus-visible:ring-2 focus-visible:outline-none"
             >
                 <svg
@@ -69,7 +69,6 @@ export function HeaderMobileMenu({ items }: HeaderMobileMenuProps) {
                 </svg>
             </button>
 
-            {/* Backdrop — only visible when open */}
             {isOpen && (
                 <div
                     className="fixed inset-0 z-40 bg-black/50"
@@ -136,7 +135,7 @@ export function HeaderMobileMenu({ items }: HeaderMobileMenuProps) {
                                 onClick={close}
                                 tabIndex={isOpen ? undefined : -1}
                                 className={cn(
-                                    'focus-visible:ring-primary-500 block w-full touch-manipulation px-4 py-3 text-xs font-semibold tracking-[0.12em] uppercase transition-colors focus-visible:ring-2 focus-visible:outline-none',
+                                    'focus-visible:ring-primary-500 flex min-h-11 w-full touch-manipulation items-center px-4 py-3 text-xs font-semibold tracking-[0.12em] uppercase transition-colors focus-visible:ring-2 focus-visible:outline-none',
                                     isActive
                                         ? 'text-secondary-100 border-primary-500 border-l-2'
                                         : 'text-secondary-400 hover:text-secondary-100 border-l-2 border-transparent'

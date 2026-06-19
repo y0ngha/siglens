@@ -38,11 +38,7 @@ import { usePathname } from 'next/navigation';
 import { useEscapeKey } from '@/shared/hooks/useEscapeKey';
 
 import { HeaderMobileMenu } from '../HeaderMobileMenu';
-
-const NAV_ITEMS = [
-    { href: '/market', label: '시장 분석' },
-    { href: '/news', label: '마켓 뉴스' },
-] as const;
+import { NAV_ITEMS } from '../headerNavItems';
 
 describe('HeaderMobileMenu', () => {
     it('renders the hamburger button with correct aria-label', () => {
@@ -73,11 +69,11 @@ describe('HeaderMobileMenu', () => {
     it('nav links are in DOM even when drawer is closed (SSR crawlability)', () => {
         render(<HeaderMobileMenu items={NAV_ITEMS} />);
 
-        // Links should be in the DOM regardless of isOpen — for crawler discoverability
+        // Links should be in the DOM regardless of isOpen — for crawler discoverability.
+        // NAV_ITEMS renders in order: /market → /news → /economy
         const links = screen.getAllByRole('link', { hidden: true });
         const hrefs = links.map(l => l.getAttribute('href'));
-        expect(hrefs).toContain('/market');
-        expect(hrefs).toContain('/news');
+        expect(hrefs).toEqual(['/market', '/news', '/economy']);
     });
 
     it('nav links have aria-hidden="true" on the drawer when closed', () => {
@@ -263,5 +259,24 @@ describe('HeaderMobileMenu', () => {
 
         const button = screen.getByRole('button', { name: '메뉴 열기' });
         expect(button).toHaveAttribute('aria-controls', 'mobile-nav-drawer');
+    });
+
+    it('clicking the hamburger while open CLOSES the drawer (toggle behaviour)', () => {
+        render(<HeaderMobileMenu items={NAV_ITEMS} />);
+
+        // Open the drawer first
+        fireEvent.click(screen.getByRole('button', { name: '메뉴 열기' }));
+        expect(screen.getByRole('dialog')).toBeInTheDocument();
+
+        // Click the hamburger again (now labelled 메뉴 닫기) — should close
+        fireEvent.click(screen.getByRole('button', { name: '메뉴 닫기' }));
+
+        // Drawer should be hidden again — and the SAME trigger reverts to the
+        // "메뉴 열기" label with aria-expanded=false (resolves only when closed,
+        // so the assertion genuinely depends on the toggle having closed it).
+        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+        expect(
+            screen.getByRole('button', { name: '메뉴 열기' })
+        ).toHaveAttribute('aria-expanded', 'false');
     });
 });

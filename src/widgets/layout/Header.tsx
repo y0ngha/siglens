@@ -2,16 +2,12 @@ import { HeaderMobileMenu } from './HeaderMobileMenu';
 import { HeaderNav } from './HeaderNav';
 import { HeaderNavStatic } from './HeaderNavStatic';
 import { HeaderUserMenu, type HeaderUserMenuUser } from './HeaderUserMenu';
+import { NAV_ITEMS } from './headerNavItems';
 import { TickerAutocomplete } from '@/features/ticker-search';
 import { SITE_NAME } from '@/shared/lib/seo';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Suspense } from 'react';
-
-const NAV_ITEMS = [
-    { href: '/market', label: '시장 분석' },
-    { href: '/news', label: '마켓 뉴스' },
-] as const;
 
 interface HeaderProps {
     /** Resolved current user (server-fetched in `app/layout.tsx`); null for guests. */
