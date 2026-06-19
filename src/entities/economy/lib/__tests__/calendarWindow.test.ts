@@ -15,7 +15,7 @@ describe('kstDateOf', () => {
         expect(kstDateOf(new Date('2026-06-20T12:30:00Z'))).toBe('2026-06-20');
     });
 
-    it('crosses KST midnight: noon ET on 2026-06-20 (17:00Z) → 2026-06-21 KST', () => {
+    it('crosses KST midnight: noon ET on 2026-06-20 (16:00Z) → 2026-06-21 KST', () => {
         // 2026-06-20T16:00:00Z = 12:00 ET = 01:00 KST next day (2026-06-21) — exact old-code failure case
         expect(kstDateOf(new Date('2026-06-20T16:00:00Z'))).toBe('2026-06-21');
     });
