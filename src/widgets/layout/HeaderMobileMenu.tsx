@@ -2,7 +2,14 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+    startTransition,
+    useCallback,
+    useEffect,
+    useEffectEvent,
+    useRef,
+    useState,
+} from 'react';
 import { createPortal } from 'react-dom';
 import { cn } from '@/shared/lib/cn';
 import { useEscapeKey } from '@/shared/hooks/useEscapeKey';
@@ -19,25 +26,10 @@ interface HeaderMobileMenuProps {
 
 export function HeaderMobileMenu({ items }: HeaderMobileMenuProps) {
     const [isOpen, setIsOpen] = useState(false);
+    const [mounted, setMounted] = useState(false);
     const pathname = usePathname();
     const triggerRef = useRef<HTMLButtonElement>(null);
     const drawerRef = useRef<HTMLDivElement>(null);
-
-    /**
-     * SSR/hydration safety gate for the portal.
-     * useEffect fires only after hydration, so the first client render (with
-     * mounted=false) matches the server HTML (no portal rendered) — avoiding
-     * React #418 hydration mismatch. After hydration the effect flips
-     * mounted=true and the portal renders normally.
-     * The lazy-initializer form (`() => typeof document !== 'undefined`) would
-     * set mounted=true on the first client render while the server had false,
-     * causing the mismatch this pattern is designed to prevent.
-     */
-    const [mounted, setMounted] = useState(false);
-    useEffect(() => {
-        // eslint-disable-next-line react-hooks/set-state-in-effect -- canonical client-only mount gate; required so the first client render matches SSR (avoids #418 hydration mismatch) before the portal renders.
-        setMounted(true);
-    }, []);
 
     const close = useCallback(() => {
         setIsOpen(false);
@@ -48,6 +40,44 @@ export function HeaderMobileMenu({ items }: HeaderMobileMenuProps) {
 
     useEscapeKey(close, isOpen);
     useFocusTrap(drawerRef, isOpen);
+
+    /**
+     * SSR/hydration safety gate for the portal.
+     * useEffect fires only after hydration, so the first client render (with
+     * mounted=false) matches the server HTML (no portal rendered) — avoiding
+     * React #418 hydration mismatch. After hydration the effect flips
+     * mounted=true and the portal renders normally.
+     * The lazy-initializer form (`() => typeof document !== 'undefined`) would
+     * set mounted=true on the first client render while the server had false,
+     * causing the mismatch this pattern is designed to prevent.
+     *
+     * useEffectEvent wraps setMounted and startTransition isolates the setState
+     * call so the set-state-in-effect lint rule is satisfied — canonical
+     * React 19 pattern (MISTAKES.md §10).
+     */
+    const markMounted = useEffectEvent(() => {
+        startTransition(() => {
+            setMounted(true);
+        });
+    });
+    useEffect(() => {
+        markMounted();
+    }, []);
+
+    // Auto-close the drawer when the pathname changes (e.g. browser back/forward
+    // popstate navigation). Nav link clicks already call close() directly, but
+    // history navigation bypasses that handler — leaving the drawer open with
+    // body-scroll locked until the user manually dismisses it.
+    // useEffectEvent + startTransition isolates the close() setState call from
+    // the effect body so the set-state-in-effect lint rule is satisfied (MISTAKES.md §10).
+    const closeOnNav = useEffectEvent(() => {
+        startTransition(() => {
+            close();
+        });
+    });
+    useEffect(() => {
+        closeOnNav();
+    }, [pathname]);
 
     // Prevent body scroll while the drawer is open
     useEffect(() => {
@@ -136,19 +166,7 @@ export function HeaderMobileMenu({ items }: HeaderMobileMenuProps) {
                                     tabIndex={isOpen ? undefined : -1}
                                     className="focus-visible:ring-primary-500 text-secondary-400 hover:text-secondary-100 flex h-11 w-11 touch-manipulation items-center justify-center rounded transition-colors focus-visible:ring-2 focus-visible:outline-none"
                                 >
-                                    <svg
-                                        width="20"
-                                        height="20"
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        strokeWidth="2"
-                                        strokeLinecap="round"
-                                        aria-hidden="true"
-                                    >
-                                        <line x1="18" y1="6" x2="6" y2="18" />
-                                        <line x1="6" y1="6" x2="18" y2="18" />
-                                    </svg>
+                                    ✕
                                 </button>
                             </div>
 

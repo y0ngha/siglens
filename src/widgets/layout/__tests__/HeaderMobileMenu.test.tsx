@@ -80,9 +80,9 @@ describe('HeaderMobileMenu', () => {
          */
         render(<HeaderMobileMenu items={NAV_ITEMS} />);
 
-        const drawer = document.getElementById('mobile-nav-drawer');
+        const drawer = document.getElementById('mobile-nav-drawer')!;
         expect(drawer).toBeInTheDocument();
-        expect(drawer?.parentElement).toBe(document.body);
+        expect(drawer.parentElement).toBe(document.body);
     });
 
     it('backdrop is portaled into document.body when open', () => {
@@ -91,7 +91,7 @@ describe('HeaderMobileMenu', () => {
         fireEvent.click(screen.getByRole('button', { name: '메뉴 열기' }));
 
         const backdrop = screen.getByTestId('mobile-nav-backdrop');
-        expect(backdrop?.parentElement).toBe(document.body);
+        expect(backdrop.parentElement).toBe(document.body);
     });
 
     it('nav links are accessible via document when drawer is closed', () => {
