@@ -1,8 +1,16 @@
+/**
+ * EconomicCalendar barrel 별칭 smoke-test.
+ *
+ * `EconomicCalendar`는 index.ts에서 `EconomicCalendarGrid as EconomicCalendar`로
+ * re-export된다. 이 파일은 barrel 별칭이 정상 동작함을 확인하는 최소 smoke 테스트다.
+ * 상세 동작은 EconomicCalendarGrid.test.tsx에서 검증한다.
+ */
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import type { EconomicCalendarEvent } from '@y0ngha/siglens-core';
 
-import { EconomicCalendar } from '@/widgets/economy/sections/EconomicCalendar';
+// barrel 별칭을 통해 import — 실제 경로가 아닌 공개 API 검증.
+import { EconomicCalendar } from '@/widgets/economy';
 
 const EVENT: EconomicCalendarEvent = {
     date: '2026-06-17 14:00:00',
@@ -14,7 +22,7 @@ const EVENT: EconomicCalendarEvent = {
     unit: '%',
 };
 
-describe('EconomicCalendar', () => {
+describe('EconomicCalendar (barrel alias → EconomicCalendarGrid)', () => {
     it('이벤트 0건이면 안내 문구', () => {
         render(<EconomicCalendar events={[]} />);
         expect(
@@ -22,31 +30,17 @@ describe('EconomicCalendar', () => {
         ).toBeInTheDocument();
     });
 
-    it('이벤트 본문 표시 (제목 + 예상/이전치)', () => {
+    it('이벤트 1건이면 이벤트 이름이 DOM에 존재한다', () => {
+        const { container } = render(<EconomicCalendar events={[EVENT]} />);
+        expect(container.textContent).toContain('Fed Rate Decision');
+    });
+
+    it('h2 제목에 "(한국시간)" 포함 (KST 캘린더 전환 확인)', () => {
         render(<EconomicCalendar events={[EVENT]} />);
-        expect(screen.getByText('Fed Rate Decision')).toBeInTheDocument();
-        expect(screen.getByText(/예상 3\.63%/)).toBeInTheDocument();
-        expect(screen.getByText(/이전 3\.63%/)).toBeInTheDocument();
+        expect(screen.getByText('(한국시간)')).toBeInTheDocument();
     });
 
-    it('정수 큰 값은 천 단위 콤마로 표기', () => {
-        render(
-            <EconomicCalendar
-                events={[
-                    {
-                        ...EVENT,
-                        estimate: 230000,
-                        previous: 229000,
-                        unit: '건',
-                    },
-                ]}
-            />
-        );
-        expect(screen.getByText(/예상 230,000건/)).toBeInTheDocument();
-        expect(screen.getByText(/이전 229,000건/)).toBeInTheDocument();
-    });
-
-    it('time 요소에 ISO-8601 dateTime 속성 (EDT offset 포함, 6월은 -04:00)', () => {
+    it('time 요소에 ET ISO-8601 dateTime 속성 (-04:00 EDT)', () => {
         const { container } = render(<EconomicCalendar events={[EVENT]} />);
         const time = container.querySelector('time');
         expect(time?.getAttribute('dateTime')).toBe(
@@ -54,78 +48,9 @@ describe('EconomicCalendar', () => {
         );
     });
 
-    it('EST 구간(12월) 이벤트 → dateTime에 -05:00 offset', () => {
-        const { container } = render(
-            <EconomicCalendar
-                events={[{ ...EVENT, date: '2026-12-10 14:00:00' }]}
-            />
-        );
-        const time = container.querySelector('time');
-        expect(time?.getAttribute('dateTime')).toBe(
-            '2026-12-10T14:00:00-05:00'
-        );
-    });
-
-    it('impact 뱃지 한국어 변환 (High → 높음)', () => {
+    it('임팩트 뱃지 한국어 변환 (High → 높음)', () => {
         render(<EconomicCalendar events={[EVENT]} />);
-        expect(screen.getByText('높음')).toBeInTheDocument();
-    });
-
-    it('actual이 있으면 실제 값 함께 표시', () => {
-        render(<EconomicCalendar events={[{ ...EVENT, actual: 3.5 }]} />);
-        expect(screen.getByText(/실제 3\.5%/)).toBeInTheDocument();
-    });
-
-    it('actual=null이면 실제 표기 미렌더', () => {
-        render(<EconomicCalendar events={[EVENT]} />);
-        expect(screen.queryByText(/실제 /)).not.toBeInTheDocument();
-    });
-
-    it.each([
-        // [description, date string, expected offset]
-        // EST구간: 3월 springDay 전날(2월 28일)
-        ['2월 말(EST)', '2026-02-28 14:00:00', '-05:00'],
-        // Spring 당일 springDay 전(3월 8일 01:59)
-        [
-            'spring 당일 전 (3월 8일 01:59, EST)',
-            '2026-03-08 01:59:00',
-            '-05:00',
-        ],
-        // Spring 당일 springDay 후(3월 8일 03:00) — 2026년 3월 두 번째 일요일=3월 8일
-        [
-            'spring 당일 후 (3월 8일 03:00, EDT)',
-            '2026-03-08 03:00:00',
-            '-04:00',
-        ],
-        // Spring forward day 02:00 자체 → EDT (실제 존재하지 않는 시각, EDT 처리)
-        [
-            'spring 02:00(시계가 앞당겨지는 순간, EDT)',
-            '2026-03-08 02:00:00',
-            '-04:00',
-        ],
-        // Spring forward day 다음날 (3월 14일 — 3월 두 번째 일요일=3월 8일이므로 3월 14일은 EDT 구간)
-        ['3월 14일(EDT)', '2026-03-14 14:00:00', '-04:00'],
-        // 7월(EDT 한복판)
-        ['7월(EDT)', '2026-07-01 10:00:00', '-04:00'],
-        // fall-back day(11월 1일) 02:00 전환 이전 구간 — 01:00 EDT 첫 발생 (중복 구간)
-        [
-            'fall 당일 01:00(EDT — 중복 구간 첫 발생)',
-            '2026-11-01 01:00:00',
-            '-04:00',
-        ],
-        // Fall back day 02:00 이후(11월 1일 03:00) → EST
-        ['fall 당일 03:00(EST)', '2026-11-01 03:00:00', '-05:00'],
-        // Fall back day 02:00 → EST
-        ['fall 02:00(EST)', '2026-11-01 02:00:00', '-05:00'],
-        // 12월(EST 겨울)
-        ['12월(EST)', '2026-12-01 10:00:00', '-05:00'],
-    ])('DST offset: %s → %s', (_, dateStr, expectedOffset) => {
-        const { container } = render(
-            <EconomicCalendar events={[{ ...EVENT, date: dateStr }]} />
-        );
-        const time = container.querySelector('time');
-        expect(time?.getAttribute('dateTime')).toBe(
-            `${dateStr.replace(' ', 'T')}${expectedOffset}`
-        );
+        // 상세 패널 내 배지 (DOM 전체에서 검색)
+        expect(screen.getAllByText('높음').length).toBeGreaterThan(0);
     });
 });

@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import { getEtOffset, nthSundayDay, toIsoDateTime } from '../etTimeUtils';
+import {
+    etDateTimeToKst,
+    getEtOffset,
+    nthSundayDay,
+    toIsoDateTime,
+} from '../etTimeUtils';
 
 // ------------------------------------------------------------------
 // nthSundayDay
@@ -146,5 +151,53 @@ describe('toIsoDateTime', () => {
         expect(toIsoDateTime('2026-03-08 01:59:00')).toBe(
             '2026-03-08T01:59:00-05:00'
         );
+    });
+});
+
+// ------------------------------------------------------------------
+// etDateTimeToKst
+// ------------------------------------------------------------------
+describe('etDateTimeToKst', () => {
+    it('EDT 구간: ET 19:30 → KST 다음날 08:30 (날짜 롤오버)', () => {
+        // '2026-06-19 19:30:00' ET(-04:00) = '2026-06-19T23:30:00Z' = KST 2026-06-20 08:30
+        const result = etDateTimeToKst('2026-06-19 19:30:00');
+        expect(result.iso).toBe('2026-06-19T19:30:00-04:00');
+        expect(result.kstDateKey).toBe('2026-06-20');
+        expect(result.kstTimeLabel).toBe('오전 8:30');
+    });
+
+    it('EST 구간: ET 09:30 → KST 같은날 23:30 (날짜 롤오버 없음)', () => {
+        // '2026-12-10 09:30:00' ET(-05:00) = '2026-12-10T14:30:00Z' = KST 2026-12-10 23:30
+        const result = etDateTimeToKst('2026-12-10 09:30:00');
+        expect(result.iso).toBe('2026-12-10T09:30:00-05:00');
+        expect(result.kstDateKey).toBe('2026-12-10');
+        expect(result.kstTimeLabel).toBe('오후 11:30');
+    });
+
+    it('DST 경계: 봄 전환일 전날 ET 23:00 → KST 다음날 (EST offset)', () => {
+        // '2026-03-07 23:00:00' ET(-05:00) = '2026-03-08T04:00:00Z' = KST 2026-03-08 13:00
+        const result = etDateTimeToKst('2026-03-07 23:00:00');
+        expect(result.iso).toBe('2026-03-07T23:00:00-05:00');
+        expect(result.kstDateKey).toBe('2026-03-08');
+        expect(result.kstTimeLabel).toBe('오후 1:00');
+    });
+
+    it('EDT → EST 전환 직후: ET 03:00 → KST (EST offset)', () => {
+        // '2026-11-01 03:00:00' ET(-05:00) = '2026-11-01T08:00:00Z' = KST 2026-11-01 17:00
+        const result = etDateTimeToKst('2026-11-01 03:00:00');
+        expect(result.iso).toBe('2026-11-01T03:00:00-05:00');
+        expect(result.kstDateKey).toBe('2026-11-01');
+        expect(result.kstTimeLabel).toBe('오후 5:00');
+    });
+
+    it('iso 필드는 toIsoDateTime 결과와 동일', () => {
+        const etDate = '2026-07-04 14:00:00';
+        const result = etDateTimeToKst(etDate);
+        expect(result.iso).toBe(toIsoDateTime(etDate));
+    });
+
+    it('kstDateKey 형식은 YYYY-MM-DD', () => {
+        const result = etDateTimeToKst('2026-06-19 09:00:00');
+        expect(result.kstDateKey).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     });
 });

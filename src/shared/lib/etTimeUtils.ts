@@ -87,3 +87,42 @@ export function toIsoDateTime(date: string): string {
     const offset = getEtOffset(year, month - 1, day, hour);
     return `${date.replace(' ', 'T')}${offset}`;
 }
+
+/**
+ * ET 벽시계 문자열('YYYY-MM-DD HH:mm:ss')을 KST 캘린더 표시용 정보로 변환한다.
+ *
+ * 반환값:
+ * - `iso`         : ET ISO-8601 문자열 — HTML `<time dateTime>` 용도.
+ * - `kstDateKey`  : KST 기준 날짜 'YYYY-MM-DD' — 캘린더 그룹핑 키.
+ * - `kstTimeLabel`: KST 시각 레이블 '오전/오후 H:mm' (ko-KR, 한국 표준시).
+ *
+ * 변환 흐름: ET 로컬 → ISO(ET offset 포함) → `new Date(iso)` → Asia/Seoul Intl 포맷.
+ * `new Date(iso)`는 ISO 오프셋을 포함하므로 UTC 기준으로 정확히 파싱된다.
+ * 날짜 롤오버(예: ET 오후 → KST 다음날)는 Intl.DateTimeFormat이 자동 처리한다.
+ */
+export function etDateTimeToKst(etDate: string): {
+    iso: string;
+    kstDateKey: string;
+    kstTimeLabel: string;
+} {
+    const iso = toIsoDateTime(etDate);
+    const d = new Date(iso);
+
+    // 'YYYY-MM-DD' 형식(en-CA 로케일 = ISO 날짜 순서)으로 KST 날짜 키 생성.
+    const kstDateKey = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Asia/Seoul',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+    }).format(d);
+
+    // '오전/오후 H:mm' 형식(ko-KR, 12시간제)으로 KST 시각 레이블 생성.
+    const kstTimeLabel = new Intl.DateTimeFormat('ko-KR', {
+        timeZone: 'Asia/Seoul',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+    }).format(d);
+
+    return { iso, kstDateKey, kstTimeLabel };
+}
