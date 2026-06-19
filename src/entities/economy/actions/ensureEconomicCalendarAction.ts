@@ -33,7 +33,7 @@ export async function ensureEconomicCalendarAction(): Promise<void> {
         if (await isCalendarRecentlyFetched()) {
             return;
         }
-        // async fetch 전에 마킹 — 동시 호출이 이 지점 이후 플래그를 읽으면 FMP 왕복 생략.
+        // 플래그를 fetch 전에 set: 동시 마운트 dedup(news 패턴). 전량 실패 시 복구는 TTL 만료까지 대기.
         await markCalendarFetched();
 
         const today = etDateOf(new Date());

@@ -20,10 +20,27 @@ const ET_DATE_FORMAT = new Intl.DateTimeFormat('en-US', {
     timeZone: 'America/New_York',
 });
 
+const KST_DATE_FORMAT = new Intl.DateTimeFormat('en-US', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    timeZone: 'Asia/Seoul',
+});
+
 /** UTC instant → ET-zoned 'YYYY-MM-DD'. */
 export function etDateOf(instant: Date): string {
     const parts = Object.fromEntries(
         ET_DATE_FORMAT.formatToParts(instant)
+            .filter(p => p.type !== 'literal')
+            .map(p => [p.type, p.value])
+    ) as Record<'year' | 'month' | 'day', string>;
+    return `${parts.year}-${parts.month}-${parts.day}`;
+}
+
+/** UTC instant → KST-zoned 'YYYY-MM-DD'. */
+export function kstDateOf(instant: Date): string {
+    const parts = Object.fromEntries(
+        KST_DATE_FORMAT.formatToParts(instant)
             .filter(p => p.type !== 'literal')
             .map(p => [p.type, p.value])
     ) as Record<'year' | 'month' | 'day', string>;

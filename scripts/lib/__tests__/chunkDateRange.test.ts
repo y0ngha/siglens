@@ -1,6 +1,14 @@
 import { describe, it, expect } from 'vitest';
 import { chunkDateRange } from '../chunkDateRange';
 
+describe('chunkDateRange guard', () => {
+    it('throws RangeError when chunkDays < 1', () => {
+        expect(() => chunkDateRange('2026-01-01', '2026-01-10', 0)).toThrow(
+            RangeError
+        );
+    });
+});
+
 describe('chunkDateRange', () => {
     it('splits a range into [from,to] chunks of at most chunkDays', () => {
         const chunks = chunkDateRange('2026-01-01', '2026-04-01', 30);

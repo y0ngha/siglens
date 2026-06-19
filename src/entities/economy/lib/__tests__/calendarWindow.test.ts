@@ -1,12 +1,36 @@
 import { describe, it, expect } from 'vitest';
 import {
     etDateOf,
+    kstDateOf,
     addEtDays,
     pastWindowStart,
     futureWindowEnd,
     PAST_WINDOW_DAYS,
     FUTURE_WINDOW_DAYS,
 } from '@/entities/economy/lib/calendarWindow';
+
+describe('kstDateOf', () => {
+    it('returns same KST day for morning US release (08:30 ET → 12:30Z → KST same day)', () => {
+        // 2026-06-20T12:30:00Z = 08:30 ET = 21:30 KST → still 2026-06-20 KST
+        expect(kstDateOf(new Date('2026-06-20T12:30:00Z'))).toBe('2026-06-20');
+    });
+
+    it('crosses KST midnight: noon ET on 2026-06-20 (17:00Z) → 2026-06-21 KST', () => {
+        // 2026-06-20T16:00:00Z = 12:00 ET = 01:00 KST next day (2026-06-21) — exact old-code failure case
+        expect(kstDateOf(new Date('2026-06-20T16:00:00Z'))).toBe('2026-06-21');
+    });
+
+    it('crosses KST midnight at year boundary', () => {
+        // 2026-01-01T20:00:00Z = 05:00 KST 2026-01-02
+        expect(kstDateOf(new Date('2026-01-01T20:00:00Z'))).toBe('2026-01-02');
+    });
+
+    it('returns a YYYY-MM-DD formatted string', () => {
+        expect(kstDateOf(new Date('2026-06-20T12:30:00Z'))).toMatch(
+            /^\d{4}-\d{2}-\d{2}$/
+        );
+    });
+});
 
 describe('etDateOf', () => {
     it('formats a UTC instant to its ET YYYY-MM-DD', () => {

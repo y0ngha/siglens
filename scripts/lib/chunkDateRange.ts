@@ -20,6 +20,7 @@ export function chunkDateRange(
     end: string,
     chunkDays: number
 ): DateChunk[] {
+    if (chunkDays < 1) throw new RangeError('chunkDays must be >= 1');
     const chunks: DateChunk[] = [];
     let cursor = start;
     while (cursor <= end) {
