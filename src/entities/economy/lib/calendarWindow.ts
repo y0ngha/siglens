@@ -33,6 +33,7 @@ export function etDateOf(instant: Date): string {
         ET_DATE_FORMAT.formatToParts(instant)
             .filter(p => p.type !== 'literal')
             .map(p => [p.type, p.value])
+        // Intl.DateTimeFormat configured with year/month/day always emits parts of these exact types.
     ) as Record<'year' | 'month' | 'day', string>;
     return `${parts.year}-${parts.month}-${parts.day}`;
 }
@@ -43,6 +44,7 @@ export function kstDateOf(instant: Date): string {
         KST_DATE_FORMAT.formatToParts(instant)
             .filter(p => p.type !== 'literal')
             .map(p => [p.type, p.value])
+        // Intl.DateTimeFormat configured with year/month/day always emits parts of these exact types.
     ) as Record<'year' | 'month' | 'day', string>;
     return `${parts.year}-${parts.month}-${parts.day}`;
 }

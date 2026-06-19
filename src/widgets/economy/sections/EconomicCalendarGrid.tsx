@@ -362,28 +362,29 @@ function MonthCalendar({
     selectedDateKey,
     onSelect,
 }: MonthCalendarProps) {
-    const totalDays = daysInMonth(year, month);
-    /** 1일의 요일 (0=일 … 6=토) */
-    const firstDow = new Date(Date.UTC(year, month, 1)).getUTCDay();
+    const weeks = useMemo(() => {
+        const totalDays = daysInMonth(year, month);
+        /** 1일의 요일 (0=일 … 6=토) */
+        const firstDow = new Date(Date.UTC(year, month, 1)).getUTCDay();
 
-    const rawCells: (DayGroup | null)[] = [
-        ...Array<null>(firstDow).fill(null),
-        ...Array.from({ length: totalDays }, (_, i) => {
-            const d = i + 1;
-            const key = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-            return groupMap.get(key) ?? null;
-        }),
-    ];
-    const padCount = (7 - (rawCells.length % 7)) % 7;
-    const cells =
-        padCount > 0
-            ? [...rawCells, ...Array<null>(padCount).fill(null)]
-            : rawCells;
+        const rawCells: (DayGroup | null)[] = [
+            ...Array<null>(firstDow).fill(null),
+            ...Array.from({ length: totalDays }, (_, i) => {
+                const d = i + 1;
+                const key = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                return groupMap.get(key) ?? null;
+            }),
+        ];
+        const padCount = (7 - (rawCells.length % 7)) % 7;
+        const cells =
+            padCount > 0
+                ? [...rawCells, ...Array<null>(padCount).fill(null)]
+                : rawCells;
 
-    const weeks: (DayGroup | null)[][] = Array.from(
-        { length: cells.length / 7 },
-        (_, i) => cells.slice(i * 7, i * 7 + 7)
-    );
+        return Array.from({ length: cells.length / 7 }, (_, i) =>
+            cells.slice(i * 7, i * 7 + 7)
+        ) as (DayGroup | null)[][];
+    }, [year, month, groupMap]);
 
     const captionText = `${year}년 ${MONTH_LABELS[month]} 경제 캘린더`;
 
@@ -481,9 +482,8 @@ export function EconomicCalendarGrid({
     events,
     today = '',
 }: EconomicCalendarGridProps) {
-    useEconomicCalendarTrigger();
-
     const [selectedDateKey, setSelectedDateKey] = useState('');
+    useEconomicCalendarTrigger();
     const groups = useMemo(() => groupEventsByKstDay(events), [events]);
     const groupMap = useMemo(
         () => new Map<string, DayGroup>(groups.map(g => [g.dateKey, g])),

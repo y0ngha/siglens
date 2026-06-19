@@ -1,12 +1,11 @@
 import { vi, describe, it, expect } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import type { EconomicCalendarEvent } from '@y0ngha/siglens-core';
+import { EconomicCalendarGrid } from '@/widgets/economy/sections/EconomicCalendarGrid';
 
 vi.mock('@/entities/economy/actions', () => ({
     ensureEconomicCalendarAction: vi.fn().mockResolvedValue(undefined),
 }));
-
-import { EconomicCalendarGrid } from '@/widgets/economy/sections/EconomicCalendarGrid';
 
 /**
  * 기준 이벤트: 2026-06-19 19:30:00 ET(-04:00) → KST 2026-06-20 오전 8:30

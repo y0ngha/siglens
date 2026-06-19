@@ -10,6 +10,7 @@ import {
 
 import { economicCalendar } from '../src/shared/db/schema';
 import { economicCalendarId } from '../src/entities/economy/lib/economicCalendarId';
+import { CALENDAR_COUNTRY } from '../src/entities/economy/lib/economyCalendarConstants';
 import { chunkDateRange } from './lib/chunkDateRange';
 import { normalizeIndicatorBaseName } from './lib/normalizeIndicatorBaseName';
 
@@ -22,8 +23,6 @@ if (!FMP_API_KEY) {
 if (!databaseUrl) {
     throw new Error('DATABASE_URL env var required');
 }
-
-const CALENDAR_COUNTRY = 'US';
 const CHUNK_DAYS = 90; // 3-month chunks
 const BACKFILL_DAYS_EACH_SIDE = 365; // now ± 1yr
 const FMP_BASE = 'https://financialmodelingprep.com/stable';
@@ -79,18 +78,23 @@ async function run(): Promise<void> {
         for (const event of events) {
             baseNames.add(normalizeIndicatorBaseName(event.event));
         }
-        if (events.length === 0) continue;
+        // id(country+date+event) 기준 dedup — 단일 배치에 중복 id가 있으면
+        // ON CONFLICT가 "cannot affect row a second time"로 실패한다.
+        const uniqueRows = new Map<string, (typeof events)[number]>();
+        for (const event of events) {
+            uniqueRows.set(
+                economicCalendarId(CALENDAR_COUNTRY, event.date, event.event),
+                event
+            );
+        }
+        if (uniqueRows.size === 0) continue;
 
-        // Idempotent upsert — onConflictDoUpdate on the deterministic id.
+        // 멱등 upsert(fetchedAt 제외) — 데이터 필드 동일 시 행 내용은 그대로, fetchedAt만 갱신.
         await db
             .insert(economicCalendar)
             .values(
-                events.map(event => ({
-                    id: economicCalendarId(
-                        CALENDAR_COUNTRY,
-                        event.date,
-                        event.event
-                    ),
+                [...uniqueRows.entries()].map(([id, event]) => ({
+                    id,
                     country: CALENDAR_COUNTRY,
                     dateEt: event.date,
                     event: event.event,
@@ -112,7 +116,7 @@ async function run(): Promise<void> {
                     fetchedAt: sql`now()`,
                 },
             });
-        upserted += events.length;
+        upserted += uniqueRows.size;
     }
 
     const sortedNames = [...baseNames].toSorted((a, b) => a.localeCompare(b));

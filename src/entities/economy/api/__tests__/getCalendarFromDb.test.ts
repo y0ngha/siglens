@@ -3,6 +3,10 @@ vi.mock('server-only', () => ({}));
 /**
  * unstable_cache mock: call-through이지만 (fn, keyParts, options) 인자를 캡처해
  * 캐시 키·revalidate·tags 계약을 단언할 수 있게 한다.
+ *
+ * 모듈-레벨 unstable_cache(fn, keyParts, options) 구조:
+ * - keyParts: ['economy-calendar-db']
+ * - anchorEt는 반환된 래퍼 함수의 인자로 전달(auto-keyed by Next.js)
  */
 let capturedKeyParts: string[] = [];
 let capturedOptions: Record<string, unknown> = {};
@@ -49,10 +53,9 @@ describe('getCalendarFromDb', () => {
         listInRange.mockResolvedValue([]);
     });
 
-    it('passes the correct cache key parts to unstable_cache', async () => {
+    it('passes the correct key array to unstable_cache', async () => {
         await getCalendarFromDb('2026-06-20');
-        expect(capturedKeyParts).toContain('economy-calendar-db');
-        expect(capturedKeyParts).toContain('2026-06-20');
+        expect(capturedKeyParts).toEqual(['economy-calendar-db']);
     });
 
     it('passes the correct revalidate and tags to unstable_cache', async () => {

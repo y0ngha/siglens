@@ -20,7 +20,7 @@ vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: vi.fn(() => ({ db: {} })),
 }));
 
-import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import type { EconomicCalendarEvent } from '@y0ngha/siglens-core';
 import { revalidateTag } from 'next/cache';
 import {
@@ -30,7 +30,11 @@ import {
 import { FmpEconomyProvider } from '@/shared/api/fmp/FmpEconomyProvider';
 import { DrizzleEconomicCalendarRepository } from '@/entities/economy/api/economicCalendarRepository';
 import { ensureEconomicCalendarAction } from '@/entities/economy/actions/ensureEconomicCalendarAction';
-import { ECONOMY_CALENDAR_CACHE_TAG } from '@/entities/economy/lib/economyCalendarConstants';
+import {
+    ECONOMY_CALENDAR_CACHE_TAG,
+    CALENDAR_INGESTION_WINDOW_DAYS,
+} from '@/entities/economy/lib/economyCalendarConstants';
+import { addEtDays, etDateOf } from '@/entities/economy/lib/calendarWindow';
 
 const EVENT: EconomicCalendarEvent = {
     date: '2026-06-13 08:30:00',
@@ -47,6 +51,9 @@ describe('ensureEconomicCalendarAction', () => {
     let upsertEvent: ReturnType<typeof vi.fn>;
 
     beforeEach(() => {
+        vi.useFakeTimers();
+        vi.setSystemTime(new Date('2026-06-20T12:00:00Z'));
+
         vi.clearAllMocks();
         vi.mocked(isCalendarRecentlyFetched).mockResolvedValue(false);
         vi.mocked(markCalendarFetched).mockResolvedValue(undefined);
@@ -66,6 +73,10 @@ describe('ensureEconomicCalendarAction', () => {
         );
     });
 
+    afterEach(() => {
+        vi.useRealTimers();
+    });
+
     it('skips fetch when recently fetched', async () => {
         vi.mocked(isCalendarRecentlyFetched).mockResolvedValue(true);
         await ensureEconomicCalendarAction();
@@ -77,6 +88,14 @@ describe('ensureEconomicCalendarAction', () => {
         await ensureEconomicCalendarAction();
         expect(markCalendarFetched).toHaveBeenCalledOnce();
         expect(getCalendar).toHaveBeenCalledOnce();
+
+        // B3: assert FMP was called with the computed window
+        const day = etDateOf(new Date('2026-06-20T12:00:00Z'));
+        expect(getCalendar).toHaveBeenCalledWith(
+            addEtDays(day, -CALENDAR_INGESTION_WINDOW_DAYS),
+            addEtDays(day, CALENDAR_INGESTION_WINDOW_DAYS)
+        );
+
         expect(upsertEvent).toHaveBeenCalledWith('US', EVENT);
         expect(revalidateTag).toHaveBeenCalledWith(
             ECONOMY_CALENDAR_CACHE_TAG,
@@ -95,5 +114,59 @@ describe('ensureEconomicCalendarAction', () => {
         await expect(ensureEconomicCalendarAction()).resolves.toBeUndefined();
         expect(upsertEvent).not.toHaveBeenCalled();
         expect(revalidateTag).not.toHaveBeenCalled();
+    });
+
+    // B4: majority failure branch — all upserts fail → no revalidate
+    it('aborts and does not revalidate when majority upserts fail', async () => {
+        const singleEvent: EconomicCalendarEvent = {
+            date: '2026-06-20 08:30:00',
+            event: 'Jobs Report',
+            impact: 'High',
+            actual: null,
+            estimate: 200000,
+            previous: 180000,
+            unit: '건',
+        };
+        getCalendar.mockResolvedValue([singleEvent]);
+        upsertEvent.mockRejectedValue(new Error('db'));
+
+        await ensureEconomicCalendarAction();
+
+        expect(revalidateTag).not.toHaveBeenCalled();
+    });
+
+    // B4: minority failure branch — some upserts fail but majority succeed → revalidate
+    it('continues and revalidates when minority upserts fail', async () => {
+        // Two DISTINCT-id events (different date) so dedup keeps both
+        const eventA: EconomicCalendarEvent = {
+            date: '2026-06-20 08:30:00',
+            event: 'Jobs Report',
+            impact: 'High',
+            actual: null,
+            estimate: 200000,
+            previous: 180000,
+            unit: '건',
+        };
+        const eventB: EconomicCalendarEvent = {
+            date: '2026-06-21 08:30:00',
+            event: 'CPI MoM',
+            impact: 'High',
+            actual: null,
+            estimate: 0.3,
+            previous: 0.2,
+            unit: '%',
+        };
+        getCalendar.mockResolvedValue([eventA, eventB]);
+        // First call rejects, second resolves true
+        upsertEvent
+            .mockRejectedValueOnce(new Error('db'))
+            .mockResolvedValueOnce(true);
+
+        await ensureEconomicCalendarAction();
+
+        expect(revalidateTag).toHaveBeenCalledWith(
+            ECONOMY_CALENDAR_CACHE_TAG,
+            'max'
+        );
     });
 });

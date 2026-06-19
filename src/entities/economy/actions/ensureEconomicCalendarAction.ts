@@ -11,6 +11,7 @@ import {
     markCalendarFetched,
 } from '../api/calendarRefreshFlag';
 import { addEtDays, etDateOf } from '../lib/calendarWindow';
+import { economicCalendarId } from '../lib/economicCalendarId';
 import {
     CALENDAR_COUNTRY,
     CALENDAR_INGESTION_WINDOW_DAYS,
@@ -55,19 +56,29 @@ export async function ensureEconomicCalendarAction(): Promise<void> {
         const { db } = getDatabaseClient();
         const repo = new DrizzleEconomicCalendarRepository(db);
 
+        // 같은 id 이벤트의 병렬 upsert는 동일 행 동시 갱신 → deadlock 위험. 먼저 id 기준 dedup.
+        const uniqueEvents = new Map<string, (typeof fresh)[number]>();
+        for (const event of fresh) {
+            uniqueEvents.set(
+                economicCalendarId(CALENDAR_COUNTRY, event.date, event.event),
+                event
+            );
+        }
+        const deduped = [...uniqueEvents.values()];
+
         const settled = await Promise.allSettled(
-            fresh.map(event => repo.upsertEvent(CALENDAR_COUNTRY, event))
+            deduped.map(event => repo.upsertEvent(CALENDAR_COUNTRY, event))
         );
         const failures = settled.filter(r => r.status === 'rejected');
         if (failures.length > 0) {
             console.error(
-                `[ensureEconomicCalendarAction] ${failures.length}/${fresh.length} upserts failed`,
+                `[ensureEconomicCalendarAction] ${failures.length}/${deduped.length} upserts failed`,
                 failures.map(f => (f.status === 'rejected' ? f.reason : null))
             );
         }
-        if (failures.length > fresh.length / MAJORITY_DIVISOR) {
+        if (failures.length > deduped.length / MAJORITY_DIVISOR) {
             console.error(
-                `[ensureEconomicCalendarAction] majority upsert failure (${failures.length}/${fresh.length}) — aborting`
+                `[ensureEconomicCalendarAction] majority upsert failure (${failures.length}/${deduped.length}) — aborting`
             );
             return;
         }
