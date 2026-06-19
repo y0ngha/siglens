@@ -24,7 +24,7 @@ export function FinancialsAiSummaryError({
             >
                 AI 재무제표 분석
             </h2>
-            <p className="text-danger-text text-sm" role="alert">
+            <p className="text-ui-danger-text text-sm" role="alert">
                 {message}
             </p>
             <button

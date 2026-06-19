@@ -5,6 +5,7 @@ import {
     EconomicCalendar,
     EconomicIndicatorGrid,
     EconomyMacroFacts,
+    EconomySkeleton,
     MacroBriefing,
     TREASURY_CARD_META,
 } from '@/widgets/economy';
@@ -248,7 +249,7 @@ export default function EconomyPage() {
             <JsonLd data={FAQ_JSON_LD} />
             <main className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8">
                 <EconomyHeroH1 />
-                <Suspense fallback={null}>
+                <Suspense fallback={<EconomySkeleton />}>
                     <EconomyContent />
                 </Suspense>
             </main>

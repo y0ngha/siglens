@@ -16,10 +16,10 @@ const REGIME_LABELS: Record<MacroBriefingResponse['regime'], string> = {
 };
 
 const REGIME_COLORS: Record<MacroBriefingResponse['regime'], string> = {
-    expansion: 'bg-ui-success/20 text-success-text',
-    slowdown: 'bg-ui-warning/20 text-warning-text',
-    contraction: 'bg-ui-danger/20 text-danger-text',
-    recovery: 'bg-ui-success/20 text-success-text',
+    expansion: 'bg-ui-success/20 text-ui-success-text',
+    slowdown: 'bg-ui-warning/20 text-ui-warning-text',
+    contraction: 'bg-ui-danger/20 text-ui-danger-text',
+    recovery: 'bg-ui-success/20 text-ui-success-text',
     neutral: 'bg-secondary-700 text-secondary-100',
 };
 

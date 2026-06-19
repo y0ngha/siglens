@@ -231,22 +231,22 @@ describe('CongressTradesTable', () => {
     });
 
     describe('side badge', () => {
-        it('Purchase trade renders 매수 badge with text-success-text class (WCAG AA)', () => {
+        it('Purchase trade renders 매수 badge with text-ui-success-text class (WCAG AA)', () => {
             render(<CongressTradesTable trades={[BASE_TRADE]} />);
             const badge = screen.getByText('매수');
-            expect(badge.className).toContain('text-success-text');
+            expect(badge.className).toContain('text-ui-success-text');
         });
 
-        it('Sale (Partial) trade renders 매도 badge with text-danger-text class (WCAG AA)', () => {
+        it('Sale (Partial) trade renders 매도 badge with text-ui-danger-text class (WCAG AA)', () => {
             render(<CongressTradesTable trades={[SELL_PARTIAL_TRADE]} />);
             const badge = screen.getByText('매도');
-            expect(badge.className).toContain('text-danger-text');
+            expect(badge.className).toContain('text-ui-danger-text');
         });
 
-        it('Sale trade renders 매도 badge with text-danger-text class (WCAG AA)', () => {
+        it('Sale trade renders 매도 badge with text-ui-danger-text class (WCAG AA)', () => {
             render(<CongressTradesTable trades={[SELL_FULL_TRADE]} />);
             const badge = screen.getByText('매도');
-            expect(badge.className).toContain('text-danger-text');
+            expect(badge.className).toContain('text-ui-danger-text');
         });
     });
 

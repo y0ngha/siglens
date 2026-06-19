@@ -5,3 +5,4 @@ export {
 } from './sections/EconomicIndicatorGrid';
 export { EconomicCalendar } from './sections/EconomicCalendar';
 export { EconomyMacroFacts } from './sections/EconomyMacroFacts';
+export { EconomySkeleton } from './sections/EconomySkeleton';
