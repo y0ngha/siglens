@@ -64,10 +64,8 @@ describe('DrizzleEconomicCalendarRepository.upsertEvent', () => {
         const { db, spies } = makeDb([{ id: 'abc' }], []);
         const repo = new DrizzleEconomicCalendarRepository(db);
         await repo.upsertEvent('US', EVENT);
-        const inserted = spies.values.mock.calls[0][0] as Record<
-            string,
-            unknown
-        >;
+        const firstCall = spies.values.mock.calls[0] as unknown[];
+        const inserted = firstCall[0] as Record<string, unknown>;
         expect(inserted.country).toBe('US');
         expect(inserted.dateEt).toBe('2026-06-13 08:30:00');
         expect(inserted.event).toBe('Core CPI MoM (May)');
