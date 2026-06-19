@@ -18,10 +18,14 @@ const POLL_INTERVAL_MS = 5_000;
  * 폴링 결과 union — core의 PollMacroBriefingResult에 `refetch` 콜백이 추가된 형태.
  * error variant는 재시도 버튼이, processing variant는 아직 로딩 중임을 표시한다.
  */
-export type UseMacroBriefingPollResult =
-    | ({ status: 'processing' } & { refetch: () => void })
-    | (PollMacroBriefingError & { refetch: () => void })
-    | (PollMacroBriefingDone & { refetch: () => void });
+type MacroBriefingPollVariant =
+    | { status: 'processing' }
+    | PollMacroBriefingError
+    | PollMacroBriefingDone;
+
+export type UseMacroBriefingPollResult = MacroBriefingPollVariant & {
+    refetch: () => void;
+};
 
 /**
  * jobId가 끝날 때까지 5초 간격으로 poll. done/error 도달 시 polling 종료.
@@ -36,8 +40,6 @@ export type UseMacroBriefingPollResult =
 export function useMacroBriefingPoll(
     jobId: string
 ): UseMacroBriefingPollResult {
-    const isHydrated = useHydrated();
-
     /**
      * `timedOut` becomes true when the ceiling timer fires while polling is
      * still in `processing`. A separate boolean state (rather than deriving
@@ -53,6 +55,9 @@ export function useMacroBriefingPoll(
      * the new window and prevents the infinite-skeleton bug.
      */
     const [pollWindow, setPollWindow] = useState(0);
+
+    // B1: useHydrated after useState declarations (§17 hook order).
+    const isHydrated = useHydrated();
 
     // §17 exception: `refetch` is destructured immediately after useQuery
     // because it feeds the useCallback below. The `refetch` reference is
@@ -71,6 +76,15 @@ export function useMacroBriefingPoll(
         refetchIntervalInBackground: true,
     });
 
+    // B2: useCallback before derived const and useEffect (§17 hook order).
+    const refetch = useCallback(() => {
+        // Reset the timeout flag and advance the poll-window counter so the
+        // ceiling useEffect re-runs and arms a fresh timer for this attempt.
+        setTimedOut(false);
+        setPollWindow(w => w + 1);
+        void queryRefetch();
+    }, [queryRefetch]);
+
     const isSettled = data?.status === 'done' || data?.status === 'error';
 
     /**
@@ -84,9 +98,13 @@ export function useMacroBriefingPoll(
      *   timer for the new attempt even though `isSettled` is still `false`.
      *   Without this second dependency, a retry on a still-stalled job would
      *   never re-arm the timer and the ceiling would never fire again.
+     *
+     * Guard: only arm when the query is enabled (!isHydrated or jobId==='' means
+     * polling never starts, yet isSettled is false — without this guard the timer
+     * would fire and emit a spurious poll_timeout before polling even begins).
      */
     useEffect(() => {
-        if (isSettled) return;
+        if (isSettled || !isHydrated || jobId === '') return;
 
         const id = setTimeout(() => {
             setTimedOut(true);
@@ -95,15 +113,7 @@ export function useMacroBriefingPoll(
         return () => {
             clearTimeout(id);
         };
-    }, [isSettled, pollWindow]);
-
-    const refetch = useCallback(() => {
-        // Reset the timeout flag and advance the poll-window counter so the
-        // ceiling useEffect re-runs and arms a fresh timer for this attempt.
-        setTimedOut(false);
-        setPollWindow(w => w + 1);
-        void queryRefetch();
-    }, [queryRefetch]);
+    }, [isSettled, pollWindow, isHydrated, jobId]);
 
     if (timedOut && !isSettled) {
         return { status: 'error', error: 'poll_timeout', refetch };

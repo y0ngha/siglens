@@ -177,6 +177,48 @@ describe('useMacroBriefingPoll', () => {
         }
     });
 
+    it('쿼리 disabled 상태(useHydrated=false)에서는 ceiling 타이머가 발동되지 않는다', async () => {
+        // gemini edge-case: when the query is disabled, isSettled stays false
+        // but the ceiling timer must NOT arm — otherwise a spurious poll_timeout
+        // fires before polling even starts.
+        vi.useFakeTimers();
+        mockUseHydrated.mockReturnValue(false);
+
+        const { result } = renderHook(
+            () => useMacroBriefingPoll('j-disabled'),
+            {
+                wrapper: makeWrapper(),
+            }
+        );
+
+        // Advance well past the (mocked 50ms) ceiling.
+        await vi.advanceTimersByTimeAsync(200);
+
+        // Must stay 'processing' — no poll_timeout emitted.
+        expect(result.current.status).toBe('processing');
+        expect(mockPoll).not.toHaveBeenCalled();
+
+        vi.useRealTimers();
+    });
+
+    it('jobId가 빈 문자열이면 ceiling 타이머가 발동되지 않는다(disabled query)', async () => {
+        // Same disabled-query guard: jobId='' disables the query and must not arm the timer.
+        vi.useFakeTimers();
+        mockUseHydrated.mockReturnValue(true);
+
+        const { result } = renderHook(() => useMacroBriefingPoll(''), {
+            wrapper: makeWrapper(),
+        });
+
+        await vi.advanceTimersByTimeAsync(200);
+
+        // Must stay 'processing' — no poll_timeout emitted.
+        expect(result.current.status).toBe('processing');
+        expect(mockPoll).not.toHaveBeenCalled();
+
+        vi.useRealTimers();
+    });
+
     it('unmount 시 polling이 중단된다', async () => {
         // processing 상태를 유지해 refetchInterval이 계속 발생할 수 있는 환경을 만든다.
         mockPoll.mockResolvedValue({ status: 'processing' });
