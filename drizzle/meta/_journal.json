@@ -127,6 +127,13 @@
             "when": 1781591483491,
             "tag": "0017_perpetual_sentry",
             "breakpoints": true
+        },
+        {
+            "idx": 18,
+            "version": "7",
+            "when": 1781897708671,
+            "tag": "0018_spotty_solo",
+            "breakpoints": true
         }
     ]
 }
