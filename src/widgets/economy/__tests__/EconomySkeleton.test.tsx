@@ -14,14 +14,14 @@ describe('EconomySkeleton', () => {
 
     it('renders animate-pulse decorative regions (aria-hidden)', () => {
         const { container } = render(<EconomySkeleton />);
-        // briefing section + grid wrapper div + calendar section = 3 aria-hidden regions
+        // macro-facts section + briefing section + grid wrapper div + calendar section = 4 aria-hidden regions
         const hiddenRegions = container.querySelectorAll(
             '[aria-hidden="true"]'
         );
-        expect(hiddenRegions.length).toBe(3);
+        expect(hiddenRegions.length).toBe(4);
         // All top-level pulse blocks carry animate-pulse
         const pulseBlocks = container.querySelectorAll('.animate-pulse');
-        // briefing card + 4 indicator cards + calendar card = 6 pulse blocks
-        expect(pulseBlocks.length).toBeGreaterThanOrEqual(6);
+        // macro-facts card + briefing card + 4 indicator cards + calendar card = 7 pulse blocks
+        expect(pulseBlocks.length).toBe(7);
     });
 });
