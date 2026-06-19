@@ -1,7 +1,5 @@
-// No 'use client' directive: this component is rendered directly by its client
-// parent (FinancialsAiSummary), never as a server-passed boundary, so it inherits
-// the client bundle from its importer. Keeping it a client *entry* would trip
-// Next's prop-serializability check (71007) on the `resetErrorBoundary` function prop.
+'use client';
+
 import type { FallbackProps } from 'react-error-boundary';
 import { getFmpUserFacingMessage } from '@/shared/api/fmp/fmpUserMessage';
 
