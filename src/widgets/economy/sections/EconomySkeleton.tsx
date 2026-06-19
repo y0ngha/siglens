@@ -6,8 +6,8 @@
  *      component. We need a height placeholder so the layout doesn't shift on
  *      hydration when EconomyContent resolves.
  *   2. MacroBriefing card — matches MacroBriefingSkeleton dimensions.
- *   3. Indicator grid — a 2-column grid of pulse cards, one per category
- *      placeholder (金利·物価·成長·雇用 ≈ 4 groups, 3 cards each row).
+ *   3. Indicator grid — a 2-column grid of pulse cards, one per category group
+ *      (금리·물가·성장·고용 ≈ 4 groups, ~3 indicator rows per card).
  *   4. Economic calendar placeholder.
  *
  * All pulse blocks use the project's standard:
