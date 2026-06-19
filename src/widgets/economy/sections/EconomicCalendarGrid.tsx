@@ -16,12 +16,8 @@ import { cn } from '@/shared/lib/cn';
 import { formatNum } from '@/shared/lib/formatNum';
 import { etDateTimeToKst } from '@/shared/lib/etTimeUtils';
 import { useEconomicCalendarTrigger } from '../hooks/useEconomicCalendarTrigger';
-
-const IMPACT_LABELS: Record<CalendarImpact, string> = {
-    High: '높음',
-    Medium: '보통',
-    Low: '낮음',
-};
+import { ImpactFilter } from './ImpactFilter';
+import { IMPACT_LABELS, IMPACT_ORDER } from '../utils/impactMeta';
 
 const IMPACT_BADGE: Record<CalendarImpact, string> = {
     High: 'bg-ui-danger/20 text-ui-danger-text',
@@ -35,9 +31,6 @@ const IMPACT_DOT: Record<CalendarImpact, string> = {
     Medium: 'bg-ui-warning',
     Low: 'bg-secondary-400',
 };
-
-/** 임팩트 점 렌더 순서 — High → Medium → Low */
-const IMPACT_ORDER: readonly CalendarImpact[] = ['High', 'Medium', 'Low'];
 
 /** 7열 그리드 요일 헤더 (일요일 시작) */
 const WEEKDAY_LABELS = ['일', '월', '화', '수', '목', '금', '토'] as const;
@@ -60,6 +53,13 @@ const MONTH_LABELS = [
 
 /** 인라인 이벤트 미리보기 최대 표시 건수 (sm 이상 화면) */
 const INLINE_EVENT_MAX = 2;
+
+/**
+ * 중요도 필터 기본값 — High+Medium ON, Low OFF.
+ * 연간 Low 이벤트가 2,919건으로 대다수라 기본 노출 시 노이즈가 크다(스펙 SP-C).
+ * 결정론적 초기값 — 렌더 중 시각/난수 의존 없음(ISR 안전).
+ */
+const DEFAULT_ACTIVE_IMPACTS: readonly CalendarImpact[] = ['High', 'Medium'];
 
 interface KstEvent {
     /** ET ISO-8601 문자열 — `<time dateTime>` 용 */
@@ -172,9 +172,14 @@ function kstDayOfWeekLabel(dateKey: string): string {
 interface DayDetailPanelProps {
     group: DayGroup;
     isSelected: boolean;
+    activeImpacts: ReadonlySet<CalendarImpact>;
 }
 
-function DayDetailPanel({ group, isSelected }: DayDetailPanelProps) {
+function DayDetailPanel({
+    group,
+    isSelected,
+    activeImpacts,
+}: DayDetailPanelProps) {
     const { month, day, dateKey } = group;
     const dowLabel = kstDayOfWeekLabel(dateKey);
 
@@ -206,6 +211,7 @@ function DayDetailPanel({ group, isSelected }: DayDetailPanelProps) {
                 {group.events.map(ev => (
                     <li
                         key={`${ev.iso}:${ev.original.event}:${ev.original.actual ?? ''}`}
+                        hidden={!activeImpacts.has(ev.original.impact)}
                         className="border-secondary-700 bg-secondary-800/50 rounded-lg border p-3"
                     >
                         <div className="flex flex-wrap items-start justify-between gap-2">
@@ -263,19 +269,31 @@ function DayDetailPanel({ group, isSelected }: DayDetailPanelProps) {
 interface DayCellProps {
     group: DayGroup;
     isSelected: boolean;
+    activeImpacts: ReadonlySet<CalendarImpact>;
     onSelect: (dateKey: string) => void;
 }
 
-function DayCell({ group, isSelected, onSelect }: DayCellProps) {
-    const { day, month, events, dateKey } = group;
-    const count = events.length;
+function DayCell({ group, isSelected, activeImpacts, onSelect }: DayCellProps) {
+    const { day, month, dateKey } = group;
 
     /**
+     * 활성 impact만 남긴 이벤트 — 셀의 점·건수·인라인 미리보기에 사용.
+     * 시각 필터(셀은 SEO 비핵심, 전체 텍스트는 상세 패널이 DOM에 보유).
+     *
      * 임팩트 종류 집합 — 점 렌더 순서(High → Medium → Low)를 위해 순서 유지.
      * 동일 날짜에 High가 여러 건이어도 점은 1개만 표시한다(시각적 노이즈 감소).
      */
-    const impactSet = new Set(events.map(e => e.original.impact));
-    const dots = IMPACT_ORDER.filter(i => impactSet.has(i));
+    const { visibleEvents, count, dots } = useMemo(() => {
+        const visibleEvents = group.events.filter(e =>
+            activeImpacts.has(e.original.impact)
+        );
+        const impactSet = new Set(visibleEvents.map(e => e.original.impact));
+        return {
+            visibleEvents,
+            count: visibleEvents.length,
+            dots: IMPACT_ORDER.filter(i => impactSet.has(i)),
+        };
+    }, [group.events, activeImpacts]);
 
     return (
         <td className="p-0.5 align-top">
@@ -326,7 +344,7 @@ function DayCell({ group, isSelected, onSelect }: DayCellProps) {
                 </span>
 
                 <span className="mt-1 hidden space-y-0.5 sm:block">
-                    {events.slice(0, INLINE_EVENT_MAX).map(ev => (
+                    {visibleEvents.slice(0, INLINE_EVENT_MAX).map(ev => (
                         <span
                             key={`${ev.iso}:${ev.original.event}`}
                             className="text-secondary-400 block min-w-0 truncate text-[10px] leading-tight"
@@ -352,6 +370,7 @@ interface MonthCalendarProps {
     month: number;
     groupMap: Map<string, DayGroup>;
     selectedDateKey: string;
+    activeImpacts: ReadonlySet<CalendarImpact>;
     onSelect: (dateKey: string) => void;
 }
 
@@ -360,6 +379,7 @@ function MonthCalendar({
     month,
     groupMap,
     selectedDateKey,
+    activeImpacts,
     onSelect,
 }: MonthCalendarProps) {
     const weeks = useMemo(() => {
@@ -422,6 +442,7 @@ function MonthCalendar({
                                         isSelected={
                                             selectedDateKey === cell.dateKey
                                         }
+                                        activeImpacts={activeImpacts}
                                         onSelect={onSelect}
                                     />
                                 ) : (
@@ -474,6 +495,8 @@ interface EconomicCalendarGridProps {
  * 3. 날짜 셀 클릭 → 상세 패널 표시(useState).
  * 4. 모든 날짜의 상세 패널을 DOM에 렌더하고(`hidden` 속성으로 비선택 숨김)
  *    SSR 크롤러가 전체 이벤트 텍스트를 색인할 수 있도록 보장한다.
+ * 5. 중요도 필터(ImpactFilter) — activeImpacts로 셀 건수·점·미리보기를 시각 한정.
+ *    Low(연 2,919건)를 기본 OFF하여 노이즈 억제; 상세 패널 `<li>`는 DOM에 유지(크롤러).
  *
  * ISR 안전: `Date.now()` / `new Date()` (무인수) 호출 없음.
  * 기본 선택 날짜 = `today`(KST) → 가장 가까운 미래 → 가장 이른 그룹.
@@ -483,6 +506,9 @@ export function EconomicCalendarGrid({
     today = '',
 }: EconomicCalendarGridProps) {
     const [selectedDateKey, setSelectedDateKey] = useState('');
+    const [activeImpacts, setActiveImpacts] = useState<
+        ReadonlySet<CalendarImpact>
+    >(() => new Set(DEFAULT_ACTIVE_IMPACTS));
     useEconomicCalendarTrigger();
     const groups = useMemo(() => groupEventsByKstDay(events), [events]);
     const groupMap = useMemo(
@@ -501,6 +527,19 @@ export function EconomicCalendarGrid({
             setSelectedDateKey(pickDefaultDateKey(groups, today));
         });
     });
+
+    function toggleImpact(impact: CalendarImpact): void {
+        setActiveImpacts(prev => {
+            const next = new Set(prev);
+            if (next.has(impact)) {
+                next.delete(impact);
+            } else {
+                next.add(impact);
+            }
+            return next;
+        });
+    }
+
     useEffect(() => {
         syncDefault();
     }, [groups, today]);
@@ -536,6 +575,10 @@ export function EconomicCalendarGrid({
                 </span>
             </h2>
 
+            <div className="mb-3">
+                <ImpactFilter value={activeImpacts} onToggle={toggleImpact} />
+            </div>
+
             <div className="border-secondary-700 space-y-6 rounded-xl border p-3 sm:p-4">
                 {months.map(({ year, month }) => (
                     <MonthCalendar
@@ -544,6 +587,7 @@ export function EconomicCalendarGrid({
                         month={month}
                         groupMap={groupMap}
                         selectedDateKey={selectedDateKey}
+                        activeImpacts={activeImpacts}
                         onSelect={setSelectedDateKey}
                     />
                 ))}
@@ -559,6 +603,7 @@ export function EconomicCalendarGrid({
                         key={group.dateKey}
                         group={group}
                         isSelected={group.dateKey === selectedDateKey}
+                        activeImpacts={activeImpacts}
                     />
                 ))}
             </div>
