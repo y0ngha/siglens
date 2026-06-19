@@ -200,4 +200,19 @@ describe('etDateTimeToKst', () => {
         const result = etDateTimeToKst('2026-06-19 09:00:00');
         expect(result.kstDateKey).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     });
+
+    it('formatToParts 변경 후 날짜 롤오버 케이스 kstDateKey 동일성 보장', () => {
+        // ET '2026-06-19 19:30:00'(-04:00) → UTC 23:30 → KST +9h = 2026-06-20 08:30
+        // en-CA 대신 formatToParts를 써도 같은 '2026-06-20'이 나와야 한다.
+        const result = etDateTimeToKst('2026-06-19 19:30:00');
+        expect(result.kstDateKey).toBe('2026-06-20');
+        expect(result.kstDateKey).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    });
+
+    it('1자리 월/일도 2자리 패딩(01, 09)된다', () => {
+        // '2026-01-02 09:00:00' EST(-05:00) → UTC 14:00 → KST +9h = 2026-01-02 23:00
+        const result = etDateTimeToKst('2026-01-02 09:00:00');
+        expect(result.kstDateKey).toBe('2026-01-02');
+        expect(result.kstDateKey).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    });
 });

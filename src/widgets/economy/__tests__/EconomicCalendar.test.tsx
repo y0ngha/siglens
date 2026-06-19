@@ -50,7 +50,7 @@ describe('EconomicCalendar (barrel alias → EconomicCalendarGrid)', () => {
 
     it('임팩트 뱃지 한국어 변환 (High → 높음)', () => {
         render(<EconomicCalendar events={[EVENT]} />);
-        // 상세 패널 내 배지 (DOM 전체에서 검색)
-        expect(screen.getAllByText('높음').length).toBeGreaterThan(0);
+        // 이벤트 1건(High) → 상세 패널에 뱃지 1개만 렌더됨
+        expect(screen.getAllByText('높음')).toHaveLength(1);
     });
 });

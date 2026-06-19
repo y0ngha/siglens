@@ -91,15 +91,19 @@ interface MonthGrid {
 // 순수 유틸
 // ---------------------------------------------------------------------------
 
+/** `parseDateKey` 반환 타입. */
+interface ParsedDateKey {
+    year: number;
+    /** 0-indexed (0=1월) */
+    month: number;
+    day: number;
+}
+
 /**
  * KST 날짜 키 'YYYY-MM-DD'에서 {year, month(0-idx), day}를 파싱한다.
  * `new Date(key)` 는 로컬 자정 기준이라 시스템 TZ에 의존하므로 직접 파싱한다.
  */
-function parseDateKey(key: string): {
-    year: number;
-    month: number;
-    day: number;
-} {
+function parseDateKey(key: string): ParsedDateKey {
     const [y, m, d] = key.split('-').map(Number);
     return { year: y, month: m - 1, day: d };
 }
@@ -128,24 +132,19 @@ function groupEventsByKstDay(
     for (const ev of events) {
         const { iso, kstDateKey, kstTimeLabel } = etDateTimeToKst(ev.date);
         const kst: KstEvent = { iso, kstTimeLabel, original: ev };
-        const existing = map.get(kstDateKey);
-        if (existing !== undefined) {
-            existing.push(kst);
-        } else {
-            map.set(kstDateKey, [kst]);
-        }
+        map.set(kstDateKey, [...(map.get(kstDateKey) ?? []), kst]);
     }
 
     return Array.from(map.entries())
-        .sort(([a], [b]) => a.localeCompare(b))
+        .toSorted(([a], [b]) => a.localeCompare(b))
         .map(([dateKey, evList]) => {
             const { year, month, day } = parseDateKey(dateKey);
             const dayOfWeek = dayOfWeekFromKey(dateKey);
             // 시각 레이블 오름차순 정렬 ('오전' < '오후' 사전 순이 대체로 맞지만
             // iso 기준 정렬이 더 정확하다)
-            const sorted = evList
-                .slice()
-                .sort((a, b) => a.iso.localeCompare(b.iso));
+            const sorted = evList.toSorted((a, b) =>
+                a.iso.localeCompare(b.iso)
+            );
             return { dateKey, dayOfWeek, year, month, day, events: sorted };
         });
 }
@@ -155,15 +154,14 @@ function groupEventsByKstDay(
  */
 function spannedMonths(groups: DayGroup[]): MonthGrid[] {
     const seen = new Set<string>();
-    const result: MonthGrid[] = [];
-    for (const g of groups) {
+    return groups.reduce<MonthGrid[]>((acc, g) => {
         const key = `${g.year}-${g.month}`;
         if (!seen.has(key)) {
             seen.add(key);
-            result.push({ year: g.year, month: g.month });
+            return [...acc, { year: g.year, month: g.month }];
         }
-    }
-    return result;
+        return acc;
+    }, []);
 }
 
 /**
@@ -189,12 +187,17 @@ function DayDetailPanel({ group, isSelected }: DayDetailPanelProps) {
 
     return (
         /**
-         * SSR 크롤러 접근성: 모든 패널을 DOM에 렌더하되, 선택되지 않은 패널에만
-         * `hidden` 속성을 부여한다. `hidden`은 `display:none`과 달리 HTML 사양상
-         * 콘텐츠를 DOM에 유지하므로 크롤러가 모든 이벤트를 색인할 수 있다.
+         * SSR 크롤러 접근성: 모든 패널을 조건부 렌더(unmount) 대신 DOM에 항상 유지하고,
+         * 비선택 패널에 `hidden` 속성을 부여한다. 조건부 렌더와 달리 비선택 패널도
+         * HTML 소스에 남아 크롤러가 전체 이벤트를 색인할 수 있다.
+         * `hidden` 속성은 요소를 a11y 트리에서 제거하므로 스크린 리더는 선택된 패널만 읽는다.
+         *
+         * ARIA 패턴: 토글 버튼(`aria-pressed`) + 레이블 연결(`aria-labelledby`).
+         * `role="tabpanel"` 미사용 — `role="tab"` / `role="tablist"` 없이 단독으로
+         * 쓰면 고아 ARIA 오류가 발생한다. 대신 각 버튼의 `id`를 `aria-labelledby`로
+         * 참조해 버튼-패널 관계를 의미론적으로 연결한다.
          */
         <div
-            role="tabpanel"
             id={`panel-${dateKey}`}
             aria-labelledby={`day-btn-${dateKey}`}
             hidden={!isSelected}
@@ -349,9 +352,7 @@ function DayCell({ group, isSelected, onSelect }: DayCellProps) {
                             key={`${ev.iso}:${ev.original.event}`}
                             className="text-secondary-400 block min-w-0 truncate text-[10px] leading-tight"
                         >
-                            {ev.kstTimeLabel
-                                .replace('오전 ', '')
-                                .replace('오후 ', '')}{' '}
+                            {ev.kstTimeLabel.replace(/^(오전|오후)\s*/, '')}{' '}
                             {ev.original.event}
                         </span>
                     ))}
@@ -391,23 +392,25 @@ function MonthCalendar({
     const firstDow = new Date(Date.UTC(year, month, 1)).getUTCDay();
 
     // 달력 셀 배열 생성 — 7열 기준 선행 빈 셀 + 날짜 + 후행 빈 셀
-    // 행(week) 단위로 잘라 <tr>로 렌더한다.
-    const cells: (DayGroup | null)[] = [
-        ...Array.from<null>({ length: firstDow }).fill(null),
+    // 행(week) 단위로 잘라 <tr>로 렌더한다. 불변 선언으로 구성(push 미사용).
+    const rawCells: (DayGroup | null)[] = [
+        ...Array<null>(firstDow).fill(null),
         ...Array.from({ length: totalDays }, (_, i) => {
             const d = i + 1;
             const key = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
             return groupMap.get(key) ?? null;
         }),
     ];
+    const padCount = (7 - (rawCells.length % 7)) % 7;
+    const cells =
+        padCount > 0
+            ? [...rawCells, ...Array<null>(padCount).fill(null)]
+            : rawCells;
 
-    // 7의 배수로 패딩
-    while (cells.length % 7 !== 0) cells.push(null);
-
-    const weeks: (DayGroup | null)[][] = [];
-    for (let i = 0; i < cells.length; i += 7) {
-        weeks.push(cells.slice(i, i + 7));
-    }
+    const weeks: (DayGroup | null)[][] = Array.from(
+        { length: cells.length / 7 },
+        (_, i) => cells.slice(i * 7, i * 7 + 7)
+    );
 
     const captionText = `${year}년 ${MONTH_LABELS[month]} 경제 캘린더`;
 

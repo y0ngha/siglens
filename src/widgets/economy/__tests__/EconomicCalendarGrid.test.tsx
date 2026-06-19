@@ -202,7 +202,8 @@ describe('EconomicCalendarGrid — 상세 패널 데이터', () => {
 
     it('임팩트 뱃지 한국어 레이블 표시 (High → 높음)', () => {
         render(<EconomicCalendarGrid events={[EVENT_A]} />);
-        expect(screen.getAllByText('높음').length).toBeGreaterThan(0);
+        // EVENT_A 1건(High) → 상세 패널에 뱃지 1개만 렌더됨
+        expect(screen.getAllByText('높음')).toHaveLength(1);
     });
 
     it('천 단위 콤마 포맷 (230,000건)', () => {
@@ -264,7 +265,7 @@ describe('EconomicCalendarGrid — 그리드 구조', () => {
         // EVENT_A → KST 6/20 (6월), EVENT_C → KST 6/21 (6월) — 같은 월
         render(<EconomicCalendarGrid events={[EVENT_A, EVENT_C]} />);
         // 가시적 월 레이블(<p>)과 sr-only caption 모두 2026년 6월을 포함하므로
-        // getAllByText로 복수 매치를 허용한다.
-        expect(screen.getAllByText(/2026년 6월/).length).toBeGreaterThan(0);
+        // 두 요소가 매치된다.
+        expect(screen.getAllByText(/2026년 6월/)).toHaveLength(2);
     });
 });
