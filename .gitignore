@@ -80,6 +80,10 @@ next-env.d.ts
 !/scripts/validate-skills.ts
 !/scripts/__tests__/
 !/scripts/__tests__/**
+# SP-A: one-time backfill script + pure helpers (tracked so users can run them).
+!/scripts/backfillEconomicCalendar.ts
+!/scripts/lib/
+!/scripts/lib/**
 
 # Local Lighthouse audit outputs (psi_*.json, desktop.json, mobile.json, headers.txt)
 /lighthouse/
