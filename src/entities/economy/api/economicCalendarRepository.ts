@@ -17,6 +17,7 @@ const IMPACT_RECORD: Record<CalendarImpact, true> = {
     Low: true,
 };
 function toImpact(value: string): CalendarImpact {
+    // `in` 멤버십 검사가 value가 CalendarImpact임을 보장하므로 타입 단언은 안전하다.
     return value in IMPACT_RECORD ? (value as CalendarImpact) : 'Low';
 }
 

@@ -1,5 +1,27 @@
 vi.mock('server-only', () => ({}));
 
+/**
+ * drizzle-orm의 gte/lte를 spy로 래핑해 listInRange 경계 계약을 단언한다.
+ * ESM namespace는 vi.spyOn 불가 — vi.mock 팩토리에서 래핑한다.
+ * and/asc/sql은 실제 구현을 그대로 사용해 쿼리 빌더 체인 동작을 보존한다.
+ */
+const gteSpy = vi.fn();
+const lteSpy = vi.fn();
+vi.mock('drizzle-orm', async importOriginal => {
+    const original = await importOriginal<typeof import('drizzle-orm')>();
+    return {
+        ...original,
+        gte: (...args: Parameters<typeof original.gte>) => {
+            gteSpy(...args);
+            return original.gte(...args);
+        },
+        lte: (...args: Parameters<typeof original.lte>) => {
+            lteSpy(...args);
+            return original.lte(...args);
+        },
+    };
+});
+
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import type { EconomicCalendarEvent } from '@y0ngha/siglens-core';
 import { DrizzleEconomicCalendarRepository } from '@/entities/economy/api/economicCalendarRepository';
@@ -77,6 +99,19 @@ describe('DrizzleEconomicCalendarRepository.upsertEvent', () => {
 
 describe('DrizzleEconomicCalendarRepository.listInRange', () => {
     beforeEach(() => vi.clearAllMocks());
+
+    it('queries with inclusive lower bound and upper bound extended to 23:59:59', async () => {
+        const { db } = makeDb([], []);
+        const repo = new DrizzleEconomicCalendarRepository(db);
+        await repo.listInRange('2026-06-01', '2026-06-30');
+        // gte 두 번째 인수는 fromEt 그대로 (하한 경계 포함)
+        expect(gteSpy).toHaveBeenCalledWith(expect.anything(), '2026-06-01');
+        // lte 두 번째 인수는 toEt + ' 23:59:59' (같은 날 이벤트 누락 방지)
+        expect(lteSpy).toHaveBeenCalledWith(
+            expect.anything(),
+            '2026-06-30 23:59:59'
+        );
+    });
 
     it('maps DB rows to EconomicCalendarEvent and coerces unknown impact to Low', async () => {
         const { db } = makeDb(

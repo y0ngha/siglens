@@ -1,9 +1,23 @@
 vi.mock('server-only', () => ({}));
+
+/**
+ * unstable_cache mock: call-through이지만 (fn, keyParts, options) 인자를 캡처해
+ * 캐시 키·revalidate·tags 계약을 단언할 수 있게 한다.
+ */
+let capturedKeyParts: string[] = [];
+let capturedOptions: Record<string, unknown> = {};
 vi.mock('next/cache', () => ({
     unstable_cache:
-        (fn: (...a: unknown[]) => unknown) =>
-        (...a: unknown[]) =>
-            fn(...a),
+        (
+            fn: (...a: unknown[]) => unknown,
+            keyParts: string[],
+            options: Record<string, unknown>
+        ) =>
+        (...a: unknown[]) => {
+            capturedKeyParts = keyParts;
+            capturedOptions = options;
+            return fn(...a);
+        },
 }));
 vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: () => ({ db: {} }),
@@ -22,11 +36,31 @@ import {
     pastWindowStart,
     futureWindowEnd,
 } from '@/entities/economy/lib/calendarWindow';
+import {
+    ECONOMY_CALENDAR_CACHE_TAG,
+    ECONOMY_CALENDAR_REVALIDATE_SECONDS,
+} from '@/entities/economy/lib/economyCalendarConstants';
 
 describe('getCalendarFromDb', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        capturedKeyParts = [];
+        capturedOptions = {};
         listInRange.mockResolvedValue([]);
+    });
+
+    it('passes the correct cache key parts to unstable_cache', async () => {
+        await getCalendarFromDb('2026-06-20');
+        expect(capturedKeyParts).toContain('economy-calendar-db');
+        expect(capturedKeyParts).toContain('2026-06-20');
+    });
+
+    it('passes the correct revalidate and tags to unstable_cache', async () => {
+        await getCalendarFromDb('2026-06-20');
+        expect(capturedOptions).toMatchObject({
+            revalidate: ECONOMY_CALENDAR_REVALIDATE_SECONDS,
+            tags: [ECONOMY_CALENDAR_CACHE_TAG],
+        });
     });
 
     it('reads the past-window..future-window range around the anchor', async () => {
