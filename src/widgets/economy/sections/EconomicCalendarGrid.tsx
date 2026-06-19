@@ -17,7 +17,7 @@ import { formatNum } from '@/shared/lib/formatNum';
 import { etDateTimeToKst } from '@/shared/lib/etTimeUtils';
 import { useEconomicCalendarTrigger } from '../hooks/useEconomicCalendarTrigger';
 import { ImpactFilter } from './ImpactFilter';
-import { IMPACT_LABELS, IMPACT_ORDER } from './impactMeta';
+import { IMPACT_LABELS, IMPACT_ORDER } from '../utils/impactMeta';
 
 const IMPACT_BADGE: Record<CalendarImpact, string> = {
     High: 'bg-ui-danger/20 text-ui-danger-text',
@@ -573,7 +573,9 @@ export function EconomicCalendarGrid({
                 </span>
             </h2>
 
-            <ImpactFilter value={activeImpacts} onToggle={toggleImpact} />
+            <div className="mb-3">
+                <ImpactFilter value={activeImpacts} onToggle={toggleImpact} />
+            </div>
 
             <div className="border-secondary-700 space-y-6 rounded-xl border p-3 sm:p-4">
                 {months.map(({ year, month }) => (

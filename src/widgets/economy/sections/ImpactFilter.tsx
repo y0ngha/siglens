@@ -3,9 +3,13 @@
 import type { CalendarImpact } from '@y0ngha/siglens-core';
 
 import { cn } from '@/shared/lib/cn';
-import { IMPACT_LABELS, IMPACT_ORDER } from './impactMeta';
+import { IMPACT_LABELS, IMPACT_ORDER } from '../utils/impactMeta';
 
-/** 활성 시 칩 색상 — 그리드 IMPACT_BADGE 색 계열과 일치(임팩트 식별성 유지). ImpactFilter 전용. */
+/**
+ * 활성 칩 색상 — 임팩트 식별성 유지(그리드 IMPACT_BADGE 계열과 일치).
+ * Low의 text-secondary-200은 정적 뱃지(secondary-300)보다 한 단계 밝게 — 인터랙티브
+ * 활성 칩의 affordance·대비를 위한 의도적 차별화(High/Medium도 밝은 ui-*-text 사용).
+ */
 const FILTER_ACTIVE: Record<CalendarImpact, string> = {
     High: 'border-ui-danger/50 bg-ui-danger/15 text-ui-danger-text',
     Medium: 'border-ui-warning/50 bg-ui-warning/15 text-ui-warning-text',
@@ -31,7 +35,7 @@ export function ImpactFilter({ value, onToggle }: ImpactFilterProps) {
         <div
             role="group"
             aria-label="중요도 필터"
-            className="mb-3 flex items-center gap-2"
+            className="flex items-center gap-2"
         >
             {IMPACT_ORDER.map(impact => {
                 const active = value.has(impact);
