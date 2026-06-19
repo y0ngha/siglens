@@ -1,8 +1,11 @@
-import { describe, it, expect } from 'vitest';
+import { vi, describe, it, expect } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import type { EconomicCalendarEvent } from '@y0ngha/siglens-core';
-
 import { EconomicCalendarGrid } from '@/widgets/economy/sections/EconomicCalendarGrid';
+
+vi.mock('@/entities/economy/actions', () => ({
+    ensureEconomicCalendarAction: vi.fn().mockResolvedValue(undefined),
+}));
 
 /**
  * 기준 이벤트: 2026-06-19 19:30:00 ET(-04:00) → KST 2026-06-20 오전 8:30
@@ -232,5 +235,58 @@ describe('EconomicCalendarGrid — 그리드 구조', () => {
         // 가시적 월 레이블(<p>)과 sr-only caption 모두 2026년 6월을 포함하므로
         // 두 요소가 매치된다.
         expect(screen.getAllByText(/2026년 6월/)).toHaveLength(2);
+    });
+});
+
+describe('EconomicCalendarGrid default selection from today', () => {
+    const ev = (date: string): EconomicCalendarEvent => ({
+        date: `${date} 08:30:00`,
+        event: `E ${date}`,
+        impact: 'High',
+        actual: null,
+        estimate: 1,
+        previous: 1,
+        unit: '%',
+    });
+
+    it("selects today's panel when an event exists for today (KST)", () => {
+        // 2026-06-20 08:30 ET → KST 2026-06-20 21:30 → KST date key 2026-06-20.
+        render(
+            <EconomicCalendarGrid
+                events={[ev('2026-06-18'), ev('2026-06-20'), ev('2026-06-25')]}
+                today="2026-06-20"
+            />
+        );
+        // The today day-button is pressed.
+        const todayBtn = screen.getByRole('button', {
+            name: /6월 20일/,
+        });
+        expect(todayBtn).toHaveAttribute('aria-pressed', 'true');
+    });
+
+    it('selects the nearest upcoming day when today has no events', () => {
+        render(
+            <EconomicCalendarGrid
+                events={[ev('2026-06-18'), ev('2026-06-25')]}
+                today="2026-06-20"
+            />
+        );
+        const upcomingBtn = screen.getByRole('button', {
+            name: /6월 25일/,
+        });
+        expect(upcomingBtn).toHaveAttribute('aria-pressed', 'true');
+    });
+
+    it('falls back to the earliest day when all events are in the past', () => {
+        render(
+            <EconomicCalendarGrid
+                events={[ev('2026-06-10'), ev('2026-06-12')]}
+                today="2026-06-20"
+            />
+        );
+        const earliestBtn = screen.getByRole('button', {
+            name: /6월 10일/,
+        });
+        expect(earliestBtn).toHaveAttribute('aria-pressed', 'true');
     });
 });

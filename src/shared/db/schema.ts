@@ -2,6 +2,7 @@ import { sql } from 'drizzle-orm';
 import {
     boolean,
     date,
+    doublePrecision,
     index,
     integer,
     jsonb,
@@ -320,6 +321,45 @@ export const earningsReports = pgTable(
             .defaultNow(),
     },
     table => [primaryKey({ columns: [table.symbol, table.earningsDate] })]
+);
+
+/**
+ * 정규화된 FMP economic-calendar 이벤트 이력 (현재 US만 저장).
+ *
+ * `id`는 country+dateEt+event의 결정론적 해시(`economicCalendarId`)다. `actual`을
+ * 포함하지 않으므로 발표 후 actual이 채워져도 같은 행으로 upsert돼 갱신된다
+ * (#610 그리드의 React key `${date}:${event}:${actual}`와는 의도가 다른 안정 키).
+ *
+ * SP-D에서 별도 마이그레이션으로 sentiment/summaryKo/interpretationKo/analyzedAt가
+ * 추가된다 — SP-A 테이블에는 미포함.
+ */
+export const economicCalendar = pgTable(
+    'economic_calendar',
+    {
+        id: text('id').primaryKey(),
+        country: text('country').notNull(),
+        // FMP 원본 'YYYY-MM-DD HH:mm:ss' (ET 벽시계). KST 변환은 표시 계층(etDateTimeToKst).
+        dateEt: text('date_et').notNull(),
+        event: text('event').notNull(),
+        // 'High' | 'Medium' | 'Low' — text 저장, 읽기 경계에서 검증.
+        impact: text('impact').notNull(),
+        estimate: doublePrecision('estimate'),
+        previous: doublePrecision('previous'),
+        // 발표 전 null; ingestion 재fetch 시 채워짐.
+        actual: doublePrecision('actual'),
+        unit: text('unit').notNull(),
+        fetchedAt: timestamp('fetched_at', { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+    },
+    table => [
+        index('economic_calendar_date_et_idx').on(table.dateEt),
+        index('economic_calendar_country_date_et_idx').on(
+            table.country,
+            table.dateEt
+        ),
+        index('economic_calendar_impact_idx').on(table.impact),
+    ]
 );
 
 /** Postgres enum for legal terms document kinds. */
