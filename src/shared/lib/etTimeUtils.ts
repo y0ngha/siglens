@@ -87,3 +87,59 @@ export function toIsoDateTime(date: string): string {
     const offset = getEtOffset(year, month - 1, day, hour);
     return `${date.replace(' ', 'T')}${offset}`;
 }
+
+/**
+ * `etDateTimeToKst`의 반환 타입.
+ *
+ * - `iso`         : ET ISO-8601 문자열 — HTML `<time dateTime>` 용도.
+ * - `kstDateKey`  : KST 기준 날짜 'YYYY-MM-DD' — 캘린더 그룹핑 키.
+ * - `kstTimeLabel`: KST 시각 레이블 '오전/오후 H:mm' (ko-KR, 한국 표준시).
+ */
+export interface EtToKstResult {
+    iso: string;
+    kstDateKey: string;
+    kstTimeLabel: string;
+}
+
+/**
+ * ET 벽시계 문자열('YYYY-MM-DD HH:mm:ss')을 KST 캘린더 표시용 정보로 변환한다.
+ *
+ * 반환값:
+ * - `iso`         : ET ISO-8601 문자열 — HTML `<time dateTime>` 용도.
+ * - `kstDateKey`  : KST 기준 날짜 'YYYY-MM-DD' — 캘린더 그룹핑 키.
+ * - `kstTimeLabel`: KST 시각 레이블 '오전/오후 H:mm' (ko-KR, 한국 표준시).
+ *
+ * 변환 흐름: ET 로컬 → ISO(ET offset 포함) → `new Date(iso)` → Asia/Seoul Intl 포맷.
+ * `new Date(iso)`는 ISO 오프셋을 포함하므로 UTC 기준으로 정확히 파싱된다.
+ * 날짜 롤오버(예: ET 오후 → KST 다음날)는 Intl.DateTimeFormat이 자동 처리한다.
+ */
+export function etDateTimeToKst(etDate: string): EtToKstResult {
+    const iso = toIsoDateTime(etDate);
+    const d = new Date(iso);
+
+    /**
+     * 'YYYY-MM-DD' 형식으로 KST 날짜 키 생성.
+     * `formatToParts`로 년/월/일을 개별 추출해 직접 조합한다.
+     * `en-CA` 로케일을 직접 format()하면 ICU 버전에 따라 구분자가 '/'로 오거나
+     * 순서가 바뀌어 `split('-')`이 NaN을 반환할 수 있다.
+     */
+    const parts = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'Asia/Seoul',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+    }).formatToParts(d);
+    const year = parts.find(p => p.type === 'year')?.value ?? '';
+    const month = parts.find(p => p.type === 'month')?.value ?? '';
+    const day = parts.find(p => p.type === 'day')?.value ?? '';
+    const kstDateKey = `${year}-${month}-${day}`;
+
+    const kstTimeLabel = new Intl.DateTimeFormat('ko-KR', {
+        timeZone: 'Asia/Seoul',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+    }).format(d);
+
+    return { iso, kstDateKey, kstTimeLabel };
+}
