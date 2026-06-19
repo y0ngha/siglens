@@ -1,5 +1,24 @@
 # Changelog
 
+# [0.24.0](https://github.com/y0ngha/siglens/compare/v0.23.0...v0.24.0) (2026-06-19)
+
+
+### Bug Fixes
+
+* **layout:** 모바일 햄버거 메뉴 — 헤더 backdrop-filter 컨테이닝 블록 트랩 해소 ([08e49b2](https://github.com/y0ngha/siglens/commit/08e49b2da806809ae1258841a75c275feb62e2c4)), closes [#418](https://github.com/y0ngha/siglens/issues/418)
+* **review:** PR [#609](https://github.com/y0ngha/siglens/issues/609) — eslint-disable 제거(useEffectEvent)·훅 순서·네비 auto-close·✕ ([d5b593c](https://github.com/y0ngha/siglens/commit/d5b593c5f80773d6c64cc711ba9cada1371130ca))
+* **review:** PR [#609](https://github.com/y0ngha/siglens/issues/609) R2 — 주석 정확성(§15.6) + ✕ aria-hidden ([2278460](https://github.com/y0ngha/siglens/commit/2278460db9a67d6cab7456043313f69e4d9f0faa))
+* **review:** PR [#609](https://github.com/y0ngha/siglens/issues/609) R3 — closeOnNav 마운트 포커스 가드 + auto-close 테스트 ([bebad56](https://github.com/y0ngha/siglens/commit/bebad56f2b48dc4af3969b7024545a06e5fb693f))
+* **review:** PR [#610](https://github.com/y0ngha/siglens/issues/610) — Intl formatToParts(견고)·toSorted·명명타입·ARIA·정밀단언 ([5d6a19e](https://github.com/y0ngha/siglens/commit/5d6a19e4283738e3fd1a90c5d5d5cc3b55409136))
+* **review:** PR [#610](https://github.com/y0ngha/siglens/issues/610) R3 — props-파생 state 동기화·훅순서 + 주석 정리 ([12855e8](https://github.com/y0ngha/siglens/commit/12855e8c89885479699eb3849741ccbe9b905f9b))
+* **review:** PR [#610](https://github.com/y0ngha/siglens/issues/610) R4 — groupMap/months useMemo·테스트 중복 제거·주석 정리 ([2d3d576](https://github.com/y0ngha/siglens/commit/2d3d576023fe3da443bc13479736513b3117a0f3))
+* **review:** PR [#610](https://github.com/y0ngha/siglens/issues/610) R5 — 훅 순서·role=grid 제거·정밀 단언·dead code ([2190ab5](https://github.com/y0ngha/siglens/commit/2190ab57a2d570c430edcde5d5f33645bd914666))
+
+
+### Features
+
+* **economy:** 경제 캘린더 달력(월 그리드) 재설계 + KST 표시 ([f91881b](https://github.com/y0ngha/siglens/commit/f91881b036260a1192f50ceec9b503ec418eac7f))
+
 # [0.23.0](https://github.com/y0ngha/siglens/compare/v0.22.0...v0.23.0) (2026-06-19)
 
 
