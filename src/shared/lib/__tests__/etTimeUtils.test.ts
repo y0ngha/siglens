@@ -190,10 +190,10 @@ describe('etDateTimeToKst', () => {
         expect(result.kstTimeLabel).toBe('오후 5:00');
     });
 
-    it('iso 필드는 toIsoDateTime 결과와 동일', () => {
-        const etDate = '2026-07-04 14:00:00';
-        const result = etDateTimeToKst(etDate);
-        expect(result.iso).toBe(toIsoDateTime(etDate));
+    it('iso 필드는 ET offset이 부착된 ISO-8601 (7월=EDT -04:00)', () => {
+        // 동어반복(toIsoDateTime과 자기 비교) 대신 구체적 기대값으로 검증.
+        const result = etDateTimeToKst('2026-07-04 14:00:00');
+        expect(result.iso).toBe('2026-07-04T14:00:00-04:00');
     });
 
     it('kstDateKey 형식은 YYYY-MM-DD', () => {
