@@ -51,9 +51,11 @@ export function HeaderMobileMenu({ items }: HeaderMobileMenuProps) {
      * set mounted=true on the first client render while the server had false,
      * causing the mismatch this pattern is designed to prevent.
      *
-     * useEffectEvent wraps setMounted and startTransition isolates the setState
-     * call so the set-state-in-effect lint rule is satisfied — canonical
-     * React 19 pattern (MISTAKES.md §10).
+     * useEffectEvent makes the setState lint-safe: setState inside a useEffectEvent
+     * is not tracked as an effect dependency, so the react-hooks/set-state-in-effect
+     * lint rule does not fire. startTransition separately marks the mount update as
+     * non-urgent (deferred paint) — it is NOT the lint fix. Canonical React 19
+     * pattern (MISTAKES.md §10).
      */
     const markMounted = useEffectEvent(() => {
         startTransition(() => {
@@ -68,8 +70,10 @@ export function HeaderMobileMenu({ items }: HeaderMobileMenuProps) {
     // popstate navigation). Nav link clicks already call close() directly, but
     // history navigation bypasses that handler — leaving the drawer open with
     // body-scroll locked until the user manually dismisses it.
-    // useEffectEvent + startTransition isolates the close() setState call from
-    // the effect body so the set-state-in-effect lint rule is satisfied (MISTAKES.md §10).
+    // useEffectEvent escapes the lint rule: setState inside a useEffectEvent is not
+    // tracked as an effect dependency, so react-hooks/set-state-in-effect does not fire.
+    // startTransition separately marks the close as a non-urgent transition — it is NOT
+    // the lint fix (MISTAKES.md §10).
     const closeOnNav = useEffectEvent(() => {
         startTransition(() => {
             close();
@@ -93,10 +97,11 @@ export function HeaderMobileMenu({ items }: HeaderMobileMenuProps) {
      * The backdrop + drawer are portaled to document.body to escape the header's
      * `backdrop-filter: blur(...)` containing block. Per CSS spec, `backdrop-filter`
      * (like `transform` and `filter`) makes the element the containing block for
-     * `position: fixed` descendants — so without a portal, the drawer's `h-full`
-     * resolves to the header's 56 px height instead of the viewport, and `inset-0`
-     * covers only the header area. Portaling to document.body restores standard
-     * viewport-relative fixed positioning.
+     * `position: fixed` descendants — so without the portal, the fixed inset
+     * coordinates (drawer `top-0 right-0`, backdrop `inset-0`) resolve against
+     * the header's bounding box instead of the viewport, and the backdrop would
+     * cover only the header area, not the full screen. Portaling to document.body
+     * restores standard viewport-relative fixed positioning.
      *
      * Nav links remain crawlable because the desktop `HeaderNavStatic` / `HeaderNav`
      * already renders the same `NAV_ITEMS` server-side; the mobile drawer being
@@ -166,7 +171,7 @@ export function HeaderMobileMenu({ items }: HeaderMobileMenuProps) {
                                     tabIndex={isOpen ? undefined : -1}
                                     className="focus-visible:ring-primary-500 text-secondary-400 hover:text-secondary-100 flex h-11 w-11 touch-manipulation items-center justify-center rounded transition-colors focus-visible:ring-2 focus-visible:outline-none"
                                 >
-                                    ✕
+                                    <span aria-hidden="true">✕</span>
                                 </button>
                             </div>
 
