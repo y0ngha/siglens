@@ -197,7 +197,9 @@ describe('etDateTimeToKst', () => {
     });
 
     it('kstDateKey 형식은 YYYY-MM-DD', () => {
+        // '2026-06-19 09:00:00' EDT(-04:00) → UTC 13:00 → KST +9h = 2026-06-19 22:00 (날짜 동일)
         const result = etDateTimeToKst('2026-06-19 09:00:00');
+        expect(result.kstDateKey).toBe('2026-06-19');
         expect(result.kstDateKey).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     });
 

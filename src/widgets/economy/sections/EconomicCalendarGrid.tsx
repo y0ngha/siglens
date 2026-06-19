@@ -260,17 +260,12 @@ function DayDetailPanel({ group, isSelected }: DayDetailPanelProps) {
 }
 
 interface DayCellProps {
-    /** null이면 선행/후행 공백 셀 */
-    group: DayGroup | null;
+    group: DayGroup;
     isSelected: boolean;
     onSelect: (dateKey: string) => void;
 }
 
 function DayCell({ group, isSelected, onSelect }: DayCellProps) {
-    if (group === null) {
-        return <td aria-hidden="true" />;
-    }
-
     const { day, month, events, dateKey } = group;
     const count = events.length;
 
@@ -399,7 +394,7 @@ function MonthCalendar({
             >
                 {year}년 {MONTH_LABELS[month]}
             </p>
-            <table className="w-full table-fixed border-collapse" role="grid">
+            <table className="w-full table-fixed border-collapse">
                 <caption className="sr-only">{captionText}</caption>
                 <thead>
                     <tr>
@@ -463,10 +458,16 @@ interface EconomicCalendarGridProps {
 export function EconomicCalendarGrid({ events }: EconomicCalendarGridProps) {
     const [selectedDateKey, setSelectedDateKey] = useState('');
     const groups = useMemo(() => groupEventsByKstDay(events), [events]);
+    const groupMap = useMemo(
+        () => new Map<string, DayGroup>(groups.map(g => [g.dateKey, g])),
+        [groups]
+    );
+    const months = useMemo(() => spannedMonths(groups), [groups]);
 
     /**
      * events가 바뀔 때 기본 선택 날짜를 가장 이른 그룹으로 재동기화한다.
-     * useEffectEvent로 감싸 setSelectedDateKey를 effect 의존성 배열에서 제외하고,
+     * useEffectEvent로 감싸 syncDefault 자체를 안정적인 참조로 만들어
+     * useEffect 의존성 배열에서 제외할 수 있게 한다.
      * startTransition으로 감싸 react-hooks/set-state-in-effect 규칙을 만족시킨다
      * (OptionsPageClient.tsx의 captureNow 패턴과 동일).
      */
@@ -478,12 +479,6 @@ export function EconomicCalendarGrid({ events }: EconomicCalendarGridProps) {
     useEffect(() => {
         syncDefault();
     }, [groups]);
-
-    const groupMap = useMemo(
-        () => new Map<string, DayGroup>(groups.map(g => [g.dateKey, g])),
-        [groups]
-    );
-    const months = useMemo(() => spannedMonths(groups), [groups]);
 
     if (events.length === 0) {
         return (
