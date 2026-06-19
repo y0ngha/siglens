@@ -130,7 +130,6 @@ describe('HeaderMobileMenu', () => {
 
         fireEvent.click(screen.getByRole('button', { name: '메뉴 열기' }));
 
-        // The trigger button has aria-controls — it reflects the open state
         const hamburger = container.querySelector(
             'button[aria-controls="mobile-nav-drawer"]'
         );
@@ -247,7 +246,6 @@ describe('HeaderMobileMenu', () => {
         fireEvent.click(screen.getByRole('button', { name: '메뉴 열기' }));
         expect(screen.getByRole('dialog')).toBeInTheDocument();
 
-        // The drawer has its own X close button with distinct aria-label
         fireEvent.click(screen.getByRole('button', { name: '메뉴 패널 닫기' }));
         expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     });
@@ -312,5 +310,22 @@ describe('HeaderMobileMenu', () => {
         expect(
             screen.getByRole('button', { name: '메뉴 열기' })
         ).toHaveAttribute('aria-expanded', 'false');
+    });
+
+    it('pathname이 변경되면 열린 드로어를 자동으로 닫는다', () => {
+        vi.mocked(usePathname).mockReturnValue('/');
+        const { rerender } = render(<HeaderMobileMenu items={NAV_ITEMS} />);
+
+        fireEvent.click(screen.getByRole('button', { name: '메뉴 열기' }));
+        expect(screen.getByRole('dialog')).toBeInTheDocument();
+
+        // Simulate navigation: usePathname returns a new value → rerender triggers
+        // the pathname useEffect → closeOnNav runs → drawer closes.
+        // The isOpen guard in closeOnNav lets the effect fire because the drawer IS
+        // open at this point (no spurious no-op on mount concern here).
+        vi.mocked(usePathname).mockReturnValue('/news');
+        rerender(<HeaderMobileMenu items={NAV_ITEMS} />);
+
+        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     });
 });

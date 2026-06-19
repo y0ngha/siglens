@@ -75,6 +75,7 @@ export function HeaderMobileMenu({ items }: HeaderMobileMenuProps) {
     // startTransition separately marks the close as a non-urgent transition — it is NOT
     // the lint fix (MISTAKES.md §10).
     const closeOnNav = useEffectEvent(() => {
+        if (!isOpen) return; // already closed: nothing to do (avoids spurious focus() on mount)
         startTransition(() => {
             close();
         });
