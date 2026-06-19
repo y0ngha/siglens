@@ -358,7 +358,7 @@ describe('useFinancialsAnalysis — branch coverage', () => {
         const realNow = Date.now;
         const frozenStart = realNow();
         let callCount = 0;
-        vi.spyOn(Date, 'now').mockImplementation(() => {
+        const dateSpy = vi.spyOn(Date, 'now').mockImplementation(() => {
             // First call (pollStart = Date.now()) returns current time.
             // Second call (ceiling check inside while loop) returns time past ceiling.
             callCount += 1;
@@ -383,7 +383,7 @@ describe('useFinancialsAnalysis — branch coverage', () => {
                 '너무 오래 걸립니다'
             );
         } finally {
-            vi.spyOn(Date, 'now').mockRestore();
+            dateSpy.mockRestore();
         }
     });
 });

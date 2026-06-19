@@ -11,6 +11,7 @@ import type { MockedFunction, Mock } from 'vitest';
 import { useCongressTrend } from '@/widgets/congress/hooks/useCongressTrend';
 import { useHydrated } from '@/shared/hooks/useHydrated';
 import { usePageHideCancel } from '@/shared/hooks/usePageHideCancel';
+import { ANALYSIS_POLL_MAX_DURATION_MS } from '@/shared/config/pollingConfig';
 import {
     cancelCongressTrendJobAction,
     pollCongressTrendAction,
@@ -254,7 +255,7 @@ describe('useCongressTrend — branch coverage', () => {
             const dateSpy = vi
                 .spyOn(Date, 'now')
                 .mockReturnValueOnce(now) // pollStartTime 기록 시
-                .mockReturnValue(now + 5 * 60 * 1000 + 1); // 첫 번째 ceiling 체크 시
+                .mockReturnValue(now + ANALYSIS_POLL_MAX_DURATION_MS + 1); // 첫 번째 ceiling 체크 시
 
             const wrapper = makeWrapper();
             const { result } = renderHook(
@@ -285,7 +286,7 @@ describe('useCongressTrend — branch coverage', () => {
             const dateSpy = vi
                 .spyOn(Date, 'now')
                 .mockReturnValueOnce(now)
-                .mockReturnValue(now + 5 * 60 * 1000 + 1);
+                .mockReturnValue(now + ANALYSIS_POLL_MAX_DURATION_MS + 1);
 
             const wrapper = makeWrapper();
             const { result } = renderHook(

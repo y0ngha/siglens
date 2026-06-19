@@ -3,8 +3,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import type {
-    PollMacroBriefingDone,
+    PollMacroBriefingProcessing,
     PollMacroBriefingError,
+    PollMacroBriefingDone,
 } from '@y0ngha/siglens-core';
 
 import { pollMacroBriefingAction } from '@/entities/economy/actions/pollMacroBriefingAction';
@@ -19,7 +20,7 @@ const POLL_INTERVAL_MS = 5_000;
  * error variant는 재시도 버튼이, processing variant는 아직 로딩 중임을 표시한다.
  */
 type MacroBriefingPollVariant =
-    | { status: 'processing' }
+    | PollMacroBriefingProcessing
     | PollMacroBriefingError
     | PollMacroBriefingDone;
 
