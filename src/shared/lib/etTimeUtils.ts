@@ -134,7 +134,6 @@ export function etDateTimeToKst(etDate: string): EtToKstResult {
     const day = parts.find(p => p.type === 'day')?.value ?? '';
     const kstDateKey = `${year}-${month}-${day}`;
 
-    // '오전/오후 H:mm' 형식(ko-KR, 12시간제)으로 KST 시각 레이블 생성.
     const kstTimeLabel = new Intl.DateTimeFormat('ko-KR', {
         timeZone: 'Asia/Seoul',
         hour: 'numeric',

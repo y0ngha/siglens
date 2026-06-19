@@ -35,6 +35,9 @@ const IMPACT_DOT: Record<CalendarImpact, string> = {
     Low: 'bg-secondary-400',
 };
 
+/** 임팩트 점 렌더 순서 — High → Medium → Low */
+const IMPACT_ORDER: readonly CalendarImpact[] = ['High', 'Medium', 'Low'];
+
 /** 7열 그리드 요일 헤더 (일요일 시작) */
 const WEEKDAY_LABELS = ['일', '월', '화', '수', '목', '금', '토'] as const;
 
@@ -276,8 +279,7 @@ function DayCell({ group, isSelected, onSelect }: DayCellProps) {
      * 동일 날짜에 High가 여러 건이어도 점은 1개만 표시한다(시각적 노이즈 감소).
      */
     const impactSet = new Set(events.map(e => e.original.impact));
-    const impactOrder: CalendarImpact[] = ['High', 'Medium', 'Low'];
-    const dots = impactOrder.filter(i => impactSet.has(i));
+    const dots = IMPACT_ORDER.filter(i => impactSet.has(i));
 
     return (
         <td className="p-0.5 align-top">
@@ -327,7 +329,6 @@ function DayCell({ group, isSelected, onSelect }: DayCellProps) {
                     {count}건
                 </span>
 
-                {/* sm 이상: 인라인 이벤트 미리보기 (최대 2건) */}
                 <span className="mt-1 hidden space-y-0.5 sm:block">
                     {events.slice(0, INLINE_EVENT_MAX).map(ev => (
                         <span
@@ -369,7 +370,6 @@ function MonthCalendar({
     /** 1일의 요일 (0=일 … 6=토) */
     const firstDow = new Date(Date.UTC(year, month, 1)).getUTCDay();
 
-    // 불변 선언으로 구성(push 미사용).
     const rawCells: (DayGroup | null)[] = [
         ...Array<null>(firstDow).fill(null),
         ...Array.from({ length: totalDays }, (_, i) => {
@@ -479,6 +479,12 @@ export function EconomicCalendarGrid({ events }: EconomicCalendarGridProps) {
         syncDefault();
     }, [groups]);
 
+    const groupMap = useMemo(
+        () => new Map<string, DayGroup>(groups.map(g => [g.dateKey, g])),
+        [groups]
+    );
+    const months = useMemo(() => spannedMonths(groups), [groups]);
+
     if (events.length === 0) {
         return (
             <section aria-labelledby="economy-calendar-heading">
@@ -497,9 +503,6 @@ export function EconomicCalendarGrid({ events }: EconomicCalendarGridProps) {
             </section>
         );
     }
-
-    const groupMap = new Map<string, DayGroup>(groups.map(g => [g.dateKey, g]));
-    const months = spannedMonths(groups);
 
     return (
         <section aria-labelledby="economy-calendar-heading">
