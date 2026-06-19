@@ -80,7 +80,7 @@ export function TechnicalFactsSummary({
                     </dd>
                 </div>
             </dl>
-            <p className="text-secondary-500 text-xs">
+            <p className="text-secondary-400 text-xs">
                 위 지표는 실시간 시세 기반 자동 계산값입니다.
             </p>
         </section>

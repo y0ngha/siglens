@@ -39,7 +39,7 @@ export function PeriodToggle({ value, onChange }: PeriodToggleProps) {
                     aria-pressed={period === value}
                     onClick={() => onChange(period)}
                     className={cn(
-                        'focus-visible:ring-primary-500 touch-manipulation rounded border px-3 py-1 text-sm font-medium transition-colors focus-visible:ring-1 focus-visible:outline-none',
+                        'focus-visible:ring-primary-500 inline-flex min-h-11 touch-manipulation items-center justify-center rounded border px-4 py-2 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none',
                         period === value
                             ? 'border-primary-400 text-primary-400'
                             : 'text-secondary-400 hover:text-secondary-200 border-transparent'

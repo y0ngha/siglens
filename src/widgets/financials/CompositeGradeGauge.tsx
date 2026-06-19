@@ -22,28 +22,29 @@ interface SegmentDef {
 }
 
 /**
- * 5-segment palette using design-system semantic tokens:
- *   0–34   → text-ui-danger       (F/D — danger)
- *   35–49  → text-ui-warning      (D/C — caution)
- *   50–64  → text-secondary-400   (C — neutral)
- *   65–79  → text-ui-success/60   (B — lighter success)
- *   80–100 → text-ui-success      (A — strongest success)
+ * 5-segment palette using the grade-ramp design tokens.
+ * Each band maps exactly to the grade cutoffs from financialsScorecard (core):
+ *   0–34   → text-grade-f  (F — red)
+ *   35–49  → text-grade-d  (D — orange)
+ *   50–64  → text-grade-c  (C — yellow)
+ *   65–79  → text-grade-b  (B — lime)
+ *   80–100 → text-grade-a  (A — green)
  */
 const SEGMENTS: ReadonlyArray<SegmentDef> = [
-    { from: 0, to: 35, strokeClass: 'text-ui-danger' },
-    { from: 35, to: 50, strokeClass: 'text-ui-warning' },
-    { from: 50, to: 65, strokeClass: 'text-secondary-400' },
-    { from: 65, to: 80, strokeClass: 'text-ui-success/60' },
-    { from: 80, to: 100, strokeClass: 'text-ui-success' },
+    { from: 0, to: 35, strokeClass: 'text-grade-f' },
+    { from: 35, to: 50, strokeClass: 'text-grade-d' },
+    { from: 50, to: 65, strokeClass: 'text-grade-c' },
+    { from: 65, to: 80, strokeClass: 'text-grade-b' },
+    { from: 80, to: 100, strokeClass: 'text-grade-a' },
 ];
 
-/** Grade → large letter text color (semantic tokens only). */
+/** Grade → large letter text color (grade-ramp tokens). */
 const GRADE_TEXT_COLOR: Record<FinancialsGrade, string> = {
-    A: 'text-ui-success',
-    B: 'text-chart-bullish',
-    C: 'text-ui-warning',
-    D: 'text-ui-danger',
-    F: 'text-chart-bearish',
+    A: 'text-grade-a',
+    B: 'text-grade-b',
+    C: 'text-grade-c',
+    D: 'text-grade-d',
+    F: 'text-grade-f',
 };
 
 const GAUGE_CX = 100;

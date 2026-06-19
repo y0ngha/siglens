@@ -60,10 +60,13 @@ export function StatementTable({
                 )}
                 <thead>
                     <tr className="text-secondary-400 border-secondary-700 border-b text-xs tracking-widest uppercase">
-                        <th className="pb-2 text-left font-medium">지표</th>
+                        <th scope="col" className="pb-2 text-left font-medium">
+                            지표
+                        </th>
                         {columns.map(col => (
                             <th
                                 key={col}
+                                scope="col"
                                 className="pb-2 text-right font-medium"
                             >
                                 {col}
@@ -77,12 +80,15 @@ export function StatementTable({
                             key={row.labelKo}
                             className="hover:bg-secondary-800/40 border-secondary-700/50 border-b transition-colors last:border-b-0"
                         >
-                            <td className="text-secondary-300 py-2.5 pr-4 text-xs font-medium whitespace-nowrap">
+                            <th
+                                scope="row"
+                                className="text-secondary-300 py-2.5 pr-4 text-left text-xs font-normal whitespace-nowrap"
+                            >
                                 {row.labelKo}
                                 {row.tooltip && (
                                     <span className="ml-1">{row.tooltip}</span>
                                 )}
-                            </td>
+                            </th>
                             {row.values.map((v, j) => {
                                 const formatted = formatValue(v, row.format);
                                 const isNegative = v !== null && v < 0;
@@ -94,7 +100,7 @@ export function StatementTable({
                                         className={cn(
                                             'py-2.5 text-right font-mono text-xs tabular-nums',
                                             formatted === '—'
-                                                ? 'text-secondary-500'
+                                                ? 'text-secondary-400'
                                                 : isNegative
                                                   ? 'text-chart-bearish'
                                                   : isPositive

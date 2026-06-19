@@ -18,7 +18,7 @@ export function FearGreedCard({ snapshot }: FearGreedCardProps) {
     if (!snapshot) {
         return (
             <section className="bg-secondary-800/40 rounded p-3">
-                <div className="text-secondary-500 text-sm">
+                <div className="text-secondary-400 text-sm">
                     공포 탐욕 지수 데이터 부족
                 </div>
             </section>
@@ -68,7 +68,7 @@ export function FearGreedCard({ snapshot }: FearGreedCardProps) {
                                 </span>
                                 <span className="font-mono">
                                     {formatFactorRaw(f.key, f.rawValue)}
-                                    <span className="text-secondary-500 ml-1">
+                                    <span className="text-secondary-400 ml-1">
                                         ({Math.round(f.percentile)}th)
                                     </span>
                                 </span>
@@ -78,7 +78,7 @@ export function FearGreedCard({ snapshot }: FearGreedCardProps) {
                 </div>
             ))}
 
-            <footer className="text-secondary-500 text-[10px]">
+            <footer className="text-secondary-400 text-[10px]">
                 {formatConfidenceFooter(
                     snapshot.sampleSize,
                     snapshot.confidence

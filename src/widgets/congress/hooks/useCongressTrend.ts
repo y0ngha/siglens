@@ -10,7 +10,10 @@ import {
 } from '@/entities/analysis/actions';
 import { sleep } from '@/shared/lib/sleep';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
-import { ANALYSIS_POLL_INTERVAL_MS } from '@/shared/config/pollingConfig';
+import {
+    ANALYSIS_POLL_INTERVAL_MS,
+    ANALYSIS_POLL_MAX_DURATION_MS,
+} from '@/shared/config/pollingConfig';
 import { usePageHideCancel } from '@/shared/hooks/usePageHideCancel';
 import { useHydrated } from '@/shared/hooks/useHydrated';
 import { BotBlockedError } from '@/widgets/symbol-page';
@@ -65,9 +68,15 @@ async function fetchCongressTrend(
     }
 
     onJobId(submitted.jobId);
+    const pollStartTime = Date.now();
     try {
         const { jobId } = submitted;
         while (!signal.aborted) {
+            if (Date.now() - pollStartTime >= ANALYSIS_POLL_MAX_DURATION_MS) {
+                throw new Error(
+                    '동향 해석이 응답하지 않습니다. 잠시 후 다시 시도해 주세요.'
+                );
+            }
             await sleep(ANALYSIS_POLL_INTERVAL_MS);
             if (signal.aborted) break;
             const polled = await pollCongressTrendAction(jobId);

@@ -20,13 +20,13 @@ interface AxisScoreCardProps {
     axis: AxisScore;
 }
 
-/** Grade badge background + text colors (semantic tokens only). */
+/** Grade badge background + text colors (grade-ramp tokens). */
 const GRADE_BADGE_CLASS: Record<FinancialsGrade, string> = {
-    A: 'bg-ui-success/10 text-ui-success',
-    B: 'bg-chart-bullish/10 text-chart-bullish',
-    C: 'bg-ui-warning/10 text-ui-warning',
-    D: 'bg-ui-danger/10 text-ui-danger',
-    F: 'bg-chart-bearish/10 text-chart-bearish',
+    A: 'bg-grade-a/10 text-grade-a',
+    B: 'bg-grade-b/10 text-grade-b',
+    C: 'bg-grade-c/10 text-grade-c',
+    D: 'bg-grade-d/10 text-grade-d',
+    F: 'bg-grade-f/10 text-grade-f',
 };
 
 /** Signal chip colors keyed by direction. */
@@ -63,13 +63,13 @@ function formatMetricValue(
     }
 }
 
-/** Progress bar for the axis score (0–100), colored by grade. */
+/** Progress bar for the axis score (0–100), colored by grade (grade-ramp tokens). */
 const PROGRESS_GRADE_COLOR: Record<FinancialsGrade, string> = {
-    A: 'bg-ui-success',
-    B: 'bg-chart-bullish',
-    C: 'bg-ui-warning',
-    D: 'bg-ui-danger',
-    F: 'bg-chart-bearish',
+    A: 'bg-grade-a',
+    B: 'bg-grade-b',
+    C: 'bg-grade-c',
+    D: 'bg-grade-d',
+    F: 'bg-grade-f',
 };
 
 interface SignalChipProps {

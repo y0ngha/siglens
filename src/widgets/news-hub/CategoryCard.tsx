@@ -42,7 +42,7 @@ export function CategoryCard({
             <h2 className="mb-1 text-base font-semibold tracking-tight text-balance">
                 {koLabel}
             </h2>
-            <p className="text-secondary-500 mb-3 text-xs leading-relaxed">
+            <p className="text-secondary-400 mb-3 text-xs leading-relaxed">
                 {koDescription}
             </p>
 
@@ -63,14 +63,14 @@ export function CategoryCard({
                     ))}
                 </ul>
             ) : (
-                <p className="text-secondary-500 mb-4 text-sm">
+                <p className="text-secondary-400 mb-4 text-sm">
                     최신 뉴스를 불러오고 있어요.
                 </p>
             )}
 
             <Link
                 href={`/news/${slug}`}
-                className="text-primary-400 hover:text-primary-300 focus-visible:ring-primary-500 mt-auto text-sm transition-colors focus-visible:ring-1 focus-visible:outline-none"
+                className="text-primary-400 hover:text-primary-300 focus-visible:ring-primary-500 mt-auto text-sm transition-colors focus-visible:ring-2 focus-visible:outline-none"
                 aria-label={`${koLabel} 뉴스 더보기`}
             >
                 더보기 <span aria-hidden="true">→</span>

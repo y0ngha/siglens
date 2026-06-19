@@ -152,7 +152,7 @@ export function MarketNewsList({
                 <button
                     type="button"
                     onClick={() => setVisibleCount(c => c + PAGE_SIZE)}
-                    className="border-secondary-700 text-secondary-400 hover:text-secondary-100 focus-visible:ring-primary-500 w-full rounded-lg border py-2 text-sm transition-colors focus-visible:ring-1 focus-visible:outline-none"
+                    className="border-secondary-700 text-secondary-400 hover:text-secondary-100 focus-visible:ring-primary-500 inline-flex min-h-11 w-full items-center justify-center rounded-lg border py-2 text-sm transition-colors focus-visible:ring-2 focus-visible:outline-none"
                 >
                     더보기 ({items.length - visibleCount}개 남음)
                 </button>

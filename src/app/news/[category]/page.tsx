@@ -75,12 +75,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const cat = categoryFromSlug(slug);
 
     if (!cat) {
-        // 잘못된 slug — noindex, canonical null(루트 layout canonical 상속 방지).
+        // 잘못된 slug — not-found.tsx가 404와 robots 메타데이터를 담당하므로
+        // 여기서 robots/alternates를 중복 설정하지 않는다(이중 robots 태그 방지).
         return {
             title: '뉴스 카테고리를 찾을 수 없어요',
             description: '요청하신 뉴스 카테고리가 존재하지 않아요.',
-            robots: { index: false, follow: false },
-            alternates: { canonical: null },
         };
     }
 

@@ -45,7 +45,7 @@ export function SymbolLayoutHeader({ symbol }: SymbolLayoutHeaderProps) {
                 <div className="flex min-w-0 items-center gap-2 sm:flex-1">
                     <Link
                         href="/"
-                        className="text-secondary-500 hover:text-secondary-300 font-mono text-xs tracking-[0.2em] uppercase transition-colors"
+                        className="text-secondary-400 hover:text-secondary-300 font-mono text-xs tracking-[0.2em] uppercase transition-colors"
                     >
                         SIGLENS
                     </Link>
@@ -91,7 +91,7 @@ export function SymbolLayoutHeader({ symbol }: SymbolLayoutHeaderProps) {
                 </div>
 
                 <div className="flex items-center gap-2 sm:order-3 sm:shrink-0">
-                    <span className="text-secondary-500 text-xs whitespace-nowrap">
+                    <span className="text-secondary-400 text-xs whitespace-nowrap">
                         AI 분석 모델
                     </span>
                     <ModelSelector

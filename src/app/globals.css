@@ -106,6 +106,14 @@
     --color-ui-warning: #f59e0b;
     --color-ui-danger: #ef5350;
 
+    /* Financials letter-grade ramp (A best → F worst). 5 distinct hues so
+       adjacent grades are distinguishable by color alone, not opacity. */
+    --color-grade-a: #22c55e; /* green  — A (≥80) */
+    --color-grade-b: #84cc16; /* lime   — B (65–79) */
+    --color-grade-c: #eab308; /* yellow — C (50–64) */
+    --color-grade-d: #f97316; /* orange — D (35–49) */
+    --color-grade-f: #ef5350; /* red    — F (0–34) */
+
     /* Brand — Social login */
     --color-brand-kakao: #fee500;
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import type {
     MacroBriefingResponse,
@@ -44,6 +44,8 @@ export type MacroBriefingInput =
 
 export interface UseMacroBriefingReturn {
     input: MacroBriefingInput;
+    /** Re-triggers the submit action. Call when `input === 'error'` to retry. */
+    refetch: () => void;
 }
 
 /**
@@ -56,12 +58,19 @@ export function useMacroBriefing(
     peekSeed?: MacroBriefingResponse | null
 ): UseMacroBriefingReturn {
     const isHydrated = useHydrated();
-    const { data } = useQuery({
+
+    // §17 exception: `refetch` is destructured immediately after useQuery
+    // because it feeds the useCallback below.
+    const { data, refetch: queryRefetch } = useQuery({
         queryKey: QUERY_KEYS.macroBriefing(),
         queryFn: submitMacroBriefingAction,
         enabled: isHydrated,
         staleTime: Infinity,
     });
+
+    const refetch = useCallback(() => {
+        void queryRefetch();
+    }, [queryRefetch]);
 
     const seedInput = useMemo<SeedMacroBriefingCached | undefined>(
         () =>
@@ -71,8 +80,8 @@ export function useMacroBriefing(
         [peekSeed]
     );
 
-    if (!data) return { input: seedInput };
-    if ('ok' in data) return { input: 'error' };
-    if (data.botBlocked) return { input: null };
-    return { input: data.briefing };
+    if (!data) return { input: seedInput, refetch };
+    if ('ok' in data) return { input: 'error', refetch };
+    if (data.botBlocked) return { input: null, refetch };
+    return { input: data.briefing, refetch };
 }

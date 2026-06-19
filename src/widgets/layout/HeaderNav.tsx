@@ -20,8 +20,9 @@ export function HeaderNav({ items }: HeaderNavProps) {
         <nav aria-label="주요 네비게이션" className="flex gap-1 sm:gap-4">
             {items.map(item => {
                 const isActive =
-                    pathname === item.href ||
-                    pathname.startsWith(`${item.href}/`);
+                    pathname !== null &&
+                    (pathname === item.href ||
+                        pathname.startsWith(`${item.href}/`));
                 return (
                     <Link
                         key={item.href}

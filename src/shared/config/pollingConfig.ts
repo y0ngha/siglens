@@ -29,3 +29,11 @@ export const NEWS_CARD_EMPTY_SNAPSHOT_MAX_POLLS = 20;
 
 /** Card polling — overall hard ceiling. */
 export const NEWS_CARD_MAX_POLL_DURATION_MS = 5 * MS_PER_MINUTE;
+
+/**
+ * Analysis job polling — overall hard ceiling shared across long-running LLM
+ * jobs (Congress, Financials, etc.).  If the worker stalls in `processing` for
+ * longer than this, the poll loop breaks and surfaces an error so the user can
+ * retry rather than seeing an infinite skeleton.
+ */
+export const ANALYSIS_POLL_MAX_DURATION_MS = 5 * MS_PER_MINUTE;
