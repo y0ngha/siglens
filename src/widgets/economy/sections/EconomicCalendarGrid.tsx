@@ -17,12 +17,7 @@ import { formatNum } from '@/shared/lib/formatNum';
 import { etDateTimeToKst } from '@/shared/lib/etTimeUtils';
 import { useEconomicCalendarTrigger } from '../hooks/useEconomicCalendarTrigger';
 import { ImpactFilter } from './ImpactFilter';
-
-const IMPACT_LABELS: Record<CalendarImpact, string> = {
-    High: '높음',
-    Medium: '보통',
-    Low: '낮음',
-};
+import { IMPACT_LABELS, IMPACT_ORDER } from './impactMeta';
 
 const IMPACT_BADGE: Record<CalendarImpact, string> = {
     High: 'bg-ui-danger/20 text-ui-danger-text',
@@ -36,9 +31,6 @@ const IMPACT_DOT: Record<CalendarImpact, string> = {
     Medium: 'bg-ui-warning',
     Low: 'bg-secondary-400',
 };
-
-/** 임팩트 점 렌더 순서 — High → Medium → Low */
-const IMPACT_ORDER: readonly CalendarImpact[] = ['High', 'Medium', 'Low'];
 
 /** 7열 그리드 요일 헤더 (일요일 시작) */
 const WEEKDAY_LABELS = ['일', '월', '화', '수', '목', '금', '토'] as const;
@@ -287,18 +279,21 @@ function DayCell({ group, isSelected, activeImpacts, onSelect }: DayCellProps) {
     /**
      * 활성 impact만 남긴 이벤트 — 셀의 점·건수·인라인 미리보기에 사용.
      * 시각 필터(셀은 SEO 비핵심, 전체 텍스트는 상세 패널이 DOM에 보유).
-     */
-    const visibleEvents = group.events.filter(e =>
-        activeImpacts.has(e.original.impact)
-    );
-    const count = visibleEvents.length;
-
-    /**
+     *
      * 임팩트 종류 집합 — 점 렌더 순서(High → Medium → Low)를 위해 순서 유지.
      * 동일 날짜에 High가 여러 건이어도 점은 1개만 표시한다(시각적 노이즈 감소).
      */
-    const impactSet = new Set(visibleEvents.map(e => e.original.impact));
-    const dots = IMPACT_ORDER.filter(i => impactSet.has(i));
+    const { visibleEvents, count, dots } = useMemo(() => {
+        const visibleEvents = group.events.filter(e =>
+            activeImpacts.has(e.original.impact)
+        );
+        const impactSet = new Set(visibleEvents.map(e => e.original.impact));
+        return {
+            visibleEvents,
+            count: visibleEvents.length,
+            dots: IMPACT_ORDER.filter(i => impactSet.has(i)),
+        };
+    }, [group.events, activeImpacts]);
 
     return (
         <td className="p-0.5 align-top">
@@ -520,6 +515,17 @@ export function EconomicCalendarGrid({
     );
     const months = useMemo(() => spannedMonths(groups), [groups]);
 
+    /**
+     * events/today가 바뀔 때 기본 선택 날짜를 재동기화한다(오늘 → 가장 가까운 미래 →
+     * 가장 이른 그룹). useEffectEvent로 감싸 안정 참조를 만들고 startTransition으로
+     * react-hooks/set-state-in-effect를 만족시킨다(기존 패턴 유지).
+     */
+    const syncDefault = useEffectEvent((): void => {
+        startTransition(() => {
+            setSelectedDateKey(pickDefaultDateKey(groups, today));
+        });
+    });
+
     function toggleImpact(impact: CalendarImpact): void {
         setActiveImpacts(prev => {
             const next = new Set(prev);
@@ -532,16 +538,6 @@ export function EconomicCalendarGrid({
         });
     }
 
-    /**
-     * events/today가 바뀔 때 기본 선택 날짜를 재동기화한다(오늘 → 가장 가까운 미래 →
-     * 가장 이른 그룹). useEffectEvent로 감싸 안정 참조를 만들고 startTransition으로
-     * react-hooks/set-state-in-effect를 만족시킨다(기존 패턴 유지).
-     */
-    const syncDefault = useEffectEvent((): void => {
-        startTransition(() => {
-            setSelectedDateKey(pickDefaultDateKey(groups, today));
-        });
-    });
     useEffect(() => {
         syncDefault();
     }, [groups, today]);

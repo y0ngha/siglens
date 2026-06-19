@@ -3,18 +3,9 @@
 import type { CalendarImpact } from '@y0ngha/siglens-core';
 
 import { cn } from '@/shared/lib/cn';
+import { IMPACT_LABELS, IMPACT_ORDER } from './impactMeta';
 
-/** 필터 칩 렌더 순서 — High → Medium → Low (그리드 IMPACT_ORDER와 동일) */
-const FILTER_IMPACTS: readonly CalendarImpact[] = ['High', 'Medium', 'Low'];
-
-/** 칩 한국어 레이블 — 그리드 IMPACT_LABELS와 동일하게 유지 */
-const FILTER_LABEL: Record<CalendarImpact, string> = {
-    High: '높음',
-    Medium: '보통',
-    Low: '낮음',
-};
-
-/** 활성 시 칩 색상 — 그리드 IMPACT_BADGE 색 계열과 일치(임팩트 식별성 유지) */
+/** 활성 시 칩 색상 — 그리드 IMPACT_BADGE 색 계열과 일치(임팩트 식별성 유지). ImpactFilter 전용. */
 const FILTER_ACTIVE: Record<CalendarImpact, string> = {
     High: 'border-ui-danger/50 bg-ui-danger/15 text-ui-danger-text',
     Medium: 'border-ui-warning/50 bg-ui-warning/15 text-ui-warning-text',
@@ -42,7 +33,7 @@ export function ImpactFilter({ value, onToggle }: ImpactFilterProps) {
             aria-label="중요도 필터"
             className="mb-3 flex items-center gap-2"
         >
-            {FILTER_IMPACTS.map(impact => {
+            {IMPACT_ORDER.map(impact => {
                 const active = value.has(impact);
                 return (
                     <button
@@ -64,7 +55,7 @@ export function ImpactFilter({ value, onToggle }: ImpactFilterProps) {
                                 active ? 'bg-current' : 'bg-secondary-600'
                             )}
                         />
-                        {FILTER_LABEL[impact]}
+                        {IMPACT_LABELS[impact]}
                     </button>
                 );
             })}
