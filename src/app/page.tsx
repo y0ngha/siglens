@@ -13,6 +13,9 @@ import { TickerCategories } from '@/widgets/home/TickerCategories';
 import Link from 'next/link';
 import { cache, Suspense } from 'react';
 
+// hrefs mirror NAV_ITEMS in `widgets/layout/headerNavItems.ts` (labels differ:
+// CTA style vs short nav label). If the top-level nav destinations change,
+// update both. (MISTAKES.md §16.5 — cross-module value duplication intent.)
 const HERO_QUICK_LINKS = [
     { href: '/market', label: '오늘 주목할 종목' },
     { href: '/news', label: '마켓 뉴스' },

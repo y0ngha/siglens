@@ -1,6 +1,7 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
-
+// vi.mock → imports 순서 (MISTAKES.md Tests §17)
 vi.mock('@/shared/api/e2eEnv', () => ({ isE2E: () => false }));
+
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 describe('getCongressTradesProvider (prod)', () => {
     afterEach(() => {
