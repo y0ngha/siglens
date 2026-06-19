@@ -180,9 +180,14 @@ function kstDayOfWeekLabel(dateKey: string): string {
 interface DayDetailPanelProps {
     group: DayGroup;
     isSelected: boolean;
+    activeImpacts: ReadonlySet<CalendarImpact>;
 }
 
-function DayDetailPanel({ group, isSelected }: DayDetailPanelProps) {
+function DayDetailPanel({
+    group,
+    isSelected,
+    activeImpacts,
+}: DayDetailPanelProps) {
     const { month, day, dateKey } = group;
     const dowLabel = kstDayOfWeekLabel(dateKey);
 
@@ -214,6 +219,7 @@ function DayDetailPanel({ group, isSelected }: DayDetailPanelProps) {
                 {group.events.map(ev => (
                     <li
                         key={`${ev.iso}:${ev.original.event}:${ev.original.actual ?? ''}`}
+                        hidden={!activeImpacts.has(ev.original.impact)}
                         className="border-secondary-700 bg-secondary-800/50 rounded-lg border p-3"
                     >
                         <div className="flex flex-wrap items-start justify-between gap-2">
@@ -597,6 +603,7 @@ export function EconomicCalendarGrid({
                         key={group.dateKey}
                         group={group}
                         isSelected={group.dateKey === selectedDateKey}
+                        activeImpacts={activeImpacts}
                     />
                 ))}
             </div>

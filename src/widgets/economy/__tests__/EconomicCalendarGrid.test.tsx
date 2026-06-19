@@ -113,6 +113,9 @@ describe('EconomicCalendarGrid — 날짜 선택', () => {
 
     it('다른 날짜 클릭 후 해당 날 상세가 표시된다', () => {
         render(<EconomicCalendarGrid events={[EVENT_A, EVENT_C]} />);
+        // EVENT_C는 Low impact → 기본 필터 Low OFF이므로 먼저 Low 칩을 켠다.
+        const group = screen.getByRole('group', { name: '중요도 필터' });
+        fireEvent.click(within(group).getByRole('button', { name: '낮음' }));
         const btn21 = screen.getByRole('button', { name: /6월 21일/ });
         fireEvent.click(btn21);
         // EVENT_C(6/21)의 이벤트 이름이 보여야 한다
@@ -345,5 +348,61 @@ describe('EconomicCalendarGrid — 중요도 필터 (기본 상태 · 셀 건수
         expect(
             screen.getByRole('button', { name: /6월 20일.*이벤트 1건/ })
         ).toBeInTheDocument();
+    });
+});
+
+describe('EconomicCalendarGrid — 중요도 필터 (상세 패널 · DOM 유지)', () => {
+    it('비활성 impact 이벤트도 상세 패널 DOM에 남는다 (크롤러 색인)', () => {
+        // EVENT_C(Low) → KST 6/21. 기본 필터 Low OFF.
+        // 6/21을 선택해 패널을 열어도, Low 항목은 hidden이지만 DOM엔 존재해야 한다.
+        const { container } = render(
+            <EconomicCalendarGrid events={[EVENT_A, EVENT_B, EVENT_C]} />
+        );
+        const group = screen.getByRole('group', { name: '중요도 필터' });
+        // 패널을 열기 위해 6/21 날짜 버튼 클릭(Low 칩은 여전히 OFF)
+        fireEvent.click(screen.getByRole('button', { name: /6월 21일/ }));
+        // Low 칩 OFF 상태이므로 화면(getByText)에는 안 보이지만 DOM엔 있다.
+        expect(container.textContent).toContain('Unemployment Claims');
+        // 해당 li가 hidden 인지 확인
+        const li = screen.getByText('Unemployment Claims').closest('li');
+        expect(li).toHaveAttribute('hidden');
+        // group 변수는 아래 토글 테스트와 대칭을 위해 참조(미사용 경고 방지)
+        expect(group).toBeInTheDocument();
+    });
+
+    it('활성 impact 이벤트의 상세 li는 hidden이 아니다', () => {
+        // EVENT_A(High) → KST 6/20, 기본 선택 + High 활성.
+        render(<EconomicCalendarGrid events={[EVENT_A, EVENT_B, EVENT_C]} />);
+        const li = screen.getByText('Fed Rate Decision').closest('li');
+        expect(li).not.toHaveAttribute('hidden');
+    });
+
+    it('Low 칩을 켜면 상세 패널의 Low li에서 hidden이 사라진다', () => {
+        render(<EconomicCalendarGrid events={[EVENT_A, EVENT_B, EVENT_C]} />);
+        const group = screen.getByRole('group', { name: '중요도 필터' });
+        fireEvent.click(screen.getByRole('button', { name: /6월 21일/ }));
+        // 켜기 전: hidden
+        expect(
+            screen.getByText('Unemployment Claims').closest('li')
+        ).toHaveAttribute('hidden');
+        // Low 켜기
+        fireEvent.click(within(group).getByRole('button', { name: '낮음' }));
+        expect(
+            screen.getByText('Unemployment Claims').closest('li')
+        ).not.toHaveAttribute('hidden');
+    });
+
+    it('Medium 칩을 끄면 상세 패널의 Medium li가 hidden 된다', () => {
+        // EVENT_B(Medium) → KST 6/20, 기본 선택일.
+        render(<EconomicCalendarGrid events={[EVENT_A, EVENT_B, EVENT_C]} />);
+        const group = screen.getByRole('group', { name: '중요도 필터' });
+        // 기본: Medium ON → CPI Release li는 hidden 아님
+        expect(
+            screen.getByText('CPI Release').closest('li')
+        ).not.toHaveAttribute('hidden');
+        fireEvent.click(within(group).getByRole('button', { name: '보통' }));
+        expect(screen.getByText('CPI Release').closest('li')).toHaveAttribute(
+            'hidden'
+        );
     });
 });
