@@ -5,7 +5,7 @@ import { useDialog } from '@/shared/hooks/useDialog';
 import { cn } from '@/shared/lib/cn';
 
 const TRIGGER_BASE_CLASS =
-    'rounded focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary-500';
+    'rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500';
 
 interface ContactDialogProps {
     triggerLabel?: string;
@@ -58,7 +58,7 @@ export function ContactDialog({
                                 type="button"
                                 onClick={close}
                                 aria-label="닫기"
-                                className="text-secondary-400 hover:text-secondary-300 focus-visible:ring-primary-500 -mt-1 -mr-1 rounded p-1 transition-colors focus-visible:ring-1 focus-visible:outline-none"
+                                className="text-secondary-400 hover:text-secondary-300 focus-visible:ring-primary-500 -mt-1 -mr-1 rounded p-1 transition-colors focus-visible:ring-2 focus-visible:outline-none"
                             >
                                 <svg
                                     width="16"
