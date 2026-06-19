@@ -56,30 +56,64 @@ describe('HeaderMobileMenu', () => {
     });
 
     it('drawer is hidden initially (aria-hidden=true)', () => {
-        const { container } = render(<HeaderMobileMenu items={NAV_ITEMS} />);
+        /*
+         * After the portal refactor the drawer is rendered via createPortal into
+         * document.body once the component mounts. jsdom runs useEffect synchronously
+         * via act(), so the drawer IS present after render — but with aria-hidden=true
+         * and translate-x-full (closed state). screen.queryByRole('dialog') returns
+         * null because aria-hidden suppresses the role from the accessibility tree.
+         */
+        render(<HeaderMobileMenu items={NAV_ITEMS} />);
 
-        // The drawer is always in the DOM for SSR crawlability, but hidden via aria-hidden
-        const drawer = container.querySelector('#mobile-nav-drawer');
+        const drawer = document.getElementById('mobile-nav-drawer');
         expect(drawer).toBeInTheDocument();
         expect(drawer).toHaveAttribute('aria-hidden', 'true');
-        // Not queryable by role when aria-hidden
+        // aria-hidden suppresses the role — dialog not reachable via role query
         expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     });
 
-    it('nav links are in DOM even when drawer is closed (SSR crawlability)', () => {
+    it('drawer is portaled into document.body', () => {
+        /*
+         * Verifies the portal escapes the header's backdrop-filter containing block:
+         * the drawer's direct parent must be document.body, not the component's
+         * wrapper div.
+         */
         render(<HeaderMobileMenu items={NAV_ITEMS} />);
 
-        // Links should be in the DOM regardless of isOpen — for crawler discoverability.
-        // NAV_ITEMS renders in order: /market → /news → /economy
+        const drawer = document.getElementById('mobile-nav-drawer');
+        expect(drawer).toBeInTheDocument();
+        expect(drawer?.parentElement).toBe(document.body);
+    });
+
+    it('backdrop is portaled into document.body when open', () => {
+        render(<HeaderMobileMenu items={NAV_ITEMS} />);
+
+        fireEvent.click(screen.getByRole('button', { name: '메뉴 열기' }));
+
+        const backdrop = screen.getByTestId('mobile-nav-backdrop');
+        expect(backdrop?.parentElement).toBe(document.body);
+    });
+
+    it('nav links are accessible via document when drawer is closed', () => {
+        /*
+         * After the portal refactor the drawer is client-rendered. The desktop
+         * HeaderNavStatic/HeaderNav already renders the same NAV_ITEMS server-side
+         * for crawlers. Here we just confirm the links exist in the document (via portal)
+         * so testing-library can find them even when the drawer is closed.
+         */
+        render(<HeaderMobileMenu items={NAV_ITEMS} />);
+
+        // Links exist in document.body (via portal) — hidden: true needed because
+        // the drawer has aria-hidden when closed.
         const links = screen.getAllByRole('link', { hidden: true });
         const hrefs = links.map(l => l.getAttribute('href'));
         expect(hrefs).toEqual(['/market', '/news', '/economy']);
     });
 
     it('nav links have aria-hidden="true" on the drawer when closed', () => {
-        const { container } = render(<HeaderMobileMenu items={NAV_ITEMS} />);
+        render(<HeaderMobileMenu items={NAV_ITEMS} />);
 
-        const drawer = container.querySelector('#mobile-nav-drawer');
+        const drawer = document.getElementById('mobile-nav-drawer');
         expect(drawer).toHaveAttribute('aria-hidden', 'true');
     });
 
