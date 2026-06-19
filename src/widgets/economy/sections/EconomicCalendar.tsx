@@ -23,8 +23,8 @@ const IMPACT_LABELS: Record<CalendarImpact, string> = {
 };
 
 const IMPACT_BADGE: Record<CalendarImpact, string> = {
-    High: 'bg-ui-danger/20 text-ui-danger',
-    Medium: 'bg-ui-warning/20 text-ui-warning',
+    High: 'bg-ui-danger/20 text-danger-text',
+    Medium: 'bg-ui-warning/20 text-warning-text',
     Low: 'bg-secondary-700 text-secondary-200',
 };
 
@@ -34,7 +34,7 @@ export function EconomicCalendar({ events }: EconomicCalendarProps) {
         <section aria-labelledby="economy-calendar-heading">
             <h2
                 id="economy-calendar-heading"
-                className="text-secondary-100 mb-3 text-xl font-semibold"
+                className="text-secondary-100 mb-3 text-lg font-semibold"
             >
                 경제 캘린더{' '}
                 <span className="text-secondary-400 text-sm font-normal">
@@ -84,7 +84,7 @@ function CalendarRow({ event }: CalendarRowProps) {
             </div>
             <span
                 className={cn(
-                    'h-fit justify-self-start rounded-full px-2 py-0.5 text-xs font-medium sm:justify-self-end',
+                    'h-fit justify-self-start rounded px-2 py-0.5 text-xs font-medium sm:justify-self-end',
                     IMPACT_BADGE[event.impact]
                 )}
             >

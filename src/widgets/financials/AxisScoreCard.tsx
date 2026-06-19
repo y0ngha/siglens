@@ -26,14 +26,14 @@ const GRADE_BADGE_CLASS: Record<FinancialsGrade, string> = {
     B: 'bg-grade-b/10 text-grade-b',
     C: 'bg-grade-c/10 text-grade-c',
     D: 'bg-grade-d/10 text-grade-d',
-    F: 'bg-grade-f/10 text-grade-f',
+    F: 'bg-grade-f/10 text-danger-text', // AA chip text (text-sm bold); CompositeGradeGauge의 text-4xl 등급 글자는 text-grade-f 유지 (대형 텍스트 3:1 통과)
 };
 
 /** Signal chip colors keyed by direction. */
 const SIGNAL_CHIP_CLASS: Record<FinancialSignalDirection, string> = {
-    positive: 'bg-chart-bullish/10 text-chart-bullish border-chart-bullish/20',
-    negative: 'bg-chart-bearish/10 text-chart-bearish border-chart-bearish/20',
-    neutral: 'bg-secondary-700 text-secondary-400 border-secondary-600',
+    positive: 'bg-chart-bullish/10 text-success-text border-chart-bullish/20',
+    negative: 'bg-chart-bearish/10 text-danger-text border-chart-bearish/20',
+    neutral: 'bg-secondary-700 text-secondary-300 border-secondary-600',
 };
 
 /**
@@ -121,7 +121,7 @@ export function AxisScoreCard({ title, axisKey, axis }: AxisScoreCardProps) {
     return (
         <section
             aria-labelledby={`axis-${axisKey}-heading`}
-            className="border-secondary-700 bg-secondary-800 flex flex-col gap-4 rounded-xl border p-6"
+            className="border-secondary-700 bg-secondary-800 flex flex-col gap-4 rounded-xl border p-4 sm:p-6"
         >
             <div className="flex items-center justify-between">
                 <h3

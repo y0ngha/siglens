@@ -13,6 +13,16 @@ interface TableRow {
      */
     values: (number | null)[];
     format?: FormatType;
+    /**
+     * When true (default), positive values render `text-success-text` and negative
+     * values render `text-danger-text` — appropriate for income/margin/growth rows
+     * where positive genuinely means good and negative means bad.
+     *
+     * Set to false for absolute balance-sheet magnitudes (e.g. 총자산, 총부채,
+     * 자본, 현금) where a larger number is neither inherently good nor bad.
+     * These rows render neutral `text-secondary-300` regardless of sign.
+     */
+    colorize?: boolean;
 }
 
 interface StatementTableProps {
@@ -51,71 +61,97 @@ export function StatementTable({
     rows,
 }: StatementTableProps) {
     return (
-        <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-                {caption && (
-                    <caption className="text-secondary-400 mb-2 text-left text-xs tracking-widest uppercase">
-                        {caption}
-                    </caption>
-                )}
-                <thead>
-                    <tr className="text-secondary-400 border-secondary-700 border-b text-xs tracking-widest uppercase">
-                        <th scope="col" className="pb-2 text-left font-medium">
-                            지표
-                        </th>
-                        {columns.map(col => (
+        <>
+            <p className="text-secondary-400 mb-2 text-xs sm:hidden">
+                ← 좌우로 스크롤 →
+            </p>
+            <div
+                className="focus-visible:ring-primary-500 overflow-x-auto rounded-xl focus-visible:ring-2 focus-visible:outline-none"
+                role="region"
+                aria-label={
+                    caption
+                        ? `${caption} (좌우 스크롤 가능)`
+                        : '재무제표 표 (좌우 스크롤 가능)'
+                }
+                tabIndex={0}
+            >
+                <table className="w-full text-sm">
+                    {caption && (
+                        <caption className="text-secondary-400 mb-2 text-left text-xs tracking-widest uppercase">
+                            {caption}
+                        </caption>
+                    )}
+                    <thead>
+                        <tr className="text-secondary-400 border-secondary-700 border-b text-xs tracking-widest uppercase">
                             <th
-                                key={col}
                                 scope="col"
-                                className="pb-2 text-right font-medium"
+                                className="pb-2 text-left font-medium"
                             >
-                                {col}
+                                지표
                             </th>
-                        ))}
-                    </tr>
-                </thead>
-                <tbody>
-                    {rows.map(row => (
-                        <tr
-                            key={row.labelKo}
-                            className="hover:bg-secondary-800/40 border-secondary-700/50 border-b transition-colors last:border-b-0"
-                        >
-                            <th
-                                scope="row"
-                                className="text-secondary-300 py-2.5 pr-4 text-left text-xs font-normal whitespace-nowrap"
-                            >
-                                {row.labelKo}
-                                {row.tooltip && (
-                                    <span className="ml-1">{row.tooltip}</span>
-                                )}
-                            </th>
-                            {row.values.map((v, j) => {
-                                const formatted = formatValue(v, row.format);
-                                const isNegative = v !== null && v < 0;
-                                const isPositive = v !== null && v > 0;
-
-                                return (
-                                    <td
-                                        key={columns[j]}
-                                        className={cn(
-                                            'py-2.5 text-right font-mono text-xs tabular-nums',
-                                            formatted === '—'
-                                                ? 'text-secondary-400'
-                                                : isNegative
-                                                  ? 'text-chart-bearish'
-                                                  : isPositive
-                                                    ? 'text-chart-bullish'
-                                                    : ''
-                                        )}
-                                    >
-                                        {formatted}
-                                    </td>
-                                );
-                            })}
+                            {columns.map(col => (
+                                <th
+                                    key={col}
+                                    scope="col"
+                                    className="pb-2 text-right font-medium"
+                                >
+                                    {col}
+                                </th>
+                            ))}
                         </tr>
-                    ))}
-                </tbody>
-            </table>
-        </div>
+                    </thead>
+                    <tbody>
+                        {rows.map(row => (
+                            <tr
+                                key={row.labelKo}
+                                className="hover:bg-secondary-800/40 border-secondary-700/50 border-b transition-colors last:border-b-0"
+                            >
+                                <th
+                                    scope="row"
+                                    className="text-secondary-300 py-2.5 pr-4 text-left text-xs font-normal whitespace-nowrap"
+                                >
+                                    {row.labelKo}
+                                    {row.tooltip && (
+                                        <span className="ml-1">
+                                            {row.tooltip}
+                                        </span>
+                                    )}
+                                </th>
+                                {row.values.map((v, j) => {
+                                    const formatted = formatValue(
+                                        v,
+                                        row.format
+                                    );
+                                    const shouldColorize =
+                                        row.colorize !== false;
+                                    const isNegative = v !== null && v < 0;
+                                    const isPositive = v !== null && v > 0;
+
+                                    return (
+                                        <td
+                                            key={columns[j]}
+                                            className={cn(
+                                                'py-2.5 text-right font-mono text-xs tabular-nums',
+                                                formatted === '—'
+                                                    ? 'text-secondary-400'
+                                                    : !shouldColorize
+                                                      ? 'text-secondary-300'
+                                                      : isNegative
+                                                        ? 'text-danger-text'
+                                                        : isPositive
+                                                          ? 'text-success-text'
+                                                          : ''
+                                            )}
+                                        >
+                                            {formatted}
+                                        </td>
+                                    );
+                                })}
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+        </>
     );
 }

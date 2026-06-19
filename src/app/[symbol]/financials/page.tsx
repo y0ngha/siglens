@@ -216,7 +216,7 @@ export default async function FinancialsPage({ params }: Props) {
             <JsonLd data={jsonLd} />
             <JsonLd data={breadcrumbJsonLd} />
             <JsonLd data={faqJsonLd} />
-            <main className="mx-auto max-w-5xl space-y-6 px-4 py-8">
+            <main className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8">
                 <SymbolPageHeading>{displayName} 재무제표</SymbolPageHeading>
                 <section className="sr-only">
                     <h2>{displayName} 재무제표 분석 개요</h2>

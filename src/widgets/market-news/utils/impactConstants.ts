@@ -8,10 +8,10 @@ export const IMPACT_LABEL: Record<NewsImpact, string> = {
 };
 
 export const IMPACT_CLASS: Record<NewsImpact, string> = {
-    high: 'bg-ui-warning/10 text-ui-warning',
+    high: 'bg-ui-warning/10 text-warning-text',
     medium: 'bg-primary-500/10 text-primary-400',
-    low: 'bg-secondary-700 text-secondary-400',
-    negligible: 'bg-secondary-700/50 text-secondary-400',
+    low: 'bg-secondary-700 text-secondary-300',
+    negligible: 'bg-secondary-700/50 text-secondary-300',
 };
 
 /**

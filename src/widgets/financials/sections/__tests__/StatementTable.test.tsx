@@ -106,25 +106,25 @@ describe('StatementTable', () => {
         });
     });
 
-    it('applies text-chart-bullish class to positive values', () => {
+    it('applies text-success-text class to positive values (colorize default)', () => {
         const { container } = render(
             <StatementTable
                 columns={['2024']}
                 rows={[{ labelKo: '매출', values: [500], format: 'num' }]}
             />
         );
-        const td = container.querySelector('td.text-chart-bullish');
+        const td = container.querySelector('td.text-success-text');
         expect(td).not.toBeNull();
     });
 
-    it('applies text-chart-bearish class to negative values', () => {
+    it('applies text-danger-text class to negative values (colorize default)', () => {
         const { container } = render(
             <StatementTable
                 columns={['2024']}
                 rows={[{ labelKo: '손실', values: [-200], format: 'num' }]}
             />
         );
-        const td = container.querySelector('td.text-chart-bearish');
+        const td = container.querySelector('td.text-danger-text');
         expect(td).not.toBeNull();
     });
 
@@ -137,7 +137,27 @@ describe('StatementTable', () => {
         );
         const td = container.querySelector('td.font-mono');
         expect(td).not.toBeNull();
-        expect(td?.className).not.toContain('text-chart-bullish');
-        expect(td?.className).not.toContain('text-chart-bearish');
+        expect(td?.className).not.toContain('text-success-text');
+        expect(td?.className).not.toContain('text-danger-text');
+    });
+
+    it('applies text-secondary-300 to non-null values when colorize=false', () => {
+        const { container } = render(
+            <StatementTable
+                columns={['2024']}
+                rows={[
+                    {
+                        labelKo: '총자산',
+                        values: [1_000_000],
+                        format: 'usd',
+                        colorize: false,
+                    },
+                ]}
+            />
+        );
+        const td = container.querySelector('td.text-secondary-300');
+        expect(td).not.toBeNull();
+        expect(td?.className).not.toContain('text-success-text');
+        expect(td?.className).not.toContain('text-danger-text');
     });
 });

@@ -62,8 +62,8 @@ const SIDE_LABEL: Record<CongressTradeSide, string> = {
 };
 
 const SIDE_CLASS: Record<CongressTradeSide, string> = {
-    buy: 'text-chart-bullish',
-    sell: 'text-chart-bearish',
+    buy: 'text-success-text',
+    sell: 'text-danger-text',
     unknown: 'text-secondary-400',
 };
 
@@ -196,7 +196,7 @@ function DisclosureCell({
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label={`${CHAMBER_LABEL[chamber]} ${office} ${transactionDate} 공시 ${isSenate ? '검색' : '문서'}`}
-                className="text-primary-400 hover:text-primary-300 text-xs underline transition-colors"
+                className="text-primary-400 hover:text-primary-300 focus-visible:ring-primary-500 rounded text-xs underline transition-colors focus-visible:ring-2 focus-visible:outline-none"
             >
                 {isSenate ? '공시 검색' : '공시'}
             </a>
@@ -234,7 +234,15 @@ export function CongressTradesTable({ trades }: CongressTradesTableProps) {
 
     return (
         <div className="border-secondary-700 bg-secondary-800 rounded-xl border">
-            <div className="overflow-x-auto">
+            <p className="text-secondary-400 px-4 pt-3 pb-0 text-xs sm:hidden">
+                ← 좌우로 스크롤 →
+            </p>
+            <div
+                className="focus-visible:ring-primary-500 overflow-x-auto rounded-xl focus-visible:ring-2 focus-visible:outline-none"
+                role="region"
+                aria-label="의회 거래 내역 표 (좌우 스크롤 가능)"
+                tabIndex={0}
+            >
                 <table className="w-full text-sm">
                     <caption className="sr-only">의회 거래 공시 목록</caption>
                     <thead>
@@ -358,7 +366,10 @@ export function CongressTradesTable({ trades }: CongressTradesTableProps) {
                                 </td>
 
                                 <td className="px-4 py-3">
-                                    <div className="text-secondary-400 max-w-[12rem] truncate text-xs">
+                                    <div
+                                        className="text-secondary-400 max-w-[12rem] truncate text-xs"
+                                        title={trade.assetDescription}
+                                    >
                                         {trade.assetDescription}
                                     </div>
                                 </td>

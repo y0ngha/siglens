@@ -28,6 +28,15 @@ export function SymbolPageHeading({
     return (
         <h1
             className={cn(
+                /*
+                 * Intentionally one step smaller than standalone page h1s
+                 * (text-2xl sm:text-3xl). Symbol pages render this h1 BELOW the
+                 * SymbolLayoutHeader breadcrumb chrome (company name + fear-greed
+                 * badge + tab nav), which already establishes the page identity.
+                 * Using the same large size as standalone pages would create a
+                 * doubled large-title visual — the breadcrumb header acts as the
+                 * primary visual anchor, so a smaller h1 keeps the hierarchy correct.
+                 */
                 'text-secondary-100 text-xl font-bold tracking-tight text-balance sm:text-2xl',
                 className
             )}

@@ -52,32 +52,39 @@ export function BalanceSheetSection({ rows }: BalanceSheetSectionProps) {
             labelKo: '총자산',
             values: displayRows.map(r => r.totalAssets),
             format: 'usd' as const,
+            colorize: false, // absolute magnitude — larger is neither good nor bad
         },
         {
             labelKo: '총부채',
             values: displayRows.map(r => r.totalLiabilities),
             format: 'usd' as const,
+            colorize: false, // absolute magnitude — size alone does not signal direction
         },
         {
             labelKo: '순부채',
             tooltip: <InfoTooltip>{NetDebtTooltip}</InfoTooltip>,
             values: displayRows.map(r => r.netDebt),
             format: 'usd' as const,
+            // net debt sign is inverted vs the success/danger convention (negative = net cash = good), so render neutral
+            colorize: false,
         },
         {
             labelKo: '현금',
             values: displayRows.map(r => r.cashAndShortTermInvestments),
             format: 'usd' as const,
+            colorize: false, // absolute stock — always positive, magnitude ≠ direction signal
         },
         {
             labelKo: '자본',
             values: displayRows.map(r => r.totalStockholdersEquity),
             format: 'usd' as const,
+            colorize: false, // absolute magnitude — larger equity not inherently good or bad
         },
         {
             labelKo: '유동비율',
             values: displayRows.map(r => r.currentRatio),
             format: 'num' as const,
+            // colorize: true (default) — higher current ratio = better liquidity
         },
     ];
 

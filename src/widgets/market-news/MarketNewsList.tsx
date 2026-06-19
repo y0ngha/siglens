@@ -20,7 +20,7 @@ function MarketNewsListHeader() {
             >
                 최신 마켓 뉴스
             </h2>
-            <span className="bg-secondary-700 text-secondary-400 rounded px-2 py-0.5 text-xs">
+            <span className="bg-secondary-700 text-secondary-300 rounded px-2 py-0.5 text-xs">
                 {PERIOD_LABEL}
             </span>
         </div>
@@ -54,16 +54,14 @@ function LoadingState() {
             aria-busy="true"
             className="w-full max-w-full min-w-0 space-y-3 overflow-hidden"
         >
-            <div className="flex items-center justify-between gap-3">
-                <MarketNewsListHeader />
-                <span
-                    className="text-secondary-400 text-xs"
-                    aria-live="polite"
-                    aria-atomic="true"
-                >
-                    뉴스 수집 중…
-                </span>
-            </div>
+            <MarketNewsListHeader />
+            <span
+                className="text-secondary-400 block text-xs"
+                aria-live="polite"
+                aria-atomic="true"
+            >
+                뉴스 수집 중…
+            </span>
             <ul className="space-y-3">
                 {Array.from({ length: SKELETON_COUNT }).map((_, i) => (
                     <li key={i}>

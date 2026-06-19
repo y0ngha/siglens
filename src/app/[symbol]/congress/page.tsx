@@ -212,7 +212,7 @@ export default async function CongressPage({ params }: Props) {
             <JsonLd data={jsonLd} />
             <JsonLd data={breadcrumbJsonLd} />
             <JsonLd data={faqJsonLd} />
-            <main className="mx-auto max-w-5xl space-y-6 px-4 py-8">
+            <main className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8">
                 <SymbolPageHeading>{displayName} 의회 거래</SymbolPageHeading>
                 <section className="sr-only">
                     <h2>{displayName} 의회 의원 매매 공시 개요</h2>

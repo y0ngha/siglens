@@ -37,7 +37,7 @@ describe('BalanceSheetSection', () => {
     it('renders empty card when no rows provided', () => {
         render(<BalanceSheetSection rows={[]} />);
         expect(
-            screen.getByText('데이터를 불러올 수 없습니다.')
+            screen.getByText('데이터를 불러올 수 없어요')
         ).toBeInTheDocument();
     });
 
