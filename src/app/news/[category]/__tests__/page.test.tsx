@@ -58,11 +58,13 @@ describe('/news/[category] generateMetadata는', () => {
         expect(String(meta.title)).toContain('암호화폐');
     });
 
-    it('유효하지 않은 카테고리면 noindex 메타를 반환한다', async () => {
+    it('유효하지 않은 카테고리면 robots 없이 title/description만 반환한다 (noindex는 not-found.tsx가 담당)', async () => {
         const meta = await generateMetadata({
             params: Promise.resolve({ category: 'bogus' }),
         });
-        expect(meta.robots).toMatchObject({ index: false });
+        // robots/alternates는 not-found.tsx가 단독 책임 — 이중 robots 태그 방지.
+        expect(meta.robots).toBeUndefined();
+        expect(String(meta.title)).toBeTruthy();
     });
 
     it('유효 카테고리이지만 스냅샷이 비어 있으면 noindex + canonical null을 반환한다', async () => {

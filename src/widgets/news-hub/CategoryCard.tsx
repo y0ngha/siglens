@@ -70,7 +70,7 @@ export function CategoryCard({
 
             <Link
                 href={`/news/${slug}`}
-                className="text-primary-400 hover:text-primary-300 focus-visible:ring-primary-500 mt-auto text-sm transition-colors focus-visible:ring-1 focus-visible:outline-none"
+                className="text-primary-400 hover:text-primary-300 focus-visible:ring-primary-500 mt-auto text-sm transition-colors focus-visible:ring-2 focus-visible:outline-none"
                 aria-label={`${koLabel} 뉴스 더보기`}
             >
                 더보기 <span aria-hidden="true">→</span>

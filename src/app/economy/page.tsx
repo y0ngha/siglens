@@ -34,7 +34,7 @@ import { EconomyDegraded } from './EconomyDegraded';
 /** 페이지 최상단 h1 — Suspense 위에 렌더되어 ready와 degraded 양 경로에서 항상 표시된다. */
 function EconomyHeroH1() {
     return (
-        <h1 className="text-secondary-100 px-6 pt-10 text-2xl font-bold tracking-tight text-balance sm:text-3xl lg:px-[15vw]">
+        <h1 className="text-secondary-100 text-2xl font-bold tracking-tight text-balance sm:text-3xl">
             {ECONOMY_TITLE}
         </h1>
     );
@@ -143,7 +143,7 @@ async function EconomyContent() {
     );
 
     return (
-        <div className="space-y-8 px-6 py-8 lg:px-[15vw]">
+        <div className="space-y-6">
             {/* SSR 크롤 텍스트 — MacroBriefing은 'use client'라 크롤러에 빈 HTML을
                 반환한다. EconomyMacroFacts가 서버사이드에서 핵심 수치를 텍스트로
                 노출해 검색 엔진이 수치 데이터를 색인할 수 있도록 한다. */}
@@ -246,7 +246,7 @@ export default function EconomyPage() {
             <JsonLd data={breadcrumbJsonLd} />
             <JsonLd data={DATASET_JSON_LD} />
             <JsonLd data={FAQ_JSON_LD} />
-            <main className="flex-1">
+            <main className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8">
                 <EconomyHeroH1 />
                 <Suspense fallback={null}>
                     <EconomyContent />

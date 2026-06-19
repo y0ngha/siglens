@@ -107,7 +107,7 @@ function ChamberBadge({ chamber }: ChamberBadgeProps) {
             className={cn(
                 'rounded px-1.5 py-0.5 text-xs font-medium',
                 chamber === 'senate'
-                    ? 'bg-primary-500/10 text-chart-bullish'
+                    ? 'bg-primary-500/10 text-primary-400'
                     : 'bg-secondary-700 text-secondary-300'
             )}
             aria-label={chamber === 'senate' ? '상원 (Senate)' : '하원 (House)'}

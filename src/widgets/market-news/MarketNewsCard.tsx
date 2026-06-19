@@ -118,7 +118,7 @@ function TickerChips({ category, tickers }: TickerChipsProps) {
                         href={`/${ticker}`}
                         aria-label={`${ticker} 종목 페이지로 이동`}
                         data-testid="ticker-chip"
-                        className="text-primary-400 hover:text-primary-300 focus-visible:ring-primary-500 rounded px-1.5 py-0.5 text-xs font-medium transition-colors focus-visible:ring-1 focus-visible:outline-none"
+                        className="text-primary-400 hover:text-primary-300 focus-visible:ring-primary-500 rounded px-1.5 py-0.5 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none"
                     >
                         {ticker}
                     </Link>
@@ -234,7 +234,7 @@ export function MarketNewsCard({ category, item }: MarketNewsCardProps) {
                         href={item.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-primary-400 focus-visible:ring-primary-500 mt-2 inline-block text-xs transition-opacity hover:opacity-70 focus-visible:ring-1 focus-visible:outline-none"
+                        className="text-primary-400 focus-visible:ring-primary-500 mt-2 inline-block text-xs transition-opacity hover:opacity-70 focus-visible:ring-2 focus-visible:outline-none"
                     >
                         원문 보기 <span aria-hidden="true">→</span>
                     </a>
