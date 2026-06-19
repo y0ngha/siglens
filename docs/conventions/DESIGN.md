@@ -88,8 +88,8 @@
 하락 캔들          #ef5350
 거래량 상승        #26a69a80  (50% 투명도)
 거래량 하락        #ef535080  (50% 투명도)
-AI 분석 bullish    text-success-text
-AI 분석 bearish    text-danger-text
+AI 분석 bullish    text-ui-success-text
+AI 분석 bearish    text-ui-danger-text
 AI 분석 neutral    text-secondary-300
 ```
 
@@ -238,21 +238,21 @@ moderate strength     text-ui-warning
 이 토큰군은 해당 맥락 전용 밝은 변형이다.
 
 ```
---color-success-text: #5eead4   (틸 300 — tinted chip 위 소형 텍스트용)
---color-danger-text:  #fca5a5   (레드 300 — tinted chip 위 소형 텍스트용)
---color-warning-text: #fcd34d   (앰버 300 — tinted chip 위 소형 텍스트용)
+--color-ui-success-text: #5eead4   (틸 300 — tinted chip 위 소형 텍스트용)
+--color-ui-danger-text:  #fca5a5   (레드 300 — tinted chip 위 소형 텍스트용)
+--color-ui-warning-text: #fcd34d   (앰버 300 — tinted chip 위 소형 텍스트용)
 ```
 
 **사용 규칙**
 
 | 상황 | 사용 토큰 |
 |---|---|
-| 칩/배지 소형 텍스트 (`bg-ui-success/10` 등 위) | `text-success-text` / `text-danger-text` / `text-warning-text` |
-| AI 분석 감성 텍스트 (bullish/bearish/neutral) | `text-success-text` / `text-danger-text` / `text-secondary-300` |
+| 칩/배지 소형 텍스트 (`bg-ui-success/10` 등 위) | `text-ui-success-text` / `text-ui-danger-text` / `text-ui-warning-text` |
+| AI 분석 감성 텍스트 (bullish/bearish/neutral) | `text-ui-success-text` / `text-ui-danger-text` / `text-secondary-300` |
 | 그래픽, 캔들, 차트 채움 | `text-chart-bullish` / `text-chart-bearish` (3:1, 대형 OK) |
 | UI 상태 표시 (아이콘, 테두리, 배경) | `ui-success` / `ui-danger` / `ui-warning` (3:1, 비텍스트 OK) |
 
-> `success-text` / `danger-text` / `warning-text`는 순수 텍스트 전용이다.
+> `ui-success-text` / `ui-danger-text` / `ui-warning-text`는 순수 텍스트 전용이다.
 > 배경 채움이나 차트 렌더링에는 사용하지 않는다.
 
 ---

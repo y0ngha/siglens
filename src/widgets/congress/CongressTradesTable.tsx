@@ -62,8 +62,8 @@ const SIDE_LABEL: Record<CongressTradeSide, string> = {
 };
 
 const SIDE_CLASS: Record<CongressTradeSide, string> = {
-    buy: 'text-success-text',
-    sell: 'text-danger-text',
+    buy: 'text-ui-success-text',
+    sell: 'text-ui-danger-text',
     unknown: 'text-secondary-400',
 };
 

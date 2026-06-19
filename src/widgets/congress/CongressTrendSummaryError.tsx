@@ -24,7 +24,7 @@ export function CongressTrendSummaryError({
             >
                 AI 동향 해석
             </h2>
-            <p className="text-danger-text text-sm" role="alert">
+            <p className="text-ui-danger-text text-sm" role="alert">
                 {message}
             </p>
             <button

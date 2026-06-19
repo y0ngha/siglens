@@ -7,9 +7,9 @@ export const SENTIMENT_LABEL: Record<NewsSentiment, string> = {
 };
 
 export const SENTIMENT_CLASS: Record<NewsSentiment, string> = {
-    bullish: 'bg-ui-success/10 text-success-text',
+    bullish: 'bg-ui-success/10 text-ui-success-text',
     neutral: 'bg-secondary-700 text-secondary-300',
-    bearish: 'bg-ui-danger/10 text-danger-text',
+    bearish: 'bg-ui-danger/10 text-ui-danger-text',
 };
 
 /**

@@ -14,8 +14,8 @@ interface TableRow {
     values: (number | null)[];
     format?: FormatType;
     /**
-     * When true (default), positive values render `text-success-text` and negative
-     * values render `text-danger-text` — appropriate for income/margin/growth rows
+     * When true (default), positive values render `text-ui-success-text` and negative
+     * values render `text-ui-danger-text` — appropriate for income/margin/growth rows
      * where positive genuinely means good and negative means bad.
      *
      * Set to false for absolute balance-sheet magnitudes (e.g. 총자산, 총부채,
@@ -137,9 +137,9 @@ export function StatementTable({
                                                     : !shouldColorize
                                                       ? 'text-secondary-300'
                                                       : isNegative
-                                                        ? 'text-danger-text'
+                                                        ? 'text-ui-danger-text'
                                                         : isPositive
-                                                          ? 'text-success-text'
+                                                          ? 'text-ui-success-text'
                                                           : ''
                                             )}
                                         >

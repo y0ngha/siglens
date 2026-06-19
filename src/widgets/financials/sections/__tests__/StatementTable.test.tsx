@@ -106,25 +106,25 @@ describe('StatementTable', () => {
         });
     });
 
-    it('applies text-success-text class to positive values (colorize default)', () => {
+    it('applies text-ui-success-text class to positive values (colorize default)', () => {
         const { container } = render(
             <StatementTable
                 columns={['2024']}
                 rows={[{ labelKo: '매출', values: [500], format: 'num' }]}
             />
         );
-        const td = container.querySelector('td.text-success-text');
+        const td = container.querySelector('td.text-ui-success-text');
         expect(td).not.toBeNull();
     });
 
-    it('applies text-danger-text class to negative values (colorize default)', () => {
+    it('applies text-ui-danger-text class to negative values (colorize default)', () => {
         const { container } = render(
             <StatementTable
                 columns={['2024']}
                 rows={[{ labelKo: '손실', values: [-200], format: 'num' }]}
             />
         );
-        const td = container.querySelector('td.text-danger-text');
+        const td = container.querySelector('td.text-ui-danger-text');
         expect(td).not.toBeNull();
     });
 
@@ -137,8 +137,8 @@ describe('StatementTable', () => {
         );
         const td = container.querySelector('td.font-mono');
         expect(td).not.toBeNull();
-        expect(td?.className).not.toContain('text-success-text');
-        expect(td?.className).not.toContain('text-danger-text');
+        expect(td?.className).not.toContain('text-ui-success-text');
+        expect(td?.className).not.toContain('text-ui-danger-text');
     });
 
     it('applies text-secondary-300 to non-null values when colorize=false', () => {
@@ -157,7 +157,7 @@ describe('StatementTable', () => {
         );
         const td = container.querySelector('td.text-secondary-300');
         expect(td).not.toBeNull();
-        expect(td?.className).not.toContain('text-success-text');
-        expect(td?.className).not.toContain('text-danger-text');
+        expect(td?.className).not.toContain('text-ui-success-text');
+        expect(td?.className).not.toContain('text-ui-danger-text');
     });
 });
