@@ -12,7 +12,7 @@ describe('EmptySectionCard', () => {
     it('renders the empty message', () => {
         render(<EmptySectionCard title="재무상태표" />);
         expect(
-            screen.getByText('데이터를 불러올 수 없습니다.')
+            screen.getByText('데이터를 불러올 수 없어요')
         ).toBeInTheDocument();
     });
 

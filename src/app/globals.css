@@ -114,6 +114,15 @@
     --color-grade-d: #f97316; /* orange — D (35–49) */
     --color-grade-f: #ef5350; /* red    — F (0–34) */
 
+    /* AA-compliant text variants of the ui semantic family. The base
+       ui-success/warning/danger and chart-bullish/bearish tokens are tuned for
+       GRAPHICS (3:1) and fail the 4.5:1 text minimum when used as small (text-xs)
+       foreground on tinted /10–/20 chip backgrounds. Use these lighter variants
+       for colored badge/table TEXT; keep the base tokens for chart fills/strokes. */
+    --color-success-text: #5eead4; /* light teal — passes ≥6.9:1 on success/10 */
+    --color-danger-text: #fca5a5; /* light red  — passes ≥6.1:1 on danger/10–20 */
+    --color-warning-text: #fcd34d; /* light amber — passes ≥7:1 on warning/10–20 */
+
     /* Brand — Social login */
     --color-brand-kakao: #fee500;
 

@@ -152,7 +152,7 @@ function DigestErrorView({ error, onRetry }: DigestErrorViewProps) {
             </h2>
             <div
                 role="alert"
-                className="text-ui-danger text-sm wrap-break-word"
+                className="text-danger-text text-sm wrap-break-word"
             >
                 {error.message}
             </div>

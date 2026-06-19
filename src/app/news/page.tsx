@@ -113,11 +113,11 @@ export default async function NewsHubPage() {
         <>
             <JsonLd data={webPageJsonLd} />
             <JsonLd data={breadcrumbJsonLd} />
-            <main className="mx-auto w-full max-w-5xl space-y-8 px-4 py-8">
+            <main className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8">
                 <h1 className="text-secondary-100 text-2xl font-bold tracking-tight text-balance sm:text-3xl">
                     마켓 뉴스 허브
                 </h1>
-                <div className="text-secondary-400 -mt-4 space-y-1 text-sm">
+                <div className="text-secondary-400 space-y-1 text-sm">
                     <p>
                         미국 일반·주식·암호화폐·외환·마켓 아티클 최신 뉴스를
                         AI가 한국어로 정리해 드려요.

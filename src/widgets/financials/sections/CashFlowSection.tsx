@@ -25,8 +25,11 @@ const TITLE = '현금흐름표';
  * `rows` are newest→oldest (index 0 = latest). Display is oldest→newest
  * left-to-right.
  *
- * CapEx is typically negative in the raw data; it renders with bearish
- * coloring when negative via StatementTable's value-based coloring.
+ * CapEx and 배당 are structurally always-negative (capital outflows by
+ * definition), so their sign is not a good/bad signal — both rows carry
+ * `colorize: false` to suppress StatementTable's value-based red/green
+ * coloring. The chart series still uses 'bearish' for CapEx to distinguish
+ * it visually from 영업CF and FCF in the trend line.
  */
 export function CashFlowSection({ rows }: CashFlowSectionProps) {
     if (rows.length === 0) {
@@ -65,6 +68,7 @@ export function CashFlowSection({ rows }: CashFlowSectionProps) {
             tooltip: <InfoTooltip>{CapExTooltip}</InfoTooltip>,
             values: displayRows.map(r => r.capitalExpenditure),
             format: 'usd' as const,
+            colorize: false, // absolute capital outflow — negative sign is structural, not a signal (same as 배당)
         },
         {
             labelKo: 'FCF',
@@ -82,6 +86,7 @@ export function CashFlowSection({ rows }: CashFlowSectionProps) {
             labelKo: '배당',
             values: displayRows.map(r => r.dividendsPaid),
             format: 'usd' as const,
+            colorize: false, // absolute cash outflow — negative sign is structural, not a signal
         },
     ];
 

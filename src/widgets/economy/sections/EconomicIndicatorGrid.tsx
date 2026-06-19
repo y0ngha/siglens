@@ -104,7 +104,7 @@ export function EconomicIndicatorGrid({
         >
             <h2
                 id="economy-indicators-heading"
-                className="text-secondary-100 text-xl font-semibold"
+                className="text-secondary-100 text-lg font-semibold"
             >
                 경제지표
             </h2>

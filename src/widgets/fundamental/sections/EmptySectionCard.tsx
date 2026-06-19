@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 
-export const EMPTY_MESSAGE = '데이터를 불러올 수 없습니다.';
+export const EMPTY_MESSAGE = '데이터를 불러올 수 없어요';
 
 interface EmptySectionCardProps {
     headingId: string;

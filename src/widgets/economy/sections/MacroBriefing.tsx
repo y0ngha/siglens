@@ -16,10 +16,10 @@ const REGIME_LABELS: Record<MacroBriefingResponse['regime'], string> = {
 };
 
 const REGIME_COLORS: Record<MacroBriefingResponse['regime'], string> = {
-    expansion: 'bg-ui-success/20 text-ui-success',
-    slowdown: 'bg-ui-warning/20 text-ui-warning',
-    contraction: 'bg-ui-danger/20 text-ui-danger',
-    recovery: 'bg-ui-success/20 text-ui-success',
+    expansion: 'bg-ui-success/20 text-success-text',
+    slowdown: 'bg-ui-warning/20 text-warning-text',
+    contraction: 'bg-ui-danger/20 text-danger-text',
+    recovery: 'bg-ui-success/20 text-success-text',
     neutral: 'bg-secondary-700 text-secondary-100',
 };
 
@@ -91,13 +91,13 @@ function MacroBriefingView({ briefing, generatedAt }: MacroBriefingViewProps) {
             <header className="mb-4 flex items-center gap-3">
                 <h2
                     id="macro-briefing-heading"
-                    className="text-secondary-100 text-xl font-semibold"
+                    className="text-secondary-100 text-lg font-semibold"
                 >
                     거시 브리핑
                 </h2>
                 <span
                     className={cn(
-                        'rounded-full px-3 py-0.5 text-sm font-medium',
+                        'rounded px-2 py-0.5 text-sm font-medium',
                         REGIME_COLORS[briefing.regime]
                     )}
                 >

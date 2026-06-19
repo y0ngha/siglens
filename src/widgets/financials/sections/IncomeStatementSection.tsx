@@ -47,11 +47,13 @@ export function IncomeStatementSection({ rows }: IncomeStatementSectionProps) {
             labelKo: '매출',
             values: displayRows.map(r => r.revenue),
             format: 'usd' as const,
+            colorize: false, // absolute magnitude — larger is not inherently good (cf. BalanceSheetSection)
         },
         {
             labelKo: '매출총이익',
             values: displayRows.map(r => r.grossProfit),
             format: 'usd' as const,
+            colorize: false, // absolute magnitude — larger is not inherently good (cf. BalanceSheetSection)
         },
         {
             labelKo: '영업이익',
