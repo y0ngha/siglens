@@ -16,6 +16,7 @@ import { cn } from '@/shared/lib/cn';
 import { formatNum } from '@/shared/lib/formatNum';
 import { etDateTimeToKst } from '@/shared/lib/etTimeUtils';
 import { useEconomicCalendarTrigger } from '../hooks/useEconomicCalendarTrigger';
+import { ImpactFilter } from '@/widgets/economy/sections/ImpactFilter';
 
 const IMPACT_LABELS: Record<CalendarImpact, string> = {
     High: '높음',
@@ -60,6 +61,13 @@ const MONTH_LABELS = [
 
 /** 인라인 이벤트 미리보기 최대 표시 건수 (sm 이상 화면) */
 const INLINE_EVENT_MAX = 2;
+
+/**
+ * 중요도 필터 기본값 — High+Medium ON, Low OFF.
+ * 연간 Low 이벤트가 2,919건으로 대다수라 기본 노출 시 노이즈가 크다(스펙 SP-C).
+ * 결정론적 초기값 — 렌더 중 시각/난수 의존 없음(ISR 안전).
+ */
+const DEFAULT_ACTIVE_IMPACTS: readonly CalendarImpact[] = ['High', 'Medium'];
 
 interface KstEvent {
     /** ET ISO-8601 문자열 — `<time dateTime>` 용 */
@@ -263,18 +271,27 @@ function DayDetailPanel({ group, isSelected }: DayDetailPanelProps) {
 interface DayCellProps {
     group: DayGroup;
     isSelected: boolean;
+    activeImpacts: ReadonlySet<CalendarImpact>;
     onSelect: (dateKey: string) => void;
 }
 
-function DayCell({ group, isSelected, onSelect }: DayCellProps) {
-    const { day, month, events, dateKey } = group;
-    const count = events.length;
+function DayCell({ group, isSelected, activeImpacts, onSelect }: DayCellProps) {
+    const { day, month, dateKey } = group;
+
+    /**
+     * 활성 impact만 남긴 이벤트 — 셀의 점·건수·인라인 미리보기에 사용.
+     * 시각 필터(셀은 SEO 비핵심, 전체 텍스트는 상세 패널이 DOM에 보유).
+     */
+    const visibleEvents = group.events.filter(e =>
+        activeImpacts.has(e.original.impact)
+    );
+    const count = visibleEvents.length;
 
     /**
      * 임팩트 종류 집합 — 점 렌더 순서(High → Medium → Low)를 위해 순서 유지.
      * 동일 날짜에 High가 여러 건이어도 점은 1개만 표시한다(시각적 노이즈 감소).
      */
-    const impactSet = new Set(events.map(e => e.original.impact));
+    const impactSet = new Set(visibleEvents.map(e => e.original.impact));
     const dots = IMPACT_ORDER.filter(i => impactSet.has(i));
 
     return (
@@ -326,7 +343,7 @@ function DayCell({ group, isSelected, onSelect }: DayCellProps) {
                 </span>
 
                 <span className="mt-1 hidden space-y-0.5 sm:block">
-                    {events.slice(0, INLINE_EVENT_MAX).map(ev => (
+                    {visibleEvents.slice(0, INLINE_EVENT_MAX).map(ev => (
                         <span
                             key={`${ev.iso}:${ev.original.event}`}
                             className="text-secondary-400 block min-w-0 truncate text-[10px] leading-tight"
@@ -352,6 +369,7 @@ interface MonthCalendarProps {
     month: number;
     groupMap: Map<string, DayGroup>;
     selectedDateKey: string;
+    activeImpacts: ReadonlySet<CalendarImpact>;
     onSelect: (dateKey: string) => void;
 }
 
@@ -360,6 +378,7 @@ function MonthCalendar({
     month,
     groupMap,
     selectedDateKey,
+    activeImpacts,
     onSelect,
 }: MonthCalendarProps) {
     const weeks = useMemo(() => {
@@ -422,6 +441,7 @@ function MonthCalendar({
                                         isSelected={
                                             selectedDateKey === cell.dateKey
                                         }
+                                        activeImpacts={activeImpacts}
                                         onSelect={onSelect}
                                     />
                                 ) : (
@@ -483,6 +503,9 @@ export function EconomicCalendarGrid({
     today = '',
 }: EconomicCalendarGridProps) {
     const [selectedDateKey, setSelectedDateKey] = useState('');
+    const [activeImpacts, setActiveImpacts] = useState<
+        ReadonlySet<CalendarImpact>
+    >(() => new Set(DEFAULT_ACTIVE_IMPACTS));
     useEconomicCalendarTrigger();
     const groups = useMemo(() => groupEventsByKstDay(events), [events]);
     const groupMap = useMemo(
@@ -490,6 +513,18 @@ export function EconomicCalendarGrid({
         [groups]
     );
     const months = useMemo(() => spannedMonths(groups), [groups]);
+
+    function toggleImpact(impact: CalendarImpact): void {
+        setActiveImpacts(prev => {
+            const next = new Set(prev);
+            if (next.has(impact)) {
+                next.delete(impact);
+            } else {
+                next.add(impact);
+            }
+            return next;
+        });
+    }
 
     /**
      * events/today가 바뀔 때 기본 선택 날짜를 재동기화한다(오늘 → 가장 가까운 미래 →
@@ -536,6 +571,8 @@ export function EconomicCalendarGrid({
                 </span>
             </h2>
 
+            <ImpactFilter value={activeImpacts} onToggle={toggleImpact} />
+
             <div className="border-secondary-700 space-y-6 rounded-xl border p-3 sm:p-4">
                 {months.map(({ year, month }) => (
                     <MonthCalendar
@@ -544,6 +581,7 @@ export function EconomicCalendarGrid({
                         month={month}
                         groupMap={groupMap}
                         selectedDateKey={selectedDateKey}
+                        activeImpacts={activeImpacts}
                         onSelect={setSelectedDateKey}
                     />
                 ))}
