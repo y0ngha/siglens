@@ -26,7 +26,7 @@ const GRADE_BADGE_CLASS: Record<FinancialsGrade, string> = {
     B: 'bg-grade-b/10 text-grade-b',
     C: 'bg-grade-c/10 text-grade-c',
     D: 'bg-grade-d/10 text-grade-d',
-    F: 'bg-grade-f/10 text-danger-text', // AA small-badge variant (text-sm bold); large gauge letter keeps text-grade-f (text-4xl → passes 3:1)
+    F: 'bg-grade-f/10 text-danger-text', // AA chip text (text-sm bold); CompositeGradeGauge의 text-4xl 등급 글자는 text-grade-f 유지 (대형 텍스트 3:1 통과)
 };
 
 /** Signal chip colors keyed by direction. */

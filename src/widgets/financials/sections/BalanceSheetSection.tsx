@@ -65,7 +65,8 @@ export function BalanceSheetSection({ rows }: BalanceSheetSectionProps) {
             tooltip: <InfoTooltip>{NetDebtTooltip}</InfoTooltip>,
             values: displayRows.map(r => r.netDebt),
             format: 'usd' as const,
-            // colorize: true (default) — negative net debt = net cash position (good)
+            // net debt sign is inverted vs the success/danger convention (negative = net cash = good), so render neutral
+            colorize: false,
         },
         {
             labelKo: '현금',

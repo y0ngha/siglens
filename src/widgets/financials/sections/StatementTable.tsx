@@ -66,9 +66,13 @@ export function StatementTable({
                 ← 좌우로 스크롤 →
             </p>
             <div
-                className="overflow-x-auto"
+                className="focus-visible:ring-primary-500 overflow-x-auto rounded-xl focus-visible:ring-2 focus-visible:outline-none"
                 role="region"
-                aria-label={caption ?? '재무제표 표 (좌우 스크롤 가능)'}
+                aria-label={
+                    caption
+                        ? `${caption} (좌우 스크롤 가능)`
+                        : '재무제표 표 (좌우 스크롤 가능)'
+                }
                 tabIndex={0}
             >
                 <table className="w-full text-sm">

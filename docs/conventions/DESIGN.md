@@ -88,9 +88,9 @@
 하락 캔들          #ef5350
 거래량 상승        #26a69a80  (50% 투명도)
 거래량 하락        #ef535080  (50% 투명도)
-AI 분석 bullish    text-chart-bullish
-AI 분석 bearish    text-chart-bearish
-AI 분석 neutral    text-secondary-400
+AI 분석 bullish    text-success-text
+AI 분석 bearish    text-danger-text
+AI 분석 neutral    text-secondary-300
 ```
 
 ---
@@ -228,6 +228,32 @@ moderate strength     text-ui-warning
 참고: `#f59e0b`는 `chart.signal`(MACD 시그널 라인)과 동일한 값이지만, UI 상태 표시 목적으로 별도 토큰(`ui-warning`)을 분리한다. 차트 시그널 렌더링에는 `chart-signal`을 사용하고, UI 심각도 표시에는 `ui-warning`을 사용한다.
 
 `#ef5350`은 `chart.bearish`(하락 캔들)와 동일한 값이지만, UI 위험/경고 알림 목적으로 별도 토큰(`ui-danger`)을 분리한다. 차트 하락 렌더링에는 `chart-bearish`를 사용하고, UI 위험 표시에는 `ui-danger`를 사용한다.
+
+---
+
+## AA Text-Variant Tokens — 소형 텍스트용 WCAG AA 색상
+
+칩/배지 배경(`/10`–`/20` 투명 색조) 위에 렌더링되는 **소형 텍스트**(text-xs/text-sm)는 기본
+`ui-*` / `chart-*` 토큰(≈3:1, 대형 텍스트 기준 통과)으로는 WCAG AA(≥4.5:1)를 충족하지 못한다.
+이 토큰군은 해당 맥락 전용 밝은 변형이다.
+
+```
+--color-success-text: #5eead4   (틸 300 — tinted chip 위 소형 텍스트용)
+--color-danger-text:  #fca5a5   (레드 300 — tinted chip 위 소형 텍스트용)
+--color-warning-text: #fcd34d   (앰버 300 — tinted chip 위 소형 텍스트용)
+```
+
+**사용 규칙**
+
+| 상황 | 사용 토큰 |
+|---|---|
+| 칩/배지 소형 텍스트 (`bg-ui-success/10` 등 위) | `text-success-text` / `text-danger-text` / `text-warning-text` |
+| AI 분석 감성 텍스트 (bullish/bearish/neutral) | `text-success-text` / `text-danger-text` / `text-secondary-300` |
+| 그래픽, 캔들, 차트 채움 | `text-chart-bullish` / `text-chart-bearish` (3:1, 대형 OK) |
+| UI 상태 표시 (아이콘, 테두리, 배경) | `ui-success` / `ui-danger` / `ui-warning` (3:1, 비텍스트 OK) |
+
+> `success-text` / `danger-text` / `warning-text`는 순수 텍스트 전용이다.
+> 배경 채움이나 차트 렌더링에는 사용하지 않는다.
 
 ---
 

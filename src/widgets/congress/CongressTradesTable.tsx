@@ -238,7 +238,7 @@ export function CongressTradesTable({ trades }: CongressTradesTableProps) {
                 ← 좌우로 스크롤 →
             </p>
             <div
-                className="overflow-x-auto"
+                className="focus-visible:ring-primary-500 overflow-x-auto rounded-xl focus-visible:ring-2 focus-visible:outline-none"
                 role="region"
                 aria-label="의회 거래 내역 표 (좌우 스크롤 가능)"
                 tabIndex={0}

@@ -118,7 +118,7 @@ function TickerChips({ category, tickers }: TickerChipsProps) {
                         href={`/${ticker}`}
                         aria-label={`${ticker} 종목 페이지로 이동`}
                         data-testid="ticker-chip"
-                        className="text-primary-400 hover:text-primary-300 focus-visible:ring-primary-500 inline-flex min-h-6 items-center rounded px-1.5 py-0.5 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                        className="text-primary-400 hover:text-primary-300 focus-visible:ring-primary-500 inline-flex min-h-6 min-w-6 items-center justify-center rounded px-1.5 py-0.5 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none"
                     >
                         {ticker}
                     </Link>
