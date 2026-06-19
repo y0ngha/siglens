@@ -358,7 +358,6 @@ describe('EconomicCalendarGrid — 중요도 필터 (상세 패널 · DOM 유지
         const { container } = render(
             <EconomicCalendarGrid events={[EVENT_A, EVENT_B, EVENT_C]} />
         );
-        const group = screen.getByRole('group', { name: '중요도 필터' });
         // 패널을 열기 위해 6/21 날짜 버튼 클릭(Low 칩은 여전히 OFF)
         fireEvent.click(screen.getByRole('button', { name: /6월 21일/ }));
         // Low 칩 OFF 상태이므로 화면(getByText)에는 안 보이지만 DOM엔 있다.
@@ -366,8 +365,6 @@ describe('EconomicCalendarGrid — 중요도 필터 (상세 패널 · DOM 유지
         // 해당 li가 hidden 인지 확인
         const li = screen.getByText('Unemployment Claims').closest('li');
         expect(li).toHaveAttribute('hidden');
-        // group 변수는 아래 토글 테스트와 대칭을 위해 참조(미사용 경고 방지)
-        expect(group).toBeInTheDocument();
     });
 
     it('활성 impact 이벤트의 상세 li는 hidden이 아니다', () => {

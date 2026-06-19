@@ -16,7 +16,7 @@ import { cn } from '@/shared/lib/cn';
 import { formatNum } from '@/shared/lib/formatNum';
 import { etDateTimeToKst } from '@/shared/lib/etTimeUtils';
 import { useEconomicCalendarTrigger } from '../hooks/useEconomicCalendarTrigger';
-import { ImpactFilter } from '@/widgets/economy/sections/ImpactFilter';
+import { ImpactFilter } from './ImpactFilter';
 
 const IMPACT_LABELS: Record<CalendarImpact, string> = {
     High: '높음',
