@@ -5,7 +5,6 @@ import type { EconomicCalendarEvent } from '@y0ngha/siglens-core';
 import { getDatabaseClient } from '@/shared/db/client';
 
 import { DrizzleIndicatorTranslationRepository } from './indicatorTranslationRepository';
-import { ensureIndicatorTranslatedAction } from '../actions/ensureIndicatorTranslatedAction';
 import {
     INDICATOR_NAME_KO,
     indicatorLabelKoFromMaps,
@@ -57,7 +56,11 @@ async function readDbMap(
 /**
  * 이벤트들의 raw 지표명을 표시 레이블(한국어 우선, 영어 fallback)로 매핑한 레코드를
  * 반환한다(키 = raw event명). dict-known은 즉시, 미매핑은 DB 캐시 룩업, 둘 다 miss면
- * 영어 fallback + fire-and-forget AI 트리거(다음 렌더 캐시 시드, 봇 포함).
+ * 영어 fallback을 반환한다(결정론적, 사이드 이펙트 없음).
+ *
+ * 미해결 이름에 대한 AI 번역 트리거는 클라이언트 훅(`useIndicatorTranslationTrigger`)이
+ * 마운트 시 담당한다 — RSC prerender/ISR cold-gen에서 고아 프로미스·revalidateTag를
+ * 실행하는 렌더 부작용을 제거하기 위해 SP-A 패턴(`useEconomicCalendarTrigger`)을 미러.
  *
  * 그리드(client)는 이 순수 레이블 맵만 받아 표시한다 — server-only 의존성 누출 없음.
  */
@@ -71,22 +74,10 @@ export async function resolveIndicatorLabels(
 
     const distinctBases = [...new Set(baseByRaw.values())];
     const unknownBases = distinctBases.filter(
-        base => !(base in INDICATOR_NAME_KO)
+        base => !Object.hasOwn(INDICATOR_NAME_KO, base)
     );
 
     const dbMap = await readDbMap(unknownBases);
-
-    // 여전히 미해결인(dict X, DB X) base에 대해서만 AI 번역을 트리거 — 각 1회.
-    for (const base of unknownBases) {
-        if (!(base in dbMap)) {
-            void ensureIndicatorTranslatedAction(base).catch((e: unknown) => {
-                console.error(
-                    '[resolveIndicatorLabels] ensureIndicatorTranslatedAction failed:',
-                    e
-                );
-            });
-        }
-    }
 
     return Object.fromEntries(
         distinctRaw.map(raw => [raw, indicatorLabelKoFromMaps(raw, dbMap)])

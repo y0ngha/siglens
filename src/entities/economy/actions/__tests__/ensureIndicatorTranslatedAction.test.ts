@@ -139,4 +139,20 @@ describe('ensureIndicatorTranslatedAction', () => {
         await ensureIndicatorTranslatedAction('Some Obscure Index YoY');
         expect(revalidateTag).not.toHaveBeenCalled();
     });
+
+    it('does not upsert or revalidate when poll done returns whitespace nameKo', async () => {
+        vi.mocked(submitIndicatorTranslation).mockResolvedValue({
+            status: 'submitted',
+            jobId: 'job-789',
+        });
+        vi.mocked(pollIndicatorTranslation).mockResolvedValue({
+            status: 'done',
+            nameKo: '   ',
+        });
+        await expect(
+            ensureIndicatorTranslatedAction('Some Obscure Index YoY')
+        ).resolves.toBeUndefined();
+        expect(upsert).not.toHaveBeenCalled();
+        expect(revalidateTag).not.toHaveBeenCalled();
+    });
 });

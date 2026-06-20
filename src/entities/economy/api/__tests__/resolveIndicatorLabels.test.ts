@@ -17,13 +17,8 @@ vi.mock('@/entities/economy/api/indicatorTranslationRepository', () => ({
     },
 }));
 
-vi.mock('@/entities/economy/actions/ensureIndicatorTranslatedAction', () => ({
-    ensureIndicatorTranslatedAction: vi.fn(),
-}));
-
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import type { EconomicCalendarEvent } from '@y0ngha/siglens-core';
-import { ensureIndicatorTranslatedAction } from '@/entities/economy/actions/ensureIndicatorTranslatedAction';
 import { resolveIndicatorLabels } from '@/entities/economy/api/resolveIndicatorLabels';
 
 const ev = (event: string): EconomicCalendarEvent => ({
@@ -40,7 +35,6 @@ describe('resolveIndicatorLabels', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         findByNames.mockResolvedValue([]);
-        vi.mocked(ensureIndicatorTranslatedAction).mockResolvedValue(undefined);
     });
 
     it('maps dict-known names to Korean without a DB lookup', async () => {
@@ -48,7 +42,6 @@ describe('resolveIndicatorLabels', () => {
         expect(labels['Nonfarm Payrolls']).toBe('비농업 고용');
         // All distinct bases were dict-known → no unknowns → no DB query.
         expect(findByNames).not.toHaveBeenCalled();
-        expect(ensureIndicatorTranslatedAction).not.toHaveBeenCalled();
     });
 
     it('applies a DB-cached translation for an unmapped name', async () => {
@@ -65,29 +58,27 @@ describe('resolveIndicatorLabels', () => {
         expect(labels['Some Obscure Index YoY (May)']).toBe(
             '어떤 모호한 지수(전년比) (5월)'
         );
-        expect(ensureIndicatorTranslatedAction).not.toHaveBeenCalled();
     });
 
-    it('falls back to English and triggers AI for a name missing everywhere', async () => {
+    it('falls back to English for a name missing from both dict and DB', async () => {
         const labels = await resolveIndicatorLabels([
             ev('Totally Unknown Thing (Apr)'),
         ]);
         expect(labels['Totally Unknown Thing (Apr)']).toBe(
             'Totally Unknown Thing (Apr)'
         );
-        expect(ensureIndicatorTranslatedAction).toHaveBeenCalledWith(
-            'Totally Unknown Thing'
-        );
+        // No trigger: resolveIndicatorLabels is now a pure reader.
+        // AI translation is triggered client-side by useIndicatorTranslationTrigger.
+        expect(findByNames).toHaveBeenCalledWith(['Totally Unknown Thing']);
     });
 
-    it('queries and triggers each distinct base only once', async () => {
+    it('queries each distinct base only once', async () => {
         await resolveIndicatorLabels([
             ev('Totally Unknown Thing (Apr)'),
             ev('Totally Unknown Thing (May)'),
         ]);
         expect(findByNames).toHaveBeenCalledTimes(1);
         expect(findByNames).toHaveBeenCalledWith(['Totally Unknown Thing']);
-        expect(ensureIndicatorTranslatedAction).toHaveBeenCalledTimes(1);
     });
 
     it('degrades to English-only labels on DB failure (graceful)', async () => {
@@ -98,5 +89,25 @@ describe('resolveIndicatorLabels', () => {
         expect(labels['Totally Unknown Thing (Apr)']).toBe(
             'Totally Unknown Thing (Apr)'
         );
+    });
+
+    it('builds a correct label map shape for mixed dict/DB/unknown names', async () => {
+        findByNames.mockResolvedValue([
+            {
+                normalizedName: 'Some Obscure Index YoY',
+                koreanName: '어떤 모호한 지수(전년比)',
+                source: 'ai',
+            },
+        ]);
+        const labels = await resolveIndicatorLabels([
+            ev('Nonfarm Payrolls'),
+            ev('Some Obscure Index YoY (May)'),
+            ev('Totally Unknown Thing'),
+        ]);
+        expect(labels['Nonfarm Payrolls']).toBe('비농업 고용');
+        expect(labels['Some Obscure Index YoY (May)']).toBe(
+            '어떤 모호한 지수(전년比) (5월)'
+        );
+        expect(labels['Totally Unknown Thing']).toBe('Totally Unknown Thing');
     });
 });

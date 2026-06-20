@@ -16,6 +16,7 @@ import { cn } from '@/shared/lib/cn';
 import { formatNum } from '@/shared/lib/formatNum';
 import { etDateTimeToKst } from '@/shared/lib/etTimeUtils';
 import { useEconomicCalendarTrigger } from '../hooks/useEconomicCalendarTrigger';
+import { useIndicatorTranslationTrigger } from '../hooks/useIndicatorTranslationTrigger';
 import { ImpactFilter } from './ImpactFilter';
 import { IMPACT_LABELS, IMPACT_ORDER } from '../utils/impactMeta';
 
@@ -542,6 +543,7 @@ export function EconomicCalendarGrid({
         ReadonlySet<CalendarImpact>
     >(() => new Set(DEFAULT_ACTIVE_IMPACTS));
     useEconomicCalendarTrigger();
+    useIndicatorTranslationTrigger(events, labels);
     const groups = useMemo(() => groupEventsByKstDay(events), [events]);
     const groupMap = useMemo(
         () => new Map<string, DayGroup>(groups.map(g => [g.dateKey, g])),

@@ -119,7 +119,12 @@ export function indicatorLabelKoFromMaps(
     dbMap: Record<string, string>
 ): string {
     const { base, period } = normalizeIndicatorName(raw);
-    const ko = INDICATOR_NAME_KO[base] ?? dbMap[base];
+    // `Record<string, string>` 타입은 `noUncheckedIndexedAccess` 없이 항상 string을
+    // 반환하므로 `?? dbMap[base]` fallback이 타입 상 dead code처럼 보인다. `Object.hasOwn`으로
+    // dict miss를 명시적으로 검사해 fallback 체인(dict → dbMap → raw)을 타입 안전하게 만든다.
+    const ko = Object.hasOwn(INDICATOR_NAME_KO, base)
+        ? INDICATOR_NAME_KO[base]
+        : (dbMap[base] ?? undefined);
     if (ko === undefined) {
         return raw;
     }
