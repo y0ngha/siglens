@@ -403,3 +403,38 @@ describe('EconomicCalendarGrid — 중요도 필터 (상세 패널 · DOM 유지
         );
     });
 });
+
+describe('EconomicCalendarGrid Korean indicator labels', () => {
+    const ev = (date: string, event: string): EconomicCalendarEvent => ({
+        date: `${date} 08:30:00`,
+        event,
+        impact: 'High',
+        actual: null,
+        estimate: 1,
+        previous: 1,
+        unit: '%',
+    });
+
+    it('renders the Korean label in the detail panel when provided', () => {
+        render(
+            <EconomicCalendarGrid
+                events={[ev('2026-06-20', 'Nonfarm Payrolls')]}
+                today="2026-06-20"
+                labels={{ 'Nonfarm Payrolls': '비농업 고용' }}
+            />
+        );
+        // The selected (today) panel shows the Korean label, not the English name.
+        expect(screen.getAllByText('비농업 고용').length).toBeGreaterThan(0);
+        expect(screen.queryByText('Nonfarm Payrolls')).toBeNull();
+    });
+
+    it('falls back to the English event name when no label is provided', () => {
+        render(
+            <EconomicCalendarGrid
+                events={[ev('2026-06-20', 'Mystery Index')]}
+                today="2026-06-20"
+            />
+        );
+        expect(screen.getAllByText('Mystery Index').length).toBeGreaterThan(0);
+    });
+});
