@@ -1,8 +1,11 @@
 import { like } from 'drizzle-orm';
 import { bcryptPasswordHasher } from '@/entities/session';
+import { economicCalendarId } from '@/entities/economy/lib/economicCalendarId';
+import { addEtDays, etDateOf } from '@/entities/economy/lib/calendarWindow';
 import { getDatabaseClient } from '@/shared/db/client';
 import {
     assetTranslations,
+    economicCalendar,
     marketNews,
     terms,
     users,
@@ -165,6 +168,68 @@ async function seed(): Promise<void> {
     );
     await db.insert(marketNews).values(newsRows);
 
+    // economic_calendar — Seed 3 calendar events relative to NOW so they always
+    // fall within the app's ±14-day window (pastWindowStart..futureWindowEnd).
+    // SP-A switched the calendar grid source from FakeEconomyProvider.getCalendar()
+    // to getCalendarFromDb (reads `economic_calendar` table). Without this seed,
+    // CI (clean DB) renders an empty calendar → "Fed Rate Decision" absent from
+    // SSR HTML → economy.spec.ts:53 fails (local-pass/CI-fail because dev DB has rows).
+    //
+    // Events mirror FakeEconomyProvider.getCalendar() by name/impact/values, but
+    // dateEt is computed relative to today-ET so the rows never fall out of window.
+    const todayEt = etDateOf(new Date());
+    const todayMinus1 = addEtDays(todayEt, -1);
+    const todayPlus1 = addEtDays(todayEt, 1);
+
+    const calendarRows = [
+        {
+            id: economicCalendarId(
+                'US',
+                `${todayEt} 14:00:00`,
+                'Fed Rate Decision'
+            ),
+            country: 'US',
+            dateEt: `${todayEt} 14:00:00`,
+            event: 'Fed Rate Decision',
+            impact: 'High',
+            estimate: 3.63,
+            previous: 3.63,
+            actual: null,
+            unit: '%',
+        },
+        {
+            id: economicCalendarId('US', `${todayMinus1} 12:30:00`, 'CPI YoY'),
+            country: 'US',
+            dateEt: `${todayMinus1} 12:30:00`,
+            event: 'CPI YoY',
+            impact: 'High',
+            estimate: 2.3,
+            previous: 2.4,
+            actual: null,
+            unit: '%',
+        },
+        {
+            id: economicCalendarId(
+                'US',
+                `${todayPlus1} 12:30:00`,
+                'Initial Jobless Claims'
+            ),
+            country: 'US',
+            dateEt: `${todayPlus1} 12:30:00`,
+            event: 'Initial Jobless Claims',
+            impact: 'Medium',
+            estimate: 230000,
+            previous: 229000,
+            actual: null,
+            unit: '',
+        },
+    ];
+    await db
+        .insert(economicCalendar)
+        .values(calendarRows)
+        .onConflictDoNothing();
+
+    console.log('e2e seed: economic_calendar ok');
     console.log('e2e seed: ok');
 }
 
