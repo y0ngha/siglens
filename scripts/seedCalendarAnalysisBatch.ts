@@ -37,6 +37,7 @@ import type {
 import type { InlinedRequest, InlinedResponse } from '@google/genai';
 import { GoogleGenAI, JobState } from '@google/genai';
 
+import { CALENDAR_ANALYZED_IMPACTS } from '../src/entities/economy/lib/economyCalendarConstants';
 import { economicCalendar } from '../src/shared/db/schema';
 
 const databaseUrl = process.env.DIRECT_DATABASE_URL ?? process.env.DATABASE_URL;
@@ -59,9 +60,6 @@ const GEMINI_MODEL = 'gemini-2.5-flash-lite';
 // well under the Gemini enqueue token limit (429 RESOURCE_EXHAUSTED) while
 // keeping the batch count low (~933 events → 4 batches).
 const CHUNK_SIZE = 300;
-
-// Medium+ impacts that get analyzed (mirrors core CALENDAR_ANALYZED_IMPACTS).
-const ANALYZED_IMPACTS: readonly CalendarImpact[] = ['High', 'Medium'];
 
 const POLL_INTERVAL_MS = 30_000;
 const MAX_POLL_MS = 2 * 60 * 60 * 1_000; // 2h
@@ -127,14 +125,8 @@ async function pollUntilComplete(
     if (!ai) throw new Error('Gemini client not initialized');
     const start = Date.now();
 
-    while (true) {
+    while (Date.now() - start <= MAX_POLL_MS) {
         const elapsed = Date.now() - start;
-        if (elapsed > MAX_POLL_MS) {
-            throw new Error(
-                `Timeout — exceeded ${formatElapsed(MAX_POLL_MS)} waiting for ${batchName}`
-            );
-        }
-
         const status = await ai.batches.get({ name: batchName });
         const state = status.state ?? 'UNKNOWN';
         console.log(
@@ -157,6 +149,9 @@ async function pollUntilComplete(
 
         await sleep(POLL_INTERVAL_MS);
     }
+    throw new Error(
+        `Timeout — exceeded ${formatElapsed(MAX_POLL_MS)} waiting for ${batchName}`
+    );
 }
 
 type Db = ReturnType<typeof drizzle>;
@@ -266,7 +261,7 @@ async function run(): Promise<void> {
         const db = drizzle(client);
 
         // Query pending events directly. impact is text in the DB; the WHERE
-        // clause restricts it to ANALYZED_IMPACTS, so the cast to CalendarImpact
+        // clause restricts it to CALENDAR_ANALYZED_IMPACTS, so the cast to CalendarImpact
         // at the boundary is sound.
         const rows = await db
             .select({
@@ -281,7 +276,9 @@ async function run(): Promise<void> {
             .from(economicCalendar)
             .where(
                 and(
-                    inArray(economicCalendar.impact, [...ANALYZED_IMPACTS]),
+                    inArray(economicCalendar.impact, [
+                        ...CALENDAR_ANALYZED_IMPACTS,
+                    ]),
                     isNotNull(economicCalendar.actual),
                     isNull(economicCalendar.analyzedAt)
                 )
