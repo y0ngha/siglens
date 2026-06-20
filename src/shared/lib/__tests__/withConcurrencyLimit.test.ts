@@ -60,7 +60,7 @@ describe('withConcurrencyLimit', () => {
             items.length,
             async x => x + 1
         );
-        expect(results.every(r => r.status === 'fulfilled')).toBe(true);
+        results.forEach(r => expect(r.status).toBe('fulfilled'));
         const values = results.map(
             r => (r as PromiseFulfilledResult<number>).value
         );

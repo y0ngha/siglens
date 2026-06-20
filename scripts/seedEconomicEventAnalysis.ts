@@ -32,6 +32,9 @@ if (!databaseUrl) {
 /** 동시 분석 상한 — seed는 일괄이라 작게 잡아 LLM 큐 압박을 피한다. */
 const SEED_PARALLEL_LIMIT = 4;
 
+/** @/shared/config/time의 MS_PER_SECOND와 동기화 */
+const MS_PER_SECOND = 1_000;
+
 function sleep(ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
@@ -48,14 +51,13 @@ async function run(): Promise<void> {
         const pending = await repo.listUnanalyzedAnnounced(
             CALENDAR_ANALYZED_IMPACTS
         );
-        console.log(
-            `Seeding analysis for ${pending.length} Medium+ announced event(s)`
-        );
+        const total = pending.length;
+        console.log(`Seeding analysis for ${total} Medium+ announced event(s)`);
 
         let analyzed = 0;
         let failed = 0;
 
-        for (let i = 0; i < pending.length; i += SEED_PARALLEL_LIMIT) {
+        for (let i = 0; i < total; i += SEED_PARALLEL_LIMIT) {
             const chunk = pending.slice(i, i + SEED_PARALLEL_LIMIT);
             const results = await Promise.allSettled(
                 chunk.map(async row => {
@@ -100,7 +102,7 @@ async function run(): Promise<void> {
                         }
                     }
                     throw new Error(
-                        `poll timeout after ${(CALENDAR_ANALYSIS_POLL_MAX_ATTEMPTS * CALENDAR_ANALYSIS_POLL_INTERVAL_MS) / 1_000}s — ${row.id}`
+                        `poll timeout after ${(CALENDAR_ANALYSIS_POLL_MAX_ATTEMPTS * CALENDAR_ANALYSIS_POLL_INTERVAL_MS) / MS_PER_SECOND}s — ${row.id}`
                     );
                 })
             );
@@ -114,7 +116,7 @@ async function run(): Promise<void> {
                 }
             }
             console.log(
-                `  ${Math.min(i + SEED_PARALLEL_LIMIT, pending.length)}/${pending.length}`
+                `  ${Math.min(i + SEED_PARALLEL_LIMIT, total)}/${total}`
             );
         }
 

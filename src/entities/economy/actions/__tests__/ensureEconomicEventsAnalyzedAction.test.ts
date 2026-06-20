@@ -210,12 +210,9 @@ describe('ensureEconomicEventsAnalyzedAction', () => {
         ).resolves.toBeUndefined();
 
         // The majority-failure console.error must have fired
-        const majorityCall = consoleError.mock.calls.find(
-            args =>
-                typeof args[0] === 'string' &&
-                args[0].includes('majority analyze failure')
+        expect(consoleError).toHaveBeenCalledWith(
+            expect.stringContaining('majority analyze failure')
         );
-        expect(majorityCall).toBeDefined();
 
         // No rows persisted → revalidateTag must NOT be called
         expect(revalidateTag).not.toHaveBeenCalled();

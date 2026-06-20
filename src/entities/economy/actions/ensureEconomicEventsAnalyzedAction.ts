@@ -8,6 +8,7 @@ import {
 import type { EconomicEventAnalysis } from '@y0ngha/siglens-core';
 
 import { isE2E } from '@/shared/api/e2eEnv';
+import { MS_PER_SECOND } from '@/shared/config/time';
 import { getDatabaseClient } from '@/shared/db/client';
 import { sleep } from '@/shared/lib/sleep';
 import { withConcurrencyLimit } from '@/shared/lib/withConcurrencyLimit';
@@ -86,7 +87,7 @@ async function analyzeAndPersistEvent(
         }
         if (analysis === null) {
             console.warn(
-                `[ensureEconomicEventsAnalyzedAction] poll timeout after ${(CALENDAR_ANALYSIS_POLL_MAX_ATTEMPTS * CALENDAR_ANALYSIS_POLL_INTERVAL_MS) / 1_000}s — ${row.id}`
+                `[ensureEconomicEventsAnalyzedAction] poll timeout after ${(CALENDAR_ANALYSIS_POLL_MAX_ATTEMPTS * CALENDAR_ANALYSIS_POLL_INTERVAL_MS) / MS_PER_SECOND}s — ${row.id}`
             );
             return false;
         }
@@ -132,11 +133,13 @@ export async function ensureEconomicEventsAnalyzedAction(): Promise<void> {
             CALENDAR_ANALYSIS_PARALLEL_LIMIT,
             row => analyzeAndPersistEvent(row, repo)
         );
-        const failures = settled.filter(r => r.status === 'rejected');
+        const failures = settled.filter(
+            (r): r is PromiseRejectedResult => r.status === 'rejected'
+        );
         if (failures.length > 0) {
             console.warn(
                 `[ensureEconomicEventsAnalyzedAction] ${failures.length}/${pending.length} analyze failed`,
-                failures.map(f => (f.status === 'rejected' ? f.reason : null))
+                failures.map(f => f.reason)
             );
         }
         if (failures.length > pending.length / MAJORITY_DIVISOR) {

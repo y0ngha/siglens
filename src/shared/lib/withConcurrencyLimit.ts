@@ -20,7 +20,8 @@ export async function withConcurrencyLimit<T, R>(
     fn: (item: T) => Promise<R>
 ): Promise<PromiseSettledResult<R>[]> {
     const results: PromiseSettledResult<R>[] = [];
-    for (let i = 0; i < items.length; i += limit) {
+    const total = items.length;
+    for (let i = 0; i < total; i += limit) {
         const chunk = items.slice(i, i + limit);
         results.push(...(await Promise.allSettled(chunk.map(fn))));
     }
