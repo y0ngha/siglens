@@ -65,8 +65,8 @@ describe('sessions 테이블 컬럼', () => {
     });
 });
 
-describe('economicIndicatorTranslations table', () => {
-    it('exposes the expected columns', () => {
+describe('economicIndicatorTranslations 테이블 컬럼', () => {
+    it('normalizedName, koreanName, source, updatedAt 컬럼 속성이 존재한다', () => {
         const cols = Object.keys(schema.economicIndicatorTranslations);
         expect(cols).toContain('normalizedName');
         expect(cols).toContain('koreanName');
