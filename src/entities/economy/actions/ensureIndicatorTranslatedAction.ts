@@ -10,6 +10,7 @@ import {
     pollIndicatorTranslation,
 } from '@y0ngha/siglens-core';
 
+import { isE2E } from '@/shared/api/e2eEnv';
 import { getDatabaseClient } from '@/shared/db/client';
 import { sleep } from '@/shared/lib/sleep';
 import { MS_PER_SECOND } from '@/shared/config/time';
@@ -82,6 +83,7 @@ export async function ensureIndicatorTranslatedAction(
     normalizedName: string
 ): Promise<void> {
     try {
+        if (isE2E()) return;
         if (normalizedName in INDICATOR_NAME_KO) {
             return;
         }

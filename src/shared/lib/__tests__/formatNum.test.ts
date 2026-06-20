@@ -21,10 +21,16 @@ describe('formatNum', () => {
         expect(formatNum(-1234, '%')).toBe('-1,234%');
     });
 
-    it('NaN → "NaN<unit>" (Intl.NumberFormat은 NaN을 "NaN"으로 직렬화)', () => {
-        // NaN은 null이 아니므로 N/A를 반환하지 않고 format(NaN) 결과를 반환한다.
-        const result = formatNum(NaN, '원');
-        expect(result).toBe('NaN원');
+    it('NaN → "N/A" (비유한수 가드)', () => {
+        expect(formatNum(NaN, '원')).toBe('N/A');
+    });
+
+    it('Infinity → "N/A" (비유한수 가드)', () => {
+        expect(formatNum(Infinity, '%')).toBe('N/A');
+    });
+
+    it('-Infinity → "N/A" (비유한수 가드)', () => {
+        expect(formatNum(-Infinity, '%')).toBe('N/A');
     });
 
     it('단위가 빈 문자열이면 숫자만 반환', () => {

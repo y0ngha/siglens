@@ -293,7 +293,7 @@ function DayDetailPanel({
                             </span>
                         </div>
                         {ev.original.sentiment != null &&
-                            ev.original.summaryKo != null && (
+                            (ev.original.summaryKo?.trim().length ?? 0) > 0 && (
                                 <div className="border-secondary-700/60 mt-2 space-y-1 border-t pt-2">
                                     <span
                                         className={cn(

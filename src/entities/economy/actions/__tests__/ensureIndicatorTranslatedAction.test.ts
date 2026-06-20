@@ -1,9 +1,11 @@
-const { mockUpsert } = vi.hoisted(() => ({
+const { mockUpsert, isE2E } = vi.hoisted(() => ({
     mockUpsert: vi.fn().mockResolvedValue(undefined),
+    isE2E: vi.fn(() => false),
 }));
 
 vi.mock('server-only', () => ({}));
 vi.mock('next/cache', () => ({ revalidateTag: vi.fn() }));
+vi.mock('@/shared/api/e2eEnv', () => ({ isE2E: () => isE2E() }));
 
 vi.mock('@y0ngha/siglens-core', () => ({
     submitIndicatorTranslation: vi.fn(),
@@ -45,6 +47,7 @@ describe('ensureIndicatorTranslatedAction', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         mockUpsert.mockClear();
+        isE2E.mockReturnValue(false);
         vi.mocked(isIndicatorTranslationPending).mockResolvedValue(false);
         vi.mocked(markIndicatorTranslationPending).mockResolvedValue(undefined);
         // Default: cached result (short-circuit, no poll needed)
@@ -52,6 +55,13 @@ describe('ensureIndicatorTranslatedAction', () => {
             status: 'cached',
             nameKo: '어떤 모호한 지수(전년比)',
         });
+    });
+
+    it('short-circuits under E2E (no LLM calls)', async () => {
+        isE2E.mockReturnValue(true);
+        await ensureIndicatorTranslatedAction('Some Obscure Index YoY');
+        expect(submitIndicatorTranslation).not.toHaveBeenCalled();
+        expect(revalidateTag).not.toHaveBeenCalled();
     });
 
     it('skips when the name is already in the code dictionary', async () => {

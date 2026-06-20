@@ -2,6 +2,7 @@
 
 import { revalidateTag } from 'next/cache';
 
+import { isE2E } from '@/shared/api/e2eEnv';
 import { getDatabaseClient } from '@/shared/db/client';
 import { FmpEconomyProvider } from '@/shared/api/fmp/FmpEconomyProvider';
 
@@ -31,6 +32,7 @@ const MAJORITY_DIVISOR = 2;
  */
 export async function ensureEconomicCalendarAction(): Promise<void> {
     try {
+        if (isE2E()) return;
         if (await isCalendarRecentlyFetched()) {
             return;
         }

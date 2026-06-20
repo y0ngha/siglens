@@ -1,7 +1,10 @@
 // All vi.mock() calls are hoisted before static imports — factory cannot reference
 // outer-scope variables. Access mocked fns via vi.mocked() after import.
+const { isE2E } = vi.hoisted(() => ({ isE2E: vi.fn(() => false) }));
+
 vi.mock('server-only', () => ({}));
 vi.mock('next/cache', () => ({ revalidateTag: vi.fn() }));
+vi.mock('@/shared/api/e2eEnv', () => ({ isE2E: () => isE2E() }));
 vi.mock('@/entities/economy/api/calendarRefreshFlag', () => ({
     isCalendarRecentlyFetched: vi.fn(),
     markCalendarFetched: vi.fn(),
@@ -21,6 +24,7 @@ vi.mock('@/shared/db/client', () => ({
 }));
 
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
+// isE2E is defined in vi.hoisted above — re-export through the mock
 import type { EconomicCalendarEvent } from '@y0ngha/siglens-core';
 import { revalidateTag } from 'next/cache';
 import {
@@ -55,6 +59,7 @@ describe('ensureEconomicCalendarAction', () => {
         vi.setSystemTime(new Date('2026-06-20T12:00:00Z'));
 
         vi.clearAllMocks();
+        isE2E.mockReturnValue(false);
         vi.mocked(isCalendarRecentlyFetched).mockResolvedValue(false);
         vi.mocked(markCalendarFetched).mockResolvedValue(undefined);
 
@@ -75,6 +80,14 @@ describe('ensureEconomicCalendarAction', () => {
 
     afterEach(() => {
         vi.useRealTimers();
+    });
+
+    it('short-circuits under E2E (no FMP calls)', async () => {
+        isE2E.mockReturnValue(true);
+        await ensureEconomicCalendarAction();
+        expect(getCalendar).not.toHaveBeenCalled();
+        expect(upsertEvent).not.toHaveBeenCalled();
+        expect(vi.mocked(revalidateTag)).not.toHaveBeenCalled();
     });
 
     it('skips fetch when recently fetched', async () => {

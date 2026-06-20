@@ -71,9 +71,21 @@ async function run(): Promise<void> {
 
     const baseNames = new Set<string>();
     let upserted = 0;
+    let skipped = 0;
 
     for (const { from, to } of chunks) {
-        const events = await fetchCalendarChunk(from, to);
+        let events: EconomicCalendarEvent[];
+        try {
+            events = await fetchCalendarChunk(from, to);
+        } catch (error) {
+            // FMP 플랜이 커버하지 않는 과거 범위(HTTP 402) 또는 일시 오류인 청크는
+            // 건너뛰고 계속한다 — 커버되는 범위만이라도 채워 백필이 전체 중단되지 않게 한다.
+            console.warn(
+                `  ${from}..${to}: skipped — ${error instanceof Error ? error.message : String(error)}`
+            );
+            skipped += 1;
+            continue;
+        }
         console.log(`  ${from}..${to}: ${events.length} US events`);
         for (const event of events) {
             baseNames.add(normalizeIndicatorBaseName(event.event));
@@ -124,7 +136,7 @@ async function run(): Promise<void> {
     await writeFile(OUTPUT_FILE, `${JSON.stringify(sortedNames, null, 2)}\n`);
 
     console.log(
-        `Done — upserted ${upserted} event rows; dumped ${sortedNames.length} distinct base indicator names to ${OUTPUT_FILE}`
+        `Done — upserted ${upserted} event rows; ${skipped} chunk(s) skipped; dumped ${sortedNames.length} distinct base indicator names to ${OUTPUT_FILE}`
     );
     await client.end();
 }

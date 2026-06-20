@@ -93,6 +93,15 @@ async function analyzeAndPersistEvent(
         }
     }
 
+    // 빈 summaryKo는 core normalizer의 crash-safe fallback 결과 — write-once로 영구
+    // 기록하면 재시도 기회가 사라진다. translation 경로와 같은 방식으로 skip 처리.
+    if (analysis.summaryKo.trim() === '') {
+        console.warn(
+            `[ensureEconomicEventsAnalyzedAction] empty summaryKo — skipping persist for ${row.id}`
+        );
+        return false;
+    }
+
     await repo.attachEventAnalysis(row.id, analysis);
     return true;
 }
