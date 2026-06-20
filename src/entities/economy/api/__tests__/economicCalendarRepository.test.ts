@@ -140,7 +140,8 @@ describe('DrizzleEconomicCalendarRepository.listInRange', () => {
         const repo = new DrizzleEconomicCalendarRepository(db);
         const events = await repo.listInRange('2026-06-01', '2026-06-30');
         expect(events).toHaveLength(2);
-        expect(events[0]).toEqual({
+        // SP-D AI 컬럼이 추가됐으므로 핵심 필드만 단언(objectContaining).
+        expect(events[0]).toMatchObject({
             date: '2026-06-13 08:30:00',
             event: 'Core CPI MoM (May)',
             impact: 'High',
