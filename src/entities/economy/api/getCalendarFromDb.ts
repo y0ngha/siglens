@@ -1,11 +1,11 @@
 import 'server-only';
 import { cache } from 'react';
 import { unstable_cache } from 'next/cache';
-import type { EconomicCalendarEvent } from '@y0ngha/siglens-core';
 
 import { getDatabaseClient } from '@/shared/db/client';
 
 import { DrizzleEconomicCalendarRepository } from './economicCalendarRepository';
+import type { EconomicCalendarEventWithAnalysis } from '../model';
 import { pastWindowStart, futureWindowEnd } from '../lib/calendarWindow';
 import {
     ECONOMY_CALENDAR_CACHE_TAG,
@@ -22,9 +22,12 @@ import {
  * HTML에 박고 정적화한다 (src/app/CLAUDE.md 4축 규약 축1).
  * revalidate=24h + `economy:calendar` 태그로 `ensureEconomicCalendarAction`이
  * on-demand 무효화 가능. cookies/headers/connection 미사용.
+ *
+ * SP-D: `listInRange`가 AI 분석 컬럼(sentiment/summaryKo/interpretationKo/analyzedAt)을
+ * 함께 반환하므로 반환 타입이 `EconomicCalendarEventWithAnalysis[]`로 확장됐다.
  */
 const fetchCalendar = unstable_cache(
-    async (anchorEt: string): Promise<EconomicCalendarEvent[]> => {
+    async (anchorEt: string): Promise<EconomicCalendarEventWithAnalysis[]> => {
         const { db } = getDatabaseClient();
         const repo = new DrizzleEconomicCalendarRepository(db);
         return repo.listInRange(
@@ -49,7 +52,7 @@ const fetchCalendar = unstable_cache(
  * DB 실패 시 빈 배열로 graceful — 캘린더 섹션만 비고 페이지는 렌더.
  */
 export const getCalendarFromDb = cache(
-    async (anchorEt: string): Promise<EconomicCalendarEvent[]> => {
+    async (anchorEt: string): Promise<EconomicCalendarEventWithAnalysis[]> => {
         try {
             return await fetchCalendar(anchorEt);
         } catch (error) {

@@ -125,6 +125,10 @@ describe('DrizzleEconomicCalendarRepository.listInRange', () => {
                     estimate: 0.3,
                     previous: 0.2,
                     unit: '%',
+                    sentiment: null,
+                    summaryKo: null,
+                    interpretationKo: null,
+                    analyzedAt: null,
                 },
                 {
                     dateEt: '2026-06-14 10:00:00',
@@ -134,6 +138,10 @@ describe('DrizzleEconomicCalendarRepository.listInRange', () => {
                     estimate: null,
                     previous: null,
                     unit: '',
+                    sentiment: null,
+                    summaryKo: null,
+                    interpretationKo: null,
+                    analyzedAt: null,
                 },
             ]
         );
@@ -148,7 +156,23 @@ describe('DrizzleEconomicCalendarRepository.listInRange', () => {
             estimate: 0.3,
             previous: 0.2,
             unit: '%',
+            sentiment: null,
+            summaryKo: null,
+            interpretationKo: null,
+            analyzedAt: null,
         });
-        expect(events[1].impact).toBe('Low');
+        expect(events[1]).toEqual({
+            date: '2026-06-14 10:00:00',
+            event: 'Mystery',
+            impact: 'Low',
+            actual: null,
+            estimate: null,
+            previous: null,
+            unit: '',
+            sentiment: null,
+            summaryKo: null,
+            interpretationKo: null,
+            analyzedAt: null,
+        });
     });
 });

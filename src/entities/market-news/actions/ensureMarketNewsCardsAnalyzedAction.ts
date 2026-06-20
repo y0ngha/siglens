@@ -5,6 +5,7 @@ import { revalidateTag } from 'next/cache';
 import { isE2E } from '@/shared/api/e2eEnv';
 import { sleep } from '@/shared/lib/sleep';
 import { MS_PER_SECOND } from '@/shared/config/time';
+import { withConcurrencyLimit } from '@/shared/lib/withConcurrencyLimit';
 import {
     pollNewsCardAnalysis,
     submitNewsCardAnalysis,
@@ -31,26 +32,6 @@ import {
 
 /** Divisor for the upsert-majority-failure threshold: if more than half of fetched items fail to upsert, abort. */
 const MAJORITY_DIVISOR = 2;
-
-/**
- * Run `fn` over each item in `items`, at most `limit` items concurrently.
- * Returns settled results in input order, identical to `Promise.allSettled`.
- *
- * Avoids adding `p-limit` as a dependency; the loop-slice pattern is
- * sufficient for the O(50) item sizes seen here.
- */
-async function withConcurrencyLimit<T, R>(
-    items: T[],
-    limit: number,
-    fn: (item: T) => Promise<R>
-): Promise<PromiseSettledResult<R>[]> {
-    const results: PromiseSettledResult<R>[] = [];
-    for (let i = 0; i < items.length; i += limit) {
-        const chunk = items.slice(i, i + limit);
-        results.push(...(await Promise.allSettled(chunk.map(fn))));
-    }
-    return results;
-}
 
 /**
  * Submit per-card AI analysis for a single item and wait for the worker to

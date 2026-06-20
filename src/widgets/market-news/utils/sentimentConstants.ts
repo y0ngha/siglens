@@ -1,23 +1,10 @@
-import type { NewsSentiment } from '@y0ngha/siglens-core';
-
-export const SENTIMENT_LABEL: Record<NewsSentiment, string> = {
-    bullish: '긍정',
-    neutral: '중립',
-    bearish: '부정',
-};
-
-export const SENTIMENT_CLASS: Record<NewsSentiment, string> = {
-    bullish: 'bg-ui-success/10 text-ui-success-text',
-    neutral: 'bg-secondary-700 text-secondary-300',
-    bearish: 'bg-ui-danger/10 text-ui-danger-text',
-};
-
 /**
- * Type guard for {@link NewsSentiment}. Uses {@link SENTIMENT_LABEL}
- * (Record<NewsSentiment, string>) as the exhaustiveness source — if core adds a
- * new sentiment, the SENTIMENT_LABEL definition fails to compile, preventing
- * silent drift.
+ * 감정(sentiment) 표시 상수 — 실제 정의는 `@/shared/lib/sentimentDisplay`로 이전.
+ * 기존 market-news 내부 소비자(`MarketNewsCard`, `MarketNewsDigest`)의 상대 경로
+ * 임포트를 깨지 않도록 re-export만 유지한다.
  */
-export function isNewsSentiment(value: unknown): value is NewsSentiment {
-    return typeof value === 'string' && value in SENTIMENT_LABEL;
-}
+export {
+    SENTIMENT_LABEL,
+    SENTIMENT_CLASS,
+    isNewsSentiment,
+} from '@/shared/lib/sentimentDisplay';

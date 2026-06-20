@@ -6,6 +6,7 @@ import { EconomicCalendarGrid } from '@/widgets/economy/sections/EconomicCalenda
 vi.mock('@/entities/economy/actions', () => ({
     ensureEconomicCalendarAction: vi.fn().mockResolvedValue(undefined),
     ensureIndicatorTranslatedAction: vi.fn().mockResolvedValue(undefined),
+    ensureEconomicEventsAnalyzedAction: vi.fn().mockResolvedValue(undefined),
 }));
 
 /**

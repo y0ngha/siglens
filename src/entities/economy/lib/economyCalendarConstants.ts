@@ -26,3 +26,38 @@ export const CALENDAR_REFRESH_FLAG_TTL_SECONDS =
 
 /** Redis refresh-flag 키 — 단일 글로벌 캘린더(심볼/카테고리 분기 없음). */
 export const CALENDAR_REFRESH_FLAG_KEY = 'economy:calendar:refresh';
+
+/**
+ * 분석 ensure가 동시에 호출하는 core submitEconomicEventAnalysis 최대 병렬 수.
+ * market-news LLM_PARALLEL_LIMIT 패턴 — worker 큐 stampede 방지. 발표 Medium+ 미분석분이
+ * 매 접속 소수라 작게 잡는다.
+ */
+export const CALENDAR_ANALYSIS_PARALLEL_LIMIT = 4;
+
+/** core가 표준 Record 키로 받는 Medium+ 임팩트 집합 — 분석 대상 필터. */
+export const CALENDAR_ANALYZED_IMPACTS = ['High', 'Medium'] as const;
+
+const CALENDAR_ANALYSIS_REFRESH_FLAG_TTL_MINUTES = 30;
+
+/**
+ * 분석 pass refresh-flag TTL — 이 윈도 안 재접속(봇 재크롤 포함)이면 분석 스캔을 건너뛴다.
+ * SP-A 인제스션 플래그와 별도 키라 두 pass가 독립적으로 쓰로틀된다.
+ */
+export const CALENDAR_ANALYSIS_REFRESH_FLAG_TTL_SECONDS =
+    CALENDAR_ANALYSIS_REFRESH_FLAG_TTL_MINUTES * SECONDS_PER_MINUTE;
+
+/** Redis 분석 refresh-flag 키 — 단일 글로벌 캘린더(SP-A 인제스션 키와 분리). */
+export const CALENDAR_ANALYSIS_REFRESH_FLAG_KEY =
+    'economy:calendar:analysis:refresh';
+
+/**
+ * core submit→poll 주기 (ms). flash-lite 평균 <10s,
+ * `CALENDAR_ANALYSIS_POLL_MAX_ATTEMPTS`회 × 2s 상한이라 serverless waitUntil 예산 내 충분하다.
+ * market-news POLL_INTERVAL_MS 패턴 미러.
+ */
+export const CALENDAR_ANALYSIS_POLL_INTERVAL_MS = 2_000;
+
+/**
+ * poll 최대 시도 횟수. 초과 시 해당 이벤트는 건너뛰고 다음 접속/플래그 만료 시 재시도된다.
+ */
+export const CALENDAR_ANALYSIS_POLL_MAX_ATTEMPTS = 30;
