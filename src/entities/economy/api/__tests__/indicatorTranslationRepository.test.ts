@@ -65,7 +65,7 @@ describe('DrizzleIndicatorTranslationRepository.upsert', () => {
         const repo = new DrizzleIndicatorTranslationRepository(db);
         await repo.upsert(RECORD);
         expect(spies.insert).toHaveBeenCalledOnce();
-        const inserted = spies.values.mock.calls[0][0] as Record<
+        const inserted = (spies.values.mock.calls[0] as unknown[])[0] as Record<
             string,
             unknown
         >;
