@@ -351,6 +351,15 @@ export const economicCalendar = pgTable(
         fetchedAt: timestamp('fetched_at', { withTimezone: true })
             .notNull()
             .defaultNow(),
+        // --- SP-D AI 분석 컬럼 (Medium+ 발표 이벤트만 채워짐) ---
+        /** core analyzeEconomicEvent 결과: 'bullish' | 'neutral' | 'bearish'. 미분석=null. */
+        sentiment: text('sentiment'),
+        /** 발표 내용 1~2문장 한국어 요약. 미분석=null. */
+        summaryKo: text('summary_ko'),
+        /** 발표의 시장 해석(왜 중요한지). 미분석=null. */
+        interpretationKo: text('interpretation_ko'),
+        /** 분석 완료 시각 — 멱등성 가드(IS NULL이면 미분석). */
+        analyzedAt: timestamp('analyzed_at', { withTimezone: true }),
     },
     table => [
         index('economic_calendar_date_et_idx').on(table.dateEt),
@@ -359,6 +368,11 @@ export const economicCalendar = pgTable(
             table.dateEt
         ),
         index('economic_calendar_impact_idx').on(table.impact),
+        // 미분석 발표분 스캔용 — ensureEconomicEventsAnalyzedAction이 impact+analyzedAt로 필터.
+        index('economic_calendar_impact_analyzed_at_idx').on(
+            table.impact,
+            table.analyzedAt
+        ),
     ]
 );
 
