@@ -47,4 +47,11 @@ describe('useEconomicCalendarTrigger', () => {
         render(<Probe />);
         expect(ensureEconomicEventsAnalyzedAction).toHaveBeenCalledOnce();
     });
+
+    it('swallows a rejected ensureEconomicEventsAnalyzedAction without throwing', () => {
+        vi.mocked(ensureEconomicEventsAnalyzedAction).mockRejectedValue(
+            new Error('analysis down')
+        );
+        expect(() => render(<Probe />)).not.toThrow();
+    });
 });

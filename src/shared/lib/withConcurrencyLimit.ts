@@ -23,6 +23,8 @@ export async function withConcurrencyLimit<T, R>(
     const total = items.length;
     for (let i = 0; i < total; i += limit) {
         const chunk = items.slice(i, i + limit);
+        // 순차 async 청킹: 각 청크를 순서대로 await해야 해서 로컬 results에 push한다.
+        // reduce+spread는 .then 체이닝이 필요해 명료성 이득이 없다.
         results.push(...(await Promise.allSettled(chunk.map(fn))));
     }
     return results;

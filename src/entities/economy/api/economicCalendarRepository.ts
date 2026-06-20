@@ -179,8 +179,7 @@ export class DrizzleEconomicCalendarRepository {
      */
     async attachEventAnalysis(
         id: string,
-        analysis: EconomicEventAnalysis,
-        analyzedAt: Date = new Date()
+        analysis: EconomicEventAnalysis
     ): Promise<void> {
         await withRetry(
             () =>
@@ -190,7 +189,7 @@ export class DrizzleEconomicCalendarRepository {
                         sentiment: analysis.sentiment,
                         summaryKo: analysis.summaryKo,
                         interpretationKo: analysis.interpretationKo,
-                        analyzedAt,
+                        analyzedAt: new Date(),
                     })
                     .where(
                         and(

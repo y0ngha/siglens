@@ -52,13 +52,13 @@ export const CALENDAR_ANALYSIS_REFRESH_FLAG_KEY =
 
 /**
  * core submit→poll 주기 (ms). flash-lite 평균 <10s,
- * 30회×2s = 60s 상한이라 serverless waitUntil 예산 내 충분하다.
+ * `CALENDAR_ANALYSIS_POLL_MAX_ATTEMPTS`회 × 2s 상한이라 serverless waitUntil 예산 내 충분하다.
  * market-news POLL_INTERVAL_MS 패턴 미러.
  */
 export const CALENDAR_ANALYSIS_POLL_INTERVAL_MS = 2_000;
 
 /**
- * poll 최대 시도 횟수. 30회×2s = 60s 상한(market-news POLL_MAX_ATTEMPTS 미러).
+ * poll 최대 시도 횟수. `CALENDAR_ANALYSIS_POLL_MAX_ATTEMPTS`회 × 2s 상한(market-news POLL_MAX_ATTEMPTS 미러).
  * 초과 시 해당 이벤트는 건너뛰고 다음 접속/플래그 만료 시 재시도된다.
  */
 export const CALENDAR_ANALYSIS_POLL_MAX_ATTEMPTS = 30;
