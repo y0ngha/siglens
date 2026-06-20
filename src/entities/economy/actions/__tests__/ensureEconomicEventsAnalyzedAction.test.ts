@@ -51,7 +51,10 @@ vi.mock('@/shared/lib/withConcurrencyLimit', async () => {
 
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { ensureEconomicEventsAnalyzedAction } from '@/entities/economy/actions/ensureEconomicEventsAnalyzedAction';
-import { ECONOMY_CALENDAR_CACHE_TAG } from '@/entities/economy/lib/economyCalendarConstants';
+import {
+    ECONOMY_CALENDAR_CACHE_TAG,
+    CALENDAR_ANALYZED_IMPACTS,
+} from '@/entities/economy/lib/economyCalendarConstants';
 
 const ROW = {
     id: 'id1',
@@ -105,8 +108,7 @@ describe('ensureEconomicEventsAnalyzedAction', () => {
         await ensureEconomicEventsAnalyzedAction();
         expect(markAnalysisRun).toHaveBeenCalledOnce();
         expect(listUnanalyzedAnnounced).toHaveBeenCalledWith([
-            'High',
-            'Medium',
+            ...CALENDAR_ANALYZED_IMPACTS,
         ]);
         expect(submitEconomicEventAnalysis).toHaveBeenCalledWith({
             event: 'Core CPI MoM (May)',
@@ -199,6 +201,9 @@ describe('ensureEconomicEventsAnalyzedAction', () => {
         listUnanalyzedAnnounced.mockResolvedValue([ROW, ROW_2]);
         submitEconomicEventAnalysis.mockRejectedValue(new Error('llm down'));
 
+        const consoleWarn = vi
+            .spyOn(console, 'warn')
+            .mockImplementation(() => {});
         const consoleError = vi
             .spyOn(console, 'error')
             .mockImplementation(() => {});
@@ -215,6 +220,7 @@ describe('ensureEconomicEventsAnalyzedAction', () => {
         // No rows persisted → revalidateTag must NOT be called
         expect(revalidateTag).not.toHaveBeenCalled();
 
+        consoleWarn.mockRestore();
         consoleError.mockRestore();
     });
 

@@ -67,6 +67,30 @@ describe('EconomicCalendarGrid analysis display', () => {
         expect(screen.queryByText('부정')).not.toBeInTheDocument();
     });
 
+    it('renders badge and summary but not interpretation when interpretationKo is null', () => {
+        render(
+            <EconomicCalendarGrid
+                events={[
+                    ev({
+                        sentiment: 'bearish',
+                        summaryKo: '요약입니다.',
+                        interpretationKo: null,
+                        analyzedAt: new Date('2026-06-20T13:00:00Z'),
+                    }),
+                ]}
+                today="2026-06-20"
+            />
+        );
+        expect(screen.getByText('부정')).toBeInTheDocument();
+        expect(screen.getByText('요약입니다.')).toBeInTheDocument();
+        // interpretation paragraph must be absent — this text only appears in the positive-test fixture
+        expect(
+            screen.queryByText(
+                '인플레 우려로 금리 인하 기대가 후퇴할 수 있어요.'
+            )
+        ).not.toBeInTheDocument();
+    });
+
     it('renders no analysis block for an unannounced event (actual null)', () => {
         render(
             <EconomicCalendarGrid
