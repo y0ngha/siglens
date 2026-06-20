@@ -181,6 +181,13 @@ async function seed(): Promise<void> {
     const todayMinus1 = addEtDays(todayEt, -1);
     const todayPlus1 = addEtDays(todayEt, 1);
 
+    // todayMinus2: ±14d 윈도 내에 있고 과거 날짜이므로 actual 채움이 자연스럽다.
+    // 분석 결과(sentiment/summaryKo/interpretationKo/analyzedAt)를 포함해
+    // SP-B(한국어 레이블)·SP-C(필터)·SP-D(sentiment 배지) e2e 검증에 사용된다.
+    const todayMinus2 = addEtDays(todayEt, -2);
+    // Low impact 이벤트 — 기본 필터(High+Med) OFF 상태. 낮음 칩 토글 테스트에 사용.
+    const todayPlus2 = addEtDays(todayEt, 2);
+
     const calendarRows = [
         {
             id: economicCalendarId(
@@ -222,6 +229,56 @@ async function seed(): Promise<void> {
             previous: 229000,
             actual: null,
             unit: '',
+        },
+        /**
+         * SP-B / SP-D e2e 앵커 이벤트 — INDICATOR_NAME_KO에 등재된 'Nonfarm Payrolls'
+         * (→ 비농업 고용)를 사용해 서버 한국어 레이블 해석을 검증한다.
+         * actual/sentiment/summaryKo/interpretationKo/analyzedAt를 모두 채워
+         * 분석 배지·요약이 SSR HTML에 박히는 것을 확인한다.
+         *
+         * today-2는 발표 완료 시점(과거)이므로 actual을 자연스럽게 채울 수 있고,
+         * PAST_WINDOW_DAYS(14일) 이내라 getCalendarFromDb 쿼리에 반드시 포함된다.
+         */
+        {
+            id: economicCalendarId(
+                'US',
+                `${todayMinus2} 12:30:00`,
+                'Nonfarm Payrolls'
+            ),
+            country: 'US',
+            dateEt: `${todayMinus2} 12:30:00`,
+            event: 'Nonfarm Payrolls',
+            impact: 'High',
+            estimate: 185000,
+            previous: 177000,
+            actual: 203000,
+            unit: '',
+            sentiment: 'bullish',
+            summaryKo:
+                '비농업 고용이 예상치를 크게 상회해 노동시장 강세를 확인했습니다.',
+            interpretationKo:
+                '고용 호조는 연준의 금리 인하 속도를 늦출 수 있어 달러 강세 요인입니다.',
+            analyzedAt: new Date(),
+        },
+        /**
+         * SP-C 필터 테스트용 Low impact 이벤트 — 기본 필터(High+Med)에서 제외되므로
+         * '낮음' 칩 클릭 전후로 이 날짜 셀의 표시 건수가 달라지는 것을 검증한다.
+         * today+2는 미래(발표 예정)이므로 actual=null이 자연스럽다.
+         */
+        {
+            id: economicCalendarId(
+                'US',
+                `${todayPlus2} 10:00:00`,
+                'MBA Mortgage Applications'
+            ),
+            country: 'US',
+            dateEt: `${todayPlus2} 10:00:00`,
+            event: 'MBA Mortgage Applications',
+            impact: 'Low',
+            estimate: null,
+            previous: -1.2,
+            actual: null,
+            unit: '%',
         },
     ];
     await db

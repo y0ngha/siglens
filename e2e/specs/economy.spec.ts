@@ -230,6 +230,155 @@ test.describe('economy overview', () => {
 });
 
 /**
+ * SP-B / SP-D / SP-C — 시드 기반 캘린더 기능 검증.
+ *
+ * 시드 기여 이벤트:
+ *   - 'Nonfarm Payrolls' (today-2, High, actual=203000, sentiment='bullish',
+ *     summaryKo='비농업 고용이 예상치를 크게 상회해 노동시장 강세를 확인했습니다.',
+ *     interpretationKo='고용 호조는 연준의 금리 인하 속도를 늦출 수 있어 달러 강세 요인입니다.')
+ *     → SP-B(한국어 레이블 '비농업 고용') + SP-D(sentiment 배지 '긍정' + summaryKo) 검증.
+ *   - 'MBA Mortgage Applications' (today+2, Low impact)
+ *     → SP-C 필터 토글 검증(기본 OFF → 클릭 ON).
+ *
+ * 서버는 실제 wall-clock 기준으로 렌더하므로(브라우저 clock freeze 불필요),
+ * today±2 이벤트가 항상 ±14d 윈도 안에 포함된다.
+ */
+test.describe('economy calendar — SP-B/C/D feature coverage', () => {
+    /**
+     * SP-B: 한국어 레이블 SSR 검증.
+     *
+     * `page.request.get`은 JS 없는 크롤러 요청과 동일한 SSR HTML을 받는다.
+     * 시드의 'Nonfarm Payrolls' 이벤트가 서버의 INDICATOR_NAME_KO 사전으로
+     * '비농업 고용'으로 변환돼 HTML에 포함돼야 한다.
+     *
+     * EconomicCalendarGrid는 서버 컴포넌트에서 labels 맵을 resolve해 주입한다.
+     * all-hidden `<div hidden>` 패널도 DOM에 항상 유지되므로 크롤러가 읽을 수 있다.
+     */
+    test('SP-B: 한국어 레이블이 SSR HTML에 노출된다 (비농업 고용)', async ({
+        page,
+    }) => {
+        const res = await page.request.get('/economy');
+        expect(res.status()).toBe(200);
+        const html = await res.text();
+
+        // INDICATOR_NAME_KO['Nonfarm Payrolls'] = '비농업 고용'
+        expect(html).toContain('비농업 고용');
+    });
+
+    /**
+     * SP-D: sentiment 배지 + summaryKo SSR 검증.
+     *
+     * 시드의 'Nonfarm Payrolls' 이벤트(bullish)는 SSR 시점에 sentiment='bullish',
+     * summaryKo가 비어있지 않으므로 EconomicCalendarGrid의 DayDetailPanel이
+     * 배지('긍정') + summaryKo 텍스트를 모든 패널 DOM에 포함한다(hidden 포함).
+     *
+     * DayDetailPanel은 isSelected에 무관하게 항상 렌더돼 SSR HTML에 존재한다.
+     */
+    test('SP-D: sentiment 배지와 summaryKo가 SSR HTML에 포함된다', async ({
+        page,
+    }) => {
+        const res = await page.request.get('/economy');
+        expect(res.status()).toBe(200);
+        const html = await res.text();
+
+        // SENTIMENT_LABEL['bullish'] = '긍정'
+        expect(html).toContain('긍정');
+        // summaryKo 시드 텍스트
+        expect(html).toContain(
+            '비농업 고용이 예상치를 크게 상회해 노동시장 강세를 확인했습니다.'
+        );
+    });
+
+    /**
+     * SP-C: 중요도 필터 토글 — ImpactFilter 인터랙션.
+     *
+     * 기본 상태: High+Medium ON, Low OFF (DEFAULT_ACTIVE_IMPACTS).
+     * '낮음' 칩 클릭 후 aria-pressed=true로 전환되는 것을 검증한다.
+     *
+     * DayCell의 aria-label은 `${N}월 ${D}일, 이벤트 ${count}건`이며 count는
+     * activeImpacts 필터를 통과한 이벤트 수다. Low 이벤트가 있는 today+2 날짜의
+     * 버튼 aria-label에서 count 변화를 확인하는 대신, 필터 칩의 aria-pressed 상태
+     * 전환만 검증한다 — count는 동일 날짜에 다른 impact 이벤트가 없을 때만 0→1이므로
+     * 시드 구성에 결합도가 생기기 때문이다.
+     */
+    test('SP-C: 낮음 칩 토글 후 aria-pressed=true로 전환된다', async ({
+        page,
+    }) => {
+        await page.goto('/economy');
+
+        const filterGroup = page.getByRole('group', { name: '중요도 필터' });
+        await expect(filterGroup).toBeVisible();
+
+        const highBtn = filterGroup.getByRole('button', { name: '높음' });
+        const medBtn = filterGroup.getByRole('button', { name: '보통' });
+        const lowBtn = filterGroup.getByRole('button', { name: '낮음' });
+
+        // 기본 상태: High+Med ON, Low OFF
+        await expect(highBtn).toHaveAttribute('aria-pressed', 'true');
+        await expect(medBtn).toHaveAttribute('aria-pressed', 'true');
+        await expect(lowBtn).toHaveAttribute('aria-pressed', 'false');
+
+        // '낮음' 클릭 → ON
+        await lowBtn.click();
+        await expect(lowBtn).toHaveAttribute('aria-pressed', 'true');
+    });
+
+    /**
+     * SP-B + SP-D: 날짜 선택 → 상세 패널 가시화 + 한국어 레이블·sentiment 배지 표시.
+     *
+     * DayCell 버튼 클릭 시 해당 날짜의 DayDetailPanel(hidden 해제)이 나타난다.
+     * 시드의 'Nonfarm Payrolls'(today-2, High) 날짜 셀을 클릭해 상세 패널이
+     * aria-pressed=true가 되는 것을 검증한다.
+     *
+     * DayDetailPanel은 항상 DOM에 존재하고(SSR visible), 셀 클릭 시 `hidden` 속성이
+     * 제거돼 Playwright의 toBeVisible()이 통과한다.
+     *
+     * 주의: aria-label은 `${N}월 ${D}일, 이벤트 ${count}건` 형태이므로 날짜를 특정하려면
+     * 정규식을 쓴다. 'Nonfarm Payrolls'(High)가 있는 날의 버튼이 최소 1건이어야 한다.
+     */
+    test('SP-D: 날짜 클릭 후 상세 패널에서 sentiment 배지와 summaryKo가 표시된다', async ({
+        page,
+    }) => {
+        await page.goto('/economy');
+
+        // Nonfarm Payrolls 이벤트가 있는 날짜 셀 — High impact이므로 기본 필터 ON에서
+        // 건수가 1 이상이다. 상세 패널의 '비농업 고용' 텍스트를 찾아 해당 패널 컨테이너를
+        // 특정한 뒤, 부모 섹션의 날짜 버튼을 클릭한다.
+        //
+        // DayDetailPanel은 항상 DOM에 존재하므로 패널 div의 id에서 dateKey를 추출하고
+        // 해당 dateKey를 가진 day-btn 버튼을 클릭한다.
+        //
+        // 구현: '비농업 고용' 텍스트가 있는 패널 div의 id(panel-{dateKey})를 파악하고
+        // 대응 버튼(id=day-btn-{dateKey})을 클릭한다.
+        const nonfarmPanel = page
+            .locator('div[id^="panel-"]')
+            .filter({ hasText: '비농업 고용' })
+            .first();
+
+        // 패널 id에서 dateKey 추출 → 버튼 id 구성
+        const panelId = await nonfarmPanel.getAttribute('id');
+        expect(panelId).not.toBeNull();
+        const dateKey = panelId!.replace('panel-', '');
+        const dayBtn = page.locator(`#day-btn-${dateKey}`);
+
+        await dayBtn.click();
+
+        // 클릭 후 패널 visible (hidden 속성 제거)
+        await expect(nonfarmPanel).toBeVisible();
+
+        // 상세 패널에 sentiment 배지 '긍정' + summaryKo가 표시된다
+        await expect(
+            nonfarmPanel.getByText('긍정', { exact: true })
+        ).toBeVisible();
+        await expect(
+            nonfarmPanel.getByText(
+                '비농업 고용이 예상치를 크게 상회해 노동시장 강세를 확인했습니다.'
+            )
+        ).toBeVisible();
+    });
+});
+
+/**
  * T3: EconomyDegraded degrade fallback — Tier 3 env-seam 패턴.
  *
  * `E2E_ECONOMY_FORCE_EMPTY=1`으로 빌드된 서버에서만 활성화된다.
