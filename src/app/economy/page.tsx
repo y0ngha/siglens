@@ -16,6 +16,7 @@ import {
 import { getEconomySnapshotStatic } from '@/entities/economy/api/economySnapshotStaticCache';
 import { peekMacroBriefingStatic } from '@/entities/economy/api/macroBriefingStaticCache';
 import { getCalendarFromDb } from '@/entities/economy/api/getCalendarFromDb';
+import { resolveIndicatorLabels } from '@/entities/economy/api/resolveIndicatorLabels';
 import { etDateOf, kstDateOf } from '@/entities/economy/lib/calendarWindow';
 import { isEmptyEconomySnapshot } from '@/entities/economy';
 import {
@@ -161,6 +162,15 @@ async function EconomyContent() {
         }
     );
 
+    // 지표명 한국어 레이블을 서버에서 미리 해결한다(dict → DB 캐시 → 영어 fallback +
+    // 미매핑 AI 트리거). 그리드는 순수 레이블 맵만 받아 표시한다(SP-B).
+    const indicatorLabels = await resolveIndicatorLabels(calendarEvents).catch(
+        (e: unknown) => {
+            console.error('[EconomyContent] resolveIndicatorLabels failed:', e);
+            return {} as Record<string, string>;
+        }
+    );
+
     return (
         <div className="space-y-6">
             {/* SSR 크롤 텍스트 — MacroBriefing은 'use client'라 크롤러에 빈 HTML을
@@ -169,7 +179,11 @@ async function EconomyContent() {
             <EconomyMacroFacts snapshot={snapshot} />
             <MacroBriefing peekSeed={peekSeed} />
             <EconomicIndicatorGrid snapshot={snapshot} />
-            <EconomicCalendar events={calendarEvents} today={todayKstKey} />
+            <EconomicCalendar
+                events={calendarEvents}
+                today={todayKstKey}
+                labels={indicatorLabels}
+            />
         </div>
     );
 }
