@@ -61,6 +61,7 @@ next-env.d.ts
 /docs/superpowers/*
 !/docs/superpowers/specs/
 !/docs/superpowers/plans/
+!/docs/superpowers/seeding/
 
 # backtest batch job state
 /scripts/backtests/.batch-job.txt
