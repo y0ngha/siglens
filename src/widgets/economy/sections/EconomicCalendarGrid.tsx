@@ -12,6 +12,11 @@ import type {
     EconomicCalendarEvent,
 } from '@y0ngha/siglens-core';
 
+import type { EconomicCalendarEventWithAnalysis } from '@/entities/economy/model';
+import {
+    SENTIMENT_LABEL,
+    SENTIMENT_CLASS,
+} from '@/widgets/market-news/utils/sentimentConstants';
 import { cn } from '@/shared/lib/cn';
 import { formatNum } from '@/shared/lib/formatNum';
 import { etDateTimeToKst } from '@/shared/lib/etTimeUtils';
@@ -62,12 +67,25 @@ const INLINE_EVENT_MAX = 2;
  */
 const DEFAULT_ACTIVE_IMPACTS: readonly CalendarImpact[] = ['High', 'Medium'];
 
+/**
+ * 그리드 입력 — SP-A `EconomicCalendarEvent` + (선택) SP-D 분석 필드. 분석 필드를
+ * optional로 둬 SP-A 호출부(분석 없는 이벤트 리터럴)도 그대로 컴파일된다. DB reader
+ * (`getCalendarFromDb`)는 항상 네 필드를 채워 넘기므로 런타임엔 항상 존재(또는 null).
+ */
+type CalendarGridEvent = EconomicCalendarEvent &
+    Partial<
+        Pick<
+            EconomicCalendarEventWithAnalysis,
+            'sentiment' | 'summaryKo' | 'interpretationKo' | 'analyzedAt'
+        >
+    >;
+
 interface KstEvent {
     /** ET ISO-8601 문자열 — `<time dateTime>` 용 */
     iso: string;
     /** 한국시간 레이블 '오전/오후 H:mm' */
     kstTimeLabel: string;
-    original: EconomicCalendarEvent;
+    original: CalendarGridEvent;
 }
 
 interface DayGroup {
@@ -123,9 +141,7 @@ function daysInMonth(year: number, month: number): number {
  * 날짜순으로 정렬된 DayGroup[] 를 반환한다.
  * 이벤트는 kstDateKey 오름차순 → kstTimeLabel 오름차순으로 정렬.
  */
-function groupEventsByKstDay(
-    events: readonly EconomicCalendarEvent[]
-): DayGroup[] {
+function groupEventsByKstDay(events: readonly CalendarGridEvent[]): DayGroup[] {
     const map = new Map<string, KstEvent[]>();
 
     for (const ev of events) {
@@ -276,6 +292,29 @@ function DayDetailPanel({
                                 {IMPACT_LABELS[ev.original.impact]}
                             </span>
                         </div>
+                        {ev.original.sentiment != null &&
+                            ev.original.summaryKo != null && (
+                                <div className="border-secondary-700/60 mt-2 space-y-1 border-t pt-2">
+                                    <span
+                                        className={cn(
+                                            'inline-block rounded px-2 py-0.5 text-xs font-medium',
+                                            SENTIMENT_CLASS[
+                                                ev.original.sentiment
+                                            ]
+                                        )}
+                                    >
+                                        {SENTIMENT_LABEL[ev.original.sentiment]}
+                                    </span>
+                                    <p className="text-secondary-200 text-sm">
+                                        {ev.original.summaryKo}
+                                    </p>
+                                    {ev.original.interpretationKo != null && (
+                                        <p className="text-secondary-400 text-xs leading-relaxed">
+                                            {ev.original.interpretationKo}
+                                        </p>
+                                    )}
+                                </div>
+                            )}
                     </li>
                 ))}
             </ul>
@@ -504,7 +543,7 @@ function pickDefaultDateKey(groups: DayGroup[], today: string): string {
 }
 
 interface EconomicCalendarGridProps {
-    events: readonly EconomicCalendarEvent[];
+    events: readonly CalendarGridEvent[];
     /**
      * 기본 선택 기준일 — KST 'YYYY-MM-DD'. 서버 RSC가 ET-오늘 instant를
      * KST 날짜키로 1회 변환해 주입한다(ISR 안전: 클라에서 `Date.now()` 미사용).
