@@ -5,6 +5,7 @@ import { EconomicCalendarGrid } from '@/widgets/economy/sections/EconomicCalenda
 
 vi.mock('@/entities/economy/actions', () => ({
     ensureEconomicCalendarAction: vi.fn().mockResolvedValue(undefined),
+    ensureIndicatorTranslatedAction: vi.fn().mockResolvedValue(undefined),
 }));
 
 /**
@@ -401,5 +402,41 @@ describe('EconomicCalendarGrid — 중요도 필터 (상세 패널 · DOM 유지
         expect(screen.getByText('CPI Release').closest('li')).toHaveAttribute(
             'hidden'
         );
+    });
+});
+
+describe('EconomicCalendarGrid Korean indicator labels', () => {
+    const ev = (date: string, event: string): EconomicCalendarEvent => ({
+        date: `${date} 08:30:00`,
+        event,
+        impact: 'High',
+        actual: null,
+        estimate: 1,
+        previous: 1,
+        unit: '%',
+    });
+
+    it('renders the Korean label in the detail panel when provided', () => {
+        render(
+            <EconomicCalendarGrid
+                events={[ev('2026-06-20', 'Nonfarm Payrolls')]}
+                today="2026-06-20"
+                labels={{ 'Nonfarm Payrolls': '비농업 고용' }}
+            />
+        );
+        // Single event on the selected (today) panel → exactly one <p> with the Korean label.
+        expect(screen.getByText('비농업 고용')).toBeInTheDocument();
+        expect(screen.queryByText('Nonfarm Payrolls')).toBeNull();
+    });
+
+    it('falls back to the English event name when no label is provided', () => {
+        render(
+            <EconomicCalendarGrid
+                events={[ev('2026-06-20', 'Mystery Index')]}
+                today="2026-06-20"
+            />
+        );
+        // Single event on the selected (today) panel → exactly one <p> with the English fallback.
+        expect(screen.getByText('Mystery Index')).toBeInTheDocument();
     });
 });

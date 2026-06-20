@@ -16,6 +16,7 @@ import { cn } from '@/shared/lib/cn';
 import { formatNum } from '@/shared/lib/formatNum';
 import { etDateTimeToKst } from '@/shared/lib/etTimeUtils';
 import { useEconomicCalendarTrigger } from '../hooks/useEconomicCalendarTrigger';
+import { useIndicatorTranslationTrigger } from '../hooks/useIndicatorTranslationTrigger';
 import { ImpactFilter } from './ImpactFilter';
 import { IMPACT_LABELS, IMPACT_ORDER } from '../utils/impactMeta';
 
@@ -169,16 +170,29 @@ function kstDayOfWeekLabel(dateKey: string): string {
     return WEEKDAY_LABELS[dayOfWeekFromKey(dateKey)];
 }
 
+/**
+ * `Object.hasOwn`으로 direct-property 여부를 확인해 prototype-pollution 방지
+ * (rawEvent === "toString" 등이 Object.prototype 함수를 반환하는 크래시 차단).
+ */
+function displayEventLabel(
+    rawEvent: string,
+    labels: Record<string, string>
+): string {
+    return Object.hasOwn(labels, rawEvent) ? labels[rawEvent] : rawEvent;
+}
+
 interface DayDetailPanelProps {
     group: DayGroup;
     isSelected: boolean;
     activeImpacts: ReadonlySet<CalendarImpact>;
+    labels: Record<string, string>;
 }
 
 function DayDetailPanel({
     group,
     isSelected,
     activeImpacts,
+    labels,
 }: DayDetailPanelProps) {
     const { month, day, dateKey } = group;
     const dowLabel = kstDayOfWeekLabel(dateKey);
@@ -225,7 +239,10 @@ function DayDetailPanel({
                                     </time>
                                 </div>
                                 <p className="text-secondary-100 text-sm font-medium">
-                                    {ev.original.event}
+                                    {displayEventLabel(
+                                        ev.original.event,
+                                        labels
+                                    )}
                                 </p>
                                 <p className="text-secondary-400 mt-0.5 text-xs">
                                     예상{' '}
@@ -271,9 +288,16 @@ interface DayCellProps {
     isSelected: boolean;
     activeImpacts: ReadonlySet<CalendarImpact>;
     onSelect: (dateKey: string) => void;
+    labels: Record<string, string>;
 }
 
-function DayCell({ group, isSelected, activeImpacts, onSelect }: DayCellProps) {
+function DayCell({
+    group,
+    isSelected,
+    activeImpacts,
+    onSelect,
+    labels,
+}: DayCellProps) {
     const { day, month, dateKey } = group;
 
     /**
@@ -350,7 +374,7 @@ function DayCell({ group, isSelected, activeImpacts, onSelect }: DayCellProps) {
                             className="text-secondary-400 block min-w-0 truncate text-[10px] leading-tight"
                         >
                             {ev.kstTimeLabel.replace(/^(오전|오후)\s*/, '')}{' '}
-                            {ev.original.event}
+                            {displayEventLabel(ev.original.event, labels)}
                         </span>
                     ))}
                     {count > INLINE_EVENT_MAX && (
@@ -372,6 +396,7 @@ interface MonthCalendarProps {
     selectedDateKey: string;
     activeImpacts: ReadonlySet<CalendarImpact>;
     onSelect: (dateKey: string) => void;
+    labels: Record<string, string>;
 }
 
 function MonthCalendar({
@@ -381,6 +406,7 @@ function MonthCalendar({
     selectedDateKey,
     activeImpacts,
     onSelect,
+    labels,
 }: MonthCalendarProps) {
     const weeks = useMemo(() => {
         const totalDays = daysInMonth(year, month);
@@ -444,6 +470,7 @@ function MonthCalendar({
                                         }
                                         activeImpacts={activeImpacts}
                                         onSelect={onSelect}
+                                        labels={labels}
                                     />
                                 ) : (
                                     <td
@@ -484,6 +511,11 @@ interface EconomicCalendarGridProps {
      * 생략 시 가장 이른 그룹을 기본 선택(기존 동작 유지).
      */
     today?: string;
+    /**
+     * raw 이벤트명 → 표시 레이블(한국어 우선) 맵. 서버 RSC가 `resolveIndicatorLabels`로
+     * 미리 해결해 주입한다. 생략 시 모든 이벤트가 영어 원문으로 표시된다(결정론적 fallback).
+     */
+    labels?: Record<string, string>;
 }
 
 /**
@@ -504,12 +536,14 @@ interface EconomicCalendarGridProps {
 export function EconomicCalendarGrid({
     events,
     today = '',
+    labels = {},
 }: EconomicCalendarGridProps) {
     const [selectedDateKey, setSelectedDateKey] = useState('');
     const [activeImpacts, setActiveImpacts] = useState<
         ReadonlySet<CalendarImpact>
     >(() => new Set(DEFAULT_ACTIVE_IMPACTS));
     useEconomicCalendarTrigger();
+    useIndicatorTranslationTrigger(events, labels);
     const groups = useMemo(() => groupEventsByKstDay(events), [events]);
     const groupMap = useMemo(
         () => new Map<string, DayGroup>(groups.map(g => [g.dateKey, g])),
@@ -589,6 +623,7 @@ export function EconomicCalendarGrid({
                         selectedDateKey={selectedDateKey}
                         activeImpacts={activeImpacts}
                         onSelect={setSelectedDateKey}
+                        labels={labels}
                     />
                 ))}
             </div>
@@ -604,6 +639,7 @@ export function EconomicCalendarGrid({
                         group={group}
                         isSelected={group.dateKey === selectedDateKey}
                         activeImpacts={activeImpacts}
+                        labels={labels}
                     />
                 ))}
             </div>

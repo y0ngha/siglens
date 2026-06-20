@@ -250,3 +250,24 @@ export interface ProfileDescriptionTranslationRepository {
     ): Promise<ProfileDescriptionTranslationRecord | null>;
     upsert(record: ProfileDescriptionTranslationRecord): Promise<void>;
 }
+
+/** 'dict' | 'ai' — indicator 번역 출처. */
+export type IndicatorTranslationSource = 'dict' | 'ai';
+
+/** 경제 지표명 한국어 번역 캐시 행. */
+export interface IndicatorTranslationRecord {
+    /** 정규화된 base 지표명(접미 괄호 제거). 예 'Core PCE Price Index YoY'. */
+    normalizedName: string;
+    /** 한국어 번역. */
+    koreanName: string;
+    /** 'dict'(코드 승격) | 'ai'(core 번역 캐시). */
+    source: IndicatorTranslationSource;
+}
+
+/** {@link IndicatorTranslationRecord}를 백킹하는 영속화 연산. */
+export interface IndicatorTranslationRepository {
+    findByNames(
+        normalizedNames: readonly string[]
+    ): Promise<IndicatorTranslationRecord[]>;
+    upsert(record: IndicatorTranslationRecord): Promise<void>;
+}
