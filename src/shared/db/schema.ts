@@ -362,6 +362,26 @@ export const economicCalendar = pgTable(
     ]
 );
 
+/**
+ * 경제 지표명 한국어 번역 캐시 — `assetTranslations` 미러. 코드 const 사전
+ * (`INDICATOR_NAME_KO`)이 source-of-truth이고, 이 테이블은 미매핑 지표명의 core AI
+ * 번역 결과를 `source:'ai'`로 캐시한다(추후 코드 사전으로 승격). `normalizedName`은
+ * 접미 괄호를 제거한 base 지표명(`normalizeIndicatorName`의 base).
+ */
+export const economicIndicatorTranslations = pgTable(
+    'economic_indicator_translations',
+    {
+        normalizedName: text('normalized_name').primaryKey(),
+        koreanName: text('korean_name').notNull(),
+        // 'dict' | 'ai' — 출처. text 저장, 읽기 경계에서 검증.
+        source: text('source').notNull(),
+        updatedAt: timestamp('updated_at', { withTimezone: true })
+            .notNull()
+            .defaultNow()
+            .$onUpdateFn(nowFn),
+    }
+);
+
 /** Postgres enum for legal terms document kinds. */
 export const termsKindEnum = pgEnum('terms_kind', TERMS_KIND_VALUES);
 

@@ -134,6 +134,13 @@
             "when": 1781897708671,
             "tag": "0018_spotty_solo",
             "breakpoints": true
+        },
+        {
+            "idx": 19,
+            "version": "7",
+            "when": 1781933220827,
+            "tag": "0019_perfect_zodiak",
+            "breakpoints": true
         }
     ]
 }

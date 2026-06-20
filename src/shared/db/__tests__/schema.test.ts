@@ -64,3 +64,13 @@ describe('sessions 테이블 컬럼', () => {
         expect(sessions.createdAt).toBeDefined();
     });
 });
+
+describe('economicIndicatorTranslations table', () => {
+    it('exposes the expected columns', () => {
+        const cols = Object.keys(schema.economicIndicatorTranslations);
+        expect(cols).toContain('normalizedName');
+        expect(cols).toContain('koreanName');
+        expect(cols).toContain('source');
+        expect(cols).toContain('updatedAt');
+    });
+});
