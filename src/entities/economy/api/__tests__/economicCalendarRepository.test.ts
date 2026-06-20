@@ -125,6 +125,10 @@ describe('DrizzleEconomicCalendarRepository.listInRange', () => {
                     estimate: 0.3,
                     previous: 0.2,
                     unit: '%',
+                    sentiment: null,
+                    summaryKo: null,
+                    interpretationKo: null,
+                    analyzedAt: null,
                 },
                 {
                     dateEt: '2026-06-14 10:00:00',
@@ -134,14 +138,17 @@ describe('DrizzleEconomicCalendarRepository.listInRange', () => {
                     estimate: null,
                     previous: null,
                     unit: '',
+                    sentiment: null,
+                    summaryKo: null,
+                    interpretationKo: null,
+                    analyzedAt: null,
                 },
             ]
         );
         const repo = new DrizzleEconomicCalendarRepository(db);
         const events = await repo.listInRange('2026-06-01', '2026-06-30');
         expect(events).toHaveLength(2);
-        // SP-D AI 컬럼이 추가됐으므로 핵심 필드만 단언(objectContaining).
-        expect(events[0]).toMatchObject({
+        expect(events[0]).toEqual({
             date: '2026-06-13 08:30:00',
             event: 'Core CPI MoM (May)',
             impact: 'High',
@@ -149,7 +156,23 @@ describe('DrizzleEconomicCalendarRepository.listInRange', () => {
             estimate: 0.3,
             previous: 0.2,
             unit: '%',
+            sentiment: null,
+            summaryKo: null,
+            interpretationKo: null,
+            analyzedAt: null,
         });
-        expect(events[1].impact).toBe('Low');
+        expect(events[1]).toEqual({
+            date: '2026-06-14 10:00:00',
+            event: 'Mystery',
+            impact: 'Low',
+            actual: null,
+            estimate: null,
+            previous: null,
+            unit: '',
+            sentiment: null,
+            summaryKo: null,
+            interpretationKo: null,
+            analyzedAt: null,
+        });
     });
 });

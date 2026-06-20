@@ -79,7 +79,6 @@ async function run(): Promise<void> {
                         return;
                     }
 
-                    // submitted — poll until done
                     const { jobId } = submitted;
                     for (
                         let attempt = 0;
