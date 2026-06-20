@@ -1,10 +1,18 @@
+import { vi } from 'vitest';
+
+const { ensureEconomicCalendarAction, ensureEconomicEventsAnalyzedAction } =
+    vi.hoisted(() => ({
+        ensureEconomicCalendarAction: vi.fn(),
+        ensureEconomicEventsAnalyzedAction: vi.fn(),
+    }));
+
 vi.mock('@/entities/economy/actions', () => ({
-    ensureEconomicCalendarAction: vi.fn(),
+    ensureEconomicCalendarAction,
+    ensureEconomicEventsAnalyzedAction,
 }));
 
-import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { render } from '@testing-library/react';
-import { ensureEconomicCalendarAction } from '@/entities/economy/actions';
 import { useEconomicCalendarTrigger } from '../useEconomicCalendarTrigger';
 
 function Probe() {
@@ -15,7 +23,8 @@ function Probe() {
 describe('useEconomicCalendarTrigger', () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        vi.mocked(ensureEconomicCalendarAction).mockResolvedValue(undefined);
+        ensureEconomicCalendarAction.mockResolvedValue(undefined);
+        ensureEconomicEventsAnalyzedAction.mockResolvedValue(undefined);
     });
 
     it('fires the ensure action once on mount', () => {
@@ -30,9 +39,12 @@ describe('useEconomicCalendarTrigger', () => {
     });
 
     it('swallows a rejected action without throwing', () => {
-        vi.mocked(ensureEconomicCalendarAction).mockRejectedValue(
-            new Error('boom')
-        );
+        ensureEconomicCalendarAction.mockRejectedValue(new Error('boom'));
         expect(() => render(<Probe />)).not.toThrow();
+    });
+
+    it('also fires the analysis ensure once on mount', () => {
+        render(<Probe />);
+        expect(ensureEconomicEventsAnalyzedAction).toHaveBeenCalledOnce();
     });
 });
