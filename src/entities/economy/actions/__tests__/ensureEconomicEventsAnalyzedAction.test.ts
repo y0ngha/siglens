@@ -207,14 +207,47 @@ describe('ensureEconomicEventsAnalyzedAction', () => {
             ensureEconomicEventsAnalyzedAction()
         ).resolves.toBeUndefined();
 
-        // The majority-failure console.error must have fired
+        // The majority-failure console.error must have fired with the exact message
         expect(consoleError).toHaveBeenCalledWith(
-            expect.stringContaining('majority analyze failure')
+            '[ensureEconomicEventsAnalyzedAction] majority analyze failure (2/2)'
         );
 
         // No rows persisted → revalidateTag must NOT be called
         expect(revalidateTag).not.toHaveBeenCalled();
 
+        consoleError.mockRestore();
+    });
+
+    it('warns but does not error on minority failure, and still revalidates persisted rows', async () => {
+        // 3 pending, first fails → 1/3 < majority(1.5)
+        const ROW_2 = { ...ROW, id: 'id2', event: 'PPI MoM (May)' };
+        const ROW_3 = { ...ROW, id: 'id3', event: 'Retail Sales MoM (May)' };
+        listUnanalyzedAnnounced.mockResolvedValue([ROW, ROW_2, ROW_3]);
+        submitEconomicEventAnalysis
+            .mockRejectedValueOnce(new Error('llm down'))
+            .mockResolvedValue({ status: 'cached', result: ANALYSIS });
+        const consoleWarn = vi
+            .spyOn(console, 'warn')
+            .mockImplementation(() => {});
+        const consoleError = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => {});
+
+        await ensureEconomicEventsAnalyzedAction();
+
+        expect(consoleWarn).toHaveBeenCalledWith(
+            expect.stringContaining('1/3 analyze failed'),
+            expect.any(Array)
+        );
+        expect(consoleError).not.toHaveBeenCalledWith(
+            expect.stringContaining('majority analyze failure')
+        );
+        expect(revalidateTag).toHaveBeenCalledWith(
+            ECONOMY_CALENDAR_CACHE_TAG,
+            'max'
+        );
+
+        consoleWarn.mockRestore();
         consoleError.mockRestore();
     });
 });
