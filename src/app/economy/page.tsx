@@ -166,6 +166,7 @@ async function EconomyContent() {
     const indicatorLabels = await resolveIndicatorLabels(calendarEvents).catch(
         (e: unknown) => {
             console.error('[EconomyContent] resolveIndicatorLabels failed:', e);
+            // empty object is always a valid Record<string, string>
             return {} as Record<string, string>;
         }
     );

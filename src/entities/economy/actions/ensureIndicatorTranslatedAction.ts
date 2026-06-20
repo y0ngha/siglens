@@ -40,7 +40,6 @@ async function submitAndPoll(normalizedName: string): Promise<string | null> {
         return sub.nameKo;
     }
 
-    // status === 'submitted' — poll until done or timeout
     const { jobId } = sub;
     for (
         let attempt = 0;

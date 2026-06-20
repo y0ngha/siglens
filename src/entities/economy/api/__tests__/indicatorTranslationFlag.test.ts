@@ -20,7 +20,10 @@ import {
     isIndicatorTranslationPending,
     markIndicatorTranslationPending,
 } from '@/entities/economy/api/indicatorTranslationFlag';
-import { INDICATOR_TRANSLATION_FLAG_TTL_SECONDS } from '@/entities/economy/lib/indicatorTranslationConstants';
+import {
+    INDICATOR_TRANSLATION_FLAG_PREFIX,
+    INDICATOR_TRANSLATION_FLAG_TTL_SECONDS,
+} from '@/entities/economy/lib/indicatorTranslationConstants';
 
 describe('indicatorTranslationFlag', () => {
     beforeEach(() => {
@@ -49,7 +52,7 @@ describe('indicatorTranslationFlag', () => {
     it('sets the pending flag with the TTL', async () => {
         await markIndicatorTranslationPending('CPI YoY');
         expect(mockSet).toHaveBeenCalledWith(
-            expect.stringContaining('CPI YoY'),
+            `${INDICATOR_TRANSLATION_FLAG_PREFIX}:CPI YoY`,
             '1',
             { ex: INDICATOR_TRANSLATION_FLAG_TTL_SECONDS }
         );
@@ -59,5 +62,17 @@ describe('indicatorTranslationFlag', () => {
         vi.mocked(getRedisClient).mockReturnValue(null);
         await markIndicatorTranslationPending('CPI YoY');
         expect(mockSet).not.toHaveBeenCalled();
+    });
+
+    it('returns false when redis.get throws', async () => {
+        mockGet.mockRejectedValue(new Error('redis timeout'));
+        expect(await isIndicatorTranslationPending('CPI YoY')).toBe(false);
+    });
+
+    it('does not throw when redis.set throws on mark', async () => {
+        mockSet.mockRejectedValue(new Error('redis timeout'));
+        await expect(
+            markIndicatorTranslationPending('CPI YoY')
+        ).resolves.toBeUndefined();
     });
 });

@@ -156,4 +156,17 @@ describe('ensureIndicatorTranslatedAction', () => {
         expect(mockUpsert).not.toHaveBeenCalled();
         expect(revalidateTag).not.toHaveBeenCalled();
     });
+
+    it('logs a warning and does not upsert or revalidate when all polls time out', async () => {
+        vi.mocked(submitIndicatorTranslation).mockResolvedValue({
+            status: 'submitted',
+            jobId: 'job-timeout',
+        });
+        vi.mocked(pollIndicatorTranslation).mockResolvedValue({
+            status: 'processing',
+        });
+        await ensureIndicatorTranslatedAction('Some Obscure Index YoY');
+        expect(mockUpsert).not.toHaveBeenCalled();
+        expect(revalidateTag).not.toHaveBeenCalled();
+    });
 });
