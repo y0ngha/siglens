@@ -16,41 +16,46 @@ import {
 } from '../lib/indicatorTranslationConstants';
 
 /**
- * 미매핑 base 이름들의 DB 캐시 행을 읽는다. ISR cold-gen 안전: `@neondatabase/serverless`
- * HTTP는 no-store라 static generate가 `DYNAMIC_SERVER_USAGE`를 throw하므로 `unstable_cache`로
+ * Module-level `unstable_cache` — ISR cold-gen 안전: `@neondatabase/serverless` HTTP는
+ * no-store라 static generate가 `DYNAMIC_SERVER_USAGE`를 throw하므로 `unstable_cache`로
  * 감싼다(src/app/CLAUDE.md 4축 축1). revalidate=24h + `economy:indicator-translation` 태그로
  * `ensureIndicatorTranslatedAction`이 on-demand 무효화 가능. DB 실패 시 빈 맵으로 graceful.
  *
- * 캐시 키에 정렬된 이름 목록을 박아 입력이 바뀌면 자연히 리프레시된다.
+ * `sortedNames`를 인자로 받아 Next.js가 자동으로 캐시 키에 포함시킨다
+ * — 입력이 바뀌면 자연히 리프레시된다. per-call 생성 대신 module-level 호이스트로
+ * SP-A `getCalendarFromDb` 패턴을 미러한다.
+ */
+const getCachedIndicatorDbMap = unstable_cache(
+    async (sortedNames: string[]): Promise<Record<string, string>> => {
+        try {
+            const { db } = getDatabaseClient();
+            const repo = new DrizzleIndicatorTranslationRepository(db);
+            const rows = await repo.findByNames(sortedNames);
+            return Object.fromEntries(
+                rows.map(r => [r.normalizedName, r.koreanName])
+            );
+        } catch (error) {
+            console.error('[resolveIndicatorLabels] DB read failed:', error);
+            return {};
+        }
+    },
+    ['economy-indicator-translation'],
+    {
+        revalidate: INDICATOR_TRANSLATION_REVALIDATE_SECONDS,
+        tags: [INDICATOR_TRANSLATION_CACHE_TAG],
+    }
+);
+
+/**
+ * 미매핑 base 이름들의 DB 캐시 행을 읽는다.
+ * 캐시 키에 정렬된 이름 목록이 인자로 자동 포함되므로 입력이 바뀌면 자연히 리프레시된다.
  */
 async function readDbMap(
     unknownNames: string[]
 ): Promise<Record<string, string>> {
     if (unknownNames.length === 0) return {};
     const sorted = [...unknownNames].toSorted((a, b) => a.localeCompare(b));
-    return unstable_cache(
-        async () => {
-            try {
-                const { db } = getDatabaseClient();
-                const repo = new DrizzleIndicatorTranslationRepository(db);
-                const rows = await repo.findByNames(sorted);
-                return Object.fromEntries(
-                    rows.map(r => [r.normalizedName, r.koreanName])
-                );
-            } catch (error) {
-                console.error(
-                    '[resolveIndicatorLabels] DB read failed:',
-                    error
-                );
-                return {};
-            }
-        },
-        ['economy-indicator-translation', sorted.join('|')],
-        {
-            revalidate: INDICATOR_TRANSLATION_REVALIDATE_SECONDS,
-            tags: [INDICATOR_TRANSLATION_CACHE_TAG],
-        }
-    )();
+    return getCachedIndicatorDbMap(sorted);
 }
 
 /**

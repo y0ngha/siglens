@@ -173,12 +173,15 @@ function kstDayOfWeekLabel(dateKey: string): string {
 /**
  * raw 이벤트명을 표시 레이블로 매핑한다 — `labels`(서버가 resolveIndicatorLabels로 미리
  * 해결한 한국어 우선 맵)에 있으면 그 값을, 없으면 raw 영어 원문을 반환(결정론적 fallback).
+ *
+ * `Object.hasOwn`으로 direct-property 여부를 확인해 prototype-pollution 방지
+ * (rawEvent === "toString" 등이 Object.prototype 함수를 반환하는 크래시 차단).
  */
 function displayEventLabel(
     rawEvent: string,
     labels: Record<string, string>
 ): string {
-    return labels[rawEvent] ?? rawEvent;
+    return Object.hasOwn(labels, rawEvent) ? labels[rawEvent] : rawEvent;
 }
 
 interface DayDetailPanelProps {

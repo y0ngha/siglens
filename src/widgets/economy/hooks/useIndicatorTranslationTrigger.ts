@@ -4,10 +4,7 @@ import { useEffect, useEffectEvent, useRef } from 'react';
 import type { EconomicCalendarEvent } from '@y0ngha/siglens-core';
 
 import { ensureIndicatorTranslatedAction } from '@/entities/economy/actions';
-import {
-    INDICATOR_NAME_KO,
-    normalizeIndicatorName,
-} from '@/entities/economy/lib/indicatorNameKo';
+import { INDICATOR_NAME_KO, normalizeIndicatorName } from '@/entities/economy';
 
 /**
  * 마운트 시 1회: 서버 render(`resolveIndicatorLabels`)에서 dict·DB 캐시 양쪽 모두 miss한

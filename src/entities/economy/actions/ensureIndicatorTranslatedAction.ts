@@ -58,7 +58,6 @@ async function submitAndPoll(normalizedName: string): Promise<string | null> {
             );
             return null;
         }
-        // status === 'processing' — continue polling
     }
 
     const timeoutSecs =

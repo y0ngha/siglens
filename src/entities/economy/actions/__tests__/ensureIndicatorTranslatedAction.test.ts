@@ -1,3 +1,7 @@
+const { mockUpsert } = vi.hoisted(() => ({
+    mockUpsert: vi.fn().mockResolvedValue(undefined),
+}));
+
 vi.mock('server-only', () => ({}));
 vi.mock('next/cache', () => ({ revalidateTag: vi.fn() }));
 
@@ -13,7 +17,7 @@ vi.mock('@/entities/economy/api/indicatorTranslationFlag', () => ({
 
 vi.mock('@/entities/economy/api/indicatorTranslationRepository', () => ({
     DrizzleIndicatorTranslationRepository: class {
-        upsert = vi.fn();
+        upsert = mockUpsert;
     },
 }));
 vi.mock('@/shared/db/client', () => ({
@@ -34,15 +38,13 @@ import {
     isIndicatorTranslationPending,
     markIndicatorTranslationPending,
 } from '@/entities/economy/api/indicatorTranslationFlag';
-import { DrizzleIndicatorTranslationRepository } from '@/entities/economy/api/indicatorTranslationRepository';
 import { ensureIndicatorTranslatedAction } from '@/entities/economy/actions/ensureIndicatorTranslatedAction';
 import { INDICATOR_TRANSLATION_CACHE_TAG } from '@/entities/economy/lib/indicatorTranslationConstants';
 
 describe('ensureIndicatorTranslatedAction', () => {
-    let upsert: ReturnType<typeof vi.fn>;
-
     beforeEach(() => {
         vi.clearAllMocks();
+        mockUpsert.mockClear();
         vi.mocked(isIndicatorTranslationPending).mockResolvedValue(false);
         vi.mocked(markIndicatorTranslationPending).mockResolvedValue(undefined);
         // Default: cached result (short-circuit, no poll needed)
@@ -50,13 +52,6 @@ describe('ensureIndicatorTranslatedAction', () => {
             status: 'cached',
             nameKo: '어떤 모호한 지수(전년比)',
         });
-        // Get the upsert mock from the repository instance
-        const RepoClass =
-            DrizzleIndicatorTranslationRepository as unknown as new () => {
-                upsert: ReturnType<typeof vi.fn>;
-            };
-        upsert = new RepoClass().upsert;
-        upsert.mockResolvedValue(undefined);
     });
 
     it('skips when the name is already in the code dictionary', async () => {
@@ -102,6 +97,12 @@ describe('ensureIndicatorTranslatedAction', () => {
 
         await ensureIndicatorTranslatedAction('Some Obscure Index YoY');
         expect(pollIndicatorTranslation).toHaveBeenCalledWith('job-123');
+        expect(mockUpsert).toHaveBeenCalledWith(
+            expect.objectContaining({
+                normalizedName: 'Some Obscure Index YoY',
+                source: 'ai',
+            })
+        );
         expect(revalidateTag).toHaveBeenCalledWith(
             INDICATOR_TRANSLATION_CACHE_TAG,
             'max'
@@ -152,7 +153,7 @@ describe('ensureIndicatorTranslatedAction', () => {
         await expect(
             ensureIndicatorTranslatedAction('Some Obscure Index YoY')
         ).resolves.toBeUndefined();
-        expect(upsert).not.toHaveBeenCalled();
+        expect(mockUpsert).not.toHaveBeenCalled();
         expect(revalidateTag).not.toHaveBeenCalled();
     });
 });

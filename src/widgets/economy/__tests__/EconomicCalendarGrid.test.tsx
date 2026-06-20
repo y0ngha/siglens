@@ -424,8 +424,8 @@ describe('EconomicCalendarGrid Korean indicator labels', () => {
                 labels={{ 'Nonfarm Payrolls': '비농업 고용' }}
             />
         );
-        // The selected (today) panel shows the Korean label, not the English name.
-        expect(screen.getAllByText('비농업 고용').length).toBeGreaterThan(0);
+        // Single event on the selected (today) panel → exactly one <p> with the Korean label.
+        expect(screen.getByText('비농업 고용')).toBeInTheDocument();
         expect(screen.queryByText('Nonfarm Payrolls')).toBeNull();
     });
 
@@ -436,6 +436,7 @@ describe('EconomicCalendarGrid Korean indicator labels', () => {
                 today="2026-06-20"
             />
         );
-        expect(screen.getAllByText('Mystery Index').length).toBeGreaterThan(0);
+        // Single event on the selected (today) panel → exactly one <p> with the English fallback.
+        expect(screen.getByText('Mystery Index')).toBeInTheDocument();
     });
 });
