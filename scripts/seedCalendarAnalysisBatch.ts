@@ -82,8 +82,6 @@ function formatElapsed(ms: number): string {
     return `${h}h${m % 60}m`;
 }
 
-// ─── Pending events ─────────────────────────────────────────────────────────
-
 interface PendingEvent {
     id: string;
     input: EconomicEventAnalysisInput;
@@ -103,15 +101,18 @@ function extractResponseText(resp: InlinedResponse): string | null {
     return typeof text === 'string' && text.trim() !== '' ? text : null;
 }
 
-function buildInlinedRequest(prompt: string): InlinedRequest {
+function buildInlinedRequest(id: string, prompt: string): InlinedRequest {
     // The core prompt is self-contained (no separate systemInstruction needed).
     // flash-lite + short structured output → no thinkingConfig (kept minimal).
+    // `metadata.id` ties each response back to its request by DB row id, making
+    // chunk-processing id-based (safer than index-based for re-run idempotency).
     return {
         contents: [{ parts: [{ text: prompt }] }],
         config: {
             temperature: 0,
             responseMimeType: 'application/json',
         },
+        metadata: { id },
     };
 }
 
@@ -166,8 +167,10 @@ interface ChunkResult {
 }
 
 /**
- * Process one completed batch: zip responses ↔ chunk by index, normalize, and
- * write-once. Responses[i] aligns with chunk[i] (preserved within the chunk).
+ * Process one completed batch: map responses by `metadata.id` (id-based, not
+ * index-based) for re-run safety — the Gemini Batch API preserves order
+ * empirically, but id-mapping guards against any future ordering divergence.
+ * write-once: analyzed_at IS NULL guard makes re-runs idempotent.
  */
 async function processResponses(
     db: Db,
@@ -176,17 +179,33 @@ async function processResponses(
 ): Promise<ChunkResult> {
     if (responses.length !== chunk.length) {
         console.warn(
-            `  [warn] chunk(${chunk.length}) / responses(${responses.length}) mismatch — zipping by index; extras dropped.`
+            `  [warn] chunk(${chunk.length}) / responses(${responses.length}) mismatch — id-mapping; unmatched responses dropped.`
         );
     }
 
-    const n = Math.min(chunk.length, responses.length);
+    // Build a lookup map from response metadata.id → response.
+    const responseById = new Map<string, InlinedResponse>();
+    for (const resp of responses) {
+        const respId = resp.metadata?.id;
+        if (!respId) {
+            console.warn(
+                `  [warn] response missing metadata.id — skipped (cannot correlate to request)`
+            );
+            continue;
+        }
+        responseById.set(respId, resp);
+    }
+
     let analyzed = 0;
     let skipped = 0;
 
-    for (let i = 0; i < n; i++) {
-        const { id } = chunk[i];
-        const response = responses[i];
+    for (const { id } of chunk) {
+        const response = responseById.get(id);
+        if (!response) {
+            console.warn(`    [${id}] skipped — no matching response found`);
+            skipped += 1;
+            continue;
+        }
 
         if (response.error) {
             console.warn(
@@ -310,7 +329,7 @@ async function run(): Promise<void> {
             // Build (but do NOT submit) the first chunk's requests as a sanity check.
             const firstChunk = requests.slice(0, CHUNK_SIZE);
             const firstChunkRequests: InlinedRequest[] = firstChunk.map(r =>
-                buildInlinedRequest(r.prompt)
+                buildInlinedRequest(r.id, r.prompt)
             );
             console.log(
                 `[dry-run] built ${firstChunkRequests.length} InlinedRequest(s) for chunk 1 (not submitted).`
@@ -331,7 +350,7 @@ async function run(): Promise<void> {
             const chunk = requests.slice(c * CHUNK_SIZE, (c + 1) * CHUNK_SIZE);
             const chunkNo = c + 1;
             const inlined: InlinedRequest[] = chunk.map(r =>
-                buildInlinedRequest(r.prompt)
+                buildInlinedRequest(r.id, r.prompt)
             );
 
             console.log(

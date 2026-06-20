@@ -2,8 +2,6 @@ vi.mock('@/entities/economy/actions', () => ({
     ensureEconomicCalendarAction: vi.fn().mockResolvedValue(undefined),
     ensureEconomicEventsAnalyzedAction: vi.fn().mockResolvedValue(undefined),
 }));
-// resolveIndicatorLabels is NOT imported by EconomicCalendarGrid — the grid
-// receives `labels` as a prop from the parent RSC. No mock needed here.
 
 import { vi, describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
@@ -118,7 +116,6 @@ describe('EconomicCalendarGrid analysis display', () => {
                 today="2026-06-20"
             />
         );
-        // '중립' badge must not appear — empty summaryKo is treated as no analysis.
         expect(screen.queryByText('중립')).not.toBeInTheDocument();
     });
 
@@ -140,8 +137,6 @@ describe('EconomicCalendarGrid analysis display', () => {
         expect(screen.queryByText('긍정')).not.toBeInTheDocument();
     });
 });
-
-// ─── I5: displayEventLabel prototype-pollution guard ────────────────────────
 
 function baseEvent(eventName: string): EconomicCalendarEvent {
     return {
@@ -166,7 +161,6 @@ describe('EconomicCalendarGrid — displayEventLabel prototype-pollution guard (
                 labels={{}}
             />
         );
-        // The cell/panel must render the raw string, not crash, not render a function.
         expect(screen.getByText('toString')).toBeInTheDocument();
     });
 

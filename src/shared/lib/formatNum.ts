@@ -9,5 +9,6 @@ const NUMBER_FORMATTER = new Intl.NumberFormat('ko-KR');
  */
 export function formatNum(v: number | null, unit: string): string {
     if (!Number.isFinite(v)) return 'N/A';
+    // `!Number.isFinite` guard above ensures v is a finite number here.
     return `${NUMBER_FORMATTER.format(v as number)}${unit}`;
 }

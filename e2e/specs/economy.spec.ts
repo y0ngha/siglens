@@ -290,18 +290,17 @@ test.describe('economy calendar — SP-B/C/D feature coverage', () => {
     });
 
     /**
-     * SP-C: 중요도 필터 토글 — ImpactFilter 인터랙션.
+     * SP-C: 중요도 필터 토글 — ImpactFilter 인터랙션 + Low 이벤트 가시성 변화.
      *
      * 기본 상태: High+Medium ON, Low OFF (DEFAULT_ACTIVE_IMPACTS).
-     * '낮음' 칩 클릭 후 aria-pressed=true로 전환되는 것을 검증한다.
+     * '낮음' 칩 클릭 후 aria-pressed=true로 전환되고, 시드의 Low impact 이벤트
+     * 'MBA Mortgage Applications'(today+2)의 <li>가 visible해지는 것을 검증한다.
      *
-     * DayCell의 aria-label은 `${N}월 ${D}일, 이벤트 ${count}건`이며 count는
-     * activeImpacts 필터를 통과한 이벤트 수다. Low 이벤트가 있는 today+2 날짜의
-     * 버튼 aria-label에서 count 변화를 확인하는 대신, 필터 칩의 aria-pressed 상태
-     * 전환만 검증한다 — count는 동일 날짜에 다른 impact 이벤트가 없을 때만 0→1이므로
-     * 시드 구성에 결합도가 생기기 때문이다.
+     * Low 이벤트 <li>는 Low 필터 OFF(기본) 시 `hidden` 속성을 갖고,
+     * Low 필터 ON 시 `hidden`이 제거돼 visible해진다.
+     * today+2 날짜 패널을 먼저 클릭해 패널 자체의 `hidden`을 해제한 뒤 검증한다.
      */
-    test('SP-C: 낮음 칩 토글 후 aria-pressed=true로 전환된다', async ({
+    test('SP-C: 낮음 칩 토글 후 aria-pressed=true로 전환되고 Low 이벤트가 visible해진다', async ({
         page,
     }) => {
         await page.goto('/economy');
@@ -318,9 +317,33 @@ test.describe('economy calendar — SP-B/C/D feature coverage', () => {
         await expect(medBtn).toHaveAttribute('aria-pressed', 'true');
         await expect(lowBtn).toHaveAttribute('aria-pressed', 'false');
 
+        // Low 이벤트 패널(today+2)을 찾아 날짜 버튼을 클릭해 패널을 선택 상태로 만든다.
+        // DayDetailPanel은 항상 DOM에 존재하므로 panel id에서 dateKey를 추출한다.
+        const mbaMortgagePanel = page
+            .locator('div[id^="panel-"]')
+            .filter({ hasText: 'MBA Mortgage Applications' })
+            .first();
+        const mbaPanelId = await mbaMortgagePanel.getAttribute('id');
+        expect(mbaPanelId).not.toBeNull();
+        const mbaDateKey = mbaPanelId!.replace('panel-', '');
+        await page.locator(`#day-btn-${mbaDateKey}`).click();
+
+        // 패널이 선택됐으므로 패널 자체는 visible.
+        await expect(mbaMortgagePanel).toBeVisible();
+
+        // Low 이벤트 <li>는 Low 필터 OFF(기본) 시 hidden — 아직 클릭 전.
+        const mbaLi = mbaMortgagePanel
+            .locator('li')
+            .filter({ hasText: 'MBA Mortgage Applications' })
+            .first();
+        await expect(mbaLi).toBeHidden();
+
         // '낮음' 클릭 → ON
         await lowBtn.click();
         await expect(lowBtn).toHaveAttribute('aria-pressed', 'true');
+
+        // Low 이벤트 <li>가 이제 visible해야 한다.
+        await expect(mbaLi).toBeVisible();
     });
 
     /**
@@ -355,7 +378,6 @@ test.describe('economy calendar — SP-B/C/D feature coverage', () => {
             .filter({ hasText: '비농업 고용' })
             .first();
 
-        // 패널 id에서 dateKey 추출 → 버튼 id 구성
         const panelId = await nonfarmPanel.getAttribute('id');
         expect(panelId).not.toBeNull();
         const dateKey = panelId!.replace('panel-', '');
