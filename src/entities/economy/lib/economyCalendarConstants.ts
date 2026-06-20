@@ -58,7 +58,7 @@ export const CALENDAR_ANALYSIS_REFRESH_FLAG_KEY =
 export const CALENDAR_ANALYSIS_POLL_INTERVAL_MS = 2_000;
 
 /**
- * poll 최대 시도 횟수. `CALENDAR_ANALYSIS_POLL_MAX_ATTEMPTS`회 × 2s 상한(market-news POLL_MAX_ATTEMPTS 미러).
+ * poll 최대 시도 횟수. `CALENDAR_ANALYSIS_POLL_MAX_ATTEMPTS`회 × `CALENDAR_ANALYSIS_POLL_INTERVAL_MS` 상한.
  * 초과 시 해당 이벤트는 건너뛰고 다음 접속/플래그 만료 시 재시도된다.
  */
 export const CALENDAR_ANALYSIS_POLL_MAX_ATTEMPTS = 30;

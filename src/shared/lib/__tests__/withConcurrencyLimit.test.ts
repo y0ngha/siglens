@@ -35,7 +35,7 @@ describe('withConcurrencyLimit', () => {
             inFlight--;
         });
 
-        expect(maxObserved).toBeLessThanOrEqual(limit);
+        expect(maxObserved).toBe(limit);
     });
 
     it('captures rejected promises as status:rejected without throwing', async () => {

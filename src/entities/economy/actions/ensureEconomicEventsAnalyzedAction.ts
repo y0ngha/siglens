@@ -29,7 +29,7 @@ import {
     ECONOMY_CALENDAR_CACHE_TAG,
 } from '../lib/economyCalendarConstants';
 
-/** 과반 실패 판정 분모. */
+/** 과반 실패 판정 분모. ensureMarketNewsCardsAnalyzedAction.ts의 MAJORITY_DIVISOR와 동일 — 변경 시 함께 업데이트. */
 const MAJORITY_DIVISOR = 2;
 
 /**

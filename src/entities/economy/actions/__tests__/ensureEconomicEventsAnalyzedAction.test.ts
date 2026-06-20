@@ -1,5 +1,3 @@
-import { vi } from 'vitest';
-
 const {
     revalidateTag,
     isAnalysisRecentlyRun,
@@ -51,7 +49,7 @@ vi.mock('@/shared/lib/withConcurrencyLimit', async () => {
     return actual;
 });
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { ensureEconomicEventsAnalyzedAction } from '@/entities/economy/actions/ensureEconomicEventsAnalyzedAction';
 import { ECONOMY_CALENDAR_CACHE_TAG } from '@/entities/economy/lib/economyCalendarConstants';
 

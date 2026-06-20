@@ -1,5 +1,3 @@
-import { vi } from 'vitest';
-
 const { ensureEconomicCalendarAction, ensureEconomicEventsAnalyzedAction } =
     vi.hoisted(() => ({
         ensureEconomicCalendarAction: vi.fn(),
@@ -11,7 +9,7 @@ vi.mock('@/entities/economy/actions', () => ({
     ensureEconomicEventsAnalyzedAction,
 }));
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { render } from '@testing-library/react';
 import { useEconomicCalendarTrigger } from '../useEconomicCalendarTrigger';
 
