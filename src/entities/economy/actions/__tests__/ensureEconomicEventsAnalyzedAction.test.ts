@@ -44,6 +44,12 @@ vi.mock('@/shared/api/e2eEnv', () => ({ isE2E: () => isE2E() }));
 vi.mock('@/shared/lib/sleep', () => ({
     sleep: vi.fn().mockResolvedValue(undefined),
 }));
+vi.mock('@/shared/lib/withConcurrencyLimit', async () => {
+    const actual = await vi.importActual<
+        typeof import('@/shared/lib/withConcurrencyLimit')
+    >('@/shared/lib/withConcurrencyLimit');
+    return actual;
+});
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { ensureEconomicEventsAnalyzedAction } from '@/entities/economy/actions/ensureEconomicEventsAnalyzedAction';
@@ -187,5 +193,33 @@ describe('ensureEconomicEventsAnalyzedAction', () => {
 
         expect(attachEventAnalysis).not.toHaveBeenCalled();
         expect(revalidateTag).not.toHaveBeenCalled();
+    });
+
+    it('logs console.error and skips revalidate when majority of events fail (§18)', async () => {
+        // Two unanalyzed events; both submit calls reject → failures (2) > pending (2) / 2
+        const ROW_2 = { ...ROW, id: 'id2', event: 'PPI MoM (May)' };
+        listUnanalyzedAnnounced.mockResolvedValue([ROW, ROW_2]);
+        submitEconomicEventAnalysis.mockRejectedValue(new Error('llm down'));
+
+        const consoleError = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => {});
+
+        await expect(
+            ensureEconomicEventsAnalyzedAction()
+        ).resolves.toBeUndefined();
+
+        // The majority-failure console.error must have fired
+        const majorityCall = consoleError.mock.calls.find(
+            args =>
+                typeof args[0] === 'string' &&
+                args[0].includes('majority analyze failure')
+        );
+        expect(majorityCall).toBeDefined();
+
+        // No rows persisted → revalidateTag must NOT be called
+        expect(revalidateTag).not.toHaveBeenCalled();
+
+        consoleError.mockRestore();
     });
 });

@@ -10,6 +10,7 @@ import type { EconomicEventAnalysis } from '@y0ngha/siglens-core';
 import { isE2E } from '@/shared/api/e2eEnv';
 import { getDatabaseClient } from '@/shared/db/client';
 import { sleep } from '@/shared/lib/sleep';
+import { withConcurrencyLimit } from '@/shared/lib/withConcurrencyLimit';
 
 import {
     DrizzleEconomicCalendarRepository,
@@ -29,23 +30,6 @@ import {
 
 /** 과반 실패 판정 분모. */
 const MAJORITY_DIVISOR = 2;
-
-/**
- * `items`를 최대 `limit`개씩 동시 실행한다(입력 순서 보존). p-limit 없이
- * O(수십) 규모에 충분한 청크 방식 — market-news withConcurrencyLimit 미러.
- */
-async function withConcurrencyLimit<T, R>(
-    items: T[],
-    limit: number,
-    fn: (item: T) => Promise<R>
-): Promise<PromiseSettledResult<R>[]> {
-    const results: PromiseSettledResult<R>[] = [];
-    for (let i = 0; i < items.length; i += limit) {
-        const chunk = items.slice(i, i + limit);
-        results.push(...(await Promise.allSettled(chunk.map(fn))));
-    }
-    return results;
-}
 
 /**
  * 한 이벤트를 core submit→poll로 분석하고 DB에 write-once 기록한다.
@@ -150,7 +134,7 @@ export async function ensureEconomicEventsAnalyzedAction(): Promise<void> {
         );
         const failures = settled.filter(r => r.status === 'rejected');
         if (failures.length > 0) {
-            console.error(
+            console.warn(
                 `[ensureEconomicEventsAnalyzedAction] ${failures.length}/${pending.length} analyze failed`,
                 failures.map(f => (f.status === 'rejected' ? f.reason : null))
             );
