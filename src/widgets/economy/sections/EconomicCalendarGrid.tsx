@@ -12,11 +12,11 @@ import type {
     EconomicCalendarEvent,
 } from '@y0ngha/siglens-core';
 
-import type { EconomicCalendarEventWithAnalysis } from '@/entities/economy/model';
+import type { EconomicCalendarEventWithAnalysis } from '@/entities/economy';
 import {
     SENTIMENT_LABEL,
     SENTIMENT_CLASS,
-} from '@/widgets/market-news/utils/sentimentConstants';
+} from '@/shared/lib/sentimentDisplay';
 import { cn } from '@/shared/lib/cn';
 import { formatNum } from '@/shared/lib/formatNum';
 import { etDateTimeToKst } from '@/shared/lib/etTimeUtils';

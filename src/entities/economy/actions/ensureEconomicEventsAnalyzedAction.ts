@@ -67,11 +67,14 @@ async function withConcurrencyLimit<T, R>(
  *
  * `result` 필드가 분석 결과 키(`SubmitEconomicEventAnalysisCached.result`,
  * `PollEconomicEventAnalysisDone.result`)이다 — 타입 정의 확인 완료.
+ *
+ * @returns `true` — `attachEventAnalysis` 성공(실제 persist); `false` — poll 오류·타임아웃으로
+ *   persist 없이 조기 반환. caller가 `true`만 카운트해 `revalidateTag` 호출 여부를 결정한다.
  */
 async function analyzeAndPersistEvent(
     row: UnanalyzedAnnouncedEvent,
     repo: DrizzleEconomicCalendarRepository
-): Promise<void> {
+): Promise<boolean> {
     const input = {
         event: row.event,
         impact: row.impact,
@@ -83,7 +86,7 @@ async function analyzeAndPersistEvent(
 
     const submitted = await submitEconomicEventAnalysis(input);
 
-    let analysis: EconomicEventAnalysis;
+    let analysis: EconomicEventAnalysis | null = null;
 
     if (submitted.status === 'cached') {
         // 캐시 히트 — 즉시 결과 사용(poll 불필요).
@@ -102,19 +105,20 @@ async function analyzeAndPersistEvent(
                 console.error(
                     `[ensureEconomicEventsAnalyzedAction] poll error ${row.id}: ${polled.error}`
                 );
-                return;
+                return false;
             }
             // 'processing' — 계속 폴링
         }
-        if (analysis! === undefined) {
+        if (analysis === null) {
             console.warn(
                 `[ensureEconomicEventsAnalyzedAction] poll timeout after ${(POLL_MAX_ATTEMPTS * POLL_INTERVAL_MS) / 1_000}s — ${row.id}`
             );
-            return;
+            return false;
         }
     }
 
     await repo.attachEventAnalysis(row.id, analysis);
+    return true;
 }
 
 /**
@@ -166,7 +170,9 @@ export async function ensureEconomicEventsAnalyzedAction(): Promise<void> {
             );
         }
 
-        const persisted = settled.filter(r => r.status === 'fulfilled').length;
+        const persisted = settled.filter(
+            r => r.status === 'fulfilled' && r.value === true
+        ).length;
         if (persisted > 0) {
             // SP-A와 같은 'economy:calendar' 태그만 무효화 — 다음 렌더가 분석 채워진 행을 읽는다.
             revalidateTag(ECONOMY_CALENDAR_CACHE_TAG, 'max');

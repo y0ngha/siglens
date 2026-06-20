@@ -152,4 +152,40 @@ describe('ensureEconomicEventsAnalyzedAction', () => {
         expect(attachEventAnalysis).not.toHaveBeenCalled();
         expect(revalidateTag).not.toHaveBeenCalled();
     });
+
+    it('does not attach or revalidate when poll returns error status (§18)', async () => {
+        // submit → submitted path; poll → error
+        submitEconomicEventAnalysis.mockResolvedValue({
+            status: 'submitted',
+            jobId: 'job-err',
+        });
+        pollEconomicEventAnalysis.mockResolvedValue({
+            status: 'error',
+            error: 'llm down',
+        });
+
+        await expect(
+            ensureEconomicEventsAnalyzedAction()
+        ).resolves.toBeUndefined();
+
+        expect(attachEventAnalysis).not.toHaveBeenCalled();
+        expect(revalidateTag).not.toHaveBeenCalled();
+    });
+
+    it('does not attach or revalidate when poll times out (§18)', async () => {
+        // submit → submitted path; poll always returns processing (loop exhausts)
+        submitEconomicEventAnalysis.mockResolvedValue({
+            status: 'submitted',
+            jobId: 'job-timeout',
+        });
+        pollEconomicEventAnalysis.mockResolvedValue({ status: 'processing' });
+
+        // sleep is already mocked as a no-op — 30 iterations run instantly
+        await expect(
+            ensureEconomicEventsAnalyzedAction()
+        ).resolves.toBeUndefined();
+
+        expect(attachEventAnalysis).not.toHaveBeenCalled();
+        expect(revalidateTag).not.toHaveBeenCalled();
+    });
 });
