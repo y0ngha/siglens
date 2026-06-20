@@ -37,6 +37,12 @@ describe('resolveIndicatorLabels', () => {
         findByNames.mockResolvedValue([]);
     });
 
+    it('returns an empty map and skips DB for empty events', async () => {
+        const labels = await resolveIndicatorLabels([]);
+        expect(labels).toEqual({});
+        expect(findByNames).not.toHaveBeenCalled();
+    });
+
     it('maps dict-known names to Korean without a DB lookup', async () => {
         const labels = await resolveIndicatorLabels([ev('Nonfarm Payrolls')]);
         expect(labels['Nonfarm Payrolls']).toBe('비농업 고용');

@@ -55,6 +55,19 @@ describe('DrizzleIndicatorTranslationRepository.findByNames', () => {
             },
         ]);
     });
+
+    it('maps a dict-sourced row correctly', async () => {
+        const { db } = makeDb([
+            {
+                normalizedName: 'CPI YoY',
+                koreanName: '소비자물가지수(전년比)',
+                source: 'dict',
+            },
+        ]);
+        const repo = new DrizzleIndicatorTranslationRepository(db);
+        const rows = await repo.findByNames(['CPI YoY']);
+        expect(rows[0].source).toBe('dict');
+    });
 });
 
 describe('DrizzleIndicatorTranslationRepository.upsert', () => {

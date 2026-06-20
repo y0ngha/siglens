@@ -162,8 +162,7 @@ async function EconomyContent() {
         }
     );
 
-    // 지표명 한국어 레이블을 서버에서 미리 해결한다(dict → DB 캐시 → 영어 fallback +
-    // 미매핑 AI 트리거). 그리드는 순수 레이블 맵만 받아 표시한다(SP-B).
+    // dict → DB 캐시 → 영어 fallback 체인. 미매핑은 클라 훅이 AI 트리거(SP-B 설계).
     const indicatorLabels = await resolveIndicatorLabels(calendarEvents).catch(
         (e: unknown) => {
             console.error('[EconomyContent] resolveIndicatorLabels failed:', e);

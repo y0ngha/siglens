@@ -28,15 +28,12 @@ export function useIndicatorTranslationTrigger(
     const triggeredRef = useRef(false);
 
     const triggerOnce = useEffectEvent((): void => {
-        const unresolvedBases = new Set<string>();
-        for (const ev of events) {
-            if (labels[ev.event] === undefined) {
-                const { base } = normalizeIndicatorName(ev.event);
-                if (!Object.hasOwn(INDICATOR_NAME_KO, base)) {
-                    unresolvedBases.add(base);
-                }
-            }
-        }
+        const unresolvedBases = new Set(
+            events
+                .filter(ev => labels[ev.event] === undefined)
+                .map(ev => normalizeIndicatorName(ev.event).base)
+                .filter(base => !Object.hasOwn(INDICATOR_NAME_KO, base))
+        );
 
         for (const base of unresolvedBases) {
             void ensureIndicatorTranslatedAction(base).catch((e: unknown) => {
