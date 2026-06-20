@@ -21,24 +21,14 @@ import {
 } from '../api/calendarAnalysisRefreshFlag';
 import {
     CALENDAR_ANALYSIS_PARALLEL_LIMIT,
+    CALENDAR_ANALYSIS_POLL_INTERVAL_MS,
+    CALENDAR_ANALYSIS_POLL_MAX_ATTEMPTS,
     CALENDAR_ANALYZED_IMPACTS,
     ECONOMY_CALENDAR_CACHE_TAG,
 } from '../lib/economyCalendarConstants';
 
 /** 과반 실패 판정 분모. */
 const MAJORITY_DIVISOR = 2;
-
-/**
- * core submit→poll 주기 (ms). news-card 분석과 동일 — flash-lite 평균 <10s,
- * 30회×2s = 60s 상한이라 serverless waitUntil 예산 내 충분하다.
- */
-const POLL_INTERVAL_MS = 2_000;
-
-/**
- * poll 최대 시도 횟수. 30회×2s = 60s 상한(market-news POLL_MAX_ATTEMPTS 미러).
- * 초과 시 해당 이벤트는 건너뛰고 다음 접속/플래그 만료 시 재시도된다.
- */
-const POLL_MAX_ATTEMPTS = 30;
 
 /**
  * `items`를 최대 `limit`개씩 동시 실행한다(입력 순서 보존). p-limit 없이
@@ -89,13 +79,15 @@ async function analyzeAndPersistEvent(
     let analysis: EconomicEventAnalysis | null = null;
 
     if (submitted.status === 'cached') {
-        // 캐시 히트 — 즉시 결과 사용(poll 불필요).
         analysis = submitted.result;
     } else {
-        // 캐시 미스 — jobId로 완료까지 폴링.
         const { jobId } = submitted;
-        for (let attempt = 0; attempt < POLL_MAX_ATTEMPTS; attempt++) {
-            await sleep(POLL_INTERVAL_MS);
+        for (
+            let attempt = 0;
+            attempt < CALENDAR_ANALYSIS_POLL_MAX_ATTEMPTS;
+            attempt++
+        ) {
+            await sleep(CALENDAR_ANALYSIS_POLL_INTERVAL_MS);
             const polled = await pollEconomicEventAnalysis(jobId);
             if (polled.status === 'done') {
                 analysis = polled.result;
@@ -107,11 +99,10 @@ async function analyzeAndPersistEvent(
                 );
                 return false;
             }
-            // 'processing' — 계속 폴링
         }
         if (analysis === null) {
             console.warn(
-                `[ensureEconomicEventsAnalyzedAction] poll timeout after ${(POLL_MAX_ATTEMPTS * POLL_INTERVAL_MS) / 1_000}s — ${row.id}`
+                `[ensureEconomicEventsAnalyzedAction] poll timeout after ${(CALENDAR_ANALYSIS_POLL_MAX_ATTEMPTS * CALENDAR_ANALYSIS_POLL_INTERVAL_MS) / 1_000}s — ${row.id}`
             );
             return false;
         }

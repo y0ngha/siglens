@@ -16,6 +16,7 @@ const EVENT_SENTIMENT_RECORD: Record<NewsSentiment, true> = {
 
 export function toEventSentiment(value: unknown): NewsSentiment | null {
     return typeof value === 'string' && value in EVENT_SENTIMENT_RECORD
-        ? (value as NewsSentiment)
+        ? // `in EVENT_SENTIMENT_RECORD` proves the runtime type; TS can't narrow `string` to the union.
+          (value as NewsSentiment)
         : null;
 }

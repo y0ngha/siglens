@@ -351,7 +351,6 @@ export const economicCalendar = pgTable(
         fetchedAt: timestamp('fetched_at', { withTimezone: true })
             .notNull()
             .defaultNow(),
-        // --- SP-D AI 분석 컬럼 (Medium+ 발표 이벤트만 채워짐) ---
         /** core analyzeEconomicEvent 결과: 'bullish' | 'neutral' | 'bearish'. 미분석=null. */
         sentiment: text('sentiment'),
         /** 발표 내용 1~2문장 한국어 요약. 미분석=null. */

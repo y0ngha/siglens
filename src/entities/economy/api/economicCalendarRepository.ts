@@ -231,18 +231,15 @@ export class DrizzleEconomicCalendarRepository {
                     ),
             NEON_TRANSIENT_RETRY
         );
-        return rows
-            .filter(
-                (r): r is typeof r & { actual: number } => r.actual !== null
-            )
-            .map(r => ({
-                id: r.id,
-                event: r.event,
-                impact: toImpact(r.impact),
-                actual: r.actual,
-                estimate: r.estimate,
-                previous: r.previous,
-                unit: r.unit,
-            }));
+        return rows.map(r => ({
+            id: r.id,
+            event: r.event,
+            impact: toImpact(r.impact),
+            // WHERE isNotNull(actual) guarantees non-null at runtime; Drizzle's select type doesn't narrow it.
+            actual: r.actual!,
+            estimate: r.estimate,
+            previous: r.previous,
+            unit: r.unit,
+        }));
     }
 }

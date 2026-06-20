@@ -17,7 +17,11 @@ import {
 } from '@y0ngha/siglens-core';
 
 import { DrizzleEconomicCalendarRepository } from '../src/entities/economy/api/economicCalendarRepository';
-import { CALENDAR_ANALYZED_IMPACTS } from '../src/entities/economy/lib/economyCalendarConstants';
+import {
+    CALENDAR_ANALYZED_IMPACTS,
+    CALENDAR_ANALYSIS_POLL_INTERVAL_MS,
+    CALENDAR_ANALYSIS_POLL_MAX_ATTEMPTS,
+} from '../src/entities/economy/lib/economyCalendarConstants';
 import type { SiglensDatabase } from '../src/shared/db/types';
 
 const databaseUrl = process.env.DIRECT_DATABASE_URL ?? process.env.DATABASE_URL;
@@ -28,87 +32,96 @@ if (!databaseUrl) {
 /** 동시 분석 상한 — seed는 일괄이라 작게 잡아 LLM 큐 압박을 피한다. */
 const SEED_PARALLEL_LIMIT = 4;
 
-/** core poll 주기 (ms). flash-lite 평균 <10s, 30회×2s = 60s 상한. */
-const POLL_INTERVAL_MS = 2_000;
-const POLL_MAX_ATTEMPTS = 30;
-
 function sleep(ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 async function run(): Promise<void> {
     const client = postgres(databaseUrl!, { max: 1 });
-    // DrizzleEconomicCalendarRepository는 SiglensDatabase(NeonHttpDatabase)를 받는다.
-    // postgres-js drizzle instance는 insert/select/update를 구조적으로 지원하므로
-    // seed용 단순 쿼리에서는 `as unknown as SiglensDatabase`로 어댑팅한다.
-    const db = drizzle(client) as unknown as SiglensDatabase;
-    const repo = new DrizzleEconomicCalendarRepository(db);
+    try {
+        // DrizzleEconomicCalendarRepository는 SiglensDatabase(NeonHttpDatabase)를 받는다.
+        // postgres-js drizzle instance는 insert/select/update를 구조적으로 지원하므로
+        // seed용 단순 쿼리에서는 `as unknown as SiglensDatabase`로 어댑팅한다.
+        const db = drizzle(client) as unknown as SiglensDatabase;
+        const repo = new DrizzleEconomicCalendarRepository(db);
 
-    const pending = await repo.listUnanalyzedAnnounced(
-        CALENDAR_ANALYZED_IMPACTS
-    );
-    console.log(
-        `Seeding analysis for ${pending.length} Medium+ announced event(s)`
-    );
+        const pending = await repo.listUnanalyzedAnnounced(
+            CALENDAR_ANALYZED_IMPACTS
+        );
+        console.log(
+            `Seeding analysis for ${pending.length} Medium+ announced event(s)`
+        );
 
-    let analyzed = 0;
-    let failed = 0;
+        let analyzed = 0;
+        let failed = 0;
 
-    for (let i = 0; i < pending.length; i += SEED_PARALLEL_LIMIT) {
-        const chunk = pending.slice(i, i + SEED_PARALLEL_LIMIT);
-        const results = await Promise.allSettled(
-            chunk.map(async row => {
-                const input = {
-                    event: row.event,
-                    impact: row.impact,
-                    actual: row.actual,
-                    estimate: row.estimate,
-                    previous: row.previous,
-                    unit: row.unit,
-                };
+        for (let i = 0; i < pending.length; i += SEED_PARALLEL_LIMIT) {
+            const chunk = pending.slice(i, i + SEED_PARALLEL_LIMIT);
+            const results = await Promise.allSettled(
+                chunk.map(async row => {
+                    const input = {
+                        event: row.event,
+                        impact: row.impact,
+                        actual: row.actual,
+                        estimate: row.estimate,
+                        previous: row.previous,
+                        unit: row.unit,
+                    };
 
-                const submitted = await submitEconomicEventAnalysis(input);
-                if (submitted.status === 'cached') {
-                    await repo.attachEventAnalysis(row.id, submitted.result);
-                    return;
-                }
-
-                // submitted — poll until done
-                const { jobId } = submitted;
-                for (let attempt = 0; attempt < POLL_MAX_ATTEMPTS; attempt++) {
-                    await sleep(POLL_INTERVAL_MS);
-                    const polled = await pollEconomicEventAnalysis(jobId);
-                    if (polled.status === 'done') {
-                        await repo.attachEventAnalysis(row.id, polled.result);
+                    const submitted = await submitEconomicEventAnalysis(input);
+                    if (submitted.status === 'cached') {
+                        await repo.attachEventAnalysis(
+                            row.id,
+                            submitted.result
+                        );
                         return;
                     }
-                    if (polled.status === 'error') {
-                        throw new Error(
-                            `poll error for ${row.id}: ${polled.error}`
-                        );
+
+                    // submitted — poll until done
+                    const { jobId } = submitted;
+                    for (
+                        let attempt = 0;
+                        attempt < CALENDAR_ANALYSIS_POLL_MAX_ATTEMPTS;
+                        attempt++
+                    ) {
+                        await sleep(CALENDAR_ANALYSIS_POLL_INTERVAL_MS);
+                        const polled = await pollEconomicEventAnalysis(jobId);
+                        if (polled.status === 'done') {
+                            await repo.attachEventAnalysis(
+                                row.id,
+                                polled.result
+                            );
+                            return;
+                        }
+                        if (polled.status === 'error') {
+                            throw new Error(
+                                `poll error for ${row.id}: ${polled.error}`
+                            );
+                        }
                     }
+                    throw new Error(
+                        `poll timeout after ${(CALENDAR_ANALYSIS_POLL_MAX_ATTEMPTS * CALENDAR_ANALYSIS_POLL_INTERVAL_MS) / 1_000}s — ${row.id}`
+                    );
+                })
+            );
+
+            for (const r of results) {
+                if (r.status === 'fulfilled') {
+                    analyzed += 1;
+                } else {
+                    failed += 1;
+                    console.error('  analyze failed:', r.reason);
                 }
-                throw new Error(
-                    `poll timeout after ${(POLL_MAX_ATTEMPTS * POLL_INTERVAL_MS) / 1_000}s — ${row.id}`
-                );
-            })
-        );
-
-        for (const r of results) {
-            if (r.status === 'fulfilled') {
-                analyzed += 1;
-            } else {
-                failed += 1;
-                console.error('  analyze failed:', r.reason);
             }
+            console.log(
+                `  ${Math.min(i + SEED_PARALLEL_LIMIT, pending.length)}/${pending.length}`
+            );
         }
-        console.log(
-            `  ${Math.min(i + SEED_PARALLEL_LIMIT, pending.length)}/${pending.length}`
-        );
-    }
 
-    console.log(`Done — analyzed ${analyzed}, failed ${failed}`);
-    await client.end();
+        console.log(`Done — analyzed ${analyzed}, failed ${failed}`);
+    } finally {
+        await client.end();
+    }
 }
 
 run().catch((error: unknown) => {
