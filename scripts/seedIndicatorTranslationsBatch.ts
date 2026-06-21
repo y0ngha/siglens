@@ -8,8 +8,8 @@
  * translate each one at first render.
  *
  * Translation-source hierarchy (hybrid, three layers):
- *   1. `INDICATOR_NAME_KO` code dict (dict) — 28 hardcoded entries, source-of-truth,
- *      excluded here (no DB row needed; display code already checks dict first).
+ *   1. The source-of-truth code dict (`INDICATOR_NAME_KO`) — excluded here (no DB row
+ *      needed; display code already checks dict first).
  *   2. `economic_indicator_translations` DB cache (ai) — THIS script fills it.
  *   3. On-access AI path (lazy fallback) — resolveIndicatorLabels triggers the
  *      submitIndicatorTranslation / pollIndicatorTranslation worker per-indicator
@@ -63,6 +63,9 @@ if (!isDryRun && !GEMINI_API_KEY) {
 }
 
 const GEMINI_MODEL = 'gemini-2.5-flash-lite';
+
+// Truncation length for the dry-run prompt preview logged to console.
+const DRY_RUN_PROMPT_PREVIEW_LENGTH = 200;
 
 // Translation prompts are tiny (single indicator name, ~dozens of tokens each).
 // 300 requests/batch keeps each batch well under the Gemini enqueue token limit
@@ -194,8 +197,12 @@ async function processResponses(
         responseById.set(respId, resp);
     }
 
-    let translated = 0;
     let skipped = 0;
+    const insertValues: {
+        normalizedName: string;
+        koreanName: string;
+        source: 'ai';
+    }[] = [];
 
     for (const { id: base } of chunk) {
         const response = responseById.get(base);
@@ -232,28 +239,27 @@ async function processResponses(
             continue;
         }
 
-        // onConflictDoNothing (NOT update): never clobber an existing dict or ai row.
-        // An empty returning array means the row already existed → count as skip.
+        insertValues.push({ normalizedName: base, koreanName, source: 'ai' });
+    }
+
+    // Single bulk insert for all valid translations in this chunk.
+    // Bases within a chunk are already distinct (deduped upstream) and pre-filtered
+    // to exclude rows already in DB, so ON CONFLICT only fires on re-run or concurrent
+    // races. inserted.length = newly written rows; the remainder (insertValues.length -
+    // inserted.length) were pre-existing and skipped by ON CONFLICT DO NOTHING.
+    let translated = 0;
+    if (insertValues.length > 0) {
         const inserted = await db
             .insert(economicIndicatorTranslations)
-            .values({
-                normalizedName: base,
-                koreanName,
-                source: 'ai',
-            })
+            .values(insertValues)
             .onConflictDoNothing({
                 target: economicIndicatorTranslations.normalizedName,
             })
             .returning({
                 normalizedName: economicIndicatorTranslations.normalizedName,
             });
-
-        if (inserted.length > 0) {
-            translated += 1;
-        } else {
-            // Row already existed (prior run or concurrent write) — idempotent skip.
-            skipped += 1;
-        }
+        translated = inserted.length;
+        skipped += insertValues.length - inserted.length;
     }
 
     return { translated, skipped };
@@ -264,14 +270,13 @@ async function run(): Promise<void> {
     try {
         const db = drizzle(client);
 
-        // Collect all distinct raw event names from the calendar.
         const eventRows = await db
             .selectDistinct({ event: economicCalendar.event })
             .from(economicCalendar);
 
-        // Compute distinct bases — normalizeIndicatorName strips the trailing period
-        // qualifier so 'CPI (May)' and 'CPI (Jun)' both reduce to base 'CPI'.
-        // The Set deduplicates across all distinct raw event names.
+        // normalizeIndicatorName strips the trailing period qualifier so 'CPI (May)'
+        // and 'CPI (Jun)' both reduce to base 'CPI'. The Set deduplicates across all
+        // distinct raw event names.
         const allBases = new Set<string>(
             eventRows.map(r => normalizeIndicatorName(r.event).base)
         );
@@ -293,7 +298,6 @@ async function run(): Promise<void> {
             b => !Object.hasOwn(INDICATOR_NAME_KO, b) && existingBases.has(b)
         ).length;
 
-        // Pending = bases NOT covered by code dict AND NOT already in DB.
         // Sorted deterministically so log output and chunk boundaries are stable.
         const pendingBases = [...allBases]
             .filter(
@@ -313,9 +317,9 @@ async function run(): Promise<void> {
             return;
         }
 
-        // Build one prompt per pending base; the base string IS the metadata id since
-        // bases are distinct. The metadata id ties each Batch API response back to
-        // its base name for id-based (not index-based) processing.
+        // The base string IS the metadata id since bases are distinct. The metadata id
+        // ties each Batch API response back to its base name for id-based (not
+        // index-based) processing.
         const requests: PendingRequest[] = pendingBases.map(base => ({
             id: base,
             prompt: buildIndicatorTranslationPrompt(base),
@@ -336,7 +340,7 @@ async function run(): Promise<void> {
                 `[dry-run] sample base="${sample.id}" promptChars=${sample.prompt.length}`
             );
             console.log(
-                `[dry-run] sample prompt head (first 200 chars):\n${sample.prompt.slice(0, 200)}`
+                `[dry-run] sample prompt head (first ${DRY_RUN_PROMPT_PREVIEW_LENGTH} chars):\n${sample.prompt.slice(0, DRY_RUN_PROMPT_PREVIEW_LENGTH)}`
             );
             // Build (but do NOT submit) the first chunk's requests as a sanity check.
             const firstChunk = requests.slice(0, CHUNK_SIZE);
@@ -349,7 +353,7 @@ async function run(): Promise<void> {
             return;
         }
 
-        const chunkCount = Math.ceil(requests.length / CHUNK_SIZE);
+        const chunkCount = Math.ceil(total / CHUNK_SIZE);
         console.log(
             `\n[plan] ${total} requests → ${chunkCount} batch(es) of up to ${CHUNK_SIZE} each (model=${GEMINI_MODEL})`
         );
