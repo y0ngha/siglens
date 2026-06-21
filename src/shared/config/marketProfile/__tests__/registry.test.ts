@@ -21,6 +21,19 @@ describe('market profile registry', () => {
                 'fear-greed',
                 'overall',
             ]);
+            expect(d.allowedTimeframes).toEqual([
+                '5Min',
+                '15Min',
+                '30Min',
+                '1Hour',
+                '4Hour',
+                '1Day',
+            ]);
+            expect(d.defaultTimeframe).toBe('1Day');
+            expect(d.priceFormat.precision).toEqual({
+                kind: 'fixed',
+                digits: 2,
+            });
         });
 
         it('returns the crypto descriptor with crypto-specific policy', () => {

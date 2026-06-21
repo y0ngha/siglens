@@ -319,4 +319,18 @@ describe('fetchCryptoAssetList', () => {
         const result = await fetchCryptoAssetList();
         expect(result).toEqual([]);
     });
+
+    it('logs and re-throws when fmpGet fails', async () => {
+        const error = new Error('FMP API error');
+        vi.mocked(fmpGet).mockRejectedValue(error);
+        const consoleSpy = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => {});
+        await expect(fetchCryptoAssetList()).rejects.toThrow('FMP API error');
+        expect(consoleSpy).toHaveBeenCalledWith(
+            '[fetchCryptoAssetList] FMP cryptocurrency-list fetch failed:',
+            error
+        );
+        consoleSpy.mockRestore();
+    });
 });
