@@ -13,11 +13,7 @@ import {
     isAdmissibleSymbolShape,
 } from '@/shared/config/market';
 import { isUnresolvableDegraded } from '@/shared/lib/symbolGuard';
-import {
-    getDescriptor,
-    marketProfileOf,
-    DEFAULT_MARKET_PROFILE,
-} from '@/shared/config/marketProfile';
+import { getDescriptor, marketProfileOf } from '@/shared/config/marketProfile';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import {
     buildAssetAboutNode,
@@ -78,9 +74,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         return NOINDEX_SYMBOL_METADATA;
     }
     const displayName = buildDisplayName(assetInfo, ticker);
-    const profile = assetInfo
-        ? marketProfileOf(assetInfo)
-        : DEFAULT_MARKET_PROFILE;
+    // assetInfo is non-null here — guarded by `if (!assetInfo) return NOINDEX_SYMBOL_METADATA` above.
+    const profile = marketProfileOf(assetInfo);
     const seo =
         getDescriptor(profile).assetClass === 'crypto'
             ? buildCryptoSymbolSeoContent(ticker, { displayName })

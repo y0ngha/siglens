@@ -184,8 +184,8 @@ export default async function Home() {
     const howToJsonLd = {
         '@context': 'https://schema.org',
         '@type': 'HowTo',
-        name: `${SITE_NAME}로 미국 주식을 차트, 실적, 뉴스, 옵션, 공포 탐욕 지수로 살펴보고 종합 결론까지 받는 방법`,
-        description: `${SITE_NAME}에서 한 종목을 차트, 실적, 뉴스, 옵션 시장, 공포 탐욕 지수 다섯 축으로 살펴보고, 다섯을 묶은 종합 결론과 시나리오를 받는 흐름입니다.`,
+        name: `${SITE_NAME}로 미국 주식과 암호화폐를 차트, 실적, 뉴스, 옵션, 공포 탐욕 지수로 살펴보고 종합 결론까지 받는 방법`,
+        description: `${SITE_NAME}에서 미국 주식이나 암호화폐 종목을 차트, 실적, 뉴스, 옵션 시장, 공포 탐욕 지수 다섯 축으로 살펴보고, 다섯을 묶은 종합 결론과 시나리오를 받는 흐름입니다.`,
         step: [
             {
                 '@type': 'HowToStep',
