@@ -4,6 +4,7 @@ import {
     formatUsdCurrency,
     formatPriceChange,
     formatPrice,
+    dynamicDecimals,
 } from '@/shared/lib/priceFormat';
 import type { PricePrecision } from '@/shared/config/marketProfile';
 
@@ -75,13 +76,56 @@ describe('formatPriceChange', () => {
 
 const usd = { currency: 'USD' as const, locale: 'en-US' };
 const fixed2: PricePrecision = { kind: 'fixed', digits: 2 };
+const integer: PricePrecision = { kind: 'integer' };
 const dyn: PricePrecision = { kind: 'dynamic-by-magnitude' };
+
+describe('dynamicDecimals', () => {
+    it('clamps values >= 1000 to 2dp', () => {
+        expect(dynamicDecimals(64192)).toBe(2);
+    });
+
+    it('uses 2dp for values in [1, 1000)', () => {
+        expect(dynamicDecimals(123.4)).toBe(2);
+    });
+
+    it('treats exact zero as 2dp', () => {
+        expect(dynamicDecimals(0)).toBe(2);
+    });
+
+    it('expands precision for sub-1 values by leading zeros', () => {
+        // 0.058158 → 1 leading zero + 4 = 5dp
+        expect(dynamicDecimals(0.058158)).toBe(5);
+    });
+
+    it('caps precision at 12dp', () => {
+        expect(dynamicDecimals(1e-20)).toBe(12);
+    });
+
+    it('returns 2dp for non-finite input (NaN/Infinity guard)', () => {
+        expect(dynamicDecimals(NaN)).toBe(2);
+        expect(dynamicDecimals(Infinity)).toBe(2);
+        expect(dynamicDecimals(-Infinity)).toBe(2);
+    });
+});
 
 describe('formatPrice', () => {
     it('fixed-2 renders equity prices to 2 decimals', () => {
         expect(formatPrice(123.456, { ...usd, precision: fixed2 })).toBe(
             '$123.46'
         );
+    });
+
+    it('integer precision renders whole-unit prices', () => {
+        expect(formatPrice(1234.56, { ...usd, precision: integer })).toBe(
+            '$1,235'
+        );
+    });
+
+    it('non-finite value falls back to 2dp without throwing', () => {
+        // dynamicDecimals NaN-guard prevents Intl RangeError; value renders as $NaN
+        expect(() =>
+            formatPrice(NaN, { ...usd, precision: dyn })
+        ).not.toThrow();
     });
 
     it('dynamic keeps 2dp for large crypto prices', () => {

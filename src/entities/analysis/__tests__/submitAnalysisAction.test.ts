@@ -27,6 +27,10 @@ vi.mock('@/shared/api/market/getCachedMarketDataProvider', () => ({
     getCachedMarketDataProvider: vi.fn(() => mockProvider),
 }));
 
+vi.mock('@/entities/ticker/lib/cryptoAssetStore', () => ({
+    isCryptoSymbol: vi.fn().mockResolvedValue(false),
+}));
+
 import { headers } from 'next/headers';
 import { resolveTierAndByok } from '@/shared/lib/byokGate';
 import type { AnalysisGateError } from '@/shared/lib/types';

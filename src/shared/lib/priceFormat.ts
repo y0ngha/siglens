@@ -1,4 +1,4 @@
-import type { PricePrecision } from '@/shared/config/marketProfile';
+import type { PriceFormatConfig } from '@/shared/config/marketProfile';
 
 type PriceSign = '+' | '';
 type PriceArrow = '▲' | '▼';
@@ -30,6 +30,9 @@ export function formatUsdCurrency(price: number): string {
 
 /** Decimal places for a value under the dynamic-by-magnitude rule. */
 export function dynamicDecimals(value: number): number {
+    // 비유한값(NaN/Infinity) 방어: log10 경로가 NaN을 반환하면 formatPrice가
+    // Intl.NumberFormat에 NaN fraction-digits를 넘겨 RangeError를 던진다.
+    if (!Number.isFinite(value)) return 2;
     const abs = Math.abs(value);
     if (abs >= 1000) return 2;
     if (abs >= 1) return 2;
@@ -39,14 +42,8 @@ export function dynamicDecimals(value: number): number {
     return Math.min(leadingZeros + 4, 12);
 }
 
-interface PriceFormatSpec {
-    currency: 'USD';
-    locale: string;
-    precision: PricePrecision;
-}
-
 /** Format a price as currency, applying the descriptor's precision rule. */
-export function formatPrice(value: number, spec: PriceFormatSpec): string {
+export function formatPrice(value: number, spec: PriceFormatConfig): string {
     const digits =
         spec.precision.kind === 'fixed'
             ? spec.precision.digits

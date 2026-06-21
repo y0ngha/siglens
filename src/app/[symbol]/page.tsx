@@ -17,6 +17,7 @@ import {
     buildDisplayName,
     getAssetInfoResilient,
 } from '@/entities/ticker';
+import { marketProfileOf } from '@/shared/config/marketProfile';
 import { getBarsStatic, quantizeBarsDataToLastClosed } from '@/entities/bars';
 import { countSkillFiles } from '@/entities/skill';
 import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/shared/config/queryConfig';
@@ -320,6 +321,9 @@ export default async function SymbolPage({ params }: Props) {
                                         indicators={
                                             quantizedFactBars.indicators
                                         }
+                                        marketProfile={marketProfileOf(
+                                            assetInfo
+                                        )}
                                     />
                                 ) : (
                                     <div

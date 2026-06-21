@@ -40,4 +40,16 @@ describe('OverlayLegend', () => {
 
         expect(screen.getByText(/●/)).toBeInTheDocument();
     });
+
+    it('applies the decimals prop so crypto sub-cent overlays are not flattened', () => {
+        const items: OverlayLegendItem[] = [
+            { name: 'MA(20)', color: '#00ff00', value: 0.058158 },
+        ];
+
+        // decimals=5 mirrors the candlestick precision for a sub-cent token;
+        // without it the value would collapse to 0.06 (the wiring-gap bug).
+        render(<OverlayLegend items={items} decimals={5} />);
+
+        expect(screen.getByText(/0\.05816/)).toBeInTheDocument();
+    });
 });

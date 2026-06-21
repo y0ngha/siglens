@@ -80,6 +80,10 @@ vi.mock('@/entities/financials-statements/lib/getFinancialsSnapshot', () => ({
     getFinancialsSnapshot: vi.fn(),
 }));
 
+vi.mock('@/entities/ticker/lib/cryptoAssetStore', () => ({
+    isCryptoSymbol: vi.fn().mockResolvedValue(false),
+}));
+
 import { submitOverallAnalysisAction } from '../actions/submitOverallAnalysisAction';
 import {
     isEtRegularSessionOpen,

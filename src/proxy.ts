@@ -65,8 +65,8 @@ export function proxy(req: NextRequest): NextResponse {
      * 그렇지 않으면 self-referencing canonical 위반이 발생한다.
      *
      * 첫 segment가 명명된 페이지(login, market 등)일 때는 우회한다.
-     * 동일 정규식(`TICKER_RE`)을 ?q= redirect와 공유해 정규식 일관성을 유지한다
-     * (예: PBR-A 같은 하이픈 ticker도 정규화).
+     * 동일 정규식(`SYMBOL_EDGE_RE`)을 ?q= redirect와 공유해 정규식 일관성을 유지한다
+     * (예: PBR-A 같은 하이픈 ticker, BTCUSD 같은 크립토 심볼도 정규화).
      */
     const firstSegment = pathname.split('/').filter(Boolean)[0];
     if (

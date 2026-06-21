@@ -105,6 +105,21 @@ interface StockChartProps {
     marketProfile?: MarketProfileId;
 }
 
+/**
+ * Resolve the number of price decimals for a market profile.
+ * fixed/integer descriptors are static; dynamic (crypto) derives significant
+ * digits from the latest close magnitude so sub-cent tokens aren't flattened.
+ */
+function resolvePriceDecimals(
+    marketProfile: MarketProfileId,
+    lastClose: number | undefined
+): number {
+    const precision = getDescriptor(marketProfile).priceFormat.precision;
+    if (precision.kind === 'fixed') return precision.digits;
+    if (precision.kind === 'integer') return 0;
+    return dynamicDecimals(lastClose ?? 1);
+}
+
 export function StockChart({
     bars,
     timeframe,
@@ -137,6 +152,14 @@ export function StockChart({
         lineWidth: DEFAULT_LINE_WIDTH,
     };
 
+    // 가격 표시 소수 자릿수 — 캔들 시리즈 priceFormat과 오버레이 범례가 공유한다.
+    // descriptor가 fixed/integer면 정적, dynamic(크립토)이면 최신 종가의 크기에서
+    // 유효 자릿수를 파생한다(sub-cent 토큰이 2dp로 0.00으로 뭉개지는 것 방지).
+    const priceDecimals = useMemo(
+        () => resolvePriceDecimals(marketProfile, bars.at(-1)?.close),
+        [marketProfile, bars]
+    );
+
     useEffect(() => {
         onChartReadyRef.current = onChartReady;
         onChartRemoveRef.current = onChartRemove;
@@ -159,13 +182,10 @@ export function StockChart({
 
         chartRef.current = chart;
 
-        const precision = getDescriptor(marketProfile).priceFormat.precision;
-        const decimals =
-            precision.kind === 'fixed'
-                ? precision.digits
-                : precision.kind === 'integer'
-                  ? 0
-                  : dynamicDecimals(bars.at(-1)?.close ?? 1);
+        const decimals = resolvePriceDecimals(
+            marketProfile,
+            bars.at(-1)?.close
+        );
 
         seriesRef.current = chart.addSeries(CandlestickSeries, {
             upColor: CHART_COLORS.bullish,
@@ -715,7 +735,10 @@ export function StockChart({
                 <IndicatorSettingsModal bindings={indicatorBindings} />
             </div>
             <div className="pointer-events-none absolute top-2 left-2 z-10 flex flex-col gap-1">
-                <OverlayLegend items={overlayLegendItems} />
+                <OverlayLegend
+                    items={overlayLegendItems}
+                    decimals={priceDecimals}
+                />
             </div>
         </div>
     );

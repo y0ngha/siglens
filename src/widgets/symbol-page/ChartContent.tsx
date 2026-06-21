@@ -8,6 +8,7 @@ import { BotBlockedNotice } from '@/shared/ui/BotBlockedNotice';
 import { AnalysisPanel } from '@/widgets/analysis';
 import { ChartSkeleton, useChartSync } from '@/widgets/chart';
 import { type AnalysisResponse, type Timeframe } from '@y0ngha/siglens-core';
+import type { MarketProfileId } from '@/shared/config/marketProfile';
 import dynamic from 'next/dynamic';
 import type { ReactNode } from 'react';
 import React, { Suspense, useEffect, useEffectEvent, useMemo } from 'react';
@@ -97,6 +98,12 @@ interface ChartContentProps {
     /** 모바일 바텀시트에 렌더링할 콘텐츠가 변경될 때 호출된다. Suspense 경계 밖에서 시트를 유지하기 위해 상위로 끌어올린다. */
     onMobileSheetContent: (content: ReactNode) => void;
     fmpSymbol?: string;
+    /**
+     * Market profile id (resolved from AssetInfo via marketProfileOf upstream).
+     * Threads per-asset price precision into the chart series, overlay legend,
+     * and technical-facts price. Defaults to 'us-equity'.
+     */
+    marketProfile?: MarketProfileId;
 }
 
 export function ChartContent({
@@ -108,6 +115,7 @@ export function ChartContent({
     initialAnalysisFailed,
     onMobileSheetContent,
     fmpSymbol,
+    marketProfile = 'us-equity',
 }: ChartContentProps) {
     const { bars, indicators } = useBars({ symbol, timeframe, fmpSymbol });
 
@@ -190,6 +198,7 @@ export function ChartContent({
                     symbol={symbol}
                     bars={bars}
                     indicators={indicators}
+                    marketProfile={marketProfile}
                 />
                 {isBotBlocked && <BotBlockedNotice />}
                 {fearGreedCard}
@@ -201,6 +210,7 @@ export function ChartContent({
                     symbol={symbol}
                     bars={bars}
                     indicators={indicators}
+                    marketProfile={marketProfile}
                 />
                 <AnalysisPanel
                     symbol={symbol}
@@ -244,6 +254,7 @@ export function ChartContent({
         actionPricesVisible,
         setActionPricesVisible,
         fmpSymbol,
+        marketProfile,
     ]);
 
     // timeframe을 React.Fragment key로 전달 — Suspense 경계 밖에서 timeframe 변경 시 자식 트리를 강제 remount한다.
@@ -310,6 +321,7 @@ export function ChartContent({
                         onChartReady={handleStockChartReady}
                         onChartRemove={handleStockChartRemove}
                         ticker={symbol}
+                        marketProfile={marketProfile}
                     />
                 </div>
 

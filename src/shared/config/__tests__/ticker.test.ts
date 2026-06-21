@@ -73,6 +73,12 @@ describe('symbol shape checks', () => {
         expect(TICKER_RE.test('BTCUSD')).toBe(true); // 6 letters ≤ 8, passes
     });
 
+    it('SYMBOL_EDGE_RE is the matcher backing isAdmissibleSymbolShape', () => {
+        expect(SYMBOL_EDGE_RE).toBeInstanceOf(RegExp);
+        expect(SYMBOL_EDGE_RE.test('BTCUSD')).toBe(true);
+        expect(SYMBOL_EDGE_RE.test('a b')).toBe(false);
+    });
+
     it('SYMBOL_EDGE_RE admits crypto shapes US regex would reject', () => {
         expect(isAdmissibleSymbolShape('BTCUSD')).toBe(true);
         expect(isAdmissibleSymbolShape('1000SATSUSD')).toBe(true); // digit-first

@@ -14,6 +14,7 @@ import { isBot } from '@/shared/api/isBot';
 import { isE2E } from '@/shared/api/e2eEnv';
 import type { AnalysisGateBlockedResult } from '@/shared/lib/types';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
+import { isCryptoSymbol } from '@/entities/ticker/lib/cryptoAssetStore';
 
 /** Final return type — core's gated result + our siglens-side gate errors. */
 export type SubmitAnalysisActionResult =
@@ -54,7 +55,9 @@ export async function submitAnalysisAction(
 
         const requestHeaders = await headers();
         const skipEnqueueIfMiss = isBot(requestHeaders);
-        const marketDataProvider = getCachedMarketDataProvider();
+        // 크립토는 24/7 시장 — ET 세션 TTL 대신 짧은 고정 TTL provider를 주입한다.
+        const alwaysOpen = await isCryptoSymbol(symbol);
+        const marketDataProvider = getCachedMarketDataProvider(alwaysOpen);
 
         // no user lookup needed when modelId is absent
         if (modelId === undefined) {
