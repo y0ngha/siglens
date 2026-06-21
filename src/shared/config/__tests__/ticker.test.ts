@@ -67,7 +67,7 @@ describe('TICKER_RE', () => {
 });
 
 describe('symbol shape checks', () => {
-    it('TICKER_RE still matches US equities only', () => {
+    it('TICKER_RE matches up-to-8-char uppercase symbols incl. BTCUSD-shaped ones', () => {
         expect(TICKER_RE.test('AAPL')).toBe(true);
         expect(TICKER_RE.test('BRK.B')).toBe(true);
         expect(TICKER_RE.test('BTCUSD')).toBe(true); // 6 letters ≤ 8, passes

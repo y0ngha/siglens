@@ -1,5 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-
+// vi.mock calls are hoisted by vitest above all imports — must appear before any import statements.
 vi.mock('../fmpTickerApi', () => ({
     searchBySymbol: vi.fn().mockResolvedValue([]),
     searchByName: vi.fn().mockResolvedValue([]),
@@ -24,6 +23,7 @@ vi.mock('../koreanNameStore', () => ({
     setKoreanTickers: vi.fn(),
 }));
 
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { searchTicker } from '../searchTicker';
 
 describe('searchTicker — crypto merge', () => {

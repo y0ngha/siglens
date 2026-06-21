@@ -339,16 +339,23 @@ describe('fetchCryptoAssetList', () => {
     });
 });
 
-// ─── DrizzleCryptoAssetRepository ────────────────────────────────────────────
+interface CryptoFindBySymbolDbResult {
+    db: SiglensDatabase;
+    limit: Mock;
+}
+
+interface CryptoSearchDbResult {
+    db: SiglensDatabase;
+    where: Mock;
+    orderBy: Mock;
+    limit: Mock;
+}
 
 /**
  * Build a mock db for DrizzleCryptoAssetRepository.findBySymbol.
  * Chain: select → from → where → limit (returns rows).
  */
-function makeCryptoFindBySymbolDb(rows: unknown[]): {
-    db: SiglensDatabase;
-    limit: Mock;
-} {
+function makeCryptoFindBySymbolDb(rows: unknown[]): CryptoFindBySymbolDbResult {
     const limit = vi.fn().mockResolvedValue(rows);
     const where = vi.fn(() => ({ limit }));
     const from = vi.fn(() => ({ where }));
@@ -360,12 +367,7 @@ function makeCryptoFindBySymbolDb(rows: unknown[]): {
  * Build a mock db for DrizzleCryptoAssetRepository.search.
  * Chain: select → from → where → orderBy → limit (returns rows).
  */
-function makeCryptoSearchDb(rows: unknown[]): {
-    db: SiglensDatabase;
-    where: Mock;
-    orderBy: Mock;
-    limit: Mock;
-} {
+function makeCryptoSearchDb(rows: unknown[]): CryptoSearchDbResult {
     const limit = vi.fn().mockResolvedValue(rows);
     const orderBy = vi.fn(() => ({ limit }));
     const where = vi.fn(() => ({ orderBy }));

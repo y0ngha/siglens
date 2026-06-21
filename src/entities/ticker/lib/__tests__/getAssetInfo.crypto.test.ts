@@ -1,5 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-
+// vi.mock calls are hoisted by vitest above all imports — must appear before any import statements.
 vi.mock('../cryptoAssetStore', () => ({
     getCryptoAsset: vi.fn(),
 }));
@@ -10,6 +9,7 @@ vi.mock('@y0ngha/siglens-core', () => ({
     createCacheProvider: () => null,
 }));
 
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { getAssetInfo } from '../getAssetInfo';
 import { getCryptoAsset } from '../cryptoAssetStore';
 import { fetchCryptoQuoteName } from '../cryptoQuoteName';

@@ -1,4 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+// vi.mock calls are hoisted by vitest above all imports — must appear before any import statements.
+// Variables referenced in mock factories must be declared before vi.mock so they are in scope
+// when vitest hoists the mocks to the top of the compiled module.
 
 const mockFindBySymbol = vi.fn();
 const mockSearch = vi.fn();
@@ -30,6 +32,7 @@ vi.mock('../../api', () => ({
     },
 }));
 
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
     isCryptoSymbol,
     getCryptoAsset,
@@ -90,6 +93,25 @@ describe('cryptoAssetStore (with DB)', () => {
             expect(result).toBeNull();
             expect(warnSpy).toHaveBeenCalledWith(
                 '[cryptoAssetStore] getCryptoAsset failed',
+                expect.any(Error)
+            );
+            warnSpy.mockRestore();
+        });
+    });
+
+    describe('searchCryptoAssets — catch branch', () => {
+        it('returns [] and logs a warning when repository.search throws', async () => {
+            // Use a unique query so the search cache does not return a cached value.
+            mockSearch.mockRejectedValue(new Error('DB error'));
+            const warnSpy = vi
+                .spyOn(console, 'warn')
+                .mockImplementation(() => {});
+
+            const result = await searchCryptoAssets('ERRTEST_CATCH_SCA');
+
+            expect(result).toEqual([]);
+            expect(warnSpy).toHaveBeenCalledWith(
+                '[cryptoAssetStore] search failed',
                 expect.any(Error)
             );
             warnSpy.mockRestore();

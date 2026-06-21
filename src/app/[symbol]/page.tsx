@@ -112,9 +112,10 @@ export default async function SymbolPage({ params }: Props) {
         countSkillFiles(),
     ]);
     // 확장된 게이트(SYMBOL_EDGE_RE)는 crypto 심볼을 수용하기 위해 이전 VALID_TICKER_RE보다
-    // 넓다. 그러나 crypto 심볼은 crypto_assets DB에서 직접 해결되므로 degrade하지 않는다.
-    // degraded + TICKER_RE 불합격 = 이전에 게이트에서 차단됐던 심볼이 FMP 없이 resolve
-    // 실패한 것 → DB에도 crypto_assets에도 없으므로 실재하지 않는 종목으로 취급해 notFound.
+    // 넓다. 정상 조건에서 crypto 심볼은 crypto_assets DB에서 직접 해결된다(degrade 없음).
+    // crypto_assets DB와 FMP가 동시에 다운된 경우에만 예외적으로 degrade 가능하며, 이는
+    // 허용된 한시적 제약이다. degraded + TICKER_RE 불합격 = DB에도 crypto_assets에도 없는
+    // 심볼이 FMP 없이 resolve 실패한 것 → 실재하지 않는 종목으로 취급해 notFound.
     // (MSFT 같은 정상 종목이 FMP 일시 장애 중 degrade되는 경우는 TICKER_RE를 통과하므로
     // 기존 degrade 200+noindex 동작을 유지한다.)
     if (degraded && !VALID_TICKER_RE.test(ticker)) notFound();
