@@ -731,6 +731,24 @@ This file contains only **recurring gotchas** that agents keep missing despite e
 ## SEO & Semantic Markup
 
 ```
+0. New top-level page routes must be discoverable and complete before merge
+   → Every new page added at app/* (e.g., /economy, /[symbol]/holdings) must ship with all of:
+      1. Static sitemap entry (buildStaticEntries.ts)
+      2. Internal navigation link (Footer.tsx, nav menus, or inline context)
+      3. SSR-friendly text content (if page uses component bridges, add SSR text proxy to support crawlers)
+      4. SEO metadata (JSON-LD dateModified, robots follow/nofollow, keywords aligned with content)
+      5. Integration test (e2e spec covering bot UA, metadata, degrade path)
+   → Post-approval audits are mandatory for new pages — review-agent clean approval is not sufficient guarantee
+   → Gap classes recur: (1) sitemap omission, (2) nav link missing, (3) client-only component rendering to crawlers, (4) metadata gaps
+   ❌ feat/economy-page: `/economy` merged without sitemap entry → 3 audit rounds to find + fix
+   ❌ Dynamic component EconomyMacroFacts shipped as client-only bridge → crawlers see empty skeleton
+   ❌ JSON-LD missing dateModified, degraded state has robots.follow: true without canonical: null alignment
+   ✅ Add page to buildStaticEntries.ts before merge
+   ✅ Add Footer link or inline navigation route before merge
+   ✅ Test page rendering with `User-Agent: bot` (Playwright/curl); verify bot sees text content, not skeleton
+   ✅ Verify all JSON-LD fields (dateModified, robots, alternates, keywords) present and consistent
+   ✅ Pre-merge: run seo-audit + coverage-audit to catch orphan routes and client-only drift
+
 1. schema.org type semantics violated — incorrect type reused for unrelated content
    → Each schema.org type has a specific domain and purpose; reusing it for unrelated content misleads search engines
    → Example: `@type: 'FinancialProduct'` is for loans, cards, insurance — not analysis services
