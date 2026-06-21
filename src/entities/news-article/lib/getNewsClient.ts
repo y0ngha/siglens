@@ -4,18 +4,22 @@ import { isE2E } from '@/shared/api/e2eEnv';
 
 let cachedStock: NewsClientPort | null = null;
 let cachedCrypto: NewsClientPort | null = null;
+let cachedFake: NewsClientPort | null = null;
 
 /** Returns the app's news client (FMP in prod, fake under E2E_TEST). */
 export function getNewsClient(
     newsSource: 'stock' | 'crypto' = 'stock'
 ): NewsClientPort {
     if (isE2E()) {
-        // Sync factory — no dynamic import possible here, so the fake loads via a
-        // gated require. Server-only and dead when E2E_TEST is unset (Turbopack
-        // still bundles it into the server output).
-        const { FakeNewsClient } =
-            require('./FakeNewsClient') as typeof import('./FakeNewsClient');
-        return new FakeNewsClient();
+        // Singleton fake: FakeNewsClient holds call-tracking state used by E2E
+        // assertions, so all callers must share the same instance. Sync require()
+        // keeps the fake out of the production bundle (Turbopack dead-code).
+        if (!cachedFake) {
+            const { FakeNewsClient } =
+                require('./FakeNewsClient') as typeof import('./FakeNewsClient');
+            cachedFake = new FakeNewsClient();
+        }
+        return cachedFake;
     }
     if (newsSource === 'crypto') {
         if (!cachedCrypto) cachedCrypto = new FmpNewsClient('crypto');

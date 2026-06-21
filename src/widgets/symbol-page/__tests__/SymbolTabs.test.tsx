@@ -127,6 +127,6 @@ describe('SymbolTabs', () => {
         const placeholder = container.querySelector(
             '.border-secondary-700.h-11.border-b'
         );
-        expect(placeholder).toBeDefined();
+        expect(placeholder).not.toBeNull();
     });
 });

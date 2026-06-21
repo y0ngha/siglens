@@ -50,11 +50,12 @@ import type { AnalysisGateError } from '@/shared/lib/types';
 import { submitAnalysisAction } from '../actions/submitAnalysisAction';
 import {
     submitAnalysis,
+    CRYPTO_SESSION,
+    US_EQUITY_SESSION,
     type ModelId,
     type SubmitAnalysisGatedResult,
 } from '@y0ngha/siglens-core';
 import { getCurrentUser } from '@/entities/session/lib/getCurrentUser';
-import { CRYPTO_SESSION, US_EQUITY_SESSION } from '@y0ngha/siglens-core';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveAssetClass';
 

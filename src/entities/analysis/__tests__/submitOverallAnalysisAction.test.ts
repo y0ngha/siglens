@@ -100,6 +100,8 @@ import {
     isEtRegularSessionOpen,
     submitOverallAnalysis,
     computeFinancialsScorecard,
+    CRYPTO_SESSION,
+    US_EQUITY_SESSION,
     type ModelId,
     type OptionsSnapshot,
     type SubmitOverallAnalysisResult,
@@ -120,7 +122,6 @@ import { fetchOptionsSnapshot } from '@/entities/options-chain/lib/optionsDataCa
 import { isOpenInterestSnapshotStale } from '@/shared/lib/options/openInterestStale';
 import type { AnalysisGateError } from '@/shared/lib/types';
 import { getFinancialsSnapshot } from '@/entities/financials-statements/lib/getFinancialsSnapshot';
-import { CRYPTO_SESSION, US_EQUITY_SESSION } from '@y0ngha/siglens-core';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveAssetClass';
 

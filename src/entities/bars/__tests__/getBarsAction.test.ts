@@ -38,6 +38,8 @@ import { getBarsAction } from '../actions/getBarsAction';
 import {
     EMPTY_SMC_RESULT,
     fetchBarsWithIndicators,
+    CRYPTO_SESSION,
+    US_EQUITY_SESSION,
 } from '@y0ngha/siglens-core';
 import type { BarsData } from '@y0ngha/siglens-core';
 import { sleep } from '@/shared/lib/sleep';
@@ -45,7 +47,6 @@ import {
     FMP_DATA_UNAVAILABLE_MESSAGE,
     FMP_TEMPORARY_UNAVAILABLE_MESSAGE,
 } from '@/shared/api/fmp/fmpUserMessage';
-import { CRYPTO_SESSION, US_EQUITY_SESSION } from '@y0ngha/siglens-core';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveAssetClass';
 

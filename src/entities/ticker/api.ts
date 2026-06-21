@@ -28,6 +28,7 @@ import { isCryptoSymbol } from './lib/cryptoAssetStore';
 import {
     getDescriptor,
     DEFAULT_MARKET_PROFILE,
+    type TabKey,
 } from '@/shared/config/marketProfile';
 
 const koreanTickerColumns = {
@@ -225,7 +226,7 @@ export async function fetchCryptoAssetList(): Promise<CryptoAssetRow[]> {
  */
 export async function isTabAllowedForSymbol(
     symbol: string,
-    tab: string
+    tab: TabKey
 ): Promise<boolean> {
     const profile = (await isCryptoSymbol(symbol))
         ? 'crypto'
