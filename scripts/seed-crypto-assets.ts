@@ -10,6 +10,8 @@ if (!databaseUrl) {
     throw new Error('DATABASE_URL env var required');
 }
 
+const UPSERT_BATCH_SIZE = 500;
+
 async function main() {
     const client = postgres(databaseUrl!, { max: 1 });
     const db = drizzle(client);
@@ -23,10 +25,9 @@ async function main() {
     );
     const total = uniqueRows.length;
 
-    const CHUNK = 500;
     let written = 0;
-    for (let i = 0; i < total; i += CHUNK) {
-        const chunk = uniqueRows.slice(i, i + CHUNK);
+    for (let i = 0; i < total; i += UPSERT_BATCH_SIZE) {
+        const chunk = uniqueRows.slice(i, i + UPSERT_BATCH_SIZE);
         await db
             .insert(cryptoAssets)
             .values(chunk)

@@ -184,6 +184,10 @@ export const koreanTickers = pgTable('korean_tickers', {
  * Mirrors `koreanTickers` shape. Membership in this table is the
  * authoritative crypto classifier (FMP's exchange field is inconsistent:
  * "CCC" in the list vs "CRYPTO" in quote/search).
+ *
+ * `korean_name` is nullable by design: the cryptocurrency-list seed intentionally
+ * leaves it NULL; Korean names are populated lazily in a later plan, mirroring the
+ * `asset_translations` lazy-translation pattern.
  */
 export const cryptoAssets = pgTable('crypto_assets', {
     symbol: varchar('symbol', { length: SYMBOL_MAX_LENGTH }).primaryKey(),
