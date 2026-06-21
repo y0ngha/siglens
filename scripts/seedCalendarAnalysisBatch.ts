@@ -178,7 +178,6 @@ async function processResponses(
         );
     }
 
-    // Build a lookup map from response metadata.id → response.
     const responseById = new Map<string, InlinedResponse>();
     for (const resp of responses) {
         const respId = resp.metadata?.id;

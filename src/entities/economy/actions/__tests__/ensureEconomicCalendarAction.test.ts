@@ -24,7 +24,6 @@ vi.mock('@/shared/db/client', () => ({
 }));
 
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
-// isE2E is defined in vi.hoisted above — re-export through the mock
 import type { EconomicCalendarEvent } from '@y0ngha/siglens-core';
 import { revalidateTag } from 'next/cache';
 import {
