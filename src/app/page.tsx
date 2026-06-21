@@ -169,6 +169,14 @@ export default async function Home() {
                     text: '현재는 회원가입 없이 무료로 제공됩니다. 향후 고급 기능은 유료 플랜으로 제공될 예정이며, 기본 분석은 계속 무료로 이용할 수 있습니다.',
                 },
             },
+            {
+                '@type': 'Question',
+                name: '암호화폐도 분석할 수 있나요?',
+                acceptedAnswer: {
+                    '@type': 'Answer',
+                    text: '비트코인(BTCUSD), 이더리움(ETHUSD) 등 주요 암호화폐도 종목처럼 분석합니다. 티커를 입력하면 24시간 가격 차트와 보조지표, 매매 신호, 최신 크립토 뉴스, 공포 탐욕 지수, 그리고 이를 묶은 AI 종합 결론까지 확인할 수 있습니다. 예: /BTCUSD.',
+                },
+            },
         ],
     };
 
@@ -181,7 +189,7 @@ export default async function Home() {
             {
                 '@type': 'HowToStep',
                 name: '종목명이나 심볼 입력',
-                text: '분석하고 싶은 미국 주식 종목명이나 심볼을 검색창에 입력합니다. 예: 애플, 테슬라, 엔비디아, AAPL, TSLA, NVDA.',
+                text: '분석하고 싶은 미국 주식이나 암호화폐의 종목명·심볼을 검색창에 입력합니다. 예: 애플, 테슬라, AAPL, TSLA, 그리고 암호화폐는 BTCUSD, ETHUSD.',
                 url: `${SITE_URL}/#search`,
             },
             {
