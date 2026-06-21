@@ -15,6 +15,7 @@ import { isE2E } from '@/shared/api/e2eEnv';
 import type { AnalysisGateBlockedResult } from '@/shared/lib/types';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { isCryptoSymbol } from '@/entities/ticker/lib/cryptoAssetStore';
+import { resolveAssetClass } from '@/entities/ticker/lib/resolveAssetClass';
 
 /** Final return type — core's gated result + our siglens-side gate errors. */
 export type SubmitAnalysisActionResult =
@@ -59,6 +60,7 @@ export async function submitAnalysisAction(
         // (Plan 4에서 core MarketSessionSpec으로 교체 예정 — tracking: https://github.com/y0ngha/siglens/issues/620).
         const alwaysOpen = await isCryptoSymbol(symbol);
         const marketDataProvider = getCachedMarketDataProvider(alwaysOpen);
+        const assetClass = await resolveAssetClass(symbol);
 
         // no user lookup needed when modelId is absent
         if (modelId === undefined) {
@@ -73,6 +75,7 @@ export async function submitAnalysisAction(
                     modelId,
                     skipEnqueueIfMiss,
                     marketDataProvider,
+                    assetClass,
                 }
             );
         }
@@ -96,6 +99,7 @@ export async function submitAnalysisAction(
                 modelId,
                 skipEnqueueIfMiss,
                 marketDataProvider,
+                assetClass,
                 tierContext: { userId, tier: gate.tier },
                 ...(gate.userApiKey !== undefined
                     ? { userApiKey: gate.userApiKey }
