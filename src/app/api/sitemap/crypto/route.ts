@@ -10,19 +10,41 @@ import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 
+const SITEMAP_RETRY_AFTER_SECONDS = '300';
+const SITEMAP_UNAVAILABLE_BODY = 'Sitemap data temporarily unavailable';
+
 export async function GET(): Promise<Response> {
     const now = new Date();
     const popular = buildCryptoPopularEntries(now);
 
     const { db } = getDatabaseClient();
     const source = new DrizzleCryptoLongTailSource(db);
-    const total = await source.count();
-    const longTailSymbols = await source.loadPage(1, CRYPTO_LONGTAIL_CAP);
-    const longTail = buildLongTailEntries(longTailSymbols, SITE_BUILD_DATE);
+    let eligible: number;
+    let longTailSymbols: readonly string[];
 
-    // No silent caps: surface how much of the universe was dropped (§4.5).
+    try {
+        [eligible, longTailSymbols] = await Promise.all([
+            source.count(),
+            source.loadPage(1, CRYPTO_LONGTAIL_CAP),
+        ]);
+    } catch (error) {
+        console.error('[sitemap-crypto] DB access failed', error);
+        return new NextResponse(SITEMAP_UNAVAILABLE_BODY, {
+            status: 503,
+            headers: {
+                'Retry-After': SITEMAP_RETRY_AFTER_SECONDS,
+            },
+        });
+    }
+
+    const longTail = buildLongTailEntries(longTailSymbols, SITE_BUILD_DATE);
+    const served = longTail.length;
+    const dropped = eligible - served;
+
+    // No silent caps: surface eligible vs served vs dropped so ops can see
+    // exactly how many longtail crypto URLs were excluded by CRYPTO_LONGTAIL_CAP.
     console.log(
-        `[sitemap-crypto] popular=${popular.length} longtail=${longTail.length} (cap ${CRYPTO_LONGTAIL_CAP}, eligible≈${total})`
+        `[sitemap-crypto] popular=${popular.length} served=${served} eligible=${eligible} dropped=${dropped}`
     );
 
     const xml = toUrlSetXml([...popular, ...longTail]);

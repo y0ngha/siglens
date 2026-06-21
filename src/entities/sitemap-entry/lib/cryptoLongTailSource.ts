@@ -3,7 +3,7 @@ import 'server-only';
 import { POPULAR_CRYPTOS } from '@/shared/config/popular-cryptos';
 import { cryptoAssets } from '@/shared/db/schema';
 import type { SiglensDatabase } from '@/shared/db/types';
-import { asc, notInArray, sql } from 'drizzle-orm';
+import { asc, countDistinct, notInArray, sql } from 'drizzle-orm';
 import type { LongTailTickerSource } from '../model';
 
 /**
@@ -21,13 +21,18 @@ const supplyRank = sql`${cryptoAssets.circulatingSupply} DESC NULLS LAST`;
 export class DrizzleCryptoLongTailSource implements LongTailTickerSource {
     constructor(private readonly db: SiglensDatabase) {}
 
+    /**
+     * Returns the TRUE eligible universe count (no cap applied).
+     * `loadPage()` enforces CRYPTO_LONGTAIL_CAP for serving; this method
+     * intentionally omits the cap so the route log can surface real drop counts.
+     */
     async count(): Promise<number> {
-        const rows = await this.db
-            .select({ symbol: cryptoAssets.symbol })
+        const [row] = await this.db
+            .select({ total: countDistinct(cryptoAssets.symbol) })
             .from(cryptoAssets)
-            .where(longTailPredicate)
-            .limit(CRYPTO_LONGTAIL_CAP);
-        return rows.length;
+            .where(longTailPredicate);
+
+        return row?.total ?? 0;
     }
 
     async loadPage(
