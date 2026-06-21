@@ -1,11 +1,14 @@
-import type { Mock } from 'vitest';
-// withRetry 내부 sleep을 즉시 resolve로 stubbing해서 transient retry 케이스의
-// 실제 대기 시간을 없앤다. `vi.mock` 은 정적 import 보다 먼저 평가되도록
-// 호이스트되어야 한다 (`import/first` 규칙과 일치).
+// vi.mock calls are hoisted by vitest above all imports — must appear before any import statements.
 vi.mock('@/shared/lib/sleep', () => ({
     sleep: vi.fn().mockResolvedValue(undefined),
 }));
+vi.mock('@/shared/api/fmp/httpClient');
 
+import type { Mock } from 'vitest';
+import { vi } from 'vitest';
+
+import { fetchCryptoAssetList } from '@/entities/ticker/api';
+import { fmpGet } from '@/shared/api/fmp/httpClient';
 import {
     DrizzleAssetTranslationRepository,
     DrizzleKoreanTickerRepository,
@@ -289,5 +292,45 @@ describe('Neon transient retry wire-up', () => {
 
         await expect(repo.upsertMany([apple])).rejects.toBe(constraintError);
         expect(insert).toHaveBeenCalledTimes(1);
+    });
+});
+
+describe('fetchCryptoAssetList', () => {
+    it('returns mapped rows, filtering out entries without a symbol', async () => {
+        vi.mocked(fmpGet).mockResolvedValue([
+            {
+                symbol: 'BTCUSD',
+                name: 'Bitcoin USD',
+                circulatingSupply: 19_700_000,
+            },
+            { name: 'no symbol' },
+        ]);
+        const result = await fetchCryptoAssetList();
+        expect(result).toHaveLength(1);
+        expect(result[0]).toEqual({
+            symbol: 'BTCUSD',
+            name: 'Bitcoin USD',
+            circulatingSupply: 19_700_000,
+        });
+    });
+
+    it('returns an empty array when FMP returns no items', async () => {
+        vi.mocked(fmpGet).mockResolvedValue([]);
+        const result = await fetchCryptoAssetList();
+        expect(result).toEqual([]);
+    });
+
+    it('logs and re-throws when fmpGet fails', async () => {
+        const error = new Error('FMP API error');
+        vi.mocked(fmpGet).mockRejectedValue(error);
+        const consoleSpy = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => {});
+        await expect(fetchCryptoAssetList()).rejects.toThrow('FMP API error');
+        expect(consoleSpy).toHaveBeenCalledWith(
+            '[fetchCryptoAssetList] FMP cryptocurrency-list fetch failed:',
+            error
+        );
+        consoleSpy.mockRestore();
     });
 });

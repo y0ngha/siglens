@@ -56,6 +56,12 @@ export interface AssetInfo {
     koreanName?: string;
     /** FMP API 심볼 (지수의 경우 ^ 접두사 포함, 예: ^SPX). 일반 주식은 undefined. */
     fmpSymbol?: string;
+    /**
+     * Market profile id. Absent on legacy/equity rows — resolve with
+     * `marketProfileOf()` which defaults to `'us-equity'`. Populated for
+     * crypto in the routing/data plan (Plan 2).
+     */
+    marketProfile?: MarketProfileId;
 }
 
 /** Curated category id used to group tickers in UI explorers. */
@@ -94,6 +100,9 @@ export type {
 export type { AuthUserRecord } from '@/shared/lib/auth/types';
 
 import type { LlmProvider } from '@/shared/config/llmProviders';
+// Direct import from /types (not the barrel) to avoid a circular dependency:
+// shared/lib/types → marketProfile/index(barrel) → registry → shared/lib/types
+import type { MarketProfileId } from '@/shared/config/marketProfile/types';
 
 export type { LlmProvider };
 
