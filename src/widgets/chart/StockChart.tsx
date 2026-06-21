@@ -159,10 +159,14 @@ export function StockChart({
         () => resolvePriceDecimals(marketProfile, bars.at(-1)?.close),
         [marketProfile, bars]
     );
+    // mount-only 차트 생성 effect가 deps 없이([]) priceDecimals를 읽을 수 있도록 ref로 미러링.
+    // effect에 priceDecimals를 deps로 추가하면 decimals 변경마다 차트가 재생성되므로 금지.
+    const priceDecimalsRef = useRef(priceDecimals);
 
     useEffect(() => {
         onChartReadyRef.current = onChartReady;
         onChartRemoveRef.current = onChartRemove;
+        priceDecimalsRef.current = priceDecimals;
     });
 
     useEffect(() => {
@@ -182,10 +186,7 @@ export function StockChart({
 
         chartRef.current = chart;
 
-        const decimals = resolvePriceDecimals(
-            marketProfile,
-            bars.at(-1)?.close
-        );
+        const decimals = priceDecimalsRef.current;
 
         seriesRef.current = chart.addSeries(CandlestickSeries, {
             upColor: CHART_COLORS.bullish,
