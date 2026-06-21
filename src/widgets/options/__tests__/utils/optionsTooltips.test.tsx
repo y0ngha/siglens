@@ -10,6 +10,7 @@ import {
     CallVolumeTooltip,
     PutVolumeTooltip,
 } from '@/widgets/options/utils/optionsTooltips';
+import { useHydrated } from '@/shared/hooks/useHydrated';
 
 vi.mock('@/shared/lib/eastern', () => ({
     EDT_OFFSET_HOURS: -4,
@@ -23,8 +24,6 @@ vi.mock('@/shared/lib/options/marketHoursDisplay', () => ({
 }));
 
 vi.mock('@/shared/hooks/useHydrated', () => ({ useHydrated: vi.fn() }));
-
-import { useHydrated } from '@/shared/hooks/useHydrated';
 
 const mockUseHydrated = vi.mocked(useHydrated);
 

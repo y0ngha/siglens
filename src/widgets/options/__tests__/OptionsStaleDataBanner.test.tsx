@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { OptionsStaleDataBanner } from '@/widgets/options/OptionsStaleDataBanner';
+import { useHydrated } from '@/shared/hooks/useHydrated';
 
 vi.mock('@/shared/lib/options/marketHoursDisplay', () => ({
     ET_MARKET_HOURS_DISPLAY: '9:30~16:00 ET',
@@ -13,8 +14,6 @@ vi.mock('@/shared/lib/eastern', () => ({
 }));
 
 vi.mock('@/shared/hooks/useHydrated', () => ({ useHydrated: vi.fn() }));
-
-import { useHydrated } from '@/shared/hooks/useHydrated';
 
 const mockUseHydrated = vi.mocked(useHydrated);
 
