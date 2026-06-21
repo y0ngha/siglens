@@ -2,13 +2,11 @@ vi.mock('@/entities/economy/actions', () => ({
     ensureEconomicCalendarAction: vi.fn().mockResolvedValue(undefined),
     ensureEconomicEventsAnalyzedAction: vi.fn().mockResolvedValue(undefined),
 }));
-vi.mock('@/entities/economy/lib/resolveIndicatorLabels', () => ({
-    resolveIndicatorLabels: vi.fn().mockResolvedValue({}),
-}));
 
 import { vi, describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import type { EconomicCalendarEventWithAnalysis } from '@/entities/economy/model';
+import type { EconomicCalendarEvent } from '@y0ngha/siglens-core';
 import { EconomicCalendarGrid } from '@/widgets/economy/sections/EconomicCalendarGrid';
 
 function ev(
@@ -101,5 +99,79 @@ describe('EconomicCalendarGrid analysis display', () => {
             />
         );
         expect(screen.queryByText('부정')).not.toBeInTheDocument();
+    });
+
+    // C1 guard: empty summaryKo (pre-fix DB row) must NOT render a badge over blank content.
+    it('renders no sentiment badge when summaryKo is an empty string (C1 guard)', () => {
+        render(
+            <EconomicCalendarGrid
+                events={[
+                    ev({
+                        sentiment: 'neutral',
+                        summaryKo: '',
+                        interpretationKo: null,
+                        analyzedAt: new Date('2026-06-20T13:00:00Z'),
+                    }),
+                ]}
+                today="2026-06-20"
+            />
+        );
+        expect(screen.queryByText('중립')).not.toBeInTheDocument();
+    });
+
+    // C1 guard: whitespace-only summaryKo must also not render.
+    it('renders no sentiment badge when summaryKo is whitespace-only (C1 guard)', () => {
+        render(
+            <EconomicCalendarGrid
+                events={[
+                    ev({
+                        sentiment: 'bullish',
+                        summaryKo: '   ',
+                        interpretationKo: null,
+                        analyzedAt: new Date('2026-06-20T13:00:00Z'),
+                    }),
+                ]}
+                today="2026-06-20"
+            />
+        );
+        expect(screen.queryByText('긍정')).not.toBeInTheDocument();
+    });
+});
+
+function baseEvent(eventName: string): EconomicCalendarEvent {
+    return {
+        date: '2026-06-20 08:30:00',
+        event: eventName,
+        impact: 'High',
+        actual: null,
+        estimate: 1,
+        previous: 1,
+        unit: '%',
+    };
+}
+
+describe('EconomicCalendarGrid — displayEventLabel prototype-pollution guard (I5)', () => {
+    it('renders the literal "toString" event name when labels map does not contain it', () => {
+        // "toString" exists on Object.prototype — `labels["toString"]` would return a
+        // function without the Object.hasOwn guard, potentially crashing the renderer.
+        render(
+            <EconomicCalendarGrid
+                events={[baseEvent('toString')]}
+                today="2026-06-20"
+                labels={{}}
+            />
+        );
+        expect(screen.getByText('toString')).toBeInTheDocument();
+    });
+
+    it('renders the literal "constructor" event name when labels map does not contain it', () => {
+        render(
+            <EconomicCalendarGrid
+                events={[baseEvent('constructor')]}
+                today="2026-06-20"
+                labels={{}}
+            />
+        );
+        expect(screen.getByText('constructor')).toBeInTheDocument();
     });
 });

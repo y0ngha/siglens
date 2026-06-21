@@ -24,6 +24,7 @@
         "db:migrate:tickers": "dotenv -e .env.local -- node_modules/.bin/tsx scripts/seed-korean-tickers.ts",
         "db:backfill:calendar": "dotenv -e .env.local -- node_modules/.bin/tsx scripts/backfillEconomicCalendar.ts",
         "db:seed:calendar-analysis": "dotenv -e .env.local -- node_modules/.bin/tsx scripts/seedEconomicEventAnalysis.ts",
+        "db:seed:calendar-analysis:batch": "dotenv -e .env.local -- node_modules/.bin/tsx scripts/seedCalendarAnalysisBatch.ts",
         "test": "NODE_OPTIONS=--no-experimental-webstorage vitest run",
         "test:quiet": "NODE_NO_WARNINGS=1 NODE_OPTIONS=--no-experimental-webstorage vitest run --reporter=dot",
         "test:related": "NODE_NO_WARNINGS=1 NODE_OPTIONS=--no-experimental-webstorage vitest related --run --passWithNoTests",

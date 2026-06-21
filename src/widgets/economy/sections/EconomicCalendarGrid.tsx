@@ -238,85 +238,94 @@ function DayDetailPanel({
                 {month + 1}월 {day}일 ({dowLabel})
             </h3>
             <ul className="space-y-2">
-                {group.events.map(ev => (
-                    <li
-                        key={`${ev.iso}:${ev.original.event}:${ev.original.actual ?? ''}`}
-                        hidden={!activeImpacts.has(ev.original.impact)}
-                        className="border-secondary-700 bg-secondary-800/50 rounded-lg border p-3"
-                    >
-                        <div className="flex flex-wrap items-start justify-between gap-2">
-                            <div className="min-w-0 flex-1">
-                                <div className="mb-0.5 flex items-center gap-2">
-                                    <time
-                                        dateTime={ev.iso}
-                                        className="text-secondary-300 shrink-0 text-xs tabular-nums"
-                                    >
-                                        {ev.kstTimeLabel}
-                                    </time>
-                                </div>
-                                <p className="text-secondary-100 text-sm font-medium">
-                                    {displayEventLabel(
-                                        ev.original.event,
-                                        labels
-                                    )}
-                                </p>
-                                <p className="text-secondary-400 mt-0.5 text-xs">
-                                    예상{' '}
-                                    {formatNum(
-                                        ev.original.estimate,
-                                        ev.original.unit
-                                    )}{' '}
-                                    · 이전{' '}
-                                    {formatNum(
-                                        ev.original.previous,
-                                        ev.original.unit
-                                    )}
-                                    {ev.original.actual !== null && (
-                                        <>
-                                            {' '}
-                                            · 실제{' '}
-                                            {formatNum(
-                                                ev.original.actual,
-                                                ev.original.unit
-                                            )}
-                                        </>
-                                    )}
-                                </p>
-                            </div>
-                            <span
-                                className={cn(
-                                    'shrink-0 rounded px-2 py-0.5 text-xs font-medium',
-                                    IMPACT_BADGE[ev.original.impact]
-                                )}
-                            >
-                                {IMPACT_LABELS[ev.original.impact]}
-                            </span>
-                        </div>
-                        {ev.original.sentiment != null &&
-                            ev.original.summaryKo != null && (
-                                <div className="border-secondary-700/60 mt-2 space-y-1 border-t pt-2">
-                                    <span
-                                        className={cn(
-                                            'inline-block rounded px-2 py-0.5 text-xs font-medium',
-                                            SENTIMENT_CLASS[
-                                                ev.original.sentiment
-                                            ]
+                {group.events.map(ev => {
+                    const hasSummaryContent =
+                        (ev.original.summaryKo?.trim().length ?? 0) > 0;
+                    return (
+                        <li
+                            key={`${ev.iso}:${ev.original.event}:${ev.original.actual ?? ''}`}
+                            hidden={!activeImpacts.has(ev.original.impact)}
+                            className="border-secondary-700 bg-secondary-800/50 rounded-lg border p-3"
+                        >
+                            <div className="flex flex-wrap items-start justify-between gap-2">
+                                <div className="min-w-0 flex-1">
+                                    <div className="mb-0.5 flex items-center gap-2">
+                                        <time
+                                            dateTime={ev.iso}
+                                            className="text-secondary-300 shrink-0 text-xs tabular-nums"
+                                        >
+                                            {ev.kstTimeLabel}
+                                        </time>
+                                    </div>
+                                    <p className="text-secondary-100 text-sm font-medium">
+                                        {displayEventLabel(
+                                            ev.original.event,
+                                            labels
                                         )}
-                                    >
-                                        {SENTIMENT_LABEL[ev.original.sentiment]}
-                                    </span>
-                                    <p className="text-secondary-200 text-sm">
-                                        {ev.original.summaryKo}
                                     </p>
-                                    {ev.original.interpretationKo != null && (
-                                        <p className="text-secondary-400 text-xs leading-relaxed">
-                                            {ev.original.interpretationKo}
-                                        </p>
-                                    )}
+                                    <p className="text-secondary-400 mt-0.5 text-xs">
+                                        예상{' '}
+                                        {formatNum(
+                                            ev.original.estimate,
+                                            ev.original.unit
+                                        )}{' '}
+                                        · 이전{' '}
+                                        {formatNum(
+                                            ev.original.previous,
+                                            ev.original.unit
+                                        )}
+                                        {ev.original.actual !== null && (
+                                            <>
+                                                {' '}
+                                                · 실제{' '}
+                                                {formatNum(
+                                                    ev.original.actual,
+                                                    ev.original.unit
+                                                )}
+                                            </>
+                                        )}
+                                    </p>
                                 </div>
-                            )}
-                    </li>
-                ))}
+                                <span
+                                    className={cn(
+                                        'shrink-0 rounded px-2 py-0.5 text-xs font-medium',
+                                        IMPACT_BADGE[ev.original.impact]
+                                    )}
+                                >
+                                    {IMPACT_LABELS[ev.original.impact]}
+                                </span>
+                            </div>
+                            {ev.original.sentiment != null &&
+                                hasSummaryContent && (
+                                    <div className="border-secondary-700/60 mt-2 space-y-1 border-t pt-2">
+                                        <span
+                                            className={cn(
+                                                'inline-block rounded px-2 py-0.5 text-xs font-medium',
+                                                SENTIMENT_CLASS[
+                                                    ev.original.sentiment
+                                                ]
+                                            )}
+                                        >
+                                            {
+                                                SENTIMENT_LABEL[
+                                                    ev.original.sentiment
+                                                ]
+                                            }
+                                        </span>
+                                        <p className="text-secondary-200 text-sm">
+                                            {ev.original.summaryKo}
+                                        </p>
+                                        {ev.original.interpretationKo !=
+                                            null && (
+                                            <p className="text-secondary-400 text-xs leading-relaxed">
+                                                {ev.original.interpretationKo}
+                                            </p>
+                                        )}
+                                    </div>
+                                )}
+                        </li>
+                    );
+                })}
             </ul>
         </div>
     );

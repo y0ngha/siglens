@@ -85,6 +85,8 @@ next-env.d.ts
 !/scripts/backfillEconomicCalendar.ts
 # SP-D: one-time AI analysis seed script (user runs after SP-A backfill).
 !/scripts/seedEconomicEventAnalysis.ts
+# One-time Gemini Batch API calendar-analysis seed script.
+!/scripts/seedCalendarAnalysisBatch.ts
 !/scripts/lib/
 !/scripts/lib/**
 

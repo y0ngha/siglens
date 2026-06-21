@@ -224,6 +224,38 @@ describe('ensureEconomicEventsAnalyzedAction', () => {
         consoleError.mockRestore();
     });
 
+    it('skips persist and revalidate when cached result has empty summaryKo (C1 guard)', async () => {
+        // core normalizeEconomicEventAnalysis crash-safe fallback: empty summaryKo.
+        // Must NOT call attachEventAnalysis (write-once guard) or revalidateTag.
+        submitEconomicEventAnalysis.mockResolvedValue({
+            status: 'cached',
+            result: {
+                sentiment: 'neutral',
+                summaryKo: '',
+                interpretationKo: '',
+            },
+        });
+
+        await ensureEconomicEventsAnalyzedAction();
+
+        expect(attachEventAnalysis).not.toHaveBeenCalled();
+        expect(revalidateTag).not.toHaveBeenCalled();
+    });
+
+    it('skips persist and revalidate when summaryKo is whitespace-only (C1 guard)', async () => {
+        submitEconomicEventAnalysis.mockResolvedValue({
+            status: 'cached',
+            result: {
+                sentiment: 'neutral',
+                summaryKo: '   ',
+                interpretationKo: '',
+            },
+        });
+        await ensureEconomicEventsAnalyzedAction();
+        expect(attachEventAnalysis).not.toHaveBeenCalled();
+        expect(revalidateTag).not.toHaveBeenCalled();
+    });
+
     it('warns but does not error on minority failure, and still revalidates persisted rows', async () => {
         // 3 pending, first fails → 1/3 < majority(1.5)
         const ROW_2 = { ...ROW, id: 'id2', event: 'PPI MoM (May)' };
