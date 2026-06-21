@@ -12,6 +12,7 @@ vi.mock('@y0ngha/siglens-core', () => ({
 
 import { getAssetInfo } from '../getAssetInfo';
 import { getCryptoAsset } from '../cryptoAssetStore';
+import { fetchCryptoQuoteName } from '../cryptoQuoteName';
 
 describe('getAssetInfo — crypto branch', () => {
     beforeEach(() => vi.clearAllMocks());
@@ -28,6 +29,25 @@ describe('getAssetInfo — crypto branch', () => {
             symbol: 'BTCUSD',
             name: 'Bitcoin USD',
             koreanName: '비트코인',
+            marketProfile: 'crypto',
+        });
+    });
+
+    it('falls back to fetchCryptoQuoteName when crypto_assets record has empty name', async () => {
+        vi.mocked(getCryptoAsset).mockResolvedValue({
+            symbol: 'EMPTYNAME',
+            name: '', // empty string — should trigger quote name lookup
+            koreanName: null,
+            circulatingSupply: null,
+        });
+        vi.mocked(fetchCryptoQuoteName).mockResolvedValue('Empty Name Coin');
+
+        const info = await getAssetInfo('emptyname');
+
+        expect(fetchCryptoQuoteName).toHaveBeenCalledWith('EMPTYNAME');
+        expect(info).toMatchObject({
+            symbol: 'EMPTYNAME',
+            name: 'Empty Name Coin',
             marketProfile: 'crypto',
         });
     });

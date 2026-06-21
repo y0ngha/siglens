@@ -1,5 +1,5 @@
 import { tryGetTickerDatabaseClient } from './db';
-import { DrizzleCryptoAssetRepository } from '../api';
+import { DrizzleCryptoAssetRepository } from '@/entities/ticker/api';
 import type {
     CryptoAssetRecord,
     CryptoAssetRepository,
@@ -7,6 +7,14 @@ import type {
 import type { TickerSearchResult } from '@/shared/lib/types';
 
 const CRYPTO_SEARCH_LIMIT = 10;
+
+/**
+ * Module-level caches for hot-path crypto classification and record lookups.
+ * The crypto universe is static (no delists mid-session), so a simple Map is
+ * safe here — no TTL needed. The process restarts on deploy, flushing stale entries.
+ */
+const cryptoSymbolCache = new Map<string, boolean>();
+const cryptoAssetCache = new Map<string, CryptoAssetRecord | null>();
 
 function tryGetRepository(): CryptoAssetRepository | null {
     const client = tryGetTickerDatabaseClient();
@@ -27,10 +35,14 @@ function recordToSearchResult(r: CryptoAssetRecord): TickerSearchResult {
 
 /** Authoritative crypto classifier: true iff the symbol exists in crypto_assets. */
 export async function isCryptoSymbol(symbol: string): Promise<boolean> {
+    const upper = symbol.toUpperCase();
+    if (cryptoSymbolCache.has(upper)) return cryptoSymbolCache.get(upper)!;
     const repository = tryGetRepository();
     if (!repository) return false;
     try {
-        return (await repository.findBySymbol(symbol.toUpperCase())) !== null;
+        const result = (await repository.findBySymbol(upper)) !== null;
+        cryptoSymbolCache.set(upper, result);
+        return result;
     } catch (e) {
         console.warn('[cryptoAssetStore] findBySymbol failed', e);
         return false;
@@ -41,10 +53,15 @@ export async function isCryptoSymbol(symbol: string): Promise<boolean> {
 export async function getCryptoAsset(
     symbol: string
 ): Promise<CryptoAssetRecord | null> {
+    const upper = symbol.toUpperCase();
+    if (cryptoAssetCache.has(upper)) return cryptoAssetCache.get(upper)!;
     const repository = tryGetRepository();
     if (!repository) return null;
     try {
-        return await repository.findBySymbol(symbol.toUpperCase());
+        const record = await repository.findBySymbol(upper);
+        cryptoAssetCache.set(upper, record);
+        cryptoSymbolCache.set(upper, record !== null);
+        return record;
     } catch (e) {
         console.warn('[cryptoAssetStore] getCryptoAsset failed', e);
         return null;

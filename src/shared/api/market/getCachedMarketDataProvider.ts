@@ -16,7 +16,7 @@ let cachedCrypto: MarketDataProvider | null = null;
  * 무의미)를 그대로 반환한다.
  *
  * `alwaysOpen=true` 시 크립토 24/7 시장용 짧은 고정 TTL을 사용한다 (Plan 4에서
- * core MarketSessionSpec으로 교체 예정).
+ * core MarketSessionSpec으로 교체 예정 — tracking: https://github.com/y0ngha/siglens/issues/620).
  */
 export function getCachedMarketDataProvider(
     alwaysOpen = false

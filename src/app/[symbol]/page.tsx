@@ -132,6 +132,10 @@ export default async function SymbolPage({ params }: Props) {
             ? null
             : quantizeBarsDataToLastClosed(factBars, new Date());
 
+    // Compute marketProfile once here so both TechnicalFactsSummary (Suspense fallback)
+    // and SymbolPageClient receive the same value without recomputing on the client.
+    const marketProfile = marketProfileOf(assetInfo);
+
     const displayName = buildDisplayName(assetInfo, ticker);
     const { fullTitle, description, url } = buildSymbolSeoContent(ticker, {
         displayName,
@@ -321,9 +325,7 @@ export default async function SymbolPage({ params }: Props) {
                                         indicators={
                                             quantizedFactBars.indicators
                                         }
-                                        marketProfile={marketProfileOf(
-                                            assetInfo
-                                        )}
+                                        marketProfile={marketProfile}
                                     />
                                 ) : (
                                     <div
@@ -344,6 +346,7 @@ export default async function SymbolPage({ params }: Props) {
                             // 항상 true를 유지한다(봇은 enqueue가 skip되어 생성 안 됨).
                             initialAnalysisFailed={true}
                             indicatorCount={skillCounts.indicators}
+                            marketProfile={marketProfile}
                         />
                     </Suspense>
                 </HydrationBoundary>

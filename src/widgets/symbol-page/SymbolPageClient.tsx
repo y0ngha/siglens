@@ -15,6 +15,7 @@ import { SymbolPageProvider } from './SymbolPageContext';
 import { buildChartPageHeading } from './utils/chartPageHeading';
 import type { AnalysisResponse } from '@y0ngha/siglens-core';
 import { marketProfileOf } from '@/shared/config/marketProfile';
+import type { MarketProfileId } from '@/shared/config/marketProfile';
 import dynamic from 'next/dynamic';
 import { Suspense } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
@@ -36,6 +37,12 @@ interface SymbolPageClientProps {
     initialAnalysis: AnalysisResponse;
     initialAnalysisFailed: boolean;
     indicatorCount: number;
+    /**
+     * Market profile resolved server-side from AssetInfo — passed down to avoid
+     * recomputing marketProfileOf(assetInfo) on the client for ChartContent.
+     * Defaults to 'us-equity' when omitted (backward compat).
+     */
+    marketProfile?: MarketProfileId;
 }
 
 export function SymbolPageClient({
@@ -45,6 +52,7 @@ export function SymbolPageClient({
     initialAnalysis,
     initialAnalysisFailed,
     indicatorCount,
+    marketProfile,
 }: SymbolPageClientProps) {
     const {
         sheetSnap,
@@ -101,9 +109,10 @@ export function SymbolPageClient({
                                 onMobileSheetContent={setMobileSheetContent}
                                 fmpSymbol={assetInfo?.fmpSymbol}
                                 marketProfile={
-                                    assetInfo
+                                    marketProfile ??
+                                    (assetInfo
                                         ? marketProfileOf(assetInfo)
-                                        : undefined
+                                        : undefined)
                                 }
                             />
                         </Suspense>

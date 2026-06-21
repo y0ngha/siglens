@@ -24,10 +24,9 @@ vi.mock('@y0ngha/siglens-core', () => ({
     RSI_OVERBOUGHT_LEVEL: 70,
     RSI_OVERSOLD_LEVEL: 30,
 }));
-vi.mock('@/shared/config/market', () => ({
+vi.mock('@/shared/config/market', async importOriginal => ({
+    ...(await importOriginal<typeof import('@/shared/config/market')>()),
     DEFAULT_TIMEFRAME: '1Day',
-    isAdmissibleSymbolShape: (s: string) =>
-        /^[A-Z0-9][A-Z0-9.-]{0,15}$/.test(s),
 }));
 vi.mock('@/entities/ticker', () => ({
     buildAssetAboutNode: vi.fn().mockReturnValue(undefined),

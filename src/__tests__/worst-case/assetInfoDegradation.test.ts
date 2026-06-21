@@ -11,10 +11,6 @@ vi.mock('@y0ngha/siglens-core', () => ({
         mockCreateCacheProvider(...args),
 }));
 
-vi.mock('@/entities/ticker/lib/ticker', () => ({
-    isValidTickerFormat: vi.fn().mockReturnValue(true),
-}));
-
 vi.mock('@/entities/ticker/api', () => ({
     DrizzleAssetTranslationRepository: vi.fn(),
 }));
@@ -68,17 +64,11 @@ describe('getAssetInfo degradation chain', () => {
     });
 
     it('returns null for invalid ticker format', async () => {
-        const { isValidTickerFormat } =
-            await import('@/entities/ticker/lib/ticker');
-        (isValidTickerFormat as ReturnType<typeof vi.fn>).mockReturnValue(
-            false
-        );
-
+        // isAdmissibleSymbolShape rejects symbols starting with special chars —
+        // no mock needed; the real check runs and returns null immediately.
         const result = await getAssetInfo('!!!');
 
         expect(result).toBeNull();
-
-        (isValidTickerFormat as ReturnType<typeof vi.fn>).mockReturnValue(true);
     });
 
     it('falls through to FMP when cache read throws', async () => {

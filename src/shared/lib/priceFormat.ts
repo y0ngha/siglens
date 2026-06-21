@@ -34,7 +34,7 @@ export function dynamicDecimals(value: number): number {
     // Intl.NumberFormat에 NaN fraction-digits를 넘겨 RangeError를 던진다.
     if (!Number.isFinite(value)) return 2;
     const abs = Math.abs(value);
-    if (abs >= 1000) return 2;
+    // Single guard covers both >= 1 and >= 1000 (same result, so >= 1000 was dead).
     if (abs >= 1) return 2;
     if (abs === 0) return 2;
     // sub-1: keep ~4 significant figures after the leading zeros

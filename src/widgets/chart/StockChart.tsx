@@ -142,6 +142,10 @@ export function StockChart({
     const onChartRemoveRef = useRef(onChartRemove);
     // paneIndices effect의 첫 mount skip 마커 (아래 useEffect 참조).
     const isInitialPaneRenderRef = useRef(true);
+    // mount-only 차트 생성 effect가 deps 없이([]) priceDecimals를 읽을 수 있도록 ref로 미러링.
+    // effect에 priceDecimals를 deps로 추가하면 decimals 변경마다 차트가 재생성되므로 금지.
+    // 초기값 2 (usEquity 고정 소수점과 일치); no-deps sync effect가 최신값으로 유지한다.
+    const priceDecimalsRef = useRef<number>(2);
 
     const { visible, toggle, paneIndices } = useIndicatorVisibility();
 
@@ -159,9 +163,6 @@ export function StockChart({
         () => resolvePriceDecimals(marketProfile, bars.at(-1)?.close),
         [marketProfile, bars]
     );
-    // mount-only 차트 생성 effect가 deps 없이([]) priceDecimals를 읽을 수 있도록 ref로 미러링.
-    // effect에 priceDecimals를 deps로 추가하면 decimals 변경마다 차트가 재생성되므로 금지.
-    const priceDecimalsRef = useRef(priceDecimals);
 
     useEffect(() => {
         onChartReadyRef.current = onChartReady;
@@ -242,6 +243,20 @@ export function StockChart({
     useEffect(() => {
         chartRef.current?.timeScale().fitContent();
     }, [bars]);
+
+    // 컴포넌트가 마운트된 채 클라이언트 사이드 심볼 탐색(예: 일반 주식 → 크립토)이 일어나면
+    // mount-only effect의 priceFormat이 구식이 된다. priceDecimals 변경 시 기존 시리즈에
+    // applyOptions를 적용해 sub-cent 토큰이 망가진 가격으로 표시되는 것을 방지한다.
+    useEffect(() => {
+        if (!seriesRef.current) return;
+        seriesRef.current.applyOptions({
+            priceFormat: {
+                type: 'price',
+                precision: priceDecimals,
+                minMove: 10 ** -priceDecimals,
+            },
+        });
+    }, [priceDecimals]);
 
     const { visiblePeriods: maVisiblePeriods, togglePeriod: toggleMAPeriod } =
         useMAOverlay(commonHookParams);

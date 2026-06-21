@@ -7,7 +7,6 @@ vi.mock('@y0ngha/siglens-core', () => ({
 }));
 
 vi.mock('@/entities/ticker/lib/ticker', () => ({
-    isValidTickerFormat: vi.fn().mockReturnValue(true),
     deduplicateResults: vi.fn((arr: unknown[]) => arr),
     isKoreanInput: vi.fn().mockReturnValue(false),
 }));

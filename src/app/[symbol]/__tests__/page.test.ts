@@ -9,10 +9,9 @@ vi.mock('@y0ngha/siglens-core', () => ({
     GEMINI_2_5_FLASH_LITE_MODEL: 'gemini-2.5-flash-lite',
     peekAnalysisCache: vi.fn(),
 }));
-vi.mock('@/shared/config/market', () => ({
+vi.mock('@/shared/config/market', async importOriginal => ({
+    ...(await importOriginal<typeof import('@/shared/config/market')>()),
     DEFAULT_TIMEFRAME: '1Day',
-    isAdmissibleSymbolShape: (s: string) =>
-        /^[A-Z0-9][A-Z0-9.-]{0,15}$/.test(s),
 }));
 vi.mock('@/entities/ticker', () => ({
     buildAssetAboutNode: vi.fn().mockReturnValue(undefined),

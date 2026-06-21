@@ -14,10 +14,8 @@ vi.mock('@/widgets/symbol-page', () => ({
         children,
 }));
 vi.mock('@/shared/ui/JsonLd', () => ({ JsonLd: () => null }));
-vi.mock('@/shared/config/market', () => ({
-    isAdmissibleSymbolShape: (s: string) =>
-        /^[A-Z0-9][A-Z0-9.-]{0,15}$/.test(s),
-    SymbolRouteParams: undefined,
+vi.mock('@/shared/config/market', async importOriginal => ({
+    ...(await importOriginal<typeof import('@/shared/config/market')>()),
 }));
 vi.mock('@/entities/ticker', () => ({
     buildAssetAboutNode: vi.fn().mockReturnValue(undefined),

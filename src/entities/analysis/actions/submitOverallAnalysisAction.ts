@@ -138,7 +138,8 @@ export async function submitOverallAnalysisAction(
             !isEtRegularSessionOpen(new Date()) &&
             isOpenInterestSnapshotStale(optionsSnapshot);
 
-        // 크립토는 24/7 시장 — ET 세션 TTL 대신 짧은 고정 TTL provider를 주입한다.
+        // 크립토는 24/7 시장 — ET 세션 TTL 대신 짧은 고정 TTL provider를 주입한다
+        // (Plan 4에서 core MarketSessionSpec으로 교체 예정 — tracking: https://github.com/y0ngha/siglens/issues/620).
         const alwaysOpen = await isCryptoSymbol(symbol);
 
         return await submitOverallAnalysis({
