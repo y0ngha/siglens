@@ -176,7 +176,11 @@ describe('CachedMarketDataProvider', () => {
             const inner = makeInner();
             const p = new CachedMarketDataProvider(inner, CRYPTO_SESSION);
             await p.getBars(barsOpts());
-            // CRYPTO_SESSION(always-open) → computeBarsEffectiveTtl 반환값은 60초.
+            /**
+             * 60 = siglens-core 내부 open-TTL 상수(BARS_OPEN_TTL_SECONDS 또는 동등값).
+             * @y0ngha/siglens-core@0.26.0 는 해당 상수를 외부로 export하지 않으므로
+             * 리터럴로 고정한다. core의 open-TTL 값이 변경되면 이 값도 함께 갱신해야 한다(드리프트 위험).
+             */
             expect(lastSetTtl.value).toBe(60);
         });
 

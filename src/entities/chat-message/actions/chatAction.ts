@@ -24,6 +24,10 @@ import {
 } from '@y0ngha/siglens-core';
 import { headers } from 'next/headers';
 import type { AssetClass } from '@/shared/config/marketProfile';
+import {
+    DEFAULT_MARKET_PROFILE,
+    getDescriptor,
+} from '@/shared/config/marketProfile';
 
 async function getClientIp(): Promise<string> {
     const headersList = await headers();
@@ -118,7 +122,7 @@ export async function chatAction(
      * falls back to its default behavior.
      */
     currentAnalysisContext: CurrentAnalysisContext | null = null,
-    assetClass: AssetClass = 'equity'
+    assetClass: AssetClass = getDescriptor(DEFAULT_MARKET_PROFILE).assetClass
 ): Promise<ChatActionResult> {
     try {
         const provider = getProviderForModel(model);

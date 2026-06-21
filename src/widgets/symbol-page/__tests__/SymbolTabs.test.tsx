@@ -129,4 +129,22 @@ describe('SymbolTabs', () => {
         );
         expect(placeholder).not.toBeNull();
     });
+
+    it('assetInfo가 null(미지 심볼)이면 us-equity 전체 탭 세트를 렌더한다 (로딩 placeholder 아님, 크립토 필터링 없음)', () => {
+        // null = the query resolved but no matching asset found (unknown symbol).
+        // SymbolTabs should fall back to DEFAULT_MARKET_PROFILE (us-equity)
+        // and render the full tab set — not the loading placeholder, not a
+        // crypto-filtered subset.
+        (useAssetInfo as ReturnType<typeof vi.fn>).mockReturnValue(null);
+        render(<SymbolTabs symbol="UNKNOWN" />);
+        // The nav must be present (not the loading placeholder).
+        expect(
+            screen.getByRole('navigation', { name: '분석 종류' })
+        ).toBeDefined();
+        // Equity-only tabs must be present (they would be absent for crypto).
+        expect(screen.getByText('펀더멘털')).toBeDefined();
+        // Crypto-shared tabs are also present.
+        expect(screen.getByText('차트')).toBeDefined();
+        expect(screen.getByText('뉴스')).toBeDefined();
+    });
 });

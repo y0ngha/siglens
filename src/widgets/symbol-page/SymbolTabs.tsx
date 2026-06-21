@@ -4,7 +4,10 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/shared/lib/cn';
 import { useAssetInfo } from './hooks/useAssetInfo';
-import { marketProfileOf } from '@/shared/config/marketProfile';
+import {
+    DEFAULT_MARKET_PROFILE,
+    marketProfileOf,
+} from '@/shared/config/marketProfile';
 import { tabsFor } from './utils/symbolTabsConfig';
 
 interface SymbolTabsProps {
@@ -26,7 +29,15 @@ export function SymbolTabs({ symbol }: SymbolTabsProps) {
         return <div className="border-secondary-700 h-11 border-b" />;
     }
 
-    const profile = marketProfileOf(assetInfo);
+    /**
+     * Null = unknown symbol (the query resolved but found no matching asset).
+     * Default to the us-equity profile so we show the full tab set rather than
+     * a blank nav — the tab bar is still functional for any valid equity route.
+     */
+    const profile =
+        assetInfo !== null
+            ? marketProfileOf(assetInfo)
+            : DEFAULT_MARKET_PROFILE;
     const tabs = tabsFor(profile);
 
     return (
