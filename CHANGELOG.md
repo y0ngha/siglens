@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.25.1](https://github.com/y0ngha/siglens/compare/v0.25.0...v0.25.1) (2026-06-21)
+
+
+### Bug Fixes
+
+* **economy:** add missing Dataset license field ([d873c71](https://github.com/y0ngha/siglens/commit/d873c7196fa3fb6f960d2df5406789d8b52ecdc8))
+* **options:** gate now-derived DST text behind useHydrated to prevent React [#418](https://github.com/y0ngha/siglens/issues/418) ([9c2be82](https://github.com/y0ngha/siglens/commit/9c2be82d170e835154fd505fb59fe3d65c7c6f5e))
+
 # [0.25.0](https://github.com/y0ngha/siglens/compare/v0.24.0...v0.25.0) (2026-06-21)
 
 
