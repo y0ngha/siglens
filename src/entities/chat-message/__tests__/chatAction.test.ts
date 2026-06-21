@@ -570,4 +570,42 @@ describe('chatAction 함수는', () => {
             expect(result).toEqual({ ok: false, error: 'server_error' });
         });
     });
+
+    describe('assetClass forwarding', () => {
+        it('assetClass 생략 시 기본값 "equity"가 requestChatCompletion에 전달된다', async () => {
+            await chatAction(
+                'AAPL',
+                'Apple Inc.',
+                '1Day',
+                MINIMAL_ANALYSIS,
+                [],
+                '질문',
+                'gemini-2.5-flash'
+            );
+
+            expect(mockRequestChatCompletion).toHaveBeenCalledWith(
+                expect.objectContaining({ assetClass: 'equity' }),
+                expect.anything()
+            );
+        });
+
+        it('assetClass: "crypto"로 전달하면 requestChatCompletion에 그대로 전달된다', async () => {
+            await chatAction(
+                'BTCUSD',
+                'Bitcoin',
+                '1Day',
+                MINIMAL_ANALYSIS,
+                [],
+                '질문',
+                'gemini-2.5-flash',
+                null,
+                'crypto'
+            );
+
+            expect(mockRequestChatCompletion).toHaveBeenCalledWith(
+                expect.objectContaining({ assetClass: 'crypto' }),
+                expect.anything()
+            );
+        });
+    });
 });

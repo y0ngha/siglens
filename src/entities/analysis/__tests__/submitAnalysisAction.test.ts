@@ -329,4 +329,38 @@ describe('submitAnalysisAction tier + BYOK gate', () => {
             );
         });
     });
+
+    describe('assetClass forwarding', () => {
+        it('resolveMarketProfile가 "crypto"이면 submitAnalysis를 assetClass: "crypto"로 호출한다', async () => {
+            mockResolveMarketProfile.mockResolvedValueOnce('crypto');
+            mockSubmitAnalysis.mockResolvedValueOnce(cachedResult);
+
+            await submitAnalysisAction('BTCUSD', 'Bitcoin', '1Day', false);
+
+            expect(mockSubmitAnalysis).toHaveBeenCalledWith(
+                'BTCUSD',
+                'Bitcoin',
+                '1Day',
+                false,
+                undefined,
+                expect.objectContaining({ assetClass: 'crypto' })
+            );
+        });
+
+        it('resolveMarketProfile가 "us-equity"이면 submitAnalysis를 assetClass: "equity"로 호출한다', async () => {
+            mockResolveMarketProfile.mockResolvedValueOnce('us-equity');
+            mockSubmitAnalysis.mockResolvedValueOnce(cachedResult);
+
+            await submitAnalysisAction('AAPL', 'Apple', '1Day', false);
+
+            expect(mockSubmitAnalysis).toHaveBeenCalledWith(
+                'AAPL',
+                'Apple',
+                '1Day',
+                false,
+                undefined,
+                expect.objectContaining({ assetClass: 'equity' })
+            );
+        });
+    });
 });

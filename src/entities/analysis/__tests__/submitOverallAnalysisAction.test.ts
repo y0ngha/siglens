@@ -758,4 +758,38 @@ describe('submitOverallAnalysisAction 함수는', () => {
             );
         });
     });
+
+    describe('assetClass forwarding', () => {
+        it('resolveMarketProfile가 "crypto"이면 submitOverallAnalysis를 assetClass: "crypto"로 호출한다', async () => {
+            mockResolveMarketProfile.mockResolvedValueOnce('crypto');
+            mockSubmitOverallAnalysis.mockResolvedValueOnce(SUBMITTED_RESULT);
+
+            await submitOverallAnalysisAction(
+                'BTCUSD',
+                'Bitcoin',
+                '1Day',
+                MODEL_ID
+            );
+
+            expect(mockSubmitOverallAnalysis).toHaveBeenCalledWith(
+                expect.objectContaining({ assetClass: 'crypto' })
+            );
+        });
+
+        it('resolveMarketProfile가 "us-equity"이면 submitOverallAnalysis를 assetClass: "equity"로 호출한다', async () => {
+            mockResolveMarketProfile.mockResolvedValueOnce('us-equity');
+            mockSubmitOverallAnalysis.mockResolvedValueOnce(SUBMITTED_RESULT);
+
+            await submitOverallAnalysisAction(
+                'AAPL',
+                'Apple Inc.',
+                '1Day',
+                MODEL_ID
+            );
+
+            expect(mockSubmitOverallAnalysis).toHaveBeenCalledWith(
+                expect.objectContaining({ assetClass: 'equity' })
+            );
+        });
+    });
 });
