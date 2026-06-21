@@ -15,6 +15,7 @@ import {
     searchByKoreanName,
     setKoreanTickers,
 } from './koreanNameStore';
+import { searchCryptoAssets } from './cryptoAssetStore';
 import { fireAndForget, type BackgroundTaskOptions } from './backgroundTask';
 import { createSingleFlight } from './utils/singleFlight';
 import { createCacheProvider } from '@y0ngha/siglens-core';
@@ -95,14 +96,16 @@ export async function searchTicker(
         }
     }
 
-    const [symbolResults, nameResults] = await Promise.all([
+    const [symbolResults, nameResults, cryptoResults] = await Promise.all([
         searchBySymbol(trimmed),
         searchByName(trimmed),
+        searchCryptoAssets(trimmed),
     ]);
 
     const merged = deduplicateResults([
         ...filterUsExchanges(symbolResults).map(toTickerSearchResult),
         ...filterUsExchanges(nameResults).map(toTickerSearchResult),
+        ...cryptoResults,
     ]);
 
     const koreanNames = await getKoreanNames(merged.map(r => r.symbol));

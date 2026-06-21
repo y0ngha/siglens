@@ -46,6 +46,11 @@ vi.mock('../../lib/koreanNameStore', () => ({
 vi.mock('../../lib/koreanTranslator', () => ({
     translateCompanyNames: () => translateCompanyNamesMock(),
 }));
+// Crypto results are tested separately in searchTicker.crypto.test.ts.
+// Equity test cases return [] so the existing equity path is unaffected.
+vi.mock('../../lib/cryptoAssetStore', () => ({
+    searchCryptoAssets: vi.fn().mockResolvedValue([]),
+}));
 
 import {
     _resetInFlightTranslationsForTest,
