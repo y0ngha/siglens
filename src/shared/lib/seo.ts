@@ -65,13 +65,12 @@ export function clampSeoDescription(text: string): string {
 // "보조지표 25종" 같은 동적 숫자는 Skills 개수가 바뀌면 stale되므로 질적 표현으로 둔다
 // (M7에서 FAQ JSON-LD에 적용한 정책을 SITE_DESCRIPTION에도 일관 적용).
 export const SITE_DESCRIPTION = clampSeoDescription(
-    '미국 주식을 티커 하나로 종합 분석합니다. 다양한 보조지표 차트, 펀더멘털·뉴스·옵션, 공포 탐욕 지수를 묶은 AI 종합 결론과 2년 백테스팅 결과까지 한 화면에서.'
+    '미국 주식과 암호화폐를 티커 하나로 종합 분석합니다. 다양한 보조지표 차트와 매매 신호, 펀더멘털·뉴스, 공포 탐욕 지수를 묶은 AI 종합 결론을 한 화면에서.'
 );
 
-export const ROOT_TITLE = `미국 주식 AI 분석 — 차트·실적·뉴스로 투자 결론까지 | ${SITE_NAME}`;
+export const ROOT_TITLE = `미국 주식·암호화폐 AI 분석 — 차트·뉴스로 투자 결론까지 | ${SITE_NAME}`;
 
 // 한글 SERP는 80~120자가 안전권이라 키워드는 핵심 검색의도 위주로 추렸다.
-// 영문 키워드, 동의어 중복(매매 신호/차트 해석 등), 너무 일반적인 단일 명사(RSI, MACD 등)는 의도적으로 제외했다.
 export const ROOT_KEYWORDS = [
     'Siglens',
     '미국 주식 AI 분석',
@@ -84,11 +83,11 @@ export const ROOT_KEYWORDS = [
     'AI 주식 백테스팅',
     '오늘의 미국 주식',
     '섹터별 주식 분석',
-    '골든크로스 종목',
     '미국 주식 PER',
-    '어닝 일정',
-    '애널리스트 컨센서스',
-    '목표 주가',
+    '암호화폐 분석',
+    '코인 시세',
+    '비트코인 차트',
+    '크립토 기술적 분석',
 ];
 
 function buildSymbolDescription(displayName: string, sector?: string): string {
