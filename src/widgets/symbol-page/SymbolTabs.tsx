@@ -20,7 +20,6 @@ export function SymbolTabs({ symbol }: SymbolTabsProps) {
     const pathname = usePathname();
     const assetInfo = useAssetInfo(symbol);
 
-    // Derived variables come after all hook calls (MISTAKES §17).
     const upper = symbol.toUpperCase();
     const profile = assetInfo
         ? marketProfileOf(assetInfo)

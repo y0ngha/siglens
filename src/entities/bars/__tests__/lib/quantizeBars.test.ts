@@ -342,7 +342,6 @@ describe('quantizeBarsDataToLastClosed', () => {
             mockOpen.mockReturnValue(false);
             const specificNow = new Date('2026-06-05T20:30:00Z');
             quantizeBarsDataToLastClosed(makeData(), specificNow);
-            // session defaults to US_EQUITY_SESSION when not specified
             expect(mockOpen).toHaveBeenCalledWith(
                 US_EQUITY_SESSION,
                 specificNow

@@ -5,7 +5,10 @@ vi.mock('@/entities/ticker/lib/getAssetInfo', () => ({
 }));
 
 import { getAssetInfo } from '@/entities/ticker/lib/getAssetInfo';
-import { resolveAssetClass } from '@/entities/ticker/lib/resolveAssetClass';
+import {
+    resolveAssetClass,
+    resolveMarketProfile,
+} from '@/entities/ticker/lib/resolveAssetClass';
 
 describe('resolveAssetClass', () => {
     it('returns "crypto" for a crypto-profile asset', async () => {
@@ -28,5 +31,29 @@ describe('resolveAssetClass', () => {
     it('defaults to "equity" when the asset is unknown (null)', async () => {
         vi.mocked(getAssetInfo).mockResolvedValue(null);
         expect(await resolveAssetClass('ZZZZ')).toBe('equity');
+    });
+});
+
+describe('resolveMarketProfile', () => {
+    it('returns "crypto" for a crypto-profile asset', async () => {
+        vi.mocked(getAssetInfo).mockResolvedValue({
+            symbol: 'BTCUSD',
+            name: 'Bitcoin USD',
+            marketProfile: 'crypto',
+        });
+        expect(await resolveMarketProfile('BTCUSD')).toBe('crypto');
+    });
+
+    it('returns "us-equity" for a profile-less (legacy) asset', async () => {
+        vi.mocked(getAssetInfo).mockResolvedValue({
+            symbol: 'AAPL',
+            name: 'Apple',
+        });
+        expect(await resolveMarketProfile('AAPL')).toBe('us-equity');
+    });
+
+    it('returns "us-equity" (default fallback) when the asset is unknown (null)', async () => {
+        vi.mocked(getAssetInfo).mockResolvedValue(null);
+        expect(await resolveMarketProfile('ZZZZ')).toBe('us-equity');
     });
 });

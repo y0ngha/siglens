@@ -100,7 +100,6 @@ export interface UseChatReturn {
 }
 
 export function useChat({ symbol }: UseChatOptions): UseChatReturn {
-    // useState declarations first — MISTAKES §17: useState/useRef → custom hooks → derived vars.
     const [messages, setMessages] = useState<DisplayMessage[]>([]);
     const [loadingPhase, setLoadingPhase] = useState<ChatLoadingPhase | null>(
         null
@@ -111,7 +110,6 @@ export function useChat({ symbol }: UseChatOptions): UseChatReturn {
     );
     const [isModelHydrated, setIsModelHydrated] = useState(false);
 
-    // Custom hooks after useState/useRef.
     // useSymbolChat must remain before the storageKey refs below whose initial values
     // depend on timeframeFromCtx — moving it after refs would read an undefined value
     // at ref-initialization time.
@@ -125,7 +123,6 @@ export function useChat({ symbol }: UseChatOptions): UseChatReturn {
     const { gateModal, dismissGate, handleModelChange, showGate } =
         useModelGate({ onAllow: setSelectedModel });
 
-    // Derived variables after all hook calls (MISTAKES §17).
     const companyName = assetInfo?.name ?? symbol;
     const assetClass = assetInfo
         ? getDescriptor(marketProfileOf(assetInfo)).assetClass
