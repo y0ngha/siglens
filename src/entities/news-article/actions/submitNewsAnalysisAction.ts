@@ -18,6 +18,7 @@ import { resolveTierAndByok, buildGateError } from '@/shared/lib/byokGate';
 import { isBot } from '@/shared/api/isBot';
 import { isE2E } from '@/shared/api/e2eEnv';
 import type { AnalysisGateBlockedResult } from '@/shared/lib/types';
+import { resolveAssetClass } from '@/entities/ticker/lib/resolveAssetClass';
 
 /** Final return type — core's news result + our siglens-side gate errors. */
 export type SubmitNewsAnalysisActionResult =
@@ -53,6 +54,7 @@ export async function submitNewsAnalysisAction(
             return { status: 'error', error: gate.error };
         }
 
+        const assetClass = await resolveAssetClass(symbol);
         const { db } = getDatabaseClient();
         const newsRepo = new DrizzleNewsRepository(db);
 
@@ -76,6 +78,7 @@ export async function submitNewsAnalysisAction(
             waitUntil,
             tier: gate.tier,
             skipEnqueueIfMiss,
+            assetClass,
             ...(gate.userApiKey !== undefined
                 ? { userApiKey: gate.userApiKey }
                 : {}),

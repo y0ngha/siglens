@@ -84,6 +84,10 @@ vi.mock('@/entities/ticker/lib/cryptoAssetStore', () => ({
     isCryptoSymbol: vi.fn().mockResolvedValue(false),
 }));
 
+vi.mock('@/entities/ticker/lib/resolveAssetClass', () => ({
+    resolveAssetClass: vi.fn().mockResolvedValue('equity'),
+}));
+
 import { submitOverallAnalysisAction } from '../actions/submitOverallAnalysisAction';
 import {
     isEtRegularSessionOpen,

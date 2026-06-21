@@ -24,6 +24,7 @@ import {
 } from '@/entities/news-article';
 import { getNextEarningsReport } from '@/entities/earnings-report';
 import { isCryptoSymbol } from '@/entities/ticker/lib/cryptoAssetStore';
+import { resolveAssetClass } from '@/entities/ticker/lib/resolveAssetClass';
 import { getCurrentUser } from '@/entities/session/lib/getCurrentUser';
 import { resolveTierAndByok, buildGateError } from '@/shared/lib/byokGate';
 import { isBot } from '@/shared/api/isBot';
@@ -141,6 +142,9 @@ export async function submitOverallAnalysisAction(
         // 크립토는 24/7 시장 — ET 세션 TTL 대신 짧은 고정 TTL provider를 주입한다
         // (Plan 4에서 core MarketSessionSpec으로 교체 예정 — tracking: https://github.com/y0ngha/siglens/issues/620).
         const alwaysOpen = await isCryptoSymbol(symbol);
+        // assetClass lets core treat the absent fundamentals/options/earnings as
+        // intentional for crypto (2-axis: technical + news) rather than missing stock data.
+        const assetClass = await resolveAssetClass(symbol);
 
         return await submitOverallAnalysis({
             symbol,
@@ -155,6 +159,7 @@ export async function submitOverallAnalysisAction(
             waitUntil,
             tier: gate.tier,
             skipEnqueueIfMiss,
+            assetClass,
             optionsSnapshot: optionsSnapshot ?? undefined,
             optionsOiStale,
             financialsScorecard,

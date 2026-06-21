@@ -40,6 +40,10 @@ vi.mock('@/shared/lib/byokGate', () => ({
     })),
 }));
 
+vi.mock('@/entities/ticker/lib/resolveAssetClass', () => ({
+    resolveAssetClass: vi.fn().mockResolvedValue('equity'),
+}));
+
 import { headers } from 'next/headers';
 import { DrizzleNewsRepository } from '@/entities/news-article';
 import { getNextEarningsReport } from '@/entities/earnings-report';
