@@ -11,6 +11,7 @@ import {
     DEFAULT_TIMEFRAME,
     SymbolRouteParams,
     isAdmissibleSymbolShape,
+    VALID_TICKER_RE,
 } from '@/shared/config/market';
 import {
     buildAssetAboutNode,
@@ -106,10 +107,17 @@ export default async function SymbolPage({ params }: Props) {
     // 다른 5개 sibling 페이지(news/fundamental/options/overall/fear-greed)와 일관:
     // 잘못된 ticker 형식은 본문에서도 notFound로 즉시 차단한다 (generateMetadata 가드와 짝).
     if (!isAdmissibleSymbolShape(ticker)) notFound();
-    const [{ assetInfo }, skillCounts] = await Promise.all([
+    const [{ assetInfo, degraded }, skillCounts] = await Promise.all([
         getAssetInfoResilient(ticker),
         countSkillFiles(),
     ]);
+    // 확장된 게이트(SYMBOL_EDGE_RE)는 crypto 심볼을 수용하기 위해 이전 VALID_TICKER_RE보다
+    // 넓다. 그러나 crypto 심볼은 crypto_assets DB에서 직접 해결되므로 degrade하지 않는다.
+    // degraded + TICKER_RE 불합격 = 이전에 게이트에서 차단됐던 심볼이 FMP 없이 resolve
+    // 실패한 것 → DB에도 crypto_assets에도 없으므로 실재하지 않는 종목으로 취급해 notFound.
+    // (MSFT 같은 정상 종목이 FMP 일시 장애 중 degrade되는 경우는 TICKER_RE를 통과하므로
+    // 기존 degrade 200+noindex 동작을 유지한다.)
+    if (degraded && !VALID_TICKER_RE.test(ticker)) notFound();
     if (!assetInfo) return notFound();
 
     // default-tf bars를 정적화로 가져온다. 실패(인프라 다운 등)는 null로 degrade해

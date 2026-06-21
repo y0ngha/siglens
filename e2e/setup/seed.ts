@@ -92,12 +92,31 @@ async function seed(): Promise<void> {
     const { db } = getDatabaseClient();
     await db
         .insert(assetTranslations)
-        .values({
-            symbol: 'AAPL',
-            name: 'Apple Inc.',
-            koreanName: '애플',
-            fmpSymbol: 'AAPL',
-        })
+        .values([
+            {
+                symbol: 'AAPL',
+                name: 'Apple Inc.',
+                koreanName: '애플',
+                fmpSymbol: 'AAPL',
+            },
+            {
+                // E2E sentinel symbol for congress sparse-trades spec:
+                // FakeCongressTradesProvider returns [] for EMPTYX (both chambers).
+                // Seeded here so getAssetInfo resolves via DB (non-degraded) and the
+                // congress page emits indexable metadata — 0 trades is a valid sparse
+                // state, not a degrade condition. Without this row, getAssetInfo falls
+                // through to FMP (config missing in E2E) → throw → degraded → noindex.
+                //
+                // name === symbol so buildDisplayName returns the bare ticker ('EMPTYX'),
+                // matching the congress spec's assertion on the h1 heading.
+                // koreanName: '' (empty, satisfies NOT NULL) so buildDisplayName stays in
+                // the no-korean branch (falsy check), returning ticker as-is.
+                symbol: 'EMPTYX',
+                name: 'EMPTYX',
+                koreanName: '',
+                fmpSymbol: 'EMPTYX',
+            },
+        ])
         .onConflictDoNothing();
 
     await db
