@@ -22,6 +22,7 @@
         "db:migrate": "dotenv -e .env.local -- node_modules/.bin/tsx db/scripts/migrate.ts",
         "db:seed:terms": "dotenv -e .env.local -- node_modules/.bin/tsx db/scripts/seedTerms.ts",
         "db:migrate:tickers": "dotenv -e .env.local -- node_modules/.bin/tsx scripts/seed-korean-tickers.ts",
+        "db:seed:crypto": "dotenv -e .env.local -- node_modules/.bin/tsx scripts/seed-crypto-assets.ts",
         "db:backfill:calendar": "dotenv -e .env.local -- node_modules/.bin/tsx scripts/backfillEconomicCalendar.ts",
         "db:seed:calendar-analysis": "dotenv -e .env.local -- node_modules/.bin/tsx scripts/seedEconomicEventAnalysis.ts",
         "db:seed:calendar-analysis:batch": "dotenv -e .env.local -- node_modules/.bin/tsx scripts/seedCalendarAnalysisBatch.ts",

@@ -89,6 +89,8 @@ next-env.d.ts
 !/scripts/seedCalendarAnalysisBatch.ts
 # One-time Gemini Batch API indicator-name translation seed script.
 !/scripts/seedIndicatorTranslationsBatch.ts
+# Plan 1: FMP cryptocurrency-list sync script.
+!/scripts/seed-crypto-assets.ts
 !/scripts/lib/
 !/scripts/lib/**
 
