@@ -12,3 +12,18 @@
  *  - 하이픈(-): `PBR-A` 같은 ADR 우선주
  */
 export const TICKER_RE = /^[A-Z][A-Z.-]{0,7}$/;
+
+/**
+ * Edge-safe admissible-symbol superset — admits BOTH US equity shapes and
+ * FMP crypto shapes (digit-first like `1000SATSUSD`, hyphenated like
+ * `1-UPUSD`, up to 16 chars). This only ADMITS a candidate at the edge
+ * (proxy.ts) and as a page-level format pre-check; the AUTHORITATIVE
+ * decision of "is this a real, classified asset" happens server-side in
+ * getAssetInfo (crypto_assets DB membership). Dependency-free for edge runtime.
+ */
+export const SYMBOL_EDGE_RE = /^[A-Z0-9][A-Z0-9.-]{0,15}$/;
+
+/** Edge-safe format pre-check; uppercases then tests against SYMBOL_EDGE_RE. */
+export function isAdmissibleSymbolShape(symbol: string): boolean {
+    return SYMBOL_EDGE_RE.test(symbol.toUpperCase());
+}
