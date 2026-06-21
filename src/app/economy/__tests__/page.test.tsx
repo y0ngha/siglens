@@ -8,6 +8,7 @@
  * Test 1: 빈 스냅샷이면 generateMetadata().robots === { index: false }
  * Test 2: 빈 스냅샷이면 EconomyContent가 EconomyDegraded를 반환
  * Test 3: peekMacroBriefingStatic이 throw해도 EconomyContent가 끝까지 렌더
+ * Test 4: DATASET_JSON_LD에 license 필드가 존재한다(GSC Dataset license 경고 해소)
  */
 
 // vi.mock은 호이스팅 — 모든 import 전에 위치해야 한다(vitest 모킹 규칙).
@@ -28,11 +29,18 @@ vi.mock('@/shared/lib/seo', () => ({
     SITE_URL: 'https://siglens.io',
     SITE_BUILD_DATE: new Date('2026-01-01T00:00:00.000Z'),
 }));
+vi.mock('@/shared/lib/legal', () => ({
+    TERMS_PATH: '/terms',
+}));
 vi.mock('@/shared/lib/og', () => ({
     OG_IMAGE_WIDTH: 1200,
     OG_IMAGE_HEIGHT: 630,
 }));
-vi.mock('@/shared/ui/JsonLd', () => ({ JsonLd: () => null }));
+// JsonLd를 스파이 가능한 컴포넌트로 교체해 EconomyPage가 전달하는 data를 캡처한다.
+// 최상단 변수 참조는 호이스팅 때문에 불가 — vi.fn()을 factory 내부에서 직접 사용한다.
+vi.mock('@/shared/ui/JsonLd', () => ({
+    JsonLd: vi.fn().mockReturnValue(null),
+}));
 // widgets은 server-only 의존이 없으므로 실제 구현 사용.
 // 단, MacroBriefing은 'use client' — mock으로 교체해 SSR 환경 충돌 방지.
 vi.mock('@/widgets/economy', () => ({
@@ -51,6 +59,8 @@ import { generateMetadata } from '@/app/economy/page';
 import { getEconomySnapshotStatic } from '@/entities/economy/api/economySnapshotStaticCache';
 import { peekMacroBriefingStatic } from '@/entities/economy/api/macroBriefingStaticCache';
 import { isEmptyEconomySnapshot } from '@/entities/economy';
+// JsonLd는 vi.mocked()를 통해 test 내부에서 접근한다(최상단 변수는 호이스팅 충돌 방지).
+import { JsonLd } from '@/shared/ui/JsonLd';
 
 const mockGetSnapshot = vi.mocked(getEconomySnapshotStatic);
 const mockPeekStatic = vi.mocked(peekMacroBriefingStatic);
@@ -178,6 +188,32 @@ describe('/economy page.tsx integration', () => {
             );
 
             consoleSpy.mockRestore();
+        });
+    });
+
+    describe('DATASET_JSON_LD — license field', () => {
+        it('EconomyPage가 Dataset JSON-LD에 license 필드를 포함해 JsonLd에 전달한다', async () => {
+            // JsonLd는 vi.mock 내부에서 vi.fn()으로 교체됐으므로 vi.mocked()로 참조.
+            const mockJsonLdComponent = vi.mocked(JsonLd);
+            mockJsonLdComponent.mockClear();
+
+            // 다른 테스트와 동일하게 dynamic import 사용(ESM 경로 alias '@/' 지원).
+            // EconomyPage는 동기 컴포넌트이므로 act 래핑 불필요.
+            const { default: EconomyPage } = await import('@/app/economy/page');
+            render(<EconomyPage />);
+
+            // JsonLd가 받은 모든 data prop 중 @type === 'Dataset'인 것을 찾는다.
+            const datasetCall = mockJsonLdComponent.mock.calls.find(
+                ([props]) =>
+                    (props as { data: { '@type': string } }).data['@type'] ===
+                    'Dataset'
+            );
+            expect(datasetCall).toBeDefined();
+            const datasetData = (
+                datasetCall![0] as { data: Record<string, unknown> }
+            ).data;
+            // GSC "license 누락" 경고 해소 — backtesting 페이지와 동일한 SITE_URL+TERMS_PATH 형식.
+            expect(datasetData.license).toBe('https://siglens.io/terms');
         });
     });
 });

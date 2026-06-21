@@ -13,11 +13,12 @@
  * 안내(ATM IV·Imp. Move)는 함수 컴포넌트로 둔다 — module-level const는 import
  * 시점에만 평가돼 DST 경계를 가로지르는 사용자에게 잘못된 시간을 보여준다.
  *
- * `'use client'`: `AtmIvTooltip`/`ImpliedMoveTooltip`은 render 시점에
- * `getEasternOffsetHours(new Date())`를 호출해 DST 윈도우를 분기한다. RSC에서
- * import되면 build/요청 시점의 한 시점만 평가돼 DST 경계를 건너는 사용자에게
- * 잘못된 한국 시간 안내가 굳어버리므로, OptionsStaleDataBanner와 동일하게
- * 클라이언트에서만 렌더되도록 강제한다.
+ * `'use client'`: `AtmIvTooltip`/`ImpliedMoveTooltip`은 `useHydrated()`로 마운트를
+ * 감지한 뒤에만 `getEasternOffsetHours(new Date())`로 현재 DST 윈도우를 분기한다.
+ * 마운트 전(SSR·첫 CSR)에는 고정 fallback(`KST_EDT_HOURS_DISPLAY`, 빈 label)을
+ * 사용해 "지금은 …" DST 안내를 생략하므로 서버·클라 첫 렌더가 일치한다 —
+ * React #418 하이드레이션 불일치 방지. RSC에서 import하면 hook을 쓸 수 없으므로
+ * `'use client'` 강제.
  */
 
 import { EDT_OFFSET_HOURS, getEasternOffsetHours } from '@/shared/lib/eastern';
@@ -26,6 +27,7 @@ import {
     KST_EDT_HOURS_DISPLAY,
     KST_EST_HOURS_DISPLAY,
 } from '@/shared/lib/options/marketHoursDisplay';
+import { useHydrated } from '@/shared/hooks/useHydrated';
 
 interface KstWindowInfo {
     window: string;
@@ -63,7 +65,12 @@ function getCurrentKstWindow(): KstWindowInfo {
 }
 
 export function AtmIvTooltip() {
-    const { window: kstWindow, label } = getCurrentKstWindow();
+    const isHydrated = useHydrated();
+    // getCurrentKstWindow()는 new Date()를 호출하므로 마운트 후에만 실행한다.
+    // SSR·첫 CSR 렌더에서 DST가 다르면 React #418 하이드레이션 불일치가 발생하므로 게이팅.
+    const { window: kstWindow, label } = isHydrated
+        ? getCurrentKstWindow()
+        : { window: KST_EDT_HOURS_DISPLAY, label: '' };
     return (
         <>
             <p>
@@ -76,14 +83,21 @@ export function AtmIvTooltip() {
                 후나 pre-market에는 Yahoo가 ATM 옵션의 IV를 0으로 클리어해
                 보내는 경우가 있어서 정확한 수치를 받을 수 없어요. 한국 시간
                 기준으로 평일 {kstWindow}(미국 정규장, {ET_MARKET_HOURS_DISPLAY}
-                ) 에 다시 확인해 주세요. 지금은 {label} 기간이에요.
+                ) 에 다시 확인해 주세요.{' '}
+                {/* 현재 DST 레이블은 마운트 후에만 렌더 — React #418 방지 */}
+                {isHydrated && `지금은 ${label} 기간이에요.`}
             </p>
         </>
     );
 }
 
 export function ImpliedMoveTooltip() {
-    const { window: kstWindow, label } = getCurrentKstWindow();
+    const isHydrated = useHydrated();
+    // getCurrentKstWindow()는 new Date()를 호출하므로 마운트 후에만 실행한다.
+    // SSR·첫 CSR 렌더에서 DST가 다르면 React #418 하이드레이션 불일치가 발생하므로 게이팅.
+    const { window: kstWindow, label } = isHydrated
+        ? getCurrentKstWindow()
+        : { window: KST_EDT_HOURS_DISPLAY, label: '' };
     return (
         <>
             <p>
@@ -101,7 +115,9 @@ export function ImpliedMoveTooltip() {
                 계산하기 때문에 ATM IV가 비어 있으면(정규장 외 시간 등) 같이
                 비워져요. 또 만기 당일이면 남은 시간이 0이라 계산이 불가능해
                 비어 보일 수 있어요. 한국 시간 기준으로 평일 {kstWindow}(미국
-                정규장)에 다시 확인해 주세요. 지금은 {label} 기간이에요.
+                정규장)에 다시 확인해 주세요.{' '}
+                {/* 현재 DST 레이블은 마운트 후에만 렌더 — React #418 방지 */}
+                {isHydrated && `지금은 ${label} 기간이에요.`}
             </p>
         </>
     );

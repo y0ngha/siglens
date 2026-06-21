@@ -6,6 +6,7 @@ import {
     KST_EST_HOURS_DISPLAY,
 } from '@/shared/lib/options/marketHoursDisplay';
 import { EDT_OFFSET_HOURS, getEasternOffsetHours } from '@/shared/lib/eastern';
+import { useHydrated } from '@/shared/hooks/useHydrated';
 
 /**
  * Surfaces a "data temporarily empty" notice when the upstream provider
@@ -30,10 +31,17 @@ import { EDT_OFFSET_HOURS, getEasternOffsetHours } from '@/shared/lib/eastern';
  * `'use client'`: 현재 시각으로 EDT/EST를 판정해야 하므로 client 렌더링.
  * cacheComponents 비활성 상태라 RSC로 두면 빌드/요청 시점에 한 번만
  * 평가되어 DST 경계를 가로질러 사용자가 보는 페이지가 잘못 안내될 수 있다.
+ *
+ * "지금은 {DST} 기간이니, {KST창}에 확인해 주세요" 문장은 `useHydrated()`로
+ * 게이팅한다. SSR과 첫 클라이언트 렌더 모두 해당 `<p>`를 생략해 일치시키고
+ * 마운트 이후에만 실제 DST 값을 채운다 — React 하이드레이션 불일치(#418) 방지.
  */
 export function OptionsStaleDataBanner() {
-    // DST 판정은 `shared/lib/eastern`의 getEasternOffsetHours를 사용한다.
-    const inEdt = getEasternOffsetHours(new Date()) === EDT_OFFSET_HOURS;
+    const isHydrated = useHydrated();
+    // DST 판정은 마운트 후에만 수행 — SSR·첫 CSR 렌더에서 new Date()가 다르면
+    // 하이드레이션 불일치(React #418)가 발생하므로 isHydrated로 게이팅한다.
+    const inEdt =
+        isHydrated && getEasternOffsetHours(new Date()) === EDT_OFFSET_HOURS;
     const currentKstWindow = inEdt
         ? KST_EDT_HOURS_DISPLAY
         : KST_EST_HOURS_DISPLAY;
@@ -59,10 +67,12 @@ export function OptionsStaleDataBanner() {
                     {KST_EDT_HOURS_DISPLAY}, 표준시(EST) 기간이면{' '}
                     {KST_EST_HOURS_DISPLAY}이에요.
                 </p>
-                <p>
-                    지금은 {currentDstLabel} 기간이니, {currentKstWindow}에
-                    확인해 주세요.
-                </p>
+                {isHydrated && (
+                    <p>
+                        지금은 {currentDstLabel} 기간이니, {currentKstWindow}에
+                        확인해 주세요.
+                    </p>
+                )}
             </div>
         </div>
     );

@@ -10,6 +10,7 @@ import {
     CallVolumeTooltip,
     PutVolumeTooltip,
 } from '@/widgets/options/utils/optionsTooltips';
+import { useHydrated } from '@/shared/hooks/useHydrated';
 
 vi.mock('@/shared/lib/eastern', () => ({
     EDT_OFFSET_HOURS: -4,
@@ -21,6 +22,10 @@ vi.mock('@/shared/lib/options/marketHoursDisplay', () => ({
     KST_EDT_HOURS_DISPLAY: '22:30~05:00',
     KST_EST_HOURS_DISPLAY: '23:30~06:00',
 }));
+
+vi.mock('@/shared/hooks/useHydrated', () => ({ useHydrated: vi.fn() }));
+
+const mockUseHydrated = vi.mocked(useHydrated);
 
 describe('optionsTooltips', () => {
     describe('MaxPainTooltip', () => {
@@ -42,19 +47,68 @@ describe('optionsTooltips', () => {
     });
 
     describe('AtmIvTooltip', () => {
-        it('renders ATM IV explanation with KST window', () => {
+        it('renders ATM IV explanation unconditional text', () => {
+            mockUseHydrated.mockReturnValue(true);
             render(<AtmIvTooltip />);
             expect(
                 screen.getByText(/현재 주가에 가장 가까운 옵션/)
             ).toBeInTheDocument();
             expect(screen.getByText(/22:30~05:00/)).toBeInTheDocument();
         });
+
+        describe('useHydrated=false (SSR / first render)', () => {
+            it('지금은 DST 문장은 없지만 정적 kstWindow fallback은 렌더된다', () => {
+                mockUseHydrated.mockReturnValue(false);
+                render(<AtmIvTooltip />);
+                const text = document.body.textContent ?? '';
+                // now-derived 레이블은 부재
+                expect(text).not.toContain('지금은');
+                // 정적 fallback 윈도우(KST_EDT_HOURS_DISPLAY)는 SSR 출력 안정성을 위해 존재해야 한다.
+                // 이 positive 단언이 없으면 비-hydrated 경로에서 kstWindow 문단이 통째로
+                // 사라지는 회귀를 못 잡는다.
+                expect(text).toContain('22:30~05:00');
+            });
+        });
+
+        describe('useHydrated=true (after mount)', () => {
+            it('지금은 ... 기간이에요 DST 문장이 렌더된다', () => {
+                mockUseHydrated.mockReturnValue(true);
+                render(<AtmIvTooltip />);
+                // getEasternOffsetHours 반환값 -4 === EDT_OFFSET_HOURS(-4) → 서머타임(EDT)
+                expect(document.body.textContent).toContain(
+                    '지금은 서머타임(EDT) 기간이에요.'
+                );
+            });
+        });
     });
 
     describe('ImpliedMoveTooltip', () => {
-        it('renders implied move explanation', () => {
+        it('renders implied move explanation unconditional text', () => {
+            mockUseHydrated.mockReturnValue(true);
             render(<ImpliedMoveTooltip />);
             expect(screen.getByText(/옵션 시장이/)).toBeInTheDocument();
+        });
+
+        describe('useHydrated=false (SSR / first render)', () => {
+            it('지금은 DST 문장은 없지만 정적 kstWindow fallback은 렌더된다', () => {
+                mockUseHydrated.mockReturnValue(false);
+                render(<ImpliedMoveTooltip />);
+                const text = document.body.textContent ?? '';
+                // now-derived 레이블은 부재
+                expect(text).not.toContain('지금은');
+                // 정적 fallback 윈도우(KST_EDT_HOURS_DISPLAY)는 SSR 출력 안정성을 위해 존재해야 한다.
+                expect(text).toContain('22:30~05:00');
+            });
+        });
+
+        describe('useHydrated=true (after mount)', () => {
+            it('지금은 ... 기간이에요 DST 문장이 렌더된다', () => {
+                mockUseHydrated.mockReturnValue(true);
+                render(<ImpliedMoveTooltip />);
+                expect(document.body.textContent).toContain(
+                    '지금은 서머타임(EDT) 기간이에요.'
+                );
+            });
         });
     });
 
