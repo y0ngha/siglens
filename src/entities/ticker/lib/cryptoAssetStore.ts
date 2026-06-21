@@ -63,7 +63,13 @@ export async function getCryptoAsset(
     symbol: string
 ): Promise<CryptoAssetRecord | null> {
     const upper = symbol.toUpperCase();
-    if (cryptoAssetCache.has(upper)) return cryptoAssetCache.get(upper)!;
+    // `cryptoAssetCache` stores `null` as a legitimate value (= "confirmed not
+    // a crypto asset"), so `.get(upper)!` would unsafely assert non-null on a
+    // stored null. Use an explicit `undefined` check instead — `has` + `get`
+    // are equivalent but require two Map lookups; a single `get` and an
+    // `!== undefined` check is both correct and cheaper.
+    const cached = cryptoAssetCache.get(upper);
+    if (cached !== undefined) return cached;
     const repository = tryGetRepository();
     if (!repository) return null;
     try {

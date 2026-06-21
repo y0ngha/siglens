@@ -118,6 +118,27 @@ describe('cryptoAssetStore (with DB)', () => {
         });
     });
 
+    describe('isCryptoSymbol — DB available, symbol absent (S2)', () => {
+        it('returns false and caches the result when findBySymbol resolves null', async () => {
+            // A unique symbol that has never entered the module-level cache before.
+            // The suffix _S2_TEST is intentionally verbose so cache bleed from
+            // other tests is impossible even if the module cache is not cleared
+            // between describe blocks (module-level Maps persist across tests).
+            mockFindBySymbol.mockResolvedValue(null);
+
+            // First call: DB available, symbol not found → should return false.
+            const first = await isCryptoSymbol('NOTACRYPTO_S2_TEST');
+            expect(first).toBe(false);
+            expect(mockFindBySymbol).toHaveBeenCalledTimes(1);
+
+            // Second call: result must be served from the module-level cache —
+            // no additional DB round-trip (the stored null IS the cache value).
+            const second = await isCryptoSymbol('NOTACRYPTO_S2_TEST');
+            expect(second).toBe(false);
+            expect(mockFindBySymbol).toHaveBeenCalledTimes(1);
+        });
+    });
+
     describe('isCryptoSymbol — cache hit', () => {
         it('returns cached value without hitting DB again for same symbol', async () => {
             mockFindBySymbol.mockResolvedValue({

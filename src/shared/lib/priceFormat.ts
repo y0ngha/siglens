@@ -28,6 +28,20 @@ export function formatUsdCurrency(price: number): string {
     return USD_CURRENCY_FORMATTER.format(price);
 }
 
+/**
+ * Number of significant digits to preserve after the leading zeros when
+ * formatting a sub-1 price (e.g. $0.000123 → 4 sig-figs → 8 decimal places).
+ * Kept as a named constant so the intent is self-documenting and the value is
+ * easy to change in one place.
+ */
+const DYNAMIC_DECIMAL_SIGNIFICANT_OFFSET = 4;
+
+/**
+ * Hard ceiling on decimal places. Prevents absurdly long fraction strings for
+ * extremely small values (e.g. $0.0000000000001 → capped at 12).
+ */
+const MAX_DYNAMIC_DECIMAL_PLACES = 12;
+
 /** Decimal places for a value under the dynamic-by-magnitude rule. */
 export function dynamicDecimals(value: number): number {
     // 비유한값(NaN/Infinity) 방어: log10 경로가 NaN을 반환하면 formatPrice가
@@ -39,7 +53,10 @@ export function dynamicDecimals(value: number): number {
     if (abs === 0) return 2;
     // sub-1: keep ~4 significant figures after the leading zeros
     const leadingZeros = Math.floor(-Math.log10(abs));
-    return Math.min(leadingZeros + 4, 12);
+    return Math.min(
+        leadingZeros + DYNAMIC_DECIMAL_SIGNIFICANT_OFFSET,
+        MAX_DYNAMIC_DECIMAL_PLACES
+    );
 }
 
 /** Format a price as currency, applying the descriptor's precision rule. */
