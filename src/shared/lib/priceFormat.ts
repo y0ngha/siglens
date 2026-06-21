@@ -1,3 +1,5 @@
+import type { PricePrecision } from '@/shared/config/marketProfile';
+
 type PriceSign = '+' | '';
 type PriceArrow = '▲' | '▼';
 type PriceArrowLabel = '상승' | '하락';
@@ -24,6 +26,39 @@ const USD_CURRENCY_FORMATTER = new Intl.NumberFormat('en-US', {
 
 export function formatUsdCurrency(price: number): string {
     return USD_CURRENCY_FORMATTER.format(price);
+}
+
+/** Decimal places for a value under the dynamic-by-magnitude rule. */
+export function dynamicDecimals(value: number): number {
+    const abs = Math.abs(value);
+    if (abs >= 1000) return 2;
+    if (abs >= 1) return 2;
+    if (abs === 0) return 2;
+    // sub-1: keep ~4 significant figures after the leading zeros
+    const leadingZeros = Math.floor(-Math.log10(abs));
+    return Math.min(leadingZeros + 4, 12);
+}
+
+interface PriceFormatSpec {
+    currency: 'USD';
+    locale: string;
+    precision: PricePrecision;
+}
+
+/** Format a price as currency, applying the descriptor's precision rule. */
+export function formatPrice(value: number, spec: PriceFormatSpec): string {
+    const digits =
+        spec.precision.kind === 'fixed'
+            ? spec.precision.digits
+            : spec.precision.kind === 'integer'
+              ? 0
+              : dynamicDecimals(value);
+    return new Intl.NumberFormat(spec.locale, {
+        style: 'currency',
+        currency: spec.currency,
+        minimumFractionDigits: digits,
+        maximumFractionDigits: digits,
+    }).format(value);
 }
 
 export function formatPriceChange(percent: number): PriceChangeDisplay {

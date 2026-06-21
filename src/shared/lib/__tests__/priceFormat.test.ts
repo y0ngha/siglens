@@ -1,8 +1,11 @@
+import { describe, it, expect } from 'vitest';
 import {
     formatUsdPrice,
     formatUsdCurrency,
     formatPriceChange,
+    formatPrice,
 } from '@/shared/lib/priceFormat';
+import type { PricePrecision } from '@/shared/config/marketProfile';
 
 describe('formatUsdPrice', () => {
     it('정수를 쉼표 포맷으로 반환한다', () => {
@@ -67,5 +70,34 @@ describe('formatPriceChange', () => {
             expect(result.arrow).toBe('▼');
             expect(result.arrowLabel).toBe('하락');
         });
+    });
+});
+
+const usd = { currency: 'USD' as const, locale: 'en-US' };
+const fixed2: PricePrecision = { kind: 'fixed', digits: 2 };
+const dyn: PricePrecision = { kind: 'dynamic-by-magnitude' };
+
+describe('formatPrice', () => {
+    it('fixed-2 renders equity prices to 2 decimals', () => {
+        expect(formatPrice(123.456, { ...usd, precision: fixed2 })).toBe(
+            '$123.46'
+        );
+    });
+
+    it('dynamic keeps 2dp for large crypto prices', () => {
+        expect(formatPrice(64192, { ...usd, precision: dyn })).toBe(
+            '$64,192.00'
+        );
+    });
+
+    it('dynamic preserves sub-cent precision', () => {
+        // MIOTAUSD ~0.058158 must not collapse to 0.06
+        expect(formatPrice(0.058158, { ...usd, precision: dyn })).toMatch(
+            /0\.0581/
+        );
+        // SHIB-scale must not collapse to 0.00
+        expect(formatPrice(0.00001234, { ...usd, precision: dyn })).toMatch(
+            /0\.00001/
+        );
     });
 });
