@@ -40,15 +40,23 @@ export async function GET(): Promise<Response> {
         });
     }
 
+    // popular entries use `now` (sliding lastmod) so crawlers see these as
+    // freshly updated each time the route serves — matching the high-priority
+    // trading-volume signals they carry.  Long-tail entries use SITE_BUILD_DATE
+    // because their content changes only when a new build deploys; advertising
+    // the request time as lastmod would send crawlers a false freshness signal
+    // and waste crawl budget on pages that haven't actually changed.
     const longTail = buildLongTailEntries(longTailSymbols, SITE_BUILD_DATE);
     const served = longTail.length;
     const dropped = eligible - served;
 
     // No silent caps: surface eligible vs served vs dropped so ops can see
     // exactly how many longtail crypto URLs were excluded by CRYPTO_LONGTAIL_CAP.
-    console.log(
-        `[sitemap-crypto] popular=${popular.length} served=${served} eligible=${eligible} dropped=${dropped}`
-    );
+    if (dropped > 0) {
+        console.warn(
+            `[sitemap-crypto] cap dropped ${dropped} longtail entries (eligible=${eligible}, served=${served})`
+        );
+    }
 
     const xml = toUrlSetXml([...popular, ...longTail]);
     return new NextResponse(xml, {

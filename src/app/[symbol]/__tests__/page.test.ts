@@ -54,6 +54,16 @@ vi.mock('@/shared/lib/seo', async importOriginal => ({
         url: 'https://siglens.io/AAPL',
         keywords: ['AAPL'],
     }),
+    // page.tsx delegates SEO content selection to resolveSymbolSeoContent, so
+    // the mock must cover it directly (the real helper calls buildSymbolSeoContent
+    // at module-scope, bypassing the mock above when spread via importOriginal).
+    resolveSymbolSeoContent: vi.fn().mockReturnValue({
+        title: 'AAPL 차트',
+        fullTitle: 'AAPL 차트 | Siglens',
+        description: 'desc',
+        url: 'https://siglens.io/AAPL',
+        keywords: ['AAPL'],
+    }),
     SITE_NAME: 'Siglens',
     SITE_URL: 'https://siglens.io',
 }));

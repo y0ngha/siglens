@@ -617,6 +617,32 @@ export function buildCryptoSymbolSeoContent(
     };
 }
 
+/**
+ * Resolves the correct chart-page SEO content for a symbol based on its asset
+ * class. Crypto pages use `buildCryptoSymbolSeoContent` (price-framed copy:
+ * "시세 분석", no koreanName); stock/ETF/Index pages use `buildSymbolSeoContent`
+ * (equity-framed copy: "주가 분석", with optional koreanName).
+ *
+ * Centralising this ternary here prevents the two call sites in
+ * `src/app/[symbol]/page.tsx` (`generateMetadata` and `SymbolPage`) from
+ * diverging independently as copy evolves.
+ */
+export function resolveSymbolSeoContent(
+    ticker: string,
+    assetClass: string,
+    opts: { displayName: string; koreanName?: string | null }
+): SymbolSeoContent {
+    if (assetClass === 'crypto') {
+        return buildCryptoSymbolSeoContent(ticker, {
+            displayName: opts.displayName,
+        });
+    }
+    return buildSymbolSeoContent(ticker, {
+        displayName: opts.displayName,
+        koreanName: opts.koreanName ?? undefined,
+    });
+}
+
 /** Build SEO metadata for the `/[symbol]/fear-greed` page. */
 export function buildSymbolFearGreedSeoContent(
     symbol: string,

@@ -26,8 +26,7 @@ import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/shared/config/queryConfig';
 import { MS_PER_SECOND } from '@/shared/config/time';
 import {
     buildBreadcrumbJsonLd,
-    buildCryptoSymbolSeoContent,
-    buildSymbolSeoContent,
+    resolveSymbolSeoContent,
     SITE_NAME,
     SITE_URL,
     NOINDEX_SYMBOL_METADATA,
@@ -75,13 +74,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     }
     const displayName = buildDisplayName(assetInfo, ticker);
     const profile = marketProfileOf(assetInfo);
-    const seo =
-        getDescriptor(profile).assetClass === 'crypto'
-            ? buildCryptoSymbolSeoContent(ticker, { displayName })
-            : buildSymbolSeoContent(ticker, {
-                  displayName,
-                  koreanName: assetInfo.koreanName,
-              });
+    const seo = resolveSymbolSeoContent(
+        ticker,
+        getDescriptor(profile).assetClass,
+        {
+            displayName,
+            koreanName: assetInfo.koreanName,
+        }
+    );
     const { title, fullTitle, description, url, keywords } = seo;
 
     return {
@@ -158,13 +158,11 @@ export default async function SymbolPage({ params }: Props) {
               );
 
     const displayName = buildDisplayName(assetInfo, ticker);
-    const pageSeo =
-        getDescriptor(marketProfile).assetClass === 'crypto'
-            ? buildCryptoSymbolSeoContent(ticker, { displayName })
-            : buildSymbolSeoContent(ticker, {
-                  displayName,
-                  koreanName: assetInfo.koreanName,
-              });
+    const pageSeo = resolveSymbolSeoContent(
+        ticker,
+        getDescriptor(marketProfile).assetClass,
+        { displayName, koreanName: assetInfo.koreanName }
+    );
     const { fullTitle, description, url } = pageSeo;
 
     // about 노드는 classifyAsset 결과가 stock일 때만 Corporation으로 채워지고,
