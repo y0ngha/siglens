@@ -727,5 +727,19 @@ describe('submitOverallAnalysisAction 함수는', () => {
 
             expect(mockGetCachedMarketDataProvider).toHaveBeenCalledWith(true);
         });
+
+        it('isCryptoSymbol이 false이면 getCachedMarketDataProvider를 false로 호출한다', async () => {
+            mockIsCryptoSymbol.mockResolvedValueOnce(false);
+            mockSubmitOverallAnalysis.mockResolvedValueOnce(SUBMITTED_RESULT);
+
+            await submitOverallAnalysisAction(
+                'AAPL',
+                'Apple Inc.',
+                '1Day',
+                MODEL_ID
+            );
+
+            expect(mockGetCachedMarketDataProvider).toHaveBeenCalledWith(false);
+        });
     });
 });

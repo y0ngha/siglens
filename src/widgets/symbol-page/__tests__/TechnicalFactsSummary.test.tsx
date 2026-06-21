@@ -158,4 +158,22 @@ describe('TechnicalFactsSummary', () => {
         );
         expect(container).toBeEmptyDOMElement();
     });
+
+    it('marketProfile=crypto + sub-cent 가격은 동적 자릿수로 렌더된다(2dp로 납작해지지 않는다)', () => {
+        // 0.058158 → dynamicDecimals: leadingZeros=1, digits=1+4=5 → "$0.05816" (5dp)
+        render(
+            <TechnicalFactsSummary
+                symbol="BTCUSD"
+                bars={[bar(0.05), bar(0.058158)]}
+                indicators={emptyIndicators}
+                marketProfile="crypto"
+            />
+        );
+        const priceText =
+            screen.getByText(/현재가/).closest('div')?.textContent ?? '';
+        // 2dp로 반올림하면 "$0.06" — 이보다 소수점이 많아야 한다.
+        expect(priceText).not.toMatch(/\$0\.06\b/);
+        // 실제 정밀도(5자리 이상) 확인 — 최소 3자리 이상 표시.
+        expect(priceText).toMatch(/\$0\.0\d{2,}/);
+    });
 });

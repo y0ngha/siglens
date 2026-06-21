@@ -301,5 +301,14 @@ describe('submitAnalysisAction tier + BYOK gate', () => {
 
             expect(mockGetCachedMarketDataProvider).toHaveBeenCalledWith(true);
         });
+
+        it('isCryptoSymbol이 false이면 getCachedMarketDataProvider를 false로 호출한다', async () => {
+            mockIsCryptoSymbol.mockResolvedValueOnce(false);
+            mockSubmitAnalysis.mockResolvedValueOnce(cachedResult);
+
+            await submitAnalysisAction('AAPL', 'Apple', '1Day', false);
+
+            expect(mockGetCachedMarketDataProvider).toHaveBeenCalledWith(false);
+        });
     });
 });

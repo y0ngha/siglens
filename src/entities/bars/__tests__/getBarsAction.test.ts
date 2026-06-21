@@ -185,6 +185,15 @@ describe('getBarsAction 함수는', () => {
 
             expect(mockGetCachedMarketDataProvider).toHaveBeenCalledWith(true);
         });
+
+        it('isCryptoSymbol이 false이면 getCachedMarketDataProvider를 false로 호출한다', async () => {
+            mockIsCryptoSymbol.mockResolvedValueOnce(false);
+            mockFetchBarsWithIndicators.mockResolvedValueOnce(mockBarsData);
+
+            await getBarsAction('AAPL', '1Day');
+
+            expect(mockGetCachedMarketDataProvider).toHaveBeenCalledWith(false);
+        });
     });
 
     describe('fetchBarsWithIndicators가 에러를 던질 때', () => {

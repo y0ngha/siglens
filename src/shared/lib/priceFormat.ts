@@ -51,7 +51,6 @@ export function dynamicDecimals(value: number): number {
     // Single guard covers both >= 1 and >= 1000 (same result, so >= 1000 was dead).
     if (abs >= 1) return 2;
     if (abs === 0) return 2;
-    // sub-1: keep ~4 significant figures after the leading zeros
     const leadingZeros = Math.floor(-Math.log10(abs));
     return Math.min(
         leadingZeros + DYNAMIC_DECIMAL_SIGNIFICANT_OFFSET,

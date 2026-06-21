@@ -53,4 +53,28 @@ describe('getCachedMarketDataProvider', () => {
             await import('@/shared/api/market/getMarketDataProvider');
         expect(getCachedMarketDataProvider()).toBe(getMarketDataProvider());
     });
+
+    it('getCachedMarketDataProvider(true) — cachedCrypto 싱글톤을 반복 호출에 재사용한다', async () => {
+        const { getCachedMarketDataProvider } =
+            await import('@/shared/api/market/getCachedMarketDataProvider');
+        const first = getCachedMarketDataProvider(true);
+        const second = getCachedMarketDataProvider(true);
+        expect(first).toBe(second);
+    });
+
+    it('getCachedMarketDataProvider(false) — equity 싱글톤을 반복 호출에 재사용한다', async () => {
+        const { getCachedMarketDataProvider } =
+            await import('@/shared/api/market/getCachedMarketDataProvider');
+        const first = getCachedMarketDataProvider(false);
+        const second = getCachedMarketDataProvider(false);
+        expect(first).toBe(second);
+    });
+
+    it('getCachedMarketDataProvider(true)와 getCachedMarketDataProvider(false)는 서로 다른 인스턴스다', async () => {
+        const { getCachedMarketDataProvider } =
+            await import('@/shared/api/market/getCachedMarketDataProvider');
+        const crypto = getCachedMarketDataProvider(true);
+        const equity = getCachedMarketDataProvider(false);
+        expect(crypto).not.toBe(equity);
+    });
 });
