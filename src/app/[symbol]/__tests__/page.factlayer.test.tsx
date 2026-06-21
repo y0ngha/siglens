@@ -50,6 +50,11 @@ vi.mock('@/entities/bars', () => ({
     getBarsStatic: vi.fn(),
     quantizeBarsDataToLastClosed: (d: unknown) => d,
 }));
+// page.tsx calls sessionSpecFor(marketProfile) before quantize — stub it out so the
+// core-level constants (US_EQUITY_SESSION) are not required in the partial core mock above.
+vi.mock('@/shared/api/market/sessionSpecFor', () => ({
+    sessionSpecFor: vi.fn(() => ({})),
+}));
 vi.mock('@/entities/skill', () => ({
     countSkillFiles: vi.fn().mockResolvedValue({
         indicators: 13,

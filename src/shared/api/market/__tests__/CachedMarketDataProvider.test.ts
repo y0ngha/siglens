@@ -1,10 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CachedMarketDataProvider } from '@/shared/api/market/CachedMarketDataProvider';
-import type {
-    Bar,
-    GetBarsOptions,
-    MarketDataProvider,
-    MarketQuote,
+import {
+    CRYPTO_SESSION,
+    type Bar,
+    type GetBarsOptions,
+    type MarketDataProvider,
+    type MarketQuote,
 } from '@y0ngha/siglens-core';
 
 /**
@@ -168,21 +169,21 @@ describe('CachedMarketDataProvider', () => {
         expect(store.size).toBe(0);
     });
 
-    describe('alwaysOpen=true (crypto) — TTL', () => {
-        it('bars TTL은 CRYPTO_BARS_TTL_SECONDS(60초) 고정이다', async () => {
+    describe('session spec — TTL', () => {
+        it('CRYPTO_SESSION → computeBarsEffectiveTtl이 always-open(60초) TTL을 반환한다', async () => {
             const inner = makeInner();
-            const p = new CachedMarketDataProvider(inner, true);
+            const p = new CachedMarketDataProvider(inner, CRYPTO_SESSION);
             await p.getBars(barsOpts());
-            // CRYPTO_BARS_TTL_SECONDS = 60 (CachedMarketDataProvider.ts 상수)
+            // CRYPTO_SESSION(always-open) → computeBarsEffectiveTtl 반환값은 60초.
             expect(lastSetTtl.value).toBe(60);
         });
 
-        it('alwaysOpen=false → computeBarsEffectiveTtl에 위임하므로 60이 아닌 값을 사용한다', async () => {
+        it('기본 session(US_EQUITY_SESSION) → computeBarsEffectiveTtl이 ET 기반 TTL을 사용한다', async () => {
             const inner = makeInner();
-            // alwaysOpen 기본값 false — ET 세션 기반 TTL(300 이상)을 반환한다.
+            // US_EQUITY_SESSION 기본값 — ET 세션 기반 TTL(60 이외의 값)을 반환한다.
             const p = new CachedMarketDataProvider(inner);
             await p.getBars(barsOpts());
-            // CRYPTO_BARS_TTL_SECONDS(60)와 다름을 보장 — 정확한 값은 computeBarsEffectiveTtl 구현에 종속.
+            // CRYPTO_SESSION의 60과 다름을 보장 — 정확한 값은 computeBarsEffectiveTtl 구현에 종속.
             expect(lastSetTtl.value).not.toBe(60);
             expect(typeof lastSetTtl.value).toBe('number');
         });

@@ -18,9 +18,20 @@ vi.mock('@/shared/api/market/getCachedMarketDataProvider', () => ({
     getCachedMarketDataProvider: vi.fn(() => mockMarketProvider),
 }));
 
-vi.mock('@/entities/ticker/lib/cryptoAssetStore', () => ({
-    isCryptoSymbol: vi.fn().mockResolvedValue(false),
+vi.mock('@/entities/ticker/lib/resolveAssetClass', () => ({
+    resolveAssetClass: vi.fn().mockResolvedValue('equity'),
 }));
+
+vi.mock('@/shared/api/market/sessionSpecFor', async () => {
+    const { US_EQUITY_SESSION, CRYPTO_SESSION } = await vi.importActual<
+        typeof import('@y0ngha/siglens-core')
+    >('@y0ngha/siglens-core');
+    return {
+        sessionSpecFor: vi.fn((profile: string) =>
+            profile === 'crypto' ? CRYPTO_SESSION : US_EQUITY_SESSION
+        ),
+    };
+});
 
 import type { MockedFunction } from 'vitest';
 import { getBarsAction } from '../actions/getBarsAction';
@@ -34,8 +45,9 @@ import {
     FMP_DATA_UNAVAILABLE_MESSAGE,
     FMP_TEMPORARY_UNAVAILABLE_MESSAGE,
 } from '@/shared/api/fmp/fmpUserMessage';
+import { CRYPTO_SESSION, US_EQUITY_SESSION } from '@y0ngha/siglens-core';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
-import { isCryptoSymbol } from '@/entities/ticker/lib/cryptoAssetStore';
+import { resolveAssetClass } from '@/entities/ticker/lib/resolveAssetClass';
 
 const mockMarketProvider =
     {} as import('@y0ngha/siglens-core').MarketDataProvider;
@@ -48,8 +60,8 @@ const mockGetCachedMarketDataProvider =
     getCachedMarketDataProvider as MockedFunction<
         typeof getCachedMarketDataProvider
     >;
-const mockIsCryptoSymbol = isCryptoSymbol as MockedFunction<
-    typeof isCryptoSymbol
+const mockResolveAssetClass = resolveAssetClass as MockedFunction<
+    typeof resolveAssetClass
 >;
 
 const mockBarsData: BarsData = {
@@ -176,23 +188,27 @@ describe('getBarsAction 함수는', () => {
         });
     });
 
-    describe('crypto symbol (alwaysOpen=true)', () => {
-        it('isCryptoSymbol이 true이면 getCachedMarketDataProvider를 true로 호출한다', async () => {
-            mockIsCryptoSymbol.mockResolvedValueOnce(true);
+    describe('crypto symbol — session spec routing', () => {
+        it('resolveAssetClass가 "crypto"이면 getCachedMarketDataProvider를 CRYPTO_SESSION으로 호출한다', async () => {
+            mockResolveAssetClass.mockResolvedValueOnce('crypto');
             mockFetchBarsWithIndicators.mockResolvedValueOnce(mockBarsData);
 
             await getBarsAction('BTCUSD', '1Day');
 
-            expect(mockGetCachedMarketDataProvider).toHaveBeenCalledWith(true);
+            expect(mockGetCachedMarketDataProvider).toHaveBeenCalledWith(
+                CRYPTO_SESSION
+            );
         });
 
-        it('isCryptoSymbol이 false이면 getCachedMarketDataProvider를 false로 호출한다', async () => {
-            mockIsCryptoSymbol.mockResolvedValueOnce(false);
+        it('resolveAssetClass가 "equity"이면 getCachedMarketDataProvider를 US_EQUITY_SESSION으로 호출한다', async () => {
+            mockResolveAssetClass.mockResolvedValueOnce('equity');
             mockFetchBarsWithIndicators.mockResolvedValueOnce(mockBarsData);
 
             await getBarsAction('AAPL', '1Day');
 
-            expect(mockGetCachedMarketDataProvider).toHaveBeenCalledWith(false);
+            expect(mockGetCachedMarketDataProvider).toHaveBeenCalledWith(
+                US_EQUITY_SESSION
+            );
         });
     });
 

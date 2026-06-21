@@ -1,5 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { Bar, MarketDataProvider } from '@y0ngha/siglens-core';
+import {
+    CRYPTO_SESSION,
+    US_EQUITY_SESSION,
+    type Bar,
+    type MarketDataProvider,
+} from '@y0ngha/siglens-core';
 
 const { mockIsE2E, fakeRawProvider } = vi.hoisted(() => ({
     mockIsE2E: vi.fn(() => false),
@@ -29,8 +34,8 @@ describe('getCachedMarketDataProvider', () => {
     it('같은 인스턴스를 반환한다(singleton)', async () => {
         const { getCachedMarketDataProvider } =
             await import('@/shared/api/market/getCachedMarketDataProvider');
-        expect(getCachedMarketDataProvider()).toBe(
-            getCachedMarketDataProvider()
+        expect(getCachedMarketDataProvider(US_EQUITY_SESSION)).toBe(
+            getCachedMarketDataProvider(US_EQUITY_SESSION)
         );
     });
 
@@ -40,7 +45,7 @@ describe('getCachedMarketDataProvider', () => {
             await import('@/shared/api/market/getCachedMarketDataProvider');
         const { CachedMarketDataProvider } =
             await import('@/shared/api/market/CachedMarketDataProvider');
-        expect(getCachedMarketDataProvider()).toBeInstanceOf(
+        expect(getCachedMarketDataProvider(US_EQUITY_SESSION)).toBeInstanceOf(
             CachedMarketDataProvider
         );
     });
@@ -51,30 +56,32 @@ describe('getCachedMarketDataProvider', () => {
             await import('@/shared/api/market/getCachedMarketDataProvider');
         const { getMarketDataProvider } =
             await import('@/shared/api/market/getMarketDataProvider');
-        expect(getCachedMarketDataProvider()).toBe(getMarketDataProvider());
+        expect(getCachedMarketDataProvider(US_EQUITY_SESSION)).toBe(
+            getMarketDataProvider()
+        );
     });
 
-    it('getCachedMarketDataProvider(true) — cachedCrypto 싱글톤을 반복 호출에 재사용한다', async () => {
+    it('CRYPTO_SESSION — cachedCrypto 싱글톤을 반복 호출에 재사용한다', async () => {
         const { getCachedMarketDataProvider } =
             await import('@/shared/api/market/getCachedMarketDataProvider');
-        const first = getCachedMarketDataProvider(true);
-        const second = getCachedMarketDataProvider(true);
+        const first = getCachedMarketDataProvider(CRYPTO_SESSION);
+        const second = getCachedMarketDataProvider(CRYPTO_SESSION);
         expect(first).toBe(second);
     });
 
-    it('getCachedMarketDataProvider(false) — equity 싱글톤을 반복 호출에 재사용한다', async () => {
+    it('US_EQUITY_SESSION — equity 싱글톤을 반복 호출에 재사용한다', async () => {
         const { getCachedMarketDataProvider } =
             await import('@/shared/api/market/getCachedMarketDataProvider');
-        const first = getCachedMarketDataProvider(false);
-        const second = getCachedMarketDataProvider(false);
+        const first = getCachedMarketDataProvider(US_EQUITY_SESSION);
+        const second = getCachedMarketDataProvider(US_EQUITY_SESSION);
         expect(first).toBe(second);
     });
 
-    it('getCachedMarketDataProvider(true)와 getCachedMarketDataProvider(false)는 서로 다른 인스턴스다', async () => {
+    it('CRYPTO_SESSION과 US_EQUITY_SESSION은 서로 다른 인스턴스다', async () => {
         const { getCachedMarketDataProvider } =
             await import('@/shared/api/market/getCachedMarketDataProvider');
-        const crypto = getCachedMarketDataProvider(true);
-        const equity = getCachedMarketDataProvider(false);
+        const crypto = getCachedMarketDataProvider(CRYPTO_SESSION);
+        const equity = getCachedMarketDataProvider(US_EQUITY_SESSION);
         expect(crypto).not.toBe(equity);
     });
 });

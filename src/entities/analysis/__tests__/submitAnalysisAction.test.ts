@@ -7,8 +7,21 @@ vi.mock('next/headers', () => ({
     headers: vi.fn(() => Promise.resolve(new Headers())),
 }));
 
+const { MOCK_CRYPTO_SESSION, MOCK_EQUITY_SESSION } = vi.hoisted(() => ({
+    MOCK_CRYPTO_SESSION: { type: 'crypto' } as never,
+    MOCK_EQUITY_SESSION: { type: 'equity' } as never,
+}));
+
 vi.mock('@y0ngha/siglens-core', () => ({
     submitAnalysis: vi.fn(),
+    CRYPTO_SESSION: MOCK_CRYPTO_SESSION,
+    US_EQUITY_SESSION: MOCK_EQUITY_SESSION,
+}));
+
+vi.mock('@/shared/api/market/sessionSpecFor', () => ({
+    sessionSpecFor: vi.fn((profile: string) =>
+        profile === 'crypto' ? MOCK_CRYPTO_SESSION : MOCK_EQUITY_SESSION
+    ),
 }));
 
 vi.mock('@/entities/session/lib/getCurrentUser', () => ({
@@ -27,10 +40,6 @@ vi.mock('@/shared/api/market/getCachedMarketDataProvider', () => ({
     getCachedMarketDataProvider: vi.fn(() => mockProvider),
 }));
 
-vi.mock('@/entities/ticker/lib/cryptoAssetStore', () => ({
-    isCryptoSymbol: vi.fn().mockResolvedValue(false),
-}));
-
 vi.mock('@/entities/ticker/lib/resolveAssetClass', () => ({
     resolveAssetClass: vi.fn().mockResolvedValue('equity'),
 }));
@@ -45,8 +54,9 @@ import {
     type SubmitAnalysisGatedResult,
 } from '@y0ngha/siglens-core';
 import { getCurrentUser } from '@/entities/session/lib/getCurrentUser';
+import { CRYPTO_SESSION, US_EQUITY_SESSION } from '@y0ngha/siglens-core';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
-import { isCryptoSymbol } from '@/entities/ticker/lib/cryptoAssetStore';
+import { resolveAssetClass } from '@/entities/ticker/lib/resolveAssetClass';
 
 const mockProvider = {} as import('@y0ngha/siglens-core').MarketDataProvider;
 
@@ -65,8 +75,8 @@ const mockGetCachedMarketDataProvider =
     getCachedMarketDataProvider as MockedFunction<
         typeof getCachedMarketDataProvider
     >;
-const mockIsCryptoSymbol = isCryptoSymbol as MockedFunction<
-    typeof isCryptoSymbol
+const mockResolveAssetClass = resolveAssetClass as MockedFunction<
+    typeof resolveAssetClass
 >;
 
 const cachedResult: SubmitAnalysisGatedResult = {
@@ -296,23 +306,27 @@ describe('submitAnalysisAction tier + BYOK gate', () => {
         });
     });
 
-    describe('crypto symbol (alwaysOpen=true)', () => {
-        it('isCryptoSymbol이 true이면 getCachedMarketDataProvider를 true로 호출한다', async () => {
-            mockIsCryptoSymbol.mockResolvedValueOnce(true);
+    describe('crypto symbol — session spec routing', () => {
+        it('resolveAssetClass가 "crypto"이면 getCachedMarketDataProvider를 CRYPTO_SESSION으로 호출한다', async () => {
+            mockResolveAssetClass.mockResolvedValueOnce('crypto');
             mockSubmitAnalysis.mockResolvedValueOnce(cachedResult);
 
             await submitAnalysisAction('BTCUSD', 'Bitcoin', '1Day', false);
 
-            expect(mockGetCachedMarketDataProvider).toHaveBeenCalledWith(true);
+            expect(mockGetCachedMarketDataProvider).toHaveBeenCalledWith(
+                CRYPTO_SESSION
+            );
         });
 
-        it('isCryptoSymbol이 false이면 getCachedMarketDataProvider를 false로 호출한다', async () => {
-            mockIsCryptoSymbol.mockResolvedValueOnce(false);
+        it('resolveAssetClass가 "equity"이면 getCachedMarketDataProvider를 US_EQUITY_SESSION으로 호출한다', async () => {
+            mockResolveAssetClass.mockResolvedValueOnce('equity');
             mockSubmitAnalysis.mockResolvedValueOnce(cachedResult);
 
             await submitAnalysisAction('AAPL', 'Apple', '1Day', false);
 
-            expect(mockGetCachedMarketDataProvider).toHaveBeenCalledWith(false);
+            expect(mockGetCachedMarketDataProvider).toHaveBeenCalledWith(
+                US_EQUITY_SESSION
+            );
         });
     });
 });

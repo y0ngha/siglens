@@ -15,6 +15,7 @@ import {
 } from '@y0ngha/siglens-core';
 import { getFundamentalDataProvider } from '@/shared/api/fmp/getFundamentalDataProvider';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
+import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import { getDatabaseClient } from '@/shared/db/client';
 import { getFinancialsSnapshot } from '@/entities/financials-statements/lib/getFinancialsSnapshot';
 import {
@@ -23,7 +24,6 @@ import {
     buildAnalysisNewsItems,
 } from '@/entities/news-article';
 import { getNextEarningsReport } from '@/entities/earnings-report';
-import { isCryptoSymbol } from '@/entities/ticker/lib/cryptoAssetStore';
 import { resolveAssetClass } from '@/entities/ticker/lib/resolveAssetClass';
 import { getCurrentUser } from '@/entities/session/lib/getCurrentUser';
 import { resolveTierAndByok, buildGateError } from '@/shared/lib/byokGate';
@@ -139,12 +139,14 @@ export async function submitOverallAnalysisAction(
             !isEtRegularSessionOpen(new Date()) &&
             isOpenInterestSnapshotStale(optionsSnapshot);
 
-        // 크립토는 24/7 시장 — ET 세션 TTL 대신 짧은 고정 TTL provider를 주입한다
-        // (Plan 4에서 core MarketSessionSpec으로 교체 예정 — tracking: https://github.com/y0ngha/siglens/issues/620).
-        const alwaysOpen = await isCryptoSymbol(symbol);
         // assetClass lets core treat the absent fundamentals/options/earnings as
         // intentional for crypto (2-axis: technical + news) rather than missing stock data.
         const assetClass = await resolveAssetClass(symbol);
+        // sessionSpecFor maps the asset class to the core MarketSessionSpec for
+        // session-aware Redis TTL (crypto=always-open, equity=ET session).
+        const marketDataProvider = getCachedMarketDataProvider(
+            sessionSpecFor(assetClass === 'crypto' ? 'crypto' : 'us-equity')
+        );
 
         return await submitOverallAnalysis({
             symbol,
@@ -152,7 +154,7 @@ export async function submitOverallAnalysisAction(
             timeframe,
             modelId,
             fundamentalProvider: getFundamentalDataProvider(),
-            marketDataProvider: getCachedMarketDataProvider(alwaysOpen),
+            marketDataProvider,
             newsItems: enrichedNews,
             upcomingCalendar: next !== null ? [next] : [],
             technical: { tierContext: { userId, tier: gate.tier } },
