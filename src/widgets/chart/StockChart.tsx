@@ -66,6 +66,11 @@ import {
     EMPTY_INDICATOR_RESULT,
     MA_DEFAULT_PERIODS,
 } from '@y0ngha/siglens-core';
+import {
+    getDescriptor,
+    type MarketProfileId,
+} from '@/shared/config/marketProfile';
+import { dynamicDecimals } from '@/shared/lib/priceFormat';
 import { IndicatorSettingsModal } from './ui/IndicatorSettingsModal';
 import {
     INDICATOR_META,
@@ -92,6 +97,12 @@ interface StockChartProps {
     onChartRemove?: () => void;
     /** aria-label에 들어갈 ticker — 스크린 리더에 차트 종목 안내. 없으면 generic label로 fallback. */
     ticker?: string;
+    /**
+     * Market profile id — drives price precision on the candlestick series.
+     * Defaults to 'us-equity' (fixed 2dp) for backward compatibility.
+     * Pass 'crypto' to enable dynamic-by-magnitude precision for sub-cent tokens.
+     */
+    marketProfile?: MarketProfileId;
 }
 
 export function StockChart({
@@ -104,6 +115,7 @@ export function StockChart({
     onChartReady,
     onChartRemove,
     ticker,
+    marketProfile = 'us-equity',
 }: StockChartProps) {
     const wrapperRef = useRef<HTMLDivElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -146,6 +158,15 @@ export function StockChart({
         });
 
         chartRef.current = chart;
+
+        const precision = getDescriptor(marketProfile).priceFormat.precision;
+        const decimals =
+            precision.kind === 'fixed'
+                ? precision.digits
+                : precision.kind === 'integer'
+                  ? 0
+                  : dynamicDecimals(bars.at(-1)?.close ?? 1);
+
         seriesRef.current = chart.addSeries(CandlestickSeries, {
             upColor: CHART_COLORS.bullish,
             downColor: CHART_COLORS.bearish,
@@ -153,6 +174,11 @@ export function StockChart({
             borderDownColor: CHART_COLORS.bearish,
             wickUpColor: CHART_COLORS.bullish,
             wickDownColor: CHART_COLORS.bearish,
+            priceFormat: {
+                type: 'price',
+                precision: decimals,
+                minMove: 10 ** -decimals,
+            },
             // LWC addSeries() 반환 타입에 UTCTimestamp 제네릭이 없어 타입 가드 불가 — 라이브러리 타입 한계.
         }) as ISeriesApi<'Candlestick', UTCTimestamp>;
 
