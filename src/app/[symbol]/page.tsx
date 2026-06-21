@@ -10,7 +10,7 @@ import { peekAnalysisStatic } from '@/entities/analysis';
 import {
     DEFAULT_TIMEFRAME,
     SymbolRouteParams,
-    VALID_TICKER_RE,
+    isAdmissibleSymbolShape,
 } from '@/shared/config/market';
 import {
     buildAssetAboutNode,
@@ -54,7 +54,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { symbol } = await params;
     const ticker = symbol.toUpperCase();
     // 본문 notFound()와 일관: 잘못된 ticker는 메타데이터를 비우고 noindex로 응답한다.
-    if (!VALID_TICKER_RE.test(ticker)) {
+    if (!isAdmissibleSymbolShape(ticker)) {
         return NOINDEX_SYMBOL_METADATA;
     }
     const { assetInfo, degraded } = await getAssetInfoResilient(ticker);
@@ -104,7 +104,7 @@ export default async function SymbolPage({ params }: Props) {
     const ticker = symbol.toUpperCase();
     // 다른 5개 sibling 페이지(news/fundamental/options/overall/fear-greed)와 일관:
     // 잘못된 ticker 형식은 본문에서도 notFound로 즉시 차단한다 (generateMetadata 가드와 짝).
-    if (!VALID_TICKER_RE.test(ticker)) notFound();
+    if (!isAdmissibleSymbolShape(ticker)) notFound();
     const [{ assetInfo }, skillCounts] = await Promise.all([
         getAssetInfoResilient(ticker),
         countSkillFiles(),

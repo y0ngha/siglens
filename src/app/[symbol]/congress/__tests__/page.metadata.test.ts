@@ -10,7 +10,8 @@ vi.mock('@/widgets/symbol-page', () => ({
 }));
 vi.mock('@/shared/ui/JsonLd', () => ({ JsonLd: () => null }));
 vi.mock('@/shared/config/market', () => ({
-    VALID_TICKER_RE: /^[A-Z]{1,5}$/,
+    isAdmissibleSymbolShape: (s: string) =>
+        /^[A-Z0-9][A-Z0-9.-]{0,15}$/.test(s),
     SymbolRouteParams: undefined,
 }));
 vi.mock('@/entities/ticker', () => ({

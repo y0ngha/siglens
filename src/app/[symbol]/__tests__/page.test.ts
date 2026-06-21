@@ -11,7 +11,8 @@ vi.mock('@y0ngha/siglens-core', () => ({
 }));
 vi.mock('@/shared/config/market', () => ({
     DEFAULT_TIMEFRAME: '1Day',
-    VALID_TICKER_RE: /^[A-Z]{1,5}$/,
+    isAdmissibleSymbolShape: (s: string) =>
+        /^[A-Z0-9][A-Z0-9.-]{0,15}$/.test(s),
 }));
 vi.mock('@/entities/ticker', () => ({
     buildAssetAboutNode: vi.fn().mockReturnValue(undefined),

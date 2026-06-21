@@ -27,7 +27,10 @@ import { ValuationCard } from '@/widgets/fundamental/sections/ValuationCard';
 import { CrossLinkCards, SymbolPageHeading } from '@/widgets/symbol-page';
 import { SectionSkeleton } from '@/widgets/symbol-page/SectionSkeleton';
 import { JsonLd } from '@/shared/ui/JsonLd';
-import { SymbolRouteParams, VALID_TICKER_RE } from '@/shared/config/market';
+import {
+    SymbolRouteParams,
+    isAdmissibleSymbolShape,
+} from '@/shared/config/market';
 import { SECONDS_PER_DAY } from '@/shared/config/time';
 import {
     buildAssetAboutNode,
@@ -68,7 +71,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { symbol } = await params;
     const upper = symbol.toUpperCase();
     // 본문 notFound()와 일관: 잘못된 ticker는 메타데이터를 비우고 noindex로 응답한다.
-    if (!VALID_TICKER_RE.test(upper)) {
+    if (!isAdmissibleSymbolShape(upper)) {
         return NOINDEX_SYMBOL_METADATA;
     }
     const { assetInfo, degraded } = await getAssetInfoResilient(upper);
@@ -361,7 +364,7 @@ export default async function FundamentalPage({ params }: Props) {
     const { symbol } = await params;
     const upper = symbol.toUpperCase();
 
-    if (!VALID_TICKER_RE.test(upper)) {
+    if (!isAdmissibleSymbolShape(upper)) {
         notFound();
     }
 
