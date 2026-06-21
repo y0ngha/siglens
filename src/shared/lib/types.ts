@@ -100,6 +100,8 @@ export type {
 export type { AuthUserRecord } from '@/shared/lib/auth/types';
 
 import type { LlmProvider } from '@/shared/config/llmProviders';
+// Direct import from /types (not the barrel) to avoid a circular dependency:
+// shared/lib/types → marketProfile/index(barrel) → registry → shared/lib/types
 import type { MarketProfileId } from '@/shared/config/marketProfile/types';
 
 export type { LlmProvider };

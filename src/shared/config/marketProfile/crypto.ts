@@ -11,7 +11,7 @@ export const CRYPTO_DESCRIPTOR: MarketProfileDescriptor = {
     },
     sessionModel: 'always-open',
     dataProvider: 'fmp',
-    toProviderSymbol: canonical => canonical, // BTCUSD passthrough
+    toProviderSymbol: canonical => canonical, // FMP crypto symbols are already canonical (BTCUSD) — no mapping needed
     newsSource: 'crypto',
     exchangeWhitelist: null, // FMP crypto exchange is "CRYPTO"/"CCC"; classify via DB
     searchSource: 'crypto-store',

@@ -182,10 +182,20 @@ export class DrizzleProfileDescriptionTranslationRepository implements ProfileDe
 
 /** Fetch the full FMP cryptocurrency universe and map to crypto_assets rows. */
 export async function fetchCryptoAssetList(): Promise<CryptoAssetRow[]> {
-    const raw = await fmpGet<FmpCryptoListRaw[]>('cryptocurrency-list', {});
-    return raw
-        .map(mapCryptoListRow)
-        .filter((r): r is CryptoAssetRow => r !== null);
+    try {
+        const raw = await fmpGet<FmpCryptoListRaw[]>('cryptocurrency-list', {});
+        return raw
+            .map(mapCryptoListRow)
+            .filter((r): r is CryptoAssetRow => r !== null);
+    } catch (e) {
+        // Boundary I/O logging; re-throw so the seed script fails loudly
+        // (a silent [] fallback would mask a failed crypto_assets sync).
+        console.error(
+            '[fetchCryptoAssetList] FMP cryptocurrency-list fetch failed:',
+            e
+        );
+        throw e;
+    }
 }
 
 /** Select DB row fields explicitly so future KoreanTickerEntry fields are not persisted accidentally. */

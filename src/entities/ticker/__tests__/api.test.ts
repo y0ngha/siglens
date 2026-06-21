@@ -313,4 +313,10 @@ describe('fetchCryptoAssetList', () => {
             circulatingSupply: 19_700_000,
         });
     });
+
+    it('returns an empty array when FMP returns no items', async () => {
+        vi.mocked(fmpGet).mockResolvedValue([]);
+        const result = await fetchCryptoAssetList();
+        expect(result).toEqual([]);
+    });
 });

@@ -1,6 +1,3 @@
-// vi.mock is hoisted by vitest above all imports — must appear before any import statements.
-vi.mock('@/shared/api/fmp/httpClient');
-
 import { describe, it, expect } from 'vitest';
 import { mapCryptoListRow } from '../fmpCryptoListClient';
 
