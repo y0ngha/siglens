@@ -30,6 +30,12 @@ import {
 } from '@/shared/lib/seo';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
+import {
+    getDescriptor,
+    marketProfileOf,
+    DEFAULT_MARKET_PROFILE,
+} from '@/shared/config/marketProfile';
+import { getAssetInfo } from '@/entities/ticker/lib/getAssetInfo';
 
 // 종목당 재무제표는 분기(약 45일) 단위로 갱신된다. 24h revalidate는 엣지 캐시를 최대한 활용하면서
 // 다음 분기 공시 이전에 오래된 데이터를 서빙하지 않는 균형점이다.
@@ -112,6 +118,15 @@ export default async function FinancialsPage({ params }: Props) {
     const upper = symbol.toUpperCase();
 
     if (!isAdmissibleSymbolShape(upper)) {
+        notFound();
+    }
+
+    // Hard-404 crypto symbols — this tab is equity-only.
+    const assetInfoForProfile = await getAssetInfo(upper);
+    const profileIdForGuard = assetInfoForProfile
+        ? marketProfileOf(assetInfoForProfile)
+        : DEFAULT_MARKET_PROFILE;
+    if (!getDescriptor(profileIdForGuard).tabs.includes('financials')) {
         notFound();
     }
 

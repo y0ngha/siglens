@@ -25,6 +25,12 @@ import {
 } from '@/shared/lib/seo';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
+import {
+    getDescriptor,
+    marketProfileOf,
+    DEFAULT_MARKET_PROFILE,
+} from '@/shared/config/marketProfile';
+import { getAssetInfo } from '@/entities/ticker/lib/getAssetInfo';
 
 // 의회 거래는 STOCK Act상 신고 마감(거래일 +30~45일) 이후 공시되므로
 // 일 단위 갱신이 적절하다. 24h revalidate는 엣지 캐시를 최대한 활용하면서
@@ -106,6 +112,15 @@ export default async function CongressPage({ params }: Props) {
     const upper = symbol.toUpperCase();
 
     if (!isAdmissibleSymbolShape(upper)) {
+        notFound();
+    }
+
+    // Hard-404 crypto symbols — this tab is equity-only.
+    const assetInfoForProfile = await getAssetInfo(upper);
+    const profileIdForGuard = assetInfoForProfile
+        ? marketProfileOf(assetInfoForProfile)
+        : DEFAULT_MARKET_PROFILE;
+    if (!getDescriptor(profileIdForGuard).tabs.includes('congress')) {
         notFound();
     }
 
