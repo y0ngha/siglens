@@ -15,7 +15,11 @@ vi.mock('../db', () => ({
 }));
 
 // Match the import path in cryptoAssetStore.ts so vitest intercepts the import.
-vi.mock('@/entities/ticker/api', () => ({
+// cryptoAssetStore.ts imports from '../api' (relative), which resolves to
+// entities/ticker/api. From this test file (lib/__tests__/), the same module
+// is reachable as '../../api'. Vitest resolves both to the same module, so
+// mocking '../../api' correctly intercepts the source's '../api' import.
+vi.mock('../../api', () => ({
     DrizzleCryptoAssetRepository: class MockRepo {
         findBySymbol(...args: unknown[]) {
             return mockFindBySymbol(...args);
@@ -130,6 +134,29 @@ describe('cryptoAssetStore (with DB)', () => {
             const isCrypto = await isCryptoSymbol('PRIMETEST_CACHE_GCACR');
             expect(isCrypto).toBe(true);
             expect(mockFindBySymbol).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    describe('searchCryptoAssets — cache hit', () => {
+        it('second call with the same query does not re-query the DB', async () => {
+            const record = {
+                symbol: 'SEARCHCACHEHIT_SCA',
+                name: 'Search Cache Hit Coin',
+                koreanName: null,
+                circulatingSupply: null,
+            };
+            mockSearch.mockResolvedValue([record]);
+
+            // First call — should hit the DB.
+            const first = await searchCryptoAssets('searchcachehit_sca');
+            expect(mockSearch).toHaveBeenCalledTimes(1);
+
+            // Second call with the same query — should read from the module-level cache.
+            const second = await searchCryptoAssets('searchcachehit_sca');
+            expect(mockSearch).toHaveBeenCalledTimes(1);
+
+            // Both calls return the same results.
+            expect(second).toEqual(first);
         });
     });
 });

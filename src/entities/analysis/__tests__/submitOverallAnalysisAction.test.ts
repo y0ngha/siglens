@@ -109,6 +109,8 @@ import { fetchOptionsSnapshot } from '@/entities/options-chain/lib/optionsDataCa
 import { isOpenInterestSnapshotStale } from '@/shared/lib/options/openInterestStale';
 import type { AnalysisGateError } from '@/shared/lib/types';
 import { getFinancialsSnapshot } from '@/entities/financials-statements/lib/getFinancialsSnapshot';
+import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
+import { isCryptoSymbol } from '@/entities/ticker/lib/cryptoAssetStore';
 
 const mockProvider = {} as import('@y0ngha/siglens-core').MarketDataProvider;
 
@@ -145,6 +147,13 @@ const mockComputeFinancialsScorecard =
     computeFinancialsScorecard as MockedFunction<
         typeof computeFinancialsScorecard
     >;
+const mockGetCachedMarketDataProvider =
+    getCachedMarketDataProvider as MockedFunction<
+        typeof getCachedMarketDataProvider
+    >;
+const mockIsCryptoSymbol = isCryptoSymbol as MockedFunction<
+    typeof isCryptoSymbol
+>;
 
 function makeSnapshot(): OptionsSnapshot {
     return {
@@ -701,6 +710,22 @@ describe('submitOverallAnalysisAction 함수는', () => {
             expect(mockSubmitOverallAnalysis).toHaveBeenCalledWith(
                 expect.objectContaining({ financialsScorecard: undefined })
             );
+        });
+    });
+
+    describe('crypto symbol (alwaysOpen=true)', () => {
+        it('isCryptoSymbol이 true이면 getCachedMarketDataProvider를 true로 호출한다', async () => {
+            mockIsCryptoSymbol.mockResolvedValueOnce(true);
+            mockSubmitOverallAnalysis.mockResolvedValueOnce(SUBMITTED_RESULT);
+
+            await submitOverallAnalysisAction(
+                'BTCUSD',
+                'Bitcoin',
+                '1Day',
+                MODEL_ID
+            );
+
+            expect(mockGetCachedMarketDataProvider).toHaveBeenCalledWith(true);
         });
     });
 });

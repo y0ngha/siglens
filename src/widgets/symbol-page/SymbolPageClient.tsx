@@ -14,8 +14,10 @@ import { useTimeframeChange } from './hooks/useTimeframeChange';
 import { SymbolPageProvider } from './SymbolPageContext';
 import { buildChartPageHeading } from './utils/chartPageHeading';
 import type { AnalysisResponse } from '@y0ngha/siglens-core';
-import { marketProfileOf } from '@/shared/config/marketProfile';
-import type { MarketProfileId } from '@/shared/config/marketProfile';
+import {
+    marketProfileOf,
+    type MarketProfileId,
+} from '@/shared/config/marketProfile';
 import dynamic from 'next/dynamic';
 import { Suspense } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';

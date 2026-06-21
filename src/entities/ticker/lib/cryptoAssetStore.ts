@@ -1,5 +1,5 @@
 import { tryGetTickerDatabaseClient } from './db';
-import { DrizzleCryptoAssetRepository } from '@/entities/ticker/api';
+import { DrizzleCryptoAssetRepository } from '../api';
 import type {
     CryptoAssetRecord,
     CryptoAssetRepository,
@@ -12,9 +12,15 @@ const CRYPTO_SEARCH_LIMIT = 10;
  * Module-level caches for hot-path crypto classification and record lookups.
  * The crypto universe is static (no delists mid-session), so a simple Map is
  * safe here — no TTL needed. The process restarts on deploy, flushing stale entries.
+ *
+ * `cryptoSearchCache` is keyed by the normalized query (lowercased + trimmed)
+ * and stores the mapped TickerSearchResult array. Autocomplete fires on every
+ * keypress, so avoiding repeated DB round-trips for the same prefix is worth
+ * the small memory cost on a static universe.
  */
 const cryptoSymbolCache = new Map<string, boolean>();
 const cryptoAssetCache = new Map<string, CryptoAssetRecord | null>();
+const cryptoSearchCache = new Map<string, TickerSearchResult[]>();
 
 function tryGetRepository(): CryptoAssetRepository | null {
     const client = tryGetTickerDatabaseClient();
@@ -72,11 +78,16 @@ export async function getCryptoAsset(
 export async function searchCryptoAssets(
     query: string
 ): Promise<TickerSearchResult[]> {
+    const normalizedQuery = query.toLowerCase().trim();
+    if (cryptoSearchCache.has(normalizedQuery))
+        return cryptoSearchCache.get(normalizedQuery)!;
     const repository = tryGetRepository();
     if (!repository) return [];
     try {
         const rows = await repository.search(query, CRYPTO_SEARCH_LIMIT);
-        return rows.map(recordToSearchResult);
+        const results = rows.map(recordToSearchResult);
+        cryptoSearchCache.set(normalizedQuery, results);
+        return results;
     } catch (e) {
         console.warn('[cryptoAssetStore] search failed', e);
         return [];

@@ -7,7 +7,10 @@ vi.mock('@/shared/api/fmp/httpClient');
 import type { Mock } from 'vitest';
 import { vi } from 'vitest';
 
-import { fetchCryptoAssetList } from '@/entities/ticker/api';
+import {
+    fetchCryptoAssetList,
+    DrizzleCryptoAssetRepository,
+} from '@/entities/ticker/api';
 import { fmpGet } from '@/shared/api/fmp/httpClient';
 import {
     DrizzleAssetTranslationRepository,
@@ -16,6 +19,7 @@ import {
 } from '@/entities/ticker';
 import type {
     AssetTranslationRecord,
+    CryptoAssetRecord,
     ProfileDescriptionTranslationRecord,
     SiglensDatabase,
 } from '@/shared/db/types';
@@ -332,5 +336,113 @@ describe('fetchCryptoAssetList', () => {
             error
         );
         consoleSpy.mockRestore();
+    });
+});
+
+// ─── DrizzleCryptoAssetRepository ────────────────────────────────────────────
+
+/**
+ * Build a mock db for DrizzleCryptoAssetRepository.findBySymbol.
+ * Chain: select → from → where → limit (returns rows).
+ */
+function makeCryptoFindBySymbolDb(rows: unknown[]): {
+    db: SiglensDatabase;
+    limit: Mock;
+} {
+    const limit = vi.fn().mockResolvedValue(rows);
+    const where = vi.fn(() => ({ limit }));
+    const from = vi.fn(() => ({ where }));
+    const select = vi.fn(() => ({ from }));
+    return { db: { select } as unknown as SiglensDatabase, limit };
+}
+
+/**
+ * Build a mock db for DrizzleCryptoAssetRepository.search.
+ * Chain: select → from → where → orderBy → limit (returns rows).
+ */
+function makeCryptoSearchDb(rows: unknown[]): {
+    db: SiglensDatabase;
+    where: Mock;
+    orderBy: Mock;
+    limit: Mock;
+} {
+    const limit = vi.fn().mockResolvedValue(rows);
+    const orderBy = vi.fn(() => ({ limit }));
+    const where = vi.fn(() => ({ orderBy }));
+    const from = vi.fn(() => ({ where }));
+    const select = vi.fn(() => ({ from }));
+    return {
+        db: { select } as unknown as SiglensDatabase,
+        where,
+        orderBy,
+        limit,
+    };
+}
+
+describe('DrizzleCryptoAssetRepository', () => {
+    const btcRecord: CryptoAssetRecord = {
+        symbol: 'BTCUSD',
+        name: 'Bitcoin USD',
+        koreanName: null,
+        circulatingSupply: 19_700_000,
+    };
+
+    describe('findBySymbol', () => {
+        it('row 가 있으면 해당 record 를 반환한다', async () => {
+            const { db } = makeCryptoFindBySymbolDb([btcRecord]);
+            const repo = new DrizzleCryptoAssetRepository(db);
+            await expect(repo.findBySymbol('BTCUSD')).resolves.toEqual(
+                btcRecord
+            );
+        });
+
+        it('row 가 없으면 null 을 반환한다', async () => {
+            const { db } = makeCryptoFindBySymbolDb([]);
+            const repo = new DrizzleCryptoAssetRepository(db);
+            await expect(repo.findBySymbol('BTCUSD')).resolves.toBeNull();
+        });
+
+        it('limit(1) 을 호출한다', async () => {
+            const { db, limit } = makeCryptoFindBySymbolDb([btcRecord]);
+            const repo = new DrizzleCryptoAssetRepository(db);
+            await repo.findBySymbol('BTCUSD');
+            expect(limit).toHaveBeenCalledWith(1);
+        });
+    });
+
+    describe('search', () => {
+        it('매칭되는 row 배열을 반환한다', async () => {
+            const { db } = makeCryptoSearchDb([btcRecord]);
+            const repo = new DrizzleCryptoAssetRepository(db);
+            await expect(repo.search('btc', 10)).resolves.toEqual([btcRecord]);
+        });
+
+        it('where 절을 호출한다 (ilike OR 조건)', async () => {
+            const { db, where } = makeCryptoSearchDb([btcRecord]);
+            const repo = new DrizzleCryptoAssetRepository(db);
+            await repo.search('btc', 10);
+            // where is called once with the or(ilike, ilike) expression
+            expect(where).toHaveBeenCalledTimes(1);
+        });
+
+        it('orderBy 를 호출한다 (circulatingSupply desc)', async () => {
+            const { db, orderBy } = makeCryptoSearchDb([btcRecord]);
+            const repo = new DrizzleCryptoAssetRepository(db);
+            await repo.search('btc', 10);
+            expect(orderBy).toHaveBeenCalledTimes(1);
+        });
+
+        it('limit 인자를 그대로 전달한다', async () => {
+            const { db, limit } = makeCryptoSearchDb([btcRecord]);
+            const repo = new DrizzleCryptoAssetRepository(db);
+            await repo.search('btc', 5);
+            expect(limit).toHaveBeenCalledWith(5);
+        });
+
+        it('결과가 없으면 빈 배열을 반환한다', async () => {
+            const { db } = makeCryptoSearchDb([]);
+            const repo = new DrizzleCryptoAssetRepository(db);
+            await expect(repo.search('xyz', 10)).resolves.toEqual([]);
+        });
     });
 });
