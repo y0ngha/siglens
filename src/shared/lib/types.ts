@@ -44,6 +44,12 @@ export interface KoreanTickerEntry extends TickerBase {
 export interface TickerSearchResult extends TickerBase {
     /** Korean company name; absent when no translation is in the store yet. */
     koreanName?: string;
+    /**
+     * Market profile id — populated for crypto results returned from the
+     * crypto_assets store so consumers can render exchange/profile badges
+     * correctly without a secondary lookup.
+     */
+    marketProfile?: MarketProfileId;
 }
 
 /** Asset metadata returned by `getAssetInfo`. */
