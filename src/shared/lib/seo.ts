@@ -573,6 +573,50 @@ function buildSymbolOverallKeywords(
     ];
 }
 
+function buildCryptoSymbolDescription(displayName: string): string {
+    return `${displayName} 가격 흐름과 매매 신호를 차트에서 확인합니다. RSI·MACD·볼린저밴드, 캔들 패턴, 주요 지지·저항선을 AI가 분석해 추세와 진입 후보 가격대를 정리합니다.`;
+}
+
+function buildCryptoSymbolKeywords(
+    ticker: string,
+    displayName: string
+): string[] {
+    return [
+        `${ticker} 시세`,
+        `${ticker} 가격`,
+        `${ticker} 시세 전망`,
+        `${ticker} 차트`,
+        `${ticker} 차트 분석`,
+        `${ticker} 매수`,
+        `${ticker} 매도`,
+        `${ticker} 매매 신호`,
+        `${ticker} 기술적 분석`,
+        `${ticker} AI 분석`,
+        `${displayName} 시세 분석`,
+        `${displayName} 차트 분석`,
+    ];
+}
+
+/** Build SEO metadata for a crypto `/[symbol]` chart page (crypto-framed copy). */
+export function buildCryptoSymbolSeoContent(
+    symbol: string,
+    opts: BuildSymbolSeoOptions = {}
+): SymbolSeoContent {
+    const ticker = symbol.toUpperCase();
+    const displayName = opts.displayName ?? ticker;
+    const title = `${displayName}(${ticker}) 시세 분석 — 차트와 매매 신호`;
+    return {
+        ticker,
+        title,
+        fullTitle: `${title} | ${SITE_NAME}`,
+        description: clampSeoDescription(
+            buildCryptoSymbolDescription(displayName)
+        ),
+        url: `${SITE_URL}/${ticker}`,
+        keywords: buildCryptoSymbolKeywords(ticker, displayName),
+    };
+}
+
 /** Build SEO metadata for the `/[symbol]/fear-greed` page. */
 export function buildSymbolFearGreedSeoContent(
     symbol: string,
