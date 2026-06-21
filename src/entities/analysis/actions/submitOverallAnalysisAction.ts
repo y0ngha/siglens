@@ -16,6 +16,8 @@ import {
 import { getFundamentalDataProvider } from '@/shared/api/fmp/getFundamentalDataProvider';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
+import { resolveMarketProfile } from '@/entities/ticker/lib/resolveAssetClass';
+import { getDescriptor } from '@/shared/config/marketProfile';
 import { getDatabaseClient } from '@/shared/db/client';
 import { getFinancialsSnapshot } from '@/entities/financials-statements/lib/getFinancialsSnapshot';
 import {
@@ -24,7 +26,6 @@ import {
     buildAnalysisNewsItems,
 } from '@/entities/news-article';
 import { getNextEarningsReport } from '@/entities/earnings-report';
-import { resolveAssetClass } from '@/entities/ticker/lib/resolveAssetClass';
 import { getCurrentUser } from '@/entities/session/lib/getCurrentUser';
 import { resolveTierAndByok, buildGateError } from '@/shared/lib/byokGate';
 import { isBot } from '@/shared/api/isBot';
@@ -139,13 +140,14 @@ export async function submitOverallAnalysisAction(
             !isEtRegularSessionOpen(new Date()) &&
             isOpenInterestSnapshotStale(optionsSnapshot);
 
-        // assetClass lets core treat the absent fundamentals/options/earnings as
-        // intentional for crypto (2-axis: technical + news) rather than missing stock data.
-        const assetClass = await resolveAssetClass(symbol);
-        // sessionSpecFor maps the asset class to the core MarketSessionSpec for
-        // session-aware Redis TTL (crypto=always-open, equity=ET session).
+        // Resolve profile once; derive both assetClass and session spec from it
+        // to avoid a lossy assetClass→profileId round-trip at the sessionSpecFor call.
+        // assetClass lets core treat absent fundamentals/options/earnings as intentional
+        // for crypto (2-axis: technical + news) rather than missing stock data.
+        const marketProfile = await resolveMarketProfile(symbol);
+        const assetClass = getDescriptor(marketProfile).assetClass;
         const marketDataProvider = getCachedMarketDataProvider(
-            sessionSpecFor(assetClass === 'crypto' ? 'crypto' : 'us-equity')
+            sessionSpecFor(marketProfile)
         );
 
         return await submitOverallAnalysis({

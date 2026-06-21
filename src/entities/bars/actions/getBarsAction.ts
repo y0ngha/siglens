@@ -4,7 +4,7 @@ import { type BarsData, type Timeframe } from '@y0ngha/siglens-core';
 import { getCachedBarsWithIndicators } from '../lib/barsDataCache';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
-import { resolveAssetClass } from '@/entities/ticker/lib/resolveAssetClass';
+import { resolveMarketProfile } from '@/entities/ticker/lib/resolveAssetClass';
 import {
     getFmpUserFacingMessage,
     logFmpPaymentRequiredError,
@@ -16,13 +16,10 @@ export async function getBarsAction(
     fmpSymbol?: string
 ): Promise<BarsData> {
     try {
-        // resolveAssetClass uses the cached getAssetInfo (DB-first → FMP) to determine the
-        // asset class, then sessionSpecFor maps it to the core MarketSessionSpec for
-        // session-aware Redis TTL (crypto=always-open 24/7, equity=ET session).
-        const assetClass = await resolveAssetClass(symbol);
-        const session = sessionSpecFor(
-            assetClass === 'crypto' ? 'crypto' : 'us-equity'
-        );
+        // Resolve profile once via cached getAssetInfo (DB-first → FMP); derive the
+        // session spec directly from it — no assetClass→profileId round-trip.
+        const marketProfile = await resolveMarketProfile(symbol);
+        const session = sessionSpecFor(marketProfile);
         return await getCachedBarsWithIndicators(
             getCachedMarketDataProvider(session),
             symbol,

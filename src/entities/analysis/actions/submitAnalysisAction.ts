@@ -15,7 +15,8 @@ import { isE2E } from '@/shared/api/e2eEnv';
 import type { AnalysisGateBlockedResult } from '@/shared/lib/types';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
-import { resolveAssetClass } from '@/entities/ticker/lib/resolveAssetClass';
+import { resolveMarketProfile } from '@/entities/ticker/lib/resolveAssetClass';
+import { getDescriptor } from '@/shared/config/marketProfile';
 
 /** Final return type — core's gated result + our siglens-side gate errors. */
 export type SubmitAnalysisActionResult =
@@ -56,11 +57,12 @@ export async function submitAnalysisAction(
 
         const requestHeaders = await headers();
         const skipEnqueueIfMiss = isBot(requestHeaders);
-        const assetClass = await resolveAssetClass(symbol);
-        // sessionSpecFor maps the asset's market profile to the core MarketSessionSpec,
-        // which computeBarsEffectiveTtl uses to pick an appropriate Redis TTL.
+        // Resolve profile once; derive both assetClass and session spec from it
+        // to avoid a lossy assetClass→profileId round-trip at the sessionSpecFor call.
+        const marketProfile = await resolveMarketProfile(symbol);
+        const assetClass = getDescriptor(marketProfile).assetClass;
         const marketDataProvider = getCachedMarketDataProvider(
-            sessionSpecFor(assetClass === 'crypto' ? 'crypto' : 'us-equity')
+            sessionSpecFor(marketProfile)
         );
 
         // no user lookup needed when modelId is absent

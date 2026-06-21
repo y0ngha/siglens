@@ -81,7 +81,7 @@ vi.mock('@/entities/financials-statements/lib/getFinancialsSnapshot', () => ({
 }));
 
 vi.mock('@/entities/ticker/lib/resolveAssetClass', () => ({
-    resolveAssetClass: vi.fn().mockResolvedValue('equity'),
+    resolveMarketProfile: vi.fn().mockResolvedValue('us-equity'),
 }));
 
 vi.mock('@/shared/api/market/sessionSpecFor', async () => {
@@ -122,7 +122,7 @@ import type { AnalysisGateError } from '@/shared/lib/types';
 import { getFinancialsSnapshot } from '@/entities/financials-statements/lib/getFinancialsSnapshot';
 import { CRYPTO_SESSION, US_EQUITY_SESSION } from '@y0ngha/siglens-core';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
-import { resolveAssetClass } from '@/entities/ticker/lib/resolveAssetClass';
+import { resolveMarketProfile } from '@/entities/ticker/lib/resolveAssetClass';
 
 const mockProvider = {} as import('@y0ngha/siglens-core').MarketDataProvider;
 
@@ -163,8 +163,8 @@ const mockGetCachedMarketDataProvider =
     getCachedMarketDataProvider as MockedFunction<
         typeof getCachedMarketDataProvider
     >;
-const mockResolveAssetClass = resolveAssetClass as MockedFunction<
-    typeof resolveAssetClass
+const mockResolveMarketProfile = resolveMarketProfile as MockedFunction<
+    typeof resolveMarketProfile
 >;
 
 function makeSnapshot(): OptionsSnapshot {
@@ -726,8 +726,8 @@ describe('submitOverallAnalysisAction 함수는', () => {
     });
 
     describe('crypto symbol — session spec routing', () => {
-        it('resolveAssetClass가 "crypto"이면 getCachedMarketDataProvider를 CRYPTO_SESSION으로 호출한다', async () => {
-            mockResolveAssetClass.mockResolvedValueOnce('crypto');
+        it('resolveMarketProfile가 "crypto"이면 getCachedMarketDataProvider를 CRYPTO_SESSION으로 호출한다', async () => {
+            mockResolveMarketProfile.mockResolvedValueOnce('crypto');
             mockSubmitOverallAnalysis.mockResolvedValueOnce(SUBMITTED_RESULT);
 
             await submitOverallAnalysisAction(
@@ -742,8 +742,8 @@ describe('submitOverallAnalysisAction 함수는', () => {
             );
         });
 
-        it('resolveAssetClass가 "equity"이면 getCachedMarketDataProvider를 US_EQUITY_SESSION으로 호출한다', async () => {
-            mockResolveAssetClass.mockResolvedValueOnce('equity');
+        it('resolveMarketProfile가 "us-equity"이면 getCachedMarketDataProvider를 US_EQUITY_SESSION으로 호출한다', async () => {
+            mockResolveMarketProfile.mockResolvedValueOnce('us-equity');
             mockSubmitOverallAnalysis.mockResolvedValueOnce(SUBMITTED_RESULT);
 
             await submitOverallAnalysisAction(

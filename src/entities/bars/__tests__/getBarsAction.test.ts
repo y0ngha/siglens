@@ -19,7 +19,7 @@ vi.mock('@/shared/api/market/getCachedMarketDataProvider', () => ({
 }));
 
 vi.mock('@/entities/ticker/lib/resolveAssetClass', () => ({
-    resolveAssetClass: vi.fn().mockResolvedValue('equity'),
+    resolveMarketProfile: vi.fn().mockResolvedValue('us-equity'),
 }));
 
 vi.mock('@/shared/api/market/sessionSpecFor', async () => {
@@ -47,7 +47,7 @@ import {
 } from '@/shared/api/fmp/fmpUserMessage';
 import { CRYPTO_SESSION, US_EQUITY_SESSION } from '@y0ngha/siglens-core';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
-import { resolveAssetClass } from '@/entities/ticker/lib/resolveAssetClass';
+import { resolveMarketProfile } from '@/entities/ticker/lib/resolveAssetClass';
 
 const mockMarketProvider =
     {} as import('@y0ngha/siglens-core').MarketDataProvider;
@@ -60,8 +60,8 @@ const mockGetCachedMarketDataProvider =
     getCachedMarketDataProvider as MockedFunction<
         typeof getCachedMarketDataProvider
     >;
-const mockResolveAssetClass = resolveAssetClass as MockedFunction<
-    typeof resolveAssetClass
+const mockResolveMarketProfile = resolveMarketProfile as MockedFunction<
+    typeof resolveMarketProfile
 >;
 
 const mockBarsData: BarsData = {
@@ -189,8 +189,8 @@ describe('getBarsAction 함수는', () => {
     });
 
     describe('crypto symbol — session spec routing', () => {
-        it('resolveAssetClass가 "crypto"이면 getCachedMarketDataProvider를 CRYPTO_SESSION으로 호출한다', async () => {
-            mockResolveAssetClass.mockResolvedValueOnce('crypto');
+        it('resolveMarketProfile가 "crypto"이면 getCachedMarketDataProvider를 CRYPTO_SESSION으로 호출한다', async () => {
+            mockResolveMarketProfile.mockResolvedValueOnce('crypto');
             mockFetchBarsWithIndicators.mockResolvedValueOnce(mockBarsData);
 
             await getBarsAction('BTCUSD', '1Day');
@@ -200,8 +200,8 @@ describe('getBarsAction 함수는', () => {
             );
         });
 
-        it('resolveAssetClass가 "equity"이면 getCachedMarketDataProvider를 US_EQUITY_SESSION으로 호출한다', async () => {
-            mockResolveAssetClass.mockResolvedValueOnce('equity');
+        it('resolveMarketProfile가 "us-equity"이면 getCachedMarketDataProvider를 US_EQUITY_SESSION으로 호출한다', async () => {
+            mockResolveMarketProfile.mockResolvedValueOnce('us-equity');
             mockFetchBarsWithIndicators.mockResolvedValueOnce(mockBarsData);
 
             await getBarsAction('AAPL', '1Day');
