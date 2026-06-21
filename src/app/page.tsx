@@ -9,6 +9,7 @@ import {
     SkillsShowcaseSkeleton,
 } from '@/widgets/home/SkillsShowcase';
 import { StatsBar, StatsBarSkeleton } from '@/widgets/home/StatsBar';
+import { CryptoShowcase } from '@/widgets/home/CryptoShowcase';
 import { TickerCategories } from '@/widgets/home/TickerCategories';
 import Link from 'next/link';
 import { cache, Suspense } from 'react';
@@ -336,6 +337,7 @@ export default async function Home() {
                     <SkillsShowcaseServer />
                 </Suspense>
                 <TickerCategories />
+                <CryptoShowcase />
             </main>
         </>
     );
