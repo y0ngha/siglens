@@ -4,10 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/shared/lib/cn';
 import { useAssetInfo } from './hooks/useAssetInfo';
-import {
-    marketProfileOf,
-    DEFAULT_MARKET_PROFILE,
-} from '@/shared/config/marketProfile';
+import { marketProfileOf } from '@/shared/config/marketProfile';
 import { tabsFor } from './utils/symbolTabsConfig';
 
 interface SymbolTabsProps {
@@ -21,10 +18,6 @@ export function SymbolTabs({ symbol }: SymbolTabsProps) {
     const assetInfo = useAssetInfo(symbol);
 
     const upper = symbol.toUpperCase();
-    const profile = assetInfo
-        ? marketProfileOf(assetInfo)
-        : DEFAULT_MARKET_PROFILE;
-    const tabs = tabsFor(profile);
 
     // Loading state: assetInfo === undefined means the RQ query is still in-flight.
     // Render a placeholder that matches the tab bar height/border so there is no
@@ -32,6 +25,9 @@ export function SymbolTabs({ symbol }: SymbolTabsProps) {
     if (assetInfo === undefined) {
         return <div className="border-secondary-700 h-11 border-b" />;
     }
+
+    const profile = marketProfileOf(assetInfo);
+    const tabs = tabsFor(profile);
 
     return (
         <nav
