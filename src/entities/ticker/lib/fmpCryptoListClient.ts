@@ -5,6 +5,7 @@ interface FmpCryptoListRaw {
     symbol?: string;
     name?: string;
     circulatingSupply?: number | null;
+    [key: string]: unknown;
 }
 
 /** Normalized row for the crypto_assets table. */
