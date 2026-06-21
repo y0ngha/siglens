@@ -134,6 +134,14 @@ export function TickerAutocomplete({
     );
 }
 
+export function CryptoBadge() {
+    return (
+        <span className="bg-primary-900/40 text-primary-300 shrink-0 rounded px-1.5 py-0.5 text-[0.625rem] font-semibold">
+            코인
+        </span>
+    );
+}
+
 interface ResultItemProps {
     id: string;
     result: TickerSearchResult;
@@ -170,6 +178,7 @@ function ResultItem({
                 <span className="text-secondary-100 shrink-0 font-medium">
                     {result.symbol}
                 </span>
+                {result.marketProfile === 'crypto' && <CryptoBadge />}
                 <span className="text-secondary-400 truncate text-sm">
                     {displayName}
                 </span>
