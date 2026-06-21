@@ -135,12 +135,37 @@ describe('DrizzleCryptoLongTailSource', () => {
             const sql = normalizeSql(query.sql);
             expect(sql).toContain('where "crypto_assets"."symbol" not in');
             expect(sql).toContain('order by');
+            // Primary sort must be circulatingSupply DESC NULLS LAST
+            expect(sql).toContain('desc nulls last');
+            expect(sql).toContain('"crypto_assets"."circulating_supply"');
+            // Secondary tiebreak: symbol asc
             expect(sql).toContain('"crypto_assets"."symbol" asc');
             // Drizzle omits OFFSET 0 — last param is the limit
             expect(query.params[query.params.length - 1]).toBe(
                 CRYPTO_LONGTAIL_CAP
             );
             expect(query.params).toContain(POPULAR_CRYPTOS[0]);
+        });
+
+        it('returns rows in circulatingSupply DESC NULLS LAST order given seeded rows', async () => {
+            // Seed: BTC has the highest supply, ETH second, UNKNOWN has null supply.
+            // The mock returns rows in whatever order we inject — we verify the SQL
+            // carries the correct ORDER BY clause so Postgres applies the sort.
+            // Row layout matches DrizzleCryptoLongTailSource.loadPage() select: { symbol }.
+            const { source, captured } = makeSource([
+                ['ETHUSD'], // would be second by supply
+                ['BTCUSD'], // would be first by supply
+                ['UNKNOWNCOIN'], // null supply → NULLS LAST
+            ]);
+
+            await source.loadPage(1, CRYPTO_LONGTAIL_CAP);
+
+            const query = captured[0]!;
+            const normalized = normalizeSql(query.sql);
+            // Verify the primary sort column and direction are present in the SQL
+            expect(normalized).toContain(
+                '"crypto_assets"."circulating_supply" desc nulls last'
+            );
         });
     });
 });

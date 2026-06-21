@@ -1,10 +1,13 @@
 import { getDatabaseClient } from '@/shared/db/client';
-import { buildCryptoPopularEntries } from '@/entities/sitemap-entry/lib/buildCryptoPopularEntries';
+import {
+    buildCryptoPopularEntries,
+    buildLongTailEntries,
+    toUrlSetXml,
+} from '@/entities/sitemap-entry';
 import {
     CRYPTO_LONGTAIL_CAP,
     DrizzleCryptoLongTailSource,
 } from '@/entities/sitemap-entry/lib/cryptoLongTailSource';
-import { buildLongTailEntries, toUrlSetXml } from '@/entities/sitemap-entry';
 import { SITE_BUILD_DATE } from '@/shared/lib/seo';
 import { NextResponse } from 'next/server';
 
@@ -17,12 +20,12 @@ export async function GET(): Promise<Response> {
     const now = new Date();
     const popular = buildCryptoPopularEntries(now);
 
-    const { db } = getDatabaseClient();
-    const source = new DrizzleCryptoLongTailSource(db);
     let eligible: number;
     let longTailSymbols: readonly string[];
 
     try {
+        const { db } = getDatabaseClient();
+        const source = new DrizzleCryptoLongTailSource(db);
         [eligible, longTailSymbols] = await Promise.all([
             source.count(),
             source.loadPage(1, CRYPTO_LONGTAIL_CAP),

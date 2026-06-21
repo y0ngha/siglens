@@ -74,7 +74,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         return NOINDEX_SYMBOL_METADATA;
     }
     const displayName = buildDisplayName(assetInfo, ticker);
-    // assetInfo is non-null here — guarded by `if (!assetInfo) return NOINDEX_SYMBOL_METADATA` above.
     const profile = marketProfileOf(assetInfo);
     const seo =
         getDescriptor(profile).assetClass === 'crypto'

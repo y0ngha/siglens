@@ -1,8 +1,9 @@
 import { POPULAR_CRYPTOS } from '@/shared/config/popular-cryptos';
 import Link from 'next/link';
 
-// Display the first 12 curated coins as quick-access chips on the homepage.
-const SHOWCASE = POPULAR_CRYPTOS.slice(0, 12);
+const CRYPTO_SHOWCASE_COUNT = 12;
+
+const SHOWCASE = POPULAR_CRYPTOS.slice(0, CRYPTO_SHOWCASE_COUNT);
 
 export function CryptoShowcase() {
     return (
@@ -15,7 +16,7 @@ export function CryptoShowcase() {
                     <li key={symbol}>
                         <Link
                             href={`/${symbol}`}
-                            className="border-secondary-800 bg-secondary-800/30 text-secondary-300 hover:border-primary-600 hover:text-primary-300 inline-flex rounded-md border px-3 py-1.5 text-xs font-medium transition-colors"
+                            className="border-secondary-800 bg-secondary-800/30 text-secondary-300 hover:border-primary-600 hover:text-primary-300 focus-visible:ring-primary-500 inline-flex rounded-md border px-3 py-1.5 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none"
                         >
                             {symbol}
                         </Link>
