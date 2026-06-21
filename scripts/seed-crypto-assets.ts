@@ -17,10 +17,16 @@ async function main() {
     const rows = await fetchCryptoAssetList();
     console.log(`Fetched ${rows.length} crypto assets from FMP`);
 
+    // Dedupe by symbol to avoid "ON CONFLICT DO UPDATE cannot affect row a second time"
+    const uniqueRows = Array.from(
+        new Map(rows.map(r => [r.symbol, r])).values()
+    );
+    const total = uniqueRows.length;
+
     const CHUNK = 500;
     let written = 0;
-    for (let i = 0; i < rows.length; i += CHUNK) {
-        const chunk = rows.slice(i, i + CHUNK);
+    for (let i = 0; i < total; i += CHUNK) {
+        const chunk = uniqueRows.slice(i, i + CHUNK);
         await db
             .insert(cryptoAssets)
             .values(chunk)
@@ -29,10 +35,13 @@ async function main() {
                 set: {
                     name: sql`excluded.name`,
                     circulatingSupply: sql`excluded.circulating_supply`,
+                    // Drizzle does NOT run $onUpdateFn on conflict-update, so
+                    // updatedAt must be set explicitly to avoid going stale.
+                    updatedAt: sql`now()`,
                 },
             });
         written += chunk.length;
-        console.log(`Upserted ${written}/${rows.length}`);
+        console.log(`Upserted ${written}/${total}`);
     }
     console.log('crypto_assets seed complete');
     await client.end();

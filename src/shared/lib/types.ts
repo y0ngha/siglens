@@ -61,7 +61,7 @@ export interface AssetInfo {
      * `marketProfileOf()` which defaults to `'us-equity'`. Populated for
      * crypto in the routing/data plan (Plan 2).
      */
-    marketProfile?: import('@/shared/config/marketProfile').MarketProfileId;
+    marketProfile?: import('@/shared/config/marketProfile/types').MarketProfileId;
 }
 
 /** Curated category id used to group tickers in UI explorers. */
