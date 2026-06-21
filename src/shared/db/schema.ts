@@ -180,6 +180,23 @@ export const koreanTickers = pgTable('korean_tickers', {
 });
 
 /**
+ * Cryptocurrency asset universe — seeded from FMP `cryptocurrency-list`.
+ * Mirrors `koreanTickers` shape. Membership in this table is the
+ * authoritative crypto classifier (FMP's exchange field is inconsistent:
+ * "CCC" in the list vs "CRYPTO" in quote/search).
+ */
+export const cryptoAssets = pgTable('crypto_assets', {
+    symbol: varchar('symbol', { length: SYMBOL_MAX_LENGTH }).primaryKey(),
+    name: text('name').notNull(),
+    koreanName: text('korean_name'),
+    circulatingSupply: doublePrecision('circulating_supply'),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+        .notNull()
+        .defaultNow()
+        .$onUpdateFn(nowFn),
+});
+
+/**
  * Korean company description translations — one row per symbol, populated
  * lazily on first visit and persisted permanently (no TTL / no deployment eviction).
  */
