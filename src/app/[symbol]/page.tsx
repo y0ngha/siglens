@@ -13,7 +13,11 @@ import {
     isAdmissibleSymbolShape,
 } from '@/shared/config/market';
 import { isUnresolvableDegraded } from '@/shared/lib/symbolGuard';
-import { marketProfileOf } from '@/shared/config/marketProfile';
+import {
+    getDescriptor,
+    marketProfileOf,
+    DEFAULT_MARKET_PROFILE,
+} from '@/shared/config/marketProfile';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import {
     buildAssetAboutNode,
@@ -26,6 +30,7 @@ import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/shared/config/queryConfig';
 import { MS_PER_SECOND } from '@/shared/config/time';
 import {
     buildBreadcrumbJsonLd,
+    buildCryptoSymbolSeoContent,
     buildSymbolSeoContent,
     SITE_NAME,
     SITE_URL,
@@ -73,11 +78,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         return NOINDEX_SYMBOL_METADATA;
     }
     const displayName = buildDisplayName(assetInfo, ticker);
-    const { title, fullTitle, description, url, keywords } =
-        buildSymbolSeoContent(ticker, {
-            displayName,
-            koreanName: assetInfo.koreanName,
-        });
+    const profile = assetInfo
+        ? marketProfileOf(assetInfo)
+        : DEFAULT_MARKET_PROFILE;
+    const seo =
+        getDescriptor(profile).assetClass === 'crypto'
+            ? buildCryptoSymbolSeoContent(ticker, { displayName })
+            : buildSymbolSeoContent(ticker, {
+                  displayName,
+                  koreanName: assetInfo.koreanName,
+              });
+    const { title, fullTitle, description, url, keywords } = seo;
 
     return {
         title,
@@ -153,19 +164,23 @@ export default async function SymbolPage({ params }: Props) {
               );
 
     const displayName = buildDisplayName(assetInfo, ticker);
-    const { fullTitle, description, url } = buildSymbolSeoContent(ticker, {
-        displayName,
-        koreanName: assetInfo.koreanName,
-    });
+    const pageSeo =
+        getDescriptor(marketProfile).assetClass === 'crypto'
+            ? buildCryptoSymbolSeoContent(ticker, { displayName })
+            : buildSymbolSeoContent(ticker, {
+                  displayName,
+                  koreanName: assetInfo.koreanName,
+              });
+    const { fullTitle, description, url } = pageSeo;
 
     // about 노드는 classifyAsset 결과가 stock일 때만 Corporation으로 채워지고,
     // ETF/Index/모호한 종목은 undefined를 반환해 spread로 자연 생략된다.
-    // 이전에는 ETF/Index 오분류 위험으로 about 자체를 두지 않았으나, 분류 안전망
-    // 도입 후엔 분류 가능한 종목만 안전하게 Corporation 노드를 노출한다.
+    // crypto는 schema.org 표준 타입이 없어 about 노드를 생략한다(assetClass 4번째 arg).
     const aboutNode = buildAssetAboutNode(
         ticker,
         assetInfo.koreanName ?? assetInfo.name,
-        assetInfo.fmpSymbol
+        assetInfo.fmpSymbol,
+        getDescriptor(marketProfile).assetClass
     );
     const jsonLd = {
         '@context': 'https://schema.org',
