@@ -38,6 +38,7 @@ import {
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
+import { getDescriptor, marketProfileOf } from '@/shared/config/marketProfile';
 
 export const revalidate = 43200; // 12h — 신선도는 ensureNewsCardsAnalyzedAction의 on-demand revalidateTag('news:${symbol}', 'max')가 보장, 시간 기반은 상한만
 
@@ -197,6 +198,8 @@ export default async function NewsPage({ params }: Props) {
     }
 
     const displayName = buildDisplayName(assetInfo, upper);
+    const assetClass = getDescriptor(marketProfileOf(assetInfo)).assetClass;
+    const isEquity = assetClass === 'equity';
     const { fullTitle, description, url } = buildSymbolNewsSeoContent(upper, {
         displayName,
         koreanName: assetInfo.koreanName,
@@ -307,8 +310,9 @@ export default async function NewsPage({ params }: Props) {
                 <section className="sr-only">
                     <h2>{displayName} 뉴스 분석 개요</h2>
                     <p>
-                        {displayName}의 최신 뉴스 분위기, 다음 어닝 일정, 최근
-                        실적 보고서, 애널리스트 등급 변경을 한국어로 정리합니다.
+                        {isEquity
+                            ? `${displayName}의 최신 뉴스 분위기, 다음 어닝 일정, 최근 실적 보고서, 애널리스트 등급 변경을 한국어로 정리합니다.`
+                            : `${displayName}의 최신 뉴스 분위기와 핵심 이슈를 한국어로 정리합니다.`}
                     </p>
                 </section>
                 <NewsAiSummaryErrorBoundary>
@@ -325,13 +329,17 @@ export default async function NewsPage({ params }: Props) {
                     <NewsListSection symbol={upper} />
                 </Suspense>
 
-                <Suspense fallback={<SectionSkeleton />}>
-                    <EventCalendarSection symbol={upper} />
-                </Suspense>
+                {isEquity && (
+                    <Suspense fallback={<SectionSkeleton />}>
+                        <EventCalendarSection symbol={upper} />
+                    </Suspense>
+                )}
 
-                <Suspense fallback={<SectionSkeleton />}>
-                    <AnalystActionsSection symbol={upper} />
-                </Suspense>
+                {isEquity && (
+                    <Suspense fallback={<SectionSkeleton />}>
+                        <AnalystActionsSection symbol={upper} />
+                    </Suspense>
+                )}
 
                 <CrossLinkCards symbol={upper} current="news" />
             </main>

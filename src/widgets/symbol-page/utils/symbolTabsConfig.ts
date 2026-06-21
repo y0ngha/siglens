@@ -1,3 +1,8 @@
+import {
+    getDescriptor,
+    type MarketProfileId,
+} from '@/shared/config/marketProfile';
+
 /**
  * Single source of truth for the symbol analysis tabs. Kept in a non-`'use client'`
  * module so both the client component (`SymbolTabs`) and server-rendered fallback
@@ -42,3 +47,9 @@ export const TABS = [
         hrefBuilder: (s: string) => `/${s}/overall`,
     },
 ] as const;
+
+/** Tabs visible for a given market profile, in canonical order. */
+export function tabsFor(profile: MarketProfileId): (typeof TABS)[number][] {
+    const allowed = new Set(getDescriptor(profile).tabs);
+    return TABS.filter(t => allowed.has(t.key));
+}

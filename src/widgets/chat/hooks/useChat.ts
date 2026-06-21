@@ -29,6 +29,7 @@ import { QUERY_KEYS } from '@/shared/config/queryConfig';
 import { usePageContextLabel } from './usePageContextLabel';
 import { useSymbolChat } from '@/features/symbol-chat';
 import { useAssetInfo } from '@/widgets/symbol-page/hooks/useAssetInfo';
+import { getDescriptor, marketProfileOf } from '@/shared/config/marketProfile';
 import { useModelGate, type ModelGateState } from '@/features/premium-gate';
 import { useHydrated } from '@/shared/hooks/useHydrated';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -99,17 +100,6 @@ export interface UseChatReturn {
 }
 
 export function useChat({ symbol }: UseChatOptions): UseChatReturn {
-    // 훅 선언 순서 예외: useSymbolChat()을 useState/useRef보다 먼저 호출함.
-    // 아래 storageKeyRef/initialStorageKeyRef 초기값이 timeframeFromCtx에 의존해야 하기 때문에
-    // 일반 순서(useState → useRef → context hook)로 두면 ref 초기화 시점에 timeframeFromCtx가 미정의됨.
-    const {
-        context,
-        timeframe: timeframeFromCtx,
-        isAnalysisReady,
-    } = useSymbolChat();
-    // useAssetInfo is cached via React Query — no extra network call when SymbolLayoutHeader already called it.
-    const assetInfo = useAssetInfo(symbol);
-    const companyName = assetInfo?.name ?? symbol;
     const [messages, setMessages] = useState<DisplayMessage[]>([]);
     const [loadingPhase, setLoadingPhase] = useState<ChatLoadingPhase | null>(
         null
@@ -119,8 +109,24 @@ export function useChat({ symbol }: UseChatOptions): UseChatReturn {
         GEMINI_2_5_FLASH_MODEL
     );
     const [isModelHydrated, setIsModelHydrated] = useState(false);
+
+    // useSymbolChat must remain before the storageKey refs below whose initial values
+    // depend on timeframeFromCtx — moving it after refs would read an undefined value
+    // at ref-initialization time.
+    const {
+        context,
+        timeframe: timeframeFromCtx,
+        isAnalysisReady,
+    } = useSymbolChat();
+    // useAssetInfo is cached via React Query — no extra network call when SymbolLayoutHeader already called it.
+    const assetInfo = useAssetInfo(symbol);
     const { gateModal, dismissGate, handleModelChange, showGate } =
         useModelGate({ onAllow: setSelectedModel });
+
+    const companyName = assetInfo?.name ?? symbol;
+    const assetClass = assetInfo
+        ? getDescriptor(marketProfileOf(assetInfo)).assetClass
+        : 'equity';
     // Tracks the last value written to localStorage by this hook instance.
     // Replaces the previous mount-flag guard, which had a regression: when ChatPanel
     // closes and reopens, the hook unmounts/remounts. With a fresh `isModelHydrated`
@@ -203,7 +209,8 @@ export function useChat({ symbol }: UseChatOptions): UseChatReturn {
                 currentMessages,
                 text,
                 selectedModel,
-                currentAnalysisContext
+                currentAnalysisContext,
+                assetClass
             ),
         onMutate: ({ text }) => {
             const userMessage: ChatMessage = { role: 'user', content: text };

@@ -4,7 +4,9 @@ import { getOrSetCache } from '@/shared/cache/getOrSetCache';
 import {
     type BarsData,
     type MarketDataProvider,
+    type MarketSessionSpec,
     type Timeframe,
+    US_EQUITY_SESSION,
     fetchBarsWithIndicators,
     computeBarsEffectiveTtl,
 } from '@y0ngha/siglens-core';
@@ -36,11 +38,12 @@ export const getCachedBarsWithIndicators = cache(
         provider: MarketDataProvider,
         symbol: string,
         timeframe: Timeframe,
-        fmpSymbol?: string
+        fmpSymbol?: string,
+        session: MarketSessionSpec = US_EQUITY_SESSION
     ): Promise<BarsData> =>
         getOrSetCache(
             buildBarsKey(symbol, timeframe, fmpSymbol),
-            computeBarsEffectiveTtl(timeframe, new Date()),
+            computeBarsEffectiveTtl(timeframe, new Date(), session),
             // Retry(429/5xx + network)는 provider의 fmpGet(FMP_TRANSIENT_RETRY)에서 처리.
             () =>
                 fetchBarsWithIndicators(provider, symbol, timeframe, fmpSymbol),

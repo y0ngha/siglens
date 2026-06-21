@@ -1,8 +1,7 @@
-export {
-    DrizzleKoreanTickerRepository,
-    DrizzleAssetTranslationRepository,
-    DrizzleProfileDescriptionTranslationRepository,
-} from './api';
+// NOTE: api.ts is server-only (transitively imports @/shared/db/client → clientTest.ts).
+// Do NOT re-export anything from './api' here — this barrel is imported by client
+// components (useRecentSearches, TickerAutocomplete, SymbolSearchPanel).
+// Server consumers must import from '@/entities/ticker/api' directly.
 
 export {
     getAssetInfoResilient,

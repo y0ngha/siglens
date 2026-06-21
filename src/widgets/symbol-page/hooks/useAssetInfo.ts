@@ -9,7 +9,13 @@ import {
 import type { AssetInfo } from '@/shared/lib/types';
 import { useHydrated } from '@/shared/hooks/useHydrated';
 
-export function useAssetInfo(symbol: string): AssetInfo | undefined {
+/**
+ * Returns:
+ * - `undefined` — query in-flight (loading placeholder should be shown)
+ * - `null`      — query resolved but no matching asset found (unknown symbol)
+ * - `AssetInfo` — resolved asset
+ */
+export function useAssetInfo(symbol: string): AssetInfo | null | undefined {
     const isHydrated = useHydrated();
     const { data } = useQuery({
         queryKey: QUERY_KEYS.assetInfo(symbol),
@@ -17,5 +23,8 @@ export function useAssetInfo(symbol: string): AssetInfo | undefined {
         enabled: isHydrated,
         staleTime: ASSET_INFO_STALE_TIME_MS,
     });
-    return data ?? undefined;
+    // `data` is `undefined` when the query has not yet resolved (loading),
+    // and `null` when the server action returned null (unknown symbol).
+    // We preserve the distinction so consumers can handle each case separately.
+    return data === undefined ? undefined : data;
 }

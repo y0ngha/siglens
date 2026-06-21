@@ -3,6 +3,9 @@ vi.mock('@/shared/lib/sleep', () => ({
     sleep: vi.fn().mockResolvedValue(undefined),
 }));
 vi.mock('@/shared/api/fmp/httpClient');
+vi.mock('@/entities/ticker/lib/cryptoAssetStore', () => ({
+    isCryptoSymbol: vi.fn(),
+}));
 
 import type { Mock } from 'vitest';
 import { vi } from 'vitest';
@@ -10,13 +13,15 @@ import { vi } from 'vitest';
 import {
     fetchCryptoAssetList,
     DrizzleCryptoAssetRepository,
+    isTabAllowedForSymbol,
 } from '@/entities/ticker/api';
 import { fmpGet } from '@/shared/api/fmp/httpClient';
+import { isCryptoSymbol } from '@/entities/ticker/lib/cryptoAssetStore';
 import {
     DrizzleAssetTranslationRepository,
     DrizzleKoreanTickerRepository,
     DrizzleProfileDescriptionTranslationRepository,
-} from '@/entities/ticker';
+} from '@/entities/ticker/api';
 import type {
     AssetTranslationRecord,
     CryptoAssetRecord,
@@ -445,6 +450,74 @@ describe('DrizzleCryptoAssetRepository', () => {
             const { db } = makeCryptoSearchDb([]);
             const repo = new DrizzleCryptoAssetRepository(db);
             await expect(repo.search('xyz', 10)).resolves.toEqual([]);
+        });
+    });
+});
+
+describe('isTabAllowedForSymbol', () => {
+    const mockIsCryptoSymbol = isCryptoSymbol as unknown as Mock;
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    describe('equity symbol (isCryptoSymbol → false)', () => {
+        beforeEach(() => {
+            mockIsCryptoSymbol.mockResolvedValue(false);
+        });
+
+        it('equity 심볼은 "fundamental" 탭을 허용한다', async () => {
+            await expect(
+                isTabAllowedForSymbol('AAPL', 'fundamental')
+            ).resolves.toBe(true);
+        });
+
+        it('equity 심볼은 "financials" 탭을 허용한다', async () => {
+            await expect(
+                isTabAllowedForSymbol('AAPL', 'financials')
+            ).resolves.toBe(true);
+        });
+
+        it('equity 심볼은 "congress" 탭을 허용한다', async () => {
+            await expect(
+                isTabAllowedForSymbol('AAPL', 'congress')
+            ).resolves.toBe(true);
+        });
+
+        it('equity 심볼은 "options" 탭을 허용한다', async () => {
+            await expect(
+                isTabAllowedForSymbol('AAPL', 'options')
+            ).resolves.toBe(true);
+        });
+    });
+
+    describe('crypto symbol (isCryptoSymbol → true)', () => {
+        beforeEach(() => {
+            mockIsCryptoSymbol.mockResolvedValue(true);
+        });
+
+        it('crypto 심볼의 equity-only 탭 "fundamental"은 허용하지 않는다', async () => {
+            await expect(
+                isTabAllowedForSymbol('BTCUSD', 'fundamental')
+            ).resolves.toBe(false);
+        });
+
+        it('crypto 심볼의 equity-only 탭 "financials"은 허용하지 않는다', async () => {
+            await expect(
+                isTabAllowedForSymbol('BTCUSD', 'financials')
+            ).resolves.toBe(false);
+        });
+
+        it('crypto 심볼의 equity-only 탭 "congress"은 허용하지 않는다', async () => {
+            await expect(
+                isTabAllowedForSymbol('BTCUSD', 'congress')
+            ).resolves.toBe(false);
+        });
+
+        it('crypto 심볼의 equity-only 탭 "options"은 허용하지 않는다', async () => {
+            await expect(
+                isTabAllowedForSymbol('BTCUSD', 'options')
+            ).resolves.toBe(false);
         });
     });
 });

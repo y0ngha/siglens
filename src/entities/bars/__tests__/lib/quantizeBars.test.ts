@@ -2,15 +2,15 @@
 // import 사이에 끼우면 import/first 위반(MISTAKES §17).
 vi.mock('@y0ngha/siglens-core', async () => ({
     ...(await vi.importActual('@y0ngha/siglens-core')),
-    isEtRegularSessionOpen: vi.fn(),
+    isRegularSessionOpen: vi.fn(),
 }));
 
 import { describe, expect, it, vi } from 'vitest';
 import type { Bar, BarsData } from '@y0ngha/siglens-core';
-import { isEtRegularSessionOpen } from '@y0ngha/siglens-core';
+import { US_EQUITY_SESSION, isRegularSessionOpen } from '@y0ngha/siglens-core';
 import { quantizeBarsDataToLastClosed } from '@/entities/bars/lib/quantizeBars';
 
-const mockOpen = vi.mocked(isEtRegularSessionOpen);
+const mockOpen = vi.mocked(isRegularSessionOpen);
 const now = new Date('2026-06-05T18:00:00Z');
 
 function bar(close: number): Bar {
@@ -338,11 +338,14 @@ describe('quantizeBarsDataToLastClosed', () => {
             expect(result.indicators.volumeProfile).toBeNull();
         });
 
-        it('calls isEtRegularSessionOpen with the exact now Date passed in', () => {
+        it('calls isRegularSessionOpen with the session and now Date passed in', () => {
             mockOpen.mockReturnValue(false);
             const specificNow = new Date('2026-06-05T20:30:00Z');
             quantizeBarsDataToLastClosed(makeData(), specificNow);
-            expect(mockOpen).toHaveBeenCalledWith(specificNow);
+            expect(mockOpen).toHaveBeenCalledWith(
+                US_EQUITY_SESSION,
+                specificNow
+            );
         });
     });
 });

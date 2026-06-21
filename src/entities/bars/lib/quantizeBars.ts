@@ -1,5 +1,9 @@
-import type { BarsData, IndicatorResult } from '@y0ngha/siglens-core';
-import { isEtRegularSessionOpen } from '@y0ngha/siglens-core';
+import type {
+    BarsData,
+    IndicatorResult,
+    MarketSessionSpec,
+} from '@y0ngha/siglens-core';
+import { US_EQUITY_SESSION, isRegularSessionOpen } from '@y0ngha/siglens-core';
 
 /**
  * Drops the last per-bar element from every per-bar indicator array in lockstep
@@ -82,9 +86,11 @@ function dropLastIndicatorBar(indicators: IndicatorResult): IndicatorResult {
  */
 export function quantizeBarsDataToLastClosed(
     data: BarsData,
-    now: Date
+    now: Date,
+    session: MarketSessionSpec = US_EQUITY_SESSION
 ): BarsData {
-    if (data.bars.length === 0 || !isEtRegularSessionOpen(now)) return data;
+    if (data.bars.length === 0 || !isRegularSessionOpen(session, now))
+        return data;
     return {
         ...data,
         bars: data.bars.slice(0, -1),

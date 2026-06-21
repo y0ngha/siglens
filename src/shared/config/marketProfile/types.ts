@@ -1,6 +1,22 @@
 import type { Timeframe } from '@y0ngha/siglens-core';
 
 /**
+ * Union of all tab route keys used in the symbol analysis page.
+ * Shared between `entities/ticker` (tab guard predicate) and
+ * `widgets/symbol-page` (TABS config, tabsFor). Defined in `shared` so both
+ * layers can import it without violating the FSD dependency direction.
+ */
+export type TabKey =
+    | 'chart'
+    | 'news'
+    | 'fundamental'
+    | 'financials'
+    | 'congress'
+    | 'options'
+    | 'fear-greed'
+    | 'overall';
+
+/**
  * Composite market-profile key — one entry per REAL tradable market.
  * Not a raw {assetClass × region} cartesian: crypto has no meaningful
  * region, and currency/session/language/provider/SEO all co-vary by the
@@ -56,7 +72,7 @@ export interface MarketProfileDescriptor {
     searchSource: 'fmp-us' | 'crypto-store';
 
     /** Tab keys (string ids matching symbolTabsConfig). */
-    tabs: readonly string[];
+    tabs: readonly TabKey[];
     defaultTimeframe: Timeframe;
     allowedTimeframes: readonly Timeframe[];
 

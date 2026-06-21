@@ -4,7 +4,9 @@ import {
     type GetBarsOptions,
     type MarketDataProvider,
     type MarketQuote,
+    type MarketSessionSpec,
     type Timeframe,
+    US_EQUITY_SESSION,
     computeBarsEffectiveTtl,
 } from '@y0ngha/siglens-core';
 import { getOrSetCache } from '@/shared/cache/getOrSetCache';
@@ -26,12 +28,6 @@ function buildBarsRawKey(o: GetBarsOptions): string {
 }
 
 /**
- * Interim: crypto is 24/7 so the ET-session TTL is wrong. Plan 4 replaces this
- * with the core MarketSessionSpec — tracking: https://github.com/y0ngha/siglens/issues/620
- */
-const CRYPTO_BARS_TTL_SECONDS = 60;
-
-/**
  * `MarketDataProvider`를 감싸 getBars/getQuote에 provider 레벨 Redis 캐싱을 주입하는
  * 데코레이터. 분석/차트 경로가 동일 provider를 거치므로(차트 getBarsAction, 분석
  * submitAnalysis/submitOverallAnalysis), 여기서 캐싱하면 차트·분석·today-quote·
@@ -46,20 +42,18 @@ const CRYPTO_BARS_TTL_SECONDS = 60;
  * market summary/sector signals 경로는 이 데코레이터를 쓰지 않는다(getMarketDataProvider
  * raw 사용 — market-isr 전담). 적용은 getCachedMarketDataProvider 팩토리가 담당.
  *
- * `alwaysOpen=true`는 크립토처럼 24/7 시장에 사용 — ET 세션 기반 TTL 대신 짧은
- * 고정 TTL을 적용한다. Plan 4에서 core MarketSessionSpec으로 교체 예정
- * (tracking: https://github.com/y0ngha/siglens/issues/620).
+ * `session`은 core의 `MarketSessionSpec`으로 시장 세션 특성(개폐장 시간, 24/7 여부)을
+ * 기술한다. `computeBarsEffectiveTtl`이 세션을 참고해 적절한 Redis TTL을 결정한다.
+ * crypto는 `CRYPTO_SESSION`(always-open), us-equity는 `US_EQUITY_SESSION`(ET 정규장).
  */
 export class CachedMarketDataProvider implements MarketDataProvider {
     constructor(
         private readonly inner: MarketDataProvider,
-        private readonly alwaysOpen = false
+        private readonly session: MarketSessionSpec = US_EQUITY_SESSION
     ) {}
 
     private ttl(timeframe: Timeframe): number {
-        return this.alwaysOpen
-            ? CRYPTO_BARS_TTL_SECONDS
-            : computeBarsEffectiveTtl(timeframe, new Date());
+        return computeBarsEffectiveTtl(timeframe, new Date(), this.session);
     }
 
     getBars = (options: GetBarsOptions): Promise<Bar[]> =>

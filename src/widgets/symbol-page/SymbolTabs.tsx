@@ -3,7 +3,12 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/shared/lib/cn';
-import { TABS } from './utils/symbolTabsConfig';
+import { useAssetInfo } from './hooks/useAssetInfo';
+import {
+    DEFAULT_MARKET_PROFILE,
+    marketProfileOf,
+} from '@/shared/config/marketProfile';
+import { tabsFor } from './utils/symbolTabsConfig';
 
 interface SymbolTabsProps {
     /** Ticker symbol. Will be uppercased internally. */
@@ -13,14 +18,34 @@ interface SymbolTabsProps {
 /** Header nav strip for the 4 analysis pages of a symbol. Uses nav + aria-current (URL-based, not tablist). */
 export function SymbolTabs({ symbol }: SymbolTabsProps) {
     const pathname = usePathname();
+    const assetInfo = useAssetInfo(symbol);
+
     const upper = symbol.toUpperCase();
+
+    // Loading state: assetInfo === undefined means the RQ query is still in-flight.
+    // Render a placeholder that matches the tab bar height/border so there is no
+    // layout shift when the real tabs appear.
+    if (assetInfo === undefined) {
+        return <div className="border-secondary-700 h-11 border-b" />;
+    }
+
+    /**
+     * Null = unknown symbol (the query resolved but found no matching asset).
+     * Default to the us-equity profile so we show the full tab set rather than
+     * a blank nav — the tab bar is still functional for any valid equity route.
+     */
+    const profile =
+        assetInfo !== null
+            ? marketProfileOf(assetInfo)
+            : DEFAULT_MARKET_PROFILE;
+    const tabs = tabsFor(profile);
 
     return (
         <nav
             aria-label="분석 종류"
             className="border-secondary-700 flex overflow-x-auto border-b"
         >
-            {TABS.map(t => {
+            {tabs.map(t => {
                 const href = t.hrefBuilder(upper);
                 const active = pathname === href;
                 return (

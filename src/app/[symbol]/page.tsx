@@ -14,6 +14,7 @@ import {
 } from '@/shared/config/market';
 import { isUnresolvableDegraded } from '@/shared/lib/symbolGuard';
 import { marketProfileOf } from '@/shared/config/marketProfile';
+import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import {
     buildAssetAboutNode,
     buildDisplayName,
@@ -121,13 +122,19 @@ export default async function SymbolPage({ params }: Props) {
     if (isUnresolvableDegraded(ticker, degraded)) notFound();
     if (!assetInfo) return notFound();
 
+    // Compute marketProfile once here so both TechnicalFactsSummary (Suspense fallback)
+    // and SymbolPageClient receive the same value without recomputing on the client.
+    const marketProfile = marketProfileOf(assetInfo);
+
     // default-tf bars를 정적화로 가져온다. 실패(인프라 다운 등)는 null로 degrade해
     // 페이지가 깨지지 않도록 한다. 이 bars는 Suspense fallback의 FactLayer SSR에만 쓰이며,
     // 클라이언트 hydration 후에는 SymbolPageClient가 인터랙티브 상태로 교체된다.
     //
     // SSR seed에 forming 봉을 박으면 ISR write churn 유발 — quantize로 마지막 완료 봉까지만.
-    // new Date()는 ISR-safe: quantize는 isEtRegularSessionOpen(now) boolean으로만 분기하므로
-    // 정규장 안에서는 분/초 차이가 결과에 영향 없음(cache content 동일).
+    // new Date()는 ISR-safe: quantize는 isRegularSessionOpen(session, now) boolean으로만
+    // 분기하므로 정규장 안에서는 분/초 차이가 결과에 영향 없음(cache content 동일).
+    // crypto(CRYPTO_SESSION)은 24/7 always-open이라 isRegularSessionOpen이 항상 true를
+    // 반환 → forming 봉을 항상 제거해 ISR write churn을 방지한다.
     const factBars = await getBarsStatic(
         ticker,
         DEFAULT_TIMEFRAME,
@@ -139,11 +146,11 @@ export default async function SymbolPage({ params }: Props) {
     const quantizedFactBars =
         factBars === null
             ? null
-            : quantizeBarsDataToLastClosed(factBars, new Date());
-
-    // Compute marketProfile once here so both TechnicalFactsSummary (Suspense fallback)
-    // and SymbolPageClient receive the same value without recomputing on the client.
-    const marketProfile = marketProfileOf(assetInfo);
+            : quantizeBarsDataToLastClosed(
+                  factBars,
+                  new Date(),
+                  sessionSpecFor(marketProfile)
+              );
 
     const displayName = buildDisplayName(assetInfo, ticker);
     const { fullTitle, description, url } = buildSymbolSeoContent(ticker, {

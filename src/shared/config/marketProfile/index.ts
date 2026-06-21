@@ -1,4 +1,5 @@
 export type {
+    TabKey,
     MarketProfileId,
     AssetClass,
     MarketRegion,

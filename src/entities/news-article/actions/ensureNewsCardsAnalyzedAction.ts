@@ -24,6 +24,8 @@ import {
     submitNewsCardAnalysis,
     type NewsItem,
 } from '@y0ngha/siglens-core';
+import { getDescriptor } from '@/shared/config/marketProfile';
+import { resolveMarketProfile } from '@/entities/ticker/lib/resolveAssetClass';
 
 /**
  * Submit card analysis for a single item and wait for the worker to finish,
@@ -83,7 +85,9 @@ export async function ensureNewsCardsAnalyzedAction(
         return;
     }
 
-    const newsClient = getNewsClient();
+    const profileId = await resolveMarketProfile(symbol);
+    const newsSource = getDescriptor(profileId).newsSource;
+    const newsClient = getNewsClient(newsSource);
     const { db } = getDatabaseClient();
     const repo = new DrizzleNewsRepository(db);
 

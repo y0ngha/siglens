@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { SymbolTabs } from '@/widgets/symbol-page/SymbolTabs';
 import { TABS } from '@/widgets/symbol-page/utils/symbolTabsConfig';
+import type { AssetInfo } from '@/shared/lib/types';
 
 let mockPathname = '/AAPL';
 
@@ -22,6 +23,13 @@ vi.mock('next/link', () => ({
             {children}
         </a>
     ),
+}));
+
+// useAssetInfo returns a resolved equity asset so all us-equity tabs are rendered.
+// (undefined = loading → shows placeholder div; null = unknown → shows us-equity tabs)
+const EQUITY_ASSET: AssetInfo = { symbol: 'AAPL', name: 'Apple Inc.' };
+vi.mock('@/widgets/symbol-page/hooks/useAssetInfo', () => ({
+    useAssetInfo: vi.fn(() => EQUITY_ASSET),
 }));
 
 describe('Symbol Tab Navigation', () => {

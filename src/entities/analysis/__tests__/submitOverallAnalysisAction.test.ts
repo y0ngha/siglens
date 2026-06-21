@@ -80,15 +80,28 @@ vi.mock('@/entities/financials-statements/lib/getFinancialsSnapshot', () => ({
     getFinancialsSnapshot: vi.fn(),
 }));
 
-vi.mock('@/entities/ticker/lib/cryptoAssetStore', () => ({
-    isCryptoSymbol: vi.fn().mockResolvedValue(false),
+vi.mock('@/entities/ticker/lib/resolveAssetClass', () => ({
+    resolveMarketProfile: vi.fn().mockResolvedValue('us-equity'),
 }));
+
+vi.mock('@/shared/api/market/sessionSpecFor', async () => {
+    const { US_EQUITY_SESSION, CRYPTO_SESSION } = await vi.importActual<
+        typeof import('@y0ngha/siglens-core')
+    >('@y0ngha/siglens-core');
+    return {
+        sessionSpecFor: vi.fn((profile: string) =>
+            profile === 'crypto' ? CRYPTO_SESSION : US_EQUITY_SESSION
+        ),
+    };
+});
 
 import { submitOverallAnalysisAction } from '../actions/submitOverallAnalysisAction';
 import {
     isEtRegularSessionOpen,
     submitOverallAnalysis,
     computeFinancialsScorecard,
+    CRYPTO_SESSION,
+    US_EQUITY_SESSION,
     type ModelId,
     type OptionsSnapshot,
     type SubmitOverallAnalysisResult,
@@ -110,7 +123,7 @@ import { isOpenInterestSnapshotStale } from '@/shared/lib/options/openInterestSt
 import type { AnalysisGateError } from '@/shared/lib/types';
 import { getFinancialsSnapshot } from '@/entities/financials-statements/lib/getFinancialsSnapshot';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
-import { isCryptoSymbol } from '@/entities/ticker/lib/cryptoAssetStore';
+import { resolveMarketProfile } from '@/entities/ticker/lib/resolveAssetClass';
 
 const mockProvider = {} as import('@y0ngha/siglens-core').MarketDataProvider;
 
@@ -151,8 +164,8 @@ const mockGetCachedMarketDataProvider =
     getCachedMarketDataProvider as MockedFunction<
         typeof getCachedMarketDataProvider
     >;
-const mockIsCryptoSymbol = isCryptoSymbol as MockedFunction<
-    typeof isCryptoSymbol
+const mockResolveMarketProfile = resolveMarketProfile as MockedFunction<
+    typeof resolveMarketProfile
 >;
 
 function makeSnapshot(): OptionsSnapshot {
@@ -713,9 +726,9 @@ describe('submitOverallAnalysisAction 함수는', () => {
         });
     });
 
-    describe('crypto symbol (alwaysOpen=true)', () => {
-        it('isCryptoSymbol이 true이면 getCachedMarketDataProvider를 true로 호출한다', async () => {
-            mockIsCryptoSymbol.mockResolvedValueOnce(true);
+    describe('crypto symbol — session spec routing', () => {
+        it('resolveMarketProfile가 "crypto"이면 getCachedMarketDataProvider를 CRYPTO_SESSION으로 호출한다', async () => {
+            mockResolveMarketProfile.mockResolvedValueOnce('crypto');
             mockSubmitOverallAnalysis.mockResolvedValueOnce(SUBMITTED_RESULT);
 
             await submitOverallAnalysisAction(
@@ -725,11 +738,13 @@ describe('submitOverallAnalysisAction 함수는', () => {
                 MODEL_ID
             );
 
-            expect(mockGetCachedMarketDataProvider).toHaveBeenCalledWith(true);
+            expect(mockGetCachedMarketDataProvider).toHaveBeenCalledWith(
+                CRYPTO_SESSION
+            );
         });
 
-        it('isCryptoSymbol이 false이면 getCachedMarketDataProvider를 false로 호출한다', async () => {
-            mockIsCryptoSymbol.mockResolvedValueOnce(false);
+        it('resolveMarketProfile가 "us-equity"이면 getCachedMarketDataProvider를 US_EQUITY_SESSION으로 호출한다', async () => {
+            mockResolveMarketProfile.mockResolvedValueOnce('us-equity');
             mockSubmitOverallAnalysis.mockResolvedValueOnce(SUBMITTED_RESULT);
 
             await submitOverallAnalysisAction(
@@ -739,7 +754,43 @@ describe('submitOverallAnalysisAction 함수는', () => {
                 MODEL_ID
             );
 
-            expect(mockGetCachedMarketDataProvider).toHaveBeenCalledWith(false);
+            expect(mockGetCachedMarketDataProvider).toHaveBeenCalledWith(
+                US_EQUITY_SESSION
+            );
+        });
+    });
+
+    describe('assetClass forwarding', () => {
+        it('resolveMarketProfile가 "crypto"이면 submitOverallAnalysis를 assetClass: "crypto"로 호출한다', async () => {
+            mockResolveMarketProfile.mockResolvedValueOnce('crypto');
+            mockSubmitOverallAnalysis.mockResolvedValueOnce(SUBMITTED_RESULT);
+
+            await submitOverallAnalysisAction(
+                'BTCUSD',
+                'Bitcoin',
+                '1Day',
+                MODEL_ID
+            );
+
+            expect(mockSubmitOverallAnalysis).toHaveBeenCalledWith(
+                expect.objectContaining({ assetClass: 'crypto' })
+            );
+        });
+
+        it('resolveMarketProfile가 "us-equity"이면 submitOverallAnalysis를 assetClass: "equity"로 호출한다', async () => {
+            mockResolveMarketProfile.mockResolvedValueOnce('us-equity');
+            mockSubmitOverallAnalysis.mockResolvedValueOnce(SUBMITTED_RESULT);
+
+            await submitOverallAnalysisAction(
+                'AAPL',
+                'Apple Inc.',
+                '1Day',
+                MODEL_ID
+            );
+
+            expect(mockSubmitOverallAnalysis).toHaveBeenCalledWith(
+                expect.objectContaining({ assetClass: 'equity' })
+            );
         });
     });
 });

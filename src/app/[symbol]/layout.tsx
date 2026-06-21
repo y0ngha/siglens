@@ -16,6 +16,7 @@ import { getBarsStatic, quantizeBarsDataToLastClosed } from '@/entities/bars';
 import { getAssetInfoResilient } from '@/entities/ticker';
 import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/shared/config/queryConfig';
 import { MS_PER_SECOND } from '@/shared/config/time';
+import { EMPTY_INDICATOR_RESULT, type BarsData } from '@y0ngha/siglens-core';
 
 interface SymbolLayoutProps {
     children: ReactNode;
@@ -114,6 +115,25 @@ export async function SymbolLayoutChrome({ params }: SymbolLayoutSegmentProps) {
             QUERY_KEYS.bars(symbol, DEFAULT_TIMEFRAME, assetInfo?.fmpSymbol),
             quantized,
             { updatedAt: stableUpdatedAt }
+        );
+    } else {
+        // Bars fetch failed (no FMP key, degraded symbol, etc.). Seed an empty
+        // BarsData into the query cache so useSuspenseQuery in
+        // FearGreedHeaderChipMounted → useBars finds data in the dehydrated state
+        // and does NOT call getBarsAction ('use server') during SSR. React 19
+        // throws "Server Functions cannot be called during initial render" when a
+        // Server Action is invoked from a query's queryFn at SSR time.
+        // updatedAt: 0 keeps the dehydrated HTML deterministic (never varies
+        // across ISR regenerations) and signals to the client that it should
+        // re-fetch immediately (staleTime check: 0 < Date.now()).
+        const emptyBars: BarsData = {
+            bars: [],
+            indicators: EMPTY_INDICATOR_RESULT,
+        };
+        queryClient.setQueryData(
+            QUERY_KEYS.bars(symbol, DEFAULT_TIMEFRAME, assetInfo?.fmpSymbol),
+            emptyBars,
+            { updatedAt: 0 }
         );
     }
 

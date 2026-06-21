@@ -35,6 +35,12 @@ vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: vi.fn().mockReturnValue({ db: {} }),
 }));
 
+// getAssetInfo is called by ensureNewsCardsAnalyzedAction (via resolveMarketProfile) to resolve
+// news source per asset. Default to equity (no marketProfile) so existing tests are unaffected.
+vi.mock('@/entities/ticker/lib/getAssetInfo', () => ({
+    getAssetInfo: vi.fn().mockResolvedValue({ symbol: 'AAPL', name: 'Apple' }),
+}));
+
 vi.mock('@/entities/news-article', () => ({
     DrizzleNewsRepository: vi.fn().mockImplementation(function () {
         return {
@@ -66,6 +72,7 @@ import type {
 } from '@y0ngha/siglens-core';
 import { DrizzleNewsRepository } from '@/entities/news-article';
 import { isRecentlyFetched, markFetched } from '../lib/newsRefreshFlag';
+import { getAssetInfo } from '@/entities/ticker/lib/getAssetInfo';
 
 const MockNewsRepository = DrizzleNewsRepository as MockedClass<
     typeof DrizzleNewsRepository
@@ -74,6 +81,7 @@ const mockIsRecentlyFetched = isRecentlyFetched as Mock;
 const mockMarkFetched = markFetched as Mock;
 const mockGetNewsClient = getNewsClient as Mock;
 const mockIsE2E = isE2E as MockedFunction<typeof isE2E>;
+const mockGetAssetInfo = getAssetInfo as MockedFunction<typeof getAssetInfo>;
 
 const mockSubmitNewsCardAnalysis = submitNewsCardAnalysis as MockedFunction<
     typeof submitNewsCardAnalysis
@@ -677,6 +685,30 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
             expect(mockAttachAnalysis).not.toHaveBeenCalled();
 
             warnSpy.mockRestore();
+        });
+    });
+
+    describe('뉴스 소스 분기는', () => {
+        it('equity 심볼(marketProfile 없음)은 getNewsClient를 "stock"으로 호출한다', async () => {
+            // Default mock already returns { symbol: 'AAPL', name: 'Apple' } (no marketProfile).
+            mockFetchNewsForPeriod.mockResolvedValue([]);
+
+            await ensureNewsCardsAnalyzedAction('AAPL');
+
+            expect(mockGetNewsClient).toHaveBeenCalledWith('stock');
+        });
+
+        it('crypto 심볼(marketProfile: "crypto")은 getNewsClient를 "crypto"로 호출한다', async () => {
+            mockGetAssetInfo.mockResolvedValueOnce({
+                symbol: 'BTCUSD',
+                name: 'Bitcoin',
+                marketProfile: 'crypto',
+            });
+            mockFetchNewsForPeriod.mockResolvedValue([]);
+
+            await ensureNewsCardsAnalyzedAction('BTCUSD');
+
+            expect(mockGetNewsClient).toHaveBeenCalledWith('crypto');
         });
     });
 
