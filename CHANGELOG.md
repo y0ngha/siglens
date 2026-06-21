@@ -1,5 +1,69 @@
 # Changelog
 
+# [0.25.0](https://github.com/y0ngha/siglens/compare/v0.24.0...v0.25.0) (2026-06-21)
+
+
+### Bug Fixes
+
+* **e2e:** seed economic_calendar so /economy SSR renders calendar events (CI-only regression from SP-A DB switch) ([1dd187c](https://github.com/y0ngha/siglens/commit/1dd187cd3bf29e91e02ae4a1cf1d954f49afc2f1))
+* **economy:** 배포 전 감사 반영 — 빈 분석 가드·formatNum non-finite·E2E 게이팅 패리티·error 바운더리·테스트 정리·백필 견고성·배치 시드 ([60d639f](https://github.com/y0ngha/siglens/commit/60d639f717964a8aeec36b7e16bcda1d07d4d0f8))
+* **economy:** fix TS2493 type cast in economicCalendarRepository test (SP-A) ([4d65482](https://github.com/y0ngha/siglens/commit/4d65482e921e2778cc820c7e61820184521a248b))
+* **economy:** PR [#611](https://github.com/y0ngha/siglens/issues/611) 리뷰 반영 — 훅 순서·as 주석·module-level cache·배치/병렬 dedup·테스트 보강 ([6240c6a](https://github.com/y0ngha/siglens/commit/6240c6a42ada102ef1089f3ca272922e798999b9))
+* **economy:** PR [#615](https://github.com/y0ngha/siglens/issues/615) 리뷰 + 재감사 반영 — as 주석·구분자 제거·배치 id 매핑·error 테스트·필터 e2e 강화 ([3069af2](https://github.com/y0ngha/siglens/commit/3069af2f77b27e577aa3581451553810275ce580))
+* **economy:** PR [#615](https://github.com/y0ngha/siglens/issues/615) R2 반영 — formatNum JSDoc undefined 제거·배치 poll 루프 헤더 종료·상수 동기화 주석 ([9f628cc](https://github.com/y0ngha/siglens/commit/9f628cca5daa2cfc022ec001a6e101f01990ab8c))
+* **economy:** PR [#616](https://github.com/y0ngha/siglens/issues/616) R1 반영 — 벌크 인서트·매직넘버 상수화·JSDoc 카운트 드리프트·WHAT 주석 제거 ([2a98448](https://github.com/y0ngha/siglens/commit/2a9844888cd546803afe6306ddb54ffb836478fe))
+* **economy:** SP-A Chunk2 리뷰 반영 — KST today 앵커 정정·chunkDays 가드·refresh-flag WHY ([135cad8](https://github.com/y0ngha/siglens/commit/135cad80d47a085c51bb5a0faaf97537401ec316))
+* **economy:** SP-B 리뷰 반영 — 번역 트리거를 클라 훅으로 이동(렌더 부작용 제거)·empty-done 테스트·dict 타입 안전 ([a6cf287](https://github.com/y0ngha/siglens/commit/a6cf287556eae92b06b3c09766afcc6af4293c7d))
+* **economy:** SP-B PR [#613](https://github.com/y0ngha/siglens/issues/613) 리뷰 반영 — barrel import·upsert 공유 spy·정확 matcher·Object.hasOwn·module-level cache ([445a89b](https://github.com/y0ngha/siglens/commit/445a89bef56b263b4c71dafda1de808611c4aac5))
+* **economy:** SP-B PR [#613](https://github.com/y0ngha/siglens/issues/613) R2 반영 — toSource dict 분기 테스트·선언적 unresolvedBases·빈배열 엣지·WHAT 주석 정리 ([2be736c](https://github.com/y0ngha/siglens/commit/2be736cfd92ce9f8181bde623e4c43100ad634b6))
+* **economy:** SP-B PR [#613](https://github.com/y0ngha/siglens/issues/613) R3 반영 — poll-timeout·Redis throw 분기 테스트·정밀 키 matcher·as 주석·WHAT 제거 ([7c3ee5a](https://github.com/y0ngha/siglens/commit/7c3ee5a47144e94ec218b15caf3bc31565a83466))
+* **economy:** SP-C PR [#612](https://github.com/y0ngha/siglens/issues/612) 리뷰 반영 — 훅 순서·impactMeta 단일화·DayCell useMemo ([1ad355e](https://github.com/y0ngha/siglens/commit/1ad355ebfe9deeb768371b1f6297a9f666666939))
+* **economy:** SP-C PR [#612](https://github.com/y0ngha/siglens/issues/612) R2 반영 — impactMeta→utils 이동·외부마진 호출자 이관·Low색 WHY ([00f76ed](https://github.com/y0ngha/siglens/commit/00f76ed66c39cfb194184117cdec3d2a9f66cd68))
+* **economy:** SP-D 리뷰 반영 — revalidateTag 게이트 boolean·poll 분기 테스트·analysis null·barrel 정리 ([2036b95](https://github.com/y0ngha/siglens/commit/2036b95b405ab1edf660f1fdadbc8827bbd4b9cc))
+* **economy:** SP-D PR [#614](https://github.com/y0ngha/siglens/issues/614) R1 반영 — no-op filter 제거·WHAT 주석·as 주석·섹션구분자·POLL 상수 단일화·seed try/finally ([6583dbe](https://github.com/y0ngha/siglens/commit/6583dbe179c0323d8df612bf0cd5389c858ea43e))
+* **economy:** SP-D PR [#614](https://github.com/y0ngha/siglens/issues/614) R2 반영 — withConcurrencyLimit/isNewsSentiment shared 단일화·test import 순서·과반실패 테스트·로깅 정리 ([313cf00](https://github.com/y0ngha/siglens/commit/313cf002564a23759e16591ee9799d7b92a83970))
+* **economy:** SP-D PR [#614](https://github.com/y0ngha/siglens/issues/614) R3 반영 — 루프 length 호이스팅·MS_PER_SECOND·정밀 matcher·type-predicate·seed 정리 ([c652c6d](https://github.com/y0ngha/siglens/commit/c652c6d666dd2b917c8a260354b7d2918619c83b))
+* **economy:** SP-D PR [#614](https://github.com/y0ngha/siglens/issues/614) R4 반영 — JSDoc 동시/eventual 정정·대칭 스왈로우 테스트·push WHY·drift·EOF·analyzedAt YAGNI 제거 ([36a9e2d](https://github.com/y0ngha/siglens/commit/36a9e2d355e429fc5aac7f1e91e29c91ae354e5a))
+* **economy:** SP-D PR [#614](https://github.com/y0ngha/siglens/issues/614) R5 반영 — vitest 중복 import 통합·JSDoc drift·정확 동시성 단언·MAJORITY_DIVISOR 출처 ([3777ff7](https://github.com/y0ngha/siglens/commit/3777ff7ec252e29ea59fb05f7009adf8e3e41bed))
+
+
+### Features
+
+* **economy:** 지표명 한국어 번역 DB 캐시 Gemini Batch 시드 스크립트 추가 ([16cf6e1](https://github.com/y0ngha/siglens/commit/16cf6e16d9090abcbb62218173ebfb56d73148fb))
+* **economy:** add AI analysis columns to economic_calendar (SP-D) ([f674c3f](https://github.com/y0ngha/siglens/commit/f674c3f669454aa0e3a461526d6f07e1bf2a5fa1))
+* **economy:** add calendar-analysis constants (SP-D) ([6722129](https://github.com/y0ngha/siglens/commit/6722129d52ef41f61c27f27dc008600fdfd988bb))
+* **economy:** add calendar-analysis refresh flag (SP-D) ([695a564](https://github.com/y0ngha/siglens/commit/695a564ab252622e3029f916ab84814414ff4c58))
+* **economy:** add deterministic economic_calendar id hash (SP-A) ([b8a7586](https://github.com/y0ngha/siglens/commit/b8a758697fd7ddc8453c00f3dc77c28ee9f54b29))
+* **economy:** add economic_calendar DB repository (SP-A) ([c3d42e2](https://github.com/y0ngha/siglens/commit/c3d42e2d4c6fc9979faad86c967537ab3732b0f4))
+* **economy:** add economic_calendar table for calendar history (SP-A) ([9cdc4aa](https://github.com/y0ngha/siglens/commit/9cdc4aa24aababe3d8e265cb90eb33d3fef4d2c6))
+* **economy:** add economic_indicator_translations table + types (SP-B) ([a18b132](https://github.com/y0ngha/siglens/commit/a18b1327861b51ea2bd36d21b625216323be1603))
+* **economy:** add economy calendar constants (SP-A) ([cfbdf83](https://github.com/y0ngha/siglens/commit/cfbdf83b6e07cfe597d2cae4d902df5e1db547f2))
+* **economy:** add ensureEconomicCalendarAction on-access ingestion (SP-A) ([6c2d6cc](https://github.com/y0ngha/siglens/commit/6c2d6cce520bc1c3cd6ccac84ca5f22e17ba7078))
+* **economy:** add ensureEconomicEventsAnalyzedAction (SP-D) ([eefe4f9](https://github.com/y0ngha/siglens/commit/eefe4f9e9f7fb184288c1c076b58377c7e5fd765))
+* **economy:** add ensureIndicatorTranslatedAction core translation seam (SP-B) ([db83446](https://github.com/y0ngha/siglens/commit/db834468c6424b92af0df58380a5352e6c0774f2))
+* **economy:** add ET calendar window helpers (SP-A) ([ae88586](https://github.com/y0ngha/siglens/commit/ae88586889e86995d23d50a369c8b1cb9b25b7ee))
+* **economy:** add event-sentiment guard + analysis view type (SP-D) ([523545f](https://github.com/y0ngha/siglens/commit/523545ffa3cc6d2bf87c531777cec144b982bb9d))
+* **economy:** add ImpactFilter chip group for calendar (SP-C) ([55f11dc](https://github.com/y0ngha/siglens/commit/55f11dc0b4f65ec31640f167c40102443ec03222))
+* **economy:** add indicator base-name normalizer for backfill dump (SP-A) ([0401ebf](https://github.com/y0ngha/siglens/commit/0401ebfe3ba3ab6c872ea7907a6d8f2c1e4a015d))
+* **economy:** add indicator name Korean i18n module + dict seed (SP-B) ([b151cfc](https://github.com/y0ngha/siglens/commit/b151cfcf557ea8c9e473a71783991b6023fc1b5b))
+* **economy:** add indicator translation constants (SP-B) ([96db083](https://github.com/y0ngha/siglens/commit/96db083765abbee82747f54dfe22024e72afed6e))
+* **economy:** add indicator translation DB repository (SP-B) ([c78b04c](https://github.com/y0ngha/siglens/commit/c78b04c1e0986c957827e56b9295ef87e526e574))
+* **economy:** add ISR-safe getCalendarFromDb reader (SP-A) ([aee847b](https://github.com/y0ngha/siglens/commit/aee847bfc5117ca53aee573e1dd40742d669cb41))
+* **economy:** add ISR-safe indicator label resolver + on-miss AI trigger (SP-B) ([8e3df18](https://github.com/y0ngha/siglens/commit/8e3df18c80c98b3417cfe544687b64301d55a809))
+* **economy:** add one-time economic calendar backfill script (SP-A) ([632b115](https://github.com/y0ngha/siglens/commit/632b115452bad85091d4787d33772e3a5843afbb))
+* **economy:** add one-time event-analysis seed script (SP-D) ([5f79e8a](https://github.com/y0ngha/siglens/commit/5f79e8a72488620d7520926cbef5eb20d13a7327))
+* **economy:** add per-name indicator translation pending-flag (SP-B) ([4fc3804](https://github.com/y0ngha/siglens/commit/4fc380415ff0fd2f383bc3b24a364ec8baef674b))
+* **economy:** add useEconomicCalendarTrigger on-access hook (SP-A) ([b8ee460](https://github.com/y0ngha/siglens/commit/b8ee460fea5433a2db4c2822e6dc9fe8ebb26f30))
+* **economy:** display event AI sentiment/summary/interpretation (SP-D) ([e720960](https://github.com/y0ngha/siglens/commit/e72096050364c1b9d5519b13687b850f5730d59f))
+* **economy:** fire analysis ensure on calendar mount (SP-D) ([df6a6ad](https://github.com/y0ngha/siglens/commit/df6a6ad3337c842b7bec15ec030df4d6016d6648))
+* **economy:** grid default-selects today + fires calendar trigger (SP-A) ([7741ede](https://github.com/y0ngha/siglens/commit/7741ede109b93a4f9089694effa698dcccec19db))
+* **economy:** render Korean indicator labels in calendar grid (SP-B) ([82504ca](https://github.com/y0ngha/siglens/commit/82504ca90730734c71987a10e74a23754384ae8a))
+* **economy:** repo analysis read/write + AI-column mapping (SP-D) ([eacecd1](https://github.com/y0ngha/siglens/commit/eacecd1224e543dc6d5ea006da1b4df47ad06910))
+* **economy:** resolve + pass Korean indicator labels on economy page (SP-B) ([6190825](https://github.com/y0ngha/siglens/commit/6190825bbbce09cd273e0d8008f3a6d69d9494c1))
+* **economy:** switch calendar data source to DB history layer (SP-A) ([878fec9](https://github.com/y0ngha/siglens/commit/878fec97204c59df8295ca5fca0196a989ab11a3))
+* **economy:** visually filter detail panel items by impact, keep in DOM (SP-C) ([3258adf](https://github.com/y0ngha/siglens/commit/3258adf2a2c743e8960c88e3fb8b52051cfc7277))
+* **economy:** wire impact filter state to calendar cells (SP-C) ([df7914a](https://github.com/y0ngha/siglens/commit/df7914a512d36b3e0ecb9ba9ffdd8ab7a348f1a8))
+
 # [0.24.0](https://github.com/y0ngha/siglens/compare/v0.23.0...v0.24.0) (2026-06-19)
 
 
