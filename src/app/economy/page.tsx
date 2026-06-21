@@ -26,6 +26,7 @@ import {
     SITE_NAME,
     SITE_URL,
 } from '@/shared/lib/seo';
+import { TERMS_PATH } from '@/shared/lib/legal';
 import { SECONDS_PER_HOUR } from '@/shared/config/time';
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
 import { JsonLd } from '@/shared/ui/JsonLd';
@@ -209,6 +210,7 @@ const DATASET_JSON_LD = {
     variableMeasured: DATASET_VARIABLE_MEASURED,
     temporalCoverage: DATASET_TEMPORAL_COVERAGE,
     creator: { '@type': 'Organization', name: SITE_NAME },
+    license: `${SITE_URL}${TERMS_PATH}`,
     url: ECONOMY_URL,
 };
 
