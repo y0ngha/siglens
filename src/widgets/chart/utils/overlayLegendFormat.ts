@@ -55,7 +55,7 @@ export function groupOverlayItems(
     ).groups;
 }
 
-export function formatOverlayValue(value: number | null): string {
+export function formatOverlayValue(value: number | null, decimals = 2): string {
     if (value === null) return '-';
-    return value.toFixed(2);
+    return value.toFixed(decimals);
 }

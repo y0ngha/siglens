@@ -1,5 +1,6 @@
 import type { Timeframe } from '@y0ngha/siglens-core';
 import { TICKER_RE } from './ticker';
+export { SYMBOL_EDGE_RE, isAdmissibleSymbolShape } from './ticker';
 
 /**
  * Valid U.S. ticker symbols. 형상 정의는 `@/shared/config/ticker`의 `TICKER_RE`로 통합됐고

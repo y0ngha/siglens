@@ -1,3 +1,5 @@
+import type { PriceFormatConfig } from '@/shared/config/marketProfile';
+
 type PriceSign = '+' | '';
 type PriceArrow = '▲' | '▼';
 type PriceArrowLabel = '상승' | '하락';
@@ -24,6 +26,52 @@ const USD_CURRENCY_FORMATTER = new Intl.NumberFormat('en-US', {
 
 export function formatUsdCurrency(price: number): string {
     return USD_CURRENCY_FORMATTER.format(price);
+}
+
+/**
+ * Number of significant digits to preserve after the leading zeros when
+ * formatting a sub-1 price (e.g. $0.000123 → 4 sig-figs → 8 decimal places).
+ * Kept as a named constant so the intent is self-documenting and the value is
+ * easy to change in one place.
+ */
+const DYNAMIC_DECIMAL_SIGNIFICANT_OFFSET = 4;
+
+/**
+ * Hard ceiling on decimal places. Prevents absurdly long fraction strings for
+ * extremely small values (e.g. $0.0000000000001 → capped at 12).
+ */
+const MAX_DYNAMIC_DECIMAL_PLACES = 12;
+
+/** Decimal places for a value under the dynamic-by-magnitude rule. */
+export function dynamicDecimals(value: number): number {
+    // 비유한값(NaN/Infinity) 방어: log10 경로가 NaN을 반환하면 formatPrice가
+    // Intl.NumberFormat에 NaN fraction-digits를 넘겨 RangeError를 던진다.
+    if (!Number.isFinite(value)) return 2;
+    const abs = Math.abs(value);
+    // Single guard covers both >= 1 and >= 1000 (same result, so >= 1000 was dead).
+    if (abs >= 1) return 2;
+    if (abs === 0) return 2;
+    const leadingZeros = Math.floor(-Math.log10(abs));
+    return Math.min(
+        leadingZeros + DYNAMIC_DECIMAL_SIGNIFICANT_OFFSET,
+        MAX_DYNAMIC_DECIMAL_PLACES
+    );
+}
+
+/** Format a price as currency, applying the descriptor's precision rule. */
+export function formatPrice(value: number, spec: PriceFormatConfig): string {
+    const digits =
+        spec.precision.kind === 'fixed'
+            ? spec.precision.digits
+            : spec.precision.kind === 'integer'
+              ? 0
+              : dynamicDecimals(value);
+    return new Intl.NumberFormat(spec.locale, {
+        style: 'currency',
+        currency: spec.currency,
+        minimumFractionDigits: digits,
+        maximumFractionDigits: digits,
+    }).format(value);
 }
 
 export function formatPriceChange(percent: number): PriceChangeDisplay {

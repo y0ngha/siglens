@@ -17,7 +17,8 @@ export type MarketRegion = 'us' | 'global';
 /**
  * Interim session model (siglens-local). A later core plan replaces this
  * with `MarketSessionSpec` from `@y0ngha/siglens-core`. Kept minimal so
- * Plans 1–2 ship without the cross-repo core change.
+ * Plans 1–2 ship without the cross-repo core change
+ * (tracking: https://github.com/y0ngha/siglens/issues/620).
  */
 export type SessionModel = 'us-equity-et' | 'always-open';
 

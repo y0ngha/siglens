@@ -27,6 +27,10 @@ vi.mock('@/shared/api/market/getCachedMarketDataProvider', () => ({
     getCachedMarketDataProvider: vi.fn(() => mockProvider),
 }));
 
+vi.mock('@/entities/ticker/lib/cryptoAssetStore', () => ({
+    isCryptoSymbol: vi.fn().mockResolvedValue(false),
+}));
+
 import { headers } from 'next/headers';
 import { resolveTierAndByok } from '@/shared/lib/byokGate';
 import type { AnalysisGateError } from '@/shared/lib/types';
@@ -37,6 +41,8 @@ import {
     type SubmitAnalysisGatedResult,
 } from '@y0ngha/siglens-core';
 import { getCurrentUser } from '@/entities/session/lib/getCurrentUser';
+import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
+import { isCryptoSymbol } from '@/entities/ticker/lib/cryptoAssetStore';
 
 const mockProvider = {} as import('@y0ngha/siglens-core').MarketDataProvider;
 
@@ -50,6 +56,13 @@ const mockSubmitAnalysis = submitAnalysis as MockedFunction<
 >;
 const mockGetCurrentUser = getCurrentUser as MockedFunction<
     typeof getCurrentUser
+>;
+const mockGetCachedMarketDataProvider =
+    getCachedMarketDataProvider as MockedFunction<
+        typeof getCachedMarketDataProvider
+    >;
+const mockIsCryptoSymbol = isCryptoSymbol as MockedFunction<
+    typeof isCryptoSymbol
 >;
 
 const cachedResult: SubmitAnalysisGatedResult = {
@@ -276,6 +289,26 @@ describe('submitAnalysisAction tier + BYOK gate', () => {
         expect(result).toMatchObject({
             status: 'error',
             error: expect.objectContaining({ code: 'unexpected_error' }),
+        });
+    });
+
+    describe('crypto symbol (alwaysOpen=true)', () => {
+        it('isCryptoSymbol이 true이면 getCachedMarketDataProvider를 true로 호출한다', async () => {
+            mockIsCryptoSymbol.mockResolvedValueOnce(true);
+            mockSubmitAnalysis.mockResolvedValueOnce(cachedResult);
+
+            await submitAnalysisAction('BTCUSD', 'Bitcoin', '1Day', false);
+
+            expect(mockGetCachedMarketDataProvider).toHaveBeenCalledWith(true);
+        });
+
+        it('isCryptoSymbol이 false이면 getCachedMarketDataProvider를 false로 호출한다', async () => {
+            mockIsCryptoSymbol.mockResolvedValueOnce(false);
+            mockSubmitAnalysis.mockResolvedValueOnce(cachedResult);
+
+            await submitAnalysisAction('AAPL', 'Apple', '1Day', false);
+
+            expect(mockGetCachedMarketDataProvider).toHaveBeenCalledWith(false);
         });
     });
 });

@@ -27,7 +27,11 @@ import { ValuationCard } from '@/widgets/fundamental/sections/ValuationCard';
 import { CrossLinkCards, SymbolPageHeading } from '@/widgets/symbol-page';
 import { SectionSkeleton } from '@/widgets/symbol-page/SectionSkeleton';
 import { JsonLd } from '@/shared/ui/JsonLd';
-import { SymbolRouteParams, VALID_TICKER_RE } from '@/shared/config/market';
+import {
+    SymbolRouteParams,
+    isAdmissibleSymbolShape,
+} from '@/shared/config/market';
+import { isUnresolvableDegraded } from '@/shared/lib/symbolGuard';
 import { SECONDS_PER_DAY } from '@/shared/config/time';
 import {
     buildAssetAboutNode,
@@ -68,7 +72,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { symbol } = await params;
     const upper = symbol.toUpperCase();
     // 본문 notFound()와 일관: 잘못된 ticker는 메타데이터를 비우고 noindex로 응답한다.
-    if (!VALID_TICKER_RE.test(upper)) {
+    if (!isAdmissibleSymbolShape(upper)) {
         return NOINDEX_SYMBOL_METADATA;
     }
     const { assetInfo, degraded } = await getAssetInfoResilient(upper);
@@ -361,7 +365,7 @@ export default async function FundamentalPage({ params }: Props) {
     const { symbol } = await params;
     const upper = symbol.toUpperCase();
 
-    if (!VALID_TICKER_RE.test(upper)) {
+    if (!isAdmissibleSymbolShape(upper)) {
         notFound();
     }
 
@@ -369,11 +373,15 @@ export default async function FundamentalPage({ params }: Props) {
     // assetInfo는 한국어 종목명을 displayName에 합치기 위해 병렬로 가져온다.
     // getProfileResilient는 ['fundamental:profile', upper] 키를 ProfileSection과 공유한다
     // → cross-request ISR 캐시 + 같은 요청 React.cache 공유(추가 FMP round-trip 없음).
-    const [{ profile, degraded: profileDegraded }, { assetInfo }] =
+    const [{ profile, degraded: profileDegraded }, { assetInfo, degraded }] =
         await Promise.all([
             getProfileResilient(upper),
             getAssetInfoResilient(upper),
         ]);
+
+    // degraded + digit-first 심볼 = crypto_assets DB와 FMP가 동시 다운 중이고 resolve 불가
+    // → 차트 페이지와 동일한 notFound 처리로 sibling 일관성 유지.
+    if (isUnresolvableDegraded(upper, degraded)) notFound();
     const displayName = assetInfo ? buildDisplayName(assetInfo, upper) : upper;
     // FMP 인프라 일시 실패: 500 대신 degrade 안내(200)를 렌더한다. generateMetadata가
     // 동일 조건을 noindex 처리하므로 이 thin 페이지는 색인되지 않고, 다음 revalidate에

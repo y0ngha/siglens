@@ -66,6 +66,11 @@ import {
     EMPTY_INDICATOR_RESULT,
     MA_DEFAULT_PERIODS,
 } from '@y0ngha/siglens-core';
+import {
+    getDescriptor,
+    type MarketProfileId,
+} from '@/shared/config/marketProfile';
+import { dynamicDecimals } from '@/shared/lib/priceFormat';
 import { IndicatorSettingsModal } from './ui/IndicatorSettingsModal';
 import {
     INDICATOR_META,
@@ -92,6 +97,27 @@ interface StockChartProps {
     onChartRemove?: () => void;
     /** aria-label에 들어갈 ticker — 스크린 리더에 차트 종목 안내. 없으면 generic label로 fallback. */
     ticker?: string;
+    /**
+     * Market profile id — drives price precision on the candlestick series.
+     * Defaults to 'us-equity' (fixed 2dp) for backward compatibility.
+     * Pass 'crypto' to enable dynamic-by-magnitude precision for sub-cent tokens.
+     */
+    marketProfile?: MarketProfileId;
+}
+
+/**
+ * Resolve the number of price decimals for a market profile.
+ * fixed/integer descriptors are static; dynamic (crypto) derives significant
+ * digits from the latest close magnitude so sub-cent tokens aren't flattened.
+ */
+function resolvePriceDecimals(
+    marketProfile: MarketProfileId,
+    lastClose: number | undefined
+): number {
+    const precision = getDescriptor(marketProfile).priceFormat.precision;
+    if (precision.kind === 'fixed') return precision.digits;
+    if (precision.kind === 'integer') return 0;
+    return dynamicDecimals(lastClose ?? 1);
 }
 
 export function StockChart({
@@ -104,6 +130,7 @@ export function StockChart({
     onChartReady,
     onChartRemove,
     ticker,
+    marketProfile = 'us-equity',
 }: StockChartProps) {
     const wrapperRef = useRef<HTMLDivElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -115,6 +142,10 @@ export function StockChart({
     const onChartRemoveRef = useRef(onChartRemove);
     // paneIndices effect의 첫 mount skip 마커 (아래 useEffect 참조).
     const isInitialPaneRenderRef = useRef(true);
+    // mount-only 차트 생성 effect가 deps 없이([]) priceDecimals를 읽을 수 있도록 ref로 미러링.
+    // effect에 priceDecimals를 deps로 추가하면 decimals 변경마다 차트가 재생성되므로 금지.
+    // 초기값 2 (usEquity 고정 소수점과 일치); no-deps sync effect가 최신값으로 유지한다.
+    const priceDecimalsRef = useRef<number>(2);
 
     const { visible, toggle, paneIndices } = useIndicatorVisibility();
 
@@ -125,9 +156,18 @@ export function StockChart({
         lineWidth: DEFAULT_LINE_WIDTH,
     };
 
+    // 가격 표시 소수 자릿수 — 캔들 시리즈 priceFormat과 오버레이 범례가 공유한다.
+    // descriptor가 fixed/integer면 정적, dynamic(크립토)이면 최신 종가의 크기에서
+    // 유효 자릿수를 파생한다(sub-cent 토큰이 2dp로 0.00으로 뭉개지는 것 방지).
+    const priceDecimals = useMemo(
+        () => resolvePriceDecimals(marketProfile, bars.at(-1)?.close),
+        [marketProfile, bars]
+    );
+
     useEffect(() => {
         onChartReadyRef.current = onChartReady;
         onChartRemoveRef.current = onChartRemove;
+        priceDecimalsRef.current = priceDecimals;
     });
 
     useEffect(() => {
@@ -146,6 +186,9 @@ export function StockChart({
         });
 
         chartRef.current = chart;
+
+        const decimals = priceDecimalsRef.current;
+
         seriesRef.current = chart.addSeries(CandlestickSeries, {
             upColor: CHART_COLORS.bullish,
             downColor: CHART_COLORS.bearish,
@@ -153,6 +196,11 @@ export function StockChart({
             borderDownColor: CHART_COLORS.bearish,
             wickUpColor: CHART_COLORS.bullish,
             wickDownColor: CHART_COLORS.bearish,
+            priceFormat: {
+                type: 'price',
+                precision: decimals,
+                minMove: 10 ** -decimals,
+            },
             // LWC addSeries() 반환 타입에 UTCTimestamp 제네릭이 없어 타입 가드 불가 — 라이브러리 타입 한계.
         }) as ISeriesApi<'Candlestick', UTCTimestamp>;
 
@@ -195,6 +243,20 @@ export function StockChart({
     useEffect(() => {
         chartRef.current?.timeScale().fitContent();
     }, [bars]);
+
+    // 컴포넌트가 마운트된 채 클라이언트 사이드 심볼 탐색(예: 일반 주식 → 크립토)이 일어나면
+    // mount-only effect의 priceFormat이 구식이 된다. priceDecimals 변경 시 기존 시리즈에
+    // applyOptions를 적용해 sub-cent 토큰이 망가진 가격으로 표시되는 것을 방지한다.
+    useEffect(() => {
+        if (!seriesRef.current) return;
+        seriesRef.current.applyOptions({
+            priceFormat: {
+                type: 'price',
+                precision: priceDecimals,
+                minMove: 10 ** -priceDecimals,
+            },
+        });
+    }, [priceDecimals]);
 
     const { visiblePeriods: maVisiblePeriods, togglePeriod: toggleMAPeriod } =
         useMAOverlay(commonHookParams);
@@ -689,7 +751,10 @@ export function StockChart({
                 <IndicatorSettingsModal bindings={indicatorBindings} />
             </div>
             <div className="pointer-events-none absolute top-2 left-2 z-10 flex flex-col gap-1">
-                <OverlayLegend items={overlayLegendItems} />
+                <OverlayLegend
+                    items={overlayLegendItems}
+                    decimals={priceDecimals}
+                />
             </div>
         </div>
     );

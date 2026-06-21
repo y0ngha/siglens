@@ -18,6 +18,10 @@ vi.mock('@/shared/api/market/getCachedMarketDataProvider', () => ({
     getCachedMarketDataProvider: vi.fn(() => mockMarketProvider),
 }));
 
+vi.mock('@/entities/ticker/lib/cryptoAssetStore', () => ({
+    isCryptoSymbol: vi.fn().mockResolvedValue(false),
+}));
+
 import type { MockedFunction } from 'vitest';
 import { getBarsAction } from '../actions/getBarsAction';
 import {
@@ -30,6 +34,8 @@ import {
     FMP_DATA_UNAVAILABLE_MESSAGE,
     FMP_TEMPORARY_UNAVAILABLE_MESSAGE,
 } from '@/shared/api/fmp/fmpUserMessage';
+import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
+import { isCryptoSymbol } from '@/entities/ticker/lib/cryptoAssetStore';
 
 const mockMarketProvider =
     {} as import('@y0ngha/siglens-core').MarketDataProvider;
@@ -38,6 +44,13 @@ const mockFetchBarsWithIndicators = fetchBarsWithIndicators as MockedFunction<
     typeof fetchBarsWithIndicators
 >;
 const sleepMock = sleep as MockedFunction<typeof sleep>;
+const mockGetCachedMarketDataProvider =
+    getCachedMarketDataProvider as MockedFunction<
+        typeof getCachedMarketDataProvider
+    >;
+const mockIsCryptoSymbol = isCryptoSymbol as MockedFunction<
+    typeof isCryptoSymbol
+>;
 
 const mockBarsData: BarsData = {
     bars: [
@@ -160,6 +173,26 @@ describe('getBarsAction 함수는', () => {
                 varianceRatio: expect.any(Array),
                 regression: expect.any(Array),
             });
+        });
+    });
+
+    describe('crypto symbol (alwaysOpen=true)', () => {
+        it('isCryptoSymbol이 true이면 getCachedMarketDataProvider를 true로 호출한다', async () => {
+            mockIsCryptoSymbol.mockResolvedValueOnce(true);
+            mockFetchBarsWithIndicators.mockResolvedValueOnce(mockBarsData);
+
+            await getBarsAction('BTCUSD', '1Day');
+
+            expect(mockGetCachedMarketDataProvider).toHaveBeenCalledWith(true);
+        });
+
+        it('isCryptoSymbol이 false이면 getCachedMarketDataProvider를 false로 호출한다', async () => {
+            mockIsCryptoSymbol.mockResolvedValueOnce(false);
+            mockFetchBarsWithIndicators.mockResolvedValueOnce(mockBarsData);
+
+            await getBarsAction('AAPL', '1Day');
+
+            expect(mockGetCachedMarketDataProvider).toHaveBeenCalledWith(false);
         });
     });
 

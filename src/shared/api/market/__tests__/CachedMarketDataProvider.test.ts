@@ -7,15 +7,25 @@ import type {
     MarketQuote,
 } from '@y0ngha/siglens-core';
 
+/**
+ * Captures the `ex` TTL passed to redis.set so we can assert that
+ * `alwaysOpen=true` uses the fixed CRYPTO_BARS_TTL_SECONDS (60 s) and
+ * `alwaysOpen=false` delegates to `computeBarsEffectiveTtl`.
+ */
+const lastSetTtl: { value: number | undefined } = { value: undefined };
+
 const { store, fakeRedis } = vi.hoisted(() => {
     const store = new Map<string, unknown>();
     const fakeRedis = {
         get: vi.fn(async (key: string) =>
             store.has(key) ? store.get(key) : null
         ),
-        set: vi.fn(async (key: string, value: unknown) => {
-            store.set(key, value);
-        }),
+        set: vi.fn(
+            async (key: string, value: unknown, opts?: { ex?: number }) => {
+                store.set(key, value);
+                lastSetTtl.value = opts?.ex;
+            }
+        ),
     };
     return { store, fakeRedis };
 });
@@ -54,6 +64,7 @@ const barsOpts = (o: Partial<GetBarsOptions> = {}): GetBarsOptions => ({
 function reset() {
     store.clear();
     redisEnabled = true;
+    lastSetTtl.value = undefined;
     fakeRedis.get.mockClear();
     fakeRedis.set.mockClear();
 }
@@ -155,5 +166,25 @@ describe('CachedMarketDataProvider', () => {
         expect(await p.getBars(barsOpts())).toEqual(SAMPLE_BARS);
         expect(await p.getQuote('AAPL')).toEqual(SAMPLE_QUOTE);
         expect(store.size).toBe(0);
+    });
+
+    describe('alwaysOpen=true (crypto) — TTL', () => {
+        it('bars TTL은 CRYPTO_BARS_TTL_SECONDS(60초) 고정이다', async () => {
+            const inner = makeInner();
+            const p = new CachedMarketDataProvider(inner, true);
+            await p.getBars(barsOpts());
+            // CRYPTO_BARS_TTL_SECONDS = 60 (CachedMarketDataProvider.ts 상수)
+            expect(lastSetTtl.value).toBe(60);
+        });
+
+        it('alwaysOpen=false → computeBarsEffectiveTtl에 위임하므로 60이 아닌 값을 사용한다', async () => {
+            const inner = makeInner();
+            // alwaysOpen 기본값 false — ET 세션 기반 TTL(300 이상)을 반환한다.
+            const p = new CachedMarketDataProvider(inner);
+            await p.getBars(barsOpts());
+            // CRYPTO_BARS_TTL_SECONDS(60)와 다름을 보장 — 정확한 값은 computeBarsEffectiveTtl 구현에 종속.
+            expect(lastSetTtl.value).not.toBe(60);
+            expect(typeof lastSetTtl.value).toBe('number');
+        });
     });
 });

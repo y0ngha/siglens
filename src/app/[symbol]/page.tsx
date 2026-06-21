@@ -10,8 +10,10 @@ import { peekAnalysisStatic } from '@/entities/analysis';
 import {
     DEFAULT_TIMEFRAME,
     SymbolRouteParams,
-    VALID_TICKER_RE,
+    isAdmissibleSymbolShape,
 } from '@/shared/config/market';
+import { isUnresolvableDegraded } from '@/shared/lib/symbolGuard';
+import { marketProfileOf } from '@/shared/config/marketProfile';
 import {
     buildAssetAboutNode,
     buildDisplayName,
@@ -54,7 +56,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { symbol } = await params;
     const ticker = symbol.toUpperCase();
     // 본문 notFound()와 일관: 잘못된 ticker는 메타데이터를 비우고 noindex로 응답한다.
-    if (!VALID_TICKER_RE.test(ticker)) {
+    if (!isAdmissibleSymbolShape(ticker)) {
         return NOINDEX_SYMBOL_METADATA;
     }
     const { assetInfo, degraded } = await getAssetInfoResilient(ticker);
@@ -104,11 +106,19 @@ export default async function SymbolPage({ params }: Props) {
     const ticker = symbol.toUpperCase();
     // 다른 5개 sibling 페이지(news/fundamental/options/overall/fear-greed)와 일관:
     // 잘못된 ticker 형식은 본문에서도 notFound로 즉시 차단한다 (generateMetadata 가드와 짝).
-    if (!VALID_TICKER_RE.test(ticker)) notFound();
-    const [{ assetInfo }, skillCounts] = await Promise.all([
+    if (!isAdmissibleSymbolShape(ticker)) notFound();
+    const [{ assetInfo, degraded }, skillCounts] = await Promise.all([
         getAssetInfoResilient(ticker),
         countSkillFiles(),
     ]);
+    // 확장된 게이트(SYMBOL_EDGE_RE)는 crypto 심볼을 수용하기 위해 이전 VALID_TICKER_RE보다
+    // 넓다. 정상 조건에서 crypto 심볼은 crypto_assets DB에서 직접 해결된다(degrade 없음).
+    // crypto_assets DB와 FMP가 동시에 다운된 경우에만 예외적으로 degrade 가능하며, 이는
+    // 허용된 한시적 제약이다. degraded + TICKER_RE 불합격 = DB에도 crypto_assets에도 없는
+    // 심볼이 FMP 없이 resolve 실패한 것 → 실재하지 않는 종목으로 취급해 notFound.
+    // (MSFT 같은 정상 종목이 FMP 일시 장애 중 degrade되는 경우는 TICKER_RE를 통과하므로
+    // 기존 degrade 200+noindex 동작을 유지한다.)
+    if (isUnresolvableDegraded(ticker, degraded)) notFound();
     if (!assetInfo) return notFound();
 
     // default-tf bars를 정적화로 가져온다. 실패(인프라 다운 등)는 null로 degrade해
@@ -130,6 +140,10 @@ export default async function SymbolPage({ params }: Props) {
         factBars === null
             ? null
             : quantizeBarsDataToLastClosed(factBars, new Date());
+
+    // Compute marketProfile once here so both TechnicalFactsSummary (Suspense fallback)
+    // and SymbolPageClient receive the same value without recomputing on the client.
+    const marketProfile = marketProfileOf(assetInfo);
 
     const displayName = buildDisplayName(assetInfo, ticker);
     const { fullTitle, description, url } = buildSymbolSeoContent(ticker, {
@@ -320,6 +334,7 @@ export default async function SymbolPage({ params }: Props) {
                                         indicators={
                                             quantizedFactBars.indicators
                                         }
+                                        marketProfile={marketProfile}
                                     />
                                 ) : (
                                     <div
@@ -340,6 +355,7 @@ export default async function SymbolPage({ params }: Props) {
                             // 항상 true를 유지한다(봇은 enqueue가 skip되어 생성 안 됨).
                             initialAnalysisFailed={true}
                             indicatorCount={skillCounts.indicators}
+                            marketProfile={marketProfile}
                         />
                     </Suspense>
                 </HydrationBoundary>

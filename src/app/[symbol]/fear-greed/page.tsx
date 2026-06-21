@@ -6,8 +6,9 @@ import { JsonLd } from '@/shared/ui/JsonLd';
 import {
     DEFAULT_TIMEFRAME,
     SymbolRouteParams,
-    VALID_TICKER_RE,
+    isAdmissibleSymbolShape,
 } from '@/shared/config/market';
+import { isUnresolvableDegraded } from '@/shared/lib/symbolGuard';
 import {
     buildAssetAboutNode,
     buildDisplayName,
@@ -51,7 +52,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { symbol } = await params;
     const ticker = symbol.toUpperCase();
     // 본문 notFound()와 일관: 잘못된 ticker는 메타데이터를 비우고 noindex로 응답한다.
-    if (!VALID_TICKER_RE.test(ticker)) {
+    if (!isAdmissibleSymbolShape(ticker)) {
         return NOINDEX_SYMBOL_METADATA;
     }
     const { assetInfo, degraded } = await getAssetInfoResilient(ticker);
@@ -95,11 +96,14 @@ export default async function SymbolFearGreedPage({ params }: Props) {
     const { symbol } = await params;
     const ticker = symbol.toUpperCase();
 
-    if (!VALID_TICKER_RE.test(ticker)) {
+    if (!isAdmissibleSymbolShape(ticker)) {
         notFound();
     }
 
-    const { assetInfo } = await getAssetInfoResilient(ticker);
+    const { assetInfo, degraded } = await getAssetInfoResilient(ticker);
+    // degraded + digit-first 심볼 = 두 데이터 소스가 동시 다운 중이고 resolve 불가
+    // → 차트 페이지와 동일한 notFound 처리로 sibling 일관성 유지.
+    if (isUnresolvableDegraded(ticker, degraded)) notFound();
     if (!assetInfo) {
         notFound();
     }

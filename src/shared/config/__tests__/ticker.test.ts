@@ -1,4 +1,9 @@
-import { TICKER_RE } from '@/shared/config/ticker';
+import { describe, it, expect } from 'vitest';
+import {
+    TICKER_RE,
+    SYMBOL_EDGE_RE,
+    isAdmissibleSymbolShape,
+} from '@/shared/config/ticker';
 
 describe('TICKER_RE', () => {
     it('RegExp 인스턴스이다', () => {
@@ -58,5 +63,33 @@ describe('TICKER_RE', () => {
         it('특수문자를 거부한다', () => {
             expect(TICKER_RE.test('A@BC')).toBe(false);
         });
+    });
+});
+
+describe('symbol shape checks', () => {
+    it('TICKER_RE matches up-to-8-char uppercase symbols incl. BTCUSD-shaped ones', () => {
+        expect(TICKER_RE.test('AAPL')).toBe(true);
+        expect(TICKER_RE.test('BRK.B')).toBe(true);
+        expect(TICKER_RE.test('BTCUSD')).toBe(true); // 6 letters ≤ 8, passes
+    });
+
+    it('SYMBOL_EDGE_RE is the matcher backing isAdmissibleSymbolShape', () => {
+        expect(SYMBOL_EDGE_RE).toBeInstanceOf(RegExp);
+        expect(SYMBOL_EDGE_RE.test('BTCUSD')).toBe(true);
+        expect(SYMBOL_EDGE_RE.test('a b')).toBe(false);
+    });
+
+    it('SYMBOL_EDGE_RE admits crypto shapes US regex would reject', () => {
+        expect(isAdmissibleSymbolShape('BTCUSD')).toBe(true);
+        expect(isAdmissibleSymbolShape('1000SATSUSD')).toBe(true); // digit-first
+        expect(isAdmissibleSymbolShape('1-UPUSD')).toBe(true); // hyphen + digit-first
+        expect(isAdmissibleSymbolShape('AAPL')).toBe(true);
+    });
+
+    it('SYMBOL_EDGE_RE rejects junk and over-long input', () => {
+        expect(isAdmissibleSymbolShape('')).toBe(false);
+        expect(isAdmissibleSymbolShape('a b')).toBe(false);
+        expect(isAdmissibleSymbolShape('!@#')).toBe(false);
+        expect(isAdmissibleSymbolShape('TOOOOOOOOOOOOOOOOONG')).toBe(false); // > 16
     });
 });

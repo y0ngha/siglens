@@ -7,9 +7,15 @@ import { formatOverlayValue } from './utils/overlayLegendFormat';
 
 interface OverlayLegendProps {
     items: OverlayLegendItem[];
+    /**
+     * Decimal places for overlay values — matches the candlestick series
+     * precision so crypto sub-cent overlays aren't flattened to 2dp.
+     * Defaults to 2 for backward compatibility (us-equity).
+     */
+    decimals?: number;
 }
 
-export function OverlayLegend({ items }: OverlayLegendProps) {
+export function OverlayLegend({ items, decimals = 2 }: OverlayLegendProps) {
     const groups = useOverlayGroups(items);
 
     if (items.length === 0) return null;
@@ -32,7 +38,7 @@ export function OverlayLegend({ items }: OverlayLegendProps) {
                             }
                         >
                             {'\u25CF'} {item.name}{' '}
-                            {formatOverlayValue(item.value)}
+                            {formatOverlayValue(item.value, decimals)}
                         </span>
                     ))}
                 </div>

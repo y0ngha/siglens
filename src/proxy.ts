@@ -4,7 +4,7 @@ import { AUTH_SESSION_COOKIE_NAME } from '@/shared/config/cookieNames';
 // type 의존성을 거치는데, Turbopack의 `import type` strip이 dev 환경에서 간헐적으로
 // 누락돼 [symbol] 라우트 fetch가 차단되는 회귀가 관찰돼 회피한다 (자세한 배경은
 // ticker.ts JSDoc 참조).
-import { TICKER_RE } from '@/shared/config/ticker';
+import { SYMBOL_EDGE_RE } from '@/shared/config/ticker';
 import { NextResponse, type NextRequest } from 'next/server';
 
 const RESERVED_FIRST_SEGMENTS = new Set([
@@ -51,7 +51,7 @@ export function proxy(req: NextRequest): NextResponse {
         const qRaw = reqUrl.searchParams.get('q');
         if (qRaw) {
             const ticker = qRaw.trim().toUpperCase();
-            if (TICKER_RE.test(ticker)) {
+            if (SYMBOL_EDGE_RE.test(ticker)) {
                 return NextResponse.redirect(new URL('/' + ticker, req.url));
             }
         }
@@ -65,14 +65,14 @@ export function proxy(req: NextRequest): NextResponse {
      * 그렇지 않으면 self-referencing canonical 위반이 발생한다.
      *
      * 첫 segment가 명명된 페이지(login, market 등)일 때는 우회한다.
-     * 동일 정규식(`TICKER_RE`)을 ?q= redirect와 공유해 정규식 일관성을 유지한다
-     * (예: PBR-A 같은 하이픈 ticker도 정규화).
+     * 동일 정규식(`SYMBOL_EDGE_RE`)을 ?q= redirect와 공유해 정규식 일관성을 유지한다
+     * (예: PBR-A 같은 하이픈 ticker, BTCUSD 같은 크립토 심볼도 정규화).
      */
     const firstSegment = pathname.split('/').filter(Boolean)[0];
     if (
         firstSegment !== undefined &&
         !RESERVED_FIRST_SEGMENTS.has(firstSegment.toLowerCase()) &&
-        TICKER_RE.test(firstSegment.toUpperCase()) &&
+        SYMBOL_EDGE_RE.test(firstSegment.toUpperCase()) &&
         firstSegment !== firstSegment.toUpperCase()
     ) {
         const canonicalUrl = new URL(reqUrl);

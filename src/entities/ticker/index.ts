@@ -27,7 +27,6 @@ export {
     buildDisplayName,
     deduplicateResults,
     isKoreanInput,
-    isValidTickerFormat,
 } from './lib/ticker';
 
 export {

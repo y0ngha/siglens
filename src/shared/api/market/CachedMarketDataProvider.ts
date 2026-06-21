@@ -26,6 +26,12 @@ function buildBarsRawKey(o: GetBarsOptions): string {
 }
 
 /**
+ * Interim: crypto is 24/7 so the ET-session TTL is wrong. Plan 4 replaces this
+ * with the core MarketSessionSpec — tracking: https://github.com/y0ngha/siglens/issues/620
+ */
+const CRYPTO_BARS_TTL_SECONDS = 60;
+
+/**
  * `MarketDataProvider`를 감싸 getBars/getQuote에 provider 레벨 Redis 캐싱을 주입하는
  * 데코레이터. 분석/차트 경로가 동일 provider를 거치므로(차트 getBarsAction, 분석
  * submitAnalysis/submitOverallAnalysis), 여기서 캐싱하면 차트·분석·today-quote·
@@ -39,14 +45,27 @@ function buildBarsRawKey(o: GetBarsOptions): string {
  *
  * market summary/sector signals 경로는 이 데코레이터를 쓰지 않는다(getMarketDataProvider
  * raw 사용 — market-isr 전담). 적용은 getCachedMarketDataProvider 팩토리가 담당.
+ *
+ * `alwaysOpen=true`는 크립토처럼 24/7 시장에 사용 — ET 세션 기반 TTL 대신 짧은
+ * 고정 TTL을 적용한다. Plan 4에서 core MarketSessionSpec으로 교체 예정
+ * (tracking: https://github.com/y0ngha/siglens/issues/620).
  */
 export class CachedMarketDataProvider implements MarketDataProvider {
-    constructor(private readonly inner: MarketDataProvider) {}
+    constructor(
+        private readonly inner: MarketDataProvider,
+        private readonly alwaysOpen = false
+    ) {}
+
+    private ttl(timeframe: Timeframe): number {
+        return this.alwaysOpen
+            ? CRYPTO_BARS_TTL_SECONDS
+            : computeBarsEffectiveTtl(timeframe, new Date());
+    }
 
     getBars = (options: GetBarsOptions): Promise<Bar[]> =>
         getOrSetCache(
             buildBarsRawKey(options),
-            computeBarsEffectiveTtl(options.timeframe, new Date()),
+            this.ttl(options.timeframe),
             () => this.inner.getBars(options),
             bars => bars.length > 0
         );
@@ -54,7 +73,7 @@ export class CachedMarketDataProvider implements MarketDataProvider {
     getQuote = (symbol: string): Promise<MarketQuote | null> =>
         getOrSetCache(
             `quote:${symbol.toUpperCase()}`,
-            computeBarsEffectiveTtl(QUOTE_TTL_TIMEFRAME, new Date()),
+            this.ttl(QUOTE_TTL_TIMEFRAME),
             () => this.inner.getQuote(symbol),
             quote => quote !== null
         );

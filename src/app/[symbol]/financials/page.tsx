@@ -11,9 +11,10 @@ import { FinancialsStatements } from '@/widgets/financials/FinancialsStatements'
 import { CrossLinkCards, SymbolPageHeading } from '@/widgets/symbol-page';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import {
-    VALID_TICKER_RE,
+    isAdmissibleSymbolShape,
     type SymbolRouteParams,
 } from '@/shared/config/market';
+import { isUnresolvableDegraded } from '@/shared/lib/symbolGuard';
 import {
     buildAssetAboutNode,
     buildDisplayName,
@@ -49,7 +50,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { symbol } = await params;
     const upper = symbol.toUpperCase();
     // 본문 notFound()와 일관: 잘못된 ticker는 메타데이터를 비우고 noindex로 응답한다.
-    if (!VALID_TICKER_RE.test(upper)) {
+    if (!isAdmissibleSymbolShape(upper)) {
         return NOINDEX_SYMBOL_METADATA;
     }
     const { assetInfo, degraded } = await getAssetInfoResilient(upper);
@@ -110,18 +111,22 @@ export default async function FinancialsPage({ params }: Props) {
     const { symbol } = await params;
     const upper = symbol.toUpperCase();
 
-    if (!VALID_TICKER_RE.test(upper)) {
+    if (!isAdmissibleSymbolShape(upper)) {
         notFound();
     }
 
     // Gate via profile — same pattern as the fundamental page.
     // getProfileResilient uses ['fundamental:profile', upper] key, shared with
     // ProfileSection inside the fundamental page, so there is no extra FMP round-trip.
-    const [{ profile, degraded: profileDegraded }, { assetInfo }] =
+    const [{ profile, degraded: profileDegraded }, { assetInfo, degraded }] =
         await Promise.all([
             getProfileResilient(upper),
             getAssetInfoResilient(upper),
         ]);
+
+    // degraded + digit-first 심볼 = crypto_assets DB와 FMP가 동시 다운 중이고 resolve 불가
+    // → 차트 페이지와 동일한 notFound 처리로 sibling 일관성 유지.
+    if (isUnresolvableDegraded(upper, degraded)) notFound();
 
     const displayName = assetInfo ? buildDisplayName(assetInfo, upper) : upper;
 
