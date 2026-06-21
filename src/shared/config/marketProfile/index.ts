@@ -4,6 +4,7 @@ export type {
     MarketRegion,
     SessionModel,
     PricePrecision,
+    PriceFormatConfig,
     MarketProfileDescriptor,
 } from './types';
 export {

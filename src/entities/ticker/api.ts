@@ -1,4 +1,10 @@
 import type { KoreanTickerEntry } from '@/shared/lib/types';
+import { fmpGet } from '@/shared/api/fmp/httpClient';
+import {
+    mapCryptoListRow,
+    type CryptoAssetRow,
+    type FmpCryptoListRaw,
+} from './lib/fmpCryptoListClient';
 import { eq, inArray, sql } from 'drizzle-orm';
 import { NEON_TRANSIENT_RETRY } from '@/shared/db/isNeonTransientError';
 import {
@@ -172,6 +178,14 @@ export class DrizzleProfileDescriptionTranslationRepository implements ProfileDe
             NEON_TRANSIENT_RETRY
         );
     }
+}
+
+/** Fetch the full FMP cryptocurrency universe and map to crypto_assets rows. */
+export async function fetchCryptoAssetList(): Promise<CryptoAssetRow[]> {
+    const raw = await fmpGet<FmpCryptoListRaw[]>('cryptocurrency-list', {});
+    return raw
+        .map(mapCryptoListRow)
+        .filter((r): r is CryptoAssetRow => r !== null);
 }
 
 /** Select DB row fields explicitly so future KoreanTickerEntry fields are not persisted accidentally. */

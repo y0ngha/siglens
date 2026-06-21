@@ -1,6 +1,13 @@
 import type { MarketProfileDescriptor } from './types';
 
-/** US listing exchanges that survive search filtering (mirror of fmpTickerApi US_EXCHANGES). */
+/**
+ * US listing exchanges that survive search filtering.
+ *
+ * Mirrors `US_EXCHANGES` in `src/entities/ticker/lib/fmpTickerApi.ts`.
+ * If you add or remove an exchange here, apply the same change there (and
+ * vice-versa) to keep ticker search and market-profile routing in sync.
+ * See MISTAKES.md §16.5 for the duplication rationale.
+ */
 const US_EXCHANGES: ReadonlySet<string> = new Set([
     'NYSE',
     'NASDAQ',

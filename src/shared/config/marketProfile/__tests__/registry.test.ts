@@ -11,7 +11,16 @@ describe('market profile registry', () => {
             const d = getDescriptor('us-equity');
             expect(d.assetClass).toBe('equity');
             expect(d.exchangeWhitelist).not.toBeNull();
-            expect(d.tabs).toContain('fundamental');
+            expect(d.tabs).toEqual([
+                'chart',
+                'news',
+                'fundamental',
+                'financials',
+                'congress',
+                'options',
+                'fear-greed',
+                'overall',
+            ]);
         });
 
         it('returns the crypto descriptor with crypto-specific policy', () => {
@@ -19,9 +28,8 @@ describe('market profile registry', () => {
             expect(d.assetClass).toBe('crypto');
             expect(d.exchangeWhitelist).toBeNull();
             expect(d.searchSource).toBe('crypto-store');
-            expect(d.tabs).not.toContain('fundamental');
-            expect(d.tabs).not.toContain('options');
-            expect(d.allowedTimeframes).not.toContain('4Hour');
+            expect(d.tabs).toEqual(['chart', 'news', 'fear-greed', 'overall']);
+            expect(d.allowedTimeframes).toEqual(['5Min', '1Hour', '1Day']);
             expect(d.priceFormat.precision).toEqual({
                 kind: 'dynamic-by-magnitude',
             });

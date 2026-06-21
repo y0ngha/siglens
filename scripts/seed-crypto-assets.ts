@@ -2,7 +2,7 @@ import postgres from 'postgres';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import { sql } from 'drizzle-orm';
 import { cryptoAssets } from '../src/shared/db/schema';
-import { fetchCryptoAssetList } from '../src/entities/ticker/lib/fmpCryptoListClient';
+import { fetchCryptoAssetList } from '../src/entities/ticker/api';
 
 const databaseUrl = process.env.DIRECT_DATABASE_URL || process.env.DATABASE_URL;
 

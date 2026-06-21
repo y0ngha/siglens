@@ -27,17 +27,20 @@ export type PricePrecision =
     | { kind: 'integer' }
     | { kind: 'dynamic-by-magnitude' };
 
+/** Price formatting configuration for a market profile. */
+export interface PriceFormatConfig {
+    currency: 'USD';
+    locale: string;
+    precision: PricePrecision;
+}
+
 /** Per-market policy bundle. Downstream code reads this; never branches on raw ids. */
 export interface MarketProfileDescriptor {
     id: MarketProfileId;
     assetClass: AssetClass;
     region: MarketRegion;
 
-    priceFormat: {
-        currency: 'USD';
-        locale: string;
-        precision: PricePrecision;
-    };
+    priceFormat: PriceFormatConfig;
 
     /** Interim; upgraded to core MarketSessionSpec in the session plan. */
     sessionModel: SessionModel;

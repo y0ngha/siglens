@@ -1,8 +1,8 @@
-import { describe, it, expect, vi } from 'vitest';
-import { mapCryptoListRow, fetchCryptoAssetList } from '../fmpCryptoListClient';
-
+// vi.mock is hoisted by vitest above all imports — must appear before any import statements.
 vi.mock('@/shared/api/fmp/httpClient');
-import { fmpGet } from '@/shared/api/fmp/httpClient';
+
+import { describe, it, expect } from 'vitest';
+import { mapCryptoListRow } from '../fmpCryptoListClient';
 
 describe('fmpCryptoListClient', () => {
     describe('mapCryptoListRow', () => {
@@ -34,24 +34,13 @@ describe('fmpCryptoListClient', () => {
         it('skips rows without a symbol', () => {
             expect(mapCryptoListRow({ name: 'no symbol' })).toBeNull();
         });
-    });
 
-    describe('fetchCryptoAssetList', () => {
-        it('returns mapped rows, filtering out entries without a symbol', async () => {
-            vi.mocked(fmpGet).mockResolvedValue([
-                {
-                    symbol: 'BTCUSD',
-                    name: 'Bitcoin USD',
-                    circulatingSupply: 19_700_000,
-                },
-                { name: 'no symbol' },
-            ]);
-            const result = await fetchCryptoAssetList();
-            expect(result).toHaveLength(1);
-            expect(result[0]).toEqual({
+        it('falls back to symbol when name is absent', () => {
+            const row = mapCryptoListRow({ symbol: 'BTCUSD' });
+            expect(row).toEqual({
                 symbol: 'BTCUSD',
-                name: 'Bitcoin USD',
-                circulatingSupply: 19_700_000,
+                name: 'BTCUSD',
+                circulatingSupply: null,
             });
         });
     });

@@ -61,7 +61,7 @@ export interface AssetInfo {
      * `marketProfileOf()` which defaults to `'us-equity'`. Populated for
      * crypto in the routing/data plan (Plan 2).
      */
-    marketProfile?: import('@/shared/config/marketProfile/types').MarketProfileId;
+    marketProfile?: MarketProfileId;
 }
 
 /** Curated category id used to group tickers in UI explorers. */
@@ -100,6 +100,7 @@ export type {
 export type { AuthUserRecord } from '@/shared/lib/auth/types';
 
 import type { LlmProvider } from '@/shared/config/llmProviders';
+import type { MarketProfileId } from '@/shared/config/marketProfile/types';
 
 export type { LlmProvider };
 

@@ -1,7 +1,5 @@
-import { fmpGet } from '@/shared/api/fmp/httpClient';
-
 /** Raw FMP cryptocurrency-list row (fields beyond these are ignored). */
-interface FmpCryptoListRaw {
+export interface FmpCryptoListRaw {
     symbol?: string;
     name?: string;
     circulatingSupply?: number | null;
@@ -26,12 +24,4 @@ export function mapCryptoListRow(raw: FmpCryptoListRaw): CryptoAssetRow | null {
                 ? raw.circulatingSupply
                 : null,
     };
-}
-
-/** Fetch the full FMP cryptocurrency universe and map to crypto_assets rows. */
-export async function fetchCryptoAssetList(): Promise<CryptoAssetRow[]> {
-    const raw = await fmpGet<FmpCryptoListRaw[]>('cryptocurrency-list', {});
-    return raw
-        .map(mapCryptoListRow)
-        .filter((r): r is CryptoAssetRow => r !== null);
 }
