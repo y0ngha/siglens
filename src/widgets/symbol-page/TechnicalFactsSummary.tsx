@@ -1,4 +1,4 @@
-import { formatPriceChange, formatUsdCurrency } from '@/shared/lib/priceFormat';
+import { formatPriceChange, formatPrice } from '@/shared/lib/priceFormat';
 import {
     RSI_OVERBOUGHT_LEVEL,
     RSI_OVERSOLD_LEVEL,
@@ -7,6 +7,10 @@ import {
 } from '@y0ngha/siglens-core';
 import { useId } from 'react';
 import { buildTechnicalFacts } from './utils/technicalFacts';
+import {
+    getDescriptor,
+    type MarketProfileId,
+} from '@/shared/config/marketProfile';
 
 function rsiZone(rsi: number): string {
     if (rsi >= RSI_OVERBOUGHT_LEVEL) return '과매수';
@@ -18,6 +22,12 @@ interface TechnicalFactsSummaryProps {
     symbol: string;
     bars: readonly Bar[];
     indicators: IndicatorResult;
+    /**
+     * Market profile id — drives price formatting.
+     * Defaults to 'us-equity' (fixed 2dp) for backward compatibility.
+     * Pass 'crypto' to enable dynamic-by-magnitude precision for sub-cent tokens.
+     */
+    marketProfile?: MarketProfileId;
 }
 
 /**
@@ -29,6 +39,7 @@ export function TechnicalFactsSummary({
     symbol,
     bars,
     indicators,
+    marketProfile = 'us-equity',
 }: TechnicalFactsSummaryProps) {
     const headingId = useId();
     const facts = buildTechnicalFacts(bars, indicators);
@@ -51,7 +62,10 @@ export function TechnicalFactsSummary({
                 <div className="flex justify-between gap-4">
                     <dt className="text-secondary-400">현재가</dt>
                     <dd>
-                        {formatUsdCurrency(facts.lastClose)}{' '}
+                        {formatPrice(
+                            facts.lastClose,
+                            getDescriptor(marketProfile).priceFormat
+                        )}{' '}
                         <span className={change.colorClass}>
                             {change.arrow} {change.sign}
                             {Math.abs(facts.changePercent).toFixed(2)}%
