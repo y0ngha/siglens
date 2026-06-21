@@ -35,12 +35,7 @@ import {
 } from '@tanstack/react-query';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import {
-    getDescriptor,
-    marketProfileOf,
-    DEFAULT_MARKET_PROFILE,
-} from '@/shared/config/marketProfile';
-import { getAssetInfo } from '@/entities/ticker/lib/getAssetInfo';
+import { assertTabAllowedForSymbol } from '@/entities/ticker/lib/assertTabAllowedForSymbol';
 
 // 종목당 SEO 콘텐츠는 고정이고 동적 데이터는 클라가 재hydrate한다. 엣지 캐시로
 // compute 호출을 줄인다. (일시 인프라 장애의 404 캐싱은 getAssetInfo strict로 차단)
@@ -135,13 +130,7 @@ export default async function OptionsPage({ params }: Props) {
     if (!isAdmissibleSymbolShape(upper)) notFound();
 
     // Hard-404 crypto symbols before the hasOptionsMarket call — this tab is equity-only.
-    const assetInfoForProfile = await getAssetInfo(upper);
-    const profileIdForGuard = assetInfoForProfile
-        ? marketProfileOf(assetInfoForProfile)
-        : DEFAULT_MARKET_PROFILE;
-    if (!getDescriptor(profileIdForGuard).tabs.includes('options')) {
-        notFound();
-    }
+    await assertTabAllowedForSymbol(upper, 'options');
 
     const [{ assetInfo, degraded }, hasOptions] = await Promise.all([
         getAssetInfoResilient(upper),
