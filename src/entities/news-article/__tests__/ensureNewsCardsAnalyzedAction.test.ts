@@ -35,6 +35,12 @@ vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: vi.fn().mockReturnValue({ db: {} }),
 }));
 
+// getAssetInfo is called by ensureNewsCardsAnalyzedAction to resolve news source per asset.
+// Default to equity (no marketProfile) so existing tests are unaffected.
+vi.mock('@/entities/ticker/lib/getAssetInfo', () => ({
+    getAssetInfo: vi.fn().mockResolvedValue({ symbol: 'AAPL', name: 'Apple' }),
+}));
+
 vi.mock('@/entities/news-article', () => ({
     DrizzleNewsRepository: vi.fn().mockImplementation(function () {
         return {

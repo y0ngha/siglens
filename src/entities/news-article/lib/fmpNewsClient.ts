@@ -162,9 +162,15 @@ function mapRawToNewsItem(raw: RawFmpNews, publishedAt: string): NewsItem {
 
 /** FMP adapter for news and earnings data. Uses `fmpGet` for all HTTP calls. */
 export class FmpNewsClient {
+    /**
+     * @param newsSource - FMP news path segment to use. 'stock' hits `news/stock` (default,
+     * US equities). 'crypto' hits `news/crypto` (symbols-tagged, same response shape).
+     */
+    constructor(private readonly newsSource: 'stock' | 'crypto' = 'stock') {}
+
     /** Fetch news articles for a symbol within the given time window (most recent first). */
     async fetchNews(symbol: string, range: NewsTimeRange): Promise<NewsItem[]> {
-        const raw = await fmpGet<RawFmpNews[]>('news/stock', {
+        const raw = await fmpGet<RawFmpNews[]>(`news/${this.newsSource}`, {
             symbols: symbol,
             limit: String(RANGE_TO_LIMIT[range]),
         });
@@ -191,7 +197,7 @@ export class FmpNewsClient {
         lookbackMs: number
     ): Promise<NewsItem[]> {
         const cutoff = new Date(Date.now() - lookbackMs);
-        const raw = await fmpGet<RawFmpNews[]>('news/stock', {
+        const raw = await fmpGet<RawFmpNews[]>(`news/${this.newsSource}`, {
             symbols: symbol,
             limit: String(LONG_PERIOD_LIMIT),
             from: toYyyyMmDd(cutoff),

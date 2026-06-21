@@ -263,6 +263,22 @@ describe('FmpNewsClient', () => {
             expect(url).toContain(`apikey=${TEST_API_KEY}`);
         });
 
+        it('requests news/stock path by default (equity)', async () => {
+            mockOk([]);
+            const client = new FmpNewsClient('stock');
+            await client.fetchNews('AAPL', '24h');
+            const url: string = mockFetch.mock.calls[0][0] as string;
+            expect(url).toContain('news/stock');
+        });
+
+        it('requests news/crypto path when newsSource is "crypto"', async () => {
+            mockOk([]);
+            const client = new FmpNewsClient('crypto');
+            await client.fetchNews('BTCUSD', '24h');
+            const url: string = mockFetch.mock.calls[0][0] as string;
+            expect(url).toContain('news/crypto');
+        });
+
         it('returns empty array when all articles are outside the window', async () => {
             mockOk([outsideWindow]);
             const client = new FmpNewsClient();
