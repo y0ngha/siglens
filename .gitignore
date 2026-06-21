@@ -87,6 +87,8 @@ next-env.d.ts
 !/scripts/seedEconomicEventAnalysis.ts
 # One-time Gemini Batch API calendar-analysis seed script.
 !/scripts/seedCalendarAnalysisBatch.ts
+# One-time Gemini Batch API indicator-name translation seed script.
+!/scripts/seedIndicatorTranslationsBatch.ts
 !/scripts/lib/
 !/scripts/lib/**
 
