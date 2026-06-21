@@ -72,6 +72,10 @@ export async function GET(): Promise<Response> {
             // sitemap fetch를 유도한다 (CDN 1h cache가 비용 흡수).
             lastModified: now,
         },
+        {
+            url: `${SITE_URL}/sitemap-crypto.xml`,
+            lastModified: now,
+        },
         ...longTailEntries,
     ];
 

@@ -60,6 +60,7 @@ const nextConfig: NextConfig = {
         { source: '/sitemap.xml', destination: '/api/sitemap' },
         { source: '/sitemap-static.xml', destination: '/api/sitemap/static' },
         { source: '/sitemap-popular.xml', destination: '/api/sitemap/popular' },
+        { source: '/sitemap-crypto.xml', destination: '/api/sitemap/crypto' },
         {
             source: '/sitemap-longtail-:page.xml',
             destination: '/api/sitemap/longtail/:page',
