@@ -24,6 +24,11 @@ import type {
     ProfileDescriptionTranslationRepository,
 } from '@/shared/db/types';
 import { withRetry } from '@/shared/lib/withRetry';
+import { isCryptoSymbol } from './lib/cryptoAssetStore';
+import {
+    getDescriptor,
+    DEFAULT_MARKET_PROFILE,
+} from '@/shared/config/marketProfile';
 
 const koreanTickerColumns = {
     symbol: koreanTickers.symbol,
@@ -199,6 +204,33 @@ export async function fetchCryptoAssetList(): Promise<CryptoAssetRow[]> {
         );
         throw e;
     }
+}
+
+/**
+ * Cache-safe tab guard predicate: returns `true` if `tab` is allowed for the
+ * given `symbol`'s market profile.
+ *
+ * Uses `isCryptoSymbol` (DB membership lookup, no HTTP fetch) to classify the
+ * symbol as `'crypto'` or `'us-equity'`, then checks the profile descriptor's
+ * tab whitelist. This avoids the `no-store` fetch that `getAssetInfo` triggers,
+ * keeping ISR/static pages static at build time.
+ *
+ * The `notFound()` side-effect intentionally lives in the calling page (app layer),
+ * not here — this function is a pure predicate.
+ *
+ * ```ts
+ * // In a page component:
+ * if (!(await isTabAllowedForSymbol(upper, 'fundamental'))) notFound();
+ * ```
+ */
+export async function isTabAllowedForSymbol(
+    symbol: string,
+    tab: string
+): Promise<boolean> {
+    const profile = (await isCryptoSymbol(symbol))
+        ? 'crypto'
+        : DEFAULT_MARKET_PROFILE;
+    return getDescriptor(profile).tabs.includes(tab);
 }
 
 /** Select DB row fields explicitly so future KoreanTickerEntry fields are not persisted accidentally. */

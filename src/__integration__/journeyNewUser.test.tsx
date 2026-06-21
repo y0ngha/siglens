@@ -51,9 +51,10 @@ vi.mock('@/shared/hooks/useFocusTrap', () => ({
     useFocusTrap: vi.fn(),
 }));
 
-// useAssetInfo returns undefined (loading) → SymbolTabs defaults to us-equity profile → all tabs shown
+// useAssetInfo returns a resolved equity asset so all us-equity tabs are rendered.
+// (undefined = loading → shows placeholder div; null = unknown → shows us-equity tabs)
 vi.mock('@/widgets/symbol-page/hooks/useAssetInfo', () => ({
-    useAssetInfo: vi.fn(() => undefined),
+    useAssetInfo: vi.fn(() => ({ symbol: 'AAPL', name: 'Apple Inc.' })),
 }));
 
 describe('Journey: New User', () => {

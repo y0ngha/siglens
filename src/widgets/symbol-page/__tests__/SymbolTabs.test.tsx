@@ -57,16 +57,24 @@ vi.mock('@/widgets/symbol-page/utils/symbolTabsConfig', () => ({
 }));
 
 vi.mock('@/widgets/symbol-page/hooks/useAssetInfo', () => ({
-    useAssetInfo: vi.fn(() => undefined),
+    useAssetInfo: vi.fn(),
 }));
 
 import { render, screen } from '@testing-library/react';
 import { usePathname } from 'next/navigation';
+import { useAssetInfo } from '@/widgets/symbol-page/hooks/useAssetInfo';
 import { SymbolTabs } from '@/widgets/symbol-page/SymbolTabs';
+import type { AssetInfo } from '@/shared/lib/types';
+
+const EQUITY_ASSET: AssetInfo = { symbol: 'AAPL', name: 'Apple Inc.' };
 
 describe('SymbolTabs', () => {
     beforeEach(() => {
         (usePathname as ReturnType<typeof vi.fn>).mockReturnValue('/AAPL');
+        // Default: resolved equity asset so most tests see the full tab bar.
+        (useAssetInfo as ReturnType<typeof vi.fn>).mockReturnValue(
+            EQUITY_ASSET
+        );
     });
 
     it('renders a nav with accessible label', () => {
@@ -109,5 +117,16 @@ describe('SymbolTabs', () => {
 
         const chartLink = screen.getByText('차트').closest('a')!;
         expect(chartLink.getAttribute('aria-current')).toBeNull();
+    });
+
+    it('renders a loading placeholder div when assetInfo is undefined (loading)', () => {
+        (useAssetInfo as ReturnType<typeof vi.fn>).mockReturnValue(undefined);
+        const { container } = render(<SymbolTabs symbol="aapl" />);
+        // No nav rendered while loading — placeholder div is shown instead.
+        expect(screen.queryByRole('navigation')).toBeNull();
+        const placeholder = container.querySelector(
+            '.border-secondary-700.h-11.border-b'
+        );
+        expect(placeholder).toBeDefined();
     });
 });

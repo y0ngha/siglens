@@ -2,6 +2,7 @@ export {
     DrizzleKoreanTickerRepository,
     DrizzleAssetTranslationRepository,
     DrizzleProfileDescriptionTranslationRepository,
+    isTabAllowedForSymbol,
 } from './api';
 
 export {

@@ -35,7 +35,7 @@ import {
 } from '@tanstack/react-query';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { assertTabAllowedForSymbol } from '@/entities/ticker/lib/assertTabAllowedForSymbol';
+import { isTabAllowedForSymbol } from '@/entities/ticker';
 
 // 종목당 SEO 콘텐츠는 고정이고 동적 데이터는 클라가 재hydrate한다. 엣지 캐시로
 // compute 호출을 줄인다. (일시 인프라 장애의 404 캐싱은 getAssetInfo strict로 차단)
@@ -130,7 +130,7 @@ export default async function OptionsPage({ params }: Props) {
     if (!isAdmissibleSymbolShape(upper)) notFound();
 
     // Hard-404 crypto symbols before the hasOptionsMarket call — this tab is equity-only.
-    await assertTabAllowedForSymbol(upper, 'options');
+    if (!(await isTabAllowedForSymbol(upper, 'options'))) notFound();
 
     const [{ assetInfo, degraded }, hasOptions] = await Promise.all([
         getAssetInfoResilient(upper),

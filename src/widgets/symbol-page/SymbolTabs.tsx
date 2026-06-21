@@ -18,12 +18,21 @@ interface SymbolTabsProps {
 /** Header nav strip for the 4 analysis pages of a symbol. Uses nav + aria-current (URL-based, not tablist). */
 export function SymbolTabs({ symbol }: SymbolTabsProps) {
     const pathname = usePathname();
-    const upper = symbol.toUpperCase();
     const assetInfo = useAssetInfo(symbol);
+
+    // Derived variables come after all hook calls (MISTAKES §17).
+    const upper = symbol.toUpperCase();
     const profile = assetInfo
         ? marketProfileOf(assetInfo)
         : DEFAULT_MARKET_PROFILE;
     const tabs = tabsFor(profile);
+
+    // Loading state: assetInfo === undefined means the RQ query is still in-flight.
+    // Render a placeholder that matches the tab bar height/border so there is no
+    // layout shift when the real tabs appear.
+    if (assetInfo === undefined) {
+        return <div className="border-secondary-700 h-11 border-b" />;
+    }
 
     return (
         <nav

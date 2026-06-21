@@ -1,4 +1,4 @@
-import { getAssetInfo } from '@/entities/ticker/lib/getAssetInfo';
+import { getAssetInfo } from './getAssetInfo';
 import {
     getDescriptor,
     marketProfileOf,

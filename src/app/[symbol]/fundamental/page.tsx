@@ -52,7 +52,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
-import { assertTabAllowedForSymbol } from '@/entities/ticker/lib/assertTabAllowedForSymbol';
+import { isTabAllowedForSymbol } from '@/entities/ticker';
 
 // 종목당 SEO 콘텐츠는 고정이고 동적 데이터는 클라가 재hydrate한다. 엣지 캐시로
 // compute 호출을 줄인다. (일시 인프라 장애의 404 캐싱은 getAssetInfo strict로 차단)
@@ -371,7 +371,7 @@ export default async function FundamentalPage({ params }: Props) {
     }
 
     // Hard-404 crypto symbols — this tab is equity-only.
-    await assertTabAllowedForSymbol(upper, 'fundamental');
+    if (!(await isTabAllowedForSymbol(upper, 'fundamental'))) notFound();
 
     // notFound guard + sector resolution을 위해 profile을 먼저 가져온다.
     // assetInfo는 한국어 종목명을 displayName에 합치기 위해 병렬로 가져온다.
