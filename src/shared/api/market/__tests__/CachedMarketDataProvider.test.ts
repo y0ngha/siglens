@@ -10,8 +10,10 @@ import {
 
 /**
  * Captures the `ex` TTL passed to redis.set so we can assert that
- * `alwaysOpen=true` uses the fixed CRYPTO_BARS_TTL_SECONDS (60 s) and
- * `alwaysOpen=false` delegates to `computeBarsEffectiveTtl`.
+ * `CachedMarketDataProvider` delegates to `computeBarsEffectiveTtl(timeframe, now, session)`
+ * with the correct `MarketSessionSpec`:
+ *   - crypto symbols → `CRYPTO_SESSION` (always-open, 24/7 uniform TTL)
+ *   - equity symbols → `US_EQUITY_SESSION` (session-aware TTL, shorter during ET hours)
  */
 const lastSetTtl: { value: number | undefined } = { value: undefined };
 
