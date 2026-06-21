@@ -10,8 +10,8 @@ export const revalidate = 2592000; // 30d
 
 export const size = { width: OG_IMAGE_WIDTH, height: OG_IMAGE_HEIGHT };
 export const contentType = 'image/png';
-// alt는 module-scope const라 ticker 동적 주입 불가 — 페이지 카테고리까지만 명시한다.
-export const alt = 'Siglens 미국 주식 AI 종합 분석';
+// alt는 module-scope const라 ticker/asset 동적 주입 불가 — 자산군 중립 문구로 둔다.
+export const alt = 'Siglens 종합 분석';
 
 interface Props {
     params: Promise<{ symbol: string }>;
