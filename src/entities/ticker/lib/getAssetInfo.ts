@@ -1,6 +1,8 @@
 import { waitUntil } from '@vercel/functions';
-import { isValidTickerFormat } from './ticker';
+import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
 import { DrizzleAssetTranslationRepository } from '../api';
+import { getCryptoAsset } from './cryptoAssetStore';
+import { fetchCryptoQuoteName } from './cryptoQuoteName';
 import type {
     AssetTranslationRecord,
     AssetTranslationRepository,
@@ -158,7 +160,7 @@ export function _resetInFlightTranslationsForTest(): void {
 /** Resolve canonical asset information for a single ticker symbol via cache → DB → FMP, with optional background Korean-name translation. */
 export async function getAssetInfo(symbol: string): Promise<AssetInfo | null> {
     const upper = symbol.toUpperCase();
-    if (!isValidTickerFormat(upper)) return null;
+    if (!isAdmissibleSymbolShape(upper)) return null;
 
     const cache = createCacheProvider();
     const cacheKey = buildAssetInfoCacheKey(upper);
@@ -170,6 +172,28 @@ export async function getAssetInfo(symbol: string): Promise<AssetInfo | null> {
         } catch {
             // Graceful degradation: cache read failure falls through to provider fetch.
         }
+    }
+
+    // Crypto classification is authoritative via crypto_assets membership.
+    // FMP profile is empty for crypto, so name comes from DB (fallback: quote).
+    const cryptoAsset = await getCryptoAsset(upper);
+    if (cryptoAsset) {
+        const name = cryptoAsset.name || (await fetchCryptoQuoteName(upper));
+        const cryptoInfo: AssetInfo = {
+            symbol: upper,
+            name,
+            marketProfile: 'crypto',
+            ...(cryptoAsset.koreanName
+                ? { koreanName: cryptoAsset.koreanName }
+                : {}),
+        };
+        setCacheBestEffort(
+            cache,
+            cacheKey,
+            cryptoInfo,
+            ASSET_INFO_CACHE_TTL_WITH_KOREAN
+        );
+        return cryptoInfo;
     }
 
     const fromDb = await readFromDatabase(upper);

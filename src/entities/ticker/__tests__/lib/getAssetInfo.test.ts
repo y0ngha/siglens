@@ -70,6 +70,12 @@ vi.mock('../../lib/koreanNameStore', () => ({
 vi.mock('../../lib/koreanTranslator', () => ({
     translateCompanyNames: () => translateCompanyNamesMock(),
 }));
+// Crypto branch: equity test cases return null (not a crypto symbol), so the
+// existing equity path is unaffected. The crypto branch itself is covered by
+// getAssetInfo.crypto.test.ts.
+vi.mock('../../lib/cryptoAssetStore', () => ({
+    getCryptoAsset: vi.fn().mockResolvedValue(null),
+}));
 
 import {
     _resetInFlightTranslationsForTest,
@@ -128,7 +134,10 @@ describe('getAssetInfo', () => {
     });
 
     it('잘못된 ticker format 은 null 반환', async () => {
-        await expect(getAssetInfo('toolong')).resolves.toBeNull();
+        // isAdmissibleSymbolShape는 17자 초과, 공백, 특수문자를 거부한다.
+        // 구 isValidTickerFormat(6+ 글자 거부)과 달리 SYMBOL_EDGE_RE(16자까지 허용)이
+        // 기준이므로 과거 'toolong' 대신 공백 포함 입력으로 테스트한다.
+        await expect(getAssetInfo('invalid symbol')).resolves.toBeNull();
         expect(searchBySymbolMock).not.toHaveBeenCalled();
     });
 
