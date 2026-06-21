@@ -11,8 +11,8 @@ import {
     DEFAULT_TIMEFRAME,
     SymbolRouteParams,
     isAdmissibleSymbolShape,
-    VALID_TICKER_RE,
 } from '@/shared/config/market';
+import { isUnresolvableDegraded } from '@/shared/lib/symbolGuard';
 import { marketProfileOf } from '@/shared/config/marketProfile';
 import {
     buildAssetAboutNode,
@@ -118,7 +118,7 @@ export default async function SymbolPage({ params }: Props) {
     // 심볼이 FMP 없이 resolve 실패한 것 → 실재하지 않는 종목으로 취급해 notFound.
     // (MSFT 같은 정상 종목이 FMP 일시 장애 중 degrade되는 경우는 TICKER_RE를 통과하므로
     // 기존 degrade 200+noindex 동작을 유지한다.)
-    if (degraded && !VALID_TICKER_RE.test(ticker)) notFound();
+    if (isUnresolvableDegraded(ticker, degraded)) notFound();
     if (!assetInfo) return notFound();
 
     // default-tf bars를 정적화로 가져온다. 실패(인프라 다운 등)는 null로 degrade해

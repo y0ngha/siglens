@@ -8,6 +8,7 @@ import {
     SymbolRouteParams,
     isAdmissibleSymbolShape,
 } from '@/shared/config/market';
+import { isUnresolvableDegraded } from '@/shared/lib/symbolGuard';
 import {
     buildAssetAboutNode,
     buildDisplayName,
@@ -99,7 +100,10 @@ export default async function SymbolFearGreedPage({ params }: Props) {
         notFound();
     }
 
-    const { assetInfo } = await getAssetInfoResilient(ticker);
+    const { assetInfo, degraded } = await getAssetInfoResilient(ticker);
+    // degraded + digit-first 심볼 = 두 데이터 소스가 동시 다운 중이고 resolve 불가
+    // → 차트 페이지와 동일한 notFound 처리로 sibling 일관성 유지.
+    if (isUnresolvableDegraded(ticker, degraded)) notFound();
     if (!assetInfo) {
         notFound();
     }

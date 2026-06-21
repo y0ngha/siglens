@@ -9,6 +9,7 @@ import {
     isAdmissibleSymbolShape,
     type SymbolRouteParams,
 } from '@/shared/config/market';
+import { isUnresolvableDegraded } from '@/shared/lib/symbolGuard';
 import {
     buildAssetAboutNode,
     buildDisplayName,
@@ -110,11 +111,15 @@ export default async function CongressPage({ params }: Props) {
 
     // getProfileResilient uses ['fundamental:profile', upper] key, shared with
     // ProfileSection inside the fundamental page, so there is no extra FMP round-trip.
-    const [{ profile, degraded: profileDegraded }, { assetInfo }] =
+    const [{ profile, degraded: profileDegraded }, { assetInfo, degraded }] =
         await Promise.all([
             getProfileResilient(upper),
             getAssetInfoResilient(upper),
         ]);
+
+    // degraded + digit-first 심볼 = crypto_assets DB와 FMP가 동시 다운 중이고 resolve 불가
+    // → 차트 페이지와 동일한 notFound 처리로 sibling 일관성 유지.
+    if (isUnresolvableDegraded(upper, degraded)) notFound();
 
     // assetInfo degraded → generateMetadata returns NOINDEX_SYMBOL_METADATA (above),
     // while the page body renders a 200 with `displayName = upper` as ticker fallback.
