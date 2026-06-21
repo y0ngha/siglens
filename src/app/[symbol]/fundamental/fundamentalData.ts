@@ -1,9 +1,9 @@
 import { cache } from 'react';
 import { getDatabaseClient } from '@/shared/db/client';
-import {
-    DrizzleProfileDescriptionTranslationRepository,
-    translateCompanyDescription,
-} from '@/entities/ticker';
+// DrizzleProfileDescriptionTranslationRepository lives in api.ts which is server-only;
+// import from the deep path to avoid pulling the DB chain into the client barrel.
+import { DrizzleProfileDescriptionTranslationRepository } from '@/entities/ticker/api';
+import { translateCompanyDescription } from '@/entities/ticker';
 import { getFundamentalDataProvider } from '@/shared/api/fmp/getFundamentalDataProvider';
 import type {
     FundamentalProfile,
