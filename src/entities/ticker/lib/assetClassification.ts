@@ -116,8 +116,11 @@ export interface CorporationAboutNode {
 export function buildAssetAboutNode(
     symbol: string,
     name: string,
-    fmpSymbol?: string
+    fmpSymbol?: string,
+    assetClass?: import('@/shared/config/marketProfile').AssetClass
 ): CorporationAboutNode | undefined {
+    // Crypto has no standard schema.org type → omit the about node entirely.
+    if (assetClass === 'crypto') return undefined;
     const category = classifyAsset(symbol, fmpSymbol);
     if (category !== 'stock') return undefined;
     return {
