@@ -62,18 +62,18 @@ if (!isDryRun && !GEMINI_API_KEY) {
     throw new Error('GEMINI_API_KEY is required in .env.local');
 }
 
+// These Gemini Batch config constants intentionally mirror the same values in
+// scripts/seedCalendarAnalysisBatch.ts — keep both in sync if you change them.
 const GEMINI_MODEL = 'gemini-2.5-flash-lite';
-
-// Truncation length for the dry-run prompt preview logged to console.
-const DRY_RUN_PROMPT_PREVIEW_LENGTH = 200;
-
 // Translation prompts are tiny (single indicator name, ~dozens of tokens each).
 // 300 requests/batch keeps each batch well under the Gemini enqueue token limit
 // (429 RESOURCE_EXHAUSTED) while keeping batch count low (~270 candidates → 1 batch).
 const CHUNK_SIZE = 300;
-
 const POLL_INTERVAL_MS = 30_000;
 const MAX_POLL_MS = 2 * 60 * 60 * 1_000; // 2h
+
+// Truncation length for the dry-run prompt preview logged to console.
+const DRY_RUN_PROMPT_PREVIEW_LENGTH = 200;
 
 const ai = GEMINI_API_KEY ? new GoogleGenAI({ apiKey: GEMINI_API_KEY }) : null;
 
@@ -94,6 +94,12 @@ function formatElapsed(ms: number): string {
 interface PendingRequest {
     id: string;
     prompt: string;
+}
+
+interface IndicatorTranslationInsert {
+    normalizedName: string;
+    koreanName: string;
+    source: 'ai';
 }
 
 /**
@@ -198,11 +204,7 @@ async function processResponses(
     }
 
     let skipped = 0;
-    const insertValues: {
-        normalizedName: string;
-        koreanName: string;
-        source: 'ai';
-    }[] = [];
+    const insertValues: IndicatorTranslationInsert[] = [];
 
     for (const { id: base } of chunk) {
         const response = responseById.get(base);
@@ -242,27 +244,28 @@ async function processResponses(
         insertValues.push({ normalizedName: base, koreanName, source: 'ai' });
     }
 
+    if (insertValues.length === 0) {
+        return { translated: 0, skipped };
+    }
+
     // Single bulk insert for all valid translations in this chunk.
     // Bases within a chunk are already distinct (deduped upstream) and pre-filtered
     // to exclude rows already in DB, so ON CONFLICT only fires on re-run or concurrent
     // races. inserted.length = newly written rows; the remainder (insertValues.length -
     // inserted.length) were pre-existing and skipped by ON CONFLICT DO NOTHING.
-    let translated = 0;
-    if (insertValues.length > 0) {
-        const inserted = await db
-            .insert(economicIndicatorTranslations)
-            .values(insertValues)
-            .onConflictDoNothing({
-                target: economicIndicatorTranslations.normalizedName,
-            })
-            .returning({
-                normalizedName: economicIndicatorTranslations.normalizedName,
-            });
-        translated = inserted.length;
-        skipped += insertValues.length - inserted.length;
-    }
-
-    return { translated, skipped };
+    const inserted = await db
+        .insert(economicIndicatorTranslations)
+        .values(insertValues)
+        .onConflictDoNothing({
+            target: economicIndicatorTranslations.normalizedName,
+        })
+        .returning({
+            normalizedName: economicIndicatorTranslations.normalizedName,
+        });
+    return {
+        translated: inserted.length,
+        skipped: skipped + (insertValues.length - inserted.length),
+    };
 }
 
 async function run(): Promise<void> {
