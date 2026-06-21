@@ -8,6 +8,9 @@ import type { TickerSearchResult } from '@/shared/lib/types';
 
 const CRYPTO_SEARCH_LIMIT = 10;
 
+const CRYPTO_EXCHANGE_CODE = 'CRYPTO';
+const CRYPTO_EXCHANGE_FULL_NAME = 'Cryptocurrency';
+
 /**
  * Module-level caches for hot-path crypto classification and record lookups.
  * The crypto universe is static (no delists mid-session), so a simple Map is
@@ -32,8 +35,8 @@ function recordToSearchResult(r: CryptoAssetRecord): TickerSearchResult {
     return {
         symbol: r.symbol,
         name: r.name,
-        exchange: 'CRYPTO',
-        exchangeFullName: 'Cryptocurrency',
+        exchange: CRYPTO_EXCHANGE_CODE,
+        exchangeFullName: CRYPTO_EXCHANGE_FULL_NAME,
         ...(r.koreanName ? { koreanName: r.koreanName } : {}),
         marketProfile: 'crypto',
     };
@@ -84,7 +87,10 @@ export async function searchCryptoAssets(
     const repository = tryGetRepository();
     if (!repository) return [];
     try {
-        const rows = await repository.search(query, CRYPTO_SEARCH_LIMIT);
+        const rows = await repository.search(
+            normalizedQuery,
+            CRYPTO_SEARCH_LIMIT
+        );
         const results = rows.map(recordToSearchResult);
         cryptoSearchCache.set(normalizedQuery, results);
         return results;

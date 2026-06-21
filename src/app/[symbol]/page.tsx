@@ -13,12 +13,12 @@ import {
     isAdmissibleSymbolShape,
     VALID_TICKER_RE,
 } from '@/shared/config/market';
+import { marketProfileOf } from '@/shared/config/marketProfile';
 import {
     buildAssetAboutNode,
     buildDisplayName,
     getAssetInfoResilient,
 } from '@/entities/ticker';
-import { marketProfileOf } from '@/shared/config/marketProfile';
 import { getBarsStatic, quantizeBarsDataToLastClosed } from '@/entities/bars';
 import { countSkillFiles } from '@/entities/skill';
 import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/shared/config/queryConfig';

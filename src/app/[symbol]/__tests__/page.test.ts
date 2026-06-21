@@ -78,6 +78,7 @@ import {
 } from '@y0ngha/siglens-core';
 import { SymbolPageClient } from '@/widgets/symbol-page/SymbolPageClient';
 import { findElementByType } from '@/__tests__/utils/findElementByType';
+import { notFound } from 'next/navigation';
 import type { MockedFunction } from 'vitest';
 
 const mockGetAssetInfoResilient = getAssetInfoResilient as MockedFunction<
@@ -262,6 +263,54 @@ describe('Symbol page', () => {
             const props = await getClientProps();
 
             expect(props.initialAnalysisFailed).toBe(true);
+        });
+    });
+
+    describe('SymbolPage — notFound gate (degraded path)', () => {
+        const mockNotFound = notFound as MockedFunction<typeof notFound>;
+
+        beforeEach(() => {
+            // Reset all mocks so prior test state (e.g. peekAnalysisCache calls
+            // from the narrative-seed suite) does not pollute these assertions.
+            vi.clearAllMocks();
+            // Restore stable defaults cleared by vi.clearAllMocks().
+            mockPeekAnalysisCache.mockResolvedValue(null);
+        });
+
+        it('branch-taken: degraded + non-US ticker shape calls notFound()', async () => {
+            // 1INCHUSD starts with a digit → fails VALID_TICKER_RE (^[A-Z]…)
+            // and represents a crypto symbol that cannot be resolved when both
+            // crypto_assets DB and FMP are down simultaneously.
+            mockGetAssetInfoResilient.mockResolvedValue({
+                assetInfo: { symbol: '1INCHUSD', name: '1inch' },
+                degraded: true,
+            } as never);
+
+            await SymbolPage({
+                params: Promise.resolve({ symbol: '1INCHUSD' }),
+            });
+
+            expect(mockNotFound).toHaveBeenCalled();
+        });
+
+        it('branch-not-taken: degraded + valid US ticker shape does NOT call notFound() for the degraded gate', async () => {
+            // AAPL passes VALID_TICKER_RE: a US equity that is temporarily
+            // degraded due to FMP downtime should continue to render (with
+            // the existing noindex metadata guard), not 404.
+            mockGetAssetInfoResilient.mockResolvedValue({
+                assetInfo: {
+                    symbol: 'AAPL',
+                    name: 'Apple Inc.',
+                    fmpSymbol: 'AAPL',
+                },
+                degraded: true,
+            } as never);
+
+            await SymbolPage({
+                params: Promise.resolve({ symbol: 'AAPL' }),
+            });
+
+            expect(mockNotFound).not.toHaveBeenCalled();
         });
     });
 });

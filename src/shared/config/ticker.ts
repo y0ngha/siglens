@@ -23,7 +23,11 @@ export const TICKER_RE = /^[A-Z][A-Z.-]{0,7}$/;
  */
 export const SYMBOL_EDGE_RE = /^[A-Z0-9][A-Z0-9.-]{0,15}$/;
 
-/** Edge-safe format pre-check; uppercases then tests against SYMBOL_EDGE_RE. */
+/**
+ * Edge-safe format pre-check; uppercases then tests against SYMBOL_EDGE_RE.
+ * Normalizes case internally, so callers need not pre-uppercase; passing an
+ * already-uppercased value (as `getAssetInfo` does) is harmless/defensive.
+ */
 export function isAdmissibleSymbolShape(symbol: string): boolean {
     return SYMBOL_EDGE_RE.test(symbol.toUpperCase());
 }
