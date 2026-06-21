@@ -5,10 +5,11 @@ import {
     type CryptoAssetRow,
     type FmpCryptoListRaw,
 } from './lib/fmpCryptoListClient';
-import { eq, inArray, sql } from 'drizzle-orm';
+import { desc, eq, ilike, inArray, or, sql } from 'drizzle-orm';
 import { NEON_TRANSIENT_RETRY } from '@/shared/db/isNeonTransientError';
 import {
     assetTranslations,
+    cryptoAssets,
     koreanTickers,
     profileDescriptionTranslations,
 } from '@/shared/db/schema';
@@ -16,6 +17,8 @@ import type { SiglensDatabase } from '@/shared/db/types';
 import type {
     AssetTranslationRecord,
     AssetTranslationRepository,
+    CryptoAssetRecord,
+    CryptoAssetRepository,
     KoreanTickerRepository,
     ProfileDescriptionTranslationRecord,
     ProfileDescriptionTranslationRepository,
@@ -207,4 +210,38 @@ function toKoreanTickerRow(entry: KoreanTickerEntry): KoreanTickerRow {
         exchange: entry.exchange,
         exchangeFullName: entry.exchangeFullName,
     };
+}
+
+/**
+ * Drizzle ORM implementation of {@link CryptoAssetRepository} backed by Neon
+ * PostgreSQL. Reads the `crypto_assets` table (written by the seed script).
+ *
+ * @param db - Drizzle-wrapped Neon database client; obtain via `createDatabaseClient`.
+ */
+export class DrizzleCryptoAssetRepository implements CryptoAssetRepository {
+    constructor(private readonly db: SiglensDatabase) {}
+
+    async findBySymbol(symbol: string): Promise<CryptoAssetRecord | null> {
+        const rows = await this.db
+            .select()
+            .from(cryptoAssets)
+            .where(eq(cryptoAssets.symbol, symbol))
+            .limit(1);
+        return rows[0] ?? null;
+    }
+
+    async search(query: string, limit: number): Promise<CryptoAssetRecord[]> {
+        const like = `%${query}%`;
+        return this.db
+            .select()
+            .from(cryptoAssets)
+            .where(
+                or(
+                    ilike(cryptoAssets.symbol, like),
+                    ilike(cryptoAssets.name, like)
+                )
+            )
+            .orderBy(desc(cryptoAssets.circulatingSupply))
+            .limit(limit);
+    }
 }

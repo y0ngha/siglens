@@ -271,3 +271,18 @@ export interface IndicatorTranslationRepository {
     ): Promise<IndicatorTranslationRecord[]>;
     upsert(record: IndicatorTranslationRecord): Promise<void>;
 }
+
+/** A row from the crypto_assets table. */
+export interface CryptoAssetRecord {
+    symbol: string;
+    name: string;
+    koreanName: string | null;
+    circulatingSupply: number | null;
+}
+
+/** Read/search access to the crypto_assets universe. */
+export interface CryptoAssetRepository {
+    findBySymbol(symbol: string): Promise<CryptoAssetRecord | null>;
+    /** Prefix/substring match over symbol + name, ordered by circulatingSupply desc, capped. */
+    search(query: string, limit: number): Promise<CryptoAssetRecord[]>;
+}
