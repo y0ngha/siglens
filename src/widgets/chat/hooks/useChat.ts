@@ -29,6 +29,7 @@ import { QUERY_KEYS } from '@/shared/config/queryConfig';
 import { usePageContextLabel } from './usePageContextLabel';
 import { useSymbolChat } from '@/features/symbol-chat';
 import { useAssetInfo } from '@/widgets/symbol-page/hooks/useAssetInfo';
+import { getDescriptor, marketProfileOf } from '@/shared/config/marketProfile';
 import { useModelGate, type ModelGateState } from '@/features/premium-gate';
 import { useHydrated } from '@/shared/hooks/useHydrated';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -110,6 +111,9 @@ export function useChat({ symbol }: UseChatOptions): UseChatReturn {
     // useAssetInfo is cached via React Query — no extra network call when SymbolLayoutHeader already called it.
     const assetInfo = useAssetInfo(symbol);
     const companyName = assetInfo?.name ?? symbol;
+    const assetClass = assetInfo
+        ? getDescriptor(marketProfileOf(assetInfo)).assetClass
+        : 'equity';
     const [messages, setMessages] = useState<DisplayMessage[]>([]);
     const [loadingPhase, setLoadingPhase] = useState<ChatLoadingPhase | null>(
         null
@@ -203,7 +207,8 @@ export function useChat({ symbol }: UseChatOptions): UseChatReturn {
                 currentMessages,
                 text,
                 selectedModel,
-                currentAnalysisContext
+                currentAnalysisContext,
+                assetClass
             ),
         onMutate: ({ text }) => {
             const userMessage: ChatMessage = { role: 'user', content: text };

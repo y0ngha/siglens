@@ -23,6 +23,7 @@ import {
     requestChatCompletion,
 } from '@y0ngha/siglens-core';
 import { headers } from 'next/headers';
+import type { AssetClass } from '@/shared/config/marketProfile';
 
 async function getClientIp(): Promise<string> {
     const headersList = await headers();
@@ -116,7 +117,8 @@ export async function chatAction(
      * `null` (or omit) when no page-level analysis is available — core then
      * falls back to its default behavior.
      */
-    currentAnalysisContext: CurrentAnalysisContext | null = null
+    currentAnalysisContext: CurrentAnalysisContext | null = null,
+    assetClass: AssetClass = 'equity'
 ): Promise<ChatActionResult> {
     try {
         const provider = getProviderForModel(model);
@@ -149,6 +151,7 @@ export async function chatAction(
                 ...(currentAnalysisContext !== null
                     ? { currentAnalysisContext }
                     : {}),
+                assetClass,
             },
             {
                 callAiProvider: getLlmProvider(),
