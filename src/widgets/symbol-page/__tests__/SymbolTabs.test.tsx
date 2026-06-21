@@ -32,6 +32,32 @@ vi.mock('@/widgets/symbol-page/utils/symbolTabsConfig', () => ({
             hrefBuilder: (s: string) => `/${s}/fundamental`,
         },
     ],
+    tabsFor: (profile: string) => {
+        const all = [
+            {
+                key: 'chart',
+                label: '차트',
+                hrefBuilder: (s: string) => `/${s}`,
+            },
+            {
+                key: 'news',
+                label: '뉴스',
+                hrefBuilder: (s: string) => `/${s}/news`,
+            },
+            {
+                key: 'fundamental',
+                label: '펀더멘털',
+                hrefBuilder: (s: string) => `/${s}/fundamental`,
+            },
+        ];
+        return profile === 'crypto'
+            ? all.filter(t => ['chart', 'news'].includes(t.key))
+            : all;
+    },
+}));
+
+vi.mock('@/widgets/symbol-page/hooks/useAssetInfo', () => ({
+    useAssetInfo: vi.fn(() => undefined),
 }));
 
 import { render, screen } from '@testing-library/react';

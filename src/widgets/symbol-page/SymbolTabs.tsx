@@ -3,7 +3,12 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/shared/lib/cn';
-import { TABS } from './utils/symbolTabsConfig';
+import { useAssetInfo } from './hooks/useAssetInfo';
+import {
+    marketProfileOf,
+    DEFAULT_MARKET_PROFILE,
+} from '@/shared/config/marketProfile';
+import { tabsFor } from './utils/symbolTabsConfig';
 
 interface SymbolTabsProps {
     /** Ticker symbol. Will be uppercased internally. */
@@ -14,13 +19,18 @@ interface SymbolTabsProps {
 export function SymbolTabs({ symbol }: SymbolTabsProps) {
     const pathname = usePathname();
     const upper = symbol.toUpperCase();
+    const assetInfo = useAssetInfo(symbol);
+    const profile = assetInfo
+        ? marketProfileOf(assetInfo)
+        : DEFAULT_MARKET_PROFILE;
+    const tabs = tabsFor(profile);
 
     return (
         <nav
             aria-label="분석 종류"
             className="border-secondary-700 flex overflow-x-auto border-b"
         >
-            {TABS.map(t => {
+            {tabs.map(t => {
                 const href = t.hrefBuilder(upper);
                 const active = pathname === href;
                 return (

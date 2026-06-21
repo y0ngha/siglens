@@ -63,6 +63,11 @@ vi.mock('@/shared/hooks/usePopoverToggle', () => ({
     }),
 }));
 
+// useAssetInfo returns undefined (loading) → SymbolTabs defaults to us-equity profile → all tabs shown
+vi.mock('@/widgets/symbol-page/hooks/useAssetInfo', () => ({
+    useAssetInfo: vi.fn(() => undefined),
+}));
+
 describe('Journey: Returning User', () => {
     beforeEach(() => {
         vi.clearAllMocks();

@@ -51,6 +51,11 @@ vi.mock('@/shared/hooks/useFocusTrap', () => ({
     useFocusTrap: vi.fn(),
 }));
 
+// useAssetInfo returns undefined (loading) → SymbolTabs defaults to us-equity profile → all tabs shown
+vi.mock('@/widgets/symbol-page/hooks/useAssetInfo', () => ({
+    useAssetInfo: vi.fn(() => undefined),
+}));
+
 describe('Journey: New User', () => {
     beforeEach(() => {
         vi.clearAllMocks();
