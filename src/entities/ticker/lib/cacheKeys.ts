@@ -21,6 +21,9 @@ export const KOREAN_NAMES_CACHE_TTL = SECONDS_PER_YEAR;
 /** 한국어 티커 캐시 키 (전체 매핑 한 번에 보관). */
 export const KOREAN_TICKERS_CACHE_KEY = 'korean:tickers';
 
+/** FMP cryptocurrency-list membership cache key. */
+export const CRYPTO_FMP_LIST_CACHE_KEY = 'crypto:fmp-list';
+
 export function buildTickerSearchCacheKey(query: string): string {
     return `ticker:search:${query.toLowerCase()}`;
 }

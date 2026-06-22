@@ -1,5 +1,6 @@
 import { tryGetTickerDatabaseClient } from './db';
 import { DrizzleCryptoAssetRepository } from '../api';
+import { fmpCryptoMembership } from './fmpCryptoMembership';
 import type {
     CryptoAssetRecord,
     CryptoAssetRepository,
@@ -15,6 +16,19 @@ const CRYPTO_EXCHANGE_FULL_NAME = 'Cryptocurrency';
  * Module-level caches for hot-path crypto classification and record lookups.
  * The crypto universe is static (no delists mid-session), so a simple Map is
  * safe here — no TTL needed. The process restarts on deploy, flushing stale entries.
+ *
+ * `cryptoSymbolCache` holds the AUTHORITATIVE classification: a symbol is set
+ * only after the full check (DB OR FMP-list) has been performed. This prevents
+ * cache pollution: if `getCryptoAsset` (DB-only) misses and sets `false`, a
+ * subsequent `isCryptoSymbol` would never consult the FMP-list fallback, causing
+ * new un-seeded coins to be misclassified as non-crypto.
+ *
+ * - `true`  → confirmed crypto (DB hit OR FMP-list hit)
+ * - `false` → confirmed non-crypto (DB miss AND FMP-list miss)
+ *
+ * Caching FMP-positive `true` is safe: asset class is effectively immutable
+ * within a process lifetime (crypto never becomes a stock). Only after BOTH
+ * DB and FMP-list miss is the symbol definitively classified as non-crypto.
  *
  * `cryptoSearchCache` is keyed by the normalized query (lowercased + trimmed)
  * and stores the mapped TickerSearchResult array. Autocomplete fires on every
@@ -42,23 +56,59 @@ function recordToSearchResult(r: CryptoAssetRecord): TickerSearchResult {
     };
 }
 
-/** Authoritative crypto classifier: true iff the symbol exists in crypto_assets. */
+/**
+ * Authoritative crypto classifier: true iff the symbol is in crypto_assets OR FMP-list.
+ *
+ * Cache contract: `cryptoSymbolCache` is only written AFTER the full check
+ * (DB + optional FMP-list fallback). This prevents the following pollution
+ * scenario: `getCryptoAsset` (DB-only) misses and writes `false` → a later
+ * `isCryptoSymbol` hits the cache and returns `false` without ever consulting
+ * the FMP-list → an un-seeded but valid crypto coin is misclassified.
+ *
+ * `true`  is cached whenever DB OR FMP-list confirms the symbol is crypto.
+ * `false` is cached ONLY after BOTH DB miss AND FMP-list miss.
+ */
 export async function isCryptoSymbol(symbol: string): Promise<boolean> {
     const upper = symbol.toUpperCase();
     if (cryptoSymbolCache.has(upper)) return cryptoSymbolCache.get(upper)!;
     const repository = tryGetRepository();
-    if (!repository) return false;
+    if (!repository) {
+        // No DB — try FMP-list as last resort so tab guards don't 404 new coins.
+        const isCrypto = (await fmpCryptoMembership(upper)) !== null;
+        cryptoSymbolCache.set(upper, isCrypto);
+        return isCrypto;
+    }
     try {
-        const result = (await repository.findBySymbol(upper)) !== null;
-        cryptoSymbolCache.set(upper, result);
-        return result;
+        const dbHit = (await repository.findBySymbol(upper)) !== null;
+        if (dbHit) {
+            cryptoSymbolCache.set(upper, true);
+            return true;
+        }
+        // Un-seeded coins not yet in crypto_assets can appear after the last re-seed —
+        // consult the FMP-list as a freshness fallback before classifying as non-crypto.
+        // Cache the result regardless: `true` is safe (asset class is immutable),
+        // and `false` only lands here after both DB and FMP-list confirm non-crypto.
+        const isCrypto = (await fmpCryptoMembership(upper)) !== null;
+        cryptoSymbolCache.set(upper, isCrypto);
+        return isCrypto;
     } catch (e) {
         console.warn('[cryptoAssetStore] findBySymbol failed', e);
         return false;
     }
 }
 
-/** Fetch a single crypto asset record (name/koreanName/supply) or null. */
+/**
+ * Fetch a single crypto asset record (name/koreanName/supply) or null.
+ *
+ * Cache contract: this function only consults the DB (no FMP-list fallback),
+ * so it must NOT write `false` into `cryptoSymbolCache` on a DB miss — doing
+ * so would poison the cache for `isCryptoSymbol`, which also checks the
+ * FMP-list before classifying a symbol as non-crypto. On DB HIT we write
+ * `true` into `cryptoSymbolCache` as a performance prime (avoids a redundant
+ * `isCryptoSymbol` DB round-trip for the same symbol). On DB MISS we leave
+ * `cryptoSymbolCache` untouched; `isCryptoSymbol` will fill it correctly after
+ * its own full check (DB + FMP-list).
+ */
 export async function getCryptoAsset(
     symbol: string
 ): Promise<CryptoAssetRecord | null> {
@@ -75,7 +125,11 @@ export async function getCryptoAsset(
     try {
         const record = await repository.findBySymbol(upper);
         cryptoAssetCache.set(upper, record);
-        cryptoSymbolCache.set(upper, record !== null);
+        if (record !== null) {
+            // On a DB miss we deliberately leave cryptoSymbolCache untouched, so
+            // isCryptoSymbol still checks the FMP-list before caching `false`.
+            cryptoSymbolCache.set(upper, true);
+        }
         return record;
     } catch (e) {
         console.warn('[cryptoAssetStore] getCryptoAsset failed', e);
