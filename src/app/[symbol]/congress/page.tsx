@@ -30,7 +30,7 @@ import { isTabAllowedForSymbol } from '@/entities/ticker/api';
 // 의회 거래는 STOCK Act상 신고 마감(거래일 +30~45일) 이후 공시되므로
 // 일 단위 갱신이 적절하다. 24h revalidate는 엣지 캐시를 최대한 활용하면서
 // 새 공시를 다음 날 안에 반영하는 균형점이다.
-// MISTAKES §15: route segment config must be a literal constant, not an imported value.
+// app/CLAUDE.md ISR 4축 규약 §4: route segment config must stay a literal for Next.js static analysis (the magic-number-extraction rule does not apply here).
 export const revalidate = 86400; // 24h
 
 // generateStaticParams가 없으면 revalidate가 무력화된다(Next.js). 빈 배열 = 빌드 시 prebuild

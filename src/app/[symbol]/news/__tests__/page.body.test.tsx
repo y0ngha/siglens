@@ -116,23 +116,28 @@ const mockGetAssetInfoResilient = vi.mocked(getAssetInfoResilient);
  * appear as JSX elements whose `type` is the local function. Since we can't
  * import those local functions, we instead collect the *children* of every
  * Suspense in the tree and check the function names via `.type.name`.
+ *
+ * The inner traversal is extracted as `walkSuspense` (module-level, explicit
+ * `results` parameter) to avoid a nested closure that captures the outer array
+ * implicitly — see MISTAKES §20.
  */
+function walkSuspense(node: ReactNode, results: ReactNode[]): void {
+    if (Array.isArray(node)) {
+        node.forEach(n => walkSuspense(n, results));
+        return;
+    }
+    if (!isValidElement(node)) return;
+    if (node.type === Suspense) {
+        const children = (node.props as { children?: ReactNode }).children;
+        if (children !== undefined) results.push(children);
+    }
+    const childProp = (node.props as { children?: ReactNode }).children;
+    if (childProp) walkSuspense(childProp, results);
+}
+
 function findAllSuspenseChildren(tree: ReactNode): ReactNode[] {
     const results: ReactNode[] = [];
-    function walk(node: ReactNode): void {
-        if (Array.isArray(node)) {
-            node.forEach(walk);
-            return;
-        }
-        if (!isValidElement(node)) return;
-        if (node.type === Suspense) {
-            const children = (node.props as { children?: ReactNode }).children;
-            if (children !== undefined) results.push(children);
-        }
-        const childProp = (node.props as { children?: ReactNode }).children;
-        if (childProp) walk(childProp);
-    }
-    walk(tree);
+    walkSuspense(tree, results);
     return results;
 }
 
@@ -142,19 +147,13 @@ function findAllSuspenseChildren(tree: ReactNode): ReactNode[] {
  * imported from the outside.
  */
 function findSuspenseChildByName(tree: ReactNode, fnName: string): boolean {
-    const children = findAllSuspenseChildren(tree);
-    for (const child of children) {
-        if (isValidElement(child)) {
-            const t = child.type as { name?: string } | string;
-            if (
-                typeof t === 'function' &&
-                (t as { name?: string }).name === fnName
-            ) {
-                return true;
-            }
-        }
-    }
-    return false;
+    return findAllSuspenseChildren(tree).some(child => {
+        if (!isValidElement(child)) return false;
+        const t = child.type as { name?: string } | string;
+        return (
+            typeof t === 'function' && (t as { name?: string }).name === fnName
+        );
+    });
 }
 
 const EQUITY_ASSET_INFO = {
@@ -254,5 +253,39 @@ describe('NewsPage — isEquity body section-gating', () => {
         const treeStr = JSON.stringify(tree);
         expect(treeStr).toContain('최신 뉴스와 어닝 일정');
         expect(treeStr).not.toContain('최신 코인 뉴스');
+    });
+});
+
+describe('NewsPage — aiArticleJsonLd headline/description isEquity branch', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    it('crypto → aiArticleJsonLd headline uses 최근 코인 뉴스 AI 요약', async () => {
+        mockGetAssetInfoResilient.mockResolvedValue(CRYPTO_ASSET_INFO);
+
+        const tree = await NewsPage({
+            params: Promise.resolve({ symbol: 'BTCUSD' }),
+        });
+
+        const treeStr = JSON.stringify(tree);
+        // crypto headline
+        expect(treeStr).toContain('최근 코인 뉴스 AI 요약');
+        // equity-only headline must be absent
+        expect(treeStr).not.toContain('최근 뉴스 AI 요약\\"');
+    });
+
+    it('equity → aiArticleJsonLd headline uses 최근 뉴스 AI 요약 (not 코인)', async () => {
+        mockGetAssetInfoResilient.mockResolvedValue(EQUITY_ASSET_INFO);
+
+        const tree = await NewsPage({
+            params: Promise.resolve({ symbol: 'aapl' }),
+        });
+
+        const treeStr = JSON.stringify(tree);
+        // equity headline (ends before 코인)
+        expect(treeStr).toContain('최근 뉴스 AI 요약');
+        // crypto-only headline must be absent
+        expect(treeStr).not.toContain('최근 코인 뉴스 AI 요약');
     });
 });

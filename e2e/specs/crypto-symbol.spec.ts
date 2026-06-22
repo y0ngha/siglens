@@ -89,4 +89,16 @@ test.describe('crypto symbol page', () => {
         expect(response.status()).toBe(200);
         expect(response.headers()['content-type']).toMatch(/xml/);
     });
+
+    test('equity-only tab URL /BTCUSD/options returns 404', async ({
+        page,
+    }) => {
+        // Validates the real isCryptoSymbolStatic → descriptor.tabs seam against
+        // the seeded crypto_assets row (BTCUSD). The page body guard calls
+        // isTabAllowedForSymbol('BTCUSD', 'options') → false → notFound() → 404.
+        // Without the seed this route would resolve getAssetInfo as null and
+        // notFound() too (different code path), so seeding BTCUSD is load-bearing.
+        const response = await page.request.get('/BTCUSD/options');
+        expect(response.status()).toBe(404);
+    });
 });

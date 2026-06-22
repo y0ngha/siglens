@@ -126,7 +126,7 @@ const mockGetProfileResilient = getProfileResilient as MockedFunction<
 
 describe('Fundamental page ISR route config', () => {
     it('exports revalidate = 86400 (literal — required for Next.js static analysis)', () => {
-        // MISTAKES §15: route segment config must be a literal, not an imported constant
+        // app/CLAUDE.md ISR 4축 규약 §4: route segment config must stay a literal for Next.js static analysis (the magic-number-extraction rule does not apply here)
         expect(revalidate).toBe(86400);
     });
 });

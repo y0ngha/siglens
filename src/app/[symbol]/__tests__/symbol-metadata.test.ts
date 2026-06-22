@@ -122,6 +122,13 @@ const { mockGetAssetInfoResilient, mockGetProfileResilient } = vi.hoisted(
     })
 );
 
+// isTabAllowedForSymbol is called in options/page.tsx generateMetadata (crypto soft-404 guard).
+// In this test all symbols are treated as equity (tab allowed = true) so the guard passes
+// and the degraded/null branches below are exercised as before.
+vi.mock('@/entities/ticker/api', () => ({
+    isTabAllowedForSymbol: vi.fn().mockResolvedValue(true),
+}));
+
 vi.mock('@/entities/ticker', () => ({
     getAssetInfoResilient: mockGetAssetInfoResilient,
     // assetInfo가 존재하는 happy-path에서 generateMetadata가 호출한다. canonical은

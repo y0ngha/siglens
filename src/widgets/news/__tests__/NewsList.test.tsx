@@ -101,4 +101,20 @@ describe('NewsList', () => {
             '2026년 5월 6일 오전 07:35 KST'
         );
     });
+
+    it('impact badge는 자산 중립 "가격 영향" 레이블을 사용한다 (equity·crypto 공용)', () => {
+        // NewsList is rendered on both equity and crypto news pages, so the label
+        // must be asset-neutral ("가격") rather than equity-specific ("주가").
+        mockUseNewsPollingWithInvalidation.mockReturnValue({
+            items: [READY_ITEM], // READY_ITEM has priceImpact: 'medium'
+            isPolling: false,
+            pollError: null,
+        });
+
+        renderWithClient(<NewsList items={[READY_ITEM]} symbol="BTCUSD" />);
+
+        // Must render "가격 영향 보통", not "주가 영향 보통".
+        expect(screen.getByText('가격 영향 보통')).toBeInTheDocument();
+        expect(screen.queryByText('주가 영향 보통')).not.toBeInTheDocument();
+    });
 });

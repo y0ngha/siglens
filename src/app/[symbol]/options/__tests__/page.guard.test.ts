@@ -67,7 +67,10 @@ import { describe, expect, it, beforeEach, vi } from 'vitest';
 import type { MockedFunction } from 'vitest';
 import { isTabAllowedForSymbol } from '@/entities/ticker/api';
 import { notFound } from 'next/navigation';
-import OptionsPage, { revalidate } from '@/app/[symbol]/options/page';
+import OptionsPage, {
+    generateMetadata,
+    revalidate,
+} from '@/app/[symbol]/options/page';
 
 const mockIsTabAllowed = isTabAllowedForSymbol as MockedFunction<
     typeof isTabAllowedForSymbol
@@ -76,7 +79,7 @@ const mockNotFound = notFound as MockedFunction<typeof notFound>;
 
 describe('Options page ISR route config', () => {
     it('exports revalidate = 43200 (literal — required for Next.js static analysis)', () => {
-        // MISTAKES §15: route segment config must be a literal, not an imported constant
+        // app/CLAUDE.md ISR 4축 규약 §4: route segment config must stay a literal for Next.js static analysis (the magic-number-extraction rule does not apply here)
         expect(revalidate).toBe(43200);
     });
 });
@@ -146,5 +149,74 @@ describe('Options page tab guard', () => {
         // The cache (which wraps hasOptionsMarket) must NOT have been called —
         // the guard ran first and threw notFound, preventing further execution.
         expect(mockCache).not.toHaveBeenCalled();
+    });
+});
+
+/**
+ * generateMetadata must mirror the page body's isTabAllowedForSymbol guard.
+ * Without it, a crypto symbol would have canonical + index:true metadata while
+ * the page body returns notFound() (noindex) — creating a soft-404 mismatch.
+ */
+describe('Options generateMetadata crypto NOINDEX guard', () => {
+    const NOINDEX_SYMBOL_METADATA = {
+        robots: { index: false, follow: false },
+        alternates: { canonical: null },
+    };
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    it('crypto symbol (isTabAllowedForSymbol → false) → returns NOINDEX_SYMBOL_METADATA', async () => {
+        mockIsTabAllowed.mockResolvedValue(false);
+
+        const result = await generateMetadata({
+            params: Promise.resolve({ symbol: 'BTCUSD' }),
+        });
+
+        expect(mockIsTabAllowed).toHaveBeenCalledWith('BTCUSD', 'options');
+        // Must exactly match NOINDEX_SYMBOL_METADATA shape: robots index:false + canonical null.
+        // A real indexable metadata object would have alternates.canonical set to a URL string.
+        expect(result).toEqual(NOINDEX_SYMBOL_METADATA);
+    });
+
+    it('equity symbol (isTabAllowedForSymbol → true) → returns indexable metadata (not NOINDEX)', async () => {
+        mockIsTabAllowed.mockResolvedValue(true);
+
+        // Provide assetInfo so generateMetadata can build real metadata content.
+        const { getAssetInfoResilient } = await import('@/entities/ticker');
+        (
+            getAssetInfoResilient as MockedFunction<
+                typeof getAssetInfoResilient
+            >
+        ).mockResolvedValue({
+            assetInfo: {
+                symbol: 'AAPL',
+                name: 'Apple Inc.',
+                koreanName: '애플',
+                fmpSymbol: 'AAPL',
+            },
+            degraded: false,
+        } as Awaited<ReturnType<typeof getAssetInfoResilient>>);
+
+        const result = await generateMetadata({
+            params: Promise.resolve({ symbol: 'AAPL' }),
+        });
+
+        expect(mockIsTabAllowed).toHaveBeenCalledWith('AAPL', 'options');
+        // Must NOT be the hard NOINDEX sentinel object.
+        // NOINDEX_SYMBOL_METADATA has { robots: { index: false, follow: false },
+        //   alternates: { canonical: null } } — the sentinel returned for crypto/invalid.
+        // The equity path (hasOptions:false in this test setup) may also add robots
+        // index:false but with follow:true and a canonical URL — a different shape.
+        expect(result).not.toEqual(NOINDEX_SYMBOL_METADATA);
+        // The equity path's robots.follow must be true (links followed), distinguishing
+        // it from NOINDEX_SYMBOL_METADATA's follow:false hard-noindex treatment.
+        const robots = result.robots as
+            | { index?: boolean; follow?: boolean }
+            | undefined;
+        // Either no robots override (full indexing) or follow:true (soft-noindex)
+        // — both are valid for equity. The hard guard's follow:false must not appear.
+        expect(robots?.follow).not.toBe(false);
     });
 });

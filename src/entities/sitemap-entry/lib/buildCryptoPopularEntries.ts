@@ -1,4 +1,5 @@
 import { POPULAR_CRYPTOS } from '@/shared/config/popular-cryptos';
+import { CRYPTO_CHART_ISR_PERIOD_HOURS } from '@/shared/config/isr';
 import { MS_PER_HOUR } from '@/shared/config/time';
 import { SITE_URL } from '@/shared/lib/seo';
 import type { SitemapEntry } from '../model';
@@ -11,7 +12,9 @@ import type { SitemapEntry } from '../model';
  */
 function quantizeTo6hBoundary(now: Date): Date {
     const utcHour = now.getUTCHours();
-    const boundaryHour = Math.floor(utcHour / 6) * 6;
+    const boundaryHour =
+        Math.floor(utcHour / CRYPTO_CHART_ISR_PERIOD_HOURS) *
+        CRYPTO_CHART_ISR_PERIOD_HOURS;
     return new Date(
         Date.UTC(
             now.getUTCFullYear(),
