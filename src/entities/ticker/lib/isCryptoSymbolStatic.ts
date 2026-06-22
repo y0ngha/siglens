@@ -26,6 +26,14 @@ import { SECONDS_PER_DAY } from '@/shared/config/time';
  * essentially static between deploys and the `symbol:UPPER` tag allows
  * on-demand invalidation via `revalidateTag` if needed.
  *
+ * Per-call closure is intentional: `unstable_cache` options (including `tags`)
+ * are static per closure instance, so a module-level singleton cannot carry a
+ * per-symbol `tags: ['symbol:UPPER']` value. Creating a new closure each call
+ * is the only way to attach the per-symbol tag for targeted `revalidateTag`
+ * invalidation. Data Cache correctness is key-based, so the per-call closure
+ * has no correctness cost; React `cache()` request-level dedup by function
+ * identity does not apply here, but the persistent Data Cache dedup by key does.
+ *
  * Graceful degradation: the underlying `isCryptoSymbol` already catches DB
  * errors and returns `false` (= treat as not-crypto), so error behavior is
  * unchanged through this wrapper.

@@ -31,15 +31,20 @@ function quantizeTo6hBoundary(now: Date): Date {
 /**
  * Crypto popular sitemap entries.
  *
- * lastmod/changeFrequency are aligned with the actual ISR revalidation cadence of each
- * route so Googlebot does not recrawl faster than the content can change:
+ * lastmod uses the chart ISR period (6h, `CRYPTO_CHART_ISR_PERIOD_HOURS`) as a
+ * conservative common baseline for all tabs via `quantizeTo6hBoundary`. This is
+ * shorter than fear-greed (revalidate=86400/24h) and overall (revalidate=43200/12h)
+ * actual cadences — meaning lastmod conservatively under-claims freshness rather than
+ * over-claiming it. Googlebot may recrawl those tabs less often than their true cadence
+ * would allow, but we never send a false "this page is newer than it is" signal.
  *
- *   - chart (`revalidate=21600`, 6h) → `changeFrequency: 'daily'`, lastmod quantized to
- *     the last 6h UTC boundary.
+ * `changeFrequency` per tab reflects editorial intent and is independent of lastmod:
+ *   - chart (`revalidate=21600`, 6h) → `changeFrequency: 'daily'`, 6h-boundary lastmod.
  *   - news (`revalidate=43200`, 12h) → `changeFrequency: 'daily'`, rolling 1h-ago lastmod
- *     (news is the most dynamic tab; 1h rolling matches the stock convention and
- *     accounts for on-demand revalidateTag that can refresh the page inside the ISR window).
- *   - fear-greed (`revalidate=86400`, 24h) → `changeFrequency: 'daily'`, 6h-boundary lastmod.
+ *     (news is the most dynamic tab; 1h rolling accounts for on-demand revalidateTag that
+ *     can refresh the page inside the ISR window).
+ *   - fear-greed (`revalidate=86400`, 24h) → `changeFrequency: 'daily'`, 6h-boundary lastmod
+ *     (actual cadence is 24h; lastmod baseline under-claims by 4×, which is conservative).
  *   - overall (`revalidate=43200`, 12h) → `changeFrequency: 'weekly'`, 6h-boundary lastmod
  *     (AI analysis cache is slow-moving; weekly matches the stock overall convention).
  *
