@@ -90,7 +90,6 @@ export async function searchTicker(
             searchCryptoAssets(trimmed).catch((): TickerSearchResult[] => []),
         ]);
         // deduplicateResults guards the unlikely case where a symbol exists in both stores.
-        // rankByRelevance scores each result so exact/popular matches surface first regardless of asset type.
         const ranked = rankByRelevance(
             deduplicateResults([...stockResults, ...cryptoResults]),
             trimmed

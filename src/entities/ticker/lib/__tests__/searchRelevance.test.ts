@@ -3,6 +3,11 @@ import {
     scoreSearchRelevance,
     rankByRelevance,
     isPopularSymbol,
+    EXACT_MATCH_SCORE,
+    PREFIX_MATCH_SCORE,
+    SUBSTRING_MATCH_SCORE,
+    FALLBACK_SCORE,
+    POPULAR_BONUS,
 } from '../searchRelevance';
 import type { TickerSearchResult } from '@/shared/lib/types';
 
@@ -23,59 +28,83 @@ function makeResult(
 describe('scoreSearchRelevance', () => {
     it('exact koreanName match scores 100', () => {
         const result = makeResult('BTCUSD', 'Bitcoin USD', '비트코인');
-        expect(scoreSearchRelevance(result, '비트코인', false)).toBe(100);
+        expect(scoreSearchRelevance(result, '비트코인', false)).toBe(
+            EXACT_MATCH_SCORE
+        );
     });
 
     it('exact symbol match scores 100', () => {
         const result = makeResult('BTCUSD', 'Bitcoin USD');
-        expect(scoreSearchRelevance(result, 'BTCUSD', false)).toBe(100);
+        expect(scoreSearchRelevance(result, 'BTCUSD', false)).toBe(
+            EXACT_MATCH_SCORE
+        );
     });
 
     it('exact name match scores 100', () => {
         const result = makeResult('BTC', 'bitcoin usd');
-        expect(scoreSearchRelevance(result, 'bitcoin usd', false)).toBe(100);
+        expect(scoreSearchRelevance(result, 'bitcoin usd', false)).toBe(
+            EXACT_MATCH_SCORE
+        );
     });
 
     it('prefix match scores 70', () => {
         const result = makeResult('BTCUSD', 'Bitcoin USD', '비트코인');
-        expect(scoreSearchRelevance(result, '비트코', false)).toBe(70);
+        expect(scoreSearchRelevance(result, '비트코', false)).toBe(
+            PREFIX_MATCH_SCORE
+        );
     });
 
     it('substring match scores 40', () => {
         const result = makeResult('BTCUSD', 'Bitcoin USD', '비트코인');
-        expect(scoreSearchRelevance(result, '코인', false)).toBe(40);
+        expect(scoreSearchRelevance(result, '코인', false)).toBe(
+            SUBSTRING_MATCH_SCORE
+        );
     });
 
     it('no match scores 10 (base fallback)', () => {
         const result = makeResult('XYZUSD', 'XYZ Coin', 'X코인');
-        expect(scoreSearchRelevance(result, 'bitcoin', false)).toBe(10);
+        expect(scoreSearchRelevance(result, 'bitcoin', false)).toBe(
+            FALLBACK_SCORE
+        );
     });
 
     it('popular bonus adds 15 on top of base', () => {
         const result = makeResult('BTCUSD', 'Bitcoin USD', '비트코인');
-        expect(scoreSearchRelevance(result, '비트코인', true)).toBe(115);
+        expect(scoreSearchRelevance(result, '비트코인', true)).toBe(
+            EXACT_MATCH_SCORE + POPULAR_BONUS
+        );
     });
 
     it('popular bonus on prefix match = 70 + 15 = 85', () => {
         const result = makeResult('BTCUSD', 'Bitcoin USD', '비트코인');
-        expect(scoreSearchRelevance(result, '비트코', true)).toBe(85);
+        expect(scoreSearchRelevance(result, '비트코', true)).toBe(
+            PREFIX_MATCH_SCORE + POPULAR_BONUS
+        );
     });
 
     it('popular bonus on no-match = 10 + 15 = 25', () => {
         const result = makeResult('BTCUSD', 'Bitcoin USD');
-        expect(scoreSearchRelevance(result, 'xyz', true)).toBe(25);
+        expect(scoreSearchRelevance(result, 'xyz', true)).toBe(
+            FALLBACK_SCORE + POPULAR_BONUS
+        );
     });
 
     it('score is case-insensitive', () => {
         const result = makeResult('AAPL', 'Apple Inc.');
-        expect(scoreSearchRelevance(result, 'apple inc.', false)).toBe(100);
-        expect(scoreSearchRelevance(result, 'AAPL', false)).toBe(100);
+        expect(scoreSearchRelevance(result, 'apple inc.', false)).toBe(
+            EXACT_MATCH_SCORE
+        );
+        expect(scoreSearchRelevance(result, 'AAPL', false)).toBe(
+            EXACT_MATCH_SCORE
+        );
     });
 
     it('missing koreanName field is skipped safely', () => {
         const result = makeResult('AAPL', 'Apple Inc.');
         // No koreanName — should not throw and still score based on name/symbol.
-        expect(scoreSearchRelevance(result, 'apple', false)).toBe(70);
+        expect(scoreSearchRelevance(result, 'apple', false)).toBe(
+            PREFIX_MATCH_SCORE
+        );
     });
 });
 
