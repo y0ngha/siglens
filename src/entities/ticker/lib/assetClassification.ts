@@ -1,3 +1,5 @@
+import type { AssetClass } from '@/shared/config/marketProfile';
+
 /**
  * 티커가 주식(stock)인지 ETF/지수(non-stock)인지 분류한다.
  *
@@ -116,8 +118,11 @@ export interface CorporationAboutNode {
 export function buildAssetAboutNode(
     symbol: string,
     name: string,
-    fmpSymbol?: string
+    fmpSymbol?: string,
+    assetClass?: AssetClass
 ): CorporationAboutNode | undefined {
+    // Crypto has no standard schema.org type → omit the about node entirely.
+    if (assetClass === 'crypto') return undefined;
     const category = classifyAsset(symbol, fmpSymbol);
     if (category !== 'stock') return undefined;
     return {

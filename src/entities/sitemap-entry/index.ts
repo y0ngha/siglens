@@ -12,5 +12,6 @@ export {
 
 export { toUrlSetXml, toSitemapIndexXml } from './lib/xml';
 export { buildPopularEntries } from './lib/buildPopularEntries';
+export { buildCryptoPopularEntries } from './lib/buildCryptoPopularEntries';
 export { buildStaticEntries } from './lib/buildStaticEntries';
 export { buildLongTailEntries } from './lib/buildLongTailEntries';

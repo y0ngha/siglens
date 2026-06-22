@@ -13,7 +13,7 @@ import {
     isAdmissibleSymbolShape,
 } from '@/shared/config/market';
 import { isUnresolvableDegraded } from '@/shared/lib/symbolGuard';
-import { marketProfileOf } from '@/shared/config/marketProfile';
+import { getDescriptor, marketProfileOf } from '@/shared/config/marketProfile';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import {
     buildAssetAboutNode,
@@ -26,7 +26,7 @@ import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/shared/config/queryConfig';
 import { MS_PER_SECOND } from '@/shared/config/time';
 import {
     buildBreadcrumbJsonLd,
-    buildSymbolSeoContent,
+    resolveSymbolSeoContent,
     SITE_NAME,
     SITE_URL,
     NOINDEX_SYMBOL_METADATA,
@@ -73,11 +73,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         return NOINDEX_SYMBOL_METADATA;
     }
     const displayName = buildDisplayName(assetInfo, ticker);
-    const { title, fullTitle, description, url, keywords } =
-        buildSymbolSeoContent(ticker, {
+    const profile = marketProfileOf(assetInfo);
+    const seo = resolveSymbolSeoContent(
+        ticker,
+        getDescriptor(profile).assetClass,
+        {
             displayName,
             koreanName: assetInfo.koreanName,
-        });
+        }
+    );
+    const { title, fullTitle, description, url, keywords } = seo;
 
     return {
         title,
@@ -125,6 +130,7 @@ export default async function SymbolPage({ params }: Props) {
     // Compute marketProfile once here so both TechnicalFactsSummary (Suspense fallback)
     // and SymbolPageClient receive the same value without recomputing on the client.
     const marketProfile = marketProfileOf(assetInfo);
+    const { assetClass } = getDescriptor(marketProfile);
 
     // default-tf bars를 정적화로 가져온다. 실패(인프라 다운 등)는 null로 degrade해
     // 페이지가 깨지지 않도록 한다. 이 bars는 Suspense fallback의 FactLayer SSR에만 쓰이며,
@@ -153,19 +159,20 @@ export default async function SymbolPage({ params }: Props) {
               );
 
     const displayName = buildDisplayName(assetInfo, ticker);
-    const { fullTitle, description, url } = buildSymbolSeoContent(ticker, {
+    const pageSeo = resolveSymbolSeoContent(ticker, assetClass, {
         displayName,
         koreanName: assetInfo.koreanName,
     });
+    const { fullTitle, description, url } = pageSeo;
 
     // about 노드는 classifyAsset 결과가 stock일 때만 Corporation으로 채워지고,
     // ETF/Index/모호한 종목은 undefined를 반환해 spread로 자연 생략된다.
-    // 이전에는 ETF/Index 오분류 위험으로 about 자체를 두지 않았으나, 분류 안전망
-    // 도입 후엔 분류 가능한 종목만 안전하게 Corporation 노드를 노출한다.
+    // crypto는 schema.org 표준 타입이 없어 about 노드를 생략한다.
     const aboutNode = buildAssetAboutNode(
         ticker,
         assetInfo.koreanName ?? assetInfo.name,
-        assetInfo.fmpSymbol
+        assetInfo.fmpSymbol,
+        assetClass
     );
     const jsonLd = {
         '@context': 'https://schema.org',

@@ -6,9 +6,11 @@ import {
 import { countLongTailTickers } from '@/entities/sitemap-entry/server';
 import { SITE_URL } from '@/shared/lib/seo';
 import { NextResponse } from 'next/server';
-
-const SITEMAP_RETRY_AFTER_SECONDS = '300';
-const SITEMAP_UNAVAILABLE_BODY = 'Sitemap data temporarily unavailable';
+import {
+    SITEMAP_CACHE_CONTROL,
+    SITEMAP_RETRY_AFTER_SECONDS,
+    SITEMAP_UNAVAILABLE_BODY,
+} from '@/app/api/sitemap/_shared/constants';
 
 // long-tail count는 DB 기반 캐시 데이터라 빌드 시점 prerender 대상이 아니다.
 // force-dynamic + CDN 1h cache로 처리.
@@ -72,6 +74,10 @@ export async function GET(): Promise<Response> {
             // sitemap fetch를 유도한다 (CDN 1h cache가 비용 흡수).
             lastModified: now,
         },
+        {
+            url: `${SITE_URL}/sitemap-crypto.xml`,
+            lastModified: now,
+        },
         ...longTailEntries,
     ];
 
@@ -79,8 +85,7 @@ export async function GET(): Promise<Response> {
     return new NextResponse(xml, {
         headers: {
             'Content-Type': 'application/xml; charset=utf-8',
-            'Cache-Control':
-                'public, max-age=3600, stale-while-revalidate=3600',
+            'Cache-Control': SITEMAP_CACHE_CONTROL,
         },
     });
 }

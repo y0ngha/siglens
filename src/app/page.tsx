@@ -9,6 +9,7 @@ import {
     SkillsShowcaseSkeleton,
 } from '@/widgets/home/SkillsShowcase';
 import { StatsBar, StatsBarSkeleton } from '@/widgets/home/StatsBar';
+import { CryptoShowcase } from '@/widgets/home/CryptoShowcase';
 import { TickerCategories } from '@/widgets/home/TickerCategories';
 import Link from 'next/link';
 import { cache, Suspense } from 'react';
@@ -169,19 +170,27 @@ export default async function Home() {
                     text: '현재는 회원가입 없이 무료로 제공됩니다. 향후 고급 기능은 유료 플랜으로 제공될 예정이며, 기본 분석은 계속 무료로 이용할 수 있습니다.',
                 },
             },
+            {
+                '@type': 'Question',
+                name: '암호화폐도 분석할 수 있나요?',
+                acceptedAnswer: {
+                    '@type': 'Answer',
+                    text: '비트코인(BTCUSD), 이더리움(ETHUSD) 등 주요 암호화폐도 종목처럼 분석합니다. 티커를 입력하면 24시간 가격 차트와 보조지표, 매매 신호, 최신 크립토 뉴스, 공포 탐욕 지수, 그리고 이를 묶은 AI 종합 결론까지 확인할 수 있습니다. 예: /BTCUSD.',
+                },
+            },
         ],
     };
 
     const howToJsonLd = {
         '@context': 'https://schema.org',
         '@type': 'HowTo',
-        name: `${SITE_NAME}로 미국 주식을 차트, 실적, 뉴스, 옵션, 공포 탐욕 지수로 살펴보고 종합 결론까지 받는 방법`,
-        description: `${SITE_NAME}에서 한 종목을 차트, 실적, 뉴스, 옵션 시장, 공포 탐욕 지수 다섯 축으로 살펴보고, 다섯을 묶은 종합 결론과 시나리오를 받는 흐름입니다.`,
+        name: `${SITE_NAME}로 미국 주식과 암호화폐를 차트, 실적, 뉴스, 옵션, 공포 탐욕 지수로 살펴보고 종합 결론까지 받는 방법`,
+        description: `${SITE_NAME}에서 미국 주식이나 암호화폐 종목을 차트, 실적, 뉴스, 옵션 시장, 공포 탐욕 지수 다섯 축으로 살펴보고, 다섯을 묶은 종합 결론과 시나리오를 받는 흐름입니다.`,
         step: [
             {
                 '@type': 'HowToStep',
                 name: '종목명이나 심볼 입력',
-                text: '분석하고 싶은 미국 주식 종목명이나 심볼을 검색창에 입력합니다. 예: 애플, 테슬라, 엔비디아, AAPL, TSLA, NVDA.',
+                text: '분석하고 싶은 미국 주식이나 암호화폐의 종목명·심볼을 검색창에 입력합니다. 예: 애플, 테슬라, AAPL, TSLA, 그리고 암호화폐는 BTCUSD, ETHUSD.',
                 url: `${SITE_URL}/#search`,
             },
             {
@@ -328,6 +337,7 @@ export default async function Home() {
                     <SkillsShowcaseServer />
                 </Suspense>
                 <TickerCategories />
+                <CryptoShowcase />
             </main>
         </>
     );

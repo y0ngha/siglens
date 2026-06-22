@@ -52,15 +52,16 @@ describe('GET /api/sitemap (index)', () => {
         expect(res.headers.get('Cache-Control')).toContain('max-age=3600');
     });
 
-    it('passes static and popular entries without long-tail pages when tickers are empty', async () => {
+    it('passes static, popular, and crypto entries without long-tail pages when tickers are empty', async () => {
         mockCountLongTailTickers.mockResolvedValue(0);
 
         await GET();
 
         const entries = mockToSitemapIndexXml.mock.calls[0][0];
-        expect(entries).toHaveLength(2);
+        expect(entries).toHaveLength(3);
         expect(entries[0].url).toContain('sitemap-static.xml');
         expect(entries[1].url).toContain('sitemap-popular.xml');
+        expect(entries[2].url).toContain('sitemap-crypto.xml');
     });
 
     it('generates long-tail sub-sitemap entries based on ticker count', async () => {
@@ -69,12 +70,13 @@ describe('GET /api/sitemap (index)', () => {
         await GET();
 
         const entries = mockToSitemapIndexXml.mock.calls[0][0];
-        expect(entries).toHaveLength(5);
-        expect(entries[2].url).toContain('sitemap-longtail-1.xml');
-        expect(entries[3].url).toContain('sitemap-longtail-2.xml');
-        expect(entries[4].url).toContain('sitemap-longtail-3.xml');
+        // static + popular + crypto + 3 longtail pages = 6
+        expect(entries).toHaveLength(6);
+        expect(entries[3].url).toContain('sitemap-longtail-1.xml');
+        expect(entries[4].url).toContain('sitemap-longtail-2.xml');
+        expect(entries[5].url).toContain('sitemap-longtail-3.xml');
         // long-tail entries now use 'now' instead of SITE_BUILD_DATE
-        expect(entries[2].lastModified).toEqual(
+        expect(entries[3].lastModified).toEqual(
             new Date('2026-01-01T00:00:00Z')
         );
         expect(mockCountLongTailTickers).toHaveBeenCalledOnce();

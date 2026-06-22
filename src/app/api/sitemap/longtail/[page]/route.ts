@@ -6,9 +6,12 @@ import {
 } from '@/entities/sitemap-entry';
 import { loadLongTailTickerPage } from '@/entities/sitemap-entry/server';
 import { SITE_BUILD_DATE } from '@/shared/lib/seo';
+import {
+    SITEMAP_CACHE_CONTROL,
+    SITEMAP_RETRY_AFTER_SECONDS,
+    SITEMAP_UNAVAILABLE_BODY,
+} from '@/app/api/sitemap/_shared/constants';
 
-const SITEMAP_RETRY_AFTER_SECONDS = '300';
-const SITEMAP_UNAVAILABLE_BODY = 'Sitemap data temporarily unavailable';
 const SITEMAP_PAGE_NOT_FOUND_BODY = 'Sitemap page not found';
 const MAX_LONGTAIL_SITEMAP_PAGE = 10_000;
 
@@ -68,8 +71,7 @@ export async function GET(
     return new NextResponse(xml, {
         headers: {
             'Content-Type': 'application/xml; charset=utf-8',
-            'Cache-Control':
-                'public, max-age=3600, stale-while-revalidate=3600',
+            'Cache-Control': SITEMAP_CACHE_CONTROL,
         },
     });
 }

@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import type { AssetClass } from '@/shared/config/marketProfile';
 
 export interface BreadcrumbItem {
     name: string;
@@ -65,13 +66,12 @@ export function clampSeoDescription(text: string): string {
 // "보조지표 25종" 같은 동적 숫자는 Skills 개수가 바뀌면 stale되므로 질적 표현으로 둔다
 // (M7에서 FAQ JSON-LD에 적용한 정책을 SITE_DESCRIPTION에도 일관 적용).
 export const SITE_DESCRIPTION = clampSeoDescription(
-    '미국 주식을 티커 하나로 종합 분석합니다. 다양한 보조지표 차트, 펀더멘털·뉴스·옵션, 공포 탐욕 지수를 묶은 AI 종합 결론과 2년 백테스팅 결과까지 한 화면에서.'
+    '미국 주식과 암호화폐를 티커 하나로 종합 분석합니다. 다양한 보조지표 차트와 매매 신호, 펀더멘털·뉴스, 공포 탐욕 지수를 묶은 AI 종합 결론을 한 화면에서.'
 );
 
-export const ROOT_TITLE = `미국 주식 AI 분석 — 차트·실적·뉴스로 투자 결론까지 | ${SITE_NAME}`;
+export const ROOT_TITLE = `미국 주식·암호화폐 AI 분석 — 차트·뉴스로 투자 결론까지 | ${SITE_NAME}`;
 
 // 한글 SERP는 80~120자가 안전권이라 키워드는 핵심 검색의도 위주로 추렸다.
-// 영문 키워드, 동의어 중복(매매 신호/차트 해석 등), 너무 일반적인 단일 명사(RSI, MACD 등)는 의도적으로 제외했다.
 export const ROOT_KEYWORDS = [
     'Siglens',
     '미국 주식 AI 분석',
@@ -84,11 +84,11 @@ export const ROOT_KEYWORDS = [
     'AI 주식 백테스팅',
     '오늘의 미국 주식',
     '섹터별 주식 분석',
-    '골든크로스 종목',
     '미국 주식 PER',
-    '어닝 일정',
-    '애널리스트 컨센서스',
-    '목표 주가',
+    '암호화폐 분석',
+    '코인 시세',
+    '비트코인 차트',
+    '크립토 기술적 분석',
 ];
 
 function buildSymbolDescription(displayName: string, sector?: string): string {
@@ -572,6 +572,89 @@ function buildSymbolOverallKeywords(
         '펀더멘털 분석',
         '뉴스 분석',
     ];
+}
+
+function buildCryptoSymbolDescription(displayName: string): string {
+    return `${displayName} 가격 흐름과 매매 신호를 차트에서 확인합니다. RSI·MACD·볼린저밴드, 캔들 패턴, 주요 지지·저항선을 AI가 분석해 추세와 진입 후보 가격대를 정리합니다.`;
+}
+
+function buildCryptoSymbolKeywords(
+    ticker: string,
+    displayName: string
+): string[] {
+    return [
+        `${ticker} 시세`,
+        `${ticker} 가격`,
+        `${ticker} 시세 전망`,
+        `${ticker} 차트`,
+        `${ticker} 차트 분석`,
+        `${ticker} 매수`,
+        `${ticker} 매도`,
+        `${ticker} 매매 신호`,
+        `${ticker} 기술적 분석`,
+        `${ticker} AI 분석`,
+        `${displayName} 시세 분석`,
+        `${displayName} 차트 분석`,
+    ];
+}
+
+/** Build SEO metadata for a crypto `/[symbol]` chart page (crypto-framed copy). */
+export function buildCryptoSymbolSeoContent(
+    symbol: string,
+    opts: BuildSymbolSeoOptions = {}
+): SymbolSeoContent {
+    const ticker = symbol.toUpperCase();
+    const displayName = opts.displayName ?? ticker;
+    const title = `${displayName}(${ticker}) 시세 분석 — 차트와 매매 신호`;
+    return {
+        ticker,
+        title,
+        fullTitle: `${title} | ${SITE_NAME}`,
+        description: clampSeoDescription(
+            buildCryptoSymbolDescription(displayName)
+        ),
+        url: `${SITE_URL}/${ticker}`,
+        keywords: buildCryptoSymbolKeywords(ticker, displayName),
+    };
+}
+
+/**
+ * Options for `resolveSymbolSeoContent`. `displayName` is required here (unlike
+ * the optional variant in `BuildSymbolSeoOptions`) because both call sites in
+ * `src/app/[symbol]/page.tsx` have already resolved the display name before
+ * calling this function. `koreanName` accepts `null` to match the raw DB field
+ * type (the implementation normalises null→undefined before forwarding to
+ * `buildSymbolSeoContent`).
+ */
+export interface ResolveSymbolSeoOpts {
+    displayName: string;
+    koreanName?: string | null;
+}
+
+/**
+ * Resolves the correct chart-page SEO content for a symbol based on its asset
+ * class. Crypto pages use `buildCryptoSymbolSeoContent` (price-framed copy:
+ * "시세 분석", no koreanName); stock/ETF/Index pages use `buildSymbolSeoContent`
+ * (equity-framed copy: "주가 분석", with optional koreanName).
+ *
+ * Centralising this ternary here prevents the two call sites in
+ * `src/app/[symbol]/page.tsx` (`generateMetadata` and `SymbolPage`) from
+ * diverging independently as copy evolves.
+ */
+export function resolveSymbolSeoContent(
+    ticker: string,
+    assetClass: AssetClass,
+    opts: ResolveSymbolSeoOpts
+): SymbolSeoContent {
+    if (assetClass === 'crypto') {
+        return buildCryptoSymbolSeoContent(ticker, {
+            displayName: opts.displayName,
+        });
+    }
+    return buildSymbolSeoContent(ticker, {
+        displayName: opts.displayName,
+        koreanName: opts.koreanName ?? undefined,
+    });
 }
 
 /** Build SEO metadata for the `/[symbol]/fear-greed` page. */
