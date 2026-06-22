@@ -1,5 +1,6 @@
 import { tryGetTickerDatabaseClient } from './db';
 import { DrizzleCryptoAssetRepository } from '../api';
+import { fmpCryptoMembership } from './fmpCryptoMembership';
 import type {
     CryptoAssetRecord,
     CryptoAssetRepository,
@@ -47,11 +48,27 @@ export async function isCryptoSymbol(symbol: string): Promise<boolean> {
     const upper = symbol.toUpperCase();
     if (cryptoSymbolCache.has(upper)) return cryptoSymbolCache.get(upper)!;
     const repository = tryGetRepository();
-    if (!repository) return false;
+    if (!repository) {
+        // No DB — try FMP-list as last resort so tab guards don't 404 new coins.
+        const entry = await fmpCryptoMembership(upper);
+        return entry !== null;
+    }
     try {
         const result = (await repository.findBySymbol(upper)) !== null;
-        cryptoSymbolCache.set(upper, result);
-        return result;
+        if (result) {
+            cryptoSymbolCache.set(upper, true);
+            return true;
+        }
+        // DB confirms not a crypto_assets member — check FMP-list freshness fallback
+        // for coins added after the last re-seed. Do NOT cache the positive result in
+        // cryptoSymbolCache: the FMP-list check has its own 24 h Redis TTL, and the
+        // module Map has no expiry — caching true here would keep a "new coin" as
+        // crypto-classified beyond the FMP-list TTL if the process stays warm.
+        // Negative (not in FMP-list either) IS safe to cache: confirmed-not-crypto.
+        const fmpEntry = await fmpCryptoMembership(upper);
+        if (fmpEntry !== null) return true;
+        cryptoSymbolCache.set(upper, false);
+        return false;
     } catch (e) {
         console.warn('[cryptoAssetStore] findBySymbol failed', e);
         return false;

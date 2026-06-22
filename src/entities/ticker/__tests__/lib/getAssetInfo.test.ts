@@ -76,6 +76,9 @@ vi.mock('../../lib/koreanTranslator', () => ({
 vi.mock('../../lib/cryptoAssetStore', () => ({
     getCryptoAsset: vi.fn().mockResolvedValue(null),
 }));
+vi.mock('../../lib/fmpCryptoMembership', () => ({
+    fmpCryptoMembership: vi.fn().mockResolvedValue(null),
+}));
 
 import {
     _resetInFlightTranslationsForTest,

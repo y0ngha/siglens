@@ -3,6 +3,7 @@ import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
 import { DrizzleAssetTranslationRepository } from '../api';
 import { getCryptoAsset } from './cryptoAssetStore';
 import { fetchCryptoQuoteName } from './cryptoQuoteName';
+import { fmpCryptoMembership } from './fmpCryptoMembership';
 import type {
     AssetTranslationRecord,
     AssetTranslationRepository,
@@ -194,6 +195,37 @@ export async function getAssetInfo(symbol: string): Promise<AssetInfo | null> {
             ASSET_INFO_CACHE_TTL_WITH_KOREAN
         );
         return cryptoInfo;
+    }
+
+    // FMP-list freshness fallback: when a new crypto is not yet seeded in
+    // crypto_assets, check membership against the cached FMP cryptocurrency-list
+    // (~24 h TTL). This closes the "new coin until next re-seed" gap — new coins
+    // resolve as crypto within the cache window instead of 404-ing.
+    // DB remains primary (koreanName/supply); FMP-list is the fallback only.
+    // fmpCryptoMembership degrades to null on infra/FMP failure (never throws),
+    // so this check cannot cause a 500 on ISR cold-gen.
+    const fmpEntry = await fmpCryptoMembership(upper);
+    if (fmpEntry) {
+        const name = fmpEntry.name || (await fetchCryptoQuoteName(upper));
+        const fmpCryptoInfo: AssetInfo = {
+            symbol: upper,
+            name,
+            marketProfile: 'crypto',
+        };
+        // FMP-list records have no koreanName and are provisional (valid only until
+        // the next crypto_assets re-seed). The 12 h TTL lets the record self-heal:
+        // once the symbol is seeded with a koreanName, the next request after
+        // cache expiry will find it in crypto_assets and write a WITH_KOREAN entry.
+        // Using WITH_KOREAN (1 yr) here would lock in the incomplete record and
+        // prevent self-healing — same reasoning as the WITHOUT_KOREAN path for
+        // equities still awaiting translation.
+        setCacheBestEffort(
+            cache,
+            cacheKey,
+            fmpCryptoInfo,
+            ASSET_INFO_CACHE_TTL_WITHOUT_KOREAN
+        );
+        return fmpCryptoInfo;
     }
 
     const fromDb = await readFromDatabase(upper);
