@@ -66,11 +66,8 @@ import {
     EMPTY_INDICATOR_RESULT,
     MA_DEFAULT_PERIODS,
 } from '@y0ngha/siglens-core';
-import {
-    getDescriptor,
-    type MarketProfileId,
-} from '@/shared/config/marketProfile';
-import { dynamicDecimals } from '@/shared/lib/priceFormat';
+import type { MarketProfileId } from '@/shared/config/marketProfile';
+import { resolvePriceDecimals } from '@/shared/lib/priceFormat';
 import { IndicatorSettingsModal } from './ui/IndicatorSettingsModal';
 import {
     INDICATOR_META,
@@ -103,21 +100,6 @@ interface StockChartProps {
      * Pass 'crypto' to enable dynamic-by-magnitude precision for sub-cent tokens.
      */
     marketProfile?: MarketProfileId;
-}
-
-/**
- * Resolve the number of price decimals for a market profile.
- * fixed/integer descriptors are static; dynamic (crypto) derives significant
- * digits from the latest close magnitude so sub-cent tokens aren't flattened.
- */
-function resolvePriceDecimals(
-    marketProfile: MarketProfileId,
-    lastClose: number | undefined
-): number {
-    const precision = getDescriptor(marketProfile).priceFormat.precision;
-    if (precision.kind === 'fixed') return precision.digits;
-    if (precision.kind === 'integer') return 0;
-    return dynamicDecimals(lastClose ?? 1);
 }
 
 export function StockChart({

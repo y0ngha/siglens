@@ -13,7 +13,7 @@ export const POPULAR_CRYPTOS = [
     'LINKUSD',
     'TRXUSD',
     'DOTUSD',
-    'MATICUSD',
+    'POLUSD',
     'LTCUSD',
     'BCHUSD',
     'SHIBUSD',

@@ -33,12 +33,13 @@ export async function GET(): Promise<NextResponse> {
             source.loadPage(1, CRYPTO_LONGTAIL_CAP),
         ]);
 
-        // popular entries use `now` (sliding lastmod) so crawlers see these as
-        // freshly updated each time the route serves — matching the high-priority
-        // trading-volume signals they carry.  Long-tail entries use SITE_BUILD_DATE
-        // because their content changes only when a new build deploys; advertising
-        // the request time as lastmod would send crawlers a false freshness signal
-        // and waste crawl budget on pages that haven't actually changed.
+        // popular entries use quantized lastmod (6h boundary for chart/overall/fear-greed,
+        // 1h-ago for news) aligned with each tab's ISR revalidate cadence — so Googlebot
+        // sees lastmod reflect when the content was actually last regenerated rather than
+        // a rolling "now" that would advertise false freshness and waste crawl budget.
+        // Long-tail entries use SITE_BUILD_DATE because their content changes only when a
+        // new build deploys; advertising the request time as lastmod would send crawlers
+        // a false freshness signal and waste crawl budget on pages that haven't actually changed.
         const longTail = buildLongTailEntries(longTailSymbols, SITE_BUILD_DATE);
         const served = longTail.length;
         const dropped = eligible - served;

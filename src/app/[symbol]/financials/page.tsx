@@ -34,7 +34,7 @@ import { isTabAllowedForSymbol } from '@/entities/ticker/api';
 
 // 종목당 재무제표는 분기(약 45일) 단위로 갱신된다. 24h revalidate는 엣지 캐시를 최대한 활용하면서
 // 다음 분기 공시 이전에 오래된 데이터를 서빙하지 않는 균형점이다.
-// MISTAKES §15: route segment config must be a literal constant, not an imported value.
+// app/CLAUDE.md ISR 4축 규약 §4: route segment config must stay a literal for Next.js static analysis (the magic-number-extraction rule does not apply here).
 export const revalidate = 86400; // 24h
 
 // generateStaticParams가 없으면 revalidate가 무력화된다(Next.js). 빈 배열 = 빌드 시 prebuild
@@ -52,6 +52,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const upper = symbol.toUpperCase();
     // 본문 notFound()와 일관: 잘못된 ticker는 메타데이터를 비우고 noindex로 응답한다.
     if (!isAdmissibleSymbolShape(upper)) {
+        return NOINDEX_SYMBOL_METADATA;
+    }
+    // 본문 `isTabAllowedForSymbol` 가드와 일관: 크립토 심볼은 financials 탭이 없으므로
+    // generateMetadata도 동일 조건에서 NOINDEX로 반환한다. 가드 없이 계속 진행하면
+    // 본문은 notFound()(noindex)인데 메타데이터는 canonical + index:true인 soft-404가 만들어진다.
+    if (!(await isTabAllowedForSymbol(upper, 'financials'))) {
         return NOINDEX_SYMBOL_METADATA;
     }
     const { assetInfo, degraded } = await getAssetInfoResilient(upper);

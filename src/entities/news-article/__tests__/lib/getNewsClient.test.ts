@@ -28,4 +28,31 @@ describe('getNewsClient', () => {
         expect(typeof client.fetchNewsForPeriod).toBe('function');
         expect(typeof client.fetchEarningsReport).toBe('function');
     });
+
+    // --- crypto branch singleton isolation (Required #3) ---
+    // getNewsClient('crypto') must return a distinct, stable singleton that is
+    // NOT the same instance as the default 'stock' client. The two caches
+    // (`cachedStock` / `cachedCrypto`) are module-level, so repeated calls must
+    // return the same object within a test run.
+
+    it("getNewsClient('crypto') returns a distinct singleton from getNewsClient('stock')", () => {
+        const stock = getNewsClient('stock');
+        const crypto = getNewsClient('crypto');
+        // Different cache slots → different instances.
+        expect(crypto).not.toBe(stock);
+    });
+
+    it("getNewsClient('crypto') is stable (same instance across repeated calls)", () => {
+        expect(getNewsClient('crypto')).toBe(getNewsClient('crypto'));
+    });
+
+    it("getNewsClient('crypto') is an FmpNewsClient", () => {
+        expect(getNewsClient('crypto')).toBeInstanceOf(FmpNewsClient);
+    });
+
+    it("getNewsClient('stock') explicit matches no-arg default (same cachedStock slot)", () => {
+        // Calling with 'stock' explicit must return the same instance as the
+        // default (no-arg) call because both hit the `cachedStock` slot.
+        expect(getNewsClient('stock')).toBe(getNewsClient());
+    });
 });

@@ -19,11 +19,14 @@ const SENTIMENT_CLASS: Record<NewsSentiment, string> = {
     neutral: 'bg-secondary-700 text-secondary-400',
 };
 
+// "가격 영향" is asset-neutral: works for both equity ("주가") and crypto ("코인 가격").
+// NewsList is rendered on both equity and crypto news pages, so "주가" (stock-price)
+// would be a misleading label on crypto pages. "가격" covers both without prop threading.
 const IMPACT_LABEL: Record<NewsImpact, string> = {
-    high: '주가 영향 큼',
-    medium: '주가 영향 보통',
-    low: '주가 영향 작음',
-    negligible: '주가 영향 거의 없음',
+    high: '가격 영향 큼',
+    medium: '가격 영향 보통',
+    low: '가격 영향 작음',
+    negligible: '가격 영향 거의 없음',
 };
 
 const IMPACT_CLASS: Record<NewsImpact, string> = {

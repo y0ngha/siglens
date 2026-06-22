@@ -14,6 +14,8 @@ import { SymbolTabsSkeleton } from '@/widgets/symbol-page/SymbolTabsSkeleton';
 import { DEFAULT_TIMEFRAME } from '@/shared/config/market';
 import { getBarsStatic, quantizeBarsDataToLastClosed } from '@/entities/bars';
 import { getAssetInfoResilient } from '@/entities/ticker';
+import { marketProfileOf } from '@/shared/config/marketProfile';
+import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/shared/config/queryConfig';
 import { MS_PER_SECOND } from '@/shared/config/time';
 import { EMPTY_INDICATOR_RESULT, type BarsData } from '@y0ngha/siglens-core';
@@ -107,7 +109,20 @@ export async function SymbolLayoutChrome({ params }: SymbolLayoutSegmentProps) {
         return null;
     });
     if (headerBars !== null) {
-        const quantized = quantizeBarsDataToLastClosed(headerBars, new Date());
+        // Derive the session spec from assetInfo so crypto (always-open) strips
+        // the forming bar consistently with the chart page. Without the session
+        // arg the call defaulted to US_EQUITY_SESSION even for crypto symbols,
+        // causing divergent seed bars and ISR write-churn on the shared bars key.
+        // When assetInfo is null (degraded symbol) DEFAULT_MARKET_PROFILE applies,
+        // which is 'us-equity' — the same as omitting the session arg.
+        const session = assetInfo
+            ? sessionSpecFor(marketProfileOf(assetInfo))
+            : sessionSpecFor('us-equity');
+        const quantized = quantizeBarsDataToLastClosed(
+            headerBars,
+            new Date(),
+            session
+        );
         // Bar.time은 seconds (epoch) — RQ dataUpdatedAt은 milliseconds 기대.
         const lastBarSec = quantized.bars.at(-1)?.time ?? 0;
         const stableUpdatedAt = lastBarSec * MS_PER_SECOND;

@@ -27,14 +27,75 @@ describe('buildCryptoPopularEntries', () => {
         expect(entries).toHaveLength(POPULAR_CRYPTOS.length * 4);
     });
 
-    it('uses a rolling lastmod of exactly now minus one hour', () => {
+    it('chart and fear-greed and overall routes use the 6h-boundary lastmod (not rolling)', () => {
         const entries = buildCryptoPopularEntries(now);
-        const expectedLastmod = new Date(
-            now.getTime() - MS_PER_HOUR
+        // now = 10:00 UTC → boundary = 06:00 UTC same day.
+        const expected6hBoundary = new Date(
+            '2026-06-21T06:00:00Z'
         ).toISOString();
-        for (const e of entries) {
-            expect(e.lastModified.toISOString()).toBe(expectedLastmod);
-        }
+        const chartEntry = entries.find(
+            e => e.url === 'https://siglens.io/BTCUSD'
+        );
+        const fgEntry = entries.find(
+            e => e.url === 'https://siglens.io/BTCUSD/fear-greed'
+        );
+        const overallEntry = entries.find(
+            e => e.url === 'https://siglens.io/BTCUSD/overall'
+        );
+        expect(chartEntry?.lastModified.toISOString()).toBe(expected6hBoundary);
+        expect(fgEntry?.lastModified.toISOString()).toBe(expected6hBoundary);
+        expect(overallEntry?.lastModified.toISOString()).toBe(
+            expected6hBoundary
+        );
+    });
+
+    it('news route uses rolling 1h-ago lastmod (most dynamic tab)', () => {
+        const entries = buildCryptoPopularEntries(now);
+        const newsEntry = entries.find(
+            e => e.url === 'https://siglens.io/BTCUSD/news'
+        );
+        const expected = new Date(now.getTime() - MS_PER_HOUR).toISOString();
+        expect(newsEntry?.lastModified.toISOString()).toBe(expected);
+    });
+
+    it('chart/fear-greed use daily changeFrequency; overall uses weekly', () => {
+        const entries = buildCryptoPopularEntries(now);
+        const chartEntry = entries.find(
+            e => e.url === 'https://siglens.io/BTCUSD'
+        );
+        const newsEntry = entries.find(
+            e => e.url === 'https://siglens.io/BTCUSD/news'
+        );
+        const fgEntry = entries.find(
+            e => e.url === 'https://siglens.io/BTCUSD/fear-greed'
+        );
+        const overallEntry = entries.find(
+            e => e.url === 'https://siglens.io/BTCUSD/overall'
+        );
+        expect(chartEntry?.changeFrequency).toBe('daily');
+        expect(newsEntry?.changeFrequency).toBe('daily');
+        expect(fgEntry?.changeFrequency).toBe('daily');
+        expect(overallEntry?.changeFrequency).toBe('weekly');
+    });
+
+    it('6h boundary quantizes correctly: midnight → 00:00', () => {
+        const midnight = new Date('2026-06-21T00:30:00Z');
+        const entries = buildCryptoPopularEntries(midnight);
+        const expected = new Date('2026-06-21T00:00:00Z').toISOString();
+        const chartEntry = entries.find(
+            e => e.url === 'https://siglens.io/BTCUSD'
+        );
+        expect(chartEntry?.lastModified.toISOString()).toBe(expected);
+    });
+
+    it('6h boundary quantizes correctly: 17:59 → 12:00', () => {
+        const late = new Date('2026-06-21T17:59:00Z');
+        const entries = buildCryptoPopularEntries(late);
+        const expected = new Date('2026-06-21T12:00:00Z').toISOString();
+        const chartEntry = entries.find(
+            e => e.url === 'https://siglens.io/BTCUSD'
+        );
+        expect(chartEntry?.lastModified.toISOString()).toBe(expected);
     });
 
     it('covers every POPULAR_CRYPTOS symbol', () => {
