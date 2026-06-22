@@ -4,6 +4,7 @@
 
 const mockFindBySymbol = vi.fn();
 const mockSearch = vi.fn();
+const mockFmpCryptoMembership = vi.fn();
 
 // The `tryGetTickerDatabaseClient` return value drives `tryGetRepository()`.
 // When null, the whole function returns null (no DB path). When non-null,
@@ -32,6 +33,15 @@ vi.mock('../../api', () => ({
     },
 }));
 
+// isCryptoSymbol now calls fmpCryptoMembership on every DB miss (and when
+// DB is unavailable). We stub it here so tests don't hit the real Redis/FMP
+// path (which imports 'server-only' and requires infra). Tests that need
+// specific FMP behavior set the mock return value in the describe block.
+vi.mock('../fmpCryptoMembership', () => ({
+    fmpCryptoMembership: (...args: unknown[]) =>
+        mockFmpCryptoMembership(...args),
+}));
+
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
     isCryptoSymbol,
@@ -43,10 +53,13 @@ describe('cryptoAssetStore (no DB)', () => {
     beforeEach(() => {
         mockFindBySymbol.mockReset();
         mockSearch.mockReset();
+        mockFmpCryptoMembership.mockReset();
         mockDbClient = null;
     });
 
-    it('isCryptoSymbol returns false when DB is unavailable', async () => {
+    it('isCryptoSymbol returns false when DB is unavailable and FMP-list misses', async () => {
+        // No DB and the symbol is not in the FMP-list either → definitively non-crypto.
+        mockFmpCryptoMembership.mockResolvedValue(null);
         expect(await isCryptoSymbol('BTCUSD_NODB')).toBe(false);
     });
 
@@ -59,6 +72,7 @@ describe('cryptoAssetStore (with DB)', () => {
     beforeEach(() => {
         mockFindBySymbol.mockReset();
         mockSearch.mockReset();
+        mockFmpCryptoMembership.mockReset();
         mockDbClient = { db: {} };
     });
 
@@ -119,23 +133,32 @@ describe('cryptoAssetStore (with DB)', () => {
     });
 
     describe('isCryptoSymbol — DB available, symbol absent (S2)', () => {
-        it('returns false and caches the result when findBySymbol resolves null', async () => {
+        it('returns false and caches the result when findBySymbol resolves null and FMP-list misses', async () => {
             // A unique symbol that has never entered the module-level cache before.
             // The suffix _S2_TEST is intentionally verbose so cache bleed from
             // other tests is impossible even if the module cache is not cleared
             // between describe blocks (module-level Maps persist across tests).
+            //
+            // New contract: DB miss alone is no longer enough to classify as
+            // non-crypto — isCryptoSymbol also checks fmpCryptoMembership. Only
+            // after both miss does it cache and return false. (Previously the
+            // old "negatives-only" contract cached false on DB miss alone, which
+            // caused the cache-pollution bug fixed in this branch.)
             mockFindBySymbol.mockResolvedValue(null);
+            mockFmpCryptoMembership.mockResolvedValue(null);
 
-            // First call: DB available, symbol not found → should return false.
+            // First call: DB miss + FMP-list miss → false.
             const first = await isCryptoSymbol('NOTACRYPTO_S2_TEST');
             expect(first).toBe(false);
             expect(mockFindBySymbol).toHaveBeenCalledTimes(1);
+            expect(mockFmpCryptoMembership).toHaveBeenCalledTimes(1);
 
             // Second call: result must be served from the module-level cache —
-            // no additional DB round-trip (the stored null IS the cache value).
+            // no additional DB or FMP-list round-trip.
             const second = await isCryptoSymbol('NOTACRYPTO_S2_TEST');
             expect(second).toBe(false);
             expect(mockFindBySymbol).toHaveBeenCalledTimes(1);
+            expect(mockFmpCryptoMembership).toHaveBeenCalledTimes(1);
         });
     });
 
