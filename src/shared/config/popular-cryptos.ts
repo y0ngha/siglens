@@ -1,20 +1,21 @@
 // 큐레이션된 인기 암호화폐 — 홈 디스커버리 + sitemap popular 엔트리.
-// FMP 심볼은 *USD 접미사(BTCUSD)를 쓴다. batch-crypto-quotes가 플랜 제한이라
-// 시가총액 자동 랭킹이 불가하므로 수동 관리한다(주식 popular-tickers와 동일 방침).
+// FMP 심볼은 *USD 접미사(BTCUSD)를 쓴다. batch-crypto-quotes가 HTTP 402(플랜 미지원)이라
+// 단건 quote를 심볼별로 호출하여 시가총액 기준 상위 N개를 자동 선정한다(update-popular-cryptos.ts).
+// 수동으로 순서를 바꾸거나 심볼을 추가/제거할 수 있습니다.
 export const POPULAR_CRYPTOS = [
     'BTCUSD',
     'ETHUSD',
-    'SOLUSD',
-    'XRPUSD',
     'BNBUSD',
-    'DOGEUSD',
-    'ADAUSD',
-    'AVAXUSD',
-    'LINKUSD',
+    'XRPUSD',
+    'SOLUSD',
     'TRXUSD',
-    'DOTUSD',
-    'POLUSD',
-    'LTCUSD',
+    'DOGEUSD',
+    'XLMUSD',
+    'ADAUSD',
+    'LINKUSD',
+    'TONUSD',
     'BCHUSD',
+    'LTCUSD',
     'SHIBUSD',
+    'SUIUSD',
 ] as const;
