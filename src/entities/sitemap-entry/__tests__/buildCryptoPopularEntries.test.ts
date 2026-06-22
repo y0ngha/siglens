@@ -10,6 +10,9 @@ describe('buildCryptoPopularEntries', () => {
         const entries = buildCryptoPopularEntries(now);
         const btc = entries.filter(e => e.url.includes('/BTCUSD'));
         const paths = btc.map(e => e.url.replace('https://siglens.io', ''));
+        // Pin the exact count: 4 routes per coin (root, /news, /fear-greed, /overall).
+        // Adding a new crypto tab without updating buildCryptoPopularEntries will fail here.
+        expect(btc).toHaveLength(4);
         expect(paths).toContain('/BTCUSD');
         expect(paths).toContain('/BTCUSD/news');
         expect(paths).toContain('/BTCUSD/fear-greed');
@@ -17,6 +20,11 @@ describe('buildCryptoPopularEntries', () => {
         expect(paths).not.toContain('/BTCUSD/fundamental');
         expect(paths).not.toContain('/BTCUSD/options');
         expect(paths).not.toContain('/BTCUSD/congress');
+    });
+
+    it('emits exactly POPULAR_CRYPTOS.length × 4 total entries', () => {
+        const entries = buildCryptoPopularEntries(now);
+        expect(entries).toHaveLength(POPULAR_CRYPTOS.length * 4);
     });
 
     it('uses a rolling lastmod of exactly now minus one hour', () => {

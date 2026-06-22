@@ -19,7 +19,7 @@ export const dynamic = 'force-dynamic';
 const SITEMAP_RETRY_AFTER_SECONDS = '300';
 const SITEMAP_UNAVAILABLE_BODY = 'Sitemap data temporarily unavailable';
 
-export async function GET(): Promise<Response> {
+export async function GET(): Promise<NextResponse> {
     const now = new Date();
     const popular = buildCryptoPopularEntries(now);
 

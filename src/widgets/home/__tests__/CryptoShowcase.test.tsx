@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import { POPULAR_CRYPTOS } from '@/shared/config/popular-cryptos';
 import { CryptoShowcase, CRYPTO_SHOWCASE_COUNT } from '../CryptoShowcase';
 
 describe('CryptoShowcase', () => {
@@ -15,7 +16,13 @@ describe('CryptoShowcase', () => {
         // the remainder are sliced off. Adding entries to POPULAR_CRYPTOS does not change this cap.
         const links = screen.getAllByRole('link');
         expect(links).toHaveLength(CRYPTO_SHOWCASE_COUNT);
-        // The 13th entry in POPULAR_CRYPTOS is LTCUSD — it must not be rendered.
-        expect(screen.queryByRole('link', { name: /LTCUSD/ })).toBeNull();
+        // Derive the first excluded symbol dynamically so reordering POPULAR_CRYPTOS
+        // or changing CRYPTO_SHOWCASE_COUNT doesn't silently leave this assertion stale.
+        const firstExcluded = POPULAR_CRYPTOS[CRYPTO_SHOWCASE_COUNT];
+        if (firstExcluded !== undefined) {
+            expect(
+                screen.queryByRole('link', { name: new RegExp(firstExcluded) })
+            ).toBeNull();
+        }
     });
 });

@@ -116,6 +116,10 @@ describe('DrizzleCryptoLongTailSource', () => {
 
             const query = captured[0]!;
             const n = query.params.length;
+            // Safe: this test controls the RemoteCallback and the query is a
+            // paginated SELECT — Drizzle always emits numeric limit/offset as
+            // the final two bind params, so the values at [n-2] and [n-1] are
+            // guaranteed to be numbers.
             const limit = query.params[n - 2] as number;
             const offset = query.params[n - 1] as number;
             expect(offset).toBe(600); // (2-1)*600
