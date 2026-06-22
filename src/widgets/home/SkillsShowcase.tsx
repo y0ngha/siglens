@@ -155,12 +155,10 @@ export function SkillCard({
     const canExpand = isClamped || isExpanded;
 
     const handleToggle = (): void => {
-        if (!canExpand) return;
         onToggleExpand(skill.name);
     };
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>): void => {
-        if (!canExpand) return;
         // 내부 컨트롤(ⓘ 버튼 등)에서 버블링된 키 이벤트는 무시 — 카드 자체가
         // 포커스됐을 때만 토글한다. 그렇지 않으면 ⓘ의 Enter/Space가 카드 펼침에
         // 가로채여 툴팁이 열리지 않는다(접근성 결함).

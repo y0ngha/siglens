@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { isElementClamped } from '../../utils/clamp';
+import { isElementClamped } from '../clamp';
 
 describe('isElementClamped', () => {
     function fakeEl(scrollHeight: number, clientHeight: number): HTMLElement {
