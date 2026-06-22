@@ -61,6 +61,7 @@ const GEMINI_MODEL = 'gemini-2.5-flash-lite';
 const POLL_INTERVAL_MS = 30_000;
 const MAX_POLL_MS = 2 * 60 * 60 * 1_000; // 2h
 const DRY_RUN_PROMPT_PREVIEW_LENGTH = 200;
+const UPSERT_BATCH_SIZE = 500;
 
 const ai = GEMINI_API_KEY ? new GoogleGenAI({ apiKey: GEMINI_API_KEY }) : null;
 
@@ -124,7 +125,7 @@ export function extractKoreanName(symbol: string, text: string): string | null {
     try {
         parsed = JSON.parse(text);
     } catch {
-        // Malformed JSON → caller skips this coin.
+        // null signals the caller to skip this coin rather than upsert a bad value.
         return null;
     }
     if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
@@ -320,7 +321,6 @@ async function processResponses(
 
     // Bulk upsert: onConflictDoUpdate on symbol so re-runs update stale/corrected
     // Korean names. `updatedAt` set explicitly (Drizzle skips $onUpdateFn on conflict).
-    const UPSERT_BATCH_SIZE = 500;
     const upsertLength = upsertValues.length;
     let translated = 0;
     for (let i = 0; i < upsertLength; i += UPSERT_BATCH_SIZE) {

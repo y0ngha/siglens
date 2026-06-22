@@ -28,6 +28,7 @@ import {
     searchTicker,
     _resetInFlightTranslationsForTest,
     MAX_SEARCH_RESULTS,
+    CRYPTO_RESERVE,
 } from '../searchTicker';
 import type { TickerSearchResult } from '@/shared/lib/types';
 
@@ -67,7 +68,9 @@ describe('searchTicker — 한글 입력 crypto 병합', () => {
         ]);
 
         const results = await searchTicker('비트코');
-        expect(results.find(r => r.symbol === 'BTCUSD')).toBeDefined();
+        expect(results.find(r => r.symbol === 'BTCUSD')).toEqual(
+            cryptoResult('BTCUSD', '비트코인')
+        );
     });
 
     it('한글 입력 시 주식 한국어 결과가 crypto 결과보다 먼저 온다', async () => {
@@ -79,9 +82,8 @@ describe('searchTicker — 한글 입력 crypto 병합', () => {
         const results = await searchTicker('코');
         const aaplIdx = results.findIndex(r => r.symbol === 'AAPL');
         const btcIdx = results.findIndex(r => r.symbol === 'BTCUSD');
-        expect(aaplIdx).toBeGreaterThanOrEqual(0);
-        expect(btcIdx).toBeGreaterThanOrEqual(0);
-        expect(aaplIdx).toBeLessThan(btcIdx);
+        expect(aaplIdx).toBe(0);
+        expect(btcIdx).toBe(1);
     });
 
     it('한글 입력 시 동일 symbol 중복 제거한다', async () => {
@@ -109,6 +111,14 @@ describe('searchTicker — 한글 입력 crypto 병합', () => {
         const results = await searchTicker('주');
         // 7 stocks + 6 crypto = 13 unique symbols → deterministically capped to MAX.
         expect(results).toHaveLength(MAX_SEARCH_RESULTS);
+        // CRYPTO_RESERVE cap: 6 crypto results are truncated to exactly CRYPTO_RESERVE.
+        expect(results.filter(r => r.exchange === 'CRYPTO')).toHaveLength(
+            CRYPTO_RESERVE
+        );
+        // The remaining MAX_SEARCH_RESULTS - CRYPTO_RESERVE slots are filled by stocks.
+        expect(results.filter(r => r.exchange === 'NASDAQ')).toHaveLength(
+            MAX_SEARCH_RESULTS - CRYPTO_RESERVE
+        );
     });
 
     it('한글 입력 시 FMP searchBySymbol/searchByName 을 호출하지 않는다', async () => {
@@ -129,7 +139,9 @@ describe('searchTicker — 한글 입력 crypto 병합', () => {
         );
 
         const results = await searchTicker('애플');
-        expect(results.find(r => r.symbol === 'AAPL')).toBeDefined();
+        expect(results.find(r => r.symbol === 'AAPL')).toEqual(
+            stockResult('AAPL', '애플')
+        );
     });
 
     it('주식 결과가 MAX를 채워도 crypto 결과가 보장된다', async () => {
@@ -144,6 +156,8 @@ describe('searchTicker — 한글 입력 crypto 병합', () => {
 
         const results = await searchTicker('주');
         expect(results).toHaveLength(MAX_SEARCH_RESULTS);
-        expect(results.find(r => r.symbol === 'BTCUSD')).toBeDefined();
+        expect(results.find(r => r.symbol === 'BTCUSD')).toEqual(
+            cryptoResult('BTCUSD', '비트코인')
+        );
     });
 });

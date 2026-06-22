@@ -108,6 +108,7 @@ describe('seed-crypto-korean-names — buildUpsertValues', () => {
             { symbol: 'BTCUSD', koreanName: '비트코인' },
             { symbol: 'ETHUSD', koreanName: '이더리움' },
         ]);
+        expect(warnSpy).not.toHaveBeenCalled();
     });
 
     it('응답이 없는 coin 은 skip 한다', () => {
@@ -123,6 +124,11 @@ describe('seed-crypto-korean-names — buildUpsertValues', () => {
 
         expect(values).toEqual([{ symbol: 'BTCUSD', koreanName: '비트코인' }]);
         expect(skipped).toBe(1);
+        expect(warnSpy).toHaveBeenCalledWith(
+            expect.stringContaining(
+                '[MISSING] skipped — no matching response found'
+            )
+        );
     });
 
     it('error 가 있는 응답은 skip 한다', () => {
@@ -136,6 +142,11 @@ describe('seed-crypto-korean-names — buildUpsertValues', () => {
 
         expect(values).toEqual([]);
         expect(skipped).toBe(1);
+        expect(warnSpy).toHaveBeenCalledWith(
+            expect.stringContaining(
+                '[BTCUSD] skipped — response error: quota exceeded'
+            )
+        );
     });
 
     it('빈 텍스트 응답은 skip 한다', () => {
@@ -146,6 +157,9 @@ describe('seed-crypto-korean-names — buildUpsertValues', () => {
 
         expect(values).toEqual([]);
         expect(skipped).toBe(1);
+        expect(warnSpy).toHaveBeenCalledWith(
+            expect.stringContaining('[BTCUSD] skipped — empty response text')
+        );
     });
 
     it('malformed JSON 응답은 skip 한다', () => {
@@ -156,6 +170,11 @@ describe('seed-crypto-korean-names — buildUpsertValues', () => {
 
         expect(values).toEqual([]);
         expect(skipped).toBe(1);
+        expect(warnSpy).toHaveBeenCalledWith(
+            expect.stringContaining(
+                '[BTCUSD] skipped — could not extract Korean name from response'
+            )
+        );
     });
 
     it('Gemini 응답 키 대소문자가 달라도 올바르게 매칭한다', () => {
@@ -180,6 +199,7 @@ describe('seed-crypto-korean-names — buildUpsertValues', () => {
 
         expect(skipped).toBe(0);
         expect(values).toEqual([{ symbol: 'BTCUSD', koreanName: '비트코인' }]);
+        expect(warnSpy).not.toHaveBeenCalled();
     });
 
     it('metadata.id 가 없는 응답은 매칭에서 제외된다', () => {
@@ -201,6 +221,16 @@ describe('seed-crypto-korean-names — buildUpsertValues', () => {
         // The response has no id to correlate, so the chunk's coin finds no match.
         expect(values).toEqual([]);
         expect(skipped).toBe(1);
+        expect(warnSpy).toHaveBeenCalledWith(
+            expect.stringContaining(
+                '[warn] response missing metadata.id — skipped (cannot correlate to request)'
+            )
+        );
+        expect(warnSpy).toHaveBeenCalledWith(
+            expect.stringContaining(
+                '[BTCUSD] skipped — no matching response found'
+            )
+        );
     });
 });
 

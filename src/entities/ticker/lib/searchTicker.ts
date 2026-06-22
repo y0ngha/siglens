@@ -29,7 +29,7 @@ export const MAX_SEARCH_RESULTS = 10;
  * stock name matches. The actual crypto slots may be fewer if fewer crypto
  * results exist; unused budget flows back to stock.
  */
-const CRYPTO_RESERVE = 3;
+export const CRYPTO_RESERVE = 3;
 
 function toKoreanEntry(
     symbol: string,
