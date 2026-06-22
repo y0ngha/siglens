@@ -146,8 +146,8 @@ describe('renderPopularCryptosFile', () => {
     it('renders an empty array when no symbols are provided', () => {
         const result = renderPopularCryptosFile([]);
 
-        expect(result).toContain(
-            'export const POPULAR_CRYPTOS = [\n] as const;'
+        expect(result).toBe(
+            `${FILE_HEADER}\nexport const POPULAR_CRYPTOS = [\n] as const;\n`
         );
     });
 
@@ -194,7 +194,8 @@ describe('CRYPTO_CANDIDATE_POOL', () => {
     });
 
     it('all symbols end with USD', () => {
-        expect(CRYPTO_CANDIDATE_POOL.every(s => s.endsWith('USD'))).toBe(true);
+        const nonUsd = CRYPTO_CANDIDATE_POOL.filter(s => !s.endsWith('USD'));
+        expect(nonUsd).toEqual([]);
     });
 });
 

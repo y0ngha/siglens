@@ -228,9 +228,12 @@ export function filterValidCandidates(
 ): CandidateFilterResult {
     const listedSymbols = new Set(cryptoList.map(e => e.symbol.toUpperCase()));
 
+    // Compute eligibility once per element — O(N), isEligible called exactly once per symbol.
+    const validSet = new Set(pool.filter(s => isEligible(s, listedSymbols)));
+
     return {
-        valid: pool.filter(s => isEligible(s, listedSymbols)),
-        dropped: pool.filter(s => !isEligible(s, listedSymbols)),
+        valid: pool.filter(s => validSet.has(s)),
+        dropped: pool.filter(s => !validSet.has(s)),
     };
 }
 
@@ -296,12 +299,18 @@ function commitFileAtomically(path: string, fileContent: string): void {
     }
 }
 
-/**
- * 결과 테이블 구분선 너비.
- * 데이터 행 = padStart(4) + ' | ' + padEnd(9) + ' | ' + padStart(14) = 33자.
- * 헤더 텍스트 길이를 감안하여 42로 설정.
- */
-const TABLE_SEPARATOR_WIDTH = 42;
+const TABLE_RANK_COL_WIDTH = 4;
+const TABLE_SYMBOL_COL_WIDTH = 9;
+const TABLE_MARKET_CAP_COL_WIDTH = 14;
+const COLUMN_DIVIDER = ' | ';
+
+// Separator spans the full data row: rank + ' | ' + symbol + ' | ' + market-cap.
+const TABLE_SEPARATOR_WIDTH =
+    TABLE_RANK_COL_WIDTH +
+    COLUMN_DIVIDER.length +
+    TABLE_SYMBOL_COL_WIDTH +
+    COLUMN_DIVIDER.length +
+    TABLE_MARKET_CAP_COL_WIDTH;
 
 function printResults(ranked: CryptoRankEntry[]): void {
     console.log(`\n--- Top ${ranked.length} Cryptos by Market Cap ---\n`);
@@ -309,10 +318,10 @@ function printResults(ranked: CryptoRankEntry[]): void {
     console.log('-'.repeat(TABLE_SEPARATOR_WIDTH));
 
     ranked.forEach((e, i) => {
-        const rank = String(i + 1).padStart(4);
-        const symbol = e.symbol.padEnd(9);
-        const cap = formatMarketCap(e.marketCap).padStart(14);
-        console.log(`${rank} | ${symbol} | ${cap}`);
+        const rank = String(i + 1).padStart(TABLE_RANK_COL_WIDTH);
+        const symbol = e.symbol.padEnd(TABLE_SYMBOL_COL_WIDTH);
+        const cap = formatMarketCap(e.marketCap).padStart(TABLE_MARKET_CAP_COL_WIDTH);
+        console.log(`${rank}${COLUMN_DIVIDER}${symbol}${COLUMN_DIVIDER}${cap}`);
     });
 }
 
