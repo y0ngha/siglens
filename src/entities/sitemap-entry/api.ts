@@ -50,6 +50,7 @@ const cryptoLongTailPredicate = notInArray(cryptoAssets.symbol, [
     ...POPULAR_CRYPTOS,
 ]);
 
+// Drizzle's desc() helper does not emit NULLS LAST; raw sql is required to keep null supply last.
 const supplyRank = sql`${cryptoAssets.circulatingSupply} DESC NULLS LAST`;
 
 export class DrizzleCryptoLongTailSource implements LongTailTickerSource {

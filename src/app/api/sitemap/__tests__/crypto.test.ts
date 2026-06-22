@@ -107,6 +107,8 @@ describe('GET /api/sitemap/crypto', () => {
         expect(res.headers.get('Content-Type')).toBe(
             'application/xml; charset=utf-8'
         );
+        expect(consoleErrorSpy).not.toHaveBeenCalled();
+        expect(consoleWarnSpy).not.toHaveBeenCalled();
     });
 
     it('logs a console.warn when eligible count exceeds served entries (dropped > 0)', async () => {
@@ -163,5 +165,7 @@ describe('GET /api/sitemap/crypto', () => {
             popularEntry,
             longTailEntry,
         ]);
+        expect(consoleErrorSpy).not.toHaveBeenCalled();
+        expect(consoleWarnSpy).not.toHaveBeenCalled();
     });
 });

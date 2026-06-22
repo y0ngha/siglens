@@ -6,9 +6,10 @@ import {
 import { countLongTailTickers } from '@/entities/sitemap-entry/server';
 import { SITE_URL } from '@/shared/lib/seo';
 import { NextResponse } from 'next/server';
-
-const SITEMAP_RETRY_AFTER_SECONDS = '300';
-const SITEMAP_UNAVAILABLE_BODY = 'Sitemap data temporarily unavailable';
+import {
+    SITEMAP_RETRY_AFTER_SECONDS,
+    SITEMAP_UNAVAILABLE_BODY,
+} from '@/app/api/sitemap/_shared/constants';
 
 // long-tail count는 DB 기반 캐시 데이터라 빌드 시점 prerender 대상이 아니다.
 // force-dynamic + CDN 1h cache로 처리.

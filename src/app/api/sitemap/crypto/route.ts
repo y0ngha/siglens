@@ -11,13 +11,14 @@ import {
 } from '@/entities/sitemap-entry/api';
 import { SITE_BUILD_DATE } from '@/shared/lib/seo';
 import { NextResponse } from 'next/server';
+import {
+    SITEMAP_RETRY_AFTER_SECONDS,
+    SITEMAP_UNAVAILABLE_BODY,
+} from '@/app/api/sitemap/_shared/constants';
 
 const { HTTP_STATUS_SERVICE_UNAVAILABLE } = constants;
 
 export const dynamic = 'force-dynamic';
-
-const SITEMAP_RETRY_AFTER_SECONDS = '300';
-const SITEMAP_UNAVAILABLE_BODY = 'Sitemap data temporarily unavailable';
 
 export async function GET(): Promise<NextResponse> {
     const now = new Date();
