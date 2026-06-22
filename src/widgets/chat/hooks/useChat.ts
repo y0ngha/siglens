@@ -110,23 +110,11 @@ export function useChat({ symbol }: UseChatOptions): UseChatReturn {
     );
     const [isModelHydrated, setIsModelHydrated] = useState(false);
 
-    // useSymbolChat must remain before the storageKey refs below whose initial values
-    // depend on timeframeFromCtx — moving it after refs would read an undefined value
-    // at ref-initialization time.
-    const {
-        context,
-        timeframe: timeframeFromCtx,
-        isAnalysisReady,
-    } = useSymbolChat();
-    // useAssetInfo is cached via React Query — no extra network call when SymbolLayoutHeader already called it.
-    const assetInfo = useAssetInfo(symbol);
-    const { gateModal, dismissGate, handleModelChange, showGate } =
-        useModelGate({ onAllow: setSelectedModel });
+    // MISTAKES §17 순서: useState/useRef → custom hooks → derived vars.
+    // null로 초기화되는 ref들(timeframeFromCtx에 의존하지 않음)은 useState 직후,
+    // custom hooks 앞에 선언한다. initialStorageKeyRef/storageKeyRef는 timeframeFromCtx에
+    // 의존하므로 useSymbolChat() 뒤에 위치한다.
 
-    const companyName = assetInfo?.name ?? symbol;
-    const assetClass = assetInfo
-        ? getDescriptor(marketProfileOf(assetInfo)).assetClass
-        : 'equity';
     // Tracks the last value written to localStorage by this hook instance.
     // Replaces the previous mount-flag guard, which had a regression: when ChatPanel
     // closes and reopens, the hook unmounts/remounts. With a fresh `isModelHydrated`
@@ -158,18 +146,37 @@ export function useChat({ symbol }: UseChatOptions): UseChatReturn {
     const loadingPhaseRef = useRef(loadingPhase);
     // mount guard: save effect skips first run (messages = []) then sets true
     const didSaveMountRef = useRef(false);
+    // storageKey just changed but messages haven't updated yet — skip that save cycle
+    const isKeyChangePendingRef = useRef(false);
+    // true until isAnalysisReady first becomes true — distinguishes page-refresh from re-analysis
+    const isFirstAnalysisReadyRef = useRef(true);
+
+    // useSymbolChat must remain after null-initialized refs and before the storageKey
+    // refs below whose initial values depend on timeframeFromCtx — moving it after those
+    // refs would read an undefined value at ref-initialization time.
+    const {
+        context,
+        timeframe: timeframeFromCtx,
+        isAnalysisReady,
+    } = useSymbolChat();
+    // useAssetInfo is cached via React Query — no extra network call when SymbolLayoutHeader already called it.
+    const assetInfo = useAssetInfo(symbol);
+    const { gateModal, dismissGate, handleModelChange, showGate } =
+        useModelGate({ onAllow: setSelectedModel });
+
     // storageKey captured at mount — mount effect reads this ref so deps array stays []
     const initialStorageKeyRef = useRef(
         buildStorageKey(symbol, timeframeFromCtx ?? DEFAULT_TIMEFRAME)
     );
-    // storageKey just changed but messages haven't updated yet — skip that save cycle
-    const isKeyChangePendingRef = useRef(false);
     // current storageKey ref — lets analysis effect read latest key without deps array entry
     const storageKeyRef = useRef(
         buildStorageKey(symbol, timeframeFromCtx ?? DEFAULT_TIMEFRAME)
     );
-    // true until isAnalysisReady first becomes true — distinguishes page-refresh from re-analysis
-    const isFirstAnalysisReadyRef = useRef(true);
+
+    const companyName = assetInfo?.name ?? symbol;
+    const assetClass = assetInfo
+        ? getDescriptor(marketProfileOf(assetInfo)).assetClass
+        : 'equity';
 
     // Derived from context — placed after refs (per the React Hook order convention) and
     // before queries/mutations so they can reference these computed values.

@@ -9,6 +9,7 @@
             "@/pages/*": ["../src/pages/*"],
             "@/shared/*": ["../src/shared/*"],
             "@/*": ["../src/*"],
+            "@e2e/*": ["../e2e/*"],
             "server-only": ["../src/__tests__/server-only-stub.ts"]
         }
     }
