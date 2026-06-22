@@ -1,3 +1,15 @@
+// useIsClamped(useLayoutEffect + ResizeObserver)가 SkillCard에서 호출되므로
+// 파일 전역으로 ResizeObserver를 stub해 ReferenceError를 방지한다.
+// scrollHeight/clientHeight은 SkillCard expand 테스트 내부에서 개별 stubClamp로 제어.
+vi.stubGlobal(
+    'ResizeObserver',
+    class {
+        observe = vi.fn();
+        unobserve = vi.fn();
+        disconnect = vi.fn();
+    }
+);
+
 vi.mock('@/shared/lib/cn', () => ({
     cn: (...args: unknown[]) =>
         args
@@ -38,19 +50,26 @@ vi.mock('../hooks/useSkillsShowcase', () => ({
     useSkillsShowcase: () => ({
         activeTab: 'all',
         showAll: false,
+        expandedKey: null,
         baseId: 'skills',
         handleTabSelect: vi.fn(),
         toggleShowAll: vi.fn(),
+        toggleExpanded: vi.fn(),
     }),
 }));
 
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import {
     HIGH_CONFIDENCE_WEIGHT,
     type SkillShowcaseItem,
 } from '@y0ngha/siglens-core';
 
-import { SkillsShowcase, SkillsShowcaseSkeleton } from '../SkillsShowcase';
+import {
+    SkillCard,
+    SkillsShowcase,
+    SkillsShowcaseSkeleton,
+} from '../SkillsShowcase';
 
 function makeSkill(
     name: string,
@@ -166,5 +185,116 @@ describe('SkillCard confidence bar color', () => {
             />
         );
         expect(getBarEl(container).className).toContain(expected);
+    });
+});
+
+describe('SkillCard expand interaction', () => {
+    const ORIGINAL = Object.getOwnPropertyDescriptors(HTMLElement.prototype);
+
+    function stubClamp(clamped: boolean): void {
+        // 접힘 상태에서 scrollHeight > clientHeight 이면 "펼침 가능"으로 판정됨.
+        Object.defineProperty(HTMLElement.prototype, 'scrollHeight', {
+            configurable: true,
+            get: () => (clamped ? 80 : 40),
+        });
+        Object.defineProperty(HTMLElement.prototype, 'clientHeight', {
+            configurable: true,
+            get: () => 40,
+        });
+    }
+
+    beforeAll(() => {
+        vi.stubGlobal(
+            'ResizeObserver',
+            class {
+                observe = vi.fn();
+                unobserve = vi.fn();
+                disconnect = vi.fn();
+            }
+        );
+    });
+
+    afterAll(() => {
+        vi.unstubAllGlobals();
+        Object.defineProperties(HTMLElement.prototype, ORIGINAL);
+    });
+
+    it('is interactive (role=button, aria-expanded) when the description is clamped', () => {
+        stubClamp(true);
+        render(
+            <SkillCard
+                skill={makeSkill('RSI')}
+                isExpanded={false}
+                onToggleExpand={vi.fn()}
+            />
+        );
+
+        const card = screen.getByRole('button', { name: /RSI/ });
+        expect(card).toHaveAttribute('aria-expanded', 'false');
+    });
+
+    it('is NOT interactive when the description fits (not clamped)', () => {
+        stubClamp(false);
+        render(
+            <SkillCard
+                skill={makeSkill('RSI')}
+                isExpanded={false}
+                onToggleExpand={vi.fn()}
+            />
+        );
+
+        expect(screen.queryByRole('button', { name: /RSI/ })).toBeNull();
+    });
+
+    it('reflects aria-expanded=true when expanded', () => {
+        stubClamp(true);
+        render(
+            <SkillCard
+                skill={makeSkill('RSI')}
+                isExpanded={true}
+                onToggleExpand={vi.fn()}
+            />
+        );
+
+        expect(screen.getByRole('button', { name: /RSI/ })).toHaveAttribute(
+            'aria-expanded',
+            'true'
+        );
+    });
+
+    it('calls onToggleExpand with the skill name on click', async () => {
+        stubClamp(true);
+        const onToggle = vi.fn();
+        const user = userEvent.setup();
+        render(
+            <SkillCard
+                skill={makeSkill('RSI')}
+                isExpanded={false}
+                onToggleExpand={onToggle}
+            />
+        );
+
+        await user.click(screen.getByRole('button', { name: /RSI/ }));
+
+        expect(onToggle).toHaveBeenCalledWith('RSI');
+    });
+
+    it('does NOT toggle the card when the ⓘ confidence button is clicked', async () => {
+        stubClamp(true);
+        const onToggle = vi.fn();
+        const user = userEvent.setup();
+        render(
+            <SkillCard
+                skill={makeSkill('RSI')}
+                isExpanded={false}
+                onToggleExpand={onToggle}
+            />
+        );
+
+        await user.click(
+            screen.getByRole('button', { name: '신뢰도 점수 설명' })
+        );
+
+        expect(onToggle).not.toHaveBeenCalled();
     });
 });
