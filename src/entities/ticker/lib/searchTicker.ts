@@ -21,7 +21,15 @@ import { createSingleFlight } from './utils/singleFlight';
 import { createCacheProvider } from '@y0ngha/siglens-core';
 import type { KoreanTickerEntry, TickerSearchResult } from '@/shared/lib/types';
 
-const MAX_SEARCH_RESULTS = 10;
+export const MAX_SEARCH_RESULTS = 10;
+
+/**
+ * When a Korean search returns both stock and crypto results, reserve this many
+ * slots for crypto so Korean coin searches aren't starved by a high volume of
+ * stock name matches. The actual crypto slots may be fewer if fewer crypto
+ * results exist; unused budget flows back to stock.
+ */
+const CRYPTO_RESERVE = 3;
 
 function toKoreanEntry(
     symbol: string,
@@ -85,11 +93,21 @@ export async function searchTicker(
         // Korean keypress (e.g. "비트코") surfaces both stock and crypto matches.
         const [stockResults, cryptoResults] = await Promise.all([
             searchByKoreanName(trimmed),
-            searchCryptoAssets(trimmed),
+            // Isolated catch so a crypto DB error doesn't discard stock results.
+            searchCryptoAssets(trimmed).catch((): TickerSearchResult[] => []),
         ]);
-        // Stock results first (higher relevance for equity-centric users), then crypto.
+        // Guarantee crypto representation: reserve up to CRYPTO_RESERVE slots for
+        // crypto results when they exist, so Korean coin searches aren't lost when
+        // many stock name matches fill the cap. Unused crypto budget flows to stock.
+        const cryptoCap = Math.min(cryptoResults.length, CRYPTO_RESERVE);
+        const cappedStock = stockResults.slice(
+            0,
+            MAX_SEARCH_RESULTS - cryptoCap
+        );
+        const remainingSlots = MAX_SEARCH_RESULTS - cappedStock.length;
+        const cappedCrypto = cryptoResults.slice(0, remainingSlots);
         // deduplicateResults guards the unlikely case where a symbol exists in both stores.
-        const merged = deduplicateResults([...stockResults, ...cryptoResults]);
+        const merged = deduplicateResults([...cappedStock, ...cappedCrypto]);
         return merged.slice(0, MAX_SEARCH_RESULTS);
     }
 

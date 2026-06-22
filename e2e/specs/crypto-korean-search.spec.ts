@@ -69,9 +69,8 @@ test.describe('crypto Korean-name search', () => {
     }) => {
         await page.goto('/');
 
-        // Use the hero-panel combobox (scoped to #search) for the click path
-        // so onSelect fires and the navigate() handler routes correctly.
-        // (The banner combobox has no onSelect; both navigate via router.push.)
+        // Use the banner (header) combobox — same selector as the badge test above.
+        // Both route to the symbol page via router.push when a result is selected.
         const search = page
             .getByRole('banner')
             .getByRole('combobox', { name: TICKER_COMBOBOX_NAME });

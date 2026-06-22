@@ -158,6 +158,30 @@ describe('seed-crypto-korean-names — buildUpsertValues', () => {
         expect(skipped).toBe(1);
     });
 
+    it('Gemini 응답 키 대소문자가 달라도 올바르게 매칭한다', () => {
+        const chunk = [{ id: 'BTCUSD', prompt: 'p1' }];
+        // Gemini returns lowercase key in metadata.id — must still match BTCUSD.
+        const lowercaseIdResponse = {
+            metadata: { id: 'btcusd' },
+            response: {
+                candidates: [
+                    {
+                        content: {
+                            parts: [{ text: jsonBody('BTCUSD', '비트코인') }],
+                        },
+                    },
+                ],
+            },
+        } as unknown as InlinedResponse;
+
+        const { values, skipped } = buildUpsertValues(chunk, [
+            lowercaseIdResponse,
+        ]);
+
+        expect(skipped).toBe(0);
+        expect(values).toEqual([{ symbol: 'BTCUSD', koreanName: '비트코인' }]);
+    });
+
     it('metadata.id 가 없는 응답은 매칭에서 제외된다', () => {
         const chunk = [{ id: 'BTCUSD', prompt: 'p1' }];
         const noId = {

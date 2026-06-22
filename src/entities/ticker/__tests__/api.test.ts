@@ -464,11 +464,24 @@ describe('DrizzleCryptoAssetRepository', () => {
             const { db, where } = makeCryptoSearchDb([]);
             const repo = new DrizzleCryptoAssetRepository(db);
             await repo.search('비트코', 10);
-            // where is called once; the or() expression must include korean_name ilike.
-            // We cannot inspect the internal Drizzle SQL object directly, so we verify
-            // that where was called (not skipped) and trust Part 1's implementation.
-            // A stronger assertion would require a real DB integration test.
             expect(where).toHaveBeenCalledTimes(1);
+            // The or() expression passed to .where() must reference the korean_name column.
+            // Drizzle nests SQL objects (or → [ilike, ilike, ilike]); we recurse into
+            // queryChunks to collect all column `.name` values. This assertion fails if
+            // korean_name is removed from the ilike OR-condition.
+            type SqlLike = {
+                queryChunks?: Array<SqlLike | { name?: string }>;
+                name?: string;
+            };
+            function collectColumnNames(node: SqlLike): string[] {
+                if (node.name) return [node.name];
+                if (!node.queryChunks) return [];
+                return node.queryChunks.flatMap(chunk =>
+                    collectColumnNames(chunk as SqlLike)
+                );
+            }
+            const condition = where.mock.calls[0][0] as SqlLike;
+            expect(collectColumnNames(condition)).toContain('korean_name');
         });
     });
 });

@@ -31,7 +31,7 @@
  */
 import postgres from 'postgres';
 import { drizzle } from 'drizzle-orm/postgres-js';
-import { desc, isNull, sql } from 'drizzle-orm';
+import { isNull, sql } from 'drizzle-orm';
 import type { InlinedRequest, InlinedResponse } from '@google/genai';
 import { GoogleGenAI, JobState } from '@google/genai';
 import { fileURLToPath } from 'node:url';
@@ -146,6 +146,12 @@ interface UpsertBuildResult {
     skipped: number;
 }
 
+interface UpsertRow {
+    symbol: string;
+    name: string;
+    koreanName: string;
+}
+
 /**
  * Map a completed batch chunk's responses to upsert values, using id-based
  * matching (metadata.id = symbol) for re-run safety. Pure (no DB / no logging
@@ -174,33 +180,29 @@ export function buildUpsertValues(
             );
             continue;
         }
-        responseById.set(respId, resp);
+        // Normalize to uppercase so Gemini casing variants (e.g. "btcusd", "BtcUsd")
+        // still match the canonical uppercase symbol stored in the DB.
+        responseById.set(respId.toUpperCase(), resp);
     }
 
-    let skipped = 0;
-    const values: CryptoKoreanUpsertValue[] = [];
-
-    for (const { id: symbol } of chunk) {
-        const response = responseById.get(symbol);
+    const values = chunk.flatMap(({ id: symbol }): CryptoKoreanUpsertValue[] => {
+        const response = responseById.get(symbol.toUpperCase());
         if (!response) {
             console.warn(`    [${symbol}] skipped — no matching response found`);
-            skipped += 1;
-            continue;
+            return [];
         }
 
         if (response.error) {
             console.warn(
                 `    [${symbol}] skipped — response error: ${response.error.message ?? 'unknown'}`
             );
-            skipped += 1;
-            continue;
+            return [];
         }
 
         const text = extractResponseText(response);
         if (text === null) {
             console.warn(`    [${symbol}] skipped — empty response text`);
-            skipped += 1;
-            continue;
+            return [];
         }
 
         const koreanName = extractKoreanName(symbol, text);
@@ -208,13 +210,13 @@ export function buildUpsertValues(
             console.warn(
                 `    [${symbol}] skipped — could not extract Korean name from response`
             );
-            skipped += 1;
-            continue;
+            return [];
         }
 
-        values.push({ symbol, koreanName });
-    }
+        return [{ symbol, koreanName }];
+    });
 
+    const skipped = chunk.length - values.length;
     return { values, skipped };
 }
 
@@ -228,11 +230,7 @@ export function buildUpsertValues(
  *
  * Exported so the test can assert the placeholder-name invariant directly.
  */
-export function toUpsertRow(value: CryptoKoreanUpsertValue): {
-    symbol: string;
-    name: string;
-    koreanName: string;
-} {
+export function toUpsertRow(value: CryptoKoreanUpsertValue): UpsertRow {
     return {
         symbol: value.symbol,
         name: value.symbol,
@@ -368,7 +366,7 @@ async function run(): Promise<void> {
             })
             .from(cryptoAssets)
             .where(isNull(cryptoAssets.koreanName))
-            .orderBy(desc(cryptoAssets.circulatingSupply))
+            .orderBy(sql`${cryptoAssets.circulatingSupply} DESC NULLS LAST`)
             .limit(CRYPTO_KOREAN_TRANSLATE_LIMIT);
 
         const total = rows.length;
