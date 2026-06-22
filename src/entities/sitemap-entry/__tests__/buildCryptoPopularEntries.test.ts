@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { buildCryptoPopularEntries } from '../lib/buildCryptoPopularEntries';
 import { POPULAR_CRYPTOS } from '@/shared/config/popular-cryptos';
+import { MS_PER_HOUR } from '@/shared/config/time';
 
 describe('buildCryptoPopularEntries', () => {
     const now = new Date('2026-06-21T10:00:00Z');
@@ -18,10 +19,13 @@ describe('buildCryptoPopularEntries', () => {
         expect(paths).not.toContain('/BTCUSD/congress');
     });
 
-    it('uses a rolling lastmod (not US market close), never in the future', () => {
+    it('uses a rolling lastmod of exactly now minus one hour', () => {
         const entries = buildCryptoPopularEntries(now);
+        const expectedLastmod = new Date(
+            now.getTime() - MS_PER_HOUR
+        ).toISOString();
         for (const e of entries) {
-            expect(e.lastModified.getTime()).toBeLessThanOrEqual(now.getTime());
+            expect(e.lastModified.toISOString()).toBe(expectedLastmod);
         }
     });
 

@@ -619,6 +619,19 @@ export function buildCryptoSymbolSeoContent(
 }
 
 /**
+ * Options for `resolveSymbolSeoContent`. `displayName` is required here (unlike
+ * the optional variant in `BuildSymbolSeoOptions`) because both call sites in
+ * `src/app/[symbol]/page.tsx` have already resolved the display name before
+ * calling this function. `koreanName` accepts `null` to match the raw DB field
+ * type (the implementation normalises null→undefined before forwarding to
+ * `buildSymbolSeoContent`).
+ */
+export interface ResolveSymbolSeoOpts {
+    displayName: string;
+    koreanName?: string | null;
+}
+
+/**
  * Resolves the correct chart-page SEO content for a symbol based on its asset
  * class. Crypto pages use `buildCryptoSymbolSeoContent` (price-framed copy:
  * "시세 분석", no koreanName); stock/ETF/Index pages use `buildSymbolSeoContent`
@@ -631,7 +644,7 @@ export function buildCryptoSymbolSeoContent(
 export function resolveSymbolSeoContent(
     ticker: string,
     assetClass: AssetClass,
-    opts: { displayName: string; koreanName?: string | null }
+    opts: ResolveSymbolSeoOpts
 ): SymbolSeoContent {
     if (assetClass === 'crypto') {
         return buildCryptoSymbolSeoContent(ticker, {

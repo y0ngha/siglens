@@ -38,6 +38,7 @@ vi.mock('@/shared/lib/seo', () => ({
     SITE_URL: 'https://siglens.io',
 }));
 
+import { constants } from 'node:http2';
 import { GET } from '@/app/api/sitemap/crypto/route';
 import {
     buildCryptoPopularEntries,
@@ -45,6 +46,8 @@ import {
     toUrlSetXml,
 } from '@/entities/sitemap-entry';
 import type { MockedFunction } from 'vitest';
+
+const { HTTP_STATUS_SERVICE_UNAVAILABLE } = constants;
 
 const mockBuildCryptoPopularEntries =
     buildCryptoPopularEntries as MockedFunction<
@@ -85,7 +88,7 @@ describe('GET /api/sitemap/crypto', () => {
 
         const res = await GET();
 
-        expect(res.status).toBe(503);
+        expect(res.status).toBe(HTTP_STATUS_SERVICE_UNAVAILABLE);
         expect(res.headers.get('Retry-After')).toBe('300');
         await expect(res.text()).resolves.toBe(
             'Sitemap data temporarily unavailable'

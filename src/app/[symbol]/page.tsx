@@ -130,6 +130,7 @@ export default async function SymbolPage({ params }: Props) {
     // Compute marketProfile once here so both TechnicalFactsSummary (Suspense fallback)
     // and SymbolPageClient receive the same value without recomputing on the client.
     const marketProfile = marketProfileOf(assetInfo);
+    const { assetClass } = getDescriptor(marketProfile);
 
     // default-tf bars를 정적화로 가져온다. 실패(인프라 다운 등)는 null로 degrade해
     // 페이지가 깨지지 않도록 한다. 이 bars는 Suspense fallback의 FactLayer SSR에만 쓰이며,
@@ -158,11 +159,10 @@ export default async function SymbolPage({ params }: Props) {
               );
 
     const displayName = buildDisplayName(assetInfo, ticker);
-    const pageSeo = resolveSymbolSeoContent(
-        ticker,
-        getDescriptor(marketProfile).assetClass,
-        { displayName, koreanName: assetInfo.koreanName }
-    );
+    const pageSeo = resolveSymbolSeoContent(ticker, assetClass, {
+        displayName,
+        koreanName: assetInfo.koreanName,
+    });
     const { fullTitle, description, url } = pageSeo;
 
     // about 노드는 classifyAsset 결과가 stock일 때만 Corporation으로 채워지고,
@@ -172,7 +172,7 @@ export default async function SymbolPage({ params }: Props) {
         ticker,
         assetInfo.koreanName ?? assetInfo.name,
         assetInfo.fmpSymbol,
-        getDescriptor(marketProfile).assetClass
+        assetClass
     );
     const jsonLd = {
         '@context': 'https://schema.org',
