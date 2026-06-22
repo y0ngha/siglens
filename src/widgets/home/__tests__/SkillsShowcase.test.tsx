@@ -297,4 +297,63 @@ describe('SkillCard expand interaction', () => {
 
         expect(onToggle).not.toHaveBeenCalled();
     });
+
+    it('toggles on Enter when the card itself is focused', async () => {
+        stubClamp(true);
+        const onToggle = vi.fn();
+        const user = userEvent.setup();
+        render(
+            <SkillCard
+                skill={makeSkill('RSI')}
+                isExpanded={false}
+                onToggleExpand={onToggle}
+            />
+        );
+
+        const card = screen.getByRole('button', { name: /RSI/ });
+        card.focus();
+        await user.keyboard('{Enter}');
+
+        expect(onToggle).toHaveBeenCalledWith('RSI');
+    });
+
+    it('toggles on Space when the card itself is focused', async () => {
+        stubClamp(true);
+        const onToggle = vi.fn();
+        const user = userEvent.setup();
+        render(
+            <SkillCard
+                skill={makeSkill('RSI')}
+                isExpanded={false}
+                onToggleExpand={onToggle}
+            />
+        );
+
+        const card = screen.getByRole('button', { name: /RSI/ });
+        card.focus();
+        await user.keyboard(' ');
+
+        expect(onToggle).toHaveBeenCalledWith('RSI');
+    });
+
+    it('does NOT toggle the card when the ⓘ button is activated via keyboard', async () => {
+        stubClamp(true);
+        const onToggle = vi.fn();
+        const user = userEvent.setup();
+        render(
+            <SkillCard
+                skill={makeSkill('RSI')}
+                isExpanded={false}
+                onToggleExpand={onToggle}
+            />
+        );
+
+        const infoButton = screen.getByRole('button', {
+            name: '신뢰도 점수 설명',
+        });
+        infoButton.focus();
+        await user.keyboard('{Enter}');
+
+        expect(onToggle).not.toHaveBeenCalled();
+    });
 });
