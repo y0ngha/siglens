@@ -30,6 +30,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
     searchTicker,
     _resetInFlightTranslationsForTest,
+    MAX_SEARCH_RESULTS,
 } from '../searchTicker';
 import type { TickerSearchResult } from '@/shared/lib/types';
 
@@ -119,5 +120,80 @@ describe('searchTicker — crypto merge', () => {
 
         const results = await searchTicker('AAPL');
         expect(results.some(r => r.symbol === 'AAPL')).toBe(true);
+    });
+});
+
+describe('searchTicker — non-Korean relevance ranking', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        _resetInFlightTranslationsForTest();
+        mockSearchByName.mockResolvedValue([]);
+        mockSearchCryptoAssets.mockResolvedValue([]);
+    });
+
+    it('ranks exact-symbol popular match above substring matches regardless of input order', async () => {
+        // FMP returns: AAPLETECH first (substring match), AAPL second (exact match + popular).
+        // rankByRelevance must reorder so AAPL leads.
+        // AAPL:      exact symbol match  → EXACT_MATCH_SCORE + POPULAR_BONUS
+        // AAPLETECH: prefix symbol match → PREFIX_MATCH_SCORE
+        const substringFirst: TickerSearchResult[] = [
+            {
+                symbol: 'AAPLETECH',
+                name: 'Aaple Technologies Inc.',
+                exchange: 'NASDAQ',
+                exchangeFullName: 'Nasdaq',
+            },
+            {
+                symbol: 'AAPL',
+                name: 'Apple Inc.',
+                exchange: 'NASDAQ',
+                exchangeFullName: 'Nasdaq',
+            },
+        ];
+        mockSearchBySymbol.mockResolvedValue(substringFirst);
+
+        const results = await searchTicker('aapl');
+
+        expect(results[0].symbol).toBe('AAPL');
+        const aaplIdx = results.findIndex(r => r.symbol === 'AAPL');
+        const aapletechIdx = results.findIndex(r => r.symbol === 'AAPLETECH');
+        expect(aaplIdx).toBeLessThan(aapletechIdx);
+    });
+
+    it('popular symbol outranks same-quality non-popular symbol', async () => {
+        // Both are exact matches but AAPL is popular, ZZZZ is not.
+        // Input has ZZZZ first; relevance ranking must put AAPL first.
+        const inputOrder: TickerSearchResult[] = [
+            {
+                symbol: 'ZZZZ',
+                name: 'Aapl Placeholder',
+                exchange: 'NASDAQ',
+                exchangeFullName: 'Nasdaq',
+            },
+            {
+                symbol: 'AAPL',
+                name: 'Apple Inc.',
+                exchange: 'NASDAQ',
+                exchangeFullName: 'Nasdaq',
+            },
+        ];
+        mockSearchBySymbol.mockResolvedValue(inputOrder);
+
+        const results = await searchTicker('aapl');
+
+        const aaplIdx = results.findIndex(r => r.symbol === 'AAPL');
+        const zzzzIdx = results.findIndex(r => r.symbol === 'ZZZZ');
+        expect(aaplIdx).toBeLessThan(zzzzIdx);
+    });
+
+    it('caps non-Korean results at MAX_SEARCH_RESULTS after relevance ranking', async () => {
+        const many = Array.from({ length: MAX_SEARCH_RESULTS + 3 }, (_, i) =>
+            fmpResult(`SYM${i}`)
+        );
+        mockSearchBySymbol.mockResolvedValue(many);
+
+        const results = await searchTicker('sym');
+
+        expect(results).toHaveLength(MAX_SEARCH_RESULTS);
     });
 });

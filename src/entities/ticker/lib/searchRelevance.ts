@@ -24,19 +24,16 @@ export const POPULAR_BONUS = 15;
 /**
  * Score a single search result against the query.
  *
- * Scoring rules (case-insensitive):
- * - Exact field match       → EXACT_MATCH_SCORE (100)
- * - Field starts with query → PREFIX_MATCH_SCORE (70)
- * - Field contains query    → SUBSTRING_MATCH_SCORE (40)
- * - No match in any field   → FALLBACK_SCORE (10)  (Fallback floor for a result that the upstream
- *                                                    search returned but whose displayed fields don't
- *                                                    literally contain the query, e.g. matched on an
- *                                                    English name the user didn't type, or a field
- *                                                    changed by koreanName enrichment.)
- * - Popular bonus           → +POPULAR_BONUS (15) (on top of base)
+ * Scoring rules (case-insensitive), best match wins across all fields:
+ * - Exact field match       → EXACT_MATCH_SCORE
+ * - Field starts with query → PREFIX_MATCH_SCORE
+ * - Field contains query    → SUBSTRING_MATCH_SCORE
+ * - No match in any field   → FALLBACK_SCORE floor (the upstream search returned this result
+ *                             but the displayed fields don't literally contain the query —
+ *                             e.g. matched on an English name the user didn't type, or a field
+ *                             changed by koreanName enrichment.)
+ * - Popular bonus           → +POPULAR_BONUS on top of base
  */
-
-/** Return the relevance score of a single field against the normalised query. */
 function fieldScore(field: string, q: string): number {
     const f = field.toLowerCase();
     if (f === q) return EXACT_MATCH_SCORE;
