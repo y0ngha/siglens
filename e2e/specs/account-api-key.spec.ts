@@ -66,11 +66,9 @@ async function clickAndAwaitActionSettle(
     button: Locator
 ): Promise<void> {
     await button.click();
-    // After click the SubmitButton renders as disabled ("저장 중…"/"삭제 중…").
-    // Wait for it to appear first, then wait for it to detach — which happens
-    // when revalidatePath('/account') completes and React remounts the card
-    // with the new key (`${provider}-${isRegistered}`). This two-phase wait
-    // gives 30s headroom for slow AES encrypt + Postgres write + RSC stream.
+    // The pending button detaches only when revalidatePath('/account') completes
+    // and React remounts the card with its new key (`${provider}-${isRegistered}`).
+    // The two-phase wait gives 30s headroom for slow AES encrypt + Postgres write + RSC stream.
     const pendingBtn = card.locator('button[disabled]');
     await pendingBtn.waitFor({ state: 'visible', timeout: 10_000 });
     await pendingBtn.waitFor({ state: 'detached', timeout: 30_000 });
