@@ -31,6 +31,18 @@ import {
     type TabKey,
 } from '@/shared/config/marketProfile';
 
+/**
+ * DB-side ORDER BY priority buckets for crypto search (lower = ranked first).
+ * These ORDINALS mirror the relevance TIERS in `searchRelevance.ts`
+ * (EXACT > PREFIX > rest, i.e. its 100 > 70 > 40/10 scores): the DB pre-sort only
+ * needs each tier's rank so exact/prefix matches survive the LIMIT cut, while the
+ * app-side scorer assigns the actual numeric scores after the fetch. Keep the two
+ * systems aligned — if a tier is added to `searchRelevance`, add a bucket here.
+ */
+const DB_SORT_EXACT = 0;
+const DB_SORT_PREFIX = 1;
+const DB_SORT_OTHER = 2;
+
 const koreanTickerColumns = {
     symbol: koreanTickers.symbol,
     name: koreanTickers.name,
@@ -270,6 +282,7 @@ export class DrizzleCryptoAssetRepository implements CryptoAssetRepository {
 
     async search(query: string, limit: number): Promise<CryptoAssetRecord[]> {
         const like = `%${query}%`;
+        const exactOrPrefix = `${query}%`;
         return this.db
             .select()
             .from(cryptoAssets)
@@ -280,7 +293,16 @@ export class DrizzleCryptoAssetRepository implements CryptoAssetRepository {
                     ilike(cryptoAssets.koreanName, like)
                 )
             )
-            .orderBy(desc(cryptoAssets.circulatingSupply))
+            .orderBy(
+                // Mirror searchRelevance's scored fields (koreanName/symbol/name) so
+                // exact/prefix matches in ANY of them are fetched within the limit
+                // before app-side re-ranking.
+                sql`CASE
+                  WHEN lower(${cryptoAssets.koreanName}) = lower(${query}) OR lower(${cryptoAssets.symbol}) = lower(${query}) OR lower(${cryptoAssets.name}) = lower(${query}) THEN ${DB_SORT_EXACT}
+                  WHEN ${cryptoAssets.koreanName} ILIKE ${exactOrPrefix} OR ${cryptoAssets.symbol} ILIKE ${exactOrPrefix} OR ${cryptoAssets.name} ILIKE ${exactOrPrefix} THEN ${DB_SORT_PREFIX}
+                  ELSE ${DB_SORT_OTHER} END`,
+                desc(cryptoAssets.circulatingSupply)
+            )
             .limit(limit);
     }
 }
