@@ -95,7 +95,7 @@ export default async function Home() {
                 name: `${SITE_NAME}는 어떤 서비스인가요?`,
                 acceptedAnswer: {
                     '@type': 'Answer',
-                    text: '미국 주식 티커를 입력하면 차트(보조지표와 캔들 패턴, 지지선과 저항선), 실적과 밸류에이션, 최근 뉴스 흐름, 옵션 시장 데이터, 그리고 단기 매수 분위기(공포 탐욕 지수)까지 각각 정리하고 이걸 묶은 종합 결론까지 보여주는 무료 웹 서비스입니다. 회원가입 없이 바로 이용할 수 있습니다.',
+                    text: '미국 주식 티커를 입력하면 차트(보조지표와 캔들 패턴, 지지선과 저항선), 실적과 밸류에이션, 최근 뉴스 흐름, 옵션 시장 데이터, 그리고 단기 매수 분위기(공포 탐욕 지수)까지 각각 정리하고 이걸 묶은 종합 결론까지 보여주는 무료 웹 서비스입니다. 비트코인·이더리움 같은 암호화폐는 차트·뉴스·공포 탐욕 지수·종합 결론을 제공합니다. 회원가입 없이 바로 이용할 수 있습니다.',
                 },
             },
             {
@@ -270,14 +270,14 @@ export default async function Home() {
                                 H1 크기 단계 — split column 폭에 맞춰 두 줄 구조 유지.
                                 lg(1024-1279, 텍스트 컬럼 ~404px): text-[2.25rem]로 축소
                                 xl(1280+, 텍스트 컬럼 ~530px+): text-5xl로 복귀
-                                (lg에서 text-5xl을 유지하면 "복잡한 미국 주식 분석을"이
-                                추가 줄바꿈돼 3줄이 된다.)
+                                (lg에서 text-5xl을 유지하면 첫 줄이 추가로
+                                줄바꿈돼 3줄이 된다.)
                             */}
                             <h1 className="text-secondary-100 mx-auto max-w-sm text-[2.2rem] leading-[1.1] font-bold tracking-tight text-balance sm:max-w-2xl sm:text-5xl lg:mx-0 lg:text-[2.25rem] xl:text-5xl">
-                                주식과 코인 분석의 새로운 기준,
+                                주식과 코인, 투자의 새로운 기준 —
                                 <br />
                                 <span className="text-primary-300">
-                                    AI가 완성하는 SIGLENS
+                                    AI가 분석하고 완성하는 SIGLENS
                                 </span>
                             </h1>
                             <p className="text-secondary-400 mx-auto mt-5 max-w-md text-base leading-relaxed sm:max-w-2xl sm:text-lg lg:mx-0">

@@ -86,9 +86,11 @@ export const ROOT_KEYWORDS = [
     '섹터별 주식 분석',
     '미국 주식 PER',
     '암호화폐 분석',
-    '코인 시세',
+    '비트코인 시세',
+    '이더리움 시세',
+    '코인 AI 분석',
+    '암호화폐 차트 분석',
     '비트코인 차트',
-    '크립토 기술적 분석',
 ];
 
 function buildSymbolDescription(displayName: string, sector?: string): string {
