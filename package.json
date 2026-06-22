@@ -51,7 +51,8 @@
         "release:minor": "SIGLENS_RELEASE_E2E=1 dotenv -e .env.local -- release-it minor --verbose",
         "release:major": "SIGLENS_RELEASE_E2E=1 dotenv -e .env.local -- release-it major --verbose",
         "fetch-this-week-tasks": "cd scripts/fetch-this-week-tasks && node --env-file=.env index.js",
-        "update-popular-tickers": "npx tsx update-popular-tickers.ts"
+        "update-popular-tickers": "npx tsx update-popular-tickers.ts",
+        "update-popular-cryptos": "tsx scripts/update-popular-cryptos.ts"
     },
     "dependencies": {
         "@anthropic-ai/sdk": "^0.92.0",
