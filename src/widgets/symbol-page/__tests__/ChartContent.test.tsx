@@ -203,13 +203,44 @@ describe('ChartContent', () => {
         expect(separator.getAttribute('aria-label')).toBe('패널 너비 조절');
     });
 
-    it('renders the disclaimer text', () => {
+    it('renders the disclaimer text for equity (default)', () => {
         render(<ChartContent {...defaultProps} />);
         expect(
             screen.getByText(
                 /차트는 Pre-market, After-market 주가를 반영하지 않습니다/
             )
         ).toBeDefined();
+    });
+
+    describe('Pre-market/After-market 면책 문구 — 자산군 게이팅', () => {
+        it('equity(기본값)에서는 Pre-market/After-market 문구를 렌더한다', () => {
+            render(
+                <ChartContent {...defaultProps} marketProfile="us-equity" />
+            );
+            expect(
+                screen.getByText(
+                    /차트는 Pre-market, After-market 주가를 반영하지 않습니다/
+                )
+            ).toBeDefined();
+        });
+
+        it('crypto에서는 Pre-market/After-market 문구를 렌더하지 않는다', () => {
+            // 암호화폐는 24/7 거래 — 장전/장후 세션이 없으므로 면책 문구가 사실과 다르다.
+            render(<ChartContent {...defaultProps} marketProfile="crypto" />);
+            expect(
+                screen.queryByText(
+                    /차트는 Pre-market, After-market 주가를 반영하지 않습니다/
+                )
+            ).toBeNull();
+        });
+
+        it('crypto에서도 시세 지연 안내는 그대로 렌더한다', () => {
+            // FMP는 crypto도 동일하게 최대 15분 지연 데이터를 제공한다.
+            render(<ChartContent {...defaultProps} marketProfile="crypto" />);
+            expect(
+                screen.getByText(/시세 데이터는 최대 15분 지연됩니다/)
+            ).toBeDefined();
+        });
     });
 
     it('renders analysis panel in aside', () => {

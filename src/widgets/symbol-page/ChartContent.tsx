@@ -338,7 +338,13 @@ export function ChartContent({
 
                 {/* 안내 */}
                 <p className="text-secondary-500 px-2 py-1 text-right text-[10px]">
-                    차트는 Pre-market, After-market 주가를 반영하지 않습니다. |
+                    {/*
+                     * Pre-market/After-market 안내는 미국 주식(equity)에만 해당한다.
+                     * 암호화폐는 24/7 거래라 장전·장후 세션 구분 자체가 없으므로
+                     * crypto 마켓 프로파일에서는 이 문구를 표시하지 않는다.
+                     */}
+                    {marketProfile !== 'crypto' &&
+                        '차트는 Pre-market, After-market 주가를 반영하지 않습니다. | '}
                     시세 데이터는 최대 15분 지연됩니다.
                 </p>
             </div>

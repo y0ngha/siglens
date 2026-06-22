@@ -90,15 +90,28 @@ test.describe('crypto symbol page', () => {
         expect(response.headers()['content-type']).toMatch(/xml/);
     });
 
-    test('equity-only tab URL /BTCUSD/options returns 404', async ({
+    test('equity-only tab URL /BTCUSD/options renders not-found page', async ({
         page,
     }) => {
         // Validates the real isCryptoSymbolStatic → descriptor.tabs seam against
         // the seeded crypto_assets row (BTCUSD). The page body guard calls
-        // isTabAllowedForSymbol('BTCUSD', 'options') → false → notFound() → 404.
-        // Without the seed this route would resolve getAssetInfo as null and
-        // notFound() too (different code path), so seeding BTCUSD is load-bearing.
-        const response = await page.request.get('/BTCUSD/options');
-        expect(response.status()).toBe(404);
+        // isTabAllowedForSymbol('BTCUSD', 'options') → false → notFound().
+        //
+        // Next.js App Router streams the layout shell first and then replaces the
+        // page segment with the nearest not-found.tsx. The HTTP response is 200
+        // (the shell is committed before the page segment resolves — see
+        // not-found.spec.ts for the framework-level documentation of this
+        // behavior). We therefore assert the rendered outcome rather than the
+        // raw HTTP status, which is an unreliable implementation detail here.
+        //
+        // Without the seed this route would resolve getAssetInfo as null and call
+        // notFound() via a different code path, so seeding BTCUSD is load-bearing
+        // for testing the isTabAllowedForSymbol seam specifically.
+        await page.goto('/BTCUSD/options');
+
+        // The global not-found.tsx renders this heading.
+        await expect(
+            page.getByRole('heading', { name: '페이지를 찾을 수 없습니다' })
+        ).toBeVisible({ timeout: 10_000 });
     });
 });
