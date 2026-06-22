@@ -4,8 +4,13 @@ import { SECONDS_PER_DAY } from '@/shared/config/time';
 import { fetchCryptoAssetList } from '../api';
 import type { CryptoAssetRow } from './fmpCryptoListClient';
 
+/** Shape of a single entry in the FMP cryptocurrency list. */
+export interface FmpCryptoEntry {
+    name: string;
+}
+
 /** Serializable form stored in Redis (Map is not JSON-serializable). */
-type FmpCryptoListRecord = Record<string, { name: string }>;
+type FmpCryptoListRecord = Record<string, FmpCryptoEntry>;
 
 /**
  * Fetch and cache the full FMP cryptocurrency-list as an upper-symbol-keyed Map.
@@ -33,10 +38,10 @@ type FmpCryptoListRecord = Record<string, { name: string }>;
  * Infra/FMP failure → returns empty Map (caller degrades to null, resolution
  * falls through to stock path — no 500).
  *
- * @internal Exported for tests only; production callers use `fmpCryptoMembership`.
+ * Exported for direct use in tests; production callers use `fmpCryptoMembership`.
  */
 export async function getFmpCryptoListMap(): Promise<
-    Map<string, { name: string }>
+    Map<string, FmpCryptoEntry>
 > {
     try {
         const record = await getOrSetCache<FmpCryptoListRecord>(
@@ -74,7 +79,7 @@ export async function getFmpCryptoListMap(): Promise<
  */
 export async function fmpCryptoMembership(
     symbol: string
-): Promise<{ name: string } | null> {
+): Promise<FmpCryptoEntry | null> {
     // getFmpCryptoListMap catches all infra/FMP failures internally and returns
     // an empty Map — it never throws. map.get() cannot throw. The outer try/catch
     // would be unreachable and is intentionally omitted.

@@ -89,7 +89,12 @@ describe('getFmpCryptoListMap', () => {
         const map = await getFmpCryptoListMap();
 
         expect(map.size).toBe(0);
-        expect(warnSpy).toHaveBeenCalled();
+        expect(warnSpy).toHaveBeenCalledWith(
+            expect.stringContaining(
+                '[fmpCryptoMembership] getFmpCryptoListMap failed, degrading to empty'
+            ),
+            expect.any(Error)
+        );
         warnSpy.mockRestore();
     });
 });
@@ -124,6 +129,12 @@ describe('fmpCryptoMembership', () => {
             .mockImplementation(() => undefined);
 
         await expect(fmpCryptoMembership('BTC')).resolves.toBeNull();
+        expect(warnSpy).toHaveBeenCalledWith(
+            expect.stringContaining(
+                '[fmpCryptoMembership] getFmpCryptoListMap failed, degrading to empty'
+            ),
+            expect.any(Error)
+        );
         warnSpy.mockRestore();
     });
 
@@ -135,6 +146,12 @@ describe('fmpCryptoMembership', () => {
             .mockImplementation(() => undefined);
 
         await expect(fmpCryptoMembership('BTC')).resolves.toBeNull();
+        expect(warnSpy).toHaveBeenCalledWith(
+            expect.stringContaining(
+                '[fmpCryptoMembership] getFmpCryptoListMap failed, degrading to empty'
+            ),
+            expect.any(Error)
+        );
         warnSpy.mockRestore();
     });
 });
