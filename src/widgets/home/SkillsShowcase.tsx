@@ -297,8 +297,15 @@ interface SkillsShowcaseProps {
 }
 
 export function SkillsShowcase({ skills }: SkillsShowcaseProps) {
-    const { activeTab, showAll, baseId, handleTabSelect, toggleShowAll } =
-        useSkillsShowcase();
+    const {
+        activeTab,
+        showAll,
+        expandedKey,
+        baseId,
+        handleTabSelect,
+        toggleShowAll,
+        toggleExpanded,
+    } = useSkillsShowcase();
 
     return (
         <section className="px-6 py-10 lg:px-[15vw]">
@@ -332,13 +339,13 @@ export function SkillsShowcase({ skills }: SkillsShowcaseProps) {
                         aria-labelledby={buildTabId(baseId, tab.value)}
                         hidden={!isActive}
                     >
-                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                        <div className="grid grid-cols-1 items-start gap-4 sm:grid-cols-2 lg:grid-cols-3">
                             {visibleSkills.map(skill => (
                                 <SkillCard
                                     key={skill.name}
                                     skill={skill}
-                                    isExpanded={false}
-                                    onToggleExpand={() => {}}
+                                    isExpanded={expandedKey === skill.name}
+                                    onToggleExpand={toggleExpanded}
                                 />
                             ))}
                         </div>
