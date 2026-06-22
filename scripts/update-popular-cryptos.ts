@@ -293,8 +293,8 @@ function commitFileAtomically(path: string, fileContent: string): void {
     } finally {
         try {
             rmSync(tempPath, { force: true });
-        } catch {
-            // best-effort cleanup
+        } catch (cleanupError) {
+            console.warn(`[update-popular-cryptos] temp file cleanup failed: ${tempPath}`, cleanupError);
         }
     }
 }

@@ -4,7 +4,6 @@ import {
     CRYPTO_CANDIDATE_POOL,
     FILE_HEADER,
     MAX_POPULAR_CRYPTOS,
-    STABLECOINS,
     filterValidCandidates,
     formatMarketCap,
     rankByMarketCap,
@@ -242,10 +241,35 @@ describe('stablecoin exclusion', () => {
         expect(dropped).toEqual(['USDTUSD', 'USDCUSD', 'DAIUSD']);
     });
 
-    it('STABLECOINS set contains USDT, USDC, DAI and other known pegged coins', () => {
-        expect(STABLECOINS.has('USDT')).toBe(true);
-        expect(STABLECOINS.has('USDC')).toBe(true);
-        expect(STABLECOINS.has('DAI')).toBe(true);
+    it('STABLECOINS set contains all known pegged coins: USDT, USDC, DAI, BUSD, TUSD, USDD, FDUSD', () => {
+        const pool = [
+            'BTCUSD',
+            'USDTUSD',
+            'USDCUSD',
+            'DAIUSD',
+            'BUSDUSD',
+            'TUSDUSD',
+            'USDDUSD',
+            'FDUSDUSD',
+        ];
+        const cryptoList = pool.map(symbol => ({
+            symbol,
+            name: symbol,
+            circulatingSupply: null,
+        }));
+
+        const { valid, dropped } = filterValidCandidates(pool, cryptoList);
+
+        expect(valid).toEqual(['BTCUSD']);
+        expect(dropped).toEqual([
+            'USDTUSD',
+            'USDCUSD',
+            'DAIUSD',
+            'BUSDUSD',
+            'TUSDUSD',
+            'USDDUSD',
+            'FDUSDUSD',
+        ]);
     });
 
     it('CRYPTO_CANDIDATE_POOL does not contain USDTUSD or USDCUSD', () => {
