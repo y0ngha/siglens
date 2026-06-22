@@ -81,14 +81,14 @@ describe('scoreSearchRelevance', () => {
         );
     });
 
-    it('popular bonus on prefix match = 70 + 15 = 85', () => {
+    it('popular bonus on prefix match = PREFIX_MATCH_SCORE + POPULAR_BONUS', () => {
         const result = makeResult('BTCUSD', 'Bitcoin USD', '비트코인');
         expect(scoreSearchRelevance(result, '비트코', true)).toBe(
             PREFIX_MATCH_SCORE + POPULAR_BONUS
         );
     });
 
-    it('popular bonus on no-match = 10 + 15 = 25', () => {
+    it('popular bonus on no-match = FALLBACK_SCORE + POPULAR_BONUS', () => {
         const result = makeResult('BTCUSD', 'Bitcoin USD');
         expect(scoreSearchRelevance(result, 'xyz', true)).toBe(
             FALLBACK_SCORE + POPULAR_BONUS
@@ -127,24 +127,24 @@ describe('scoreSearchRelevance', () => {
 
 describe('rankByRelevance', () => {
     it('exact match ranks first, then prefix, then substring', () => {
-        // query '비트': field '비트코인' startsWith '비트' → prefix → 70
-        //               field '비트' === '비트' → exact → 100
-        //               field '가나비트다라' includes '비트' → substring → 40
-        const exactResult = makeResult('BITUSD', 'Bit Coin', '비트'); // exact → 100
-        const prefixResult = makeResult('BTCUSD', 'Bitcoin USD', '비트코인'); // prefix → 70
-        const subResult = makeResult('COINX', 'Coin X', '가나비트다라'); // substring → 40
+        // query '비트': field '비트코인' startsWith '비트' → prefix → PREFIX_MATCH_SCORE
+        //               field '비트' === '비트' → exact → EXACT_MATCH_SCORE
+        //               field '가나비트다라' includes '비트' → substring → SUBSTRING_MATCH_SCORE
+        const exactResult = makeResult('BITUSD', 'Bit Coin', '비트'); // exact → EXACT_MATCH_SCORE
+        const prefixResult = makeResult('BTCUSD', 'Bitcoin USD', '비트코인'); // prefix → PREFIX_MATCH_SCORE
+        const subResult = makeResult('COINX', 'Coin X', '가나비트다라'); // substring → SUBSTRING_MATCH_SCORE
 
         // Input order: prefix, substring, exact — so stable sort must reorder by score.
         const results = [prefixResult, subResult, exactResult];
         const ranked = rankByRelevance(results, '비트');
-        expect(ranked[0].symbol).toBe('BITUSD'); // exact → 100
-        expect(ranked[1].symbol).toBe('BTCUSD'); // prefix → 70
-        expect(ranked[2].symbol).toBe('COINX'); // substring → 40
+        expect(ranked[0].symbol).toBe('BITUSD'); // exact → EXACT_MATCH_SCORE
+        expect(ranked[1].symbol).toBe('BTCUSD'); // prefix → PREFIX_MATCH_SCORE
+        expect(ranked[2].symbol).toBe('COINX'); // substring → SUBSTRING_MATCH_SCORE
     });
 
     it('popular exact match beats non-popular exact match', () => {
-        // BTCUSD is in POPULAR_CRYPTOS → score 100+15=115
-        // VIDTUSD is not popular → score 100
+        // BTCUSD is in POPULAR_CRYPTOS → EXACT_MATCH_SCORE + POPULAR_BONUS
+        // VIDTUSD is not popular → EXACT_MATCH_SCORE only
         const results: TickerSearchResult[] = [
             makeResult('VIDTUSD', 'VIDT Coin', '비트코인'), // not popular, exact
             makeResult('BTCUSD', 'Bitcoin USD', '비트코인'), // popular, exact
@@ -160,7 +160,7 @@ describe('rankByRelevance', () => {
             makeResult('BBB', 'Beta', '베타'),
             makeResult('CCC', 'Gamma', '감마'),
         ];
-        // query 'xyz' matches none → all score 10, order preserved
+        // query 'xyz' matches none → all score FALLBACK_SCORE, order preserved
         const ranked = rankByRelevance(results, 'xyz');
         expect(ranked.map(r => r.symbol)).toEqual(['AAA', 'BBB', 'CCC']);
     });

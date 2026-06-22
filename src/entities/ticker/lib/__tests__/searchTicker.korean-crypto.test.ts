@@ -131,9 +131,9 @@ describe('searchTicker — 한글 입력 crypto 병합', () => {
             stockResult('STOCK4', '다라비트코인마바'),
             stockResult('STOCK5', '사아비트코인자차'),
         ];
-        // BTCUSD: exact koreanName match + popular → score 115
-        // VIDTUSD: exact koreanName match, not popular → score 100
-        // stocks: substring match → score 40
+        // BTCUSD: exact koreanName match + popular → EXACT_MATCH_SCORE + POPULAR_BONUS
+        // VIDTUSD: exact koreanName match, not popular → EXACT_MATCH_SCORE only
+        // stocks: substring match → SUBSTRING_MATCH_SCORE
         mockSearchByKoreanName.mockResolvedValue(substockResults);
         mockSearchCryptoAssets.mockResolvedValue([
             cryptoResult('VIDTUSD', '비트코인'),
@@ -166,7 +166,7 @@ describe('searchTicker — 한글 입력 crypto 병합', () => {
             stockResult('OTC4', '수이홀딩스'),
             stockResult('OTC5', '수이파트너스'),
         ];
-        // SUIUSD: exact koreanName match + popular → 115
+        // SUIUSD: exact koreanName match + popular → EXACT_MATCH_SCORE + POPULAR_BONUS
         mockSearchByKoreanName.mockResolvedValue(otcStocks);
         mockSearchCryptoAssets.mockResolvedValue([
             cryptoResult('SUIUSD', '수이'),

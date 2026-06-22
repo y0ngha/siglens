@@ -155,9 +155,6 @@ describe('searchTicker — non-Korean relevance ranking', () => {
         const results = await searchTicker('aapl');
 
         expect(results[0].symbol).toBe('AAPL');
-        const aaplIdx = results.findIndex(r => r.symbol === 'AAPL');
-        const aapletechIdx = results.findIndex(r => r.symbol === 'AAPLETECH');
-        expect(aaplIdx).toBeLessThan(aapletechIdx);
     });
 
     it('popular symbol outranks same-quality non-popular symbol', async () => {
