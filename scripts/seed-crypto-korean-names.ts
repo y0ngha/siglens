@@ -102,10 +102,10 @@ interface PendingRequest {
  * Exported for unit-testing the strip behaviour.
  */
 export function buildCryptoTranslationPrompt(symbol: string, name: string): string {
-    const coinName = name.replace(/\s*USD\s*$/i, '').trim();
+    const coinName = name.replace(/\s+USD\s*$/i, '').trim();
     return `Translate this cryptocurrency English name to Korean (한국에서 통용되는 한국어 이름 또는 음역).
 Return ONLY a JSON object with the symbol as key and the Korean name as value.
-Ignore any trailing "USD" currency suffix in the coin name — return ONLY the coin's Korean name (음역 허용), never include "USD".
+The coin name has been pre-cleaned of any trailing "USD" quote suffix; if any "USD" remains, ignore it and return ONLY the coin's Korean name (음역 허용), never include "USD".
 Example for Bitcoin: {"BTCUSD":"비트코인"}
 
 Coin:

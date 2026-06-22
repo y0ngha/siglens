@@ -252,7 +252,6 @@ describe('seed-crypto-korean-names — toUpsertRow', () => {
 describe('seed-crypto-korean-names — buildCryptoTranslationPrompt', () => {
     it('FMP " USD" 접미사를 프롬프트 전에 제거한다', () => {
         const prompt = buildCryptoTranslationPrompt('SUIUSD', 'Sui USD');
-        // The stripped name must appear; the raw suffixed form must not.
         expect(prompt).toContain('Sui');
         expect(prompt).not.toContain('Sui USD');
     });
@@ -280,7 +279,6 @@ describe('seed-crypto-korean-names — buildCryptoTranslationPrompt', () => {
             'SomeCoin  USD  '
         );
         expect(prompt).toContain('SomeCoin');
-        // The coin-name portion after the colon must not contain " USD".
         // We split on ": " to isolate the coin name from "- SYMBOL: <name>".
         const coinLine =
             prompt.split('\n').find(l => l.includes('XYZUSD:')) ?? '';
@@ -292,5 +290,28 @@ describe('seed-crypto-korean-names — buildCryptoTranslationPrompt', () => {
         // Only a trailing " USD" suffix should be stripped.
         const prompt = buildCryptoTranslationPrompt('XUSD', 'USD Coin');
         expect(prompt).toContain('USD Coin');
+    });
+
+    it('공백 없이 이름에 붙은 USD는 제거하지 않는다 (TrueUSD 케이스)', () => {
+        // FMP always appends " USD" with a preceding space. A coin whose name
+        // already contains "USD" as an internal substring (e.g. "TrueUSD USD")
+        // must lose only the space-preceded trailing suffix, not the name-internal "USD".
+        const prompt = buildCryptoTranslationPrompt('TRUEUSD', 'TrueUSD USD');
+        expect(prompt).toContain('TrueUSD');
+        const coinLine =
+            prompt.split('\n').find(l => l.includes('TRUEUSD:')) ?? '';
+        const coinNamePart = coinLine.split(': ').slice(1).join(': ');
+        expect(coinNamePart).toBe('TrueUSD');
+    });
+
+    it('이름-내부 USD만 있고 공백 접미사가 없으면 그대로 유지된다', () => {
+        // A hypothetical bare "SomethingUSD" with no trailing " USD" space must
+        // not be stripped at all (\s+ requires at least one whitespace before USD).
+        const prompt = buildCryptoTranslationPrompt('TERRAUSD', 'TerraUSD');
+        expect(prompt).toContain('TerraUSD');
+        const coinLine =
+            prompt.split('\n').find(l => l.includes('TERRAUSD:')) ?? '';
+        const coinNamePart = coinLine.split(': ').slice(1).join(': ');
+        expect(coinNamePart).toBe('TerraUSD');
     });
 });
