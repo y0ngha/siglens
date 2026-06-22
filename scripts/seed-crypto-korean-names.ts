@@ -321,8 +321,9 @@ async function processResponses(
     // Bulk upsert: onConflictDoUpdate on symbol so re-runs update stale/corrected
     // Korean names. `updatedAt` set explicitly (Drizzle skips $onUpdateFn on conflict).
     const UPSERT_BATCH_SIZE = 500;
+    const upsertLength = upsertValues.length;
     let translated = 0;
-    for (let i = 0; i < upsertValues.length; i += UPSERT_BATCH_SIZE) {
+    for (let i = 0; i < upsertLength; i += UPSERT_BATCH_SIZE) {
         const batch = upsertValues.slice(i, i + UPSERT_BATCH_SIZE);
         await db
             .insert(cryptoAssets)

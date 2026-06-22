@@ -67,7 +67,7 @@ describe('searchTicker — 한글 입력 crypto 병합', () => {
         ]);
 
         const results = await searchTicker('비트코');
-        expect(results.some(r => r.symbol === 'BTCUSD')).toBe(true);
+        expect(results.find(r => r.symbol === 'BTCUSD')).toBeDefined();
     });
 
     it('한글 입력 시 주식 한국어 결과가 crypto 결과보다 먼저 온다', async () => {
@@ -129,7 +129,7 @@ describe('searchTicker — 한글 입력 crypto 병합', () => {
         );
 
         const results = await searchTicker('애플');
-        expect(results.some(r => r.symbol === 'AAPL')).toBe(true);
+        expect(results.find(r => r.symbol === 'AAPL')).toBeDefined();
     });
 
     it('주식 결과가 MAX를 채워도 crypto 결과가 보장된다', async () => {
@@ -144,6 +144,6 @@ describe('searchTicker — 한글 입력 crypto 병합', () => {
 
         const results = await searchTicker('주');
         expect(results).toHaveLength(MAX_SEARCH_RESULTS);
-        expect(results.some(r => r.symbol === 'BTCUSD')).toBe(true);
+        expect(results.find(r => r.symbol === 'BTCUSD')).toBeDefined();
     });
 });

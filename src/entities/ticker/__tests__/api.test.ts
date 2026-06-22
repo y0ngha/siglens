@@ -38,6 +38,19 @@ import type {
 } from '@/shared/db/types';
 import type { KoreanTickerEntry } from '@/shared/lib/types';
 
+type SqlLike = {
+    queryChunks?: Array<SqlLike | { name?: string }>;
+    name?: string;
+};
+
+function collectColumnNames(node: SqlLike): string[] {
+    if (node.name) return [node.name];
+    if (!node.queryChunks) return [];
+    return node.queryChunks.flatMap(chunk =>
+        collectColumnNames(chunk as SqlLike)
+    );
+}
+
 const apple: KoreanTickerEntry = {
     symbol: 'AAPL',
     name: 'Apple Inc.',
@@ -469,17 +482,6 @@ describe('DrizzleCryptoAssetRepository', () => {
             // Drizzle nests SQL objects (or → [ilike, ilike, ilike]); we recurse into
             // queryChunks to collect all column `.name` values. This assertion fails if
             // korean_name is removed from the ilike OR-condition.
-            type SqlLike = {
-                queryChunks?: Array<SqlLike | { name?: string }>;
-                name?: string;
-            };
-            function collectColumnNames(node: SqlLike): string[] {
-                if (node.name) return [node.name];
-                if (!node.queryChunks) return [];
-                return node.queryChunks.flatMap(chunk =>
-                    collectColumnNames(chunk as SqlLike)
-                );
-            }
             const condition = where.mock.calls[0][0] as SqlLike;
             expect(collectColumnNames(condition)).toContain('korean_name');
         });
