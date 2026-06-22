@@ -92,14 +92,24 @@ interface PendingRequest {
  * Returns a JSON object `{ "SYMBOL": "한국어 이름" }` so the response is
  * unambiguous (coin names can be multi-word; a plain string response risks
  * mis-parsing multi-line output).
+ *
+ * The FMP API appends a trailing " USD" quote-currency suffix to crypto names
+ * (e.g. "Bitcoin USD", "Sui USD", "ArbDoge AI USD"). Gemini sometimes preserves
+ * this suffix in the Korean output ("아브도지 AI USD") or fails to translate at
+ * all ("Sui USD"). We strip it before embedding the name in the prompt and
+ * explicitly instruct the model to ignore any such suffix.
+ *
+ * Exported for unit-testing the strip behaviour.
  */
-function buildCryptoTranslationPrompt(symbol: string, name: string): string {
+export function buildCryptoTranslationPrompt(symbol: string, name: string): string {
+    const coinName = name.replace(/\s+USD\s*$/i, '').trim();
     return `Translate this cryptocurrency English name to Korean (한국에서 통용되는 한국어 이름 또는 음역).
 Return ONLY a JSON object with the symbol as key and the Korean name as value.
+The coin name has been pre-cleaned of any trailing "USD" quote suffix; if any "USD" remains, ignore it and return ONLY the coin's Korean name (음역 허용), never include "USD".
 Example for Bitcoin: {"BTCUSD":"비트코인"}
 
 Coin:
-- ${symbol}: ${name}`;
+- ${symbol}: ${coinName}`;
 }
 
 /**
