@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { CryptoShowcase } from '../CryptoShowcase';
+import { CryptoShowcase, CRYPTO_SHOWCASE_COUNT } from '../CryptoShowcase';
 
 describe('CryptoShowcase', () => {
     it('renders links to popular crypto symbol pages', () => {
@@ -9,13 +9,12 @@ describe('CryptoShowcase', () => {
         expect(btc).toHaveAttribute('href', '/BTCUSD');
     });
 
-    it('renders exactly 12 crypto chip links (CRYPTO_SHOWCASE_COUNT cap)', () => {
+    it('renders exactly CRYPTO_SHOWCASE_COUNT crypto chip links', () => {
         render(<CryptoShowcase />);
-        // POPULAR_CRYPTOS has 15 entries; the component slices to the first 12.
-        // Asserting the exact count pins the cap so a POPULAR_CRYPTOS addition
-        // or a slice-boundary change would fail the test immediately.
+        // CryptoShowcase renders only the first CRYPTO_SHOWCASE_COUNT of POPULAR_CRYPTOS;
+        // the remainder are sliced off. Adding entries to POPULAR_CRYPTOS does not change this cap.
         const links = screen.getAllByRole('link');
-        expect(links).toHaveLength(12);
+        expect(links).toHaveLength(CRYPTO_SHOWCASE_COUNT);
         // The 13th entry in POPULAR_CRYPTOS is LTCUSD — it must not be rendered.
         expect(screen.queryByRole('link', { name: /LTCUSD/ })).toBeNull();
     });

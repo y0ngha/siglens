@@ -36,9 +36,8 @@ function makeSource(rows: unknown[][]): SourceFixture {
 }
 
 describe('CRYPTO_LONGTAIL_CAP', () => {
-    it('caps the crypto longtail universe to a sane number of URLs', () => {
-        expect(CRYPTO_LONGTAIL_CAP).toBeGreaterThan(0);
-        expect(CRYPTO_LONGTAIL_CAP).toBeLessThanOrEqual(2000);
+    it('is set to the expected cap of 1000', () => {
+        expect(CRYPTO_LONGTAIL_CAP).toBe(1000);
     });
 });
 

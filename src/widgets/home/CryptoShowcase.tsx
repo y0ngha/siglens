@@ -1,7 +1,7 @@
 import { POPULAR_CRYPTOS } from '@/shared/config/popular-cryptos';
 import Link from 'next/link';
 
-const CRYPTO_SHOWCASE_COUNT = 12;
+export const CRYPTO_SHOWCASE_COUNT = 12;
 
 const SHOWCASE = POPULAR_CRYPTOS.slice(0, CRYPTO_SHOWCASE_COUNT);
 
