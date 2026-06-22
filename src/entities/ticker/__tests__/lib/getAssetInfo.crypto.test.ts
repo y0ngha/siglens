@@ -1,6 +1,5 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import type { CacheProvider } from '@y0ngha/siglens-core';
-import type { CryptoAssetRecord } from '@/shared/db/types';
+// vi.mock calls are hoisted above all imports; declared first so they are in scope
+// when vitest hoists them to the top of the compiled module.
 
 // ---- hoisted mocks ----
 const {
@@ -63,6 +62,9 @@ vi.mock('../../lib/koreanTranslator', () => ({
     translateCompanyNames: vi.fn().mockResolvedValue({}),
 }));
 
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import type { CacheProvider } from '@y0ngha/siglens-core';
+import type { CryptoAssetRecord } from '@/shared/db/types';
 import {
     _resetInFlightTranslationsForTest,
     getAssetInfo,

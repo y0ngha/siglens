@@ -125,9 +125,8 @@ export async function getCryptoAsset(
         const record = await repository.findBySymbol(upper);
         cryptoAssetCache.set(upper, record);
         if (record !== null) {
-            // DB hit: prime the symbol cache with a confirmed `true`.
-            // DB miss: leave cryptoSymbolCache untouched — isCryptoSymbol must
-            // still check the FMP-list before caching `false`.
+            // On a DB miss we deliberately leave cryptoSymbolCache untouched, so
+            // isCryptoSymbol still checks the FMP-list before caching `false`.
             cryptoSymbolCache.set(upper, true);
         }
         return record;

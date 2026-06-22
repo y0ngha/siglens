@@ -1,4 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+// vi.mock calls are hoisted above all imports; declared first so they are in scope
+// when vitest hoists them to the top of the compiled module.
 
 // ---- hoisted mocks ----
 const { getOrSetCacheMock, fetchCryptoAssetListMock } = vi.hoisted(() => ({
@@ -17,6 +18,7 @@ vi.mock('../../api', () => ({
     fetchCryptoAssetList: fetchCryptoAssetListMock,
 }));
 
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
     getFmpCryptoListMap,
     fmpCryptoMembership,
