@@ -20,8 +20,8 @@ interface UseIsClampedReturn {
  * 첫 페인트 이후 측정해도 CLS 없이 정확한 값을 얻을 수 있다.
  */
 export function useIsClamped(enabled: boolean): UseIsClampedReturn {
-    const ref = useRef<HTMLParagraphElement>(null);
     const [isClamped, setIsClamped] = useState(false);
+    const ref = useRef<HTMLParagraphElement>(null);
 
     useEffect(() => {
         if (!enabled) return;

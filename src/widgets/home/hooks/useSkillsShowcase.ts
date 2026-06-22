@@ -34,7 +34,7 @@ export function useSkillsShowcase(): UseSkillsShowcaseReturn {
         setExpandedKey(null);
     }, []);
 
-    // 아코디언: 같은 키를 다시 누르면 닫힘.
+    // 아코디언 UX 정책: 같은 카드를 다시 클릭하면 닫히고, 다른 카드를 열면 이전 카드는 자동으로 닫힌다.
     const toggleExpanded = useCallback((key: string): void => {
         setExpandedKey(prev => (prev === key ? null : key));
     }, []);

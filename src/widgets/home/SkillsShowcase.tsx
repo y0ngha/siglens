@@ -171,8 +171,8 @@ export function SkillCard({
         }
     };
 
-    // 펼침 가능 카드만 인터랙티브하게. 카드 내부에 ⓘ 버튼이 있어 루트를
-    // 진짜 <button>으로 만들 수 없으므로 role="button"+tabIndex로 처리한다.
+    // 카드 내부에 ⓘ 버튼이 있어 루트를 진짜 <button>으로 만들 수 없으므로
+    // role="button"+tabIndex로 처리한다.
     const interactiveProps = canExpand
         ? {
               role: 'button',
