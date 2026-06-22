@@ -10,17 +10,72 @@ import { SelfNormWarningBadge } from './SelfNormWarningBadge';
 import { formatConfidenceFooter } from '@/shared/lib/fearGreedLabels';
 import { usePublishSymbolChat } from '@/features/symbol-chat';
 import { buildChatState } from './utils/buildChatState';
+import { useHydrated } from '@/shared/hooks/useHydrated';
 
 interface FearGreedPageProps {
     symbol: string;
     fmpSymbol?: string;
 }
 
+/**
+ * Skeleton shown during SSR and the synchronous first-client render.
+ *
+ * useFearGreedFromSymbol → useBars → useSuspenseQuery has staleTime:30 s.
+ * The dehydrated seed (quantized, forming-bar-stripped) is always stale on
+ * the client (daily bar updatedAt << Date.now()), so React Query fires a
+ * background refetch immediately after mount.  For crypto (CRYPTO_SESSION,
+ * always-open), the SSR seed strips the forming bar but the refetched bars
+ * include it → SSR score ≠ first-client score → React #418.
+ *
+ * The fix mirrors FearGreedHeaderChipMounted: render a stable, score-free
+ * skeleton during hydration so SSR HTML and the first sync client render are
+ * identical, then swap in the real score-driven UI after useEffect fires.
+ * This is intentional: the page comment notes "점수는 클라가 bars로 계산"
+ * (score is computed client-side); the skeleton makes that explicit.
+ */
+function FearGreedPageSkeleton() {
+    return (
+        <div
+            className="flex flex-col gap-6 p-4 md:p-6"
+            aria-busy="true"
+            aria-label="공포 탐욕 지수 로딩 중"
+        >
+            <div className="grid gap-6 md:grid-cols-2">
+                <section className="flex flex-col gap-3">
+                    <div className="bg-secondary-700/40 h-4 w-40 animate-pulse rounded" />
+                    <div className="bg-secondary-700/40 h-48 w-full animate-pulse rounded" />
+                    <div className="bg-secondary-700/40 h-16 w-full animate-pulse rounded" />
+                </section>
+                <section className="flex flex-col gap-3">
+                    <div className="bg-secondary-700/40 h-20 w-full animate-pulse rounded" />
+                    <div className="bg-secondary-700/40 h-20 w-full animate-pulse rounded" />
+                </section>
+            </div>
+            <section className="flex flex-col gap-2">
+                <div className="bg-secondary-700/40 h-4 w-32 animate-pulse rounded" />
+                <div className="bg-secondary-700/40 h-40 w-full animate-pulse rounded" />
+            </section>
+        </div>
+    );
+}
+
 export function FearGreedPage({ symbol, fmpSymbol }: FearGreedPageProps) {
+    const isHydrated = useHydrated();
     const { snapshot, history } = useFearGreedFromSymbol({ symbol, fmpSymbol });
 
     const chatState = useMemo(() => buildChatState(snapshot), [snapshot]);
     usePublishSymbolChat(chatState);
+
+    // During SSR and the first synchronous client render, suppress the
+    // score-driven output entirely.  The snapshot value may differ between
+    // the SSR-quantized seed and the client's first refetch (especially for
+    // crypto, which always has a forming bar), so rendering it during
+    // hydration trips React #418.  After useEffect fires (isHydrated=true)
+    // the client owns the score and any divergence is a normal React update,
+    // not a hydration error.
+    if (!isHydrated) {
+        return <FearGreedPageSkeleton />;
+    }
 
     if (!snapshot) {
         return (

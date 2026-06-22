@@ -67,7 +67,10 @@ import { isTabAllowedForSymbol } from '@/entities/ticker/api';
 import { getAssetInfoResilient } from '@/entities/ticker';
 import { getProfileResilient } from '@/app/[symbol]/fundamental/getProfileResilient';
 import { notFound } from 'next/navigation';
-import CongressPage, { revalidate } from '@/app/[symbol]/congress/page';
+import CongressPage, {
+    generateMetadata,
+    revalidate,
+} from '@/app/[symbol]/congress/page';
 
 const mockIsTabAllowed = isTabAllowedForSymbol as MockedFunction<
     typeof isTabAllowedForSymbol
@@ -136,5 +139,81 @@ describe('Congress page tab guard', () => {
 
         // getProfileResilient must NOT have been called — the guard prevented it.
         expect(mockGetProfileResilient).not.toHaveBeenCalled();
+    });
+});
+
+/**
+ * generateMetadata must mirror the page body's isTabAllowedForSymbol guard.
+ * Without it, a crypto symbol would have canonical + index:true metadata while
+ * the page body returns notFound() (noindex) — creating a soft-404 mismatch.
+ */
+describe('Congress generateMetadata crypto NOINDEX guard', () => {
+    const NOINDEX_SYMBOL_METADATA = {
+        robots: { index: false, follow: false },
+        alternates: { canonical: null },
+    };
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    it('crypto symbol (isTabAllowedForSymbol → false) → returns NOINDEX_SYMBOL_METADATA', async () => {
+        mockIsTabAllowed.mockResolvedValue(false);
+
+        const result = await generateMetadata({
+            params: Promise.resolve({ symbol: 'BTCUSD' }),
+        });
+
+        expect(mockIsTabAllowed).toHaveBeenCalledWith('BTCUSD', 'congress');
+        // Must exactly match NOINDEX_SYMBOL_METADATA shape: robots index:false + canonical null.
+        // A real indexable metadata object would have alternates.canonical set to a URL string.
+        expect(result).toEqual(NOINDEX_SYMBOL_METADATA);
+    });
+
+    it('equity symbol (isTabAllowedForSymbol → true) → returns indexable metadata (not NOINDEX)', async () => {
+        mockIsTabAllowed.mockResolvedValue(true);
+
+        // Provide assetInfo + profile so generateMetadata can build real metadata content.
+        mockGetAssetInfoResilient.mockResolvedValue({
+            assetInfo: {
+                symbol: 'AAPL',
+                name: 'Apple Inc.',
+                koreanName: '애플',
+                fmpSymbol: 'AAPL',
+            },
+            degraded: false,
+        } as Awaited<ReturnType<typeof getAssetInfoResilient>>);
+        mockGetProfileResilient.mockResolvedValue({
+            profile: { sector: 'Technology', description: '' },
+            degraded: false,
+        } as Awaited<ReturnType<typeof getProfileResilient>>);
+
+        // getCongressTradesResilient is called after the profile gate in generateMetadata.
+        // Return non-degraded so the equity path proceeds to build real metadata.
+        const { getCongressTradesResilient } =
+            await import('@/entities/congress-trades');
+        (
+            getCongressTradesResilient as MockedFunction<
+                typeof getCongressTradesResilient
+            >
+        ).mockResolvedValue({
+            trades: [],
+            degraded: false,
+        } as Awaited<ReturnType<typeof getCongressTradesResilient>>);
+
+        const result = await generateMetadata({
+            params: Promise.resolve({ symbol: 'AAPL' }),
+        });
+
+        expect(mockIsTabAllowed).toHaveBeenCalledWith('AAPL', 'congress');
+        // Must NOT be the hard NOINDEX sentinel object.
+        // NOINDEX_SYMBOL_METADATA has { robots: { index: false, follow: false },
+        //   alternates: { canonical: null } } — the sentinel returned for crypto/invalid.
+        expect(result).not.toEqual(NOINDEX_SYMBOL_METADATA);
+        // The equity path's robots.follow must not be false (hard-noindex treatment).
+        const robots = result.robots as
+            | { index?: boolean; follow?: boolean }
+            | undefined;
+        expect(robots?.follow).not.toBe(false);
     });
 });

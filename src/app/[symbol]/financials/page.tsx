@@ -54,6 +54,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     if (!isAdmissibleSymbolShape(upper)) {
         return NOINDEX_SYMBOL_METADATA;
     }
+    // 본문 `isTabAllowedForSymbol` 가드와 일관: 크립토 심볼은 financials 탭이 없으므로
+    // generateMetadata도 동일 조건에서 NOINDEX로 반환한다. 가드 없이 계속 진행하면
+    // 본문은 notFound()(noindex)인데 메타데이터는 canonical + index:true인 soft-404가 만들어진다.
+    if (!(await isTabAllowedForSymbol(upper, 'financials'))) {
+        return NOINDEX_SYMBOL_METADATA;
+    }
     const { assetInfo, degraded } = await getAssetInfoResilient(upper);
     if (degraded) {
         return NOINDEX_SYMBOL_METADATA;

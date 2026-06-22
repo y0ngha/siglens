@@ -1,4 +1,9 @@
 // vi.mock hoists, but for clarity all mocks are declared above imports.
+// Default: equity symbol (allowed) — individual tests that need crypto behavior
+// can override mockIsTabAllowedForSymbol per-call.
+vi.mock('@/entities/ticker/api', () => ({
+    isTabAllowedForSymbol: vi.fn().mockResolvedValue(true),
+}));
 vi.mock('@/widgets/congress', () => ({
     CongressTrendSummary: () => null,
     CongressTradesTable: () => null,
