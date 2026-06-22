@@ -3,8 +3,16 @@ vi.mock('@/shared/lib/sleep', () => ({
     sleep: vi.fn().mockResolvedValue(undefined),
 }));
 vi.mock('@/shared/api/fmp/httpClient');
+// `cryptoAssetStore` is still mocked because `isCryptoSymbolStatic` imports `isCryptoSymbol`
+// from it — vitest needs a mock so the import resolves without touching the DB.
 vi.mock('@/entities/ticker/lib/cryptoAssetStore', () => ({
     isCryptoSymbol: vi.fn(),
+}));
+// `isTabAllowedForSymbol` delegates to `isCryptoSymbolStatic` (unstable_cache-wrapped)
+// instead of raw `isCryptoSymbol`. The `isTabAllowedForSymbol` describe block controls
+// behaviour via `mockIsCryptoSymbolStatic`.
+vi.mock('@/entities/ticker/lib/isCryptoSymbolStatic', () => ({
+    isCryptoSymbolStatic: vi.fn(),
 }));
 
 import type { Mock } from 'vitest';
@@ -16,7 +24,7 @@ import {
     isTabAllowedForSymbol,
 } from '@/entities/ticker/api';
 import { fmpGet } from '@/shared/api/fmp/httpClient';
-import { isCryptoSymbol } from '@/entities/ticker/lib/cryptoAssetStore';
+import { isCryptoSymbolStatic } from '@/entities/ticker/lib/isCryptoSymbolStatic';
 import {
     DrizzleAssetTranslationRepository,
     DrizzleKoreanTickerRepository,
@@ -455,15 +463,19 @@ describe('DrizzleCryptoAssetRepository', () => {
 });
 
 describe('isTabAllowedForSymbol', () => {
-    const mockIsCryptoSymbol = isCryptoSymbol as unknown as Mock;
+    // `isTabAllowedForSymbol` now delegates to `isCryptoSymbolStatic`
+    // (unstable_cache-wrapped, ISR cold-gen-safe) rather than raw `isCryptoSymbol`.
+    // This mock controls behaviour for the tests below; `mockIsCryptoSymbol` is
+    // kept for other tests in this file that test the store functions directly.
+    const mockIsCryptoSymbolStatic = isCryptoSymbolStatic as unknown as Mock;
 
     beforeEach(() => {
         vi.clearAllMocks();
     });
 
-    describe('equity symbol (isCryptoSymbol → false)', () => {
+    describe('equity symbol (isCryptoSymbolStatic → false)', () => {
         beforeEach(() => {
-            mockIsCryptoSymbol.mockResolvedValue(false);
+            mockIsCryptoSymbolStatic.mockResolvedValue(false);
         });
 
         it('equity 심볼은 "fundamental" 탭을 허용한다', async () => {
@@ -491,9 +503,9 @@ describe('isTabAllowedForSymbol', () => {
         });
     });
 
-    describe('crypto symbol (isCryptoSymbol → true)', () => {
+    describe('crypto symbol (isCryptoSymbolStatic → true)', () => {
         beforeEach(() => {
-            mockIsCryptoSymbol.mockResolvedValue(true);
+            mockIsCryptoSymbolStatic.mockResolvedValue(true);
         });
 
         it('crypto 심볼의 equity-only 탭 "fundamental"은 허용하지 않는다', async () => {

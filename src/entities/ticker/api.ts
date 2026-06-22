@@ -24,7 +24,7 @@ import type {
     ProfileDescriptionTranslationRepository,
 } from '@/shared/db/types';
 import { withRetry } from '@/shared/lib/withRetry';
-import { isCryptoSymbol } from './lib/cryptoAssetStore';
+import { isCryptoSymbolStatic } from './lib/isCryptoSymbolStatic';
 import {
     getDescriptor,
     DEFAULT_MARKET_PROFILE,
@@ -208,13 +208,18 @@ export async function fetchCryptoAssetList(): Promise<CryptoAssetRow[]> {
 }
 
 /**
- * Cache-safe tab guard predicate: returns `true` if `tab` is allowed for the
- * given `symbol`'s market profile.
+ * ISR cold-gen-safe tab guard predicate: returns `true` if `tab` is allowed
+ * for the given `symbol`'s market profile.
  *
- * Uses `isCryptoSymbol` (DB membership lookup, no HTTP fetch) to classify the
- * symbol as `'crypto'` or `'us-equity'`, then checks the profile descriptor's
- * tab whitelist. This avoids the `no-store` fetch that `getAssetInfo` triggers,
- * keeping ISR/static pages static at build time.
+ * Uses `isCryptoSymbolStatic` (Next.js `unstable_cache`-wrapped Neon DB read)
+ * instead of raw `isCryptoSymbol` so that ISR cold-gen does not encounter a
+ * no-store fetch that throws `DYNAMIC_SERVER_USAGE`. The page-level tab guards
+ * for options/financials/fundamental/congress run BEFORE `getAssetInfoResilient`,
+ * which means without this wrapper they would be the first uncached DB read on
+ * a fresh ISR render, causing a 500.
+ *
+ * Hot paths (getAssetInfo, search) continue to use `isCryptoSymbol` directly —
+ * those callers are not wrapped here and are unaffected by this change.
  *
  * The `notFound()` side-effect intentionally lives in the calling page (app layer),
  * not here — this function is a pure predicate.
@@ -228,7 +233,7 @@ export async function isTabAllowedForSymbol(
     symbol: string,
     tab: TabKey
 ): Promise<boolean> {
-    const profile = (await isCryptoSymbol(symbol))
+    const profile = (await isCryptoSymbolStatic(symbol))
         ? 'crypto'
         : DEFAULT_MARKET_PROFILE;
     return getDescriptor(profile).tabs.includes(tab);

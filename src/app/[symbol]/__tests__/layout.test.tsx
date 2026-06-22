@@ -34,6 +34,18 @@ const {
 
 vi.mock('@y0ngha/siglens-core', () => ({
     EMPTY_INDICATOR_RESULT: MOCK_EMPTY_INDICATOR_RESULT,
+    // Phase 1 added sessionSpecFor(marketProfileOf(assetInfo)) which imports
+    // US_EQUITY_SESSION and CRYPTO_SESSION from siglens-core. Provide minimal
+    // valid MarketSessionSpec objects so the switch in sessionSpecFor resolves
+    // without throwing "No export defined on mock".
+    US_EQUITY_SESSION: {
+        kind: 'scheduled' as const,
+        timeZone: 'America/New_York',
+        openMinute: 570,
+        closeMinute: 960,
+        weekendDays: [0, 6],
+    },
+    CRYPTO_SESSION: { kind: 'always-open' as const },
 }));
 
 vi.mock('@tanstack/react-query', () => ({
@@ -83,8 +95,13 @@ vi.mock('@/entities/ticker', () => ({
 vi.mock('@/entities/bars', () => ({
     getBarsStatic: (symbol: string, timeframe: string, fmpSymbol?: string) =>
         mockGetBarsStatic(symbol, timeframe, fmpSymbol),
-    quantizeBarsDataToLastClosed: (data: unknown, now: Date) =>
-        mockQuantize(data, now),
+    // Phase 1 extended the call to pass a session spec as the third argument.
+    // Capture all 3 args so tests can assert the correct session is threaded.
+    quantizeBarsDataToLastClosed: (
+        data: unknown,
+        now: Date,
+        session?: unknown
+    ) => mockQuantize(data, now, session),
 }));
 
 import { SymbolLayoutChrome } from '@/app/[symbol]/layout';
@@ -124,7 +141,14 @@ describe('SymbolLayoutChrome SSR seed (ISR write churn 차단)', () => {
         });
 
         expect(mockGetBarsStatic).toHaveBeenCalledWith('aapl', '1Day', 'AAPL');
-        expect(mockQuantize).toHaveBeenCalledWith(RAW_BARS, expect.any(Date));
+        // ASSET_INFO has no marketProfile → defaults to us-equity → US_EQUITY_SESSION
+        expect(mockQuantize).toHaveBeenCalledWith(RAW_BARS, expect.any(Date), {
+            kind: 'scheduled',
+            timeZone: 'America/New_York',
+            openMinute: 570,
+            closeMinute: 960,
+            weekendDays: [0, 6],
+        });
 
         const barsSeedCalls = mockSetQueryData.mock.calls.filter(
             ([key]) => Array.isArray(key) && key[0] === 'bars'
@@ -221,5 +245,59 @@ describe('SymbolLayoutChrome SSR seed (ISR write churn 차단)', () => {
         expect(barsSeedCalls).toHaveLength(1);
         // updatedAt 0 fallback — bar 없으면 안정성 보장 안 되지만 throw 없이 진행
         expect(barsSeedCalls[0][2]).toEqual({ updatedAt: 0 });
+    });
+
+    it('CRYPTO assetInfo → quantizeBarsDataToLastClosed called with CRYPTO_SESSION (always-open)', async () => {
+        // A crypto AssetInfo carries marketProfile: 'crypto' → sessionSpecFor maps
+        // 'always-open' sessionModel → CRYPTO_SESSION { kind: 'always-open' }.
+        const CRYPTO_ASSET_INFO = {
+            symbol: 'BTCUSD',
+            name: 'Bitcoin USD',
+            fmpSymbol: 'BTCUSD',
+            marketProfile: 'crypto' as const,
+        };
+        mockGetAssetInfoResilient.mockResolvedValue({
+            assetInfo: CRYPTO_ASSET_INFO,
+            degraded: false,
+        });
+        mockGetBarsStatic.mockResolvedValue(RAW_BARS);
+
+        await SymbolLayoutChrome({
+            params: Promise.resolve({ symbol: 'BTCUSD' }),
+        });
+
+        // Core fix: crypto must strip the forming bar with CRYPTO_SESSION, not
+        // US_EQUITY_SESSION, to prevent ISR write-churn on the shared bars key.
+        expect(mockQuantize).toHaveBeenCalledWith(RAW_BARS, expect.any(Date), {
+            kind: 'always-open',
+        });
+    });
+
+    it('EQUITY assetInfo (no marketProfile) → quantizeBarsDataToLastClosed called with US_EQUITY_SESSION', async () => {
+        // An equity AssetInfo has no marketProfile (undefined) → defaults to
+        // 'us-equity' → sessionSpecFor maps 'us-equity-et' → US_EQUITY_SESSION.
+        const EQUITY_ASSET_INFO = {
+            symbol: 'AAPL',
+            name: 'Apple Inc.',
+            fmpSymbol: 'AAPL',
+            // marketProfile intentionally absent (legacy equity)
+        };
+        mockGetAssetInfoResilient.mockResolvedValue({
+            assetInfo: EQUITY_ASSET_INFO,
+            degraded: false,
+        });
+        mockGetBarsStatic.mockResolvedValue(RAW_BARS);
+
+        await SymbolLayoutChrome({
+            params: Promise.resolve({ symbol: 'AAPL' }),
+        });
+
+        expect(mockQuantize).toHaveBeenCalledWith(RAW_BARS, expect.any(Date), {
+            kind: 'scheduled',
+            timeZone: 'America/New_York',
+            openMinute: 570,
+            closeMinute: 960,
+            weekendDays: [0, 6],
+        });
     });
 });

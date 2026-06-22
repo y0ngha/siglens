@@ -605,7 +605,9 @@ export function buildCryptoSymbolSeoContent(
 ): SymbolSeoContent {
     const ticker = symbol.toUpperCase();
     const displayName = opts.displayName ?? ticker;
-    const title = `${displayName}(${ticker}) 시세 분석 — 차트와 매매 신호`;
+    // L1: ticker-led format keeps title under ~55 chars including "| Siglens" suffix,
+    // fitting the ~60-char SERP safe zone without dropping crypto-relevant keywords.
+    const title = `${ticker} 시세 분석 — ${displayName} 차트와 매매 신호`;
     return {
         ticker,
         title,
@@ -654,6 +656,196 @@ export function resolveSymbolSeoContent(
     return buildSymbolSeoContent(ticker, {
         displayName: opts.displayName,
         koreanName: opts.koreanName ?? undefined,
+    });
+}
+
+// ---------------------------------------------------------------------------
+// Crypto-framed sibling tab SEO builders (H2/H3/M1)
+// ---------------------------------------------------------------------------
+
+/** Build SEO metadata for a crypto `/[symbol]/news` page (no 어닝/실적/애널리스트). */
+export function buildCryptoSymbolNewsSeoContent(
+    symbol: string,
+    opts: BuildSymbolSeoOptions = {}
+): SymbolSeoContent {
+    const ticker = symbol.toUpperCase();
+    const subject = opts.displayName ?? ticker;
+    // Crypto news focuses on price catalysts and market sentiment — not earnings or analyst ratings.
+    const title = `${ticker} 코인 뉴스 — 호재 악재와 크립토 시장 분위기`;
+    const fullTitle = `${title} | ${SITE_NAME}`;
+    return {
+        ticker,
+        title,
+        fullTitle,
+        description: clampSeoDescription(
+            `${subject} 최신 뉴스에서 가격을 움직인 호재·악재를 확인합니다. 크립토 시장 분위기와 핵심 이슈를 AI가 한국어로 정리합니다.`
+        ),
+        url: `${SITE_URL}/${ticker}/news`,
+        keywords: buildCryptoSymbolNewsKeywords(ticker),
+    };
+}
+
+function buildCryptoSymbolNewsKeywords(ticker: string): string[] {
+    return [
+        `${ticker} 뉴스`,
+        `${ticker} 코인 뉴스`,
+        `${ticker} 호재`,
+        `${ticker} 악재`,
+        `${ticker} 뉴스 분위기`,
+        `${ticker} 시장 이슈`,
+        `${ticker} 크립토 뉴스`,
+        `${ticker} 소식`,
+        `코인 뉴스 분석`,
+        `크립토 뉴스`,
+        `코인 호재`,
+        `코인 악재`,
+        `암호화폐 뉴스`,
+        `코인 시장 분위기`,
+        `비트코인 뉴스`,
+    ];
+}
+
+/**
+ * Select the correct news-page SEO builder by asset class.
+ * Crypto uses `buildCryptoSymbolNewsSeoContent` (no 어닝/실적/애널리스트 copy);
+ * equity uses `buildSymbolNewsSeoContent`.
+ */
+export function resolveSymbolNewsSeoContent(
+    ticker: string,
+    assetClass: AssetClass,
+    opts: ResolveSymbolSeoOpts
+): SymbolSeoContent {
+    if (assetClass === 'crypto') {
+        return buildCryptoSymbolNewsSeoContent(ticker, {
+            displayName: opts.displayName,
+        });
+    }
+    return buildSymbolNewsSeoContent(ticker, {
+        displayName: opts.displayName,
+        koreanName: opts.koreanName ?? undefined,
+    });
+}
+
+/** Build SEO metadata for a crypto `/[symbol]/overall` page (no 주가/분기실적/펀더멘털). */
+export function buildCryptoSymbolOverallSeoContent(
+    symbol: string,
+    opts: BuildSymbolSeoOptions = {}
+): SymbolSeoContent {
+    const ticker = symbol.toUpperCase();
+    const subject = opts.displayName ?? ticker;
+    // Crypto overall axes: chart trend, news sentiment, fear-greed — no earnings/fundamental.
+    const title = `${ticker} 코인 종합 분석 — 강세와 약세 시나리오, 위험 요인`;
+    const fullTitle = `${title} | ${SITE_NAME}`;
+    return {
+        ticker,
+        title,
+        fullTitle,
+        description: clampSeoDescription(
+            `${subject} 시세를 차트 추세·뉴스·매수 분위기 세 축으로 묶어 강세·약세 시나리오로 정리합니다. 진입 후보 가격대와 시나리오가 깨지는 위험 요인도 함께 짚습니다.`
+        ),
+        url: `${SITE_URL}/${ticker}/overall`,
+        keywords: buildCryptoSymbolOverallKeywords(ticker),
+    };
+}
+
+function buildCryptoSymbolOverallKeywords(ticker: string): string[] {
+    return [
+        `${ticker} AI 종합 분석`,
+        `${ticker} 코인 종합 분석`,
+        `${ticker} 시나리오 분석`,
+        `${ticker} 시나리오`,
+        `${ticker} 진입 타이밍`,
+        `${ticker} 위험 요인`,
+        `${ticker} 매수 분위기`,
+        `AI 종합 분석`,
+        `코인 시나리오 분석`,
+        `크립토 종합 분석`,
+        `코인 기술적 분석`,
+        `암호화폐 AI 분석`,
+    ];
+}
+
+/**
+ * Select the correct overall-page SEO builder by asset class.
+ * Crypto uses `buildCryptoSymbolOverallSeoContent` (chart/news/fear-greed axes only);
+ * equity uses `buildSymbolOverallSeoContent`.
+ */
+export function resolveSymbolOverallSeoContent(
+    ticker: string,
+    assetClass: AssetClass,
+    opts: ResolveSymbolSeoOpts
+): SymbolSeoContent {
+    if (assetClass === 'crypto') {
+        return buildCryptoSymbolOverallSeoContent(ticker, {
+            displayName: opts.displayName,
+        });
+    }
+    return buildSymbolOverallSeoContent(ticker, {
+        displayName: opts.displayName,
+        koreanName: opts.koreanName ?? undefined,
+    });
+}
+
+/** Build SEO metadata for a crypto `/[symbol]/fear-greed` page (coin-framed keywords). */
+export function buildCryptoSymbolFearGreedSeoContent(
+    symbol: string,
+    opts: BuildSymbolSeoOptions = {}
+): SymbolSeoContent {
+    const ticker = symbol.toUpperCase();
+    const subject = opts.displayName ?? ticker;
+    // Title/description mirrors the stock builder but substitutes coin-appropriate language.
+    const title = `${ticker} 공포 탐욕 지수 — 0~100 점수와 5단계 코인 분위기`;
+    const fullTitle = `${title} | ${SITE_NAME}`;
+    return {
+        ticker,
+        title,
+        fullTitle,
+        description: clampSeoDescription(
+            buildSymbolFearGreedDescription(subject)
+        ),
+        url: `${SITE_URL}/${ticker}/fear-greed`,
+        keywords: buildCryptoSymbolFearGreedKeywords(ticker),
+    };
+}
+
+function buildCryptoSymbolFearGreedKeywords(ticker: string): string[] {
+    return [
+        `${ticker} 공포 지수`,
+        `${ticker} 탐욕 지수`,
+        `${ticker} 코인 매수 분위기`,
+        `${ticker} 매수세`,
+        `${ticker} 단기 흐름`,
+        `${ticker} 단기 심리`,
+        `공포 탐욕 지수`,
+        `코인 투자 심리`,
+        `코인 매수 분위기`,
+        `Fear Greed Index`,
+        `크립토 투자 심리`,
+        `암호화폐 매수 분위기`,
+        `코인 단기 매매 심리`,
+    ];
+}
+
+/**
+ * Select the correct fear-greed-page SEO builder by asset class.
+ * Crypto uses `buildCryptoSymbolFearGreedSeoContent` (coin-framed keywords);
+ * equity uses `buildSymbolFearGreedSeoContent`.
+ */
+export function resolveSymbolFearGreedSeoContent(
+    ticker: string,
+    assetClass: AssetClass,
+    opts: ResolveSymbolSeoOpts
+): SymbolSeoContent {
+    if (assetClass === 'crypto') {
+        return buildCryptoSymbolFearGreedSeoContent(ticker, {
+            displayName: opts.displayName,
+        });
+    }
+    return buildSymbolFearGreedSeoContent(ticker, {
+        displayName: opts.displayName,
+        koreanName: opts.koreanName ?? undefined,
+        // sector is not forwarded — none of the fear-greed callers resolve a sector
+        // (it's equity-tab metadata context, not tracked at this page level).
     });
 }
 

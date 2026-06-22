@@ -31,10 +31,14 @@ export type AssetClass = 'equity' | 'crypto';
 export type MarketRegion = 'us' | 'global';
 
 /**
- * Interim session model (siglens-local). A later core plan replaces this
- * with `MarketSessionSpec` from `@y0ngha/siglens-core`. Kept minimal so
- * Plans 1–2 ship without the cross-repo core change
- * (tracking: https://github.com/y0ngha/siglens/issues/620).
+ * Interim session model (siglens-local). Each `MarketProfileDescriptor` carries
+ * a `sessionModel` value that `sessionSpecFor` (`shared/api/market/sessionSpecFor.ts`)
+ * translates to the core `MarketSessionSpec` (`US_EQUITY_SESSION` / `CRYPTO_SESSION`
+ * from `@y0ngha/siglens-core`). The translation is already wired — this type is
+ * the interim descriptor field, not the final session representation.
+ *
+ * Adding a new variant here requires a matching `case` in `sessionSpecFor`'s
+ * exhaustive switch; the compiler will error if the switch is incomplete.
  */
 export type SessionModel = 'us-equity-et' | 'always-open';
 

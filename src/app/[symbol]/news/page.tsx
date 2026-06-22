@@ -29,8 +29,8 @@ import { todayKstIsoDate } from '@/shared/lib/dateKey';
 import { getFmpUserFacingMessage } from '@/shared/api/fmp/fmpUserMessage';
 import {
     buildBreadcrumbJsonLd,
-    buildSymbolNewsSeoContent,
     buildSymbolSeoContent,
+    resolveSymbolNewsSeoContent,
     NOINDEX_SYMBOL_METADATA,
     SITE_NAME,
     SITE_URL,
@@ -74,8 +74,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         return NOINDEX_SYMBOL_METADATA;
     }
     const displayName = buildDisplayName(assetInfo, upper);
+    const assetClass = getDescriptor(marketProfileOf(assetInfo)).assetClass;
     const { title, fullTitle, description, url, keywords } =
-        buildSymbolNewsSeoContent(upper, {
+        resolveSymbolNewsSeoContent(upper, assetClass, {
             displayName,
             koreanName: assetInfo.koreanName,
         });
@@ -200,17 +201,22 @@ export default async function NewsPage({ params }: Props) {
     const displayName = buildDisplayName(assetInfo, upper);
     const assetClass = getDescriptor(marketProfileOf(assetInfo)).assetClass;
     const isEquity = assetClass === 'equity';
-    const { fullTitle, description, url } = buildSymbolNewsSeoContent(upper, {
-        displayName,
-        koreanName: assetInfo.koreanName,
-    });
+    const { fullTitle, description, url } = resolveSymbolNewsSeoContent(
+        upper,
+        assetClass,
+        {
+            displayName,
+            koreanName: assetInfo.koreanName,
+        }
+    );
 
-    // about 노드는 stock으로 분류된 경우만 채워지고, ETF/Index/모호한 종목은
-    // undefined로 자연 생략된다 (assetClassification 모듈 doc 참고).
+    // about 노드는 stock으로 분류된 경우만 채워지고, ETF/Index/모호한 종목과 crypto는
+    // undefined로 자연 생략된다. crypto는 schema.org 표준 타입이 없어 about 노드 자체를 두지 않는다.
     const aboutNode = buildAssetAboutNode(
         upper,
         assetInfo.koreanName ?? assetInfo.name,
-        assetInfo.fmpSymbol
+        assetInfo.fmpSymbol,
+        assetClass
     );
     const jsonLd = {
         '@context': 'https://schema.org',
@@ -226,7 +232,7 @@ export default async function NewsPage({ params }: Props) {
 
     const breadcrumbJsonLd = buildBreadcrumbJsonLd([
         { name: upper, url: buildSymbolSeoContent(upper).url },
-        { name: '뉴스 분석', url: buildSymbolNewsSeoContent(upper).url },
+        { name: '뉴스 분석', url },
     ]);
 
     // datePublished는 의도적으로 생략한다 — ticker별 최초 뉴스 ingestion 시각
@@ -235,11 +241,17 @@ export default async function NewsPage({ params }: Props) {
     // datePublished는 옵션이라 생략 가능. dateModified는 getTodayIsoDay()로
     // 일 단위 양자화 (rationale은 helper JSDoc 참고).
     const todayIsoDay = getTodayIsoDay();
+    // headline/description은 자산 유형별로 분기한다 — 크립토 페이지에 주식 특유의
+    // "어닝·실적·애널리스트" 문구가 등장하면 실제로 없는 콘텐츠를 약속하는 허위 신호가 된다.
     const aiArticleJsonLd = {
         '@context': 'https://schema.org',
         '@type': 'Article',
-        headline: `${displayName} 최근 뉴스 AI 요약`,
-        description: `${displayName} 최신 뉴스의 호재·악재 분위기와 핵심 이슈를 한국어로 정리합니다.`,
+        headline: isEquity
+            ? `${displayName} 최근 뉴스 AI 요약`
+            : `${displayName} 최근 코인 뉴스 AI 요약`,
+        description: isEquity
+            ? `${displayName} 최신 뉴스의 호재·악재 분위기와 핵심 이슈를 한국어로 정리합니다.`
+            : `${displayName} 최신 크립토 뉴스의 호재·악재 분위기와 시장 이슈를 한국어로 정리합니다.`,
         inLanguage: 'ko',
         dateModified: todayIsoDay,
         isPartOf: { '@type': 'WebPage', '@id': `${url}#webpage` },
@@ -305,7 +317,9 @@ export default async function NewsPage({ params }: Props) {
             {newsListJsonLd ? <JsonLd data={newsListJsonLd} /> : null}
             <main className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8">
                 <SymbolPageHeading>
-                    {displayName} 최신 뉴스와 어닝 일정
+                    {isEquity
+                        ? `${displayName} 최신 뉴스와 어닝 일정`
+                        : `${displayName} 최신 코인 뉴스`}
                 </SymbolPageHeading>
                 <section className="sr-only">
                     <h2>{displayName} 뉴스 분석 개요</h2>

@@ -15,12 +15,14 @@ import {
     getAssetInfoResilient,
 } from '@/entities/ticker';
 import { getBarsStatic, quantizeBarsDataToLastClosed } from '@/entities/bars';
+import { getDescriptor, marketProfileOf } from '@/shared/config/marketProfile';
+import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/shared/config/queryConfig';
 import { MS_PER_SECOND } from '@/shared/config/time';
 import {
     buildBreadcrumbJsonLd,
-    buildSymbolFearGreedSeoContent,
     buildSymbolSeoContent,
+    resolveSymbolFearGreedSeoContent,
     NOINDEX_SYMBOL_METADATA,
     SITE_NAME,
     SITE_URL,
@@ -66,8 +68,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         return NOINDEX_SYMBOL_METADATA;
     }
     const displayName = buildDisplayName(assetInfo, ticker);
+    const assetClass = getDescriptor(marketProfileOf(assetInfo)).assetClass;
     const { title, fullTitle, description, url, keywords } =
-        buildSymbolFearGreedSeoContent(ticker, {
+        resolveSymbolFearGreedSeoContent(ticker, assetClass, {
             displayName,
             koreanName: assetInfo.koreanName,
         });
@@ -109,21 +112,24 @@ export default async function SymbolFearGreedPage({ params }: Props) {
     }
 
     const displayName = buildDisplayName(assetInfo, ticker);
+    const assetClass = getDescriptor(marketProfileOf(assetInfo)).assetClass;
 
-    const { fullTitle, description, url } = buildSymbolFearGreedSeoContent(
+    const { fullTitle, description, url } = resolveSymbolFearGreedSeoContent(
         ticker,
+        assetClass,
         {
             displayName,
             koreanName: assetInfo.koreanName,
         }
     );
 
-    // about 노드는 stock으로 분류된 경우만 채워지고, ETF/Index/모호한 종목은
-    // undefined로 자연 생략된다 (assetClassification 모듈 doc 참고).
+    // about 노드는 stock으로 분류된 경우만 채워지고, ETF/Index/모호한 종목과 crypto는
+    // undefined로 자연 생략된다. crypto는 schema.org 표준 타입이 없어 about 노드 자체를 두지 않는다.
     const aboutNode = buildAssetAboutNode(
         ticker,
         assetInfo.koreanName ?? assetInfo.name,
-        assetInfo.fmpSymbol
+        assetInfo.fmpSymbol,
+        assetClass
     );
     const webPageJsonLd = {
         '@context': 'https://schema.org',
@@ -193,7 +199,13 @@ export default async function SymbolFearGreedPage({ params }: Props) {
     if (fgBars !== null) {
         // updatedAt 명시: RQ dehydrate 기본은 Date.now()라 매 ISR 재생성마다 다른 timestamp가
         // HTML에 박혀 ISR write churn 발생. 마지막 완료 봉의 time으로 고정.
-        const quantized = quantizeBarsDataToLastClosed(fgBars, new Date());
+        // Session arg mirrors the chart page pattern: crypto (always-open) must strip
+        // the forming bar with CRYPTO_SESSION, not US_EQUITY_SESSION (the default).
+        const quantized = quantizeBarsDataToLastClosed(
+            fgBars,
+            new Date(),
+            sessionSpecFor(marketProfileOf(assetInfo))
+        );
         // Bar.time은 seconds (epoch) — RQ dataUpdatedAt은 milliseconds.
         const lastBarSec = quantized.bars.at(-1)?.time ?? 0;
         const stableUpdatedAt = lastBarSec * MS_PER_SECOND;

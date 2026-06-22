@@ -5,6 +5,7 @@ import { addEtDays, etDateOf } from '@/entities/economy/lib/calendarWindow';
 import { getDatabaseClient } from '@/shared/db/client';
 import {
     assetTranslations,
+    cryptoAssets,
     economicCalendar,
     marketNews,
     terms,
@@ -118,6 +119,36 @@ async function seed(): Promise<void> {
             },
         ])
         .onConflictDoNothing();
+
+    // crypto_assets — seeds the crypto_assets table so getAssetInfo(BTCUSD)
+    // resolves via crypto_assets membership check (getCryptoAsset) and returns
+    // an AssetInfo with marketProfile:'crypto'. Without this seed, getCryptoAsset
+    // returns null → getAssetInfo falls through to FMP (not available in E2E) →
+    // degraded or null → /BTCUSD renders notFound(). This is the gap that let
+    // crypto-specific bugs ship undetected (Rec #4 of the crypto post-audit).
+    //
+    // Column constraints (crypto_assets table):
+    //   symbol (PK), name (NOT NULL), koreanName (nullable), circulatingSupply
+    //   (nullable), updatedAt (defaultNow, NOT NULL).
+    await db
+        .insert(cryptoAssets)
+        .values([
+            {
+                symbol: 'BTCUSD',
+                name: 'Bitcoin USD',
+                koreanName: '비트코인',
+                circulatingSupply: 19_700_000,
+            },
+            {
+                symbol: 'ETHUSD',
+                name: 'Ethereum USD',
+                koreanName: '이더리움',
+                circulatingSupply: 120_000_000,
+            },
+        ])
+        .onConflictDoNothing();
+
+    console.log('e2e seed: crypto_assets ok');
 
     await db
         .insert(terms)
