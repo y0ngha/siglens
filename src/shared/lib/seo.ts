@@ -659,10 +659,6 @@ export function resolveSymbolSeoContent(
     });
 }
 
-// ---------------------------------------------------------------------------
-// Crypto-framed sibling tab SEO builders (H2/H3/M1)
-// ---------------------------------------------------------------------------
-
 /** Build SEO metadata for a crypto `/[symbol]/news` page (no 어닝/실적/애널리스트). */
 export function buildCryptoSymbolNewsSeoContent(
     symbol: string,
@@ -801,6 +797,10 @@ export function buildCryptoSymbolFearGreedSeoContent(
         title,
         fullTitle,
         description: clampSeoDescription(
+            // The fear-greed metric measures buying/selling pressure from price
+            // position and volume flow — semantics that are identical for crypto
+            // and equity.  Only the title and keywords need crypto-specific copy;
+            // the description body is shared intentionally via buildSymbolFearGreedDescription.
             buildSymbolFearGreedDescription(subject)
         ),
         url: `${SITE_URL}/${ticker}/fear-greed`,

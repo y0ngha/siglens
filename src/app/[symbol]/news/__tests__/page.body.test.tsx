@@ -165,18 +165,20 @@ const EQUITY_ASSET_INFO = {
         marketProfile: 'us-equity' as const,
     },
     degraded: false,
-} as never;
+} as Awaited<ReturnType<typeof getAssetInfoResilient>>;
 
 const CRYPTO_ASSET_INFO = {
     assetInfo: {
         symbol: 'BTCUSD',
         name: 'Bitcoin',
         koreanName: '비트코인',
-        fmpSymbol: null,
+        // fmpSymbol is null for crypto — the type requires string|undefined, so we
+        // cast through unknown to represent the real runtime shape that the DB returns.
+        fmpSymbol: null as unknown as string | undefined,
         marketProfile: 'crypto' as const,
     },
     degraded: false,
-} as never;
+} as Awaited<ReturnType<typeof getAssetInfoResilient>>;
 
 describe('NewsPage — isEquity body section-gating', () => {
     beforeEach(() => {

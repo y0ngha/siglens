@@ -96,10 +96,6 @@ vi.mock('@/shared/lib/seo', async importOriginal => ({
     }),
     SITE_NAME: 'Siglens',
     SITE_URL: 'https://siglens.io',
-    NOINDEX_SYMBOL_METADATA: {
-        robots: { index: false, follow: false },
-        alternates: { canonical: null },
-    },
 }));
 vi.mock('react-error-boundary', () => ({
     ErrorBoundary: ({ children }: { children: React.ReactNode }) => children,
@@ -107,6 +103,7 @@ vi.mock('react-error-boundary', () => ({
 
 import { describe, expect, it, beforeEach, vi } from 'vitest';
 import type { MockedFunction } from 'vitest';
+import { NOINDEX_SYMBOL_METADATA } from '@/shared/lib/seo';
 import { isTabAllowedForSymbol } from '@/entities/ticker/api';
 import { getAssetInfoResilient } from '@/entities/ticker';
 import { getProfileResilient } from '@/app/[symbol]/fundamental/getProfileResilient';
@@ -193,11 +190,6 @@ describe('Fundamental page tab guard', () => {
  * the page body returns notFound() (noindex) — creating a soft-404 mismatch.
  */
 describe('Fundamental generateMetadata crypto NOINDEX guard', () => {
-    const NOINDEX_SYMBOL_METADATA = {
-        robots: { index: false, follow: false },
-        alternates: { canonical: null },
-    };
-
     beforeEach(() => {
         vi.clearAllMocks();
     });
@@ -242,10 +234,9 @@ describe('Fundamental generateMetadata crypto NOINDEX guard', () => {
         // NOINDEX_SYMBOL_METADATA has { robots: { index: false, follow: false },
         //   alternates: { canonical: null } } — the sentinel returned for crypto/invalid.
         expect(result).not.toEqual(NOINDEX_SYMBOL_METADATA);
-        // The equity path's robots.follow must not be false (hard-noindex treatment).
-        const robots = result.robots as
-            | { index?: boolean; follow?: boolean }
-            | undefined;
-        expect(robots?.follow).not.toBe(false);
+        // Equity generateMetadata does not set a robots override — the page is fully
+        // indexable.  NOINDEX_SYMBOL_METADATA always has robots.index: false, so
+        // checking robots is undefined is the positive falsifiable signal.
+        expect(result.robots).toBeUndefined();
     });
 });

@@ -57,14 +57,11 @@ vi.mock('@/shared/lib/seo', async importOriginal => ({
     }),
     SITE_NAME: 'Siglens',
     SITE_URL: 'https://siglens.io',
-    NOINDEX_SYMBOL_METADATA: {
-        robots: { index: false, follow: false },
-        alternates: { canonical: null },
-    },
 }));
 
 import { describe, expect, it, beforeEach, vi } from 'vitest';
 import type { MockedFunction } from 'vitest';
+import { NOINDEX_SYMBOL_METADATA } from '@/shared/lib/seo';
 import { isTabAllowedForSymbol } from '@/entities/ticker/api';
 import { notFound } from 'next/navigation';
 import OptionsPage, {
@@ -158,11 +155,6 @@ describe('Options page tab guard', () => {
  * the page body returns notFound() (noindex) — creating a soft-404 mismatch.
  */
 describe('Options generateMetadata crypto NOINDEX guard', () => {
-    const NOINDEX_SYMBOL_METADATA = {
-        robots: { index: false, follow: false },
-        alternates: { canonical: null },
-    };
-
     beforeEach(() => {
         vi.clearAllMocks();
     });
@@ -207,16 +199,14 @@ describe('Options generateMetadata crypto NOINDEX guard', () => {
         // Must NOT be the hard NOINDEX sentinel object.
         // NOINDEX_SYMBOL_METADATA has { robots: { index: false, follow: false },
         //   alternates: { canonical: null } } — the sentinel returned for crypto/invalid.
-        // The equity path (hasOptions:false in this test setup) may also add robots
-        // index:false but with follow:true and a canonical URL — a different shape.
         expect(result).not.toEqual(NOINDEX_SYMBOL_METADATA);
-        // The equity path's robots.follow must be true (links followed), distinguishing
-        // it from NOINDEX_SYMBOL_METADATA's follow:false hard-noindex treatment.
+        // The equity path with hasOptionsMarket:false (our mock) sets
+        // robots: { index: false, follow: true } — links are still crawlable.
+        // follow:true is the positive falsifiable signal: NOINDEX_SYMBOL_METADATA
+        // has follow:false, and no other equity branch sets follow:false.
         const robots = result.robots as
             | { index?: boolean; follow?: boolean }
             | undefined;
-        // Either no robots override (full indexing) or follow:true (soft-noindex)
-        // — both are valid for equity. The hard guard's follow:false must not appear.
-        expect(robots?.follow).not.toBe(false);
+        expect(robots?.follow).toBe(true);
     });
 });

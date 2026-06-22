@@ -36,6 +36,7 @@ interface FearGreedPageProps {
 function FearGreedPageSkeleton() {
     return (
         <div
+            role="status"
             className="flex flex-col gap-6 p-4 md:p-6"
             aria-busy="true"
             aria-label="공포 탐욕 지수 로딩 중"

@@ -54,9 +54,9 @@ describe('FearGreedPage', () => {
             // This prevents React #418 for crypto (forming-bar divergence).
             expect(queryByText('50')).toBeNull();
             expect(queryByText(/탐욕|공포|중립/)).toBeNull();
-            // Accessible busy state while loading
+            // role="status" announces to screen readers that loading is in progress.
             expect(
-                getByRole('generic', { name: /공포 탐욕 지수 로딩 중/ })
+                getByRole('status', { name: /공포 탐욕 지수 로딩 중/ })
             ).toBeInTheDocument();
         });
 

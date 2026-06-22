@@ -83,10 +83,6 @@ describe('resolveSymbolSeoContent', () => {
     });
 });
 
-// ---------------------------------------------------------------------------
-// H2: Crypto news SEO builder
-// ---------------------------------------------------------------------------
-
 describe('buildCryptoSymbolNewsSeoContent', () => {
     it('title is crypto-framed — no 어닝/실적/애널리스트 wording', () => {
         const c = buildCryptoSymbolNewsSeoContent('BTCUSD', {
@@ -159,10 +155,6 @@ describe('resolveSymbolNewsSeoContent', () => {
     });
 });
 
-// ---------------------------------------------------------------------------
-// H3: Crypto overall SEO builder
-// ---------------------------------------------------------------------------
-
 describe('buildCryptoSymbolOverallSeoContent', () => {
     it('title is crypto-framed — no 주가/분기실적/펀더멘털 wording', () => {
         const c = buildCryptoSymbolOverallSeoContent('BTCUSD', {
@@ -228,10 +220,6 @@ describe('resolveSymbolOverallSeoContent', () => {
         expect(c.description).toBe(stock.description);
     });
 });
-
-// ---------------------------------------------------------------------------
-// M1: Crypto fear-greed SEO builder
-// ---------------------------------------------------------------------------
 
 describe('buildCryptoSymbolFearGreedSeoContent', () => {
     it('title is crypto-framed (코인 분위기)', () => {
