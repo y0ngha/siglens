@@ -147,11 +147,11 @@ export function SkillCard({
     isExpanded,
     onToggleExpand,
 }: SkillCardProps) {
-    const badge = skill.type != null ? TYPE_BADGE[skill.type] : null;
-    const barColor = barColorClass(skill.confidenceWeight);
-
     // 클램프 측정은 접힘 상태에서만 유효(펼치면 판정이 뒤집힘) → enabled=!isExpanded.
     const { ref: descRef, isClamped } = useIsClamped(!isExpanded);
+
+    const badge = skill.type != null ? TYPE_BADGE[skill.type] : null;
+    const barColor = barColorClass(skill.confidenceWeight);
     const canExpand = isClamped || isExpanded;
 
     const handleToggle = (): void => {
@@ -213,7 +213,7 @@ export function SkillCard({
             <div
                 className={cn(
                     'mb-3 overflow-hidden transition-[max-height] duration-200 ease-out motion-reduce:transition-none',
-                    isExpanded ? 'max-h-[40rem]' : 'max-h-[2.85rem]'
+                    isExpanded ? 'max-h-[40rem]' : 'max-h-[3rem]'
                 )}
             >
                 <p

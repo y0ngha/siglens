@@ -1,4 +1,4 @@
-// useIsClamped(useLayoutEffect + ResizeObserver)가 SkillCard에서 호출되므로
+// useIsClamped(useEffect + ResizeObserver)가 SkillCard에서 호출되므로
 // 파일 전역으로 ResizeObserver를 stub해 ReferenceError를 방지한다.
 // scrollHeight/clientHeight은 SkillCard expand 테스트 내부에서 개별 stubClamp로 제어.
 vi.stubGlobal(
@@ -202,17 +202,6 @@ describe('SkillCard expand interaction', () => {
             get: () => 40,
         });
     }
-
-    beforeAll(() => {
-        vi.stubGlobal(
-            'ResizeObserver',
-            class {
-                observe = vi.fn();
-                unobserve = vi.fn();
-                disconnect = vi.fn();
-            }
-        );
-    });
 
     afterAll(() => {
         vi.unstubAllGlobals();

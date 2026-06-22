@@ -34,7 +34,7 @@ export function useSkillsShowcase(): UseSkillsShowcaseReturn {
         setExpandedKey(null);
     }, []);
 
-    // 아코디언: 같은 key면 닫고, 다른 key면 그 카드로 교체(한 번에 하나만 펼침).
+    // 아코디언: 같은 키를 다시 누르면 닫힘.
     const toggleExpanded = useCallback((key: string): void => {
         setExpandedKey(prev => (prev === key ? null : key));
     }, []);
