@@ -135,7 +135,7 @@ const POPULAR_CRYPTOS_PATH = resolve(
  *   2. batch-crypto-quotes 엔드포인트는 HTTP 402(플랜 미지원)이므로
  *      단건 quote 엔드포인트를 심볼별로 순차 호출하는 방식으로 시가총액을 수집한다.
  */
-const FILE_HEADER = `// 큐레이션된 인기 암호화폐 — 홈 디스커버리 + sitemap popular 엔트리.
+export const FILE_HEADER = `// 큐레이션된 인기 암호화폐 — 홈 디스커버리 + sitemap popular 엔트리.
 // FMP 심볼은 *USD 접미사(BTCUSD)를 쓴다. batch-crypto-quotes가 HTTP 402(플랜 미지원)이라
 // 단건 quote를 심볼별로 호출하여 시가총액 기준 상위 N개를 자동 선정한다(update-popular-cryptos.ts).
 // 수동으로 순서를 바꾸거나 심볼을 추가/제거할 수 있습니다.`;
@@ -184,10 +184,11 @@ async function fetchCryptoList(apiKey: string): Promise<FmpCryptoListEntry[]> {
         );
     }
 
-    // FMP returns unvalidated JSON; shape matches FmpCryptoListEntry
-    const raw = (await res.json()) as FmpCryptoListEntry[];
+    // FMP returns unvalidated JSON; runtime guard before trusting shape
+    const raw: unknown = await res.json();
     if (!Array.isArray(raw)) return [];
-    return raw;
+    const typed = raw as FmpCryptoListEntry[];
+    return typed;
 }
 
 async function fetchSingleQuote(
@@ -202,10 +203,12 @@ async function fetchSingleQuote(
         return null;
     }
 
-    // FMP quote endpoint returns an array; first element is the result
-    const raw = (await res.json()) as FmpQuoteResult[];
+    // FMP quote endpoint returns an array; runtime guard before trusting shape
+    const raw: unknown = await res.json();
     if (!Array.isArray(raw) || raw.length === 0) return null;
-    return raw[0] ?? null;
+    const first = raw[0] as FmpQuoteResult;
+    if (typeof first?.symbol !== 'string') return null;
+    return first;
 }
 
 /**
@@ -225,10 +228,13 @@ export function filterValidCandidates(
         return listedSymbols.has(upper) && !STABLECOINS.has(base);
     };
 
-    return {
-        valid: pool.filter(s => isEligible(s)),
-        dropped: pool.filter(s => !isEligible(s)),
-    };
+    return pool.reduce<CandidateFilterResult>(
+        (acc, s) => {
+            const key = isEligible(s) ? 'valid' : 'dropped';
+            return { ...acc, [key]: [...acc[key], s] };
+        },
+        { valid: [], dropped: [] }
+    );
 }
 
 /**

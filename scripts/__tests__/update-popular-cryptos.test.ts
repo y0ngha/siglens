@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
+import { POPULAR_CRYPTOS } from '../../src/shared/config/popular-cryptos';
 import {
     CRYPTO_CANDIDATE_POOL,
+    FILE_HEADER,
     MAX_POPULAR_CRYPTOS,
     STABLECOINS,
     filterValidCandidates,
@@ -137,16 +139,7 @@ describe('renderPopularCryptosFile', () => {
         const result = renderPopularCryptosFile(['BTCUSD', 'ETHUSD', 'SOLUSD']);
 
         expect(result).toBe(
-            `// 큐레이션된 인기 암호화폐 — 홈 디스커버리 + sitemap popular 엔트리.
-// FMP 심볼은 *USD 접미사(BTCUSD)를 쓴다. batch-crypto-quotes가 HTTP 402(플랜 미지원)이라
-// 단건 quote를 심볼별로 호출하여 시가총액 기준 상위 N개를 자동 선정한다(update-popular-cryptos.ts).
-// 수동으로 순서를 바꾸거나 심볼을 추가/제거할 수 있습니다.
-export const POPULAR_CRYPTOS = [
-    'BTCUSD',
-    'ETHUSD',
-    'SOLUSD',
-] as const;
-`
+            `${FILE_HEADER}\nexport const POPULAR_CRYPTOS = [\n    'BTCUSD',\n    'ETHUSD',\n    'SOLUSD',\n] as const;\n`
         );
     });
 
@@ -182,29 +175,9 @@ export const POPULAR_CRYPTOS = [
 });
 
 describe('CRYPTO_CANDIDATE_POOL', () => {
-    it('contains all 15 current POPULAR_CRYPTOS symbols', () => {
-        // These are the symbols in the existing popular-cryptos.ts at the time
-        // this script was authored. If the popular list changes, update this test.
-        const currentPopular = [
-            'BTCUSD',
-            'ETHUSD',
-            'SOLUSD',
-            'XRPUSD',
-            'BNBUSD',
-            'DOGEUSD',
-            'ADAUSD',
-            'AVAXUSD',
-            'LINKUSD',
-            'TRXUSD',
-            'DOTUSD',
-            'POLUSD',
-            'LTCUSD',
-            'BCHUSD',
-            'SHIBUSD',
-        ];
-
+    it('contains all current POPULAR_CRYPTOS symbols', () => {
         expect(CRYPTO_CANDIDATE_POOL).toEqual(
-            expect.arrayContaining(currentPopular)
+            expect.arrayContaining([...POPULAR_CRYPTOS])
         );
     });
 
@@ -265,9 +238,7 @@ describe('stablecoin exclusion', () => {
         const { valid, dropped } = filterValidCandidates(pool, cryptoList);
 
         expect(valid).toEqual(['BTCUSD', 'ETHUSD']);
-        expect(dropped).toEqual(
-            expect.arrayContaining(['USDTUSD', 'USDCUSD', 'DAIUSD'])
-        );
+        expect(dropped).toEqual(['USDTUSD', 'USDCUSD', 'DAIUSD']);
     });
 
     it('STABLECOINS set contains USDT, USDC, DAI and other known pegged coins', () => {
