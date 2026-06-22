@@ -7,7 +7,8 @@ import type {
 } from '@/shared/db/types';
 import type { TickerSearchResult } from '@/shared/lib/types';
 
-// 25 candidates feed app-side relevance re-ranking in searchTicker without large payloads.
+// Fetch extra candidates (CRYPTO_SEARCH_LIMIT) so app-side relevance re-ranking has enough
+// to work with; the DB pre-sort only orders them, the final ranking is done in searchRelevance.
 const CRYPTO_SEARCH_LIMIT = 25;
 
 const CRYPTO_EXCHANGE_CODE = 'CRYPTO';

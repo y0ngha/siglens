@@ -21,7 +21,6 @@ export const SUBSTRING_MATCH_SCORE = 40;
 export const FALLBACK_SCORE = 10;
 export const POPULAR_BONUS = 15;
 
-// Score one field against the query: exact > prefix > substring match, else 0.
 function fieldScore(field: string, q: string): number {
     const f = field.toLowerCase();
     if (f === q) return EXACT_MATCH_SCORE;

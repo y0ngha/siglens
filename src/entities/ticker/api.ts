@@ -282,9 +282,13 @@ export class DrizzleCryptoAssetRepository implements CryptoAssetRepository {
                 )
             )
             .orderBy(
-                sql`CASE WHEN lower(${cryptoAssets.koreanName}) = lower(${query}) OR lower(${cryptoAssets.symbol}) = lower(${query}) THEN 0
-                         WHEN ${cryptoAssets.koreanName} ILIKE ${exactOrPrefix} OR ${cryptoAssets.symbol} ILIKE ${exactOrPrefix} THEN 1
-                         ELSE 2 END`,
+                // Mirror searchRelevance's scored fields (koreanName/symbol/name) so
+                // exact/prefix matches in ANY of them are fetched within the limit
+                // before app-side re-ranking.
+                sql`CASE
+                  WHEN lower(${cryptoAssets.koreanName}) = lower(${query}) OR lower(${cryptoAssets.symbol}) = lower(${query}) OR lower(${cryptoAssets.name}) = lower(${query}) THEN 0
+                  WHEN ${cryptoAssets.koreanName} ILIKE ${exactOrPrefix} OR ${cryptoAssets.symbol} ILIKE ${exactOrPrefix} OR ${cryptoAssets.name} ILIKE ${exactOrPrefix} THEN 1
+                  ELSE 2 END`,
                 desc(cryptoAssets.circulatingSupply)
             )
             .limit(limit);

@@ -453,13 +453,21 @@ describe('DrizzleCryptoAssetRepository', () => {
             expect(where).toHaveBeenCalledTimes(1);
         });
 
-        it('orderBy 를 호출한다 (relevance + circulatingSupply desc)', async () => {
+        it('orderBy is called with exactly 2 ordering args: relevance CASE + circulatingSupply desc', async () => {
             const { db, orderBy } = makeCryptoSearchDb([btcRecord]);
             const repo = new DrizzleCryptoAssetRepository(db);
             await repo.search('btc', 10);
             expect(orderBy).toHaveBeenCalledTimes(1);
             const orderByArgs = orderBy.mock.calls[0];
             expect(orderByArgs).toHaveLength(2);
+            // 1st arg: sql CASE object (not a plain column ref — has queryChunks, not a bare column name)
+            const caseArg = orderByArgs[0] as SqlLike;
+            expect(caseArg).toBeTypeOf('object');
+            // 2nd arg: desc(cryptoAssets.circulatingSupply) — Drizzle wraps the column
+            // in a SQL chunk tree; collectColumnNames recurses into queryChunks to find
+            // the column name node, confirming the tiebreak sorts by circulating_supply.
+            const descArg = orderByArgs[1] as SqlLike;
+            expect(collectColumnNames(descArg)).toContain('circulating_supply');
         });
 
         it('limit 인자를 그대로 전달한다', async () => {
