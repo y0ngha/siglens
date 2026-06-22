@@ -458,7 +458,6 @@ describe('DrizzleCryptoAssetRepository', () => {
             const repo = new DrizzleCryptoAssetRepository(db);
             await repo.search('btc', 10);
             expect(orderBy).toHaveBeenCalledTimes(1);
-            // Must receive 2 args: the CASE relevance expression and desc(circulatingSupply).
             const orderByArgs = orderBy.mock.calls[0];
             expect(orderByArgs).toHaveLength(2);
         });

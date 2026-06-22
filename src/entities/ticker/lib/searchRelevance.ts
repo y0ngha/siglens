@@ -21,10 +21,20 @@ export const SUBSTRING_MATCH_SCORE = 40;
 export const FALLBACK_SCORE = 10;
 export const POPULAR_BONUS = 15;
 
+// Score one field against the query: exact > prefix > substring match, else 0.
+function fieldScore(field: string, q: string): number {
+    const f = field.toLowerCase();
+    if (f === q) return EXACT_MATCH_SCORE;
+    if (f.startsWith(q)) return PREFIX_MATCH_SCORE;
+    if (f.includes(q)) return SUBSTRING_MATCH_SCORE;
+    return 0;
+}
+
 /**
  * Score a single search result against the query.
  *
- * Scoring rules (case-insensitive), best match wins across all fields:
+ * Scoring rules (case-insensitive), best match wins across all fields
+ * (koreanName / symbol / name):
  * - Exact field match       → EXACT_MATCH_SCORE
  * - Field starts with query → PREFIX_MATCH_SCORE
  * - Field contains query    → SUBSTRING_MATCH_SCORE
@@ -34,14 +44,6 @@ export const POPULAR_BONUS = 15;
  *                             changed by koreanName enrichment.)
  * - Popular bonus           → +POPULAR_BONUS on top of base
  */
-function fieldScore(field: string, q: string): number {
-    const f = field.toLowerCase();
-    if (f === q) return EXACT_MATCH_SCORE;
-    if (f.startsWith(q)) return PREFIX_MATCH_SCORE;
-    if (f.includes(q)) return SUBSTRING_MATCH_SCORE;
-    return 0;
-}
-
 export function scoreSearchRelevance(
     result: ScorableResult,
     query: string,
