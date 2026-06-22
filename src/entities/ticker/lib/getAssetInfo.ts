@@ -153,7 +153,7 @@ function translateAndPersist(
     });
 }
 
-/** @internal Test helper — clears the in-flight registry between cases. */
+/** Test helper — clears the in-flight registry between cases. */
 export function _resetInFlightTranslationsForTest(): void {
     translationSingleFlight._resetForTest();
 }
