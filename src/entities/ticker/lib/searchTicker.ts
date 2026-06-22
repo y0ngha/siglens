@@ -107,8 +107,7 @@ export async function searchTicker(
         const remainingSlots = MAX_SEARCH_RESULTS - cappedStock.length;
         const cappedCrypto = cryptoResults.slice(0, remainingSlots);
         // deduplicateResults guards the unlikely case where a symbol exists in both stores.
-        const merged = deduplicateResults([...cappedStock, ...cappedCrypto]);
-        return merged.slice(0, MAX_SEARCH_RESULTS);
+        return deduplicateResults([...cappedStock, ...cappedCrypto]);
     }
 
     const cache = createCacheProvider();

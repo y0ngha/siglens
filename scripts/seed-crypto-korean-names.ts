@@ -36,6 +36,7 @@ import type { InlinedRequest, InlinedResponse } from '@google/genai';
 import { GoogleGenAI, JobState } from '@google/genai';
 import { fileURLToPath } from 'node:url';
 import { cryptoAssets } from '../src/shared/db/schema';
+import { MS_PER_HOUR, MS_PER_SECOND } from '../src/shared/config/time';
 
 // Env reads are deferred to run() (not module-level throws) so the pure helpers
 // below (extractKoreanName / buildUpsertValues) can be imported by unit tests
@@ -58,8 +59,8 @@ const CRYPTO_KOREAN_TRANSLATE_LIMIT = Number(
 // stays within Gemini enqueue token limits for short translation prompts.
 const CHUNK_SIZE = 300;
 const GEMINI_MODEL = 'gemini-2.5-flash-lite';
-const POLL_INTERVAL_MS = 30_000;
-const MAX_POLL_MS = 2 * 60 * 60 * 1_000; // 2h
+const POLL_INTERVAL_MS = 30 * MS_PER_SECOND;
+const MAX_POLL_MS = 2 * MS_PER_HOUR; // 2h
 const DRY_RUN_PROMPT_PREVIEW_LENGTH = 200;
 const UPSERT_BATCH_SIZE = 500;
 
@@ -155,8 +156,8 @@ interface UpsertRow {
 
 /**
  * Map a completed batch chunk's responses to upsert values, using id-based
- * matching (metadata.id = symbol) for re-run safety. Pure (no DB / no logging
- * beyond warnings) so the unit test can assert the response→value mapping —
+ * matching (metadata.id = symbol) for re-run safety. No DB or external I/O —
+ * only console.warn for diagnostics — so the unit test can assert the response→value mapping —
  * including which responses get skipped — without a database.
  *
  * Exported for the same reason as extractKoreanName: the test must run the real
