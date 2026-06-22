@@ -29,6 +29,9 @@ import { test, expect } from '../support/fixtures';
 
 const TAB_NAV_NAME = '분석 종류';
 const HYDRATION_TIMEOUT = 20_000; // nav won't appear until React hydrates
+const VISIBLE_TIMEOUT_MS = 15_000; // heading/element visible after SSR paint
+const TAB_VISIBLE_TIMEOUT_MS = 5_000; // individual tab links after nav is already visible
+const NOT_FOUND_TIMEOUT_MS = 10_000; // not-found page heading after navigation
 
 test.describe('crypto symbol page', () => {
     test('smoke: /BTCUSD renders a heading containing the ticker', async ({
@@ -41,7 +44,7 @@ test.describe('crypto symbol page', () => {
         // resolves to a string that always includes "BTCUSD".
         await expect(
             page.getByRole('heading', { level: 1, name: /BTCUSD/ })
-        ).toBeVisible({ timeout: 15_000 });
+        ).toBeVisible({ timeout: VISIBLE_TIMEOUT_MS });
     });
 
     test('crypto tab whitelist: chart/news/fear-greed/overall tabs present after hydration', async ({
@@ -58,7 +61,7 @@ test.describe('crypto symbol page', () => {
         for (const label of ['차트', '뉴스', '공포 탐욕 지수', '종합']) {
             await expect(
                 tabNav.getByRole('link', { name: label, exact: true })
-            ).toBeVisible({ timeout: 5_000 });
+            ).toBeVisible({ timeout: TAB_VISIBLE_TIMEOUT_MS });
         }
     });
 
@@ -112,6 +115,6 @@ test.describe('crypto symbol page', () => {
         // The global not-found.tsx renders this heading.
         await expect(
             page.getByRole('heading', { name: '페이지를 찾을 수 없습니다' })
-        ).toBeVisible({ timeout: 10_000 });
+        ).toBeVisible({ timeout: NOT_FOUND_TIMEOUT_MS });
     });
 });

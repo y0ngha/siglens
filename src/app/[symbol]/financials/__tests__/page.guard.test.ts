@@ -73,8 +73,14 @@ vi.mock('@/shared/lib/seo', async importOriginal => ({
     SITE_URL: 'https://siglens.io',
 }));
 
-import { describe, expect, it, beforeEach, vi } from 'vitest';
-import type { MockedFunction } from 'vitest';
+import {
+    describe,
+    expect,
+    it,
+    beforeEach,
+    vi,
+    type MockedFunction,
+} from 'vitest';
 import { NOINDEX_SYMBOL_METADATA } from '@/shared/lib/seo';
 import { isTabAllowedForSymbol } from '@/entities/ticker/api';
 import { getAssetInfoResilient } from '@/entities/ticker';

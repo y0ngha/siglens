@@ -10,7 +10,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { resolvePriceDecimals } from '@/widgets/chart/utils/resolvePriceDecimals';
+import { resolvePriceDecimals } from '@/shared/lib/priceFormat';
 
 describe('resolvePriceDecimals', () => {
     describe('crypto (dynamic-by-magnitude precision)', () => {
