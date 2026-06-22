@@ -7,6 +7,7 @@ import {
 import { loadLongTailTickerPage } from '@/entities/sitemap-entry/server';
 import { SITE_BUILD_DATE } from '@/shared/lib/seo';
 import {
+    SITEMAP_CACHE_CONTROL,
     SITEMAP_RETRY_AFTER_SECONDS,
     SITEMAP_UNAVAILABLE_BODY,
 } from '@/app/api/sitemap/_shared/constants';
@@ -70,8 +71,7 @@ export async function GET(
     return new NextResponse(xml, {
         headers: {
             'Content-Type': 'application/xml; charset=utf-8',
-            'Cache-Control':
-                'public, max-age=3600, stale-while-revalidate=3600',
+            'Cache-Control': SITEMAP_CACHE_CONTROL,
         },
     });
 }

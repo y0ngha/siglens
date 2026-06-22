@@ -7,6 +7,7 @@ import { countLongTailTickers } from '@/entities/sitemap-entry/server';
 import { SITE_URL } from '@/shared/lib/seo';
 import { NextResponse } from 'next/server';
 import {
+    SITEMAP_CACHE_CONTROL,
     SITEMAP_RETRY_AFTER_SECONDS,
     SITEMAP_UNAVAILABLE_BODY,
 } from '@/app/api/sitemap/_shared/constants';
@@ -84,8 +85,7 @@ export async function GET(): Promise<Response> {
     return new NextResponse(xml, {
         headers: {
             'Content-Type': 'application/xml; charset=utf-8',
-            'Cache-Control':
-                'public, max-age=3600, stale-while-revalidate=3600',
+            'Cache-Control': SITEMAP_CACHE_CONTROL,
         },
     });
 }
