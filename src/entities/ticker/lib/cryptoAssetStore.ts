@@ -7,7 +7,8 @@ import type {
 } from '@/shared/db/types';
 import type { TickerSearchResult } from '@/shared/lib/types';
 
-const CRYPTO_SEARCH_LIMIT = 10;
+// 25 candidates feed app-side relevance re-ranking in searchTicker without large payloads.
+const CRYPTO_SEARCH_LIMIT = 25;
 
 const CRYPTO_EXCHANGE_CODE = 'CRYPTO';
 const CRYPTO_EXCHANGE_FULL_NAME = 'Cryptocurrency';
@@ -137,7 +138,7 @@ export async function getCryptoAsset(
     }
 }
 
-/** Search crypto assets by symbol/name; ordered by liquidity, capped. */
+/** Search crypto assets by symbol/name; DB pre-sorts exact/prefix matches first, then by supply, for app-side relevance re-ranking. */
 export async function searchCryptoAssets(
     query: string
 ): Promise<TickerSearchResult[]> {

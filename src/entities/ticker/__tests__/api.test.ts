@@ -453,7 +453,7 @@ describe('DrizzleCryptoAssetRepository', () => {
             expect(where).toHaveBeenCalledTimes(1);
         });
 
-        it('orderBy 를 호출한다 (circulatingSupply desc)', async () => {
+        it('orderBy 를 호출한다 (relevance + circulatingSupply desc)', async () => {
             const { db, orderBy } = makeCryptoSearchDb([btcRecord]);
             const repo = new DrizzleCryptoAssetRepository(db);
             await repo.search('btc', 10);

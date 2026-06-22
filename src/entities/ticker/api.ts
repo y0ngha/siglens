@@ -270,6 +270,7 @@ export class DrizzleCryptoAssetRepository implements CryptoAssetRepository {
 
     async search(query: string, limit: number): Promise<CryptoAssetRecord[]> {
         const like = `%${query}%`;
+        const exactOrPrefix = `${query}%`;
         return this.db
             .select()
             .from(cryptoAssets)
@@ -280,7 +281,12 @@ export class DrizzleCryptoAssetRepository implements CryptoAssetRepository {
                     ilike(cryptoAssets.koreanName, like)
                 )
             )
-            .orderBy(desc(cryptoAssets.circulatingSupply))
+            .orderBy(
+                sql`CASE WHEN lower(${cryptoAssets.koreanName}) = lower(${query}) OR lower(${cryptoAssets.symbol}) = lower(${query}) THEN 0
+                         WHEN ${cryptoAssets.koreanName} ILIKE ${exactOrPrefix} OR ${cryptoAssets.symbol} ILIKE ${exactOrPrefix} THEN 1
+                         ELSE 2 END`,
+                desc(cryptoAssets.circulatingSupply)
+            )
             .limit(limit);
     }
 }

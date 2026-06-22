@@ -16,20 +16,13 @@ import {
     setKoreanTickers,
 } from './koreanNameStore';
 import { searchCryptoAssets } from './cryptoAssetStore';
+import { rankByRelevance } from './searchRelevance';
 import { fireAndForget, type BackgroundTaskOptions } from './backgroundTask';
 import { createSingleFlight } from './utils/singleFlight';
 import { createCacheProvider } from '@y0ngha/siglens-core';
 import type { KoreanTickerEntry, TickerSearchResult } from '@/shared/lib/types';
 
 export const MAX_SEARCH_RESULTS = 10;
-
-/**
- * When a Korean search returns both stock and crypto results, reserve this many
- * slots for crypto so Korean coin searches aren't starved by a high volume of
- * stock name matches. The actual crypto slots may be fewer if fewer crypto
- * results exist; unused budget flows back to stock.
- */
-export const CRYPTO_RESERVE = 3;
 
 function toKoreanEntry(
     symbol: string,
@@ -96,18 +89,13 @@ export async function searchTicker(
             // Isolated catch so a crypto DB error doesn't discard stock results.
             searchCryptoAssets(trimmed).catch((): TickerSearchResult[] => []),
         ]);
-        // Guarantee crypto representation: reserve up to CRYPTO_RESERVE slots for
-        // crypto results when they exist, so Korean coin searches aren't lost when
-        // many stock name matches fill the cap. Unused crypto budget flows to stock.
-        const cryptoCap = Math.min(cryptoResults.length, CRYPTO_RESERVE);
-        const cappedStock = stockResults.slice(
-            0,
-            MAX_SEARCH_RESULTS - cryptoCap
-        );
-        const remainingSlots = MAX_SEARCH_RESULTS - cappedStock.length;
-        const cappedCrypto = cryptoResults.slice(0, remainingSlots);
         // deduplicateResults guards the unlikely case where a symbol exists in both stores.
-        return deduplicateResults([...cappedStock, ...cappedCrypto]);
+        // rankByRelevance scores each result so exact/popular matches surface first regardless of asset type.
+        const ranked = rankByRelevance(
+            deduplicateResults([...stockResults, ...cryptoResults]),
+            trimmed
+        );
+        return ranked.slice(0, MAX_SEARCH_RESULTS);
     }
 
     const cache = createCacheProvider();
@@ -151,7 +139,8 @@ export async function searchTicker(
         );
     }
 
-    const final = enriched.slice(0, MAX_SEARCH_RESULTS);
+    const ranked = rankByRelevance(enriched, trimmed);
+    const final = ranked.slice(0, MAX_SEARCH_RESULTS);
 
     if (cache) {
         fireAndForget(

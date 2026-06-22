@@ -28,7 +28,6 @@ import {
     searchTicker,
     _resetInFlightTranslationsForTest,
     MAX_SEARCH_RESULTS,
-    CRYPTO_RESERVE,
 } from '../searchTicker';
 import type { TickerSearchResult } from '@/shared/lib/types';
 
@@ -73,19 +72,6 @@ describe('searchTicker — 한글 입력 crypto 병합', () => {
         );
     });
 
-    it('한글 입력 시 주식 한국어 결과가 crypto 결과보다 먼저 온다', async () => {
-        mockSearchByKoreanName.mockResolvedValue([stockResult('AAPL', '애플')]);
-        mockSearchCryptoAssets.mockResolvedValue([
-            cryptoResult('BTCUSD', '비트코인'),
-        ]);
-
-        const results = await searchTicker('코');
-        const aaplIdx = results.findIndex(r => r.symbol === 'AAPL');
-        const btcIdx = results.findIndex(r => r.symbol === 'BTCUSD');
-        expect(aaplIdx).toBe(0);
-        expect(btcIdx).toBe(1);
-    });
-
     it('한글 입력 시 동일 symbol 중복 제거한다', async () => {
         const shared = stockResult('BTCUSD', '비트코인');
         mockSearchByKoreanName.mockResolvedValue([shared]);
@@ -109,16 +95,7 @@ describe('searchTicker — 한글 입력 crypto 병합', () => {
         mockSearchCryptoAssets.mockResolvedValue(manyCrypto);
 
         const results = await searchTicker('주');
-        // 7 stocks + 6 crypto = 13 unique symbols → deterministically capped to MAX.
         expect(results).toHaveLength(MAX_SEARCH_RESULTS);
-        // CRYPTO_RESERVE cap: 6 crypto results are truncated to exactly CRYPTO_RESERVE.
-        expect(results.filter(r => r.exchange === 'CRYPTO')).toHaveLength(
-            CRYPTO_RESERVE
-        );
-        // The remaining MAX_SEARCH_RESULTS - CRYPTO_RESERVE slots are filled by stocks.
-        expect(results.filter(r => r.exchange === 'NASDAQ')).toHaveLength(
-            MAX_SEARCH_RESULTS - CRYPTO_RESERVE
-        );
     });
 
     it('한글 입력 시 FMP searchBySymbol/searchByName 을 호출하지 않는다', async () => {
@@ -144,20 +121,63 @@ describe('searchTicker — 한글 입력 crypto 병합', () => {
         );
     });
 
-    it('주식 결과가 MAX를 채워도 crypto 결과가 보장된다', async () => {
-        // 10 stock results would normally starve crypto results entirely.
-        // With CRYPTO_RESERVE=3, stock is capped at 7 and crypto gets ≥1 slot.
-        const manyStocks = Array.from({ length: 10 }, (_, i) =>
-            stockResult(`STOCK${i}`, `주식${i}`)
-        );
-        const someCrypto = [cryptoResult('BTCUSD', '비트코인')];
-        mockSearchByKoreanName.mockResolvedValue(manyStocks);
-        mockSearchCryptoAssets.mockResolvedValue(someCrypto);
+    it('"비트코인" 쿼리에서 popular 정확일치 crypto(BTCUSD)가 substring-match 주식보다 먼저 온다', async () => {
+        // Several stocks whose koreanName merely contains "비트코인" as substring
+        const substockResults = [
+            stockResult('STOCK0', '가나비트코인다라'),
+            stockResult('STOCK1', '마바비트코인사아'),
+            stockResult('STOCK2', '자차비트코인카타'),
+            stockResult('STOCK3', '파하비트코인가나'),
+            stockResult('STOCK4', '다라비트코인마바'),
+            stockResult('STOCK5', '사아비트코인자차'),
+        ];
+        // BTCUSD: exact koreanName match + popular → score 115
+        // VIDTUSD: exact koreanName match, not popular → score 100
+        // stocks: substring match → score 40
+        mockSearchByKoreanName.mockResolvedValue(substockResults);
+        mockSearchCryptoAssets.mockResolvedValue([
+            cryptoResult('VIDTUSD', '비트코인'),
+            cryptoResult('BTCUSD', '비트코인'),
+        ]);
 
-        const results = await searchTicker('주');
-        expect(results).toHaveLength(MAX_SEARCH_RESULTS);
-        expect(results.find(r => r.symbol === 'BTCUSD')).toEqual(
-            cryptoResult('BTCUSD', '비트코인')
-        );
+        const results = await searchTicker('비트코인');
+        expect(results[0].symbol).toBe('BTCUSD');
+        expect(results[1].symbol).toBe('VIDTUSD');
+        // all substocks should rank below both cryptos
+        const stockSymbols = results
+            .map(r => r.symbol)
+            .filter(s => s.startsWith('STOCK'));
+        const btcIdx = results.findIndex(r => r.symbol === 'BTCUSD');
+        const vidtIdx = results.findIndex(r => r.symbol === 'VIDTUSD');
+        for (const sym of stockSymbols) {
+            const idx = results.findIndex(r => r.symbol === sym);
+            expect(idx).toBeGreaterThan(btcIdx);
+            expect(idx).toBeGreaterThan(vidtIdx);
+        }
+    });
+
+    it('"수이" 쿼리에서 popular crypto(SUIUSD)가 substring-match 주식보다 먼저 온다', async () => {
+        // Several OTC stocks whose koreanName contains "수이" as substring
+        const otcStocks = [
+            stockResult('OTC0', '수이테크놀로지'),
+            stockResult('OTC1', '수이코퍼레이션'),
+            stockResult('OTC2', '수이그룹'),
+            stockResult('OTC3', '수이인터내셔널'),
+            stockResult('OTC4', '수이홀딩스'),
+            stockResult('OTC5', '수이파트너스'),
+        ];
+        // SUIUSD: exact koreanName match + popular → 115
+        mockSearchByKoreanName.mockResolvedValue(otcStocks);
+        mockSearchCryptoAssets.mockResolvedValue([
+            cryptoResult('SUIUSD', '수이'),
+        ]);
+
+        const results = await searchTicker('수이');
+        expect(results[0].symbol).toBe('SUIUSD');
+        const suiIdx = results.findIndex(r => r.symbol === 'SUIUSD');
+        for (const stock of otcStocks) {
+            const idx = results.findIndex(r => r.symbol === stock.symbol);
+            expect(idx).toBeGreaterThan(suiIdx);
+        }
     });
 });
