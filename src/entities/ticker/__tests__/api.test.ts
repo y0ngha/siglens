@@ -38,6 +38,19 @@ import type {
 } from '@/shared/db/types';
 import type { KoreanTickerEntry } from '@/shared/lib/types';
 
+type SqlLike = {
+    queryChunks?: Array<SqlLike | { name?: string }>;
+    name?: string;
+};
+
+function collectColumnNames(node: SqlLike): string[] {
+    if (node.name) return [node.name];
+    if (!node.queryChunks) return [];
+    return node.queryChunks.flatMap(chunk =>
+        collectColumnNames(chunk as SqlLike)
+    );
+}
+
 const apple: KoreanTickerEntry = {
     symbol: 'AAPL',
     name: 'Apple Inc.',
@@ -458,6 +471,19 @@ describe('DrizzleCryptoAssetRepository', () => {
             const { db } = makeCryptoSearchDb([]);
             const repo = new DrizzleCryptoAssetRepository(db);
             await expect(repo.search('xyz', 10)).resolves.toEqual([]);
+        });
+
+        it('korean_name 컬럼도 ilike 조건에 포함한다', async () => {
+            const { db, where } = makeCryptoSearchDb([]);
+            const repo = new DrizzleCryptoAssetRepository(db);
+            await repo.search('비트코', 10);
+            expect(where).toHaveBeenCalledTimes(1);
+            // The or() expression passed to .where() must reference the korean_name column.
+            // Drizzle nests SQL objects (or → [ilike, ilike, ilike]); we recurse into
+            // queryChunks to collect all column `.name` values. This assertion fails if
+            // korean_name is removed from the ilike OR-condition.
+            const condition = where.mock.calls[0][0] as SqlLike;
+            expect(collectColumnNames(condition)).toContain('korean_name');
         });
     });
 });
