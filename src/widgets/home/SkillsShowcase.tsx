@@ -9,6 +9,7 @@ import {
     type SkillsActiveTab,
     useSkillsShowcase,
 } from './hooks/useSkillsShowcase';
+import { useIsClamped } from './hooks/useIsClamped';
 
 const INITIAL_VISIBLE_COUNT = 12;
 const SKELETON_TAB_WIDTHS_PX = [48, 56, 64, 52, 60, 72] as const;
@@ -102,7 +103,11 @@ function ConfidenceInfoTooltip() {
                 type="button"
                 aria-label="신뢰도 점수 설명"
                 aria-describedby={tooltipId}
-                onClick={toggle}
+                onClick={e => {
+                    // 카드 펼침 토글로 버블링되지 않게 — ⓘ는 신뢰도 설명 전용.
+                    e.stopPropagation();
+                    toggle();
+                }}
                 className="text-secondary-600 hover:text-secondary-400 focus-visible:ring-primary-500 cursor-help rounded text-xs leading-none transition-colors focus-visible:ring-1 focus-visible:outline-none"
             >
                 ⓘ
@@ -133,14 +138,61 @@ function ConfidenceInfoTooltip() {
 
 interface SkillCardProps {
     skill: SkillShowcaseItem;
+    isExpanded: boolean;
+    onToggleExpand: (key: string) => void;
 }
 
-function SkillCard({ skill }: SkillCardProps) {
+export function SkillCard({
+    skill,
+    isExpanded,
+    onToggleExpand,
+}: SkillCardProps) {
+    // 클램프 측정은 접힘 상태에서만 유효(펼치면 판정이 뒤집힘) → enabled=!isExpanded.
+    const { ref: descRef, isClamped } = useIsClamped(!isExpanded);
+
     const badge = skill.type != null ? TYPE_BADGE[skill.type] : null;
     const barColor = barColorClass(skill.confidenceWeight);
+    const canExpand = isClamped || isExpanded;
+
+    const handleToggle = (): void => {
+        onToggleExpand(skill.name);
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>): void => {
+        // 내부 컨트롤(ⓘ 버튼 등)에서 버블링된 키 이벤트는 무시 — 카드 자체가
+        // 포커스됐을 때만 토글한다. 그렇지 않으면 ⓘ의 Enter/Space가 카드 펼침에
+        // 가로채여 툴팁이 열리지 않는다(접근성 결함).
+        if (e.target !== e.currentTarget) return;
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault(); // Space의 페이지 스크롤 방지
+            onToggleExpand(skill.name);
+        }
+    };
+
+    // 카드 내부에 ⓘ 버튼이 있어 루트를 진짜 <button>으로 만들 수 없으므로
+    // role="button"+tabIndex로 처리한다.
+    const interactiveProps = canExpand
+        ? {
+              role: 'button',
+              tabIndex: 0,
+              'aria-expanded': isExpanded,
+              onClick: handleToggle,
+              onKeyDown: handleKeyDown,
+          }
+        : {};
 
     return (
-        <div className="bg-secondary-800/50 border-secondary-700 rounded-lg border p-4">
+        <div
+            {...interactiveProps}
+            className={cn(
+                'bg-secondary-800/50 border-secondary-700 rounded-lg border p-4',
+                'transition-[transform,box-shadow,border-color,background-color] duration-200 ease-out motion-reduce:transition-none',
+                'focus-visible:ring-primary-500 focus-visible:ring-1 focus-visible:outline-none',
+                // 호버 lift는 마우스(hover 지원) 기기 + 펼침 가능 카드에만.
+                canExpand &&
+                    '[@media(hover:hover)]:hover:border-secondary-600 [@media(hover:hover)]:hover:bg-secondary-800/70 cursor-pointer [@media(hover:hover)]:hover:-translate-y-0.5 [@media(hover:hover)]:hover:scale-[1.015] [@media(hover:hover)]:hover:shadow-lg'
+            )}
+        >
             <div className="mb-2 flex items-start gap-2">
                 <span className="text-secondary-200 min-w-0 text-sm font-medium">
                     {skill.name}
@@ -156,9 +208,25 @@ function SkillCard({ skill }: SkillCardProps) {
                     </span>
                 )}
             </div>
-            <p className="text-secondary-400 mb-3 line-clamp-2 text-sm leading-relaxed">
-                {skill.description}
-            </p>
+            {/* max-h는 펼침 트랜지션 상한일 뿐 — 시각적 클램프는 내부 <p>의 line-clamp-2가 담당.
+                접힘값 3rem은 2줄 높이(text-sm × leading-relaxed ≈ 2.85rem)에 서브픽셀 여유를
+                둬 글자/말줄임 잘림을 막는다. line-clamp 줄 수를 바꾸면 이 값도 함께 조정. */}
+            <div
+                className={cn(
+                    'mb-3 overflow-hidden transition-[max-height] duration-200 ease-out motion-reduce:transition-none',
+                    isExpanded ? 'max-h-[40rem]' : 'max-h-[3rem]'
+                )}
+            >
+                <p
+                    ref={descRef}
+                    className={cn(
+                        'text-secondary-400 text-sm leading-relaxed',
+                        !isExpanded && 'line-clamp-2'
+                    )}
+                >
+                    {skill.description}
+                </p>
+            </div>
             <div className="flex items-center gap-2">
                 <div className="bg-secondary-700 h-1.5 flex-1 overflow-hidden rounded-full">
                     <div
@@ -234,8 +302,15 @@ interface SkillsShowcaseProps {
 }
 
 export function SkillsShowcase({ skills }: SkillsShowcaseProps) {
-    const { activeTab, showAll, baseId, handleTabSelect, toggleShowAll } =
-        useSkillsShowcase();
+    const {
+        activeTab,
+        showAll,
+        expandedKey,
+        baseId,
+        handleTabSelect,
+        toggleShowAll,
+        toggleExpanded,
+    } = useSkillsShowcase();
 
     return (
         <section className="px-6 py-10 lg:px-[15vw]">
@@ -269,9 +344,14 @@ export function SkillsShowcase({ skills }: SkillsShowcaseProps) {
                         aria-labelledby={buildTabId(baseId, tab.value)}
                         hidden={!isActive}
                     >
-                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                        <div className="grid grid-cols-1 items-start gap-4 sm:grid-cols-2 lg:grid-cols-3">
                             {visibleSkills.map(skill => (
-                                <SkillCard key={skill.name} skill={skill} />
+                                <SkillCard
+                                    key={skill.name}
+                                    skill={skill}
+                                    isExpanded={expandedKey === skill.name}
+                                    onToggleExpand={toggleExpanded}
+                                />
                             ))}
                         </div>
                         {hasMore && (

@@ -23,6 +23,12 @@ describe('FmpMarketNewsClient.fetchCategoryNews는', () => {
         global.fetch = mockFetch as unknown as typeof fetch;
         mockFetch.mockReset();
         process.env.FMP_API_KEY = TEST_API_KEY;
+        // 픽스처 publishedDate(2026-06-15)가 MARKET_NEWS_LOOKBACK(7일) 윈도 안에 들도록
+        // 현재 시각을 고정한다. 미고정 시 실제 벽시계가 06-22를 지나면 기사가 전부
+        // 필터링돼 테스트가 시각 의존적으로 깨진다(pre-existing flaky).
+        vi.spyOn(Date, 'now').mockReturnValue(
+            new Date('2026-06-16T00:00:00Z').getTime()
+        );
     });
 
     afterEach(() => {
@@ -123,6 +129,12 @@ describe('FmpMarketNewsClient.fetchCategoryNews — tryNormalizeFmpPublishedDate
         global.fetch = mockFetch as unknown as typeof fetch;
         mockFetch.mockReset();
         process.env.FMP_API_KEY = TEST_API_KEY;
+        // 픽스처 publishedDate(2026-06-15)가 MARKET_NEWS_LOOKBACK(7일) 윈도 안에 들도록
+        // 현재 시각을 고정한다. 미고정 시 실제 벽시계가 06-22를 지나면 기사가 전부
+        // 필터링돼 테스트가 시각 의존적으로 깨진다(pre-existing flaky).
+        vi.spyOn(Date, 'now').mockReturnValue(
+            new Date('2026-06-16T00:00:00Z').getTime()
+        );
     });
 
     afterEach(() => {

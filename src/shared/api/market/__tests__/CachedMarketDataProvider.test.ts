@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CachedMarketDataProvider } from '@/shared/api/market/CachedMarketDataProvider';
 import {
     CRYPTO_SESSION,
@@ -172,6 +172,17 @@ describe('CachedMarketDataProvider', () => {
     });
 
     describe('session spec — TTL', () => {
+        // computeBarsEffectiveTtl(.., new Date(), ..)이 실제 벽시계를 쓰므로, ET 정규장 중에는
+        // US_EQUITY의 open-TTL이 60이 되어 CRYPTO(항상 60)와 구분되지 않아 테스트가 시각에 따라
+        // 깨졌다. 장이 닫힌 시각(토요일)으로 고정해 US_EQUITY가 closed-TTL(≠60)을 쓰도록 결정화한다.
+        beforeEach(() => {
+            vi.useFakeTimers({ toFake: ['Date'] });
+            vi.setSystemTime(new Date('2026-01-03T12:00:00Z')); // 토요일 — 미국 장 마감
+        });
+        afterEach(() => {
+            vi.useRealTimers();
+        });
+
         it('CRYPTO_SESSION → computeBarsEffectiveTtl이 always-open(60초) TTL을 반환한다', async () => {
             const inner = makeInner();
             const p = new CachedMarketDataProvider(inner, CRYPTO_SESSION);
