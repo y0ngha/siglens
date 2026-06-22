@@ -24,7 +24,7 @@ const { mockCount, mockLoadPage } = vi.hoisted(() => ({
         .mockResolvedValue([]),
 }));
 
-vi.mock('@/entities/sitemap-entry/lib/cryptoLongTailSource', () => ({
+vi.mock('@/entities/sitemap-entry/api', () => ({
     CRYPTO_LONGTAIL_CAP: 1000,
     // Must use `function` (not arrow) so `new DrizzleCryptoLongTailSource(db)`
     // does not throw "is not a constructor" in vitest's mock engine.
@@ -99,6 +99,35 @@ describe('GET /api/sitemap/crypto', () => {
         expect(res.status).toBe(200);
         expect(res.headers.get('Content-Type')).toBe(
             'application/xml; charset=utf-8'
+        );
+    });
+
+    it('logs a console.warn when eligible count exceeds served entries (dropped > 0)', async () => {
+        // eligible=5 from count(), but loadPage returns only 2 symbols.
+        // buildLongTailEntries (mocked) returns 2 entries → served=2.
+        // dropped = eligible(5) - served(2) = 3 > 0 → should warn.
+        mockCount.mockResolvedValue(5);
+        mockLoadPage.mockResolvedValue(['LTCUSD', 'DOGUSD']);
+        mockBuildLongTailEntries.mockReturnValue([
+            {
+                url: 'https://siglens.io/LTCUSD',
+                lastModified: new Date('2025-01-01'),
+                changeFrequency: 'weekly' as const,
+                priority: 0.5,
+            },
+            {
+                url: 'https://siglens.io/DOGUSD',
+                lastModified: new Date('2025-01-01'),
+                changeFrequency: 'weekly' as const,
+                priority: 0.5,
+            },
+        ]);
+
+        await GET();
+
+        expect(consoleWarnSpy).toHaveBeenCalledOnce();
+        expect(consoleWarnSpy).toHaveBeenCalledWith(
+            expect.stringContaining('cap dropped')
         );
     });
 

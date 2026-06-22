@@ -7,7 +7,7 @@ import {
 import {
     CRYPTO_LONGTAIL_CAP,
     DrizzleCryptoLongTailSource,
-} from '@/entities/sitemap-entry/lib/cryptoLongTailSource';
+} from '@/entities/sitemap-entry/api';
 import { SITE_BUILD_DATE } from '@/shared/lib/seo';
 import { NextResponse } from 'next/server';
 

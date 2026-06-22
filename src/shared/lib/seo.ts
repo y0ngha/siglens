@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import type { AssetClass } from '@/shared/config/marketProfile';
 
 export interface BreadcrumbItem {
     name: string;
@@ -629,7 +630,7 @@ export function buildCryptoSymbolSeoContent(
  */
 export function resolveSymbolSeoContent(
     ticker: string,
-    assetClass: string,
+    assetClass: AssetClass,
     opts: { displayName: string; koreanName?: string | null }
 ): SymbolSeoContent {
     if (assetClass === 'crypto') {

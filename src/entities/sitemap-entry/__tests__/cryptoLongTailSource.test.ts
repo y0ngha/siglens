@@ -4,10 +4,7 @@ import type { SiglensDatabase } from '@/shared/db/types';
 import type { RemoteCallback } from 'drizzle-orm/pg-proxy';
 import { drizzle } from 'drizzle-orm/pg-proxy';
 import { describe, expect, it } from 'vitest';
-import {
-    CRYPTO_LONGTAIL_CAP,
-    DrizzleCryptoLongTailSource,
-} from '../lib/cryptoLongTailSource';
+import { CRYPTO_LONGTAIL_CAP, DrizzleCryptoLongTailSource } from '../api';
 
 interface CapturedQuery {
     sql: string;
