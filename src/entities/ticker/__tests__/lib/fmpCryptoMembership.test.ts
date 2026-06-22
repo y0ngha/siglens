@@ -13,6 +13,8 @@ vi.mock('@/shared/cache/getOrSetCache', () => ({
 }));
 vi.mock('@/shared/config/time', () => ({
     SECONDS_PER_DAY: 86400,
+    SECONDS_PER_HOUR: 3600,
+    SECONDS_PER_YEAR: 31536000,
 }));
 vi.mock('../../api', () => ({
     fetchCryptoAssetList: fetchCryptoAssetListMock,
@@ -23,6 +25,8 @@ import {
     getFmpCryptoListMap,
     fmpCryptoMembership,
 } from '../../lib/fmpCryptoMembership';
+import { CRYPTO_FMP_LIST_CACHE_KEY } from '../../lib/cacheKeys';
+import { SECONDS_PER_DAY } from '@/shared/config/time';
 
 describe('getFmpCryptoListMap', () => {
     beforeEach(() => {
@@ -76,8 +80,8 @@ describe('getFmpCryptoListMap', () => {
         await getFmpCryptoListMap();
 
         expect(getOrSetCacheMock).toHaveBeenCalledWith(
-            'crypto:fmp-list',
-            86400,
+            CRYPTO_FMP_LIST_CACHE_KEY,
+            SECONDS_PER_DAY,
             expect.any(Function)
         );
     });

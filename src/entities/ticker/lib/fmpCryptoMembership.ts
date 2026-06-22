@@ -2,6 +2,7 @@ import 'server-only';
 import { getOrSetCache } from '@/shared/cache/getOrSetCache';
 import { SECONDS_PER_DAY } from '@/shared/config/time';
 import { fetchCryptoAssetList } from '../api';
+import { CRYPTO_FMP_LIST_CACHE_KEY } from './cacheKeys';
 import type { CryptoAssetRow } from './fmpCryptoListClient';
 
 /** Shape of a single entry in the FMP cryptocurrency list. */
@@ -45,7 +46,7 @@ export async function getFmpCryptoListMap(): Promise<
 > {
     try {
         const record = await getOrSetCache<FmpCryptoListRecord>(
-            'crypto:fmp-list',
+            CRYPTO_FMP_LIST_CACHE_KEY,
             SECONDS_PER_DAY,
             async () => {
                 const rows = await fetchCryptoAssetList();

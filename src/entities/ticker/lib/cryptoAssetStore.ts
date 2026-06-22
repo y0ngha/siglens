@@ -84,7 +84,8 @@ export async function isCryptoSymbol(symbol: string): Promise<boolean> {
             cryptoSymbolCache.set(upper, true);
             return true;
         }
-        // DB miss — consult FMP-list for un-seeded coins added after last re-seed.
+        // Un-seeded coins not yet in crypto_assets can appear after the last re-seed —
+        // consult the FMP-list as a freshness fallback before classifying as non-crypto.
         // Cache the result regardless: `true` is safe (asset class is immutable),
         // and `false` only lands here after both DB and FMP-list confirm non-crypto.
         const isCrypto = (await fmpCryptoMembership(upper)) !== null;
