@@ -9,11 +9,14 @@ class MockResizeObserver {
 }
 vi.stubGlobal('ResizeObserver', MockResizeObserver);
 
-afterAll(() => {
-    vi.unstubAllGlobals();
-});
-
 describe('useIsClamped', () => {
+    // el != null 실측 경로(measure() → ResizeObserver.observe())는 SkillCard 통합 테스트
+    // (SkillsShowcase.test.tsx의 stubClamp + render)가 커버한다. 여기서는 두 early-return 가드만 검증.
+
+    afterAll(() => {
+        vi.unstubAllGlobals();
+    });
+
     it('enabled=false면 측정을 건너뛰고 isClamped=false를 유지한다', () => {
         const { result } = renderHook(() => useIsClamped(false));
         expect(result.current.isClamped).toBe(false);

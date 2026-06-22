@@ -208,6 +208,9 @@ export function SkillCard({
                     </span>
                 )}
             </div>
+            {/* max-h는 펼침 트랜지션 상한일 뿐 — 시각적 클램프는 내부 <p>의 line-clamp-2가 담당.
+                접힘값 3rem은 2줄 높이(text-sm × leading-relaxed ≈ 2.85rem)에 서브픽셀 여유를
+                둬 글자/말줄임 잘림을 막는다. line-clamp 줄 수를 바꾸면 이 값도 함께 조정. */}
             <div
                 className={cn(
                     'mb-3 overflow-hidden transition-[max-height] duration-200 ease-out motion-reduce:transition-none',
