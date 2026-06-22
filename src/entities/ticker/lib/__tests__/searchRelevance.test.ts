@@ -68,6 +68,12 @@ describe('scoreSearchRelevance', () => {
         );
     });
 
+    it('empty query scores FALLBACK_SCORE (no field is a meaningful match)', () => {
+        expect(
+            scoreSearchRelevance(makeResult('AAPL', 'Apple Inc.'), '', false)
+        ).toBe(FALLBACK_SCORE);
+    });
+
     it('popular bonus adds 15 on top of base', () => {
         const result = makeResult('BTCUSD', 'Bitcoin USD', '비트코인');
         expect(scoreSearchRelevance(result, '비트코인', true)).toBe(
@@ -97,6 +103,17 @@ describe('scoreSearchRelevance', () => {
         expect(scoreSearchRelevance(result, 'AAPL', false)).toBe(
             EXACT_MATCH_SCORE
         );
+    });
+
+    it('empty/whitespace query scores FALLBACK_SCORE (guarded edge case)', () => {
+        // After .trim() the query is '', which fieldScore guards (returns 0 for every
+        // field) so the base never rises above FALLBACK_SCORE. Without the guard,
+        // ''.startsWith('') would be true for every field and score everything as PREFIX.
+        // The real caller (searchTicker) returns early on a blank query and never reaches
+        // here; this test pins the guarded behavior of the pure function.
+        const result = makeResult('AAPL', 'Apple Inc.', '애플');
+        expect(scoreSearchRelevance(result, '', false)).toBe(FALLBACK_SCORE);
+        expect(scoreSearchRelevance(result, '   ', false)).toBe(FALLBACK_SCORE);
     });
 
     it('missing koreanName field is skipped safely', () => {

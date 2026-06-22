@@ -460,9 +460,11 @@ describe('DrizzleCryptoAssetRepository', () => {
             expect(orderBy).toHaveBeenCalledTimes(1);
             const orderByArgs = orderBy.mock.calls[0];
             expect(orderByArgs).toHaveLength(2);
-            // 1st arg: sql CASE object (not a plain column ref — has queryChunks, not a bare column name)
+            // 1st arg: sql CASE object — Drizzle's sql`` template result carries a
+            // queryChunks array (the SQL fragment tree). Asserting the property is more
+            // precise than a bare typeof-object check and distinguishes it from a column ref.
             const caseArg = orderByArgs[0] as SqlLike;
-            expect(caseArg).toBeTypeOf('object');
+            expect(caseArg).toHaveProperty('queryChunks');
             // 2nd arg: desc(cryptoAssets.circulatingSupply) — Drizzle wraps the column
             // in a SQL chunk tree; collectColumnNames recurses into queryChunks to find
             // the column name node, confirming the tiebreak sorts by circulating_supply.

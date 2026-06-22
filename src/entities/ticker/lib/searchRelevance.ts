@@ -1,6 +1,5 @@
 import { POPULAR_TICKERS } from '@/shared/config/popular-tickers';
 import { POPULAR_CRYPTOS } from '@/shared/config/popular-cryptos';
-import type { TickerSearchResult } from '@/shared/lib/types';
 
 export interface ScorableResult {
     symbol: string;
@@ -22,6 +21,9 @@ export const FALLBACK_SCORE = 10;
 export const POPULAR_BONUS = 15;
 
 function fieldScore(field: string, q: string): number {
+    // Empty query is not a meaningful match — every field startsWith(''), which would
+    // incorrectly score everything as PREFIX_MATCH_SCORE; guard before substring tests.
+    if (q === '') return 0;
     const f = field.toLowerCase();
     if (f === q) return EXACT_MATCH_SCORE;
     if (f.startsWith(q)) return PREFIX_MATCH_SCORE;
@@ -42,6 +44,12 @@ function fieldScore(field: string, q: string): number {
  *                             e.g. matched on an English name the user didn't type, or a field
  *                             changed by koreanName enrichment.)
  * - Popular bonus           → +POPULAR_BONUS on top of base
+ *
+ * Edge case — empty/whitespace-only query: after `.trim()` the query becomes `''`.
+ * `fieldScore` guards this early (returns 0 for every field), so the base never rises
+ * above FALLBACK_SCORE, and `scoreSearchRelevance` returns FALLBACK_SCORE (+ popular
+ * bonus). The only active caller (`searchTicker`) short-circuits before an empty query
+ * reaches here, but the guard makes the function self-defending.
  */
 export function scoreSearchRelevance(
     result: ScorableResult,
@@ -64,11 +72,16 @@ export function scoreSearchRelevance(
  * Re-rank a deduplicated result list by relevance score (DESC).
  * .toSorted is stable in Node ≥20 / V8, so same-score results preserve their input order.
  * Does NOT slice — caller is responsible for capping to MAX_SEARCH_RESULTS.
+ *
+ * Generic over `T extends ScorableResult` so the input element type flows through to the
+ * return (a `TickerSearchResult[]` in, a `TickerSearchResult[]` out), while still accepting
+ * any list whose elements expose the scored fields. This keeps `ScorableResult` as the single
+ * shared contract between the scorer and the ranker rather than a parallel narrower type.
  */
-export function rankByRelevance(
-    results: TickerSearchResult[],
+export function rankByRelevance<T extends ScorableResult>(
+    results: T[],
     query: string
-): TickerSearchResult[] {
+): T[] {
     return results
         .map(result => ({
             result,
