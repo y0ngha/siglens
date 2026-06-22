@@ -187,7 +187,7 @@ async function fetchCryptoList(apiKey: string): Promise<FmpCryptoListEntry[]> {
     // FMP returns unvalidated JSON; runtime guard before trusting shape
     const raw: unknown = await res.json();
     if (!Array.isArray(raw)) return [];
-    const typed = raw as FmpCryptoListEntry[];
+    const typed = raw as FmpCryptoListEntry[]; // Array.isArray guard above; element shape trusts the stable FMP cryptocurrency-list contract
     return typed;
 }
 
@@ -206,9 +206,15 @@ async function fetchSingleQuote(
     // FMP quote endpoint returns an array; runtime guard before trusting shape
     const raw: unknown = await res.json();
     if (!Array.isArray(raw) || raw.length === 0) return null;
-    const first = raw[0] as FmpQuoteResult;
+    const first = raw[0] as FmpQuoteResult; // Array.isArray + length>0 guards above; element shape trusts the stable FMP quote API contract
     if (typeof first?.symbol !== 'string') return null;
     return first;
+}
+
+function isEligible(symbol: string, listedSymbols: ReadonlySet<string>): boolean {
+    const upper = symbol.toUpperCase();
+    const base = upper.endsWith('USD') ? upper.slice(0, -3) : upper;
+    return listedSymbols.has(upper) && !STABLECOINS.has(base);
 }
 
 /**
@@ -222,19 +228,10 @@ export function filterValidCandidates(
 ): CandidateFilterResult {
     const listedSymbols = new Set(cryptoList.map(e => e.symbol.toUpperCase()));
 
-    const isEligible = (symbol: string): boolean => {
-        const upper = symbol.toUpperCase();
-        const base = upper.endsWith('USD') ? upper.slice(0, -3) : upper;
-        return listedSymbols.has(upper) && !STABLECOINS.has(base);
+    return {
+        valid: pool.filter(s => isEligible(s, listedSymbols)),
+        dropped: pool.filter(s => !isEligible(s, listedSymbols)),
     };
-
-    return pool.reduce<CandidateFilterResult>(
-        (acc, s) => {
-            const key = isEligible(s) ? 'valid' : 'dropped';
-            return { ...acc, [key]: [...acc[key], s] };
-        },
-        { valid: [], dropped: [] }
-    );
 }
 
 /**
@@ -301,7 +298,8 @@ function commitFileAtomically(path: string, fileContent: string): void {
 
 /**
  * 결과 테이블 구분선 너비.
- * "Rank | Symbol    | Market Cap" 헤더의 컬럼 패딩 합산값(4+3+9+3+14 = 33 + 구분자 9 = 42).
+ * 데이터 행 = padStart(4) + ' | ' + padEnd(9) + ' | ' + padStart(14) = 33자.
+ * 헤더 텍스트 길이를 감안하여 42로 설정.
  */
 const TABLE_SEPARATOR_WIDTH = 42;
 
@@ -349,8 +347,7 @@ async function main(): Promise<void> {
 
     const ranked: CryptoRankEntry[] = [];
 
-    for (let i = 0; i < valid.length; i++) {
-        const symbol = valid[i]!;
+    for (const [i, symbol] of valid.entries()) {
         process.stdout.write(
             `  [${i + 1}/${valid.length}] ${symbol.padEnd(10)}`
         );

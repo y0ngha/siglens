@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { POPULAR_CRYPTOS } from '../../src/shared/config/popular-cryptos';
+import { POPULAR_CRYPTOS } from '@/shared/config/popular-cryptos';
 import {
     CRYPTO_CANDIDATE_POOL,
     FILE_HEADER,
@@ -199,8 +199,8 @@ describe('CRYPTO_CANDIDATE_POOL', () => {
 });
 
 describe('MAX_POPULAR_CRYPTOS', () => {
-    it('matches the current popular-cryptos.ts list size (15)', () => {
-        expect(MAX_POPULAR_CRYPTOS).toBe(15);
+    it('matches the current popular-cryptos.ts list size', () => {
+        expect(MAX_POPULAR_CRYPTOS).toBe(POPULAR_CRYPTOS.length);
     });
 });
 
