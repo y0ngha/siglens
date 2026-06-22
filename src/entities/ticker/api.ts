@@ -276,7 +276,8 @@ export class DrizzleCryptoAssetRepository implements CryptoAssetRepository {
             .where(
                 or(
                     ilike(cryptoAssets.symbol, like),
-                    ilike(cryptoAssets.name, like)
+                    ilike(cryptoAssets.name, like),
+                    ilike(cryptoAssets.koreanName, like)
                 )
             )
             .orderBy(desc(cryptoAssets.circulatingSupply))

@@ -10,6 +10,11 @@ import type { TickerSearchResult } from '@/shared/lib/types';
  * autocomplete renders real options without a live FMP call (CI has no
  * FMP_API_KEY). Mirrors the E2E short-circuit pattern used by the data-provider
  * factories (getMarketDataProvider, getFundamentalDataProvider, etc.).
+ *
+ * Crypto entries (BTCUSD/ETHUSD) are included so that Korean-name searches
+ * (e.g. "비트코") surface the expected crypto result with the 코인 badge in
+ * the autocomplete dropdown. The koreanName values mirror what seed.ts writes
+ * to crypto_assets so the fixture is consistent with the seeded DB.
  */
 const E2E_TICKER_FIXTURE: ReadonlyArray<TickerSearchResult> = [
     {
@@ -31,6 +36,22 @@ const E2E_TICKER_FIXTURE: ReadonlyArray<TickerSearchResult> = [
         exchange: 'NASDAQ',
         exchangeFullName: 'NASDAQ Global Market',
     },
+    {
+        symbol: 'BTCUSD',
+        name: 'Bitcoin USD',
+        exchange: 'CRYPTO',
+        exchangeFullName: 'Cryptocurrency',
+        koreanName: '비트코인',
+        marketProfile: 'crypto',
+    },
+    {
+        symbol: 'ETHUSD',
+        name: 'Ethereum USD',
+        exchange: 'CRYPTO',
+        exchangeFullName: 'Cryptocurrency',
+        koreanName: '이더리움',
+        marketProfile: 'crypto',
+    },
 ];
 
 export async function searchTickerAction(
@@ -41,13 +62,15 @@ export async function searchTickerAction(
 
     if (isE2E()) {
         // Hermetic E2E path: never touch FMP. Filter the fixture by the typed
-        // query (symbol or name, case-insensitive); fall back to the full
-        // AAPL-family set so the listbox is never empty.
+        // query (symbol, name, or koreanName — case-insensitive so Korean
+        // prefix queries like "비트코" match the BTCUSD entry); fall back to
+        // the full fixture set so the listbox is never empty.
         const needle = trimmed.toLowerCase();
         const matches = E2E_TICKER_FIXTURE.filter(
             t =>
                 t.symbol.toLowerCase().includes(needle) ||
-                t.name.toLowerCase().includes(needle)
+                t.name.toLowerCase().includes(needle) ||
+                (t.koreanName?.toLowerCase().includes(needle) ?? false)
         );
         return matches.length > 0 ? matches : [...E2E_TICKER_FIXTURE];
     }

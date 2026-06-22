@@ -80,8 +80,17 @@ export async function searchTicker(
     if (!trimmed) return [];
 
     if (isKoreanInput(trimmed)) {
-        const results = await searchByKoreanName(trimmed);
-        return results.slice(0, MAX_SEARCH_RESULTS);
+        // Stock Korean names come from the korean_tickers table; crypto Korean names
+        // come from crypto_assets.korean_name. Run both in parallel so a single
+        // Korean keypress (e.g. "비트코") surfaces both stock and crypto matches.
+        const [stockResults, cryptoResults] = await Promise.all([
+            searchByKoreanName(trimmed),
+            searchCryptoAssets(trimmed),
+        ]);
+        // Stock results first (higher relevance for equity-centric users), then crypto.
+        // deduplicateResults guards the unlikely case where a symbol exists in both stores.
+        const merged = deduplicateResults([...stockResults, ...cryptoResults]);
+        return merged.slice(0, MAX_SEARCH_RESULTS);
     }
 
     const cache = createCacheProvider();

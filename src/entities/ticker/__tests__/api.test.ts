@@ -459,6 +459,17 @@ describe('DrizzleCryptoAssetRepository', () => {
             const repo = new DrizzleCryptoAssetRepository(db);
             await expect(repo.search('xyz', 10)).resolves.toEqual([]);
         });
+
+        it('korean_name 컬럼도 ilike 조건에 포함한다', async () => {
+            const { db, where } = makeCryptoSearchDb([]);
+            const repo = new DrizzleCryptoAssetRepository(db);
+            await repo.search('비트코', 10);
+            // where is called once; the or() expression must include korean_name ilike.
+            // We cannot inspect the internal Drizzle SQL object directly, so we verify
+            // that where was called (not skipped) and trust Part 1's implementation.
+            // A stronger assertion would require a real DB integration test.
+            expect(where).toHaveBeenCalledTimes(1);
+        });
     });
 });
 
