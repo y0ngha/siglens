@@ -50,7 +50,6 @@ const cryptoLongTailPredicate = notInArray(cryptoAssets.symbol, [
     ...POPULAR_CRYPTOS,
 ]);
 
-// circulatingSupply DESC NULLS LAST, then symbol asc for a stable tiebreak.
 const supplyRank = sql`${cryptoAssets.circulatingSupply} DESC NULLS LAST`;
 
 export class DrizzleCryptoLongTailSource implements LongTailTickerSource {
@@ -74,7 +73,6 @@ export class DrizzleCryptoLongTailSource implements LongTailTickerSource {
         pageNumber: number,
         pageSize: number
     ): Promise<readonly string[]> {
-        // Resolve the capped, ranked universe, then page within it.
         const offset = (pageNumber - 1) * pageSize;
         if (offset >= CRYPTO_LONGTAIL_CAP) return [];
         const limit = Math.min(pageSize, CRYPTO_LONGTAIL_CAP - offset);

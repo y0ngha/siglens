@@ -16,10 +16,12 @@ function normalizeSql(query: string): string {
     return query.replace(/\s+/g, ' ').trim().toLowerCase();
 }
 
-function makeSource(rows: unknown[][]): {
+interface SourceFixture {
     source: DrizzleCryptoLongTailSource;
     captured: CapturedQuery[];
-} {
+}
+
+function makeSource(rows: unknown[][]): SourceFixture {
     const captured: CapturedQuery[] = [];
     const callback: RemoteCallback = async (sql, params, method) => {
         captured.push({ sql, params, method });

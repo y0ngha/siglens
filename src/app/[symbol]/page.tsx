@@ -167,7 +167,7 @@ export default async function SymbolPage({ params }: Props) {
 
     // about 노드는 classifyAsset 결과가 stock일 때만 Corporation으로 채워지고,
     // ETF/Index/모호한 종목은 undefined를 반환해 spread로 자연 생략된다.
-    // crypto는 schema.org 표준 타입이 없어 about 노드를 생략한다(assetClass 4번째 arg).
+    // crypto는 schema.org 표준 타입이 없어 about 노드를 생략한다.
     const aboutNode = buildAssetAboutNode(
         ticker,
         assetInfo.koreanName ?? assetInfo.name,

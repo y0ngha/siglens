@@ -94,6 +94,10 @@ describe('GET /api/sitemap/crypto', () => {
             'Sitemap data temporarily unavailable'
         );
         expect(mockToUrlSetXml).not.toHaveBeenCalled();
+        expect(consoleErrorSpy).toHaveBeenCalledWith(
+            '[sitemap-crypto] DB access failed',
+            expect.any(Error)
+        );
     });
 
     it('returns 200 with XML content-type on success', async () => {
