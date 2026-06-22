@@ -32,10 +32,6 @@ import {
 } from 'fs';
 import { dirname, resolve } from 'path';
 
-// ---------------------------------------------------------------------------
-// Constants
-// ---------------------------------------------------------------------------
-
 const FMP_BASE_URL = 'https://financialmodelingprep.com/stable';
 
 /**
@@ -43,6 +39,20 @@ const FMP_BASE_URL = 'https://financialmodelingprep.com/stable';
  * 변경 시 함께 검토: src/shared/config/popular-cryptos.ts
  */
 export const MAX_POPULAR_CRYPTOS = 15;
+
+/**
+ * Stablecoins are dollar-pegged — no meaningful price action for technical analysis,
+ * so excluded from the popular list.
+ */
+export const STABLECOINS: ReadonlySet<string> = new Set([
+    'USDT',
+    'USDC',
+    'DAI',
+    'BUSD',
+    'TUSD',
+    'USDD',
+    'FDUSD',
+]);
 
 /**
  * API 호출 간 딜레이(ms). FMP 무료/엔트리 플랜의 rate limit을 준수하기 위해
@@ -62,14 +72,12 @@ const REQUEST_DELAY_MS = 250;
  *   - 이름 변경/폐지 코인은 제거: 예) MATICUSD → POLUSD (Polygon rebranding, 제거 완료)
  */
 export const CRYPTO_CANDIDATE_POOL: readonly string[] = [
-    // Top-10 by market cap (as of mid-2025 typical rankings)
+    // Top-10 by market cap (as of mid-2025 typical rankings, stablecoins excluded)
     'BTCUSD',
     'ETHUSD',
-    'USDTUSD',
     'BNBUSD',
     'SOLUSD',
     'XRPUSD',
-    'USDCUSD',
     'DOGEUSD',
     'ADAUSD',
     'TRXUSD',
@@ -132,10 +140,6 @@ const FILE_HEADER = `// 큐레이션된 인기 암호화폐 — 홈 디스커버
 // 단건 quote를 심볼별로 호출하여 시가총액 기준 상위 N개를 자동 선정한다(update-popular-cryptos.ts).
 // 수동으로 순서를 바꾸거나 심볼을 추가/제거할 수 있습니다.`;
 
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-
 interface FmpCryptoListEntry {
     symbol: string;
     name: string;
@@ -154,24 +158,21 @@ export interface CryptoRankEntry {
     marketCap: number;
 }
 
-// ---------------------------------------------------------------------------
-// Utilities
-// ---------------------------------------------------------------------------
+export interface CandidateFilterResult {
+    valid: string[];
+    dropped: string[];
+}
 
 function sleep(ms: number): Promise<void> {
     return new Promise(r => setTimeout(r, ms));
 }
 
-function formatMarketCap(cap: number): string {
+export function formatMarketCap(cap: number): string {
     if (cap >= 1_000_000_000_000) return `$${(cap / 1_000_000_000_000).toFixed(2)}T`;
     if (cap >= 1_000_000_000) return `$${(cap / 1_000_000_000).toFixed(2)}B`;
     if (cap >= 1_000_000) return `$${(cap / 1_000_000).toFixed(2)}M`;
     return `$${cap.toFixed(0)}`;
 }
-
-// ---------------------------------------------------------------------------
-// FMP API
-// ---------------------------------------------------------------------------
 
 async function fetchCryptoList(apiKey: string): Promise<FmpCryptoListEntry[]> {
     const url = `${FMP_BASE_URL}/cryptocurrency-list?apikey=${encodeURIComponent(apiKey)}`;
@@ -207,31 +208,27 @@ async function fetchSingleQuote(
     return raw[0] ?? null;
 }
 
-// ---------------------------------------------------------------------------
-// Core logic (exported for testability)
-// ---------------------------------------------------------------------------
-
 /**
  * cryptocurrency-list로부터 유효 심볼 집합을 구성한다.
  * 풀에 있으나 리스트에 없는 심볼은 폐지/이름변경된 것으로 간주, 제거한다.
+ * 스테이블코인(STABLECOINS)은 가격 변동이 없어 기술적 분석이 무의미하므로 제외한다.
  */
 export function filterValidCandidates(
     pool: readonly string[],
     cryptoList: FmpCryptoListEntry[]
-): { valid: string[]; dropped: string[] } {
+): CandidateFilterResult {
     const listedSymbols = new Set(cryptoList.map(e => e.symbol.toUpperCase()));
-    const valid: string[] = [];
-    const dropped: string[] = [];
 
-    for (const symbol of pool) {
-        if (listedSymbols.has(symbol.toUpperCase())) {
-            valid.push(symbol);
-        } else {
-            dropped.push(symbol);
-        }
-    }
+    const isEligible = (symbol: string): boolean => {
+        const upper = symbol.toUpperCase();
+        const base = upper.endsWith('USD') ? upper.slice(0, -3) : upper;
+        return listedSymbols.has(upper) && !STABLECOINS.has(base);
+    };
 
-    return { valid, dropped };
+    return {
+        valid: pool.filter(s => isEligible(s)),
+        dropped: pool.filter(s => !isEligible(s)),
+    };
 }
 
 /**
@@ -244,8 +241,7 @@ export function rankByMarketCap(
 ): CryptoRankEntry[] {
     return entries
         .filter(e => e.marketCap > 0)
-        .slice()
-        .sort((a, b) => b.marketCap - a.marketCap)
+        .toSorted((a, b) => b.marketCap - a.marketCap)
         .slice(0, topN);
 }
 
@@ -262,10 +258,6 @@ export const POPULAR_CRYPTOS = [
 ${body}] as const;
 `;
 }
-
-// ---------------------------------------------------------------------------
-// File write
-// ---------------------------------------------------------------------------
 
 function writeAndFormatFileAtomically(
     path: string,
@@ -301,10 +293,6 @@ function commitFileAtomically(path: string, fileContent: string): void {
     }
 }
 
-// ---------------------------------------------------------------------------
-// Result display
-// ---------------------------------------------------------------------------
-
 /**
  * 결과 테이블 구분선 너비.
  * "Rank | Symbol    | Market Cap" 헤더의 컬럼 패딩 합산값(4+3+9+3+14 = 33 + 구분자 9 = 42).
@@ -324,10 +312,6 @@ function printResults(ranked: CryptoRankEntry[]): void {
     });
 }
 
-// ---------------------------------------------------------------------------
-// Main
-// ---------------------------------------------------------------------------
-
 async function main(): Promise<void> {
     config({ path: resolve(process.cwd(), '.env.local') });
 
@@ -339,7 +323,6 @@ async function main(): Promise<void> {
     console.log('\n=== Update Popular Cryptos ===\n');
     console.log(`Candidate pool size: ${CRYPTO_CANDIDATE_POOL.length}`);
 
-    // 1. Validate candidates against the full crypto list (drop delisted/renamed)
     console.log('\nFetching cryptocurrency-list for candidate validation...');
     const cryptoList = await fetchCryptoList(apiKey);
     console.log(`cryptocurrency-list returned: ${cryptoList.length} entries`);
@@ -356,7 +339,6 @@ async function main(): Promise<void> {
     }
     console.log(`Valid candidates after validation: ${valid.length}`);
 
-    // 2. Fetch single quote per valid candidate for marketCap
     console.log(`\nFetching quotes for ${valid.length} candidates...`);
 
     const ranked: CryptoRankEntry[] = [];
@@ -381,7 +363,6 @@ async function main(): Promise<void> {
         }
     }
 
-    // 3. Rank and select top N
     const topCryptos = rankByMarketCap(ranked, MAX_POPULAR_CRYPTOS);
 
     if (topCryptos.length === 0) {
@@ -390,10 +371,8 @@ async function main(): Promise<void> {
         );
     }
 
-    // 4. Display results
     printResults(topCryptos);
 
-    // 5. Render and atomically write the config file
     const topSymbols = topCryptos.map(e => e.symbol);
     const fileContent = renderPopularCryptosFile(topSymbols);
     commitFileAtomically(POPULAR_CRYPTOS_PATH, fileContent);

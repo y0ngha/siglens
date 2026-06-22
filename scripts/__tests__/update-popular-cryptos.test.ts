@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 import {
     CRYPTO_CANDIDATE_POOL,
     MAX_POPULAR_CRYPTOS,
+    STABLECOINS,
     filterValidCandidates,
+    formatMarketCap,
     rankByMarketCap,
     renderPopularCryptosFile,
 } from '../update-popular-cryptos';
@@ -201,9 +203,9 @@ describe('CRYPTO_CANDIDATE_POOL', () => {
             'SHIBUSD',
         ];
 
-        for (const symbol of currentPopular) {
-            expect(CRYPTO_CANDIDATE_POOL).toContain(symbol);
-        }
+        expect(CRYPTO_CANDIDATE_POOL).toEqual(
+            expect.arrayContaining(currentPopular)
+        );
     });
 
     it('has no duplicate symbols', () => {
@@ -219,14 +221,63 @@ describe('CRYPTO_CANDIDATE_POOL', () => {
     });
 
     it('all symbols end with USD', () => {
-        for (const symbol of CRYPTO_CANDIDATE_POOL) {
-            expect(symbol.endsWith('USD')).toBe(true);
-        }
+        expect(CRYPTO_CANDIDATE_POOL.every(s => s.endsWith('USD'))).toBe(true);
     });
 });
 
 describe('MAX_POPULAR_CRYPTOS', () => {
     it('matches the current popular-cryptos.ts list size (15)', () => {
         expect(MAX_POPULAR_CRYPTOS).toBe(15);
+    });
+});
+
+describe('formatMarketCap', () => {
+    it('formats values >= 1T with T suffix and two decimals', () => {
+        expect(formatMarketCap(1_300_000_000_000)).toBe('$1.30T');
+        expect(formatMarketCap(1_000_000_000_000)).toBe('$1.00T');
+    });
+
+    it('formats values >= 1B (but < 1T) with B suffix and two decimals', () => {
+        expect(formatMarketCap(500_000_000_000)).toBe('$500.00B');
+        expect(formatMarketCap(1_000_000_000)).toBe('$1.00B');
+    });
+
+    it('formats values >= 1M (but < 1B) with M suffix and two decimals', () => {
+        expect(formatMarketCap(42_000_000)).toBe('$42.00M');
+        expect(formatMarketCap(1_000_000)).toBe('$1.00M');
+    });
+
+    it('formats sub-million values as integer dollars', () => {
+        expect(formatMarketCap(999_999)).toBe('$999999');
+        expect(formatMarketCap(1.5)).toBe('$2');
+    });
+});
+
+describe('stablecoin exclusion', () => {
+    it('filterValidCandidates drops stablecoins even when present in the crypto list', () => {
+        const pool = ['BTCUSD', 'USDTUSD', 'USDCUSD', 'ETHUSD', 'DAIUSD'];
+        const cryptoList = pool.map(symbol => ({
+            symbol,
+            name: symbol,
+            circulatingSupply: null,
+        }));
+
+        const { valid, dropped } = filterValidCandidates(pool, cryptoList);
+
+        expect(valid).toEqual(['BTCUSD', 'ETHUSD']);
+        expect(dropped).toEqual(
+            expect.arrayContaining(['USDTUSD', 'USDCUSD', 'DAIUSD'])
+        );
+    });
+
+    it('STABLECOINS set contains USDT, USDC, DAI and other known pegged coins', () => {
+        expect(STABLECOINS.has('USDT')).toBe(true);
+        expect(STABLECOINS.has('USDC')).toBe(true);
+        expect(STABLECOINS.has('DAI')).toBe(true);
+    });
+
+    it('CRYPTO_CANDIDATE_POOL does not contain USDTUSD or USDCUSD', () => {
+        expect(CRYPTO_CANDIDATE_POOL).not.toContain('USDTUSD');
+        expect(CRYPTO_CANDIDATE_POOL).not.toContain('USDCUSD');
     });
 });
