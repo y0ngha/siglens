@@ -48,30 +48,33 @@ async function isRegistered(page: Page): Promise<boolean> {
 }
 
 /**
- * Click a state-changing button (저장/삭제) and wait for the card's "진행 중"
- * pending state to leave the Anthropic card's DOM subtree.
+ * Click a state-changing button (저장/삭제) and wait for the card to reach its
+ * settled outcome, identified by the expected badge text (등록됨 / 미등록).
  *
- * The card's React key encodes `${provider}-${isRegistered}`, so
- * `revalidatePath('/account')` causes a full card remount — removing the
- * `저장 중…`/`삭제 중…` disabled button entirely. Waiting for that button to
- * detach from the Anthropic card is the earliest reliable signal that the RSC
- * re-render has settled and React has committed the new badge state to DOM.
- *
- * This is more reliable than `waitForResponse` (fires on headers, not when
- * the streaming RSC body is fully consumed) and avoids `response.body()` which
- * throws on streaming responses already consumed by the browser.
+ * Waiting on the OUTCOME badge rather than the transient disabled-button
+ * lifecycle ("저장 중…"/"삭제 중…") eliminates two CI failure modes:
+ *   (a) Fast action: the disabled button may never become visible before it
+ *       disappears (the old 10 s `waitFor visible` could time out).
+ *   (b) Slow RSC stream: under CI parallel DB-write load,
+ *       `revalidatePath('/account')` can take >30 s to remount the card,
+ *       causing the old `waitFor detached` to time out.
+ * The badge is the state the caller actually cares about and is stable once
+ * the RSC re-render commits — making it robust to both extremes.
  */
 async function clickAndAwaitActionSettle(
     card: Locator,
-    button: Locator
+    button: Locator,
+    expectedBadge: string
 ): Promise<void> {
     await button.click();
-    // The pending button detaches only when revalidatePath('/account') completes
-    // and React remounts the card with its new key (`${provider}-${isRegistered}`).
-    // The two-phase wait gives 30s headroom for slow AES encrypt + Postgres write + RSC stream.
-    const pendingBtn = card.locator('button[disabled]');
-    await pendingBtn.waitFor({ state: 'visible', timeout: 10_000 });
-    await pendingBtn.waitFor({ state: 'detached', timeout: 30_000 });
+    // Wait on the settled OUTCOME — the badge after revalidatePath('/account')
+    // remounts the card — instead of polling the transient disabled "저장 중…/삭제 중…"
+    // button. The badge is the state the caller cares about and is robust to fast
+    // actions (pending button missed) and slow RSC streams under CI load (detach
+    // exceeding 30s) — the two failure modes of the old button-lifecycle wait.
+    await expect(card.getByText(expectedBadge, { exact: true })).toBeVisible({
+        timeout: 45_000,
+    });
 }
 
 /** Delete the Anthropic key through the UI and wait for the 미등록 badge. */
@@ -79,7 +82,8 @@ async function deleteAnthropicKey(page: Page): Promise<void> {
     const card = anthropicCard(page);
     await clickAndAwaitActionSettle(
         card,
-        card.getByRole('button', { name: '삭제', exact: true })
+        card.getByRole('button', { name: '삭제', exact: true }),
+        '미등록'
     );
     await expect(card.getByText('미등록', { exact: true })).toBeVisible({
         timeout: 15_000,
@@ -117,13 +121,12 @@ test.describe('account API key CRUD (authed storageState)', () => {
         // Target the textbox role specifically: the show/hide toggle button's
         // aria-label ("API 키 보이기") also matches a bare /API 키/ pattern.
         await card.getByRole('textbox', { name: /API 키/ }).fill(DUMMY_KEY);
-        // Wait for the card to remount (RSC re-render complete) before
-        // asserting the badge. revalidatePath('/account') replaces the entire
-        // card subtree; the pending disabled button detaching is the earliest
-        // reliable DOM signal that React has committed the new state.
+        // Wait for the settled 등록됨 badge — robust to both fast actions
+        // (pending button never observed) and slow RSC streams under CI load.
         await clickAndAwaitActionSettle(
             card,
-            card.getByRole('button', { name: '저장', exact: true })
+            card.getByRole('button', { name: '저장', exact: true }),
+            '등록됨'
         );
 
         // revalidatePath('/account') flips the badge after the (real AES
