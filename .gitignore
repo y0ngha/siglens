@@ -91,6 +91,8 @@ next-env.d.ts
 !/scripts/seedIndicatorTranslationsBatch.ts
 # Plan 1: FMP cryptocurrency-list sync script.
 !/scripts/seed-crypto-assets.ts
+# Infra: post-build assertion script for standalone skills/ inclusion.
+!/scripts/assert-standalone-skills.mjs
 !/scripts/lib/
 !/scripts/lib/**
 

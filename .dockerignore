@@ -1,0 +1,16 @@
+node_modules
+.next
+.git
+.github
+coverage
+playwright-report
+test-results
+e2e/specs
+e2e/setup
+e2e/run-e2e.sh
+**/*.test.ts
+**/*.test.tsx
+**/__tests__
+.env*
+docs
+refs
