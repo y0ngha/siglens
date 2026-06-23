@@ -30,6 +30,10 @@ import type { Locator, Page } from '@playwright/test';
  */
 const PROVIDER_LABEL = 'Claude (Anthropic)';
 const DUMMY_KEY = 'sk-ant-e2e-dummy';
+/** Timeout for the settled badge after revalidatePath remounts the card. */
+const BADGE_SETTLE_TIMEOUT_MS = 45_000;
+/** Timeout for auxiliary badge/heading assertions that do not involve a network round-trip. */
+const BADGE_ASSERT_TIMEOUT_MS = 15_000;
 
 /** The provider card scoped by its label heading's nearest card container. */
 function anthropicCard(page: Page): Locator {
@@ -67,13 +71,8 @@ async function clickAndAwaitActionSettle(
     expectedBadge: string
 ): Promise<void> {
     await button.click();
-    // Wait on the settled OUTCOME — the badge after revalidatePath('/account')
-    // remounts the card — instead of polling the transient disabled "저장 중…/삭제 중…"
-    // button. The badge is the state the caller cares about and is robust to fast
-    // actions (pending button missed) and slow RSC streams under CI load (detach
-    // exceeding 30s) — the two failure modes of the old button-lifecycle wait.
     await expect(card.getByText(expectedBadge, { exact: true })).toBeVisible({
-        timeout: 45_000,
+        timeout: BADGE_SETTLE_TIMEOUT_MS,
     });
 }
 
@@ -85,9 +84,6 @@ async function deleteAnthropicKey(page: Page): Promise<void> {
         card.getByRole('button', { name: '삭제', exact: true }),
         '미등록'
     );
-    await expect(card.getByText('미등록', { exact: true })).toBeVisible({
-        timeout: 15_000,
-    });
 }
 
 test.describe('account API key CRUD (authed storageState)', () => {
@@ -99,7 +95,7 @@ test.describe('account API key CRUD (authed storageState)', () => {
         await page.goto('/account');
         await expect(
             page.getByRole('heading', { level: 1, name: '계정 설정' })
-        ).toBeVisible({ timeout: 15_000 });
+        ).toBeVisible({ timeout: BADGE_ASSERT_TIMEOUT_MS });
 
         // Normalize to 미등록 so register→delete starts from a clean slate even
         // if a prior run (persistent DB) left the Anthropic key registered.
@@ -132,9 +128,6 @@ test.describe('account API key CRUD (authed storageState)', () => {
         // revalidatePath('/account') flips the badge after the (real AES
         // encryption) save resolves; the card key change remounts it as
         // registered.
-        await expect(card.getByText('등록됨', { exact: true })).toBeVisible({
-            timeout: 15_000,
-        });
         await expect(card.getByText('미등록', { exact: true })).toHaveCount(0);
 
         // --- Delete: 삭제 → back to 미등록. ---
