@@ -199,7 +199,8 @@ export default async function NewsPage({ params }: Props) {
     }
 
     const displayName = buildDisplayName(assetInfo, upper);
-    const assetClass = getDescriptor(marketProfileOf(assetInfo)).assetClass;
+    const marketProfile = marketProfileOf(assetInfo);
+    const assetClass = getDescriptor(marketProfile).assetClass;
     const isEquity = assetClass === 'equity';
     const { fullTitle, description, url } = resolveSymbolNewsSeoContent(
         upper,
@@ -355,7 +356,11 @@ export default async function NewsPage({ params }: Props) {
                     </Suspense>
                 )}
 
-                <CrossLinkCards symbol={upper} current="news" />
+                <CrossLinkCards
+                    symbol={upper}
+                    current="news"
+                    marketProfile={marketProfile}
+                />
             </main>
         </>
     );

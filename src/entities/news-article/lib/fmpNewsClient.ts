@@ -148,11 +148,32 @@ export function toYyyyMmDd(date: Date): string {
     return date.toISOString().slice(0, 10);
 }
 
+/**
+ * Sentinel string used when `site` is absent/null and the `url` cannot be
+ * parsed as a valid URL. Exported so tests can assert against the constant
+ * rather than a duplicated literal (§13.5).
+ */
+export const SOURCE_UNKNOWN_FALLBACK = 'unknown';
+
+/**
+ * FMP crypto news sometimes returns `site` as null despite the type declaration
+ * (`site: string`). Provide a hostname-derived fallback so the NOT NULL `source`
+ * DB column is always satisfied without requiring a schema migration.
+ */
+function resolveSource(raw: RawFmpNews): string {
+    if (raw.site) return raw.site;
+    try {
+        return new URL(raw.url).hostname;
+    } catch {
+        return SOURCE_UNKNOWN_FALLBACK;
+    }
+}
+
 function mapRawToNewsItem(raw: RawFmpNews, publishedAt: string): NewsItem {
     return {
         id: hashUrlToId(raw.url),
         symbol: raw.symbol,
-        source: raw.site,
+        source: resolveSource(raw),
         url: raw.url,
         publishedAt,
         titleEn: raw.title,

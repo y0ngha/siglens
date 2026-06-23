@@ -11,9 +11,16 @@ import type { MockedFunction } from 'vitest';
 // 대부분의 describe는 useOverallAnalysis를 mock해 임의 state shape를 주입하지만,
 // 'OverallContent SSR seed' describe는 mockImplementation으로 실제 훅을 복원해
 // initialAnalysis prop → done 서사로 흐르는 전체 경로를 검증한다(아래 참고).
-vi.mock('@/widgets/overall/hooks/useOverallAnalysis', () => ({
-    useOverallAnalysis: vi.fn(),
-}));
+vi.mock('@/widgets/overall/hooks/useOverallAnalysis', async importOriginal => {
+    const actual =
+        await importOriginal<
+            typeof import('@/widgets/overall/hooks/useOverallAnalysis')
+        >();
+    return {
+        ...actual,
+        useOverallAnalysis: vi.fn(),
+    };
+});
 vi.mock('@/features/symbol-chat', () => ({
     usePublishSymbolChat: vi.fn(),
 }));
@@ -137,7 +144,8 @@ describe('OverallContent tf 쿼리 파라미터 처리 (§18 분기)', () => {
             'Apple Inc.',
             '1Hour',
             'gemini-2.5-flash-lite',
-            undefined
+            undefined,
+            'equity'
         );
     });
 
@@ -155,7 +163,8 @@ describe('OverallContent tf 쿼리 파라미터 처리 (§18 분기)', () => {
             'Apple Inc.',
             DEFAULT_TIMEFRAME,
             'gemini-2.5-flash-lite',
-            undefined
+            undefined,
+            'equity'
         );
     });
 });
@@ -657,6 +666,138 @@ describe('OverallContent — /news와 동일 순차 게이트 (useNewsAnalysisTr
         // 사용자 복구 동선: "다시 시도" 버튼이 노출돼야 한다 (회귀 가드)
         expect(
             screen.getByRole('button', { name: /다시 시도/ })
+        ).toBeInTheDocument();
+    });
+});
+
+/**
+ * F1: crypto assetClass — OverallContent hides options/fundamental/financials sections,
+ * and useOverallAnalysis is called with assetClass='crypto'.
+ */
+describe('OverallContent — crypto assetClass (F1 / UI Group 3)', () => {
+    beforeEach(async () => {
+        mockUseOverallAnalysis.mockReset();
+        // Reset useWaitForNewsCards to the default (non-error) state so the
+        // previous describe's pollError mock doesn't bleed into these tests.
+        const { useWaitForNewsCards } = await import('@/widgets/news');
+        (
+            useWaitForNewsCards as MockedFunction<typeof useWaitForNewsCards>
+        ).mockImplementation((_symbol: string, initiallyReady: boolean) => ({
+            isReady: initiallyReady,
+            pollError: null,
+        }));
+    });
+
+    it('useOverallAnalysis를 assetClass=crypto로 호출한다', () => {
+        mockUseOverallAnalysis.mockReturnValue({
+            state: { status: 'idle' },
+            trigger: vi.fn(),
+        });
+        render(
+            <OverallContent
+                symbol="BTCUSD"
+                companyName="Bitcoin USD"
+                hasEnrichedNews={false}
+                assetClass="crypto"
+            />
+        );
+        expect(mockUseOverallAnalysis).toHaveBeenCalledWith(
+            'BTCUSD',
+            'Bitcoin USD',
+            DEFAULT_TIMEFRAME,
+            'gemini-2.5-flash-lite',
+            undefined, // initialAnalysis
+            'crypto'
+        );
+    });
+
+    it('done 상태에서 OptionsSummary를 렌더하지 않는다', () => {
+        mockUseOverallAnalysis.mockReturnValue({
+            state: {
+                status: 'done',
+                result: makeDoneResult({ optionsBulletsKo: ['옵션 신호'] }),
+            },
+            trigger: vi.fn(),
+        });
+        render(
+            <OverallContent
+                symbol="BTCUSD"
+                companyName="Bitcoin USD"
+                hasEnrichedNews={true}
+                assetClass="crypto"
+            />
+        );
+        expect(screen.queryByRole('heading', { name: /옵션 시장/ })).toBeNull();
+    });
+
+    it('done 상태에서 FundamentalSummary를 렌더하지 않는다', () => {
+        mockUseOverallAnalysis.mockReturnValue({
+            state: {
+                status: 'done',
+                result: makeDoneResult({
+                    fundamentalBulletsKo: ['펀더멘털 신호'],
+                }),
+            },
+            trigger: vi.fn(),
+        });
+        render(
+            <OverallContent
+                symbol="BTCUSD"
+                companyName="Bitcoin USD"
+                hasEnrichedNews={true}
+                assetClass="crypto"
+            />
+        );
+        expect(
+            screen.queryByRole('heading', { name: /펀더멘털 분석 요약/ })
+        ).toBeNull();
+    });
+
+    it('done 상태에서 FinancialsSummary를 렌더하지 않는다', () => {
+        mockUseOverallAnalysis.mockReturnValue({
+            state: {
+                status: 'done',
+                result: makeDoneResult({ financialsBulletsKo: ['재무 신호'] }),
+            },
+            trigger: vi.fn(),
+        });
+        render(
+            <OverallContent
+                symbol="BTCUSD"
+                companyName="Bitcoin USD"
+                hasEnrichedNews={true}
+                assetClass="crypto"
+            />
+        );
+        expect(
+            screen.queryByRole('heading', { name: /^재무 분석$/ })
+        ).toBeNull();
+    });
+
+    it('done 상태에서 TechnicalSummary와 NewsSummary는 렌더한다', () => {
+        mockUseOverallAnalysis.mockReturnValue({
+            state: {
+                status: 'done',
+                result: makeDoneResult({
+                    technicalBulletsKo: ['기술적 신호'],
+                    newsBulletsKo: ['뉴스 신호'],
+                }),
+            },
+            trigger: vi.fn(),
+        });
+        render(
+            <OverallContent
+                symbol="BTCUSD"
+                companyName="Bitcoin USD"
+                hasEnrichedNews={true}
+                assetClass="crypto"
+            />
+        );
+        expect(
+            screen.getByRole('heading', { name: /기술적 분석 요약/ })
+        ).toBeInTheDocument();
+        expect(
+            screen.getByRole('heading', { name: /뉴스 분석 요약/ })
         ).toBeInTheDocument();
     });
 });

@@ -1,6 +1,7 @@
 'use client';
 
 import { cn } from '@/shared/lib/cn';
+import type { AssetClass } from '@/shared/config/marketProfile';
 
 interface OverallTriggerCtaProps {
     onTrigger: () => void;
@@ -9,12 +10,26 @@ interface OverallTriggerCtaProps {
      * 새 뉴스 누락 부분 결과로 진행되는 걸 막을 때 사용한다(/news와 동일 게이트).
      */
     disabled?: boolean;
+    /**
+     * Asset class of the symbol being analysed.
+     * Controls the subtitle copy:
+     * - Crypto shows a subtitle listing 차트·뉴스·시장 분위기.
+     * - Equity shows a subtitle listing 차트·옵션·펀더멘털·뉴스·시장 분위기.
+     * (These are the subtitle's emphasis items, not the analysis-axis count.)
+     */
+    assetClass?: AssetClass;
 }
 
 export function OverallTriggerCta({
     onTrigger,
     disabled = false,
+    assetClass = 'equity',
 }: OverallTriggerCtaProps) {
+    const subtitle =
+        assetClass === 'crypto'
+            ? '차트·뉴스·시장 분위기를 통합한 AI 결론을 받아보세요.'
+            : '차트·옵션·펀더멘털·뉴스·시장 분위기를 통합한 AI 결론을 받아보세요.';
+
     return (
         <section
             aria-labelledby="overall-cta-heading"
@@ -28,8 +43,7 @@ export function OverallTriggerCta({
                 AI 종합 분석
             </h2>
             <p className="text-secondary-400 mt-3 text-sm leading-relaxed">
-                차트·옵션·펀더멘털·뉴스·시장 분위기를 통합한 AI 결론을
-                받아보세요.
+                {subtitle}
             </p>
             <button
                 type="button"

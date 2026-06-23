@@ -8,6 +8,7 @@ import type {
     OverallAxis,
     Timeframe,
 } from '@y0ngha/siglens-core';
+import type { AssetClass } from '@/shared/config/marketProfile';
 import {
     submitOverallAnalysisAction,
     pollOverallAnalysisAction,
@@ -34,6 +35,7 @@ import { useHydrated } from '@/shared/hooks/useHydrated';
 import { usePageHideCancel } from '@/shared/hooks/usePageHideCancel';
 import { BotBlockedError } from '@/widgets/symbol-page';
 import type { OverallAnalysisState, ProgressState } from '../types';
+import { axesForAssetClass } from '../utils/axesForAssetClass';
 
 export interface UseOverallAnalysisReturn {
     state: OverallAnalysisState;
@@ -58,13 +60,6 @@ interface DependencyPollResult {
     status: string;
     error?: string;
 }
-
-const AXIS_ORDER: readonly OverallAxis[] = [
-    'technical',
-    'fundamental',
-    'news',
-    'options',
-];
 
 /**
  * submitUntilReady 재진입 한도. dedup이 적용된 뒤에도 의존성 분석이 끊임없이
@@ -112,19 +107,23 @@ async function pollDependencyJob(
  * pending_dependencies 응답에서 받은 각 axis jobId를 직접 polling해
  * 모든 dependency가 완료될 때까지 대기한다.
  * submit을 반복 호출하지 않으므로 중복 job이 생성되지 않는다.
+ *
+ * `applicableAxes`는 asset class에 따라 결정된 축 목록이다. crypto는
+ * ['technical', 'news']만 폴링하고 fundamental/options는 무시한다.
  */
 async function waitForDependencies(
     initialPendingJobs: Record<OverallAxis, string | undefined>,
     signal: AbortSignal,
     onProgress: (p: ProgressState) => void,
-    onJobsUpdate: (jobs: CurrentJobs) => void
+    onJobsUpdate: (jobs: CurrentJobs) => void,
+    applicableAxes: readonly OverallAxis[]
 ): Promise<void> {
     let remainingJobs = { ...initialPendingJobs };
     let retryCount = 0;
 
     onJobsUpdate({ phase: 'dependencies', jobs: remainingJobs });
 
-    while (AXIS_ORDER.some(axis => remainingJobs[axis] !== undefined)) {
+    while (applicableAxes.some(axis => remainingJobs[axis] !== undefined)) {
         throwIfAborted(signal);
         await sleep(AUGMENT_AND_OVERALL_POLL_INTERVAL_MS);
         throwIfAborted(signal);
@@ -133,8 +132,9 @@ async function waitForDependencies(
         // 피한다. 두 callback이 같은 직전 값을 읽어 spread로 덮어쓰면 한쪽
         // 변경이 사라지는 race를 막기 위함.
         const completedAxes = await Promise.all(
-            AXIS_ORDER.filter(axis => remainingJobs[axis] !== undefined).map(
-                async (axis): Promise<OverallAxis | null> => {
+            applicableAxes
+                .filter(axis => remainingJobs[axis] !== undefined)
+                .map(async (axis): Promise<OverallAxis | null> => {
                     const jobId = remainingJobs[axis]!;
                     const result = await pollDependencyJob(axis, jobId);
                     if (result.status === 'error') {
@@ -145,8 +145,7 @@ async function waitForDependencies(
                         );
                     }
                     return result.status === 'done' ? axis : null;
-                }
-            )
+                })
         );
         remainingJobs = completedAxes.reduce(
             (acc, axis) =>
@@ -180,6 +179,7 @@ async function submitUntilReady(
     signal: AbortSignal,
     onProgress: (p: ProgressState) => void,
     onJobsUpdate: (jobs: CurrentJobs) => void,
+    applicableAxes: readonly OverallAxis[],
     options: { force?: boolean } = {},
     depth = 0
 ): Promise<
@@ -215,7 +215,8 @@ async function submitUntilReady(
         submitted.pendingJobs,
         signal,
         onProgress,
-        onJobsUpdate
+        onJobsUpdate,
+        applicableAxes
     );
     throwIfAborted(signal);
 
@@ -229,6 +230,7 @@ async function submitUntilReady(
         signal,
         onProgress,
         onJobsUpdate,
+        applicableAxes,
         {},
         depth + 1
     );
@@ -245,6 +247,7 @@ async function fetchOverallAnalysis(
     // 변경으로 새 실행이 시작된 뒤 이전 실행의 finally가 새 실행의 ref를 null로
     // 덮어쓰는 race를 막기 위해 사용한다.
     onJobsUpdate: (jobs: CurrentJobs, expectedCurrent?: CurrentJobs) => void,
+    applicableAxes: readonly OverallAxis[],
     options: { force?: boolean } = {}
 ): Promise<OverallAnalysisResponse> {
     // 이 실행이 마지막으로 ref에 기록한 값. finally에서 compare-and-clear의
@@ -265,6 +268,7 @@ async function fetchOverallAnalysis(
         signal,
         onProgress,
         trackedUpdate,
+        applicableAxes,
         options
     );
 
@@ -339,7 +343,15 @@ export function useOverallAnalysis(
      * 빈 상태에서 시작하므로, "절대 갱신 안 됨" 사각지대는 생기지 않는다. 동일
      * 세션·동일 timeframe에서의 명시적 갱신은 재분석(trigger force)으로 처리된다.
      */
-    initialResult?: OverallAnalysisResponse
+    initialResult?: OverallAnalysisResponse,
+    /**
+     * Asset class of the symbol being analysed.
+     * Crypto runs on technical + news only — fundamental and options axes are
+     * never submitted, polled, or cancelled for crypto symbols.
+     * Defaults to 'equity' so existing callers that don't yet pass this param
+     * continue to get the full 4-axis behaviour.
+     */
+    assetClass: AssetClass = 'equity'
 ): UseOverallAnalysisReturn {
     const queryClient = useQueryClient();
     const isHydrated = useHydrated();
@@ -384,6 +396,7 @@ export function useOverallAnalysis(
                     }
                     currentJobsRef.current = jobs;
                 },
+                axesForAssetClass(assetClass),
                 { force }
             );
         },
@@ -440,6 +453,12 @@ export function useOverallAnalysis(
 
     // ref를 null로 초기화해 unmount cleanup과의 이중 cancel을 방지한다.
     const getPageHideJobs = useCallback((): CancelJobEntry[] | null => {
+        // axesForAssetClass returns a module-level constant array (CRYPTO_AXIS_ORDER or
+        // EQUITY_AXIS_ORDER), so the reference is already stable across renders — useMemo
+        // would be redundant and, with preserve-manual-memoization, preserved as dead
+        // weight rather than optimised away. Computed inline so assetClass is the real
+        // dependency (pure function, stable result).
+        const applicableAxes = axesForAssetClass(assetClass);
         const current = currentJobsRef.current;
         if (current === null) return null;
         currentJobsRef.current = null;
@@ -447,7 +466,8 @@ export function useOverallAnalysis(
         const jobs: CancelJobEntry[] =
             current.phase === 'dependencies'
                 ? [
-                      ...(current.jobs.technical !== undefined
+                      ...(applicableAxes.includes('technical') &&
+                      current.jobs.technical !== undefined
                           ? [
                                 {
                                     jobId: current.jobs.technical,
@@ -455,7 +475,8 @@ export function useOverallAnalysis(
                                 },
                             ]
                           : []),
-                      ...(current.jobs.fundamental !== undefined
+                      ...(applicableAxes.includes('fundamental') &&
+                      current.jobs.fundamental !== undefined
                           ? [
                                 {
                                     jobId: current.jobs.fundamental,
@@ -463,7 +484,8 @@ export function useOverallAnalysis(
                                 },
                             ]
                           : []),
-                      ...(current.jobs.news !== undefined
+                      ...(applicableAxes.includes('news') &&
+                      current.jobs.news !== undefined
                           ? [
                                 {
                                     jobId: current.jobs.news,
@@ -471,7 +493,8 @@ export function useOverallAnalysis(
                                 },
                             ]
                           : []),
-                      ...(current.jobs.options !== undefined
+                      ...(applicableAxes.includes('options') &&
+                      current.jobs.options !== undefined
                           ? [
                                 {
                                     jobId: current.jobs.options,
@@ -483,7 +506,7 @@ export function useOverallAnalysis(
                 : [{ jobId: current.jobId, type: 'overall' as const }];
 
         return jobs.length > 0 ? jobs : null;
-    }, []);
+    }, [assetClass]);
     usePageHideCancel(getPageHideJobs);
 
     useEffect(() => {
@@ -497,20 +520,28 @@ export function useOverallAnalysis(
     // fire-and-forget이므로 useMutation 없이 직접 호출한다.
     useEffect(() => {
         return () => {
+            // Inline (no useMemo) for the same stability reason as getPageHideJobs above.
+            const applicableAxes = axesForAssetClass(assetClass);
             const current = currentJobsRef.current;
             if (current === null) return;
             currentJobsRef.current = null;
 
             if (current.phase === 'dependencies') {
                 const { technical, fundamental, news, options } = current.jobs;
-                if (technical !== undefined)
+                if (
+                    applicableAxes.includes('technical') &&
+                    technical !== undefined
+                )
                     void cancelAnalysisJobAction(technical).catch(error =>
                         console.warn(
                             '[useOverallAnalysis] cancel technical failed',
                             error
                         )
                     );
-                if (fundamental !== undefined)
+                if (
+                    applicableAxes.includes('fundamental') &&
+                    fundamental !== undefined
+                )
                     void cancelFundamentalAnalysisJobAction(fundamental).catch(
                         error =>
                             console.warn(
@@ -518,14 +549,14 @@ export function useOverallAnalysis(
                                 error
                             )
                     );
-                if (news !== undefined)
+                if (applicableAxes.includes('news') && news !== undefined)
                     void cancelNewsAnalysisJobAction(news).catch(error =>
                         console.warn(
                             '[useOverallAnalysis] cancel news failed',
                             error
                         )
                     );
-                if (options !== undefined)
+                if (applicableAxes.includes('options') && options !== undefined)
                     void cancelOptionsAnalysisJobAction(options).catch(error =>
                         console.warn(
                             '[useOverallAnalysis] cancel options failed',
@@ -542,7 +573,7 @@ export function useOverallAnalysis(
                 );
             }
         };
-    }, [queryKey]);
+    }, [queryKey, assetClass]);
 
     return { state, trigger };
 }
