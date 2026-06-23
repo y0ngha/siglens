@@ -43,6 +43,9 @@ COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/skills ./skills
+# sharp는 standalone에 자동 트레이싱되지 않음 → builder에서 명시 복사 (플랫폼 @img 패키지 포함)
+COPY --from=builder /app/node_modules/sharp ./node_modules/sharp
+COPY --from=builder /app/node_modules/@img ./node_modules/@img
 # sharp가 standalone에 트레이싱됐는지 빌드타임 검증 (누락 시 빌드 실패)
 RUN node -e "require.resolve('sharp')" || (echo 'FAIL: sharp가 standalone에 없음' && exit 1)
 EXPOSE 3000
