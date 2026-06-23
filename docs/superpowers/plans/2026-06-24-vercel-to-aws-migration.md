@@ -407,10 +407,23 @@ Phase A는 앱 동작에 영향 없는 추가/설정이므로 `docs/aws-migratio
       "Effect": "Allow",
       "Action": ["ec2:CreateLaunchTemplateVersion", "ec2:DescribeLaunchTemplates", "ec2:DescribeLaunchTemplateVersions", "autoscaling:StartInstanceRefresh", "autoscaling:DescribeInstanceRefreshes", "autoscaling:DescribeAutoScalingGroups", "autoscaling:UpdateAutoScalingGroup"],
       "Resource": "*"
+    },
+    {
+      "Sid": "BuildTimeDbUrl",
+      "Effect": "Allow",
+      "Action": ["ssm:GetParameter"],
+      "Resource": "arn:aws:ssm:ap-northeast-2:ACCOUNT_ID:parameter/siglens/DATABASE_URL"
+    },
+    {
+      "Sid": "BuildTimeDbUrlDecrypt",
+      "Effect": "Allow",
+      "Action": ["kms:Decrypt"],
+      "Resource": "*"
     }
   ]
 }
 ```
+> ⚠️ **빌드타임 DB 의존**: `yarn build`가 ISR prerender(`/news/[category]` 등)에서 DB를 호출하므로 Docker 빌드에 `DATABASE_URL`이 필요(Vercel은 빌드 시 전체 env가 있어 자동 충족). CI는 위 권한으로 SSM `/siglens/DATABASE_URL`을 읽어 **build secret(`--secret id=DATABASE_URL`)으로 주입**한다(build-arg 금지 — 로그 노출). Dockerfile은 이미 `--mount=type=secret,id=DATABASE_URL`로 받음.
 
 - [ ] **Step 3: prereqs 문서 작성**
 
@@ -969,10 +982,15 @@ jobs:
           TAG: ${{ github.ref_name }}
         run: |
           echo "${{ secrets.SIGLENS_GITHUB_TOKEN }}" > /tmp/gh_token
+          # 빌드타임 ISR prerender가 DB를 호출 → SSM에서 DATABASE_URL을 읽어 build secret으로 주입
+          aws ssm get-parameter --name /siglens/DATABASE_URL --with-decryption \
+            --query 'Parameter.Value' --output text > /tmp/db_url
           DOCKER_BUILDKIT=1 docker build \
             --secret id=SIGLENS_GITHUB_TOKEN,src=/tmp/gh_token \
+            --secret id=DATABASE_URL,src=/tmp/db_url \
             --build-arg NEXT_PUBLIC_SITE_URL=https://siglens.io \
             -t "$ECR/siglens:$TAG" -t "$ECR/siglens:latest" .
+          rm -f /tmp/gh_token /tmp/db_url
           docker push "$ECR/siglens:$TAG"
           docker push "$ECR/siglens:latest"
       - name: Deploy (launch template + instance refresh)
@@ -1003,28 +1021,85 @@ git commit -m "feat(ci): deploy on v* tag — buildx arm64 → ECR → instance 
 
 ---
 
-# Phase E — 컷오버 & 문서
+# Phase E — 수동 선배포 → beta 실증 → CI/CD 검증 → 컷오버
 
-## Task 16: beta 검증
+> **전제**: Phase A PR이 **master에 머지**돼 master가 컨테이너 빌드 가능해야 함(Dockerfile·standalone·health·sharp 포함). 수동 배포는 그 시점 master(아마 PR #633 포함, 버전 상승)를 빌드한다.
 
-- [ ] **Step 1: CloudFlare에 beta 레코드 추가 (Chrome)**
+## Task 16: 수동 선배포 (master 빌드 → AWS)
 
-오케스트레이터가 CF DNS에 `beta.siglens.io` CNAME → `$ALB_DNS`, orange-cloud 추가. + Transform Rule로 beta host에 `X-Robots-Tag: noindex` 주입.
+- [ ] **Step 1: master 최신화 + 이미지 빌드·푸시**
 
-- [ ] **Step 2: beta 검증 체크리스트 실행**
+```bash
+git checkout master && git pull
+source infra/aws/.env
+export SIGLENS_GITHUB_TOKEN="$(grep '^SIGLENS_GITHUB_TOKEN=' /Users/y0ngha/Project/siglens/.env.production | cut -d= -f2- | tr -d '\"')"
+export DATABASE_URL="$(aws ssm get-parameter --name /siglens/DATABASE_URL --with-decryption --query Parameter.Value --output text)"
+TAG="manual-$(git rev-parse --short HEAD)"
+ECR_HOST="$ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com"
+aws ecr get-login-password | docker login --username AWS --password-stdin "$ECR_HOST"
+DOCKER_BUILDKIT=1 docker build --platform linux/arm64 \
+  --secret id=SIGLENS_GITHUB_TOKEN,env=SIGLENS_GITHUB_TOKEN \
+  --secret id=DATABASE_URL,env=DATABASE_URL \
+  --build-arg NEXT_PUBLIC_SITE_URL=https://siglens.io \
+  -t "$ECR_HOST/siglens:$TAG" .
+docker push "$ECR_HOST/siglens:$TAG"
+```
+Expected: 이미지 push 성공.
+
+- [ ] **Step 2: launch template + ASG 배포**
+
+```bash
+bash infra/aws/05-launch-template.sh "$TAG"
+bash infra/aws/deploy.sh "$TAG"      # ASG가 Task 13에서 이미 떠 있으면 instance refresh
+source infra/aws/.ids
+aws elbv2 describe-target-health --target-group-arn "$TG_ARN" --query 'TargetHealthDescriptions[].TargetHealth.State'
+```
+Expected: `["healthy"]`.
+
+- [ ] **Step 3: beta DNS 연결 (Chrome)**
+
+CF DNS에 `beta.siglens.io` CNAME → `$ALB_DNS`(orange) + Transform Rule로 beta host에 `X-Robots-Tag: noindex` 주입.
+
+## Task 17: beta.siglens.io 실증 스모크
+
+- [ ] **Step 1: 자동 스모크**
 
 ```bash
 curl -fsS https://beta.siglens.io/api/health
 curl -fsS https://beta.siglens.io/ -o /dev/null -w '%{http_code}\n'
 curl -fsS https://beta.siglens.io/AAPL/overall -o /dev/null -w '%{http_code}\n'
 ```
-Expected: 각 200. 추가 수동: 심볼/탭 렌더, ISR 재생성(로그), Worker 분석 잡, next/image, CloudWatch 로그, CF 캐시 헤더 동작. (OAuth 로그인은 미검증 — 설계 D10)
+Expected: 각 200.
+
+- [ ] **Step 2: 주요 기능 수동 체크 (Chrome)**
+
+핵심 기능 위주: **① AI 분석 동작**(분석 잡 제출→완료, Worker 연결) · **② 데이터 로딩**(차트·지표·재무·뉴스) · 심볼/탭 렌더 · ISR 재생성(CloudWatch 로그) · next/image · CF 캐시 헤더. (OAuth 로그인은 미검증 — 설계 D10)
 
 - [ ] **Step 3: 롤백 드릴**
 
 beta 레코드를 잠시 제거→복원해 CF flip 절차를 1회 연습하고 기록.
 
-## Task 17: 컷오버
+## Task 18: CI/CD 검증 (`yarn release`)
+
+- [ ] **Step 1: 릴리스로 자동 배포 트리거**
+
+beta 실증이 통과한 뒤, 자동 파이프라인을 검증한다:
+```bash
+yarn release:patch        # release-it: bump + "chore: release vX.Y.Z" + vX.Y.Z 태그 push
+```
+Expected: GitHub Actions `deploy` 워크플로가 `v*` 태그로 발화 → buildx 빌드 → ECR push → instance refresh.
+
+- [ ] **Step 2: 파이프라인 정상 연결 확인**
+
+```bash
+gh run list --workflow=deploy.yml --limit 1
+source infra/aws/.ids
+aws autoscaling describe-instance-refreshes --auto-scaling-group-name siglens-asg --query 'InstanceRefreshes[0].Status'
+aws elbv2 describe-target-health --target-group-arn "$TG_ARN" --query 'TargetHealthDescriptions[].TargetHealth.State'
+```
+Expected: 워크플로 success, refresh `Successful`, 타깃 `healthy`. → 자동 배포 파이프라인 검증 완료.
+
+## Task 19: siglens.io 컷오버
 
 - [ ] **Step 1: 저트래픽 윈도우에 siglens.io repoint (Chrome)**
 
@@ -1042,7 +1117,7 @@ Expected: 200. **+ 브라우저로 OAuth 로그인 1건 최우선 확인**. ALB 
 
 5xx 급증/핵심 플로우 손상/OOM 시 CF `siglens.io`→Vercel 즉시 repoint.
 
-## Task 18: 안정화 후 해제 + 문서
+## Task 20: 안정화 후 해제 + 문서
 
 - [ ] **Step 1: 문서 작성/갱신**
 
@@ -1069,7 +1144,9 @@ git commit -m "chore(infra): decommission Vercel, document AWS hosting"
 
 ## Self-Review 메모
 
-- **Spec 커버리지**: 설계 §5(IAM)→Task 7, §6(패키징/CI)→Task 5·8·15, §7(네트워킹/TLS/DNS)→Task 9·10·13·16·17, §8(시크릿/env)→Task 11, §9(parity 6항목)→Task 1·2·3·4·5, §10(컷오버)→Task 16·17·18, §11(코드변경)→Task 1~5, §12(IaC)→Task 8~14, §13(문서)→Task 18, §14(테스트)→각 태스크 분산, **§15(모니터링)→Task 14b**, §16(후속)→Task 18 Step3. 전 섹션 매핑됨.
+- **Spec 커버리지**: 설계 §5(IAM)→Task 7, §6(패키징/CI)→Task 5·8·15, §7(네트워킹/TLS/DNS)→Task 9·10·13·16·19, §8(시크릿/env)→Task 11, §9(parity 6항목)→Task 1·2·3·4·5, §10(컷오버/롤백)→Task 19, §11(코드변경)→Task 1~5, §12(IaC)→Task 8~14, §13(문서)→Task 20, §14(테스트)→각 태스크 분산, **§15(모니터링)→Task 14b**, §16(후속)→Task 20 Step3. 전 섹션 매핑됨.
+- **Phase E 흐름(사용자 확정)**: Task 16 수동 선배포(master 빌드) → Task 17 beta.siglens.io 실증(AI 분석·데이터 로딩) → Task 18 `yarn release` CI/CD 검증 → Task 19 siglens.io 컷오버 → Task 20 해제. 전제: Phase A PR이 master 머지되어야 함.
+- **빌드타임 DB 의존**: `yarn build`가 ISR prerender에서 DB 호출 → Dockerfile `--mount=type=secret,id=DATABASE_URL`, CI/수동배포는 SSM `/siglens/DATABASE_URL`을 build secret으로 주입(build-arg 금지). CI 역할에 `ssm:GetParameter` 추가(Task 7).
 - **D1~D13 결정 매핑**: D1·D12·D13→Task 12·13, D2→env 리전+SSM DATABASE_URL, D3→Task 5·8·11, D4·D5→Task 14·15, D6→Phase B·C, D7→Task 10·16·17(Route53 없음), D8·D9→Task 11, **D10→Task 11 Step2(OAUTH 값 검증)+Task 16**, D11→Task 18 Step3.
 - **의도적 선택(설계상 "권장"이라 plan 미포함, 필요 시 추가)**: §7.2 origin 비밀헤더 이중잠금(CF IP 대역만으로 1차 충분), §9-6 sharp glibc jemalloc 튜닝(이미지 多 시에만). 둘 다 옵션.
 - **후속(별도)**: 워커 이관(siglens-worker→Fargate)은 본 계획 범위 외, 별도 spec.
