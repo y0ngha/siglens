@@ -379,9 +379,6 @@ export function useOverallAnalysis(
     const [triggered, setTriggered] = useState(initialResult !== undefined);
     const [progress, setProgress] = useState<ProgressState | null>(null);
     const currentJobsRef = useRef<CurrentJobs>(null);
-    // Stable reference — axesForAssetClass returns a module-level constant array,
-    // so the reference identity never changes between renders for the same assetClass.
-    const applicableAxes = axesForAssetClass(assetClass);
     // 재분석 trigger가 다음 queryFn 호출에서 force=true를 사용해야 한다고 신호를
     // 보내는 single-shot ref. queryFn 안에서 read 후 즉시 false로 reset한다.
     // useState 대신 ref를 쓰는 이유: trigger → refetch → queryFn 흐름이 같은
@@ -431,6 +428,13 @@ export function useOverallAnalysis(
         // staleTime: Infinity와 결합해 자동 refetch(=재생성) 없이 서사를 보여 준다.
         initialData: initialResult,
     });
+
+    // §17 hook order: derived variables go after useRef/useQuery calls.
+    // axesForAssetClass returns a module-level constant array, so the reference
+    // is already stable for the same assetClass — no useMemo needed.
+    // React Compiler (preserve-manual-memoization) would reject a redundant
+    // useMemo here because it sees the function returns an existing stable ref.
+    const applicableAxes = axesForAssetClass(assetClass);
 
     const state = useMemo((): OverallAnalysisState => {
         if (!triggered) return { status: 'idle' };

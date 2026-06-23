@@ -705,8 +705,8 @@ describe('OverallContent — crypto assetClass (F1 / UI Group 3)', () => {
         expect(mockUseOverallAnalysis).toHaveBeenCalledWith(
             'BTCUSD',
             'Bitcoin USD',
-            expect.any(String), // timeframe
-            expect.any(String), // modelId
+            DEFAULT_TIMEFRAME,
+            'gemini-2.5-flash-lite',
             undefined, // initialAnalysis
             'crypto'
         );
