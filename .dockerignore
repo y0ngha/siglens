@@ -13,3 +13,4 @@ e2e/run-e2e.sh
 **/__tests__
 .env*
 docs
+refs

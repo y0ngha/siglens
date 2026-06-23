@@ -17,7 +17,7 @@ if (!existsSync(standaloneSkills)) {
     process.exit(1);
 }
 const count = readdirSync(standaloneSkills, { recursive: true }).filter(f =>
-    String(f).endsWith('.md')
+    f.endsWith('.md')
 ).length;
 if (count === 0) {
     console.error('FAIL: standalone/skills 에 .md 파일이 0개');
