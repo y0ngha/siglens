@@ -64,6 +64,19 @@
   - Rule: MISTAKES.md §Tests §13 — DOM assertions on deterministic counts must use exact count matcher, not existence check
   - Context: Modal grid bind test; fixture produces exactly 1 ma binding row → exactly 1 col-span-2 wrapper. Changed to `expect(document.querySelectorAll('.col-span-2').length).toBe(1)` for correctness and future-proofing against accidental duplicates.
 
+## [feat/skill-card-expand-description | AI 분석 스킬 카드 클릭-확장 기능 | 2026-06-22]
+- Violation: Nested interactive control (ⓘ button) inside `role="button"` card container; card's `handleKeyDown` preventDefault suppressed button's native keyboard activation (Enter/Space)
+  - Rule: Accessibility — Interactive controls nested in role="button" containers must not have their keyboard events hijacked by parent onKeyDown handlers
+  - Context: SkillCardExpandable renders an info icon as a nested `<button>` inside a `<div role="button">`. The card's onKeyDown handler used preventDefault without guarding, which blocked the nested button's Enter/Space activation. Fixed by adding `if (e.target !== e.currentTarget) return;` to handleKeyDown, allowing events from nested interactives to bubble normally.
 
+## [feat/ticker-search-relevance Round 2 | feat/ticker-search-relevance | 2026-06-23]
+- Violation: JSDoc claimed "matched in DB somehow" for ticker search candidates, but the function is called from multiple contexts where the behavior differs or the claim does not hold
+  - Rule: MISTAKES.md §15.6 — Comments/JSDoc making factually inaccurate claims about the code they describe
+  - Context: searchTickersByRelevance JSDoc made a narrow claim about DB behavior that didn't account for all call sites. Removed the inaccurate claim; JSDoc now describes only what is universally true across all callers.
+
+## [feat/ticker-search-relevance Round 2 | feat/ticker-search-relevance | 2026-06-23]
+- Violation: Pure calculation helper used imperative for...of + mutable accumulators instead of declarative map/filter/reduce
+  - Rule: MISTAKES.md §21 — Pure calculation functions using imperative for-loop + push instead of higher-order functions
+  - Context: computeRelevanceScores iterated with for...of and pushed results into accumulator array. Refactored to use .map() for clarity and immutability.
 
 
