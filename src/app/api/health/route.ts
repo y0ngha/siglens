@@ -2,6 +2,6 @@
 // (30초마다 호출되므로 외부 의존성 블립이 인스턴스를 죽이면 안 됨)
 export const dynamic = 'force-dynamic';
 
-export function GET() {
+export function GET(): Response {
     return Response.json({ status: 'ok' }, { status: 200 });
 }
