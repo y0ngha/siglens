@@ -31,22 +31,22 @@ const LABEL: Record<PageKey, string> = {
     overall: 'AI 종합 분석',
 };
 
+const EQUITY_DESCRIPTIONS: Record<PageKey, string> = {
+    chart: '기술적 지표 + AI 종합 리포트',
+    news: '실시간 뉴스 + 애널리스트 의견 분석',
+    fundamental: '재무·밸류에이션·애널리스트 전망',
+    financials: '손익계산서·재무상태표·현금흐름표',
+    options: '옵션 시장이 보는 가격대와 기대 변동성',
+    'fear-greed': '단기 매매 심리 0~100 점수',
+    congress: '상원·하원 의원 매매 공시와 AI 동향 해석',
+    overall: '4축 통합 AI 결론 + 시나리오',
+};
+
 /**
  * Returns the per-page description string, branching on assetClass for pages
  * whose copy is equity-specific (currently "overall").
  */
 function getDescription(page: PageKey, assetClass: AssetClass): string {
-    const EQUITY_DESCRIPTIONS: Record<PageKey, string> = {
-        chart: '기술적 지표 + AI 종합 리포트',
-        news: '실시간 뉴스 + 애널리스트 의견 분석',
-        fundamental: '재무·밸류에이션·애널리스트 전망',
-        financials: '손익계산서·재무상태표·현금흐름표',
-        options: '옵션 시장이 보는 가격대와 기대 변동성',
-        'fear-greed': '단기 매매 심리 0~100 점수',
-        congress: '상원·하원 의원 매매 공시와 AI 동향 해석',
-        overall: '4축 통합 AI 결론 + 시나리오',
-    };
-
     if (page === 'overall' && assetClass === 'crypto') {
         return '차트·뉴스·심리 통합 AI 결론 + 시나리오';
     }
@@ -89,7 +89,6 @@ export function CrossLinkCards({
     const descriptor = getDescriptor(marketProfile);
     const allowedTabKeys = new Set(descriptor.tabs);
     const assetClass = descriptor.assetClass;
-    // Only render pages whose tab key is in the allowed set for this profile.
     const visiblePages = ALL_PAGES.filter(p => allowedTabKeys.has(p));
 
     return (

@@ -175,7 +175,8 @@ export default async function OverallPage({ params }: Props) {
     const hasEnrichedNews = newsItems.some(item => item.sentiment !== null);
 
     const displayName = buildDisplayName(assetInfo, upper);
-    const assetClass = getDescriptor(marketProfileOf(assetInfo)).assetClass;
+    const marketProfile = marketProfileOf(assetInfo);
+    const assetClass = getDescriptor(marketProfile).assetClass;
     const isEquity = assetClass === 'equity';
     const { fullTitle, description, url } = resolveSymbolOverallSeoContent(
         upper,
@@ -365,7 +366,7 @@ export default async function OverallPage({ params }: Props) {
                 <CrossLinkCards
                     symbol={upper}
                     current="overall"
-                    marketProfile={marketProfileOf(assetInfo)}
+                    marketProfile={marketProfile}
                 />
             </main>
         </>

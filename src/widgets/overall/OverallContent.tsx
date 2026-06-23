@@ -80,8 +80,6 @@ export function OverallContent({
         initialAnalysis,
         assetClass
     );
-    const isEquity = assetClass === 'equity';
-    const applicableAxes = axesForAssetClass(assetClass);
 
     // usePublishSymbolChat은 chatState(useMemo 반환값)를 인자로 받으므로 useMemo 뒤에 둔다(§17 의존 순서).
     const chatState = useMemo(
@@ -89,6 +87,9 @@ export function OverallContent({
         [state, timeframe]
     );
     usePublishSymbolChat(chatState);
+
+    const isEquity = assetClass === 'equity';
+    const applicableAxes = axesForAssetClass(assetClass);
 
     // useWaitForNewsCards가 누적 polling 실패 임계를 넘으면 inline fallback으로 회복한다 —
     // OverallContent는 ErrorBoundary로 감싸지 않으므로(throw하면 페이지 전체 crash),
@@ -239,15 +240,15 @@ export function OverallContent({
             <OverallSummary headline={r.headlineKo} />
             <TechnicalSummary bullets={r.technicalBulletsKo} />
             {isEquity && (
-                <OptionsSummary
-                    bullets={r.optionsBulletsKo}
-                    oiStale={optionsOiStale}
-                />
+                <>
+                    <OptionsSummary
+                        bullets={r.optionsBulletsKo}
+                        oiStale={optionsOiStale}
+                    />
+                    <FundamentalSummary bullets={r.fundamentalBulletsKo} />
+                    <FinancialsSummary bullets={r.financialsBulletsKo} />
+                </>
             )}
-            {isEquity && (
-                <FundamentalSummary bullets={r.fundamentalBulletsKo} />
-            )}
-            {isEquity && <FinancialsSummary bullets={r.financialsBulletsKo} />}
             <NewsSummary bullets={r.newsBulletsKo} />
             <IntegratedConclusion text={r.integratedConclusionKo} />
             <ScenarioAnalysis scenarios={r.scenarios} />

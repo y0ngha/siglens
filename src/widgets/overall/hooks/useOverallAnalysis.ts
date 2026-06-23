@@ -483,11 +483,10 @@ export function useOverallAnalysis(
         if (current === null) return null;
         currentJobsRef.current = null;
 
-        const axisSet = new Set(applicableAxes);
         const jobs: CancelJobEntry[] =
             current.phase === 'dependencies'
                 ? [
-                      ...(axisSet.has('technical') &&
+                      ...(applicableAxes.includes('technical') &&
                       current.jobs.technical !== undefined
                           ? [
                                 {
@@ -496,7 +495,7 @@ export function useOverallAnalysis(
                                 },
                             ]
                           : []),
-                      ...(axisSet.has('fundamental') &&
+                      ...(applicableAxes.includes('fundamental') &&
                       current.jobs.fundamental !== undefined
                           ? [
                                 {
@@ -505,7 +504,8 @@ export function useOverallAnalysis(
                                 },
                             ]
                           : []),
-                      ...(axisSet.has('news') && current.jobs.news !== undefined
+                      ...(applicableAxes.includes('news') &&
+                      current.jobs.news !== undefined
                           ? [
                                 {
                                     jobId: current.jobs.news,
@@ -513,7 +513,7 @@ export function useOverallAnalysis(
                                 },
                             ]
                           : []),
-                      ...(axisSet.has('options') &&
+                      ...(applicableAxes.includes('options') &&
                       current.jobs.options !== undefined
                           ? [
                                 {
@@ -548,16 +548,20 @@ export function useOverallAnalysis(
 
             if (current.phase === 'dependencies') {
                 const { technical, fundamental, news, options } = current.jobs;
-                // Only cancel axes that are applicable for this asset class.
-                const axisSet = new Set(applicableAxes);
-                if (axisSet.has('technical') && technical !== undefined)
+                if (
+                    applicableAxes.includes('technical') &&
+                    technical !== undefined
+                )
                     void cancelAnalysisJobAction(technical).catch(error =>
                         console.warn(
                             '[useOverallAnalysis] cancel technical failed',
                             error
                         )
                     );
-                if (axisSet.has('fundamental') && fundamental !== undefined)
+                if (
+                    applicableAxes.includes('fundamental') &&
+                    fundamental !== undefined
+                )
                     void cancelFundamentalAnalysisJobAction(fundamental).catch(
                         error =>
                             console.warn(
@@ -565,14 +569,14 @@ export function useOverallAnalysis(
                                 error
                             )
                     );
-                if (axisSet.has('news') && news !== undefined)
+                if (applicableAxes.includes('news') && news !== undefined)
                     void cancelNewsAnalysisJobAction(news).catch(error =>
                         console.warn(
                             '[useOverallAnalysis] cancel news failed',
                             error
                         )
                     );
-                if (axisSet.has('options') && options !== undefined)
+                if (applicableAxes.includes('options') && options !== undefined)
                     void cancelOptionsAnalysisJobAction(options).catch(error =>
                         console.warn(
                             '[useOverallAnalysis] cancel options failed',
