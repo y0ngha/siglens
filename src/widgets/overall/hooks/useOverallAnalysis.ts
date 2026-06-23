@@ -396,7 +396,7 @@ export function useOverallAnalysis(
                     }
                     currentJobsRef.current = jobs;
                 },
-                applicableAxes,
+                axesForAssetClass(assetClass),
                 { force }
             );
         },
@@ -407,13 +407,6 @@ export function useOverallAnalysis(
         // staleTime: Infinity와 결합해 자동 refetch(=재생성) 없이 서사를 보여 준다.
         initialData: initialResult,
     });
-
-    // §17 hook order: derived variables go after useRef/useQuery calls.
-    // axesForAssetClass returns a module-level constant array (CRYPTO_AXIS_ORDER or
-    // EQUITY_AXIS_ORDER), so the reference is already stable across renders — useMemo
-    // would be redundant and, with preserve-manual-memoization, preserved as dead
-    // weight rather than optimised away, so a plain derived const is used instead.
-    const applicableAxes = axesForAssetClass(assetClass);
 
     const state = useMemo((): OverallAnalysisState => {
         if (!triggered) return { status: 'idle' };
@@ -460,6 +453,12 @@ export function useOverallAnalysis(
 
     // ref를 null로 초기화해 unmount cleanup과의 이중 cancel을 방지한다.
     const getPageHideJobs = useCallback((): CancelJobEntry[] | null => {
+        // axesForAssetClass returns a module-level constant array (CRYPTO_AXIS_ORDER or
+        // EQUITY_AXIS_ORDER), so the reference is already stable across renders — useMemo
+        // would be redundant and, with preserve-manual-memoization, preserved as dead
+        // weight rather than optimised away. Computed inline so assetClass is the real
+        // dependency (pure function, stable result).
+        const applicableAxes = axesForAssetClass(assetClass);
         const current = currentJobsRef.current;
         if (current === null) return null;
         currentJobsRef.current = null;
@@ -507,7 +506,7 @@ export function useOverallAnalysis(
                 : [{ jobId: current.jobId, type: 'overall' as const }];
 
         return jobs.length > 0 ? jobs : null;
-    }, [applicableAxes]);
+    }, [assetClass]);
     usePageHideCancel(getPageHideJobs);
 
     useEffect(() => {
@@ -521,6 +520,12 @@ export function useOverallAnalysis(
     // fire-and-forget이므로 useMutation 없이 직접 호출한다.
     useEffect(() => {
         return () => {
+            // axesForAssetClass returns a module-level constant array (CRYPTO_AXIS_ORDER or
+            // EQUITY_AXIS_ORDER), so the reference is already stable across renders — useMemo
+            // would be redundant and, with preserve-manual-memoization, preserved as dead
+            // weight rather than optimised away. Computed inline so assetClass is the real
+            // dependency (pure function, stable result).
+            const applicableAxes = axesForAssetClass(assetClass);
             const current = currentJobsRef.current;
             if (current === null) return;
             currentJobsRef.current = null;
@@ -572,7 +577,7 @@ export function useOverallAnalysis(
                 );
             }
         };
-    }, [queryKey, applicableAxes]);
+    }, [queryKey, assetClass]);
 
     return { state, trigger };
 }

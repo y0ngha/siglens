@@ -278,6 +278,8 @@ export default async function SymbolPage({ params }: Props) {
     });
     const initialAnalysis = cachedAnalysis ?? FALLBACK_ANALYSIS;
 
+    const priceWord = assetClass === 'crypto' ? '시세' : '주가';
+
     return (
         <>
             <JsonLd data={jsonLd} />
@@ -308,7 +310,7 @@ export default async function SymbolPage({ params }: Props) {
                         지지선과 저항선을 분석합니다.
                     </p>
                     <p>
-                        {`${displayName} ${assetClass === 'crypto' ? '시세' : '주가'}를 RSI, MACD, 볼린저밴드 등 보조지표로 해석하고, 도지나 해머, 장악형 같은 주요 캔들 패턴과 차트 패턴을 자동으로 감지합니다. 주요 지지선과 저항선 레벨, 매매 전략도 함께 확인할 수 있습니다.`}
+                        {`${displayName} ${priceWord}를 RSI, MACD, 볼린저밴드 등 보조지표로 해석하고, 도지나 해머, 장악형 같은 주요 캔들 패턴과 차트 패턴을 자동으로 감지합니다. 주요 지지선과 저항선 레벨, 매매 전략도 함께 확인할 수 있습니다.`}
                     </p>
                     <p>AI와 대화로 분석 결과 확인</p>
                     <p>

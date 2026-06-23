@@ -1,9 +1,9 @@
 import Link from 'next/link';
-import type {
-    MarketProfileId,
-    AssetClass,
+import {
+    getDescriptor,
+    type MarketProfileId,
+    type AssetClass,
 } from '@/shared/config/marketProfile';
-import { getDescriptor } from '@/shared/config/marketProfile';
 
 /** All cross-linked page types in the symbol sub-navigation. */
 const ALL_PAGES = [

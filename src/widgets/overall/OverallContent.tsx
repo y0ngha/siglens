@@ -86,6 +86,9 @@ export function OverallContent({
     );
     usePublishSymbolChat(chatState);
 
+    // §17 hook order: derived variables go after all hook calls.
+    // Neither isEquity nor applicableAxes is consumed by any hook above —
+    // they are used only in JSX / render logic below.
     const isEquity = assetClass === 'equity';
     const applicableAxes = axesForAssetClass(assetClass);
 

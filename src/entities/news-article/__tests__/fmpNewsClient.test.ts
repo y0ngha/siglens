@@ -7,6 +7,7 @@ import {
     computeCutoff,
     hashUrlToId,
     normalizeFmpPublishedDate,
+    SOURCE_UNKNOWN_FALLBACK,
     toYyyyMmDd,
 } from '../lib/fmpNewsClient';
 import { MS_PER_DAY, MS_PER_HOUR } from '@/shared/config/time';
@@ -511,7 +512,7 @@ describe('FmpNewsClient — null site fallback (F2)', () => {
         const client = new FmpNewsClient('crypto');
         const result = await client.fetchNews('BTCUSD', '24h');
         expect(result).toHaveLength(1);
-        expect(result[0]!.source).toBe('unknown');
+        expect(result[0]!.source).toBe(SOURCE_UNKNOWN_FALLBACK);
     });
 
     it('uses site directly when site is a non-empty string (non-regression)', async () => {

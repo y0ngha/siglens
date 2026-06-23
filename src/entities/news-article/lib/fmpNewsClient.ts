@@ -149,6 +149,13 @@ export function toYyyyMmDd(date: Date): string {
 }
 
 /**
+ * Sentinel string used when `site` is absent/null and the `url` cannot be
+ * parsed as a valid URL. Exported so tests can assert against the constant
+ * rather than a duplicated literal (§13.5).
+ */
+export const SOURCE_UNKNOWN_FALLBACK = 'unknown';
+
+/**
  * FMP crypto news sometimes returns `site` as null despite the type declaration
  * (`site: string`). Provide a hostname-derived fallback so the NOT NULL `source`
  * DB column is always satisfied without requiring a schema migration.
@@ -158,7 +165,7 @@ function resolveSource(raw: RawFmpNews): string {
     try {
         return new URL(raw.url).hostname;
     } catch {
-        return 'unknown';
+        return SOURCE_UNKNOWN_FALLBACK;
     }
 }
 
