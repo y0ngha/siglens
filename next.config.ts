@@ -6,6 +6,12 @@ const withBundleAnalyzer = bundleAnalyzer({
 });
 
 const nextConfig: NextConfig = {
+    // self-host: Docker 최소 번들(.next/standalone + server.js)
+    output: 'standalone',
+
+    // 압축은 CloudFlare가 brotli로 엣지에서 수행 → Next의 gzip 이중압축 방지
+    compress: false,
+
     allowedDevOrigins: ['172.30.1.26'],
 
     images: {
