@@ -65,4 +65,15 @@ describe('OverallTriggerCta', () => {
         ).toHaveAttribute('aria-busy', 'true');
         expect(screen.getByText(/30초~1분 소요/)).toBeInTheDocument();
     });
+
+    it('assetClass="crypto": subtitle lists 차트·뉴스·시장 분위기 and omits equity-only words', () => {
+        render(<OverallTriggerCta onTrigger={vi.fn()} assetClass="crypto" />);
+
+        // Crypto subtitle must be present.
+        expect(screen.getByText(/차트·뉴스·시장 분위기/)).toBeInTheDocument();
+
+        // Equity-only terms must NOT appear in the rendered output.
+        expect(screen.queryByText(/옵션/)).not.toBeInTheDocument();
+        expect(screen.queryByText(/펀더멘털/)).not.toBeInTheDocument();
+    });
 });

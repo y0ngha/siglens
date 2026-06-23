@@ -1,6 +1,7 @@
 import { MS_PER_SECOND, SECONDS_PER_MINUTE } from '@/shared/config/time';
 import { AUGMENT_AND_OVERALL_POLL_INTERVAL_MS } from '@/shared/config/pollingConfig';
 import type { OverallAxis } from '@y0ngha/siglens-core';
+import { EQUITY_AXIS_ORDER } from './utils/axesForAssetClass';
 
 const AXIS_LABEL: Record<OverallAxis, string> = {
     technical: '기술적 분석',
@@ -34,13 +35,6 @@ interface DependencyProgressProps {
      */
     applicableAxes?: readonly OverallAxis[];
 }
-
-const EQUITY_AXIS_ORDER: readonly OverallAxis[] = [
-    'technical',
-    'fundamental',
-    'news',
-    'options',
-];
 
 export function DependencyProgress({
     pendingJobs,

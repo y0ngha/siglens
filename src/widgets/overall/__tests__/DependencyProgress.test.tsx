@@ -77,4 +77,53 @@ describe('DependencyProgress', () => {
         });
         expect(section).toHaveAttribute('aria-busy', 'true');
     });
+
+    describe('crypto applicableAxes (2 axes)', () => {
+        const CRYPTO_PENDING: Record<OverallAxis, string | undefined> = {
+            technical: 'job-1',
+            news: 'job-2',
+            fundamental: undefined,
+            options: undefined,
+        };
+
+        it('shows 0/2 when both crypto axes are pending', () => {
+            render(
+                <DependencyProgress
+                    pendingJobs={CRYPTO_PENDING}
+                    retryCount={0}
+                    applicableAxes={['technical', 'news']}
+                />
+            );
+
+            expect(screen.getByText(/0\/2/)).toBeInTheDocument();
+        });
+
+        it('renders technical and news axis labels', () => {
+            render(
+                <DependencyProgress
+                    pendingJobs={CRYPTO_PENDING}
+                    retryCount={0}
+                    applicableAxes={['technical', 'news']}
+                />
+            );
+
+            expect(screen.getByText(/기술적 분석/)).toBeInTheDocument();
+            expect(screen.getByText(/뉴스 분석/)).toBeInTheDocument();
+        });
+
+        it('does NOT render fundamental or options axis labels', () => {
+            render(
+                <DependencyProgress
+                    pendingJobs={CRYPTO_PENDING}
+                    retryCount={0}
+                    applicableAxes={['technical', 'news']}
+                />
+            );
+
+            expect(screen.queryByText(/펀더멘털 분석/)).not.toBeInTheDocument();
+            expect(
+                screen.queryByText(/옵션 시장 분석/)
+            ).not.toBeInTheDocument();
+        });
+    });
 });

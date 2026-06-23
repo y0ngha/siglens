@@ -409,11 +409,10 @@ export function useOverallAnalysis(
     });
 
     // §17 hook order: derived variables go after useRef/useQuery calls.
-    // axesForAssetClass returns a module-level constant array, so the reference
-    // is already stable for the same assetClass — no useMemo needed. A manual
-    // useMemo here would be preserved as dead weight by React Compiler
-    // (preserve-manual-memoization mode), since the function already returns a
-    // stable ref with no closure over reactive values.
+    // axesForAssetClass returns a module-level constant array (CRYPTO_AXIS_ORDER or
+    // EQUITY_AXIS_ORDER), so the reference is already stable across renders — useMemo
+    // would be redundant and, with preserve-manual-memoization, preserved as dead
+    // weight rather than optimised away, so a plain derived const is used instead.
     const applicableAxes = axesForAssetClass(assetClass);
 
     const state = useMemo((): OverallAnalysisState => {
