@@ -480,8 +480,6 @@ export function useOverallAnalysis(
     }, [triggered, refetch]);
 
     // ref를 null로 초기화해 unmount cleanup과의 이중 cancel을 방지한다.
-    // crypto는 applicableAxes = ['technical', 'news']이므로 fundamental/options
-    // cancel entry는 생성되지 않는다.
     const getPageHideJobs = useCallback((): CancelJobEntry[] | null => {
         const current = currentJobsRef.current;
         if (current === null) return null;
@@ -542,8 +540,6 @@ export function useOverallAnalysis(
     // symbol, companyName, timeframe, modelId 변경(queryKey 교체) 시, unmount 시
     // 진행 중인 job을 cancel한다.
     // fire-and-forget이므로 useMutation 없이 직접 호출한다.
-    // crypto는 applicableAxes = ['technical', 'news']이므로 fundamental/options
-    // cancel은 실행되지 않는다.
     useEffect(() => {
         return () => {
             const current = currentJobsRef.current;

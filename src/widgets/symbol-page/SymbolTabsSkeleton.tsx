@@ -6,7 +6,7 @@
  * The pill count (4) is a neutral minimum that covers any profile's tab set without
  * profile resolution in this static skeleton.
  */
-const SKELETON_PILL_COUNT = 4;
+export const SKELETON_PILL_COUNT = 4;
 
 export function SymbolTabsSkeleton() {
     return (

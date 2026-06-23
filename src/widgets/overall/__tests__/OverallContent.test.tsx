@@ -701,7 +701,6 @@ describe('OverallContent — crypto assetClass (F1 / UI Group 3)', () => {
                 assetClass="crypto"
             />
         );
-        // 6th argument is assetClass
         expect(mockUseOverallAnalysis).toHaveBeenCalledWith(
             'BTCUSD',
             'Bitcoin USD',
@@ -728,7 +727,6 @@ describe('OverallContent — crypto assetClass (F1 / UI Group 3)', () => {
                 assetClass="crypto"
             />
         );
-        // OptionsSummary heading is "옵션 시장"
         expect(screen.queryByRole('heading', { name: /옵션 시장/ })).toBeNull();
     });
 
@@ -750,7 +748,6 @@ describe('OverallContent — crypto assetClass (F1 / UI Group 3)', () => {
                 assetClass="crypto"
             />
         );
-        // FundamentalSummary heading is "펀더멘털 분석 요약"
         expect(
             screen.queryByRole('heading', { name: /펀더멘털 분석 요약/ })
         ).toBeNull();
@@ -772,7 +769,6 @@ describe('OverallContent — crypto assetClass (F1 / UI Group 3)', () => {
                 assetClass="crypto"
             />
         );
-        // FinancialsSummary heading is "재무 분석"
         expect(
             screen.queryByRole('heading', { name: /^재무 분석$/ })
         ).toBeNull();
@@ -797,7 +793,6 @@ describe('OverallContent — crypto assetClass (F1 / UI Group 3)', () => {
                 assetClass="crypto"
             />
         );
-        // TechnicalSummary: "기술적 분석 요약", NewsSummary: "뉴스 분석 요약"
         expect(
             screen.getByRole('heading', { name: /기술적 분석 요약/ })
         ).toBeInTheDocument();

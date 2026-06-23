@@ -21,7 +21,7 @@ describe('CrossLinkCards', () => {
     it('renders a section with accessible label', () => {
         render(<CrossLinkCards symbol="AAPL" current="chart" />);
         const section = screen.getByRole('region', { name: '다른 분석 탭' });
-        expect(section).toBeDefined();
+        expect(section).toBeInTheDocument();
     });
 
     it('renders 8 cards (all pages including financials and congress) for us-equity', () => {
@@ -44,7 +44,7 @@ describe('CrossLinkCards', () => {
 
     it('renders the current page label text', () => {
         render(<CrossLinkCards symbol="AAPL" current="chart" />);
-        expect(screen.getByText('지금 보는 페이지예요')).toBeDefined();
+        expect(screen.getByText('지금 보는 페이지예요')).toBeInTheDocument();
     });
 
     it('renders non-current pages as links', () => {
@@ -71,10 +71,12 @@ describe('CrossLinkCards', () => {
 
     it('renders descriptions for all pages', () => {
         render(<CrossLinkCards symbol="AAPL" current="chart" />);
-        expect(screen.getByText('기술적 지표 + AI 종합 리포트')).toBeDefined();
+        expect(
+            screen.getByText('기술적 지표 + AI 종합 리포트')
+        ).toBeInTheDocument();
         expect(
             screen.getByText('실시간 뉴스 + 애널리스트 의견 분석')
-        ).toBeDefined();
+        ).toBeInTheDocument();
     });
 });
 
@@ -113,11 +115,10 @@ describe('CrossLinkCards — crypto profile', () => {
                 marketProfile="crypto"
             />
         );
-        // Crypto overall uses 3-axis wording, not the equity "4축" wording.
         expect(screen.queryByText('4축 통합 AI 결론 + 시나리오')).toBeNull();
         expect(
             screen.getByText('차트·뉴스·심리 통합 AI 결론 + 시나리오')
-        ).toBeDefined();
+        ).toBeInTheDocument();
     });
 
     it('still renders chart, news, fear-greed, overall tabs for crypto', () => {
@@ -128,8 +129,8 @@ describe('CrossLinkCards — crypto profile', () => {
                 marketProfile="crypto"
             />
         );
-        expect(screen.getByText('뉴스 분석')).toBeDefined();
-        expect(screen.getByText('공포 탐욕 지수')).toBeDefined();
-        expect(screen.getByText('AI 종합 분석')).toBeDefined();
+        expect(screen.getByText('뉴스 분석')).toBeInTheDocument();
+        expect(screen.getByText('공포 탐욕 지수')).toBeInTheDocument();
+        expect(screen.getByText('AI 종합 분석')).toBeInTheDocument();
     });
 });

@@ -1,5 +1,8 @@
 import { render, screen } from '@testing-library/react';
-import { SymbolTabsSkeleton } from '@/widgets/symbol-page/SymbolTabsSkeleton';
+import {
+    SymbolTabsSkeleton,
+    SKELETON_PILL_COUNT,
+} from '@/widgets/symbol-page/SymbolTabsSkeleton';
 
 describe('SymbolTabsSkeleton', () => {
     it('renders a nav element with aria-hidden', () => {
@@ -19,8 +22,7 @@ describe('SymbolTabsSkeleton', () => {
         const links = container.querySelectorAll('a');
         expect(links).toHaveLength(0);
 
-        // SKELETON_PILL_COUNT = 4 placeholder spans
         const spans = container.querySelectorAll('span');
-        expect(spans.length).toBe(4);
+        expect(spans.length).toBe(SKELETON_PILL_COUNT);
     });
 });
