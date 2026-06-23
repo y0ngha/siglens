@@ -520,11 +520,7 @@ export function useOverallAnalysis(
     // fire-and-forget이므로 useMutation 없이 직접 호출한다.
     useEffect(() => {
         return () => {
-            // axesForAssetClass returns a module-level constant array (CRYPTO_AXIS_ORDER or
-            // EQUITY_AXIS_ORDER), so the reference is already stable across renders — useMemo
-            // would be redundant and, with preserve-manual-memoization, preserved as dead
-            // weight rather than optimised away. Computed inline so assetClass is the real
-            // dependency (pure function, stable result).
+            // Inline (no useMemo) for the same stability reason as getPageHideJobs above.
             const applicableAxes = axesForAssetClass(assetClass);
             const current = currentJobsRef.current;
             if (current === null) return;
