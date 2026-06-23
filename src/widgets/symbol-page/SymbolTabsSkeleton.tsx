@@ -1,13 +1,12 @@
+/** Neutral minimum pill count — covers any profile's tab set without profile resolution. */
+export const SKELETON_PILL_COUNT = 4;
+
 /**
  * Static SymbolTabs fallback — no usePathname so the PPR prerender shell can resolve.
  *
  * Renders label-less placeholder pills instead of equity-specific tab labels so
  * no equity copy flashes on crypto routes before the real SymbolTabs hydrates.
- * The pill count (4) is a neutral minimum that covers any profile's tab set without
- * profile resolution in this static skeleton.
  */
-export const SKELETON_PILL_COUNT = 4;
-
 export function SymbolTabsSkeleton() {
     return (
         <nav

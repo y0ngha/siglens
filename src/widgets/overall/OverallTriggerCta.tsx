@@ -12,8 +12,10 @@ interface OverallTriggerCtaProps {
     disabled?: boolean;
     /**
      * Asset class of the symbol being analysed.
-     * Crypto shows a 3-axis subtitle (차트·뉴스·시장 분위기); equity keeps the
-     * full 5-axis wording.
+     * Controls the subtitle copy: crypto lists 3 items in the UI (차트·뉴스·시장 분위기);
+     * equity lists 5 (차트·옵션·펀더멘털·뉴스·시장 분위기). These counts refer to the
+     * subtitle's enumerated items, not the `OverallAxis` analysis axes (which are 4 for
+     * equity and 2 for crypto).
      */
     assetClass?: AssetClass;
 }

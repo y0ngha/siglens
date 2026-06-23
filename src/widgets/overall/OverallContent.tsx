@@ -3,10 +3,8 @@
 import { usePublishSymbolChat } from '@/features/symbol-chat';
 import { useNewsAnalysisTrigger, useWaitForNewsCards } from '@/widgets/news';
 import { DependencyProgress } from './DependencyProgress';
-import {
-    useOverallAnalysis,
-    axesForAssetClass,
-} from './hooks/useOverallAnalysis';
+import { useOverallAnalysis } from './hooks/useOverallAnalysis';
+import { axesForAssetClass } from './utils/axesForAssetClass';
 import { OverallTriggerCta } from './OverallTriggerCta';
 import { ReanalyzeButton } from './ReanalyzeButton';
 import { FinancialsSummary } from './sections/FinancialsSummary';

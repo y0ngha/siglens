@@ -1141,9 +1141,9 @@ describe('useOverallAnalysis — crypto assetClass (F1)', () => {
         expect(mockPollFundamental).not.toHaveBeenCalled();
         expect(mockPollOptions).not.toHaveBeenCalled();
 
-        // technical and news must be polled
-        expect(mockPollTechnical).toHaveBeenCalled();
-        expect(mockPollNews).toHaveBeenCalled();
+        // technical and news must be polled with their respective jobIds
+        expect(mockPollTechnical).toHaveBeenCalledWith('job-t');
+        expect(mockPollNews).toHaveBeenCalledWith('job-n');
     });
 
     it('cleanup 시 fundamental/options cancel을 호출하지 않는다', async () => {

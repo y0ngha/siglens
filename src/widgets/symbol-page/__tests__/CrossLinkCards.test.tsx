@@ -117,7 +117,7 @@ describe('CrossLinkCards — crypto profile', () => {
         );
         expect(screen.queryByText('4축 통합 AI 결론 + 시나리오')).toBeNull();
         expect(
-            screen.getByText('차트·뉴스·심리 통합 AI 결론 + 시나리오')
+            screen.getByText('차트·뉴스·시장 분위기 통합 AI 결론 + 시나리오')
         ).toBeInTheDocument();
     });
 

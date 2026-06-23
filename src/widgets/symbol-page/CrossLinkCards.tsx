@@ -48,7 +48,7 @@ const EQUITY_DESCRIPTIONS: Record<PageKey, string> = {
  */
 function getDescription(page: PageKey, assetClass: AssetClass): string {
     if (page === 'overall' && assetClass === 'crypto') {
-        return '차트·뉴스·심리 통합 AI 결론 + 시나리오';
+        return '차트·뉴스·시장 분위기 통합 AI 결론 + 시나리오';
     }
     return EQUITY_DESCRIPTIONS[page];
 }

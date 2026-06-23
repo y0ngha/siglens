@@ -149,10 +149,6 @@ describe('FmpNewsClient', () => {
         });
     }
 
-    // ------------------------------------------------------------------ //
-    // API key guard
-    // ------------------------------------------------------------------ //
-
     describe('FMP_API_KEY missing', () => {
         it('fetchNews throws when FMP_API_KEY is not set', async () => {
             delete process.env.FMP_API_KEY;
@@ -163,10 +159,6 @@ describe('FmpNewsClient', () => {
         });
     });
 
-    // ------------------------------------------------------------------ //
-    // Non-2xx HTTP error
-    // ------------------------------------------------------------------ //
-
     describe('non-2xx HTTP response', () => {
         it('fetchNews throws with status in message', async () => {
             mockError(404);
@@ -174,10 +166,6 @@ describe('FmpNewsClient', () => {
             await expect(client.fetchNews('AAPL', '7d')).rejects.toThrow('404');
         });
     });
-
-    // ------------------------------------------------------------------ //
-    // fetchNews
-    // ------------------------------------------------------------------ //
 
     describe('fetchNews', () => {
         // Articles used in time-window filter tests.
@@ -317,10 +305,6 @@ describe('FmpNewsClient', () => {
         });
     });
 
-    // ------------------------------------------------------------------ //
-    // fetchNewsForPeriod
-    // ------------------------------------------------------------------ //
-
     describe('fetchNewsForPeriod', () => {
         // FIXED_NOW_MS = 2024-06-01T12:00:00Z
         // lookbackMs = 7 * MS_PER_DAY → cutoff = 2024-05-25T12:00:00Z
@@ -414,10 +398,6 @@ describe('FmpNewsClient', () => {
         });
     });
 
-    // ------------------------------------------------------------------ //
-    // fetchEarningsReport
-    // ------------------------------------------------------------------ //
-
     describe('fetchEarningsReport', () => {
         it('returns the first earnings report', async () => {
             mockOk([
@@ -457,10 +437,6 @@ describe('FmpNewsClient', () => {
         });
     });
 });
-
-// ------------------------------------------------------------------ //
-// F2: null `site` fallback (crypto news articles)
-// ------------------------------------------------------------------ //
 
 describe('FmpNewsClient — null site fallback (F2)', () => {
     // Shared within-window article base with a valid URL so hostname can be derived.

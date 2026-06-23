@@ -35,6 +35,7 @@ import { useHydrated } from '@/shared/hooks/useHydrated';
 import { usePageHideCancel } from '@/shared/hooks/usePageHideCancel';
 import { BotBlockedError } from '@/widgets/symbol-page';
 import type { OverallAnalysisState, ProgressState } from '../types';
+import { axesForAssetClass } from '../utils/axesForAssetClass';
 
 export interface UseOverallAnalysisReturn {
     state: OverallAnalysisState;
@@ -58,28 +59,6 @@ type CurrentJobs =
 interface DependencyPollResult {
     status: string;
     error?: string;
-}
-
-/** All four axes for equity overall analysis. */
-const EQUITY_AXIS_ORDER: readonly OverallAxis[] = [
-    'technical',
-    'fundamental',
-    'news',
-    'options',
-];
-
-/** Crypto uses only technical + news (no fundamental profile / options chain). */
-const CRYPTO_AXIS_ORDER: readonly OverallAxis[] = ['technical', 'news'];
-
-/**
- * Returns the applicable axis list for the given asset class.
- * Centralises the equity-vs-crypto axis branching so `waitForDependencies`,
- * the cleanup effects, and `DependencyProgress` all derive from the same source.
- */
-export function axesForAssetClass(
-    assetClass: AssetClass
-): readonly OverallAxis[] {
-    return assetClass === 'crypto' ? CRYPTO_AXIS_ORDER : EQUITY_AXIS_ORDER;
 }
 
 /**
@@ -431,9 +410,10 @@ export function useOverallAnalysis(
 
     // §17 hook order: derived variables go after useRef/useQuery calls.
     // axesForAssetClass returns a module-level constant array, so the reference
-    // is already stable for the same assetClass — no useMemo needed.
-    // React Compiler (preserve-manual-memoization) would reject a redundant
-    // useMemo here because it sees the function returns an existing stable ref.
+    // is already stable for the same assetClass — no useMemo needed. A manual
+    // useMemo here would be preserved as dead weight by React Compiler
+    // (preserve-manual-memoization mode), since the function already returns a
+    // stable ref with no closure over reactive values.
     const applicableAxes = axesForAssetClass(assetClass);
 
     const state = useMemo((): OverallAnalysisState => {
