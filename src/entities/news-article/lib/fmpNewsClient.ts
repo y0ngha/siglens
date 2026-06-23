@@ -148,11 +148,25 @@ export function toYyyyMmDd(date: Date): string {
     return date.toISOString().slice(0, 10);
 }
 
+/**
+ * FMP crypto news sometimes returns `site` as null despite the type declaration
+ * (`site: string`). Provide a hostname-derived fallback so the NOT NULL `source`
+ * DB column is always satisfied without requiring a schema migration.
+ */
+function resolveSource(raw: RawFmpNews): string {
+    if (raw.site) return raw.site;
+    try {
+        return new URL(raw.url).hostname;
+    } catch {
+        return 'unknown';
+    }
+}
+
 function mapRawToNewsItem(raw: RawFmpNews, publishedAt: string): NewsItem {
     return {
         id: hashUrlToId(raw.url),
         symbol: raw.symbol,
-        source: raw.site,
+        source: resolveSource(raw),
         url: raw.url,
         publishedAt,
         titleEn: raw.title,

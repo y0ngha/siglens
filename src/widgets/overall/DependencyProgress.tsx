@@ -9,13 +9,6 @@ const AXIS_LABEL: Record<OverallAxis, string> = {
     options: '옵션 시장 분석',
 };
 
-const AXIS_ORDER: readonly OverallAxis[] = [
-    'technical',
-    'fundamental',
-    'news',
-    'options',
-];
-
 /**
  * 각 축의 평균 처리 소요 시간 (초 단위).
  * 기술적 분석은 다단계 지표 계산으로 약 5분, 나머지는 약 1분.
@@ -33,18 +26,33 @@ const AXIS_ESTIMATED_SECONDS: Record<OverallAxis, number> = {
 interface DependencyProgressProps {
     pendingJobs: Record<OverallAxis, string | undefined>;
     retryCount: number;
+    /**
+     * Axes applicable for this asset class (from `axesForAssetClass`).
+     * Crypto passes ['technical', 'news'] so the progress bar shows 2 rows
+     * and "{completed}/2" instead of the equity "{completed}/4".
+     * Defaults to all four equity axes for backward compatibility.
+     */
+    applicableAxes?: readonly OverallAxis[];
 }
+
+const EQUITY_AXIS_ORDER: readonly OverallAxis[] = [
+    'technical',
+    'fundamental',
+    'news',
+    'options',
+];
 
 export function DependencyProgress({
     pendingJobs,
     retryCount,
+    applicableAxes = EQUITY_AXIS_ORDER,
 }: DependencyProgressProps) {
-    const completed = AXIS_ORDER.filter(
+    const completed = applicableAxes.filter(
         axis => pendingJobs[axis] === undefined
     ).length;
-    const total = AXIS_ORDER.length;
+    const total = applicableAxes.length;
 
-    const pendingAxes = AXIS_ORDER.filter(
+    const pendingAxes = applicableAxes.filter(
         axis => pendingJobs[axis] !== undefined
     );
     const estimatedTotalSeconds = pendingAxes.reduce(
@@ -87,7 +95,7 @@ export function DependencyProgress({
                 달라질 수 있어요.
             </p>
             <ul aria-label="축별 진행 상태" className="mt-4 space-y-3">
-                {AXIS_ORDER.map(axis => {
+                {applicableAxes.map(axis => {
                     const isPending = pendingJobs[axis] !== undefined;
                     return (
                         <li key={axis} className="flex items-center gap-3">

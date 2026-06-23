@@ -160,7 +160,7 @@ export interface RawFmpNews {
     symbol: string;
     publishedDate: string;
     title: string;
-    site: string;
+    site: string | null;
     text: string | null;
     url: string;
 }

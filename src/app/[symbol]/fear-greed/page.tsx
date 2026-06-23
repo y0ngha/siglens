@@ -112,7 +112,8 @@ export default async function SymbolFearGreedPage({ params }: Props) {
     }
 
     const displayName = buildDisplayName(assetInfo, ticker);
-    const assetClass = getDescriptor(marketProfileOf(assetInfo)).assetClass;
+    const marketProfile = marketProfileOf(assetInfo);
+    const assetClass = getDescriptor(marketProfile).assetClass;
 
     const { fullTitle, description, url } = resolveSymbolFearGreedSeoContent(
         ticker,
@@ -274,7 +275,11 @@ export default async function SymbolFearGreedPage({ params }: Props) {
                         />
                     </ErrorBoundary>
                 </HydrationBoundary>
-                <CrossLinkCards symbol={ticker} current="fear-greed" />
+                <CrossLinkCards
+                    symbol={ticker}
+                    current="fear-greed"
+                    marketProfile={marketProfile}
+                />
             </main>
         </>
     );

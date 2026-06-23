@@ -1059,3 +1059,127 @@ describe('useOverallAnalysis', () => {
         });
     });
 });
+
+/**
+ * F1: crypto assetClass — fundamental/options 축은 submit·poll·cancel 하지 않는다.
+ * pending_dependencies 응답에 fundamental/options job이 있더라도 crypto는 무시한다.
+ */
+describe('useOverallAnalysis — crypto assetClass (F1)', () => {
+    const CRYPTO_PENDING_DEPS = {
+        status: 'pending_dependencies' as const,
+        pendingJobs: {
+            technical: 'job-t' as string | undefined,
+            // Server might include these for crypto; client must ignore them.
+            fundamental: 'job-f' as string | undefined,
+            news: 'job-n' as string | undefined,
+            options: 'job-o' as string | undefined,
+        },
+    };
+
+    const SUBMITTED = {
+        status: 'submitted' as const,
+        jobId: 'overall-job',
+    };
+
+    beforeEach(() => {
+        mockSubmit.mockReset();
+        mockPollOverall.mockReset();
+        mockPollTechnical.mockReset();
+        mockPollFundamental.mockReset();
+        mockPollNews.mockReset();
+        mockPollOptions.mockReset();
+        mockCancelTechnical.mockResolvedValue(undefined);
+        mockCancelFundamental.mockResolvedValue(undefined);
+        mockCancelNews.mockResolvedValue(undefined);
+        mockCancelOverall.mockResolvedValue(undefined);
+        mockCancelOptions.mockResolvedValue(undefined);
+    });
+
+    afterEach(() => {
+        queryClients.forEach(c => c.clear());
+        queryClients.length = 0;
+    });
+
+    it('pending_dependencies 응답에 fundamental/options가 있어도 폴링하지 않는다', async () => {
+        // First call: pending_dependencies with all 4 axes
+        // Second call: submitted (after deps resolve)
+        mockSubmit
+            .mockResolvedValueOnce(CRYPTO_PENDING_DEPS)
+            .mockResolvedValueOnce(SUBMITTED);
+
+        // crypto only polls technical + news; these resolve immediately
+        mockPollTechnical.mockResolvedValue({
+            status: 'done',
+            result: {} as never,
+        });
+        mockPollNews.mockResolvedValue({ status: 'done', result: {} as never });
+        mockPollOverall.mockResolvedValue({
+            status: 'done',
+            result: OVERALL_RESULT,
+        });
+
+        const { result } = renderHook(
+            () =>
+                useOverallAnalysis(
+                    'BTCUSD',
+                    'Bitcoin USD',
+                    '1Day',
+                    'gemini-2.5-flash-lite',
+                    undefined,
+                    'crypto'
+                ),
+            { wrapper: makeWrapper() }
+        );
+
+        act(() => {
+            result.current.trigger();
+        });
+
+        await waitFor(() => expect(result.current.state.status).toBe('done'));
+
+        // fundamental and options must NEVER be polled for crypto
+        expect(mockPollFundamental).not.toHaveBeenCalled();
+        expect(mockPollOptions).not.toHaveBeenCalled();
+
+        // technical and news must be polled
+        expect(mockPollTechnical).toHaveBeenCalled();
+        expect(mockPollNews).toHaveBeenCalled();
+    });
+
+    it('cleanup 시 fundamental/options cancel을 호출하지 않는다', async () => {
+        mockSubmit.mockResolvedValue(CRYPTO_PENDING_DEPS);
+        mockPollTechnical.mockResolvedValue({ status: 'processing' });
+        mockPollNews.mockResolvedValue({ status: 'processing' });
+
+        const { result, unmount } = renderHook(
+            () =>
+                useOverallAnalysis(
+                    'BTCUSD',
+                    'Bitcoin USD',
+                    '1Day',
+                    'gemini-2.5-flash-lite',
+                    undefined,
+                    'crypto'
+                ),
+            { wrapper: makeWrapper() }
+        );
+
+        act(() => {
+            result.current.trigger();
+        });
+
+        await waitFor(() =>
+            expect(result.current.state.status).toBe('pending_dependencies')
+        );
+
+        unmount();
+
+        // crypto cleanup must cancel technical and news with their respective jobIds
+        expect(mockCancelTechnical).toHaveBeenCalledWith('job-t');
+        expect(mockCancelNews).toHaveBeenCalledWith('job-n');
+
+        // crypto cleanup must not cancel fundamental or options
+        expect(mockCancelFundamental).not.toHaveBeenCalled();
+        expect(mockCancelOptions).not.toHaveBeenCalled();
+    });
+});

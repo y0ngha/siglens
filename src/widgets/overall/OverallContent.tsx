@@ -3,7 +3,10 @@
 import { usePublishSymbolChat } from '@/features/symbol-chat';
 import { useNewsAnalysisTrigger, useWaitForNewsCards } from '@/widgets/news';
 import { DependencyProgress } from './DependencyProgress';
-import { useOverallAnalysis } from './hooks/useOverallAnalysis';
+import {
+    useOverallAnalysis,
+    axesForAssetClass,
+} from './hooks/useOverallAnalysis';
 import { OverallTriggerCta } from './OverallTriggerCta';
 import { ReanalyzeButton } from './ReanalyzeButton';
 import { FinancialsSummary } from './sections/FinancialsSummary';
@@ -22,6 +25,7 @@ import { cn } from '@/shared/lib/cn';
 import { type OverallAnalysisResponse } from '@y0ngha/siglens-core';
 import { type CSSProperties, useMemo } from 'react';
 import { useTimeframeFromUrl } from './hooks/useTimeframeFromUrl';
+import type { AssetClass } from '@/shared/config/marketProfile';
 
 const SKELETON_LINE_COUNT = 3;
 const SKELETON_WIDTH_START_PCT = 85;
@@ -41,6 +45,12 @@ interface OverallContentProps {
      * /news submitNewsAnalysis 호출의 input이 동기화돼야 axis cache가 공유된다.
      */
     hasEnrichedNews: boolean;
+    /**
+     * Asset class of the symbol being analysed.
+     * Controls which axes are submitted/polled (crypto: technical + news only)
+     * and which result sections are rendered (crypto: no options/fundamental/financials).
+     */
+    assetClass?: AssetClass;
 }
 
 export function OverallContent({
@@ -48,6 +58,7 @@ export function OverallContent({
     companyName,
     initialAnalysis,
     hasEnrichedNews,
+    assetClass = 'equity',
 }: OverallContentProps) {
     // /news와 동일 패턴: 마운트 시 개별 카드 분석 fire-and-forget trigger + cards ready 폴링.
     // 새 뉴스 fetch+분석을 사용자 클릭 전에 시작해두면 trigger 시점엔 분석 완료 row만
@@ -66,8 +77,11 @@ export function OverallContent({
         companyName,
         timeframe,
         modelId,
-        initialAnalysis
+        initialAnalysis,
+        assetClass
     );
+    const isEquity = assetClass === 'equity';
+    const applicableAxes = axesForAssetClass(assetClass);
 
     // usePublishSymbolChat은 chatState(useMemo 반환값)를 인자로 받으므로 useMemo 뒤에 둔다(§17 의존 순서).
     const chatState = useMemo(
@@ -110,7 +124,11 @@ export function OverallContent({
         // /news와 동일 게이트 — 새 뉴스 fetch+분석을 백그라운드에서 끝낸 뒤 submit이 일어나야
         // submitNewsAnalysis cache key가 /news와 일치(axis hit)한다.
         return (
-            <OverallTriggerCta onTrigger={trigger} disabled={!isCardsReady} />
+            <OverallTriggerCta
+                onTrigger={trigger}
+                disabled={!isCardsReady}
+                assetClass={assetClass}
+            />
         );
     }
 
@@ -123,6 +141,7 @@ export function OverallContent({
             <DependencyProgress
                 pendingJobs={state.pendingJobs}
                 retryCount={state.retryCount}
+                applicableAxes={applicableAxes}
             />
         );
     }
@@ -219,12 +238,16 @@ export function OverallContent({
         <div className="space-y-6">
             <OverallSummary headline={r.headlineKo} />
             <TechnicalSummary bullets={r.technicalBulletsKo} />
-            <OptionsSummary
-                bullets={r.optionsBulletsKo}
-                oiStale={optionsOiStale}
-            />
-            <FundamentalSummary bullets={r.fundamentalBulletsKo} />
-            <FinancialsSummary bullets={r.financialsBulletsKo} />
+            {isEquity && (
+                <OptionsSummary
+                    bullets={r.optionsBulletsKo}
+                    oiStale={optionsOiStale}
+                />
+            )}
+            {isEquity && (
+                <FundamentalSummary bullets={r.fundamentalBulletsKo} />
+            )}
+            {isEquity && <FinancialsSummary bullets={r.financialsBulletsKo} />}
             <NewsSummary bullets={r.newsBulletsKo} />
             <IntegratedConclusion text={r.integratedConclusionKo} />
             <ScenarioAnalysis scenarios={r.scenarios} />

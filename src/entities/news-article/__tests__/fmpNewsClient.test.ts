@@ -457,3 +457,101 @@ describe('FmpNewsClient', () => {
         });
     });
 });
+
+// ------------------------------------------------------------------ //
+// F2: null `site` fallback (crypto news articles)
+// ------------------------------------------------------------------ //
+
+describe('FmpNewsClient — null site fallback (F2)', () => {
+    // Shared within-window article base with a valid URL so hostname can be derived.
+    const FIXED_NOW_MS_FOR_SUITE = new Date('2024-06-01T12:00:00Z').getTime();
+    const originalFetch = global.fetch;
+
+    beforeEach(() => {
+        global.fetch = mockFetch as unknown as typeof fetch;
+        mockFetch.mockReset();
+        process.env.FMP_API_KEY = 'test-api-key';
+        vi.spyOn(Date, 'now').mockReturnValue(FIXED_NOW_MS_FOR_SUITE);
+    });
+
+    afterEach(() => {
+        global.fetch = originalFetch;
+        vi.restoreAllMocks();
+    });
+
+    function mockOkSuite(data: unknown): void {
+        mockFetch.mockResolvedValueOnce({
+            ok: true,
+            json: async () => data,
+        });
+    }
+
+    it('falls back to URL hostname when site is null (crypto news)', async () => {
+        mockOkSuite([
+            {
+                symbol: 'BTCUSD',
+                publishedDate: '2024-06-01T08:00:00Z',
+                title: 'BTC price update',
+                site: null, // FMP crypto news sometimes omits site
+                text: 'Bitcoin hits new high.',
+                url: 'https://coindesk.com/btc-price-update',
+            },
+        ]);
+        const client = new FmpNewsClient('crypto');
+        const result = await client.fetchNews('BTCUSD', '24h');
+        expect(result).toHaveLength(1);
+        // source must be derived from URL hostname, not empty/null
+        expect(result[0]!.source).toBe('coindesk.com');
+    });
+
+    it('falls back to URL hostname when site is an empty string', async () => {
+        mockOkSuite([
+            {
+                symbol: 'ETHUSD',
+                publishedDate: '2024-06-01T08:00:00Z',
+                title: 'ETH update',
+                site: '',
+                text: 'Ethereum news.',
+                url: 'https://cointelegraph.com/eth-update',
+            },
+        ]);
+        const client = new FmpNewsClient('crypto');
+        const result = await client.fetchNews('ETHUSD', '24h');
+        expect(result).toHaveLength(1);
+        expect(result[0]!.source).toBe('cointelegraph.com');
+    });
+
+    it('uses "unknown" fallback when both site is null and URL is invalid', async () => {
+        mockOkSuite([
+            {
+                symbol: 'BTCUSD',
+                publishedDate: '2024-06-01T08:00:00Z',
+                title: 'BTC article',
+                site: null,
+                text: 'Body.',
+                url: 'not-a-valid-url',
+            },
+        ]);
+        const client = new FmpNewsClient('crypto');
+        const result = await client.fetchNews('BTCUSD', '24h');
+        expect(result).toHaveLength(1);
+        expect(result[0]!.source).toBe('unknown');
+    });
+
+    it('uses site directly when site is a non-empty string (non-regression)', async () => {
+        mockOkSuite([
+            {
+                symbol: 'AAPL',
+                publishedDate: '2024-06-01T08:00:00Z',
+                title: 'AAPL article',
+                site: 'Reuters',
+                text: 'Body.',
+                url: 'https://reuters.com/aapl',
+            },
+        ]);
+        const client = new FmpNewsClient();
+        const result = await client.fetchNews('AAPL', '24h');
+        expect(result).toHaveLength(1);
+        expect(result[0]!.source).toBe('Reuters');
+    });
+});

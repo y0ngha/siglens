@@ -359,9 +359,14 @@ export default async function OverallPage({ params }: Props) {
                         companyName={assetInfo.name}
                         initialAnalysis={cachedOverall ?? undefined}
                         hasEnrichedNews={hasEnrichedNews}
+                        assetClass={assetClass}
                     />
                 </Suspense>
-                <CrossLinkCards symbol={upper} current="overall" />
+                <CrossLinkCards
+                    symbol={upper}
+                    current="overall"
+                    marketProfile={marketProfileOf(assetInfo)}
+                />
             </main>
         </>
     );
