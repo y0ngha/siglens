@@ -15,7 +15,7 @@
                 "ecr:BatchGetImage",
                 "ecr:GetDownloadUrlForLayer"
             ],
-            "Resource": "arn:aws:ecr:ap-northeast-2:997468679347:repository/siglens"
+            "Resource": "arn:aws:ecr:ap-northeast-2:ACCOUNT_ID:repository/siglens"
         },
         {
             "Sid": "ReadAppSecrets",

@@ -69,7 +69,9 @@ Requires=docker.service
 TimeoutStopSec=35
 ExecStartPre=/usr/local/bin/siglens-fetch-env.sh
 ExecStartPre=-/usr/bin/docker rm -f siglens
-ExecStart=/usr/bin/docker run --rm --name siglens -p 3000:3000 --env-file /run/siglens/env --log-opt max-size=10m --log-opt max-file=3 $IMAGE
+# --security-opt no-new-privileges 적용: 컨테이너 프로세스의 권한 상승 차단.
+# --cap-drop / --read-only 는 런타임 검증 후 적용 예정 (현재 보류).
+ExecStart=/usr/bin/docker run --rm --name siglens -p 3000:3000 --env-file /run/siglens/env --log-opt max-size=10m --log-opt max-file=3 --security-opt no-new-privileges:true $IMAGE
 ExecStop=/usr/bin/docker stop -t 30 siglens
 Restart=always
 RestartSec=5

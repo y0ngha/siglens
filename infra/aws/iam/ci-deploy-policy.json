@@ -19,7 +19,7 @@
                 "ecr:CompleteLayerUpload",
                 "ecr:PutImage"
             ],
-            "Resource": "arn:aws:ecr:ap-northeast-2:997468679347:repository/siglens"
+            "Resource": "arn:aws:ecr:ap-northeast-2:ACCOUNT_ID:repository/siglens"
         },
         {
             "Sid": "DeployDescribe",
@@ -40,7 +40,7 @@
                 "ec2:CreateLaunchTemplateVersion",
                 "ec2:ModifyLaunchTemplate"
             ],
-            "Resource": "arn:aws:ec2:ap-northeast-2:997468679347:launch-template/*"
+            "Resource": "arn:aws:ec2:ap-northeast-2:ACCOUNT_ID:launch-template/*"
         },
         {
             "Sid": "DeployAsg",
@@ -49,7 +49,7 @@
                 "autoscaling:StartInstanceRefresh",
                 "autoscaling:UpdateAutoScalingGroup"
             ],
-            "Resource": "arn:aws:autoscaling:ap-northeast-2:997468679347:autoScalingGroup:*:autoScalingGroupName/siglens-asg"
+            "Resource": "arn:aws:autoscaling:ap-northeast-2:ACCOUNT_ID:autoScalingGroup:*:autoScalingGroupName/siglens-asg"
         },
         {
             "Sid": "PassEc2Role",

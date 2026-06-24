@@ -15,10 +15,15 @@ ALB_LABEL=$(echo "$ALB_ARN" | sed 's#.*:loadbalancer/##')          # -> app/sigl
 TG_LABEL=$(echo "$TG_ARN"  | sed 's#.*:\(targetgroup/[^/]*/[^/]*\)$#\1#')  # -> targetgroup/siglens-tg/<id>
 RES_LABEL="$ALB_LABEL/$TG_LABEL"
 
+TT_CONFIG=$(jq -n \
+  --arg res_label "$RES_LABEL" \
+  --argjson target 1000 \
+  '{PredefinedMetricSpecification:{PredefinedMetricType:"ALBRequestCountPerTarget",ResourceLabel:$res_label},TargetValue:$target}')
+
 aws autoscaling put-scaling-policy \
   --auto-scaling-group-name siglens-asg \
   --policy-name siglens-tt-albreq \
   --policy-type TargetTrackingScaling \
-  --target-tracking-configuration "{\"PredefinedMetricSpecification\":{\"PredefinedMetricType\":\"ALBRequestCountPerTarget\",\"ResourceLabel\":\"$RES_LABEL\"},\"TargetValue\":1000}"
+  --target-tracking-configuration "$TT_CONFIG"
 
 log "scaling policy siglens-tt-albreq set (target 1000 req/target); ASG max-size → 4 | resource-label: $RES_LABEL"
