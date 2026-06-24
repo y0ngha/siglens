@@ -48,7 +48,7 @@ export const TICKER_CATEGORIES: readonly TickerCategory[] = [
         label: '핀테크·크립토',
         items: [
             { symbol: 'COIN', name: '코인베이스' },
-            { symbol: 'MSTR', name: '스트래티지' },
+            { symbol: 'MSTR', name: '마이크로스트래티지' },
             { symbol: 'HOOD', name: '로빈후드' },
             { symbol: 'XYZ', name: '블록' },
             { symbol: 'PYPL', name: '페이팔' },

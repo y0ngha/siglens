@@ -1,19 +1,21 @@
 import Link from 'next/link';
 
+import type { TickerItem } from '@/shared/lib/types';
 import { cn } from '@/shared/lib/cn';
 
-export type CategoryCardItem = {
-    symbol: string;
-    name: string;
-};
+export type CategoryCardItem = TickerItem;
 
-export type CategoryCard = {
-    id: string;
-    label: string;
+/** 카드 좌측 보더 + 라벨 텍스트의 Tailwind 색상 클래스 쌍. */
+export type CardStyle = {
     /** Tailwind left-border 색상 클래스, 예: 'border-l-primary-400' */
     borderColor: string;
     /** Tailwind 텍스트 색상 클래스, 예: 'text-primary-400' */
     textColor: string;
+};
+
+export type CategoryCard = CardStyle & {
+    id: string;
+    label: string;
     items: readonly CategoryCardItem[];
 };
 

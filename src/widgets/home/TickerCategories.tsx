@@ -1,18 +1,19 @@
 import type { CategoryId } from '@/shared/lib/types';
 import { TICKER_CATEGORIES } from '@/shared/config/popular-tickers';
-import { CategoryCardGrid, type CategoryCard } from './ui/CategoryCardGrid';
+import {
+    CategoryCardGrid,
+    type CategoryCard,
+    type CardStyle,
+} from './ui/CategoryCardGrid';
 
-const CATEGORY_STYLES: Record<
-    CategoryId,
-    { borderColor: string; textColor: string }
-> = {
+const CATEGORY_STYLES: Record<CategoryId, CardStyle> = {
     megacap: {
         borderColor: 'border-l-primary-400',
         textColor: 'text-primary-400',
     },
     'ai-semiconductor': {
-        borderColor: 'border-l-chart-bullish',
-        textColor: 'text-chart-bullish',
+        borderColor: 'border-l-ui-success',
+        textColor: 'text-ui-success',
     },
     'software-cloud': {
         borderColor: 'border-l-primary-300',
@@ -43,25 +44,24 @@ const CATEGORY_STYLES: Record<
         textColor: 'text-secondary-300',
     },
     'energy-industrial': {
-        borderColor: 'border-l-chart-bearish',
-        textColor: 'text-chart-bearish',
+        borderColor: 'border-l-ui-danger',
+        textColor: 'text-ui-danger',
     },
 };
 
-export function TickerCategories() {
-    const cards: CategoryCard[] = TICKER_CATEGORIES.map(category => ({
-        id: category.id,
-        label: category.label,
-        borderColor: CATEGORY_STYLES[category.id].borderColor,
-        textColor: CATEGORY_STYLES[category.id].textColor,
-        items: category.items,
-    }));
+const TICKER_CARDS: CategoryCard[] = TICKER_CATEGORIES.map(category => ({
+    id: category.id,
+    label: category.label,
+    ...CATEGORY_STYLES[category.id],
+    items: category.items,
+}));
 
+export function TickerCategories() {
     return (
         <CategoryCardGrid
             heading="섹터별 인기 종목"
             ariaLabel="섹터별 인기 종목 탐색"
-            cards={cards}
+            cards={TICKER_CARDS}
         />
     );
 }

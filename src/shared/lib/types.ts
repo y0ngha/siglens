@@ -70,6 +70,9 @@ export interface AssetInfo {
     marketProfile?: MarketProfileId;
 }
 
+/** 카드 칩 하나 — 심볼 + 한글 표시명. */
+export type TickerItem = { symbol: string; name: string };
+
 /** Curated category id used to group tickers in UI explorers. */
 export type CategoryId =
     | 'megacap'
@@ -87,7 +90,7 @@ export type CategoryId =
 export interface TickerCategory {
     id: CategoryId;
     label: string;
-    items: readonly { symbol: string; name: string }[];
+    items: readonly TickerItem[];
 }
 
 /** 암호화폐 큐레이션 카테고리 id. */
@@ -97,7 +100,7 @@ export type CryptoCategoryId = 'major' | 'altcoin';
 export interface CryptoCategory {
     id: CryptoCategoryId;
     label: string;
-    items: readonly { symbol: string; name: string }[];
+    items: readonly TickerItem[];
 }
 
 export type {
