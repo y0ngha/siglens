@@ -15,4 +15,12 @@ aws cloudwatch put-metric-alarm --alarm-name siglens-cpu-credits-low --namespace
   --metric-name CPUCreditBalance --dimensions Name=AutoScalingGroupName,Value=siglens-asg \
   --statistic Minimum --period 300 --evaluation-periods 2 --threshold 30 \
   --comparison-operator LessThanThreshold --treat-missing-data notBreaching $ACTIONS
-log "alarms created (5xx, unhealthy, cpu-credits)"
+aws cloudwatch put-metric-alarm --alarm-name siglens-disk-high --namespace CWAgent \
+  --metric-name disk_used_percent --dimensions Name=AutoScalingGroupName,Value=siglens-asg \
+  --statistic Maximum --period 300 --evaluation-periods 2 --threshold 85 \
+  --comparison-operator GreaterThanThreshold --treat-missing-data notBreaching $ACTIONS
+aws cloudwatch put-metric-alarm --alarm-name siglens-mem-high --namespace CWAgent \
+  --metric-name mem_used_percent --dimensions Name=AutoScalingGroupName,Value=siglens-asg \
+  --statistic Average --period 300 --evaluation-periods 3 --threshold 90 \
+  --comparison-operator GreaterThanThreshold --treat-missing-data notBreaching $ACTIONS
+log "alarms created (5xx, unhealthy, cpu-credits, disk, mem)"

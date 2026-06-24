@@ -7,6 +7,29 @@ REGION=ap-northeast-2
 dnf install -y docker
 systemctl enable --now docker
 
+# CloudWatch 에이전트: 디스크·메모리 지표 수집 (EC2 기본 지표에 없음)
+dnf install -y amazon-cloudwatch-agent
+cat > /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json <<'CWCFG'
+{
+  "agent": { "metrics_collection_interval": 60, "run_as_user": "root" },
+  "metrics": {
+    "namespace": "CWAgent",
+    "append_dimensions": {
+      "InstanceId": "${aws:InstanceId}",
+      "AutoScalingGroupName": "${aws:AutoScalingGroupName}"
+    },
+    "aggregation_dimensions": [["AutoScalingGroupName"]],
+    "metrics_collected": {
+      "disk": { "measurement": ["used_percent"], "resources": ["/"], "metrics_collection_interval": 60 },
+      "mem":  { "measurement": ["mem_used_percent"], "metrics_collection_interval": 60 }
+    }
+  }
+}
+CWCFG
+/opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl \
+  -a fetch-config -m ec2 -s \
+  -c file:/opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json
+
 ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text --region "$REGION")
 ECR="$ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com"
 IMAGE="$ECR/siglens:__IMAGE_TAG__"
@@ -31,7 +54,7 @@ Requires=docker.service
 [Service]
 TimeoutStopSec=35
 ExecStartPre=-/usr/bin/docker rm -f siglens
-ExecStart=/usr/bin/docker run --rm --name siglens -p 3000:3000 --env-file /run/siglens/env $IMAGE
+ExecStart=/usr/bin/docker run --rm --name siglens -p 3000:3000 --env-file /run/siglens/env --log-opt max-size=10m --log-opt max-file=3 $IMAGE
 ExecStop=/usr/bin/docker stop -t 30 siglens
 Restart=always
 RestartSec=5

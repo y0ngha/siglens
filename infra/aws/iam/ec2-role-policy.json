@@ -37,6 +37,12 @@
                 "logs:CreateLogGroup"
             ],
             "Resource": "arn:aws:logs:ap-northeast-2:ACCOUNT_ID:log-group:/siglens/*"
+        },
+        {
+            "Sid": "CloudWatchAgent",
+            "Effect": "Allow",
+            "Action": ["cloudwatch:PutMetricData", "ec2:DescribeTags"],
+            "Resource": "*"
         }
     ]
 }
