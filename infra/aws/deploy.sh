@@ -6,17 +6,26 @@ bash "$(dirname "$0")/05-launch-template.sh" "$TAG"
 log "rolling to $TAG (ASG already pinned to siglens-lt \$Latest)"
 
 # Start an instance refresh with:
-#   MinHealthyPercentage 100 — ASG adds the new instance before terminating the old one
-#                              (capacity never drops below 100 % of desired = zero downtime).
-#   InstanceWarmup 300       — > health-check-grace 180 s + ELB detection ~90 s; the refresh
-#                              re-evaluates ELB health after grace expires before counting the
-#                              new instance healthy, so a runtime-unhealthy new instance does
-#                              NOT cause the old one to be terminated.
+#   MinHealthyPercentage 100  — capacity must never drop below 100 % of desired during the
+#                               refresh, so the old instance is kept alive until the new one
+#                               is fully healthy.
+#   MaxHealthyPercentage 200  — allows the ASG to temporarily exceed desired capacity by 1
+#                               (desired=1 → max running=2) so the replacement is LAUNCHED
+#                               and passes ELB health checks BEFORE the old instance is
+#                               drained/terminated.  Without this, AWS cannot add a new
+#                               instance while MinHealthyPercentage=100 is already satisfied
+#                               by the single existing instance, so it terminates first —
+#                               causing the ~90 s gap we measured.  ASG max-size=4, so
+#                               briefly running 2 instances is within limits.
+#   InstanceWarmup 300        — > health-check-grace 180 s + ELB detection ~90 s; the refresh
+#                               re-evaluates ELB health after grace expires before counting the
+#                               new instance healthy, so a runtime-unhealthy new instance does
+#                               NOT cause the old one to be terminated.
 # No DesiredConfiguration — the ASG already references siglens-lt at Version=$Latest, and
 # 05-launch-template.sh stamped the new image as $Latest before this script ran.
 REFRESH_ID=$(aws autoscaling start-instance-refresh \
   --auto-scaling-group-name siglens-asg \
-  --preferences '{"MinHealthyPercentage":100,"InstanceWarmup":300}' \
+  --preferences '{"MinHealthyPercentage":100,"MaxHealthyPercentage":200,"InstanceWarmup":300}' \
   --query InstanceRefreshId \
   --output text)
 log "instance refresh started for $TAG (refresh-id: $REFRESH_ID)"
