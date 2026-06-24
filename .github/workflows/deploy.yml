@@ -24,7 +24,7 @@ permissions:
 
 jobs:
     deploy:
-        runs-on: ubuntu-latest
+        runs-on: ubuntu-24.04-arm
         steps:
             - uses: actions/checkout@v4
 
@@ -50,11 +50,6 @@ jobs:
               id: ecr
               uses: aws-actions/amazon-ecr-login@v2
 
-            - name: Set up QEMU (arm64 emulation)
-              uses: docker/setup-qemu-action@v3
-              with:
-                  platforms: arm64
-
             - name: Set up Docker Buildx
               uses: docker/setup-buildx-action@v3
 
@@ -73,8 +68,8 @@ jobs:
             # NOTE: The DATABASE_URL secret must be added to the repo's Actions secrets
             # before this workflow can succeed. See: Settings → Secrets → Actions.
             #
-            # Build pipeline (arm64-safe, zero-downtime):
-            #   1. Build for linux/arm64 with --load (image lands in runner's Docker daemon via QEMU).
+            # Build pipeline (arm64-native, zero-downtime):
+            #   1. Build for linux/arm64 with --load (image lands in runner's Docker daemon natively).
             #   2. Smoke-test: run /sbin/tini inside the arm64 image — catches exec-format errors
             #      before any push or ASG roll, so the running instance is never touched on a bad build.
             #   3. Push the validated image to ECR.
@@ -98,9 +93,10 @@ jobs:
                       -t 997468679347.dkr.ecr.ap-northeast-2.amazonaws.com/siglens:${IMAGE_TAG} \
                       .
 
-            # Run the arm64 binary under QEMU emulation to confirm the entrypoint is the right
-            # architecture. This is the exact check that would have caught the exec-format error
+            # Run the arm64 binary natively to confirm the entrypoint is the right architecture.
+            # This is the exact check that would have caught the exec-format error
             # (linux/amd64 image deployed to a Graviton t4g.medium host).
+            # On a native arm64 runner this is a real boot check with no emulation overhead.
             # Runs env-free so no runtime secrets are required here.
             - name: Smoke test image (arm64 boots)
               run: |
