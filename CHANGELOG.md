@@ -1,5 +1,17 @@
 # Changelog
 
+# [0.27.0](https://github.com/y0ngha/siglens/compare/v0.26.0...v0.27.0) (2026-06-24)
+
+
+### Bug Fixes
+
+* **options-chain:** yahoo-finance2 validation 에러 로그 억제 ([0171be9](https://github.com/y0ngha/siglens/commit/0171be954282212ab1f263204d3c189672faf808))
+
+
+### Features
+
+* 홈 페이지 암호화폐 섹션 추가 및 카드 한글 이름 표시 ([bc909a7](https://github.com/y0ngha/siglens/commit/bc909a746ffd1ac0513f884c1b85dc6fa9af22cc))
+
 # [0.26.0](https://github.com/y0ngha/siglens/compare/v0.25.1...v0.26.0) (2026-06-24)
 
 
