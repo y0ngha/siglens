@@ -1,5 +1,17 @@
 # Changelog
 
+# [0.28.0](https://github.com/y0ngha/siglens/compare/v0.27.0...v0.28.0) (2026-06-24)
+
+
+### Bug Fixes
+
+* **home:** center hero in tablet band, constrain search to max-w block ([5169f3f](https://github.com/y0ngha/siglens/commit/5169f3f90d906ed23d9331659c3a5a5578172bd2))
+
+
+### Features
+
+* **infra:** 배포 후 CF 캐시 자동 퍼지 + CW 메트릭 InstanceId 차원 제거 ([114f47f](https://github.com/y0ngha/siglens/commit/114f47f02d1aa765ed1ed5f7e1634db5d0cdacc5))
+
 # [0.27.0](https://github.com/y0ngha/siglens/compare/v0.26.0...v0.27.0) (2026-06-24)
 
 
