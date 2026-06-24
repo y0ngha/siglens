@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 source "$(dirname "$0")/lib.sh"; source "$(dirname "$0")/.env"; source "$(dirname "$0")/.ids"
-SUBNETS=$(aws ec2 describe-subnets --filters Name=vpc-id,Values="$VPC_ID" Name=default-for-az,Values=true --query 'Subnets[].SubnetId' --output text)
+# Restrict to 2a/2b only: adding 2c/2d would auto-allocate extra public IPv4 addresses
+# (~$3.6/mo each) and incur cross-AZ data charges. Two AZs satisfies the ALB minimum
+# (requires ≥2) and still provides multi-AZ resilience.
+SUBNETS=$(aws ec2 describe-subnets --filters Name=vpc-id,Values="$VPC_ID" "Name=availability-zone,Values=ap-northeast-2a,ap-northeast-2b" Name=default-for-az,Values=true --query 'Subnets[].SubnetId' --output text)
 SUBNET_CSV=$(echo $SUBNETS | tr ' ' ',')
 # ALB (멱등)
 ALB_ARN=$(aws elbv2 describe-load-balancers --names siglens-alb --query 'LoadBalancers[0].LoadBalancerArn' --output text 2>/dev/null) || true
