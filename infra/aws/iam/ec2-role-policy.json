@@ -1,0 +1,58 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "EcrAuth",
+            "Effect": "Allow",
+            "Action": ["ecr:GetAuthorizationToken"],
+            "Resource": "*"
+        },
+        {
+            "Sid": "EcrPull",
+            "Effect": "Allow",
+            "Action": [
+                "ecr:BatchCheckLayerAvailability",
+                "ecr:BatchGetImage",
+                "ecr:GetDownloadUrlForLayer"
+            ],
+            "Resource": "arn:aws:ecr:ap-northeast-2:ACCOUNT_ID:repository/siglens"
+        },
+        {
+            "Sid": "ReadAppSecrets",
+            "Effect": "Allow",
+            "Action": [
+                "ssm:GetParametersByPath",
+                "ssm:GetParameters",
+                "ssm:GetParameter"
+            ],
+            "Resource": "arn:aws:ssm:ap-northeast-2:ACCOUNT_ID:parameter/siglens/*"
+        },
+        {
+            "Sid": "DecryptSecrets",
+            "Effect": "Allow",
+            "Action": ["kms:Decrypt"],
+            "Resource": "*",
+            "Condition": {
+                "StringEquals": {
+                    "kms:ViaService": "ssm.ap-northeast-2.amazonaws.com"
+                }
+            }
+        },
+        {
+            "Sid": "Logs",
+            "Effect": "Allow",
+            "Action": [
+                "logs:CreateLogStream",
+                "logs:PutLogEvents",
+                "logs:CreateLogGroup"
+            ],
+            "Resource": "arn:aws:logs:ap-northeast-2:ACCOUNT_ID:log-group:/siglens/*"
+        },
+        {
+            "Sid": "CloudWatchAgent",
+            "Effect": "Allow",
+            "Action": ["cloudwatch:PutMetricData", "ec2:DescribeTags"],
+            "Resource": "*"
+        }
+    ]
+}
