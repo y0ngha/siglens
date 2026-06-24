@@ -2,15 +2,20 @@
     "Version": "2012-10-17",
     "Statement": [
         {
+            "Sid": "EcrAuth",
+            "Effect": "Allow",
+            "Action": ["ecr:GetAuthorizationToken"],
+            "Resource": "*"
+        },
+        {
             "Sid": "EcrPull",
             "Effect": "Allow",
             "Action": [
-                "ecr:GetAuthorizationToken",
+                "ecr:BatchCheckLayerAvailability",
                 "ecr:BatchGetImage",
-                "ecr:GetDownloadUrlForLayer",
-                "ecr:BatchCheckLayerAvailability"
+                "ecr:GetDownloadUrlForLayer"
             ],
-            "Resource": "*"
+            "Resource": "arn:aws:ecr:ap-northeast-2:997468679347:repository/siglens"
         },
         {
             "Sid": "ReadAppSecrets",

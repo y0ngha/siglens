@@ -84,7 +84,7 @@ aws iam get-open-id-connect-provider --open-id-connect-provider-arn "$OIDC_ARN" 
   || aws iam create-open-id-connect-provider \
        --url https://token.actions.githubusercontent.com \
        --client-id-list sts.amazonaws.com \
-       --thumbprint-list 6938fd4d98bab03faadb97b34396831e3780aea1 >/dev/null
+       --thumbprint-list 6938fd4d98bab03faadb97b34396831e3780aea1 1c58a3a8518e8759bf075b76b750d4f2df264fcd >/dev/null
 echo "[iam] GitHub OIDC provider ready"
 
 ### 4) CI 배포 역할 (OIDC 신뢰, 태그 push로 제한) ###

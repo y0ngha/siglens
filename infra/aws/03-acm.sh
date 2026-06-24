@@ -6,8 +6,17 @@ if [ "$CERT_ARN" = "None" ] || [ -z "$CERT_ARN" ]; then
   CERT_ARN=$(aws acm request-certificate --domain-name siglens.io \
     --subject-alternative-names beta.siglens.io www.siglens.io \
     --validation-method DNS --query CertificateArn --output text)
-  log "cert requested"
-  sleep 6
+  log "cert requested — waiting for DNS validation records..."
+  for _i in $(seq 1 10); do
+    _records=$(aws acm describe-certificate --certificate-arn "$CERT_ARN" \
+      --query 'Certificate.DomainValidationOptions[].ResourceRecord' \
+      --output text 2>/dev/null)
+    if [ -n "$_records" ] && [ "$_records" != "None" ]; then
+      break
+    fi
+    sleep 3
+  done
+  unset _i _records
 fi
 grep -q '^export CERT_ARN=' "$(dirname "$0")/.ids" 2>/dev/null || echo "export CERT_ARN=$CERT_ARN" >> "$(dirname "$0")/.ids"
 log "CERT_ARN=$CERT_ARN"

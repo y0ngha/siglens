@@ -2,10 +2,15 @@
     "Version": "2012-10-17",
     "Statement": [
         {
+            "Sid": "EcrAuth",
+            "Effect": "Allow",
+            "Action": ["ecr:GetAuthorizationToken"],
+            "Resource": "*"
+        },
+        {
             "Sid": "EcrPush",
             "Effect": "Allow",
             "Action": [
-                "ecr:GetAuthorizationToken",
                 "ecr:BatchCheckLayerAvailability",
                 "ecr:BatchGetImage",
                 "ecr:GetDownloadUrlForLayer",
@@ -14,23 +19,37 @@
                 "ecr:CompleteLayerUpload",
                 "ecr:PutImage"
             ],
+            "Resource": "arn:aws:ecr:ap-northeast-2:997468679347:repository/siglens"
+        },
+        {
+            "Sid": "DeployDescribe",
+            "Effect": "Allow",
+            "Action": [
+                "ec2:DescribeSecurityGroups",
+                "ec2:DescribeLaunchTemplates",
+                "ec2:DescribeLaunchTemplateVersions",
+                "autoscaling:DescribeAutoScalingGroups",
+                "autoscaling:DescribeInstanceRefreshes"
+            ],
             "Resource": "*"
         },
         {
-            "Sid": "Deploy",
+            "Sid": "DeployLaunchTemplate",
             "Effect": "Allow",
             "Action": [
                 "ec2:CreateLaunchTemplateVersion",
-                "ec2:DescribeLaunchTemplates",
-                "ec2:DescribeLaunchTemplateVersions",
-                "ec2:DescribeSecurityGroups",
-                "ec2:ModifyLaunchTemplate",
+                "ec2:ModifyLaunchTemplate"
+            ],
+            "Resource": "arn:aws:ec2:ap-northeast-2:997468679347:launch-template/*"
+        },
+        {
+            "Sid": "DeployAsg",
+            "Effect": "Allow",
+            "Action": [
                 "autoscaling:StartInstanceRefresh",
-                "autoscaling:DescribeInstanceRefreshes",
-                "autoscaling:DescribeAutoScalingGroups",
                 "autoscaling:UpdateAutoScalingGroup"
             ],
-            "Resource": "*"
+            "Resource": "arn:aws:autoscaling:ap-northeast-2:997468679347:autoScalingGroup:*:autoScalingGroupName/siglens-asg"
         },
         {
             "Sid": "PassEc2Role",

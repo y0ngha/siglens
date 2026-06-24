@@ -36,11 +36,14 @@ MAX_ITERATIONS=60
 SLEEP_SECONDS=20
 
 for i in $(seq 1 "$MAX_ITERATIONS"); do
-    RESULT=$(aws autoscaling describe-instance-refreshes \
+    if ! RESULT=$(aws autoscaling describe-instance-refreshes \
         --auto-scaling-group-name siglens-asg \
         --instance-refresh-ids "$REFRESH_ID" \
         --query 'InstanceRefreshes[0].[Status,PercentageComplete,StatusReason]' \
-        --output text)
+        --output text 2>/dev/null); then
+        log "WARNING: describe-instance-refreshes failed (transient?), retrying..."
+        sleep "$SLEEP_SECONDS"; continue
+    fi
 
     # Parse the tab-separated fields (StatusReason may be empty/None).
     STATUS=$(printf '%s' "$RESULT" | cut -f1)
