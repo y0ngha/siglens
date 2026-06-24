@@ -3,27 +3,20 @@ source "$(dirname "$0")/lib.sh"; source "$(dirname "$0")/.env"
 TAG="${1:?usage: deploy.sh <image-tag>}"
 bash "$(dirname "$0")/05-launch-template.sh" "$TAG"
 
-# Capture the version number that 05-launch-template.sh just stamped as $Latest.
-# DesiredConfiguration requires an explicit version string (not the "$Latest" alias)
-# so that AutoRollback knows exactly which version to revert to on health failure.
-NEW_VER=$(aws ec2 describe-launch-template-versions \
-  --launch-template-name siglens-lt \
-  --versions '$Latest' \
-  --query 'LaunchTemplateVersions[0].VersionNumber' \
-  --output text)
-log "rolling to launch template version $NEW_VER ($TAG)"
+log "rolling to $TAG (ASG already pinned to siglens-lt \$Latest)"
 
 # Start an instance refresh with:
 #   MinHealthyPercentage 100 — ASG adds the new instance before terminating the old one
 #                              (capacity never drops below 100 % of desired = zero downtime).
-#   InstanceWarmup 300       — give the new instance 5 min to pass ELB health checks.
-#   AutoRollback true        — if the new instance never becomes healthy, ASG automatically
-#                              reverts to the previous launch-template version (the last
-#                              working image) instead of leaving the service degraded.
+#   InstanceWarmup 300       — > health-check-grace 180 s + ELB detection ~90 s; the refresh
+#                              re-evaluates ELB health after grace expires before counting the
+#                              new instance healthy, so a runtime-unhealthy new instance does
+#                              NOT cause the old one to be terminated.
+# No DesiredConfiguration — the ASG already references siglens-lt at Version=$Latest, and
+# 05-launch-template.sh stamped the new image as $Latest before this script ran.
 REFRESH_ID=$(aws autoscaling start-instance-refresh \
   --auto-scaling-group-name siglens-asg \
-  --desired-configuration "{\"LaunchTemplate\":{\"LaunchTemplateName\":\"siglens-lt\",\"Version\":\"$NEW_VER\"}}" \
-  --preferences '{"MinHealthyPercentage":100,"InstanceWarmup":300,"AutoRollback":true}' \
+  --preferences '{"MinHealthyPercentage":100,"InstanceWarmup":300}' \
   --query InstanceRefreshId \
   --output text)
 log "instance refresh started for $TAG (refresh-id: $REFRESH_ID)"
