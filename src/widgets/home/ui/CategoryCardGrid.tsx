@@ -24,7 +24,7 @@ interface CategoryCardGridProps {
 }
 
 // 주식(섹터)·암호화폐 두 섹션이 동일한 카드 디자인을 공유하도록 추출한
-// 순수 프레젠테이션 컴포넌트. 데이터와 색상 클래스는 호출부가 주입한다.
+// 순수 프레젠테이션 컴포넌트.
 export function CategoryCardGrid({
     heading,
     ariaLabel,

@@ -67,4 +67,18 @@ describe('CategoryCardGrid', () => {
         expect(link).toHaveTextContent('비트코인');
         expect(link).toHaveTextContent('BTCUSD');
     });
+
+    it('cards가 빈 배열이면 카드 없이 nav를 렌더한다', () => {
+        render(
+            <CategoryCardGrid
+                heading="테스트"
+                ariaLabel="테스트 탐색"
+                cards={[]}
+            />
+        );
+        expect(
+            screen.getByRole('navigation', { name: '테스트 탐색' })
+        ).toBeInTheDocument();
+        expect(screen.queryByRole('heading', { level: 3 })).toBeNull();
+    });
 });

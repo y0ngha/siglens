@@ -6,13 +6,12 @@ import {
     CryptoShowcase,
     HeroIllustration,
     HowItWorks,
-    TickerCategories,
-} from '@/widgets/home';
-import {
     SkillsShowcase,
     SkillsShowcaseSkeleton,
-} from '@/widgets/home/SkillsShowcase';
-import { StatsBar, StatsBarSkeleton } from '@/widgets/home/StatsBar';
+    StatsBar,
+    StatsBarSkeleton,
+    TickerCategories,
+} from '@/widgets/home';
 import Link from 'next/link';
 import { cache, Suspense } from 'react';
 
