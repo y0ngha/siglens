@@ -100,3 +100,5 @@ next-env.d.ts
 /lighthouse/
 # brainstorming visual companion
 .superpowers/
+infra/aws/.env
+infra/aws/.ids

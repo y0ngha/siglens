@@ -1,0 +1,125 @@
+name: Deploy
+
+on:
+    push:
+        tags:
+            - 'v*'
+    workflow_dispatch:
+        inputs:
+            tag:
+                description: 'Image tag to deploy (e.g. 0.26.0 — without leading v)'
+                required: true
+                type: string
+
+# Never cancel an in-flight deploy: a partial rollout is worse than a queued one.
+# If two tags race, the second waits until the first ASG refresh completes.
+concurrency:
+    group: deploy
+    cancel-in-progress: false
+
+permissions:
+    # OIDC token exchange requires id-token: write
+    id-token: write
+    contents: read
+
+jobs:
+    deploy:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+
+            # Derive the immutable image tag:
+            # - tag push  → strip leading 'v' from the ref  (v0.26.0 → 0.26.0)
+            # - manual run → use the inputs.tag value directly
+            - name: Derive IMAGE_TAG
+              run: |
+                  if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+                      IMAGE_TAG="${{ inputs.tag }}"
+                  else
+                      IMAGE_TAG="${GITHUB_REF_NAME#v}"
+                  fi
+                  echo "IMAGE_TAG=${IMAGE_TAG}" >> "$GITHUB_ENV"
+
+            - name: Configure AWS credentials (OIDC)
+              uses: aws-actions/configure-aws-credentials@v4
+              with:
+                  role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+                  aws-region: ap-northeast-2
+
+            - name: Login to Amazon ECR
+              id: ecr
+              uses: aws-actions/amazon-ecr-login@v2
+
+            - name: Set up Docker Buildx
+              uses: docker/setup-buildx-action@v3
+
+            # Build and push the Docker image.
+            #
+            # Tag strategy: push only the immutable version tag (e.g. :0.26.0).
+            # We intentionally do NOT push :latest because:
+            #   - user-data.sh pins an explicit tag, so :latest is never referenced at runtime.
+            #   - The ECR lifecycle policy retains the last 3 tagged images; pushing :latest would
+            #     cause every release to overwrite it and confuse the lifecycle count.
+            #
+            # Secrets are passed via BuildKit secret mounts so they never appear
+            # in image layers or build logs (see Dockerfile RUN --mount=type=secret).
+            # DATABASE_URL is needed at build time for ISR prerender of news/[category] routes.
+            #
+            # NOTE: The DATABASE_URL secret must be added to the repo's Actions secrets
+            # before this workflow can succeed. See: Settings → Secrets → Actions.
+            - name: Build and push to ECR
+              env:
+                  SIGLENS_GITHUB_TOKEN: ${{ secrets.SIGLENS_GITHUB_TOKEN }}
+                  DATABASE_URL: ${{ secrets.DATABASE_URL }}
+              run: |
+                  docker buildx build \
+                      --provenance=false \
+                      --secret id=SIGLENS_GITHUB_TOKEN,env=SIGLENS_GITHUB_TOKEN \
+                      --secret id=DATABASE_URL,env=DATABASE_URL \
+                      --build-arg NEXT_PUBLIC_SITE_URL=https://siglens.io \
+                      --build-arg NEXT_PUBLIC_ADSENSE_PUBLISHER_ID=ca-pub-6121223912694381 \
+                      --build-arg NEXT_PUBLIC_ADSENSE_SLOT_PROGRESS=2260139933 \
+                      --build-arg NEXT_PUBLIC_ADSENSE_SLOT_PANEL_BOTTOM=5816241560 \
+                      --build-arg NEXT_PUBLIC_ADSENSE_ENABLED=false \
+                      -t 997468679347.dkr.ecr.ap-northeast-2.amazonaws.com/siglens:${IMAGE_TAG} \
+                      --push \
+                      .
+
+            # Roll the ASG by reusing the existing infra scripts.
+            #
+            # On the CI runner, infra/aws/.env and infra/aws/.ids are gitignored and absent.
+            # We regenerate minimal equivalents here before calling deploy.sh.
+            #
+            # .env is written WITHOUT AWS_PROFILE: the OIDC credential chain populates
+            # AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY / AWS_SESSION_TOKEN automatically
+            # via configure-aws-credentials above. Setting AWS_PROFILE=siglens would
+            # cause the AWS CLI to look for a named profile that doesn't exist on the runner
+            # and fail immediately.
+            #
+            # EC2_SG is looked up by security-group name rather than hardcoding the ID,
+            # because group IDs are mutable (can be recreated) while names are stable
+            # by convention in this infra.
+            - name: Regenerate infra env files for CI (no AWS_PROFILE)
+              run: |
+                  # Heredoc uses a tab-stripped form (<<-) so the closing EOF can be indented.
+                  # The content lines must still start with a real tab for <<- stripping to work;
+                  # here we write via printf to avoid any heredoc indentation ambiguity.
+                  printf '%s\n' \
+                      'export AWS_REGION=ap-northeast-2' \
+                      'export APP=siglens' \
+                      'export ECR_REPO=siglens' \
+                      'export INSTANCE_TYPE=t4g.medium' \
+                      'export EC2_ROLE=siglens-ec2-role' \
+                      > infra/aws/.env
+
+                  EC2_SG=$(aws ec2 describe-security-groups \
+                      --filters Name=group-name,Values=siglens-ec2-sg \
+                      --query 'SecurityGroups[0].GroupId' \
+                      --output text)
+                  printf 'export EC2_SG=%s\n' "${EC2_SG}" > infra/aws/.ids
+
+            - name: Roll ASG via deploy.sh
+              run: bash infra/aws/deploy.sh "$IMAGE_TAG"
+
+            - name: Log deployed tag
+              run: echo "Deployed siglens:${IMAGE_TAG} — ASG instance refresh started."

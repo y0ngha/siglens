@@ -1,0 +1,44 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "EcrPush",
+            "Effect": "Allow",
+            "Action": [
+                "ecr:GetAuthorizationToken",
+                "ecr:BatchCheckLayerAvailability",
+                "ecr:InitiateLayerUpload",
+                "ecr:UploadLayerPart",
+                "ecr:CompleteLayerUpload",
+                "ecr:PutImage"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Sid": "Deploy",
+            "Effect": "Allow",
+            "Action": [
+                "ec2:CreateLaunchTemplateVersion",
+                "ec2:DescribeLaunchTemplates",
+                "ec2:DescribeLaunchTemplateVersions",
+                "autoscaling:StartInstanceRefresh",
+                "autoscaling:DescribeInstanceRefreshes",
+                "autoscaling:DescribeAutoScalingGroups",
+                "autoscaling:UpdateAutoScalingGroup"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Sid": "BuildTimeDbUrl",
+            "Effect": "Allow",
+            "Action": ["ssm:GetParameter"],
+            "Resource": "arn:aws:ssm:ap-northeast-2:ACCOUNT_ID:parameter/siglens/DATABASE_URL"
+        },
+        {
+            "Sid": "BuildTimeDbUrlDecrypt",
+            "Effect": "Allow",
+            "Action": ["kms:Decrypt"],
+            "Resource": "*"
+        }
+    ]
+}

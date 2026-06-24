@@ -1,0 +1,42 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "EcrPull",
+            "Effect": "Allow",
+            "Action": [
+                "ecr:GetAuthorizationToken",
+                "ecr:BatchGetImage",
+                "ecr:GetDownloadUrlForLayer",
+                "ecr:BatchCheckLayerAvailability"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Sid": "ReadAppSecrets",
+            "Effect": "Allow",
+            "Action": [
+                "ssm:GetParametersByPath",
+                "ssm:GetParameters",
+                "ssm:GetParameter"
+            ],
+            "Resource": "arn:aws:ssm:ap-northeast-2:ACCOUNT_ID:parameter/siglens/*"
+        },
+        {
+            "Sid": "DecryptSecrets",
+            "Effect": "Allow",
+            "Action": ["kms:Decrypt"],
+            "Resource": "*"
+        },
+        {
+            "Sid": "Logs",
+            "Effect": "Allow",
+            "Action": [
+                "logs:CreateLogStream",
+                "logs:PutLogEvents",
+                "logs:CreateLogGroup"
+            ],
+            "Resource": "arn:aws:logs:ap-northeast-2:ACCOUNT_ID:log-group:/siglens/*"
+        }
+    ]
+}
