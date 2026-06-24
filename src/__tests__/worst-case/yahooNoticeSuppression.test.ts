@@ -30,8 +30,26 @@ describe('Yahoo Finance notice suppression', () => {
     it('constructs YahooFinance with suppressNotices config', async () => {
         await import('@/entities/options-chain/lib/YahooOptionsAdapter');
 
-        expect(mockConstructorArgs).toContainEqual({
-            suppressNotices: ['yahooSurvey'],
-        });
+        expect(mockConstructorArgs).toContainEqual(
+            expect.objectContaining({
+                suppressNotices: ['yahooSurvey'],
+            })
+        );
+    });
+
+    it('constructs YahooFinance with validation.logErrors disabled to suppress schema-validation noise', async () => {
+        await import('@/entities/options-chain/lib/YahooOptionsAdapter');
+
+        // validation.logErrors: false prevents multi-line "Failed Yahoo Schema
+        // validation … This may happen intermittently…" messages that the library
+        // emits by default (logErrors: true in defaults.js) whenever a symbol probe
+        // hits an empty or malformed options response.  The FailedYahooValidationError
+        // is still thrown and caught by the adapter's catch block — only the log is
+        // suppressed.
+        expect(mockConstructorArgs).toContainEqual(
+            expect.objectContaining({
+                validation: expect.objectContaining({ logErrors: false }),
+            })
+        );
     });
 });

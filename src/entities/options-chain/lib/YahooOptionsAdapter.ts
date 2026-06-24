@@ -26,7 +26,17 @@ import {
 // `yahooSurvey` 공지는 yahoo-finance2가 첫 호출 시 한 번 출력하는 마케팅 배너로,
 // 운영 로그에 노이즈만 남기므로 명시적으로 억제한다.
 // ref: https://github.com/gadicc/yahoo-finance2/issues/764#issuecomment-2056623851
-const yahooFinance = new YahooFinance({ suppressNotices: ['yahooSurvey'] });
+//
+// `validation.logErrors: false` — 옵션이 없거나 비정형 데이터를 가진 심볼을 probe할 때
+// yahoo-finance2가 schema 불일치 시 다중 행의 "Failed Yahoo Schema validation …
+// This may happen intermittently…" 메시지를 logger.error로 출력한다.
+// 이 에러는 adapter의 catch 블록에서 null 반환으로 이미 처리되므로 로그 자체는 노이즈다.
+// validation: { logErrors: false }를 설정하면 FailedYahooValidationError throw는
+// 그대로 유지한 채 로그 출력만 비활성화된다(라이브러리 v3.15.3 defaults.js:24).
+const yahooFinance = new YahooFinance({
+    suppressNotices: ['yahooSurvey'],
+    validation: { logErrors: false },
+});
 
 function toIsoDate(d: Date): string {
     return d.toISOString().slice(0, 10);
