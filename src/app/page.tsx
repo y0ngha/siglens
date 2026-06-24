@@ -263,7 +263,7 @@ export default async function Home() {
                         <div className="order-first lg:order-last">
                             <HeroIllustration className="mx-auto h-auto w-full max-w-md lg:max-w-none" />
                         </div>
-                        <div className="text-center md:text-left">
+                        <div className="text-center lg:text-left">
                             <p className="text-secondary-400 mb-5 font-mono text-[0.68rem] leading-relaxed tracking-[0.18em] uppercase sm:text-xs">
                                 투자의 확신을 더하는 AI 분석
                             </p>
@@ -290,11 +290,11 @@ export default async function Home() {
                             </p>
                             <div
                                 id="search"
-                                className="mt-8 flex w-full justify-center md:justify-start"
+                                className="mt-8 flex w-full justify-center lg:justify-start"
                             >
-                                <SymbolSearchPanel />
+                                <SymbolSearchPanel className="max-w-2xl lg:max-w-none" />
                             </div>
-                            <div className="mt-6 flex flex-wrap justify-center gap-x-5 gap-y-2 md:justify-start">
+                            <div className="mt-6 flex flex-wrap justify-center gap-x-5 gap-y-2 lg:justify-start">
                                 {HERO_QUICK_LINKS.map(({ href, label }) => (
                                     <Link
                                         key={href}
