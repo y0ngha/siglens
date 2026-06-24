@@ -7,6 +7,7 @@ while IFS='=' read -r key val; do
   [[ "$key" =~ ^#.*$ || -z "$key" ]] && continue
   [[ "$key" =~ $EXCLUDE ]] && continue
   val="${val%\"}"; val="${val#\"}"
+  val="${val%\'}"; val="${val#\'}"
   aws ssm put-parameter --name "/siglens/$key" --type SecureString --value "$val" --overwrite >/dev/null
   n=$((n+1))
 done < <(grep -E '^[A-Z]' "$SRC")

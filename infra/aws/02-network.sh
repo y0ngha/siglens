@@ -9,6 +9,13 @@ fi
 for cidr in $(curl -fsS https://www.cloudflare.com/ips-v4); do
   aws ec2 authorize-security-group-ingress --group-id "$ALB_SG" --protocol tcp --port 443 --cidr "$cidr" >/dev/null 2>&1 || true
 done
+# Defensive: the ALB is currently IPv4-only, but authorizing CF IPv6 ranges here
+# future-proofs the SG for dual-stack. IPv6 ingress requires --ip-permissions with
+# Ipv6Ranges rather than the --cidr shorthand (which only accepts IPv4 CIDRs).
+for cidr6 in $(curl -fsS https://www.cloudflare.com/ips-v6); do
+  aws ec2 authorize-security-group-ingress --group-id "$ALB_SG" \
+    --ip-permissions "IpProtocol=tcp,FromPort=443,ToPort=443,Ipv6Ranges=[{CidrIpv6=$cidr6}]" >/dev/null 2>&1 || true
+done
 EC2_SG=$(aws ec2 describe-security-groups --filters Name=group-name,Values=siglens-ec2-sg Name=vpc-id,Values=$VPC_ID --query 'SecurityGroups[0].GroupId' --output text 2>/dev/null) || true
 if [ "$EC2_SG" = "None" ] || [ -z "$EC2_SG" ]; then
   EC2_SG=$(aws ec2 create-security-group --group-name siglens-ec2-sg --description "siglens EC2 - from ALB" --vpc-id "$VPC_ID" --query GroupId --output text)

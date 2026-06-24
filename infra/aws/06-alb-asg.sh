@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 source "$(dirname "$0")/lib.sh"; source "$(dirname "$0")/.env"; source "$(dirname "$0")/.ids"
-SUBNETS=$(aws ec2 describe-subnets --filters Name=vpc-id,Values=$VPC_ID Name=default-for-az,Values=true --query 'Subnets[].SubnetId' --output text)
+SUBNETS=$(aws ec2 describe-subnets --filters Name=vpc-id,Values="$VPC_ID" Name=default-for-az,Values=true --query 'Subnets[].SubnetId' --output text)
 SUBNET_CSV=$(echo $SUBNETS | tr ' ' ',')
 # ALB (멱등)
 ALB_ARN=$(aws elbv2 describe-load-balancers --names siglens-alb --query 'LoadBalancers[0].LoadBalancerArn' --output text 2>/dev/null) || true
 if [ "$ALB_ARN" = "None" ] || [ -z "$ALB_ARN" ]; then
+  # $SUBNETS intentionally unquoted: word-split into multiple subnet IDs
   ALB_ARN=$(aws elbv2 create-load-balancer --name siglens-alb --type application --scheme internet-facing \
     --security-groups "$ALB_SG" --subnets $SUBNETS --query 'LoadBalancers[0].LoadBalancerArn' --output text)
 fi

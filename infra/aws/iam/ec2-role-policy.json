@@ -26,7 +26,12 @@
             "Sid": "DecryptSecrets",
             "Effect": "Allow",
             "Action": ["kms:Decrypt"],
-            "Resource": "*"
+            "Resource": "*",
+            "Condition": {
+                "StringEquals": {
+                    "kms:ViaService": "ssm.ap-northeast-2.amazonaws.com"
+                }
+            }
         },
         {
             "Sid": "Logs",

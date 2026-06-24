@@ -34,18 +34,32 @@ ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text --region 
 ECR="$ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com"
 IMAGE="$ECR/siglens:__IMAGE_TAG__"
 
-# SSM /siglens/* → env-file (인스턴스 역할이 복호화)
+# /run is tmpfs — wiped on reboot. Write the SSM fetch as a standalone script so
+# the systemd unit can re-run it as ExecStartPre on every (re)start, not just at
+# cloud-init time. Without this, a reboot would leave /run/siglens/env missing and
+# the Restart=always docker run would crash-loop forever.
+cat > /usr/local/bin/siglens-fetch-env.sh <<'FETCHSCRIPT'
+#!/usr/bin/env bash
+set -euxo pipefail
+REGION=ap-northeast-2
 mkdir -p /run/siglens
 aws ssm get-parameters-by-path --region "$REGION" --path /siglens/ --with-decryption \
   --query 'Parameters[].[Name,Value]' --output text \
   | sed 's#^/siglens/##' | awk -F'\t' '{print $1"="$2}' > /run/siglens/env
 chmod 600 /run/siglens/env
+FETCHSCRIPT
+chmod +x /usr/local/bin/siglens-fetch-env.sh
+
+# Run once now so the initial boot has the env-file ready before docker pull.
+/usr/local/bin/siglens-fetch-env.sh
 
 # ECR 로그인 + 이미지 pull
 aws ecr get-login-password --region "$REGION" | docker login --username AWS --password-stdin "$ECR"
 docker pull "$IMAGE"
 
 # systemd 유닛 (graceful stop 30s — Dockerfile tini가 SIGTERM 전달)
+# ExecStartPre order: fetch env first (re-populates /run/siglens/env after reboot),
+# then remove any stale container, then docker run.
 cat > /etc/systemd/system/siglens.service <<UNIT
 [Unit]
 Description=siglens
@@ -53,6 +67,7 @@ After=docker.service
 Requires=docker.service
 [Service]
 TimeoutStopSec=35
+ExecStartPre=/usr/local/bin/siglens-fetch-env.sh
 ExecStartPre=-/usr/bin/docker rm -f siglens
 ExecStart=/usr/bin/docker run --rm --name siglens -p 3000:3000 --env-file /run/siglens/env --log-opt max-size=10m --log-opt max-file=3 $IMAGE
 ExecStop=/usr/bin/docker stop -t 30 siglens

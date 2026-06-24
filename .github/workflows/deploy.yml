@@ -4,12 +4,9 @@ on:
     push:
         tags:
             - 'v*'
-    workflow_dispatch:
-        inputs:
-            tag:
-                description: 'Image tag to deploy (e.g. 0.26.0 — without leading v)'
-                required: true
-                type: string
+    # workflow_dispatch is intentionally omitted: the OIDC trust policy only allows
+    # refs/tags/v*, so a manual dispatch from a branch would fail OIDC with a 403.
+    # To redeploy, push a new tag or re-run a tag's completed workflow run.
 
 # Never cancel an in-flight deploy: a partial rollout is worse than a queued one.
 # If two tags race, the second waits until the first ASG refresh completes.
@@ -28,16 +25,11 @@ jobs:
         steps:
             - uses: actions/checkout@v4
 
-            # Derive the immutable image tag:
-            # - tag push  → strip leading 'v' from the ref  (v0.26.0 → 0.26.0)
-            # - manual run → use the inputs.tag value directly
+            # Derive the immutable image tag: strip the leading 'v' from the tag ref.
+            # (v0.26.0 → 0.26.0)
             - name: Derive IMAGE_TAG
               run: |
-                  if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-                      IMAGE_TAG="${{ inputs.tag }}"
-                  else
-                      IMAGE_TAG="${GITHUB_REF_NAME#v}"
-                  fi
+                  IMAGE_TAG="${GITHUB_REF_NAME#v}"
                   echo "IMAGE_TAG=${IMAGE_TAG}" >> "$GITHUB_ENV"
 
             - name: Configure AWS credentials (OIDC)
