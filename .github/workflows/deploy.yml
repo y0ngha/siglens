@@ -139,3 +139,28 @@ jobs:
 
             - name: Log deployed tag
               run: echo "Deployed siglens:${IMAGE_TAG} — ASG instance refresh completed successfully."
+
+            # Purge the Cloudflare cache after a successful deploy so the new build is served
+            # immediately. Content-hashed /_next/static assets bust on their own, but cached
+            # HTML pages would otherwise serve old markup (and reference old CSS) until the
+            # s-maxage window expires — which is why a style change wasn't appearing without this.
+            # continue-on-error: a purge hiccup (or a not-yet-configured token) must NOT mark an
+            # already-completed rollout as failed.
+            - name: Purge Cloudflare cache
+              continue-on-error: true
+              env:
+                  CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+                  CF_ZONE_ID: ${{ secrets.CF_ZONE_ID }}
+              run: |
+                  resp=$(curl -sS -X POST \
+                    "https://api.cloudflare.com/client/v4/zones/${CF_ZONE_ID}/purge_cache" \
+                    -H "Authorization: Bearer ${CF_API_TOKEN}" \
+                    -H "Content-Type: application/json" \
+                    --data '{"purge_everything":true}')
+                  echo "$resp"
+                  if echo "$resp" | grep -q '"success":true'; then
+                    echo "✅ Cloudflare cache purged"
+                  else
+                    echo "⚠️ Cloudflare purge failed — verify CF_API_TOKEN secret (Zone:Cache Purge) and CF_ZONE_ID"
+                    exit 1
+                  fi

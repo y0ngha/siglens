@@ -9,13 +9,19 @@ systemctl enable --now docker
 
 # CloudWatch 에이전트: 디스크·메모리 지표 수집 (EC2 기본 지표에 없음)
 dnf install -y amazon-cloudwatch-agent
+# InstanceId dimension intentionally omitted from append_dimensions: including it would cause
+# each ASG instance to publish its own unique metric series, making custom-metric count grow
+# linearly with fleet size (~$0.30/metric/mo per instance, ~30+ metrics at max ASG size).
+# Keeping only AutoScalingGroupName means the aggregation_dimensions below still produces the
+# {AutoScalingGroupName}-dimensioned metric that the disk-high/mem-high alarms in 07-alarms.sh
+# target — alarm coverage is unchanged. Trade-off: no per-instance breakdown in CloudWatch;
+# use SSM Session Manager or CloudWatch Logs for per-instance inspection instead.
 cat > /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json <<'CWCFG'
 {
   "agent": { "metrics_collection_interval": 60, "run_as_user": "root" },
   "metrics": {
     "namespace": "CWAgent",
     "append_dimensions": {
-      "InstanceId": "${aws:InstanceId}",
       "AutoScalingGroupName": "${aws:AutoScalingGroupName}"
     },
     "aggregation_dimensions": [["AutoScalingGroupName"]],
