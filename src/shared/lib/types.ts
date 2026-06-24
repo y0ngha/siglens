@@ -83,11 +83,21 @@ export type CategoryId =
     | 'ev-mobility'
     | 'energy-industrial';
 
-/** Curated ticker category (id + label + member tickers). */
+/** Curated ticker category (id + label + member tickers with Korean names). */
 export interface TickerCategory {
     id: CategoryId;
     label: string;
-    tickers: readonly string[];
+    items: readonly { symbol: string; name: string }[];
+}
+
+/** 암호화폐 큐레이션 카테고리 id. */
+export type CryptoCategoryId = 'major' | 'altcoin';
+
+/** 암호화폐 큐레이션 카테고리(id + label + 멤버 심볼/한글명). */
+export interface CryptoCategory {
+    id: CryptoCategoryId;
+    label: string;
+    items: readonly { symbol: string; name: string }[];
 }
 
 export type {

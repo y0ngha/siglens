@@ -1,15 +1,11 @@
-import Link from 'next/link';
-
-import { cn } from '@/shared/lib/cn';
 import type { CategoryId } from '@/shared/lib/types';
 import { TICKER_CATEGORIES } from '@/shared/config/popular-tickers';
+import { CategoryCardGrid, type CategoryCard } from './ui/CategoryCardGrid';
 
-type CategoryStyle = {
-    borderColor: string;
-    textColor: string;
-};
-
-const CATEGORY_STYLES: Record<CategoryId, CategoryStyle> = {
+const CATEGORY_STYLES: Record<
+    CategoryId,
+    { borderColor: string; textColor: string }
+> = {
     megacap: {
         borderColor: 'border-l-primary-400',
         textColor: 'text-primary-400',
@@ -53,55 +49,19 @@ const CATEGORY_STYLES: Record<CategoryId, CategoryStyle> = {
 };
 
 export function TickerCategories() {
+    const cards: CategoryCard[] = TICKER_CATEGORIES.map(category => ({
+        id: category.id,
+        label: category.label,
+        borderColor: CATEGORY_STYLES[category.id].borderColor,
+        textColor: CATEGORY_STYLES[category.id].textColor,
+        items: category.items,
+    }));
+
     return (
-        <nav
-            aria-label="섹터별 인기 종목 탐색"
-            className="px-6 py-10 lg:pr-[10vw] lg:pl-[15vw]"
-        >
-            <h2 className="text-secondary-200 mb-6 text-sm font-semibold tracking-wider uppercase">
-                섹터별 인기 종목
-            </h2>
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {TICKER_CATEGORIES.map(category => {
-                    const style = CATEGORY_STYLES[category.id];
-                    return (
-                        <div
-                            key={category.id}
-                            id={category.id}
-                            className={cn(
-                                'border-secondary-700 bg-secondary-800/50 scroll-mt-20 rounded-lg border p-5',
-                                'border-l-2',
-                                style.borderColor
-                            )}
-                        >
-                            <h3
-                                className={cn(
-                                    'mb-3 text-xs font-semibold tracking-wider uppercase',
-                                    style.textColor
-                                )}
-                            >
-                                {category.label}
-                            </h3>
-                            <ul
-                                className="flex touch-manipulation flex-wrap gap-2"
-                                aria-label={`${category.label} 섹터 종목 목록`}
-                            >
-                                {category.tickers.map(ticker => (
-                                    <li key={ticker}>
-                                        <Link
-                                            href={`/${ticker}`}
-                                            title={`${ticker} 주식 분석`}
-                                            className="border-secondary-700 text-secondary-300 hover:border-primary-600/40 hover:text-primary-400 focus-visible:ring-primary-500 inline-block rounded-full border px-3 py-1 text-xs transition-colors focus-visible:ring-2 focus-visible:outline-none"
-                                        >
-                                            {ticker}
-                                        </Link>
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
-                    );
-                })}
-            </div>
-        </nav>
+        <CategoryCardGrid
+            heading="섹터별 인기 종목"
+            ariaLabel="섹터별 인기 종목 탐색"
+            cards={cards}
+        />
     );
 }

@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { SITE_NAME } from '@/shared/lib/seo';
 import { ContactDialog } from '@/widgets/layout/ContactDialog';
-import { TickerCategories } from '@/widgets/home/TickerCategories';
+import { TickerCategories } from '@/widgets/home';
 
 export const metadata: Metadata = {
     title: '페이지를 찾을 수 없습니다',

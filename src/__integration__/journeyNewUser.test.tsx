@@ -38,7 +38,11 @@ vi.mock('@/shared/config/popular-tickers', () => ({
         {
             id: 'megacap',
             label: 'Mega Cap',
-            tickers: ['AAPL', 'MSFT', 'GOOGL'],
+            items: [
+                { symbol: 'AAPL', name: 'Apple' },
+                { symbol: 'MSFT', name: 'Microsoft' },
+                { symbol: 'GOOGL', name: 'Alphabet' },
+            ],
         },
     ],
 }));
@@ -72,7 +76,7 @@ describe('Journey: New User', () => {
 
         it('ticker links navigate to symbol pages', () => {
             render(<TickerCategories />);
-            const aaplLink = screen.getByRole('link', { name: 'AAPL' });
+            const aaplLink = screen.getByRole('link', { name: /AAPL/ });
             expect(aaplLink).toHaveAttribute('href', '/AAPL');
         });
     });

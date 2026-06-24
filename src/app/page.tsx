@@ -2,15 +2,17 @@ import { countSkillFiles, FileSkillsLoader } from '@/entities/skill';
 import { SymbolSearchPanel } from '@/features/ticker-search';
 import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from '@/shared/lib/seo';
 import { JsonLd } from '@/shared/ui/JsonLd';
-import { HeroIllustration } from '@/widgets/home/HeroIllustration';
-import { HowItWorks } from '@/widgets/home/HowItWorks';
+import {
+    CryptoShowcase,
+    HeroIllustration,
+    HowItWorks,
+    TickerCategories,
+} from '@/widgets/home';
 import {
     SkillsShowcase,
     SkillsShowcaseSkeleton,
 } from '@/widgets/home/SkillsShowcase';
 import { StatsBar, StatsBarSkeleton } from '@/widgets/home/StatsBar';
-import { CryptoShowcase } from '@/widgets/home/CryptoShowcase';
-import { TickerCategories } from '@/widgets/home/TickerCategories';
 import Link from 'next/link';
 import { cache, Suspense } from 'react';
 
@@ -262,7 +264,7 @@ export default async function Home() {
                         <div className="order-first lg:order-last">
                             <HeroIllustration className="mx-auto h-auto w-full max-w-md lg:max-w-none" />
                         </div>
-                        <div className="text-center lg:text-left">
+                        <div className="text-center md:text-left">
                             <p className="text-secondary-400 mb-5 font-mono text-[0.68rem] leading-relaxed tracking-[0.18em] uppercase sm:text-xs">
                                 투자의 확신을 더하는 AI 분석
                             </p>
@@ -289,11 +291,11 @@ export default async function Home() {
                             </p>
                             <div
                                 id="search"
-                                className="mt-8 flex w-full justify-center lg:justify-start"
+                                className="mt-8 flex w-full justify-center md:justify-start"
                             >
                                 <SymbolSearchPanel />
                             </div>
-                            <div className="mt-6 flex flex-wrap justify-center gap-x-5 gap-y-2 lg:justify-start">
+                            <div className="mt-6 flex flex-wrap justify-center gap-x-5 gap-y-2 md:justify-start">
                                 {HERO_QUICK_LINKS.map(({ href, label }) => (
                                     <Link
                                         key={href}

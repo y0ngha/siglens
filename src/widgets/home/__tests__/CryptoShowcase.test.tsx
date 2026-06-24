@@ -1,28 +1,54 @@
+vi.mock('next/link', () => ({
+    default: ({
+        href,
+        children,
+        ...rest
+    }: {
+        href: string;
+        children: React.ReactNode;
+        [key: string]: unknown;
+    }) => (
+        <a href={href} {...rest}>
+            {children}
+        </a>
+    ),
+}));
+vi.mock('@/shared/lib/cn', () => ({
+    cn: (...args: unknown[]) =>
+        args
+            .flat()
+            .filter(a => typeof a === 'string' && a.length > 0)
+            .join(' '),
+}));
+
+import React from 'react';
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { POPULAR_CRYPTOS } from '@/shared/config/popular-cryptos';
-import { CryptoShowcase, CRYPTO_SHOWCASE_COUNT } from '../CryptoShowcase';
+import { CryptoShowcase } from '../CryptoShowcase';
 
 describe('CryptoShowcase', () => {
-    it('renders links to popular crypto symbol pages', () => {
+    it('섹션 heading이 "암호화폐 인기 종목"이다', () => {
         render(<CryptoShowcase />);
-        const btc = screen.getByRole('link', { name: /BTCUSD/ });
-        expect(btc).toHaveAttribute('href', '/BTCUSD');
+        expect(
+            screen.getByRole('heading', { name: '암호화폐 인기 종목' })
+        ).toBeInTheDocument();
     });
 
-    it('renders exactly CRYPTO_SHOWCASE_COUNT crypto chip links', () => {
+    it('major 카드와 altcoin 카드가 모두 렌더링된다', () => {
         render(<CryptoShowcase />);
-        // CryptoShowcase renders only the first CRYPTO_SHOWCASE_COUNT of POPULAR_CRYPTOS;
-        // the remainder are sliced off. Adding entries to POPULAR_CRYPTOS does not change this cap.
-        const links = screen.getAllByRole('link');
-        expect(links).toHaveLength(CRYPTO_SHOWCASE_COUNT);
-        // Derive the first excluded symbol dynamically so reordering POPULAR_CRYPTOS
-        // or changing CRYPTO_SHOWCASE_COUNT doesn't silently leave this assertion stale.
-        const firstExcluded = POPULAR_CRYPTOS[CRYPTO_SHOWCASE_COUNT];
-        if (firstExcluded !== undefined) {
-            expect(
-                screen.queryByRole('link', { name: new RegExp(firstExcluded) })
-            ).toBeNull();
-        }
+        expect(screen.getByText('메이저')).toBeInTheDocument();
+        expect(screen.getByText('알트코인')).toBeInTheDocument();
+    });
+
+    it('비트코인 링크가 /BTCUSD로 연결된다', () => {
+        render(<CryptoShowcase />);
+        const btcLink = screen.getByRole('link', { name: /BTCUSD/ });
+        expect(btcLink).toHaveAttribute('href', '/BTCUSD');
+    });
+
+    it('각 카드에 한글명이 표시된다', () => {
+        render(<CryptoShowcase />);
+        expect(screen.getByText('비트코인')).toBeInTheDocument();
+        expect(screen.getByText('도지코인')).toBeInTheDocument();
     });
 });
