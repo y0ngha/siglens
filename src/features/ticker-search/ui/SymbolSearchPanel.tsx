@@ -19,7 +19,7 @@ export function SymbolSearchPanel({ className }: SymbolSearchPanelProps) {
             <TickerAutocomplete size="lg" onSelect={addSearch} />
 
             {recentSearches.length > 0 && (
-                <div className="mt-4 flex flex-wrap items-center justify-center gap-2 lg:justify-start">
+                <div className="mt-4 flex flex-wrap items-center justify-center gap-2 md:justify-start">
                     <span className="text-secondary-500 text-xs">
                         최근 검색
                     </span>

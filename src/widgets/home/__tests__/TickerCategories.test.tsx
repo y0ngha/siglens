@@ -25,12 +25,15 @@ vi.mock('@/shared/config/popular-tickers', () => ({
         {
             id: 'megacap',
             label: '메가캡·지수',
-            tickers: ['AAPL', 'MSFT'],
+            items: [
+                { symbol: 'AAPL', name: '애플' },
+                { symbol: 'MSFT', name: '마이크로소프트' },
+            ],
         },
         {
             id: 'ai-semiconductor',
             label: 'AI·반도체',
-            tickers: ['NVDA'],
+            items: [{ symbol: 'NVDA', name: '엔비디아' }],
         },
     ],
 }));
@@ -82,7 +85,7 @@ describe('TickerCategories', () => {
         render(<TickerCategories />);
 
         expect(
-            screen.getByRole('list', { name: /메가캡·지수 섹터 종목 목록/ })
+            screen.getByRole('list', { name: /메가캡·지수 종목 목록/ })
         ).toBeInTheDocument();
     });
 });

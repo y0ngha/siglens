@@ -8,13 +8,13 @@ describe('TICKER_CATEGORIES', () => {
         expect(TICKER_CATEGORIES.length).toBeGreaterThan(0);
     });
 
-    it('각 카테고리가 id, label, tickers를 가진다', () => {
+    it('각 카테고리가 id, label, items를 가진다', () => {
         for (const category of TICKER_CATEGORIES) {
             expect(typeof category.id).toBe('string');
             expect(category.id.length).toBeGreaterThan(0);
             expect(typeof category.label).toBe('string');
             expect(category.label.length).toBeGreaterThan(0);
-            expect(category.tickers.length).toBeGreaterThan(0);
+            expect(category.items.length).toBeGreaterThan(0);
         }
     });
 
@@ -25,17 +25,18 @@ describe('TICKER_CATEGORIES', () => {
 
     it('각 카테고리 내 ticker에 중복이 없다', () => {
         for (const category of TICKER_CATEGORIES) {
-            expect(new Set(category.tickers).size).toBe(
-                category.tickers.length
-            );
+            const symbols = category.items.map(i => i.symbol);
+            expect(new Set(symbols).size).toBe(symbols.length);
         }
     });
 
     it('모든 ticker가 비어있지 않은 문자열이다', () => {
         for (const category of TICKER_CATEGORIES) {
-            for (const ticker of category.tickers) {
-                expect(typeof ticker).toBe('string');
-                expect(ticker.length).toBeGreaterThan(0);
+            for (const item of category.items) {
+                expect(typeof item.symbol).toBe('string');
+                expect(item.symbol.length).toBeGreaterThan(0);
+                expect(typeof item.name).toBe('string');
+                expect(item.name.length).toBeGreaterThan(0);
             }
         }
     });
@@ -43,15 +44,16 @@ describe('TICKER_CATEGORIES', () => {
     it('megacap 카테고리가 존재한다', () => {
         const megacap = TICKER_CATEGORIES.find(c => c.id === 'megacap');
         expect(megacap).toBeDefined();
-        expect(megacap!.tickers).toContain('AAPL');
-        expect(megacap!.tickers).toContain('MSFT');
+        const symbols = megacap!.items.map(i => i.symbol);
+        expect(symbols).toContain('AAPL');
+        expect(symbols).toContain('MSFT');
     });
 
     it('순수 우주 기업 카테고리를 포함한다', () => {
         const space = TICKER_CATEGORIES.find(c => c.id === 'space');
         expect(space).toBeDefined();
         expect(space!.label).toBe('우주·항공우주');
-        expect(space!.tickers).toEqual([
+        expect(space!.items.map(i => i.symbol)).toEqual([
             'SPCX',
             'RKLB',
             'ASTS',

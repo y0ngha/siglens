@@ -84,7 +84,7 @@ export function TickerAutocomplete({
                     onChange={handleChange}
                     onKeyDown={handleKeyDown}
                     onFocus={handleFocus}
-                    placeholder="종목 입력… 예: AAPL, 애플"
+                    placeholder="종목 입력 (예: AAPL, 애플, BTC, 비트코인)"
                     className={cn(
                         INPUT_BASE,
                         INPUT_SIZE[size],

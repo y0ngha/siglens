@@ -1,28 +1,35 @@
-import { POPULAR_CRYPTOS } from '@/shared/config/popular-cryptos';
-import Link from 'next/link';
+import type { CryptoCategoryId } from '@/shared/lib/types';
+import { CRYPTO_CATEGORIES } from '@/shared/config/crypto-categories';
+import {
+    CategoryCardGrid,
+    type CategoryCard,
+    type CardStyle,
+} from './ui/CategoryCardGrid';
 
-export const CRYPTO_SHOWCASE_COUNT = 12;
+const CRYPTO_STYLES: Record<CryptoCategoryId, CardStyle> = {
+    major: {
+        borderColor: 'border-l-primary-400',
+        textColor: 'text-primary-400',
+    },
+    altcoin: {
+        borderColor: 'border-l-secondary-300',
+        textColor: 'text-secondary-300',
+    },
+};
 
-const SHOWCASE = POPULAR_CRYPTOS.slice(0, CRYPTO_SHOWCASE_COUNT);
+const CRYPTO_CARDS: CategoryCard[] = CRYPTO_CATEGORIES.map(category => ({
+    id: category.id,
+    label: category.label,
+    ...CRYPTO_STYLES[category.id],
+    items: category.items,
+}));
 
 export function CryptoShowcase() {
     return (
-        <section className="px-6 pb-8 lg:px-[15vw]">
-            <h2 className="text-secondary-200 mb-3 text-sm font-semibold">
-                인기 암호화폐
-            </h2>
-            <ul className="flex flex-wrap gap-2">
-                {SHOWCASE.map(symbol => (
-                    <li key={symbol}>
-                        <Link
-                            href={`/${symbol}`}
-                            className="border-secondary-800 bg-secondary-800/30 text-secondary-300 hover:border-primary-600 hover:text-primary-300 focus-visible:ring-primary-500 inline-flex rounded-md border px-3 py-1.5 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none"
-                        >
-                            {symbol}
-                        </Link>
-                    </li>
-                ))}
-            </ul>
-        </section>
+        <CategoryCardGrid
+            heading="암호화폐 인기 종목"
+            ariaLabel="암호화폐 인기 종목 탐색"
+            cards={CRYPTO_CARDS}
+        />
     );
 }
