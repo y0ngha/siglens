@@ -1,7 +1,7 @@
 {
     "git": {
         "deploymentEnabled": {
-            "master": true
+            "master": false
         }
     },
     "ignoreCommand": "git log -1 --pretty=%B | grep -q '^chore: release' && exit 1 || exit 0"

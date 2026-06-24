@@ -79,4 +79,18 @@
   - Rule: MISTAKES.md §21 — Pure calculation functions using imperative for-loop + push instead of higher-order functions
   - Context: computeRelevanceScores iterated with for...of and pushed results into accumulator array. Refactored to use .map() for clarity and immutability.
 
+## [feat/aws-infra Round 1 | feat/aws-infra | 2026-06-24]
+- Violation: SSM env-vars written to /run (tmpfs) only at cloud-init → lost on OS reboot → container crash-loop
+  - Rule: Infrastructure Functions — Runtime configuration must survive OS restart; ephemeral storage invalid for persistent config
+  - Context: user-data.sh saved SSM env to /run only. Fixed: added systemd ExecStartPre to re-fetch from SSM before container start, ensuring config persists across reboots.
+- Violation: workflow_dispatch trigger on restricted GitHub Actions OIDC trust (scoped to refs/tags/v*) → fails with 403
+  - Rule: OIDC trust scope must match all intended workflow trigger patterns; workflow_dispatch incompatible with tag-scoped trust
+  - Context: deploy.yml workflow_dispatch would fail because GitHub OIDC trust restricted to release tags. Removed workflow_dispatch; only refs/tags/v* remains in trigger scope.
+- Violation: sed delimiter collision — `sed s/__IMAGE_TAG__/$TAG/` breaks when tag contains '/' (e.g., v2/aws-migration)
+  - Rule: Shell utilities — sed delimiter must be chosen to avoid collision with variable content; '|' preferred for paths
+  - Context: 05-launch-template.sh used forward-slash delimiter with tag variable that may contain forward-slashes. Changed to '|' delimiter for safety.
+- Violation: IAM role Resource:* overly broad without resource condition guards
+  - Rule: AWS IAM — Resource:* requires compensating conditions (kms:ViaService, effect narrowing); unconditional wildcards violate least-privilege
+  - Context: kms:Decrypt Resource:* scoped via kms:ViaService=ssm condition (ci-deploy + ec2 role). Constraint prevents lateral key access across other services.
+
 
