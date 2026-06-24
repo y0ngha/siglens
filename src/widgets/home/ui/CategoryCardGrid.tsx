@@ -3,27 +3,25 @@ import Link from 'next/link';
 import type { TickerItem } from '@/shared/lib/types';
 import { cn } from '@/shared/lib/cn';
 
-export type CategoryCardItem = TickerItem;
-
 /** 카드 좌측 보더 + 라벨 텍스트의 Tailwind 색상 클래스 쌍. */
-export type CardStyle = {
+export interface CardStyle {
     /** Tailwind left-border 색상 클래스, 예: 'border-l-primary-400' */
     borderColor: string;
     /** Tailwind 텍스트 색상 클래스, 예: 'text-primary-400' */
     textColor: string;
-};
+}
 
-export type CategoryCard = CardStyle & {
+export interface CategoryCard extends CardStyle {
     id: string;
     label: string;
-    items: readonly CategoryCardItem[];
-};
+    items: readonly TickerItem[];
+}
 
-type CategoryCardGridProps = {
+interface CategoryCardGridProps {
     heading: string;
     ariaLabel: string;
     cards: readonly CategoryCard[];
-};
+}
 
 // 주식(섹터)·암호화폐 두 섹션이 동일한 카드 디자인을 공유하도록 추출한
 // 순수 프레젠테이션 컴포넌트. 데이터와 색상 클래스는 호출부가 주입한다.

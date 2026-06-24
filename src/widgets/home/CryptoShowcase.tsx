@@ -12,8 +12,8 @@ const CRYPTO_STYLES: Record<CryptoCategoryId, CardStyle> = {
         textColor: 'text-primary-400',
     },
     altcoin: {
-        borderColor: 'border-l-ui-success',
-        textColor: 'text-ui-success',
+        borderColor: 'border-l-secondary-300',
+        textColor: 'text-secondary-300',
     },
 };
 

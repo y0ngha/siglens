@@ -12,8 +12,8 @@ const CATEGORY_STYLES: Record<CategoryId, CardStyle> = {
         textColor: 'text-primary-400',
     },
     'ai-semiconductor': {
-        borderColor: 'border-l-ui-success',
-        textColor: 'text-ui-success',
+        borderColor: 'border-l-primary-300',
+        textColor: 'text-primary-300',
     },
     'software-cloud': {
         borderColor: 'border-l-primary-300',
@@ -44,8 +44,8 @@ const CATEGORY_STYLES: Record<CategoryId, CardStyle> = {
         textColor: 'text-secondary-300',
     },
     'energy-industrial': {
-        borderColor: 'border-l-ui-danger',
-        textColor: 'text-ui-danger',
+        borderColor: 'border-l-secondary-500',
+        textColor: 'text-secondary-500',
     },
 };
 

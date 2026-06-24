@@ -71,7 +71,10 @@ export interface AssetInfo {
 }
 
 /** 카드 칩 하나 — 심볼 + 한글 표시명. */
-export type TickerItem = { symbol: string; name: string };
+export interface TickerItem {
+    symbol: string;
+    name: string;
+}
 
 /** Curated category id used to group tickers in UI explorers. */
 export type CategoryId =

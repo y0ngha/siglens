@@ -1,3 +1,17 @@
+vi.mock('@/shared/config/crypto-categories', () => ({
+    CRYPTO_CATEGORIES: [
+        {
+            id: 'major',
+            label: '메이저',
+            items: [{ symbol: 'BTCUSD', name: '비트코인' }],
+        },
+        {
+            id: 'altcoin',
+            label: '알트코인',
+            items: [{ symbol: 'DOGEUSD', name: '도지코인' }],
+        },
+    ],
+}));
 vi.mock('next/link', () => ({
     default: ({
         href,
