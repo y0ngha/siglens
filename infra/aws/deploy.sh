@@ -3,6 +3,16 @@ source "$(dirname "$0")/lib.sh"; source "$(dirname "$0")/.env"
 TAG="${1:?usage: deploy.sh <image-tag>}"
 bash "$(dirname "$0")/05-launch-template.sh" "$TAG"
 
+# Capture the version number that 05-launch-template.sh just stamped as $Latest.
+# DesiredConfiguration requires an explicit version string (not the "$Latest" alias)
+# so that AutoRollback knows exactly which version to revert to on health failure.
+NEW_VER=$(aws ec2 describe-launch-template-versions \
+  --launch-template-name siglens-lt \
+  --versions '$Latest' \
+  --query 'LaunchTemplateVersions[0].VersionNumber' \
+  --output text)
+log "rolling to launch template version $NEW_VER ($TAG)"
+
 # Start an instance refresh with:
 #   MinHealthyPercentage 100 — ASG adds the new instance before terminating the old one
 #                              (capacity never drops below 100 % of desired = zero downtime).
@@ -12,6 +22,7 @@ bash "$(dirname "$0")/05-launch-template.sh" "$TAG"
 #                              working image) instead of leaving the service degraded.
 REFRESH_ID=$(aws autoscaling start-instance-refresh \
   --auto-scaling-group-name siglens-asg \
+  --desired-configuration "{\"LaunchTemplate\":{\"LaunchTemplateName\":\"siglens-lt\",\"Version\":\"$NEW_VER\"}}" \
   --preferences '{"MinHealthyPercentage":100,"InstanceWarmup":300,"AutoRollback":true}' \
   --query InstanceRefreshId \
   --output text)
