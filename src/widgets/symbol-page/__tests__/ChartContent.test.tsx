@@ -118,7 +118,8 @@ vi.mock('@/widgets/symbol-page/hooks/usePanelResize', () => ({
     PANEL_MAX_WIDTH: 640,
 }));
 
-vi.mock('@/widgets/symbol-page/hooks/useAnalysisProgress', () => ({
+// ChartContent가 분석 위젯 훅을 직접 import하므로 모킹 대상도 동일 경로로 변경.
+vi.mock('@/widgets/analysis/hooks/useAnalysisProgress', () => ({
     useAnalysisProgress: vi.fn(() => ({
         phaseIndex: 0,
         tipIndex: 0,

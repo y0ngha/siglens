@@ -70,7 +70,8 @@ vi.mock('../hooks/useAnalysisDisplay', () => ({
         handleProgressFinished: vi.fn(),
     }),
 }));
-vi.mock('../hooks/useAnalysisProgress', () => ({
+// ChartContent가 분석 위젯 훅을 직접 import하므로 모킹 대상도 동일 경로로 변경.
+vi.mock('@/widgets/analysis/hooks/useAnalysisProgress', () => ({
     useAnalysisProgress: () => ({ phaseIndex: 0, tipIndex: 0 }),
 }));
 vi.mock('@/features/symbol-chat', () => ({ usePublishSymbolChat: vi.fn() }));

@@ -19,7 +19,8 @@ import { useActionPricesVisibility } from './hooks/useActionPricesVisibility';
 import { useAnalysis } from './hooks/useAnalysis';
 import { useAnalysisDerivedData } from './hooks/useAnalysisDerivedData';
 import { useAnalysisDisplay } from './hooks/useAnalysisDisplay';
-import { useAnalysisProgress } from './hooks/useAnalysisProgress';
+// useAnalysisProgress는 Spec-2 PR-B1에서 widgets/analysis로 이전됐다.
+import { useAnalysisProgress } from '@/widgets/analysis/hooks/useAnalysisProgress';
 import { useBars } from '@/entities/bars/hooks/useBars';
 import {
     PANEL_MAX_WIDTH,
