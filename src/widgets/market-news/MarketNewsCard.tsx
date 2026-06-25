@@ -135,7 +135,6 @@ export function MarketNewsCard({ category, item }: MarketNewsCardProps) {
             isHighImpact={isHighImpact}
             pending={pending}
             url={item.url}
-            // MarketNewsCard의 AnalysisSkeleton: aria-hidden=true, text-secondary-400 텍스트
             analysisSkeleton={
                 <div
                     aria-hidden="true"
@@ -148,18 +147,20 @@ export function MarketNewsCard({ category, item }: MarketNewsCardProps) {
                     </span>
                 </div>
             }
-            // MarketNewsCard의 SummarySkeletonLine: aria-hidden=true
             summarySkeletonLine={
                 <div aria-hidden="true" className="mt-2 space-y-1.5">
                     <div className="bg-secondary-700/70 h-3.5 w-full animate-pulse rounded motion-reduce:animate-none" />
                     <div className="bg-secondary-700/70 h-3.5 w-4/5 animate-pulse rounded motion-reduce:animate-none" />
                 </div>
             }
-            // MarketNewsCard 배지 행: min-w-0 포함, text-secondary-300 카테고리, translate="no" source
             badgeRow={
                 <div className="mt-1.5 flex min-w-0 flex-wrap items-center gap-2">
-                    <SentimentBadge value={item.sentiment!} />
-                    <ImpactBadge value={item.priceImpact!} />
+                    {item.sentiment !== null && (
+                        <SentimentBadge value={item.sentiment} />
+                    )}
+                    {item.priceImpact !== null && (
+                        <ImpactBadge value={item.priceImpact} />
+                    )}
                     {item.category !== null && (
                         <span className="bg-secondary-700 text-secondary-300 rounded px-2 py-0.5 text-xs">
                             {item.category}
@@ -176,13 +177,11 @@ export function MarketNewsCard({ category, item }: MarketNewsCardProps) {
                     </span>
                 </div>
             }
-            // 티커 칩 슬롯: tickers가 있을 때만 렌더한다.
             tickerChipSlot={
                 item.tickers.length > 0 ? (
                     <TickerChips category={category} tickers={item.tickers} />
                 ) : undefined
             }
-            // 본문/요약 섹션: section 엘리먼트를 직접 인라인으로 사용한다.
             bodySection={
                 <>
                     {item.bodyKo !== null && (
@@ -207,7 +206,6 @@ export function MarketNewsCard({ category, item }: MarketNewsCardProps) {
                     )}
                 </>
             }
-            // MarketNewsCard 링크: aria-hidden span으로 감싼 화살표
             linkChildren={
                 <>
                     원문 보기 <span aria-hidden="true">→</span>

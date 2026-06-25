@@ -43,9 +43,6 @@ const VALID_IMPACTS = new Set<string>(['high', 'medium', 'low', 'negligible']);
 const PAGE_SIZE = 5;
 const NEWS_LIST_SKELETON_COUNT = 3;
 
-// 테스트가 NewsList에서 직접 import하므로 re-export로 유지한다.
-export { formatNewsPublishedAt } from '@/shared/lib/timeFormat';
-
 function isNewsSentiment(value: string): value is NewsSentiment {
     return VALID_SENTIMENTS.has(value);
 }
@@ -196,7 +193,6 @@ function NewsCard({ item }: { item: NewsDisplayItem }) {
             isHighImpact={isHighImpact}
             pending={pending}
             url={item.url}
-            // NewsList의 AnalysisSkeleton: aria-hidden 없음, text-secondary-500 텍스트
             analysisSkeleton={
                 <div className="mt-1.5 flex flex-wrap items-center gap-2">
                     <div className="bg-secondary-700 h-5 w-10 animate-pulse rounded motion-reduce:animate-none" />
@@ -206,14 +202,12 @@ function NewsCard({ item }: { item: NewsDisplayItem }) {
                     </span>
                 </div>
             }
-            // NewsList의 SummarySkeletonLine: aria-hidden 없음
             summarySkeletonLine={
                 <div className="mt-2 space-y-1.5">
                     <div className="bg-secondary-700/70 h-3.5 w-full animate-pulse rounded motion-reduce:animate-none" />
                     <div className="bg-secondary-700/70 h-3.5 w-4/5 animate-pulse rounded motion-reduce:animate-none" />
                 </div>
             }
-            // NewsList 배지 행: min-w-0 없음, text-secondary-400 source span
             badgeRow={
                 <div className="mt-1.5 flex flex-wrap items-center gap-2">
                     {item.sentiment !== null && (
@@ -238,9 +232,6 @@ function NewsCard({ item }: { item: NewsDisplayItem }) {
                     </span>
                 </div>
             }
-            // NewsList는 티커 칩 슬롯을 사용하지 않는다.
-            tickerChipSlot={undefined}
-            // NewsList 본문: NewsTextSection 컴포넌트 사용
             bodySection={
                 <>
                     {item.bodyKo !== null && (
@@ -251,7 +242,6 @@ function NewsCard({ item }: { item: NewsDisplayItem }) {
                     )}
                 </>
             }
-            // NewsList 링크: 텍스트 노드 형태의 화살표
             linkChildren="원문 보기 →"
         />
     );

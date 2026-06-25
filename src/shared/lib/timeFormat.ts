@@ -58,7 +58,6 @@ const DATE_TIME_TIMEFRAMES: ReadonlySet<Timeframe> = new Set([
     '4Hour',
 ]);
 
-// 뉴스 발행 시각 → KST 기준 한국어 날짜+시간 문자열 ("2026년 5월 6일 오전 07:35 KST")
 const NEWS_PUBLISHED_AT_FORMATTER = new Intl.DateTimeFormat('ko-KR', {
     year: 'numeric',
     month: 'short',
