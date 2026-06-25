@@ -53,6 +53,9 @@ vi.mock('../hooks/useActionPricesVisibility', () => ({
 vi.mock('../SymbolModelContext', () => ({
     useSymbolModel: () => ({ modelId: 'gemini-2.5-flash', isHydrated: true }),
 }));
+vi.mock('../SymbolPageContext', () => ({
+    useSymbolPageContext: () => ({ indicatorCount: 25 }),
+}));
 vi.mock('../hooks/useAnalysisDerivedData', () => ({
     useAnalysisDerivedData: () => ({
         clusteredKeyLevels: { support: [], resistance: [] },
@@ -66,7 +69,7 @@ vi.mock('../hooks/useAnalysisDisplay', () => ({
         handleProgressFinished: vi.fn(),
     }),
 }));
-vi.mock('../hooks/useAnalysisProgress', () => ({
+vi.mock('@/widgets/analysis/hooks/useAnalysisProgress', () => ({
     useAnalysisProgress: () => ({ phaseIndex: 0, tipIndex: 0 }),
 }));
 vi.mock('@/features/symbol-chat', () => ({ usePublishSymbolChat: vi.fn() }));

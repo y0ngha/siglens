@@ -10,9 +10,8 @@
 // mock하지 않는다 — 실제 라벨 맵과 리포트 빌더를 통과시켜 진짜 계약을 검증한다.
 // 부수효과가 큰 자식(AdBanner 등)과 컨텍스트·시간·클립보드 헬퍼만 mock한다.
 
-vi.mock('@/widgets/symbol-page', () => ({
-    useSymbolPageContext: () => ({ indicatorCount: 25 }),
-}));
+// indicatorCount는 이제 AnalysisPanel에 prop으로 전달한다.
+// useSymbolPageContext mock이 더 이상 필요 없다.
 vi.mock('@/shared/config/time', () => ({
     MS_PER_SECOND: 1000,
     SECONDS_PER_MINUTE: 60,

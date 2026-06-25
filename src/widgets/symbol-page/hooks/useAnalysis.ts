@@ -78,10 +78,9 @@ interface UseAnalysisOptions {
     isModelHydrated?: boolean;
 }
 
-// CooldownNotice 타입은 cross-widget 소비를 위해 types.ts로 추출.
-// 아래에서 re-export하여 기존 import 호환성 유지.
-import type { CooldownNotice } from '../types';
-export type { CooldownNotice } from '../types';
+// symbol-page → analysis는 허용된 하향 의존(cross-widget cross-import).
+import type { CooldownNotice } from '@/widgets/analysis/model/types';
+export type { CooldownNotice } from '@/widgets/analysis/model/types';
 
 export interface UseAnalysisResult {
     analysis: AnalysisResponse;

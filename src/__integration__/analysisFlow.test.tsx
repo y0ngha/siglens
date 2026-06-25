@@ -33,9 +33,6 @@ vi.mock('@y0ngha/siglens-core', async importOriginal => {
 // AnalysisPanel을 실제로 렌더하기 위한 인프라 mock. trendUtils·
 // buildExpertAnalysisReport·MarkdownText·@/shared/lib/trendline 등 핵심
 // 렌더·계약 경로는 mock하지 않고 실제 구현을 통과시킨다.
-vi.mock('@/widgets/symbol-page', () => ({
-    useSymbolPageContext: () => ({ indicatorCount: 25 }),
-}));
 vi.mock('@/shared/config/time', () => ({
     MS_PER_SECOND: 1000,
     SECONDS_PER_MINUTE: 60,

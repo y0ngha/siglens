@@ -11,7 +11,7 @@ widgets는 `features/`, `entities/`, `shared/`를 import 가능. **상위 레이
 | from | to | 사유 |
 |---|---|---|
 | `widgets/symbol-page` | `widgets/chart`, `widgets/analysis`, `widgets/fear-greed` 등 | symbol-page는 종목 페이지의 composition widget으로, 여러 위젯의 hook/컴포넌트를 조합. FSD 정석으로는 pages 레이어가 담당한다. 현재는 composition을 `widgets/symbol-page`에 잠정 유지하지만, FSD `pages` 레이어(`src/pages/*`, 라우팅은 `src/app/`에 잔류)는 `eslint.config.mjs`에 정식 element로 이미 예약돼 있어 향후 이관 가능 |
-| 각 위젯 | `widgets/symbol-page` | symbol-page 공용 hook 소비. useAssetInfo/useBars는 Spec-2 PR-A에서 각각 entities/ticker, entities/bars로 이전됨 — cross-widget 의존성 해소됨 |
+| `widgets/symbol-page` | `widgets/analysis` | CooldownNotice 타입 소비 (useAnalysis.ts). analysis → symbol-page 역방향 엣지 제거(Spec-2 PR-B1)로 허용된 하향 의존만 남음 |
 
 이 예외는 ESLint `from: 'widgets', allow: ['widgets', ...]`로 관리됨.
 
@@ -25,6 +25,8 @@ widgets는 `features/`, `entities/`, `shared/`를 import 가능. **상위 레이
 - `useAssetInfo` → `@/entities/ticker/hooks/useAssetInfo` (Spec-2 PR-A)
 - `useBars` → `@/entities/bars/hooks/useBars` (Spec-2 PR-A)
 - `BotBlockedError` → `@/shared/lib/BotBlockedError` (Spec-2 PR-A)
+- `useAnalysisProgress`, `ANALYSIS_PHASES`, `ANALYSIS_TIPS` → `@/widgets/analysis/hooks/useAnalysisProgress` (Spec-2 PR-B1)
+- `CooldownNotice` → `@/widgets/analysis/model/types` (Spec-2 PR-B1)
 
 소비자는 항목별 실제 경로로 deep import한다:
 - `useDefaultModelId` → `@/widgets/symbol-page/hooks/useDefaultModelId`

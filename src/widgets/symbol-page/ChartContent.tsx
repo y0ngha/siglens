@@ -19,7 +19,7 @@ import { useActionPricesVisibility } from './hooks/useActionPricesVisibility';
 import { useAnalysis } from './hooks/useAnalysis';
 import { useAnalysisDerivedData } from './hooks/useAnalysisDerivedData';
 import { useAnalysisDisplay } from './hooks/useAnalysisDisplay';
-import { useAnalysisProgress } from './hooks/useAnalysisProgress';
+import { useAnalysisProgress } from '@/widgets/analysis/hooks/useAnalysisProgress';
 import { useBars } from '@/entities/bars/hooks/useBars';
 import {
     PANEL_MAX_WIDTH,
@@ -27,6 +27,7 @@ import {
     usePanelResize,
 } from './hooks/usePanelResize';
 import { useSymbolModel } from './SymbolModelContext';
+import { useSymbolPageContext } from './SymbolPageContext';
 import { TechnicalFactsSummary } from './TechnicalFactsSummary';
 import type { AnalysisStatus } from './utils/analysisStatus';
 import { getAnalysisStatus } from './utils/analysisStatus';
@@ -134,6 +135,9 @@ export function ChartContent({
 
     const { modelId, isHydrated: isModelHydrated } = useSymbolModel();
 
+    // analysis → symbol-page 역방향 import를 제거하기 위해 여기서 context를 읽어 내려보낸다.
+    const { indicatorCount } = useSymbolPageContext();
+
     const {
         analysis,
         analysisResult,
@@ -226,6 +230,7 @@ export function ChartContent({
                     cooldownNotice={cooldownNotice}
                     actionPricesVisible={actionPricesVisible}
                     onActionPricesVisibilityChange={setActionPricesVisible}
+                    indicatorCount={indicatorCount}
                 />
                 {/* 서사가 있어도(캐시된 분석을 표시 중) 봇 판정이면 안내를 additive로
                     덧붙인다 — 자동 트리거/수동 재분석이 봇으로 오판돼 차단된 사실을
@@ -255,6 +260,7 @@ export function ChartContent({
         setActionPricesVisible,
         fmpSymbol,
         marketProfile,
+        indicatorCount,
     ]);
 
     // timeframe을 React.Fragment key로 전달 — Suspense 경계 밖에서 timeframe 변경 시 자식 트리를 강제 remount한다.

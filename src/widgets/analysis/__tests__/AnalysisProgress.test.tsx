@@ -5,7 +5,7 @@ vi.mock('@/shared/lib/cn', () => ({
             .filter(a => typeof a === 'string' && a.length > 0)
             .join(' '),
 }));
-vi.mock('@/widgets/symbol-page', () => ({
+vi.mock('../hooks/useAnalysisProgress', () => ({
     ANALYSIS_PHASES: ['차트 분석 중', '패턴 탐지 중', '결과 생성 중'],
     ANALYSIS_TIPS: ['팁 하나', '팁 둘', '팁 셋'],
 }));

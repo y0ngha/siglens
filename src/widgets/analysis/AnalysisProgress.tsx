@@ -1,7 +1,7 @@
 'use client';
 
 import { cn } from '@/shared/lib/cn';
-import { ANALYSIS_PHASES, ANALYSIS_TIPS } from '@/widgets/symbol-page';
+import { ANALYSIS_PHASES, ANALYSIS_TIPS } from './hooks/useAnalysisProgress';
 import { AdBanner } from './AdBanner';
 
 /**

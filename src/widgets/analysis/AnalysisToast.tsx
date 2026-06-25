@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import type { CooldownNotice } from '@/widgets/symbol-page';
+import type { CooldownNotice } from './model/types';
 import { MS_PER_SECOND, SECONDS_PER_MINUTE } from '@/shared/config/time';
 
 /**

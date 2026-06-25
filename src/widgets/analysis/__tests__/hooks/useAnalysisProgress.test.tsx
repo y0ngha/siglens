@@ -3,7 +3,7 @@ import {
     useAnalysisProgress,
     ANALYSIS_PHASES,
     ANALYSIS_TIPS,
-} from '@/widgets/symbol-page/hooks/useAnalysisProgress';
+} from '@/widgets/analysis/hooks/useAnalysisProgress';
 
 describe('useAnalysisProgress', () => {
     beforeEach(() => {
@@ -130,7 +130,7 @@ describe('useAnalysisProgress', () => {
             vi.advanceTimersByTime(60_000);
         });
 
-        // Phase should have advanced by the finishing sequence, not the normal interval
+        // 마무리 시퀀스로 인해 phaseIndex가 진행됐을 수 있으나, 일반 interval로 인한 진행이 아니어야 한다.
         expect(result.current.phaseIndex).toBeGreaterThanOrEqual(
             phaseAtFinishingStart
         );

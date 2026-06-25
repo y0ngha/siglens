@@ -34,11 +34,8 @@ vi.mock('@/shared/lib/formatAnalyzedAt', () => ({
 vi.mock('@/entities/analysis', () => ({
     isAnalysisStale: () => false,
 }));
-vi.mock('@/widgets/symbol-page', () => ({
-    useSymbolPageContext: () => ({ indicatorCount: 25 }),
-    ANALYSIS_PHASES: ['분석 중'],
-    ANALYSIS_TIPS: ['팁'],
-}));
+// indicatorCount는 이제 AnalysisPanel에 prop으로 전달한다.
+// useSymbolPageContext / ANALYSIS_PHASES / ANALYSIS_TIPS mock이 더 이상 필요 없다.
 vi.mock('../AnalysisProgress', () => ({
     AnalysisProgress: () => <div data-testid="analysis-progress" />,
 }));

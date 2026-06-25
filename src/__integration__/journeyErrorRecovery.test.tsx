@@ -13,7 +13,8 @@ vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: vi.fn(() => ({ db: {}, sql: () => null })),
 }));
 
-vi.mock('@/widgets/symbol-page', () => ({
+// AnalysisProgress가 내부 hook에서 직접 import하므로 여기서 mock한다.
+vi.mock('@/widgets/analysis/hooks/useAnalysisProgress', () => ({
     ANALYSIS_PHASES: [
         '데이터 수집',
         '패턴 분석',

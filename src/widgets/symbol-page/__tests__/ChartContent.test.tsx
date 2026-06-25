@@ -101,6 +101,10 @@ vi.mock('@/widgets/symbol-page/SymbolModelContext', () => ({
     })),
 }));
 
+vi.mock('@/widgets/symbol-page/SymbolPageContext', () => ({
+    useSymbolPageContext: vi.fn(() => ({ indicatorCount: 25 })),
+}));
+
 vi.mock('@/widgets/symbol-page/hooks/usePanelResize', () => ({
     usePanelResize: vi.fn(() => ({
         panelWidth: 640,
@@ -112,7 +116,7 @@ vi.mock('@/widgets/symbol-page/hooks/usePanelResize', () => ({
     PANEL_MAX_WIDTH: 640,
 }));
 
-vi.mock('@/widgets/symbol-page/hooks/useAnalysisProgress', () => ({
+vi.mock('@/widgets/analysis/hooks/useAnalysisProgress', () => ({
     useAnalysisProgress: vi.fn(() => ({
         phaseIndex: 0,
         tipIndex: 0,
