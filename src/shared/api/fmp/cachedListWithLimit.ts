@@ -1,8 +1,16 @@
 import { getOrSetCache } from '@/shared/cache/getOrSetCache';
 
 /**
+ * opts 타입 — `cachedListWithLimit` 선택적 파라미터.
+ */
+interface CachedListOpts {
+    onError?: 'empty' | 'rethrow';
+    logPrefix?: string;
+}
+
+/**
  * 리스트형 FMP 응답의 공통 패턴을 추출한 헬퍼:
- * `getOrSetCache(key, ttl, fetch).then(r => r.slice(0, max)).catch(...)`.
+ * `getOrSetCache(key, ttl, fetcher).then(r => r.slice(0, max)).catch(...)`.
  *
  * - `onError: 'empty'`  — inner throw 시 로깅 후 `[]` 반환 (financials 패턴).
  * - `onError: 'rethrow'` — inner throw 시 그대로 전파 (congress 패턴).
@@ -13,9 +21,10 @@ import { getOrSetCache } from '@/shared/cache/getOrSetCache';
  *
  * @param key      Redis 캐시 키 (호출자가 완성된 키를 전달)
  * @param ttl      캐시 TTL(초)
- * @param max      반환 상한 — 항상 cold fetch는 이 값으로 inner를 호출하고
- *                 캐싱하며, 읽을 때 slice(0, max)를 적용
- * @param fetch    cold 캐시 시 데이터를 가져올 async fetcher
+ * @param max      반환 상한 — getOrSetCache 결과를 slice(0, max)로 잘라 반환한다.
+ *                 cold fetch 시 inner 호출 상한은 caller의 `fetcher` 클로저에 바인딩되며,
+ *                 이 함수는 캐시된 전체 목록에서 slice만 적용한다.
+ * @param fetcher  cold 캐시 시 데이터를 가져올 async fetcher
  * @param opts.onError   에러 처리 전략 (기본값: 'empty')
  * @param opts.logPrefix console.error 앞에 붙는 접두사 (onError='empty'일 때만 사용)
  */
@@ -23,12 +32,12 @@ export function cachedListWithLimit<T>(
     key: string,
     ttl: number,
     max: number,
-    fetch: () => Promise<T[]>,
-    opts: { onError?: 'empty' | 'rethrow'; logPrefix?: string } = {}
+    fetcher: () => Promise<T[]>,
+    opts: CachedListOpts = {}
 ): Promise<T[]> {
     const { onError = 'empty', logPrefix = '' } = opts;
 
-    const base = getOrSetCache(key, ttl, fetch).then(rows =>
+    const base = getOrSetCache(key, ttl, fetcher).then(rows =>
         rows.slice(0, max)
     );
 

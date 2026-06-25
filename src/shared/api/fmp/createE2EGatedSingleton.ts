@@ -30,11 +30,7 @@ export function createE2EGatedSingleton<T>(
 
     return (): T => {
         if (cached !== null) return cached;
-        if (isE2E()) {
-            cached = loadFake();
-            return cached;
-        }
-        cached = makeReal();
+        cached = isE2E() ? loadFake() : makeReal();
         return cached;
     };
 }

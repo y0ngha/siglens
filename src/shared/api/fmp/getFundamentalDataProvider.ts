@@ -16,6 +16,9 @@ export const getFundamentalDataProvider: () => FundamentalProvider =
             // Sync factory — no dynamic import possible here, so the fake loads via a
             // gated require. Server-only and dead when E2E_TEST is unset (Turbopack
             // still bundles it into the server output).
+            // Safe cast: require() returns the exact module object at runtime, but TS
+            // cannot infer its shape from synchronous require(), so we assert it
+            // matches the static import type of the same module.
             const { FakeFundamentalDataProvider } =
                 require('./FakeFundamentalDataProvider') as typeof import('./FakeFundamentalDataProvider');
             return new FakeFundamentalDataProvider();
