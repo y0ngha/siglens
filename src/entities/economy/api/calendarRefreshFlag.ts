@@ -12,7 +12,7 @@ const _flag = createRedisFlag(
 );
 
 /** 최근 TTL 내 fetch 여부 — Redis 실패 시 false(항상 fetch). market-news 미러. */
-export const isCalendarRecentlyFetched = _flag.isSet as () => Promise<boolean>;
+export const isCalendarRecentlyFetched = _flag.isSet;
 
 /** "최근 fetch함" 마킹 — Redis 실패 시 noop. */
-export const markCalendarFetched = _flag.mark as () => Promise<void>;
+export const markCalendarFetched = _flag.mark;

@@ -7,55 +7,64 @@ import { getRedisClient } from './redisClient';
  * 각 flag는 단일 Redis 키(고정 키 또는 파라미터를 받는 함수)와 TTL을 가진다.
  * Redis 미구성/장애 시 isSet은 false(=항상 fetch), mark는 noop으로 degrade한다.
  *
- * 반환 인터페이스:
- * - `isSet(key?)` — 플래그가 설정돼 있으면 true
- * - `mark(key?)`  — 플래그를 TTL 동안 '1'로 세팅
- *
- * @param keyOrFn  - 고정 문자열이거나 파라미터를 받아 Redis 키를 반환하는 함수.
+ * @param key        - 고정 Redis 키 문자열.
  * @param ttlSeconds - Redis EX 값(초).
  * @param logPrefix  - 오류 로그에 표시할 슬라이스 식별자 (예: '[newsRefreshFlag]').
  */
-export function createRedisFlag<TKey extends string | void = void>(
-    keyOrFn: TKey extends string ? (param: TKey) => string : string,
+export function createRedisFlag(
+    key: string,
     ttlSeconds: number,
-    logPrefix: string
+    logPrefix?: string
 ): {
-    isSet: TKey extends string
-        ? (param: TKey) => Promise<boolean>
-        : () => Promise<boolean>;
-    mark: TKey extends string
-        ? (param: TKey) => Promise<void>
-        : () => Promise<void>;
-} {
-    // 런타임 분기: keyOrFn이 함수면 파라미터를 받고, 문자열이면 무시한다.
-    // 조건부 반환 타입은 호출자 편의를 위한 것이며, 내부 구현은 단일 경로다.
-    const resolveKey = (param?: string): string =>
-        typeof keyOrFn === 'function'
-            ? (keyOrFn as (p: string) => string)(param ?? '')
-            : (keyOrFn as string);
+    isSet: () => Promise<boolean>;
+    mark: () => Promise<void>;
+};
 
-    async function isSet(param?: string): Promise<boolean> {
+/**
+ * Redis boolean-flag 팩토리 — 파라미터로 Redis 키를 동적으로 생성하는 모드.
+ *
+ * @param keyFn      - 파라미터를 받아 Redis 키를 반환하는 함수.
+ * @param ttlSeconds - Redis EX 값(초).
+ * @param logPrefix  - 오류 로그에 표시할 슬라이스 식별자 (예: '[newsRefreshFlag]').
+ */
+export function createRedisFlag<A>(
+    keyFn: (arg: A) => string,
+    ttlSeconds: number,
+    logPrefix?: string
+): {
+    isSet: (arg: A) => Promise<boolean>;
+    mark: (arg: A) => Promise<void>;
+};
+
+// 구현부 — 오버로드 시그니처에 노출되지 않음. 런타임 동작은 기존과 동일.
+export function createRedisFlag(
+    keyOrFn: string | ((arg: unknown) => string),
+    ttlSeconds: number,
+    logPrefix = ''
+) {
+    const resolveKey = (arg?: unknown): string =>
+        typeof keyOrFn === 'function' ? keyOrFn(arg) : keyOrFn;
+
+    async function isSet(arg?: unknown): Promise<boolean> {
         const redis = getRedisClient();
         if (redis === null) return false;
         try {
-            return (await redis.get(resolveKey(param))) !== null;
+            return (await redis.get(resolveKey(arg))) !== null;
         } catch (error) {
             console.error(`${logPrefix} get failed`, error);
             return false;
         }
     }
 
-    async function mark(param?: string): Promise<void> {
+    async function mark(arg?: unknown): Promise<void> {
         const redis = getRedisClient();
         if (redis === null) return;
         try {
-            await redis.set(resolveKey(param), '1', { ex: ttlSeconds });
+            await redis.set(resolveKey(arg), '1', { ex: ttlSeconds });
         } catch (error) {
             console.error(`${logPrefix} set failed`, error);
         }
     }
 
-    // 조건부 반환 타입은 호출자 시그니처 편의용 — 런타임 값은 동일 함수.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return { isSet, mark } as any;
+    return { isSet, mark };
 }

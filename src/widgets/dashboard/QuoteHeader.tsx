@@ -54,13 +54,8 @@ export function QuoteHeader({
     );
 
     if (layout === 'signal') {
-        // SignalStockCard 원본 DOM:
-        //   행1: 티커 + 변동폭(justify-between)
-        //   행2: 한국어 이름
-        //   행3: 가격
         return (
             <>
-                {/* 티커 + 변동폭 — 한 행으로 */}
                 <div className="flex items-center justify-between gap-1">
                     <span
                         translate="no"
@@ -70,11 +65,9 @@ export function QuoteHeader({
                     </span>
                     {changeSpan}
                 </div>
-                {/* 한국어 이름 */}
                 <p className="text-secondary-400 min-w-0 truncate text-xs">
                     {data.koreanName}
                 </p>
-                {/* 가격 */}
                 <p className="text-secondary-100 font-mono text-sm tabular-nums">
                     ${formatUsdPrice(data.price)}
                 </p>
@@ -82,28 +75,20 @@ export function QuoteHeader({
         );
     }
 
-    // layout === 'index' (기본값)
-    // IndexCard 원본 DOM:
-    //   행1: 티커 단독 행
-    //   행2: 한국어 이름 + 변동폭(justify-between)
-    //   행3: 가격
     return (
         <>
-            {/* 티커 — 단독 행으로 overflow 방지 */}
             <span
                 translate="no"
                 className="text-secondary-100 font-mono text-xs font-semibold"
             >
                 {data.symbol}
             </span>
-            {/* 한국어 이름 + 변동폭 */}
             <div className="flex items-center justify-between gap-1">
                 <p className="text-secondary-400 min-w-0 truncate text-xs">
                     {data.koreanName}
                 </p>
                 {changeSpan}
             </div>
-            {/* 가격 */}
             <p className="text-secondary-100 font-mono text-sm tabular-nums">
                 ${formatUsdPrice(data.price)}
             </p>

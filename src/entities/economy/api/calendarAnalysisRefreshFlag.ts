@@ -12,7 +12,7 @@ const _flag = createRedisFlag(
 );
 
 /** 최근 TTL 내 분석 pass 수행 여부 — Redis 실패 시 false(항상 스캔). SP-A 플래그 미러. */
-export const isAnalysisRecentlyRun = _flag.isSet as () => Promise<boolean>;
+export const isAnalysisRecentlyRun = _flag.isSet;
 
 /** "최근 분석함" 마킹 — Redis 실패 시 noop. */
-export const markAnalysisRun = _flag.mark as () => Promise<void>;
+export const markAnalysisRun = _flag.mark;
