@@ -29,6 +29,3 @@ export {
     ANALYSIS_PHASES,
     ANALYSIS_TIPS,
 } from './hooks/useAnalysisProgress';
-
-// BotBlockedError는 @/shared/lib/BotBlockedError로 이전됨.
-// 소비자는 해당 경로에서 직접 import할 것.

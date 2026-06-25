@@ -37,15 +37,6 @@ vi.mock('@/shared/hooks/usePageHideCancel', () => ({
     usePageHideCancel: vi.fn(),
 }));
 
-vi.mock('@/widgets/symbol-page', () => ({
-    BotBlockedError: class BotBlockedError extends Error {
-        constructor() {
-            super('bot_blocked');
-            this.name = 'BotBlockedError';
-        }
-    },
-}));
-
 // SSR hydration gate — default hydrated so existing tests fetch on mount; the
 // gate-closed test flips it to false to assert the auto-trigger is suppressed.
 vi.mock('@/shared/hooks/useHydrated', () => ({
