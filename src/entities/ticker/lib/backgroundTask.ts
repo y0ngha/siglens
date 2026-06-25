@@ -7,7 +7,8 @@ export interface BackgroundTaskOptions {
      * integration may supply a `waitUntil` implementation here so the runtime
      * can keep the process alive until background work (cache writes, translation
      * jobs) completes before shutdown. When absent, `fireAndForget` owns the
-     * floating promise with a no-op catch-net.
+     * floating promise with a `console.error` logging catch-net to prevent
+     * unhandled rejection crashes.
      */
     waitUntil?: WaitUntil;
 }

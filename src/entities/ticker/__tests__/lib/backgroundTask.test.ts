@@ -11,16 +11,13 @@ describe('fireAndForget', () => {
         expect(waitUntil).toHaveBeenCalledWith(p);
     });
 
-    it('options가 없으면 waitUntil을 호출하지 않고 throw하지 않는다', () => {
-        const waitUntil = vi.fn();
-        fireAndForget(Promise.resolve());
-        expect(waitUntil).not.toHaveBeenCalled();
-    });
-
     it('options가 없고 promise가 reject되면 console.error로 로깅하고 unhandledRejection을 막는다', async () => {
         const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
         fireAndForget(Promise.reject(new Error('boom')));
         await new Promise(r => setTimeout(r, 0));
-        expect(errSpy).toHaveBeenCalled();
+        expect(errSpy).toHaveBeenCalledWith(
+            '[fireAndForget] background task error:',
+            expect.any(Error)
+        );
     });
 });
