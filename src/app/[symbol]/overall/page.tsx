@@ -1,6 +1,7 @@
 import { OverallContent } from '@/widgets/overall/OverallContent';
 import { OverallFactsSummary } from '@/widgets/overall';
-import { CrossLinkCards, SymbolPageHeading } from '@/widgets/symbol-page';
+import { SymbolPageHeading } from '@/views/symbol';
+import { CrossLinkCards } from '@/shared/ui/CrossLinkCards';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import {
     DEFAULT_TIMEFRAME,

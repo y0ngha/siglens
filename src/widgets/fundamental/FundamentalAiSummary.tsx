@@ -7,7 +7,7 @@ import {
     type FundamentalSentiment,
 } from '@y0ngha/siglens-core';
 import { cn } from '@/shared/lib/cn';
-import { useDefaultModelId } from '@/widgets/symbol-page/hooks/useDefaultModelId';
+import { useDefaultModelId } from '@/features/symbol-model';
 import { useFundamentalAnalysis } from './hooks/useFundamentalAnalysis';
 import { usePublishSymbolChat } from '@/features/symbol-chat';
 import { buildChatState } from './utils/buildChatState';

@@ -11,7 +11,7 @@ import {
     isOAuthProvider,
     buildOAuthRedirectUri,
 } from '@/features/auth-oauth/lib/providers';
-import { TABS } from '@/widgets/symbol-page/utils/symbolTabsConfig';
+import { TABS } from '@/views/symbol/utils/symbolTabsConfig';
 
 const FAKE_HMAC_SECRET = 'test-secret-must-be-32-bytes-!ok';
 

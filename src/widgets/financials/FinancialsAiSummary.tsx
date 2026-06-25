@@ -7,7 +7,7 @@ import type {
 } from '@y0ngha/siglens-core';
 import { cn } from '@/shared/lib/cn';
 import { AXIS_LABEL_KO } from './axisLabels';
-import { useDefaultModelId } from '@/widgets/symbol-page/hooks/useDefaultModelId';
+import { useDefaultModelId } from '@/features/symbol-model';
 import { useFinancialsAnalysis } from './hooks/useFinancialsAnalysis';
 import { usePublishSymbolChat } from '@/features/symbol-chat';
 import { buildChatState } from './utils/buildChatState';

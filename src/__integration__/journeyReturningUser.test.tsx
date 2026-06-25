@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { SectorTabs } from '@/widgets/dashboard/SectorTabs';
-import { SymbolTabs } from '@/widgets/symbol-page/SymbolTabs';
+import { SymbolTabs } from '@/views/symbol/SymbolTabs';
 import { TimeframeSelector } from '@/widgets/chart/TimeframeSelector';
 import { ModelSelector } from '@/widgets/analysis/ModelSelector';
 import type { Timeframe, ModelId } from '@y0ngha/siglens-core';

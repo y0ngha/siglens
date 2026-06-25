@@ -45,9 +45,11 @@ vi.mock('@/widgets/overall/OverallContent', () => ({
 vi.mock('@/widgets/overall', () => ({
     OverallFactsSummary: () => null,
 }));
-vi.mock('@/widgets/symbol-page', () => ({
-    CrossLinkCards: () => null,
+vi.mock('@/views/symbol', () => ({
     SymbolPageHeading: ({ children }: { children: unknown }) => children,
+}));
+vi.mock('@/shared/ui/CrossLinkCards', () => ({
+    CrossLinkCards: () => null,
 }));
 
 vi.mock('@/shared/lib/seo', async importOriginal => ({

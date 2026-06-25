@@ -64,11 +64,13 @@ vi.mock('@/widgets/news/sections/EventCalendar', () => ({
 vi.mock('@/widgets/news/sections/AnalystActions', () => ({
     AnalystActions: () => null,
 }));
-vi.mock('@/widgets/symbol-page', () => ({
-    CrossLinkCards: () => null,
+vi.mock('@/views/symbol', () => ({
     SymbolPageHeading: ({ children }: { children: unknown }) => children,
 }));
-vi.mock('@/widgets/symbol-page/SectionSkeleton', () => ({
+vi.mock('@/shared/ui/CrossLinkCards', () => ({
+    CrossLinkCards: () => null,
+}));
+vi.mock('@/views/symbol/SectionSkeleton', () => ({
     SectionSkeleton: () => null,
 }));
 

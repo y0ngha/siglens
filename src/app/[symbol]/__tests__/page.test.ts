@@ -1,4 +1,4 @@
-vi.mock('@/widgets/symbol-page/SymbolPageClient', () => ({
+vi.mock('@/views/symbol/SymbolPageClient', () => ({
     SymbolPageClient: () => null,
 }));
 vi.mock('@/shared/ui/JsonLd', () => ({ JsonLd: () => null }));
@@ -91,7 +91,7 @@ import {
     GEMINI_2_5_FLASH_LITE_MODEL,
     peekAnalysisCache,
 } from '@y0ngha/siglens-core';
-import { SymbolPageClient } from '@/widgets/symbol-page/SymbolPageClient';
+import { SymbolPageClient } from '@/views/symbol/SymbolPageClient';
 import { findElementByType } from '@/__tests__/utils/findElementByType';
 import { notFound } from 'next/navigation';
 import type { MockedFunction } from 'vitest';

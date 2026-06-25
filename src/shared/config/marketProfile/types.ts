@@ -3,7 +3,7 @@ import type { Timeframe } from '@y0ngha/siglens-core';
 /**
  * Union of all tab route keys used in the symbol analysis page.
  * Shared between `entities/ticker` (tab guard predicate) and
- * `widgets/symbol-page` (TABS config, tabsFor). Defined in `shared` so both
+ * `views/symbol/utils/symbolTabsConfig` (TABS config, tabsFor). Defined in `shared` so both
  * layers can import it without violating the FSD dependency direction.
  */
 export type TabKey =

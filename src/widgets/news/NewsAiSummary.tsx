@@ -9,7 +9,7 @@ import { useNewsAnalysisTrigger } from './hooks/useNewsAnalysisTrigger';
 import { useWaitForNewsCards } from './hooks/useWaitForNewsCards';
 import { buildChatState } from './utils/buildChatState';
 import { BotBlockedNotice } from '@/shared/ui/BotBlockedNotice';
-import { useDefaultModelId } from '@/widgets/symbol-page/hooks/useDefaultModelId';
+import { useDefaultModelId } from '@/features/symbol-model';
 import { cn } from '@/shared/lib/cn';
 import {
     type NewsAnalysisResponse,

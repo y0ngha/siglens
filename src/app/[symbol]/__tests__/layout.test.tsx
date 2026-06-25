@@ -64,10 +64,10 @@ vi.mock('@/app/[symbol]/SymbolLayoutClient', () => ({
     SymbolLayoutJail: () => null,
     SymbolLayoutProviders: () => null,
 }));
-vi.mock('@/widgets/symbol-page/SymbolLayoutHeader', () => ({
+vi.mock('@/views/symbol/SymbolLayoutHeader', () => ({
     SymbolLayoutHeader: () => null,
 }));
-vi.mock('@/widgets/symbol-page/SymbolTabsSkeleton', () => ({
+vi.mock('@/views/symbol/SymbolTabsSkeleton', () => ({
     SymbolTabsSkeleton: () => null,
 }));
 

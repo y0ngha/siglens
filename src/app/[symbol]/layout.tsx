@@ -9,8 +9,8 @@ import {
     SymbolLayoutJail,
     SymbolLayoutProviders,
 } from '@/app/[symbol]/SymbolLayoutClient';
-import { SymbolLayoutHeader } from '@/widgets/symbol-page/SymbolLayoutHeader';
-import { SymbolTabsSkeleton } from '@/widgets/symbol-page/SymbolTabsSkeleton';
+import { SymbolLayoutHeader } from '@/views/symbol/SymbolLayoutHeader';
+import { SymbolTabsSkeleton } from '@/views/symbol/SymbolTabsSkeleton';
 import { DEFAULT_TIMEFRAME } from '@/shared/config/market';
 import { getBarsStatic, quantizeBarsDataToLastClosed } from '@/entities/bars';
 import { getAssetInfoResilient } from '@/entities/ticker';

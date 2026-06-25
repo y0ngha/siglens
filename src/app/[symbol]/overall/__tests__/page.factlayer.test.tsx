@@ -13,10 +13,12 @@
 vi.mock('@/widgets/overall/OverallContent', () => ({
     OverallContent: () => null,
 }));
-vi.mock('@/widgets/symbol-page', () => ({
-    CrossLinkCards: () => null,
+vi.mock('@/views/symbol', () => ({
     SymbolPageHeading: ({ children }: { children: React.ReactNode }) =>
         children,
+}));
+vi.mock('@/shared/ui/CrossLinkCards', () => ({
+    CrossLinkCards: () => null,
 }));
 vi.mock('@/shared/ui/JsonLd', () => ({ JsonLd: () => null }));
 vi.mock('@/shared/config/market', async importOriginal => ({

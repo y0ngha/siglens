@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
-import { SymbolTabs } from '@/widgets/symbol-page/SymbolTabs';
-import { TABS } from '@/widgets/symbol-page/utils/symbolTabsConfig';
+import { SymbolTabs } from '@/views/symbol/SymbolTabs';
+import { TABS } from '@/views/symbol/utils/symbolTabsConfig';
 import type { AssetInfo } from '@/shared/lib/types';
 
 let mockPathname = '/AAPL';

@@ -37,9 +37,11 @@ vi.mock('@/widgets/congress', () => ({
     CongressTrendSummary: () => null,
     CongressTradesTable: () => null,
 }));
-vi.mock('@/widgets/symbol-page', () => ({
-    CrossLinkCards: () => null,
+vi.mock('@/views/symbol', () => ({
     SymbolPageHeading: () => null,
+}));
+vi.mock('@/shared/ui/CrossLinkCards', () => ({
+    CrossLinkCards: () => null,
 }));
 vi.mock('@/shared/ui/JsonLd', () => ({ JsonLd: () => null }));
 vi.mock('@/shared/lib/seo', async importOriginal => ({

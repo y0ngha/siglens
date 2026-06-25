@@ -8,7 +8,7 @@ vi.mock('@/features/symbol-chat', () => ({
         <div data-testid="chat-provider">{children}</div>
     ),
 }));
-vi.mock('@/widgets/symbol-page/SymbolModelContext', () => ({
+vi.mock('@/features/symbol-model/model/SymbolModelContext', () => ({
     SymbolModelProvider: ({ children }: { children: React.ReactNode }) => (
         <div data-testid="model-provider">{children}</div>
     ),

@@ -1,7 +1,8 @@
 import { FearGreedPage } from '@/widgets/fear-greed/FearGreedPage';
 import { ErrorBoundary } from 'react-error-boundary';
 import { FearGreedPageError } from '@/widgets/fear-greed';
-import { CrossLinkCards, SymbolPageHeading } from '@/widgets/symbol-page';
+import { SymbolPageHeading } from '@/views/symbol';
+import { CrossLinkCards } from '@/shared/ui/CrossLinkCards';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import {
     DEFAULT_TIMEFRAME,

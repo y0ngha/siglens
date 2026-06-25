@@ -24,7 +24,7 @@ vi.mock('@/widgets/overall/hooks/useOverallAnalysis', async importOriginal => {
 vi.mock('@/features/symbol-chat', () => ({
     usePublishSymbolChat: vi.fn(),
 }));
-vi.mock('@/widgets/symbol-page/hooks/useDefaultModelId', () => ({
+vi.mock('@/features/symbol-model', () => ({
     useDefaultModelId: vi.fn(() => 'gemini-2.5-flash-lite'),
 }));
 // /news와 동일 게이트 적용 — 두 훅을 단순화해 효과만 검증한다.

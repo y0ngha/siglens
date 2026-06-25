@@ -11,7 +11,7 @@
  * `children`, so we first locate the Suspense element then inspect its fallback.
  */
 
-vi.mock('@/widgets/symbol-page/SymbolPageClient', () => ({
+vi.mock('@/views/symbol/SymbolPageClient', () => ({
     SymbolPageClient: () => null,
 }));
 vi.mock('@/shared/ui/JsonLd', () => ({ JsonLd: () => null }));
@@ -105,7 +105,7 @@ vi.mock('@/entities/analysis/lib/peekAnalysisStaticCache', () => ({
 import { Suspense, type ReactNode } from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { default as SymbolPage } from '@/app/[symbol]/page';
-import { TechnicalFactsSummary } from '@/widgets/symbol-page/TechnicalFactsSummary';
+import { TechnicalFactsSummary } from '@/views/symbol';
 import { getBarsStatic } from '@/entities/bars';
 import { getAssetInfoResilient } from '@/entities/ticker';
 import { findElementByType } from '@/__tests__/utils/findElementByType';
