@@ -1,6 +1,7 @@
 import 'server-only';
 import { cache } from 'react';
 import { getOrSetCache } from '@/shared/cache/getOrSetCache';
+import { sym } from './symKey';
 import { FMP_FUNDAMENTAL_REVALIDATE_SECONDS } from './fundamentalClient';
 import type { FmpEarningsReportItem } from './fundamentalClient';
 import type { FundamentalProvider } from './fundamentalProvider.types';
@@ -24,7 +25,6 @@ import type {
 
 const TTL = FMP_FUNDAMENTAL_REVALIDATE_SECONDS;
 export const PEER_LIMIT = 10;
-const sym = (s: string): string => s.toUpperCase();
 
 /**
  * `FundamentalProvider`를 감싸 메서드별 Redis 캐싱을 주입하는 데코레이터.
