@@ -8,8 +8,39 @@ concurrency:
     group: ci-${{ github.event.pull_request.number }}
     cancel-in-progress: true
 
+permissions:
+    contents: read
+
 jobs:
+    # Cheap detect job: decide whether the heavy `ci` job runs. Needs a checkout
+    # only to read .github/path-filters.yml; the PR diff comes from the REST API.
+    changes:
+        runs-on: ubuntu-latest
+        permissions:
+            contents: read
+            pull-requests: read
+        outputs:
+            run: ${{ steps.gate.outputs.run }}
+        steps:
+            - uses: actions/checkout@v4
+            - uses: dorny/paths-filter@v4
+              id: f
+              with:
+                  filters: .github/path-filters.yml
+            # Run CI unless every changed file is CI-irrelevant. skills are .md
+            # (inside ci_irrelevant) so rescue CI when any skills file changed.
+            - name: Compute gate
+              id: gate
+              run: |
+                  if [ "${{ steps.f.outputs.all_count }}" != "${{ steps.f.outputs.ci_irrelevant_count }}" ] || [ "${{ steps.f.outputs.skills }}" = "true" ]; then
+                      echo "run=true" >> "$GITHUB_OUTPUT"
+                  else
+                      echo "run=false" >> "$GITHUB_OUTPUT"
+                  fi
+
     ci:
+        needs: changes
+        if: needs.changes.outputs.run == 'true'
         runs-on: ubuntu-latest
         env:
             SIGLENS_GITHUB_TOKEN: ${{ secrets.SIGLENS_GITHUB_TOKEN }}
@@ -43,3 +74,20 @@ jobs:
 
             - name: Test
               run: yarn test
+
+    # Required-check gate: always runs so a path-skipped `ci` never leaves a
+    # required check stuck "pending". Mark THIS job required (not `ci`).
+    ci-required:
+        needs: [changes, ci]
+        if: always()
+        runs-on: ubuntu-latest
+        steps:
+            - name: Verify CI did not fail
+              run: |
+                  if [ "${{ needs.changes.result }}" = "failure" ] || [ "${{ needs.changes.result }}" = "cancelled" ]; then
+                      echo "detect job failed"; exit 1
+                  fi
+                  if [ "${{ needs.ci.result }}" = "failure" ] || [ "${{ needs.ci.result }}" = "cancelled" ]; then
+                      echo "ci failed"; exit 1
+                  fi
+                  echo "ci ok (result=${{ needs.ci.result }})"

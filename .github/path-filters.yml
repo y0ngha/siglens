@@ -1,0 +1,55 @@
+# Shared path filters for CI/E2E job-level gating.
+# See docs/superpowers/specs/2026-06-25-ci-e2e-path-gating-design.md
+#
+# dorny/paths-filter sets picomatch dot:true, so ** matches dotfiles/dot-dirs.
+# Gating uses the *_count outputs: a workflow runs iff
+#   all_count != <workflow>_irrelevant_count
+# i.e. at least one changed file is OUTSIDE the irrelevant set (denylist).
+# Forgetting an irrelevant path makes that path count as relevant => the
+# workflow runs unnecessarily (the safe failure direction).
+
+# Total changed files.
+all:
+    - '**'
+
+# Changes that cannot affect ANY check (CI or E2E).
+common_irrelevant: &common_irrelevant
+    - 'docs/**'
+    - 'refs/**'
+    - '**/*.md'
+    - '.claude/**'
+    - '.gemini/**'
+    - '.agents/**'
+    - '.superpowers/**'
+    - '.idea/**'
+    - '.vscode/**'
+    - '.husky/**'
+    - 'LICENSE'
+
+# CI (typecheck/lint/format/test/validate:skills) is irrelevant only for the
+# common set. skills are .md and match **/*.md above, so the `skills` filter
+# below rescues CI for skills-only changes.
+ci_irrelevant: *common_irrelevant
+
+# E2E (prod build + Playwright) is additionally blind to lint/format/unit-test
+# tooling and to skills (read at runtime via fs.readdir, not bundled into the
+# build). dorny flattens the nested anchor list below (documented behavior).
+e2e_irrelevant:
+    - *common_irrelevant
+    - 'skills/**'
+    - 'skills-lock.json'
+    - 'eslint.config.mjs'
+    - '.stylelintrc.cjs'
+    - '.prettierrc.cjs'
+    - '.prettierignore'
+    - 'vitest.config.ts'
+    - 'vitest.setup.*.ts'
+    - 'lint-staged.config.mjs'
+    - 'scripts/validate-skills.ts'
+    - '.github/workflows/ci.yml'
+
+# Rescue: any of these MUST run CI (validate:skills) despite matching **/*.md.
+skills:
+    - 'skills/**'
+    - 'skills-lock.json'
+    - 'scripts/validate-skills.ts'
