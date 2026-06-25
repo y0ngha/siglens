@@ -40,10 +40,6 @@ vi.mock('@y0ngha/siglens-core', () => ({
     pollAnalysis: vi.fn(),
 }));
 
-vi.mock('@vercel/functions', () => ({
-    waitUntil: vi.fn(),
-}));
-
 import { callAiProviderRouter } from '@/entities/llm-provider/api/router';
 import { pollAnalysisAction } from '@/entities/analysis/actions/pollAnalysisAction';
 import { pollAnalysis } from '@y0ngha/siglens-core';

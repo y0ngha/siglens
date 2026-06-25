@@ -1,6 +1,5 @@
 'use server';
 
-import { waitUntil } from '@vercel/functions';
 import { headers, cookies } from 'next/headers';
 import {
     submitOptionsAnalysis,
@@ -80,7 +79,6 @@ export async function submitOptionsAnalysisAction(
             expirationDate,
             modelId,
             snapshot,
-            waitUntil,
             tier: gate.tier,
             skipEnqueueIfMiss,
             ...(gate.userApiKey !== undefined

@@ -128,8 +128,7 @@ export function isNeonTransientError(error: unknown): boolean {
  * `fn()` itself runs slow and the elapsed time approaches 5s, withRetry
  * bails out rather than queueing more sleeps. Maximum sleep cap is ~2.8s
  * (200+400+800 + up to 1× jitter), so this budget covers the worst case
- * comfortably while leaving headroom inside Vercel serverless 10s function
- * limits.
+ * comfortably on a long-lived server (suitable for any runtime).
  *
  * Import this constant from every `*Repository.upsert*` site so the retry
  * behavior stays uniform across repositories.

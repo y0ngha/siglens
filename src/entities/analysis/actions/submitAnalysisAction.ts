@@ -1,6 +1,5 @@
 'use server';
 
-import { waitUntil } from '@vercel/functions';
 import { headers } from 'next/headers';
 import {
     submitAnalysis,
@@ -74,7 +73,6 @@ export async function submitAnalysisAction(
                 force,
                 fmpSymbol,
                 {
-                    waitUntil,
                     modelId,
                     skipEnqueueIfMiss,
                     marketDataProvider,
@@ -98,7 +96,6 @@ export async function submitAnalysisAction(
             force,
             fmpSymbol,
             {
-                waitUntil,
                 modelId,
                 skipEnqueueIfMiss,
                 marketDataProvider,

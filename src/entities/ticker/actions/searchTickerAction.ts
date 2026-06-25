@@ -1,6 +1,5 @@
 'use server';
 
-import { waitUntil } from '@vercel/functions';
 import { searchTicker } from '../lib/searchTicker';
 import { isE2E } from '@/shared/api/e2eEnv';
 import type { TickerSearchResult } from '@/shared/lib/types';
@@ -75,5 +74,5 @@ export async function searchTickerAction(
         return matches.length > 0 ? matches : [...E2E_TICKER_FIXTURE];
     }
 
-    return searchTicker(trimmed, { waitUntil });
+    return searchTicker(trimmed);
 }

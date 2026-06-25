@@ -5,10 +5,6 @@ vi.mock('next/headers', () => ({
     headers: vi.fn(() => Promise.resolve(new Headers())),
 }));
 
-vi.mock('@vercel/functions', () => ({
-    waitUntil: vi.fn(),
-}));
-
 // action이 core로 forwarding하는 인자 shape, OI-stale 게이팅, financials scorecard
 // 주입을 검증한다. requireActual로 타입 surface를 합치고 핵심 3개 export를 override한다.
 vi.mock('@y0ngha/siglens-core', async () => {

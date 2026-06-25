@@ -1,6 +1,5 @@
 'use server';
 
-import { waitUntil } from '@vercel/functions';
 import { headers } from 'next/headers';
 import {
     submitFundamentalAnalysis,
@@ -51,7 +50,6 @@ export async function submitFundamentalAnalysisAction(
             symbol,
             modelId,
             dataProvider: getFundamentalDataProvider(),
-            waitUntil,
             tier: gate.tier,
             skipEnqueueIfMiss,
             ...(gate.userApiKey !== undefined

@@ -3,10 +3,6 @@ import { searchTickerAction } from '../../actions/searchTickerAction';
 import { searchTicker } from '../../lib/searchTicker';
 import type { TickerSearchResult } from '@/shared/lib/types';
 
-vi.mock('@vercel/functions', () => ({
-    waitUntil: vi.fn(),
-}));
-
 vi.mock('../../lib/searchTicker', () => ({
     searchTicker: vi.fn(),
 }));
@@ -38,9 +34,7 @@ describe('searchTickerAction 함수는', () => {
 
         await searchTickerAction('  apple  ');
 
-        expect(mockSearchTicker).toHaveBeenCalledWith('apple', {
-            waitUntil: expect.any(Function),
-        });
+        expect(mockSearchTicker).toHaveBeenCalledWith('apple');
     });
 
     it('underlying 함수의 결과를 그대로 반환한다', async () => {

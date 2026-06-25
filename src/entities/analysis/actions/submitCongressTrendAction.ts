@@ -1,6 +1,5 @@
 'use server';
 
-import { waitUntil } from '@vercel/functions';
 import { headers, cookies } from 'next/headers';
 import {
     submitCongressTrend,
@@ -56,7 +55,6 @@ export async function submitCongressTrendAction(
             symbol,
             modelId,
             dataProvider: getCongressTradesProvider(),
-            waitUntil,
             skipEnqueueIfMiss,
         });
     } catch (error) {

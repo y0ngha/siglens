@@ -3,7 +3,6 @@ import type { ReactNode } from 'react';
 import Script from 'next/script';
 import { Geist, Geist_Mono } from 'next/font/google';
 import localFont from 'next/font/local';
-import { Analytics } from '@vercel/analytics/next';
 import { AuthSessionHeaderClient } from '@/app/_components/AuthSessionHeaderClient';
 import { Footer } from '@/widgets/layout/Footer';
 import { SiteJsonLd } from '@/widgets/layout/SiteJsonLd';
@@ -161,7 +160,6 @@ export default function RootLayout({ children }: RootLayoutProps) {
                         strategy="lazyOnload"
                     />
                 )}
-                <Analytics />
             </body>
         </html>
     );

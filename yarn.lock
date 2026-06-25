@@ -3596,60 +3596,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@vercel/analytics@npm:^2.0.1":
-  version: 2.0.1
-  resolution: "@vercel/analytics@npm:2.0.1"
-  peerDependencies:
-    "@remix-run/react": ^2
-    "@sveltejs/kit": ^1 || ^2
-    next: ">= 13"
-    nuxt: ">= 3"
-    react: ^18 || ^19 || ^19.0.0-rc
-    svelte: ">= 4"
-    vue: ^3
-    vue-router: ^4
-  peerDependenciesMeta:
-    "@remix-run/react":
-      optional: true
-    "@sveltejs/kit":
-      optional: true
-    next:
-      optional: true
-    nuxt:
-      optional: true
-    react:
-      optional: true
-    svelte:
-      optional: true
-    vue:
-      optional: true
-    vue-router:
-      optional: true
-  checksum: 10c0/c788c03d0f072f6f2be52d3f6f4f0680d2343f0d8765a759a044204223b14a6e14b285d0c5d5d05c0b66d4419746c5b245656ebdc48398328d85d96f1ede982b
-  languageName: node
-  linkType: hard
-
-"@vercel/functions@npm:^3.4.3":
-  version: 3.6.0
-  resolution: "@vercel/functions@npm:3.6.0"
-  dependencies:
-    "@vercel/oidc": "npm:3.4.1"
-  peerDependencies:
-    "@aws-sdk/credential-provider-web-identity": "*"
-  peerDependenciesMeta:
-    "@aws-sdk/credential-provider-web-identity":
-      optional: true
-  checksum: 10c0/a2383cd0498b1f65303a97932eb01344efd6f0f67bec6e47d4afd3f7284fd0541272676d6f28056d4d751723da552dbedce80583c4e3117101892f7b89ae2073
-  languageName: node
-  linkType: hard
-
-"@vercel/oidc@npm:3.4.1":
-  version: 3.4.1
-  resolution: "@vercel/oidc@npm:3.4.1"
-  checksum: 10c0/088a24ef846a2f2194e733ae47df451e3e4f97f4d930dda5bc3da3066f38cd4fe7ad335ba7f5268d4123f71a4e585fca0ce6dce90c34e85239f70346d100395c
-  languageName: node
-  linkType: hard
-
 "@vitest/coverage-v8@npm:^4.1.7":
   version: 4.1.7
   resolution: "@vitest/coverage-v8@npm:4.1.7"
@@ -11169,8 +11115,6 @@ __metadata:
     "@types/react": "npm:^19"
     "@types/react-dom": "npm:^19"
     "@upstash/redis": "npm:^1.37.0"
-    "@vercel/analytics": "npm:^2.0.1"
-    "@vercel/functions": "npm:^3.4.3"
     "@vitest/coverage-v8": "npm:^4.1.7"
     "@y0ngha/siglens-core": "npm:0.27.0"
     babel-plugin-react-compiler: "npm:^1.0.0"

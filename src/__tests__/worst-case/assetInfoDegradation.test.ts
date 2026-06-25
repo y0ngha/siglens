@@ -1,7 +1,3 @@
-vi.mock('@vercel/functions', () => ({
-    waitUntil: vi.fn((p: Promise<unknown>) => p.catch(() => {})),
-}));
-
 const mockCacheGet = vi.fn();
 const mockCacheSet = vi.fn();
 const mockCreateCacheProvider = vi.fn();

@@ -1,7 +1,4 @@
 import type { MockedFunction } from 'vitest';
-vi.mock('@vercel/functions', () => ({
-    waitUntil: vi.fn(),
-}));
 
 vi.mock('next/headers', () => ({
     headers: vi.fn(() => Promise.resolve(new Headers())),

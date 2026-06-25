@@ -3,10 +3,6 @@ import { pollAnalysisAction } from '../actions/pollAnalysisAction';
 import { pollAnalysis } from '@y0ngha/siglens-core';
 import type { PollAnalysisResult } from '@y0ngha/siglens-core';
 
-vi.mock('@vercel/functions', () => ({
-    waitUntil: vi.fn(),
-}));
-
 vi.mock('@y0ngha/siglens-core', async () => ({
     ...(await vi.importActual('@y0ngha/siglens-core')),
     pollAnalysis: vi.fn(),
@@ -26,9 +22,7 @@ describe('pollAnalysisAction 함수는', () => {
 
         await pollAnalysisAction('job-123');
 
-        expect(mockPollAnalysis).toHaveBeenCalledWith('job-123', {
-            waitUntil: expect.any(Function),
-        });
+        expect(mockPollAnalysis).toHaveBeenCalledWith('job-123');
     });
 
     it('underlying 함수의 결과를 그대로 반환한다', async () => {

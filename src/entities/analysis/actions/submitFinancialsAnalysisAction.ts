@@ -1,6 +1,5 @@
 'use server';
 
-import { waitUntil } from '@vercel/functions';
 import { headers, cookies } from 'next/headers';
 import {
     submitFinancialsAnalysis,
@@ -57,7 +56,6 @@ export async function submitFinancialsAnalysisAction(
             symbol,
             modelId,
             dataProvider: getFinancialStatementsProvider(),
-            waitUntil,
             tier: gate.tier,
             skipEnqueueIfMiss,
             ...(gate.userApiKey !== undefined
