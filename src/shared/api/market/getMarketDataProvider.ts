@@ -1,6 +1,6 @@
 import type { MarketDataProvider } from '@y0ngha/siglens-core';
 import { FmpMarketProvider } from '@/shared/api/fmp/FmpMarketProvider';
-import { createE2EGatedSingleton } from '@/shared/api/fmp/createE2EGatedSingleton';
+import { createE2EGatedSingleton } from '@/shared/api/createE2EGatedSingleton';
 
 /** Returns the app's market data provider (FMP in prod, fake under E2E_TEST). */
 export const getMarketDataProvider: () => MarketDataProvider =

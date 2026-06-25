@@ -1,6 +1,6 @@
 import { FmpFundamentalClient } from './fundamentalClient';
 import { CachedFundamentalProvider } from './CachedFundamentalProvider';
-import { createE2EGatedSingleton } from './createE2EGatedSingleton';
+import { createE2EGatedSingleton } from '@/shared/api/createE2EGatedSingleton';
 import type { FundamentalProvider } from './fundamentalProvider.types';
 
 // Re-exported so existing importers (`@/shared/api/fmp/getFundamentalDataProvider`)

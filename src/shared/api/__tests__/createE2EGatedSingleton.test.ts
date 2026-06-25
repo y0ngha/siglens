@@ -9,7 +9,7 @@ vi.mock('@/shared/api/e2eEnv', () => ({
 }));
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { createE2EGatedSingleton } from '@/shared/api/fmp/createE2EGatedSingleton';
+import { createE2EGatedSingleton } from '@/shared/api/createE2EGatedSingleton';
 
 afterEach(() => {
     e2eFlag.value = false;

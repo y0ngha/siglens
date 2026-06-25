@@ -1,6 +1,6 @@
 import { CachedFinancialStatementsProvider } from './CachedFinancialStatementsProvider';
 import { FmpFinancialStatementsClient } from './financialStatementsClient';
-import { createE2EGatedSingleton } from './createE2EGatedSingleton';
+import { createE2EGatedSingleton } from '@/shared/api/createE2EGatedSingleton';
 import type { FinancialStatementsProvider } from '@y0ngha/siglens-core';
 
 /** Returns the app's financial statements provider (FMP in prod, fake under E2E_TEST). */

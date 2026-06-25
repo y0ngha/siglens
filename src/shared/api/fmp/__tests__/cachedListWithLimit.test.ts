@@ -20,7 +20,6 @@ afterEach(() => {
 
 describe('cachedListWithLimit — 정상 동작 (slice 적용)', () => {
     beforeEach(() => {
-        // getOrSetCache가 fetcher 결과를 그대로 반환하는 기본 동작 시뮬레이션
         mockGetOrSetCache.mockImplementation(
             (_key: unknown, _ttl: unknown, fetcher: () => Promise<unknown>) =>
                 fetcher()
