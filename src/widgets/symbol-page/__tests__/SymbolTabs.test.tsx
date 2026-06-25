@@ -56,13 +56,13 @@ vi.mock('@/widgets/symbol-page/utils/symbolTabsConfig', () => ({
     },
 }));
 
-vi.mock('@/widgets/symbol-page/hooks/useAssetInfo', () => ({
+vi.mock('@/entities/ticker/hooks/useAssetInfo', () => ({
     useAssetInfo: vi.fn(),
 }));
 
 import { render, screen } from '@testing-library/react';
 import { usePathname } from 'next/navigation';
-import { useAssetInfo } from '@/widgets/symbol-page/hooks/useAssetInfo';
+import { useAssetInfo } from '@/entities/ticker/hooks/useAssetInfo';
 import { SymbolTabs } from '@/widgets/symbol-page/SymbolTabs';
 import type { AssetInfo } from '@/shared/lib/types';
 

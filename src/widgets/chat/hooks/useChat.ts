@@ -28,7 +28,7 @@ import { CHAT_NON_CHART_BASELINE_ANALYSIS } from '@/entities/chat-message';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
 import { usePageContextLabel } from './usePageContextLabel';
 import { useSymbolChat } from '@/features/symbol-chat';
-import { useAssetInfo } from '@/widgets/symbol-page/hooks/useAssetInfo';
+import { useAssetInfo } from '@/entities/ticker/hooks/useAssetInfo';
 import { getDescriptor, marketProfileOf } from '@/shared/config/marketProfile';
 import { useModelGate, type ModelGateState } from '@/features/premium-gate';
 import { useHydrated } from '@/shared/hooks/useHydrated';

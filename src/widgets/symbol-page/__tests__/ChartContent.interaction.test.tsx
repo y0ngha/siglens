@@ -27,7 +27,7 @@ vi.mock('@/widgets/chart', () => ({
 // lightweight-charts/useVolumeChartData가 mock 데이터에서 크래시하므로 stub한다.
 vi.mock('@/widgets/chart/StockChart', () => ({ StockChart: () => null }));
 vi.mock('@/widgets/chart/VolumeChart', () => ({ VolumeChart: () => null }));
-vi.mock('../hooks/useBars', () => ({
+vi.mock('@/entities/bars/hooks/useBars', () => ({
     useBars: () => ({
         bars: [
             { time: 0, open: 100, high: 120, low: 90, close: 100, volume: 1 },

@@ -35,7 +35,7 @@ vi.mock('@/widgets/chat/hooks/usePageContextLabel', () => ({
     usePageContextLabel: () => mockPageContextLabel,
 }));
 
-vi.mock('@/widgets/symbol-page/hooks/useAssetInfo', () => ({
+vi.mock('@/entities/ticker/hooks/useAssetInfo', () => ({
     useAssetInfo: () => ({ name: 'Apple Inc.' }),
 }));
 

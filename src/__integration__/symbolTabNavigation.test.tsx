@@ -28,7 +28,7 @@ vi.mock('next/link', () => ({
 // useAssetInfo returns a resolved equity asset so all us-equity tabs are rendered.
 // (undefined = loading → shows placeholder div; null = unknown → shows us-equity tabs)
 const EQUITY_ASSET: AssetInfo = { symbol: 'AAPL', name: 'Apple Inc.' };
-vi.mock('@/widgets/symbol-page/hooks/useAssetInfo', () => ({
+vi.mock('@/entities/ticker/hooks/useAssetInfo', () => ({
     useAssetInfo: vi.fn(() => EQUITY_ASSET),
 }));
 

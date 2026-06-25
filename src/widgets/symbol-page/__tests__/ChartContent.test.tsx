@@ -50,7 +50,7 @@ vi.mock('@/shared/ui/BotBlockedNotice', () => ({
     BotBlockedNotice: () => <div data-testid="bot-blocked-notice" />,
 }));
 
-vi.mock('@/widgets/symbol-page/hooks/useBars', () => ({
+vi.mock('@/entities/bars/hooks/useBars', () => ({
     useBars: vi.fn(() => ({
         bars: [
             { time: 1, open: 100, high: 110, low: 90, close: 105, volume: 500 },
@@ -251,7 +251,7 @@ describe('ChartContent', () => {
     it('keeps the facts layer and appends (does not replace with) the bot notice when bot is blocked and there is no narrative', async () => {
         const { useAnalysis } =
             await import('@/widgets/symbol-page/hooks/useAnalysis');
-        const { useBars } = await import('@/widgets/symbol-page/hooks/useBars');
+        const { useBars } = await import('@/entities/bars/hooks/useBars');
         // 사실 층이 실제로 렌더되려면 봉 2개 + rsi/macd 지표가 필요하다(buildTechnicalFacts는
         // 봉이 2개 미만이면 null). 파일 기본 useBars mock은 봉 1개라 facts가 null이 되므로
         // 이 테스트에 한해 2봉으로 override해 '교체가 아니라 병존'을 검증한다.

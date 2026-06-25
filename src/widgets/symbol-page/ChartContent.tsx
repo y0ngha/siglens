@@ -20,7 +20,7 @@ import { useAnalysis } from './hooks/useAnalysis';
 import { useAnalysisDerivedData } from './hooks/useAnalysisDerivedData';
 import { useAnalysisDisplay } from './hooks/useAnalysisDisplay';
 import { useAnalysisProgress } from './hooks/useAnalysisProgress';
-import { useBars } from './hooks/useBars';
+import { useBars } from '@/entities/bars/hooks/useBars';
 import {
     PANEL_MAX_WIDTH,
     PANEL_MIN_WIDTH,

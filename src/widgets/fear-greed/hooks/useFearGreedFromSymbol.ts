@@ -1,6 +1,6 @@
 'use client';
 
-import { useBars } from '@/widgets/symbol-page/hooks/useBars';
+import { useBars } from '@/entities/bars/hooks/useBars';
 import { useFearGreed, type UseFearGreedResult } from './useFearGreed';
 import { DEFAULT_TIMEFRAME } from '@/shared/config/market';
 

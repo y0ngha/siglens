@@ -36,7 +36,7 @@ vi.mock('@/features/symbol-chat', () => ({
 vi.mock('@/widgets/chat/hooks/usePageContextLabel', () => ({
     usePageContextLabel: () => null,
 }));
-vi.mock('@/widgets/symbol-page/hooks/useAssetInfo', () => ({
+vi.mock('@/entities/ticker/hooks/useAssetInfo', () => ({
     useAssetInfo: (...args: unknown[]) => mockUseAssetInfo(...args),
 }));
 vi.mock('@/entities/chat-message/actions', () => ({

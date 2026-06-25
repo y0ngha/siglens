@@ -14,7 +14,7 @@ import { QUERY_KEYS } from '@/shared/config/queryConfig';
 import { ANALYSIS_POLL_INTERVAL_MS } from '@/shared/config/pollingConfig';
 import { usePageHideCancel } from '@/shared/hooks/usePageHideCancel';
 import { useHydrated } from '@/shared/hooks/useHydrated';
-import { BotBlockedError } from '@/widgets/symbol-page';
+import { BotBlockedError } from '@/shared/lib/BotBlockedError';
 import type {
     CancelJobEntry,
     OptionsExpirationSelector,

@@ -5,7 +5,7 @@ import { Suspense } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
 import { SymbolTabs } from './SymbolTabs';
 import { SymbolTabsSkeleton } from './SymbolTabsSkeleton';
-import { useAssetInfo } from './hooks/useAssetInfo';
+import { useAssetInfo } from '@/entities/ticker/hooks/useAssetInfo';
 import { useSymbolModel } from './SymbolModelContext';
 import { ModelSelector } from '@/widgets/analysis';
 import { FearGreedHeaderChipMounted } from './FearGreedHeaderChipMounted';

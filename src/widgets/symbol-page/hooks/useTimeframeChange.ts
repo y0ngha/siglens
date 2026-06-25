@@ -7,7 +7,7 @@ import type { Timeframe } from '@y0ngha/siglens-core';
 import { DEFAULT_TIMEFRAME, isValidTimeframe } from '@/shared/config/market';
 import { getBarsAction } from '@/entities/bars/actions';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
-import { useAssetInfo } from './useAssetInfo';
+import { useAssetInfo } from '@/entities/ticker/hooks/useAssetInfo';
 
 const TIMEFRAME_QUERY_PARAM = 'tf';
 

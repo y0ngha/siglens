@@ -30,5 +30,5 @@ export {
     ANALYSIS_TIPS,
 } from './hooks/useAnalysisProgress';
 
-// Exceptions re-exported for cross-widget consumption
-export { BotBlockedError } from './exceptions/BotBlockedError';
+// BotBlockedError는 @/shared/lib/BotBlockedError로 이전됨.
+// 소비자는 해당 경로에서 직접 import할 것.
