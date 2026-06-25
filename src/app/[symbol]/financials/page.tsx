@@ -156,7 +156,6 @@ export default async function FinancialsPage({ params }: Props) {
         assetInfo?.fmpSymbol
     );
 
-    // buildSymbolWebPageJsonLd 반환 형태: { '@context': '…', '@type': 'WebPage', '@id': `${url}#webpage`, … }
     const jsonLd = buildSymbolWebPageJsonLd({
         url,
         name: fullTitle,

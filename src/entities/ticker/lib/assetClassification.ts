@@ -101,7 +101,7 @@ export function classifyAsset(
  * schema.org Corporation about-node의 구체 형태. 반환 타입을 named interface로
  * 좁혀 두면 호출자(page.tsx)에서 spread할 때 키 누락/오타가 컴파일 시점에 잡힌다.
  */
-export interface CorporationAboutNode {
+export interface CorporationAboutNode extends Record<string, unknown> {
     '@type': 'Corporation';
     name: string;
     tickerSymbol: string;

@@ -186,7 +186,7 @@ export function buildSymbolWebPageJsonLd(params: {
     url: string;
     name: string;
     description: string;
-    about?: object;
+    about?: Record<string, unknown>;
 }): Record<string, unknown> {
     const { url, name, description, about } = params;
     return {

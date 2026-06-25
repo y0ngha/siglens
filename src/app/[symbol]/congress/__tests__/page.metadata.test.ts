@@ -263,7 +263,10 @@ describe('Congress page JSON-LD schema types', () => {
     );
 
     it('page.tsx emits a WebPage schema type', () => {
-        expect(pageSource).toContain("'@type': 'WebPage'");
+        // WebPage JSON-LD는 buildSymbolWebPageJsonLd 헬퍼가 생성한다.
+        // '@type': 'WebPage' 리터럴은 헬퍼 내부에 있으므로, 페이지 소스에서
+        // 헬퍼 호출 여부로 확인한다(seo.ts JSDoc에 반환 형태 문서화).
+        expect(pageSource).toContain('buildSymbolWebPageJsonLd(');
     });
 
     it('page.tsx emits a FAQPage schema type', () => {
