@@ -9,8 +9,9 @@ import {
 interface StrikeBarTooltipProps {
     /** DOM id — aria-describedby와 role="tooltip" 양쪽에서 일치해야 함. */
     id: string;
-    /** 현재 hover 중인 row (null이면 hidden). */
-    hoveredRow: unknown | null;
+    /** 현재 hover 중인 row (null이면 hidden). non-null일 때는 항상 객체이며,
+     *  컴포넌트 내부에서는 null 여부만 확인하므로 `object`로 받는다. */
+    hoveredRow: object | null;
     /** computeTooltipPos가 반환한 컨테이너 기준 좌표. */
     tooltipPos: TooltipPosition | null;
     /** 툴팁 내용. 각 차트가 자신의 데이터 포맷으로 렌더링한다. */
