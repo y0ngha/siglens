@@ -6,6 +6,8 @@ import { cn } from '@/shared/lib/cn';
 import { NEWS_LIST_PERIOD_LABEL } from '@/shared/lib/news/periodLabels';
 import type { NewsImpact, NewsSentiment } from '@y0ngha/siglens-core';
 import { useState } from 'react';
+import { formatNewsPublishedAt } from '@/shared/lib/timeFormat';
+import { NewsCardShell } from '@/shared/ui/NewsCardShell';
 
 const SENTIMENT_LABEL: Record<NewsSentiment, string> = {
     bullish: '긍정',
@@ -40,14 +42,6 @@ const VALID_SENTIMENTS = new Set<string>(['bullish', 'bearish', 'neutral']);
 const VALID_IMPACTS = new Set<string>(['high', 'medium', 'low', 'negligible']);
 const PAGE_SIZE = 5;
 const NEWS_LIST_SKELETON_COUNT = 3;
-const NEWS_PUBLISHED_AT_FORMATTER = new Intl.DateTimeFormat('ko-KR', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    timeZone: 'Asia/Seoul',
-});
 
 function isNewsSentiment(value: string): value is NewsSentiment {
     return VALID_SENTIMENTS.has(value);
@@ -59,10 +53,6 @@ function isNewsImpact(value: string): value is NewsImpact {
 
 function isPendingAnalysis(item: NewsDisplayItem): boolean {
     return item.sentiment === null || item.priceImpact === null;
-}
-
-export function formatNewsPublishedAt(publishedAt: string): string {
-    return `${NEWS_PUBLISHED_AT_FORMATTER.format(new Date(publishedAt))} KST`;
 }
 
 function SentimentBadge({ value }: { value: string }) {
@@ -90,25 +80,6 @@ function ImpactBadge({ value }: { value: string }) {
         >
             {IMPACT_LABEL[value]}
         </span>
-    );
-}
-
-function AnalysisSkeleton() {
-    return (
-        <div className="mt-1.5 flex flex-wrap items-center gap-2">
-            <div className="bg-secondary-700 h-5 w-10 animate-pulse rounded motion-reduce:animate-none" />
-            <div className="bg-secondary-700 h-5 w-20 animate-pulse rounded motion-reduce:animate-none" />
-            <span className="text-secondary-500 text-xs">AI 분석 중…</span>
-        </div>
-    );
-}
-
-function SummarySkeletonLine() {
-    return (
-        <div className="mt-2 space-y-1.5">
-            <div className="bg-secondary-700/70 h-3.5 w-full animate-pulse rounded motion-reduce:animate-none" />
-            <div className="bg-secondary-700/70 h-3.5 w-4/5 animate-pulse rounded motion-reduce:animate-none" />
-        </div>
     );
 }
 
@@ -210,6 +181,30 @@ function NewsRefreshStatusCard() {
     );
 }
 
+/**
+ * aria-hidden 없음 — NewsList는 스크린리더가 로딩 상태를 읽도록 허용한다.
+ * text-secondary-500 텍스트 컬러는 MarketNewsCard(text-secondary-400)와 의도적으로 다르다.
+ */
+function AnalysisSkeleton() {
+    return (
+        <div className="mt-1.5 flex flex-wrap items-center gap-2">
+            <div className="bg-secondary-700 h-5 w-10 animate-pulse rounded motion-reduce:animate-none" />
+            <div className="bg-secondary-700 h-5 w-20 animate-pulse rounded motion-reduce:animate-none" />
+            <span className="text-secondary-500 text-xs">AI 분석 중…</span>
+        </div>
+    );
+}
+
+/** aria-hidden 없음 — NewsList는 스크린리더가 본문 로딩 중 스켈레톤을 읽도록 허용한다. */
+function SummarySkeletonLine() {
+    return (
+        <div className="mt-2 space-y-1.5">
+            <div className="bg-secondary-700/70 h-3.5 w-full animate-pulse rounded motion-reduce:animate-none" />
+            <div className="bg-secondary-700/70 h-3.5 w-4/5 animate-pulse rounded motion-reduce:animate-none" />
+        </div>
+    );
+}
+
 function NewsCard({ item }: { item: NewsDisplayItem }) {
     const pending = isPendingAnalysis(item);
     const isHighImpact = !pending && item.priceImpact === 'high';
@@ -217,25 +212,14 @@ function NewsCard({ item }: { item: NewsDisplayItem }) {
     const publishedDate = formatNewsPublishedAt(item.publishedAt);
 
     return (
-        <article
-            className={cn(
-                'border-secondary-700 bg-secondary-800 hover:border-primary-500/50 w-full max-w-full min-w-0 overflow-hidden rounded-xl border p-4 transition-[colors,transform] hover:-translate-y-px',
-                // Bump left padding so content doesn't sit flush against the 3px accent strip.
-                isHighImpact && 'border-l-ui-warning border-l-[3px] pl-5'
-            )}
-        >
-            <h3
-                className={cn(
-                    'leading-snug font-semibold text-balance wrap-break-word',
-                    pending && 'opacity-80'
-                )}
-            >
-                {item.titleKo ?? item.titleEn}
-            </h3>
-
-            {pending ? (
-                <AnalysisSkeleton />
-            ) : (
+        <NewsCardShell
+            title={item.titleKo ?? item.titleEn}
+            isHighImpact={isHighImpact}
+            pending={pending}
+            url={item.url}
+            analysisSkeleton={<AnalysisSkeleton />}
+            summarySkeletonLine={<SummarySkeletonLine />}
+            badgeRow={
                 <div className="mt-1.5 flex flex-wrap items-center gap-2">
                     {item.sentiment !== null && (
                         <SentimentBadge value={item.sentiment} />
@@ -258,11 +242,8 @@ function NewsCard({ item }: { item: NewsDisplayItem }) {
                         {item.source}
                     </span>
                 </div>
-            )}
-
-            {pending ? (
-                <SummarySkeletonLine />
-            ) : (
+            }
+            bodySection={
                 <>
                     {item.bodyKo !== null && (
                         <NewsTextSection label="본문" text={item.bodyKo} />
@@ -271,19 +252,9 @@ function NewsCard({ item }: { item: NewsDisplayItem }) {
                         <NewsTextSection label="요약" text={item.summaryKo} />
                     )}
                 </>
-            )}
-
-            {!pending && (
-                <a
-                    href={item.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-primary-400 focus-visible:ring-primary-500 mt-2 inline-block text-xs transition-opacity hover:opacity-70 focus-visible:ring-2 focus-visible:outline-none"
-                >
-                    원문 보기 →
-                </a>
-            )}
-        </article>
+            }
+            linkChildren="원문 보기 →"
+        />
     );
 }
 
