@@ -47,13 +47,11 @@ export function getEasternOffsetHours(utcDate: Date): -4 | -5 {
     const fallDay = nthSundayDay(year, NOVEMBER, FIRST_SUNDAY);
 
     // UTC 순간으로 경계 계산: 전환은 각각 UTC 07:00, 06:00에 발생
-    const dstStart = new Date(
-        Date.UTC(year, MARCH, springDay, DST_START_UTC_HOUR)
-    );
-    const dstEnd = new Date(
-        Date.UTC(year, NOVEMBER, fallDay, DST_END_UTC_HOUR)
-    );
+    // Date 객체 할당 없이 원시 ms 비교로 동일 결과 (호출 당 GC 압력 최소화)
+    const dstStartMs = Date.UTC(year, MARCH, springDay, DST_START_UTC_HOUR);
+    const dstEndMs = Date.UTC(year, NOVEMBER, fallDay, DST_END_UTC_HOUR);
 
-    const isEDT = utcDate >= dstStart && utcDate < dstEnd;
+    const timeMs = utcDate.getTime();
+    const isEDT = timeMs >= dstStartMs && timeMs < dstEndMs;
     return isEDT ? EDT_OFFSET_HOURS : EST_OFFSET_HOURS;
 }

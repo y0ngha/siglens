@@ -56,7 +56,6 @@ function getEtOffsetHours(year: number, month: number, day: number): number {
     const springDay = nthSundayDay(year, MARCH, SECOND_SUNDAY);
     const fallDay = nthSundayDay(year, NOVEMBER, FIRST_SUNDAY);
 
-    // date-only UTC 자정 기준 비교 (기존 동작 보존)
     const dateMs = Date.UTC(year, month - 1, day);
     const springMs = Date.UTC(year, MARCH, springDay);
     const fallMs = Date.UTC(year, NOVEMBER, fallDay);

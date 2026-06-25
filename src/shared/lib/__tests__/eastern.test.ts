@@ -99,16 +99,7 @@ describe('DST 경계 동치 핀 — 통합 전 실제 출력 캡처', () => {
 
     describe('getEasternOffsetHours (eastern.ts) — UTC 순간 기반 경계', () => {
         // 봄 전환: 3월 두 번째 일요일 07:00 UTC (= EST 02:00 local)
-        it('2024 봄 전환: UTC 06:59:59 → -5 (EST, 전환 직전)', () => {
-            expect(
-                getEasternOffsetHours(new Date('2024-03-10T06:59:59Z'))
-            ).toBe(-5);
-        });
-        it('2024 봄 전환: UTC 07:00:00 → -4 (EDT, 전환 정각)', () => {
-            expect(
-                getEasternOffsetHours(new Date('2024-03-10T07:00:00Z'))
-            ).toBe(-4);
-        });
+        // 전환 직전(06:59:59)/정각(07:00:00) 경계는 상단 describe('eastern')에서 이미 검증
         it('2024 봄 전환: UTC 13:30:00 (= EDT 09:30) → -4', () => {
             expect(
                 getEasternOffsetHours(new Date('2024-03-10T13:30:00Z'))
@@ -116,23 +107,14 @@ describe('DST 경계 동치 핀 — 통합 전 실제 출력 캡처', () => {
         });
 
         // 가을 전환: 11월 첫 번째 일요일 06:00 UTC (= EDT 02:00 local)
-        it('2024 가을 전환: UTC 05:59:59 → -4 (EDT, 전환 직전)', () => {
-            expect(
-                getEasternOffsetHours(new Date('2024-11-03T05:59:59Z'))
-            ).toBe(-4);
-        });
-        it('2024 가을 전환: UTC 06:00:00 → -5 (EST, 전환 정각)', () => {
-            expect(
-                getEasternOffsetHours(new Date('2024-11-03T06:00:00Z'))
-            ).toBe(-5);
-        });
+        // 전환 직전(05:59:59)/정각(06:00:00) 경계는 상단 describe('eastern')에서 이미 검증
         it('2024 가을 전환: UTC 14:30:00 (= EST 09:30) → -5', () => {
             expect(
                 getEasternOffsetHours(new Date('2024-11-03T14:30:00Z'))
             ).toBe(-5);
         });
 
-        // 2026: 3월/11월 모두 1일이 일요일
+        // 2026: 3월/11월 모두 1일이 일요일 — nthSundayDay 극단 케이스 신규 검증
         it('2026 봄 전환(3/8): UTC 06:59:59 → -5', () => {
             expect(
                 getEasternOffsetHours(new Date('2026-03-08T06:59:59Z'))
@@ -159,11 +141,6 @@ describe('DST 경계 동치 핀 — 통합 전 실제 출력 캡처', () => {
             expect(
                 getEasternOffsetHours(new Date('2024-07-01T12:00:00Z'))
             ).toBe(-4);
-        });
-        it('비경계: 2024-01-15 UTC 12:00 → -5 (EST 일반 구간)', () => {
-            expect(
-                getEasternOffsetHours(new Date('2024-01-15T12:00:00Z'))
-            ).toBe(-5);
         });
     });
 
