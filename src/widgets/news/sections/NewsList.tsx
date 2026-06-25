@@ -7,7 +7,7 @@ import { NEWS_LIST_PERIOD_LABEL } from '@/shared/lib/news/periodLabels';
 import type { NewsImpact, NewsSentiment } from '@y0ngha/siglens-core';
 import { useState } from 'react';
 import { formatNewsPublishedAt } from '@/shared/lib/timeFormat';
-import { NewsCardShell } from '../ui/NewsCardShell';
+import { NewsCardShell } from '@/shared/ui/NewsCardShell';
 
 const SENTIMENT_LABEL: Record<NewsSentiment, string> = {
     bullish: '긍정',

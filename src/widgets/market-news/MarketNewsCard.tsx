@@ -3,7 +3,7 @@ import type { MarketNewsCardItem } from '@/entities/market-news';
 import type { NewsFeedCategory } from '@y0ngha/siglens-core';
 import { cn } from '@/shared/lib/cn';
 import { formatNewsPublishedAt } from '@/shared/lib/timeFormat';
-import { NewsCardShell } from '@/widgets/news/ui/NewsCardShell';
+import { NewsCardShell } from '@/shared/ui/NewsCardShell';
 import {
     SENTIMENT_LABEL,
     SENTIMENT_CLASS,

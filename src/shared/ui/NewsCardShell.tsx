@@ -35,7 +35,7 @@ export interface NewsCardShellProps {
 
     /**
      * 티커 칩 슬롯 (선택).
-     * market-news 카드만 사용한다; NewsList 카드는 null을 전달해 생략한다.
+     * market-news 카드만 사용한다; NewsList 카드는 이 prop을 생략한다.
      */
     tickerChipSlot?: ReactNode;
 
@@ -61,11 +61,8 @@ export interface NewsCardShellProps {
  *
  * NewsList의 `NewsCard`와 `MarketNewsCard` 양쪽이 공유하는
  * 외곽 article wrapper · 제목 · pending/ready 분기 구조를 단일 소스로 관리한다.
- * 서피스별로 다른 레이블·클래스 맵·DOM 세부사항은 props/children으로 주입된다.
- *
- * 중요: 이 컴포넌트는 각 서피스의 렌더된 DOM이 byte-identical하게 유지되도록
- * 구조적 컨테이너 역할만 한다. badge 레이블, aria-hidden 등 차이 요소는
- * 호출 측 props를 통해 서피스별로 독립적으로 제어된다.
+ * 서피스별로 다른 레이블·클래스 맵·DOM 세부사항은 props/children으로 주입되므로
+ * 최종 렌더 DOM은 서피스마다 다를 수 있다.
  */
 export function NewsCardShell({
     title,
