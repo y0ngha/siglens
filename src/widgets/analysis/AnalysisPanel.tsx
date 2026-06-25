@@ -30,7 +30,6 @@ import type {
 } from '@y0ngha/siglens-core';
 import { HIGH_CONFIDENCE_WEIGHT } from '@y0ngha/siglens-core';
 import { cn } from '@/shared/lib/cn';
-import { useSymbolPageContext } from '@/widgets/symbol-page';
 import {
     parseStructuredSummary,
     type SkillSummarySection,
@@ -41,7 +40,7 @@ import { resolveStrengthDisplay } from './utils/signalUtils';
 import { AnalysisProgress } from './AnalysisProgress';
 import { AnalysisToast } from './AnalysisToast';
 import { AdBanner } from './AdBanner';
-import type { CooldownNotice } from '@/widgets/symbol-page';
+import type { CooldownNotice } from './model/types';
 import { TRENDLINE_DIRECTION_LABEL } from '@/shared/lib/trendline';
 import { MS_PER_SECOND, SECONDS_PER_MINUTE } from '@/shared/config/time';
 import { DEFAULT_RESET_MS as COPY_RESET_MS } from '@/shared/hooks/useCopyToClipboard';
@@ -722,6 +721,12 @@ interface AnalysisPanelProps {
     /** false이면 광고를 표시하지 않는다. Pro 사용자에게는 false를 전달한다.
      *  인증 시스템 도입 전까지 기본값은 true (모든 사용자를 Free로 처리). */
     isFreeUser?: boolean;
+    /**
+     * 이번 분석에 적용된 인디케이터 종류 수.
+     * ChartContent가 SymbolPageContext에서 읽어 prop으로 내려준다.
+     * analysis → symbol-page 역방향 의존을 제거하기 위해 prop으로 전달한다.
+     */
+    indicatorCount?: number;
 }
 
 export function AnalysisPanel({
@@ -739,8 +744,8 @@ export function AnalysisPanel({
     actionPricesVisible = true,
     onActionPricesVisibilityChange,
     isFreeUser = true,
+    indicatorCount = 0,
 }: AnalysisPanelProps) {
-    const { indicatorCount } = useSymbolPageContext();
     const [copyState, setCopyState] = useState<'idle' | 'copied' | 'failed'>(
         'idle'
     );

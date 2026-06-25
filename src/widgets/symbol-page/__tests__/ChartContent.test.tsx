@@ -101,6 +101,12 @@ vi.mock('@/widgets/symbol-page/SymbolModelContext', () => ({
     })),
 }));
 
+// Spec-2 PR-B1: ChartContent가 indicatorCount를 AnalysisPanel에 prop으로 내리기 위해
+// useSymbolPageContext를 직접 호출한다. 테스트에서 Provider 없이 렌더되므로 mock 필요.
+vi.mock('@/widgets/symbol-page/SymbolPageContext', () => ({
+    useSymbolPageContext: vi.fn(() => ({ indicatorCount: 25 })),
+}));
+
 vi.mock('@/widgets/symbol-page/hooks/usePanelResize', () => ({
     usePanelResize: vi.fn(() => ({
         panelWidth: 640,

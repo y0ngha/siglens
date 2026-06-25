@@ -50,6 +50,10 @@ vi.mock('../hooks/useActionPricesVisibility', () => ({
 vi.mock('../SymbolModelContext', () => ({
     useSymbolModel: () => ({ modelId: 'gemini-2.5-flash', isHydrated: true }),
 }));
+// Spec-2 PR-B1: indicatorCount를 prop으로 내리기 위해 ChartContent가 useSymbolPageContext를 호출한다.
+vi.mock('../SymbolPageContext', () => ({
+    useSymbolPageContext: () => ({ indicatorCount: 25 }),
+}));
 vi.mock('../hooks/useAnalysisDerivedData', () => ({
     useAnalysisDerivedData: () => ({
         clusteredKeyLevels: { support: [], resistance: [] },
