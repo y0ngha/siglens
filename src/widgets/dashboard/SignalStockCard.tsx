@@ -20,7 +20,9 @@ export function SignalStockCard({ data }: SignalStockCardProps) {
             )}
         >
             <div className="flex flex-col gap-1">
+                {/* layout="signal": 티커+변동폭 한 행 → 한국어 이름 → 가격 (마스터 DOM 동일) */}
                 <QuoteHeader
+                    layout="signal"
                     data={{
                         symbol: data.symbol,
                         koreanName: data.koreanName,

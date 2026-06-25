@@ -11,6 +11,15 @@ export interface QuoteHeaderData {
 
 interface QuoteHeaderProps {
     data: QuoteHeaderData;
+    /**
+     * 레이아웃 변형.
+     *
+     * - `'index'` (기본): 티커 단독 행 → 한국어 이름 + 변동폭(justify-between) → 가격.
+     *   IndexCard 원본 DOM과 동일.
+     * - `'signal'`: 티커 + 변동폭(justify-between) 한 행 → 한국어 이름 → 가격.
+     *   SignalStockCard 원본 DOM과 동일.
+     */
+    layout?: 'index' | 'signal';
 }
 
 /**
@@ -18,12 +27,66 @@ interface QuoteHeaderProps {
  *
  * 각 카드는 필드명(changesPercentage vs changePercent)을 `QuoteHeaderData`로 정규화해 전달한다.
  * DOM 구조·a11y(arrow aria-hidden, sr-only)·tabular-nums 클래스를 단일 소스로 관리한다.
+ *
+ * `layout` prop으로 두 카드의 원본 DOM을 정확히 재현한다.
  */
-export function QuoteHeader({ data }: QuoteHeaderProps): React.ReactElement {
+export function QuoteHeader({
+    data,
+    layout = 'index',
+}: QuoteHeaderProps): React.ReactElement {
     const { sign, colorClass, arrow, arrowLabel } = formatPriceChange(
         data.changePercent
     );
 
+    /** 변동폭 span — 두 레이아웃에서 동일하게 사용 */
+    const changeSpan = (
+        <span
+            className={cn(
+                'flex shrink-0 items-center gap-0.5 font-mono text-xs tabular-nums',
+                colorClass
+            )}
+        >
+            <span aria-hidden="true">{arrow}</span>
+            <span className="sr-only">{arrowLabel}</span>
+            {sign}
+            {data.changePercent.toFixed(2)}%
+        </span>
+    );
+
+    if (layout === 'signal') {
+        // SignalStockCard 원본 DOM:
+        //   행1: 티커 + 변동폭(justify-between)
+        //   행2: 한국어 이름
+        //   행3: 가격
+        return (
+            <>
+                {/* 티커 + 변동폭 — 한 행으로 */}
+                <div className="flex items-center justify-between gap-1">
+                    <span
+                        translate="no"
+                        className="text-secondary-100 font-mono text-xs font-semibold"
+                    >
+                        {data.symbol}
+                    </span>
+                    {changeSpan}
+                </div>
+                {/* 한국어 이름 */}
+                <p className="text-secondary-400 min-w-0 truncate text-xs">
+                    {data.koreanName}
+                </p>
+                {/* 가격 */}
+                <p className="text-secondary-100 font-mono text-sm tabular-nums">
+                    ${formatUsdPrice(data.price)}
+                </p>
+            </>
+        );
+    }
+
+    // layout === 'index' (기본값)
+    // IndexCard 원본 DOM:
+    //   행1: 티커 단독 행
+    //   행2: 한국어 이름 + 변동폭(justify-between)
+    //   행3: 가격
     return (
         <>
             {/* 티커 — 단독 행으로 overflow 방지 */}
@@ -38,17 +101,7 @@ export function QuoteHeader({ data }: QuoteHeaderProps): React.ReactElement {
                 <p className="text-secondary-400 min-w-0 truncate text-xs">
                     {data.koreanName}
                 </p>
-                <span
-                    className={cn(
-                        'flex shrink-0 items-center gap-0.5 font-mono text-xs tabular-nums',
-                        colorClass
-                    )}
-                >
-                    <span aria-hidden="true">{arrow}</span>
-                    <span className="sr-only">{arrowLabel}</span>
-                    {sign}
-                    {data.changePercent.toFixed(2)}%
-                </span>
+                {changeSpan}
             </div>
             {/* 가격 */}
             <p className="text-secondary-100 font-mono text-sm tabular-nums">
