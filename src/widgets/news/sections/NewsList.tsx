@@ -181,6 +181,30 @@ function NewsRefreshStatusCard() {
     );
 }
 
+/**
+ * aria-hidden 없음 — NewsList는 스크린리더가 로딩 상태를 읽도록 허용한다.
+ * text-secondary-500 텍스트 컬러는 MarketNewsCard(text-secondary-400)와 의도적으로 다르다.
+ */
+function AnalysisSkeleton() {
+    return (
+        <div className="mt-1.5 flex flex-wrap items-center gap-2">
+            <div className="bg-secondary-700 h-5 w-10 animate-pulse rounded motion-reduce:animate-none" />
+            <div className="bg-secondary-700 h-5 w-20 animate-pulse rounded motion-reduce:animate-none" />
+            <span className="text-secondary-500 text-xs">AI 분석 중…</span>
+        </div>
+    );
+}
+
+/** aria-hidden 없음 — NewsList는 스크린리더가 본문 로딩 중 스켈레톤을 읽도록 허용한다. */
+function SummarySkeletonLine() {
+    return (
+        <div className="mt-2 space-y-1.5">
+            <div className="bg-secondary-700/70 h-3.5 w-full animate-pulse rounded motion-reduce:animate-none" />
+            <div className="bg-secondary-700/70 h-3.5 w-4/5 animate-pulse rounded motion-reduce:animate-none" />
+        </div>
+    );
+}
+
 function NewsCard({ item }: { item: NewsDisplayItem }) {
     const pending = isPendingAnalysis(item);
     const isHighImpact = !pending && item.priceImpact === 'high';
@@ -193,21 +217,8 @@ function NewsCard({ item }: { item: NewsDisplayItem }) {
             isHighImpact={isHighImpact}
             pending={pending}
             url={item.url}
-            analysisSkeleton={
-                <div className="mt-1.5 flex flex-wrap items-center gap-2">
-                    <div className="bg-secondary-700 h-5 w-10 animate-pulse rounded motion-reduce:animate-none" />
-                    <div className="bg-secondary-700 h-5 w-20 animate-pulse rounded motion-reduce:animate-none" />
-                    <span className="text-secondary-500 text-xs">
-                        AI 분석 중…
-                    </span>
-                </div>
-            }
-            summarySkeletonLine={
-                <div className="mt-2 space-y-1.5">
-                    <div className="bg-secondary-700/70 h-3.5 w-full animate-pulse rounded motion-reduce:animate-none" />
-                    <div className="bg-secondary-700/70 h-3.5 w-4/5 animate-pulse rounded motion-reduce:animate-none" />
-                </div>
-            }
+            analysisSkeleton={<AnalysisSkeleton />}
+            summarySkeletonLine={<SummarySkeletonLine />}
             badgeRow={
                 <div className="mt-1.5 flex flex-wrap items-center gap-2">
                     {item.sentiment !== null && (

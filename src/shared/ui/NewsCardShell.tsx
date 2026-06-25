@@ -47,8 +47,9 @@ export interface NewsCardShellProps {
 
     /**
      * "원문 보기" 링크의 자식 노드.
-     * NewsList: `원문 보기 →` (텍스트 노드)
-     * MarketNewsCard: `원문 보기 <span aria-hidden>→</span>`
+     * NewsList: `원문 보기 →` (텍스트 노드) — 화살표를 가시 텍스트로 포함해 스크린리더가 읽는다.
+     * MarketNewsCard: `원문 보기 <span aria-hidden>→</span>` — 화살표를 aria-hidden으로 감싸
+     * 스크린리더가 "화살표"를 두 번 읽지 않도록 한다 (버튼 레이블에 방향 기호가 혼재하는 맥락).
      */
     linkChildren: ReactNode;
 
