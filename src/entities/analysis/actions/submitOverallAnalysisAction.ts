@@ -1,6 +1,5 @@
 'use server';
 
-import { waitUntil } from '@vercel/functions';
 import { headers } from 'next/headers';
 import {
     isEtRegularSessionOpen,
@@ -160,7 +159,6 @@ export async function submitOverallAnalysisAction(
             newsItems: enrichedNews,
             upcomingCalendar: next !== null ? [next] : [],
             technical: { tierContext: { userId, tier: gate.tier } },
-            waitUntil,
             tier: gate.tier,
             skipEnqueueIfMiss,
             assetClass,

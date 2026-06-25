@@ -1,8 +1,4 @@
 // vi.mock → imports 순서 (MISTAKES.md Tests §17)
-vi.mock('@vercel/functions', () => ({
-    waitUntil: vi.fn(),
-}));
-
 vi.mock('next/headers', () => ({
     headers: vi.fn(() => Promise.resolve(new Headers())),
     cookies: vi.fn(() => Promise.resolve({ get: vi.fn(() => undefined) })),

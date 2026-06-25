@@ -1,4 +1,3 @@
-import { waitUntil } from '@vercel/functions';
 import { isAdmissibleSymbolShape } from '@/shared/config/ticker';
 import { DrizzleAssetTranslationRepository } from '../api';
 import { getCryptoAsset } from './cryptoAssetStore';
@@ -18,6 +17,7 @@ import { filterUsExchanges, searchBySymbol } from './fmpTickerApi';
 import { translateCompanyNames } from './koreanTranslator';
 import { getKoreanNames, setKoreanTickers } from './koreanNameStore';
 import type { AssetInfoMatch } from './backgroundTask';
+import { fireAndForget } from './backgroundTask';
 import { createSingleFlight } from './utils/singleFlight';
 import { createCacheProvider, type CacheProvider } from '@y0ngha/siglens-core';
 import type { AssetInfo, KoreanTickerEntry } from '@/shared/lib/types';
@@ -259,7 +259,7 @@ export async function getAssetInfo(symbol: string): Promise<AssetInfo | null> {
     };
 
     if (koreanName) {
-        waitUntil(
+        fireAndForget(
             persistTranslation(upper, fmpSymbol, name, koreanName, cache).catch(
                 e => console.warn('[getAssetInfo] persist failed', e)
             )
@@ -267,7 +267,7 @@ export async function getAssetInfo(symbol: string): Promise<AssetInfo | null> {
         return info;
     }
 
-    waitUntil(
+    fireAndForget(
         translateAndPersist(
             upper,
             { symbol: fmpSymbol, name, exchange, exchangeFullName },

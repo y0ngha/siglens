@@ -1,7 +1,3 @@
-vi.mock('@vercel/functions', () => ({
-    waitUntil: vi.fn((p: Promise<unknown>) => p.catch(() => {})),
-}));
-
 vi.mock('@y0ngha/siglens-core', () => ({
     createCacheProvider: vi.fn(),
 }));

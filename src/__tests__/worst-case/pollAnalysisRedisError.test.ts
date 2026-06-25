@@ -2,10 +2,6 @@ vi.mock('@y0ngha/siglens-core', () => ({
     pollAnalysis: vi.fn(),
 }));
 
-vi.mock('@vercel/functions', () => ({
-    waitUntil: vi.fn(),
-}));
-
 import { pollAnalysisAction } from '@/entities/analysis/actions/pollAnalysisAction';
 import { pollAnalysis } from '@y0ngha/siglens-core';
 
@@ -59,14 +55,11 @@ describe('pollAnalysisAction error handling and edge cases', () => {
         expect((result as unknown as { data: unknown }).data).toBeNull();
     });
 
-    it('passes jobId and waitUntil correctly', async () => {
+    it('passes jobId correctly', async () => {
         mockPollAnalysis.mockResolvedValue({ status: 'pending' });
 
         await pollAnalysisAction('specific-job-id');
 
-        expect(mockPollAnalysis).toHaveBeenCalledWith(
-            'specific-job-id',
-            expect.objectContaining({ waitUntil: expect.any(Function) })
-        );
+        expect(mockPollAnalysis).toHaveBeenCalledWith('specific-job-id');
     });
 });

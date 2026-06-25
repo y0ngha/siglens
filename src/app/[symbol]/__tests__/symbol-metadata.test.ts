@@ -171,10 +171,6 @@ vi.mock('@/entities/news-article/actions', () => ({
     ensureNewsCardsAnalyzedAction: vi.fn(() => Promise.resolve()),
 }));
 
-vi.mock('@vercel/functions', () => ({
-    waitUntil: vi.fn(),
-}));
-
 // tanstack query (페이지 default export에서 사용, generateMetadata에는 불필요)
 vi.mock('@tanstack/react-query', () => ({
     QueryClient: vi.fn().mockImplementation(function () {

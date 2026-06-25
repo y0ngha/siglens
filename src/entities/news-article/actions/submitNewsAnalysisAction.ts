@@ -1,6 +1,5 @@
 'use server';
 
-import { waitUntil } from '@vercel/functions';
 import { headers } from 'next/headers';
 import {
     submitNewsAnalysis,
@@ -75,7 +74,6 @@ export async function submitNewsAnalysisAction(
             modelId,
             news: enrichedNews,
             upcomingCalendar: next !== null ? [next] : [],
-            waitUntil,
             tier: gate.tier,
             skipEnqueueIfMiss,
             assetClass,

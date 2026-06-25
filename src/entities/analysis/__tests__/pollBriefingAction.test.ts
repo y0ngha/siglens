@@ -3,10 +3,6 @@ import { pollBriefingAction } from '../actions/pollBriefingAction';
 import { pollBriefing } from '@y0ngha/siglens-core';
 import type { PollBriefingResult } from '@y0ngha/siglens-core';
 
-vi.mock('@vercel/functions', () => ({
-    waitUntil: vi.fn(),
-}));
-
 vi.mock('@y0ngha/siglens-core', async () => ({
     ...(await vi.importActual('@y0ngha/siglens-core')),
     pollBriefing: vi.fn(),
@@ -26,9 +22,7 @@ describe('pollBriefingAction 함수는', () => {
 
         await pollBriefingAction('job-456');
 
-        expect(mockPollBriefing).toHaveBeenCalledWith('job-456', {
-            waitUntil: expect.any(Function),
-        });
+        expect(mockPollBriefing).toHaveBeenCalledWith('job-456');
     });
 
     it('underlying 함수의 결과를 그대로 반환한다', async () => {

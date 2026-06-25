@@ -1,6 +1,5 @@
 'use server';
 
-import { waitUntil } from '@vercel/functions';
 import { headers } from 'next/headers';
 import {
     submitMarketNewsDigest,
@@ -84,7 +83,6 @@ export async function submitMarketNewsDigestAction(
             modelId: DEFAULT_DIGEST_MODEL_ID,
             news,
             skipEnqueueIfMiss,
-            waitUntil,
         });
     } catch (error) {
         console.error('[submitMarketNewsDigestAction]', error);
