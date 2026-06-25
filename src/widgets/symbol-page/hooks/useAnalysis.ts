@@ -295,7 +295,6 @@ export function useAnalysis({
     }, [reset, mutate]);
 
     /**
-     * 진행 중인 워커 작업을 취소·mutation 상태 초기화·새 분석 시작을 한 번에 수행한다.
      * 타임프레임 변경·모델 변경 두 effect에서 공유한다.
      * modelIdOverride 미전달 시 latestModelIdRef(=최신 렌더 모델)를 사용한다.
      */

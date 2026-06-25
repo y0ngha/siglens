@@ -24,7 +24,7 @@ export function ModelSelect({
     selected,
     onChange,
     isHydrated,
-}: ModelSelectProps): React.ReactElement {
+}: ModelSelectProps) {
     const triggerRef = useRef<HTMLButtonElement>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
     const optionRefs = useRef<(HTMLDivElement | null)[]>([]);

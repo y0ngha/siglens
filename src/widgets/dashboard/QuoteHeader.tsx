@@ -30,10 +30,7 @@ interface QuoteHeaderProps {
  *
  * `layout` prop으로 두 카드의 원본 DOM을 정확히 재현한다.
  */
-export function QuoteHeader({
-    data,
-    layout = 'index',
-}: QuoteHeaderProps): React.ReactElement {
+export function QuoteHeader({ data, layout = 'index' }: QuoteHeaderProps) {
     const { sign, colorClass, arrow, arrowLabel } = formatPriceChange(
         data.changePercent
     );

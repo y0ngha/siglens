@@ -2,19 +2,19 @@
  * getClientIp — x-forwarded-for 파싱 단위 테스트.
  * next/headers와 server-only는 vitest setup에서 stub되어 있다고 가정한다.
  */
-import { getClientIp } from '../api/getClientIp';
-
-const mockGet = vi.fn<(key: string) => string | null>();
-
-vi.mock('next/headers', () => ({
-    headers: () =>
-        Promise.resolve({
-            get: mockGet,
-        }),
-}));
 
 // server-only 모듈은 import 시 throw하므로 stub 처리한다.
 vi.mock('server-only', () => ({}));
+
+const { mockGet } = vi.hoisted(() => ({
+    mockGet: vi.fn<(key: string) => string | null>(),
+}));
+
+vi.mock('next/headers', () => ({
+    headers: () => Promise.resolve({ get: mockGet }),
+}));
+
+import { getClientIp } from '../api/getClientIp';
 
 describe('getClientIp', () => {
     afterEach(() => {
