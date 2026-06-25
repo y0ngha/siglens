@@ -2,9 +2,6 @@ name: E2E
 
 on:
     pull_request:
-    push:
-        branches:
-            - feat/e2e-playwright-foundation
 
 # Least privilege: checkout + upload artifacts. @y0ngha/siglens-core installs
 # from npm.pkg.github.com (see .yarnrc.yml) using the SIGLENS_GITHUB_TOKEN
@@ -19,7 +16,34 @@ concurrency:
     cancel-in-progress: true
 
 jobs:
+    # Cheap detect job: decide whether the heavy `e2e` job runs. Needs a checkout
+    # only to read .github/path-filters.yml; the PR diff comes from the REST API.
+    changes:
+        runs-on: ubuntu-latest
+        permissions:
+            contents: read
+            pull-requests: read
+        outputs:
+            run: ${{ steps.gate.outputs.run }}
+        steps:
+            - uses: actions/checkout@v4
+            - uses: dorny/paths-filter@v4
+              id: f
+              with:
+                  filters: .github/path-filters.yml
+            # Run E2E unless every changed file is E2E-irrelevant.
+            - name: Compute gate
+              id: gate
+              run: |
+                  if [ "${{ steps.f.outputs.all_count }}" != "${{ steps.f.outputs.e2e_irrelevant_count }}" ]; then
+                      echo "run=true" >> "$GITHUB_OUTPUT"
+                  else
+                      echo "run=false" >> "$GITHUB_OUTPUT"
+                  fi
+
     e2e:
+        needs: changes
+        if: needs.changes.outputs.run == 'true'
         runs-on: ubuntu-latest
         # .yarnrc.yml authenticates the @y0ngha scope to GitHub Packages via
         # ${SIGLENS_GITHUB_TOKEN}; yarn (even `yarn --version`) fails without it.
@@ -115,3 +139,20 @@ jobs:
             - name: Tear down backend
               if: always()
               run: yarn e2e:down
+
+    # Required-check gate: always runs so a path-skipped `e2e` never leaves a
+    # required check stuck "pending". Mark THIS job required (not `e2e`).
+    e2e-required:
+        needs: [changes, e2e]
+        if: always()
+        runs-on: ubuntu-latest
+        steps:
+            - name: Verify E2E did not fail
+              run: |
+                  if [ "${{ needs.changes.result }}" = "failure" ] || [ "${{ needs.changes.result }}" = "cancelled" ]; then
+                      echo "detect job failed"; exit 1
+                  fi
+                  if [ "${{ needs.e2e.result }}" = "failure" ] || [ "${{ needs.e2e.result }}" = "cancelled" ]; then
+                      echo "e2e failed"; exit 1
+                  fi
+                  echo "e2e ok (result=${{ needs.e2e.result }})"
