@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { TickerCategories } from '@/widgets/home/TickerCategories';
-import { SymbolTabs } from '@/widgets/symbol-page/SymbolTabs';
+import { SymbolTabs } from '@/views/symbol/SymbolTabs';
 import { PremiumModelGateModal } from '@/features/premium-gate/ui/PremiumModelGateModal';
 import type { GateMode } from '@/entities/api-key';
 

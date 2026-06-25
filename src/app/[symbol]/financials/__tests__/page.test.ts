@@ -13,7 +13,7 @@ vi.mock('@/widgets/financials/FinancialsScorecard', () => ({
 vi.mock('@/widgets/financials/FinancialsStatements', () => ({
     FinancialsStatements: () => null,
 }));
-vi.mock('@/widgets/symbol-page', () => ({
+vi.mock('@/views/symbol', () => ({
     CrossLinkCards: () => null,
     SymbolPageHeading: ({ children }: { children: React.ReactNode }) =>
         children,

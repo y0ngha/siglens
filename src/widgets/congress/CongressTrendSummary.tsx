@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import { useDefaultModelId } from '@/widgets/symbol-page/hooks/useDefaultModelId';
+import { useDefaultModelId } from '@/features/symbol-model';
 import { usePublishSymbolChat } from '@/features/symbol-chat';
 import { BotBlockedNotice } from '@/shared/ui/BotBlockedNotice';
 import { useCongressTrend } from './hooks/useCongressTrend';

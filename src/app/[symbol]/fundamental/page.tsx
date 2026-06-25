@@ -24,8 +24,9 @@ import { PeersTable } from '@/widgets/fundamental/sections/PeersTable';
 import { ProfileCard } from '@/widgets/fundamental/sections/ProfileCard';
 import { ProfitabilityCard } from '@/widgets/fundamental/sections/ProfitabilityCard';
 import { ValuationCard } from '@/widgets/fundamental/sections/ValuationCard';
-import { CrossLinkCards, SymbolPageHeading } from '@/widgets/symbol-page';
-import { SectionSkeleton } from '@/widgets/symbol-page/SectionSkeleton';
+import { SymbolPageHeading } from '@/views/symbol';
+import { CrossLinkCards } from '@/shared/ui/CrossLinkCards';
+import { SectionSkeleton } from '@/views/symbol/SectionSkeleton';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import {
     SymbolRouteParams,

@@ -36,7 +36,7 @@ vi.mock('@/shared/ui/BotBlockedNotice', () => ({
     BotBlockedNotice: () => <div data-testid="bot-blocked" />,
 }));
 
-vi.mock('@/widgets/symbol-page/hooks/useDefaultModelId', () => ({
+vi.mock('@/features/symbol-model/hooks/useDefaultModelId', () => ({
     useDefaultModelId: () => 'gemini-2.5-flash-lite',
 }));
 

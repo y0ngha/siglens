@@ -1,4 +1,5 @@
-import { CrossLinkCards, SymbolPageHeading } from '@/widgets/symbol-page';
+import { SymbolPageHeading } from '@/views/symbol';
+import { CrossLinkCards } from '@/shared/ui/CrossLinkCards';
 
 interface FinancialsDegradedProps {
     /** Resolved display name (Korean+English+ticker, or bare-ticker fallback). */

@@ -36,7 +36,7 @@ vi.mock('@/widgets/options/OptionsPageClient', () => ({
 vi.mock('@/widgets/options/OptionsEmptyState', () => ({
     OptionsEmptyState: () => null,
 }));
-vi.mock('@/widgets/symbol-page', () => ({
+vi.mock('@/views/symbol', () => ({
     SymbolPageHeading: () => null,
     CrossLinkCards: () => null,
 }));

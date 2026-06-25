@@ -8,7 +8,8 @@ import { FinancialsDegraded } from '@/app/[symbol]/financials/FinancialsDegraded
 import { FinancialsAiSummary } from '@/widgets/financials/FinancialsAiSummary';
 import { FinancialsScorecard } from '@/widgets/financials/FinancialsScorecard';
 import { FinancialsStatements } from '@/widgets/financials/FinancialsStatements';
-import { CrossLinkCards, SymbolPageHeading } from '@/widgets/symbol-page';
+import { SymbolPageHeading } from '@/views/symbol';
+import { CrossLinkCards } from '@/shared/ui/CrossLinkCards';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import {
     isAdmissibleSymbolShape,

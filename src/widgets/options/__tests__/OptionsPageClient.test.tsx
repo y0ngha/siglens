@@ -8,9 +8,12 @@ vi.mock('react-error-boundary', () => ({
     ),
 }));
 
-vi.mock('@/widgets/symbol-page', () => ({
-    CrossLinkCards: () => <div data-testid="cross-links" />,
+vi.mock('@/features/symbol-model', () => ({
     useSymbolModel: () => ({ modelId: 'gemini-2.5-flash-lite' }),
+}));
+
+vi.mock('@/shared/ui/CrossLinkCards', () => ({
+    CrossLinkCards: () => <div data-testid="cross-links" />,
 }));
 
 vi.mock('@/widgets/options/ExpirationSelector', () => ({

@@ -8,7 +8,7 @@ vi.mock('@/widgets/congress', () => ({
     CongressTrendSummary: () => null,
     CongressTradesTable: () => null,
 }));
-vi.mock('@/widgets/symbol-page', () => ({
+vi.mock('@/views/symbol', () => ({
     CrossLinkCards: () => null,
     SymbolPageHeading: ({ children }: { children: React.ReactNode }) =>
         children,

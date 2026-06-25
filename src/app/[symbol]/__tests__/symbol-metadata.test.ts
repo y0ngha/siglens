@@ -12,13 +12,13 @@ vi.mock('server-only', () => ({}));
 vi.mock('react-markdown', () => () => null);
 
 // page.tsx → SymbolPageClient → AnalysisPanel → MarkdownText 체인을 끊기 위해 컴포넌트를 stub
-vi.mock('@/widgets/symbol-page/SymbolPageClient', () => ({
+vi.mock('@/views/symbol/SymbolPageClient', () => ({
     SymbolPageClient: () => null,
 }));
 vi.mock('@/shared/ui/JsonLd', () => ({
     JsonLd: () => null,
 }));
-vi.mock('@/widgets/symbol-page/CrossLinkCards', () => ({
+vi.mock('@/shared/ui/CrossLinkCards', () => ({
     CrossLinkCards: () => null,
 }));
 vi.mock('@/widgets/fundamental/FundamentalAiSummary', () => ({
@@ -51,7 +51,7 @@ vi.mock('@/widgets/fundamental/sections/ProfitabilityCard', () => ({
 vi.mock('@/widgets/fundamental/sections/ValuationCard', () => ({
     ValuationCard: () => null,
 }));
-vi.mock('@/widgets/symbol-page/SectionSkeleton', () => ({
+vi.mock('@/views/symbol/SectionSkeleton', () => ({
     SectionSkeleton: () => null,
 }));
 vi.mock('@/widgets/news/NewsAiSummary', () => ({

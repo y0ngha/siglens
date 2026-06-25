@@ -6,7 +6,7 @@ vi.mock('@/shared/lib/cn', () => ({
             .filter(a => typeof a === 'string' && a.length > 0)
             .join(' '),
 }));
-vi.mock('@/widgets/symbol-page/hooks/useDefaultModelId', () => ({
+vi.mock('@/features/symbol-model/hooks/useDefaultModelId', () => ({
     useDefaultModelId: () => 'gemini-2.5-flash-lite',
 }));
 vi.mock('../hooks/useCongressTrend', () => ({

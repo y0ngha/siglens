@@ -3,7 +3,8 @@ import { getCongressTradesResilient } from '@/entities/congress-trades';
 import { getProfileResilient } from '@/app/[symbol]/fundamental/getProfileResilient';
 import { CongressDegraded } from '@/app/[symbol]/congress/CongressDegraded';
 import { CongressTradesTable, CongressTrendSummary } from '@/widgets/congress';
-import { CrossLinkCards, SymbolPageHeading } from '@/widgets/symbol-page';
+import { SymbolPageHeading } from '@/views/symbol';
+import { CrossLinkCards } from '@/shared/ui/CrossLinkCards';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import {
     isAdmissibleSymbolShape,

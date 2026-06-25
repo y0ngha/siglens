@@ -1,0 +1,142 @@
+import { render, screen } from '@testing-library/react';
+import { SymbolLayoutHeader } from '@/views/symbol/SymbolLayoutHeader';
+
+vi.mock('next/link', () => ({
+    default: ({
+        href,
+        children,
+        ...rest
+    }: {
+        href: string;
+        children: React.ReactNode;
+        [key: string]: unknown;
+    }) => (
+        <a href={href} {...rest}>
+            {children}
+        </a>
+    ),
+}));
+
+vi.mock('@/entities/ticker/hooks/useAssetInfo', () => ({
+    useAssetInfo: vi.fn(() => ({
+        name: 'Apple Inc.',
+        koreanName: '애플',
+        fmpSymbol: 'AAPL',
+    })),
+}));
+
+vi.mock('@/features/symbol-model/model/SymbolModelContext', () => ({
+    useSymbolModel: vi.fn(() => ({
+        modelId: 'gemini-2.5-flash-lite',
+        allowedModels: ['gemini-2.5-flash-lite'],
+        isHydrated: true,
+        gateModal: null,
+        dismissGate: vi.fn(),
+        handleModelChange: vi.fn(),
+    })),
+}));
+
+vi.mock('@/views/symbol/SymbolTabs', () => ({
+    SymbolTabs: () => <nav data-testid="symbol-tabs">tabs</nav>,
+}));
+
+vi.mock('@/views/symbol/SymbolTabsSkeleton', () => ({
+    SymbolTabsSkeleton: () => <div data-testid="tabs-skeleton">loading</div>,
+}));
+
+vi.mock('@/widgets/analysis', () => ({
+    ModelSelector: ({
+        selectedModel,
+    }: {
+        selectedModel: string;
+        [key: string]: unknown;
+    }) => <div data-testid="model-selector">{selectedModel}</div>,
+}));
+
+// Throw-capable so the ErrorBoundary fallback={null} path can be exercised.
+const { mockFearGreedChip } = vi.hoisted(() => ({
+    mockFearGreedChip: vi.fn(),
+}));
+
+vi.mock('@/views/symbol/FearGreedHeaderChipMounted', () => ({
+    FearGreedHeaderChipMounted: () => mockFearGreedChip(),
+}));
+
+vi.mock('@/features/premium-gate', () => ({
+    PremiumModelGateModal: () => <div data-testid="gate-modal">modal</div>,
+}));
+
+vi.mock('@/shared/lib/llmProviderLabels', () => ({
+    LLM_PROVIDER_LABELS: { google: 'Google' },
+}));
+
+describe('SymbolLayoutHeader', () => {
+    beforeEach(() => {
+        mockFearGreedChip.mockImplementation(() => (
+            <span data-testid="fear-greed-chip">FG</span>
+        ));
+    });
+
+    it('renders a header element', () => {
+        render(<SymbolLayoutHeader symbol="aapl" />);
+        expect(screen.getByRole('banner')).toBeDefined();
+    });
+
+    it('renders the SIGLENS logo link', () => {
+        render(<SymbolLayoutHeader symbol="aapl" />);
+        const link = screen.getByText('SIGLENS');
+        expect(link.closest('a')?.getAttribute('href')).toBe('/');
+    });
+
+    it('renders the uppercased ticker', () => {
+        render(<SymbolLayoutHeader symbol="aapl" />);
+        expect(screen.getByText('(AAPL)')).toBeDefined();
+    });
+
+    it('renders the company name', () => {
+        render(<SymbolLayoutHeader symbol="aapl" />);
+        expect(screen.getByText('Apple Inc.')).toBeDefined();
+    });
+
+    it('renders the korean name', () => {
+        render(<SymbolLayoutHeader symbol="aapl" />);
+        expect(screen.getByText(/애플/)).toBeDefined();
+    });
+
+    it('renders the model selector', () => {
+        render(<SymbolLayoutHeader symbol="aapl" />);
+        expect(screen.getByTestId('model-selector')).toBeDefined();
+    });
+
+    it('renders AI model label text', () => {
+        render(<SymbolLayoutHeader symbol="aapl" />);
+        expect(screen.getByText('AI 분석 모델')).toBeDefined();
+    });
+
+    it('swallows a thrown fear-greed chip error via ErrorBoundary and still renders the header', () => {
+        // FearGreedHeaderChipMounted uses useSuspenseQuery; if its bars fetch
+        // throws (the SSR failure mode #513 guards), the ErrorBoundary
+        // fallback={null} must contain it so the header shell survives.
+        const consoleSpy = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => undefined);
+        mockFearGreedChip.mockImplementation(() => {
+            throw new Error('bars fetch failed');
+        });
+
+        // try/finally so a failed assertion still restores the spy and doesn't
+        // leak the console.error mock into sibling tests.
+        try {
+            render(<SymbolLayoutHeader symbol="aapl" />);
+
+            expect(screen.queryByTestId('fear-greed-chip')).toBeNull();
+            expect(screen.getByRole('banner')).toBeDefined();
+            expect(screen.getByText('(AAPL)')).toBeDefined();
+            // ErrorBoundary가 에러를 잡으면 React가 console.error로 보고한다 —
+            // 에러 경로가 실제로 실행됐음을 검증.
+            expect(consoleSpy).toHaveBeenCalled();
+        } finally {
+            consoleSpy.mockRestore();
+        }
+    });
+});

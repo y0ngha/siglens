@@ -4,7 +4,7 @@ import { type ReactNode } from 'react';
 import { useSelectedLayoutSegment } from 'next/navigation';
 import { FloatingChatButton } from '@/widgets/chat/FloatingChatButton';
 import { SymbolChatProvider } from '@/features/symbol-chat';
-import { SymbolModelProvider } from '@/widgets/symbol-page/SymbolModelContext';
+import { SymbolModelProvider } from '@/features/symbol-model';
 import { cn } from '@/shared/lib/cn';
 
 interface SymbolLayoutJailProps {

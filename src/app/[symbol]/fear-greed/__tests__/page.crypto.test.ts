@@ -79,7 +79,7 @@ vi.mock('@/widgets/fear-greed/FearGreedPage', () => ({
 vi.mock('@/widgets/fear-greed', () => ({
     FearGreedPageError: () => null,
 }));
-vi.mock('@/widgets/symbol-page', () => ({
+vi.mock('@/views/symbol', () => ({
     CrossLinkCards: () => null,
     SymbolPageHeading: () => null,
 }));

@@ -10,8 +10,9 @@ import { NewsAiSummarySkeleton } from '@/widgets/news/NewsAiSummarySkeleton';
 import { AnalystActions } from '@/widgets/news/sections/AnalystActions';
 import { EventCalendar } from '@/widgets/news/sections/EventCalendar';
 import { NewsList } from '@/widgets/news/sections/NewsList';
-import { CrossLinkCards, SymbolPageHeading } from '@/widgets/symbol-page';
-import { SectionSkeleton } from '@/widgets/symbol-page/SectionSkeleton';
+import { SymbolPageHeading } from '@/views/symbol';
+import { CrossLinkCards } from '@/shared/ui/CrossLinkCards';
+import { SectionSkeleton } from '@/views/symbol/SectionSkeleton';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import {
     SymbolRouteParams,

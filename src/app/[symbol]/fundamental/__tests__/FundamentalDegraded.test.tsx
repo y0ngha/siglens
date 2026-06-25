@@ -4,10 +4,13 @@ import type { ReactNode } from 'react';
 import { render, screen } from '@testing-library/react';
 import { FundamentalDegraded } from '../FundamentalDegraded';
 
-vi.mock('@/widgets/symbol-page', () => ({
+vi.mock('@/views/symbol', () => ({
     SymbolPageHeading: ({ children }: { children: ReactNode }) => (
         <h1>{children}</h1>
     ),
+}));
+
+vi.mock('@/shared/ui/CrossLinkCards', () => ({
     CrossLinkCards: ({
         symbol,
         current,

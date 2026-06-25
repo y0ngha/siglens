@@ -1,5 +1,5 @@
 import { OptionsPageClient } from '@/widgets/options/OptionsPageClient';
-import { SymbolPageHeading } from '@/widgets/symbol-page';
+import { SymbolPageHeading } from '@/views/symbol';
 import { OptionsEmptyState } from '@/widgets/options/OptionsEmptyState';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import {

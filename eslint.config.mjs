@@ -114,9 +114,9 @@ const eslintConfig = defineConfig([
         settings: {
             'boundaries/elements': [
                 // FSD 6-layer
-                // ⚠️ src/pages/는 FSD composition layer 용도. Next.js 라우팅은 src/app/에서만 처리.
-                // Next.js App Router 프로젝트에서 src/pages/ 파일 추가 시 Pages Router 활성화 주의.
-                { type: 'pages', pattern: 'src/pages/*' },
+                // ⚠️ src/views/는 FSD composition layer 용도. Next.js 라우팅은 src/app/에서만 처리.
+                // src/pages/ 대신 src/views/ 사용: App Router에서 src/pages/ 추가 시 Pages Router 활성화됨.
+                { type: 'pages', pattern: 'src/views/*' },
                 { type: 'widgets', pattern: 'src/widgets/*' },
                 { type: 'features', pattern: 'src/features/*' },
                 { type: 'entities', pattern: 'src/entities/*' },
@@ -212,6 +212,10 @@ const eslintConfig = defineConfig([
             // widgets 간 cross-import: hook에 server-side 의존이 있어 barrel re-export 시
             // Jest ESM 해석 실패. deep path 허용으로 우회 (Phase 7).
             'src/widgets/**',
+            // views composition layer: symbol-page 이관(Spec-2 PR-B2) 후 ChartContent/useAnalysis가
+            // @/widgets/analysis/hooks/* + @/widgets/analysis/model/* deep import를 유지해야 한다.
+            // barrel에 없는 CooldownNotice(model/types), useAnalysisProgress(hooks/) 때문.
+            'src/views/**',
             // byokGate는 import 'server-only' 선언 + src/shared/CLAUDE.md §의도적 예외 (shared → entities)에서
             // 허용된 shared → entities 의존성을 가진다. barrel에서 제외된 api-key/api deep import
             // 가 필요하므로 no-restricted-imports 예외로 추가한다.
