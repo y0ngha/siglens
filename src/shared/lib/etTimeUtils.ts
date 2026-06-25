@@ -1,27 +1,23 @@
 // EDT: 3월 두 번째 일요일 02:00 ~ 11월 첫 번째 일요일 02:00 → UTC-4 (IANA America/New_York)
 // EST: 그 외 구간 → UTC-5
 // 월은 JS Date 0-indexed 기준 (0 = January)
-import { FIRST_SUNDAY, MARCH, NOVEMBER, SECOND_SUNDAY } from './eastern';
+import {
+    FIRST_SUNDAY,
+    MARCH,
+    NOVEMBER,
+    SECOND_SUNDAY,
+    nthSundayDay,
+} from './eastern';
 
-const DAYS_IN_WEEK = 7;
+// nthSundayDay는 eastern.ts의 정규 원시 함수를 위임해 사용한다.
+// 하위 호환성을 위해 re-export한다 (기존 import 경로 유지).
+export { nthSundayDay };
+
 const SPRING_FORWARD_MONTH = MARCH;
 const SPRING_FORWARD_NTH = SECOND_SUNDAY;
 const FALL_BACK_MONTH = NOVEMBER;
 const FALL_BACK_NTH = FIRST_SUNDAY;
 const DST_TRANSITION_LOCAL_HOUR = 2;
-
-/**
- * 해당 연도·월의 N번째 일요일의 날짜(day-of-month)를 반환한다.
- * @param year - 연도
- * @param month - 0-indexed 월 (0 = January)
- * @param nth - 1-indexed 번째 일요일
- */
-export function nthSundayDay(year: number, month: number, nth: number): number {
-    const firstDayOfMonth = new Date(Date.UTC(year, month, 1));
-    const firstSundayOffset =
-        (DAYS_IN_WEEK - firstDayOfMonth.getUTCDay()) % DAYS_IN_WEEK;
-    return 1 + firstSundayOffset + (nth - 1) * DAYS_IN_WEEK;
-}
 
 /**
  * ET 로컬 벽시계 날짜·시각을 직접 받아 해당 시점의 ET UTC 오프셋을 반환한다.

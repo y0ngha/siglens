@@ -7,6 +7,15 @@ import type {
 } from '@y0ngha/siglens-core';
 import { MS_PER_SECOND } from '@/shared/config/time';
 import { fmpGet } from '@/shared/api/fmp/httpClient';
+import {
+    MARCH,
+    NOVEMBER,
+    SECOND_SUNDAY,
+    FIRST_SUNDAY,
+    EDT_OFFSET_HOURS,
+    EST_OFFSET_HOURS,
+    nthSundayDay,
+} from '@/shared/lib/eastern';
 
 const ISO_DATE_PREFIX_LENGTH = 10; // "YYYY-MM-DD"
 const ISO_DATE_PART_INDEX = 0;
@@ -14,12 +23,9 @@ const ISO_DATE_PART_INDEX = 0;
 // FMP ET→UTC timestamp conversion. Canonical home after the market-provider
 // ejection: siglens-core no longer fetches market data (it owns only the
 // MarketDataProvider port), so this logic permanently lives in siglens.
-const EDT_OFFSET_HOURS = -4;
-const EST_OFFSET_HOURS = -5;
-const DST_START_MONTH = 3;
-const DST_START_NTH_SUNDAY = 2;
-const DST_END_MONTH = 11;
-const DST_END_NTH_SUNDAY = 1;
+//
+// DST 날짜 계산은 eastern.ts의 nthSundayDay를 정규 원시 함수로 위임한다.
+// FMP API 날짜 문자열은 1-indexed month이므로 0-indexed(MARCH=2, NOVEMBER=10)로 변환해 전달한다.
 
 const FMP_DATETIME_YEAR_END = 4;
 const FMP_DATETIME_MONTH_START = 5;
@@ -33,22 +39,29 @@ const FMP_DATETIME_MINUTE_END = 16;
 const FMP_DATETIME_SECOND_START = 17;
 const FMP_DATETIME_SECOND_END = 19;
 
-function getNthSundayOfMonth(year: number, month: number, n: number): Date {
-    const firstOfMonth = new Date(Date.UTC(year, month - 1, 1));
-    const dayOfWeek = firstOfMonth.getUTCDay();
-    const firstSunday = dayOfWeek === 0 ? 1 : 8 - dayOfWeek;
-    return new Date(Date.UTC(year, month - 1, firstSunday + (n - 1) * 7));
-}
-
+/**
+ * FMP 날짜 문자열의 연도·1-indexed 월·일을 받아 ET UTC 오프셋을 반환한다.
+ *
+ * date-only 비교: FMP 장중 데이터의 시각은 항상 09:30~16:00 ET이고
+ * DST 전환 기준 시각(02:00 ET)보다 늦으므로 날짜 단위 비교로 오프셋을 정확히 결정할 수 있다.
+ * hour 인수를 받지 않는 이 설계는 의도적이며 기존 동작을 보존한다.
+ *
+ * @param year  - 연도
+ * @param month - 1-indexed 월 (FMP 날짜 문자열 원본 값)
+ * @param day   - day-of-month
+ * @returns EDT(-4) 또는 EST(-5)
+ */
 function getEtOffsetHours(year: number, month: number, day: number): number {
-    const dstStart = getNthSundayOfMonth(
-        year,
-        DST_START_MONTH,
-        DST_START_NTH_SUNDAY
-    );
-    const dstEnd = getNthSundayOfMonth(year, DST_END_MONTH, DST_END_NTH_SUNDAY);
-    const date = new Date(Date.UTC(year, month - 1, day));
-    return date >= dstStart && date < dstEnd
+    // nthSundayDay는 0-indexed month를 받으므로 MARCH(2), NOVEMBER(10)을 직접 사용
+    const springDay = nthSundayDay(year, MARCH, SECOND_SUNDAY);
+    const fallDay = nthSundayDay(year, NOVEMBER, FIRST_SUNDAY);
+
+    // date-only UTC 자정 기준 비교 (기존 동작 보존)
+    const dateMs = Date.UTC(year, month - 1, day);
+    const springMs = Date.UTC(year, MARCH, springDay);
+    const fallMs = Date.UTC(year, NOVEMBER, fallDay);
+
+    return dateMs >= springMs && dateMs < fallMs
         ? EDT_OFFSET_HOURS
         : EST_OFFSET_HOURS;
 }
