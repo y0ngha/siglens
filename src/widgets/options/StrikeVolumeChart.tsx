@@ -1,20 +1,10 @@
 'use client';
 
-import {
-    useMemo,
-    useRef,
-    useState,
-    type CSSProperties,
-    type PointerEvent,
-} from 'react';
+import { useMemo } from 'react';
 import type { OptionsChain } from '@y0ngha/siglens-core';
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
 import { CallVolumeTooltip, PutVolumeTooltip } from './utils/optionsTooltips';
-import {
-    computeTooltipPos,
-    TOOLTIP_MIN_WIDTH_PX,
-    type TooltipPosition,
-} from './utils/computeTooltipPos';
+// TOOLTIP_MIN_WIDTH_PX는 StrikeBarTooltip 내부에서 computeTooltipPos를 통해 가져온다.
 import { pickLabelIndices } from './utils/pickLabelIndices';
 import { aggregateStrikeVolume } from './utils/aggregateStrikeVolume';
 import { formatCompactCount } from './utils/formatCompactCount';
@@ -28,6 +18,14 @@ import {
     GUIDE_LINE_STROKE_WIDTH,
 } from './utils/chartStrokeWidths';
 import { findNearestStrikeIndex } from '@/entities/options-chain';
+import { useStrikeBarChart } from './hooks/useStrikeBarChart';
+import {
+    barCenterX,
+    barPixelHeight,
+    slotWidth,
+} from './lib/strikeChartGeometry';
+import { StrikeBarTooltip } from './ui/StrikeBarTooltip';
+import { StrikeBarSrTable } from './ui/StrikeBarSrTable';
 
 interface StrikeVolumeChartProps {
     /** Spot price used to anchor the current-price guide line. */
@@ -82,29 +80,18 @@ const STRAIGHT_LABEL_FONT_SIZE = 9;
 // anchor가 어느 tooltip을 가리키는지 모호해진다.
 const TOOLTIP_ELEMENT_ID = 'volume-chart-tooltip';
 
-function slotWidth(count: number): number {
-    return CHART_WIDTH / count;
-}
-
-function barCenterX(index: number, count: number): number {
-    const sw = slotWidth(count);
-    return PAD_LEFT + sw * index + sw / 2;
-}
-
-function barPixelHeight(volume: number, maxVolume: number): number {
-    if (maxVolume === 0) return 0;
-    return Math.min((volume / maxVolume) * HALF_HEIGHT, HALF_HEIGHT);
-}
-
 export function StrikeVolumeChart({
     underlyingPrice,
     chain,
 }: StrikeVolumeChartProps) {
-    const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
-    const [tooltipPos, setTooltipPos] = useState<TooltipPosition | null>(null);
-    const containerRef = useRef<HTMLDivElement | null>(null);
-    // 컨테이너 DOMRect 캐시 — OpenInterestChart와 동일한 reflow 회피 패턴.
-    const cachedRectRef = useRef<DOMRect | null>(null);
+    const {
+        containerRef,
+        hoveredIndex,
+        tooltipPos,
+        handlePointerEnter,
+        handlePointerMove,
+        handlePointerLeave,
+    } = useStrikeBarChart();
 
     const derived = useMemo(() => {
         if (!chain) return null;
@@ -170,7 +157,7 @@ export function StrikeVolumeChart({
     const { volumeByStrike, globalMax, currentPriceIdx, labelIndices } =
         derived;
     const count = volumeByStrike.length;
-    const sw = slotWidth(count);
+    const sw = slotWidth(count, CHART_WIDTH);
     const bw = sw * BAR_WIDTH_FILL_RATIO;
 
     // hoveredIndex 가드 — 만기 chip 전환으로 배열이 짧아지는 사이 stale
@@ -179,48 +166,12 @@ export function StrikeVolumeChart({
         hoveredIndex !== null ? (volumeByStrike[hoveredIndex] ?? null) : null;
 
     const currentPriceX =
-        currentPriceIdx >= 0 ? barCenterX(currentPriceIdx, count) : null;
+        currentPriceIdx >= 0
+            ? barCenterX(currentPriceIdx, count, PAD_LEFT, CHART_WIDTH)
+            : null;
 
     const rotateLabels = labelIndices.size > LABEL_ROTATION_THRESHOLD;
     const peakVolumeLabel = formatCompactCount(globalMax);
-
-    const handlePointerEnter = (
-        event: PointerEvent<SVGRectElement>,
-        index: number
-    ): void => {
-        const container = containerRef.current;
-        if (!container) return;
-        const rect = container.getBoundingClientRect();
-        cachedRectRef.current = rect;
-        setHoveredIndex(index);
-        setTooltipPos(computeTooltipPos(event, rect));
-    };
-
-    const handlePointerMove = (
-        event: PointerEvent<SVGRectElement>,
-        index: number
-    ): void => {
-        const rect = cachedRectRef.current;
-        // enter 전에 move가 먼저 발사되는 모바일 touchmove 경로 대응 —
-        // 한 번 측정해 캐시한 뒤 이후 move부터는 캐시만 읽는다.
-        if (rect === null) {
-            const container = containerRef.current;
-            if (!container) return;
-            const measured = container.getBoundingClientRect();
-            cachedRectRef.current = measured;
-            setHoveredIndex(index);
-            setTooltipPos(computeTooltipPos(event, measured));
-            return;
-        }
-        if (hoveredIndex !== index) setHoveredIndex(index);
-        setTooltipPos(computeTooltipPos(event, rect));
-    };
-
-    const handlePointerLeave = (): void => {
-        cachedRectRef.current = null;
-        setHoveredIndex(null);
-        setTooltipPos(null);
-    };
 
     return (
         <div
@@ -283,9 +234,17 @@ export function StrikeVolumeChart({
                 </text>
 
                 {volumeByStrike.map((row, i) => {
-                    const cx = barCenterX(i, count);
-                    const callH = barPixelHeight(row.callVolume, globalMax);
-                    const putH = barPixelHeight(row.putVolume, globalMax);
+                    const cx = barCenterX(i, count, PAD_LEFT, CHART_WIDTH);
+                    const callH = barPixelHeight(
+                        row.callVolume,
+                        globalMax,
+                        HALF_HEIGHT
+                    );
+                    const putH = barPixelHeight(
+                        row.putVolume,
+                        globalMax,
+                        HALF_HEIGHT
+                    );
 
                     return (
                         <g key={row.strike}>
@@ -339,7 +298,7 @@ export function StrikeVolumeChart({
 
                 {volumeByStrike.map((row, i) => {
                     if (!labelIndices.has(i)) return null;
-                    const cx = barCenterX(i, count);
+                    const cx = barCenterX(i, count, PAD_LEFT, CHART_WIDTH);
                     const labelY =
                         SVG_HEIGHT - PAD_BOTTOM + X_AXIS_LABEL_OFFSET_PX;
 
@@ -374,22 +333,10 @@ export function StrikeVolumeChart({
                 })}
             </svg>
 
-            {/* `aria-describedby`가 가리키는 대상은 항상 DOM에 있어야 한다.
-                `hidden`으로 숨기면 접근성 트리에서도 빠지지만, 하단 sr-only
-                테이블이 전체 volume 데이터를 제공하므로 이 pointer-only
-                tooltip에서는 허용 가능한 트레이드오프다. */}
-            <div
+            <StrikeBarTooltip
                 id={TOOLTIP_ELEMENT_ID}
-                role="tooltip"
-                hidden={hoveredRow === null || tooltipPos === null}
-                className="border-secondary-600 bg-secondary-900/95 text-secondary-100 pointer-events-none absolute top-[var(--tooltip-y)] left-[var(--tooltip-x)] z-10 min-w-[var(--tooltip-min-w)] -translate-x-1/2 -translate-y-full rounded-md border px-3 py-2 text-xs shadow-lg backdrop-blur"
-                style={
-                    {
-                        '--tooltip-x': `${tooltipPos?.x ?? 0}px`,
-                        '--tooltip-y': `${tooltipPos?.y ?? 0}px`,
-                        '--tooltip-min-w': `${TOOLTIP_MIN_WIDTH_PX}px`,
-                    } as CSSProperties
-                }
+                hoveredRow={hoveredRow}
+                tooltipPos={tooltipPos}
             >
                 {hoveredRow !== null && (
                     <>
@@ -419,7 +366,7 @@ export function StrikeVolumeChart({
                         </div>
                     </>
                 )}
-            </div>
+            </StrikeBarTooltip>
 
             <div className="text-secondary-500 mt-2 flex flex-wrap items-center gap-3 text-[10px]">
                 <span className="flex items-center gap-1">
@@ -447,30 +394,14 @@ export function StrikeVolumeChart({
                 </span>
             </div>
 
-            {/* OpenInterestChart와 동일 — <table>에 sr-only를 직접 두면
-                `display: table`이 normal flow에 잔재를 남겨 페이지 height에
-                영향을 주므로 <div>로 감싼다. */}
-            <div className="sr-only">
-                <table>
-                    <caption>Strike별 거래량 데이터</caption>
-                    <thead>
-                        <tr>
-                            <th scope="col">Strike</th>
-                            <th scope="col">Call Volume</th>
-                            <th scope="col">Put Volume</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {volumeByStrike.map(row => (
-                            <tr key={row.strike}>
-                                <td>{row.strike}</td>
-                                <td>{row.callVolume}</td>
-                                <td>{row.putVolume}</td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
+            <StrikeBarSrTable
+                caption="Strike별 거래량 데이터"
+                headers={['Strike', 'Call Volume', 'Put Volume']}
+                rows={volumeByStrike.map(row => ({
+                    key: row.strike,
+                    cells: [row.strike, row.callVolume, row.putVolume],
+                }))}
+            />
         </div>
     );
 }
