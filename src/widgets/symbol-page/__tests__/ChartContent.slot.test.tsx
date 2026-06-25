@@ -53,7 +53,6 @@ vi.mock('../hooks/useActionPricesVisibility', () => ({
 vi.mock('../SymbolModelContext', () => ({
     useSymbolModel: () => ({ modelId: 'gemini-2.5-flash', isHydrated: true }),
 }));
-// Spec-2 PR-B1: indicatorCount를 prop으로 내리기 위해 ChartContent가 useSymbolPageContext를 호출한다.
 vi.mock('../SymbolPageContext', () => ({
     useSymbolPageContext: () => ({ indicatorCount: 25 }),
 }));
@@ -70,7 +69,6 @@ vi.mock('../hooks/useAnalysisDisplay', () => ({
         handleProgressFinished: vi.fn(),
     }),
 }));
-// ChartContent가 분석 위젯 훅을 직접 import하므로 모킹 대상도 동일 경로로 변경.
 vi.mock('@/widgets/analysis/hooks/useAnalysisProgress', () => ({
     useAnalysisProgress: () => ({ phaseIndex: 0, tipIndex: 0 }),
 }));

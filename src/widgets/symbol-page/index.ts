@@ -15,11 +15,6 @@ export { buildChartPageHeading } from './utils/chartPageHeading';
 // 정책에 해당하지 않아 barrel로 노출한다. app route의 FactLayer SSR fallback이 소비.
 export { TechnicalFactsSummary } from './TechnicalFactsSummary';
 
-// NOTE: CooldownNotice, useAnalysisProgress, ANALYSIS_PHASES, ANALYSIS_TIPS는
-// Spec-2 PR-B1에서 widgets/analysis로 이전됐다.
-// - CooldownNotice → @/widgets/analysis/model/types
-// - useAnalysisProgress, ANALYSIS_PHASES, ANALYSIS_TIPS → @/widgets/analysis/hooks/useAnalysisProgress
-//
 // useAssetInfo, useBars, useDefaultModelId는 여기에 re-export하지 않는다:
 // 서버 사이드 의존성(entity actions → @google/genai ESM)이 Jest 모듈 해석을 깨뜨림.
 // cross-widget 소비자는 deep path로 직접 import한다.

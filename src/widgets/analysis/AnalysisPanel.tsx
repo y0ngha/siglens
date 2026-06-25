@@ -723,7 +723,6 @@ interface AnalysisPanelProps {
     isFreeUser?: boolean;
     /**
      * 이번 분석에 적용된 인디케이터 종류 수.
-     * ChartContent가 SymbolPageContext에서 읽어 prop으로 내려준다.
      * analysis → symbol-page 역방향 의존을 제거하기 위해 prop으로 전달한다.
      */
     indicatorCount?: number;

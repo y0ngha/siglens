@@ -13,7 +13,6 @@ vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: vi.fn(() => ({ db: {}, sql: () => null })),
 }));
 
-// Spec-2 PR-B1: ANALYSIS_PHASES / ANALYSIS_TIPS는 widgets/analysis로 이전.
 // AnalysisProgress가 내부 hook에서 직접 import하므로 여기서 mock한다.
 vi.mock('@/widgets/analysis/hooks/useAnalysisProgress', () => ({
     ANALYSIS_PHASES: [

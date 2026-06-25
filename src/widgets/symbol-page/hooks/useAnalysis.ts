@@ -78,7 +78,6 @@ interface UseAnalysisOptions {
     isModelHydrated?: boolean;
 }
 
-// CooldownNotice는 Spec-2 PR-B1에서 widgets/analysis로 이전됐다.
 // symbol-page → analysis는 허용된 하향 의존(cross-widget cross-import).
 import type { CooldownNotice } from '@/widgets/analysis/model/types';
 export type { CooldownNotice } from '@/widgets/analysis/model/types';

@@ -19,7 +19,6 @@ import { useActionPricesVisibility } from './hooks/useActionPricesVisibility';
 import { useAnalysis } from './hooks/useAnalysis';
 import { useAnalysisDerivedData } from './hooks/useAnalysisDerivedData';
 import { useAnalysisDisplay } from './hooks/useAnalysisDisplay';
-// useAnalysisProgress는 Spec-2 PR-B1에서 widgets/analysis로 이전됐다.
 import { useAnalysisProgress } from '@/widgets/analysis/hooks/useAnalysisProgress';
 import { useBars } from '@/entities/bars/hooks/useBars';
 import {
@@ -136,7 +135,6 @@ export function ChartContent({
 
     const { modelId, isHydrated: isModelHydrated } = useSymbolModel();
 
-    // indicatorCount는 AnalysisPanel에 prop으로 전달한다.
     // analysis → symbol-page 역방향 import를 제거하기 위해 여기서 context를 읽어 내려보낸다.
     const { indicatorCount } = useSymbolPageContext();
 
