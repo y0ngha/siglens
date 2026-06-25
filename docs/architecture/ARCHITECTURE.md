@@ -20,7 +20,7 @@ Feature-Sliced Design (FSD) 6-layer 아키텍처를 기반으로 한다.
 ├─────────────────────────────────────────┤
 │           features (유스케이스)           │  auth-*, contact-form, ticker-search 등
 ├─────────────────────────────────────────┤
-│       entities (도메인 엔티티)            │  user, session, bars, analysis, ticker 등
+│       entities (도메인 엔티티)            │  auth, bars, analysis, ticker 등
 ├─────────────────────────────────────────┤
 │        shared (공유 유틸리티)             │  lib, config, ui, hooks, db, email, api
 └─────────────────────────────────────────┘
@@ -62,7 +62,7 @@ app            ← pages, widgets, features, entities, shared import 가능.
 **위반 예시 (절대 금지)**
 ```typescript
 // ❌ widgets에서 entity internal path 직접 import
-import { loginUser } from '@/entities/user/lib/loginUser'; // 금지 — barrel로만
+import { loginUser } from '@/entities/auth/lib/loginUser'; // 금지 — barrel로만
 
 // ❌ siglens-core deep import
 import { calculateBollinger } from '@y0ngha/siglens-core/dist/domain/indicators/bollinger'; // 금지
@@ -74,8 +74,9 @@ import { calculateBollinger } from '@y0ngha/siglens-core/dist/domain/indicators/
 import { detectCandlePatternEntries, RSI_OVERBOUGHT_LEVEL } from '@y0ngha/siglens-core';
 import type { Bar, IndicatorResult } from '@y0ngha/siglens-core';
 
-// ✅ features에서 entity barrel import
-import { DrizzleUserRepository } from '@/entities/user';
+// ✅ features에서 entity barrel import (server-only 제외 항목은 deep import)
+import { loginUser } from '@/entities/auth';
+import { DrizzleUserRepository } from '@/entities/auth/api'; // server-only → deep import
 ```
 
 **순환 의존성 금지**

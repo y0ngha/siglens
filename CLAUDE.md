@@ -183,12 +183,12 @@ app  →  pages  →  widgets  →  features  →  entities  →  shared
 ```
 
 - 각 레이어는 자기 위 레이어를 import할 수 없다 (예: entities는 features를 import할 수 없음).
-- 같은 레이어 안의 다른 슬라이스끼리 import 금지 (예: `entities/user`는 `entities/session`을 직접 import할 수 없음 — 상위 레이어를 통해 라우팅).
+- 같은 레이어 안의 다른 슬라이스끼리 import 금지 (예: `entities/analysis`는 `entities/ticker`를 직접 import할 수 없음 — 상위 레이어를 통해 라우팅).
   - **예외**: `shared` 레이어는 내부 슬라이스 간 import 허용 (예: `shared/ui` → `shared/lib`). ESLint `{ from: 'shared', allow: ['shared'] }` 규칙으로 강제.
   - **예외**: entities 간 cross-import 허용 (analysis → news-article, earnings-report 등 도메인 조합 필요).
   - **예외**: features 간 cross-import 허용 (auth-signup → auth-email-verification 등).
   - **예외**: widgets 간 cross-import 허용 (symbol-page가 chart/analysis/fear-greed 위젯 조합).
-- production 코드는 슬라이스 barrel(index.ts)만 import (예: `@/entities/user`, NOT `@/entities/user/lib/loginUser`). 테스트 파일 및 actions/, lib/ 내부 파일은 예외.
+- production 코드는 슬라이스 barrel(index.ts)만 import (예: `@/entities/auth`, NOT `@/entities/auth/lib/loginUser`). 테스트 파일 및 actions/, lib/ 내부 파일은 예외.
 
 ### `@y0ngha/siglens-core` — 모든 레이어에서 직접 import 가능
 
