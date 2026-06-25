@@ -14,7 +14,12 @@ cross-widget import는 현재 허용되지만, `symbol-page` 슬라이스는 Spe
   - 이유: `symbol-page` 컴포지션이 FSD `pages` 레이어(`src/views/symbol/`)로 이관됨 (Spec-2 PR-B2)
   - 관련 hook은 `src/features/symbol-model/`로, CrossLinkCards는 `src/shared/ui/`로 이동
 
-이 예외는 ESLint `from: 'widgets', allow: ['widgets', ...]`로 관리됨. (widgets 간 cross-import는 여전히 허용 — PR-C에서 재검토 예정)
+이 예외는 ESLint `from: 'widgets', allow: ['widgets', ...]`로 관리됨. Spec-2 PR-C 재검토 결과, 예외는 아래 두 pre-existing 엣지에 한해 유지됨:
+
+- **`fear-greed → chart`**: `FearGreedPage.tsx`가 `@/widgets/chart/FearGreedHistoricalChart`를 deep import (barrel 미포함 heavy component)
+- **`overall → news`**: `OverallContent.tsx`가 `@/widgets/news` barrel에서 `useNewsAnalysisTrigger`, `useWaitForNewsCards`를 소비
+
+두 엣지 모두 symbol-page와 무관(symbol-page는 PR-B2에서 `src/views/symbol/`로 이관). 규칙 완전 제거는 위 두 컴포넌트의 이전을 선행해야 하므로 보류.
 
 ## barrel 제외 대상
 
