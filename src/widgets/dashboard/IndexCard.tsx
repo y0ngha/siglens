@@ -24,7 +24,6 @@ export function IndexCard({ data, href }: IndexCardProps) {
                     symbol: data.symbol,
                     koreanName: data.koreanName,
                     price: data.price,
-                    // IndexCardData는 changesPercentage 필드를 사용한다.
                     changePercent: data.changesPercentage,
                 }}
             />
