@@ -141,8 +141,11 @@ const eslintConfig = defineConfig([
                             ],
                         },
                         {
-                            // widgets 간 cross-import 허용: symbol-page가 chart/analysis/fear-greed 위젯을 조합하고,
-                            // fundamental/news/options/overall이 symbol-page barrel에서 공통 hook(useDefaultModelId 등)을 소비.
+                            // widgets 간 cross-import 허용: Spec-2 PR-B2에서 symbol-page가 src/views/symbol/로 이관되어
+                            // 해당 엣지는 제거됨. 현재 허용 목적은 두 pre-existing 엣지에 한정:
+                            //   - fear-greed → chart: FearGreedPage.tsx가 @/widgets/chart/FearGreedHistoricalChart를 deep import
+                            //   - overall → news: OverallContent.tsx가 @/widgets/news barrel에서 useNewsAnalysisTrigger/useWaitForNewsCards를 소비
+                            // 두 엣지 모두 symbol-page와 무관. 규칙 완전 제거는 해당 컴포넌트 이전이 선행되어야 하므로 보류.
                             from: { type: 'widgets' },
                             allow: [
                                 { to: { type: 'widgets' } },
@@ -209,8 +212,10 @@ const eslintConfig = defineConfig([
             // 예: getCurrentUser, optionsDataCache 등 server-only 마킹된 함수들
             'src/app/**/!(api)/**',
             'src/app/*.tsx',
-            // widgets 간 cross-import: hook에 server-side 의존이 있어 barrel re-export 시
-            // Jest ESM 해석 실패. deep path 허용으로 우회 (Phase 7).
+            // widgets 간 cross-import: Spec-2 PR-B2 이후 symbol-page 엣지는 제거됨.
+            // 잔존 deep-import: fear-greed → @/widgets/chart/FearGreedHistoricalChart
+            //   (barrel에서 제외된 heavy-chart 컴포넌트, server-side 의존으로 re-export 시 Jest ESM 해석 실패).
+            // barrel 소비 엣지(overall → @/widgets/news)도 이 ignore 범위 내에서 허용됨 (Phase 7).
             'src/widgets/**',
             // views composition layer: symbol-page 이관(Spec-2 PR-B2) 후 ChartContent/useAnalysis가
             // @/widgets/analysis/hooks/* + @/widgets/analysis/model/* deep import를 유지해야 한다.
