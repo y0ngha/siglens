@@ -22,7 +22,7 @@ import { isE2E } from '@/shared/api/e2eEnv';
  * @param loadFake  E2E용 Fake 인스턴스 생성 함수 (내부에서 require('./Fake…') 호출)
  * @returns 첫 호출 시 인스턴스를 생성·저장하고 이후 호출은 캐시를 반환하는 팩토리 함수
  */
-export function createE2EGatedSingleton<T>(
+export function createE2EGatedSingleton<T extends object>(
     makeReal: () => T,
     loadFake: () => T
 ): () => T {

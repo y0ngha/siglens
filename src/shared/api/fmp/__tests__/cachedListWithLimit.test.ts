@@ -97,7 +97,8 @@ describe("cachedListWithLimit — onError: 'empty' (기본값)", () => {
     });
 
     it('opts 미전달 시에도 기본값 empty로 동작한다', async () => {
-        mockGetOrSetCache.mockRejectedValue(new Error('timeout'));
+        const error = new Error('timeout');
+        mockGetOrSetCache.mockRejectedValue(error);
         const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
         // opts 인자 없이 호출
@@ -109,6 +110,8 @@ describe("cachedListWithLimit — onError: 'empty' (기본값)", () => {
         );
 
         expect(result).toEqual([]);
+        // opts 미전달 시 logPrefix 기본값('')으로 console.error가 호출돼야 한다
+        expect(spy).toHaveBeenCalledWith('', error);
         spy.mockRestore();
     });
 });

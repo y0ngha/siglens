@@ -1,10 +1,13 @@
 import { getOrSetCache } from '@/shared/cache/getOrSetCache';
 
+/** 에러 처리 전략 — 'empty': 로깅 후 [] 반환, 'rethrow': 에러 전파 */
+type CachedListOnError = 'empty' | 'rethrow';
+
 /**
  * opts 타입 — `cachedListWithLimit` 선택적 파라미터.
  */
 interface CachedListOpts {
-    onError?: 'empty' | 'rethrow';
+    onError?: CachedListOnError;
     logPrefix?: string;
 }
 
