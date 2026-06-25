@@ -1,7 +1,6 @@
-// DrizzleSessionRepository は barrel から除外 —
-// api.ts が @/shared/db/schema (import 'server-only') を import するため
-// client component が barrel を import すると build が壊れる。
-// server consumer は @/entities/session/api から直接 deep import する。
+// DrizzleSessionRepository는 barrel에서 제외 — api.ts가 @/shared/db/schema(import 'server-only')를
+// import하므로 client component가 barrel을 import하면 build가 깨진다.
+// server 소비자는 @/entities/session/api에서 직접 deep import한다.
 // getCurrentUser は barrel から除外 — next/headers 의존이 client 번들에 포함되는 문제 방지.
 // 서버 소비자는 @/entities/session/lib/getCurrentUser에서 직접 import.
 // getAuthDatabaseClient도 barrel에서 제외 — @/shared/db/client → require('./clientTest') →
@@ -39,8 +38,8 @@ export type {
     PasswordHasher,
     PasswordVerifier,
 } from './lib/types';
-// bcryptPasswordHasher / bcryptPasswordVerifier は barrel から除外 —
-// bcrypt は Node.js ネイティブ依存のため client bundle に入ると build が壊れる。
-// server consumer は @/entities/session/lib/bcrypt から直接 deep import する。
+// bcryptPasswordHasher / bcryptPasswordVerifier는 barrel에서 제외 — bcrypt는 Node.js 네이티브
+// 의존성이 있어 client bundle에 포함되면 build가 깨진다.
+// server 소비자는 @/entities/session/lib/bcrypt에서 직접 import한다.
 export { useCurrentUser } from './hooks/useCurrentUser';
 export { useAuthHint } from './hooks/useAuthHint';

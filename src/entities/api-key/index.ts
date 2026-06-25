@@ -1,6 +1,6 @@
-// DrizzleUserApiKeyRepository と LlmApiKeyDecryptionFailedError は barrel から除外 —
-// api.ts が drizzle/encryption を import するため client bundle に入ると build が壊れる。
-// server consumer は @/entities/api-key/api から直接 deep import する。
+// DrizzleUserApiKeyRepository와 LlmApiKeyDecryptionFailedError는 barrel에서 제외 —
+// api.ts가 drizzle/encryption을 import하므로 client bundle에 포함되면 build가 깨진다.
+// server 소비자는 @/entities/api-key/api에서 직접 import한다.
 
 export { isLlmProvider, normalizeLlmApiKey } from './lib/apiKey';
 export {

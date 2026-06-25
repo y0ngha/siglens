@@ -49,7 +49,7 @@ vi.mock('next/navigation', () => ({
     notFound: vi.fn(),
 }));
 // /news와 동일 게이트(useWaitForNewsCards) 적용을 위해 newsItems를 SSR에서 조회한다.
-// getNewsList は barrel 除外対象 — @/entities/news-article/api から deep import する.
+// getNewsList는 barrel 제외 대상이므로 @/entities/news-article/api에서 직접 import한다.
 vi.mock('@/entities/news-article/api', () => ({
     getNewsList: vi.fn().mockResolvedValue([]),
 }));

@@ -1,7 +1,6 @@
-// DrizzleNewsRepository と getNewsList は barrel から除外 —
-// api.ts が drizzle/DB client を import し import 'server-only' で保護されるため
-// client bundle に入ると build が壊れる。
-// server consumer は @/entities/news-article/api から直接 deep import する。
+// DrizzleNewsRepository와 getNewsList는 barrel에서 제외 — api.ts가 drizzle/DB client를 import하고
+// 'server-only'로 보호되므로 client bundle에 포함되면 build가 깨진다.
+// server 소비자는 @/entities/news-article/api에서 직접 import한다.
 export type { NewsRow } from './api';
 
 // lib
