@@ -6,7 +6,9 @@ vi.mock('@/widgets/chart', () => ({
     TimeframeSelector: () => null,
 }));
 vi.mock('../ChartContent', () => ({ ChartContent: () => null }));
-vi.mock('../hooks/useAssetInfo', () => ({ useAssetInfo: () => undefined }));
+vi.mock('@/entities/ticker/hooks/useAssetInfo', () => ({
+    useAssetInfo: () => undefined,
+}));
 vi.mock('../hooks/useMobileSheet', () => ({
     useMobileSheet: () => ({
         sheetSnap: 0,

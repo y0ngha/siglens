@@ -22,7 +22,7 @@ vi.mock('@/entities/bars/actions', () => ({
     getBarsAction: vi.fn().mockResolvedValue({ bars: [], indicators: {} }),
 }));
 
-vi.mock('@/widgets/symbol-page/hooks/useAssetInfo', () => ({
+vi.mock('@/entities/ticker/hooks/useAssetInfo', () => ({
     useAssetInfo: vi.fn(() => undefined),
 }));
 

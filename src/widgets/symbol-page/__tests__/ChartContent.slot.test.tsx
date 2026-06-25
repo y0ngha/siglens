@@ -20,7 +20,7 @@ vi.mock('@/widgets/chart', () => ({
         handleVolumeChartRemove: vi.fn(),
     }),
 }));
-vi.mock('../hooks/useBars', () => ({
+vi.mock('@/entities/bars/hooks/useBars', () => ({
     useBars: () => ({
         bars: [
             { time: 0, open: 100, high: 120, low: 90, close: 100, volume: 1 },

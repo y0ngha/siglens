@@ -33,7 +33,7 @@ import { AUGMENT_AND_OVERALL_POLL_INTERVAL_MS } from '@/shared/config/pollingCon
 import type { CancelJobEntry } from '@/shared/lib/types';
 import { useHydrated } from '@/shared/hooks/useHydrated';
 import { usePageHideCancel } from '@/shared/hooks/usePageHideCancel';
-import { BotBlockedError } from '@/widgets/symbol-page';
+import { BotBlockedError } from '@/shared/lib/BotBlockedError';
 import type { OverallAnalysisState, ProgressState } from '../types';
 import { axesForAssetClass } from '../utils/axesForAssetClass';
 

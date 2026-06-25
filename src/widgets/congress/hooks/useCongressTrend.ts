@@ -16,7 +16,7 @@ import {
 } from '@/shared/config/pollingConfig';
 import { usePageHideCancel } from '@/shared/hooks/usePageHideCancel';
 import { useHydrated } from '@/shared/hooks/useHydrated';
-import { BotBlockedError } from '@/widgets/symbol-page';
+import { BotBlockedError } from '@/shared/lib/BotBlockedError';
 import type { CancelJobEntry } from '@/shared/lib/types';
 
 /**

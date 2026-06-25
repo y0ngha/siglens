@@ -6,7 +6,7 @@ import { renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 import { getBarsAction } from '@/entities/bars/actions';
-import { useBars } from '@/widgets/symbol-page/hooks/useBars';
+import { useBars } from '@/entities/bars/hooks/useBars';
 import type { BarsData, Timeframe } from '@y0ngha/siglens-core';
 
 const MOCK_BARS_DATA: BarsData = {

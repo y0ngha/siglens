@@ -6,7 +6,7 @@ import { renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 import { getAssetInfoAction } from '@/entities/ticker/actions';
-import { useAssetInfo } from '@/widgets/symbol-page/hooks/useAssetInfo';
+import { useAssetInfo } from '@/entities/ticker/hooks/useAssetInfo';
 import type { AssetInfo } from '@/shared/lib/types';
 
 const MOCK_ASSET_INFO: AssetInfo = {

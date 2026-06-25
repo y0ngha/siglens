@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-vi.mock('@/widgets/symbol-page/hooks/useBars', () => ({
+vi.mock('@/entities/bars/hooks/useBars', () => ({
     useBars: vi.fn(() => ({
         bars: [{ time: 1, open: 100, high: 110, low: 90, close: 105 }],
         indicators: { buySellVolume: [] },
@@ -16,7 +16,7 @@ vi.mock('@/shared/config/market', () => ({
 }));
 
 import { renderHook } from '@testing-library/react';
-import { useBars } from '@/widgets/symbol-page/hooks/useBars';
+import { useBars } from '@/entities/bars/hooks/useBars';
 import { useFearGreed } from '@/widgets/fear-greed/hooks/useFearGreed';
 
 import { useFearGreedFromSymbol } from '../../hooks/useFearGreedFromSymbol';

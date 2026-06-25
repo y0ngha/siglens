@@ -2,7 +2,7 @@ import { render } from '@testing-library/react';
 import { SENTIMENT_LABEL_TEXT } from '@/shared/lib/fearGreedLabels';
 import { FearGreedHeaderChipMounted } from '@/widgets/symbol-page/FearGreedHeaderChipMounted';
 
-vi.mock('@/widgets/symbol-page/hooks/useBars', () => ({
+vi.mock('@/entities/bars/hooks/useBars', () => ({
     useBars: vi.fn(() => ({
         bars: [],
         indicators: { buySellVolume: [] },

@@ -62,7 +62,7 @@ vi.mock('@/widgets/symbol-page/ChartContent', () => ({
     ),
 }));
 
-vi.mock('@/widgets/symbol-page/hooks/useAssetInfo', () => ({
+vi.mock('@/entities/ticker/hooks/useAssetInfo', () => ({
     useAssetInfo: vi.fn(() => undefined),
 }));
 

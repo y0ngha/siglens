@@ -1,4 +1,4 @@
-import { BotBlockedError } from '@/widgets/symbol-page/exceptions/BotBlockedError';
+import { BotBlockedError } from '@/shared/lib/BotBlockedError';
 
 describe('BotBlockedError', () => {
     it('extends Error', () => {

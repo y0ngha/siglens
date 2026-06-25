@@ -30,7 +30,7 @@ vi.mock('@/widgets/chat/hooks/usePageContextLabel', () => ({
     usePageContextLabel: () => null,
 }));
 
-vi.mock('@/widgets/symbol-page/hooks/useAssetInfo', () => ({
+vi.mock('@/entities/ticker/hooks/useAssetInfo', () => ({
     useAssetInfo: () => ({ name: 'AAPL Inc.' }),
 }));
 

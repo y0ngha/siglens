@@ -17,7 +17,7 @@ vi.mock('next/link', () => ({
     ),
 }));
 
-vi.mock('@/widgets/symbol-page/hooks/useAssetInfo', () => ({
+vi.mock('@/entities/ticker/hooks/useAssetInfo', () => ({
     useAssetInfo: vi.fn(() => ({
         name: 'Apple Inc.',
         koreanName: '애플',

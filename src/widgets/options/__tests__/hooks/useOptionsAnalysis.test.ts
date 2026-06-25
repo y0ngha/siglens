@@ -28,15 +28,6 @@ vi.mock('@/shared/hooks/usePageHideCancel', () => ({
     usePageHideCancel: vi.fn(),
 }));
 
-vi.mock('@/widgets/symbol-page', () => ({
-    BotBlockedError: class BotBlockedError extends Error {
-        constructor() {
-            super('bot_blocked');
-            this.name = 'BotBlockedError';
-        }
-    },
-}));
-
 const mockSubmit = submitOptionsAnalysisAction as ReturnType<typeof vi.fn>;
 const mockPoll = pollOptionsAnalysisAction as ReturnType<typeof vi.fn>;
 

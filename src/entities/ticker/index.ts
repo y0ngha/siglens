@@ -3,6 +3,10 @@
 // components (useRecentSearches, TickerAutocomplete, SymbolSearchPanel).
 // Server consumers must import from '@/entities/ticker/api' directly.
 
+// useAssetInfo hook는 barrel에서 제외 — actions/ barrel이 @google/genai ESM을 전이적으로
+// pull-in하여 Jest 모듈 해석이 깨진다.
+// 소비자는 @/entities/ticker/hooks/useAssetInfo 에서 직접 deep import한다.
+
 export {
     getAssetInfoResilient,
     type ResilientAssetInfo,

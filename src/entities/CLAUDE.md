@@ -68,6 +68,8 @@ export async function myAction() { ... }
 | `api-key` | `DrizzleUserApiKeyRepository`, `LlmApiKeyDecryptionFailedError` | `api.ts`가 drizzle/encryption import — `server-only` 보호 대상 |
 | `inquiry` | `DrizzleContactRepository` | `api.ts`가 drizzle/schema import — `server-only` 보호 대상 |
 | `news-article` | `DrizzleNewsRepository`, `getNewsList` | `api.ts`가 drizzle/DB client import, `import 'server-only'` 선언 |
+| `bars` | `useBars` hook | Server Action barrel이 `@google/genai` ESM을 전이적으로 pull-in → Jest 모듈 해석 깨짐. deep import: `@/entities/bars/hooks/useBars` |
+| `ticker` | `useAssetInfo` hook | Server Action barrel이 `@google/genai` ESM을 전이적으로 pull-in → Jest 모듈 해석 깨짐. deep import: `@/entities/ticker/hooks/useAssetInfo` |
 
 ## 슬라이스 구조
 

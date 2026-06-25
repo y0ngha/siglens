@@ -1,8 +1,8 @@
 import { render } from '@testing-library/react';
 import { FearGreedCardMounted } from '@/widgets/symbol-page/FearGreedCardMounted';
-import { useBars } from '@/widgets/symbol-page/hooks/useBars';
+import { useBars } from '@/entities/bars/hooks/useBars';
 
-vi.mock('@/widgets/symbol-page/hooks/useBars', () => ({
+vi.mock('@/entities/bars/hooks/useBars', () => ({
     useBars: vi.fn(() => ({
         bars: [],
         indicators: { buySellVolume: [] },
