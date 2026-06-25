@@ -1,4 +1,5 @@
 import { fmpGet as fmpGetRaw } from './httpClient';
+import { toFiniteNumber } from './toFiniteNumber';
 import { FMP_STATEMENTS_REVALIDATE_SECONDS } from '@/shared/config/time';
 import type {
     BalanceSheetRow,
@@ -33,12 +34,8 @@ function fmpGet<T>(
     });
 }
 
-/**
- * Coerce a raw FMP number to a finite number or null.
- * Matches the `toFiniteNumber` contract used throughout this adapter layer.
- */
-const num = (v: number | undefined): number | null =>
-    typeof v === 'number' && Number.isFinite(v) ? v : null;
+/** toFiniteNumber의 단항 별칭 — undefined 입력을 허용하는 로컬 쇼트핸드. */
+const num = (v: number | undefined): number | null => toFiniteNumber(v);
 
 /**
  * FMP adapter implementing core's `FinancialStatementsProvider` for the six

@@ -39,7 +39,8 @@ export async function verifyEmailAction(
 
         const { db } = getAuthDatabaseClient();
         const userRepo = new DrizzleUserRepository(db);
-        const existing = await userRepo.findByEmail(normalizeEmail(email));
+        // email은 위에서 이미 normalizeEmail() 처리됨 — 중복 호출 불필요.
+        const existing = await userRepo.findByEmail(email);
 
         if (existing !== null) {
             return {

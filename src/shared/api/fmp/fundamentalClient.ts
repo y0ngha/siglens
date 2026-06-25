@@ -1,4 +1,5 @@
 import { fmpGet as fmpGetRaw } from './httpClient';
+import { toFiniteNumber } from './toFiniteNumber';
 import { SECONDS_PER_HOUR } from '@/shared/config/time';
 import type {
     RawFmpAnalystEstimate,
@@ -86,10 +87,6 @@ const GRADES_ACTION_MAP: Record<string, GradesAction> = {
 /** Map a FMP action string to the domain `GradesAction` union; unknown strings fall back to `'other'`. */
 function toGradesAction(raw: string): GradesAction {
     return GRADES_ACTION_MAP[raw.toLowerCase()] ?? 'other';
-}
-
-function toFiniteNumber(value: number | null | undefined): number | null {
-    return typeof value === 'number' && Number.isFinite(value) ? value : null;
 }
 
 function toEarningsDate(value: RawFmpEarningsReport): string | null {

@@ -13,7 +13,7 @@ import { marketNews } from '@/shared/db/schema';
 import type { SiglensDatabase } from '@/shared/db/types';
 import type { NewsDisplayItem } from '@/shared/lib/types';
 import { withRetry } from '@/shared/lib/withRetry';
-import { getRedisClient } from '@/shared/cache/redisClient';
+import { createRedisFlag } from '@/shared/cache/createRedisFlag';
 import { SECONDS_PER_MINUTE } from '@/shared/config/time';
 import type { MarketNewsItem } from './lib/marketNewsClientPort';
 import { MARKET_NEWS_LOOKBACK_MS } from './lib/marketNewsConstants';
@@ -277,7 +277,6 @@ function toMarketNewsRow(row: MarketNewsDbRow): MarketNewsRow {
 }
 
 // Lives in api.ts (not lib/) per Architecture §0.7 — lib/ must be pure.
-// per-symbol news-article/lib/newsRefreshFlag.ts has the same drift, to be unified separately.
 
 const MARKET_NEWS_REFRESH_FLAG_TTL_MINUTES = 10;
 
@@ -289,31 +288,14 @@ const MARKET_NEWS_REFRESH_FLAG_TTL_MINUTES = 10;
 export const MARKET_NEWS_REFRESH_FLAG_TTL_SECONDS =
     MARKET_NEWS_REFRESH_FLAG_TTL_MINUTES * SECONDS_PER_MINUTE;
 
-function buildRefreshFlagKey(sentinel: string): string {
-    return `market-news:refresh:${sentinel}`;
-}
+const _marketNewsFlag = createRedisFlag(
+    (sentinel: string) => `market-news:refresh:${sentinel}`,
+    MARKET_NEWS_REFRESH_FLAG_TTL_SECONDS,
+    '[marketNewsRefreshFlag]'
+);
 
 /** Returns true if this sentinel bucket was fetched within the TTL. Redis failure → false (always fetch). */
-export async function isRecentlyFetched(sentinel: string): Promise<boolean> {
-    const redis = getRedisClient();
-    if (redis === null) return false;
-    try {
-        return (await redis.get(buildRefreshFlagKey(sentinel))) !== null;
-    } catch (error) {
-        console.error('[marketNewsRefreshFlag] get failed', error);
-        return false;
-    }
-}
+export const isRecentlyFetched = _marketNewsFlag.isSet;
 
 /** Mark this sentinel bucket as "recently fetched". Redis failure → noop. */
-export async function markFetched(sentinel: string): Promise<void> {
-    const redis = getRedisClient();
-    if (redis === null) return;
-    try {
-        await redis.set(buildRefreshFlagKey(sentinel), '1', {
-            ex: MARKET_NEWS_REFRESH_FLAG_TTL_SECONDS,
-        });
-    } catch (error) {
-        console.error('[marketNewsRefreshFlag] set failed', error);
-    }
-}
+export const markFetched = _marketNewsFlag.mark;
