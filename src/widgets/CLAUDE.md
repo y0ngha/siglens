@@ -26,7 +26,9 @@ widgets는 `features/`, `entities/`, `shared/`를 import 가능. **상위 레이
 - `useBars` → `@/entities/bars/hooks/useBars` (Spec-2 PR-A)
 - `BotBlockedError` → `@/shared/lib/BotBlockedError` (Spec-2 PR-A)
 
-소비자는 `@/widgets/<slice>/hooks/<name>` deep path로 import.
+소비자는 항목별 실제 경로로 deep import한다:
+- `useDefaultModelId` → `@/widgets/symbol-page/hooks/useDefaultModelId`
+- `FearGreedHistoricalChart` → `@/widgets/chart/FearGreedHistoricalChart`
 
 ## 슬라이스 구조
 
