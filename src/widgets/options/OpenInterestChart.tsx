@@ -9,12 +9,7 @@ import {
     GUIDE_LINE_STROKE_WIDTH,
     MIDLINE_STROKE_WIDTH,
 } from './utils/chartStrokeWidths';
-import {
-    computeTooltipPos,
-    TOOLTIP_ELEMENT_ID,
-    TOOLTIP_MIN_WIDTH_PX,
-    type TooltipPosition,
-} from './utils/computeTooltipPos';
+import { TOOLTIP_ELEMENT_ID } from './utils/computeTooltipPos';
 import { formatCompactCount } from './utils/formatCompactCount';
 import {
     CallOpenInterestTooltip,
@@ -22,6 +17,14 @@ import {
     PutOpenInterestTooltip,
 } from './utils/optionsTooltips';
 import { pickLabelIndices } from './utils/pickLabelIndices';
+import { useStrikeBarChart } from './hooks/useStrikeBarChart';
+import {
+    barCenterX,
+    barPixelHeight,
+    slotWidth,
+} from './lib/strikeChartGeometry';
+import { StrikeBarTooltip } from './ui/StrikeBarTooltip';
+import { StrikeBarSrTable } from './ui/StrikeBarSrTable';
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
 import { findNearestStrikeIndex } from '@/entities/options-chain';
 import {
@@ -29,13 +32,7 @@ import {
     type OptionsChain,
     type OptionsExpirationMetrics,
 } from '@y0ngha/siglens-core';
-import {
-    useMemo,
-    useRef,
-    useState,
-    type CSSProperties,
-    type PointerEvent,
-} from 'react';
+import { useMemo } from 'react';
 
 interface OpenInterestChartProps {
     /** Spot price used to anchor the current-price guide line. */
@@ -46,6 +43,12 @@ interface OpenInterestChartProps {
     metrics: OptionsExpirationMetrics | null;
 }
 
+// SVG 레이아웃 상수는 StrikeVolumeChart와 동일하게 복제한다 — 두 차트가
+// 나란히 렌더되면서 같은 viewport / 같은 막대 비율을 공유해야 사용자가
+// 두 차트를 비교하는 시선 흐름이 어색해지지 않는다. 상수를 별도 유틸로
+// 빼지 않는 이유: 추후 어느 한쪽 차트의 패딩만 미세조정할 가능성이
+// 충분히 있고, 한 변경이 두 차트에 동시에 영향을 주는 결합도를 미리
+// 만들 필요는 없다.
 const SVG_WIDTH = 600;
 const SVG_HEIGHT = 240;
 const PAD_TOP = 30;
@@ -99,32 +102,19 @@ const X_AXIS_LABEL_OFFSET_PX = 14;
 const ROTATED_LABEL_FONT_SIZE = 8;
 const STRAIGHT_LABEL_FONT_SIZE = 9;
 
-function slotWidth(count: number): number {
-    return CHART_WIDTH / count;
-}
-
-function barCenterX(index: number, count: number): number {
-    const sw = slotWidth(count);
-    return PAD_LEFT + sw * index + sw / 2;
-}
-
-function barPixelHeight(oi: number, maxOi: number): number {
-    if (maxOi === 0) return 0;
-    return Math.min((oi / maxOi) * HALF_HEIGHT, HALF_HEIGHT);
-}
-
 export function OpenInterestChart({
     underlyingPrice,
     chain,
     metrics,
 }: OpenInterestChartProps) {
-    const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
-    const [tooltipPos, setTooltipPos] = useState<TooltipPosition | null>(null);
-    const containerRef = useRef<HTMLDivElement | null>(null);
-    // 컨테이너 DOMRect 캐시. pointerEnter 시 한 번 측정해 두고 pointerMove에서
-    // 재사용한다 — move마다 `getBoundingClientRect`를 부르면 reflow를 매번
-    // 트리거해 마우스가 빠르게 움직일 때 frame drop을 유발한다.
-    const cachedRectRef = useRef<DOMRect | null>(null);
+    const {
+        containerRef,
+        hoveredIndex,
+        tooltipPos,
+        handlePointerEnter,
+        handlePointerMove,
+        handlePointerLeave,
+    } = useStrikeBarChart();
 
     const derived = useMemo(() => {
         if (!chain) return null;
@@ -226,7 +216,7 @@ export function OpenInterestChart({
         labelIndices,
     } = derived;
     const count = oiByStrike.length;
-    const sw = slotWidth(count);
+    const sw = slotWidth(count, CHART_WIDTH);
     const bw = sw * BAR_WIDTH_FILL_RATIO;
 
     // hoveredIndex 가드: oiByStrike가 chip 전환으로 짧아지는 사이에 hover state
@@ -237,51 +227,17 @@ export function OpenInterestChart({
     const hoveredRow =
         hoveredIndex !== null ? (oiByStrike[hoveredIndex] ?? null) : null;
 
-    const maxPainX = maxPainIdx >= 0 ? barCenterX(maxPainIdx, count) : null;
+    const maxPainX =
+        maxPainIdx >= 0
+            ? barCenterX(maxPainIdx, count, PAD_LEFT, CHART_WIDTH)
+            : null;
     const currentPriceX =
-        currentPriceIdx >= 0 ? barCenterX(currentPriceIdx, count) : null;
+        currentPriceIdx >= 0
+            ? barCenterX(currentPriceIdx, count, PAD_LEFT, CHART_WIDTH)
+            : null;
 
     const rotateLabels = labelIndices.size > LABEL_ROTATION_THRESHOLD;
     const peakOiLabel = formatCompactCount(globalMax);
-
-    const handlePointerEnter = (
-        event: PointerEvent<SVGRectElement>,
-        index: number
-    ): void => {
-        const container = containerRef.current;
-        if (!container) return;
-        const rect = container.getBoundingClientRect();
-        cachedRectRef.current = rect;
-        setHoveredIndex(index);
-        setTooltipPos(computeTooltipPos(event, rect));
-    };
-
-    const handlePointerMove = (
-        event: PointerEvent<SVGRectElement>,
-        index: number
-    ): void => {
-        const rect = cachedRectRef.current;
-        // enter 핸들러가 캐시를 채우기 전에 move가 발사되는 경로(예: 모바일
-        // touchmove)에서는 한 번 측정해 즉시 캐시한다 — 이후 move부터는
-        // 캐시된 rect만 사용해 reflow 비용 없음.
-        if (rect === null) {
-            const container = containerRef.current;
-            if (!container) return;
-            const measured = container.getBoundingClientRect();
-            cachedRectRef.current = measured;
-            setHoveredIndex(index);
-            setTooltipPos(computeTooltipPos(event, measured));
-            return;
-        }
-        if (hoveredIndex !== index) setHoveredIndex(index);
-        setTooltipPos(computeTooltipPos(event, rect));
-    };
-
-    const handlePointerLeave = (): void => {
-        cachedRectRef.current = null;
-        setHoveredIndex(null);
-        setTooltipPos(null);
-    };
 
     return (
         <div
@@ -347,16 +303,21 @@ export function OpenInterestChart({
                 </text>
 
                 {oiByStrike.map((row, i) => {
-                    const cx = barCenterX(i, count);
+                    const cx = barCenterX(i, count, PAD_LEFT, CHART_WIDTH);
                     const isTopOi = topOiSet.has(row.strike);
                     const opacity = isTopOi
                         ? BAR_OPACITY_TOP_OI
                         : BAR_OPACITY_DEFAULT;
                     const callH = barPixelHeight(
                         row.callOpenInterest,
-                        globalMax
+                        globalMax,
+                        HALF_HEIGHT
                     );
-                    const putH = barPixelHeight(row.putOpenInterest, globalMax);
+                    const putH = barPixelHeight(
+                        row.putOpenInterest,
+                        globalMax,
+                        HALF_HEIGHT
+                    );
 
                     return (
                         <g key={row.strike}>
@@ -422,7 +383,7 @@ export function OpenInterestChart({
 
                 {oiByStrike.map((row, i) => {
                     if (!labelIndices.has(i)) return null;
-                    const cx = barCenterX(i, count);
+                    const cx = barCenterX(i, count, PAD_LEFT, CHART_WIDTH);
                     const labelY =
                         SVG_HEIGHT - PAD_BOTTOM + X_AXIS_LABEL_OFFSET_PX;
 
@@ -457,27 +418,10 @@ export function OpenInterestChart({
                 })}
             </svg>
 
-            {/* `aria-describedby`가 가리키는 대상은 항상 DOM에 있어야 한다.
-                `hidden` 속성으로 숨기면 접근성 트리에서도 제거되어 screen
-                reader가 참조를 따라올 수 없지만, 하단 `sr-only` 테이블이
-                전체 OI 데이터를 제공하므로 이 pointer-only tooltip에서는
-                허용 가능한 트레이드오프다. */}
-            <div
+            <StrikeBarTooltip
                 id={TOOLTIP_ELEMENT_ID}
-                role="tooltip"
-                hidden={hoveredRow === null || tooltipPos === null}
-                className="border-secondary-600 bg-secondary-900/95 text-secondary-100 pointer-events-none absolute top-[var(--tooltip-y)] left-[var(--tooltip-x)] z-10 min-w-[var(--tooltip-min-w)] -translate-x-1/2 -translate-y-full rounded-md border px-3 py-2 text-xs shadow-lg backdrop-blur"
-                style={
-                    // CSS 커스텀 프로퍼티(--*)는 런타임에 유효하나 React의
-                    // CSSProperties 타입은 임의 `--*` 키를 포함하지 않아
-                    // 인덱스 시그니처가 막힘 — TS 한계 우회용 cast이며
-                    // 런타임 리스크는 없다.
-                    {
-                        '--tooltip-x': `${tooltipPos?.x ?? 0}px`,
-                        '--tooltip-y': `${tooltipPos?.y ?? 0}px`,
-                        '--tooltip-min-w': `${TOOLTIP_MIN_WIDTH_PX}px`,
-                    } as CSSProperties
-                }
+                hoveredRow={hoveredRow}
+                tooltipPos={tooltipPos}
             >
                 {hoveredRow !== null && (
                     <>
@@ -510,7 +454,7 @@ export function OpenInterestChart({
                         </div>
                     </>
                 )}
-            </div>
+            </StrikeBarTooltip>
 
             <div className="text-secondary-500 mt-2 flex flex-wrap items-center gap-3 text-[10px]">
                 <span className="flex items-center gap-1">
@@ -545,31 +489,18 @@ export function OpenInterestChart({
                 </span>
             </div>
 
-            {/* sr-only를 <table>이 아니라 wrapper <div>에 둔다 —
-                <table>은 `display: table`이라 `position: absolute`와 결합돼도
-                일부 환경에서 normal flow에 잔재가 남아 페이지 height에
-                영향을 준다. <div>로 감싸 absolute 컨텍스트를 분리한다. */}
-            <div className="sr-only">
-                <table>
-                    <caption>Strike별 Open Interest 데이터</caption>
-                    <thead>
-                        <tr>
-                            <th scope="col">Strike</th>
-                            <th scope="col">Call OI</th>
-                            <th scope="col">Put OI</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {oiByStrike.map(row => (
-                            <tr key={row.strike}>
-                                <td>{row.strike}</td>
-                                <td>{row.callOpenInterest}</td>
-                                <td>{row.putOpenInterest}</td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
+            <StrikeBarSrTable
+                caption="Strike별 Open Interest 데이터"
+                headers={['Strike', 'Call OI', 'Put OI']}
+                rows={oiByStrike.map(row => ({
+                    key: row.strike,
+                    cells: [
+                        row.strike,
+                        row.callOpenInterest,
+                        row.putOpenInterest,
+                    ],
+                }))}
+            />
         </div>
     );
 }
