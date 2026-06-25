@@ -1,6 +1,7 @@
 import 'server-only';
 import { cache } from 'react';
-import { getOrSetCache } from '@/shared/cache/getOrSetCache';
+import { sym } from './symKey';
+import { cachedListWithLimit } from './cachedListWithLimit';
 import { CONGRESS_REVALIDATE_SECONDS } from '@/shared/config/time';
 import type {
     Chamber,
@@ -9,7 +10,6 @@ import type {
 } from '@y0ngha/siglens-core';
 
 const TTL = CONGRESS_REVALIDATE_SECONDS;
-const sym = (s: string): string => s.toUpperCase();
 
 /**
  * Cold-cache fetch는 항상 이 고정 상한으로 inner를 호출하고 전체 배열을 캐싱한다.
@@ -46,17 +46,18 @@ export class CachedCongressTradesProvider implements CongressTradesProvider {
     constructor(private readonly inner: CongressTradesProvider) {}
 
     getTrades = cache(
-        async (
+        (
             symbol: string,
             chamber: Chamber,
             limit: number
-        ): Promise<RawCongressTrade[]> => {
-            const cached = await getOrSetCache(
+        ): Promise<RawCongressTrade[]> =>
+            cachedListWithLimit(
                 `congress:${chamber}:${sym(symbol)}`,
                 TTL,
-                () => this.inner.getTrades(symbol, chamber, CONGRESS_MAX_TRADES)
-            );
-            return cached.slice(0, limit);
-        }
+                limit,
+                () =>
+                    this.inner.getTrades(symbol, chamber, CONGRESS_MAX_TRADES),
+                { onError: 'rethrow' }
+            )
     );
 }

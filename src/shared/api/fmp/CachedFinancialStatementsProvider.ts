@@ -1,6 +1,7 @@
 import 'server-only';
 import { cache } from 'react';
-import { getOrSetCache } from '@/shared/cache/getOrSetCache';
+import { sym } from './symKey';
+import { cachedListWithLimit } from './cachedListWithLimit';
 import { FMP_STATEMENTS_REVALIDATE_SECONDS } from '@/shared/config/time';
 import type {
     BalanceSheetRow,
@@ -14,7 +15,6 @@ import type {
 } from '@y0ngha/siglens-core';
 
 const TTL = FMP_STATEMENTS_REVALIDATE_SECONDS;
-const sym = (s: string): string => s.toUpperCase();
 
 /**
  * Cold-cache fetch는 항상 이 고정 상한으로 inner를 호출하고 전체 배열을 캐싱한다.
@@ -57,21 +57,21 @@ export class CachedFinancialStatementsProvider implements FinancialStatementsPro
             period: StatementPeriod,
             limit: number
         ): Promise<IncomeStatementRow[]> =>
-            getOrSetCache(
+            cachedListWithLimit(
                 `financials:income:${sym(symbol)}:${period}`,
                 TTL,
+                limit,
                 () =>
                     this.inner.getIncomeStatements(
                         symbol,
                         period,
                         MAX_STATEMENT_LIMIT
-                    )
+                    ),
+                {
+                    onError: 'empty',
+                    logPrefix: '[CachedFinancials] income failed:',
+                }
             )
-                .then(rows => rows.slice(0, limit))
-                .catch(error => {
-                    console.error('[CachedFinancials] income failed:', error);
-                    return [];
-                })
     );
 
     getBalanceSheets = cache(
@@ -80,21 +80,21 @@ export class CachedFinancialStatementsProvider implements FinancialStatementsPro
             period: StatementPeriod,
             limit: number
         ): Promise<BalanceSheetRow[]> =>
-            getOrSetCache(
+            cachedListWithLimit(
                 `financials:balance:${sym(symbol)}:${period}`,
                 TTL,
+                limit,
                 () =>
                     this.inner.getBalanceSheets(
                         symbol,
                         period,
                         MAX_STATEMENT_LIMIT
-                    )
+                    ),
+                {
+                    onError: 'empty',
+                    logPrefix: '[CachedFinancials] balance failed:',
+                }
             )
-                .then(rows => rows.slice(0, limit))
-                .catch(error => {
-                    console.error('[CachedFinancials] balance failed:', error);
-                    return [];
-                })
     );
 
     getCashFlowStatements = cache(
@@ -103,21 +103,21 @@ export class CachedFinancialStatementsProvider implements FinancialStatementsPro
             period: StatementPeriod,
             limit: number
         ): Promise<CashFlowRow[]> =>
-            getOrSetCache(
+            cachedListWithLimit(
                 `financials:cashflow:${sym(symbol)}:${period}`,
                 TTL,
+                limit,
                 () =>
                     this.inner.getCashFlowStatements(
                         symbol,
                         period,
                         MAX_STATEMENT_LIMIT
-                    )
+                    ),
+                {
+                    onError: 'empty',
+                    logPrefix: '[CachedFinancials] cashflow failed:',
+                }
             )
-                .then(rows => rows.slice(0, limit))
-                .catch(error => {
-                    console.error('[CachedFinancials] cashflow failed:', error);
-                    return [];
-                })
     );
 
     getIncomeStatementGrowths = cache(
@@ -126,24 +126,21 @@ export class CachedFinancialStatementsProvider implements FinancialStatementsPro
             period: StatementPeriod,
             limit: number
         ): Promise<IncomeGrowthRow[]> =>
-            getOrSetCache(
+            cachedListWithLimit(
                 `financials:income-growth:${sym(symbol)}:${period}`,
                 TTL,
+                limit,
                 () =>
                     this.inner.getIncomeStatementGrowths(
                         symbol,
                         period,
                         MAX_STATEMENT_LIMIT
-                    )
+                    ),
+                {
+                    onError: 'empty',
+                    logPrefix: '[CachedFinancials] income-growth failed:',
+                }
             )
-                .then(rows => rows.slice(0, limit))
-                .catch(error => {
-                    console.error(
-                        '[CachedFinancials] income-growth failed:',
-                        error
-                    );
-                    return [];
-                })
     );
 
     getFinancialGrowths = cache(
@@ -152,24 +149,21 @@ export class CachedFinancialStatementsProvider implements FinancialStatementsPro
             period: StatementPeriod,
             limit: number
         ): Promise<FinancialGrowthRow[]> =>
-            getOrSetCache(
+            cachedListWithLimit(
                 `financials:financial-growth:${sym(symbol)}:${period}`,
                 TTL,
+                limit,
                 () =>
                     this.inner.getFinancialGrowths(
                         symbol,
                         period,
                         MAX_STATEMENT_LIMIT
-                    )
+                    ),
+                {
+                    onError: 'empty',
+                    logPrefix: '[CachedFinancials] financial-growth failed:',
+                }
             )
-                .then(rows => rows.slice(0, limit))
-                .catch(error => {
-                    console.error(
-                        '[CachedFinancials] financial-growth failed:',
-                        error
-                    );
-                    return [];
-                })
     );
 
     getCashFlowGrowths = cache(
@@ -178,23 +172,20 @@ export class CachedFinancialStatementsProvider implements FinancialStatementsPro
             period: StatementPeriod,
             limit: number
         ): Promise<CashFlowGrowthRow[]> =>
-            getOrSetCache(
+            cachedListWithLimit(
                 `financials:cashflow-growth:${sym(symbol)}:${period}`,
                 TTL,
+                limit,
                 () =>
                     this.inner.getCashFlowGrowths(
                         symbol,
                         period,
                         MAX_STATEMENT_LIMIT
-                    )
+                    ),
+                {
+                    onError: 'empty',
+                    logPrefix: '[CachedFinancials] cashflow-growth failed:',
+                }
             )
-                .then(rows => rows.slice(0, limit))
-                .catch(error => {
-                    console.error(
-                        '[CachedFinancials] cashflow-growth failed:',
-                        error
-                    );
-                    return [];
-                })
     );
 }
