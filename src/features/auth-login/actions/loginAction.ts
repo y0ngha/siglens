@@ -3,13 +3,13 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import {
-    DrizzleSessionRepository,
-    bcryptPasswordVerifier,
     applyAuthCookie,
     isSecureCookieEnv,
     createAuthHintCookie,
     DEFAULT_SESSION_TTL_SECONDS,
 } from '@/entities/session';
+import { bcryptPasswordVerifier } from '@/entities/session/lib/bcrypt';
+import { DrizzleSessionRepository } from '@/entities/session/api';
 import { getAuthDatabaseClient } from '@/entities/session/lib/db';
 import { DrizzleUserRepository, loginUser } from '@/entities/user';
 import type { LoginFormState } from '@/shared/lib/auth/formTypes';

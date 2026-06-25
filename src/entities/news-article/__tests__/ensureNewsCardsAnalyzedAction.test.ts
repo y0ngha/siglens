@@ -41,7 +41,7 @@ vi.mock('@/entities/ticker/lib/getAssetInfo', () => ({
     getAssetInfo: vi.fn().mockResolvedValue({ symbol: 'AAPL', name: 'Apple' }),
 }));
 
-vi.mock('@/entities/news-article', () => ({
+vi.mock('@/entities/news-article/api', () => ({
     DrizzleNewsRepository: vi.fn().mockImplementation(function () {
         return {
             upsertNewsItem: vi.fn(),
@@ -70,7 +70,7 @@ import type {
     SubmitNewsCardAnalysisResult,
     PollNewsCardAnalysisResult,
 } from '@y0ngha/siglens-core';
-import { DrizzleNewsRepository } from '@/entities/news-article';
+import { DrizzleNewsRepository } from '@/entities/news-article/api';
 import { isRecentlyFetched, markFetched } from '../lib/newsRefreshFlag';
 import { getAssetInfo } from '@/entities/ticker/lib/getAssetInfo';
 

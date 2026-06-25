@@ -3,7 +3,7 @@ import { callAiProviderRouter } from '@/entities/llm-provider';
 import { getCurrentUser } from '@/entities/session/lib/getCurrentUser';
 import { chatAction } from '../actions/chatAction';
 import { getDatabaseClient } from '@/shared/db/client';
-import { DrizzleUserApiKeyRepository } from '@/entities/api-key';
+import { DrizzleUserApiKeyRepository } from '@/entities/api-key/api';
 import type {
     AnalysisResponse,
     ChatActionResult,
@@ -55,7 +55,7 @@ vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: vi.fn(),
 }));
 
-vi.mock('@/entities/api-key', () => ({
+vi.mock('@/entities/api-key/api', () => ({
     DrizzleUserApiKeyRepository: vi.fn(),
 }));
 

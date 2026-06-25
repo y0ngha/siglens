@@ -7,7 +7,7 @@ const { mockSubmitInquiry, mockCreate } = vi.hoisted(() => ({
 vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: vi.fn(() => ({ db: {}, sql: () => null })),
 }));
-vi.mock('@/entities/inquiry', () => ({
+vi.mock('@/entities/inquiry/api', () => ({
     DrizzleContactRepository: vi.fn().mockImplementation(function () {
         return {
             create: mockCreate,

@@ -15,7 +15,7 @@ vi.mock('next/navigation', () => ({
         throw new Error(`NEXT_REDIRECT:${path}`);
     }),
 }));
-vi.mock('@/entities/api-key', () => ({
+vi.mock('@/entities/api-key/api', () => ({
     DrizzleUserApiKeyRepository: vi.fn().mockImplementation(function () {
         return {
             upsert: mockUpsert,

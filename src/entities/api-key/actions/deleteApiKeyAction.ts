@@ -2,7 +2,7 @@
 
 import { getCurrentUser } from '@/entities/session/lib/getCurrentUser';
 import { getDatabaseClient } from '@/shared/db/client';
-import { DrizzleUserApiKeyRepository } from '@/entities/api-key';
+import { DrizzleUserApiKeyRepository } from '@/entities/api-key/api';
 import { isLlmProvider } from '../lib/apiKey';
 import type { ApiKeyActionState } from '../lib/types';
 import { revalidatePath } from 'next/cache';

@@ -1,12 +1,12 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import {
-    DrizzleSessionRepository,
     applyAuthCookie,
     createAuthHintCookie,
     createAuthSession,
     DEFAULT_SESSION_TTL_SECONDS,
     isSecureCookieEnv,
 } from '@/entities/session';
+import { DrizzleSessionRepository } from '@/entities/session/api';
 import { getAuthDatabaseClient } from '@/entities/session/lib/db';
 import { DrizzleUserRepository } from '@/entities/user';
 import { createPendingOAuthSignupStoreFromEnv } from '@/entities/oauth-account';

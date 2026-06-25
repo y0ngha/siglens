@@ -3,7 +3,7 @@
 import { getLlmProvider } from '@/entities/llm-provider';
 import { getCurrentUser } from '@/entities/session/lib/getCurrentUser';
 import { getDatabaseClient } from '@/shared/db/client';
-import { DrizzleUserApiKeyRepository } from '@/entities/api-key';
+import { DrizzleUserApiKeyRepository } from '@/entities/api-key/api';
 import { DrizzleUserRepository } from '@/entities/user';
 import { getUserTier } from '@/entities/user-tier';
 import type {

@@ -36,8 +36,8 @@ vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: vi.fn().mockReturnValue({ db: {} }),
 }));
 
-vi.mock('@/entities/news-article', async () => {
-    const actual = await vi.importActual('@/entities/news-article');
+vi.mock('@/entities/news-article/api', async () => {
+    const actual = await vi.importActual('@/entities/news-article/api');
     return {
         ...actual,
         DrizzleNewsRepository: vi.fn().mockImplementation(function () {
@@ -111,10 +111,8 @@ import {
     type FinancialsScorecard,
 } from '@y0ngha/siglens-core';
 import { headers } from 'next/headers';
-import {
-    DrizzleNewsRepository,
-    MAX_AGGREGATE_NEWS_ITEMS,
-} from '@/entities/news-article';
+import { DrizzleNewsRepository } from '@/entities/news-article/api';
+import { MAX_AGGREGATE_NEWS_ITEMS } from '@/entities/news-article';
 import { getNextEarningsReport } from '@/entities/earnings-report';
 import { getCurrentUser } from '@/entities/session/lib/getCurrentUser';
 import { resolveTierAndByok } from '@/shared/lib/byokGate';

@@ -19,8 +19,8 @@ vi.mock('@/entities/user-tier', () => ({
     getUserTier: (...args: unknown[]) => mockGetUserTier(...args),
 }));
 
-vi.mock('@/entities/api-key', async () => {
-    const actual = await vi.importActual('@/entities/api-key');
+vi.mock('@/entities/api-key/api', async () => {
+    const actual = await vi.importActual('@/entities/api-key/api');
     return {
         ...actual,
         DrizzleUserApiKeyRepository: vi.fn().mockImplementation(function () {
@@ -31,7 +31,7 @@ vi.mock('@/entities/api-key', async () => {
     };
 });
 
-import { LlmApiKeyDecryptionFailedError } from '@/entities/api-key';
+import { LlmApiKeyDecryptionFailedError } from '@/entities/api-key/api';
 import {
     resolveTierAndByok,
     buildGateError,

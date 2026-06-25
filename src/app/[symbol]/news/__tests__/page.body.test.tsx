@@ -39,8 +39,10 @@ vi.mock('@/app/[symbol]/news/newsData', () => ({
 }));
 
 vi.mock('@/entities/news-article', () => ({
-    getNewsList: vi.fn().mockResolvedValue([]),
     NEWS_LIST_CACHE_KEY: 'news-list',
+}));
+vi.mock('@/entities/news-article/api', () => ({
+    getNewsList: vi.fn().mockResolvedValue([]),
 }));
 
 vi.mock('@/widgets/news/NewsAiSummary', () => ({

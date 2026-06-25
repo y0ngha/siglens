@@ -1,3 +1,5 @@
+import 'server-only';
+
 import { cache } from 'react';
 import { and, desc, eq, gte, sql } from 'drizzle-orm';
 import type {

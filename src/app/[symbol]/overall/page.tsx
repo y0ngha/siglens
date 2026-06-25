@@ -14,7 +14,8 @@ import {
     buildDisplayName,
     getAssetInfoResilient,
 } from '@/entities/ticker';
-import { getNewsList, NEWS_LIST_CACHE_KEY } from '@/entities/news-article';
+import { getNewsList } from '@/entities/news-article/api';
+import { NEWS_LIST_CACHE_KEY } from '@/entities/news-article';
 import {
     buildBreadcrumbJsonLd,
     buildSymbolSeoContent,

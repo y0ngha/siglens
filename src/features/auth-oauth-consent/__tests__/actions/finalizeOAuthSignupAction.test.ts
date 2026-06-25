@@ -26,6 +26,8 @@ vi.mock('@/entities/session', () => ({
     createAuthSession: vi.fn(),
     DEFAULT_SESSION_TTL_SECONDS: 7776000,
     isSecureCookieEnv: vi.fn(() => false),
+}));
+vi.mock('@/entities/session/api', () => ({
     DrizzleSessionRepository: vi.fn().mockImplementation(function () {
         return {};
     }),

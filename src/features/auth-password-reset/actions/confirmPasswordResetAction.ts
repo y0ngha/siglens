@@ -1,11 +1,11 @@
 'use server';
 
 import { DrizzleUserRepository, confirmPasswordReset } from '@/entities/user';
+import { AUTH_SERVICE_UNAVAILABLE_MESSAGE } from '@/entities/session';
 import {
     bcryptPasswordHasher,
     bcryptPasswordVerifier,
-    AUTH_SERVICE_UNAVAILABLE_MESSAGE,
-} from '@/entities/session';
+} from '@/entities/session/lib/bcrypt';
 import { getAuthDatabaseClient } from '@/entities/session/lib/db';
 import { createEmailTokenStore } from '@/entities/email-token';
 import { redirect } from 'next/navigation';

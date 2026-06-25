@@ -1,4 +1,7 @@
-export { DrizzleNewsRepository, getNewsList, type NewsRow } from './api';
+// DrizzleNewsRepository와 getNewsList는 barrel에서 제외 — api.ts가 drizzle/DB client를 import하고
+// 'server-only'로 보호되므로 client bundle에 포함되면 build가 깨진다.
+// server 소비자는 @/entities/news-article/api에서 직접 import한다.
+export type { NewsRow } from './api';
 
 // lib
 export {

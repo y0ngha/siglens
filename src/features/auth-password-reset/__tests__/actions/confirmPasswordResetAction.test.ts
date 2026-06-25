@@ -9,10 +9,12 @@ vi.mock('@/shared/db/client', () => ({
     resetDatabaseClientForTests: vi.fn(),
 }));
 vi.mock('@/entities/session', () => ({
-    bcryptPasswordHasher: { hashPassword: vi.fn() },
-    bcryptPasswordVerifier: { verifyPassword: vi.fn() },
     AUTH_SERVICE_UNAVAILABLE_MESSAGE:
         '서비스에 일시적인 문제가 발생했습니다. 잠시 후 다시 시도해주세요.',
+}));
+vi.mock('@/entities/session/lib/bcrypt', () => ({
+    bcryptPasswordHasher: { hashPassword: vi.fn() },
+    bcryptPasswordVerifier: { verifyPassword: vi.fn() },
 }));
 // getAuthDatabaseClient는 barrel이 아닌 @/entities/session/lib/db에서 직접 import되므로
 // (server-only 체인을 client 번들에서 분리) 해당 경로를 별도로 mock한다.

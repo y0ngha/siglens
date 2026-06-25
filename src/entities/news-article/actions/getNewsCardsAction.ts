@@ -1,7 +1,7 @@
 'use server';
 
 import { getDatabaseClient } from '@/shared/db/client';
-import { DrizzleNewsRepository } from '@/entities/news-article';
+import { DrizzleNewsRepository } from '@/entities/news-article/api';
 import { NEWS_LOOKBACK_MS } from '../lib/newsLookback';
 import type { NewsDisplayItem } from '@/shared/lib/types';
 

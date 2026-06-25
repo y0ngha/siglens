@@ -20,7 +20,10 @@ vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: () => ({ db: { __mock: true } }),
 }));
 
-import { DrizzleNewsRepository, getNewsList } from '@/entities/news-article';
+import {
+    DrizzleNewsRepository,
+    getNewsList,
+} from '@/entities/news-article/api';
 // 같은 슬라이스 내부 segment는 relative import (CONVENTIONS.md §FSD Slice Internal Imports).
 import { NEWS_LOOKBACK_MS } from '../../lib/newsLookback';
 

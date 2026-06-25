@@ -3,7 +3,7 @@
 import type { ContactFormState } from '@/shared/lib/types';
 import { validateContactInput } from '../lib/validation';
 import { getDatabaseClient } from '@/shared/db/client';
-import { DrizzleContactRepository } from '@/entities/inquiry';
+import { DrizzleContactRepository } from '@/entities/inquiry/api';
 import { submitInquiry } from '../lib/submitInquiry';
 
 function getVal(formData: FormData, key: string): string {
