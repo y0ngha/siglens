@@ -38,7 +38,6 @@ vi.mock('@/widgets/options/OptionsEmptyState', () => ({
 }));
 vi.mock('@/views/symbol', () => ({
     SymbolPageHeading: () => null,
-    CrossLinkCards: () => null,
 }));
 vi.mock('@/shared/ui/JsonLd', () => ({ JsonLd: () => null }));
 vi.mock('@y0ngha/siglens-core', () => ({

@@ -76,8 +76,10 @@ vi.mock('@/widgets/fundamental/sections/ValuationCard', () => ({
     ValuationCard: () => null,
 }));
 vi.mock('@/views/symbol', () => ({
-    CrossLinkCards: () => null,
     SymbolPageHeading: () => null,
+}));
+vi.mock('@/shared/ui/CrossLinkCards', () => ({
+    CrossLinkCards: () => null,
 }));
 vi.mock('@/views/symbol/SectionSkeleton', () => ({
     SectionSkeleton: () => null,

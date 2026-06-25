@@ -39,7 +39,7 @@ vi.mock('@/shared/lib/sleep', () => ({
 vi.mock('@/features/symbol-chat', () => ({
     usePublishSymbolChat: vi.fn(),
 }));
-vi.mock('@/features/symbol-model/hooks/useDefaultModelId', () => ({
+vi.mock('@/features/symbol-model', () => ({
     useDefaultModelId: vi.fn(() => 'gemini-2.5-flash-lite'),
 }));
 // /news와 동일 게이트 적용 후 mock 필요. flow 테스트는 hasEnrichedNews=true 전제로
