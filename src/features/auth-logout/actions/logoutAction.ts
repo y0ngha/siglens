@@ -3,12 +3,12 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import {
-    DrizzleSessionRepository,
     AUTH_SESSION_COOKIE_NAME,
     applyAuthCookie,
     isSecureCookieEnv,
     createExpiredAuthHintCookie,
 } from '@/entities/session';
+import { DrizzleSessionRepository } from '@/entities/session/api';
 import { getAuthDatabaseClient } from '@/entities/session/lib/db';
 import { logoutUser } from '@/entities/user';
 

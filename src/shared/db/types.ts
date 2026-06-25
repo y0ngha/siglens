@@ -1,3 +1,5 @@
+import 'server-only';
+
 import type { NeonQueryFunction } from '@neondatabase/serverless';
 import type { NeonHttpDatabase } from 'drizzle-orm/neon-http';
 import type { Tier } from '@y0ngha/siglens-core';

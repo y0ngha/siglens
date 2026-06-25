@@ -212,6 +212,10 @@ const eslintConfig = defineConfig([
             // widgets 간 cross-import: hook에 server-side 의존이 있어 barrel re-export 시
             // Jest ESM 해석 실패. deep path 허용으로 우회 (Phase 7).
             'src/widgets/**',
+            // byokGate는 import 'server-only' 선언 + CLAUDE.md §의도적 예외에서 허용된
+            // shared → entities 의존성을 가진다. barrel에서 제외된 api-key/api deep import
+            // 가 필요하므로 no-restricted-imports 예외로 추가한다.
+            'src/shared/lib/byokGate.ts',
         ],
         rules: {
             'no-restricted-imports': [

@@ -7,7 +7,7 @@ vi.mock('@/entities/session/lib/getCurrentUser', () => ({
 vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: vi.fn(() => ({ db: {}, sql: () => null })),
 }));
-vi.mock('@/entities/api-key', () => ({
+vi.mock('@/entities/api-key/api', () => ({
     DrizzleUserApiKeyRepository: vi.fn().mockImplementation(function () {
         return {
             findByUser: mockFindByUser,

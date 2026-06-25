@@ -2,7 +2,8 @@ import {
     getEarningsReportComparison,
     getGradeEvents,
 } from '@/app/[symbol]/news/newsData';
-import { getNewsList, NEWS_LIST_CACHE_KEY } from '@/entities/news-article';
+import { getNewsList } from '@/entities/news-article/api';
+import { NEWS_LIST_CACHE_KEY } from '@/entities/news-article';
 import { NewsAiSummary } from '@/widgets/news/NewsAiSummary';
 import { NewsAiSummaryErrorBoundary } from '@/widgets/news/NewsAiSummaryErrorBoundary';
 import { NewsAiSummarySkeleton } from '@/widgets/news/NewsAiSummarySkeleton';

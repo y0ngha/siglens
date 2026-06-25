@@ -9,7 +9,7 @@ import {
     type SubmitNewsAnalysisResult,
 } from '@y0ngha/siglens-core';
 import { getDatabaseClient } from '@/shared/db/client';
-import { DrizzleNewsRepository } from '@/entities/news-article';
+import { DrizzleNewsRepository } from '@/entities/news-article/api';
 import { NEWS_ANALYSIS_LOOKBACK_MS } from '../lib/newsLookback';
 import { buildAnalysisNewsItems } from '../lib/buildAnalysisNewsItems';
 import { getNextEarningsReport } from '@/entities/earnings-report';

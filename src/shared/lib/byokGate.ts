@@ -11,7 +11,7 @@ import { getDatabaseClient } from '@/shared/db/client';
 import {
     DrizzleUserApiKeyRepository,
     LlmApiKeyDecryptionFailedError,
-} from '@/entities/api-key';
+} from '@/entities/api-key/api';
 import { getUserTier } from '@/entities/user-tier';
 import { DrizzleUserRepository } from '@/entities/user';
 import type { AnalysisGateError, AnalysisGateErrorCode } from './types';

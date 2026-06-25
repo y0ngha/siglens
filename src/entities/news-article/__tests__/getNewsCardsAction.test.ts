@@ -7,7 +7,7 @@ vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: mockGetDatabaseClient,
 }));
 
-vi.mock('@/entities/news-article', () => ({
+vi.mock('@/entities/news-article/api', () => ({
     DrizzleNewsRepository: class {
         listBySymbol = mockListBySymbol;
     },

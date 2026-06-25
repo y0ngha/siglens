@@ -16,7 +16,7 @@ vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: vi.fn().mockReturnValue({ db: {} }),
 }));
 
-vi.mock('@/entities/news-article', () => ({
+vi.mock('@/entities/news-article/api', () => ({
     DrizzleNewsRepository: vi.fn().mockImplementation(function () {
         return {
             listBySymbol: vi.fn(),
@@ -45,7 +45,7 @@ vi.mock('@/entities/ticker/lib/resolveAssetClass', () => ({
 }));
 
 import { headers } from 'next/headers';
-import { DrizzleNewsRepository } from '@/entities/news-article';
+import { DrizzleNewsRepository } from '@/entities/news-article/api';
 import { getNextEarningsReport } from '@/entities/earnings-report';
 import {
     submitNewsAnalysis,

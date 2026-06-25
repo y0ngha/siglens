@@ -16,15 +16,17 @@ vi.mock('@/entities/user', () => ({
     deleteAccount: vi.fn(),
 }));
 vi.mock('@/entities/session', () => ({
-    DrizzleSessionRepository: vi.fn().mockImplementation(function () {
-        return {};
-    }),
     applyAuthCookie: vi.fn((c: unknown) => c),
     isSecureCookieEnv: vi.fn(() => false),
     createExpiredAuthHintCookie: vi.fn(() => ({
         name: 'auth_hint',
         value: '',
     })),
+}));
+vi.mock('@/entities/session/api', () => ({
+    DrizzleSessionRepository: vi.fn().mockImplementation(function () {
+        return {};
+    }),
 }));
 // getAuthDatabaseClient는 barrel이 아닌 @/entities/session/lib/db에서 직접 import되므로
 // (server-only 체인을 client 번들에서 분리) 해당 경로를 별도로 mock한다.

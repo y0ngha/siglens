@@ -9,7 +9,7 @@ import { encryptToken } from '@/shared/db/tokenEncryption';
 import {
     DrizzleUserApiKeyRepository,
     LlmApiKeyDecryptionFailedError,
-} from '@/entities/api-key';
+} from '@/entities/api-key/api';
 import type { SiglensDatabase } from '@/shared/db/types';
 
 const VALID_KEY_HEX = 'b'.repeat(64);

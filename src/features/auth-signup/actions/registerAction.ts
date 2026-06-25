@@ -5,14 +5,16 @@ import { sanitizeNextPath } from '@/shared/lib/auth/redirect';
 import {
     applyAuthCookie,
     createAuthHintCookie,
-    bcryptPasswordHasher,
-    bcryptPasswordVerifier,
     AUTH_SERVICE_UNAVAILABLE_MESSAGE,
     CONSENT_REQUIRED_MESSAGE,
     DEFAULT_SESSION_TTL_SECONDS,
     isSecureCookieEnv,
-    DrizzleSessionRepository,
 } from '@/entities/session';
+import { DrizzleSessionRepository } from '@/entities/session/api';
+import {
+    bcryptPasswordHasher,
+    bcryptPasswordVerifier,
+} from '@/entities/session/lib/bcrypt';
 import { getAuthDatabaseClient } from '@/entities/session/lib/db';
 import {
     loginUser,

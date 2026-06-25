@@ -1,5 +1,5 @@
 import { like } from 'drizzle-orm';
-import { bcryptPasswordHasher } from '@/entities/session';
+import { bcryptPasswordHasher } from '@/entities/session/lib/bcrypt';
 import { economicCalendarId } from '@/entities/economy/lib/economicCalendarId';
 import { addEtDays, etDateOf } from '@/entities/economy/lib/calendarWindow';
 import { getDatabaseClient } from '@/shared/db/client';

@@ -20,8 +20,8 @@ import { resolveMarketProfile } from '@/entities/ticker/lib/resolveAssetClass';
 import { getDescriptor } from '@/shared/config/marketProfile';
 import { getDatabaseClient } from '@/shared/db/client';
 import { getFinancialsSnapshot } from '@/entities/financials-statements/lib/getFinancialsSnapshot';
+import { DrizzleNewsRepository } from '@/entities/news-article/api';
 import {
-    DrizzleNewsRepository,
     NEWS_ANALYSIS_LOOKBACK_MS,
     buildAnalysisNewsItems,
 } from '@/entities/news-article';

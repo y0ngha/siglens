@@ -10,8 +10,8 @@ import {
     createAuthSession,
     DEFAULT_SESSION_TTL_SECONDS,
     isSecureCookieEnv,
-    DrizzleSessionRepository,
 } from '@/entities/session';
+import { DrizzleSessionRepository } from '@/entities/session/api';
 import { getAuthDatabaseClient } from '@/entities/session/lib/db';
 import { createPendingOAuthSignupStoreFromEnv } from '@/entities/oauth-account';
 import { DrizzleAgreementRepository } from '@/entities/agreement';

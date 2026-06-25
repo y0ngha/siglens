@@ -49,9 +49,8 @@ vi.mock('next/navigation', () => ({
     notFound: vi.fn(),
 }));
 // /news와 동일 게이트(useWaitForNewsCards) 적용을 위해 newsItems를 SSR에서 조회한다.
-// getNewsList는 entities/news-article로 이동 — barrel mock.
-vi.mock('@/entities/news-article', async importOriginal => ({
-    ...(await importOriginal<typeof import('@/entities/news-article')>()),
+// getNewsList は barrel 除外対象 — @/entities/news-article/api から deep import する.
+vi.mock('@/entities/news-article/api', () => ({
     getNewsList: vi.fn().mockResolvedValue([]),
 }));
 
@@ -203,7 +202,7 @@ describe('Overall page (narrative seed)', () => {
 
     it('모든 row가 미분석(sentiment=null)이면 hasEnrichedNews=false 전달', async () => {
         mockPeekOverall.mockResolvedValue(null);
-        const { getNewsList } = await import('@/entities/news-article');
+        const { getNewsList } = await import('@/entities/news-article/api');
         (
             getNewsList as MockedFunction<typeof getNewsList>
         ).mockResolvedValueOnce([
@@ -216,7 +215,7 @@ describe('Overall page (narrative seed)', () => {
 
     it('hasEnrichedNews=true: enriched row(sentiment!==null)가 1개라도 있으면 true 전달 (게이트 즉시 통과)', async () => {
         mockPeekOverall.mockResolvedValue(null);
-        const { getNewsList } = await import('@/entities/news-article');
+        const { getNewsList } = await import('@/entities/news-article/api');
         (
             getNewsList as MockedFunction<typeof getNewsList>
         ).mockResolvedValueOnce([
@@ -230,7 +229,7 @@ describe('Overall page (narrative seed)', () => {
 
     it('getNewsList가 throw해도 ISR-safe하게 hasEnrichedNews=false로 degrade한다', async () => {
         mockPeekOverall.mockResolvedValue(null);
-        const { getNewsList } = await import('@/entities/news-article');
+        const { getNewsList } = await import('@/entities/news-article/api');
         (
             getNewsList as MockedFunction<typeof getNewsList>
         ).mockRejectedValueOnce(new Error('db down'));

@@ -64,7 +64,10 @@ export async function myAction() { ... }
 | 슬라이스 | 제외 export | 사유 |
 |---|---|---|
 | `options-chain` | `hasOptionsMarket`, `fetchOptionsSnapshot`, `optionsDataCache` 관련 | `yahoo-finance2` → `@deno/shim-deno`가 `child_process`, `dns` 등 Node.js 전용 모듈 요구 |
-| `session` | `getCurrentUser` | `next/headers` 의존 |
+| `session` | `DrizzleSessionRepository`, `getCurrentUser`, `bcryptPasswordHasher`, `bcryptPasswordVerifier` | `api.ts` → `schema.ts` (`server-only`) / `next/headers` 의존 / bcrypt는 Node.js 전용 |
+| `api-key` | `DrizzleUserApiKeyRepository`, `LlmApiKeyDecryptionFailedError` | `api.ts`가 drizzle/encryption import — `server-only` 보호 대상 |
+| `inquiry` | `DrizzleContactRepository` | `api.ts`가 drizzle/schema import — `server-only` 보호 대상 |
+| `news-article` | `DrizzleNewsRepository`, `getNewsList` | `api.ts`가 drizzle/DB client import, `import 'server-only'` 선언 |
 
 ## 슬라이스 구조
 
