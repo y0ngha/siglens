@@ -4,7 +4,7 @@ import { useEffect, useRef } from 'react';
 import { usePathname } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import { Header, type HeaderUserMenuUser } from '@/widgets/layout';
-import { useCurrentUser, useAuthHint } from '@/entities/session';
+import { useCurrentUser, useAuthHint } from '@/entities/auth';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
 
 /**

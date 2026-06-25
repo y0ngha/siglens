@@ -1,12 +1,13 @@
 'use server';
 
-import { DrizzleUserRepository, confirmPasswordReset } from '@/entities/user';
-import { AUTH_SERVICE_UNAVAILABLE_MESSAGE } from '@/entities/session';
+import { confirmPasswordReset } from '@/entities/auth';
+import { DrizzleUserRepository } from '@/entities/auth/api';
+import { AUTH_SERVICE_UNAVAILABLE_MESSAGE } from '@/entities/auth';
 import {
     bcryptPasswordHasher,
     bcryptPasswordVerifier,
-} from '@/entities/session/lib/bcrypt';
-import { getAuthDatabaseClient } from '@/entities/session/lib/db';
+} from '@/entities/auth/lib/bcrypt';
+import { getAuthDatabaseClient } from '@/entities/auth/lib/db';
 import { createEmailTokenStore } from '@/entities/email-token';
 import { redirect } from 'next/navigation';
 import type { ResetPasswordFormState } from '@/shared/lib/auth/formTypes';

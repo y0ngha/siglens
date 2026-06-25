@@ -12,7 +12,7 @@ vi.mock('@/shared/db/client', () => ({
     })),
     resetDatabaseClientForTests: vi.fn(),
 }));
-vi.mock('@/entities/session', () => ({
+vi.mock('@/entities/auth', () => ({
     applyAuthCookie: vi.fn((c: unknown) => c),
     createAuthHintCookie: vi.fn(() => ({
         name: 'auth_hint',
@@ -23,28 +23,28 @@ vi.mock('@/entities/session', () => ({
     CONSENT_REQUIRED_MESSAGE: '서비스 이용을 위해 필수 약관에 동의해 주세요.',
     DEFAULT_SESSION_TTL_SECONDS: 7776000,
     isSecureCookieEnv: vi.fn(() => false),
+    loginUser: vi.fn(),
+    registerUser: vi.fn(),
 }));
-vi.mock('@/entities/session/api', () => ({
+// DrizzleUserRepository와 DrizzleSessionRepository는 barrel이 아닌
+// @/entities/auth/api에서 직접 import되므로 해당 경로를 mock한다.
+vi.mock('@/entities/auth/api', () => ({
     DrizzleSessionRepository: vi.fn().mockImplementation(function () {
         return {};
     }),
-}));
-vi.mock('@/entities/session/lib/bcrypt', () => ({
-    bcryptPasswordHasher: { hashPassword: vi.fn() },
-    bcryptPasswordVerifier: { verifyPassword: vi.fn() },
-}));
-// getAuthDatabaseClient는 barrel이 아닌 @/entities/session/lib/db에서 직접 import되므로
-// (server-only 체인을 client 번들에서 분리) 해당 경로를 별도로 mock한다.
-vi.mock('@/entities/session/lib/db', () => ({
-    getAuthDatabaseClient: vi.fn(() => ({ db: {}, sql: () => null })),
-    resetAuthDatabaseClientForTests: vi.fn(),
-}));
-vi.mock('@/entities/user', () => ({
     DrizzleUserRepository: vi.fn().mockImplementation(function () {
         return {};
     }),
-    loginUser: vi.fn(),
-    registerUser: vi.fn(),
+}));
+vi.mock('@/entities/auth/lib/bcrypt', () => ({
+    bcryptPasswordHasher: { hashPassword: vi.fn() },
+    bcryptPasswordVerifier: { verifyPassword: vi.fn() },
+}));
+// getAuthDatabaseClient는 barrel이 아닌 @/entities/auth/lib/db에서 직접 import되므로
+// (server-only 체인을 client 번들에서 분리) 해당 경로를 별도로 mock한다.
+vi.mock('@/entities/auth/lib/db', () => ({
+    getAuthDatabaseClient: vi.fn(() => ({ db: {}, sql: () => null })),
+    resetAuthDatabaseClientForTests: vi.fn(),
 }));
 vi.mock('@/entities/agreement', () => ({
     DrizzleAgreementRepository: vi.fn(),
@@ -58,16 +58,16 @@ vi.mock('@/entities/email-token', () => ({
 
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { loginUser, registerUser } from '@/entities/user';
+import { loginUser, registerUser } from '@/entities/auth';
 import { createEmailTokenStore } from '@/entities/email-token';
 import { DrizzleAgreementRepository } from '@/entities/agreement';
 import { DrizzleTermsRepository } from '@/entities/terms';
-import { AUTH_SERVICE_UNAVAILABLE_MESSAGE } from '@/entities/session';
+import { AUTH_SERVICE_UNAVAILABLE_MESSAGE } from '@/entities/auth';
 import { registerAction } from '@/features/auth-signup/actions/registerAction';
 import {
     getAuthDatabaseClient,
     resetAuthDatabaseClientForTests,
-} from '@/entities/session/lib/db';
+} from '@/entities/auth/lib/db';
 import { makeFormData } from '@/shared/test-utils/makeFormData';
 
 const mockCookies = cookies as MockedFunction<typeof cookies>;

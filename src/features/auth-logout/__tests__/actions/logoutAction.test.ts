@@ -9,7 +9,7 @@ vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: vi.fn(() => ({ db: {}, sql: () => null })),
     resetDatabaseClientForTests: vi.fn(),
 }));
-vi.mock('@/entities/session', () => ({
+vi.mock('@/entities/auth', () => ({
     AUTH_SESSION_COOKIE_NAME: 'siglens_session',
     applyAuthCookie: vi.fn((c: unknown) => c),
     isSecureCookieEnv: vi.fn(() => false),
@@ -18,26 +18,26 @@ vi.mock('@/entities/session', () => ({
         value: '',
     })),
 }));
-vi.mock('@/entities/session/api', () => ({
+vi.mock('@/entities/auth/api', () => ({
     DrizzleSessionRepository: vi.fn().mockImplementation(function () {
         return {};
     }),
 }));
-// getAuthDatabaseClient는 barrel이 아닌 @/entities/session/lib/db에서 직접 import되므로
+// getAuthDatabaseClient는 barrel이 아닌 @/entities/auth/lib/db에서 직접 import되므로
 // (server-only 체인을 client 번들에서 분리) 해당 경로를 별도로 mock한다.
-vi.mock('@/entities/session/lib/db', () => ({
+vi.mock('@/entities/auth/lib/db', () => ({
     getAuthDatabaseClient: vi.fn(() => ({ db: {}, sql: () => null })),
     resetAuthDatabaseClientForTests: vi.fn(),
 }));
-vi.mock('@/entities/user', () => ({
+vi.mock('@/entities/auth', () => ({
     logoutUser: vi.fn(),
 }));
 
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { logoutUser } from '@/entities/user';
+import { logoutUser } from '@/entities/auth';
 import { logoutAction } from '@/features/auth-logout/actions/logoutAction';
-import { resetAuthDatabaseClientForTests } from '@/entities/session/lib/db';
+import { resetAuthDatabaseClientForTests } from '@/entities/auth/lib/db';
 
 const mockCookies = cookies as MockedFunction<typeof cookies>;
 const mockLogout = logoutUser as MockedFunction<typeof logoutUser>;

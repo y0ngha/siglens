@@ -4,7 +4,8 @@ import {
     DrizzleOAuthAccountRepository,
     compositeOAuthRevoker,
 } from '@/entities/oauth-account';
-import { DrizzleUserRepository, deleteAccount } from '@/entities/user';
+import { deleteAccount } from '@/entities/auth';
+import { DrizzleUserRepository } from '@/entities/auth/api';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import type { DeleteAccountFormState } from '@/shared/lib/auth/formTypes';
@@ -13,9 +14,9 @@ import {
     applyAuthCookie,
     isSecureCookieEnv,
     createExpiredAuthHintCookie,
-} from '@/entities/session';
-import { getAuthDatabaseClient } from '@/entities/session/lib/db';
-import { getCurrentUser } from '@/entities/session/lib/getCurrentUser';
+} from '@/entities/auth';
+import { getAuthDatabaseClient } from '@/entities/auth/lib/db';
+import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 
 const NOT_AUTHENTICATED_MESSAGE = '로그인이 필요합니다.';
 const EMAIL_MISMATCH_MESSAGE =

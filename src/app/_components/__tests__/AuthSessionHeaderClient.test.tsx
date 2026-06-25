@@ -9,7 +9,7 @@ vi.mock('@/widgets/layout/Header', () => ({
         return null;
     },
 }));
-vi.mock('@/entities/session', () => ({
+vi.mock('@/entities/auth', () => ({
     useCurrentUser: vi.fn(),
     useAuthHint: vi.fn(),
 }));
@@ -26,7 +26,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render } from '@testing-library/react';
 import type { AuthUserRecord } from '@/shared/lib/auth/types';
 import { AuthSessionHeaderClient } from '@/app/_components/AuthSessionHeaderClient';
-import { useCurrentUser, useAuthHint } from '@/entities/session';
+import { useCurrentUser, useAuthHint } from '@/entities/auth';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
 
 const mockCurrentUser = vi.mocked(useCurrentUser);

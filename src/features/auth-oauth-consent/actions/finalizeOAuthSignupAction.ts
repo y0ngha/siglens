@@ -10,13 +10,15 @@ import {
     createAuthSession,
     DEFAULT_SESSION_TTL_SECONDS,
     isSecureCookieEnv,
-} from '@/entities/session';
-import { DrizzleSessionRepository } from '@/entities/session/api';
-import { getAuthDatabaseClient } from '@/entities/session/lib/db';
+} from '@/entities/auth';
+import {
+    DrizzleSessionRepository,
+    DrizzleUserRepository,
+} from '@/entities/auth/api';
+import { getAuthDatabaseClient } from '@/entities/auth/lib/db';
 import { createPendingOAuthSignupStoreFromEnv } from '@/entities/oauth-account';
 import { DrizzleAgreementRepository } from '@/entities/agreement';
 import { DrizzleTermsRepository } from '@/entities/terms';
-import { DrizzleUserRepository } from '@/entities/user';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 

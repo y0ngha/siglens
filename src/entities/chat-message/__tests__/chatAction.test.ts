@@ -1,6 +1,6 @@
 import type { MockedFunction, MockedClass, Mock } from 'vitest';
 import { callAiProviderRouter } from '@/entities/llm-provider';
-import { getCurrentUser } from '@/entities/session/lib/getCurrentUser';
+import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { chatAction } from '../actions/chatAction';
 import { getDatabaseClient } from '@/shared/db/client';
 import { DrizzleUserApiKeyRepository } from '@/entities/api-key/api';
@@ -47,7 +47,7 @@ vi.mock('@/entities/llm-provider', () => {
     };
 });
 
-vi.mock('@/entities/session/lib/getCurrentUser', () => ({
+vi.mock('@/entities/auth/lib/getCurrentUser', () => ({
     getCurrentUser: vi.fn(),
 }));
 

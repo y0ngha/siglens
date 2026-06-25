@@ -9,18 +9,17 @@ import {
     CONSENT_REQUIRED_MESSAGE,
     DEFAULT_SESSION_TTL_SECONDS,
     isSecureCookieEnv,
-} from '@/entities/session';
-import { DrizzleSessionRepository } from '@/entities/session/api';
+} from '@/entities/auth';
+import {
+    DrizzleSessionRepository,
+    DrizzleUserRepository,
+} from '@/entities/auth/api';
 import {
     bcryptPasswordHasher,
     bcryptPasswordVerifier,
-} from '@/entities/session/lib/bcrypt';
-import { getAuthDatabaseClient } from '@/entities/session/lib/db';
-import {
-    loginUser,
-    registerUser,
-    DrizzleUserRepository,
-} from '@/entities/user';
+} from '@/entities/auth/lib/bcrypt';
+import { getAuthDatabaseClient } from '@/entities/auth/lib/db';
+import { loginUser, registerUser } from '@/entities/auth';
 import { DrizzleAgreementRepository } from '@/entities/agreement';
 import { DrizzleTermsRepository } from '@/entities/terms';
 import { createEmailTokenStore } from '@/entities/email-token';

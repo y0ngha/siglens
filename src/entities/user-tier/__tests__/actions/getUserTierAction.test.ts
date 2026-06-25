@@ -3,7 +3,7 @@ const { mockGetCurrentUser, mockGetUserTier } = vi.hoisted(() => ({
     mockGetUserTier: vi.fn(),
 }));
 
-vi.mock('@/entities/session/lib/getCurrentUser', () => ({
+vi.mock('@/entities/auth/lib/getCurrentUser', () => ({
     getCurrentUser: (...args: unknown[]) => mockGetCurrentUser(...args),
 }));
 
@@ -11,7 +11,9 @@ vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: vi.fn(() => ({ db: {}, sql: () => null })),
 }));
 
-vi.mock('@/entities/user', () => ({
+// DrizzleUserRepository는 barrel이 아닌 @/entities/auth/api에서 직접 import되므로
+// 해당 경로를 mock한다.
+vi.mock('@/entities/auth/api', () => ({
     DrizzleUserRepository: vi.fn().mockImplementation(function () {
         return {};
     }),

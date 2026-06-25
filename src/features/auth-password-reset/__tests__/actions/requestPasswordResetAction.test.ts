@@ -3,17 +3,21 @@ vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: vi.fn(() => ({ db: {}, sql: () => null })),
     resetDatabaseClientForTests: vi.fn(),
 }));
-// getAuthDatabaseClient는 barrel이 아닌 @/entities/session/lib/db에서 직접 import되므로
+// getAuthDatabaseClient는 barrel이 아닌 @/entities/auth/lib/db에서 직접 import되므로
 // (server-only 체인을 client 번들에서 분리) 해당 경로를 별도로 mock한다.
-vi.mock('@/entities/session/lib/db', () => ({
+vi.mock('@/entities/auth/lib/db', () => ({
     getAuthDatabaseClient: vi.fn(() => ({ db: {}, sql: () => null })),
     resetAuthDatabaseClientForTests: vi.fn(),
 }));
-vi.mock('@/entities/user', () => ({
+vi.mock('@/entities/auth', () => ({
+    requestPasswordReset: vi.fn(),
+}));
+// DrizzleUserRepository는 barrel이 아닌 @/entities/auth/api에서 직접 import되므로
+// 해당 경로를 별도로 mock한다.
+vi.mock('@/entities/auth/api', () => ({
     DrizzleUserRepository: vi.fn().mockImplementation(function () {
         return {};
     }),
-    requestPasswordReset: vi.fn(),
 }));
 vi.mock('@/entities/email-token', () => ({
     createEmailTokenStore: vi.fn(),
@@ -30,13 +34,13 @@ vi.mock('@/shared/email/dispatcher', () => ({
     createEmailDispatcher: vi.fn(() => ({ sendEmail: sendEmailMock })),
 }));
 
-import { requestPasswordReset } from '@/entities/user';
+import { requestPasswordReset } from '@/entities/auth';
 import {
     createEmailTokenStore,
     buildPasswordResetEmail,
 } from '@/entities/email-token';
 import { requestPasswordResetAction } from '@/features/auth-password-reset/actions/requestPasswordResetAction';
-import { resetAuthDatabaseClientForTests } from '@/entities/session/lib/db';
+import { resetAuthDatabaseClientForTests } from '@/entities/auth/lib/db';
 import { makeFormData } from '@/shared/test-utils/makeFormData';
 
 const mockRequest = requestPasswordReset as MockedFunction<

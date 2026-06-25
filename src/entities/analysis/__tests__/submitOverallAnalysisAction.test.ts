@@ -48,7 +48,7 @@ vi.mock('@/entities/earnings-report', () => ({
     getNextEarningsReport: vi.fn(),
 }));
 
-vi.mock('@/entities/session/lib/getCurrentUser', () => ({
+vi.mock('@/entities/auth/lib/getCurrentUser', () => ({
     getCurrentUser: vi.fn(),
 }));
 
@@ -110,7 +110,7 @@ import { headers } from 'next/headers';
 import { DrizzleNewsRepository } from '@/entities/news-article/api';
 import { MAX_AGGREGATE_NEWS_ITEMS } from '@/entities/news-article';
 import { getNextEarningsReport } from '@/entities/earnings-report';
-import { getCurrentUser } from '@/entities/session/lib/getCurrentUser';
+import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { resolveTierAndByok } from '@/shared/lib/byokGate';
 import { fetchOptionsSnapshot } from '@/entities/options-chain/lib/optionsDataCache';
 import { isOpenInterestSnapshotStale } from '@/shared/lib/options/openInterestStale';

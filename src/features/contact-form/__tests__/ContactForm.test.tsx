@@ -1,7 +1,7 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ContactForm } from '@/features/contact-form';
 import { useContactForm } from '@/features/contact-form/hooks/useContactForm';
-import { useCurrentUser } from '@/entities/session';
+import { useCurrentUser } from '@/entities/auth';
 import type { ContactFormState } from '@/shared/lib/types';
 import type { UseQueryResult } from '@tanstack/react-query';
 import type { AuthUserRecord } from '@/shared/lib/auth/types';
@@ -12,7 +12,7 @@ vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: vi.fn(() => ({ db: {}, sql: () => null })),
 }));
 vi.mock('@/features/contact-form/hooks/useContactForm');
-vi.mock('@/entities/session');
+vi.mock('@/entities/auth');
 
 const mockUseContactForm = vi.mocked(useContactForm);
 const mockUseCurrentUser = vi.mocked(useCurrentUser);

@@ -25,7 +25,7 @@ vi.mock('@y0ngha/siglens-core', () => ({
         'anthropic' as LlmProvider,
 }));
 
-vi.mock('@/entities/session/actions', () => ({
+vi.mock('@/entities/auth/actions', () => ({
     currentUserAction: vi.fn(),
 }));
 

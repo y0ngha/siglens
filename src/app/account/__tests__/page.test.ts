@@ -1,7 +1,7 @@
 vi.mock('@/features/api-key-management', () => ({
     ApiKeySection: () => null,
 }));
-vi.mock('@/entities/session', () => ({
+vi.mock('@/entities/auth', () => ({
     getCurrentUser: vi.fn(),
 }));
 vi.mock('@/entities/api-key/actions', () => ({
