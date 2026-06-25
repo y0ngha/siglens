@@ -1,6 +1,5 @@
-import { toProviderTurns } from '../lib/utils';
+import { toProviderTurns, findSpecByApiModelId } from '../lib/utils';
 import Anthropic from '@anthropic-ai/sdk';
-import { MODEL_SPECS } from '@y0ngha/siglens-core';
 import type {
     AiContents,
     CallAiProviderOptions,
@@ -28,13 +27,6 @@ function isValidEffort(
     value: string
 ): value is NonNullable<ModelSpec['effort']> {
     return value in VALID_EFFORT_RECORD;
-}
-
-// apiModelId(e.g. 'claude-sonnet-4-6')로 ModelSpec을 역방향 조회한다.
-function findSpecByApiModelId(apiModelId: string): ModelSpec | undefined {
-    return (Object.values(MODEL_SPECS) as ModelSpec[]).find(
-        s => s.apiModelId === apiModelId
-    );
 }
 
 /**

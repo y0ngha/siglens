@@ -28,7 +28,7 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { saveApiKeyAction } from '@/entities/api-key/actions/saveApiKeyAction';
 import { makeFormData } from '@/shared/test-utils/makeFormData';
-import type { ApiKeyActionState } from '@/entities/api-key/lib';
+import type { ApiKeyActionState } from '@/entities/api-key';
 
 const mockGetCurrentUser = getCurrentUser as MockedFunction<
     typeof getCurrentUser

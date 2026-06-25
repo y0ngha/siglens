@@ -1,28 +1,18 @@
 'use client';
 
 import { ContextSwitchSystemMessage } from './ContextSwitchSystemMessage';
+import { ModelSelect } from './ModelSelect';
+import type { ModelOption } from './ModelSelect';
 import { useChat } from './hooks/useChat';
 import { useChatInput } from './hooks/useChatInput';
 import { useSymbolChat } from '@/features/symbol-chat';
-import { usePopoverToggle } from '@/shared/hooks/usePopoverToggle';
 import { MarkdownText } from '@/shared/ui/MarkdownText';
 import { PremiumModelGateModal } from '@/features/premium-gate';
 import { cn } from '@/shared/lib/cn';
 import { LLM_PROVIDER_LABELS } from '@/shared/lib/llmProviderLabels';
-import {
-    isFreeModel,
-    VALID_CHAT_MODELS,
-    type ModelId,
-} from '@y0ngha/siglens-core';
-import { useRef, useState } from 'react';
+import { VALID_CHAT_MODELS, type ModelId } from '@y0ngha/siglens-core';
 
-interface ChatModelOption {
-    id: ModelId;
-    label: string;
-    fullName: string;
-}
-
-type ChatModelDisplay = Pick<ChatModelOption, 'label' | 'fullName'>;
+type ChatModelDisplay = Pick<ModelOption, 'label' | 'fullName'>;
 
 const MODEL_DISPLAY_MAP: Partial<Record<ModelId, ChatModelDisplay>> = {
     'gemini-2.5-flash': { label: 'Flash', fullName: 'Gemini 2.5 Flash' },
@@ -51,10 +41,9 @@ function getModelDisplay(id: ModelId): ChatModelDisplay {
     return MODEL_DISPLAY_MAP[id] ?? { label: id, fullName: id };
 }
 
-const CHAT_MODEL_OPTIONS = VALID_CHAT_MODELS.map(id => ({
-    id,
-    ...getModelDisplay(id),
-})) satisfies ReadonlyArray<ChatModelOption>;
+const CHAT_MODEL_OPTIONS: readonly ModelOption[] = VALID_CHAT_MODELS.map(
+    id => ({ id, ...getModelDisplay(id) })
+);
 
 const LOADING_MESSAGES = {
     analyzing: '질문 내용을 살펴보고 있어요...',
@@ -68,14 +57,6 @@ interface ChatPanelProps {
 
 export function ChatPanel({ symbol, onClose }: ChatPanelProps) {
     const { isAnalysisReady } = useSymbolChat();
-    const triggerRef = useRef<HTMLButtonElement>(null);
-    const dropdownRef = useRef<HTMLDivElement>(null);
-    const optionRefs = useRef<(HTMLDivElement | null)[]>([]);
-    const [opensUpward, setOpensUpward] = useState(true);
-    const { isOpen, toggle, close } = usePopoverToggle([
-        triggerRef,
-        dropdownRef,
-    ]);
 
     const {
         messages,
@@ -100,63 +81,6 @@ export function ChatPanel({ symbol, onClose }: ChatPanelProps) {
         handleSubmit,
         handleKeyDown,
     } = useChatInput({ messages, loadingPhase, isAnalysisReady, sendMessage });
-
-    const selectedModelOption = getModelDisplay(selectedModel);
-
-    const handleDropdownToggle = () => {
-        if (!isOpen && triggerRef.current) {
-            const rect = triggerRef.current.getBoundingClientRect();
-            setOpensUpward(rect.top > window.innerHeight - rect.bottom);
-        }
-        toggle();
-        if (!isOpen) {
-            const selectedIdx = CHAT_MODEL_OPTIONS.findIndex(
-                opt => opt.id === selectedModel
-            );
-            setTimeout(() => optionRefs.current[selectedIdx]?.focus(), 0);
-        }
-    };
-
-    const handleListboxKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-        const currentIndex = CHAT_MODEL_OPTIONS.findIndex(
-            opt => opt.id === selectedModel
-        );
-        switch (e.key) {
-            case 'ArrowDown': {
-                e.preventDefault();
-                const nextIdx = (currentIndex + 1) % CHAT_MODEL_OPTIONS.length;
-                handleModelChange(CHAT_MODEL_OPTIONS[nextIdx]!.id);
-                optionRefs.current[nextIdx]?.focus();
-                break;
-            }
-            case 'ArrowUp': {
-                e.preventDefault();
-                const prevIdx =
-                    (currentIndex - 1 + CHAT_MODEL_OPTIONS.length) %
-                    CHAT_MODEL_OPTIONS.length;
-                handleModelChange(CHAT_MODEL_OPTIONS[prevIdx]!.id);
-                optionRefs.current[prevIdx]?.focus();
-                break;
-            }
-            case 'Home':
-                e.preventDefault();
-                handleModelChange(CHAT_MODEL_OPTIONS[0]!.id);
-                optionRefs.current[0]?.focus();
-                break;
-            case 'End': {
-                e.preventDefault();
-                const lastIdx = CHAT_MODEL_OPTIONS.length - 1;
-                handleModelChange(CHAT_MODEL_OPTIONS[lastIdx]!.id);
-                optionRefs.current[lastIdx]?.focus();
-                break;
-            }
-            case 'Escape':
-                e.preventDefault();
-                close();
-                triggerRef.current?.focus();
-                break;
-        }
-    };
 
     const placeholder = !isAnalysisReady
         ? '분석이 완료된 후 질문할 수 있어요'
@@ -269,113 +193,12 @@ export function ChatPanel({ symbol, onClose }: ChatPanelProps) {
 
             <div className="border-secondary-700 border-t px-3 py-2">
                 <div className="text-secondary-600 mb-1.5 flex items-center gap-1.5 text-[10px]">
-                    <div className="relative">
-                        {!isModelHydrated ? (
-                            <div className="bg-secondary-700 w-16 animate-pulse rounded px-1.5 py-0.5 text-[10px]">
-                                &nbsp;
-                            </div>
-                        ) : (
-                            <button
-                                ref={triggerRef}
-                                type="button"
-                                onClick={handleDropdownToggle}
-                                className="bg-secondary-700 hover:bg-secondary-600 text-secondary-400 focus-visible:ring-primary-500 flex items-center gap-1 rounded px-1.5 py-0.5 transition-colors focus-visible:ring-1 focus-visible:outline-none"
-                                aria-haspopup="listbox"
-                                aria-expanded={isOpen}
-                                aria-label="AI 모델 선택"
-                            >
-                                <span>{selectedModelOption.label}</span>
-                                <span
-                                    className={cn(
-                                        'transition-transform duration-150',
-                                        isOpen && 'rotate-180'
-                                    )}
-                                    aria-hidden="true"
-                                >
-                                    ▾
-                                </span>
-                            </button>
-                        )}
-
-                        {isOpen && (
-                            <div
-                                ref={dropdownRef}
-                                role="listbox"
-                                aria-label="AI 모델 목록"
-                                onKeyDown={handleListboxKeyDown}
-                                className={cn(
-                                    'border-secondary-600 bg-secondary-800 absolute left-0 z-10 min-w-40 rounded-lg border shadow-lg',
-                                    opensUpward
-                                        ? 'bottom-full mb-1'
-                                        : 'top-full mt-1'
-                                )}
-                            >
-                                <div className="max-h-66 overflow-y-auto overscroll-contain">
-                                    {CHAT_MODEL_OPTIONS.map((option, i) => (
-                                        <div
-                                            key={option.id}
-                                            ref={el => {
-                                                optionRefs.current[i] = el;
-                                            }}
-                                            role="option"
-                                            tabIndex={
-                                                selectedModel === option.id
-                                                    ? 0
-                                                    : -1
-                                            }
-                                            aria-selected={
-                                                selectedModel === option.id
-                                            }
-                                            onClick={() => {
-                                                handleModelChange(option.id);
-                                                close();
-                                                triggerRef.current?.focus();
-                                            }}
-                                            onKeyDown={e => {
-                                                if (
-                                                    e.key === 'Enter' ||
-                                                    e.key === ' '
-                                                ) {
-                                                    e.preventDefault();
-                                                    handleModelChange(
-                                                        option.id
-                                                    );
-                                                    close();
-                                                    triggerRef.current?.focus();
-                                                }
-                                            }}
-                                            className={cn(
-                                                'focus-visible:ring-primary-500 flex min-h-11 w-full cursor-pointer items-center gap-2 px-3 transition-colors focus-visible:ring-1 focus-visible:outline-none',
-                                                selectedModel === option.id
-                                                    ? 'text-primary-300 bg-primary-900/20'
-                                                    : 'text-secondary-300 hover:bg-secondary-700'
-                                            )}
-                                        >
-                                            <span className="w-3 text-[10px]">
-                                                {selectedModel === option.id &&
-                                                    '✓'}
-                                            </span>
-                                            <div className="flex flex-1 items-center justify-between gap-2">
-                                                <div>
-                                                    <div className="text-[11px] font-medium">
-                                                        {option.label}
-                                                    </div>
-                                                    <div className="text-secondary-500 text-[10px]">
-                                                        {option.fullName}
-                                                    </div>
-                                                </div>
-                                                {!isFreeModel(option.id) && (
-                                                    <span className="text-ui-warning text-[9px] leading-none font-semibold uppercase">
-                                                        PRO
-                                                    </span>
-                                                )}
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-                    </div>
+                    <ModelSelect
+                        options={CHAT_MODEL_OPTIONS}
+                        selected={selectedModel}
+                        onChange={handleModelChange}
+                        isHydrated={isModelHydrated ?? false}
+                    />
 
                     <span>·</span>
                     <span>분석 결과 안에서만 답해요</span>

@@ -294,6 +294,28 @@ export function useAnalysis({
         })();
     }, [reset, mutate]);
 
+    /**
+     * 진행 중인 워커 작업을 취소·mutation 상태 초기화·새 분석 시작을 한 번에 수행한다.
+     * 타임프레임 변경·모델 변경 두 effect에서 공유한다.
+     * modelIdOverride 미전달 시 latestModelIdRef(=최신 렌더 모델)를 사용한다.
+     */
+    const restartAnalysis = useCallback(
+        (modelIdOverride?: ModelId): void => {
+            const jobId = currentJobIdRef.current;
+            currentJobIdRef.current = null;
+            if (jobId !== null) cancelMutate(jobId);
+            reset();
+            mutate({
+                symbol: latestRef.current.symbol,
+                companyName: latestRef.current.companyName,
+                force: false,
+                fmpSymbol: latestRef.current.fmpSymbol,
+                modelId: modelIdOverride ?? latestModelIdRef.current,
+            });
+        },
+        [cancelMutate, reset, mutate]
+    );
+
     // ref를 null로 초기화해 unmount cleanup과의 이중 cancel을 방지한다.
     const getPageHideJobs = useCallback((): CancelJobEntry[] | null => {
         const jobId = currentJobIdRef.current;
@@ -393,6 +415,7 @@ export function useAnalysis({
     useEffect(() => {
         if (!initialAnalysisFailedAtMount) return;
         if (isModelHydrated === false) return;
+        // 초기 실패 재시도는 이미 reset/cancel 없이 진행 — 진행 중인 작업이 없는 상태에서만 도달한다.
         mutate({
             symbol: latestRef.current.symbol,
             companyName: latestRef.current.companyName,
@@ -408,20 +431,8 @@ export function useAnalysis({
             return;
         }
         prevTimeframeChangeCountRef.current = timeframeChangeCount;
-
-        const jobId = currentJobIdRef.current;
-        currentJobIdRef.current = null;
-
-        if (jobId !== null) cancelMutate(jobId);
-        reset();
-        mutate({
-            symbol: latestRef.current.symbol,
-            companyName: latestRef.current.companyName,
-            force: false,
-            fmpSymbol: latestRef.current.fmpSymbol,
-            modelId: latestModelIdRef.current,
-        });
-    }, [timeframeChangeCount, reset, mutate, cancelMutate]);
+        restartAnalysis();
+    }, [timeframeChangeCount, restartAnalysis]);
 
     useEffect(() => {
         // localStorage에서 저장된 모델을 처음 읽는 시점(hydration)은 사용자 변경이 아니므로
@@ -435,19 +446,10 @@ export function useAnalysis({
         if (modelId === prevModelIdRef.current) return;
         prevModelIdRef.current = modelId;
 
-        const jobId = currentJobIdRef.current;
-        currentJobIdRef.current = null;
-
-        if (jobId !== null) cancelMutate(jobId);
-        reset();
-        mutate({
-            symbol: latestRef.current.symbol,
-            companyName: latestRef.current.companyName,
-            force: false,
-            fmpSymbol: latestRef.current.fmpSymbol,
-            modelId,
-        });
-    }, [modelId, isModelHydrated, reset, mutate, cancelMutate]);
+        // 모델 변경은 새 modelId를 명시 전달 — latestModelIdRef가 렌더 직후 갱신되지 않은
+        // 경우에도 useLayoutEffect 전에 이 effect가 실행될 수 있으므로 값을 직접 주입한다.
+        restartAnalysis(modelId);
+    }, [modelId, isModelHydrated, restartAnalysis]);
 
     // 쿨다운이 활성화된 동안 1초마다 로컬에서 카운트다운한다.
     // isCountdownActive(0 → 양수 전환)가 true가 될 때만 인터벌을 시작해 중복 시작을 방지한다.

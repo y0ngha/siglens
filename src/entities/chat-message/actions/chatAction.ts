@@ -22,19 +22,12 @@ import {
     getProviderForModel,
     requestChatCompletion,
 } from '@y0ngha/siglens-core';
-import { headers } from 'next/headers';
 import type { AssetClass } from '@/shared/config/marketProfile';
 import {
     DEFAULT_MARKET_PROFILE,
     getDescriptor,
 } from '@/shared/config/marketProfile';
-
-async function getClientIp(): Promise<string> {
-    const headersList = await headers();
-    return (
-        headersList.get('x-forwarded-for')?.split(',')[0].trim() ?? 'unknown'
-    );
-}
+import { getClientIp } from '../lib/getClientIp';
 
 /**
  * Server-owned key per provider, forwarded to core as `serverApiKey` on

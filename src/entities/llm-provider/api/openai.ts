@@ -1,18 +1,6 @@
-import { toProviderTurns } from '../lib/utils';
-import type {
-    AiContents,
-    CallAiProviderOptions,
-    ModelSpec,
-} from '@y0ngha/siglens-core';
-import { MODEL_SPECS } from '@y0ngha/siglens-core';
+import { toProviderTurns, findSpecByApiModelId } from '../lib/utils';
+import type { AiContents, CallAiProviderOptions } from '@y0ngha/siglens-core';
 import OpenAI from 'openai';
-
-// apiModelId로 ModelSpec을 역방향 조회한다.
-function findSpecByApiModelId(apiModelId: string): ModelSpec | undefined {
-    return (Object.values(MODEL_SPECS) as ModelSpec[]).find(
-        s => s.apiModelId === apiModelId
-    );
-}
 
 function toResponsesInput(
     contents: AiContents

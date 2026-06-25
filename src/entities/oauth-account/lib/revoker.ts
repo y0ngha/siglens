@@ -25,5 +25,3 @@ export const compositeOAuthRevoker: OAuthRevoker = {
         await adapter.revokeToken(params);
     },
 };
-
-export type { OAuthRevoker, RevokeTokenParams } from './revokerTypes';

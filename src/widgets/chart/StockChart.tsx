@@ -70,8 +70,9 @@ import type { MarketProfileId } from '@/shared/config/marketProfile';
 import { resolvePriceDecimals } from '@/shared/lib/priceFormat';
 import { IndicatorSettingsModal } from './ui/IndicatorSettingsModal';
 import {
-    INDICATOR_META,
+    INDICATOR_REGISTRY,
     type IndicatorBinding,
+    type IndicatorKey,
 } from './model/indicatorRegistry';
 
 interface CommonHookParams {
@@ -497,191 +498,52 @@ export function StockChart({
         labels: paneLabels,
     });
 
-    const indicatorBindings = useMemo<IndicatorBinding[]>(
-        () => [
-            {
-                meta: INDICATOR_META.ma,
+    /**
+     * 오버레이/period 지표처럼 별도 훅 반환값을 받는 항목의 오버라이드 맵.
+     * INDICATOR_REGISTRY 순회 시 이 맵에 있는 key는 오버라이드를 우선하고,
+     * 없으면 `visible[key]` + `toggle(key)` 기본 패턴으로 폴백한다.
+     */
+    const overlayOverrides = useMemo<
+        Partial<Record<string, Omit<IndicatorBinding, 'meta'>>>
+    >(
+        () => ({
+            ma: {
                 active: maVisiblePeriods.length > 0,
                 availablePeriods: MA_DEFAULT_PERIODS,
                 visiblePeriods: maVisiblePeriods,
                 onTogglePeriod: toggleMAPeriod,
             },
-            {
-                meta: INDICATOR_META.ema,
+            ema: {
                 active: emaVisiblePeriods.length > 0,
                 availablePeriods: EMA_DEFAULT_PERIODS,
                 visiblePeriods: emaVisiblePeriods,
                 onTogglePeriod: toggleEMAPeriod,
             },
-            {
-                meta: INDICATOR_META.ichimoku,
-                active: ichimokuVisible,
-                onToggle: toggleIchimoku,
-            },
-            {
-                meta: INDICATOR_META.rsi,
-                active: visible.rsi,
-                onToggle: () => toggle('rsi'),
-            },
-            {
-                meta: INDICATOR_META.macd,
-                active: visible.macd,
-                onToggle: () => toggle('macd'),
-            },
-            {
-                meta: INDICATOR_META.dmi,
-                active: visible.dmi,
-                onToggle: () => toggle('dmi'),
-            },
-            {
-                meta: INDICATOR_META.stochastic,
-                active: visible.stochastic,
-                onToggle: () => toggle('stochastic'),
-            },
-            {
-                meta: INDICATOR_META.stochRsi,
-                active: visible.stochRsi,
-                onToggle: () => toggle('stochRsi'),
-            },
-            {
-                meta: INDICATOR_META.cci,
-                active: visible.cci,
-                onToggle: () => toggle('cci'),
-            },
-            {
-                meta: INDICATOR_META.bollinger,
-                active: bollingerVisible,
-                onToggle: toggleBollinger,
-            },
-            {
-                meta: INDICATOR_META.volumeProfile,
-                active: vpVisible,
-                onToggle: toggleVP,
-            },
-            {
-                meta: INDICATOR_META.mfi,
-                active: visible.mfi,
-                onToggle: () => toggle('mfi'),
-            },
-            {
-                meta: INDICATOR_META.williamsR,
-                active: visible.williamsR,
-                onToggle: () => toggle('williamsR'),
-            },
-            {
-                meta: INDICATOR_META.connorsRsi,
-                active: visible.connorsRsi,
-                onToggle: () => toggle('connorsRsi'),
-            },
-            {
-                meta: INDICATOR_META.cmf,
-                active: visible.cmf,
-                onToggle: () => toggle('cmf'),
-            },
-            {
-                meta: INDICATOR_META.bollingerPercentB,
-                active: visible.bollingerPercentB,
-                onToggle: () => toggle('bollingerPercentB'),
-            },
-            {
-                meta: INDICATOR_META.hurst,
-                active: visible.hurst,
-                onToggle: () => toggle('hurst'),
-            },
-            {
-                meta: INDICATOR_META.varianceRatio,
-                active: visible.varianceRatio,
-                onToggle: () => toggle('varianceRatio'),
-            },
-            {
-                meta: INDICATOR_META.macdV,
-                active: visible.macdV,
-                onToggle: () => toggle('macdV'),
-            },
-            {
-                meta: INDICATOR_META.forceIndex,
-                active: visible.forceIndex,
-                onToggle: () => toggle('forceIndex'),
-            },
-            {
-                meta: INDICATOR_META.obv,
-                active: visible.obv,
-                onToggle: () => toggle('obv'),
-            },
-            {
-                meta: INDICATOR_META.atr,
-                active: visible.atr,
-                onToggle: () => toggle('atr'),
-            },
-            {
-                meta: INDICATOR_META.yangZhang,
-                active: visible.yangZhang,
-                onToggle: () => toggle('yangZhang'),
-            },
-            {
-                meta: INDICATOR_META.ewmaVolatility,
-                active: visible.ewmaVolatility,
-                onToggle: () => toggle('ewmaVolatility'),
-            },
-            {
-                meta: INDICATOR_META.keltnerChannel,
-                active: keltnerVisible,
-                onToggle: toggleKeltner,
-            },
-            {
-                meta: INDICATOR_META.donchianChannel,
+            ichimoku: { active: ichimokuVisible, onToggle: toggleIchimoku },
+            bollinger: { active: bollingerVisible, onToggle: toggleBollinger },
+            volumeProfile: { active: vpVisible, onToggle: toggleVP },
+            keltnerChannel: { active: keltnerVisible, onToggle: toggleKeltner },
+            donchianChannel: {
                 active: donchianVisible,
                 onToggle: toggleDonchian,
             },
-            {
-                meta: INDICATOR_META.supertrend,
+            supertrend: {
                 active: supertrendVisible,
                 onToggle: toggleSupertrend,
             },
-            {
-                meta: INDICATOR_META.parabolicSar,
+            parabolicSar: {
                 active: parabolicSarVisible,
                 onToggle: toggleParabolicSar,
             },
-            {
-                meta: INDICATOR_META.chandelierExit,
+            chandelierExit: {
                 active: chandelierVisible,
                 onToggle: toggleChandelier,
             },
-            {
-                meta: INDICATOR_META.elderRay,
-                active: visible.elderRay,
-                onToggle: () => toggle('elderRay'),
-            },
-            {
-                meta: INDICATOR_META.squeezeMomentum,
-                active: visible.squeezeMomentum,
-                onToggle: () => toggle('squeezeMomentum'),
-            },
-            {
-                meta: INDICATOR_META.regression,
-                active: visible.regression,
-                onToggle: () => toggle('regression'),
-            },
-            {
-                meta: INDICATOR_META.elderImpulse,
-                active: visible.elderImpulse,
-                onToggle: () => toggle('elderImpulse'),
-            },
-            {
-                meta: INDICATOR_META.smc,
-                active: visible.smc,
-                onToggle: () => toggle('smc'),
-            },
-        ],
-        // deps에 visible 객체 전체를 둔다 — 한 지표 토글 시 전체 binding이 재조립되지만
-        // 항목 수가 적어 비용은 무시할 만하며, 개별 visible 키를 나열하는 것보다 명료하다.
+        }),
         [
             maVisiblePeriods,
             emaVisiblePeriods,
             ichimokuVisible,
-            visible,
-            toggle,
             bollingerVisible,
             vpVisible,
             keltnerVisible,
@@ -700,6 +562,27 @@ export function StockChart({
             toggleParabolicSar,
             toggleChandelier,
         ]
+    );
+
+    const indicatorBindings = useMemo<IndicatorBinding[]>(
+        () =>
+            INDICATOR_REGISTRY.map(meta => {
+                const override = overlayOverrides[meta.key];
+                if (override !== undefined) {
+                    return { meta, ...override };
+                }
+                // pane 지표(visible[key] 직접 토글) 기본 패턴
+                // visible은 Record<IndicatorKey, boolean>로 선언되므로 안전한 캐스트.
+                const key = meta.key as IndicatorKey;
+                return {
+                    meta,
+                    active: visible[key],
+                    onToggle: () => toggle(key),
+                };
+            }),
+        // deps에 visible 객체 전체를 둔다 — 한 지표 토글 시 전체 binding이 재조립되지만
+        // 항목 수가 적어 비용은 무시할 만하며, 개별 visible 키를 나열하는 것보다 명료하다.
+        [overlayOverrides, visible, toggle]
     );
 
     if (bars.length === 0) {

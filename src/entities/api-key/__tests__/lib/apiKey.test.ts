@@ -2,7 +2,7 @@ import {
     isLlmProvider,
     LLM_PROVIDER_VALUES,
     normalizeLlmApiKey,
-} from '@/entities/api-key/lib';
+} from '@/entities/api-key';
 
 describe('normalizeLlmApiKey', () => {
     it('returns the input when it has no surrounding whitespace', () => {
