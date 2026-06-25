@@ -232,3 +232,5 @@ No unit tests apply (CI config). Verification is empirical against real PR diffs
 3. Open a `src/**` PR → both run as today.
 4. Confirm `ci-required` / `e2e-required` are green in all three so they are safe
    to mark as required checks.
+
+<!-- gating verification probe: docs-only change, expect ci+e2e SKIP -->
