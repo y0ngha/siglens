@@ -12,8 +12,6 @@ vi.mock('@/entities/auth/api', () => ({
     DrizzleSessionRepository: vi.fn().mockImplementation(function () {
         return {};
     }),
-}));
-vi.mock('@/entities/auth/api', () => ({
     DrizzleUserRepository: vi.fn().mockImplementation(function () {
         return {};
     }),

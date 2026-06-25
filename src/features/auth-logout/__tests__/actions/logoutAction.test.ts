@@ -17,7 +17,10 @@ vi.mock('@/entities/auth', () => ({
         name: 'auth_hint',
         value: '',
     })),
+    logoutUser: vi.fn(),
 }));
+// DrizzleSessionRepository는 barrel이 아닌 @/entities/auth/api에서 직접 import되므로
+// 해당 경로를 mock한다.
 vi.mock('@/entities/auth/api', () => ({
     DrizzleSessionRepository: vi.fn().mockImplementation(function () {
         return {};
@@ -28,9 +31,6 @@ vi.mock('@/entities/auth/api', () => ({
 vi.mock('@/entities/auth/lib/db', () => ({
     getAuthDatabaseClient: vi.fn(() => ({ db: {}, sql: () => null })),
     resetAuthDatabaseClientForTests: vi.fn(),
-}));
-vi.mock('@/entities/auth', () => ({
-    logoutUser: vi.fn(),
 }));
 
 import { cookies } from 'next/headers';

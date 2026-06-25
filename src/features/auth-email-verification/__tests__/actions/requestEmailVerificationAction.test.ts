@@ -1,10 +1,8 @@
 import type { MockedFunction } from 'vitest';
 vi.mock('@/entities/auth', () => ({
-    requestEmailVerification: vi.fn(),
-}));
-vi.mock('@/entities/auth', () => ({
     AUTH_SERVICE_UNAVAILABLE_MESSAGE:
         '서비스에 일시적인 문제가 발생했습니다. 잠시 후 다시 시도해주세요.',
+    requestEmailVerification: vi.fn(),
 }));
 vi.mock('@/entities/email-token', () => ({
     createEmailTokenStore: vi.fn(),
