@@ -1,23 +1,6 @@
 import { getEasternOffsetHours } from '@/shared/lib/eastern';
 import { getEtOffset, nthSundayDay } from '@/shared/lib/etTimeUtils';
 
-// FmpMarketProvider의 getEtOffsetHours/getNthSundayOfMonth는 private이므로
-// fmpIntradayDateToUtcSeconds의 동작을 통해 간접적으로 검증한다.
-// 대신 실제 동작을 여기서 참조 구현으로 재현해 경계를 핀한다.
-function fmpGetEtOffsetHours(year: number, month: number, day: number): number {
-    // FmpMarketProvider의 내부 getEtOffsetHours를 그대로 복제 (date-only, 시각 무시)
-    function getNthSundayOfMonthFmp(y: number, m: number, n: number): Date {
-        const firstOfMonth = new Date(Date.UTC(y, m - 1, 1));
-        const dayOfWeek = firstOfMonth.getUTCDay();
-        const firstSunday = dayOfWeek === 0 ? 1 : 8 - dayOfWeek;
-        return new Date(Date.UTC(y, m - 1, firstSunday + (n - 1) * 7));
-    }
-    const dstStart = getNthSundayOfMonthFmp(year, 3, 2);
-    const dstEnd = getNthSundayOfMonthFmp(year, 11, 1);
-    const date = new Date(Date.UTC(year, month - 1, day));
-    return date >= dstStart && date < dstEnd ? -4 : -5;
-}
-
 describe('eastern', () => {
     describe('getEasternOffsetHours', () => {
         describe('EST 기간 (11월 첫 번째 일요일 ~ 3월 두 번째 일요일)', () => {
@@ -89,7 +72,10 @@ describe('eastern', () => {
 
 // ============================================================
 // 경계 동치 핀 테스트 (PR4 통합 검증용)
-// 세 구현의 실제 출력값을 캡처해 리팩터링 이후에도 동일성을 보장한다.
+// eastern.ts / etTimeUtils.ts 두 정식 공개 함수의 실제 출력값을 캡처해
+// 리팩터링 이후에도 동일성을 보장한다.
+// FMP date-only 경계는 FmpMarketProvider.test.ts DST-boundary 케이스가
+// getBars 실 경로를 통해 종단 검증하므로 여기서 중복 복제하지 않는다.
 // ============================================================
 
 describe('DST 경계 동치 핀 — 통합 전 실제 출력 캡처', () => {
@@ -227,76 +213,6 @@ describe('DST 경계 동치 핀 — 통합 전 실제 출력 캡처', () => {
         });
         it('비경계: 2024-01-15 hour=12 → "-05:00" (EST)', () => {
             expect(getEtOffset(2024, 0, 15, 12)).toBe('-05:00');
-        });
-    });
-
-    describe('fmpGetEtOffsetHours (FmpMarketProvider 내부, date-only) — 시각 무시 경계', () => {
-        // FMP는 날짜 전체를 하나의 오프셋으로 처리 (hour 무시)
-        // 봄 전환일 전날 → EST, 당일부터 → EDT (시각 무관)
-        it('2024 봄 전환 전날(3/9) → -5 (EST)', () => {
-            expect(fmpGetEtOffsetHours(2024, 3, 9)).toBe(-5);
-        });
-        it('2024 봄 전환일(3/10) → -4 (EDT, hour 무시)', () => {
-            expect(fmpGetEtOffsetHours(2024, 3, 10)).toBe(-4);
-        });
-        it('2024 가을 전환 전날(11/2) → -4 (EDT)', () => {
-            expect(fmpGetEtOffsetHours(2024, 11, 2)).toBe(-4);
-        });
-        it('2024 가을 전환일(11/3) → -5 (EST, 당일 전체)', () => {
-            expect(fmpGetEtOffsetHours(2024, 11, 3)).toBe(-5);
-        });
-
-        // 2026: 극단 케이스
-        it('2026 봄 전환일(3/8) → -4 (EDT)', () => {
-            expect(fmpGetEtOffsetHours(2026, 3, 8)).toBe(-4);
-        });
-        it('2026 봄 전환 전날(3/7) → -5 (EST)', () => {
-            expect(fmpGetEtOffsetHours(2026, 3, 7)).toBe(-5);
-        });
-        it('2026 가을 전환일(11/1) → -5 (EST)', () => {
-            expect(fmpGetEtOffsetHours(2026, 11, 1)).toBe(-5);
-        });
-        it('2026 가을 전환 전날(10/31) → -4 (EDT)', () => {
-            expect(fmpGetEtOffsetHours(2026, 10, 31)).toBe(-4);
-        });
-
-        // 비경계 날짜
-        it('비경계: 2024-07-01 → -4 (EDT)', () => {
-            expect(fmpGetEtOffsetHours(2024, 7, 1)).toBe(-4);
-        });
-        it('비경계: 2024-01-15 → -5 (EST)', () => {
-            expect(fmpGetEtOffsetHours(2024, 1, 15)).toBe(-5);
-        });
-    });
-
-    describe('함수 간 경계 차이 명세 — 동일 시각, 다른 반환 형태', () => {
-        // 봄 전환일 01:30 ET (= 06:30 UTC, 전환 전)
-        // getEtOffset: hour=1 → -05:00 (EST) — 시각 인식 정확
-        // getEasternOffsetHours: UTC 06:30Z → -5 (전환 전) — UTC 인식 정확
-        // fmpGetEtOffsetHours: day=10 → -4 (EDT) — date-only, 의도적 단순화
-        it('봄 전환일 01:30 ET: getEtOffset hour=1 → "-05:00"', () => {
-            expect(getEtOffset(2024, 2, 10, 1)).toBe('-05:00');
-        });
-        it('봄 전환일 01:30 ET: getEasternOffsetHours UTC 06:30Z → -5', () => {
-            expect(
-                getEasternOffsetHours(new Date('2024-03-10T06:30:00Z'))
-            ).toBe(-5);
-        });
-        it('봄 전환일 date-only: fmpGetEtOffsetHours(2024,3,10) → -4 (date-only, 설계적 차이)', () => {
-            expect(fmpGetEtOffsetHours(2024, 3, 10)).toBe(-4);
-        });
-
-        // 봄 전환일 09:30 ET (= 13:30 UTC, 전환 후) — 장중 시각은 세 함수 모두 -4
-        it('봄 전환일 09:30 ET: getEtOffset hour=9 → "-04:00"', () => {
-            expect(getEtOffset(2024, 2, 10, 9)).toBe('-04:00');
-        });
-        it('봄 전환일 09:30 ET: getEasternOffsetHours UTC 13:30Z → -4', () => {
-            expect(
-                getEasternOffsetHours(new Date('2024-03-10T13:30:00Z'))
-            ).toBe(-4);
-        });
-        it('봄 전환일 09:30 ET: fmpGetEtOffsetHours → -4 (장중 = 항상 EDT)', () => {
-            expect(fmpGetEtOffsetHours(2024, 3, 10)).toBe(-4);
         });
     });
 });
