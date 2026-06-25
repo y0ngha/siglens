@@ -20,4 +20,11 @@ describe('fireAndForget', () => {
             expect.any(Error)
         );
     });
+
+    it('options가 없고 promise가 resolve되면 console.error를 호출하지 않는다', async () => {
+        const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+        fireAndForget(Promise.resolve());
+        await new Promise(r => setTimeout(r, 0));
+        expect(errSpy).not.toHaveBeenCalled();
+    });
 });
