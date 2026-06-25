@@ -1,4 +1,7 @@
-import { getTimeFormatter } from '@/shared/lib/timeFormat';
+import {
+    getTimeFormatter,
+    formatNewsPublishedAt,
+} from '@/shared/lib/timeFormat';
 
 // 2024-03-30 09:30:00 UTC = 2024-03-30 18:30:00 KST (UTC+9)
 const UTC_TIMESTAMP_SECONDS = 1711791000;
@@ -11,6 +14,22 @@ const LATE_UTC_TIMESTAMP_SECONDS =
     new Date('2024-01-15T17:00:00Z').getTime() / 1000;
 
 describe('timeFormat', () => {
+    describe('formatNewsPublishedAt', () => {
+        it('UTC ISO 시각을 KST 기준 한국어 날짜+시간 문자열로 변환한다', () => {
+            // 2026-05-05T22:35:21.000Z → KST 2026-05-06 07:35
+            expect(formatNewsPublishedAt('2026-05-05T22:35:21.000Z')).toBe(
+                '2026년 5월 6일 오전 07:35 KST'
+            );
+        });
+
+        it('날짜 경계 케이스: UTC 전날이지만 KST 기준 다음날로 표시된다', () => {
+            // 2026-05-05T15:00:00.000Z → KST 2026-05-06 00:00
+            expect(formatNewsPublishedAt('2026-05-05T15:00:00.000Z')).toBe(
+                '2026년 5월 6일 오전 12:00 KST'
+            );
+        });
+    });
+
     describe('getTimeFormatter', () => {
         describe('5Min 타임프레임', () => {
             it('KST 기준 시:분 형식(HH:mm)을 반환한다', () => {

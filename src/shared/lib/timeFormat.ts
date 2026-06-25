@@ -58,6 +58,30 @@ const DATE_TIME_TIMEFRAMES: ReadonlySet<Timeframe> = new Set([
     '4Hour',
 ]);
 
+// 뉴스 발행 시각 → KST 기준 한국어 날짜+시간 문자열 ("2026년 5월 6일 오전 07:35 KST")
+const NEWS_PUBLISHED_AT_FORMATTER = new Intl.DateTimeFormat('ko-KR', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZone: 'Asia/Seoul',
+});
+
+/**
+ * ISO 발행 시각을 KST 기준 한국어 날짜+시간 문자열로 변환한다.
+ *
+ * 두 뉴스 서피스(NewsList · MarketNewsCard)가 동일한 포맷터 인스턴스를
+ * 공유할 수 있도록 shared/lib에 단일 소스로 배치됐다.
+ *
+ * @example
+ * formatNewsPublishedAt('2026-05-05T22:35:21.000Z')
+ * // → '2026년 5월 6일 오전 07:35 KST'
+ */
+export function formatNewsPublishedAt(publishedAt: string): string {
+    return `${NEWS_PUBLISHED_AT_FORMATTER.format(new Date(publishedAt))} KST`;
+}
+
 export function getTimeFormatter(
     timeframe: Timeframe
 ): (timestamp: number) => string {

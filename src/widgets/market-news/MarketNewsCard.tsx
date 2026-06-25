@@ -2,6 +2,8 @@ import Link from 'next/link';
 import type { MarketNewsCardItem } from '@/entities/market-news';
 import type { NewsFeedCategory } from '@y0ngha/siglens-core';
 import { cn } from '@/shared/lib/cn';
+import { formatNewsPublishedAt } from '@/shared/lib/timeFormat';
+import { NewsCardShell } from '@/widgets/news/ui/NewsCardShell';
 import {
     SENTIMENT_LABEL,
     SENTIMENT_CLASS,
@@ -13,21 +15,8 @@ import {
     isNewsImpact,
 } from './utils/impactConstants';
 
-const PUBLISHED_AT_FORMATTER = new Intl.DateTimeFormat('ko-KR', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    timeZone: 'Asia/Seoul',
-});
-
 function isPending(item: MarketNewsCardItem): boolean {
     return item.sentiment === null || item.priceImpact === null;
-}
-
-function formatPublishedAt(publishedAt: string): string {
-    return `${PUBLISHED_AT_FORMATTER.format(new Date(publishedAt))} KST`;
 }
 
 interface SentimentBadgeProps {
@@ -64,29 +53,6 @@ function ImpactBadge({ value }: ImpactBadgeProps) {
         >
             {IMPACT_LABEL[value]}
         </span>
-    );
-}
-
-/** Skeleton shown while AI analysis is still pending for this card. */
-function AnalysisSkeleton() {
-    return (
-        <div
-            aria-hidden="true"
-            className="mt-1.5 flex flex-wrap items-center gap-2"
-        >
-            <div className="bg-secondary-700 h-5 w-10 animate-pulse rounded motion-reduce:animate-none" />
-            <div className="bg-secondary-700 h-5 w-20 animate-pulse rounded motion-reduce:animate-none" />
-            <span className="text-secondary-400 text-xs">AI 분석 중…</span>
-        </div>
-    );
-}
-
-function SummarySkeletonLine() {
-    return (
-        <div aria-hidden="true" className="mt-2 space-y-1.5">
-            <div className="bg-secondary-700/70 h-3.5 w-full animate-pulse rounded motion-reduce:animate-none" />
-            <div className="bg-secondary-700/70 h-3.5 w-4/5 animate-pulse rounded motion-reduce:animate-none" />
-        </div>
     );
 }
 
@@ -161,27 +127,36 @@ export interface MarketNewsCardProps {
 export function MarketNewsCard({ category, item }: MarketNewsCardProps) {
     const pending = isPending(item);
     const isHighImpact = !pending && item.priceImpact === 'high';
-    const publishedDate = formatPublishedAt(item.publishedAt);
+    const publishedDate = formatNewsPublishedAt(item.publishedAt);
 
     return (
-        <article
-            className={cn(
-                'border-secondary-700 bg-secondary-800 hover:border-primary-500/50 w-full max-w-full min-w-0 overflow-hidden rounded-xl border p-4 transition-[colors,transform] hover:-translate-y-px',
-                isHighImpact && 'border-l-ui-warning border-l-[3px] pl-5'
-            )}
-        >
-            <h3
-                className={cn(
-                    'leading-snug font-semibold text-balance wrap-break-word',
-                    pending && 'opacity-80'
-                )}
-            >
-                {item.titleKo ?? item.titleEn}
-            </h3>
-
-            {pending ? (
-                <AnalysisSkeleton />
-            ) : (
+        <NewsCardShell
+            title={item.titleKo ?? item.titleEn}
+            isHighImpact={isHighImpact}
+            pending={pending}
+            url={item.url}
+            // MarketNewsCard의 AnalysisSkeleton: aria-hidden=true, text-secondary-400 텍스트
+            analysisSkeleton={
+                <div
+                    aria-hidden="true"
+                    className="mt-1.5 flex flex-wrap items-center gap-2"
+                >
+                    <div className="bg-secondary-700 h-5 w-10 animate-pulse rounded motion-reduce:animate-none" />
+                    <div className="bg-secondary-700 h-5 w-20 animate-pulse rounded motion-reduce:animate-none" />
+                    <span className="text-secondary-400 text-xs">
+                        AI 분석 중…
+                    </span>
+                </div>
+            }
+            // MarketNewsCard의 SummarySkeletonLine: aria-hidden=true
+            summarySkeletonLine={
+                <div aria-hidden="true" className="mt-2 space-y-1.5">
+                    <div className="bg-secondary-700/70 h-3.5 w-full animate-pulse rounded motion-reduce:animate-none" />
+                    <div className="bg-secondary-700/70 h-3.5 w-4/5 animate-pulse rounded motion-reduce:animate-none" />
+                </div>
+            }
+            // MarketNewsCard 배지 행: min-w-0 포함, text-secondary-300 카테고리, translate="no" source
+            badgeRow={
                 <div className="mt-1.5 flex min-w-0 flex-wrap items-center gap-2">
                     <SentimentBadge value={item.sentiment!} />
                     <ImpactBadge value={item.priceImpact!} />
@@ -200,15 +175,15 @@ export function MarketNewsCard({ category, item }: MarketNewsCardProps) {
                         {item.source}
                     </span>
                 </div>
-            )}
-
-            {item.tickers.length > 0 && (
-                <TickerChips category={category} tickers={item.tickers} />
-            )}
-
-            {pending ? (
-                <SummarySkeletonLine />
-            ) : (
+            }
+            // 티커 칩 슬롯: tickers가 있을 때만 렌더한다.
+            tickerChipSlot={
+                item.tickers.length > 0 ? (
+                    <TickerChips category={category} tickers={item.tickers} />
+                ) : undefined
+            }
+            // 본문/요약 섹션: section 엘리먼트를 직접 인라인으로 사용한다.
+            bodySection={
                 <>
                     {item.bodyKo !== null && (
                         <section className="border-secondary-700/70 mt-3 border-t pt-3">
@@ -230,16 +205,14 @@ export function MarketNewsCard({ category, item }: MarketNewsCardProps) {
                             </p>
                         </section>
                     )}
-                    <a
-                        href={item.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-primary-400 focus-visible:ring-primary-500 mt-2 inline-block text-xs transition-opacity hover:opacity-70 focus-visible:ring-2 focus-visible:outline-none"
-                    >
-                        원문 보기 <span aria-hidden="true">→</span>
-                    </a>
                 </>
-            )}
-        </article>
+            }
+            // MarketNewsCard 링크: aria-hidden span으로 감싼 화살표
+            linkChildren={
+                <>
+                    원문 보기 <span aria-hidden="true">→</span>
+                </>
+            }
+        />
     );
 }
