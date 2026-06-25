@@ -65,8 +65,10 @@ vi.mock('@/widgets/news/sections/AnalystActions', () => ({
     AnalystActions: () => null,
 }));
 vi.mock('@/views/symbol', () => ({
-    CrossLinkCards: () => null,
     SymbolPageHeading: ({ children }: { children: unknown }) => children,
+}));
+vi.mock('@/shared/ui/CrossLinkCards', () => ({
+    CrossLinkCards: () => null,
 }));
 vi.mock('@/views/symbol/SectionSkeleton', () => ({
     SectionSkeleton: () => null,

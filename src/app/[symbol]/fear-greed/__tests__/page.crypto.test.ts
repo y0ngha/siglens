@@ -80,8 +80,10 @@ vi.mock('@/widgets/fear-greed', () => ({
     FearGreedPageError: () => null,
 }));
 vi.mock('@/views/symbol', () => ({
-    CrossLinkCards: () => null,
     SymbolPageHeading: () => null,
+}));
+vi.mock('@/shared/ui/CrossLinkCards', () => ({
+    CrossLinkCards: () => null,
 }));
 vi.mock('@/shared/ui/JsonLd', () => ({ JsonLd: () => null }));
 vi.mock('react-error-boundary', () => ({

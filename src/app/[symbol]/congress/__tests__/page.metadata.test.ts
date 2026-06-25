@@ -9,9 +9,11 @@ vi.mock('@/widgets/congress', () => ({
     CongressTradesTable: () => null,
 }));
 vi.mock('@/views/symbol', () => ({
-    CrossLinkCards: () => null,
     SymbolPageHeading: ({ children }: { children: React.ReactNode }) =>
         children,
+}));
+vi.mock('@/shared/ui/CrossLinkCards', () => ({
+    CrossLinkCards: () => null,
 }));
 vi.mock('@/shared/ui/JsonLd', () => ({ JsonLd: () => null }));
 vi.mock('@/shared/config/market', async importOriginal => ({

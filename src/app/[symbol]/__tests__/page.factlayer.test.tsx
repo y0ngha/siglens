@@ -105,7 +105,7 @@ vi.mock('@/entities/analysis/lib/peekAnalysisStaticCache', () => ({
 import { Suspense, type ReactNode } from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { default as SymbolPage } from '@/app/[symbol]/page';
-import { TechnicalFactsSummary } from '@/views/symbol/TechnicalFactsSummary';
+import { TechnicalFactsSummary } from '@/views/symbol';
 import { getBarsStatic } from '@/entities/bars';
 import { getAssetInfoResilient } from '@/entities/ticker';
 import { findElementByType } from '@/__tests__/utils/findElementByType';
