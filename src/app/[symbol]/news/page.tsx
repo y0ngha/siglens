@@ -31,7 +31,9 @@ import { getFmpUserFacingMessage } from '@/shared/api/fmp/fmpUserMessage';
 import {
     buildBreadcrumbJsonLd,
     buildSymbolSeoContent,
+    buildSymbolWebPageJsonLd,
     resolveSymbolNewsSeoContent,
+    symbolMetadataFromSeo,
     NOINDEX_SYMBOL_METADATA,
     SITE_NAME,
     SITE_URL,
@@ -76,33 +78,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     }
     const displayName = buildDisplayName(assetInfo, upper);
     const assetClass = getDescriptor(marketProfileOf(assetInfo)).assetClass;
-    const { title, fullTitle, description, url, keywords } =
-        resolveSymbolNewsSeoContent(upper, assetClass, {
-            displayName,
-            koreanName: assetInfo.koreanName,
-        });
-
-    return {
-        title,
-        description,
-        keywords,
-        alternates: {
-            canonical: url,
-        },
-        openGraph: {
-            type: 'website',
-            siteName: SITE_NAME,
-            title: fullTitle,
-            description,
-            url,
-            locale: 'ko_KR',
-        },
-        twitter: {
-            card: 'summary_large_image',
-            title: fullTitle,
-            description,
-        },
-    };
+    const seo = resolveSymbolNewsSeoContent(upper, assetClass, {
+        displayName,
+        koreanName: assetInfo.koreanName,
+    });
+    return symbolMetadataFromSeo(seo);
 }
 
 interface SymbolSectionProps {
@@ -220,17 +200,12 @@ export default async function NewsPage({ params }: Props) {
         assetInfo.fmpSymbol,
         assetClass
     );
-    const jsonLd = {
-        '@context': 'https://schema.org',
-        '@type': 'WebPage',
-        '@id': `${url}#webpage`,
+    const jsonLd = buildSymbolWebPageJsonLd({
+        url,
         name: fullTitle,
         description,
-        url,
-        inLanguage: 'ko',
-        isPartOf: { '@type': 'WebSite', '@id': `${SITE_URL}#website` },
-        ...(aboutNode && { about: aboutNode }),
-    };
+        about: aboutNode,
+    });
 
     const breadcrumbJsonLd = buildBreadcrumbJsonLd([
         { name: upper, url: buildSymbolSeoContent(upper).url },

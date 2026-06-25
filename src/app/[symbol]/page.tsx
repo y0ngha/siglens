@@ -26,9 +26,9 @@ import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/shared/config/queryConfig';
 import { MS_PER_SECOND } from '@/shared/config/time';
 import {
     buildBreadcrumbJsonLd,
+    buildSymbolWebPageJsonLd,
     resolveSymbolSeoContent,
-    SITE_NAME,
-    SITE_URL,
+    symbolMetadataFromSeo,
     NOINDEX_SYMBOL_METADATA,
 } from '@/shared/lib/seo';
 import {
@@ -82,29 +82,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
             koreanName: assetInfo.koreanName,
         }
     );
-    const { title, fullTitle, description, url, keywords } = seo;
-
-    return {
-        title,
-        description,
-        keywords,
-        alternates: {
-            canonical: url,
-        },
-        openGraph: {
-            type: 'website',
-            siteName: SITE_NAME,
-            title: fullTitle,
-            description,
-            url,
-            locale: 'ko_KR',
-        },
-        twitter: {
-            card: 'summary_large_image',
-            title: fullTitle,
-            description,
-        },
-    };
+    return symbolMetadataFromSeo(seo);
 }
 
 export default async function SymbolPage({ params }: Props) {
@@ -174,17 +152,12 @@ export default async function SymbolPage({ params }: Props) {
         assetInfo.fmpSymbol,
         assetClass
     );
-    const jsonLd = {
-        '@context': 'https://schema.org',
-        '@type': 'WebPage',
-        '@id': `${url}#webpage`,
+    const jsonLd = buildSymbolWebPageJsonLd({
+        url,
         name: fullTitle,
         description,
-        url,
-        inLanguage: 'ko',
-        isPartOf: { '@type': 'WebSite', '@id': `${SITE_URL}#website` },
-        ...(aboutNode && { about: aboutNode }),
-    };
+        about: aboutNode,
+    });
 
     // 차트 페이지는 ticker landing이므로 [Siglens, ticker] 2단계로 통일한다.
     // (sibling 페이지들은 [Siglens, ticker, 섹션명] 3단계 — buildBreadcrumbJsonLd가 Siglens를 자동 prepend.)
