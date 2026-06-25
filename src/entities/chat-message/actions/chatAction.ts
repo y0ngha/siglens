@@ -27,7 +27,7 @@ import {
     DEFAULT_MARKET_PROFILE,
     getDescriptor,
 } from '@/shared/config/marketProfile';
-import { getClientIp } from '../lib/getClientIp';
+import { getClientIp } from '../api/getClientIp';
 
 /**
  * Server-owned key per provider, forwarded to core as `serverApiKey` on

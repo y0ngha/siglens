@@ -159,4 +159,104 @@ describe('ModelSelect', () => {
         fireEvent.keyDown(screen.getByRole('listbox'), { key: 'Escape' });
         expect(screen.queryByRole('listbox')).toBeNull();
     });
+
+    it('ArrowDown 키로 다음 항목을 선택하고 onChange가 호출된다', () => {
+        const onChange = vi.fn();
+        render(
+            <ModelSelect
+                options={OPTIONS}
+                selected={'gemini-2.5-flash' as ModelId}
+                onChange={onChange}
+                isHydrated={true}
+            />
+        );
+        fireEvent.click(screen.getByRole('button', { name: 'AI 모델 선택' }));
+
+        // 첫 번째 항목(index 0) 선택 상태 → ArrowDown → 두 번째 항목
+        fireEvent.keyDown(screen.getByRole('listbox'), { key: 'ArrowDown' });
+        expect(onChange).toHaveBeenCalledWith('claude-sonnet-4-6');
+    });
+
+    it('ArrowDown 키는 마지막 항목에서 첫 번째 항목으로 순환한다', () => {
+        const onChange = vi.fn();
+        render(
+            <ModelSelect
+                options={OPTIONS}
+                selected={'claude-sonnet-4-6' as ModelId}
+                onChange={onChange}
+                isHydrated={true}
+            />
+        );
+        fireEvent.click(screen.getByRole('button', { name: 'AI 모델 선택' }));
+
+        // 마지막 항목(index 1) 선택 상태 → ArrowDown → 첫 번째 항목(순환)
+        fireEvent.keyDown(screen.getByRole('listbox'), { key: 'ArrowDown' });
+        expect(onChange).toHaveBeenCalledWith('gemini-2.5-flash');
+    });
+
+    it('ArrowUp 키로 이전 항목을 선택하고 onChange가 호출된다', () => {
+        const onChange = vi.fn();
+        render(
+            <ModelSelect
+                options={OPTIONS}
+                selected={'claude-sonnet-4-6' as ModelId}
+                onChange={onChange}
+                isHydrated={true}
+            />
+        );
+        fireEvent.click(screen.getByRole('button', { name: 'AI 모델 선택' }));
+
+        // 두 번째 항목(index 1) 선택 상태 → ArrowUp → 첫 번째 항목
+        fireEvent.keyDown(screen.getByRole('listbox'), { key: 'ArrowUp' });
+        expect(onChange).toHaveBeenCalledWith('gemini-2.5-flash');
+    });
+
+    it('ArrowUp 키는 첫 번째 항목에서 마지막 항목으로 순환한다', () => {
+        const onChange = vi.fn();
+        render(
+            <ModelSelect
+                options={OPTIONS}
+                selected={'gemini-2.5-flash' as ModelId}
+                onChange={onChange}
+                isHydrated={true}
+            />
+        );
+        fireEvent.click(screen.getByRole('button', { name: 'AI 모델 선택' }));
+
+        // 첫 번째 항목(index 0) 선택 상태 → ArrowUp → 마지막 항목(순환)
+        fireEvent.keyDown(screen.getByRole('listbox'), { key: 'ArrowUp' });
+        expect(onChange).toHaveBeenCalledWith('claude-sonnet-4-6');
+    });
+
+    it('Home 키로 첫 번째 항목을 선택한다', () => {
+        const onChange = vi.fn();
+        render(
+            <ModelSelect
+                options={OPTIONS}
+                selected={'claude-sonnet-4-6' as ModelId}
+                onChange={onChange}
+                isHydrated={true}
+            />
+        );
+        fireEvent.click(screen.getByRole('button', { name: 'AI 모델 선택' }));
+
+        fireEvent.keyDown(screen.getByRole('listbox'), { key: 'Home' });
+        expect(onChange).toHaveBeenCalledWith('gemini-2.5-flash');
+    });
+
+    it('End 키로 마지막 항목을 선택한다', () => {
+        const onChange = vi.fn();
+        render(
+            <ModelSelect
+                options={OPTIONS}
+                selected={'gemini-2.5-flash' as ModelId}
+                onChange={onChange}
+                isHydrated={true}
+            />
+        );
+        fireEvent.click(screen.getByRole('button', { name: 'AI 모델 선택' }));
+
+        fireEvent.keyDown(screen.getByRole('listbox'), { key: 'End' });
+        expect(onChange).toHaveBeenCalledWith('claude-sonnet-4-6');
+    });
 });

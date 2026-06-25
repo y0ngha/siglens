@@ -44,8 +44,11 @@ describe('QuoteHeader — layout: index (기본값)', () => {
 
     it('등락률 + 부호를 렌더하고 sr-only 레이블이 정확히 1개다', () => {
         render(<QuoteHeader data={BASE} />);
-        // 변동폭 span 안에 '+1.23%' 포함된 텍스트 노드 존재
-        expect(screen.getByText('+1.23%')).toBeInTheDocument();
+        // 변동폭 span의 textContent에 '+1.23%'가 포함된다
+        // (arrow aria-hidden + sr-only 레이블이 인접해 있으므로 함수 매처 사용)
+        expect(
+            screen.getByText(text => text.includes('+1.23%'))
+        ).toBeInTheDocument();
         // sr-only는 arrowLabel 전용 — 정확히 1개
         const srOnlyEls = document.querySelectorAll('.sr-only');
         expect(srOnlyEls).toHaveLength(1);
