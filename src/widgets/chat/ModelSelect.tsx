@@ -1,8 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import type { ModelId } from '@y0ngha/siglens-core';
-import { isFreeModel } from '@y0ngha/siglens-core';
+import { isFreeModel, type ModelId } from '@y0ngha/siglens-core';
 import { usePopoverToggle } from '@/shared/hooks/usePopoverToggle';
 import { cn } from '@/shared/lib/cn';
 

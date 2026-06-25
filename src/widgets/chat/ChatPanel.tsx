@@ -1,8 +1,7 @@
 'use client';
 
 import { ContextSwitchSystemMessage } from './ContextSwitchSystemMessage';
-import { ModelSelect } from './ModelSelect';
-import type { ModelOption } from './ModelSelect';
+import { ModelSelect, type ModelOption } from './ModelSelect';
 import { useChat } from './hooks/useChat';
 import { useChatInput } from './hooks/useChatInput';
 import { useSymbolChat } from '@/features/symbol-chat';

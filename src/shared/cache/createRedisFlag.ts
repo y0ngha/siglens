@@ -1,6 +1,18 @@
 import 'server-only';
 import { getRedisClient } from './redisClient';
 
+/** 고정 Redis 키를 사용하는 boolean-flag 핸들 (인수 없음 모드). */
+export interface RedisFlagHandle {
+    isSet: () => Promise<boolean>;
+    mark: () => Promise<void>;
+}
+
+/** 동적 Redis 키를 사용하는 boolean-flag 핸들 (파라미터 모드). */
+export interface RedisFlagHandleWithArg<A> {
+    isSet: (arg: A) => Promise<boolean>;
+    mark: (arg: A) => Promise<void>;
+}
+
 /**
  * Redis boolean-flag 팩토리 — 모든 refresh-flag 모듈이 공유하는 get/set 패턴.
  *
@@ -15,10 +27,7 @@ export function createRedisFlag(
     key: string,
     ttlSeconds: number,
     logPrefix?: string
-): {
-    isSet: () => Promise<boolean>;
-    mark: () => Promise<void>;
-};
+): RedisFlagHandle;
 
 /**
  * Redis boolean-flag 팩토리 — 파라미터로 Redis 키를 동적으로 생성하는 모드.
@@ -31,10 +40,7 @@ export function createRedisFlag<A>(
     keyFn: (arg: A) => string,
     ttlSeconds: number,
     logPrefix?: string
-): {
-    isSet: (arg: A) => Promise<boolean>;
-    mark: (arg: A) => Promise<void>;
-};
+): RedisFlagHandleWithArg<A>;
 
 // 구현부 — 오버로드 시그니처에 노출되지 않음. 런타임 동작은 기존과 동일.
 export function createRedisFlag(

@@ -571,8 +571,8 @@ export function StockChart({
                 if (override !== undefined) {
                     return { meta, ...override };
                 }
-                // pane 지표(visible[key] 직접 토글) 기본 패턴
-                // visible은 Record<IndicatorKey, boolean>로 선언되므로 안전한 캐스트.
+                // visible이 Record<IndicatorKey, boolean>이라 string 키로 직접 색인 불가 — 캐스트 필요.
+                // INDICATOR_REGISTRY는 IndicatorKey 멤버로만 구성되므로 캐스트 안전.
                 const key = meta.key as IndicatorKey;
                 return {
                     meta,

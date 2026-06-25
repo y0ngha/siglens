@@ -1,5 +1,22 @@
-import { toProviderTurns } from '@/entities/llm-provider/lib/utils';
+import {
+    findSpecByApiModelId,
+    toProviderTurns,
+} from '@/entities/llm-provider/lib/utils';
 import type { ConversationTurn } from '@y0ngha/siglens-core';
+
+describe('findSpecByApiModelId', () => {
+    it('유효한 apiModelId로 일치하는 ModelSpec을 반환한다', () => {
+        // MODEL_SPECS의 'claude-sonnet-4-6' 키는 apiModelId 'claude-sonnet-4-6'을 가진다.
+        const result = findSpecByApiModelId('claude-sonnet-4-6');
+        expect(result).toBeDefined();
+        expect(result?.apiModelId).toBe('claude-sonnet-4-6');
+    });
+
+    it('존재하지 않는 apiModelId는 undefined를 반환한다', () => {
+        const result = findSpecByApiModelId('non-existent-model-id');
+        expect(result).toBeUndefined();
+    });
+});
 
 describe('toProviderTurns', () => {
     describe('string contents', () => {
