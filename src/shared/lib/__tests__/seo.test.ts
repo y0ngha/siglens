@@ -7,6 +7,8 @@ import {
     buildSymbolFearGreedSeoContent,
     buildSymbolOptionsSeoContent,
     buildBreadcrumbJsonLd,
+    buildSymbolWebPageJsonLd,
+    symbolMetadataFromSeo,
     clampSeoDescription,
     SEO_DESCRIPTION_MAX_LENGTH,
     SITE_URL,
@@ -586,6 +588,116 @@ describe('buildSymbolOptionsSeoContent', () => {
     it('defaults hasOptions to true', () => {
         const content = buildSymbolOptionsSeoContent('AAPL');
         expect(content.title).toContain('Max Pain');
+    });
+});
+
+describe('buildSymbolWebPageJsonLd', () => {
+    it('필수 필드(context/type/id/name/description/url/inLanguage/isPartOf)를 모두 포함한다', () => {
+        const result = buildSymbolWebPageJsonLd({
+            url: 'https://siglens.io/AAPL',
+            name: 'AAPL 주가 분석 | Siglens',
+            description: 'AAPL 주가 흐름과 매매 신호를 확인합니다.',
+        }) as Record<string, unknown>;
+
+        expect(result['@context']).toBe('https://schema.org');
+        expect(result['@type']).toBe('WebPage');
+        expect(result['@id']).toBe('https://siglens.io/AAPL#webpage');
+        expect(result['name']).toBe('AAPL 주가 분석 | Siglens');
+        expect(result['description']).toBe(
+            'AAPL 주가 흐름과 매매 신호를 확인합니다.'
+        );
+        expect(result['url']).toBe('https://siglens.io/AAPL');
+        expect(result['inLanguage']).toBe('ko');
+        expect(result['isPartOf']).toEqual({
+            '@type': 'WebSite',
+            '@id': `${SITE_URL}#website`,
+        });
+    });
+
+    it('about이 없으면 about 키를 포함하지 않는다', () => {
+        const result = buildSymbolWebPageJsonLd({
+            url: 'https://siglens.io/AAPL',
+            name: 'AAPL | Siglens',
+            description: '설명',
+        }) as Record<string, unknown>;
+
+        expect('about' in result).toBe(false);
+    });
+
+    it('about이 있으면 about 키를 포함한다', () => {
+        const aboutNode = { '@type': 'Corporation', name: '애플' };
+        const result = buildSymbolWebPageJsonLd({
+            url: 'https://siglens.io/AAPL',
+            name: 'AAPL | Siglens',
+            description: '설명',
+            about: aboutNode,
+        }) as Record<string, unknown>;
+
+        expect(result['about']).toEqual(aboutNode);
+    });
+
+    it('@id가 url#webpage 패턴이다', () => {
+        const url = 'https://siglens.io/TSLA/overall';
+        const result = buildSymbolWebPageJsonLd({
+            url,
+            name: 'TSLA | Siglens',
+            description: '설명',
+        }) as Record<string, unknown>;
+
+        expect(result['@id']).toBe(`${url}#webpage`);
+    });
+});
+
+describe('symbolMetadataFromSeo', () => {
+    const baseSeo = buildSymbolSeoContent('AAPL', {
+        displayName: '애플, Apple Inc. (AAPL)',
+        koreanName: '애플',
+    });
+
+    it('title/description/keywords를 그대로 매핑한다', () => {
+        const meta = symbolMetadataFromSeo(baseSeo);
+
+        expect(meta.title).toBe(baseSeo.title);
+        expect(meta.description).toBe(baseSeo.description);
+        expect(meta.keywords).toEqual(baseSeo.keywords);
+    });
+
+    it('alternates.canonical이 seo.url이다', () => {
+        const meta = symbolMetadataFromSeo(baseSeo);
+
+        expect(meta.alternates?.canonical).toBe(baseSeo.url);
+    });
+
+    it('openGraph에 type/siteName/locale이 고정값으로 들어간다', () => {
+        const meta = symbolMetadataFromSeo(baseSeo);
+        const og = meta.openGraph as Record<string, unknown>;
+
+        expect(og['type']).toBe('website');
+        expect(og['siteName']).toBe(SITE_NAME);
+        expect(og['locale']).toBe('ko_KR');
+        expect(og['title']).toBe(baseSeo.fullTitle);
+        expect(og['description']).toBe(baseSeo.description);
+        expect(og['url']).toBe(baseSeo.url);
+    });
+
+    it('twitter에 card/title/description이 들어간다', () => {
+        const meta = symbolMetadataFromSeo(baseSeo);
+        const tw = meta.twitter as Record<string, unknown>;
+
+        expect(tw['card']).toBe('summary_large_image');
+        expect(tw['title']).toBe(baseSeo.fullTitle);
+        expect(tw['description']).toBe(baseSeo.description);
+    });
+
+    it('openGraph.title이 fullTitle(브랜드 포함)이고 meta.title이 title(브랜드 제외)이다', () => {
+        const meta = symbolMetadataFromSeo(baseSeo);
+        const og = meta.openGraph as Record<string, unknown>;
+
+        // title은 루트 레이아웃이 "| Siglens" 자동 추가 → 브랜드 미포함
+        expect(meta.title).toBe(baseSeo.title);
+        expect(meta.title).not.toContain('Siglens');
+        // openGraph/twitter title은 fullTitle(브랜드 포함) 사용
+        expect(og['title']).toContain('Siglens');
     });
 });
 

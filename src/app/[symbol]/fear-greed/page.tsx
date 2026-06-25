@@ -22,10 +22,10 @@ import { MS_PER_SECOND } from '@/shared/config/time';
 import {
     buildBreadcrumbJsonLd,
     buildSymbolSeoContent,
+    buildSymbolWebPageJsonLd,
     resolveSymbolFearGreedSeoContent,
+    symbolMetadataFromSeo,
     NOINDEX_SYMBOL_METADATA,
-    SITE_NAME,
-    SITE_URL,
 } from '@/shared/lib/seo';
 import {
     dehydrate,
@@ -69,30 +69,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     }
     const displayName = buildDisplayName(assetInfo, ticker);
     const assetClass = getDescriptor(marketProfileOf(assetInfo)).assetClass;
-    const { title, fullTitle, description, url, keywords } =
-        resolveSymbolFearGreedSeoContent(ticker, assetClass, {
-            displayName,
-            koreanName: assetInfo.koreanName,
-        });
-    return {
-        title,
-        description,
-        keywords,
-        alternates: { canonical: url },
-        openGraph: {
-            type: 'website',
-            siteName: SITE_NAME,
-            title: fullTitle,
-            description,
-            url,
-            locale: 'ko_KR',
-        },
-        twitter: {
-            card: 'summary_large_image',
-            title: fullTitle,
-            description,
-        },
-    };
+    const seo = resolveSymbolFearGreedSeoContent(ticker, assetClass, {
+        displayName,
+        koreanName: assetInfo.koreanName,
+    });
+    return symbolMetadataFromSeo(seo);
 }
 
 export default async function SymbolFearGreedPage({ params }: Props) {
@@ -132,17 +113,12 @@ export default async function SymbolFearGreedPage({ params }: Props) {
         assetInfo.fmpSymbol,
         assetClass
     );
-    const webPageJsonLd = {
-        '@context': 'https://schema.org',
-        '@type': 'WebPage',
-        '@id': `${url}#webpage`,
+    const webPageJsonLd = buildSymbolWebPageJsonLd({
+        url,
         name: fullTitle,
         description,
-        url,
-        inLanguage: 'ko',
-        isPartOf: { '@type': 'WebSite', '@id': `${SITE_URL}#website` },
-        ...(aboutNode && { about: aboutNode }),
-    };
+        about: aboutNode,
+    });
 
     const breadcrumbJsonLd = buildBreadcrumbJsonLd([
         { name: ticker, url: buildSymbolSeoContent(ticker).url },

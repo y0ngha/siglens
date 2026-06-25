@@ -24,9 +24,9 @@ import {
     buildBreadcrumbJsonLd,
     buildSymbolOptionsSeoContent,
     buildSymbolSeoContent,
+    buildSymbolWebPageJsonLd,
+    symbolMetadataFromSeo,
     NOINDEX_SYMBOL_METADATA,
-    SITE_NAME,
-    SITE_URL,
 } from '@/shared/lib/seo';
 import {
     dehydrate,
@@ -97,34 +97,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         return NOINDEX_SYMBOL_METADATA;
     }
     const displayName = buildDisplayName(assetInfo, upper);
-    const { title, fullTitle, description, url, keywords } =
-        buildSymbolOptionsSeoContent(upper, {
-            displayName,
-            koreanName: assetInfo.koreanName,
-            hasOptions,
-        });
+    const seo = buildSymbolOptionsSeoContent(upper, {
+        displayName,
+        koreanName: assetInfo.koreanName,
+        hasOptions,
+    });
+    // 옵션 없는 종목은 본문 OptionsEmptyState에서 sibling 분석 페이지
+    // (차트/펀더멘털/뉴스 등)로 안내하므로, crawler가 그 internal link를
+    // 따라갈 수 있도록 follow는 true를 유지한다. noindex이지만 follow:true는
+    // "이 페이지는 색인 말고, 링크는 따라가라"는 정확한 의도 표현.
     return {
-        title,
-        description,
-        keywords,
-        alternates: { canonical: url },
-        openGraph: {
-            type: 'website',
-            siteName: SITE_NAME,
-            title: fullTitle,
-            description,
-            url,
-            locale: 'ko_KR',
-        },
-        twitter: {
-            card: 'summary_large_image',
-            title: fullTitle,
-            description,
-        },
-        // 옵션 없는 종목은 본문 OptionsEmptyState에서 sibling 분석 페이지
-        // (차트/펀더멘털/뉴스 등)로 안내하므로, crawler가 그 internal link를
-        // 따라갈 수 있도록 follow는 true를 유지한다. noindex이지만 follow:true는
-        // "이 페이지는 색인 말고, 링크는 따라가라"는 정확한 의도 표현.
+        ...symbolMetadataFromSeo(seo),
         ...(hasOptions ? {} : { robots: { index: false, follow: true } }),
     };
 }
@@ -198,17 +181,12 @@ export default async function OptionsPage({ params }: Props) {
         assetInfo.koreanName ?? assetInfo.name,
         assetInfo.fmpSymbol
     );
-    const jsonLd = {
-        '@context': 'https://schema.org',
-        '@type': 'WebPage',
-        '@id': `${url}#webpage`,
+    const jsonLd = buildSymbolWebPageJsonLd({
+        url,
         name: fullTitle,
         description,
-        url,
-        inLanguage: 'ko',
-        isPartOf: { '@type': 'WebSite', '@id': `${SITE_URL}#website` },
-        ...(aboutNode && { about: aboutNode }),
-    };
+        about: aboutNode,
+    });
 
     const breadcrumbJsonLd = buildBreadcrumbJsonLd([
         { name: upper, url: buildSymbolSeoContent(upper).url },

@@ -167,6 +167,72 @@ function buildSymbolKeywords(
     ];
 }
 
+/**
+ * 8개 심볼 페이지가 공유하는 WebPage JSON-LD 노드를 생성한다.
+ * `about`은 stock으로 분류된 경우에만 채워지며, 없으면 키 자체를 생략한다.
+ *
+ * 반환 형태:
+ * {
+ *   "@context": "https://schema.org",
+ *   "@type": "WebPage",
+ *   "@id": `${url}#webpage`,
+ *   name, description, url,
+ *   inLanguage: "ko",
+ *   isPartOf: { "@type": "WebSite", "@id": `${SITE_URL}#website` },
+ *   ...(about && { about }),
+ * }
+ */
+export function buildSymbolWebPageJsonLd(params: {
+    url: string;
+    name: string;
+    description: string;
+    about?: object;
+}): Record<string, unknown> {
+    const { url, name, description, about } = params;
+    return {
+        '@context': 'https://schema.org',
+        '@type': 'WebPage',
+        '@id': `${url}#webpage`,
+        name,
+        description,
+        url,
+        inLanguage: 'ko',
+        isPartOf: { '@type': 'WebSite', '@id': `${SITE_URL}#website` },
+        ...(about && { about }),
+    };
+}
+
+/**
+ * 8개 심볼 페이지 `generateMetadata`가 반환하는 Metadata 객체를 생성한다.
+ * SymbolSeoContent의 `title/fullTitle/description/url/keywords` 5개 필드를
+ * Next.js Metadata 형태로 매핑한다. 동일한 구조가 8 곳에 중복됐던 것을 제거.
+ *
+ * options/page.tsx의 `robots` 스프레드는 호출측이 직접 추가해야 한다:
+ * `return { ...symbolMetadataFromSeo(seo), ...(hasOptions ? {} : { robots }) };`
+ */
+export function symbolMetadataFromSeo(seo: SymbolSeoContent): Metadata {
+    const { title, fullTitle, description, url, keywords } = seo;
+    return {
+        title,
+        description,
+        keywords,
+        alternates: { canonical: url },
+        openGraph: {
+            type: 'website',
+            siteName: SITE_NAME,
+            title: fullTitle,
+            description,
+            url,
+            locale: 'ko_KR',
+        },
+        twitter: {
+            card: 'summary_large_image',
+            title: fullTitle,
+            description,
+        },
+    };
+}
+
 // 홈(Siglens → SITE_URL)이 첫 항목으로 자동 삽입된다.
 // schema.org BreadcrumbList의 `item`은 절대 URL이어야 하므로
 // 상대 경로로 들어온 trail은 SITE_URL prefix를 붙여 절대화한다.

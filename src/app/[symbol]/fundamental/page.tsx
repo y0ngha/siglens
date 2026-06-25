@@ -42,9 +42,9 @@ import {
     buildBreadcrumbJsonLd,
     buildSymbolFundamentalSeoContent,
     buildSymbolSeoContent,
+    buildSymbolWebPageJsonLd,
+    symbolMetadataFromSeo,
     NOINDEX_SYMBOL_METADATA,
-    SITE_NAME,
-    SITE_URL,
 } from '@/shared/lib/seo';
 import { getProfileResilient } from './getProfileResilient';
 import { FundamentalDegraded } from './FundamentalDegraded';
@@ -100,33 +100,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     // sector는 의도적으로 <meta description>에 쓰지 않는다(description은 sector 없는 base
     // 카피, 페이지 본문 JSON-LD만 sector 보강 카피). 위 profile 조회는 noindex 게이트 용도이며
     // 두 description 모두 동일 함수에서 파생되므로 핵심 의미는 일치한다.
-    const { title, fullTitle, description, url, keywords } =
-        buildSymbolFundamentalSeoContent(upper, {
-            displayName,
-            koreanName: assetInfo?.koreanName,
-        });
-
-    return {
-        title,
-        description,
-        keywords,
-        alternates: {
-            canonical: url,
-        },
-        openGraph: {
-            type: 'website',
-            siteName: SITE_NAME,
-            title: fullTitle,
-            description,
-            url,
-            locale: 'ko_KR',
-        },
-        twitter: {
-            card: 'summary_large_image',
-            title: fullTitle,
-            description,
-        },
-    };
+    const seo = buildSymbolFundamentalSeoContent(upper, {
+        displayName,
+        koreanName: assetInfo?.koreanName,
+    });
+    return symbolMetadataFromSeo(seo);
 }
 
 interface SymbolSectionProps {
@@ -426,17 +404,12 @@ export default async function FundamentalPage({ params }: Props) {
         assetInfo?.koreanName ?? assetInfo?.name ?? upper,
         assetInfo?.fmpSymbol
     );
-    const jsonLd = {
-        '@context': 'https://schema.org',
-        '@type': 'WebPage',
-        '@id': `${url}#webpage`,
+    const jsonLd = buildSymbolWebPageJsonLd({
+        url,
         name: fullTitle,
         description,
-        url,
-        inLanguage: 'ko',
-        isPartOf: { '@type': 'WebSite', '@id': `${SITE_URL}#website` },
-        ...(aboutNode && { about: aboutNode }),
-    };
+        about: aboutNode,
+    });
 
     const breadcrumbJsonLd = buildBreadcrumbJsonLd([
         { name: upper, url: buildSymbolSeoContent(upper).url },
