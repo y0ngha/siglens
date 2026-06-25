@@ -4,7 +4,6 @@ import { useMemo } from 'react';
 import type { OptionsChain } from '@y0ngha/siglens-core';
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
 import { CallVolumeTooltip, PutVolumeTooltip } from './utils/optionsTooltips';
-// TOOLTIP_MIN_WIDTH_PX는 StrikeBarTooltip 내부에서 computeTooltipPos를 통해 가져온다.
 import { pickLabelIndices } from './utils/pickLabelIndices';
 import { aggregateStrikeVolume } from './utils/aggregateStrikeVolume';
 import { formatCompactCount } from './utils/formatCompactCount';

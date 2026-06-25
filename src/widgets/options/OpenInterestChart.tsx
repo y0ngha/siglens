@@ -43,10 +43,12 @@ interface OpenInterestChartProps {
     metrics: OptionsExpirationMetrics | null;
 }
 
-// SVG 레이아웃 상수. StrikeVolumeChart와 현재 동일하지만 의도적으로 복제한다 —
-// 두 차트가 나란히 렌더되면서 지금은 같은 크기를 공유하지만, 추후 어느 한쪽
-// 차트의 패딩만 미세조정할 가능성이 충분히 있고, 한 변경이 양쪽에 동시에
-// 영향을 주는 결합도를 미리 만들 필요는 없다.
+// SVG 레이아웃 상수는 StrikeVolumeChart와 동일하게 복제한다 — 두 차트가
+// 나란히 렌더되면서 같은 viewport / 같은 막대 비율을 공유해야 사용자가
+// 두 차트를 비교하는 시선 흐름이 어색해지지 않는다. 상수를 별도 유틸로
+// 빼지 않는 이유: 추후 어느 한쪽 차트의 패딩만 미세조정할 가능성이
+// 충분히 있고, 한 변경이 두 차트에 동시에 영향을 주는 결합도를 미리
+// 만들 필요는 없다.
 const SVG_WIDTH = 600;
 const SVG_HEIGHT = 240;
 const PAD_TOP = 30;

@@ -2,16 +2,21 @@
 
 import { type ReactNode } from 'react';
 
+/** `StrikeBarSrTable`의 단일 행 타입. */
+export interface StrikeBarSrTableRow {
+    /** `key` prop으로 사용되는 고유 식별자. */
+    key: string | number;
+    /** 순서대로 렌더할 셀 내용. */
+    cells: ReactNode[];
+}
+
 interface StrikeBarSrTableProps {
     /** <caption> 텍스트 — 스크린 리더에 표 목적을 설명한다. */
     caption: string;
     /** <thead> 컬럼 헤더 목록. */
     headers: string[];
     /** <tbody> 행 목록. 각 row는 고유 key와 렌더할 셀(cells)로 구성된다. */
-    rows: Array<{
-        key: string | number;
-        cells: ReactNode[];
-    }>;
+    rows: StrikeBarSrTableRow[];
 }
 
 /**

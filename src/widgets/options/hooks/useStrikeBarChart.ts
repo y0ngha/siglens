@@ -1,10 +1,26 @@
 'use client';
 
-import { useRef, useState, type PointerEvent } from 'react';
+import { useRef, useState, type PointerEvent, type RefObject } from 'react';
 import {
     computeTooltipPos,
     type TooltipPosition,
 } from '../utils/computeTooltipPos';
+
+/** `useStrikeBarChart` 훅의 반환 타입. */
+export interface UseStrikeBarChartReturn {
+    containerRef: RefObject<HTMLDivElement | null>;
+    hoveredIndex: number | null;
+    tooltipPos: TooltipPosition | null;
+    handlePointerEnter: (
+        event: PointerEvent<SVGRectElement>,
+        index: number
+    ) => void;
+    handlePointerMove: (
+        event: PointerEvent<SVGRectElement>,
+        index: number
+    ) => void;
+    handlePointerLeave: () => void;
+}
 
 /**
  * Strike 바 차트 공용 포인터 핸들러 훅.
@@ -20,7 +36,7 @@ import {
  *   캐시한다.
  * - pointerLeave 시 캐시와 hover state를 모두 초기화한다.
  */
-export function useStrikeBarChart() {
+export function useStrikeBarChart(): UseStrikeBarChartReturn {
     const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
     const [tooltipPos, setTooltipPos] = useState<TooltipPosition | null>(null);
     const containerRef = useRef<HTMLDivElement | null>(null);
