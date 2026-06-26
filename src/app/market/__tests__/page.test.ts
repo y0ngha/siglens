@@ -253,6 +253,46 @@ describe('Market page', () => {
             mockPeekBriefingStatic.mockRejectedValue(new Error('redis down'));
             await expect(MarketContent()).resolves.toBeDefined();
         });
+
+        it('getMarketSummaryStatic throwing → .catch() degraded empty summary, page does not throw', async () => {
+            // ISR 빈 캐시 동결 방지: summary loader throw 시 { indices: [], sectors: [] }로
+            // 폴백해 MarketContent가 non-empty 결과를 반환해야 한다.
+            mockGetMarketSummaryStatic.mockRejectedValue(new Error('FMP 5xx'));
+            const consoleSpy = vi
+                .spyOn(console, 'error')
+                .mockImplementation(() => undefined);
+
+            await expect(MarketContent()).resolves.toBeDefined();
+            expect(consoleSpy).toHaveBeenCalledWith(
+                expect.stringContaining(
+                    '[MarketContent] getMarketSummaryStatic failed:'
+                ),
+                expect.any(Error)
+            );
+
+            consoleSpy.mockRestore();
+        });
+
+        it('getSectorSignalsStatic throwing → .catch() degraded empty stocks, page does not throw', async () => {
+            // ISR 빈 캐시 동결 방지: signals loader throw 시 { computedAt, stocks: [] }로
+            // 폴백해 MarketContent가 non-empty 결과를 반환해야 한다.
+            mockGetSectorSignalsStatic.mockRejectedValue(
+                new Error('cache miss')
+            );
+            const consoleSpy = vi
+                .spyOn(console, 'error')
+                .mockImplementation(() => undefined);
+
+            await expect(MarketContent()).resolves.toBeDefined();
+            expect(consoleSpy).toHaveBeenCalledWith(
+                expect.stringContaining(
+                    '[MarketContent] getSectorSignalsStatic failed:'
+                ),
+                expect.any(Error)
+            );
+
+            consoleSpy.mockRestore();
+        });
     });
 
     describe('page structure — no searchParams dependency', () => {

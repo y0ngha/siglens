@@ -57,13 +57,22 @@ async function loadCategorySnapshot(
     category: NewsFeedCategory
 ): Promise<CategorySnapshot> {
     const cfg = CATEGORY_CONFIG[category];
+    // ISR degrade guard: getMarketNewsList(DB)가 throw하면 ISR 캐시에 0-byte 빈 결과가
+    // 굳는 것을 막으려면 여기서 흡수해야 한다. [] 로 degrade → isEmpty:true 가 되어
+    // 이미 존재하는 MarketNewsDegraded empty-state 분기로 자연스럽게 빠진다.
     const rows = await staticSymbolCache(
         ['market-news:list', cfg.sentinel],
         cfg.sentinel,
         () => getMarketNewsList(cfg.sentinel),
         [`${MARKET_NEWS_CACHE_TAG_PREFIX}:${cfg.sentinel}`],
         SECONDS_PER_HALF_DAY
-    );
+    ).catch((e: unknown) => {
+        console.error(
+            `[CategoryNewsPage] loadCategorySnapshot(${category}) failed, degrading to []:`,
+            e
+        );
+        return [] as Awaited<ReturnType<typeof getMarketNewsList>>;
+    });
     // Project to the same allowlist `getMarketNewsCardsAction` uses so the
     // client component never sees server-only DB columns (bodyEn/symbol/analyzedAt).
     const items = rows.map(toMarketNewsCardItem);

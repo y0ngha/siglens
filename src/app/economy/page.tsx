@@ -131,8 +131,14 @@ export async function generateMetadata(): Promise<Metadata> {
 
 /** cold-gen(ISR 정적 생성 컨텍스트)에서 dynamic API(`cookies`/`headers`/`connection()`) 금지. */
 async function EconomyContent() {
-    const snapshot = await getEconomySnapshotStatic();
-    if (isEmptyEconomySnapshot(snapshot)) return <EconomyDegraded />;
+    // 외부 I/O 오류(Redis 등)는 graceful 처리 — 빈 캐시 동결을 막기 위해 throw 대신
+    // null로 폴백해 EconomyDegraded를 반환한다. generateMetadata와 동일한 catch 패턴.
+    const snapshot = await getEconomySnapshotStatic().catch(e => {
+        console.error('[EconomyContent] snapshot failed:', e);
+        return null;
+    });
+    if (snapshot === null || isEmptyEconomySnapshot(snapshot))
+        return <EconomyDegraded />;
 
     // 1-hour date-hour 버킷 키로 macro briefing peek seed 조회. miss는 null → 클라가 submit.
     const dateHour = new Date().toISOString().slice(0, ISO_DATE_HOUR_SLICE_END);

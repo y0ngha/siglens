@@ -193,13 +193,21 @@ async function ProfileDescriptionSection({
     symbol,
     fallback,
 }: ProfileDescriptionSectionProps) {
+    // ISR degrade guard: getProfileDescriptionKo(AI 번역)가 throw하더라도 ISR 캐시에
+    // 0-byte 빈 결과가 굳지 않도록 흡수한다. null 로 degrade → fallback(영어 원문)을 렌더.
     const descriptionKo = await staticSymbolCache(
         ['fundamental:desc-ko', symbol],
         symbol,
         () => getProfileDescriptionKo(symbol),
         [],
         SECONDS_PER_DAY
-    );
+    ).catch((e: unknown) => {
+        console.error(
+            '[ProfileDescriptionSection] getProfileDescriptionKo failed, degrading to null:',
+            e
+        );
+        return null;
+    });
     return (
         <p className="text-secondary-400 mt-4 line-clamp-4 text-sm leading-relaxed">
             {descriptionKo ?? fallback}
@@ -209,13 +217,21 @@ async function ProfileDescriptionSection({
 
 async function ProfileSection({ symbol }: SymbolSectionProps) {
     // Shares the same key as the notFound guard in the page body — cross-request ISR cache is shared.
+    // ISR degrade guard: getProfile(FMP)가 throw하면 null 로 degrade → ProfileCard(null)가
+    // 기존 empty-state UI를 렌더하고 페이지 크롬은 유지된다.
     const profile = await staticSymbolCache(
         ['fundamental:profile', symbol],
         symbol,
         () => getProfile(symbol),
         [],
         SECONDS_PER_DAY
-    );
+    ).catch((e: unknown) => {
+        console.error(
+            '[ProfileSection] getProfile failed, degrading to null:',
+            e
+        );
+        return null;
+    });
 
     const descriptionSlot = (
         <Suspense fallback={<ProfileDescriptionSkeleton />}>
@@ -230,50 +246,84 @@ async function ProfileSection({ symbol }: SymbolSectionProps) {
 }
 
 async function ValuationSection({ symbol }: SymbolSectionProps) {
+    // ISR degrade guard: getKeyMetricsTtm(FMP)가 throw하면 null 로 degrade →
+    // ValuationCard(null)가 기존 empty-state UI를 렌더한다.
     const metrics = await staticSymbolCache(
         ['fundamental:metrics', symbol],
         symbol,
         () => getKeyMetricsTtm(symbol),
         [],
         SECONDS_PER_DAY
-    );
+    ).catch((e: unknown) => {
+        console.error(
+            '[ValuationSection] getKeyMetricsTtm failed, degrading to null:',
+            e
+        );
+        return null;
+    });
     return <ValuationCard metrics={metrics} />;
 }
 
 async function PeersSection({ symbol }: SymbolSectionProps) {
+    // ISR degrade guard: getStockPeers(FMP)가 throw하면 [] 로 degrade →
+    // PeersTable([])가 기존 empty-state UI를 렌더한다.
     const peers = await staticSymbolCache(
         ['fundamental:peers', symbol],
         symbol,
         () => getStockPeers(symbol),
         [],
         SECONDS_PER_DAY
-    );
+    ).catch((e: unknown) => {
+        console.error(
+            '[PeersSection] getStockPeers failed, degrading to []:',
+            e
+        );
+        return [] as Awaited<ReturnType<typeof getStockPeers>>;
+    });
     return <PeersTable peers={peers} />;
 }
 
 async function ProfitabilitySection({ symbol }: SymbolSectionProps) {
+    // ISR degrade guard: getRatiosTtm(FMP)가 throw하면 null 로 degrade →
+    // ProfitabilityCard(null)가 기존 empty-state UI를 렌더한다.
     const ratios = await staticSymbolCache(
         ['fundamental:ratios', symbol],
         symbol,
         () => getRatiosTtm(symbol),
         [],
         SECONDS_PER_DAY
-    );
+    ).catch((e: unknown) => {
+        console.error(
+            '[ProfitabilitySection] getRatiosTtm failed, degrading to null:',
+            e
+        );
+        return null;
+    });
     return <ProfitabilityCard ratios={ratios} />;
 }
 
 async function GrowthSection({ symbol }: SymbolSectionProps) {
+    // ISR degrade guard: getIncomeStatementGrowth(FMP)가 throw하면 null 로 degrade →
+    // GrowthChart(null)가 기존 empty-state UI를 렌더한다.
     const growth = await staticSymbolCache(
         ['fundamental:growth', symbol],
         symbol,
         () => getIncomeStatementGrowth(symbol),
         [],
         SECONDS_PER_DAY
-    );
+    ).catch((e: unknown) => {
+        console.error(
+            '[GrowthSection] getIncomeStatementGrowth failed, degrading to null:',
+            e
+        );
+        return null;
+    });
     return <GrowthChart growth={growth} />;
 }
 
 async function FinancialHealthSection({ symbol }: SymbolSectionProps) {
+    // ISR degrade guard: 각 FMP 로더가 throw하면 null 로 degrade →
+    // FinancialHealthCard(null, null, null)가 기존 empty-state UI를 렌더한다.
     const [ratios, scores, cashFlow] = await Promise.all([
         staticSymbolCache(
             ['fundamental:ratios', symbol],
@@ -281,21 +331,39 @@ async function FinancialHealthSection({ symbol }: SymbolSectionProps) {
             () => getRatiosTtm(symbol),
             [],
             SECONDS_PER_DAY
-        ),
+        ).catch((e: unknown) => {
+            console.error(
+                '[FinancialHealthSection] getRatiosTtm failed, degrading to null:',
+                e
+            );
+            return null;
+        }),
         staticSymbolCache(
             ['fundamental:scores', symbol],
             symbol,
             () => getFinancialScores(symbol),
             [],
             SECONDS_PER_DAY
-        ),
+        ).catch((e: unknown) => {
+            console.error(
+                '[FinancialHealthSection] getFinancialScores failed, degrading to null:',
+                e
+            );
+            return null;
+        }),
         staticSymbolCache(
             ['fundamental:cashflow', symbol],
             symbol,
             () => getCashFlowStatement(symbol),
             [],
             SECONDS_PER_DAY
-        ),
+        ).catch((e: unknown) => {
+            console.error(
+                '[FinancialHealthSection] getCashFlowStatement failed, degrading to null:',
+                e
+            );
+            return null;
+        }),
     ]);
     return (
         <FinancialHealthCard
@@ -307,6 +375,8 @@ async function FinancialHealthSection({ symbol }: SymbolSectionProps) {
 }
 
 async function FutureDirectionSection({ symbol }: SymbolSectionProps) {
+    // ISR degrade guard: 각 FMP 로더가 throw하면 null 로 degrade →
+    // FutureDirectionCard(null, null, null, null)가 기존 empty-state UI를 렌더한다.
     const [estimates, grades, ptConsensus, ptSummary] = await Promise.all([
         staticSymbolCache(
             ['fundamental:estimates', symbol],
@@ -314,28 +384,52 @@ async function FutureDirectionSection({ symbol }: SymbolSectionProps) {
             () => getAnalystEstimates(symbol),
             [],
             SECONDS_PER_DAY
-        ),
+        ).catch((e: unknown) => {
+            console.error(
+                '[FutureDirectionSection] getAnalystEstimates failed, degrading to null:',
+                e
+            );
+            return null;
+        }),
         staticSymbolCache(
             ['fundamental:grades-consensus', symbol],
             symbol,
             () => getGradesConsensus(symbol),
             [],
             SECONDS_PER_DAY
-        ),
+        ).catch((e: unknown) => {
+            console.error(
+                '[FutureDirectionSection] getGradesConsensus failed, degrading to null:',
+                e
+            );
+            return null;
+        }),
         staticSymbolCache(
             ['fundamental:pt-consensus', symbol],
             symbol,
             () => getPriceTargetConsensus(symbol),
             [],
             SECONDS_PER_DAY
-        ),
+        ).catch((e: unknown) => {
+            console.error(
+                '[FutureDirectionSection] getPriceTargetConsensus failed, degrading to null:',
+                e
+            );
+            return null;
+        }),
         staticSymbolCache(
             ['fundamental:pt-summary', symbol],
             symbol,
             () => getPriceTargetSummary(symbol),
             [],
             SECONDS_PER_DAY
-        ),
+        ).catch((e: unknown) => {
+            console.error(
+                '[FutureDirectionSection] getPriceTargetSummary failed, degrading to null:',
+                e
+            );
+            return null;
+        }),
     ]);
     return (
         <FutureDirectionCard

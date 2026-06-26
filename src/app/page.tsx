@@ -35,7 +35,16 @@ const HERO_QUICK_LINKS = [
 // 이 페이지 자체는 dynamic 의존성이 없다. revalidate로 skills 파일 변경 반영.
 export const revalidate = 86400; // 24h — skills는 배포 시 갱신되므로 장중 신선도와 무관
 
-const loadSkills = cache(() => new FileSkillsLoader().loadSkills());
+// skills 파일시스템 읽기 오류는 graceful 처리 — 빈 배열/0으로 폴백해 페이지 렌더를
+// 계속한다. ISR 빈 캐시 동결 방지: throw하면 0-byte HTML이 캐시에 박힌다.
+const loadSkills = cache(async () => {
+    try {
+        return await new FileSkillsLoader().loadSkills();
+    } catch (e) {
+        console.error('[Home] loadSkills failed:', e);
+        return [];
+    }
+});
 
 async function AsyncStatsBar() {
     const skills = await loadSkills();
@@ -50,7 +59,20 @@ async function SkillsShowcaseServer() {
 // WebSite SearchAction(urlTemplate=`?q={search_term_string}`)의 ?q= 처리는 proxy.ts가 담당한다.
 // page.tsx에서 searchParams를 소비하면 라우트가 dynamic으로 바뀌어 ISR 캐싱이 불가능하기 때문이다.
 export default async function Home() {
-    const skillCounts = await countSkillFiles();
+    // countSkillFiles 오류(fs 접근 실패 등)는 graceful 처리 — 0 폴백으로 페이지를 계속 렌더한다.
+    // throw가 전파되면 ISR 빈 캐시(0-byte body)가 동결된다.
+    const skillCounts = await countSkillFiles().catch(e => {
+        console.error('[Home] countSkillFiles failed:', e);
+        return {
+            indicators: 0,
+            candlesticks: 0,
+            patterns: 0,
+            strategies: 0,
+            supportResistance: 0,
+            fundamental: 0,
+            news: 0,
+        };
+    });
 
     const jsonLd = {
         '@context': 'https://schema.org',
