@@ -1,10 +1,3 @@
-// vi.mock → imports 순서 (MISTAKES.md Tests §17)
-const { mockGetFmpMsg } = vi.hoisted(() => ({ mockGetFmpMsg: vi.fn() }));
-
-vi.mock('@/shared/api/fmp/fmpUserMessage', () => ({
-    getFmpUserFacingMessage: mockGetFmpMsg,
-}));
-
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import type { FallbackProps } from 'react-error-boundary';
@@ -19,6 +12,7 @@ const renderSection = (
         idPrefix?: string;
         fallbackMessage?: string;
         className?: string;
+        getErrorMessage?: (error: unknown) => string | null;
     } = {}
 ) =>
     render(
@@ -29,14 +23,13 @@ const renderSection = (
             idPrefix={overrides.idPrefix ?? 'test-ai-summary'}
             fallbackMessage={overrides.fallbackMessage}
             className={overrides.className}
+            getErrorMessage={overrides.getErrorMessage}
         />
     );
 
 describe('AiSummaryErrorSection', () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        // 기본적으로 FMP 메시지 없음 — 각 케이스에서 필요 시 오버라이드
-        mockGetFmpMsg.mockReturnValue(null);
     });
 
     describe('슬롯 — heading 렌더링', () => {
@@ -68,17 +61,33 @@ describe('AiSummaryErrorSection', () => {
     });
 
     describe('메시지 도출 우선순위', () => {
-        it('getFmpUserFacingMessage가 값을 반환하면 그 값을 표시한다', () => {
-            mockGetFmpMsg.mockReturnValue('FMP 사용량을 초과했어요');
+        it('getErrorMessage가 값을 반환하면 그 값을 표시한다 (FMP 서피스 동작)', () => {
+            const getFmpMsg = vi
+                .fn()
+                .mockReturnValue('FMP 사용량을 초과했어요');
 
-            renderSection(new Error('raw transport error'));
+            renderSection(new Error('raw transport error'), vi.fn(), {
+                getErrorMessage: getFmpMsg,
+            });
 
             expect(screen.getByRole('alert')).toHaveTextContent(
                 'FMP 사용량을 초과했어요'
             );
         });
 
-        it('FMP 메시지 없고 Error 인스턴스면 error.message를 표시한다', () => {
+        it('getErrorMessage가 null을 반환하고 Error 인스턴스면 error.message를 표시한다', () => {
+            const getFmpMsg = vi.fn().mockReturnValue(null);
+
+            renderSection(new Error('상세 오류 메시지'), vi.fn(), {
+                getErrorMessage: getFmpMsg,
+            });
+
+            expect(screen.getByRole('alert')).toHaveTextContent(
+                '상세 오류 메시지'
+            );
+        });
+
+        it('getErrorMessage 없이 Error 인스턴스면 error.message를 표시한다 (뉴스 서피스 동작)', () => {
             renderSection(new Error('상세 오류 메시지'));
 
             expect(screen.getByRole('alert')).toHaveTextContent(
@@ -86,7 +95,7 @@ describe('AiSummaryErrorSection', () => {
             );
         });
 
-        it('Error도 아니고 FMP 메시지도 없으면 기본 fallbackMessage를 표시한다', () => {
+        it('Error도 아니고 getErrorMessage도 없으면 기본 fallbackMessage를 표시한다', () => {
             renderSection('just a string');
 
             expect(screen.getByRole('alert')).toHaveTextContent(

@@ -1,7 +1,6 @@
 'use client';
 
 import type { FallbackProps } from 'react-error-boundary';
-import { getFmpUserFacingMessage } from '@/shared/api/fmp/fmpUserMessage';
 import { cn } from '@/shared/lib/cn';
 
 export interface AiSummaryErrorSectionProps extends FallbackProps {
@@ -16,7 +15,7 @@ export interface AiSummaryErrorSectionProps extends FallbackProps {
      */
     idPrefix: string;
     /**
-     * error instanceof Error도 아니고 getFmpUserFacingMessage도 null을 반환할 때
+     * error instanceof Error도 아니고 getErrorMessage도 null을 반환할 때
      * 보여줄 마지막 폴백 메시지.
      * 기본값: '분석 중 오류가 발생했습니다.'
      */
@@ -25,13 +24,19 @@ export interface AiSummaryErrorSectionProps extends FallbackProps {
      * 섹션에 추가할 className (예: 너비 제약이 필요한 뉴스 서피스).
      */
     className?: string;
+    /**
+     * 서피스별 에러 메시지 추출기. 전달하지 않으면 error.message → fallbackMessage로 폴백한다.
+     * FMP 서피스(fundamental / financials / congress)는 getFmpUserFacingMessage를 주입하고,
+     * FMP와 무관한 서피스(news 등)는 생략하여 기본 폴백을 사용한다.
+     */
+    getErrorMessage?: (error: unknown) => string | null;
 }
 
 /**
  * 4개 AI 분석 위젯(fundamental / financials / news / congress)이 공유하는 에러 셸.
  *
  * 단일 소스로 아래 세 가지 표준화를 보장한다:
- * - 메시지: getFmpUserFacingMessage → error.message → fallbackMessage 우선순위.
+ * - 메시지: getErrorMessage(주입 시) → error.message → fallbackMessage 우선순위.
  * - 에러 텍스트 색: `text-ui-danger-text` (danger-on-surface 토큰).
  * - 재시도 버튼: 44px 최소 탭 타깃 (`min-h-11 inline-flex items-center px-3 py-2`).
  */
@@ -42,11 +47,12 @@ export function AiSummaryErrorSection({
     idPrefix,
     fallbackMessage = '분석 중 오류가 발생했습니다.',
     className,
+    getErrorMessage,
 }: AiSummaryErrorSectionProps) {
     const headingId = `${idPrefix}-error-heading`;
 
     const message =
-        getFmpUserFacingMessage(error) ??
+        getErrorMessage?.(error) ??
         (error instanceof Error ? error.message : fallbackMessage);
 
     return (

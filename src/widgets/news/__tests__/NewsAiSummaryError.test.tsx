@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { NewsAiSummaryError } from '@/widgets/news/NewsAiSummaryError';
+import { FMP_TEMPORARY_UNAVAILABLE_MESSAGE } from '@/shared/api/fmp/fmpUserMessage';
 
 describe('NewsAiSummaryError', () => {
     it('renders error message from Error object', () => {
@@ -58,5 +59,18 @@ describe('NewsAiSummaryError', () => {
         );
         await user.click(screen.getByRole('button', { name: /다시 시도/ }));
         expect(reset).toHaveBeenCalledTimes(1);
+    });
+
+    it('FMP 형태 에러여도 FMP 안내 문구가 아닌 원본 error.message를 표시한다 (뉴스 서피스 동작 보존)', () => {
+        render(
+            <NewsAiSummaryError
+                error={new Error('FMP profile 429')}
+                resetErrorBoundary={vi.fn()}
+            />
+        );
+        expect(screen.getByText('FMP profile 429')).toBeInTheDocument();
+        expect(
+            screen.queryByText(FMP_TEMPORARY_UNAVAILABLE_MESSAGE)
+        ).not.toBeInTheDocument();
     });
 });

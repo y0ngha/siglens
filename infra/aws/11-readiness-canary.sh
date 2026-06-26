@@ -32,8 +32,8 @@ ALARM_NAME="siglens-readiness-canary-failed"
 # `aws synthetics describe-runtime-versions`로 최신 지원 버전을 확인하고 필요 시 bump할 것.
 RUNTIME_VERSION="syn-nodejs-puppeteer-9.1"
 
-# ALARM_SNS: 07-alarms.sh と同じ変数を使用 — .env または .ids から注入される.
-# 未設定の場合は通知なし.
+# ALARM_SNS: 07-alarms.sh와 동일한 변수 사용 — .env 또는 .ids에서 주입된다.
+# 미설정 시 알림 없음.
 ACTIONS=""
 [[ -n "${ALARM_SNS:-}" ]] && ACTIONS="--alarm-actions $ALARM_SNS"
 
