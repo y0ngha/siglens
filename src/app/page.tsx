@@ -13,7 +13,14 @@ import {
     TickerCategories,
 } from '@/widgets/home';
 import Link from 'next/link';
+import type { Metadata } from 'next';
 import { cache, Suspense } from 'react';
+
+// 루트 레이아웃에서 canonical을 제거했으므로 홈 페이지 자체가 명시적으로 self-canonical을 선언한다.
+// 다른 인덱서블 페이지들(economy, market, backtesting 등)은 이미 자체 canonical을 갖고 있다.
+export const metadata: Metadata = {
+    alternates: { canonical: SITE_URL },
+};
 
 // hrefs mirror NAV_ITEMS in `widgets/layout/headerNavItems.ts` (labels differ:
 // CTA style vs short nav label). If the top-level nav destinations change,

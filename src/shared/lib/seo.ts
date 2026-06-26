@@ -6,8 +6,39 @@ export interface BreadcrumbItem {
     url: string;
 }
 
-export const SITE_URL =
-    process.env.NEXT_PUBLIC_SITE_URL ?? 'https://siglens.io';
+/**
+ * 사이트 URL. 환경 변수가 설정된 경우 그 값을, 없으면 기본값 'https://siglens.io'을 사용한다.
+ *
+ * 프로덕션 가드: NODE_ENV==='production'이고 NEXT_PUBLIC_SITE_URL이 설정됐는데
+ * 호스트가 'siglens.io'가 아니면 모듈 로드 시 즉시 throw한다.
+ * 잘못된/프리뷰 값이 모든 canonical·OG URL을 오염시키는 것을 빠른 실패로 막는다.
+ * 변수가 설정되지 않은 경우(기본값 사용)는 문제가 없으므로 통과시킨다.
+ */
+function resolveSiteUrl(): string {
+    const fromEnv = process.env.NEXT_PUBLIC_SITE_URL;
+    const url = fromEnv ?? 'https://siglens.io';
+
+    if (process.env.NODE_ENV === 'production' && fromEnv !== undefined) {
+        let host: string;
+        try {
+            host = new URL(url).hostname;
+        } catch {
+            throw new Error(
+                `[seo] NEXT_PUBLIC_SITE_URL="${url}"은 유효한 URL이 아닙니다.`
+            );
+        }
+        if (host !== 'siglens.io') {
+            throw new Error(
+                `[seo] NEXT_PUBLIC_SITE_URL="${url}"의 호스트가 siglens.io가 아닙니다. ` +
+                    `canonical/OG URL이 오염되는 것을 막기 위해 빠른 실패합니다.`
+            );
+        }
+    }
+
+    return url;
+}
+
+export const SITE_URL = resolveSiteUrl();
 
 export const SITE_NAME = 'Siglens';
 

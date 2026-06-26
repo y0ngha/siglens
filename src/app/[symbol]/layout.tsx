@@ -14,7 +14,10 @@ import { SymbolTabsSkeleton } from '@/views/symbol/SymbolTabsSkeleton';
 import { DEFAULT_TIMEFRAME } from '@/shared/config/market';
 import { getBarsStatic, quantizeBarsDataToLastClosed } from '@/entities/bars';
 import { getAssetInfoResilient } from '@/entities/ticker';
-import { marketProfileOf } from '@/shared/config/marketProfile';
+import {
+    marketProfileOf,
+    DEFAULT_MARKET_PROFILE,
+} from '@/shared/config/marketProfile';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/shared/config/queryConfig';
 import { MS_PER_SECOND } from '@/shared/config/time';
@@ -117,7 +120,7 @@ export async function SymbolLayoutChrome({ params }: SymbolLayoutSegmentProps) {
         // which is 'us-equity' — the same as omitting the session arg.
         const session = assetInfo
             ? sessionSpecFor(marketProfileOf(assetInfo))
-            : sessionSpecFor('us-equity');
+            : sessionSpecFor(DEFAULT_MARKET_PROFILE);
         const quantized = quantizeBarsDataToLastClosed(
             headerBars,
             new Date(),
