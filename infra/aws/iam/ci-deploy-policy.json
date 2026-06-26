@@ -70,6 +70,12 @@
             "Resource": "arn:aws:ssm:ap-northeast-2:ACCOUNT_ID:parameter/siglens/DATABASE_URL"
         },
         {
+            "Sid": "EnvCompletenessCheck",
+            "Effect": "Allow",
+            "Action": ["ssm:GetParametersByPath"],
+            "Resource": "arn:aws:ssm:ap-northeast-2:ACCOUNT_ID:parameter/siglens/*"
+        },
+        {
             "Sid": "BuildTimeDbUrlDecrypt",
             "Effect": "Allow",
             "Action": ["kms:Decrypt"],

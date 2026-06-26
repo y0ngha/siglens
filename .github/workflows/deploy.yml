@@ -20,7 +20,38 @@ permissions:
     contents: read
 
 jobs:
+    # Fast pre-deploy gate: typecheck + unit tests only (NOT e2e — too slow for the
+    # deploy hot path; e2e runs on PRs before the tag is ever cut). A tagged commit
+    # that fails typecheck or unit tests must NOT reach the docker build / ASG roll.
+    # `deploy` declares `needs: test-gate`, so a red gate blocks the rollout entirely.
+    test-gate:
+        runs-on: ubuntu-latest
+        env:
+            SIGLENS_GITHUB_TOKEN: ${{ secrets.SIGLENS_GITHUB_TOKEN }}
+        permissions:
+            contents: read
+        steps:
+            - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+            - name: Enable Corepack
+              run: corepack enable
+
+            - uses: actions/setup-node@v4
+              with:
+                  node-version-file: .nvmrc
+                  cache: yarn
+
+            - name: Install dependencies
+              run: yarn install --immutable
+
+            - name: Type check
+              run: yarn typecheck
+
+            - name: Test (unit)
+              run: yarn test
+
     deploy:
+        needs: test-gate
         runs-on: ubuntu-24.04-arm
         steps:
             - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
@@ -134,7 +165,14 @@ jobs:
                       --output text)
                   printf 'export EC2_SG=%s\n' "${EC2_SG}" > infra/aws/.ids
 
+            # PINNED_AMI (M1): the launch template uses a deliberately pinned AMI, not
+            # "latest AL2023" resolved fresh each deploy. The pin lives in the repo
+            # Actions *variable* vars.PINNED_AMI (Settings → Secrets and variables →
+            # Actions → Variables). 05-launch-template.sh reads it from this env var.
+            # Bump it deliberately (e.g. after 09-bake-ami.sh prints a new golden AMI ID).
             - name: Roll ASG via deploy.sh
+              env:
+                  PINNED_AMI: ${{ vars.PINNED_AMI }}
               run: bash infra/aws/deploy.sh "$IMAGE_TAG"
 
             - name: Log deployed tag
