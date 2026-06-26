@@ -11,7 +11,7 @@
 - 보호 라우트는 **두지 않는다**. `proxy.ts`는 *이미 로그인된* 사용자가
   `/login`·`/signup`에 접근했을 때 `/`로 보내는 역방향 가드만 담당한다.
 - 인증 use-case(register/login/logout/social/delete/email-verify/password-reset)는
-  FSD 슬라이스(`src/entities/user/lib/`, `src/features/auth-*/actions/`)에 직접 구현되어 있으며,
+  FSD 슬라이스(`src/entities/auth/lib/`, `src/features/auth-*/actions/`)에 직접 구현되어 있으며,
   비밀번호 해싱(`bcryptjs`), 이메일 토큰 저장소, OAuth 어댑터, 사용자 DB 어댑터(Drizzle/Neon)도
   모두 siglens가 직접 보유한다. siglens-core는 더 이상 인증 도메인을 알지 못한다.
 
@@ -34,7 +34,8 @@
 ## 파일 맵
 
 ```
-src/entities/session/
+src/entities/auth/                   (entities/session + entities/user 병합 슬라이스)
+  api.ts                   DrizzleSessionRepository + DrizzleUserRepository (server-only)
   lib/
     db.ts                    Drizzle/Neon 클라이언트 싱글톤 (siglens 로컬)
     applyAuthCookie.ts       AuthSessionCookie → next/headers cookies().set 매핑
@@ -43,12 +44,6 @@ src/entities/session/
     bcrypt.ts                bcryptPasswordHasher (cost 12, bcryptjs)
     tokenUtils.ts            세션 토큰 생성/검증
     errorMessages.ts         인증 에러 메시지 상수
-  actions/
-    currentUserAction.ts     'use server' wrapper — useCurrentUser용
-    cleanupExpiredSessionsAction.ts  만료 세션 정리
-
-src/entities/user/
-  lib/
     registerUser.ts          registerUser use-case
     loginUser.ts             loginUser use-case
     logoutUser.ts            logoutUser use-case
@@ -58,6 +53,9 @@ src/entities/user/
     verifyEmail.ts           이메일 인증 코드 검증
     requestPasswordReset.ts  비밀번호 재설정 토큰 발급
     confirmPasswordReset.ts  비밀번호 재설정 실행
+  actions/
+    currentUserAction.ts     'use server' wrapper — useCurrentUser용
+    cleanupExpiredSessionsAction.ts  만료 세션 정리
 
 src/entities/oauth-account/
   lib/

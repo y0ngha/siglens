@@ -1,6 +1,6 @@
 'use server';
 
-import { getCurrentUser } from '@/entities/session/lib/getCurrentUser';
+import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { getDatabaseClient } from '@/shared/db/client';
 import { DrizzleUserApiKeyRepository } from '@/entities/api-key/api';
 import { isLlmProvider, normalizeLlmApiKey } from '../lib/apiKey';

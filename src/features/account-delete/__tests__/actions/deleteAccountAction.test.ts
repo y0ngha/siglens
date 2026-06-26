@@ -9,32 +9,32 @@ vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: vi.fn(() => ({ db: {}, sql: () => null })),
     resetDatabaseClientForTests: vi.fn(),
 }));
-vi.mock('@/entities/user', () => ({
-    DrizzleUserRepository: vi.fn().mockImplementation(function () {
-        return {};
-    }),
-    deleteAccount: vi.fn(),
-}));
-vi.mock('@/entities/session', () => ({
+vi.mock('@/entities/auth', () => ({
     applyAuthCookie: vi.fn((c: unknown) => c),
     isSecureCookieEnv: vi.fn(() => false),
     createExpiredAuthHintCookie: vi.fn(() => ({
         name: 'auth_hint',
         value: '',
     })),
+    deleteAccount: vi.fn(),
 }));
-vi.mock('@/entities/session/api', () => ({
+// DrizzleUserRepository와 DrizzleSessionRepository는 barrel이 아닌
+// @/entities/auth/api에서 직접 import되므로 해당 경로를 mock한다.
+vi.mock('@/entities/auth/api', () => ({
     DrizzleSessionRepository: vi.fn().mockImplementation(function () {
         return {};
     }),
+    DrizzleUserRepository: vi.fn().mockImplementation(function () {
+        return {};
+    }),
 }));
-// getAuthDatabaseClient는 barrel이 아닌 @/entities/session/lib/db에서 직접 import되므로
+// getAuthDatabaseClient는 barrel이 아닌 @/entities/auth/lib/db에서 직접 import되므로
 // (server-only 체인을 client 번들에서 분리) 해당 경로를 별도로 mock한다.
-vi.mock('@/entities/session/lib/db', () => ({
+vi.mock('@/entities/auth/lib/db', () => ({
     getAuthDatabaseClient: vi.fn(() => ({ db: {}, sql: () => null })),
     resetAuthDatabaseClientForTests: vi.fn(),
 }));
-vi.mock('@/entities/session/lib/getCurrentUser', () => ({
+vi.mock('@/entities/auth/lib/getCurrentUser', () => ({
     getCurrentUser: vi.fn(),
 }));
 vi.mock('@/entities/oauth-account', () => ({
@@ -46,10 +46,10 @@ vi.mock('@/entities/oauth-account', () => ({
 
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { deleteAccount } from '@/entities/user';
-import { getCurrentUser } from '@/entities/session/lib/getCurrentUser';
+import { deleteAccount } from '@/entities/auth';
+import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { deleteAccountAction } from '@/features/account-delete/actions/deleteAccountAction';
-import { resetAuthDatabaseClientForTests } from '@/entities/session/lib/db';
+import { resetAuthDatabaseClientForTests } from '@/entities/auth/lib/db';
 import { makeFormData } from '@/shared/test-utils/makeFormData';
 
 const mockCookies = cookies as MockedFunction<typeof cookies>;

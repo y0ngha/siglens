@@ -1,10 +1,8 @@
 import type { MockedFunction } from 'vitest';
-vi.mock('@/entities/user', () => ({
-    requestEmailVerification: vi.fn(),
-}));
-vi.mock('@/entities/session', () => ({
+vi.mock('@/entities/auth', () => ({
     AUTH_SERVICE_UNAVAILABLE_MESSAGE:
         '서비스에 일시적인 문제가 발생했습니다. 잠시 후 다시 시도해주세요.',
+    requestEmailVerification: vi.fn(),
 }));
 vi.mock('@/entities/email-token', () => ({
     createEmailTokenStore: vi.fn(),
@@ -21,12 +19,14 @@ vi.mock('@/shared/email/dispatcher', () => ({
     createEmailDispatcher: vi.fn(() => ({ sendEmail: sendEmailMock })),
 }));
 
-import { requestEmailVerification } from '@/entities/user';
+import {
+    requestEmailVerification,
+    AUTH_SERVICE_UNAVAILABLE_MESSAGE,
+} from '@/entities/auth';
 import {
     createEmailTokenStore,
     buildEmailVerificationEmail,
 } from '@/entities/email-token';
-import { AUTH_SERVICE_UNAVAILABLE_MESSAGE } from '@/entities/session';
 import { requestEmailVerificationAction } from '@/features/auth-email-verification/actions/requestEmailVerificationAction';
 import { makeFormData } from '@/shared/test-utils/makeFormData';
 

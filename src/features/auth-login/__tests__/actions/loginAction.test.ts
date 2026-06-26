@@ -9,7 +9,7 @@ vi.mock('@/shared/db/client', () => ({
     getDatabaseClient: vi.fn(() => ({ db: {}, sql: () => null })),
     resetDatabaseClientForTests: vi.fn(),
 }));
-vi.mock('@/entities/session', () => ({
+vi.mock('@/entities/auth', () => ({
     applyAuthCookie: vi.fn((c: unknown) => c),
     isSecureCookieEnv: vi.fn(() => false),
     createAuthHintCookie: vi.fn(() => ({
@@ -17,33 +17,33 @@ vi.mock('@/entities/session', () => ({
         value: 'true',
     })),
     DEFAULT_SESSION_TTL_SECONDS: 7776000,
+    loginUser: vi.fn(),
 }));
-vi.mock('@/entities/session/api', () => ({
+// DrizzleUserRepository와 DrizzleSessionRepository는 barrel이 아닌
+// @/entities/auth/api에서 직접 import되므로 해당 경로를 mock한다.
+vi.mock('@/entities/auth/api', () => ({
     DrizzleSessionRepository: vi.fn().mockImplementation(function () {
         return {};
     }),
-}));
-vi.mock('@/entities/session/lib/bcrypt', () => ({
-    bcryptPasswordVerifier: { verifyPassword: vi.fn() },
-}));
-// getAuthDatabaseClient는 barrel이 아닌 @/entities/session/lib/db에서 직접 import되므로
-// (server-only 체인을 client 번들에서 분리) 해당 경로를 별도로 mock한다.
-vi.mock('@/entities/session/lib/db', () => ({
-    getAuthDatabaseClient: vi.fn(() => ({ db: {}, sql: () => null })),
-    resetAuthDatabaseClientForTests: vi.fn(),
-}));
-vi.mock('@/entities/user', () => ({
     DrizzleUserRepository: vi.fn().mockImplementation(function () {
         return {};
     }),
-    loginUser: vi.fn(),
+}));
+vi.mock('@/entities/auth/lib/bcrypt', () => ({
+    bcryptPasswordVerifier: { verifyPassword: vi.fn() },
+}));
+// getAuthDatabaseClient는 barrel이 아닌 @/entities/auth/lib/db에서 직접 import되므로
+// (server-only 체인을 client 번들에서 분리) 해당 경로를 별도로 mock한다.
+vi.mock('@/entities/auth/lib/db', () => ({
+    getAuthDatabaseClient: vi.fn(() => ({ db: {}, sql: () => null })),
+    resetAuthDatabaseClientForTests: vi.fn(),
 }));
 
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { loginUser } from '@/entities/user';
+import { loginUser } from '@/entities/auth';
 import { loginAction } from '@/features/auth-login/actions/loginAction';
-import { resetAuthDatabaseClientForTests } from '@/entities/session/lib/db';
+import { resetAuthDatabaseClientForTests } from '@/entities/auth/lib/db';
 import { makeFormData } from '@/shared/test-utils/makeFormData';
 
 const mockCookies = cookies as MockedFunction<typeof cookies>;

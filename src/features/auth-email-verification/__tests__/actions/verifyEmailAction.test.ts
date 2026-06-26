@@ -2,24 +2,26 @@ import type { MockedFunction, MockedClass } from 'vitest';
 vi.mock('@/entities/email-token', () => ({
     createEmailTokenStore: vi.fn(),
 }));
-vi.mock('@/entities/session', () => ({
+vi.mock('@/entities/auth', () => ({
     AUTH_SERVICE_UNAVAILABLE_MESSAGE:
         '서비스에 일시적인 문제가 발생했습니다. 잠시 후 다시 시도해주세요.',
-}));
-// getAuthDatabaseClient는 barrel이 아닌 @/entities/session/lib/db에서 직접 import되므로
-// (server-only 체인을 client 번들에서 분리) 해당 경로를 별도로 mock한다.
-vi.mock('@/entities/session/lib/db', () => ({
-    getAuthDatabaseClient: vi.fn(),
-}));
-vi.mock('@/entities/user', () => ({
-    DrizzleUserRepository: vi.fn(),
     verifyEmail: vi.fn(),
 }));
+// getAuthDatabaseClient는 barrel이 아닌 @/entities/auth/lib/db에서 직접 import되므로
+// (server-only 체인을 client 번들에서 분리) 해당 경로를 별도로 mock한다.
+vi.mock('@/entities/auth/lib/db', () => ({
+    getAuthDatabaseClient: vi.fn(),
+}));
+// DrizzleUserRepository는 barrel이 아닌 @/entities/auth/api에서 직접 import되므로
+// 해당 경로를 별도로 mock한다.
+vi.mock('@/entities/auth/api', () => ({
+    DrizzleUserRepository: vi.fn(),
+}));
 
-import { verifyEmail, DrizzleUserRepository } from '@/entities/user';
+import { verifyEmail, AUTH_SERVICE_UNAVAILABLE_MESSAGE } from '@/entities/auth';
+import { DrizzleUserRepository } from '@/entities/auth/api';
 import { createEmailTokenStore } from '@/entities/email-token';
-import { AUTH_SERVICE_UNAVAILABLE_MESSAGE } from '@/entities/session';
-import { getAuthDatabaseClient } from '@/entities/session/lib/db';
+import { getAuthDatabaseClient } from '@/entities/auth/lib/db';
 import { verifyEmailAction } from '@/features/auth-email-verification/actions/verifyEmailAction';
 import { makeFormData } from '@/shared/test-utils/makeFormData';
 

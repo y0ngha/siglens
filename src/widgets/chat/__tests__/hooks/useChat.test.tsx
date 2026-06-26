@@ -39,7 +39,7 @@ vi.mock('@/entities/chat-message/actions', () => ({
     getRemainingTokensAction: vi.fn().mockResolvedValue(5),
 }));
 
-vi.mock('@/entities/session/actions/currentUserAction', () => ({
+vi.mock('@/entities/auth/actions/currentUserAction', () => ({
     currentUserAction: vi.fn().mockResolvedValue(null),
 }));
 

@@ -1,5 +1,5 @@
 import type { OAuthProvider } from '@/shared/lib/types';
-import type { SocialLoginUserInput } from '@/entities/user';
+import type { SocialLoginUserInput } from '@/entities/auth';
 
 /** OAuth 콜백 처리 단계의 실패 사유. */
 export type OAuthProfileFailureReason =

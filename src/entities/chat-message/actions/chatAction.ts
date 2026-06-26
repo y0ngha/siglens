@@ -1,10 +1,10 @@
 'use server';
 
 import { getLlmProvider } from '@/entities/llm-provider';
-import { getCurrentUser } from '@/entities/session/lib/getCurrentUser';
+import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { getDatabaseClient } from '@/shared/db/client';
 import { DrizzleUserApiKeyRepository } from '@/entities/api-key/api';
-import { DrizzleUserRepository } from '@/entities/user';
+import { DrizzleUserRepository } from '@/entities/auth/api';
 import { getUserTier } from '@/entities/user-tier';
 import type {
     AnalysisResponse,

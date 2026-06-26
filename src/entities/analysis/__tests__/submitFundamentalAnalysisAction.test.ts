@@ -18,7 +18,7 @@ vi.mock('@/shared/api/fmp/fundamentalClient', async importOriginal => ({
     }),
 }));
 
-vi.mock('@/entities/session/lib/getCurrentUser', () => ({
+vi.mock('@/entities/auth/lib/getCurrentUser', () => ({
     getCurrentUser: vi.fn(),
 }));
 
@@ -37,7 +37,7 @@ import {
     type SubmitFundamentalAnalysisResult,
 } from '@y0ngha/siglens-core';
 import { FmpFundamentalClient } from '@/shared/api/fmp/fundamentalClient';
-import { getCurrentUser } from '@/entities/session/lib/getCurrentUser';
+import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { resolveTierAndByok } from '@/shared/lib/byokGate';
 import type { AnalysisGateError } from '@/shared/lib/types';
 import { submitFundamentalAnalysisAction } from '../actions/submitFundamentalAnalysisAction';

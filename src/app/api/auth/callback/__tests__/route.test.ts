@@ -1,20 +1,20 @@
 import type { Mocked, MockedFunction, MockedClass } from 'vitest';
-vi.mock('@/entities/user', () => ({
-    DrizzleUserRepository: vi.fn(),
-}));
-vi.mock('@/entities/session', () => ({
+vi.mock('@/entities/auth', () => ({
     applyAuthCookie: vi.fn().mockReturnValue({ name: 'auth', value: 'v' }),
     createAuthHintCookie: vi.fn().mockReturnValue({ name: 'hint', value: '1' }),
     createAuthSession: vi.fn(),
     DEFAULT_SESSION_TTL_SECONDS: 86400,
     isSecureCookieEnv: vi.fn().mockReturnValue(false),
 }));
-vi.mock('@/entities/session/api', () => ({
+// DrizzleUserRepository와 DrizzleSessionRepository는 barrel이 아닌
+// @/entities/auth/api에서 직접 import되므로 해당 경로를 mock한다.
+vi.mock('@/entities/auth/api', () => ({
     DrizzleSessionRepository: vi.fn(),
+    DrizzleUserRepository: vi.fn(),
 }));
-// getAuthDatabaseClient는 barrel이 아닌 @/entities/session/lib/db에서 직접 import되므로
+// getAuthDatabaseClient는 barrel이 아닌 @/entities/auth/lib/db에서 직접 import되므로
 // (server-only 체인을 client 번들에서 분리) 해당 경로를 별도로 mock한다.
-vi.mock('@/entities/session/lib/db', () => ({
+vi.mock('@/entities/auth/lib/db', () => ({
     getAuthDatabaseClient: vi.fn().mockReturnValue({ db: {} }),
 }));
 vi.mock('@/entities/oauth-account', () => ({
@@ -39,9 +39,11 @@ vi.mock('@/shared/lib/auth/redirect', () => ({
 
 import { NextRequest } from 'next/server';
 import { GET } from '@/app/api/auth/callback/[provider]/route';
-import { DrizzleUserRepository } from '@/entities/user';
-import { createAuthSession } from '@/entities/session';
-import { DrizzleSessionRepository } from '@/entities/session/api';
+import { createAuthSession } from '@/entities/auth';
+import {
+    DrizzleSessionRepository,
+    DrizzleUserRepository,
+} from '@/entities/auth/api';
 import { createPendingOAuthSignupStoreFromEnv } from '@/entities/oauth-account';
 import {
     getOAuthAdapter,

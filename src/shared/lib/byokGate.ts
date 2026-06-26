@@ -13,7 +13,7 @@ import {
     LlmApiKeyDecryptionFailedError,
 } from '@/entities/api-key/api';
 import { getUserTier } from '@/entities/user-tier';
-import { DrizzleUserRepository } from '@/entities/user';
+import { DrizzleUserRepository } from '@/entities/auth/api';
 import type { AnalysisGateError, AnalysisGateErrorCode } from './types';
 
 const GATE_MESSAGES: Record<AnalysisGateErrorCode, string> = {

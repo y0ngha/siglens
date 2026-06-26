@@ -8,7 +8,7 @@ import {
     type LlmProvider,
 } from '@y0ngha/siglens-core';
 import type { GateMode } from '@/entities/api-key';
-import { currentUserAction } from '@/entities/session/actions';
+import { currentUserAction } from '@/entities/auth/actions';
 import { getRegisteredProvidersAction } from '@/entities/api-key/actions';
 import { useQuery } from '@tanstack/react-query';
 import {

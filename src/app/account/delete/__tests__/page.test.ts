@@ -4,7 +4,7 @@ vi.mock('@/shared/ui/auth/AuthCardShell', () => ({
 vi.mock('@/features/account-delete', () => ({
     DeleteAccountConfirm: () => null,
 }));
-vi.mock('@/entities/session', () => ({
+vi.mock('@/entities/auth', () => ({
     getCurrentUser: vi.fn(),
 }));
 vi.mock('@/shared/lib/seo', () => ({

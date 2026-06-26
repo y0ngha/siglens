@@ -1,8 +1,8 @@
-import { registerUser } from '@/entities/user/lib/registerUser';
+import { registerUser } from '@/entities/auth/lib/registerUser';
 import type {
     RegisterUserDependencies,
     RegisterUserInput,
-} from '@/entities/user/lib/authUseCaseTypes';
+} from '@/entities/auth/lib/authUseCaseTypes';
 
 function createMockDependencies(
     overrides: Partial<RegisterUserDependencies> = {}

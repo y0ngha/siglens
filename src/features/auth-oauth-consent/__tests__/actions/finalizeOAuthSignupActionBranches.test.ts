@@ -15,9 +15,8 @@ vi.mock('@/entities/oauth-account', () => ({
     createPendingOAuthSignupStoreFromEnv: vi.fn(),
 }));
 vi.mock('@/entities/terms');
-vi.mock('@/entities/user');
 vi.mock('@/entities/agreement');
-vi.mock('@/entities/session', () => ({
+vi.mock('@/entities/auth', () => ({
     applyAuthCookie: vi.fn((c: unknown) => c),
     createAuthHintCookie: vi.fn(() => ({
         name: 'auth_hint',
@@ -34,14 +33,18 @@ vi.mock('@/entities/session', () => ({
     DEFAULT_SESSION_TTL_SECONDS: 7776000,
     isSecureCookieEnv: vi.fn(() => false),
 }));
-vi.mock('@/entities/session/api', () => ({
+// DrizzleSessionRepository는 barrel이 아닌 @/entities/auth/api에서 직접 import된다.
+vi.mock('@/entities/auth/api', () => ({
     DrizzleSessionRepository: vi.fn().mockImplementation(function () {
         return {};
     }),
+    DrizzleUserRepository: vi.fn().mockImplementation(function () {
+        return {};
+    }),
 }));
-// getAuthDatabaseClient는 barrel이 아닌 @/entities/session/lib/db에서 직접 import되므로
+// getAuthDatabaseClient는 barrel이 아닌 @/entities/auth/lib/db에서 직접 import되므로
 // (server-only 체인을 client 번들에서 분리) 해당 경로를 별도로 mock한다.
-vi.mock('@/entities/session/lib/db', () => ({
+vi.mock('@/entities/auth/lib/db', () => ({
     getAuthDatabaseClient: vi.fn(() => ({ db: {}, sql: () => null })),
 }));
 vi.mock('next/headers', () => ({

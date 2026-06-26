@@ -5,10 +5,12 @@ import {
     createAuthSession,
     DEFAULT_SESSION_TTL_SECONDS,
     isSecureCookieEnv,
-} from '@/entities/session';
-import { DrizzleSessionRepository } from '@/entities/session/api';
-import { getAuthDatabaseClient } from '@/entities/session/lib/db';
-import { DrizzleUserRepository } from '@/entities/user';
+} from '@/entities/auth';
+import {
+    DrizzleSessionRepository,
+    DrizzleUserRepository,
+} from '@/entities/auth/api';
+import { getAuthDatabaseClient } from '@/entities/auth/lib/db';
 import { createPendingOAuthSignupStoreFromEnv } from '@/entities/oauth-account';
 import {
     buildOAuthRedirectUri,

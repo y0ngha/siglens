@@ -7,11 +7,14 @@ import {
     isSecureCookieEnv,
     createAuthHintCookie,
     DEFAULT_SESSION_TTL_SECONDS,
-} from '@/entities/session';
-import { bcryptPasswordVerifier } from '@/entities/session/lib/bcrypt';
-import { DrizzleSessionRepository } from '@/entities/session/api';
-import { getAuthDatabaseClient } from '@/entities/session/lib/db';
-import { DrizzleUserRepository, loginUser } from '@/entities/user';
+    loginUser,
+} from '@/entities/auth';
+import { bcryptPasswordVerifier } from '@/entities/auth/lib/bcrypt';
+import {
+    DrizzleSessionRepository,
+    DrizzleUserRepository,
+} from '@/entities/auth/api';
+import { getAuthDatabaseClient } from '@/entities/auth/lib/db';
 import type { LoginFormState } from '@/shared/lib/auth/formTypes';
 import { sanitizeNextPath } from '@/shared/lib/auth/redirect';
 import { normalizeEmail } from '@/shared/lib/auth/validation';

@@ -25,7 +25,7 @@ vi.mock('@/features/contact-form/hooks/useContactForm', () => ({
     useContactForm: () => [contactState, mockFormAction],
 }));
 
-vi.mock('@/entities/session', () => ({
+vi.mock('@/entities/auth', () => ({
     useCurrentUser: () =>
         ({
             data: null,

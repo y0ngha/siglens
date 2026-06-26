@@ -25,7 +25,7 @@ import {
     buildAnalysisNewsItems,
 } from '@/entities/news-article';
 import { getNextEarningsReport } from '@/entities/earnings-report';
-import { getCurrentUser } from '@/entities/session/lib/getCurrentUser';
+import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { resolveTierAndByok, buildGateError } from '@/shared/lib/byokGate';
 import { isBot } from '@/shared/api/isBot';
 import { isE2E } from '@/shared/api/e2eEnv';

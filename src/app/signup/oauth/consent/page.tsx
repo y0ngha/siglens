@@ -4,7 +4,7 @@ import { AuthCardShell } from '@/shared/ui/auth/AuthCardShell';
 import { OAuthConsentForm } from '@/features/auth-oauth-consent';
 import { createPendingOAuthSignupStoreFromEnv } from '@/entities/oauth-account';
 import { cancelOAuthSignupAction } from '@/features/auth-oauth/actions';
-import { OAUTH_ERROR_REDIRECT } from '@/entities/session';
+import { OAUTH_ERROR_REDIRECT } from '@/entities/auth';
 import { SITE_NAME, SITE_URL } from '@/shared/lib/seo';
 import type { Metadata } from 'next';
 

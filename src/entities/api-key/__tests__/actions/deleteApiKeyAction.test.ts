@@ -3,7 +3,7 @@ const { mockDeleteByUserAndProvider } = vi.hoisted(() => ({
     mockDeleteByUserAndProvider: vi.fn(),
 }));
 
-vi.mock('@/entities/session/lib/getCurrentUser', () => ({
+vi.mock('@/entities/auth/lib/getCurrentUser', () => ({
     getCurrentUser: vi.fn(),
 }));
 vi.mock('@/shared/db/client', () => ({
@@ -25,7 +25,7 @@ vi.mock('@/entities/api-key/api', () => ({
     }),
 }));
 
-import { getCurrentUser } from '@/entities/session/lib/getCurrentUser';
+import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { deleteApiKeyAction } from '@/entities/api-key/actions/deleteApiKeyAction';

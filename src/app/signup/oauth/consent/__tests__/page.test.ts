@@ -10,7 +10,7 @@ vi.mock('@/entities/oauth-account', () => ({
 vi.mock('@/features/auth-oauth/actions', () => ({
     cancelOAuthSignupAction: vi.fn(),
 }));
-vi.mock('@/entities/session', () => ({
+vi.mock('@/entities/auth', () => ({
     OAUTH_ERROR_REDIRECT: {
         consentInvalid: '/login?error=oauth_consent_invalid',
         serviceUnavailable: '/login?error=service_unavailable',

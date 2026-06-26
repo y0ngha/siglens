@@ -25,7 +25,7 @@ vi.mock('@/entities/earnings-report', () => ({
     getNextEarningsReport: vi.fn(),
 }));
 
-vi.mock('@/entities/session/lib/getCurrentUser', () => ({
+vi.mock('@/entities/auth/lib/getCurrentUser', () => ({
     getCurrentUser: vi.fn(),
 }));
 
@@ -51,7 +51,7 @@ import {
     type EnrichedNewsItem,
     type EarningsCalendarItem,
 } from '@y0ngha/siglens-core';
-import { getCurrentUser } from '@/entities/session/lib/getCurrentUser';
+import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { resolveTierAndByok } from '@/shared/lib/byokGate';
 import type { AnalysisGateError } from '@/shared/lib/types';
 import { resolveAssetClass } from '@/entities/ticker/lib/resolveAssetClass';

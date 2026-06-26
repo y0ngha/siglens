@@ -1,6 +1,6 @@
 import { createHmac, randomBytes, timingSafeEqual } from 'crypto';
 import type { SupportedOAuthProvider } from '@/shared/lib/types';
-import { isSecureCookieEnv, type ResponseCookie } from '@/entities/session';
+import { isSecureCookieEnv, type ResponseCookie } from '@/entities/auth';
 
 /** OAuth state 쿠키 이름. */
 export const OAUTH_STATE_COOKIE_NAME = 'siglens_oauth_state';
