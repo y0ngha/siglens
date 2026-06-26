@@ -95,6 +95,12 @@ cat > /etc/systemd/system/siglens.service <<UNIT
 Description=siglens
 After=docker.service
 Requires=docker.service
+# SSM/KMS 스로틀 방지 (M3): ExecStartPre가 매 재시작마다 SSM GetParametersByPath +
+# KMS Decrypt를 호출한다. 크래시 루프 시 플릿 전체가 단시간에 수백 회 호출→계정 단위
+# SSM/KMS 스로틀로 번질 수 있다. 120s 안에 5회 초과 재시작 시 systemd가 유닛을 멈추고
+# ASG/ELB unhealthy 경로가 인스턴스를 교체하도록 위임한다.
+StartLimitIntervalSec=120
+StartLimitBurst=5
 [Service]
 TimeoutStopSec=35
 ExecStartPre=/usr/local/bin/siglens-fetch-env.sh

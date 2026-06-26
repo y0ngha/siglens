@@ -25,7 +25,8 @@ log "rolling to $TAG (ASG already pinned to siglens-lt \$Latest)"
 #                               by the single existing instance, so it terminates first —
 #                               causing the ~90 s gap we measured.  ASG max-size=4, so
 #                               briefly running 2 instances is within limits.
-#   InstanceWarmup 300        — > health-check-grace 180 s + ELB detection ~90 s; the refresh
+#   InstanceWarmup 300        — > health-check-grace 240 s (see 06-alb-asg.sh) + ELB detection
+#                               ~90 s; the refresh
 #                               re-evaluates ELB health after grace expires before counting the
 #                               new instance healthy, so a runtime-unhealthy new instance does
 #                               NOT cause the old one to be terminated.

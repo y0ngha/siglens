@@ -20,6 +20,22 @@ ENV_EXAMPLE="${1:-$(dirname "$0")/../../.env.example}"
 
 EXCLUDE='^(NEXT_PUBLIC_|SIGLENS_GITHUB_TOKEN)'
 
+# Optional keys: present in .env.example but intentionally absent from SSM in production.
+#
+# Rationale: prod chat uses Gemini exclusively (GEMINI_CHAT_API_KEY is in SSM).
+# ANTHROPIC_CHAT_API_KEY and OPENAI_CHAT_API_KEY are BYOK (bring-your-own-key)
+# alternative providers read lazily in src/entities/chat-message/actions/chatAction.ts
+# only when a user explicitly selects that model. Their absence from SSM is intentional
+# and must NOT block deploy — missing them here would be a false positive deploy-gate.
+#
+# DEBUG_VERBOSE_LOGS is an optional debug flag (defaults off when unset); it is never
+# provisioned in prod SSM and must likewise not block deploy.
+OPTIONAL_KEYS=(
+  ANTHROPIC_CHAT_API_KEY
+  OPENAI_CHAT_API_KEY
+  DEBUG_VERBOSE_LOGS
+)
+
 # 필수 키 수집: KEY=... 형태 라인에서 KEY만 추출(주석/빈 줄 스킵, EXCLUDE 제외).
 REQUIRED_KEYS=()
 while IFS= read -r line; do
@@ -38,9 +54,23 @@ EXISTING=$(aws ssm get-parameters-by-path --path /siglens/ --recursive \
   --output json \
   | jq -r '.Parameters[].Name | ltrimstr("/siglens/")')
 
+is_optional() {
+  local k="$1"
+  for opt in "${OPTIONAL_KEYS[@]}"; do
+    [ "$k" = "$opt" ] && return 0
+  done
+  return 1
+}
+
 MISSING=()
 for key in "${REQUIRED_KEYS[@]}"; do
-  grep -qxF "$key" <<<"$EXISTING" || MISSING+=("$key")
+  if ! grep -qxF "$key" <<<"$EXISTING"; then
+    if is_optional "$key"; then
+      log "WARN: optional key $key not in SSM — skipping (BYOK provider, not required for prod)"
+    else
+      MISSING+=("$key")
+    fi
+  fi
 done
 
 if [ "${#MISSING[@]}" -gt 0 ]; then
@@ -50,4 +80,4 @@ if [ "${#MISSING[@]}" -gt 0 ]; then
   exit 1
 fi
 
-log "env completeness OK — all ${#REQUIRED_KEYS[@]} required keys present in SSM /siglens/*"
+log "env completeness OK — all required keys present in SSM /siglens/*"

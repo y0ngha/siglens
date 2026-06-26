@@ -46,7 +46,7 @@ if [ "$ASG_EXISTS" = "None" ] || [ -z "$ASG_EXISTS" ]; then
     --launch-template "LaunchTemplateName=siglens-lt,Version=\$Latest" \
     --min-size 1 --max-size 4 --desired-capacity 1 \
     --vpc-zone-identifier "$SUBNET_CSV" --target-group-arns "$TG_ARN" \
-    --health-check-type ELB --health-check-grace-period 180
+    --health-check-type ELB --health-check-grace-period 240 # golden AMI: env-fetch+delta pull; base AL2023: +dnf installs+full pull can approach 180s
 fi
 ALB_DNS=$(aws elbv2 describe-load-balancers --load-balancer-arns "$ALB_ARN" --query 'LoadBalancers[0].DNSName' --output text)
 for kv in "ALB_ARN=$ALB_ARN" "TG_ARN=$TG_ARN" "ALB_DNS=$ALB_DNS"; do

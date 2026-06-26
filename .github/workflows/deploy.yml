@@ -26,6 +26,7 @@ jobs:
     # `deploy` declares `needs: test-gate`, so a red gate blocks the rollout entirely.
     test-gate:
         runs-on: ubuntu-latest
+        timeout-minutes: 15
         env:
             SIGLENS_GITHUB_TOKEN: ${{ secrets.SIGLENS_GITHUB_TOKEN }}
         permissions:
@@ -52,6 +53,7 @@ jobs:
 
     deploy:
         needs: test-gate
+        timeout-minutes: 30
         runs-on: ubuntu-24.04-arm
         steps:
             - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4

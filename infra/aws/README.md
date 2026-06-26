@@ -12,12 +12,18 @@ SigLens는 AWS(ALB + ASG / EC2 `t4g.medium` arm64)에서 서빙된다. 런타임
 | 엔드포인트     | 깊이                 | 누가 폴링하나                          |
 | -------------- | -------------------- | -------------------------------------- |
 | `/api/health`  | shallow (`{status:'ok'}`만) | **ALB 타깃 그룹 헬스체크**(liveness) |
-| `/api/ready`   | deep (DB+Redis 핑)   | **CloudWatch/알람**(readiness)         |
+| `/api/ready`   | deep (DB+Redis 핑)   | **현재: 컨테이너 로그 경유만** — 아래 참고 |
 
 `/api/health`는 의존성 블립이 인스턴스를 죽이지 않도록 의도적으로 shallow.
 `/api/ready`는 Neon DB + Upstash Redis 도달성을 확인해 200(ready)/503(not_ready)을
-반환한다(짧은 타임아웃·병렬 핑). 알람은 `/ready`를 폴링해 의존성 장애를 감지하되,
-ALB 헬스체크(`/health`)와 분리해 데이터 의존성 장애로 타깃이 빠지는 것을 막는다.
+반환한다(짧은 타임아웃·병렬 핑).
+
+> **현재 상태**: `/api/ready`는 CloudWatch Synthetics 카나리나 알람이 직접 폴링하지 않는다.
+> 레디니스 신호는 CloudWatch Logs `/siglens/app`의 컨테이너 로그에서만 관찰할 수 있다.
+> ALB 5xx 알람(`07-alarms.sh`)이 하드 장애를 커버하지만, **DB/Redis 레디니스 장애는
+> 현재 능동적으로 알람하지 않는다.**
+> 액티브 레디니스 모니터링을 활성화하려면 opt-in 스크립트를 참고:
+> `infra/aws/11-readiness-canary.sh` (빌링 리소스 생성 — 자동 실행 아님).
 
 ## SIGTERM graceful drain (H1)
 
