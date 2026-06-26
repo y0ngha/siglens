@@ -208,6 +208,9 @@ describe('/[symbol]/news ISR empty-cache prevention', () => {
             new Error('DB connection refused')
         );
         mockGetFmpUserFacingMessage.mockReturnValue(null);
+        const consoleSpy = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => {});
 
         // Render the section directly — must not throw, must show generic message.
         render(await EventCalendarSection({ symbol: 'AAPL' }));
@@ -215,6 +218,12 @@ describe('/[symbol]/news ISR empty-cache prevention', () => {
         expect(
             screen.getByText('실적 일정을 불러오지 못했어요.')
         ).toBeInTheDocument();
+        expect(consoleSpy).toHaveBeenCalledWith(
+            expect.stringContaining('[EventCalendarSection]'),
+            expect.any(Error)
+        );
+
+        consoleSpy.mockRestore();
     });
 
     it('getEarningsReportComparison throw (FMP error) → EventCalendarSection renders FMP message, no throw', async () => {
@@ -225,18 +234,30 @@ describe('/[symbol]/news ISR empty-cache prevention', () => {
         mockGetFmpUserFacingMessage.mockReturnValue(
             'FMP 서비스가 일시 중단됐어요.'
         );
+        const consoleSpy = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => {});
 
         render(await EventCalendarSection({ symbol: 'AAPL' }));
 
         expect(
             screen.getByText('FMP 서비스가 일시 중단됐어요.')
         ).toBeInTheDocument();
+        expect(consoleSpy).toHaveBeenCalledWith(
+            expect.stringContaining('[EventCalendarSection]'),
+            expect.any(Error)
+        );
+
+        consoleSpy.mockRestore();
     });
 
     it('getGradeEvents throw (non-FMP) → AnalystActionsSection renders generic alert, no throw', async () => {
         // non-FMP error: getFmpUserFacingMessage returns null → generic fallback
         mockGetGradeEvents.mockRejectedValue(new Error('Redis unavailable'));
         mockGetFmpUserFacingMessage.mockReturnValue(null);
+        const consoleSpy = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => {});
 
         // Render the section directly — must not throw, must show generic message.
         render(await AnalystActionsSection({ symbol: 'AAPL' }));
@@ -244,6 +265,12 @@ describe('/[symbol]/news ISR empty-cache prevention', () => {
         expect(
             screen.getByText('애널리스트 동향을 불러오지 못했어요.')
         ).toBeInTheDocument();
+        expect(consoleSpy).toHaveBeenCalledWith(
+            expect.stringContaining('[AnalystActionsSection]'),
+            expect.any(Error)
+        );
+
+        consoleSpy.mockRestore();
     });
 
     it('getGradeEvents throw (FMP error) → AnalystActionsSection renders FMP message, no throw', async () => {
@@ -251,12 +278,21 @@ describe('/[symbol]/news ISR empty-cache prevention', () => {
         mockGetFmpUserFacingMessage.mockReturnValue(
             '데이터 제공 서비스에 문제가 생겼어요.'
         );
+        const consoleSpy = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => {});
 
         render(await AnalystActionsSection({ symbol: 'AAPL' }));
 
         expect(
             screen.getByText('데이터 제공 서비스에 문제가 생겼어요.')
         ).toBeInTheDocument();
+        expect(consoleSpy).toHaveBeenCalledWith(
+            expect.stringContaining('[AnalystActionsSection]'),
+            expect.any(Error)
+        );
+
+        consoleSpy.mockRestore();
     });
 
     it('success path — all loaders succeed → real content rendered, no degrade alerts', async () => {

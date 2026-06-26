@@ -213,6 +213,8 @@ import React from 'react';
 import { isValidElement } from 'react';
 import { render, screen } from '@testing-library/react';
 import FundamentalPage, {
+    ProfileSection,
+    ProfileDescriptionSection,
     ValuationSection,
     PeersSection,
     ProfitabilitySection,
@@ -223,6 +225,8 @@ import FundamentalPage, {
 import { getAssetInfoResilient } from '@/entities/ticker';
 import { getProfileResilient } from '@/app/[symbol]/fundamental/getProfileResilient';
 import {
+    getProfile,
+    getProfileDescriptionKo,
     getKeyMetricsTtm,
     getStockPeers,
     getRatiosTtm,
@@ -240,6 +244,10 @@ const mockGetAssetInfoResilient = getAssetInfoResilient as MockedFunction<
 >;
 const mockGetProfileResilient = getProfileResilient as MockedFunction<
     typeof getProfileResilient
+>;
+const mockGetProfile = getProfile as MockedFunction<typeof getProfile>;
+const mockGetProfileDescriptionKo = getProfileDescriptionKo as MockedFunction<
+    typeof getProfileDescriptionKo
 >;
 const mockGetKeyMetricsTtm = getKeyMetricsTtm as MockedFunction<
     typeof getKeyMetricsTtm
@@ -320,6 +328,8 @@ describe('Fundamental page ISR empty-cache prevention — section layer (Layer B
     beforeEach(() => {
         vi.clearAllMocks();
         // Default: all loaders succeed with safe empty values.
+        mockGetProfile.mockResolvedValue(null);
+        mockGetProfileDescriptionKo.mockResolvedValue(null);
         mockGetKeyMetricsTtm.mockResolvedValue(null);
         mockGetStockPeers.mockResolvedValue(
             [] as Awaited<ReturnType<typeof getStockPeers>>
@@ -332,6 +342,56 @@ describe('Fundamental page ISR empty-cache prevention — section layer (Layer B
         mockGetGradesConsensus.mockResolvedValue(null);
         mockGetPriceTargetConsensus.mockResolvedValue(null);
         mockGetPriceTargetSummary.mockResolvedValue(null);
+    });
+
+    it('ProfileSection: loader throw → renders degraded card (data-degraded="true"), does not throw', async () => {
+        mockGetProfile.mockRejectedValue(new Error('FMP profile 500'));
+        const consoleSpy = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => {});
+
+        // Must not throw — .catch() in ProfileSection absorbs the rejection
+        // and passes null to ProfileCard, which the mock renders as data-degraded="true".
+        render(await ProfileSection({ symbol: 'AAPL' }));
+
+        const card = screen.getByTestId('profile-card');
+        expect(card).toBeInTheDocument();
+        expect(card.getAttribute('data-degraded')).toBe('true');
+        expect(consoleSpy).toHaveBeenCalledWith(
+            expect.stringContaining('[ProfileSection]'),
+            expect.any(Error)
+        );
+
+        consoleSpy.mockRestore();
+    });
+
+    it('ProfileDescriptionSection: loader throw → renders fallback text, does not throw', async () => {
+        mockGetProfileDescriptionKo.mockRejectedValue(
+            new Error('translation service 503')
+        );
+        const consoleSpy = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => {});
+
+        // Must not throw — .catch() in ProfileDescriptionSection absorbs the rejection
+        // and returns null so descriptionKo ?? fallback renders the fallback string.
+        render(
+            await ProfileDescriptionSection({
+                symbol: 'AAPL',
+                fallback: 'English description fallback',
+            })
+        );
+
+        // Degraded output: the <p> renders the fallback (English description) instead of null.
+        expect(
+            screen.getByText('English description fallback')
+        ).toBeInTheDocument();
+        expect(consoleSpy).toHaveBeenCalledWith(
+            expect.stringContaining('[ProfileDescriptionSection]'),
+            expect.any(Error)
+        );
+
+        consoleSpy.mockRestore();
     });
 
     it('ValuationSection: loader throw → renders degraded card (data-degraded="true"), does not throw', async () => {
