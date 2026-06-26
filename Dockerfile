@@ -22,12 +22,18 @@ ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL \
     NEXT_PUBLIC_ADSENSE_PUBLISHER_ID=$NEXT_PUBLIC_ADSENSE_PUBLISHER_ID \
     NEXT_PUBLIC_ADSENSE_SLOT_PANEL_BOTTOM=$NEXT_PUBLIC_ADSENSE_SLOT_PANEL_BOTTOM \
     NEXT_PUBLIC_ADSENSE_SLOT_PROGRESS=$NEXT_PUBLIC_ADSENSE_SLOT_PROGRESS
-# DATABASE_URL은 빌드 타임 ISR prerender(news/[category] 등)에 필요. secret mount로 주입해
-# 빌드 로그·이미지 레이어에 자격증명이 남지 않게 한다.
+# 빌드 타임 ISR prerender에 필요한 자격증명. secret mount로 주입해 빌드 로그·이미지
+# 레이어에 자격증명이 남지 않게 한다.
+#   - DATABASE_URL: news/[category]·legal 등 DB-backed prerender
+#   - FMP_API_KEY: /economy(거시경제 지표/treasury)·/market(지수·섹터 quote) prerender.
+#     없으면 빌드타임 FMP fetch가 실패해 EconomyDegraded/빈 패널이 이미지에 baked되고,
+#     ISR revalidate(24h)까지 degraded 페이지가 서빙된다. (런타임 SSM에는 이미 존재)
 RUN --mount=type=secret,id=SIGLENS_GITHUB_TOKEN,required=true \
     --mount=type=secret,id=DATABASE_URL,required=true \
+    --mount=type=secret,id=FMP_API_KEY,required=true \
     SIGLENS_GITHUB_TOKEN="$(cat /run/secrets/SIGLENS_GITHUB_TOKEN)" \
     DATABASE_URL="$(cat /run/secrets/DATABASE_URL)" \
+    FMP_API_KEY="$(cat /run/secrets/FMP_API_KEY)" \
     yarn build
 RUN node scripts/assert-standalone-skills.mjs
 
