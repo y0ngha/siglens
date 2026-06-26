@@ -38,6 +38,15 @@ const sharedTestConfig = {
     exclude: [...configDefaults.exclude, 'e2e/**'],
 };
 
+/**
+ * Coverage OOM 해결책 (widgets 레이어 v8 계측 힙 고갈):
+ * Vitest 4는 vmThreads poolOptions.execArgv를 제거해 vitest.config.ts 내부에서
+ * 워커 힙 크기를 직접 설정할 수 없다(ERR_WORKER_INVALID_EXEC_ARGV).
+ * 대신 `package.json`의 test-coverage 스크립트에서
+ *   `NODE_OPTIONS="--no-experimental-webstorage --max-old-space-size=4096"`
+ * 를 설정해 Vitest 프로세스 자체의 힙을 확보한다. vmThreads 워커는 부모의
+ * --max-old-space-size를 상속하므로 워커별 OOM도 함께 해소된다.
+ */
 const coverageConfig = {
     provider: 'v8' as const,
     include: [
