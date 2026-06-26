@@ -40,10 +40,13 @@ test.describe('financials AI summary — error boundary recovery', () => {
 
         await page.goto('/AAPL/financials');
 
-        // 에러 바운더리가 fallback(FinancialsAiSummaryError)을 렌더한다.
-        // 헤딩 텍스트(AI 재무제표 분석)가 에러 섹션에 노출되면 바운더리가 작동한 것.
+        // 에러 바운더리가 fallback(FinancialsAiSummaryError)을 렌더할 때까지 기다린다.
+        // 주의: 헤딩 'AI 재무제표 분석'은 로딩/성공 상태에도 존재하므로 에러 렌더의
+        // 결정적 신호가 아니다 — 분석은 client hook이 hydration 후 비동기로 가져오므로,
+        // 헤딩만 기다리고 쿠키를 비우면 액션이 실행되기 전에 쿠키가 사라져 정상 픽스처가
+        // 렌더되는 레이스가 발생한다. 에러 전용 신호인 '다시 시도' 버튼을 기다려야 한다.
         await expect(
-            page.getByRole('heading', { name: 'AI 재무제표 분석' })
+            page.getByRole('button', { name: '다시 시도' })
         ).toBeVisible();
 
         // 에러는 한 위젯에 격리된다 — 탭 네비게이션은 여전히 살아 있다.
@@ -80,10 +83,13 @@ test.describe('congress AI trend — error boundary recovery', () => {
 
         await page.goto('/AAPL/congress');
 
-        // 에러 바운더리가 fallback(CongressTrendSummaryError)을 렌더한다.
-        // 헤딩 텍스트(AI 동향 해석)가 에러 섹션에 노출되면 바운더리가 작동한 것.
+        // 에러 바운더리가 fallback(CongressTrendSummaryError)을 렌더할 때까지 기다린다.
+        // 주의: 헤딩 'AI 동향 해석'은 로딩/성공 상태에도 존재하므로 에러 렌더의 결정적
+        // 신호가 아니다 — 분석은 client hook이 hydration 후 비동기로 가져오므로, 헤딩만
+        // 기다리고 쿠키를 비우면 액션 실행 전에 쿠키가 사라져 정상 픽스처가 렌더되는
+        // 레이스가 발생한다. 에러 전용 신호인 '다시 시도' 버튼을 기다려야 한다.
         await expect(
-            page.getByRole('heading', { name: 'AI 동향 해석' })
+            page.getByRole('button', { name: '다시 시도' })
         ).toBeVisible();
 
         // 에러는 한 위젯에 격리된다 — 탭 네비게이션은 여전히 살아 있다.
