@@ -2,6 +2,7 @@
 
 import type { FallbackProps } from 'react-error-boundary';
 import { getFmpUserFacingMessage } from '@/shared/api/fmp/fmpUserMessage';
+import { cn } from '@/shared/lib/cn';
 
 export interface AiSummaryErrorSectionProps extends FallbackProps {
     /**
@@ -51,10 +52,10 @@ export function AiSummaryErrorSection({
     return (
         <section
             aria-labelledby={headingId}
-            className={
-                'border-ui-danger/30 bg-secondary-800 rounded-xl border p-6' +
-                (className ? ` ${className}` : '')
-            }
+            className={cn(
+                'border-ui-danger/30 bg-secondary-800 rounded-xl border p-6',
+                className
+            )}
         >
             <h2
                 id={headingId}

@@ -1,4 +1,5 @@
 import { type CSSProperties } from 'react';
+import { cn } from '@/shared/lib/cn';
 
 const SKELETON_LINE_COUNT = 3;
 const SKELETON_WIDTH_START_PCT = 85;
@@ -44,10 +45,10 @@ export function AiSummarySkeleton({
         <section
             aria-labelledby={headingId}
             aria-busy="true"
-            className={
-                'border-secondary-700 bg-secondary-800 rounded-xl border p-6' +
-                (className ? ` ${className}` : '')
-            }
+            className={cn(
+                'border-secondary-700 bg-secondary-800 rounded-xl border p-6',
+                className
+            )}
         >
             <h2
                 id={headingId}
