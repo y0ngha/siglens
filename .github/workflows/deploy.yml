@@ -88,10 +88,13 @@ jobs:
             #
             # Secrets are passed via BuildKit secret mounts so they never appear
             # in image layers or build logs (see Dockerfile RUN --mount=type=secret).
-            # DATABASE_URL is needed at build time for ISR prerender of news/[category] routes.
+            # DATABASE_URL is needed at build time for ISR prerender of news/[category] + legal routes.
+            # FMP_API_KEY is needed at build time for ISR prerender of /economy + /market (without it,
+            # the snapshot/quote fetches fail and a degraded page is baked into the image until the
+            # 24h revalidation re-renders it at runtime).
             #
-            # NOTE: The DATABASE_URL secret must be added to the repo's Actions secrets
-            # before this workflow can succeed. See: Settings → Secrets → Actions.
+            # NOTE: DATABASE_URL and FMP_API_KEY secrets must both be present in the repo's Actions
+            # secrets before this workflow can succeed (required=true mounts). See: Settings → Secrets → Actions.
             #
             # Build pipeline (arm64-native, zero-downtime):
             #   1. Build for linux/arm64 with --load (image lands in runner's Docker daemon natively).
@@ -103,12 +106,15 @@ jobs:
               env:
                   SIGLENS_GITHUB_TOKEN: ${{ secrets.SIGLENS_GITHUB_TOKEN }}
                   DATABASE_URL: ${{ secrets.DATABASE_URL }}
+                  # FMP_API_KEY: /economy·/market 빌드타임 prerender에 필요(없으면 degraded baked).
+                  FMP_API_KEY: ${{ secrets.FMP_API_KEY }}
               run: |
                   docker buildx build \
                       --platform linux/arm64 \
                       --provenance=false \
                       --secret id=SIGLENS_GITHUB_TOKEN,env=SIGLENS_GITHUB_TOKEN \
                       --secret id=DATABASE_URL,env=DATABASE_URL \
+                      --secret id=FMP_API_KEY,env=FMP_API_KEY \
                       --build-arg NEXT_PUBLIC_SITE_URL=https://siglens.io \
                       --build-arg NEXT_PUBLIC_ADSENSE_PUBLISHER_ID=ca-pub-6121223912694381 \
                       --build-arg NEXT_PUBLIC_ADSENSE_SLOT_PROGRESS=2260139933 \
