@@ -7,12 +7,47 @@ export interface BreadcrumbItem {
 }
 
 /**
+ * 호스트가 로컬/개발 환경인지 판단한다.
+ *
+ * 다음 케이스를 로컬/개발 환경으로 간주하고 SITE_URL 검증에서 제외한다:
+ *  - localhost, 127.0.0.1, 0.0.0.0, ::1 (루프백)
+ *  - 도트(.)가 없는 단순 호스트 — TLD 없음, 예: "app", "myserver"
+ *  - *.local 접미사 — mDNS/Bonjour 로컬 호스트명
+ *
+ * CI 환경에서 NEXT_PUBLIC_SITE_URL=http://localhost:4200 같은 값이 설정돼도
+ * 빌드가 깨지지 않도록 하기 위한 예외 조건이다.
+ */
+function isLocalOrDevHost(host: string): boolean {
+    // 루프백 주소 및 명시적 로컬 호스트명
+    if (
+        host === 'localhost' ||
+        host === '127.0.0.1' ||
+        host === '0.0.0.0' ||
+        host === '::1'
+    ) {
+        return true;
+    }
+    // TLD 없는 단순 호스트명 (도트 미포함)
+    if (!host.includes('.')) {
+        return true;
+    }
+    // *.local mDNS 호스트명
+    if (host.endsWith('.local')) {
+        return true;
+    }
+    return false;
+}
+
+/**
  * 사이트 URL. 환경 변수가 설정된 경우 그 값을, 없으면 기본값 'https://siglens.io'을 사용한다.
  *
  * 프로덕션 가드: NODE_ENV==='production'이고 NEXT_PUBLIC_SITE_URL이 설정됐는데
- * 호스트가 'siglens.io'가 아니면 모듈 로드 시 즉시 throw한다.
- * 잘못된/프리뷰 값이 모든 canonical·OG URL을 오염시키는 것을 빠른 실패로 막는다.
- * 변수가 설정되지 않은 경우(기본값 사용)는 문제가 없으므로 통과시킨다.
+ * 호스트가 실제 원격 도메인이면서 'siglens.io'가 아닐 때 모듈 로드 시 즉시 throw한다.
+ * 잘못된 프리뷰/ALB 도메인이 canonical·OG URL을 오염시키는 것을 빠른 실패로 막는다.
+ *
+ * 예외 — 아래 호스트는 로컬/개발/CI 환경으로 간주해 throw하지 않는다:
+ *   localhost, 127.0.0.1, 0.0.0.0, ::1, TLD 없는 단순 호스트, *.local
+ * 변수가 설정되지 않은 경우(기본값 사용)도 검사 대상이 아니므로 통과시킨다.
  */
 function resolveSiteUrl(): string {
     const fromEnv = process.env.NEXT_PUBLIC_SITE_URL;
@@ -27,7 +62,8 @@ function resolveSiteUrl(): string {
                 `[seo] NEXT_PUBLIC_SITE_URL="${url}"은 유효한 URL이 아닙니다.`
             );
         }
-        if (host !== 'siglens.io') {
+        // 로컬/개발/CI 호스트는 빌드 안전을 위해 검증에서 제외한다.
+        if (!isLocalOrDevHost(host) && host !== 'siglens.io') {
             throw new Error(
                 `[seo] NEXT_PUBLIC_SITE_URL="${url}"의 호스트가 siglens.io가 아닙니다. ` +
                     `canonical/OG URL이 오염되는 것을 막기 위해 빠른 실패합니다.`
