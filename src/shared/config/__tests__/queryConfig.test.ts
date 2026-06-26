@@ -1,12 +1,19 @@
-import type { ModelId } from '@y0ngha/siglens-core';
+import type {
+    ModelId,
+    Timeframe,
+    DashboardTimeframe,
+} from '@y0ngha/siglens-core';
 import {
     ASSET_INFO_STALE_TIME_MS,
     BARS_STALE_TIME_MS,
+    CURRENT_USER_STALE_TIME_MS,
     KOREAN_TRANSLATION_STALE_TIME_MS,
     MARKET_SUMMARY_STALE_TIME_MS,
     QUERY_GC_TIME_MS,
     QUERY_KEYS,
     QUERY_STALE_TIME_MS,
+    REGISTERED_PROVIDERS_STALE_TIME_MS,
+    SECTOR_SIGNALS_STALE_TIME_MS,
     TICKER_SEARCH_STALE_TIME_MS,
     USER_TIER_STALE_TIME_MS,
 } from '@/shared/config/queryConfig';
@@ -16,11 +23,14 @@ describe('queryConfig staleTime constants', () => {
         QUERY_STALE_TIME_MS,
         QUERY_GC_TIME_MS,
         MARKET_SUMMARY_STALE_TIME_MS,
+        SECTOR_SIGNALS_STALE_TIME_MS,
         TICKER_SEARCH_STALE_TIME_MS,
         KOREAN_TRANSLATION_STALE_TIME_MS,
         ASSET_INFO_STALE_TIME_MS,
         BARS_STALE_TIME_MS,
         USER_TIER_STALE_TIME_MS,
+        CURRENT_USER_STALE_TIME_MS,
+        REGISTERED_PROVIDERS_STALE_TIME_MS,
     };
 
     it.each(Object.entries(constants))(
@@ -37,6 +47,36 @@ describe('queryConfig staleTime constants', () => {
 
     it('user tier query key는 안정적이다', () => {
         expect(QUERY_KEYS.userTier()).toEqual(['user-tier']);
+    });
+
+    it('currentUser query key는 안정적이다', () => {
+        expect(QUERY_KEYS.currentUser()).toEqual(['current-user']);
+    });
+
+    it('marketSummary query key는 안정적이다', () => {
+        expect(QUERY_KEYS.marketSummary()).toEqual(['market-summary']);
+    });
+
+    it('marketBriefing query key는 안정적이다', () => {
+        expect(QUERY_KEYS.marketBriefing()).toEqual(['market-briefing']);
+    });
+
+    it('macroBriefing query key는 안정적이다', () => {
+        expect(QUERY_KEYS.macroBriefing()).toEqual(['macro-briefing']);
+    });
+
+    it('remainingTokens query key는 안정적이다', () => {
+        expect(QUERY_KEYS.remainingTokens()).toEqual([
+            'chat',
+            'remaining-tokens',
+        ]);
+    });
+
+    it('registeredProviders query key는 안정적이다', () => {
+        expect(QUERY_KEYS.registeredProviders()).toEqual([
+            'llm',
+            'registered-providers',
+        ]);
     });
 });
 
@@ -62,5 +102,127 @@ describe('QUERY_KEYS.financialsAnalysis', () => {
         const financials = QUERY_KEYS.financialsAnalysis('AAPL', MODEL_ID);
         const fundamental = QUERY_KEYS.fundamentalAnalysis('AAPL', MODEL_ID);
         expect(financials[0]).not.toBe(fundamental[0]);
+    });
+});
+
+describe('QUERY_KEYS — 나머지 키 팩토리', () => {
+    const MODEL_ID = 'gemini-2.5-flash' as ModelId;
+    const TIMEFRAME: Timeframe = '1Day';
+    const DASHBOARD_TF: DashboardTimeframe = '1Day';
+
+    it('bars: symbol 대문자 정규화 + fmpSymbol 포함', () => {
+        expect(QUERY_KEYS.bars('aapl', TIMEFRAME, 'AAPL')).toEqual([
+            'bars',
+            'AAPL',
+            '1Day',
+            'AAPL',
+        ]);
+    });
+
+    it('barsPrefix: fmpSymbol 없이 [bars, UPPER_SYMBOL, timeframe]', () => {
+        expect(QUERY_KEYS.barsPrefix('aapl', TIMEFRAME)).toEqual([
+            'bars',
+            'AAPL',
+            TIMEFRAME,
+        ]);
+    });
+
+    it('tickerSearch: 쿼리 문자열을 그대로 포함한다', () => {
+        expect(QUERY_KEYS.tickerSearch('apple')).toEqual([
+            'ticker-search',
+            'apple',
+        ]);
+    });
+
+    it('assetInfo: symbol 대문자 정규화', () => {
+        expect(QUERY_KEYS.assetInfo('tsla')).toEqual(['asset-info', 'TSLA']);
+    });
+
+    it('briefing: jobId를 그대로 포함한다', () => {
+        expect(QUERY_KEYS.briefing('job-123')).toEqual(['briefing', 'job-123']);
+    });
+
+    it('macroBriefingPoll: jobId를 포함한다', () => {
+        expect(QUERY_KEYS.macroBriefingPoll('job-abc')).toEqual([
+            'macro-briefing-poll',
+            'job-abc',
+        ]);
+    });
+
+    it('fundamentalAnalysis: symbol 대문자 정규화 + modelId', () => {
+        expect(QUERY_KEYS.fundamentalAnalysis('aapl', MODEL_ID)).toEqual([
+            'fundamental-analysis',
+            'AAPL',
+            MODEL_ID,
+        ]);
+    });
+
+    it('congressTrend: symbol 대문자 정규화 + modelId', () => {
+        expect(QUERY_KEYS.congressTrend('aapl', MODEL_ID)).toEqual([
+            'congress-trend',
+            'AAPL',
+            MODEL_ID,
+        ]);
+    });
+
+    it('newsAnalysis: symbol 대문자 정규화 + companyName + modelId', () => {
+        expect(QUERY_KEYS.newsAnalysis('aapl', 'Apple Inc.', MODEL_ID)).toEqual(
+            ['news-analysis', 'AAPL', 'Apple Inc.', MODEL_ID]
+        );
+    });
+
+    it('newsAnalysisPrefix: 모든 modelId 변형을 무효화하는 prefix', () => {
+        expect(QUERY_KEYS.newsAnalysisPrefix('aapl')).toEqual([
+            'news-analysis',
+            'AAPL',
+        ]);
+    });
+
+    it('overallAnalysis: symbol 대문자 + companyName + timeframe + modelId', () => {
+        expect(
+            QUERY_KEYS.overallAnalysis(
+                'aapl',
+                'Apple Inc.',
+                TIMEFRAME,
+                MODEL_ID
+            )
+        ).toEqual([
+            'overall-analysis',
+            'AAPL',
+            'Apple Inc.',
+            TIMEFRAME,
+            MODEL_ID,
+        ]);
+    });
+
+    it('sectorSignals: timeframe을 포함한다', () => {
+        expect(QUERY_KEYS.sectorSignals(DASHBOARD_TF)).toEqual([
+            'sector-signals',
+            DASHBOARD_TF,
+        ]);
+    });
+
+    it('optionsSnapshot: symbol 대문자 정규화', () => {
+        expect(QUERY_KEYS.optionsSnapshot('aapl')).toEqual([
+            'options-snapshot',
+            'AAPL',
+        ]);
+    });
+
+    it('optionsAnalysis: symbol + companyName + expirationDate + modelId', () => {
+        expect(
+            QUERY_KEYS.optionsAnalysis(
+                'aapl',
+                'Apple Inc.',
+                '2025-01-17',
+                MODEL_ID
+            )
+        ).toEqual([
+            'options-analysis',
+            'AAPL',
+            'Apple Inc.',
+            '2025-01-17',
+            MODEL_ID,
+        ]);
     });
 });

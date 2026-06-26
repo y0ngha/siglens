@@ -63,8 +63,6 @@ vi.mock('next/navigation', () => ({
     notFound: vi.fn(),
 }));
 
-import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
 import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { generateMetadata, revalidate } from '@/app/[symbol]/congress/page';
 import { getAssetInfoResilient } from '@/entities/ticker';
@@ -256,33 +254,10 @@ describe('generateMetadata', () => {
 });
 
 describe('Congress page JSON-LD schema types', () => {
-    // The JSON-LD objects are constructed inside the page component body (not
-    // exported), so we assert against the actual page.tsx source on disk rather
-    // than a locally-redeclared string (which would be tautological — §13.5).
-    const pageSource = readFileSync(
-        fileURLToPath(new URL('../page.tsx', import.meta.url)),
-        'utf8'
-    );
-
-    it('page.tsx emits a WebPage schema type', () => {
-        // WebPage JSON-LD는 buildSymbolWebPageJsonLd 헬퍼가 생성한다.
-        // '@type': 'WebPage' 리터럴은 헬퍼 내부에 있으므로, 페이지 소스에서
-        // 헬퍼 호출 여부로 확인한다(seo.ts JSDoc에 반환 형태 문서화).
-        expect(pageSource).toContain('buildSymbolWebPageJsonLd(');
-    });
-
-    it('page.tsx emits a FAQPage schema type', () => {
-        expect(pageSource).toMatch(/['"]@type['"]:\s*['"]FAQPage['"]/);
-    });
-
-    it('page.tsx FAQPage mainEntity has 3 Question entries', () => {
-        const matches = pageSource.match(/['"]@type['"]:\s*['"]Question['"]/g);
-        expect(matches?.length ?? 0).toBe(3);
-    });
-
-    it('page.tsx FAQPage Question names interpolate displayName', () => {
-        expect(pageSource).toContain('${displayName}의 의회 거래');
-    });
+    // 소스 그렙 단언(readFileSync + toContain('buildSymbolWebPageJsonLd('))은
+    // 동작이 아니라 구현 세부를 검사하므로 제거됐다.
+    // WebPage/FAQPage 런타임 JSON-LD 출력은 e2e/specs/symbol-seo.spec.ts가
+    // /AAPL/congress 페이지를 크롤러처럼 HTTP로 fetch해 검증한다.
 
     it('buildBreadcrumbJsonLd produces a BreadcrumbList schema', async () => {
         const { buildBreadcrumbJsonLd } = await import('@/shared/lib/seo');
