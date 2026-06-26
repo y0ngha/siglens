@@ -102,3 +102,5 @@ next-env.d.ts
 .superpowers/
 infra/aws/.env
 infra/aws/.ids
+# 핀된 AMI ID (region/account 종속, 운영자 로컬). CI는 vars.PINNED_AMI 사용.
+infra/aws/.ami

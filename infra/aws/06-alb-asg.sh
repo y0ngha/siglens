@@ -19,6 +19,16 @@ if [ "$TG_ARN" = "None" ] || [ -z "$TG_ARN" ]; then
     --target-type instance --health-check-path /api/health --health-check-interval-seconds 30 \
     --healthy-threshold-count 2 --unhealthy-threshold-count 3 --query 'TargetGroups[0].TargetGroupArn' --output text)
 fi
+# Deregistration delay: 인스턴스 refresh로 타깃이 draining 상태가 되면 ALB가
+# 새 연결을 끊고 in-flight 요청만 흘려보낸 뒤 dereg을 완료한다. 기본 300s는
+# 우리 graceful-shutdown 예산과 맞지 않으므로 30s로 낮춘다:
+#   - systemd ExecStop=docker stop -t 30 (컨테이너 30s 후 SIGKILL)
+#   - instrumentation SIGTERM drain deadline 25s
+#   - 이 dereg delay 30s
+# 셋이 정합해야 롤 시 in-flight 요청·백그라운드 작업이 깔끔히 비워진다.
+# modify-target-group-attributes는 upsert라 매 실행 안전(멱등).
+aws elbv2 modify-target-group-attributes --target-group-arn "$TG_ARN" \
+  --attributes Key=deregistration_delay.timeout_seconds,Value=30 >/dev/null
 # HTTPS 443 리스너 (ACM)
 if ! aws elbv2 describe-listeners --load-balancer-arn "$ALB_ARN" --query 'Listeners[?Port==`443`]' --output text | grep -q .; then
   aws elbv2 create-listener --load-balancer-arn "$ALB_ARN" --protocol HTTPS --port 443 \
@@ -28,9 +38,13 @@ fi
 # ASG (멱등)
 ASG_EXISTS=$(aws autoscaling describe-auto-scaling-groups --auto-scaling-group-names siglens-asg --query 'AutoScalingGroups[0].AutoScalingGroupName' --output text 2>/dev/null) || true
 if [ "$ASG_EXISTS" = "None" ] || [ -z "$ASG_EXISTS" ]; then
+  # max-size 4: ASG 용량의 단일 소스 오브 트루스(L1). 08-scaling.sh는 더 이상
+  # max-size를 건드리지 않는다 — 06과 08이 서로 다른 값을 설정해 표류하던 문제를
+  # 여기로 통합. instance refresh는 MaxHealthyPercentage=200(desired+1)만 필요하므로
+  # 4면 충분하고, 지속 부하 시 타깃 트래킹 스케일아웃 여유도 확보된다.
   aws autoscaling create-auto-scaling-group --auto-scaling-group-name siglens-asg \
     --launch-template "LaunchTemplateName=siglens-lt,Version=\$Latest" \
-    --min-size 1 --max-size 2 --desired-capacity 1 \
+    --min-size 1 --max-size 4 --desired-capacity 1 \
     --vpc-zone-identifier "$SUBNET_CSV" --target-group-arns "$TG_ARN" \
     --health-check-type ELB --health-check-grace-period 180
 fi

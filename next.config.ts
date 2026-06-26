@@ -9,6 +9,14 @@ const nextConfig: NextConfig = {
     // self-host: Docker 최소 번들(.next/standalone + server.js)
     output: 'standalone',
 
+    // serverExternalPackages 부재는 의도된 것(L3) — 다시 추가하지 말 것.
+    // 과거 'postgres'를 serverExternalPackages에 넣었다가 E2E prod build가 깨졌다:
+    // 정적 페이지 prerender 중 clientTest(postgres)가 실제 실행되는데 external 처리로
+    // 번들에서 빠져 빌드가 실패(MEMORY: e2e_prerender_executes_clienttest 참고).
+    // 프로덕션 DB는 Neon HTTP 드라이버(@neondatabase/serverless)를 쓰므로 네이티브
+    // postgres를 external로 분리할 이유 자체가 없다. external 후보가 생기면 반드시
+    // `E2E_TEST=1 yarn build`로 검증한 뒤에만 추가한다.
+
     // 압축은 CloudFlare가 brotli로 엣지에서 수행 → Next의 gzip 이중압축 방지
     compress: false,
 
