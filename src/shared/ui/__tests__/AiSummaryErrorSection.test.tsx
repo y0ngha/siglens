@@ -7,6 +7,7 @@ vi.mock('@/shared/api/fmp/fmpUserMessage', () => ({
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
+import type { FallbackProps } from 'react-error-boundary';
 import { AiSummaryErrorSection } from '../AiSummaryErrorSection';
 
 // FallbackProps.error is typed `any`; helper keeps test call sites readable.
@@ -22,8 +23,7 @@ const renderSection = (
 ) =>
     render(
         <AiSummaryErrorSection
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            error={error as any}
+            error={error as FallbackProps['error']}
             resetErrorBoundary={reset}
             heading={overrides.heading ?? 'AI 테스트 분석'}
             idPrefix={overrides.idPrefix ?? 'test-ai-summary'}

@@ -38,6 +38,16 @@ function isLocalOrDevHost(host: string): boolean {
     return false;
 }
 
+function parseHostname(rawUrl: string): string {
+    try {
+        return new URL(rawUrl).hostname;
+    } catch {
+        throw new Error(
+            `[seo] NEXT_PUBLIC_SITE_URL="${rawUrl}"은 유효한 URL이 아닙니다.`
+        );
+    }
+}
+
 /**
  * 사이트 URL. 환경 변수가 설정된 경우 그 값을, 없으면 기본값 'https://siglens.io'을 사용한다.
  *
@@ -54,14 +64,7 @@ function resolveSiteUrl(): string {
     const url = fromEnv ?? 'https://siglens.io';
 
     if (process.env.NODE_ENV === 'production' && fromEnv !== undefined) {
-        let host: string;
-        try {
-            host = new URL(url).hostname;
-        } catch {
-            throw new Error(
-                `[seo] NEXT_PUBLIC_SITE_URL="${url}"은 유효한 URL이 아닙니다.`
-            );
-        }
+        const host = parseHostname(url);
         // 로컬/개발/CI 호스트는 빌드 안전을 위해 검증에서 제외한다.
         if (!isLocalOrDevHost(host) && host !== 'siglens.io') {
             throw new Error(

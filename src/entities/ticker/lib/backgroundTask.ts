@@ -50,13 +50,13 @@ export function stopAcceptingBackgroundTasks(): void {
     acceptingNewTasks = false;
 }
 
-/** @internal 테스트 간 모듈 상태를 초기화한다. */
+/** 테스트 간 모듈 상태를 초기화한다. */
 export function __resetBackgroundTasksForTests(): void {
     pendingTasks.clear();
     acceptingNewTasks = true;
 }
 
-/** @internal 현재 추적 중인 백그라운드 작업 수(테스트/진단용). */
+/** 현재 추적 중인 백그라운드 작업 수(테스트/진단용). */
 export function __pendingBackgroundTaskCount(): number {
     return pendingTasks.size;
 }

@@ -1,5 +1,3 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-
 vi.mock('@/shared/db/client', () => ({
     tryGetDatabaseClient: vi.fn(),
 }));
@@ -8,6 +6,7 @@ vi.mock('@/shared/cache/redisClient', () => ({
     getRedisClient: vi.fn(),
 }));
 
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { GET } from '../route';
 import { tryGetDatabaseClient } from '@/shared/db/client';
 import { getRedisClient } from '@/shared/cache/redisClient';
