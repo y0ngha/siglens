@@ -29,6 +29,19 @@ BASE_AMI=$(aws ec2 describe-images --owners amazon \
 [ -n "$BASE_AMI" ] && [ "$BASE_AMI" != "None" ] || { log "ERROR: base AL2023 arm64 AMI not found"; exit 1; }
 log "base AMI: $BASE_AMI"
 
+# 빌더 네트워킹/권한(fix): run-instances는 subnet·SG·인스턴스 프로파일을 명시해야 한다.
+# 누락 시 (1) default VPC가 없는 계정에서 launch 자체가 실패하고, (2) 인스턴스 프로파일
+# 부재로 SSM send-command 폴링(아래 마커 확인)과 ECR 접근이 불가해 bake가 실패한다.
+# 앱 런타임 롤($EC2_ROLE, AmazonSSMManagedInstanceCore 부착)을 재사용하고, 퍼블릭(IGW)
+# 기본 서브넷을 골라 dnf/ECR/SSM 아웃바운드를 보장한다(--associate-public-ip-address).
+BUILDER_PROFILE="${BUILDER_PROFILE:-$EC2_ROLE}"
+BUILDER_SG="${BUILDER_SG:-$EC2_SG}"
+BUILDER_SUBNET="${BUILDER_SUBNET:-$(aws ec2 describe-subnets --region "$REGION" \
+  --filters "Name=vpc-id,Values=$VPC_ID" "Name=default-for-az,Values=true" \
+  --query 'Subnets[0].SubnetId' --output text)}"
+[ -n "$BUILDER_SUBNET" ] && [ "$BUILDER_SUBNET" != "None" ] || { log "ERROR: builder subnet not resolved in $VPC_ID"; exit 1; }
+log "builder net: subnet=$BUILDER_SUBNET sg=$BUILDER_SG profile=$BUILDER_PROFILE"
+
 # 빌더 인스턴스가 부팅 시 설치를 수행하도록 user-data를 구성한다.
 # 마지막에 /etc/siglens-golden-ami 마커를 남겨 런타임 user-data.sh가 설치를 건너뛰게 한다.
 BUILDER_UD=$(base64 <<'BAKE'
@@ -48,6 +61,9 @@ log "launching builder instance ($INSTANCE_TYPE from $BASE_AMI)..."
 BUILDER_ID=$(aws ec2 run-instances --region "$REGION" \
   --image-id "$BASE_AMI" --instance-type "$INSTANCE_TYPE" \
   --user-data "$BUILDER_UD" \
+  --iam-instance-profile "Name=$BUILDER_PROFILE" \
+  --subnet-id "$BUILDER_SUBNET" --security-group-ids "$BUILDER_SG" \
+  --associate-public-ip-address \
   --instance-initiated-shutdown-behavior stop \
   --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value=siglens-ami-builder}]' \
   --query 'Instances[0].InstanceId' --output text)
