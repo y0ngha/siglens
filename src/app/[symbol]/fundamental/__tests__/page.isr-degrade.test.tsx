@@ -16,11 +16,13 @@
  *   getProfileResilient + getAssetInfoResilient. Tests here verify that the
  *   top-level degrade guard (profile-level) works correctly.
  *
- *   Layer B — section functions (lazy async): ValuationSection, PeersSection,
- *   etc. are tested by invoking them through staticSymbolCache (which the mock
- *   routes straight to the fetcher). Each section function's .catch() is what
- *   protects ISR — we verify this by calling the section fetchers directly via
- *   the mock and asserting that console.error is called with the context prefix.
+ *   Layer B — section functions (exported async RSCs): ValuationSection,
+ *   PeersSection, etc. are exported from page.tsx as named exports and tested
+ *   by calling them directly. staticSymbolCache is mocked to call fetcher()
+ *   directly so a rejection propagates to the section's .catch() handler.
+ *   Widget mocks render a visible data-testid so the degraded path (null/[]
+ *   passed to the card) is assertable. This is falsifiable: removing a
+ *   section's .catch() causes the test to fail with an unhandled rejection.
  *
  * Mirrors page.guard.test.ts mocking pattern.
  */
@@ -72,7 +74,11 @@ vi.mock('@/shared/cache/staticSymbolCache', () => ({
         ) => fetcher()
     ),
 }));
-// Widget mocks to avoid deep import chains.
+// Widget card mocks render a data-testid that reflects the data they received.
+// When the section's .catch() fires, the loader returns null/[] and the card
+// renders with degraded props — the testid becomes assertable in Layer B tests.
+// When no .catch() fires (success path), the same mock renders the same testid
+// but it still proves the section did not throw.
 vi.mock('@/widgets/fundamental/FundamentalAiSummary', () => ({
     FundamentalAiSummary: () => null,
 }));
@@ -83,25 +89,89 @@ vi.mock('@/widgets/fundamental/FundamentalAiSummarySkeleton', () => ({
     FundamentalAiSummarySkeleton: () => null,
 }));
 vi.mock('@/widgets/fundamental/sections/FinancialHealthCard', () => ({
-    FinancialHealthCard: () => null,
+    FinancialHealthCard: ({
+        ratios,
+        scores,
+        cashFlow,
+    }: {
+        ratios: unknown;
+        scores: unknown;
+        cashFlow: unknown;
+    }) => (
+        <div
+            data-testid="financial-health-card"
+            data-degraded={
+                ratios === null && scores === null && cashFlow === null
+                    ? 'true'
+                    : 'false'
+            }
+        />
+    ),
 }));
 vi.mock('@/widgets/fundamental/sections/FutureDirectionCard', () => ({
-    FutureDirectionCard: () => null,
+    FutureDirectionCard: ({
+        estimates,
+        grades,
+        ptConsensus,
+        ptSummary,
+    }: {
+        estimates: unknown;
+        grades: unknown;
+        ptConsensus: unknown;
+        ptSummary: unknown;
+    }) => (
+        <div
+            data-testid="future-direction-card"
+            data-degraded={
+                estimates === null &&
+                grades === null &&
+                ptConsensus === null &&
+                ptSummary === null
+                    ? 'true'
+                    : 'false'
+            }
+        />
+    ),
 }));
 vi.mock('@/widgets/fundamental/sections/GrowthChart', () => ({
-    GrowthChart: () => null,
+    GrowthChart: ({ growth }: { growth: unknown }) => (
+        <div
+            data-testid="growth-chart"
+            data-degraded={growth === null ? 'true' : 'false'}
+        />
+    ),
 }));
 vi.mock('@/widgets/fundamental/sections/PeersTable', () => ({
-    PeersTable: () => null,
+    PeersTable: ({ peers }: { peers: unknown[] }) => (
+        <div
+            data-testid="peers-table"
+            data-degraded={peers.length === 0 ? 'true' : 'false'}
+        />
+    ),
 }));
 vi.mock('@/widgets/fundamental/sections/ProfileCard', () => ({
-    ProfileCard: () => null,
+    ProfileCard: ({ profile }: { profile: unknown }) => (
+        <div
+            data-testid="profile-card"
+            data-degraded={profile === null ? 'true' : 'false'}
+        />
+    ),
 }));
 vi.mock('@/widgets/fundamental/sections/ProfitabilityCard', () => ({
-    ProfitabilityCard: () => null,
+    ProfitabilityCard: ({ ratios }: { ratios: unknown }) => (
+        <div
+            data-testid="profitability-card"
+            data-degraded={ratios === null ? 'true' : 'false'}
+        />
+    ),
 }));
 vi.mock('@/widgets/fundamental/sections/ValuationCard', () => ({
-    ValuationCard: () => null,
+    ValuationCard: ({ metrics }: { metrics: unknown }) => (
+        <div
+            data-testid="valuation-card"
+            data-degraded={metrics === null ? 'true' : 'false'}
+        />
+    ),
 }));
 vi.mock('@/views/symbol', () => ({
     SymbolPageHeading: ({ children }: { children: unknown }) => children,
@@ -139,8 +209,17 @@ import {
     beforeEach,
     type MockedFunction,
 } from 'vitest';
+import React from 'react';
 import { isValidElement } from 'react';
-import FundamentalPage from '@/app/[symbol]/fundamental/page';
+import { render, screen } from '@testing-library/react';
+import FundamentalPage, {
+    ValuationSection,
+    PeersSection,
+    ProfitabilitySection,
+    GrowthSection,
+    FinancialHealthSection,
+    FutureDirectionSection,
+} from '@/app/[symbol]/fundamental/page';
 import { getAssetInfoResilient } from '@/entities/ticker';
 import { getProfileResilient } from '@/app/[symbol]/fundamental/getProfileResilient';
 import {
@@ -151,8 +230,10 @@ import {
     getFinancialScores,
     getCashFlowStatement,
     getAnalystEstimates,
+    getGradesConsensus,
+    getPriceTargetConsensus,
+    getPriceTargetSummary,
 } from '@/app/[symbol]/fundamental/fundamentalData';
-import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
 
 const mockGetAssetInfoResilient = getAssetInfoResilient as MockedFunction<
     typeof getAssetInfoResilient
@@ -177,9 +258,14 @@ const mockGetCashFlowStatement = getCashFlowStatement as MockedFunction<
 const mockGetAnalystEstimates = getAnalystEstimates as MockedFunction<
     typeof getAnalystEstimates
 >;
-// staticSymbolCache is mocked to call fetcher() directly — used in section tests.
-const mockStaticSymbolCache = staticSymbolCache as MockedFunction<
-    typeof staticSymbolCache
+const mockGetGradesConsensus = getGradesConsensus as MockedFunction<
+    typeof getGradesConsensus
+>;
+const mockGetPriceTargetConsensus = getPriceTargetConsensus as MockedFunction<
+    typeof getPriceTargetConsensus
+>;
+const mockGetPriceTargetSummary = getPriceTargetSummary as MockedFunction<
+    typeof getPriceTargetSummary
 >;
 
 const EQUITY_ASSET_INFO = {
@@ -215,264 +301,199 @@ describe('Fundamental page ISR empty-cache prevention — top-level guard', () =
 /**
  * Layer B: section-level ISR degrade tests.
  *
- * Each section is a module-level async function (not exported from page.tsx).
- * We cannot call them directly, but we CAN test that when their loaders reject,
- * the .catch() in the section absorbs the error. To do this we exploit the fact
- * that staticSymbolCache is mocked to call fetcher() directly — so the rejection
- * flows through the section's .catch() handler when the section awaits its cache call.
+ * Each section is exported from page.tsx as a named async function. We render
+ * the real section directly with staticSymbolCache mocked to call fetcher()
+ * directly — so a loader rejection propagates to the section's .catch() handler.
  *
- * However, since the sections are lazy RSC children inside <Suspense> and are NOT
- * awaited by FundamentalPage directly, we cannot trigger them through FundamentalPage.
- * Instead we test the loader catch via a direct call to the mocked staticSymbolCache
- * with a rejecting fetcher, simulating what happens when Next.js resolves the Suspense
- * child during ISR streaming. This exercises exactly the .catch() handler code path.
+ * Widget card mocks render a data-testid with data-degraded="true" when the
+ * section passes null/[] (the degrade value from .catch()). This makes each
+ * test falsifiable: removing a section's .catch() causes an unhandled rejection
+ * instead of a successful render with data-degraded="true".
+ *
+ * Falsifiability check (performed once after writing this suite):
+ *   1. Temporarily remove the .catch() from ValuationSection in page.tsx.
+ *   2. Run: yarn vitest run src/app/[symbol]/fundamental/__tests__/page.isr-degrade.test.tsx
+ *   3. The "ValuationSection: loader throw → renders degraded card" test FAILS.
+ *   4. Restore .catch() → test PASSES again. ✓
  */
-describe('Fundamental page ISR empty-cache prevention — section loader catch', () => {
+describe('Fundamental page ISR empty-cache prevention — section layer (Layer B)', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        // Default: all loaders succeed with safe empty values.
+        mockGetKeyMetricsTtm.mockResolvedValue(null);
+        mockGetStockPeers.mockResolvedValue(
+            [] as Awaited<ReturnType<typeof getStockPeers>>
+        );
+        mockGetRatiosTtm.mockResolvedValue(null);
+        mockGetIncomeStatementGrowth.mockResolvedValue(null);
+        mockGetFinancialScores.mockResolvedValue(null);
+        mockGetCashFlowStatement.mockResolvedValue(null);
+        mockGetAnalystEstimates.mockResolvedValue(null);
+        mockGetGradesConsensus.mockResolvedValue(null);
+        mockGetPriceTargetConsensus.mockResolvedValue(null);
+        mockGetPriceTargetSummary.mockResolvedValue(null);
     });
 
-    /**
-     * The section loader pattern is:
-     *   staticSymbolCache([key], symbol, () => loaderFn(symbol), [], TTL)
-     *     .catch(e => { console.error('[Context]...', e); return safeEmpty; })
-     *
-     * Because staticSymbolCache is mocked as fetcher(), a rejection in loaderFn
-     * surfaces immediately. We verify the .catch() is wired correctly by checking
-     * that console.error is called with the context prefix.
-     *
-     * We call staticSymbolCache manually with a rejecting fetcher to simulate the
-     * section function's internal cache call, then apply the same .catch() from
-     * the source code. This is a structural test that the catch contract is met.
-     */
-    it('ValuationSection loader: getKeyMetricsTtm reject → .catch emits [ValuationSection] log', async () => {
-        const err = new Error('FMP 429');
-        mockGetKeyMetricsTtm.mockRejectedValue(err);
+    it('ValuationSection: loader throw → renders degraded card (data-degraded="true"), does not throw', async () => {
+        mockGetKeyMetricsTtm.mockRejectedValue(new Error('FMP 429'));
         const consoleSpy = vi
             .spyOn(console, 'error')
             .mockImplementation(() => {});
 
-        // Simulate the ValuationSection cache call path: fetcher rejects → .catch fires.
-        const result = await mockStaticSymbolCache(
-            ['fundamental:metrics', 'AAPL'],
-            'AAPL',
-            () => getKeyMetricsTtm('AAPL'),
-            [],
-            86400
-        ).catch((e: unknown) => {
-            console.error(
-                '[ValuationSection] getKeyMetricsTtm failed, degrading to null:',
-                e
-            );
-            return null;
-        });
+        // Must not throw — .catch() in ValuationSection absorbs the rejection
+        // and passes null to ValuationCard, which the mock renders as data-degraded="true".
+        render(await ValuationSection({ symbol: 'AAPL' }));
 
-        expect(result).toBeNull();
+        const card = screen.getByTestId('valuation-card');
+        expect(card).toBeInTheDocument();
+        expect(card.getAttribute('data-degraded')).toBe('true');
         expect(consoleSpy).toHaveBeenCalledWith(
             expect.stringContaining('[ValuationSection]'),
-            err
+            expect.any(Error)
         );
 
         consoleSpy.mockRestore();
     });
 
-    it('PeersSection loader: getStockPeers reject → .catch emits [PeersSection] log, returns []', async () => {
-        const err = new Error('FMP peers down');
-        mockGetStockPeers.mockRejectedValue(err);
+    it('PeersSection: loader throw → renders degraded card (data-degraded="true"), does not throw', async () => {
+        mockGetStockPeers.mockRejectedValue(new Error('FMP peers down'));
         const consoleSpy = vi
             .spyOn(console, 'error')
             .mockImplementation(() => {});
 
-        const result = await mockStaticSymbolCache(
-            ['fundamental:peers', 'AAPL'],
-            'AAPL',
-            () => getStockPeers('AAPL'),
-            [],
-            86400
-        ).catch((e: unknown) => {
-            console.error(
-                '[PeersSection] getStockPeers failed, degrading to []:',
-                e
-            );
-            return [];
-        });
+        render(await PeersSection({ symbol: 'AAPL' }));
 
-        expect(Array.isArray(result)).toBe(true);
-        expect((result as unknown[]).length).toBe(0);
+        const card = screen.getByTestId('peers-table');
+        expect(card).toBeInTheDocument();
+        expect(card.getAttribute('data-degraded')).toBe('true');
         expect(consoleSpy).toHaveBeenCalledWith(
             expect.stringContaining('[PeersSection]'),
-            err
+            expect.any(Error)
         );
 
         consoleSpy.mockRestore();
     });
 
-    it('FinancialHealthSection: getRatiosTtm reject → .catch emits log, returns null', async () => {
-        const err = new Error('FMP ratios down');
-        mockGetRatiosTtm.mockRejectedValue(err);
+    it('ProfitabilitySection: loader throw → renders degraded card (data-degraded="true"), does not throw', async () => {
+        mockGetRatiosTtm.mockRejectedValue(new Error('FMP ratios down'));
         const consoleSpy = vi
             .spyOn(console, 'error')
             .mockImplementation(() => {});
 
-        const result = await mockStaticSymbolCache(
-            ['fundamental:ratios', 'AAPL'],
-            'AAPL',
-            () => getRatiosTtm('AAPL'),
-            [],
-            86400
-        ).catch((e: unknown) => {
-            console.error(
-                '[FinancialHealthSection] getRatiosTtm failed, degrading to null:',
-                e
-            );
-            return null;
-        });
+        render(await ProfitabilitySection({ symbol: 'AAPL' }));
 
-        expect(result).toBeNull();
+        const card = screen.getByTestId('profitability-card');
+        expect(card).toBeInTheDocument();
+        expect(card.getAttribute('data-degraded')).toBe('true');
         expect(consoleSpy).toHaveBeenCalledWith(
-            expect.stringContaining('[FinancialHealthSection] getRatiosTtm'),
-            err
+            expect.stringContaining('[ProfitabilitySection]'),
+            expect.any(Error)
         );
 
         consoleSpy.mockRestore();
     });
 
-    it('GrowthSection: getIncomeStatementGrowth reject → .catch emits log, returns null', async () => {
-        const err = new Error('FMP growth down');
-        mockGetIncomeStatementGrowth.mockRejectedValue(err);
+    it('GrowthSection: loader throw → renders degraded card (data-degraded="true"), does not throw', async () => {
+        mockGetIncomeStatementGrowth.mockRejectedValue(
+            new Error('FMP growth down')
+        );
         const consoleSpy = vi
             .spyOn(console, 'error')
             .mockImplementation(() => {});
 
-        const result = await mockStaticSymbolCache(
-            ['fundamental:growth', 'AAPL'],
-            'AAPL',
-            () => getIncomeStatementGrowth('AAPL'),
-            [],
-            86400
-        ).catch((e: unknown) => {
-            console.error(
-                '[GrowthSection] getIncomeStatementGrowth failed, degrading to null:',
-                e
-            );
-            return null;
-        });
+        render(await GrowthSection({ symbol: 'AAPL' }));
 
-        expect(result).toBeNull();
+        const card = screen.getByTestId('growth-chart');
+        expect(card).toBeInTheDocument();
+        expect(card.getAttribute('data-degraded')).toBe('true');
         expect(consoleSpy).toHaveBeenCalledWith(
             expect.stringContaining('[GrowthSection]'),
-            err
+            expect.any(Error)
         );
 
         consoleSpy.mockRestore();
     });
 
-    it('FutureDirectionSection: getAnalystEstimates reject → .catch emits log, returns null', async () => {
-        const err = new Error('FMP estimates down');
-        mockGetAnalystEstimates.mockRejectedValue(err);
+    it('FinancialHealthSection: all three loaders throw → renders degraded card (data-degraded="true"), does not throw', async () => {
+        mockGetRatiosTtm.mockRejectedValue(new Error('ratios down'));
+        mockGetFinancialScores.mockRejectedValue(new Error('scores down'));
+        mockGetCashFlowStatement.mockRejectedValue(new Error('cashflow down'));
         const consoleSpy = vi
             .spyOn(console, 'error')
             .mockImplementation(() => {});
 
-        const result = await mockStaticSymbolCache(
-            ['fundamental:estimates', 'AAPL'],
-            'AAPL',
-            () => getAnalystEstimates('AAPL'),
-            [],
-            86400
-        ).catch((e: unknown) => {
-            console.error(
-                '[FutureDirectionSection] getAnalystEstimates failed, degrading to null:',
-                e
-            );
-            return null;
-        });
+        render(await FinancialHealthSection({ symbol: 'AAPL' }));
 
-        expect(result).toBeNull();
-        expect(consoleSpy).toHaveBeenCalledWith(
-            expect.stringContaining(
-                '[FutureDirectionSection] getAnalystEstimates'
-            ),
-            err
-        );
-
-        consoleSpy.mockRestore();
-    });
-
-    it('FinancialHealthSection: all three loaders reject → all three catch handlers fire independently', async () => {
-        const errRatios = new Error('ratios down');
-        const errScores = new Error('scores down');
-        const errCashFlow = new Error('cashflow down');
-        mockGetRatiosTtm.mockRejectedValue(errRatios);
-        mockGetFinancialScores.mockRejectedValue(errScores);
-        mockGetCashFlowStatement.mockRejectedValue(errCashFlow);
-        const consoleSpy = vi
-            .spyOn(console, 'error')
-            .mockImplementation(() => {});
-
-        // Simulate Promise.all inside FinancialHealthSection — each fails independently.
-        const [ratios, scores, cashFlow] = await Promise.all([
-            mockStaticSymbolCache(
-                ['fundamental:ratios', 'AAPL'],
-                'AAPL',
-                () => getRatiosTtm('AAPL'),
-                [],
-                86400
-            ).catch((e: unknown) => {
-                console.error(
-                    '[FinancialHealthSection] getRatiosTtm failed, degrading to null:',
-                    e
-                );
-                return null;
-            }),
-            mockStaticSymbolCache(
-                ['fundamental:scores', 'AAPL'],
-                'AAPL',
-                () => getFinancialScores('AAPL'),
-                [],
-                86400
-            ).catch((e: unknown) => {
-                console.error(
-                    '[FinancialHealthSection] getFinancialScores failed, degrading to null:',
-                    e
-                );
-                return null;
-            }),
-            mockStaticSymbolCache(
-                ['fundamental:cashflow', 'AAPL'],
-                'AAPL',
-                () => getCashFlowStatement('AAPL'),
-                [],
-                86400
-            ).catch((e: unknown) => {
-                console.error(
-                    '[FinancialHealthSection] getCashFlowStatement failed, degrading to null:',
-                    e
-                );
-                return null;
-            }),
-        ]);
-
-        expect(ratios).toBeNull();
-        expect(scores).toBeNull();
-        expect(cashFlow).toBeNull();
+        const card = screen.getByTestId('financial-health-card');
+        expect(card).toBeInTheDocument();
+        expect(card.getAttribute('data-degraded')).toBe('true');
         expect(consoleSpy).toHaveBeenCalledWith(
             expect.stringContaining('[FinancialHealthSection] getRatiosTtm'),
-            errRatios
+            expect.any(Error)
         );
         expect(consoleSpy).toHaveBeenCalledWith(
             expect.stringContaining(
                 '[FinancialHealthSection] getFinancialScores'
             ),
-            errScores
+            expect.any(Error)
         );
         expect(consoleSpy).toHaveBeenCalledWith(
             expect.stringContaining(
                 '[FinancialHealthSection] getCashFlowStatement'
             ),
-            errCashFlow
+            expect.any(Error)
         );
 
         consoleSpy.mockRestore();
+    });
+
+    it('FutureDirectionSection: all four loaders throw → renders degraded card (data-degraded="true"), does not throw', async () => {
+        mockGetAnalystEstimates.mockRejectedValue(new Error('estimates down'));
+        mockGetGradesConsensus.mockRejectedValue(new Error('grades down'));
+        mockGetPriceTargetConsensus.mockRejectedValue(
+            new Error('pt-consensus down')
+        );
+        mockGetPriceTargetSummary.mockRejectedValue(
+            new Error('pt-summary down')
+        );
+        const consoleSpy = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => {});
+
+        render(await FutureDirectionSection({ symbol: 'AAPL' }));
+
+        const card = screen.getByTestId('future-direction-card');
+        expect(card).toBeInTheDocument();
+        expect(card.getAttribute('data-degraded')).toBe('true');
+        expect(consoleSpy).toHaveBeenCalledWith(
+            expect.stringContaining(
+                '[FutureDirectionSection] getAnalystEstimates'
+            ),
+            expect.any(Error)
+        );
+
+        consoleSpy.mockRestore();
+    });
+
+    it('success path — all loaders succeed → cards receive real data (data-degraded="false"), no throw', async () => {
+        // Override defaults with non-null values to prove the success path.
+        const fakeMetrics = { peRatioTTM: 30 };
+        mockGetKeyMetricsTtm.mockResolvedValue(
+            fakeMetrics as Awaited<ReturnType<typeof getKeyMetricsTtm>>
+        );
+        // Use a non-empty array cast through unknown to avoid needing full peer shape.
+        mockGetStockPeers.mockResolvedValue([
+            { symbol: 'MSFT' },
+        ] as unknown as Awaited<ReturnType<typeof getStockPeers>>);
+
+        render(await ValuationSection({ symbol: 'AAPL' }));
+        expect(
+            screen.getByTestId('valuation-card').getAttribute('data-degraded')
+        ).toBe('false');
+
+        render(await PeersSection({ symbol: 'AAPL' }));
+        expect(
+            screen.getByTestId('peers-table').getAttribute('data-degraded')
+        ).toBe('false');
     });
 });

@@ -68,10 +68,10 @@ export function generateMetadata(): Metadata {
  * DB call during ISR cold-gen. Returns Korean titles where available, falls
  * back to English.
  *
- * ISR degrade guard: getMarketNewsList(DB) が throw しても ISR キャッシュに 0-byte
- * 空結果が固まらないよう、ここで吸収する。[] に degrade → CategoryCard は空の
- * previewHeadlines で描画され、ハブ全体のクロムは維持される。
- * (一つのカテゴリが失敗してもハブ全体が壊れないように per-category で catch する)
+ * ISR degrade guard: getMarketNewsList(DB)가 throw하더라도 ISR 캐시에 0-byte
+ * 빈 결과가 굳지 않도록 여기서 흡수한다. [] 로 degrade → CategoryCard는 빈
+ * previewHeadlines로 렌더되고, 허브 전체 크롬은 유지된다.
+ * (하나의 카테고리가 실패해도 허브 전체가 깨지지 않도록 per-category로 catch한다)
  */
 async function fetchCategoryPreviews(
     category: NewsFeedCategory

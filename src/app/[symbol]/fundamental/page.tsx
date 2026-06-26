@@ -189,7 +189,7 @@ interface ProfileDescriptionSectionProps {
     fallback: string;
 }
 
-async function ProfileDescriptionSection({
+export async function ProfileDescriptionSection({
     symbol,
     fallback,
 }: ProfileDescriptionSectionProps) {
@@ -215,7 +215,7 @@ async function ProfileDescriptionSection({
     );
 }
 
-async function ProfileSection({ symbol }: SymbolSectionProps) {
+export async function ProfileSection({ symbol }: SymbolSectionProps) {
     // Shares the same key as the notFound guard in the page body — cross-request ISR cache is shared.
     // ISR degrade guard: getProfile(FMP)가 throw하면 null 로 degrade → ProfileCard(null)가
     // 기존 empty-state UI를 렌더하고 페이지 크롬은 유지된다.
@@ -245,7 +245,7 @@ async function ProfileSection({ symbol }: SymbolSectionProps) {
     return <ProfileCard profile={profile} descriptionSlot={descriptionSlot} />;
 }
 
-async function ValuationSection({ symbol }: SymbolSectionProps) {
+export async function ValuationSection({ symbol }: SymbolSectionProps) {
     // ISR degrade guard: getKeyMetricsTtm(FMP)가 throw하면 null 로 degrade →
     // ValuationCard(null)가 기존 empty-state UI를 렌더한다.
     const metrics = await staticSymbolCache(
@@ -264,7 +264,7 @@ async function ValuationSection({ symbol }: SymbolSectionProps) {
     return <ValuationCard metrics={metrics} />;
 }
 
-async function PeersSection({ symbol }: SymbolSectionProps) {
+export async function PeersSection({ symbol }: SymbolSectionProps) {
     // ISR degrade guard: getStockPeers(FMP)가 throw하면 [] 로 degrade →
     // PeersTable([])가 기존 empty-state UI를 렌더한다.
     const peers = await staticSymbolCache(
@@ -283,7 +283,7 @@ async function PeersSection({ symbol }: SymbolSectionProps) {
     return <PeersTable peers={peers} />;
 }
 
-async function ProfitabilitySection({ symbol }: SymbolSectionProps) {
+export async function ProfitabilitySection({ symbol }: SymbolSectionProps) {
     // ISR degrade guard: getRatiosTtm(FMP)가 throw하면 null 로 degrade →
     // ProfitabilityCard(null)가 기존 empty-state UI를 렌더한다.
     const ratios = await staticSymbolCache(
@@ -302,7 +302,7 @@ async function ProfitabilitySection({ symbol }: SymbolSectionProps) {
     return <ProfitabilityCard ratios={ratios} />;
 }
 
-async function GrowthSection({ symbol }: SymbolSectionProps) {
+export async function GrowthSection({ symbol }: SymbolSectionProps) {
     // ISR degrade guard: getIncomeStatementGrowth(FMP)가 throw하면 null 로 degrade →
     // GrowthChart(null)가 기존 empty-state UI를 렌더한다.
     const growth = await staticSymbolCache(
@@ -321,7 +321,7 @@ async function GrowthSection({ symbol }: SymbolSectionProps) {
     return <GrowthChart growth={growth} />;
 }
 
-async function FinancialHealthSection({ symbol }: SymbolSectionProps) {
+export async function FinancialHealthSection({ symbol }: SymbolSectionProps) {
     // ISR degrade guard: 각 FMP 로더가 throw하면 null 로 degrade →
     // FinancialHealthCard(null, null, null)가 기존 empty-state UI를 렌더한다.
     const [ratios, scores, cashFlow] = await Promise.all([
@@ -374,7 +374,7 @@ async function FinancialHealthSection({ symbol }: SymbolSectionProps) {
     );
 }
 
-async function FutureDirectionSection({ symbol }: SymbolSectionProps) {
+export async function FutureDirectionSection({ symbol }: SymbolSectionProps) {
     // ISR degrade guard: 각 FMP 로더가 throw하면 null 로 degrade →
     // FutureDirectionCard(null, null, null, null)가 기존 empty-state UI를 렌더한다.
     const [estimates, grades, ptConsensus, ptSummary] = await Promise.all([
