@@ -58,11 +58,14 @@ vi.mock('@/entities/email-token', () => ({
 
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { loginUser, registerUser } from '@/entities/auth';
+import {
+    loginUser,
+    registerUser,
+    AUTH_SERVICE_UNAVAILABLE_MESSAGE,
+} from '@/entities/auth';
 import { createEmailTokenStore } from '@/entities/email-token';
 import { DrizzleAgreementRepository } from '@/entities/agreement';
 import { DrizzleTermsRepository } from '@/entities/terms';
-import { AUTH_SERVICE_UNAVAILABLE_MESSAGE } from '@/entities/auth';
 import { registerAction } from '@/features/auth-signup/actions/registerAction';
 import {
     getAuthDatabaseClient,

@@ -34,9 +34,11 @@ vi.mock('@/entities/email-token', () => ({
     createEmailTokenStore: vi.fn(),
 }));
 
-import { confirmPasswordReset } from '@/entities/auth';
+import {
+    confirmPasswordReset,
+    AUTH_SERVICE_UNAVAILABLE_MESSAGE,
+} from '@/entities/auth';
 import { createEmailTokenStore } from '@/entities/email-token';
-import { AUTH_SERVICE_UNAVAILABLE_MESSAGE } from '@/entities/auth';
 import { confirmPasswordResetAction } from '@/features/auth-password-reset/actions/confirmPasswordResetAction';
 import { resetAuthDatabaseClientForTests } from '@/entities/auth/lib/db';
 import { makeFormData } from '@/shared/test-utils/makeFormData';

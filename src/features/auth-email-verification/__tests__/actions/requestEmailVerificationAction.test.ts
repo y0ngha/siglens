@@ -19,12 +19,14 @@ vi.mock('@/shared/email/dispatcher', () => ({
     createEmailDispatcher: vi.fn(() => ({ sendEmail: sendEmailMock })),
 }));
 
-import { requestEmailVerification } from '@/entities/auth';
+import {
+    requestEmailVerification,
+    AUTH_SERVICE_UNAVAILABLE_MESSAGE,
+} from '@/entities/auth';
 import {
     createEmailTokenStore,
     buildEmailVerificationEmail,
 } from '@/entities/email-token';
-import { AUTH_SERVICE_UNAVAILABLE_MESSAGE } from '@/entities/auth';
 import { requestEmailVerificationAction } from '@/features/auth-email-verification/actions/requestEmailVerificationAction';
 import { makeFormData } from '@/shared/test-utils/makeFormData';
 

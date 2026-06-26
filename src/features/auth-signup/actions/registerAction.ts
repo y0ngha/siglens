@@ -9,6 +9,8 @@ import {
     CONSENT_REQUIRED_MESSAGE,
     DEFAULT_SESSION_TTL_SECONDS,
     isSecureCookieEnv,
+    loginUser,
+    registerUser,
 } from '@/entities/auth';
 import {
     DrizzleSessionRepository,
@@ -19,7 +21,6 @@ import {
     bcryptPasswordVerifier,
 } from '@/entities/auth/lib/bcrypt';
 import { getAuthDatabaseClient } from '@/entities/auth/lib/db';
-import { loginUser, registerUser } from '@/entities/auth';
 import { DrizzleAgreementRepository } from '@/entities/agreement';
 import { DrizzleTermsRepository } from '@/entities/terms';
 import { createEmailTokenStore } from '@/entities/email-token';

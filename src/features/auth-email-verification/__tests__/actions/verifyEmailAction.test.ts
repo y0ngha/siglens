@@ -18,10 +18,9 @@ vi.mock('@/entities/auth/api', () => ({
     DrizzleUserRepository: vi.fn(),
 }));
 
-import { verifyEmail } from '@/entities/auth';
+import { verifyEmail, AUTH_SERVICE_UNAVAILABLE_MESSAGE } from '@/entities/auth';
 import { DrizzleUserRepository } from '@/entities/auth/api';
 import { createEmailTokenStore } from '@/entities/email-token';
-import { AUTH_SERVICE_UNAVAILABLE_MESSAGE } from '@/entities/auth';
 import { getAuthDatabaseClient } from '@/entities/auth/lib/db';
 import { verifyEmailAction } from '@/features/auth-email-verification/actions/verifyEmailAction';
 import { makeFormData } from '@/shared/test-utils/makeFormData';

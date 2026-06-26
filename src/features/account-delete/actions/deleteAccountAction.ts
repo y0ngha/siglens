@@ -4,17 +4,17 @@ import {
     DrizzleOAuthAccountRepository,
     compositeOAuthRevoker,
 } from '@/entities/oauth-account';
-import { deleteAccount } from '@/entities/auth';
+import {
+    deleteAccount,
+    applyAuthCookie,
+    isSecureCookieEnv,
+    createExpiredAuthHintCookie,
+} from '@/entities/auth';
 import { DrizzleUserRepository } from '@/entities/auth/api';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import type { DeleteAccountFormState } from '@/shared/lib/auth/formTypes';
 import { normalizeEmail } from '@/shared/lib/auth/validation';
-import {
-    applyAuthCookie,
-    isSecureCookieEnv,
-    createExpiredAuthHintCookie,
-} from '@/entities/auth';
 import { getAuthDatabaseClient } from '@/entities/auth/lib/db';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 
