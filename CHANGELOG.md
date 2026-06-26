@@ -1,5 +1,26 @@
 # Changelog
 
+# [0.29.0](https://github.com/y0ngha/siglens/compare/v0.28.0...v0.29.0) (2026-06-26)
+
+
+### Bug Fixes
+
+* **dashboard:** preserve SignalStockCard layout; tighten QuoteHeader test (PR8 review) ([07eb06e](https://github.com/y0ngha/siglens/commit/07eb06e2d122e809edcd4c61f26f9ef04682ade4))
+* **e2e:** update seed.ts import path to @/entities/auth/lib/bcrypt ([7f41282](https://github.com/y0ngha/siglens/commit/7f412825b82f21f01bf7ea4a74d609f05d7cf942))
+* **e2e:** wait for retry button before clearing force-error cookie ([715d91d](https://github.com/y0ngha/siglens/commit/715d91d37f395f0f903e3fd095c473cd7fad8d0c))
+* **infra:** pin builder subnet/SG/instance-profile in AMI bake ([dc6981a](https://github.com/y0ngha/siglens/commit/dc6981a090bd45d5ba4b3fddb61d35e9c4f6590e))
+* **isr:** degrade on loader throws to prevent empty-cache freeze ([2ad9b4d](https://github.com/y0ngha/siglens/commit/2ad9b4d54e0ebad293f5e78d914e26aabacda7fc))
+* **review:** address PR [#656](https://github.com/y0ngha/siglens/issues/656) review feedback ([403259f](https://github.com/y0ngha/siglens/commit/403259f29fcec2ddab10e960638ee78f909e3005))
+* **review:** address PR [#657](https://github.com/y0ngha/siglens/issues/657) review feedback ([63f37ae](https://github.com/y0ngha/siglens/commit/63f37ae51f2806b93e617e44727b3a6829f7e3a5))
+* **review:** decouple AiSummaryErrorSection from FMP + suggestions ([57a8e51](https://github.com/y0ngha/siglens/commit/57a8e51f548aa01a504ba8db36eee7cb1e095b7f))
+* **seo:** allow local/dev hosts in SITE_URL assertion so builds don't break ([df756f3](https://github.com/y0ngha/siglens/commit/df756f37df9b565fcee10cd8dc936f1f61c646ac))
+* **tests:** deduplicate vi.mock('@/entities/auth') calls in test files ([03be847](https://github.com/y0ngha/siglens/commit/03be8470e592a2a146cdb4887e3b1c2873664326))
+
+
+### Features
+
+* **infra:** SIGTERM drain, /api/ready, ALB dereg, deploy test-gate, AMI pin+golden, env hardening (audit fixes) ([e259b59](https://github.com/y0ngha/siglens/commit/e259b5936098e471fc8bcdecc98f00aa7815c385))
+
 # [0.28.0](https://github.com/y0ngha/siglens/compare/v0.27.0...v0.28.0) (2026-06-24)
 
 
