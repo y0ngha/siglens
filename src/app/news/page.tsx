@@ -67,6 +67,11 @@ export function generateMetadata(): Metadata {
  * Uses `staticSymbolCache` (axis 1) to avoid DYNAMIC_SERVER_USAGE from the
  * DB call during ISR cold-gen. Returns Korean titles where available, falls
  * back to English.
+ *
+ * ISR degrade guard: getMarketNewsList(DB)가 throw하더라도 ISR 캐시에 0-byte
+ * 빈 결과가 굳지 않도록 여기서 흡수한다. [] 로 degrade → CategoryCard는 빈
+ * previewHeadlines로 렌더되고, 허브 전체 크롬은 유지된다.
+ * (하나의 카테고리가 실패해도 허브 전체가 깨지지 않도록 per-category로 catch한다)
  */
 async function fetchCategoryPreviews(
     category: NewsFeedCategory
@@ -78,7 +83,13 @@ async function fetchCategoryPreviews(
         () => getMarketNewsList(cfg.sentinel),
         [`${MARKET_NEWS_CACHE_TAG_PREFIX}:${cfg.sentinel}`],
         SECONDS_PER_DAY
-    );
+    ).catch((e: unknown) => {
+        console.error(
+            `[NewsHubPage] fetchCategoryPreviews(${category}) failed, degrading to []:`,
+            e
+        );
+        return [] as Awaited<ReturnType<typeof getMarketNewsList>>;
+    });
     return rows
         .slice(0, PREVIEW_HEADLINE_LIMIT)
         .map(row => row.titleKo ?? row.titleEn);

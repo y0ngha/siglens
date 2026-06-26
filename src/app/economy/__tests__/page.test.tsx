@@ -159,6 +159,38 @@ describe('/economy page.tsx integration', () => {
                 screen.getByText(/잠시 후 다시 시도해 주세요/)
             ).toBeInTheDocument();
         });
+
+        it('getEconomySnapshotStatic이 throw하면 EconomyDegraded를 렌더한다 (빈 캐시 동결 방지)', async () => {
+            // P0 incident path: snapshot loader throws (Redis timeout, FMP 5xx 등) →
+            // .catch(() => null) → null 처리 → EconomyDegraded. throw가 전파되면
+            // ISR 0-byte 빈 캐시가 동결된다.
+            mockGetSnapshot.mockRejectedValue(new Error('redis timeout'));
+            // isEmptyEconomySnapshot은 null 경로에서 호출되지 않아야 한다.
+            mockIsEmpty.mockReturnValue(false);
+
+            const consoleSpy = vi
+                .spyOn(console, 'error')
+                .mockImplementation(() => undefined);
+
+            const { default: EconomyPage } = await import('@/app/economy/page');
+            const { act } = await import('@testing-library/react');
+            await act(async () => {
+                render(<EconomyPage />);
+            });
+
+            // EconomyDegraded가 렌더돼야 한다(non-empty page, not a throw).
+            expect(
+                screen.getByText(/잠시 후 다시 시도해 주세요/)
+            ).toBeInTheDocument();
+
+            // .catch() 가 console.error를 호출했어야 한다.
+            expect(consoleSpy).toHaveBeenCalledWith(
+                expect.stringContaining('[EconomyContent] snapshot failed:'),
+                expect.any(Error)
+            );
+
+            consoleSpy.mockRestore();
+        });
     });
 
     describe('EconomyContent — peek error resilience', () => {

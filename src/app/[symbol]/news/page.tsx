@@ -90,18 +90,27 @@ interface SymbolSectionProps {
     symbol: string;
 }
 
-async function NewsListSection({ symbol }: SymbolSectionProps) {
+export async function NewsListSection({ symbol }: SymbolSectionProps) {
+    // ISR degrade guard: getNewsList(Postgres)가 throw하면 ISR 캐시에 0-byte 빈 결과가
+    // 굳는 것을 막으려면 여기서 흡수해야 한다. [] 로 degrade → NewsList는 빈 배열로
+    // 기존 empty-state UI를 렌더하고 페이지 크롬(heading/CrossLinks 등)은 유지된다.
     const items = await staticSymbolCache(
         [NEWS_LIST_CACHE_KEY, symbol],
         symbol,
         () => getNewsList(symbol),
         [`news:${symbol}`],
         SECONDS_PER_HALF_DAY
-    );
+    ).catch((e: unknown) => {
+        console.error(
+            '[NewsListSection] getNewsList failed, degrading to []:',
+            e
+        );
+        return [] as Awaited<ReturnType<typeof getNewsList>>;
+    });
     return <NewsList items={items} symbol={symbol} />;
 }
 
-async function EventCalendarSection({ symbol }: SymbolSectionProps) {
+export async function EventCalendarSection({ symbol }: SymbolSectionProps) {
     const today = todayKstIsoDate();
     let earningsReports: Awaited<
         ReturnType<typeof getEarningsReportComparison>
@@ -115,14 +124,18 @@ async function EventCalendarSection({ symbol }: SymbolSectionProps) {
             SECONDS_PER_HALF_DAY
         );
     } catch (error) {
-        const message = getFmpUserFacingMessage(error);
-        if (message === null) throw error;
+        console.error(
+            '[EventCalendarSection] earnings load failed, degrading:',
+            error
+        );
+        const message =
+            getFmpUserFacingMessage(error) ?? '실적 일정을 불러오지 못했어요.';
         return <NewsDataServerAlert title="실적 일정" message={message} />;
     }
     return <EventCalendar earningsReports={earningsReports} />;
 }
 
-async function AnalystActionsSection({ symbol }: SymbolSectionProps) {
+export async function AnalystActionsSection({ symbol }: SymbolSectionProps) {
     let events: Awaited<ReturnType<typeof getGradeEvents>>;
     try {
         events = await staticSymbolCache(
@@ -133,8 +146,13 @@ async function AnalystActionsSection({ symbol }: SymbolSectionProps) {
             SECONDS_PER_HALF_DAY
         );
     } catch (error) {
-        const message = getFmpUserFacingMessage(error);
-        if (message === null) throw error;
+        console.error(
+            '[AnalystActionsSection] grades load failed, degrading:',
+            error
+        );
+        const message =
+            getFmpUserFacingMessage(error) ??
+            '애널리스트 동향을 불러오지 못했어요.';
         return (
             <NewsDataServerAlert
                 title="애널리스트 등급 변경"
@@ -256,13 +274,19 @@ export default async function NewsPage({ params }: Props) {
         },
     };
 
+    // ISR degrade guard: getNewsList(Postgres)가 throw하면 ISR 캐시에 0-byte 빈 결과가
+    // 굳는 것을 막으려면 여기서 흡수해야 한다. [] 로 degrade → newsListJsonLd가 null이
+    // 되고 페이지 크롬(heading/AI summary/CrossLinks 등)은 유지된다.
     const newsItems = await staticSymbolCache(
         [NEWS_LIST_CACHE_KEY, upper],
         upper,
         () => getNewsList(upper),
         [`news:${upper}`],
         SECONDS_PER_HALF_DAY
-    );
+    ).catch((e: unknown) => {
+        console.error('[NewsPage] getNewsList failed, degrading to []:', e);
+        return [] as Awaited<ReturnType<typeof getNewsList>>;
+    });
     // At least one AI-enriched card means aggregate analysis can start immediately.
     const hasEnrichedNews = newsItems.some(item => item.sentiment !== null);
 

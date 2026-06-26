@@ -123,13 +123,22 @@ export default async function OptionsPage({ params }: Props) {
 
     const [{ assetInfo, degraded }, hasOptions] = await Promise.all([
         getAssetInfoResilient(upper),
+        // ISR degrade guard: hasOptionsMarket는 Yahoo 인프라 실패 시 throw한다.
+        // throw가 ISR 캐시에 0-byte 빈 결과를 굳히는 것을 막으려면 여기서 흡수해야 한다.
+        // false로 degrade → 이미 존재하는 OptionsEmptyState 분기로 자연스럽게 빠진다.
         staticSymbolCache(
             ['options:has', upper],
             upper,
             () => hasOptionsMarket(upper),
             [],
             SECONDS_PER_HALF_DAY
-        ),
+        ).catch((e: unknown) => {
+            console.error(
+                '[OptionsPage] hasOptionsMarket failed, degrading to false:',
+                e
+            );
+            return false;
+        }),
     ]);
 
     // degraded + digit-first 심볼 = 두 데이터 소스가 동시 다운 중이고 resolve 불가
@@ -139,13 +148,22 @@ export default async function OptionsPage({ params }: Props) {
     if (!hasOptions) return <OptionsEmptyState symbol={upper} />;
 
     const displayName = buildDisplayName(assetInfo, upper);
+    // ISR degrade guard: fetchOptionsSnapshot는 Yahoo 인프라 실패 시 throw한다.
+    // throw가 ISR 캐시에 0-byte 빈 결과를 굳히는 것을 막으려면 여기서 흡수해야 한다.
+    // null로 degrade → 이미 존재하는 null 분기(OptionsEmptyState)로 자연스럽게 빠진다.
     const snapshot = await staticSymbolCache(
         ['options:snapshot', upper],
         upper,
         () => fetchOptionsSnapshot(upper),
         [],
         SECONDS_PER_HALF_DAY
-    );
+    ).catch((e: unknown) => {
+        console.error(
+            '[OptionsPage] fetchOptionsSnapshot failed, degrading to null:',
+            e
+        );
+        return null;
+    });
     if (snapshot === null) return <OptionsEmptyState symbol={upper} />;
 
     const expirations = snapshot.chains.map(c => c.expirationDate);
