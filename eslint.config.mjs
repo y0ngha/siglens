@@ -225,6 +225,11 @@ const eslintConfig = defineConfig([
             // 허용된 shared → entities 의존성을 가진다. barrel에서 제외된 api-key/api deep import
             // 가 필요하므로 no-restricted-imports 예외로 추가한다.
             'src/shared/lib/byokGate.ts',
+            // instrumentation*.ts는 Next 서버 전용 런타임 훅(SIGTERM graceful-drain)이다.
+            // drain 유틸(drainBackgroundTasks/stopAcceptingBackgroundTasks)은 server-only라
+            // client 번들에 포함되는 ticker barrel에 노출할 수 없어 lib 경로에서 deep import해야 한다.
+            'src/instrumentation.ts',
+            'src/instrumentation.node.ts',
         ],
         rules: {
             'no-restricted-imports': [

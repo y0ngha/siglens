@@ -1,6 +1,14 @@
 #!/usr/bin/env bash
 source "$(dirname "$0")/lib.sh"; source "$(dirname "$0")/.env"
 TAG="${1:?usage: deploy.sh <image-tag>}"
+
+# env 완전성 게이트(M5): .env.example의 모든 필수 키가 SSM /siglens/* 에 있는지
+# 롤 이전에 확인한다. 누락 시 check-env.sh가 누락 키를 나열하고 비정상 종료해
+# 여기서 set -e로 배포가 멈춘다. 비상시 SKIP_ENV_CHECK=1로 우회(권장하지 않음).
+if [ "${SKIP_ENV_CHECK:-0}" != "1" ]; then
+  bash "$(dirname "$0")/check-env.sh"
+fi
+
 bash "$(dirname "$0")/05-launch-template.sh" "$TAG"
 
 log "rolling to $TAG (ASG already pinned to siglens-lt \$Latest)"
@@ -17,7 +25,8 @@ log "rolling to $TAG (ASG already pinned to siglens-lt \$Latest)"
 #                               by the single existing instance, so it terminates first —
 #                               causing the ~90 s gap we measured.  ASG max-size=4, so
 #                               briefly running 2 instances is within limits.
-#   InstanceWarmup 300        — > health-check-grace 180 s + ELB detection ~90 s; the refresh
+#   InstanceWarmup 300        — > health-check-grace 240 s (see 06-alb-asg.sh) + ELB detection
+#                               ~90 s; the refresh
 #                               re-evaluates ELB health after grace expires before counting the
 #                               new instance healthy, so a runtime-unhealthy new instance does
 #                               NOT cause the old one to be terminated.

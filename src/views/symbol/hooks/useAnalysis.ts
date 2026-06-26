@@ -14,7 +14,7 @@ import type {
     ModelId,
     Timeframe,
 } from '@y0ngha/siglens-core';
-import { MS_PER_MINUTE } from '@/shared/config/time';
+import { MS_PER_MINUTE, MS_PER_SECOND } from '@/shared/config/time';
 import {
     submitAnalysisAction,
     type SubmitAnalysisActionResult,
@@ -47,7 +47,7 @@ interface AnalyzeMutationVariables {
 const REANALYZE_COOLDOWN_MS = 5 * MS_PER_MINUTE;
 
 /** 캐시 히트(force=false 즉시 응답) 시 적용하는 짧은 클라이언트 쿨다운 — 같은 캐시의 빠른 반복 호출 방지. */
-const CACHE_HIT_COOLDOWN_MS = 30_000;
+const CACHE_HIT_COOLDOWN_MS = 30 * MS_PER_SECOND;
 
 interface UseAnalysisOptions {
     symbol: string;

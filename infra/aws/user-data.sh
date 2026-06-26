@@ -4,11 +4,18 @@
 set -euxo pipefail
 REGION=ap-northeast-2
 
-dnf install -y docker
-systemctl enable --now docker
+# 골든 AMI(M2) 감지: 09-bake-ami.sh가 docker·cloudwatch-agent·jq를 미리 설치하고
+# /etc/siglens-golden-ami 마커를 남긴다. 마커가 있으면 부팅 시 dnf install을 건너뛰어
+# 부팅을 빠르고 결정적으로 만든다(boot = env-fetch + docker pull(델타) + run).
+# 마커가 없으면(=base AL2023에서 직접 기동) 기존처럼 부팅 시 설치한다.
+if [ -f /etc/siglens-golden-ami ]; then
+  echo "[user-data] golden AMI detected — skipping dnf installs (docker/cwagent/jq baked in)"
+  systemctl enable --now docker
+else
+  dnf install -y docker jq amazon-cloudwatch-agent
+  systemctl enable --now docker
+fi
 
-# CloudWatch 에이전트: 디스크·메모리 지표 수집 (EC2 기본 지표에 없음)
-dnf install -y amazon-cloudwatch-agent
 # InstanceId dimension intentionally omitted from append_dimensions: including it would cause
 # each ASG instance to publish its own unique metric series, making custom-metric count grow
 # linearly with fleet size (~$0.30/metric/mo per instance, ~30+ metrics at max ASG size).
@@ -49,9 +56,14 @@ cat > /usr/local/bin/siglens-fetch-env.sh <<'FETCHSCRIPT'
 set -euxo pipefail
 REGION=ap-northeast-2
 mkdir -p /run/siglens
+# JSON + jq 파서(M6): --output text | awk -F'\t' 는 값에 탭/개행이 들어가면
+# 필드를 깨뜨려 env가 손상된다(예: 멀티라인 PEM, base64). --output json + jq로
+# Name/Value를 안전하게 추출한다. ltrimstr로 /siglens/ 접두를 제거.
+# (참고: get-parameters-by-path는 --max-items 미지정 시 AWS CLI v2가 자동
+#  페이지네이션하므로 수동 페이징은 불필요 — 10개 "truncation"은 오해다.)
 aws ssm get-parameters-by-path --region "$REGION" --path /siglens/ --with-decryption \
-  --query 'Parameters[].[Name,Value]' --output text \
-  | sed 's#^/siglens/##' | awk -F'\t' '{print $1"="$2}' > /run/siglens/env
+  --output json \
+  | jq -r '.Parameters[] | "\(.Name | ltrimstr("/siglens/"))=\(.Value)"' > /run/siglens/env
 chmod 600 /run/siglens/env
 FETCHSCRIPT
 chmod +x /usr/local/bin/siglens-fetch-env.sh
@@ -63,6 +75,18 @@ chmod +x /usr/local/bin/siglens-fetch-env.sh
 aws ecr get-login-password --region "$REGION" | docker login --username AWS --password-stdin "$ECR"
 docker pull "$IMAGE"
 
+# CloudWatch Logs(L4): 컨테이너 stdout/stderr를 awslogs 드라이버로 중앙 수집한다.
+# json-file 로컬 로그는 인스턴스 종료(ASG roll/스케일인) 시 사라져 크래시 사후분석이
+# 불가능했다. 로그 그룹은 09... 가 아니라 별도 infra 스크립트(10-logs.sh)가 생성하지만,
+# 부팅 시에도 멱등하게 보장한다(레이스/순서 무관). 스트림은 인스턴스 ID로 구분.
+# 필요 IAM: 인스턴스 역할에 logs:CreateLogStream, logs:PutLogEvents (+ CreateLogGroup).
+LOG_GROUP=/siglens/app
+TOKEN=$(curl -sf -X PUT "http://169.254.169.254/latest/api/token" \
+  -H "X-aws-ec2-metadata-token-ttl-seconds: 60" || true)
+INSTANCE_ID=$(curl -sf -H "X-aws-ec2-metadata-token: $TOKEN" \
+  "http://169.254.169.254/latest/meta-data/instance-id" || echo unknown)
+aws logs create-log-group --log-group-name "$LOG_GROUP" --region "$REGION" 2>/dev/null || true
+
 # systemd 유닛 (graceful stop 30s — Dockerfile tini가 SIGTERM 전달)
 # ExecStartPre order: fetch env first (re-populates /run/siglens/env after reboot),
 # then remove any stale container, then docker run.
@@ -71,13 +95,21 @@ cat > /etc/systemd/system/siglens.service <<UNIT
 Description=siglens
 After=docker.service
 Requires=docker.service
+# SSM/KMS 스로틀 방지 (M3): ExecStartPre가 매 재시작마다 SSM GetParametersByPath +
+# KMS Decrypt를 호출한다. 크래시 루프 시 플릿 전체가 단시간에 수백 회 호출→계정 단위
+# SSM/KMS 스로틀로 번질 수 있다. 120s 안에 5회 초과 재시작 시 systemd가 유닛을 멈추고
+# ASG/ELB unhealthy 경로가 인스턴스를 교체하도록 위임한다.
+StartLimitIntervalSec=120
+StartLimitBurst=5
 [Service]
 TimeoutStopSec=35
 ExecStartPre=/usr/local/bin/siglens-fetch-env.sh
 ExecStartPre=-/usr/bin/docker rm -f siglens
 # --security-opt no-new-privileges 적용: 컨테이너 프로세스의 권한 상승 차단.
 # --cap-drop / --read-only 는 런타임 검증 후 적용 예정 (현재 보류).
-ExecStart=/usr/bin/docker run --rm --name siglens -p 3000:3000 --env-file /run/siglens/env --log-opt max-size=10m --log-opt max-file=3 --security-opt no-new-privileges:true $IMAGE
+# awslogs 드라이버로 stdout/stderr를 CloudWatch Logs($LOG_GROUP)로 전송(L4).
+# 인스턴스가 사라져도 로그가 보존된다.
+ExecStart=/usr/bin/docker run --rm --name siglens -p 3000:3000 --env-file /run/siglens/env --security-opt no-new-privileges:true --log-driver awslogs --log-opt awslogs-region=$REGION --log-opt awslogs-group=$LOG_GROUP --log-opt awslogs-stream=$INSTANCE_ID --log-opt awslogs-create-group=true $IMAGE
 ExecStop=/usr/bin/docker stop -t 30 siglens
 Restart=always
 RestartSec=5

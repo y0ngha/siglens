@@ -103,9 +103,11 @@ export const metadata: Metadata = {
             'max-snippet': -1,
         },
     },
-    alternates: {
-        canonical: SITE_URL,
-    },
+    // canonical은 root layout에서 설정하지 않는다.
+    // 루트 레벨 canonical은 자기 자신의 URL을 가진 canonical을 선언하지 않는
+    // 미래 페이지에서 SITE_URL이 상속되는 잠재적 footgun이 된다.
+    // 각 인덱서블 페이지는 자체 alternates.canonical을 선언한다.
+    // 홈 페이지의 canonical은 src/app/page.tsx에 명시한다.
     // Google Search Console token: set NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION env var.
     verification: {
         other: {

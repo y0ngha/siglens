@@ -95,6 +95,35 @@ test.describe('symbol SEO + ISR (crawler-facing)', () => {
         expect(response.headers()['x-nextjs-cache']).toBe('HIT');
     });
 
+    test('/AAPL/financials embeds valid inline JSON-LD (WebPage + BreadcrumbList + FAQPage)', async ({
+        page,
+    }) => {
+        // 런타임 HTML을 크롤러처럼 fetch해 inline JSON-LD 블록을 파싱한다.
+        // source-grep 단언(readFileSync + toContain)을 대체한다 — 동작이 아니라
+        // 구현 세부를 검사하는 brittleness를 제거한다.
+        const response = await page.request.get('/AAPL/financials');
+        expect(response.status()).toBe(200);
+
+        const types = rootJsonLdTypes(await response.text());
+        expect(types).toContain('WebPage');
+        expect(types).toContain('BreadcrumbList');
+        expect(types).toContain('FAQPage');
+    });
+
+    test('/AAPL/congress embeds valid inline JSON-LD (WebPage + BreadcrumbList + FAQPage)', async ({
+        page,
+    }) => {
+        // 런타임 HTML을 크롤러처럼 fetch해 inline JSON-LD 블록을 파싱한다.
+        // source-grep 단언(readFileSync + toContain)을 대체한다.
+        const response = await page.request.get('/AAPL/congress');
+        expect(response.status()).toBe(200);
+
+        const types = rootJsonLdTypes(await response.text());
+        expect(types).toContain('WebPage');
+        expect(types).toContain('BreadcrumbList');
+        expect(types).toContain('FAQPage');
+    });
+
     test('an unseeded but well-formed ticker degrades to 200 + noindex (never 500)', async ({
         page,
     }) => {
