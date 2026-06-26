@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.29.1](https://github.com/y0ngha/siglens/compare/v0.29.0...v0.29.1) (2026-06-26)
+
+
+### Bug Fixes
+
+* **deploy:** mount FMP_API_KEY at build time for /economy + /market prerender ([35b2f54](https://github.com/y0ngha/siglens/commit/35b2f54a2caef69ae8f1546eeec687d3a0bb82ed))
+
 # [0.29.0](https://github.com/y0ngha/siglens/compare/v0.28.0...v0.29.0) (2026-06-26)
 
 
