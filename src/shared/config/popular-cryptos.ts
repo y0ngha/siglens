@@ -14,9 +14,9 @@ export const POPULAR_CRYPTOS = [
     'XLMUSD',
     'ADAUSD',
     'LINKUSD',
-    'TONUSD',
     'BCHUSD',
+    'TONUSD',
     'LTCUSD',
-    'SHIBUSD',
+    'AVAXUSD',
     'SUIUSD',
 ] as const;
