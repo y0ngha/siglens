@@ -1,5 +1,35 @@
 # Changelog
 
+# [0.31.0](https://github.com/y0ngha/siglens/compare/v0.30.0...v0.31.0) (2026-06-28)
+
+
+### Bug Fixes
+
+* CloudWatch alarms now idempotently create SNS topic and wire notifications ([6f8dd60](https://github.com/y0ngha/siglens/commit/6f8dd6000f2dfe6bb552c03a88bf08879d1b456c))
+* **isr-cache:** abort hung S3 requests, async gzip, skip non-200 renders, deploy bootstrap docs ([901c5d6](https://github.com/y0ngha/siglens/commit/901c5d60730e2ef984b7dccc9975f02abf3ecae8))
+* **isr-cache:** activate handler in prod (build-arg + SSM), IMDS hop limit, deploy-role S3/SSM perms ([452bca1](https://github.com/y0ngha/siglens/commit/452bca1c0b2afdd2a3740dffccc84a6910297d3f))
+* **isr-cache:** add S3 socketTimeout, stronger bundle gate, APP_ROUTE empty/error guard ([28e7edd](https://github.com/y0ngha/siglens/commit/28e7eddb4c428bd9913fdb8a3cf313ca30f003dc))
+* **isr-cache:** address PR review — functional Set/reduce/forEach, vi.mock hoisting, const ternary, sync comments ([149f0f9](https://github.com/y0ngha/siglens/commit/149f0f93a93610dd960af1377a285f081fa2d6b2))
+* **isr-cache:** binary-safe serialization (v8), s3 timeouts, null/empty-render guards, +coverage ([10991ec](https://github.com/y0ngha/siglens/commit/10991ecd5a7243567da0eccabad0ad319ece7663))
+* **isr-cache:** capture page (x-next-cache-tags) and fetch soft tags in set() ([013c73c](https://github.com/y0ngha/siglens/commit/013c73c47dfcd15c2518c0e19b1016b1540d5239))
+* **isr-cache:** correct cacheHandler get wrapper + set kind routing (Next 16.2 contract) ([939d08c](https://github.com/y0ngha/siglens/commit/939d08c75795cf8a844a1fda93a7719158cd2ea3))
+* **isr-cache:** explicit Dockerfile COPY for cache-handler + aws-sdk deps (5 top-level) ([9eac23b](https://github.com/y0ngha/siglens/commit/9eac23b538f914a100d1c85ad8d6be2c4749bf33))
+* **isr-cache:** narrow failure metric filter, correct runbook bucket-sync count + kill-switch verify window ([e058d8f](https://github.com/y0ngha/siglens/commit/e058d8fcaefaf757b789c1f383fbc8652d24ea75))
+
+
+### Features
+
+* **isr-cache:** add aws-sdk dependency and config module ([4fd508e](https://github.com/y0ngha/siglens/commit/4fd508e025caeded103a74496c8bc7f51ad79d5c))
+* **isr-cache:** bundle cache-handler and aws-sdk into standalone image ([ff667ab](https://github.com/y0ngha/siglens/commit/ff667ab6f22aabcaf9a7338991d3974d801224c6))
+* **isr-cache:** cache handler orchestrator ([9c0ab5c](https://github.com/y0ngha/siglens/commit/9c0ab5c6b6b18fade2b04c32e5765b1a4ca28b28))
+* **isr-cache:** fail-open failure alarm + ops runbook ([9b495cc](https://github.com/y0ngha/siglens/commit/9b495cc88801724136ed2da873ad0d87d7c1181b))
+* **isr-cache:** gzip serialize module ([29b504b](https://github.com/y0ngha/siglens/commit/29b504b4af2b6af0e4acb707ef491597a680c4c9))
+* **isr-cache:** local in-process tag store ([95e46d9](https://github.com/y0ngha/siglens/commit/95e46d95f237db04ed4c1d96e03458279a051ed2))
+* **isr-cache:** pass GIT_SHA buildId and purge old cache prefix on deploy ([367396b](https://github.com/y0ngha/siglens/commit/367396b5ffe3eb2044c85f5aa4c47b59a107fbb8))
+* **isr-cache:** s3 bucket + lifecycle + ec2 iam policy ([a6f93eb](https://github.com/y0ngha/siglens/commit/a6f93eb330bcb541a612e37b56778c6e57020502))
+* **isr-cache:** s3 store with key scheme and fail-open ([d0f2215](https://github.com/y0ngha/siglens/commit/d0f2215f655b0756189f6b061361a3df97b5fbd0))
+* **isr-cache:** wire cacheHandler in next.config (prod+bucket gated) ([816d505](https://github.com/y0ngha/siglens/commit/816d5052f2e6c032418fd84ad5999ff850e1b7fd))
+
 # [0.30.0](https://github.com/y0ngha/siglens/compare/v0.29.2...v0.30.0) (2026-06-28)
 
 
