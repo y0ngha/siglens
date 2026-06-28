@@ -24,6 +24,7 @@ source "$(dirname "$0")/lib.sh"
 source "$(dirname "$0")/.env"
 
 REGION="${AWS_REGION:-ap-northeast-2}"
+# ⚠️ 버킷 이름은 infra/aws/12-isr-cache.sh, infra/aws/deploy.sh, .github/workflows/deploy.yml 3곳에서 동기화되어야 한다.
 BUCKET="${ISR_CACHE_BUCKET:-siglens-isr-cache}"
 
 # 버킷 생성 (없을 때만)

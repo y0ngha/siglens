@@ -1,16 +1,20 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { vi } from 'vitest';
 
-const getEntry = vi.fn();
-const setEntry = vi.fn();
+const { getEntry, setEntry, mockConfig } = vi.hoisted(() => ({
+    getEntry: vi.fn(),
+    setEntry: vi.fn(),
+    mockConfig: { disabled: false },
+}));
+
 vi.mock('../s3Store.mjs', () => ({
     getEntry: (...a) => getEntry(...a),
     setEntry: (...a) => setEntry(...a),
 }));
 // config.disabled를 테스트에서 토글할 수 있도록 mutable 객체로 mock.
 // vi.mock 팩토리는 호이스트되므로 mutable 참조도 vi.hoisted로 끌어올려야 한다.
-const { mockConfig } = vi.hoisted(() => ({ mockConfig: { disabled: false } }));
 vi.mock('../config.mjs', () => ({ config: mockConfig }));
 
+import { describe, it, expect, beforeEach } from 'vitest';
 import CacheHandler, { collectTags } from '../index.mjs';
 import { _resetForTest, markRevalidated } from '../tagStore.mjs';
 

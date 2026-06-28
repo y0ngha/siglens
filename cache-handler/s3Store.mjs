@@ -49,10 +49,12 @@ const S3_KEY_HASH_THRESHOLD = 900;
 
 function s3Key(key, kind) {
     const sub = kind === 'FETCH' ? 'fetch' : 'pages';
-    let id = encodeURIComponent(key);
+    const encoded = encodeURIComponent(key);
     // S3 키 1024바이트 한계 — 초과 시 sha256으로 대체(고유성 보존).
-    if (Buffer.byteLength(id) > S3_KEY_HASH_THRESHOLD)
-        id = createHash('sha256').update(key).digest('hex');
+    const id =
+        Buffer.byteLength(encoded) > S3_KEY_HASH_THRESHOLD
+            ? createHash('sha256').update(key).digest('hex')
+            : encoded;
     return `${config.keyPrefix}/${config.buildId}/${sub}/${id}.cache`;
 }
 

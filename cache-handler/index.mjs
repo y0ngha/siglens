@@ -24,27 +24,28 @@ const NEXT_CACHE_TAGS_HEADER = 'x-next-cache-tags';
 // 기존 `ctx?.tags || []`는 페이지를 항상 tags:[]로 저장해 revalidateTag가 ISR 페이지를
 // 영구히 무효화하지 못했다(get의 maxRevalidatedAt(entry.tags)가 빈 배열만 봄).
 export function collectTags(data, ctx) {
-    const tags = new Set();
-
-    const add = list => {
-        if (!Array.isArray(list)) return;
-        for (const tag of list) {
-            if (typeof tag === 'string' && tag.length > 0) tags.add(tag);
-        }
-    };
-
-    // FETCH: set context의 tags(+방어적 softTags)와 값 자체의 tags.
-    add(ctx?.tags);
-    add(ctx?.softTags);
-    add(data?.tags);
+    const filterTags = list =>
+        Array.isArray(list)
+            ? list.filter(t => typeof t === 'string' && t.length > 0)
+            : [];
 
     // APP_PAGE / APP_ROUTE / PAGES: 헤더 x-next-cache-tags(쉼표 구분).
     const header = data?.headers?.[NEXT_CACHE_TAGS_HEADER];
-    if (typeof header === 'string') {
-        add(header.split(',').map(t => t.trim()));
-    }
+    const headerTags =
+        typeof header === 'string'
+            ? header
+                  .split(',')
+                  .map(t => t.trim())
+                  .filter(t => t.length > 0)
+            : [];
 
-    return Array.from(tags);
+    return [
+        // FETCH: set context의 tags(+방어적 softTags)와 값 자체의 tags.
+        ...filterTags(ctx?.tags),
+        ...filterTags(ctx?.softTags),
+        ...filterTags(data?.tags),
+        ...headerTags,
+    ].filter((tag, i, arr) => arr.indexOf(tag) === i);
 }
 
 // Next.js 16.2 단수 cacheHandler (incremental-cache/index.d.ts 계약).
@@ -106,7 +107,7 @@ export default class CacheHandler {
     async revalidateTag(tags) {
         const arr = Array.isArray(tags) ? tags : [tags];
         const now = Date.now();
-        for (const tag of arr) markRevalidated(tag, now);
+        arr.forEach(tag => markRevalidated(tag, now));
     }
 
     resetRequestCache() {} // 로컬 태그맵은 per-request 상태가 아니므로 no-op

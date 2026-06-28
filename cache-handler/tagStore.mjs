@@ -16,12 +16,10 @@ export function markRevalidated(tag, now) {
 }
 
 export function maxRevalidatedAt(tags) {
-    let max = 0;
-    for (const tag of tags) {
-        const t = revalidatedAt.get(tag);
-        if (t && t > max) max = t;
-    }
-    return max;
+    return tags.reduce((max, tag) => {
+        const t = revalidatedAt.get(tag) ?? 0;
+        return t > max ? t : max;
+    }, 0);
 }
 
 // 테스트 전용 — 맵 초기화.
