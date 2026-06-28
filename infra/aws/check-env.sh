@@ -34,6 +34,10 @@ OPTIONAL_KEYS=(
   ANTHROPIC_CHAT_API_KEY
   OPENAI_CHAT_API_KEY
   DEBUG_VERBOSE_LOGS
+  # Optional SNS email subscription address for ISR cache alarms. The SNS topic
+  # and CloudWatch alarm wiring (07-alarms.sh) are created regardless; only the
+  # email subscription is skipped when this is absent. Never block deploy for it.
+  ALARM_EMAIL
 )
 
 # 필수 키 수집: KEY=... 형태 라인에서 KEY만 추출(주석/빈 줄 스킵, EXCLUDE 제외).

@@ -49,6 +49,12 @@ RUN node scripts/assert-standalone-skills.mjs
 FROM node:22-alpine AS runner
 RUN apk add --no-cache tini
 WORKDIR /app
+# GIT_SHA must be re-declared in the runner stage — ARG scope is per-stage in Docker.
+# Without this, process.env.GIT_SHA is unset at runtime and cache-handler/config.mjs
+# falls back to buildId 'dev', causing every deploy to collide on the same
+# siglens-isr/dev/ S3 prefix and breaking per-release cache isolation.
+ARG GIT_SHA
+ENV GIT_SHA=$GIT_SHA
 ENV NODE_ENV=production \
     PORT=3000 \
     HOSTNAME=0.0.0.0
