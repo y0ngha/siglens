@@ -71,6 +71,7 @@ resetRequestCache(): void
 - ⚠️ **`refreshTags`는 단수 핸들러에 없음** (그건 `cacheHandlers` 복수 = `use cache` 전용). 멀티 인스턴스 태그 검증은 **`get()` 내부**에서 수행.
 - `cacheComponents` 비활성이므로 전통 cacheHandler가 ISR/fetch/route/unstable_cache를 모두 담당.
 - 태그는 `unstable_cache`(`staticSymbolCache`)에 걸리며 `FETCH` kind `set` ctx.tags로 정상 전달됨(검증 완료). #78864(APP_PAGE set의 tags 누락) 버그는 데이터-레이어 태그 방식이라 영향 없음.
+- `resetRequestCache()`는 no-op으로 둔다(로컬 태그맵은 per-request 상태가 아님). `revalidateTag`의 `durations`(Next16 SWR profile) 인자는 soft invalidation에선 무시하고 `now`만 기록한다.
 
 ### 4.2 S3 키 스킴 + 저장 포맷
 
@@ -82,13 +83,16 @@ resetRequestCache(): void
 ```
 - 키 충돌 방지: `encodeURIComponent(key)`(고유성 보존), 1024바이트 초과 시 sha256 fallback
 - S3 object body = `gzip(JSON.stringify({ value, lastModified, tags, revalidate, kind }))` — 메타를 페이로드와 한 객체에. RSC 페이로드가 커서 **gzip 필수**
+- **og/twitter image**(`dynamic:'force-static'`, revalidate 30d, `(ticker,label)` 순수 함수): 동적 세그먼트 + force-static이라 cacheHandler를 경유한다(코드 확인). **별도 prefix 없이 `pages/`와 동일 처리** — lifecycle 14일에 만료돼도 순수 함수라 재생성이 저렴하다.
+- **IMAGE kind**(next/image 최적화, Header·HeroIllustration 등 6곳 정적 에셋): `images.customCacheHandler`를 **옵트인하지 않아** 디스크(`.next/cache/images`)에 둔다 — 정적 에셋이라 작고(옛 분석 8KB) 디스크풀과 무관하므로 외부화 대상에서 의도적으로 제외.
 
 ### 4.3 태그 처리 (로컬 in-process, soft invalidation)
 
-- `tagStore` = 핸들러 메모리의 `Map<tag, revalidatedAt>`, 항목 **10s TTL**은 적용하지 않고(로컬이 source of truth) 영구 보관
+- `tagStore` = 핸들러 메모리의 `Map<tag, revalidatedAt>`. 로컬이 source of truth이므로 외부 폴링 캐시가 아니며 TTL 없이 보관한다.
 - `set`은 DynamoDB/외부 미접촉 — S3 엔트리에 `tags`+`lastModified`만 기록
 - `revalidateTag`는 로컬 맵에 `tag→now` 즉시 기록(read-your-writes 보장)
 - `get`은 S3 엔트리의 각 tag를 로컬 맵과 비교해 stale 판정
+- **메모리 영향**: `revalidateTag`된 태그(`news:${symbol}` 등)가 맵에 누적되나, 심볼 유니버스가 유한해 상한이 수만 엔트리(~수 MB)로 미미하다. 우려 시 LRU/TTL 도입(확장 여지).
 
 ### 4.4 무효화 / 배포
 
@@ -123,7 +127,7 @@ cacheMaxMemorySize: 0,   // 멀티 인스턴스 정합성: 인스턴스 로컬 L
 
 ### 4.8 인프라 (`infra/aws/12-isr-cache.sh`, 신규)
 
-- S3 버킷 + lifecycle(전체 14일 만료; og/twitter image prefix는 30일+)
+- S3 버킷 + lifecycle(전체 14일 균일 만료 — og/twitter image도 동일 처리, 순수 함수라 만료 시 재생성 저렴)
 - `00-iam-setup.sh`의 EC2 role inline 정책에 S3(GetObject/PutObject/DeleteObject) 추가 (DynamoDB 없음)
 
 ### 4.9 킬 스위치 / 롤백 (2단계)
