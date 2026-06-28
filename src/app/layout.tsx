@@ -169,7 +169,6 @@ export default function RootLayout({ children }: RootLayoutProps) {
                     접속자 수 정확도를 확보한다(beacon ~5KB라 LCP/INP 영향은 미미). */}
                 {CF_BEACON_TOKEN && (
                     <Script
-                        defer
                         src="https://static.cloudflareinsights.com/beacon.min.js"
                         data-cf-beacon={`{"token": "${CF_BEACON_TOKEN}"}`}
                         strategy="afterInteractive"
