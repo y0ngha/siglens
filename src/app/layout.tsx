@@ -10,6 +10,7 @@ import { PwaBanner } from '@/features/pwa-install';
 import { NoticePopupLoader } from '@/widgets/notice-popup';
 import { ReactQueryProvider } from '@/app/providers';
 import { ADSENSE_ENABLED } from '@/shared/lib/adsense';
+import { CF_BEACON_TOKEN } from '@/shared/lib/cloudflareAnalytics';
 import {
     ROOT_KEYWORDS,
     ROOT_TITLE,
@@ -160,6 +161,18 @@ export default function RootLayout({ children }: RootLayoutProps) {
                         src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"
                         crossOrigin="anonymous"
                         strategy="lazyOnload"
+                    />
+                )}
+                {/* Cloudflare Web Analytics — 쿠키리스 트래픽 측정(UV/PV + 페이지별
+                    조회수). beacon이 history API로 SPA 라우팅을 자동 추적하므로 추가
+                    설정이 필요 없다. afterInteractive로 빠른 이탈 방문자까지 집계해
+                    접속자 수 정확도를 확보한다(beacon ~5KB라 LCP/INP 영향은 미미). */}
+                {CF_BEACON_TOKEN && (
+                    <Script
+                        defer
+                        src="https://static.cloudflareinsights.com/beacon.min.js"
+                        data-cf-beacon={`{"token": "${CF_BEACON_TOKEN}"}`}
+                        strategy="afterInteractive"
                     />
                 )}
             </body>
