@@ -39,9 +39,11 @@ aws cloudwatch put-metric-alarm --alarm-name siglens-mem-high --namespace CWAgen
   --comparison-operator GreaterThanThreshold --treat-missing-data notBreaching $ACTIONS
 # ISR 캐시 fail-open 가시성: s3Store의 '[isr-cache] s3 get/set failed' 로그를 메트릭으로.
 # fail-open이라 S3 perms/버킷/IMDS가 깨져도 캐시가 조용히 죽을 뿐 알람이 없다 — 이를 잡는다.
+# '?"a" ?"b"' 는 CloudWatch Logs 필터 OR 문법: a 또는 b를 포함하는 줄만 카운트.
+# 실패 로그(get/set failed)만 대상 — 정상 [isr-cache] 로그(hit/miss 등)는 제외.
 aws logs put-metric-filter --log-group-name /siglens/app \
   --filter-name siglens-isr-cache-failures \
-  --filter-pattern '"[isr-cache]"' \
+  --filter-pattern '?"[isr-cache] s3 get failed" ?"[isr-cache] s3 set failed"' \
   --metric-transformations metricName=IsrCacheFailures,metricNamespace=Siglens/ISRCache,metricValue=1,defaultValue=0
 # 5분간 5건 초과 = 산발적 S3 hiccup(정상 재생성)이 아니라 지속 실패 → 캐시 사실상 죽음.
 aws cloudwatch put-metric-alarm --alarm-name siglens-isr-cache-failures --namespace Siglens/ISRCache \
