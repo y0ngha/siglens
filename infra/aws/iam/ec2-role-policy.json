@@ -53,6 +53,12 @@
             "Effect": "Allow",
             "Action": ["cloudwatch:PutMetricData", "ec2:DescribeTags"],
             "Resource": "*"
+        },
+        {
+            "Sid": "IsrCacheS3",
+            "Effect": "Allow",
+            "Action": ["s3:GetObject", "s3:PutObject", "s3:DeleteObject"],
+            "Resource": "arn:aws:s3:::siglens-isr-cache/*"
         }
     ]
 }
