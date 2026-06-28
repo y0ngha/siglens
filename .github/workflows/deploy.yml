@@ -120,6 +120,7 @@ jobs:
                       --build-arg NEXT_PUBLIC_ADSENSE_SLOT_PROGRESS=2260139933 \
                       --build-arg NEXT_PUBLIC_ADSENSE_SLOT_PANEL_BOTTOM=5816241560 \
                       --build-arg NEXT_PUBLIC_ADSENSE_ENABLED=false \
+                      --build-arg GIT_SHA=${IMAGE_TAG} \
                       --load \
                       -t ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.ap-northeast-2.amazonaws.com/siglens:${IMAGE_TAG} \
                       .
