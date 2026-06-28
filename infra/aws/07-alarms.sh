@@ -44,7 +44,7 @@ aws cloudwatch put-metric-alarm --alarm-name siglens-mem-high --namespace CWAgen
 aws logs put-metric-filter --log-group-name /siglens/app \
   --filter-name siglens-isr-cache-failures \
   --filter-pattern '?"[isr-cache] s3 get failed" ?"[isr-cache] s3 set failed"' \
-  --metric-transformations metricName=IsrCacheFailures,metricNamespace=Siglens/ISRCache,metricValue=1,defaultValue=0
+  --metric-transformations metricName=IsrCacheFailures,metricNamespace=Siglens/ISRCache,metricValue=1
 # 5분간 5건 초과 = 산발적 S3 hiccup(정상 재생성)이 아니라 지속 실패 → 캐시 사실상 죽음.
 aws cloudwatch put-metric-alarm --alarm-name siglens-isr-cache-failures --namespace Siglens/ISRCache \
   --metric-name IsrCacheFailures --statistic Sum --period 300 --evaluation-periods 1 --threshold 5 \

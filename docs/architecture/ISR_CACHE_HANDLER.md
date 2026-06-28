@@ -142,7 +142,7 @@ aws s3 rm s3://siglens-isr-cache/ --recursive --region ap-northeast-2
 - **네임스페이스**: `Siglens/ISRCache` / 메트릭: `IsrCacheFailures`
 - **메트릭 필터**: `/siglens/app`에서 `?"[isr-cache] s3 get failed" ?"[isr-cache] s3 set failed"` OR 패턴(실패 로그만)을 카운트.
 - **임계값**: 5분(period=300) 내 Sum > 5 → ALARM (SNS `siglens-alerts` 알림).
-- `defaultValue=0` 설정으로 로그 공백 기간에도 `notBreaching` 상태 유지.
+- 실패 로그가 없으면 메트릭 데이터가 수집되지 않으며, 알람의 `--treat-missing-data notBreaching` 설정이 이를 `OK`로 처리한다 (고볼륨 로그 그룹에 불필요한 0-데이터포인트를 만들지 않기 위해 `defaultValue`는 의도적으로 생략).
 - **해석**: 일시적 S3 hiccup은 낮은 빈도로 정상. 알람 발화 = 5분간 5건 초과 = 구조적 실패(IAM 퍼미션 박탈, 버킷 삭제, IMDS 차단 등). 즉시 조사 필요.
 
 ### `siglens-disk-high` — 캐시 외부화 회귀 카나리
