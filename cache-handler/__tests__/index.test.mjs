@@ -171,6 +171,33 @@ describe('CacheHandler.set', () => {
         expect(setEntry).toHaveBeenCalledOnce();
     });
 
+    it('status가 5xx인 APP_ROUTE는 body가 있어도 저장하지 않는다(빈/실패 응답 동결 방지)', async () => {
+        await new CacheHandler({}).set(
+            '/og',
+            { kind: 'APP_ROUTE', body: Buffer.from('err'), status: 500 },
+            {}
+        );
+        expect(setEntry).not.toHaveBeenCalled();
+    });
+
+    it('body가 빈 APP_ROUTE는 저장하지 않는다', async () => {
+        await new CacheHandler({}).set(
+            '/og',
+            { kind: 'APP_ROUTE', body: null, status: 200 },
+            {}
+        );
+        expect(setEntry).not.toHaveBeenCalled();
+    });
+
+    it('status가 200이고 body가 있는 APP_ROUTE는 정상 저장한다', async () => {
+        await new CacheHandler({}).set(
+            '/og',
+            { kind: 'APP_ROUTE', body: Buffer.from('png'), status: 200 },
+            {}
+        );
+        expect(setEntry).toHaveBeenCalledOnce();
+    });
+
     it('APP_PAGE는 ctx.tags 없이 x-next-cache-tags 헤더에서 태그를 캡처한다', async () => {
         // Next 16.2 페이지 set: context에 tags가 없고 태그는 캐시 값의
         // headers['x-next-cache-tags']에 쉼표 구분으로 실린다.

@@ -69,7 +69,10 @@ COPY --chown=node:node --from=builder /app/node_modules/@aws-crypto ./node_modul
 COPY --chown=node:node --from=builder /app/node_modules/@aws ./node_modules/@aws
 COPY --chown=node:node --from=builder /app/node_modules/tslib ./node_modules/tslib
 # 누락 시 즉시 빌드 실패(런타임 ENOSPC보다 빌드 실패가 낫다).
-RUN node -e "require.resolve('@aws-sdk/client-s3')" || (echo 'FAIL: @aws-sdk/client-s3 누락' && exit 1)
+# require.resolve만으론 엔트리 모듈만 확인한다 — 미래 SDK 업그레이드가 런타임에
+# 도달 가능하게 만드는 전이 의존(transitive dep)의 누락은 잡지 못한다. 실제로
+# S3Client를 construct하면 의존 트리를 더 깊게 로드해 그런 누락을 빌드에서 잡는다.
+RUN node -e "const {S3Client}=require('@aws-sdk/client-s3'); new S3Client({region:'ap-northeast-2'}); console.log('aws-sdk ok')" || (echo 'FAIL: @aws-sdk/client-s3 load/construct' && exit 1)
 RUN node -e "require('node:fs').accessSync('./cache-handler/index.mjs')" || (echo 'FAIL: cache-handler 누락' && exit 1)
 USER node
 EXPOSE 3000

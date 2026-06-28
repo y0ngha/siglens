@@ -20,12 +20,24 @@ function s3() {
     // (dist-cjs/index.js setRequestTimeout: throwOnRequestTimeout가 false면 logger.warn만).
     // true여야 req.destroy(error) + reject(error)로 행(hang)을 실제로 끊어 렌더 경로를
     // 풀어준다. 그렇지 않으면 느린/행 S3 응답이 2000ms 후에도 무한정 대기한다.
+    //
+    // socketTimeout:3000이 본문 다운로드(body) 구간을 경계한다. requestTimeout은
+    // 응답 헤더 도착 시점까지만 유효하다 — 헤더가 오면 node-http-handler가
+    // resolve({response})에서 clearTimeouts()를 호출해 requestTimeout을 취소한다
+    // (dist-cjs/index.js: resolve→clearTimeouts→timing.clearTimeout(requestTimeoutId)).
+    // 이후 res.Body.transformToByteArray() 스트림 read는 socketTimeout만이 경계한다.
+    // setSocketTimeout(0<t<6000)은 request.socket.setTimeout(t, onTimeout)으로 네이티브
+    // 소켓 비활성 타임아웃을 걸고 0을 반환하므로 clearTimeouts()가 취소하지 못한다 —
+    // 본문 read 중 S3 stall이 나면 onTimeout이 request.destroy()+reject(TimeoutError)로
+    // 끊는다. cacheMaxMemorySize:0(L1 없음)이라 이 경계가 없으면 mid-stream stall이
+    // 렌더 경로를 무한정 멈춘다.
     client ??= new S3Client({
         region: config.region,
         maxAttempts: 2,
         requestHandler: {
             connectionTimeout: 1000,
             requestTimeout: 2000,
+            socketTimeout: 3000,
             throwOnRequestTimeout: true,
         },
     });

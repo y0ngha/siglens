@@ -83,6 +83,16 @@ export default class CacheHandler {
             (!data.html || (data.status && data.status >= 400))
         )
             return;
+        // APP_ROUTE 엔트리(route handler 응답)는 html이 아니라 data.body(Buffer)+data.status를
+        // 쓰므로 위 가드를 우회한다(CachedRouteValue, response-cache/types.d.ts:70 — body:Buffer,
+        // status:number). 현재 캐시되는 APP_ROUTE는 순수 함수 og/twitter 이미지뿐이라 안전하나,
+        // 미래에 에러를 반환하는 cached route handler가 4xx/5xx나 빈 body를 영속화하지 못하도록
+        // 방어한다(#657 빈/실패 응답 동결 방지와 동일 취지).
+        if (
+            kind === 'APP_ROUTE' &&
+            (!data.body || (data.status && data.status >= 400))
+        )
+            return;
         // set context엔 kind가 없다. fetch 엔트리는 data.kind==='FETCH'로 식별되므로,
         // get(ctx.kind)와 동일한 subfolder로 라우팅되도록 set은 data.kind를 사용한다.
         await setEntry(cacheKey, kind, {
