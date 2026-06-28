@@ -108,6 +108,9 @@ export default defineConfig({
                         // scripts/ — scripts/ is tsconfig-excluded but its unit
                         // tests still run here so CI's `yarn test` covers them.
                         'scripts/**/__tests__/**/*.test.ts',
+                        // ISR cache handler lives outside src/ as plain ESM (.mjs)
+                        // so Next.js can require() it without any transpilation step.
+                        'cache-handler/**/__tests__/**/*.test.mjs',
                     ],
                     environment: 'node',
                 },

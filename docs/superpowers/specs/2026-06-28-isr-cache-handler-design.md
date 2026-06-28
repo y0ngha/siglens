@@ -122,7 +122,11 @@ cacheMaxMemorySize: 0,   // 멀티 인스턴스 정합성: 인스턴스 로컬 L
 ### 4.7 빌드 / Docker
 
 - `@aws-sdk/client-s3` 추가 (modular import로 번들 최소화)
-- standalone이 핸들러·SDK를 자동 트레이싱 안 할 수 있음(특히 E2E 빌드에선 cacheHandler 미등록) → **`outputFileTracingIncludes`에 조건 무관 명시 포함** + Dockerfile 명시 COPY + `require.resolve` 검증 라인(sharp 패턴)
+- standalone이 핸들러·SDK를 자동 트레이싱 안 할 수 있음(특히 E2E 빌드에선 cacheHandler 미등록).
+  **구현 결정(업데이트)**: `outputFileTracingIncludes`에 cache-handler를 넣지 않고,
+  **Dockerfile 명시 COPY + `require.resolve` 검증 라인(sharp 패턴)** 으로 결정적으로 번들한다.
+  tracing 휴리스틱보다 명시 COPY가 강하고 빌드 조건(E2E vs prod)에 무관하게 동작하므로,
+  `outputFileTracingIncludes`는 `skills/`만 유지한다. next.config.ts에 그 취지의 주석을 둔다.
 - `GIT_SHA`를 Dockerfile `ARG`→`ENV`로 주입(`deploy.yml`이 전달)
 
 ### 4.8 인프라 (`infra/aws/12-isr-cache.sh`, 신규)

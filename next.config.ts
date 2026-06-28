@@ -1,5 +1,8 @@
 import type { NextConfig } from 'next';
 import bundleAnalyzer from '@next/bundle-analyzer';
+import { createRequire } from 'module';
+
+const require = createRequire(import.meta.url);
 
 const withBundleAnalyzer = bundleAnalyzer({
     enabled: process.env.ANALYZE === 'true',
@@ -8,6 +11,19 @@ const withBundleAnalyzer = bundleAnalyzer({
 const nextConfig: NextConfig = {
     // self-host: Docker 최소 번들(.next/standalone + server.js)
     output: 'standalone',
+
+    // ISR/fetch 캐시를 S3로 외부화(디스크풀 방지). production + 버킷 설정 시에만 등록.
+    // dev/E2E(버킷 없음)는 기본 파일시스템 캐시로 동작.
+    cacheHandler:
+        process.env.NODE_ENV === 'production' && process.env.ISR_CACHE_BUCKET
+            ? require.resolve('./cache-handler/index.mjs')
+            : undefined,
+    // 멀티 인스턴스 정합성: 인스턴스 로컬 L1 캐시를 끄고 모든 read/write를 핸들러로.
+    cacheMaxMemorySize: 0,
+
+    // ⚠️ next/image 최적화 캐시(IMAGE kind)는 디스크에 유지한다(정적 에셋이라 작음, ~8KB).
+    // images.customCacheHandler를 true로 켜지 말 것 — IMAGE까지 S3로 보내면 불필요한
+    // 비용/복잡도만 늘고 디스크풀과 무관하다(외부화 대상에서 의도적 제외, spec §4.2).
 
     // serverExternalPackages 부재는 의도된 것(L3) — 다시 추가하지 말 것.
     // 과거 'postgres'를 serverExternalPackages에 넣었다가 E2E prod build가 깨졌다:
@@ -45,6 +61,10 @@ const nextConfig: NextConfig = {
 
     // skills/ 디렉토리는 fs.readdir로 동적 접근하므로 Vercel이 자동 추적하지 못한다.
     // 명시적으로 포함시켜 Server Actions에서 파일을 읽을 수 있도록 한다.
+    //
+    // 참고: ISR cache-handler(cache-handler/**/*.mjs)는 여기 없다 — 의도적이다.
+    // 핸들러는 Dockerfile의 명시적 COPY + require.resolve 게이트로 결정적으로 번들된다
+    // (tracing 휴리스틱보다 강함). 따라서 outputFileTracingIncludes에 없어도 누락이 아니다.
     outputFileTracingIncludes: {
         '/**': ['./skills/**/*'],
     },

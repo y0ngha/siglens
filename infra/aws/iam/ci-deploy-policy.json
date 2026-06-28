@@ -76,6 +76,21 @@
             "Resource": "arn:aws:ssm:ap-northeast-2:ACCOUNT_ID:parameter/siglens/*"
         },
         {
+            "Sid": "IsrCachePurge",
+            "Effect": "Allow",
+            "Action": ["s3:ListBucket", "s3:DeleteObject"],
+            "Resource": [
+                "arn:aws:s3:::siglens-isr-cache",
+                "arn:aws:s3:::siglens-isr-cache/*"
+            ]
+        },
+        {
+            "Sid": "IsrBuildIdParam",
+            "Effect": "Allow",
+            "Action": ["ssm:GetParameter", "ssm:PutParameter"],
+            "Resource": "arn:aws:ssm:ap-northeast-2:ACCOUNT_ID:parameter/siglens/prev-isr-buildid"
+        },
+        {
             "Sid": "BuildTimeDbUrlDecrypt",
             "Effect": "Allow",
             "Action": ["kms:Decrypt"],

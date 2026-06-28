@@ -16,6 +16,14 @@ ARG NEXT_PUBLIC_ADSENSE_ENABLED
 ARG NEXT_PUBLIC_ADSENSE_PUBLISHER_ID
 ARG NEXT_PUBLIC_ADSENSE_SLOT_PANEL_BOTTOM
 ARG NEXT_PUBLIC_ADSENSE_SLOT_PROGRESS
+ARG GIT_SHA
+ENV GIT_SHA=$GIT_SHA
+# ISR_CACHE_BUCKET을 빌드 타임에 노출해야 next.config.ts의 cacheHandler 게이트
+# (NODE_ENV==='production' && ISR_CACHE_BUCKET)가 빌드 시 true로 평가되어 핸들러가
+# standalone server.js에 baked된다. 런타임 값은 runner가 SSM/--env-file로 별도 주입한다
+# (여기서 하드코딩하지 않음 — 비어 있으면 핸들러 미등록 = 파일시스템 폴백).
+ARG ISR_CACHE_BUCKET
+ENV ISR_CACHE_BUCKET=$ISR_CACHE_BUCKET
 ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL \
     NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION=$NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION \
     NEXT_PUBLIC_ADSENSE_ENABLED=$NEXT_PUBLIC_ADSENSE_ENABLED \
@@ -52,6 +60,20 @@ COPY --chown=node:node --from=builder /app/node_modules/sharp ./node_modules/sha
 COPY --chown=node:node --from=builder /app/node_modules/@img ./node_modules/@img
 # sharp explicit COPY가 성공했는지 확인 (require.resolve 실패 = COPY 누락)
 RUN node -e "require.resolve('sharp')" || (echo 'FAIL: sharp가 node_modules에 없음' && exit 1)
+# ISR 캐시 핸들러 (production .mjs만, 테스트 제외) — standalone에 자동 포함되지 않아 명시 복사.
+COPY --chown=node:node --from=builder /app/cache-handler/*.mjs ./cache-handler/
+# AWS SDK + 그 의존 top-level 5개 (격리 require 시뮬로 확정: @aws-sdk/client-s3 로드에 필요).
+COPY --chown=node:node --from=builder /app/node_modules/@aws-sdk ./node_modules/@aws-sdk
+COPY --chown=node:node --from=builder /app/node_modules/@smithy ./node_modules/@smithy
+COPY --chown=node:node --from=builder /app/node_modules/@aws-crypto ./node_modules/@aws-crypto
+COPY --chown=node:node --from=builder /app/node_modules/@aws ./node_modules/@aws
+COPY --chown=node:node --from=builder /app/node_modules/tslib ./node_modules/tslib
+# 누락 시 즉시 빌드 실패(런타임 ENOSPC보다 빌드 실패가 낫다).
+# require.resolve만으론 엔트리 모듈만 확인한다 — 미래 SDK 업그레이드가 런타임에
+# 도달 가능하게 만드는 전이 의존(transitive dep)의 누락은 잡지 못한다. 실제로
+# S3Client를 construct하면 의존 트리를 더 깊게 로드해 그런 누락을 빌드에서 잡는다.
+RUN node -e "const {S3Client}=require('@aws-sdk/client-s3'); new S3Client({region:'ap-northeast-2'}); console.log('aws-sdk ok')" || (echo 'FAIL: @aws-sdk/client-s3 load/construct' && exit 1)
+RUN node -e "require('node:fs').accessSync('./cache-handler/index.mjs')" || (echo 'FAIL: cache-handler 누락' && exit 1)
 USER node
 EXPOSE 3000
 ENTRYPOINT ["/sbin/tini", "--"]

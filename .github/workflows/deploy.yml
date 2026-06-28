@@ -120,6 +120,10 @@ jobs:
                       --build-arg NEXT_PUBLIC_ADSENSE_SLOT_PROGRESS=2260139933 \
                       --build-arg NEXT_PUBLIC_ADSENSE_SLOT_PANEL_BOTTOM=5816241560 \
                       --build-arg NEXT_PUBLIC_ADSENSE_ENABLED=false \
+                      `# GIT_SHA carries the release version (IMAGE_TAG), not a commit SHA. It is baked as buildId and used as the per-release S3 cache prefix (siglens-isr/<GIT_SHA>/...).` \
+                      --build-arg GIT_SHA=${IMAGE_TAG} \
+                      `# ⚠️ 버킷 이름은 infra/aws/12-isr-cache.sh, infra/aws/deploy.sh, .github/workflows/deploy.yml 3곳에서 동기화되어야 한다.` \
+                      --build-arg ISR_CACHE_BUCKET=siglens-isr-cache \
                       --load \
                       -t ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.ap-northeast-2.amazonaws.com/siglens:${IMAGE_TAG} \
                       .
