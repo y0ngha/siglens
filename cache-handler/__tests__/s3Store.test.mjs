@@ -2,9 +2,21 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const send = vi.fn();
 vi.mock('@aws-sdk/client-s3', () => ({
-    S3Client: vi.fn(() => ({ send })),
-    GetObjectCommand: vi.fn(input => ({ __type: 'get', input })),
-    PutObjectCommand: vi.fn(input => ({ __type: 'put', input })),
+    S3Client: class {
+        send = send;
+    },
+    GetObjectCommand: class {
+        constructor(input) {
+            this.__type = 'get';
+            this.input = input;
+        }
+    },
+    PutObjectCommand: class {
+        constructor(input) {
+            this.__type = 'put';
+            this.input = input;
+        }
+    },
 }));
 vi.mock('../config.mjs', () => ({
     config: {
