@@ -2,6 +2,51 @@ import { getEntry, setEntry } from './s3Store.mjs';
 import { markRevalidated, maxRevalidatedAt } from './tagStore.mjs';
 import { config } from './config.mjs';
 
+// Next 16.2가 set()에 넘기는 페이지 태그 헤더 키.
+// 출처: next/dist/lib/constants.js:275 — NEXT_CACHE_TAGS_HEADER = 'x-next-cache-tags'.
+const NEXT_CACHE_TAGS_HEADER = 'x-next-cache-tags';
+
+// set()의 모든 실태그 소스를 union한다.
+//
+// Next 16.2 source 검증(node_modules/next/dist/...):
+//   - FETCH 엔트리: set context(SetIncrementalFetchCacheContext, response-cache/types.d.ts:177)는
+//     `tags`만 갖는다. softTags는 GET context에만 있으나(types.d.ts:164) 멀티인스턴스/방어 목적으로
+//     ctx.softTags도 union한다(없으면 무해). 추가로 CachedFetchValue.tags(types.d.ts:47)가 값 자체에
+//     실린다 — file-system-cache.get이 data.value.tags를 신뢰하는 부분(file-system-cache.js:122).
+//   - APP_PAGE / APP_ROUTE / PAGES 엔트리: set context에 `tags` 필드가 없다
+//     (SetIncrementalResponseCacheContext, types.d.ts:184). Next는 페이지 태그를 캐시 값의 헤더
+//     `x-next-cache-tags`에서 읽는다 — file-system-cache.get의
+//     data.value.headers?.[NEXT_CACHE_TAGS_HEADER] (file-system-cache.js:214-216).
+//     커스텀 cacheHandler.set(key, data, ctx)에서 data는 그 value 객체 자체이므로
+//     헤더는 data.headers[NEXT_CACHE_TAGS_HEADER]에 위치한다(set 경로의 `headers: data.headers`,
+//     file-system-cache.js set 블록과 동일 shape).
+//
+// 기존 `ctx?.tags || []`는 페이지를 항상 tags:[]로 저장해 revalidateTag가 ISR 페이지를
+// 영구히 무효화하지 못했다(get의 maxRevalidatedAt(entry.tags)가 빈 배열만 봄).
+export function collectTags(data, ctx) {
+    const tags = new Set();
+
+    const add = list => {
+        if (!Array.isArray(list)) return;
+        for (const tag of list) {
+            if (typeof tag === 'string' && tag.length > 0) tags.add(tag);
+        }
+    };
+
+    // FETCH: set context의 tags(+방어적 softTags)와 값 자체의 tags.
+    add(ctx?.tags);
+    add(ctx?.softTags);
+    add(data?.tags);
+
+    // APP_PAGE / APP_ROUTE / PAGES: 헤더 x-next-cache-tags(쉼표 구분).
+    const header = data?.headers?.[NEXT_CACHE_TAGS_HEADER];
+    if (typeof header === 'string') {
+        add(header.split(',').map(t => t.trim()));
+    }
+
+    return Array.from(tags);
+}
+
 // Next.js 16.2 단수 cacheHandler (incremental-cache/index.d.ts 계약).
 // 메서드: get / set / revalidateTag(tags, durations?) / resetRequestCache.
 // refreshTags 훅은 단수 핸들러에 없으므로(그건 cacheHandlers 복수=use cache 전용),
@@ -29,7 +74,7 @@ export default class CacheHandler {
         await setEntry(cacheKey, data?.kind, {
             value: data,
             lastModified: Date.now(),
-            tags: ctx?.tags || [],
+            tags: collectTags(data, ctx),
         });
     }
 
