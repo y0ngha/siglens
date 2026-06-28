@@ -16,6 +16,8 @@ ARG NEXT_PUBLIC_ADSENSE_ENABLED
 ARG NEXT_PUBLIC_ADSENSE_PUBLISHER_ID
 ARG NEXT_PUBLIC_ADSENSE_SLOT_PANEL_BOTTOM
 ARG NEXT_PUBLIC_ADSENSE_SLOT_PROGRESS
+ARG GIT_SHA
+ENV GIT_SHA=$GIT_SHA
 ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL \
     NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION=$NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION \
     NEXT_PUBLIC_ADSENSE_ENABLED=$NEXT_PUBLIC_ADSENSE_ENABLED \
@@ -52,6 +54,13 @@ COPY --chown=node:node --from=builder /app/node_modules/sharp ./node_modules/sha
 COPY --chown=node:node --from=builder /app/node_modules/@img ./node_modules/@img
 # sharp explicit COPY가 성공했는지 확인 (require.resolve 실패 = COPY 누락)
 RUN node -e "require.resolve('sharp')" || (echo 'FAIL: sharp가 node_modules에 없음' && exit 1)
+# ISR 캐시 핸들러 + AWS SDK는 standalone에 자동 트레이싱되지 않을 수 있어 명시 복사.
+COPY --chown=node:node --from=builder /app/cache-handler ./cache-handler
+COPY --chown=node:node --from=builder /app/node_modules/@aws-sdk ./node_modules/@aws-sdk
+COPY --chown=node:node --from=builder /app/node_modules/@smithy ./node_modules/@smithy
+# 누락 시 즉시 실패(런타임 ENOSPC보다 빌드 실패가 낫다).
+RUN node -e "require.resolve('@aws-sdk/client-s3')" || (echo 'FAIL: @aws-sdk/client-s3 누락' && exit 1)
+RUN node -e "require('node:fs').accessSync('./cache-handler/index.mjs')" || (echo 'FAIL: cache-handler 누락' && exit 1)
 USER node
 EXPOSE 3000
 ENTRYPOINT ["/sbin/tini", "--"]
