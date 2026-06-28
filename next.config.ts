@@ -62,7 +62,7 @@ const nextConfig: NextConfig = {
     // skills/ 디렉토리는 fs.readdir로 동적 접근하므로 Vercel이 자동 추적하지 못한다.
     // 명시적으로 포함시켜 Server Actions에서 파일을 읽을 수 있도록 한다.
     outputFileTracingIncludes: {
-        '/**': ['./skills/**/*', './cache-handler/**/*'],
+        '/**': ['./skills/**/*'],
     },
 
     // cacheComponents (Next.js 16 PPR + 'use cache' directive)는 임시 비활성.
