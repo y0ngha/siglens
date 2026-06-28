@@ -5,6 +5,13 @@ TAG="${1:?usage: deploy.sh <image-tag>}"
 # env 완전성 게이트(M5): .env.example의 모든 필수 키가 SSM /siglens/* 에 있는지
 # 롤 이전에 확인한다. 누락 시 check-env.sh가 누락 키를 나열하고 비정상 종료해
 # 여기서 set -e로 배포가 멈춘다. 비상시 SKIP_ENV_CHECK=1로 우회(권장하지 않음).
+#
+# 부트스트랩 의존성(중요): .env.example에 ISR_CACHE_BUCKET이 추가되면서, 이 게이트는
+# /siglens/ISR_CACHE_BUCKET이 SSM에 존재해야 통과한다. 이 SSM 파라미터는
+# infra/aws/12-isr-cache.sh가 게시한다(버킷 생성 + SSM put). 12-isr-cache.sh는
+# 첫 태그 배포 전에 1회 수동 실행해야 한다(멱등). 실행하지 않으면 여기서 게이트가
+# 누락 키로 배포를 중단시킨다. (DATABASE_URL처럼 하드 요구이며 의도된 것 —
+# OPTIONAL_KEYS에 넣지 않는다.)
 if [ "${SKIP_ENV_CHECK:-0}" != "1" ]; then
   bash "$(dirname "$0")/check-env.sh"
 fi

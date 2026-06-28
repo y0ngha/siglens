@@ -14,10 +14,20 @@ function s3() {
     // cacheMaxMemorySize:0이라 L1 메모리 캐시가 없다 — 모든 read가 렌더 경로에서 S3를
     // 대기한다. S3가 행(hang)하면 요청 전체가 멈추므로 connection/request 타임아웃과
     // 제한된 재시도로 경계를 둔다(SDK가 config-object form을 NodeHttpHandler로 해석).
+    //
+    // throwOnRequestTimeout:true가 핵심이다. @smithy/node-http-handler(4.8.2)는
+    // 기본적으로 requestTimeout 초과 시 WARN 로그만 남기고 요청을 abort하지 않는다
+    // (dist-cjs/index.js setRequestTimeout: throwOnRequestTimeout가 false면 logger.warn만).
+    // true여야 req.destroy(error) + reject(error)로 행(hang)을 실제로 끊어 렌더 경로를
+    // 풀어준다. 그렇지 않으면 느린/행 S3 응답이 2000ms 후에도 무한정 대기한다.
     client ??= new S3Client({
         region: config.region,
         maxAttempts: 2,
-        requestHandler: { connectionTimeout: 1000, requestTimeout: 2000 },
+        requestHandler: {
+            connectionTimeout: 1000,
+            requestTimeout: 2000,
+            throwOnRequestTimeout: true,
+        },
     });
     return client;
 }
@@ -45,7 +55,7 @@ export async function getEntry(key, kind) {
         // zero-byte 객체(Body 없음)는 throw가 아니라 miss로 취급한다.
         if (!res.Body) return null;
         const buf = Buffer.from(await res.Body.transformToByteArray());
-        return deserialize(buf);
+        return await deserialize(buf);
     } catch (e) {
         if (e.name === 'NoSuchKey' || e.$metadata?.httpStatusCode === 404)
             return null;
@@ -60,7 +70,7 @@ export async function setEntry(key, kind, entry) {
             new PutObjectCommand({
                 Bucket: config.bucket,
                 Key: s3Key(key, kind),
-                Body: serialize(entry),
+                Body: await serialize(entry),
             })
         );
     } catch (e) {

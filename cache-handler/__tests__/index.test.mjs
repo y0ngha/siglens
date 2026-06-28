@@ -69,6 +69,12 @@ describe('CacheHandler.get', () => {
             await new CacheHandler({}).get('/AAPL', { kind: 'APP_PAGE' })
         ).toEqual({ lastModified: 1000, value: { html: 'hi' } });
     });
+
+    it('ctx.kind를 getEntry로 그대로 전달한다(fetch/pages 라우팅)', async () => {
+        getEntry.mockResolvedValueOnce(null);
+        await new CacheHandler({}).get('/x', { kind: 'FETCH' });
+        expect(getEntry).toHaveBeenCalledWith('/x', 'FETCH');
+    });
 });
 
 describe('CacheHandler.set', () => {
@@ -145,6 +151,24 @@ describe('CacheHandler.set', () => {
             {}
         );
         expect(setEntry).not.toHaveBeenCalled();
+    });
+
+    it('status가 4xx인 APP_PAGE는 html이 있어도 저장하지 않는다(notFound 404 영속 방지)', async () => {
+        await new CacheHandler({}).set(
+            '/AAPL',
+            { kind: 'APP_PAGE', html: '<p>not found</p>', status: 404 },
+            {}
+        );
+        expect(setEntry).not.toHaveBeenCalled();
+    });
+
+    it('status가 200인 APP_PAGE는 정상 저장한다', async () => {
+        await new CacheHandler({}).set(
+            '/AAPL',
+            { kind: 'APP_PAGE', html: 'x', status: 200 },
+            {}
+        );
+        expect(setEntry).toHaveBeenCalledOnce();
     });
 
     it('APP_PAGE는 ctx.tags 없이 x-next-cache-tags 헤더에서 태그를 캡처한다', async () => {

@@ -61,6 +61,10 @@ const nextConfig: NextConfig = {
 
     // skills/ 디렉토리는 fs.readdir로 동적 접근하므로 Vercel이 자동 추적하지 못한다.
     // 명시적으로 포함시켜 Server Actions에서 파일을 읽을 수 있도록 한다.
+    //
+    // 참고: ISR cache-handler(cache-handler/**/*.mjs)는 여기 없다 — 의도적이다.
+    // 핸들러는 Dockerfile의 명시적 COPY + require.resolve 게이트로 결정적으로 번들된다
+    // (tracing 휴리스틱보다 강함). 따라서 outputFileTracingIncludes에 없어도 누락이 아니다.
     outputFileTracingIncludes: {
         '/**': ['./skills/**/*'],
     },

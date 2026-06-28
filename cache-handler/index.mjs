@@ -72,10 +72,17 @@ export default class CacheHandler {
         // (incremental-cache/file-system-cache.js: `if (!this.flushToDisk || !data) return`).
         if (config.disabled || !data) return;
         // 빈/실패 렌더를 영속 캐시에 굳히지 않는다(#657 빈 ISR 캐시 동결 방지).
-        // 캐시가 이제 재시작 간 durable하므로, html이 비어있는 APP_PAGE/PAGES는 저장하지 않는다
-        // (IncrementalCachedAppPageValue/IncrementalCachedPageValue.html — response-cache/types.d.ts).
+        // 캐시가 이제 재시작 간 durable하므로, html이 비어있거나 status가 4xx/5xx인
+        // APP_PAGE/PAGES는 저장하지 않는다. notFound()는 body가 있는 404를 만드는데,
+        // 이를 S3에 영속화하면 페이지 복구 후에도 404가 stale로 남는다(SEO 악영향).
+        // status 필드는 response-cache/types.d.ts의 IncrementalCachedAppPageValue.status /
+        // IncrementalCachedPageValue.status(number | undefined)에 실린다.
         const kind = data.kind;
-        if ((kind === 'APP_PAGE' || kind === 'PAGES') && !data.html) return;
+        if (
+            (kind === 'APP_PAGE' || kind === 'PAGES') &&
+            (!data.html || (data.status && data.status >= 400))
+        )
+            return;
         // set context엔 kind가 없다. fetch 엔트리는 data.kind==='FETCH'로 식별되므로,
         // get(ctx.kind)와 동일한 subfolder로 라우팅되도록 set은 data.kind를 사용한다.
         await setEntry(cacheKey, kind, {

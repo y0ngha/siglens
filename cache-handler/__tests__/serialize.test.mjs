@@ -2,22 +2,22 @@ import { describe, it, expect } from 'vitest';
 import { serialize, deserialize } from '../serialize.mjs';
 
 describe('serialize', () => {
-    it('gzip 왕복이 원본과 동치다', () => {
+    it('gzip 왕복이 원본과 동치다', async () => {
         const obj = {
             value: { html: 'x'.repeat(1000) },
             lastModified: 123,
             tags: ['symbol:AAPL'],
         };
-        const buf = serialize(obj);
+        const buf = await serialize(obj);
         expect(Buffer.isBuffer(buf)).toBe(true);
-        expect(deserialize(buf)).toEqual(obj);
+        expect(await deserialize(buf)).toEqual(obj);
     });
 
-    it('빈 객체도 왕복된다', () => {
-        expect(deserialize(serialize({}))).toEqual({});
+    it('빈 객체도 왕복된다', async () => {
+        expect(await deserialize(await serialize({}))).toEqual({});
     });
 
-    it('Buffer(rscData)와 Map<string,Buffer>(segmentData)를 보존한다', () => {
+    it('Buffer(rscData)와 Map<string,Buffer>(segmentData)를 보존한다', async () => {
         // Next 16.2 APP_PAGE 값 모양 — JSON.stringify면 Buffer/Map이 깨진다.
         const obj = {
             value: {
@@ -29,7 +29,7 @@ describe('serialize', () => {
             lastModified: 1,
             tags: ['symbol:AAPL'],
         };
-        const out = deserialize(serialize(obj));
+        const out = await deserialize(await serialize(obj));
 
         // 타입이 보존돼야 한다(JSON이면 plain object/array로 변형됨).
         // 주의: vmThreads 풀에선 코드가 별도 realm에서 실행돼 `instanceof Map`이
@@ -54,7 +54,7 @@ describe('serialize', () => {
         );
     });
 
-    it('APP_ROUTE body(Buffer)도 보존한다', () => {
+    it('APP_ROUTE body(Buffer)도 보존한다', async () => {
         const obj = {
             value: {
                 kind: 'APP_ROUTE',
@@ -64,7 +64,7 @@ describe('serialize', () => {
             lastModified: 2,
             tags: [],
         };
-        const out = deserialize(serialize(obj));
+        const out = await deserialize(await serialize(obj));
         expect(Buffer.isBuffer(out.value.body)).toBe(true);
         expect(out.value.body.equals(Buffer.from([1, 2, 3]))).toBe(true);
     });

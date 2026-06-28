@@ -6,6 +6,12 @@
 # 14일 lifecycle으로 미방문 캐시를 자동 정리해 디스크풀 재발을 방지한다.
 # (순수 함수로 재생성이 저렴하므로 균일 만료로 단순화)
 #
+# ⚠️ 부트스트랩 순서(중요): 이 스크립트는 첫 태그 배포 전에 1회 수동 실행해야 한다.
+#    버킷을 만들고 /siglens/ISR_CACHE_BUCKET을 SSM에 게시한다(멱등). deploy.sh의
+#    env 완전성 게이트(check-env.sh)가 .env.example의 ISR_CACHE_BUCKET 때문에 이
+#    SSM 파라미터를 요구하므로, 미실행 시 배포가 누락 키로 중단된다. deploy 어디서도
+#    이 스크립트를 자동 호출하지 않는다(인프라 부트스트랩은 수동).
+#
 # 사용법:
 #     bash infra/aws/12-isr-cache.sh
 #

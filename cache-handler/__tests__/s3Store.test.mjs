@@ -85,7 +85,7 @@ describe('getEntry', () => {
 
     it('저장된 엔트리를 역직렬화해 반환한다', async () => {
         const entry = { value: { html: 'hi' }, lastModified: 5, tags: ['t'] };
-        const body = serialize(entry);
+        const body = await serialize(entry);
         send.mockResolvedValueOnce({
             Body: { transformToByteArray: async () => body },
         });
