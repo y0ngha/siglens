@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.31.1](https://github.com/y0ngha/siglens/compare/v0.31.0...v0.31.1) (2026-06-28)
+
+
+### Bug Fixes
+
+* **isr-cache:** activate externalization — s3:ListBucket, runner GIT_SHA env, optional ALARM_EMAIL ([dc83066](https://github.com/y0ngha/siglens/commit/dc83066116389ad72ba05c395b07b0c7bd352bc7))
+
 # [0.31.0](https://github.com/y0ngha/siglens/compare/v0.30.0...v0.31.0) (2026-06-28)
 
 
