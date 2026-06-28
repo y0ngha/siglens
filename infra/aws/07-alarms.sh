@@ -26,7 +26,8 @@ aws cloudwatch put-metric-alarm --alarm-name siglens-cpu-credits-low --namespace
   --metric-name CPUCreditBalance --dimensions Name=AutoScalingGroupName,Value=siglens-asg \
   --statistic Minimum --period 300 --evaluation-periods 2 --threshold 30 \
   --comparison-operator LessThanThreshold --treat-missing-data notBreaching $ACTIONS
-# 로그로테이션/캐시 증가 고려, 가득참 전 여유
+# 로그로테이션/캐시 증가 고려, 가득참 전 여유.
+# ISR 외부화(S3) 이후 디스크가 다시 오르면 캐시 외부화가 조용히 실패한 것 — 회귀 카나리 역할.
 aws cloudwatch put-metric-alarm --alarm-name siglens-disk-high --namespace CWAgent \
   --metric-name disk_used_percent --dimensions Name=AutoScalingGroupName,Value=siglens-asg \
   --statistic Maximum --period 300 --evaluation-periods 2 --threshold 85 \
@@ -36,4 +37,14 @@ aws cloudwatch put-metric-alarm --alarm-name siglens-mem-high --namespace CWAgen
   --metric-name mem_used_percent --dimensions Name=AutoScalingGroupName,Value=siglens-asg \
   --statistic Average --period 300 --evaluation-periods 3 --threshold 90 \
   --comparison-operator GreaterThanThreshold --treat-missing-data notBreaching $ACTIONS
-log "alarms created (5xx, unhealthy, cpu-credits, disk, mem)"
+# ISR 캐시 fail-open 가시성: s3Store의 '[isr-cache] s3 get/set failed' 로그를 메트릭으로.
+# fail-open이라 S3 perms/버킷/IMDS가 깨져도 캐시가 조용히 죽을 뿐 알람이 없다 — 이를 잡는다.
+aws logs put-metric-filter --log-group-name /siglens/app \
+  --filter-name siglens-isr-cache-failures \
+  --filter-pattern '"[isr-cache]"' \
+  --metric-transformations metricName=IsrCacheFailures,metricNamespace=Siglens/ISRCache,metricValue=1,defaultValue=0
+# 5분간 5건 초과 = 산발적 S3 hiccup(정상 재생성)이 아니라 지속 실패 → 캐시 사실상 죽음.
+aws cloudwatch put-metric-alarm --alarm-name siglens-isr-cache-failures --namespace Siglens/ISRCache \
+  --metric-name IsrCacheFailures --statistic Sum --period 300 --evaluation-periods 1 --threshold 5 \
+  --comparison-operator GreaterThanThreshold --treat-missing-data notBreaching $ACTIONS
+log "alarms created (5xx, unhealthy, cpu-credits, disk, mem, isr-cache-failures)"
