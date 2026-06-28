@@ -1,5 +1,19 @@
 # Changelog
 
+# [0.30.0](https://github.com/y0ngha/siglens/compare/v0.29.2...v0.30.0) (2026-06-28)
+
+
+### Bug Fixes
+
+* disable Cloudflare beacon in E2E tests ([16f2bfa](https://github.com/y0ngha/siglens/commit/16f2bfa59a57692111fc6a17240bbc71099e4bbe))
+* **infra:** AL2023 AMI base image minimal variant drift ([f336db2](https://github.com/y0ngha/siglens/commit/f336db2f26c59d0019e25187ffca793fd10b5039))
+* remove redundant defer from Cloudflare Web Analytics Script ([30532f1](https://github.com/y0ngha/siglens/commit/30532f1fa2b4306cce2806cfaef31a7a7f456bf4))
+
+
+### Features
+
+* Add Cloudflare Web Analytics beacon ([42f118b](https://github.com/y0ngha/siglens/commit/42f118b0281b776b4b96c60045548534ba8f7cf6))
+
 ## [0.29.2](https://github.com/y0ngha/siglens/compare/v0.29.1...v0.29.2) (2026-06-27)
 
 ## [0.29.1](https://github.com/y0ngha/siglens/compare/v0.29.0...v0.29.1) (2026-06-26)
