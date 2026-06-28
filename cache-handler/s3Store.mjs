@@ -10,7 +10,15 @@ import { config } from './config.mjs';
 let client;
 function s3() {
     // EC2 instance role 자격증명 자동 사용. region만 지정.
-    client ??= new S3Client({ region: config.region });
+    //
+    // cacheMaxMemorySize:0이라 L1 메모리 캐시가 없다 — 모든 read가 렌더 경로에서 S3를
+    // 대기한다. S3가 행(hang)하면 요청 전체가 멈추므로 connection/request 타임아웃과
+    // 제한된 재시도로 경계를 둔다(SDK가 config-object form을 NodeHttpHandler로 해석).
+    client ??= new S3Client({
+        region: config.region,
+        maxAttempts: 2,
+        requestHandler: { connectionTimeout: 1000, requestTimeout: 2000 },
+    });
     return client;
 }
 
@@ -34,6 +42,8 @@ export async function getEntry(key, kind) {
                 Key: s3Key(key, kind),
             })
         );
+        // zero-byte 객체(Body 없음)는 throw가 아니라 miss로 취급한다.
+        if (!res.Body) return null;
         const buf = Buffer.from(await res.Body.transformToByteArray());
         return deserialize(buf);
     } catch (e) {

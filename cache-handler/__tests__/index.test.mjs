@@ -6,7 +6,10 @@ vi.mock('../s3Store.mjs', () => ({
     getEntry: (...a) => getEntry(...a),
     setEntry: (...a) => setEntry(...a),
 }));
-vi.mock('../config.mjs', () => ({ config: { disabled: false } }));
+// config.disabled를 테스트에서 토글할 수 있도록 mutable 객체로 mock.
+// vi.mock 팩토리는 호이스트되므로 mutable 참조도 vi.hoisted로 끌어올려야 한다.
+const { mockConfig } = vi.hoisted(() => ({ mockConfig: { disabled: false } }));
+vi.mock('../config.mjs', () => ({ config: mockConfig }));
 
 import CacheHandler, { collectTags } from '../index.mjs';
 import { _resetForTest, markRevalidated } from '../tagStore.mjs';
@@ -14,6 +17,7 @@ import { _resetForTest, markRevalidated } from '../tagStore.mjs';
 beforeEach(() => {
     getEntry.mockReset();
     setEntry.mockReset();
+    mockConfig.disabled = false;
     _resetForTest();
 });
 
@@ -46,6 +50,24 @@ describe('CacheHandler.get', () => {
         expect(
             await new CacheHandler({}).get('/AAPL', { kind: 'APP_PAGE' })
         ).toBeNull();
+    });
+
+    it('킬스위치(config.disabled)면 getEntry를 부르지 않고 null', async () => {
+        mockConfig.disabled = true;
+        expect(
+            await new CacheHandler({}).get('/AAPL', { kind: 'APP_PAGE' })
+        ).toBeNull();
+        expect(getEntry).not.toHaveBeenCalled();
+    });
+
+    it('엔트리에 tags가 없어도 throw하지 않고 hit 반환(entry.tags || [] fallback)', async () => {
+        getEntry.mockResolvedValueOnce({
+            value: { html: 'hi' },
+            lastModified: 1000,
+        });
+        expect(
+            await new CacheHandler({}).get('/AAPL', { kind: 'APP_PAGE' })
+        ).toEqual({ lastModified: 1000, value: { html: 'hi' } });
     });
 });
 
@@ -92,6 +114,39 @@ describe('CacheHandler.set', () => {
         expect(entry.lastModified).toBeGreaterThanOrEqual(before);
     });
 
+    it('킬스위치(config.disabled)면 setEntry를 부르지 않는다', async () => {
+        mockConfig.disabled = true;
+        await new CacheHandler({}).set(
+            '/AAPL',
+            { kind: 'APP_PAGE', html: 'x' },
+            {}
+        );
+        expect(setEntry).not.toHaveBeenCalled();
+    });
+
+    it('data가 null이면 setEntry를 부르지 않는다(Next 계약: !data → return)', async () => {
+        await new CacheHandler({}).set('/AAPL', null, {});
+        expect(setEntry).not.toHaveBeenCalled();
+    });
+
+    it('html이 빈 APP_PAGE는 저장하지 않는다(#657 빈 ISR 캐시 동결 방지)', async () => {
+        await new CacheHandler({}).set(
+            '/AAPL',
+            { kind: 'APP_PAGE', html: '' },
+            {}
+        );
+        expect(setEntry).not.toHaveBeenCalled();
+    });
+
+    it('html이 빈 PAGES도 저장하지 않는다', async () => {
+        await new CacheHandler({}).set(
+            '/AAPL',
+            { kind: 'PAGES', html: undefined },
+            {}
+        );
+        expect(setEntry).not.toHaveBeenCalled();
+    });
+
     it('APP_PAGE는 ctx.tags 없이 x-next-cache-tags 헤더에서 태그를 캡처한다', async () => {
         // Next 16.2 페이지 set: context에 tags가 없고 태그는 캐시 값의
         // headers['x-next-cache-tags']에 쉼표 구분으로 실린다.
@@ -133,6 +188,12 @@ describe('collectTags', () => {
     it('태그 소스가 전혀 없으면 빈 배열', () => {
         expect(collectTags({ kind: 'APP_PAGE', html: 'x' }, {})).toEqual([]);
         expect(collectTags(undefined, undefined)).toEqual([]);
+    });
+});
+
+describe('CacheHandler.resetRequestCache', () => {
+    it('no-op으로 throw하지 않는다(로컬 태그맵은 per-request 상태가 아님)', () => {
+        expect(() => new CacheHandler({}).resetRequestCache()).not.toThrow();
     });
 });
 

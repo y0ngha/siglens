@@ -68,10 +68,17 @@ export default class CacheHandler {
     }
 
     async set(cacheKey, data, ctx) {
-        if (config.disabled) return;
+        // Next 계약: file-system-cache.set은 data가 falsy면 즉시 return한다
+        // (incremental-cache/file-system-cache.js: `if (!this.flushToDisk || !data) return`).
+        if (config.disabled || !data) return;
+        // 빈/실패 렌더를 영속 캐시에 굳히지 않는다(#657 빈 ISR 캐시 동결 방지).
+        // 캐시가 이제 재시작 간 durable하므로, html이 비어있는 APP_PAGE/PAGES는 저장하지 않는다
+        // (IncrementalCachedAppPageValue/IncrementalCachedPageValue.html — response-cache/types.d.ts).
+        const kind = data.kind;
+        if ((kind === 'APP_PAGE' || kind === 'PAGES') && !data.html) return;
         // set context엔 kind가 없다. fetch 엔트리는 data.kind==='FETCH'로 식별되므로,
-        // get(ctx.kind)와 동일한 subfolder로 라우팅되도록 set은 data?.kind를 사용한다.
-        await setEntry(cacheKey, data?.kind, {
+        // get(ctx.kind)와 동일한 subfolder로 라우팅되도록 set은 data.kind를 사용한다.
+        await setEntry(cacheKey, kind, {
             value: data,
             lastModified: Date.now(),
             tags: collectTags(data, ctx),

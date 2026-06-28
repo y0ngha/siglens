@@ -41,6 +41,17 @@ describe('s3Store key scheme', () => {
             'siglens-isr/sha123/fetch/%2FAAPL.cache'
         );
     });
+
+    it('짧은 키는 %2F encodeURIComponent 형태로 둔다', () => {
+        const k = s3KeyForTest('/foo/bar', 'APP_PAGE');
+        expect(k).toBe('siglens-isr/sha123/pages/%2Ffoo%2Fbar.cache');
+    });
+
+    it('900바이트 초과 키는 sha256 64-hex로 대체한다(S3 1024 한계)', () => {
+        const longKey = '/' + 'a'.repeat(1000);
+        const k = s3KeyForTest(longKey, 'APP_PAGE');
+        expect(k).toMatch(/^siglens-isr\/sha123\/pages\/[0-9a-f]{64}\.cache$/);
+    });
 });
 
 describe('getEntry', () => {
@@ -55,6 +66,20 @@ describe('getEntry', () => {
         send.mockRejectedValueOnce(
             Object.assign(new Error('timeout'), { name: 'TimeoutError' })
         );
+        expect(await getEntry('/AAPL', 'APP_PAGE')).toBeNull();
+    });
+
+    it('$metadata 404(이름 없는 에러)는 null을 반환한다', async () => {
+        send.mockRejectedValueOnce(
+            Object.assign(new Error('not found'), {
+                $metadata: { httpStatusCode: 404 },
+            })
+        );
+        expect(await getEntry('/AAPL', 'APP_PAGE')).toBeNull();
+    });
+
+    it('zero-byte 객체(Body 없음)는 miss로 null 반환(throw 안 함)', async () => {
+        send.mockResolvedValueOnce({ Body: undefined });
         expect(await getEntry('/AAPL', 'APP_PAGE')).toBeNull();
     });
 
