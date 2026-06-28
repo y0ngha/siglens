@@ -18,16 +18,18 @@ export default class CacheHandler {
         // soft invalidation: 엔트리 태그 중 하나라도 lastModified 이후 revalidate됐으면 stale.
         if (maxRevalidatedAt(entry.tags || []) > entry.lastModified)
             return null;
-        return entry.value;
+        // Next 16.2 계약: get()은 CacheHandlerValue 래퍼 { lastModified, value }를 반환해야 한다.
+        return { lastModified: entry.lastModified, value: entry.value };
     }
 
     async set(cacheKey, data, ctx) {
         if (config.disabled) return;
-        await setEntry(cacheKey, ctx?.kind, {
+        // set context엔 kind가 없다. fetch 엔트리는 data.kind==='FETCH'로 식별되므로,
+        // get(ctx.kind)와 동일한 subfolder로 라우팅되도록 set은 data?.kind를 사용한다.
+        await setEntry(cacheKey, data?.kind, {
             value: data,
             lastModified: Date.now(),
             tags: ctx?.tags || [],
-            kind: ctx?.kind,
         });
     }
 

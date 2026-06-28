@@ -25,7 +25,7 @@ describe('CacheHandler.get', () => {
         ).toBeNull();
     });
 
-    it('태그가 revalidate되지 않았으면 value 반환(hit)', async () => {
+    it('태그가 revalidate되지 않았으면 wrapper { lastModified, value } 반환(hit)', async () => {
         getEntry.mockResolvedValueOnce({
             value: { html: 'hi' },
             lastModified: 1000,
@@ -33,7 +33,7 @@ describe('CacheHandler.get', () => {
         });
         expect(
             await new CacheHandler({}).get('/AAPL', { kind: 'APP_PAGE' })
-        ).toEqual({ html: 'hi' });
+        ).toEqual({ lastModified: 1000, value: { html: 'hi' } });
     });
 
     it('태그가 lastModified 이후 revalidate됐으면 null(stale)', async () => {
@@ -50,18 +50,28 @@ describe('CacheHandler.get', () => {
 });
 
 describe('CacheHandler.set', () => {
-    it('lastModified와 tags를 담아 저장한다', async () => {
+    it('FETCH는 data.kind로 fetch subfolder에 라우팅한다', async () => {
+        await new CacheHandler({}).set(
+            '/api',
+            { kind: 'FETCH', data: {} },
+            { tags: ['t'] }
+        );
+        const [key, kind, entry] = setEntry.mock.calls[0];
+        expect(key).toBe('/api');
+        expect(kind).toBe('FETCH');
+        expect(entry.value).toEqual({ kind: 'FETCH', data: {} });
+        expect(entry.tags).toEqual(['t']);
+    });
+
+    it('비FETCH(APP_PAGE)는 data.kind로 pages에 라우팅한다', async () => {
         const before = Date.now();
         await new CacheHandler({}).set(
             '/AAPL',
-            { html: 'x' },
-            { kind: 'APP_PAGE', tags: ['news:AAPL'] }
+            { kind: 'APP_PAGE', html: 'x' },
+            { tags: ['news:AAPL'] }
         );
-        expect(setEntry).toHaveBeenCalledOnce();
-        const [key, kind, entry] = setEntry.mock.calls[0];
-        expect(key).toBe('/AAPL');
+        const [, kind, entry] = setEntry.mock.calls[0];
         expect(kind).toBe('APP_PAGE');
-        expect(entry.value).toEqual({ html: 'x' });
         expect(entry.tags).toEqual(['news:AAPL']);
         expect(entry.lastModified).toBeGreaterThanOrEqual(before);
     });
