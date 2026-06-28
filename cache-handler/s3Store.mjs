@@ -92,5 +92,4 @@ export async function setEntry(key, kind, entry) {
     }
 }
 
-// 테스트 전용 — 키 스킴 검증.
 export const s3KeyForTest = s3Key;

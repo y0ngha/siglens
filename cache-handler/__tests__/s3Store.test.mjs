@@ -65,10 +65,18 @@ describe('getEntry', () => {
     });
 
     it('기타 에러도 null을 반환한다(fail-open)', async () => {
+        const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
         send.mockRejectedValueOnce(
             Object.assign(new Error('timeout'), { name: 'TimeoutError' })
         );
         expect(await getEntry('/AAPL', 'APP_PAGE')).toBeNull();
+        expect(spy).toHaveBeenCalledWith(
+            '[isr-cache] s3 get failed',
+            '/AAPL',
+            'TimeoutError',
+            'timeout'
+        );
+        spy.mockRestore();
     });
 
     it('$metadata 404(이름 없는 에러)는 null을 반환한다', async () => {

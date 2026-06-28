@@ -40,12 +40,14 @@ export function collectTags(data, ctx) {
             : [];
 
     return [
-        // FETCH: set context의 tags(+방어적 softTags)와 값 자체의 tags.
-        ...filterTags(ctx?.tags),
-        ...filterTags(ctx?.softTags),
-        ...filterTags(data?.tags),
-        ...headerTags,
-    ].filter((tag, i, arr) => arr.indexOf(tag) === i);
+        ...new Set([
+            // FETCH: set context의 tags(+방어적 softTags)와 값 자체의 tags.
+            ...filterTags(ctx?.tags),
+            ...filterTags(ctx?.softTags),
+            ...filterTags(data?.tags),
+            ...headerTags,
+        ]),
+    ];
 }
 
 // Next.js 16.2 단수 cacheHandler (incremental-cache/index.d.ts 계약).

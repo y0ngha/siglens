@@ -10,11 +10,13 @@ describe('config (real module, env defaults)', () => {
         vi.stubEnv('AWS_REGION', '');
         vi.stubEnv('GIT_SHA', '');
         vi.stubEnv('ISR_CACHE_DISABLED', '');
+        vi.stubEnv('ISR_CACHE_BUCKET', '');
         const { config } = await import('../config.mjs');
         expect(config.region).toBe('ap-northeast-2');
         expect(config.buildId).toBe('dev');
         expect(config.keyPrefix).toBe('siglens-isr');
         expect(config.disabled).toBe(false);
+        expect(config.bucket).toBe('');
     });
 
     it('env가 설정되면 그 값을 사용한다', async () => {

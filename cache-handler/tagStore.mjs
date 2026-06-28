@@ -22,7 +22,6 @@ export function maxRevalidatedAt(tags) {
     }, 0);
 }
 
-// 테스트 전용 — 맵 초기화.
 export function _resetForTest() {
     revalidatedAt.clear();
 }
