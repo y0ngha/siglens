@@ -22,11 +22,19 @@ REGION="${AWS_REGION:-ap-northeast-2}"
 INSTANCE_TYPE="${INSTANCE_TYPE:-t4g.medium}"
 AMI_FILE="$(dirname "$0")/.ami"
 
-# 베이스: 최신 AL2023 arm64. 골든 AMI는 여기서 출발해 한 번만 의도적으로 굽는다.
-BASE_AMI=$(aws ec2 describe-images --owners amazon \
-  --filters "Name=name,Values=al2023-ami-*-arm64" "Name=state,Values=available" \
-  --query 'sort_by(Images,&CreationDate)[-1].ImageId' --output text --region "$REGION")
-[ -n "$BASE_AMI" ] && [ "$BASE_AMI" != "None" ] || { log "ERROR: base AL2023 arm64 AMI not found"; exit 1; }
+# 베이스: 최신 AL2023 standard arm64. 골든 AMI는 여기서 출발해 한 번만 의도적으로 굽는다.
+#
+# ⚠️ minimal 표류 주의(2026-06-28 사고): describe-images 필터 "al2023-ami-*-arm64"는
+# minimal 변종(al2023-ami-minimal-*)까지 매칭한다. minimal이 standard보다 몇 분 늦게
+# 게시되는 탓에 sort_by(CreationDate)[-1]이 minimal을 집어버렸고, minimal에는
+# ec2-instance-connect와 amazon-ssm-agent가 빠져 있어 부팅된 운영 인스턴스에
+# SSM Session Manager로도 EC2 Instance Connect로도 진입할 수 없게 됐다(디스크풀
+# 장애 시 셸 진단 불가의 직접 원인). AWS 관리 SSM public parameter는 standard
+# kernel-default 이미지를 정확히 가리키므로 minimal 표류를 원천 차단한다.
+BASE_AMI=$(aws ssm get-parameter --region "$REGION" \
+  --name /aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-arm64 \
+  --query 'Parameter.Value' --output text)
+[ -n "$BASE_AMI" ] && [ "$BASE_AMI" != "None" ] || { log "ERROR: base AL2023 standard arm64 AMI not found"; exit 1; }
 log "base AMI: $BASE_AMI"
 
 # 빌더 네트워킹/권한(fix): run-instances는 subnet·SG·인스턴스 프로파일을 명시해야 한다.
@@ -47,9 +55,16 @@ log "builder net: subnet=$BUILDER_SUBNET sg=$BUILDER_SG profile=$BUILDER_PROFILE
 BUILDER_UD=$(base64 <<'BAKE'
 #!/usr/bin/env bash
 set -euxo pipefail
-dnf install -y docker jq amazon-cloudwatch-agent
+# ec2-instance-connect / amazon-ssm-agent: standard AL2023엔 기본 포함이지만,
+# base 표류(minimal) 대비 + 명시성 위해 직접 설치/활성화한다. 이 둘이 없으면
+# 부팅된 운영 인스턴스에 SSM Session Manager로도 EC2 Instance Connect로도 진입할
+# 수 없어, 장애 시 셸 진단이 불가능해진다(2026-06-28 디스크풀 사고의 2차 원인).
+dnf install -y docker jq amazon-cloudwatch-agent ec2-instance-connect amazon-ssm-agent
 # docker 데몬은 굳이 부팅 활성화만(이미지에 패키지가 들어가는 게 핵심)
 systemctl enable docker
+# SSM agent를 부팅 시 자동 기동·등록하도록 활성화한다(등록에는 인스턴스 프로파일의
+# AmazonSSMManagedInstanceCore 권한이 필요 — 00-iam-setup.sh가 부착).
+systemctl enable amazon-ssm-agent
 # 골든 AMI 마커: 런타임 user-data.sh가 이 파일을 보고 dnf install을 스킵한다.
 echo "baked $(date -u +%FT%TZ)" > /etc/siglens-golden-ami
 # 설치 완료 신호용 마커(폴링).
