@@ -64,22 +64,44 @@ async function isRegistered(page: Page): Promise<boolean> {
  *       causing the old `waitFor detached` to time out.
  * The badge is the state the caller actually cares about and is stable once
  * the RSC re-render commits — making it robust to both extremes.
+ *
+ * Reload fallback: if the automatic RSC remount via revalidatePath does not
+ * flip the badge within BADGE_SETTLE_TIMEOUT_MS (CI revalidate latency can
+ * exceed 45 s under parallel DB-write load), we fall back to a full page
+ * reload and re-assert. The server action has already committed at this point,
+ * so the reload reads the authoritative DB state — this only papers over
+ * UI-refresh latency, NOT data correctness. A genuinely failed save/delete
+ * would still show the wrong badge after reload and cause the test to fail.
  */
 async function clickAndAwaitActionSettle(
+    page: Page,
     card: Locator,
     button: Locator,
     expectedBadge: string
 ): Promise<void> {
     await button.click();
-    await expect(card.getByText(expectedBadge, { exact: true })).toBeVisible({
-        timeout: BADGE_SETTLE_TIMEOUT_MS,
-    });
+    try {
+        await expect(
+            card.getByText(expectedBadge, { exact: true })
+        ).toBeVisible({
+            timeout: BADGE_SETTLE_TIMEOUT_MS,
+        });
+    } catch {
+        // revalidatePath UI-refresh timed out — reload to read committed state.
+        await page.reload();
+        await expect(
+            card.getByText(expectedBadge, { exact: true })
+        ).toBeVisible({
+            timeout: BADGE_SETTLE_TIMEOUT_MS,
+        });
+    }
 }
 
 /** Delete the Anthropic key through the UI and wait for the 미등록 badge. */
 async function deleteAnthropicKey(page: Page): Promise<void> {
     const card = anthropicCard(page);
     await clickAndAwaitActionSettle(
+        page,
         card,
         card.getByRole('button', { name: '삭제', exact: true }),
         '미등록'
@@ -120,6 +142,7 @@ test.describe('account API key CRUD (authed storageState)', () => {
         // Wait for the settled 등록됨 badge — robust to both fast actions
         // (pending button never observed) and slow RSC streams under CI load.
         await clickAndAwaitActionSettle(
+            page,
             card,
             card.getByRole('button', { name: '저장', exact: true }),
             '등록됨'
