@@ -43,4 +43,9 @@ aws s3api put-bucket-lifecycle-configuration --bucket "$BUCKET" \
     }]
   }'
 
+# 버킷 이름을 SSM에 게시 → user-data가 /siglens/* 를 fetch하므로 런타임 컨테이너 env에
+# ISR_CACHE_BUCKET이 주입되어 cacheHandler가 활성화된다(빌드 타임 게이트는 build-arg가 담당).
+aws ssm put-parameter --name /siglens/ISR_CACHE_BUCKET --value "$BUCKET" --type String --overwrite >/dev/null
+log "published /siglens/ISR_CACHE_BUCKET=$BUCKET to SSM"
+
 log "isr cache bucket ready: $BUCKET (14d lifecycle)"

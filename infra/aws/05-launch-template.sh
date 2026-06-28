@@ -52,6 +52,7 @@ LTDATA=$(jq -n \
       }
     }],
     UserData: $ud,
+    MetadataOptions: { HttpTokens: "required", HttpPutResponseHopLimit: 2 },
     TagSpecifications: [{
       ResourceType: "instance",
       Tags: [{ Key: "Name", Value: "siglens" }]
