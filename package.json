@@ -9,6 +9,7 @@
         "clear:backtesting": "rm -rf public/backtesting/*",
         "predev": "yarn clear:backtesting && yarn copy:backtesting",
         "prebuild": "yarn clear:backtesting && yarn copy:backtesting",
+        "clear:build": "rm -rf .next",
         "dev": "yarn predev && next dev --turbopack -p 4200",
         "build": "yarn prebuild && rm -rf .next && NEXT_BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ') next build",
         "analyze": "ANALYZE=true yarn build",
