@@ -1,6 +1,15 @@
 #!/usr/bin/env bash
 source "$(dirname "$0")/lib.sh"; source "$(dirname "$0")/.env"; source "$(dirname "$0")/.ids"
-ACTIONS=""; [[ -n "${ALARM_SNS:-}" ]] && ACTIONS="--alarm-actions $ALARM_SNS"
+# SNS 알림 토픽(idempotent: 이미 있으면 기존 ARN 반환).
+# 2026-06-28 인시던트: 알람들이 ALARM_SNS 미설정으로 AlarmActions=[] 상태였고, 디스크
+# 100% 도달이 아무 알림 없이 조용히 진행됐다. 토픽 생성을 스크립트에 내장해 "액션 없는
+# 알람"을 구조적으로 차단한다. 외부에서 ALARM_SNS를 주입하면 그것을 우선 사용한다.
+ALARM_SNS="${ALARM_SNS:-$(aws sns create-topic --name siglens-alerts --query TopicArn --output text)}"
+# 이메일 구독(idempotent). ALARM_EMAIL(.env)이 있으면 구독 — confirm 메일 클릭 후 활성화된다.
+[[ -n "${ALARM_EMAIL:-}" ]] && aws sns subscribe --topic-arn "$ALARM_SNS" --protocol email \
+  --notification-endpoint "$ALARM_EMAIL" >/dev/null 2>&1 || true
+# alarm + ok 양방향 통지(임계 초과뿐 아니라 정상 복구도 알린다).
+ACTIONS="--alarm-actions $ALARM_SNS --ok-actions $ALARM_SNS"
 ALB_SUFFIX=$(echo "$ALB_ARN" | sed 's#.*:loadbalancer/##')
 TG_SUFFIX=$(echo "$TG_ARN" | sed 's#.*:##')
 # 5분간 ELB 5xx 10건 초과 = 비정상 (정상 트래픽 노이즈 위)
