@@ -28,3 +28,16 @@ export const OAUTH_PROVIDER_VALUES = [
 /** Legal terms document kinds tracked in the `terms` table. */
 export const TERMS_KIND_VALUES = ['privacy', 'tos'] as const;
 export type TermsKind = (typeof TERMS_KIND_VALUES)[number];
+
+/** All valid shareable analysis kinds — used as a Postgres enum and UI discriminant. */
+export const SHAREABLE_KIND_VALUES = [
+    'chart',
+    'overall',
+    'news',
+    'fundamental',
+    'financials',
+    'congress',
+    'options',
+    'fear-greed',
+] as const;
+export type ShareableKind = (typeof SHAREABLE_KIND_VALUES)[number];
