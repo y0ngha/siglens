@@ -17,6 +17,7 @@ import {
 } from '@y0ngha/siglens-core';
 import { useMemo } from 'react';
 import { NEWS_ANALYSIS_PERIOD_LABEL } from '@/shared/lib/news/periodLabels';
+import { useRegisterShareable, mapAnalysisStatus } from '@/features/share';
 
 const SENTIMENT_LABEL: Record<NewsSentiment, string> = {
     bullish: '긍정',
@@ -276,6 +277,18 @@ export function NewsAiSummary({
         [isCardsReady, analysis]
     );
     usePublishSymbolChat(chatState);
+    useRegisterShareable({
+        kind: 'news',
+        status: mapAnalysisStatus(analysis.status),
+        result: analysis.status === 'done' ? analysis.result : null,
+        context: {
+            symbol,
+            displayName: companyName ?? symbol,
+            assetClass: '',
+            analyzedAt: undefined,
+        },
+        trigger: analysis.trigger,
+    });
 
     // Surface persistent polling errors to the surrounding error boundary
     // (NewsAiSummaryErrorBoundary) so the fallback UI takes over.

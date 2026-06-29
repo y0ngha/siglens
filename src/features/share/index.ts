@@ -7,3 +7,4 @@ export type {
     ShareableRegistration,
     ShareableStatus,
 } from './model/ShareableAnalysisContext';
+export { mapAnalysisStatus } from './lib/mapAnalysisStatus';

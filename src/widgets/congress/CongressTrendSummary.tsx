@@ -2,6 +2,7 @@
 
 import { useMemo } from 'react';
 import { useDefaultModelId } from '@/features/symbol-model';
+import { useRegisterShareable, mapAnalysisStatus } from '@/features/share';
 import { usePublishSymbolChat } from '@/features/symbol-chat';
 import { BotBlockedNotice } from '@/shared/ui/BotBlockedNotice';
 import { useCongressTrend } from './hooks/useCongressTrend';
@@ -25,6 +26,18 @@ export function CongressTrendSummary({ symbol }: CongressTrendSummaryProps) {
     // chatState 파생 변수에 의존하므로 useMemo 뒤에 위치)
     const chatState = useMemo(() => buildChatState(state), [state]);
     usePublishSymbolChat(chatState);
+    useRegisterShareable({
+        kind: 'congress',
+        status: mapAnalysisStatus(state.status),
+        result: state.status === 'done' ? state.result : null,
+        context: {
+            symbol,
+            displayName: symbol,
+            assetClass: '',
+            analyzedAt: undefined,
+        },
+        trigger: state.trigger,
+    });
 
     if (state.status === 'loading') {
         return <CongressTrendSummarySkeleton />;

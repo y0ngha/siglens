@@ -6,6 +6,7 @@ import {
     type FundamentalCategory,
     type FundamentalSentiment,
 } from '@y0ngha/siglens-core';
+import { useRegisterShareable, mapAnalysisStatus } from '@/features/share';
 import { cn } from '@/shared/lib/cn';
 import { useDefaultModelId } from '@/features/symbol-model';
 import { useFundamentalAnalysis } from './hooks/useFundamentalAnalysis';
@@ -133,6 +134,18 @@ export function FundamentalAiSummary({ symbol }: FundamentalAiSummaryProps) {
     // 인자로 받기 때문에 useMemo 뒤에 위치해야 한다.
     const chatState = useMemo(() => buildChatState(state), [state]);
     usePublishSymbolChat(chatState);
+    useRegisterShareable({
+        kind: 'fundamental',
+        status: mapAnalysisStatus(state.status),
+        result: state.status === 'done' ? state.result : null,
+        context: {
+            symbol,
+            displayName: symbol,
+            assetClass: '',
+            analyzedAt: undefined,
+        },
+        trigger: state.trigger,
+    });
 
     if (state.status === 'loading') {
         return <FundamentalAiSummarySkeleton />;
