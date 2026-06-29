@@ -4,7 +4,10 @@ import { getOrSetCache } from '@/shared/cache/getOrSetCache';
 import { sym } from './symKey';
 import { FMP_FUNDAMENTAL_REVALIDATE_SECONDS } from './fundamentalClient';
 import type { FmpEarningsReportItem } from './fundamentalClient';
-import type { FundamentalProvider } from './fundamentalProvider.types';
+import type {
+    FundamentalProvider,
+    FundamentalProviderWithRawPeers,
+} from './fundamentalProvider.types';
 import type {
     EarningsReport,
     FundamentalAnalystEstimateInput,
@@ -38,7 +41,7 @@ export const PEER_LIMIT = 10;
  *
  * earnings(no-store + DB 영속)와 historical-sector(빈 stub)는 pass-through한다.
  */
-export class CachedFundamentalProvider implements FundamentalProvider {
+export class CachedFundamentalProvider implements FundamentalProviderWithRawPeers {
     constructor(private readonly inner: FundamentalProvider) {}
 
     getProfile = cache(
@@ -193,6 +196,18 @@ export class CachedFundamentalProvider implements FundamentalProvider {
                         Promise.resolve<FundamentalPeerInput[]>([])
                     );
             })
+    );
+
+    /**
+     * 페이지 전용 raw peer 목록(symbol/companyName/marketCap). per/psr enrich 없음 →
+     * peer당 valuation fan-out 제거. PeersTable은 이 3개 필드만 렌더한다. enriched
+     * `getStockPeers`는 FactLayer(분석 프롬프트) 전용으로 그대로 둔다.
+     */
+    getStockPeersRaw = cache(
+        (symbol: string): Promise<FundamentalPeerInput[]> =>
+            getOrSetCache(`fundamental:peers-raw:${sym(symbol)}`, TTL, () =>
+                this.inner.getStockPeers(symbol)
+            )
     );
 
     /**

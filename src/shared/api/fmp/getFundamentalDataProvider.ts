@@ -1,15 +1,16 @@
 import { FmpFundamentalClient } from './fundamentalClient';
 import { CachedFundamentalProvider } from './CachedFundamentalProvider';
 import { createE2EGatedSingleton } from '@/shared/api/createE2EGatedSingleton';
-import type { FundamentalProvider } from './fundamentalProvider.types';
+import type { FundamentalProviderWithRawPeers } from './fundamentalProvider.types';
 
 // Re-exported so existing importers (`@/shared/api/fmp/getFundamentalDataProvider`)
-// keep resolving; the interface itself lives in `fundamentalProvider.types` to
+// keep resolving; the interfaces themselves live in `fundamentalProvider.types` to
 // avoid a type-level cycle with the `CachedFundamentalProvider` class import above.
 export type { FundamentalProvider } from './fundamentalProvider.types';
+export type { FundamentalProviderWithRawPeers } from './fundamentalProvider.types';
 
 /** Returns the app's fundamental data provider (FMP in prod, fake under E2E_TEST). */
-export const getFundamentalDataProvider: () => FundamentalProvider =
+export const getFundamentalDataProvider: () => FundamentalProviderWithRawPeers =
     createE2EGatedSingleton(
         () => new CachedFundamentalProvider(new FmpFundamentalClient()),
         () => {

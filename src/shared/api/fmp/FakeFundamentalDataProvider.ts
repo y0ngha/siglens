@@ -17,6 +17,7 @@ import type {
     GradesEvent,
 } from '@y0ngha/siglens-core';
 import type { FmpEarningsReportItem } from './fundamentalClient';
+import type { FundamentalProviderWithRawPeers } from './fundamentalProvider.types';
 
 /**
  * E2E-only `FundamentalDataProvider` returning deterministic, non-throwing
@@ -29,7 +30,9 @@ import type { FmpEarningsReportItem } from './fundamentalClient';
  * siglens-specific extras (`getGrades`, `getEarningsReports`) that some
  * injection points call directly on the concrete `FmpFundamentalClient`.
  */
-export class FakeFundamentalDataProvider implements FundamentalDataProvider {
+export class FakeFundamentalDataProvider
+    implements FundamentalDataProvider, FundamentalProviderWithRawPeers
+{
     async getProfile(symbol: string): Promise<FundamentalProfile | null> {
         return {
             symbol: symbol.toUpperCase(),
@@ -74,6 +77,10 @@ export class FakeFundamentalDataProvider implements FundamentalDataProvider {
     }
 
     async getStockPeers(_symbol: string): Promise<FundamentalPeerInput[]> {
+        return [];
+    }
+
+    async getStockPeersRaw(_symbol: string): Promise<FundamentalPeerInput[]> {
         return [];
     }
 

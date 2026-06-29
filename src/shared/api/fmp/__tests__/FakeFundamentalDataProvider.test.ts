@@ -26,4 +26,8 @@ describe('FakeFundamentalDataProvider', () => {
     it('getEarningsReports returns an empty list (no-op DB upsert under E2E)', async () => {
         await expect(provider.getEarningsReports('AAPL')).resolves.toEqual([]);
     });
+
+    it('getStockPeersRaw returns [] (deterministic E2E fixture)', async () => {
+        await expect(provider.getStockPeersRaw('AAPL')).resolves.toEqual([]);
+    });
 });
