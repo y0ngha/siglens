@@ -2,8 +2,17 @@ vi.mock('@/shared/lib/sleep', () => ({
     sleep: vi.fn().mockResolvedValue(undefined),
 }));
 
-import { FmpFundamentalClient } from '../fundamentalClient';
-import { SECONDS_PER_HOUR } from '@/shared/config/time';
+import {
+    FmpFundamentalClient,
+    FMP_FUNDAMENTAL_REVALIDATE_SECONDS,
+} from '../fundamentalClient';
+import { SECONDS_PER_DAY } from '@/shared/config/time';
+
+describe('FMP_FUNDAMENTAL_REVALIDATE_SECONDS', () => {
+    it('is 24h (SECONDS_PER_DAY) — fundamentals are quarterly; aligns with statements/congress', () => {
+        expect(FMP_FUNDAMENTAL_REVALIDATE_SECONDS).toBe(SECONDS_PER_DAY);
+    });
+});
 
 const mockFetch = vi.fn();
 
@@ -817,7 +826,7 @@ describe('FmpFundamentalClient', () => {
     // ------------------------------------------------------------------ //
 
     describe('캐시 옵션', () => {
-        it('fundamental fetch는 1h next.revalidate로 캐싱된다', async () => {
+        it('fundamental fetch는 24h next.revalidate로 캐싱된다', async () => {
             mockOk([
                 {
                     symbol: 'AAPL',
@@ -834,7 +843,7 @@ describe('FmpFundamentalClient', () => {
             const opts = mockFetch.mock.calls[0]![1] as RequestInit & {
                 next?: { revalidate?: number };
             };
-            expect(opts.next?.revalidate).toBe(SECONDS_PER_HOUR);
+            expect(opts.next?.revalidate).toBe(SECONDS_PER_DAY);
         });
 
         it('earnings fetch는 no-store(캐시 안 함)다', async () => {
