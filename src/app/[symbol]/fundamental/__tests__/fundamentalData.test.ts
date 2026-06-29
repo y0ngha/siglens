@@ -17,6 +17,10 @@ vi.mock('@/entities/ticker', () => ({
 const fundamentalClient = vi.hoisted(() => ({
     getProfile: vi.fn().mockResolvedValue(null),
     getStockPeers: vi.fn().mockResolvedValue([]),
+    // getStockPeersRaw is implemented on CachedFundamentalProvider (the outer
+    // decorator) and delegates to inner.getStockPeers. This stub satisfies the
+    // mock class shape so the factory can instantiate without errors.
+    getStockPeersRaw: vi.fn().mockResolvedValue([]),
     getKeyMetricsTtm: vi.fn().mockResolvedValue(null),
     getRatiosTtm: vi.fn().mockResolvedValue(null),
     getIncomeStatementGrowth: vi.fn().mockResolvedValue(null),
@@ -34,6 +38,7 @@ vi.mock('@/shared/api/fmp/fundamentalClient', async importOriginal => ({
     FmpFundamentalClient: class MockFmpFundamentalClient {
         getProfile = fundamentalClient.getProfile;
         getStockPeers = fundamentalClient.getStockPeers;
+        getStockPeersRaw = fundamentalClient.getStockPeersRaw;
         getKeyMetricsTtm = fundamentalClient.getKeyMetricsTtm;
         getRatiosTtm = fundamentalClient.getRatiosTtm;
         getIncomeStatementGrowth = fundamentalClient.getIncomeStatementGrowth;
@@ -81,164 +86,15 @@ describe('fundamentalData', () => {
         expect(result).toBeNull();
     });
 
-    it('getStockPeers returns an empty array', async () => {
+    // getStockPeers (page) delegates to provider.getStockPeersRaw (un-enriched).
+    // Per/psr enrichment was moved into CachedFundamentalProvider.getStockPeers
+    // (enriched, FactLayer-only); the page path uses getStockPeersRaw to avoid
+    // per-peer valuation fan-out. Delegation coverage lives in
+    // fundamentalData.delegation.test.ts; CachedFundamentalProvider.test.ts
+    // covers the raw vs enriched split at the provider level.
+    it('getStockPeers returns an empty array (raw, no enrich)', async () => {
         const result = await getStockPeers('AAPL');
         expect(result).toEqual([]);
-    });
-
-    describe('getStockPeers', () => {
-        it('populates per/psr from each peer key-metrics', async () => {
-            fundamentalClient.getStockPeers.mockResolvedValueOnce([
-                {
-                    symbol: 'MSFT',
-                    companyName: 'Microsoft',
-                    marketCap: 3_000_000,
-                },
-            ]);
-            fundamentalClient.getKeyMetricsTtm.mockResolvedValueOnce({
-                peRatioTTM: 35.5,
-                priceToSalesRatioTTM: 12.25,
-                pbRatioTTM: null,
-                pegRatioTTM: null,
-                enterpriseValueOverEBITDATTM: null,
-                epsTTM: null,
-            });
-
-            const result = await getStockPeers('AAPL');
-
-            expect(result).toEqual([
-                {
-                    symbol: 'MSFT',
-                    companyName: 'Microsoft',
-                    marketCap: 3_000_000,
-                    per: 35.5,
-                    psr: 12.25,
-                },
-            ]);
-            expect(fundamentalClient.getKeyMetricsTtm).toHaveBeenCalledWith(
-                'MSFT'
-            );
-        });
-
-        it('enriches each of multiple peers with its own key-metrics independently', async () => {
-            fundamentalClient.getStockPeers.mockResolvedValueOnce([
-                {
-                    symbol: 'MSFT',
-                    companyName: 'Microsoft',
-                    marketCap: 3_000_000,
-                },
-                {
-                    symbol: 'GOOG',
-                    companyName: 'Alphabet',
-                    marketCap: 2_000_000,
-                },
-            ]);
-            // Enrichment is sequential (peer order MSFT → GOOG), so the two
-            // `*Once` returns are consumed in that order — each peer receives
-            // its own distinct metrics. Using `*Once` (not `mockImplementation`)
-            // keeps this test from leaking a default into later cases.
-            fundamentalClient.getKeyMetricsTtm
-                .mockResolvedValueOnce({
-                    peRatioTTM: 35.5,
-                    priceToSalesRatioTTM: 12.25,
-                    pbRatioTTM: null,
-                    pegRatioTTM: null,
-                    enterpriseValueOverEBITDATTM: null,
-                    epsTTM: null,
-                })
-                .mockResolvedValueOnce({
-                    peRatioTTM: 24.5,
-                    priceToSalesRatioTTM: 6.5,
-                    pbRatioTTM: null,
-                    pegRatioTTM: null,
-                    enterpriseValueOverEBITDATTM: null,
-                    epsTTM: null,
-                });
-
-            const result = await getStockPeers('AAPL');
-
-            expect(result).toEqual([
-                {
-                    symbol: 'MSFT',
-                    companyName: 'Microsoft',
-                    marketCap: 3_000_000,
-                    per: 35.5,
-                    psr: 12.25,
-                },
-                {
-                    symbol: 'GOOG',
-                    companyName: 'Alphabet',
-                    marketCap: 2_000_000,
-                    per: 24.5,
-                    psr: 6.5,
-                },
-            ]);
-            expect(fundamentalClient.getKeyMetricsTtm).toHaveBeenCalledWith(
-                'MSFT'
-            );
-            expect(fundamentalClient.getKeyMetricsTtm).toHaveBeenCalledWith(
-                'GOOG'
-            );
-        });
-
-        it('defaults per/psr to null when a peer has no key-metrics', async () => {
-            fundamentalClient.getStockPeers.mockResolvedValueOnce([
-                {
-                    symbol: 'GOOG',
-                    companyName: 'Alphabet',
-                    marketCap: 2_000_000,
-                },
-            ]);
-            fundamentalClient.getKeyMetricsTtm.mockResolvedValueOnce(null);
-
-            const result = await getStockPeers('AAPL');
-
-            expect(result).toEqual([
-                {
-                    symbol: 'GOOG',
-                    companyName: 'Alphabet',
-                    marketCap: 2_000_000,
-                    per: null,
-                    psr: null,
-                },
-            ]);
-            expect(fundamentalClient.getKeyMetricsTtm).toHaveBeenCalledWith(
-                'GOOG'
-            );
-        });
-
-        it('defaults per/psr to null when key-metrics fields are null', async () => {
-            fundamentalClient.getStockPeers.mockResolvedValueOnce([
-                {
-                    symbol: 'AMZN',
-                    companyName: 'Amazon',
-                    marketCap: 1_500_000,
-                },
-            ]);
-            fundamentalClient.getKeyMetricsTtm.mockResolvedValueOnce({
-                peRatioTTM: null,
-                priceToSalesRatioTTM: null,
-                pbRatioTTM: null,
-                pegRatioTTM: null,
-                enterpriseValueOverEBITDATTM: null,
-                epsTTM: null,
-            });
-
-            const result = await getStockPeers('AAPL');
-
-            expect(result).toEqual([
-                {
-                    symbol: 'AMZN',
-                    companyName: 'Amazon',
-                    marketCap: 1_500_000,
-                    per: null,
-                    psr: null,
-                },
-            ]);
-            expect(fundamentalClient.getKeyMetricsTtm).toHaveBeenCalledWith(
-                'AMZN'
-            );
-        });
     });
 
     it('getKeyMetricsTtm returns null', async () => {
