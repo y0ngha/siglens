@@ -32,6 +32,7 @@ import { TechnicalFactsSummary } from './TechnicalFactsSummary';
 import type { AnalysisStatus } from './utils/analysisStatus';
 import { getAnalysisStatus } from './utils/analysisStatus';
 import { buildChatState } from './utils/buildChatState';
+import { useRegisterShareable, deriveChartStatus } from '@/features/share';
 
 const StockChart = dynamic(
     () => import('@/widgets/chart/StockChart').then(mod => mod.StockChart),
@@ -292,6 +293,23 @@ export function ChartContent({
         [analysis, timeframe, displayAnalyzing, isBotBlocked, analysisError]
     );
     usePublishSymbolChat(chatState);
+    useRegisterShareable({
+        kind: 'chart',
+        status: deriveChartStatus({
+            isAnalyzing,
+            analysisError: analysisError !== null,
+            isBotBlocked,
+            hasResult: (analysisResult ?? analysis) != null,
+        }),
+        result: analysisResult ?? analysis ?? null,
+        context: {
+            symbol,
+            displayName: companyName,
+            assetClass: '',
+            analyzedAt: (analysisResult ?? analysis)?.analyzedAt,
+        },
+        trigger: handleReanalyze,
+    });
 
     useEffect(() => {
         notifyMobileContent(mobileContent);

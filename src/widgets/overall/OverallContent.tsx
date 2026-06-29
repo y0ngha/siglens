@@ -24,6 +24,7 @@ import { type OverallAnalysisResponse } from '@y0ngha/siglens-core';
 import { type CSSProperties, useMemo } from 'react';
 import { useTimeframeFromUrl } from './hooks/useTimeframeFromUrl';
 import type { AssetClass } from '@/shared/config/marketProfile';
+import { useRegisterShareable, mapAnalysisStatus } from '@/features/share';
 
 const SKELETON_LINE_COUNT = 3;
 const SKELETON_WIDTH_START_PCT = 85;
@@ -85,6 +86,18 @@ export function OverallContent({
         [state, timeframe]
     );
     usePublishSymbolChat(chatState);
+    useRegisterShareable({
+        kind: 'overall',
+        status: mapAnalysisStatus(state.status),
+        result: state.status === 'done' ? state.result : null,
+        context: {
+            symbol,
+            displayName: companyName ?? symbol,
+            assetClass: '',
+            analyzedAt: undefined,
+        },
+        trigger,
+    });
 
     // §17 hook order: derived variables go after all hook calls.
     // Neither isEquity nor applicableAxes is consumed by any hook above —
