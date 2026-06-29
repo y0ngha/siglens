@@ -11,7 +11,11 @@ const RESULT: CongressTrendResponse = {
 
 describe('buildChatState (congress)', () => {
     it('done 상태에서 congress context와 isAnalysisReady:true를 반환한다', () => {
-        const state: CongressTrendState = { status: 'done', result: RESULT };
+        const state: CongressTrendState = {
+            status: 'done',
+            result: RESULT,
+            trigger: () => {},
+        };
 
         const chatState = buildChatState(state);
 
@@ -23,7 +27,10 @@ describe('buildChatState (congress)', () => {
     });
 
     it('loading 상태에서 context:null, isAnalysisReady:false를 반환한다', () => {
-        const state: CongressTrendState = { status: 'loading' };
+        const state: CongressTrendState = {
+            status: 'loading',
+            trigger: () => {},
+        };
 
         const chatState = buildChatState(state);
 
@@ -35,7 +42,10 @@ describe('buildChatState (congress)', () => {
     });
 
     it('no_trades 상태에서 context:null, isAnalysisReady:false를 반환한다', () => {
-        const state: CongressTrendState = { status: 'no_trades' };
+        const state: CongressTrendState = {
+            status: 'no_trades',
+            trigger: () => {},
+        };
 
         const chatState = buildChatState(state);
 
@@ -47,7 +57,10 @@ describe('buildChatState (congress)', () => {
     });
 
     it('bot_blocked 상태에서 context:null, isAnalysisReady:false를 반환한다', () => {
-        const state: CongressTrendState = { status: 'bot_blocked' };
+        const state: CongressTrendState = {
+            status: 'bot_blocked',
+            trigger: () => {},
+        };
 
         const chatState = buildChatState(state);
 
@@ -63,6 +76,7 @@ describe('buildChatState (congress)', () => {
             status: 'error',
             error: new Error('test error'),
             retry: () => {},
+            trigger: () => {},
         };
 
         const chatState = buildChatState(state);
@@ -78,8 +92,12 @@ describe('buildChatState (congress)', () => {
         const doneState: CongressTrendState = {
             status: 'done',
             result: RESULT,
+            trigger: () => {},
         };
-        const noTradesState: CongressTrendState = { status: 'no_trades' };
+        const noTradesState: CongressTrendState = {
+            status: 'no_trades',
+            trigger: () => {},
+        };
 
         expect(buildChatState(doneState).timeframe).toBeNull();
         expect(buildChatState(noTradesState).timeframe).toBeNull();

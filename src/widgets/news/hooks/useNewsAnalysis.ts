@@ -18,10 +18,10 @@ import { BotBlockedError } from '@/shared/lib/BotBlockedError';
 import type { CancelJobEntry } from '@/shared/lib/types';
 
 export type NewsAnalysisState =
-    | { status: 'loading' }
-    | { status: 'done'; result: NewsAnalysisResponse }
-    | { status: 'bot_blocked' }
-    | { status: 'error'; error: Error; retry: () => void };
+    | { status: 'loading'; trigger: () => void }
+    | { status: 'done'; result: NewsAnalysisResponse; trigger: () => void }
+    | { status: 'bot_blocked'; trigger: () => void }
+    | { status: 'error'; error: Error; retry: () => void; trigger: () => void };
 
 // AbortSignal로 unmount 시 폴링을 즉시 종료한다.
 // onJobId는 두 번째 인자(expectedCurrent)를 받으면 ref가 일치할 때만 갱신한다 →
@@ -165,7 +165,7 @@ export function useNewsAnalysis(
 
     if (query.isError) {
         if (query.error instanceof BotBlockedError) {
-            return { status: 'bot_blocked' };
+            return { status: 'bot_blocked', trigger: retry };
         }
         return {
             status: 'error',
@@ -174,18 +174,19 @@ export function useNewsAnalysis(
                     ? query.error
                     : new Error('분석 중 오류가 발생했습니다.'),
             retry,
+            trigger: retry,
         };
     }
 
     // isFetching을 data보다 먼저 확인해야 background refetch(뉴스 갱신 후 재분석) 중에도
     // 스피너가 표시된다. data 체크를 먼저 두면 이전 결과가 그대로 노출되어 스피너가 뜨지 않는다.
     if (query.isFetching) {
-        return { status: 'loading' };
+        return { status: 'loading', trigger: retry };
     }
 
     if (query.data !== undefined) {
-        return { status: 'done', result: query.data };
+        return { status: 'done', result: query.data, trigger: retry };
     }
 
-    return { status: 'loading' };
+    return { status: 'loading', trigger: retry };
 }

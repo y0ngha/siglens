@@ -14,6 +14,7 @@ describe('buildChatState', () => {
         const state: FinancialsAnalysisState = {
             status: 'done',
             result: RESULT,
+            trigger: () => {},
         };
 
         const chatState = buildChatState(state);
@@ -26,7 +27,10 @@ describe('buildChatState', () => {
     });
 
     it('loading 상태에서 context:null, isAnalysisReady:false를 반환한다', () => {
-        const state: FinancialsAnalysisState = { status: 'loading' };
+        const state: FinancialsAnalysisState = {
+            status: 'loading',
+            trigger: () => {},
+        };
 
         const chatState = buildChatState(state);
 
@@ -38,7 +42,10 @@ describe('buildChatState', () => {
     });
 
     it('bot_blocked 상태에서 context:null, isAnalysisReady:false를 반환한다', () => {
-        const state: FinancialsAnalysisState = { status: 'bot_blocked' };
+        const state: FinancialsAnalysisState = {
+            status: 'bot_blocked',
+            trigger: () => {},
+        };
 
         const chatState = buildChatState(state);
 
@@ -54,6 +61,7 @@ describe('buildChatState', () => {
             status: 'error',
             error: new Error('test error'),
             retry: () => {},
+            trigger: () => {},
         };
 
         const chatState = buildChatState(state);
@@ -69,8 +77,12 @@ describe('buildChatState', () => {
         const doneState: FinancialsAnalysisState = {
             status: 'done',
             result: RESULT,
+            trigger: () => {},
         };
-        const loadingState: FinancialsAnalysisState = { status: 'loading' };
+        const loadingState: FinancialsAnalysisState = {
+            status: 'loading',
+            trigger: () => {},
+        };
 
         expect(buildChatState(doneState).timeframe).toBeNull();
         expect(buildChatState(loadingState).timeframe).toBeNull();

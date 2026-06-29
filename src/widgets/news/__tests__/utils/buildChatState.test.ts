@@ -15,6 +15,7 @@ describe('news buildChatState', () => {
         const state: NewsAnalysisState = {
             status: 'done',
             result: FAKE_RESULT,
+            trigger: () => {},
         };
         expect(buildChatState(state)).toEqual({
             context: { kind: 'news', payload: FAKE_RESULT },
@@ -24,7 +25,9 @@ describe('news buildChatState', () => {
     });
 
     it('loading → context: null, ready=false', () => {
-        expect(buildChatState({ status: 'loading' })).toEqual({
+        expect(
+            buildChatState({ status: 'loading', trigger: () => {} })
+        ).toEqual({
             context: null,
             timeframe: null,
             isAnalysisReady: false,
@@ -32,7 +35,9 @@ describe('news buildChatState', () => {
     });
 
     it('bot_blocked → context: null, ready=false', () => {
-        expect(buildChatState({ status: 'bot_blocked' })).toEqual({
+        expect(
+            buildChatState({ status: 'bot_blocked', trigger: () => {} })
+        ).toEqual({
             context: null,
             timeframe: null,
             isAnalysisReady: false,
@@ -44,6 +49,7 @@ describe('news buildChatState', () => {
             status: 'error',
             error: new Error('boom'),
             retry: () => {},
+            trigger: () => {},
         };
         expect(buildChatState(state)).toEqual({
             context: null,
