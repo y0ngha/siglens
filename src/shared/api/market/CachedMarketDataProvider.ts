@@ -71,10 +71,31 @@ export class CachedMarketDataProvider implements MarketDataProvider {
         return computeBarsEffectiveTtl(timeframe, new Date(), this.session);
     }
 
+    /**
+     * `from`이 최근 윈도우(오늘−EOD_RECENT_FROM_DAYS) 이전인지 확인한다.
+     * `from===undefined`이면 전체 히스토리 요청이므로 항상 split을 적용한다.
+     * `from`이 최근 윈도우 안에 있으면(짧은 lookback), 과거 윈도우가 역전되므로
+     * single-key 경로를 사용한다.
+     */
+    private isLongDailyWindow(from: string | undefined): boolean {
+        // from===undefined ⇒ full history ⇒ split. Otherwise only split when the
+        // requested start is older than the recent window; a short lookback (from
+        // within the last ~10d) would invert the historical window, so it uses the
+        // single-key path instead.
+        if (from === undefined) return true;
+        const recentFrom = isoDateDaysAgo(new Date(), EOD_RECENT_FROM_DAYS);
+        return from.slice(0, 10) < recentFrom;
+    }
+
     getBars = (options: GetBarsOptions): Promise<Bar[]> => {
-        // 1Day 라이브 뷰(before 미지정)만 과거(long)+최근(live) 분리. 인트라데이·과거
-        // 페이지네이션(before 지정)은 기존 단일 60s 경로 유지.
-        if (options.timeframe === '1Day' && options.before === undefined) {
+        // 1Day 라이브 뷰(before 미지정)이면서 lookback이 충분히 긴 경우에만 과거(long)+최근(live) 분리.
+        // 짧은 lookback(from이 최근 ~10d 이내)은 과거 윈도우가 역전되므로 단일 경로 사용.
+        // 인트라데이·과거 페이지네이션(before 지정)도 기존 단일 60s 경로 유지.
+        if (
+            options.timeframe === '1Day' &&
+            options.before === undefined &&
+            this.isLongDailyWindow(options.from)
+        ) {
             return this.getCachedDailyBars(options);
         }
         return getOrSetCache(
@@ -86,6 +107,10 @@ export class CachedMarketDataProvider implements MarketDataProvider {
     };
 
     /**
+     * 요청 윈도우가 최근 overlap 구간(오늘−EOD_RECENT_FROM_DAYS)보다 앞에서 시작함을
+     * 전제로 한다(isLongDailyWindow 가드 통과 후 진입). 짧은 lookback은 getCachedDailyBars를
+     * 직접 호출하지 말고 반드시 getBars를 통해 라우팅할 것.
+     *
      * 1Day 일봉을 불변 과거(long-cache)와 최근(live)로 나눠 fetch 후 병합한다.
      * 과거 윈도우는 `before=오늘−7d`로 한정해 오늘 봉을 포함하지 않으므로(=불변)
      * long TTL로 캐싱하고, 매일 키(`from`·`histTo` 날짜)가 self-versioning된다.

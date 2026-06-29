@@ -264,6 +264,197 @@ describe('CachedMarketDataProvider', () => {
             expect(getBars).toHaveBeenCalledTimes(1);
             expect(getBars.mock.calls[0]?.[0].before).toBeUndefined();
         });
+
+        // Fix 3(a): from=undefined split branch
+        it('(a) from=undefined → split taken; historical key has empty from segment', async () => {
+            // system time: 2026-06-30T15:00:00Z (set in beforeEach)
+            // histTo = 2026-06-23, recentFrom = 2026-06-20
+            const getBars = vi.fn(async (o: GetBarsOptions) =>
+                o.before !== undefined ? [bar(10), bar(11)] : [bar(11), bar(12)]
+            );
+            const provider = new CachedMarketDataProvider({
+                getBars,
+                getQuote: vi.fn(async () => null),
+            });
+
+            const result = await provider.getBars({
+                symbol: 'AAPL',
+                timeframe: '1Day',
+                // from is undefined → isLongDailyWindow returns true
+            });
+
+            // Split was taken: two inner.getBars calls
+            expect(getBars).toHaveBeenCalledTimes(2);
+            // Historical key: bars:eodhist:AAPL::<histTo> (empty from segment)
+            const histKey = [...store.keys()].find(k =>
+                k.startsWith('bars:eodhist:AAPL::')
+            );
+            expect(histKey).toBeDefined();
+            // Merged result: dedup on time=11, sorted
+            expect(result.map(b => b.time)).toEqual([10, 11, 12]);
+        });
+
+        // Fix 3(b): FMP throw poison-prevention on split path
+        it('(b) inner.getBars throw on split path → rejects without caching anything', async () => {
+            const getBars = vi.fn(async (_o: GetBarsOptions) => {
+                throw new Error('FMP 503');
+            });
+            const provider = new CachedMarketDataProvider({
+                getBars,
+                getQuote: vi.fn(async () => null),
+            });
+
+            await expect(
+                provider.getBars({
+                    symbol: 'AAPL',
+                    timeframe: '1Day',
+                    from: '2024-01-01',
+                })
+            ).rejects.toThrow('FMP 503');
+            expect(store.size).toBe(0);
+        });
+
+        // Fix 3(c): Redis-down fallback on split path
+        it('(c) redisEnabled=false on split path → returns merged result, store empty', async () => {
+            redisEnabled = false;
+            const getBars = vi.fn(async (o: GetBarsOptions) =>
+                o.before !== undefined ? [bar(1)] : [bar(1), bar(2)]
+            );
+            const provider = new CachedMarketDataProvider({
+                getBars,
+                getQuote: vi.fn(async () => null),
+            });
+
+            const result = await provider.getBars({
+                symbol: 'AAPL',
+                timeframe: '1Day',
+                from: '2024-01-01',
+            });
+
+            expect(result.map(b => b.time)).toEqual([1, 2]);
+            expect(store.size).toBe(0);
+        });
+
+        // Fix 3(d): short-window fallback (Fix 1 guard)
+        it('(d) short 1Day window (from within last 10d) → single-key path, no eodhist/eodrecent keys', async () => {
+            // system time: 2026-06-30T15:00:00Z
+            // recentFrom = today - 10d = 2026-06-20
+            // from=2026-06-27 is within last 10d → isLongDailyWindow returns false
+            const getBars = vi.fn(async (_o: GetBarsOptions) => [bar(5)]);
+            const provider = new CachedMarketDataProvider({
+                getBars,
+                getQuote: vi.fn(async () => null),
+            });
+
+            await provider.getBars({
+                symbol: 'AAPL',
+                timeframe: '1Day',
+                from: '2026-06-27', // within last 10d from 2026-06-30
+            });
+
+            // Single inner call (not two)
+            expect(getBars).toHaveBeenCalledTimes(1);
+            // No eodhist or eodrecent keys; uses bars:raw key
+            const hasHistKey = [...store.keys()].some(k =>
+                k.startsWith('bars:eodhist')
+            );
+            const hasRecentKey = [...store.keys()].some(k =>
+                k.startsWith('bars:eodrecent')
+            );
+            const hasRawKey = [...store.keys()].some(k =>
+                k.startsWith('bars:raw')
+            );
+            expect(hasHistKey).toBe(false);
+            expect(hasRecentKey).toBe(false);
+            expect(hasRawKey).toBe(true);
+        });
+
+        // Fix 3(e): empty-window shouldCache guard
+        it('(e) one window returns [] → that window key NOT written; merge returns non-empty side', async () => {
+            // historical returns [], recent returns [bar(5)]
+            const getBars = vi.fn(async (o: GetBarsOptions) =>
+                o.before !== undefined ? [] : [bar(5)]
+            );
+            const provider = new CachedMarketDataProvider({
+                getBars,
+                getQuote: vi.fn(async () => null),
+            });
+
+            const result = await provider.getBars({
+                symbol: 'AAPL',
+                timeframe: '1Day',
+                from: '2024-01-01',
+            });
+
+            // Historical key (empty result) must NOT be cached
+            const hasHistKey = [...store.keys()].some(k =>
+                k.startsWith('bars:eodhist')
+            );
+            expect(hasHistKey).toBe(false);
+            // Recent key (non-empty) must be cached
+            const hasRecentKey = [...store.keys()].some(k =>
+                k.startsWith('bars:eodrecent')
+            );
+            expect(hasRecentKey).toBe(true);
+            // Merge still returns the non-empty side
+            expect(result.map(b => b.time)).toEqual([5]);
+        });
+
+        // Fix 3(f): recent-window TTL — open vs closed
+        it('(f) bars:eodrecent TTL: market-open instant → 60s', async () => {
+            // ET regular session open: Mon 2026-06-29 14:30 UTC = 10:30 ET
+            vi.setSystemTime(new Date('2026-06-29T14:30:00Z'));
+            resetSharedState();
+
+            const getBars = vi.fn(async (_o: GetBarsOptions) => [bar(1)]);
+            const provider = new CachedMarketDataProvider({
+                getBars,
+                getQuote: vi.fn(async () => null),
+            });
+
+            await provider.getBars({
+                symbol: 'AAPL',
+                timeframe: '1Day',
+                from: '2024-01-01',
+            });
+
+            // Find the set call for bars:eodrecent:* key
+            const recentSetCall = fakeRedis.set.mock.calls.find(
+                ([key]) =>
+                    typeof key === 'string' && key.startsWith('bars:eodrecent')
+            );
+            expect(recentSetCall).toBeDefined();
+            const recentTtl = recentSetCall?.[2]?.ex;
+            expect(recentTtl).toBe(60); // open-session TTL
+        });
+
+        it('(f) bars:eodrecent TTL: market-closed instant → > 60s', async () => {
+            // Saturday 2026-06-27 12:00 UTC — US equity market closed
+            vi.setSystemTime(new Date('2026-06-27T12:00:00Z'));
+            resetSharedState();
+
+            const getBars = vi.fn(async (_o: GetBarsOptions) => [bar(1)]);
+            const provider = new CachedMarketDataProvider({
+                getBars,
+                getQuote: vi.fn(async () => null),
+            });
+
+            await provider.getBars({
+                symbol: 'AAPL',
+                timeframe: '1Day',
+                from: '2024-01-01',
+            });
+
+            // Find the set call for bars:eodrecent:* key
+            const recentSetCall = fakeRedis.set.mock.calls.find(
+                ([key]) =>
+                    typeof key === 'string' && key.startsWith('bars:eodrecent')
+            );
+            expect(recentSetCall).toBeDefined();
+            const recentTtl = recentSetCall?.[2]?.ex;
+            expect(typeof recentTtl).toBe('number');
+            expect(recentTtl).toBeGreaterThan(60); // closed-session TTL > 60s
+        });
     });
 
     describe('session spec — TTL', () => {
