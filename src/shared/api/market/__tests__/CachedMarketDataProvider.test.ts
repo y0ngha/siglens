@@ -37,6 +37,16 @@ vi.mock('@/shared/cache/redisClient', () => ({
     getRedisClient: () => (redisEnabled ? fakeRedis : null),
 }));
 
+/** Minimal bar factory for EOD split tests. */
+const bar = (time: number): Bar => ({
+    time,
+    open: 1,
+    high: 1,
+    low: 1,
+    close: 1,
+    volume: 1,
+});
+
 const SAMPLE_BARS: Bar[] = [
     { time: 1, open: 1, high: 2, low: 0.5, close: 1.5, volume: 100 },
 ];
@@ -57,9 +67,14 @@ function makeInner(
     } as MarketDataProvider;
 }
 
+/**
+ * barsOpts defaults to '5Min' so the single-key (`bars:raw:*`) path is exercised —
+ * '1Day' without `before` now goes through the EOD-split path (getCachedDailyBars).
+ * Tests that specifically target 1Day caching live in the '1Day EOD split' describe block.
+ */
 const barsOpts = (o: Partial<GetBarsOptions> = {}): GetBarsOptions => ({
     symbol: 'aapl',
-    timeframe: '1Day',
+    timeframe: '5Min',
     from: '2026-01-01',
     ...o,
 });
@@ -72,6 +87,11 @@ function reset() {
     fakeRedis.set.mockClear();
 }
 
+/** Alias used by the EOD split tests (mirrors CachedFundamentalProvider naming). */
+function resetSharedState() {
+    reset();
+}
+
 describe('CachedMarketDataProvider', () => {
     beforeEach(reset);
 
@@ -82,7 +102,7 @@ describe('CachedMarketDataProvider', () => {
         const first = await p.getBars(barsOpts());
         expect(first).toEqual(SAMPLE_BARS);
         expect(inner.getBars).toHaveBeenCalledTimes(1);
-        expect(store.has('bars:raw:AAPL:1Day:2026-01-01::')).toBe(true);
+        expect(store.has('bars:raw:AAPL:5Min:2026-01-01::')).toBe(true);
 
         const second = await p.getBars(barsOpts());
         expect(second).toEqual(SAMPLE_BARS);
@@ -95,7 +115,7 @@ describe('CachedMarketDataProvider', () => {
         expect(await p.getBars(barsOpts())).toEqual([]);
         expect(await p.getBars(barsOpts())).toEqual([]);
         expect(inner.getBars).toHaveBeenCalledTimes(2);
-        expect(store.has('bars:raw:AAPL:1Day:2026-01-01::')).toBe(false);
+        expect(store.has('bars:raw:AAPL:5Min:2026-01-01::')).toBe(false);
     });
 
     it('getBars: from/before/limit이 모두 undefined면 키에 빈 문자열로 채워진다 (?? 가드)', async () => {
@@ -103,7 +123,7 @@ describe('CachedMarketDataProvider', () => {
         const p = new CachedMarketDataProvider(inner);
         await p.getBars(barsOpts({ from: undefined }));
         expect(inner.getBars).toHaveBeenCalledTimes(1);
-        expect(store.has('bars:raw:AAPL:1Day:::')).toBe(true);
+        expect(store.has('bars:raw:AAPL:5Min:::')).toBe(true);
     });
 
     it('getBars: from/before가 다르면 키가 분리된다', async () => {
@@ -113,9 +133,9 @@ describe('CachedMarketDataProvider', () => {
         await p.getBars(barsOpts({ from: '2026-02-01' }));
         await p.getBars(barsOpts({ from: '2026-01-01', before: '2026-03-01' }));
         expect(inner.getBars).toHaveBeenCalledTimes(3);
-        expect(store.has('bars:raw:AAPL:1Day:2026-01-01::')).toBe(true);
-        expect(store.has('bars:raw:AAPL:1Day:2026-02-01::')).toBe(true);
-        expect(store.has('bars:raw:AAPL:1Day:2026-01-01:2026-03-01:')).toBe(
+        expect(store.has('bars:raw:AAPL:5Min:2026-01-01::')).toBe(true);
+        expect(store.has('bars:raw:AAPL:5Min:2026-02-01::')).toBe(true);
+        expect(store.has('bars:raw:AAPL:5Min:2026-01-01:2026-03-01:')).toBe(
             true
         );
     });
@@ -126,8 +146,8 @@ describe('CachedMarketDataProvider', () => {
         await p.getBars(barsOpts({ limit: 100 }));
         await p.getBars(barsOpts({ limit: 200 }));
         expect(inner.getBars).toHaveBeenCalledTimes(2);
-        expect(store.has('bars:raw:AAPL:1Day:2026-01-01::100')).toBe(true);
-        expect(store.has('bars:raw:AAPL:1Day:2026-01-01::200')).toBe(true);
+        expect(store.has('bars:raw:AAPL:5Min:2026-01-01::100')).toBe(true);
+        expect(store.has('bars:raw:AAPL:5Min:2026-01-01::200')).toBe(true);
     });
 
     it('getBars: inner throw는 전파되고 캐싱되지 않는다(worst case)', async () => {
@@ -169,6 +189,81 @@ describe('CachedMarketDataProvider', () => {
         expect(await p.getBars(barsOpts())).toEqual(SAMPLE_BARS);
         expect(await p.getQuote('AAPL')).toEqual(SAMPLE_QUOTE);
         expect(store.size).toBe(0);
+    });
+
+    describe('1Day EOD split', () => {
+        beforeEach(() => {
+            resetSharedState(); // fakeRedis store clear
+            vi.useFakeTimers();
+            vi.setSystemTime(new Date('2026-06-30T15:00:00Z'));
+        });
+        afterEach(() => vi.useRealTimers());
+
+        it('splits 1Day into historical(before set) + recent(from set) and merges', async () => {
+            const getBars = vi.fn(async (o: GetBarsOptions) =>
+                o.before !== undefined ? [bar(1), bar(2)] : [bar(2), bar(3)]
+            );
+            const provider = new CachedMarketDataProvider({
+                getBars,
+                getQuote: vi.fn(async () => null),
+            });
+            const opts: GetBarsOptions = {
+                symbol: 'AAPL',
+                timeframe: '1Day',
+                from: '2024-06-30',
+            };
+
+            const result = await provider.getBars(opts);
+
+            // 두 윈도우 호출: 하나는 before(과거), 하나는 from override(최근)
+            const calls = getBars.mock.calls.map(c => c[0]);
+            expect(calls.some(c => c.before !== undefined)).toBe(true);
+            expect(
+                calls.some(
+                    c => c.before === undefined && c.from !== '2024-06-30'
+                )
+            ).toBe(true);
+            // merge + dedup(시간 2 중복 → 1개), 오름차순
+            expect(result.map(b => b.time)).toEqual([1, 2, 3]);
+        });
+
+        it('serves historical window from long cache on the 2nd call (same day)', async () => {
+            const getBars = vi.fn(async (o: GetBarsOptions) =>
+                o.before !== undefined ? [bar(1)] : [bar(2)]
+            );
+            const provider = new CachedMarketDataProvider({
+                getBars,
+                getQuote: vi.fn(async () => null),
+            });
+            const opts: GetBarsOptions = {
+                symbol: 'AAPL',
+                timeframe: '1Day',
+                from: '2024-06-30',
+            };
+
+            await provider.getBars(opts);
+            await provider.getBars(opts);
+
+            const histCalls = getBars.mock.calls.filter(
+                c => c[0].before !== undefined
+            );
+            expect(histCalls).toHaveLength(1); // 과거 윈도우는 long-cache hit
+        });
+
+        it('leaves non-1Day timeframes on the single-key path', async () => {
+            const getBars = vi.fn(async (_o: GetBarsOptions) => [bar(1)]);
+            const provider = new CachedMarketDataProvider({
+                getBars,
+                getQuote: vi.fn(async () => null),
+            });
+            await provider.getBars({
+                symbol: 'AAPL',
+                timeframe: '5Min',
+                from: '2026-06-20',
+            });
+            expect(getBars).toHaveBeenCalledTimes(1);
+            expect(getBars.mock.calls[0]?.[0].before).toBeUndefined();
+        });
     });
 
     describe('session spec — TTL', () => {
