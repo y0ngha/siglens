@@ -40,7 +40,9 @@ interface FundamentalAiSummaryViewProps {
     result: FundamentalAnalysisResponse;
 }
 
-function FundamentalAiSummaryView({ result }: FundamentalAiSummaryViewProps) {
+export function FundamentalAiSummaryView({
+    result,
+}: FundamentalAiSummaryViewProps) {
     return (
         <section
             aria-labelledby="ai-summary-heading"

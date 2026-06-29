@@ -94,7 +94,7 @@ interface NewsAiSummaryViewProps {
     result: NewsAnalysisResponse;
 }
 
-function NewsAiSummaryView({ result }: NewsAiSummaryViewProps) {
+export function NewsAiSummaryView({ result }: NewsAiSummaryViewProps) {
     return (
         <section
             aria-labelledby="news-ai-summary-heading"

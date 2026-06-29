@@ -32,7 +32,9 @@ interface FinancialsAiSummaryViewProps {
     result: FinancialsAnalysisResponse;
 }
 
-function FinancialsAiSummaryView({ result }: FinancialsAiSummaryViewProps) {
+export function FinancialsAiSummaryView({
+    result,
+}: FinancialsAiSummaryViewProps) {
     return (
         <section
             aria-labelledby="financials-ai-summary-heading"

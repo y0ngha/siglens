@@ -115,7 +115,7 @@ interface OptionsAiAnalysisViewProps {
     result: OptionsAnalysisResponse;
 }
 
-function OptionsAiAnalysisView({ result }: OptionsAiAnalysisViewProps) {
+export function OptionsAiAnalysisView({ result }: OptionsAiAnalysisViewProps) {
     const isEmpty =
         result.summary === '' &&
         result.perExpiration.length === 0 &&
