@@ -11,7 +11,7 @@ export type { OgText };
  * `satisfies Record<ShareableKind, ...>`.
  */
 export function buildOgText(snapshot: SharedAnalysisSnapshot): OgText {
-    const r = snapshot.result as Record<string, unknown>;
+    const r = snapshot.result as unknown as Record<string, unknown>;
     const builder = SHARE_KIND_OG_BUILDERS[snapshot.kind];
     return builder(r, snapshot.symbol);
 }
