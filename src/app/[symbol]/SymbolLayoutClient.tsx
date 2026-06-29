@@ -5,6 +5,7 @@ import { useSelectedLayoutSegment } from 'next/navigation';
 import { FloatingChatButton } from '@/widgets/chat/FloatingChatButton';
 import { SymbolChatProvider } from '@/features/symbol-chat';
 import { SymbolModelProvider } from '@/features/symbol-model';
+import { ShareableAnalysisProvider } from '@/features/share';
 import { cn } from '@/shared/lib/cn';
 
 interface SymbolLayoutJailProps {
@@ -69,7 +70,11 @@ export function SymbolLayoutProviders({
 }: SymbolLayoutProvidersProps) {
     return (
         <SymbolChatProvider>
-            <SymbolModelProvider>{children}</SymbolModelProvider>
+            <SymbolModelProvider>
+                <ShareableAnalysisProvider>
+                    {children}
+                </ShareableAnalysisProvider>
+            </SymbolModelProvider>
         </SymbolChatProvider>
     );
 }
