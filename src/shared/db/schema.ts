@@ -21,6 +21,7 @@ import {
 import {
     LLM_PROVIDER_VALUES,
     OAUTH_PROVIDER_VALUES,
+    SHAREABLE_KIND_VALUES,
     TERMS_KIND_VALUES,
     USAGE_ACTION_TYPE_VALUES,
     USER_TIER_VALUES,
@@ -55,6 +56,12 @@ export const oauthProviderEnum = pgEnum(
 
 /** Postgres enum for supported LLM providers whose API keys are stored per user. */
 export const llmProviderEnum = pgEnum('llm_provider', LLM_PROVIDER_VALUES);
+
+/** Postgres enum for shareable analysis kinds (chart, overall, news, etc.). */
+export const shareableKindEnum = pgEnum(
+    'shareable_kind',
+    SHAREABLE_KIND_VALUES
+);
 
 /** Registered users — one row per account, keyed by UUID. */
 export const users = pgTable('users', {
@@ -511,5 +518,41 @@ export const notices = pgTable(
             table.startsAt,
             table.endsAt
         ),
+    ]
+);
+
+const CONTENT_HASH_LENGTH = 64; // sha256 hex
+
+/**
+ * 공유된 분석 스냅샷 — 사용자(또는 비회원)가 공유 링크를 생성할 때 삽입.
+ *
+ * - `contentHash`가 동일하면 같은 분석 내용이므로 uq 제약으로 중복 저장 방지.
+ * - `userId`는 SET NULL on delete — 탈퇴한 사용자의 공유 링크는 사라지지 않고
+ *   익명 스냅샷으로 유지된다(링크가 살아있으면 내용은 보여야 함).
+ * - `expiresAt` 만료 행은 별도 크론으로 정리한다.
+ */
+export const sharedAnalyses = pgTable(
+    'shared_analyses',
+    {
+        id: text('id').primaryKey(),
+        userId: uuid('user_id').references(() => users.id, {
+            onDelete: 'set null',
+        }),
+        kind: shareableKindEnum('kind').notNull(),
+        symbol: varchar('symbol', { length: SYMBOL_MAX_LENGTH }).notNull(),
+        contentHash: varchar('content_hash', {
+            length: CONTENT_HASH_LENGTH,
+        }).notNull(),
+        snapshotJson: jsonb('snapshot_json').notNull(),
+        sharerTier: userTierEnum('sharer_tier').notNull().default('free'),
+        createdAt: timestamp('created_at', { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+        expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    },
+    table => [
+        index('shared_analyses_symbol_idx').on(table.symbol),
+        index('shared_analyses_expires_at_idx').on(table.expiresAt),
+        uniqueIndex('shared_analyses_content_uq').on(table.contentHash),
     ]
 );
