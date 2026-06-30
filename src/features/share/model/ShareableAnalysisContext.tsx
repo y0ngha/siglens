@@ -68,11 +68,13 @@ export function useShareable(): ShareableRegistration | null {
  */
 export function useRegisterShareable(reg: ShareableRegistration): void {
     const ctx = useContext(Ctx);
-    const { kind, status, result, context, trigger } = reg;
+    // `triggerRef` is declared before destructuring so that all hooks appear in
+    // the same top-level order on every render (React hook invariant).
+    const triggerRef = useRef(reg.trigger);
+    const { kind, status, result, context } = reg;
     const { symbol, displayName, assetClass, analyzedAt } = context;
-    const triggerRef = useRef(trigger);
     useEffect(() => {
-        triggerRef.current = trigger;
+        triggerRef.current = reg.trigger;
     });
     useEffect(() => {
         ctx?.register({

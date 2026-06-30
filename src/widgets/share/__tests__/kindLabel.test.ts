@@ -1,5 +1,5 @@
 import { kindLabel } from '../lib/kindLabel';
-import type { ShareableKind } from '../types';
+import type { ShareableKind } from '@/entities/shared-analysis';
 
 describe('kindLabel', () => {
     const cases: Array<[ShareableKind, string]> = [

@@ -24,7 +24,7 @@ vi.mock('react', async importOriginal => {
     };
 });
 
-import { getCachedSharedAnalysis } from '../lib/getCachedSharedAnalysis';
+import { getCachedSharedAnalysis } from '../actions/getCachedSharedAnalysis';
 
 const foundResult = {
     status: 'found' as const,

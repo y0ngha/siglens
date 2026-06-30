@@ -1,4 +1,4 @@
-import type { ShareableKind } from '../types';
+import type { ShareableKind } from '@/entities/shared-analysis';
 
 /**
  * ShareableKind를 한국어 레이블로 변환한다.

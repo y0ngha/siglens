@@ -1,4 +1,4 @@
-import type { ShareableStatus } from '@/features/share';
+import type { ShareableStatus } from '../model/ShareableAnalysisContext';
 
 export interface DeriveChartStatusInput {
     isAnalyzing: boolean;

@@ -1,10 +1,11 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { getCachedSharedAnalysis } from '@/entities/shared-analysis/lib/getCachedSharedAnalysis';
+import { getCachedSharedAnalysis } from '@/entities/shared-analysis/actions/getCachedSharedAnalysis';
 import { resolveAsOf } from '@/entities/shared-analysis/lib/resolveAsOf';
-import { kindLabel } from '@/entities/shared-analysis/lib/kindLabel';
+import { kindLabel } from '@/widgets/share/lib/kindLabel';
 import { buildShareMetadata } from '@/entities/shared-analysis/lib/buildShareSeo';
 import { ShareKindPanel } from '@/widgets/share/ui/ShareKindPanel';
+import { formatAnalyzedAt } from '@/shared/lib/formatAnalyzedAt';
 import { SITE_NAME } from '@/shared/lib/seo';
 import { INVESTMENT_DISCLAIMER } from '@/shared/lib/legal';
 
@@ -50,11 +51,10 @@ export default async function SharePage({ params }: Props) {
 
     const { snapshot, createdAt } = lookup;
     const ticker = snapshot.symbol.toUpperCase();
-    const asOf = resolveAsOf(snapshot, createdAt);
+    const asOf = formatAnalyzedAt(resolveAsOf(snapshot, createdAt));
     const label = kindLabel(snapshot.kind);
     return (
         <main className="mx-auto w-full max-w-4xl px-4 py-8 sm:px-6">
-            {/* 헤더: 워드마크 + 종목 + 분석 종류 칩 */}
             <h1 className="mb-6 flex flex-wrap items-center gap-2">
                 <span className="text-secondary-500 text-sm font-medium">
                     {SITE_NAME}
@@ -68,15 +68,12 @@ export default async function SharePage({ params }: Props) {
                 </span>
             </h1>
 
-            {/* 스냅샷 면책 박스 */}
             <div className="border-secondary-700 bg-secondary-800/50 text-secondary-400 mb-6 rounded-lg border px-3 py-2 text-xs">
                 {asOf} 기준 · 스냅샷이라 현재 시세와 다를 수 있어요
             </div>
 
-            {/* 분석 패널 */}
             <ShareKindPanel kind={snapshot.kind} result={snapshot.result} />
 
-            {/* D-3: 투자 면책 고지 */}
             <div
                 role="note"
                 aria-label="투자 면책 고지"
@@ -87,7 +84,6 @@ export default async function SharePage({ params }: Props) {
                 </p>
             </div>
 
-            {/* 바이럴 CTA */}
             <div className="mt-8 text-center">
                 <Link
                     href={`/${ticker}`}

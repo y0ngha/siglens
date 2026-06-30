@@ -1,4 +1,4 @@
-import type { ShareableStatus } from '@/features/share';
+import type { ShareableStatus } from '../model/ShareableAnalysisContext';
 
 /**
  * Maps a raw hook status string (from any analysis hook) to a canonical
