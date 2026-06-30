@@ -277,9 +277,14 @@ export function NewsAiSummary({
         [isCardsReady, analysis]
     );
     usePublishSymbolChat(chatState);
+    // When enriched news cards are not yet ready the analysis query is disabled
+    // (enabled: false → useNewsAnalysis returns status 'loading' immediately).
+    // Mapping that 'loading' to 'pending' misleads the share system into showing
+    // "preparing" before any actual analysis has started. Register 'idle' instead
+    // so the share button stays dormant until real analysis work begins.
     useRegisterShareable({
         kind: 'news',
-        status: mapAnalysisStatus(analysis.status),
+        status: isCardsReady ? mapAnalysisStatus(analysis.status) : 'idle',
         result: analysis.status === 'done' ? analysis.result : null,
         context: {
             symbol,

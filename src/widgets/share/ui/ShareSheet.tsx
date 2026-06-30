@@ -1,6 +1,7 @@
 'use client';
 
 import { useEscapeKey } from '@/shared/hooks/useEscapeKey';
+import { useOnClickOutside } from '@/shared/hooks/useOnClickOutside';
 import { useCopyToClipboard } from '@/shared/hooks/useCopyToClipboard';
 import { cn } from '@/shared/lib/cn';
 import { buildTweetIntentUrl } from '@/shared/lib/share';
@@ -21,6 +22,7 @@ const ROW_BASE =
 /**
  * Desktop popover panel listing share actions.
  * Focus management: first actionable item receives focus on mount; Escape triggers onClose.
+ * Click-outside dismissal: pointerdown anywhere outside the panel calls onClose (Spec §9-4).
  *
  * The component is "always-open presentational" — open/close state lives in the parent
  * (ShareButton via usePopoverToggle). ShareSheet only manages internal item focus.
@@ -35,9 +37,13 @@ export function ShareSheet({
     const { copied, copy } = useCopyToClipboard();
     const [copyFailed, setCopyFailed] = useState(false);
     const firstItemRef = useRef<HTMLButtonElement>(null);
+    const panelRef = useRef<HTMLDivElement>(null);
 
     // Escape key closes the popover.
     useEscapeKey(onClose, true);
+
+    // Click/tap outside the panel closes the popover (Spec §9-4).
+    useOnClickOutside([panelRef], onClose, { enabled: true });
 
     // Focus the first actionable item on mount (a11y: keyboard users land here).
     useEffect(() => {
@@ -57,6 +63,7 @@ export function ShareSheet({
 
     return (
         <div
+            ref={panelRef}
             className="bg-secondary-900 border-secondary-800 absolute right-0 z-50 mt-2 w-72 rounded-lg border p-2 shadow-2xl"
             role="dialog"
             aria-label={title}

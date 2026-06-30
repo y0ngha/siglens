@@ -101,4 +101,20 @@ describe('ShareSheet', () => {
         fireEvent.keyDown(document, { key: 'Escape' });
         expect(onClose).toHaveBeenCalledTimes(1);
     });
+
+    // R4-1: pointerdown outside the panel calls onClose (click-outside dismissal)
+    it('calls onClose when pointerdown occurs outside the panel', () => {
+        const { onClose } = setup();
+        // Simulate a click outside the dialog panel (on document.body)
+        fireEvent.pointerDown(document.body);
+        expect(onClose).toHaveBeenCalledTimes(1);
+    });
+
+    // R4-1: pointerdown inside the panel does NOT call onClose
+    it('does NOT call onClose when pointerdown occurs inside the panel', () => {
+        const { onClose } = setup();
+        const panel = document.querySelector('[role="dialog"]') as HTMLElement;
+        fireEvent.pointerDown(panel);
+        expect(onClose).not.toHaveBeenCalled();
+    });
 });
