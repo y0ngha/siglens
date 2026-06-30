@@ -24,5 +24,8 @@ export function parseSnapshot(raw: unknown): SharedAnalysisSnapshot | null {
     if (typeof obj.symbol !== 'string') return null;
     if (typeof obj.context !== 'object' || obj.context === null) return null;
     if (typeof obj.result !== 'object' || obj.result === null) return null;
+    // Safe: all structural invariants (kind, symbol, context, result) have been
+    // verified above by the guard checks; the cast narrows the runtime-validated
+    // object to the typed snapshot without further re-validation.
     return obj as unknown as SharedAnalysisSnapshot;
 }

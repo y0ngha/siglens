@@ -17,5 +17,8 @@ export function buildShareSnapshot<K extends ShareableKind>(
         context: { ...input.context, symbol: input.symbol.toUpperCase() },
         result: input.result,
     };
+    // Safe: JSON round-trip produces a plain object with the same shape as
+    // SharedAnalysisSnapshot<K>; the cast narrows the `unknown` parse result
+    // back to the typed snapshot without re-running validation.
     return JSON.parse(JSON.stringify(snapshot)) as SharedAnalysisSnapshot<K>;
 }

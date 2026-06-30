@@ -39,6 +39,11 @@ export function ShareKindPanel<K extends ShareableKind>({
     kind,
     result,
 }: ShareKindPanelProps<K>) {
+    // Safe: `kind` and `result` are co-typed via the same generic `K`, so the
+    // registry entry for this key always accepts exactly the result type that
+    // was passed in. The cast collapses the union return type to the concrete
+    // generic signature without narrowing the individual union members at call
+    // sites.
     const Panel = SHARE_KIND_PANEL_REGISTRY[kind] as (props: {
         result: SnapshotResultOf<K>;
     }) => ReactNode;

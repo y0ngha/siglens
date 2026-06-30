@@ -13,7 +13,6 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 import { ShareButton } from '../ui/ShareButton';
 
-// ── hoisted mocks ──────────────────────────────────────────────────────────
 const { mockAction, mockUseShareable, mockCanShareNatively } = vi.hoisted(
     () => ({
         mockAction: vi.fn(),
@@ -57,7 +56,6 @@ vi.mock('@/shared/lib/seo', () => ({
     SITE_URL: 'https://siglens.io',
 }));
 
-// ── helpers ────────────────────────────────────────────────────────────────
 let queryClient: QueryClient;
 
 function Wrapper({ children }: { children: ReactNode }) {
@@ -91,7 +89,6 @@ function renderButton() {
     return render(<ShareButton />, { wrapper: Wrapper });
 }
 
-// ── setup / teardown ───────────────────────────────────────────────────────
 beforeEach(() => {
     queryClient = new QueryClient({
         defaultOptions: {
@@ -107,8 +104,6 @@ beforeEach(() => {
 afterEach(() => {
     queryClient.clear();
 });
-
-// ── tests ──────────────────────────────────────────────────────────────────
 
 describe('ShareButton', () => {
     it('has aria-label "분석 결과 공유"', () => {
@@ -259,7 +254,7 @@ describe('ShareButton', () => {
         });
     });
 
-    // ── R2-1: auto-advance (preparing flow) ────────────────────────────────
+    // R2-1: auto-advance (preparing flow)
     describe('auto-advance: pending → success', () => {
         it('opens SharePreparingModal when status=pending and click, then calls mutation when status advances to success', async () => {
             const reg = makeReg('pending');
@@ -353,7 +348,7 @@ describe('ShareButton', () => {
         });
     });
 
-    // ── R3-1: native-share no-double-fire (mobile auto-advance) ──────────────
+    // R3-1: native-share no-double-fire (mobile auto-advance)
     describe('native-share: auto-advance no-double-fire', () => {
         it('pending → click (preparing modal opens) → success: native share called once, modal closed, second rerender does not re-fire', async () => {
             // Set up a navigator.share that resolves immediately.
@@ -434,8 +429,7 @@ describe('ShareButton', () => {
         });
     });
 
-    // ── T2: onSuccess branch tree ────────────────────────────────────────────
-
+    // T2: onSuccess branch tree
     describe('onSuccess branch tree', () => {
         it('does not open ShareSheet when action returns ok:false', async () => {
             mockAction.mockResolvedValue({ ok: false, code: 'rate_limited' });

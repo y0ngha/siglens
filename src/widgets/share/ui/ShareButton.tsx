@@ -56,6 +56,25 @@ export function ShareButton() {
     const { tier: sharerTier } = useUserTier();
 
     /**
+     * Reset all transient UI state when the user switches to a different analysis
+     * tab. Without this, dialogs and modals opened on one tab would persist after
+     * navigating to a tab that registers a different `kind`.
+     *
+     * Uses the getDerivedStateFromProps-equivalent pattern (setState during render)
+     * to avoid the react-hooks/set-state-in-effect lint rule while still resetting
+     * synchronously before the next paint.
+     */
+    const [prevKind, setPrevKind] = useState(reg?.kind);
+    if (prevKind !== reg?.kind) {
+        setPrevKind(reg?.kind);
+        setSheetOpen(false);
+        setTriggerDialogOpen(false);
+        setPreparingOpen(false);
+        setUnavailableVisible(false);
+        setHasTriggered(false);
+    }
+
+    /**
      * Stable refs to the latest reg and sharerTier values. The mutation fn reads
      * these so it always operates on the current registration even when called
      * from within the auto-advance effect (where the closure would otherwise close
@@ -87,9 +106,18 @@ export function ShareButton() {
                 sharerTier: sharerTierRef.current,
             });
         },
+        onError: () => {
+            // Network / unexpected throw: dismiss the preparing modal so it
+            // doesn't stay stuck, and reset the auto-advance gate.
+            setHasTriggered(false);
+            setPreparingOpen(false);
+        },
         onSuccess: async result => {
             if (!result.ok) {
-                // Treat action-level errors as a benign close; no toast per spec.
+                // Action-level error (e.g. rate_limited, persist_failed): dismiss
+                // preparing modal so it doesn't stay stuck, reset auto-advance gate.
+                setHasTriggered(false);
+                setPreparingOpen(false);
                 return;
             }
             const url = `${SITE_URL}/share/${result.id}`;

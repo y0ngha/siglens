@@ -146,7 +146,7 @@ describe('isValidShareInput', () => {
         ).toBe(true);
     });
 
-    // R3-5: additional rejection cases ─────────────────────────────────────────
+    // R3-5: additional rejection cases
 
     it('rejects context with non-string assetClass', () => {
         expect(

@@ -14,8 +14,6 @@ import { FearGreedShareView } from '../FearGreedShareView';
 import { SENTIMENT_LABEL_TEXT } from '@/shared/lib/fearGreedLabels';
 import { WARNING_TEXT } from '../SelfNormWarningBadge';
 
-// ── helpers ──────────────────────────────────────────────────────────────────
-
 function makeSnapshot(
     overrides: Partial<FearGreedSnapshot> = {}
 ): FearGreedSnapshot {
@@ -47,8 +45,6 @@ function makeSnapshot(
         ...overrides,
     };
 }
-
-// ── tests ─────────────────────────────────────────────────────────────────────
 
 describe('FearGreedShareView', () => {
     describe('hero score and label', () => {

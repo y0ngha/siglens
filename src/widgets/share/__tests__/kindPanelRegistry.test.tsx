@@ -17,7 +17,7 @@ import { render } from '@testing-library/react';
 import { SHAREABLE_KIND_VALUES } from '@/shared/db/constants';
 import { SHARE_KIND_PANEL_REGISTRY } from '@/widgets/share/ui/kindPanelRegistry';
 
-// ─── mock every heavy widget so this test stays unit-level ───────────────────
+// Mock every heavy widget so this test stays unit-level.
 //
 // IMPORTANT: mock paths MUST match the import paths in kindPanelRegistry.tsx.
 // If the registry deep-imports a component but the mock targets the barrel (or
@@ -50,7 +50,7 @@ vi.mock('@/widgets/fear-greed/FearGreedShareView', () => ({
     FearGreedShareView: () => null,
 }));
 
-// ─── minimal stub results (cast to never — mocks ignore props anyway) ─────────
+// Minimal stub results (cast to never — mocks ignore props anyway).
 
 const stubResults = {
     chart: { trend: 'bullish', summary: '차트 분석' },
@@ -62,8 +62,6 @@ const stubResults = {
     options: { chain: [] },
     'fear-greed': { value: 50 },
 } as const;
-
-// ─── tests ───────────────────────────────────────────────────────────────────
 
 describe('SHARE_KIND_PANEL_REGISTRY', () => {
     it('contains exactly the 8 shareable kinds — no more, no less', () => {
@@ -110,8 +108,7 @@ describe('SHARE_KIND_PANEL_REGISTRY', () => {
         }
     });
 
-    // ── T4: chart adapter passes correct props to AnalysisPanel ──────────────
-
+    // T4: chart adapter passes correct props to AnalysisPanel
     describe('chart adapter (ChartSharePanel)', () => {
         beforeEach(() => {
             mockAnalysisPanel.mockClear();
