@@ -197,6 +197,16 @@ const eslintConfig = defineConfig([
         },
     },
     {
+        // Test files deliberately cross FSD layer boundaries (e.g. an entity
+        // __tests__ file importing from src/views/ for exhaustiveness checks).
+        // Disable boundaries/dependencies for all test files so inline
+        // eslint-disable comments are not needed.
+        files: ['src/**/*.test.{ts,tsx}', 'src/**/__tests__/**'],
+        rules: {
+            'boundaries/dependencies': 'off',
+        },
+    },
+    {
         files: ['src/**/*.{ts,tsx}'],
         ignores: [
             'src/**/*.test.{ts,tsx}',

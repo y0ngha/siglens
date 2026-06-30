@@ -59,4 +59,49 @@ describe('isValidShareInput', () => {
             })
         ).toBe(false);
     });
+    it('rejects symbol longer than 32 characters', () => {
+        expect(
+            isValidShareInput({
+                kind: 'chart',
+                symbol: 'A'.repeat(33),
+                context: { symbol: 'A'.repeat(33), displayName: 'Long' },
+                result: {},
+                sharerTier: 'free',
+            })
+        ).toBe(false);
+    });
+    it('accepts symbol exactly 32 characters', () => {
+        expect(
+            isValidShareInput({
+                kind: 'chart',
+                symbol: 'A'.repeat(32),
+                context: { symbol: 'A'.repeat(32), displayName: 'Long' },
+                result: {},
+                sharerTier: 'free',
+            })
+        ).toBe(true);
+    });
+    it('accepts input when assetClass is omitted (optional)', () => {
+        expect(
+            isValidShareInput({
+                kind: 'chart',
+                symbol: 'AAPL',
+                context: { symbol: 'AAPL', displayName: 'Apple' },
+                result: { trend: 'bullish' },
+                sharerTier: 'free',
+            })
+        ).toBe(true);
+    });
+    it('accepts input when assetClass is empty string (widgets that omit it send nothing now)', () => {
+        // Empty string is allowed since assetClass is optional string (undefined or string)
+        expect(
+            isValidShareInput({
+                kind: 'news',
+                symbol: 'TSLA',
+                context: { symbol: 'TSLA', displayName: 'Tesla' },
+                result: { overallSentiment: 'bullish' },
+                sharerTier: 'free',
+            })
+        ).toBe(true);
+    });
 });

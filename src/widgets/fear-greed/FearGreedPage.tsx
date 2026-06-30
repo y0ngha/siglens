@@ -74,7 +74,6 @@ export function FearGreedPage({ symbol, fmpSymbol }: FearGreedPageProps) {
         context: {
             symbol,
             displayName: symbol,
-            assetClass: '',
         },
         trigger: () => {},
     });

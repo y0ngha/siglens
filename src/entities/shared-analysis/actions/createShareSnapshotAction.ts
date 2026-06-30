@@ -55,7 +55,7 @@ export async function createShareSnapshotAction(
             ),
             snapshot,
             sharerTier: input.sharerTier,
-            userId: input.userId ?? null,
+            userId: null,
             expiresAt,
         });
         return { ok: true, id };

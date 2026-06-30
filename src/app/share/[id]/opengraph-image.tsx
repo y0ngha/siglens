@@ -1,6 +1,6 @@
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/shared/lib/og';
 import { buildSymbolOgImage } from '@/entities/og-image';
-import { getSharedAnalysis } from '@/entities/shared-analysis/actions/getSharedAnalysisAction';
+import { getSharedAnalysisAction } from '@/entities/shared-analysis/actions/getSharedAnalysisAction';
 import { kindLabel } from '@/entities/shared-analysis/lib/kindLabel';
 
 // 공유 스냅샷은 id마다 달라 정적 생성 불가 → force-dynamic
@@ -16,7 +16,7 @@ interface Props {
 
 export default async function Image({ params }: Props) {
     const { id } = await params;
-    const lookup = await getSharedAnalysis(id);
+    const lookup = await getSharedAnalysisAction(id);
 
     if (lookup.status === 'found') {
         const { snapshot } = lookup;

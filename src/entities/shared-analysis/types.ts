@@ -31,7 +31,8 @@ export interface ShareContext {
     symbol: string;
     displayName: string;
     koreanName?: string;
-    assetClass: string;
+    /** 종목 자산 분류(equity/crypto 등). 위젯이 값을 알 때만 전달; 미지 시 생략. */
+    assetClass?: string;
     analyzedAt?: string;
 }
 
@@ -52,7 +53,6 @@ export interface CreateShareInput<K extends ShareableKind = ShareableKind> {
     context: ShareContext;
     result: SnapshotResultOf<K>;
     sharerTier: Tier;
-    userId?: string;
 }
 
 /** 액션 결과. */

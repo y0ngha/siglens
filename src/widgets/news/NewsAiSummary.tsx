@@ -284,7 +284,6 @@ export function NewsAiSummary({
         context: {
             symbol,
             displayName: companyName ?? symbol,
-            assetClass: '',
             analyzedAt: undefined,
         },
         trigger: analysis.trigger,

@@ -33,7 +33,6 @@ export function CongressTrendSummary({ symbol }: CongressTrendSummaryProps) {
         context: {
             symbol,
             displayName: symbol,
-            assetClass: '',
             analyzedAt: undefined,
         },
         trigger: state.trigger,

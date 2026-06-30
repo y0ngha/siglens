@@ -85,7 +85,7 @@ export function OverallContent({
         context: {
             symbol,
             displayName: companyName ?? symbol,
-            assetClass: '',
+            assetClass,
             analyzedAt: undefined,
         },
         trigger,

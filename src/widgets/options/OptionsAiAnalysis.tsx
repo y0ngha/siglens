@@ -247,7 +247,6 @@ export function OptionsAiAnalysis({
         context: {
             symbol,
             displayName: companyName ?? symbol,
-            assetClass: '',
             analyzedAt:
                 state.status === 'done' ? state.result.analyzedAt : undefined,
         },

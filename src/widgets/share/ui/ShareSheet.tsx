@@ -5,7 +5,7 @@ import { useCopyToClipboard } from '@/shared/hooks/useCopyToClipboard';
 import { cn } from '@/shared/lib/cn';
 import { buildTweetIntentUrl } from '@/shared/lib/share';
 import { useEffect, useRef, useState } from 'react';
-import { CheckIcon, KakaoIcon, LinkIcon, XLogoIcon } from './icons';
+import { CheckIcon, LinkIcon, XLogoIcon } from './icons';
 
 interface ShareSheetProps {
     shareUrl: string;
@@ -53,7 +53,6 @@ export function ShareSheet({
         }
     }
 
-    const hasKakaoKey = Boolean(process.env.NEXT_PUBLIC_KAKAO_JS_KEY);
     const tweetUrl = buildTweetIntentUrl({ text: tweetText, shareUrl });
 
     return (
@@ -107,22 +106,6 @@ export function ShareSheet({
                 <XLogoIcon className="h-5 w-5" />
                 <span>X에 공유</span>
             </a>
-
-            {/* 3. Kakao — rendered only when the JS key is configured */}
-            {hasKakaoKey && (
-                <button
-                    type="button"
-                    onClick={() => {
-                        // Kakao SDK integration is wired up by the consumer.
-                        // ShareSheet only renders the entry point.
-                    }}
-                    className={cn(ROW_BASE, 'touch-manipulation')}
-                    aria-label="카카오톡으로 공유"
-                >
-                    <KakaoIcon className="h-5 w-5" />
-                    <span>카카오톡으로 공유</span>
-                </button>
-            )}
 
             {/* Screen-reader-only description */}
             <p className="sr-only">{description}</p>

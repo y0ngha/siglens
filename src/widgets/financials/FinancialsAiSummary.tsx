@@ -135,7 +135,6 @@ export function FinancialsAiSummary({ symbol }: FinancialsAiSummaryProps) {
         context: {
             symbol,
             displayName: symbol,
-            assetClass: '',
             analyzedAt: undefined,
         },
         trigger: state.trigger,

@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import type React from 'react';
-import { getSharedAnalysis } from '@/entities/shared-analysis/actions/getSharedAnalysisAction';
+import { getSharedAnalysisAction } from '@/entities/shared-analysis/actions/getSharedAnalysisAction';
 import { resolveAsOf } from '@/entities/shared-analysis/lib/resolveAsOf';
 import { kindLabel } from '@/entities/shared-analysis/lib/kindLabel';
 import { buildShareMetadata } from '@/entities/shared-analysis/lib/buildShareSeo';
@@ -18,13 +18,13 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { id } = await params;
-    const lookup = await getSharedAnalysis(id);
+    const lookup = await getSharedAnalysisAction(id);
     return buildShareMetadata(lookup);
 }
 
 export default async function SharePage({ params }: Props) {
     const { id } = await params;
-    const lookup = await getSharedAnalysis(id);
+    const lookup = await getSharedAnalysisAction(id);
 
     if (lookup.status !== 'found') {
         return (

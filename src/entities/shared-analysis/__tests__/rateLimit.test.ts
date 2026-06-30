@@ -60,4 +60,14 @@ describe('checkShareRateLimit', () => {
         await checkShareRateLimit('ipHashA');
         expect(expire).toHaveBeenCalledWith('share:rl:ipHashA', 3600);
     });
+
+    it('allows (fail-open) when redis incr rejects', async () => {
+        mockGetRedis.mockReturnValue({
+            writer: {
+                incr: vi.fn().mockRejectedValue(new Error('ECONNREFUSED')),
+                expire: vi.fn(),
+            },
+        });
+        expect(await checkShareRateLimit('ipHashA')).toBe(true);
+    });
 });

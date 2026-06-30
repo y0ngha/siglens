@@ -59,17 +59,38 @@ export function useShareable(): ShareableRegistration | null {
     return useContext(Ctx)?.current ?? null;
 }
 
-/** 활성 탭 위젯이 자기 상태를 등록한다. 언마운트 시 해제. */
+/**
+ * 활성 탭 위젯이 자기 상태를 등록한다. 언마운트 시 해제.
+ *
+ * Deps are primitive values extracted from reg so no eslint-disable is needed
+ * and no object-identity render loop occurs. `trigger` is captured via a ref
+ * so the registration effect doesn't re-run when only the callback identity changes.
+ */
 export function useRegisterShareable(reg: ShareableRegistration): void {
     const ctx = useContext(Ctx);
-    const regRef = useRef<ShareableRegistration>(reg);
+    const { kind, status, result, context, trigger } = reg;
+    const { symbol, displayName, assetClass, analyzedAt } = context;
+    const triggerRef = useRef(trigger);
     useEffect(() => {
-        regRef.current = reg;
+        triggerRef.current = trigger;
     });
     useEffect(() => {
-        ctx?.register(reg);
-    }, [ctx, reg.kind, reg.status, reg.result]); // eslint-disable-line react-hooks/exhaustive-deps
-    useEffect(() => {
+        ctx?.register({
+            kind,
+            status,
+            result,
+            context: { symbol, displayName, assetClass, analyzedAt },
+            trigger: () => triggerRef.current(),
+        });
         return () => ctx?.register(null);
-    }, [ctx]);
+    }, [
+        ctx,
+        kind,
+        status,
+        result,
+        symbol,
+        displayName,
+        assetClass,
+        analyzedAt,
+    ]);
 }

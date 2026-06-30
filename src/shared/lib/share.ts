@@ -34,15 +34,3 @@ export function canShareNatively(): boolean {
 export function isShareAbort(err: unknown): boolean {
     return err instanceof DOMException && err.name === 'AbortError';
 }
-
-export interface KakaoSharePayload {
-    title: string;
-    description: string;
-    url: string;
-}
-
-export function buildKakaoSharePayload(
-    p: KakaoSharePayload
-): KakaoSharePayload {
-    return p;
-}

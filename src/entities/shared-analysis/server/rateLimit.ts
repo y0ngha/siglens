@@ -14,7 +14,13 @@ export async function checkShareRateLimit(ipHash: string): Promise<boolean> {
     if (!pair) return true;
 
     const key = `share:rl:${ipHash}`;
-    const count = await pair.writer.incr(key);
-    if (count === 1) await pair.writer.expire(key, WINDOW_SECONDS);
-    return count <= SHARE_LIMIT_PER_HOUR;
+    try {
+        const count = await pair.writer.incr(key);
+        if (count === 1) await pair.writer.expire(key, WINDOW_SECONDS);
+        return count <= SHARE_LIMIT_PER_HOUR;
+    } catch {
+        // Redis is configured but currently unreachable — fail-open so a transient
+        // Redis outage does not block all share creation.
+        return true;
+    }
 }

@@ -143,7 +143,6 @@ export function FundamentalAiSummary({ symbol }: FundamentalAiSummaryProps) {
         context: {
             symbol,
             displayName: symbol,
-            assetClass: '',
             analyzedAt: undefined,
         },
         trigger: state.trigger,

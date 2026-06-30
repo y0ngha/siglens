@@ -305,7 +305,6 @@ export function ChartContent({
         context: {
             symbol,
             displayName: companyName,
-            assetClass: '',
             analyzedAt: (analysisResult ?? analysis)?.analyzedAt,
         },
         trigger: handleReanalyze,

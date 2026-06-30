@@ -2,7 +2,6 @@ import {
     buildTweetIntentUrl,
     isShareAbort,
     canShareNatively,
-    buildKakaoSharePayload,
 } from '@/shared/lib/share';
 
 describe('buildTweetIntentUrl', () => {
@@ -60,16 +59,5 @@ describe('canShareNatively', () => {
             matchMedia: vi.fn().mockReturnValue({ matches: false }),
         });
         expect(canShareNatively()).toBe(false);
-    });
-});
-
-describe('buildKakaoSharePayload', () => {
-    it('returns the input payload object', () => {
-        const payload = {
-            title: 'AAPL 분석',
-            description: '강세 추세',
-            url: 'https://siglens.io/share/abc',
-        };
-        expect(buildKakaoSharePayload(payload)).toEqual(payload);
     });
 });

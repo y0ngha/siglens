@@ -81,21 +81,12 @@ describe('ShareSheet', () => {
         });
     });
 
-    // C-5 test 4a: Kakao hidden when no JS key (default env)
-    it('hides Kakao button when NEXT_PUBLIC_KAKAO_JS_KEY is not set', () => {
+    // Kakao button is removed (no-op SDK not wired — follow-up task)
+    it('does not render a Kakao button', () => {
         setup();
         expect(
             screen.queryByRole('button', { name: /카카오|Kakao/ })
         ).not.toBeInTheDocument();
-    });
-
-    // C-5 test 4b: Kakao rendered when key is set
-    it('renders Kakao button when NEXT_PUBLIC_KAKAO_JS_KEY is set', () => {
-        vi.stubEnv('NEXT_PUBLIC_KAKAO_JS_KEY', 'test-kakao-key');
-        setup();
-        expect(
-            screen.getByRole('button', { name: /카카오/ })
-        ).toBeInTheDocument();
     });
 
     // C-5 test 5a: on mount, first actionable item (copy button) receives focus

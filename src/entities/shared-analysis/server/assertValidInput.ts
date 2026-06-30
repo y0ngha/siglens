@@ -13,10 +13,13 @@ export function isValidShareInput(raw: unknown): raw is CreateShareInput {
         !(SHAREABLE_KIND_VALUES as readonly string[]).includes(o.kind as string)
     )
         return false;
-    if (!isNonEmptyString(o.symbol)) return false;
+    if (!isNonEmptyString(o.symbol) || (o.symbol as string).length > 32)
+        return false;
     if (typeof o.context !== 'object' || o.context === null) return false;
     const ctx = o.context as Record<string, unknown>;
-    if (!isNonEmptyString(ctx.displayName) || !isNonEmptyString(ctx.assetClass))
+    if (!isNonEmptyString(ctx.displayName)) return false;
+    // assetClass is optional; when present it must be a string
+    if (ctx.assetClass !== undefined && typeof ctx.assetClass !== 'string')
         return false;
     if (typeof o.result !== 'object' || o.result === null) return false;
     if (
