@@ -64,10 +64,13 @@ export const getKeyMetricsTtm = (
 ): Promise<FundamentalValuationMetrics | null> =>
     fundamentalClient.getKeyMetricsTtm(symbol);
 
-// 캐싱·enrich가 CachedFundamentalProvider로 이관됐으므로 이중 처리 없이 위임한다.
+// 페이지 PeersTable은 티커·회사명·시총만 렌더하므로 per/psr enrich가 불필요하다 →
+// raw 경로로 위임해 peer valuation fan-out을 제거한다. enriched getStockPeers는
+// FactLayer(분석 프롬프트) 전용으로 남는다.
 export const getStockPeers = (
     symbol: string
-): Promise<FundamentalPeerInput[]> => fundamentalClient.getStockPeers(symbol);
+): Promise<FundamentalPeerInput[]> =>
+    fundamentalClient.getStockPeersRaw(symbol);
 
 export const getRatiosTtm = (
     symbol: string

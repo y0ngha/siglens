@@ -373,6 +373,72 @@ describe('CachedFundamentalProvider — getStockPeers enrich', () => {
     });
 });
 
+describe('CachedFundamentalProvider — getStockPeersRaw', () => {
+    beforeEach(resetSharedState);
+
+    it('getStockPeersRaw caches raw peers WITHOUT enrich (no getKeyMetricsTtm calls)', async () => {
+        resetSharedState();
+        const inner = makeInner({
+            getStockPeers: vi.fn(async () => [
+                { symbol: 'MSFT', companyName: 'Microsoft', marketCap: 3e12 },
+            ]),
+            getKeyMetricsTtm: vi.fn(async () => ({
+                peRatioTTM: 10,
+                priceToSalesRatioTTM: 3,
+                pbRatioTTM: null,
+                pegRatioTTM: null,
+                enterpriseValueOverEBITDATTM: null,
+                epsTTM: null,
+            })),
+        });
+        const provider = new CachedFundamentalProvider(inner);
+
+        const peers = await provider.getStockPeersRaw('AAPL');
+
+        expect(peers).toEqual([
+            { symbol: 'MSFT', companyName: 'Microsoft', marketCap: 3e12 },
+        ]);
+        // enrich가 일어나지 않아야 한다(per/psr fan-out 제거)
+        expect(inner.getKeyMetricsTtm).not.toHaveBeenCalled();
+        // raw 목록은 별도 키로 캐싱
+        expect(store.has('fundamental:peers-raw:AAPL')).toBe(true);
+
+        // 2번째 호출은 캐시 hit → inner.getStockPeers 추가 호출 없음
+        await provider.getStockPeersRaw('AAPL');
+        expect(inner.getStockPeers).toHaveBeenCalledTimes(1);
+    });
+
+    it('getStockPeersRaw caps result at PEER_LIMIT (no getKeyMetricsTtm calls)', async () => {
+        const rawPeers = Array.from({ length: PEER_LIMIT + 3 }, (_, i) => ({
+            symbol: `P${i}`,
+            companyName: `Company ${i}`,
+            marketCap: 1e9,
+        }));
+        const inner = makeInner({
+            getStockPeers: vi.fn(async () => rawPeers),
+            getKeyMetricsTtm: vi.fn(async () => ({
+                peRatioTTM: 10,
+                priceToSalesRatioTTM: 3,
+                pbRatioTTM: null,
+                pegRatioTTM: null,
+                enterpriseValueOverEBITDATTM: null,
+                epsTTM: null,
+            })),
+        });
+        const provider = new CachedFundamentalProvider(inner);
+
+        const peers = await provider.getStockPeersRaw('AAPL');
+
+        // inner returns more than PEER_LIMIT → result must be capped
+        expect(peers).toHaveLength(PEER_LIMIT);
+        expect(peers.map((p: FundamentalPeerInput) => p.symbol)).toEqual(
+            rawPeers.slice(0, PEER_LIMIT).map(p => p.symbol)
+        );
+        // enrich must NOT happen (no getKeyMetricsTtm fan-out)
+        expect(inner.getKeyMetricsTtm).not.toHaveBeenCalled();
+    });
+});
+
 describe('CachedFundamentalProvider — sector + pass-through', () => {
     beforeEach(resetSharedState);
 

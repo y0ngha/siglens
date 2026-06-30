@@ -27,6 +27,7 @@ const mockProvider = vi.hoisted(() => ({
     getProfile: vi.fn(),
     getKeyMetricsTtm: vi.fn(),
     getStockPeers: vi.fn(),
+    getStockPeersRaw: vi.fn(async () => []),
     getRatiosTtm: vi.fn(),
     getIncomeStatementGrowth: vi.fn(),
     getFinancialScores: vi.fn(),
@@ -139,14 +140,9 @@ describe('fundamentalData delegation wiring', () => {
         assertOnlyMethodCalled('getKeyMetricsTtm', 'MSFT');
     });
 
-    it('getStockPeers delegates to provider.getStockPeers only', async () => {
-        const peers = [
-            { symbol: 'GOOG', companyName: 'Alphabet', marketCap: 2_000_000 },
-        ];
-        mockProvider.getStockPeers.mockResolvedValue(peers);
-        const result = await getStockPeers('AAPL');
-        expect(result).toEqual(peers);
-        assertOnlyMethodCalled('getStockPeers', 'AAPL');
+    it('getStockPeers (page) delegates to provider.getStockPeersRaw (no enrich), not enriched getStockPeers', async () => {
+        await getStockPeers('AAPL');
+        assertOnlyMethodCalled('getStockPeersRaw', 'AAPL');
     });
 
     it('getRatiosTtm delegates to provider.getRatiosTtm only', async () => {

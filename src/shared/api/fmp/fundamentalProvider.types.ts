@@ -1,4 +1,7 @@
-import type { FundamentalDataProvider } from '@y0ngha/siglens-core';
+import type {
+    FundamentalDataProvider,
+    FundamentalPeerInput,
+} from '@y0ngha/siglens-core';
 import type { FmpEarningsReportItem } from './fundamentalClient';
 
 /**
@@ -19,4 +22,15 @@ export interface FundamentalProvider extends FundamentalDataProvider {
         symbol: string,
         limit?: number
     ): Promise<FmpEarningsReportItem[]>;
+}
+
+/**
+ * 소비자(페이지·팩토리)가 받는 표면. `FundamentalProvider`에 페이지 전용 raw peer
+ * 조회를 더한다. raw peer(symbol/companyName/marketCap)는 PeersTable이 렌더하는
+ * 전부이며 per/psr enrich가 필요 없다 — enriched `getStockPeers`는 FactLayer(분석)
+ * 전용으로 유지된다. `CachedFundamentalProvider`가 이 표면을 구현하고,
+ * `FakeFundamentalDataProvider`(E2E)도 만족한다.
+ */
+export interface FundamentalProviderWithRawPeers extends FundamentalProvider {
+    getStockPeersRaw(symbol: string): Promise<FundamentalPeerInput[]>;
 }

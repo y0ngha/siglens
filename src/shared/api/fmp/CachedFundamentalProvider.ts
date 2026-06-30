@@ -4,7 +4,10 @@ import { getOrSetCache } from '@/shared/cache/getOrSetCache';
 import { sym } from './symKey';
 import { FMP_FUNDAMENTAL_REVALIDATE_SECONDS } from './fundamentalClient';
 import type { FmpEarningsReportItem } from './fundamentalClient';
-import type { FundamentalProvider } from './fundamentalProvider.types';
+import type {
+    FundamentalProvider,
+    FundamentalProviderWithRawPeers,
+} from './fundamentalProvider.types';
 import type {
     EarningsReport,
     FundamentalAnalystEstimateInput,
@@ -38,7 +41,7 @@ export const PEER_LIMIT = 10;
  *
  * earnings(no-store + DB 영속)와 historical-sector(빈 stub)는 pass-through한다.
  */
-export class CachedFundamentalProvider implements FundamentalProvider {
+export class CachedFundamentalProvider implements FundamentalProviderWithRawPeers {
     constructor(private readonly inner: FundamentalProvider) {}
 
     getProfile = cache(
@@ -196,6 +199,24 @@ export class CachedFundamentalProvider implements FundamentalProvider {
     );
 
     /**
+     * 페이지 전용 raw peer 목록(symbol/companyName/marketCap). per/psr enrich 없음 →
+     * peer당 valuation fan-out 제거. PeersTable은 이 3개 필드만 렌더한다. enriched
+     * `getStockPeers`는 FactLayer(분석 프롬프트) 전용으로 그대로 둔다. 비정상적으로
+     * 큰 peer 목록을 방지하기 위해 enriched 경로와 동일하게 PEER_LIMIT으로 상한을 둔다.
+     */
+    getStockPeersRaw = cache(
+        (symbol: string): Promise<FundamentalPeerInput[]> =>
+            getOrSetCache(
+                `fundamental:peers-raw:${sym(symbol)}`,
+                TTL,
+                async () => {
+                    const raw = await this.inner.getStockPeers(symbol);
+                    return raw.slice(0, PEER_LIMIT);
+                }
+            )
+    );
+
+    /**
      * 섹터 스냅샷은 날짜 단위 데이터이므로 키를 `<DATE>`로 잡는다(심볼 무관).
      * 분석 경로에서만 호출되며 기존엔 무캐시였다 — 캐싱으로 분석마다의 FMP 호출을 막는다.
      */
@@ -206,7 +227,7 @@ export class CachedFundamentalProvider implements FundamentalProvider {
             )
     );
 
-    // earnings: DB-영속이라 Redis 캐시 대상 아님
+    // earnings: 실적 발표 시점 실시간성이 중요(no-store) → Redis TTL 미적용. fundamentalClient 주석 참고.
     getEarningsReport = (symbol: string): Promise<EarningsReport | null> =>
         this.inner.getEarningsReport(symbol);
 
