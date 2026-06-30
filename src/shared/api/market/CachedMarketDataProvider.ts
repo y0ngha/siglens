@@ -80,7 +80,7 @@ export class CachedMarketDataProvider implements MarketDataProvider {
     private isLongDailyWindow(from: string | undefined): boolean {
         // from===undefined ⇒ full history ⇒ split. Otherwise only split when the
         // requested start is older than the recent window; a short lookback (from
-        // within the last ~10d) would invert the historical window, so it uses the
+        // within the last ~EOD_RECENT_FROM_DAYS days) would invert the historical window, so it uses the
         // single-key path instead.
         if (from === undefined) return true;
         const recentFrom = isoDateDaysAgo(new Date(), EOD_RECENT_FROM_DAYS);
@@ -89,7 +89,7 @@ export class CachedMarketDataProvider implements MarketDataProvider {
 
     getBars = (options: GetBarsOptions): Promise<Bar[]> => {
         // 1Day 라이브 뷰(before 미지정)이면서 lookback이 충분히 긴 경우에만 과거(long)+최근(live) 분리.
-        // 짧은 lookback(from이 최근 ~10d 이내)은 과거 윈도우가 역전되므로 단일 경로 사용.
+        // 짧은 lookback(from이 최근 ~EOD_RECENT_FROM_DAYS일 이내)은 과거 윈도우가 역전되므로 단일 경로 사용.
         // 인트라데이·과거 페이지네이션(before 지정)도 기존 단일 60s 경로 유지.
         if (
             options.timeframe === '1Day' &&
@@ -112,10 +112,10 @@ export class CachedMarketDataProvider implements MarketDataProvider {
      * 직접 호출하지 말고 반드시 getBars를 통해 라우팅할 것.
      *
      * 1Day 일봉을 불변 과거(long-cache)와 최근(live)로 나눠 fetch 후 병합한다.
-     * 과거 윈도우는 `before=오늘−7d`로 한정해 오늘 봉을 포함하지 않으므로(=불변)
+     * 과거 윈도우는 `before=오늘−EOD_HIST_TO_DAYS`로 한정해 오늘 봉을 포함하지 않으므로(=불변)
      * long TTL로 캐싱하고, 매일 키(`from`·`histTo` 날짜)가 self-versioning된다.
-     * 최근 윈도우(`from=오늘−10d`)는 작은 EOD(~10행)+오늘 봉(quote)을 기존 세션 TTL
-     * (장중 60s)로 가져온다. 두 윈도우는 약 3일 겹쳐 주말·공휴일 갭을 막고
+     * 최근 윈도우(`from=오늘−EOD_RECENT_FROM_DAYS`)는 작은 EOD(~EOD_RECENT_FROM_DAYS행)+오늘 봉(quote)을 기존 세션 TTL
+     * (장중 60s)로 가져온다. 두 윈도우는 (EOD_RECENT_FROM_DAYS - EOD_HIST_TO_DAYS)일 겹쳐 주말·공휴일 갭을 막고
      * `mergeBarsByTime`가 중복(time)을 최근 우선으로 제거한다. 결과는 단일
      * `getBars(from)`와 동일 집합이다.
      */

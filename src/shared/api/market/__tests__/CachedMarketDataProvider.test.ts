@@ -216,13 +216,16 @@ describe('CachedMarketDataProvider', () => {
             const result = await provider.getBars(opts);
 
             // 두 윈도우 호출: 하나는 before(과거), 하나는 from override(최근)
+            // system time: 2026-06-30T15:00:00Z → histTo=2026-06-23, recentFrom=2026-06-20
             const calls = getBars.mock.calls.map(c => c[0]);
-            expect(calls.some(c => c.before !== undefined)).toBe(true);
-            expect(
-                calls.some(
-                    c => c.before === undefined && c.from !== '2024-06-30'
-                )
-            ).toBe(true);
+            const histCall = calls.find(c => c.before !== undefined);
+            expect(histCall).toBeDefined();
+            expect(histCall?.before).toBe('2026-06-23');
+            const recentCall = calls.find(
+                c => c.before === undefined && c.from !== '2024-06-30'
+            );
+            expect(recentCall).toBeDefined();
+            expect(recentCall?.from).toBe('2026-06-20');
             // merge + dedup(시간 2 중복 → 1개), 오름차순
             expect(result.map(b => b.time)).toEqual([1, 2, 3]);
         });
@@ -454,6 +457,27 @@ describe('CachedMarketDataProvider', () => {
             const recentTtl = recentSetCall?.[2]?.ex;
             expect(typeof recentTtl).toBe('number');
             expect(recentTtl).toBeGreaterThan(60); // closed-session TTL > 60s
+        });
+
+        it('1Day with before set → single-key path (no EOD split)', async () => {
+            const getBars = vi.fn(async (_o: GetBarsOptions) => [bar(1)]);
+            const provider = new CachedMarketDataProvider({
+                getBars,
+                getQuote: vi.fn(async () => null),
+            });
+            await provider.getBars({
+                symbol: 'AAPL',
+                timeframe: '1Day',
+                from: '2024-01-01',
+                before: '2026-06-20',
+            });
+            expect(getBars).toHaveBeenCalledTimes(1);
+            expect(
+                [...store.keys()].some(k => k.startsWith('bars:eodhist'))
+            ).toBe(false);
+            expect(store.has('bars:raw:AAPL:1Day:2024-01-01:2026-06-20:')).toBe(
+                true
+            );
         });
     });
 
