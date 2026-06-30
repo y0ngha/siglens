@@ -1,5 +1,20 @@
 # Changelog
 
+# [0.32.0](https://github.com/y0ngha/siglens/compare/v0.31.1...v0.32.0) (2026-06-30)
+
+
+### Features
+
+* **fmp:** add getStockPeersRaw (un-enriched, page-only peer list) ([a3c2519](https://github.com/y0ngha/siglens/commit/a3c25195f5513ad4e77115f87d8054c721fb6ad9))
+* **market:** add mergeBarsByTime pure helper for EOD cache split ([c704f2c](https://github.com/y0ngha/siglens/commit/c704f2c73444b66ad03311f2ebda933706b1089b))
+
+
+### Performance Improvements
+
+* **fmp:** extend fundamental cache TTL 1h -> 24h ([ba3128d](https://github.com/y0ngha/siglens/commit/ba3128dd3d65f508e666a9a28bf74e0b721e156b))
+* **fundamental:** page peers use raw (un-enriched) list, drop per/psr fan-out ([c4c310a](https://github.com/y0ngha/siglens/commit/c4c310aa3ad61fef20a1cfc6a311f5eb27056f3e))
+* **market:** split 1Day EOD into immutable-history(long) + recent(live) caches ([6332f95](https://github.com/y0ngha/siglens/commit/6332f950654b0b27e840db1d5f1e2ca308cb2fb4))
+
 ## [0.31.1](https://github.com/y0ngha/siglens/compare/v0.31.0...v0.31.1) (2026-06-28)
 
 
