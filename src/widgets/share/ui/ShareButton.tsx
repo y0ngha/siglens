@@ -1,6 +1,13 @@
 'use client';
 
-import { useCallback, useId, useRef, useState } from 'react';
+import {
+    useCallback,
+    useEffect,
+    useId,
+    useMemo,
+    useRef,
+    useState,
+} from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { useShareable } from '@/features/share';
 import { useUserTier } from '@/features/symbol-model/hooks/useUserTier';
@@ -18,25 +25,31 @@ import { ShareIcon, SpinnerIcon } from './icons';
  *
  * State machine (based on useShareable() status):
  * - null / 'unavailable' → button stays enabled; click shows inline notice.
- * - 'success'           → mutate createShareSnapshotAction → native share or ShareSheet.
+ * - 'success'           → runShare() → createShareSnapshotAction → native share or ShareSheet.
  * - 'pending'           → open SharePreparingModal (already polling).
  * - 'idle' / 'error'   → open ShareTriggerDialog; on confirm → reg.trigger() + modal.
  *
- * Auto-advance: when preparingModal is open and reg.status transitions to 'success',
- * the ShareButton's render cycle will re-evaluate via useShareable() re-render and the
- * pending-to-success path is handled by the useEffect below. This keeps the implementation
- * simple without wiring an extra effect inside the modal itself.
+ * Auto-advance: `hasTriggered` is set to true (in event handlers only) when the
+ * user enters the preparing flow. A useEffect keyed on `hasTriggered` + `reg.status`
+ * + `reg.result` watches for the status-to-'success' transition and automatically calls
+ * runShare() without any setState (satisfying react-hooks/set-state-in-effect). The
+ * preparingPhase ('pending' → 'error') is derived via useMemo from observable state,
+ * so no setState is needed in the effect. The direct success-click path reuses the
+ * same runShare() callback (DRY).
  */
 export function ShareButton() {
     // ── state ────────────────────────────────────────────────────────────
     const [sheetOpen, setSheetOpen] = useState(false);
     const [triggerDialogOpen, setTriggerDialogOpen] = useState(false);
     const [preparingOpen, setPreparingOpen] = useState(false);
-    const [preparingPhase, setPreparingPhase] = useState<'pending' | 'error'>(
-        'pending'
-    );
     const [shareUrl, setShareUrl] = useState<string | null>(null);
     const [unavailableVisible, setUnavailableVisible] = useState(false);
+    /**
+     * True when the user is in the preparing flow (set in event handlers, never in
+     * effects). Combined with `reg.status` to derive preparingPhase and gate the
+     * auto-advance effect. Cleared in onSuccess (async callback) and handlePreparingClose.
+     */
+    const [hasTriggered, setHasTriggered] = useState(false);
 
     // ── refs ─────────────────────────────────────────────────────────────
     const buttonRef = useRef<HTMLButtonElement>(null);
@@ -45,18 +58,37 @@ export function ShareButton() {
     const reg = useShareable();
     const { tier: sharerTier } = useUserTier();
 
+    /**
+     * Stable refs to the latest reg and sharerTier values. The mutation fn reads
+     * these so it always operates on the current registration even when called
+     * from within the auto-advance effect (where the closure would otherwise close
+     * over a stale 'pending' reg). Updated in a no-dep useEffect (runs after every
+     * render, before the browser paints) so they are never read during render itself.
+     */
+    const regRef = useRef(reg);
+    const sharerTierRef = useRef(sharerTier);
+    useEffect(() => {
+        regRef.current = reg;
+        sharerTierRef.current = sharerTier;
+    });
+
     // ── mutation ──────────────────────────────────────────────────────────
     const mutation = useMutation({
         mutationFn: async () => {
-            if (!reg || reg.status !== 'success' || !reg.result) {
+            const currentReg = regRef.current;
+            if (
+                !currentReg ||
+                currentReg.status !== 'success' ||
+                !currentReg.result
+            ) {
                 throw new Error('No shareable result available');
             }
             return createShareSnapshotAction({
-                kind: reg.kind,
-                symbol: reg.context.symbol,
-                context: reg.context,
-                result: reg.result,
-                sharerTier,
+                kind: currentReg.kind,
+                symbol: currentReg.context.symbol,
+                context: currentReg.context,
+                result: currentReg.result,
+                sharerTier: sharerTierRef.current,
             });
         },
         onSuccess: async result => {
@@ -67,7 +99,7 @@ export function ShareButton() {
             const url = `${SITE_URL}/share/${result.id}`;
             setShareUrl(url);
 
-            const symbol = reg?.context.symbol ?? '';
+            const symbol = regRef.current?.context.symbol ?? '';
             const title = `${symbol} AI 분석 결과`;
             const text = `${symbol} AI 분석 결과를 SigLens에서 확인하세요`;
 
@@ -82,12 +114,63 @@ export function ShareButton() {
                     // AbortError → user dismissed OS sheet, silently ignore.
                 }
             } else {
-                // Close preparing modal if open, open sheet.
+                // Close preparing modal if open and open sheet.
+                setHasTriggered(false);
                 setPreparingOpen(false);
                 setSheetOpen(true);
             }
         },
     });
+
+    /**
+     * Stable ref to mutation.mutate so runShare's identity never changes across
+     * renders. Without this, every mutation state update (idle→pending→success)
+     * would produce a new `mutation` object, a new `runShare`, and re-fire the
+     * auto-advance effect while hasTriggered is still true — causing double mutate().
+     */
+    const mutateRef = useRef(mutation.mutate);
+    useEffect(() => {
+        mutateRef.current = mutation.mutate;
+    });
+
+    /**
+     * Shared share-execution function used by both the direct success-click path and
+     * the auto-advance effect. Stable identity prevents the auto-advance effect from
+     * re-firing due to mutation state changes mid-flight.
+     */
+    const runShare = useCallback(() => {
+        mutateRef.current();
+    }, []);
+
+    // ── derived: preparing modal phase ───────────────────────────────────
+    /**
+     * Phase is derived purely from observable state — no setState called during render
+     * and no refs read during render. Error phase only shows after the user has
+     * actually triggered analysis (`hasTriggered`) and the result came back as an error,
+     * preventing a false error phase when opening the modal from an already-errored reg.
+     */
+    const preparingPhase = useMemo((): 'pending' | 'error' => {
+        if (preparingOpen && hasTriggered && reg?.status === 'error') {
+            return 'error';
+        }
+        return 'pending';
+    }, [preparingOpen, hasTriggered, reg?.status]);
+
+    // ── auto-advance effect ───────────────────────────────────────────────
+    /**
+     * When the user has triggered analysis (hasTriggered) and the result becomes
+     * available (reg transitions to 'success'), automatically execute the share.
+     * This effect only calls runShare() — an external-system side-effect via React
+     * Query — and does NOT call setState directly, complying with the
+     * react-hooks/set-state-in-effect rule. State cleanup happens inside the mutation's
+     * async onSuccess callback.
+     */
+    useEffect(() => {
+        if (!hasTriggered) return;
+        if (reg?.status === 'success' && reg.result != null) {
+            runShare();
+        }
+    }, [hasTriggered, reg?.status, reg?.result, runShare]);
 
     // ── derived ──────────────────────────────────────────────────────────
     const effectiveStatus = reg?.status ?? 'unavailable';
@@ -107,24 +190,24 @@ export function ShareButton() {
         }
 
         if (effectiveStatus === 'success') {
-            mutation.mutate();
+            runShare();
             return;
         }
 
         if (effectiveStatus === 'pending') {
-            setPreparingPhase('pending');
+            setHasTriggered(true);
             setPreparingOpen(true);
             return;
         }
 
         // 'idle' | 'error'
         setTriggerDialogOpen(true);
-    }, [isMutating, effectiveStatus, reg, mutation]);
+    }, [isMutating, effectiveStatus, reg, runShare]);
 
     const handleTriggerConfirm = useCallback(() => {
         setTriggerDialogOpen(false);
         reg?.trigger();
-        setPreparingPhase('pending');
+        setHasTriggered(true);
         setPreparingOpen(true);
     }, [reg]);
 
@@ -134,13 +217,13 @@ export function ShareButton() {
     }, []);
 
     const handlePreparingClose = useCallback(() => {
+        setHasTriggered(false);
         setPreparingOpen(false);
         buttonRef.current?.focus();
     }, []);
 
     const handlePreparingRetry = useCallback(() => {
         reg?.trigger();
-        setPreparingPhase('pending');
     }, [reg]);
 
     const handleSheetClose = useCallback(() => {

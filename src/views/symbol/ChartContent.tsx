@@ -299,7 +299,16 @@ export function ChartContent({
             isAnalyzing,
             analysisError: analysisError !== null,
             isBotBlocked,
-            hasResult: (analysisResult ?? analysis) != null,
+            // Gate on a REAL analysis — the seeded `initialAnalysis` is always
+            // non-null (a fallback/no-narrative AnalysisResponse), so checking
+            // `(analysisResult ?? analysis) != null` would report 'success' even
+            // before the user has triggered an analysis. Instead, require an actual
+            // analysisResult or a non-fallback initialAnalysis so an unanalyzed
+            // chart yields 'idle' (→ ShareTriggerDialog) rather than snapshotting
+            // a fallback shell.
+            hasResult:
+                analysisResult != null ||
+                (analysis != null && !isFallbackAnalysis(analysis)),
         }),
         result: analysisResult ?? analysis ?? null,
         context: {

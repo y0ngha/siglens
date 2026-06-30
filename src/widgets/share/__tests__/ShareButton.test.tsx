@@ -259,6 +259,100 @@ describe('ShareButton', () => {
         });
     });
 
+    // ── R2-1: auto-advance (preparing flow) ────────────────────────────────
+    describe('auto-advance: pending → success', () => {
+        it('opens SharePreparingModal when status=pending and click, then calls mutation when status advances to success', async () => {
+            const reg = makeReg('pending');
+            mockUseShareable.mockReturnValue(reg);
+            const { rerender } = renderButton();
+
+            // Click with pending → modal should open.
+            fireEvent.click(
+                screen.getByRole('button', { name: '분석 결과 공유' })
+            );
+            expect(
+                screen.getByRole('dialog', { name: '분석 준비 중' })
+            ).toBeInTheDocument();
+
+            // Simulate analysis completing: status transitions to 'success'.
+            mockUseShareable.mockReturnValue(makeReg('success'));
+            // rerender must receive just the unwrapped element — the wrapper from
+            // renderButton() is applied automatically by RTL.
+            rerender(<ShareButton />);
+
+            // Auto-advance effect fires → mutation called → sheet appears.
+            await waitFor(() => expect(mockAction).toHaveBeenCalledTimes(1));
+            await waitFor(() =>
+                expect(
+                    screen.getByRole('dialog', { name: /AAPL AI 분석 결과/ })
+                ).toBeInTheDocument()
+            );
+        });
+
+        it('switches preparing modal to error phase when status transitions to error', async () => {
+            mockUseShareable.mockReturnValue(makeReg('pending'));
+            const { rerender } = renderButton();
+
+            fireEvent.click(
+                screen.getByRole('button', { name: '분석 결과 공유' })
+            );
+            expect(
+                screen.getByRole('dialog', { name: '분석 준비 중' })
+            ).toBeInTheDocument();
+
+            // Simulate analysis error.
+            mockUseShareable.mockReturnValue(makeReg('error'));
+            rerender(<ShareButton />);
+
+            // Modal switches to error phase — no mutation called, title changes.
+            await waitFor(() => expect(mockAction).not.toHaveBeenCalled());
+            await waitFor(() =>
+                expect(
+                    screen.getByRole('dialog', { name: '분석 실패' })
+                ).toBeInTheDocument()
+            );
+        });
+    });
+
+    describe('auto-advance: idle → confirm → success', () => {
+        it('opens dialog on idle click, confirms → trigger called + preparing modal; then advances to share on success', async () => {
+            const idleReg = makeReg('idle');
+            mockUseShareable.mockReturnValue(idleReg);
+            const { rerender } = renderButton();
+
+            // Click idle → dialog opens.
+            fireEvent.click(
+                screen.getByRole('button', { name: '분석 결과 공유' })
+            );
+            expect(
+                screen.getByRole('dialog', {
+                    name: '공유하기 전에 분석을 준비할게요',
+                })
+            ).toBeInTheDocument();
+
+            // Confirm → trigger called, preparing modal opens.
+            fireEvent.click(
+                screen.getByRole('button', { name: '분석하고 공유하기' })
+            );
+            expect(idleReg.trigger).toHaveBeenCalledTimes(1);
+            expect(
+                screen.getByRole('dialog', { name: '분석 준비 중' })
+            ).toBeInTheDocument();
+
+            // Simulate analysis completing.
+            mockUseShareable.mockReturnValue(makeReg('success'));
+            rerender(<ShareButton />);
+
+            // Auto-advance fires → createShareSnapshotAction called.
+            await waitFor(() => expect(mockAction).toHaveBeenCalledTimes(1));
+            await waitFor(() =>
+                expect(
+                    screen.getByRole('dialog', { name: /AAPL AI 분석 결과/ })
+                ).toBeInTheDocument()
+            );
+        });
+    });
+
     // ── T2: onSuccess branch tree ────────────────────────────────────────────
 
     describe('onSuccess branch tree', () => {

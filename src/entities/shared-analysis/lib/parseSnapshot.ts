@@ -8,7 +8,15 @@ function isShareableKind(v: unknown): v is SharedAnalysisSnapshot['kind'] {
     );
 }
 
-/** jsonb로 저장된 스냅샷을 검증하고 타입을 좁힌다. 형태 불일치면 null. */
+/**
+ * jsonb로 저장된 스냅샷을 검증하고 타입을 좁힌다. 형태 불일치면 null.
+ *
+ * Trust boundary: result-interior validation (e.g. that result.trend matches kind
+ * 'chart') is intentionally delegated to the error boundary in app/share/error.tsx.
+ * Snapshots are server-written from inputs already validated by isValidShareInput,
+ * so per-kind structural checks here would be redundant defence-in-depth with no
+ * practical benefit given the controlled write path.
+ */
 export function parseSnapshot(raw: unknown): SharedAnalysisSnapshot | null {
     if (typeof raw !== 'object' || raw === null) return null;
     const obj = raw as Record<string, unknown>;

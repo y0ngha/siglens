@@ -33,6 +33,9 @@ export async function createShareSnapshotAction(
     const now = new Date();
     const ip = await getClientIp();
     const ipHash = hashUsageIp(ip, now);
+    // Rate-limit runs before content-hash dedupe intentionally: re-sharing identical
+    // content is uncommon and the token cost is acceptable; moving the dedupe check
+    // first would require a DB round-trip before every rate-limit decision.
     if (!(await checkShareRateLimit(ipHash))) {
         return { ok: false, code: 'rate_limited' };
     }
