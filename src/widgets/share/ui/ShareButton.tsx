@@ -38,7 +38,6 @@ import { ShareIcon, SpinnerIcon } from './icons';
  * same runShare() callback (DRY).
  */
 export function ShareButton() {
-    // ── state ────────────────────────────────────────────────────────────
     const [sheetOpen, setSheetOpen] = useState(false);
     const [triggerDialogOpen, setTriggerDialogOpen] = useState(false);
     const [preparingOpen, setPreparingOpen] = useState(false);
@@ -51,10 +50,8 @@ export function ShareButton() {
      */
     const [hasTriggered, setHasTriggered] = useState(false);
 
-    // ── refs ─────────────────────────────────────────────────────────────
     const buttonRef = useRef<HTMLButtonElement>(null);
 
-    // ── hooks ─────────────────────────────────────────────────────────────
     const reg = useShareable();
     const { tier: sharerTier } = useUserTier();
 
@@ -72,7 +69,6 @@ export function ShareButton() {
         sharerTierRef.current = sharerTier;
     });
 
-    // ── mutation ──────────────────────────────────────────────────────────
     const mutation = useMutation({
         mutationFn: async () => {
             const currentReg = regRef.current;
@@ -151,7 +147,6 @@ export function ShareButton() {
         mutateRef.current();
     }, []);
 
-    // ── derived: preparing modal phase ───────────────────────────────────
     /**
      * Phase is derived purely from observable state — no setState called during render
      * and no refs read during render. Error phase only shows after the user has
@@ -165,7 +160,6 @@ export function ShareButton() {
         return 'pending';
     }, [preparingOpen, hasTriggered, reg?.status]);
 
-    // ── auto-advance effect ───────────────────────────────────────────────
     /**
      * When the user has triggered analysis (hasTriggered) and the result becomes
      * available (reg transitions to 'success'), automatically execute the share.
@@ -181,11 +175,9 @@ export function ShareButton() {
         }
     }, [hasTriggered, reg?.status, reg?.result, runShare]);
 
-    // ── derived ──────────────────────────────────────────────────────────
     const effectiveStatus = reg?.status ?? 'unavailable';
     const isMutating = mutation.isPending;
 
-    // ── handlers ─────────────────────────────────────────────────────────
     const handleClick = useCallback(() => {
         // Prevent double-click while mutation is in flight.
         if (isMutating) return;
@@ -240,16 +232,13 @@ export function ShareButton() {
         buttonRef.current?.focus();
     }, []);
 
-    // ── unavailable notice id ─────────────────────────────────────────────
     const noticeId = useId();
 
-    // ── tweet text ────────────────────────────────────────────────────────
     const symbol = reg?.context.symbol ?? '';
     const tweetText = `${symbol} AI 분석 결과를 SigLens에서 확인하세요`;
 
     return (
         <div className="relative">
-            {/* ── Share button ──────────────────────────────────────────── */}
             <button
                 ref={buttonRef}
                 type="button"
@@ -272,7 +261,6 @@ export function ShareButton() {
                 )}
             </button>
 
-            {/* ── Unavailable inline notice ─────────────────────────────── */}
             {unavailableVisible && (
                 <p
                     id={noticeId}
@@ -283,7 +271,6 @@ export function ShareButton() {
                 </p>
             )}
 
-            {/* ── ShareSheet (desktop popover) ─────────────────────────── */}
             {sheetOpen && shareUrl && (
                 <ShareSheet
                     shareUrl={shareUrl}
@@ -294,14 +281,12 @@ export function ShareButton() {
                 />
             )}
 
-            {/* ── ShareTriggerDialog ───────────────────────────────────── */}
             <ShareTriggerDialog
                 open={triggerDialogOpen}
                 onConfirm={handleTriggerConfirm}
                 onCancel={handleTriggerCancel}
             />
 
-            {/* ── SharePreparingModal ──────────────────────────────────── */}
             <SharePreparingModal
                 open={preparingOpen}
                 phase={preparingPhase}

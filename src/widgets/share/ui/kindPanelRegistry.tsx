@@ -25,10 +25,6 @@ import { CongressTrendSummaryView } from '@/widgets/congress/CongressTrendSummar
 import { OptionsAiAnalysisView } from '@/widgets/options/OptionsAiAnalysis';
 import { FearGreedShareView } from '@/widgets/fear-greed/FearGreedShareView';
 
-// ────────────────────────────────────────────────────────────────────────────
-// chart adapter
-// ────────────────────────────────────────────────────────────────────────────
-
 /**
  * AnalysisPanel has several required props that are interaction/live-data
  * concerns (symbol, keyLevels, timeframe). For the read-only share view:
@@ -56,10 +52,6 @@ function ChartSharePanel({ result }: { result: SnapshotResultOf<'chart'> }) {
         />
     );
 }
-
-// ────────────────────────────────────────────────────────────────────────────
-// Registry
-// ────────────────────────────────────────────────────────────────────────────
 
 type PanelComponent<K extends ShareableKind> = (props: {
     result: SnapshotResultOf<K>;

@@ -1,3 +1,5 @@
+import { cn } from '@/shared/lib/cn';
+
 interface IconProps {
     className?: string;
 }
@@ -76,26 +78,6 @@ export function XLogoIcon({ className = 'h-5 w-5' }: IconProps) {
     );
 }
 
-/** Kakao Talk bubble icon (20×20, house style). */
-export function KakaoIcon({ className = 'h-5 w-5' }: IconProps) {
-    return (
-        <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 20 20"
-            fill="currentColor"
-            className={className}
-            aria-hidden
-        >
-            {/* Simplified KakaoTalk speech-bubble shape */}
-            <path
-                fillRule="evenodd"
-                d="M10 2C5.589 2 2 4.902 2 8.5c0 2.326 1.385 4.367 3.47 5.574L4.5 17.5l3.93-2.144A9.98 9.98 0 0 0 10 15.5c4.411 0 8-2.91 8-6.5S14.411 2 10 2Z"
-                clipRule="evenodd"
-            />
-        </svg>
-    );
-}
-
 /**
  * Animated spinner icon (20×20, house style).
  * Uses Tailwind's `animate-spin` class for the rotation animation.
@@ -128,9 +110,4 @@ export function SpinnerIcon({ className = 'h-5 w-5' }: IconProps) {
             />
         </svg>
     );
-}
-
-// Inline cn to avoid a dep cycle in this leaf file (icons.tsx has no imports from our codebase).
-function cn(...classes: (string | undefined | false)[]): string {
-    return classes.filter(Boolean).join(' ');
 }
