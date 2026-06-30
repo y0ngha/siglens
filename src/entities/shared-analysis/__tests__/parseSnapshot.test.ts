@@ -26,4 +26,18 @@ describe('parseSnapshot', () => {
         expect(parseSnapshot(null)).toBeNull();
         expect(parseSnapshot('x')).toBeNull();
     });
+
+    // ── T5: additional rejection branches ────────────────────────────────────
+
+    it('returns null when symbol is a number (not a string)', () => {
+        expect(parseSnapshot({ ...valid, symbol: 123 })).toBeNull();
+    });
+
+    it('returns null when context is null', () => {
+        expect(parseSnapshot({ ...valid, context: null })).toBeNull();
+    });
+
+    it('returns null when result is null', () => {
+        expect(parseSnapshot({ ...valid, result: null })).toBeNull();
+    });
 });

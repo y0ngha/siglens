@@ -60,4 +60,21 @@ describe('canShareNatively', () => {
         });
         expect(canShareNatively()).toBe(false);
     });
+
+    // ── T6: SSR branch — navigator.share present but window.matchMedia undefined ──
+
+    it('returns false when navigator.share is present but window.matchMedia is undefined', () => {
+        /**
+         * This covers the branch in canShareNatively where typeof window !== 'undefined'
+         * but typeof window.matchMedia !== 'function'. The function falls through to
+         * `return false` rather than evaluating matchMedia().matches.
+         * Scenario: some environments expose window without matchMedia (e.g. jsdom
+         * without matchMedia polyfill, or certain SSR shims).
+         */
+        vi.stubGlobal('navigator', { share: vi.fn() });
+        vi.stubGlobal('window', {
+            // matchMedia intentionally absent to exercise the typeof guard
+        });
+        expect(canShareNatively()).toBe(false);
+    });
 });

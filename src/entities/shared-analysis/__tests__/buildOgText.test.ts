@@ -66,4 +66,72 @@ describe('buildOgText', () => {
         );
         expect(out.tweet.length).toBeLessThanOrEqual(180);
     });
+
+    // ── T3: fundamental, financials, congress + ?? fallback paths ─────────────
+
+    it('fundamental: uses overallSentiment + overallConclusionKo', () => {
+        const out = buildOgText(
+            snap('fundamental', {
+                overallSentiment: 'bullish',
+                overallConclusionKo: '실적 개선 기대',
+            })
+        );
+        expect(out.description).toContain('강세');
+        expect(out.description).toContain('실적 개선 기대');
+    });
+
+    it('financials: uses overallSentiment + overallConclusionKo', () => {
+        const out = buildOgText(
+            snap('financials', {
+                overallSentiment: 'bearish',
+                overallConclusionKo: '매출 감소 우려',
+            })
+        );
+        expect(out.description).toContain('약세');
+        expect(out.description).toContain('매출 감소 우려');
+    });
+
+    it('congress: uses overallSentiment + summaryKo', () => {
+        const out = buildOgText(
+            snap('congress', {
+                overallSentiment: 'neutral',
+                summaryKo: '의회 매수 지속',
+            })
+        );
+        expect(out.description).toContain('중립');
+        expect(out.description).toContain('의회 매수 지속');
+    });
+
+    it('fundamental: falls back to "neutral" when overallSentiment is absent', () => {
+        const out = buildOgText(snap('fundamental', {}));
+        // direction maps "neutral" → "중립"
+        expect(out.description).toContain('중립');
+    });
+
+    it('financials: falls back to "neutral" when overallSentiment is absent', () => {
+        const out = buildOgText(snap('financials', {}));
+        expect(out.description).toContain('중립');
+    });
+
+    it('congress: falls back to "neutral" when overallSentiment is absent', () => {
+        const out = buildOgText(snap('congress', {}));
+        expect(out.description).toContain('중립');
+    });
+
+    it('overall: falls back to "neutral" when scenarios is absent', () => {
+        const out = buildOgText(snap('overall', { headlineKo: '혼조세' }));
+        // majorityName([]) === 'neutral' → "중립"
+        expect(out.description).toContain('중립');
+    });
+
+    it('overall: falls back to "neutral" when scenarios entries have no name', () => {
+        const out = buildOgText(
+            snap('overall', {
+                headlineKo: '불확실',
+                // scenarios with no name property → counts map stays empty → best stays 'neutral'
+                scenarios: [{}, {}],
+            })
+        );
+        expect(out.description).toContain('중립');
+    });
 });

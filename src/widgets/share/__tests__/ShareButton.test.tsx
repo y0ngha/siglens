@@ -258,4 +258,76 @@ describe('ShareButton', () => {
             ).not.toBeDisabled();
         });
     });
+
+    // ── T2: onSuccess branch tree ────────────────────────────────────────────
+
+    describe('onSuccess branch tree', () => {
+        it('does not open ShareSheet when action returns ok:false', async () => {
+            mockAction.mockResolvedValue({ ok: false, code: 'rate_limited' });
+            mockUseShareable.mockReturnValue(makeReg('success'));
+            renderButton();
+            fireEvent.click(
+                screen.getByRole('button', { name: '분석 결과 공유' })
+            );
+            await waitFor(() => expect(mockAction).toHaveBeenCalledTimes(1));
+            // ShareSheet dialog must NOT appear.
+            expect(
+                screen.queryByRole('dialog', { name: /AAPL AI 분석 결과/ })
+            ).not.toBeInTheDocument();
+        });
+
+        it('calls navigator.share when canShareNatively is true and share resolves', async () => {
+            const shareFn = vi.fn().mockResolvedValue(undefined);
+            vi.stubGlobal('navigator', { share: shareFn });
+            mockCanShareNatively.mockReturnValue(true);
+            mockUseShareable.mockReturnValue(makeReg('success'));
+            renderButton();
+            fireEvent.click(
+                screen.getByRole('button', { name: '분석 결과 공유' })
+            );
+            await waitFor(() => expect(shareFn).toHaveBeenCalledTimes(1));
+            // ShareSheet must NOT be opened when native share succeeds.
+            expect(
+                screen.queryByRole('dialog', { name: /AAPL AI 분석 결과/ })
+            ).not.toBeInTheDocument();
+            vi.unstubAllGlobals();
+        });
+
+        it('swallows AbortError silently when navigator.share rejects with AbortError', async () => {
+            const abortErr = new DOMException('cancelled', 'AbortError');
+            const shareFn = vi.fn().mockRejectedValue(abortErr);
+            vi.stubGlobal('navigator', { share: shareFn });
+            mockCanShareNatively.mockReturnValue(true);
+            mockUseShareable.mockReturnValue(makeReg('success'));
+            renderButton();
+            fireEvent.click(
+                screen.getByRole('button', { name: '분석 결과 공유' })
+            );
+            await waitFor(() => expect(shareFn).toHaveBeenCalledTimes(1));
+            // No ShareSheet on abort.
+            expect(
+                screen.queryByRole('dialog', { name: /AAPL AI 분석 결과/ })
+            ).not.toBeInTheDocument();
+            vi.unstubAllGlobals();
+        });
+
+        it('falls back to ShareSheet when navigator.share rejects with non-abort error', async () => {
+            const nonAbortErr = new Error('Network error');
+            const shareFn = vi.fn().mockRejectedValue(nonAbortErr);
+            vi.stubGlobal('navigator', { share: shareFn });
+            mockCanShareNatively.mockReturnValue(true);
+            mockUseShareable.mockReturnValue(makeReg('success'));
+            renderButton();
+            fireEvent.click(
+                screen.getByRole('button', { name: '분석 결과 공유' })
+            );
+            // Should open ShareSheet after non-abort rejection.
+            await waitFor(() =>
+                expect(
+                    screen.getByRole('dialog', { name: /AAPL AI 분석 결과/ })
+                ).toBeInTheDocument()
+            );
+            vi.unstubAllGlobals();
+        });
+    });
 });
