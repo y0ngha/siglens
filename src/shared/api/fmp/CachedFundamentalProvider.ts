@@ -227,7 +227,7 @@ export class CachedFundamentalProvider implements FundamentalProviderWithRawPeer
             )
     );
 
-    // earnings: DB-영속이라 Redis 캐시 대상 아님
+    // earnings: 실적 발표 시점 실시간성이 중요(no-store) → Redis TTL 미적용. fundamentalClient 주석 참고.
     getEarningsReport = (symbol: string): Promise<EarningsReport | null> =>
         this.inner.getEarningsReport(symbol);
 

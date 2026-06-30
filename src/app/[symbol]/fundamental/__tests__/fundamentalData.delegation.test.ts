@@ -142,8 +142,7 @@ describe('fundamentalData delegation wiring', () => {
 
     it('getStockPeers (page) delegates to provider.getStockPeersRaw (no enrich), not enriched getStockPeers', async () => {
         await getStockPeers('AAPL');
-        expect(mockProvider.getStockPeersRaw).toHaveBeenCalledWith('AAPL');
-        expect(mockProvider.getStockPeers).not.toHaveBeenCalled();
+        assertOnlyMethodCalled('getStockPeersRaw', 'AAPL');
     });
 
     it('getRatiosTtm delegates to provider.getRatiosTtm only', async () => {
