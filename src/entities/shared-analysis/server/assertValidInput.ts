@@ -6,10 +6,14 @@ function isNonEmptyString(v: unknown): v is string {
 }
 
 /**
- * Maximum byte length (UTF-16 code units via JSON.stringify) allowed for the
- * `result` field in a share snapshot. 64 KB is comfortably above the largest
- * legitimate analysis response while blocking pathological payloads that would
- * bloat the shared_analyses jsonb column.
+ * Maximum UTF-8 byte length allowed for the `result` field in a share snapshot.
+ * 64 KB is comfortably above the largest legitimate analysis response while
+ * blocking pathological payloads that would bloat the shared_analyses jsonb column.
+ *
+ * Measured with `Buffer.byteLength(..., 'utf8')` rather than
+ * `JSON.stringify(...).length` to correctly account for multibyte characters
+ * (e.g. Korean text) that occupy 3 bytes each in UTF-8 but only 1 UTF-16 code
+ * unit — which the `.length` property returns.
  */
 export const MAX_RESULT_BYTES = 65_536;
 
@@ -30,7 +34,8 @@ export function isValidShareInput(raw: unknown): raw is CreateShareInput {
     if (ctx.assetClass !== undefined && typeof ctx.assetClass !== 'string')
         return false;
     if (typeof o.result !== 'object' || o.result === null) return false;
-    if (JSON.stringify(o.result).length > MAX_RESULT_BYTES) return false;
+    if (Buffer.byteLength(JSON.stringify(o.result), 'utf8') > MAX_RESULT_BYTES)
+        return false;
     if (
         !(USER_TIER_VALUES as readonly string[]).includes(
             o.sharerTier as string

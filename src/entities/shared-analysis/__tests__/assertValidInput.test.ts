@@ -124,13 +124,17 @@ describe('isValidShareInput', () => {
     });
 
     it('accepts result that is exactly at MAX_RESULT_BYTES boundary', () => {
-        // Construct a result object whose JSON serialization is exactly MAX_RESULT_BYTES.
-        // JSON.stringify({data:""}) = '{"data":""}' = 11 chars (overhead).
-        // So padding = MAX_RESULT_BYTES - 11 yields a total of exactly MAX_RESULT_BYTES.
-        const overhead = JSON.stringify({ data: '' }).length; // 11
+        // Build a result whose UTF-8 byte length equals MAX_RESULT_BYTES exactly.
+        // JSON.stringify({data:""}) overhead is 11 ASCII bytes, so padding fills the rest.
+        const overhead = Buffer.byteLength(
+            JSON.stringify({ data: '' }),
+            'utf8'
+        ); // 11
         const paddingLen = MAX_RESULT_BYTES - overhead;
         const boundaryResult = { data: 'x'.repeat(paddingLen) };
-        expect(JSON.stringify(boundaryResult).length).toBe(MAX_RESULT_BYTES);
+        expect(Buffer.byteLength(JSON.stringify(boundaryResult), 'utf8')).toBe(
+            MAX_RESULT_BYTES
+        );
         expect(
             isValidShareInput({
                 kind: 'chart',
@@ -140,5 +144,65 @@ describe('isValidShareInput', () => {
                 sharerTier: 'free',
             })
         ).toBe(true);
+    });
+
+    // R3-5: additional rejection cases ─────────────────────────────────────────
+
+    it('rejects context with non-string assetClass', () => {
+        expect(
+            isValidShareInput({
+                kind: 'chart',
+                symbol: 'AAPL',
+                context: { displayName: 'Apple', assetClass: 123 },
+                result: {},
+                sharerTier: 'free',
+            })
+        ).toBe(false);
+    });
+
+    it('rejects context: null', () => {
+        expect(
+            isValidShareInput({
+                kind: 'chart',
+                symbol: 'AAPL',
+                context: null,
+                result: {},
+                sharerTier: 'free',
+            })
+        ).toBe(false);
+    });
+
+    it('rejects context with non-string displayName', () => {
+        expect(
+            isValidShareInput({
+                kind: 'chart',
+                symbol: 'AAPL',
+                context: { displayName: 42 },
+                result: {},
+                sharerTier: 'free',
+            })
+        ).toBe(false);
+    });
+
+    it('rejects oversized result whose UTF-8 byte size exceeds 64KB (multibyte guard)', () => {
+        // Korean characters are 3 bytes each in UTF-8 but 1 in UTF-16 length.
+        // Build a string where UTF-8 bytes > MAX_RESULT_BYTES.
+        // '가' = 3 UTF-8 bytes. We need the JSON envelope's byte size to exceed cap.
+        // JSON.stringify({data:"가".repeat(n)}) → overhead ~11 bytes + 3n bytes.
+        // n = ceil((MAX_RESULT_BYTES) / 3) + 1 ensures overflow.
+        const n = Math.ceil(MAX_RESULT_BYTES / 3) + 1;
+        const oversized = { data: '가'.repeat(n) };
+        expect(
+            Buffer.byteLength(JSON.stringify(oversized), 'utf8')
+        ).toBeGreaterThan(MAX_RESULT_BYTES);
+        expect(
+            isValidShareInput({
+                kind: 'chart',
+                symbol: 'AAPL',
+                context: { displayName: 'Apple' },
+                result: oversized,
+                sharerTier: 'free',
+            })
+        ).toBe(false);
     });
 });

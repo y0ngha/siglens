@@ -30,7 +30,6 @@ export type SnapshotResultOf<K extends ShareableKind> = ShareResultMap[K];
 export interface ShareContext {
     symbol: string;
     displayName: string;
-    koreanName?: string;
     /** 종목 자산 분류(equity/crypto 등). 위젯이 값을 알 때만 전달; 미지 시 생략. */
     assetClass?: string;
     analyzedAt?: string;

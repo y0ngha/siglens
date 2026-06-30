@@ -353,6 +353,87 @@ describe('ShareButton', () => {
         });
     });
 
+    // ── R3-1: native-share no-double-fire (mobile auto-advance) ──────────────
+    describe('native-share: auto-advance no-double-fire', () => {
+        it('pending → click (preparing modal opens) → success: native share called once, modal closed, second rerender does not re-fire', async () => {
+            // Set up a navigator.share that resolves immediately.
+            const shareFn = vi.fn().mockResolvedValue(undefined);
+            vi.stubGlobal('navigator', { share: shareFn });
+            mockCanShareNatively.mockReturnValue(true);
+
+            // Start with status='pending' (already polling).
+            const pendingReg = makeReg('pending');
+            mockUseShareable.mockReturnValue(pendingReg);
+            const { rerender } = renderButton();
+
+            // Click with pending → preparing modal opens.
+            fireEvent.click(
+                screen.getByRole('button', { name: '분석 결과 공유' })
+            );
+            expect(
+                screen.getByRole('dialog', { name: '분석 준비 중' })
+            ).toBeInTheDocument();
+
+            // Advance status to 'success' → auto-advance effect fires → mutation → native share.
+            mockUseShareable.mockReturnValue(makeReg('success'));
+            rerender(<ShareButton />);
+
+            await waitFor(() => expect(shareFn).toHaveBeenCalledTimes(1));
+
+            // Preparing modal must be closed after native share completes.
+            await waitFor(() =>
+                expect(
+                    screen.queryByRole('dialog', { name: '분석 준비 중' })
+                ).not.toBeInTheDocument()
+            );
+
+            // Second rerender with same 'success' result (simulates provider identity change).
+            // hasTriggered must now be false → auto-advance effect must NOT re-fire.
+            rerender(<ShareButton />);
+
+            // Allow any pending micro-tasks to flush.
+            await waitFor(() => expect(shareFn).toHaveBeenCalledTimes(1));
+
+            vi.unstubAllGlobals();
+        });
+
+        it('native-share AbortError: preparing modal is closed and does not re-fire', async () => {
+            const abortErr = new DOMException('cancelled', 'AbortError');
+            const shareFn = vi.fn().mockRejectedValue(abortErr);
+            vi.stubGlobal('navigator', { share: shareFn });
+            mockCanShareNatively.mockReturnValue(true);
+
+            const pendingReg = makeReg('pending');
+            mockUseShareable.mockReturnValue(pendingReg);
+            const { rerender } = renderButton();
+
+            fireEvent.click(
+                screen.getByRole('button', { name: '분석 결과 공유' })
+            );
+            expect(
+                screen.getByRole('dialog', { name: '분석 준비 중' })
+            ).toBeInTheDocument();
+
+            mockUseShareable.mockReturnValue(makeReg('success'));
+            rerender(<ShareButton />);
+
+            await waitFor(() => expect(shareFn).toHaveBeenCalledTimes(1));
+
+            // Modal must close even on AbortError.
+            await waitFor(() =>
+                expect(
+                    screen.queryByRole('dialog', { name: '분석 준비 중' })
+                ).not.toBeInTheDocument()
+            );
+
+            // No double-fire on subsequent rerender.
+            rerender(<ShareButton />);
+            await waitFor(() => expect(shareFn).toHaveBeenCalledTimes(1));
+
+            vi.unstubAllGlobals();
+        });
+    });
+
     // ── T2: onSuccess branch tree ────────────────────────────────────────────
 
     describe('onSuccess branch tree', () => {

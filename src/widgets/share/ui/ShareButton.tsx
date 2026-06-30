@@ -106,12 +106,21 @@ export function ShareButton() {
             if (canShareNatively()) {
                 try {
                     await navigator.share({ title, text, url });
+                    // Reset preparing-flow state so the auto-advance effect cannot
+                    // re-fire on a subsequent provider re-render (double-fire guard).
+                    setHasTriggered(false);
+                    setPreparingOpen(false);
                 } catch (err) {
                     if (!isShareAbort(err)) {
                         // Non-abort errors: fall through to sheet.
                         setSheetOpen(true);
                     }
                     // AbortError → user dismissed OS sheet, silently ignore.
+                    // Reset preparing-flow state in both error sub-cases so the
+                    // SharePreparingModal is dismissed and the auto-advance effect
+                    // is gated out on the next render.
+                    setHasTriggered(false);
+                    setPreparingOpen(false);
                 }
             } else {
                 // Close preparing modal if open and open sheet.

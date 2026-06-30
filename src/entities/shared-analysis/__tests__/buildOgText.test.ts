@@ -134,4 +134,46 @@ describe('buildOgText', () => {
         );
         expect(out.description).toContain('중립');
     });
+
+    // ── R3-5: additional ?? fallback branches ─────────────────────────────────
+
+    it('chart: {} (no trend / no summary) → direction "중립", empty summary', () => {
+        const out = buildOgText(snap('chart', {}));
+        // trend ?? 'neutral' → '중립'; summary ?? '' → empty → description is just '중립'
+        expect(out.description).toBe('중립');
+    });
+
+    it('overall: integratedConclusionKo used when headlineKo is absent', () => {
+        const out = buildOgText(
+            snap('overall', {
+                integratedConclusionKo: '종합 의견',
+                scenarios: [{ name: 'bullish' }, { name: 'bullish' }],
+            })
+        );
+        expect(out.description).toContain('종합 의견');
+        expect(out.description).toContain('강세');
+    });
+
+    it('overall: scenarios entries without name still resolve majority to neutral', () => {
+        const out = buildOgText(
+            snap('overall', {
+                headlineKo: '불확실',
+                scenarios: [{ name: undefined }, {}],
+            })
+        );
+        // No named scenarios → counts map empty → 'neutral' → '중립'
+        expect(out.description).toContain('중립');
+    });
+
+    it('options: { tone: "bullish" } with no signals → uses tone path', () => {
+        const out = buildOgText(snap('options', { tone: 'bullish' }));
+        // signals is empty → signals[0]?.kind is undefined → falls back to r.tone
+        expect(out.description).toContain('강세');
+    });
+
+    it('options: {} (no signals, no tone) → direction "neutral" → "중립"', () => {
+        const out = buildOgText(snap('options', {}));
+        // signals[0]?.kind = undefined, r.tone ?? 'neutral' = 'neutral' → '중립'
+        expect(out.description).toContain('중립');
+    });
 });
