@@ -7,8 +7,10 @@ import type { Bar } from '@y0ngha/siglens-core';
  * 복원하는 데 쓴다 — 결과는 동일한 `[from, now]` 구간에 대한 단일 `getBars` 호출과 같은 집합이어야 한다.
  */
 export function mergeBarsByTime(historical: Bar[], recent: Bar[]): Bar[] {
-    const byTime = new Map<number, Bar>();
-    for (const b of historical) byTime.set(b.time, b);
-    for (const b of recent) byTime.set(b.time, b); // recent wins on overlap
-    return [...byTime.values()].sort((a, b) => a.time - b.time);
+    // Map 생성자: 나중 엔트리가 이전 것을 덮어쓰므로 recent가 overlap에서 우선.
+    const byTime = new Map<number, Bar>([
+        ...historical.map(b => [b.time, b] as const),
+        ...recent.map(b => [b.time, b] as const),
+    ]);
+    return [...byTime.values()].toSorted((a, b) => a.time - b.time);
 }

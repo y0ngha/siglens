@@ -17,10 +17,6 @@ vi.mock('@/entities/ticker', () => ({
 const fundamentalClient = vi.hoisted(() => ({
     getProfile: vi.fn().mockResolvedValue(null),
     getStockPeers: vi.fn().mockResolvedValue([]),
-    // getStockPeersRaw is implemented on CachedFundamentalProvider (the outer
-    // decorator) and delegates to inner.getStockPeers. This stub satisfies the
-    // mock class shape so the factory can instantiate without errors.
-    getStockPeersRaw: vi.fn().mockResolvedValue([]),
     getKeyMetricsTtm: vi.fn().mockResolvedValue(null),
     getRatiosTtm: vi.fn().mockResolvedValue(null),
     getIncomeStatementGrowth: vi.fn().mockResolvedValue(null),
@@ -38,7 +34,6 @@ vi.mock('@/shared/api/fmp/fundamentalClient', async importOriginal => ({
     FmpFundamentalClient: class MockFmpFundamentalClient {
         getProfile = fundamentalClient.getProfile;
         getStockPeers = fundamentalClient.getStockPeers;
-        getStockPeersRaw = fundamentalClient.getStockPeersRaw;
         getKeyMetricsTtm = fundamentalClient.getKeyMetricsTtm;
         getRatiosTtm = fundamentalClient.getRatiosTtm;
         getIncomeStatementGrowth = fundamentalClient.getIncomeStatementGrowth;

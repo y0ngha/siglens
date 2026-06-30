@@ -2,7 +2,6 @@ import type {
     EarningsReport,
     FundamentalAnalystEstimateInput,
     FundamentalCashFlowInput,
-    FundamentalDataProvider,
     FundamentalFinancialScoresInput,
     FundamentalGradesConsensusInput,
     FundamentalGrowthInput,
@@ -30,9 +29,7 @@ import type { FundamentalProviderWithRawPeers } from './fundamentalProvider.type
  * siglens-specific extras (`getGrades`, `getEarningsReports`) that some
  * injection points call directly on the concrete `FmpFundamentalClient`.
  */
-export class FakeFundamentalDataProvider
-    implements FundamentalDataProvider, FundamentalProviderWithRawPeers
-{
+export class FakeFundamentalDataProvider implements FundamentalProviderWithRawPeers {
     async getProfile(symbol: string): Promise<FundamentalProfile | null> {
         return {
             symbol: symbol.toUpperCase(),

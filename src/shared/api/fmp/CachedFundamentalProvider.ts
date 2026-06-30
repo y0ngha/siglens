@@ -201,12 +201,18 @@ export class CachedFundamentalProvider implements FundamentalProviderWithRawPeer
     /**
      * 페이지 전용 raw peer 목록(symbol/companyName/marketCap). per/psr enrich 없음 →
      * peer당 valuation fan-out 제거. PeersTable은 이 3개 필드만 렌더한다. enriched
-     * `getStockPeers`는 FactLayer(분석 프롬프트) 전용으로 그대로 둔다.
+     * `getStockPeers`는 FactLayer(분석 프롬프트) 전용으로 그대로 둔다. 비정상적으로
+     * 큰 peer 목록을 방지하기 위해 enriched 경로와 동일하게 PEER_LIMIT으로 상한을 둔다.
      */
     getStockPeersRaw = cache(
         (symbol: string): Promise<FundamentalPeerInput[]> =>
-            getOrSetCache(`fundamental:peers-raw:${sym(symbol)}`, TTL, () =>
-                this.inner.getStockPeers(symbol)
+            getOrSetCache(
+                `fundamental:peers-raw:${sym(symbol)}`,
+                TTL,
+                async () => {
+                    const raw = await this.inner.getStockPeers(symbol);
+                    return raw.slice(0, PEER_LIMIT);
+                }
             )
     );
 
