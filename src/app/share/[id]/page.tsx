@@ -1,11 +1,10 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import type React from 'react';
 import { getCachedSharedAnalysis } from '@/entities/shared-analysis/lib/getCachedSharedAnalysis';
 import { resolveAsOf } from '@/entities/shared-analysis/lib/resolveAsOf';
 import { kindLabel } from '@/entities/shared-analysis/lib/kindLabel';
 import { buildShareMetadata } from '@/entities/shared-analysis/lib/buildShareSeo';
-import { SHARE_KIND_PANEL_REGISTRY } from '@/widgets/share/ui/kindPanelRegistry';
+import { ShareKindPanel } from '@/widgets/share/ui/ShareKindPanel';
 import { SITE_NAME } from '@/shared/lib/seo';
 import { INVESTMENT_DISCLAIMER } from '@/shared/lib/legal';
 
@@ -53,13 +52,6 @@ export default async function SharePage({ params }: Props) {
     const ticker = snapshot.symbol.toUpperCase();
     const asOf = resolveAsOf(snapshot, createdAt);
     const label = kindLabel(snapshot.kind);
-    // snapshot.kind와 snapshot.result는 같은 K에 대해 일관성을 보장하지만,
-    // SharedAnalysisSnapshot<K>의 제네릭이 호출 지점에서 분기되지 않으므로
-    // 런타임에는 올바른 타입이 전달됨을 보장하며 캐스트한다.
-    const Panel = SHARE_KIND_PANEL_REGISTRY[snapshot.kind] as (props: {
-        result: typeof snapshot.result;
-    }) => React.ReactNode;
-
     return (
         <main className="mx-auto w-full max-w-4xl px-4 py-8 sm:px-6">
             {/* 헤더: 워드마크 + 종목 + 분석 종류 칩 */}
@@ -82,7 +74,7 @@ export default async function SharePage({ params }: Props) {
             </div>
 
             {/* 분석 패널 */}
-            <Panel result={snapshot.result} />
+            <ShareKindPanel kind={snapshot.kind} result={snapshot.result} />
 
             {/* D-3: 투자 면책 고지 */}
             <div
