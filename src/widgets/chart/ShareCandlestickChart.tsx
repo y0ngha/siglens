@@ -14,7 +14,11 @@
 
 import { useEffect, useRef } from 'react';
 import type { IChartApi, ISeriesApi, UTCTimestamp } from 'lightweight-charts';
-import { CandlestickSeries, createChart } from 'lightweight-charts';
+import {
+    CandlestickSeries,
+    CrosshairMode,
+    createChart,
+} from 'lightweight-charts';
 import type { Bar } from '@y0ngha/siglens-core';
 import { CHART_COLORS } from '@/shared/lib/chartColors';
 import { buildCandlestickData } from './utils/candlestickDataUtils';
@@ -54,9 +58,9 @@ export function ShareCandlestickChart({
                 vertLines: { color: CHART_COLORS.grid },
                 horzLines: { color: CHART_COLORS.grid },
             },
-            // Disable crosshair interaction on the share page — read-only view.
+            // Hide crosshair on the share page — read-only static snapshot view.
             crosshair: {
-                mode: 0, // CrosshairMode.Normal=0; imported enum would bloat this file
+                mode: CrosshairMode.Hidden,
             },
             // Hide the time scale buttons (no navigation needed for static bars).
             timeScale: {

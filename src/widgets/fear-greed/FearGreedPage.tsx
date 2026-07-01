@@ -76,6 +76,9 @@ export function FearGreedPage({ symbol, fmpSymbol }: FearGreedPageProps) {
             displayName: symbol,
             // FearGreedSnapshot has no analyzedAt; resolveAsOf falls back to createdAt.
         },
+        // fear-greed is deterministic (computed from bars client-side, no async
+        // analysis job to dispatch). The snapshot is ready once bars load — no
+        // trigger action needed.
         trigger: () => {},
     });
 

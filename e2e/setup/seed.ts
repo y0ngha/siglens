@@ -8,6 +8,7 @@ import {
     cryptoAssets,
     economicCalendar,
     marketNews,
+    sharedAnalyses,
     terms,
     users,
 } from '@/shared/db/schema';
@@ -337,6 +338,65 @@ async function seed(): Promise<void> {
         .onConflictDoNothing();
 
     console.log('e2e seed: economic_calendar ok');
+
+    // shared_analyses — seeds one chart-kind snapshot row with a known id so
+    // the E2E golden-path test can visit /share/<id> without needing the full
+    // createShareSnapshotAction round-trip (heavy: requires analysis pipeline).
+    //
+    // The snapshot_json contains a minimal but structurally valid AnalysisResponse
+    // (chart kind) so parseSnapshot() accepts it and kindPanelRegistry routes to
+    // ChartSharePanel, which renders via the mocked AnalysisPanel.
+    //
+    // Column constraints (shared_analyses table):
+    //   id (PK, text), kind (shareableKindEnum), symbol (varchar NOT NULL),
+    //   contentHash (varchar NOT NULL, unique), snapshotJson (jsonb NOT NULL),
+    //   sharerTier (userTierEnum default 'free'), expiresAt (timestamp NOT NULL).
+    //   userId (nullable, SET NULL on delete), createdAt (defaultNow).
+    //
+    // expires_at is far future (2099) so the row is always found.
+    // onConflictDoNothing on PK keeps the seed re-runnable (idempotent).
+    const E2E_SHARE_ID = 'e2e-share-chart-aapl-fixture01';
+    const chartSnapshotJson = {
+        kind: 'chart',
+        symbol: 'AAPL',
+        context: {
+            symbol: 'AAPL',
+            displayName: 'Apple Inc.',
+            assetClass: 'equity',
+            analyzedAt: '2026-01-01T00:00:00.000Z',
+        },
+        result: {
+            trend: 'neutral',
+            summary: 'E2E 공유 스냅샷 고정 분석 요약입니다.',
+            indicatorResults: [],
+            riskLevel: 'medium',
+            keyLevels: { support: [], resistance: [] },
+            priceTargets: {
+                bullish: { targets: [], condition: '' },
+                bearish: { targets: [], condition: '' },
+            },
+            patternSummaries: [],
+            strategyResults: [],
+            candlePatterns: [],
+            trendlines: [],
+            analyzedAt: '2026-01-01T00:00:00.000Z',
+        },
+    };
+    await db
+        .insert(sharedAnalyses)
+        .values({
+            id: E2E_SHARE_ID,
+            userId: null,
+            kind: 'chart',
+            symbol: 'AAPL',
+            contentHash: 'e2e-fixture-chart-aapl-contenthash-seed-00000001',
+            snapshotJson: chartSnapshotJson,
+            sharerTier: 'free',
+            expiresAt: new Date('2099-01-01T00:00:00Z'),
+        })
+        .onConflictDoNothing();
+
+    console.log('e2e seed: shared_analyses ok');
     console.log('e2e seed: ok');
 }
 

@@ -25,15 +25,16 @@ import type { ShareableKind } from '@/entities/shared-analysis';
 import { SHAREABLE_KIND_VALUES } from '@/shared/db/constants';
 import { ShareKindPanel } from '@/widgets/share/ui/ShareKindPanel';
 
-// ─── mock heavy widget deps so the test stays unit-level ─────────────────────
-//
+// Mock heavy widget deps so the test stays unit-level.
 // Paths MUST match the imports in kindPanelRegistry.tsx (deep paths, not barrels).
 
 vi.mock('@/widgets/analysis/AnalysisPanel', () => ({
     AnalysisPanel: () => null,
 }));
+
+const mockOverallView = vi.fn((_props: Record<string, unknown>) => null);
 vi.mock('@/widgets/overall/OverallView', () => ({
-    OverallView: () => null,
+    OverallView: (props: Record<string, unknown>) => mockOverallView(props),
 }));
 vi.mock('@/widgets/news/NewsAiSummary', () => ({
     NewsAiSummaryView: () => null,
@@ -59,8 +60,6 @@ vi.mock('@/widgets/chart/ShareCandlestickChart', () => ({
     ShareCandlestickChart: () => null,
 }));
 
-// ─── minimal stub results per kind ───────────────────────────────────────────
-
 const stubResults: Record<ShareableKind, unknown> = {
     chart: { trend: 'bullish', summary: '차트 분석' },
     overall: { score: 70 },
@@ -71,8 +70,6 @@ const stubResults: Record<ShareableKind, unknown> = {
     options: { chain: [] },
     'fear-greed': { value: 50 },
 };
-
-// ─── tests ───────────────────────────────────────────────────────────────────
 
 describe('ShareKindPanel (RSC boundary dispatcher)', () => {
     /**
@@ -115,5 +112,58 @@ describe('ShareKindPanel (RSC boundary dispatcher)', () => {
                 />
             )
         ).not.toThrow();
+    });
+
+    /**
+     * Regression guard for Blocker A — assetClass must flow from ShareKindPanel
+     * down to OverallView so crypto shares suppress equity-only sections.
+     *
+     * Without the fix, `overall` registry entry ignored assetClass and
+     * OverallView always received its default ('equity'), causing
+     * Options/Fundamental/Financials sections to appear on crypto overall shares.
+     */
+    describe('overall panel: assetClass forwarded to OverallView', () => {
+        beforeEach(() => {
+            mockOverallView.mockClear();
+        });
+
+        it('passes assetClass="crypto" to OverallView when specified', () => {
+            render(
+                <ShareKindPanel
+                    kind="overall"
+                    result={stubResults.overall as never}
+                    assetClass="crypto"
+                />
+            );
+            expect(mockOverallView).toHaveBeenCalledTimes(1);
+            expect(mockOverallView).toHaveBeenCalledWith(
+                expect.objectContaining({ assetClass: 'crypto' })
+            );
+        });
+
+        it('passes assetClass="equity" to OverallView when specified', () => {
+            render(
+                <ShareKindPanel
+                    kind="overall"
+                    result={stubResults.overall as never}
+                    assetClass="equity"
+                />
+            );
+            expect(mockOverallView).toHaveBeenCalledWith(
+                expect.objectContaining({ assetClass: 'equity' })
+            );
+        });
+
+        it('passes assetClass=undefined to OverallView when omitted', () => {
+            render(
+                <ShareKindPanel
+                    kind="overall"
+                    result={stubResults.overall as never}
+                />
+            );
+            expect(mockOverallView).toHaveBeenCalledWith(
+                expect.objectContaining({ assetClass: undefined })
+            );
+        });
     });
 });

@@ -41,7 +41,7 @@ export default async function SharePage({ params }: Props) {
                 </p>
                 <Link
                     href="/"
-                    className="bg-primary-600 hover:bg-primary-700 mt-8 rounded-lg px-6 py-2.5 text-sm font-medium text-white transition-colors"
+                    className="bg-primary-600 hover:bg-primary-700 focus-visible:ring-primary-500 mt-8 rounded-lg px-6 py-2.5 text-sm font-medium text-white transition-colors focus-visible:ring-2 focus-visible:outline-none"
                 >
                     {SITE_NAME} 홈으로 돌아가기
                 </Link>
@@ -76,6 +76,11 @@ export default async function SharePage({ params }: Props) {
                 kind={snapshot.kind}
                 result={snapshot.result}
                 chartBars={snapshot.chartBars}
+                assetClass={
+                    snapshot.context.assetClass === 'crypto'
+                        ? 'crypto'
+                        : 'equity'
+                }
             />
 
             <div

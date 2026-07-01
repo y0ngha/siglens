@@ -25,6 +25,7 @@ import type {
     ShareableKind,
     SnapshotResultOf,
 } from '@/entities/shared-analysis';
+import type { AssetClass } from '@/shared/config/marketProfile';
 import type { Bar } from '@y0ngha/siglens-core';
 import { SHARE_KIND_PANEL_REGISTRY } from './kindPanelRegistry';
 
@@ -37,6 +38,12 @@ interface ShareKindPanelProps<K extends ShareableKind> {
      * to the chart panel to render a static read-only candlestick chart.
      */
     chartBars?: Bar[];
+    /**
+     * Asset class from snapshot context — controls which sections render in
+     * the `overall` panel (e.g. crypto hides Options/Fundamental/Financials).
+     * Forwarded through the registry to `<OverallView assetClass={...} />`.
+     */
+    assetClass?: AssetClass;
 }
 
 /**
@@ -47,6 +54,7 @@ export function ShareKindPanel<K extends ShareableKind>({
     kind,
     result,
     chartBars,
+    assetClass,
 }: ShareKindPanelProps<K>) {
     // Safe: `kind` and `result` are co-typed via the same generic `K`, so the
     // registry entry for this key always accepts exactly the result type that
@@ -56,6 +64,9 @@ export function ShareKindPanel<K extends ShareableKind>({
     const Panel = SHARE_KIND_PANEL_REGISTRY[kind] as (props: {
         result: SnapshotResultOf<K>;
         chartBars?: Bar[];
+        assetClass?: AssetClass;
     }) => ReactNode;
-    return <Panel result={result} chartBars={chartBars} />;
+    return (
+        <Panel result={result} chartBars={chartBars} assetClass={assetClass} />
+    );
 }

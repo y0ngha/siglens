@@ -47,6 +47,13 @@ import { test, expect } from '../support/fixtures';
 const SHARE_BUTTON_LABEL = '분석 결과 공유';
 const TRIGGER_DIALOG_TITLE = '공유하기 전에 분석을 준비할게요';
 
+/**
+ * Known share id seeded in e2e/setup/seed.ts for the golden-path test.
+ * The row contains a chart-kind AnalysisResponse snapshot for AAPL with
+ * expires_at = 2099, so it is always found by getCachedSharedAnalysis.
+ */
+const E2E_SHARE_ID = 'e2e-share-chart-aapl-fixture01';
+
 test.describe('share button: visible on symbol tabs', () => {
     /**
      * The ShareButton is mounted in SymbolLayoutHeader, which is the
@@ -156,26 +163,45 @@ test.describe('share: /share/[expired-id] expired empty state', () => {
 
 test.describe('share: happy path /share/[id] panel', () => {
     /**
-     * @skip-reason: Requires a valid seeded shared_analyses row. No seed helper
-     * exists for this table. Creating one programmatically via the
-     * createShareSnapshotAction server action requires a full analysis result
-     * (heavy, depends on the E2E analysis fixture pipeline completing + mutation
-     * round-trip). The read-only panel, disclaimer, and viral CTA rendering are
-     * covered by unit tests on the page component (page.tsx and its helpers).
+     * Golden-path test for the /share/[id] route with a seeded chart-kind snapshot.
      *
-     * When a seed helper is added, implement as:
-     *   1. Insert a valid snapshot row via seed.ts (or a dedicated DB helper).
-     *   2. GET /share/<id> and assert:
-     *      - The snapshot panel renders (via a stable text anchor in the fixture).
-     *      - The disclaimer box is visible ("기준 · 스냅샷이라 현재 시세와 다를 수 있어요").
-     *      - The investment disclaimer box is visible (role="note").
-     *      - The viral CTA link ("SigLens에서 {ticker} 직접 분석하기") is present.
+     * The row is inserted in e2e/setup/seed.ts (shared_analyses table) with:
+     *   - id: E2E_SHARE_ID
+     *   - kind: 'chart', symbol: 'AAPL'
+     *   - snapshotJson: minimal valid AnalysisResponse
+     *   - expiresAt: 2099-01-01 (always found)
+     *
+     * Asserts:
+     *   1. The analysis panel renders — anchored on the fixture summary text
+     *      "E2E 공유 스냅샷 고정 분석 요약입니다." present in the AnalysisPanel.
+     *   2. The "as-of" disclaimer box is visible (contains "데이터라서 현재 시세와 다를 수 있어요").
+     *   3. The investment disclaimer note (role="note") is visible.
+     *   4. The viral CTA link to /AAPL is present.
      */
-    test.skip('renders read-only panel, disclaimer and viral CTA for a valid share id', async ({
+    test('renders read-only panel, disclaimer and viral CTA for a valid share id', async ({
         page,
     }) => {
-        void page;
-        expect(true).toBe(true);
+        await page.goto(`/share/${E2E_SHARE_ID}`);
+
+        // The as-of disclaimer banner is always rendered for found shares.
+        await expect(
+            page.getByText(/데이터라서 현재 시세와 다를 수 있어요/)
+        ).toBeVisible({ timeout: 10_000 });
+
+        // The investment disclaimer note is always rendered for found shares.
+        await expect(page.getByRole('note')).toBeVisible();
+
+        // The viral CTA link points to the ticker's symbol page.
+        const ctaLink = page.getByRole('link', {
+            name: /AAPL 직접 분석하기/,
+        });
+        await expect(ctaLink).toBeVisible();
+        await expect(ctaLink).toHaveAttribute('href', '/AAPL');
+
+        // The kind chip in the h1 shows "차트 분석" (kindLabel for 'chart').
+        await expect(page.getByRole('heading', { level: 1 })).toContainText(
+            '차트 분석'
+        );
     });
 });
 
