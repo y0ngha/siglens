@@ -1,5 +1,23 @@
 # Changelog
 
+# [0.33.0](https://github.com/y0ngha/siglens/compare/v0.32.0...v0.33.0) (2026-07-01)
+
+
+### Bug Fixes
+
+* **market:** cooldown stale-history refetch + cache-coverage check (PR review) ([ea0f2b5](https://github.com/y0ngha/siglens/commit/ea0f2b551ea7c586425ba5f9122abca653e117c9))
+
+
+### Features
+
+* **cache:** add optional isFresh predicate to getOrSetCache ([eef51ce](https://github.com/y0ngha/siglens/commit/eef51ce3f63310d4bafd45b9c470e89aacbf75fc))
+
+
+### Performance Improvements
+
+* **market:** anchored 2-tier EOD cache (date-free keys, overlap staleness) ([e1f3c98](https://github.com/y0ngha/siglens/commit/e1f3c989244ef22a5bfb43b4311a0ab0011b5267))
+* **market:** widen EOD overlap to 5d + cover from=undefined and slice boundary ([4d7da1d](https://github.com/y0ngha/siglens/commit/4d7da1d87b23ce93b6a001bbd2a4bf2cacc0a80a))
+
 # [0.32.0](https://github.com/y0ngha/siglens/compare/v0.31.1...v0.32.0) (2026-06-30)
 
 
