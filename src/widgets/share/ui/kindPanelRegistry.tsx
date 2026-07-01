@@ -16,6 +16,7 @@ import type {
     ShareableKind,
     SnapshotResultOf,
 } from '@/entities/shared-analysis';
+import { clusterKeyLevels, validateKeyLevels } from '@y0ngha/siglens-core';
 import { AnalysisPanel } from '@/widgets/analysis/AnalysisPanel';
 import { OverallView } from '@/widgets/overall/OverallView';
 import { NewsAiSummaryView } from '@/widgets/news/NewsAiSummary';
@@ -32,9 +33,11 @@ import { FearGreedShareView } from '@/widgets/fear-greed/FearGreedShareView';
  * - `symbol`: extracted from `result.analyzedAt` context but not stored in
  *   AnalysisResponse itself. We pass an empty string — it's only used in the
  *   copy-report utility, which is not reachable in the share view.
- * - `keyLevels`: the snapshot stores `AnalysisResponse.keyLevels` (raw),
- *   but AnalysisPanel takes `ClusteredKeyLevels`. We pass an empty clustered
- *   structure; the panel gracefully degrades when arrays are empty.
+ * - `keyLevels`: derived from `result.keyLevels` (raw `KeyLevels`) via
+ *   `validateKeyLevels` + `clusterKeyLevels`. We pass `currentPrice=0` because
+ *   no live bar data is available; this sets epsilon=0 (no merging) but all
+ *   valid levels still flow through. Falls back to the empty clustered structure
+ *   when `result.keyLevels` is absent, so the panel degrades gracefully.
  * - `timeframe`: used only for stale-banner logic. We pass `'1Day'` as a
  *   safe, non-triggering default (stale threshold for 1Day is longest).
  * - All interaction props (`onReanalyze`, `onActionPricesVisibilityChange`)
@@ -42,11 +45,13 @@ import { FearGreedShareView } from '@/widgets/fear-greed/FearGreedShareView';
  *   are undefined.
  */
 function ChartSharePanel({ result }: { result: SnapshotResultOf<'chart'> }) {
+    const rawKeyLevels = result.keyLevels ?? { support: [], resistance: [] };
+    const clustered = clusterKeyLevels(validateKeyLevels(rawKeyLevels), 0);
     return (
         <AnalysisPanel
             symbol=""
             analysis={result}
-            keyLevels={{ support: [], resistance: [] }}
+            keyLevels={clustered}
             timeframe="1Day"
             isFreeUser={false}
         />

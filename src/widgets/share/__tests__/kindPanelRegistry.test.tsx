@@ -6,7 +6,8 @@
  *  2. Each entry is a function.
  *  3. The registry key set exactly equals SHAREABLE_KIND_VALUES (no extras).
  *  4. Each kind actually RENDERS without throwing (catches undefined component bugs).
- *  5. The chart adapter passes the correct fixed props to AnalysisPanel.
+ *  5. The chart adapter derives ClusteredKeyLevels from result.keyLevels via
+ *     validateKeyLevels + clusterKeyLevels and passes them to AnalysisPanel.
  *
  * Mocks use deep paths that match the imports in kindPanelRegistry.tsx — so the
  * mock resolves at the same module boundary that the registry uses, preventing
@@ -14,6 +15,7 @@
  */
 
 import { render } from '@testing-library/react';
+import type { ClusteredKeyLevels } from '@y0ngha/siglens-core';
 import { SHAREABLE_KIND_VALUES } from '@/shared/db/constants';
 import { SHARE_KIND_PANEL_REGISTRY } from '@/widgets/share/ui/kindPanelRegistry';
 
@@ -24,6 +26,28 @@ import { SHARE_KIND_PANEL_REGISTRY } from '@/widgets/share/ui/kindPanelRegistry'
 // vice-versa), the mock won't intercept and the component will be undefined.
 
 const mockAnalysisPanel = vi.fn((_props: Record<string, unknown>) => null);
+
+// Stub clusterKeyLevels / validateKeyLevels so the chart adapter test is
+// deterministic without depending on core implementation details.
+const STUB_CLUSTERED: ClusteredKeyLevels = {
+    support: [{ price: 100, reason: 'stub', count: 1, sources: [] }],
+    resistance: [{ price: 200, reason: 'stub', count: 1, sources: [] }],
+};
+const mockClusterKeyLevels = vi.fn(
+    (_kl: unknown, _price: number) => STUB_CLUSTERED
+);
+const mockValidateKeyLevels = vi.fn((kl: unknown) => kl);
+
+vi.mock('@y0ngha/siglens-core', async importOriginal => {
+    const original =
+        await importOriginal<typeof import('@y0ngha/siglens-core')>();
+    return {
+        ...original,
+        clusterKeyLevels: (kl: unknown, price: number) =>
+            mockClusterKeyLevels(kl, price),
+        validateKeyLevels: (kl: unknown) => mockValidateKeyLevels(kl),
+    };
+});
 
 vi.mock('@/widgets/analysis/AnalysisPanel', () => ({
     AnalysisPanel: (props: Record<string, unknown>) => mockAnalysisPanel(props),
@@ -108,34 +132,76 @@ describe('SHARE_KIND_PANEL_REGISTRY', () => {
         }
     });
 
-    // T4: chart adapter passes correct props to AnalysisPanel
+    // T4: chart adapter derives ClusteredKeyLevels from result.keyLevels and passes to AnalysisPanel
     describe('chart adapter (ChartSharePanel)', () => {
         beforeEach(() => {
             mockAnalysisPanel.mockClear();
+            mockClusterKeyLevels.mockClear();
+            mockValidateKeyLevels.mockClear();
         });
 
-        it('renders AnalysisPanel with analysis=result, keyLevels={support:[],resistance:[]}, timeframe="1Day", symbol=""', () => {
+        it('derives ClusteredKeyLevels from result.keyLevels via validateKeyLevels + clusterKeyLevels and passes to AnalysisPanel', () => {
             /**
-             * ChartSharePanel passes these fixed adapter props to AnalysisPanel
-             * so the read-only share view degrades gracefully without live data.
+             * ChartSharePanel derives keyLevels from the snapshot result:
+             * - validateKeyLevels filters invalid entries from result.keyLevels
+             * - clusterKeyLevels clusters the validated levels (currentPrice=0 since
+             *   no live bar data is available; epsilon=0 means no merging but all
+             *   valid levels still flow through)
+             * - The ClusteredKeyLevels output is passed to AnalysisPanel
              * - symbol: '' (only used in copy-report util, unreachable in share view)
-             * - keyLevels: {support:[], resistance:[]} (clustered shape, graceful empty)
              * - timeframe: '1Day' (non-triggering stale-banner default)
              * - isFreeUser: false
              * See kindPanelRegistry.tsx ChartSharePanel JSDoc for full rationale.
              */
+            const rawKeyLevels = {
+                support: [{ price: 100, reason: '지지선' }],
+                resistance: [{ price: 200, reason: '저항선' }],
+            };
+            const fakeResult = {
+                trend: 'bullish',
+                summary: '상승 추세',
+                keyLevels: rawKeyLevels,
+            };
+            render(
+                SHARE_KIND_PANEL_REGISTRY.chart({ result: fakeResult as never })
+            );
+
+            // validateKeyLevels called with the raw keyLevels from result
+            expect(mockValidateKeyLevels).toHaveBeenCalledWith(rawKeyLevels);
+            // clusterKeyLevels called with currentPrice=0 (no live bar data)
+            expect(mockClusterKeyLevels).toHaveBeenCalledWith(
+                expect.anything(),
+                0
+            );
+            // AnalysisPanel receives the clustered output
+            expect(mockAnalysisPanel).toHaveBeenCalledTimes(1);
+            expect(mockAnalysisPanel).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    analysis: fakeResult,
+                    keyLevels: STUB_CLUSTERED,
+                    timeframe: '1Day',
+                    symbol: '',
+                })
+            );
+        });
+
+        it('falls back to empty clustered structure when result.keyLevels is absent', () => {
             const fakeResult = { trend: 'bullish', summary: '상승 추세' };
             render(
                 SHARE_KIND_PANEL_REGISTRY.chart({ result: fakeResult as never })
             );
 
+            // validateKeyLevels called with the empty fallback
+            expect(mockValidateKeyLevels).toHaveBeenCalledWith({
+                support: [],
+                resistance: [],
+            });
             expect(mockAnalysisPanel).toHaveBeenCalledTimes(1);
+            // The clustered output (mocked as STUB_CLUSTERED) is still passed through
             expect(mockAnalysisPanel).toHaveBeenCalledWith(
                 expect.objectContaining({
                     analysis: fakeResult,
-                    keyLevels: { support: [], resistance: [] },
-                    timeframe: '1Day',
-                    symbol: '',
+                    keyLevels: STUB_CLUSTERED,
                 })
             );
         });

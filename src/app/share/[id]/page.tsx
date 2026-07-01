@@ -5,7 +5,7 @@ import { resolveAsOf } from '@/entities/shared-analysis/lib/resolveAsOf';
 import { kindLabel } from '@/widgets/share/lib/kindLabel';
 import { buildShareMetadata } from '@/entities/shared-analysis/lib/buildShareSeo';
 import { ShareKindPanel } from '@/widgets/share/ui/ShareKindPanel';
-import { formatAnalyzedAt } from '@/shared/lib/formatAnalyzedAt';
+import { formatKoreanDateTime } from '@/shared/lib/formatKoreanDateTime';
 import { SITE_NAME } from '@/shared/lib/seo';
 import { INVESTMENT_DISCLAIMER } from '@/shared/lib/legal';
 
@@ -51,7 +51,7 @@ export default async function SharePage({ params }: Props) {
 
     const { snapshot, createdAt } = lookup;
     const ticker = snapshot.symbol.toUpperCase();
-    const asOf = formatAnalyzedAt(resolveAsOf(snapshot, createdAt));
+    const asOf = formatKoreanDateTime(resolveAsOf(snapshot, createdAt));
     const label = kindLabel(snapshot.kind);
     return (
         <main className="mx-auto w-full max-w-4xl px-4 py-8 sm:px-6">
@@ -69,7 +69,7 @@ export default async function SharePage({ params }: Props) {
             </h1>
 
             <div className="border-secondary-700 bg-secondary-800/50 text-secondary-400 mb-6 rounded-lg border px-3 py-2 text-xs">
-                {asOf} 기준 · 스냅샷이라 현재 시세와 다를 수 있어요
+                {asOf} 데이터라서 현재 시세와 다를 수 있어요
             </div>
 
             <ShareKindPanel kind={snapshot.kind} result={snapshot.result} />
