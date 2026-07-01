@@ -249,6 +249,11 @@ const eslintConfig = defineConfig([
             // 허용된 shared → entities 의존성을 가진다. barrel에서 제외된 api-key/api deep import
             // 가 필요하므로 no-restricted-imports 예외로 추가한다.
             'src/shared/lib/byokGate.ts',
+            // useShareFlow는 widgets/share/ui/ShareButton에서 추출된 비즈니스 로직 훅이다.
+            // symbol-model barrel이 useUserTier를 의도적으로 제외(클라 번들 오염 방지)하므로
+            // deep path(@/features/symbol-model/hooks/useUserTier)에서 직접 import해야 한다.
+            // widgets/** 계층이 동일 예외를 받는 것과 동일한 근거.
+            'src/features/share/hooks/useShareFlow.ts',
             // instrumentation*.ts는 Next 서버 전용 런타임 훅(SIGTERM graceful-drain)이다.
             // drain 유틸(drainBackgroundTasks/stopAcceptingBackgroundTasks)은 server-only라
             // client 번들에 포함되는 ticker barrel에 노출할 수 없어 lib 경로에서 deep import해야 한다.

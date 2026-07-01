@@ -7,6 +7,11 @@
  * createShareSnapshotAction is mocked to return { ok: true, id: 'abc' }.
  * @/shared/lib/share — canShareNatively stubbed to false (desktop path) so ShareSheet appears.
  * @/shared/lib/seo  — SITE_URL stubbed to 'https://siglens.io'.
+ *
+ * Note: useShareable is mocked at the model-module level
+ * (@/features/share/model/ShareableAnalysisContext) so that useShareFlow — which
+ * imports it via the relative path — picks up the mock. The barrel-level
+ * @/features/share mock is kept for consumers that import useShareable from the barrel.
  */
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -24,6 +29,21 @@ const { mockAction, mockUseShareable, mockCanShareNatively } = vi.hoisted(
 vi.mock('@/entities/shared-analysis/actions/createShareSnapshotAction', () => ({
     createShareSnapshotAction: mockAction,
 }));
+
+// Mock at the model level so useShareFlow's relative import is intercepted.
+vi.mock(
+    '@/features/share/model/ShareableAnalysisContext',
+    async importOriginal => {
+        const original =
+            await importOriginal<
+                typeof import('@/features/share/model/ShareableAnalysisContext')
+            >();
+        return {
+            ...original,
+            useShareable: mockUseShareable,
+        };
+    }
+);
 
 vi.mock('@/features/share', async importOriginal => {
     const original = await importOriginal<typeof import('@/features/share')>();
