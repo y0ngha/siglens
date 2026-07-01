@@ -206,6 +206,9 @@ describe('CachedMarketDataProvider', () => {
         };
 
         it('uses date-free anchored keys (bars:eodhist:<SYM>, bars:eodrecent:<SYM>)', async () => {
+            // oldest bar(bar(1)) time=1 이 options.from('2024-06-30') 보다 훨씬 이전이므로
+            // covers 체크를 통과하도록 utcMidnight('2024-06-30') 이하 값을 써야 한다.
+            // bar(1)은 unix time 1 = 1970-01-01이므로 covers OK.
             const getBars = vi.fn(async (o: GetBarsOptions) =>
                 o.before !== undefined ? [bar(1)] : [bar(2)]
             );
@@ -223,13 +226,20 @@ describe('CachedMarketDataProvider', () => {
         });
 
         it('history is NOT refetched across a day boundary when still fresh (anchored key, overlap holds)', async () => {
-            // history fetch(before=histTo)는 recentFrom 이후를 커버하는 봉을 반환하도록 구성
+            // history fetch(before=histTo)는 recentFrom 이후를 커버하는 봉을 반환하도록 구성.
+            // oldest bar(covering)를 from('2024-06-30') 이하로 설정해 covers 체크 통과.
+            const oldestBar = Math.floor(
+                Date.parse('2024-06-30T00:00:00Z') / 1000
+            ); // == options.from → covers
             const histBarTime = Math.floor(
                 Date.parse('2026-06-25T00:00:00Z') / 1000
             ); // recentFrom(2026-06-20) 이후 → fresh
             const getBars = vi.fn(async (o: GetBarsOptions) =>
                 o.before !== undefined
-                    ? [{ ...bar(histBarTime), time: histBarTime }]
+                    ? [
+                          { ...bar(oldestBar), time: oldestBar },
+                          { ...bar(histBarTime), time: histBarTime },
+                      ]
                     : [bar(9)]
             );
             const provider = new CachedMarketDataProvider({
@@ -252,14 +262,21 @@ describe('CachedMarketDataProvider', () => {
             expect(histCallsTotal).toBe(1); // 자정 넘겨도 재fetch 없음(fresh)
         });
 
-        it('history IS refetched when cached newest falls behind recentFrom (stale, overlap lost)', async () => {
-            // history fetch가 recentFrom 이전(오래된) 봉만 반환 → isFresh=false → 매번 재fetch
+        it('history IS refetched when stale AND cooldown has expired (stale + cooldown expired → refetch)', async () => {
+            // history fetch가 recentFrom 이전(오래된) 봉만 반환 → isFresh overlap=false
+            // 첫 fetch 후 시간이 > EOD_HIST_STALE_RECHECK_SECONDS(1h) 경과 → 쿨다운 만료 → 재fetch
+            const oldestBar = Math.floor(
+                Date.parse('2024-06-30T00:00:00Z') / 1000
+            ); // covers from='2024-06-30'
             const staleTime = Math.floor(
                 Date.parse('2026-06-01T00:00:00Z') / 1000
-            ); // recentFrom(2026-06-20) 이전
+            ); // recentFrom(2026-06-20) 이전 → overlap 소실
             const getBars = vi.fn(async (o: GetBarsOptions) =>
                 o.before !== undefined
-                    ? [{ ...bar(staleTime), time: staleTime }]
+                    ? [
+                          { ...bar(oldestBar), time: oldestBar },
+                          { ...bar(staleTime), time: staleTime },
+                      ]
                     : [bar(9)]
             );
             const provider = new CachedMarketDataProvider({
@@ -267,15 +284,123 @@ describe('CachedMarketDataProvider', () => {
                 getQuote: vi.fn(async () => null),
             });
 
-            await provider.getBars(longOpts);
+            await provider.getBars(longOpts); // 1차: stale, fetchedAt 기록
+
+            // 2시간 경과 → nowSeconds - fetchedAt >= EOD_HIST_STALE_RECHECK_SECONDS(3600) → 재fetch
+            vi.setSystemTime(new Date('2026-06-30T17:00:00Z'));
             await provider.getBars(longOpts);
             const histCalls = getBars.mock.calls.filter(
                 c => c[0].before !== undefined
             ).length;
-            expect(histCalls).toBe(2); // stale → 재fetch
+            expect(histCalls).toBe(2); // 쿨다운 만료 → 재fetch
+        });
+
+        it('[Blocker fix] stale + within cooldown → served from cache (no refetch)', async () => {
+            // permanent-stale(상장폐지/장기정지): newest bar never reaches recentFrom.
+            // 2nd call within the same hour → cooldown active → 재fetch 없이 캐시 반환.
+            const oldestBar = Math.floor(
+                Date.parse('2024-06-30T00:00:00Z') / 1000
+            ); // covers from='2024-06-30'
+            const staleTime = Math.floor(
+                Date.parse('2026-06-01T00:00:00Z') / 1000
+            ); // recentFrom(2026-06-20) 이전 → overlap 소실
+            const getBars = vi.fn(async (o: GetBarsOptions) =>
+                o.before !== undefined
+                    ? [
+                          { ...bar(oldestBar), time: oldestBar },
+                          { ...bar(staleTime), time: staleTime },
+                      ]
+                    : [bar(9)]
+            );
+            const provider = new CachedMarketDataProvider({
+                getBars,
+                getQuote: vi.fn(async () => null),
+            });
+
+            await provider.getBars(longOpts); // 1차 fetch → stale, fetchedAt 기록
+
+            // 30분 경과 → nowSeconds - fetchedAt = 1800 < 3600 → 쿨다운 내 → 재fetch 없음
+            vi.setSystemTime(new Date('2026-06-30T15:30:00Z'));
+            await provider.getBars(longOpts);
+            const histCalls = getBars.mock.calls.filter(
+                c => c[0].before !== undefined
+            ).length;
+            expect(histCalls).toBe(1); // 쿨다운 내 → 캐시 서빙, 추가 fetch 없음
+        });
+
+        it('[truncation fix] shorter cache does not truncate a longer request', async () => {
+            // 1차: oldest=2025-06-30(~1yr) 으로 캐시 워밍.
+            // 2차: from='2024-06-30'(~2yr) 요청 → oldest(2025) > from(2024) → covers=false → 재fetch.
+            const shortOldest = Math.floor(
+                Date.parse('2025-06-30T00:00:00Z') / 1000
+            ); // 캐시의 최古 봉
+            const freshNewest = Math.floor(
+                Date.parse('2026-06-25T00:00:00Z') / 1000
+            ); // overlap 유지 → isFresh true(covers가 false면 무관)
+            const getBars = vi.fn(async (o: GetBarsOptions) =>
+                o.before !== undefined
+                    ? [
+                          { ...bar(shortOldest), time: shortOldest },
+                          { ...bar(freshNewest), time: freshNewest },
+                      ]
+                    : [bar(9)]
+            );
+            const provider = new CachedMarketDataProvider({
+                getBars,
+                getQuote: vi.fn(async () => null),
+            });
+
+            // 1차: from='2025-06-30' → oldest(2025) <= from(2025) → covers OK → 캐시
+            await provider.getBars({ ...longOpts, from: '2025-06-30' });
+            const histCallsAfterFirst = getBars.mock.calls.filter(
+                c => c[0].before !== undefined
+            ).length;
+            expect(histCallsAfterFirst).toBe(1);
+
+            // 2차: from='2024-06-30' → oldest(2025) > from(2024) → covers FAIL → 재fetch
+            await provider.getBars({ ...longOpts, from: '2024-06-30' });
+            const histCallsAfterSecond = getBars.mock.calls.filter(
+                c => c[0].before !== undefined
+            ).length;
+            expect(histCallsAfterSecond).toBe(2); // covers 실패 → 재fetch 발생
+        });
+
+        it('[boundary] isFresh recentFrom boundary: newest exactly == recentFromThreshold → fresh', async () => {
+            // System time: 2026-06-30T15:00:00Z → recentFrom = 2026-06-20 → threshold = utcMidnight(2026-06-20)
+            const recentFromThreshold = Math.floor(
+                Date.parse('2026-06-20T00:00:00Z') / 1000
+            );
+            const oldestBar = Math.floor(
+                Date.parse('2024-06-30T00:00:00Z') / 1000
+            ); // covers from='2024-06-30'
+            const getBars = vi.fn(async (o: GetBarsOptions) =>
+                o.before !== undefined
+                    ? [
+                          { ...bar(oldestBar), time: oldestBar },
+                          {
+                              ...bar(recentFromThreshold),
+                              time: recentFromThreshold,
+                          },
+                      ]
+                    : [bar(9)]
+            );
+            const provider = new CachedMarketDataProvider({
+                getBars,
+                getQuote: vi.fn(async () => null),
+            });
+
+            await provider.getBars(longOpts); // 1차
+            await provider.getBars(longOpts); // 2차: 같은 시각 → fresh → 재fetch 없음
+            const histCalls = getBars.mock.calls.filter(
+                c => c[0].before !== undefined
+            ).length;
+            expect(histCalls).toBe(1); // >= inclusive → fresh, 재fetch 0
         });
 
         it('merges history + recent and slices to options.from', async () => {
+            const oldestBar = Math.floor(
+                Date.parse('2024-06-30T00:00:00Z') / 1000
+            ); // == options.from → covers check 통과
             const inRange = Math.floor(
                 Date.parse('2025-01-01T00:00:00Z') / 1000
             );
@@ -289,6 +414,7 @@ describe('CachedMarketDataProvider', () => {
                 o.before !== undefined
                     ? [
                           { ...bar(tooOld), time: tooOld },
+                          { ...bar(oldestBar), time: oldestBar },
                           { ...bar(inRange), time: inRange },
                       ]
                     : [{ ...bar(recentT), time: recentT }]
@@ -306,12 +432,18 @@ describe('CachedMarketDataProvider', () => {
         });
 
         it('cold symbol = 2 fetches (history + recent); repeat within session = 0', async () => {
+            const oldestBar = Math.floor(
+                Date.parse('2024-06-30T00:00:00Z') / 1000
+            ); // covers from='2024-06-30'
             const freshHist = Math.floor(
                 Date.parse('2026-06-25T00:00:00Z') / 1000
-            );
+            ); // >= recentFrom → fresh
             const getBars = vi.fn(async (o: GetBarsOptions) =>
                 o.before !== undefined
-                    ? [{ ...bar(freshHist), time: freshHist }]
+                    ? [
+                          { ...bar(oldestBar), time: oldestBar },
+                          { ...bar(freshHist), time: freshHist },
+                      ]
                     : [bar(9)]
             );
             const provider = new CachedMarketDataProvider({
@@ -497,7 +629,7 @@ describe('CachedMarketDataProvider', () => {
         it('sliceFrom keeps a bar exactly at options.from (inclusive boundary)', async () => {
             const boundary = Math.floor(
                 Date.parse('2024-06-30T00:00:00Z') / 1000
-            ); // == options.from
+            ); // == options.from — oldest bar이므로 covers(from) 통과
             const recentT = Math.floor(
                 Date.parse('2026-06-29T00:00:00Z') / 1000
             );
