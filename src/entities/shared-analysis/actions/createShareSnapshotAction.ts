@@ -26,12 +26,12 @@ const SHARE_TTL_DAYS = 7;
 export async function createShareSnapshotAction(
     rawInput: unknown
 ): Promise<CreateShareResult> {
-    if (!isValidShareInput(rawInput)) {
-        return { ok: false, code: 'invalid_input' };
-    }
-    const input = rawInput;
-
     try {
+        if (!isValidShareInput(rawInput)) {
+            return { ok: false, code: 'invalid_input' };
+        }
+        const input = rawInput;
+
         const now = new Date();
         const ip = await getClientIp();
         const ipHash = hashUsageIp(ip, now);

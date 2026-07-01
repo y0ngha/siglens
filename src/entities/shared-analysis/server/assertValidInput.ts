@@ -18,9 +18,6 @@ function isNonEmptyString(v: unknown): v is string {
  */
 export const MAX_RESULT_BYTES = 65_536;
 
-// Re-export so existing callers of this module's MAX_CHART_BARS continue to work.
-export { MAX_CHART_BARS };
-
 /**
  * Maximum byte length for `context.displayName` and `context.assetClass`.
  * Prevents bypassing the MAX_RESULT_BYTES guard by stuffing large payloads

@@ -23,6 +23,10 @@ export function buildShareMetadata(lookup: SharedAnalysisLookup): Metadata {
             title,
             description,
             robots: { index: false, follow: false },
+            // canonical: null mirrors the NOINDEX_SYMBOL_METADATA pattern:
+            // noindex pages should not declare a canonical URL so crawlers do
+            // not accidentally attribute the snapshot URL as authoritative.
+            alternates: { canonical: null },
             openGraph: {
                 type: 'website',
                 siteName: SITE_NAME,
@@ -38,9 +42,10 @@ export function buildShareMetadata(lookup: SharedAnalysisLookup): Metadata {
         };
     }
 
-    // expired | not_found — minimal noindex
+    // expired | not_found — minimal noindex; canonical: null for the same reason.
     return {
         title: '공유 분석',
         robots: { index: false },
+        alternates: { canonical: null },
     };
 }

@@ -30,11 +30,18 @@ export function parseSnapshot(raw: unknown): SharedAnalysisSnapshot | null {
     if (typeof obj.result !== 'object' || obj.result === null) return null;
     // Only the top-level shape (kind, symbol, context, result presence) is
     // validated here. Per-kind result-interior validation (e.g. that
-    // result.trend matches kind 'chart') is intentionally delegated to the
-    // error boundary in app/share/error.tsx — snapshots are server-written from
-    // inputs already checked by isValidShareInput, so deeper checks here would
-    // be redundant.
-    // chartBars (optional Bar[]) passes through transparently — it is either absent
-    // (old snapshots without bars) or an array validated at write time.
+    // result.trend matches kind 'chart'), chartBars interior structure, and
+    // snapshot schema version drift are intentionally delegated to the error
+    // boundary in app/share/error.tsx.
+    //
+    // Rationale: snapshots are server-written from inputs already checked by
+    // isValidShareInput, so deeper structural checks here would be redundant.
+    // Version drift (future schema changes) is also handled by the error
+    // boundary — if a stale snapshot shape causes a render error, the boundary
+    // shows a graceful fallback rather than a hard crash.
+    //
+    // chartBars (optional Bar[]) passes through transparently — it is either
+    // absent (non-chart or pre-bars snapshots) or an array validated at write
+    // time by isValidBar inside isValidShareInput.
     return obj as unknown as SharedAnalysisSnapshot;
 }

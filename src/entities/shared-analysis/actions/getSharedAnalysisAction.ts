@@ -14,6 +14,11 @@ import type { SharedAnalysisLookup } from '../types';
  * - jsonb 형태 불일치: not_found (파싱 실패)
  * - DB 연결 실패 / DATABASE_URL 미설정: not_found (fail-open degrade)
  * - 정상: found + snapshot + createdAt(ISO)
+ *
+ * Read path is intentionally unthrottled (no rate limit): the share id is a
+ * 128-bit unguessable token, the page is noindex, and React.cache deduplicates
+ * calls within a single render. Adding a read-side rate limit would break
+ * legitimate viral traffic without a meaningful security benefit.
  */
 export async function getSharedAnalysisAction(
     id: string

@@ -15,10 +15,14 @@ import type { ShareableKind } from '@/shared/db/constants';
 /**
  * Maximum number of candlestick bars stored in a chart share snapshot.
  *
+ * This is a COUNT cap on `chartBars` (enforced by `isValidShareInput`), not a
+ * jsonb column size limit. The actual size constraint on the `result` field is
+ * MAX_RESULT_BYTES (65 536 UTF-8 bytes), defined in server/assertValidInput.ts.
+ *
  * Size reasoning (worst case):
  *   - Largest legitimate AnalysisResponse (Korean text, 50 signals, 40 key levels): ~20 KB
  *   - 400 bars × ~101 bytes/bar (JSON): ~40 KB
- *   - Combined: ~60 KB — well within the 64 KB jsonb column limit.
+ *   - Combined: ~60 KB — comfortably under MAX_RESULT_BYTES.
  *
  * Core's TIMEFRAME_BARS_LIMIT for 1Day is 500; we cap at 400 to leave a
  * comfortable safety margin. ChartContent slices to the last MAX_CHART_BARS

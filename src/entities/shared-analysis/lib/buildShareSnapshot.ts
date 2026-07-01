@@ -29,8 +29,9 @@ export function buildShareSnapshot<K extends ShareableKind>(
     //     NaN/Infinity reaches here for bar numbers.
     //   - result interior numbers: NOT finite-checked by isValidShareInput, so
     //     NaN/Infinity inside result fields will silently become null. This is
-    //     acceptable — jsonb storage requires JSON-safe values, and the display
-    //     layer already handles null gracefully.
+    //     intentional and low-risk — jsonb storage requires JSON-safe values,
+    //     the AI outputs producing these values are string-dominant (Korean text),
+    //     and the display layer already handles null gracefully.
     // The cast narrows the `unknown` parse result back to the typed snapshot
     // without re-running validation.
     return JSON.parse(JSON.stringify(snapshot)) as SharedAnalysisSnapshot<K>;

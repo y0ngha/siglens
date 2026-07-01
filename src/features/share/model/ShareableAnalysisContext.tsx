@@ -79,6 +79,13 @@ export function useShareable(): ShareableRegistration | null {
  * bars and is read at registration time, which is triggered by the other primitive
  * deps (status, result, symbol, etc.) that change meaningfully when bars actually
  * update (the analysis result / status transitions accompany a new bars fetch).
+ *
+ * Intentional design: chartBars-only updates (bars changing but status/result
+ * unchanged) do NOT re-trigger registration. This is acceptable for the share flow
+ * because (a) bars always change in concert with status/result transitions in
+ * practice, and (b) the share snapshot is immutable once created — stale bars at
+ * registration time are low-risk and the snapshot captures bars at share-click time
+ * via the ref (not at registration time).
  */
 export function useRegisterShareable(reg: ShareableRegistration): void {
     const ctx = useContext(Ctx);
