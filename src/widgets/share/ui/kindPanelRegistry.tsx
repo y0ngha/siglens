@@ -18,13 +18,13 @@ import type {
 } from '@/entities/shared-analysis';
 import type { Bar } from '@y0ngha/siglens-core';
 import { clusterKeyLevels, validateKeyLevels } from '@y0ngha/siglens-core';
-import { AnalysisPanel } from '@/widgets/analysis/AnalysisPanel';
+import { AnalysisPanel } from '@/widgets/analysis';
 import { ShareCandlestickChart } from '@/widgets/chart/ShareCandlestickChart';
 import { OverallView } from '@/widgets/overall/OverallView';
 import { NewsAiSummaryView } from '@/widgets/news/NewsAiSummary';
 import { FundamentalAiSummaryView } from '@/widgets/fundamental/FundamentalAiSummary';
 import { FinancialsAiSummaryView } from '@/widgets/financials/FinancialsAiSummary';
-import { CongressTrendSummaryView } from '@/widgets/congress/CongressTrendSummaryView';
+import { CongressTrendSummaryView } from '@/widgets/congress';
 import { OptionsAiAnalysisView } from '@/widgets/options/OptionsAiAnalysis';
 import { FearGreedShareView } from '@/widgets/fear-greed/FearGreedShareView';
 

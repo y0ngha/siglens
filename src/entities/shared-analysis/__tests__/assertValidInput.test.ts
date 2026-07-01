@@ -1,6 +1,7 @@
 import {
     isValidShareInput,
     MAX_CHART_BARS,
+    MAX_DISPLAY_NAME_LENGTH,
     MAX_RESULT_BYTES,
 } from '@/entities/shared-analysis/server/assertValidInput';
 
@@ -312,5 +313,171 @@ describe('isValidShareInput', () => {
                 chartBars: [makeBar(0)],
             })
         ).toBe(false);
+    });
+
+    // ── Bar element shape validation ──────────────────────────────────────────
+
+    it('rejects chart input where a bar element is missing required numeric fields', () => {
+        const malformedBar = { time: 1700000000, open: 150 }; // missing high/low/close
+        expect(
+            isValidShareInput({
+                kind: 'chart',
+                symbol: 'AAPL',
+                context: { symbol: 'AAPL', displayName: 'Apple' },
+                result: { trend: 'bullish' },
+                sharerTier: 'free',
+                chartBars: [malformedBar],
+            })
+        ).toBe(false);
+    });
+
+    it('rejects chart input where a bar element has a non-numeric field', () => {
+        const malformedBar = {
+            time: 1700000000,
+            open: 'not-a-number',
+            high: 155,
+            low: 148,
+            close: 153,
+            volume: 1000000,
+        };
+        expect(
+            isValidShareInput({
+                kind: 'chart',
+                symbol: 'AAPL',
+                context: { symbol: 'AAPL', displayName: 'Apple' },
+                result: { trend: 'bullish' },
+                sharerTier: 'free',
+                chartBars: [malformedBar],
+            })
+        ).toBe(false);
+    });
+
+    it('rejects chart input where a bar element has a non-finite number (NaN)', () => {
+        const malformedBar = {
+            time: 1700000000,
+            open: NaN,
+            high: 155,
+            low: 148,
+            close: 153,
+            volume: 1000000,
+        };
+        expect(
+            isValidShareInput({
+                kind: 'chart',
+                symbol: 'AAPL',
+                context: { symbol: 'AAPL', displayName: 'Apple' },
+                result: { trend: 'bullish' },
+                sharerTier: 'free',
+                chartBars: [malformedBar],
+            })
+        ).toBe(false);
+    });
+
+    it('rejects chart input where a bar element has Infinity in a numeric field', () => {
+        const malformedBar = {
+            time: 1700000000,
+            open: 150,
+            high: Infinity,
+            low: 148,
+            close: 153,
+            volume: 1000000,
+        };
+        expect(
+            isValidShareInput({
+                kind: 'chart',
+                symbol: 'AAPL',
+                context: { symbol: 'AAPL', displayName: 'Apple' },
+                result: { trend: 'bullish' },
+                sharerTier: 'free',
+                chartBars: [malformedBar],
+            })
+        ).toBe(false);
+    });
+
+    it('accepts valid chartBars with all required numeric OHLCV fields', () => {
+        const validBars = [makeBar(0), makeBar(1), makeBar(2)];
+        expect(
+            isValidShareInput({
+                kind: 'chart',
+                symbol: 'AAPL',
+                context: { symbol: 'AAPL', displayName: 'Apple' },
+                result: { trend: 'bullish' },
+                sharerTier: 'free',
+                chartBars: validBars,
+            })
+        ).toBe(true);
+    });
+
+    it('rejects chart input where a bar element is a primitive (not an object)', () => {
+        expect(
+            isValidShareInput({
+                kind: 'chart',
+                symbol: 'AAPL',
+                context: { symbol: 'AAPL', displayName: 'Apple' },
+                result: { trend: 'bullish' },
+                sharerTier: 'free',
+                chartBars: [42],
+            })
+        ).toBe(false);
+    });
+
+    // ── displayName / assetClass length cap ───────────────────────────────────
+
+    it('rejects context.displayName exceeding MAX_DISPLAY_NAME_LENGTH', () => {
+        expect(
+            isValidShareInput({
+                kind: 'chart',
+                symbol: 'AAPL',
+                context: {
+                    displayName: 'A'.repeat(MAX_DISPLAY_NAME_LENGTH + 1),
+                },
+                result: {},
+                sharerTier: 'free',
+            })
+        ).toBe(false);
+    });
+
+    it('accepts context.displayName exactly at MAX_DISPLAY_NAME_LENGTH', () => {
+        expect(
+            isValidShareInput({
+                kind: 'chart',
+                symbol: 'AAPL',
+                context: {
+                    displayName: 'A'.repeat(MAX_DISPLAY_NAME_LENGTH),
+                },
+                result: {},
+                sharerTier: 'free',
+            })
+        ).toBe(true);
+    });
+
+    it('rejects context.assetClass exceeding MAX_DISPLAY_NAME_LENGTH', () => {
+        expect(
+            isValidShareInput({
+                kind: 'chart',
+                symbol: 'AAPL',
+                context: {
+                    displayName: 'Apple',
+                    assetClass: 'x'.repeat(MAX_DISPLAY_NAME_LENGTH + 1),
+                },
+                result: {},
+                sharerTier: 'free',
+            })
+        ).toBe(false);
+    });
+
+    it('accepts context.assetClass exactly at MAX_DISPLAY_NAME_LENGTH', () => {
+        expect(
+            isValidShareInput({
+                kind: 'chart',
+                symbol: 'AAPL',
+                context: {
+                    displayName: 'Apple',
+                    assetClass: 'x'.repeat(MAX_DISPLAY_NAME_LENGTH),
+                },
+                result: {},
+                sharerTier: 'free',
+            })
+        ).toBe(true);
     });
 });

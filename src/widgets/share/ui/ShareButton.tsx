@@ -12,7 +12,7 @@ import { useMutation } from '@tanstack/react-query';
 import { useShareable } from '@/features/share';
 import { useUserTier } from '@/features/symbol-model/hooks/useUserTier';
 import { createShareSnapshotAction } from '@/entities/shared-analysis/actions/createShareSnapshotAction';
-import { MAX_CHART_BARS } from '@/entities/shared-analysis/server/assertValidInput';
+import { MAX_CHART_BARS } from '@/entities/shared-analysis';
 import { canShareNatively, isShareAbort } from '@/shared/lib/share';
 import { SITE_URL } from '@/shared/lib/seo';
 import { cn } from '@/shared/lib/cn';

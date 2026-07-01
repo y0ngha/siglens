@@ -1,5 +1,6 @@
 import { SHAREABLE_KIND_VALUES, USER_TIER_VALUES } from '@/shared/db/constants';
 import type { CreateShareInput } from '../types';
+import { MAX_CHART_BARS } from '../types';
 
 function isNonEmptyString(v: unknown): v is string {
     return typeof v === 'string' && v.length > 0;
@@ -17,19 +18,47 @@ function isNonEmptyString(v: unknown): v is string {
  */
 export const MAX_RESULT_BYTES = 65_536;
 
+// Re-export so existing callers of this module's MAX_CHART_BARS continue to work.
+export { MAX_CHART_BARS };
+
 /**
- * Maximum number of candlestick bars stored in a chart share snapshot.
- *
- * Size reasoning (worst case):
- *   - Largest legitimate AnalysisResponse (Korean text, 50 signals, 40 key levels): ~20 KB
- *   - 400 bars × ~101 bytes/bar (JSON): ~40 KB
- *   - Combined: ~60 KB — well within the 64 KB jsonb column limit.
- *
- * Core's TIMEFRAME_BARS_LIMIT for 1Day is 500; we cap at 400 to leave a
- * comfortable safety margin. ChartContent slices to the last MAX_CHART_BARS
- * before sending (most recent candles are most relevant for the analysis).
+ * Maximum byte length for `context.displayName` and `context.assetClass`.
+ * Prevents bypassing the MAX_RESULT_BYTES guard by stuffing large payloads
+ * into string context fields that are not covered by the `result` size check.
  */
-export const MAX_CHART_BARS = 400;
+export const MAX_DISPLAY_NAME_LENGTH = 128;
+
+/**
+ * Returns true when the value is a valid OHLCV Bar element.
+ *
+ * `time`, `open`, `high`, `low`, and `close` must all be finite numbers.
+ * `volume` is optional in the Bar type (`vwap` is also optional and ignored
+ * here), but when present it must also be a finite number.
+ */
+function isValidBar(v: unknown): boolean {
+    if (typeof v !== 'object' || v === null) return false;
+    const b = v as Record<string, unknown>;
+    const requiredNumeric: (keyof typeof b)[] = [
+        'time',
+        'open',
+        'high',
+        'low',
+        'close',
+    ];
+    for (const key of requiredNumeric) {
+        if (typeof b[key] !== 'number' || !Number.isFinite(b[key] as number))
+            return false;
+    }
+    // volume is required in Bar but checking presence defensively.
+    if (b.volume !== undefined) {
+        if (
+            typeof b.volume !== 'number' ||
+            !Number.isFinite(b.volume as number)
+        )
+            return false;
+    }
+    return true;
+}
 
 /** 클라가 전달한 공유 입력의 형태를 검증한다(내용 신뢰 X, 형태만). */
 export function isValidShareInput(raw: unknown): raw is CreateShareInput {
@@ -44,9 +73,14 @@ export function isValidShareInput(raw: unknown): raw is CreateShareInput {
     if (typeof o.context !== 'object' || o.context === null) return false;
     const ctx = o.context as Record<string, unknown>;
     if (!isNonEmptyString(ctx.displayName)) return false;
-    // assetClass is optional; when present it must be a string
-    if (ctx.assetClass !== undefined && typeof ctx.assetClass !== 'string')
+    if ((ctx.displayName as string).length > MAX_DISPLAY_NAME_LENGTH)
         return false;
+    // assetClass is optional; when present it must be a string within the length cap.
+    if (ctx.assetClass !== undefined) {
+        if (typeof ctx.assetClass !== 'string') return false;
+        if ((ctx.assetClass as string).length > MAX_DISPLAY_NAME_LENGTH)
+            return false;
+    }
     if (typeof o.result !== 'object' || o.result === null) return false;
     if (Buffer.byteLength(JSON.stringify(o.result), 'utf8') > MAX_RESULT_BYTES)
         return false;
@@ -57,12 +91,14 @@ export function isValidShareInput(raw: unknown): raw is CreateShareInput {
     )
         return false;
     // chartBars is optional; when present (chart kind), it must be a non-empty
-    // array within the count cap. Non-chart kinds must not include chartBars.
+    // array within the count cap where every element has valid Bar shape.
+    // Non-chart kinds must not include chartBars.
     if (o.chartBars !== undefined) {
         if (o.kind !== 'chart') return false;
         if (!Array.isArray(o.chartBars)) return false;
         if (o.chartBars.length === 0 || o.chartBars.length > MAX_CHART_BARS)
             return false;
+        if (!o.chartBars.every(isValidBar)) return false;
     }
     return true;
 }

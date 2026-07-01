@@ -74,6 +74,7 @@ export function FearGreedPage({ symbol, fmpSymbol }: FearGreedPageProps) {
         context: {
             symbol,
             displayName: symbol,
+            // FearGreedSnapshot has no analyzedAt; resolveAsOf falls back to createdAt.
         },
         trigger: () => {},
     });

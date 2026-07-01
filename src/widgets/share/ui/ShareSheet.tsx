@@ -26,6 +26,12 @@ const ROW_BASE =
  *
  * The component is "always-open presentational" — open/close state lives in the parent
  * (ShareButton via usePopoverToggle). ShareSheet only manages internal item focus.
+ *
+ * NON-modal popover: dismissed via click-outside (useOnClickOutside) + Escape
+ * (useEscapeKey). Does NOT use a focus trap — unlike ShareTriggerDialog and
+ * SharePreparingModal (which are true modal dialogs) this is an inline popover
+ * where users can tab through OS affordances freely. The absence of useFocusTrap
+ * is intentional, not an oversight.
  */
 export function ShareSheet({
     shareUrl,

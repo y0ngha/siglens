@@ -22,8 +22,11 @@ export function buildShareSnapshot<K extends ShareableKind>(
         result: input.result,
         ...(input.chartBars !== undefined && { chartBars: input.chartBars }),
     };
-    // Safe: JSON round-trip produces a plain object with the same shape as
-    // SharedAnalysisSnapshot<K>; the cast narrows the `unknown` parse result
-    // back to the typed snapshot without re-running validation.
+    // Safe: JSON.stringify → JSON.parse produces a JSON-safe plain object (no
+    // Date instances, undefined fields are dropped, functions are stripped).
+    // Non-finite numbers (NaN/Infinity) become null, which is acceptable for
+    // bar price fields — isValidShareInput already requires finite numerics.
+    // The cast narrows the `unknown` parse result back to the typed snapshot
+    // without re-running validation.
     return JSON.parse(JSON.stringify(snapshot)) as SharedAnalysisSnapshot<K>;
 }

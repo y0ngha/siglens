@@ -289,6 +289,7 @@ export function NewsAiSummary({
         context: {
             symbol,
             displayName: companyName ?? symbol,
+            // NewsAnalysisResponse has no analyzedAt; resolveAsOf falls back to createdAt.
             analyzedAt: undefined,
         },
         trigger: analysis.trigger,

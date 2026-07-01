@@ -44,6 +44,14 @@ export class DrizzleSharedAnalysisRepository implements SharedAnalysisRepository
      * Wrapped in withRetry(NEON_TRANSIENT_RETRY) to absorb transient Neon HTTP
      * driver failures (e.g. admin_shutdown, fetch failed) without surfacing them
      * to the action layer.
+     *
+     * Retry safety: `record.id` is a fresh random token generated once per
+     * action call (in generateShareId, before this method is invoked), so a
+     * retry cannot produce a duplicate PK for the same logical request. The
+     * ON CONFLICT on content_hash is the realistic dup-prevention path (same
+     * analysis shared twice). A PK collision on retry is theoretically possible
+     * but vanishingly unlikely (crypto-random 21-char nanoid); accepted as a
+     * known, low-risk window rather than adding retry-level ID regeneration.
      */
     async create(record: CreateRecord): Promise<string> {
         const [row] = await withRetry(

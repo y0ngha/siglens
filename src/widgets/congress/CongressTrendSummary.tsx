@@ -33,6 +33,7 @@ export function CongressTrendSummary({ symbol }: CongressTrendSummaryProps) {
         context: {
             symbol,
             displayName: symbol,
+            // CongressTrendResponse has no analyzedAt; resolveAsOf falls back to createdAt.
             analyzedAt: undefined,
         },
         trigger: state.trigger,

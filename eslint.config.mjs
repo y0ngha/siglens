@@ -197,10 +197,14 @@ const eslintConfig = defineConfig([
         },
     },
     {
-        // Test files deliberately cross FSD layer boundaries (e.g. an entity
-        // __tests__ file importing from src/views/ for exhaustiveness checks).
-        // Disable boundaries/dependencies for all test files so inline
-        // eslint-disable comments are not needed.
+        // Test files deliberately cross FSD layer boundaries:
+        //   - src/entities/shared-analysis/__tests__/kindExhaustiveness.test.ts
+        //     imports src/views/symbol/utils/symbolTabsConfig (views → entity).
+        //   - src/app/[symbol]/__tests__/page.test.ts imports src/views/symbol/.
+        //   - src/__integration__/*.test.tsx import src/views/symbol/ components.
+        // Narrowing to a single file is not feasible because multiple test files
+        // in different layers need the same exemption. Kept broad so no inline
+        // eslint-disable comments are required.
         files: ['src/**/*.test.{ts,tsx}', 'src/**/__tests__/**'],
         rules: {
             'boundaries/dependencies': 'off',

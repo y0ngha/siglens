@@ -86,6 +86,7 @@ export function OverallContent({
             symbol,
             displayName: companyName ?? symbol,
             assetClass,
+            // OverallAnalysisResponse has no analyzedAt; resolveAsOf falls back to createdAt.
             analyzedAt: undefined,
         },
         trigger,

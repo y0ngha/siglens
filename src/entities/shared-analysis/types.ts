@@ -12,6 +12,23 @@ import type {
 } from '@y0ngha/siglens-core';
 import type { ShareableKind } from '@/shared/db/constants';
 
+/**
+ * Maximum number of candlestick bars stored in a chart share snapshot.
+ *
+ * Size reasoning (worst case):
+ *   - Largest legitimate AnalysisResponse (Korean text, 50 signals, 40 key levels): ~20 KB
+ *   - 400 bars × ~101 bytes/bar (JSON): ~40 KB
+ *   - Combined: ~60 KB — well within the 64 KB jsonb column limit.
+ *
+ * Core's TIMEFRAME_BARS_LIMIT for 1Day is 500; we cap at 400 to leave a
+ * comfortable safety margin. ChartContent slices to the last MAX_CHART_BARS
+ * before sending (most recent candles are most relevant for the analysis).
+ *
+ * Declared here (client-safe module) rather than in server/assertValidInput.ts
+ * so ShareButton ('use client') can import it without pulling in server-only code.
+ */
+export const MAX_CHART_BARS = 400;
+
 export type { ShareableKind };
 
 /** kind → 그 탭의 분석 결과 타입. */

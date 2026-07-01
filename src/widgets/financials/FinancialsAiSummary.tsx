@@ -135,6 +135,7 @@ export function FinancialsAiSummary({ symbol }: FinancialsAiSummaryProps) {
         context: {
             symbol,
             displayName: symbol,
+            // FinancialsAnalysisResponse has no analyzedAt; resolveAsOf falls back to createdAt.
             analyzedAt: undefined,
         },
         trigger: state.trigger,

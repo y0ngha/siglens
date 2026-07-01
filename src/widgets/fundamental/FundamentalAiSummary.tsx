@@ -143,6 +143,7 @@ export function FundamentalAiSummary({ symbol }: FundamentalAiSummaryProps) {
         context: {
             symbol,
             displayName: symbol,
+            // FundamentalAnalysisResponse has no analyzedAt; resolveAsOf falls back to createdAt.
             analyzedAt: undefined,
         },
         trigger: state.trigger,
