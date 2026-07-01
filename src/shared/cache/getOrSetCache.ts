@@ -37,19 +37,24 @@ function isCacheEnvelope<T>(value: unknown): value is CacheEnvelope<T> {
  * 가드. 기본값은 항상 캐싱이며, fmpGet 기반 fetcher처럼 장애 시 throw하는 경우엔
  * 지정할 필요가 없다(잘못된 값이 애초에 set 단계에 도달하지 못하므로).
  *
+ * `isFresh(value)`가 false면 envelope hit이어도 miss로 취급해 refetch 후 덮어쓴다.
+ * 기본값은 항상 fresh — 기존 호출부는 영향 없음. 캐시된 값 자체(예: EOD history 겹침)로
+ * staleness를 판정해야 하는 호출부를 위한 가드.
+ *
  * Redis 미설정/장애 시에는 graceful fallback — `fetcher()`를 직접 호출한다.
  */
 export async function getOrSetCache<T>(
     key: string,
     ttlSeconds: number,
     fetcher: () => Promise<T>,
-    shouldCache: (value: T) => boolean = () => true
+    shouldCache: (value: T) => boolean = () => true,
+    isFresh: (value: T) => boolean = () => true
 ): Promise<T> {
     const redis = getRedisClient();
     if (redis !== null) {
         try {
             const hit = await redis.get<unknown>(key);
-            if (isCacheEnvelope<T>(hit)) return hit.data;
+            if (isCacheEnvelope<T>(hit) && isFresh(hit.data)) return hit.data;
         } catch (error) {
             console.error(`[getOrSetCache] get failed: ${key}`, error);
         }

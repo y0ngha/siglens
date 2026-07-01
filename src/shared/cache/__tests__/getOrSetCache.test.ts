@@ -168,4 +168,35 @@ describe('getOrSetCache 함수는', () => {
             expect.any(Error)
         );
     });
+
+    it('isFresh가 false를 반환하면 캐시 히트도 miss로 취급해 refetch 후 덮어쓴다', async () => {
+        const redis = createRedisStub();
+        redis.store.set('k', { data: 'stale' });
+        mockedGetRedisClient.mockReturnValue(redis as never);
+        const fetcher = vi.fn().mockResolvedValue('fresh');
+
+        const result = await getOrSetCache(
+            'k',
+            60,
+            fetcher,
+            () => true, // shouldCache
+            value => value === 'fresh' // isFresh: 'stale'은 false
+        );
+
+        expect(result).toBe('fresh');
+        expect(fetcher).toHaveBeenCalledTimes(1);
+        expect(redis.store.get('k')).toEqual({ data: 'fresh' });
+    });
+
+    it('isFresh 미전달 시 캐시 히트를 그대로 반환한다(기본값 항상 fresh)', async () => {
+        const redis = createRedisStub();
+        redis.store.set('k', { data: 'cached' });
+        mockedGetRedisClient.mockReturnValue(redis as never);
+        const fetcher = vi.fn().mockResolvedValue('fresh');
+
+        const result = await getOrSetCache('k', 60, fetcher);
+
+        expect(result).toBe('cached');
+        expect(fetcher).not.toHaveBeenCalled();
+    });
 });
