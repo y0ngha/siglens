@@ -51,6 +51,28 @@ function sliceFrom(bars: Bar[], from: string | undefined): Bar[] {
     return bars.filter(b => b.time >= threshold);
 }
 
+/**
+ * history 캐시 엔트리가 재사용 가능한지 판정한다:
+ * ① covers: 캐시된 최古 봉이 요청 `fromThreshold`를 커버(더 과거 요청 시 truncation 방지),
+ * ② overlap: 최신 봉이 recent 윈도우와 겹치면 fresh,
+ * ③ cooldown: 겹침이 소실됐어도(상장폐지 등 permanent-stale) 최근 재조회했으면 재사용해
+ *    per-request 재fetch thrash를 막는다.
+ */
+function isHistoryEntryFresh(
+    entry: EodHistoryEntry,
+    fromThreshold: number | null,
+    recentFromThreshold: number,
+    nowSeconds: number
+): boolean {
+    if (entry.bars.length === 0) return false;
+    const covers =
+        fromThreshold === null || entry.bars[0]!.time <= fromThreshold;
+    if (!covers) return false;
+    if (entry.bars[entry.bars.length - 1]!.time >= recentFromThreshold)
+        return true;
+    return nowSeconds - entry.fetchedAt < EOD_HIST_STALE_RECHECK_SECONDS;
+}
+
 /** quote TTL은 bars 일봉 개장-경계 정책을 재사용 — timeframe과 무관한 placeholder. */
 const QUOTE_TTL_TIMEFRAME = '1Day' as const satisfies Timeframe;
 
@@ -180,26 +202,13 @@ export class CachedMarketDataProvider implements MarketDataProvider {
                     fetchedAt: nowSeconds,
                 }),
                 entry => entry.bars.length > 0,
-                entry => {
-                    if (entry.bars.length === 0) return false;
-                    // 요청 from 이 캐시된 최古 봉보다 과거면 커버 못 함 → 재fetch(truncation 방지).
-                    const covers =
-                        fromThreshold === null ||
-                        entry.bars[0]!.time <= fromThreshold;
-                    if (!covers) return false;
-                    // 최신 봉이 recent 윈도우와 겹치면 fresh.
-                    if (
-                        entry.bars[entry.bars.length - 1]!.time >=
-                        recentFromThreshold
+                entry =>
+                    isHistoryEntryFresh(
+                        entry,
+                        fromThreshold,
+                        recentFromThreshold,
+                        nowSeconds
                     )
-                        return true;
-                    // 겹침이 소실됐어도(예: 상장폐지) 최근 재조회했다면 그대로 사용해
-                    // per-request 재fetch thrash를 막는다.
-                    return (
-                        nowSeconds - entry.fetchedAt <
-                        EOD_HIST_STALE_RECHECK_SECONDS
-                    );
-                }
             ),
             getOrSetCache(
                 `bars:eodrecent:${symbolKey}`,
