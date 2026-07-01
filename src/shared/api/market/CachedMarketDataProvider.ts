@@ -10,20 +10,67 @@ import {
     computeBarsEffectiveTtl,
 } from '@y0ngha/siglens-core';
 import { getOrSetCache } from '@/shared/cache/getOrSetCache';
-import { SECONDS_PER_DAY } from '@/shared/config/time';
+import { SECONDS_PER_DAY, SECONDS_PER_HOUR } from '@/shared/config/time';
 import { mergeBarsByTime } from './mergeBarsByTime';
 
-/** 과거(불변) 윈도우 종료점: 오늘 − 7일. 최근 윈도우와 겹쳐 주말·공휴일 갭 방지. */
-const EOD_HIST_TO_DAYS = 7;
-/** 최근(live) 윈도우 시작점: 오늘 − 10일(약 3일 overlap → dedup). */
+/**
+ * 과거(불변) 윈도우 종료점: 오늘 − EOD_HIST_TO_DAYS일. recent와 겹쳐 갭 방지.
+ * overlap = EOD_RECENT_FROM_DAYS − EOD_HIST_TO_DAYS = 5일 →
+ * 최대 4일 연속 휴장(공휴일+주말 인접)에도 겹침이 유지된다.
+ */
+const EOD_HIST_TO_DAYS = 5;
+/** 최근(live) 윈도우 시작점: 오늘 − EOD_RECENT_FROM_DAYS일. */
 const EOD_RECENT_FROM_DAYS = 10;
-/** 과거 윈도우 long TTL. 키가 날짜로 self-versioning하므로 intraday 커버 + 여유. */
-const EOD_HIST_TTL_SECONDS = SECONDS_PER_DAY * 2;
+/** 과거 history long TTL(30일). 갱신은 TTL이 아니라 recent와의 겹침 staleness가 주도. */
+const EOD_HIST_TTL_SECONDS = SECONDS_PER_DAY * 30;
+/** stale(겹침 소실) history를 재조회하는 최소 간격. 상장폐지·장기정지처럼 최신 봉이
+ * 영구히 recentFrom에 못 미치는 심볼이 매 요청마다 full 재fetch하는 것을 방지한다. */
+const EOD_HIST_STALE_RECHECK_SECONDS = SECONDS_PER_HOUR;
+
+/** history 캐시 엔트리: 불변 과거 봉 + fetch 시각(stale-recheck 쿨다운 판정용). */
+interface EodHistoryEntry {
+    bars: Bar[];
+    fetchedAt: number; // unix seconds
+}
 
 function isoDateDaysAgo(now: Date, days: number): string {
     const d = new Date(now);
     d.setUTCDate(d.getUTCDate() - days);
     return d.toISOString().slice(0, 10);
+}
+
+/** YYYY-MM-DD(또는 ISO) 날짜를 UTC 자정 unix초로 변환(Bar.time과 동일 규약). */
+function utcMidnightSeconds(dateStr: string): number {
+    return Math.floor(Date.parse(dateStr.slice(0, 10) + 'T00:00:00Z') / 1000);
+}
+
+/** `from` 이후(포함) 봉만 남긴다 — 단일 `getBars(from)`와 동일 집합 보장. */
+function sliceFrom(bars: Bar[], from: string | undefined): Bar[] {
+    if (from === undefined) return bars;
+    const threshold = utcMidnightSeconds(from);
+    return bars.filter(b => b.time >= threshold);
+}
+
+/**
+ * history 캐시 엔트리가 재사용 가능한지 판정한다:
+ * ① covers: 캐시된 최古 봉이 요청 `fromThreshold`를 커버(더 과거 요청 시 truncation 방지),
+ * ② overlap: 최신 봉이 recent 윈도우와 겹치면 fresh,
+ * ③ cooldown: 겹침이 소실됐어도(상장폐지 등 permanent-stale) 최근 재조회했으면 재사용해
+ *    per-request 재fetch thrash를 막는다.
+ */
+function isHistoryEntryFresh(
+    entry: EodHistoryEntry,
+    fromThreshold: number | null,
+    recentFromThreshold: number,
+    nowSeconds: number
+): boolean {
+    if (entry.bars.length === 0) return false;
+    const covers =
+        fromThreshold === null || entry.bars[0]!.time <= fromThreshold;
+    if (!covers) return false;
+    if (entry.bars[entry.bars.length - 1]!.time >= recentFromThreshold)
+        return true;
+    return nowSeconds - entry.fetchedAt < EOD_HIST_STALE_RECHECK_SECONDS;
 }
 
 /** quote TTL은 bars 일봉 개장-경계 정책을 재사용 — timeframe과 무관한 placeholder. */
@@ -107,38 +154,74 @@ export class CachedMarketDataProvider implements MarketDataProvider {
     };
 
     /**
-     * 요청 윈도우가 최근 overlap 구간(오늘−EOD_RECENT_FROM_DAYS)보다 앞에서 시작함을
-     * 전제로 한다(isLongDailyWindow 가드 통과 후 진입). 짧은 lookback은 getCachedDailyBars를
-     * 직접 호출하지 말고 반드시 getBars를 통해 라우팅할 것.
+     * 요청 윈도우가 최근 overlap 구간보다 앞에서 시작함을 전제로 한다(isLongDailyWindow
+     * 가드 통과 후 진입). 짧은 lookback은 getBars를 통해 단일 경로로 라우팅된다.
      *
-     * 1Day 일봉을 불변 과거(long-cache)와 최근(live)로 나눠 fetch 후 병합한다.
-     * 과거 윈도우는 `before=오늘−EOD_HIST_TO_DAYS`로 한정해 오늘 봉을 포함하지 않으므로(=불변)
-     * long TTL로 캐싱하고, 매일 키(`from`·`histTo` 날짜)가 self-versioning된다.
-     * 최근 윈도우(`from=오늘−EOD_RECENT_FROM_DAYS`)는 작은 EOD(~EOD_RECENT_FROM_DAYS행)+오늘 봉(quote)을 기존 세션 TTL
-     * (장중 60s)로 가져온다. 두 윈도우는 (EOD_RECENT_FROM_DAYS - EOD_HIST_TO_DAYS)일 겹쳐 주말·공휴일 갭을 막고
-     * `mergeBarsByTime`가 중복(time)을 최근 우선으로 제거한다. 결과는 단일
-     * `getBars(from)`와 동일 집합이다.
+     * 1Day 일봉을 불변 과거(history, 날짜-없는 앵커 키 `bars:eodhist:<SYM>`)와 최근(live,
+     * `bars:eodrecent:<SYM>`)으로 나눠 병렬 fetch 후 병합한다. 캐시 키에 날짜를 넣지 않아
+     * UTC 자정 롤로 인한 전체 재fetch가 없다.
+     *
+     * history 엔트리는 `{ bars, fetchedAt }` 형태로 저장한다. `isFresh` 판정:
+     *   1. covers(from): 캐시된 최古 봉이 요청 `from` 이전이어야 함 — 짧은 캐시가 긴 요청을
+     *      잘라내는 truncation을 방지한다.
+     *   2. 겹침 유지: 최신 봉이 recentFrom 이후 → fresh.
+     *   3. stale-recheck 쿨다운: 겹침이 소실됐어도(상장폐지·장기정지 등 permanent-stale) 최근
+     *      EOD_HIST_STALE_RECHECK_SECONDS 이내 fetch했으면 그대로 사용 — 매 요청마다 full
+     *      재fetch thrash를 막는다. 쿨다운 만료 후에만 재fetch.
+     *
+     * recent는 `from=오늘−EOD_RECENT_FROM_DAYS`(오늘 봉을 quote로 append)를 세션 TTL로 가져와
+     * 오늘/최근 신선도를 담당한다. 두 윈도우의 (EOD_RECENT_FROM_DAYS − EOD_HIST_TO_DAYS)일
+     * 겹침을 `mergeBarsByTime`가 recent 우선으로 dedup하고, `sliceFrom`가 options.from으로
+     * 잘라 단일 `getBars(from)`와 동일 집합을 만든다.
+     *
+     * 앵커 키에서 from을 뺄 수 있는 근거: 모든 long-1Day 호출부가 core
+     * TIMEFRAME_LOOKBACK_DAYS['1Day'] 단일 lookback을 공유한다(짧은 lookback은 가드가
+     * 단일 경로로 분기). core lookback 변경 시 이 전제도 함께 갱신할 것.
      */
     private async getCachedDailyBars(options: GetBarsOptions): Promise<Bar[]> {
         const now = new Date();
+        const nowSeconds = Math.floor(now.getTime() / 1000);
         const histTo = isoDateDaysAgo(now, EOD_HIST_TO_DAYS);
         const recentFrom = isoDateDaysAgo(now, EOD_RECENT_FROM_DAYS);
+        const recentFromThreshold = utcMidnightSeconds(recentFrom);
+        const fromThreshold =
+            options.from !== undefined
+                ? utcMidnightSeconds(options.from)
+                : null;
         const symbolKey = options.symbol.toUpperCase();
-        const [historical, recent] = await Promise.all([
-            getOrSetCache(
-                `bars:eodhist:${symbolKey}:${options.from ?? ''}:${histTo}`,
+
+        const [historyEntry, recent] = await Promise.all([
+            getOrSetCache<EodHistoryEntry>(
+                `bars:eodhist:${symbolKey}`,
                 EOD_HIST_TTL_SECONDS,
-                () => this.inner.getBars({ ...options, before: histTo }),
-                bars => bars.length > 0
+                async () => ({
+                    bars: await this.inner.getBars({
+                        ...options,
+                        before: histTo,
+                    }),
+                    fetchedAt: nowSeconds,
+                }),
+                entry => entry.bars.length > 0,
+                entry =>
+                    isHistoryEntryFresh(
+                        entry,
+                        fromThreshold,
+                        recentFromThreshold,
+                        nowSeconds
+                    )
             ),
             getOrSetCache(
-                `bars:eodrecent:${symbolKey}:${recentFrom}`,
+                `bars:eodrecent:${symbolKey}`,
                 this.ttl('1Day'),
                 () => this.inner.getBars({ ...options, from: recentFrom }),
                 bars => bars.length > 0
             ),
         ]);
-        return mergeBarsByTime(historical, recent);
+
+        return sliceFrom(
+            mergeBarsByTime(historyEntry.bars, recent),
+            options.from
+        );
     }
 
     getQuote = (symbol: string): Promise<MarketQuote | null> =>
