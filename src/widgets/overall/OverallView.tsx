@@ -7,6 +7,7 @@
  */
 
 import type { OverallAnalysisResponse } from '@y0ngha/siglens-core';
+import type { AssetClass } from '@/shared/config/marketProfile';
 import { FinancialsSummary } from './sections/FinancialsSummary';
 import { FundamentalSummary } from './sections/FundamentalSummary';
 import { IntegratedConclusion } from './sections/IntegratedConclusion';
@@ -23,7 +24,7 @@ interface OverallViewProps {
      * Asset class controls which axes are rendered.
      * Defaults to 'equity' (shows options/fundamental/financials sections).
      */
-    assetClass?: 'equity' | 'crypto';
+    assetClass?: AssetClass;
 }
 
 export function OverallView({

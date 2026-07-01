@@ -1,7 +1,7 @@
 // options widget barrel — public API for external consumers.
 
 export { OptionsPageClient } from './OptionsPageClient';
-export { OptionsAiAnalysis } from './OptionsAiAnalysis';
+export { OptionsAiAnalysis, OptionsAiAnalysisView } from './OptionsAiAnalysis';
 export { OptionsAiAnalysisError } from './OptionsAiAnalysisError';
 export { OptionsAiAnalysisSkeleton } from './OptionsAiAnalysisSkeleton';
 export { OptionsAiAnalysisStaleNotice } from './OptionsAiAnalysisStaleNotice';
