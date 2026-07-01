@@ -2,8 +2,8 @@
 
 /**
  * Read-only presentational view of a FearGreedSnapshot for the share/[id] panel.
- * Renders the hero gauge, comparison gauges, group bars, and warning badge
- * from a static snapshot without needing live hooks.
+ * Renders the hero gauge, group bars, and warning badge from a static snapshot
+ * without needing live hooks.
  */
 
 import type { FearGreedSnapshot } from '@y0ngha/siglens-core';

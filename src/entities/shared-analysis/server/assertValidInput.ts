@@ -34,6 +34,7 @@ export const MAX_DISPLAY_NAME_LENGTH = 128;
  */
 function isValidBar(v: unknown): boolean {
     if (typeof v !== 'object' || v === null) return false;
+    // guarded by the typeof + null check just above; safe to index as a plain object map
     const b = v as Record<string, unknown>;
     const requiredNumeric: (keyof typeof b)[] = [
         'time',
@@ -60,8 +61,10 @@ function isValidBar(v: unknown): boolean {
 /** 클라가 전달한 공유 입력의 형태를 검증한다(내용 신뢰 X, 형태만). */
 export function isValidShareInput(raw: unknown): raw is CreateShareInput {
     if (typeof raw !== 'object' || raw === null) return false;
+    // guarded by the typeof + null check just above; safe to index as a plain object map
     const o = raw as Record<string, unknown>;
     if (
+        // const arrays widened to readonly string[] so .includes() accepts a plain string argument
         !(SHAREABLE_KIND_VALUES as readonly string[]).includes(o.kind as string)
     )
         return false;
@@ -82,6 +85,7 @@ export function isValidShareInput(raw: unknown): raw is CreateShareInput {
     if (Buffer.byteLength(JSON.stringify(o.result), 'utf8') > MAX_RESULT_BYTES)
         return false;
     if (
+        // const array widened to readonly string[] so .includes() accepts a plain string argument
         !(USER_TIER_VALUES as readonly string[]).includes(
             o.sharerTier as string
         )

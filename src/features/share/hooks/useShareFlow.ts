@@ -77,7 +77,6 @@ export interface UseShareFlowResult {
  * the mutation's async onSuccess callback.
  */
 export function useShareFlow(): UseShareFlowResult {
-    // ── State ────────────────────────────────────────────────────────────────
     const [sheetOpen, setSheetOpen] = useState(false);
     const [triggerDialogOpen, setTriggerDialogOpen] = useState(false);
     const [preparingOpen, setPreparingOpen] = useState(false);
@@ -90,7 +89,6 @@ export function useShareFlow(): UseShareFlowResult {
      */
     const [hasTriggered, setHasTriggered] = useState(false);
 
-    // ── Refs ─────────────────────────────────────────────────────────────────
     const buttonRef = useRef<HTMLButtonElement>(null);
     /**
      * Stable refs to the latest reg and sharerTier values. The mutation fn reads
@@ -109,11 +107,9 @@ export function useShareFlow(): UseShareFlowResult {
      */
     const mutateRef = useRef<() => void>(() => undefined);
 
-    // ── Custom hooks ─────────────────────────────────────────────────────────
     const reg = useShareable();
     const { tier: sharerTier } = useUserTier();
 
-    // ── getDerivedState pattern ───────────────────────────────────────────────
     /**
      * Reset all transient UI state when the user switches to a different analysis tab.
      *
@@ -131,7 +127,6 @@ export function useShareFlow(): UseShareFlowResult {
         setHasTriggered(false);
     }
 
-    // ── Mutation ─────────────────────────────────────────────────────────────
     const mutation = useMutation({
         mutationFn: async () => {
             const currentReg = regRef.current;
@@ -210,7 +205,6 @@ export function useShareFlow(): UseShareFlowResult {
         },
     });
 
-    // ── useMemo ───────────────────────────────────────────────────────────────
     /**
      * Phase is derived purely from observable state — no setState called during render
      * and no refs read during render. Error phase only shows after the user has
@@ -224,7 +218,6 @@ export function useShareFlow(): UseShareFlowResult {
         return 'pending';
     }, [preparingOpen, hasTriggered, reg?.status]);
 
-    // ── Callbacks ─────────────────────────────────────────────────────────────
     /**
      * Shared share-execution function used by both the direct success-click path and
      * the auto-advance effect. Stable identity prevents the auto-advance effect from
@@ -234,7 +227,6 @@ export function useShareFlow(): UseShareFlowResult {
         mutateRef.current();
     }, []);
 
-    // ── Derived state ─────────────────────────────────────────────────────────
     // Placed after useMemo/useCallback per MISTAKES #17 strict hook order:
     // useState/useRef → hooks/useMutation → useCallback/useMemo → derived → handlers → useEffect.
     const effectiveStatus = reg?.status ?? 'unavailable';
@@ -294,7 +286,6 @@ export function useShareFlow(): UseShareFlowResult {
         buttonRef.current?.focus();
     }, []);
 
-    // ── Effects ───────────────────────────────────────────────────────────────
     /**
      * Keep all stable refs in sync with the latest values so callbacks and the
      * mutation fn always read up-to-date state without stale closure issues.
@@ -321,7 +312,6 @@ export function useShareFlow(): UseShareFlowResult {
         }
     }, [hasTriggered, reg?.status, reg?.result, runShare]);
 
-    // ── Stable return value ───────────────────────────────────────────────────
     const describedById = useId();
     const symbol = reg?.context.symbol ?? '';
     const tweetText = `${symbol} AI 분석 결과를 SigLens에서 확인하세요`;

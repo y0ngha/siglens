@@ -145,7 +145,7 @@ describe('SharePreparingModal', () => {
         });
 
         // C-7: 닫기 calling onClose
-        it('renders at least two close buttons (header ✕ + body 닫기) in error phase', () => {
+        it('renders exactly two close buttons (header ✕ + body 닫기) in error phase', () => {
             render(
                 <SharePreparingModal
                     open
@@ -158,7 +158,7 @@ describe('SharePreparingModal', () => {
             const closeButtons = screen.getAllByRole('button', {
                 name: '닫기',
             });
-            expect(closeButtons.length).toBeGreaterThanOrEqual(2);
+            expect(closeButtons.length).toBe(2);
         });
 
         it('calls onClose when the body 닫기 button is clicked', () => {

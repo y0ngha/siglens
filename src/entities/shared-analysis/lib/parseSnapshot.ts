@@ -4,6 +4,7 @@ import type { SharedAnalysisSnapshot } from '../types';
 function isShareableKind(v: unknown): v is SharedAnalysisSnapshot['kind'] {
     return (
         typeof v === 'string' &&
+        // const array widened to readonly string[] so .includes() accepts a plain string argument
         (SHAREABLE_KIND_VALUES as readonly string[]).includes(v)
     );
 }
@@ -23,6 +24,7 @@ function isShareableKind(v: unknown): v is SharedAnalysisSnapshot['kind'] {
  */
 export function parseSnapshot(raw: unknown): SharedAnalysisSnapshot | null {
     if (typeof raw !== 'object' || raw === null) return null;
+    // guarded by the typeof + null check just above; safe to treat as a plain object map
     const obj = raw as Record<string, unknown>;
     if (!isShareableKind(obj.kind)) return null;
     if (typeof obj.symbol !== 'string') return null;
