@@ -53,6 +53,11 @@ vi.mock('@/widgets/options/OptionsAiAnalysis', () => ({
 vi.mock('@/widgets/fear-greed/FearGreedShareView', () => ({
     FearGreedShareView: () => null,
 }));
+// ShareCandlestickChart uses lightweight-charts which requires a DOM canvas;
+// mock it at the widget path so kindPanelRegistry.tsx can resolve it.
+vi.mock('@/widgets/chart/ShareCandlestickChart', () => ({
+    ShareCandlestickChart: () => null,
+}));
 
 // ─── minimal stub results per kind ───────────────────────────────────────────
 
@@ -88,5 +93,27 @@ describe('ShareKindPanel (RSC boundary dispatcher)', () => {
                 ).not.toThrow();
             });
         }
+    });
+
+    it('renders chart kind with chartBars prop without throwing', () => {
+        const stubBars = [
+            {
+                time: 1700000000,
+                open: 150,
+                high: 155,
+                low: 148,
+                close: 153,
+                volume: 1000000,
+            },
+        ];
+        expect(() =>
+            render(
+                <ShareKindPanel
+                    kind="chart"
+                    result={stubResults.chart as never}
+                    chartBars={stubBars}
+                />
+            )
+        ).not.toThrow();
     });
 });

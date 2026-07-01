@@ -9,6 +9,7 @@ import { checkShareRateLimit } from '../server/rateLimit';
 import { buildShareSnapshot } from '../lib/buildShareSnapshot';
 import { contentHash } from '../lib/contentHash';
 import { generateShareId } from '../lib/generateShareId';
+import { MS_PER_DAY } from '@/shared/config/time';
 import type { CreateShareResult } from '../types';
 
 const SHARE_TTL_DAYS = 7;
@@ -42,9 +43,7 @@ export async function createShareSnapshotAction(
 
     try {
         const snapshot = buildShareSnapshot(input);
-        const expiresAt = new Date(
-            now.getTime() + SHARE_TTL_DAYS * 24 * 60 * 60 * 1000
-        );
+        const expiresAt = new Date(now.getTime() + SHARE_TTL_DAYS * MS_PER_DAY);
         const { db } = getDatabaseClient();
         const repo = new DrizzleSharedAnalysisRepository(db);
         const id = await repo.create({

@@ -1,5 +1,6 @@
 import {
     isValidShareInput,
+    MAX_CHART_BARS,
     MAX_RESULT_BYTES,
 } from '@/entities/shared-analysis/server/assertValidInput';
 
@@ -202,6 +203,113 @@ describe('isValidShareInput', () => {
                 context: { displayName: 'Apple' },
                 result: oversized,
                 sharerTier: 'free',
+            })
+        ).toBe(false);
+    });
+
+    // ── chartBars validation ──────────────────────────────────────────────────
+
+    const makeBar = (i: number) => ({
+        time: 1700000000 + i * 86400,
+        open: 150,
+        high: 155,
+        low: 148,
+        close: 153,
+        volume: 1000000,
+    });
+
+    it('accepts chart input with valid chartBars', () => {
+        expect(
+            isValidShareInput({
+                kind: 'chart',
+                symbol: 'AAPL',
+                context: { symbol: 'AAPL', displayName: 'Apple' },
+                result: { trend: 'bullish' },
+                sharerTier: 'free',
+                chartBars: [makeBar(0), makeBar(1)],
+            })
+        ).toBe(true);
+    });
+
+    it('accepts chart input without chartBars (optional)', () => {
+        expect(
+            isValidShareInput({
+                kind: 'chart',
+                symbol: 'AAPL',
+                context: { symbol: 'AAPL', displayName: 'Apple' },
+                result: { trend: 'bullish' },
+                sharerTier: 'free',
+            })
+        ).toBe(true);
+    });
+
+    it('accepts chart input with exactly MAX_CHART_BARS bars', () => {
+        const bars = Array.from({ length: MAX_CHART_BARS }, (_, i) =>
+            makeBar(i)
+        );
+        expect(
+            isValidShareInput({
+                kind: 'chart',
+                symbol: 'AAPL',
+                context: { symbol: 'AAPL', displayName: 'Apple' },
+                result: { trend: 'bullish' },
+                sharerTier: 'free',
+                chartBars: bars,
+            })
+        ).toBe(true);
+    });
+
+    it('rejects chart input with chartBars exceeding MAX_CHART_BARS', () => {
+        const bars = Array.from({ length: MAX_CHART_BARS + 1 }, (_, i) =>
+            makeBar(i)
+        );
+        expect(
+            isValidShareInput({
+                kind: 'chart',
+                symbol: 'AAPL',
+                context: { symbol: 'AAPL', displayName: 'Apple' },
+                result: { trend: 'bullish' },
+                sharerTier: 'free',
+                chartBars: bars,
+            })
+        ).toBe(false);
+    });
+
+    it('rejects chart input with empty chartBars array', () => {
+        expect(
+            isValidShareInput({
+                kind: 'chart',
+                symbol: 'AAPL',
+                context: { symbol: 'AAPL', displayName: 'Apple' },
+                result: { trend: 'bullish' },
+                sharerTier: 'free',
+                chartBars: [],
+            })
+        ).toBe(false);
+    });
+
+    it('rejects chart input with non-array chartBars', () => {
+        expect(
+            isValidShareInput({
+                kind: 'chart',
+                symbol: 'AAPL',
+                context: { symbol: 'AAPL', displayName: 'Apple' },
+                result: { trend: 'bullish' },
+                sharerTier: 'free',
+                chartBars: 'not-an-array',
+            })
+        ).toBe(false);
+    });
+
+    it('rejects non-chart kind with chartBars present', () => {
+        expect(
+            isValidShareInput({
+                kind: 'news',
+                symbol: 'AAPL',
+                context: { symbol: 'AAPL', displayName: 'Apple' },
+                result: { overallSentiment: 'bullish' },
+                sharerTier: 'free',
+                chartBars: [makeBar(0)],
             })
         ).toBe(false);
     });

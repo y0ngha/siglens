@@ -317,6 +317,10 @@ export function ChartContent({
             analyzedAt: (analysisResult ?? analysis)?.analyzedAt,
         },
         trigger: handleReanalyze,
+        // Thread snapshot-time bars into the registration so ShareButton can
+        // embed them in the chart share snapshot. bars is captured via a ref
+        // in useRegisterShareable — no re-registration on every render.
+        chartBars: bars,
     });
 
     useEffect(() => {

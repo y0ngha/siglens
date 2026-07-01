@@ -12,6 +12,7 @@ import { useMutation } from '@tanstack/react-query';
 import { useShareable } from '@/features/share';
 import { useUserTier } from '@/features/symbol-model/hooks/useUserTier';
 import { createShareSnapshotAction } from '@/entities/shared-analysis/actions/createShareSnapshotAction';
+import { MAX_CHART_BARS } from '@/entities/shared-analysis/server/assertValidInput';
 import { canShareNatively, isShareAbort } from '@/shared/lib/share';
 import { SITE_URL } from '@/shared/lib/seo';
 import { cn } from '@/shared/lib/cn';
@@ -98,12 +99,23 @@ export function ShareButton() {
             ) {
                 throw new Error('No shareable result available');
             }
+            // Slice to the last MAX_CHART_BARS candles (most recent = most relevant
+            // for the analysis). The server re-validates the count in isValidShareInput;
+            // this client-side cap prevents exceeding the server limit before the
+            // network round-trip.
+            const chartBars =
+                currentReg.kind === 'chart' &&
+                currentReg.chartBars !== undefined &&
+                currentReg.chartBars.length > 0
+                    ? currentReg.chartBars.slice(-MAX_CHART_BARS)
+                    : undefined;
             return createShareSnapshotAction({
                 kind: currentReg.kind,
                 symbol: currentReg.context.symbol,
                 context: currentReg.context,
                 result: currentReg.result,
                 sharerTier: sharerTierRef.current,
+                ...(chartBars !== undefined && { chartBars }),
             });
         },
         onError: () => {

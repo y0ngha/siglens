@@ -72,7 +72,11 @@ export default async function SharePage({ params }: Props) {
                 {asOf} 데이터라서 현재 시세와 다를 수 있어요
             </div>
 
-            <ShareKindPanel kind={snapshot.kind} result={snapshot.result} />
+            <ShareKindPanel
+                kind={snapshot.kind}
+                result={snapshot.result}
+                chartBars={snapshot.chartBars}
+            />
 
             <div
                 role="note"

@@ -16,8 +16,10 @@ import type {
     ShareableKind,
     SnapshotResultOf,
 } from '@/entities/shared-analysis';
+import type { Bar } from '@y0ngha/siglens-core';
 import { clusterKeyLevels, validateKeyLevels } from '@y0ngha/siglens-core';
 import { AnalysisPanel } from '@/widgets/analysis/AnalysisPanel';
+import { ShareCandlestickChart } from '@/widgets/chart/ShareCandlestickChart';
 import { OverallView } from '@/widgets/overall/OverallView';
 import { NewsAiSummaryView } from '@/widgets/news/NewsAiSummary';
 import { FundamentalAiSummaryView } from '@/widgets/fundamental/FundamentalAiSummary';
@@ -43,27 +45,47 @@ import { FearGreedShareView } from '@/widgets/fear-greed/FearGreedShareView';
  * - All interaction props (`onReanalyze`, `onActionPricesVisibilityChange`)
  *   are intentionally omitted — the panel hides those UI elements when they
  *   are undefined.
+ *
+ * `chartBars` is optional — old snapshots (created before this feature) will
+ * not have bars. When present, a read-only candlestick chart is rendered ABOVE
+ * the AnalysisPanel so the viewer sees the price context at analysis time.
  */
-function ChartSharePanel({ result }: { result: SnapshotResultOf<'chart'> }) {
+function ChartSharePanel({
+    result,
+    chartBars,
+}: {
+    result: SnapshotResultOf<'chart'>;
+    chartBars?: Bar[];
+}) {
     const rawKeyLevels = result.keyLevels ?? { support: [], resistance: [] };
     const clustered = clusterKeyLevels(validateKeyLevels(rawKeyLevels), 0);
     return (
-        <AnalysisPanel
-            symbol=""
-            analysis={result}
-            keyLevels={clustered}
-            timeframe="1Day"
-            isFreeUser={false}
-        />
+        <div className="flex flex-col gap-6">
+            {chartBars !== undefined && chartBars.length > 0 && (
+                <div className="border-secondary-700 overflow-hidden rounded-lg border">
+                    <ShareCandlestickChart bars={chartBars} />
+                </div>
+            )}
+            <AnalysisPanel
+                symbol=""
+                analysis={result}
+                keyLevels={clustered}
+                timeframe="1Day"
+                isFreeUser={false}
+            />
+        </div>
     );
 }
 
 type PanelComponent<K extends ShareableKind> = (props: {
     result: SnapshotResultOf<K>;
+    chartBars?: Bar[];
 }) => ReactNode;
 
 export const SHARE_KIND_PANEL_REGISTRY = {
-    chart: ({ result }) => <ChartSharePanel result={result} />,
+    chart: ({ result, chartBars }) => (
+        <ChartSharePanel result={result} chartBars={chartBars} />
+    ),
     overall: ({ result }) => <OverallView result={result} />,
     news: ({ result }) => <NewsAiSummaryView result={result} />,
     fundamental: ({ result }) => <FundamentalAiSummaryView result={result} />,

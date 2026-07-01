@@ -14,6 +14,15 @@ const input = {
     sharerTier: 'free',
 } as unknown as CreateShareInput;
 
+const stubBar = {
+    time: 1700000000,
+    open: 150,
+    high: 155,
+    low: 148,
+    close: 153,
+    volume: 1000000,
+};
+
 describe('buildShareSnapshot', () => {
     it('builds a snapshot with uppercased symbol', () => {
         const snap = buildShareSnapshot(input);
@@ -23,6 +32,34 @@ describe('buildShareSnapshot', () => {
     });
     it('produces a JSON-stable object (no Date/undefined/functions)', () => {
         const snap = buildShareSnapshot(input);
+        expect(JSON.parse(JSON.stringify(snap))).toEqual(snap);
+    });
+
+    // chartBars forwarding
+    it('includes chartBars in snapshot when provided', () => {
+        const inputWithBars = {
+            ...input,
+            chartBars: [stubBar, { ...stubBar, time: 1700086400 }],
+        } as unknown as CreateShareInput;
+        const snap = buildShareSnapshot(inputWithBars);
+        expect(snap.chartBars).toHaveLength(2);
+        expect(snap.chartBars?.[0]).toEqual(stubBar);
+    });
+
+    it('omits chartBars from snapshot when not provided', () => {
+        const snap = buildShareSnapshot(input);
+        expect(snap.chartBars).toBeUndefined();
+        expect(Object.prototype.hasOwnProperty.call(snap, 'chartBars')).toBe(
+            false
+        );
+    });
+
+    it('produces a JSON-stable snapshot with chartBars', () => {
+        const inputWithBars = {
+            ...input,
+            chartBars: [stubBar],
+        } as unknown as CreateShareInput;
+        const snap = buildShareSnapshot(inputWithBars);
         expect(JSON.parse(JSON.stringify(snap))).toEqual(snap);
     });
 });

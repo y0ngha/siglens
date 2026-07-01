@@ -15,6 +15,7 @@ import type {
     ShareableKind,
     SnapshotResultOf,
 } from '@/entities/shared-analysis';
+import type { Bar } from '@y0ngha/siglens-core';
 
 export type ShareableStatus =
     | 'idle'
@@ -31,6 +32,12 @@ export interface ShareableRegistration<
     result: SnapshotResultOf<K> | null;
     context: ShareContext;
     trigger: () => void;
+    /**
+     * Snapshot-time candlestick bars — chart kind only.
+     * Threaded from ChartContent (which has bars in scope via useBars) into the
+     * share registration so ShareButton can include them in the snapshot action call.
+     */
+    chartBars?: Bar[];
 }
 
 interface ShareableContextValue {
@@ -65,16 +72,25 @@ export function useShareable(): ShareableRegistration | null {
  * Deps are primitive values extracted from reg so no eslint-disable is needed
  * and no object-identity render loop occurs. `trigger` is captured via a ref
  * so the registration effect doesn't re-run when only the callback identity changes.
+ *
+ * `chartBars` is also captured via a ref: the bars array reference changes every
+ * render (useBars returns a new array on each query result), so including it directly
+ * as a dep would cause continuous re-registration. The ref always holds the latest
+ * bars and is read at registration time, which is triggered by the other primitive
+ * deps (status, result, symbol, etc.) that change meaningfully when bars actually
+ * update (the analysis result / status transitions accompany a new bars fetch).
  */
 export function useRegisterShareable(reg: ShareableRegistration): void {
     const ctx = useContext(Ctx);
-    // `triggerRef` is declared before destructuring so that all hooks appear in
-    // the same top-level order on every render (React hook invariant).
+    // Refs are declared before destructuring so all hooks appear in the same
+    // top-level order on every render (React hook invariant).
     const triggerRef = useRef(reg.trigger);
+    const chartBarsRef = useRef(reg.chartBars);
     const { kind, status, result, context } = reg;
     const { symbol, displayName, assetClass, analyzedAt } = context;
     useEffect(() => {
         triggerRef.current = reg.trigger;
+        chartBarsRef.current = reg.chartBars;
     });
     useEffect(() => {
         ctx?.register({
@@ -83,6 +99,7 @@ export function useRegisterShareable(reg: ShareableRegistration): void {
             result,
             context: { symbol, displayName, assetClass, analyzedAt },
             trigger: () => triggerRef.current(),
+            chartBars: chartBarsRef.current,
         });
         return () => ctx?.register(null);
     }, [

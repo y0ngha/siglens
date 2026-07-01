@@ -17,6 +17,20 @@ function isNonEmptyString(v: unknown): v is string {
  */
 export const MAX_RESULT_BYTES = 65_536;
 
+/**
+ * Maximum number of candlestick bars stored in a chart share snapshot.
+ *
+ * Size reasoning (worst case):
+ *   - Largest legitimate AnalysisResponse (Korean text, 50 signals, 40 key levels): ~20 KB
+ *   - 400 bars × ~101 bytes/bar (JSON): ~40 KB
+ *   - Combined: ~60 KB — well within the 64 KB jsonb column limit.
+ *
+ * Core's TIMEFRAME_BARS_LIMIT for 1Day is 500; we cap at 400 to leave a
+ * comfortable safety margin. ChartContent slices to the last MAX_CHART_BARS
+ * before sending (most recent candles are most relevant for the analysis).
+ */
+export const MAX_CHART_BARS = 400;
+
 /** 클라가 전달한 공유 입력의 형태를 검증한다(내용 신뢰 X, 형태만). */
 export function isValidShareInput(raw: unknown): raw is CreateShareInput {
     if (typeof raw !== 'object' || raw === null) return false;
@@ -42,5 +56,13 @@ export function isValidShareInput(raw: unknown): raw is CreateShareInput {
         )
     )
         return false;
+    // chartBars is optional; when present (chart kind), it must be a non-empty
+    // array within the count cap. Non-chart kinds must not include chartBars.
+    if (o.chartBars !== undefined) {
+        if (o.kind !== 'chart') return false;
+        if (!Array.isArray(o.chartBars)) return false;
+        if (o.chartBars.length === 0 || o.chartBars.length > MAX_CHART_BARS)
+            return false;
+    }
     return true;
 }

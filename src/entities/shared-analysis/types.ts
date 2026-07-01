@@ -7,6 +7,7 @@ import type {
     CongressTrendResponse,
     OptionsAnalysisResponse,
     FearGreedSnapshot,
+    Bar,
     Tier,
 } from '@y0ngha/siglens-core';
 import type { ShareableKind } from '@/shared/db/constants';
@@ -43,6 +44,13 @@ export interface SharedAnalysisSnapshot<
     symbol: string;
     context: ShareContext;
     result: SnapshotResultOf<K>;
+    /**
+     * Snapshot-time candlestick bars — chart kind only.
+     * Stored at snapshot level (not inside `result`) so the existing
+     * `MAX_RESULT_BYTES` guard on `result` remains unchanged.
+     * Capped to `MAX_CHART_BARS` (400) bars by `isValidShareInput`.
+     */
+    chartBars?: Bar[];
 }
 
 /** createShareSnapshotAction 입력(클라 전달). */
@@ -52,6 +60,12 @@ export interface CreateShareInput<K extends ShareableKind = ShareableKind> {
     context: ShareContext;
     result: SnapshotResultOf<K>;
     sharerTier: Tier;
+    /**
+     * Snapshot-time OHLCV bars to embed in the chart share snapshot.
+     * Only valid (and only sent) when `kind === 'chart'`.
+     * Validated server-side: must be an array with length ≤ MAX_CHART_BARS.
+     */
+    chartBars?: Bar[];
 }
 
 /** 액션 결과. */

@@ -8,6 +8,8 @@
  *  4. Each kind actually RENDERS without throwing (catches undefined component bugs).
  *  5. The chart adapter derives ClusteredKeyLevels from result.keyLevels via
  *     validateKeyLevels + clusterKeyLevels and passes them to AnalysisPanel.
+ *  6. The chart adapter renders ShareCandlestickChart when chartBars is provided,
+ *     and omits it when chartBars is absent (graceful degradation for old snapshots).
  *
  * Mocks use deep paths that match the imports in kindPanelRegistry.tsx — so the
  * mock resolves at the same module boundary that the registry uses, preventing
@@ -15,7 +17,7 @@
  */
 
 import { render } from '@testing-library/react';
-import type { ClusteredKeyLevels } from '@y0ngha/siglens-core';
+import type { Bar, ClusteredKeyLevels } from '@y0ngha/siglens-core';
 import { SHAREABLE_KIND_VALUES } from '@/shared/db/constants';
 import { SHARE_KIND_PANEL_REGISTRY } from '@/widgets/share/ui/kindPanelRegistry';
 
@@ -26,6 +28,9 @@ import { SHARE_KIND_PANEL_REGISTRY } from '@/widgets/share/ui/kindPanelRegistry'
 // vice-versa), the mock won't intercept and the component will be undefined.
 
 const mockAnalysisPanel = vi.fn((_props: Record<string, unknown>) => null);
+const mockShareCandlestickChart = vi.fn(
+    (_props: Record<string, unknown>) => null
+);
 
 // Stub clusterKeyLevels / validateKeyLevels so the chart adapter test is
 // deterministic without depending on core implementation details.
@@ -51,6 +56,10 @@ vi.mock('@y0ngha/siglens-core', async importOriginal => {
 
 vi.mock('@/widgets/analysis/AnalysisPanel', () => ({
     AnalysisPanel: (props: Record<string, unknown>) => mockAnalysisPanel(props),
+}));
+vi.mock('@/widgets/chart/ShareCandlestickChart', () => ({
+    ShareCandlestickChart: (props: Record<string, unknown>) =>
+        mockShareCandlestickChart(props),
 }));
 vi.mock('@/widgets/overall/OverallView', () => ({
     OverallView: () => null,
@@ -204,6 +213,56 @@ describe('SHARE_KIND_PANEL_REGISTRY', () => {
                     keyLevels: STUB_CLUSTERED,
                 })
             );
+        });
+
+        // T6: snapshot-time chart rendering via ShareCandlestickChart
+
+        it('renders ShareCandlestickChart when chartBars is provided', () => {
+            mockShareCandlestickChart.mockClear();
+            const fakeResult = { trend: 'bullish', summary: '차트 분석' };
+            const stubBars: Bar[] = [
+                {
+                    time: 1700000000,
+                    open: 150,
+                    high: 155,
+                    low: 148,
+                    close: 153,
+                    volume: 1000000,
+                },
+            ];
+            render(
+                SHARE_KIND_PANEL_REGISTRY.chart({
+                    result: fakeResult as never,
+                    chartBars: stubBars,
+                })
+            );
+            expect(mockShareCandlestickChart).toHaveBeenCalledTimes(1);
+            expect(mockShareCandlestickChart).toHaveBeenCalledWith(
+                expect.objectContaining({ bars: stubBars })
+            );
+        });
+
+        it('does not render ShareCandlestickChart when chartBars is absent (old snapshot graceful degradation)', () => {
+            mockShareCandlestickChart.mockClear();
+            const fakeResult = { trend: 'bullish', summary: '차트 분석' };
+            render(
+                SHARE_KIND_PANEL_REGISTRY.chart({ result: fakeResult as never })
+            );
+            expect(mockShareCandlestickChart).not.toHaveBeenCalled();
+            // AnalysisPanel still renders without the chart
+            expect(mockAnalysisPanel).toHaveBeenCalledTimes(1);
+        });
+
+        it('does not render ShareCandlestickChart when chartBars is an empty array', () => {
+            mockShareCandlestickChart.mockClear();
+            const fakeResult = { trend: 'bullish', summary: '차트 분석' };
+            render(
+                SHARE_KIND_PANEL_REGISTRY.chart({
+                    result: fakeResult as never,
+                    chartBars: [],
+                })
+            );
+            expect(mockShareCandlestickChart).not.toHaveBeenCalled();
         });
     });
 });

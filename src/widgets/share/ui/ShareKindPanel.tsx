@@ -15,8 +15,9 @@
  *   `undefined` at render time.
  *
  *   The fix: move the dispatch into a *named* 'use client' component (`ShareKindPanel`).
- *   The server component passes only JSON-serializable props (`kind` + `result`);
- *   the client component performs the registry lookup and renders the correct panel.
+ *   The server component passes only JSON-serializable props (`kind` + `result` +
+ *   optional `chartBars`); the client component performs the registry lookup and
+ *   renders the correct panel.
  */
 
 import type { ReactNode } from 'react';
@@ -24,11 +25,18 @@ import type {
     ShareableKind,
     SnapshotResultOf,
 } from '@/entities/shared-analysis';
+import type { Bar } from '@y0ngha/siglens-core';
 import { SHARE_KIND_PANEL_REGISTRY } from './kindPanelRegistry';
 
 interface ShareKindPanelProps<K extends ShareableKind> {
     kind: K;
     result: SnapshotResultOf<K>;
+    /**
+     * Snapshot-time candlestick bars — only present when `kind === 'chart'`.
+     * Serialized from `snapshot.chartBars` at the RSC boundary and forwarded
+     * to the chart panel to render a static read-only candlestick chart.
+     */
+    chartBars?: Bar[];
 }
 
 /**
@@ -38,6 +46,7 @@ interface ShareKindPanelProps<K extends ShareableKind> {
 export function ShareKindPanel<K extends ShareableKind>({
     kind,
     result,
+    chartBars,
 }: ShareKindPanelProps<K>) {
     // Safe: `kind` and `result` are co-typed via the same generic `K`, so the
     // registry entry for this key always accepts exactly the result type that
@@ -46,6 +55,7 @@ export function ShareKindPanel<K extends ShareableKind>({
     // sites.
     const Panel = SHARE_KIND_PANEL_REGISTRY[kind] as (props: {
         result: SnapshotResultOf<K>;
+        chartBars?: Bar[];
     }) => ReactNode;
-    return <Panel result={result} />;
+    return <Panel result={result} chartBars={chartBars} />;
 }
