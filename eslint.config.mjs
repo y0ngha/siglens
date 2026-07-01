@@ -197,15 +197,25 @@ const eslintConfig = defineConfig([
         },
     },
     {
-        // Test files deliberately cross FSD layer boundaries:
-        //   - src/entities/shared-analysis/__tests__/kindExhaustiveness.test.ts
-        //     imports src/views/symbol/utils/symbolTabsConfig (views → entity).
-        //   - src/app/[symbol]/__tests__/page.test.ts imports src/views/symbol/.
-        //   - src/__integration__/*.test.tsx import src/views/symbol/ components.
-        // Narrowing to a single file is not feasible because multiple test files
-        // in different layers need the same exemption. Kept broad so no inline
-        // eslint-disable comments are required.
-        files: ['src/**/*.test.{ts,tsx}', 'src/**/__tests__/**'],
+        // Specific test files that deliberately cross FSD layer boundaries by importing
+        // upward (entity → views, or integration harness → views).
+        //
+        // app/** tests are NOT listed here: app → views is an allowed dependency
+        // (app layer may import pages/views per boundaries/dependencies rules above).
+        //
+        // Enumerated files and patterns:
+        //   - kindExhaustiveness.test.ts: entity importing @/views/symbol/utils/symbolTabsConfig
+        //     to assert that every ShareableKind has a matching tab key.
+        //   - src/__integration__/*.test.{ts,tsx}: integration harness files are outside all
+        //     FSD layer patterns; several import @/views/symbol/ components and utils directly.
+        //
+        // Do NOT broaden this list without justification — the intent is to keep the set small
+        // so boundary violations in new test files are caught by the linter.
+        files: [
+            'src/entities/shared-analysis/__tests__/kindExhaustiveness.test.ts',
+            'src/__integration__/*.test.ts',
+            'src/__integration__/*.test.tsx',
+        ],
         rules: {
             'boundaries/dependencies': 'off',
         },

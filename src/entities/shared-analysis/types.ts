@@ -80,6 +80,14 @@ export interface CreateShareInput<K extends ShareableKind = ShareableKind> {
     symbol: string;
     context: ShareContext;
     result: SnapshotResultOf<K>;
+    /**
+     * Tier of the user who created the share, persisted to `shared_analyses.sharer_tier`.
+     *
+     * Not consumed on the current read path (getSharedAnalysisAction / ShareKindPanel / share page).
+     * Stored intentionally as cheap metadata for a documented follow-up: tier-based field masking
+     * on the viewer side (spec §12 — e.g. blurring premium fields for free-tier sharers).
+     * Removing and re-adding a DB column later would be churn, so this is kept in place.
+     */
     sharerTier: Tier;
     /**
      * Snapshot-time OHLCV bars to embed in the chart share snapshot.

@@ -529,7 +529,9 @@ const CONTENT_HASH_LENGTH = 64; // sha256 hex
  * - `contentHash`가 동일하면 같은 분석 내용이므로 uq 제약으로 중복 저장 방지.
  * - `userId`는 SET NULL on delete — 탈퇴한 사용자의 공유 링크는 사라지지 않고
  *   익명 스냅샷으로 유지된다(링크가 살아있으면 내용은 보여야 함).
- * - `expiresAt` 만료 행은 별도 크론으로 정리한다.
+ * - `expiresAt` 만료 행은 현재 앱 레벨의 `isExpired()` 필터로 읽기 시 걸러지며,
+ *   DB 물리 삭제 크론은 아직 미구현이다(tracked follow-up: docs/reference/CRON.md §pending).
+ *   만료 행이 누적되어도 쿼리 결과에는 노출되지 않는다.
  */
 export const sharedAnalyses = pgTable(
     'shared_analyses',
@@ -544,6 +546,12 @@ export const sharedAnalyses = pgTable(
             length: CONTENT_HASH_LENGTH,
         }).notNull(),
         snapshotJson: jsonb('snapshot_json').notNull(),
+        /**
+         * Tier of the user who created the share — stored as cheap metadata.
+         * Not read on the current view path; reserved for tier-based field masking
+         * on the viewer side (spec §12 follow-up). Column is intentionally kept
+         * to avoid a destructive migration once the follow-up ships.
+         */
         sharerTier: userTierEnum('sharer_tier').notNull().default('free'),
         createdAt: timestamp('created_at', { withTimezone: true })
             .notNull()

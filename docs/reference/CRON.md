@@ -2,6 +2,12 @@
 
 현재 등록된 cron 작업이 없습니다. 어닝 데이터는 사용자가 종목의 뉴스 페이지에 진입할 때 on-demand 방식으로 FMP에서 fetch해 `earnings_reports` 테이블에 upsert됩니다 (`src/app/[symbol]/news/newsData.ts`의 `getEarningsReportComparison`).
 
+## Pending Follow-ups
+
+| 테이블 | 작업 | 상태 |
+|---|---|---|
+| `shared_analyses` | 만료 행(`expires_at < NOW()`) 주기적 물리 삭제 | ⏳ 미구현 — 현재는 앱 레벨 `isExpired()` 필터로 읽기 시 걸러짐. 행이 누적되어 문제가 될 경우 위 패턴에 따라 `PATCH /api/cron/cleanup-shared-analyses` 크론 추가. |
+
 ## 새 Cron 추가 패턴
 
 향후 cron을 추가할 때 따를 패턴:
