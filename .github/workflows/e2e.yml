@@ -52,6 +52,10 @@ jobs:
         # (a PAT with read:packages) for CI to install @y0ngha/siglens-core.
         env:
             SIGLENS_GITHUB_TOKEN: ${{ secrets.SIGLENS_GITHUB_TOKEN }}
+            # getBarsStatic calls fmpTickerApi which throws if FMP_API_KEY is absent;
+            # without it, SymbolPage bars never load and analysis fixtures stay stuck
+            # at "시장 데이터 정렬 중", timing out all analysis-dependent E2E specs.
+            FMP_API_KEY: ${{ secrets.FMP_API_KEY }}
         # Single job is sufficient for this foundation PR (one smoke spec).
         # When the spec count grows, add Playwright sharding via a matrix
         # (e.g. strategy.matrix.shard: [1, 2] + `--shard=${{ matrix.shard }}/2`).
