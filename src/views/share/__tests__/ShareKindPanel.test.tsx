@@ -23,7 +23,7 @@
 import { render } from '@testing-library/react';
 import type { ShareableKind } from '@/entities/shared-analysis';
 import { SHAREABLE_KIND_VALUES } from '@/shared/db/constants';
-import { ShareKindPanel } from '@/widgets/share/ui/ShareKindPanel';
+import { ShareKindPanel } from '@/views/share/ShareKindPanel';
 
 // Mock heavy widget deps so the test stays unit-level.
 // Paths MUST match the imports in kindPanelRegistry.tsx (deep paths, not barrels).

@@ -4,7 +4,7 @@ import { getCachedSharedAnalysis } from '@/entities/shared-analysis/actions/getC
 import { resolveAsOf } from '@/entities/shared-analysis/lib/resolveAsOf';
 import { kindLabel } from '@/widgets/share/lib/kindLabel';
 import { buildShareMetadata } from '@/entities/shared-analysis/lib/buildShareSeo';
-import { ShareKindPanel } from '@/widgets/share/ui/ShareKindPanel';
+import { ShareKindPanel } from '@/views/share';
 import { formatKoreanDateTime } from '@/shared/lib/formatKoreanDateTime';
 import { SITE_NAME } from '@/shared/lib/seo';
 import { INVESTMENT_DISCLAIMER } from '@/shared/lib/legal';
@@ -85,6 +85,7 @@ export default async function SharePage({ params }: Props) {
                         ? 'crypto'
                         : 'equity'
                 }
+                symbol={ticker}
             />
 
             <div

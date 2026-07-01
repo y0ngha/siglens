@@ -44,6 +44,12 @@ interface ShareKindPanelProps<K extends ShareableKind> {
      * Forwarded through the registry to `<OverallView assetClass={...} />`.
      */
     assetClass?: AssetClass;
+    /**
+     * Ticker symbol from the snapshot (e.g. "AAPL"). Forwarded to the chart
+     * panel so the copy-report utility and aria-label use the real ticker
+     * instead of an empty string.
+     */
+    symbol?: string;
 }
 
 /**
@@ -55,6 +61,7 @@ export function ShareKindPanel<K extends ShareableKind>({
     result,
     chartBars,
     assetClass,
+    symbol,
 }: ShareKindPanelProps<K>) {
     // Safe: `kind` and `result` are co-typed via the same generic `K`, so the
     // registry entry for this key always accepts exactly the result type that
@@ -65,8 +72,14 @@ export function ShareKindPanel<K extends ShareableKind>({
         result: SnapshotResultOf<K>;
         chartBars?: Bar[];
         assetClass?: AssetClass;
+        symbol?: string;
     }) => ReactNode;
     return (
-        <Panel result={result} chartBars={chartBars} assetClass={assetClass} />
+        <Panel
+            result={result}
+            chartBars={chartBars}
+            assetClass={assetClass}
+            symbol={symbol}
+        />
     );
 }

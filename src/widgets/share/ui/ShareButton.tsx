@@ -180,10 +180,7 @@ export function ShareButton() {
      */
     const mutateRef = useRef(mutation.mutate);
 
-    // ── Derived state ─────────────────────────────────────────────────────────
-    const effectiveStatus = reg?.status ?? 'unavailable';
-    const isMutating = mutation.isPending;
-
+    // ── useMemo ───────────────────────────────────────────────────────────────
     /**
      * Phase is derived purely from observable state — no setState called during render
      * and no refs read during render. Error phase only shows after the user has
@@ -206,6 +203,12 @@ export function ShareButton() {
     const runShare = useCallback(() => {
         mutateRef.current();
     }, []);
+
+    // ── Derived state ─────────────────────────────────────────────────────────
+    // Placed after useMemo/useCallback per MISTAKES #17 strict hook order:
+    // useState/useRef → hooks/useMutation → useCallback/useMemo → derived → handlers → useEffect.
+    const effectiveStatus = reg?.status ?? 'unavailable';
+    const isMutating = mutation.isPending;
 
     const handleClick = useCallback(() => {
         // Prevent double-click while mutation is in flight.

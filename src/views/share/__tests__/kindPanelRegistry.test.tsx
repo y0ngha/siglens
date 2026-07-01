@@ -19,7 +19,7 @@
 import { render } from '@testing-library/react';
 import type { Bar, ClusteredKeyLevels } from '@y0ngha/siglens-core';
 import { SHAREABLE_KIND_VALUES } from '@/shared/db/constants';
-import { SHARE_KIND_PANEL_REGISTRY } from '@/widgets/share/ui/kindPanelRegistry';
+import { SHARE_KIND_PANEL_REGISTRY } from '@/views/share/kindPanelRegistry';
 
 // Mock every heavy widget so this test stays unit-level.
 //
@@ -157,7 +157,8 @@ describe('SHARE_KIND_PANEL_REGISTRY', () => {
              *   no live bar data is available; epsilon=0 means no merging but all
              *   valid levels still flow through)
              * - The ClusteredKeyLevels output is passed to AnalysisPanel
-             * - symbol: '' (only used in copy-report util, unreachable in share view)
+             * - symbol: forwarded from the snapshot so the copy-report utility
+             *   uses the real ticker (e.g. `AAPL 기술적 분석 리포트`, `siglens.io/AAPL`)
              * - timeframe: '1Day' (non-triggering stale-banner default)
              * - isFreeUser: false
              * See kindPanelRegistry.tsx ChartSharePanel JSDoc for full rationale.
@@ -172,7 +173,10 @@ describe('SHARE_KIND_PANEL_REGISTRY', () => {
                 keyLevels: rawKeyLevels,
             };
             render(
-                SHARE_KIND_PANEL_REGISTRY.chart({ result: fakeResult as never })
+                SHARE_KIND_PANEL_REGISTRY.chart({
+                    result: fakeResult as never,
+                    symbol: 'AAPL',
+                })
             );
 
             // validateKeyLevels called with the raw keyLevels from result
@@ -182,15 +186,25 @@ describe('SHARE_KIND_PANEL_REGISTRY', () => {
                 expect.anything(),
                 0
             );
-            // AnalysisPanel receives the clustered output
+            // AnalysisPanel receives the clustered output and the real ticker
             expect(mockAnalysisPanel).toHaveBeenCalledTimes(1);
             expect(mockAnalysisPanel).toHaveBeenCalledWith(
                 expect.objectContaining({
                     analysis: fakeResult,
                     keyLevels: STUB_CLUSTERED,
                     timeframe: '1Day',
-                    symbol: '',
+                    symbol: 'AAPL',
                 })
+            );
+        });
+
+        it('uses empty string when symbol is omitted (backwards compat for callers that omit symbol)', () => {
+            const fakeResult = { trend: 'bullish', summary: '상승 추세' };
+            render(
+                SHARE_KIND_PANEL_REGISTRY.chart({ result: fakeResult as never })
+            );
+            expect(mockAnalysisPanel).toHaveBeenCalledWith(
+                expect.objectContaining({ symbol: '' })
             );
         });
 
@@ -217,7 +231,7 @@ describe('SHARE_KIND_PANEL_REGISTRY', () => {
 
         // T6: snapshot-time chart rendering via ShareCandlestickChart
 
-        it('renders ShareCandlestickChart when chartBars is provided', () => {
+        it('renders ShareCandlestickChart when chartBars is provided, forwarding ticker for aria-label (S2)', () => {
             mockShareCandlestickChart.mockClear();
             const fakeResult = { trend: 'bullish', summary: '차트 분석' };
             const stubBars: Bar[] = [
@@ -234,11 +248,13 @@ describe('SHARE_KIND_PANEL_REGISTRY', () => {
                 SHARE_KIND_PANEL_REGISTRY.chart({
                     result: fakeResult as never,
                     chartBars: stubBars,
+                    symbol: 'TSLA',
                 })
             );
             expect(mockShareCandlestickChart).toHaveBeenCalledTimes(1);
+            // ticker must be forwarded so aria-label reads "TSLA 스냅샷 캔들 차트"
             expect(mockShareCandlestickChart).toHaveBeenCalledWith(
-                expect.objectContaining({ bars: stubBars })
+                expect.objectContaining({ bars: stubBars, ticker: 'TSLA' })
             );
         });
 
