@@ -36,7 +36,8 @@ describe('FinancialsAiSummary', () => {
     it('renders skeleton during loading', () => {
         vi.mocked(useFinancialsAnalysis).mockReturnValue({
             status: 'loading',
-        } as ReturnType<typeof useFinancialsAnalysis>);
+            trigger: vi.fn(),
+        });
 
         render(<FinancialsAiSummary symbol="AAPL" />);
 
@@ -46,7 +47,8 @@ describe('FinancialsAiSummary', () => {
     it('renders bot-blocked notice', () => {
         vi.mocked(useFinancialsAnalysis).mockReturnValue({
             status: 'bot_blocked',
-        } as ReturnType<typeof useFinancialsAnalysis>);
+            trigger: vi.fn(),
+        });
 
         render(<FinancialsAiSummary symbol="AAPL" />);
 
@@ -58,7 +60,8 @@ describe('FinancialsAiSummary', () => {
             status: 'error',
             error: new Error('test'),
             retry: vi.fn(),
-        } as unknown as ReturnType<typeof useFinancialsAnalysis>);
+            trigger: vi.fn(),
+        });
 
         render(<FinancialsAiSummary symbol="AAPL" />);
 
@@ -74,7 +77,8 @@ describe('FinancialsAiSummary', () => {
                 axisAssessments: [],
                 riskFactorsKo: [],
             },
-        } as unknown as ReturnType<typeof useFinancialsAnalysis>);
+            trigger: vi.fn(),
+        });
 
         render(<FinancialsAiSummary symbol="AAPL" />);
 
@@ -112,7 +116,8 @@ describe('FinancialsAiSummary', () => {
                 ],
                 riskFactorsKo: [],
             },
-        } as unknown as ReturnType<typeof useFinancialsAnalysis>);
+            trigger: vi.fn(),
+        });
 
         render(<FinancialsAiSummary symbol="AAPL" />);
 
@@ -135,7 +140,8 @@ describe('FinancialsAiSummary', () => {
                 axisAssessments: [],
                 riskFactorsKo: ['부채 증가', '현금흐름 악화'],
             },
-        } as unknown as ReturnType<typeof useFinancialsAnalysis>);
+            trigger: vi.fn(),
+        });
 
         render(<FinancialsAiSummary symbol="AAPL" />);
 

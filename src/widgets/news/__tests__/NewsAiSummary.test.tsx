@@ -66,7 +66,10 @@ describe('NewsAiSummary', () => {
             isReady: false,
             pollError: null,
         });
-        mockAnalysisResult.mockReturnValue({ status: 'loading' });
+        mockAnalysisResult.mockReturnValue({
+            status: 'loading',
+            trigger: vi.fn(),
+        });
 
         render(
             <NewsAiSummary
@@ -85,7 +88,10 @@ describe('NewsAiSummary', () => {
             isReady: true,
             pollError: null,
         });
-        mockAnalysisResult.mockReturnValue({ status: 'loading' });
+        mockAnalysisResult.mockReturnValue({
+            status: 'loading',
+            trigger: vi.fn(),
+        });
 
         render(
             <NewsAiSummary
@@ -105,6 +111,7 @@ describe('NewsAiSummary', () => {
         mockAnalysisResult.mockReturnValue({
             status: 'done',
             result: RESULT,
+            trigger: vi.fn(),
         });
 
         render(
@@ -124,7 +131,10 @@ describe('NewsAiSummary', () => {
             isReady: true,
             pollError: null,
         });
-        mockAnalysisResult.mockReturnValue({ status: 'bot_blocked' });
+        mockAnalysisResult.mockReturnValue({
+            status: 'bot_blocked',
+            trigger: vi.fn(),
+        });
 
         render(
             <NewsAiSummary
@@ -145,6 +155,7 @@ describe('NewsAiSummary', () => {
             status: 'error',
             error: new Error('Analysis failed'),
             retry: vi.fn(),
+            trigger: vi.fn(),
         });
 
         render(
@@ -165,7 +176,10 @@ describe('NewsAiSummary', () => {
             isReady: false,
             pollError: new Error('Poll failure'),
         });
-        mockAnalysisResult.mockReturnValue({ status: 'loading' });
+        mockAnalysisResult.mockReturnValue({
+            status: 'loading',
+            trigger: vi.fn(),
+        });
 
         expect(() =>
             render(
@@ -183,7 +197,10 @@ describe('NewsAiSummary mount trigger', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         mockWaitResult.mockReturnValue({ isReady: false, pollError: null });
-        mockAnalysisResult.mockReturnValue({ status: 'loading' });
+        mockAnalysisResult.mockReturnValue({
+            status: 'loading',
+            trigger: vi.fn(),
+        });
     });
 
     it('마운트 시 ensureNewsCardsAnalyzedAction을 symbol로 1회 호출한다', () => {

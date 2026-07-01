@@ -64,7 +64,7 @@ describe('OptionsAiAnalysis', () => {
     });
 
     it('renders skeleton during loading', () => {
-        mockState.mockReturnValue({ status: 'loading' });
+        mockState.mockReturnValue({ status: 'loading', trigger: vi.fn() });
         render(
             <OptionsAiAnalysis
                 symbol="AAPL"
@@ -77,7 +77,7 @@ describe('OptionsAiAnalysis', () => {
     });
 
     it('renders bot blocked notice', () => {
-        mockState.mockReturnValue({ status: 'bot_blocked' });
+        mockState.mockReturnValue({ status: 'bot_blocked', trigger: vi.fn() });
         render(
             <OptionsAiAnalysis
                 symbol="AAPL"
@@ -94,6 +94,7 @@ describe('OptionsAiAnalysis', () => {
             status: 'error',
             error: new Error('fail'),
             retry: vi.fn(),
+            trigger: vi.fn(),
         });
         render(
             <OptionsAiAnalysis
@@ -107,7 +108,11 @@ describe('OptionsAiAnalysis', () => {
     });
 
     it('renders analysis result with summary and signals', () => {
-        mockState.mockReturnValue({ status: 'done', result: RESULT });
+        mockState.mockReturnValue({
+            status: 'done',
+            result: RESULT,
+            trigger: vi.fn(),
+        });
         render(
             <OptionsAiAnalysis
                 symbol="AAPL"
