@@ -13,8 +13,12 @@ import { getOrSetCache } from '@/shared/cache/getOrSetCache';
 import { SECONDS_PER_DAY } from '@/shared/config/time';
 import { mergeBarsByTime } from './mergeBarsByTime';
 
-/** 과거(불변) 윈도우 종료점: 오늘 − EOD_HIST_TO_DAYS일. recent와 겹쳐 갭 방지. */
-const EOD_HIST_TO_DAYS = 7;
+/**
+ * 과거(불변) 윈도우 종료점: 오늘 − EOD_HIST_TO_DAYS일. recent와 겹쳐 갭 방지.
+ * overlap = EOD_RECENT_FROM_DAYS − EOD_HIST_TO_DAYS = 5일 →
+ * 최대 4일 연속 휴장(공휴일+주말 인접)에도 겹침이 유지된다.
+ */
+const EOD_HIST_TO_DAYS = 5;
 /** 최근(live) 윈도우 시작점: 오늘 − EOD_RECENT_FROM_DAYS일. */
 const EOD_RECENT_FROM_DAYS = 10;
 /** 과거 history long TTL(30일). 갱신은 TTL이 아니라 recent와의 겹침 staleness가 주도. */

@@ -467,6 +467,57 @@ describe('CachedMarketDataProvider', () => {
             expect(result.map(b => b.time)).toEqual([recentT]);
         });
 
+        it('from=undefined → anchored split taken, merged result returned unsliced', async () => {
+            const freshHist = Math.floor(
+                Date.parse('2026-06-26T00:00:00Z') / 1000
+            ); // >= recentFrom(2026-06-20) → fresh
+            const recentT = Math.floor(
+                Date.parse('2026-06-29T00:00:00Z') / 1000
+            );
+            const getBars = vi.fn(async (o: GetBarsOptions) =>
+                o.before !== undefined
+                    ? [{ ...bar(freshHist), time: freshHist }]
+                    : [{ ...bar(recentT), time: recentT }]
+            );
+            const provider = new CachedMarketDataProvider({
+                getBars,
+                getQuote: vi.fn(async () => null),
+            });
+            const result = await provider.getBars({
+                symbol: 'AAPL',
+                timeframe: '1Day',
+            }); // no `from`
+            expect(store.has('bars:eodhist:AAPL')).toBe(true);
+            expect(store.has('bars:eodrecent:AAPL')).toBe(true);
+            expect(getBars).toHaveBeenCalledTimes(2);
+            // from 없음 → sliceFrom가 미절단(unsliced): 양쪽 봉 모두 유지
+            expect(result.map(b => b.time)).toEqual([freshHist, recentT]);
+        });
+
+        it('sliceFrom keeps a bar exactly at options.from (inclusive boundary)', async () => {
+            const boundary = Math.floor(
+                Date.parse('2024-06-30T00:00:00Z') / 1000
+            ); // == options.from
+            const recentT = Math.floor(
+                Date.parse('2026-06-29T00:00:00Z') / 1000
+            );
+            const getBars = vi.fn(async (o: GetBarsOptions) =>
+                o.before !== undefined
+                    ? [{ ...bar(boundary), time: boundary }]
+                    : [{ ...bar(recentT), time: recentT }]
+            );
+            const provider = new CachedMarketDataProvider({
+                getBars,
+                getQuote: vi.fn(async () => null),
+            });
+            const result = await provider.getBars({
+                symbol: 'AAPL',
+                timeframe: '1Day',
+                from: '2024-06-30',
+            });
+            expect(result.map(b => b.time)).toContain(boundary);
+        });
+
         // Preserved: recent-window TTL — open vs closed
         it('(f) bars:eodrecent TTL: market-open instant → 60s', async () => {
             // ET regular session open: Mon 2026-06-29 14:30 UTC = 10:30 ET
