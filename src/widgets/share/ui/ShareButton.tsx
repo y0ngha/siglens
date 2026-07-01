@@ -39,6 +39,7 @@ import { ShareIcon, SpinnerIcon } from './icons';
  * same runShare() callback (DRY).
  */
 export function ShareButton() {
+    // ── State ────────────────────────────────────────────────────────────────
     const [sheetOpen, setSheetOpen] = useState(false);
     const [triggerDialogOpen, setTriggerDialogOpen] = useState(false);
     const [preparingOpen, setPreparingOpen] = useState(false);
@@ -51,11 +52,14 @@ export function ShareButton() {
      */
     const [hasTriggered, setHasTriggered] = useState(false);
 
+    // ── Refs ─────────────────────────────────────────────────────────────────
     const buttonRef = useRef<HTMLButtonElement>(null);
 
+    // ── Custom hooks ─────────────────────────────────────────────────────────
     const reg = useShareable();
     const { tier: sharerTier } = useUserTier();
 
+    // ── getDerivedState pattern ───────────────────────────────────────────────
     /**
      * Reset all transient UI state when the user switches to a different analysis
      * tab. Without this, dialogs and modals opened on one tab would persist after
@@ -64,6 +68,10 @@ export function ShareButton() {
      * Uses the getDerivedStateFromProps-equivalent pattern (setState during render)
      * to avoid the react-hooks/set-state-in-effect lint rule while still resetting
      * synchronously before the next paint.
+     *
+     * Note: symbol-page tabs are real route segments (each tab has its own
+     * page.tsx under [symbol]/). Switching tabs unmounts and remounts the component,
+     * so `kind` changing here is the guard that resets state on tab navigation.
      */
     const [prevKind, setPrevKind] = useState(reg?.kind);
     if (prevKind !== reg?.kind) {
@@ -84,11 +92,8 @@ export function ShareButton() {
      */
     const regRef = useRef(reg);
     const sharerTierRef = useRef(sharerTier);
-    useEffect(() => {
-        regRef.current = reg;
-        sharerTierRef.current = sharerTier;
-    });
 
+    // ── Mutation ─────────────────────────────────────────────────────────────
     const mutation = useMutation({
         mutationFn: async () => {
             const currentReg = regRef.current;
@@ -174,18 +179,10 @@ export function ShareButton() {
      * auto-advance effect while hasTriggered is still true — causing double mutate().
      */
     const mutateRef = useRef(mutation.mutate);
-    useEffect(() => {
-        mutateRef.current = mutation.mutate;
-    });
 
-    /**
-     * Shared share-execution function used by both the direct success-click path and
-     * the auto-advance effect. Stable identity prevents the auto-advance effect from
-     * re-firing due to mutation state changes mid-flight.
-     */
-    const runShare = useCallback(() => {
-        mutateRef.current();
-    }, []);
+    // ── Derived state ─────────────────────────────────────────────────────────
+    const effectiveStatus = reg?.status ?? 'unavailable';
+    const isMutating = mutation.isPending;
 
     /**
      * Phase is derived purely from observable state — no setState called during render
@@ -200,23 +197,15 @@ export function ShareButton() {
         return 'pending';
     }, [preparingOpen, hasTriggered, reg?.status]);
 
+    // ── Callbacks ─────────────────────────────────────────────────────────────
     /**
-     * When the user has triggered analysis (hasTriggered) and the result becomes
-     * available (reg transitions to 'success'), automatically execute the share.
-     * This effect only calls runShare() — an external-system side-effect via React
-     * Query — and does NOT call setState directly, complying with the
-     * react-hooks/set-state-in-effect rule. State cleanup happens inside the mutation's
-     * async onSuccess callback.
+     * Shared share-execution function used by both the direct success-click path and
+     * the auto-advance effect. Stable identity prevents the auto-advance effect from
+     * re-firing due to mutation state changes mid-flight.
      */
-    useEffect(() => {
-        if (!hasTriggered) return;
-        if (reg?.status === 'success' && reg.result != null) {
-            runShare();
-        }
-    }, [hasTriggered, reg?.status, reg?.result, runShare]);
-
-    const effectiveStatus = reg?.status ?? 'unavailable';
-    const isMutating = mutation.isPending;
+    const runShare = useCallback(() => {
+        mutateRef.current();
+    }, []);
 
     const handleClick = useCallback(() => {
         // Prevent double-click while mutation is in flight.
@@ -272,6 +261,37 @@ export function ShareButton() {
         buttonRef.current?.focus();
     }, []);
 
+    // ── Effects ───────────────────────────────────────────────────────────────
+    /**
+     * Keep stable refs in sync with the latest values so callbacks and the mutation
+     * fn always read up-to-date state without stale closure issues.
+     * No deps (runs after every render) — intentional: always reflects latest values.
+     */
+    useEffect(() => {
+        regRef.current = reg;
+        sharerTierRef.current = sharerTier;
+    });
+
+    useEffect(() => {
+        mutateRef.current = mutation.mutate;
+    });
+
+    /**
+     * When the user has triggered analysis (hasTriggered) and the result becomes
+     * available (reg transitions to 'success'), automatically execute the share.
+     * This effect only calls runShare() — an external-system side-effect via React
+     * Query — and does NOT call setState directly, complying with the
+     * react-hooks/set-state-in-effect rule. State cleanup happens inside the mutation's
+     * async onSuccess callback.
+     */
+    useEffect(() => {
+        if (!hasTriggered) return;
+        if (reg?.status === 'success' && reg.result != null) {
+            runShare();
+        }
+    }, [hasTriggered, reg?.status, reg?.result, runShare]);
+
+    // ── Render ────────────────────────────────────────────────────────────────
     const noticeId = useId();
 
     const symbol = reg?.context.symbol ?? '';

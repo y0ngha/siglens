@@ -246,7 +246,7 @@ export function OptionsAiAnalysis({
         result: state.status === 'done' ? state.result : null,
         context: {
             symbol,
-            displayName: companyName ?? symbol,
+            displayName: companyName,
             analyzedAt:
                 state.status === 'done' ? state.result.analyzedAt : undefined,
         },

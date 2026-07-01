@@ -288,7 +288,7 @@ export function NewsAiSummary({
         result: analysis.status === 'done' ? analysis.result : null,
         context: {
             symbol,
-            displayName: companyName ?? symbol,
+            displayName: companyName,
             // NewsAnalysisResponse has no analyzedAt; resolveAsOf falls back to createdAt.
             analyzedAt: undefined,
         },

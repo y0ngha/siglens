@@ -31,17 +31,17 @@ export async function createShareSnapshotAction(
     }
     const input = rawInput;
 
-    const now = new Date();
-    const ip = await getClientIp();
-    const ipHash = hashUsageIp(ip, now);
-    // Rate-limit runs before content-hash dedupe intentionally: re-sharing identical
-    // content is uncommon and the token cost is acceptable; moving the dedupe check
-    // first would require a DB round-trip before every rate-limit decision.
-    if (!(await checkShareRateLimit(ipHash))) {
-        return { ok: false, code: 'rate_limited' };
-    }
-
     try {
+        const now = new Date();
+        const ip = await getClientIp();
+        const ipHash = hashUsageIp(ip, now);
+        // Rate-limit runs before content-hash dedupe intentionally: re-sharing identical
+        // content is uncommon and the token cost is acceptable; moving the dedupe check
+        // first would require a DB round-trip before every rate-limit decision.
+        if (!(await checkShareRateLimit(ipHash))) {
+            return { ok: false, code: 'rate_limited' };
+        }
+
         const snapshot = buildShareSnapshot(input);
         const expiresAt = new Date(now.getTime() + SHARE_TTL_DAYS * MS_PER_DAY);
         const { db } = getDatabaseClient();

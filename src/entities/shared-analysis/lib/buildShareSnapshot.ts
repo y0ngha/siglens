@@ -24,8 +24,13 @@ export function buildShareSnapshot<K extends ShareableKind>(
     };
     // Safe: JSON.stringify → JSON.parse produces a JSON-safe plain object (no
     // Date instances, undefined fields are dropped, functions are stripped).
-    // Non-finite numbers (NaN/Infinity) become null, which is acceptable for
-    // bar price fields — isValidShareInput already requires finite numerics.
+    // Non-finite numbers (NaN/Infinity) become null via JSON round-trip:
+    //   - chartBars price fields: finite-validated by isValidShareInput, so no
+    //     NaN/Infinity reaches here for bar numbers.
+    //   - result interior numbers: NOT finite-checked by isValidShareInput, so
+    //     NaN/Infinity inside result fields will silently become null. This is
+    //     acceptable — jsonb storage requires JSON-safe values, and the display
+    //     layer already handles null gracefully.
     // The cast narrows the `unknown` parse result back to the typed snapshot
     // without re-running validation.
     return JSON.parse(JSON.stringify(snapshot)) as SharedAnalysisSnapshot<K>;

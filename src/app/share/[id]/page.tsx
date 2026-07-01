@@ -27,6 +27,10 @@ export default async function SharePage({ params }: Props) {
     const lookup = await getCachedSharedAnalysis(id);
 
     if (lookup.status !== 'found') {
+        // Intentional: returns HTTP 200 (not notFound()) so the user sees a
+        // friendly expired-link page instead of a generic 404. The noindex
+        // metadata in buildShareMetadata() prevents search engines from
+        // indexing this expired/not-found state.
         return (
             <main className="flex flex-1 flex-col items-center px-6 py-20 text-center">
                 <p className="text-primary-400 font-mono text-sm tracking-widest">

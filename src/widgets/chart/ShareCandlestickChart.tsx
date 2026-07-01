@@ -12,7 +12,7 @@
  * lightweight-charts usage in one widget boundary.
  */
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { IChartApi, ISeriesApi, UTCTimestamp } from 'lightweight-charts';
 import {
     CandlestickSeries,
@@ -45,8 +45,16 @@ export function ShareCandlestickChart({
         null
     );
 
+    /**
+     * Capture the mount-time bars via lazy initializer so the effect dependency
+     * array is satisfied without disabling the exhaustive-deps rule. The snapshot
+     * is intentionally immutable — the share page chart never re-renders with new
+     * bars, so a stable reference is exactly what we want.
+     */
+    const [snapshotBars] = useState(() => bars);
+
     useEffect(() => {
-        if (!containerRef.current || bars.length === 0) return;
+        if (!containerRef.current || snapshotBars.length === 0) return;
 
         const chart = createChart(containerRef.current, {
             autoSize: true,
@@ -83,7 +91,9 @@ export function ShareCandlestickChart({
         }) as ISeriesApi<'Candlestick', UTCTimestamp>;
 
         // No Elder Impulse on the share chart — pass empty array and isActive=false.
-        seriesRef.current.setData(buildCandlestickData(bars, [], false));
+        seriesRef.current.setData(
+            buildCandlestickData(snapshotBars, [], false)
+        );
         chart.timeScale().fitContent();
 
         return () => {
@@ -92,16 +102,14 @@ export function ShareCandlestickChart({
             chartRef.current = null;
             seriesRef.current = null;
         };
-        // Mount-only: bars are snapshot-immutable; no deps intentional.
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    }, [snapshotBars]);
 
     const ariaLabel =
         ticker !== undefined && ticker !== ''
             ? `${ticker} 스냅샷 캔들 차트`
             : '스냅샷 가격 차트';
 
-    if (bars.length === 0) {
+    if (snapshotBars.length === 0) {
         return (
             <div className="flex h-48 w-full items-center justify-center">
                 <p className="text-secondary-400 text-sm">

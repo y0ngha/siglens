@@ -551,6 +551,7 @@ export const sharedAnalyses = pgTable(
         expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
     },
     table => [
+        index('shared_analyses_user_id_idx').on(table.userId),
         index('shared_analyses_symbol_idx').on(table.symbol),
         index('shared_analyses_expires_at_idx').on(table.expiresAt),
         uniqueIndex('shared_analyses_content_uq').on(table.contentHash),

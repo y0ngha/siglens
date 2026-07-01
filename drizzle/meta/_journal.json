@@ -162,6 +162,13 @@
             "when": 1782742244529,
             "tag": "0022_overconfident_warlock",
             "breakpoints": true
+        },
+        {
+            "idx": 23,
+            "version": "7",
+            "when": 1782873939354,
+            "tag": "0023_panoramic_mister_fear",
+            "breakpoints": true
         }
     ]
 }
