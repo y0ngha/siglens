@@ -69,6 +69,8 @@ export const SHARE_KIND_OG_BUILDERS = {
 
     overall: (r: Record<string, unknown>, symbol: string): OgText => {
         const direction = majorityName(
+            // r.scenarios is validated as an object array by isValidShareInput at write
+            // time; the cast narrows the opaque Record value to the expected shape.
             r.scenarios as { name?: string }[] | undefined
         );
         const summary = firstLine(
@@ -102,6 +104,8 @@ export const SHARE_KIND_OG_BUILDERS = {
     },
 
     options: (r: Record<string, unknown>, symbol: string): OgText => {
+        // r.signals is a validated object array from the server-written snapshot;
+        // the cast narrows the opaque Record value to the expected shape.
         const signals = (r.signals as { kind?: string }[] | undefined) ?? [];
         const direction = signals[0]?.kind ?? String(r.tone ?? 'neutral');
         const summary = firstLine(String(r.summary ?? ''));

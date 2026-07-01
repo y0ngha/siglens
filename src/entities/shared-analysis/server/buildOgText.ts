@@ -11,6 +11,10 @@ export type { OgText };
  * `satisfies Record<ShareableKind, ...>`.
  */
 export function buildOgText(snapshot: SharedAnalysisSnapshot): OgText {
+    // snapshot.result is a server-written, isValidShareInput-validated *AnalysisResponse
+    // object persisted as jsonb. The double-cast (via unknown) is required because
+    // SnapshotResultOf<K> is not narrowed at this call site — each kind branch in
+    // SHARE_KIND_OG_BUILDERS reads only the fields that are valid for that kind.
     const r = snapshot.result as unknown as Record<string, unknown>;
     const builder = SHARE_KIND_OG_BUILDERS[snapshot.kind];
     return builder(r, snapshot.symbol);
