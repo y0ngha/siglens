@@ -53,7 +53,8 @@ export async function createShareSnapshotAction(
             contentHash: contentHash(
                 snapshot.kind,
                 snapshot.symbol,
-                snapshot.result
+                snapshot.result,
+                snapshot.chartBars
             ),
             snapshot,
             sharerTier: input.sharerTier,
