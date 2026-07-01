@@ -100,7 +100,7 @@ describe('ShareTriggerDialog', () => {
         expect(container.firstChild).toBeNull();
     });
 
-    it('focuses the primary CTA on open (useFocusTrap moves to first focusable)', () => {
+    it('renders the header close button', () => {
         render(
             <ShareTriggerDialog
                 open
@@ -108,10 +108,36 @@ describe('ShareTriggerDialog', () => {
                 onCancel={onCancel}
             />
         );
-        // useFocusTrap focuses the first focusable element inside the dialog,
-        // which is the primary CTA button.
+        expect(
+            screen.getByRole('button', { name: '닫기' })
+        ).toBeInTheDocument();
+    });
+
+    it('calls onCancel when the header close button is clicked', () => {
+        render(
+            <ShareTriggerDialog
+                open
+                onConfirm={onConfirm}
+                onCancel={onCancel}
+            />
+        );
+        fireEvent.click(screen.getByRole('button', { name: '닫기' }));
+        expect(onCancel).toHaveBeenCalledTimes(1);
+    });
+
+    it('focuses the header close button on open (useFocusTrap moves to first focusable)', () => {
+        render(
+            <ShareTriggerDialog
+                open
+                onConfirm={onConfirm}
+                onCancel={onCancel}
+            />
+        );
+        // useFocusTrap focuses the first focusable element inside the dialog.
+        // The header ✕ close button is now the first focusable element (added for
+        // dialog-dismissal consistency with SharePreparingModal).
         expect(document.activeElement).toBe(
-            screen.getByRole('button', { name: '분석하고 공유하기' })
+            screen.getByRole('button', { name: '닫기' })
         );
     });
 });

@@ -41,13 +41,21 @@ export function ShareTriggerDialog({
                 tabIndex={-1}
                 className="border-secondary-700 bg-secondary-800 w-full max-w-sm rounded-xl border shadow-2xl outline-none"
             >
-                <div className="border-secondary-700 border-b px-5 py-4">
+                <div className="border-secondary-700 flex items-center justify-between border-b px-5 py-4">
                     <h2
                         id="share-trigger-dialog-title"
                         className="text-secondary-100 text-sm font-semibold"
                     >
                         공유하기 전에 분석을 준비할게요
                     </h2>
+                    <button
+                        type="button"
+                        aria-label="닫기"
+                        onClick={onCancel}
+                        className="text-secondary-400 hover:text-secondary-200 focus-visible:ring-primary-500 -mr-1 rounded p-1 transition-colors focus-visible:ring-1 focus-visible:outline-none"
+                    >
+                        ✕
+                    </button>
                 </div>
 
                 <div className="flex flex-col gap-4 px-5 py-4">

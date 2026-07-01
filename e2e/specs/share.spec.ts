@@ -27,12 +27,9 @@ import { test, expect } from '../support/fixtures';
  *      scope for this task. The not-found test (scenario 2) covers the same
  *      empty-state UI path that expired rows also render.
  *
- *   4. /share/[id] happy path — SKIPPED.
- *      Reason: requires a seeded shared_analyses row with a valid snapshot.
- *      Creating one via the full createShareSnapshotAction flow requires a
- *      complete analysis result (heavy, depends on E2E analysis pipeline). No
- *      seed helper for shared_analyses exists. The panel + disclaimer + CTA
- *      render path is verified via unit tests on the page components.
+ *   4. /share/[id] happy path — REAL TEST (scenario 4 below).
+ *      seed.ts inserts a chart-kind snapshot row (E2E_SHARE_ID, expiresAt=2099).
+ *      The panel + disclaimer + CTA render path is asserted against the seeded row.
  *
  *   5. confirm → loading → share interactive flow — REAL TEST (partial).
  *      Asserting that clicking ShareButton when no analysis is ready opens
@@ -141,13 +138,14 @@ test.describe('share: /share/[id] not-found empty state', () => {
 
 test.describe('share: /share/[expired-id] expired empty state', () => {
     /**
-     * @skip-reason: No DB seeding helper exists for the shared_analyses table
-     * in this E2E suite. Seeding an expired row would require inserting directly
-     * into the DB inside e2e/setup/seed.ts (which only seeds asset rows today).
-     * The not-found scenario above covers the identical empty-state UI path, so
-     * the risk surface is fully covered without the seed.
+     * @skip-reason: seed.ts now seeds shared_analyses (E2E_SHARE_ID row with
+     * expiresAt=2099). An expired-row seed (expiresAt in the past) is not yet
+     * added because the not-found test above covers the identical empty-state UI
+     * path (page.tsx renders the same branch for both expired and not_found).
+     * Adding a seeded expired row would require a second insert in seed.ts with
+     * a past expiresAt, which is out of scope for this task.
      *
-     * When e2e/setup/seed.ts gains a shared_analyses seeder, implement as:
+     * When an expired-row seed is added to e2e/setup/seed.ts, implement as:
      *   1. Seed a row with expiresAt = yesterday.
      *   2. GET /share/<seeded-id> and assert the empty-state h1.
      */

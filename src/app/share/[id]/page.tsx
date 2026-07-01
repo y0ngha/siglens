@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { getCachedSharedAnalysis } from '@/entities/shared-analysis/actions/getCachedSharedAnalysis';
 import { resolveAsOf } from '@/entities/shared-analysis/lib/resolveAsOf';
-import { kindLabel } from '@/widgets/share/lib/kindLabel';
+import { kindLabel } from '@/widgets/share';
 import { buildShareMetadata } from '@/entities/shared-analysis/lib/buildShareSeo';
 import { ShareKindPanel } from '@/views/share';
 import { formatKoreanDateTime } from '@/shared/lib/formatKoreanDateTime';

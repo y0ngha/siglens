@@ -10,7 +10,9 @@ import {
 } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { useShareable } from '@/features/share';
+import type { ShareableRegistration } from '@/features/share';
 import { useUserTier } from '@/features/symbol-model/hooks/useUserTier';
+import type { Tier } from '@y0ngha/siglens-core';
 import { createShareSnapshotAction } from '@/entities/shared-analysis/actions/createShareSnapshotAction';
 import { MAX_CHART_BARS } from '@/entities/shared-analysis';
 import { canShareNatively, isShareAbort } from '@/shared/lib/share';
@@ -54,6 +56,24 @@ export function ShareButton() {
 
     // ── Refs ─────────────────────────────────────────────────────────────────
     const buttonRef = useRef<HTMLButtonElement>(null);
+    /**
+     * Stable refs to the latest reg and sharerTier values. The mutation fn reads
+     * these so it always operates on the current registration even when called
+     * from within the auto-advance effect (where the closure would otherwise close
+     * over a stale 'pending' reg). Updated in a no-dep useEffect (runs after every
+     * render, before the browser paints) so they are never read during render itself.
+     */
+    const regRef = useRef<ShareableRegistration | null>(null);
+    const sharerTierRef = useRef<Tier>('free');
+    /**
+     * Stable ref to mutation.mutate so runShare's identity never changes across
+     * renders. Without this, every mutation state update (idle→pending→success)
+     * would produce a new `mutation` object, a new `runShare`, and re-fire the
+     * auto-advance effect while hasTriggered is still true — causing double mutate().
+     * Typed as `() => void` because runShare always calls it with no variables
+     * (the mutationFn reads state from regRef/sharerTierRef directly).
+     */
+    const mutateRef = useRef<() => void>(() => undefined);
 
     // ── Custom hooks ─────────────────────────────────────────────────────────
     const reg = useShareable();
@@ -82,16 +102,6 @@ export function ShareButton() {
         setUnavailableVisible(false);
         setHasTriggered(false);
     }
-
-    /**
-     * Stable refs to the latest reg and sharerTier values. The mutation fn reads
-     * these so it always operates on the current registration even when called
-     * from within the auto-advance effect (where the closure would otherwise close
-     * over a stale 'pending' reg). Updated in a no-dep useEffect (runs after every
-     * render, before the browser paints) so they are never read during render itself.
-     */
-    const regRef = useRef(reg);
-    const sharerTierRef = useRef(sharerTier);
 
     // ── Mutation ─────────────────────────────────────────────────────────────
     const mutation = useMutation({
@@ -171,14 +181,6 @@ export function ShareButton() {
             }
         },
     });
-
-    /**
-     * Stable ref to mutation.mutate so runShare's identity never changes across
-     * renders. Without this, every mutation state update (idle→pending→success)
-     * would produce a new `mutation` object, a new `runShare`, and re-fire the
-     * auto-advance effect while hasTriggered is still true — causing double mutate().
-     */
-    const mutateRef = useRef(mutation.mutate);
 
     // ── useMemo ───────────────────────────────────────────────────────────────
     /**
@@ -266,16 +268,15 @@ export function ShareButton() {
 
     // ── Effects ───────────────────────────────────────────────────────────────
     /**
-     * Keep stable refs in sync with the latest values so callbacks and the mutation
-     * fn always read up-to-date state without stale closure issues.
+     * Keep all stable refs in sync with the latest values so callbacks and the
+     * mutation fn always read up-to-date state without stale closure issues.
      * No deps (runs after every render) — intentional: always reflects latest values.
+     * Merged into a single effect because all three refs share the same dep-less
+     * update pattern.
      */
     useEffect(() => {
         regRef.current = reg;
         sharerTierRef.current = sharerTier;
-    });
-
-    useEffect(() => {
         mutateRef.current = mutation.mutate;
     });
 
