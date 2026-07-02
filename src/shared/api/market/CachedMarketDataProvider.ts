@@ -19,6 +19,11 @@ import type { SiglensMarketProvider } from './marketProvider.types';
 /** 최근(live) 윈도우 시작점: 오늘 − EOD_RECENT_FROM_DAYS일. isLongDailyWindow 게이트에서 사용. */
 const EOD_RECENT_FROM_DAYS = 10;
 
+/** 마감(16:00 ET) 후 FMP EOD 발행까지의 안전 버퍼(시간). 이 시간 전에는 당일을
+ * lastClosed로 롤하지 않아, 발행 전 불완전 EOD가 당일 키에 캐시되는 것을 막는다.
+ * 버퍼 구간에도 당일 봉은 quote(최종 OHLCV)로 온전히 표시된다. */
+const EOD_PUBLISH_BUFFER_HOURS = 4;
+
 /**
  * EOD history 캐시 TTL. 세션-날짜 키(bars:eodhist:<SYM>:<date>)가 미국 마감마다
  * 자동 롤(자연 버전닝)되므로 TTL은 단순히 롱 홀리데이 플래토를 넘길 여유만 있으면 된다.
@@ -50,6 +55,10 @@ function sliceFrom(bars: Bar[], from: string | undefined): Bar[] {
  * 직전 금요일로 되감는다(공휴일은 미보정 — 그 날짜로 키가 한 번 더 versioning될 뿐 EOD
  * 조회는 실제 마지막 거래일까지 반환하므로 데이터는 정확). EOD history 캐시 키에 넣어
  * 미국 마감마다 캐시가 자연 롤(=세션당 1회 재조회)되게 한다.
+ *
+ * EOD_PUBLISH_BUFFER_HOURS: 마감 직후 FMP가 당일 EOD를 아직 발행하지 않았을 수 있으므로,
+ * 16:00 ET + 4h(20:00 ET)가 지나야 당일을 lastClosed로 롤한다. 버퍼 구간에는 직전 거래일이
+ * lastClosed로 유지되어, 불완전 EOD가 당일 키에 캐시되는 갭을 방지한다.
  */
 export function lastClosedSessionDateEt(now: Date): string {
     const et = new Date(
@@ -57,7 +66,9 @@ export function lastClosedSessionDateEt(now: Date): string {
     );
     const dow = et.getUTCDay(); // 0=Sun..6=Sat (ET wall-clock via shifted UTC getters)
     const closedToday =
-        dow >= 1 && dow <= 5 && et.getUTCHours() >= MARKET_CLOSE_HOUR;
+        dow >= 1 &&
+        dow <= 5 &&
+        et.getUTCHours() >= MARKET_CLOSE_HOUR + EOD_PUBLISH_BUFFER_HOURS;
     const cursor = new Date(
         Date.UTC(et.getUTCFullYear(), et.getUTCMonth(), et.getUTCDate())
     );

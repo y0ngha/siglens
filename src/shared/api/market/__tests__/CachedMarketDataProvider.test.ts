@@ -216,20 +216,30 @@ describe('CachedMarketDataProvider', () => {
             expect(result).toBe('2026-07-10');
         });
 
-        it('summer weekday AFTER close (Mon 16:30 EDT = 20:30 UTC) → lastClosed = today', () => {
-            // 2026-07-13 Monday 20:30Z = 16:30 EDT (summer, after 20:00Z close)
+        it('summer weekday AFTER close but WITHIN buffer (Mon 16:30 EDT = 20:30 UTC) → lastClosed = prev Friday', () => {
+            // 2026-07-13 Monday 20:30Z = 16:30 EDT (summer, after close but within 4h buffer)
+            // Buffer ends at 20:00 ET = 00:00 UTC Tue 7/14. Still within buffer → prev trading day.
             const result = lastClosedSessionDateEt(
                 new Date('2026-07-13T20:30:00Z')
+            );
+            expect(result).toBe('2026-07-10');
+        });
+
+        it('summer weekday AFTER close+buffer (Mon 20:30 EDT = 00:30 UTC Tue) → lastClosed = today (7/13)', () => {
+            // 2026-07-14 00:30Z = 20:30 EDT Mon 7/13 (after close + 4h buffer)
+            const result = lastClosedSessionDateEt(
+                new Date('2026-07-14T00:30:00Z')
             );
             expect(result).toBe('2026-07-13');
         });
 
-        it('just after Friday close (Fri 16:01 EDT = 20:01 UTC) → lastClosed = Friday', () => {
-            // 2026-07-10 Friday 20:01Z = 16:01 EDT (summer)
+        it('just after Friday close (Fri 16:01 EDT = 20:01 UTC) → lastClosed = prev Thursday (within buffer)', () => {
+            // 2026-07-10 Friday 20:01Z = 16:01 EDT (summer, within 4h buffer)
+            // Buffer ends at 20:00 ET = 00:00 UTC Sat 7/11. Still within buffer → prev trading day.
             const result = lastClosedSessionDateEt(
                 new Date('2026-07-10T20:01:00Z')
             );
-            expect(result).toBe('2026-07-10');
+            expect(result).toBe('2026-07-09');
         });
 
         it('Saturday (after Fri close) → lastClosed = Friday', () => {
@@ -248,10 +258,19 @@ describe('CachedMarketDataProvider', () => {
             expect(result).toBe('2026-07-10');
         });
 
-        it('winter (EST) after close (Mon 16:30 EST = 21:30 UTC) → lastClosed = today', () => {
-            // 2026-01-12 Monday 21:30Z = 16:30 EST (winter, after 21:00Z close)
+        it('winter (EST) after close but WITHIN buffer (Mon 16:30 EST = 21:30 UTC) → lastClosed = prev Friday', () => {
+            // 2026-01-12 Monday 21:30Z = 16:30 EST (winter, after close but within 4h buffer)
+            // Buffer ends at 20:00 ET = 01:00 UTC Tue 1/13. Still within buffer → prev trading day.
             const result = lastClosedSessionDateEt(
                 new Date('2026-01-12T21:30:00Z')
+            );
+            expect(result).toBe('2026-01-09');
+        });
+
+        it('winter (EST) after close+buffer (Mon 20:30 EST = 01:30 UTC Tue) → lastClosed = today (1/12)', () => {
+            // 2026-01-13 01:30Z = 20:30 EST Mon 1/12 (after close + 4h buffer)
+            const result = lastClosedSessionDateEt(
+                new Date('2026-01-13T01:30:00Z')
             );
             expect(result).toBe('2026-01-12');
         });
@@ -263,6 +282,43 @@ describe('CachedMarketDataProvider', () => {
                 new Date('2026-01-12T20:30:00Z')
             );
             expect(result).toBe('2026-01-09');
+        });
+
+        // ── EOD publish buffer boundary tests ────────────────────────────────
+        // close=16:00 ET, buffer=4h → roll only at 20:00 ET
+        it('[buffer] summer: 16:30 EDT (within buffer) → lastClosed = prev trading day (7/10)', () => {
+            // 2026-07-13 Mon 20:30Z = 16:30 EDT — after close but before buffer end (20:00 ET = 00:00 UTC Tue)
+            expect(
+                lastClosedSessionDateEt(new Date('2026-07-13T20:30:00Z'))
+            ).toBe('2026-07-10');
+        });
+
+        it('[buffer] summer: 20:30 EDT (after buffer) → lastClosed = today (7/13)', () => {
+            // 2026-07-14 00:30Z = 20:30 EDT Mon 7/13 — past close+buffer
+            expect(
+                lastClosedSessionDateEt(new Date('2026-07-14T00:30:00Z'))
+            ).toBe('2026-07-13');
+        });
+
+        it('[buffer] summer during session: 09:40 EDT (7/13) → lastClosed = prev Friday (7/10)', () => {
+            // 2026-07-13 Mon 13:40Z = 09:40 EDT — during regular session, not yet closed
+            expect(
+                lastClosedSessionDateEt(new Date('2026-07-13T13:40:00Z'))
+            ).toBe('2026-07-10');
+        });
+
+        it('[buffer] winter: 16:30 EST (within buffer) → lastClosed = prev Friday (1/09)', () => {
+            // 2026-01-12 Mon 21:30Z = 16:30 EST — after close but within buffer (buffer ends 01:00 UTC Tue)
+            expect(
+                lastClosedSessionDateEt(new Date('2026-01-12T21:30:00Z'))
+            ).toBe('2026-01-09');
+        });
+
+        it('[buffer] winter: 20:30 EST (after buffer) → lastClosed = today (1/12)', () => {
+            // 2026-01-13 01:30Z = 20:30 EST Mon 1/12 — past close+buffer
+            expect(
+                lastClosedSessionDateEt(new Date('2026-01-13T01:30:00Z'))
+            ).toBe('2026-01-12');
         });
     });
 
@@ -384,7 +440,7 @@ describe('CachedMarketDataProvider', () => {
         });
 
         // ── new session → new key → refetch ───────────────────────────────────
-        it('new session (after Tue close) → new key → refetch', async () => {
+        it('new session (after Tue close+buffer) → new key → refetch', async () => {
             const histBar = bar(
                 Math.floor(Date.parse('2024-06-30T00:00:00Z') / 1000)
             );
@@ -399,8 +455,9 @@ describe('CachedMarketDataProvider', () => {
             expect(getBars).toHaveBeenCalledTimes(1);
             expect(store.has('bars:eodhist:AAPL:2026-06-29')).toBe(true);
 
-            // Advance past Tue close: Tue 20:30Z (EDT 16:30) → lastClosed now = 2026-06-30 (Tuesday)
-            vi.setSystemTime(new Date('2026-06-30T20:30:00Z'));
+            // Advance past Tue close+buffer: Wed 00:30Z = 20:30 EDT Tue
+            // (20:00 ET + 4h buffer = 00:00 UTC Wed; 00:30Z is past buffer)
+            vi.setSystemTime(new Date('2026-07-01T00:30:00Z'));
 
             await provider.getBars(longOpts);
             // New key → cache miss → refetch
@@ -695,6 +752,80 @@ describe('CachedMarketDataProvider', () => {
             );
             expect(todaySetCall).toBeDefined();
             expect(todaySetCall![2]?.ex).toBe(60); // open-session TTL
+        });
+
+        // ── gap-free integration: buffer prevents incomplete-cache gap ────────
+        it('[gap-free] buffer prevents stale EOD being served the next session', async () => {
+            // Scenario:
+            // (a) Fri 7/10 20:30 UTC = 16:30 EDT — after close but WITHIN 4h buffer.
+            //     lastClosed = 2026-07-09 (Thu). A request caches history under key :2026-07-09.
+            // (b) Mon 7/13 13:40 UTC = 09:40 EDT — during regular session.
+            //     lastClosed = 2026-07-10 (Fri) — key :2026-07-10 is a fresh miss (not the stale :2026-07-09 one).
+            //     getBars is called with before: '2026-07-10', proving no stale 7/09 data is served.
+            //
+            // Note: from='2025-06-01' is used to ensure isLongDailyWindow=true regardless of system time.
+
+            const longFrom: GetBarsOptions = {
+                symbol: 'AAPL',
+                timeframe: '1Day',
+                from: '2025-06-01', // >10 days before any test date → always long window
+            };
+
+            const friHistBar = bar(
+                Math.floor(Date.parse('2026-07-09T00:00:00Z') / 1000)
+            );
+            const monHistBar = bar(
+                Math.floor(Date.parse('2026-07-10T00:00:00Z') / 1000)
+            );
+
+            // (a) Within buffer after Fri close — lastClosed must be 2026-07-09 (Thu)
+            vi.setSystemTime(new Date('2026-07-10T20:30:00Z')); // 16:30 EDT Fri — within buffer
+            resetSharedState();
+
+            const getBarsA = vi.fn(async (opts: GetBarsOptions) => {
+                if (opts.before === '2026-07-09') return [friHistBar];
+                if (opts.before === '2026-07-10')
+                    return [friHistBar, monHistBar];
+                return [friHistBar];
+            });
+            const providerA = new CachedMarketDataProvider(
+                makeInner({
+                    getBars: getBarsA,
+                    getTodayBar: vi.fn(async () => null),
+                })
+            );
+
+            await providerA.getBars(longFrom);
+            // At 7/10 16:30 EDT (within buffer), lastClosed = 2026-07-09
+            expect(store.has('bars:eodhist:AAPL:2026-07-09')).toBe(true);
+            expect(store.has('bars:eodhist:AAPL:2026-07-10')).toBe(false);
+            expect(getBarsA).toHaveBeenCalledWith(
+                expect.objectContaining({ before: '2026-07-09' })
+            );
+
+            // (b) Mon 7/13 during session — lastClosed = 2026-07-10 (Fri, after buffer passed overnight)
+            vi.setSystemTime(new Date('2026-07-13T13:40:00Z')); // 09:40 EDT Mon
+            resetSharedState();
+
+            const getBarsB = vi.fn(async () => [friHistBar, monHistBar]);
+            const providerB = new CachedMarketDataProvider(
+                makeInner({
+                    getBars: getBarsB,
+                    getTodayBar: vi.fn(async () => null),
+                })
+            );
+
+            await providerB.getBars(longFrom);
+            // Key is :2026-07-10 (Fri) — not the stale :2026-07-09 from step (a)
+            expect(store.has('bars:eodhist:AAPL:2026-07-10')).toBe(true);
+            expect(store.has('bars:eodhist:AAPL:2026-07-09')).toBe(false);
+            // getBars fetched with before='2026-07-10', not '2026-07-09'
+            expect(getBarsB).toHaveBeenCalledWith(
+                expect.objectContaining({ before: '2026-07-10' })
+            );
+            // History includes monHistBar (7/10 data) — no 1-day gap
+            const result = await providerB.getBars(longFrom);
+            expect(result.map(b => b.time)).toContain(monHistBar.time);
         });
 
         it('bars:today TTL: market-closed instant → > 60s', async () => {
