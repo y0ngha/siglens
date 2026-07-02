@@ -48,7 +48,8 @@ const EOD_HIST_TTL_SECONDS = SECONDS_PER_DAY * 7;
  * 경계를 채우며, 휴장일/주말에는 실제 거래가 없다. 4h를 초과하는 드문 FMP 장애도 다음 쿨다운
  * 재fetch에서 자가 치유된다(다음 세션 이전에 충분히 여유 있음).
  */
-const EOD_HIST_INCOMPLETE_COOLDOWN_SECONDS = SECONDS_PER_HOUR * 4;
+const EOD_HIST_INCOMPLETE_COOLDOWN_SECONDS =
+    EOD_PUBLISH_BUFFER_HOURS * SECONDS_PER_HOUR;
 
 function isoDateDaysAgo(now: Date, days: number): string {
     const d = new Date(now);
@@ -146,7 +147,7 @@ export class CachedMarketDataProvider implements MarketDataProvider {
     }
 
     /**
-     * `from`이 최근 윈도우(오늘−EOD_RECENT_FROM_DAYS) 이전인지 확인한다.
+     * `from`이 최근 윈도우(오늘−EOD_LONG_WINDOW_GATE_DAYS) 이전인지 확인한다.
      * `from===undefined`이면 전체 히스토리 요청이므로 항상 split을 적용한다.
      * `from`이 최근 윈도우 안에 있으면(짧은 lookback), 과거 윈도우가 역전되므로
      * single-key 경로를 사용한다.
@@ -169,7 +170,7 @@ export class CachedMarketDataProvider implements MarketDataProvider {
 
     getBars = (options: GetBarsOptions): Promise<Bar[]> => {
         // 1Day 라이브 뷰(before 미지정)이면서 lookback이 충분히 긴 경우에만 과거(long)+오늘(live) 분리.
-        // 짧은 lookback(from이 최근 ~EOD_RECENT_FROM_DAYS일 이내)은 과거 윈도우가 역전되므로 단일 경로 사용.
+        // 짧은 lookback(from이 최근 ~EOD_LONG_WINDOW_GATE_DAYS일 이내)은 과거 윈도우가 역전되므로 단일 경로 사용.
         // 인트라데이·과거 페이지네이션(before 지정)도 기존 단일 60s 경로 유지.
         // now를 한 번만 캡처해 isLongDailyWindow와 getCachedDailyBars가 동일 클락 기준으로 동작.
         const now = new Date();
