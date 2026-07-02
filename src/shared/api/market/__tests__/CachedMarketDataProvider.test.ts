@@ -948,6 +948,122 @@ describe('CachedMarketDataProvider', () => {
             expect(todaySetCall).toBeDefined();
             expect(todaySetCall![2]?.ex).toBeGreaterThan(60); // closed-session TTL > 60s
         });
+
+        // ── crypto: weekend gap-free (session-aware lastClosed) ───────────────
+        it('[crypto] Sunday: before=yesterday(Saturday), NOT Friday — weekend bars retained', async () => {
+            /**
+             * System time: 2026-07-12 (Sunday) 12:00 UTC.
+             * Crypto (always-open): lastClosed = yesterday = 2026-07-11 (Saturday).
+             * US equity (scheduled): lastClosed = 2026-07-10 (Friday, weekend rewind).
+             *
+             * Proves: crypto keeps Saturday's completed EOD bar; equity would truncate it.
+             */
+            vi.setSystemTime(new Date('2026-07-12T12:00:00Z')); // Sunday
+            resetSharedState();
+
+            const cryptoOpts: GetBarsOptions = {
+                symbol: 'BTC',
+                timeframe: '1Day',
+                from: '2024-01-01',
+            };
+
+            // Crypto provider: lastClosed must be 2026-07-11 (Saturday = yesterday UTC)
+            const cryptoBars = vi.fn(async () => [
+                bar(Math.floor(Date.parse('2024-01-01T00:00:00Z') / 1000)),
+            ]);
+            const cryptoProvider = new CachedMarketDataProvider(
+                makeInner({
+                    getBars: cryptoBars,
+                    getTodayBar: vi.fn(async () => null),
+                }),
+                CRYPTO_SESSION
+            );
+
+            await cryptoProvider.getBars(cryptoOpts);
+
+            // Crypto key must use Saturday (yesterday UTC), not Friday
+            expect(store.has('bars:eodhist:BTC:2026-07-11')).toBe(true);
+            expect(store.has('bars:eodhist:BTC:2026-07-10')).toBe(false);
+            expect(cryptoBars).toHaveBeenCalledWith(
+                expect.objectContaining({ before: '2026-07-11' })
+            );
+
+            // Contrast: equity provider on same Sunday uses Friday as lastClosed
+            resetSharedState();
+            const equityBars = vi.fn(async () => [
+                bar(Math.floor(Date.parse('2024-01-01T00:00:00Z') / 1000)),
+            ]);
+            const equityProvider = new CachedMarketDataProvider(
+                makeInner({
+                    getBars: equityBars,
+                    getTodayBar: vi.fn(async () => null),
+                })
+            );
+
+            await equityProvider.getBars({
+                symbol: 'AAPL',
+                timeframe: '1Day',
+                from: '2024-01-01',
+            });
+
+            // Equity key is Friday (weekend rewind)
+            expect(store.has('bars:eodhist:AAPL:2026-07-10')).toBe(true);
+            expect(store.has('bars:eodhist:AAPL:2026-07-11')).toBe(false);
+        });
+
+        // ── merge-under-lag: documents behavior when history lags behind today ─
+        it('[merge-under-lag] history lags (newest < lastClosed) → short TTL + result includes today bar', async () => {
+            /**
+             * Behavior-documenting test: FMP has not yet published day N's EOD.
+             * History newest bar = day N-1 (lag). today bar = day N+1 (advanced quote).
+             *
+             * Expected:
+             * (a) bars:eodhist is written with SHORT retry TTL (15min = 900s) — completeness
+             *     check (newest >= lastClosed) fails, so we schedule a retry.
+             * (b) merged result still contains history bars + the today bar — the short TTL
+             *     drives re-fetch once FMP publishes N; until then the series has today via quote.
+             *
+             * System time: 2026-06-30 15:00 UTC (Tue 11:00 EDT, before close)
+             * lastClosed = 2026-06-29 (Mon). History newest = 2026-06-28 (lag, N-1).
+             * todayBar = 2026-07-01 (advanced, N+1).
+             */
+            vi.setSystemTime(new Date('2026-06-30T15:00:00Z'));
+            resetSharedState();
+
+            // history lags: newest bar = 2026-06-28, behind lastClosed 2026-06-29
+            const laggedHistBar = bar(
+                Math.floor(Date.parse('2026-06-28T00:00:00Z') / 1000)
+            );
+            // today is advanced: 2026-07-01
+            const advancedTodayBar = bar(
+                Math.floor(Date.parse('2026-07-01T00:00:00Z') / 1000)
+            );
+
+            const getBars = vi.fn(async () => [laggedHistBar]);
+            const getTodayBar = vi.fn(async () => advancedTodayBar);
+            const provider = new CachedMarketDataProvider(
+                makeInner({ getBars, getTodayBar })
+            );
+
+            const result = await provider.getBars({
+                symbol: 'AAPL',
+                timeframe: '1Day',
+                from: '2024-01-01',
+            });
+
+            // (a) short TTL because history newest (2026-06-28) < lastClosed (2026-06-29)
+            const histSetCall = fakeRedis.set.mock.calls.find(
+                ([key]) =>
+                    typeof key === 'string' && key.startsWith('bars:eodhist')
+            );
+            expect(histSetCall).toBeDefined();
+            expect(histSetCall![2]?.ex).toBe(SECONDS_PER_MINUTE * 15);
+
+            // (b) merged result contains both lagged history and today bar
+            const times = result.map(b => b.time);
+            expect(times).toContain(laggedHistBar.time);
+            expect(times).toContain(advancedTodayBar.time);
+        });
     });
 
     describe('session spec — TTL', () => {

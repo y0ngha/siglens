@@ -137,14 +137,20 @@ export class CachedMarketDataProvider implements MarketDataProvider {
      * `from===undefined`이면 전체 히스토리 요청이므로 항상 split을 적용한다.
      * `from`이 최근 윈도우 안에 있으면(짧은 lookback), 과거 윈도우가 역전되므로
      * single-key 경로를 사용한다.
+     *
+     * `now`는 `getBars`에서 캡처한 단일 클락 값을 전달받아, 한 번의 `getBars` 호출이
+     * 동일 시각 기준으로 동작하도록 보장한다.
      */
-    private isLongDailyWindow(from: string | undefined): boolean {
+    private isLongDailyWindow(
+        from: string | undefined,
+        now: Date = new Date()
+    ): boolean {
         // from===undefined ⇒ full history ⇒ split. Otherwise only split when the
         // requested start is older than the recent window; a short lookback (from
         // within the last ~EOD_RECENT_FROM_DAYS days) would invert the historical window, so it uses the
         // single-key path instead.
         if (from === undefined) return true;
-        const recentFrom = isoDateDaysAgo(new Date(), EOD_RECENT_FROM_DAYS);
+        const recentFrom = isoDateDaysAgo(now, EOD_RECENT_FROM_DAYS);
         return from.slice(0, 10) < recentFrom;
     }
 
@@ -152,12 +158,14 @@ export class CachedMarketDataProvider implements MarketDataProvider {
         // 1Day 라이브 뷰(before 미지정)이면서 lookback이 충분히 긴 경우에만 과거(long)+오늘(live) 분리.
         // 짧은 lookback(from이 최근 ~EOD_RECENT_FROM_DAYS일 이내)은 과거 윈도우가 역전되므로 단일 경로 사용.
         // 인트라데이·과거 페이지네이션(before 지정)도 기존 단일 60s 경로 유지.
+        // now를 한 번만 캡처해 isLongDailyWindow와 getCachedDailyBars가 동일 클락 기준으로 동작.
+        const now = new Date();
         if (
             options.timeframe === '1Day' &&
             options.before === undefined &&
-            this.isLongDailyWindow(options.from)
+            this.isLongDailyWindow(options.from, now)
         ) {
-            return this.getCachedDailyBars(options);
+            return this.getCachedDailyBars(options, now);
         }
         return getOrSetCache(
             buildBarsRawKey(options),
@@ -169,24 +177,37 @@ export class CachedMarketDataProvider implements MarketDataProvider {
 
     /**
      * 1Day 일봉을 불변 과거(history, EOD)와 오늘(today, quote)로 나눠 병렬 fetch 후 병합한다.
-     * - history `bars:eodhist:<SYM>:<lastClosedSessionDateEt>`: 세션-날짜 키가 16:00 ET(DST-aware)
-     *   마감마다 자동 롤 → 세션당 1회 재조회. `before=lastClosed`로 완료된 EOD까지만 fetch.
+     * - history `bars:eodhist:<SYM>:<lastClosed>`: 세션-날짜 키가 세션 마감마다 자동 롤 →
+     *   세션당 1회 재조회. `before=lastClosed`로 완료된 EOD까지만 fetch.
+     *   `lastClosed`는 세션 종류에 따라 다르게 계산된다:
+     *   - US 주식(`scheduled`): 16:00 ET 마감 + EOD_PUBLISH_BUFFER_HOURS(4h) 버퍼 + 주말 되감기.
+     *   - 크립토(`always-open`): 어제 UTC 날짜 — 24/7이므로 주말 되감기·ET 버퍼 없음.
      *   TTL은 fetch된 bars가 lastClosed까지 도달했는지에 따라 분기한다:
      *   - 도달했으면(newest.time >= lastClosedThreshold) 7일 long TTL(EOD_HIST_TTL_SECONDS).
-     *   - 미도달이면(FMP EOD 미발행/지연 또는 휴장일 키) 15분 short TTL(EOD_HIST_INCOMPLETE_TTL_SECONDS)로
-     *     재시도를 허용한다. FMP가 따라잡은 후 첫 조회에서 long TTL로 승격된다.
-     *     lag 구간에도 갭은 발생하지 않는다 — lastClosed 시점에는 today(quote)가 동일 날짜를
-     *     커버하므로 series는 연속이다.
+     *   - 미도달이면(FMP EOD 미발행/지연) 15분 short TTL(EOD_HIST_INCOMPLETE_TTL_SECONDS)로
+     *     재시도를 허용한다. FMP가 따라잡으면 long TTL로 승격된다.
+     *     갭은 일시적(short retry TTL 이내)이다 — lastClosed 경계에서는 today(quote)가 해당 날짜를
+     *     커버하므로 FMP가 발행하기 전까지도 series는 연속이다. FMP 발행 후 최초 재fetch에서 해소.
      *   isFresh는 요청 from 커버(truncation 방지)만 판정.
      * - today `bars:today:<SYM>`: `inner.getTodayBar`(quote 기반 OHLCV) 세션 TTL(장중 60s).
      * `mergeBarsByTime`가 오늘 봉을 overlap 우선으로 병합, `sliceFrom`가 options.from으로 잘라
      * 단일 `getBars(from)`와 동일 집합을 만든다. 세션-날짜 키로 history는 항상 마지막 마감까지
      * 커버, today(quote)와 갭 없음. 키 전제: 모든 long-1Day 호출부가 core 730d lookback 공유
      * (짧은 lookback은 isLongDailyWindow가 단일 경로로 분기).
+     *
+     * `now`는 `getBars`에서 캡처한 단일 클락 값을 받아, 한 번의 호출 안에서 `isLongDailyWindow`와
+     * 동일 시각 기준으로 동작하도록 보장한다.
      */
-    private async getCachedDailyBars(options: GetBarsOptions): Promise<Bar[]> {
-        const now = new Date();
-        const lastClosed = lastClosedSessionDateEt(now);
+    private async getCachedDailyBars(
+        options: GetBarsOptions,
+        now: Date = new Date()
+    ): Promise<Bar[]> {
+        // 24/7 크립토: 주말도 거래일 → 어제 UTC가 마지막 완료 일봉.
+        // US 주식: 16:00 ET 마감 + 4h 버퍼 + 주말 되감기.
+        const lastClosed =
+            this.session.kind === 'always-open'
+                ? isoDateDaysAgo(now, 1)
+                : lastClosedSessionDateEt(now);
         const lastClosedThreshold = utcMidnightSeconds(lastClosed);
         const fromThreshold =
             options.from !== undefined
