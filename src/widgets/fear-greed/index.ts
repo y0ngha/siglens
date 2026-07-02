@@ -5,6 +5,8 @@
 export { FearGreedGauge } from './FearGreedGauge';
 export { FearGreedPageError } from './FearGreedPageError';
 export { SelfNormWarningBadge } from './SelfNormWarningBadge';
+// 'use client' presentational view — used by share panel registry.
+export { FearGreedShareView } from './FearGreedShareView';
 
 // Hooks re-exported for cross-widget consumption
 export { useFearGreedFromSymbol } from './hooks/useFearGreedFromSymbol';

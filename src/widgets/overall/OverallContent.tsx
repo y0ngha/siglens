@@ -7,15 +7,6 @@ import { useOverallAnalysis } from './hooks/useOverallAnalysis';
 import { axesForAssetClass } from './utils/axesForAssetClass';
 import { OverallTriggerCta } from './OverallTriggerCta';
 import { ReanalyzeButton } from './ReanalyzeButton';
-import { FinancialsSummary } from './sections/FinancialsSummary';
-import { FundamentalSummary } from './sections/FundamentalSummary';
-import { IntegratedConclusion } from './sections/IntegratedConclusion';
-import { NewsSummary } from './sections/NewsSummary';
-import { OptionsSummary } from './sections/OptionsSummary';
-import { OverallSummary } from './sections/OverallSummary';
-import { RiskFactors } from './sections/RiskFactors';
-import { ScenarioAnalysis } from './sections/ScenarioAnalysis';
-import { TechnicalSummary } from './sections/TechnicalSummary';
 import { buildChatState } from './utils/buildChatState';
 import { BotBlockedNotice } from '@/shared/ui/BotBlockedNotice';
 import { useDefaultModelId } from '@/features/symbol-model';
@@ -24,6 +15,8 @@ import { type OverallAnalysisResponse } from '@y0ngha/siglens-core';
 import { type CSSProperties, useMemo } from 'react';
 import { useTimeframeFromUrl } from './hooks/useTimeframeFromUrl';
 import type { AssetClass } from '@/shared/config/marketProfile';
+import { useRegisterShareable, mapAnalysisStatus } from '@/features/share';
+import { OverallView } from './OverallView';
 
 const SKELETON_LINE_COUNT = 3;
 const SKELETON_WIDTH_START_PCT = 85;
@@ -85,11 +78,22 @@ export function OverallContent({
         [state, timeframe]
     );
     usePublishSymbolChat(chatState);
+    useRegisterShareable({
+        kind: 'overall',
+        status: mapAnalysisStatus(state.status),
+        result: state.status === 'done' ? state.result : null,
+        context: {
+            symbol,
+            displayName: companyName ?? symbol,
+            assetClass,
+            // OverallAnalysisResponse has no analyzedAt; resolveAsOf falls back to createdAt.
+            analyzedAt: undefined,
+        },
+        trigger,
+    });
 
     // §17 hook order: derived variables go after all hook calls.
-    // Neither isEquity nor applicableAxes is consumed by any hook above —
-    // they are used only in JSX / render logic below.
-    const isEquity = assetClass === 'equity';
+    // applicableAxes is consumed in the pending_dependencies branch.
     const applicableAxes = axesForAssetClass(assetClass);
 
     // useWaitForNewsCards가 누적 polling 실패 임계를 넘으면 inline fallback으로 회복한다 —
@@ -238,22 +242,7 @@ export function OverallContent({
 
     return (
         <div className="space-y-6">
-            <OverallSummary headline={r.headlineKo} />
-            <TechnicalSummary bullets={r.technicalBulletsKo} />
-            {isEquity && (
-                <>
-                    <OptionsSummary
-                        bullets={r.optionsBulletsKo}
-                        oiStale={optionsOiStale}
-                    />
-                    <FundamentalSummary bullets={r.fundamentalBulletsKo} />
-                    <FinancialsSummary bullets={r.financialsBulletsKo} />
-                </>
-            )}
-            <NewsSummary bullets={r.newsBulletsKo} />
-            <IntegratedConclusion text={r.integratedConclusionKo} />
-            <ScenarioAnalysis scenarios={r.scenarios} />
-            <RiskFactors factors={r.riskFactorsKo} />
+            <OverallView result={r} assetClass={assetClass} />
             <ReanalyzeButton
                 onClick={trigger}
                 highlighted={reanalyzeHighlighted}

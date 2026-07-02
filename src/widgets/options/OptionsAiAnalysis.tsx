@@ -16,6 +16,7 @@ import { OptionsAiAnalysisSkeleton } from './OptionsAiAnalysisSkeleton';
 import { useOptionsAnalysis } from './hooks/useOptionsAnalysis';
 import { buildChatState } from './utils/buildChatState';
 import type { OptionsExpirationSelector } from '@/shared/lib/types';
+import { useRegisterShareable, mapAnalysisStatus } from '@/features/share';
 
 const TONE_LABEL: Record<OptionsTone, string> = {
     bullish: '강세',
@@ -114,7 +115,7 @@ interface OptionsAiAnalysisViewProps {
     result: OptionsAnalysisResponse;
 }
 
-function OptionsAiAnalysisView({ result }: OptionsAiAnalysisViewProps) {
+export function OptionsAiAnalysisView({ result }: OptionsAiAnalysisViewProps) {
     const isEmpty =
         result.summary === '' &&
         result.perExpiration.length === 0 &&
@@ -239,6 +240,18 @@ export function OptionsAiAnalysis({
     // (overall/fundamental/news/chart) 모두 동일 패턴.
     const chatState = useMemo(() => buildChatState(state), [state]);
     usePublishSymbolChat(chatState);
+    useRegisterShareable({
+        kind: 'options',
+        status: mapAnalysisStatus(state.status),
+        result: state.status === 'done' ? state.result : null,
+        context: {
+            symbol,
+            displayName: companyName,
+            analyzedAt:
+                state.status === 'done' ? state.result.analyzedAt : undefined,
+        },
+        trigger: state.trigger,
+    });
 
     if (state.status === 'loading') {
         return <OptionsAiAnalysisSkeleton />;

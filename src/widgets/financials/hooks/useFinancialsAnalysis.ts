@@ -21,10 +21,14 @@ import { BotBlockedError } from '@/shared/lib/BotBlockedError';
 import type { CancelJobEntry } from '@/shared/lib/types';
 
 export type FinancialsAnalysisState =
-    | { status: 'loading' }
-    | { status: 'done'; result: FinancialsAnalysisResponse }
-    | { status: 'bot_blocked' }
-    | { status: 'error'; error: Error; retry: () => void };
+    | { status: 'loading'; trigger: () => void }
+    | {
+          status: 'done';
+          result: FinancialsAnalysisResponse;
+          trigger: () => void;
+      }
+    | { status: 'bot_blocked'; trigger: () => void }
+    | { status: 'error'; error: Error; retry: () => void; trigger: () => void };
 
 // onJobId는 두 번째 인자(expectedCurrent)를 받으면 ref가 일치할 때만 갱신한다 →
 // retry/queryKey 변경으로 새 실행이 시작된 뒤에도 이전 실행의 finally가
@@ -158,7 +162,7 @@ export function useFinancialsAnalysis(
 
     if (query.isError) {
         if (query.error instanceof BotBlockedError) {
-            return { status: 'bot_blocked' };
+            return { status: 'bot_blocked', trigger: retry };
         }
         return {
             status: 'error',
@@ -167,12 +171,13 @@ export function useFinancialsAnalysis(
                     ? query.error
                     : new Error('분석 중 오류가 발생했습니다.'),
             retry,
+            trigger: retry,
         };
     }
 
     if (query.data !== undefined) {
-        return { status: 'done', result: query.data };
+        return { status: 'done', result: query.data, trigger: retry };
     }
 
-    return { status: 'loading' };
+    return { status: 'loading', trigger: retry };
 }

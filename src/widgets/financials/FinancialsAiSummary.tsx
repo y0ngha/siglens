@@ -5,6 +5,7 @@ import type {
     FinancialsAnalysisResponse,
     FinancialsSentiment,
 } from '@y0ngha/siglens-core';
+import { useRegisterShareable, mapAnalysisStatus } from '@/features/share';
 import { cn } from '@/shared/lib/cn';
 import { AXIS_LABEL_KO } from './axisLabels';
 import { useDefaultModelId } from '@/features/symbol-model';
@@ -31,7 +32,9 @@ interface FinancialsAiSummaryViewProps {
     result: FinancialsAnalysisResponse;
 }
 
-function FinancialsAiSummaryView({ result }: FinancialsAiSummaryViewProps) {
+export function FinancialsAiSummaryView({
+    result,
+}: FinancialsAiSummaryViewProps) {
     return (
         <section
             aria-labelledby="financials-ai-summary-heading"
@@ -125,6 +128,18 @@ export function FinancialsAiSummary({ symbol }: FinancialsAiSummaryProps) {
     // 인자로 받기 때문에 useMemo 뒤에 위치해야 한다.
     const chatState = useMemo(() => buildChatState(state), [state]);
     usePublishSymbolChat(chatState);
+    useRegisterShareable({
+        kind: 'financials',
+        status: mapAnalysisStatus(state.status),
+        result: state.status === 'done' ? state.result : null,
+        context: {
+            symbol,
+            displayName: symbol,
+            // FinancialsAnalysisResponse has no analyzedAt; resolveAsOf falls back to createdAt.
+            analyzedAt: undefined,
+        },
+        trigger: state.trigger,
+    });
 
     if (state.status === 'loading') {
         return <FinancialsAiSummarySkeleton />;

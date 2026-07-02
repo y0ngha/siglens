@@ -15,6 +15,7 @@ describe('schema 테이블 export', () => {
         'earningsReports',
         'terms',
         'agreements',
+        'sharedAnalyses',
     ] as const;
 
     it.each(expectedTables)("'%s' 테이블이 export 되어 있다", tableName => {
@@ -37,6 +38,7 @@ describe('schema enum export', () => {
         'oauthProviderEnum',
         'llmProviderEnum',
         'termsKindEnum',
+        'shareableKindEnum',
     ] as const;
 
     it.each(expectedEnums)("'%s' enum이 export 되어 있다", enumName => {

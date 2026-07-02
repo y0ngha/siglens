@@ -197,6 +197,30 @@ const eslintConfig = defineConfig([
         },
     },
     {
+        // Specific test files that deliberately cross FSD layer boundaries by importing
+        // upward (entity → views, or integration harness → views).
+        //
+        // app/** tests are NOT listed here: app → views is an allowed dependency
+        // (app layer may import pages/views per boundaries/dependencies rules above).
+        //
+        // Enumerated files and patterns:
+        //   - kindExhaustiveness.test.ts: entity importing @/views/symbol/utils/symbolTabsConfig
+        //     to assert that every ShareableKind has a matching tab key.
+        //   - src/__integration__/*.test.{ts,tsx}: integration harness files are outside all
+        //     FSD layer patterns; several import @/views/symbol/ components and utils directly.
+        //
+        // Do NOT broaden this list without justification — the intent is to keep the set small
+        // so boundary violations in new test files are caught by the linter.
+        files: [
+            'src/entities/shared-analysis/__tests__/kindExhaustiveness.test.ts',
+            'src/__integration__/*.test.ts',
+            'src/__integration__/*.test.tsx',
+        ],
+        rules: {
+            'boundaries/dependencies': 'off',
+        },
+    },
+    {
         files: ['src/**/*.{ts,tsx}'],
         ignores: [
             'src/**/*.test.{ts,tsx}',
@@ -225,6 +249,11 @@ const eslintConfig = defineConfig([
             // 허용된 shared → entities 의존성을 가진다. barrel에서 제외된 api-key/api deep import
             // 가 필요하므로 no-restricted-imports 예외로 추가한다.
             'src/shared/lib/byokGate.ts',
+            // useShareFlow는 widgets/share/ui/ShareButton에서 추출된 비즈니스 로직 훅이다.
+            // symbol-model barrel이 useUserTier를 의도적으로 제외(클라 번들 오염 방지)하므로
+            // deep path(@/features/symbol-model/hooks/useUserTier)에서 직접 import해야 한다.
+            // widgets/** 계층이 동일 예외를 받는 것과 동일한 근거.
+            'src/features/share/hooks/useShareFlow.ts',
             // instrumentation*.ts는 Next 서버 전용 런타임 훅(SIGTERM graceful-drain)이다.
             // drain 유틸(drainBackgroundTasks/stopAcceptingBackgroundTasks)은 server-only라
             // client 번들에 포함되는 ticker barrel에 노출할 수 없어 lib 경로에서 deep import해야 한다.

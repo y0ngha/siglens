@@ -41,6 +41,7 @@ describe('CongressTrendSummary', () => {
     it('renders skeleton during loading', () => {
         vi.mocked(useCongressTrend).mockReturnValue({
             status: 'loading',
+            trigger: vi.fn(),
         });
 
         render(<CongressTrendSummary symbol="AAPL" />);
@@ -51,6 +52,7 @@ describe('CongressTrendSummary', () => {
     it('renders empty state when no trades exist', () => {
         vi.mocked(useCongressTrend).mockReturnValue({
             status: 'no_trades',
+            trigger: vi.fn(),
         });
 
         render(<CongressTrendSummary symbol="AAPL" />);
@@ -61,6 +63,7 @@ describe('CongressTrendSummary', () => {
     it('renders bot-blocked notice', () => {
         vi.mocked(useCongressTrend).mockReturnValue({
             status: 'bot_blocked',
+            trigger: vi.fn(),
         });
 
         render(<CongressTrendSummary symbol="AAPL" />);
@@ -73,6 +76,7 @@ describe('CongressTrendSummary', () => {
             status: 'error',
             error: new Error('test'),
             retry: vi.fn(),
+            trigger: vi.fn(),
         });
 
         render(<CongressTrendSummary symbol="AAPL" />);
@@ -89,6 +93,7 @@ describe('CongressTrendSummary', () => {
                 notableMembersKo: [],
                 riskNoteKo: '',
             },
+            trigger: vi.fn(),
         });
 
         render(<CongressTrendSummary symbol="AAPL" />);
@@ -104,6 +109,7 @@ describe('CongressTrendSummary', () => {
         const { usePublishSymbolChat } = await import('@/features/symbol-chat');
         vi.mocked(useCongressTrend).mockReturnValue({
             status: 'loading',
+            trigger: vi.fn(),
         });
 
         render(<CongressTrendSummary symbol="AAPL" />);

@@ -17,6 +17,7 @@ import {
 } from '@y0ngha/siglens-core';
 import { useMemo } from 'react';
 import { NEWS_ANALYSIS_PERIOD_LABEL } from '@/shared/lib/news/periodLabels';
+import { useRegisterShareable, mapAnalysisStatus } from '@/features/share';
 
 const SENTIMENT_LABEL: Record<NewsSentiment, string> = {
     bullish: '긍정',
@@ -93,7 +94,7 @@ interface NewsAiSummaryViewProps {
     result: NewsAnalysisResponse;
 }
 
-function NewsAiSummaryView({ result }: NewsAiSummaryViewProps) {
+export function NewsAiSummaryView({ result }: NewsAiSummaryViewProps) {
     return (
         <section
             aria-labelledby="news-ai-summary-heading"
@@ -276,6 +277,23 @@ export function NewsAiSummary({
         [isCardsReady, analysis]
     );
     usePublishSymbolChat(chatState);
+    // When enriched news cards are not yet ready the analysis query is disabled
+    // (enabled: false → useNewsAnalysis returns status 'loading' immediately).
+    // Mapping that 'loading' to 'pending' misleads the share system into showing
+    // "preparing" before any actual analysis has started. Register 'idle' instead
+    // so the share button stays dormant until real analysis work begins.
+    useRegisterShareable({
+        kind: 'news',
+        status: isCardsReady ? mapAnalysisStatus(analysis.status) : 'idle',
+        result: analysis.status === 'done' ? analysis.result : null,
+        context: {
+            symbol,
+            displayName: companyName,
+            // NewsAnalysisResponse has no analyzedAt; resolveAsOf falls back to createdAt.
+            analyzedAt: undefined,
+        },
+        trigger: analysis.trigger,
+    });
 
     // Surface persistent polling errors to the surrounding error boundary
     // (NewsAiSummaryErrorBoundary) so the fallback UI takes over.

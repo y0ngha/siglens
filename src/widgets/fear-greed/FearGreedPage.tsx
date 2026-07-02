@@ -11,6 +11,7 @@ import { formatConfidenceFooter } from '@/shared/lib/fearGreedLabels';
 import { usePublishSymbolChat } from '@/features/symbol-chat';
 import { buildChatState } from './utils/buildChatState';
 import { useHydrated } from '@/shared/hooks/useHydrated';
+import { useRegisterShareable } from '@/features/share';
 
 interface FearGreedPageProps {
     symbol: string;
@@ -66,6 +67,20 @@ export function FearGreedPage({ symbol, fmpSymbol }: FearGreedPageProps) {
 
     const chatState = useMemo(() => buildChatState(snapshot), [snapshot]);
     usePublishSymbolChat(chatState);
+    useRegisterShareable({
+        kind: 'fear-greed',
+        status: snapshot ? 'success' : 'unavailable',
+        result: snapshot ?? null,
+        context: {
+            symbol,
+            displayName: symbol,
+            // FearGreedSnapshot has no analyzedAt; resolveAsOf falls back to createdAt.
+        },
+        // fear-greed is deterministic (computed from bars client-side, no async
+        // analysis job to dispatch). The snapshot is ready once bars load — no
+        // trigger action needed.
+        trigger: () => {},
+    });
 
     // During SSR and the first synchronous client render, suppress the
     // score-driven output entirely.  The snapshot value may differ between

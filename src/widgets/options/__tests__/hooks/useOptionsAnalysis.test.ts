@@ -72,6 +72,32 @@ describe('useOptionsAnalysis', () => {
         client.clear();
     });
 
+    it('exposes trigger function on every status variant', async () => {
+        mockSubmit.mockResolvedValue({ status: 'cached', result: RESULT });
+        const { client, wrapper } = makeWrapper();
+        const { result } = renderHook(
+            () =>
+                useOptionsAnalysis({
+                    symbol: 'AAPL',
+                    companyName: 'Apple Inc.',
+                    expirationDate: '2025-06-20',
+                    modelId: 'gemini-2.5-flash-lite',
+                }),
+            { wrapper }
+        );
+
+        // loading state — trigger is a function
+        expect(typeof result.current.trigger).toBe('function');
+
+        await waitFor(() => {
+            expect(result.current.status).toBe('done');
+        });
+
+        // done state — trigger is still a function
+        expect(typeof result.current.trigger).toBe('function');
+        client.clear();
+    });
+
     it('returns done when submit returns cached result', async () => {
         mockSubmit.mockResolvedValue({
             status: 'cached',

@@ -70,6 +70,10 @@ vi.mock('@/shared/lib/llmProviderLabels', () => ({
     LLM_PROVIDER_LABELS: { google: 'Google' },
 }));
 
+vi.mock('@/widgets/share', () => ({
+    ShareButton: () => <button data-testid="share-button">공유</button>,
+}));
+
 describe('SymbolLayoutHeader', () => {
     beforeEach(() => {
         mockFearGreedChip.mockImplementation(() => (

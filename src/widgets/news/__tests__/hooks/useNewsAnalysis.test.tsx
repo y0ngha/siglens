@@ -116,6 +116,26 @@ describe('useNewsAnalysis', () => {
         );
     });
 
+    it('모든 status variant에서 trigger 함수를 노출한다', async () => {
+        const wrapper = makeWrapper();
+
+        const { result } = renderHook(
+            () =>
+                useNewsAnalysis('AAPL', 'Apple Inc.', 'gemini-2.5-flash-lite'),
+            { wrapper }
+        );
+
+        // loading 상태 — trigger is a function
+        expect(typeof result.current.trigger).toBe('function');
+
+        await waitFor(() => {
+            expect(result.current.status).toBe('done');
+        });
+
+        // done 상태 — trigger is still a function
+        expect(typeof result.current.trigger).toBe('function');
+    });
+
     it('분석 실패 후 retry가 Server Action을 다시 호출한다', async () => {
         mockSubmit
             .mockRejectedValueOnce(new Error('temporary failure'))

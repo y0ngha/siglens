@@ -32,6 +32,7 @@ import { TechnicalFactsSummary } from './TechnicalFactsSummary';
 import type { AnalysisStatus } from './utils/analysisStatus';
 import { getAnalysisStatus } from './utils/analysisStatus';
 import { buildChatState } from './utils/buildChatState';
+import { useRegisterShareable, deriveChartStatus } from '@/features/share';
 
 const StockChart = dynamic(
     () => import('@/widgets/chart/StockChart').then(mod => mod.StockChart),
@@ -292,6 +293,35 @@ export function ChartContent({
         [analysis, timeframe, displayAnalyzing, isBotBlocked, analysisError]
     );
     usePublishSymbolChat(chatState);
+    useRegisterShareable({
+        kind: 'chart',
+        status: deriveChartStatus({
+            isAnalyzing,
+            analysisError: analysisError !== null,
+            isBotBlocked,
+            // Gate on a REAL analysis — the seeded `initialAnalysis` is always
+            // non-null (a fallback/no-narrative AnalysisResponse), so checking
+            // `(analysisResult ?? analysis) != null` would report 'success' even
+            // before the user has triggered an analysis. Instead, require an actual
+            // analysisResult or a non-fallback initialAnalysis so an unanalyzed
+            // chart yields 'idle' (→ ShareTriggerDialog) rather than snapshotting
+            // a fallback shell.
+            hasResult:
+                analysisResult != null ||
+                (analysis != null && !isFallbackAnalysis(analysis)),
+        }),
+        result: analysisResult ?? analysis ?? null,
+        context: {
+            symbol,
+            displayName: companyName,
+            analyzedAt: (analysisResult ?? analysis)?.analyzedAt,
+        },
+        trigger: handleReanalyze,
+        // Thread snapshot-time bars into the registration so ShareButton can
+        // embed them in the chart share snapshot. bars is captured via a ref
+        // in useRegisterShareable — no re-registration on every render.
+        chartBars: bars,
+    });
 
     useEffect(() => {
         notifyMobileContent(mobileContent);

@@ -1,0 +1,1 @@
+CREATE INDEX "shared_analyses_user_id_idx" ON "shared_analyses" USING btree ("user_id");

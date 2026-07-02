@@ -36,7 +36,8 @@ describe('FundamentalAiSummary', () => {
     it('renders skeleton during loading', () => {
         vi.mocked(useFundamentalAnalysis).mockReturnValue({
             status: 'loading',
-        } as ReturnType<typeof useFundamentalAnalysis>);
+            trigger: vi.fn(),
+        });
 
         render(<FundamentalAiSummary symbol="AAPL" />);
 
@@ -46,7 +47,8 @@ describe('FundamentalAiSummary', () => {
     it('renders bot-blocked notice', () => {
         vi.mocked(useFundamentalAnalysis).mockReturnValue({
             status: 'bot_blocked',
-        } as ReturnType<typeof useFundamentalAnalysis>);
+            trigger: vi.fn(),
+        });
 
         render(<FundamentalAiSummary symbol="AAPL" />);
 
@@ -58,7 +60,8 @@ describe('FundamentalAiSummary', () => {
             status: 'error',
             error: new Error('test'),
             retry: vi.fn(),
-        } as unknown as ReturnType<typeof useFundamentalAnalysis>);
+            trigger: vi.fn(),
+        });
 
         render(<FundamentalAiSummary symbol="AAPL" />);
 
@@ -74,7 +77,8 @@ describe('FundamentalAiSummary', () => {
                 categoryAssessments: [],
                 riskFactorsKo: [],
             },
-        } as unknown as ReturnType<typeof useFundamentalAnalysis>);
+            trigger: vi.fn(),
+        });
 
         render(<FundamentalAiSummary symbol="AAPL" />);
 

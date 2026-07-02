@@ -108,6 +108,7 @@ import { DrizzleUserRepository } from '@/entities/auth/api'; // server-only → 
     │   ├── login
     │   ├── market
     │   ├── reset-password
+    │   ├── share/[id]    # 공유 스냅샷 읽기전용 페이지 (noindex, OG, disclaimer)
     │   └── signup
     ├── entities
     │   ├── agreement/    # 약관 동의 상태
@@ -128,6 +129,7 @@ import { DrizzleUserRepository } from '@/entities/auth/api'; // server-only → 
     │   ├── options-chain/ # 옵션 체인 데이터
     │   ├── sector-signal/ # 섹터 시그널
     │   ├── session/      # 세션/인증 쿠키
+    │   ├── shared-analysis/ # 공유 스냅샷 생성·조회 (shared_analyses DB, kindRegistry)
     │   ├── sitemap-entry/ # 사이트맵 엔트리
     │   ├── skill/        # Skills 파일 로드 (.md 분석 룰)
     │   ├── terms/        # 약관 본문
@@ -142,6 +144,7 @@ import { DrizzleUserRepository } from '@/entities/auth/api'; // server-only → 
     │   ├── contact-form/
     │   ├── premium-gate/
     │   ├── pwa-install/
+    │   ├── share/        # 공유 컨텍스트 등록 (ShareableAnalysisContext, useShareable)
     │   ├── symbol-chat/
     │   └── ticker-search/
     ├── shared
@@ -168,6 +171,7 @@ import { DrizzleUserRepository } from '@/entities/auth/api'; // server-only → 
         ├── notice-popup/ # 긴급 공지 모달 (경로 매칭, localStorage dismiss, 우선순위)
         ├── options/
         ├── overall/
+        ├── share/        # ShareButton, ShareSheet, ShareTriggerDialog, SharePreparingModal
         └── symbol-page/
 ```
 

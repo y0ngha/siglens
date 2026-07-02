@@ -21,10 +21,14 @@ import { BotBlockedError } from '@/shared/lib/BotBlockedError';
 import type { CancelJobEntry } from '@/shared/lib/types';
 
 export type FundamentalAnalysisState =
-    | { status: 'loading' }
-    | { status: 'done'; result: FundamentalAnalysisResponse }
-    | { status: 'bot_blocked' }
-    | { status: 'error'; error: Error; retry: () => void };
+    | { status: 'loading'; trigger: () => void }
+    | {
+          status: 'done';
+          result: FundamentalAnalysisResponse;
+          trigger: () => void;
+      }
+    | { status: 'bot_blocked'; trigger: () => void }
+    | { status: 'error'; error: Error; retry: () => void; trigger: () => void };
 
 // AbortSignal로 unmount 시 폴링을 즉시 종료한다.
 // onJobId는 두 번째 인자(expectedCurrent)를 받으면 ref가 일치할 때만 갱신한다 →
@@ -155,7 +159,7 @@ export function useFundamentalAnalysis(
 
     if (query.isError) {
         if (query.error instanceof BotBlockedError) {
-            return { status: 'bot_blocked' };
+            return { status: 'bot_blocked', trigger: retry };
         }
         return {
             status: 'error',
@@ -164,12 +168,13 @@ export function useFundamentalAnalysis(
                     ? query.error
                     : new Error('분석 중 오류가 발생했습니다.'),
             retry,
+            trigger: retry,
         };
     }
 
     if (query.data !== undefined) {
-        return { status: 'done', result: query.data };
+        return { status: 'done', result: query.data, trigger: retry };
     }
 
-    return { status: 'loading' };
+    return { status: 'loading', trigger: retry };
 }

@@ -8,6 +8,7 @@ import { SymbolTabsSkeleton } from './SymbolTabsSkeleton';
 import { useAssetInfo } from '@/entities/ticker/hooks/useAssetInfo';
 import { useSymbolModel } from '@/features/symbol-model';
 import { ModelSelector } from '@/widgets/analysis';
+import { ShareButton } from '@/widgets/share';
 import { FearGreedHeaderChipMounted } from './FearGreedHeaderChipMounted';
 import { PremiumModelGateModal } from '@/features/premium-gate';
 import { LLM_PROVIDER_LABELS } from '@/shared/lib/llmProviderLabels';
@@ -91,6 +92,7 @@ export function SymbolLayoutHeader({ symbol }: SymbolLayoutHeaderProps) {
                 </div>
 
                 <div className="flex items-center gap-2 sm:order-3 sm:shrink-0">
+                    <ShareButton />
                     <span className="text-secondary-400 text-xs whitespace-nowrap">
                         AI 분석 모델
                     </span>

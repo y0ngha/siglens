@@ -9,7 +9,7 @@
 vi.mock('server-only', () => ({}));
 
 // react-markdown은 ESM-only 패키지라 Jest 환경에서 파싱 불가 — 컴포넌트 전체를 stub
-vi.mock('react-markdown', () => () => null);
+vi.mock('react-markdown', () => ({ default: () => null }));
 
 // page.tsx → SymbolPageClient → AnalysisPanel → MarkdownText 체인을 끊기 위해 컴포넌트를 stub
 vi.mock('@/views/symbol/SymbolPageClient', () => ({
