@@ -89,34 +89,42 @@ export function useShareable(): ShareableRegistration | null {
  */
 export function useRegisterShareable(reg: ShareableRegistration): void {
     const ctx = useContext(Ctx);
-    // Refs are declared before destructuring so all hooks appear in the same
-    // top-level order on every render (React hook invariant).
+    // `register` is a stable useCallback from the Provider — its identity never
+    // changes, unlike `ctx` (the memoized value object) which gets a new
+    // reference on every setCurrent. Depending on `register` (not `ctx`) is
+    // what breaks the re-registration storm.
+    const register = ctx?.register;
+    // Refs capture the churn-prone values (trigger, chartBars, result) so the
+    // registration effect can depend ONLY on stable primitives and never re-run
+    // on object-identity changes. Without this, a caller that builds a fresh
+    // `result`/`context`/`trigger` each render (e.g. ChartContent) triggers an
+    // infinite loop: register → setCurrent → Provider re-render → new object
+    // deps → effect re-runs → register → … (heap-exhaustion render storm).
     const triggerRef = useRef(reg.trigger);
     const chartBarsRef = useRef(reg.chartBars);
-    const { kind, status, result, context } = reg;
+    const resultRef = useRef(reg.result);
+    const { kind, status, context } = reg;
     const { symbol, displayName, assetClass, analyzedAt } = context;
     useEffect(() => {
         triggerRef.current = reg.trigger;
         chartBarsRef.current = reg.chartBars;
+        resultRef.current = reg.result;
     });
     useEffect(() => {
-        ctx?.register({
+        if (!register) return;
+        // A genuinely new analysis result always arrives with a new `analyzedAt`
+        // and/or a `status` transition (both primitives in the deps below), so
+        // reading `result` from the ref at registration time is sufficient — the
+        // effect re-runs on those meaningful transitions and picks up the latest
+        // result/trigger/chartBars from their refs.
+        register({
             kind,
             status,
-            result,
+            result: resultRef.current,
             context: { symbol, displayName, assetClass, analyzedAt },
             trigger: () => triggerRef.current(),
             chartBars: chartBarsRef.current,
         });
-        return () => ctx?.register(null);
-    }, [
-        ctx,
-        kind,
-        status,
-        result,
-        symbol,
-        displayName,
-        assetClass,
-        analyzedAt,
-    ]);
+        return () => register(null);
+    }, [register, kind, status, symbol, displayName, assetClass, analyzedAt]);
 }

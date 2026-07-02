@@ -56,4 +56,38 @@ describe('ShareableAnalysisContext', () => {
         });
         expect(screen.getByTestId('status').textContent).toBe('none');
     });
+    it('does not enter a re-registration render storm when inputs are unstable objects', () => {
+        // Mirrors ChartContent: a fresh `context`/`trigger`/`result` object every
+        // render. Pre-fix this looped infinitely (heap OOM). The cap converts a
+        // regression into a clean throw instead of exhausting memory.
+        let renders = 0;
+        function UnstableRegistrar() {
+            renders++;
+            if (renders > 25) {
+                throw new Error(`re-registration storm: ${renders} renders`);
+            }
+            const reg = {
+                kind: 'chart',
+                status: 'success',
+                result: { trend: 'bullish' },
+                context: {
+                    symbol: 'AAPL',
+                    displayName: 'Apple',
+                    assetClass: 'us_equity',
+                },
+                trigger: () => {},
+            } as unknown as ShareableRegistration;
+            useRegisterShareable(reg);
+            return null;
+        }
+        render(
+            <ShareableAnalysisProvider>
+                <UnstableRegistrar />
+                <Reader />
+            </ShareableAnalysisProvider>
+        );
+        act(() => {});
+        expect(renders).toBeLessThanOrEqual(4);
+        expect(screen.getByTestId('status').textContent).toBe('success');
+    });
 });
