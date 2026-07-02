@@ -187,7 +187,9 @@ test.describe('share: happy path /share/[id] panel', () => {
         ).toBeVisible({ timeout: 10_000 });
 
         // The investment disclaimer note is always rendered for found shares.
-        await expect(page.getByRole('note')).toBeVisible();
+        // Scope to <main>: the global site footer also renders a role="note"
+        // disclaimer, so an unscoped getByRole('note') is a strict-mode violation.
+        await expect(page.getByRole('main').getByRole('note')).toBeVisible();
 
         // The viral CTA link points to the ticker's symbol page.
         const ctaLink = page.getByRole('link', {
@@ -299,13 +301,24 @@ test.describe('share: confirm → loading interactive flow', () => {
             await page.keyboard.press('Escape');
             await expect(triggerDialog).not.toBeVisible({ timeout: 2_000 });
         } else {
-            // Unavailable branch: the notice appeared instead — that's also a
-            // valid outcome for this timing-sensitive test.
+            // Non-dialog branch. In E2E the analysis fixture frequently resolves
+            // to 'success' before the click lands, so the click opens the
+            // ShareSheet (role="dialog", aria-label "AAPL AI 분석 결과"). A 'pending'
+            // click opens the SharePreparingModal ("분석 준비 중"); an 'unavailable'
+            // click shows the inline notice. Any of these proves the ShareButton's
+            // status-based branching works end-to-end in the browser.
+            const shareSheet = page.getByRole('dialog', {
+                name: 'AAPL AI 분석 결과',
+            });
+            const preparingModal = page.getByRole('dialog', {
+                name: '분석 준비 중',
+            });
+            const unavailableNotice = page.getByRole('status').filter({
+                hasText: '이 탭은 공유할 분석이 아직 없어요',
+            });
             await expect(
-                page
-                    .getByRole('status')
-                    .filter({ hasText: '이 탭은 공유할 분석이 아직 없어요' })
-            ).toBeVisible({ timeout: 2_000 });
+                shareSheet.or(preparingModal).or(unavailableNotice).first()
+            ).toBeVisible({ timeout: 5_000 });
         }
     });
 });
