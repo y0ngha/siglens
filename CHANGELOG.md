@@ -1,5 +1,85 @@
 # Changelog
 
+# [0.34.0](https://github.com/y0ngha/siglens/compare/v0.33.0...v0.34.0) (2026-07-02)
+
+
+### Bug Fixes
+
+* **e2e:** revert FMP_API_KEY injection; fix two share.spec assertions ([4cdd049](https://github.com/y0ngha/siglens/commit/4cdd0492dee493840d41d8bde00ef361955ffef1))
+* **market:** add EOD publish buffer to session-date roll (prevent close-boundary gap) ([dfa55d3](https://github.com/y0ngha/siglens/commit/dfa55d3bca7eac07edd79db2d5687674626caf3b))
+* **market:** cooldown incomplete-history refetch (delisted/holiday) + ET-correct today-bar date + review nits ([0076e45](https://github.com/y0ngha/siglens/commit/0076e45d9560fa9eb3b22b8ca9227e379e0ee035))
+* **market:** session-aware lastClosed for crypto (keep weekend EOD bars) + single-now + jsdoc ([1c60fba](https://github.com/y0ngha/siglens/commit/1c60fbad51e9dadc738d28d1999df04fd3474e37))
+* **market:** short-TTL retry when EOD history lags lastClosed (FMP publish-lag robustness) ([923e85b](https://github.com/y0ngha/siglens/commit/923e85b6cbb753735f18d3c0283a216264c801a5))
+* **share:** add safe-cast guarantee comments (round 7) ([e9cc445](https://github.com/y0ngha/siglens/commit/e9cc4452651d1a113b441a9423bb554f67f4a141))
+* **share:** add trigger to analysis hook mocks + extend status-variant coverage ([fc7dab1](https://github.com/y0ngha/siglens/commit/fc7dab19d8d223560e3cdaa8cae349a0e6834e70)), closes [#664](https://github.com/y0ngha/siglens/issues/664)
+* **share:** address R1 audit findings (F1-F9) ([33a414b](https://github.com/y0ngha/siglens/commit/33a414b186f8a5cd7c6b6b429942b761237655f7))
+* **share:** B1-B7 code-review blockers — import paths, kindLabel location, hook order, JSDoc, constant, comments ([0cdd282](https://github.com/y0ngha/siglens/commit/0cdd28239418c08a18ddebe0f8a1f81e184a2f7d))
+* **share:** eliminate useRegisterShareable re-registration render storm ([774be0f](https://github.com/y0ngha/siglens/commit/774be0febbf6fcff39e5c91a489c32690fef9a83))
+* **share:** entity comments, dead re-export removal, try-block move, rejected read-limit note ([03e4887](https://github.com/y0ngha/siglens/commit/03e48870e9fcce40a6e9b8683686f14e99890cf6)), closes [#664](https://github.com/y0ngha/siglens/issues/664)
+* **share:** fix TS2352 double-cast in buildOgText dispatcher ([c49c8be](https://github.com/y0ngha/siglens/commit/c49c8bea06c4f8f3616c3b6d7db8f9227c05be9b))
+* **share:** friendly KST disclaimer + restore keyLevels on chart share panel ([47f02db](https://github.com/y0ngha/siglens/commit/47f02db31abf99f1ab49703748781e0cd2a6a02a))
+* **share:** implement auto-advance, payload cap, chart fallback guard, and trust docs ([5fed5c0](https://github.com/y0ngha/siglens/commit/5fed5c05b527bc4bb35c6a75515abdc0b5ff6a4e))
+* **share:** include chartBars in dedup content hash so each share keeps its own share-time chart ([fd0b260](https://github.com/y0ngha/siglens/commit/fd0b26014b24f2b9596660f98cde91f0dec575b3))
+* **share:** R3 audit — native-share state reset, UTF-8 byte cap, dead koreanName field, env comment, branch coverage ([4e742f4](https://github.com/y0ngha/siglens/commit/4e742f47361dd7d39cc7df4e36946e08d71e68e9))
+* **share:** R4-1 click-outside dismissal, R4-2 cached DB lookup, R4-3 news idle status ([11e41f9](https://github.com/y0ngha/siglens/commit/11e41f9c567e6e1290d121872189ac31eec42910))
+* **share:** R5 review — use shared cn, drop separator comments and dead KakaoIcon ([4c4893e](https://github.com/y0ngha/siglens/commit/4c4893ead002d7008b94a2d04335ab5cf7e08e17))
+* **share:** reserve /share path in middleware (prevent ticker uppercase 301) ([67bc88b](https://github.com/y0ngha/siglens/commit/67bc88b3fea9feacca784cf8d42206be8cf92f02))
+* **share:** resolve undefined panel component in share kindPanelRegistry (barrel imports) ([be403c3](https://github.com/y0ngha/siglens/commit/be403c376261676b8351a1f813f5d201ae7ef594))
+* **share:** round-2 review fixes — B2/B3/B4/B5 + S1-S5 ([7f3af84](https://github.com/y0ngha/siglens/commit/7f3af84c8fafc1141abfedb8dd256fbc15f8484f))
+* **share:** round-4 review — assetClass propagation, e2e golden path, a11y + doc accuracy ([7ee7533](https://github.com/y0ngha/siglens/commit/7ee7533e976ddba3794446b408d2fd89a62e1d0c))
+* **share:** round-5 review — remove eslint-disable, userId index, atomic rate-limit ([458f531](https://github.com/y0ngha/siglens/commit/458f53134fcf3683f5601b8d7a83175c7bf83e24))
+* **share:** S1, B7, G1-G3 — as-cast comments, separator cleanup, ShareButton resilience + tab-reset + asOf format ([3619aa1](https://github.com/y0ngha/siglens/commit/3619aa1f98a59343157af1731ea4018b17ed9ef4))
+* **share:** ShareButton ref consolidation, dialog close button, barrel export, e2e comment fixes ([cf7bb6d](https://github.com/y0ngha/siglens/commit/cf7bb6d93d252b718083f8295dcd708bdf310424)), closes [#664](https://github.com/y0ngha/siglens/issues/664)
+* **share:** thread real ticker through chain; move composition to views/share (round 6) ([0b677f5](https://github.com/y0ngha/siglens/commit/0b677f51c01f440affa72d0447f0347c5ff17cec)), closes [#17](https://github.com/y0ngha/siglens/issues/17)
+
+
+### Features
+
+* **share:** 11.2 kindLabel — 8 Korean kind labels with exhaustiveness ([f2dbb1f](https://github.com/y0ngha/siglens/commit/f2dbb1ff7b763ccd1f83112372873e06722af023))
+* **share:** 11.3 opengraph-image — dynamic OG image for /share/[id] ([600e34c](https://github.com/y0ngha/siglens/commit/600e34ccd5b83c52b89c48178bedebac57c97c0f))
+* **share:** 11.4 buildShareMetadata + C-8 tests ([54370cf](https://github.com/y0ngha/siglens/commit/54370cf5d9ef20a8eb2613a2dcb68f8fe1b194a1))
+* **share:** 11.5 /share/[id] page + D-3 investment disclaimer ([e1cf95e](https://github.com/y0ngha/siglens/commit/e1cf95e76a273b319b03bffb2d1a657cfc254175))
+* **share:** add buildShareSnapshot ([f895b8c](https://github.com/y0ngha/siglens/commit/f895b8c41613eff86dbfbe3c6efc583ede3ea556))
+* **share:** add contentHash ([050d82c](https://github.com/y0ngha/siglens/commit/050d82ce7902cd874d57641f2a7e7abd143d10d5))
+* **share:** add createShareSnapshotAction ([40ece3b](https://github.com/y0ngha/siglens/commit/40ece3bd580a439bb6ea183a13d203f4219b1502))
+* **share:** add DrizzleSharedAnalysisRepository ([3b7b571](https://github.com/y0ngha/siglens/commit/3b7b57188ec129169b14558b9082279173136b84))
+* **share:** add generateShareId ([f585596](https://github.com/y0ngha/siglens/commit/f5855966ea4aae524626846f160bff5e8f69b83c))
+* **share:** add getSharedAnalysis lookup action ([a626b2c](https://github.com/y0ngha/siglens/commit/a626b2cf803949b3ac5d0677942b94d017392d99))
+* **share:** add inline share icons ([28677b5](https://github.com/y0ngha/siglens/commit/28677b56966e2f40ff9cd3fd6f2c0e5521680f4f))
+* **share:** add isExpired ([6cd354f](https://github.com/y0ngha/siglens/commit/6cd354fdbe7ab7dcf52bb726497affd9edb41952))
+* **share:** add isValidShareInput ([4f6f860](https://github.com/y0ngha/siglens/commit/4f6f86036a7b50270b9862a0872b8175c77352f9))
+* **share:** add kind panel registry with exhaustive 8-kind mapping (Task 9.5) ([1765f52](https://github.com/y0ngha/siglens/commit/1765f5251e53fef09ae1b8a0378ebdf00067d088))
+* **share:** add parseSnapshot ([22bb16f](https://github.com/y0ngha/siglens/commit/22bb16fd7f052f57875e7c06adc6ba29839fd54f))
+* **share:** add per-kind buildOgText ([453e86e](https://github.com/y0ngha/siglens/commit/453e86ea81fa875899db285adf4275f3003e21c7))
+* **share:** add share branching helpers ([c8c53a0](https://github.com/y0ngha/siglens/commit/c8c53a0e10c131554e4d97c138024857b6db6549))
+* **share:** add share rate limit helper ([6b41c1f](https://github.com/y0ngha/siglens/commit/6b41c1f7c8987448b72eddea37711a3bff1ba4a7))
+* **share:** add share status mapping helpers ([1dbcfa1](https://github.com/y0ngha/siglens/commit/1dbcfa148ff1fcc47043f798c2c79ff86572fe0a))
+* **share:** add shareable kind constants ([dfee204](https://github.com/y0ngha/siglens/commit/dfee20435cea8dab859c56d7c27990809fd10646))
+* **share:** add ShareableAnalysisContext ([3a4120d](https://github.com/y0ngha/siglens/commit/3a4120d96ee27d4510443931ddef838688a2cd7e))
+* **share:** add ShareButton + barrel ([9b112a8](https://github.com/y0ngha/siglens/commit/9b112a82e7e9b8389443c04d8a7fb5161ae126fd))
+* **share:** add ShareButton to symbol header ([8e3c084](https://github.com/y0ngha/siglens/commit/8e3c0846e2e0a74dc3af71a6f4f42193ee5203a3))
+* **share:** add shared_analyses table and shareable_kind enum ([1a54a3c](https://github.com/y0ngha/siglens/commit/1a54a3c9582ddccd6c36a99ef741dda3ccf90822))
+* **share:** add shared-analysis barrel (types only) ([702610f](https://github.com/y0ngha/siglens/commit/702610fdfea8d978af1ff1abc3b0e583f4c40e24))
+* **share:** add shared-analysis domain types ([43684b3](https://github.com/y0ngha/siglens/commit/43684b3e0ca5b9605d3a64c9b0ac7a1aef5bd58f))
+* **share:** add SharePreparingModal ([ef92612](https://github.com/y0ngha/siglens/commit/ef92612225dfc20c2edeaf1bb983ec05775ccfee))
+* **share:** add ShareSheet with C-5 test coverage ([f38b9c7](https://github.com/y0ngha/siglens/commit/f38b9c739453a1bb931ba6fec93f7238992ca497))
+* **share:** add ShareTriggerDialog ([a4fcf52](https://github.com/y0ngha/siglens/commit/a4fcf52207f4ee46c9e30b945936d64797eb1285))
+* **share:** B-2 resolveAsOf — snapshot.context.analyzedAt ?? createdAt ([96e5139](https://github.com/y0ngha/siglens/commit/96e5139e79ab0156323a66037fc7ae7edb5cc0ef))
+* **share:** export *View components from news/fundamental/financials/options widgets ([9bb5f88](https://github.com/y0ngha/siglens/commit/9bb5f88fbf4feedfd2dd73e8bb8bc9ece52603bf))
+* **share:** expose trigger from 5 analysis hooks (Task 7.1) ([ae974c1](https://github.com/y0ngha/siglens/commit/ae974c1d57fc54cb434fee0dfd0bd3ac49d14d84))
+* **share:** extract FearGreedShareView for registry reuse (B-3) ([29e9bc5](https://github.com/y0ngha/siglens/commit/29e9bc5126d54d90b670be72e5f2cbb92fbc6104))
+* **share:** mount ShareableAnalysisProvider in symbol layout ([e51fe70](https://github.com/y0ngha/siglens/commit/e51fe70cb6e39cb88735a78e848674873e070d02))
+* **share:** register news/fundamental/financials/congress/options analysis to share context ([e4fc9ad](https://github.com/y0ngha/siglens/commit/e4fc9adfedb2be0e294e3abc2900031a9bbce804))
+* **share:** register overall, fear-greed, chart to share context ([05f35bd](https://github.com/y0ngha/siglens/commit/05f35bd608ab47049980c199ab339c4151d74e6d))
+* **share:** snapshot-time candlestick chart on share page ([1aad64e](https://github.com/y0ngha/siglens/commit/1aad64e978fb63cbd746bb11f3202a7eca459cab))
+* **share:** unify kind server registry with exhaustiveness ([0a2aab4](https://github.com/y0ngha/siglens/commit/0a2aab4cbd0d81fe42cc247a2a3dc812a06232eb))
+
+
+### Performance Improvements
+
+* **market:** quote-only today tail + daily 22:00 KST EOD cache expiry ([5492452](https://github.com/y0ngha/siglens/commit/54924523417dc1d95b24c52c6c534a151ad7cf8d))
+* **market:** session-dated EOD history key (DST-aware US-close boundary) ([3918b60](https://github.com/y0ngha/siglens/commit/3918b60e2c394125cf5a73c1c1448ed3d8ef0665))
+
 # [0.33.0](https://github.com/y0ngha/siglens/compare/v0.32.0...v0.33.0) (2026-07-01)
 
 
