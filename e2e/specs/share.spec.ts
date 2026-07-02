@@ -1,4 +1,5 @@
 import { test, expect } from '../support/fixtures';
+import { E2E_FORCE_ANALYSIS_ERROR_COOKIE } from '@/shared/api/e2eAnalysisStub';
 
 /**
  * Share flow E2E — Task 13.1 + Addendum D-4.
@@ -256,19 +257,40 @@ test.describe('share: confirm → loading interactive flow', () => {
     });
 
     /**
-     * When ShareTriggerDialog is open, the "분석하고 공유하기" button is the
-     * primary CTA. Asserting it appears is sufficient proof that the dialog
-     * rendered. We then press Escape to close it (useEscapeKey is wired).
+     * Deterministic ShareTriggerDialog assertion via the options force-error seam.
      *
-     * This test is best-effort: it will run only if the previous click lands
-     * on the dialog branch (not the unavailable branch). We make it
-     * independent by navigating fresh and clicking immediately before the
-     * E2E analysis short-circuit completes, which reliably lands on idle/null.
+     * The chart tab's analysis auto-resolves to the E2E fixture ('success') on a
+     * timing we can't control, so clicking Share there races between idle / pending /
+     * success and the trigger dialog appears only intermittently. Instead we drive
+     * the OPTIONS tab into a deterministic 'error' state with
+     * E2E_FORCE_ANALYSIS_ERROR_COOKIE (the same seam resilience.spec uses).
+     *
+     * OptionsAiAnalysis calls useRegisterShareable({ status: mapAnalysisStatus(
+     * state.status), ... }) unconditionally and, on error, renders an inline error
+     * component (NOT a thrown React error boundary), so it stays mounted and
+     * registers status 'error'. mapAnalysisStatus('error') === 'error', so the
+     * ShareButton's onClick opens the ShareTriggerDialog reliably — no timing race.
      */
     test('ShareTriggerDialog appears with confirm and cancel CTAs', async ({
         page,
+        context,
     }) => {
-        await page.goto('/AAPL');
+        await context.addCookies([
+            {
+                name: E2E_FORCE_ANALYSIS_ERROR_COOKIE,
+                value: '1',
+                url: 'http://localhost:4300',
+            },
+        ]);
+
+        await page.goto('/AAPL/options');
+
+        // Deterministic error state — options registration status becomes 'error'.
+        await expect(
+            page.getByText(
+                '옵션 분석을 가져오지 못했어요. 잠시 후 다시 시도해주세요.'
+            )
+        ).toBeVisible();
 
         const shareButton = page.getByRole('button', {
             name: SHARE_BUTTON_LABEL,
@@ -276,49 +298,22 @@ test.describe('share: confirm → loading interactive flow', () => {
         await expect(shareButton).toBeVisible();
         await shareButton.click();
 
+        // status 'error' → ShareTriggerDialog opens (deterministic, no race).
         const triggerDialog = page.getByRole('dialog', {
             name: TRIGGER_DIALOG_TITLE,
         });
+        await expect(triggerDialog).toBeVisible({ timeout: 5_000 });
 
-        // Only assert dialog content if the dialog branch was taken.
-        // If unavailable branch fires instead, this test is a soft pass.
-        const dialogAppeared = await triggerDialog
-            .waitFor({ timeout: 3_000 })
-            .then(() => true)
-            .catch(() => false);
+        // Primary + cancel CTAs prove the dialog rendered fully.
+        await expect(
+            page.getByRole('button', { name: '분석하고 공유하기' })
+        ).toBeVisible();
+        await expect(
+            page.getByRole('button', { name: '다음에' })
+        ).toBeVisible();
 
-        if (dialogAppeared) {
-            // Primary CTA
-            await expect(
-                page.getByRole('button', { name: '분석하고 공유하기' })
-            ).toBeVisible();
-            // Cancel CTA
-            await expect(
-                page.getByRole('button', { name: '다음에' })
-            ).toBeVisible();
-
-            // Escape closes the dialog
-            await page.keyboard.press('Escape');
-            await expect(triggerDialog).not.toBeVisible({ timeout: 2_000 });
-        } else {
-            // Non-dialog branch. In E2E the analysis fixture frequently resolves
-            // to 'success' before the click lands, so the click opens the
-            // ShareSheet (role="dialog", aria-label "AAPL AI 분석 결과"). A 'pending'
-            // click opens the SharePreparingModal ("분석 준비 중"); an 'unavailable'
-            // click shows the inline notice. Any of these proves the ShareButton's
-            // status-based branching works end-to-end in the browser.
-            const shareSheet = page.getByRole('dialog', {
-                name: 'AAPL AI 분석 결과',
-            });
-            const preparingModal = page.getByRole('dialog', {
-                name: '분석 준비 중',
-            });
-            const unavailableNotice = page.getByRole('status').filter({
-                hasText: '이 탭은 공유할 분석이 아직 없어요',
-            });
-            await expect(
-                shareSheet.or(preparingModal).or(unavailableNotice).first()
-            ).toBeVisible({ timeout: 5_000 });
-        }
+        // Escape closes the dialog (useEscapeKey wired).
+        await page.keyboard.press('Escape');
+        await expect(triggerDialog).not.toBeVisible({ timeout: 2_000 });
     });
 });
