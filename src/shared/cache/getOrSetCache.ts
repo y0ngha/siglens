@@ -41,11 +41,15 @@ function isCacheEnvelope<T>(value: unknown): value is CacheEnvelope<T> {
  * 기본값은 항상 fresh — 기존 호출부는 영향 없음. 캐시된 값 자체(예: EOD history 겹침)로
  * staleness를 판정해야 하는 호출부를 위한 가드.
  *
+ * `ttlSeconds`는 숫자 또는 fetch된 값을 받아 TTL(초)을 반환하는 함수다. 함수 형태를 쓰면
+ * 결과에 따라 TTL을 달리할 수 있다(예: FMP EOD 미발행/지연 시 짧은 재시도 TTL). 숫자 호출부는
+ * 영향 없음.
+ *
  * Redis 미설정/장애 시에는 graceful fallback — `fetcher()`를 직접 호출한다.
  */
 export async function getOrSetCache<T>(
     key: string,
-    ttlSeconds: number,
+    ttlSeconds: number | ((value: T) => number),
     fetcher: () => Promise<T>,
     shouldCache: (value: T) => boolean = () => true,
     isFresh: (value: T) => boolean = () => true
@@ -63,8 +67,10 @@ export async function getOrSetCache<T>(
     const fresh = await fetcher();
 
     if (redis !== null && shouldCache(fresh)) {
+        const ex =
+            typeof ttlSeconds === 'function' ? ttlSeconds(fresh) : ttlSeconds;
         try {
-            await redis.set(key, { data: fresh }, { ex: ttlSeconds });
+            await redis.set(key, { data: fresh }, { ex });
         } catch (error) {
             console.error(`[getOrSetCache] set failed: ${key}`, error);
         }

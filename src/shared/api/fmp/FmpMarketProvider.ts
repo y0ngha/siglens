@@ -1,11 +1,11 @@
 import type {
     GetBarsOptions,
-    MarketDataProvider,
     Bar,
     MarketQuote,
     Timeframe,
 } from '@y0ngha/siglens-core';
-import { MS_PER_SECOND } from '@/shared/config/time';
+import type { SiglensMarketProvider } from '@/shared/api/market/marketProvider.types';
+import { MS_PER_SECOND, MS_PER_HOUR } from '@/shared/config/time';
 import { fmpGet } from '@/shared/api/fmp/httpClient';
 import {
     MARCH,
@@ -15,6 +15,7 @@ import {
     EDT_OFFSET_HOURS,
     EST_OFFSET_HOURS,
     nthSundayDay,
+    getEasternOffsetHours,
 } from '@/shared/lib/eastern';
 
 const ISO_DATE_PREFIX_LENGTH = 10; // "YYYY-MM-DD"
@@ -164,7 +165,7 @@ function buildBarsQuery(
  * the shared `fmpGet` HTTP client (retry + structured FmpHttpError). Quote
  * failures degrade to `null`; bar failures propagate (after fmpGet's retries).
  */
-export class FmpMarketProvider implements MarketDataProvider {
+export class FmpMarketProvider implements SiglensMarketProvider {
     async getBars(options: GetBarsOptions): Promise<Bar[]> {
         // `options.limit` is intentionally not forwarded: this adapter bounds
         // results by the `from`/`before` date window, because the FMP historical
@@ -228,13 +229,27 @@ export class FmpMarketProvider implements MarketDataProvider {
         }
     }
 
+    /** 오늘(최근 거래일) 봉을 /quote로 조회한다(OHLCV). EOD 캐시의 live tail 전용. */
+    async getTodayBar(symbol: string): Promise<Bar | null> {
+        return this.fetchTodayQuoteBar(symbol);
+    }
+
     private async fetchTodayQuoteBar(symbol: string): Promise<Bar | null> {
         try {
             const raw = await fmpGet<FmpQuote[]>('quote', { symbol });
             if (!Array.isArray(raw) || raw.length === 0) return null;
             const quote = raw[0]!;
-            const d = new Date(quote.timestamp * MS_PER_SECOND);
-            const dateStr = d.toISOString().split('T')[ISO_DATE_PART_INDEX]!;
+            // Derive the ET-local trading date from the quote timestamp.
+            // UTC toISOString() would cross to the next calendar day after ~19:00 EST
+            // (or ~20:00 EDT) for after-hours trades — producing a wrong +1 day date.
+            // Shift by the ET offset first so getUTCDate/Month/FullYear reflect wall-clock ET.
+            const quoteMs = quote.timestamp * MS_PER_SECOND;
+            const etDate = new Date(
+                quoteMs + getEasternOffsetHours(new Date(quoteMs)) * MS_PER_HOUR
+            );
+            const dateStr = etDate.toISOString().split('T')[
+                ISO_DATE_PART_INDEX
+            ]!;
             return {
                 time: Math.floor(
                     new Date(dateStr + 'T00:00:00Z').getTime() / MS_PER_SECOND

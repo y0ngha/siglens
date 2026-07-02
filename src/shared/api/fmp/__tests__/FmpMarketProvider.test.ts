@@ -321,4 +321,150 @@ describe('FmpMarketProvider', () => {
             );
         });
     });
+
+    describe('getTodayBar', () => {
+        it('returns OHLCV Bar built from /quote response', async () => {
+            // timestamp = 2026-04-15T14:00:00Z → date = 2026-04-15 → UTC midnight
+            const timestampSec = Math.floor(
+                Date.UTC(2026, 3, 15, 14, 0, 0) / MS_PER_SECOND
+            );
+            mockFmpGet.mockResolvedValueOnce([
+                {
+                    price: 150,
+                    open: 145,
+                    dayHigh: 155,
+                    dayLow: 140,
+                    volume: 5000,
+                    timestamp: timestampSec,
+                    changePercentage: 1.5,
+                    name: 'Apple',
+                },
+            ]);
+
+            const bar = await provider.getTodayBar('AAPL');
+
+            expect(mockFmpGet).toHaveBeenCalledWith('quote', {
+                symbol: 'AAPL',
+            });
+            expect(bar).not.toBeNull();
+            // time = UTC midnight of 2026-04-15
+            expect(bar!.time).toBe(Date.UTC(2026, 3, 15) / MS_PER_SECOND);
+            expect(bar!.open).toBe(145);
+            expect(bar!.high).toBe(155);
+            expect(bar!.low).toBe(140);
+            expect(bar!.close).toBe(150);
+            expect(bar!.volume).toBe(5000);
+        });
+
+        it('returns null when quote array is empty', async () => {
+            mockFmpGet.mockResolvedValueOnce([]);
+            expect(await provider.getTodayBar('AAPL')).toBeNull();
+        });
+
+        it('returns null when fmpGet rejects (network error)', async () => {
+            mockFmpGet.mockRejectedValueOnce(new Error('network error'));
+            expect(await provider.getTodayBar('AAPL')).toBeNull();
+        });
+
+        it('returns null when fmpGet returns non-array', async () => {
+            mockFmpGet.mockResolvedValueOnce({});
+            expect(await provider.getTodayBar('AAPL')).toBeNull();
+        });
+
+        it('[tz] after-hours winter trade (19:30 EST = 2026-01-15T00:30:00Z) → bar dated 2026-01-15 (ET trading day), NOT 2026-01-16', async () => {
+            /**
+             * Regression guard for the ET timezone bug:
+             * UTC toISOString() crosses midnight after ~19:00 EST in winter.
+             * A trade at 19:30 EST = 00:30 UTC next day → old code dated the bar +1 day.
+             *
+             * Fix: shift by ET offset before extracting the date.
+             * 2026-01-15 19:30 EST = 2026-01-16T00:30:00Z (UTC).
+             * ET offset at this instant = EST = -5.
+             * Shifted: 2026-01-16T00:30:00Z + (-5h) → 2026-01-15T19:30:00 ET (same day).
+             * Date extracted from shifted instant = 2026-01-15 ✓
+             */
+            // timestamp in seconds: 2026-01-16T00:30:00Z
+            const timestampSec = Math.floor(
+                Date.UTC(2026, 0, 16, 0, 30, 0) / MS_PER_SECOND
+            );
+            mockFmpGet.mockResolvedValueOnce([
+                {
+                    price: 200,
+                    open: 195,
+                    dayHigh: 205,
+                    dayLow: 190,
+                    volume: 3000,
+                    timestamp: timestampSec,
+                    changePercentage: 0.5,
+                    name: 'Apple',
+                },
+            ]);
+
+            const result = await provider.getTodayBar('AAPL');
+
+            expect(result).not.toBeNull();
+            // Must be UTC midnight of 2026-01-15 (the ET trading day)
+            expect(result!.time).toBe(Date.UTC(2026, 0, 15) / MS_PER_SECOND);
+            // Must NOT be 2026-01-16
+            expect(result!.time).not.toBe(
+                Date.UTC(2026, 0, 16) / MS_PER_SECOND
+            );
+        });
+
+        it('[tz] regular-hours trade (14:00 EST winter) → bar dated correctly (no off-by-one)', async () => {
+            // 2026-01-15 14:00 EST = 2026-01-15T19:00:00Z (UTC, before midnight → no bug)
+            const timestampSec = Math.floor(
+                Date.UTC(2026, 0, 15, 19, 0, 0) / MS_PER_SECOND
+            );
+            mockFmpGet.mockResolvedValueOnce([
+                {
+                    price: 200,
+                    open: 195,
+                    dayHigh: 205,
+                    dayLow: 190,
+                    volume: 3000,
+                    timestamp: timestampSec,
+                    changePercentage: 0.5,
+                    name: 'Apple',
+                },
+            ]);
+
+            const result = await provider.getTodayBar('AAPL');
+
+            expect(result).not.toBeNull();
+            // ET and UTC agree: 2026-01-15
+            expect(result!.time).toBe(Date.UTC(2026, 0, 15) / MS_PER_SECOND);
+        });
+
+        it('[tz] after-hours summer trade (20:30 EDT = 2026-07-15T00:30:00Z) → bar dated 2026-07-15 (ET trading day), NOT 2026-07-16', async () => {
+            /**
+             * Summer (EDT = UTC-4): midnight UTC = 20:00 EDT.
+             * A trade at 20:30 EDT = 2026-07-16T00:30:00Z (UTC).
+             * Shifted by ET offset (-4): 2026-07-15T20:30:00 EDT → date 2026-07-15 ✓
+             */
+            const timestampSec = Math.floor(
+                Date.UTC(2026, 6, 16, 0, 30, 0) / MS_PER_SECOND
+            );
+            mockFmpGet.mockResolvedValueOnce([
+                {
+                    price: 200,
+                    open: 195,
+                    dayHigh: 205,
+                    dayLow: 190,
+                    volume: 3000,
+                    timestamp: timestampSec,
+                    changePercentage: 0.5,
+                    name: 'Apple',
+                },
+            ]);
+
+            const result = await provider.getTodayBar('AAPL');
+
+            expect(result).not.toBeNull();
+            expect(result!.time).toBe(Date.UTC(2026, 6, 15) / MS_PER_SECOND);
+            expect(result!.time).not.toBe(
+                Date.UTC(2026, 6, 16) / MS_PER_SECOND
+            );
+        });
+    });
 });

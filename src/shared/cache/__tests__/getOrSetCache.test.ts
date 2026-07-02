@@ -73,6 +73,19 @@ describe('getOrSetCache 함수는', () => {
         );
     });
 
+    it('ttlSeconds가 함수이면 fetch된 값을 받아 반환값을 ex로 사용한다', async () => {
+        const redis = createRedisStub();
+        mockedGetRedisClient.mockReturnValue(redis as never);
+        const fetcher = vi.fn().mockResolvedValue(42);
+        const ttlFn = vi.fn((value: number) => value * 10); // 42 → 420
+
+        const result = await getOrSetCache('k', ttlFn, fetcher);
+
+        expect(result).toBe(42);
+        expect(ttlFn).toHaveBeenCalledWith(42);
+        expect(redis.set).toHaveBeenCalledWith('k', { data: 42 }, { ex: 420 });
+    });
+
     it('빈 배열도 envelope으로 캐싱한다(legit empty)', async () => {
         const redis = createRedisStub();
         mockedGetRedisClient.mockReturnValue(redis as never);

@@ -6,32 +6,50 @@ import {
     type MarketQuote,
     type MarketSessionSpec,
     type Timeframe,
+    MARKET_CLOSE_HOUR,
     US_EQUITY_SESSION,
     computeBarsEffectiveTtl,
 } from '@y0ngha/siglens-core';
 import { getOrSetCache } from '@/shared/cache/getOrSetCache';
-import { SECONDS_PER_DAY, SECONDS_PER_HOUR } from '@/shared/config/time';
+import { getEasternOffsetHours } from '@/shared/lib/eastern';
+import {
+    MS_PER_HOUR,
+    SECONDS_PER_DAY,
+    SECONDS_PER_HOUR,
+} from '@/shared/config/time';
 import { mergeBarsByTime } from './mergeBarsByTime';
+import type { SiglensMarketProvider } from './marketProvider.types';
 
 /**
- * 과거(불변) 윈도우 종료점: 오늘 − EOD_HIST_TO_DAYS일. recent와 겹쳐 갭 방지.
- * overlap = EOD_RECENT_FROM_DAYS − EOD_HIST_TO_DAYS = 5일 →
- * 최대 4일 연속 휴장(공휴일+주말 인접)에도 겹침이 유지된다.
+ * `isLongDailyWindow` 라우팅 게이트의 룩백 임계값(일 수).
+ * `from`이 이 값보다 오래된 경우 EOD split 경로를 사용하고,
+ * 최근 윈도우(오늘−N일 이내)이면 단일 키 경로를 사용한다.
  */
-const EOD_HIST_TO_DAYS = 5;
-/** 최근(live) 윈도우 시작점: 오늘 − EOD_RECENT_FROM_DAYS일. */
-const EOD_RECENT_FROM_DAYS = 10;
-/** 과거 history long TTL(30일). 갱신은 TTL이 아니라 recent와의 겹침 staleness가 주도. */
-const EOD_HIST_TTL_SECONDS = SECONDS_PER_DAY * 30;
-/** stale(겹침 소실) history를 재조회하는 최소 간격. 상장폐지·장기정지처럼 최신 봉이
- * 영구히 recentFrom에 못 미치는 심볼이 매 요청마다 full 재fetch하는 것을 방지한다. */
-const EOD_HIST_STALE_RECHECK_SECONDS = SECONDS_PER_HOUR;
+const EOD_LONG_WINDOW_GATE_DAYS = 10;
 
-/** history 캐시 엔트리: 불변 과거 봉 + fetch 시각(stale-recheck 쿨다운 판정용). */
-interface EodHistoryEntry {
-    bars: Bar[];
-    fetchedAt: number; // unix seconds
-}
+/** 마감(16:00 ET) 후 FMP EOD 발행까지의 안전 버퍼(시간). 이 시간 전에는 당일을
+ * lastClosed로 롤하지 않아, 발행 전 불완전 EOD가 당일 키에 캐시되는 것을 막는다.
+ * 버퍼 구간에도 당일 봉은 quote(최종 OHLCV)로 온전히 표시된다. */
+const EOD_PUBLISH_BUFFER_HOURS = 4;
+
+/**
+ * EOD history 캐시 TTL. 세션-날짜 키(bars:eodhist:<SYM>:<date>)가 미국 마감마다
+ * 자동 롤(자연 버전닝)되므로 TTL은 단순히 롱 홀리데이 플래토를 넘길 여유만 있으면 된다.
+ * 7일 = 공휴일 연속 최대치(추수감사절 주 등)를 충분히 커버.
+ */
+const EOD_HIST_TTL_SECONDS = SECONDS_PER_DAY * 7;
+
+/**
+ * 불완전 EOD history(상장폐지/거래정지, 휴장일로 라벨된 키, 드물게 4h를 초과하는 FMP 지연)를
+ * 캐싱할 쿨다운 TTL. 이 값으로 재fetch를 제한(≈6회/일/심볼)해 스래싱을 방지한다.
+ *
+ * 4h publish buffer가 대부분의 일시적 FMP 지연을 이미 흡수하므로, "불완전" 조회는 거의 항상
+ * 영구적 상황(상장폐지, 거래 없는 휴장일 키)이다. 갭은 발생하지 않는다: today(quote)가
+ * 경계를 채우며, 휴장일/주말에는 실제 거래가 없다. 4h를 초과하는 드문 FMP 장애도 다음 쿨다운
+ * 재fetch에서 자가 치유된다(다음 세션 이전에 충분히 여유 있음).
+ */
+const EOD_HIST_INCOMPLETE_COOLDOWN_SECONDS =
+    EOD_PUBLISH_BUFFER_HOURS * SECONDS_PER_HOUR;
 
 function isoDateDaysAgo(now: Date, days: number): string {
     const d = new Date(now);
@@ -52,25 +70,35 @@ function sliceFrom(bars: Bar[], from: string | undefined): Bar[] {
 }
 
 /**
- * history 캐시 엔트리가 재사용 가능한지 판정한다:
- * ① covers: 캐시된 최古 봉이 요청 `fromThreshold`를 커버(더 과거 요청 시 truncation 방지),
- * ② overlap: 최신 봉이 recent 윈도우와 겹치면 fresh,
- * ③ cooldown: 겹침이 소실됐어도(상장폐지 등 permanent-stale) 최근 재조회했으면 재사용해
- *    per-request 재fetch thrash를 막는다.
+ * 마지막으로 마감된(16:00 ET 경과) 미국 정규 세션의 ET 날짜(YYYY-MM-DD)를 반환한다.
+ * 서머타임은 getEasternOffsetHours로 반영(여름 마감=20:00 UTC, 겨울=21:00 UTC). 주말은
+ * 직전 금요일로 되감는다(공휴일은 미보정 — 그 날짜로 키가 한 번 더 versioning될 뿐 EOD
+ * 조회는 실제 마지막 거래일까지 반환하므로 데이터는 정확). EOD history 캐시 키에 넣어
+ * 미국 마감마다 캐시가 자연 롤(=세션당 1회 재조회)되게 한다.
+ *
+ * EOD_PUBLISH_BUFFER_HOURS: 마감 직후 FMP가 당일 EOD를 아직 발행하지 않았을 수 있으므로,
+ * 16:00 ET + 4h(20:00 ET)가 지나야 당일을 lastClosed로 롤한다. 버퍼 구간에는 직전 거래일이
+ * lastClosed로 유지되어, 불완전 EOD가 당일 키에 캐시되는 갭을 방지한다.
  */
-function isHistoryEntryFresh(
-    entry: EodHistoryEntry,
-    fromThreshold: number | null,
-    recentFromThreshold: number,
-    nowSeconds: number
-): boolean {
-    if (entry.bars.length === 0) return false;
-    const covers =
-        fromThreshold === null || entry.bars[0]!.time <= fromThreshold;
-    if (!covers) return false;
-    if (entry.bars[entry.bars.length - 1]!.time >= recentFromThreshold)
-        return true;
-    return nowSeconds - entry.fetchedAt < EOD_HIST_STALE_RECHECK_SECONDS;
+export function lastClosedSessionDateEt(now: Date): string {
+    const et = new Date(
+        now.getTime() + getEasternOffsetHours(now) * MS_PER_HOUR
+    );
+    const dow = et.getUTCDay(); // 0=Sun..6=Sat (ET wall-clock via shifted UTC getters)
+    const closedToday =
+        1 <= dow &&
+        dow <= 5 &&
+        et.getUTCHours() >= MARKET_CLOSE_HOUR + EOD_PUBLISH_BUFFER_HOURS;
+    const cursor = new Date(
+        Date.UTC(et.getUTCFullYear(), et.getUTCMonth(), et.getUTCDate())
+    );
+    if (!closedToday) cursor.setUTCDate(cursor.getUTCDate() - 1);
+    let day = cursor.getUTCDay();
+    while (day === 0 || day === 6) {
+        cursor.setUTCDate(cursor.getUTCDate() - 1);
+        day = cursor.getUTCDay();
+    }
+    return cursor.toISOString().slice(0, 10);
 }
 
 /** quote TTL은 bars 일봉 개장-경계 정책을 재사용 — timeframe과 무관한 placeholder. */
@@ -110,7 +138,7 @@ function buildBarsRawKey(o: GetBarsOptions): string {
  */
 export class CachedMarketDataProvider implements MarketDataProvider {
     constructor(
-        private readonly inner: MarketDataProvider,
+        private readonly inner: SiglensMarketProvider,
         private readonly session: MarketSessionSpec = US_EQUITY_SESSION
     ) {}
 
@@ -119,31 +147,39 @@ export class CachedMarketDataProvider implements MarketDataProvider {
     }
 
     /**
-     * `from`이 최근 윈도우(오늘−EOD_RECENT_FROM_DAYS) 이전인지 확인한다.
+     * `from`이 최근 윈도우(오늘−EOD_LONG_WINDOW_GATE_DAYS) 이전인지 확인한다.
      * `from===undefined`이면 전체 히스토리 요청이므로 항상 split을 적용한다.
      * `from`이 최근 윈도우 안에 있으면(짧은 lookback), 과거 윈도우가 역전되므로
      * single-key 경로를 사용한다.
+     *
+     * `now`는 `getBars`에서 캡처한 단일 클락 값을 전달받아, 한 번의 `getBars` 호출이
+     * 동일 시각 기준으로 동작하도록 보장한다.
      */
-    private isLongDailyWindow(from: string | undefined): boolean {
+    private isLongDailyWindow(
+        from: string | undefined,
+        now: Date = new Date()
+    ): boolean {
         // from===undefined ⇒ full history ⇒ split. Otherwise only split when the
-        // requested start is older than the recent window; a short lookback (from
-        // within the last ~EOD_RECENT_FROM_DAYS days) would invert the historical window, so it uses the
+        // requested start is older than the gate threshold; a short lookback (from
+        // within the last ~EOD_LONG_WINDOW_GATE_DAYS days) would invert the historical window, so it uses the
         // single-key path instead.
         if (from === undefined) return true;
-        const recentFrom = isoDateDaysAgo(new Date(), EOD_RECENT_FROM_DAYS);
+        const recentFrom = isoDateDaysAgo(now, EOD_LONG_WINDOW_GATE_DAYS);
         return from.slice(0, 10) < recentFrom;
     }
 
     getBars = (options: GetBarsOptions): Promise<Bar[]> => {
-        // 1Day 라이브 뷰(before 미지정)이면서 lookback이 충분히 긴 경우에만 과거(long)+최근(live) 분리.
-        // 짧은 lookback(from이 최근 ~EOD_RECENT_FROM_DAYS일 이내)은 과거 윈도우가 역전되므로 단일 경로 사용.
+        // 1Day 라이브 뷰(before 미지정)이면서 lookback이 충분히 긴 경우에만 과거(long)+오늘(live) 분리.
+        // 짧은 lookback(from이 최근 ~EOD_LONG_WINDOW_GATE_DAYS일 이내)은 과거 윈도우가 역전되므로 단일 경로 사용.
         // 인트라데이·과거 페이지네이션(before 지정)도 기존 단일 60s 경로 유지.
+        // now를 한 번만 캡처해 isLongDailyWindow와 getCachedDailyBars가 동일 클락 기준으로 동작.
+        const now = new Date();
         if (
             options.timeframe === '1Day' &&
             options.before === undefined &&
-            this.isLongDailyWindow(options.from)
+            this.isLongDailyWindow(options.from, now)
         ) {
-            return this.getCachedDailyBars(options);
+            return this.getCachedDailyBars(options, now);
         }
         return getOrSetCache(
             buildBarsRawKey(options),
@@ -154,74 +190,77 @@ export class CachedMarketDataProvider implements MarketDataProvider {
     };
 
     /**
-     * 요청 윈도우가 최근 overlap 구간보다 앞에서 시작함을 전제로 한다(isLongDailyWindow
-     * 가드 통과 후 진입). 짧은 lookback은 getBars를 통해 단일 경로로 라우팅된다.
+     * 1Day 일봉을 불변 과거(history, EOD)와 오늘(today, quote)로 나눠 병렬 fetch 후 병합한다.
+     * - history `bars:eodhist:<SYM>:<lastClosed>`: 세션-날짜 키가 세션 마감마다 자동 롤 →
+     *   세션당 1회 재조회. `before=lastClosed`로 완료된 EOD까지만 fetch.
+     *   `lastClosed`는 세션 종류에 따라 다르게 계산된다:
+     *   - US 주식(`non-always-open` / US equity): 16:00 ET 마감 + EOD_PUBLISH_BUFFER_HOURS(4h) 버퍼 + 주말 되감기.
+     *   - 크립토(`always-open`): 어제 UTC 날짜 — 24/7이므로 주말 되감기·ET 버퍼 없음.
+     *   TTL은 fetch된 bars가 lastClosed까지 도달했는지에 따라 분기한다:
+     *   - 도달했으면(newest.time >= lastClosedThreshold) 7일 long TTL(EOD_HIST_TTL_SECONDS).
+     *   - 미도달이면(FMP EOD 미발행/지연, 상장폐지, 휴장일 키) 4h 쿨다운 TTL(EOD_HIST_INCOMPLETE_COOLDOWN_SECONDS)로
+     *     재fetch를 제한(≈6회/일/심볼)한다. FMP가 따라잡으면 long TTL로 승격된다.
+     *     갭은 발생하지 않는다: today(quote)가 경계를 채우며 휴장일/주말은 거래가 없다. 단, today(quote)가 lastClosed를 채우는 것은
+     *     `lastClosed`가 오늘 당일의 세션 날짜와 같을 때(마감+버퍼 당일)만 해당한다. FMP 발행 지연이
+     *     전일 봉에 걸리는 일반 장중 케이스에서는 해당 날짜가 EOD 발행 전까지 진정으로 부재하며,
+     *     short TTL 재시도가 FMP 발행 후 해소한다. 무조건적인 series 연속성은 보장하지 않는다.
+     *   isFresh는 요청 from 커버(truncation 방지)만 판정.
+     * - today `bars:today:<SYM>`: `inner.getTodayBar`(quote 기반 OHLCV) 세션 TTL(장중 60s).
+     * `mergeBarsByTime`가 오늘 봉을 overlap 우선으로 병합, `sliceFrom`가 options.from으로 잘라
+     * 단일 `getBars(from)`와 동일 집합을 만든다. 세션-날짜 키로 history는 항상 마지막 마감까지
+     * 커버, today(quote)와 갭 없음. 키 전제: 모든 long-1Day 호출부가 core 730d lookback 공유
+     * (짧은 lookback은 isLongDailyWindow가 단일 경로로 분기).
      *
-     * 1Day 일봉을 불변 과거(history, 날짜-없는 앵커 키 `bars:eodhist:<SYM>`)와 최근(live,
-     * `bars:eodrecent:<SYM>`)으로 나눠 병렬 fetch 후 병합한다. 캐시 키에 날짜를 넣지 않아
-     * UTC 자정 롤로 인한 전체 재fetch가 없다.
-     *
-     * history 엔트리는 `{ bars, fetchedAt }` 형태로 저장한다. `isFresh` 판정:
-     *   1. covers(from): 캐시된 최古 봉이 요청 `from` 이전이어야 함 — 짧은 캐시가 긴 요청을
-     *      잘라내는 truncation을 방지한다.
-     *   2. 겹침 유지: 최신 봉이 recentFrom 이후 → fresh.
-     *   3. stale-recheck 쿨다운: 겹침이 소실됐어도(상장폐지·장기정지 등 permanent-stale) 최근
-     *      EOD_HIST_STALE_RECHECK_SECONDS 이내 fetch했으면 그대로 사용 — 매 요청마다 full
-     *      재fetch thrash를 막는다. 쿨다운 만료 후에만 재fetch.
-     *
-     * recent는 `from=오늘−EOD_RECENT_FROM_DAYS`(오늘 봉을 quote로 append)를 세션 TTL로 가져와
-     * 오늘/최근 신선도를 담당한다. 두 윈도우의 (EOD_RECENT_FROM_DAYS − EOD_HIST_TO_DAYS)일
-     * 겹침을 `mergeBarsByTime`가 recent 우선으로 dedup하고, `sliceFrom`가 options.from으로
-     * 잘라 단일 `getBars(from)`와 동일 집합을 만든다.
-     *
-     * 앵커 키에서 from을 뺄 수 있는 근거: 모든 long-1Day 호출부가 core
-     * TIMEFRAME_LOOKBACK_DAYS['1Day'] 단일 lookback을 공유한다(짧은 lookback은 가드가
-     * 단일 경로로 분기). core lookback 변경 시 이 전제도 함께 갱신할 것.
+     * `now`는 `getBars`에서 캡처한 단일 클락 값을 받아, 한 번의 호출 안에서 `isLongDailyWindow`와
+     * 동일 시각 기준으로 동작하도록 보장한다.
      */
-    private async getCachedDailyBars(options: GetBarsOptions): Promise<Bar[]> {
-        const now = new Date();
-        const nowSeconds = Math.floor(now.getTime() / 1000);
-        const histTo = isoDateDaysAgo(now, EOD_HIST_TO_DAYS);
-        const recentFrom = isoDateDaysAgo(now, EOD_RECENT_FROM_DAYS);
-        const recentFromThreshold = utcMidnightSeconds(recentFrom);
+    private async getCachedDailyBars(
+        options: GetBarsOptions,
+        now: Date = new Date()
+    ): Promise<Bar[]> {
+        // 24/7 크립토: 주말도 거래일 → 어제 UTC가 마지막 완료 일봉.
+        // US 주식: 16:00 ET 마감 + 4h 버퍼 + 주말 되감기.
+        const lastClosed =
+            this.session.kind === 'always-open'
+                ? isoDateDaysAgo(now, 1)
+                : lastClosedSessionDateEt(now);
+        const lastClosedThreshold = utcMidnightSeconds(lastClosed);
         const fromThreshold =
             options.from !== undefined
                 ? utcMidnightSeconds(options.from)
                 : null;
         const symbolKey = options.symbol.toUpperCase();
 
-        const [historyEntry, recent] = await Promise.all([
-            getOrSetCache<EodHistoryEntry>(
-                `bars:eodhist:${symbolKey}`,
-                EOD_HIST_TTL_SECONDS,
-                async () => ({
-                    bars: await this.inner.getBars({
-                        ...options,
-                        before: histTo,
-                    }),
-                    fetchedAt: nowSeconds,
-                }),
-                entry => entry.bars.length > 0,
-                entry =>
-                    isHistoryEntryFresh(
-                        entry,
-                        fromThreshold,
-                        recentFromThreshold,
-                        nowSeconds
-                    )
+        const [history, todayBars] = await Promise.all([
+            getOrSetCache<Bar[]>(
+                `bars:eodhist:${symbolKey}:${lastClosed}`,
+                bars =>
+                    bars.length > 0 &&
+                    bars[bars.length - 1]!.time >= lastClosedThreshold
+                        ? EOD_HIST_TTL_SECONDS
+                        : EOD_HIST_INCOMPLETE_COOLDOWN_SECONDS,
+                () => this.inner.getBars({ ...options, before: lastClosed }),
+                bars => bars.length > 0,
+                bars =>
+                    bars.length > 0 &&
+                    (fromThreshold === null || bars[0]!.time <= fromThreshold)
             ),
-            getOrSetCache(
-                `bars:eodrecent:${symbolKey}`,
+            getOrSetCache<Bar[]>(
+                `bars:today:${symbolKey}`,
                 this.ttl('1Day'),
-                () => this.inner.getBars({ ...options, from: recentFrom }),
+                async () => {
+                    const bar = await this.inner.getTodayBar(options.symbol);
+                    return bar !== null ? [bar] : [];
+                },
                 bars => bars.length > 0
             ),
         ]);
 
-        return sliceFrom(
-            mergeBarsByTime(historyEntry.bars, recent),
-            options.from
-        );
+        // quote-derived today bar wins on same-time overlap (intended: live tail takes
+        // precedence over any same-dated EOD history bar). Note: a stale pre-market
+        // /quote timestamp could momentarily overwrite an authoritative EOD bar with
+        // quote-approximated OHLCV until a fresh trade updates the quote; self-heals.
+        return sliceFrom(mergeBarsByTime(history, todayBars), options.from);
     }
 
     getQuote = (symbol: string): Promise<MarketQuote | null> =>
