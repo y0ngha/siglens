@@ -180,14 +180,16 @@ export class CachedMarketDataProvider implements MarketDataProvider {
      * - history `bars:eodhist:<SYM>:<lastClosed>`: 세션-날짜 키가 세션 마감마다 자동 롤 →
      *   세션당 1회 재조회. `before=lastClosed`로 완료된 EOD까지만 fetch.
      *   `lastClosed`는 세션 종류에 따라 다르게 계산된다:
-     *   - US 주식(`scheduled`): 16:00 ET 마감 + EOD_PUBLISH_BUFFER_HOURS(4h) 버퍼 + 주말 되감기.
+     *   - US 주식(`non-always-open` / US equity): 16:00 ET 마감 + EOD_PUBLISH_BUFFER_HOURS(4h) 버퍼 + 주말 되감기.
      *   - 크립토(`always-open`): 어제 UTC 날짜 — 24/7이므로 주말 되감기·ET 버퍼 없음.
      *   TTL은 fetch된 bars가 lastClosed까지 도달했는지에 따라 분기한다:
      *   - 도달했으면(newest.time >= lastClosedThreshold) 7일 long TTL(EOD_HIST_TTL_SECONDS).
      *   - 미도달이면(FMP EOD 미발행/지연) 15분 short TTL(EOD_HIST_INCOMPLETE_TTL_SECONDS)로
      *     재시도를 허용한다. FMP가 따라잡으면 long TTL로 승격된다.
-     *     갭은 일시적(short retry TTL 이내)이다 — lastClosed 경계에서는 today(quote)가 해당 날짜를
-     *     커버하므로 FMP가 발행하기 전까지도 series는 연속이다. FMP 발행 후 최초 재fetch에서 해소.
+     *     갭은 short retry TTL 이내에 자가 치유된다. 단, today(quote)가 lastClosed를 채우는 것은
+     *     `lastClosed`가 오늘 당일의 세션 날짜와 같을 때(마감+버퍼 당일)만 해당한다. FMP 발행 지연이
+     *     전일 봉에 걸리는 일반 장중 케이스에서는 해당 날짜가 EOD 발행 전까지 진정으로 부재하며,
+     *     short TTL 재시도가 FMP 발행 후 해소한다. 무조건적인 series 연속성은 보장하지 않는다.
      *   isFresh는 요청 from 커버(truncation 방지)만 판정.
      * - today `bars:today:<SYM>`: `inner.getTodayBar`(quote 기반 OHLCV) 세션 TTL(장중 60s).
      * `mergeBarsByTime`가 오늘 봉을 overlap 우선으로 병합, `sliceFrom`가 options.from으로 잘라
@@ -240,6 +242,10 @@ export class CachedMarketDataProvider implements MarketDataProvider {
             ),
         ]);
 
+        // quote-derived today bar wins on same-time overlap (intended: live tail takes
+        // precedence over any same-dated EOD history bar). Note: a stale pre-market
+        // /quote timestamp could momentarily overwrite an authoritative EOD bar with
+        // quote-approximated OHLCV until a fresh trade updates the quote; self-heals.
         return sliceFrom(mergeBarsByTime(history, todayBars), options.from);
     }
 
