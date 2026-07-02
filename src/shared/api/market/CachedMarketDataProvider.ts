@@ -12,7 +12,11 @@ import {
 } from '@y0ngha/siglens-core';
 import { getOrSetCache } from '@/shared/cache/getOrSetCache';
 import { getEasternOffsetHours } from '@/shared/lib/eastern';
-import { MS_PER_HOUR, SECONDS_PER_DAY } from '@/shared/config/time';
+import {
+    MS_PER_HOUR,
+    SECONDS_PER_DAY,
+    SECONDS_PER_MINUTE,
+} from '@/shared/config/time';
 import { mergeBarsByTime } from './mergeBarsByTime';
 import type { SiglensMarketProvider } from './marketProvider.types';
 
@@ -30,6 +34,10 @@ const EOD_PUBLISH_BUFFER_HOURS = 4;
  * 7일 = 공휴일 연속 최대치(추수감사절 주 등)를 충분히 커버.
  */
 const EOD_HIST_TTL_SECONDS = SECONDS_PER_DAY * 7;
+
+/** history가 lastClosed까지 도달하지 못한 경우(FMP EOD 미발행/지연, 또는 휴장일 키)의
+ * 짧은 재시도 TTL. 다음 조회가 곧 재fetch해 FMP가 따라잡으면 long TTL로 승격된다. */
+const EOD_HIST_INCOMPLETE_TTL_SECONDS = SECONDS_PER_MINUTE * 15;
 
 function isoDateDaysAgo(now: Date, days: number): string {
     const d = new Date(now);
@@ -163,8 +171,13 @@ export class CachedMarketDataProvider implements MarketDataProvider {
      * 1Day 일봉을 불변 과거(history, EOD)와 오늘(today, quote)로 나눠 병렬 fetch 후 병합한다.
      * - history `bars:eodhist:<SYM>:<lastClosedSessionDateEt>`: 세션-날짜 키가 16:00 ET(DST-aware)
      *   마감마다 자동 롤 → 세션당 1회 재조회. `before=lastClosed`로 완료된 EOD까지만 fetch.
-     *   TTL=7일(EOD_HIST_TTL_SECONDS)은 롱 홀리데이 플래토를 커버할 여유만 필요. isFresh는
-     *   요청 from 커버(truncation 방지)만 판정.
+     *   TTL은 fetch된 bars가 lastClosed까지 도달했는지에 따라 분기한다:
+     *   - 도달했으면(newest.time >= lastClosedThreshold) 7일 long TTL(EOD_HIST_TTL_SECONDS).
+     *   - 미도달이면(FMP EOD 미발행/지연 또는 휴장일 키) 15분 short TTL(EOD_HIST_INCOMPLETE_TTL_SECONDS)로
+     *     재시도를 허용한다. FMP가 따라잡은 후 첫 조회에서 long TTL로 승격된다.
+     *     lag 구간에도 갭은 발생하지 않는다 — lastClosed 시점에는 today(quote)가 동일 날짜를
+     *     커버하므로 series는 연속이다.
+     *   isFresh는 요청 from 커버(truncation 방지)만 판정.
      * - today `bars:today:<SYM>`: `inner.getTodayBar`(quote 기반 OHLCV) 세션 TTL(장중 60s).
      * `mergeBarsByTime`가 오늘 봉을 overlap 우선으로 병합, `sliceFrom`가 options.from으로 잘라
      * 단일 `getBars(from)`와 동일 집합을 만든다. 세션-날짜 키로 history는 항상 마지막 마감까지
@@ -174,6 +187,7 @@ export class CachedMarketDataProvider implements MarketDataProvider {
     private async getCachedDailyBars(options: GetBarsOptions): Promise<Bar[]> {
         const now = new Date();
         const lastClosed = lastClosedSessionDateEt(now);
+        const lastClosedThreshold = utcMidnightSeconds(lastClosed);
         const fromThreshold =
             options.from !== undefined
                 ? utcMidnightSeconds(options.from)
@@ -183,7 +197,11 @@ export class CachedMarketDataProvider implements MarketDataProvider {
         const [history, todayBars] = await Promise.all([
             getOrSetCache<Bar[]>(
                 `bars:eodhist:${symbolKey}:${lastClosed}`,
-                EOD_HIST_TTL_SECONDS,
+                bars =>
+                    bars.length > 0 &&
+                    bars[bars.length - 1]!.time >= lastClosedThreshold
+                        ? EOD_HIST_TTL_SECONDS
+                        : EOD_HIST_INCOMPLETE_TTL_SECONDS,
                 () => this.inner.getBars({ ...options, before: lastClosed }),
                 bars => bars.length > 0,
                 bars =>

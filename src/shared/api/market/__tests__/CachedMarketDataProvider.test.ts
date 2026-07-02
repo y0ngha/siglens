@@ -10,7 +10,7 @@ import {
     type MarketQuote,
 } from '@y0ngha/siglens-core';
 import type { SiglensMarketProvider } from '@/shared/api/market/marketProvider.types';
-import { SECONDS_PER_DAY } from '@/shared/config/time';
+import { SECONDS_PER_DAY, SECONDS_PER_MINUTE } from '@/shared/config/time';
 
 /**
  * Captures the `ex` TTL passed to redis.set so we can assert that
@@ -390,12 +390,14 @@ describe('CachedMarketDataProvider', () => {
             expect(store.has('bars:today:AAPL')).toBe(true);
         });
 
-        // ── eodhist TTL = SECONDS_PER_DAY * 7 ────────────────────────────────
-        it('bars:eodhist TTL = SECONDS_PER_DAY * 7 (7-day long TTL)', async () => {
-            const histBar = bar(
-                Math.floor(Date.parse('2024-06-30T00:00:00Z') / 1000)
+        // ── eodhist TTL = SECONDS_PER_DAY * 7 when history reaches lastClosed ─
+        it('bars:eodhist TTL = SECONDS_PER_DAY * 7 (7-day long TTL) when newest bar reaches lastClosed', async () => {
+            // System time: 2026-06-30T15:00Z → lastClosed = 2026-06-29
+            // newest bar must be at 2026-06-29 UTC midnight to trigger long TTL
+            const lastClosedBar = bar(
+                Math.floor(Date.parse('2026-06-29T00:00:00Z') / 1000)
             );
-            const getBars = vi.fn(async () => [histBar]);
+            const getBars = vi.fn(async () => [lastClosedBar]);
             const getTodayBar = vi.fn(async () => null);
             const provider = new CachedMarketDataProvider(
                 makeInner({ getBars, getTodayBar })
@@ -409,6 +411,94 @@ describe('CachedMarketDataProvider', () => {
             );
             expect(histSetCall).toBeDefined();
             expect(histSetCall![2]?.ex).toBe(SECONDS_PER_DAY * 7);
+        });
+
+        // ── FMP publish-lag: incomplete history → short TTL ───────────────────
+        it('[FMP lag] history newest bar BEFORE lastClosed → short retry TTL (15 min)', async () => {
+            // System time: 2026-06-30T15:00Z → lastClosed = 2026-06-29
+            // FMP has not yet published the 2026-06-29 EOD; newest bar is 2026-06-28
+            const laggedBar = bar(
+                Math.floor(Date.parse('2026-06-28T00:00:00Z') / 1000)
+            );
+            const getBars = vi.fn(async () => [laggedBar]);
+            const getTodayBar = vi.fn(async () => null);
+            const provider = new CachedMarketDataProvider(
+                makeInner({ getBars, getTodayBar })
+            );
+
+            await provider.getBars(longOpts);
+
+            const histSetCall = fakeRedis.set.mock.calls.find(
+                ([key]) =>
+                    typeof key === 'string' && key.startsWith('bars:eodhist')
+            );
+            expect(histSetCall).toBeDefined();
+            // Short TTL = 15 minutes (900 seconds) — allows retry once FMP catches up
+            expect(histSetCall![2]?.ex).toBe(SECONDS_PER_MINUTE * 15);
+        });
+
+        // ── FMP publish-lag: complete history → long TTL ──────────────────────
+        it('[FMP lag] history newest bar AT lastClosed → long TTL (7 days)', async () => {
+            // System time: 2026-06-30T15:00Z → lastClosed = 2026-06-29
+            // FMP has published; newest bar is exactly 2026-06-29
+            const completeBar = bar(
+                Math.floor(Date.parse('2026-06-29T00:00:00Z') / 1000)
+            );
+            const getBars = vi.fn(async () => [completeBar]);
+            const getTodayBar = vi.fn(async () => null);
+            const provider = new CachedMarketDataProvider(
+                makeInner({ getBars, getTodayBar })
+            );
+
+            await provider.getBars(longOpts);
+
+            const histSetCall = fakeRedis.set.mock.calls.find(
+                ([key]) =>
+                    typeof key === 'string' && key.startsWith('bars:eodhist')
+            );
+            expect(histSetCall).toBeDefined();
+            expect(histSetCall![2]?.ex).toBe(SECONDS_PER_DAY * 7);
+        });
+
+        // ── FMP publish-lag: retry after short TTL catches up → long TTL ──────
+        it('[FMP lag] retry after short-TTL expiry with FMP caught up → long TTL on second set', async () => {
+            // System time: 2026-06-30T15:00Z → lastClosed = 2026-06-29
+            // First fetch: FMP lagged, newest bar = 2026-06-28 → short TTL
+            const laggedBar = bar(
+                Math.floor(Date.parse('2026-06-28T00:00:00Z') / 1000)
+            );
+            const completeBar = bar(
+                Math.floor(Date.parse('2026-06-29T00:00:00Z') / 1000)
+            );
+            const getBars = vi.fn().mockResolvedValueOnce([laggedBar]);
+            const provider = new CachedMarketDataProvider(
+                makeInner({ getBars, getTodayBar: vi.fn(async () => null) })
+            );
+
+            await provider.getBars(longOpts);
+
+            const firstHistSetCall = fakeRedis.set.mock.calls.find(
+                ([key]) =>
+                    typeof key === 'string' && key.startsWith('bars:eodhist')
+            );
+            expect(firstHistSetCall![2]?.ex).toBe(SECONDS_PER_MINUTE * 15);
+
+            // Simulate short-TTL expiry by clearing the eodhist key from the store
+            for (const key of store.keys()) {
+                if (key.startsWith('bars:eodhist')) store.delete(key);
+            }
+            fakeRedis.set.mockClear();
+
+            // Second fetch: FMP has now published 2026-06-29 bar → long TTL
+            getBars.mockResolvedValueOnce([completeBar]);
+            await provider.getBars(longOpts);
+
+            const secondHistSetCall = fakeRedis.set.mock.calls.find(
+                ([key]) =>
+                    typeof key === 'string' && key.startsWith('bars:eodhist')
+            );
+            expect(secondHistSetCall).toBeDefined();
+            expect(secondHistSetCall![2]?.ex).toBe(SECONDS_PER_DAY * 7);
         });
 
         // ── same session = cache hit (same lastClosed → same key) ─────────────
