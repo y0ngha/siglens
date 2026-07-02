@@ -6,10 +6,13 @@ import {
     type MarketQuote,
     type MarketSessionSpec,
     type Timeframe,
+    MARKET_CLOSE_HOUR,
     US_EQUITY_SESSION,
     computeBarsEffectiveTtl,
 } from '@y0ngha/siglens-core';
 import { getOrSetCache } from '@/shared/cache/getOrSetCache';
+import { getEasternOffsetHours } from '@/shared/lib/eastern';
+import { MS_PER_HOUR, SECONDS_PER_DAY } from '@/shared/config/time';
 import { mergeBarsByTime } from './mergeBarsByTime';
 import type { SiglensMarketProvider } from './marketProvider.types';
 
@@ -17,10 +20,11 @@ import type { SiglensMarketProvider } from './marketProvider.types';
 const EOD_RECENT_FROM_DAYS = 10;
 
 /**
- * EOD history 캐시 만료 시각 = 매일 22:00 KST(=13:00 UTC, 미국 개장 ~30분 전). 그 이후 첫
- * 조회가 전일까지 완료된 EOD를 재조회 → 미국 세션 내내 history fresh, 오늘 봉은 quote가 담당.
+ * EOD history 캐시 TTL. 세션-날짜 키(bars:eodhist:<SYM>:<date>)가 미국 마감마다
+ * 자동 롤(자연 버전닝)되므로 TTL은 단순히 롱 홀리데이 플래토를 넘길 여유만 있으면 된다.
+ * 7일 = 공휴일 연속 최대치(추수감사절 주 등)를 충분히 커버.
  */
-const EOD_REFRESH_UTC_HOUR = 13;
+const EOD_HIST_TTL_SECONDS = SECONDS_PER_DAY * 7;
 
 function isoDateDaysAgo(now: Date, days: number): string {
     const d = new Date(now);
@@ -41,15 +45,27 @@ function sliceFrom(bars: Bar[], from: string | undefined): Bar[] {
 }
 
 /**
- * 다음 13:00 UTC(22:00 KST)까지 남은 초를 반환한다. 이미 지났으면 다음 날 13:00 UTC 기준.
- * EOD history 캐시 TTL로 사용해 미국 개장 ~30분 전에 전일까지 EOD를 1회 재조회한다.
+ * 마지막으로 마감된(16:00 ET 경과) 미국 정규 세션의 ET 날짜(YYYY-MM-DD)를 반환한다.
+ * 서머타임은 getEasternOffsetHours로 반영(여름 마감=20:00 UTC, 겨울=21:00 UTC). 주말은
+ * 직전 금요일로 되감는다(공휴일은 미보정 — 그 날짜로 키가 한 번 더 versioning될 뿐 EOD
+ * 조회는 실제 마지막 거래일까지 반환하므로 데이터는 정확). EOD history 캐시 키에 넣어
+ * 미국 마감마다 캐시가 자연 롤(=세션당 1회 재조회)되게 한다.
  */
-export function secondsUntilNextEodRefresh(now: Date): number {
-    const target = new Date(now);
-    target.setUTCHours(EOD_REFRESH_UTC_HOUR, 0, 0, 0);
-    if (target.getTime() <= now.getTime())
-        target.setUTCDate(target.getUTCDate() + 1);
-    return Math.ceil((target.getTime() - now.getTime()) / 1000);
+export function lastClosedSessionDateEt(now: Date): string {
+    const et = new Date(
+        now.getTime() + getEasternOffsetHours(now) * MS_PER_HOUR
+    );
+    const dow = et.getUTCDay(); // 0=Sun..6=Sat (ET wall-clock via shifted UTC getters)
+    const closedToday =
+        dow >= 1 && dow <= 5 && et.getUTCHours() >= MARKET_CLOSE_HOUR;
+    const cursor = new Date(
+        Date.UTC(et.getUTCFullYear(), et.getUTCMonth(), et.getUTCDate())
+    );
+    if (!closedToday) cursor.setUTCDate(cursor.getUTCDate() - 1);
+    while (cursor.getUTCDay() === 0 || cursor.getUTCDay() === 6) {
+        cursor.setUTCDate(cursor.getUTCDate() - 1);
+    }
+    return cursor.toISOString().slice(0, 10);
 }
 
 /** quote TTL은 bars 일봉 개장-경계 정책을 재사용 — timeframe과 무관한 placeholder. */
@@ -134,18 +150,19 @@ export class CachedMarketDataProvider implements MarketDataProvider {
 
     /**
      * 1Day 일봉을 불변 과거(history, EOD)와 오늘(today, quote)로 나눠 병렬 fetch 후 병합한다.
-     * - history `bars:eodhist:<SYM>`(날짜 없는 앵커 키): `before=어제`로 완료된 EOD만 fetch,
-     *   TTL은 매일 22:00 KST(=13:00 UTC)에 만료(secondsUntilNextEodRefresh) → 미국 개장 전
-     *   전일까지 EOD 1회 재조회, 세션 내내 fresh. isFresh는 요청 from 커버(truncation 방지)만 판정.
+     * - history `bars:eodhist:<SYM>:<lastClosedSessionDateEt>`: 세션-날짜 키가 16:00 ET(DST-aware)
+     *   마감마다 자동 롤 → 세션당 1회 재조회. `before=lastClosed`로 완료된 EOD까지만 fetch.
+     *   TTL=7일(EOD_HIST_TTL_SECONDS)은 롱 홀리데이 플래토를 커버할 여유만 필요. isFresh는
+     *   요청 from 커버(truncation 방지)만 판정.
      * - today `bars:today:<SYM>`: `inner.getTodayBar`(quote 기반 OHLCV) 세션 TTL(장중 60s).
      * `mergeBarsByTime`가 오늘 봉을 overlap 우선으로 병합, `sliceFrom`가 options.from으로 잘라
-     * 단일 `getBars(from)`와 동일 집합을 만든다. 6h가 아니라 22:00 만료라 daily-refresh 보장 →
-     * history는 항상 어제까지 커버, today(quote)와 갭 없음. 앵커 키 전제: 모든 long-1Day 호출부가
-     * core 730d lookback 공유(짧은 lookback은 isLongDailyWindow가 단일 경로로 분기).
+     * 단일 `getBars(from)`와 동일 집합을 만든다. 세션-날짜 키로 history는 항상 마지막 마감까지
+     * 커버, today(quote)와 갭 없음. 키 전제: 모든 long-1Day 호출부가 core 730d lookback 공유
+     * (짧은 lookback은 isLongDailyWindow가 단일 경로로 분기).
      */
     private async getCachedDailyBars(options: GetBarsOptions): Promise<Bar[]> {
         const now = new Date();
-        const yesterday = isoDateDaysAgo(now, 1);
+        const lastClosed = lastClosedSessionDateEt(now);
         const fromThreshold =
             options.from !== undefined
                 ? utcMidnightSeconds(options.from)
@@ -154,9 +171,9 @@ export class CachedMarketDataProvider implements MarketDataProvider {
 
         const [history, todayBars] = await Promise.all([
             getOrSetCache<Bar[]>(
-                `bars:eodhist:${symbolKey}`,
-                secondsUntilNextEodRefresh(now),
-                () => this.inner.getBars({ ...options, before: yesterday }),
+                `bars:eodhist:${symbolKey}:${lastClosed}`,
+                EOD_HIST_TTL_SECONDS,
+                () => this.inner.getBars({ ...options, before: lastClosed }),
                 bars => bars.length > 0,
                 bars =>
                     bars.length > 0 &&
