@@ -15,13 +15,17 @@ import { getEasternOffsetHours } from '@/shared/lib/eastern';
 import {
     MS_PER_HOUR,
     SECONDS_PER_DAY,
-    SECONDS_PER_MINUTE,
+    SECONDS_PER_HOUR,
 } from '@/shared/config/time';
 import { mergeBarsByTime } from './mergeBarsByTime';
 import type { SiglensMarketProvider } from './marketProvider.types';
 
-/** 최근(live) 윈도우 시작점: 오늘 − EOD_RECENT_FROM_DAYS일. isLongDailyWindow 게이트에서 사용. */
-const EOD_RECENT_FROM_DAYS = 10;
+/**
+ * `isLongDailyWindow` 라우팅 게이트의 룩백 임계값(일 수).
+ * `from`이 이 값보다 오래된 경우 EOD split 경로를 사용하고,
+ * 최근 윈도우(오늘−N일 이내)이면 단일 키 경로를 사용한다.
+ */
+const EOD_LONG_WINDOW_GATE_DAYS = 10;
 
 /** 마감(16:00 ET) 후 FMP EOD 발행까지의 안전 버퍼(시간). 이 시간 전에는 당일을
  * lastClosed로 롤하지 않아, 발행 전 불완전 EOD가 당일 키에 캐시되는 것을 막는다.
@@ -35,9 +39,16 @@ const EOD_PUBLISH_BUFFER_HOURS = 4;
  */
 const EOD_HIST_TTL_SECONDS = SECONDS_PER_DAY * 7;
 
-/** history가 lastClosed까지 도달하지 못한 경우(FMP EOD 미발행/지연, 또는 휴장일 키)의
- * 짧은 재시도 TTL. 다음 조회가 곧 재fetch해 FMP가 따라잡으면 long TTL로 승격된다. */
-const EOD_HIST_INCOMPLETE_TTL_SECONDS = SECONDS_PER_MINUTE * 15;
+/**
+ * 불완전 EOD history(상장폐지/거래정지, 휴장일로 라벨된 키, 드물게 4h를 초과하는 FMP 지연)를
+ * 캐싱할 쿨다운 TTL. 이 값으로 재fetch를 제한(≈6회/일/심볼)해 스래싱을 방지한다.
+ *
+ * 4h publish buffer가 대부분의 일시적 FMP 지연을 이미 흡수하므로, "불완전" 조회는 거의 항상
+ * 영구적 상황(상장폐지, 거래 없는 휴장일 키)이다. 갭은 발생하지 않는다: today(quote)가
+ * 경계를 채우며, 휴장일/주말에는 실제 거래가 없다. 4h를 초과하는 드문 FMP 장애도 다음 쿨다운
+ * 재fetch에서 자가 치유된다(다음 세션 이전에 충분히 여유 있음).
+ */
+const EOD_HIST_INCOMPLETE_COOLDOWN_SECONDS = SECONDS_PER_HOUR * 4;
 
 function isoDateDaysAgo(now: Date, days: number): string {
     const d = new Date(now);
@@ -74,15 +85,17 @@ export function lastClosedSessionDateEt(now: Date): string {
     );
     const dow = et.getUTCDay(); // 0=Sun..6=Sat (ET wall-clock via shifted UTC getters)
     const closedToday =
-        dow >= 1 &&
+        1 <= dow &&
         dow <= 5 &&
         et.getUTCHours() >= MARKET_CLOSE_HOUR + EOD_PUBLISH_BUFFER_HOURS;
     const cursor = new Date(
         Date.UTC(et.getUTCFullYear(), et.getUTCMonth(), et.getUTCDate())
     );
     if (!closedToday) cursor.setUTCDate(cursor.getUTCDate() - 1);
-    while (cursor.getUTCDay() === 0 || cursor.getUTCDay() === 6) {
+    let day = cursor.getUTCDay();
+    while (day === 0 || day === 6) {
         cursor.setUTCDate(cursor.getUTCDate() - 1);
+        day = cursor.getUTCDay();
     }
     return cursor.toISOString().slice(0, 10);
 }
@@ -146,11 +159,11 @@ export class CachedMarketDataProvider implements MarketDataProvider {
         now: Date = new Date()
     ): boolean {
         // from===undefined ⇒ full history ⇒ split. Otherwise only split when the
-        // requested start is older than the recent window; a short lookback (from
-        // within the last ~EOD_RECENT_FROM_DAYS days) would invert the historical window, so it uses the
+        // requested start is older than the gate threshold; a short lookback (from
+        // within the last ~EOD_LONG_WINDOW_GATE_DAYS days) would invert the historical window, so it uses the
         // single-key path instead.
         if (from === undefined) return true;
-        const recentFrom = isoDateDaysAgo(now, EOD_RECENT_FROM_DAYS);
+        const recentFrom = isoDateDaysAgo(now, EOD_LONG_WINDOW_GATE_DAYS);
         return from.slice(0, 10) < recentFrom;
     }
 
@@ -184,9 +197,9 @@ export class CachedMarketDataProvider implements MarketDataProvider {
      *   - 크립토(`always-open`): 어제 UTC 날짜 — 24/7이므로 주말 되감기·ET 버퍼 없음.
      *   TTL은 fetch된 bars가 lastClosed까지 도달했는지에 따라 분기한다:
      *   - 도달했으면(newest.time >= lastClosedThreshold) 7일 long TTL(EOD_HIST_TTL_SECONDS).
-     *   - 미도달이면(FMP EOD 미발행/지연) 15분 short TTL(EOD_HIST_INCOMPLETE_TTL_SECONDS)로
-     *     재시도를 허용한다. FMP가 따라잡으면 long TTL로 승격된다.
-     *     갭은 short retry TTL 이내에 자가 치유된다. 단, today(quote)가 lastClosed를 채우는 것은
+     *   - 미도달이면(FMP EOD 미발행/지연, 상장폐지, 휴장일 키) 4h 쿨다운 TTL(EOD_HIST_INCOMPLETE_COOLDOWN_SECONDS)로
+     *     재fetch를 제한(≈6회/일/심볼)한다. FMP가 따라잡으면 long TTL로 승격된다.
+     *     갭은 발생하지 않는다: today(quote)가 경계를 채우며 휴장일/주말은 거래가 없다. 단, today(quote)가 lastClosed를 채우는 것은
      *     `lastClosed`가 오늘 당일의 세션 날짜와 같을 때(마감+버퍼 당일)만 해당한다. FMP 발행 지연이
      *     전일 봉에 걸리는 일반 장중 케이스에서는 해당 날짜가 EOD 발행 전까지 진정으로 부재하며,
      *     short TTL 재시도가 FMP 발행 후 해소한다. 무조건적인 series 연속성은 보장하지 않는다.
@@ -224,7 +237,7 @@ export class CachedMarketDataProvider implements MarketDataProvider {
                     bars.length > 0 &&
                     bars[bars.length - 1]!.time >= lastClosedThreshold
                         ? EOD_HIST_TTL_SECONDS
-                        : EOD_HIST_INCOMPLETE_TTL_SECONDS,
+                        : EOD_HIST_INCOMPLETE_COOLDOWN_SECONDS,
                 () => this.inner.getBars({ ...options, before: lastClosed }),
                 bars => bars.length > 0,
                 bars =>

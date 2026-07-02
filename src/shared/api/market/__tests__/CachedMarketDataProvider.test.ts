@@ -10,7 +10,7 @@ import {
     type MarketQuote,
 } from '@y0ngha/siglens-core';
 import type { SiglensMarketProvider } from '@/shared/api/market/marketProvider.types';
-import { SECONDS_PER_DAY, SECONDS_PER_MINUTE } from '@/shared/config/time';
+import { SECONDS_PER_DAY, SECONDS_PER_HOUR } from '@/shared/config/time';
 
 /**
  * Captures the `ex` TTL passed to redis.set so we can assert that
@@ -413,10 +413,11 @@ describe('CachedMarketDataProvider', () => {
             expect(histSetCall![2]?.ex).toBe(SECONDS_PER_DAY * 7);
         });
 
-        // ── FMP publish-lag: incomplete history → short TTL ───────────────────
-        it('[FMP lag] history newest bar BEFORE lastClosed → short retry TTL (15 min)', async () => {
+        // ── FMP publish-lag / permanent-incomplete → cooldown TTL ──────────────
+        it('[FMP lag / permanent-incomplete] history newest bar BEFORE lastClosed → cooldown TTL (4h = 14400s)', async () => {
             // System time: 2026-06-30T15:00Z → lastClosed = 2026-06-29
-            // FMP has not yet published the 2026-06-29 EOD; newest bar is 2026-06-28
+            // FMP has not yet published the 2026-06-29 EOD (or symbol is delisted);
+            // newest bar is 2026-06-28.
             const laggedBar = bar(
                 Math.floor(Date.parse('2026-06-28T00:00:00Z') / 1000)
             );
@@ -433,8 +434,8 @@ describe('CachedMarketDataProvider', () => {
                     typeof key === 'string' && key.startsWith('bars:eodhist')
             );
             expect(histSetCall).toBeDefined();
-            // Short TTL = 15 minutes (900 seconds) — allows retry once FMP catches up
-            expect(histSetCall![2]?.ex).toBe(SECONDS_PER_MINUTE * 15);
+            // Cooldown TTL = 4h (14400 seconds) — bounds refetch to ≈6/day/symbol
+            expect(histSetCall![2]?.ex).toBe(SECONDS_PER_HOUR * 4);
         });
 
         // ── FMP publish-lag: complete history → long TTL ──────────────────────
@@ -481,7 +482,7 @@ describe('CachedMarketDataProvider', () => {
                 ([key]) =>
                     typeof key === 'string' && key.startsWith('bars:eodhist')
             );
-            expect(firstHistSetCall![2]?.ex).toBe(SECONDS_PER_MINUTE * 15);
+            expect(firstHistSetCall![2]?.ex).toBe(SECONDS_PER_HOUR * 4);
 
             // Simulate short-TTL expiry by clearing the eodhist key from the store
             for (const key of store.keys()) {
@@ -499,6 +500,97 @@ describe('CachedMarketDataProvider', () => {
             );
             expect(secondHistSetCall).toBeDefined();
             expect(secondHistSetCall![2]?.ex).toBe(SECONDS_PER_DAY * 7);
+        });
+
+        // ── delisted/permanent-incomplete: cooldown TTL + within-cooldown cache hit ──
+        it('[delisted] permanent-incomplete (months-old newest bar) → cooldown TTL (4h), within-cooldown = cache hit (no 2nd inner.getBars)', async () => {
+            /**
+             * Scenario: a delisted symbol's history newest bar is months before lastClosed.
+             * We use from='2024-01-01' so that the bar (at 2024-01-15) satisfies the
+             * isFresh coverage check (bars[0].time <= fromThreshold).
+             *
+             * Expected:
+             * (a) bars:eodhist is cached with cooldown TTL (4h = 14400s).
+             * (b) A repeat call within the cooldown (cache still populated) is a hit —
+             *     inner.getBars is NOT called a second time.
+             * This documents that permanent-incomplete history no longer thrashes.
+             */
+            // System time: 2026-06-30T15:00Z → lastClosed = 2026-06-29
+            // Bar at 2024-01-15 is months before lastClosed (incomplete), and before
+            // from='2024-01-01'? No — we use from='2024-01-15' so bar[0].time == threshold.
+            const delistedOpts: GetBarsOptions = {
+                symbol: 'DELIST',
+                timeframe: '1Day',
+                from: '2023-01-01', // old enough to trigger long window gate
+            };
+            const oldBar = bar(
+                Math.floor(Date.parse('2023-01-01T00:00:00Z') / 1000) // oldest bar satisfies coverage check
+            );
+            const getBars = vi.fn(async () => [oldBar]);
+            const getTodayBar = vi.fn(async () => null);
+            const provider = new CachedMarketDataProvider(
+                makeInner({ getBars, getTodayBar })
+            );
+
+            // First call: cache miss → fetches and stores with cooldown TTL
+            await provider.getBars(delistedOpts);
+
+            const histSetCall = fakeRedis.set.mock.calls.find(
+                ([key]) =>
+                    typeof key === 'string' && key.startsWith('bars:eodhist')
+            );
+            expect(histSetCall).toBeDefined();
+            expect(histSetCall![2]?.ex).toBe(SECONDS_PER_HOUR * 4); // 14400s
+
+            // Second call: key still in store (cooldown not expired) → cache hit, no 2nd fetch
+            await provider.getBars(delistedOpts);
+            expect(getBars).toHaveBeenCalledTimes(1); // still 1 — cache hit
+        });
+
+        // ── holiday-labeled key: cooldown TTL + no gap (history + today contiguous) ──
+        it('[holiday key] incomplete history (holiday-labeled lastClosed, real last trading day older) → cooldown TTL + no gap (history + today contiguous)', async () => {
+            /**
+             * Scenario: lastClosed falls on a date that is treated as a holiday by the
+             * exchange (no trading). The EOD fetch returns bars whose newest is the real
+             * last trading day (older than lastClosed). This is the "holiday-labeled key"
+             * case — the eodhist key is keyed on the holiday date but returns data up to
+             * the preceding trading day. today(quote) fills the live tail.
+             *
+             * Expected:
+             * (a) bars:eodhist is cached with cooldown TTL (not long TTL).
+             * (b) merged result = history bars (up to real last trading day) + today bar,
+             *     contiguous (no gap).
+             */
+            // System time: 2026-06-30T15:00Z → lastClosed = 2026-06-29 (Mon)
+            const lastRealTradingDayBar = bar(
+                Math.floor(Date.parse('2026-06-26T00:00:00Z') / 1000) // Friday before a holiday week
+            );
+            const todayBarObj = bar(
+                Math.floor(Date.parse('2026-06-30T00:00:00Z') / 1000) // today quote
+            );
+            const getBars = vi.fn(async () => [lastRealTradingDayBar]);
+            const getTodayBar = vi.fn(async () => todayBarObj);
+            const provider = new CachedMarketDataProvider(
+                makeInner({ getBars, getTodayBar })
+            );
+
+            const result = await provider.getBars(longOpts);
+
+            // (a) cooldown TTL because newest bar (2026-06-26) < lastClosed (2026-06-29)
+            const histSetCall = fakeRedis.set.mock.calls.find(
+                ([key]) =>
+                    typeof key === 'string' && key.startsWith('bars:eodhist')
+            );
+            expect(histSetCall).toBeDefined();
+            expect(histSetCall![2]?.ex).toBe(SECONDS_PER_HOUR * 4);
+
+            // (b) merged result is contiguous: history up to real last trading day + today
+            const times = result.map(b => b.time);
+            expect(times).toContain(lastRealTradingDayBar.time);
+            expect(times).toContain(todayBarObj.time);
+            // result is ascending and contains both anchors with no unexpected gap
+            expect(times[0]).toBe(lastRealTradingDayBar.time);
+            expect(times[times.length - 1]).toBe(todayBarObj.time);
         });
 
         // ── same session = cache hit (same lastClosed → same key) ─────────────
@@ -1051,13 +1143,13 @@ describe('CachedMarketDataProvider', () => {
                 from: '2024-01-01',
             });
 
-            // (a) short TTL because history newest (2026-06-28) < lastClosed (2026-06-29)
+            // (a) cooldown TTL because history newest (2026-06-28) < lastClosed (2026-06-29)
             const histSetCall = fakeRedis.set.mock.calls.find(
                 ([key]) =>
                     typeof key === 'string' && key.startsWith('bars:eodhist')
             );
             expect(histSetCall).toBeDefined();
-            expect(histSetCall![2]?.ex).toBe(SECONDS_PER_MINUTE * 15);
+            expect(histSetCall![2]?.ex).toBe(SECONDS_PER_HOUR * 4);
 
             // (b) merged result contains both lagged history and today bar
             const times = result.map(b => b.time);
