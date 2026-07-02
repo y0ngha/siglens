@@ -1,10 +1,10 @@
 import type {
     GetBarsOptions,
-    MarketDataProvider,
     Bar,
     MarketQuote,
     Timeframe,
 } from '@y0ngha/siglens-core';
+import type { SiglensMarketProvider } from '@/shared/api/market/marketProvider.types';
 import { MS_PER_SECOND } from '@/shared/config/time';
 import { fmpGet } from '@/shared/api/fmp/httpClient';
 import {
@@ -164,7 +164,7 @@ function buildBarsQuery(
  * the shared `fmpGet` HTTP client (retry + structured FmpHttpError). Quote
  * failures degrade to `null`; bar failures propagate (after fmpGet's retries).
  */
-export class FmpMarketProvider implements MarketDataProvider {
+export class FmpMarketProvider implements SiglensMarketProvider {
     async getBars(options: GetBarsOptions): Promise<Bar[]> {
         // `options.limit` is intentionally not forwarded: this adapter bounds
         // results by the `from`/`before` date window, because the FMP historical
@@ -226,6 +226,11 @@ export class FmpMarketProvider implements MarketDataProvider {
             console.warn('[FmpMarketProvider] getQuote failed:', symbol, error);
             return null;
         }
+    }
+
+    /** 오늘(최근 거래일) 봉을 /quote로 조회한다(OHLCV). EOD 캐시의 live tail 전용. */
+    async getTodayBar(symbol: string): Promise<Bar | null> {
+        return this.fetchTodayQuoteBar(symbol);
     }
 
     private async fetchTodayQuoteBar(symbol: string): Promise<Bar | null> {

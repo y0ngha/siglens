@@ -321,4 +321,54 @@ describe('FmpMarketProvider', () => {
             );
         });
     });
+
+    describe('getTodayBar', () => {
+        it('returns OHLCV Bar built from /quote response', async () => {
+            // timestamp = 2026-04-15T14:00:00Z → date = 2026-04-15 → UTC midnight
+            const timestampSec = Math.floor(
+                Date.UTC(2026, 3, 15, 14, 0, 0) / MS_PER_SECOND
+            );
+            mockFmpGet.mockResolvedValueOnce([
+                {
+                    price: 150,
+                    open: 145,
+                    dayHigh: 155,
+                    dayLow: 140,
+                    volume: 5000,
+                    timestamp: timestampSec,
+                    changePercentage: 1.5,
+                    name: 'Apple',
+                },
+            ]);
+
+            const bar = await provider.getTodayBar('AAPL');
+
+            expect(mockFmpGet).toHaveBeenCalledWith('quote', {
+                symbol: 'AAPL',
+            });
+            expect(bar).not.toBeNull();
+            // time = UTC midnight of 2026-04-15
+            expect(bar!.time).toBe(Date.UTC(2026, 3, 15) / MS_PER_SECOND);
+            expect(bar!.open).toBe(145);
+            expect(bar!.high).toBe(155);
+            expect(bar!.low).toBe(140);
+            expect(bar!.close).toBe(150);
+            expect(bar!.volume).toBe(5000);
+        });
+
+        it('returns null when quote array is empty', async () => {
+            mockFmpGet.mockResolvedValueOnce([]);
+            expect(await provider.getTodayBar('AAPL')).toBeNull();
+        });
+
+        it('returns null when fmpGet rejects (network error)', async () => {
+            mockFmpGet.mockRejectedValueOnce(new Error('network error'));
+            expect(await provider.getTodayBar('AAPL')).toBeNull();
+        });
+
+        it('returns null when fmpGet returns non-array', async () => {
+            mockFmpGet.mockResolvedValueOnce({});
+            expect(await provider.getTodayBar('AAPL')).toBeNull();
+        });
+    });
 });
