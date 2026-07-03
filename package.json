@@ -63,7 +63,7 @@
         "@neondatabase/serverless": "^1.1.0",
         "@tanstack/react-query": "^5.95.2",
         "@upstash/redis": "^1.37.0",
-        "@y0ngha/siglens-core": "0.27.0",
+        "@y0ngha/siglens-core": "0.28.0",
         "bcryptjs": "^3.0.3",
         "clsx": "^2.1.1",
         "drizzle-orm": "^0.45.2",
