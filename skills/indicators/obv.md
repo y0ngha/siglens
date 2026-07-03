@@ -5,7 +5,7 @@ type: indicator_guide
 indicators: ['obv']
 confidence_weight: 0.8
 usage_roles: [confirmation, measurement]
-token_cost: 512
+token_cost: 517
 digest_hash: "2bf75817"
 ---
 
@@ -73,6 +73,6 @@ OBV flat: sideways while price oscillates = accumulation/distribution equilibriu
 
 Combinations: + RSI (both diverging at same point = dual-confirmation reversal); + MACD (OBV breakout + MACD golden cross = volume + price confirmation); + Volume Profile (OBV direction + POC alignment = strong S/R zone); + Bollinger (OBV breakout during squeeze = directional commitment).
 
-Caveats: cumulative — absolute value meaningless, only direction/slope matter. Treats all volume equally regardless of price-move magnitude. Noisy for low-volume/thinly-traded stocks. Gap days distort it disproportionately. Best on daily+; intraday dominated by microstructure noise.
+Caveats: cumulative — absolute value meaningless, only direction/slope matter. Treats all volume equally regardless of price-move magnitude. Noisy, unreliable signals for low-volume/thinly-traded stocks. Gap days distort it disproportionately. Best on daily+; intraday dominated by microstructure noise.
 <!-- PROMPT_DIGEST:END -->
 
