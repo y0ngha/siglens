@@ -8,7 +8,8 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [golden_cross, death_cross]
-token_cost: 0
+token_cost: 1545
+digest_hash: "1e16fb4d"
 ---
 
 ## Overview
@@ -189,3 +190,57 @@ When analyzing the current MA Cycle results, include the following:
 - **Stage Duration Characteristics**: For stable stages (1, 4), provide context on duration. For transition stages (2, 3, 5, 6), explain the possibility of rapid progression and the conditions for transitioning to the next stage.
 
 - **Range-Bound Assessment**: If a pattern of short Stages 1 and 4 with repeated Stages 2, 3, 5, and 6 is visible, mention the possibility of a range-bound market and present the breakout conditions.
+
+<!-- PROMPT_DIGEST:START -->
+이동평균선 대순환 분석 (confidence_weight 0.8)
+Classify market into 6 stages by ordering of short MA5 / medium MA20 / long MA60. Granville's Law gives 8 buy/sell signals. Analyze via 3 dimensions: ordering (identify situation), spacing (probability of next-stage transition), slope (spot false signals).
+
+### DATA SOURCE RULE (mandatory)
+Read ONLY from the `- MA:` indicator line (SMA values). Short=MA(5), Medium=MA(20), Long=MA(60). Do NOT use EMA (`- EMA:` is for MACD 대순환). Using EMA makes both strategies identical and meaningless.
+
+### Stage definitions (Stage | ordering top→bottom | entry cross | duration)
+1 Stable Uptrend | Short>Medium>Long | Medium golden-crosses Long | Long
+2 Downside Shift 1 (End of Bull) | Medium>Short>Long | Short dead-crosses Medium | Short
+3 Downside Shift 2 (Entrance to Bear) | Medium>Long>Short | Short dead-crosses Long | Short
+4 Stable Downtrend | Long>Medium>Short | Medium dead-crosses Long | Long
+5 Upside Shift 1 (End of Bear) | Long>Short>Medium | Short golden-crosses Medium | Short
+6 Upside Shift 2 (Entrance to Bull) | Short>Long>Medium | Short golden-crosses Long | Short
+Forward sequence 1→2→3→4→5→6→1; reverse possible but lower probability, always returns to forward. Range-bound: Stages 1&4 brief + 2,3,5,6 prolonged.
+
+### Stage response strategy
+S1: all 3 MAs rising, buy edge; widening gaps → aggressive buy; strong while med/long rising; →S2 when short dead-crosses medium.
+S2: close S1 longs; BUT if med+long still rising steadily, hold long (temp pullback); wide upward med/long band = not downtrend; short falling + medium ending rise + near-parallel → consider early sell; if long slope still rising, dead cross may be false.
+S3: close all S1 longs; early-sell conditions: (1) S1 long enough, (2) forward 1→2→3, (3) short+medium down + long nearly flat; →S4 needs long's rise to end; if short bounces early & crosses long → reverse to S2, possible range.
+S4: all 3 falling, sell edge; widening gaps → aggressive sell; faster pace than S1; →S5 when short golden-crosses medium.
+S5: close S4 shorts; BUT if med+long still falling steadily, hold short (temp bounce); wide downward med/long band = not uptrend; short rising + medium ending fall + near-parallel → consider early buy; if long slope still falling, golden cross may be false.
+S6: close all S4 shorts; early-buy conditions: (1) S4 long enough, (2) forward 4→5→6, (3) short+medium up + long nearly flat; →S1 needs long's decline to end; if short drops early & crosses long → reverse to S5, possible range.
+
+### Granville's Law — 8 signals (line1=short, line2=reference medium/long; direction+slope of line2 is key to false signals)
+Buy 1 Golden Cross: line2 declined enough, now sideways/turning slightly up, line1 crosses clearly above from below (most classic).
+Buy 2 Re-cross during continued rise: line2 continuously rising, line1 crosses it — can be mistaken for dead cross; verify line2 turned rising→sideways/declining.
+Buy 3 Pullback Bounce: line1 above rising line2, approaches but doesn't cross, then rises again; pullback level = buy point.
+Buy 4 MA Deviation: line1 far below declining line2; mean-reversion toward line2; reference signal when deviation >10% (adjust by volatility).
+Sell 1 Dead Cross: line2 risen enough, now sideways/turning slightly down, line1 crosses clearly below from above (most classic).
+Sell 2 Re-cross during continued decline: line2 continuously falling, line1 crosses — can be mistaken for golden cross; verify line2 turned falling→sideways/rising.
+Sell 3 Temporary Bounce then Re-decline: line1 below declining line2, approaches but doesn't cross, then falls; bounce peak = sell point.
+Sell 4 MA Deviation: line1 far above rising line2; expected convergence via mean reversion; reference when deviation >10%.
+False-signal criteria: Golden-cross false when line2 still declining or long-term slope unchanged; Dead-cross false when line2 still rising or long-term slope unchanged. COMMON: change in long-term line's direction is the single most important false-signal criterion.
+
+### Pullback Buy (temp correction within uptrend)
+Occurs: (1) S1→S2/S3 then reverse to S1 continuing up; (2) during S1, only price drops below med/long then recovers. Key: even if short/price fell, if med+long keep rising = pullback. Buy timing: short that fell below medium rises again and widens gap in short>medium>long ordering.
+
+### Dead Cat Bounce Sell (temp recovery within downtrend, opposite of pullback)
+Occurs: (1) S4→S5/S6 then reverse to S4 continuing down; (2) during S4, only price rises above med/long then returns. Key: even if short/price rose, if med+long keep falling = temp bounce. Sell timing: short that rose above medium falls again and widens gap in long>medium>short.
+
+### MA Spacing patterns
+Stable: 3 lines near-parallel → trend continues. Accelerating: gaps widening → building momentum; early expansion = strong continuation, late expansion = risk of sharp reversal after top/bottom. Decelerating: gaps narrowing → losing momentum, higher next-stage transition probability.
+Range breakout: lines sideways & converge (med/long convergence is key). Upside breakout: lines rise with widening gaps + short stays above medium without re-crossing. Downside: lines fall with widening gaps + short stays below medium. False: apparent breakout but short re-crosses medium → range continues; don't enter prematurely.
+
+### AI instructions (narrative summary, include)
+- Current Stage: which of 1-6 from MA5/MA20/MA60 positions (from `- MA:` line). If unclear/converging → "Stage Transition Zone" or "Possible Range-Bound Market".
+- Forward/Reverse progression: path from previous to current stage; if reverse, clarify meaning (pullback vs reversal).
+- 3-Dim: Ordering (stage+meaning); Spacing (widening/narrowing/parallel + implication); Slope (each MA's slope + false-signal possibility).
+- Granville signals: if detectable, give signal number + conditions; else "No clear Granville signal at this time."
+- Stage duration: stable (1,4) context; transition (2,3,5,6) rapid-progression possibility + next-stage conditions.
+- Range-bound assessment: if short 1&4 with repeated 2,3,5,6, mention range possibility + breakout conditions.
+<!-- PROMPT_DIGEST:END -->

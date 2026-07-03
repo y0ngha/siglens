@@ -9,7 +9,8 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [rsi_oversold, rsi_overbought, bollinger_lower_bounce]
-token_cost: 0
+token_cost: 1078
+digest_hash: "4bba64c5"
 ---
 
 ## Overview
@@ -184,3 +185,45 @@ Additional output rules:
 - If price is at a **known support/resistance level** while oversold/overbought, flag as triple confluence (highest confidence)
 - If neither oversold nor overbought conditions exist, state "현재 과매수/과매도 조건 미충족 — 평균 회귀 신호 없음"
 - Set the `trend` field: `bullish` if oversold conditions confirmed in non-trending market, `bearish` if overbought conditions confirmed in non-trending market, `neutral` if no mean reversion signal or trending environment
+
+<!-- PROMPT_DIGEST:START -->
+평균 회귀 전략 (confidence_weight 0.74)
+Price returns to mean after significant deviation. Win rate 60-70% in range-bound markets. Works best when NOT trending strongly (ADX<25); in trending markets produces losing trades (falling knives / shorting strength).
+Mean = MA20/MA50, middle Bollinger Band (MA20), VWAP, or statistical mean. Oversold (extreme below) → bounce likely; Overbought (extreme above) → pullback likely.
+
+### Signal indicators
+Bollinger Bands (20-MA ± 2 SD, ~95% of price action):
+- touches/penetrates lower band = oversold buy; upper band = overbought sell; middle (MA20) = mean/target; width contracting (squeeze) = low vol, breakout likely, reversion may fail; width expanding = extreme moves may continue before reverting.
+- %B = (Price − Lower)/(Upper − Lower); %B<0 = below lower (extreme oversold); %B>1 = above upper (extreme overbought); %B=0.5 = middle (mean).
+RSI: <30 oversold buy; <20 extremely oversold strong buy; >70 overbought sell; >80 extremely overbought strong sell; crossing 50 from below = bullish mean cross (upward reversion in progress); from above = bearish mean cross.
+MA deviation: Distance = (Price − MA)/MA ×100; >+10% = overbought; <−10% = oversold; adjust by historical volatility.
+
+### Entry
+Buy (oversold) standard: (1) ADX<25; (2) price touches/penetrates lower Bollinger; (3) RSI<30 simultaneously; (4) enter long on bullish reversal candle (hammer, bullish engulfing, or close in upper half of range); (5) stop below lowest point of move or 2×ATR below entry; (6) target middle band (MA20), aggressive = upper band.
+Buy high-confidence (3 simultaneous): %B<0 + RSI<30 + at/near known support (horizontal, prior swing low, Fibonacci) → triple confluence, highest win rate.
+Sell (overbought) standard: (1) ADX<25; (2) price touches/penetrates upper band; (3) RSI>70 simultaneously; (4) enter short on bearish reversal candle (shooting star, bearish engulfing, or close in lower half); (5) stop above highest point or 2×ATR above; (6) target middle band, aggressive = lower band.
+
+### Exit
+Primary target: middle band (MA20). Extended: opposite band, only when initial move to mean shows strong momentum. Stop: 2×ATR beyond deviation extreme. Time: if no reversion within 5-7 bars, condition may be trend not deviation — close. Invalidation: if RSI reaches even more extreme (e.g. entered RSI 28, drops to 15) without price stabilizing — tighten stop or exit.
+
+### Environment Filter: ADX (essential, NOT optional)
+<15 no trend/very low vol → good but small moves, tight targets; 15-25 weak trend/range → BEST for mean reversion; 25-35 moderate trend developing → caution, higher risk; >35 strong trend → AVOID, use trend-following; >50 extreme trend → do NOT use, high risk of continued deviation.
+
+### Confidence
+Increase: ADX<25; Bollinger+RSI both confirm; at known S/R (triple confluence); volume decreases during extreme (exhaustion); higher TF no clear trend.
+Decrease: ADX>30 (counter-trend); only one indicator; fundamental catalyst (earnings/news) — may not revert; strong higher-TF trend; Bollinger bands expanding rapidly.
+Caveats: catching falling knives (price stays oversold days/weeks in strong downtrend) — always check higher-TF trend + ADX. Not for trending markets — ADX filter essential. News-driven moves = permanent re-pricing, not deviation. Band-expansion trap: lower-band touch during expanding bands may start larger move — wait for contraction/stabilization. Asymmetric risk: reversion targets smaller than potential losses — strict stops + sizing essential.
+
+### Output (one **label**: value per line)
+**시장 환경**: [ADX 기반, 예: ADX 18 — 비추세, 적합 / ADX 38 — 강한 추세, 부적합]
+**볼린저 밴드 위치**: [예: 하단 밴드 터치 (%B=-0.05) — 극단 과매도]
+**RSI 상태**: [값+해석, 예: RSI 25 — 과매도, 매수 신호 활성]
+**이평선 이격도**: [예: MA20 대비 -8.2% 이격 — 과매도 근접]
+**매매 신호**: [종합, 예: 볼린저 하단 + RSI 28 = 이중 과매도 — 반등 매수 적합 / 조건 미충족]
+**상세 분석**: [환경 적합성, 복합 지표, S/R 수렴, 목표가(중심 밴드), 리스크, 주의사항]
+- If ADX>30, explicitly warn signals unreliable in trending environment.
+- If Bollinger+RSI both confirm → flag high-confidence.
+- If at known S/R while oversold/overbought → flag triple confluence (highest).
+- If neither condition → "현재 과매수/과매도 조건 미충족 — 평균 회귀 신호 없음".
+- trend: bullish if oversold confirmed in non-trending, bearish if overbought confirmed in non-trending, neutral if no signal or trending.
+<!-- PROMPT_DIGEST:END -->

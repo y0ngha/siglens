@@ -7,7 +7,8 @@ indicators: []
 confidence_weight: 0.65
 gating:
   tier: always_on
-token_cost: 0
+token_cost: 1105
+digest_hash: "eb8e68cc"
 ---
 
 ## Overview
@@ -217,3 +218,52 @@ Additional output rules:
 - If a **Fibonacci cluster** is identified (levels from multiple swings converging), highlight it as a high-probability zone
 - If price has broken below 78.6% retracement, note that the trend is likely invalidated
 - Set the `trend` field: `bullish` if price is bouncing from a retracement level in an uptrend, `bearish` if price is rejecting from a retracement level in a downtrend, `neutral` if price is between levels or no clear trend
+
+<!-- PROMPT_DIGEST:START -->
+피보나치 전략 (confidence_weight 0.65)
+Fibonacci ratios project support/resistance and targets. Weak independent predictive power academically — value comes from CONFLUENCE, not standalone use.
+
+### Ratios (ratio | name | significance)
+0.236 shallow retracement (minor support in strong trends); 0.382 moderate (key support, healthy pullback); 0.500 midpoint (not a Fib ratio but practically significant); 0.618 Golden Ratio deep retracement (most important, make-or-break for trend); 0.786 (=√0.618) very deep (last defense before full retracement); 1.272 (=√1.618) first extension target; 1.618 primary extension target; 2.000 round-number extension; 2.618 (=1.618²) extended-move target.
+
+### Retracement
+Uptrend: swing low(0%)→swing high(100%); levels 23.6/38.2/50/61.8/78.6% act as SUPPORT, watch bounces. Downtrend: swing high(0%)→swing low(100%); same levels act as RESISTANCE, watch rejection.
+Depth interpretation: 23.6-38.2% = shallow (very strong trend, minor pause); 38.2-50% = moderate (healthy pullback); 50-61.8% = deep (trend intact, momentum weakening); 61.8-78.6% = very deep (trend integrity questionable); beyond 78.6% = near-full retracement, trend likely broken.
+
+### Extension (three-point: swing low A → swing high B → retracement low C; project from C using A-B distance)
+127.2%: C+(B−A)×1.272; 161.8%: C+(B−A)×1.618; 200%: C+(B−A)×2.000; 261.8%: C+(B−A)×2.618. Serve as profit targets for positions near C.
+Priority: conservative 127.2%; primary 161.8% (most commonly reached); aggressive 200%/261.8% (strong trends only).
+
+### Cluster
+Levels from 2-3 recent swings converging in one zone = strong S/R. Align within 0.5-1% of each other. 2 levels = notable; 3+ = high-probability; cluster + horizontal S/R or MA = highest probability.
+
+### Elliott Wave integration (Wave | expected Fib relationship)
+W2 retraces 50-61.8% of W1; W3 extends 161.8% of W1 (from W2 end); W4 retraces 23.6-38.2% of W3; W5 = W1 or extends 61.8-100% of W1-3 combined; A ≈ W5 or retraces 38.2-61.8% of impulse; C ≈ A or extends 127.2-161.8% of A. Agreement between Elliott + Fib boosts confidence.
+
+### Entry
+Retracement Buy (uptrend): PREREQ confirmed uptrend + completed upswing → draw retracement swing low→high → price pulls back to 38.2/50/61.8% → require ≥1 confirmation (bullish candle [hammer/engulfing/morning star] at level; RSI divergence; volume decrease on pullback + increase on bounce; level coincides with horizontal support or MA) → enter on confirmation candle close. Stop below next deeper Fib level (enter 38.2%, stop below 50%). Target = swing high retest or extension levels.
+Retracement Sell (downtrend): mirror — confirmed downtrend, bounce to 38.2/50/61.8%, bearish confirmation, enter on close. Stop above next shallower Fib level. Target = swing low retest or extensions.
+Extension targets after entry: close 50% at 127.2%, 30% at 161.8%, trail remaining 20% with stop at 127.2%.
+
+### Exit
+Primary: reaches extension target. Invalidation: breaks through 78.6% retracement (trend likely broken — exit longs). Cluster exit: reaching opposite-direction cluster = strong resistance, consider taking profit. Trailing: move stop to breakeven at 0% level (original swing high/low), then trail using new-swing Fib levels.
+
+### Confidence
+Increase: aligns with horizontal S/R; cluster; candlestick confirms at level; Elliott position matches; aligns with key MA (MA20/50/200).
+Decrease: used in isolation without confluence; no clear swing to anchor; choppy/trendless market; multiple close levels (38.2% & 50% within 1%) — ambiguous.
+Caveats: not standalone; use most visually obvious significant swings; don't over-apply to minor swings; 50% is a midpoint, not truly Fibonacci.
+
+### Output (one **label**: value per line)
+**스윙 구간**: [예: 스윙 저점 $138 → 고점 $175 (상승 스윙)]
+**주요 되돌림 레벨**: [예: 38.2%=$160.87, 50%=$156.50, 61.8%=$152.13]
+**현재 가격 위치**: [어느 레벨 근처]
+**클러스터 존**: [예: $155-157에 2개 스윙 38.2%·61.8% 수렴 / 클러스터 미감지]
+**확장 목표가**: [해당 시, 예: 127.2%=$185.10, 161.8%=$197.83]
+**매매 신호**: [현재 신호 / 명확한 신호 없음]
+**상세 분석**: [스윙 구조, 되돌림 깊이 해석, S/R 수렴, 엘리어트 관계(해당 시), 주의사항]
+- Compute levels from the largest/clearest recent swing.
+- If price within 1% of a level, describe reaction there.
+- Highlight cluster as high-probability zone.
+- If broken below 78.6%, note trend likely invalidated.
+- trend: bullish if bouncing from retracement in uptrend, bearish if rejecting in downtrend, neutral if between levels/no trend.
+<!-- PROMPT_DIGEST:END -->

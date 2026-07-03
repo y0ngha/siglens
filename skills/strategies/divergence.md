@@ -9,7 +9,8 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [rsi_bullish_divergence, rsi_bearish_divergence, macd_histogram_bullish_convergence, macd_histogram_bearish_convergence]
-token_cost: 0
+token_cost: 1104
+digest_hash: "0046b7af"
 ---
 
 ## Overview
@@ -185,3 +186,52 @@ Additional output rules:
 - If **hidden divergence** is detected, emphasize that it is a continuation signal, not a reversal
 - If no divergence is found, state "현재 가격-오실레이터 간 다이버전스 미감지" and briefly describe the current momentum alignment
 - Set the `trend` field: `bullish` if regular bullish or hidden bullish divergence confirmed, `bearish` if regular bearish or hidden bearish divergence confirmed, `neutral` if no divergence or unconfirmed
+
+<!-- PROMPT_DIGEST:START -->
+다이버전스 전략 (confidence_weight 0.78)
+Discrepancy between price and oscillator (RSI, MACD histogram, Stochastic %K) anticipates reversal or confirms continuation.
+
+### Types
+Regular (reversal signals):
+- Regular Bullish: price Lower Low + oscillator Higher Low → downtrend weakening → reversal up. High reliability at support.
+- Regular Bearish: price Higher High + oscillator Lower High → uptrend weakening → reversal down. High reliability at resistance.
+Hidden (continuation signals):
+- Hidden Bullish: price Higher Low + oscillator Lower Low → pullback within uptrend → continuation up. Strong in uptrends.
+- Hidden Bearish: price Lower High + oscillator Higher High → bounce within downtrend → continuation down. Strong in downtrends.
+Distinction: Regular = momentum fails to confirm new extreme (reversal); Hidden = price holds trend while oscillator overshoots (continuation).
+
+### Oscillator guidelines
+- RSI: most effective in extremes (<30 or >70). Regular bullish esp. if RSI was <30 recovering; regular bearish esp. if RSI was >70 declining. Hidden valid in neutral 40-60 during strong trend.
+- MACD: use histogram (more sensitive than line). Regular bullish = price LL + histogram shallower negative bar; regular bearish = price HH + histogram shorter positive bar. Signal-line crossover after divergence adds confirmation. MACD divergences precede larger moves than RSI.
+- Stochastic: best in ranging/moderate-trend markets; most effective %K in extremes (<20 or >80). %K/%D crossover after divergence = entry timing. Unreliable in strong trends.
+
+### Multi-oscillator win rates
+RSI+MACD ~73% (highest, momentum+trend); RSI+Stochastic ~65% (ranging); MACD+Stochastic ~62%; all three ~78% (rare, most reliable).
+
+### Entry rules
+Regular Bullish: price LL + oscillator HL → wait confirmation (RSI crosses >30, Stoch %K >20, or MACD hist turns positive) → optional: price bounces off support → enter long on confirmation candle close. Stop below recent swing low (the LL). Target = prior swing high/resistance or 1:2 R:R.
+Regular Bearish: price HH + oscillator LH → wait confirmation (RSI <70, Stoch %K <80, or MACD hist turns negative) → optional: reject at resistance → enter short on close. Stop above recent swing high (the HH). Target = prior swing low/support or 1:2 R:R.
+Hidden Bullish: PREREQ confirmed uptrend (HH/HL, price above key MAs) → price HL + oscillator LL → enter long when oscillator recovers from LL. Stop below the HL. Target = retest recent high/next resistance.
+Hidden Bearish: PREREQ confirmed downtrend (LH/LL, price below key MAs) → price LH + oscillator HH → enter short when oscillator declines from HH. Stop above the LH. Target = retest recent low/next support.
+
+### Exit
+Primary: target reached. Trail: move stop to breakeven after 1:1, then trail behind swing points. Invalidation: close if opposite-direction divergence forms. Time: if price fails to move as expected within 10-15 bars, close for small loss/breakeven.
+
+### Confidence
+Increase: multiple oscillators same divergence; at known S/R; volume confirms (decreasing on price extreme); on higher TF (daily/weekly).
+Decrease: only one oscillator; strong trend (regular divergences persist through multiple swings); no S/R confluence; very low TF (1m/5m noise).
+Caveats: NEVER trade divergence alone — it is a warning, always require confirmation. In strong trends regular divergence can appear at multiple consecutive swings before reversal — check higher-TF trend first. Hidden = continuation NOT reversal, do not confuse with regular. Keep divergence and entry confirmation on SAME timeframe. Oscillator values change per bar — confirm on CLOSED bars only.
+
+### Output (one **label**: value per line)
+**감지된 다이버전스**: [Regular Bullish / Regular Bearish / Hidden Bullish / Hidden Bearish / 감지 없음]
+**관련 오실레이터**: [예: RSI + MACD 동시]
+**가격 패턴**: [예: 가격 LL($142→$138) + RSI HL(28→32)]
+**확인 상태**: [확인 완료 / 확인 대기 중 / 미확인]
+**매매 신호**: [구체적 진입 신호 / 명확한 신호 없음]
+**상세 분석**: [맥락, 지지/저항 수렴, 멀티 오실레이터 일치, 주의사항]
+- Multiple oscillators same divergence → note explicitly as higher confidence.
+- Confirmation pending → state specific condition needed (e.g. "RSI가 30선을 상향 돌파하면 확인 완료").
+- Hidden divergence → emphasize continuation, not reversal.
+- None → "현재 가격-오실레이터 간 다이버전스 미감지" + describe momentum alignment.
+- trend: bullish if regular/hidden bullish confirmed, bearish if regular/hidden bearish confirmed, neutral if none/unconfirmed.
+<!-- PROMPT_DIGEST:END -->
