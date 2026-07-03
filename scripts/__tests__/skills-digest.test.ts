@@ -77,6 +77,28 @@ describe('splitFrontmatter', () => {
     });
 });
 
+describe('splitFrontmatter CRLF normalization', () => {
+    it('produces the same digest_hash and token_cost for a CRLF file as its LF twin', () => {
+        const digestText = 'a fresh compressed digest';
+        const lfContent = buildFile({ digest: digestText });
+        const crlfContent = lfContent.replace(/\n/g, '\r\n');
+
+        const lfResult = updateFileContent(lfContent);
+        const crlfResult = updateFileContent(crlfContent);
+        expect(lfResult.changed).toBe(true);
+        expect(crlfResult.changed).toBe(true);
+
+        const lfSplit = splitFrontmatter(lfResult.content)!;
+        const crlfSplit = splitFrontmatter(crlfResult.content)!;
+        expect(readFrontmatterScalar(crlfSplit.header, 'digest_hash')).toBe(
+            readFrontmatterScalar(lfSplit.header, 'digest_hash')
+        );
+        expect(readFrontmatterScalar(crlfSplit.header, 'token_cost')).toBe(
+            readFrontmatterScalar(lfSplit.header, 'token_cost')
+        );
+    });
+});
+
 describe('extractDigestSection', () => {
     it('reports missing when there are no markers at all', () => {
         expect(extractDigestSection(BODY)).toEqual({ kind: 'missing' });

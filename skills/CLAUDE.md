@@ -26,7 +26,7 @@ All keys are **snake_case**; the loader maps them to camelCase `Skill` fields.
 | `gating.signal_kind` | `gated` only | `event` \| `state` | picks the gating path |
 | `gating.triggers` | `event` only | `[signal_name, ...]` | each must be a valid catalog name or a detected candle pattern; non-empty |
 | `gating.state` | `state` only | `{ feature, predicate }` | must be one of the valid pairs below; optional `hi`/`lo` numeric thresholds |
-| `token_cost` | top-level | number | **currently unused placeholder — set `0`** (reserved for build-time tokenizer baking) |
+| `token_cost` | top-level | number | **measured token estimate of the skill's `PROMPT_DIGEST` section** (`Math.ceil(digestText.length / 4)`) — maintained by `yarn skills:digest-update`, checked by `yarn skills:digest-verify`. See [PROMPT_DIGEST markers](#prompt_digest-markers) below. Do not hand-set it. |
 | `smc_full_guide` | top-level | `true` | **SMC full-guide skill only** — identifies it so a compressed note can replace it |
 
 ## confidence_weight
@@ -140,6 +140,48 @@ For a **candle** skill, the trigger is the candle pattern name (e.g. `hammer`,
 | `vwap` | `bandDistAtr` |
 | `buySellVolume` | `ratio` |
 
+## PROMPT_DIGEST markers
+
+A skill file may carry a compressed, prompt-facing rewrite of its body — the
+**digest** — delimited by a marker pair that every digested skill **must** have
+exactly one of, appended once at the very end of the file, after the body:
+
+```
+<!-- PROMPT_DIGEST:START -->
+...digest text...
+<!-- PROMPT_DIGEST:END -->
+```
+
+- **What gets injected into the AI prompt is the digest, not the full body.**
+  The full body stays the human-facing authoring source (what you read/edit in
+  this repo); the digest is the token-cheap rewrite the selector actually sends
+  when the skill fires.
+- The digest text itself is always **hand-authored** — no script writes it.
+- Exactly one `START`/`END` pair, in that order, with nothing but whitespace
+  after `END`. Duplicate markers, a `START` with no matching `END`, an
+  `END` with no `START`, or trailing content after `END` are all rejected as
+  malformed by `yarn skills:digest-verify`.
+- `digest_hash` is the first 8 hex chars of `SHA-256(original body)`, computed
+  **at digest-authoring time** — it fingerprints the body the digest was
+  written against, not the digest text itself. If the original body changes
+  later and `digest_hash` isn't refreshed to match, `verify` reports a
+  **hash-mismatch**: that means **the digest is stale** (it no longer reflects
+  the current body) and must be **re-authored by hand** against the new body,
+  then refreshed with `yarn skills:digest-update`.
+- `token_cost` is `Math.ceil(digestText.length / 4)` — recomputed the same way,
+  from the digest text alone.
+
+**Tooling** (`scripts/skills-digest.ts`):
+
+- `yarn skills:digest-verify` — read-only. Flags any file with a missing
+  digest, malformed markers, a stale `digest_hash`, or a stale `token_cost`.
+  Run before pushing once a skill has a digest section.
+- `yarn skills:digest-update` — recomputes and rewrites `digest_hash` +
+  `token_cost` in place for every file that already has an `ok` digest
+  section; files with no digest, or a malformed one, are left untouched (that's
+  `verify`'s job to flag, not this command's to fix). Idempotent — running it
+  twice in a row makes zero changes the second time.
+
 ## How to add a new skill / strategy
 
 1. **Pick the tier.** Chart-relevant lens or pattern with no detector → `tier: always_on`.
@@ -149,7 +191,10 @@ For a **candle** skill, the trigger is the candle pattern name (e.g. `hammer`,
      Add `signal_kind: event` + a non-empty `triggers` list of known names.
    - **state** — it's a persistent condition (overbought, band-proximity, etc.).
      Add `signal_kind: state` + a `state: { feature, predicate }` from the valid pairs.
-3. Set `token_cost: 0` (placeholder). Add `smc_full_guide: true` only on the SMC guide.
+3. Leave `token_cost` and `digest_hash` to the digest tooling — never hand-set them.
+   If/when the skill gets a `PROMPT_DIGEST` section (see below), run
+   `yarn skills:digest-update` to compute both. Add `smc_full_guide: true` only on
+   the SMC guide.
 4. **Run `yarn validate:skills`.** It cross-checks every trigger against the core
    catalog and every state pair against `isStateNotable`, rejecting typos and
    unreachable combos. This is a **CI gate** — a bad tag fails the build.

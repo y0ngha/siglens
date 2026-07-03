@@ -68,7 +68,12 @@ export interface FrontmatterSplit {
  * used by the separate gating validator.
  */
 export function splitFrontmatter(content: string): FrontmatterSplit | null {
-    const lines = content.split('\n');
+    // Normalize CRLF -> LF before splitting: this is the single read/parse
+    // entry point every caller (verify, update-meta, and their unit tests)
+    // funnels through, so normalizing here makes digest_hash/token_cost
+    // platform-stable regardless of the source file's line endings. A no-op
+    // for LF-only content, so existing hashes are unaffected.
+    const lines = content.replace(/\r\n/g, '\n').split('\n');
     if (lines[0]?.trim() !== '---') return null;
 
     let endIdx = -1;
@@ -393,14 +398,14 @@ async function listSkillFiles(): Promise<string[]> {
 }
 
 function runVerify(files: string[]): void {
-    const rows: { file: string; violation: Violation }[] = [];
-    for (const file of files) {
+    const rows = files.flatMap(file => {
         const content = readFileSync(file, 'utf-8');
         const rel = relative(REPO_ROOT, file);
-        for (const violation of verifyFileContent(content)) {
-            rows.push({ file: rel, violation });
-        }
-    }
+        return verifyFileContent(content).map(violation => ({
+            file: rel,
+            violation,
+        }));
+    });
 
     if (rows.length > 0) {
         console.error(
