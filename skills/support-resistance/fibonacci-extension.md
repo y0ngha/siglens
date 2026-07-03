@@ -7,7 +7,8 @@ indicators: []
 confidence_weight: 0.7
 gating:
   tier: always_on
-token_cost: 0
+token_cost: 601
+digest_hash: "05bde548"
 ---
 
 ## Overview
@@ -107,3 +108,22 @@ When analyzing with Fibonacci Extension:
 - Treat extension levels as target "zones" rather than exact prices
 - Extension levels are profit targets, not entry signals — they indicate where to exit, not where to enter
 - If the A-B swing is too small or unclear, extension projections lose reliability
+
+<!-- PROMPT_DIGEST:START -->
+Fibonacci Extension (take-profit target projection)
+- Projects price targets BEYOND the original swing after a retracement completes. Three-point A-B-C method: A = swing start, B = swing end, C = retracement completion. Levels projected from C using Fib ratios on the A-B distance.
+Extension levels:
+- 100% — equal measured move (1:1), most conservative, high-probability in trends.
+- 127.2% — first major extension; Wave 3 extensions / pattern projections; partial profit-taking in strong trends.
+- 161.8% — golden ratio, most important; primary take-profit; Wave 3 often reaches 161.8% of Wave 1.
+- 200% — double measured move; very strong sustained trend; secondary target after 161.8%.
+- 261.8% — rarely reached; potential trend exhaustion; consider full exit / overextended.
+Point identification: A = impulse start, B = impulse end (swing high in uptrend, swing low in downtrend), C = retracement completion (confirmed by reversal signals).
+- Uptrend: A = swing low, B = swing high, C = retracement low. Target = C + (B − A) × ratio (projects upward).
+- Downtrend: A = swing high, B = swing low, C = retracement high. Target = C − (A − B) × ratio (projects downward).
+Take-profit signals: 127.2% → partial profit 25–33%; 161.8% → primary target, exit 50%+; 200% → strong profit-taking, trend maturing; 261.8% → full exit, exhaustion likely.
+Confluence: extension + other S/R (pivots, prior swings) = stronger confidence; extension + volume climax = high reversal prob; multiple projections converging = cluster target zone.
+Risk mgmt: compute R:R before entry; entry at C, stop below A (uptrend) / above A (downtrend); target 161.8% (risk = C-to-A, reward = C-to-161.8%); only enter if target gives ≥1:2 R:R.
+AI instructions: (1) confirm retracement completed (C established) — targets only valid after completion. (2) identify A,B,C from bars (uptrend: A recent significant swing low, B subsequent swing high, C retracement low; downtrend inverse). (3) compute 100/127.2/161.8/200/261.8% from C. (4) include relevant levels in priceTargets as bullish/bearish with Fib ratio basis. (5) use levels to validate R:R in actionRecommendation. (6) note confluence with pivots, prior swings, MAs.
+Caveats: only valid after C confirmed — do NOT apply during active retracement. Treat levels as zones, not exact prices. Levels are profit targets, NOT entry signals. Too small/unclear A-B swing → unreliable.
+<!-- PROMPT_DIGEST:END -->

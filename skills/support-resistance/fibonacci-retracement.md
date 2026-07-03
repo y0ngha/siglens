@@ -7,7 +7,8 @@ indicators: []
 confidence_weight: 0.7
 gating:
   tier: always_on
-token_cost: 0
+token_cost: 561
+digest_hash: "922c365e"
 ---
 
 ## Overview
@@ -116,3 +117,22 @@ When analyzing with Fibonacci Retracement:
 - Fibonacci retracement has limited standalone predictive power — always combine with other confirmation tools
 - Price tends to react in a "zone" around the level rather than at the exact price
 - For short timeframes (1Min, 5Min), use the most recent intraday swing; for daily, use the most prominent multi-day swing
+
+<!-- PROMPT_DIGEST:START -->
+Fibonacci Retracement (support/resistance from swing pullbacks)
+- Measures % retracement of a significant price swing. Key levels: 23.6%, 38.2%, 50%, 61.8%, 78.6%.
+Level meaning:
+- 23.6% — shallow; very strong trend, minimal pullback; momentum/breakout continuation.
+- 38.2% — moderate/"healthy" correction; reliable trend-continuation entry; aligns with Wave 4.
+- 50.0% — not a true Fib ratio (Dow Theory), psychologically significant halfway level.
+- 61.8% — golden ratio, most important; "Golden Pocket" zone (61.8%–65%); often final line of defense; strongest with MA/Bollinger confluence.
+- 78.6% — deep; tests trend integrity; retrace beyond 78.6% → reversal probability rises sharply; last viable S/R before full reversal.
+Application:
+- Uptrend: 0% = recent significant swing low, 100% = swing high; levels act as SUPPORT; wait for level + confirmation to enter.
+- Downtrend: 0% = recent significant swing high, 100% = swing low; levels act as RESISTANCE; wait for level + confirmation.
+- Multi-swing: cluster/overlap of levels from different swings = exceptionally strong S/R zone.
+Signals: bounce at level + bullish reversal candle → long; retracement staying above 38.2% → very strong uptrend; Fib + MA convergence → high-confidence support. Rejection at level + bearish candle → short; retracement exceeding 61.8% → weakening / reversal risk; Fib + Bollinger → high-confidence resistance.
+Elliott Wave: Wave 2 retraces 50%–61.8% of Wave 1; Wave 4 retraces 38.2% of Wave 3; Wave 3 (not shortest) projects to 161.8% extension of Wave 1.
+AI instructions: (1) identify most significant recent swing high & low from bars. (2) apply 23.6/38.2/50/61.8/78.6% between them. (3) find levels nearest current price. (4) assess depth for trend strength: <38.2% very strong; 38.2–50% healthy correction; 50–61.8% deep but intact; >61.8% weakening/reversal risk. (5) check confluence (MAs, Bollinger, pivots). (6) include significant levels in keyLevels with retracement % + context as reason.
+Caveats: swing selection is subjective. Limited standalone predictive power — always combine with confirmation. Reacts in a zone around the level, not exact price. Short timeframes → most recent intraday swing; daily → most prominent multi-day swing.
+<!-- PROMPT_DIGEST:END -->

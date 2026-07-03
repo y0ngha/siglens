@@ -7,7 +7,8 @@ indicators: []
 confidence_weight: 0.75
 gating:
   tier: always_on
-token_cost: 0
+token_cost: 588
+digest_hash: "a946a9fd"
 ---
 
 ## Overview
@@ -114,3 +115,30 @@ When analyzing with Pivot Points:
 - Pivot points are primarily designed for daily timeframe analysis. For intraday timeframes (1Min, 5Min, 15Min, 1Hour), use the most recent daily bar for calculation.
 - On gap-open days, pivot levels may have reduced accuracy.
 - Weekly/monthly pivots can be used for swing trading context but are secondary to daily pivots for intraday analysis.
+
+<!-- PROMPT_DIGEST:START -->
+Pivot Points (intraday S/R from prior bar H/L/C)
+- PP = central equilibrium. Price > PP = bullish bias; price < PP = bearish bias. R1–R3 resistance, S1–S3 support.
+Standard (Classic) — equal weight H/L/C:
+- PP = (H + L + C) / 3
+- R1 = 2×PP − L; R2 = PP + (H − L); R3 = H + 2×(PP − L)
+- S1 = 2×PP − H; S2 = PP − (H − L); S3 = L − 2×(H − PP)
+Woodie — double-weights Close:
+- PP = (H + L + 2×C) / 4; R1,R2,S1,S2 use Standard formulas with Woodie PP.
+Camarilla — tighter, Close-clustered (scalping/mean-reversion):
+- R1 = C + (H−L)×1.1/12; R2 = C + (H−L)×1.1/6; R3 = C + (H−L)×1.1/4; R4 = C + (H−L)×1.1/2
+- S1 = C − (H−L)×1.1/12; S2 = C − (H−L)×1.1/6; S3 = C − (H−L)×1.1/4; S4 = C − (H−L)×1.1/2
+Fibonacci — Fib ratios on range around Standard PP:
+- PP = (H + L + C) / 3
+- R1 = PP + 0.382×(H−L); R2 = PP + 0.618×(H−L); R3 = PP + 1.000×(H−L)
+- S1 = PP − 0.382×(H−L); S2 = PP − 0.618×(H−L); S3 = PP − 1.000×(H−L)
+DeMark — conditional X:
+- If C < O: X = H + 2×L + C; if C > O: X = 2×H + L + C; if C = O: X = H + L + 2×C
+- PP = X/4; R1 = X/2 − L; S1 = X/2 − H
+(H/L/C/O = previous bar's High/Low/Close/Open.)
+Bullish signals: open above PP = bullish session bias; bounce off S1 + rising volume = long; break above R1 + volume = continuation long; first touch of PP from below + bullish candle = strong support.
+Bearish signals: open below PP = bearish bias; reject R1 + bearish candle = short; break below S1 + volume = continuation short; first touch of PP from above + bearish candle = resistance confirmation.
+Key rules: R1–S1 = primary session activity zone; FIRST touch of any level = highest reliability; repeated touches weaken the level; gap opens may invalidate pivots (reduced reliability on gap days).
+AI instructions: (1) prioritize Standard + Fibonacci pivots from previous bar H/L/C; Woodie/Camarilla/DeMark secondary (Camarilla for scalping, Woodie for close-weighted). (2) determine price position vs PP, R1–R3, S1–S3. (3) find nearest levels as immediate S/R. (4) note convergence with MAs, Bollinger, Fib levels (↑ reliability). (5) assess directional bias vs PP. (6) include levels in keyLevels with calculation basis as reason.
+Caveats: designed for daily timeframe — for intraday (1Min/5Min/15Min/1Hour) use most recent daily bar. Gap-open days = reduced accuracy. Weekly/monthly pivots for swing context, secondary to daily for intraday.
+<!-- PROMPT_DIGEST:END -->
