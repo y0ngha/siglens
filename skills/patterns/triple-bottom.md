@@ -14,7 +14,8 @@ display:
     label: "넥라인"
 gating:
   tier: always_on
-token_cost: 0
+token_cost: 673
+digest_hash: "8c28f23b"
 ---
 
 ## Detection Criteria
@@ -80,3 +81,44 @@ When this pattern is detected, include the following in the analysis response:
 - **Volume context**: State whether volume behavior confirms the pattern (declining volume across troughs, volume surge on neckline break). Note volume comparison between each successive trough.
 - **Completion status**: Clearly indicate whether the pattern is still forming (which trough is in progress) or fully confirmed by a neckline break.
 - **Target projection**: Calculate and state the measured move target using neckline-to-trough distance projected above the neckline.
+
+<!-- PROMPT_DIGEST:START -->
+삼중바닥 (Triple Bottom) — bullish reversal, confidence_weight 0.78. Three troughs at ~equal support; neckline = line connecting the two peaks between troughs.
+
+### Detection
+- Three distinct troughs at ~same price, within 2–3% of each other.
+- Two clear peaks between the troughs form the neckline.
+- Each trough separated by meaningful rally ≥3% (trough average → neckline).
+- Three troughs span minimum 20 bars (needs more time than Double Bottom).
+- Closer trough prices → higher reliability.
+- Confirmed when price CLOSES above neckline.
+
+### Grading
+- Increase: all three troughs within 1.5% of each other; volume decreasing on third trough vs first; volume surge on neckline break; duration >30 bars; bullish RSI/MACD divergence across the three troughs.
+- Decrease: troughs differ >3%; no volume pattern; shallow peaks (<3% from trough average); forming in strong downtrend with no stabilization; third trough notably deeper than first two (accelerating downtrend).
+- Ideal: volume declines on each successive trough (selling exhausting); third trough with lowest volume.
+- Third trough bouncing faster than prior troughs → growing buyer confidence.
+- Retest holding above neckline strengthens bullish case (2nd entry ref).
+
+### False positives
+- Strong downtrend: three similar troughs may be a pause before further decline.
+- No volume pattern across troughs → weak accumulation thesis.
+- Troughs form too quickly (<20 bars total) → likely noise.
+- Each trough notably lower than previous (>3%) → descending channel, not Triple Bottom.
+- Intraday wick above neckline without closing break = not confirmed.
+- Middle trough significantly LOWER than the other two → Inverse Head & Shoulders, not Triple Bottom.
+
+### Target (measured move)
+- Vertical distance neckline → average of three troughs, projected UP from neckline break. E.g. neckline $57, troughs avg $50 → target $64 ($57+$7).
+- Conservative first target = 50% of full projected distance.
+- Invalidation/stop = lowest of the three troughs; close below negates.
+- Risk/reward = (price→target) vs (price→lowest trough); ≥2:1 favorable. Patterns >40 bars → larger moves.
+
+### Output
+- keyPrices: all three trough prices, neckline price, projected target if neckline broken.
+- patternSummaries: status (first/second/third trough formed / completed / neckline broken); price-diff % among troughs; spacing; how it differs from Double Bottom or Inverse H&S.
+- Volume context: declining volume across troughs; surge on break; compare successive troughs.
+- Completion status: forming (which trough) vs confirmed by neckline break.
+- Target projection: neckline-to-trough-average projected above neckline.
+- trend: bullish when confirmed.
+<!-- PROMPT_DIGEST:END -->

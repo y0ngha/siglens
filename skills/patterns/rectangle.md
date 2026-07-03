@@ -14,7 +14,8 @@ display:
     label: "지지/저항선"
 gating:
   tier: always_on
-token_cost: 0
+token_cost: 777
+digest_hash: "7179d8c5"
 ---
 
 ## Detection Criteria
@@ -86,3 +87,48 @@ When this pattern is detected, include the following in the analysis response:
 - **Volume context**: State whether volume is declining during formation, whether volume favors one direction (accumulation or distribution), and whether a volume surge confirmed the breakout. Note any false breakout attempts.
 - **Completion status**: Clearly indicate whether the rectangle is still forming or confirmed by a decisive close outside a boundary with volume confirmation.
 - **Target projection**: Calculate and state the measured move target in both directions using the rectangle height projected from each boundary.
+
+<!-- PROMPT_DIGEST:START -->
+직사각형 (Rectangle) — continuation-or-reversal, confidence_weight 0.65. Horizontal support/resistance range; breakout direction ~equal probability.
+
+### Detection
+- Horizontal resistance: ≥2 touches at ~same price (within 2%).
+- Horizontal support: ≥2 touches at ~same price (within 2%).
+- Both lines clearly horizontal (slope <1.5%) — else channel/wedge, not rectangle.
+- Support-to-resistance height ≥3% of support price (else too narrow).
+- Price oscillates with clear bounces (not gradual drift). Minimum 15 bars.
+- Prior trend must exist → Rectangle Top (uptrend) or Rectangle Bottom (downtrend).
+- Confirmed by decisive CLOSE outside either boundary with increased volume.
+
+### Top vs Bottom
+- Rectangle Top: after uptrend; break UP through resistance = continuation, break DOWN through support = reversal.
+- Rectangle Bottom: after downtrend; break DOWN through support = continuation, break UP through resistance = reversal.
+
+### Grading
+- Increase: 3+ touches on both boundaries; volume declining during pattern with break surge; breakout aligns with prior trend; duration >20 bars; strong prior trend.
+- Decrease: <2 touches on either boundary; high/erratic volume; no clear prior trend; sloping boundaries; prior false breakouts.
+- Prior trend gives continuation bias (Top→up, Bottom→down more often), but reversal breakouts can be powerful.
+- Too many touches (>6–7) without resolution → pattern stale, losing energy.
+- Accumulation (higher volume on support bounces) in Tops; distribution (higher volume on resistance rejections) in Bottoms.
+
+### False positives
+- False breakout (most common): brief close outside then back in. Require a 2nd consecutive close outside OR 1–2% extension beyond boundary.
+- Either boundary slope >1.5% → channel/wedge, not rectangle.
+- Height <3% of support price (breakout noise dominates).
+- Weakening bounces over time → boundary about to fail.
+- No prior trend → range-bound, reduced predictive value.
+
+### Target (measured move)
+- Rectangle height (support→resistance), projected in breakout direction from breakout point.
+- E.g. support $90, resistance $100 ($10): up-breakout → $110; down-breakdown → $80.
+- Conservative first target = 50% of height. Stop = opposite boundary (up→support, down→resistance).
+- Bulkowski: Rectangle Top breakouts often EXCEED measured target — treat full target as minimum. (Rectangle Tops avg ~51% profit, most profitable pattern by avg return.)
+
+### Output
+- keyPrices: support, resistance, projected targets in BOTH breakout directions.
+- patternSummaries: type (Top/Bottom by prior trend); status (forming / support broken / resistance broken); touches per boundary; height as % of price; duration; prior trend + breakout bias.
+- Volume context: declining during formation? favors accumulation/distribution? break surge? note false-breakout attempts.
+- Completion status: forming vs confirmed by decisive close outside a boundary with volume.
+- Target projection: measured move in both directions from each boundary.
+- trend: set by realized breakout direction (bullish up-break, bearish down-break); neutral while forming.
+<!-- PROMPT_DIGEST:END -->

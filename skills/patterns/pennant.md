@@ -14,7 +14,8 @@ display:
     label: "페넌트"
 gating:
   tier: always_on
-token_cost: 0
+token_cost: 764
+digest_hash: "d59b6e3d"
 ---
 
 ## Detection Criteria
@@ -99,3 +100,48 @@ When this pattern is detected, include the following in the analysis response:
 - **Volume context**: State whether volume confirms the pattern — high volume on flagpole, dramatic volume decline during the pennant, and volume surge on breakout. Quantify the volume decline percentage.
 - **Completion status**: Clearly indicate whether the pennant is still forming or confirmed by a close outside the trendline in the flagpole direction.
 - **Target projection**: Calculate and state the measured move target using the flagpole length projected from the breakout point.
+
+<!-- PROMPT_DIGEST:START -->
+페넌트 (Pennant) — continuation, confidence_weight 0.72. Flagpole + converging symmetrical-triangle consolidation. Bull (up flagpole) or Bear (down flagpole).
+
+### Detection
+- Strong decisive flagpole must PRECEDE pattern, on above-average volume. Bull = up move, Bear = down move.
+- Pennant = converging symmetrical triangle (lower highs + higher lows compress range).
+- Duration short vs flagpole: typically 1–3 weeks (5–15 daily bars). >3 weeks loses continuation bias.
+- Volume must decline significantly during pennant (pause, not directional shift).
+- Both upper (descending) and lower (ascending) trendlines need ≥2 touches each.
+- Retracement ≤~38.2% of flagpole at widest point (guideline; up to 50% can still be reliable; >50% materially weakens bias).
+- Confirmed when price CLOSES outside pennant in flagpole direction with volume returning above-average.
+
+### Pennant vs Symmetrical Triangle
+- Pennant: always preceded by sharp flagpole; short (1–3 wk); higher continuation probability from momentum.
+- Symmetrical Triangle: no flagpole; longer (weeks–months); bias from prior trend only.
+- If NO clear flagpole precedes converging trendlines → classify as Symmetrical Triangle instead.
+
+### Grading
+- Increase: flagpole ≥10% move on high volume; retrace <25% of flagpole; volume drops 60%+ vs flagpole; duration 1–2 wk; breakout matches flagpole direction with volume surge.
+- Decrease: weak/gradual flagpole; retrace >38.2%; volume stays elevated; lasts >3 weeks; breakout opposes flagpole.
+- Tight/rapid convergence → more imminent, forceful breakout.
+
+### False positives
+- No flagpole → it is a symmetrical triangle, not a pennant.
+- Duration >3–4 weeks (loses "brief pause" character).
+- Retrace >50% of flagpole (momentum absorbed).
+- Elevated volume during formation (active trading, may reverse).
+- Counter-flagpole breakout → treat skeptically, needs very strong volume.
+- Clearly asymmetric trendlines (one much steeper) → may be flag or wedge.
+
+### Target (measured move)
+- Project flagpole LENGTH from breakout point in breakout direction.
+- Bull e.g. flagpole $50→$70 ($20), breakout $67 → target $87. Bear e.g. $100→$80 ($20), breakdown $83 → target $63.
+- Conservative first target = 50% of flagpole length.
+- Risk/reward = (price→target) vs (price→opposite pennant side); ≥2:1 favorable. Stop = opposite trendline or recent swing high/low within pennant.
+
+### Output
+- keyPrices: flagpole base, flagpole end, pennant upper trendline, pennant lower trendline, projected target if broken.
+- patternSummaries: type (Bull/Bear); status (flagpole formed / pennant forming / breakout confirmed); flagpole move %; retracement depth vs flagpole; convergence tightness; duration; note distinction from Symmetrical Triangle.
+- Volume context: high on flagpole, dramatic decline during pennant (quantify % drop), surge on breakout.
+- Completion status: forming vs confirmed by close outside trendline in flagpole direction.
+- Target projection: flagpole length from breakout point.
+- trend: bullish (Bull) / bearish (Bear) when confirmed.
+<!-- PROMPT_DIGEST:END -->

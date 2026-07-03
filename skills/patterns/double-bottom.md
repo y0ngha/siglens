@@ -14,7 +14,8 @@ display:
     label: "넥라인"
 gating:
   tier: always_on
-token_cost: 0
+token_cost: 509
+digest_hash: "f7b71b09"
 ---
 
 ## Detection Criteria
@@ -75,3 +76,37 @@ When this pattern is detected, include the following in the analysis response:
 - **Volume context**: State whether volume behavior confirms the pattern (increasing volume on second trough, volume increase on neckline break).
 - **Completion status**: Clearly indicate whether the pattern is still forming (second trough in progress) or fully confirmed by a neckline break.
 - **Target projection**: Calculate and state the measured move target using neckline-to-trough distance projected above the neckline.
+
+<!-- PROMPT_DIGEST:START -->
+### Double Bottom (bullish reversal)
+
+Geometry:
+- Two distinct troughs at ~same price, within 3% of each other (closer = more reliable).
+- Clear peak (neckline) between troughs, height ≥3% from trough average.
+- Troughs separated by minimum 10 bars.
+- Confirmed: close ABOVE neckline (the peak between troughs).
+
+Confidence (weight 0.75): bullish mirror of Double Top.
+- Increase: trough prices within 1%, volume increase on second trough, neckline break with volume surge, spacing > 15 bars.
+- Decrease: troughs differ > 2.5%, no volume divergence, shallow peak (< 3% from trough avg), pattern in narrow range.
+
+Signals: second-trough volume HIGHER than first (accumulation); neckline break with volume; RSI higher low on second trough = bullish divergence; successful retest holds above neckline.
+
+False positives / invalidation:
+- Strong downtrend: two troughs may be a pause before further decline — check trend context.
+- Troughs < 10 bars apart = intraday noise.
+- No volume divergence (2nd trough equal/lower volume) = weak.
+- Peak < 3% of trough price = invalid neckline.
+- Intraday wick above neckline without close = not confirmed.
+
+Target: vertical distance neckline − average of two troughs; project UP from neckline break point (e.g., troughs avg $80, neckline $85 → target $90). Partial = 50% of projected distance.
+Stop/invalidation: the LOWER of the two troughs; close below negates. R/R ≥ 2:1 favorable. Time-symmetric troughs (equidistant from neckline) more reliable.
+
+Output:
+- keyPrices: both trough prices, neckline price, projected target (if broken).
+- patternSummaries: status (first trough formed / second trough in progress / completed / neckline broken), price difference % between troughs, spacing.
+- Volume context: increasing on second trough, increase on neckline break.
+- Completion status: forming (second trough in progress) vs confirmed (neckline break).
+- Target projection: neckline-to-trough distance projected above neckline.
+- Include analytical-reference (not trading-recommendation) framing.
+<!-- PROMPT_DIGEST:END -->

@@ -14,7 +14,8 @@ display:
     label: "추세선"
 gating:
   tier: always_on
-token_cost: 0
+token_cost: 688
+digest_hash: "5f404a2b"
 ---
 
 ## Detection Criteria
@@ -80,3 +81,42 @@ When this pattern is detected, include the following in the analysis response:
 - **Volume context**: State whether volume is declining as expected during formation and whether a volume surge confirmed the breakout. Note the volume level relative to the recent average.
 - **Completion status**: Clearly indicate whether the triangle is still forming, which breakout direction is more likely based on the prior trend, or confirmed by a close outside a trendline.
 - **Target projection**: Calculate and state the measured move target in both directions using the triangle height projected from the breakout point.
+
+<!-- PROMPT_DIGEST:START -->
+대칭삼각형 (Symmetrical Triangle) — neutral continuation, confidence_weight 0.65. Breaks in prior-trend direction ~65–70% of the time.
+
+### Detection
+- Descending resistance trendline connecting ≥2 progressively lower highs.
+- Ascending support trendline connecting ≥2 progressively higher lows.
+- Two trendlines converge toward an apex (range compresses).
+- Minimum 15 bars for validity.
+- Both trendlines need meaningful slopes — if either nearly horizontal (slope <1%) it is an ascending/descending triangle instead.
+- Prior trend must exist (continuation pattern).
+- Confirmed when price decisively CLOSES outside either trendline.
+
+### Grading
+- Increase: strong prior trend; 3+ touches per trendline; clear volume decline as triangle narrows; breakout in first 2/3 (to projected apex); breakout aligns with prior trend.
+- Decrease: no clear prior trend (range-bound); <2 touches per trendline; breakout near/past apex; breakout opposes prior trend; high volume maintained without resolution.
+- Optimal breakout zone = 50%–75% of triangle (start→projected apex); too early premature, too late insufficient move.
+- Volume contraction as it narrows is the primary tell that a decisive breakout nears.
+
+### False positives
+- Apex breakout (at/past apex): minimal measured move, high failure — pattern expires near apex.
+- No prior trend → coin-flip; require prior move ≥10% before pattern.
+- Low-volume breakout → often reverses (false-breakout trap).
+- Narrow-range whipsaw: intraday breach without close → wait for closing break.
+- One trendline much steeper than the other → wedge, not symmetrical triangle (should converge at ~equal rates).
+
+### Target (measured move)
+- Triangle height at widest point (upper−lower trendline at pattern start), projected in breakout direction from breakout point. E.g. $15 range, up-break at $105 → target $120.
+- Conservative first target = 50% of triangle height. Stop = opposite trendline (up→ascending support, down→descending resistance).
+- Risk/reward = (price→target) vs (price→opposite trendline); ≥2:1 favorable.
+
+### Output
+- keyPrices: current upper trendline, current lower trendline, projected apex, target in BOTH breakout directions.
+- patternSummaries: status (forming / approaching apex / broken up / broken down); convergence rate; touches per side; position in triangle (early/mid/late); prior trend direction (informs likely breakout).
+- Volume context: declining during formation? surge confirmed breakout? volume vs recent average.
+- Completion status: forming vs which direction more likely (prior trend) vs confirmed by close outside a trendline.
+- Target projection: triangle height projected both directions from breakout.
+- trend: neutral until breakout; set by realized breakout direction.
+<!-- PROMPT_DIGEST:END -->

@@ -14,7 +14,8 @@ display:
     label: "림 저항선"
 gating:
   tier: always_on
-token_cost: 0
+token_cost: 702
+digest_hash: "07429977"
 ---
 
 ## Detection Criteria
@@ -82,3 +83,42 @@ When this pattern is detected, include the following in the analysis response:
 - **Volume context**: State whether volume follows the expected U-shape — declining on the left side, minimum at the bottom, and increasing on the right side. Note the volume level at the breakout relative to the average.
 - **Completion status**: Clearly indicate which phase the pattern is in and how far along the right side has developed. Note whether the right rim has reached the left rim level.
 - **Target projection**: Calculate and state the measured move target using the saucer depth projected upward from the rim breakout point.
+
+<!-- PROMPT_DIGEST:START -->
+원형바닥 (Rounding Bottom / Saucer) — long-term bullish reversal, confidence_weight 0.78, documented success rate 75–82%. Often coincides with sector/market rotation into the stock.
+
+### Detection
+- Gradual rounded U-shape over extended period — NOT V-shaped bottom nor flat base.
+- Three phases: gradual decline (left), stabilization (bottom), gradual rise (right); smooth transitions, not abrupt.
+- Left rim & right rim at ~similar price levels (within 5%). Right rim reaching left-rim level completes the saucer.
+- Volume follows U-shape: declining left, minimum at bottom, gradually increasing right.
+- Typically months–years on daily; minimum 30 bars for validity, reliable formations 50+ bars.
+- Confirmed when price CLOSES above left rim (neckline/resistance) with increased volume.
+
+### Grading
+- Increase: formation >3 months (60+ daily bars); clear volume U-shape; smooth curves without sharp moves; rim breakout with significant volume; prior downtrend ≥20% before pattern.
+- Decrease: V-shape not U; flat/erratic volume; sharp moves within pattern; right rim >5% below left rim; forming in already-sideways market (no prior downtrend).
+- Volume U-shape is the MOST important confirmation (distribution→accumulation).
+- Left & right sides roughly equal duration (time symmetry); large lopsidedness reduces reliability.
+
+### False positives
+- V-shaped rapid bounce (not patient accumulation).
+- Right side hasn't risen to at least the MIDPOINT of the left side's decline → still early, not confirmed.
+- No volume increase on right side → accumulation thesis weak.
+- Sharp disruptions (gaps/spikes/selloffs) break the gradual thesis.
+- Right rim >5% below left rim → lower high, continued weakness.
+- Premature identification before right side develops → frequent false signals.
+
+### Target (measured move)
+- Saucer depth (rim level→bottom), projected UP from rim breakout point. E.g. rim $50, bottom $35 → target $65 ($50+$15).
+- Conservative first target = 50% of saucer depth. Stop = recent right-side trough, or saucer bottom for wider stop.
+- Higher-timeframe (weekly/monthly) confirmations often exceed measured target (major reversals).
+
+### Output
+- keyPrices: left rim, right rim (current/projected), bottom, projected target if rim broken.
+- patternSummaries: status (left side forming / bottom stabilizing / right side developing / rim reached / breakout confirmed); saucer depth as % of rim; formation duration; left/right symmetry; shape (smooth U vs irregular).
+- Volume context: whether volume follows U-shape (decline left, min bottom, increase right); breakout volume vs average.
+- Completion status: which phase; how far right side developed; whether right rim reached left-rim level.
+- Target projection: saucer depth projected up from rim breakout.
+- trend: bullish when confirmed.
+<!-- PROMPT_DIGEST:END -->

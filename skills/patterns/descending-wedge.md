@@ -14,7 +14,8 @@ display:
     label: "추세선"
 gating:
   tier: always_on
-token_cost: 0
+token_cost: 526
+digest_hash: "9df7321e"
 ---
 
 ## Detection Criteria
@@ -77,3 +78,37 @@ When this pattern is detected, include the following in the analysis response:
 - **Volume context**: State whether volume is declining as expected within the wedge and whether a volume surge accompanied any trendline break.
 - **Completion status**: Clearly indicate whether the wedge is still forming or confirmed by a close above the upper trendline.
 - **Target projection**: Calculate and state the measured move target using the widest wedge height projected from the breakout point.
+
+<!-- PROMPT_DIGEST:START -->
+### Descending Wedge (bullish reversal)
+
+Geometry:
+- Both highs and lows falling (lower highs + lower lows).
+- Upper trendline (highs) and lower trendline (lows) converge (range narrows). Upper trendline must be STEEPER than lower for valid convergence.
+- ≥3 touches on each trendline (3 highs, 3 lows). Convergence ratio ≥30%. Minimum 15 bars.
+- Confirmed by break ABOVE upper trendline.
+
+Confidence (weight 0.7): predominantly breaks upward but direction less predictable (no clear neckline).
+- Increase: clear convergence with 4+ touches per line, volume decline in formation followed by surge on breakout, decisive break above upper trendline with volume surge, duration > 25 bars.
+- Decrease: <3 touches per line, no volume pattern, break near apex, ambiguous convergence (near parallel).
+
+Signals: declining volume during formation (bullish divergence RSI/MACD strengthens); break should occur in first 2/3 of wedge for max reliability; volume surge on breakout confirms.
+
+False positives / invalidation:
+- Convergence < 15% (near-equal slopes) = descending channel, not wedge.
+- Narrowing < 30% = wedge not well-defined.
+- <3 touches = premature.
+- Strong bearish catalyst may break downward.
+- Break in last 10% (near apex) = minimal target.
+
+Target: wedge height = vertical distance between upper & lower trendlines at pattern start; project UP from breakout point (e.g., $10 range, break at $95 → target $105). Partial = 50% of height.
+Stop/invalidation: most recent swing low within wedge (or lower trendline); close below negates. R/R ≥ 2:1 favorable.
+
+Output:
+- keyPrices: current upper & lower trendline values, projected apex price & bar, breakout target (if upper trendline broken).
+- patternSummaries: status (forming / approaching apex / upper trendline broken), convergence rate, touch counts, position (early/mid/late).
+- Volume context: declining within wedge; surge on break.
+- Completion status: forming vs confirmed (close above upper trendline).
+- Target projection: widest wedge height from breakout point.
+- Include analytical-reference (not trading-recommendation) framing.
+<!-- PROMPT_DIGEST:END -->

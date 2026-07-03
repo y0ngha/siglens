@@ -14,7 +14,8 @@ display:
     label: "저항선"
 gating:
   tier: always_on
-token_cost: 0
+token_cost: 601
+digest_hash: "1b764299"
 ---
 
 ## Detection Criteria
@@ -81,3 +82,34 @@ When this pattern is detected, include the following in the analysis response:
 - **Volume context**: State whether volume is contracting as expected during formation and whether a volume surge accompanied any breakout or breakdown.
 - **Completion status**: Clearly indicate whether the triangle is still forming or confirmed by a decisive close above the horizontal resistance.
 - **Target projection**: Calculate and state the measured move target using the triangle height projected from the breakout point.
+
+<!-- PROMPT_DIGEST:START -->
+### Ascending Triangle (bullish continuation)
+
+Geometry:
+- Horizontal resistance line: ≥2 touches at ~same price (within 1%); slope must be < 1% (else it's a rising channel/symmetrical triangle).
+- Ascending support trendline: ≥2 progressively higher lows, clear upward slope.
+- Price converges (range narrows) toward apex. Minimum 15 bars.
+
+Confirmation: close ABOVE horizontal resistance with increased volume (surge 50%+ above average). Intraday wick above resistance without a close = not confirmed. Volume should decline as triangle narrows. Post-breakout: a pullback to the former resistance that holds as support confirms the pattern. Accelerating higher lows on the ascending support trendline = intensifying buying pressure.
+
+Confidence (weight 0.75): upside breakout ~70%, target reached 75–87%.
+- Increase: 3+ touches on resistance, 3+ on support, declining volume, breakout in first 2/3 of triangle (between 50%–75% point most reliable), prior uptrend.
+- Decrease: <2 touches either line, breakout near/past apex, no prior trend, volume rising without breakout, only marginal higher lows.
+
+False positives / invalidation:
+- ~25% break downward; close below ascending trendline invalidates bullish thesis.
+- Apex/near-apex breakout = reduced reliability & target.
+- Breakout without volume surge may be false.
+
+Target: triangle height = vertical distance from horizontal resistance to lowest point of ascending trendline at pattern start; project UP from breakout point (e.g., resistance $100, start low $90 → target $110). Partial target = 50% of height. Breakdown scenario: close below ascending trendline → bearish target = full height projected DOWN from breakdown.
+Stop/invalidation: most recent higher low on ascending trendline (or the trendline). R/R ≥ 2:1 favorable.
+
+Output:
+- keyPrices: horizontal resistance, current ascending trendline value, projected apex price, breakout target (if broken).
+- patternSummaries: status (forming / approaching apex / resistance broken / trendline broken), touch counts on resistance & support, breakout position vs apex (early/mid/late), prior trend direction.
+- Volume context: contraction during formation; volume surge on breakout/breakdown.
+- Completion status: forming vs confirmed (decisive close above resistance).
+- Target projection: measured move from breakout point.
+- Include analytical-reference (not trading-recommendation) framing.
+<!-- PROMPT_DIGEST:END -->

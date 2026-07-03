@@ -14,7 +14,8 @@ display:
     label: "넥라인"
 gating:
   tier: always_on
-token_cost: 0
+token_cost: 496
+digest_hash: "86e4cde8"
 ---
 
 ## Detection Criteria
@@ -75,3 +76,37 @@ When this pattern is detected, include the following in the analysis response:
 - **Volume context**: State whether volume behavior confirms the pattern (declining volume on second peak, volume increase on neckline break).
 - **Completion status**: Clearly indicate whether the pattern is still forming (second peak in progress) or fully confirmed by a neckline break.
 - **Target projection**: Calculate and state the measured move target using peak-to-neckline distance projected below the neckline.
+
+<!-- PROMPT_DIGEST:START -->
+### Double Top (bearish reversal)
+
+Geometry:
+- Two distinct peaks at ~same price, within 3% of each other (closer = more reliable).
+- Clear trough (neckline) between peaks, depth ≥3% from peak average.
+- Peaks separated by minimum 10 bars.
+- Confirmed: close BELOW neckline (the trough between peaks).
+
+Confidence (weight 0.75).
+- Increase: peak prices within 1%, volume decline on second peak, neckline break with volume surge, spacing > 15 bars.
+- Decrease: peaks differ > 2.5%, no volume divergence, shallow trough (< 3% from peak avg), pattern in narrow range.
+
+Signals: second-peak volume LOWER than first (weakening buying); neckline break with volume; RSI lower high on second peak = bearish divergence; failed retest that can't reclaim neckline.
+
+False positives / invalidation:
+- Strong uptrend: two peaks may be consolidation before continuation — check trend context.
+- Peaks < 10 bars apart = intraday noise.
+- No volume divergence (2nd peak equal/higher volume) = less likely reversal.
+- Trough < 3% of peak price = invalid neckline.
+- Intraday wick below neckline without close = not confirmed.
+
+Target: vertical distance average of two peaks − neckline; project DOWN from neckline break point (e.g., peaks avg $120, neckline $115 → target $110). Partial = 50% of projected distance.
+Stop/invalidation: the HIGHER of the two peaks; close above negates. R/R ≥ 2:1 favorable. Time-symmetric peaks (equidistant from neckline) more reliable.
+
+Output:
+- keyPrices: both peak prices, neckline price, projected target (if broken).
+- patternSummaries: status (first peak formed / second peak in progress / completed / neckline broken), price difference % between peaks, spacing.
+- Volume context: declining on second peak, increase on neckline break.
+- Completion status: forming (second peak in progress) vs confirmed (neckline break).
+- Target projection: peak-to-neckline distance projected below neckline.
+- Include analytical-reference (not trading-recommendation) framing.
+<!-- PROMPT_DIGEST:END -->
