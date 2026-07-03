@@ -14,7 +14,8 @@ display:
     label: "깃발 하단"
 gating:
   tier: always_on
-token_cost: 0
+token_cost: 575
+digest_hash: "79cc4420"
 ---
 
 ## Detection Criteria
@@ -80,3 +81,39 @@ When this pattern is detected, include the following in the analysis response:
 - **Volume context**: State whether volume confirms the pattern — high volume on flagpole, declining volume during the flag, and volume surge on breakdown. Quantify the volume decline during the flag relative to the flagpole.
 - **Completion status**: Clearly indicate whether the flag is still forming or confirmed by a close below the lower channel with volume.
 - **Target projection**: Calculate and state the measured move target using the flagpole length projected from the breakdown point.
+
+<!-- PROMPT_DIGEST:START -->
+### Bear Flag (bearish continuation)
+
+Geometry:
+- Flagpole: strong steep near-vertical DOWN move first, with above-average volume. Gradual decline = invalid.
+- Flag: upward or horizontal parallel channel after flagpole; boundaries roughly parallel. Should slope UP against downtrend (or sideways); downward-sloping flag less reliable.
+- Duration: short vs flagpole — typically 1–4 weeks (5–20 daily bars). Retrace ≤50% of flagpole.
+- Volume declines noticeably during flag.
+- Confirmed: close BELOW lower flag channel with increased volume.
+
+Confidence (weight 0.75): mirrors Bull Flag.
+- Increase: flagpole decline ≥10% with above-avg volume, flag retrace < 38.2%, volume drops 50%+ vs flagpole, flag duration 1–2 weeks, breakdown volume returns to flagpole levels.
+- Decrease: shallow/slow flagpole, retrace > 50%, volume rising in flag, duration > 4 weeks, channel too wide / loses parallel structure.
+
+Signals: shallow retrace ideal 25–38.2%; breakdown volume should return to flagpole levels.
+
+False positives / invalidation:
+- Retrace > 50% = momentum broken, possible reversal.
+- Duration > 4 weeks = accumulation base.
+- High volume in flag = accumulation.
+- Descending flag (falling-wedge-like) = possible capitulation not consolidation.
+- No clear flagpole = just an upward channel.
+- Flagpole ending at major historical support may become reversal base.
+
+Target: flagpole length (top to bottom); project DOWN from breakdown point (e.g., pole $100→$80 = $20, breakdown at $84 → target $64). Partial = 50% of length. Fastest resolution (1–2 weeks) = strongest continuation.
+Stop/invalidation: upper flag channel or most recent swing high within flag. R/R ≥ 2:1 favorable.
+
+Output:
+- keyPrices: flagpole top, flagpole bottom, flag upper channel, flag lower channel, projected downward target.
+- patternSummaries: status (flagpole formed / flag forming / breakdown confirmed), flagpole decline % & duration, flag retrace depth vs flagpole, flag slope direction, flag duration.
+- Volume context: high on flagpole, declining in flag (quantify decline vs flagpole), surge on breakdown.
+- Completion status: forming vs confirmed (close below lower channel with volume).
+- Target projection: flagpole length from breakdown point.
+- Include analytical-reference (not trading-recommendation) framing.
+<!-- PROMPT_DIGEST:END -->

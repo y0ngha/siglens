@@ -5,6 +5,8 @@ type: indicator_guide
 indicators: ['ma']
 confidence_weight: 0.8
 usage_roles: [signal, confirmation, regime]
+token_cost: 499
+digest_hash: "9d4cd402"
 ---
 
 ## Overview
@@ -56,3 +58,31 @@ MA (Simple Moving Average) calculates the arithmetic mean of closing prices over
 - MA(200) is widely observed and can act as a self-fulfilling support/resistance level due to the sheer number of market participants referencing it.
 - Golden and dead crosses are most reliable on daily timeframes. On minute or hourly charts, they produce frequent false signals.
 - Flat, horizontal MAs indicate no trend. Trend-following strategies using MAs are ineffective in this context.
+
+<!-- PROMPT_DIGEST:START -->
+### MA (Simple Moving Average) — periods 5, 20, 60, 120, 200
+
+Slower than EMA; better for medium-to-long term trend and structural S/R.
+
+Support/resistance:
+- MA(20) = short-term support (uptrend) / resistance (downtrend).
+- MA(60) = medium-term structure; close above/below often signals a significant shift.
+- MA(120)/MA(200) = long-term structural levels. MA(200) is the most widely watched; price holding above = long-term bull structure.
+- Uptrend: multiple MAs in ascending order act as a support zone.
+
+Golden/Dead cross:
+- Golden Cross: MA(20) or MA(60) crosses above MA(120) or MA(200) = medium-to-long term bullish (trend structure improving); most significant when ADX rising or volume confirms.
+- Dead Cross: MA(20) or MA(60) crosses below MA(120) or MA(200) = medium-to-long term bearish.
+- Lagging — confirms shifts already in progress, doesn't predict.
+
+Slope/strength: all MAs rising and fanning out (wider spacing) = trend strengthening; converging = weakening (consolidation/reversal). MA(5) most responsive; MA(5) steeply above MA(20) = accelerated move.
+
+Multi-MA alignment: price above MA(5) > MA(20) > MA(60) > MA(120) > MA(200) = most bullish structure (all timeframes up). Reverse order (MA200 > MA120 > MA60 > MA20 > MA5, price below all) = most bearish. Price between MAs = transitional/ranging.
+
+Mean reversion: price significantly above MA(200) → reversion pressure rises; deviation >10–15% from MA(200) either direction = extreme reading.
+
+Combinations: golden cross + rising volume more reliable than on declining volume. MA(60)/MA(200) position sets trend regime, RSI gives OB/OS within it. MA alignment = structural trend, MACD crossover = timing. Bollinger middle band IS MA(20).
+
+Caveats: SMA lags more than EMA (equal weighting) — levels may break before SMA catches up. MA(200) self-fulfilling (widely watched). Golden/dead crosses most reliable on daily; frequent false signals on minute/hourly. Flat horizontal MAs = no trend, trend-following ineffective.
+<!-- PROMPT_DIGEST:END -->
+

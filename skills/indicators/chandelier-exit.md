@@ -11,7 +11,8 @@ gating:
   state:
     feature: chandelier
     predicate: level
-token_cost: 0
+token_cost: 424
+digest_hash: "703e6029"
 ---
 
 ## Overview
@@ -48,3 +49,22 @@ As an entry signal it is **NONE — do not use it to enter.** As a trailing-stop
 - This is **not an entry signal** — using a Chandelier flip to enter inverts its purpose and trades the lag.
 - The stop is lagging by construction (it hangs from a 22-bar extreme); in a sharp reversal it gives back open profit before triggering.
 - The 22/3 parameters suit daily swing trades; tighter multiples on intraday data whipsaw out of normal volatility.
+
+<!-- PROMPT_DIGEST:START -->
+### Chandelier Exit Signal Guide
+Volatility-adjusted TRAILING STOP / trend-regime flag — explicitly an exit/risk tool, NOT an entry signal.
+- Formula: long stop = HighestHigh(22) − ATR(22)×3; short stop = LowestLow(22) + ATR(22)×3. Ratchets in the trade's favor, never loosens.
+
+Signal interpretation:
+- Trailing stop level: long stop = ratcheting floor (a close below closes the long); short stop = mirror ceiling. Primary output is a stop level, not a signal.
+- Trend/regime flip (state gate): active-side flip (long-stop regime ↔ short-stop regime) = advisory regime-change flag. State gate fires when the trend side has flipped within the last few bars (a regime turn) — NOT whenever a trend merely exists.
+
+Reliability: confidence weight 0.35 (lowest directional weight, by design). Forward-edge study: 0 significant cells — exactly as theory predicts for a lagging ATR-stop construct (a validation, not a failure). As an entry signal it is NONE — do not use it to enter; as a trailing-stop / trend-regime context it is good at its actual job.
+
+Combinations:
+- + a separate entry method: "good for stops … time entries with basic chart analysis or a momentum oscillator."
+- + ATR/volatility lens (Yang-Zhang / EWMA): read how wide the stop is in the current vol regime.
+- + trend regime (Hurst / Regression R²): a flip flag is more meaningful when the regime lens confirms a genuine trend change vs range noise.
+
+Caveats: NOT an entry signal — a Chandelier flip to enter inverts its purpose and trades the lag; lagging by construction (hangs from a 22-bar extreme — in a sharp reversal gives back open profit before triggering); 22/3 suits daily swing, tighter multiples whipsaw on intraday.
+<!-- PROMPT_DIGEST:END -->

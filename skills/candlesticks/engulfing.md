@@ -9,7 +9,8 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [bullish_engulfing, bearish_engulfing]
-token_cost: 0
+token_cost: 357
+digest_hash: "1d92c2ee"
 ---
 
 ## Overview
@@ -60,3 +61,14 @@ When a Bullish Engulfing or Bearish Engulfing pattern is detected in the candle 
 - Cross-reference with RSI and Bollinger Band position for confluence
 - If the pattern appears in a range-bound market (ADX < 20), explicitly note reduced reliability in the summary
 - State the trend context clearly: "Bullish Engulfing appeared at the bottom of a downtrend" or "Appeared in a sideways range — reliability is low"
+
+<!-- PROMPT_DIGEST:START -->
+Engulfing Pattern Guide (Bullish/Bearish)
+- 2-candle reversal, highest-reliability group (57%). Second candle's BODY completely engulfs the first candle's body.
+- Bullish: in a downtrend, small bearish candle → large bullish candle fully engulfing the prior body.
+- Bearish: in an uptrend, small bullish candle → large bearish candle fully engulfing the prior body.
+Signal strength — Bullish: Strong = clear downtrend + volume up on 2nd candle + RSI oversold (≤30); Moderate = after downtrend, minimal volume change; Weak = unclear/sideways. Bearish: Strong = clear uptrend + volume up on 2nd candle + RSI overbought (≥70); Moderate = after uptrend, minimal volume change; Weak = unclear/sideways.
+Combinations: RSI extremes ↑ reliability; touch of upper/lower Bollinger band ↑ reversal prob; 2nd-candle volume ≥150% of average ↑ reliability; near key MAs (20, 60) = S/R reversal.
+Caveats: judge by BODY, not shadow. Reliability drops sharply in sideways ranges — interpret within trend context. In gapless markets (crypto, FX) Engulfing forms more often → require extra confirmation. Do NOT use as reversal when range-bound (ADX < 20).
+AI: assess preceding trend via EMA(20) slope + ADX; check 2nd-candle volume above average; cross-reference RSI + Bollinger for confluence; if ADX < 20 explicitly note reduced reliability; state trend context ("Bullish Engulfing at bottom of downtrend" vs "sideways range — reliability low").
+<!-- PROMPT_DIGEST:END -->

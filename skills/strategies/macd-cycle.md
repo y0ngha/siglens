@@ -9,7 +9,8 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [macd_bullish_cross, macd_bearish_cross]
-token_cost: 0
+token_cost: 1174
+digest_hash: "e8585e90"
 ---
 
 ## Overview
@@ -171,3 +172,51 @@ Add an entry to skillSignals with skillName: `"MACD 대순환 분석"`. The sign
 
 - If a stage transition has recently occurred or is imminent (any MACD near zero): type `"skill"`, strength `"moderate"`, description in Korean describing which MACD is crossing zero and what stage transition this implies (e.g. "MACD(상) 제로선 접근 중 — Stage 1→2 전환 위험")
 - If an entry timing condition is met: type `"skill"`, strength `"strong"` for Normal / `"moderate"` for Early / `"weak"` for Advance, description in Korean describing the signal
+
+<!-- PROMPT_DIGEST:START -->
+MACD 대순환 분석 (confidence_weight 0.75)
+Identify 6-stage cycle from signs of three computed MACD values (differences of three EMAs) and their signal crosses.
+
+### DATA SOURCE RULE (mandatory)
+Read EMA from the `- EMA:` line; do NOT use MA (`- MA:` is for 이동평균선 대순환 only). Short=EMA(9), Mid=EMA(21), Long=EMA(60).
+Compute: MACD(상)=EMA(9)−EMA(21); MACD(중)=EMA(9)−EMA(60); MACD(하)=EMA(21)−EMA(60).
+System also provides MACD(12,26,9) as supplementary; its histogram (MACD line − Signal line) = momentum proxy for MACD(중) direction (uses EMA12/EMA26, not exact match).
+Signal-line entry mapping: MACD(상) dead-cross=Stage2 entry / golden=Stage5; MACD(중) dead=Stage3 / golden=Stage6; MACD(하) dead=Stage4 / golden=Stage1.
+
+### Stage table (Stage | 상 | 중 | 하 | EMA order)
+1 Stable Uptrend | + | + | + | Short>Mid>Long
+2 Decline Transition 1 | − | + | + | Mid>Short>Long
+3 Decline Transition 2 | − | − | + | Mid>Long>Short
+4 Stable Downtrend | − | − | − | Long>Mid>Short
+5 Rise Transition 1 | + | − | − | Long>Short>Mid
+6 Rise Transition 2 | + | + | − | Short>Long>Mid
+Sign derivation: 상>0 when EMA9>EMA21; 중>0 when EMA9>EMA60; 하>0 when EMA21>EMA60.
+Transitions occur when a MACD crosses zero (its two EMAs cross); each MACD's signal-line cross precedes the zero cross (early warning): S1→2 상 dead-crosses signal; S2→3 중 dead; S3→4 하 dead; S4→5 상 golden; S5→6 중 golden; S6→1 하 golden.
+Forward cycle 1→2→3→4→5→6→1. Reverse: uptrend reverse (S1→2→1, Long EMA still rising = pullback); downtrend reverse (S4→5→4, Long EMA still declining = temp bounce).
+
+### Stage identification steps
+1. Compute the three MACDs from `- EMA:` values.
+2. Match signs (+/−) to table; if two adjacent MACDs have opposite signs and one is very close to zero → transition in progress.
+3. Transition imminence: MACD approaching zero from current side = imminent EMA crossover; closer to zero relative to recent range = higher probability.
+4. Confirm with MACD(12,26,9) as MACD(중) momentum proxy: hist>0 growing = 중 momentum rising (bullish for stage); hist>0 shrinking = weakening (S6→1 or S2→3 risk); hist<0 growing (more negative) = bearish building; hist<0 shrinking (toward zero) = potential S4→5 or S3→4 imminent.
+
+### Signal interpretation — Long Entry Timing (3 levels; LONG only, no short entries)
+Normal (본매매): Stage 6 — 상>0, 중>0, 하<0, all three trending up toward their zero crossings, MACD(12,26,9) histogram positive and expanding.
+Early (조기): Stage 5 — 상 just turned positive, 중 approaching zero from below.
+Advance (선발대): late Stage 4 — 하 approaching zero from below (shrinking negative), MACD(12,26,9) histogram bottoming; small position only.
+Reverse cycle: uptrend reverse (S1→2→1) — 상 dips briefly negative then recovers → buy opportunity if 중 and 하 remain clearly positive. Downtrend reverse (S4→5→4) — 상 briefly positive then drops → sell opportunity if 중 and 하 remain clearly negative.
+
+### Confidence
+Increase: EMA(60) slope aligns with stage direction; MACDs clearly +/− (not near zero); MACD(12,26,9) histogram confirms momentum; volume expands during transitions.
+Decrease: any MACD near zero (stage-switching noise); rapid consecutive reversals; sharp gaps distorting EMAs; single-timeframe without multi-TF confirmation.
+Caveats: the three signal lines (9-EMA of each MACD) can't be individually computed — imminence inferred from MACD proximity to zero, not direct signal cross. In sideways markets all three converge near zero — extra skepticism when any MACD magnitude small vs recent price range. Gaps (earnings/news) distort EMA order. EMA periods (9,21,60) are system defaults, may differ from original cycle theory.
+
+### AI instructions
+Data source check: confirm reading EMA(9/21/60) from `- EMA:`, NOT MA. Add skillResults entry:
+- skillName: exactly "MACD 대순환 분석"
+- trend: "bullish" for Stages 1/5/6, "bearish" for 2/3/4, "neutral" for transition zones (a MACD near zero, mixed signals)
+- summary (Korean) must include: (1) computed 상/중/하 values with signs; (2) current Stage number+description from sign pattern; (3) stage confirmation — EMA ordering matches expected; (4) transition risk — which MACD closest to zero + what transition; (5) MACD(12,26,9) histogram value+direction; (6) EMA(60) slope (rising/flat/declining → forward vs reverse cycle); (7) entry timing — Normal/Early/Advance met or none (no short signals).
+Add skillSignals entry, skillName "MACD 대순환 분석":
+- stage transition recent/imminent (any MACD near zero): type "skill", strength "moderate", Korean description of which MACD crossing zero + implied transition (e.g. "MACD(상) 제로선 접근 중 — Stage 1→2 전환 위험").
+- entry timing met: type "skill", strength "strong" Normal / "moderate" Early / "weak" Advance, Korean description.
+<!-- PROMPT_DIGEST:END -->

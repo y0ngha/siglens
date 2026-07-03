@@ -11,7 +11,8 @@ gating:
   state:
     feature: donchian
     predicate: channelProximity
-token_cost: 0
+token_cost: 520
+digest_hash: "f905be8a"
 ---
 
 ## Overview
@@ -66,3 +67,35 @@ Donchian Channel, developed by Richard Donchian in the 1940s — widely regarded
 - The standard 20-period lookback is designed for daily charts. For intraday trading, shorter periods (10-15) may be appropriate. For position trading, longer periods (50-55) reduce noise.
 - Donchian Channel breakout systems have a historically low win rate (typically 35-45%) but achieve profitability through large average wins exceeding small average losses. Traders must be psychologically prepared for frequent small losses.
 - The simplicity of Donchian Channel is both its strength and weakness — it reacts identically to genuine breakouts and false breakouts. Filters (ATR, volume, ADX) are essential companions.
+
+<!-- PROMPT_DIGEST:START -->
+### Donchian Channel Signal Guide
+Period 20; highest-high / lowest-low channel, middle = average of bands. Foundation of Turtle Trading.
+
+Channel breakout (primary):
+- Close above upper band (new N-period high) = bullish breakout / buy.
+- Close below lower band (new N-period low) = bearish breakout / sell-short.
+- Turtle entry: long when price exceeds 20-day high; short when below 20-day low.
+- Strongest with above-average volume and expanding ATR.
+
+Support/resistance:
+- Upper band = dynamic resistance in downtrend/consolidation; lower band = dynamic support in uptrend/consolidation; middle line = equilibrium / mean-reversion target.
+- Trending: band in the trend direction = trailing continuation reference.
+
+Channel width (volatility):
+- Widening = expanding volatility, active trending.
+- Narrowing (bands converging) = contracting volatility, consolidation, breakout likely imminent.
+- Narrowest in several weeks = maximum compression, significant directional move probable.
+
+Turtle exit: long exits at 10-day low; short exits at 10-day high (asymmetric 20-day entry / 10-day exit — let winners run, cut losses short).
+
+Trend: consistently near upper band = strong uptrend; near lower band = strong downtrend; oscillating between = ranging (mean-reversion outperforms breakout).
+
+Combinations:
+- + ATR: breakout + rising ATR = high-prob trend initiation; + flat ATR = potential false breakout.
+- + ADX: ADX>25 at breakout = trend acceleration; ADX<20 = breakout from a range, confirmation critical.
+- + OBV: new OBV high on upper-band breakout = volume conviction.
+- + MACD: histogram expanding in breakout direction = momentum alignment.
+
+Caveats: price-only, no volume — always cross-reference volume indicators; ranging markets = flat bands, frequent whipsaws (filter with ADX / channel-width); 20 = daily standard (10–15 intraday, 50–55 position); historically low win rate (typically 35–45%) but profitable via large wins > small losses — prepare for frequent small losses; reacts identically to genuine and false breakouts — filters (ATR/volume/ADX) essential.
+<!-- PROMPT_DIGEST:END -->

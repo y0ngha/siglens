@@ -8,7 +8,8 @@ confidence_weight: 0.8
 usage_roles: [signal, confirmation, regime]
 gating:
   tier: always_on
-token_cost: 0
+token_cost: 1502
+digest_hash: "b51bed10"
 smc_full_guide: true
 ---
 
@@ -210,3 +211,54 @@ Additional output rules:
 - If price swept EQH or EQL within the last 5 bars without follow-through, flag it as a potential liquidity grab reversal.
 - Set `trend` field: `bullish` if structure is bullish and price is in Discount near an OB/FVG, `bearish` if structure is bearish and price is in Premium near an OB/FVG, `neutral` otherwise.
 - Set `strength` field as a separate JSON field (do NOT embed it in description): map confluence count → `weak` (1 factor), `moderate` (2 factors), `strong` (3+ factors).
+
+<!-- PROMPT_DIGEST:START -->
+### Smart Money Concepts (SMC / ICT) — institutional footprint analysis
+
+Pre-computed `smc` fields: `swingHighs`/`swingLows` (pivots), `structureBreaks` (BOS/CHoCH w/ direction+type), `orderBlocks` (w/ mitigation), `fairValueGaps` (w/ mitigation), `equalHighs`/`equalLows`, `premiumZone` (top 25% of swing range), `equilibriumZone` (middle 50%), `discountZone` (bottom 25%). `atr` is a **companion** for proximity thresholds (EQH/EQL tolerance `0.5×ATR`; key-level distance `2–3×ATR`), supplied separately.
+
+**1. Market Structure — BOS / CHoCH**
+- Bullish structure = higher highs (HH) + higher lows (HL). Bearish = lower highs (LH) + lower lows (LL).
+- **BOS (Break of Structure)**: close beyond most recent swing in SAME direction as trend → continuation. Bullish BOS closes above most recent confirmed swing high; bearish BOS closes below most recent swing low.
+- **CHoCH (Change of Character)**: close beyond swing in OPPOSITE direction to trend → first counter-trend break, potential reversal WARNING (does not confirm alone — needs OB/FVG reaction).
+- Count consecutive BOS in same direction = trend strength. CHoCH after long BOS sequence = high-prob reversal warning. CHoCH + successful OB test = high-conviction reversal.
+
+**2. Order Blocks (OB)**
+- Bullish OB = last bearish candle (close<open) immediately before a bullish BOS/CHoCH. Bearish OB = last bullish candle (close>open) before a bearish BOS/CHoCH.
+- Mitigation: Bullish OB mitigated when price closes below OB.low; Bearish OB when price closes above OB.high.
+- Unmitigated OBs = primary interest zones. Price returning to unmitigated OB in dominant-structure direction = high-prob entry. Closer test = higher reaction probability. Mitigated OBs lose significance — expect no reaction. OBs near EQH/EQL = extra confluence (resting liquidity fuels move).
+
+**3. Fair Value Gaps (FVG)** — 3-candle imbalance where middle candle leaves untraded gap.
+- Bullish FVG: `bars[i].low > bars[i-2].high`; zone = `[bars[i-2].high, bars[i].low]`.
+- Bearish FVG: `bars[i].high < bars[i-2].low`; zone = `[bars[i].high, bars[i-2].low]`.
+- Mitigated when price re-enters gap zone.
+- Unmitigated FVGs = magnets; institutions drive price back to fill before continuing. Bullish FVG in bullish trend = support on return; bearish FVG in bearish trend = resistance. Stacked FVGs = higher reaction prob. FVG overlapping an OB = especially high-prob zone. Fully mitigated FVGs = reduced significance.
+
+**4. Equal Highs / Lows (EQH / EQL)** — two+ swing highs/lows within `0.5×ATR`.
+- Liquidity pools: retail stops rest just beyond; institutions drive through to trigger stops then reverse.
+- EQH above price = liquidity target: bullish structure pushing toward EQH → expect brief spike-through then reversal, OR continuation if genuinely accumulating. EQL below price = mirror for bearish.
+- BOS through EQH/EQL with follow-through = confirmed institutional intent. Failed break (quick spike then reversal, often wick) = high-prob reversal = "liquidity sweep."
+
+**5. Premium / Equilibrium / Discount** (from most recent swing high→swing low):
+- Premium (top 25%) = expensive; Equilibrium (mid 50%) = fair value; Discount (bottom 25%) = cheap.
+- Institutional buyers accumulate in Discount; sellers distribute in Premium.
+- Bullish bias: long setups in Discount near unmitigated bullish OB/FVG. Bearish bias: short setups in Premium near unmitigated bearish OB/FVG. Equilibrium = neutral, wait for signal. Equilibrium + strong CHoCH = mean-reversion trigger.
+
+**Confluence (heuristic, not empirically validated):** 1 factor = Low (don't act alone); 2 = Moderate (context-dependent); 3+ = High (primary actionable).
+Highest-prob setups: (1) CHoCH + unmitigated OB in Discount (bullish reversal); (2) CHoCH + unmitigated OB in Premium (bearish reversal); (3) BOS continuation + FVG test at Discount/Premium boundary; (4) liquidity sweep through EQH/EQL + OB/FVG in swept zone.
+Disconfirming (reduce confidence): OB/FVG already mitigated; mixed structure (no clear BOS sequence); price at Equilibrium with no nearby OB/FVG; EQH/EQL targeted but no reversal follows sweep.
+
+**Failure modes:** CHoCH reversed within 1–3 bars back to original trend = false (was liquidity sweep) — wait for OB/FVG retest before treating valid. OB entered and passed straight through without rejection wick/reaction = institutions not defending, drop it. FVG filled and closed beyond far edge = loses significance. SMC is discretionary/visual — treat programmatic output as shortlist, not standalone. Trend-strength-blind — cross-check ADX/trend filter before acting on breaks. Premium/Discount range is heuristic (built from single most recent high + low from independent arrays; may mismatch after CHoCH/chop) — cross-check actual BOS/CHoCH sequence before using as triggers.
+
+**AI Analysis steps:** (1) Determine structure bias — count consecutive bullish vs bearish BOS, identify most recent CHoCH + confirmation → state bullish/bearish/mixed. (2) Identify active levels — unmitigated OBs & FVGs nearest price, EQH/EQL within 2×ATR, current zone. (3) Build confluence per level → low(1)/moderate(2)/high(3+). (4) Combine structure bias + levels → continuation vs reversal + primary reason.
+
+Return in this EXACT format (one `**label**: value` per line):
+```
+**시장 구조**: [강세 / 약세 / 전환 중 — BOS/CHoCH 시퀀스 요약]
+**현재 가격 영역**: [프리미엄 / 균형 / 디스카운트]
+**주요 활성 레벨**: [미완료 OB 및 FVG 레벨]
+**유동성 대상**: [근접한 EQH/EQL]
+**방향 의견**: [강세 / 약세 / 중립]
+```
+Output rules: if no unmitigated OB/FVG within 3×ATR of price, state "근처 미완료 레벨 없음" and use zone+structure alone. If CHoCH within last 10 bars, flag as high-priority reversal watch. If EQH/EQL swept within last 5 bars without follow-through, flag as potential liquidity grab reversal. Set `trend`: `bullish` if bullish structure + price in Discount near OB/FVG; `bearish` if bearish structure + price in Premium near OB/FVG; else `neutral`. Set `strength` as separate JSON field (NOT in description): confluence count → `weak`(1)/`moderate`(2)/`strong`(3+).
+<!-- PROMPT_DIGEST:END -->

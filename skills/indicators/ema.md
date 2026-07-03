@@ -5,6 +5,8 @@ type: indicator_guide
 indicators: ['ema']
 confidence_weight: 0.8
 usage_roles: [signal, confirmation, regime]
+token_cost: 382
+digest_hash: "4c91359a"
 ---
 
 ## Overview
@@ -56,3 +58,27 @@ EMA (Exponential Moving Average) applies exponentially decaying weights to histo
 - EMA is a lagging indicator. It reflects what has already happened and should not be used to predict exact tops or bottoms.
 - In choppy, low-volatility markets, EMA crossovers generate noise. Always filter by ADX or price structure before acting on crossovers.
 - Longer-period EMAs (60) move slowly and require more bars before a meaningful signal emerges — premature signals occur when price whipsaws around the EMA.
+
+<!-- PROMPT_DIGEST:START -->
+### EMA (Exponential Moving Average) — periods 9, 20, 21, 60
+
+Dynamic support/resistance:
+- Uptrend: pullback to EMA(20)/EMA(21) then bounce = long entry (more reliable the longer the trend). Downtrend: rally to EMA(20)/EMA(21) then reverse = short entry.
+- EMA(60) = medium-term structure; decisive close above/below = trend regime change.
+- EMA(9) = short-term momentum confirmation, not S/R.
+
+Slope: rising steeply = strong bullish; rising slowly/flattening = momentum fading (consolidation/reversal ahead); declining = bearish (strength ∝ angle).
+
+Crossover:
+- EMA(9) > EMA(20/21) = short-term bullish shift (early long in uptrend); EMA(9) < EMA(20/21) = short-term bearish.
+- EMA(20/21) > EMA(60) = medium-term bullish crossover (structural shift); EMA(20/21) < EMA(60) = medium-term bearish.
+
+Alignment: EMA9 > EMA20 > EMA60 = strongly bullish (favor longs); EMA9 < EMA20 < EMA60 = strongly bearish; intertwined/crossing = no trend, avoid trend-following.
+
+Price position: above all EMAs = bullish (buy dips to EMA20); below all = bearish (short rallies to EMA20); between EMA20 and EMA60 = transitional, wait for decisive break.
+
+Confluence: ADX > 25 + price above EMA(60) = trend-long confirmed. EMA(20) alignment + MACD crossover direction = strong two-indicator confirmation. EMA = trend filter, RSI confirms momentum alignment.
+
+Caveats: lagging — don't predict exact tops/bottoms. In choppy/low-vol markets crossovers = noise; filter by ADX or price structure. EMA(60) needs more bars; premature signals on whipsaw.
+<!-- PROMPT_DIGEST:END -->
+

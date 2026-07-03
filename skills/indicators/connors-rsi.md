@@ -11,7 +11,8 @@ gating:
   state:
     feature: connorsRsi
     predicate: level
-token_cost: 0
+token_cost: 418
+digest_hash: "8283b4d7"
 ---
 
 ## Overview
@@ -51,3 +52,25 @@ Critically, his edge was the **full multi-filter system** (ADX > 30 + a measured
 - Standalone forward edge measured at ≈0, with some negative cells — do not treat <10 / >90 as a buy/sell trigger on its own.
 - Because CRSI is so fast, it whipsaws in trends; it is a range/pullback tool, not a trend tool.
 - The original parameter set (3,2,100) is tuned to daily US equities; transplanting it to other timeframes/markets without re-validation is unsupported.
+
+<!-- PROMPT_DIGEST:START -->
+### Connors RSI (CRSI) Signal Guide
+Composite short-term mean-reversion oscillator.
+- CRSI(3,2,100) = [RSI(close,3) + RSI(streak,2) + PercentRank(ROC1,100)] / 3 (price-momentum + streak-duration + return-magnitude, majority-rules).
+
+Extreme thresholds (state gate):
+- CRSI < 10 = oversold → short-term mean-reversion LONG candidate.
+- CRSI > 90 = overbought → mean-reversion SHORT candidate.
+- Thresholds are extreme (10/90 not 30/70) because CRSI moves fast; state gate fires at <10 / >90.
+
+Exit gauge: Connors exits longs when CRSI recovers into the 50–80 band — it is an exit timer as much as an entry filter. Setups are short-hold (2–5, up to ~8 days) and counter-trend.
+
+Reliability: confidence weight 0.4 (advisory only). Forward-edge study: 0 significant cells, several negative t-stats. Connors' edge was the FULL multi-filter system (ADX>30 + measured sell-off + bottom-of-range + limit entry + CRSI-based exit), NOT the lone <10/>90 trigger. Use as a pullback-quality and exit gauge on non-trending liquid names, never standalone.
+
+Combinations:
+- + ADX trend filter: confirm a tradable pullback context; in choppy non-trending names CRSI extremes are pullback-quality reads, not triggers.
+- + Bollinger %B: if the daily %B short event and CRSI>90 align in a mean-reverting regime = genuine confluence.
+- as exit timer: pair with a directional entry method, use the 50–80 recovery band to time the exit not the entry.
+
+Caveats: standalone edge ≈0 (some negative cells) — do not treat <10/>90 as a buy/sell trigger on its own; whipsaws in trends (range/pullback tool only); (3,2,100) tuned to daily US equities, transplanting without re-validation unsupported.
+<!-- PROMPT_DIGEST:END -->

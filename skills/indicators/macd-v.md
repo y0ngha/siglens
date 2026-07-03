@@ -11,7 +11,8 @@ gating:
   state:
     feature: macdV
     predicate: level
-token_cost: 0
+token_cost: 480
+digest_hash: "a960f947"
 ---
 
 ## Overview
@@ -53,3 +54,24 @@ Use MACD-V as **momentum-state context under a trend filter**, never as a standa
 - Standalone forward edge measured at ≈0 — present it as confluence, not a signal.
 - The ±150 band is a volatility-normalized convention, not a hard law; under a trend filter the effective oversold can sit nearer −100.
 - ATR(26) normalization means very low-volatility regimes can inflate the reading; cross-check the volatility lens (Yang-Zhang / EWMA) before trusting an extreme.
+
+<!-- PROMPT_DIGEST:START -->
+### MACD-V (Volatility-Normalised Momentum) — CONFIRMATION ONLY, not a standalone trigger
+
+MACD-V = [(EMA(close,12) − EMA(close,26)) / ATR(26)] × 100; Signal = EMA(MACD-V, 9). Standard 12/26/9 normalized by ATR(26) → comparable across time AND across markets (same ±150 band held on S&P, Bund, Natural Gas).
+
+±150 OB/OS band:
+- |MACD-V| ≥ 150 = ~95%-containment overbought/oversold zone; state gate fires here (the ±150 risk zone). Cross UP through −150 = oversold reset; cross DOWN through +150 = overbought rollover.
+- ±50 = weak/strong momentum transition; 0-line = momentum-regime flip.
+
+Momentum lifecycle: 8-state map (Ranging / Rallying / Rebounding / Retracing / Reversing / Risk). Value + direction places price in a state, not a binary buy/sell.
+
+Trend-filtered asymmetry: under a 200-EMA filter OB/OS become asymmetric — in a bull regime pullbacks tend to bottom near −100 (the "new oversold"), not −150. Read the band relative to the prevailing trend, not absolutely.
+
+Confidence weight 0.4 — advisory only. Forward-edge study: 0 of 18 cells significant (best 1H h=12, t ≈ 1.94, not significant). Source paper is descriptive/taxonomic with no forward-profitability test. Use as momentum-state context under a trend filter, never as a standalone intraday trigger.
+
+Combinations: + 200-EMA filter (act only on oversold resets in uptrend, overbought rollovers in downtrend — the filter gives the band its usable asymmetric meaning); + regime lens (Hurst/VR/R²: high-R²/H>0.5 → ±150 = continuation context; mean-reverting regime → extreme closer to reversion setup); + event signal (Bollinger %B, MACD cross) grades backdrop while the event triggers.
+
+Caveats: standalone edge ≈0 — confluence not a signal. ±150 is a convention not a law; under a trend filter effective oversold can sit nearer −100. Low-vol regimes can inflate the reading via ATR(26) — cross-check Yang-Zhang/EWMA before trusting an extreme.
+<!-- PROMPT_DIGEST:END -->
+

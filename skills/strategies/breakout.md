@@ -9,7 +9,8 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [bollinger_upper_breakout, keltner_upper_breakout, keltner_lower_breakout, ichimoku_cloud_breakout, ichimoku_cloud_breakdown]
-token_cost: 0
+token_cost: 975
+digest_hash: "111a0413"
 ---
 
 ## Overview
@@ -198,3 +199,50 @@ Additional output rules:
 - If a **false breakout** appears to have occurred (breakout followed by reversal back into range), identify it explicitly
 - If **no breakout setup** is visible, state "현재 명확한 브레이크아웃 셋업 미감지" and describe the current price structure
 - Set the `trend` field: `bullish` if upside breakout confirmed, `bearish` if downside breakout confirmed, `neutral` if approaching boundary or no breakout
+
+<!-- PROMPT_DIGEST:START -->
+브레이크아웃 전략 (confidence_weight 0.72)
+Enter when price decisively closes beyond a defined support/resistance boundary. False breakouts occur 40-50% without filters; even with filters expect 25-35%. Late entry (buys after move); suffers in choppy/range markets — filter environment with ADX.
+
+### Breakout Types
+- Range: close beyond horizontal range → long above resistance / short below support. Longer range = more significant. Volume should increase substantially on breakout bar.
+- Pattern: continuation (flag, pennant, ascending triangle) → breakout in prior-trend direction; reversal (H&S, double top/bottom) → against prior trend. Measured targets (e.g. H&S target = head height from neckline).
+- Moving Average: MA200 breakout most significant (bull/bear divide); MA50 = intermediate trend change. Requires price to remain above/below MA for 2-3 closes to confirm.
+- Donchian (Turtle): break above highest-high / below lowest-low of past N bars. Classic = 20-bar entry, 10-bar exit. ATR-based position sizing. Best in trends, bad in ranges.
+
+### False-Breakout Filters
+1. Closing price: only count when CLOSE (not intraday) is beyond boundary.
+2. Volume: genuine breakout has volume ≥50% above 20-bar average; stays elevated 2-3 bars. Declining-volume breakouts are suspect.
+3. Multi-bar (conservative): require 2 consecutive closes beyond boundary.
+4. Momentum: RSI must not be in extreme opposite zone (e.g. RSI>70 for downside breakout is contradictory); MACD trending in breakout direction; ADX rising above 25 confirms trending environment.
+5. Retest (most conservative): after breakout, wait for pullback to broken boundary; enter if it holds (support↔resistance flip).
+
+### Entry Rules
+- Aggressive: close beyond boundary + volume 50%+ above 20-bar avg → enter at close/next open. Stop = opposite side of range or 1.5×ATR.
+- Standard: close beyond + volume confirms + RSI/MACD align + wait 2nd consecutive close → enter at 2nd bar close. Stop = midpoint of prior range or 2×ATR.
+- Conservative (retest): breakout + close beyond → pullback retest → boundary holds (closes back in breakout dir) → enter on hold. Stop = below retest low (long)/above retest high (short) or 1.5×ATR.
+
+### Exit
+- Targets: range height projected from breakout point; pattern measured move; Donchian = opposite channel boundary (20-bar-high entry → exit 10-bar low); ATR target 3-4×ATR for trending.
+- Stop: initial 1.5-2×ATR, or opposite side of range. Trailing: after 2×ATR profit, trail stop 2×ATR behind highest close (long)/lowest close (short).
+- Scale in 50% initial + 50% on retest; scale out 50% at 1:1 R:R + 50% at pattern target or 3×ATR.
+
+### Confidence
+Increase: volume expansion 50%+; breakout after long consolidation; multi-TF aligned; ADX>25; pattern with clear measured target.
+Decrease: low/declining volume; boundary tested multiple times with prior failed breakouts; range-bound (ADX<20); near major news/earnings; very tight range with recent high volatility (choppy).
+Caveats: overnight gap breakouts valid but slippage significant; well-known levels can cause rapid reversals as early traders take profits.
+
+### Output (one **label**: value per line)
+**브레이크아웃 유형**: [Range / Pattern / Moving Average / Donchian / 감지 없음]
+**돌파 레벨**: [돌파/접근 중인 가격 수준]
+**거래량 확인**: [예: 돌파 봉 20일 평균 대비 180% — 유효 / 거래량 미확인]
+**필터 통과 여부**: [적용 필터와 결과, 예: 종가+거래량+RSI = 3/3 충족]
+**리테스트 상태**: [해당 시 / 리테스트 미발생]
+**매매 신호**: [현재 신호]
+**상세 분석**: [돌파 맥락, 레인지/패턴 특성, 거짓 돌파 가능성, 목표가(패턴 측정치), 손절 레벨, 주의사항]
+- If approaching but not broken: describe setup + conditions for valid breakout.
+- If broken: evaluate all filters (volume, close, momentum) and state how many satisfied.
+- If false breakout (reversal back into range): identify explicitly.
+- If no setup: "현재 명확한 브레이크아웃 셋업 미감지" + describe price structure.
+- trend: bullish if upside breakout confirmed, bearish if downside confirmed, neutral if approaching/no breakout.
+<!-- PROMPT_DIGEST:END -->

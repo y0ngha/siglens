@@ -11,7 +11,8 @@ gating:
   state:
     feature: stochastic
     predicate: level
-token_cost: 0
+token_cost: 368
+digest_hash: "69730dbb"
 ---
 
 ## Overview
@@ -53,3 +54,29 @@ The Stochastic Oscillator measures the current closing price relative to the hig
 - In strong trending markets, stochastic can remain in overbought or oversold territory for many bars. Do not automatically sell when stochastic exceeds 80 if a strong trend is in place.
 - Use ADX to determine regime first: if ADX < 20, stochastic oscillator signals are more reliable (range environment); if ADX > 25, stochastic signals may lag behind price movement.
 - The default (14,3,3) setting is moderately responsive. For faster signals, reduce %K to 5 or 9 (more noise); for slower signals, increase to 21 (fewer but higher quality signals).
+
+<!-- PROMPT_DIGEST:START -->
+### Stochastic (14,3,3)
+
+Close relative to high-low range. %K primary line; %D smoothed signal. 14-period lookback, Slow %K smoothed 3, %D = 3-period SMA of %K. Range 0–100.
+
+**Thresholds:**
+- %K > 80: overbought — pullback/reversal risk. In strong uptrends can stay >80 multiple bars.
+- %K < 20: oversold — bounce/reversal potential.
+- >90 or <10: very strong momentum in current direction — confirm trend before fading.
+
+**%K/%D crossovers:**
+- %K crosses above %D (Golden Cross) = bullish buy; most reliable when both lines <20 at crossover.
+- %K crosses below %D (Dead Cross) = bearish sell; most reliable when both >80.
+- Mid-range (40–60) crossovers less reliable — filter with EMA/MACD.
+
+**Divergence:**
+- Bullish: price lower low while stoch higher low → upside reversal; strongest in oversold.
+- Bearish: price higher high while stoch lower high → downside reversal; strongest in overbought.
+
+**%D trend bias:** consistently >50 = bullish bias; consistently <50 = bearish bias.
+
+**Combos:** +RSI (both extreme + diverge with price = materially higher strength); +MACD (short-term timing + medium-term direction filter, only take aligned crossovers); +BB (buy signal at lower band = high-prob mean reversion in ranges).
+
+**Caveats:** strong trends keep stoch extreme many bars — don't auto-sell when >80 in strong trend; use ADX regime (ADX<20 = stoch reliable/range; ADX>25 = stoch may lag); (14,3,3) moderate — %K 5/9 faster+noisier, 21 slower+higher quality.
+<!-- PROMPT_DIGEST:END -->

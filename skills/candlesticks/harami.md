@@ -9,7 +9,8 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [bullish_harami, bearish_harami, bullish_harami_cross, bearish_harami_cross]
-token_cost: 0
+token_cost: 461
+digest_hash: "70449431"
 ---
 
 ## Overview
@@ -66,3 +67,13 @@ When a Bullish Harami, Bearish Harami, or Harami Cross is detected:
 - Cross-reference with RSI and MACD momentum indicators
 - Note the relative confidence: "Harami has lower reliability than Engulfing — a confirmation candle is required"
 - For Harami Cross, emphasize the enhanced reliability: "Harami Cross is a stronger reversal signal than a standard Harami"
+
+<!-- PROMPT_DIGEST:START -->
+Harami Pattern Guide (Bullish/Bearish Harami, Harami Cross)
+- 2-candle reversal, opposite of Engulfing: 2nd candle's body completely CONTAINED within the 1st candle's body. Signals trend weakness / reversal potential. Lower reliability than Engulfing; increases significantly after a long-term trend.
+Variants: Bullish Harami = small bullish candle contained in prior bearish candle's body → downtrend weakening. Bearish Harami = small bearish candle contained in prior bullish candle's body → uptrend weakening. Harami Cross = 2nd candle is a Doji → stronger reversal signal (indecision + reversal potential).
+Signal strength — Bullish: Strong = after long downtrend + Harami Cross (Doji 2nd) + declining volume; Moderate = after downtrend, 2nd candle within 25% of 1st candle's body size; Weak = after short-term decline / unclear. Bearish: Strong = after long uptrend + Harami Cross + declining volume; Moderate = after uptrend, 2nd candle within 25% of 1st candle's body size; Weak = after short-term rise / unclear.
+Combinations: RSI overbought/oversold ↑ reversal prob; MACD histogram shrinking confirms weakening; band-extreme + Bollinger contraction suggests directional shift; declining 2nd-candle volume confirms weakening.
+Caveats: lower reliability than Engulfing — need a confirmation candle, not isolation. If 2nd candle extends beyond 1st candle's body, it is NOT a Harami. Reliability drops sharply when trend short/unclear. A Harami with HIGH volume can instead signal continuation.
+AI: assess length/strength of preceding trend via EMA(20/60) + ADX; determine standard Harami vs Harami Cross (Doji) for confidence; check declining 2nd-candle volume; cross-reference RSI + MACD; note "Harami has lower reliability than Engulfing — confirmation candle required"; for Harami Cross emphasize it is stronger than standard Harami.
+<!-- PROMPT_DIGEST:END -->

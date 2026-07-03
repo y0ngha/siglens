@@ -9,7 +9,8 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [rsi_oversold, rsi_overbought, rsi_bullish_divergence, rsi_bearish_divergence]
-token_cost: 0
+token_cost: 344
+digest_hash: "f52ddf23"
 ---
 
 ## Overview
@@ -52,3 +53,29 @@ RSI (Relative Strength Index) measures the ratio of average gains to average los
 - In trending markets, RSI can remain overbought or oversold for many bars. Do not use RSI in isolation during strong trends.
 - RSI divergence in a strong trend is often a false signal — always cross-reference with trend strength indicators (ADX, EMA slope).
 - Smoothed RSI or signal-line overlays (9-period EMA of RSI) can reduce noise in choppy conditions.
+
+<!-- PROMPT_DIGEST:START -->
+### RSI(14)
+
+**Overbought/Oversold:**
+- RSI > 70: overbought — short-term correction risk. Strong uptrend can Band Walk above 70 for extended periods — NOT an automatic sell.
+- RSI < 30: oversold — rebound potential.
+- RSI > 80 / RSI < 20: extreme in high-vol markets — confirm with other indicators.
+
+**Mid-line (50):**
+- Crosses above 50 from below: bullish momentum shift (buy-side; most reliable daily+).
+- Crosses below 50 from above: bearish momentum shift.
+
+**Divergence:**
+- Bearish: price higher high while RSI lower high → downside reversal. Highest in overbought / trend weakness.
+- Bullish: price lower low while RSI higher low → upside reversal. Most reliable in oversold.
+- Divergence more trustworthy in ranging/weakening trends; in strong trends confirm via MACD or Bollinger Band narrowing.
+
+**Failure swing:**
+- Bearish FS: RSI fails to exceed prior peak in overbought, then breaks below prior trough — strong sell.
+- Bullish FS: RSI holds above prior trough in oversold, then breaks above prior peak — strong buy.
+
+**Combos:** +BB (RSI<30 near lower band = high-prob mean reversion); +MACD (trend direction); +Volume; +ADX (ADX>25 & RSI extreme in strong uptrend = continuation, NOT reversal).
+
+**Caveats:** trending markets keep RSI extreme many bars — don't use alone in strong trends; divergence in strong trend often false (cross-check ADX/EMA slope).
+<!-- PROMPT_DIGEST:END -->

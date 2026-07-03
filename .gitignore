@@ -79,6 +79,8 @@ next-env.d.ts
 /scripts/**
 # Tracked tooling that must run in CI (skill frontmatter validation gate).
 !/scripts/validate-skills.ts
+# Tracked tooling: PROMPT_DIGEST metadata verify/update-meta (Phase 2 / PR2a).
+!/scripts/skills-digest.ts
 !/scripts/__tests__/
 !/scripts/__tests__/**
 # SP-A: one-time backfill script + pure helpers (tracked so users can run them).

@@ -14,7 +14,8 @@ display:
     label: "넥라인"
 gating:
   tier: always_on
-token_cost: 0
+token_cost: 689
+digest_hash: "a52a74a6"
 ---
 
 ## Detection Criteria
@@ -80,3 +81,44 @@ When this pattern is detected, include the following in the analysis response:
 - **Volume context**: State whether volume behavior confirms the pattern (progressive decline across peaks, volume surge on neckline break). Note volume comparison between each successive peak.
 - **Completion status**: Clearly indicate whether the pattern is still forming (which peak is in progress) or fully confirmed by a neckline break.
 - **Target projection**: Calculate and state the measured move target using peak-to-neckline distance projected below the neckline.
+
+<!-- PROMPT_DIGEST:START -->
+삼중천장 (Triple Top) — bearish reversal, confidence_weight 0.8 (Bulkowski ~88% success). Three peaks at ~equal resistance; neckline = line connecting the two troughs between peaks.
+
+### Detection
+- Three distinct peaks at ~same price, within 2–3% of each other.
+- Two clear troughs between the peaks form the neckline.
+- Each peak separated by meaningful retracement ≥3% (peak average → neckline).
+- Three peaks span minimum 20 bars (needs more time than Double Top).
+- Closer peak prices → higher reliability.
+- Confirmed when price CLOSES below neckline.
+
+### Grading
+- Increase: all three peaks within 1.5% of each other; progressive volume decline on each successive peak; neckline break with volume surge; duration >30 bars; clear volume decline on third peak vs first.
+- Decrease: peaks differ >3%; no progressive volume decline; shallow troughs (<3% from peak average); choppy/directionless market; third peak significantly lower than first two (gradual downtrend instead).
+- Ideal: volume decreases on each successive peak; third peak lowest volume (exhausted buying after three failed resistance tests).
+- Third peak weakness (shorter time at high, quicker rejection) reinforces pattern.
+- Failed retest that cannot reclaim neckline strengthens bearish case.
+
+### False positives
+- Powerful uptrend: three similar peaks may be extended consolidation (rectangle), not reversal.
+- Volume consistent/increasing across peaks → buying not weakened, may resolve up as rectangle breakout.
+- Peaks form too quickly (<20 bars total) → likely noise.
+- Each peak notably higher than previous (>3%) → rising channel, not Triple Top.
+- Intraday wick below neckline without closing break = not confirmed.
+- Middle peak significantly HIGHER than the other two → Head & Shoulders, not Triple Top.
+
+### Target (measured move)
+- Vertical distance average of three peaks → neckline, projected DOWN from neckline break. E.g. peaks avg $150, neckline $143 → target $136 ($143−$7).
+- Conservative first target = 50% of full projected distance.
+- Invalidation/stop = highest of the three peaks; close above negates.
+- Risk/reward = (price→target) vs (price→highest peak); ≥2:1 favorable. Patterns >40 bars → larger moves.
+
+### Output
+- keyPrices: all three peak prices, neckline price, projected target if neckline broken.
+- patternSummaries: status (first/second/third peak formed / completed / neckline broken); price-diff % among peaks; spacing; how it differs from Double Top or Head & Shoulders.
+- Volume context: progressive decline across peaks; surge on break; compare successive peaks.
+- Completion status: forming (which peak) vs confirmed by neckline break.
+- Target projection: peak-average-to-neckline projected below neckline.
+- trend: bearish when confirmed.
+<!-- PROMPT_DIGEST:END -->

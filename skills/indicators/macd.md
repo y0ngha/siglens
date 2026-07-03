@@ -9,7 +9,8 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [macd_bullish_cross, macd_bearish_cross, macd_histogram_bullish_convergence, macd_histogram_bearish_convergence]
-token_cost: 0
+token_cost: 448
+digest_hash: "d35b1318"
 ---
 
 ## Overview
@@ -55,3 +56,30 @@ MACD (Moving Average Convergence Divergence) is computed as the difference betwe
 - MACD is a lagging indicator by nature. Do not rely on it for precise entry timing in fast-moving markets.
 - In horizontal/ranging markets, signal-line crossovers occur frequently and are largely noise. Confirm market structure with ADX before using MACD signals.
 - The 12/26/9 setting is optimized for daily bars. For intraday timeframes (1-minute, 5-minute), shorter settings (e.g., 6/12/5) may provide more responsive signals.
+
+<!-- PROMPT_DIGEST:START -->
+### MACD (12, 26, 9) — momentum oscillator + trend tracker
+
+MACD line = EMA(12) − EMA(26); Signal = EMA(MACD, 9); Histogram = MACD − Signal.
+
+Line vs Signal crossover:
+- MACD crosses above Signal (Golden Cross) = bullish, buy signal; most reliable below the zero line with accelerating momentum.
+- MACD crosses below Signal (Dead Cross) = bearish, sell signal; most reliable above the zero line.
+- In choppy/ranging markets crossovers = frequent false positives; confirm with ADX or Bollinger width.
+
+Histogram:
+- Expanding positively (each bar taller) = bullish momentum intensifying, continuation likely.
+- Shrinking from a positive peak = bullish momentum weakening, prepare for reversal/pullback.
+- Expanding negatively = bearish intensifying.
+- Shrinking from a negative trough = bearish weakening, potential recovery.
+- Histogram peak/trough often precedes the price reversal (leading quality).
+
+Zero-line: MACD above 0 = short EMA above long EMA, medium-term bullish (structural shift); below 0 = medium-term bearish.
+
+Divergence: bearish = price higher high while MACD line/histogram lower high → momentum weakening, potential reversal. Bullish = price lower low while MACD higher low → downside momentum fading, potential recovery. Among the most reliable reversal signals — best at key S/R levels or Bollinger extremes.
+
+Combinations: + EMA(20/60) trend filter (only take buys above EMA, sells below); + RSI (OB/OS context); + Bollinger (crossover within squeeze breakout = high-prob trend initiation); + ADX (ADX > 25 = reliable, ADX < 20 = low-confidence).
+
+Caveats: lagging — don't rely on precise entry timing in fast markets. In horizontal/ranging markets signal-line crossovers = largely noise; confirm structure with ADX. 12/26/9 tuned for daily; intraday may use ~6/12/5.
+<!-- PROMPT_DIGEST:END -->
+

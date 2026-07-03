@@ -11,7 +11,8 @@ gating:
   state:
     feature: elderImpulse
     predicate: level
-token_cost: 0
+token_cost: 465
+digest_hash: "fc55910a"
 ---
 
 ## Overview
@@ -47,3 +48,24 @@ As a **direction-permission gate it is moderate-to-high**; as a standalone signa
 - Do not score this indicator by its own forward return — it is a filter, evaluated by the lift it gives a separate entry, not by a standalone t-stat.
 - Green/red is a *permission*, not a buy/sell command; acting on color alone over-trades.
 - Because it combines EMA13 and the MACD histogram, it inherits both lags; the color can flip a bar or two after the underlying turn.
+
+<!-- PROMPT_DIGEST:START -->
+### Elder Impulse System Signal Guide
+Censorship / permission gate, NOT an entry rule.
+- Bar color: GREEN if EMA13 rising AND MACD histogram rising; RED if both falling; BLUE otherwise. MACD standard (12,26,9).
+
+Censorship / permission (Elder: "tells me what I'm NOT allowed to do"):
+- GREEN → longs allowed; shorting FORBIDDEN.
+- RED → shorts allowed; buying PROHIBITED.
+- BLUE → both directions permitted (momentum and trend disagree, neither side censored).
+- Actionable moment = the flip off a color (green→blue, blue→red, etc.) — it changes what is forbidden. State gate fires when the latest bar carries a color and either flipped vs the previous colored bar or is non-blue (green/red actively forbid one side). Elder: "Enter cautiously, exit fast."
+
+Reliability: confidence weight 0.45 (advisory / permission gate, not standalone). Forward-edge: 0 of 18 cells significant (all |t|<1.8) — the strongest "working-as-designed" result in the set. A censorship rule is not supposed to have a standalone edge; its value is the conditional LIFT it adds to a separate entry method (suppressing counter-trend entries). As a direction-permission gate: moderate-to-high; as a standalone signal: low / not-applicable.
+
+Combinations:
+- + any entry method: use color to VETO — never short on green, never buy on red (where the conditional lift lives).
+- + Bollinger %B event: a daily %B overbought short is only permitted when impulse is red or blue, never green.
+- + regime lens: most valuable in a clean trend (high R² / H>0.5), where counter-trend entries are most punished.
+
+Caveats: do not score by its own forward return (it's a filter, evaluated by lift not standalone t-stat); green/red is a permission not a buy/sell command (acting on color alone over-trades); inherits EMA13 + MACD-histogram lags (color can flip a bar or two after the underlying turn).
+<!-- PROMPT_DIGEST:END -->

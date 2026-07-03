@@ -7,7 +7,8 @@ indicators: []
 confidence_weight: 0.68
 gating:
   tier: always_on
-token_cost: 0
+token_cost: 1340
+digest_hash: "105c3716"
 ---
 
 ## Absolute Rules
@@ -191,3 +192,61 @@ Additional output rules:
 - If a **motive/impulse wave** is in progress, provide upside extension targets (fibonacci levels).
 - If the detected pattern appears **complete**, explicitly state "완료" in the 파동 진행 field.
 - Set the `trend` field: `bullish` if in motive (impulse/extension) wave, `bearish` if in corrective wave, `neutral` if unclear or consolidating.
+
+<!-- PROMPT_DIGEST:START -->
+엘리어트 파동 (confidence_weight 0.68)
+
+### Absolute Rules (any violation = invalid count; discard and seek alternative)
+1. Wave 2 must not retrace >100% of Wave 1 (cannot end below Wave 1 start).
+2. Wave 3 must not be the shortest of motive waves (1,3,5); usually longest.
+3. Wave 4 low must not overlap Wave 1 high. Exception: diagonals and triangles.
+
+### Wave characteristics
+Motive: W1 often mistaken for bounce in downtrend, usually shortest, high volume in bear W1. W3 typically longest/strongest, breaks above W1 high, max volume + gaps. W5 usually weaker than W3 in stocks, peak warnings, can extend or truncate (fail to exceed W3).
+Corrective: A often mistaken for pullback, volume may rise on decline. B = false recovery (bear rally), volume decreases, may equal/exceed prior high (false breakout). C destroys uptrend hope, often reaches prior W4 low.
+
+### Impulse rules
+5 sub-waves (1-2-3-4-5). W1/W5 may be impulse or diagonal; W3 always impulse; W2 corrective (any except Triangle; complex WXY ending in triangle allowed); W4 always corrective.
+Guidelines: W2 and W4 alternate (sharp↔sideways). W2 retraces deeper than W4. W3 most often extends; extension in only ONE of the three motive waves. Truncated W5 possible after extremely long W3.
+
+### Diagonals
+Leading (as W1 or A): 5-3-5-3-5 or 3-3-3-3-3; W4 MUST overlap W1; W2 not >100% of W1; sub 1,3,5 impulse or zigzag; signals likely W3 extension.
+Ending (as W5 or C): 3-3-3-3-3, all sub-waves zigzags; W4 MUST overlap W1; momentum decreases toward end; typically sharp reversal follows.
+Contracting: W3<1, W5<3, converging trendlines. Expanding: W3>1, W5>3, diverging.
+
+### Corrective waves
+Zigzag (5-3-5): A,C impulses (or diagonals); B any corrective, must not retrace >100% of A; C almost always extends beyond A end. Extends to Double Zigzag (WXY)/Triple (WXYXZ). Fib: C = 1.0×/0.618×/1.618× of A; B retraces A 0.382-0.786.
+Flat (3-3-5): A,B corrective, C motive; B must retrace ≥90% of A. Expanded (most common): B exceeds A start by 1.05-1.382×, C breaks beyond A end. Regular: B retraces A 0.9-1.05×. Running (rare): B exceeds A start, C fails to reach A end. Fib: C = 1.0-1.618× of A; expanded-flat C = 1.236-1.618× of A or B.
+Triangle (3-3-3-3-3): 5 sub-waves A-B-C-D-E, each zigzag/corrective. Only at: W4 of impulse, B of zigzag/flat, Y of Double Three, Z of Triple Three. Contracting: C<A, D<B, E<C. Expanding: C>A, D>B, E>C (rare). Post-completion thrust ≈ widest part of triangle. Running Contracting: B exceeds A start (~60%). Fib: most sub-waves retrace prior 0.618-0.786.
+
+### Complex combinations
+Double Three (WXY): 3 alternating correctives joined by X. Valid W/Y pairs: (Zigzag,Flat),(Zigzag,Triangle),(Flat,Triangle),(Flat,Flat),(Flat,Zigzag). Zigzag and Triangle appear at most once each in W/Y; Triangle only as final (Y).
+Triple Three (WXYXZ): 5 alternating correctives joined by X; same rules; Zigzag/Triangle at most once in W/Y/Z; Triangle only as final (Z); rarer. Fib: all waves retrace prior 0.786-1.382 (near-horizontal net movement).
+
+### Fibonacci guidelines (Wave | key ratios | deep/extreme | reference)
+W2 retrace: 38.2/50/61.8% | 76.4/85.4% | of W1.
+W3 extension: 138.2/161.8% | 261.8% | of W1 from W2 end.
+W4 retrace: 23.6/38.2% | 50% | of W3.
+W5 extension: 61.8/100/161.8% | — | of W1, or of W1-3 length.
+W5 target formulas (P_n=price at end of wave n, P_0=W1 start): =W1(100%): P_4+(P_1−P_0); 61.8% of W1: P_4+(P_1−P_0)×0.618; 61.8% of W1-3: P_4+(P_3−P_0)×0.618; 161.8% of W1: P_4+(P_1−P_0)×1.618.
+When W1 extends: W2 retraces 23.6-38.2%, W4 retraces 14.6-23.6%. When W3 extends: W1 and W5 tend equal or 0.618 ratio. When W5 extends: likely when W1=W3; target = W1-3 length ×1.618 from W4.
+
+### Truncation (wave failure: final motive sub-wave — W5 of impulse or C of corrective — fails to exceed prior motive wave end)
+Detection: W5/C forms valid 5-3-5-3-5 zigzag; W5/C breaks back through W4/B end (Point of Recognition POR), confirming LL/HH on reversal; W4/B relatively deep (W5/C must retrace ≥61.8% of W4/B); W3's internal W5 cannot be truncated. Significance: severe weakening — downtrend→reversal up, uptrend→reversal down.
+
+### Alternation
+W2 sharp (zigzag, deep)→W4 sideways (flat/triangle/complex, shallow); vice versa. Time: W4 usually longer duration, W2 shorter but deeper. Complexity: simple W2→more complex W4. Motive: W1 short→W3 extends, W5 shorter; W1 extends→W3,W5 don't; neither W1 nor W3 extends→W5 extends; extremely long W3 raises W5 truncation probability.
+
+### AI instructions
+Use LAST 120 bars MAX for counting. Report ONLY the most recent (latest) wave pattern at the end of data — do not label entire history. Apply all 3 absolute rules strictly; discard violating counts. If truncation detected, report explicitly.
+Output (one **label**: value per line):
+**현재 파동 위치**: [예: 5파 진행 중 (임펄스 완성 직전)]
+**파동 진행**: [가격 포함, 예: 1파($120→$180)→2파($180→$145)→3파($145→$240)→4파($240→$200)→5파 진행 중]
+**파동 유형**: [임펄스 / 다이아고날 / 지그재그 / 플랫 / 삼각형 / 복합 조정]
+**목표가**: [피보나치 근거 포함]
+**절단 여부**: [절단 감지 없음 / 5파 절단 의심 — POR($xxx) 이탈 시 확정]
+**상세 분석**: [파동 구조, 피보나치 관계, 주의사항]
+- Corrective in progress → give retracement targets (fib). Motive/impulse in progress → give upside extension targets (fib).
+- If pattern complete → state "완료" in 파동 진행.
+- trend: bullish if in motive (impulse/extension) wave, bearish if in corrective, neutral if unclear/consolidating.
+<!-- PROMPT_DIGEST:END -->

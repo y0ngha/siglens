@@ -14,7 +14,8 @@ display:
     label: "넥라인"
 gating:
   tier: always_on
-token_cost: 0
+token_cost: 674
+digest_hash: "5c002a4f"
 ---
 
 ## Detection Criteria
@@ -77,3 +78,47 @@ When this pattern is detected, include the following in the analysis response:
 - **Volume context**: State whether volume behavior confirms or contradicts the pattern (increasing volume on right shoulder, volume surge on break).
 - **Completion status**: Clearly indicate whether the pattern is still forming or fully confirmed by a neckline break with a closing price above.
 - **Target projection**: Calculate and state the measured move target using neckline-to-head distance projected above the neckline.
+
+<!-- PROMPT_DIGEST:START -->
+역헤드앤숄더 (Inverse Head & Shoulders) — bullish reversal, confidence_weight 0.8. Three troughs: left shoulder, head (center), right shoulder.
+
+### Detection
+- Head must be lowest trough, clearly below both shoulders.
+- Left & right shoulder lows within 5% of each other in price.
+- Neckline = line connecting the two peaks between the three troughs.
+- Near-horizontal neckline → higher reliability.
+- Minimum 20 bars from left to right shoulder.
+- Neckline-to-head distance must be ≥3% of neckline price (else too shallow, reject).
+
+### Grading
+- Increase: near-horizontal neckline (slope <2%); symmetric shoulders (price diff <3%); volume confirmation on neckline break; duration >30 bars.
+- Decrease: steep neckline (slope >5%); asymmetric shoulders (price diff >5%); no volume increase on right shoulder; forming in strong downtrend with no prior support.
+- Right shoulder volume should be HIGHER than during the head (growing buying interest / accumulation).
+- Bullish momentum divergence (RSI/MACD higher lows vs price head low) strengthens signal.
+
+### Confirmation / invalidation
+- Confirmed by decisive CLOSE above neckline on above-average volume. Low-volume break may be false.
+- Retest: price often retests neckline from above; holding above it reinforces bullish signal.
+- Invalidation: close BELOW right shoulder low negates the pattern (stop reference).
+- Wick-only intraday break with no close above = not confirmed.
+
+### False positives (do NOT classify as inverse H&S)
+- Shoulder depths differ by >10% (loses structural integrity).
+- Neckline-to-head <3% of neckline price (too shallow).
+- Three-trough bounce within a strong downtrend that is mere consolidation before further decline.
+- Volume keeps declining through right shoulder & break with no surge (lacks conviction).
+
+### Target (measured move)
+- Vertical distance neckline→head, projected UP from neckline break point. E.g. neckline $100, head $90 → target $110 ($100+$10).
+- Conservative first target = 50% of full projected distance.
+- Risk/reward = (price→target) vs (price→right shoulder low); ≥2:1 favorable.
+- Patterns >40 bars tend to produce larger moves.
+
+### Output
+- keyPrices: neckline, head, left shoulder, right shoulder prices; projected target if neckline broken.
+- patternSummaries: status (forming / right shoulder in progress / completed / neckline broken), neckline slope direction, shoulder symmetry.
+- Volume context: whether volume confirms (increasing right-shoulder volume, break surge) or contradicts.
+- Completion status: forming vs confirmed by close above neckline.
+- Target projection: measured-move target (neckline-to-head projected above neckline).
+- trend: bullish when pattern confirmed.
+<!-- PROMPT_DIGEST:END -->

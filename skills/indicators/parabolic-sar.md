@@ -9,7 +9,8 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [parabolic_sar_flip, parabolic_sar_bearish_flip]
-token_cost: 0
+token_cost: 549
+digest_hash: "c68cfd71"
 ---
 
 ## Overview
@@ -57,3 +58,25 @@ Parabolic SAR (Stop and Reverse), developed by J. Welles Wilder in 1978, plots d
 - In strongly trending markets, SAR can stay on one side for extended periods. Do not exit a position solely because SAR has been running for many bars — let the flip signal determine the exit.
 - Gap openings can cause the SAR to instantly flip, even if the underlying trend is intact. Verify gap-triggered flips with volume and other indicators.
 - **False reversals at trend onset**: The first few bars after a SAR flip are the most vulnerable to whipsaw. Because the AF resets to 0.02 at reversal, the SAR sits close to price and can be re-flipped by a modest retracement. Consider requiring the new trend to hold for 2–3 bars, or adding a volume/momentum filter before committing capital to the reversal.
+
+<!-- PROMPT_DIGEST:START -->
+### Parabolic SAR (AF start 0.02, max 0.20) — trend direction, reversal, trailing stop
+
+Dots above/below price. AF starts 0.02, +0.02 each new extreme point, capped 0.20; SAR converges toward price until a reversal fires.
+
+Trend direction: dots below price = uptrend, maintain longs (rising trailing stop); dots above price = downtrend, maintain shorts or stay out (falling trailing stop). Dot position (above vs below) = primary binary directional signal.
+
+Reversal (flip):
+- Flip from below to above price = uptrend ended, bearish reversal — close longs / consider shorts.
+- Flip from above to below price = downtrend ended, bullish reversal — close shorts / consider longs.
+- Most reliable in trending markets; in ranging markets flips are frequent and produce whipsaw losses.
+
+Dot spacing (momentum): accelerating away/widening gap = strong, increasing momentum, high confidence in continuation; converging/narrowing gap = momentum weakening, flip approaching, tighten risk. Convergence after a long trend → the flip is more likely a genuine reversal than a whipsaw.
+
+Trailing stop: use SAR values directly as stop levels. Long: stop at current SAR dot (below price), exit if price closes below SAR. Short: stop at current SAR dot (above price), exit if price closes above SAR.
+
+Combinations: + ADX (only follow SAR when ADX > 25; ADX < 20 = unreliable — eliminates most whipsaws); + MACD (SAR bullish flip + MACD golden cross = high-conviction long); + RSI (SAR bearish flip while RSI > 70 strengthens sell; SAR bullish flip while RSI < 30 strengthens buy); + ATR (high-vol: slower AF start 0.01 reduces false flips; low-vol: standard 0.02).
+
+Caveats: poor in ranging/choppy markets — always filter with trend strength (ADX, EMA slope). Standard params suit daily. Lagging — confirms reversals, doesn't predict. In strong trends can stay one side long — let the flip determine exit, don't exit just because SAR ran many bars. Gap openings can instantly flip even with trend intact — verify gap-triggered flips with volume/other indicators. First few bars after a flip most whipsaw-prone (AF reset to 0.02 sits SAR near price) — consider requiring 2–3 bars hold or a volume/momentum filter.
+<!-- PROMPT_DIGEST:END -->
+

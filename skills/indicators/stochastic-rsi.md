@@ -11,7 +11,8 @@ gating:
   state:
     feature: stochRsi
     predicate: level
-token_cost: 0
+token_cost: 379
+digest_hash: "5e6d88c8"
 ---
 
 ## Overview
@@ -54,3 +55,31 @@ Stochastic RSI applies the Stochastic formula to RSI values rather than price, c
 - Because it is derived from RSI which is itself a smoothed value, StochRSI can appear to lag even while it is designed to lead — the interpretation is relative to RSI, not to price directly.
 - Use StochRSI primarily for timing within an already-established directional bias. Establish the trend direction first with EMA, MACD, or ADX, then use StochRSI for precise entry timing.
 - Values can remain at extreme levels (above 0.8 or below 0.2) for extended periods in trending conditions — avoid mean-reversion assumptions in trending environments.
+
+<!-- PROMPT_DIGEST:START -->
+### Stochastic RSI (14,14,3,3)
+
+Stochastic formula applied to RSI values (2nd-order, more sensitive). Range 0–1. RSI(14) applied to 14-period Stochastic window, %K smoothed 3, %D = 3-period SMA of %K.
+
+**Thresholds:**
+- %K > 0.8: extreme high zone — short-term correction signal; may persist in strong uptrends.
+- %K < 0.2: extreme low zone — short-term recovery signal.
+- Reacts faster than RSI; catches turning points before RSI.
+
+**%K/%D crossovers:**
+- %K crosses above %D from below 0.2 = strong bullish reversal (one of highest-quality StochRSI signals).
+- %K crosses below %D from above 0.8 = strong bearish reversal.
+- Mid-range (0.4–0.6) crossovers = lower quality, confirm with other indicators.
+
+**Leading:**
+- Rises sharply near 0 → above 0.5 while RSI still <50 → RSI/price may follow up.
+- Drops sharply near 1 → below 0.5 while RSI still >50 → precede downside.
+
+**Divergence:**
+- Bullish: price lower low while StochRSI higher low → potential reversal.
+- Bearish: price higher high while StochRSI lower high → losing strength.
+
+**Combos:** +VWAP+Volume Profile (short-term inflections at institutional S/R); +MACD/ADX (only take buy signals when MACD positive & ADX confirms trend); +BB (lower extreme near BB lower band = strong bounce confluence).
+
+**Caveats:** extremely sensitive, whipsaws common in low-vol/sideways — never sole trigger; can appear to lag despite designed to lead; use for timing within established bias; values persist >0.8 or <0.2 in trends — avoid mean-reversion assumptions.
+<!-- PROMPT_DIGEST:END -->

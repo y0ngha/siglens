@@ -11,7 +11,8 @@ gating:
   state:
     feature: regression
     predicate: level
-token_cost: 0
+token_cost: 346
+digest_hash: "68ded38b"
 ---
 
 ## Overview
@@ -43,3 +44,18 @@ Confidence weight **0.45** — a conditioner, not a directional signal. R² is c
 - **Window-scaled significance is mandatory.** R² rises mechanically as the window shrinks, so a *fixed* cutoff is a bug. The 95% critical-R² scales with lookback: n=5 → 0.77, n=14 → 0.27, n=20 → 0.20, n=30 → 0.13, n=60 → 0.06, n=120 → 0.03. The gate's ≈0.3 cutoff is a conservative simplification for the default ~20-bar window — read it against the table, not as universal.
 - **Direction-blind**: never infer a side from R² alone.
 - Assumes a *linear* trend — parabolic / accelerating moves score lower R² than their strength implies, and the result is sensitive to the price transform (raw vs log).
+
+<!-- PROMPT_DIGEST:START -->
+### Regression R² — trend-cleanliness conditioner (direction-blind)
+
+- Measures how cleanly price trends over trailing window; R²∈[0,1]. R²≈0 = choppy/no linear trend; R²≈1 = clean straight trend.
+- **Direction-blind**: says only *how cleanly*, never which way — pair with regression slope sign for direction.
+- **High R²** → trending cleanly: up-weight trend-following, do NOT fade the move.
+- **Low R²** → chop/range: up-weight mean-reversion (e.g. Bollinger %B short), down-weight breakout bets.
+- High R² + positive slope = clean uptrend; high R² + negative slope = clean downtrend.
+- State gate fires when R² clears a significance cutoff (≈0.3 for default ~20-bar window).
+- Confidence **0.45** — conditioner, never stands alone; no directional t-stat.
+- **Window-scaled significance mandatory** (fixed cutoff = bug; R² rises mechanically as window shrinks). 95% critical-R²: n=5→0.77, n=14→0.27, n=20→0.20, n=30→0.13, n=60→0.06, n=120→0.03. Read the ≈0.3 gate against this table, not as universal.
+- Combos: +slope sign (min viable pairing); +Hurst+Variance Ratio (regime lens — high R² agreeing with H>0.5 and VR>1 = confident clean-trend). Use as weight on directional skills: suppress counter-trend reversion when R² high, favor when low.
+- Caveats: assumes linear trend (parabolic/accelerating scores lower than strength implies); sensitive to price transform (raw vs log).
+<!-- PROMPT_DIGEST:END -->

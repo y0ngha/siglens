@@ -7,7 +7,8 @@ indicators: ['ma', 'rsi', 'macd']
 confidence_weight: 0.8
 gating:
   tier: always_on
-token_cost: 0
+token_cost: 1444
+digest_hash: "aad76318"
 ---
 
 ## Overview
@@ -217,3 +218,62 @@ Additional output rules:
 - If **all three timeframes align**, flag as a high-confidence setup
 - If the Higher TF shows **late-stage exhaustion** (extreme RSI, multiple divergences), warn even if direction aligns
 - Set the `trend` field: `bullish` if Higher TF uptrend confirmed and at least 2/3 tiers agree, `bearish` if Higher TF downtrend confirmed and at least 2/3 tiers agree, `neutral` if Higher TF range-bound or timeframes conflict
+
+<!-- PROMPT_DIGEST:START -->
+다중 시간대 분석 (confidence_weight 0.8)
+Meta-strategy: trade in the direction of the higher timeframe trend, enter on the lower timeframe signal. Adds a directional filter to any other strategy; does not predict direction itself.
+
+### Three-tier structure (Tier | purpose | typical TF | what to analyze)
+Higher TF (Direction): dominant trend | Weekly/Daily | trend direction, major S/R, market phase.
+Middle TF (Strategy): setups/patterns | Daily/4H | chart patterns, indicator setups, key levels, entry zones.
+Lower TF (Timing): precise entry/exit | 1H/15M | entry triggers, candlestick patterns, micro S/R.
+Combinations: Position=Monthly/Weekly/Daily; Swing=Weekly/Daily/4H; Short-term=Daily/4H/1H; Intraday=4H/1H/15M.
+Rule: each tier ≈ 4-6× the period of the next lower. Too close (15m & 30m) = redundant; too far (monthly & 5m) = unactionable gaps.
+
+### Core Rules
+1. Trade ONLY in Higher-TF direction: HTF uptrend → longs only on Mid/Lower; HTF downtrend → shorts only; HTF range → both allowed but reduced size. NEVER counter-trend against HTF — eliminates majority of losing trades.
+2. Higher-TF S/R takes priority: daily resistance outweighs 1H buy signal; weekly support outweighs 4H sell signal. Check if Mid/Lower trade runs into an HTF level before entering.
+3. Minimum two-tier agreement: enter only when ≥2 of 3 TFs agree; ideal = all 3 align; never enter when only 1 tier supports.
+4. Higher-TF overrides Lower-TF extremes: HTF overbought (RSI>70) → ignore Lower-TF bullish signals; HTF oversold (RSI<30) → ignore Lower-TF bearish signals. HTF extreme = current trend phase nearing exhaustion.
+
+### Procedure
+Step1 Higher TF — Direction: HH/HL (uptrend), LH/LL (downtrend), or range? Price above/below MA50 & MA200? Nearest major S/R? RSI above 50 (bullish) or below (bearish)? → Output: LONG ONLY / SHORT ONLY / NEUTRAL.
+Step2 Middle TF — Setup: find pattern/indicator/price action aligned with HTF direction; identify entry zone (support for longs, resistance for shorts); confirm MACD/RSI support direction; define invalidation level. → Output: specific setup or "no setup".
+Step3 Lower TF — Timing: entry trigger (candlestick pattern, indicator crossover, micro-breakout confirming Mid setup); stop below Lower-TF swing low (long)/above swing high (short); size from stop distance + risk per trade; enter on trigger, don't chase. → Output: entry price, stop, size.
+
+### Alignment scoring (position sizing)
+Strong 3/3 = all agree → full 100%. Moderate 2/3 = Higher+Middle agree, Lower neutral/not triggered → reduced 50-75%. Weak 1/3 = only one supports → no entry, wait. Conflicting = Higher contradicts Lower → no entry, likely false signal.
+
+### Common patterns by alignment
+Trend Continuation (highest prob): HTF clear uptrend (above MA50/MA200, HH/HL); Mid pullback to support (Fib, MA20, trendline); Lower bullish reversal candle/crossover at support → enter long at Lower trigger, target Mid resistance.
+Trend Reversal (more confirmation): HTF exhaustion (RSI divergence, climactic volume); Mid bearish pattern (H&S, double top); Lower breakdown below boundary with volume → short at Lower confirmation, reduced size (counter-HTF risk).
+Range-Bound: HTF no trend, oscillating between S/R; Mid mean-reversion setup (Bollinger/RSI extreme); Lower reversal candle at boundary → enter toward mean reversion, target opposite boundary.
+
+### Indicator usage (Indicator | Higher | Middle | Lower)
+MA: trend direction (above/below MA50,MA200) | dynamic S/R (MA20,MA50) | entry trigger (MA5 crossover).
+RSI: trend strength (above/below 50) | overbought/oversold zones | divergence, timing.
+MACD: trend direction (above/below zero) | signal crossovers, histogram | momentum confirmation.
+Bollinger: trend channel | entry zones (band touches) | squeeze breakout timing.
+Volume: trend health (expanding/contracting) | setup confirmation | entry-bar volume.
+
+### Confidence
+Increase: all 3 align; HTF trend well-established (not early/late stage); Mid setup with clear structure + defined invalidation; Lower trigger fires with volume.
+Decrease: HTF range-bound; Mid & Lower conflict; HTF late-stage exhaustion (extended RSI, climactic volume); only one TF available.
+Caveats: don't wait for perfect 3/3 (2/3 often sufficient); TF conflicts are normal info — HTF takes precedence; limited HTF data (e.g. only 30 weekly bars) = unreliable; MTA aligns not predicts — all 3 can agree and still lose on an unexpected catalyst.
+
+### AI instructions (current system limitation: single timeframe per request)
+When only one TF provided: (1) treat it as Middle TF (Strategy); (2) infer Higher TF direction from longer-period indicators (MA50, MA200, long-term context) and overall price structure; (3) note what Lower-TF confirmation is needed — recommend user check a lower TF; (4) assess alignment from what's determinable (indicator trends, MA positions, S/R). If multiple TFs available in future, do full three-tier analysis.
+Output (one **label**: value per line):
+**상위 시간대 추세**: [예: 일봉 상승 추세 — MA50/MA200 상방, HH/HL]
+**중간 시간대 셋업**: [예: 4시간봉 MA20 지지 테스트 — 풀백 매수 셋업]
+**하위 시간대 타이밍**: [예: 1시간봉 RSI 30선 상향 + 망치형 — 트리거 발생]
+**시간대 정렬도**: [예: 3/3 강한 정렬 / 2/3 보통 — 상위·중간 상승, 하위 미확인]
+**방향성 판단**: [예: LONG ONLY — 상위 상승 추세, 하위 매수 진입만 허용]
+**매매 신호**: [현재 실행 가능 신호 / 시간대 충돌로 진입 보류]
+**상세 분석**: [각 시간대 요약, 정렬 상태, 주요 S/R, 진입·손절·목표가, 주의사항]
+- Only one TF available → state conclusions + what additional TFs would provide.
+- Higher-TF conflicts with Mid/Lower → explicitly warn against counter-trend entry.
+- All 3 align → flag high-confidence.
+- HTF late-stage exhaustion (extreme RSI, multiple divergences) → warn even if direction aligns.
+- trend: bullish if HTF uptrend confirmed and ≥2/3 agree, bearish if HTF downtrend confirmed and ≥2/3 agree, neutral if HTF range-bound or TFs conflict.
+<!-- PROMPT_DIGEST:END -->

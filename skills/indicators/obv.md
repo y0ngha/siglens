@@ -5,6 +5,8 @@ type: indicator_guide
 indicators: ['obv']
 confidence_weight: 0.8
 usage_roles: [confirmation, measurement]
+token_cost: 512
+digest_hash: "2bf75817"
 ---
 
 ## Overview
@@ -49,3 +51,28 @@ OBV (On-Balance Volume), developed by Joe Granville in 1963, is a cumulative vol
 - In low-volume environments or for thinly traded stocks, OBV can produce noisy, unreliable signals.
 - Gap days can distort OBV significantly — a large gap up on moderate volume inflates OBV disproportionately.
 - OBV works best on daily or higher timeframes. Intraday OBV is heavily influenced by market microstructure noise.
+
+<!-- PROMPT_DIGEST:START -->
+### OBV (On-Balance Volume) — cumulative volume indicator
+
+Adds volume on up-close days, subtracts on down-close days. Changes in accumulation/distribution pattern (slope changes, divergences, trendline breaks) often precede price reversals — a pattern-level observation, not a universal "volume leads price" law.
+
+Trend confirmation:
+- OBV rising + price rising = uptrend confirmed by volume, strong bullish conviction (accumulation on up days).
+- OBV falling + price falling = downtrend confirmed by distribution, strong bearish conviction.
+- OBV same direction as price = structural confirmation the trend has volume support, likely to continue.
+
+Divergence:
+- Bullish: price lower low while OBV higher low → volume quietly accumulating despite falling price, potential upside reversal; one of OBV's most powerful signals, often before major bottoms.
+- Bearish: price higher high while OBV lower high → volume draining despite rising price, potential downside reversal (smart money distributing).
+- Most reliable near significant S/R levels or after extended trends.
+
+Breakout (leading): OBV to a new high before price = leading bullish, price likely to follow; OBV to a new low before price = leading bearish (distribution accelerating). OBV trendline breaks can precede price breakouts by several bars (early-entry edge).
+
+OBV flat: sideways while price oscillates = accumulation/distribution equilibrium, no directional conviction — wait for OBV to break its range.
+
+Combinations: + RSI (both diverging at same point = dual-confirmation reversal); + MACD (OBV breakout + MACD golden cross = volume + price confirmation); + Volume Profile (OBV direction + POC alignment = strong S/R zone); + Bollinger (OBV breakout during squeeze = directional commitment).
+
+Caveats: cumulative — absolute value meaningless, only direction/slope matter. Treats all volume equally regardless of price-move magnitude. Noisy for low-volume/thinly-traded stocks. Gap days distort it disproportionately. Best on daily+; intraday dominated by microstructure noise.
+<!-- PROMPT_DIGEST:END -->
+
