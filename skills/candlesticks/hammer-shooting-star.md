@@ -9,7 +9,8 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [hammer, inverted_hammer, shooting_star, hanging_man]
-token_cost: 0
+token_cost: 474
+digest_hash: "725364d1"
 ---
 
 ## Overview
@@ -72,3 +73,13 @@ When a Hammer, Inverted Hammer, Shooting Star, or Hanging Man is detected:
 - Cross-reference with RSI and Bollinger Band position
 - Emphasize that single-candle patterns require next-bar confirmation: "Hammer detected — next candle must confirm with a bullish close"
 - If the pattern appears without a clear preceding trend, explicitly reduce the signal weight
+
+<!-- PROMPT_DIGEST:START -->
+Hammer/Shooting Star Guide (Hammer, Inverted Hammer, Shooting Star, Hanging Man)
+- Single-candle reversal; same shape classified differently by trend position. Low reliability alone — next-candle confirmation always required.
+Geometry + context: Hammer = at downtrend bottom, small body + long lower shadow (≥2× body) + little/no upper shadow → bullish reversal. Inverted Hammer = at downtrend bottom, small body + long upper shadow + little/no lower shadow → reliability 60% (highest in family). Shooting Star = at uptrend top, small body + long upper shadow (≥2× body) + little/no lower shadow → bearish reversal. Hanging Man = at uptrend top, same shape as Hammer but bearish (because in an uptrend).
+Signal strength — Bullish (Hammer, Inverted Hammer): Strong = clear downtrend + long shadow (≥3× body) + next candle bullish close + volume up; Moderate = after downtrend, shadow 2–3× body; Weak = unclear/pre-confirmation. Bearish (Shooting Star, Hanging Man): Strong = clear uptrend + long shadow (≥3× body) + next candle bearish close + volume up; Moderate = after uptrend, shadow 2–3× body; Weak = unclear/pre-confirmation.
+Combinations: RSI overbought/oversold ↑ strength; touch of Bollinger band ↑ reversal prob; Hammer above key support confirms bottom; higher relative volume ↑ reliability.
+Caveats: position (trend context) determines the name. NEVER use in isolation — confirm with next candle's direction. Do NOT interpret as reversal in a sideways range. On short timeframes, shadow-to-body ratio unstable → lower reliability.
+AI: determine trend context via EMA(20) to confirm classification; evaluate shadow-to-body ratio (2× minimum, 3×+ strong); check next candle for confirmation; cross-reference RSI + Bollinger; emphasize next-bar confirmation ("Hammer detected — next candle must confirm with a bullish close"); if no clear preceding trend, explicitly reduce signal weight.
+<!-- PROMPT_DIGEST:END -->

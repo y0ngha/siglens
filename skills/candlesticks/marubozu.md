@@ -9,7 +9,8 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [bullish_marubozu, bearish_marubozu]
-token_cost: 0
+token_cost: 419
+digest_hash: "d4e201d9"
 ---
 
 ## Overview
@@ -63,3 +64,13 @@ When a Bullish Marubozu or Bearish Marubozu is detected:
 - If consecutive Marubozu candles appear, warn about potential overextension: "Consecutive Marubozu detected — caution for potential overheating"
 - Cross-reference with RSI to assess whether the trend is becoming overextended
 - State the interpretation clearly: "Bullish Marubozu is a signal confirming the strength of the current uptrend"
+
+<!-- PROMPT_DIGEST:START -->
+Marubozu Guide (single-candle trend-strength confirmation)
+- Long candle with no/extremely short shadows (within 1% of total range) = overwhelming one-directional force. TREND STRENGTH CONFIRMATION, NOT a reversal signal.
+Geometry: Bullish = Open=Low, Close=High (or very close), long bullish candle no shadows, strong buying → continuation. Bearish = Open=High, Close=Low (or very close), long bearish candle no shadows, strong selling → continuation.
+Signal strength — Bullish: Strong = volume ≥150% avg + during uptrend + breakout above key resistance; Moderate = above-avg volume + during uptrend; Weak = below-avg volume / isolated in sideways range. Bearish: Strong = volume ≥150% avg + during downtrend + breakdown below key support; Moderate = above-avg volume + during downtrend; Weak = below-avg volume / isolated in sideways range.
+Combinations: above-avg volume confirms strength, below-avg reduces reliability; at a key-level breakout/breakdown confirms breakout validity; with EMA(20/60) breakout confirms trend shift; consecutive Marubozu + RSI extremes warns overheating/oversold.
+Caveats: interpret as trend-strength confirmation, NOT reversal. Consecutive Marubozu can warn of overheating/oversold. Do not enter on a single Marubozu alone — trend context + volume confirmation essential. Below-avg-volume Marubozu may be distorted by low liquidity.
+AI: clarify continuation not reversal; evaluate volume vs recent average; check coincidence with key-level breakout (S/R, EMA crossover); if consecutive, warn "caution for potential overheating"; cross-reference RSI for overextension; state clearly ("Bullish Marubozu confirms strength of current uptrend").
+<!-- PROMPT_DIGEST:END -->

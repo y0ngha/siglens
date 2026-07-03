@@ -9,7 +9,8 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [morning_star, evening_star, morning_doji_star, evening_doji_star]
-token_cost: 0
+token_cost: 419
+digest_hash: "078e7d8e"
 ---
 
 ## Overview
@@ -63,3 +64,13 @@ When a Morning Star, Evening Star, Morning Doji Star, or Evening Doji Star is de
 - Cross-reference with volume changes across all three candles
 - For 24-hour markets (crypto, FX), note that gap conditions are naturally relaxed
 - State the specific variant detected: "Morning Doji Star has higher reliability than a standard Morning Star"
+
+<!-- PROMPT_DIGEST:START -->
+Morning/Evening Star Guide (3-candle reversal)
+- Higher reliability than single-candle patterns. If middle candle is a Doji → Morning/Evening Doji Star, even greater reliability.
+Structure: Morning Star = (1) long bearish candle (downtrend continuation), (2) small-body candle (gap down, indecision), (3) long bullish candle recovering ≥50% of the 1st. Evening Star = (1) long bullish candle (uptrend continuation), (2) small-body candle (gap up, indecision), (3) long bearish candle retracing ≥50% of the 1st.
+Signal strength — Morning: Strong = clear downtrend + middle Doji + 3rd recovers ≥60% of 1st + volume up; Moderate = after downtrend, 3rd recovers 50–60%; Weak = unclear, 3rd recovery <50%. Evening: Strong = clear uptrend + middle Doji + 3rd retraces ≥60% of 1st + volume up; Moderate = after uptrend, 3rd retraces 50–60%; Weak = unclear, 3rd retracement <50%.
+Combinations: RSI extremes ↑ reliability; MACD histogram direction change = powerful; sharp volume increase on 3rd candle confirms new trend; near key S/R ↑ reversal prob.
+Caveats: in 24h markets (crypto, FX) gaps rarely form → relax gap conditions. If middle candle's body too large, classify as general reversal, not a Star. On short timeframes (1Min, 5Min) noise high / reliability low. If all three candles below-avg volume, reliability drops sharply.
+AI: verify preceding trend via EMA(20) + EMA(60); evaluate 3rd candle's recovery/retracement ratio vs 1st; check if middle candle is a Doji variant for enhanced reliability; cross-reference volume across all three; for 24h markets note gap conditions relaxed; state variant ("Morning Doji Star has higher reliability than standard Morning Star").
+<!-- PROMPT_DIGEST:END -->

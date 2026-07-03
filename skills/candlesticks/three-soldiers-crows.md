@@ -9,7 +9,8 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [three_white_soldiers, three_black_crows]
-token_cost: 0
+token_cost: 469
+digest_hash: "94371c38"
 ---
 
 ## Overview
@@ -63,3 +64,13 @@ When Three White Soldiers or Three Black Crows is detected:
 - If the third candle is exceptionally long relative to the first two, warn about potential overextension: "Third candle is excessively long — caution for potential overheating"
 - Cross-reference with nearby resistance/support levels to evaluate continuation potential
 - State the pattern strength based on body-to-shadow ratios of all three candles
+
+<!-- PROMPT_DIGEST:START -->
+Three Soldiers/Crows Guide (3-candle reversal, strong)
+- Three consecutive long candles in the same direction, each forming a new high/low.
+Structure: Three White Soldiers = 3 consecutive long bullish candles, each opens WITHIN the prior candle's body and closes higher → bullish reversal in a downtrend. Three Black Crows = 3 consecutive long bearish candles, each opens WITHIN the prior candle's body and closes lower → bearish reversal in an uptrend.
+Signal strength — Soldiers: Strong = after clear downtrend + each body large with short shadows (near-Marubozu) + progressively increasing volume; Moderate = after downtrend, bodies relatively large but shadows present; Weak = after significant prior rally (overheating risk). Crows: Strong = after clear uptrend + each body large with short shadows + progressively increasing volume; Moderate = after uptrend, bodies relatively large but shadows present; Weak = after significant prior decline (oversold risk).
+Combinations: RSI moving from neutral toward extreme = confirmation; MACD directional shift = powerful; progressively increasing volume across all 3 confirms strength; EMA(20) breakout/breakdown confirms trend shift.
+Caveats: if 3rd candle excessively long → overheating/oversold, don't chase. After a large prior move → potential exhaustion. Each candle's open must start within the prior candle's body — INVALID if it opens with a gap up/down. Near major S/R, consider failed-breakout possibility.
+AI: evaluate each candle's body size + shadow ratio (smaller shadows = stronger conviction); confirm pattern emerges after a clear opposing trend via EMA(20) + EMA(60); assess volume progression (increasing confirms); if 3rd candle exceptionally long vs first two, warn "caution for potential overheating"; cross-reference nearby S/R for continuation; state strength from body-to-shadow ratios of all three.
+<!-- PROMPT_DIGEST:END -->
