@@ -7,7 +7,7 @@ confidence_weight: 1.0
 gating:
   tier: always_on
 token_cost: 821
-digest_hash: "b1535f14"
+digest_hash: "43b44c5d"
 ---
 
 ## Indicator Core (compressed)
@@ -53,7 +53,7 @@ indicator is injected separately only when that indicator is currently notable.
 
 ### Regime alignment (cross-indicator)
 
-- **Determine the trend regime FIRST** (ADX strength + DMI direction + MA structure). ADX measures trend *strength only, never direction* — direction comes from +DI/−DI dominance and price vs the MA stack.
+- **Determine the trend regime FIRST** (ADX strength + DMI direction + MA structure). ADX measures trend *strength only, never direction* — direction comes from +DI/-DI dominance and price vs the MA stack.
 - **In a strong trend (ADX > 25), oscillator overbought/oversold readings are NOT standalone reversal signals.** RSI/Stochastic can stay extreme for many bars (band-walk), and counter-trend divergences in strong trends are often false.
 - **Default read in a strong trend is continuation.** Counter-trend (mean-reversion / bounce) calls require explicit confirmation (e.g. a confirmed reversal pattern, or divergence + structure break) and must carry reduced confidence.
 - **In thin / low-volume conditions, volume-dependent indicators (OBV etc.) are less reliable** — discount their weight.
@@ -88,7 +88,7 @@ Volume:
 - **Buy/Sell Volume:** buy/(buy+sell) ratio; ≥0.65 buy pressure / ≤0.35 sell pressure; price-volume divergence = exhaustion.
 - **Volume Profile:** volume-by-price; POC / high-volume nodes = magnet levels, low-volume gaps = fast-move zones.
 Regime alignment (cross-indicator):
-- Determine trend regime FIRST (ADX strength + DMI direction + MA structure). ADX = strength only, never direction — direction from +DI/−DI and price vs MA stack.
+- Determine trend regime FIRST (ADX strength + DMI direction + MA structure). ADX = strength only, never direction — direction from +DI/-DI and price vs MA stack.
 - Strong trend (ADX > 25): oscillator overbought/oversold are NOT standalone reversal signals — RSI/Stochastic can band-walk extreme for many bars; counter-trend divergences in strong trends often false.
 - Default read in a strong trend = continuation; counter-trend (mean-reversion/bounce) calls require explicit confirmation (confirmed reversal pattern, or divergence + structure break) and reduced confidence.
 - Thin/low-volume: volume-dependent indicators (OBV etc.) less reliable — discount their weight.
