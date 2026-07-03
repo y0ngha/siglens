@@ -46,6 +46,8 @@
         "format:staged": "prettier --write --ignore-unknown",
         "typecheck": "tsc --noEmit",
         "validate:skills": "tsx scripts/validate-skills.ts",
+        "skills:digest-verify": "tsx scripts/skills-digest.ts verify",
+        "skills:digest-update": "tsx scripts/skills-digest.ts update-meta",
         "format:check": "prettier --check .",
         "prepare": "husky",
         "release": "SIGLENS_RELEASE_E2E=1 dotenv -e .env.local -- release-it --verbose",
