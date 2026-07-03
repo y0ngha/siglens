@@ -11,7 +11,8 @@ gating:
   state:
     feature: williamsR
     predicate: level
-token_cost: 0
+token_cost: 510
+digest_hash: "d27ca839"
 ---
 
 ## Overview
@@ -56,3 +57,32 @@ Williams %R, developed by Larry Williams, is a momentum oscillator that measures
 - %R is related to Fast Stochastic %K by a fixed linear offset (`%R = %K - 100`), so it carries identical informational content on a shifted scale. Using both simultaneously adds no new signal — choose one or the other.
 - The 14-period setting is standard for daily charts. For shorter timeframes, periods of 10 or 21 may provide better sensitivity depending on the asset's characteristics.
 - %R does not incorporate volume information. Combine with volume-based indicators (OBV, MFI) for more robust signal confirmation.
+
+<!-- PROMPT_DIGEST:START -->
+### Williams %R(14)
+
+Close relative to highest high over lookback. Range 0 to -100. `%R = Fast Stochastic %K − 100` (linear offset — same direction on same data). Period 14.
+
+**Thresholds:**
+- %R above -20 (0 to -20): overbought — close near range top. Ranging → downside correction; strong uptrend can persist (trend persistence).
+- %R below -80 (-80 to -100): oversold — close near range bottom. Ranging → upside rebound; strong downtrend can persist.
+- -20 to -80: neutral zone.
+
+**Momentum reversal:**
+- %R crosses above -80 from below = bullish shift (buy, esp. confirmed by price support).
+- %R crosses below -20 from above = bearish shift (sell, esp. confirmed by resistance).
+- The crossing (exit from extreme) is the actionable signal — NOT just being in the zone; filters false signals in strong trends.
+
+**Failure swing:**
+- Bullish: %R dips <-80, recovers >-80, dips again but stays above prior low, then rises above intermediate high — strong buy (sellers failed).
+- Bearish: %R rises >-20, pulls back <-20, rises again but fails to exceed prior high, then falls below intermediate low — strong sell (buyers failed).
+
+**Divergence:**
+- Bullish: price lower low while %R higher low → downside momentum weakening, reversal up.
+- Bearish: price higher high while %R lower high → upside weakening, reversal down.
+- Most reliable at extreme OB/OS levels.
+
+**Combos:** +Stochastic (%R = Fast %K −100; project's Stochastic is Slow %K [Fast %K smoothed 3] — comparing unsmoothed %R vs smoothed Slow %K reveals early turning points when %R extremes appear before Slow %K confirms); +RSI (%R faster for early entry timing, RSI for context); +MACD (enter long when MACD bullish & %R crosses above -80); +BB (%R oversold + price at lower band = high-prob mean reversion buy in ranges).
+
+**Caveats:** frequent false signals in strong trends (can stay >-20 many bars — don't sell on overbought alone); %R = %K−100 fixed offset, identical info — don't use both together; 14 standard daily, 10/21 for shorter TF; no volume — combine OBV/MFI.
+<!-- PROMPT_DIGEST:END -->

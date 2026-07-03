@@ -5,6 +5,8 @@ type: indicator_guide
 indicators: ['atr']
 confidence_weight: 0.8
 usage_roles: [confirmation, measurement, risk]
+token_cost: 445
+digest_hash: "b2973bd0"
 ---
 
 ## Overview
@@ -51,3 +53,31 @@ ATR (Average True Range), developed by J. Welles Wilder in 1978, measures market
 - ATR is heavily influenced by gap moves. A single large gap can spike ATR for the entire lookback period, so use caution around earnings announcements or major news events.
 - Different asset classes have vastly different ATR scales. Always compare ATR as a percentage of price (ATR / Close × 100) when comparing volatility across instruments.
 - ATR is a lagging indicator — it reflects past volatility, not future volatility. Use it for calibrating risk parameters, not for predicting directional moves.
+
+<!-- PROMPT_DIGEST:START -->
+### ATR Signal Guide
+- Measures volatility magnitude, NOT direction (period 14).
+
+Volatility:
+- Rising ATR: expanding swings (trend initiations, breakouts, panic sell-offs) — trend-following most effective.
+- Falling ATR: compressing (consolidation, range, late-stage trend) — mean-reversion outperforms.
+- ATR at historically low levels: volatility squeeze — expect a significant breakout either direction; confirm direction with Bollinger Squeeze / Donchian.
+
+Stop-loss (Chandelier Exit): long = highest high − N×ATR; short = lowest low + N×ATR. N typically 1.5–3.0.
+- N=1.5 tight (short-term/scalping, higher stop-out frequency); N=2.0 standard (swing); N=3.0 wide (position/volatile instruments).
+- Initial stop: entry − 2×ATR is a common default for longs (distances stop from normal noise).
+
+Position sizing: Position Size = Account Risk / (ATR × Multiplier). E.g. $500 risk, ATR(14)=$2.50, 2× → $500/($2.50×2) = 100 shares. Equalizes dollar risk across assets regardless of volatility.
+
+Breakout confirmation:
+- Breakout + ATR expanding above its 20-period average = genuine volatility expansion, higher follow-through.
+- Breakout + ATR flat/declining = low conviction, higher probability of false breakout/quick reversal.
+
+Combinations:
+- ATR + Parabolic SAR: robust trend-exit system.
+- ATR + Bollinger: bandwidth compression + ATR at historic lows = dual squeeze confirmation.
+- ATR + ADX: both rising = strengthening trend + expanding volatility = highest-confidence trend-following.
+- ATR + Donchian: breakout filtered by ATR expansion cuts false entries significantly.
+
+Caveats: no direction; gap moves spike ATR for the whole lookback (caution near earnings/news); compare cross-asset as ATR/Close×100; lagging — use for risk calibration, not directional prediction.
+<!-- PROMPT_DIGEST:END -->

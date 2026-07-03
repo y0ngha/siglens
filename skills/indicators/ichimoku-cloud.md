@@ -7,7 +7,8 @@ confidence_weight: 0.85
 usage_roles: [signal, confirmation, regime]
 gating:
   tier: always_on
-token_cost: 0
+token_cost: 734
+digest_hash: "2548155d"
 ---
 
 ## Overview
@@ -68,3 +69,42 @@ When all three align, the probability of trend continuation is significantly ele
 - The 9/26/52 periods were originally designed for Japanese rice markets trading 6 days a week. Some practitioners adjust to (10/30/60) for 5-day trading weeks.
 - Cloud analysis requires patience — meaningful signals emerge over longer time periods. Short-term interpretations of Ichimoku components are prone to noise.
 - Chikou Span interpretation requires careful chart reading because it is plotted in a shifted position; automated analysis should reference the actual close vs. the price 26 bars ago.
+
+<!-- PROMPT_DIGEST:START -->
+### Ichimoku Cloud (9, 26, 52) — multi-component trend system
+
+Components: Tenkan-sen (conversion, 9), Kijun-sen (base, 26), Senkou Span A (leading, projected 26 bars ahead), Senkou Span B (leading, 52, projected 26 ahead), Chikou Span (close shifted 26 bars back). Cloud (Kumo) = area between Span A and B.
+
+Price vs cloud:
+- Above cloud = bullish trend, buyers in control; buy signals from other indicators more reliable here.
+- Below cloud = bearish trend, sellers in control; sell signals more reliable here.
+- Inside cloud = neutral/transitional, conflicting forces — avoid high-conviction directional positions until price resolves outside.
+- Cloud thickness = S/R strength: thick = hard to break, thin = easier to penetrate.
+
+TK Cross:
+- Tenkan crosses above Kijun = Golden TK Cross, bullish short-to-medium term; strongest above the cloud.
+- Tenkan crosses below Kijun = Dead TK Cross, bearish; strongest below the cloud.
+- TK cross inside cloud = neutral; below cloud = bearish; above cloud = bullish.
+
+Kumo breakout:
+- Close above cloud from below = major bullish signal, trend shifted to uptrend — the most significant single Ichimoku event.
+- Close below cloud from above = major bearish signal, trend shifted to downtrend.
+- Breakout strength inversely related to cloud thickness: thin cloud = more likely to succeed; thick cloud = needs extra confirmation.
+
+Chikou Span confirmation:
+- Chikou (close plotted 26 bars ago) above the price candles from 26 bars ago = bullish confirmation (current momentum exceeds historical price level).
+- Chikou below past-price candles = bearish confirmation.
+- Final confirmation layer; when TK cross + price above cloud + Chikou above past price all align = highest-confidence bullish signal.
+
+Cloud shape / future structure:
+- Senkou A above Senkou B (bullish/green cloud) = projected equilibrium bullish, future structural support.
+- Senkou B above Senkou A (bearish/red cloud) = projected equilibrium bearish.
+- Upcoming cloud (26 bars ahead) switching bearish→bullish (cloud twist) = forward-looking bullish; balance of power projected to shift to buyers.
+
+Three-signal alignment (strongest signals): (1) price above cloud, (2) Tenkan above Kijun, (3) Chikou above past price. All three aligned → trend continuation probability significantly elevated (bearish mirror when all inverted).
+
+Confluence: ADX > 25 + price above cloud = structural + strength confirmation. Kijun/cloud boundary aligned with Volume Profile POC = dual S/R backing. Price above both cloud and MA(200) = highest-timeframe bullish consensus.
+
+Caveats: in choppy/sideways markets price repeatedly enters/exits cloud → conflicting signals; ineffective in ranging conditions. 9/26/52 designed for 6-day rice markets; some use 10/30/60 for 5-day weeks. Meaningful signals emerge over longer periods; short-term reads = noise. For automation reference actual close vs price 26 bars ago (Chikou is plotted shifted).
+<!-- PROMPT_DIGEST:END -->
+

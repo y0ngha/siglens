@@ -9,7 +9,8 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [cci_bullish_cross, cci_bearish_cross]
-token_cost: 0
+token_cost: 452
+digest_hash: "ff167cee"
 ---
 
 ## Overview
@@ -55,3 +56,32 @@ CCI (Commodity Channel Index) measures the deviation of the Typical Price (TP = 
 - In trending markets, CCI values above +100 indicate trend strength and should not trigger automatic sell signals without additional context.
 - CCI is sensitive to the 0.015 normalization constant. While this constant standardizes the distribution, real-world readings frequently exceed ±300 during gap moves or earnings events.
 - Shorter CCI periods (10–14) respond faster but generate more noise; longer periods (25–50) smooth the signal but lag more.
+
+<!-- PROMPT_DIGEST:START -->
+### CCI Signal Guide
+- Period 20; Typical Price = (high+low+close)/3; no fixed bounds — can extend beyond ±100/±200.
+
+Primary thresholds:
+- CCI > +100: significantly above average — overbought OR start of strong trend; sustained >+100 = uptrend in progress, not necessarily a sell.
+- CCI < -100: significantly below — oversold OR strong downtrend; sustained <-100 = downtrend in progress.
+- Crossing above -100 from below = BUY (downside momentum weakening, returning to fair value).
+- Crossing below +100 from above = SELL (upside momentum fading).
+
+Zero-line: cross above 0 from below = early bullish shift (direction filter); below 0 from above = early bearish.
+
+Trend persistence:
+- Consistently >+100 multiple bars = strong uptrend; pullbacks toward +100 = buying opportunities, not sells.
+- Consistently <-100 = strong downtrend.
+- Bearish divergence: CCI lower highs while price higher highs → weakening → potential reversal.
+- Bullish divergence: CCI higher lows while price lower lows → potential recovery.
+
+Extremes: >+200 rare, extreme upside deviation — tends to eventually revert (timing unpredictable); <-200 extreme downside — may signal climax/panic selling.
+
+Combinations:
+- + RSI: both simultaneously OB or OS = confluence strengthens signal.
+- + Bollinger: CCI>+100 near upper band = strong OB confluence; <-100 near lower band = OS.
+- + MACD: CCI zero-cross same direction as MACD cross = early trend-shift confirmation.
+- + Volume: CCI extreme + volume spike often marks reversals; surge at >+200 = climax buying.
+
+Caveats: no fixed bounds — set no mechanical hard limits, context determines; in trends >+100 = strength not auto-sell; sensitive to 0.015 constant, readings frequently exceed ±300 on gaps/earnings; shorter periods (10–14) faster/noisier, longer (25–50) smoother/laggier.
+<!-- PROMPT_DIGEST:END -->

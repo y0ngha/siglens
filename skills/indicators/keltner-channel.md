@@ -11,7 +11,8 @@ gating:
   state:
     feature: keltner
     predicate: bandDistAtr
-token_cost: 0
+token_cost: 568
+digest_hash: "66f319b3"
 ---
 
 ## Overview
@@ -62,3 +63,33 @@ Keltner Channel, originally developed by Chester Keltner in the 1960s and modern
 - The squeeze setup requires both Bollinger Bands and Keltner Channel to be applied simultaneously. The squeeze is not a Keltner-only signal.
 - In strongly trending markets, price can ride outside the Keltner band for extended periods (band walk). Do not take mean reversion trades against a strong trend.
 - The standard parameters (EMA 20, ATR 10, multiplier 2.0) work well on daily charts. For shorter timeframes, consider EMA 10 with multiplier 1.5 for more responsive signals.
+
+<!-- PROMPT_DIGEST:START -->
+### Keltner Channel (EMA 20, ATR 10, multiplier 2.0) — ATR-based volatility channel
+
+Middle EMA(20) with bands at 2 × ATR(10). Smoother than Bollinger (ATR vs stdev), less reactive to spikes.
+
+Channel breakout (momentum):
+- Close above upper band = strong bullish momentum beyond normal vol range; continuation in a trend, breakout in a range.
+- Close below lower band = strong bearish momentum; downside continuation likely in a trend.
+- 2+ consecutive closes outside band reinforces the breakout (sustained, less likely false).
+
+Channel return (mean reversion):
+- Return inside channel after upper-band excursion = momentum fading → reversion toward middle EMA.
+- Return inside after lower-band excursion = selling exhausting → recovery toward middle.
+- Keltner-extreme reversion trades most effective when ADX < 25 (non-trending).
+
+Middle line (EMA): price above = bullish, middle acts as dynamic support on pullbacks; below = bearish, dynamic resistance on rallies. Bounces from middle during trends confirm health + give pullback entries.
+
+Bollinger-Keltner Squeeze:
+- Bollinger Bands (20, 2) contract inside Keltner = squeeze, extreme volatility compression → imminent high-vol breakout.
+- Squeeze release (Bollinger expand back outside Keltner) = breakout begun. Direction = which side price breaks: above upper Keltner = bullish, below lower Keltner = bearish.
+- One of the most reliable vol contraction/expansion setups. Use MACD/momentum to confirm direction. Requires BOTH Bollinger and Keltner — not a Keltner-only signal.
+
+Channel width: widening = ATR rising, vol expanding, larger trend moves; narrowing = ATR declining, compressing, squeeze may be forming.
+
+Combinations: Keltner + Bollinger (squeeze, primary synergy); + RSI (RSI OB/OS + price at band extreme = dual-confirmation reversion); + MACD (histogram expanding in breakout direction on squeeze release = high-prob); + ADX (ADX > 25 + price outside band = continuation; ADX < 20 + price at extreme = reversion).
+
+Caveats: smoother/slower than Bollinger — fewer false signals but slower to adapt to spikes. In strong trends price can band-walk outside for long periods — don't take mean-reversion against a strong trend. Standard params suit daily; shorter timeframes use EMA 10, multiplier 1.5.
+<!-- PROMPT_DIGEST:END -->
+

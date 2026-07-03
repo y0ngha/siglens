@@ -5,6 +5,8 @@ type: indicator_guide
 indicators: ['volumeProfile']
 confidence_weight: 0.85
 usage_roles: [confirmation, measurement]
+token_cost: 394
+digest_hash: "1bfae4db"
 ---
 
 ## Overview
@@ -53,3 +55,26 @@ Volume Profile distributes cumulative traded volume across price levels within a
 - The 80% return-to-value-area rule is a probabilistic observation, not a guarantee.
 - In low-liquidity or pre-market hours, volume profile distributions can be distorted by thin trading.
 - POC and VAH/VAL levels shift as new bars are added to the profile window. Real-time changes in these levels should be factored into ongoing analysis.
+
+<!-- PROMPT_DIGEST:START -->
+### Volume Profile — POC, VAH/VAL, Value Area, thin zones
+
+**POC (Point of Control)** = highest-volume price level, market center of gravity / equilibrium.
+- Price above POC = bullish structural positioning; below POC = bearish.
+- Strong magnet — price frequently returns to POC after extended moves; expect strong support/resistance on approach.
+- Decisive close through POC on high volume = potential trend flip.
+
+**Value Area (~70% of session volume; VAH upper, VAL lower):**
+- Within VA = accepted range, balanced/rotational.
+- Break above VAH with expanding volume = bullish breakout, continuation likely (seek higher equilibrium).
+- Break below VAL with expanding volume = bearish breakdown, continuation lower.
+- Return into VA after excursion = value reversion; price returns to prior VA ~80% of the time on next bar (the 80% rule).
+
+**Thin volume zones** (low vol between high-volume nodes): price moves rapidly through in either direction. Thin zone above price = upside acceleration path; below = downside. Prepare for faster-than-usual movement.
+
+**HVN/LVN:** High-Volume Nodes = strong S/R, price consolidates/reverses. Low-Volume Nodes = price falls through quickly in direction of momentum.
+
+**Combos:** +VWAP (VWAP near POC = dual confirmation, strongest S/R); +MA(20/60) (POC alignment = multi-system support); +BB (POC near middle band = powerful pivot zone).
+
+**Caveats:** valid only for its computed period (30 vs 500 bars differ); 80% rule is probabilistic, not guaranteed; low-liquidity/pre-market distorts distributions; POC/VAH/VAL shift as bars added.
+<!-- PROMPT_DIGEST:END -->

@@ -11,7 +11,8 @@ gating:
   state:
     feature: bollinger
     predicate: pctB
-token_cost: 0
+token_cost: 510
+digest_hash: "c6a14b0b"
 ---
 
 ## Overview
@@ -58,3 +59,36 @@ Bollinger Bands consist of a middle band (20-period SMA) and an upper and lower 
 - Never interpret an upper band touch as an automatic sell signal. In trending conditions, this is precisely where a trend continuation trade would be placed.
 - Bollinger squeeze predicts volatility expansion, not direction. Always identify the likely direction with a trend filter before trading a squeeze breakout.
 - The standard (20, 2) settings suit daily charts. For intraday analysis, narrower periods like (10, 2.0) increase sensitivity but also noise.
+
+<!-- PROMPT_DIGEST:START -->
+### Bollinger Bands Signal Guide
+- Middle = 20-period SMA; upper/lower = ±2 standard deviations. Widen in high vol, contract in low vol.
+
+Band touch / position:
+- Touch/exceed UPPER: statistically high. Ranging = potential overbought; strong uptrend = "walk the band" = trend continuation, NOT a sell.
+- Touch/below LOWER: statistically low. Ranging = potential oversold; strong downtrend = band-walk on the lower side.
+- Band touches are context-dependent, not absolute entry/exit triggers.
+
+Squeeze (contraction):
+- Narrow bands (low bandwidth) = compressed volatility, energy building — imminent breakout in EITHER direction (no direction implied).
+- Find direction via MACD trend / ADX directionality / price structure (higher lows vs lower highs).
+- Squeeze + high-volume breakout above upper = strong bullish initiation; below lower = strongly bearish.
+
+Middle band crossover:
+- Close above 20 SMA from below = early bullish shift (potential uptrend beginning); below from above = early bearish shift.
+
+Band walk (continuation):
+- Close outside/at UPPER band ≥3 consecutive bars = strong uptrend, mean-reversion inappropriate.
+- LOWER band ≥3 consecutive bars = strong downtrend.
+
+Mean reversion (sideways / low-ADX):
+- Upper band = potential pullback toward middle; lower band = potential bounce.
+- Most reliable when RSI confirms overbought (>70) or oversold (<30) at the same time as band touch.
+
+Combinations:
+- + RSI: RSI<30 near lower band = high-prob mean-reversion buy; RSI>70 near upper = mean-reversion sell in ranging markets.
+- + MACD/ADX: determine regime FIRST; if ADX>25 and MACD trending, band touches are continuation signals not reversals.
+- + Volume Profile: bounce from lower band near a POC level = support strengthened by supply/demand confluence.
+
+Caveats: never auto-sell on an upper band touch (that's precisely a trend-continuation entry zone); squeeze predicts vol expansion not direction — identify direction with a trend filter first; (20,2) suits daily, (10,2.0) intraday raises sensitivity and noise.
+<!-- PROMPT_DIGEST:END -->

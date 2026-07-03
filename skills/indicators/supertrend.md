@@ -9,7 +9,8 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [supertrend_bullish_flip, supertrend_bearish_flip]
-token_cost: 0
+token_cost: 371
+digest_hash: "5630c2d8"
 ---
 
 ## Overview
@@ -54,3 +55,26 @@ Supertrend is an ATR-based trend-following indicator that plots a single line ab
 - The standard (10, 3.0) parameters suit daily charts for swing trading. For more sensitive signals (intraday), use (7, 2.0). For less sensitive signals (position trading), use (14, 4.0).
 - A higher multiplier reduces flip frequency but increases lag. A lower multiplier increases sensitivity but adds noise. Adjust based on the asset's volatility characteristics.
 - Supertrend does not account for volume — a low-volume flip is equally weighted as a high-volume flip. Always cross-reference with volume.
+
+<!-- PROMPT_DIGEST:START -->
+### Supertrend (10, 3.0)
+
+ATR-based trend-following, single line as dynamic S/R. ATR period 10, multiplier 3.0. Non-repainting (confirmed at bar close, doesn't change retroactively).
+
+**Direction:**
+- Line below price (green): uptrend — line = dynamic support.
+- Line above price (red): downtrend — line = dynamic resistance.
+
+**Flip (reversal):**
+- Red→green (above→below): bullish reversal — price closed above downtrend resistance. Consider long.
+- Green→red (below→above): bearish reversal — price closed below uptrend support. Close long / short.
+- Flips confirmed ONLY on bar close; intrabar crossings are NOT valid.
+
+**Dynamic S/R:** line = trailing stop-loss (below in uptrend, above in downtrend). Close beyond line = reversal; bounce off = continuation.
+
+**Distance:** large gap price↔Supertrend = strong momentum, far from reversal; narrowing gap = decelerating, tighten risk.
+
+**Combos:** +RSI (bullish flip + RSI<50 rising from oversold = high-prob; bearish flip + RSI>50 falling from overbought = stronger); +EMA(20/50) (only buy when price above EMA50, sell when below); +MACD (crossover same direction = dual confirmation); +Volume (above-avg flip = higher follow-through).
+
+**Caveats:** lagging — confirms after trend begins, no early detection; choppy/ranging whipsaws — filter ADX>25; (10,3.0) = daily swing, intraday (7,2.0), position (14,4.0); higher mult = fewer flips + more lag, lower mult = more sensitive + noisier; ignores volume — always cross-reference.
+<!-- PROMPT_DIGEST:END -->

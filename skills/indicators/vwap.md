@@ -11,7 +11,8 @@ gating:
   state:
     feature: vwap
     predicate: bandDistAtr
-token_cost: 0
+token_cost: 441
+digest_hash: "698e45a9"
 ---
 
 ## Overview
@@ -61,3 +62,34 @@ VWAP (Volume Weighted Average Price) is the cumulative average price weighted by
 - On daily bars, VWAP represents the session average rather than a standard chart-based VWAP. Its interpretation differs from intraday use.
 - Do not use VWAP alone as a decision tool. It is most effective when combined with volume analysis and trend context.
 - **Late-session volume sensitivity**: VWAP is an equally weighted volume-price average across the session, so a single high-volume bar late in the day (e.g., a closing auction surge, block print, or news-driven spike) can pull VWAP significantly. This can create a distorted reference level that persists into the next session if an anchored VWAP is carried over. On days with heavy late-session volume, re-assess VWAP reliability before treating it as fair value.
+
+<!-- PROMPT_DIGEST:START -->
+### VWAP — intraday volume-weighted fair value (resets each session)
+
+Institutional fair-value benchmark. Primarily intraday; significance diminishes on daily+ timeframes.
+
+**Price position:**
+- Above VWAP = buying pressure dominant, bullish intraday bias (institutions accumulated below).
+- Below VWAP = selling pressure dominant, bearish intraday bias.
+- Oscillating around VWAP = consolidation; breakout WITH volume confirmation is meaningful.
+
+**Support/Resistance:**
+- Pullback to VWAP from above & holding = support (buy in direction of prevailing trend).
+- Rally to VWAP from below & stalling = resistance (short entry).
+- Strength increases when high-volume accumulation occurred near that level.
+
+**Breakout:**
+- Break above VWAP with above-average volume = strong bullish, high-prob intraday long.
+- Break below with above-average volume = strong bearish.
+- Volume essential — low-volume break likely false.
+
+**Deviation/extremes:**
+- Price >1–2% above VWAP = extended, mean-reversion risk (esp. low-vol).
+- Price significantly below VWAP = deeply discounted, potential institutional buying (support).
+
+**Timeframe:** most meaningful intraday (1–15min); hourly still useful; daily+ loses value unless anchored VWAP from a significant event (earnings, gap day, swing high/low).
+
+**Combos:** +Volume (confirmation at breakout = highest prob); +Stochastic RSI (VWAP = bias, StochRSI = entry timing); +Volume Profile (VWAP near POC = strongest S/R).
+
+**Caveats:** session-based, resets daily — not a multi-day S/R level; daily bars = session average not standard VWAP; don't use alone; late-session volume sensitivity — single high-volume late bar (closing auction, block print, news spike) can distort VWAP; re-assess reliability on heavy late-session days.
+<!-- PROMPT_DIGEST:END -->

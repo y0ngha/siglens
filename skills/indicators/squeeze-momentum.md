@@ -9,7 +9,8 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [squeeze_momentum_bullish, squeeze_momentum_bearish]
-token_cost: 0
+token_cost: 534
+digest_hash: "c4622160"
 ---
 
 ## Overview
@@ -71,3 +72,34 @@ When the squeeze fires (`sqzOff` transitions from false to true), evaluate momen
 - The momentum value from linear regression is a smooth, lagging measure. It will not capture sharp intraday reversals — it reflects the underlying directional bias over the window period.
 - Do not use momentum zero-crossings in isolation on very short timeframes — noise can cause frequent crossings without sustained directional moves. Require the cross to hold for at least 1-2 bars.
 - This indicator is best applied on daily and hourly charts. On minute charts, reduce the KC/BB lengths to 10-14 for more responsive signals.
+
+<!-- PROMPT_DIGEST:START -->
+### Squeeze Momentum (BB:20, KC:20, mult:1.5)
+
+Params: BB length 20, KC length 20, KC multiplier 1.5 (applied to both BB deviation & KC ATR offset). Note: BB deviation uses multKC=1.5 (not standard 2.0) → narrower bands, more frequent squeeze transitions; do NOT compare with standalone BB(20,2.0). Requires BB + KC + regression series to compute.
+
+**Squeeze state:**
+- **Squeeze ON** (`sqzOn`): BB entirely inside KC — volatility compressed, setup phase. Longer squeeze = more coiled energy, more powerful breakout.
+- **Squeeze OFF** (`sqzOff`): BB expanded back outside KC — released, trigger phase.
+- **No Squeeze** (`noSqz`): neither — transitional, less actionable alone.
+
+**Momentum** (linreg of `close − avg(avg(HH,LL), sma_close)` over 20 bars):
+- >0 & rising (`increasing=true`): bullish strengthening.
+- >0 & falling: bullish weakening (losing steam).
+- <0 & falling: bearish strengthening.
+- <0 & rising: bearish weakening (bottoming).
+- crossing zero: reversal — neg→pos bullish, pos→neg bearish (most significant).
+
+**Combined:**
+- sqzOff + mom>0 + rising = highest-prob bullish breakout (classic buy).
+- sqzOff + mom<0 + falling = highest-prob bearish breakdown (classic short).
+- sqzOn + mom rising (positive) = bullish energy accumulating, anticipate upside breakout.
+- sqzOn + mom falling (negative) = bearish accumulating, anticipate downside breakdown.
+- sqzOff + mom direction change = potential false breakout / early exhaustion.
+
+**Directional bias at release** (sqzOff false→true): mom>0 = bullish breakout expected; mom<0 = bearish. `increasing` field = real-time acceleration (rising abs = gaining strength).
+
+**Combos:** +MACD histogram at release (aligned = very high prob); +RSI (>50 with sqzOff+mom>0 reinforces bullish; <50 with sqzOff+mom<0 reinforces bearish); +Volume (buy surge on release); +KC width; +Supertrend alignment.
+
+**Caveats:** long squeeze not a fading signal (10+ bars → larger moves); choppy low-vol cycles on/off — confirm ADX>20; momentum lags (won't catch sharp intraday reversals); require zero-cross to hold 1-2 bars on short TF; best daily/hourly (minute: reduce KC/BB to 10-14).
+<!-- PROMPT_DIGEST:END -->

@@ -11,7 +11,8 @@ gating:
   state:
     feature: ewma
     predicate: level
-token_cost: 0
+token_cost: 353
+digest_hash: "ab97800f"
 ---
 
 ## Overview
@@ -44,3 +45,24 @@ Confidence weight **0.3** — measurement, **directional weight 0**. There is no
 - **No direction** — a volatility level is never bullish or bearish.
 - **λ = 0.94 is an empirical convention, not a constant**: RiskMetrics chose it by RMSE-minimizing the optimal λ per series across 480 series, then accuracy-weighted-averaging — it is not optimal for any single asset.
 - EWMA is a restricted **IGARCH with no mean reversion**: it produces flat-horizon forecasts and over-persists after a shock. It is also single-fixed-memory, λ-sensitive, and assumes normality (so it underestimates tails). Use it as a reactive scale, not a regime forecaster.
+
+<!-- PROMPT_DIGEST:START -->
+### EWMA Volatility (RiskMetrics, λ = 0.94) — MEASUREMENT ONLY, NO DIRECTION
+
+Reactive volatility forecast (VaR standard). λ = 0.94 daily (half-life ~11 days), λ = 0.97 monthly. Uses only past returns — no look-ahead. Reacts faster to shocks than an SMA of squared returns and avoids the SMA "ghosting" jump.
+
+Interpretation — pure measurement, NEVER bullish or bearish:
+- Use the level as a dynamic risk scale — VaR, position sizing, gauging current volatility regime.
+- Expanding vs contracting: fresh shock spikes EWMA fast; calm tape decays it smoothly. Use to contextualize other signals.
+- State gate fires when reactive vol reaches a top/bottom regime extreme over its recent window — not on any directional condition.
+
+Confidence weight 0.3 — directional weight 0. No forward-edge t-stat (makes no directional claim); it is a risk/sizing input.
+
+Combinations:
+- EWMA + position sizing/VaR — scale exposure to the level (its designed use).
+- EWMA vs Yang-Zhang divergence — flags intraday churn vs close-to-close drift.
+- EWMA + any directional signal — only to size the trade and read regime, never as the signal.
+
+Caveats: no direction — a vol level is never bullish/bearish. λ = 0.94 is an empirical convention, not optimal per asset. Restricted IGARCH with no mean reversion (over-persists after shock), λ-sensitive, assumes normality (underestimates tails). Reactive scale, not a regime forecaster.
+<!-- PROMPT_DIGEST:END -->
+

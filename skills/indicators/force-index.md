@@ -11,7 +11,8 @@ gating:
   state:
     feature: forceIndex
     predicate: level
-token_cost: 0
+token_cost: 375
+digest_hash: "dc706c0e"
 ---
 
 ## Overview
@@ -53,3 +54,22 @@ Use it as **volume confirmation plus a divergence warning**, layered onto a dire
 - Standalone forward edge measured at ≈0 — present as confluence/confirmation, never a signal.
 - FI is volume-scaled, so absolute levels are not comparable across symbols or across volume regimes; read sign and slope, not magnitude.
 - Divergence is a warning, not timing — it can persist for many bars before (or without) a reversal.
+
+<!-- PROMPT_DIGEST:START -->
+### Force Index (Elder) — CONFLUENCE/CONFIRMATION ONLY, never a standalone trigger
+
+Fuses direction, extent, and volume. FI(1) = (Close − PrevClose) × Volume; FI(13) = EMA13 of FI(1). FI(2) = fast timer, FI(13) = trend/divergence read, FI(~100) = long-term bias filter.
+
+Zero-line cross (state gate): FI crossing 0 = force behind price flipped sign — buyers took over (cross up) / sellers took over (cross down). State gate fires on this sign flip vs previous bar. A momentum-turn marker, not a trade trigger alone.
+
+Divergence (primary read): bullish = price lower low while FI higher low → selling force fading. Bearish = mirror. Elder's most useful output but "not a trade signal in itself."
+
+Buy-the-dip timer: in uptrend (price above 22-EMA), FI(2) dip into negative territory = pullback-entry timer — only with the trend filter, never alone.
+
+Confidence weight 0.4 — advisory only. Forward-edge study: 0 of 18 cells significant (all |t| < 1.8). Use as volume confirmation plus divergence warning layered on a directional method.
+
+Combinations: FI + 22-EMA (take FI(2) dips only in trend direction); FI + price/oscillator divergence (agreeing RSI/MACD divergence at a key level = higher-quality warning); FI + CMF/MFI/OBV (corroborate with independent volume indicator).
+
+Caveats: standalone edge ≈0 — never a signal. Volume-scaled, so absolute levels not comparable across symbols/volume regimes — read sign and slope, not magnitude. Divergence is a warning not timing — can persist many bars.
+<!-- PROMPT_DIGEST:END -->
+

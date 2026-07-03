@@ -11,7 +11,8 @@ gating:
   state:
     feature: buySellVolume
     predicate: ratio
-token_cost: 0
+token_cost: 544
+digest_hash: "8dd03db0"
 ---
 
 ## Overview
@@ -71,3 +72,35 @@ A close near the high implies buyers dominated the bar; a close near the low imp
 - On very low-volume bars, the absolute split is small and statistically less meaningful. Weight signals from high-volume bars more heavily.
 - The formula treats the close position within the range as a linear proxy for buyer/seller control. This is an **approximation** — actual intrabar order flow (who initiated each trade) is not captured. True tick-by-tick buy/sell classification requires tape reading, not OHLC decomposition.
 - The buy/sell decomposition via close-position is a heuristic popularized by TradingView-style "BS" indicators; it is not independently validated in academic microstructure literature. Treat it as a directional-bias proxy, not as a measurement of true aggressive buying/selling volume.
+
+<!-- PROMPT_DIGEST:START -->
+### Buy/Sell Volume Signal Guide
+- buyVolume = volume×(close−low)/(high−low); sellVolume = volume×(high−close)/(high−low); both 0 when high=low.
+
+Current bar pressure:
+- buyVol >> sellVol: strong buying, bulls controlled — supports upside continuation/reversal.
+- sellVol >> buyVol: strong selling, bears controlled — supports downside.
+- buyVol ≈ sellVol: balanced/indecision — watch subsequent bars.
+
+Buy ratio: >60% buyers dominant; <40% sellers dominant; 40–60% balanced/inconclusive.
+
+Cumulative:
+- Cumulative buy ratio rising over recent bars = bullish momentum confirmation; sell ratio rising = bearish.
+- sellVol spike on a bar closing near its low = climactic selling (exhaustion or acceleration per trend context); buyVol spike closing near high = climactic buying.
+
+Breakout / trend:
+- Break resistance + high buy ratio = genuine conviction, high follow-through; + high sell ratio = suspect breakout, watch reversal.
+- Downtrend + persistent high sell ratios = internal volume confirmation, avoid counter-trend entries; uptrend + persistent high buy ratios = continuation likely.
+
+Divergence:
+- Bullish: price lower low while buy ratio higher low → selling pressure diminishing → potential reversal.
+- Bearish: price higher high while sell ratio rising → buying pressure fading → potential reversal.
+
+Combinations:
+- + OBV: rising OBV + high buy ratios = strong accumulation.
+- + CMF: positive CMF + rising buy ratio = sustained buying pressure.
+- + RSI: RSI oversold + high buy ratio same bar = selling exhaustion with intrabar absorption, strong mean-reversion entry.
+- + Candlesticks: bullish engulfing with high buy ratio has more conviction than with neutral ratio — confirms pattern quality.
+
+Caveats: entirely range-based (narrow/doji bar → tiny absolute values even at high volume — interpret with total volume size); gaps not reflected (gap-up bar near its low → false high sell ratio; session opens/gaps are the top false-signal source); low-volume bars less meaningful — weight high-volume bars more; close-position is a linear approximation/heuristic (TradingView "BS"), NOT true order flow, not academically validated — a directional-bias proxy only.
+<!-- PROMPT_DIGEST:END -->

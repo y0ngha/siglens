@@ -11,7 +11,8 @@ gating:
   state:
     feature: varianceRatio
     predicate: level
-token_cost: 0
+token_cost: 363
+digest_hash: "789ff7cf"
 ---
 
 ## Overview
@@ -44,3 +45,22 @@ Confidence weight **0.5** — the highest of the regime trio, reflecting its fir
 - **q-dependence**: VR depends on the chosen horizon q — scan a grid rather than trusting a single q.
 - Use the **heteroskedasticity-robust Z\***; the homoskedastic version over-rejects under real-world volatility clustering.
 - **Rejection of the random walk is not a direction** — VR > 1 says "trending," but you still need slope sign to know which way. The gate's fixed margin is a heuristic, not the formal test.
+
+<!-- PROMPT_DIGEST:START -->
+### Variance Ratio (Lo-MacKinlay) — most statistically grounded regime classifier
+
+Formula: `VR(q) = Var(q-period return) / [q·Var(1-period return)]`. Random walk → VR≈1. **VR > 1 = positive autocorrelation / trending; VR < 1 = negative autocorrelation / mean-reverting.**
+Significance: `Z(q) = (VR−1)/√φ(q)`, `φ(q) = 2(2q−1)(q−1)/(3qT)`; use heteroskedasticity-robust `Z*` (1990 erratum — essential under GARCH), overlapping returns, bias-corrected denominator.
+
+**Regime conditioner:**
+- VR > 1 & Z* significant → trend regime; up-weight trend-following.
+- VR < 1 & Z* significant → mean-reversion regime; up-weight reversion (e.g. Bollinger %B short).
+- VR ≈ 1 → random walk; low confidence.
+- State gate fires when |VR − 1| clears ≈0.2 (deliberate simplification of q-/sample-dependent Z*; gating heuristic, not a significance claim).
+
+**Confidence 0.5** — highest of regime trio (firmest statistical pedigree); no directional t-stat (classifies regime, doesn't forecast direction).
+
+**Combos:** +Hurst+Regression R² (regime lens — VR carries most weight when all three agree); + directional event (let VR decide whether to trust trend-continuation vs mean-reversion; e.g. only take daily %B short when VR<1 or near 1, not in strong trend regime).
+
+**Caveats:** q-dependent — scan a grid, don't trust single q; use robust Z* (homoskedastic over-rejects under vol clustering); rejection ≠ direction — VR>1 says "trending" but still need slope sign.
+<!-- PROMPT_DIGEST:END -->

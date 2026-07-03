@@ -5,6 +5,8 @@ type: indicator_guide
 indicators: ['dmi']
 confidence_weight: 0.85
 usage_roles: [confirmation, regime]
+token_cost: 428
+digest_hash: "261be0f6"
 ---
 
 ## Overview
@@ -45,3 +47,32 @@ ADX (Average Directional Index) is derived from DMI and measures the strength of
 - ADX is computed from Wilder-smoothed directional movement (Wilder smoothing uses `α = 1/N`, distinct from the standard EMA weight `α = 2/(N+1)`), so it lags the actual trend onset by several bars.
 - Using ADX < 20 as a filter to suppress trend-following signals significantly reduces false entries in choppy markets.
 - ADX above 60 is rare and often precedes a violent reversal or consolidation phase — approach with caution.
+
+<!-- PROMPT_DIGEST:START -->
+### ADX Signal Guide
+- Measures trend STRENGTH only, not direction (scale 0–100, >60 rare; period 14).
+
+Level bands:
+- 0–20: no meaningful trend / ranging — trend-following poor; use oscillator/mean-reversion.
+- 20–25: trend forming — wait for DI crossover confirmation before committing.
+- 25–40: clear trend in progress — trend-following (momentum entries, pullback buys) appropriate.
+- 40–60: strong established trend — MACD/price-structure continuation signals highly reliable.
+- >60: extreme strength; exhaustion risk elevated — scale in carefully, watch for reversal signals.
+
+Slope (rising vs falling):
+- Rising: strengthening — maintain/add positions aligned with +DI or -DI dominance.
+- Declining from a peak: momentum weakening even if direction not reversed — reduce size / tighten stops.
+- Flattening near 20–25: may be transitioning to a range.
+
+Peak/reversal:
+- Peaks and turns down sharply: primary trend losing force (not a reversal) — extension trades carry higher risk.
+- Second ADX peak lower than the first while price continues same direction = bearish trend-strength divergence, early exhaustion warning.
+
+Combinations:
+- ADX + DMI(+DI/-DI): ADX=strength, DIs=direction — always use both together.
+- ADX>25 & price above EMA(50): bullish trend structurally confirmed across momentum and MA.
+- ADX>25 & RSI overbought: overbought in a trending market = continuation, not reversal.
+- ADX<20: MACD crossovers noisy; ADX>25: MACD crossovers more reliable.
+
+Caveats: high ADX alone says nothing about up/down; Wilder-smoothed (α=1/N) so lags trend onset by several bars; using ADX<20 as a filter cuts false entries in choppy markets; ADX>60 rare, often precedes violent reversal/consolidation.
+<!-- PROMPT_DIGEST:END -->

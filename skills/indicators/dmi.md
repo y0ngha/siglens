@@ -9,7 +9,8 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [dmi_bullish_cross, dmi_bearish_cross]
-token_cost: 0
+token_cost: 355
+digest_hash: "e0ea8271"
 ---
 
 ## Overview
@@ -49,3 +50,31 @@ DMI (Directional Movement Index) measures the directional pressure of price move
 - In choppy or range-bound markets, DI lines cross frequently and produce unreliable signals.
 - ADX does not indicate direction — always read +DI/-DI alongside ADX to determine which direction the trend is running.
 - A high ADX (> 40) signals an extremely strong trend but also potential exhaustion; new entries at very high ADX levels carry increased reversal risk.
+
+<!-- PROMPT_DIGEST:START -->
+### DMI Signal Guide
++DI/-DI directional pressure, period 14; read with ADX for strength.
+
++DI vs -DI:
+- +DI > -DI: buying dominates, upward bias (larger gap = more decisive bullish pressure).
+- -DI > +DI: selling dominates, downward bias.
+- Gap narrow (within 3–5 points): balanced, directional signal weak.
+
+DI crossover:
+- +DI crosses above -DI = early bullish reversal; reliability increases significantly when ADX>20.
+- -DI crosses above +DI = early bearish reversal; confirm ADX>20.
+- Crossovers during low ADX (<20) generate many false signals — caution.
+
+Combined DMI + ADX:
+- +DI>-DI & ADX rising above 25 = strong bullish trend forming/strengthening, favor long.
+- -DI>+DI & ADX rising above 25 = strong bearish trend, favor short.
+- ADX peaking/declining while DIs still divergent = momentum exhausting, reduce exposure / tighten stops.
+- ADX<20 = no meaningful trend, use range/mean-reversion, avoid trend-following.
+
+Combinations:
+- + ADX: DMI=direction, ADX confirms sufficient strength to trade.
+- + MACD: MACD cross same direction as dominant DI = high-confluence entry.
+- + EMA(50/60): +DI dominant & price above EMA(60) = aligned momentum + trend structure.
+
+Caveats: crossovers lagging (confirm changes after they begin); choppy/range = frequent unreliable crosses; ADX gives no direction (always read +DI/-DI alongside); high ADX>40 = very strong but exhaustion risk, new entries carry reversal risk.
+<!-- PROMPT_DIGEST:END -->

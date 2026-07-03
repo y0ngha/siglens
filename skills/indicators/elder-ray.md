@@ -11,7 +11,8 @@ gating:
   state:
     feature: elderRay
     predicate: level
-token_cost: 0
+token_cost: 474
+digest_hash: "37634b1f"
 ---
 
 ## Overview
@@ -51,3 +52,24 @@ Reliability is best characterized as **moderate-to-high specifically for diverge
 - Standalone forward edge measured at ≈0 — the raw 0-cross whipsaws in ranges.
 - The signal is the *turn* (negative-but-rising / positive-but-falling), not the absolute sign; reading only "Bull > 0 = bullish" misuses the indicator.
 - EMA13 is the anchor, so a fast EMA regime shift can briefly distort both powers — confirm the underlying trend with a separate filter.
+
+<!-- PROMPT_DIGEST:START -->
+### Elder-Ray Signal Guide (Bull Power / Bear Power)
+- Bull Power = High − EMA13; Bear Power = Low − EMA13. EMA13 = consensus of value.
+- Normal regime: Bull Power > 0 and Bear Power < 0. Behavior RELATIVE to that baseline is the signal, not the raw level.
+
+Elder's long setup (state gate) — core two conditions:
+1. Trend up (EMA13 rising), AND
+2. Bear Power negative but RISING (sellers losing grip) — Elder's best buy setup. Mirror: Bull Power positive but FALLING in a downtrend = selling pressure entering a rally. State gate fires on these turn conditions vs the previous bar.
+
+Divergence (highest-quality variant): bullish (price lower low, Bear Power higher low) within an uptrend, or bearish (price higher high, Bull Power lower high) — strongest read, best inside the Triple Screen system.
+
+Reliability: confidence weight 0.45 (advisory only). Forward-edge: 0 of 18 cells significant (all |t|<1.8). The naive 0-cross was never the recommended signal (false signals in ranges); Elder always embedded it in the Triple Screen, conditioned on a higher-timeframe trend. Moderate-to-high specifically for divergence within an established trend; low for any standalone level read.
+
+Combinations:
+- + EMA13 trend filter (Triple Screen): act on bear-power-rising longs only when higher-TF trend is up; bull-power-falling shorts only when down.
+- + price divergence at a key level: Bear Power higher-low against price lower-low at support = canonical high-quality buy.
+- + a confirming oscillator (MACD/RSI) divergence: agreement across two independent divergences raises confidence.
+
+Caveats: standalone edge ≈0 (raw 0-cross whipsaws in ranges); the signal is the TURN (negative-but-rising / positive-but-falling), NOT the absolute sign — reading only "Bull>0=bullish" misuses it; EMA13 anchor — a fast EMA regime shift can briefly distort both powers, confirm the trend with a separate filter.
+<!-- PROMPT_DIGEST:END -->

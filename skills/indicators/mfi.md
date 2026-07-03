@@ -9,7 +9,8 @@ gating:
   tier: gated
   signal_kind: event
   triggers: [mfi_oversold_bounce, mfi_overbought_reversal]
-token_cost: 0
+token_cost: 565
+digest_hash: "2e919e64"
 ---
 
 ## Overview
@@ -56,3 +57,30 @@ MFI (Money Flow Index) is a volume-weighted momentum oscillator that combines bo
 - MFI requires reliable volume data. For instruments with fragmented volume (e.g., forex, some ETFs with multiple venues), MFI signals may be less reliable.
 - MFI is most effective on daily or higher timeframes where volume data is more meaningful. Intraday MFI is susceptible to volume spikes from algorithmic trading that do not reflect genuine directional conviction.
 - Due to volume weighting, MFI generally exhibits less extreme readings than RSI on the same price action — high-volume, less-volatile bars dampen the oscillator. A reading of 80 on MFI typically reflects stronger conviction than 80 on RSI, because it required sustained volume backing rather than pure price momentum.
+
+<!-- PROMPT_DIGEST:START -->
+### MFI (Money Flow Index, 14) — volume-weighted momentum oscillator, range 0–100
+
+"Volume-Weighted RSI": uses Typical Price × Volume. More sensitive to institutional/large-volume flow.
+
+Overbought/oversold:
+- MFI > 80 = overbought, potential short-term correction (esp. if volume declining); in a strong uptrend MFI can stay > 80 for extended periods.
+- MFI < 20 = oversold, potential short-term rebound (esp. if selling volume diminishing).
+- MFI > 90 / MFI < 10 = extreme, very high probability of short-term reversal; rare and strong.
+
+Money-flow divergence:
+- Bullish: price lower low while MFI higher low → selling pressure decreasing, capital shifting to buy side; strong reversal, often more reliable than RSI divergence (includes volume).
+- Bearish: price higher high while MFI lower high → buying weakening, capital shifting to sell side.
+- Carries extra weight vs pure price oscillators — reflects actual capital commitment (volume × price).
+
+Failure swing:
+- Bullish: MFI drops below 20, recovers, drops again but holds above prior low, then breaks above the intermediate high = strong buy.
+- Bearish: MFI rises above 80, pulls back, rises again but fails to exceed prior high, then breaks below the intermediate low = strong sell.
+
+Zero-flow (50 line): cross above 50 from below = positive money flow dominates, bullish bias; cross below 50 from above = negative money flow, bearish bias. Sustained above 50 = accumulation (institutional buying); sustained below 50 = distribution (institutional selling).
+
+Combinations: + RSI (both at same extreme = dual confirmation; RSI OB but MFI not = weaker); + OBV (both same direction = high-confidence volume consensus); + Bollinger (MFI < 20 + price at lower band = high-prob reversion buy); + MACD (golden cross + MFI rising above 50 = reversal with capital-flow confirmation).
+
+Caveats: Typical Price distorted by extreme intrabar volatility (long shadows). Like RSI, in strong trends can stay extreme — don't treat OB/OS as automatic reversals, confirm with ADX/structure. Needs reliable volume (weak for forex, multi-venue ETFs). Best on daily+; intraday susceptible to algo volume spikes. Generally less extreme than RSI on same action — MFI 80 typically reflects stronger conviction than RSI 80.
+<!-- PROMPT_DIGEST:END -->
+
