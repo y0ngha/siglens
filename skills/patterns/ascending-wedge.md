@@ -13,7 +13,9 @@ display:
     color: "#ef5350"
     label: "추세선"
 gating:
-  tier: always_on
+  tier: gated
+  signal_kind: event
+  triggers: [ascending_wedge]
 token_cost: 536
 digest_hash: "23832341"
 ---

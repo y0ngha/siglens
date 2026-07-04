@@ -13,7 +13,9 @@ display:
     color: "#26a69a"
     label: "핸들 저항선"
 gating:
-  tier: always_on
+  tier: gated
+  signal_kind: event
+  triggers: [cup_and_handle]
 token_cost: 613
 digest_hash: "0e23aabf"
 ---

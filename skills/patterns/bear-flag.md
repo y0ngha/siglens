@@ -13,7 +13,9 @@ display:
     color: "#ef5350"
     label: "깃발 하단"
 gating:
-  tier: always_on
+  tier: gated
+  signal_kind: event
+  triggers: [bear_flag]
 token_cost: 575
 digest_hash: "79cc4420"
 ---

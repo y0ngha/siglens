@@ -5,7 +5,15 @@
  * the snake_case schema, and cross-checks every `triggers` value against the
  * detectSignals signal catalog + candle-pattern catalog exported by
  * `@y0ngha/siglens-core` (the resolved core — see STEP-0 finding: siglens
- * consumes the core via the bare package specifier, never via `@/domain`).
+ * consumes the core via the bare package specifier, never via `@/domain`) plus
+ * the hand-mirrored chart-pattern pre-screener catalog (`PATTERN_TRIGGER_CATALOG`).
+ *
+ * Trigger validation is **type-aware**: a skill's own `type` selects which one
+ * of the three trigger vocabularies its `triggers` entries must belong to —
+ * `type: pattern` → chart-pattern pre-screener ids only, `type: candlestick` →
+ * candle-pattern names only, every other gated type → detectSignals catalog
+ * names only. A trigger valid in one vocabulary but wrong for the skill's own
+ * `type` is rejected the same as an unknown name.
  *
  * Exits non-zero on any of:
  *   - frontmatter that cannot be parsed,
@@ -13,7 +21,9 @@
  *     see skills/CLAUDE.md),
  *   - a `gating` block missing a required field / with an invalid value,
  *   - an unreachable gated skill (no triggers and no state predicate),
- *   - a `triggers` entry that is not a known catalog signal or candle pattern.
+ *   - a `triggers` entry that is not a known catalog signal, candle pattern, or
+ *     chart-pattern id — or that belongs to the wrong vocabulary for the
+ *     skill's own `type`.
  *
  * Run via `yarn validate:skills`; wired into CI.
  */
@@ -93,6 +103,52 @@ void _signalCatalogIsExhaustive;
 
 const SIGNAL_SET = new Set<string>(SIGNAL_CATALOG);
 
+/**
+ * Chart-pattern pre-screener candidates — the 17 `ChartPatternId` values the
+ * core's `screenChartPatterns()` can flag on a chart. When a pattern is a
+ * plausible candidate, its detailed pattern skill is gated in via an `event`
+ * trigger (exactly the way a detectSignals catalog entry gates an
+ * indicator/strategy skill). These live in a separate catalog from
+ * SIGNAL_CATALOG on purpose: they are `ChartPatternId` values, not `SignalType`
+ * members, so the SIGNAL_CATALOG `satisfies readonly SignalType[]` clause (and
+ * its exhaustiveness guard) would reject them.
+ *
+ * Version note: this tuple is hand-mirrored from the core's `ChartPatternId`
+ * union (siglens-core `domain/types`). As of the pinned core version
+ * (0.31.0), `ChartPatternId` is still annotated `@internal` in the core and
+ * is not re-exported from the package's public root barrel (the package has
+ * no subpath exports either, so there is no public import path for it at
+ * all) — confirmed by checking `node_modules/@y0ngha/siglens-core/dist/index.d.ts`
+ * and the package's `exports` map. A `satisfies readonly ChartPatternId[]` +
+ * exhaustiveness guard (mirroring SIGNAL_CATALOG above) therefore is not
+ * possible yet; this tuple must stay a hand-maintained, untyped mirror until
+ * the core promotes `ChartPatternId` to a public export. Once it does,
+ * tighten this to the `satisfies`/exhaustiveness-guard pattern so a future
+ * drift in the pattern union fails the build here instead of silently
+ * accepting a stale id.
+ */
+const PATTERN_TRIGGER_CATALOG = [
+    'head_and_shoulders',
+    'inverse_head_and_shoulders',
+    'double_top',
+    'double_bottom',
+    'triple_top',
+    'triple_bottom',
+    'ascending_triangle',
+    'descending_triangle',
+    'symmetrical_triangle',
+    'ascending_wedge',
+    'descending_wedge',
+    'bull_flag',
+    'bear_flag',
+    'pennant',
+    'rectangle',
+    'cup_and_handle',
+    'rounding_bottom',
+] as const;
+
+const PATTERN_TRIGGER_SET = new Set<string>(PATTERN_TRIGGER_CATALOG);
+
 /** A trigger is a valid candle pattern when the core has a label for it. */
 const isCandlePattern = (name: string): boolean =>
     // (a) why cast: the label getters are typed to accept only the
@@ -104,8 +160,54 @@ const isCandlePattern = (name: string): boolean =>
     getCandlePatternLabel(name as CandlePattern) !== undefined ||
     getMultiCandlePatternLabel(name as MultiCandlePattern) !== undefined;
 
-const isKnownTrigger = (name: string): boolean =>
-    SIGNAL_SET.has(name) || isCandlePattern(name);
+/**
+ * The trigger vocabulary a skill's `event` triggers must draw from, selected
+ * by the skill's own `type`. A trigger valid in a *different* vocabulary
+ * (e.g. a candle name on a `pattern` skill) is still rejected — each skill
+ * type owns exactly one vocabulary; see skills/CLAUDE.md's event-triggers
+ * section for the authored version of this table.
+ *
+ *   - `pattern`      → `type: pattern` skills (chart-pattern pre-screener ids)
+ *   - `candlestick`  → `type: candlestick` skills (candle-pattern names)
+ *   - `signal`       → every other gated type (`indicator_guide`, `strategy`,
+ *                      `support_resistance`, or an absent/unknown `type`) —
+ *                      detectSignals catalog names only. No skill file
+ *                      currently mixes candle names into this vocabulary, so
+ *                      it is not extended to accept them (see PR #673 review).
+ */
+type TriggerVocabulary = 'pattern' | 'candlestick' | 'signal';
+
+const triggerVocabularyForType = (type: unknown): TriggerVocabulary => {
+    if (type === 'pattern') return 'pattern';
+    if (type === 'candlestick') return 'candlestick';
+    return 'signal';
+};
+
+const isValidTriggerForVocabulary = (
+    name: string,
+    vocabulary: TriggerVocabulary
+): boolean => {
+    switch (vocabulary) {
+        case 'pattern':
+            return PATTERN_TRIGGER_SET.has(name);
+        case 'candlestick':
+            return isCandlePattern(name);
+        case 'signal':
+            return SIGNAL_SET.has(name);
+    }
+};
+
+/** Per-file error hint naming the vocabulary a rejected trigger should have come from. */
+const triggerVocabularyErrorHint = (vocabulary: TriggerVocabulary): string => {
+    switch (vocabulary) {
+        case 'pattern':
+            return 'type: pattern skills may only trigger on a PATTERN_TRIGGER_CATALOG chart-pattern pre-screener id';
+        case 'candlestick':
+            return 'type: candlestick skills may only trigger on a candle-pattern name the core has a label for';
+        case 'signal':
+            return 'this skill type may only trigger on a detectSignals catalog entry (not a candle pattern or chart-pattern id)';
+    }
+};
 
 /**
  * Mirror of `SKILL_STATE_FEATURES` / `SKILL_STATE_PREDICATE_KINDS` in
@@ -308,11 +410,11 @@ export const validateSkillData = (data: Record<string, unknown>): string[] => {
 
     return [
         ...(usageRolesError !== null ? [usageRolesError] : []),
-        ...validateGating(data.gating),
+        ...validateGating(data.gating, data.type),
     ];
 };
 
-function validateGating(gating: unknown): string[] {
+function validateGating(gating: unknown, type: unknown): string[] {
     if (!isRecord(gating)) {
         return ['`gating` must be a mapping.'];
     }
@@ -339,15 +441,16 @@ function validateGating(gating: unknown): string[] {
                 'event-gated skill is unreachable: `triggers` is missing or empty.',
             ];
         }
+        const vocabulary = triggerVocabularyForType(type);
         return triggers.flatMap(trigger => {
             if (typeof trigger !== 'string') {
                 return [
                     `\`triggers\` entry is not a string: ${String(trigger)}.`,
                 ];
             }
-            if (!isKnownTrigger(trigger)) {
+            if (!isValidTriggerForVocabulary(trigger, vocabulary)) {
                 return [
-                    `unknown trigger "${trigger}" — not a detectSignals catalog entry or candle pattern.`,
+                    `unknown trigger "${trigger}" — ${triggerVocabularyErrorHint(vocabulary)}.`,
                 ];
             }
             return [];
