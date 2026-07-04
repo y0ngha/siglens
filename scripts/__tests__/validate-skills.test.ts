@@ -24,6 +24,7 @@ describe('validateSkillData', () => {
         it('event-gated candle skill with candle-pattern triggers is valid', () => {
             expect(
                 validateSkillData({
+                    type: 'candlestick',
                     gating: {
                         tier: 'gated',
                         signal_kind: 'event',
@@ -123,6 +124,105 @@ describe('validateSkillData', () => {
         });
     });
 
+    describe('type-aware trigger vocabulary', () => {
+        it('rejects a candle-pattern name on a non-candlestick skill', () => {
+            const errors = validateSkillData({
+                type: 'indicator_guide',
+                usage_roles: ['signal'],
+                gating: {
+                    tier: 'gated',
+                    signal_kind: 'event',
+                    triggers: ['hammer'],
+                },
+            });
+            expect(errors).toHaveLength(1);
+            expect(errors[0]).toMatch(/unknown trigger "hammer"/);
+            expect(errors[0]).toMatch(/detectSignals catalog entry/);
+        });
+
+        it('rejects a chart-pattern id on a non-pattern skill', () => {
+            const errors = validateSkillData({
+                type: 'strategy',
+                gating: {
+                    tier: 'gated',
+                    signal_kind: 'event',
+                    triggers: ['head_and_shoulders'],
+                },
+            });
+            expect(errors).toHaveLength(1);
+            expect(errors[0]).toMatch(/unknown trigger "head_and_shoulders"/);
+            expect(errors[0]).toMatch(/detectSignals catalog entry/);
+        });
+
+        it('rejects a detectSignals catalog name on a pattern skill', () => {
+            const errors = validateSkillData({
+                type: 'pattern',
+                gating: {
+                    tier: 'gated',
+                    signal_kind: 'event',
+                    triggers: ['rsi_oversold'],
+                },
+            });
+            expect(errors).toHaveLength(1);
+            expect(errors[0]).toMatch(/unknown trigger "rsi_oversold"/);
+            expect(errors[0]).toMatch(/PATTERN_TRIGGER_CATALOG/);
+        });
+
+        it('rejects a candle-pattern name on a pattern skill', () => {
+            const errors = validateSkillData({
+                type: 'pattern',
+                gating: {
+                    tier: 'gated',
+                    signal_kind: 'event',
+                    triggers: ['bullish_engulfing'],
+                },
+            });
+            expect(errors).toHaveLength(1);
+            expect(errors[0]).toMatch(/unknown trigger "bullish_engulfing"/);
+            expect(errors[0]).toMatch(/PATTERN_TRIGGER_CATALOG/);
+        });
+
+        it('rejects a detectSignals catalog name on a candlestick skill', () => {
+            const errors = validateSkillData({
+                type: 'candlestick',
+                gating: {
+                    tier: 'gated',
+                    signal_kind: 'event',
+                    triggers: ['rsi_oversold'],
+                },
+            });
+            expect(errors).toHaveLength(1);
+            expect(errors[0]).toMatch(/unknown trigger "rsi_oversold"/);
+            expect(errors[0]).toMatch(/candle-pattern name/);
+        });
+
+        it('rejects a chart-pattern id on a candlestick skill', () => {
+            const errors = validateSkillData({
+                type: 'candlestick',
+                gating: {
+                    tier: 'gated',
+                    signal_kind: 'event',
+                    triggers: ['double_top'],
+                },
+            });
+            expect(errors).toHaveLength(1);
+            expect(errors[0]).toMatch(/unknown trigger "double_top"/);
+            expect(errors[0]).toMatch(/candle-pattern name/);
+        });
+
+        it('a skill with no `type` field is validated against the signal vocabulary', () => {
+            const errors = validateSkillData({
+                gating: {
+                    tier: 'gated',
+                    signal_kind: 'event',
+                    triggers: ['hammer'],
+                },
+            });
+            expect(errors).toHaveLength(1);
+            expect(errors[0]).toMatch(/unknown trigger "hammer"/);
+        });
+    });
+
     describe('usage_roles', () => {
         // These fixtures all include a valid `gating` block so the assertion
         // isolates the usage_roles check under test — otherwise the missing
@@ -206,7 +306,14 @@ describe('validateSkillData', () => {
             const errors = validateSkillData({
                 type: 'pattern',
                 usage_roles: ['signal'],
-                gating: VALID_GATING,
+                // `type: pattern` triggers must come from the pattern
+                // vocabulary — use a valid chart-pattern id here so the
+                // assertion isolates the usage_roles check under test.
+                gating: {
+                    tier: 'gated' as const,
+                    signal_kind: 'event' as const,
+                    triggers: ['head_and_shoulders'],
+                },
             });
             expect(errors).toHaveLength(1);
             expect(errors[0]).toMatch(/usage_roles/);

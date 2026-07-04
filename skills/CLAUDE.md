@@ -110,8 +110,11 @@ Every skill declares `gating.tier`; there is no untagged state. `always_on` mean
 different things depending on which analysis type the skill belongs to:
 
 - **Chart skills** — chart-relevant, deliberately ungated (no detector, or used as
-  an analysis lens): chart-patterns, theory strategies
-  (elliott-wave / fibonacci / multi-timeframe), S/R, Ichimoku, SMC.
+  an analysis lens): theory strategies (elliott-wave / fibonacci / multi-timeframe),
+  S/R, Ichimoku, SMC. Chart-pattern skills are **not** in this list — each is
+  event-gated on its own chart-pattern pre-screener candidate (see below); the
+  always-on `_core/pattern-index.md` covers baseline pattern awareness for every
+  chart prompt regardless of which individual pattern skills gate in.
 - **Fundamental/news skills** — `always_on` **within their own analysis type**:
   fundamental prompts always include the fundamental skills, news prompts always
   include the news skills. This is *not* "always injected everywhere." The
@@ -125,9 +128,25 @@ Every skill file — chart, fundamental, or news — sets an explicit `tier`.
 
 ## event triggers — the valid catalog
 
-A `triggers` entry must be **either** a valid `detectSignals` catalog name (below)
-**or** a detected candle-pattern name. The validator cross-checks against the core's
-exported catalog: a typo'd trigger **fails CI** — it does not silently disappear.
+A `triggers` entry falls into one of **three** categories, and a skill's own
+`type` determines which one its triggers must draw from — the validator rejects
+a trigger from the wrong category even if the name is valid in another:
+
+1. A valid `detectSignals` catalog name (below) — for `indicator_guide`,
+   `strategy`, and `support_resistance` skills.
+2. A detected candle-pattern name — for `candlestick` skills only.
+3. A chart-pattern pre-screener candidate id — for `pattern` skills only. These
+   are the 17 `ChartPatternId` values the core's `screenChartPatterns()` can flag
+   (`head_and_shoulders`, `inverse_head_and_shoulders`, `double_top`,
+   `double_bottom`, `triple_top`, `triple_bottom`, `ascending_triangle`,
+   `descending_triangle`, `symmetrical_triangle`, `ascending_wedge`,
+   `descending_wedge`, `bull_flag`, `bear_flag`, `pennant`, `rectangle`,
+   `cup_and_handle`, `rounding_bottom` — see `PATTERN_TRIGGER_CATALOG` in
+   `scripts/validate-skills.ts`).
+
+The validator cross-checks each skill's triggers against only the category
+valid for its own `type`: a typo'd trigger, or a trigger borrowed from the
+wrong category, **fails CI** — it does not silently disappear.
 
 Full signal catalog (bidirectional set):
 
@@ -214,22 +233,30 @@ exactly one of, appended once at the very end of the file, after the body:
 
 ## How to add a new skill / strategy
 
-1. **Pick the tier.** Chart-relevant lens or pattern with no detector → `tier: always_on`.
-   Fundamental/news with no meaningful trigger → also `tier: always_on` (the
-   category whitelist, not the tier, keeps it out of chart prompts) — never leave
-   `gating` off.
+1. **Pick the tier.** Chart-relevant lens with no detector (theory strategy, S/R,
+   Ichimoku, SMC) → `tier: always_on`. A **chart-pattern** skill (`type: pattern`)
+   always has a detector — the pre-screener — so it is `tier: gated` with its own
+   `ChartPatternId` as the `event` trigger (see the event-triggers section above);
+   it is never `always_on`. Fundamental/news with no meaningful trigger → also
+   `tier: always_on` (the category whitelist, not the tier, keeps it out of chart
+   prompts) — never leave `gating` off.
 2. **If gated, pick the kind:**
-   - **event** — there is a catalog signal (or candle pattern) that should turn it on.
-     Add `signal_kind: event` + a non-empty `triggers` list of known names.
+   - **event** — there is a catalog signal, candle pattern, or chart-pattern
+     pre-screener candidate that should turn it on. Add `signal_kind: event` + a
+     non-empty `triggers` list drawn from the category that matches this skill's
+     `type` (indicator/strategy/S-R → `detectSignals` names, `candlestick` →
+     candle names, `pattern` → `ChartPatternId` values).
    - **state** — it's a persistent condition (overbought, band-proximity, etc.).
      Add `signal_kind: state` + a `state: { feature, predicate }` from the valid pairs.
 3. Leave `token_cost` and `digest_hash` to the digest tooling — never hand-set them.
    If/when the skill gets a `PROMPT_DIGEST` section (see below), run
    `yarn skills:digest-update` to compute both. Add `smc_full_guide: true` only on
    the SMC guide.
-4. **Run `yarn validate:skills`.** It cross-checks every trigger against the core
-   catalog and every state pair against `isStateNotable`, rejecting typos and
-   unreachable combos. This is a **CI gate** — a bad tag fails the build.
+4. **Run `yarn validate:skills`.** It cross-checks every trigger against the
+   category valid for the skill's own `type` (catalog signal, candle pattern, or
+   chart-pattern id) and every state pair against `isStateNotable`, rejecting
+   typos, wrong-category triggers, and unreachable combos. This is a **CI gate**
+   — a bad tag fails the build.
 
 > Adding a strategy that fires on an *existing* signal = frontmatter-only change (zero
 > core code). Only a genuinely new signal kind needs a core `detectSignals` change.
