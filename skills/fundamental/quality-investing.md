@@ -4,6 +4,8 @@ description: 높은 자본 효율성과 지속 가능한 경쟁 우위(경제적
 category: fundamental
 confidence_weight: 0.88
 indicators: []
+gating:
+  tier: always_on
 token_cost: 170
 digest_hash: "c2905d78"
 ---

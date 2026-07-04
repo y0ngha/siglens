@@ -5,6 +5,8 @@ type: indicator_guide
 indicators: ['ema']
 confidence_weight: 0.8
 usage_roles: [signal, confirmation, regime]
+gating:
+  tier: always_on
 token_cost: 382
 digest_hash: "4c91359a"
 ---

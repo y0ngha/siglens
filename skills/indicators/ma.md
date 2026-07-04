@@ -5,6 +5,8 @@ type: indicator_guide
 indicators: ['ma']
 confidence_weight: 0.8
 usage_roles: [signal, confirmation, regime]
+gating:
+  tier: always_on
 token_cost: 499
 digest_hash: "9d4cd402"
 ---

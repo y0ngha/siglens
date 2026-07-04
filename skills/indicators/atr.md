@@ -5,6 +5,8 @@ type: indicator_guide
 indicators: ['atr']
 confidence_weight: 0.8
 usage_roles: [confirmation, measurement, risk]
+gating:
+  tier: always_on
 token_cost: 445
 digest_hash: "b2973bd0"
 ---

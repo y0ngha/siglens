@@ -4,6 +4,8 @@ description: 어닝 발표 직전·직후의 가격 변동 패턴과 Whisper Num
 category: news
 confidence_weight: 0.80
 indicators: []
+gating:
+  tier: always_on
 token_cost: 246
 digest_hash: "4d33495c"
 ---
