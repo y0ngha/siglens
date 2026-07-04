@@ -17,9 +17,27 @@ This retires the old fail-open behavior (untagged → always included), which ex
 before the engine applied a per-analysis-type category whitelist; once that
 whitelist exists, an untagged skill has no correct default (chart skills and
 fundamental/news skills need opposite treatment), so the loader refuses to guess.
-The CI validator (`yarn validate:skills`) rejects a missing/malformed `gating`
-block before it ships — every skill file, chart or fundamental/news, must carry
-an explicit `tier`.
+The CI validator (`yarn validate:skills`, `scripts/validate-skills.ts`) rejects a
+missing/malformed `gating` block before it ships — every skill file, chart or
+fundamental/news, must carry an explicit `tier`.
+
+**Scope of "load error" — CI vs. runtime.** The two enforcement points land on
+different timelines and must not be conflated:
+
+- **CI (this repo, today):** `yarn validate:skills` rejects a missing or
+  malformed `gating` block for every skill file. This is authoring-time
+  enforcement — it stops a new untagged skill from ever being committed.
+- **Runtime (siglens-core ≥0.30, not yet shipped):** the selection engine's
+  fail-closed behavior described above — treating an untagged/unreachable
+  skill as a load error at prompt-build time — arrives with that engine.
+  Until it ships, this repo's app-side parser
+  (`src/entities/skill/api.ts`'s `parseGating`) still **fail-opens** at
+  runtime: it mirrors the pre-≥0.30 core loader and returns `undefined`
+  (treated as untagged) for a malformed/unreachable block rather than
+  throwing. That parser is deliberately left unchanged in this PR: 100% of
+  skill files are CI-tagged today, so the fail-open path is currently
+  unreachable in practice, but the runtime code itself does not yet enforce
+  the policy — only CI does.
 
 ## Frontmatter `gating` schema
 
