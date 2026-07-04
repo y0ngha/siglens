@@ -4,6 +4,8 @@ description: 저평가된 우량 기업을 발굴하는 벤저민 그레이엄 /
 category: fundamental
 confidence_weight: 0.9
 indicators: []
+gating:
+  tier: always_on
 token_cost: 168
 digest_hash: "d424e139"
 ---

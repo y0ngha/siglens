@@ -3,12 +3,6 @@ import { validateSkillData } from '../validate-skills';
 
 describe('validateSkillData', () => {
     describe('valid frontmatter', () => {
-        it('untagged skill (no gating block) produces no errors', () => {
-            expect(
-                validateSkillData({ name: 'x', confidence_weight: 0.5 })
-            ).toEqual([]);
-        });
-
         it('always_on tier is valid', () => {
             expect(
                 validateSkillData({ gating: { tier: 'always_on' } })
@@ -53,6 +47,15 @@ describe('validateSkillData', () => {
     });
 
     describe('schema errors', () => {
+        it('rejects a skill with no `gating` block at all (explicit-gating policy)', () => {
+            const errors = validateSkillData({
+                name: 'x',
+                confidence_weight: 0.5,
+            });
+            expect(errors).toHaveLength(1);
+            expect(errors[0]).toMatch(/missing `gating` block/);
+        });
+
         it('rejects a non-mapping gating block', () => {
             expect(validateSkillData({ gating: 'always_on' })).toHaveLength(1);
         });
@@ -95,17 +98,30 @@ describe('validateSkillData', () => {
     });
 
     describe('usage_roles', () => {
+        // These fixtures all include a valid `gating` block so the assertion
+        // isolates the usage_roles check under test — otherwise the missing
+        // `gating` block would surface as an extra, unrelated error.
+        const VALID_GATING = {
+            tier: 'gated' as const,
+            signal_kind: 'event' as const,
+            triggers: ['rsi_oversold'],
+        };
+
         it('indicator_guide with valid [signal, confirmation] passes', () => {
             expect(
                 validateSkillData({
                     type: 'indicator_guide',
                     usage_roles: ['signal', 'confirmation'],
+                    gating: VALID_GATING,
                 })
             ).toEqual([]);
         });
 
         it('indicator_guide missing usage_roles fails', () => {
-            const errors = validateSkillData({ type: 'indicator_guide' });
+            const errors = validateSkillData({
+                type: 'indicator_guide',
+                gating: VALID_GATING,
+            });
             expect(errors).toHaveLength(1);
             expect(errors[0]).toMatch(/usage_roles/);
         });
@@ -114,6 +130,7 @@ describe('validateSkillData', () => {
             const errors = validateSkillData({
                 type: 'indicator_guide',
                 usage_roles: [],
+                gating: VALID_GATING,
             });
             expect(errors).toHaveLength(1);
             expect(errors[0]).toMatch(/usage_roles/);
@@ -123,6 +140,7 @@ describe('validateSkillData', () => {
             const errors = validateSkillData({
                 type: 'indicator_guide',
                 usage_roles: 'signal',
+                gating: VALID_GATING,
             });
             expect(errors).toHaveLength(1);
             expect(errors[0]).toMatch(/usage_roles/);
@@ -132,6 +150,7 @@ describe('validateSkillData', () => {
             const errors = validateSkillData({
                 type: 'indicator_guide',
                 usage_roles: ['signal', 'bogus_role'],
+                gating: VALID_GATING,
             });
             expect(errors).toHaveLength(1);
             expect(errors[0]).toMatch(/invalid usage_role/);
@@ -141,6 +160,7 @@ describe('validateSkillData', () => {
             const errors = validateSkillData({
                 type: 'indicator_guide',
                 usage_roles: ['signal', 'signal'],
+                gating: VALID_GATING,
             });
             expect(errors).toHaveLength(1);
             expect(errors[0]).toMatch(/duplicate usage_role/);
@@ -150,6 +170,7 @@ describe('validateSkillData', () => {
             const errors = validateSkillData({
                 type: 'indicator_guide',
                 usage_roles: ['confirmation', 'signal'],
+                gating: VALID_GATING,
             });
             expect(errors).toHaveLength(1);
             expect(errors[0]).toMatch(/canonical order/);
@@ -159,6 +180,7 @@ describe('validateSkillData', () => {
             const errors = validateSkillData({
                 type: 'pattern',
                 usage_roles: ['signal'],
+                gating: VALID_GATING,
             });
             expect(errors).toHaveLength(1);
             expect(errors[0]).toMatch(/usage_roles/);

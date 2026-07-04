@@ -9,6 +9,8 @@
  *
  * Exits non-zero on any of:
  *   - frontmatter that cannot be parsed,
+ *   - a skill with no `gating` block at all (explicit gating is required —
+ *     see skills/CLAUDE.md),
  *   - a `gating` block missing a required field / with an invalid value,
  *   - an unreachable gated skill (no triggers and no state predicate),
  *   - a `triggers` entry that is not a known catalog signal or candle pattern.
@@ -283,8 +285,8 @@ function validateUsageRoles(
 
 /**
  * Validate a single skill's frontmatter `data`. Returns the list of error
- * messages (empty when the skill is valid or intentionally untagged). Exported
- * for unit testing without spawning the CLI.
+ * messages (empty when the skill is valid). Exported for unit testing without
+ * spawning the CLI.
  */
 export const validateSkillData = (data: Record<string, unknown>): string[] => {
     const usageRolesError = validateUsageRoles(
@@ -293,11 +295,20 @@ export const validateSkillData = (data: Record<string, unknown>): string[] => {
         data.gating
     );
 
-    // A skill with no `gating` block is intentionally untagged (the core
-    // selector fail-opens it). Only validate when a block is present.
+    // Explicit gating is mandatory (skills/CLAUDE.md's explicit-gating
+    // policy): a skill with no `gating` block at all is a validation error,
+    // not "intentionally untagged". This retires the old fail-open behavior
+    // where an absent block skipped gating validation entirely.
+    if (!('gating' in data)) {
+        return [
+            ...(usageRolesError !== null ? [usageRolesError] : []),
+            'missing `gating` block — every skill must declare `gating.tier` (see skills/CLAUDE.md explicit-gating policy).',
+        ];
+    }
+
     return [
         ...(usageRolesError !== null ? [usageRolesError] : []),
-        ...('gating' in data ? validateGating(data.gating) : []),
+        ...validateGating(data.gating),
     ];
 };
 
@@ -408,7 +419,13 @@ const parseSkillFile = (file: string): FileResult => {
 };
 
 const main = async (): Promise<void> => {
-    const allFiles = await glob('**/*.md', { cwd: SKILLS_DIR, absolute: true });
+    // `CLAUDE.md` is authoring documentation, not a skill file — it has no
+    // frontmatter at all and must not be validated as one.
+    const allFiles = await glob('**/*.md', {
+        cwd: SKILLS_DIR,
+        absolute: true,
+        ignore: ['CLAUDE.md'],
+    });
     // `.sort()` not `.toSorted()`: scripts/ isn't covered by the main tsconfig's
     // esnext lib, so Array.prototype.toSorted isn't available; the spread copies
     // the array first so the original is not mutated.

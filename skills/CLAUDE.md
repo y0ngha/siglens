@@ -10,11 +10,34 @@ all ~70 of them every time. Tagging a skill with `gating` tells the selector *wh
 to include it (e.g. only when RSI is oversold, or Bollinger %B is extreme). This
 removes irrelevant distraction for floor models and cuts tokens.
 
-**Fail-open is the default.** A skill with **no `gating` block** is always included.
-A malformed/unreachable `gating` block is treated as untagged (also always included) —
-it never silently disappears. The CI validator (`yarn validate:skills`) rejects the
-malformed block before it ships, so fail-open is a safety net, not an excuse to skip
-validation.
+**Every skill must declare `gating`.** A skill with **no `gating` block**, or a
+malformed/unreachable one, is a **load error** under the selection engine
+(siglens-core ≥0.30) — there is no untagged fallback that keeps it always injected.
+This retires the old fail-open behavior (untagged → always included), which existed
+before the engine applied a per-analysis-type category whitelist; once that
+whitelist exists, an untagged skill has no correct default (chart skills and
+fundamental/news skills need opposite treatment), so the loader refuses to guess.
+The CI validator (`yarn validate:skills`, `scripts/validate-skills.ts`) rejects a
+missing/malformed `gating` block before it ships — every skill file, chart or
+fundamental/news, must carry an explicit `tier`.
+
+**Scope of "load error" — CI vs. runtime.** The two enforcement points land on
+different timelines and must not be conflated:
+
+- **CI (this repo, today):** `yarn validate:skills` rejects a missing or
+  malformed `gating` block for every skill file. This is authoring-time
+  enforcement — it stops a new untagged skill from ever being committed.
+- **Runtime (siglens-core ≥0.30, not yet shipped):** the selection engine's
+  fail-closed behavior described above — treating an untagged/unreachable
+  skill as a load error at prompt-build time — arrives with that engine.
+  Until it ships, this repo's app-side parser
+  (`src/entities/skill/api.ts`'s `parseGating`) still **fail-opens** at
+  runtime: it mirrors the pre-≥0.30 core loader and returns `undefined`
+  (treated as untagged) for a malformed/unreachable block rather than
+  throwing. That parser is deliberately left unchanged in this PR: 100% of
+  skill files are CI-tagged today, so the fail-open path is currently
+  unreachable in practice, but the runtime code itself does not yet enforce
+  the policy — only CI does.
 
 ## Frontmatter `gating` schema
 
@@ -81,17 +104,24 @@ gating:
   triggers: [rsi_oversold, rsi_overbought]
 ```
 
-## tier: always_on vs untagged
+## tier: always_on — chart skills vs fundamental/news skills
 
-Both end up always-injected, but they mean different things:
+Every skill declares `gating.tier`; there is no untagged state. `always_on` means
+different things depending on which analysis type the skill belongs to:
 
-- **`always_on`** — chart-relevant, deliberately ungated (no detector or used as an
-  analysis lens): chart-patterns, theory strategies
+- **Chart skills** — chart-relevant, deliberately ungated (no detector, or used as
+  an analysis lens): chart-patterns, theory strategies
   (elliott-wave / fibonacci / multi-timeframe), S/R, Ichimoku, SMC.
-- **untagged (no `gating`)** — fail-open inclusion: non-chart fundamental/news skills,
-  or indicators with no meaningful trigger.
+- **Fundamental/news skills** — `always_on` **within their own analysis type**:
+  fundamental prompts always include the fundamental skills, news prompts always
+  include the news skills. This is *not* "always injected everywhere." The
+  selection engine applies a category whitelist per analysis type before `tier` is
+  even evaluated (TECHNICAL only draws from `_core`/indicators/patterns/strategies/
+  candlesticks/support-resistance; FUNDAMENTAL/FINANCIALS only from `fundamental`;
+  NEWS only from `news`), so a fundamental/news skill's `always_on` can never leak
+  into a chart prompt — the whitelist, not the tier, is what keeps prompts scoped.
 
-Prefer an explicit `tier: always_on` for chart skills; leave fundamental/news untagged.
+Every skill file — chart, fundamental, or news — sets an explicit `tier`.
 
 ## event triggers — the valid catalog
 
@@ -185,7 +215,9 @@ exactly one of, appended once at the very end of the file, after the body:
 ## How to add a new skill / strategy
 
 1. **Pick the tier.** Chart-relevant lens or pattern with no detector → `tier: always_on`.
-   Fundamental/news → leave untagged (no `gating` block).
+   Fundamental/news with no meaningful trigger → also `tier: always_on` (the
+   category whitelist, not the tier, keeps it out of chart prompts) — never leave
+   `gating` off.
 2. **If gated, pick the kind:**
    - **event** — there is a catalog signal (or candle pattern) that should turn it on.
      Add `signal_kind: event` + a non-empty `triggers` list of known names.

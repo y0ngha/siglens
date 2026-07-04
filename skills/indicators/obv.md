@@ -5,6 +5,8 @@ type: indicator_guide
 indicators: ['obv']
 confidence_weight: 0.8
 usage_roles: [confirmation, measurement]
+gating:
+  tier: always_on
 token_cost: 517
 digest_hash: "2bf75817"
 ---

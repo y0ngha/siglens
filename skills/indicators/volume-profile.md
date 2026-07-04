@@ -5,6 +5,8 @@ type: indicator_guide
 indicators: ['volumeProfile']
 confidence_weight: 0.85
 usage_roles: [confirmation, measurement]
+gating:
+  tier: always_on
 token_cost: 394
 digest_hash: "1bfae4db"
 ---
