@@ -93,6 +93,46 @@ void _signalCatalogIsExhaustive;
 
 const SIGNAL_SET = new Set<string>(SIGNAL_CATALOG);
 
+/**
+ * Chart-pattern pre-screener candidates — the 17 `ChartPatternId` values the
+ * core's `screenChartPatterns()` can flag on a chart. When a pattern is a
+ * plausible candidate, its detailed pattern skill is gated in via an `event`
+ * trigger (exactly the way a detectSignals catalog entry gates an
+ * indicator/strategy skill). These live in a separate catalog from
+ * SIGNAL_CATALOG on purpose: they are `ChartPatternId` values, not `SignalType`
+ * members, so the SIGNAL_CATALOG `satisfies readonly SignalType[]` clause (and
+ * its exhaustiveness guard) would reject them.
+ *
+ * Version note: this tuple is hand-mirrored from the core's `ChartPatternId`
+ * union (siglens-core domain/types). The core root barrel does not re-export
+ * `ChartPatternId` until v0.30.0 — this branch merges only after that bump.
+ * Once it lands on a core that exports the type, tighten this to
+ * `satisfies readonly ChartPatternId[]` + an exhaustiveness guard (mirroring
+ * SIGNAL_CATALOG above) so a future drift in the pattern union fails the build
+ * here instead of silently accepting a stale id.
+ */
+const PATTERN_TRIGGER_CATALOG = [
+    'head_and_shoulders',
+    'inverse_head_and_shoulders',
+    'double_top',
+    'double_bottom',
+    'triple_top',
+    'triple_bottom',
+    'ascending_triangle',
+    'descending_triangle',
+    'symmetrical_triangle',
+    'ascending_wedge',
+    'descending_wedge',
+    'bull_flag',
+    'bear_flag',
+    'pennant',
+    'rectangle',
+    'cup_and_handle',
+    'rounding_bottom',
+] as const;
+
+const PATTERN_TRIGGER_SET = new Set<string>(PATTERN_TRIGGER_CATALOG);
+
 /** A trigger is a valid candle pattern when the core has a label for it. */
 const isCandlePattern = (name: string): boolean =>
     // (a) why cast: the label getters are typed to accept only the
@@ -105,7 +145,9 @@ const isCandlePattern = (name: string): boolean =>
     getMultiCandlePatternLabel(name as MultiCandlePattern) !== undefined;
 
 const isKnownTrigger = (name: string): boolean =>
-    SIGNAL_SET.has(name) || isCandlePattern(name);
+    SIGNAL_SET.has(name) ||
+    PATTERN_TRIGGER_SET.has(name) ||
+    isCandlePattern(name);
 
 /**
  * Mirror of `SKILL_STATE_FEATURES` / `SKILL_STATE_PREDICATE_KINDS` in

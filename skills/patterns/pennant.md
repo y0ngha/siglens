@@ -13,7 +13,9 @@ display:
     color: "#78909c"
     label: "페넌트"
 gating:
-  tier: always_on
+  tier: gated
+  signal_kind: event
+  triggers: [pennant]
 token_cost: 764
 digest_hash: "d59b6e3d"
 ---

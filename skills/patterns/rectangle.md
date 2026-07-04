@@ -13,7 +13,9 @@ display:
     color: "#78909c"
     label: "지지/저항선"
 gating:
-  tier: always_on
+  tier: gated
+  signal_kind: event
+  triggers: [rectangle]
 token_cost: 777
 digest_hash: "7179d8c5"
 ---

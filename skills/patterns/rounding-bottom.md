@@ -13,7 +13,9 @@ display:
     color: "#26a69a"
     label: "림 저항선"
 gating:
-  tier: always_on
+  tier: gated
+  signal_kind: event
+  triggers: [rounding_bottom]
 token_cost: 702
 digest_hash: "07429977"
 ---

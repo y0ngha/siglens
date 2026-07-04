@@ -13,7 +13,9 @@ display:
     color: "#26a69a"
     label: "넥라인"
 gating:
-  tier: always_on
+  tier: gated
+  signal_kind: event
+  triggers: [double_bottom]
 token_cost: 509
 digest_hash: "f7b71b09"
 ---

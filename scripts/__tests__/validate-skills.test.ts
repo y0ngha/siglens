@@ -33,6 +33,32 @@ describe('validateSkillData', () => {
             ).toEqual([]);
         });
 
+        it('event-gated pattern skill with chart-pattern pre-screener triggers is valid', () => {
+            // The 17 ChartPatternId values are accepted via PATTERN_TRIGGER_CATALOG
+            // (a separate catalog from SIGNAL_CATALOG). A pattern skill gates in
+            // when the pre-screener flags its pattern as a candidate.
+            expect(
+                validateSkillData({
+                    type: 'pattern',
+                    gating: {
+                        tier: 'gated',
+                        signal_kind: 'event',
+                        triggers: ['head_and_shoulders'],
+                    },
+                })
+            ).toEqual([]);
+            expect(
+                validateSkillData({
+                    type: 'pattern',
+                    gating: {
+                        tier: 'gated',
+                        signal_kind: 'event',
+                        triggers: ['cup_and_handle', 'rounding_bottom'],
+                    },
+                })
+            ).toEqual([]);
+        });
+
         it('state-gated skill with a supported (feature, predicate) pair is valid', () => {
             expect(
                 validateSkillData({

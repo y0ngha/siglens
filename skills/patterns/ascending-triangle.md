@@ -13,7 +13,9 @@ display:
     color: "#26a69a"
     label: "저항선"
 gating:
-  tier: always_on
+  tier: gated
+  signal_kind: event
+  triggers: [ascending_triangle]
 token_cost: 601
 digest_hash: "1b764299"
 ---
