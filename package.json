@@ -44,7 +44,8 @@
         "test:e2e:ui": "playwright test --ui",
         "format": "prettier --write .",
         "format:staged": "prettier --write --ignore-unknown",
-        "typecheck": "tsc --noEmit",
+        "typecheck": "tsgo --noEmit",
+        "typecheck:tsc": "tsc --noEmit",
         "validate:skills": "tsx scripts/validate-skills.ts",
         "skills:digest-verify": "tsx scripts/skills-digest.ts verify",
         "skills:digest-update": "tsx scripts/skills-digest.ts update-meta",
@@ -100,7 +101,8 @@
         "@types/node": "^20",
         "@types/react": "^19",
         "@types/react-dom": "^19",
-        "@vitest/coverage-v8": "^4.1.7",
+        "@typescript/native-preview": "7.0.0-dev.20260704.1",
+        "@vitest/coverage-v8": "^4.1.9",
         "babel-plugin-react-compiler": "^1.0.0",
         "dotenv-cli": "^11.0.0",
         "drizzle-kit": "^0.31.10",
@@ -122,7 +124,8 @@
         "tailwindcss": "^4",
         "tsx": "^4.22.3",
         "typescript": "^5",
-        "vitest": "^4.1.7"
+        "vite": "^8.1.3",
+        "vitest": "^4.1.9"
     },
     "packageManager": "yarn@4.12.0",
     "browserslist": [
