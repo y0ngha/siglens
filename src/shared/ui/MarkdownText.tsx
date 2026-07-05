@@ -69,10 +69,7 @@ export function MarkdownText({
 }: MarkdownTextProps) {
     return (
         <div
-            className={cn(
-                'leading-[1.75] tracking-normal [word-break:keep-all]',
-                className
-            )}
+            className={cn('leading-[1.75] tracking-normal', className)}
             {...props}
         >
             <ReactMarkdown components={components}>{children}</ReactMarkdown>

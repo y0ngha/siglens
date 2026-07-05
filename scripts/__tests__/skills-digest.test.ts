@@ -335,6 +335,16 @@ describe('updateFileContent', () => {
         expect(result.skippedReason).toBe('missing-digest');
     });
 
+    it('skips a file with no --- frontmatter block at all (parallel to verifyFileContent)', () => {
+        const content = 'no frontmatter here at all';
+        const result = updateFileContent(content);
+        expect(result).toEqual({
+            changed: false,
+            skippedReason: 'invalid-frontmatter',
+            content,
+        });
+    });
+
     it('skips a malformed file', () => {
         const content = buildFile();
         const split = splitFrontmatter(content)!;

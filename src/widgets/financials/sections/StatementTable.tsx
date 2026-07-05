@@ -93,7 +93,7 @@ export function StatementTable({
                                 <th
                                     key={col}
                                     scope="col"
-                                    className="pb-2 text-right font-medium"
+                                    className="px-3 pb-2 text-right font-medium whitespace-nowrap"
                                 >
                                     {col}
                                 </th>
@@ -131,7 +131,7 @@ export function StatementTable({
                                         <td
                                             key={columns[j]}
                                             className={cn(
-                                                'py-2.5 text-right font-mono text-xs tabular-nums',
+                                                'px-3 py-2.5 text-right font-mono text-xs whitespace-nowrap tabular-nums',
                                                 formatted === '—'
                                                     ? 'text-secondary-400'
                                                     : !shouldColorize

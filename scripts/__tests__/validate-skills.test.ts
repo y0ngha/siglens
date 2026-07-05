@@ -1,5 +1,8 @@
-import { describe, expect, it } from 'vitest';
-import { validateSkillData } from '../validate-skills';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { parseSkillFile, validateSkillData } from '../validate-skills';
 
 describe('validateSkillData', () => {
     describe('valid frontmatter', () => {
@@ -412,5 +415,58 @@ describe('validateSkillData', () => {
             });
             expect(errors[0]).toMatch(/unreachable state predicate/);
         });
+    });
+});
+
+describe('parseSkillFile fail-closed parse failures', () => {
+    // Both branches below must surface as an *error* (so `main()` exits 1 —
+    // fail-closed drop), never as a silently-accepted valid skill. These cover
+    // the gray-matter try/catch and the "frontmatter missing/not a mapping"
+    // check in parseSkillFile, which had no test before this file.
+    let dir: string;
+
+    const writeFixture = (name: string, content: string): string => {
+        const file = join(dir, name);
+        writeFileSync(file, content);
+        return file;
+    };
+
+    beforeEach(() => {
+        dir = mkdtempSync(join(tmpdir(), 'validate-skills-test-'));
+    });
+
+    afterEach(() => {
+        rmSync(dir, { recursive: true, force: true });
+    });
+
+    it('drops a file with unparseable (broken) YAML frontmatter', () => {
+        // Unbalanced `{` in a flow mapping — js-yaml (via gray-matter) throws
+        // rather than returning malformed data.
+        const file = writeFixture(
+            'broken-yaml.md',
+            '---\ngating: {tier: gated\n---\nbody text\n'
+        );
+        const result = parseSkillFile(file);
+        expect(result.hasGating).toBe(false);
+        expect(result.errors).toHaveLength(1);
+        expect(result.errors[0]?.message).toMatch(
+            /failed to parse frontmatter/
+        );
+    });
+
+    it('drops a file whose frontmatter parses to a non-mapping (e.g. a YAML list)', () => {
+        // Valid YAML, but the top-level value is an array, not a mapping —
+        // gray-matter does not throw here, so this exercises the separate
+        // `!isRecord(parsed.data)` guard.
+        const file = writeFixture(
+            'non-mapping.md',
+            '---\n- just\n- a\n- list\n---\nbody text\n'
+        );
+        const result = parseSkillFile(file);
+        expect(result.hasGating).toBe(false);
+        expect(result.errors).toHaveLength(1);
+        expect(result.errors[0]?.message).toMatch(
+            /frontmatter is missing or not a mapping/
+        );
     });
 });
