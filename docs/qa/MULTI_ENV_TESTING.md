@@ -63,3 +63,31 @@ test.describe('@webkit 긴 본문 오버플로우', () => {
 
 > 로컬은 통과하는데 CI에서만 실패하면 추측하지 말고 playwright-report 아티팩트(error-context a11y
 > 스냅샷 + 스크린샷/trace)를 직접 분석한다 → [EMPIRICAL_VERIFICATION.md](./EMPIRICAL_VERIFICATION.md).
+
+---
+
+## 5. CSS 전용 회귀 — 한글 음절 줄바꿈 · 숫자 컬럼 오버플로 (375px)
+
+PR #674에서 좁은 모바일 폭에서만 드러나는 두 가지 레이아웃 회귀를 CSS로 수정했다. 이 클래스는
+**vitest/jsdom이 레이아웃을 계산하지 않아 유닛 테스트로 잡히지 않으므로**, 375px 실렌더로 확인한다.
+
+**증상 & 근본 수정**
+
+- 한글이 음절 단위로 쪼개짐(예: "약세"→"약"/"세", "리스크"→"리스"/"크") → 전역 `body { word-break: keep-all; overflow-wrap: break-word; }`로 어절(공백) 단위 줄바꿈.
+- 재무 표 숫자 컬럼이 붙거나("$28.1B$64.1B") 음수 부호가 줄바꿈됨("-$976M"의 `-`) → `StatementTable`/`OptionsChainTable` 셀에 `px-3 whitespace-nowrap`(초과분은 `overflow-x` 스크롤).
+- 분석 헤더가 좁은 폭에서 짓눌려 쪼개짐 → `AnalysisPanel` 헤더를 `flex-col sm:flex-row sm:justify-between` 반응형 스택으로.
+
+**375px 확인 절차** (대상: `/[symbol]/financials`, `/[symbol]`)
+
+1. 전역 규칙 활성 확인: `getComputedStyle(document.body).wordBreak === 'keep-all'`.
+2. 현금흐름표 CapEx 음수 셀("-$976M" 등)이 **단일 줄**인지 — 셀 높이가 1줄 높이인지 확인(부호가 윗줄로 깨지지 않음).
+3. 표 숫자 컬럼이 붙지 않고 스크롤 컨테이너가 **가로 스크롤 가능**한지 — `region.scrollWidth > region.clientWidth`.
+4. AI 분석 헤더 배지(예: "약세"/"보합")와 "리스크 …" 라벨이 **음절 단위로 쪼개지지 않는지** — 각 배지/라벨이 단일 줄.
+
+> 실렌더 팁: 창이 OS 최소 폭(예: ~1500px)에 걸려 뷰포트를 375px로 줄일 수 없으면, 대상 카드/표
+> 컨테이너를 직접 좁혀 재현한다 — `section.style.width = '345px'` 후 위 2~4를 셀 높이·`scrollWidth`로
+> 측정(§4의 `document.scrollWidth ≤ clientWidth` 원칙과 동일). 미디어쿼리(`sm:`) 분기는 실뷰포트가
+> 필요하므로 Playwright `devices['iPhone 14']`(webkit) 프로젝트로 자동화한다.
+
+**자동화 상태**: 위 절차의 Playwright 375px 시각 회귀 스펙은 **issue #676**로 추적한다(작성 전까지는
+이 수동 절차가 게이트).
