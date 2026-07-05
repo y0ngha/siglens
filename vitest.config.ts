@@ -21,12 +21,15 @@ const sharedConfig = {
 
 const sharedTestConfig = {
     globals: true as const,
-    pool: 'vmThreads' as const,
-    maxThreads: 8,
+    // Node 25 + jsdom은 worker_threads 기반 풀(vmThreads·threads)에서 워커가
+    // 기동 즉시 크래시한다("Worker exited unexpectedly"). child_process 기반
+    // forks 풀만 안정적으로 동작한다 — 시작 오버헤드는 다소 크지만 유일한 선택지.
+    pool: 'forks' as const,
+    maxWorkers: 8,
     experimental: { fsModuleCache: true },
-    // `vmThreads`는 워커 한 개 안에서 여러 테스트 파일이 process.env를 공유한다.
-    // `vi.stubEnv`가 파일의 마지막 테스트 뒤 자동 복원되지 않으면(기본 unstubEnvs=false)
-    // 스텁된 env가 같은 워커의 다음 파일로 새어, isE2E()를 켜 factory들의
+    // forks 풀도 워커(자식 프로세스) 하나가 여러 테스트 파일을 순차 재사용하므로
+    // 한 파일에서 `vi.stubEnv`한 값이 자동 복원되지 않으면(기본 unstubEnvs=false)
+    // 같은 워커의 다음 파일로 새어, isE2E()를 켜 factory들의
     // `require('./Fake*')` dead-branch를 활성화 → "Cannot find module" flake를 일으킨다.
     // 매 테스트 후 자동 unstub해 누수를 차단한다(전역 afterEach의 raw E2E_TEST 복원과 함께).
     unstubEnvs: true as const,
@@ -40,12 +43,12 @@ const sharedTestConfig = {
 
 /**
  * Coverage OOM 해결책 (widgets 레이어 v8 계측 힙 고갈):
- * Vitest 4는 vmThreads poolOptions.execArgv를 제거해 vitest.config.ts 내부에서
- * 워커 힙 크기를 직접 설정할 수 없다(ERR_WORKER_INVALID_EXEC_ARGV).
- * 대신 `package.json`의 test-coverage 스크립트에서
+ * vitest.config.ts 내부에서는 워커 힙 크기를 직접 설정할 수 없어
+ * `package.json`의 test-coverage 스크립트에서
  *   `NODE_OPTIONS="--no-experimental-webstorage --max-old-space-size=4096"`
- * 를 설정해 Vitest 프로세스 자체의 힙을 확보한다. vmThreads 워커는 부모의
- * --max-old-space-size를 상속하므로 워커별 OOM도 함께 해소된다.
+ * 를 설정해 Vitest 프로세스 자체의 힙을 확보한다. forks 풀의 자식 프로세스는
+ * 부모의 NODE_OPTIONS(--max-old-space-size 포함)를 상속하므로 워커별 OOM도
+ * 함께 해소된다.
  */
 const coverageConfig = {
     provider: 'v8' as const,

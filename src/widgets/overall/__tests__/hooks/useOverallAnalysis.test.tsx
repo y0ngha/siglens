@@ -1148,8 +1148,17 @@ describe('useOverallAnalysis — crypto assetClass (F1)', () => {
 
     it('cleanup 시 fundamental/options cancel을 호출하지 않는다', async () => {
         mockSubmit.mockResolvedValue(CRYPTO_PENDING_DEPS);
-        mockPollTechnical.mockResolvedValue({ status: 'processing' });
-        mockPollNews.mockResolvedValue({ status: 'processing' });
+        // Hold the dependency polls unresolved so the hook stays parked in the
+        // dependencies phase at unmount (technical + news still in-flight).
+        // Returning { status: 'processing' } here would be fatal: sleep() is
+        // mocked to resolve instantly (see module mock above), so a poll that
+        // keeps resolving turns waitForDependencies into a delay-free microtask
+        // loop that re-renders every iteration → unbounded heap growth → OOM.
+        // A never-resolving promise suspends the loop at its await instead,
+        // mirroring the real "still in-flight" state — same pattern the equity
+        // dependencies-phase cancel tests use above.
+        mockPollTechnical.mockImplementation(() => new Promise(() => {}));
+        mockPollNews.mockImplementation(() => new Promise(() => {}));
 
         const { result, unmount } = renderHook(
             () =>
