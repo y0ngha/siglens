@@ -54,24 +54,30 @@
     /* Chart — Supertrend (추세 색 고정값: bullish teal / bearish red) */
     --color-chart-supertrend-up: #26a69a;
     --color-chart-supertrend-down: #ef5350;
+
     /* Chart — Parabolic SAR (추세 색 점) */
     --color-chart-parabolic-sar-up: #26a69a;
     --color-chart-parabolic-sar-down: #ef5350;
+
     /* Chart — Chandelier Exit (추세 색 점선 stop) */
     --color-chart-chandelier-long: #26a69a;
     --color-chart-chandelier-short: #ef5350;
+
     /* Chart — Elder Ray */
     --color-chart-elder-bull-power: #26a69a;
     --color-chart-elder-bear-power: #ef5350;
+
     /* Chart — Squeeze Momentum / 상태 점 */
     --color-chart-squeeze-momentum-up: #26a69a;
     --color-chart-squeeze-momentum-down: #ef5350;
     --color-chart-squeeze-on: #fbbf24;
     --color-chart-squeeze-off: #94a3b8;
     --color-chart-squeeze-none: #3b82f6;
+
     /* Chart — Regression */
     --color-chart-regression-up: #26a69a;
     --color-chart-regression-down: #ef5350;
+
     /* Chart — Elder Impulse (캔들 색) */
     --color-chart-impulse-bullish: #26a69a;
     --color-chart-impulse-bearish: #ef5350;
@@ -189,6 +195,11 @@ body {
        자체는 globals.css 상단 @theme에서 정의된 Geist→Pretendard→OS 순서. */
     font-family: var(--font-sans);
     color: var(--color-secondary-50);
+
+    /* 한글은 keep-all로 어절(공백) 단위로만 줄바꿈해 음절 쪼개짐(예: "약세"→"약"/"세")을
+       막고, 공백 없는 긴 토큰은 overflow-wrap으로 넘침을 방지한다. */
+    word-break: keep-all;
+    overflow-wrap: break-word;
     background-color: var(--color-secondary-900);
 }
 
