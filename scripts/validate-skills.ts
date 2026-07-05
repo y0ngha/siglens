@@ -127,7 +127,7 @@ const SIGNAL_SET = new Set<string>(SIGNAL_CATALOG);
  * drift in the pattern union fails the build here instead of silently
  * accepting a stale id.
  */
-const PATTERN_TRIGGER_CATALOG = [
+export const PATTERN_TRIGGER_CATALOG = [
     'head_and_shoulders',
     'inverse_head_and_shoulders',
     'double_top',
@@ -492,8 +492,13 @@ interface FileResult {
     errors: SkillError[];
 }
 
-/** Read + validate one skill file. Returns its errors (with file context) and whether it carries a gating block. */
-const parseSkillFile = (file: string): FileResult => {
+/**
+ * Read + validate one skill file. Returns its errors (with file context) and
+ * whether it carries a gating block. Exported for unit testing the fail-closed
+ * parse-failure branches (unparseable YAML, non-mapping frontmatter) without
+ * spawning the CLI.
+ */
+export const parseSkillFile = (file: string): FileResult => {
     const rel = relative(REPO_ROOT, file);
     const withFile = (message: string): SkillError => ({ file: rel, message });
 
