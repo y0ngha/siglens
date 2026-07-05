@@ -284,7 +284,7 @@ function TrendBadge({ trend }: TrendBadgeProps) {
     return (
         <span
             className={cn(
-                'rounded border px-2 py-0.5 text-xs font-bold',
+                'rounded border px-2 py-0.5 text-xs font-bold whitespace-nowrap',
                 display.color,
                 display.bgColor
             )}
@@ -873,7 +873,10 @@ export function AnalysisPanel({
                 key={cooldownNotice?.nonce}
                 notice={cooldownNotice}
             />
-            <div className="flex items-center justify-between">
+            {/* 모바일(<sm)에서는 좌/우 그룹을 세로로 쌓아 정렬을 맞추고, sm+에서만
+                양끝 정렬한다. flex-wrap+ml-auto는 초협폭 wrap 시 좌/우가 엇갈리는
+                지그재그가 생겨 responsive 스택으로 대체했다. */}
+            <div className="flex flex-col gap-y-2 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-2">
                     <span className="text-secondary-200 text-sm font-semibold">
                         AI 분석
@@ -886,11 +889,11 @@ export function AnalysisPanel({
                     )}
                     <TrendBadge trend={analysis.trend} />
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-2 sm:justify-end">
                     {analysis.analyzedAt && (
                         <time
                             dateTime={analysis.analyzedAt}
-                            className="text-secondary-500 text-xs"
+                            className="text-secondary-500 text-xs whitespace-nowrap"
                         >
                             {formatAnalyzedAt(analysis.analyzedAt)}
                         </time>
@@ -901,7 +904,7 @@ export function AnalysisPanel({
                         disabled={showProgress || isAnalyzing}
                         className={cn(
                             // [공통 스타일]
-                            'focus-visible:ring-primary-500 rounded border px-2 py-1 text-xs font-medium transition-colors focus-visible:ring-1 focus-visible:outline-none',
+                            'focus-visible:ring-primary-500 rounded border px-2 py-1 text-xs font-medium whitespace-nowrap transition-colors focus-visible:ring-1 focus-visible:outline-none',
 
                             // [1. 로딩/분석 중 상태]
                             (showProgress || isAnalyzing) &&
@@ -928,7 +931,7 @@ export function AnalysisPanel({
                         {copyState === 'failed' && '복사 실패'}
                         {copyState === 'idle' && '리포트 복사'}
                     </button>
-                    <div className="text-secondary-400 flex items-center gap-1.5 text-xs">
+                    <div className="text-secondary-400 flex items-center gap-1.5 text-xs whitespace-nowrap">
                         <span>리스크</span>
                         <span
                             className={cn(

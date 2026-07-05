@@ -239,7 +239,7 @@ export function OptionsChainTable({
                                             )}
                                         </td>
 
-                                        <td className="text-secondary-300 px-3 py-1.5 text-right font-mono tabular-nums">
+                                        <td className="text-secondary-300 px-3 py-1.5 text-right font-mono whitespace-nowrap tabular-nums">
                                             {call
                                                 ? formatBidAsk(
                                                       call.bid,
@@ -262,7 +262,7 @@ export function OptionsChainTable({
                                                 : '—'}
                                         </td>
 
-                                        <td className="text-secondary-300 px-3 py-1.5 text-right font-mono tabular-nums">
+                                        <td className="text-secondary-300 px-3 py-1.5 text-right font-mono whitespace-nowrap tabular-nums">
                                             {put
                                                 ? formatBidAsk(put.bid, put.ask)
                                                 : '—'}
