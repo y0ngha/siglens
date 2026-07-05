@@ -66,6 +66,9 @@ jobs:
             - name: Validate skills
               run: yarn validate:skills
 
+            - name: Verify skill digests
+              run: yarn skills:digest-verify
+
             - name: Lint
               run: yarn lint
 
