@@ -1,5 +1,31 @@
 # Changelog
 
+# [0.35.0](https://github.com/y0ngha/siglens/compare/v0.34.0...v0.35.0) (2026-07-05)
+
+
+### Bug Fixes
+
+* **skills:** consolidate cross-indicator regime-alignment policy into indicator-core (+obv digest restore) ([468f93f](https://github.com/y0ngha/siglens/commit/468f93f4540fa85cdfe8f2b272bfad2c9711f6b2))
+* **skills:** explicit gating for 12 previously-untagged skills ([21c29f6](https://github.com/y0ngha/siglens/commit/21c29f6d14840445d2a0579282774ff056639507))
+* **skills:** pattern index carries measured-move/invalidation hints + precise confidence scoping ([5be1e11](https://github.com/y0ngha/siglens/commit/5be1e11d941ae6df2de1758500090515fe61cb87))
+* **skills:** PR review round 1 — gating doc sync, ChartPatternId satisfies guard, type-aware trigger validation ([26ce6ae](https://github.com/y0ngha/siglens/commit/26ce6aea042784b28caa271454654142f12ee682))
+* **skills:** validator rejects untagged skills — enforce explicit-gating policy in CI ([86a9b83](https://github.com/y0ngha/siglens/commit/86a9b83b0620e9fed5ee4a737cc5bf0baae9d8aa))
+* **ui:** 모바일 한글 음절 줄바꿈·숫자 컬럼 오버플로 수정 ([61223e6](https://github.com/y0ngha/siglens/commit/61223e6849ab36c10b3cadac4c24334fd3235307))
+
+
+### Features
+
+* **skills:** add prompt digests — _core primers ([cf2d5eb](https://github.com/y0ngha/siglens/commit/cf2d5ebf64b565ad9050adf050e8f0f4dd072abc))
+* **skills:** add prompt digests — candlesticks ([b4c729d](https://github.com/y0ngha/siglens/commit/b4c729da6bd21ee9e02f176ed67065b2e36e6c8d))
+* **skills:** add prompt digests — fundamental ([c9e1448](https://github.com/y0ngha/siglens/commit/c9e144805b09fd36ad7d6d24c299f35ee861205a))
+* **skills:** add prompt digests — indicators ([9138d64](https://github.com/y0ngha/siglens/commit/9138d6493b3c5172c4e94acb3e7329ec0b0ca45a))
+* **skills:** add prompt digests — news ([a45a0cd](https://github.com/y0ngha/siglens/commit/a45a0cd3a8fe1b52e614b659d315cba3bb88477f))
+* **skills:** add prompt digests — patterns ([fefdcff](https://github.com/y0ngha/siglens/commit/fefdcff8413eadc7c59c2246308b05660507bc40))
+* **skills:** add prompt digests — strategies ([9a59242](https://github.com/y0ngha/siglens/commit/9a59242642fb6407e7b87ec06860727f5ffec3ea))
+* **skills:** add prompt digests — support-resistance ([0ece926](https://github.com/y0ngha/siglens/commit/0ece92691992e0dc22111a2ff71d10dac5ba9053))
+* **skills:** digest verify/update-meta script ([3e7845e](https://github.com/y0ngha/siglens/commit/3e7845e2c4b20ebbcb4680d6f420ec6d1139edb1))
+* **skills:** gate pattern skills on pre-screener candidates + always-on pattern index ([c6dee08](https://github.com/y0ngha/siglens/commit/c6dee08a246c08784ca9c8d57d5be7009194f852))
+
 # [0.34.0](https://github.com/y0ngha/siglens/compare/v0.33.0...v0.34.0) (2026-07-02)
 
 
