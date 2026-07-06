@@ -146,8 +146,10 @@ const POPULAR_CRYPTOS_PATH = resolve(
 export const FILE_HEADER = `// 큐레이션된 인기 암호화폐 — 홈 디스커버리 + sitemap popular 엔트리.
 // FMP 심볼은 *USD 접미사(BTCUSD)를 쓴다. batch-crypto-quotes가 HTTP 402(플랜 미지원)이라
 // 단건 quote를 심볼별로 호출하여 시가총액 상위 N개를 선정한다(update-popular-cryptos.ts).
-// 갱신은 누적 방식이다: 매 실행마다 시총 상위 N개 중 기존 목록에 없는 심볼만
-// "// --- Trending (YYYY-MM-DD) ---" 섹션으로 배열 끝에 추가하며, 기존 심볼은 삭제하지 않는다.
+// 목록 대부분은 스크립트의 누적 갱신 결과다: 매 실행마다 시총 상위 N개 중 기존 목록에
+// 없는 심볼만 "// --- Trending (YYYY-MM-DD) ---" 섹션으로 배열 끝에 추가하며, 기존 심볼은
+// 삭제하지 않는다. 다만 "Restored from history"·"Curated high-interest" 섹션은 스크립트
+// 실행 결과가 아니라 수동으로 복원·추가한 것이므로, 자동 갱신 로직을 건드릴 때 삭제하지 않도록 주의한다.
 // 심볼 후보를 늘리려면 scripts/update-popular-cryptos.ts의 CRYPTO_CANDIDATE_POOL을 수정하라.`;
 
 // popular-cryptos.ts 배열 경계 마커 — 기존 파일에서 심볼을 추출·중복제거·append할 때 기준점.
@@ -184,6 +186,12 @@ export interface CandidateFilterResult {
 export interface DeduplicateCryptoEntriesResult {
     content: string;
     removedSymbols: readonly string[];
+}
+
+interface DedupAcc {
+    keptLines: readonly string[];
+    removed: readonly string[];
+    seen: ReadonlySet<string>;
 }
 
 function sleep(ms: number): Promise<void> {
@@ -333,11 +341,6 @@ export function deduplicateCryptoEntries(
     const section = fileContent.slice(sectionStart, arrayEnd);
     const afterSection = fileContent.slice(arrayEnd);
 
-    interface DedupAcc {
-        keptLines: readonly string[];
-        removed: readonly string[];
-        seen: ReadonlySet<string>;
-    }
     const initialAcc: DedupAcc = { keptLines: [], removed: [], seen: new Set() };
 
     // CRLF-safe split — defensive, since this repo is LF-normalized by prettier
