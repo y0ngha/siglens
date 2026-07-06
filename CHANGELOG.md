@@ -1,5 +1,7 @@
 # Changelog
 
+## [0.35.1](https://github.com/y0ngha/siglens/compare/v0.35.0...v0.35.1) (2026-07-06)
+
 # [0.35.0](https://github.com/y0ngha/siglens/compare/v0.34.0...v0.35.0) (2026-07-05)
 
 
