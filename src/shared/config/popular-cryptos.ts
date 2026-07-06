@@ -20,4 +20,27 @@ export const POPULAR_CRYPTOS = [
     'LTCUSD',
     'AVAXUSD',
     'SUIUSD',
+
+    // --- Restored from history (2026-07-06) ---
+    // 과거 전체-교체 방식에서 시총 순위 밖으로 밀려 사라졌던 심볼을 git 히스토리에서 복원.
+    // (폐지/리브랜딩된 MATICUSD는 후계 POLUSD로 대체되므로 제외.)
+    'DOTUSD',
+    'POLUSD',
+    'SHIBUSD',
+
+    // --- Curated high-interest (2026-07-06) ---
+    // 시총 상위 밖이지만 대중 관심도·거래 활성도가 높은 대표 코인 (CRYPTO_CANDIDATE_POOL 내 유효 심볼).
+    // DeFi 대표(UNI/AAVE), L2 양대(ARB/OP), 관심도 높은 L1(NEAR/APT/ATOM/TIA/INJ),
+    // 스토리지 대표(FIL), 밈 대표(PEPE).
+    'UNIUSD',
+    'AAVEUSD',
+    'ARBUSD',
+    'OPUSD',
+    'NEARUSD',
+    'APTUSD',
+    'ATOMUSD',
+    'TIAUSD',
+    'INJUSD',
+    'FILUSD',
+    'PEPEUSD',
 ] as const;

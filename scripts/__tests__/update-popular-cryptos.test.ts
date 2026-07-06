@@ -202,8 +202,12 @@ describe('CRYPTO_CANDIDATE_POOL', () => {
 });
 
 describe('MAX_POPULAR_CRYPTOS', () => {
-    it('matches the current popular-cryptos.ts list size', () => {
-        expect(MAX_POPULAR_CRYPTOS).toBe(POPULAR_CRYPTOS.length);
+    // MAX_POPULAR_CRYPTOS is the per-run top-N selection size, not the list size.
+    // The list accumulates over runs (never shrinks), so it must be >= MAX_POPULAR_CRYPTOS.
+    it('is at most the current accumulated popular-cryptos.ts list size', () => {
+        expect(POPULAR_CRYPTOS.length).toBeGreaterThanOrEqual(
+            MAX_POPULAR_CRYPTOS
+        );
     });
 });
 
