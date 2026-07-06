@@ -3,7 +3,8 @@
  *
  * FMP cryptocurrency-list API로 후보 풀을 검증한 뒤,
  * 각 심볼의 단건 quote 엔드포인트에서 marketCap을 수집하여
- * 시가총액 상위 MAX_POPULAR_CRYPTOS 개를 POPULAR_CRYPTOS로 덮어씁니다.
+ * 시가총액 상위 MAX_POPULAR_CRYPTOS 개를 선정하고,
+ * 그중 기존 POPULAR_CRYPTOS에 없는 심볼만 누적 추가합니다.
  *
  * FMP 플랜 제약:
  *   - batch-crypto-quotes → HTTP 402 (플랜 미지원). 사용 불가.
@@ -18,14 +19,19 @@
  *   FMP_API_KEY
  *
  * 결과:
- *   시가총액 기준 상위 N개로 src/shared/config/popular-cryptos.ts를 완전 교체합니다.
- *   (누적 추가가 아니라 매 실행마다 현재 상위 코인으로 리프레시)
+ *   src/shared/config/popular-cryptos.ts에 누적 추가합니다(update-popular-tickers.ts와 동일 방식).
+ *   매 실행마다 시가총액 상위 N개 중 기존 목록에 없는 심볼만
+ *   "// --- Trending (YYYY-MM-DD) ---" 섹션으로 배열 끝에 append하며,
+ *   기존 심볼은 삭제하지 않습니다. 같은 날짜에 재실행하면 중복 방지를 위해 스킵합니다.
+ *   파일이 없으면(최초 부트스트랩) 상위 N개로 새로 생성합니다.
  */
 
 import { execSync } from 'child_process';
 import { config } from 'dotenv';
 import {
+    existsSync,
     mkdirSync,
+    readFileSync,
     renameSync,
     rmSync,
     writeFileSync,
@@ -127,19 +133,28 @@ const POPULAR_CRYPTOS_PATH = resolve(
 );
 
 /**
- * popular-cryptos.ts에 기록되는 헤더 주석.
+ * popular-cryptos.ts를 최초 부트스트랩(파일 부재)할 때만 사용하는 헤더 주석.
  *
- * 이 스크립트를 실행할 때마다 파일 전체를 이 헤더 + 새 배열로 교체하므로,
- * 라이브 파일 헤더의 WHY(아래 제약 두 가지)를 반드시 보존해야 한다:
+ * 파일이 이미 존재하면 스크립트는 배열에만 심볼을 누적 append하고 헤더는 건드리지 않는다.
+ * 따라서 라이브 파일 헤더의 WHY(아래 제약 두 가지)는 그대로 보존된다:
  *   1. FMP 심볼은 *USD 접미사(BTCUSD) 형태를 사용한다.
  *   2. batch-crypto-quotes 엔드포인트는 HTTP 402(플랜 미지원)이므로
  *      단건 quote 엔드포인트를 심볼별로 순차 호출하는 방식으로 시가총액을 수집한다.
  */
 export const FILE_HEADER = `// 큐레이션된 인기 암호화폐 — 홈 디스커버리 + sitemap popular 엔트리.
 // FMP 심볼은 *USD 접미사(BTCUSD)를 쓴다. batch-crypto-quotes가 HTTP 402(플랜 미지원)이라
-// 단건 quote를 심볼별로 호출하여 시가총액 기준 상위 N개를 자동 선정한다(update-popular-cryptos.ts).
-// 주의: 이 파일은 스크립트가 자동 생성하므로 수동 변경은 다음 실행 때 덮어씌워진다.
-// 심볼을 추가/변경하려면 scripts/update-popular-cryptos.ts의 CRYPTO_CANDIDATE_POOL을 수정하라.`;
+// 단건 quote를 심볼별로 호출하여 시가총액 상위 N개를 선정한다(update-popular-cryptos.ts).
+// 갱신은 누적 방식이다: 매 실행마다 시총 상위 N개 중 기존 목록에 없는 심볼만
+// "// --- Trending (YYYY-MM-DD) ---" 섹션으로 배열 끝에 추가하며, 기존 심볼은 삭제하지 않는다.
+// 심볼 후보를 늘리려면 scripts/update-popular-cryptos.ts의 CRYPTO_CANDIDATE_POOL을 수정하라.`;
+
+// popular-cryptos.ts 배열 경계 마커 — 기존 파일에서 심볼을 추출·중복제거·append할 때 기준점.
+const POPULAR_CRYPTOS_DECLARATION = 'export const POPULAR_CRYPTOS = [';
+const POPULAR_CRYPTOS_END = '] as const;';
+// crypto 심볼 리터럴 한 줄 매칭: 들여쓰기 + 'BTCUSD', + 선택적 후행 주석.
+// Trending 섹션 헤더(// --- ... ---) 같은 비-심볼 줄은 매칭되지 않는다.
+const CRYPTO_LITERAL_LINE_PATTERN =
+    /^(\s*)['"]([A-Z][A-Z0-9.-]*)['"],?(\s*(?:\/\/.*)?)?$/;
 
 interface FmpCryptoListEntry {
     symbol: string;
@@ -162,6 +177,11 @@ export interface CryptoRankEntry {
 export interface CandidateFilterResult {
     valid: string[];
     dropped: string[];
+}
+
+export interface DeduplicateCryptoEntriesResult {
+    content: string;
+    removedSymbols: readonly string[];
 }
 
 function sleep(ms: number): Promise<void> {
@@ -266,6 +286,96 @@ ${body}] as const;
 `;
 }
 
+/**
+ * 기존 popular-cryptos.ts 내용에서 POPULAR_CRYPTOS 배열에 이미 존재하는 심볼 집합을 추출한다.
+ * 선언 마커를 찾지 못하면 빈 집합을 반환한다(신규 심볼 전부를 추가 대상으로 간주).
+ */
+export function extractExistingCryptos(fileContent: string): Set<string> {
+    const arrayStart = fileContent.indexOf(POPULAR_CRYPTOS_DECLARATION);
+    if (arrayStart === -1) return new Set();
+
+    const popularSection = fileContent.slice(arrayStart);
+    const matches = popularSection.match(/['"]([A-Z][A-Z0-9.-]*)['"]/g);
+    return new Set(matches ? matches.map(m => m.slice(1, -1)) : []);
+}
+
+/**
+ * POPULAR_CRYPTOS 배열 내부의 중복 심볼 줄을 첫 등장만 남기고 제거한다.
+ * 배열 경계 밖의 내용(헤더 주석 등)과 Trending 섹션 헤더 줄은 보존한다.
+ */
+export function deduplicateCryptoEntries(
+    fileContent: string
+): DeduplicateCryptoEntriesResult {
+    const arrayStart = fileContent.indexOf(POPULAR_CRYPTOS_DECLARATION);
+    const arrayEnd = fileContent.indexOf(POPULAR_CRYPTOS_END, arrayStart);
+
+    if (arrayStart === -1 || arrayEnd === -1) {
+        return { content: fileContent, removedSymbols: [] };
+    }
+
+    const sectionStart = arrayStart + POPULAR_CRYPTOS_DECLARATION.length;
+    const beforeSection = fileContent.slice(0, sectionStart);
+    const section = fileContent.slice(sectionStart, arrayEnd);
+    const afterSection = fileContent.slice(arrayEnd);
+    const seenSymbols = new Set<string>();
+    const removedSymbols: string[] = [];
+
+    const deduplicatedSection = section
+        .split('\n')
+        .filter(line => {
+            const symbolMatch = line.match(CRYPTO_LITERAL_LINE_PATTERN);
+            if (!symbolMatch) return true;
+
+            const symbol = symbolMatch[2]!;
+            if (!seenSymbols.has(symbol)) {
+                seenSymbols.add(symbol);
+                return true;
+            }
+
+            removedSymbols.push(symbol);
+            return false;
+        })
+        .join('\n');
+
+    return {
+        content: `${beforeSection}${deduplicatedSection}${afterSection}`,
+        removedSymbols,
+    };
+}
+
+/**
+ * 신규 심볼을 "// --- Trending (YYYY-MM-DD) ---" 섹션으로 배열 끝(] as const;) 앞에 삽입한다.
+ * 같은 날짜 섹션이 이미 있으면 중복 방지를 위해 원본을 그대로 반환한다.
+ */
+export function insertCryptoTrendingSection(
+    fileContent: string,
+    newSymbols: readonly string[]
+): string {
+    const date = new Date().toISOString().slice(0, 10);
+    const sectionHeader = `// --- Trending (${date}) ---`;
+
+    if (fileContent.includes(sectionHeader)) {
+        console.warn(
+            `Trending section for ${date} already exists. Skipping to avoid duplicates.`
+        );
+        return fileContent;
+    }
+
+    const symbolLines = newSymbols.map(s => `    '${s}',`).join('\n');
+    const section = `\n    ${sectionHeader}\n${symbolLines}\n`;
+
+    const insertionPoint = fileContent.lastIndexOf(POPULAR_CRYPTOS_END);
+    if (insertionPoint === -1) {
+        throw new Error('Could not find "] as const;" in popular-cryptos.ts');
+    }
+
+    return (
+        fileContent.slice(0, insertionPoint) +
+        section +
+        fileContent.slice(insertionPoint)
+    );
+}
+
 function writeAndFormatFileAtomically(
     path: string,
     fileContent: string
@@ -355,26 +465,30 @@ async function main(): Promise<void> {
 
     console.log(`\nFetching quotes for ${valid.length} candidates...`);
 
-    const ranked: CryptoRankEntry[] = [];
+    // Sequential rate-limited fetch accumulated immutably (mirrors update-popular-tickers.ts).
+    const ranked = await valid.reduce(
+        async (accPromise, symbol, i) => {
+            const acc = await accPromise;
+            process.stdout.write(
+                `  [${i + 1}/${valid.length}] ${symbol.padEnd(10)}`
+            );
 
-    for (const [i, symbol] of valid.entries()) {
-        process.stdout.write(
-            `  [${i + 1}/${valid.length}] ${symbol.padEnd(10)}`
-        );
+            const quote = await fetchSingleQuote(apiKey, symbol);
 
-        const quote = await fetchSingleQuote(apiKey, symbol);
+            if (i < valid.length - 1) {
+                await sleep(REQUEST_DELAY_MS);
+            }
 
-        if (quote === null || !quote.marketCap || quote.marketCap <= 0) {
-            console.log('→ skipped (no marketCap)');
-        } else {
+            if (quote === null || !quote.marketCap || quote.marketCap <= 0) {
+                console.log('→ skipped (no marketCap)');
+                return acc;
+            }
+
             console.log(`→ ${formatMarketCap(quote.marketCap)}`);
-            ranked.push({ symbol, marketCap: quote.marketCap });
-        }
-
-        if (i < valid.length - 1) {
-            await sleep(REQUEST_DELAY_MS);
-        }
-    }
+            return [...acc, { symbol, marketCap: quote.marketCap }];
+        },
+        Promise.resolve([] as CryptoRankEntry[])
+    );
 
     const topCryptos = rankByMarketCap(ranked, MAX_POPULAR_CRYPTOS);
 
@@ -387,13 +501,80 @@ async function main(): Promise<void> {
     printResults(topCryptos);
 
     const topSymbols = topCryptos.map(e => e.symbol);
-    const fileContent = renderPopularCryptosFile(topSymbols);
-    commitFileAtomically(POPULAR_CRYPTOS_PATH, fileContent);
 
-    console.log(
-        `\nDone! POPULAR_CRYPTOS updated to top ${topCryptos.length} by market cap.`
+    // 파일이 없으면(최초 부트스트랩) 상위 심볼로 새로 생성한다.
+    if (!existsSync(POPULAR_CRYPTOS_PATH)) {
+        commitFileAtomically(
+            POPULAR_CRYPTOS_PATH,
+            renderPopularCryptosFile(topSymbols)
+        );
+        console.log(
+            `\nDone! Bootstrapped POPULAR_CRYPTOS with ${topSymbols.length} symbols: ${topSymbols.join(', ')}`
+        );
+        return;
+    }
+
+    // 누적 갱신: 기존 파일을 읽어 중복을 정리한 뒤,
+    // 상위 심볼 중 아직 목록에 없는 것만 날짜 Trending 섹션으로 추가한다.
+    const originalFileContent = readFileSync(POPULAR_CRYPTOS_PATH, 'utf-8');
+    const initialDeduplication = deduplicateCryptoEntries(originalFileContent);
+    const existingCryptos = extractExistingCryptos(
+        initialDeduplication.content
     );
-    console.log(`Symbols: ${topSymbols.join(', ')}`);
+    console.log(`\nExisting cryptos: ${existingCryptos.size}`);
+
+    if (initialDeduplication.removedSymbols.length > 0) {
+        console.log(
+            `Duplicate symbols removed before update: ${initialDeduplication.removedSymbols.join(', ')}`
+        );
+    }
+
+    const newSymbols = topSymbols.filter(s => !existingCryptos.has(s));
+    console.log(
+        `New symbols (in top ${MAX_POPULAR_CRYPTOS}, not already listed): ${newSymbols.length}`
+    );
+
+    if (newSymbols.length === 0) {
+        // 신규 없음 — 중복 정리분만 반영하고 종료한다.
+        if (initialDeduplication.content !== originalFileContent) {
+            commitFileAtomically(
+                POPULAR_CRYPTOS_PATH,
+                initialDeduplication.content
+            );
+            console.log('\nDone! No new cryptos — duplicates cleaned up.');
+        } else {
+            console.log('\nDone! No new cryptos — file already up to date.');
+        }
+        return;
+    }
+
+    const contentWithTrendingSection = insertCryptoTrendingSection(
+        initialDeduplication.content,
+        newSymbols
+    );
+    const addedSymbols =
+        contentWithTrendingSection === initialDeduplication.content
+            ? []
+            : newSymbols;
+    const finalDeduplication = deduplicateCryptoEntries(
+        contentWithTrendingSection
+    );
+
+    if (finalDeduplication.removedSymbols.length > 0) {
+        console.log(
+            `Duplicate symbols removed after update: ${finalDeduplication.removedSymbols.join(', ')}`
+        );
+    }
+
+    commitFileAtomically(POPULAR_CRYPTOS_PATH, finalDeduplication.content);
+
+    if (addedSymbols.length > 0) {
+        console.log(
+            `\nDone! Added ${addedSymbols.length} cryptos: ${addedSymbols.join(', ')}`
+        );
+    } else {
+        console.log('\nDone! Crypto list updated after cleanup.');
+    }
 }
 
 if (require.main === module) {

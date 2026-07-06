@@ -1,11 +1,14 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { POPULAR_CRYPTOS } from '@/shared/config/popular-cryptos';
 import {
     CRYPTO_CANDIDATE_POOL,
     FILE_HEADER,
     MAX_POPULAR_CRYPTOS,
+    deduplicateCryptoEntries,
+    extractExistingCryptos,
     filterValidCandidates,
     formatMarketCap,
+    insertCryptoTrendingSection,
     rankByMarketCap,
     renderPopularCryptosFile,
 } from '../update-popular-cryptos';
@@ -275,5 +278,150 @@ describe('stablecoin exclusion', () => {
     it('CRYPTO_CANDIDATE_POOL does not contain USDTUSD or USDCUSD', () => {
         expect(CRYPTO_CANDIDATE_POOL).not.toContain('USDTUSD');
         expect(CRYPTO_CANDIDATE_POOL).not.toContain('USDCUSD');
+    });
+});
+
+describe('extractExistingCryptos', () => {
+    it('extracts every symbol declared in the POPULAR_CRYPTOS array', () => {
+        const fileContent = renderPopularCryptosFile([
+            'BTCUSD',
+            'ETHUSD',
+            'SOLUSD',
+        ]);
+
+        const result = extractExistingCryptos(fileContent);
+
+        expect(result).toEqual(new Set(['BTCUSD', 'ETHUSD', 'SOLUSD']));
+    });
+
+    it('includes symbols added under Trending sections', () => {
+        const fileContent = `${FILE_HEADER}
+export const POPULAR_CRYPTOS = [
+    'BTCUSD',
+    'ETHUSD',
+
+    // --- Trending (2026-07-06) ---
+    'SUIUSD',
+] as const;
+`;
+
+        const result = extractExistingCryptos(fileContent);
+
+        expect(result).toEqual(new Set(['BTCUSD', 'ETHUSD', 'SUIUSD']));
+    });
+
+    it('returns an empty set when the declaration marker is absent', () => {
+        expect(extractExistingCryptos('export const OTHER = [];')).toEqual(
+            new Set()
+        );
+    });
+});
+
+describe('deduplicateCryptoEntries', () => {
+    it('keeps only the first occurrence of each symbol in the array', () => {
+        const fileContent = `export const POPULAR_CRYPTOS = [
+    'BTCUSD',
+    'ETHUSD',
+
+    // --- Trending (2026-07-06) ---
+    'ETHUSD',
+    'SUIUSD',
+] as const;
+`;
+
+        const result = deduplicateCryptoEntries(fileContent);
+
+        expect(result.removedSymbols).toEqual(['ETHUSD']);
+        expect(result.content).toBe(`export const POPULAR_CRYPTOS = [
+    'BTCUSD',
+    'ETHUSD',
+
+    // --- Trending (2026-07-06) ---
+    'SUIUSD',
+] as const;
+`);
+    });
+
+    it('does not treat identical symbols outside the array as duplicates', () => {
+        const fileContent = `export const CRYPTO_CATEGORIES = ['BTCUSD'];
+
+export const POPULAR_CRYPTOS = [
+    'BTCUSD',
+    'ETHUSD',
+    'BTCUSD',
+] as const;
+`;
+
+        const result = deduplicateCryptoEntries(fileContent);
+
+        expect(result.removedSymbols).toEqual(['BTCUSD']);
+        expect(result.content).toContain(
+            "export const CRYPTO_CATEGORIES = ['BTCUSD'];"
+        );
+        expect(result.content).toContain(`export const POPULAR_CRYPTOS = [
+    'BTCUSD',
+    'ETHUSD',
+] as const;`);
+    });
+
+    it('returns the original content when the array markers are absent', () => {
+        const fileContent = `export const OTHER = ['BTCUSD', 'BTCUSD'];`;
+
+        expect(deduplicateCryptoEntries(fileContent)).toEqual({
+            content: fileContent,
+            removedSymbols: [],
+        });
+    });
+});
+
+describe('insertCryptoTrendingSection', () => {
+    beforeEach(() => {
+        vi.useFakeTimers();
+        // 날짜 의존을 제거해 결정적으로 만든다 (Trending 섹션 헤더에 오늘 날짜가 박힘).
+        vi.setSystemTime(new Date('2026-07-06T12:00:00.000Z'));
+    });
+
+    afterEach(() => {
+        vi.useRealTimers();
+    });
+
+    it('appends a dated Trending section before the closing marker', () => {
+        const fileContent = renderPopularCryptosFile(['BTCUSD', 'ETHUSD']);
+
+        const result = insertCryptoTrendingSection(fileContent, [
+            'SUIUSD',
+            'TONUSD',
+        ]);
+
+        expect(result).toBe(`${FILE_HEADER}
+export const POPULAR_CRYPTOS = [
+    'BTCUSD',
+    'ETHUSD',
+
+    // --- Trending (2026-07-06) ---
+    'SUIUSD',
+    'TONUSD',
+] as const;
+`);
+    });
+
+    it('skips insertion when a section for the same date already exists', () => {
+        const fileContent = `export const POPULAR_CRYPTOS = [
+    'BTCUSD',
+
+    // --- Trending (2026-07-06) ---
+    'ETHUSD',
+] as const;
+`;
+
+        const result = insertCryptoTrendingSection(fileContent, ['SUIUSD']);
+
+        expect(result).toBe(fileContent);
+    });
+
+    it('throws when the closing marker is missing', () => {
+        expect(() =>
+            insertCryptoTrendingSection('export const BROKEN = [', ['BTCUSD'])
+        ).toThrow('Could not find "] as const;" in popular-cryptos.ts');
     });
 });
