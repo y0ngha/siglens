@@ -41,7 +41,9 @@ import { dirname, resolve } from 'path';
 const FMP_BASE_URL = 'https://financialmodelingprep.com/stable';
 
 /**
- * 최대 인기 암호화폐 수. 현재 popular-cryptos.ts의 큐레이션 목록과 동일.
+ * 실행 1회당 시가총액 기준 상위 선정 개수(누적 모델의 top-N 크기).
+ * popular-cryptos.ts의 실제 심볼 수는 매 실행마다 신규 심볼만 append되어 계속 늘어나므로
+ * 이 값과 같지 않고, 항상 이 값 이상이다(하한).
  * 변경 시 함께 검토: src/shared/config/popular-cryptos.ts
  */
 export const MAX_POPULAR_CRYPTOS = 15;
@@ -273,11 +275,19 @@ export function rankByMarketCap(
 }
 
 /**
+ * 심볼 하나를 POPULAR_CRYPTOS 배열 리터럴 줄 포맷으로 렌더링한다.
+ * renderPopularCryptosFile과 insertCryptoTrendingSection이 공유해 포맷 drift를 방지한다.
+ */
+function formatCryptoSymbolLine(symbol: string): string {
+    return `    '${symbol}',`;
+}
+
+/**
  * popular-cryptos.ts 파일 내용을 렌더링한다.
  * 헤더 주석은 보존하고 POPULAR_CRYPTOS 배열만 교체한다.
  */
 export function renderPopularCryptosFile(symbols: readonly string[]): string {
-    const lines = symbols.map(s => `    '${s}',`).join('\n');
+    const lines = symbols.map(formatCryptoSymbolLine).join('\n');
     const body = lines.length > 0 ? `${lines}\n` : '';
 
     return `${FILE_HEADER}
@@ -288,13 +298,18 @@ ${body}] as const;
 
 /**
  * 기존 popular-cryptos.ts 내용에서 POPULAR_CRYPTOS 배열에 이미 존재하는 심볼 집합을 추출한다.
- * 선언 마커를 찾지 못하면 빈 집합을 반환한다(신규 심볼 전부를 추가 대상으로 간주).
+ * deduplicateCryptoEntries와 동일하게 POPULAR_CRYPTOS_END를 배열 끝 경계로 사용해,
+ * 배열 뒤에 다른 export/주석이 추가되어도 관련 없는 따옴표 문자열을 심볼로 오인하지 않는다.
+ * 선언 마커나 종료 마커를 찾지 못하면 빈 집합을 반환한다(신규 심볼 전부를 추가 대상으로 간주).
  */
 export function extractExistingCryptos(fileContent: string): Set<string> {
     const arrayStart = fileContent.indexOf(POPULAR_CRYPTOS_DECLARATION);
     if (arrayStart === -1) return new Set();
 
-    const popularSection = fileContent.slice(arrayStart);
+    const arrayEnd = fileContent.indexOf(POPULAR_CRYPTOS_END, arrayStart);
+    if (arrayEnd === -1) return new Set();
+
+    const popularSection = fileContent.slice(arrayStart, arrayEnd);
     const matches = popularSection.match(/['"]([A-Z][A-Z0-9.-]*)['"]/g);
     return new Set(matches ? matches.map(m => m.slice(1, -1)) : []);
 }
@@ -317,29 +332,42 @@ export function deduplicateCryptoEntries(
     const beforeSection = fileContent.slice(0, sectionStart);
     const section = fileContent.slice(sectionStart, arrayEnd);
     const afterSection = fileContent.slice(arrayEnd);
-    const seenSymbols = new Set<string>();
-    const removedSymbols: string[] = [];
 
-    const deduplicatedSection = section
-        .split('\n')
-        .filter(line => {
+    interface DedupAcc {
+        keptLines: readonly string[];
+        removed: readonly string[];
+        seen: ReadonlySet<string>;
+    }
+    const initialAcc: DedupAcc = { keptLines: [], removed: [], seen: new Set() };
+
+    // CRLF-safe split — defensive, since this repo is LF-normalized by prettier
+    // but the file may originate from a non-normalized source (e.g. Windows checkout).
+    const { keptLines, removed } = section.split(/\r?\n/).reduce(
+        (acc, line): DedupAcc => {
             const symbolMatch = line.match(CRYPTO_LITERAL_LINE_PATTERN);
-            if (!symbolMatch) return true;
-
-            const symbol = symbolMatch[2]!;
-            if (!seenSymbols.has(symbol)) {
-                seenSymbols.add(symbol);
-                return true;
+            if (!symbolMatch) {
+                return { ...acc, keptLines: [...acc.keptLines, line] };
             }
 
-            removedSymbols.push(symbol);
-            return false;
-        })
-        .join('\n');
+            const symbol = symbolMatch[2]!;
+            if (acc.seen.has(symbol)) {
+                return { ...acc, removed: [...acc.removed, symbol] };
+            }
+
+            return {
+                keptLines: [...acc.keptLines, line],
+                removed: acc.removed,
+                seen: new Set(acc.seen).add(symbol),
+            };
+        },
+        initialAcc
+    );
+
+    const deduplicatedSection = keptLines.join('\n');
 
     return {
         content: `${beforeSection}${deduplicatedSection}${afterSection}`,
-        removedSymbols,
+        removedSymbols: removed,
     };
 }
 
@@ -361,10 +389,14 @@ export function insertCryptoTrendingSection(
         return fileContent;
     }
 
-    const symbolLines = newSymbols.map(s => `    '${s}',`).join('\n');
+    const symbolLines = newSymbols.map(formatCryptoSymbolLine).join('\n');
     const section = `\n    ${sectionHeader}\n${symbolLines}\n`;
 
-    const insertionPoint = fileContent.lastIndexOf(POPULAR_CRYPTOS_END);
+    // Same boundary strategy as deduplicateCryptoEntries/extractExistingCryptos:
+    // find the declaration first, then search for the end marker from there on,
+    // instead of lastIndexOf (which could match an unrelated "] as const;" elsewhere in the file).
+    const arrayStart = fileContent.indexOf(POPULAR_CRYPTOS_DECLARATION);
+    const insertionPoint = fileContent.indexOf(POPULAR_CRYPTOS_END, arrayStart);
     if (insertionPoint === -1) {
         throw new Error('Could not find "] as const;" in popular-cryptos.ts');
     }
@@ -487,7 +519,7 @@ async function main(): Promise<void> {
             console.log(`→ ${formatMarketCap(quote.marketCap)}`);
             return [...acc, { symbol, marketCap: quote.marketCap }];
         },
-        Promise.resolve([] as CryptoRankEntry[])
+        Promise.resolve([] as CryptoRankEntry[]) // empty array literal satisfies any element type — safe seed for the accumulator
     );
 
     const topCryptos = rankByMarketCap(ranked, MAX_POPULAR_CRYPTOS);
@@ -502,7 +534,6 @@ async function main(): Promise<void> {
 
     const topSymbols = topCryptos.map(e => e.symbol);
 
-    // 파일이 없으면(최초 부트스트랩) 상위 심볼로 새로 생성한다.
     if (!existsSync(POPULAR_CRYPTOS_PATH)) {
         commitFileAtomically(
             POPULAR_CRYPTOS_PATH,
@@ -535,7 +566,6 @@ async function main(): Promise<void> {
     );
 
     if (newSymbols.length === 0) {
-        // 신규 없음 — 중복 정리분만 반영하고 종료한다.
         if (initialDeduplication.content !== originalFileContent) {
             commitFileAtomically(
                 POPULAR_CRYPTOS_PATH,

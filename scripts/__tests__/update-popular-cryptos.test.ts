@@ -319,6 +319,28 @@ export const POPULAR_CRYPTOS = [
             new Set()
         );
     });
+
+    it('does not extract symbols declared after the array end marker', () => {
+        const fileContent = `export const POPULAR_CRYPTOS = [
+    'BTCUSD',
+    'ETHUSD',
+] as const;
+
+export const UNRELATED_EXPORT = ['SOLUSD', 'XRPUSD'];
+`;
+
+        const result = extractExistingCryptos(fileContent);
+
+        expect(result).toEqual(new Set(['BTCUSD', 'ETHUSD']));
+    });
+
+    it('returns an empty set when the end marker is missing', () => {
+        const fileContent = `export const POPULAR_CRYPTOS = [
+    'BTCUSD',
+`;
+
+        expect(extractExistingCryptos(fileContent)).toEqual(new Set());
+    });
 });
 
 describe('deduplicateCryptoEntries', () => {
