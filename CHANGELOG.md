@@ -1,5 +1,13 @@
 # Changelog
 
+# [0.36.0](https://github.com/y0ngha/siglens/compare/v0.35.1...v0.36.0) (2026-07-06)
+
+
+### Features
+
+* **crypto:** restore dropped symbols and add curated high-interest coins ([4b86434](https://github.com/y0ngha/siglens/commit/4b86434015e2dabb5974b16ddea5ce94157a7f4b)), closes [hi#interest](https://github.com/hi/issues/interest)
+* **scripts:** accumulate crypto popular list instead of full overwrite ([569465d](https://github.com/y0ngha/siglens/commit/569465dc17e5f69157c473f562fbab723778ddbd))
+
 ## [0.35.1](https://github.com/y0ngha/siglens/compare/v0.35.0...v0.35.1) (2026-07-06)
 
 # [0.35.0](https://github.com/y0ngha/siglens/compare/v0.34.0...v0.35.0) (2026-07-05)
