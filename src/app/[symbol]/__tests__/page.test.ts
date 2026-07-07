@@ -18,6 +18,12 @@ vi.mock('@/entities/ticker', () => ({
     buildDisplayName: vi.fn().mockReturnValue('Apple Inc.'),
     getAssetInfoResilient: vi.fn(),
 }));
+vi.mock('@/entities/symbol-indexability', () => ({
+    evaluateSymbolIndexability: vi.fn(() => ({
+        indexable: true,
+        reason: 'popular',
+    })),
+}));
 vi.mock('@/entities/bars/actions', () => ({
     getBarsAction: vi.fn().mockResolvedValue({ bars: [] }),
 }));
@@ -91,6 +97,7 @@ import {
     GEMINI_2_5_FLASH_LITE_MODEL,
     peekAnalysisCache,
 } from '@y0ngha/siglens-core';
+import { evaluateSymbolIndexability } from '@/entities/symbol-indexability';
 import { SymbolPageClient } from '@/views/symbol/SymbolPageClient';
 import { findElementByType } from '@/__tests__/utils/findElementByType';
 import { notFound } from 'next/navigation';
@@ -102,6 +109,10 @@ const mockGetAssetInfoResilient = getAssetInfoResilient as MockedFunction<
 const mockPeekAnalysisCache = peekAnalysisCache as MockedFunction<
     typeof peekAnalysisCache
 >;
+const mockEvaluateSymbolIndexability =
+    evaluateSymbolIndexability as MockedFunction<
+        typeof evaluateSymbolIndexability
+    >;
 
 interface ClientSeedProps {
     initialAnalysis: unknown;
@@ -119,6 +130,17 @@ describe('Symbol page', () => {
     describe('generateMetadata', () => {
         beforeEach(() => {
             vi.clearAllMocks();
+            mockEvaluateSymbolIndexability.mockImplementation(
+                ({ assetInfo, degraded }) => {
+                    if (degraded) {
+                        return { indexable: false, reason: 'degraded' };
+                    }
+                    if (assetInfo === null) {
+                        return { indexable: false, reason: 'asset-missing' };
+                    }
+                    return { indexable: true, reason: 'popular' };
+                }
+            );
         });
 
         it('returns noindex for invalid ticker', async () => {
@@ -200,6 +222,49 @@ describe('Symbol page', () => {
 
             expect(metadata.robots).toEqual({ index: false, follow: false });
         });
+
+        it('gate blocked unapproved longtail returns noindex', async () => {
+            const assetInfo = {
+                symbol: '0NEUSD',
+                name: 'Stone USD',
+            };
+            mockGetAssetInfoResilient.mockResolvedValue({
+                assetInfo,
+                degraded: false,
+            } as never);
+            mockEvaluateSymbolIndexability.mockReturnValueOnce({
+                indexable: false,
+                reason: 'longtail-default-blocked',
+            });
+
+            const metadata = await generateMetadata({
+                params: Promise.resolve({ symbol: '0NEUSD' }),
+            });
+
+            expect(metadata.robots).toEqual({ index: false, follow: false });
+            expect(mockEvaluateSymbolIndexability).toHaveBeenCalledWith({
+                symbol: '0NEUSD',
+                assetInfo,
+                degraded: false,
+            });
+        });
+
+        it('gate allowed curated crypto keeps metadata indexable', async () => {
+            mockGetAssetInfoResilient.mockResolvedValue({
+                assetInfo: {
+                    symbol: 'BTCUSD',
+                    name: 'Bitcoin USD',
+                    fmpSymbol: 'BTCUSD',
+                },
+                degraded: false,
+            } as never);
+
+            const metadata = await generateMetadata({
+                params: Promise.resolve({ symbol: 'BTCUSD' }),
+            });
+
+            expect(metadata.robots).toBeUndefined();
+        });
     });
 
     describe('SymbolPage (narrative seed)', () => {
@@ -278,6 +343,30 @@ describe('Symbol page', () => {
             const props = await getClientProps();
 
             expect(props.initialAnalysisFailed).toBe(true);
+        });
+
+        it('does not render chart FAQ JSON-LD', async () => {
+            mockPeekAnalysisCache.mockResolvedValue(null);
+
+            const tree = await SymbolPage({
+                params: Promise.resolve({ symbol: 'aapl' }),
+            });
+            const serialized = JSON.stringify(tree);
+
+            expect(serialized).not.toContain('FAQPage');
+        });
+
+        it('does not render hidden keyword stuffing copy', async () => {
+            mockPeekAnalysisCache.mockResolvedValue(null);
+
+            const tree = await SymbolPage({
+                params: Promise.resolve({ symbol: 'aapl' }),
+            });
+            const serialized = JSON.stringify(tree);
+
+            expect(serialized).not.toContain('도지나 해머');
+            expect(serialized).not.toContain('볼린저밴드');
+            expect(serialized).not.toContain('보조지표 13종');
         });
     });
 

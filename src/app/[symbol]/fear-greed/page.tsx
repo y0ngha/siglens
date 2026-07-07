@@ -1,4 +1,5 @@
 import { FearGreedPage } from '@/widgets/fear-greed/FearGreedPage';
+import { getBlockedSymbolMetadata } from '@/app/[symbol]/symbolIndexabilityMetadata';
 import { ErrorBoundary } from 'react-error-boundary';
 import { FearGreedPageError } from '@/widgets/fear-greed';
 import { SymbolPageHeading } from '@/views/symbol';
@@ -59,15 +60,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         return NOINDEX_SYMBOL_METADATA;
     }
     const { assetInfo, degraded } = await getAssetInfoResilient(ticker);
-    if (degraded) {
-        return NOINDEX_SYMBOL_METADATA;
-    }
-    // 본문 `if (!assetInfo) notFound()`와 일관: 실재하지 않는 ticker(assetInfo: null,
-    // degraded: false)는 메타데이터도 noindex로 맞춘다. 가드가 없으면 본문 not-found(noindex)와
-    // 메타데이터 index가 충돌하는 soft-404가 만들어진다.
-    if (!assetInfo) {
-        return NOINDEX_SYMBOL_METADATA;
-    }
+    const blockedMetadata = getBlockedSymbolMetadata({
+        symbol: ticker,
+        assetInfo,
+        degraded,
+    });
+    if (blockedMetadata) return blockedMetadata;
+    if (!assetInfo) return NOINDEX_SYMBOL_METADATA;
+
     const displayName = buildDisplayName(assetInfo, ticker);
     const assetClass = getDescriptor(marketProfileOf(assetInfo)).assetClass;
     const seo = resolveSymbolFearGreedSeoContent(ticker, assetClass, {

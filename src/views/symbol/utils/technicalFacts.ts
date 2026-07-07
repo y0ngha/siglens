@@ -1,4 +1,14 @@
-import type { Bar, IndicatorResult } from '@y0ngha/siglens-core';
+import {
+    RSI_OVERBOUGHT_LEVEL,
+    RSI_OVERSOLD_LEVEL,
+    type Bar,
+    type IndicatorResult,
+} from '@y0ngha/siglens-core';
+import {
+    getDescriptor,
+    type MarketProfileId,
+} from '@/shared/config/marketProfile';
+import { formatPrice } from '@/shared/lib/priceFormat';
 
 /** chart 사실 층에 표시하는 결정적 기술 지표 묶음. */
 export interface TechnicalFacts {
@@ -11,22 +21,69 @@ export interface TechnicalFacts {
     macdHistogram: number | null;
     high52w: number;
     low52w: number;
-    /** 52주 고점 대비 % (<= 0). */
+    /** 최근 윈도우 고점 대비 % (<= 0). */
     pctFrom52wHigh: number;
-    /** 52주 저점 대비 % (>= 0). */
+    /** 최근 윈도우 저점 대비 % (>= 0). */
     pctAbove52wLow: number;
 }
 
-// 미국 정규장 1년 ≈ 252 거래일. 일봉 기준 52주 윈도.
-// @y0ngha/siglens-core에는 동일한 "연간 거래일/52주 봉 개수" 상수가 없어(확인: core
-// 숫자 export 목록에 TRADING/252/YEAR/52 매칭 없음) 로컬에 유지한다. core가 추가하면 교체.
-const TRADING_DAYS_52W = 252;
+// timeframe prop 없이도 결정적으로 계산하기 위해 마지막 RECENT_BARS_WINDOW 봉만 사용한다.
+export const RECENT_BARS_WINDOW = 252;
 
 // 등락률 계산에 직전 봉(prev)과 마지막 봉(last)이 필요하므로 최소 2개 봉이 있어야 한다.
 const MIN_BARS_FOR_FACTS = 2;
 
 function lastNonNull(arr: readonly (number | null)[]): number | null {
     return arr.findLast((v): v is number => v !== null) ?? null;
+}
+
+function changeDirection(changePercent: number): '상승' | '하락' | '보합' {
+    if (changePercent > 0) return '상승';
+    if (changePercent < 0) return '하락';
+    return '보합';
+}
+
+export function technicalFactsRsiZone(
+    rsi: number
+): '과매수' | '과매도' | '중립' {
+    if (rsi >= RSI_OVERBOUGHT_LEVEL) return '과매수';
+    if (rsi <= RSI_OVERSOLD_LEVEL) return '과매도';
+    return '중립';
+}
+
+export function technicalFactsMacdMomentumLabel(
+    histogram: number
+): '상승' | '하락' | '중립' {
+    if (histogram > 0) return '상승';
+    if (histogram < 0) return '하락';
+    return '중립';
+}
+
+function macdNarrativePart(histogram: number): string {
+    const label = technicalFactsMacdMomentumLabel(histogram);
+    if (label === '상승') {
+        return 'MACD 히스토그램은 양수라 단기 모멘텀은 상승 쪽';
+    }
+    if (label === '하락') {
+        return 'MACD 히스토그램은 음수라 단기 모멘텀은 하락 쪽';
+    }
+    return 'MACD 히스토그램은 0이라 단기 모멘텀은 중립에 가까운 상태';
+}
+
+function rsiNarrativePart(rsi: number): string {
+    return `RSI ${rsi.toFixed(1)}로 ${technicalFactsRsiZone(rsi)} 구간`;
+}
+
+function changeNarrativePart(
+    symbol: string,
+    price: string,
+    changePercent: number
+): string {
+    return `${symbol}은 최근 종가 ${price} 기준으로 직전 봉 대비 ${Math.abs(changePercent).toFixed(2)}% ${changeDirection(changePercent)}했습니다.`;
+}
+
+function recentRangeNarrativePart(facts: TechnicalFacts): string {
+    return `최근 ${RECENT_BARS_WINDOW}개 봉 고점 대비 ${facts.pctFrom52wHigh.toFixed(1)}%, 저점 대비 +${facts.pctAbove52wLow.toFixed(1)}% 위치에 있습니다.`;
 }
 
 /**
@@ -44,9 +101,9 @@ export function buildTechnicalFacts(
     if (prev.close === 0) return null;
 
     const changePercent = ((last.close - prev.close) / prev.close) * 100;
-    const bars52w = bars.slice(-TRADING_DAYS_52W);
-    const high52w = Math.max(...bars52w.map(b => b.high));
-    const low52w = Math.min(...bars52w.map(b => b.low));
+    const recentBars = bars.slice(-RECENT_BARS_WINDOW);
+    const high52w = Math.max(...recentBars.map(b => b.high));
+    const low52w = Math.min(...recentBars.map(b => b.low));
 
     return {
         lastClose: last.close,
@@ -55,7 +112,7 @@ export function buildTechnicalFacts(
         macdHistogram: lastNonNull(indicators.macd.map(m => m.histogram)),
         high52w,
         low52w,
-        // high52w === 0 분기는 도달 불가능한 방어 가드다: prev 봉은 52주 윈도(bars52w)에
+        // high52w === 0 분기는 도달 불가능한 방어 가드다: prev 봉은 recentBars에
         // 포함되고 prev.high >= prev.close이며, 위에서 prev.close === 0을 이미 걸러
         // prev.close > 0이므로 high52w >= prev.high >= prev.close > 0. (방어 유지)
         pctFrom52wHigh:
@@ -63,4 +120,31 @@ export function buildTechnicalFacts(
         pctAbove52wLow:
             low52w === 0 ? 0 : ((last.close - low52w) / low52w) * 100,
     };
+}
+
+export function buildTechnicalFactsNarrative(
+    symbol: string,
+    facts: TechnicalFacts,
+    marketProfile: MarketProfileId
+): string[] {
+    const price = formatPrice(
+        facts.lastClose,
+        getDescriptor(marketProfile).priceFormat
+    );
+    const lines = [changeNarrativePart(symbol, price, facts.changePercent)];
+
+    const momentumParts: string[] = [];
+    if (facts.rsi !== null) {
+        momentumParts.push(rsiNarrativePart(facts.rsi));
+    }
+    if (facts.macdHistogram !== null) {
+        momentumParts.push(macdNarrativePart(facts.macdHistogram));
+    }
+    if (momentumParts.length > 0) {
+        lines.push(`${momentumParts.join('이며, ')}입니다.`);
+    }
+
+    lines.push(recentRangeNarrativePart(facts));
+
+    return lines;
 }

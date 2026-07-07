@@ -1,21 +1,36 @@
 import { formatPriceChange, formatPrice } from '@/shared/lib/priceFormat';
-import {
-    RSI_OVERBOUGHT_LEVEL,
-    RSI_OVERSOLD_LEVEL,
-    type Bar,
-    type IndicatorResult,
-} from '@y0ngha/siglens-core';
+import type { Bar, IndicatorResult } from '@y0ngha/siglens-core';
 import { useId } from 'react';
-import { buildTechnicalFacts } from './utils/technicalFacts';
+import {
+    buildTechnicalFacts,
+    buildTechnicalFactsNarrative,
+    RECENT_BARS_WINDOW,
+    technicalFactsMacdMomentumLabel,
+    technicalFactsRsiZone,
+} from './utils/technicalFacts';
 import {
     getDescriptor,
     type MarketProfileId,
 } from '@/shared/config/marketProfile';
 
-function rsiZone(rsi: number): string {
-    if (rsi >= RSI_OVERBOUGHT_LEVEL) return '과매수';
-    if (rsi <= RSI_OVERSOLD_LEVEL) return '과매도';
-    return '중립';
+interface ChangeDisplay {
+    colorClass: string;
+    text: string;
+}
+
+function formatVisibleChange(changePercent: number): ChangeDisplay {
+    if (changePercent === 0) {
+        return {
+            colorClass: 'text-secondary-300',
+            text: '0.00% 보합',
+        };
+    }
+
+    const change = formatPriceChange(changePercent);
+    return {
+        colorClass: change.colorClass,
+        text: `${change.arrow} ${change.sign}${Math.abs(changePercent).toFixed(2)}%`,
+    };
 }
 
 interface TechnicalFactsSummaryProps {
@@ -45,7 +60,12 @@ export function TechnicalFactsSummary({
     const facts = buildTechnicalFacts(bars, indicators);
     if (!facts) return null;
 
-    const change = formatPriceChange(facts.changePercent);
+    const change = formatVisibleChange(facts.changePercent);
+    const narrative = buildTechnicalFactsNarrative(
+        symbol,
+        facts,
+        marketProfile
+    );
 
     return (
         <section
@@ -66,36 +86,44 @@ export function TechnicalFactsSummary({
                             facts.lastClose,
                             getDescriptor(marketProfile).priceFormat
                         )}{' '}
-                        <span className={change.colorClass}>
-                            {change.arrow} {change.sign}
-                            {Math.abs(facts.changePercent).toFixed(2)}%
-                        </span>
+                        <span className={change.colorClass}>{change.text}</span>
                     </dd>
                 </div>
                 {facts.rsi !== null && (
                     <div className="flex justify-between gap-4">
                         <dt className="text-secondary-400">RSI</dt>
                         <dd>
-                            {facts.rsi.toFixed(1)} ({rsiZone(facts.rsi)})
+                            {`${facts.rsi.toFixed(1)} (${technicalFactsRsiZone(facts.rsi)})`}
                         </dd>
                     </div>
                 )}
                 {facts.macdHistogram !== null && (
                     <div className="flex justify-between gap-4">
                         <dt className="text-secondary-400">MACD 모멘텀</dt>
-                        <dd>{facts.macdHistogram >= 0 ? '상승' : '하락'}</dd>
+                        <dd>
+                            {technicalFactsMacdMomentumLabel(
+                                facts.macdHistogram
+                            )}
+                        </dd>
                     </div>
                 )}
                 <div className="flex justify-between gap-4">
-                    <dt className="text-secondary-400">52주 위치</dt>
+                    <dt className="text-secondary-400">
+                        {`최근 ${RECENT_BARS_WINDOW}개 봉 위치`}
+                    </dt>
                     <dd>
                         고점 대비 {facts.pctFrom52wHigh.toFixed(1)}%, 저점 대비
                         +{facts.pctAbove52wLow.toFixed(1)}%
                     </dd>
                 </div>
             </dl>
+            <div className="text-secondary-300 space-y-1 text-sm leading-6">
+                {narrative.map(line => (
+                    <p key={line}>{line}</p>
+                ))}
+            </div>
             <p className="text-secondary-400 text-xs">
-                위 지표는 실시간 시세 기반 자동 계산값입니다.
+                위 지표는 표시된 차트 데이터 기반 자동 계산값입니다.
             </p>
         </section>
     );

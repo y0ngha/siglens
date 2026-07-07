@@ -67,14 +67,13 @@ test.describe('seo smoke', () => {
         expect(body).toMatch(/Sitemap:\s*\S+\/sitemap\.xml/i);
     });
 
-    // long-tail sub-sitemap 라우트는 unit-mock만 돼 있어 next.config rewrite
-    // (/sitemap-longtail-{n}.xml → /api/sitemap/longtail/{n})가 e2e로 검증된 적이 없다.
-    // 범위 밖 페이지는 DB 시드와 무관하게 핸들러가 자체 404를 반환하므로, rewrite+핸들러
-    // 결선을 결정적으로 검증한다(MAX_LONGTAIL_SITEMAP_PAGE=10000 초과 → 404).
-    test('/sitemap-longtail-99999.xml (out-of-range) routes to the handler and 404s', async ({
+    // Long-tail sitemap endpoints are intentionally retired. This validates the
+    // next.config rewrite (/sitemap-longtail-{n}.xml → /api/sitemap/longtail/{n})
+    // still reaches the handler and returns the permanent removal status.
+    test('/sitemap-longtail-1.xml routes to the retired handler and returns 410', async ({
         page,
     }) => {
-        const response = await page.request.get('/sitemap-longtail-99999.xml');
-        expect(response.status()).toBe(404);
+        const response = await page.request.get('/sitemap-longtail-1.xml');
+        expect(response.status()).toBe(410);
     });
 });

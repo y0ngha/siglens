@@ -22,16 +22,13 @@ log "rolling to $TAG (ASG already pinned to siglens-lt \$Latest)"
 
 # Start an instance refresh with:
 #   MinHealthyPercentage 100  — capacity must never drop below 100 % of desired during the
-#                               refresh, so the old instance is kept alive until the new one
-#                               is fully healthy.
+#                               refresh. With desired=2, at least two healthy instances must
+#                               remain available before any old instance is drained.
 #   MaxHealthyPercentage 200  — allows the ASG to temporarily exceed desired capacity by 1
-#                               (desired=1 → max running=2) so the replacement is LAUNCHED
-#                               and passes ELB health checks BEFORE the old instance is
-#                               drained/terminated.  Without this, AWS cannot add a new
-#                               instance while MinHealthyPercentage=100 is already satisfied
-#                               by the single existing instance, so it terminates first —
-#                               causing the ~90 s gap we measured.  ASG max-size=4, so
-#                               briefly running 2 instances is within limits.
+#                               batch (desired=2 → max running=4) so replacements are launched
+#                               and pass ELB health checks BEFORE old instances are drained.
+#                               This avoids the healthy-target=0 gap that causes whole-site
+#                               502s. ASG max-size=4, so the temporary surge is within limits.
 #   InstanceWarmup 300        — > health-check-grace 240 s (see 06-alb-asg.sh) + ELB detection
 #                               ~90 s; the refresh
 #                               re-evaluates ELB health after grace expires before counting the

@@ -38,15 +38,28 @@ fi
 # ASG (멱등)
 ASG_EXISTS=$(aws autoscaling describe-auto-scaling-groups --auto-scaling-group-names siglens-asg --query 'AutoScalingGroups[0].AutoScalingGroupName' --output text 2>/dev/null) || true
 if [ "$ASG_EXISTS" = "None" ] || [ -z "$ASG_EXISTS" ]; then
+  # min/desired 2: 단일 인스턴스가 ELB health check failure로 교체될 때 healthy
+  # target이 0개가 되면 Cloudflare/ALB가 사이트 전체 502를 반환한다. 평시 2대를
+  # 유지해 한 대가 교체·배포·unhealthy 상태여도 다른 한 대가 계속 트래픽을 받게 한다.
+  #
   # max-size 4: ASG 용량의 단일 소스 오브 트루스(L1). 08-scaling.sh는 더 이상
   # max-size를 건드리지 않는다 — 06과 08이 서로 다른 값을 설정해 표류하던 문제를
-  # 여기로 통합. instance refresh는 MaxHealthyPercentage=200(desired+1)만 필요하므로
-  # 4면 충분하고, 지속 부하 시 타깃 트래킹 스케일아웃 여유도 확보된다.
+  # 여기로 통합. instance refresh는 MaxHealthyPercentage=200(desired=2 → max
+  # running=4)를 허용하므로 4면 충분하고, 지속 부하 시 타깃 트래킹 스케일아웃
+  # 여유도 확보된다.
   aws autoscaling create-auto-scaling-group --auto-scaling-group-name siglens-asg \
     --launch-template "LaunchTemplateName=siglens-lt,Version=\$Latest" \
-    --min-size 1 --max-size 4 --desired-capacity 1 \
+    --min-size 2 --max-size 4 --desired-capacity 2 \
     --vpc-zone-identifier "$SUBNET_CSV" --target-group-arns "$TG_ARN" \
     --health-check-type ELB --health-check-grace-period 240 # golden AMI: env-fetch+delta pull; base AL2023: +dnf installs+full pull can approach 180s
+else
+  # Existing groups are reconciled as well as newly-created groups. This prevents
+  # a future infra rerun from leaving the production ASG in the unsafe desired=1
+  # shape that can produce a total 502 during unhealthy replacement.
+  aws autoscaling update-auto-scaling-group --auto-scaling-group-name siglens-asg \
+    --min-size 2 --max-size 4 --desired-capacity 2 \
+    --vpc-zone-identifier "$SUBNET_CSV" --health-check-type ELB \
+    --health-check-grace-period 240 >/dev/null
 fi
 ALB_DNS=$(aws elbv2 describe-load-balancers --load-balancer-arns "$ALB_ARN" --query 'LoadBalancers[0].DNSName' --output text)
 for kv in "ALB_ARN=$ALB_ARN" "TG_ARN=$TG_ARN" "ALB_DNS=$ALB_DNS"; do

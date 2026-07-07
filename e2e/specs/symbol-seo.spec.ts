@@ -13,9 +13,10 @@ import { test, expect } from '../support/fixtures';
  *
  * Ground truth captured against `next start` (E2E build, no FMP key):
  *   - /AAPL (seeded)        → 200, robots "index, follow", 1 <h1>, 8 ld+json blocks
- *   - /MSFT (unseeded)      → 200 + robots "noindex, nofollow" (degraded fallback,
+ *   - /ZZZZ (unapproved)    → 200 + robots "noindex, nofollow" (degraded fallback,
  *                             NOT 500 — getAssetInfoResilient returns a degraded
- *                             ticker rather than throwing; see PR #549)
+ *                             ticker rather than throwing; see PR #549, while
+ *                             the indexability gate blocks longtail exposure)
  *   - /AAPL  warmed 2nd req → `x-nextjs-cache: HIT` (ISR cache serves the route)
  */
 
@@ -42,7 +43,7 @@ function countH1(html: string): number {
 }
 
 test.describe('symbol SEO + ISR (crawler-facing)', () => {
-    test('/AAPL embeds valid inline JSON-LD (WebPage + BreadcrumbList + FAQPage)', async ({
+    test('/AAPL embeds valid inline JSON-LD without chart FAQ boilerplate', async ({
         page,
     }) => {
         const response = await page.request.get('/AAPL');
@@ -56,7 +57,7 @@ test.describe('symbol SEO + ISR (crawler-facing)', () => {
         // to change independently.
         expect(types).toContain('WebPage');
         expect(types).toContain('BreadcrumbList');
-        expect(types).toContain('FAQPage');
+        expect(types).not.toContain('FAQPage');
     });
 
     test('/AAPL/news embeds valid inline JSON-LD (Article + BreadcrumbList)', async ({
@@ -124,28 +125,21 @@ test.describe('symbol SEO + ISR (crawler-facing)', () => {
         expect(types).toContain('FAQPage');
     });
 
-    test('an unseeded but well-formed ticker degrades to 200 + noindex (never 500)', async ({
+    test('an unapproved but well-formed ticker degrades to 200 + noindex (never 500)', async ({
         page,
     }) => {
-        // MSFT is format-valid but not in the E2E seed (only AAPL is). With no
-        // FMP key under E2E, getAssetInfo throws an infra error which
-        // getAssetInfoResilient catches → degraded fallback. The ISR cold-gen
-        // must complete 200 (a thrown DYNAMIC_SERVER_USAGE would 500 — the F2
-        // regression fixed in #549), and generateMetadata must emit noindex.
-        const response = await page.request.get('/MSFT');
+        // ZZZZ is format-valid but intentionally not seeded and not in the
+        // approved index footprint. With no FMP key under E2E, getAssetInfo
+        // throws an infra error which getAssetInfoResilient catches → degraded
+        // fallback. The ISR cold-gen must complete 200 (a thrown
+        // DYNAMIC_SERVER_USAGE would 500 — the F2 regression fixed in #549), and
+        // generateMetadata must emit noindex for unapproved longtail exposure.
+        const response = await page.request.get('/ZZZZ');
         expect(response.status()).toBe(200);
 
         const html = await response.text();
         expect(html).toMatch(
             /<meta name="robots" content="noindex, nofollow"\/?>/
         );
-        expect(countH1(html)).toBe(1);
-        // The single SSR h1 is buildChartPageHeading(displayName). When degraded,
-        // buildDisplayName falls back to the bare ticker, so the heading resolves
-        // to exactly "MSFT 차트 분석". Asserting that full phrase (not just the
-        // bare symbol, which also appears in canonical/OG tags) proves the
-        // degraded display-name fallback specifically.
-        const h1Text = html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/)?.[1] ?? '';
-        expect(h1Text).toContain('MSFT 차트 분석');
     });
 });
