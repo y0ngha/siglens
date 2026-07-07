@@ -141,6 +141,13 @@ vi.mock('@/entities/ticker', () => ({
     buildAssetAboutNode: vi.fn(() => undefined),
 }));
 
+vi.mock('@/entities/symbol-indexability', () => ({
+    evaluateSymbolIndexability: vi.fn(() => ({
+        indexable: true,
+        reason: 'popular',
+    })),
+}));
+
 // fundamental generateMetadata는 noindex 게이트로 getProfileResilient를 호출한다.
 vi.mock('@/app/[symbol]/fundamental/getProfileResilient', () => ({
     getProfileResilient: mockGetProfileResilient,
@@ -190,6 +197,13 @@ import { generateMetadata as generateNewsMetadata } from '@/app/[symbol]/news/pa
 import { generateMetadata as generateOverallMetadata } from '@/app/[symbol]/overall/page';
 import { generateMetadata as generateFearGreedMetadata } from '@/app/[symbol]/fear-greed/page';
 import { generateMetadata as generateOptionsMetadata } from '@/app/[symbol]/options/page';
+import { evaluateSymbolIndexability } from '@/entities/symbol-indexability';
+import type { MockedFunction } from 'vitest';
+
+const mockEvaluateSymbolIndexability =
+    evaluateSymbolIndexability as MockedFunction<
+        typeof evaluateSymbolIndexability
+    >;
 
 function makeParams(symbol: string): { params: Promise<{ symbol: string }> } {
     return { params: Promise.resolve({ symbol }) };
@@ -248,6 +262,24 @@ describe('generateMetadata — canonical URL 회귀 가드', () => {
             expect(metadata.alternates?.canonical).toBe(
                 'https://siglens.io/TSLA'
             );
+        });
+
+        it('central indexability gate blocks unapproved longtail with noindex + canonical null', async () => {
+            mockGetAssetInfoResilient.mockResolvedValue({
+                assetInfo: { symbol: '0NEUSD', name: 'Stone USD' },
+                degraded: false,
+            });
+            mockEvaluateSymbolIndexability.mockReturnValueOnce({
+                indexable: false,
+                reason: 'longtail-default-blocked',
+            });
+
+            const metadata = await generateSymbolMetadata(
+                makeParamsWithSearch('0NEUSD')
+            );
+
+            expect(metadata.robots).toEqual({ index: false, follow: false });
+            expect(metadata.alternates?.canonical).toBeNull();
         });
     });
 

@@ -2,6 +2,7 @@ import { SymbolPageClient } from '@/views/symbol/SymbolPageClient';
 import { TechnicalFactsSummary, buildChartPageHeading } from '@/views/symbol';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { FALLBACK_ANALYSIS } from '@/entities/chat-message';
+import { evaluateSymbolIndexability } from '@/entities/symbol-indexability';
 import { GEMINI_2_5_FLASH_LITE_MODEL } from '@y0ngha/siglens-core';
 import { peekAnalysisStatic } from '@/entities/analysis';
 import {
@@ -67,6 +68,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     // canonical을 생성해, 한 페이지에 robots 태그가 충돌(index + noindex)하고 존재하지 않는
     // URL을 canonical로 자기참조하는 soft-404가 만들어진다.
     if (!assetInfo) {
+        return NOINDEX_SYMBOL_METADATA;
+    }
+    const decision = evaluateSymbolIndexability({
+        symbol: ticker,
+        route: 'chart',
+        assetInfo,
+        degraded,
+    });
+    if (!decision.indexable) {
         return NOINDEX_SYMBOL_METADATA;
     }
     const displayName = buildDisplayName(assetInfo, ticker);
@@ -160,39 +170,6 @@ export default async function SymbolPage({ params }: Props) {
     // (sibling 페이지들은 [Siglens, ticker, 섹션명] 3단계 — buildBreadcrumbJsonLd가 Siglens를 자동 prepend.)
     const breadcrumbJsonLd = buildBreadcrumbJsonLd([{ name: ticker, url }]);
 
-    const faqJsonLd = {
-        '@context': 'https://schema.org',
-        '@type': 'FAQPage',
-        mainEntity: [
-            {
-                '@type': 'Question',
-                name: `${displayName} 차트 분석에서 무엇을 볼 수 있나요?`,
-                acceptedAnswer: {
-                    '@type': 'Answer',
-                    // FAQ JSON-LD는 동적 숫자(보조지표 개수)를 빼고 질적 표현으로
-                    // 유지해 Skills 카운트 변화 시 schema 회귀를 막는다.
-                    text: `RSI, MACD, 볼린저밴드 같은 다양한 보조지표로 추세를 해석하고, 도지나 해머 같은 캔들 패턴, 헤드앤숄더 같은 차트 패턴, 주요 지지선과 저항선 레벨, 매매 신호까지 한 페이지에서 정리해 보여줍니다. AI가 추세 판단과 진입 후보 가격대를 따로 정리해 같이 읽기 좋습니다.`,
-                },
-            },
-            {
-                '@type': 'Question',
-                name: '차트만으로 매매 판단을 해도 될까요?',
-                acceptedAnswer: {
-                    '@type': 'Answer',
-                    text: '차트는 추세와 매매 시점을 잡는 데 강하지만, 펀더멘털, 최근 뉴스, 단기 매수 분위기까지 같이 봐야 시나리오가 깨지는 위험 요인을 놓치지 않습니다. 종목 페이지의 다른 탭(/fundamental, /news, /fear-greed, /overall)을 함께 살펴보는 게 안전합니다.',
-                },
-            },
-            {
-                '@type': 'Question',
-                name: '추세 판단과 진입 후보 가격대는 어떻게 만들어지나요?',
-                acceptedAnswer: {
-                    '@type': 'Answer',
-                    text: 'AI가 보조지표, 캔들 패턴, 차트 패턴을 종합해 추세 방향을 정리하고, 주요 지지선과 저항선을 기반으로 진입을 고려할 만한 가격대를 후보로 제시합니다. 화면에 표시된 분석 결과를 근거로 챗봇에게 후속 질문도 할 수 있습니다.',
-                },
-            },
-        ],
-    };
-
     const queryClient = new QueryClient({
         defaultOptions: {
             queries: {
@@ -248,13 +225,10 @@ export default async function SymbolPage({ params }: Props) {
     });
     const initialAnalysis = cachedAnalysis ?? FALLBACK_ANALYSIS;
 
-    const priceWord = assetClass === 'crypto' ? '시세' : '주가';
-
     return (
         <>
             <JsonLd data={jsonLd} />
             <JsonLd data={breadcrumbJsonLd} />
-            <JsonLd data={faqJsonLd} />
             {/* main 랜드마크: 다른 5개 sibling 페이지는 본문에 <main>이 있는데
                 차트 페이지만 빠져 있어 의미론적 일관성이 깨졌었다. SymbolPageClient
                 outer div는 flex-1로 viewport를 채우는 구조라 그 위 한 단을 main으로
@@ -273,20 +247,8 @@ export default async function SymbolPage({ params }: Props) {
                         (WCAG 1.3.1). 보조 설명은 heading 없이 p로만 노출한다. */}
                     <p>{displayName} 차트 분석 개요</p>
                     <p>
-                        {displayName}의 기술적 분석 페이지입니다. 보조지표{' '}
-                        {skillCounts.indicators}종, 캔들 패턴{' '}
-                        {skillCounts.candlesticks}종, 차트 패턴{' '}
-                        {skillCounts.patterns}종을 활용해 추세, 진입 구간,
-                        지지선과 저항선을 분석합니다.
-                    </p>
-                    <p>
-                        {`${displayName} ${priceWord}를 RSI, MACD, 볼린저밴드 등 보조지표로 해석하고, 도지나 해머, 장악형 같은 주요 캔들 패턴과 차트 패턴을 자동으로 감지합니다. 주요 지지선과 저항선 레벨, 매매 전략도 함께 확인할 수 있습니다.`}
-                    </p>
-                    <p>AI와 대화로 분석 결과 확인</p>
-                    <p>
-                        분석된 차트 데이터를 근거로 AI와 대화할 수 있습니다.
-                        추세 판단, 지표 의미, 진입 타이밍 등 궁금한 점을
-                        질문하면 {displayName}의 현재 상황에 맞춰 답변합니다.
+                        {displayName}의 가격 흐름과 기술적 지표 요약을 확인할 수
+                        있는 차트 페이지입니다.
                     </p>
                 </section>
                 <HydrationBoundary state={dehydrate(queryClient)}>
