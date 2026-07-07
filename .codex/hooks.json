@@ -1,0 +1,14 @@
+{
+    "hooks": {
+        "SubagentStop": [
+            {
+                "hooks": [
+                    {
+                        "type": "command",
+                        "command": "node '/Users/y0ngha/Project/siglens/.codex/hooks/validate-exit-signal.js'"
+                    }
+                ]
+            }
+        ]
+    }
+}
