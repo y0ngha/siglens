@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.36.1](https://github.com/y0ngha/siglens/compare/v0.36.0...v0.36.1) (2026-07-07)
+
+
+### Bug Fixes
+
+* **seo:** address indexability review comments ([b547034](https://github.com/y0ngha/siglens/commit/b5470343153d8888398d69606c587ed40d972ef4))
+* **seo:** gate longtail index footprint ([e996207](https://github.com/y0ngha/siglens/commit/e99620790ed2dfc54d9030d02ec4eb0195ae8ab2))
+
 # [0.36.0](https://github.com/y0ngha/siglens/compare/v0.35.1...v0.36.0) (2026-07-06)
 
 
