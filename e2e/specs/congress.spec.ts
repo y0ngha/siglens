@@ -121,14 +121,14 @@ test.describe('congress: happy path', () => {
 });
 
 test.describe('congress: sparse (0 trades)', () => {
-    test('EMPTYX renders h1, indexable surface, empty-table copy and 200', async ({
+    test('EMPTYX renders h1, empty-table copy and 200 (noindex via longtail gate, not degrade)', async ({
         page,
     }) => {
         // EMPTYX is the e2e sentinel symbol: FakeCongressTradesProvider returns
         // [] for both chambers. The page must still render successfully
-        // (200, indexable) because 0 trades is a normal sparse-ticker state —
-        // not an error. This is the documented difference from financials,
-        // where 0 rows is treated as degrade.
+        // (200) with the normal empty-state UI because 0 trades is a sparse-
+        // ticker state — not a degrade. This is the documented difference
+        // from financials, where 0 rows is treated as degrade.
         const response = await page.goto('/EMPTYX/congress');
 
         // 200 OK — not 404, not 500.
@@ -141,12 +141,17 @@ test.describe('congress: sparse (0 trades)', () => {
             page.getByRole('heading', { level: 1, name: /EMPTYX.*의회 거래/ })
         ).toBeVisible();
 
-        // Indexable: no <meta name="robots" content="noindex"> on this page.
-        // The congress route only emits NOINDEX_SYMBOL_METADATA for invalid
-        // tickers or degrade — 0 trades is a normal indexable state.
+        // noindex — but for a different reason than sparse trades. Since the
+        // longtail index-quality gate (evaluateSymbolIndexability, PR #678)
+        // landed, any symbol outside POPULAR_TICKERS/APPROVED_LONGTAIL_TICKERS
+        // is 'longtail-default-blocked' regardless of degrade/trade state.
+        // EMPTYX is a fake e2e sentinel, never in either allowlist, so this
+        // page is always noindex now. This assertion is NOT proof of degrade —
+        // the body below still renders the normal empty-state UI (not
+        // CongressDegraded), proving sparse ≠ degrade at the content level.
         await expect(
             page.locator('meta[name="robots"][content*="noindex"]')
-        ).toHaveCount(0);
+        ).toHaveCount(1);
 
         // Empty-state card rendered by CongressTradesEmpty.
         await expect(

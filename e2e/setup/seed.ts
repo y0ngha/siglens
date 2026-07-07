@@ -105,9 +105,14 @@ async function seed(): Promise<void> {
                 // E2E sentinel symbol for congress sparse-trades spec:
                 // FakeCongressTradesProvider returns [] for EMPTYX (both chambers).
                 // Seeded here so getAssetInfo resolves via DB (non-degraded) and the
-                // congress page emits indexable metadata — 0 trades is a valid sparse
-                // state, not a degrade condition. Without this row, getAssetInfo falls
-                // through to FMP (config missing in E2E) → throw → degraded → noindex.
+                // congress page renders the normal empty-state UI rather than
+                // CongressDegraded — 0 trades is a valid sparse state, not a degrade
+                // condition. Without this row, getAssetInfo falls through to FMP
+                // (config missing in E2E) → throw → degraded → CongressDegraded UI.
+                // Note: the page is still noindex regardless — EMPTYX is outside
+                // POPULAR_TICKERS/APPROVED_LONGTAIL_TICKERS, so the longtail index
+                // quality gate (evaluateSymbolIndexability, PR #678) blocks it
+                // independent of this degrade/sparse distinction.
                 //
                 // name === symbol so buildDisplayName returns the bare ticker ('EMPTYX'),
                 // matching the congress spec's assertion on the h1 heading.
