@@ -12,6 +12,7 @@ import {
     getRatiosTtm,
     getStockPeers,
 } from '@/app/[symbol]/fundamental/fundamentalData';
+import { getBlockedSymbolMetadata } from '@/app/[symbol]/symbolIndexabilityMetadata';
 import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
 
 import { FundamentalAiSummary } from '@/widgets/fundamental/FundamentalAiSummary';
@@ -84,9 +85,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         return NOINDEX_SYMBOL_METADATA;
     }
     const { assetInfo, degraded } = await getAssetInfoResilient(upper);
-    if (degraded) {
-        return NOINDEX_SYMBOL_METADATA;
-    }
+    const blockedMetadata = getBlockedSymbolMetadata({
+        symbol: upper,
+        assetInfo,
+        degraded,
+    });
+    if (blockedMetadata) return blockedMetadata;
+
     // 펀더멘털 페이지는 FMP profile이 있어야 렌더된다. profile을 본문/ProfileSection과
     // 동일한 정적 캐시 키로 미리 확인한다(같은 요청 내 React.cache + unstable_cache 공유라
     // 추가 FMP round-trip 없음). 그래서 본문 렌더 결과와 metadata noindex 판단이 일치한다:

@@ -1,4 +1,5 @@
 import { getCongressPageData } from '@/app/[symbol]/congress/congressData';
+import { getBlockedSymbolMetadata } from '@/app/[symbol]/symbolIndexabilityMetadata';
 import { getCongressTradesResilient } from '@/entities/congress-trades';
 import { getProfileResilient } from '@/app/[symbol]/fundamental/getProfileResilient';
 import { CongressDegraded } from '@/app/[symbol]/congress/CongressDegraded';
@@ -58,9 +59,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         return NOINDEX_SYMBOL_METADATA;
     }
     const { assetInfo, degraded } = await getAssetInfoResilient(upper);
-    if (degraded) {
-        return NOINDEX_SYMBOL_METADATA;
-    }
+    const blockedMetadata = getBlockedSymbolMetadata({
+        symbol: upper,
+        assetInfo,
+        degraded,
+    });
+    if (blockedMetadata) return blockedMetadata;
+
     // 의회 거래 페이지는 종목이 실존해야 의미가 있다 — fundamental/financials와
     // 동일한 profile 게이트로 존재성을 확인한다(같은 요청 내 React.cache + unstable_cache
     // 공유라 추가 FMP round-trip 없음). 본문과 메타의 source-of-truth가 일치한다:

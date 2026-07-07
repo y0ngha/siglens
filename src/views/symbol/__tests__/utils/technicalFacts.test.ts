@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
     buildTechnicalFacts,
     buildTechnicalFactsNarrative,
+    RECENT_BARS_WINDOW,
 } from '../../utils/technicalFacts';
 
 function bar(close: number, high = close, low = close): Bar {
@@ -127,7 +128,7 @@ describe('buildTechnicalFactsNarrative', () => {
         ).toEqual([
             'AAPL은 최근 종가 $110.00 기준으로 직전 봉 대비 10.00% 상승했습니다.',
             'RSI 62.5로 중립 구간이며, MACD 히스토그램은 양수라 단기 모멘텀은 상승 쪽입니다.',
-            '최근 252개 봉 고점 대비 -8.3%, 저점 대비 +22.2% 위치에 있습니다.',
+            `최근 ${RECENT_BARS_WINDOW}개 봉 고점 대비 -8.3%, 저점 대비 +22.2% 위치에 있습니다.`,
         ]);
     });
 
@@ -144,7 +145,7 @@ describe('buildTechnicalFactsNarrative', () => {
             buildTechnicalFactsNarrative('AAPL', facts!, 'us-equity')
         ).toEqual([
             'AAPL은 최근 종가 $90.00 기준으로 직전 봉 대비 10.00% 하락했습니다.',
-            '최근 252개 봉 고점 대비 -25.0%, 저점 대비 +12.5% 위치에 있습니다.',
+            `최근 ${RECENT_BARS_WINDOW}개 봉 고점 대비 -25.0%, 저점 대비 +12.5% 위치에 있습니다.`,
         ]);
     });
 
@@ -162,7 +163,7 @@ describe('buildTechnicalFactsNarrative', () => {
         ).toEqual([
             'AAPL은 최근 종가 $110.00 기준으로 직전 봉 대비 10.00% 상승했습니다.',
             'RSI 50.0로 중립 구간이며, MACD 히스토그램은 0이라 단기 모멘텀은 중립에 가까운 상태입니다.',
-            '최근 252개 봉 고점 대비 -8.3%, 저점 대비 +22.2% 위치에 있습니다.',
+            `최근 ${RECENT_BARS_WINDOW}개 봉 고점 대비 -8.3%, 저점 대비 +22.2% 위치에 있습니다.`,
         ]);
     });
 

@@ -15,7 +15,6 @@ describe('evaluateSymbolIndexability', () => {
         expect(
             evaluateSymbolIndexability({
                 symbol: '!!!',
-                route: 'chart',
                 assetInfo: null,
                 degraded: false,
             })
@@ -26,7 +25,6 @@ describe('evaluateSymbolIndexability', () => {
         expect(
             evaluateSymbolIndexability({
                 symbol: 'ZZZQ',
-                route: 'chart',
                 assetInfo: null,
                 degraded: false,
             })
@@ -37,7 +35,6 @@ describe('evaluateSymbolIndexability', () => {
         expect(
             evaluateSymbolIndexability({
                 symbol: 'AAPL',
-                route: 'chart',
                 assetInfo: asset('AAPL'),
                 degraded: true,
             })
@@ -48,7 +45,6 @@ describe('evaluateSymbolIndexability', () => {
         expect(
             evaluateSymbolIndexability({
                 symbol: 'aapl',
-                route: 'chart',
                 assetInfo: asset('AAPL'),
                 degraded: false,
             })
@@ -59,7 +55,6 @@ describe('evaluateSymbolIndexability', () => {
         expect(
             evaluateSymbolIndexability({
                 symbol: 'btcusd',
-                route: 'chart',
                 assetInfo: asset('BTCUSD', { marketProfile: 'crypto' }),
                 degraded: false,
             })
@@ -70,7 +65,6 @@ describe('evaluateSymbolIndexability', () => {
         expect(
             evaluateSymbolIndexability({
                 symbol: '0NEUSD',
-                route: 'chart',
                 assetInfo: asset('0NEUSD', { marketProfile: 'crypto' }),
                 degraded: false,
             })
@@ -84,7 +78,6 @@ describe('evaluateSymbolIndexability', () => {
         expect(
             evaluateSymbolIndexability({
                 symbol: 'ZZZOF',
-                route: 'chart',
                 assetInfo: asset('ZZZOF'),
                 degraded: false,
             })

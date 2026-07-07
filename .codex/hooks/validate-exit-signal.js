@@ -17,7 +17,9 @@ const fs = require('fs');
 
 const KNOWN_AGENTS = [
     'implementation-agent',
+    'issue-agent',
     'review-agent',
+    'mistake-managing-agent',
     'pr-fix-agent',
     'git-agent',
 ];

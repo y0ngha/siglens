@@ -7,6 +7,7 @@ import {
     type IndicatorResult,
 } from '@y0ngha/siglens-core';
 import { TechnicalFactsSummary } from '../TechnicalFactsSummary';
+import { RECENT_BARS_WINDOW } from '../utils/technicalFacts';
 
 const OVERBOUGHT_RSI = RSI_OVERBOUGHT_LEVEL + 1;
 const OVERSOLD_RSI = RSI_OVERSOLD_LEVEL - 1;
@@ -235,7 +236,9 @@ describe('TechnicalFactsSummary', () => {
             />
         );
 
-        expect(screen.getByText(/최근 252개 봉 위치/)).toBeInTheDocument();
+        expect(
+            screen.getByText(`최근 ${RECENT_BARS_WINDOW}개 봉 위치`)
+        ).toBeInTheDocument();
         expect(
             screen.getByText(
                 '위 지표는 표시된 차트 데이터 기반 자동 계산값입니다.'

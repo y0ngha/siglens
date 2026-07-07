@@ -1,4 +1,5 @@
 import { OptionsPageClient } from '@/widgets/options/OptionsPageClient';
+import { getBlockedSymbolMetadata } from '@/app/[symbol]/symbolIndexabilityMetadata';
 import { SymbolPageHeading } from '@/views/symbol';
 import { OptionsEmptyState } from '@/widgets/options/OptionsEmptyState';
 import { JsonLd } from '@/shared/ui/JsonLd';
@@ -87,15 +88,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
             return false;
         }),
     ]);
-    if (degraded) {
-        return NOINDEX_SYMBOL_METADATA;
-    }
-    // 본문 `if (!assetInfo) notFound()`와 일관: 실재하지 않는 ticker(assetInfo: null,
-    // degraded: false)는 메타데이터도 noindex로 맞춘다. 가드가 없으면 본문 not-found(noindex)와
-    // 메타데이터 index가 충돌하는 soft-404가 만들어진다.
-    if (!assetInfo) {
-        return NOINDEX_SYMBOL_METADATA;
-    }
+    const blockedMetadata = getBlockedSymbolMetadata({
+        symbol: upper,
+        assetInfo,
+        degraded,
+    });
+    if (blockedMetadata) return blockedMetadata;
+    if (!assetInfo) return NOINDEX_SYMBOL_METADATA;
+
     const displayName = buildDisplayName(assetInfo, upper);
     const seo = buildSymbolOptionsSeoContent(upper, {
         displayName,

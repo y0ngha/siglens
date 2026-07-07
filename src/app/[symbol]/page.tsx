@@ -2,7 +2,7 @@ import { SymbolPageClient } from '@/views/symbol/SymbolPageClient';
 import { TechnicalFactsSummary, buildChartPageHeading } from '@/views/symbol';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { FALLBACK_ANALYSIS } from '@/entities/chat-message';
-import { evaluateSymbolIndexability } from '@/entities/symbol-indexability';
+import { getBlockedSymbolMetadata } from '@/app/[symbol]/symbolIndexabilityMetadata';
 import { GEMINI_2_5_FLASH_LITE_MODEL } from '@y0ngha/siglens-core';
 import { peekAnalysisStatic } from '@/entities/analysis';
 import {
@@ -59,26 +59,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         return NOINDEX_SYMBOL_METADATA;
     }
     const { assetInfo, degraded } = await getAssetInfoResilient(ticker);
-    if (degraded) {
-        return NOINDEX_SYMBOL_METADATA;
-    }
-    // 본문 `if (!assetInfo) notFound()`와 일관: 형식은 유효하나 실재하지 않는 ticker
-    // (FMP 빈 결과 → assetInfo: null, degraded: false)는 메타데이터도 noindex로 맞춘다.
-    // 이 가드가 없으면 본문은 not-found(noindex)를 렌더하는데 메타데이터는 index,follow +
-    // canonical을 생성해, 한 페이지에 robots 태그가 충돌(index + noindex)하고 존재하지 않는
-    // URL을 canonical로 자기참조하는 soft-404가 만들어진다.
-    if (!assetInfo) {
-        return NOINDEX_SYMBOL_METADATA;
-    }
-    const decision = evaluateSymbolIndexability({
+    const blockedMetadata = getBlockedSymbolMetadata({
         symbol: ticker,
-        route: 'chart',
         assetInfo,
         degraded,
     });
-    if (!decision.indexable) {
-        return NOINDEX_SYMBOL_METADATA;
-    }
+    if (blockedMetadata) return blockedMetadata;
+    if (!assetInfo) return NOINDEX_SYMBOL_METADATA;
+
     const displayName = buildDisplayName(assetInfo, ticker);
     const profile = marketProfileOf(assetInfo);
     const seo = resolveSymbolSeoContent(

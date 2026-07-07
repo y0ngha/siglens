@@ -130,6 +130,17 @@ describe('Symbol page', () => {
     describe('generateMetadata', () => {
         beforeEach(() => {
             vi.clearAllMocks();
+            mockEvaluateSymbolIndexability.mockImplementation(
+                ({ assetInfo, degraded }) => {
+                    if (degraded) {
+                        return { indexable: false, reason: 'degraded' };
+                    }
+                    if (assetInfo === null) {
+                        return { indexable: false, reason: 'asset-missing' };
+                    }
+                    return { indexable: true, reason: 'popular' };
+                }
+            );
         });
 
         it('returns noindex for invalid ticker', async () => {
@@ -233,7 +244,6 @@ describe('Symbol page', () => {
             expect(metadata.robots).toEqual({ index: false, follow: false });
             expect(mockEvaluateSymbolIndexability).toHaveBeenCalledWith({
                 symbol: '0NEUSD',
-                route: 'chart',
                 assetInfo,
                 degraded: false,
             });

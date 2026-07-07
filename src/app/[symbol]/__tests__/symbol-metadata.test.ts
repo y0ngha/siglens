@@ -233,6 +233,17 @@ describe('generateMetadata — canonical URL 회귀 가드', () => {
             assetInfo: { symbol: 'AAPL', name: 'Apple Inc.' },
             degraded: false,
         });
+        mockEvaluateSymbolIndexability.mockImplementation(
+            ({ assetInfo, degraded }) => {
+                if (degraded) {
+                    return { indexable: false, reason: 'degraded' };
+                }
+                if (assetInfo === null) {
+                    return { indexable: false, reason: 'asset-missing' };
+                }
+                return { indexable: true, reason: 'popular' };
+            }
+        );
         // fundamental의 noindex 게이트 기본값: profile 존재 + 비-degraded(정상 happy-path).
         mockGetProfileResilient.mockResolvedValue({
             profile: { symbol: 'AAPL' },
@@ -281,6 +292,36 @@ describe('generateMetadata — canonical URL 회귀 가드', () => {
             expect(metadata.robots).toEqual({ index: false, follow: false });
             expect(metadata.alternates?.canonical).toBeNull();
         });
+    });
+
+    describe('central indexability gate — symbol sibling routes', () => {
+        it.each([
+            { name: 'fundamental', generate: generateFundamentalMetadata },
+            { name: 'news', generate: generateNewsMetadata },
+            { name: 'overall', generate: generateOverallMetadata },
+            { name: 'fear-greed', generate: generateFearGreedMetadata },
+            { name: 'options', generate: generateOptionsMetadata },
+        ])(
+            '$name 페이지도 unapproved longtail을 noindex 처리한다',
+            async ({ generate }) => {
+                mockGetAssetInfoResilient.mockResolvedValue({
+                    assetInfo: { symbol: '0NEUSD', name: 'Stone USD' },
+                    degraded: false,
+                });
+                mockEvaluateSymbolIndexability.mockReturnValueOnce({
+                    indexable: false,
+                    reason: 'longtail-default-blocked',
+                });
+
+                const metadata = await generate(makeParams('0NEUSD'));
+
+                expect(metadata.robots).toEqual({
+                    index: false,
+                    follow: false,
+                });
+                expect(metadata.alternates?.canonical).toBeNull();
+            }
+        );
     });
 
     describe('[symbol]/fundamental 페이지 (/AAPL/fundamental)', () => {

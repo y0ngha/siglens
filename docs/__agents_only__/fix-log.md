@@ -93,4 +93,18 @@
   - Rule: (new) File-content parsing that feeds a hash/fingerprint must normalize line endings before splitting, so the fingerprint is stable across platforms/editors
   - Context: Fixed by normalizing `content.replace(/\r\n/g, '\n')` inside `splitFrontmatter` — the single parse entry point every caller (verify, update-meta, tests) funnels through. Added a CRLF-vs-LF fixture-parity unit test. No-op for existing LF files (verified: `yarn skills:digest-verify` still reports 80/80 clean, unchanged).
 
+## [PR #678 | agent/seo-index-quality-gate | 2026-07-08]
+- Violation: Central symbol indexability gate was applied only to the chart page metadata while sibling symbol routes could still emit indexable metadata for unapproved longtail symbols.
+  - Rule: SEO metadata must stay consistent across route variants that represent the same crawlable entity.
+  - Context: Added a shared app-level metadata helper and wired it into chart, news, fundamental, options, overall, fear-greed, financials, and congress metadata.
+
+## [PR #678 | agent/seo-index-quality-gate | 2026-07-08]
+- Violation: Codex hook configuration hardcoded the author's absolute local project path.
+  - Rule: Repository tooling must not depend on contributor-specific absolute paths.
+  - Context: Replaced the hook command with a repository-relative path so the checked-in hook works outside the author's machine.
+
+## [PR #678 | agent/seo-index-quality-gate | 2026-07-08]
+- Violation: The checked-in exit-signal hook allowlist omitted newly added agent names.
+  - Rule: Tooling allowlists must be updated atomically with the agents they validate.
+  - Context: Added `issue-agent` and `mistake-managing-agent` to `KNOWN_AGENTS` so their valid exit signals are accepted.
 

@@ -1,10 +1,7 @@
 import type { AssetInfo } from '@/shared/lib/types';
 
-export type SymbolIndexabilityRoute = 'chart';
-
 export interface SymbolIndexabilityInput {
     symbol: string;
-    route: SymbolIndexabilityRoute;
     assetInfo: AssetInfo | null;
     degraded: boolean;
 }

@@ -4,6 +4,7 @@ import { useId } from 'react';
 import {
     buildTechnicalFacts,
     buildTechnicalFactsNarrative,
+    RECENT_BARS_WINDOW,
     technicalFactsMacdMomentumLabel,
     technicalFactsRsiZone,
 } from './utils/technicalFacts';
@@ -107,7 +108,9 @@ export function TechnicalFactsSummary({
                     </div>
                 )}
                 <div className="flex justify-between gap-4">
-                    <dt className="text-secondary-400">최근 252개 봉 위치</dt>
+                    <dt className="text-secondary-400">
+                        {`최근 ${RECENT_BARS_WINDOW}개 봉 위치`}
+                    </dt>
                     <dd>
                         고점 대비 {facts.pctFrom52wHigh.toFixed(1)}%, 저점 대비
                         +{facts.pctAbove52wLow.toFixed(1)}%
