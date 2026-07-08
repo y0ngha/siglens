@@ -35,6 +35,51 @@ if ! aws elbv2 describe-listeners --load-balancer-arn "$ALB_ARN" --query 'Listen
     --certificates CertificateArn="$CERT_ARN" \
     --default-actions Type=forward,TargetGroupArn="$TG_ARN" >/dev/null
 fi
+HTTPS_LISTENER_ARN=$(aws elbv2 describe-listeners --load-balancer-arn "$ALB_ARN" \
+  --query 'Listeners[?Port==`443`].ListenerArn | [0]' --output text)
+
+WWW_REDIRECT_RULE_ARN=$(aws elbv2 describe-rules --listener-arn "$HTTPS_LISTENER_ARN" \
+  --query "Rules[?Conditions[?Field=='host-header' && contains(HostHeaderConfig.Values, 'www.siglens.io')]].RuleArn | [0]" \
+  --output text 2>/dev/null) || true
+
+if [ "$WWW_REDIRECT_RULE_ARN" = "None" ] || [ -z "$WWW_REDIRECT_RULE_ARN" ]; then
+  USED_LISTENER_PRIORITIES=$(aws elbv2 describe-rules --listener-arn "$HTTPS_LISTENER_ARN" \
+    --query 'Rules[?Priority!=`default`].Priority' --output text)
+
+  priority_in_use() {
+    for priority in $USED_LISTENER_PRIORITIES; do
+      if [ "$priority" = "$1" ]; then
+        return 0
+      fi
+    done
+    return 1
+  }
+
+  # Priority 10 is reserved for host canonicalization. If another rule already
+  # owns it, use the next free low priority instead of failing the whole script.
+  WWW_REDIRECT_PRIORITY=10
+  if priority_in_use "$WWW_REDIRECT_PRIORITY"; then
+    WWW_REDIRECT_PRIORITY=
+    for candidate_priority in $(seq 11 99); do
+      if ! priority_in_use "$candidate_priority"; then
+        WWW_REDIRECT_PRIORITY=$candidate_priority
+        break
+      fi
+    done
+  fi
+
+  if [ -z "$WWW_REDIRECT_PRIORITY" ]; then
+    echo "No available ALB listener priority found for www.siglens.io redirect rule" >&2
+    exit 1
+  fi
+
+  aws elbv2 create-rule --listener-arn "$HTTPS_LISTENER_ARN" --priority "$WWW_REDIRECT_PRIORITY" \
+    --conditions Field=host-header,Values=www.siglens.io \
+    --actions '[{"Type":"redirect","RedirectConfig":{"Protocol":"HTTPS","Port":"443","Host":"siglens.io","Path":"/#{path}","Query":"#{query}","StatusCode":"HTTP_301"}}]' >/dev/null
+  log "www.siglens.io -> siglens.io redirect rule created (priority $WWW_REDIRECT_PRIORITY)"
+else
+  log "www.siglens.io -> siglens.io redirect rule exists ($WWW_REDIRECT_RULE_ARN)"
+fi
 # ASG (멱등)
 ASG_EXISTS=$(aws autoscaling describe-auto-scaling-groups --auto-scaling-group-names siglens-asg --query 'AutoScalingGroups[0].AutoScalingGroupName' --output text 2>/dev/null) || true
 if [ "$ASG_EXISTS" = "None" ] || [ -z "$ASG_EXISTS" ]; then

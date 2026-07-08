@@ -4,9 +4,9 @@
  * These tests invoke the RSC directly (no render) and traverse the returned
  * element tree to assert that:
  * - Happy: cached overall analysis present → OverallFactsSummary in Suspense fallback
- * - Worst: peek MISS (null) → OverallFactsSummary absent, page still resolves
+ * - Worst: peek MISS (null) → OverallFactualFallback in Suspense fallback
  *
- * OverallFactsSummary lives in the Suspense `fallback` prop, not in `children`,
+ * FactLayer content lives in the Suspense `fallback` prop, not in `children`,
  * so we locate the Suspense element then inspect its fallback.
  */
 
@@ -67,11 +67,15 @@ vi.mock('next/navigation', () => ({
 vi.mock('@/shared/cache/staticSymbolCache', () => ({
     staticSymbolCache: vi.fn(),
 }));
+vi.mock('@/widgets/overall', () => ({
+    OverallFactsSummary: () => null,
+    OverallFactualFallback: () => null,
+}));
 
 import { Suspense, type ReactNode } from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { default as OverallPage } from '@/app/[symbol]/overall/page';
-import { OverallFactsSummary } from '@/widgets/overall';
+import { OverallFactsSummary, OverallFactualFallback } from '@/widgets/overall';
 import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
 import { NEWS_LIST_CACHE_KEY } from '@/entities/news-article';
 import { findElementByType } from '@/__tests__/utils/findElementByType';
@@ -134,10 +138,14 @@ describe('OverallPage — FactLayer SSR integration', () => {
         expect((factLayer?.props as { symbol: string }).symbol).toBe('AAPL');
     });
 
-    it('Worst: peek MISS(null)면 OverallFactsSummary 미렌더 — 크래시 없이 페이지 정상', async () => {
+    it('Worst: peek MISS(null)면 OverallFactualFallback을 렌더한다', async () => {
+        const newsItems = [
+            { id: 'news-1', sentiment: 'bullish' },
+            { id: 'news-2', sentiment: null },
+        ];
         mockStatic.mockImplementation(async (key: readonly unknown[]) => {
             if (key[0] === NEWS_LIST_CACHE_KEY) {
-                return [] as never;
+                return newsItems as never;
             }
             return null as never;
         });
@@ -151,6 +159,22 @@ describe('OverallPage — FactLayer SSR integration', () => {
         const fallback = findSuspenseFallback(tree);
         const factLayer = findElementByType(fallback, OverallFactsSummary);
         expect(factLayer).toBeNull();
+        const factualFallback = findElementByType(
+            fallback,
+            OverallFactualFallback
+        );
+        expect(factualFallback).not.toBeNull();
+        expect(
+            factualFallback?.props as {
+                symbol: string;
+                displayName: string;
+                newsItems: unknown[];
+            }
+        ).toMatchObject({
+            symbol: 'AAPL',
+            displayName: 'Apple Inc.',
+            newsItems,
+        });
     });
 
     it('Worst: staticSymbolCache 실패(throw)해도 페이지가 깨지지 않는다(null degrade) — newsItems + peek 둘 다 catch fallback', async () => {
@@ -162,7 +186,7 @@ describe('OverallPage — FactLayer SSR integration', () => {
         ).resolves.toBeTruthy();
     });
 
-    it('Worst: staticSymbolCache 실패 시 fallback은 스켈레톤 div(FactLayer 없음)', async () => {
+    it('Worst: staticSymbolCache 실패 시 OverallFactualFallback으로 degrade한다', async () => {
         mockStatic.mockRejectedValue(new Error('redis infra down'));
 
         const tree = await OverallPage({
@@ -171,5 +195,15 @@ describe('OverallPage — FactLayer SSR integration', () => {
         const fallback = findSuspenseFallback(tree);
         const factLayer = findElementByType(fallback, OverallFactsSummary);
         expect(factLayer).toBeNull();
+        const factualFallback = findElementByType(
+            fallback,
+            OverallFactualFallback
+        );
+        expect(factualFallback).not.toBeNull();
+        expect(
+            factualFallback?.props as { newsItems: unknown[] }
+        ).toMatchObject({
+            newsItems: [],
+        });
     });
 });

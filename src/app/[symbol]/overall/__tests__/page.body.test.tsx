@@ -1,9 +1,8 @@
 /**
  * Overall page body branching tests — verifies crypto-vs-equity copy in:
  *   1. SymbolPageHeading (visible h1 region)
- *   2. sr-only description paragraph
- *   3. Visible 3-paragraph guide section
- *   4. FAQ JSON-LD `mainEntity[*].acceptedAnswer.text` answers
+ *   2. Visible 3-paragraph guide section
+ *   3. FAQ JSON-LD `mainEntity[*].acceptedAnswer.text` answers
  *
  * Strategy: invoke the RSC directly (no DOM render) and JSON.stringify the tree
  * to assert presence/absence of branch-specific strings, mirroring the pattern
@@ -43,6 +42,7 @@ vi.mock('@/widgets/overall/OverallContent', () => ({
     OverallContent: () => null,
 }));
 vi.mock('@/widgets/overall', () => ({
+    OverallFactualFallback: () => null,
     OverallFactsSummary: () => null,
 }));
 vi.mock('@/views/symbol', () => ({
@@ -136,37 +136,6 @@ describe('OverallPage — isEquity body branching', () => {
             const treeStr = JSON.stringify(tree);
             expect(treeStr).toContain('차트와 옵션 시장, 실적, 뉴스 종합 분석');
             expect(treeStr).not.toContain('차트와 뉴스, 매수 분위기 종합 분석');
-        });
-    });
-
-    describe('sr-only description paragraph', () => {
-        it('crypto → sr-only uses 기술적 분석, 뉴스, 공포 탐욕 지수를 통합', async () => {
-            mockGetAssetInfoResilient.mockResolvedValue(CRYPTO_ASSET_INFO);
-            const tree = await OverallPage({
-                params: Promise.resolve({ symbol: 'BTCUSD' }),
-            });
-            const treeStr = JSON.stringify(tree);
-            expect(treeStr).toContain(
-                '기술적 분석, 뉴스, 공포 탐욕 지수를 통합한 결론'
-            );
-            // equity-only text must be absent
-            expect(treeStr).not.toContain(
-                '펀더멘털, 뉴스, 옵션, 공포 탐욕 지수의 5축'
-            );
-        });
-
-        it('equity → sr-only uses 기술적 분석, 펀더멘털, 뉴스, 옵션, 공포 탐욕 지수의 5축', async () => {
-            mockGetAssetInfoResilient.mockResolvedValue(EQUITY_ASSET_INFO);
-            const tree = await OverallPage({
-                params: Promise.resolve({ symbol: 'aapl' }),
-            });
-            const treeStr = JSON.stringify(tree);
-            expect(treeStr).toContain(
-                '기술적 분석, 펀더멘털, 뉴스, 옵션, 공포 탐욕 지수의 5축'
-            );
-            expect(treeStr).not.toContain(
-                '기술적 분석, 뉴스, 공포 탐욕 지수를 통합한 결론'
-            );
         });
     });
 

@@ -55,6 +55,9 @@ vi.mock('@/widgets/news/NewsAiSummaryErrorBoundary', () => ({
 vi.mock('@/widgets/news/NewsAiSummarySkeleton', () => ({
     NewsAiSummarySkeleton: () => null,
 }));
+vi.mock('@/widgets/news', () => ({
+    NewsFactsSummary: () => null,
+}));
 vi.mock('@/widgets/news/sections/NewsList', () => ({
     NewsList: () => null,
 }));
@@ -109,8 +112,13 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Suspense, isValidElement, type ReactNode } from 'react';
 import NewsPage from '@/app/[symbol]/news/page';
 import { getAssetInfoResilient } from '@/entities/ticker';
+import { getNewsList } from '@/entities/news-article/api';
+import { NewsFactsSummary } from '@/widgets/news';
+import { findElementByType } from '@/__tests__/utils/findElementByType';
+import type { NewsDisplayItem } from '@/shared/lib/types';
 
 const mockGetAssetInfoResilient = vi.mocked(getAssetInfoResilient);
+const mockGetNewsList = vi.mocked(getNewsList);
 
 /**
  * Collect all Suspense children ReactNodes from the element tree.
@@ -184,9 +192,78 @@ const CRYPTO_ASSET_INFO = {
     degraded: false,
 } as Awaited<ReturnType<typeof getAssetInfoResilient>>;
 
+const READY_NEWS: Awaited<ReturnType<typeof getNewsList>> = [
+    {
+        id: 'news-1',
+        symbol: 'AAPL',
+        publishedAt: '2026-05-06T00:00:00.000Z',
+        titleEn: 'Apple announces new product',
+        titleKo: '애플, 신제품 발표',
+        bodyEn: 'Apple announced a new product.',
+        sentiment: 'bullish',
+        category: 'earnings',
+        bodyKo: '애플은 신제품 발표 이후 수요 기대가 커졌다고 밝혔습니다.',
+        summaryKo: '신제품 발표가 투자심리에 긍정적으로 작용했습니다.',
+        priceImpact: 'medium',
+        analyzedAt: new Date('2026-05-06T01:00:00.000Z'),
+        url: 'https://example.com/news-1',
+        source: 'Example',
+    },
+];
+
+describe('NewsPage — NewsFactsSummary SSR props', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mockGetNewsList.mockResolvedValue([]);
+    });
+
+    it('equity page passes symbol, displayName, assetClass, and fetched news items', async () => {
+        mockGetAssetInfoResilient.mockResolvedValue(EQUITY_ASSET_INFO);
+        mockGetNewsList.mockResolvedValue(READY_NEWS);
+
+        const tree = await NewsPage({
+            params: Promise.resolve({ symbol: 'aapl' }),
+        });
+
+        const facts = findElementByType(tree, NewsFactsSummary);
+
+        expect(facts).not.toBeNull();
+        expect(facts?.props).toMatchObject({
+            symbol: 'AAPL',
+            displayName: 'Apple Inc.',
+            assetClass: 'equity',
+            items: READY_NEWS,
+        });
+    });
+
+    it('degraded news fetch passes an empty items array to NewsFactsSummary', async () => {
+        const errorSpy = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => undefined);
+        mockGetAssetInfoResilient.mockResolvedValue(EQUITY_ASSET_INFO);
+        mockGetNewsList.mockRejectedValueOnce(new Error('news fetch failed'));
+
+        try {
+            const tree = await NewsPage({
+                params: Promise.resolve({ symbol: 'aapl' }),
+            });
+
+            const facts = findElementByType(tree, NewsFactsSummary);
+
+            expect(facts).not.toBeNull();
+            expect(
+                (facts?.props as { items: NewsDisplayItem[] }).items
+            ).toEqual([]);
+        } finally {
+            errorSpy.mockRestore();
+        }
+    });
+});
+
 describe('NewsPage — isEquity body section-gating', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        mockGetNewsList.mockResolvedValue([]);
     });
 
     it('equity symbol → EventCalendarSection present as Suspense child', async () => {
@@ -265,6 +342,7 @@ describe('NewsPage — isEquity body section-gating', () => {
 describe('NewsPage — aiArticleJsonLd headline/description isEquity branch', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        mockGetNewsList.mockResolvedValue([]);
     });
 
     it('crypto → aiArticleJsonLd headline uses 최근 코인 뉴스 AI 요약', async () => {
