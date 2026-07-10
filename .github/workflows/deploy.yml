@@ -51,6 +51,9 @@ jobs:
             - name: Test (unit)
               run: yarn test
 
+            - name: Test infra scripts
+              run: bash infra/aws/__tests__/reconcile-www-redirect.test.sh
+
     deploy:
         needs: test-gate
         timeout-minutes: 30
@@ -70,6 +73,11 @@ jobs:
               with:
                   role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
                   aws-region: ap-northeast-2
+
+            # Reconcile the host-level redirect before Docker build/ECR push so stale
+            # CI role permissions or ALB drift fail before a release image is published.
+            - name: Preflight ALB www-to-apex redirect
+              run: bash infra/aws/reconcile-www-redirect.sh
 
             - name: Login to Amazon ECR
               id: ecr
@@ -188,7 +196,7 @@ jobs:
               run: bash infra/aws/deploy.sh "$IMAGE_TAG"
 
             - name: Log deployed tag
-              run: echo "Deployed siglens:${IMAGE_TAG} — ASG instance refresh completed successfully."
+              run: echo "Deployed siglens:${IMAGE_TAG}; ASG instance refresh completed successfully."
 
             # Purge the Cloudflare cache after a successful deploy so the new build is served
             # immediately. Content-hashed /_next/static assets bust on their own, but cached

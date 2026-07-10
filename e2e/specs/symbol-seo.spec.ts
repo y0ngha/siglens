@@ -73,6 +73,28 @@ test.describe('symbol SEO + ISR (crawler-facing)', () => {
         expect(types).toContain('BreadcrumbList');
     });
 
+    test('/AAPL/news exposes SSR factual summary text before hydration', async ({
+        page,
+    }) => {
+        const response = await page.request.get('/AAPL/news');
+        expect(response.status()).toBe(200);
+
+        const html = await response.text();
+        expect(html).toContain('최근 뉴스 데이터 요약');
+        expect(html).toContain('최신 뉴스 데이터가 아직 준비되지 않았습니다.');
+    });
+
+    test('/AAPL/overall exposes SSR factual fallback text before hydration', async ({
+        page,
+    }) => {
+        const response = await page.request.get('/AAPL/overall');
+        expect(response.status()).toBe(200);
+
+        const html = await response.text();
+        expect(html).toContain('종합 분석 데이터 상태');
+        expect(html).toContain('최근 뉴스 데이터는 아직 준비되지 않았습니다.');
+    });
+
     test('/AAPL SSR HTML has exactly one h1 (no cloaking / no duplicate headings)', async ({
         page,
     }) => {

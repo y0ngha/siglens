@@ -122,6 +122,51 @@ describe('NewsFactsSummary', () => {
         expect(section).not.toHaveTextContent('분위기 분포는');
     });
 
+    it('hides optional factual sections for degraded non-empty news items', () => {
+        const items: NewsDisplayItem[] = [
+            makeNewsItem('degraded-1', {
+                publishedAt: 'not-a-date',
+                titleKo: null,
+                titleEn: null as unknown as string,
+                sentiment: null,
+            }),
+            makeNewsItem('degraded-2', {
+                publishedAt: undefined as unknown as string,
+                titleKo: undefined as unknown as string | null,
+                titleEn: undefined as unknown as string,
+                sentiment: null,
+            }),
+        ];
+
+        render(
+            <NewsFactsSummary
+                symbol="AAPL"
+                displayName="Apple Inc."
+                assetClass="equity"
+                items={items}
+            />
+        );
+
+        const section = screen.getByRole('region', {
+            name: 'Apple Inc. 최근 뉴스 데이터 요약',
+        });
+        expect(section).toHaveTextContent(
+            'Apple Inc. (AAPL) 페이지는 최근 뉴스 2건을 표시합니다.'
+        );
+        expect(section).toHaveTextContent(
+            'AI 뉴스 카드 분석은 0건 완료됐습니다.'
+        );
+        expect(section).toHaveTextContent(
+            '뉴스 흐름과 함께 어닝 일정, 최근 실적, 애널리스트 등급 변경을 이어서 확인할 수 있습니다.'
+        );
+        expect(section).not.toHaveTextContent('최신 기사는');
+        expect(section).not.toHaveTextContent('분위기 분포는');
+        expect(
+            within(section).queryByRole('heading', { name: '최근 기사 제목' })
+        ).not.toBeInTheDocument();
+        expect(within(section).queryByRole('list')).not.toBeInTheDocument();
+    });
+
     it('renders crypto support copy for crypto assets', () => {
         render(
             <NewsFactsSummary

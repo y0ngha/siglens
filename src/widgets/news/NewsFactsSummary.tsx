@@ -43,9 +43,15 @@ function getSentimentCounts(
 ): SentimentCounts {
     return items.reduce<SentimentCounts>(
         (counts, item) => {
-            if (item.sentiment === 'bullish') counts.bullish += 1;
-            if (item.sentiment === 'neutral') counts.neutral += 1;
-            if (item.sentiment === 'bearish') counts.bearish += 1;
+            if (item.sentiment === 'bullish') {
+                return { ...counts, bullish: counts.bullish + 1 };
+            }
+            if (item.sentiment === 'neutral') {
+                return { ...counts, neutral: counts.neutral + 1 };
+            }
+            if (item.sentiment === 'bearish') {
+                return { ...counts, bearish: counts.bearish + 1 };
+            }
             return counts;
         },
         { bullish: 0, neutral: 0, bearish: 0 }
@@ -56,7 +62,7 @@ function getHeadlineItems(items: readonly NewsDisplayItem[]): HeadlineItem[] {
     return items
         .map(item => ({
             id: item.id,
-            title: item.titleKo ?? item.titleEn,
+            title: item.titleKo ?? item.titleEn ?? '',
         }))
         .filter(item => item.title.length > 0)
         .slice(0, MAX_HEADLINES);
