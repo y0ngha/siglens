@@ -1,5 +1,7 @@
 // news widget barrel — public API for external consumers.
 
+export { NewsFactsSummary } from './NewsFactsSummary';
+export type { NewsFactsSummaryProps } from './NewsFactsSummary';
 export { NewsAiSummary, NewsAiSummaryView } from './NewsAiSummary';
 export { NewsAiSummaryError } from './NewsAiSummaryError';
 export { NewsAiSummaryErrorBoundary } from './NewsAiSummaryErrorBoundary';

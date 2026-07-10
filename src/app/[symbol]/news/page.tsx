@@ -5,6 +5,7 @@ import {
 import { getBlockedSymbolMetadata } from '@/app/[symbol]/symbolIndexabilityMetadata';
 import { getNewsList } from '@/entities/news-article/api';
 import { NEWS_LIST_CACHE_KEY } from '@/entities/news-article';
+import { NewsFactsSummary } from '@/widgets/news';
 import { NewsAiSummary } from '@/widgets/news/NewsAiSummary';
 import { NewsAiSummaryErrorBoundary } from '@/widgets/news/NewsAiSummaryErrorBoundary';
 import { NewsAiSummarySkeleton } from '@/widgets/news/NewsAiSummarySkeleton';
@@ -323,6 +324,12 @@ export default async function NewsPage({ params }: Props) {
                         ? `${displayName} 최신 뉴스와 어닝 일정`
                         : `${displayName} 최신 코인 뉴스`}
                 </SymbolPageHeading>
+                <NewsFactsSummary
+                    symbol={upper}
+                    displayName={displayName}
+                    assetClass={assetClass}
+                    items={newsItems}
+                />
                 <section className="sr-only">
                     <h2>{displayName} 뉴스 분석 개요</h2>
                     <p>

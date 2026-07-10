@@ -78,6 +78,9 @@ jobs:
             - name: Test
               run: yarn test
 
+            - name: Test infra scripts
+              run: bash infra/aws/__tests__/reconcile-www-redirect.test.sh
+
     # Required-check gate: always runs so a path-skipped `ci` never leaves a
     # required check stuck "pending". Mark THIS job required (not `ci`).
     ci-required:
