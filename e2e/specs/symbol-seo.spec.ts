@@ -42,6 +42,10 @@ function countH1(html: string): number {
     return (html.match(/<h1[\s>]/g) ?? []).length;
 }
 
+function normalizeReactSsrText(html: string): string {
+    return html.replace(/<!--[\s\S]*?-->/g, '');
+}
+
 test.describe('symbol SEO + ISR (crawler-facing)', () => {
     test('/AAPL embeds valid inline JSON-LD without chart FAQ boilerplate', async ({
         page,
@@ -80,8 +84,14 @@ test.describe('symbol SEO + ISR (crawler-facing)', () => {
         expect(response.status()).toBe(200);
 
         const html = await response.text();
+        const normalizedHtml = normalizeReactSsrText(html);
         expect(html).toContain('최근 뉴스 데이터 요약');
-        expect(html).toContain('최신 뉴스 데이터가 아직 준비되지 않았습니다.');
+        expect(normalizedHtml).toMatch(
+            /최신 뉴스 데이터가 아직 준비되지 않았습니다|AI 뉴스 카드 분석은 \d+건 완료됐습니다/
+        );
+        expect(normalizedHtml).toMatch(
+            /뉴스 카드가 분석되면 최근 기사와 분위기 요약이 이 영역에 표시됩니다|뉴스 흐름과 함께 어닝 일정, 최근 실적, 애널리스트 등급 변경을 이어서 확인할 수 있습니다/
+        );
     });
 
     test('/AAPL/overall exposes SSR factual fallback text before hydration', async ({
