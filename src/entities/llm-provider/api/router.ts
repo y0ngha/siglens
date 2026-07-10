@@ -1,6 +1,7 @@
 import { callAnthropicChat } from './anthropic';
 import { callGeminiChat } from './gemini';
 import { callOpenaiChat } from './openai';
+import { callDeepseekChat } from './deepseek';
 import type {
     ActiveModelId,
     CallAiProviderOptions,
@@ -53,6 +54,8 @@ export async function callAiProviderRouter(
             return callOpenaiChat(apiOptions);
         case 'google':
             return callGeminiChat(apiOptions);
+        case 'deepseek':
+            return callDeepseekChat(apiOptions);
         default: {
             const exhausted: never = provider;
             throw new Error(`Unhandled AI provider: ${String(exhausted)}`);

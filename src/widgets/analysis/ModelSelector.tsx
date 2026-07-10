@@ -31,6 +31,11 @@ const MODEL_DISPLAY_MAP: Partial<Record<ModelId, ModelDisplay>> = {
     'gpt-5-mini': { label: 'GPT Mini', fullName: 'GPT-5 Mini' },
     'gpt-5.4': { label: 'GPT 5.4', fullName: 'GPT-5.4' },
     'gpt-5.5': { label: 'GPT 5.5', fullName: 'GPT-5.5' },
+    'deepseek-v4-flash': {
+        label: 'DeepSeek Flash',
+        fullName: 'DeepSeek V4 Flash',
+    },
+    'deepseek-v4-pro': { label: 'DeepSeek Pro', fullName: 'DeepSeek V4 Pro' },
 };
 
 function getModelDisplay(id: ModelId): ModelDisplay {

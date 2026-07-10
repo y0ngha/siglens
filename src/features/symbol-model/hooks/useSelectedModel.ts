@@ -7,13 +7,11 @@ import {
     useEffectEvent,
     useState,
 } from 'react';
-import {
-    GEMINI_2_5_FLASH_LITE_MODEL,
-    type ModelId,
-} from '@y0ngha/siglens-core';
+import { DEEPSEEK_V4_FLASH_MODEL, type ModelId } from '@y0ngha/siglens-core';
 import { LOCAL_STORAGE_ANALYSIS_MODEL_KEY } from '@/shared/lib/storageKeys';
+import { migrateLegacyAnalysisModel } from '../lib/migrateAnalysisModel';
 
-const DEFAULT_MODEL: ModelId = GEMINI_2_5_FLASH_LITE_MODEL;
+const DEFAULT_MODEL: ModelId = DEEPSEEK_V4_FLASH_MODEL;
 
 export function useSelectedModel(
     allowedModels: readonly ModelId[]
@@ -31,6 +29,9 @@ export function useSelectedModel(
 
     const readFromStorage = useEffectEvent((): void => {
         if (typeof window === 'undefined') return;
+        // Run the one-time legacy-default migration BEFORE reading, so the read
+        // below picks up the migrated value for users still on gemini-2.5-flash-lite.
+        migrateLegacyAnalysisModel();
         const stored = localStorage.getItem(
             LOCAL_STORAGE_ANALYSIS_MODEL_KEY
         ) as ModelId | null;

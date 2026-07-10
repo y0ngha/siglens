@@ -22,7 +22,12 @@ describe('useSelectedModel — branch coverage', () => {
             'gemini-2.5-flash'
         );
 
+        // Includes DEEPSEEK_V4_FLASH_MODEL (the real DEFAULT_MODEL) so the mount-time
+        // re-validate effect (L52-61) doesn't race the hydration effect and clobber it —
+        // matches production, where tier restrictions are disabled and every model
+        // (including the default) is always in allowedModels.
         const allowedModels: ModelId[] = [
+            'deepseek-v4-flash',
             'gemini-2.5-flash-lite',
             'gemini-2.5-flash',
         ];
@@ -39,6 +44,7 @@ describe('useSelectedModel — branch coverage', () => {
         localStorage.setItem(LOCAL_STORAGE_ANALYSIS_MODEL_KEY, 'unknown-model');
 
         const allowedModels: ModelId[] = [
+            'deepseek-v4-flash',
             'gemini-2.5-flash-lite',
             'gemini-2.5-flash',
         ];
@@ -46,7 +52,7 @@ describe('useSelectedModel — branch coverage', () => {
 
         await act(async () => {});
 
-        expect(result.current[0]).toBe('gemini-2.5-flash-lite');
+        expect(result.current[0]).toBe('deepseek-v4-flash');
     });
 
     it('setSelectedModel persists to localStorage', () => {
@@ -95,7 +101,8 @@ describe('useSelectedModel — branch coverage', () => {
             });
         });
 
-        // Should fall back to DEFAULT_MODEL (which is gemini-2.5-flash-lite)
+        // DEFAULT_MODEL (deepseek-v4-flash) is not in the new allowedModels either,
+        // so this falls through to allowedModels[0] (L59), not DEFAULT_MODEL (L57).
         expect(result.current[0]).toBe('gemini-2.5-flash-lite');
     });
 

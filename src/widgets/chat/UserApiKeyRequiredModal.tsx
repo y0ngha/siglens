@@ -10,6 +10,7 @@ const PROVIDER_DISPLAY: Record<LlmProvider, string> = {
     anthropic: 'Anthropic',
     google: 'Google',
     openai: 'OpenAI',
+    deepseek: 'DeepSeek',
 };
 
 interface UserApiKeyRequiredModalProps {

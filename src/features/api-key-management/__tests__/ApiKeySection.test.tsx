@@ -38,23 +38,24 @@ describe('ApiKeySection', () => {
         ).toBeInTheDocument();
     });
 
-    it('renders all three provider cards', () => {
+    it('renders all four provider cards', () => {
         render(<ApiKeySection registeredProviders={[]} />);
         expect(screen.getByText('Claude (Anthropic)')).toBeInTheDocument();
         expect(screen.getByText('Gemini (Google)')).toBeInTheDocument();
         expect(screen.getByText('ChatGPT (OpenAI)')).toBeInTheDocument();
+        expect(screen.getByText('DeepSeek')).toBeInTheDocument();
     });
 
     it('shows "미등록" badge for unregistered providers', () => {
         render(<ApiKeySection registeredProviders={[]} />);
         const badges = screen.getAllByText('미등록');
-        expect(badges).toHaveLength(3);
+        expect(badges).toHaveLength(4);
     });
 
     it('shows "등록됨" badge for registered providers', () => {
         render(<ApiKeySection registeredProviders={['anthropic']} />);
         expect(screen.getByText('등록됨')).toBeInTheDocument();
-        expect(screen.getAllByText('미등록')).toHaveLength(2);
+        expect(screen.getAllByText('미등록')).toHaveLength(3);
     });
 
     it('shows save input for unregistered providers', () => {
@@ -77,7 +78,12 @@ describe('ApiKeySection', () => {
         const user = userEvent.setup();
         render(
             <ApiKeySection
-                registeredProviders={['anthropic', 'google', 'openai']}
+                registeredProviders={[
+                    'anthropic',
+                    'google',
+                    'openai',
+                    'deepseek',
+                ]}
             />
         );
 

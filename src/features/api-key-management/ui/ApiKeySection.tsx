@@ -13,6 +13,7 @@ const PROVIDER_PLACEHOLDERS: Record<LlmProvider, string> = {
     anthropic: 'sk-ant-...',
     google: 'AIza...',
     openai: 'sk-...',
+    deepseek: 'sk-...',
 };
 
 interface StatusMessageProps {

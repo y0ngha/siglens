@@ -17,8 +17,8 @@ import type {
     UserTierContext,
 } from '@y0ngha/siglens-core';
 import {
+    DEEPSEEK_V4_FLASH_MODEL,
     DEFAULT_TIER,
-    GEMINI_2_5_FLASH_MODEL,
     getProviderForModel,
     requestChatCompletion,
 } from '@y0ngha/siglens-core';
@@ -43,6 +43,8 @@ function getServerPrimaryKey(provider: LlmProvider): string | undefined {
             return process.env.ANTHROPIC_CHAT_API_KEY;
         case 'openai':
             return process.env.OPENAI_CHAT_API_KEY;
+        case 'deepseek':
+            return process.env.DEEPSEEK_CHAT_API_KEY;
         default: {
             const exhausted: never = provider;
             throw new Error(`Unhandled LLM provider: ${String(exhausted)}`);
@@ -105,7 +107,7 @@ export async function chatAction(
     analysis: AnalysisResponse,
     history: ChatMessage[],
     userMessage: string,
-    model: ModelId = GEMINI_2_5_FLASH_MODEL,
+    model: ModelId = DEEPSEEK_V4_FLASH_MODEL,
     /**
      * Tagged union representing the analysis result the user is currently
      * looking at (technical / fundamental / news / overall). When provided,

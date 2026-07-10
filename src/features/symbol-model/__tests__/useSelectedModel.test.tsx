@@ -1,13 +1,19 @@
 import { renderHook, act, waitFor } from '@testing-library/react';
 import type { ModelId } from '@y0ngha/siglens-core';
 import { useSelectedModel } from '@/features/symbol-model/hooks/useSelectedModel';
-import { LOCAL_STORAGE_ANALYSIS_MODEL_KEY } from '@/shared/lib/storageKeys';
+import {
+    LOCAL_STORAGE_ANALYSIS_MODEL_KEY,
+    LOCAL_STORAGE_ANALYSIS_MODEL_MIGRATION_KEY,
+} from '@/shared/lib/storageKeys';
 
+// useSelectedModel transitively imports migrateLegacyAnalysisModel, which reads
+// both the new and legacy defaults from core — the mock must export both.
 vi.mock('@y0ngha/siglens-core', () => ({
+    DEEPSEEK_V4_FLASH_MODEL: 'deepseek-v4-flash',
     GEMINI_2_5_FLASH_LITE_MODEL: 'gemini-2.5-flash-lite',
 }));
 
-const DEFAULT_MODEL = 'gemini-2.5-flash-lite' as ModelId;
+const DEFAULT_MODEL = 'deepseek-v4-flash' as ModelId;
 const PREMIUM_MODEL = 'gemini-2.5-pro' as ModelId;
 
 describe('useSelectedModel', () => {
@@ -101,5 +107,34 @@ describe('useSelectedModel', () => {
         await waitFor(() => {
             expect(result.current[2]).toBe(true);
         });
+    });
+
+    it('migrates a legacy-default (gemini-2.5-flash-lite) stored value to the new default on mount', async () => {
+        // Legacy user: old analysis default stored, migration flag not yet set.
+        localStorage.setItem(
+            LOCAL_STORAGE_ANALYSIS_MODEL_KEY,
+            'gemini-2.5-flash-lite'
+        );
+        expect(
+            localStorage.getItem(LOCAL_STORAGE_ANALYSIS_MODEL_MIGRATION_KEY)
+        ).toBeNull();
+
+        const { result } = renderHook(() =>
+            useSelectedModel([DEFAULT_MODEL, PREMIUM_MODEL])
+        );
+
+        await waitFor(() => {
+            expect(result.current[2]).toBe(true);
+        });
+
+        // The mount-time migration rewrote the stored value, so the hook resolves
+        // to the new DeepSeek default and the migration flag is now set.
+        expect(result.current[0]).toBe(DEFAULT_MODEL);
+        expect(localStorage.getItem(LOCAL_STORAGE_ANALYSIS_MODEL_KEY)).toBe(
+            DEFAULT_MODEL
+        );
+        expect(
+            localStorage.getItem(LOCAL_STORAGE_ANALYSIS_MODEL_MIGRATION_KEY)
+        ).not.toBeNull();
     });
 });

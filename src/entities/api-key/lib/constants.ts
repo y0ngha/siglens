@@ -11,6 +11,7 @@ export const AI_PROVIDER_VALUES = [
     'claude',
     'gemini',
     'chatgpt',
+    'deepseek',
 ] as const satisfies readonly AIProvider[];
 
 // If core adds e.g. 'mistral' to AIProvider, `Exclude<...>` becomes

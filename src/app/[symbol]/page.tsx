@@ -3,7 +3,7 @@ import { TechnicalFactsSummary, buildChartPageHeading } from '@/views/symbol';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { FALLBACK_ANALYSIS } from '@/entities/chat-message';
 import { getBlockedSymbolMetadata } from '@/app/[symbol]/symbolIndexabilityMetadata';
-import { GEMINI_2_5_FLASH_LITE_MODEL } from '@y0ngha/siglens-core';
+import { DEEPSEEK_V4_FLASH_MODEL } from '@y0ngha/siglens-core';
 import { peekAnalysisStatic } from '@/entities/analysis';
 import {
     DEFAULT_TIMEFRAME,
@@ -199,14 +199,14 @@ export default async function SymbolPage({ params }: Props) {
     // 삼키지 않고 로깅한 뒤 degrade한다.
     //
     // modelId: 익명/SSR 기본 방문자가 캐시를 쓰는 키와 정렬한다. SymbolModelContext의
-    // DEFAULT_MODEL이 GEMINI_2_5_FLASH_LITE_MODEL이고, useAnalysis가 그 값을
-    // submitAnalysisAction에 그대로 전달하므로 writer는 lite 모델 키로 캐시한다.
+    // DEFAULT_MODEL이 DEEPSEEK_V4_FLASH_MODEL이고, useAnalysis가 그 값을
+    // submitAnalysisAction에 그대로 전달하므로 writer는 DeepSeek flash 모델 키로 캐시한다.
     // peek도 동일 모델을 넘겨야 HIT한다.
     const cachedAnalysis = await peekAnalysisStatic(
         ticker,
         DEFAULT_TIMEFRAME,
         assetInfo.fmpSymbol,
-        GEMINI_2_5_FLASH_LITE_MODEL
+        DEEPSEEK_V4_FLASH_MODEL
     ).catch((error: unknown) => {
         console.error('[SymbolPage] peekAnalysisStatic failed:', error);
         return null;

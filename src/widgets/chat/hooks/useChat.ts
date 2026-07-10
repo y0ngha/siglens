@@ -8,7 +8,7 @@ import {
 } from '../utils/chatStorage';
 import { isChatMessage } from '../utils/chatMessageUtils';
 import {
-    GEMINI_2_5_FLASH_MODEL,
+    DEEPSEEK_V4_FLASH_MODEL,
     VALID_CHAT_MODELS,
     getProviderForModel,
     type AnalysisResponse,
@@ -106,7 +106,7 @@ export function useChat({ symbol }: UseChatOptions): UseChatReturn {
     );
     const [analysisUpdated, setAnalysisUpdated] = useState(false);
     const [selectedModel, setSelectedModel] = useState<ModelId>(
-        GEMINI_2_5_FLASH_MODEL
+        DEEPSEEK_V4_FLASH_MODEL
     );
     const [isModelHydrated, setIsModelHydrated] = useState(false);
 

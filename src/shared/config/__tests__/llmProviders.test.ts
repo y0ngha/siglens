@@ -21,14 +21,19 @@ describe('LLM_PROVIDER_VALUES', () => {
         );
     });
 
-    it("'anthropic', 'google', 'openai'를 포함한다", () => {
+    it("'anthropic', 'google', 'openai', 'deepseek'를 포함한다", () => {
         expect([...LLM_PROVIDER_VALUES]).toEqual(
-            expect.arrayContaining(['anthropic', 'google', 'openai'])
+            expect.arrayContaining([
+                'anthropic',
+                'google',
+                'openai',
+                'deepseek',
+            ])
         );
     });
 
-    it('3개 프로바이더가 정의되어 있다', () => {
-        expect(LLM_PROVIDER_VALUES).toHaveLength(3);
+    it('4개 프로바이더가 정의되어 있다', () => {
+        expect(LLM_PROVIDER_VALUES).toHaveLength(4);
     });
 });
 
