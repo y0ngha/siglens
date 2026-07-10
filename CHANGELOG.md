@@ -1,5 +1,17 @@
 # Changelog
 
+# [0.37.0](https://github.com/y0ngha/siglens/compare/v0.36.1...v0.37.0) (2026-07-10)
+
+
+### Bug Fixes
+
+* harden www redirect deploy path ([0a2c3c7](https://github.com/y0ngha/siglens/commit/0a2c3c7216ecf189449a244eb224889de20c6f6a))
+
+
+### Features
+
+* www 리다이렉트와 SSR 요약 추가 ([e6b92cc](https://github.com/y0ngha/siglens/commit/e6b92ccf5329bd1a7a897a065f84d6abee50285a))
+
 ## [0.36.1](https://github.com/y0ngha/siglens/compare/v0.36.0...v0.36.1) (2026-07-07)
 
 
