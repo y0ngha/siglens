@@ -13,12 +13,17 @@ interface DeepSeekThinkingToggle {
 }
 
 /**
- * `chat.completions.create` params extended with DeepSeek's `thinking` field.
- * Localized to this file so the rest of the codebase never has to reason
+ * Streaming `chat.completions.create` params extended with DeepSeek's `thinking`
+ * field. Localized to this file so the rest of the codebase never has to reason
  * about a field the `openai` SDK types don't know about.
+ *
+ * Streaming is required: DeepSeek terminates long non-streaming connections at
+ * ~50-60s (a verbose chatbot answer could hit this with the 393216 max_tokens
+ * cap). Streaming keeps the connection alive as tokens flow; we still return the
+ * fully-aggregated text, so the caller contract is unchanged.
  */
 type DeepSeekChatCompletionParams =
-    OpenAI.Chat.ChatCompletionCreateParamsNonStreaming & {
+    OpenAI.Chat.ChatCompletionCreateParamsStreaming & {
         thinking: DeepSeekThinkingToggle;
     };
 
@@ -64,14 +69,21 @@ export async function callDeepseekChat({
         thinking,
         // temperature only applies in non-thinking mode.
         ...(!spec.thinking ? { temperature: spec.temperature } : {}),
+        stream: true,
+        stream_options: { include_usage: true },
     };
 
-    const response = await client.chat.completions.create(params);
+    const stream = await client.chat.completions.create(params);
 
-    const text = response.choices[0]?.message.content;
-    if (text === null || text === undefined) {
-        throw new Error('[deepseek] Provider returned null/undefined response');
+    // Aggregate the streamed deltas into the full conversational text.
+    let text = '';
+    for await (const chunk of stream) {
+        const delta = chunk.choices[0]?.delta?.content;
+        if (delta) {
+            text += delta;
+        }
     }
+
     if (text === '') {
         console.warn('[deepseek] Provider returned empty string');
     }

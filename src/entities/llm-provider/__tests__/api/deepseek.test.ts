@@ -24,8 +24,28 @@ const PRO_OPTIONS = {
     model: 'deepseek-v4-pro', // apiModelId, thinking
 } as const;
 
+// DeepSeek chat is called in STREAMING mode, so `create` resolves to an async
+// iterable of chunks. These helpers build fresh streams (single-use).
+interface Chunk {
+    choices: Array<{ delta?: { content?: string | null } }>;
+    usage?: unknown;
+}
+
+function toStream(chunks: Chunk[]) {
+    return {
+        async *[Symbol.asyncIterator]() {
+            for (const chunk of chunks) {
+                yield chunk;
+            }
+        },
+    };
+}
+
 function okResponse(content: string) {
-    return { choices: [{ message: { content } }] };
+    return toStream([
+        { choices: [{ delta: { content } }] },
+        { choices: [{ delta: {} }], usage: { prompt_tokens: 1 } },
+    ]);
 }
 
 describe('callDeepseekChat', () => {
@@ -80,6 +100,10 @@ describe('callDeepseekChat', () => {
             const call = mockCreate.mock.calls[0][0];
             expect(call.model).toBe('deepseek-v4-flash');
             expect(call.messages).toEqual([{ role: 'user', content: 'Hello' }]);
+            // Streaming is mandatory (avoids DeepSeek's ~50-60s non-streaming
+            // connection termination on long outputs).
+            expect(call.stream).toBe(true);
+            expect(call.stream_options).toEqual({ include_usage: true });
         });
 
         it('response_format을 강제하지 않는다 (챗봇은 자연 텍스트 반환)', async () => {
@@ -239,24 +263,33 @@ describe('callDeepseekChat', () => {
             warnSpy.mockRestore();
         });
 
-        it('content가 null이면 에러를 던진다', async () => {
-            mockCreate.mockResolvedValue({
-                choices: [{ message: { content: null } }],
-            });
-
-            await expect(callDeepseekChat(FLASH_OPTIONS)).rejects.toThrow(
-                '[deepseek] Provider returned null/undefined response'
+        it('null/undefined content 델타는 건너뛰고 유효한 델타만 집계한다', async () => {
+            mockCreate.mockResolvedValue(
+                toStream([
+                    { choices: [{ delta: { content: null } }] },
+                    { choices: [{ delta: {} }] },
+                    { choices: [{ delta: { content: 'real answer' } }] },
+                    { choices: [{ delta: {} }], usage: { prompt_tokens: 1 } },
+                ])
             );
+
+            const result = await callDeepseekChat(FLASH_OPTIONS);
+
+            expect(result).toBe('real answer');
         });
 
-        it('content가 undefined이면 에러를 던진다', async () => {
-            mockCreate.mockResolvedValue({
-                choices: [{ message: { content: undefined } }],
-            });
-
-            await expect(callDeepseekChat(FLASH_OPTIONS)).rejects.toThrow(
-                '[deepseek] Provider returned null/undefined response'
+        it('여러 델타를 하나의 응답으로 집계한다', async () => {
+            mockCreate.mockResolvedValue(
+                toStream([
+                    { choices: [{ delta: { content: 'part-1 ' } }] },
+                    { choices: [{ delta: { content: 'part-2' } }] },
+                    { choices: [{ delta: {} }], usage: { prompt_tokens: 1 } },
+                ])
             );
+
+            const result = await callDeepseekChat(FLASH_OPTIONS);
+
+            expect(result).toBe('part-1 part-2');
         });
     });
 });
