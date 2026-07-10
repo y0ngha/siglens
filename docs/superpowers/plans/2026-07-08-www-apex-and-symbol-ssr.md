@@ -4,6 +4,14 @@
 
 **Goal:** Add a permanent `www.siglens.io` to apex redirect and strengthen crawler-visible SSR factual content on the `news` and `overall` symbol pages.
 
+> **[2026-07-10 update — www redirect moved to Cloudflare]** The `www -> apex` 301 redirect
+> is now implemented as a **Cloudflare dashboard Redirect Rule** (`http.host eq "www.siglens.io"`
+> → `concat("https://siglens.io", http.request.uri.path)`, 301, preserve query string), not the
+> AWS ALB listener rule below. Cloudflare 301s at the edge, so requests never reach the ALB.
+> `infra/aws/reconcile-www-redirect.sh`, its test, the CI/deploy integration, and the ALB IAM
+> permissions have been removed. The ACM `www.siglens.io` SAN (`infra/aws/03-acm.sh`) is kept
+> defensively for grey-cloud fallback. The ALB-based tasks below are retained as history.
+
 **Architecture:** Canonicalize the `www` host at the AWS ALB HTTPS listener before requests reach Next.js. Add small server-safe factual summary components that reuse data already fetched by the page RSCs, avoiding new external calls and avoiding hidden SEO text.
 
 **Tech Stack:** AWS ALB shell provisioning, Next.js App Router RSC, TypeScript, Vitest, React Testing Library, existing FSD layer rules.

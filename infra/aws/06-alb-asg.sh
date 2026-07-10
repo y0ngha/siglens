@@ -35,15 +35,7 @@ if ! aws elbv2 describe-listeners --load-balancer-arn "$ALB_ARN" --query 'Listen
     --certificates CertificateArn="$CERT_ARN" \
     --default-actions Type=forward,TargetGroupArn="$TG_ARN" >/dev/null
 fi
-HTTPS_LISTENER_ARN=$(aws elbv2 describe-listeners --load-balancer-arn "$ALB_ARN" \
-  --query 'Listeners[?Port==`443`].ListenerArn | [0]' --output text)
 
-if [ "$HTTPS_LISTENER_ARN" = "None" ] || [ -z "$HTTPS_LISTENER_ARN" ]; then
-  echo "ERROR: HTTPS listener ARN lookup returned empty/None for ALB $ALB_ARN" >&2
-  exit 1
-fi
-
-bash "$(dirname "$0")/reconcile-www-redirect.sh" --listener-arn "$HTTPS_LISTENER_ARN"
 # ASG (멱등)
 ASG_EXISTS=$(aws autoscaling describe-auto-scaling-groups --auto-scaling-group-names siglens-asg --query 'AutoScalingGroups[0].AutoScalingGroupName' --output text 2>/dev/null) || true
 if [ "$ASG_EXISTS" = "None" ] || [ -z "$ASG_EXISTS" ]; then

@@ -4,6 +4,16 @@
 - 상태: Design, 사용자 리뷰 대기
 - 범위: `www.siglens.io` 정규화, symbol sibling page SSR factual content 강화
 
+> **[2026-07-10 업데이트 — www 정규화 구현 방식 이관]**
+> 이 문서(및 §3.1의 ALB HTTPS listener rule 설계, `infra/aws/reconcile-www-redirect.sh`)는
+> `www -> apex` 301 정규화를 **AWS ALB 리스너 규칙**으로 구현하는 것으로 계획했다.
+> 실제로는 **Cloudflare 대시보드 Redirect Rule**(`http.host eq "www.siglens.io"` →
+> `concat("https://siglens.io", http.request.uri.path)`, 301, query string 보존)로 이관했다.
+> Cloudflare가 엣지에서 301하므로 요청이 ALB까지 도달하지 않는다.
+> 이에 따라 `reconcile-www-redirect.sh`·테스트·CI/deploy 통합·ALB IAM 권한은 모두 제거됐다.
+> ACM 인증서의 `www.siglens.io` SAN(`infra/aws/03-acm.sh`)은 grey-cloud fallback 시
+> ALB 직결 TLS를 위해 방어적으로 유지한다. 아래 §3.1 ALB rule 설계는 히스토리 참고용이다.
+
 ## 1. 배경
 
 2026-07-01 전후 SEO 급락 대응으로 1차 조치에서는 longtail index footprint를 축소하고 chart page의 SSR factual content를 강화했다. 후속 확인에서 `www.siglens.io`가 apex로 redirect되지 않고 독립 호스트로 `200` 응답하는 것이 확인됐다.

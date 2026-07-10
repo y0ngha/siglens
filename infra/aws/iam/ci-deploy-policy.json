@@ -37,18 +37,6 @@
             "Resource": "*"
         },
         {
-            "Sid": "AlbRedirectCreateRule",
-            "Effect": "Allow",
-            "Action": ["elasticloadbalancing:CreateRule"],
-            "Resource": "arn:aws:elasticloadbalancing:ap-northeast-2:ACCOUNT_ID:listener/app/siglens-alb/*/*"
-        },
-        {
-            "Sid": "AlbRedirectModifyRule",
-            "Effect": "Allow",
-            "Action": ["elasticloadbalancing:ModifyRule"],
-            "Resource": "arn:aws:elasticloadbalancing:ap-northeast-2:ACCOUNT_ID:listener-rule/app/siglens-alb/*/*/*"
-        },
-        {
             "Sid": "DeployLaunchTemplate",
             "Effect": "Allow",
             "Action": [
