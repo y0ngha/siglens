@@ -32,7 +32,12 @@ interface SymbolModelContextValue {
     reasoning: boolean;
     /** Persists the member's raw toggle preference (member-only UI writes this). */
     setReasoning: (value: boolean) => void;
-    /** Whether the current tier is allowed to see/use the reasoning toggle (member/pro). */
+    /**
+     * Whether the current tier may interact with (toggle) the reasoning
+     * switch (member/pro). The switch is always rendered — tiers that can't
+     * use it see it in a locked state (which opens the signup nudge) rather
+     * than it being hidden.
+     */
     canUseReasoning: boolean;
     /**
      * Whether the reasoning toggle's localStorage read has completed (mirrors
