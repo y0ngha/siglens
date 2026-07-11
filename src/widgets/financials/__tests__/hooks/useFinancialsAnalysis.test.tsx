@@ -109,7 +109,8 @@ describe('useFinancialsAnalysis', () => {
         });
         expect(mockSubmit).toHaveBeenCalledWith(
             'AAPL',
-            'gemini-2.5-flash-lite'
+            'gemini-2.5-flash-lite',
+            false
         );
     });
 

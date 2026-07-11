@@ -8,7 +8,11 @@ import {
     type Timeframe,
 } from '@y0ngha/siglens-core';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
-import { resolveTierAndByok, buildGateError } from '@/shared/lib/byokGate';
+import {
+    resolveTierAndByok,
+    resolveReasoning,
+    buildGateError,
+} from '@/shared/lib/byokGate';
 import { isBot } from '@/shared/api/isBot';
 import { isE2E } from '@/shared/api/e2eEnv';
 import type { AnalysisGateBlockedResult } from '@/shared/lib/types';
@@ -29,7 +33,13 @@ export async function submitAnalysisAction(
     timeframe: Timeframe,
     force?: boolean,
     fmpSymbol?: string,
-    modelId?: ModelId
+    modelId?: ModelId,
+    /**
+     * Client-requested "깊은 생각" (deep-thinking) toggle value (member-reasoning-toggle
+     * spec Part A). Only honored for member/pro tiers — `resolveReasoning` forces
+     * `false` for anonymous/free callers regardless of this value.
+     */
+    reasoning?: boolean
 ): Promise<SubmitAnalysisActionResult> {
     try {
         // E2E short-circuits the LLM/worker (see e2eAnalysisStub). The
@@ -101,6 +111,7 @@ export async function submitAnalysisAction(
                 marketDataProvider,
                 assetClass,
                 tierContext: { userId, tier: gate.tier },
+                reasoning: resolveReasoning(gate.tier, reasoning),
                 ...(gate.userApiKey !== undefined
                     ? { userApiKey: gate.userApiKey }
                     : {}),

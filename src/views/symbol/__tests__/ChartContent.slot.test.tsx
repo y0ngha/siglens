@@ -51,7 +51,20 @@ vi.mock('../hooks/useActionPricesVisibility', () => ({
     }),
 }));
 vi.mock('@/features/symbol-model/model/SymbolModelContext', () => ({
-    useSymbolModel: () => ({ modelId: 'gemini-2.5-flash', isHydrated: true }),
+    useSymbolModel: () => ({
+        modelId: 'gemini-2.5-flash',
+        isHydrated: true,
+        reasoning: false,
+        isReasoningHydrated: true,
+    }),
+}));
+vi.mock('@/features/analysis-nudge', () => ({
+    useAnonAnalysisNudge: () => ({
+        isOpen: false,
+        onSymbolAnalyzed: vi.fn(),
+        close: vi.fn(),
+    }),
+    AnalysisSignupNudgeModal: () => null,
 }));
 vi.mock('../SymbolPageContext', () => ({
     useSymbolPageContext: () => ({ indicatorCount: 25 }),

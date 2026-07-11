@@ -54,6 +54,10 @@ vi.mock('@/entities/auth/lib/getCurrentUser', () => ({
 
 vi.mock('@/shared/lib/byokGate', () => ({
     resolveTierAndByok: vi.fn(),
+    resolveReasoning: vi.fn(
+        (tier: string, clientReasoning?: boolean) =>
+            tier !== 'free' && clientReasoning === true
+    ),
     buildGateError: vi.fn((code: string) => ({
         code,
         message: `mock-${code}`,
@@ -716,6 +720,61 @@ describe('submitOverallAnalysisAction 함수는', () => {
             expect(result).toBe(SUBMITTED_RESULT);
             expect(mockSubmitOverallAnalysis).toHaveBeenCalledWith(
                 expect.objectContaining({ financialsScorecard: undefined })
+            );
+        });
+    });
+
+    describe('reasoning forwarding', () => {
+        it('forwards reasoning: true for member tier when client requests it', async () => {
+            mockGetCurrentUser.mockResolvedValue({ id: 'u1' } as never);
+            mockResolveTierAndByok.mockResolvedValue({
+                kind: 'allowed',
+                tier: 'member' as never,
+            });
+
+            await submitOverallAnalysisAction(
+                'AAPL',
+                'Apple Inc.',
+                '1Day',
+                MODEL_ID,
+                { reasoning: true }
+            );
+
+            expect(mockSubmitOverallAnalysis).toHaveBeenCalledWith(
+                expect.objectContaining({ reasoning: true })
+            );
+        });
+
+        it('forces reasoning: false for free tier even when client requests true', async () => {
+            await submitOverallAnalysisAction(
+                'AAPL',
+                'Apple Inc.',
+                '1Day',
+                MODEL_ID,
+                { reasoning: true }
+            );
+
+            expect(mockSubmitOverallAnalysis).toHaveBeenCalledWith(
+                expect.objectContaining({ reasoning: false })
+            );
+        });
+
+        it('defaults reasoning to false when options are omitted', async () => {
+            mockGetCurrentUser.mockResolvedValue({ id: 'u1' } as never);
+            mockResolveTierAndByok.mockResolvedValue({
+                kind: 'allowed',
+                tier: 'member' as never,
+            });
+
+            await submitOverallAnalysisAction(
+                'AAPL',
+                'Apple Inc.',
+                '1Day',
+                MODEL_ID
+            );
+
+            expect(mockSubmitOverallAnalysis).toHaveBeenCalledWith(
+                expect.objectContaining({ reasoning: false })
             );
         });
     });

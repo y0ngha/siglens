@@ -5,6 +5,7 @@ import { getAllowedModels, type ModelId } from '@y0ngha/siglens-core';
 import { useSelectedModel } from '../hooks/useSelectedModel';
 import { useModelGate, type ModelGateState } from '@/features/premium-gate';
 import { useUserTier } from '../hooks/useUserTier';
+import { useReasoningToggle } from '@/features/reasoning-toggle';
 
 interface SymbolModelContextValue {
     modelId: ModelId;
@@ -13,6 +14,25 @@ interface SymbolModelContextValue {
     gateModal: ModelGateState | null;
     dismissGate: () => void;
     handleModelChange: (model: ModelId) => void;
+    /**
+     * Effective "깊은 생각" (reasoning) value — member-reasoning-toggle spec
+     * Part A. Already tier-gated: `false` for anonymous/free regardless of
+     * the member's stored preference. Server-side `resolveReasoning` is the
+     * authoritative enforcement; this client-side gate only prevents a
+     * stale/stray `true` from a downgraded session from being sent at all.
+     */
+    reasoning: boolean;
+    /** Persists the member's raw toggle preference (member-only UI writes this). */
+    setReasoning: (value: boolean) => void;
+    /** Whether the current tier is allowed to see/use the reasoning toggle (member/pro). */
+    canUseReasoning: boolean;
+    /**
+     * Whether the reasoning toggle's localStorage read has completed (mirrors
+     * `isHydrated` for `modelId`). Consumers that restart analysis on
+     * reasoning change (e.g. `useAnalysis`) gate on this the same way they
+     * gate on model hydration, to avoid a spurious extra fetch mid-hydration.
+     */
+    isReasoningHydrated: boolean;
 }
 
 const SymbolModelContext = createContext<SymbolModelContextValue | null>(null);
@@ -28,6 +48,13 @@ export function SymbolModelProvider({ children }: SymbolModelProviderProps) {
     const { gateModal, dismissGate, handleModelChange } = useModelGate({
         onAllow: setModelId,
     });
+    const [storedReasoning, setReasoning, isReasoningHydrated] =
+        useReasoningToggle();
+    // free(익명 포함) tier는 서버에서도 강제되지만(resolveReasoning), 클라에서도
+    // 미리 false로 접어 두면 downgrade(로그아웃/등급 하락) 직후 stale true 값이
+    // 한 프레임이라도 실제 submit에 실려 나가는 것을 방지한다.
+    const canUseReasoning = tier !== 'free';
+    const reasoning = canUseReasoning && storedReasoning;
 
     const value = useMemo(
         () => ({
@@ -37,6 +64,10 @@ export function SymbolModelProvider({ children }: SymbolModelProviderProps) {
             gateModal,
             dismissGate,
             handleModelChange,
+            reasoning,
+            setReasoning,
+            canUseReasoning,
+            isReasoningHydrated,
         }),
         [
             modelId,
@@ -45,6 +76,10 @@ export function SymbolModelProvider({ children }: SymbolModelProviderProps) {
             gateModal,
             dismissGate,
             handleModelChange,
+            reasoning,
+            setReasoning,
+            canUseReasoning,
+            isReasoningHydrated,
         ]
     );
 

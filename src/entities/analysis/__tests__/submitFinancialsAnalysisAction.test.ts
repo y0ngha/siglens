@@ -29,6 +29,10 @@ vi.mock('@/entities/auth/lib/getCurrentUser', () => ({
 
 vi.mock('@/shared/lib/byokGate', () => ({
     resolveTierAndByok: vi.fn(),
+    resolveReasoning: vi.fn(
+        (tier: string, clientReasoning?: boolean) =>
+            tier !== 'free' && clientReasoning === true
+    ),
     buildGateError: vi.fn((code: string) => ({
         code,
         message: `mock-${code}`,
@@ -247,6 +251,44 @@ describe('submitFinancialsAnalysisAction 함수는', () => {
         expect(mockSubmitFinancialsAnalysis).toHaveBeenCalledWith(
             expect.objectContaining({ skipEnqueueIfMiss: false })
         );
+    });
+
+    describe('reasoning forwarding', () => {
+        it('forwards reasoning: true for member tier when client requests it', async () => {
+            mockGetCurrentUser.mockResolvedValue({ id: 'u1' } as never);
+            mockResolveTierAndByok.mockResolvedValue({
+                kind: 'allowed',
+                tier: 'member' as never,
+            });
+
+            await submitFinancialsAnalysisAction('AAPL', MODEL_ID, true);
+
+            expect(mockSubmitFinancialsAnalysis).toHaveBeenCalledWith(
+                expect.objectContaining({ reasoning: true })
+            );
+        });
+
+        it('forces reasoning: false for free tier even when client requests true', async () => {
+            await submitFinancialsAnalysisAction('AAPL', MODEL_ID, true);
+
+            expect(mockSubmitFinancialsAnalysis).toHaveBeenCalledWith(
+                expect.objectContaining({ reasoning: false })
+            );
+        });
+
+        it('defaults reasoning to false when omitted', async () => {
+            mockGetCurrentUser.mockResolvedValue({ id: 'u1' } as never);
+            mockResolveTierAndByok.mockResolvedValue({
+                kind: 'allowed',
+                tier: 'member' as never,
+            });
+
+            await submitFinancialsAnalysisAction('AAPL', MODEL_ID);
+
+            expect(mockSubmitFinancialsAnalysis).toHaveBeenCalledWith(
+                expect.objectContaining({ reasoning: false })
+            );
+        });
     });
 
     it('E2E 모드에서 e2eCachedFinancials를 반환하고 provider를 호출하지 않는다', async () => {

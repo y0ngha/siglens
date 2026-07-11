@@ -24,8 +24,17 @@ vi.mock('@/features/premium-gate', () => ({
     })),
 }));
 
+const { mockUseUserTier, mockUseReasoningToggle } = vi.hoisted(() => ({
+    mockUseUserTier: vi.fn(() => ({ tier: 'free', isLoading: false })),
+    mockUseReasoningToggle: vi.fn(() => [false, vi.fn()]),
+}));
+
 vi.mock('@/features/symbol-model/hooks/useUserTier', () => ({
-    useUserTier: vi.fn(() => ({ tier: 'free', isLoading: false })),
+    useUserTier: mockUseUserTier,
+}));
+
+vi.mock('@/features/reasoning-toggle', () => ({
+    useReasoningToggle: mockUseReasoningToggle,
 }));
 
 const queryClients: QueryClient[] = [];
@@ -45,6 +54,11 @@ function makeWrapper() {
 }
 
 describe('SymbolModelContext', () => {
+    beforeEach(() => {
+        mockUseUserTier.mockReturnValue({ tier: 'free', isLoading: false });
+        mockUseReasoningToggle.mockReturnValue([false, vi.fn(), true]);
+    });
+
     afterEach(() => {
         queryClients.splice(0).forEach(c => c.clear());
     });
@@ -85,5 +99,77 @@ describe('SymbolModelContext', () => {
         });
 
         expect(result.current.isHydrated).toBe(true);
+    });
+
+    describe('reasoning gating (member-reasoning-toggle spec Part A)', () => {
+        it('forces reasoning=false and canUseReasoning=false for free tier even if stored preference is true', () => {
+            mockUseUserTier.mockReturnValue({ tier: 'free', isLoading: false });
+            mockUseReasoningToggle.mockReturnValue([true, vi.fn(), true]);
+
+            const { result } = renderHook(() => useSymbolModel(), {
+                wrapper: makeWrapper(),
+            });
+
+            expect(result.current.canUseReasoning).toBe(false);
+            expect(result.current.reasoning).toBe(false);
+        });
+
+        it('honors the stored true preference for member tier', () => {
+            mockUseUserTier.mockReturnValue({
+                tier: 'member',
+                isLoading: false,
+            });
+            mockUseReasoningToggle.mockReturnValue([true, vi.fn(), true]);
+
+            const { result } = renderHook(() => useSymbolModel(), {
+                wrapper: makeWrapper(),
+            });
+
+            expect(result.current.canUseReasoning).toBe(true);
+            expect(result.current.reasoning).toBe(true);
+        });
+
+        it('honors the stored true preference for pro tier', () => {
+            mockUseUserTier.mockReturnValue({ tier: 'pro', isLoading: false });
+            mockUseReasoningToggle.mockReturnValue([true, vi.fn(), true]);
+
+            const { result } = renderHook(() => useSymbolModel(), {
+                wrapper: makeWrapper(),
+            });
+
+            expect(result.current.canUseReasoning).toBe(true);
+            expect(result.current.reasoning).toBe(true);
+        });
+
+        it('defaults reasoning=false for member tier when stored preference is false', () => {
+            mockUseUserTier.mockReturnValue({
+                tier: 'member',
+                isLoading: false,
+            });
+            mockUseReasoningToggle.mockReturnValue([false, vi.fn(), true]);
+
+            const { result } = renderHook(() => useSymbolModel(), {
+                wrapper: makeWrapper(),
+            });
+
+            expect(result.current.canUseReasoning).toBe(true);
+            expect(result.current.reasoning).toBe(false);
+        });
+
+        it('exposes setReasoning delegating to the underlying toggle setter', () => {
+            const setReasoning = vi.fn();
+            mockUseUserTier.mockReturnValue({
+                tier: 'member',
+                isLoading: false,
+            });
+            mockUseReasoningToggle.mockReturnValue([false, setReasoning, true]);
+
+            const { result } = renderHook(() => useSymbolModel(), {
+                wrapper: makeWrapper(),
+            });
+
+            result.current.setReasoning(true);
+            expect(setReasoning).toHaveBeenCalledWith(true);
+        });
     });
 });

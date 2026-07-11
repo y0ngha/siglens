@@ -180,7 +180,7 @@ async function submitUntilReady(
     onProgress: (p: ProgressState) => void,
     onJobsUpdate: (jobs: CurrentJobs) => void,
     applicableAxes: readonly OverallAxis[],
-    options: { force?: boolean } = {},
+    options: { force?: boolean; reasoning?: boolean } = {},
     depth = 0
 ): Promise<
     Exclude<
@@ -221,7 +221,10 @@ async function submitUntilReady(
     throwIfAborted(signal);
 
     // 모든 dependency 완료 후 재submit — 이번엔 pending_dependencies가 반환되지
-    // 않는다. force는 의도적으로 전파하지 않는다(위 JSDoc 참고).
+    // 않는다. force는 의도적으로 전파하지 않는다(위 JSDoc 참고). reasoning은
+    // force와 달리 재분석 "의도"가 아니라 이번 fetchOverallAnalysis 호출 전체에
+    // 걸친 요청 속성이므로 재귀 재submit에도 그대로 유지한다 — 그렇지 않으면
+    // 의존성 완료 후 최종 submit이 reasoning=false로 되돌아가는 회귀가 생긴다.
     return submitUntilReady(
         symbol,
         companyName,
@@ -231,7 +234,7 @@ async function submitUntilReady(
         onProgress,
         onJobsUpdate,
         applicableAxes,
-        {},
+        { reasoning: options.reasoning },
         depth + 1
     );
 }
@@ -248,7 +251,7 @@ async function fetchOverallAnalysis(
     // 덮어쓰는 race를 막기 위해 사용한다.
     onJobsUpdate: (jobs: CurrentJobs, expectedCurrent?: CurrentJobs) => void,
     applicableAxes: readonly OverallAxis[],
-    options: { force?: boolean } = {}
+    options: { force?: boolean; reasoning?: boolean } = {}
 ): Promise<OverallAnalysisResponse> {
     // 이 실행이 마지막으로 ref에 기록한 값. finally에서 compare-and-clear의
     // 비교 기준으로 사용한다 — 다른 실행이 ref를 갱신했다면 그 값을 보존한다.
@@ -351,7 +354,13 @@ export function useOverallAnalysis(
      * Defaults to 'equity' so existing callers that don't yet pass this param
      * continue to get the full 4-axis behaviour.
      */
-    assetClass: AssetClass = 'equity'
+    assetClass: AssetClass = 'equity',
+    /**
+     * Member "깊은 생각" (deep-thinking) toggle value (member-reasoning-toggle
+     * spec Part A). Defaults to `false`. Part of the query key so toggling
+     * re-submits analysis (distinct cache key).
+     */
+    reasoning = false
 ): UseOverallAnalysisReturn {
     const queryClient = useQueryClient();
     const isHydrated = useHydrated();
@@ -366,8 +375,14 @@ export function useOverallAnalysis(
     const queryFnForceRef = useRef<boolean>(false);
     const queryKey = useMemo(
         () =>
-            QUERY_KEYS.overallAnalysis(symbol, companyName, timeframe, modelId),
-        [symbol, companyName, timeframe, modelId]
+            QUERY_KEYS.overallAnalysis(
+                symbol,
+                companyName,
+                timeframe,
+                modelId,
+                reasoning
+            ),
+        [symbol, companyName, timeframe, modelId, reasoning]
     );
     // queryKey를 ref에 캡처해 mount 시 최초 렌더 기준으로 캐시를 확인한다.
     const queryKeyRef = useRef(queryKey);
@@ -376,7 +391,14 @@ export function useOverallAnalysis(
         queryKey,
         queryFn: ({
             signal,
-            queryKey: [, qSymbol, qCompanyName, qTimeframe, qModelId],
+            queryKey: [
+                ,
+                qSymbol,
+                qCompanyName,
+                qTimeframe,
+                qModelId,
+                qReasoning,
+            ],
         }) => {
             const force = queryFnForceRef.current;
             queryFnForceRef.current = false;
@@ -397,7 +419,7 @@ export function useOverallAnalysis(
                     currentJobsRef.current = jobs;
                 },
                 axesForAssetClass(assetClass),
-                { force }
+                { force, reasoning: qReasoning }
             );
         },
         enabled: isHydrated && triggered,

@@ -38,6 +38,7 @@ vi.mock('@/shared/ui/BotBlockedNotice', () => ({
 
 vi.mock('@/features/symbol-model', () => ({
     useDefaultModelId: () => 'gemini-2.5-flash-lite',
+    useDefaultReasoning: () => false,
 }));
 
 vi.mock('@/shared/lib/cn', () => ({

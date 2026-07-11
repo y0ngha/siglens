@@ -13,6 +13,18 @@ vi.mock('@/shared/api/fmp/getCongressTradesProvider', () => ({
     getCongressTradesProvider: vi.fn(() => ({})),
 }));
 
+vi.mock('@/entities/auth/lib/getCurrentUser', () => ({
+    getCurrentUser: vi.fn(),
+}));
+
+vi.mock('@/shared/lib/byokGate', () => ({
+    resolveTierOnly: vi.fn(),
+    resolveReasoning: vi.fn(
+        (tier: string, clientReasoning?: boolean) =>
+            tier !== 'free' && clientReasoning === true
+    ),
+}));
+
 vi.mock('@/shared/api/e2eAnalysisStub', () => ({
     e2eCachedCongressTrend: vi.fn(() => ({ status: 'cached', result: {} })),
     e2eForcedCongressError: vi.fn(() => ({
@@ -31,6 +43,8 @@ import {
     type SubmitCongressTrendResult,
 } from '@y0ngha/siglens-core';
 import { getCongressTradesProvider } from '@/shared/api/fmp/getCongressTradesProvider';
+import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
+import { resolveTierOnly } from '@/shared/lib/byokGate';
 import { submitCongressTrendAction } from '../actions/submitCongressTrendAction';
 
 const mockHeaders = headers as MockedFunction<typeof headers>;
@@ -41,6 +55,12 @@ const mockGetCongressTradesProvider =
     getCongressTradesProvider as MockedFunction<
         typeof getCongressTradesProvider
     >;
+const mockGetCurrentUser = getCurrentUser as MockedFunction<
+    typeof getCurrentUser
+>;
+const mockResolveTierOnly = resolveTierOnly as MockedFunction<
+    typeof resolveTierOnly
+>;
 
 const CACHED_RESULT: SubmitCongressTrendResult = {
     status: 'cached',
@@ -65,6 +85,10 @@ describe('submitCongressTrendAction 함수는', () => {
         mockGetCongressTradesProvider.mockReset();
         mockGetCongressTradesProvider.mockReturnValue({} as never);
         mockSubmitCongressTrend.mockResolvedValue(SUBMITTED_RESULT);
+        mockGetCurrentUser.mockReset();
+        mockResolveTierOnly.mockReset();
+        mockGetCurrentUser.mockResolvedValue(null);
+        mockResolveTierOnly.mockResolvedValue('free');
     });
 
     it('siglens-core submitCongressTrend에 symbol과 modelId를 전달한다', async () => {
@@ -130,6 +154,70 @@ describe('submitCongressTrendAction 함수는', () => {
         expect(mockSubmitCongressTrend).toHaveBeenCalledWith(
             expect.objectContaining({ skipEnqueueIfMiss: false })
         );
+    });
+
+    describe('reasoning forwarding', () => {
+        it('resolves tier via getCurrentUser + resolveTierOnly and forwards reasoning: true for member tier', async () => {
+            mockGetCurrentUser.mockResolvedValue({ id: 'u1' } as never);
+            mockResolveTierOnly.mockResolvedValue('member');
+            mockSubmitCongressTrend.mockResolvedValueOnce(CACHED_RESULT);
+
+            await submitCongressTrendAction('AAPL', MODEL_ID, true);
+
+            expect(mockResolveTierOnly).toHaveBeenCalledWith('u1');
+            expect(mockSubmitCongressTrend).toHaveBeenCalledWith(
+                expect.objectContaining({ reasoning: true })
+            );
+        });
+
+        it('resolves tier as free (null userId) for anonymous callers', async () => {
+            mockGetCurrentUser.mockResolvedValue(null);
+            mockResolveTierOnly.mockResolvedValue('free');
+            mockSubmitCongressTrend.mockResolvedValueOnce(CACHED_RESULT);
+
+            await submitCongressTrendAction('AAPL', MODEL_ID, true);
+
+            expect(mockResolveTierOnly).toHaveBeenCalledWith(null);
+            expect(mockSubmitCongressTrend).toHaveBeenCalledWith(
+                expect.objectContaining({ reasoning: false })
+            );
+        });
+
+        it('defaults reasoning to false when omitted', async () => {
+            mockGetCurrentUser.mockResolvedValue({ id: 'u1' } as never);
+            mockResolveTierOnly.mockResolvedValue('member');
+            mockSubmitCongressTrend.mockResolvedValueOnce(CACHED_RESULT);
+
+            await submitCongressTrendAction('AAPL', MODEL_ID);
+
+            expect(mockSubmitCongressTrend).toHaveBeenCalledWith(
+                expect.objectContaining({ reasoning: false })
+            );
+        });
+
+        it('skips the tier lookup entirely when reasoning is not requested (omitted)', async () => {
+            mockSubmitCongressTrend.mockResolvedValueOnce(CACHED_RESULT);
+
+            await submitCongressTrendAction('AAPL', MODEL_ID);
+
+            expect(mockGetCurrentUser).not.toHaveBeenCalled();
+            expect(mockResolveTierOnly).not.toHaveBeenCalled();
+            expect(mockSubmitCongressTrend).toHaveBeenCalledWith(
+                expect.objectContaining({ reasoning: false })
+            );
+        });
+
+        it('skips the tier lookup entirely when reasoning is explicitly false', async () => {
+            mockSubmitCongressTrend.mockResolvedValueOnce(CACHED_RESULT);
+
+            await submitCongressTrendAction('AAPL', MODEL_ID, false);
+
+            expect(mockGetCurrentUser).not.toHaveBeenCalled();
+            expect(mockResolveTierOnly).not.toHaveBeenCalled();
+            expect(mockSubmitCongressTrend).toHaveBeenCalledWith(
+                expect.objectContaining({ reasoning: false })
+            );
+        });
     });
 
     it('E2E 모드에서 e2eCachedCongressTrend를 반환하고 provider를 호출하지 않는다', async () => {

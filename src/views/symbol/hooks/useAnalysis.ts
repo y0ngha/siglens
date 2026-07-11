@@ -38,6 +38,7 @@ interface AnalyzeMutationVariables {
     force: boolean;
     fmpSymbol?: string;
     modelId?: ModelId;
+    reasoning?: boolean;
 }
 
 /**
@@ -76,6 +77,17 @@ interface UseAnalysisOptions {
      * undefined이면 hydration 추적을 하지 않는다(하위 호환).
      */
     isModelHydrated?: boolean;
+    /**
+     * 효과적(tier-gated) "깊은 생각" reasoning 값 (member-reasoning-toggle spec
+     * Part A). SymbolModelContext에서 온다 — 회원이 아니면 항상 `false`.
+     */
+    reasoning?: boolean;
+    /**
+     * useReasoningToggle의 localStorage read가 끝났는지 여부. isModelHydrated와
+     * 동일한 목적 — hydration 중간에 스푸리어스 재분석이 트리거되지 않도록 한다.
+     * undefined이면 hydration 추적을 하지 않는다(하위 호환).
+     */
+    isReasoningHydrated?: boolean;
 }
 
 // symbol-page → analysis는 허용된 하향 의존(cross-widget cross-import).
@@ -110,6 +122,8 @@ export function useAnalysis({
     timeframeChangeCount,
     modelId,
     isModelHydrated,
+    reasoning,
+    isReasoningHydrated,
 }: UseAnalysisOptions): UseAnalysisResult {
     // 1. useState
     const [analysisResult, setAnalysisResult] =
@@ -138,8 +152,10 @@ export function useAnalysis({
     });
     const latestTimeframeRef = useRef<Timeframe>(timeframe);
     const latestModelIdRef = useRef<ModelId | undefined>(modelId);
+    const latestReasoningRef = useRef<boolean | undefined>(reasoning);
     const prevTimeframeChangeCountRef = useRef(0);
     const prevModelIdRef = useRef<ModelId | undefined>(modelId);
+    const prevReasoningRef = useRef<boolean | undefined>(reasoning);
     /**
      * localStorage hydration으로 인한 model 변경(마운트 직후 DEFAULT_MODEL → 저장값)을
      * 사용자 의도 변경과 구분하기 위한 플래그.
@@ -147,6 +163,13 @@ export function useAnalysis({
      */
     const hasHandledModelHydrationRef = useRef(
         isModelHydrated !== false // undefined(추적 안 함)이면 처음부터 true로 취급
+    );
+    /**
+     * localStorage hydration으로 인한 reasoning 변경(마운트 직후 false → 저장값)을
+     * 사용자 의도 변경과 구분하기 위한 플래그. hasHandledModelHydrationRef와 동일 패턴.
+     */
+    const hasHandledReasoningHydrationRef = useRef(
+        isReasoningHydrated !== false // undefined(추적 안 함)이면 처음부터 true로 취급
     );
     // 현재 진행 중인 워커 job ID. 타임프레임 변경 시 취소 신호 전달에 사용.
     const currentJobIdRef = useRef<string | null>(null);
@@ -171,6 +194,7 @@ export function useAnalysis({
             companyName: mutCompanyName,
             fmpSymbol: mutFmpSymbol,
             modelId: mutModelId,
+            reasoning: mutReasoning,
         }) => {
             lastForceRef.current = force;
             return submitAnalysisAction(
@@ -179,7 +203,8 @@ export function useAnalysis({
                 latestTimeframeRef.current,
                 force,
                 mutFmpSymbol,
-                mutModelId
+                mutModelId,
+                mutReasoning
             );
         },
         onMutate: () => {
@@ -260,7 +285,8 @@ export function useAnalysis({
     const isAnalyzing =
         isSubmitting ||
         isPolling ||
-        (initialAnalysisFailedAtMount && isModelHydrated === false);
+        (initialAnalysisFailedAtMount &&
+            (isModelHydrated === false || isReasoningHydrated === false));
     const analysisError = submitError?.message ?? pollError ?? null;
     // 쿨다운 카운트다운이 활성화된 상태. effect deps에 사용해 불필요한 재시작을 방지한다.
     const isCountdownActive = reanalyzeCooldownMs > 0;
@@ -289,16 +315,18 @@ export function useAnalysis({
                 force: true,
                 fmpSymbol: latestFmpSymbol,
                 modelId: latestModelIdRef.current,
+                reasoning: latestReasoningRef.current,
             });
         })();
     }, [reset, mutate]);
 
     /**
-     * 타임프레임 변경·모델 변경 두 effect에서 공유한다.
-     * modelIdOverride 미전달 시 latestModelIdRef(=최신 렌더 모델)를 사용한다.
+     * 타임프레임 변경·모델 변경·reasoning 변경 세 effect에서 공유한다.
+     * modelIdOverride/reasoningOverride 미전달 시 각각 latestModelIdRef/
+     * latestReasoningRef(=최신 렌더 값)를 사용한다.
      */
     const restartAnalysis = useCallback(
-        (modelIdOverride?: ModelId): void => {
+        (modelIdOverride?: ModelId, reasoningOverride?: boolean): void => {
             const jobId = currentJobIdRef.current;
             currentJobIdRef.current = null;
             if (jobId !== null) cancelMutate(jobId);
@@ -309,6 +337,7 @@ export function useAnalysis({
                 force: false,
                 fmpSymbol: latestRef.current.fmpSymbol,
                 modelId: modelIdOverride ?? latestModelIdRef.current,
+                reasoning: reasoningOverride ?? latestReasoningRef.current,
             });
         },
         [cancelMutate, reset, mutate]
@@ -330,6 +359,7 @@ export function useAnalysis({
         latestRef.current = { symbol, companyName, fmpSymbol };
         latestTimeframeRef.current = timeframe;
         latestModelIdRef.current = modelId;
+        latestReasoningRef.current = reasoning;
     });
 
     // 8. useEffect
@@ -410,9 +440,12 @@ export function useAnalysis({
 
     // 서버에서 초기 AI 분석이 실패한 경우, localStorage hydration이 완료된 뒤 자동으로 재분석을 실행한다.
     // isModelHydrated=false 동안에는 기본값(DEFAULT_MODEL)이 사용 중이므로 hydration 완료까지 대기한다.
+    // isReasoningHydrated도 동일하게 대기한다 — 그렇지 않으면 회원의 저장된 reasoning=true가
+    // 반영되기 전에 reasoning=false(기본값)로 초기 재시도가 나가버린다.
     useEffect(() => {
         if (!initialAnalysisFailedAtMount) return;
         if (isModelHydrated === false) return;
+        if (isReasoningHydrated === false) return;
         // 초기 실패 재시도는 이미 reset/cancel 없이 진행 — 진행 중인 작업이 없는 상태에서만 도달한다.
         mutate({
             symbol: latestRef.current.symbol,
@@ -420,8 +453,14 @@ export function useAnalysis({
             force: false,
             fmpSymbol: latestRef.current.fmpSymbol,
             modelId: latestModelIdRef.current,
+            reasoning: latestReasoningRef.current,
         });
-    }, [mutate, isModelHydrated, initialAnalysisFailedAtMount]);
+    }, [
+        mutate,
+        isModelHydrated,
+        isReasoningHydrated,
+        initialAnalysisFailedAtMount,
+    ]);
 
     // 타임프레임 변경 시 진행 중인 워커 작업을 취소하고, 이전 mutation 상태를 초기화한 뒤 새 분석을 자동 실행한다.
     useEffect(() => {
@@ -448,6 +487,27 @@ export function useAnalysis({
         // 경우에도 useLayoutEffect 전에 이 effect가 실행될 수 있으므로 값을 직접 주입한다.
         restartAnalysis(modelId);
     }, [modelId, isModelHydrated, restartAnalysis]);
+
+    // 토글 변경 시 재분석(다른 캐시 키) — modelId 변경 effect와 완전히 동일한 패턴.
+    // localStorage hydration으로 인한 reasoning 변경(마운트 직후 false → 저장값)은
+    // 사용자 의도 변경이 아니므로 재분석을 트리거하지 않는다.
+    useEffect(() => {
+        if (
+            !hasHandledReasoningHydrationRef.current &&
+            isReasoningHydrated !== false
+        ) {
+            hasHandledReasoningHydrationRef.current = true;
+            prevReasoningRef.current = reasoning;
+            return;
+        }
+
+        if (reasoning === prevReasoningRef.current) return;
+        prevReasoningRef.current = reasoning;
+
+        // 회원의 명시적 토글 변경은 새 reasoning 값을 직접 주입한다 — modelId 변경과
+        // 동일 이유(latestReasoningRef가 이 effect보다 늦게 갱신될 수 있음).
+        restartAnalysis(undefined, reasoning);
+    }, [reasoning, isReasoningHydrated, restartAnalysis]);
 
     // 쿨다운이 활성화된 동안 1초마다 로컬에서 카운트다운한다.
     // isCountdownActive(0 → 양수 전환)가 true가 될 때만 인터벌을 시작해 중복 시작을 방지한다.

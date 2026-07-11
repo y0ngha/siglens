@@ -41,6 +41,7 @@ vi.mock('@/features/symbol-chat', () => ({
 }));
 vi.mock('@/features/symbol-model', () => ({
     useDefaultModelId: vi.fn(() => 'gemini-2.5-flash-lite'),
+    useDefaultReasoning: vi.fn(() => false),
 }));
 // /news와 동일 게이트 적용 후 mock 필요. flow 테스트는 hasEnrichedNews=true 전제로
 // 게이트를 즉시 통과시키고 본래 검증(submit→polling→done 서사)을 그대로 유지한다.
@@ -169,11 +170,12 @@ describe('OverallContent 사용자 분석 플로우 (userEvent)', () => {
         ).toBeInTheDocument();
 
         // 훅은 첫 trigger에서 queryFnForceRef(false)를 그대로 options로 넘기므로
-        // 5번째 인자는 정확히 { force: false }다 — done 상태에서의 재분석만 force:true.
+        // 5번째 인자는 정확히 { force: false, reasoning: false }다(기본
+        // reasoning=false) — done 상태에서의 재분석만 force:true.
         expect(mockSubmit).toHaveBeenCalledTimes(1);
         const firstArgs = mockSubmit.mock.calls[0]!;
         expect(firstArgs[0]).toBe('AAPL');
-        expect(firstArgs[4]).toEqual({ force: false });
+        expect(firstArgs[4]).toEqual({ force: false, reasoning: false });
 
         expect(mockPollOverall).toHaveBeenCalledWith('overall-job');
         expect(mockPollOverall).toHaveBeenCalledTimes(2);

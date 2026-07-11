@@ -26,6 +26,7 @@ vi.mock('@/features/symbol-chat', () => ({
 }));
 vi.mock('@/features/symbol-model', () => ({
     useDefaultModelId: vi.fn(() => 'gemini-2.5-flash-lite'),
+    useDefaultReasoning: vi.fn(() => false),
 }));
 // /news와 동일 게이트 적용 — 두 훅을 단순화해 효과만 검증한다.
 // useNewsAnalysisTrigger는 fire-and-forget mount effect이므로 no-op.
@@ -145,7 +146,8 @@ describe('OverallContent tf 쿼리 파라미터 처리 (§18 분기)', () => {
             '1Hour',
             'gemini-2.5-flash-lite',
             undefined,
-            'equity'
+            'equity',
+            false
         );
     });
 
@@ -164,7 +166,8 @@ describe('OverallContent tf 쿼리 파라미터 처리 (§18 분기)', () => {
             DEFAULT_TIMEFRAME,
             'gemini-2.5-flash-lite',
             undefined,
-            'equity'
+            'equity',
+            false
         );
     });
 });
@@ -707,7 +710,8 @@ describe('OverallContent — crypto assetClass (F1 / UI Group 3)', () => {
             DEFAULT_TIMEFRAME,
             'gemini-2.5-flash-lite',
             undefined, // initialAnalysis
-            'crypto'
+            'crypto',
+            false
         );
     });
 

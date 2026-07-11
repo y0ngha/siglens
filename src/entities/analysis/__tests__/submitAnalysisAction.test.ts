@@ -27,6 +27,10 @@ vi.mock('@/entities/auth/lib/getCurrentUser', () => ({
 
 vi.mock('@/shared/lib/byokGate', () => ({
     resolveTierAndByok: vi.fn(),
+    resolveReasoning: vi.fn(
+        (tier: string, clientReasoning?: boolean) =>
+            tier !== 'free' && clientReasoning === true
+    ),
     buildGateError: vi.fn((code: string) => ({
         code,
         message: `mock-${code}`,
@@ -324,6 +328,88 @@ describe('submitAnalysisAction tier + BYOK gate', () => {
 
             expect(mockGetCachedMarketDataProvider).toHaveBeenCalledWith(
                 US_EQUITY_SESSION
+            );
+        });
+    });
+
+    describe('reasoning forwarding', () => {
+        it('forwards reasoning: true for member tier when client requests it', async () => {
+            mockGetCurrentUser.mockResolvedValue({ id: 'u1' } as never);
+            mockResolveTierAndByok.mockResolvedValue({
+                kind: 'allowed',
+                tier: 'member' as never,
+            });
+
+            await submitAnalysisAction(
+                'AAPL',
+                'Apple',
+                '1Day',
+                false,
+                '^AAPL',
+                FREE_MODEL,
+                true
+            );
+
+            expect(mockSubmitAnalysis).toHaveBeenCalledWith(
+                'AAPL',
+                'Apple',
+                '1Day',
+                false,
+                '^AAPL',
+                expect.objectContaining({ reasoning: true })
+            );
+        });
+
+        it('forces reasoning: false for free tier even when client requests true', async () => {
+            mockGetCurrentUser.mockResolvedValue(null);
+            mockResolveTierAndByok.mockResolvedValue({
+                kind: 'allowed',
+                tier: 'free' as never,
+            });
+
+            await submitAnalysisAction(
+                'AAPL',
+                'Apple',
+                '1Day',
+                false,
+                '^AAPL',
+                FREE_MODEL,
+                true
+            );
+
+            expect(mockSubmitAnalysis).toHaveBeenCalledWith(
+                'AAPL',
+                'Apple',
+                '1Day',
+                false,
+                '^AAPL',
+                expect.objectContaining({ reasoning: false })
+            );
+        });
+
+        it('defaults reasoning to false for member tier when client omits it', async () => {
+            mockGetCurrentUser.mockResolvedValue({ id: 'u1' } as never);
+            mockResolveTierAndByok.mockResolvedValue({
+                kind: 'allowed',
+                tier: 'member' as never,
+            });
+
+            await submitAnalysisAction(
+                'AAPL',
+                'Apple',
+                '1Day',
+                false,
+                '^AAPL',
+                FREE_MODEL
+            );
+
+            expect(mockSubmitAnalysis).toHaveBeenCalledWith(
+                'AAPL',
+                'Apple',
+                '1Day',
+                false,
+                '^AAPL',
+                expect.objectContaining({ reasoning: false })
             );
         });
     });

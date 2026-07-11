@@ -36,6 +36,8 @@ vi.mock('@/entities/api-key/api', async () => {
 import { LlmApiKeyDecryptionFailedError } from '@/entities/api-key/api';
 import {
     resolveTierAndByok,
+    resolveTierOnly,
+    resolveReasoning,
     buildGateError,
     isKnownModelId,
 } from '../byokGate';
@@ -149,6 +151,54 @@ describe('buildGateError', () => {
         expect(err.code).toBe('invalid_model');
         expect(typeof err.message).toBe('string');
         expect(err.message.length).toBeGreaterThan(0);
+    });
+});
+
+describe('resolveTierOnly', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mockGetUserTier.mockResolvedValue('member');
+    });
+
+    it('returns "free" for anonymous (null) userId without touching the DB', async () => {
+        const tier = await resolveTierOnly(null);
+        expect(tier).toBe('free');
+        expect(mockGetUserTier).not.toHaveBeenCalled();
+    });
+
+    it('resolves the tier via getUserTier for a logged-in userId', async () => {
+        const tier = await resolveTierOnly('u1');
+        expect(tier).toBe('member');
+        expect(mockGetUserTier).toHaveBeenCalledWith(
+            { userId: 'u1' },
+            expect.anything()
+        );
+    });
+});
+
+describe('resolveReasoning', () => {
+    it('forces false for free tier even when the client requests true', () => {
+        expect(resolveReasoning('free', true)).toBe(false);
+    });
+
+    it('forces false for free tier when the client omits reasoning', () => {
+        expect(resolveReasoning('free')).toBe(false);
+    });
+
+    it('honors client true for member tier', () => {
+        expect(resolveReasoning('member', true)).toBe(true);
+    });
+
+    it('honors client true for pro tier', () => {
+        expect(resolveReasoning('pro', true)).toBe(true);
+    });
+
+    it('defaults to false for member tier when client omits reasoning', () => {
+        expect(resolveReasoning('member')).toBe(false);
+    });
+
+    it('defaults to false for member tier when client explicitly sends false', () => {
+        expect(resolveReasoning('member', false)).toBe(false);
     });
 });
 

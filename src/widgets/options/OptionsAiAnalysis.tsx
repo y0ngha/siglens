@@ -220,6 +220,8 @@ interface OptionsAiAnalysisProps {
     /** 'YYYY-MM-DD' or 'all'. */
     expirationDate: OptionsExpirationSelector;
     modelId: ModelId;
+    /** Member "깊은 생각" (deep-thinking) toggle value (member-reasoning-toggle spec Part A). */
+    reasoning?: boolean;
 }
 
 export function OptionsAiAnalysis({
@@ -227,12 +229,14 @@ export function OptionsAiAnalysis({
     companyName,
     expirationDate,
     modelId,
+    reasoning,
 }: OptionsAiAnalysisProps) {
     const state = useOptionsAnalysis({
         symbol,
         companyName,
         expirationDate,
         modelId,
+        reasoning,
     });
 
     // 훅 선언 순서 예외(MISTAKES.md #17): usePublishSymbolChat은 chatState(파생

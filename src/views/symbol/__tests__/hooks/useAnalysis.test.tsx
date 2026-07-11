@@ -71,6 +71,8 @@ interface PartialOptions {
     timeframeChangeCount?: number;
     modelId?: string;
     isModelHydrated?: boolean;
+    reasoning?: boolean;
+    isReasoningHydrated?: boolean;
 }
 
 function makeOptions(overrides?: PartialOptions) {
@@ -83,6 +85,8 @@ function makeOptions(overrides?: PartialOptions) {
         timeframeChangeCount: overrides?.timeframeChangeCount ?? 0,
         modelId: overrides?.modelId as never,
         isModelHydrated: overrides?.isModelHydrated,
+        reasoning: overrides?.reasoning,
+        isReasoningHydrated: overrides?.isReasoningHydrated,
     };
 }
 
@@ -167,6 +171,164 @@ describe('useAnalysis', () => {
             );
 
             expect(result.current.isAnalyzing).toBe(false);
+        });
+    });
+
+    describe('reasoning (member-reasoning-toggle spec Part A)', () => {
+        it('forwards reasoning to submitAnalysisAction', async () => {
+            mockSubmit.mockResolvedValue({
+                status: 'cached',
+                result: INITIAL_ANALYSIS,
+            });
+
+            renderHook(
+                () =>
+                    useAnalysis(
+                        makeOptions({
+                            initialAnalysisFailed: true,
+                            reasoning: true,
+                        })
+                    ),
+                { wrapper: makeWrapper() }
+            );
+
+            await waitFor(() => {
+                expect(mockSubmit).toHaveBeenCalledWith(
+                    'AAPL',
+                    'Apple Inc.',
+                    '1Day',
+                    false,
+                    undefined,
+                    undefined,
+                    true
+                );
+            });
+        });
+
+        it('initialAnalysisFailed=true이고 isReasoningHydrated=false이면 mutate 전에도 isAnalyzing이 true다', () => {
+            const { result } = renderHook(
+                () =>
+                    useAnalysis(
+                        makeOptions({
+                            initialAnalysisFailed: true,
+                            isReasoningHydrated: false,
+                        })
+                    ),
+                { wrapper: makeWrapper() }
+            );
+
+            expect(result.current.isAnalyzing).toBe(true);
+            expect(mockSubmit).not.toHaveBeenCalled();
+        });
+
+        it('isReasoningHydrated가 false→true로 전환되면 자동 재분석을 실행한다', async () => {
+            mockSubmit.mockResolvedValue({
+                status: 'cached',
+                result: INITIAL_ANALYSIS,
+            });
+
+            const { rerender } = renderHook(
+                ({ isReasoningHydrated }: { isReasoningHydrated: boolean }) =>
+                    useAnalysis(
+                        makeOptions({
+                            initialAnalysisFailed: true,
+                            isReasoningHydrated,
+                        })
+                    ),
+                {
+                    wrapper: makeWrapper(),
+                    initialProps: { isReasoningHydrated: false },
+                }
+            );
+
+            expect(mockSubmit).not.toHaveBeenCalled();
+
+            rerender({ isReasoningHydrated: true });
+
+            await waitFor(() => {
+                expect(mockSubmit).toHaveBeenCalledTimes(1);
+            });
+        });
+
+        it('reasoning 값이 변경되면(회원 토글) 재분석을 트리거한다', async () => {
+            mockSubmit.mockResolvedValue({
+                status: 'cached',
+                result: INITIAL_ANALYSIS,
+            });
+
+            const { rerender } = renderHook(
+                ({ reasoning }: { reasoning: boolean }) =>
+                    useAnalysis(
+                        makeOptions({
+                            initialAnalysisFailed: true,
+                            isReasoningHydrated: true,
+                            reasoning,
+                        })
+                    ),
+                {
+                    wrapper: makeWrapper(),
+                    initialProps: { reasoning: false },
+                }
+            );
+
+            await waitFor(() => {
+                expect(mockSubmit).toHaveBeenCalledTimes(1);
+            });
+            mockSubmit.mockClear();
+
+            rerender({ reasoning: true });
+
+            await waitFor(() => {
+                expect(mockSubmit).toHaveBeenCalledTimes(1);
+            });
+            expect(mockSubmit).toHaveBeenCalledWith(
+                'AAPL',
+                'Apple Inc.',
+                '1Day',
+                false,
+                undefined,
+                undefined,
+                true
+            );
+        });
+
+        it('hydration으로 인한 reasoning 값 변화(마운트 직후 false→저장된 true)는 재분석을 트리거하지 않는다', async () => {
+            mockSubmit.mockResolvedValue({
+                status: 'cached',
+                result: INITIAL_ANALYSIS,
+            });
+
+            const { rerender } = renderHook(
+                ({
+                    reasoning,
+                    isReasoningHydrated,
+                }: {
+                    reasoning: boolean;
+                    isReasoningHydrated: boolean;
+                }) =>
+                    useAnalysis(
+                        makeOptions({
+                            initialAnalysisFailed: false,
+                            reasoning,
+                            isReasoningHydrated,
+                        })
+                    ),
+                {
+                    wrapper: makeWrapper(),
+                    initialProps: {
+                        reasoning: false,
+                        isReasoningHydrated: false,
+                    },
+                }
+            );
+
+            expect(mockSubmit).not.toHaveBeenCalled();
+
+            // Hydration flips reasoning false→true and isReasoningHydrated false→true
+            // in the same render (mirrors the modelId hydration flip) — no fetch.
+            rerender({ reasoning: true, isReasoningHydrated: true });
+
+            expect(mockSubmit).not.toHaveBeenCalled();
         });
     });
 

@@ -83,12 +83,20 @@ describe('queryConfig staleTime constants', () => {
 describe('QUERY_KEYS.financialsAnalysis', () => {
     const MODEL_ID = 'gemini-2.5-flash' as ModelId;
 
-    it('key 배열은 [prefix, UPPER_SYMBOL, modelId] 형태이다', () => {
+    it('key 배열은 [prefix, UPPER_SYMBOL, modelId, reasoning] 형태이다', () => {
         expect(QUERY_KEYS.financialsAnalysis('aapl', MODEL_ID)).toEqual([
             'financials-analysis',
             'AAPL',
             MODEL_ID,
+            false,
         ]);
+    });
+
+    it('reasoning=true는 reasoning=false(기본)와 다른 키를 만든다 (member-reasoning-toggle spec)', () => {
+        const off = QUERY_KEYS.financialsAnalysis('AAPL', MODEL_ID, false);
+        const on = QUERY_KEYS.financialsAnalysis('AAPL', MODEL_ID, true);
+        expect(off).not.toEqual(on);
+        expect(QUERY_KEYS.financialsAnalysis('AAPL', MODEL_ID)).toEqual(off);
     });
 
     it('symbol을 대문자로 정규화한다', () => {
@@ -149,36 +157,54 @@ describe('QUERY_KEYS — 나머지 키 팩토리', () => {
         ]);
     });
 
-    it('fundamentalAnalysis: symbol 대문자 정규화 + modelId', () => {
+    it('fundamentalAnalysis: symbol 대문자 정규화 + modelId + reasoning(기본 false)', () => {
         expect(QUERY_KEYS.fundamentalAnalysis('aapl', MODEL_ID)).toEqual([
             'fundamental-analysis',
             'AAPL',
             MODEL_ID,
+            false,
         ]);
     });
 
-    it('congressTrend: symbol 대문자 정규화 + modelId', () => {
+    it('congressTrend: symbol 대문자 정규화 + modelId + reasoning(기본 false)', () => {
         expect(QUERY_KEYS.congressTrend('aapl', MODEL_ID)).toEqual([
             'congress-trend',
             'AAPL',
             MODEL_ID,
+            false,
         ]);
     });
 
-    it('newsAnalysis: symbol 대문자 정규화 + companyName + modelId', () => {
+    it('newsAnalysis: symbol 대문자 정규화 + companyName + modelId + reasoning(기본 false)', () => {
         expect(QUERY_KEYS.newsAnalysis('aapl', 'Apple Inc.', MODEL_ID)).toEqual(
-            ['news-analysis', 'AAPL', 'Apple Inc.', MODEL_ID]
+            ['news-analysis', 'AAPL', 'Apple Inc.', MODEL_ID, false]
         );
     });
 
-    it('newsAnalysisPrefix: 모든 modelId 변형을 무효화하는 prefix', () => {
+    it('newsAnalysis: reasoning=true는 다른 키를 만든다', () => {
+        const on = QUERY_KEYS.newsAnalysis(
+            'aapl',
+            'Apple Inc.',
+            MODEL_ID,
+            true
+        );
+        expect(on).toEqual([
+            'news-analysis',
+            'AAPL',
+            'Apple Inc.',
+            MODEL_ID,
+            true,
+        ]);
+    });
+
+    it('newsAnalysisPrefix: 모든 modelId/reasoning 변형을 무효화하는 prefix', () => {
         expect(QUERY_KEYS.newsAnalysisPrefix('aapl')).toEqual([
             'news-analysis',
             'AAPL',
         ]);
     });
 
-    it('overallAnalysis: symbol 대문자 + companyName + timeframe + modelId', () => {
+    it('overallAnalysis: symbol 대문자 + companyName + timeframe + modelId + reasoning(기본 false)', () => {
         expect(
             QUERY_KEYS.overallAnalysis(
                 'aapl',
@@ -192,6 +218,7 @@ describe('QUERY_KEYS — 나머지 키 팩토리', () => {
             'Apple Inc.',
             TIMEFRAME,
             MODEL_ID,
+            false,
         ]);
     });
 
@@ -209,7 +236,7 @@ describe('QUERY_KEYS — 나머지 키 팩토리', () => {
         ]);
     });
 
-    it('optionsAnalysis: symbol + companyName + expirationDate + modelId', () => {
+    it('optionsAnalysis: symbol + companyName + expirationDate + modelId + reasoning(기본 false)', () => {
         expect(
             QUERY_KEYS.optionsAnalysis(
                 'aapl',
@@ -223,6 +250,7 @@ describe('QUERY_KEYS — 나머지 키 팩토리', () => {
             'Apple Inc.',
             '2025-01-17',
             MODEL_ID,
+            false,
         ]);
     });
 });

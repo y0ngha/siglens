@@ -48,6 +48,42 @@ export type ByokOutcome =
     | { kind: 'blocked'; error: AnalysisGateError };
 
 /**
+ * Resolve a caller's tier without the BYOK/premium-model gate — used by
+ * analysis surfaces that have no BYOK concept (e.g. congress trend, which is
+ * public data with no premium model gating) but still need `tier` to decide
+ * the reasoning toggle (member-reasoning-toggle spec Part A.3).
+ *
+ * @param userId - Authenticated user ID. `null` (anonymous) resolves to `'free'`.
+ */
+export async function resolveTierOnly(userId: string | null): Promise<Tier> {
+    if (userId === null) return 'free';
+    return getUserTier(
+        { userId },
+        { users: new DrizzleUserRepository(getDatabaseClient().db) }
+    );
+}
+
+/**
+ * Server-side enforcement of the reasoning ("깊은 생각") toggle
+ * (member-reasoning-toggle spec Part A.3).
+ *
+ * Anonymous and free-tier callers can never receive `reasoning: true`
+ * regardless of what the client sent — the client value is only honored for
+ * `member`/`pro` tiers. This is the single source of truth for that rule; all
+ * analysis submit actions must route their client-supplied `reasoning`
+ * through this function before forwarding it to siglens-core.
+ *
+ * @param tier - Resolved caller tier (`resolveTierAndByok`/`resolveTierOnly`).
+ * @param clientReasoning - Raw value from the request. Ignored for `free`.
+ */
+export function resolveReasoning(
+    tier: Tier,
+    clientReasoning?: boolean
+): boolean {
+    return tier !== 'free' && clientReasoning === true;
+}
+
+/**
  * Tier 조회 + BYOK 게이트.
  *
  * @param userId - 인증된 사용자 ID. null이면 free tier로 처리.
@@ -62,13 +98,7 @@ export async function resolveTierAndByok(
         return { kind: 'blocked', error: buildGateError('invalid_model') };
     }
 
-    const tier =
-        userId === null
-            ? 'free'
-            : await getUserTier(
-                  { userId },
-                  { users: new DrizzleUserRepository(getDatabaseClient().db) }
-              );
+    const tier = await resolveTierOnly(userId);
 
     const premium = isPremiumModel(modelId);
 
