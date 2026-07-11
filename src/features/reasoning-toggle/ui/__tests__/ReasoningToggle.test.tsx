@@ -175,10 +175,10 @@ describe('ReasoningToggle', () => {
         // assistive tech the control cannot be activated.
         expect(toggle.hasAttribute('aria-disabled')).toBe(false);
         expect(toggle.getAttribute('aria-checked')).toBe('false');
-        // The switch itself conveys "locked/unavailable" now that the
-        // standalone lock icon is gone: muted track + half opacity read as
-        // disabled, while it stays clickable (cursor-pointer, not
-        // cursor-not-allowed, and no native `disabled` attribute).
+        // The switch itself conveys "locked/unavailable": the muted track +
+        // half opacity read as disabled, while it stays clickable
+        // (cursor-pointer, not cursor-not-allowed, and no native `disabled`
+        // attribute) — the switch carries the locked meaning.
         expect(toggle.className).toContain('opacity-50');
         expect(toggle.className).toContain('cursor-pointer');
         expect(toggle.hasAttribute('disabled')).toBe(false);
@@ -241,6 +241,10 @@ describe('ReasoningToggle', () => {
         // A genuine `disabled` takes precedence over `locked`: it is a true
         // no-op, so it must fire nothing on click — not even the locked nudge.
         expect(toggle.getAttribute('aria-disabled')).toBe('true');
+        // The cursor must match that no-op behaviour: `disabled` wins, so it
+        // reads as non-operable (cursor-not-allowed) rather than clickable.
+        expect(toggle.className).toContain('cursor-not-allowed');
+        expect(toggle.className).not.toContain('cursor-pointer');
 
         fireEvent.click(toggle);
 

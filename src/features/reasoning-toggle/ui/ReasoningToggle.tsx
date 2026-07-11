@@ -97,14 +97,20 @@ export function ReasoningToggle({
                 className={cn(
                     'focus-visible:ring-primary-500 relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors focus-visible:ring-1 focus-visible:outline-none',
                     effectiveChecked ? 'bg-primary-600' : 'bg-secondary-700',
-                    // Locked non-members: the switch itself now carries the
-                    // "unavailable" meaning (the standalone lock icon was
-                    // removed), so render it visibly disabled — muted track +
-                    // half opacity, OFF knob — while staying clickable so the
-                    // click opens the signup nudge (cursor-pointer, not
-                    // cursor-not-allowed; no native `disabled` which would swallow onClick).
-                    locked && 'bg-secondary-800 cursor-pointer opacity-50',
-                    !locked && disabled && 'cursor-not-allowed opacity-60'
+                    // A genuine `disabled` (true no-op) always wins the cursor:
+                    // it must read as non-operable (cursor-not-allowed) even when
+                    // also locked, so this precedence matches `handleClick`, where
+                    // `disabled` short-circuits before the locked branch.
+                    disabled && 'cursor-not-allowed opacity-60',
+                    // Locked non-members: the switch itself carries the
+                    // "unavailable" meaning through the muted track + reduced
+                    // opacity — there is no separate lock affordance. It stays
+                    // clickable so the click opens the signup nudge
+                    // (cursor-pointer, not cursor-not-allowed; no native
+                    // `disabled` which would swallow onClick).
+                    locked &&
+                        !disabled &&
+                        'bg-secondary-800 cursor-pointer opacity-50'
                 )}
             >
                 <span
