@@ -1,4 +1,4 @@
-import { DEFAULT_TIER, type Tier } from '@y0ngha/siglens-core';
+import type { Tier } from '@y0ngha/siglens-core';
 import type { OAuthProvider } from '@/shared/lib/types';
 import { and, eq, lt, sql } from 'drizzle-orm';
 import { NEON_TRANSIENT_RETRY } from '@/shared/db/isNeonTransientError';
@@ -29,6 +29,14 @@ const sessionColumns = {
     expiresAt: sessions.expiresAt,
     createdAt: sessions.createdAt,
 };
+
+/**
+ * Tier assigned to a user at signup (email/password or OAuth). A signed-up
+ * user is a member — anonymous visitors have no user row and fall back to
+ * core's `DEFAULT_TIER` ('free') via {@link getUserTier}, which is unaffected
+ * by this constant.
+ */
+const SIGNED_UP_USER_TIER: Tier = 'member';
 
 /** Drizzle ORM implementation of {@link SessionRepository} backed by Neon PostgreSQL. */
 export class DrizzleSessionRepository implements SessionRepository {
@@ -209,7 +217,7 @@ export class DrizzleUserRepository
                         passwordHash: input.passwordHash,
                         name: input.name ?? null,
                         avatarUrl: input.avatarUrl ?? null,
-                        tier: DEFAULT_TIER,
+                        tier: SIGNED_UP_USER_TIER,
                         emailVerified: input.emailVerified ?? false,
                     })
                     .onConflictDoNothing({ target: users.email })
@@ -256,7 +264,7 @@ export class DrizzleUserRepository
                         passwordHash: null,
                         name: input.name ?? null,
                         avatarUrl: input.avatarUrl ?? null,
-                        tier: DEFAULT_TIER,
+                        tier: SIGNED_UP_USER_TIER,
                         emailVerified: true,
                     })
                     .onConflictDoNothing({ target: users.email })
