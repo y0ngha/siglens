@@ -101,8 +101,24 @@ test.describe('symbol SEO + ISR (crawler-facing)', () => {
         expect(response.status()).toBe(200);
 
         const html = await response.text();
+        const normalizedHtml = normalizeReactSsrText(html);
         expect(html).toContain('종합 분석 데이터 상태');
-        expect(html).toContain('최근 뉴스 데이터는 아직 준비되지 않았습니다.');
+        // OverallFactualFallback renders one of two factual news paragraphs
+        // depending on whether AAPL already has ingested news rows at render
+        // time. That state is suite-ordering dependent: a prior browser spec
+        // that mounts OverallContent/news widgets fires useNewsAnalysisTrigger →
+        // ensureNewsCardsAnalyzedAction, which upserts the deterministic
+        // FakeNewsClient fixtures (2 AAPL rows) and revalidateTag('news:AAPL').
+        // Once that has happened, getNewsList('AAPL') returns 2 and the fallback
+        // shows the "N건 확인" variant instead of the "아직 준비되지 않았습니다"
+        // variant — both are equally valid crawlable SSR facts. Accept either,
+        // mirroring the sibling /AAPL/news assertion above, so this probe stays
+        // robust to news-ingestion ordering. (Comments are stripped first because
+        // the count variant interpolates digits, which React SSR splits with
+        // comment nodes.)
+        expect(normalizedHtml).toMatch(
+            /최근 뉴스 데이터는 아직 준비되지 않았습니다|현재 서버가 확인한 최근 뉴스는 \d+건/
+        );
     });
 
     test('/AAPL SSR HTML has exactly one h1 (no cloaking / no duplicate headings)', async ({
