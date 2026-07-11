@@ -11,7 +11,13 @@ import { type AnalysisResponse, type Timeframe } from '@y0ngha/siglens-core';
 import type { MarketProfileId } from '@/shared/config/marketProfile';
 import dynamic from 'next/dynamic';
 import type { ReactNode } from 'react';
-import React, { Suspense, useEffect, useEffectEvent, useMemo } from 'react';
+import React, {
+    Suspense,
+    useEffect,
+    useEffectEvent,
+    useMemo,
+    useRef,
+} from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
 import { SNAP_PEEK } from './constants/mobileSheet';
 import { FearGreedCardMounted } from './FearGreedCardMounted';
@@ -27,6 +33,10 @@ import {
     usePanelResize,
 } from './hooks/usePanelResize';
 import { useSymbolModel } from '@/features/symbol-model';
+import {
+    useAnonAnalysisNudge,
+    AnalysisSignupNudgeModal,
+} from '@/features/analysis-nudge';
 import { useSymbolPageContext } from './SymbolPageContext';
 import { TechnicalFactsSummary } from './TechnicalFactsSummary';
 import type { AnalysisStatus } from './utils/analysisStatus';
@@ -119,6 +129,9 @@ export function ChartContent({
     fmpSymbol,
     marketProfile = 'us-equity',
 }: ChartContentProps) {
+    // 비회원 회원가입 유도(Part B) — 같은 심볼에 대한 중복 카운트 방지용.
+    const notifiedSymbolRef = useRef<string | null>(null);
+
     const { bars, indicators } = useBars({ symbol, timeframe, fmpSymbol });
 
     const { panelWidth, isDragging, handleDragStart, handleKeyDown } =
@@ -134,7 +147,12 @@ export function ChartContent({
     const { actionPricesVisible, setActionPricesVisible } =
         useActionPricesVisibility();
 
-    const { modelId, isHydrated: isModelHydrated } = useSymbolModel();
+    const {
+        modelId,
+        isHydrated: isModelHydrated,
+        reasoning,
+        isReasoningHydrated,
+    } = useSymbolModel();
 
     // analysis → symbol-page 역방향 import를 제거하기 위해 여기서 context를 읽어 내려보낸다.
     const { indicatorCount } = useSymbolPageContext();
@@ -158,10 +176,20 @@ export function ChartContent({
         timeframeChangeCount,
         modelId,
         isModelHydrated,
+        reasoning,
+        isReasoningHydrated,
     });
 
     const { displayAnalyzing, handleProgressFinished } =
         useAnalysisDisplay(isAnalyzing);
+
+    // 비회원 3-심볼 회원가입 유도 모달 (member-reasoning-toggle spec Part B).
+    // 회원/로그인 판별 전에는 useAnonAnalysisNudge 내부에서 자체적으로 no-op한다.
+    const {
+        isOpen: isNudgeOpen,
+        onSymbolAnalyzed,
+        close: closeNudge,
+    } = useAnonAnalysisNudge();
 
     // 데스크톱·모바일 두 인스턴스 공유 — 모바일 시트 unmount/remount 시에도 상태 유지.
     const { phaseIndex: progressPhaseIndex, tipIndex: progressTipIndex } =
@@ -333,6 +361,18 @@ export function ChartContent({
         }
     }, [analysisResult]);
 
+    // 비회원 3-심볼 회원가입 유도(Part B) — 실제 서사가 렌더된 시점("완료/렌더")에
+    // 카운트한다. 캐시 HIT으로 즉시 나타나든 새로 생성됐든 동일하게 "봤으면" 카운트한다
+    // (spec §1). notifiedSymbolRef는 같은 심볼에 대해 중복 카운트(불필요한 localStorage
+    // read/write)를 막는다 — 다운스트림 recordAnonSymbolAnalysis도 심볼 기준 dedup하므로
+    // 정확성을 위해 필수는 아니지만, 매 재렌더마다 카운트를 재시도하지 않도록 한다.
+    useEffect(() => {
+        if (isFallbackAnalysis(analysis)) return;
+        if (notifiedSymbolRef.current === symbol) return;
+        notifiedSymbolRef.current = symbol;
+        onSymbolAnalyzed(symbol);
+    }, [symbol, analysis, onSymbolAnalyzed]);
+
     return (
         <div className="flex h-full w-full flex-col md:flex-row">
             {/* 차트 영역 — 바텀시트는 fixed 오버레이. pb는 SNAP_PEEK 높이만큼 확보해 Peek 시 거래량 차트가 가려지지 않도록 한다.
@@ -422,6 +462,9 @@ export function ChartContent({
             {isDragging && (
                 <div className="fixed inset-0 z-50 cursor-col-resize" />
             )}
+
+            {/* 비회원 3-심볼 회원가입 유도 모달(Part B) — 소프트 넙지, 분석은 절대 차단하지 않는다. */}
+            {isNudgeOpen && <AnalysisSignupNudgeModal onClose={closeNudge} />}
         </div>
     );
 }

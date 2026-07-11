@@ -35,6 +35,7 @@ async function fetchOptionsAnalysis(
     companyName: string,
     expirationDate: OptionsExpirationSelector,
     modelId: ModelId,
+    reasoning: boolean,
     signal: AbortSignal,
     onJobId: (jobId: string | null, expectedCurrent?: string | null) => void
 ): Promise<OptionsAnalysisResponse> {
@@ -44,7 +45,8 @@ async function fetchOptionsAnalysis(
         symbol,
         companyName,
         expirationDate,
-        modelId
+        modelId,
+        reasoning
     );
 
     if (submitted.status === 'cached') return submitted.result;
@@ -88,6 +90,12 @@ interface UseOptionsAnalysisInput {
     companyName: string;
     expirationDate: OptionsExpirationSelector;
     modelId: ModelId;
+    /**
+     * Member "깊은 생각" (deep-thinking) toggle value (member-reasoning-toggle
+     * spec Part A). Defaults to `false`. Part of the query key so toggling
+     * re-submits analysis (distinct cache key).
+     */
+    reasoning?: boolean;
 }
 
 /**
@@ -102,6 +110,7 @@ export function useOptionsAnalysis({
     companyName,
     expirationDate,
     modelId,
+    reasoning = false,
 }: UseOptionsAnalysisInput): OptionsAnalysisState {
     const currentJobIdRef = useRef<string | null>(null);
     const queryClient = useQueryClient();
@@ -112,22 +121,31 @@ export function useOptionsAnalysis({
                 symbol,
                 companyName,
                 expirationDate,
-                modelId
+                modelId,
+                reasoning
             ),
-        [symbol, companyName, expirationDate, modelId]
+        [symbol, companyName, expirationDate, modelId, reasoning]
     );
 
     const query = useQuery({
         queryKey,
         queryFn: ({
             signal,
-            queryKey: [, qSymbol, qCompanyName, qExpiration, qModelId],
+            queryKey: [
+                ,
+                qSymbol,
+                qCompanyName,
+                qExpiration,
+                qModelId,
+                qReasoning,
+            ],
         }) =>
             fetchOptionsAnalysis(
                 qSymbol,
                 qCompanyName,
                 qExpiration,
                 qModelId,
+                qReasoning,
                 signal,
                 (jobId, expectedCurrent) => {
                     if (

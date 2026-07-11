@@ -8,7 +8,11 @@ import {
 } from '@y0ngha/siglens-core';
 import { getFundamentalDataProvider } from '@/shared/api/fmp/getFundamentalDataProvider';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
-import { resolveTierAndByok, buildGateError } from '@/shared/lib/byokGate';
+import {
+    resolveTierAndByok,
+    resolveReasoning,
+    buildGateError,
+} from '@/shared/lib/byokGate';
 import { isBot } from '@/shared/api/isBot';
 import { isE2E } from '@/shared/api/e2eEnv';
 import type { AnalysisGateBlockedResult } from '@/shared/lib/types';
@@ -21,7 +25,12 @@ export type SubmitFundamentalAnalysisActionResult =
 /** Server Action: tier + BYOK gate, then submit fundamental analysis via siglens-core with FMP provider; returns `cached | submitted | error`. */
 export async function submitFundamentalAnalysisAction(
     symbol: string,
-    modelId: SubmitFundamentalAnalysisOptions['modelId']
+    modelId: SubmitFundamentalAnalysisOptions['modelId'],
+    /**
+     * Client-requested "깊은 생각" (deep-thinking) toggle value (member-reasoning-toggle
+     * spec Part A). Only honored for member/pro tiers.
+     */
+    reasoning?: boolean
 ): Promise<SubmitFundamentalAnalysisActionResult> {
     try {
         // E2E short-circuits the LLM/worker; returns a deterministic cached fixture
@@ -51,6 +60,7 @@ export async function submitFundamentalAnalysisAction(
             modelId,
             dataProvider: getFundamentalDataProvider(),
             tier: gate.tier,
+            reasoning: resolveReasoning(gate.tier, reasoning),
             skipEnqueueIfMiss,
             ...(gate.userApiKey !== undefined
                 ? { userApiKey: gate.userApiKey }

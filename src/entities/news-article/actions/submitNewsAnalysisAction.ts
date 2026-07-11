@@ -13,7 +13,11 @@ import { NEWS_ANALYSIS_LOOKBACK_MS } from '../lib/newsLookback';
 import { buildAnalysisNewsItems } from '../lib/buildAnalysisNewsItems';
 import { getNextEarningsReport } from '@/entities/earnings-report';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
-import { resolveTierAndByok, buildGateError } from '@/shared/lib/byokGate';
+import {
+    resolveTierAndByok,
+    resolveReasoning,
+    buildGateError,
+} from '@/shared/lib/byokGate';
 import { isBot } from '@/shared/api/isBot';
 import { isE2E } from '@/shared/api/e2eEnv';
 import type { AnalysisGateBlockedResult } from '@/shared/lib/types';
@@ -28,7 +32,12 @@ export type SubmitNewsAnalysisActionResult =
 export async function submitNewsAnalysisAction(
     symbol: string,
     companyName: string,
-    modelId: SubmitNewsAnalysisOptions['modelId']
+    modelId: SubmitNewsAnalysisOptions['modelId'],
+    /**
+     * Client-requested "깊은 생각" (deep-thinking) toggle value (member-reasoning-toggle
+     * spec Part A). Only honored for member/pro tiers.
+     */
+    reasoning?: boolean
 ): Promise<SubmitNewsAnalysisActionResult> {
     try {
         // E2E short-circuits the LLM/worker; returns a deterministic cached fixture
@@ -75,6 +84,7 @@ export async function submitNewsAnalysisAction(
             news: enrichedNews,
             upcomingCalendar: next !== null ? [next] : [],
             tier: gate.tier,
+            reasoning: resolveReasoning(gate.tier, reasoning),
             skipEnqueueIfMiss,
             assetClass,
             ...(gate.userApiKey !== undefined

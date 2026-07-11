@@ -37,10 +37,15 @@ export type FundamentalAnalysisState =
 async function fetchFundamentalAnalysis(
     symbol: string,
     modelId: ModelId,
+    reasoning: boolean,
     signal: AbortSignal,
     onJobId: (jobId: string | null, expectedCurrent?: string | null) => void
 ): Promise<FundamentalAnalysisResponse> {
-    const submitted = await submitFundamentalAnalysisAction(symbol, modelId);
+    const submitted = await submitFundamentalAnalysisAction(
+        symbol,
+        modelId,
+        reasoning
+    );
 
     if (submitted.status === 'cached') return submitted.result;
     if (submitted.status === 'miss_no_trigger') {
@@ -82,22 +87,29 @@ async function fetchFundamentalAnalysis(
 
 export function useFundamentalAnalysis(
     symbol: string,
-    modelId: ModelId
+    modelId: ModelId,
+    /**
+     * Member "깊은 생각" (deep-thinking) toggle value (member-reasoning-toggle
+     * spec Part A). Defaults to `false`. Part of the query key so toggling
+     * re-submits analysis (distinct cache key).
+     */
+    reasoning = false
 ): FundamentalAnalysisState {
     const queryClient = useQueryClient();
     const isHydrated = useHydrated();
     const currentJobIdRef = useRef<string | null>(null);
     const queryKey = useMemo(
-        () => QUERY_KEYS.fundamentalAnalysis(symbol, modelId),
-        [symbol, modelId]
+        () => QUERY_KEYS.fundamentalAnalysis(symbol, modelId, reasoning),
+        [symbol, modelId, reasoning]
     );
 
     const query = useQuery({
         queryKey,
-        queryFn: ({ signal, queryKey: [, qSymbol, qModelId] }) =>
+        queryFn: ({ signal, queryKey: [, qSymbol, qModelId, qReasoning] }) =>
             fetchFundamentalAnalysis(
                 qSymbol,
                 qModelId,
+                qReasoning,
                 signal,
                 (jobId, expectedCurrent) => {
                     if (

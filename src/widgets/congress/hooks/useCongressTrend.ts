@@ -49,10 +49,15 @@ export type CongressTrendState =
 async function fetchCongressTrend(
     symbol: string,
     modelId: ModelId,
+    reasoning: boolean,
     signal: AbortSignal,
     onJobId: (jobId: string | null, expectedCurrent?: string | null) => void
 ): Promise<CongressTrendResponse> {
-    const submitted = await submitCongressTrendAction(symbol, modelId);
+    const submitted = await submitCongressTrendAction(
+        symbol,
+        modelId,
+        reasoning
+    );
 
     if (submitted.status === 'cached') return submitted.result;
     if (submitted.status === 'miss_no_trigger') {
@@ -96,7 +101,13 @@ async function fetchCongressTrend(
 
 export function useCongressTrend(
     symbol: string,
-    modelId: ModelId
+    modelId: ModelId,
+    /**
+     * Member "깊은 생각" (deep-thinking) toggle value (member-reasoning-toggle
+     * spec Part A). Defaults to `false`. Part of the query key so toggling
+     * re-submits analysis (distinct cache key).
+     */
+    reasoning = false
 ): CongressTrendState {
     const currentJobIdRef = useRef<string | null>(null);
     const queryClient = useQueryClient();
@@ -106,11 +117,12 @@ export function useCongressTrend(
     // deep-equality로 비교하므로 매 렌더 새 배열 참조가 생성돼도 불필요한
     // 재페치가 발생하지 않는다.
     const query = useQuery({
-        queryKey: QUERY_KEYS.congressTrend(symbol, modelId),
-        queryFn: ({ signal, queryKey: [, qSymbol, qModelId] }) =>
+        queryKey: QUERY_KEYS.congressTrend(symbol, modelId, reasoning),
+        queryFn: ({ signal, queryKey: [, qSymbol, qModelId, qReasoning] }) =>
             fetchCongressTrend(
                 qSymbol,
                 qModelId,
+                qReasoning,
                 signal,
                 (jobId, expectedCurrent) => {
                     if (
@@ -146,12 +158,12 @@ export function useCongressTrend(
         if (!isHydrated) return;
         if (
             queryClient.getQueryData(
-                QUERY_KEYS.congressTrend(symbol, modelId)
+                QUERY_KEYS.congressTrend(symbol, modelId, reasoning)
             ) === undefined
         ) {
             void refetch();
         }
-    }, [isHydrated, queryClient, symbol, modelId, refetch]);
+    }, [isHydrated, queryClient, symbol, modelId, reasoning, refetch]);
 
     useEffect(() => {
         return () => {
@@ -163,7 +175,7 @@ export function useCongressTrend(
                 });
             }
         };
-    }, [symbol, modelId]);
+    }, [symbol, modelId, reasoning]);
 
     if (query.isError) {
         if (query.error instanceof BotBlockedError) {

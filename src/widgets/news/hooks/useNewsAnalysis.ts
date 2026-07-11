@@ -31,6 +31,7 @@ async function fetchNewsAnalysis(
     symbol: string,
     companyName: string,
     modelId: ModelId,
+    reasoning: boolean,
     signal: AbortSignal,
     onJobId: (jobId: string | null, expectedCurrent?: string | null) => void
 ): Promise<NewsAnalysisResponse> {
@@ -38,7 +39,8 @@ async function fetchNewsAnalysis(
     const submitted = await submitNewsAnalysisAction(
         symbol,
         companyName,
-        modelId
+        modelId,
+        reasoning
     );
 
     if (submitted.status === 'cached') return submitted.result;
@@ -92,28 +94,38 @@ interface UseNewsAnalysisOptions {
      * `retry: false + staleTime: Infinity` 정책 하에 영구 캐시되는 회귀를 막는다.
      */
     enabled?: boolean;
+    /**
+     * Member "깊은 생각" (deep-thinking) toggle value (member-reasoning-toggle
+     * spec Part A). Defaults to `false`. Part of the query key so toggling
+     * re-submits analysis (distinct cache key).
+     */
+    reasoning?: boolean;
 }
 
 export function useNewsAnalysis(
     symbol: string,
     companyName: string,
     modelId: ModelId,
-    { enabled = true }: UseNewsAnalysisOptions = {}
+    { enabled = true, reasoning = false }: UseNewsAnalysisOptions = {}
 ): NewsAnalysisState {
     const currentJobIdRef = useRef<string | null>(null);
     const isHydrated = useHydrated();
     const queryKey = useMemo(
-        () => QUERY_KEYS.newsAnalysis(symbol, companyName, modelId),
-        [symbol, companyName, modelId]
+        () => QUERY_KEYS.newsAnalysis(symbol, companyName, modelId, reasoning),
+        [symbol, companyName, modelId, reasoning]
     );
 
     const query = useQuery({
         queryKey,
-        queryFn: ({ signal, queryKey: [, qSymbol, qCompanyName, qModelId] }) =>
+        queryFn: ({
+            signal,
+            queryKey: [, qSymbol, qCompanyName, qModelId, qReasoning],
+        }) =>
             fetchNewsAnalysis(
                 qSymbol,
                 qCompanyName,
                 qModelId,
+                qReasoning,
                 signal,
                 (jobId, expectedCurrent) => {
                     if (

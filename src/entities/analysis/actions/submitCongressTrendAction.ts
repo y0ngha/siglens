@@ -7,6 +7,8 @@ import {
     type SubmitCongressTrendResult,
 } from '@y0ngha/siglens-core';
 import { getCongressTradesProvider } from '@/shared/api/fmp/getCongressTradesProvider';
+import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
+import { resolveTierOnly, resolveReasoning } from '@/shared/lib/byokGate';
 import { isBot } from '@/shared/api/isBot';
 import { isE2E } from '@/shared/api/e2eEnv';
 
@@ -22,7 +24,8 @@ export type SubmitCongressTrendActionResult = SubmitCongressTrendResult;
  * error`.
  *
  * §Public access: congress filings are public data. No usage-limit check and
- * no BYOK gate are applied — `resolveTierAndByok` is intentionally absent.
+ * no BYOK gate are applied — `resolveTierAndByok` is intentionally absent
+ * (only the lighter `resolveTierOnly` runs, for reasoning gating).
  *
  * §Bot guard: `skipEnqueueIfMiss = isBot(headers)` so crawlers never trigger
  * LLM worker dispatches.
@@ -30,10 +33,20 @@ export type SubmitCongressTrendActionResult = SubmitCongressTrendResult;
  * §E2E: when `E2E_TEST=1`, returns a deterministic cached fixture. The stub
  * imports are lazy/dynamic so they land in a server-only chunk that the prod
  * bundle never ships (mirrors submitFinancialsAnalysisAction).
+ *
+ * §Reasoning: congress has no BYOK/premium gate, but the "깊은 생각" toggle
+ * (member-reasoning-toggle spec Part A) still requires knowing the caller's
+ * tier — `resolveTierOnly` resolves tier alone (no premium-model check),
+ * and `resolveReasoning` forces `false` for anonymous/free callers.
  */
 export async function submitCongressTrendAction(
     symbol: string,
-    modelId: SubmitCongressTrendOptions['modelId']
+    modelId: SubmitCongressTrendOptions['modelId'],
+    /**
+     * Client-requested "깊은 생각" (deep-thinking) toggle value. Only honored
+     * for member/pro tiers.
+     */
+    reasoning?: boolean
 ): Promise<SubmitCongressTrendActionResult> {
     try {
         if (isE2E()) {
@@ -51,11 +64,15 @@ export async function submitCongressTrendAction(
         const requestHeaders = await headers();
         const skipEnqueueIfMiss = isBot(requestHeaders);
 
+        const user = await getCurrentUser();
+        const tier = await resolveTierOnly(user?.id ?? null);
+
         return await submitCongressTrend({
             symbol,
             modelId,
             dataProvider: getCongressTradesProvider(),
             skipEnqueueIfMiss,
+            reasoning: resolveReasoning(tier, reasoning),
         });
     } catch (error) {
         // MISTAKES §0.7: server actions must not propagate raw exceptions to

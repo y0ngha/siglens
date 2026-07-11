@@ -132,12 +132,17 @@ export default async function OverallPage({ params }: Props) {
         staticSymbolCache(
             ['peek:overall', upper, DEEPSEEK_V4_FLASH_MODEL],
             upper,
+            // reasoning: false 고정 — member-reasoning-toggle spec Part A.4. 이 SSR
+            // peek은 익명/봇 방문자 셸이므로 writer(익명·free의 submitOverallAnalysisAction)가
+            // 쓰는 reasoning-OFF 키와 정렬돼야 HIT한다. 회원 토글 ON 결과가 섞이는 캐시
+            // 오염을 방지한다(회원은 클라 재요청으로 자기 값을 받는다).
             () =>
                 peekOverallAnalysisCache(
                     upper,
                     assetInfo.name,
                     DEFAULT_TIMEFRAME,
-                    DEEPSEEK_V4_FLASH_MODEL
+                    DEEPSEEK_V4_FLASH_MODEL,
+                    false
                 ),
             [],
             SECONDS_PER_HALF_DAY

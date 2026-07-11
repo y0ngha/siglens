@@ -68,19 +68,38 @@ export const QUERY_KEYS = {
     userTier: () => ['user-tier'] as const,
     remainingTokens: () => ['chat', 'remaining-tokens'] as const,
     registeredProviders: () => ['llm', 'registered-providers'] as const,
-    fundamentalAnalysis: (symbol: string, modelId: ModelId) =>
-        ['fundamental-analysis', upper(symbol), modelId] as const,
-    financialsAnalysis: (symbol: string, modelId: ModelId) =>
-        ['financials-analysis', upper(symbol), modelId] as const,
-    congressTrend: (symbol: string, modelId: ModelId) =>
-        ['congress-trend', upper(symbol), modelId] as const,
+    // reasoning defaults to `false` on every analysis key below so existing
+    // 2/3-arg call sites (pre-member-reasoning-toggle) keep resolving to the
+    // exact same key they always have — only a member's explicit `true` value
+    // produces a distinct key (member-reasoning-toggle spec Part A: "changing
+    // the toggle re-submits analysis" relies on this key change).
+    fundamentalAnalysis: (
+        symbol: string,
+        modelId: ModelId,
+        reasoning = false
+    ) => ['fundamental-analysis', upper(symbol), modelId, reasoning] as const,
+    financialsAnalysis: (symbol: string, modelId: ModelId, reasoning = false) =>
+        ['financials-analysis', upper(symbol), modelId, reasoning] as const,
+    congressTrend: (symbol: string, modelId: ModelId, reasoning = false) =>
+        ['congress-trend', upper(symbol), modelId, reasoning] as const,
     // News augment (chart page) and news analysis (news page) share this key so
     // a single React Query entry serves both pages within a session — preventing
     // a duplicate fetch when the user navigates between /AAPL and /AAPL/news.
     // Augment consumers may use `select` to project to a narrower shape.
-    newsAnalysis: (symbol: string, companyName: string, modelId: ModelId) =>
-        ['news-analysis', upper(symbol), companyName, modelId] as const,
-    /** Prefix key — invalidates all modelId variants for a symbol at once. */
+    newsAnalysis: (
+        symbol: string,
+        companyName: string,
+        modelId: ModelId,
+        reasoning = false
+    ) =>
+        [
+            'news-analysis',
+            upper(symbol),
+            companyName,
+            modelId,
+            reasoning,
+        ] as const,
+    /** Prefix key — invalidates all modelId/reasoning variants for a symbol at once. */
     newsAnalysisPrefix: (
         symbol: string
     ): readonly ['news-analysis', string] => ['news-analysis', upper(symbol)],
@@ -88,7 +107,8 @@ export const QUERY_KEYS = {
         symbol: string,
         companyName: string,
         timeframe: Timeframe,
-        modelId: ModelId
+        modelId: ModelId,
+        reasoning = false
     ) =>
         [
             'overall-analysis',
@@ -96,6 +116,7 @@ export const QUERY_KEYS = {
             companyName,
             timeframe,
             modelId,
+            reasoning,
         ] as const,
     sectorSignals: (timeframe: DashboardTimeframe) =>
         ['sector-signals', timeframe] as const,
@@ -110,7 +131,8 @@ export const QUERY_KEYS = {
         symbol: string,
         companyName: string,
         expirationDate: OptionsExpirationSelector,
-        modelId: ModelId
+        modelId: ModelId,
+        reasoning = false
     ) =>
         [
             'options-analysis',
@@ -118,5 +140,6 @@ export const QUERY_KEYS = {
             companyName,
             expirationDate,
             modelId,
+            reasoning,
         ] as const,
 } as const;

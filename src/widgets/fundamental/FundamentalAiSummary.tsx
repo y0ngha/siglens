@@ -8,7 +8,10 @@ import {
 } from '@y0ngha/siglens-core';
 import { useRegisterShareable, mapAnalysisStatus } from '@/features/share';
 import { cn } from '@/shared/lib/cn';
-import { useDefaultModelId } from '@/features/symbol-model';
+import {
+    useDefaultModelId,
+    useDefaultReasoning,
+} from '@/features/symbol-model';
 import { useFundamentalAnalysis } from './hooks/useFundamentalAnalysis';
 import { usePublishSymbolChat } from '@/features/symbol-chat';
 import { buildChatState } from './utils/buildChatState';
@@ -128,7 +131,8 @@ interface FundamentalAiSummaryProps {
 
 export function FundamentalAiSummary({ symbol }: FundamentalAiSummaryProps) {
     const modelId = useDefaultModelId();
-    const state = useFundamentalAnalysis(symbol, modelId);
+    const reasoning = useDefaultReasoning();
+    const state = useFundamentalAnalysis(symbol, modelId, reasoning);
 
     // bot_blocked/loading/error 시에도 chatState를 명시적으로 publish하여 챗봇이
     // 이전 페이지의 stale context를 그대로 들고 가지 않게 한다.

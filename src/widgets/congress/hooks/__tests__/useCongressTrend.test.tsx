@@ -92,7 +92,8 @@ describe('useCongressTrend', () => {
         expect(result.current.result).toEqual(CONGRESS_RESULT);
         expect(mockSubmit).toHaveBeenCalledWith(
             'AAPL',
-            'gemini-2.5-flash-lite'
+            'gemini-2.5-flash-lite',
+            false
         );
     });
 

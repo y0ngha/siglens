@@ -11,7 +11,11 @@ import {
 } from '@y0ngha/siglens-core';
 import { fetchOptionsSnapshot } from '../lib/optionsDataCache';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
-import { resolveTierAndByok, buildGateError } from '@/shared/lib/byokGate';
+import {
+    resolveTierAndByok,
+    resolveReasoning,
+    buildGateError,
+} from '@/shared/lib/byokGate';
 import { isBot } from '@/shared/api/isBot';
 import { isE2E } from '@/shared/api/e2eEnv';
 import type {
@@ -33,7 +37,12 @@ export async function submitOptionsAnalysisAction(
     symbol: string,
     companyName: string,
     expirationDate: OptionsExpirationSelector,
-    modelId: ModelId
+    modelId: ModelId,
+    /**
+     * Client-requested "깊은 생각" (deep-thinking) toggle value (member-reasoning-toggle
+     * spec Part A). Only honored for member/pro tiers.
+     */
+    reasoning?: boolean
 ): Promise<SubmitOptionsAnalysisActionResult> {
     try {
         // E2E short-circuits the LLM/worker with a deterministic fixture (see
@@ -80,6 +89,7 @@ export async function submitOptionsAnalysisAction(
             modelId,
             snapshot,
             tier: gate.tier,
+            reasoning: resolveReasoning(gate.tier, reasoning),
             skipEnqueueIfMiss,
             ...(gate.userApiKey !== undefined
                 ? { userApiKey: gate.userApiKey }

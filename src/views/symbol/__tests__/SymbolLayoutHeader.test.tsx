@@ -25,15 +25,36 @@ vi.mock('@/entities/ticker/hooks/useAssetInfo', () => ({
     })),
 }));
 
-vi.mock('@/features/symbol-model/model/SymbolModelContext', () => ({
-    useSymbolModel: vi.fn(() => ({
+const { mockUseSymbolModel } = vi.hoisted(() => ({
+    mockUseSymbolModel: vi.fn(() => ({
         modelId: 'gemini-2.5-flash-lite',
         allowedModels: ['gemini-2.5-flash-lite'],
         isHydrated: true,
         gateModal: null,
         dismissGate: vi.fn(),
         handleModelChange: vi.fn(),
+        reasoning: false,
+        setReasoning: vi.fn(),
+        canUseReasoning: false,
     })),
+}));
+
+vi.mock('@/features/symbol-model/model/SymbolModelContext', () => ({
+    useSymbolModel: mockUseSymbolModel,
+}));
+
+vi.mock('@/features/reasoning-toggle', () => ({
+    ReasoningToggle: ({
+        checked,
+        visible,
+    }: {
+        checked: boolean;
+        visible: boolean;
+        onChange: (v: boolean) => void;
+    }) =>
+        visible ? (
+            <div data-testid="reasoning-toggle">{checked ? 'on' : 'off'}</div>
+        ) : null,
 }));
 
 vi.mock('@/views/symbol/SymbolTabs', () => ({
@@ -115,6 +136,42 @@ describe('SymbolLayoutHeader', () => {
     it('renders AI model label text', () => {
         render(<SymbolLayoutHeader symbol="aapl" />);
         expect(screen.getByText('AI 분석 모델')).toBeDefined();
+    });
+
+    it('hides the reasoning toggle for free/anonymous tier (canUseReasoning=false)', () => {
+        mockUseSymbolModel.mockReturnValueOnce({
+            modelId: 'gemini-2.5-flash-lite',
+            allowedModels: ['gemini-2.5-flash-lite'],
+            isHydrated: true,
+            gateModal: null,
+            dismissGate: vi.fn(),
+            handleModelChange: vi.fn(),
+            reasoning: false,
+            setReasoning: vi.fn(),
+            canUseReasoning: false,
+        });
+
+        render(<SymbolLayoutHeader symbol="aapl" />);
+        expect(screen.queryByTestId('reasoning-toggle')).toBeNull();
+    });
+
+    it('shows the reasoning toggle for member/pro tier (canUseReasoning=true)', () => {
+        mockUseSymbolModel.mockReturnValueOnce({
+            modelId: 'gemini-2.5-flash-lite',
+            allowedModels: ['gemini-2.5-flash-lite'],
+            isHydrated: true,
+            gateModal: null,
+            dismissGate: vi.fn(),
+            handleModelChange: vi.fn(),
+            reasoning: true,
+            setReasoning: vi.fn(),
+            canUseReasoning: true,
+        });
+
+        render(<SymbolLayoutHeader symbol="aapl" />);
+        const toggle = screen.getByTestId('reasoning-toggle');
+        expect(toggle).toBeDefined();
+        expect(toggle.textContent).toBe('on');
     });
 
     it('swallows a thrown fear-greed chip error via ErrorBoundary and still renders the header', () => {

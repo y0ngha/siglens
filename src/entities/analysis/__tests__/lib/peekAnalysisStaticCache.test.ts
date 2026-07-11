@@ -34,7 +34,8 @@ describe('peekAnalysisStatic', () => {
             'AAPL',
             '1Day',
             'AAPL',
-            'gemini-2.5-flash-lite'
+            'gemini-2.5-flash-lite',
+            false
         );
     });
 
@@ -53,7 +54,27 @@ describe('peekAnalysisStatic', () => {
             'AAPL',
             '1Day',
             undefined,
-            'gemini-2.5-flash-lite'
+            'gemini-2.5-flash-lite',
+            false
+        );
+    });
+
+    it('always peeks the reasoning-OFF key (member-reasoning-toggle spec Part A.4)', async () => {
+        mockPeek.mockResolvedValue(null);
+
+        await peekAnalysisStatic(
+            'AAPL',
+            '1Day',
+            undefined,
+            'deepseek-v4-flash'
+        );
+
+        expect(mockPeek).toHaveBeenCalledWith(
+            'AAPL',
+            '1Day',
+            undefined,
+            'deepseek-v4-flash',
+            false
         );
     });
 });

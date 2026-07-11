@@ -9,7 +9,10 @@ import { OverallTriggerCta } from './OverallTriggerCta';
 import { ReanalyzeButton } from './ReanalyzeButton';
 import { buildChatState } from './utils/buildChatState';
 import { BotBlockedNotice } from '@/shared/ui/BotBlockedNotice';
-import { useDefaultModelId } from '@/features/symbol-model';
+import {
+    useDefaultModelId,
+    useDefaultReasoning,
+} from '@/features/symbol-model';
 import { cn } from '@/shared/lib/cn';
 import { type OverallAnalysisResponse } from '@y0ngha/siglens-core';
 import { type CSSProperties, useMemo } from 'react';
@@ -63,13 +66,15 @@ export function OverallContent({
     // tf는 서버가 아니라 client가 URL에서 읽어 [symbol] ISR(정적 렌더)을 유지한다.
     const timeframe = useTimeframeFromUrl();
     const modelId = useDefaultModelId();
+    const reasoning = useDefaultReasoning();
     const { state, trigger } = useOverallAnalysis(
         symbol,
         companyName,
         timeframe,
         modelId,
         initialAnalysis,
-        assetClass
+        assetClass,
+        reasoning
     );
 
     // usePublishSymbolChat은 chatState(useMemo 반환값)를 인자로 받으므로 useMemo 뒤에 둔다(§17 의존 순서).

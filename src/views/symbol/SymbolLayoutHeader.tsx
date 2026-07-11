@@ -11,6 +11,7 @@ import { ModelSelector } from '@/widgets/analysis';
 import { ShareButton } from '@/widgets/share';
 import { FearGreedHeaderChipMounted } from './FearGreedHeaderChipMounted';
 import { PremiumModelGateModal } from '@/features/premium-gate';
+import { ReasoningToggle } from '@/features/reasoning-toggle';
 import { LLM_PROVIDER_LABELS } from '@/shared/lib/llmProviderLabels';
 
 interface SymbolLayoutHeaderProps {
@@ -38,6 +39,9 @@ export function SymbolLayoutHeader({ symbol }: SymbolLayoutHeaderProps) {
         handleModelChange,
         gateModal,
         dismissGate,
+        reasoning,
+        setReasoning,
+        canUseReasoning,
     } = useSymbolModel();
 
     return (
@@ -103,6 +107,11 @@ export function SymbolLayoutHeader({ symbol }: SymbolLayoutHeaderProps) {
                         className="w-28 sm:w-32 lg:w-36"
                         showLabel={false}
                         dropdownAlign="right"
+                    />
+                    <ReasoningToggle
+                        checked={reasoning}
+                        onChange={setReasoning}
+                        visible={canUseReasoning}
                     />
                 </div>
 

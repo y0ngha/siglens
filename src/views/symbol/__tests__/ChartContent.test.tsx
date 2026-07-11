@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import type { AnalysisResponse, Timeframe } from '@y0ngha/siglens-core';
 import { FALLBACK_ANALYSIS } from '@/entities/chat-message';
 import { ChartContent } from '@/views/symbol/ChartContent';
@@ -98,7 +98,28 @@ vi.mock('@/features/symbol-model/model/SymbolModelContext', () => ({
     useSymbolModel: vi.fn(() => ({
         modelId: 'gemini-2.5-flash-lite',
         isHydrated: true,
+        reasoning: false,
+        isReasoningHydrated: true,
     })),
+}));
+
+const { mockUseAnonAnalysisNudge } = vi.hoisted(() => ({
+    mockUseAnonAnalysisNudge: vi.fn(() => ({
+        isOpen: false,
+        onSymbolAnalyzed: vi.fn(),
+        close: vi.fn(),
+    })),
+}));
+
+vi.mock('@/features/analysis-nudge', () => ({
+    useAnonAnalysisNudge: mockUseAnonAnalysisNudge,
+    AnalysisSignupNudgeModal: ({ onClose }: { onClose: () => void }) => (
+        <div data-testid="analysis-signup-nudge-modal">
+            <button type="button" onClick={onClose}>
+                close
+            </button>
+        </div>
+    ),
 }));
 
 vi.mock('@/views/symbol/SymbolPageContext', () => ({
@@ -250,6 +271,87 @@ describe('ChartContent', () => {
     it('renders analysis panel in aside', () => {
         render(<ChartContent {...defaultProps} />);
         expect(screen.getByTestId('analysis-panel')).toBeDefined();
+    });
+
+    describe('anonymous signup nudge (member-reasoning-toggle spec Part B)', () => {
+        it('does not render the nudge modal when isOpen is false', () => {
+            mockUseAnonAnalysisNudge.mockReturnValueOnce({
+                isOpen: false,
+                onSymbolAnalyzed: vi.fn(),
+                close: vi.fn(),
+            });
+            render(<ChartContent {...defaultProps} />);
+            expect(
+                screen.queryByTestId('analysis-signup-nudge-modal')
+            ).toBeNull();
+        });
+
+        it('renders the nudge modal when isOpen is true', () => {
+            mockUseAnonAnalysisNudge.mockReturnValueOnce({
+                isOpen: true,
+                onSymbolAnalyzed: vi.fn(),
+                close: vi.fn(),
+            });
+            render(<ChartContent {...defaultProps} />);
+            expect(
+                screen.getByTestId('analysis-signup-nudge-modal')
+            ).toBeDefined();
+        });
+
+        it('closing the modal calls the hook-provided close()', async () => {
+            const close = vi.fn();
+            mockUseAnonAnalysisNudge.mockReturnValueOnce({
+                isOpen: true,
+                onSymbolAnalyzed: vi.fn(),
+                close,
+            });
+            render(<ChartContent {...defaultProps} />);
+            screen
+                .getByTestId('analysis-signup-nudge-modal')
+                .querySelector('button')
+                ?.click();
+            expect(close).toHaveBeenCalledTimes(1);
+        });
+
+        it('notifies onSymbolAnalyzed with the symbol when a real (non-fallback) narrative renders', async () => {
+            const onSymbolAnalyzed = vi.fn();
+            mockUseAnonAnalysisNudge.mockReturnValueOnce({
+                isOpen: false,
+                onSymbolAnalyzed,
+                close: vi.fn(),
+            });
+            // default useAnalysis mock returns `analysis: {}` — not the
+            // FALLBACK_ANALYSIS reference, so isFallbackAnalysis() is false.
+            render(<ChartContent {...defaultProps} />);
+            await waitFor(() => {
+                expect(onSymbolAnalyzed).toHaveBeenCalledWith('AAPL');
+            });
+        });
+
+        it('does not notify onSymbolAnalyzed while the analysis is still the FALLBACK_ANALYSIS shell', async () => {
+            const { useAnalysis } =
+                await import('@/views/symbol/hooks/useAnalysis');
+            const onSymbolAnalyzed = vi.fn();
+            mockUseAnonAnalysisNudge.mockReturnValueOnce({
+                isOpen: false,
+                onSymbolAnalyzed,
+                close: vi.fn(),
+            });
+            (useAnalysis as ReturnType<typeof vi.fn>).mockReturnValueOnce({
+                analysis: FALLBACK_ANALYSIS,
+                analysisResult: null,
+                isAnalyzing: true,
+                analysisError: null,
+                isBotBlocked: false,
+                handleReanalyze: vi.fn(),
+                reanalyzeCooldownMs: 0,
+                cooldownNotice: null,
+            });
+
+            render(<ChartContent {...defaultProps} />);
+
+            expect(onSymbolAnalyzed).not.toHaveBeenCalled();
+        });
     });
 
     it('keeps the facts layer and appends (does not replace with) the bot notice when bot is blocked and there is no narrative', async () => {

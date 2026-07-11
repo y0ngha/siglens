@@ -6,3 +6,4 @@ export {
     useSymbolModel,
 } from './model/SymbolModelContext';
 export { useDefaultModelId } from './hooks/useDefaultModelId';
+export { useDefaultReasoning } from './hooks/useDefaultReasoning';

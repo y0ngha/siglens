@@ -36,6 +36,10 @@ vi.mock('@/entities/auth/lib/getCurrentUser', () => ({
 
 vi.mock('@/shared/lib/byokGate', () => ({
     resolveTierAndByok: vi.fn(),
+    resolveReasoning: vi.fn(
+        (tier: string, clientReasoning?: boolean) =>
+            tier !== 'free' && clientReasoning === true
+    ),
     buildGateError: vi.fn((code: string) => ({
         code,
         message: `mock-${code}`,
@@ -251,6 +255,61 @@ describe('submitOptionsAnalysisAction', () => {
         expect(result).toMatchObject({
             status: 'error',
             error: expect.objectContaining({ code: 'unexpected_error' }),
+        });
+    });
+
+    describe('reasoning forwarding', () => {
+        it('forwards reasoning: true for member tier when client requests it', async () => {
+            mockGetCurrentUser.mockResolvedValue({ id: 'u1' } as never);
+            mockResolveTierAndByok.mockResolvedValue({
+                kind: 'allowed',
+                tier: 'member' as never,
+            });
+
+            await submitOptionsAnalysisAction(
+                'AAPL',
+                'Apple Inc.',
+                'all',
+                MODEL_ID,
+                true
+            );
+
+            expect(mockSubmitOptionsAnalysis).toHaveBeenCalledWith(
+                expect.objectContaining({ reasoning: true })
+            );
+        });
+
+        it('forces reasoning: false for free tier even when client requests true', async () => {
+            await submitOptionsAnalysisAction(
+                'AAPL',
+                'Apple Inc.',
+                'all',
+                MODEL_ID,
+                true
+            );
+
+            expect(mockSubmitOptionsAnalysis).toHaveBeenCalledWith(
+                expect.objectContaining({ reasoning: false })
+            );
+        });
+
+        it('defaults reasoning to false when omitted', async () => {
+            mockGetCurrentUser.mockResolvedValue({ id: 'u1' } as never);
+            mockResolveTierAndByok.mockResolvedValue({
+                kind: 'allowed',
+                tier: 'member' as never,
+            });
+
+            await submitOptionsAnalysisAction(
+                'AAPL',
+                'Apple Inc.',
+                'all',
+                MODEL_ID
+            );
+
+            expect(mockSubmitOptionsAnalysis).toHaveBeenCalledWith(
+                expect.objectContaining({ reasoning: false })
+            );
         });
     });
 });

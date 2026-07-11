@@ -171,7 +171,8 @@ describe('Overall page (narrative seed)', () => {
             'AAPL',
             'Apple Inc.',
             '1Day',
-            DEEPSEEK_V4_FLASH_MODEL
+            DEEPSEEK_V4_FLASH_MODEL,
+            false
         );
         expect(props.initialAnalysis).toEqual(cached);
     });

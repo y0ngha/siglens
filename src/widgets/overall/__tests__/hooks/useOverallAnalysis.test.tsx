@@ -467,7 +467,10 @@ describe('useOverallAnalysis', () => {
             await waitFor(() => {
                 const lastCall =
                     mockSubmit.mock.calls[mockSubmit.mock.calls.length - 1];
-                expect(lastCall?.[4]).toEqual({ force: true });
+                expect(lastCall?.[4]).toEqual({
+                    force: true,
+                    reasoning: false,
+                });
             });
         });
 
@@ -490,9 +493,13 @@ describe('useOverallAnalysis', () => {
             );
 
             // 첫 trigger는 queryFnForceRef(false)를 그대로 options로 넘기므로
-            // 5번째 인자는 정확히 { force: false }다. done 상태 재분석만 force:true.
+            // 5번째 인자는 정확히 { force: false, reasoning: false }다(기본
+            // reasoning=false). done 상태 재분석만 force:true.
             const firstCall = mockSubmit.mock.calls[0];
-            expect(firstCall?.[4]).toEqual({ force: false });
+            expect(firstCall?.[4]).toEqual({
+                force: false,
+                reasoning: false,
+            });
         });
     });
 

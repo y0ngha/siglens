@@ -9,7 +9,10 @@ import { useNewsAnalysisTrigger } from './hooks/useNewsAnalysisTrigger';
 import { useWaitForNewsCards } from './hooks/useWaitForNewsCards';
 import { buildChatState } from './utils/buildChatState';
 import { BotBlockedNotice } from '@/shared/ui/BotBlockedNotice';
-import { useDefaultModelId } from '@/features/symbol-model';
+import {
+    useDefaultModelId,
+    useDefaultReasoning,
+} from '@/features/symbol-model';
 import { cn } from '@/shared/lib/cn';
 import {
     type NewsAnalysisResponse,
@@ -253,12 +256,14 @@ export function NewsAiSummary({
         hasEnrichedNews
     );
     const modelId = useDefaultModelId();
+    const reasoning = useDefaultReasoning();
     // enabled 게이트: enriched news cards가 DB에 적어도 1개 있을 때까지 submit을
     // 미룬다. 이 게이트가 없으면 빈 DB에 대해 submit이 즉시 fire되어 core가
     // no_news 결과를 돌려주고, retry:false + staleTime:Infinity 정책에 의해
     // 에러가 영구 캐시돼 cards가 enrich된 뒤에도 분석 패널이 회복되지 않는다.
     const analysis = useNewsAnalysis(symbol, companyName, modelId, {
         enabled: isCardsReady,
+        reasoning,
     });
 
     // 훅 선언 순서 예외(MISTAKES.md #17): usePublishSymbolChat은 chatState(파생 변수)를

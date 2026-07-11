@@ -1,7 +1,10 @@
 'use client';
 
 import { useMemo } from 'react';
-import { useDefaultModelId } from '@/features/symbol-model';
+import {
+    useDefaultModelId,
+    useDefaultReasoning,
+} from '@/features/symbol-model';
 import { useRegisterShareable, mapAnalysisStatus } from '@/features/share';
 import { usePublishSymbolChat } from '@/features/symbol-chat';
 import { BotBlockedNotice } from '@/shared/ui/BotBlockedNotice';
@@ -18,7 +21,8 @@ interface CongressTrendSummaryProps {
 
 export function CongressTrendSummary({ symbol }: CongressTrendSummaryProps) {
     const modelId = useDefaultModelId();
-    const state = useCongressTrend(symbol, modelId);
+    const reasoning = useDefaultReasoning();
+    const state = useCongressTrend(symbol, modelId, reasoning);
 
     // loading/no_trades/bot_blocked/error 시에도 chatState를 명시적으로
     // publish하여 챗봇이 이전 페이지의 stale context를 그대로 들고 가지

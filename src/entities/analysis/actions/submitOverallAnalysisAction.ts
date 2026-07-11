@@ -26,7 +26,11 @@ import {
 } from '@/entities/news-article';
 import { getNextEarningsReport } from '@/entities/earnings-report';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
-import { resolveTierAndByok, buildGateError } from '@/shared/lib/byokGate';
+import {
+    resolveTierAndByok,
+    resolveReasoning,
+    buildGateError,
+} from '@/shared/lib/byokGate';
 import { isBot } from '@/shared/api/isBot';
 import { isE2E } from '@/shared/api/e2eEnv';
 // Cross-entity: options-chain fetchOptionsSnapshot 필요. Phase 9에서 features 레이어 도입 시 해소.
@@ -45,6 +49,12 @@ export type SubmitOverallAnalysisActionResult =
  */
 export interface SubmitOverallAnalysisActionOptions {
     force?: boolean;
+    /**
+     * Client-requested "깊은 생각" (deep-thinking) toggle value (member-reasoning-toggle
+     * spec Part A). Only honored for member/pro tiers — forced `false` for
+     * anonymous/free callers by `resolveReasoning` regardless of this value.
+     */
+    reasoning?: boolean;
 }
 
 /** Server Action: tier + BYOK gate, then submit a 4-axis overall analysis job; loads enriched news + earnings from DB, options snapshot, injects FMP provider; returns `cached | submitted | pending_dependencies | error`. */
@@ -160,6 +170,7 @@ export async function submitOverallAnalysisAction(
             upcomingCalendar: next !== null ? [next] : [],
             technical: { tierContext: { userId, tier: gate.tier } },
             tier: gate.tier,
+            reasoning: resolveReasoning(gate.tier, options.reasoning),
             skipEnqueueIfMiss,
             assetClass,
             optionsSnapshot: optionsSnapshot ?? undefined,

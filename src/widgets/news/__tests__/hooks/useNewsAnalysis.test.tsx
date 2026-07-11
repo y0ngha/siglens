@@ -112,7 +112,8 @@ describe('useNewsAnalysis', () => {
         expect(mockSubmit).toHaveBeenCalledWith(
             'AAPL',
             'Apple Inc.',
-            'gemini-2.5-flash-lite'
+            'gemini-2.5-flash-lite',
+            false
         );
     });
 

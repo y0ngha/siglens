@@ -8,7 +8,10 @@ import type {
 import { useRegisterShareable, mapAnalysisStatus } from '@/features/share';
 import { cn } from '@/shared/lib/cn';
 import { AXIS_LABEL_KO } from './axisLabels';
-import { useDefaultModelId } from '@/features/symbol-model';
+import {
+    useDefaultModelId,
+    useDefaultReasoning,
+} from '@/features/symbol-model';
 import { useFinancialsAnalysis } from './hooks/useFinancialsAnalysis';
 import { usePublishSymbolChat } from '@/features/symbol-chat';
 import { buildChatState } from './utils/buildChatState';
@@ -120,7 +123,8 @@ interface FinancialsAiSummaryProps {
 
 export function FinancialsAiSummary({ symbol }: FinancialsAiSummaryProps) {
     const modelId = useDefaultModelId();
-    const state = useFinancialsAnalysis(symbol, modelId);
+    const reasoning = useDefaultReasoning();
+    const state = useFinancialsAnalysis(symbol, modelId, reasoning);
 
     // bot_blocked/loading/error 시에도 chatState를 명시적으로 publish하여 챗봇이
     // 이전 페이지의 stale context를 그대로 들고 가지 않게 한다.

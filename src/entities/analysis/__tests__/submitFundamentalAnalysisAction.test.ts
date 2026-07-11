@@ -24,6 +24,10 @@ vi.mock('@/entities/auth/lib/getCurrentUser', () => ({
 
 vi.mock('@/shared/lib/byokGate', () => ({
     resolveTierAndByok: vi.fn(),
+    resolveReasoning: vi.fn(
+        (tier: string, clientReasoning?: boolean) =>
+            tier !== 'free' && clientReasoning === true
+    ),
     buildGateError: vi.fn((code: string) => ({
         code,
         message: `mock-${code}`,
@@ -226,6 +230,44 @@ describe('submitFundamentalAnalysisAction 함수는', () => {
         expect(mockSubmitFundamentalAnalysis).toHaveBeenCalledWith(
             expect.objectContaining({ skipEnqueueIfMiss: true })
         );
+    });
+
+    describe('reasoning forwarding', () => {
+        it('forwards reasoning: true for member tier when client requests it', async () => {
+            mockGetCurrentUser.mockResolvedValue({ id: 'u1' } as never);
+            mockResolveTierAndByok.mockResolvedValue({
+                kind: 'allowed',
+                tier: 'member' as never,
+            });
+
+            await submitFundamentalAnalysisAction('AAPL', MODEL_ID, true);
+
+            expect(mockSubmitFundamentalAnalysis).toHaveBeenCalledWith(
+                expect.objectContaining({ reasoning: true })
+            );
+        });
+
+        it('forces reasoning: false for free tier even when client requests true', async () => {
+            await submitFundamentalAnalysisAction('AAPL', MODEL_ID, true);
+
+            expect(mockSubmitFundamentalAnalysis).toHaveBeenCalledWith(
+                expect.objectContaining({ reasoning: false })
+            );
+        });
+
+        it('defaults reasoning to false when omitted', async () => {
+            mockGetCurrentUser.mockResolvedValue({ id: 'u1' } as never);
+            mockResolveTierAndByok.mockResolvedValue({
+                kind: 'allowed',
+                tier: 'member' as never,
+            });
+
+            await submitFundamentalAnalysisAction('AAPL', MODEL_ID);
+
+            expect(mockSubmitFundamentalAnalysis).toHaveBeenCalledWith(
+                expect.objectContaining({ reasoning: false })
+            );
+        });
     });
 
     it('passes skipEnqueueIfMiss: false to siglens-core when request UA is not a bot', async () => {

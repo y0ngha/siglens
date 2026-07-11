@@ -27,6 +27,12 @@ import { SECONDS_PER_QUARTER_DAY } from '@/shared/config/time';
  * 혼용 시 캐시 분기 방지). 키: ticker + timeframe + modelId. fmpSymbol은 peekAnalysisCache의
  * 내부 cache 키가 쓰지 않으므로 unstable_cache 키에서 제외한다 — 포함하면 같은 데이터가
  * fmpSymbol 유무로 중복 엔트리에 저장된다. 시그니처 정렬을 위해 인자로는 받아 그대로 전달한다.
+ *
+ * reasoning은 항상 `false`로 고정한다(member-reasoning-toggle spec Part A.4) — 이 SSR peek은
+ * 익명/봇 방문자가 보는 초기 셸이므로, writer(익명·free 방문자의 submitAnalysisAction)가
+ * 쓰는 reasoning-OFF 키와 정렬되어야 HIT한다. 회원이 토글 ON으로 받은 결과가 이 익명 peek에
+ * 섞이는 캐시 오염을 방지한다(회원은 클라 재요청으로 자기 값을 받는다). unstable_cache 키에는
+ * 포함하지 않는다 — 항상 상수이므로 별도 분기가 필요 없다.
  */
 export function peekAnalysisStatic(
     ticker: string,
@@ -36,7 +42,7 @@ export function peekAnalysisStatic(
 ): Promise<AnalysisResponse | null> {
     const upper = ticker.toUpperCase();
     return unstable_cache(
-        () => peekAnalysisCache(upper, timeframe, fmpSymbol, modelId),
+        () => peekAnalysisCache(upper, timeframe, fmpSymbol, modelId, false),
         ['peek-analysis-static', upper, timeframe, modelId],
         { revalidate: SECONDS_PER_QUARTER_DAY, tags: [`symbol:${upper}`] }
     )();

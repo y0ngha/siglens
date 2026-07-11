@@ -66,7 +66,7 @@ export function OptionsPageClient({
     //   useEffect로 mount 직후 한 번만 채워 SSR 마크업은 항상 banner 없음
     //   상태로 통일한다. snapshot 참조가 갱신되면 자동으로 재평가된다.
     const [now, setNow] = useState<Date | null>(null);
-    const { modelId } = useSymbolModel();
+    const { modelId, reasoning } = useSymbolModel();
     const validSlots = useMemo(() => slots.filter(isSlotMapping), [slots]);
     // 단일 호출로 (chain, metrics)을 산출하고 세 자식에 prop-drill 한다 —
     // 이전엔 OptionsMetricsRow / OpenInterestChart / OptionsChainTable이
@@ -119,6 +119,7 @@ export function OptionsPageClient({
                         companyName={companyName}
                         expirationDate={expirationDate}
                         modelId={modelId}
+                        reasoning={reasoning}
                     />
                 </ErrorBoundary>
             )}
