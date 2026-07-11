@@ -161,7 +161,7 @@ describe('ReasoningToggle', () => {
         expect(onChange).not.toHaveBeenCalled();
     });
 
-    it('non-member: switch renders locked (aria-disabled) and forced off', () => {
+    it('non-member: switch renders locked (aria-disabled), disabled-styled, and forced off', () => {
         render(
             <ReasoningToggle
                 checked={false}
@@ -172,6 +172,25 @@ describe('ReasoningToggle', () => {
         const toggle = screen.getByRole('switch');
         expect(toggle.getAttribute('aria-disabled')).toBe('true');
         expect(toggle.getAttribute('aria-checked')).toBe('false');
+        // The switch itself conveys "locked/unavailable" now that the
+        // standalone lock icon is gone: muted track + half opacity read as
+        // disabled, while it stays clickable (cursor-pointer, not
+        // cursor-not-allowed, and no native `disabled` attribute).
+        expect(toggle.className).toContain('opacity-50');
+        expect(toggle.className).toContain('cursor-pointer');
+        expect(toggle.hasAttribute('disabled')).toBe(false);
+    });
+
+    it('non-member: no standalone lock icon is rendered (the switch carries the meaning)', () => {
+        const { container } = render(
+            <ReasoningToggle
+                checked={false}
+                onChange={vi.fn()}
+                canUse={false}
+            />
+        );
+        // Only the knob is aria-hidden; there is no separate lock <svg>.
+        expect(container.querySelector('svg')).toBeNull();
     });
 
     it('non-member: a stale checked=true prop is still forced to the OFF state (aria-checked and knob position)', () => {

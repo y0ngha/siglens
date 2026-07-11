@@ -65,7 +65,7 @@ export function ReasoningToggle({
     };
 
     return (
-        <div className={cn('flex items-center gap-2', className)}>
+        <div className={cn('flex items-center gap-1.5', className)}>
             <span className="text-secondary-400 text-xs whitespace-nowrap">
                 상세 분석
             </span>
@@ -79,23 +79,6 @@ export function ReasoningToggle({
                 </p>
                 <p>대신 분석에 시간이 조금 더 걸릴 수 있어요.</p>
             </InfoTooltip>
-            {locked && (
-                <svg
-                    width="13"
-                    height="13"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    aria-hidden="true"
-                    className="text-secondary-400 shrink-0"
-                >
-                    <rect x="3" y="11" width="18" height="10" rx="2" />
-                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                </svg>
-            )}
             <button
                 type="button"
                 role="switch"
@@ -106,7 +89,13 @@ export function ReasoningToggle({
                 className={cn(
                     'focus-visible:ring-primary-500 relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors focus-visible:ring-1 focus-visible:outline-none',
                     effectiveChecked ? 'bg-primary-600' : 'bg-secondary-700',
-                    locked && 'cursor-pointer opacity-60',
+                    // Locked non-members: the switch itself now carries the
+                    // "unavailable" meaning (the standalone lock icon was
+                    // removed), so render it visibly disabled — muted track +
+                    // half opacity, OFF knob — while staying clickable so the
+                    // click opens the signup nudge (cursor-pointer, not
+                    // cursor-not-allowed; no native `disabled` which would swallow onClick).
+                    locked && 'bg-secondary-800 cursor-pointer opacity-50',
                     !locked && disabled && 'cursor-not-allowed opacity-60'
                 )}
             >
