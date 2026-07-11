@@ -12,6 +12,19 @@ export interface UseAnonAnalysisNudgeResult {
     /** Whether the signup-nudge modal should be rendered open. */
     isOpen: boolean;
     /**
+     * True once `useCurrentUser` has settled (data !== undefined) — i.e. we
+     * definitively know whether the visitor is a member or anonymous.
+     * Callers that gate a "consume once" ref (e.g. ChartContent's
+     * notifiedSymbolRef) on `onSymbolAnalyzed` MUST also gate on this flag
+     * and include it in their effect's dependency array. Otherwise a call
+     * that lands before login resolves gets silently absorbed by the
+     * no-op branch below, the ref is marked "done" anyway, and the
+     * effective (anonymous) call that would fire once resolution flips
+     * true never happens — dropping that symbol from the distinct-symbol
+     * count (see member-reasoning-toggle spec Part B).
+     */
+    isLoginResolved: boolean;
+    /**
      * Call when a symbol analysis completes/renders. No-op for members and
      * while the login state is still resolving (§ do not count before
      * membership is known — a member's first paint must never be
@@ -60,5 +73,5 @@ export function useAnonAnalysisNudge(): UseAnonAnalysisNudgeResult {
         setIsOpen(false);
     }, []);
 
-    return { isOpen, onSymbolAnalyzed, close };
+    return { isOpen, isLoginResolved, onSymbolAnalyzed, close };
 }

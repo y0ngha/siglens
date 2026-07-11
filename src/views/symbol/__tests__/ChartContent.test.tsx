@@ -104,8 +104,12 @@ vi.mock('@/features/symbol-model/model/SymbolModelContext', () => ({
 }));
 
 const { mockUseAnonAnalysisNudge } = vi.hoisted(() => ({
+    // isLoginResolved: true by default — most tests here exercise the
+    // post-resolve path. The real hook only ever calls onSymbolAnalyzed's
+    // effective branch once this is true (see ChartContent's gating on it).
     mockUseAnonAnalysisNudge: vi.fn(() => ({
         isOpen: false,
+        isLoginResolved: true,
         onSymbolAnalyzed: vi.fn(),
         close: vi.fn(),
     })),
@@ -277,6 +281,7 @@ describe('ChartContent', () => {
         it('does not render the nudge modal when isOpen is false', () => {
             mockUseAnonAnalysisNudge.mockReturnValueOnce({
                 isOpen: false,
+                isLoginResolved: true,
                 onSymbolAnalyzed: vi.fn(),
                 close: vi.fn(),
             });
@@ -289,6 +294,7 @@ describe('ChartContent', () => {
         it('renders the nudge modal when isOpen is true', () => {
             mockUseAnonAnalysisNudge.mockReturnValueOnce({
                 isOpen: true,
+                isLoginResolved: true,
                 onSymbolAnalyzed: vi.fn(),
                 close: vi.fn(),
             });
@@ -302,6 +308,7 @@ describe('ChartContent', () => {
             const close = vi.fn();
             mockUseAnonAnalysisNudge.mockReturnValueOnce({
                 isOpen: true,
+                isLoginResolved: true,
                 onSymbolAnalyzed: vi.fn(),
                 close,
             });
@@ -317,6 +324,7 @@ describe('ChartContent', () => {
             const onSymbolAnalyzed = vi.fn();
             mockUseAnonAnalysisNudge.mockReturnValueOnce({
                 isOpen: false,
+                isLoginResolved: true,
                 onSymbolAnalyzed,
                 close: vi.fn(),
             });
@@ -334,6 +342,7 @@ describe('ChartContent', () => {
             const onSymbolAnalyzed = vi.fn();
             mockUseAnonAnalysisNudge.mockReturnValueOnce({
                 isOpen: false,
+                isLoginResolved: true,
                 onSymbolAnalyzed,
                 close: vi.fn(),
             });

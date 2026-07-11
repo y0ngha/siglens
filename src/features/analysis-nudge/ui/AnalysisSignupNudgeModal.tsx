@@ -30,10 +30,7 @@ export function AnalysisSignupNudgeModal({
     }, []);
 
     return (
-        <div
-            className="fixed inset-0 z-50 flex items-center justify-center p-4"
-            aria-modal="true"
-        >
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             {/* backdrop */}
             <div
                 className="bg-secondary-950/80 absolute inset-0 backdrop-blur-sm"
@@ -44,6 +41,7 @@ export function AnalysisSignupNudgeModal({
             <div
                 ref={panelRef}
                 role="dialog"
+                aria-modal="true"
                 aria-labelledby={TITLE_ID}
                 tabIndex={-1}
                 className="bg-secondary-900 ring-secondary-800 relative w-full max-w-sm rounded-2xl p-6 shadow-2xl ring-1 outline-none"

@@ -187,6 +187,7 @@ export function ChartContent({
     // 회원/로그인 판별 전에는 useAnonAnalysisNudge 내부에서 자체적으로 no-op한다.
     const {
         isOpen: isNudgeOpen,
+        isLoginResolved: isNudgeLoginResolved,
         onSymbolAnalyzed,
         close: closeNudge,
     } = useAnonAnalysisNudge();
@@ -366,12 +367,22 @@ export function ChartContent({
     // (spec §1). notifiedSymbolRef는 같은 심볼에 대해 중복 카운트(불필요한 localStorage
     // read/write)를 막는다 — 다운스트림 recordAnonSymbolAnalysis도 심볼 기준 dedup하므로
     // 정확성을 위해 필수는 아니지만, 매 재렌더마다 카운트를 재시도하지 않도록 한다.
+    //
+    // isNudgeLoginResolved 게이팅이 필수인 이유: useCurrentUser는 마운트 시
+    // data === undefined(로그인 판별 전)이고, 이때 onSymbolAnalyzed는 no-op이다.
+    // 캐시 HIT으로 initialAnalysis가 마운트 즉시 non-fallback인 케이스에서, 판별 전에
+    // notifiedSymbolRef를 먼저 세팅해버리면 로그인 판별이 끝나 onSymbolAnalyzed가
+    // "진짜" 함수로 바뀌어도(식별성 변경 → effect 재실행) ref가 이미 symbol로 채워져
+    // 있어 조기 return — 그 심볼은 영원히 기록되지 않는다. 판별 완료(isNudgeLoginResolved)
+    // 전까지는 ref를 세팅하지도, onSymbolAnalyzed를 호출하지도 않고, 판별이 true로
+    // 바뀌는 순간 effect가 재실행되도록 deps에 포함시켜 그때 정확히 한 번 기록한다.
     useEffect(() => {
+        if (!isNudgeLoginResolved) return;
         if (isFallbackAnalysis(analysis)) return;
         if (notifiedSymbolRef.current === symbol) return;
         notifiedSymbolRef.current = symbol;
         onSymbolAnalyzed(symbol);
-    }, [symbol, analysis, onSymbolAnalyzed]);
+    }, [symbol, analysis, isNudgeLoginResolved, onSymbolAnalyzed]);
 
     return (
         <div className="flex h-full w-full flex-col md:flex-row">
