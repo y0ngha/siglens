@@ -1,24 +1,23 @@
-import { migrateLegacyAnalysisModel } from '@/features/symbol-model/lib/migrateAnalysisModel';
+import { migrateLegacyChatModel } from '@/features/symbol-model/lib/migrateChatModel';
 import {
-    LOCAL_STORAGE_ANALYSIS_MODEL_KEY,
-    LOCAL_STORAGE_ANALYSIS_MODEL_MIGRATION_KEY,
+    LOCAL_STORAGE_CHAT_MODEL_KEY,
+    LOCAL_STORAGE_CHAT_MODEL_MIGRATION_KEY,
 } from '@/shared/lib/storageKeys';
 
-const OLD_DEFAULT = 'gemini-2.5-flash-lite';
+const OLD_DEFAULT = 'gemini-2.5-flash';
 const NEW_DEFAULT = 'deepseek-v4-flash';
 
 function readStored(): string | null {
-    return localStorage.getItem(LOCAL_STORAGE_ANALYSIS_MODEL_KEY);
+    return localStorage.getItem(LOCAL_STORAGE_CHAT_MODEL_KEY);
 }
 
 function isFlagSet(): boolean {
     return (
-        localStorage.getItem(LOCAL_STORAGE_ANALYSIS_MODEL_MIGRATION_KEY) !==
-        null
+        localStorage.getItem(LOCAL_STORAGE_CHAT_MODEL_MIGRATION_KEY) !== null
     );
 }
 
-describe('migrateLegacyAnalysisModel', () => {
+describe('migrateLegacyChatModel', () => {
     beforeEach(() => {
         localStorage.clear();
     });
@@ -28,74 +27,74 @@ describe('migrateLegacyAnalysisModel', () => {
         vi.restoreAllMocks();
     });
 
-    it('migrates the old default (gemini-2.5-flash-lite) to the new default and sets the flag', () => {
-        localStorage.setItem(LOCAL_STORAGE_ANALYSIS_MODEL_KEY, OLD_DEFAULT);
+    it('migrates the old CHAT default (gemini-2.5-flash) to the new default and sets the flag', () => {
+        localStorage.setItem(LOCAL_STORAGE_CHAT_MODEL_KEY, OLD_DEFAULT);
 
-        migrateLegacyAnalysisModel();
+        migrateLegacyChatModel();
 
         expect(readStored()).toBe(NEW_DEFAULT);
         expect(isFlagSet()).toBe(true);
     });
 
-    it('leaves a deliberate post-flip flash-lite choice untouched when the flag is already set', () => {
-        // User deliberately picked flash-lite AFTER the flip → flag already set.
-        localStorage.setItem(LOCAL_STORAGE_ANALYSIS_MODEL_MIGRATION_KEY, '1');
-        localStorage.setItem(LOCAL_STORAGE_ANALYSIS_MODEL_KEY, OLD_DEFAULT);
+    it('leaves a deliberate post-flip gemini-2.5-flash choice untouched when the flag is already set', () => {
+        // User deliberately picked gemini-2.5-flash AFTER the flip → flag already set.
+        localStorage.setItem(LOCAL_STORAGE_CHAT_MODEL_MIGRATION_KEY, '1');
+        localStorage.setItem(LOCAL_STORAGE_CHAT_MODEL_KEY, OLD_DEFAULT);
 
-        migrateLegacyAnalysisModel();
+        migrateLegacyChatModel();
 
         expect(readStored()).toBe(OLD_DEFAULT);
     });
 
     it('leaves the new default (deepseek-v4-flash) unchanged and sets the flag', () => {
-        localStorage.setItem(LOCAL_STORAGE_ANALYSIS_MODEL_KEY, NEW_DEFAULT);
+        localStorage.setItem(LOCAL_STORAGE_CHAT_MODEL_KEY, NEW_DEFAULT);
 
-        migrateLegacyAnalysisModel();
+        migrateLegacyChatModel();
 
         expect(readStored()).toBe(NEW_DEFAULT);
         expect(isFlagSet()).toBe(true);
     });
 
     it('leaves an unrelated stored model (gpt-5-mini) unchanged and sets the flag', () => {
-        localStorage.setItem(LOCAL_STORAGE_ANALYSIS_MODEL_KEY, 'gpt-5-mini');
+        localStorage.setItem(LOCAL_STORAGE_CHAT_MODEL_KEY, 'gpt-5-mini');
 
-        migrateLegacyAnalysisModel();
+        migrateLegacyChatModel();
 
         expect(readStored()).toBe('gpt-5-mini');
         expect(isFlagSet()).toBe(true);
     });
 
-    it('does NOT migrate gemini-2.5-flash (the old CHAT default, not the analysis default)', () => {
+    it('does NOT migrate gemini-2.5-flash-lite (the old ANALYSIS default, not the chat default)', () => {
         localStorage.setItem(
-            LOCAL_STORAGE_ANALYSIS_MODEL_KEY,
-            'gemini-2.5-flash'
+            LOCAL_STORAGE_CHAT_MODEL_KEY,
+            'gemini-2.5-flash-lite'
         );
 
-        migrateLegacyAnalysisModel();
+        migrateLegacyChatModel();
 
-        expect(readStored()).toBe('gemini-2.5-flash');
+        expect(readStored()).toBe('gemini-2.5-flash-lite');
         expect(isFlagSet()).toBe(true);
     });
 
     it('does not error when there is no stored value and still sets the flag', () => {
         expect(readStored()).toBeNull();
 
-        expect(() => migrateLegacyAnalysisModel()).not.toThrow();
+        expect(() => migrateLegacyChatModel()).not.toThrow();
 
         expect(readStored()).toBeNull();
         expect(isFlagSet()).toBe(true);
     });
 
     it('is idempotent — a second call is a no-op', () => {
-        localStorage.setItem(LOCAL_STORAGE_ANALYSIS_MODEL_KEY, OLD_DEFAULT);
+        localStorage.setItem(LOCAL_STORAGE_CHAT_MODEL_KEY, OLD_DEFAULT);
 
-        migrateLegacyAnalysisModel();
+        migrateLegacyChatModel();
         expect(readStored()).toBe(NEW_DEFAULT);
 
-        // Simulate the user deliberately switching back to flash-lite after the
-        // migration already ran — the second call must NOT re-migrate it.
-        localStorage.setItem(LOCAL_STORAGE_ANALYSIS_MODEL_KEY, OLD_DEFAULT);
-        migrateLegacyAnalysisModel();
+        // Simulate the user deliberately switching back to gemini-2.5-flash after
+        // the migration already ran — the second call must NOT re-migrate it.
+        localStorage.setItem(LOCAL_STORAGE_CHAT_MODEL_KEY, OLD_DEFAULT);
+        migrateLegacyChatModel();
 
         expect(readStored()).toBe(OLD_DEFAULT);
     });
@@ -110,7 +109,7 @@ describe('migrateLegacyAnalysisModel', () => {
 
         vi.stubGlobal('window', undefined);
 
-        expect(() => migrateLegacyAnalysisModel()).not.toThrow();
+        expect(() => migrateLegacyChatModel()).not.toThrow();
 
         expect(getItemSpy).not.toHaveBeenCalled();
         expect(setItemSpy).not.toHaveBeenCalled();
@@ -122,7 +121,7 @@ describe('migrateLegacyAnalysisModel', () => {
         });
         const setItemSpy = vi.spyOn(Storage.prototype, 'setItem');
 
-        expect(() => migrateLegacyAnalysisModel()).not.toThrow();
+        expect(() => migrateLegacyChatModel()).not.toThrow();
         expect(setItemSpy).not.toHaveBeenCalled();
     });
 });

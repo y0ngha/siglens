@@ -32,6 +32,8 @@ import { useAssetInfo } from '@/entities/ticker/hooks/useAssetInfo';
 import { getDescriptor, marketProfileOf } from '@/shared/config/marketProfile';
 import { useModelGate, type ModelGateState } from '@/features/premium-gate';
 import { useHydrated } from '@/shared/hooks/useHydrated';
+import { migrateLegacyChatModel } from '@/features/symbol-model/lib/migrateChatModel';
+import { LOCAL_STORAGE_CHAT_MODEL_KEY } from '@/shared/lib/storageKeys';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
     startTransition,
@@ -46,7 +48,11 @@ import {
 
 // 분석 중 단계의 최소 표시 시간 (UX: 즉시 사라지면 깜빡이는 것처럼 보임)
 const ANALYZING_PHASE_MIN_DURATION_MS = 1500;
-export const MODEL_STORAGE_KEY = 'siglens_chat_model';
+// Re-exported for backward compatibility with existing test imports — the
+// canonical value now lives in `@/shared/lib/storageKeys` so the one-time chat
+// model migration (`migrateLegacyChatModel`) and this hook share a single
+// source of truth instead of duplicating the string literal.
+export const MODEL_STORAGE_KEY = LOCAL_STORAGE_CHAT_MODEL_KEY;
 
 // Matches the siglens-core chat token limit; update only when the core policy changes.
 const DAILY_CHAT_LIMIT = 5;
@@ -309,6 +315,10 @@ export function useChat({ symbol }: UseChatOptions): UseChatReturn {
     // 무의미한 setItem을 막기 위해 lastWrittenModelRef를 stored 값으로 초기화한다.
     // 다음 사용자 변경 시점부터 정상적으로 setItem이 호출된다.
     useEffect(() => {
+        // Runs the one-time legacy-default migration BEFORE the read below, so a
+        // browser still holding the old chat default (`gemini-2.5-flash`) has
+        // already been rewritten to `deepseek-v4-flash` by the time we hydrate.
+        migrateLegacyChatModel();
         try {
             const stored = localStorage.getItem(MODEL_STORAGE_KEY);
             // VALID_CHAT_MODELS comes from siglens-core and is the runtime source of truth.

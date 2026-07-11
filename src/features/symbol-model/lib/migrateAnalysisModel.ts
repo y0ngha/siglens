@@ -26,27 +26,35 @@ import {
  * Idempotent and SSR-safe: no-ops when `window` is undefined and returns early
  * once the flag is present. Only the exact legacy-default value is rewritten —
  * any other stored model (gpt, claude, gemini-2.5-flash, etc.) is left intact.
+ *
+ * Wrapped in try/catch: some browsers (incognito / storage-blocked) throw a
+ * `SecurityError` on `localStorage` access. A failed migration must never crash
+ * the app at mount, so any storage error is swallowed and treated as a no-op.
  */
 export function migrateLegacyAnalysisModel(): void {
     if (typeof window === 'undefined') return;
 
-    // Already migrated in this browser — never touch the stored model again.
-    if (
-        localStorage.getItem(LOCAL_STORAGE_ANALYSIS_MODEL_MIGRATION_KEY) !==
-        null
-    ) {
-        return;
-    }
+    try {
+        // Already migrated in this browser — never touch the stored model again.
+        if (
+            localStorage.getItem(LOCAL_STORAGE_ANALYSIS_MODEL_MIGRATION_KEY) !==
+            null
+        ) {
+            return;
+        }
 
-    const stored = localStorage.getItem(LOCAL_STORAGE_ANALYSIS_MODEL_KEY);
-    if (stored === GEMINI_2_5_FLASH_LITE_MODEL) {
-        localStorage.setItem(
-            LOCAL_STORAGE_ANALYSIS_MODEL_KEY,
-            DEEPSEEK_V4_FLASH_MODEL
-        );
-    }
+        const stored = localStorage.getItem(LOCAL_STORAGE_ANALYSIS_MODEL_KEY);
+        if (stored === GEMINI_2_5_FLASH_LITE_MODEL) {
+            localStorage.setItem(
+                LOCAL_STORAGE_ANALYSIS_MODEL_KEY,
+                DEEPSEEK_V4_FLASH_MODEL
+            );
+        }
 
-    // Always set the flag — even when there was nothing to migrate — so the
-    // migration runs exactly once and later flash-lite choices stay untouched.
-    localStorage.setItem(LOCAL_STORAGE_ANALYSIS_MODEL_MIGRATION_KEY, '1');
+        // Always set the flag — even when there was nothing to migrate — so the
+        // migration runs exactly once and later flash-lite choices stay untouched.
+        localStorage.setItem(LOCAL_STORAGE_ANALYSIS_MODEL_MIGRATION_KEY, '1');
+    } catch {
+        // SecurityError (incognito / storage-blocked) — no-op, never crash at mount.
+    }
 }
