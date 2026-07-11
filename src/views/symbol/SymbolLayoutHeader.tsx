@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Suspense } from 'react';
+import { Suspense, useState } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
 import { SymbolTabs } from './SymbolTabs';
 import { SymbolTabsSkeleton } from './SymbolTabsSkeleton';
@@ -12,6 +12,7 @@ import { ShareButton } from '@/widgets/share';
 import { FearGreedHeaderChipMounted } from './FearGreedHeaderChipMounted';
 import { PremiumModelGateModal } from '@/features/premium-gate';
 import { ReasoningToggle } from '@/features/reasoning-toggle';
+import { AnalysisSignupNudgeModal } from '@/features/analysis-nudge';
 import { LLM_PROVIDER_LABELS } from '@/shared/lib/llmProviderLabels';
 
 interface SymbolLayoutHeaderProps {
@@ -32,6 +33,7 @@ export function SymbolLayoutHeader({ symbol }: SymbolLayoutHeaderProps) {
     const assetInfo = useAssetInfo(symbol);
     const ticker = symbol.toUpperCase();
     const hasCompanyName = !!assetInfo && assetInfo.name !== ticker;
+    const [signupNudgeOpen, setSignupNudgeOpen] = useState(false);
 
     const {
         modelId,
@@ -95,7 +97,7 @@ export function SymbolLayoutHeader({ symbol }: SymbolLayoutHeaderProps) {
                     </ErrorBoundary>
                 </div>
 
-                <div className="flex items-center gap-2 sm:order-3 sm:shrink-0">
+                <div className="flex flex-wrap items-center justify-end gap-x-2 gap-y-2 sm:order-3 sm:shrink-0 sm:flex-nowrap">
                     <ShareButton />
                     <span className="text-secondary-400 text-xs whitespace-nowrap">
                         AI 분석 모델
@@ -111,7 +113,8 @@ export function SymbolLayoutHeader({ symbol }: SymbolLayoutHeaderProps) {
                     <ReasoningToggle
                         checked={reasoning}
                         onChange={setReasoning}
-                        visible={canUseReasoning}
+                        canUse={canUseReasoning}
+                        onLockedClick={() => setSignupNudgeOpen(true)}
                     />
                 </div>
 
@@ -138,6 +141,12 @@ export function SymbolLayoutHeader({ symbol }: SymbolLayoutHeaderProps) {
                     mode={gateModal.mode}
                     providerLabel={LLM_PROVIDER_LABELS[gateModal.provider]}
                     onClose={dismissGate}
+                />
+            )}
+
+            {signupNudgeOpen && (
+                <AnalysisSignupNudgeModal
+                    onClose={() => setSignupNudgeOpen(false)}
                 />
             )}
         </header>

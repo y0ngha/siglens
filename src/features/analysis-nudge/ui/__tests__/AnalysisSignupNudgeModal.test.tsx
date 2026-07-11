@@ -34,7 +34,7 @@ describe('AnalysisSignupNudgeModal', () => {
         ).toBeInTheDocument();
         expect(
             screen.getByText(
-                /회원가입하면 '깊은 생각'을 켜고 더 자세한 분석 리포트를 받을 수 있어요\./
+                /회원가입하면 '상세 분석'을 켜고 더 자세한 분석 리포트를 받을 수 있어요\./
             )
         ).toBeInTheDocument();
     });

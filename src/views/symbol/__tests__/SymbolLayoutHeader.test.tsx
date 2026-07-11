@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { SymbolLayoutHeader } from '@/views/symbol/SymbolLayoutHeader';
 
 vi.mock('next/link', () => ({
@@ -46,15 +46,33 @@ vi.mock('@/features/symbol-model/model/SymbolModelContext', () => ({
 vi.mock('@/features/reasoning-toggle', () => ({
     ReasoningToggle: ({
         checked,
-        visible,
+        canUse,
+        onChange,
+        onLockedClick,
     }: {
         checked: boolean;
-        visible: boolean;
+        canUse: boolean;
         onChange: (v: boolean) => void;
-    }) =>
-        visible ? (
-            <div data-testid="reasoning-toggle">{checked ? 'on' : 'off'}</div>
-        ) : null,
+        onLockedClick?: () => void;
+    }) => (
+        <button
+            type="button"
+            data-testid="reasoning-toggle"
+            onClick={() => (canUse ? onChange(!checked) : onLockedClick?.())}
+        >
+            {canUse ? (checked ? 'on' : 'off') : 'locked'}
+        </button>
+    ),
+}));
+
+vi.mock('@/features/analysis-nudge', () => ({
+    AnalysisSignupNudgeModal: ({ onClose }: { onClose: () => void }) => (
+        <div role="dialog" data-testid="signup-nudge-modal">
+            <button type="button" onClick={onClose}>
+                close
+            </button>
+        </div>
+    ),
 }));
 
 vi.mock('@/views/symbol/SymbolTabs', () => ({
@@ -138,7 +156,7 @@ describe('SymbolLayoutHeader', () => {
         expect(screen.getByText('AI 분석 모델')).toBeDefined();
     });
 
-    it('hides the reasoning toggle for free/anonymous tier (canUseReasoning=false)', () => {
+    it('still renders the reasoning toggle for free/anonymous tier (canUseReasoning=false), locked rather than hidden', () => {
         mockUseSymbolModel.mockReturnValueOnce({
             modelId: 'gemini-2.5-flash-lite',
             allowedModels: ['gemini-2.5-flash-lite'],
@@ -152,7 +170,9 @@ describe('SymbolLayoutHeader', () => {
         });
 
         render(<SymbolLayoutHeader symbol="aapl" />);
-        expect(screen.queryByTestId('reasoning-toggle')).toBeNull();
+        const toggle = screen.getByTestId('reasoning-toggle');
+        expect(toggle).toBeDefined();
+        expect(toggle.textContent).toBe('locked');
     });
 
     it('shows the reasoning toggle for member/pro tier (canUseReasoning=true)', () => {
@@ -172,6 +192,71 @@ describe('SymbolLayoutHeader', () => {
         const toggle = screen.getByTestId('reasoning-toggle');
         expect(toggle).toBeDefined();
         expect(toggle.textContent).toBe('on');
+    });
+
+    it('member: clicking the toggle calls setReasoning (no signup nudge)', () => {
+        const setReasoning = vi.fn();
+        mockUseSymbolModel.mockReturnValueOnce({
+            modelId: 'gemini-2.5-flash-lite',
+            allowedModels: ['gemini-2.5-flash-lite'],
+            isHydrated: true,
+            gateModal: null,
+            dismissGate: vi.fn(),
+            handleModelChange: vi.fn(),
+            reasoning: false,
+            setReasoning,
+            canUseReasoning: true,
+        });
+
+        render(<SymbolLayoutHeader symbol="aapl" />);
+        fireEvent.click(screen.getByTestId('reasoning-toggle'));
+
+        expect(setReasoning).toHaveBeenCalledWith(true);
+        expect(screen.queryByTestId('signup-nudge-modal')).toBeNull();
+    });
+
+    it('non-member: clicking the locked toggle opens the signup nudge modal', () => {
+        mockUseSymbolModel.mockReturnValueOnce({
+            modelId: 'gemini-2.5-flash-lite',
+            allowedModels: ['gemini-2.5-flash-lite'],
+            isHydrated: true,
+            gateModal: null,
+            dismissGate: vi.fn(),
+            handleModelChange: vi.fn(),
+            reasoning: false,
+            setReasoning: vi.fn(),
+            canUseReasoning: false,
+        });
+
+        render(<SymbolLayoutHeader symbol="aapl" />);
+        expect(screen.queryByTestId('signup-nudge-modal')).toBeNull();
+
+        fireEvent.click(screen.getByTestId('reasoning-toggle'));
+
+        expect(screen.getByRole('dialog')).toBeDefined();
+        expect(screen.getByTestId('signup-nudge-modal')).toBeDefined();
+    });
+
+    it('non-member: closing the signup nudge modal removes it', () => {
+        mockUseSymbolModel.mockReturnValueOnce({
+            modelId: 'gemini-2.5-flash-lite',
+            allowedModels: ['gemini-2.5-flash-lite'],
+            isHydrated: true,
+            gateModal: null,
+            dismissGate: vi.fn(),
+            handleModelChange: vi.fn(),
+            reasoning: false,
+            setReasoning: vi.fn(),
+            canUseReasoning: false,
+        });
+
+        render(<SymbolLayoutHeader symbol="aapl" />);
+        fireEvent.click(screen.getByTestId('reasoning-toggle'));
+        expect(screen.getByTestId('signup-nudge-modal')).toBeDefined();
+
+        fireEvent.click(screen.getByText('close'));
+
+        expect(screen.queryByTestId('signup-nudge-modal')).toBeNull();
     });
 
     it('swallows a thrown fear-greed chip error via ErrorBoundary and still renders the header', () => {

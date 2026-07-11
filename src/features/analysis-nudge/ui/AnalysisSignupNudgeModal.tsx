@@ -70,7 +70,7 @@ export function AnalysisSignupNudgeModal({
                         더 깊은 분석을 원하세요?
                     </h2>
                     <p className="text-secondary-300 text-sm leading-relaxed">
-                        회원가입하면 &apos;깊은 생각&apos;을 켜고 더 자세한 분석
+                        회원가입하면 &apos;상세 분석&apos;을 켜고 더 자세한 분석
                         리포트를 받을 수 있어요.
                     </p>
                 </div>
