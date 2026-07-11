@@ -2,6 +2,7 @@
 
 import { useEscapeKey } from '@/shared/hooks/useEscapeKey';
 import { useFocusTrap } from '@/shared/hooks/useFocusTrap';
+import { REASONING_FEATURE_LABEL } from '@/shared/lib/reasoningFeature';
 import Link from 'next/link';
 import { useEffect, useRef } from 'react';
 
@@ -70,8 +71,8 @@ export function AnalysisSignupNudgeModal({
                         더 깊은 분석을 원하세요?
                     </h2>
                     <p className="text-secondary-300 text-sm leading-relaxed">
-                        회원가입하면 &apos;상세 분석&apos;을 켜고 더 자세한 분석
-                        리포트를 받을 수 있어요.
+                        회원가입하면 &apos;{REASONING_FEATURE_LABEL}&apos;을
+                        켜고 더 자세한 분석 리포트를 받을 수 있어요.
                     </p>
                 </div>
 

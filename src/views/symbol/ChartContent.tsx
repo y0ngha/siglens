@@ -33,10 +33,7 @@ import {
     usePanelResize,
 } from './hooks/usePanelResize';
 import { useSymbolModel } from '@/features/symbol-model';
-import {
-    useAnonAnalysisNudge,
-    AnalysisSignupNudgeModal,
-} from '@/features/analysis-nudge';
+import { useAnonAnalysisNudge } from '@/features/analysis-nudge';
 import { useSymbolPageContext } from './SymbolPageContext';
 import { TechnicalFactsSummary } from './TechnicalFactsSummary';
 import type { AnalysisStatus } from './utils/analysisStatus';
@@ -152,6 +149,7 @@ export function ChartContent({
         isHydrated: isModelHydrated,
         reasoning,
         isReasoningHydrated,
+        openSignupNudge,
     } = useSymbolModel();
 
     // analysis → symbol-page 역방향 import를 제거하기 위해 여기서 context를 읽어 내려보낸다.
@@ -183,14 +181,13 @@ export function ChartContent({
     const { displayAnalyzing, handleProgressFinished } =
         useAnalysisDisplay(isAnalyzing);
 
-    // 비회원 3-심볼 회원가입 유도 모달 (member-reasoning-toggle spec Part B).
+    // 비회원 3-심볼 회원가입 유도 (member-reasoning-toggle spec Part B).
     // 회원/로그인 판별 전에는 useAnonAnalysisNudge 내부에서 자체적으로 no-op한다.
-    const {
-        isOpen: isNudgeOpen,
-        isLoginResolved: isNudgeLoginResolved,
-        onSymbolAnalyzed,
-        close: closeNudge,
-    } = useAnonAnalysisNudge();
+    // 모달 자체는 SymbolModelProvider가 단 하나만 렌더하며, 임계값 통과 시
+    // 공유 opener(openSignupNudge)로 그 단일 인스턴스를 연다 — 헤더의 잠금 토글
+    // 넙지와 동일 인스턴스를 공유해 두 모달이 겹쳐 뜨는 것을 막는다.
+    const { isLoginResolved: isNudgeLoginResolved, onSymbolAnalyzed } =
+        useAnonAnalysisNudge(openSignupNudge);
 
     // 데스크톱·모바일 두 인스턴스 공유 — 모바일 시트 unmount/remount 시에도 상태 유지.
     const { phaseIndex: progressPhaseIndex, tipIndex: progressTipIndex } =
@@ -473,9 +470,8 @@ export function ChartContent({
             {isDragging && (
                 <div className="fixed inset-0 z-50 cursor-col-resize" />
             )}
-
-            {/* 비회원 3-심볼 회원가입 유도 모달(Part B) — 소프트 넙지, 분석은 절대 차단하지 않는다. */}
-            {isNudgeOpen && <AnalysisSignupNudgeModal onClose={closeNudge} />}
+            {/* 비회원 3-심볼 회원가입 유도 모달(Part B)은 SymbolModelProvider가
+                단일 인스턴스로 렌더한다 — 여기서는 openSignupNudge로 열기만 한다. */}
         </div>
     );
 }

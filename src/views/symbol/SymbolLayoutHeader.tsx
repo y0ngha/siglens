@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Suspense, useState } from 'react';
+import { Suspense } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
 import { SymbolTabs } from './SymbolTabs';
 import { SymbolTabsSkeleton } from './SymbolTabsSkeleton';
@@ -12,7 +12,6 @@ import { ShareButton } from '@/widgets/share';
 import { FearGreedHeaderChipMounted } from './FearGreedHeaderChipMounted';
 import { PremiumModelGateModal } from '@/features/premium-gate';
 import { ReasoningToggle } from '@/features/reasoning-toggle';
-import { AnalysisSignupNudgeModal } from '@/features/analysis-nudge';
 import { LLM_PROVIDER_LABELS } from '@/shared/lib/llmProviderLabels';
 
 interface SymbolLayoutHeaderProps {
@@ -33,7 +32,6 @@ export function SymbolLayoutHeader({ symbol }: SymbolLayoutHeaderProps) {
     const assetInfo = useAssetInfo(symbol);
     const ticker = symbol.toUpperCase();
     const hasCompanyName = !!assetInfo && assetInfo.name !== ticker;
-    const [signupNudgeOpen, setSignupNudgeOpen] = useState(false);
 
     const {
         modelId,
@@ -44,6 +42,7 @@ export function SymbolLayoutHeader({ symbol }: SymbolLayoutHeaderProps) {
         reasoning,
         setReasoning,
         canUseReasoning,
+        openSignupNudge,
     } = useSymbolModel();
 
     return (
@@ -114,7 +113,7 @@ export function SymbolLayoutHeader({ symbol }: SymbolLayoutHeaderProps) {
                         checked={reasoning}
                         onChange={setReasoning}
                         canUse={canUseReasoning}
-                        onLockedClick={() => setSignupNudgeOpen(true)}
+                        onLockedClick={openSignupNudge}
                     />
                 </div>
 
@@ -143,12 +142,8 @@ export function SymbolLayoutHeader({ symbol }: SymbolLayoutHeaderProps) {
                     onClose={dismissGate}
                 />
             )}
-
-            {signupNudgeOpen && (
-                <AnalysisSignupNudgeModal
-                    onClose={() => setSignupNudgeOpen(false)}
-                />
-            )}
+            {/* The signup-nudge modal is rendered once by SymbolModelProvider
+                (shared with ChartContent's auto-nudge) — not here. */}
         </header>
     );
 }

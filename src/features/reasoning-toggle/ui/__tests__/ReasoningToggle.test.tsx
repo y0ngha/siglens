@@ -161,7 +161,7 @@ describe('ReasoningToggle', () => {
         expect(onChange).not.toHaveBeenCalled();
     });
 
-    it('non-member: switch renders locked (aria-disabled), disabled-styled, and forced off', () => {
+    it('non-member: switch renders locked (disabled-styled) and forced off, but NOT aria-disabled (it is still interactive)', () => {
         render(
             <ReasoningToggle
                 checked={false}
@@ -170,7 +170,10 @@ describe('ReasoningToggle', () => {
             />
         );
         const toggle = screen.getByRole('switch');
-        expect(toggle.getAttribute('aria-disabled')).toBe('true');
+        // The locked switch stays interactive (clicking it opens the signup
+        // nudge), so it must NOT report aria-disabled — that would tell
+        // assistive tech the control cannot be activated.
+        expect(toggle.hasAttribute('aria-disabled')).toBe(false);
         expect(toggle.getAttribute('aria-checked')).toBe('false');
         // The switch itself conveys "locked/unavailable" now that the
         // standalone lock icon is gone: muted track + half opacity read as
@@ -179,6 +182,21 @@ describe('ReasoningToggle', () => {
         expect(toggle.className).toContain('opacity-50');
         expect(toggle.className).toContain('cursor-pointer');
         expect(toggle.hasAttribute('disabled')).toBe(false);
+    });
+
+    it('member: a genuinely disabled (no-op) switch reports aria-disabled', () => {
+        render(
+            <ReasoningToggle
+                checked={false}
+                onChange={vi.fn()}
+                canUse={true}
+                disabled={true}
+            />
+        );
+        const toggle = screen.getByRole('switch');
+        // Unlike `locked`, a `disabled` member switch is a true no-op, so
+        // aria-disabled is correct here.
+        expect(toggle.getAttribute('aria-disabled')).toBe('true');
     });
 
     it('non-member: no standalone lock icon is rendered (the switch carries the meaning)', () => {

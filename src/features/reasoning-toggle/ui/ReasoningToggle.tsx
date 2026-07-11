@@ -1,6 +1,7 @@
 'use client';
 
 import { cn } from '@/shared/lib/cn';
+import { REASONING_FEATURE_LABEL } from '@/shared/lib/reasoningFeature';
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
 
 interface ReasoningToggleProps {
@@ -46,14 +47,13 @@ export function ReasoningToggle({
     // so the switch always reads as OFF regardless of the raw `checked` prop
     // (which may still hold a member's previously-persisted preference).
     const effectiveChecked = locked ? false : checked;
-    const isDisabled = locked || disabled;
     // Locked is still clickable (it opens the signup nudge), so its
     // accessible name must say "signup unlocks this" rather than the generic
     // toggle label — otherwise a screen reader user has no way to know why
     // activating it doesn't flip the switch.
     const ariaLabel = locked
-        ? '상세 분석 — 회원가입하면 사용할 수 있어요'
-        : '상세 분석 (추론) 토글';
+        ? `${REASONING_FEATURE_LABEL} — 회원가입하면 사용할 수 있어요`
+        : `${REASONING_FEATURE_LABEL} (추론) 토글`;
 
     const handleClick = (): void => {
         if (locked) {
@@ -67,7 +67,7 @@ export function ReasoningToggle({
     return (
         <div className={cn('flex items-center gap-1.5', className)}>
             <span className="text-secondary-400 text-xs whitespace-nowrap">
-                상세 분석
+                {REASONING_FEATURE_LABEL}
             </span>
             <InfoTooltip>
                 <p className="mb-1">
@@ -84,7 +84,11 @@ export function ReasoningToggle({
                 role="switch"
                 aria-checked={effectiveChecked}
                 aria-label={ariaLabel}
-                aria-disabled={isDisabled || undefined}
+                // Only the genuine `disabled` (true no-op) case is non-operable.
+                // A `locked` non-member switch is still interactive (clicking it
+                // opens the signup nudge), so it must NOT report aria-disabled —
+                // that would tell assistive tech the control can't be activated.
+                aria-disabled={disabled || undefined}
                 onClick={handleClick}
                 className={cn(
                     'focus-visible:ring-primary-500 relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors focus-visible:ring-1 focus-visible:outline-none',

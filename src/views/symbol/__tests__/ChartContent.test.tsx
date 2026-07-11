@@ -94,12 +94,17 @@ vi.mock('@/views/symbol/hooks/useActionPricesVisibility', () => ({
     })),
 }));
 
+const { mockOpenSignupNudge } = vi.hoisted(() => ({
+    mockOpenSignupNudge: vi.fn(),
+}));
+
 vi.mock('@/features/symbol-model/model/SymbolModelContext', () => ({
     useSymbolModel: vi.fn(() => ({
         modelId: 'gemini-2.5-flash-lite',
         isHydrated: true,
         reasoning: false,
         isReasoningHydrated: true,
+        openSignupNudge: mockOpenSignupNudge,
     })),
 }));
 
@@ -107,23 +112,17 @@ const { mockUseAnonAnalysisNudge } = vi.hoisted(() => ({
     // isLoginResolved: true by default — most tests here exercise the
     // post-resolve path. The real hook only ever calls onSymbolAnalyzed's
     // effective branch once this is true (see ChartContent's gating on it).
+    // The modal open-state is no longer owned by this hook: crossing the
+    // threshold calls the provider's shared opener, so the hook returns just
+    // the resolution flag + the per-symbol notifier.
     mockUseAnonAnalysisNudge: vi.fn(() => ({
-        isOpen: false,
         isLoginResolved: true,
         onSymbolAnalyzed: vi.fn(),
-        close: vi.fn(),
     })),
 }));
 
 vi.mock('@/features/analysis-nudge', () => ({
     useAnonAnalysisNudge: mockUseAnonAnalysisNudge,
-    AnalysisSignupNudgeModal: ({ onClose }: { onClose: () => void }) => (
-        <div data-testid="analysis-signup-nudge-modal">
-            <button type="button" onClick={onClose}>
-                close
-            </button>
-        </div>
-    ),
 }));
 
 vi.mock('@/views/symbol/SymbolPageContext', () => ({
@@ -278,55 +277,18 @@ describe('ChartContent', () => {
     });
 
     describe('anonymous signup nudge (member-reasoning-toggle spec Part B)', () => {
-        it('does not render the nudge modal when isOpen is false', () => {
-            mockUseAnonAnalysisNudge.mockReturnValueOnce({
-                isOpen: false,
-                isLoginResolved: true,
-                onSymbolAnalyzed: vi.fn(),
-                close: vi.fn(),
-            });
+        it('does not render the signup-nudge modal itself — the provider owns the single instance', () => {
             render(<ChartContent {...defaultProps} />);
-            expect(
-                screen.queryByTestId('analysis-signup-nudge-modal')
-            ).toBeNull();
-        });
-
-        it('renders the nudge modal when isOpen is true', () => {
-            mockUseAnonAnalysisNudge.mockReturnValueOnce({
-                isOpen: true,
-                isLoginResolved: true,
-                onSymbolAnalyzed: vi.fn(),
-                close: vi.fn(),
-            });
-            render(<ChartContent {...defaultProps} />);
-            expect(
-                screen.getByTestId('analysis-signup-nudge-modal')
-            ).toBeDefined();
-        });
-
-        it('closing the modal calls the hook-provided close()', async () => {
-            const close = vi.fn();
-            mockUseAnonAnalysisNudge.mockReturnValueOnce({
-                isOpen: true,
-                isLoginResolved: true,
-                onSymbolAnalyzed: vi.fn(),
-                close,
-            });
-            render(<ChartContent {...defaultProps} />);
-            screen
-                .getByTestId('analysis-signup-nudge-modal')
-                .querySelector('button')
-                ?.click();
-            expect(close).toHaveBeenCalledTimes(1);
+            // ChartContent no longer imports/renders AnalysisSignupNudgeModal;
+            // the one instance lives in SymbolModelProvider. No dialog here.
+            expect(screen.queryByRole('dialog')).toBeNull();
         });
 
         it('notifies onSymbolAnalyzed with the symbol when a real (non-fallback) narrative renders', async () => {
             const onSymbolAnalyzed = vi.fn();
             mockUseAnonAnalysisNudge.mockReturnValueOnce({
-                isOpen: false,
                 isLoginResolved: true,
                 onSymbolAnalyzed,
-                close: vi.fn(),
             });
             // default useAnalysis mock returns `analysis: {}` — not the
             // FALLBACK_ANALYSIS reference, so isFallbackAnalysis() is false.
@@ -341,10 +303,8 @@ describe('ChartContent', () => {
                 await import('@/views/symbol/hooks/useAnalysis');
             const onSymbolAnalyzed = vi.fn();
             mockUseAnonAnalysisNudge.mockReturnValueOnce({
-                isOpen: false,
                 isLoginResolved: true,
                 onSymbolAnalyzed,
-                close: vi.fn(),
             });
             (useAnalysis as ReturnType<typeof vi.fn>).mockReturnValueOnce({
                 analysis: FALLBACK_ANALYSIS,

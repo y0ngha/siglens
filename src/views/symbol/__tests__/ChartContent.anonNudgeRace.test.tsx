@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, waitFor } from '@testing-library/react';
 import type { AnalysisResponse, Timeframe } from '@y0ngha/siglens-core';
 import type { UseQueryResult } from '@tanstack/react-query';
 import type { AuthUserRecord } from '@/shared/lib/auth/types';
@@ -100,12 +100,21 @@ vi.mock('@/views/symbol/hooks/useActionPricesVisibility', () => ({
     })),
 }));
 
+// Stable shared opener — in production this is the provider's memoized
+// `openSignupNudge`. It must keep a stable identity across renders so the real
+// hook's `onSymbolAnalyzed` only changes identity when login resolution flips
+// (the exact seam this race test exercises via notifiedSymbolRef).
+const { mockOpenSignupNudge } = vi.hoisted(() => ({
+    mockOpenSignupNudge: vi.fn(),
+}));
+
 vi.mock('@/features/symbol-model/model/SymbolModelContext', () => ({
     useSymbolModel: vi.fn(() => ({
         modelId: 'gemini-2.5-flash-lite',
         isHydrated: true,
         reasoning: false,
         isReasoningHydrated: true,
+        openSignupNudge: mockOpenSignupNudge,
     })),
 }));
 
@@ -189,6 +198,7 @@ describe('ChartContent × useAnonAnalysisNudge integration (real hook, race betw
         mockRecord.mockReset();
         mockHasShown.mockReset();
         mockMarkShown.mockReset();
+        mockOpenSignupNudge.mockReset();
         mockHasShown.mockReturnValue(false);
     });
 
@@ -277,8 +287,11 @@ describe('ChartContent × useAnonAnalysisNudge integration (real hook, race betw
         });
         expect(mockRecord).toHaveBeenCalledTimes(3);
 
+        // The nudge now opens via the provider's shared opener (the single
+        // modal instance is rendered by SymbolModelProvider, not ChartContent),
+        // so we assert the opener fired exactly once at the 3rd distinct symbol.
         await waitFor(() => {
-            expect(screen.getByRole('dialog')).toBeDefined();
+            expect(mockOpenSignupNudge).toHaveBeenCalledTimes(1);
         });
         expect(mockMarkShown).toHaveBeenCalledTimes(1);
     });
