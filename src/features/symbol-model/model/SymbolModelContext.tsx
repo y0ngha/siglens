@@ -64,6 +64,14 @@ interface SymbolModelProviderProps {
 }
 
 export function SymbolModelProvider({ children }: SymbolModelProviderProps) {
+    // Single shared open-state for the signup-nudge modal. Both entry points
+    // (locked-toggle click in the header, 3-symbol auto-nudge in ChartContent)
+    // flip this same flag, and the modal is rendered once below — see the
+    // `isSignupNudgeOpen` doc for why a single instance is required.
+    // (Declared first per the useState → custom-hooks → derived → handlers
+    // hook-ordering convention — CONVENTIONS.md "Custom Hook Declaration Order".)
+    const [isSignupNudgeOpen, setIsSignupNudgeOpen] = useState(false);
+
     const { tier } = useUserTier();
     const allowedModels = useMemo(() => getAllowedModels(tier), [tier]);
     const [modelId, setModelId, isHydrated] = useSelectedModel(allowedModels);
@@ -78,11 +86,6 @@ export function SymbolModelProvider({ children }: SymbolModelProviderProps) {
     const canUseReasoning = tier !== 'free';
     const reasoning = canUseReasoning && storedReasoning;
 
-    // Single shared open-state for the signup-nudge modal. Both entry points
-    // (locked-toggle click in the header, 3-symbol auto-nudge in ChartContent)
-    // flip this same flag, and the modal is rendered once below — see the
-    // `isSignupNudgeOpen` doc for why a single instance is required.
-    const [isSignupNudgeOpen, setIsSignupNudgeOpen] = useState(false);
     const openSignupNudge = useCallback(() => setIsSignupNudgeOpen(true), []);
     const closeSignupNudge = useCallback(() => setIsSignupNudgeOpen(false), []);
 

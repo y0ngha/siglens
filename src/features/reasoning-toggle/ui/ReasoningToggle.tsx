@@ -56,11 +56,15 @@ export function ReasoningToggle({
         : `${REASONING_FEATURE_LABEL} (추론) 토글`;
 
     const handleClick = (): void => {
+        // A genuine `disabled` is a full no-op and takes precedence: it reports
+        // aria-disabled (non-operable to AT), so it must fire NOTHING on click —
+        // not even the locked signup nudge — otherwise the control would
+        // contradict its own aria-disabled state.
+        if (disabled) return;
         if (locked) {
             onLockedClick?.();
             return;
         }
-        if (disabled) return;
         onChange(!checked);
     };
 

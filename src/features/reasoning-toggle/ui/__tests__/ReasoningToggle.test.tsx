@@ -224,6 +224,30 @@ describe('ReasoningToggle', () => {
         expect(knob?.className).not.toContain('translate-x-[18px]');
     });
 
+    it('locked AND disabled: clicking is fully inert (neither onChange nor onLockedClick) and reports aria-disabled', () => {
+        const onChange = vi.fn();
+        const onLockedClick = vi.fn();
+        render(
+            <ReasoningToggle
+                checked={false}
+                onChange={onChange}
+                canUse={false}
+                disabled={true}
+                onLockedClick={onLockedClick}
+            />
+        );
+
+        const toggle = screen.getByRole('switch');
+        // A genuine `disabled` takes precedence over `locked`: it is a true
+        // no-op, so it must fire nothing on click — not even the locked nudge.
+        expect(toggle.getAttribute('aria-disabled')).toBe('true');
+
+        fireEvent.click(toggle);
+
+        expect(onChange).not.toHaveBeenCalled();
+        expect(onLockedClick).not.toHaveBeenCalled();
+    });
+
     it('non-member: clicking the locked switch calls onLockedClick, not onChange', () => {
         const onChange = vi.fn();
         const onLockedClick = vi.fn();

@@ -185,7 +185,7 @@ export function ChartContent({
     // 회원/로그인 판별 전에는 useAnonAnalysisNudge 내부에서 자체적으로 no-op한다.
     // 모달 자체는 SymbolModelProvider가 단 하나만 렌더하며, 임계값 통과 시
     // 공유 opener(openSignupNudge)로 그 단일 인스턴스를 연다 — 헤더의 잠금 토글
-    // 넙지와 동일 인스턴스를 공유해 두 모달이 겹쳐 뜨는 것을 막는다.
+    // 넛지와 동일 인스턴스를 공유해 두 모달이 겹쳐 뜨는 것을 막는다.
     const { isLoginResolved: isNudgeLoginResolved, onSymbolAnalyzed } =
         useAnonAnalysisNudge(openSignupNudge);
 
