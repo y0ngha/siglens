@@ -92,7 +92,7 @@ const FAKE_USER = {
     email: 'a@b.com',
     name: null,
     avatarUrl: null,
-    tier: 'free' as const,
+    tier: 'member' as const,
     emailVerified: true,
     createdAt: new Date(),
     updatedAt: new Date(),

@@ -16,7 +16,7 @@ const userRecord = {
     email: 'user@example.com',
     name: 'Ada',
     avatarUrl: null,
-    tier: 'free',
+    tier: 'member',
     emailVerified: true,
     createdAt: new Date('2026-04-26T00:00:00.000Z'),
     updatedAt: new Date('2026-04-26T00:00:01.000Z'),
@@ -296,7 +296,7 @@ describe('DrizzleUserRepository', () => {
         expect(result).toBeNull();
     });
 
-    it('inserts a free-tier email user with password hash', async () => {
+    it('inserts a member-tier email user with password hash', async () => {
         const { db, insert, values, onConflictDoNothing, returning } =
             makeInsertDb([userRecord]);
         const repository = new DrizzleUserRepository(db);
@@ -313,7 +313,7 @@ describe('DrizzleUserRepository', () => {
             passwordHash: 'hashed-password',
             name: 'Ada',
             avatarUrl: null,
-            tier: 'free',
+            tier: 'member',
             emailVerified: false,
         });
         expect(onConflictDoNothing).toHaveBeenCalledWith({
@@ -400,7 +400,7 @@ describe('DrizzleUserRepository', () => {
         expect(result).toBeNull();
     });
 
-    it('creates a free-tier OAuth user and provider account link', async () => {
+    it('creates a member-tier OAuth user and provider account link', async () => {
         const { db, userValues, accountValues, accountOnConflictDoNothing } =
             makeOAuthInsertDb({
                 userRows: [userRecord],
@@ -420,7 +420,7 @@ describe('DrizzleUserRepository', () => {
             passwordHash: null,
             name: 'Ada',
             avatarUrl: null,
-            tier: 'free',
+            tier: 'member',
             emailVerified: true,
         });
         expect(accountValues).toHaveBeenCalledWith({

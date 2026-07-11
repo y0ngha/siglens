@@ -70,7 +70,7 @@ export const users = pgTable('users', {
     passwordHash: text('password_hash'),
     name: text('name'),
     avatarUrl: text('avatar_url'),
-    tier: userTierEnum('tier').notNull().default('free'),
+    tier: userTierEnum('tier').notNull().default('member'),
     emailVerified: boolean('email_verified').notNull().default(false),
     createdAt: timestamp('created_at', { withTimezone: true })
         .notNull()
