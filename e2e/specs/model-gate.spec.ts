@@ -32,8 +32,8 @@ import { test, expect } from '../support/fixtures';
  *                claude-haiku-4-5, gpt-5-mini
  *       premium: gemini-2.5-pro, claude-sonnet-4-6, claude-opus-4-7,
  *                gemini-3.1-pro-preview, gemini-3-flash-preview, gpt-5.4, gpt-5.5
- *     The default/selected model is gemini-2.5-flash-lite → trigger shows
- *     "Flash Lite". We exercise the premium branch with "Claude Sonnet 4.6"
+ *     The default/selected model is deepseek-v4-flash → trigger shows
+ *     "DeepSeek Flash". We exercise the premium branch with "Claude Sonnet 4.6"
  *     (label "Sonnet", non-free ⇒ guest auth gate).
  *
  *   - The gate modal is a `role="dialog"` (aria-labelledby the
@@ -54,7 +54,7 @@ import { test, expect } from '../support/fixtures';
 
 const SELECTOR_TRIGGER_NAME = 'AI 분석 모델 선택';
 const SELECTOR_LISTBOX_NAME = 'AI 분석 모델 목록';
-const FREE_DEFAULT_LABEL = 'Flash Lite'; // gemini-2.5-flash-lite trigger label
+const FREE_DEFAULT_LABEL = 'DeepSeek Flash'; // deepseek-v4-flash — the free default model's trigger label
 // A free, non-default option. Matched by EXACT accessible name (label +
 // fullName), because the substring "Gemini 2.5 Flash" also occurs inside the
 // default option's name "Flash Lite Gemini 2.5 Flash Lite".
@@ -71,7 +71,7 @@ test.describe('model gate (guest)', () => {
     }) => {
         await page.goto('/AAPL');
 
-        // Default selection is the free Gemini Flash Lite — its label shows on
+        // Default selection is the free DeepSeek Flash — its label shows on
         // the trigger before we touch anything.
         const trigger = page.getByRole('button', {
             name: SELECTOR_TRIGGER_NAME,

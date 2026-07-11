@@ -44,7 +44,7 @@ vi.mock('@/shared/lib/seo', async importOriginal => ({
     SITE_URL: 'https://siglens.io',
 }));
 vi.mock('@y0ngha/siglens-core', () => ({
-    GEMINI_2_5_FLASH_LITE_MODEL: 'gemini-2.5-flash-lite',
+    DEEPSEEK_V4_FLASH_MODEL: 'deepseek-v4-flash',
     peekOverallAnalysisCache: vi.fn(),
 }));
 vi.mock('next/navigation', () => ({
@@ -63,7 +63,7 @@ import {
 } from '@/app/[symbol]/overall/page';
 import { getAssetInfoResilient } from '@/entities/ticker';
 import {
-    GEMINI_2_5_FLASH_LITE_MODEL,
+    DEEPSEEK_V4_FLASH_MODEL,
     peekOverallAnalysisCache,
 } from '@y0ngha/siglens-core';
 import { OverallContent } from '@/widgets/overall/OverallContent';
@@ -171,7 +171,7 @@ describe('Overall page (narrative seed)', () => {
             'AAPL',
             'Apple Inc.',
             '1Day',
-            GEMINI_2_5_FLASH_LITE_MODEL
+            DEEPSEEK_V4_FLASH_MODEL
         );
         expect(props.initialAnalysis).toEqual(cached);
     });

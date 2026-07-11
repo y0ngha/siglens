@@ -86,8 +86,13 @@ describe('useChat — model persistence', () => {
     });
 
     it('does not overwrite stored model with the default on initial mount', async () => {
-        // Pre-existing stored model from a previous session.
-        localStorage.setItem(MODEL_STORAGE_KEY, 'gemini-2.5-flash');
+        // Pre-existing stored model from a previous session. Deliberately NOT the
+        // legacy chat default (`gemini-2.5-flash`) — that exact value now triggers
+        // the one-time migration (see the dedicated migration test below), which
+        // legitimately writes to MODEL_STORAGE_KEY at mount. This test asserts the
+        // unrelated original regression: an arbitrary already-stored selection
+        // must never be silently overwritten on mount.
+        localStorage.setItem(MODEL_STORAGE_KEY, 'claude-sonnet-4-6');
         const setItemSpy = vi.spyOn(Storage.prototype, 'setItem');
 
         await act(async () => {
@@ -104,6 +109,24 @@ describe('useChat — model persistence', () => {
         );
         expect(modelWrites).toHaveLength(0);
         setItemSpy.mockRestore();
+    });
+
+    it('migrates a legacy gemini-2.5-flash stored chat model to deepseek-v4-flash after mount', async () => {
+        // Simulates a pre-DeepSeek-flip user who never touched the model selector:
+        // `useChat` used to auto-persist the old chat default, so this exact value
+        // is indistinguishable from "never chosen" and must be migrated forward.
+        localStorage.setItem(MODEL_STORAGE_KEY, 'gemini-2.5-flash');
+
+        const { result } = await act(async () => {
+            return renderHook(() => useChat({ symbol: 'AAPL' }), {
+                wrapper: makeWrapper(),
+            });
+        });
+
+        expect(result.current.selectedModel).toBe('deepseek-v4-flash');
+        expect(localStorage.getItem(MODEL_STORAGE_KEY)).toBe(
+            'deepseek-v4-flash'
+        );
     });
 
     it('persists model changes after open→close→open (B4 regression)', async () => {

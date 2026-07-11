@@ -28,7 +28,7 @@ import {
 } from '@/shared/lib/seo';
 import { getDescriptor, marketProfileOf } from '@/shared/config/marketProfile';
 import {
-    GEMINI_2_5_FLASH_LITE_MODEL,
+    DEEPSEEK_V4_FLASH_MODEL,
     peekOverallAnalysisCache,
 } from '@y0ngha/siglens-core';
 import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
@@ -97,8 +97,8 @@ export default async function OverallPage({ params }: Props) {
     //
     // modelId: chart 페이지와 동일하게 익명/SSR 기본 방문자가 캐시를 쓰는 키와
     // 정렬한다. OverallContent → useDefaultModelId → SymbolModelContext의 DEFAULT_MODEL
-    // (GEMINI_2_5_FLASH_LITE_MODEL)이 submitOverallAnalysisAction에 그대로 전달되므로
-    // writer는 lite 모델 키로 캐시한다. peek도 동일 모델을 넘겨야 HIT한다.
+    // (DEEPSEEK_V4_FLASH_MODEL)이 submitOverallAnalysisAction에 그대로 전달되므로
+    // writer는 DeepSeek flash 모델 키로 캐시한다. peek도 동일 모델을 넘겨야 HIT한다.
     //
     // 시그니처가 chart의 peekAnalysisCache(symbol, timeframe, fmpSymbol?, modelId?)와
     // 다른 건 의도적이다 — overall은 2번째 인자로 companyName을 받는다. 각 core peek
@@ -130,14 +130,14 @@ export default async function OverallPage({ params }: Props) {
             return [] as Awaited<ReturnType<typeof getNewsList>>;
         }),
         staticSymbolCache(
-            ['peek:overall', upper, GEMINI_2_5_FLASH_LITE_MODEL],
+            ['peek:overall', upper, DEEPSEEK_V4_FLASH_MODEL],
             upper,
             () =>
                 peekOverallAnalysisCache(
                     upper,
                     assetInfo.name,
                     DEFAULT_TIMEFRAME,
-                    GEMINI_2_5_FLASH_LITE_MODEL
+                    DEEPSEEK_V4_FLASH_MODEL
                 ),
             [],
             SECONDS_PER_HALF_DAY

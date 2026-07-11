@@ -70,7 +70,7 @@ vi.mock('@/shared/lib/seo', async importOriginal => ({
 }));
 
 vi.mock('@y0ngha/siglens-core', () => ({
-    GEMINI_2_5_FLASH_LITE_MODEL: 'gemini-2.5-flash-lite',
+    DEEPSEEK_V4_FLASH_MODEL: 'deepseek-v4-flash',
     peekOverallAnalysisCache: vi.fn().mockResolvedValue(null),
 }));
 

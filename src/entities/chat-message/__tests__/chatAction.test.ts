@@ -12,7 +12,7 @@ import type {
     LlmProvider,
 } from '@y0ngha/siglens-core';
 import {
-    GEMINI_2_5_FLASH_MODEL,
+    DEEPSEEK_V4_FLASH_MODEL,
     getProviderForModel,
     requestChatCompletion,
 } from '@y0ngha/siglens-core';
@@ -110,6 +110,7 @@ describe('chatAction 함수는', () => {
         process.env.GEMINI_CHAT_API_KEY = 'gemini-server-key';
         delete process.env.ANTHROPIC_CHAT_API_KEY;
         delete process.env.OPENAI_CHAT_API_KEY;
+        delete process.env.DEEPSEEK_CHAT_API_KEY;
         mockHeaders.mockResolvedValue(
             makeHeadersMap('1.2.3.4') as unknown as Awaited<
                 ReturnType<typeof headers>
@@ -127,6 +128,7 @@ describe('chatAction 함수는', () => {
         delete process.env.GEMINI_CHAT_API_KEY;
         delete process.env.ANTHROPIC_CHAT_API_KEY;
         delete process.env.OPENAI_CHAT_API_KEY;
+        delete process.env.DEEPSEEK_CHAT_API_KEY;
     });
 
     describe('Gemini 모델을 사용할 때', () => {
@@ -205,6 +207,32 @@ describe('chatAction 함수는', () => {
         });
     });
 
+    describe('DeepSeek 모델을 사용할 때', () => {
+        it('free DeepSeek 모델은 DEEPSEEK_CHAT_API_KEY를 serverApiKey로 전달한다', async () => {
+            process.env.DEEPSEEK_CHAT_API_KEY = 'deepseek-key';
+            delete process.env.GEMINI_CHAT_API_KEY;
+
+            await chatAction(
+                'AAPL',
+                'Apple Inc.',
+                '1Day',
+                MINIMAL_ANALYSIS,
+                [],
+                '질문',
+                'deepseek-v4-flash'
+            );
+
+            expect(mockRequestChatCompletion).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    serverApiKey: 'deepseek-key',
+                    userApiKey: undefined,
+                    model: 'deepseek-v4-flash',
+                }),
+                { callAiProvider: callAiProviderRouter }
+            );
+        });
+    });
+
     describe('서버 키가 없을 때', () => {
         it('Gemini 서버 primary key가 미설정이면 server_error를 반환하고 core를 호출하지 않는다', async () => {
             delete process.env.GEMINI_CHAT_API_KEY;
@@ -247,6 +275,21 @@ describe('chatAction 함수는', () => {
                 [],
                 '질문',
                 'gpt-5-mini'
+            );
+
+            expect(result).toEqual({ ok: false, error: 'server_error' });
+            expect(mockRequestChatCompletion).not.toHaveBeenCalled();
+        });
+
+        it('DeepSeek 서버 primary key가 미설정이면 server_error를 반환하고 core를 호출하지 않는다', async () => {
+            const result = await chatAction(
+                'AAPL',
+                'Apple Inc.',
+                '1Day',
+                MINIMAL_ANALYSIS,
+                [],
+                '질문',
+                'deepseek-v4-flash'
             );
 
             expect(result).toEqual({ ok: false, error: 'server_error' });
@@ -446,7 +489,9 @@ describe('chatAction 함수는', () => {
     });
 
     describe('기본 모델', () => {
-        it('model을 생략하면 GEMINI_2_5_FLASH_MODEL을 core에 전달한다', async () => {
+        it('model을 생략하면 DEEPSEEK_V4_FLASH_MODEL을 core에 전달한다', async () => {
+            process.env.DEEPSEEK_CHAT_API_KEY = 'deepseek-server-key';
+
             await chatAction(
                 'AAPL',
                 'Apple Inc.',
@@ -458,7 +503,7 @@ describe('chatAction 함수는', () => {
 
             expect(mockRequestChatCompletion).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    model: GEMINI_2_5_FLASH_MODEL,
+                    model: DEEPSEEK_V4_FLASH_MODEL,
                 }),
                 expect.objectContaining({
                     callAiProvider: callAiProviderRouter,

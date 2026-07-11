@@ -26,10 +26,16 @@ export const CHATGPT_MODEL_PRIORITY: readonly ModelId[] = [
     'gpt-5-mini',
 ];
 
+export const DEEPSEEK_MODEL_PRIORITY: readonly ModelId[] = [
+    'deepseek-v4-flash',
+    'deepseek-v4-pro',
+];
+
 const PROVIDER_PRIORITY_MAP: Record<AIProvider, readonly ModelId[]> = {
     claude: CLAUDE_MODEL_PRIORITY,
     gemini: GEMINI_MODEL_PRIORITY,
     chatgpt: CHATGPT_MODEL_PRIORITY,
+    deepseek: DEEPSEEK_MODEL_PRIORITY,
 };
 
 export function resolveDefaultModelForProvider(

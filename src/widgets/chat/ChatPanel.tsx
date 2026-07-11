@@ -9,36 +9,8 @@ import { MarkdownText } from '@/shared/ui/MarkdownText';
 import { PremiumModelGateModal } from '@/features/premium-gate';
 import { cn } from '@/shared/lib/cn';
 import { LLM_PROVIDER_LABELS } from '@/shared/lib/llmProviderLabels';
-import { VALID_CHAT_MODELS, type ModelId } from '@y0ngha/siglens-core';
-
-type ChatModelDisplay = Pick<ModelOption, 'label' | 'fullName'>;
-
-const MODEL_DISPLAY_MAP: Partial<Record<ModelId, ChatModelDisplay>> = {
-    'gemini-2.5-flash': { label: 'Flash', fullName: 'Gemini 2.5 Flash' },
-    'gemini-2.5-flash-lite': {
-        label: 'Flash Lite',
-        fullName: 'Gemini 2.5 Flash Lite',
-    },
-    'gemini-2.5-pro': { label: 'Pro', fullName: 'Gemini 2.5 Pro' },
-    'gemini-3.1-pro-preview': {
-        label: '3.1 Pro',
-        fullName: 'Gemini 3.1 Pro Preview',
-    },
-    'gemini-3-flash-preview': {
-        label: 'Flash 3',
-        fullName: 'Gemini 3 Flash Preview',
-    },
-    'claude-haiku-4-5': { label: 'Haiku', fullName: 'Claude Haiku 4.5' },
-    'claude-sonnet-4-6': { label: 'Sonnet', fullName: 'Claude Sonnet 4.6' },
-    'claude-opus-4-7': { label: 'Opus', fullName: 'Claude Opus 4.7' },
-    'gpt-5-mini': { label: 'GPT Mini', fullName: 'GPT-5 Mini' },
-    'gpt-5.4': { label: 'GPT 5.4', fullName: 'GPT-5.4' },
-    'gpt-5.5': { label: 'GPT 5.5', fullName: 'GPT-5.5' },
-};
-
-function getModelDisplay(id: ModelId): ChatModelDisplay {
-    return MODEL_DISPLAY_MAP[id] ?? { label: id, fullName: id };
-}
+import { getModelDisplay } from '@/shared/lib/modelDisplay';
+import { VALID_CHAT_MODELS } from '@y0ngha/siglens-core';
 
 const CHAT_MODEL_OPTIONS: readonly ModelOption[] = VALID_CHAT_MODELS.map(
     id => ({ id, ...getModelDisplay(id) })

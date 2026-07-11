@@ -11,6 +11,10 @@ vi.mock('@/entities/llm-provider/api/gemini', () => ({
     callGeminiChat: vi.fn(),
 }));
 
+vi.mock('@/entities/llm-provider/api/deepseek', () => ({
+    callDeepseekChat: vi.fn(),
+}));
+
 vi.mock('@y0ngha/siglens-core', async () => {
     const actual = await vi.importActual<typeof import('@y0ngha/siglens-core')>(
         '@y0ngha/siglens-core'
@@ -26,6 +30,7 @@ vi.mock('@y0ngha/siglens-core', async () => {
 import { callAnthropicChat } from '@/entities/llm-provider/api/anthropic';
 import { callGeminiChat } from '@/entities/llm-provider/api/gemini';
 import { callOpenaiChat } from '@/entities/llm-provider/api/openai';
+import { callDeepseekChat } from '@/entities/llm-provider/api/deepseek';
 import { callAiProviderRouter } from '@/entities/llm-provider/api/router';
 import type { LlmProvider } from '@y0ngha/siglens-core';
 import { getProviderForModel } from '@y0ngha/siglens-core';
@@ -38,6 +43,9 @@ const mockCallOpenaiChat = callOpenaiChat as MockedFunction<
 >;
 const mockCallGeminiWithKeyFallback = callGeminiChat as MockedFunction<
     typeof callGeminiChat
+>;
+const mockCallDeepseekChat = callDeepseekChat as MockedFunction<
+    typeof callDeepseekChat
 >;
 const mockGetProviderForModel = getProviderForModel as MockedFunction<
     typeof getProviderForModel
@@ -55,6 +63,7 @@ describe('callAiProviderRouter', () => {
         mockCallAnthropicChat.mockResolvedValue('anthropic response');
         mockCallOpenaiChat.mockResolvedValue('openai response');
         mockCallGeminiWithKeyFallback.mockResolvedValue('gemini response');
+        mockCallDeepseekChat.mockResolvedValue('deepseek response');
         const actual = await vi.importActual<
             typeof import('@y0ngha/siglens-core')
         >('@y0ngha/siglens-core');
@@ -112,6 +121,24 @@ describe('callAiProviderRouter', () => {
         });
     });
 
+    describe('DeepSeek 모델 라우팅', () => {
+        it('deepseek-v4-flash 모델은 callDeepseekChat에 위임하고 다른 어댑터는 호출하지 않는다', async () => {
+            const options = { ...BASE_OPTIONS, model: 'deepseek-v4-flash' };
+
+            const result = await callAiProviderRouter(options);
+
+            expect(result).toBe('deepseek response');
+            expect(mockCallDeepseekChat).toHaveBeenCalledTimes(1);
+            expect(mockCallDeepseekChat).toHaveBeenCalledWith({
+                ...options,
+                model: 'deepseek-v4-flash',
+            });
+            expect(mockCallAnthropicChat).not.toHaveBeenCalled();
+            expect(mockCallOpenaiChat).not.toHaveBeenCalled();
+            expect(mockCallGeminiWithKeyFallback).not.toHaveBeenCalled();
+        });
+    });
+
     describe('알 수 없는 provider 처리', () => {
         it('알 수 없는 provider이면 에러를 던진다', async () => {
             mockGetProviderForModel.mockReturnValueOnce(
@@ -141,6 +168,7 @@ describe('callAiProviderRouter', () => {
             expect(mockCallAnthropicChat).not.toHaveBeenCalled();
             expect(mockCallOpenaiChat).not.toHaveBeenCalled();
             expect(mockCallGeminiWithKeyFallback).not.toHaveBeenCalled();
+            expect(mockCallDeepseekChat).not.toHaveBeenCalled();
         });
     });
 });

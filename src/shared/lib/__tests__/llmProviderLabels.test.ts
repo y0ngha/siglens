@@ -28,6 +28,10 @@ describe('LLM_PROVIDER_LABELS', () => {
         expect(LLM_PROVIDER_LABELS.openai).toContain('ChatGPT');
     });
 
+    it('deepseek label is DeepSeek', () => {
+        expect(LLM_PROVIDER_LABELS.deepseek).toBe('DeepSeek');
+    });
+
     it('each label includes the company name in parentheses', () => {
         expect(LLM_PROVIDER_LABELS.anthropic).toMatch(/\(Anthropic\)/);
         expect(LLM_PROVIDER_LABELS.google).toMatch(/\(Google\)/);

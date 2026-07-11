@@ -6,7 +6,7 @@ vi.mock('@/entities/chat-message', () => ({
     FALLBACK_ANALYSIS: { summary: 'fallback' },
 }));
 vi.mock('@y0ngha/siglens-core', () => ({
-    GEMINI_2_5_FLASH_LITE_MODEL: 'gemini-2.5-flash-lite',
+    DEEPSEEK_V4_FLASH_MODEL: 'deepseek-v4-flash',
     peekAnalysisCache: vi.fn(),
 }));
 vi.mock('@/shared/config/market', async importOriginal => ({
@@ -94,7 +94,7 @@ import {
 } from '@/app/[symbol]/page';
 import { getAssetInfoResilient } from '@/entities/ticker';
 import {
-    GEMINI_2_5_FLASH_LITE_MODEL,
+    DEEPSEEK_V4_FLASH_MODEL,
     peekAnalysisCache,
 } from '@y0ngha/siglens-core';
 import { evaluateSymbolIndexability } from '@/entities/symbol-indexability';
@@ -306,7 +306,7 @@ describe('Symbol page', () => {
                 'AAPL',
                 '1Day',
                 'AAPL',
-                GEMINI_2_5_FLASH_LITE_MODEL
+                DEEPSEEK_V4_FLASH_MODEL
             );
             expect(props.initialAnalysis).toEqual(cached);
         });

@@ -3,6 +3,7 @@
 export { callAnthropicChat } from './api/anthropic';
 export { callGeminiChat } from './api/gemini';
 export { callOpenaiChat } from './api/openai';
+export { callDeepseekChat } from './api/deepseek';
 export { callAiProviderRouter } from './api/router';
 export { getLlmProvider } from './api/getLlmProvider';
 export {
@@ -14,6 +15,7 @@ export type { ProviderTurn } from './lib/utils';
 export {
     CLAUDE_MODEL_PRIORITY,
     CHATGPT_MODEL_PRIORITY,
+    DEEPSEEK_MODEL_PRIORITY,
     FALLBACK_MODEL_ID,
     GEMINI_MODEL_PRIORITY,
     resolveDefaultModelForProvider,

@@ -1,6 +1,7 @@
 import {
     CHATGPT_MODEL_PRIORITY,
     CLAUDE_MODEL_PRIORITY,
+    DEEPSEEK_MODEL_PRIORITY,
     GEMINI_MODEL_PRIORITY,
     resolveDefaultModelForProvider,
 } from '@/entities/llm-provider/lib/providerDefaults';
@@ -22,6 +23,11 @@ describe('resolveDefaultModelForProvider', () => {
             const result = resolveDefaultModelForProvider('chatgpt', []);
             expect(result).toBeNull();
         });
+
+        it('returns null for deepseek provider', () => {
+            const result = resolveDefaultModelForProvider('deepseek', []);
+            expect(result).toBeNull();
+        });
     });
 
     describe('when all models are allowed', () => {
@@ -29,6 +35,7 @@ describe('resolveDefaultModelForProvider', () => {
             ...CLAUDE_MODEL_PRIORITY,
             ...GEMINI_MODEL_PRIORITY,
             ...CHATGPT_MODEL_PRIORITY,
+            ...DEEPSEEK_MODEL_PRIORITY,
         ];
 
         it('returns the top priority claude model', () => {
@@ -44,6 +51,14 @@ describe('resolveDefaultModelForProvider', () => {
         it('returns the top priority chatgpt model', () => {
             const result = resolveDefaultModelForProvider('chatgpt', allModels);
             expect(result).toBe(CHATGPT_MODEL_PRIORITY[0]);
+        });
+
+        it('returns the top priority deepseek model', () => {
+            const result = resolveDefaultModelForProvider(
+                'deepseek',
+                allModels
+            );
+            expect(result).toBe(DEEPSEEK_MODEL_PRIORITY[0]);
         });
     });
 
@@ -74,6 +89,15 @@ describe('resolveDefaultModelForProvider', () => {
             );
             expect(result).toBe(CHATGPT_MODEL_PRIORITY[1]);
         });
+
+        it('returns the second priority deepseek model when the first is blocked', () => {
+            const allowedModels = DEEPSEEK_MODEL_PRIORITY.slice(1);
+            const result = resolveDefaultModelForProvider(
+                'deepseek',
+                allowedModels
+            );
+            expect(result).toBe(DEEPSEEK_MODEL_PRIORITY[1]);
+        });
     });
 
     describe('when only the lowest priority model is allowed', () => {
@@ -103,6 +127,15 @@ describe('resolveDefaultModelForProvider', () => {
             ]);
             expect(result).toBe(lowestPriority);
         });
+
+        it('returns the bottom priority deepseek model', () => {
+            const lowestPriority =
+                DEEPSEEK_MODEL_PRIORITY[DEEPSEEK_MODEL_PRIORITY.length - 1];
+            const result = resolveDefaultModelForProvider('deepseek', [
+                lowestPriority,
+            ]);
+            expect(result).toBe(lowestPriority);
+        });
     });
 
     describe('when only models from a different provider are in allowedModels', () => {
@@ -122,6 +155,13 @@ describe('resolveDefaultModelForProvider', () => {
 
         it('returns null for chatgpt when only claude models are allowed', () => {
             const result = resolveDefaultModelForProvider('chatgpt', [
+                ...CLAUDE_MODEL_PRIORITY,
+            ]);
+            expect(result).toBeNull();
+        });
+
+        it('returns null for deepseek when only claude models are allowed', () => {
+            const result = resolveDefaultModelForProvider('deepseek', [
                 ...CLAUDE_MODEL_PRIORITY,
             ]);
             expect(result).toBeNull();

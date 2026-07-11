@@ -22,11 +22,12 @@ EXCLUDE='^(NEXT_PUBLIC_|SIGLENS_GITHUB_TOKEN)'
 
 # Optional keys: present in .env.example but intentionally absent from SSM in production.
 #
-# Rationale: prod chat uses Gemini exclusively (GEMINI_CHAT_API_KEY is in SSM).
-# ANTHROPIC_CHAT_API_KEY and OPENAI_CHAT_API_KEY are BYOK (bring-your-own-key)
-# alternative providers read lazily in src/entities/chat-message/actions/chatAction.ts
-# only when a user explicitly selects that model. Their absence from SSM is intentional
-# and must NOT block deploy — missing them here would be a false positive deploy-gate.
+# Rationale: DeepSeek is the default chat/analysis provider (DEEPSEEK_CHAT_API_KEY,
+# like GEMINI_CHAT_API_KEY, is a server-paid key in SSM). ANTHROPIC_CHAT_API_KEY and
+# OPENAI_CHAT_API_KEY are BYOK (bring-your-own-key) alternative providers read lazily in
+# src/entities/chat-message/actions/chatAction.ts only when a user explicitly selects
+# that model. Their absence from SSM is intentional and must NOT block deploy — missing
+# them here would be a false positive deploy-gate.
 #
 # DEBUG_VERBOSE_LOGS is an optional debug flag (defaults off when unset); it is never
 # provisioned in prod SSM and must likewise not block deploy.
