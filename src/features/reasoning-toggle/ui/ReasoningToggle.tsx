@@ -34,7 +34,7 @@ export function ReasoningToggle({
 
     return (
         <div className={cn('flex flex-col gap-1', className)}>
-            <label className="flex items-center gap-2">
+            <div className="flex items-center gap-2">
                 <span className="text-secondary-400 text-xs whitespace-nowrap">
                     깊은 생각
                 </span>
@@ -59,7 +59,7 @@ export function ReasoningToggle({
                         )}
                     />
                 </button>
-            </label>
+            </div>
             {checked && (
                 <p className="text-secondary-500 text-[10px] leading-relaxed">
                     추론을 켜면 상세 분석을 하느라 응답이 다소 지연될 수 있어요.

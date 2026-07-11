@@ -36,8 +36,11 @@ export type SubmitCongressTrendActionResult = SubmitCongressTrendResult;
  *
  * §Reasoning: congress has no BYOK/premium gate, but the "깊은 생각" toggle
  * (member-reasoning-toggle spec Part A) still requires knowing the caller's
- * tier — `resolveTierOnly` resolves tier alone (no premium-model check),
- * and `resolveReasoning` forces `false` for anonymous/free callers.
+ * tier when the client actually requests it — `resolveTierOnly` resolves tier
+ * alone (no premium-model check), and `resolveReasoning` forces `false` for
+ * anonymous/free callers. The tier lookup is skipped entirely when the client
+ * didn't request reasoning, since the result would be forced to `false`
+ * either way.
  */
 export async function submitCongressTrendAction(
     symbol: string,
@@ -64,15 +67,22 @@ export async function submitCongressTrendAction(
         const requestHeaders = await headers();
         const skipEnqueueIfMiss = isBot(requestHeaders);
 
-        const user = await getCurrentUser();
-        const tier = await resolveTierOnly(user?.id ?? null);
+        // resolveReasoning always returns false when the client didn't ask for
+        // reasoning, regardless of tier — skip the tier DB lookup entirely in
+        // that case rather than resolving it just to discard the result.
+        let resolvedReasoning = false;
+        if (reasoning === true) {
+            const user = await getCurrentUser();
+            const tier = await resolveTierOnly(user?.id ?? null);
+            resolvedReasoning = resolveReasoning(tier, reasoning);
+        }
 
         return await submitCongressTrend({
             symbol,
             modelId,
             dataProvider: getCongressTradesProvider(),
             skipEnqueueIfMiss,
-            reasoning: resolveReasoning(tier, reasoning),
+            reasoning: resolvedReasoning,
         });
     } catch (error) {
         // MISTAKES §0.7: server actions must not propagate raw exceptions to

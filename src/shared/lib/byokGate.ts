@@ -98,13 +98,7 @@ export async function resolveTierAndByok(
         return { kind: 'blocked', error: buildGateError('invalid_model') };
     }
 
-    const tier =
-        userId === null
-            ? 'free'
-            : await getUserTier(
-                  { userId },
-                  { users: new DrizzleUserRepository(getDatabaseClient().db) }
-              );
+    const tier = await resolveTierOnly(userId);
 
     const premium = isPremiumModel(modelId);
 

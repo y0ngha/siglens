@@ -120,6 +120,15 @@ describe('recordAnonSymbolAnalysis', () => {
         const result = recordAnonSymbolAnalysis('AAPL', DAY_1);
         expect(result).toEqual({ distinctCount: 0, crossedThreshold: false });
     });
+
+    it('treats a tampered record with non-string symbols as absent (starts fresh)', () => {
+        localStorage.setItem(
+            LOCAL_STORAGE_ANON_ANALYZED_SYMBOLS_KEY,
+            JSON.stringify({ dateUtc: '2026-07-10', symbols: [1, 2, 3] })
+        );
+        const result = recordAnonSymbolAnalysis('AAPL', DAY_1);
+        expect(result).toEqual({ distinctCount: 1, crossedThreshold: false });
+    });
 });
 
 describe('hasNudgeShownToday / markNudgeShownToday', () => {

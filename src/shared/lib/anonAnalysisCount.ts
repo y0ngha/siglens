@@ -37,7 +37,10 @@ function readAnalyzedSymbolsRecord(): AnonAnalyzedSymbolsRecord | null {
         !('dateUtc' in parsed) ||
         !('symbols' in parsed) ||
         typeof (parsed as { dateUtc: unknown }).dateUtc !== 'string' ||
-        !Array.isArray((parsed as { symbols: unknown }).symbols)
+        !Array.isArray((parsed as { symbols: unknown }).symbols) ||
+        !(parsed as { symbols: unknown[] }).symbols.every(
+            s => typeof s === 'string'
+        )
     ) {
         return null;
     }

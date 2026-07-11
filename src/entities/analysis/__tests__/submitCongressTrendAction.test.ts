@@ -194,6 +194,30 @@ describe('submitCongressTrendAction 함수는', () => {
                 expect.objectContaining({ reasoning: false })
             );
         });
+
+        it('skips the tier lookup entirely when reasoning is not requested (omitted)', async () => {
+            mockSubmitCongressTrend.mockResolvedValueOnce(CACHED_RESULT);
+
+            await submitCongressTrendAction('AAPL', MODEL_ID);
+
+            expect(mockGetCurrentUser).not.toHaveBeenCalled();
+            expect(mockResolveTierOnly).not.toHaveBeenCalled();
+            expect(mockSubmitCongressTrend).toHaveBeenCalledWith(
+                expect.objectContaining({ reasoning: false })
+            );
+        });
+
+        it('skips the tier lookup entirely when reasoning is explicitly false', async () => {
+            mockSubmitCongressTrend.mockResolvedValueOnce(CACHED_RESULT);
+
+            await submitCongressTrendAction('AAPL', MODEL_ID, false);
+
+            expect(mockGetCurrentUser).not.toHaveBeenCalled();
+            expect(mockResolveTierOnly).not.toHaveBeenCalled();
+            expect(mockSubmitCongressTrend).toHaveBeenCalledWith(
+                expect.objectContaining({ reasoning: false })
+            );
+        });
     });
 
     it('E2E 모드에서 e2eCachedCongressTrend를 반환하고 provider를 호출하지 않는다', async () => {
