@@ -45,7 +45,8 @@ const { MockOAuthStateSecretMisconfiguredError } = vi.hoisted(() => {
 vi.mock('@/features/auth-oauth', () => ({
     buildOAuthRedirectUri: vi
         .fn()
-        .mockReturnValue('https://example.com/callback/google'),
+        .mockReturnValue('https://siglens.io/api/auth/callback/google'),
+    getOAuthRedirectBaseUrl: vi.fn().mockReturnValue('https://siglens.io'),
     getOAuthAdapter: vi.fn(),
     isOAuthProvider: vi.fn(),
     OAUTH_STATE_COOKIE_NAME: 'oauth_state',

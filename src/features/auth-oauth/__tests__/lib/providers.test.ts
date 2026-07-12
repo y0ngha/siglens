@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
     buildOAuthRedirectUri,
     getOAuthAdapter,
+    getOAuthRedirectBaseUrl,
     isOAuthProvider,
 } from '@/features/auth-oauth/lib/providers';
 import { e2eFakeOAuthAdapter } from '@/features/auth-oauth/lib/E2eFakeOAuthAdapter';
@@ -53,6 +54,41 @@ describe('getOAuthAdapter', () => {
     it('E2E_TEST가 "1"이 아닌 값이면 실제 어댑터를 반환한다', () => {
         process.env.E2E_TEST = '0';
         expect(getOAuthAdapter('google')).toBe(googleOAuthAdapter);
+    });
+});
+
+describe('getOAuthRedirectBaseUrl', () => {
+    const originalRedirect = process.env.OAUTH_REDIRECT_BASE_URL;
+    const originalSiteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+
+    afterEach(() => {
+        process.env.OAUTH_REDIRECT_BASE_URL = originalRedirect;
+        process.env.NEXT_PUBLIC_SITE_URL = originalSiteUrl;
+    });
+
+    it('OAUTH_REDIRECT_BASE_URL이 우선순위로 사용된다', () => {
+        process.env.OAUTH_REDIRECT_BASE_URL = 'https://app.example.com';
+        process.env.NEXT_PUBLIC_SITE_URL = 'https://other.example.com';
+        expect(getOAuthRedirectBaseUrl()).toBe('https://app.example.com');
+    });
+
+    it('OAUTH_REDIRECT_BASE_URL이 없으면 NEXT_PUBLIC_SITE_URL로 fallback한다', () => {
+        delete process.env.OAUTH_REDIRECT_BASE_URL;
+        process.env.NEXT_PUBLIC_SITE_URL = 'https://siglens.app';
+        expect(getOAuthRedirectBaseUrl()).toBe('https://siglens.app');
+    });
+
+    it('베이스 URL 끝의 슬래시는 제거된다', () => {
+        process.env.OAUTH_REDIRECT_BASE_URL = 'https://siglens.io/';
+        expect(getOAuthRedirectBaseUrl()).toBe('https://siglens.io');
+    });
+
+    it('두 변수 모두 비어 있으면 throw한다', () => {
+        delete process.env.OAUTH_REDIRECT_BASE_URL;
+        delete process.env.NEXT_PUBLIC_SITE_URL;
+        expect(() => getOAuthRedirectBaseUrl()).toThrow(
+            'OAuth redirect base URL is not configured'
+        );
     });
 });
 

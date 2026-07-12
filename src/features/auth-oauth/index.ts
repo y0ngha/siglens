@@ -3,6 +3,7 @@ export {
     getOAuthAdapter,
     isOAuthProvider,
     buildOAuthRedirectUri,
+    getOAuthRedirectBaseUrl,
 } from './lib/providers';
 export {
     issueOAuthState,

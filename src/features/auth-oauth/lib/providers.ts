@@ -33,10 +33,15 @@ export function isOAuthProvider(
     return (SUPPORTED_PROVIDERS as readonly string[]).includes(value);
 }
 
-/** 어댑터가 사용하는 redirect URI를 환경변수 단일 소스에서 도출. base 미설정 시 throw. */
-export function buildOAuthRedirectUri(
-    provider: SupportedOAuthProvider
-): string {
+/**
+ * OAuth 리다이렉트에 사용할 신뢰된 공개 base URL을 환경변수 단일 소스에서 도출.
+ *
+ * AWS ALB 뒤에서는 들어온 요청의 `req.url` 호스트가 컨테이너 내부 bind
+ * (0.0.0.0:3000)라서 리다이렉트 Location이 깨진다. 그래서 콜백 라우트의 모든
+ * 리다이렉트 base와 어댑터 redirect URI는 이 단일 소스를 써야 한다.
+ * base 미설정 시 throw (fail-closed). 후행 슬래시는 제거한다.
+ */
+export function getOAuthRedirectBaseUrl(): string {
     const base =
         process.env.OAUTH_REDIRECT_BASE_URL ?? process.env.NEXT_PUBLIC_SITE_URL;
     if (!base) {
@@ -44,6 +49,12 @@ export function buildOAuthRedirectUri(
             'OAuth redirect base URL is not configured: set OAUTH_REDIRECT_BASE_URL or NEXT_PUBLIC_SITE_URL'
         );
     }
-    const trimmed = base.endsWith('/') ? base.slice(0, -1) : base;
-    return `${trimmed}/api/auth/callback/${provider}`;
+    return base.endsWith('/') ? base.slice(0, -1) : base;
+}
+
+/** 어댑터가 사용하는 redirect URI를 환경변수 단일 소스에서 도출. base 미설정 시 throw. */
+export function buildOAuthRedirectUri(
+    provider: SupportedOAuthProvider
+): string {
+    return `${getOAuthRedirectBaseUrl()}/api/auth/callback/${provider}`;
 }
