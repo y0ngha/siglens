@@ -83,6 +83,11 @@ describe('getOAuthRedirectBaseUrl', () => {
         expect(getOAuthRedirectBaseUrl()).toBe('https://siglens.io');
     });
 
+    it('베이스 URL 끝의 연속된 슬래시도 모두 제거된다', () => {
+        process.env.OAUTH_REDIRECT_BASE_URL = 'https://siglens.io//';
+        expect(getOAuthRedirectBaseUrl()).toBe('https://siglens.io');
+    });
+
     it('두 변수 모두 비어 있으면 throw한다', () => {
         delete process.env.OAUTH_REDIRECT_BASE_URL;
         delete process.env.NEXT_PUBLIC_SITE_URL;

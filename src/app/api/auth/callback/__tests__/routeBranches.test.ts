@@ -129,6 +129,7 @@ describe('GET /api/auth/callback — branch coverage', () => {
 
         expect(res.status).toBe(307);
         const location = res.headers.get('location') ?? '';
+        expect(new URL(location).host).toBe('siglens.io');
         expect(location).toContain('error=oauth_unknown');
     });
 
@@ -141,6 +142,7 @@ describe('GET /api/auth/callback — branch coverage', () => {
 
         expect(res.status).toBe(307);
         const location = res.headers.get('location') ?? '';
+        expect(new URL(location).host).toBe('siglens.io');
         expect(location).toContain('error=oauth_unknown');
     });
 
@@ -158,6 +160,7 @@ describe('GET /api/auth/callback — branch coverage', () => {
 
         expect(res.status).toBe(307);
         const location = res.headers.get('location') ?? '';
+        expect(new URL(location).host).toBe('siglens.io');
         expect(location).toContain('error=oauth_unknown');
     });
 
@@ -189,6 +192,7 @@ describe('GET /api/auth/callback — branch coverage', () => {
 
         expect(res.status).toBe(307);
         const location = res.headers.get('location') ?? '';
+        expect(new URL(location).host).toBe('siglens.io');
         expect(location).toContain('error=oauth_unknown');
     });
 
@@ -208,6 +212,7 @@ describe('GET /api/auth/callback — branch coverage', () => {
 
         expect(res.status).toBe(307);
         const location = res.headers.get('location') ?? '';
+        expect(new URL(location).host).toBe('siglens.io');
         expect(location).toContain('error=oauth_profile_invalid');
     });
 

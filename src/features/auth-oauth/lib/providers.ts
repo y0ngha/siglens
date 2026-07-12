@@ -49,7 +49,7 @@ export function getOAuthRedirectBaseUrl(): string {
             'OAuth redirect base URL is not configured: set OAUTH_REDIRECT_BASE_URL or NEXT_PUBLIC_SITE_URL'
         );
     }
-    return base.endsWith('/') ? base.slice(0, -1) : base;
+    return base.replace(/\/+$/, '');
 }
 
 /** 어댑터가 사용하는 redirect URI를 환경변수 단일 소스에서 도출. base 미설정 시 throw. */
