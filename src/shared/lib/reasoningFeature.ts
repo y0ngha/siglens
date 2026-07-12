@@ -1,5 +1,5 @@
 /**
- * Canonical user-facing name of the "깊은 생각"(reasoning) feature.
+ * Canonical user-facing name of the reasoning ("상세 분석") feature.
  *
  * Single source of truth for the label so the toggle control
  * (`ReasoningToggle`) and the signup-nudge copy (`AnalysisSignupNudgeModal`)

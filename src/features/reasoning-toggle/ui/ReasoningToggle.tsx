@@ -93,6 +93,12 @@ export function ReasoningToggle({
                 // opens the signup nudge), so it must NOT report aria-disabled —
                 // that would tell assistive tech the control can't be activated.
                 aria-disabled={disabled || undefined}
+                // Native `disabled` gates on the `disabled` PROP (a genuine
+                // no-op), which also removes it from the tab order. `locked`
+                // never sets it — the `disabled` prop is false for locked
+                // non-members — so the locked switch stays focusable/clickable
+                // to open the signup nudge.
+                disabled={disabled}
                 onClick={handleClick}
                 className={cn(
                     'focus-visible:ring-primary-500 relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors focus-visible:ring-1 focus-visible:outline-none',

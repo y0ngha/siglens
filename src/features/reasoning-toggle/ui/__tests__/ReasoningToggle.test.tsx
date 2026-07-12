@@ -146,20 +146,30 @@ describe('ReasoningToggle', () => {
         expect(onChange).toHaveBeenCalledWith(true);
     });
 
-    it('member: does not call onChange when disabled', () => {
+    it('member: a genuinely disabled switch has the native disabled attribute (out of tab order) and clicking fires nothing', () => {
         const onChange = vi.fn();
+        const onLockedClick = vi.fn();
         render(
             <ReasoningToggle
                 checked={false}
                 onChange={onChange}
                 canUse={true}
                 disabled={true}
+                onLockedClick={onLockedClick}
             />
         );
 
-        fireEvent.click(screen.getByRole('switch'));
+        const toggle = screen.getByRole('switch');
+        // A genuine `disabled` (the PROP, not `locked`) is a true no-op, so it
+        // carries the native `disabled` attribute — which also removes it from
+        // the tab order — unlike the locked switch, which must stay focusable.
+        expect(toggle).toBeDisabled();
+        expect(toggle.hasAttribute('disabled')).toBe(true);
+
+        fireEvent.click(toggle);
 
         expect(onChange).not.toHaveBeenCalled();
+        expect(onLockedClick).not.toHaveBeenCalled();
     });
 
     it('non-member: switch renders locked (disabled-styled) and forced off, but NOT aria-disabled (it is still interactive)', () => {
