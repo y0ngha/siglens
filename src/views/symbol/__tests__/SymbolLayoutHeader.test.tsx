@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { SymbolLayoutHeader } from '@/views/symbol/SymbolLayoutHeader';
 
 vi.mock('next/link', () => ({
@@ -25,8 +25,16 @@ vi.mock('@/entities/ticker/hooks/useAssetInfo', () => ({
     })),
 }));
 
-const { mockUseSymbolModel } = vi.hoisted(() => ({
-    mockUseSymbolModel: vi.fn(() => ({
+const { mockUseSymbolModel, mockOpenSignupNudge } = vi.hoisted(() => ({
+    mockOpenSignupNudge: vi.fn(),
+    mockUseSymbolModel: vi.fn(),
+}));
+
+// The provider (not the header) owns and renders the single signup-nudge modal.
+// The header only calls the shared `openSignupNudge` from context on a locked
+// toggle click, so these tests assert on that opener, not on a rendered modal.
+function symbolModelValue(overrides: Record<string, unknown> = {}) {
+    return {
         modelId: 'gemini-2.5-flash-lite',
         allowedModels: ['gemini-2.5-flash-lite'],
         isHydrated: true,
@@ -36,8 +44,10 @@ const { mockUseSymbolModel } = vi.hoisted(() => ({
         reasoning: false,
         setReasoning: vi.fn(),
         canUseReasoning: false,
-    })),
-}));
+        openSignupNudge: mockOpenSignupNudge,
+        ...overrides,
+    };
+}
 
 vi.mock('@/features/symbol-model/model/SymbolModelContext', () => ({
     useSymbolModel: mockUseSymbolModel,
@@ -46,15 +56,23 @@ vi.mock('@/features/symbol-model/model/SymbolModelContext', () => ({
 vi.mock('@/features/reasoning-toggle', () => ({
     ReasoningToggle: ({
         checked,
-        visible,
+        canUse,
+        onChange,
+        onLockedClick,
     }: {
         checked: boolean;
-        visible: boolean;
+        canUse: boolean;
         onChange: (v: boolean) => void;
-    }) =>
-        visible ? (
-            <div data-testid="reasoning-toggle">{checked ? 'on' : 'off'}</div>
-        ) : null,
+        onLockedClick?: () => void;
+    }) => (
+        <button
+            type="button"
+            data-testid="reasoning-toggle"
+            onClick={() => (canUse ? onChange(!checked) : onLockedClick?.())}
+        >
+            {canUse ? (checked ? 'on' : 'off') : 'locked'}
+        </button>
+    ),
 }));
 
 vi.mock('@/views/symbol/SymbolTabs', () => ({
@@ -97,6 +115,8 @@ vi.mock('@/widgets/share', () => ({
 
 describe('SymbolLayoutHeader', () => {
     beforeEach(() => {
+        mockOpenSignupNudge.mockReset();
+        mockUseSymbolModel.mockReturnValue(symbolModelValue());
         mockFearGreedChip.mockImplementation(() => (
             <span data-testid="fear-greed-chip">FG</span>
         ));
@@ -138,40 +158,57 @@ describe('SymbolLayoutHeader', () => {
         expect(screen.getByText('AI 분석 모델')).toBeDefined();
     });
 
-    it('hides the reasoning toggle for free/anonymous tier (canUseReasoning=false)', () => {
-        mockUseSymbolModel.mockReturnValueOnce({
-            modelId: 'gemini-2.5-flash-lite',
-            allowedModels: ['gemini-2.5-flash-lite'],
-            isHydrated: true,
-            gateModal: null,
-            dismissGate: vi.fn(),
-            handleModelChange: vi.fn(),
-            reasoning: false,
-            setReasoning: vi.fn(),
-            canUseReasoning: false,
-        });
+    it('still renders the reasoning toggle for free/anonymous tier (canUseReasoning=false), locked rather than hidden', () => {
+        mockUseSymbolModel.mockReturnValueOnce(
+            symbolModelValue({ canUseReasoning: false })
+        );
 
         render(<SymbolLayoutHeader symbol="aapl" />);
-        expect(screen.queryByTestId('reasoning-toggle')).toBeNull();
+        const toggle = screen.getByTestId('reasoning-toggle');
+        expect(toggle).toBeDefined();
+        expect(toggle.textContent).toBe('locked');
     });
 
     it('shows the reasoning toggle for member/pro tier (canUseReasoning=true)', () => {
-        mockUseSymbolModel.mockReturnValueOnce({
-            modelId: 'gemini-2.5-flash-lite',
-            allowedModels: ['gemini-2.5-flash-lite'],
-            isHydrated: true,
-            gateModal: null,
-            dismissGate: vi.fn(),
-            handleModelChange: vi.fn(),
-            reasoning: true,
-            setReasoning: vi.fn(),
-            canUseReasoning: true,
-        });
+        mockUseSymbolModel.mockReturnValueOnce(
+            symbolModelValue({ reasoning: true, canUseReasoning: true })
+        );
 
         render(<SymbolLayoutHeader symbol="aapl" />);
         const toggle = screen.getByTestId('reasoning-toggle');
         expect(toggle).toBeDefined();
         expect(toggle.textContent).toBe('on');
+    });
+
+    it('member: clicking the toggle calls setReasoning (no signup nudge)', () => {
+        const setReasoning = vi.fn();
+        mockUseSymbolModel.mockReturnValueOnce(
+            symbolModelValue({ setReasoning, canUseReasoning: true })
+        );
+
+        render(<SymbolLayoutHeader symbol="aapl" />);
+        fireEvent.click(screen.getByTestId('reasoning-toggle'));
+
+        expect(setReasoning).toHaveBeenCalledWith(true);
+        // Members never trigger the shared signup-nudge opener.
+        expect(mockOpenSignupNudge).not.toHaveBeenCalled();
+    });
+
+    it('non-member: clicking the locked toggle opens the shared signup nudge (via provider opener)', () => {
+        mockUseSymbolModel.mockReturnValueOnce(
+            symbolModelValue({ canUseReasoning: false })
+        );
+
+        render(<SymbolLayoutHeader symbol="aapl" />);
+        // The header does NOT render the modal itself — the provider owns the
+        // single instance. Clicking the locked toggle only calls the opener.
+        expect(mockOpenSignupNudge).not.toHaveBeenCalled();
+
+        fireEvent.click(screen.getByTestId('reasoning-toggle'));
+
+        expect(mockOpenSignupNudge).toHaveBeenCalledTimes(1);
+        // The modal is not rendered in the header's subtree.
+        expect(screen.queryByRole('dialog')).toBeNull();
     });
 
     it('swallows a thrown fear-greed chip error via ErrorBoundary and still renders the header', () => {

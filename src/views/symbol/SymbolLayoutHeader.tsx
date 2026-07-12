@@ -42,6 +42,7 @@ export function SymbolLayoutHeader({ symbol }: SymbolLayoutHeaderProps) {
         reasoning,
         setReasoning,
         canUseReasoning,
+        openSignupNudge,
     } = useSymbolModel();
 
     return (
@@ -95,7 +96,7 @@ export function SymbolLayoutHeader({ symbol }: SymbolLayoutHeaderProps) {
                     </ErrorBoundary>
                 </div>
 
-                <div className="flex items-center gap-2 sm:order-3 sm:shrink-0">
+                <div className="flex flex-wrap items-center justify-end gap-x-2 gap-y-2 sm:order-3 sm:shrink-0 sm:flex-nowrap">
                     <ShareButton />
                     <span className="text-secondary-400 text-xs whitespace-nowrap">
                         AI 분석 모델
@@ -111,7 +112,8 @@ export function SymbolLayoutHeader({ symbol }: SymbolLayoutHeaderProps) {
                     <ReasoningToggle
                         checked={reasoning}
                         onChange={setReasoning}
-                        visible={canUseReasoning}
+                        canUse={canUseReasoning}
+                        onLockedClick={openSignupNudge}
                     />
                 </div>
 
@@ -140,6 +142,8 @@ export function SymbolLayoutHeader({ symbol }: SymbolLayoutHeaderProps) {
                     onClose={dismissGate}
                 />
             )}
+            {/* The signup-nudge modal is rendered once by SymbolModelProvider
+                (shared with ChartContent's auto-nudge) — not here. */}
         </header>
     );
 }

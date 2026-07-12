@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useCallback } from 'react';
 import { useCurrentUser } from '@/entities/auth';
 import {
     recordAnonSymbolAnalysis,
@@ -9,8 +9,6 @@ import {
 } from '@/shared/lib/anonAnalysisCount';
 
 export interface UseAnonAnalysisNudgeResult {
-    /** Whether the signup-nudge modal should be rendered open. */
-    isOpen: boolean;
     /**
      * True once `useCurrentUser` has settled (data !== undefined) — i.e. we
      * definitively know whether the visitor is a member or anonymous.
@@ -33,8 +31,6 @@ export interface UseAnonAnalysisNudgeResult {
      * wait for the definitive answer before counting at all).
      */
     onSymbolAnalyzed: (symbol: string) => void;
-    /** Dismiss the modal (does not mark it shown again — already marked on open). */
-    close: () => void;
 }
 
 /**
@@ -45,15 +41,27 @@ export interface UseAnonAnalysisNudgeResult {
  * `markNudgeShownToday`). Members are always a no-op: the counter and modal
  * exist purely to solicit signup, so a logged-in user has nothing to gain
  * from either.
+ *
+ * The modal's open-state and the single modal instance are NOT owned here.
+ * They live in `SymbolModelProvider` so the auto-nudge (this hook) and the
+ * locked-toggle nudge (`SymbolLayoutHeader`) share ONE modal instance — two
+ * co-mounted `fixed inset-0 z-50` modals would fight over focus-trap/Escape.
+ * The caller passes `openNudge` (the provider's shared opener); crossing the
+ * threshold invokes it instead of a local `setState`.
+ *
+ * @param openNudge Shared opener from `useSymbolModel().openSignupNudge`. Must
+ *   be a stable reference (the provider memoizes it with `useCallback`) so
+ *   `onSymbolAnalyzed`'s identity only changes with login resolution — callers
+ *   dedup on that identity.
  */
-export function useAnonAnalysisNudge(): UseAnonAnalysisNudgeResult {
+export function useAnonAnalysisNudge(
+    openNudge: () => void
+): UseAnonAnalysisNudgeResult {
     const currentUserQuery = useCurrentUser();
     // undefined until the query settles — before that we don't know whether
     // the visitor is a member, so we must not count (see onSymbolAnalyzed doc).
     const isLoginResolved = currentUserQuery.data !== undefined;
     const isAnonymous = isLoginResolved && currentUserQuery.data === null;
-
-    const [isOpen, setIsOpen] = useState(false);
 
     const onSymbolAnalyzed = useCallback(
         (symbol: string): void => {
@@ -64,14 +72,10 @@ export function useAnonAnalysisNudge(): UseAnonAnalysisNudgeResult {
             if (hasNudgeShownToday()) return;
 
             markNudgeShownToday();
-            setIsOpen(true);
+            openNudge();
         },
-        [isAnonymous]
+        [isAnonymous, openNudge]
     );
 
-    const close = useCallback((): void => {
-        setIsOpen(false);
-    }, []);
-
-    return { isOpen, isLoginResolved, onSymbolAnalyzed, close };
+    return { isLoginResolved, onSymbolAnalyzed };
 }

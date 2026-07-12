@@ -1,4 +1,4 @@
-import { render, screen, renderHook } from '@testing-library/react';
+import { render, screen, renderHook, fireEvent } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 import type { ModelId } from '@y0ngha/siglens-core';
@@ -6,6 +6,19 @@ import {
     SymbolModelProvider,
     useSymbolModel,
 } from '@/features/symbol-model/model/SymbolModelContext';
+
+// The provider renders the ONE shared signup-nudge modal. Mock it to a simple
+// testid dialog so these tests can assert single-instance open/close behavior
+// without pulling in the real modal's focus-trap/next-link dependencies.
+vi.mock('@/features/analysis-nudge', () => ({
+    AnalysisSignupNudgeModal: ({ onClose }: { onClose: () => void }) => (
+        <div role="dialog" data-testid="signup-nudge-modal">
+            <button type="button" onClick={onClose}>
+                close
+            </button>
+        </div>
+    ),
+}));
 
 vi.mock('@y0ngha/siglens-core', () => ({
     getAllowedModels: vi.fn(() => ['gemini-2.5-flash-lite'] as ModelId[]),
@@ -170,6 +183,75 @@ describe('SymbolModelContext', () => {
 
             result.current.setReasoning(true);
             expect(setReasoning).toHaveBeenCalledWith(true);
+        });
+    });
+
+    describe('shared signup-nudge modal (single instance)', () => {
+        // A consumer that surfaces the shared nudge controls so both entry
+        // points (header locked-toggle + ChartContent auto-nudge) can be
+        // simulated against one provider-rendered modal. The open-state is
+        // provider-LOCAL (deliberately NOT on the context value), so these
+        // tests assert on the RENDERED modal instance rather than reading an
+        // open flag off the context.
+        function NudgeConsumer() {
+            const { openSignupNudge, closeSignupNudge } = useSymbolModel();
+            return (
+                <div>
+                    <button
+                        type="button"
+                        data-testid="open-nudge"
+                        onClick={openSignupNudge}
+                    >
+                        open
+                    </button>
+                    <button
+                        type="button"
+                        data-testid="close-nudge"
+                        onClick={closeSignupNudge}
+                    >
+                        close
+                    </button>
+                </div>
+            );
+        }
+
+        it('starts closed and renders no modal instance', () => {
+            render(<NudgeConsumer />, { wrapper: makeWrapper() });
+            expect(screen.queryByTestId('signup-nudge-modal')).toBeNull();
+        });
+
+        it('openSignupNudge renders exactly one shared modal instance', () => {
+            render(<NudgeConsumer />, { wrapper: makeWrapper() });
+
+            fireEvent.click(screen.getByTestId('open-nudge'));
+
+            // Exactly one modal, regardless of how many triggers ask to open it.
+            expect(screen.getAllByTestId('signup-nudge-modal')).toHaveLength(1);
+        });
+
+        it('a second open request does not stack a second modal (idempotent open)', () => {
+            render(<NudgeConsumer />, { wrapper: makeWrapper() });
+
+            fireEvent.click(screen.getByTestId('open-nudge'));
+            fireEvent.click(screen.getByTestId('open-nudge'));
+
+            expect(screen.getAllByTestId('signup-nudge-modal')).toHaveLength(1);
+        });
+
+        it('closeSignupNudge (and the modal onClose) removes the single instance', () => {
+            render(<NudgeConsumer />, { wrapper: makeWrapper() });
+
+            fireEvent.click(screen.getByTestId('open-nudge'));
+            expect(screen.getByTestId('signup-nudge-modal')).toBeDefined();
+
+            // Drive the modal's own onClose (wired to closeSignupNudge).
+            fireEvent.click(
+                screen
+                    .getByTestId('signup-nudge-modal')
+                    .querySelector('button')!
+            );
+
+            expect(screen.queryByTestId('signup-nudge-modal')).toBeNull();
         });
     });
 });

@@ -12,6 +12,8 @@ features는 `entities/`와 `shared/`만 import 가능. **상위 레이어(widget
 |---|---|---|
 | `features/auth-signup` | `features/auth-email-verification` | 회원가입 3단계 흐름에서 이메일 인증 phase 전환 필요. 공유 로직을 entities로 추출하면 useActionState 연결이 깨짐 |
 | `features/auth-oauth-consent` | `features/auth-signup` | OAuth 신규 가입 동의 단계에서 auth-signup의 가입 흐름을 재사용 |
+| `features/symbol-model` | `features/analysis-nudge` | symbol-model provider가 공유 회원가입 넛지 모달을 단 하나만 호스팅한다. reasoning 토글(잠금 클릭)과 익명 3-심볼 넛지가 이 단일 인스턴스를 함께 연다 |
+| `features/analysis-nudge` | `features/reasoning-toggle` | 회원가입 넛지 copy가 reasoning 기능을 이름으로 부른다. 그 이름(`REASONING_FEATURE_LABEL`)의 단일 소스는 reasoning-toggle이 소유하므로 barrel을 통해 상수를 재사용한다 |
 
 이 예외는 ESLint `from: 'features', allow: ['features', ...]`로 관리됨. Phase 7 cleanup 시 해소 가능.
 

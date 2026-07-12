@@ -53,15 +53,14 @@ vi.mock('@/features/symbol-model/model/SymbolModelContext', () => ({
         isHydrated: true,
         reasoning: false,
         isReasoningHydrated: true,
+        openSignupNudge: vi.fn(),
     }),
 }));
 vi.mock('@/features/analysis-nudge', () => ({
     useAnonAnalysisNudge: () => ({
-        isOpen: false,
+        isLoginResolved: false,
         onSymbolAnalyzed: vi.fn(),
-        close: vi.fn(),
     }),
-    AnalysisSignupNudgeModal: () => null,
 }));
 vi.mock('../SymbolPageContext', () => ({
     useSymbolPageContext: () => ({ indicatorCount: 25 }),
