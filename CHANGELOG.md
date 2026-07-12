@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.38.1](https://github.com/y0ngha/siglens/compare/v0.38.0...v0.38.1) (2026-07-12)
+
+
+### Bug Fixes
+
+* **auth:** build OAuth callback redirects from the trusted base URL ([3a15357](https://github.com/y0ngha/siglens/commit/3a15357e1ae451b1896ad4cd7090e018f4c89581))
+
 # [0.38.0](https://github.com/y0ngha/siglens/compare/v0.37.0...v0.38.0) (2026-07-12)
 
 
