@@ -1,7 +1,7 @@
 'use client';
 
 import { cn } from '@/shared/lib/cn';
-import { REASONING_FEATURE_LABEL } from '@/shared/lib/reasoningFeature';
+import { REASONING_FEATURE_LABEL } from '../model/reasoningFeature';
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
 
 interface ReasoningToggleProps {

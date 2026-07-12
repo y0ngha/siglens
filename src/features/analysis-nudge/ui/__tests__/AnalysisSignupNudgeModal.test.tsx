@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { AnalysisSignupNudgeModal } from '@/features/analysis-nudge/ui/AnalysisSignupNudgeModal';
-import { REASONING_FEATURE_LABEL } from '@/shared/lib/reasoningFeature';
+import { REASONING_FEATURE_LABEL } from '@/features/reasoning-toggle';
 
 vi.mock('next/link', () => ({
     default: ({

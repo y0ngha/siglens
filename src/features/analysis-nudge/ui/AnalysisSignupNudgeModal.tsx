@@ -2,7 +2,7 @@
 
 import { useEscapeKey } from '@/shared/hooks/useEscapeKey';
 import { useFocusTrap } from '@/shared/hooks/useFocusTrap';
-import { REASONING_FEATURE_LABEL } from '@/shared/lib/reasoningFeature';
+import { REASONING_FEATURE_LABEL } from '@/features/reasoning-toggle';
 import Link from 'next/link';
 import { useEffect, useRef } from 'react';
 

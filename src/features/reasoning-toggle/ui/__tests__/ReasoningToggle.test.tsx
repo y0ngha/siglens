@@ -1,6 +1,6 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ReasoningToggle } from '@/features/reasoning-toggle/ui/ReasoningToggle';
-import { REASONING_FEATURE_LABEL } from '@/shared/lib/reasoningFeature';
+import { REASONING_FEATURE_LABEL } from '../../model/reasoningFeature';
 
 vi.mock('@/shared/hooks/useEscapeKey', () => ({
     useEscapeKey: vi.fn(),
