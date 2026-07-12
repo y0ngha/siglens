@@ -1,5 +1,26 @@
 # Changelog
 
+# [0.38.0](https://github.com/y0ngha/siglens/compare/v0.37.0...v0.38.0) (2026-07-12)
+
+
+### Bug Fixes
+
+* address PR [#683](https://github.com/y0ngha/siglens/issues/683) r3 — factual comment wording + cursor precedence ([20348b5](https://github.com/y0ngha/siglens/commit/20348b531976a6d18e2cf4037b912de042403958))
+* address PR [#683](https://github.com/y0ngha/siglens/issues/683) r6 — JSDoc label + native disabled tab-order ([dc3502c](https://github.com/y0ngha/siglens/commit/dc3502ca039cd5a242826e9522c44c5df19342e1))
+* address PR [#683](https://github.com/y0ngha/siglens/issues/683) re-review (hook order + disabled inert + docs) ([0e39525](https://github.com/y0ngha/siglens/commit/0e39525934f6f05833e474ccc81aefc228d8fac0)), closes [#17](https://github.com/y0ngha/siglens/issues/17)
+* consolidate signup-nudge modal to one instance + a11y + label constant ([a98d7af](https://github.com/y0ngha/siglens/commit/a98d7afb7d78b1f48024e9347f7b0de5ff91c229)), closes [#683](https://github.com/y0ngha/siglens/issues/683)
+* gate anon nudge notify on login resolution + aria-modal node ([8232b70](https://github.com/y0ngha/siglens/commit/8232b70757f01f6ea647c52ee5a83d6eed05f3cf))
+* migrate legacy chat model default and harden model migrations ([25896cf](https://github.com/y0ngha/siglens/commit/25896cffa3b5f4743a7166b42a7ecd83a4a6b2f1))
+* stream DeepSeek chat to avoid non-streaming connection termination ([c5e88c2](https://github.com/y0ngha/siglens/commit/c5e88c296ac331bd67df5d7c249a13722f6ddcf6))
+
+
+### Features
+
+* add DeepSeek V4 provider and make it the default model ([4d5fca4](https://github.com/y0ngha/siglens/commit/4d5fca4c65a8cfbffc69d696cfc8d5ca6f3b0314))
+* add reasoning toggle for members + anonymous signup nudge ([a385458](https://github.com/y0ngha/siglens/commit/a385458e3b6ef9fa9618db351d0512e919498067))
+* assign 'member' tier on signup + migrate existing users ([a3d3121](https://github.com/y0ngha/siglens/commit/a3d3121a54c1b5f350591f74fa9463f046f5d0ff))
+* reasoning toggle UX — 상세 분석 label, info tooltip, locked non-member state ([9023df0](https://github.com/y0ngha/siglens/commit/9023df08b91cce2fd55f90a012f87c6237703e61))
+
 # [0.37.0](https://github.com/y0ngha/siglens/compare/v0.36.1...v0.37.0) (2026-07-10)
 
 
