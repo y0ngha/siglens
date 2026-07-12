@@ -11,16 +11,8 @@ import { type AnalysisResponse, type Timeframe } from '@y0ngha/siglens-core';
 import type { MarketProfileId } from '@/shared/config/marketProfile';
 import dynamic from 'next/dynamic';
 import type { ReactNode } from 'react';
-import React, {
-    Suspense,
-    useEffect,
-    useEffectEvent,
-    useMemo,
-    useRef,
-} from 'react';
-import { ErrorBoundary } from 'react-error-boundary';
+import React, { useEffect, useEffectEvent, useMemo, useRef } from 'react';
 import { SNAP_PEEK } from './constants/mobileSheet';
-import { FearGreedCardMounted } from './FearGreedCardMounted';
 import { useActionPricesVisibility } from './hooks/useActionPricesVisibility';
 import { useAnalysis } from './hooks/useAnalysis';
 import { useAnalysisDerivedData } from './hooks/useAnalysisDerivedData';
@@ -203,16 +195,6 @@ export function ChartContent({
 
     const analysisContent = useMemo(() => {
         const hasNarrative = !isFallbackAnalysis(analysis);
-        const fearGreedCard = (
-            <ErrorBoundary fallback={null}>
-                <Suspense fallback={null}>
-                    <FearGreedCardMounted
-                        symbol={symbol}
-                        fmpSymbol={fmpSymbol}
-                    />
-                </Suspense>
-            </ErrorBoundary>
-        );
 
         // 분기 우선순위: 서사 유무를 먼저 보고, 봇 차단은 그 안에서 additive로 둔다.
         // 이전엔 `isBotBlocked`를 맨 앞에서 검사해 봇이면 BotBlockedNotice가 사실 층
@@ -232,7 +214,6 @@ export function ChartContent({
                     marketProfile={marketProfile}
                 />
                 {isBotBlocked && <BotBlockedNotice />}
-                {fearGreedCard}
             </div>
         ) : (
             <div className="flex flex-col gap-3">
@@ -264,7 +245,6 @@ export function ChartContent({
                     stale 분석만 보던 실사용자가 인지하도록(PR #530 리뷰 반영). 두 분기가
                     동일하게 `isBotBlocked`일 때만 안내를 노출해 일관된다. */}
                 {isBotBlocked && <BotBlockedNotice className="mt-3" />}
-                {fearGreedCard}
             </div>
         );
     }, [
@@ -285,7 +265,6 @@ export function ChartContent({
         cooldownNotice,
         actionPricesVisible,
         setActionPricesVisible,
-        fmpSymbol,
         marketProfile,
         indicatorCount,
     ]);

@@ -156,10 +156,6 @@ vi.mock('@/shared/lib/pwaEvents', () => ({
     PWA_TRIGGER_EVENT: 'pwa-trigger',
 }));
 
-vi.mock('@/views/symbol/FearGreedCardMounted', () => ({
-    FearGreedCardMounted: () => <div data-testid="fear-greed-card" />,
-}));
-
 // The two seams the real bug lives in: login-state resolution
 // (`useCurrentUser`) and the localStorage-backed distinct-symbol counter
 // (`anonAnalysisCount`). `@/features/analysis-nudge` itself is left unmocked.

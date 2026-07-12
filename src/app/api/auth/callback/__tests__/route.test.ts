@@ -20,10 +20,16 @@ vi.mock('@/entities/auth/lib/db', () => ({
 vi.mock('@/entities/oauth-account', () => ({
     createPendingOAuthSignupStoreFromEnv: vi.fn(),
 }));
+// getOAuthRedirectBaseUrl는 콜백 라우트의 모든 리다이렉트 base로 쓰인다.
+// 요청 호스트(makeRequest의 example.com)와 다른 값(siglens.io)을 반환하게 해서,
+// 리다이렉트 Location이 요청 호스트가 아니라 신뢰된 base를 쓰는지 검증한다.
+// (구버전의 `req.url` base였다면 example.com이 나와 이 단언이 실패한다.)
+const TRUSTED_BASE = 'https://siglens.io';
 vi.mock('@/features/auth-oauth', () => ({
     buildOAuthRedirectUri: vi
         .fn()
-        .mockReturnValue('https://example.com/callback/google'),
+        .mockReturnValue('https://siglens.io/api/auth/callback/google'),
+    getOAuthRedirectBaseUrl: vi.fn().mockReturnValue('https://siglens.io'),
     getOAuthAdapter: vi.fn(),
     isOAuthProvider: vi.fn(),
     OAUTH_STATE_COOKIE_NAME: 'oauth_state',
@@ -177,6 +183,9 @@ describe('GET /api/auth/callback/[provider]', () => {
             const res = await GET(req, DEFAULT_PARAMS);
 
             expect(res.status).toBe(307);
+            const location = res.headers.get('location') ?? '';
+            // 성공 리다이렉트도 신뢰된 base 호스트를 써야 한다(req.url 아님).
+            expect(new URL(location).host).toBe('siglens.io');
             expect(mockCreateAuthSession).toHaveBeenCalledWith(
                 expect.objectContaining({ userId: FAKE_USER.id })
             );
@@ -196,6 +205,9 @@ describe('GET /api/auth/callback/[provider]', () => {
 
             expect(res.status).toBe(307);
             const location = res.headers.get('location') ?? '';
+            // ALB 뒤 req.url(내부 bind) 대신 신뢰된 공개 base를 써야 한다.
+            expect(location.startsWith(`${TRUSTED_BASE}/login`)).toBe(true);
+            expect(new URL(location).host).toBe('siglens.io');
             expect(location).toContain('error=oauth_email_conflict');
             expect(location).toContain(encodeURIComponent(FAKE_PROFILE.email));
         });
@@ -212,6 +224,7 @@ describe('GET /api/auth/callback/[provider]', () => {
 
             expect(res.status).toBe(307);
             const location = res.headers.get('location') ?? '';
+            expect(new URL(location).host).toBe('siglens.io');
             expect(location).toContain('error=oauth_unknown');
         });
     });
@@ -235,6 +248,7 @@ describe('GET /api/auth/callback/[provider]', () => {
 
             expect(res.status).toBe(307);
             const location = res.headers.get('location') ?? '';
+            expect(new URL(location).host).toBe('siglens.io');
             expect(location).toContain('error=oauth_unknown');
         });
     });
@@ -249,6 +263,7 @@ describe('GET /api/auth/callback/[provider]', () => {
 
             expect(res.status).toBe(307);
             const location = res.headers.get('location') ?? '';
+            expect(new URL(location).host).toBe('siglens.io');
             expect(location).toContain('/signup/oauth/consent');
             expect(location).toContain('token=pending-token');
         });

@@ -45,7 +45,8 @@ const { MockOAuthStateSecretMisconfiguredError } = vi.hoisted(() => {
 vi.mock('@/features/auth-oauth', () => ({
     buildOAuthRedirectUri: vi
         .fn()
-        .mockReturnValue('https://example.com/callback/google'),
+        .mockReturnValue('https://siglens.io/api/auth/callback/google'),
+    getOAuthRedirectBaseUrl: vi.fn().mockReturnValue('https://siglens.io'),
     getOAuthAdapter: vi.fn(),
     isOAuthProvider: vi.fn(),
     OAUTH_STATE_COOKIE_NAME: 'oauth_state',
@@ -128,6 +129,7 @@ describe('GET /api/auth/callback — branch coverage', () => {
 
         expect(res.status).toBe(307);
         const location = res.headers.get('location') ?? '';
+        expect(new URL(location).host).toBe('siglens.io');
         expect(location).toContain('error=oauth_unknown');
     });
 
@@ -140,6 +142,7 @@ describe('GET /api/auth/callback — branch coverage', () => {
 
         expect(res.status).toBe(307);
         const location = res.headers.get('location') ?? '';
+        expect(new URL(location).host).toBe('siglens.io');
         expect(location).toContain('error=oauth_unknown');
     });
 
@@ -157,6 +160,7 @@ describe('GET /api/auth/callback — branch coverage', () => {
 
         expect(res.status).toBe(307);
         const location = res.headers.get('location') ?? '';
+        expect(new URL(location).host).toBe('siglens.io');
         expect(location).toContain('error=oauth_unknown');
     });
 
@@ -188,6 +192,7 @@ describe('GET /api/auth/callback — branch coverage', () => {
 
         expect(res.status).toBe(307);
         const location = res.headers.get('location') ?? '';
+        expect(new URL(location).host).toBe('siglens.io');
         expect(location).toContain('error=oauth_unknown');
     });
 
@@ -207,6 +212,7 @@ describe('GET /api/auth/callback — branch coverage', () => {
 
         expect(res.status).toBe(307);
         const location = res.headers.get('location') ?? '';
+        expect(new URL(location).host).toBe('siglens.io');
         expect(location).toContain('error=oauth_profile_invalid');
     });
 

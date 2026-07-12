@@ -15,6 +15,7 @@ import { createPendingOAuthSignupStoreFromEnv } from '@/entities/oauth-account';
 import {
     buildOAuthRedirectUri,
     getOAuthAdapter,
+    getOAuthRedirectBaseUrl,
     isOAuthProvider,
     OAUTH_STATE_COOKIE_NAME,
     OAuthStateSecretMisconfiguredError,
@@ -27,12 +28,8 @@ interface CallbackRouteParams {
     params: Promise<{ provider: string }>;
 }
 
-function redirectToLoginWithError(
-    req: NextRequest,
-    code: string,
-    email?: string
-): NextResponse {
-    const url = new URL('/login', req.url);
+function redirectToLoginWithError(code: string, email?: string): NextResponse {
+    const url = new URL('/login', getOAuthRedirectBaseUrl());
     url.searchParams.set('error', code);
     if (email) url.searchParams.set('email', email);
     const response = NextResponse.redirect(url);
@@ -46,7 +43,7 @@ export async function GET(
 ): Promise<NextResponse> {
     const { provider } = await params;
     if (!isOAuthProvider(provider)) {
-        return redirectToLoginWithError(req, 'oauth_unknown');
+        return redirectToLoginWithError('oauth_unknown');
     }
 
     const queryState = req.nextUrl.searchParams.get('state');
@@ -54,7 +51,7 @@ export async function GET(
     const stateCookie = req.cookies.get(OAUTH_STATE_COOKIE_NAME)?.value;
 
     if (!queryState || !code) {
-        return redirectToLoginWithError(req, 'oauth_unknown');
+        return redirectToLoginWithError('oauth_unknown');
     }
 
     let stateResult;
@@ -64,12 +61,12 @@ export async function GET(
         if (error instanceof OAuthStateSecretMisconfiguredError) {
             // Fail closed: when the HMAC secret is misconfigured, refuse the callback
             // rather than fall back to unsigned validation.
-            return redirectToLoginWithError(req, 'oauth_unknown');
+            return redirectToLoginWithError('oauth_unknown');
         }
         throw error;
     }
     if (!stateResult.ok) {
-        return redirectToLoginWithError(req, 'oauth_unknown');
+        return redirectToLoginWithError('oauth_unknown');
     }
 
     const redirectUri = buildOAuthRedirectUri(provider);
@@ -77,7 +74,7 @@ export async function GET(
         provider
     ).exchangeCodeForProfile({ code, redirectUri });
     if (!profileResult.ok) {
-        return redirectToLoginWithError(req, 'oauth_profile_invalid');
+        return redirectToLoginWithError('oauth_profile_invalid');
     }
 
     const { db } = getAuthDatabaseClient();
@@ -97,7 +94,10 @@ export async function GET(
             secureCookie: secure,
         });
         const response = NextResponse.redirect(
-            new URL(sanitizeNextPath(stateResult.next), req.url)
+            new URL(
+                sanitizeNextPath(stateResult.next),
+                getOAuthRedirectBaseUrl()
+            )
         );
         response.cookies.set(applyAuthCookie(cookie));
         response.cookies.set(
@@ -115,7 +115,6 @@ export async function GET(
     );
     if (existingEmailUser !== null) {
         return redirectToLoginWithError(
-            req,
             'oauth_email_conflict',
             profileResult.profile.email
         );
@@ -123,7 +122,7 @@ export async function GET(
 
     const pendingStore = createPendingOAuthSignupStoreFromEnv();
     if (!pendingStore) {
-        return redirectToLoginWithError(req, 'oauth_unknown');
+        return redirectToLoginWithError('oauth_unknown');
     }
 
     // `provider` was already narrowed to SupportedOAuthProvider by isOAuthProvider() above.
@@ -141,9 +140,12 @@ export async function GET(
             createdAt: new Date().toISOString(),
         })
         .catch(() => null);
-    if (!token) return redirectToLoginWithError(req, 'oauth_unknown');
+    if (!token) return redirectToLoginWithError('oauth_unknown');
 
-    const consentUrl = new URL('/signup/oauth/consent', req.url);
+    const consentUrl = new URL(
+        '/signup/oauth/consent',
+        getOAuthRedirectBaseUrl()
+    );
     consentUrl.searchParams.set('token', token);
     const response = NextResponse.redirect(consentUrl);
     response.cookies.set(expiredOAuthStateCookie());
