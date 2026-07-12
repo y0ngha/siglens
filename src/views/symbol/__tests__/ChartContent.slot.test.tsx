@@ -85,9 +85,6 @@ vi.mock('@/widgets/analysis/hooks/useAnalysisProgress', () => ({
     useAnalysisProgress: () => ({ phaseIndex: 0, tipIndex: 0 }),
 }));
 vi.mock('@/features/symbol-chat', () => ({ usePublishSymbolChat: vi.fn() }));
-vi.mock('../FearGreedCardMounted', () => ({
-    FearGreedCardMounted: () => null,
-}));
 vi.mock('@/widgets/analysis', () => ({
     AnalysisPanel: () => <div data-testid="analysis-panel" />,
 }));
