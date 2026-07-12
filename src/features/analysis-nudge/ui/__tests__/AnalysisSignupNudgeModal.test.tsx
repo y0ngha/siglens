@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { AnalysisSignupNudgeModal } from '@/features/analysis-nudge/ui/AnalysisSignupNudgeModal';
+import { REASONING_FEATURE_LABEL } from '@/shared/lib/reasoningFeature';
 
 vi.mock('next/link', () => ({
     default: ({
@@ -34,7 +35,9 @@ describe('AnalysisSignupNudgeModal', () => {
         ).toBeInTheDocument();
         expect(
             screen.getByText(
-                /회원가입하면 '상세 분석'을 켜고 더 자세한 분석 리포트를 받을 수 있어요\./
+                new RegExp(
+                    `회원가입하면 '${REASONING_FEATURE_LABEL}'을 켜고 더 자세한 분석 리포트를 받을 수 있어요\\.`
+                )
             )
         ).toBeInTheDocument();
     });

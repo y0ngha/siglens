@@ -189,15 +189,14 @@ describe('SymbolModelContext', () => {
     describe('shared signup-nudge modal (single instance)', () => {
         // A consumer that surfaces the shared nudge controls so both entry
         // points (header locked-toggle + ChartContent auto-nudge) can be
-        // simulated against one provider-rendered modal.
+        // simulated against one provider-rendered modal. The open-state is
+        // provider-LOCAL (deliberately NOT on the context value), so these
+        // tests assert on the RENDERED modal instance rather than reading an
+        // open flag off the context.
         function NudgeConsumer() {
-            const { isSignupNudgeOpen, openSignupNudge, closeSignupNudge } =
-                useSymbolModel();
+            const { openSignupNudge, closeSignupNudge } = useSymbolModel();
             return (
                 <div>
-                    <span data-testid="nudge-open">
-                        {String(isSignupNudgeOpen)}
-                    </span>
                     <button
                         type="button"
                         data-testid="open-nudge"
@@ -218,7 +217,6 @@ describe('SymbolModelContext', () => {
 
         it('starts closed and renders no modal instance', () => {
             render(<NudgeConsumer />, { wrapper: makeWrapper() });
-            expect(screen.getByTestId('nudge-open').textContent).toBe('false');
             expect(screen.queryByTestId('signup-nudge-modal')).toBeNull();
         });
 
@@ -227,7 +225,6 @@ describe('SymbolModelContext', () => {
 
             fireEvent.click(screen.getByTestId('open-nudge'));
 
-            expect(screen.getByTestId('nudge-open').textContent).toBe('true');
             // Exactly one modal, regardless of how many triggers ask to open it.
             expect(screen.getAllByTestId('signup-nudge-modal')).toHaveLength(1);
         });
@@ -254,7 +251,6 @@ describe('SymbolModelContext', () => {
                     .querySelector('button')!
             );
 
-            expect(screen.getByTestId('nudge-open').textContent).toBe('false');
             expect(screen.queryByTestId('signup-nudge-modal')).toBeNull();
         });
     });

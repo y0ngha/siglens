@@ -47,16 +47,18 @@ interface SymbolModelContextValue {
      */
     isReasoningHydrated: boolean;
     /**
-     * Whether the signup-nudge modal is currently open. The modal itself is
-     * rendered EXACTLY ONCE by `SymbolModelProvider` (which wraps both the
-     * layout header and the chart page tree), so the locked-toggle nudge
-     * (`SymbolLayoutHeader`) and the anonymous 3-symbol auto-nudge
-     * (`ChartContent` → `useAnonAnalysisNudge`) share a single instance
-     * instead of each mounting their own `fixed inset-0 z-50` dialog — two
-     * stacked modals would clash over focus-trap/Escape handling.
+     * Open the shared signup-nudge modal (locked toggle click + auto-nudge).
+     *
+     * The modal itself is rendered EXACTLY ONCE by `SymbolModelProvider`
+     * (which wraps both the layout header and the chart page tree), so the
+     * locked-toggle nudge (`SymbolLayoutHeader`) and the anonymous 3-symbol
+     * auto-nudge (`ChartContent` → `useAnonAnalysisNudge`) share a single
+     * instance instead of each mounting their own `fixed inset-0 z-50` dialog
+     * — two stacked modals would clash over focus-trap/Escape handling. The
+     * open-state itself is provider-LOCAL (not exposed on the context value)
+     * so opening/closing the modal never changes the context value identity
+     * and thus never re-renders unrelated `useSymbolModel()` consumers.
      */
-    isSignupNudgeOpen: boolean;
-    /** Open the shared signup-nudge modal (locked toggle click + auto-nudge). */
     openSignupNudge: () => void;
     /** Dismiss the shared signup-nudge modal. */
     closeSignupNudge: () => void;
@@ -72,7 +74,10 @@ export function SymbolModelProvider({ children }: SymbolModelProviderProps) {
     // Single shared open-state for the signup-nudge modal. Both entry points
     // (locked-toggle click in the header, 3-symbol auto-nudge in ChartContent)
     // flip this same flag, and the modal is rendered once below — see the
-    // `isSignupNudgeOpen` doc for why a single instance is required.
+    // `openSignupNudge` doc for why a single instance is required. This state
+    // is provider-LOCAL and intentionally NOT part of the context value: only
+    // the provider reads it (to render the modal), so keeping it out of the
+    // memoized value means open/close never churns `useSymbolModel()` consumers.
     // (Declared first per the useState → custom-hooks → derived → handlers
     // hook-ordering convention — CONVENTIONS.md "Custom Hook Declaration Order".)
     const [isSignupNudgeOpen, setIsSignupNudgeOpen] = useState(false);
@@ -106,7 +111,6 @@ export function SymbolModelProvider({ children }: SymbolModelProviderProps) {
             setReasoning,
             canUseReasoning,
             isReasoningHydrated,
-            isSignupNudgeOpen,
             openSignupNudge,
             closeSignupNudge,
         }),
@@ -121,7 +125,6 @@ export function SymbolModelProvider({ children }: SymbolModelProviderProps) {
             setReasoning,
             canUseReasoning,
             isReasoningHydrated,
-            isSignupNudgeOpen,
             openSignupNudge,
             closeSignupNudge,
         ]

@@ -1,5 +1,6 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ReasoningToggle } from '@/features/reasoning-toggle/ui/ReasoningToggle';
+import { REASONING_FEATURE_LABEL } from '@/shared/lib/reasoningFeature';
 
 vi.mock('@/shared/hooks/useEscapeKey', () => ({
     useEscapeKey: vi.fn(),
@@ -41,7 +42,7 @@ describe('ReasoningToggle', () => {
             <ReasoningToggle checked={false} onChange={vi.fn()} canUse={true} />
         );
         expect(screen.getByRole('switch')).toBeDefined();
-        expect(screen.getByText('상세 분석')).toBeDefined();
+        expect(screen.getByText(REASONING_FEATURE_LABEL)).toBeDefined();
     });
 
     it('renders the "상세 분석" label for non-members too', () => {
@@ -52,7 +53,7 @@ describe('ReasoningToggle', () => {
                 canUse={false}
             />
         );
-        expect(screen.getByText('상세 분석')).toBeDefined();
+        expect(screen.getByText(REASONING_FEATURE_LABEL)).toBeDefined();
     });
 
     it('uses the renamed aria-label for members', () => {
@@ -60,7 +61,7 @@ describe('ReasoningToggle', () => {
             <ReasoningToggle checked={false} onChange={vi.fn()} canUse={true} />
         );
         expect(screen.getByRole('switch').getAttribute('aria-label')).toBe(
-            '상세 분석 (추론) 토글'
+            `${REASONING_FEATURE_LABEL} (추론) 토글`
         );
     });
 
@@ -73,7 +74,7 @@ describe('ReasoningToggle', () => {
             />
         );
         expect(screen.getByRole('switch').getAttribute('aria-label')).toBe(
-            '상세 분석 — 회원가입하면 사용할 수 있어요'
+            `${REASONING_FEATURE_LABEL} — 회원가입하면 사용할 수 있어요`
         );
     });
 
