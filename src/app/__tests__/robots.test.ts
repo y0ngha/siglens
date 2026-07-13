@@ -33,17 +33,20 @@ describe('robots', () => {
         );
     });
 
-    it('disallows GoogleOther non-search crawlers (search indexing unaffected)', () => {
+    it('GoogleOther 비검색 크롤러는 전면 Disallow 대신 crawl-delay 그룹에 포함된다', () => {
         const result = robots();
-        // 정확히 3개로 결정적이므로 exact 배열 비교 — 실수로 Googlebot 등이 끼면 즉시 실패한다.
+        // Anthropic/AI 학습/AI 검색 크롤러와 통합된 단일 crawl-delay 그룹에 속한다.
+        // 실수로 Googlebot 본체가 이 그룹에 끼면 즉시 실패하도록 arrayContaining으로 멤버십만 확인한다.
         expect(result.rules).toContainEqual(
             expect.objectContaining({
-                userAgent: [
+                userAgent: expect.arrayContaining([
                     'GoogleOther',
                     'GoogleOther-Image',
                     'GoogleOther-Video',
-                ],
-                disallow: '/',
+                ]),
+                allow: '/',
+                disallow: ['/api/'],
+                crawlDelay: AI_CRAWLER_CRAWL_DELAY_SECONDS,
             })
         );
     });
@@ -79,10 +82,33 @@ describe('robots', () => {
         }
     });
 
-    it('limits Anthropic automated crawlers to one crawl every 60 seconds (and keeps /api/ disallowed)', () => {
+    it('limits Anthropic 크롤러를 포함한 통합 crawl-delay 그룹을 60초 간격으로 제한한다(and keeps /api/ disallowed)', () => {
         const result = robots();
+        // ANTHROPIC/GOOGLE_NON_SEARCH/AI_TRAINING/AI_SEARCH 4개 크롤러군이 하나의
+        // allow+crawlDelay 그룹으로 통합됐다. 전면 Disallow는 검색 랭킹에 기여하지
+        // 않는 봇이라도 origin fetch 자체는 허용해 인용 가시성을 보존하려는 의도다.
         expect(result.rules).toContainEqual({
-            userAgent: ['ClaudeBot', 'Claude-SearchBot'],
+            userAgent: [
+                'ClaudeBot',
+                'Claude-SearchBot',
+                'GoogleOther',
+                'GoogleOther-Image',
+                'GoogleOther-Video',
+                'GPTBot',
+                'Google-Extended',
+                'Applebot-Extended',
+                'Bytespider',
+                'CCBot',
+                'Meta-ExternalAgent',
+                'Amazonbot',
+                'anthropic-ai',
+                'cohere-ai',
+                'Diffbot',
+                'Omgilibot',
+                'ImagesiftBot',
+                'PerplexityBot',
+                'OAI-SearchBot',
+            ],
             allow: '/',
             disallow: ['/api/'],
             crawlDelay: AI_CRAWLER_CRAWL_DELAY_SECONDS,
@@ -94,11 +120,13 @@ describe('robots', () => {
         expect(result.sitemap).toBe('https://siglens.io/sitemap.xml');
     });
 
-    it('AI 학습/스크레이퍼 크롤러를 전면 Disallow한다', () => {
+    it('AI 학습/스크레이퍼 크롤러는 전면 Disallow 대신 crawl-delay 그룹으로 허용한다', () => {
         const result = robots();
+        // 검색 색인에 기여하지 않는 크롤러라도 전면 차단은 하지 않고 빈도만 낮추는 쪽으로
+        // 정책이 통합됐다. origin fetch 비용 절감은 crawlDelay로 달성한다.
         expect(result.rules).toContainEqual(
             expect.objectContaining({
-                userAgent: [
+                userAgent: expect.arrayContaining([
                     'GPTBot',
                     'Google-Extended',
                     'Applebot-Extended',
@@ -111,19 +139,26 @@ describe('robots', () => {
                     'Diffbot',
                     'Omgilibot',
                     'ImagesiftBot',
-                ],
-                disallow: '/',
+                ]),
+                allow: '/',
+                disallow: ['/api/'],
+                crawlDelay: AI_CRAWLER_CRAWL_DELAY_SECONDS,
             })
         );
     });
 
     it('AI 검색·인용 크롤러는 crawlDelay로 허용하되 /api/는 disallow한다(접근 보존)', () => {
         const result = robots();
-        expect(result.rules).toContainEqual({
-            userAgent: ['PerplexityBot', 'OAI-SearchBot'],
-            allow: '/',
-            disallow: ['/api/'],
-            crawlDelay: AI_CRAWLER_CRAWL_DELAY_SECONDS,
-        });
+        expect(result.rules).toContainEqual(
+            expect.objectContaining({
+                userAgent: expect.arrayContaining([
+                    'PerplexityBot',
+                    'OAI-SearchBot',
+                ]),
+                allow: '/',
+                disallow: ['/api/'],
+                crawlDelay: AI_CRAWLER_CRAWL_DELAY_SECONDS,
+            })
+        );
     });
 });
