@@ -32,6 +32,9 @@ vi.mock('../SymbolPageContext', () => ({
     SymbolPageProvider: ({ children }: { children: ReactNode }) => children,
     useSymbolPageContext: () => ({ indicatorCount: 13 }),
 }));
+vi.mock('@/features/symbol-model', () => ({
+    useSymbolModel: vi.fn(() => ({ tier: 'free', isTierHydrated: true })),
+}));
 
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';

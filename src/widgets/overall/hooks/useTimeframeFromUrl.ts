@@ -1,6 +1,7 @@
 'use client';
 
-import { useSearchParams } from 'next/navigation';
+import { useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import type { Timeframe } from '@y0ngha/siglens-core';
 import { DEFAULT_TIMEFRAME, isValidTimeframe } from '@/shared/config/market';
 
@@ -10,7 +11,36 @@ import { DEFAULT_TIMEFRAME, isValidTimeframe } from '@/shared/config/market';
  * 유효하지 않거나 없으면 `DEFAULT_TIMEFRAME`. 호출부가 timeframe을 파생 변수가 아니라
  * 훅 반환값으로 받게 해 MISTAKES.md §17(훅 선언이 파생 변수보다 앞) 준수를 돕는다.
  */
-export function useTimeframeFromUrl(): Timeframe {
+export function useTimeframeFromUrl(
+    symbol: string,
+    isFreeTier: boolean,
+    isTierHydrated: boolean
+): Timeframe {
     const tfParam = useSearchParams().get('tf');
-    return isValidTimeframe(tfParam) ? tfParam : DEFAULT_TIMEFRAME;
+    const router = useRouter();
+    const requestedTimeframe = isValidTimeframe(tfParam)
+        ? tfParam
+        : DEFAULT_TIMEFRAME;
+    const timeframe =
+        (!isTierHydrated || isFreeTier) &&
+        requestedTimeframe !== DEFAULT_TIMEFRAME
+            ? DEFAULT_TIMEFRAME
+            : requestedTimeframe;
+
+    useEffect(() => {
+        if (
+            !isTierHydrated ||
+            !isFreeTier ||
+            tfParam === null ||
+            tfParam === DEFAULT_TIMEFRAME
+        ) {
+            return;
+        }
+
+        router.replace(`/${symbol}/overall?tf=${DEFAULT_TIMEFRAME}`, {
+            scroll: false,
+        });
+    }, [isFreeTier, isTierHydrated, router, symbol, tfParam]);
+
+    return timeframe;
 }

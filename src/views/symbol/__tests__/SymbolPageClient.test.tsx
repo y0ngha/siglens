@@ -83,6 +83,10 @@ vi.mock('@/views/symbol/hooks/useTimeframeChange', () => ({
     })),
 }));
 
+vi.mock('@/features/symbol-model', () => ({
+    useSymbolModel: vi.fn(() => ({ tier: 'free', isTierHydrated: true })),
+}));
+
 vi.mock('@/views/symbol/SymbolPageContext', () => ({
     SymbolPageProvider: ({ children }: { children: React.ReactNode }) => (
         <div data-testid="provider">{children}</div>

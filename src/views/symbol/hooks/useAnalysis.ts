@@ -12,6 +12,8 @@ import {
 import type {
     AnalysisResponse,
     ModelId,
+    Tier,
+    TierInfoDepth,
     Timeframe,
 } from '@y0ngha/siglens-core';
 import { MS_PER_MINUTE, MS_PER_SECOND } from '@/shared/config/time';
@@ -49,6 +51,14 @@ const REANALYZE_COOLDOWN_MS = 5 * MS_PER_MINUTE;
 
 /** 캐시 히트(force=false 즉시 응답) 시 적용하는 짧은 클라이언트 쿨다운 — 같은 캐시의 빠른 반복 호출 방지. */
 const CACHE_HIT_COOLDOWN_MS = 30 * MS_PER_SECOND;
+const FREE_LOCKED_INFO_DEPTH: readonly TierInfoDepth[] = [
+    'partial_detail',
+    'full_detail',
+    'entry',
+    'stoploss',
+    'target',
+    'confidence',
+];
 
 interface UseAnalysisOptions {
     symbol: string;
@@ -56,6 +66,7 @@ interface UseAnalysisOptions {
     /** latestTimeframeRef를 통해 analyzeAction 호출 시 최신 timeframe 값을 읽기 위한 채널 */
     timeframe: Timeframe;
     initialAnalysis: AnalysisResponse;
+    initialLockedInfoDepth?: readonly TierInfoDepth[];
     /**
      * 서버에서 초기 AI 분석이 실패했는지 여부.
      * true이면 마운트 시 자동으로 재분석을 실행한다.
@@ -88,6 +99,8 @@ interface UseAnalysisOptions {
      * undefined이면 hydration 추적을 하지 않는다(하위 호환).
      */
     isReasoningHydrated?: boolean;
+    isTierHydrated?: boolean;
+    tier?: Tier;
 }
 
 // symbol-page → analysis는 허용된 하향 의존(cross-widget cross-import).
@@ -98,6 +111,7 @@ export interface UseAnalysisResult {
     analysis: AnalysisResponse;
     /** 새 분석이 완료됐을 때만 값이 세팅됨. initialAnalysis 기반 초기 로드엔 null. */
     analysisResult: AnalysisResponse | null;
+    lockedInfoDepth: readonly TierInfoDepth[];
     isAnalyzing: boolean;
     analysisError: string | null;
     /**
@@ -117,6 +131,7 @@ export function useAnalysis({
     companyName,
     timeframe,
     initialAnalysis,
+    initialLockedInfoDepth = [],
     initialAnalysisFailed,
     fmpSymbol,
     timeframeChangeCount,
@@ -124,10 +139,15 @@ export function useAnalysis({
     isModelHydrated,
     reasoning,
     isReasoningHydrated,
+    isTierHydrated,
+    tier,
 }: UseAnalysisOptions): UseAnalysisResult {
     // 1. useState
     const [analysisResult, setAnalysisResult] =
         useState<AnalysisResponse | null>(null);
+    const [lockedInfoDepth, setLockedInfoDepth] = useState<
+        readonly TierInfoDepth[]
+    >(initialLockedInfoDepth);
     const [reanalyzeCooldownMs, setReanalyzeCooldownMs] = useState<number>(0);
     const [cooldownNotice, setCooldownNotice] = useState<CooldownNotice | null>(
         null
@@ -153,9 +173,12 @@ export function useAnalysis({
     const latestTimeframeRef = useRef<Timeframe>(timeframe);
     const latestModelIdRef = useRef<ModelId | undefined>(modelId);
     const latestReasoningRef = useRef<boolean | undefined>(reasoning);
+    const latestTierRef = useRef<Tier | undefined>(tier);
     const prevTimeframeChangeCountRef = useRef(0);
     const prevModelIdRef = useRef<ModelId | undefined>(modelId);
     const prevReasoningRef = useRef<boolean | undefined>(reasoning);
+    const prevTierRef = useRef<Tier | undefined>(tier);
+    const hasHandledTierHydrationRef = useRef(isTierHydrated !== false);
     /**
      * localStorage hydration으로 인한 model 변경(마운트 직후 DEFAULT_MODEL → 저장값)을
      * 사용자 의도 변경과 구분하기 위한 플래그.
@@ -215,7 +238,16 @@ export function useAnalysis({
         onSuccess: (data, variables) => {
             if (data.status === 'cached') {
                 currentJobIdRef.current = null;
-                setAnalysisResult(data.result);
+                if (
+                    latestTierRef.current === 'free' &&
+                    (data.lockedInfoDepth?.length ?? 0) === 0
+                ) {
+                    setAnalysisResult(null);
+                    setLockedInfoDepth(FREE_LOCKED_INFO_DEPTH);
+                    return;
+                }
+                setAnalysisResult(normalizeAnalysisResponse(data.result));
+                setLockedInfoDepth(data.lockedInfoDepth);
                 // force 경로는 정상 5분 쿨다운, 일반 캐시 히트는 짧은
                 // 쿨다운(30s) — 같은 결과 즉시 재호출로 인한 스팸 방지.
                 setReanalyzeCooldownMs(prev =>
@@ -286,7 +318,9 @@ export function useAnalysis({
         isSubmitting ||
         isPolling ||
         (initialAnalysisFailedAtMount &&
-            (isModelHydrated === false || isReasoningHydrated === false));
+            (isModelHydrated === false ||
+                isReasoningHydrated === false ||
+                isTierHydrated === false));
     const analysisError = submitError?.message ?? pollError ?? null;
     // 쿨다운 카운트다운이 활성화된 상태. effect deps에 사용해 불필요한 재시작을 방지한다.
     const isCountdownActive = reanalyzeCooldownMs > 0;
@@ -295,6 +329,7 @@ export function useAnalysis({
     // latestRef 패턴을 사용하므로 symbol을 deps에서 제외하고 안정적인 함수 참조를 유지한다.
     // Redis 기반 쿨다운을 atomic하게 점유한 뒤에만 mutation을 실행한다.
     const handleReanalyze = useCallback((): void => {
+        if (isTierHydrated === false) return;
         const { symbol: latestSymbol, fmpSymbol: latestFmpSymbol } =
             latestRef.current;
         const tf = latestTimeframeRef.current;
@@ -318,7 +353,7 @@ export function useAnalysis({
                 reasoning: latestReasoningRef.current,
             });
         })();
-    }, [reset, mutate]);
+    }, [isTierHydrated, reset, mutate]);
 
     /**
      * 타임프레임 변경·모델 변경·reasoning 변경 세 effect에서 공유한다.
@@ -360,6 +395,7 @@ export function useAnalysis({
         latestTimeframeRef.current = timeframe;
         latestModelIdRef.current = modelId;
         latestReasoningRef.current = reasoning;
+        latestTierRef.current = tier;
     });
 
     // 8. useEffect
@@ -389,7 +425,19 @@ export function useAnalysis({
 
                     if (result.status === 'done') {
                         currentJobIdRef.current = null;
-                        setAnalysisResult(result.result);
+                        if (
+                            latestTierRef.current === 'free' &&
+                            (result.lockedInfoDepth?.length ?? 0) === 0
+                        ) {
+                            setAnalysisResult(null);
+                            setLockedInfoDepth(FREE_LOCKED_INFO_DEPTH);
+                            setIsPolling(false);
+                            return;
+                        }
+                        setAnalysisResult(
+                            normalizeAnalysisResponse(result.result)
+                        );
+                        setLockedInfoDepth(result.lockedInfoDepth);
                         if (lastForceRef.current) {
                             setReanalyzeCooldownMs(REANALYZE_COOLDOWN_MS);
                         }
@@ -446,6 +494,7 @@ export function useAnalysis({
         if (!initialAnalysisFailedAtMount) return;
         if (isModelHydrated === false) return;
         if (isReasoningHydrated === false) return;
+        if (isTierHydrated === false) return;
         // 초기 실패 재시도는 이미 reset/cancel 없이 진행 — 진행 중인 작업이 없는 상태에서만 도달한다.
         mutate({
             symbol: latestRef.current.symbol,
@@ -459,6 +508,7 @@ export function useAnalysis({
         mutate,
         isModelHydrated,
         isReasoningHydrated,
+        isTierHydrated,
         initialAnalysisFailedAtMount,
     ]);
 
@@ -467,9 +517,10 @@ export function useAnalysis({
         if (timeframeChangeCount === prevTimeframeChangeCountRef.current) {
             return;
         }
+        if (isTierHydrated === false) return;
         prevTimeframeChangeCountRef.current = timeframeChangeCount;
         restartAnalysis();
-    }, [timeframeChangeCount, restartAnalysis]);
+    }, [timeframeChangeCount, isTierHydrated, restartAnalysis]);
 
     useEffect(() => {
         // localStorage에서 저장된 모델을 처음 읽는 시점(hydration)은 사용자 변경이 아니므로
@@ -481,12 +532,13 @@ export function useAnalysis({
         }
 
         if (modelId === prevModelIdRef.current) return;
+        if (isTierHydrated === false) return;
         prevModelIdRef.current = modelId;
 
         // 모델 변경은 새 modelId를 명시 전달 — latestModelIdRef가 렌더 직후 갱신되지 않은
         // 경우에도 useLayoutEffect 전에 이 effect가 실행될 수 있으므로 값을 직접 주입한다.
         restartAnalysis(modelId);
-    }, [modelId, isModelHydrated, restartAnalysis]);
+    }, [modelId, isModelHydrated, isTierHydrated, restartAnalysis]);
 
     // 토글 변경 시 재분석(다른 캐시 키) — modelId 변경 effect와 완전히 동일한 패턴.
     // localStorage hydration으로 인한 reasoning 변경(마운트 직후 false → 저장값)은
@@ -502,12 +554,38 @@ export function useAnalysis({
         }
 
         if (reasoning === prevReasoningRef.current) return;
+        if (isTierHydrated === false) return;
         prevReasoningRef.current = reasoning;
 
         // 회원의 명시적 토글 변경은 새 reasoning 값을 직접 주입한다 — modelId 변경과
         // 동일 이유(latestReasoningRef가 이 effect보다 늦게 갱신될 수 있음).
         restartAnalysis(undefined, reasoning);
-    }, [reasoning, isReasoningHydrated, restartAnalysis]);
+    }, [reasoning, isReasoningHydrated, isTierHydrated, restartAnalysis]);
+
+    useEffect(() => {
+        if (isTierHydrated === false) return;
+
+        if (!hasHandledTierHydrationRef.current) {
+            hasHandledTierHydrationRef.current = true;
+            prevTierRef.current = tier;
+            if (tier !== 'free' && !initialAnalysisFailedAtMount) {
+                restartAnalysis();
+            }
+            return;
+        }
+
+        if (tier === prevTierRef.current) return;
+        prevTierRef.current = tier;
+        setAnalysisResult(null);
+        setLockedInfoDepth(tier === 'free' ? initialLockedInfoDepth : []);
+        restartAnalysis();
+    }, [
+        tier,
+        isTierHydrated,
+        initialAnalysisFailedAtMount,
+        initialLockedInfoDepth,
+        restartAnalysis,
+    ]);
 
     // 쿨다운이 활성화된 동안 1초마다 로컬에서 카운트다운한다.
     // isCountdownActive(0 → 양수 전환)가 true가 될 때만 인터벌을 시작해 중복 시작을 방지한다.
@@ -551,6 +629,7 @@ export function useAnalysis({
     return {
         analysis,
         analysisResult,
+        lockedInfoDepth,
         isAnalyzing,
         analysisError,
         isBotBlocked,

@@ -1,4 +1,8 @@
-import type { AnalysisResponse, KeyLevels } from '@y0ngha/siglens-core';
+import type {
+    AnalysisResponse,
+    FilteredAnalysisResponse,
+    KeyLevels,
+} from '@y0ngha/siglens-core';
 
 /**
  * `AnalysisResponse`의 모든 필드를 required로 선언하지만, 실제 응답은
@@ -20,7 +24,7 @@ const EMPTY_KEY_LEVELS: KeyLevels = {
 };
 
 export function normalizeAnalysisResponse(
-    analysis: AnalysisResponse
+    analysis: AnalysisResponse | FilteredAnalysisResponse
 ): AnalysisResponse {
     // `AnalysisResponse` types keyLevels as required, but an LLM partial response
     // can omit it at runtime — widen to optional so the null/undefined guard below
@@ -37,12 +41,15 @@ export function normalizeAnalysisResponse(
 
     return {
         ...analysis,
+        summary: analysis.summary ?? '',
+        trend: analysis.trend ?? 'neutral',
         indicatorResults: analysis.indicatorResults ?? [],
+        riskLevel: analysis.riskLevel ?? 'medium',
         patternSummaries: analysis.patternSummaries ?? [],
         strategyResults: analysis.strategyResults ?? [],
         candlePatterns: analysis.candlePatterns ?? [],
         trendlines: analysis.trendlines ?? [],
         keyLevels,
         priceTargets: analysis.priceTargets ?? { bullish: null, bearish: null },
-    };
+    } as AnalysisResponse;
 }

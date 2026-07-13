@@ -1,7 +1,7 @@
 import { unstable_cache } from 'next/cache';
 import {
     peekAnalysisCache,
-    type AnalysisResponse,
+    type FilteredAnalysisResult,
     type ModelId,
     type Timeframe,
 } from '@y0ngha/siglens-core';
@@ -24,7 +24,7 @@ import { SECONDS_PER_QUARTER_DAY } from '@/shared/config/time';
  * 전제(축 0): root layout cookies() 제거가 선결돼야 정적화가 유효하다.
  *
  * ticker는 대문자로 정규화해 unstable_cache 키·태그를 canonical하게 유지한다(호출부 대소문자
- * 혼용 시 캐시 분기 방지). 키: ticker + timeframe + modelId. fmpSymbol은 peekAnalysisCache의
+ * 혼용 시 캐시 분기 방지). 키: ticker + timeframe + modelId + tier. fmpSymbol은 peekAnalysisCache의
  * 내부 cache 키가 쓰지 않으므로 unstable_cache 키에서 제외한다 — 포함하면 같은 데이터가
  * fmpSymbol 유무로 중복 엔트리에 저장된다. 시그니처 정렬을 위해 인자로는 받아 그대로 전달한다.
  *
@@ -39,11 +39,19 @@ export function peekAnalysisStatic(
     timeframe: Timeframe,
     fmpSymbol: string | undefined,
     modelId: ModelId
-): Promise<AnalysisResponse | null> {
+): Promise<FilteredAnalysisResult | null> {
     const upper = ticker.toUpperCase();
     return unstable_cache(
-        () => peekAnalysisCache(upper, timeframe, fmpSymbol, modelId, false),
-        ['peek-analysis-static', upper, timeframe, modelId],
+        () =>
+            peekAnalysisCache(
+                upper,
+                timeframe,
+                fmpSymbol,
+                modelId,
+                false,
+                'free'
+            ),
+        ['peek-analysis-static', upper, timeframe, modelId, 'free'],
         { revalidate: SECONDS_PER_QUARTER_DAY, tags: [`symbol:${upper}`] }
     )();
 }

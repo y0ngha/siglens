@@ -7,6 +7,7 @@ import type {
     OptionsAnalysisResponse,
     OverallAnalysisResponse,
     SubmitAnalysisGatedResult,
+    Tier,
     SubmitCongressTrendCached,
     SubmitCongressTrendFetchError,
     SubmitFinancialsAnalysisCached,
@@ -17,6 +18,7 @@ import type {
     SubmitOptionsAnalysisNoChainsError,
     SubmitOverallAnalysisCached,
 } from '@y0ngha/siglens-core';
+import { filterAnalysisResult } from '@y0ngha/siglens-core';
 import fixture from '@e2e/fixtures/analysis.json';
 export { isE2E } from './e2eEnv';
 
@@ -49,8 +51,13 @@ interface E2eAnalysisFixture {
 const typedFixture = fixture as E2eAnalysisFixture;
 
 /** Fixed `{ status: 'cached' }` technical analysis result for E2E runs. */
-export function e2eCachedTechnical(): SubmitAnalysisGatedResult {
-    return { status: 'cached', result: typedFixture.technical };
+export function e2eCachedTechnical(
+    tier: Tier = 'free'
+): SubmitAnalysisGatedResult {
+    return {
+        status: 'cached',
+        ...filterAnalysisResult(typedFixture.technical, tier),
+    };
 }
 
 /** Fixed `{ status: 'cached' }` overall analysis result for E2E runs. */

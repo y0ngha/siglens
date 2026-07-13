@@ -1,8 +1,9 @@
-import { renderHook, act } from '@testing-library/react';
+import { renderHook, act, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 import type { Timeframe } from '@y0ngha/siglens-core';
 import { useTimeframeChange } from '@/views/symbol/hooks/useTimeframeChange';
+import { getBarsAction } from '@/entities/bars/actions';
 
 const mockReplace = vi.fn();
 const mockGet = vi.fn().mockReturnValue(null);
@@ -53,9 +54,12 @@ describe('useTimeframeChange', () => {
     });
 
     it('defaults to DEFAULT_TIMEFRAME when search param is absent', () => {
-        const { result } = renderHook(() => useTimeframeChange('AAPL'), {
-            wrapper: makeWrapper(),
-        });
+        const { result } = renderHook(
+            () => useTimeframeChange('AAPL', false, true),
+            {
+                wrapper: makeWrapper(),
+            }
+        );
 
         expect(result.current.timeframe).toBe('1Day');
     });
@@ -63,9 +67,12 @@ describe('useTimeframeChange', () => {
     it('reads timeframe from search param', () => {
         mockGet.mockReturnValue('1Week');
 
-        const { result } = renderHook(() => useTimeframeChange('AAPL'), {
-            wrapper: makeWrapper(),
-        });
+        const { result } = renderHook(
+            () => useTimeframeChange('AAPL', false, true),
+            {
+                wrapper: makeWrapper(),
+            }
+        );
 
         expect(result.current.timeframe).toBe('1Week');
     });
@@ -73,30 +80,110 @@ describe('useTimeframeChange', () => {
     it('falls back to DEFAULT_TIMEFRAME for invalid search param', () => {
         mockGet.mockReturnValue('invalid');
 
-        const { result } = renderHook(() => useTimeframeChange('AAPL'), {
-            wrapper: makeWrapper(),
-        });
+        const { result } = renderHook(
+            () => useTimeframeChange('AAPL', false, true),
+            {
+                wrapper: makeWrapper(),
+            }
+        );
 
         expect(result.current.timeframe).toBe('1Day');
     });
 
     it('starts with timeframeChangeCount of 0', () => {
-        const { result } = renderHook(() => useTimeframeChange('AAPL'), {
-            wrapper: makeWrapper(),
-        });
+        const { result } = renderHook(
+            () => useTimeframeChange('AAPL', false, true),
+            {
+                wrapper: makeWrapper(),
+            }
+        );
 
         expect(result.current.timeframeChangeCount).toBe(0);
     });
 
     it('skips change when next timeframe equals current', () => {
-        const { result } = renderHook(() => useTimeframeChange('AAPL'), {
-            wrapper: makeWrapper(),
-        });
+        const { result } = renderHook(
+            () => useTimeframeChange('AAPL', false, true),
+            {
+                wrapper: makeWrapper(),
+            }
+        );
 
         act(() => {
             result.current.handleTimeframeChange('1Day' as Timeframe);
         });
 
+        expect(mockReplace).not.toHaveBeenCalled();
+    });
+
+    it('canonicalizes a non-1Day query for a hydrated free user', () => {
+        mockGet.mockReturnValue('1Week');
+
+        const { result } = renderHook(
+            () => useTimeframeChange('AAPL', true, true),
+            {
+                wrapper: makeWrapper(),
+            }
+        );
+
+        expect(result.current.timeframe).toBe('1Day');
+        expect(mockReplace).toHaveBeenCalledWith('/AAPL?tf=1Day', {
+            scroll: false,
+        });
+    });
+
+    it('uses 1Day until the user tier has hydrated', () => {
+        mockGet.mockReturnValue('1Week');
+
+        const { result } = renderHook(
+            () => useTimeframeChange('AAPL', false, false),
+            {
+                wrapper: makeWrapper(),
+            }
+        );
+
+        expect(result.current.timeframe).toBe('1Day');
+        expect(mockReplace).not.toHaveBeenCalled();
+    });
+
+    it('does not navigate, prefetch, or change timeframe before tier hydration', () => {
+        const { result } = renderHook(
+            () => useTimeframeChange('AAPL', false, false),
+            {
+                wrapper: makeWrapper(),
+            }
+        );
+
+        act(() => {
+            result.current.handleTimeframeChange('1Week' as Timeframe);
+        });
+
+        expect(mockReplace).not.toHaveBeenCalled();
+        expect(getBarsAction).not.toHaveBeenCalled();
+        expect(result.current.timeframeChangeCount).toBe(0);
+    });
+
+    it('restores a member query timeframe after hydration and refreshes analysis once', async () => {
+        mockGet.mockReturnValue('1Week');
+
+        const { result, rerender } = renderHook(
+            ({ isTierHydrated }: { isTierHydrated: boolean }) =>
+                useTimeframeChange('AAPL', false, isTierHydrated),
+            {
+                wrapper: makeWrapper(),
+                initialProps: { isTierHydrated: false },
+            }
+        );
+
+        expect(result.current.timeframe).toBe('1Day');
+        expect(result.current.timeframeChangeCount).toBe(0);
+
+        rerender({ isTierHydrated: true });
+
+        await waitFor(() => {
+            expect(result.current.timeframe).toBe('1Week');
+            expect(result.current.timeframeChangeCount).toBe(1);
+        });
         expect(mockReplace).not.toHaveBeenCalled();
     });
 });

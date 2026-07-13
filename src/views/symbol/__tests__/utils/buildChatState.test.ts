@@ -20,6 +20,7 @@ describe('chart buildChatState', () => {
                 displayAnalyzing: false,
                 isBotBlocked: true,
                 analysisError: null,
+                lockedInfoDepth: [],
             })
         ).toEqual({
             context: null,
@@ -36,6 +37,7 @@ describe('chart buildChatState', () => {
                 displayAnalyzing: false,
                 isBotBlocked: false,
                 analysisError: 'boom',
+                lockedInfoDepth: [],
             })
         ).toEqual({
             context: null,
@@ -52,6 +54,7 @@ describe('chart buildChatState', () => {
                 displayAnalyzing: true,
                 isBotBlocked: false,
                 analysisError: null,
+                lockedInfoDepth: [],
             })
         ).toEqual({
             context: { kind: 'technical', payload: ANALYSIS },
@@ -68,11 +71,29 @@ describe('chart buildChatState', () => {
                 displayAnalyzing: false,
                 isBotBlocked: false,
                 analysisError: null,
+                lockedInfoDepth: [],
             })
         ).toEqual({
             context: { kind: 'technical', payload: ANALYSIS },
             timeframe: TIMEFRAME,
             isAnalysisReady: true,
+        });
+    });
+
+    it('locked detail → context: null, ready=false', () => {
+        expect(
+            buildChatState({
+                analysis: ANALYSIS,
+                timeframe: TIMEFRAME,
+                displayAnalyzing: false,
+                isBotBlocked: false,
+                analysisError: null,
+                lockedInfoDepth: ['full_detail'],
+            })
+        ).toEqual({
+            context: null,
+            timeframe: TIMEFRAME,
+            isAnalysisReady: false,
         });
     });
 });

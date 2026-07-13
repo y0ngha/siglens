@@ -1,4 +1,8 @@
-import type { AnalysisResponse, Timeframe } from '@y0ngha/siglens-core';
+import type {
+    AnalysisResponse,
+    TierInfoDepth,
+    Timeframe,
+} from '@y0ngha/siglens-core';
 import type { SymbolChatState } from '@/features/symbol-chat';
 
 interface BuildChatStateInput {
@@ -7,6 +11,7 @@ interface BuildChatStateInput {
     displayAnalyzing: boolean;
     isBotBlocked: boolean;
     analysisError: string | null;
+    lockedInfoDepth: readonly TierInfoDepth[];
 }
 
 // 차트(technical) 페이지의 채팅 publish 페이로드.
@@ -20,8 +25,9 @@ export function buildChatState({
     displayAnalyzing,
     isBotBlocked,
     analysisError,
+    lockedInfoDepth,
 }: BuildChatStateInput): SymbolChatState {
-    if (isBotBlocked || analysisError !== null) {
+    if (isBotBlocked || analysisError !== null || lockedInfoDepth.length > 0) {
         return { context: null, timeframe, isAnalysisReady: false };
     }
     return {

@@ -100,6 +100,7 @@ describe('submitCongressTrendAction 함수는', () => {
             expect.objectContaining({
                 symbol: 'AAPL',
                 modelId: MODEL_ID,
+                tier: 'free',
             })
         );
     });
@@ -195,27 +196,27 @@ describe('submitCongressTrendAction 함수는', () => {
             );
         });
 
-        it('skips the tier lookup entirely when reasoning is not requested (omitted)', async () => {
+        it('forwards tier when reasoning is not requested (omitted)', async () => {
             mockSubmitCongressTrend.mockResolvedValueOnce(CACHED_RESULT);
 
             await submitCongressTrendAction('AAPL', MODEL_ID);
 
-            expect(mockGetCurrentUser).not.toHaveBeenCalled();
-            expect(mockResolveTierOnly).not.toHaveBeenCalled();
+            expect(mockGetCurrentUser).toHaveBeenCalled();
+            expect(mockResolveTierOnly).toHaveBeenCalledWith(null);
             expect(mockSubmitCongressTrend).toHaveBeenCalledWith(
-                expect.objectContaining({ reasoning: false })
+                expect.objectContaining({ reasoning: false, tier: 'free' })
             );
         });
 
-        it('skips the tier lookup entirely when reasoning is explicitly false', async () => {
+        it('forwards tier when reasoning is explicitly false', async () => {
             mockSubmitCongressTrend.mockResolvedValueOnce(CACHED_RESULT);
 
             await submitCongressTrendAction('AAPL', MODEL_ID, false);
 
-            expect(mockGetCurrentUser).not.toHaveBeenCalled();
-            expect(mockResolveTierOnly).not.toHaveBeenCalled();
+            expect(mockGetCurrentUser).toHaveBeenCalled();
+            expect(mockResolveTierOnly).toHaveBeenCalledWith(null);
             expect(mockSubmitCongressTrend).toHaveBeenCalledWith(
-                expect.objectContaining({ reasoning: false })
+                expect.objectContaining({ reasoning: false, tier: 'free' })
             );
         });
     });

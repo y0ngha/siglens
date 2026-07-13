@@ -101,6 +101,15 @@ describe('SymbolModelContext', () => {
         expect(result.current.isHydrated).toBe(true);
     });
 
+    it('provides the resolved tier and its hydration state', () => {
+        const { result } = renderHook(() => useSymbolModel(), {
+            wrapper: makeWrapper(),
+        });
+
+        expect(result.current.tier).toBe('free');
+        expect(result.current.isTierHydrated).toBe(true);
+    });
+
     describe('reasoning gating (member-reasoning-toggle spec Part A)', () => {
         it('forces reasoning=false and canUseReasoning=false for free tier even if stored preference is true', () => {
             mockUseUserTier.mockReturnValue({ tier: 'free', isLoading: false });

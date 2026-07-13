@@ -13,7 +13,8 @@ import { useMobileSheet } from './hooks/useMobileSheet';
 import { useTimeframeChange } from './hooks/useTimeframeChange';
 import { SymbolPageProvider } from './SymbolPageContext';
 import { buildChartPageHeading } from './utils/chartPageHeading';
-import type { AnalysisResponse } from '@y0ngha/siglens-core';
+import { useSymbolModel } from '@/features/symbol-model';
+import type { AnalysisResponse, TierInfoDepth } from '@y0ngha/siglens-core';
 import {
     marketProfileOf,
     type MarketProfileId,
@@ -37,6 +38,7 @@ interface SymbolPageClientProps {
     /** 한국어명 + 영문사명을 합친 표시 문자열 (예: "애플, Apple Inc. (AAPL)"). */
     displayName: string;
     initialAnalysis: AnalysisResponse;
+    initialLockedInfoDepth?: readonly TierInfoDepth[];
     initialAnalysisFailed: boolean;
     indicatorCount: number;
     /**
@@ -52,10 +54,13 @@ export function SymbolPageClient({
     companyName,
     displayName,
     initialAnalysis,
+    initialLockedInfoDepth = [],
     initialAnalysisFailed,
     indicatorCount,
     marketProfile,
 }: SymbolPageClientProps) {
+    const { tier, isTierHydrated } = useSymbolModel();
+    const isFreeTier = isTierHydrated && tier === 'free';
     const {
         sheetSnap,
         setSheetSnap,
@@ -63,7 +68,7 @@ export function SymbolPageClient({
         setMobileSheetContent,
     } = useMobileSheet();
     const { timeframe, timeframeChangeCount, handleTimeframeChange } =
-        useTimeframeChange(symbol);
+        useTimeframeChange(symbol, isFreeTier, isTierHydrated);
     const assetInfo = useAssetInfo(symbol);
     const isHydrated = useHydrated();
     const isMobileViewport = useIsMobileViewport();
@@ -93,6 +98,8 @@ export function SymbolPageClient({
                     <TimeframeSelector
                         value={timeframe}
                         onChange={handleTimeframeChange}
+                        isFreeTier={isFreeTier}
+                        isTierHydrated={isTierHydrated}
                     />
                 </div>
                 <div className="relative flex min-h-0 flex-1 overflow-hidden">
@@ -107,6 +114,7 @@ export function SymbolPageClient({
                                 timeframe={timeframe}
                                 timeframeChangeCount={timeframeChangeCount}
                                 initialAnalysis={initialAnalysis}
+                                initialLockedInfoDepth={initialLockedInfoDepth}
                                 initialAnalysisFailed={initialAnalysisFailed}
                                 onMobileSheetContent={setMobileSheetContent}
                                 fmpSymbol={assetInfo?.fmpSymbol}

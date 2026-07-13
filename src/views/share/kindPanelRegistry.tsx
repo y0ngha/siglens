@@ -75,6 +75,7 @@ function ChartSharePanel({
                 keyLevels={clustered}
                 timeframe="1Day"
                 isFreeUser={false}
+                showLockedSignup={false}
             />
         </div>
     );

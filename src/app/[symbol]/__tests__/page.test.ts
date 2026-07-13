@@ -297,7 +297,7 @@ describe('Symbol page', () => {
         }
 
         it('peek HIT 시 캐시된 분석을 initialAnalysis로 전달한다', async () => {
-            const cached = { summary: 'cached analysis' };
+            const cached = { result: { summary: 'cached analysis' } };
             mockPeekAnalysisCache.mockResolvedValue(cached as never);
 
             const props = await getClientProps();
@@ -307,9 +307,10 @@ describe('Symbol page', () => {
                 '1Day',
                 'AAPL',
                 DEEPSEEK_V4_FLASH_MODEL,
-                false
+                false,
+                'free'
             );
-            expect(props.initialAnalysis).toEqual(cached);
+            expect(props.initialAnalysis).toMatchObject(cached.result);
         });
 
         it('peek MISS(null) 시 FALLBACK_ANALYSIS를 전달한다', async () => {
@@ -317,7 +318,9 @@ describe('Symbol page', () => {
 
             const props = await getClientProps();
 
-            expect(props.initialAnalysis).toEqual({ summary: 'fallback' });
+            expect(props.initialAnalysis).toMatchObject({
+                summary: 'fallback',
+            });
         });
 
         it('peek가 throw해도 크래시 없이 FALLBACK_ANALYSIS로 degrade한다', async () => {
@@ -325,12 +328,14 @@ describe('Symbol page', () => {
 
             const props = await getClientProps();
 
-            expect(props.initialAnalysis).toEqual({ summary: 'fallback' });
+            expect(props.initialAnalysis).toMatchObject({
+                summary: 'fallback',
+            });
         });
 
         it('seed 여부와 무관하게 initialAnalysisFailed=true를 유지한다 (순수 additive)', async () => {
             mockPeekAnalysisCache.mockResolvedValue({
-                summary: 'cached analysis',
+                result: { summary: 'cached analysis' },
             } as never);
 
             const props = await getClientProps();

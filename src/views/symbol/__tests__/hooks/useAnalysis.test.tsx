@@ -9,7 +9,12 @@ import { getReanalyzeCooldownMs } from '@/entities/analysis';
 import { CANCEL_JOBS_API_PATH } from '@/shared/lib/cancelJobsApi';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
-import type { AnalysisResponse, Timeframe } from '@y0ngha/siglens-core';
+import type {
+    AnalysisResponse,
+    Tier,
+    TierInfoDepth,
+    Timeframe,
+} from '@y0ngha/siglens-core';
 import type { ReactNode } from 'react';
 import { readBlobText } from '@/shared/test-utils/readBlobText';
 
@@ -73,6 +78,9 @@ interface PartialOptions {
     isModelHydrated?: boolean;
     reasoning?: boolean;
     isReasoningHydrated?: boolean;
+    initialLockedInfoDepth?: readonly TierInfoDepth[];
+    isTierHydrated?: boolean;
+    tier?: Tier;
 }
 
 function makeOptions(overrides?: PartialOptions) {
@@ -87,6 +95,9 @@ function makeOptions(overrides?: PartialOptions) {
         isModelHydrated: overrides?.isModelHydrated,
         reasoning: overrides?.reasoning,
         isReasoningHydrated: overrides?.isReasoningHydrated,
+        initialLockedInfoDepth: overrides?.initialLockedInfoDepth,
+        isTierHydrated: overrides?.isTierHydrated,
+        tier: overrides?.tier,
     };
 }
 
@@ -133,6 +144,7 @@ describe('useAnalysis', () => {
             mockSubmit.mockResolvedValue({
                 status: 'cached',
                 result: INITIAL_ANALYSIS,
+                lockedInfoDepth: [],
             });
 
             const { rerender } = renderHook(
@@ -174,11 +186,184 @@ describe('useAnalysis', () => {
         });
     });
 
+    describe('isTierHydrated', () => {
+        it('waits for the resolved tier before retrying a free SSR analysis', async () => {
+            mockSubmit.mockResolvedValue({
+                status: 'cached',
+                result: INITIAL_ANALYSIS,
+                lockedInfoDepth: [],
+            });
+
+            const { result, rerender } = renderHook(
+                ({ isTierHydrated }: { isTierHydrated: boolean }) =>
+                    useAnalysis(
+                        makeOptions({
+                            initialAnalysisFailed: true,
+                            initialLockedInfoDepth: ['partial_detail'],
+                            isTierHydrated,
+                        })
+                    ),
+                {
+                    wrapper: makeWrapper(),
+                    initialProps: { isTierHydrated: false },
+                }
+            );
+
+            expect(result.current.lockedInfoDepth).toEqual(['partial_detail']);
+            expect(mockSubmit).not.toHaveBeenCalled();
+
+            rerender({ isTierHydrated: true });
+
+            await waitFor(() => {
+                expect(mockSubmit).toHaveBeenCalledTimes(1);
+                expect(result.current.lockedInfoDepth).toEqual([]);
+            });
+        });
+
+        it('refetches the free-safe SSR result once a member tier hydrates', async () => {
+            mockSubmit.mockResolvedValue({
+                status: 'cached',
+                result: INITIAL_ANALYSIS,
+                lockedInfoDepth: [],
+            });
+
+            const { rerender } = renderHook(
+                ({ isTierHydrated }: { isTierHydrated: boolean }) =>
+                    useAnalysis(
+                        makeOptions({
+                            isTierHydrated,
+                            tier: 'member',
+                        })
+                    ),
+                {
+                    wrapper: makeWrapper(),
+                    initialProps: { isTierHydrated: false },
+                }
+            );
+
+            expect(mockSubmit).not.toHaveBeenCalled();
+
+            rerender({ isTierHydrated: true });
+
+            await waitFor(() => {
+                expect(mockSubmit).toHaveBeenCalledTimes(1);
+            });
+        });
+
+        it('does not render a legacy cached result without lock metadata for a resolved free tier', async () => {
+            mockSubmit.mockResolvedValue({
+                status: 'cached',
+                result: INITIAL_ANALYSIS,
+            } as never);
+
+            const { result } = renderHook(
+                () =>
+                    useAnalysis(
+                        makeOptions({
+                            initialAnalysisFailed: true,
+                            isTierHydrated: true,
+                            tier: 'free',
+                        })
+                    ),
+                { wrapper: makeWrapper() }
+            );
+
+            await waitFor(() => {
+                expect(result.current.lockedInfoDepth).toEqual([
+                    'partial_detail',
+                    'full_detail',
+                    'entry',
+                    'stoploss',
+                    'target',
+                    'confidence',
+                ]);
+                expect(result.current.analysisResult).toBeNull();
+            });
+        });
+
+        it('does not render a legacy poll result without lock metadata for a resolved free tier', async () => {
+            mockSubmit.mockResolvedValue({
+                status: 'submitted',
+                jobId: 'legacy-job',
+            });
+            mockPoll.mockResolvedValue({
+                status: 'done',
+                result: INITIAL_ANALYSIS,
+            } as never);
+
+            const { result } = renderHook(
+                () =>
+                    useAnalysis(
+                        makeOptions({
+                            initialAnalysisFailed: true,
+                            isTierHydrated: true,
+                            tier: 'free',
+                        })
+                    ),
+                { wrapper: makeWrapper() }
+            );
+
+            await waitFor(() => {
+                expect(result.current.lockedInfoDepth).toContain('full_detail');
+                expect(result.current.analysisResult).toBeNull();
+            });
+        });
+
+        it('clears a member result before a free-tier refresh can complete', async () => {
+            let resolveSecondSubmit: (() => void) | undefined;
+            mockSubmit
+                .mockResolvedValueOnce({
+                    status: 'cached',
+                    result: INITIAL_ANALYSIS,
+                    lockedInfoDepth: [],
+                })
+                .mockImplementationOnce(
+                    () =>
+                        new Promise(resolve => {
+                            resolveSecondSubmit = () =>
+                                resolve({
+                                    status: 'submitted',
+                                    jobId: 'free-refresh',
+                                });
+                        })
+                );
+
+            const { result, rerender } = renderHook(
+                ({ tier }: { tier: Tier }) =>
+                    useAnalysis(
+                        makeOptions({
+                            initialAnalysisFailed: true,
+                            initialLockedInfoDepth: ['full_detail'],
+                            isTierHydrated: true,
+                            tier,
+                        })
+                    ),
+                {
+                    wrapper: makeWrapper(),
+                    initialProps: { tier: 'member' as Tier },
+                }
+            );
+
+            await waitFor(() => {
+                expect(result.current.analysisResult).not.toBeNull();
+            });
+
+            rerender({ tier: 'free' });
+
+            await waitFor(() => {
+                expect(result.current.analysisResult).toBeNull();
+                expect(result.current.lockedInfoDepth).toEqual(['full_detail']);
+            });
+            resolveSecondSubmit?.();
+        });
+    });
+
     describe('reasoning (member-reasoning-toggle spec Part A)', () => {
         it('forwards reasoning to submitAnalysisAction', async () => {
             mockSubmit.mockResolvedValue({
                 status: 'cached',
                 result: INITIAL_ANALYSIS,
+                lockedInfoDepth: [],
             });
 
             renderHook(
@@ -225,6 +410,7 @@ describe('useAnalysis', () => {
             mockSubmit.mockResolvedValue({
                 status: 'cached',
                 result: INITIAL_ANALYSIS,
+                lockedInfoDepth: [],
             });
 
             const { rerender } = renderHook(
@@ -254,6 +440,7 @@ describe('useAnalysis', () => {
             mockSubmit.mockResolvedValue({
                 status: 'cached',
                 result: INITIAL_ANALYSIS,
+                lockedInfoDepth: [],
             });
 
             const { rerender } = renderHook(
@@ -296,6 +483,7 @@ describe('useAnalysis', () => {
             mockSubmit.mockResolvedValue({
                 status: 'cached',
                 result: INITIAL_ANALYSIS,
+                lockedInfoDepth: [],
             });
 
             const { rerender } = renderHook(
@@ -415,6 +603,7 @@ describe('useAnalysis', () => {
             mockSubmit.mockResolvedValue({
                 status: 'cached',
                 result: INITIAL_ANALYSIS,
+                lockedInfoDepth: [],
             });
 
             renderHook(() => useAnalysis(makeOptions()), {

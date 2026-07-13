@@ -146,6 +146,44 @@ describe('AnalysisPanel', () => {
         expect(screen.getByText('요약 텍스트')).toBeInTheDocument();
     });
 
+    it('shows a signup lock for hidden free-tier details', () => {
+        render(
+            <AnalysisPanel
+                symbol="AAPL"
+                analysis={makeAnalysis()}
+                keyLevels={EMPTY_KEY_LEVELS}
+                timeframe="1Day"
+                lockedInfoDepth={['partial_detail']}
+                showLockedSignup={true}
+            />
+        );
+
+        expect(
+            screen.getByText('상세 분석과 매매 전략은 회원에게 제공됩니다.')
+        ).toBeInTheDocument();
+        expect(screen.getByRole('link', { name: '회원가입' })).toHaveAttribute(
+            'href',
+            '/signup'
+        );
+    });
+
+    it('does not show a signup lock when rendering a shared snapshot', () => {
+        render(
+            <AnalysisPanel
+                symbol="AAPL"
+                analysis={makeAnalysis()}
+                keyLevels={EMPTY_KEY_LEVELS}
+                timeframe="1Day"
+                lockedInfoDepth={['partial_detail']}
+                showLockedSignup={false}
+            />
+        );
+
+        expect(
+            screen.queryByText('상세 분석과 매매 전략은 회원에게 제공됩니다.')
+        ).not.toBeInTheDocument();
+    });
+
     it('renders "AI 분석" heading', () => {
         render(
             <AnalysisPanel

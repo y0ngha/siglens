@@ -7,7 +7,11 @@ import { PWA_TRIGGER_EVENT } from '@/shared/lib/pwaEvents';
 import { BotBlockedNotice } from '@/shared/ui/BotBlockedNotice';
 import { AnalysisPanel } from '@/widgets/analysis';
 import { ChartSkeleton, useChartSync } from '@/widgets/chart';
-import { type AnalysisResponse, type Timeframe } from '@y0ngha/siglens-core';
+import {
+    type AnalysisResponse,
+    type TierInfoDepth,
+    type Timeframe,
+} from '@y0ngha/siglens-core';
 import type { MarketProfileId } from '@/shared/config/marketProfile';
 import dynamic from 'next/dynamic';
 import type { ReactNode } from 'react';
@@ -105,6 +109,7 @@ interface ChartContentProps {
     /** 타임프레임이 변경된 누적 횟수. Suspense remount 시 초기 마운트와 타임프레임 변경을 구분한다. */
     timeframeChangeCount: number;
     initialAnalysis: AnalysisResponse;
+    initialLockedInfoDepth?: readonly TierInfoDepth[];
     /** 서버에서 초기 AI 분석이 실패했는지 여부. true이면 마운트 시 자동으로 재분석을 실행한다. */
     initialAnalysisFailed: boolean;
     /** 모바일 바텀시트에 렌더링할 콘텐츠가 변경될 때 호출된다. Suspense 경계 밖에서 시트를 유지하기 위해 상위로 끌어올린다. */
@@ -124,6 +129,7 @@ export function ChartContent({
     timeframe,
     timeframeChangeCount,
     initialAnalysis,
+    initialLockedInfoDepth = [],
     initialAnalysisFailed,
     onMobileSheetContent,
     fmpSymbol,
@@ -152,6 +158,8 @@ export function ChartContent({
         isHydrated: isModelHydrated,
         reasoning,
         isReasoningHydrated,
+        tier,
+        isTierHydrated,
     } = useSymbolModel();
 
     // analysis → symbol-page 역방향 import를 제거하기 위해 여기서 context를 읽어 내려보낸다.
@@ -160,6 +168,7 @@ export function ChartContent({
     const {
         analysis,
         analysisResult,
+        lockedInfoDepth,
         isAnalyzing,
         analysisError,
         isBotBlocked,
@@ -171,6 +180,7 @@ export function ChartContent({
         companyName,
         timeframe,
         initialAnalysis,
+        initialLockedInfoDepth,
         initialAnalysisFailed,
         fmpSymbol,
         timeframeChangeCount,
@@ -178,6 +188,8 @@ export function ChartContent({
         isModelHydrated,
         reasoning,
         isReasoningHydrated,
+        isTierHydrated,
+        tier,
     });
 
     const { displayAnalyzing, handleProgressFinished } =
@@ -261,6 +273,8 @@ export function ChartContent({
                     actionPricesVisible={actionPricesVisible}
                     onActionPricesVisibilityChange={setActionPricesVisible}
                     indicatorCount={indicatorCount}
+                    lockedInfoDepth={lockedInfoDepth}
+                    showLockedSignup={tier === 'free' && isTierHydrated}
                 />
                 {/* 서사가 있어도(캐시된 분석을 표시 중) 봇 판정이면 안내를 additive로
                     덧붙인다 — 자동 트리거/수동 재분석이 봇으로 오판돼 차단된 사실을
@@ -291,6 +305,9 @@ export function ChartContent({
         fmpSymbol,
         marketProfile,
         indicatorCount,
+        lockedInfoDepth,
+        tier,
+        isTierHydrated,
     ]);
 
     // timeframe을 React.Fragment key로 전달 — Suspense 경계 밖에서 timeframe 변경 시 자식 트리를 강제 remount한다.
@@ -318,8 +335,16 @@ export function ChartContent({
                 displayAnalyzing,
                 isBotBlocked,
                 analysisError,
+                lockedInfoDepth,
             }),
-        [analysis, timeframe, displayAnalyzing, isBotBlocked, analysisError]
+        [
+            analysis,
+            timeframe,
+            displayAnalyzing,
+            isBotBlocked,
+            analysisError,
+            lockedInfoDepth,
+        ]
     );
     usePublishSymbolChat(chatState);
     useRegisterShareable({

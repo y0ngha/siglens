@@ -27,6 +27,7 @@ vi.mock('@/features/symbol-chat', () => ({
 vi.mock('@/features/symbol-model', () => ({
     useDefaultModelId: vi.fn(() => 'gemini-2.5-flash-lite'),
     useDefaultReasoning: vi.fn(() => false),
+    useSymbolModel: vi.fn(() => ({ tier: 'member', isTierHydrated: true })),
 }));
 // /news와 동일 게이트 적용 — 두 훅을 단순화해 효과만 검증한다.
 // useNewsAnalysisTrigger는 fire-and-forget mount effect이므로 no-op.
@@ -74,6 +75,7 @@ const { searchParamsRef } = vi.hoisted(() => ({
 }));
 vi.mock('next/navigation', () => ({
     useSearchParams: () => searchParamsRef.value,
+    useRouter: () => ({ replace: vi.fn() }),
 }));
 
 import { render, screen, fireEvent } from '@testing-library/react';

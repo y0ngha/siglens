@@ -4,7 +4,10 @@ import { JsonLd } from '@/shared/ui/JsonLd';
 import { FALLBACK_ANALYSIS } from '@/entities/chat-message';
 import { getBlockedSymbolMetadata } from '@/app/[symbol]/symbolIndexabilityMetadata';
 import { DEEPSEEK_V4_FLASH_MODEL } from '@y0ngha/siglens-core';
-import { peekAnalysisStatic } from '@/entities/analysis';
+import {
+    normalizeAnalysisResponse,
+    peekAnalysisStatic,
+} from '@/entities/analysis';
 import {
     DEFAULT_TIMEFRAME,
     SymbolRouteParams,
@@ -211,7 +214,9 @@ export default async function SymbolPage({ params }: Props) {
         console.error('[SymbolPage] peekAnalysisStatic failed:', error);
         return null;
     });
-    const initialAnalysis = cachedAnalysis ?? FALLBACK_ANALYSIS;
+    const initialAnalysis = normalizeAnalysisResponse(
+        cachedAnalysis?.result ?? FALLBACK_ANALYSIS
+    );
 
     return (
         <>
@@ -283,6 +288,9 @@ export default async function SymbolPage({ params }: Props) {
                             companyName={assetInfo.name}
                             displayName={displayName}
                             initialAnalysis={initialAnalysis}
+                            initialLockedInfoDepth={
+                                cachedAnalysis?.lockedInfoDepth ?? []
+                            }
                             // 순수 additive: 캐시 seed 여부와 무관하게 클라이언트는
                             // 마운트 시 useAnalysis가 자동으로 재분석을 트리거하도록
                             // 항상 true를 유지한다(봇은 enqueue가 skip되어 생성 안 됨).

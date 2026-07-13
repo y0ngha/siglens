@@ -35,12 +35,9 @@ export type SubmitCongressTrendActionResult = SubmitCongressTrendResult;
  * bundle never ships (mirrors submitFinancialsAnalysisAction).
  *
  * §Reasoning: congress has no BYOK/premium gate, but the "깊은 생각" toggle
- * (member-reasoning-toggle spec Part A) still requires knowing the caller's
- * tier when the client actually requests it — `resolveTierOnly` resolves tier
- * alone (no premium-model check), and `resolveReasoning` forces `false` for
- * anonymous/free callers. The tier lookup is skipped entirely when the client
- * didn't request reasoning, since the result would be forced to `false`
- * either way.
+ * (member-reasoning-toggle spec Part A) still requires the caller tier.
+ * `resolveTierOnly` also supplies the core tier policy, and
+ * `resolveReasoning` forces `false` for anonymous/free callers.
  */
 export async function submitCongressTrendAction(
     symbol: string,
@@ -67,15 +64,9 @@ export async function submitCongressTrendAction(
         const requestHeaders = await headers();
         const skipEnqueueIfMiss = isBot(requestHeaders);
 
-        // resolveReasoning always returns false when the client didn't ask for
-        // reasoning, regardless of tier — skip the tier DB lookup entirely in
-        // that case rather than resolving it just to discard the result.
-        let resolvedReasoning = false;
-        if (reasoning === true) {
-            const user = await getCurrentUser();
-            const tier = await resolveTierOnly(user?.id ?? null);
-            resolvedReasoning = resolveReasoning(tier, reasoning);
-        }
+        const user = await getCurrentUser();
+        const tier = await resolveTierOnly(user?.id ?? null);
+        const resolvedReasoning = resolveReasoning(tier, reasoning);
 
         return await submitCongressTrend({
             symbol,
@@ -83,6 +74,7 @@ export async function submitCongressTrendAction(
             dataProvider: getCongressTradesProvider(),
             skipEnqueueIfMiss,
             reasoning: resolvedReasoning,
+            tier,
         });
     } catch (error) {
         // MISTAKES §0.7: server actions must not propagate raw exceptions to

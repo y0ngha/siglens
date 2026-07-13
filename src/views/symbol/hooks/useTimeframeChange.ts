@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useState, useTransition } from 'react';
+import { useCallback, useEffect, useRef, useState, useTransition } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import type { Timeframe } from '@y0ngha/siglens-core';
@@ -18,7 +18,11 @@ interface UseTimeframeChangeResult {
     handleTimeframeChange: (nextTimeframe: Timeframe) => void;
 }
 
-export function useTimeframeChange(symbol: string): UseTimeframeChangeResult {
+export function useTimeframeChange(
+    symbol: string,
+    isFreeTier: boolean,
+    isTierHydrated: boolean
+): UseTimeframeChangeResult {
     const [timeframeChangeCount, setTimeframeChangeCount] = useState(0);
     const [, startTransition] = useTransition();
 
@@ -28,10 +32,49 @@ export function useTimeframeChange(symbol: string): UseTimeframeChangeResult {
     const router = useRouter();
 
     const tf = searchParams.get(TIMEFRAME_QUERY_PARAM);
-    const timeframe = isValidTimeframe(tf) ? tf : DEFAULT_TIMEFRAME;
+    const requestedTimeframe = isValidTimeframe(tf) ? tf : DEFAULT_TIMEFRAME;
+    const timeframe =
+        (!isTierHydrated || isFreeTier) &&
+        requestedTimeframe !== DEFAULT_TIMEFRAME
+            ? DEFAULT_TIMEFRAME
+            : requestedTimeframe;
+    const previousTimeframeRef = useRef<Timeframe>(timeframe);
+    const pendingNavigationRef = useRef<Timeframe | null>(null);
+
+    useEffect(() => {
+        if (
+            !isTierHydrated ||
+            !isFreeTier ||
+            tf === null ||
+            tf === DEFAULT_TIMEFRAME
+        ) {
+            return;
+        }
+
+        router.replace(
+            `/${symbol}?${TIMEFRAME_QUERY_PARAM}=${DEFAULT_TIMEFRAME}`,
+            {
+                scroll: false,
+            }
+        );
+    }, [isFreeTier, isTierHydrated, router, symbol, tf]);
+
+    useEffect(() => {
+        if (!isTierHydrated) return;
+        if (timeframe === previousTimeframeRef.current) return;
+
+        previousTimeframeRef.current = timeframe;
+        if (pendingNavigationRef.current === timeframe) {
+            pendingNavigationRef.current = null;
+            return;
+        }
+        setTimeframeChangeCount(count => count + 1);
+    }, [isTierHydrated, timeframe]);
 
     const handleTimeframeChange = useCallback(
         (nextTimeframe: Timeframe): void => {
+            if (!isTierHydrated) return;
+            if (isFreeTier && nextTimeframe !== DEFAULT_TIMEFRAME) return;
             if (nextTimeframe === timeframe) return;
             // 이전 타임프레임 쿼리 취소 — 불필요한 네트워크 요청 방지
             void queryClient.cancelQueries({
@@ -52,13 +95,22 @@ export function useTimeframeChange(symbol: string): UseTimeframeChangeResult {
             });
             startTransition(() => {
                 setTimeframeChangeCount(c => c + 1);
+                pendingNavigationRef.current = nextTimeframe;
                 router.replace(
                     `/${symbol}?${TIMEFRAME_QUERY_PARAM}=${nextTimeframe}`,
                     { scroll: false }
                 );
             });
         },
-        [timeframe, queryClient, symbol, router, assetInfo?.fmpSymbol]
+        [
+            timeframe,
+            isFreeTier,
+            isTierHydrated,
+            queryClient,
+            symbol,
+            router,
+            assetInfo?.fmpSymbol,
+        ]
     );
 
     return { timeframe, timeframeChangeCount, handleTimeframeChange };

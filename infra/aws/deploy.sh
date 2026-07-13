@@ -68,14 +68,6 @@ for i in $(seq 1 "$MAX_ITERATIONS"); do
     case "$STATUS" in
         Successful)
             log "instance refresh completed successfully for $TAG"
-            # 직전 buildId(=직전 태그) prefix의 S3 캐시를 정리(storage 회수). lifecycle 14일이 백업.
-            # 현재 태그는 보존. 정리 실패는 배포를 막지 않는다(best-effort).
-            PREV_TAG=$(aws ssm get-parameter --name /siglens/prev-isr-buildid --query Parameter.Value --output text 2>/dev/null || echo "")
-            if [ -n "$PREV_TAG" ] && [ "$PREV_TAG" != "$TAG" ]; then
-              # ⚠️ 버킷 이름은 infra/aws/12-isr-cache.sh, infra/aws/deploy.sh, .github/workflows/deploy.yml 3곳에서 동기화되어야 한다.
-              aws s3 rm "s3://${ISR_CACHE_BUCKET:-siglens-isr-cache}/siglens-isr/${PREV_TAG}/" --recursive >/dev/null 2>&1 || true
-              log "purged old ISR cache prefix: $PREV_TAG"
-            fi
             aws ssm put-parameter --name /siglens/prev-isr-buildid --value "$TAG" --type String --overwrite >/dev/null 2>&1 || true
             exit 0
             ;;
