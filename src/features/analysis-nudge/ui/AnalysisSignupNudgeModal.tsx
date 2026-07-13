@@ -2,6 +2,7 @@
 
 import { useEscapeKey } from '@/shared/hooks/useEscapeKey';
 import { useFocusTrap } from '@/shared/hooks/useFocusTrap';
+import { REASONING_FEATURE_LABEL } from '@/features/reasoning-toggle';
 import Link from 'next/link';
 import { useEffect, useRef } from 'react';
 
@@ -70,8 +71,12 @@ export function AnalysisSignupNudgeModal({
                         더 깊은 분석을 원하세요?
                     </h2>
                     <p className="text-secondary-300 text-sm leading-relaxed">
-                        회원가입하면 &apos;깊은 생각&apos;을 켜고 더 자세한 분석
-                        리포트를 받을 수 있어요.
+                        {/* The object-particle `을` assumes REASONING_FEATURE_LABEL
+                            ends in a consonant (batchim) — true for '상세 분석'
+                            (분석 ends in 석). Revisit the particle (을/를) if the
+                            label ever changes to a vowel-final word. */}
+                        회원가입하면 &apos;{REASONING_FEATURE_LABEL}&apos;을
+                        켜고 더 자세한 분석 리포트를 받을 수 있어요.
                     </p>
                 </div>
 

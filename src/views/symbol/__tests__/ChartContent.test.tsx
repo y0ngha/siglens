@@ -94,12 +94,17 @@ vi.mock('@/views/symbol/hooks/useActionPricesVisibility', () => ({
     })),
 }));
 
+const { mockOpenSignupNudge } = vi.hoisted(() => ({
+    mockOpenSignupNudge: vi.fn(),
+}));
+
 vi.mock('@/features/symbol-model/model/SymbolModelContext', () => ({
     useSymbolModel: vi.fn(() => ({
         modelId: 'gemini-2.5-flash-lite',
         isHydrated: true,
         reasoning: false,
         isReasoningHydrated: true,
+        openSignupNudge: mockOpenSignupNudge,
     })),
 }));
 
@@ -107,23 +112,17 @@ const { mockUseAnonAnalysisNudge } = vi.hoisted(() => ({
     // isLoginResolved: true by default — most tests here exercise the
     // post-resolve path. The real hook only ever calls onSymbolAnalyzed's
     // effective branch once this is true (see ChartContent's gating on it).
+    // The modal open-state is no longer owned by this hook: crossing the
+    // threshold calls the provider's shared opener, so the hook returns just
+    // the resolution flag + the per-symbol notifier.
     mockUseAnonAnalysisNudge: vi.fn(() => ({
-        isOpen: false,
         isLoginResolved: true,
         onSymbolAnalyzed: vi.fn(),
-        close: vi.fn(),
     })),
 }));
 
 vi.mock('@/features/analysis-nudge', () => ({
     useAnonAnalysisNudge: mockUseAnonAnalysisNudge,
-    AnalysisSignupNudgeModal: ({ onClose }: { onClose: () => void }) => (
-        <div data-testid="analysis-signup-nudge-modal">
-            <button type="button" onClick={onClose}>
-                close
-            </button>
-        </div>
-    ),
 }));
 
 vi.mock('@/views/symbol/SymbolPageContext', () => ({
@@ -164,22 +163,7 @@ vi.mock('@/shared/lib/pwaEvents', () => ({
     PWA_TRIGGER_EVENT: 'pwa-trigger',
 }));
 
-// Throw-capable so the ErrorBoundary fallback={null} path can be exercised.
-const { mockFearGreedCard } = vi.hoisted(() => ({
-    mockFearGreedCard: vi.fn(),
-}));
-
-vi.mock('@/views/symbol/FearGreedCardMounted', () => ({
-    FearGreedCardMounted: () => mockFearGreedCard(),
-}));
-
 describe('ChartContent', () => {
-    beforeEach(() => {
-        mockFearGreedCard.mockImplementation(() => (
-            <div data-testid="fear-greed-card" />
-        ));
-    });
-
     afterEach(() => {
         vi.clearAllMocks();
     });
@@ -199,31 +183,11 @@ describe('ChartContent', () => {
         expect(container.firstElementChild).toBeDefined();
     });
 
-    it('swallows a thrown fear-greed card error via ErrorBoundary and still renders the chart', () => {
-        // FearGreedCardMounted uses useSuspenseQuery; if its bars fetch throws
-        // (the SSR failure mode #513 guards), the ErrorBoundary fallback={null}
-        // must contain it so the chart shell keeps rendering.
-        const consoleSpy = vi
-            .spyOn(console, 'error')
-            .mockImplementation(() => undefined);
-        mockFearGreedCard.mockImplementation(() => {
-            throw new Error('bars fetch failed');
-        });
-
-        // try/finally so a failed assertion still restores the spy and doesn't
-        // leak the console.error mock into sibling tests.
-        try {
-            const { container } = render(<ChartContent {...defaultProps} />);
-
-            expect(screen.queryByTestId('fear-greed-card')).toBeNull();
-            expect(container.firstElementChild).not.toBeNull();
-            expect(screen.getByRole('separator')).toBeDefined();
-            // ErrorBoundary가 에러를 잡으면 React가 console.error로 보고한다 —
-            // 에러 경로가 실제로 실행됐음을 검증(테스트가 공허하게 통과하지 않도록).
-            expect(consoleSpy).toHaveBeenCalled();
-        } finally {
-            consoleSpy.mockRestore();
-        }
+    it('does not render a fear-greed card in the analysis panel', () => {
+        // 공포·탐욕 지표는 헤더 칩과 전용 페이지에만 노출한다 — 기술적 분석
+        // 패널(차트 사이드)에서는 제거됐다. 회귀 방지용 단언.
+        render(<ChartContent {...defaultProps} />);
+        expect(screen.queryByTestId('fear-greed-card')).toBeNull();
     });
 
     it('renders the drag handle separator', () => {
@@ -278,55 +242,18 @@ describe('ChartContent', () => {
     });
 
     describe('anonymous signup nudge (member-reasoning-toggle spec Part B)', () => {
-        it('does not render the nudge modal when isOpen is false', () => {
-            mockUseAnonAnalysisNudge.mockReturnValueOnce({
-                isOpen: false,
-                isLoginResolved: true,
-                onSymbolAnalyzed: vi.fn(),
-                close: vi.fn(),
-            });
+        it('does not render the signup-nudge modal itself — the provider owns the single instance', () => {
             render(<ChartContent {...defaultProps} />);
-            expect(
-                screen.queryByTestId('analysis-signup-nudge-modal')
-            ).toBeNull();
-        });
-
-        it('renders the nudge modal when isOpen is true', () => {
-            mockUseAnonAnalysisNudge.mockReturnValueOnce({
-                isOpen: true,
-                isLoginResolved: true,
-                onSymbolAnalyzed: vi.fn(),
-                close: vi.fn(),
-            });
-            render(<ChartContent {...defaultProps} />);
-            expect(
-                screen.getByTestId('analysis-signup-nudge-modal')
-            ).toBeDefined();
-        });
-
-        it('closing the modal calls the hook-provided close()', async () => {
-            const close = vi.fn();
-            mockUseAnonAnalysisNudge.mockReturnValueOnce({
-                isOpen: true,
-                isLoginResolved: true,
-                onSymbolAnalyzed: vi.fn(),
-                close,
-            });
-            render(<ChartContent {...defaultProps} />);
-            screen
-                .getByTestId('analysis-signup-nudge-modal')
-                .querySelector('button')
-                ?.click();
-            expect(close).toHaveBeenCalledTimes(1);
+            // ChartContent no longer imports/renders AnalysisSignupNudgeModal;
+            // the one instance lives in SymbolModelProvider. No dialog here.
+            expect(screen.queryByRole('dialog')).toBeNull();
         });
 
         it('notifies onSymbolAnalyzed with the symbol when a real (non-fallback) narrative renders', async () => {
             const onSymbolAnalyzed = vi.fn();
             mockUseAnonAnalysisNudge.mockReturnValueOnce({
-                isOpen: false,
                 isLoginResolved: true,
                 onSymbolAnalyzed,
-                close: vi.fn(),
             });
             // default useAnalysis mock returns `analysis: {}` — not the
             // FALLBACK_ANALYSIS reference, so isFallbackAnalysis() is false.
@@ -341,10 +268,8 @@ describe('ChartContent', () => {
                 await import('@/views/symbol/hooks/useAnalysis');
             const onSymbolAnalyzed = vi.fn();
             mockUseAnonAnalysisNudge.mockReturnValueOnce({
-                isOpen: false,
                 isLoginResolved: true,
                 onSymbolAnalyzed,
-                close: vi.fn(),
             });
             (useAnalysis as ReturnType<typeof vi.fn>).mockReturnValueOnce({
                 analysis: FALLBACK_ANALYSIS,

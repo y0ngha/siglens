@@ -1,4 +1,5 @@
 import { renderHook, act } from '@testing-library/react';
+import type { Mock } from 'vitest';
 import type { UseQueryResult } from '@tanstack/react-query';
 import type { AuthUserRecord } from '@/shared/lib/auth/types';
 import { useAnonAnalysisNudge } from '@/features/analysis-nudge/hooks/useAnonAnalysisNudge';
@@ -39,7 +40,15 @@ function mockQueryResult(
 }
 
 describe('useAnonAnalysisNudge', () => {
+    // The shared opener injected by the caller (in production, the memoized
+    // `openSignupNudge` from SymbolModelProvider). Crossing the threshold must
+    // invoke THIS instead of any local state — the hook no longer owns the
+    // modal's open-state, so both the header nudge and the auto-nudge open the
+    // single provider-rendered instance.
+    let openNudge: Mock<() => void>;
+
     beforeEach(() => {
+        openNudge = vi.fn<() => void>();
         mockRecord.mockReset();
         mockHasShown.mockReset();
         mockMarkShown.mockReset();
@@ -53,34 +62,36 @@ describe('useAnonAnalysisNudge', () => {
     it('does not count before login state is resolved (data undefined)', () => {
         mockUseCurrentUser.mockReturnValue(mockQueryResult(undefined));
 
-        const { result } = renderHook(() => useAnonAnalysisNudge());
+        const { result } = renderHook(() => useAnonAnalysisNudge(openNudge));
 
+        expect(result.current.isLoginResolved).toBe(false);
         act(() => {
             result.current.onSymbolAnalyzed('AAPL');
         });
 
         expect(mockRecord).not.toHaveBeenCalled();
-        expect(result.current.isOpen).toBe(false);
+        expect(openNudge).not.toHaveBeenCalled();
     });
 
     it('is a no-op for members (logged-in user)', () => {
         mockUseCurrentUser.mockReturnValue(mockQueryResult(MEMBER));
 
-        const { result } = renderHook(() => useAnonAnalysisNudge());
+        const { result } = renderHook(() => useAnonAnalysisNudge(openNudge));
 
         act(() => {
             result.current.onSymbolAnalyzed('AAPL');
         });
 
         expect(mockRecord).not.toHaveBeenCalled();
-        expect(result.current.isOpen).toBe(false);
+        expect(openNudge).not.toHaveBeenCalled();
     });
 
     it('records the symbol for anonymous visitors (data=null, resolved)', () => {
         mockUseCurrentUser.mockReturnValue(mockQueryResult(null));
 
-        const { result } = renderHook(() => useAnonAnalysisNudge());
+        const { result } = renderHook(() => useAnonAnalysisNudge(openNudge));
 
+        expect(result.current.isLoginResolved).toBe(true);
         act(() => {
             result.current.onSymbolAnalyzed('AAPL');
         });
@@ -88,7 +99,7 @@ describe('useAnonAnalysisNudge', () => {
         expect(mockRecord).toHaveBeenCalledWith('AAPL');
     });
 
-    it('opens the modal when the 3rd distinct symbol crosses the threshold and not shown today', () => {
+    it('opens the shared modal when the 3rd distinct symbol crosses the threshold and not shown today', () => {
         mockUseCurrentUser.mockReturnValue(mockQueryResult(null));
         mockRecord.mockReturnValue({
             distinctCount: 3,
@@ -96,13 +107,13 @@ describe('useAnonAnalysisNudge', () => {
         });
         mockHasShown.mockReturnValue(false);
 
-        const { result } = renderHook(() => useAnonAnalysisNudge());
+        const { result } = renderHook(() => useAnonAnalysisNudge(openNudge));
 
         act(() => {
             result.current.onSymbolAnalyzed('NVDA');
         });
 
-        expect(result.current.isOpen).toBe(true);
+        expect(openNudge).toHaveBeenCalledTimes(1);
         expect(mockMarkShown).toHaveBeenCalledTimes(1);
     });
 
@@ -114,13 +125,13 @@ describe('useAnonAnalysisNudge', () => {
         });
         mockHasShown.mockReturnValue(true);
 
-        const { result } = renderHook(() => useAnonAnalysisNudge());
+        const { result } = renderHook(() => useAnonAnalysisNudge(openNudge));
 
         act(() => {
             result.current.onSymbolAnalyzed('NVDA');
         });
 
-        expect(result.current.isOpen).toBe(false);
+        expect(openNudge).not.toHaveBeenCalled();
         expect(mockMarkShown).not.toHaveBeenCalled();
     });
 
@@ -131,33 +142,12 @@ describe('useAnonAnalysisNudge', () => {
             crossedThreshold: false,
         });
 
-        const { result } = renderHook(() => useAnonAnalysisNudge());
+        const { result } = renderHook(() => useAnonAnalysisNudge(openNudge));
 
         act(() => {
             result.current.onSymbolAnalyzed('AAPL');
         });
 
-        expect(result.current.isOpen).toBe(false);
-    });
-
-    it('close() sets isOpen back to false', () => {
-        mockUseCurrentUser.mockReturnValue(mockQueryResult(null));
-        mockRecord.mockReturnValue({
-            distinctCount: 3,
-            crossedThreshold: true,
-        });
-        mockHasShown.mockReturnValue(false);
-
-        const { result } = renderHook(() => useAnonAnalysisNudge());
-
-        act(() => {
-            result.current.onSymbolAnalyzed('NVDA');
-        });
-        expect(result.current.isOpen).toBe(true);
-
-        act(() => {
-            result.current.close();
-        });
-        expect(result.current.isOpen).toBe(false);
+        expect(openNudge).not.toHaveBeenCalled();
     });
 });

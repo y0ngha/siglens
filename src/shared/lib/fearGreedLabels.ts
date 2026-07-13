@@ -71,8 +71,8 @@ export function formatFactorRaw(
 }
 
 /**
- * Confidence footer 표시 포맷터 — Hero footer(FearGreedPage)와 분석 탭 카드
- * footer(FearGreedCard) 양쪽에서 동일 형태로 사용한다.
+ * Confidence footer 표시 포맷터 — fear & greed를 표시하는 여러 footer에서
+ * 동일 형태로 사용한다.
  */
 export function formatConfidenceFooter(
     sampleSize: number,

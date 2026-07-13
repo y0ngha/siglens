@@ -56,15 +56,14 @@ vi.mock('@/features/symbol-model/model/SymbolModelContext', () => ({
         isHydrated: true,
         reasoning: false,
         isReasoningHydrated: true,
+        openSignupNudge: vi.fn(),
     }),
 }));
 vi.mock('@/features/analysis-nudge', () => ({
     useAnonAnalysisNudge: () => ({
-        isOpen: false,
+        isLoginResolved: false,
         onSymbolAnalyzed: vi.fn(),
-        close: vi.fn(),
     }),
-    AnalysisSignupNudgeModal: () => null,
 }));
 vi.mock('../SymbolPageContext', () => ({
     useSymbolPageContext: () => ({ indicatorCount: 25 }),
@@ -86,9 +85,6 @@ vi.mock('@/widgets/analysis/hooks/useAnalysisProgress', () => ({
     useAnalysisProgress: () => ({ phaseIndex: 0, tipIndex: 0 }),
 }));
 vi.mock('@/features/symbol-chat', () => ({ usePublishSymbolChat: vi.fn() }));
-vi.mock('../FearGreedCardMounted', () => ({
-    FearGreedCardMounted: () => null,
-}));
 vi.mock('@/widgets/analysis', () => ({
     AnalysisPanel: () => <div data-testid="analysis-panel" />,
 }));

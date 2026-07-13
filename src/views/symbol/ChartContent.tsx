@@ -15,16 +15,8 @@ import {
 import type { MarketProfileId } from '@/shared/config/marketProfile';
 import dynamic from 'next/dynamic';
 import type { ReactNode } from 'react';
-import React, {
-    Suspense,
-    useEffect,
-    useEffectEvent,
-    useMemo,
-    useRef,
-} from 'react';
-import { ErrorBoundary } from 'react-error-boundary';
+import React, { useEffect, useEffectEvent, useMemo, useRef } from 'react';
 import { SNAP_PEEK } from './constants/mobileSheet';
-import { FearGreedCardMounted } from './FearGreedCardMounted';
 import { useActionPricesVisibility } from './hooks/useActionPricesVisibility';
 import { useAnalysis } from './hooks/useAnalysis';
 import { useAnalysisDerivedData } from './hooks/useAnalysisDerivedData';
@@ -37,10 +29,7 @@ import {
     usePanelResize,
 } from './hooks/usePanelResize';
 import { useSymbolModel } from '@/features/symbol-model';
-import {
-    useAnonAnalysisNudge,
-    AnalysisSignupNudgeModal,
-} from '@/features/analysis-nudge';
+import { useAnonAnalysisNudge } from '@/features/analysis-nudge';
 import { useSymbolPageContext } from './SymbolPageContext';
 import { TechnicalFactsSummary } from './TechnicalFactsSummary';
 import type { AnalysisStatus } from './utils/analysisStatus';
@@ -160,6 +149,7 @@ export function ChartContent({
         isReasoningHydrated,
         tier,
         isTierHydrated,
+        openSignupNudge,
     } = useSymbolModel();
 
     // analysis → symbol-page 역방향 import를 제거하기 위해 여기서 context를 읽어 내려보낸다.
@@ -195,14 +185,13 @@ export function ChartContent({
     const { displayAnalyzing, handleProgressFinished } =
         useAnalysisDisplay(isAnalyzing);
 
-    // 비회원 3-심볼 회원가입 유도 모달 (member-reasoning-toggle spec Part B).
+    // 비회원 3-심볼 회원가입 유도 (member-reasoning-toggle spec Part B).
     // 회원/로그인 판별 전에는 useAnonAnalysisNudge 내부에서 자체적으로 no-op한다.
-    const {
-        isOpen: isNudgeOpen,
-        isLoginResolved: isNudgeLoginResolved,
-        onSymbolAnalyzed,
-        close: closeNudge,
-    } = useAnonAnalysisNudge();
+    // 모달 자체는 SymbolModelProvider가 단 하나만 렌더하며, 임계값 통과 시
+    // 공유 opener(openSignupNudge)로 그 단일 인스턴스를 연다 — 헤더의 잠금 토글
+    // 넛지와 동일 인스턴스를 공유해 두 모달이 겹쳐 뜨는 것을 막는다.
+    const { isLoginResolved: isNudgeLoginResolved, onSymbolAnalyzed } =
+        useAnonAnalysisNudge(openSignupNudge);
 
     // 데스크톱·모바일 두 인스턴스 공유 — 모바일 시트 unmount/remount 시에도 상태 유지.
     const { phaseIndex: progressPhaseIndex, tipIndex: progressTipIndex } =
@@ -218,16 +207,6 @@ export function ChartContent({
 
     const analysisContent = useMemo(() => {
         const hasNarrative = !isFallbackAnalysis(analysis);
-        const fearGreedCard = (
-            <ErrorBoundary fallback={null}>
-                <Suspense fallback={null}>
-                    <FearGreedCardMounted
-                        symbol={symbol}
-                        fmpSymbol={fmpSymbol}
-                    />
-                </Suspense>
-            </ErrorBoundary>
-        );
 
         // 분기 우선순위: 서사 유무를 먼저 보고, 봇 차단은 그 안에서 additive로 둔다.
         // 이전엔 `isBotBlocked`를 맨 앞에서 검사해 봇이면 BotBlockedNotice가 사실 층
@@ -247,7 +226,6 @@ export function ChartContent({
                     marketProfile={marketProfile}
                 />
                 {isBotBlocked && <BotBlockedNotice />}
-                {fearGreedCard}
             </div>
         ) : (
             <div className="flex flex-col gap-3">
@@ -281,7 +259,6 @@ export function ChartContent({
                     stale 분석만 보던 실사용자가 인지하도록(PR #530 리뷰 반영). 두 분기가
                     동일하게 `isBotBlocked`일 때만 안내를 노출해 일관된다. */}
                 {isBotBlocked && <BotBlockedNotice className="mt-3" />}
-                {fearGreedCard}
             </div>
         );
     }, [
@@ -302,7 +279,6 @@ export function ChartContent({
         cooldownNotice,
         actionPricesVisible,
         setActionPricesVisible,
-        fmpSymbol,
         marketProfile,
         indicatorCount,
         lockedInfoDepth,
@@ -498,9 +474,8 @@ export function ChartContent({
             {isDragging && (
                 <div className="fixed inset-0 z-50 cursor-col-resize" />
             )}
-
-            {/* 비회원 3-심볼 회원가입 유도 모달(Part B) — 소프트 넙지, 분석은 절대 차단하지 않는다. */}
-            {isNudgeOpen && <AnalysisSignupNudgeModal onClose={closeNudge} />}
+            {/* 비회원 3-심볼 회원가입 유도 모달(Part B)은 SymbolModelProvider가
+                단일 인스턴스로 렌더한다 — 여기서는 openSignupNudge로 열기만 한다. */}
         </div>
     );
 }
