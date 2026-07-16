@@ -430,9 +430,18 @@ function KeyLevelsHeaderInfo() {
 
 interface PatternAccordionItemProps {
     pattern: PatternResult;
+    /**
+     * confidence 정보 깊이가 잠긴 free 티어에서는 confidenceWeight가 0으로
+     * 마스킹되어 도착한다. 0을 그대로 ConfidenceBadge에 넘기면 'medium'으로
+     * 오표시되므로, 잠긴 경우 배지 자체를 숨긴다.
+     */
+    showConfidence: boolean;
 }
 
-function PatternAccordionItem({ pattern }: PatternAccordionItemProps) {
+function PatternAccordionItem({
+    pattern,
+    showConfidence,
+}: PatternAccordionItemProps) {
     const [isOpen, setIsOpen] = useState(false);
 
     const handleToggleOpen = (): void => {
@@ -457,11 +466,13 @@ function PatternAccordionItem({ pattern }: PatternAccordionItemProps) {
                     <TrendBadge trend={pattern.trend} />
                     <ChevronIcon isOpen={isOpen} />
                 </button>
-                <span className="shrink-0 pr-2">
-                    <ConfidenceBadge
-                        confidenceWeight={pattern.confidenceWeight}
-                    />
-                </span>
+                {showConfidence && (
+                    <span className="shrink-0 pr-2">
+                        <ConfidenceBadge
+                            confidenceWeight={pattern.confidenceWeight}
+                        />
+                    </span>
+                )}
             </div>
 
             {isOpen ? (
@@ -528,9 +539,14 @@ function StructuredSkillSummary({ sections }: StructuredSkillSummaryProps) {
 
 interface StrategyAccordionItemProps {
     strategy: StrategyResult;
+    /** free 티어의 마스킹된 confidenceWeight(0) 오표시 방지. PatternAccordionItem 참조. */
+    showConfidence: boolean;
 }
 
-function StrategyAccordionItem({ strategy }: StrategyAccordionItemProps) {
+function StrategyAccordionItem({
+    strategy,
+    showConfidence,
+}: StrategyAccordionItemProps) {
     const [isOpen, setIsOpen] = useState(false);
 
     const handleToggleOpen = (): void => {
@@ -554,11 +570,13 @@ function StrategyAccordionItem({ strategy }: StrategyAccordionItemProps) {
                     <TrendBadge trend={strategy.trend} />
                     <ChevronIcon isOpen={isOpen} />
                 </button>
-                <span className="shrink-0 pr-2">
-                    <ConfidenceBadge
-                        confidenceWeight={strategy.confidenceWeight}
-                    />
-                </span>
+                {showConfidence && (
+                    <span className="shrink-0 pr-2">
+                        <ConfidenceBadge
+                            confidenceWeight={strategy.confidenceWeight}
+                        />
+                    </span>
+                )}
             </div>
 
             {isOpen ? (
@@ -780,6 +798,11 @@ export function AnalysisPanel({
         lockedInfoDepth.some(depth =>
             LOCKED_ACTION_INFO_DEPTHS.includes(depth)
         );
+    // free 티어는 스킬 감지 결과(패턴/전략)는 보지만 confidence 정보 깊이는
+    // 잠겨 confidenceWeight가 0으로 마스킹되어 온다. 배지를 숨겨 0을 'medium'
+    // 신뢰도로 오표시하는 것을 막는다.
+    const hasLockedConfidence =
+        hasLockedDetails && lockedInfoDepth.includes('confidence');
     const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const resetCopyStateLater = (): void => {
@@ -989,8 +1012,17 @@ export function AnalysisPanel({
                 </p>
             )}
             <p className="text-secondary-500 font-mono text-xs">
-                {detectedPatterns.length + detectedStrategyResults.length}개
-                스킬 감지 · {indicatorCount}종 인디케이터 적용
+                {/* free 티어는 대표 스킬만 샘플되어 감지 개수가 0일 수 있으므로,
+                    오해를 주지 않도록 개수 세그먼트를 숨기고 인디케이터 적용
+                    수만 노출한다. 대표 스킬 안내는 아래 nudge가 담당한다. */}
+                {!hasLockedDetails && (
+                    <>
+                        {detectedPatterns.length +
+                            detectedStrategyResults.length}
+                        개 스킬 감지 ·{' '}
+                    </>
+                )}
+                {indicatorCount}종 인디케이터 적용
             </p>
 
             {/* 분석 중에는 진행 인디케이터로 대체.
@@ -1021,18 +1053,29 @@ export function AnalysisPanel({
             {!showProgress && (
                 <>
                     {hasLockedDetails && (
-                        <div className="border-secondary-700 relative overflow-hidden rounded-lg border p-4">
+                        <div className="border-secondary-700 relative overflow-hidden rounded-lg border">
+                            {/* 블러 스켈레톤은 장식용 배경이다. absolute로 카드를
+                                채우되 높이는 아래 CTA 레이어가 결정하므로, 문구가
+                                길어져도 CTA가 카드 밖으로 잘리지 않는다. */}
                             <div
-                                className="pointer-events-none blur-sm select-none"
+                                className="pointer-events-none absolute inset-0 p-4 blur-sm select-none"
                                 aria-hidden
                             >
                                 <div className="bg-secondary-700/60 h-3 w-2/5 rounded" />
                                 <div className="bg-secondary-700/40 mt-3 h-3 w-full rounded" />
                                 <div className="bg-secondary-700/40 mt-2 h-3 w-4/5 rounded" />
+                                <div className="bg-secondary-700/40 mt-2 h-3 w-full rounded" />
+                                <div className="bg-secondary-700/40 mt-2 h-3 w-3/5 rounded" />
                             </div>
-                            <div className="bg-secondary-900/55 absolute inset-0 flex flex-col items-center justify-center gap-2 px-4 text-center">
+                            <div className="bg-secondary-900/55 relative flex flex-col items-center justify-center gap-2 p-4 text-center">
                                 <p className="text-secondary-100 text-sm font-semibold">
                                     상세 분석과 매매 전략은 회원에게 제공됩니다.
+                                </p>
+                                <p className="text-secondary-300 text-xs leading-relaxed">
+                                    보조지표 심층 분석, 캔들 패턴, 리스크·핵심
+                                    지지·저항 레벨, 진입·손절·익절 매매
+                                    시나리오까지 회원가입 후 모두 확인할 수
+                                    있어요.
                                 </p>
                                 <Link
                                     href="/signup"
@@ -1223,6 +1266,7 @@ export function AnalysisPanel({
                                     <PatternAccordionItem
                                         key={pattern.id}
                                         pattern={pattern}
+                                        showConfidence={!hasLockedConfidence}
                                     />
                                 ))}
                             </div>
@@ -1243,10 +1287,28 @@ export function AnalysisPanel({
                                     <StrategyAccordionItem
                                         key={strategy.id}
                                         strategy={strategy}
+                                        showConfidence={!hasLockedConfidence}
                                     />
                                 ))}
                             </div>
                         </div>
+                    )}
+
+                    {/* free 티어는 그룹당 최대 3개로 샘플된 대표 스킬만 노출된다.
+                        결과가 잘렸다는 사실을 감추지 않고 친절하게 회원가입을
+                        안내한다. 스킬 감지 개수는 노출하지 않는다. 0개일 수 있어
+                        오해를 주기 때문이다. */}
+                    {hasLockedDetails && (
+                        <p className="text-secondary-500 text-xs leading-relaxed">
+                            비회원에게는 대표 스킬 분석만 제공돼요.{' '}
+                            <Link
+                                href="/signup"
+                                className="text-primary-400 hover:text-primary-300 focus-visible:ring-primary-500 rounded underline focus-visible:ring-1 focus-visible:outline-none"
+                            >
+                                회원가입
+                            </Link>
+                            하면 전체 스킬 분석을 볼 수 있어요.
+                        </p>
                     )}
                 </>
             )}
