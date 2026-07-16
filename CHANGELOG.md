@@ -1,5 +1,12 @@
 # Changelog
 
+# [0.40.0](https://github.com/y0ngha/siglens/compare/v0.39.0...v0.40.0) (2026-07-16)
+
+
+### Features
+
+* **analysis:** show sampled skill detections to free tier ([9be8c7e](https://github.com/y0ngha/siglens/commit/9be8c7e1a7ee2b1dc23c744ab9b7bfde4bb16aea))
+
 # [0.39.0](https://github.com/y0ngha/siglens/compare/v0.38.1...v0.39.0) (2026-07-16)
 
 
