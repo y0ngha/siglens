@@ -309,6 +309,46 @@ describe('useAnalysis', () => {
             });
         });
 
+        it('sets the normalized result and a non-empty lockedInfoDepth for a free tier with a genuine partial lock', async () => {
+            // Unlike the "legacy cached result" test above (empty/missing
+            // lockedInfoDepth triggers the FREE_LOCKED_INFO_DEPTH fabrication
+            // guard), a real gated response carries a non-empty
+            // lockedInfoDepth and must flow straight through to state.
+            mockSubmit.mockResolvedValue({
+                status: 'cached',
+                result: {
+                    summary: '무료 티어 부분 공개 요약',
+                    trend: 'bullish',
+                    riskLevel: 'medium',
+                } as unknown as AnalysisResponse,
+                lockedInfoDepth: ['partial_detail'],
+            });
+
+            const { result } = renderHook(
+                () =>
+                    useAnalysis(
+                        makeOptions({
+                            initialAnalysisFailed: true,
+                            isTierHydrated: true,
+                            tier: 'free',
+                        })
+                    ),
+                { wrapper: makeWrapper() }
+            );
+
+            await waitFor(() => {
+                expect(result.current.lockedInfoDepth).toEqual([
+                    'partial_detail',
+                ]);
+                expect(result.current.analysisResult).not.toBeNull();
+                expect(result.current.analysisResult?.summary).toBe(
+                    '무료 티어 부분 공개 요약'
+                );
+                expect(result.current.analysisResult?.trend).toBe('bullish');
+                expect(result.current.analysisResult?.riskLevel).toBe('medium');
+            });
+        });
+
         it('clears a member result before a free-tier refresh can complete', async () => {
             let resolveSecondSubmit: (() => void) | undefined;
             mockSubmit

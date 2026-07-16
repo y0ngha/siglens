@@ -184,6 +184,37 @@ describe('AnalysisPanel', () => {
         ).not.toBeInTheDocument();
     });
 
+    it('masks the risk badge and action recommendation section when locked, not just showing the teaser', () => {
+        render(
+            <AnalysisPanel
+                symbol="AAPL"
+                analysis={makeAnalysis({
+                    riskLevel: 'medium',
+                    actionRecommendation: makeActionRecommendation(),
+                })}
+                keyLevels={EMPTY_KEY_LEVELS}
+                timeframe="1Day"
+                lockedInfoDepth={['partial_detail', 'full_detail']}
+                showLockedSignup={true}
+            />
+        );
+
+        // The signup teaser is present.
+        expect(
+            screen.getByText('상세 분석과 매매 전략은 회원에게 제공됩니다.')
+        ).toBeInTheDocument();
+        expect(screen.getByRole('link', { name: '회원가입' })).toHaveAttribute(
+            'href',
+            '/signup'
+        );
+
+        // The gated values themselves must be removed, not merely covered by
+        // the teaser overlay: risk badge (hasLockedPartialDetail) and the
+        // action recommendation section (hasLockedActionDetail).
+        expect(screen.queryByText('보통')).not.toBeInTheDocument();
+        expect(screen.queryByText('매매 전략')).not.toBeInTheDocument();
+    });
+
     it('renders "AI 분석" heading', () => {
         render(
             <AnalysisPanel

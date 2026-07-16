@@ -117,6 +117,7 @@ const mockEvaluateSymbolIndexability =
 interface ClientSeedProps {
     initialAnalysis: unknown;
     initialAnalysisFailed: unknown;
+    initialLockedInfoDepth: unknown;
 }
 
 describe('Symbol page', () => {
@@ -349,6 +350,28 @@ describe('Symbol page', () => {
             const props = await getClientProps();
 
             expect(props.initialAnalysisFailed).toBe(true);
+        });
+
+        it('peek HIT의 lockedInfoDepth를 initialLockedInfoDepth로 그대로 전달한다', async () => {
+            mockPeekAnalysisCache.mockResolvedValue({
+                result: { summary: 'cached analysis' },
+                lockedInfoDepth: ['partial_detail', 'full_detail'],
+            } as never);
+
+            const props = await getClientProps();
+
+            expect(props.initialLockedInfoDepth).toEqual([
+                'partial_detail',
+                'full_detail',
+            ]);
+        });
+
+        it('peek MISS(null) 시 initialLockedInfoDepth는 빈 배열로 기본값 처리된다', async () => {
+            mockPeekAnalysisCache.mockResolvedValue(null);
+
+            const props = await getClientProps();
+
+            expect(props.initialLockedInfoDepth).toEqual([]);
         });
 
         it('does not render chart FAQ JSON-LD', async () => {

@@ -94,5 +94,15 @@ test.describe('symbol analysis: cached-fixture short-circuit renders', () => {
         await expect(page.getByRole('button', { name: '5분' })).toHaveClass(
             /primary/
         );
+
+        // A member's tier resolves to `member`, and core's `MEMBER_INFO_DEPTH`
+        // equals `PRO_INFO_DEPTH` (see @y0ngha/siglens-core domain/tier.ts), so
+        // `filterAnalysisResult` deterministically returns an empty
+        // `lockedInfoDepth` for this tier, so the signup nudge must not render.
+        await expect(
+            page
+                .getByRole('complementary')
+                .getByRole('link', { name: '회원가입' })
+        ).not.toBeVisible();
     });
 });

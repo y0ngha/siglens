@@ -163,6 +163,26 @@ describe('useTimeframeChange', () => {
         expect(result.current.timeframeChangeCount).toBe(0);
     });
 
+    it('is a no-op when a hydrated free user requests a non-default timeframe', () => {
+        // Mirrors the pre-hydration no-op test above, but exercises the
+        // separate `isFreeTier && nextTimeframe !== DEFAULT_TIMEFRAME` guard
+        // inside handleTimeframeChange, which applies even after hydration.
+        const { result } = renderHook(
+            () => useTimeframeChange('AAPL', true, true),
+            {
+                wrapper: makeWrapper(),
+            }
+        );
+
+        act(() => {
+            result.current.handleTimeframeChange('1Week' as Timeframe);
+        });
+
+        expect(mockReplace).not.toHaveBeenCalled();
+        expect(getBarsAction).not.toHaveBeenCalled();
+        expect(result.current.timeframeChangeCount).toBe(0);
+    });
+
     it('restores a member query timeframe after hydration and refreshes analysis once', async () => {
         mockGet.mockReturnValue('1Week');
 

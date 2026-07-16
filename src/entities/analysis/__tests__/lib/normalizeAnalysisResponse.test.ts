@@ -91,4 +91,23 @@ describe('normalizeAnalysisResponse', () => {
 
         expect(result.keyLevels).toEqual({ support: [], resistance: [] });
     });
+
+    it('falls back to defaults when summary/trend/riskLevel are omitted, as a free-filtered response would', () => {
+        // partial() always supplies summary/trend/riskLevel, which never
+        // exercises the `??` fallbacks below. A tier-filtered response nulls
+        // these fields out entirely, so build the input without them.
+        const result = normalizeAnalysisResponse({
+            indicatorResults: [],
+            patternSummaries: [],
+            strategyResults: [],
+            candlePatterns: [],
+            trendlines: [],
+            keyLevels: { support: [], resistance: [] },
+            priceTargets: { bullish: null, bearish: null },
+        } as unknown as AnalysisResponse);
+
+        expect(result.summary).toBe('');
+        expect(result.trend).toBe('neutral');
+        expect(result.riskLevel).toBe('medium');
+    });
 });
