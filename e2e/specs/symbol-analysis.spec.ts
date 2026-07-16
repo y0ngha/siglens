@@ -67,9 +67,11 @@ test.describe('symbol analysis: cached-fixture short-circuit renders', () => {
         await page.goto('/AAPL?tf=1Hour');
 
         await page.waitForURL('**/AAPL?tf=1Day');
-        await expect(page.getByRole('button', { name: '5분' })).toBeDisabled();
         await expect(
-            page.getByRole('button', { name: '1시간' })
+            page.getByRole('button', { name: '5분', exact: true })
+        ).toBeDisabled();
+        await expect(
+            page.getByRole('button', { name: '1시간', exact: true })
         ).toBeDisabled();
         await expect(
             page
@@ -89,11 +91,13 @@ test.describe('symbol analysis: cached-fixture short-circuit renders', () => {
 
         await page.goto('/AAPL?tf=5Min');
 
-        await expect(page.getByRole('button', { name: '5분' })).toBeEnabled();
+        await expect(
+            page.getByRole('button', { name: '5분', exact: true })
+        ).toBeEnabled();
         await page.waitForURL('**/AAPL?tf=5Min');
-        await expect(page.getByRole('button', { name: '5분' })).toHaveClass(
-            /primary/
-        );
+        await expect(
+            page.getByRole('button', { name: '5분', exact: true })
+        ).toHaveClass(/primary/);
 
         // A member's tier resolves to `member`, and core's `MEMBER_INFO_DEPTH`
         // equals `PRO_INFO_DEPTH` (see @y0ngha/siglens-core domain/tier.ts), so

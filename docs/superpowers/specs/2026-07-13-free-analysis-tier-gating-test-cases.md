@@ -10,7 +10,10 @@
 4. Free cached reads and static peeks omit every locked detail field; member
    responses retain the full fields.
 5. Free prompt construction receives at most three deterministically sampled
-   skills per skill type (fewer when a group has fewer than three). Member
+   skills per prompt-injection group (fewer when a group has fewer than three).
+   Groups are keyed by `skill.type` for technical skills and by
+   `skill.category` for the type-less fundamental, news, and congress skills,
+   so each category is capped independently and never starved to zero. Member
    prompt construction receives the complete catalog.
 6. Cache keys differ for free and member and change when the sampled skill set
    changes.
@@ -36,8 +39,10 @@
 6. Locked results hide risk and actionable recommendation values, show a signup
    teaser only in the normal analysis view, and do not show it in shares.
 7. `submitAnalysisAction`, `pollAnalysisAction`, `pollOverallAnalysisAction`,
-   static peek, and Congress actions pass the resolved tier to core, falling
-   back to free when tier resolution fails.
+   and Congress actions resolve the caller tier and pass it to core, falling
+   back to free when tier resolution fails. The static peeks always use the
+   free policy (anonymous or bot SSR shell), passing a constant `free` with no
+   tier resolution.
 8. The app normalizes omitted free fields without displaying fabricated values.
 9. The overall page canonicalizes a free `/overall?tf=1Hour` request to daily
    without creating an intraday technical-axis submission; member keeps the

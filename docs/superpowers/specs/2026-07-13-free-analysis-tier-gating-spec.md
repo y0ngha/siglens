@@ -13,7 +13,10 @@ only a usability layer.
 - The app disables unavailable timeframe controls, rejects unavailable bars
   Server Action requests, and canonicalizes an unauthorized `tf` query to
   `1Day` after tier hydration.
-- `free` analysis prompts sample at most three skills per skill type.
+- `free` analysis prompts sample at most three skills per prompt-injection
+  group. Technical skills group by `skill.type`; the type-less fundamental,
+  news, and congress skills group by `skill.category`, so each category is
+  capped independently and no category is starved to zero.
 - Core removes gated detail from every free response. The app renders the
   omitted detail as a signup teaser rather than fabricating analysis values.
 - Share snapshots retain the analysis supplied to the share flow and do not
