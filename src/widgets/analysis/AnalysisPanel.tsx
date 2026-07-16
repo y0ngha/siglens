@@ -1036,7 +1036,7 @@ export function AnalysisPanel({
                                 </p>
                                 <Link
                                     href="/signup"
-                                    className="bg-primary-600 hover:bg-primary-700 rounded px-3 py-1.5 text-sm font-semibold text-white transition-colors"
+                                    className="bg-primary-600 hover:bg-primary-700 focus-visible:ring-primary-500 rounded px-3 py-1.5 text-sm font-semibold text-white transition-colors focus-visible:ring-1 focus-visible:outline-none"
                                 >
                                     회원가입
                                 </Link>
