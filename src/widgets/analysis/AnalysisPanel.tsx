@@ -225,6 +225,14 @@ function ReconciledLevelsBlock({
     );
 }
 
+/** hasLockedActionDetail이 매매 전략 섹션을 잠그는 TierInfoDepth 값들. */
+const LOCKED_ACTION_INFO_DEPTHS: readonly TierInfoDepth[] = [
+    'entry',
+    'stoploss',
+    'target',
+    'full_detail',
+];
+
 const RISK_LEVEL_COLOR: Record<RiskLevel, string> = {
     low: 'text-chart-bullish',
     medium: 'text-ui-warning',
@@ -724,10 +732,14 @@ interface AnalysisPanelProps {
     /** false이면 광고를 표시하지 않는다. Pro 사용자에게는 false를 전달한다.
      *  인증 시스템 도입 전까지 기본값은 true (모든 사용자를 Free로 처리). */
     isFreeUser?: boolean;
-    /** 잠긴 상세 조각. 원본 값은 이 컴포넌트에 전달되지 않는다. */
+    /**
+     * 잠긴 상세 조각. 원본 값은 이 컴포넌트에 전달되지 않는다.
+     * SSR·hydration 이전에도(initialLockedInfoDepth 경유) 채워질 수 있고,
+     * 이 배열이 비어있지 않은 것만으로 게이트된 필드(리스크 배지·매매 전략·
+     * 주요 레벨)를 숨긴다. tier hydration 완료 여부에는 의존하지 않으므로,
+     * 크롤러를 포함한 첫 SSR 페인트부터 fabricated 값이 노출되지 않는다.
+     */
     lockedInfoDepth?: readonly TierInfoDepth[];
-    /** 일반 종목 페이지에서만 잠금 회원가입 안내를 표시한다. */
-    showLockedSignup?: boolean;
     /**
      * 이번 분석에 적용된 인디케이터 종류 수.
      * analysis → symbol-page 역방향 의존을 제거하기 위해 prop으로 전달한다.
@@ -751,7 +763,6 @@ export function AnalysisPanel({
     onActionPricesVisibilityChange,
     isFreeUser = true,
     lockedInfoDepth = [],
-    showLockedSignup = false,
     indicatorCount = 0,
 }: AnalysisPanelProps) {
     const [copyState, setCopyState] = useState<'idle' | 'copied' | 'failed'>(
@@ -761,13 +772,13 @@ export function AnalysisPanel({
     // 클라이언트 hydration 시점의 시각이 다를 수 있어 stale 평가는 client mount
     // 이후로 미룬다. `now`가 null인 동안에는 배너가 표시되지 않는다.
     const [now, setNow] = useState<Date | null>(null);
-    const hasLockedDetails = showLockedSignup && lockedInfoDepth.length > 0;
+    const hasLockedDetails = lockedInfoDepth.length > 0;
     const hasLockedPartialDetail =
         hasLockedDetails && lockedInfoDepth.includes('partial_detail');
     const hasLockedActionDetail =
         hasLockedDetails &&
         lockedInfoDepth.some(depth =>
-            ['entry', 'stoploss', 'target', 'full_detail'].includes(depth)
+            LOCKED_ACTION_INFO_DEPTHS.includes(depth)
         );
     const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 

@@ -252,7 +252,6 @@ export function ChartContent({
                     onActionPricesVisibilityChange={setActionPricesVisible}
                     indicatorCount={indicatorCount}
                     lockedInfoDepth={lockedInfoDepth}
-                    showLockedSignup={tier === 'free' && isTierHydrated}
                 />
                 {/* 서사가 있어도(캐시된 분석을 표시 중) 봇 판정이면 안내를 additive로
                     덧붙인다 — 자동 트리거/수동 재분석이 봇으로 오판돼 차단된 사실을
@@ -282,8 +281,6 @@ export function ChartContent({
         marketProfile,
         indicatorCount,
         lockedInfoDepth,
-        tier,
-        isTierHydrated,
     ]);
 
     // timeframe을 React.Fragment key로 전달 — Suspense 경계 밖에서 timeframe 변경 시 자식 트리를 강제 remount한다.

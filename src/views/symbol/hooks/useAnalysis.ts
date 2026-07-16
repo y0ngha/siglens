@@ -254,7 +254,11 @@ export function useAnalysis({
                     return;
                 }
                 setAnalysisResult(normalizeAnalysisResponse(data.result));
-                setLockedInfoDepth(data.lockedInfoDepth);
+                // 롤링 배포 중 구버전 인스턴스가 lockedInfoDepth 필드 자체가 없는
+                // 레거시 응답을 돌려줄 수 있다. free 분기는 위에서 이미 처리했으므로
+                // 여기 도달하는 member/pro 호출자에게 undefined가 그대로 저장되면
+                // buildChatState 등 하위 소비자의 .length 접근이 크래시한다.
+                setLockedInfoDepth(data.lockedInfoDepth ?? []);
                 // force 경로는 정상 5분 쿨다운, 일반 캐시 히트는 짧은
                 // 쿨다운(30s) — 같은 결과 즉시 재호출로 인한 스팸 방지.
                 setReanalyzeCooldownMs(prev =>
@@ -444,7 +448,10 @@ export function useAnalysis({
                         setAnalysisResult(
                             normalizeAnalysisResponse(result.result)
                         );
-                        setLockedInfoDepth(result.lockedInfoDepth);
+                        // cached 경로와 동일한 롤링 배포 안전망. member/pro 호출자가
+                        // lockedInfoDepth 없는 구버전 응답을 받아도 undefined가 아닌
+                        // 빈 배열을 저장한다.
+                        setLockedInfoDepth(result.lockedInfoDepth ?? []);
                         if (lastForceRef.current) {
                             setReanalyzeCooldownMs(REANALYZE_COOLDOWN_MS);
                         }

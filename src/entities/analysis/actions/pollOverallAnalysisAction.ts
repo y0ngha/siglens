@@ -12,7 +12,10 @@ import { resolveTierOnly } from '@/shared/lib/byokGate';
 export async function pollOverallAnalysisAction(
     jobId: string
 ): Promise<PollOverallAnalysisResult> {
-    let tier: Tier;
+    // 해석 실패 시 free로 fail-closed 처리한다. 상위 tier로 오인해 잠긴
+    // 상세를 노출하는 것보다, 실제로는 회원인 호출자가 일시적으로 free
+    // 취급되는 편이 안전하다.
+    let tier: Tier = 'free';
     try {
         const user = await getCurrentUser();
         tier = await resolveTierOnly(user?.id ?? null);
@@ -21,18 +24,6 @@ export async function pollOverallAnalysisAction(
             '[pollOverallAnalysisAction] Failed to resolve caller tier:',
             error
         );
-        try {
-            return await pollOverallAnalysis(jobId, { tier: 'free' });
-        } catch (fallbackError) {
-            console.error(
-                '[pollOverallAnalysisAction] Failed to poll with free fallback:',
-                fallbackError
-            );
-            return {
-                status: 'error',
-                error: 'Overall analysis poll is temporarily unavailable.',
-            };
-        }
     }
 
     try {

@@ -154,7 +154,6 @@ describe('AnalysisPanel', () => {
                 keyLevels={EMPTY_KEY_LEVELS}
                 timeframe="1Day"
                 lockedInfoDepth={['partial_detail']}
-                showLockedSignup={true}
             />
         );
 
@@ -167,15 +166,14 @@ describe('AnalysisPanel', () => {
         );
     });
 
-    it('does not show a signup lock when rendering a shared snapshot', () => {
+    it('does not show a signup lock when lockedInfoDepth is empty (e.g. shared snapshot)', () => {
         render(
             <AnalysisPanel
                 symbol="AAPL"
                 analysis={makeAnalysis()}
                 keyLevels={EMPTY_KEY_LEVELS}
                 timeframe="1Day"
-                lockedInfoDepth={['partial_detail']}
-                showLockedSignup={false}
+                lockedInfoDepth={[]}
             />
         );
 
@@ -184,6 +182,13 @@ describe('AnalysisPanel', () => {
         ).not.toBeInTheDocument();
     });
 
+    // BLOCKER 1 regression guard: hasLockedDetails must derive from
+    // lockedInfoDepth alone, with no separate "showLockedSignup"/tier-hydration
+    // signal that could leave gated fields rendered on an SSR/pre-hydration
+    // pass. AnalysisPanel accepts no such signal any more, so passing only
+    // lockedInfoDepth (as ChartContent does immediately from
+    // initialLockedInfoDepth, before tier hydration resolves) already
+    // reproduces that pass; this test locks the gate to that single source.
     it('masks the risk badge and action recommendation section when locked, not just showing the teaser', () => {
         render(
             <AnalysisPanel
@@ -195,7 +200,6 @@ describe('AnalysisPanel', () => {
                 keyLevels={EMPTY_KEY_LEVELS}
                 timeframe="1Day"
                 lockedInfoDepth={['partial_detail', 'full_detail']}
-                showLockedSignup={true}
             />
         );
 

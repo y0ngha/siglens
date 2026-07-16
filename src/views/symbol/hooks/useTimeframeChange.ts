@@ -25,6 +25,7 @@ export function useTimeframeChange(
 ): UseTimeframeChangeResult {
     const [timeframeChangeCount, setTimeframeChangeCount] = useState(0);
     const [, startTransition] = useTransition();
+    const pendingNavigationRef = useRef<Timeframe | null>(null);
 
     const searchParams = useSearchParams();
     const assetInfo = useAssetInfo(symbol);
@@ -38,8 +39,9 @@ export function useTimeframeChange(
         requestedTimeframe !== DEFAULT_TIMEFRAME
             ? DEFAULT_TIMEFRAME
             : requestedTimeframe;
+    // previousTimeframeRef의 초기값은 파생 변수 timeframe에 의존하므로, 훅
+    // 선언 순서 예외(MISTAKES.md #17)로 timeframe 계산 직후에 둔다.
     const previousTimeframeRef = useRef<Timeframe>(timeframe);
-    const pendingNavigationRef = useRef<Timeframe | null>(null);
 
     const handleTimeframeChange = useCallback(
         (nextTimeframe: Timeframe): void => {
@@ -93,13 +95,22 @@ export function useTimeframeChange(
             return;
         }
 
-        router.replace(
-            `/${symbol}?${TIMEFRAME_QUERY_PARAM}=${DEFAULT_TIMEFRAME}`,
-            {
-                scroll: false,
-            }
+        // free tier의 intraday 딥링크를 daily로 캐노니컬라이즈하는 순수 URL 보정이다.
+        // SSR page.tsx는 PPR을 static으로 유지하려고 tf를 읽지 않고(useSearchParams
+        // 회피), 파생 timeframe도 free 호출자에게는 이미 DEFAULT_TIMEFRAME을 강제하므로
+        // 서버에서 다시 가져올 데이터가 없다. router.replace()는 불필요한 RSC 왕복을
+        // 유발할 뿐 아니라, 이 마운트 시점 effect에서 호출되면 초기 렌더·suspense
+        // 폭풍과 겹쳐 navigation transition이 인터럽트되며 history 커밋이 조용히
+        // 드롭된다(약 절반 확률). 그러면 tf가 intraday로 남지만 effect의 의존성은
+        // 변하지 않아 재시도되지 않고, e2e waitForURL이 60s 타임아웃한다. 대신
+        // window.history.replaceState는 URL을 동기적으로 바꾸고 Next가 useSearchParams와
+        // 동기화하므로(공식 검색 파라미터 갱신 패턴) 캐노니컬라이즈가 결정적으로 완료된다.
+        window.history.replaceState(
+            null,
+            '',
+            `/${symbol}?${TIMEFRAME_QUERY_PARAM}=${DEFAULT_TIMEFRAME}`
         );
-    }, [isFreeTier, isTierHydrated, router, symbol, tf]);
+    }, [isFreeTier, isTierHydrated, symbol, tf]);
 
     useEffect(() => {
         if (!isTierHydrated) return;

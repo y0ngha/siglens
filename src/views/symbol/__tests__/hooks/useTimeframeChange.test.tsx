@@ -116,8 +116,13 @@ describe('useTimeframeChange', () => {
         expect(mockReplace).not.toHaveBeenCalled();
     });
 
-    it('canonicalizes a non-1Day query for a hydrated free user', () => {
+    it('canonicalizes a non-1Day query for a hydrated free user via history.replaceState', () => {
         mockGet.mockReturnValue('1Week');
+        // Canonicalization uses window.history.replaceState (not router.replace):
+        // the server ignores `tf`, so a router.replace() RSC round-trip is both
+        // wasteful and race-droppable from this mount-time effect. history
+        // .replaceState is synchronous and Next syncs useSearchParams from it.
+        const replaceStateSpy = vi.spyOn(window.history, 'replaceState');
 
         const { result } = renderHook(
             () => useTimeframeChange('AAPL', true, true),
@@ -127,9 +132,10 @@ describe('useTimeframeChange', () => {
         );
 
         expect(result.current.timeframe).toBe('1Day');
-        expect(mockReplace).toHaveBeenCalledWith('/AAPL?tf=1Day', {
-            scroll: false,
-        });
+        expect(mockReplace).not.toHaveBeenCalled();
+        expect(replaceStateSpy).toHaveBeenCalledWith(null, '', '/AAPL?tf=1Day');
+
+        replaceStateSpy.mockRestore();
     });
 
     it('uses 1Day until the user tier has hydrated', () => {
