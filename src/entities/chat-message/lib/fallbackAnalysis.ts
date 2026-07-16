@@ -25,12 +25,31 @@ export const FALLBACK_ANALYSIS: AnalysisResponse = {
 
 /**
  * `analysis`가 chart 페이지의 "AI 서사 없음" placeholder인지 판정한다.
- * SSR cache-miss 경로(`[symbol]/page.tsx`)는 `FALLBACK_ANALYSIS` 상수를 참조
- * 그대로 `initialAnalysis`로 전달하므로 reference equality로 안전하게 판정한다.
- * 클라이언트가 실제 분석을 받으면 별도 객체로 교체되어 false가 된다.
+ *
+ * 참조 동등성만으로는 판정할 수 없다: SSR cache-miss 경로(`[symbol]/page.tsx`)가
+ * `FALLBACK_ANALYSIS`를 `initialAnalysis`로 넘겨도, 그 prop은 `SymbolPageClient`의
+ * `'use client'` 경계(RSC 직렬화)를 건너면서 값은 동일하지만 참조는 다른 객체로
+ * 재구성된다(`ShareKindPanel`의 "props are serialized over the RSC boundary" 코멘트
+ * 참고). 게다가 `useAnalysis`의 `normalizeAnalysisResponse`가 그 위에 `{ ...analysis }`
+ * 스프레드를 한 번 더 씌워 참조를 재차 끊는다. 따라서 `=== FALLBACK_ANALYSIS`만으로는
+ * 실제 프로덕션 경로(클라이언트가 받는 `analysis`)에서 단 한 번도 true가 되지 않는다.
+ *
+ * 그래서 참조 fast-path(같은 프로세스 내 직접 참조·테스트 등)를 유지하되, placeholder만
+ * 갖는 고유한 값(sentinel summary 텍스트 + 모든 배열이 비어 있음)으로 값 기반 판정을
+ * 추가한다. sentinel summary 텍스트는 이 파일에서만 정의되어 다른 실제 분석 결과와
+ * 우연히 겹칠 수 없다.
  */
 export function isFallbackAnalysis(analysis: AnalysisResponse): boolean {
-    return analysis === FALLBACK_ANALYSIS;
+    if (analysis === FALLBACK_ANALYSIS) return true;
+
+    return (
+        analysis.summary === FALLBACK_ANALYSIS.summary &&
+        (analysis.indicatorResults?.length ?? 0) === 0 &&
+        (analysis.patternSummaries?.length ?? 0) === 0 &&
+        (analysis.strategyResults?.length ?? 0) === 0 &&
+        (analysis.candlePatterns?.length ?? 0) === 0 &&
+        (analysis.trendlines?.length ?? 0) === 0
+    );
 }
 
 /**

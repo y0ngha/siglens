@@ -2,8 +2,10 @@
  * Unit tests for chart (symbol-page) `buildChatState`.
  *
  * Verifies the bot_blocked/error short-circuit so stale technical payloads
- * never leak to the chatbot, plus the `displayAnalyzing` gating of
- * `isAnalysisReady`.
+ * never leak to the chatbot, the locked (free-tier) case that keeps
+ * `context: null` (no-leak of gated analysis detail) while still allowing
+ * chat input to become ready, and the `displayAnalyzing` gating of
+ * `isAnalysisReady` in both the locked and unlocked branches.
  */
 import type { AnalysisResponse, Timeframe } from '@y0ngha/siglens-core';
 import { buildChatState } from '@/views/symbol/utils/buildChatState';
@@ -20,6 +22,7 @@ describe('chart buildChatState', () => {
                 displayAnalyzing: false,
                 isBotBlocked: true,
                 analysisError: null,
+                lockedInfoDepth: [],
             })
         ).toEqual({
             context: null,
@@ -36,6 +39,7 @@ describe('chart buildChatState', () => {
                 displayAnalyzing: false,
                 isBotBlocked: false,
                 analysisError: 'boom',
+                lockedInfoDepth: [],
             })
         ).toEqual({
             context: null,
@@ -52,6 +56,7 @@ describe('chart buildChatState', () => {
                 displayAnalyzing: true,
                 isBotBlocked: false,
                 analysisError: null,
+                lockedInfoDepth: [],
             })
         ).toEqual({
             context: { kind: 'technical', payload: ANALYSIS },
@@ -68,11 +73,46 @@ describe('chart buildChatState', () => {
                 displayAnalyzing: false,
                 isBotBlocked: false,
                 analysisError: null,
+                lockedInfoDepth: [],
             })
         ).toEqual({
             context: { kind: 'technical', payload: ANALYSIS },
             timeframe: TIMEFRAME,
             isAnalysisReady: true,
+        });
+    });
+
+    it('locked detail → context: null (no-leak), ready=true (chat still usable)', () => {
+        expect(
+            buildChatState({
+                analysis: ANALYSIS,
+                timeframe: TIMEFRAME,
+                displayAnalyzing: false,
+                isBotBlocked: false,
+                analysisError: null,
+                lockedInfoDepth: ['full_detail'],
+            })
+        ).toEqual({
+            context: null,
+            timeframe: TIMEFRAME,
+            isAnalysisReady: true,
+        });
+    });
+
+    it('locked detail + displayAnalyzing → context: null, ready=false', () => {
+        expect(
+            buildChatState({
+                analysis: ANALYSIS,
+                timeframe: TIMEFRAME,
+                displayAnalyzing: true,
+                isBotBlocked: false,
+                analysisError: null,
+                lockedInfoDepth: ['full_detail'],
+            })
+        ).toEqual({
+            context: null,
+            timeframe: TIMEFRAME,
+            isAnalysisReady: false,
         });
     });
 });

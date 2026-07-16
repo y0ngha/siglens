@@ -12,6 +12,7 @@ import { BotBlockedNotice } from '@/shared/ui/BotBlockedNotice';
 import {
     useDefaultModelId,
     useDefaultReasoning,
+    useSymbolModel,
 } from '@/features/symbol-model';
 import { cn } from '@/shared/lib/cn';
 import { type OverallAnalysisResponse } from '@y0ngha/siglens-core';
@@ -64,7 +65,12 @@ export function OverallContent({
     );
 
     // tf는 서버가 아니라 client가 URL에서 읽어 [symbol] ISR(정적 렌더)을 유지한다.
-    const timeframe = useTimeframeFromUrl();
+    const { tier, isTierHydrated } = useSymbolModel();
+    const timeframe = useTimeframeFromUrl(
+        symbol,
+        isTierHydrated && tier === 'free',
+        isTierHydrated
+    );
     const modelId = useDefaultModelId();
     const reasoning = useDefaultReasoning();
     const { state, trigger } = useOverallAnalysis(

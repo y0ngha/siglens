@@ -46,4 +46,13 @@ describe('TimeframeSelector', () => {
 
         expect(onChange).toHaveBeenCalledWith('4Hour' satisfies Timeframe);
     });
+
+    it('disables every non-1Day button for free tier', () => {
+        render(
+            <TimeframeSelector value="1Day" onChange={vi.fn()} isFreeTier />
+        );
+
+        expect(screen.getByRole('button', { name: '5분' })).toBeDisabled();
+        expect(screen.getByRole('button', { name: '1일' })).toBeEnabled();
+    });
 });

@@ -12,6 +12,18 @@ vi.mock('@/shared/lib/sleep', () => ({
 vi.mock('@y0ngha/siglens-core', async () => ({
     ...(await vi.importActual('@y0ngha/siglens-core')),
     fetchBarsWithIndicators: vi.fn(),
+    isTimeframeAllowed: vi.fn(
+        (tier: string, timeframe: string) =>
+            tier !== 'free' || timeframe === '1Day'
+    ),
+}));
+
+vi.mock('@/entities/auth/lib/getCurrentUser', () => ({
+    getCurrentUser: vi.fn(),
+}));
+
+vi.mock('@/shared/lib/byokGate', () => ({
+    resolveTierOnly: vi.fn(),
 }));
 
 vi.mock('@/shared/api/market/getCachedMarketDataProvider', () => ({
@@ -41,6 +53,8 @@ import {
     CRYPTO_SESSION,
     US_EQUITY_SESSION,
 } from '@y0ngha/siglens-core';
+import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
+import { resolveTierOnly } from '@/shared/lib/byokGate';
 import type { BarsData } from '@y0ngha/siglens-core';
 import { sleep } from '@/shared/lib/sleep';
 import {
@@ -63,6 +77,12 @@ const mockGetCachedMarketDataProvider =
     >;
 const mockResolveMarketProfile = resolveMarketProfile as MockedFunction<
     typeof resolveMarketProfile
+>;
+const mockGetCurrentUser = getCurrentUser as MockedFunction<
+    typeof getCurrentUser
+>;
+const mockResolveTierOnly = resolveTierOnly as MockedFunction<
+    typeof resolveTierOnly
 >;
 
 const mockBarsData: BarsData = {
@@ -119,6 +139,8 @@ const mockBarsData: BarsData = {
 describe('getBarsAction 함수는', () => {
     beforeEach(() => {
         mockFetchBarsWithIndicators.mockReset();
+        mockGetCurrentUser.mockResolvedValue(null);
+        mockResolveTierOnly.mockResolvedValue('free');
         sleepMock.mockClear();
         vi.spyOn(Math, 'random').mockReturnValue(0);
     });
@@ -141,8 +163,12 @@ describe('getBarsAction 함수는', () => {
             expect(result).toBe(mockBarsData);
         });
 
-        it('다른 종목과 타임프레임으로도 올바르게 위임한다', async () => {
+        it('member는 분봉도 올바르게 위임한다', async () => {
             mockFetchBarsWithIndicators.mockResolvedValueOnce(mockBarsData);
+            mockGetCurrentUser.mockResolvedValueOnce({
+                id: 'member-1',
+            } as never);
+            mockResolveTierOnly.mockResolvedValueOnce('member');
 
             await getBarsAction('TSLA', '5Min');
 
@@ -152,6 +178,22 @@ describe('getBarsAction 함수는', () => {
                 '5Min',
                 undefined
             );
+        });
+
+        it('free는 서버 액션으로 직접 요청한 분봉을 거부한다', async () => {
+            await expect(getBarsAction('TSLA', '5Min')).rejects.toThrow(
+                'Timeframe 5Min is not available for free tier.'
+            );
+            expect(mockFetchBarsWithIndicators).not.toHaveBeenCalled();
+        });
+
+        it('tier resolution fails closed to free for intraday requests', async () => {
+            mockGetCurrentUser.mockRejectedValueOnce(new Error('auth down'));
+
+            await expect(getBarsAction('TSLA', '5Min')).rejects.toThrow(
+                'Timeframe 5Min is not available for free tier.'
+            );
+            expect(mockFetchBarsWithIndicators).not.toHaveBeenCalled();
         });
 
         it('fmpSymbol이 주어지면 fetchBarsWithIndicators에 그대로 전달한다', async () => {

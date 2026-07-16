@@ -73,7 +73,12 @@ export default function robots(): MetadataRoute.Robots {
                 disallow: ['/api/'],
             },
             {
-                userAgent: [...ANTHROPIC_CRAWLER_USER_AGENTS, ...GOOGLE_NON_SEARCH_USER_AGENTS, ...AI_TRAINING_CRAWLER_USER_AGENTS, ...AI_SEARCH_CRAWLER_USER_AGENTS]
+                userAgent: [
+                    ...ANTHROPIC_CRAWLER_USER_AGENTS,
+                    ...GOOGLE_NON_SEARCH_USER_AGENTS,
+                    ...AI_TRAINING_CRAWLER_USER_AGENTS,
+                    ...AI_SEARCH_CRAWLER_USER_AGENTS,
+                ],
                 allow: '/',
                 // robots.txt는 가장 구체적인 그룹만 적용하고 `*` 그룹을 상속하지 않으므로,
                 // crawl-delay 그룹에도 /api/ disallow를 명시해야 한다(미명시 시 API 크롤 허용됨).

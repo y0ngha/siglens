@@ -8,6 +8,7 @@ import {
     useRef,
     useState,
 } from 'react';
+import Link from 'next/link';
 import { EyeIcon } from '@/shared/ui/EyeIcon';
 import { InfoTooltip } from '@/shared/ui/InfoTooltip';
 import { MarkdownText } from '@/shared/ui/MarkdownText';
@@ -23,6 +24,7 @@ import type {
     PriceScenario,
     RiskLevel,
     StrategyResult,
+    TierInfoDepth,
     Timeframe,
     Trend,
     Trendline,
@@ -30,6 +32,7 @@ import type {
 } from '@y0ngha/siglens-core';
 import { HIGH_CONFIDENCE_WEIGHT } from '@y0ngha/siglens-core';
 import { cn } from '@/shared/lib/cn';
+import { isFallbackAnalysis } from '@/entities/chat-message';
 import {
     parseStructuredSummary,
     type SkillSummarySection,
@@ -221,6 +224,14 @@ function ReconciledLevelsBlock({
         </section>
     );
 }
+
+/** hasLockedActionDetail이 매매 전략 섹션을 잠그는 TierInfoDepth 값들. */
+const LOCKED_ACTION_INFO_DEPTHS: readonly TierInfoDepth[] = [
+    'entry',
+    'stoploss',
+    'target',
+    'full_detail',
+];
 
 const RISK_LEVEL_COLOR: Record<RiskLevel, string> = {
     low: 'text-chart-bullish',
@@ -722,6 +733,14 @@ interface AnalysisPanelProps {
      *  인증 시스템 도입 전까지 기본값은 true (모든 사용자를 Free로 처리). */
     isFreeUser?: boolean;
     /**
+     * 잠긴 상세 조각. 원본 값은 이 컴포넌트에 전달되지 않는다.
+     * SSR·hydration 이전에도(initialLockedInfoDepth 경유) 채워질 수 있고,
+     * 이 배열이 비어있지 않은 것만으로 게이트된 필드(리스크 배지·매매 전략·
+     * 주요 레벨)를 숨긴다. tier hydration 완료 여부에는 의존하지 않으므로,
+     * 크롤러를 포함한 첫 SSR 페인트부터 fabricated 값이 노출되지 않는다.
+     */
+    lockedInfoDepth?: readonly TierInfoDepth[];
+    /**
      * 이번 분석에 적용된 인디케이터 종류 수.
      * analysis → symbol-page 역방향 의존을 제거하기 위해 prop으로 전달한다.
      */
@@ -743,6 +762,7 @@ export function AnalysisPanel({
     actionPricesVisible = true,
     onActionPricesVisibilityChange,
     isFreeUser = true,
+    lockedInfoDepth = [],
     indicatorCount = 0,
 }: AnalysisPanelProps) {
     const [copyState, setCopyState] = useState<'idle' | 'copied' | 'failed'>(
@@ -752,6 +772,14 @@ export function AnalysisPanel({
     // 클라이언트 hydration 시점의 시각이 다를 수 있어 stale 평가는 client mount
     // 이후로 미룬다. `now`가 null인 동안에는 배너가 표시되지 않는다.
     const [now, setNow] = useState<Date | null>(null);
+    const hasLockedDetails = lockedInfoDepth.length > 0;
+    const hasLockedPartialDetail =
+        hasLockedDetails && lockedInfoDepth.includes('partial_detail');
+    const hasLockedActionDetail =
+        hasLockedDetails &&
+        lockedInfoDepth.some(depth =>
+            LOCKED_ACTION_INFO_DEPTHS.includes(depth)
+        );
     const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const resetCopyStateLater = (): void => {
@@ -765,7 +793,7 @@ export function AnalysisPanel({
     };
 
     const handleCopyReport = async (): Promise<void> => {
-        if (showProgress || isAnalyzing) return;
+        if (showProgress || isAnalyzing || hasLockedDetails) return;
 
         try {
             if (typeof navigator === 'undefined' || !navigator.clipboard) {
@@ -887,7 +915,14 @@ export function AnalysisPanel({
                             aria-hidden
                         />
                     )}
-                    <TrendBadge trend={analysis.trend} />
+                    {/* free 사용자의 direction(trend)은 core filterAnalysisResult가
+                        허용하는 진짜 값이라 그대로 보여준다. 다만 FALLBACK_ANALYSIS
+                        placeholder처럼 서사가 없는 응답은 normalizeAnalysisResponse가
+                        trend를 'neutral'로 채워 넣은 fabricated 값이므로, 그 경우엔
+                        배지를 아예 숨겨 가짜 신호를 노출하지 않는다. */}
+                    {!isFallbackAnalysis(analysis) && (
+                        <TrendBadge trend={analysis.trend} />
+                    )}
                 </div>
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-2 sm:justify-end">
                     {analysis.analyzedAt && (
@@ -898,50 +933,54 @@ export function AnalysisPanel({
                             {formatAnalyzedAt(analysis.analyzedAt)}
                         </time>
                     )}
-                    <button
-                        type="button"
-                        onClick={handleCopyReport}
-                        disabled={showProgress || isAnalyzing}
-                        className={cn(
-                            // [공통 스타일]
-                            'focus-visible:ring-primary-500 rounded border px-2 py-1 text-xs font-medium whitespace-nowrap transition-colors focus-visible:ring-1 focus-visible:outline-none',
-
-                            // [1. 로딩/분석 중 상태]
-                            (showProgress || isAnalyzing) &&
-                                'border-secondary-700 text-secondary-600 cursor-not-allowed',
-
-                            // [2. 일반 상태 (진행 중이 아닐 때만 적용)]
-                            !showProgress &&
-                                !isAnalyzing && {
-                                    'border-primary-400/40 bg-primary-400/10 text-primary-300':
-                                        copyState === 'copied',
-                                    'border-chart-bearish/40 bg-chart-bearish/10 text-chart-bearish':
-                                        copyState === 'failed',
-                                    'border-secondary-700 text-secondary-300 hover:border-secondary-600 hover:text-secondary-100':
-                                        copyState === 'idle',
-                                }
-                        )}
-                        title={
-                            showProgress || isAnalyzing
-                                ? '분석이 완료된 뒤 복사할 수 있습니다'
-                                : '리포트 복사'
-                        }
-                    >
-                        {copyState === 'copied' && '복사됨'}
-                        {copyState === 'failed' && '복사 실패'}
-                        {copyState === 'idle' && '리포트 복사'}
-                    </button>
-                    <div className="text-secondary-400 flex items-center gap-1.5 text-xs whitespace-nowrap">
-                        <span>리스크</span>
-                        <span
+                    {!hasLockedDetails && (
+                        <button
+                            type="button"
+                            onClick={handleCopyReport}
+                            disabled={showProgress || isAnalyzing}
                             className={cn(
-                                'font-semibold',
-                                RISK_LEVEL_COLOR[analysis.riskLevel]
+                                // [공통 스타일]
+                                'focus-visible:ring-primary-500 rounded border px-2 py-1 text-xs font-medium whitespace-nowrap transition-colors focus-visible:ring-1 focus-visible:outline-none',
+
+                                // [1. 로딩/분석 중 상태]
+                                (showProgress || isAnalyzing) &&
+                                    'border-secondary-700 text-secondary-600 cursor-not-allowed',
+
+                                // [2. 일반 상태 (진행 중이 아닐 때만 적용)]
+                                !showProgress &&
+                                    !isAnalyzing && {
+                                        'border-primary-400/40 bg-primary-400/10 text-primary-300':
+                                            copyState === 'copied',
+                                        'border-chart-bearish/40 bg-chart-bearish/10 text-chart-bearish':
+                                            copyState === 'failed',
+                                        'border-secondary-700 text-secondary-300 hover:border-secondary-600 hover:text-secondary-100':
+                                            copyState === 'idle',
+                                    }
                             )}
+                            title={
+                                showProgress || isAnalyzing
+                                    ? '분석이 완료된 뒤 복사할 수 있습니다'
+                                    : '리포트 복사'
+                            }
                         >
-                            {RISK_LEVEL_LABEL[analysis.riskLevel]}
-                        </span>
-                    </div>
+                            {copyState === 'copied' && '복사됨'}
+                            {copyState === 'failed' && '복사 실패'}
+                            {copyState === 'idle' && '리포트 복사'}
+                        </button>
+                    )}
+                    {!hasLockedPartialDetail && (
+                        <div className="text-secondary-400 flex items-center gap-1.5 text-xs whitespace-nowrap">
+                            <span>리스크</span>
+                            <span
+                                className={cn(
+                                    'font-semibold',
+                                    RISK_LEVEL_COLOR[analysis.riskLevel]
+                                )}
+                            >
+                                {RISK_LEVEL_LABEL[analysis.riskLevel]}
+                            </span>
+                        </div>
+                    )}
                 </div>
             </div>
             {copyState === 'failed' && (
@@ -964,9 +1003,16 @@ export function AnalysisPanel({
                     isFreeUser={isFreeUser}
                 />
             ) : (
-                <MarkdownText className="text-secondary-300 text-sm">
-                    {analysis.summary}
-                </MarkdownText>
+                // TrendBadge와 동일한 신호(isFallbackAnalysis)로 가드한다.
+                // 서사가 없는 응답은 normalizeAnalysisResponse가 summary를 빈
+                // 문자열로 채워 넣으므로 그 fabricated 빈 값을 렌더하지 않는다.
+                // free 사용자의 진짜 summary는 direction과 함께 허용된 필드이므로
+                // 그대로 보여준다.
+                !isFallbackAnalysis(analysis) && (
+                    <MarkdownText className="text-secondary-300 text-sm">
+                        {analysis.summary}
+                    </MarkdownText>
+                )
             )}
 
             {/* 마무리 애니메이션이 끝나기 전(showProgress=true) 동안에는 노출하지 않는다.
@@ -974,19 +1020,43 @@ export function AnalysisPanel({
                 결과가 한 번에 드러나도록 하기 위함이다. */}
             {!showProgress && (
                 <>
+                    {hasLockedDetails && (
+                        <div className="border-secondary-700 relative overflow-hidden rounded-lg border p-4">
+                            <div
+                                className="pointer-events-none blur-sm select-none"
+                                aria-hidden
+                            >
+                                <div className="bg-secondary-700/60 h-3 w-2/5 rounded" />
+                                <div className="bg-secondary-700/40 mt-3 h-3 w-full rounded" />
+                                <div className="bg-secondary-700/40 mt-2 h-3 w-4/5 rounded" />
+                            </div>
+                            <div className="bg-secondary-900/55 absolute inset-0 flex flex-col items-center justify-center gap-2 px-4 text-center">
+                                <p className="text-secondary-100 text-sm font-semibold">
+                                    상세 분석과 매매 전략은 회원에게 제공됩니다.
+                                </p>
+                                <Link
+                                    href="/signup"
+                                    className="bg-primary-600 hover:bg-primary-700 focus-visible:ring-primary-500 rounded px-3 py-1.5 text-sm font-semibold text-white transition-colors focus-visible:ring-1 focus-visible:outline-none"
+                                >
+                                    회원가입
+                                </Link>
+                            </div>
+                        </div>
+                    )}
                     <div className="border-secondary-700 border-t" />
 
-                    {analysis.actionRecommendation && (
-                        <ActionRecommendationSection
-                            rec={analysis.actionRecommendation}
-                            isChartVisible={actionPricesVisible}
-                            onToggleChart={() =>
-                                onActionPricesVisibilityChange?.(
-                                    !actionPricesVisible
-                                )
-                            }
-                        />
-                    )}
+                    {!hasLockedActionDetail &&
+                        analysis.actionRecommendation && (
+                            <ActionRecommendationSection
+                                rec={analysis.actionRecommendation}
+                                isChartVisible={actionPricesVisible}
+                                onToggleChart={() =>
+                                    onActionPricesVisibilityChange?.(
+                                        !actionPricesVisible
+                                    )
+                                }
+                            />
+                        )}
 
                     {(supportLevels.length > 0 ||
                         resistanceLevels.length > 0 ||

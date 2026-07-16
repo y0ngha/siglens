@@ -40,13 +40,22 @@ describe('isE2E', () => {
 });
 
 describe('e2eCached* fixture getters', () => {
-    it('e2eCachedTechnical returns a cached technical result', () => {
+    it('e2eCachedTechnical applies the free response filter by default', () => {
         const result = e2eCachedTechnical();
         expect(result.status).toBe('cached');
         if (result.status !== 'cached') throw new Error('unreachable');
-        // technical AnalysisResponse anchor fields the E2E specs assert on.
         expect(result.result.summary).toContain('E2E 고정 분석 결과');
         expect(result.result.trend).toBe('neutral');
+        expect(result.lockedInfoDepth).toContain('partial_detail');
+        expect(result.result).toHaveProperty('riskLevel', null);
+    });
+
+    it('e2eCachedTechnical preserves full detail for member', () => {
+        const result = e2eCachedTechnical('member');
+        expect(result.status).toBe('cached');
+        if (result.status !== 'cached') throw new Error('unreachable');
+        expect(result.lockedInfoDepth).toEqual([]);
+        expect(result.result).toHaveProperty('riskLevel');
     });
 
     it('e2eCachedOverall returns a cached overall result', () => {
@@ -101,13 +110,13 @@ describe('e2eCached* fixture getters', () => {
         expect(axes).toContain('cash');
     });
 
-    it('returns a stable fixture reference across calls (no per-call rebuild)', () => {
+    it('returns a deterministic free response across calls', () => {
         const a = e2eCachedTechnical();
         const b = e2eCachedTechnical();
         if (a.status !== 'cached' || b.status !== 'cached') {
             throw new Error('unreachable: stub always returns cached');
         }
-        expect(a.result).toBe(b.result);
+        expect(a).toEqual(b);
     });
 });
 

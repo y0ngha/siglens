@@ -121,6 +121,7 @@ describe('useAnalysis — branch coverage', () => {
             mockSubmit.mockResolvedValue({
                 status: 'cached',
                 result: CACHED_RESULT,
+                lockedInfoDepth: [],
             });
 
             const { result } = renderHook(
@@ -129,7 +130,9 @@ describe('useAnalysis — branch coverage', () => {
             );
 
             await waitFor(() => {
-                expect(result.current.analysisResult).toBe(CACHED_RESULT);
+                expect(result.current.analysisResult).toMatchObject(
+                    CACHED_RESULT
+                );
             });
         });
     });
@@ -226,6 +229,7 @@ describe('useAnalysis — branch coverage', () => {
             mockPoll.mockResolvedValueOnce({
                 status: 'done',
                 result: CACHED_RESULT,
+                lockedInfoDepth: [],
             });
 
             const { result } = renderHook(
@@ -234,7 +238,9 @@ describe('useAnalysis — branch coverage', () => {
             );
 
             await waitFor(() => {
-                expect(result.current.analysisResult).toBe(CACHED_RESULT);
+                expect(result.current.analysisResult).toMatchObject(
+                    CACHED_RESULT
+                );
             });
         });
     });
@@ -338,6 +344,7 @@ describe('useAnalysis — branch coverage', () => {
                 .mockResolvedValueOnce({
                     status: 'cached',
                     result: CACHED_RESULT,
+                    lockedInfoDepth: [],
                 });
             mockPoll.mockImplementation(() => new Promise(() => {}));
 
@@ -407,6 +414,7 @@ describe('useAnalysis — branch coverage', () => {
             mockSubmit.mockResolvedValue({
                 status: 'cached',
                 result: CACHED_RESULT,
+                lockedInfoDepth: [],
             });
 
             const { rerender } = renderHook(

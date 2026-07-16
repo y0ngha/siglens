@@ -27,6 +27,7 @@ vi.mock('@/entities/auth/lib/getCurrentUser', () => ({
 
 vi.mock('@/shared/lib/byokGate', () => ({
     resolveTierAndByok: vi.fn(),
+    resolveTierOnly: vi.fn(),
     resolveReasoning: vi.fn(
         (tier: string, clientReasoning?: boolean) =>
             tier !== 'free' && clientReasoning === true
@@ -46,7 +47,7 @@ vi.mock('@/entities/ticker/lib/resolveAssetClass', () => ({
 }));
 
 import { headers } from 'next/headers';
-import { resolveTierAndByok } from '@/shared/lib/byokGate';
+import { resolveTierAndByok, resolveTierOnly } from '@/shared/lib/byokGate';
 import type { AnalysisGateError } from '@/shared/lib/types';
 import { submitAnalysisAction } from '../actions/submitAnalysisAction';
 import {
@@ -67,6 +68,9 @@ const mockHeaders = headers as MockedFunction<typeof headers>;
 const mockResolveTierAndByok = resolveTierAndByok as MockedFunction<
     typeof resolveTierAndByok
 >;
+const mockResolveTierOnly = resolveTierOnly as MockedFunction<
+    typeof resolveTierOnly
+>;
 const mockSubmitAnalysis = submitAnalysis as MockedFunction<
     typeof submitAnalysis
 >;
@@ -84,6 +88,7 @@ const mockResolveMarketProfile = resolveMarketProfile as MockedFunction<
 const cachedResult: SubmitAnalysisGatedResult = {
     status: 'cached',
     result: { summary: 'cached' } as never,
+    lockedInfoDepth: [],
 };
 
 const FREE_MODEL = 'gemini-2.5-flash-lite' as ModelId;
@@ -99,6 +104,7 @@ describe('submitAnalysisAction tier + BYOK gate', () => {
         vi.clearAllMocks();
         mockSubmitAnalysis.mockResolvedValue(cachedResult);
         mockGetCurrentUser.mockResolvedValue(null);
+        mockResolveTierOnly.mockResolvedValue('free');
     });
 
     it('returns blocked result when gate.kind === "blocked"', async () => {
@@ -200,16 +206,20 @@ describe('submitAnalysisAction tier + BYOK gate', () => {
         expect(opts).not.toHaveProperty('userApiKey');
     });
 
-    it('bypasses gate and uses default model when modelId is undefined', async () => {
+    it('resolves and forwards tier context when modelId is undefined', async () => {
         mockGetCurrentUser.mockResolvedValue(null);
 
         await submitAnalysisAction('AAPL', 'Apple', '1Day', true, '^AAPL');
 
         expect(mockResolveTierAndByok).not.toHaveBeenCalled();
+        expect(mockResolveTierOnly).toHaveBeenCalledWith(null);
         expect(mockSubmitAnalysis).toHaveBeenCalledTimes(1);
         const lastCall = mockSubmitAnalysis.mock.calls.at(-1);
         const opts = lastCall![5] as Record<string, unknown>;
-        expect(opts).not.toHaveProperty('tierContext');
+        expect(opts).toMatchObject({
+            tierContext: { userId: null, tier: 'free' },
+            reasoning: false,
+        });
         expect(opts).not.toHaveProperty('userApiKey');
         expect(mockSubmitAnalysis).toHaveBeenCalledWith(
             'AAPL',

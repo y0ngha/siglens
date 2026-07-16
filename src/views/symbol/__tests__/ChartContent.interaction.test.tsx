@@ -90,6 +90,7 @@ function analysisReturn(
     return {
         analysis: FALLBACK_ANALYSIS,
         analysisResult: null,
+        lockedInfoDepth: [],
         isAnalyzing: false,
         analysisError: null,
         isBotBlocked: false,

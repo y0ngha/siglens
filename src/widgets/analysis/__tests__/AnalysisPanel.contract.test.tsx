@@ -38,13 +38,14 @@ vi.mock('../StaleAnalysisBanner', () => ({
     StaleAnalysisBanner: () => null,
 }));
 
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, within } from '@testing-library/react';
 import type {
     AnalysisResponse,
     ClusteredKeyLevels,
 } from '@y0ngha/siglens-core';
 
 import { AnalysisPanel } from '../AnalysisPanel';
+import { FALLBACK_ANALYSIS } from '@/entities/chat-message';
 
 // 타입에서 직접 구성한 완전한 응답. 모든 배열/객체 필드를 채운다.
 function makeFullAnalysis(): AnalysisResponse {
@@ -264,5 +265,48 @@ describe('AnalysisPanel — core output contract', () => {
             )
         ).toBeInTheDocument();
         expect(screen.getByText('주요 가격대')).toBeInTheDocument();
+    });
+
+    it('does not fabricate a trend badge or summary for the no-narrative FALLBACK_ANALYSIS shell', () => {
+        // trendUtils는 이 파일에서 mock하지 않으므로 실제 resolveTrendDisplay가
+        // 적용된다. FALLBACK_ANALYSIS.trend === 'neutral'은 실제 라벨 맵에서
+        // 유효한 값('보합')이라, 가드가 없다면 이 테스트는 실패해야 정상이다.
+        render(
+            <AnalysisPanel
+                symbol="AAPL"
+                analysis={FALLBACK_ANALYSIS}
+                keyLevels={makeFullKeyLevels()}
+                timeframe="1Day"
+            />
+        );
+
+        expect(screen.queryByText('보합')).not.toBeInTheDocument();
+        expect(
+            screen.queryByText(FALLBACK_ANALYSIS.summary)
+        ).not.toBeInTheDocument();
+    });
+
+    it('shows the trend badge and summary for a genuine neutral (non-fallback) response', () => {
+        // 위 테스트와 동일하게 trend는 'neutral'이지만, 이번엔 FALLBACK_ANALYSIS
+        // 참조가 아니므로 isFallbackAnalysis가 false다. 진짜 neutral 응답은
+        // 계속 정상 노출되어야 한다(가드가 neutral 자체를 숨기는 게 아님을 확인).
+        render(
+            <AnalysisPanel
+                symbol="AAPL"
+                analysis={{ ...makeFullAnalysis(), trend: 'neutral' }}
+                keyLevels={makeFullKeyLevels()}
+                timeframe="1Day"
+            />
+        );
+
+        // 헤더 영역으로 범위를 좁혀 단언한다. RSI 지표 신호도 trend: 'neutral'
+        // 이라 동일한 '보합' 라벨을 별도로 렌더하므로(TrendBadge 재사용),
+        // 페이지 전체 getByText는 두 요소를 모두 매치해 모호해진다.
+        const header = screen.getByText('AI 분석').closest('div');
+        if (header === null) throw new Error('header container not found');
+        expect(within(header).getByText('보합')).toBeInTheDocument();
+        expect(
+            screen.getByText(/중기 상승 추세가 유지되는/)
+        ).toBeInTheDocument();
     });
 });

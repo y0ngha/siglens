@@ -93,6 +93,7 @@ function analysisReturn(analysis: AnalysisResponse): UseAnalysisResult {
     return {
         analysis,
         analysisResult: analysis === FALLBACK_ANALYSIS ? null : analysis,
+        lockedInfoDepth: [],
         isAnalyzing: false,
         analysisError: null,
         isBotBlocked: false,

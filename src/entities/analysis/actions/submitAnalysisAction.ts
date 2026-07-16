@@ -10,6 +10,7 @@ import {
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import {
     resolveTierAndByok,
+    resolveTierOnly,
     resolveReasoning,
     buildGateError,
 } from '@/shared/lib/byokGate';
@@ -42,6 +43,9 @@ export async function submitAnalysisAction(
     reasoning?: boolean
 ): Promise<SubmitAnalysisActionResult> {
     try {
+        const user = await getCurrentUser();
+        const userId = user?.id ?? null;
+
         // E2E short-circuits the LLM/worker (see e2eAnalysisStub). The
         // short-circuit stays bot-aware so the crawler path (miss_no_trigger →
         // BotBlockedNotice) remains reachable under E2E: a bot User-Agent yields
@@ -59,9 +63,10 @@ export async function submitAnalysisAction(
         if (isE2E()) {
             const requestHeaders = await headers();
             if (isBot(requestHeaders)) return { status: 'miss_no_trigger' };
+            const tier = await resolveTierOnly(userId);
             const { e2eCachedTechnical } =
                 await import('@/shared/api/e2eAnalysisStub');
-            return e2eCachedTechnical();
+            return e2eCachedTechnical(tier);
         }
 
         const requestHeaders = await headers();
@@ -74,8 +79,8 @@ export async function submitAnalysisAction(
             sessionSpecFor(marketProfile)
         );
 
-        // no user lookup needed when modelId is absent
         if (modelId === undefined) {
+            const tier = await resolveTierOnly(userId);
             return await submitAnalysis(
                 symbol,
                 companyName,
@@ -87,12 +92,11 @@ export async function submitAnalysisAction(
                     skipEnqueueIfMiss,
                     marketDataProvider,
                     assetClass,
+                    tierContext: { userId, tier },
+                    reasoning: resolveReasoning(tier, reasoning),
                 }
             );
         }
-
-        const user = await getCurrentUser();
-        const userId = user?.id ?? null;
 
         const gate = await resolveTierAndByok(userId, modelId);
         if (gate.kind === 'blocked') {

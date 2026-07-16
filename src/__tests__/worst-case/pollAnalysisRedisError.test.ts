@@ -1,25 +1,41 @@
 vi.mock('@y0ngha/siglens-core', () => ({
     pollAnalysis: vi.fn(),
 }));
+vi.mock('@/entities/auth/lib/getCurrentUser', () => ({
+    getCurrentUser: vi.fn(),
+}));
+vi.mock('@/shared/lib/byokGate', () => ({
+    resolveTierOnly: vi.fn(),
+}));
 
 import { pollAnalysisAction } from '@/entities/analysis/actions/pollAnalysisAction';
 import { pollAnalysis } from '@y0ngha/siglens-core';
+import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
+import { resolveTierOnly } from '@/shared/lib/byokGate';
 
 const mockPollAnalysis = pollAnalysis as ReturnType<typeof vi.fn>;
 
 describe('pollAnalysisAction error handling and edge cases', () => {
+    beforeEach(() => {
+        vi.mocked(getCurrentUser).mockResolvedValue(null);
+        vi.mocked(resolveTierOnly).mockResolvedValue('free');
+    });
+
     afterEach(() => {
         vi.clearAllMocks();
     });
 
-    it('propagates error when pollAnalysis throws (Redis connection fail)', async () => {
+    it('returns a typed error when pollAnalysis throws (Redis connection fail)', async () => {
+        // MISTAKES §0.7: the server action must not propagate the raw Redis
+        // exception to the client — it catches it and returns a typed error.
         mockPollAnalysis.mockRejectedValue(
             new Error('Redis connection refused')
         );
 
-        await expect(pollAnalysisAction('job-1')).rejects.toThrow(
-            'Redis connection refused'
-        );
+        await expect(pollAnalysisAction('job-1')).resolves.toEqual({
+            status: 'error',
+            error: 'Analysis poll is temporarily unavailable.',
+        });
     });
 
     it('handles error status from poll result', async () => {
@@ -60,6 +76,8 @@ describe('pollAnalysisAction error handling and edge cases', () => {
 
         await pollAnalysisAction('specific-job-id');
 
-        expect(mockPollAnalysis).toHaveBeenCalledWith('specific-job-id');
+        expect(mockPollAnalysis).toHaveBeenCalledWith('specific-job-id', {
+            tier: 'free',
+        });
     });
 });

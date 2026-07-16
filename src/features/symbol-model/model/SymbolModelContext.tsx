@@ -8,7 +8,11 @@ import {
     useState,
     type ReactNode,
 } from 'react';
-import { getAllowedModels, type ModelId } from '@y0ngha/siglens-core';
+import {
+    getAllowedModels,
+    type ModelId,
+    type Tier,
+} from '@y0ngha/siglens-core';
 import { useSelectedModel } from '../hooks/useSelectedModel';
 import { useModelGate, type ModelGateState } from '@/features/premium-gate';
 import { useUserTier } from '../hooks/useUserTier';
@@ -19,6 +23,8 @@ interface SymbolModelContextValue {
     modelId: ModelId;
     allowedModels: readonly ModelId[];
     isHydrated: boolean;
+    tier: Tier;
+    isTierHydrated: boolean;
     gateModal: ModelGateState | null;
     dismissGate: () => void;
     handleModelChange: (model: ModelId) => void;
@@ -82,7 +88,7 @@ export function SymbolModelProvider({ children }: SymbolModelProviderProps) {
     // hook-ordering convention — CONVENTIONS.md "Custom Hook Declaration Order".)
     const [isSignupNudgeOpen, setIsSignupNudgeOpen] = useState(false);
 
-    const { tier } = useUserTier();
+    const { tier, isLoading: isTierLoading } = useUserTier();
     const allowedModels = useMemo(() => getAllowedModels(tier), [tier]);
     const [modelId, setModelId, isHydrated] = useSelectedModel(allowedModels);
     const { gateModal, dismissGate, handleModelChange } = useModelGate({
@@ -104,6 +110,8 @@ export function SymbolModelProvider({ children }: SymbolModelProviderProps) {
             modelId,
             allowedModels,
             isHydrated,
+            tier,
+            isTierHydrated: !isTierLoading,
             gateModal,
             dismissGate,
             handleModelChange,
@@ -118,6 +126,8 @@ export function SymbolModelProvider({ children }: SymbolModelProviderProps) {
             modelId,
             allowedModels,
             isHydrated,
+            tier,
+            isTierLoading,
             gateModal,
             dismissGate,
             handleModelChange,

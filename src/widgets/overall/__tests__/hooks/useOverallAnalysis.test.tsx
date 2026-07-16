@@ -246,6 +246,7 @@ describe('useOverallAnalysis', () => {
             mockPollTechnical.mockResolvedValue({
                 status: 'done',
                 result: {} as never,
+                lockedInfoDepth: [],
             });
             mockPollFundamental.mockResolvedValue({
                 status: 'done',
@@ -295,7 +296,11 @@ describe('useOverallAnalysis', () => {
             // 2 round만에 완료
             mockPollTechnical
                 .mockResolvedValueOnce({ status: 'processing' })
-                .mockResolvedValue({ status: 'done', result: {} as never });
+                .mockResolvedValue({
+                    status: 'done',
+                    result: {} as never,
+                    lockedInfoDepth: [],
+                });
             mockPollFundamental
                 .mockResolvedValueOnce({ status: 'processing' })
                 .mockResolvedValue({ status: 'done', result: {} as never });
@@ -346,6 +351,7 @@ describe('useOverallAnalysis', () => {
             mockPollTechnical.mockResolvedValue({
                 status: 'done',
                 result: {} as never,
+                lockedInfoDepth: [],
             });
             mockPollOverall.mockResolvedValue({
                 status: 'done',
@@ -383,6 +389,7 @@ describe('useOverallAnalysis', () => {
             mockPollTechnical.mockResolvedValue({
                 status: 'done',
                 result: {} as never,
+                lockedInfoDepth: [],
             });
             mockPollFundamental.mockResolvedValue({
                 status: 'done',
@@ -625,6 +632,7 @@ describe('useOverallAnalysis', () => {
             mockPollTechnical.mockResolvedValue({
                 status: 'done',
                 result: {} as never,
+                lockedInfoDepth: [],
             });
             mockPollFundamental.mockResolvedValue({
                 status: 'done',
@@ -1118,6 +1126,7 @@ describe('useOverallAnalysis — crypto assetClass (F1)', () => {
         mockPollTechnical.mockResolvedValue({
             status: 'done',
             result: {} as never,
+            lockedInfoDepth: [],
         });
         mockPollNews.mockResolvedValue({ status: 'done', result: {} as never });
         mockPollOverall.mockResolvedValue({

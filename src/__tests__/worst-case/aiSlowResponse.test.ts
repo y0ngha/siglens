@@ -39,14 +39,27 @@ vi.mock('@y0ngha/siglens-core', () => ({
     },
     pollAnalysis: vi.fn(),
 }));
+vi.mock('@/entities/auth/lib/getCurrentUser', () => ({
+    getCurrentUser: vi.fn(),
+}));
+vi.mock('@/shared/lib/byokGate', () => ({
+    resolveTierOnly: vi.fn(),
+}));
 
 import { callAiProviderRouter } from '@/entities/llm-provider/api/router';
 import { pollAnalysisAction } from '@/entities/analysis/actions/pollAnalysisAction';
 import { pollAnalysis } from '@y0ngha/siglens-core';
+import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
+import { resolveTierOnly } from '@/shared/lib/byokGate';
 
 const mockPollAnalysis = pollAnalysis as ReturnType<typeof vi.fn>;
 
 describe('AI slow response and timeout handling', () => {
+    beforeEach(() => {
+        vi.mocked(getCurrentUser).mockResolvedValue(null);
+        vi.mocked(resolveTierOnly).mockResolvedValue('free');
+    });
+
     afterEach(() => {
         vi.restoreAllMocks();
     });

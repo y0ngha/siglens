@@ -1,5 +1,4 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import type { AnalysisResponse } from '@y0ngha/siglens-core';
 
 vi.mock('next/cache', () => ({
     unstable_cache: (fn: (...a: unknown[]) => unknown) => fn, // identity로 통과 검증
@@ -16,10 +15,11 @@ const mockPeek = vi.mocked(peekAnalysisCache);
 describe('peekAnalysisStatic', () => {
     beforeEach(() => vi.clearAllMocks());
 
-    it('delegates to peekAnalysisCache with the same args and returns its data', async () => {
+    it('uses the free-tier peek and returns its data', async () => {
         const cached = {
-            summary: 'cached analysis',
-        } as unknown as AnalysisResponse;
+            result: { summary: 'cached analysis' } as never,
+            lockedInfoDepth: [],
+        };
         mockPeek.mockResolvedValue(cached);
 
         const result = await peekAnalysisStatic(
@@ -35,7 +35,8 @@ describe('peekAnalysisStatic', () => {
             '1Day',
             'AAPL',
             'gemini-2.5-flash-lite',
-            false
+            false,
+            'free'
         );
     });
 
@@ -55,7 +56,8 @@ describe('peekAnalysisStatic', () => {
             '1Day',
             undefined,
             'gemini-2.5-flash-lite',
-            false
+            false,
+            'free'
         );
     });
 
@@ -74,7 +76,8 @@ describe('peekAnalysisStatic', () => {
             '1Day',
             undefined,
             'deepseek-v4-flash',
-            false
+            false,
+            'free'
         );
     });
 });

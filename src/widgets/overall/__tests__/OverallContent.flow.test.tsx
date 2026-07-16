@@ -42,6 +42,7 @@ vi.mock('@/features/symbol-chat', () => ({
 vi.mock('@/features/symbol-model', () => ({
     useDefaultModelId: vi.fn(() => 'gemini-2.5-flash-lite'),
     useDefaultReasoning: vi.fn(() => false),
+    useSymbolModel: vi.fn(() => ({ tier: 'member', isTierHydrated: true })),
 }));
 // /news와 동일 게이트 적용 후 mock 필요. flow 테스트는 hasEnrichedNews=true 전제로
 // 게이트를 즉시 통과시키고 본래 검증(submit→polling→done 서사)을 그대로 유지한다.
@@ -57,6 +58,7 @@ const { searchParamsRef } = vi.hoisted(() => ({
 }));
 vi.mock('next/navigation', () => ({
     useSearchParams: () => searchParamsRef.value,
+    useRouter: () => ({ replace: vi.fn() }),
 }));
 // react-markdown은 ESM-only라 테스트 환경에서 직접 로드하면 실패한다. 본 테스트는
 // 서사 텍스트 노출 여부만 보므로 MarkdownText를 단순 wrapper로 대체한다.

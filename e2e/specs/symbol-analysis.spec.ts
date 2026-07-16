@@ -3,6 +3,7 @@ import {
     ANALYSIS_FIXTURE_SUMMARY_PREFIX,
     ANALYSIS_RENDER_TIMEOUT_MS,
 } from '../support/constants';
+import { signupThrowawayUser } from '../support/signupThrowawayUser';
 
 /**
  * End-to-end validation of the analysis short-circuit infra (Tasks A/B).
@@ -39,6 +40,8 @@ import {
  */
 
 test.describe('symbol analysis: cached-fixture short-circuit renders', () => {
+    test.describe.configure({ timeout: 60_000 });
+
     test('renders the AI analysis from the cached fixture', async ({
         page,
     }) => {
@@ -58,36 +61,52 @@ test.describe('symbol analysis: cached-fixture short-circuit renders', () => {
         ).toBeVisible({ timeout: ANALYSIS_RENDER_TIMEOUT_MS });
     });
 
-    test('timeframe change keeps the fixture analysis rendered', async ({
+    test('free deep links are canonicalized to daily and intraday controls are disabled', async ({
         page,
     }) => {
-        await page.goto('/AAPL');
+        await page.goto('/AAPL?tf=1Hour');
 
-        // Wait for the initial cached fixture to render before switching.
-        // Scope to the desktop analysis aside so the off-screen mobile-sheet
-        // copy of the same summary cannot trip a strict-mode violation.
-        const fixtureSummary = page
-            .getByRole('complementary')
-            .getByText(ANALYSIS_FIXTURE_SUMMARY_PREFIX, { exact: false });
-        await expect(fixtureSummary).toBeVisible({
-            timeout: ANALYSIS_RENDER_TIMEOUT_MS,
-        });
+        await page.waitForURL('**/AAPL?tf=1Day');
+        await expect(
+            page.getByRole('button', { name: '5분', exact: true })
+        ).toBeDisabled();
+        await expect(
+            page.getByRole('button', { name: '1시간', exact: true })
+        ).toBeDisabled();
+        await expect(
+            page
+                .getByRole('complementary')
+                .getByRole('link', { name: '회원가입' })
+        ).toBeVisible({ timeout: ANALYSIS_RENDER_TIMEOUT_MS });
+    });
 
-        // Default timeframe is 1Day; switch to 1Hour via the TimeframeSelector.
-        const oneHourButton = page.getByRole('button', { name: '1시간' });
-        await oneHourButton.click();
+    test('new member may retain a direct minute-timeframe URL', async ({
+        page,
+    }) => {
+        await signupThrowawayUser(
+            page,
+            `e2e-tier-member-${Date.now()}@test.com`,
+            'E2eTierMember1!'
+        );
 
-        // The change is reflected in the URL (?tf=1Hour) — a meaningful,
-        // user-visible outcome of the timeframe switch.
-        await page.waitForURL('**/AAPL?tf=1Hour');
+        await page.goto('/AAPL?tf=5Min');
 
-        // The 1Hour button is now the active one (primary border/text color).
-        await expect(oneHourButton).toHaveClass(/primary/);
+        await expect(
+            page.getByRole('button', { name: '5분', exact: true })
+        ).toBeEnabled();
+        await page.waitForURL('**/AAPL?tf=5Min');
+        await expect(
+            page.getByRole('button', { name: '5분', exact: true })
+        ).toHaveClass(/primary/);
 
-        // The timeframe change re-runs the cached short-circuit, so the fixture
-        // analysis must still be rendered afterwards (not stuck loading/blank).
-        await expect(fixtureSummary).toBeVisible({
-            timeout: ANALYSIS_RENDER_TIMEOUT_MS,
-        });
+        // A member's tier resolves to `member`, and core's `MEMBER_INFO_DEPTH`
+        // equals `PRO_INFO_DEPTH` (see @y0ngha/siglens-core domain/tier.ts), so
+        // `filterAnalysisResult` deterministically returns an empty
+        // `lockedInfoDepth` for this tier, so the signup nudge must not render.
+        await expect(
+            page
+                .getByRole('complementary')
+                .getByRole('link', { name: '회원가입' })
+        ).not.toBeVisible();
     });
 });

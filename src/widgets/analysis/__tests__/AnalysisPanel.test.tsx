@@ -146,6 +146,79 @@ describe('AnalysisPanel', () => {
         expect(screen.getByText('요약 텍스트')).toBeInTheDocument();
     });
 
+    it('shows a signup lock for hidden free-tier details', () => {
+        render(
+            <AnalysisPanel
+                symbol="AAPL"
+                analysis={makeAnalysis()}
+                keyLevels={EMPTY_KEY_LEVELS}
+                timeframe="1Day"
+                lockedInfoDepth={['partial_detail']}
+            />
+        );
+
+        expect(
+            screen.getByText('상세 분석과 매매 전략은 회원에게 제공됩니다.')
+        ).toBeInTheDocument();
+        expect(screen.getByRole('link', { name: '회원가입' })).toHaveAttribute(
+            'href',
+            '/signup'
+        );
+    });
+
+    it('does not show a signup lock when lockedInfoDepth is empty (e.g. shared snapshot)', () => {
+        render(
+            <AnalysisPanel
+                symbol="AAPL"
+                analysis={makeAnalysis()}
+                keyLevels={EMPTY_KEY_LEVELS}
+                timeframe="1Day"
+                lockedInfoDepth={[]}
+            />
+        );
+
+        expect(
+            screen.queryByText('상세 분석과 매매 전략은 회원에게 제공됩니다.')
+        ).not.toBeInTheDocument();
+    });
+
+    // BLOCKER 1 regression guard: hasLockedDetails must derive from
+    // lockedInfoDepth alone, with no separate "showLockedSignup"/tier-hydration
+    // signal that could leave gated fields rendered on an SSR/pre-hydration
+    // pass. AnalysisPanel accepts no such signal any more, so passing only
+    // lockedInfoDepth (as ChartContent does immediately from
+    // initialLockedInfoDepth, before tier hydration resolves) already
+    // reproduces that pass; this test locks the gate to that single source.
+    it('masks the risk badge and action recommendation section when locked, not just showing the teaser', () => {
+        render(
+            <AnalysisPanel
+                symbol="AAPL"
+                analysis={makeAnalysis({
+                    riskLevel: 'medium',
+                    actionRecommendation: makeActionRecommendation(),
+                })}
+                keyLevels={EMPTY_KEY_LEVELS}
+                timeframe="1Day"
+                lockedInfoDepth={['partial_detail', 'full_detail']}
+            />
+        );
+
+        // The signup teaser is present.
+        expect(
+            screen.getByText('상세 분석과 매매 전략은 회원에게 제공됩니다.')
+        ).toBeInTheDocument();
+        expect(screen.getByRole('link', { name: '회원가입' })).toHaveAttribute(
+            'href',
+            '/signup'
+        );
+
+        // The gated values themselves must be removed, not merely covered by
+        // the teaser overlay: risk badge (hasLockedPartialDetail) and the
+        // action recommendation section (hasLockedActionDetail).
+        expect(screen.queryByText('보통')).not.toBeInTheDocument();
+        expect(screen.queryByText('매매 전략')).not.toBeInTheDocument();
+    });
+
     it('renders "AI 분석" heading', () => {
         render(
             <AnalysisPanel
