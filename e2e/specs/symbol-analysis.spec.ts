@@ -73,10 +73,13 @@ test.describe('symbol analysis: cached-fixture short-circuit renders', () => {
         await expect(
             page.getByRole('button', { name: '1시간', exact: true })
         ).toBeDisabled();
+        // free 분석 패널에는 회원가입 CTA가 두 곳(상세 잠금 카드 + 대표 스킬
+        // nudge) 노출되므로 strict 매칭 대신 첫 링크의 가시성만 검증한다.
         await expect(
             page
                 .getByRole('complementary')
                 .getByRole('link', { name: '회원가입' })
+                .first()
         ).toBeVisible({ timeout: ANALYSIS_RENDER_TIMEOUT_MS });
     });
 

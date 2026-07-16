@@ -160,10 +160,82 @@ describe('AnalysisPanel', () => {
         expect(
             screen.getByText('상세 분석과 매매 전략은 회원에게 제공됩니다.')
         ).toBeInTheDocument();
-        expect(screen.getByRole('link', { name: '회원가입' })).toHaveAttribute(
-            'href',
-            '/signup'
+        // Two signup entry points exist for free: the detail lock card and the
+        // sampled-skill nudge. Both must point at /signup.
+        const signupLinks = screen.getAllByRole('link', { name: '회원가입' });
+        expect(signupLinks.length).toBeGreaterThan(0);
+        signupLinks.forEach(link =>
+            expect(link).toHaveAttribute('href', '/signup')
         );
+    });
+
+    it('shows a friendly sampled-skill nudge for free tier without exposing a skill count', () => {
+        render(
+            <AnalysisPanel
+                symbol="AAPL"
+                analysis={makeAnalysis()}
+                keyLevels={EMPTY_KEY_LEVELS}
+                timeframe="1Day"
+                lockedInfoDepth={['partial_detail']}
+            />
+        );
+
+        expect(
+            screen.getByText(/비회원에게는 대표 스킬 분석만 제공돼요/)
+        ).toBeInTheDocument();
+        // The "회원가입" here is a <Link>, so the trailing copy lives in a
+        // separate text node; assert it directly instead of spanning the link.
+        expect(
+            screen.getByText(/하면 전체 스킬 분석을 볼 수 있어요/)
+        ).toBeInTheDocument();
+    });
+
+    it('does not show the sampled-skill nudge for members (nothing locked)', () => {
+        render(
+            <AnalysisPanel
+                symbol="AAPL"
+                analysis={makeAnalysis()}
+                keyLevels={EMPTY_KEY_LEVELS}
+                timeframe="1Day"
+                lockedInfoDepth={[]}
+            />
+        );
+
+        expect(
+            screen.queryByText(/비회원에게는 대표 스킬 분석만 제공돼요/)
+        ).not.toBeInTheDocument();
+    });
+
+    it('hides the skill-detected count for free tier but keeps the indicator count', () => {
+        render(
+            <AnalysisPanel
+                symbol="AAPL"
+                analysis={makeAnalysis()}
+                keyLevels={EMPTY_KEY_LEVELS}
+                timeframe="1Day"
+                indicatorCount={39}
+                lockedInfoDepth={['partial_detail']}
+            />
+        );
+
+        expect(screen.queryByText(/스킬 감지/)).not.toBeInTheDocument();
+        expect(screen.getByText(/39종 인디케이터 적용/)).toBeInTheDocument();
+    });
+
+    it('shows the skill-detected count for members', () => {
+        render(
+            <AnalysisPanel
+                symbol="AAPL"
+                analysis={makeAnalysis()}
+                keyLevels={EMPTY_KEY_LEVELS}
+                timeframe="1Day"
+                indicatorCount={39}
+                lockedInfoDepth={[]}
+            />
+        );
+
+        expect(screen.getByText(/스킬 감지/)).toBeInTheDocument();
+        expect(screen.getByText(/39종 인디케이터 적용/)).toBeInTheDocument();
     });
 
     it('does not show a signup lock when lockedInfoDepth is empty (e.g. shared snapshot)', () => {
@@ -207,9 +279,10 @@ describe('AnalysisPanel', () => {
         expect(
             screen.getByText('상세 분석과 매매 전략은 회원에게 제공됩니다.')
         ).toBeInTheDocument();
-        expect(screen.getByRole('link', { name: '회원가입' })).toHaveAttribute(
-            'href',
-            '/signup'
+        const signupLinks = screen.getAllByRole('link', { name: '회원가입' });
+        expect(signupLinks.length).toBeGreaterThan(0);
+        signupLinks.forEach(link =>
+            expect(link).toHaveAttribute('href', '/signup')
         );
 
         // The gated values themselves must be removed, not merely covered by
@@ -338,6 +411,79 @@ describe('AnalysisPanel', () => {
 
         expect(screen.getByText('상승 삼각형')).toBeInTheDocument();
         expect(screen.queryByText('이중 바닥')).not.toBeInTheDocument();
+    });
+
+    it('hides the confidence badge on skill items when confidence is locked (free tier)', () => {
+        render(
+            <AnalysisPanel
+                symbol="AAPL"
+                analysis={makeAnalysis({
+                    patternSummaries: [makePattern({ confidenceWeight: 0 })],
+                })}
+                keyLevels={EMPTY_KEY_LEVELS}
+                timeframe="1Day"
+                lockedInfoDepth={['partial_detail', 'confidence']}
+            />
+        );
+
+        // The pattern itself is visible to free...
+        expect(screen.getByText('상승 삼각형')).toBeInTheDocument();
+        // ...but its masked confidenceWeight (0) must not render as a badge,
+        // which would otherwise mislead as '중간 신뢰도'.
+        expect(screen.queryByText('중간 신뢰도')).not.toBeInTheDocument();
+        expect(screen.queryByText('높은 신뢰도')).not.toBeInTheDocument();
+    });
+
+    it('shows the confidence badge on skill items for members (confidence unlocked)', () => {
+        render(
+            <AnalysisPanel
+                symbol="AAPL"
+                analysis={makeAnalysis({
+                    patternSummaries: [makePattern({ confidenceWeight: 0.9 })],
+                })}
+                keyLevels={EMPTY_KEY_LEVELS}
+                timeframe="1Day"
+                lockedInfoDepth={[]}
+            />
+        );
+
+        expect(screen.getByText('상승 삼각형')).toBeInTheDocument();
+        expect(screen.getByText('높은 신뢰도')).toBeInTheDocument();
+    });
+
+    it('hides the confidence badge on strategy items when confidence is locked (free tier)', () => {
+        render(
+            <AnalysisPanel
+                symbol="AAPL"
+                analysis={makeAnalysis({
+                    strategyResults: [makeStrategy({ confidenceWeight: 0 })],
+                })}
+                keyLevels={EMPTY_KEY_LEVELS}
+                timeframe="1Day"
+                lockedInfoDepth={['partial_detail', 'confidence']}
+            />
+        );
+
+        expect(screen.getByText('Breakout')).toBeInTheDocument();
+        expect(screen.queryByText('중간 신뢰도')).not.toBeInTheDocument();
+        expect(screen.queryByText('높은 신뢰도')).not.toBeInTheDocument();
+    });
+
+    it('shows the confidence badge on strategy items for members (confidence unlocked)', () => {
+        render(
+            <AnalysisPanel
+                symbol="AAPL"
+                analysis={makeAnalysis({
+                    strategyResults: [makeStrategy({ confidenceWeight: 0.9 })],
+                })}
+                keyLevels={EMPTY_KEY_LEVELS}
+                timeframe="1Day"
+                lockedInfoDepth={[]}
+            />
+        );
+
+        expect(screen.getByText('Breakout')).toBeInTheDocument();
+        expect(screen.getByText('높은 신뢰도')).toBeInTheDocument();
     });
 
     it('expands pattern accordion to show summary and key prices', () => {
