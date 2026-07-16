@@ -51,5 +51,11 @@ export function normalizeAnalysisResponse(
         trendlines: analysis.trendlines ?? [],
         keyLevels,
         priceTargets: analysis.priceTargets ?? { bullish: null, bearish: null },
+        // Safe cast: the spread carries every field from the (possibly partial)
+        // input, and every field `AnalysisResponse` requires is explicitly
+        // defaulted above (summary/trend/indicatorResults/riskLevel/
+        // patternSummaries/strategyResults/candlePatterns/trendlines/keyLevels/
+        // priceTargets). TS just cannot narrow a spread of a partial input to
+        // the full required type on its own.
     } as AnalysisResponse;
 }

@@ -35,5 +35,16 @@ export async function pollOverallAnalysisAction(
         }
     }
 
-    return pollOverallAnalysis(jobId, { tier });
+    try {
+        return await pollOverallAnalysis(jobId, { tier });
+    } catch (error) {
+        console.error(
+            '[pollOverallAnalysisAction] Failed to poll overall analysis:',
+            error
+        );
+        return {
+            status: 'error',
+            error: 'Overall analysis poll is temporarily unavailable.',
+        };
+    }
 }

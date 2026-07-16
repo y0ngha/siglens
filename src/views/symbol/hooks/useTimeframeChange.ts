@@ -41,36 +41,6 @@ export function useTimeframeChange(
     const previousTimeframeRef = useRef<Timeframe>(timeframe);
     const pendingNavigationRef = useRef<Timeframe | null>(null);
 
-    useEffect(() => {
-        if (
-            !isTierHydrated ||
-            !isFreeTier ||
-            tf === null ||
-            tf === DEFAULT_TIMEFRAME
-        ) {
-            return;
-        }
-
-        router.replace(
-            `/${symbol}?${TIMEFRAME_QUERY_PARAM}=${DEFAULT_TIMEFRAME}`,
-            {
-                scroll: false,
-            }
-        );
-    }, [isFreeTier, isTierHydrated, router, symbol, tf]);
-
-    useEffect(() => {
-        if (!isTierHydrated) return;
-        if (timeframe === previousTimeframeRef.current) return;
-
-        previousTimeframeRef.current = timeframe;
-        if (pendingNavigationRef.current === timeframe) {
-            pendingNavigationRef.current = null;
-            return;
-        }
-        setTimeframeChangeCount(count => count + 1);
-    }, [isTierHydrated, timeframe]);
-
     const handleTimeframeChange = useCallback(
         (nextTimeframe: Timeframe): void => {
             if (!isTierHydrated) return;
@@ -112,6 +82,36 @@ export function useTimeframeChange(
             assetInfo?.fmpSymbol,
         ]
     );
+
+    useEffect(() => {
+        if (
+            !isTierHydrated ||
+            !isFreeTier ||
+            tf === null ||
+            tf === DEFAULT_TIMEFRAME
+        ) {
+            return;
+        }
+
+        router.replace(
+            `/${symbol}?${TIMEFRAME_QUERY_PARAM}=${DEFAULT_TIMEFRAME}`,
+            {
+                scroll: false,
+            }
+        );
+    }, [isFreeTier, isTierHydrated, router, symbol, tf]);
+
+    useEffect(() => {
+        if (!isTierHydrated) return;
+        if (timeframe === previousTimeframeRef.current) return;
+
+        previousTimeframeRef.current = timeframe;
+        if (pendingNavigationRef.current === timeframe) {
+            pendingNavigationRef.current = null;
+            return;
+        }
+        setTimeframeChangeCount(count => count + 1);
+    }, [isTierHydrated, timeframe]);
 
     return { timeframe, timeframeChangeCount, handleTimeframeChange };
 }

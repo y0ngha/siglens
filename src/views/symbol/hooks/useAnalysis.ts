@@ -9,12 +9,13 @@ import {
     useRef,
     useState,
 } from 'react';
-import type {
-    AnalysisResponse,
-    ModelId,
-    Tier,
-    TierInfoDepth,
-    Timeframe,
+import {
+    TIER_CONFIG,
+    type AnalysisResponse,
+    type ModelId,
+    type Tier,
+    type TierInfoDepth,
+    type Timeframe,
 } from '@y0ngha/siglens-core';
 import { MS_PER_MINUTE, MS_PER_SECOND } from '@/shared/config/time';
 import {
@@ -51,14 +52,20 @@ const REANALYZE_COOLDOWN_MS = 5 * MS_PER_MINUTE;
 
 /** 캐시 히트(force=false 즉시 응답) 시 적용하는 짧은 클라이언트 쿨다운 — 같은 캐시의 빠른 반복 호출 방지. */
 const CACHE_HIT_COOLDOWN_MS = 30 * MS_PER_SECOND;
-const FREE_LOCKED_INFO_DEPTH: readonly TierInfoDepth[] = [
-    'partial_detail',
-    'full_detail',
-    'entry',
-    'stoploss',
-    'target',
-    'confidence',
-];
+
+// 자유 티어에서 잠기는 TierInfoDepth 전체 집합. `@y0ngha/siglens-core`의
+// `TIER_CONFIG.infoDepth`(free/member/pro allow-list)에서 직접 파생시킨다.
+// 로컬 리터럴 배열로 TierInfoDepth 유니온을 다시 나열하면, core가 새 depth
+// 값을 추가하거나 free의 allow-list를 바꿔도 이 파일이 조용히 드리프트한다
+// (MISTAKES.md Documentation Sync §6). member/pro가 현재 모든 TierInfoDepth
+// 값을 허용하므로 세 tier의 allow-list 합집합이 곧 전체 TierInfoDepth
+// 집합이며, 거기서 free가 허용하는 값만 제외하면 free가 잠그는 집합이 된다.
+const ALL_INFO_DEPTHS = Array.from(
+    new Set(Object.values(TIER_CONFIG.infoDepth).flat())
+);
+const FREE_LOCKED_INFO_DEPTH: readonly TierInfoDepth[] = ALL_INFO_DEPTHS.filter(
+    depth => !TIER_CONFIG.infoDepth.free.includes(depth)
+);
 
 interface UseAnalysisOptions {
     symbol: string;

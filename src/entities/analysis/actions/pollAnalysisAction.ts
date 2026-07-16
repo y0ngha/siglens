@@ -34,5 +34,13 @@ export async function pollAnalysisAction(
         }
     }
 
-    return pollAnalysis(jobId, { tier });
+    try {
+        return await pollAnalysis(jobId, { tier });
+    } catch (error) {
+        console.error('[pollAnalysisAction] Failed to poll analysis:', error);
+        return {
+            status: 'error',
+            error: 'Analysis poll is temporarily unavailable.',
+        };
+    }
 }

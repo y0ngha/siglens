@@ -25,14 +25,17 @@ describe('pollAnalysisAction error handling and edge cases', () => {
         vi.clearAllMocks();
     });
 
-    it('propagates error when pollAnalysis throws (Redis connection fail)', async () => {
+    it('returns a typed error when pollAnalysis throws (Redis connection fail)', async () => {
+        // MISTAKES §0.7: the server action must not propagate the raw Redis
+        // exception to the client — it catches it and returns a typed error.
         mockPollAnalysis.mockRejectedValue(
             new Error('Redis connection refused')
         );
 
-        await expect(pollAnalysisAction('job-1')).rejects.toThrow(
-            'Redis connection refused'
-        );
+        await expect(pollAnalysisAction('job-1')).resolves.toEqual({
+            status: 'error',
+            error: 'Analysis poll is temporarily unavailable.',
+        });
     });
 
     it('handles error status from poll result', async () => {

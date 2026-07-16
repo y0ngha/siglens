@@ -32,6 +32,7 @@ import type {
 } from '@y0ngha/siglens-core';
 import { HIGH_CONFIDENCE_WEIGHT } from '@y0ngha/siglens-core';
 import { cn } from '@/shared/lib/cn';
+import { isFallbackAnalysis } from '@/entities/chat-message';
 import {
     parseStructuredSummary,
     type SkillSummarySection,
@@ -903,7 +904,14 @@ export function AnalysisPanel({
                             aria-hidden
                         />
                     )}
-                    <TrendBadge trend={analysis.trend} />
+                    {/* free 사용자의 direction(trend)은 core filterAnalysisResult가
+                        허용하는 진짜 값이라 그대로 보여준다. 다만 FALLBACK_ANALYSIS
+                        placeholder처럼 서사가 없는 응답은 normalizeAnalysisResponse가
+                        trend를 'neutral'로 채워 넣은 fabricated 값이므로, 그 경우엔
+                        배지를 아예 숨겨 가짜 신호를 노출하지 않는다. */}
+                    {!isFallbackAnalysis(analysis) && (
+                        <TrendBadge trend={analysis.trend} />
+                    )}
                 </div>
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-2 sm:justify-end">
                     {analysis.analyzedAt && (
@@ -984,9 +992,16 @@ export function AnalysisPanel({
                     isFreeUser={isFreeUser}
                 />
             ) : (
-                <MarkdownText className="text-secondary-300 text-sm">
-                    {analysis.summary}
-                </MarkdownText>
+                // TrendBadge와 동일한 신호(isFallbackAnalysis)로 가드한다.
+                // 서사가 없는 응답은 normalizeAnalysisResponse가 summary를 빈
+                // 문자열로 채워 넣으므로 그 fabricated 빈 값을 렌더하지 않는다.
+                // free 사용자의 진짜 summary는 direction과 함께 허용된 필드이므로
+                // 그대로 보여준다.
+                !isFallbackAnalysis(analysis) && (
+                    <MarkdownText className="text-secondary-300 text-sm">
+                        {analysis.summary}
+                    </MarkdownText>
+                )
             )}
 
             {/* 마무리 애니메이션이 끝나기 전(showProgress=true) 동안에는 노출하지 않는다.

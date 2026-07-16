@@ -92,4 +92,17 @@ describe('pollOverallAnalysisAction 함수는', () => {
             error: 'Overall analysis poll is temporarily unavailable.',
         });
     });
+
+    it('resolved-tier polling failure returns a typed error instead of throwing', async () => {
+        mockPollOverallAnalysis.mockRejectedValueOnce(
+            new Error('redis unavailable')
+        );
+
+        await expect(
+            pollOverallAnalysisAction('job-overall-001')
+        ).resolves.toEqual({
+            status: 'error',
+            error: 'Overall analysis poll is temporarily unavailable.',
+        });
+    });
 });

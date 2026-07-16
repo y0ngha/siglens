@@ -72,4 +72,13 @@ describe('pollAnalysisAction 함수는', () => {
             error: 'Analysis poll is temporarily unavailable.',
         });
     });
+
+    it('resolved-tier polling failure returns a typed error instead of throwing', async () => {
+        mockPollAnalysis.mockRejectedValueOnce(new Error('redis unavailable'));
+
+        await expect(pollAnalysisAction('job-123')).resolves.toEqual({
+            status: 'error',
+            error: 'Analysis poll is temporarily unavailable.',
+        });
+    });
 });
