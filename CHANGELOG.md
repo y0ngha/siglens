@@ -1,5 +1,21 @@
 # Changelog
 
+# [0.39.0](https://github.com/y0ngha/siglens/compare/v0.38.1...v0.39.0) (2026-07-16)
+
+
+### Bug Fixes
+
+* address PR [#685](https://github.com/y0ngha/siglens/issues/685) review — keep free chat usable ([a82586d](https://github.com/y0ngha/siglens/commit/a82586d58ea5952aedfdc307697a4f146af258bf))
+* address PR [#685](https://github.com/y0ngha/siglens/issues/685) round-2 review + fix flaky free-canonicalization e2e ([f13e81c](https://github.com/y0ngha/siglens/commit/f13e81c457d4fc21756d5d77c7842821ae51399d))
+* address PR [#685](https://github.com/y0ngha/siglens/issues/685) round-3 review — make isFallbackAnalysis value-based ([df21a31](https://github.com/y0ngha/siglens/commit/df21a318a8e9bd958b6527a5785de5358c65720d))
+* e2e 타임프레임 셀렉터 모호성 제거 및 스펙 문서 정렬 ([9c77204](https://github.com/y0ngha/siglens/commit/9c77204cb15f136157211f9c50b5200c09557986))
+* robots.ts syntax error and align test with consolidated crawler policy ([96c9c22](https://github.com/y0ngha/siglens/commit/96c9c22a2b3c7f4e02ca6694c425e693a59dc050))
+
+
+### Features
+
+* free analysis tier gating (1Day limit, signup blur card, tier threading) ([c1a3a58](https://github.com/y0ngha/siglens/commit/c1a3a58139fdd6497a8bd0fbe6aae1dc8c875976))
+
 ## [0.38.1](https://github.com/y0ngha/siglens/compare/v0.38.0...v0.38.1) (2026-07-12)
 
 
