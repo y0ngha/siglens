@@ -23,6 +23,8 @@ function setHoldings(overrides: Partial<Holdings>) {
         holdings: [],
         isHydrated: true,
         isLoading: false,
+        isError: false,
+        refetch: vi.fn(),
         save: {
             mutateAsync: vi.fn(),
             isPending: false,
@@ -73,5 +75,21 @@ describe('useSymbolHolding', () => {
         const { result } = renderHook(() => useSymbolHolding('AAPL'));
         expect(result.current.isHydrated).toBe(false);
         expect(result.current.save).toBe(save);
+    });
+
+    it('passes through isLoading and isError from usePortfolioHoldings', () => {
+        setHoldings({ holdings: [], isLoading: true, isError: false });
+        const { result: loadingResult } = renderHook(() =>
+            useSymbolHolding('AAPL')
+        );
+        expect(loadingResult.current.isLoading).toBe(true);
+        expect(loadingResult.current.isError).toBe(false);
+
+        setHoldings({ holdings: [], isLoading: false, isError: true });
+        const { result: errorResult } = renderHook(() =>
+            useSymbolHolding('AAPL')
+        );
+        expect(errorResult.current.isLoading).toBe(false);
+        expect(errorResult.current.isError).toBe(true);
     });
 });

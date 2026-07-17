@@ -93,18 +93,15 @@ describe('getPortfolioHoldingsAction', () => {
         });
     });
 
-    it('repo 조회 실패 시 빈 배열을 반환하고 console.error로 로그를 남긴다', async () => {
+    it('repo 조회가 (재시도 후에도) 계속 실패하면 결과를 삼키지 않고 그대로 throw한다 — React Query가 isError를 세팅하도록', async () => {
+        // A plain Error (not a NeonDbError) is not transient, so withRetry
+        // rethrows on the first attempt without sleeping/retrying.
         mockGetCurrentUser.mockResolvedValue(AUTHED_USER);
         mockFindByUser.mockRejectedValue(new Error('DB connection failed'));
-        const consoleErrorSpy = vi
-            .spyOn(console, 'error')
-            .mockImplementation(() => {});
 
-        const result = await getPortfolioHoldingsAction();
-
-        expect(result).toEqual([]);
-        expect(consoleErrorSpy).toHaveBeenCalled();
-        consoleErrorSpy.mockRestore();
+        await expect(getPortfolioHoldingsAction()).rejects.toThrow(
+            'DB connection failed'
+        );
     });
 });
 
@@ -144,6 +141,38 @@ describe('savePortfolioHoldingAction', () => {
         if (result.status === 'error') {
             expect(result.code).toBe('invalid_symbol');
         }
+        expect(mockGetAssetInfo).not.toHaveBeenCalled();
+        expect(mockUpsert).not.toHaveBeenCalled();
+    });
+
+    it('input이 object가 아니면(hostile client) invalid_symbol 에러를 반환하고 throw하지 않는다', async () => {
+        mockGetCurrentUser.mockResolvedValue(AUTHED_USER);
+
+        const result = await savePortfolioHoldingAction(123 as never);
+
+        expect(result).toEqual({
+            status: 'error',
+            code: 'invalid_symbol',
+            message: '유효하지 않은 입력입니다.',
+        });
+        expect(mockGetAssetInfo).not.toHaveBeenCalled();
+        expect(mockUpsert).not.toHaveBeenCalled();
+    });
+
+    it('input 필드가 문자열이 아니면(hostile client) invalid_symbol 에러를 반환하고 throw하지 않는다', async () => {
+        mockGetCurrentUser.mockResolvedValue(AUTHED_USER);
+
+        const result = await savePortfolioHoldingAction({
+            symbol: 'AAPL',
+            quantity: 10,
+            averagePrice: '150.5',
+        } as never);
+
+        expect(result).toEqual({
+            status: 'error',
+            code: 'invalid_symbol',
+            message: '유효하지 않은 입력입니다.',
+        });
         expect(mockGetAssetInfo).not.toHaveBeenCalled();
         expect(mockUpsert).not.toHaveBeenCalled();
     });
@@ -281,6 +310,19 @@ describe('deletePortfolioHoldingAction', () => {
         if (result.status === 'error') {
             expect(result.code).toBe('invalid_symbol');
         }
+        expect(mockDeleteByUserAndSymbol).not.toHaveBeenCalled();
+    });
+
+    it('symbol이 문자열이 아니면(hostile client) invalid_symbol 에러를 반환하고 throw하지 않는다', async () => {
+        mockGetCurrentUser.mockResolvedValue(AUTHED_USER);
+
+        const result = await deletePortfolioHoldingAction(123 as never);
+
+        expect(result).toEqual({
+            status: 'error',
+            code: 'invalid_symbol',
+            message: '유효하지 않은 종목 코드입니다.',
+        });
         expect(mockDeleteByUserAndSymbol).not.toHaveBeenCalled();
     });
 

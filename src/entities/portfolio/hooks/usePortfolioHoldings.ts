@@ -27,6 +27,8 @@ interface UsePortfolioHoldingsReturn {
     holdings: PortfolioHoldingView[];
     isHydrated: boolean;
     isLoading: boolean;
+    isError: boolean;
+    refetch: () => void;
     save: UseMutationResult<SavePortfolioResult, Error, RawHoldingInput>;
     remove: UseMutationResult<DeletePortfolioResult, Error, string>;
 }
@@ -36,7 +38,7 @@ export function usePortfolioHoldings(): UsePortfolioHoldingsReturn {
     const isHydrated = useHydrated();
     const qc = useQueryClient();
 
-    const { data, isLoading } = useQuery({
+    const { data, isLoading, isError, refetch } = useQuery({
         queryKey: QUERY_KEYS.portfolioHoldings(),
         queryFn: () => getPortfolioHoldingsAction(),
         enabled: isHydrated,
@@ -67,5 +69,15 @@ export function usePortfolioHoldings(): UsePortfolioHoldingsReturn {
 
     const holdings: PortfolioHoldingView[] = data ?? [];
 
-    return { holdings, isHydrated, isLoading, save, remove };
+    return {
+        holdings,
+        isHydrated,
+        isLoading,
+        isError,
+        refetch: () => {
+            void refetch();
+        },
+        save,
+        remove,
+    };
 }

@@ -145,7 +145,7 @@ function HoldingRow({
                     </div>
                 )}
             </div>
-            <div role="alert" aria-live="polite" className="min-h-5 text-sm">
+            <div role="alert" className="min-h-5 text-sm">
                 {deleteError && (
                     <span className="text-ui-danger">{deleteError}</span>
                 )}
@@ -156,7 +156,7 @@ function HoldingRow({
 
 /** Account-page section for managing the member's portfolio holdings: list + inline edit + inline delete confirm + add form. */
 export function PortfolioSection() {
-    const { holdings, isHydrated, isLoading, save, remove } =
+    const { holdings, isHydrated, isLoading, isError, refetch, save, remove } =
         usePortfolioHoldings();
 
     const [editingSymbol, setEditingSymbol] = useState<string | null>(null);
@@ -193,13 +193,29 @@ export function PortfolioSection() {
 
             {isLoadingState && <HoldingsSkeleton />}
 
-            {!isLoadingState && holdings.length === 0 && (
+            {!isLoadingState && isError && (
+                <div
+                    role="alert"
+                    className="border-secondary-800 text-secondary-400 rounded-xl border border-dashed px-4 py-6 text-center text-sm"
+                >
+                    <p>보유종목을 일시적으로 불러오지 못했어요.</p>
+                    <button
+                        type="button"
+                        onClick={() => refetch()}
+                        className={cn(ACTION_BUTTON, 'mt-3')}
+                    >
+                        다시 시도
+                    </button>
+                </div>
+            )}
+
+            {!isLoadingState && !isError && holdings.length === 0 && (
                 <p className="border-secondary-800 text-secondary-400 rounded-xl border border-dashed px-4 py-6 text-center text-sm">
                     아직 등록한 보유종목이 없어요. 첫 종목을 추가해 보세요.
                 </p>
             )}
 
-            {!isLoadingState && holdings.length > 0 && (
+            {!isLoadingState && !isError && holdings.length > 0 && (
                 <ul className="space-y-2">
                     {holdings.map(holding => (
                         <HoldingRow
@@ -242,7 +258,7 @@ export function PortfolioSection() {
                 </ul>
             )}
 
-            {!isLoadingState && (
+            {!isLoadingState && !isError && (
                 <div className="border-secondary-800 space-y-2 border-t pt-4">
                     <h3 className="text-secondary-200 text-sm font-semibold">
                         종목 추가

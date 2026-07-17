@@ -4,11 +4,13 @@ import { useLogout } from '@/features/auth-logout/hooks/useLogout';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
 
 const mockSetQueryData = vi.fn();
+const mockRemoveQueries = vi.fn();
 const mockLogoutAction = vi.fn().mockResolvedValue(undefined);
 
 vi.mock('@tanstack/react-query', () => ({
     useQueryClient: () => ({
         setQueryData: mockSetQueryData,
+        removeQueries: mockRemoveQueries,
     }),
 }));
 
@@ -40,6 +42,18 @@ describe('useLogout', () => {
             null
         );
         expect(mockLogoutAction).toHaveBeenCalled();
+    });
+
+    it('removes the portfolio holdings query from the cache on logout', async () => {
+        const { result } = renderHook(() => useLogout());
+
+        await act(async () => {
+            result.current.logout();
+        });
+
+        expect(mockRemoveQueries).toHaveBeenCalledWith({
+            queryKey: QUERY_KEYS.portfolioHoldings(),
+        });
     });
 
     it('logout function is always callable after re-render', () => {

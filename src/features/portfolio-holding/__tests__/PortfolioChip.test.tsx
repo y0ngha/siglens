@@ -47,6 +47,8 @@ function setHoldings(overrides: Partial<Holdings>) {
         holdings: [],
         isHydrated: true,
         isLoading: false,
+        isError: false,
+        refetch: vi.fn(),
         save: {
             mutateAsync: vi.fn(),
             isPending: false,
@@ -79,13 +81,30 @@ describe('PortfolioChipMounted / PortfolioChip', () => {
         expect(container).toBeEmptyDOMElement();
     });
 
-    it('renders the "set" chip for a present user with no holding', () => {
+    it('renders the "set" chip for a present user with no holding (resolved successfully)', () => {
         setCurrentUser(USER);
-        setHoldings({ holdings: [] });
+        setHoldings({ holdings: [], isLoading: false, isError: false });
         render(<PortfolioChipMounted symbol="AAPL" />);
         expect(
             screen.getByRole('button', { name: '내 평단 설정' })
         ).toBeInTheDocument();
+    });
+
+    it('renders nothing while the holdings query is loading, even for a logged-in user', () => {
+        setCurrentUser(USER);
+        setHoldings({ holdings: [], isLoading: true });
+        const { container } = render(<PortfolioChipMounted symbol="AAPL" />);
+        expect(container).toBeEmptyDOMElement();
+    });
+
+    it('renders nothing (not the false "설정" state) when the holdings query errors', () => {
+        setCurrentUser(USER);
+        setHoldings({ holdings: [], isLoading: false, isError: true });
+        const { container } = render(<PortfolioChipMounted symbol="AAPL" />);
+        expect(container).toBeEmptyDOMElement();
+        expect(
+            screen.queryByRole('button', { name: '내 평단 설정' })
+        ).not.toBeInTheDocument();
     });
 
     it('renders the value chip when a holding exists', () => {

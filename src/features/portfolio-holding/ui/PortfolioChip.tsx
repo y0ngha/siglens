@@ -22,14 +22,18 @@ interface PortfolioChipProps {
 export function PortfolioChip({ symbol }: PortfolioChipProps) {
     const [isOpen, setIsOpen] = useState(false);
     const triggerRef = useRef<HTMLButtonElement>(null);
-    const { holding, isHydrated, save } = useSymbolHolding(symbol);
+    const { holding, isHydrated, isLoading, isError, save } =
+        useSymbolHolding(symbol);
 
     // Rendering during hydration risks an SSR/CSR text mismatch (the holdings
     // query is client-only and gated on isHydrated itself) — same rationale
     // as FearGreedHeaderChipMounted, except here we simply hide until ready
     // rather than show a skeleton, since an unset holding renders nothing
-    // visually distinct from "not yet known".
-    if (!isHydrated) return null;
+    // visually distinct from "not yet known". The same hide-don't-flash
+    // treatment applies while the query is loading or has failed: rendering
+    // the "설정" (unset) button in either state would falsely tell a member
+    // with existing holdings that nothing is set yet.
+    if (!isHydrated || isLoading || isError) return null;
 
     const label =
         holding === null

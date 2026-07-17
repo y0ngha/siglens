@@ -129,6 +129,34 @@ describe('usePortfolioHoldings', () => {
         expect(mockGetPortfolioHoldingsAction).toHaveBeenCalledTimes(1);
     });
 
+    it('exposes isError: false on a successful fetch', async () => {
+        const { result } = renderHook(() => usePortfolioHoldings(), {
+            wrapper: makeWrapper(),
+        });
+
+        await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+        expect(result.current.isError).toBe(false);
+    });
+
+    it('exposes isError: true and an empty holdings list when the read fails, and refetch() re-invokes the query', async () => {
+        mockGetPortfolioHoldingsAction
+            .mockRejectedValueOnce(new Error('DB connection failed'))
+            .mockResolvedValueOnce([HOLDING]);
+
+        const { result } = renderHook(() => usePortfolioHoldings(), {
+            wrapper: makeWrapper(),
+        });
+
+        await waitFor(() => expect(result.current.isError).toBe(true));
+        expect(result.current.holdings).toEqual([]);
+
+        result.current.refetch();
+
+        await waitFor(() => expect(result.current.isError).toBe(false));
+        expect(result.current.holdings).toEqual([HOLDING]);
+    });
+
     it('remove.mutateAsync calls deletePortfolioHoldingAction and invalidates the list on success', async () => {
         mockDeletePortfolioHoldingAction.mockResolvedValue({ status: 'ok' });
         mockGetPortfolioHoldingsAction

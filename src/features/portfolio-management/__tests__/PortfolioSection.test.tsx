@@ -45,6 +45,8 @@ function setHoldings(
         holdings: [],
         isHydrated: true,
         isLoading: false,
+        isError: false,
+        refetch: vi.fn(),
         save: {
             mutateAsync: vi.fn(),
             isPending: false,
@@ -152,5 +154,23 @@ describe('PortfolioSection', () => {
                 '아직 등록한 보유종목이 없어요. 첫 종목을 추가해 보세요.'
             )
         ).not.toBeInTheDocument();
+    });
+
+    it('renders an error state instead of the empty state when the list query fails, and refetch() is called on 다시 시도', async () => {
+        const user = userEvent.setup();
+        const { refetch } = setHoldings({ holdings: [], isError: true });
+        render(<PortfolioSection />);
+
+        expect(
+            screen.getByText('보유종목을 일시적으로 불러오지 못했어요.')
+        ).toBeInTheDocument();
+        expect(
+            screen.queryByText(
+                '아직 등록한 보유종목이 없어요. 첫 종목을 추가해 보세요.'
+            )
+        ).not.toBeInTheDocument();
+
+        await user.click(screen.getByRole('button', { name: '다시 시도' }));
+        expect(refetch).toHaveBeenCalled();
     });
 });
