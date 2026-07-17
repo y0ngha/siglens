@@ -1,7 +1,9 @@
 /**
- * Branch coverage tests for finalizeOAuthSignupAction — targets uncovered:
- * - L28-30: formData.get('token'|'agreed_privacy'|'agreed_tos') ?? '' when field is missing
- * - L86: sanitizeNextPath(profile.next) cond-expr fallback
+ * Branch coverage tests for finalizeOAuthSignupAction — covers the
+ * formData.get(...) ?? '' null-coalescing fallback for missing fields,
+ * exercised through two early-return branches:
+ * - token missing → redirects to the consent-invalid error page
+ * - agreed_privacy/agreed_tos missing → returns a consent_required error
  */
 
 import type { Mock } from 'vitest';
