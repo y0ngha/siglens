@@ -146,30 +146,7 @@ describe('AnalysisPanel', () => {
         expect(screen.getByText('요약 텍스트')).toBeInTheDocument();
     });
 
-    it('shows a signup lock for hidden free-tier details', () => {
-        render(
-            <AnalysisPanel
-                symbol="AAPL"
-                analysis={makeAnalysis()}
-                keyLevels={EMPTY_KEY_LEVELS}
-                timeframe="1Day"
-                lockedInfoDepth={['partial_detail']}
-            />
-        );
-
-        expect(
-            screen.getByText('상세 분석과 매매 전략은 회원에게 제공됩니다.')
-        ).toBeInTheDocument();
-        // Exactly two signup entry points exist for free: the detail lock card
-        // and the sampled-skill nudge card. Both must point at /signup.
-        const signupLinks = screen.getAllByRole('link', { name: '회원가입' });
-        expect(signupLinks).toHaveLength(2);
-        signupLinks.forEach(link =>
-            expect(link).toHaveAttribute('href', '/signup')
-        );
-    });
-
-    it('shows a friendly sampled-skill card for free tier with the fixed sample and the member skill total', () => {
+    it('shows a single consolidated upsell card with exactly one signup CTA for free', () => {
         render(
             <AnalysisPanel
                 symbol="AAPL"
@@ -183,14 +160,21 @@ describe('AnalysisPanel', () => {
 
         // Fixed per-group sample (3), not the (possibly zero) detected count.
         expect(
-            screen.getByText(/대표 스킬 3개로 분석했어요/)
+            screen.getByText(/대표 스킬 3개로 분석한 요약이에요/)
         ).toBeInTheDocument();
         // Member skill total is threaded from countSkillFiles.
         expect(
             screen.getByText(
-                /회원가입 후 42개 스킬을 모두 적용한 분석 결과를 확인할 수 있어요/
+                /회원가입하면 42개 스킬을 모두 적용한 상세 분석을 받아볼 수 있어요/
             )
         ).toBeInTheDocument();
+        // The member-only detail items are folded into the same card.
+        expect(screen.getByText(/보조지표 심층 분석/)).toBeInTheDocument();
+        // The two former cards were consolidated into one, so a free user now
+        // sees exactly ONE signup CTA (no duplicate call to action).
+        const signupLinks = screen.getAllByRole('link', { name: '회원가입' });
+        expect(signupLinks).toHaveLength(1);
+        expect(signupLinks[0]).toHaveAttribute('href', '/signup');
     });
 
     it('falls back to a countless message when the member skill total is unavailable (0)', () => {
@@ -209,12 +193,12 @@ describe('AnalysisPanel', () => {
         expect(screen.queryByText(/0개 스킬/)).not.toBeInTheDocument();
         expect(
             screen.getByText(
-                /회원가입 후 전체 스킬을 적용한 분석 결과를 확인할 수 있어요/
+                /회원가입하면 전체 스킬을 적용한 상세 분석을 받아볼 수 있어요/
             )
         ).toBeInTheDocument();
     });
 
-    it('does not show the sampled-skill card for members (nothing locked)', () => {
+    it('does not show the upsell card for members (nothing locked)', () => {
         render(
             <AnalysisPanel
                 symbol="AAPL"
@@ -227,7 +211,10 @@ describe('AnalysisPanel', () => {
         );
 
         expect(
-            screen.queryByText(/대표 스킬 3개로 분석했어요/)
+            screen.queryByText(/대표 스킬 3개로 분석한 요약이에요/)
+        ).not.toBeInTheDocument();
+        expect(
+            screen.queryByRole('link', { name: '회원가입' })
         ).not.toBeInTheDocument();
     });
 
@@ -275,7 +262,7 @@ describe('AnalysisPanel', () => {
         );
 
         expect(
-            screen.queryByText('상세 분석과 매매 전략은 회원에게 제공됩니다.')
+            screen.queryByText(/대표 스킬 3개로 분석한 요약이에요/)
         ).not.toBeInTheDocument();
     });
 
@@ -300,18 +287,16 @@ describe('AnalysisPanel', () => {
             />
         );
 
-        // The signup teaser is present.
+        // The single consolidated upsell card is present with one CTA.
         expect(
-            screen.getByText('상세 분석과 매매 전략은 회원에게 제공됩니다.')
+            screen.getByText(/대표 스킬 3개로 분석한 요약이에요/)
         ).toBeInTheDocument();
         const signupLinks = screen.getAllByRole('link', { name: '회원가입' });
-        expect(signupLinks).toHaveLength(2);
-        signupLinks.forEach(link =>
-            expect(link).toHaveAttribute('href', '/signup')
-        );
+        expect(signupLinks).toHaveLength(1);
+        expect(signupLinks[0]).toHaveAttribute('href', '/signup');
 
         // The gated values themselves must be removed, not merely covered by
-        // the teaser overlay: risk badge (hasLockedPartialDetail) and the
+        // the upsell card: risk badge (hasLockedPartialDetail) and the
         // action recommendation section (hasLockedActionDetail).
         expect(screen.queryByText('보통')).not.toBeInTheDocument();
         expect(screen.queryByText('매매 전략')).not.toBeInTheDocument();
