@@ -138,12 +138,12 @@ test.describe('portfolio holdings CRUD (authed storageState)', () => {
 
         // ---- 2. Chip reflects it on the symbol page ----
         await page.goto('/AAPL');
-        const chip = page.getByRole('button', { name: /^내 평단/ });
+        const chip = page.getByRole('button', { name: /^평단/ });
         await expect(chip).toBeVisible({ timeout: SETTLE_TIMEOUT_MS });
-        // Exact match proves the "set" state, not the "내 평단 설정" unset copy.
+        // Exact match proves the "set" state, not the "평단 설정" unset copy.
         // Generous timeout: this is a fresh hard navigation, so the chip's own
         // client-side holdings fetch (not just hydration) must complete first.
-        await expect(chip).toHaveText('내 평단 $150 · 10주', {
+        await expect(chip).toHaveText('평단 $150 · 10주', {
             timeout: SETTLE_TIMEOUT_MS,
         });
 
@@ -224,7 +224,7 @@ test.describe('portfolio holdings CRUD (authed storageState)', () => {
         await region.getByRole('button', { name: '추가', exact: true }).click();
 
         await expect(
-            region.getByText('유효하지 않은 종목 코드입니다.')
+            region.getByText('올바른 종목 코드를 입력해 주세요.')
         ).toBeVisible({ timeout: SETTLE_TIMEOUT_MS });
 
         // Nothing was persisted for the rejected symbol.

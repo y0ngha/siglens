@@ -109,7 +109,7 @@ describe('usePortfolioHoldings', () => {
         mockSavePortfolioHoldingAction.mockResolvedValue({
             status: 'error',
             code: 'invalid_symbol',
-            message: '유효하지 않은 종목 코드입니다.',
+            message: '올바른 종목 코드를 입력해 주세요.',
         });
 
         const { result } = renderHook(() => usePortfolioHoldings(), {
