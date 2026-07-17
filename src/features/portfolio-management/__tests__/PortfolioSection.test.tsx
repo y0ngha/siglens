@@ -321,6 +321,33 @@ describe('PortfolioSection', () => {
         expect(screen.getByText('AAPL')).toBeInTheDocument();
     });
 
+    it('shows a generic delete error and does not crash when remove.mutateAsync rejects outright', async () => {
+        const user = userEvent.setup();
+        const { remove } = setHoldings({ holdings: [HOLDING] });
+        (remove.mutateAsync as ReturnType<typeof vi.fn>).mockRejectedValue(
+            new Error('session outage')
+        );
+        render(<PortfolioSection />);
+
+        const row = screen.getByText('AAPL').closest('li');
+        if (!row) throw new Error('holding row not found');
+
+        await user.click(
+            within(row).getByRole('button', { name: 'AAPL 보유종목 삭제' })
+        );
+        await user.click(
+            within(row).getByRole('button', { name: '삭제 확정' })
+        );
+
+        expect(
+            await within(row).findByText(
+                '삭제에 실패했어요. 잠시 후 다시 시도해 주세요.'
+            )
+        ).toBeInTheDocument();
+        // Row is not removed - the symbol is still on screen.
+        expect(screen.getByText('AAPL')).toBeInTheDocument();
+    });
+
     it('restores the normal row buttons without deleting when 취소 is clicked on the delete confirm', async () => {
         const user = userEvent.setup();
         const { remove } = setHoldings({ holdings: [HOLDING] });

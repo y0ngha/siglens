@@ -217,14 +217,28 @@ export function PortfolioSection() {
     const handleDelete = async (symbol: string) => {
         setDeleteError(null);
         setStatusMessage(null);
-        const result = await remove.mutateAsync(symbol);
-        if (result.status === 'error') {
-            setDeleteError({ symbol, message: result.message });
-            return;
+        try {
+            const result = await remove.mutateAsync(symbol);
+            if (result.status === 'error') {
+                setDeleteError({ symbol, message: result.message });
+                return;
+            }
+            setConfirmingDeleteSymbol(null);
+            setStatusMessage(`'${symbol}' 보유종목을 삭제했어요`);
+            setDeleteSuccessTick(tick => tick + 1);
+        } catch {
+            // remove.mutateAsync can reject outright (e.g. getCurrentUser()
+            // throwing on a session outage, or an RSC transport failure) —
+            // deletePortfolioHoldingAction only catches its own DB errors and
+            // returns a `status: 'error'` result, it doesn't guard those.
+            // Mirror HoldingForm.handleSubmit's save-path guard so a delete
+            // failure surfaces the same per-row feedback instead of an
+            // unhandled promise rejection.
+            setDeleteError({
+                symbol,
+                message: '삭제에 실패했어요. 잠시 후 다시 시도해 주세요.',
+            });
         }
-        setConfirmingDeleteSymbol(null);
-        setStatusMessage(`'${symbol}' 보유종목을 삭제했어요`);
-        setDeleteSuccessTick(tick => tick + 1);
     };
 
     return (
