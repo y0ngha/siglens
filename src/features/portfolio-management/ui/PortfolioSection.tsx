@@ -188,31 +188,64 @@ export function PortfolioSection() {
         symbol: string;
         message: string;
     } | null>(null);
+    const [statusMessage, setStatusMessage] = useState<string | null>(null);
+    // Bumped on every successful delete; a dedicated effect (below) reacts to
+    // it rather than calling .focus() straight from handleDelete, because
+    // HoldingRow has its own effect that returns focus to its "삭제" button
+    // whenever isConfirmingDelete flips back to false — which also happens on
+    // a *successful* delete (confirmingDeleteSymbol resets the same way a
+    // cancel would). React flushes child effects before parent effects within
+    // the same commit, so driving this focus move through a parent-level
+    // effect (instead of an inline call) guarantees it runs after — and wins
+    // over — HoldingRow's, landing focus on the heading rather than a button
+    // that may be about to unmount.
+    const [deleteSuccessTick, setDeleteSuccessTick] = useState(0);
+    const headingRef = useRef<HTMLHeadingElement>(null);
 
     const { holdings, isHydrated, isLoading, isError, refetch, save, remove } =
         usePortfolioHoldings();
 
     const isLoadingState = !isHydrated || isLoading;
 
+    // Fires once per successful delete (see deleteSuccessTick above).
+    useEffect(() => {
+        if (deleteSuccessTick > 0) {
+            headingRef.current?.focus();
+        }
+    }, [deleteSuccessTick]);
+
     const handleDelete = async (symbol: string) => {
         setDeleteError(null);
+        setStatusMessage(null);
         const result = await remove.mutateAsync(symbol);
         if (result.status === 'error') {
             setDeleteError({ symbol, message: result.message });
             return;
         }
         setConfirmingDeleteSymbol(null);
+        setStatusMessage(`'${symbol}' 보유종목을 삭제했어요`);
+        setDeleteSuccessTick(tick => tick + 1);
     };
 
     return (
         <div className="space-y-4">
             <div>
-                <h2 className="text-secondary-100 text-lg font-semibold">
+                <h2
+                    ref={headingRef}
+                    tabIndex={-1}
+                    className="text-secondary-100 focus-visible:ring-primary-500 rounded-sm text-lg font-semibold focus-visible:ring-2 focus-visible:outline-none"
+                >
                     보유종목
                 </h2>
                 <p className="text-secondary-400 mt-1 text-sm">
                     등록하면 내 평단 기준으로 분석을 받을 수 있어요.
                 </p>
+            </div>
+
+            <div role="status" aria-live="polite" className="min-h-5 text-sm">
+                {statusMessage && (
+                    <span className="text-ui-success">{statusMessage}</span>
+                )}
             </div>
 
             {isLoadingState && <HoldingsSkeleton />}
@@ -252,9 +285,13 @@ export function PortfolioSection() {
                             }}
                             onCancelEdit={() => setEditingSymbol(null)}
                             onSave={async input => {
+                                setStatusMessage(null);
                                 const result = await save.mutateAsync(input);
                                 if (result.status === 'ok') {
                                     setEditingSymbol(null);
+                                    setStatusMessage(
+                                        `'${result.holding.symbol}' 보유종목을 저장했어요`
+                                    );
                                 }
                                 return result;
                             }}
@@ -288,7 +325,16 @@ export function PortfolioSection() {
                         종목 추가
                     </h3>
                     <HoldingForm
-                        onSubmit={input => save.mutateAsync(input)}
+                        onSubmit={async input => {
+                            setStatusMessage(null);
+                            const result = await save.mutateAsync(input);
+                            if (result.status === 'ok') {
+                                setStatusMessage(
+                                    `'${result.holding.symbol}' 보유종목을 저장했어요`
+                                );
+                            }
+                            return result;
+                        }}
                         submitting={save.isPending && editingSymbol === null}
                     />
                 </div>

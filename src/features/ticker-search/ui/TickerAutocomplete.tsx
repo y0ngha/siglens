@@ -42,6 +42,15 @@ interface TickerAutocompleteProps {
     ariaInvalid?: boolean;
     /** Forwarded to the underlying input so a host form can associate its own field-level error message. */
     ariaDescribedby?: string;
+    /**
+     * Associates the input with a host form's own visible field label (e.g.
+     * HoldingForm's "종목" label) so the accessible name matches what's on
+     * screen, instead of the generic default "종목 티커 검색" aria-label.
+     * When provided, this takes over as the input's accessible name (the
+     * default `aria-label` is omitted) — other consumers that don't pass it
+     * keep the unchanged default behavior.
+     */
+    ariaLabelledby?: string;
 }
 
 export function TickerAutocomplete({
@@ -52,6 +61,7 @@ export function TickerAutocomplete({
     inputClassName,
     ariaInvalid,
     ariaDescribedby,
+    ariaLabelledby,
 }: TickerAutocompleteProps) {
     const {
         query,
@@ -87,7 +97,8 @@ export function TickerAutocomplete({
                     name="symbol"
                     autoComplete="off"
                     role="combobox"
-                    aria-label="종목 티커 검색"
+                    aria-label={ariaLabelledby ? undefined : '종목 티커 검색'}
+                    aria-labelledby={ariaLabelledby}
                     aria-expanded={isOpen}
                     aria-haspopup="listbox"
                     aria-controls={LISTBOX_ID}

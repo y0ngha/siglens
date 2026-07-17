@@ -102,13 +102,35 @@ describe('PortfolioSection', () => {
         });
     });
 
+    it('announces success in the polite status region after adding a holding', async () => {
+        const user = userEvent.setup();
+        const { save } = setHoldings({ holdings: [] });
+        (save.mutateAsync as ReturnType<typeof vi.fn>).mockResolvedValue({
+            status: 'ok',
+            holding: HOLDING,
+        });
+        render(<PortfolioSection />);
+
+        await user.type(screen.getByLabelText('종목 티커 검색'), 'AAPL');
+        await user.type(screen.getByLabelText('수량'), '10');
+        await user.type(screen.getByLabelText('평단'), '150.5');
+        await user.click(screen.getByRole('button', { name: '추가' }));
+
+        expect(
+            await screen.findByText("'AAPL' 보유종목을 저장했어요")
+        ).toBeInTheDocument();
+        expect(screen.getByRole('status')).toHaveTextContent(
+            "'AAPL' 보유종목을 저장했어요"
+        );
+    });
+
     it('surfaces the error message when the save mutation returns an error result', async () => {
         const user = userEvent.setup();
         const { save } = setHoldings({ holdings: [] });
         (save.mutateAsync as ReturnType<typeof vi.fn>).mockResolvedValue({
             status: 'error',
             code: 'invalid_symbol',
-            message: '유효하지 않은 종목 코드입니다.',
+            message: '올바른 종목 코드를 입력해 주세요.',
         });
         render(<PortfolioSection />);
 
@@ -118,7 +140,7 @@ describe('PortfolioSection', () => {
         await user.click(screen.getByRole('button', { name: '추가' }));
 
         expect(
-            await screen.findByText('유효하지 않은 종목 코드입니다.')
+            await screen.findByText('올바른 종목 코드를 입력해 주세요.')
         ).toBeInTheDocument();
     });
 
@@ -143,6 +165,55 @@ describe('PortfolioSection', () => {
         await waitFor(() => {
             expect(remove.mutateAsync).toHaveBeenCalledWith('AAPL');
         });
+    });
+
+    it('announces success in the polite status region after deleting a holding', async () => {
+        const user = userEvent.setup();
+        const { remove } = setHoldings({ holdings: [HOLDING] });
+        (remove.mutateAsync as ReturnType<typeof vi.fn>).mockResolvedValue({
+            status: 'ok',
+        });
+        render(<PortfolioSection />);
+
+        const row = screen.getByText('AAPL').closest('li');
+        if (!row) throw new Error('holding row not found');
+
+        await user.click(
+            within(row).getByRole('button', { name: 'AAPL 보유종목 삭제' })
+        );
+        await user.click(
+            within(row).getByRole('button', { name: '삭제 확정' })
+        );
+
+        expect(
+            await screen.findByText("'AAPL' 보유종목을 삭제했어요")
+        ).toBeInTheDocument();
+    });
+
+    it('moves focus to the section heading (not <body>) after a successful delete', async () => {
+        const user = userEvent.setup();
+        const { remove } = setHoldings({ holdings: [HOLDING] });
+        (remove.mutateAsync as ReturnType<typeof vi.fn>).mockResolvedValue({
+            status: 'ok',
+        });
+        render(<PortfolioSection />);
+
+        const row = screen.getByText('AAPL').closest('li');
+        if (!row) throw new Error('holding row not found');
+
+        await user.click(
+            within(row).getByRole('button', { name: 'AAPL 보유종목 삭제' })
+        );
+        await user.click(
+            within(row).getByRole('button', { name: '삭제 확정' })
+        );
+
+        await waitFor(() => {
+            expect(
+                screen.getByRole('heading', { name: '보유종목' })
+            ).toHaveFocus();
+        });
+        expect(document.activeElement).not.toBe(document.body);
     });
 
     it('shows a loading skeleton while not yet hydrated', () => {
@@ -199,6 +270,11 @@ describe('PortfolioSection', () => {
         expect(
             within(row).queryByRole('button', { name: '저장' })
         ).not.toBeInTheDocument();
+
+        // Success is announced in the section's polite status region.
+        expect(
+            screen.getByText("'AAPL' 보유종목을 저장했어요")
+        ).toBeInTheDocument();
     });
 
     it('moves focus into the inline edit form (quantity field) when 수정 is clicked', async () => {

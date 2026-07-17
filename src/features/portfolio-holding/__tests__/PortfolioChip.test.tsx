@@ -255,7 +255,7 @@ describe('PortfolioChipMounted / PortfolioChip', () => {
         (save.mutateAsync as ReturnType<typeof vi.fn>).mockResolvedValue({
             status: 'error',
             code: 'invalid_price',
-            message: '0보다 큰 평균 단가를 입력해 주세요 (소수점 8자리까지)',
+            message: '0보다 큰 평균 단가를 입력해 주세요 (소수점 8자리까지).',
         });
         render(<PortfolioChipMounted symbol="AAPL" />);
 
@@ -266,7 +266,7 @@ describe('PortfolioChipMounted / PortfolioChip', () => {
 
         expect(
             await screen.findByText(
-                '0보다 큰 평균 단가를 입력해 주세요 (소수점 8자리까지)'
+                '0보다 큰 평균 단가를 입력해 주세요 (소수점 8자리까지).'
             )
         ).toBeInTheDocument();
         expect(screen.getByLabelText('평단')).toHaveFocus();
