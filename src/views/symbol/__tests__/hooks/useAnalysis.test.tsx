@@ -39,6 +39,14 @@ vi.mock('@/shared/lib/sleep', () => ({
     sleep: vi.fn().mockResolvedValue(undefined),
 }));
 
+const { mockUseSymbolHolding } = vi.hoisted(() => ({
+    mockUseSymbolHolding: vi.fn(),
+}));
+
+vi.mock('@/features/portfolio-holding', () => ({
+    useSymbolHolding: mockUseSymbolHolding,
+}));
+
 const mockSubmit = submitAnalysisAction as MockedFunction<
     typeof submitAnalysisAction
 >;
@@ -110,6 +118,17 @@ describe('useAnalysis', () => {
         mockCancel.mockReset();
         mockCancel.mockResolvedValue(undefined);
         (getReanalyzeCooldownMs as Mock).mockResolvedValue(0);
+        // 대부분의 기존 테스트는 personalization과 무관하므로, 홀딩 쿼리가 즉시
+        // 해석 완료(hydrated, not loading)되고 홀딩이 없는 기본 상태로 둔다 —
+        // 그래야 홀딩-변경 effect가 "최초 hydration 세팅"만 캡처하고 재분석을
+        // 트리거하지 않는다.
+        mockUseSymbolHolding.mockReturnValue({
+            holding: null,
+            isHydrated: true,
+            isLoading: false,
+            isError: false,
+            save: {} as never,
+        });
 
         sendBeaconMock = vi.fn();
         Object.defineProperty(navigator, 'sendBeacon', {
@@ -557,6 +576,163 @@ describe('useAnalysis', () => {
             rerender({ reasoning: true, isReasoningHydrated: true });
 
             expect(mockSubmit).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('holding-change re-run (personalized-analysis-by-position-bucket spec, Subsystem C)', () => {
+        it('restarts analysis when the member holding avg changes after hydration', async () => {
+            mockSubmit.mockResolvedValue({
+                status: 'cached',
+                result: INITIAL_ANALYSIS,
+                lockedInfoDepth: [],
+            });
+            mockUseSymbolHolding.mockReturnValue({
+                holding: {
+                    symbol: 'AAPL',
+                    companyName: null,
+                    fmpSymbol: null,
+                    quantity: '10',
+                    averagePrice: '100',
+                    updatedAt: '2026-01-01T00:00:00Z',
+                },
+                isHydrated: true,
+                isLoading: false,
+                isError: false,
+                save: {} as never,
+            });
+
+            const { rerender } = renderHook(
+                () =>
+                    useAnalysis(makeOptions({ initialAnalysisFailed: false })),
+                { wrapper: makeWrapper() }
+            );
+
+            // 초기 hydration 세팅 — 재분석을 트리거하지 않는다.
+            expect(mockSubmit).not.toHaveBeenCalled();
+
+            mockUseSymbolHolding.mockReturnValue({
+                holding: {
+                    symbol: 'AAPL',
+                    companyName: null,
+                    fmpSymbol: null,
+                    quantity: '10',
+                    averagePrice: '150',
+                    updatedAt: '2026-01-02T00:00:00Z',
+                },
+                isHydrated: true,
+                isLoading: false,
+                isError: false,
+                save: {} as never,
+            });
+            rerender();
+
+            await waitFor(() => {
+                expect(mockSubmit).toHaveBeenCalledTimes(1);
+            });
+        });
+
+        it('does not restart on the hydration-driven initial holding resolution', async () => {
+            mockSubmit.mockResolvedValue({
+                status: 'cached',
+                result: INITIAL_ANALYSIS,
+                lockedInfoDepth: [],
+            });
+            mockUseSymbolHolding.mockReturnValue({
+                holding: null,
+                isHydrated: false,
+                isLoading: true,
+                isError: false,
+                save: {} as never,
+            });
+
+            const { rerender } = renderHook(
+                () =>
+                    useAnalysis(makeOptions({ initialAnalysisFailed: false })),
+                { wrapper: makeWrapper() }
+            );
+
+            mockUseSymbolHolding.mockReturnValue({
+                holding: {
+                    symbol: 'AAPL',
+                    companyName: null,
+                    fmpSymbol: null,
+                    quantity: '10',
+                    averagePrice: '100',
+                    updatedAt: '2026-01-01T00:00:00Z',
+                },
+                isHydrated: true,
+                isLoading: false,
+                isError: false,
+                save: {} as never,
+            });
+            rerender();
+
+            // 최초 hydration 완료(그 시점에 홀딩이 이미 존재)는 사용자 의도 변경이
+            // 아니므로 재분석을 트리거하지 않는다.
+            expect(mockSubmit).not.toHaveBeenCalled();
+        });
+
+        it('does not restart while the holding query is still loading (client-side symbol nav race)', async () => {
+            mockSubmit.mockResolvedValue({
+                status: 'cached',
+                result: INITIAL_ANALYSIS,
+                lockedInfoDepth: [],
+            });
+            // 최초 해석 완료 — 홀딩 없음으로 캡처.
+            mockUseSymbolHolding.mockReturnValue({
+                holding: null,
+                isHydrated: true,
+                isLoading: false,
+                isError: false,
+                save: {} as never,
+            });
+
+            const { rerender } = renderHook(
+                () =>
+                    useAnalysis(makeOptions({ initialAnalysisFailed: false })),
+                { wrapper: makeWrapper() }
+            );
+
+            // 심볼 nav로 쿼리가 다시 loading 상태가 되면서 홀딩 값이 잠깐 바뀐 것처럼
+            // 보여도, 아직 loading 중이면 재분석을 트리거하지 않는다.
+            mockUseSymbolHolding.mockReturnValue({
+                holding: {
+                    symbol: 'AAPL',
+                    companyName: null,
+                    fmpSymbol: null,
+                    quantity: '10',
+                    averagePrice: '100',
+                    updatedAt: '2026-01-01T00:00:00Z',
+                },
+                isHydrated: true,
+                isLoading: true,
+                isError: false,
+                save: {} as never,
+            });
+            rerender();
+
+            expect(mockSubmit).not.toHaveBeenCalled();
+
+            // loading이 끝나야 비로소 (진짜 변경으로) 재분석이 트리거된다.
+            mockUseSymbolHolding.mockReturnValue({
+                holding: {
+                    symbol: 'AAPL',
+                    companyName: null,
+                    fmpSymbol: null,
+                    quantity: '10',
+                    averagePrice: '100',
+                    updatedAt: '2026-01-01T00:00:00Z',
+                },
+                isHydrated: true,
+                isLoading: false,
+                isError: false,
+                save: {} as never,
+            });
+            rerender();
+
+            await waitFor(() => {
+                expect(mockSubmit).toHaveBeenCalledTimes(1);
+            });
         });
     });
 

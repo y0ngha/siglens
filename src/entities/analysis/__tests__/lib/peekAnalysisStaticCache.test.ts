@@ -36,7 +36,9 @@ describe('peekAnalysisStatic', () => {
             'AAPL',
             'gemini-2.5-flash-lite',
             false,
-            'free'
+            'free',
+            undefined,
+            undefined
         );
     });
 
@@ -57,7 +59,9 @@ describe('peekAnalysisStatic', () => {
             undefined,
             'gemini-2.5-flash-lite',
             false,
-            'free'
+            'free',
+            undefined,
+            undefined
         );
     });
 
@@ -77,7 +81,9 @@ describe('peekAnalysisStatic', () => {
             undefined,
             'deepseek-v4-flash',
             false,
-            'free'
+            'free',
+            undefined,
+            undefined
         );
     });
 });

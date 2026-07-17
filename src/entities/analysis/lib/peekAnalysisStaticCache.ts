@@ -33,6 +33,14 @@ import { SECONDS_PER_QUARTER_DAY } from '@/shared/config/time';
  * 쓰는 reasoning-OFF 키와 정렬되어야 HIT한다. 회원이 토글 ON으로 받은 결과가 이 익명 peek에
  * 섞이는 캐시 오염을 방지한다(회원은 클라 재요청으로 자기 값을 받는다). unstable_cache 키에는
  * 포함하지 않는다 — 항상 상수이므로 별도 분기가 필요 없다.
+ *
+ * positionBucket도 동일 이유로 항상 no-bucket(`undefined`)으로 고정한다
+ * (personalized-analysis-by-position-bucket spec, Subsystem C). 이 익명 peek의 writer는
+ * 익명/봇 방문자의 submitAnalysisAction이며, `resolveHoldingPositionBucket`이 free tier·
+ * 미로그인 호출자에게 절대 버킷을 부여하지 않으므로(자기 자신도 free tier로 고정) 그 writer가
+ * 쓰는 키는 항상 no-bucket이다. 회원이 자신의 포지션으로 개인화된 결과를 받는 것은 클라
+ * 재요청(useAnalysis의 holding-change effect)의 몫이며, 이 SSR peek에 섞이면 안 된다.
+ * unstable_cache 키에는 포함하지 않는다 — 항상 상수이므로 별도 분기가 필요 없다.
  */
 export function peekAnalysisStatic(
     ticker: string,
@@ -49,7 +57,9 @@ export function peekAnalysisStatic(
                 fmpSymbol,
                 modelId,
                 false,
-                'free'
+                'free',
+                undefined,
+                undefined
             ),
         ['peek-analysis-static', upper, timeframe, modelId, 'free'],
         { revalidate: SECONDS_PER_QUARTER_DAY, tags: [`symbol:${upper}`] }

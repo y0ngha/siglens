@@ -18,6 +18,7 @@ import {
     type Timeframe,
 } from '@y0ngha/siglens-core';
 import { MS_PER_MINUTE, MS_PER_SECOND } from '@/shared/config/time';
+import { useSymbolHolding } from '@/features/portfolio-holding';
 import {
     submitAnalysisAction,
     type SubmitAnalysisActionResult,
@@ -315,6 +316,28 @@ export function useAnalysis({
         },
     });
 
+    // 5. useSymbolHolding — personalized-analysis-by-position-bucket spec
+    // (Subsystem C). Source of the member's holding for THIS symbol. The
+    // INITIAL analysis on mount is already personalized WITHOUT any client
+    // involvement — submitAnalysisAction server-reads the holding itself —
+    // so this hook exists purely to catch a *subsequent* change (the member
+    // sets/edits their avg via the holding chip while already viewing the
+    // page) via the effect below (§9).
+    const {
+        holding,
+        isHydrated: isHoldingHydrated,
+        isLoading: isHoldingLoading,
+    } = useSymbolHolding(symbol);
+    // "Resolved" gates out two race windows: the query hasn't hydrated yet
+    // (isHoldingHydrated===false), and a client-side symbol nav that
+    // re-triggers isLoading on the shared holdings query. Treating an avg
+    // value as authoritative before this is true risks a premature
+    // no-bucket restart immediately followed by a bucketed one.
+    const isHoldingResolved = isHoldingHydrated && !isHoldingLoading;
+    const holdingAvgPrice = holding?.averagePrice ?? null;
+    const prevHoldingAvgPriceRef = useRef<string | null>(holdingAvgPrice);
+    const hasHandledHoldingHydrationRef = useRef(false);
+
     // `@y0ngha/siglens-core`가 부분 응답(누락된 배열/객체)을 돌려줄 수 있으므로
     // 소스에서 1회 정규화해 타입 계약을 런타임에서 다시 보장한다. 이 결과를
     // AnalysisPanel·buildExpertAnalysisReport·useAnalysisDerivedData가 공유한다.
@@ -324,19 +347,20 @@ export function useAnalysis({
         [analysisResult, initialAnalysis]
     );
 
-    // 5. Derived variables
+    // 6. Derived variables
     const isAnalyzing =
         isSubmitting ||
         isPolling ||
         (initialAnalysisFailedAtMount &&
             (isModelHydrated === false ||
                 isReasoningHydrated === false ||
-                isTierHydrated === false));
+                isTierHydrated === false ||
+                !isHoldingResolved));
     const analysisError = submitError?.message ?? pollError ?? null;
     // 쿨다운 카운트다운이 활성화된 상태. effect deps에 사용해 불필요한 재시작을 방지한다.
     const isCountdownActive = reanalyzeCooldownMs > 0;
 
-    // 6. Handlers
+    // 7. Handlers
     // latestRef 패턴을 사용하므로 symbol을 deps에서 제외하고 안정적인 함수 참조를 유지한다.
     // Redis 기반 쿨다운을 atomic하게 점유한 뒤에만 mutation을 실행한다.
     const handleReanalyze = useCallback((): void => {
@@ -398,7 +422,7 @@ export function useAnalysis({
     }, []);
     usePageHideCancel(getPageHideJobs);
 
-    // 7. useLayoutEffect
+    // 8. useLayoutEffect
     // symbol, timeframe의 최신 렌더 값을 DOM 커밋 전에 동기 갱신하여
     // mutation 호출 시점에 stale closure를 방지한다.
     useLayoutEffect(() => {
@@ -409,7 +433,7 @@ export function useAnalysis({
         latestTierRef.current = tier;
     });
 
-    // 8. useEffect
+    // 9. useEffect
 
     // 폴링 — submit 결과가 'submitted'이면 polling 시작.
     // setState는 async IIFE 내부에서 호출되므로 react-hooks/set-state-in-effect 규칙 위반이 아니다.
@@ -503,12 +527,17 @@ export function useAnalysis({
     // 서버에서 초기 AI 분석이 실패한 경우, localStorage hydration이 완료된 뒤 자동으로 재분석을 실행한다.
     // isModelHydrated=false 동안에는 기본값(DEFAULT_MODEL)이 사용 중이므로 hydration 완료까지 대기한다.
     // isReasoningHydrated도 동일하게 대기한다 — 그렇지 않으면 회원의 저장된 reasoning=true가
-    // 반영되기 전에 reasoning=false(기본값)로 초기 재시도가 나가버린다.
+    // 반영되기 전에 reasoning=false(기본값)로 초기 재시도가 나가버린다. isHoldingResolved도
+    // 동일한 이유로 대기한다(personalized-analysis-by-position-bucket spec, Subsystem C) —
+    // 서버가 이 재시도에서도 자체적으로 홀딩을 다시 읽어 개인화하므로 정합성 문제는 아니지만,
+    // 다른 hydration 게이트와 일관되게 홀딩 쿼리가 아직 진행 중인 채로 재시도가 나가는 것을
+    // 피한다.
     useEffect(() => {
         if (!initialAnalysisFailedAtMount) return;
         if (isModelHydrated === false) return;
         if (isReasoningHydrated === false) return;
         if (isTierHydrated === false) return;
+        if (!isHoldingResolved) return;
         // 초기 실패 재시도는 이미 reset/cancel 없이 진행 — 진행 중인 작업이 없는 상태에서만 도달한다.
         mutate({
             symbol: latestRef.current.symbol,
@@ -523,6 +552,7 @@ export function useAnalysis({
         isModelHydrated,
         isReasoningHydrated,
         isTierHydrated,
+        isHoldingResolved,
         initialAnalysisFailedAtMount,
     ]);
 
@@ -575,6 +605,28 @@ export function useAnalysis({
         // 동일 이유(latestReasoningRef가 이 effect보다 늦게 갱신될 수 있음).
         restartAnalysis(undefined, reasoning);
     }, [reasoning, isReasoningHydrated, isTierHydrated, restartAnalysis]);
+
+    // 회원의 보유 평단이 하이드레이션 이후 실제로 변경되면 재분석(다른 캐시 키) —
+    // reasoning 변경 effect와 완전히 동일한 패턴(personalized-analysis-by-position-bucket
+    // spec, Subsystem C). 홀딩 쿼리의 hydration/loading으로 인한 초기 값 세팅(마운트 직후
+    // null → 실제 홀딩, 또는 그 반대)은 사용자 의도 변경이 아니므로 재분석을 트리거하지
+    // 않는다 — 초기 마운트 분석은 이미 서버가 자체적으로 홀딩을 읽어 개인화했다. force를
+    // 주지 않는다 — 같은 버킷의 다른 회원과 캐시를 공유하고 싶기 때문.
+    useEffect(() => {
+        if (!isHoldingResolved) return;
+
+        if (!hasHandledHoldingHydrationRef.current) {
+            hasHandledHoldingHydrationRef.current = true;
+            prevHoldingAvgPriceRef.current = holdingAvgPrice;
+            return;
+        }
+
+        if (holdingAvgPrice === prevHoldingAvgPriceRef.current) return;
+        if (isTierHydrated === false) return;
+        prevHoldingAvgPriceRef.current = holdingAvgPrice;
+
+        restartAnalysis();
+    }, [holdingAvgPrice, isHoldingResolved, isTierHydrated, restartAnalysis]);
 
     useEffect(() => {
         if (isTierHydrated === false) return;
