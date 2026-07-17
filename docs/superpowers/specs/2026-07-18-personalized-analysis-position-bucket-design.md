@@ -91,11 +91,11 @@ Mirror the `reasoning`-change machinery in `useAnalysis`:
 
 - **Automatic** for members with a holding (no toggle) — the user's stated intent ("로그인+평단 설정되어 있으면 분석에 활용"). When a holding exists and tier≠free, analysis is personalized; otherwise it's the shared/base analysis.
 - The personalized analysis is a **cache variant** (base for guests/free/no-holding; bucketed for members-with-holding), so guests/SSR are unaffected (they read the no-bucket key).
-- Consider a subtle "내 평단 기준으로 분석했어요" affordance in the analysis panel so the member knows it's personalized (small; finalize in impl). This also sets up D's nudge copy.
+- **✅ Implemented**: a subtle "내 평단 기준으로 분석했어요" badge in `AnalysisPanel` (analysis header row, `data-testid="personalized-analysis-badge"`), gated client-side on `tier !== 'free' && holding != null` (via `useSymbolHolding` + the tier threaded from `useSymbolModel`), and additionally suppressed on a fallback/no-narrative analysis. This also sets up D's nudge copy.
 
 ## 10. Testing
 
-- **core**: `bucketizePosition` pure (all bands + boundaries + null guards); `positionKeySuffix` + `buildAnalysisCacheKey` (no-bucket = legacy key byte-identical; each bucket = distinct key); `submitAnalysis`/`peekAnalysisCache` thread the bucket to key + prompt; prompt hint present in `dynamic` only when bucketed; PROMPT_TEMPLATE_VERSION = p7.
+- **core**: `bucketizePosition` pure (all bands + boundaries + null guards); `positionKeySuffix` + `buildAnalysisCacheKey` (no-bucket = legacy key byte-identical; each bucket = distinct key); `submitAnalysis`/`peekAnalysisCache` thread the bucket to key + prompt; prompt hint present in `dynamic` only when bucketed; `PROMPT_TEMPLATE_VERSION` stays `p6` (deliberately NOT bumped — see §5).
 - **siglens**: `resolvePositionBucket` gate (free → no bucket; member+holding → avg; no holding → none); `submitAnalysisAction` server-reads avg + passes it (never trusts client); `useAnalysis` re-runs on holding change, hydration-gated, no premature no-bucket submit; `peekAnalysisStaticCache` pins no-bucket; queryKey unchanged for base.
 - **e2e** (authed): a member with a profitable AAPL holding gets a personalized analysis (assert the affordance / a bucketed marker); a guest gets the base analysis; changing the holding re-runs analysis.
 - **overlay local verification** (per repo convention): build core locally, overlay into siglens, verify end-to-end before the core release.
@@ -106,12 +106,11 @@ Mirror the `reasoning`-change machinery in `useAnalysis`:
 2. After approval: `yarn release:minor` (0.37.0) → tag `v0.37.0` → CI publishes to GitHub Packages.
 3. Siglens branch (stacked on B or off master-after-B): bump dep to 0.37.0 + `yarn install`, implement the threading + tests → **siglens PR**.
 4. Local verification uses an **overlay** (built core → siglens/node_modules) so nothing is blocked on the publish for testing.
-- **Backward compat**: no-bucket path is byte-identical + same key; the `p7` bump cold-starts the technical prompt cache once (acceptable; self-healing). New core param is optional → old siglens keeps working against 0.37.0.
+- **Backward compat**: no-bucket path is byte-identical + same key; `PROMPT_TEMPLATE_VERSION` is NOT bumped (stays `p6`, §5) — the bucketed path lands on a brand-new `:pos=<bucket>` key namespace, so there is no cold-start of the existing warm cache. New core param is optional → old siglens keeps working against 0.37.0.
 
 ## 12. Risks & open items
 
-- **PROMPT_TEMPLATE_VERSION bump invalidates warm technical analysis once** — a one-time cold-start cost across all symbols (like prior p-bumps). Acceptable; note it.
 - **Bucket boundary choice** (±5%/±20%) is a product feel decision — finalize in impl; easy to tune (it's just the bucketizer).
 - **Cost**: cardinality ×(≤6) is bounded, but personalized entries are net-new cache writes for members. Monitor. (This is exactly why we bucketed instead of raw-avg.)
-- **The `p7` bump + cache-key change are the highest-risk edits in the whole A–D feature** — they affect the entire analysis pipeline. This is why C gets a core PR + critical review + overlay verification before release.
+- **The cache-key change is one of the higher-risk edits in the whole A–D feature** — it affects the entire analysis pipeline. This is why C gets a core PR + critical review + overlay verification before release. (No `PROMPT_TEMPLATE_VERSION` bump, so no warm-cache cold-start risk — see §5.)
 - **avg staleness**: the server reads the avg at submit time; if the member edits their holding, the client re-run picks up the new bucket. Fine.

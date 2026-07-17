@@ -54,8 +54,11 @@ export type SubmitAnalysisActionResult =
  * this is normally a warm cache hit rather than a fresh FMP call. It is a
  * real added dependency on every member-with-holding submit (even one that
  * would otherwise be a pure cache hit on the analysis itself), but reusing
- * the existing cached quote keeps the cost bounded and keeps the "you're in
- * profit" band consistent with what the analysis snapshot sees.
+ * the existing cached quote keeps the cost bounded. Note this is a close
+ * PROXY, not a guaranteed match: the quote cache can drift intraday from the
+ * analysis snapshot's own last-bar close (different TTLs/fetch times), so the
+ * position bucket can occasionally disagree with the price a user sees in
+ * the snapshot by a small margin. Acceptable for a coarse ~5-band bucket.
  */
 async function resolveHoldingPositionBucket(
     userId: string | null,
