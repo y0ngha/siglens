@@ -198,6 +198,24 @@ describe('DrizzlePortfolioRepository.findByUser', () => {
 
         await expect(repo.findByUser('user-1')).resolves.toEqual([]);
     });
+
+    it('retries once on a transient Neon error and succeeds', async () => {
+        const neonTransient = Object.assign(
+            new Error('Error connecting to database: fetch failed'),
+            { name: 'NeonDbError' }
+        );
+        const where = vi
+            .fn()
+            .mockRejectedValueOnce(neonTransient)
+            .mockResolvedValueOnce([holdingRow]);
+        const from = vi.fn(() => ({ where }));
+        const select = vi.fn(() => ({ from }));
+        const db = { select } as unknown as SiglensDatabase;
+        const repo = new DrizzlePortfolioRepository(db);
+
+        await expect(repo.findByUser('user-1')).resolves.toEqual([holdingRow]);
+        expect(select).toHaveBeenCalledTimes(2);
+    });
 });
 
 describe('DrizzlePortfolioRepository.findByUserAndSymbol', () => {
@@ -217,6 +235,27 @@ describe('DrizzlePortfolioRepository.findByUserAndSymbol', () => {
         await expect(
             repo.findByUserAndSymbol('user-1', 'AAPL')
         ).resolves.toEqual(holdingRow);
+    });
+
+    it('retries once on a transient Neon error and succeeds', async () => {
+        const neonTransient = Object.assign(
+            new Error('Error connecting to database: fetch failed'),
+            { name: 'NeonDbError' }
+        );
+        const limit = vi
+            .fn()
+            .mockRejectedValueOnce(neonTransient)
+            .mockResolvedValueOnce([holdingRow]);
+        const where = vi.fn(() => ({ limit }));
+        const from = vi.fn(() => ({ where }));
+        const select = vi.fn(() => ({ from }));
+        const db = { select } as unknown as SiglensDatabase;
+        const repo = new DrizzlePortfolioRepository(db);
+
+        await expect(
+            repo.findByUserAndSymbol('user-1', 'AAPL')
+        ).resolves.toEqual(holdingRow);
+        expect(select).toHaveBeenCalledTimes(2);
     });
 });
 
@@ -252,5 +291,25 @@ describe('DrizzlePortfolioRepository.deleteByUserAndSymbol', () => {
                 eq(portfolioHoldings.symbol, 'AAPL')
             )
         );
+    });
+
+    it('retries once on a transient Neon error and succeeds', async () => {
+        const neonTransient = Object.assign(
+            new Error('Error connecting to database: fetch failed'),
+            { name: 'NeonDbError' }
+        );
+        const returning = vi
+            .fn()
+            .mockRejectedValueOnce(neonTransient)
+            .mockResolvedValueOnce([{ id: 'holding-1' }]);
+        const where = vi.fn(() => ({ returning }));
+        const deleteFn = vi.fn(() => ({ where }));
+        const db = { delete: deleteFn } as unknown as SiglensDatabase;
+        const repo = new DrizzlePortfolioRepository(db);
+
+        await expect(
+            repo.deleteByUserAndSymbol('user-1', 'AAPL')
+        ).resolves.toBe(true);
+        expect(deleteFn).toHaveBeenCalledTimes(2);
     });
 });

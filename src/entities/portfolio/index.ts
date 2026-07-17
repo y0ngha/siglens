@@ -8,4 +8,3 @@ export type {
     SavePortfolioResult,
     DeletePortfolioResult,
 } from './model';
-export { validateHoldingInput } from './lib/validateHoldingInput';

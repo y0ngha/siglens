@@ -26,15 +26,23 @@ const columns = {
  * Neon PostgreSQL. One row per (userId, symbol); `upsert` relies on the
  * `portfolio_holdings_user_symbol_uidx` unique index to merge repeat
  * submissions for the same symbol instead of accumulating duplicate rows.
+ *
+ * Every method wraps its query in `withRetry(NEON_TRANSIENT_RETRY)` — retry
+ * is a repository-layer concern, applied uniformly here rather than
+ * scattered across individual action call sites.
  */
 export class DrizzlePortfolioRepository implements PortfolioHoldingRepository {
     constructor(private readonly db: SiglensDatabase) {}
 
     async findByUser(userId: string): Promise<PortfolioHoldingRecord[]> {
-        return this.db
-            .select(columns)
-            .from(portfolioHoldings)
-            .where(eq(portfolioHoldings.userId, userId));
+        return withRetry(
+            () =>
+                this.db
+                    .select(columns)
+                    .from(portfolioHoldings)
+                    .where(eq(portfolioHoldings.userId, userId)),
+            NEON_TRANSIENT_RETRY
+        );
     }
 
     /**
@@ -48,16 +56,20 @@ export class DrizzlePortfolioRepository implements PortfolioHoldingRepository {
         userId: string,
         symbol: string
     ): Promise<PortfolioHoldingRecord | null> {
-        const [row] = await this.db
-            .select(columns)
-            .from(portfolioHoldings)
-            .where(
-                and(
-                    eq(portfolioHoldings.userId, userId),
-                    eq(portfolioHoldings.symbol, symbol)
-                )
-            )
-            .limit(1);
+        const [row] = await withRetry(
+            () =>
+                this.db
+                    .select(columns)
+                    .from(portfolioHoldings)
+                    .where(
+                        and(
+                            eq(portfolioHoldings.userId, userId),
+                            eq(portfolioHoldings.symbol, symbol)
+                        )
+                    )
+                    .limit(1),
+            NEON_TRANSIENT_RETRY
+        );
         return row ?? null;
     }
 
@@ -103,15 +115,19 @@ export class DrizzlePortfolioRepository implements PortfolioHoldingRepository {
         userId: string,
         symbol: string
     ): Promise<boolean> {
-        const deleted = await this.db
-            .delete(portfolioHoldings)
-            .where(
-                and(
-                    eq(portfolioHoldings.userId, userId),
-                    eq(portfolioHoldings.symbol, symbol)
-                )
-            )
-            .returning({ id: portfolioHoldings.id });
+        const deleted = await withRetry(
+            () =>
+                this.db
+                    .delete(portfolioHoldings)
+                    .where(
+                        and(
+                            eq(portfolioHoldings.userId, userId),
+                            eq(portfolioHoldings.symbol, symbol)
+                        )
+                    )
+                    .returning({ id: portfolioHoldings.id }),
+            NEON_TRANSIENT_RETRY
+        );
 
         return deleted.length > 0;
     }

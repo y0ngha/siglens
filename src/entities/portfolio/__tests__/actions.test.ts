@@ -93,9 +93,11 @@ describe('getPortfolioHoldingsAction', () => {
         });
     });
 
-    it('repo 조회가 (재시도 후에도) 계속 실패하면 결과를 삼키지 않고 그대로 throw한다 — React Query가 isError를 세팅하도록', async () => {
-        // A plain Error (not a NeonDbError) is not transient, so withRetry
-        // rethrows on the first attempt without sleeping/retrying.
+    it('repo 조회가 실패하면 결과를 삼키지 않고 그대로 throw한다 — React Query가 isError를 세팅하도록', async () => {
+        // Retry now lives inside DrizzlePortfolioRepository.findByUser (see
+        // api.test.ts for retry coverage); the repo is mocked here, so any
+        // rejection propagates straight through — proving the action itself
+        // does not swallow it.
         mockGetCurrentUser.mockResolvedValue(AUTHED_USER);
         mockFindByUser.mockRejectedValue(new Error('DB connection failed'));
 
