@@ -38,6 +38,7 @@ import {
     resolveTierAndByok,
     resolveTierOnly,
     resolveReasoning,
+    resolvePositionBucket,
     buildGateError,
     isKnownModelId,
 } from '../byokGate';
@@ -199,6 +200,32 @@ describe('resolveReasoning', () => {
 
     it('defaults to false for member tier when client explicitly sends false', () => {
         expect(resolveReasoning('member', false)).toBe(false);
+    });
+});
+
+describe('resolvePositionBucket', () => {
+    it('returns undefined for free tier even with valid avg/current prices', () => {
+        expect(resolvePositionBucket('free', 100, 120)).toBeUndefined();
+    });
+
+    it('returns undefined when avgPrice is null (no holding)', () => {
+        expect(resolvePositionBucket('member', null, 120)).toBeUndefined();
+    });
+
+    it('returns undefined when currentPrice is null (price read failed)', () => {
+        expect(resolvePositionBucket('member', 100, null)).toBeUndefined();
+    });
+
+    it('returns the bucket for a member with a profitable holding', () => {
+        expect(resolvePositionBucket('member', 100, 110)).toBe('profit');
+    });
+
+    it('returns the bucket for a pro tier with a deep-loss holding', () => {
+        expect(resolvePositionBucket('pro', 100, 70)).toBe('deep-loss');
+    });
+
+    it('returns undefined when bucketizePosition itself cannot derive a bucket (non-positive avg)', () => {
+        expect(resolvePositionBucket('member', 0, 120)).toBeUndefined();
     });
 });
 

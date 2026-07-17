@@ -3,15 +3,21 @@
 import { headers } from 'next/headers';
 import {
     submitAnalysis,
+    type MarketDataProvider,
     type ModelId,
+    type PositionBucket,
     type SubmitAnalysisGatedResult,
+    type Tier,
     type Timeframe,
 } from '@y0ngha/siglens-core';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
+import { getDatabaseClient } from '@/shared/db/client';
+import { DrizzlePortfolioRepository } from '@/entities/portfolio/api';
 import {
     resolveTierAndByok,
     resolveTierOnly,
     resolveReasoning,
+    resolvePositionBucket,
     buildGateError,
 } from '@/shared/lib/byokGate';
 import { isBot } from '@/shared/api/isBot';
@@ -26,6 +32,59 @@ import { getDescriptor } from '@/shared/config/marketProfile';
 export type SubmitAnalysisActionResult =
     | SubmitAnalysisGatedResult
     | AnalysisGateBlockedResult;
+
+/**
+ * Server-reads the member's holding for `symbol` (if any) plus the current
+ * cached price, then derives a coarse position bucket via
+ * `resolvePositionBucket` (personalized-analysis-by-position-bucket spec,
+ * Subsystem C). The average price NEVER comes from the client — it is
+ * re-read from the DB on every call, which is the whole point: a
+ * client-passed avg would be spoofable and would poison the shared analysis
+ * cache (the bucket folds into `buildAnalysisCacheKey`).
+ *
+ * Skips the DB/price reads entirely for anonymous or free-tier callers (free
+ * tier never gets a bucket — mirrors `resolveReasoning`), and degrades to
+ * `undefined` (no bucket, i.e. the shared/base analysis) on ANY failure —
+ * a holding-read or price-read error must never block the underlying
+ * analysis submission.
+ *
+ * The current price comes from `marketDataProvider.getQuote` — the same
+ * Redis-cached quote (`quote:<SYMBOL>`, session-aware TTL) that
+ * `CachedMarketDataProvider` already serves for bars/today-quote reads, so
+ * this is normally a warm cache hit rather than a fresh FMP call. It is a
+ * real added dependency on every member-with-holding submit (even one that
+ * would otherwise be a pure cache hit on the analysis itself), but reusing
+ * the existing cached quote keeps the cost bounded and keeps the "you're in
+ * profit" band consistent with what the analysis snapshot sees.
+ */
+async function resolveHoldingPositionBucket(
+    userId: string | null,
+    tier: Tier,
+    symbol: string,
+    fmpSymbol: string | undefined,
+    marketDataProvider: MarketDataProvider
+): Promise<PositionBucket | undefined> {
+    if (tier === 'free' || userId === null) return undefined;
+    try {
+        const { db } = getDatabaseClient();
+        const holding = await new DrizzlePortfolioRepository(
+            db
+        ).findByUserAndSymbol(userId, symbol.toUpperCase());
+        if (holding === null) return undefined;
+
+        const avgPrice = Number(holding.averagePrice);
+        const quote = await marketDataProvider.getQuote(fmpSymbol ?? symbol);
+        const currentPrice = quote?.price ?? null;
+
+        return resolvePositionBucket(tier, avgPrice, currentPrice);
+    } catch (error) {
+        console.error(
+            '[submitAnalysisAction] position bucket resolution failed, degrading to no-bucket:',
+            error
+        );
+        return undefined;
+    }
+}
 
 /** 서버사이드 tier + BYOK 게이트 후 core의 submitAnalysis에 위임. */
 export async function submitAnalysisAction(
@@ -81,6 +140,13 @@ export async function submitAnalysisAction(
 
         if (modelId === undefined) {
             const tier = await resolveTierOnly(userId);
+            const positionBucket = await resolveHoldingPositionBucket(
+                userId,
+                tier,
+                symbol,
+                fmpSymbol,
+                marketDataProvider
+            );
             return await submitAnalysis(
                 symbol,
                 companyName,
@@ -94,6 +160,7 @@ export async function submitAnalysisAction(
                     assetClass,
                     tierContext: { userId, tier },
                     reasoning: resolveReasoning(tier, reasoning),
+                    positionBucket,
                 }
             );
         }
@@ -102,6 +169,14 @@ export async function submitAnalysisAction(
         if (gate.kind === 'blocked') {
             return { status: 'error', error: gate.error };
         }
+
+        const positionBucket = await resolveHoldingPositionBucket(
+            userId,
+            gate.tier,
+            symbol,
+            fmpSymbol,
+            marketDataProvider
+        );
 
         return await submitAnalysis(
             symbol,
@@ -116,6 +191,7 @@ export async function submitAnalysisAction(
                 assetClass,
                 tierContext: { userId, tier: gate.tier },
                 reasoning: resolveReasoning(gate.tier, reasoning),
+                positionBucket,
                 ...(gate.userApiKey !== undefined
                     ? { userApiKey: gate.userApiKey }
                     : {}),
