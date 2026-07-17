@@ -1018,9 +1018,9 @@ export function AnalysisPanel({
                 </p>
             )}
             <p className="text-secondary-500 font-mono text-xs">
-                {/* free 티어는 대표 스킬만 샘플되어 감지 개수가 0일 수 있으므로,
-                    오해를 주지 않도록 개수 세그먼트를 숨기고 인디케이터 적용
-                    수만 노출한다. 대표 스킬 안내는 아래 nudge가 담당한다. */}
+                {/* free 티어는 스킬이 그룹당 소수만 샘플되어 감지 개수가 0일 수
+                    있으므로, 오해를 주지 않도록 개수 세그먼트를 숨기고 인디케이터
+                    적용 수만 노출한다. 회원가입 안내는 아래 업셀 카드가 담당한다. */}
                 {!hasLockedDetails && (
                     <>
                         {detectedPatterns.length +
@@ -1058,9 +1058,9 @@ export function AnalysisPanel({
                 결과가 한 번에 드러나도록 하기 위함이다. */}
             {!showProgress && (
                 <>
-                    {/* free 티어의 상세 잠금 안내와 대표 스킬 안내는 패널 하단의
-                        단일 카드(아래)로 통합했다. 회원가입 CTA를 한 번만 노출해
-                        중복을 없앤다. */}
+                    {/* free 티어의 상세 잠금 안내와 스킬 샘플 안내는 패널 하단의
+                        단일 업셀 카드(아래)로 통합했다. 회원가입 CTA를 한 번만
+                        노출해 중복을 없앤다. */}
                     <div className="border-secondary-700 border-t" />
 
                     {!hasLockedActionDetail &&
