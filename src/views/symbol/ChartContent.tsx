@@ -210,6 +210,11 @@ export function ChartContent({
     // 전달하며, AdBanner의 isFreeUser는 기본값 없는 필수 prop이다). tier가 'pro'가
     // 아닐 때만 광고를 노출한다. tier는 hydration 전 DEFAULT_TIER('free')로 폴백되어
     // 로딩 중에는 free와 동일하게 취급된다(기존 기본값 true와 일치).
+    //
+    // ⚠️ 광고 제거는 '결제(pro)' 전용 혜택이라 member는 의도적으로 광고 노출 대상이다.
+    // 이는 기능 게이팅 축(canUseReasoning = tier !== 'free', isFreeTier = tier === 'free'
+    // — 둘 다 member를 pro와 함께 취급)과 다른 별개의 축이다. 따라서 여기서는 'free' 대신
+    // 'pro'를 기준으로 판별한다(member ≠ 광고 면제).
     const isFreeUser = tier !== 'pro';
 
     const analysisContent = useMemo(() => {
