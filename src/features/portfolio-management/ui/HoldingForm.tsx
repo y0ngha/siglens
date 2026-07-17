@@ -1,6 +1,6 @@
 'use client';
 
-import { useId, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { TickerAutocomplete } from '@/features/ticker-search';
 import { cn } from '@/shared/lib/cn';
 import { trimTrailingZeros } from '@/shared/lib/trimTrailingZeros';
@@ -45,6 +45,14 @@ interface HoldingFormProps {
     onSubmit: (input: RawHoldingInput) => Promise<SavePortfolioResult>;
     submitting?: boolean;
     onCancel?: () => void;
+    /**
+     * When true and in edit mode, focuses the quantity field once on mount.
+     * Used by an inline row editor (e.g. `PortfolioSection`) so swapping a
+     * row's display buttons for this form moves keyboard focus into the new
+     * control instead of dropping it to `<body>`. The symbol field is
+     * read-only in edit mode, so quantity is the first focusable input.
+     */
+    autoFocusFirstField?: boolean;
 }
 
 /** Controlled add/edit form for a single holding. In add mode, clears itself on success; in edit mode, calls onCancel on success to let the parent close the inline editor. */
@@ -53,6 +61,7 @@ export function HoldingForm({
     onSubmit,
     submitting = false,
     onCancel,
+    autoFocusFirstField = false,
 }: HoldingFormProps) {
     const isEditMode = initial !== undefined;
     const formId = useId();
@@ -71,6 +80,17 @@ export function HoldingForm({
     const symbolFieldRef = useRef<HTMLDivElement>(null);
     const quantityRef = useRef<HTMLInputElement>(null);
     const priceRef = useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+        if (autoFocusFirstField && isEditMode) {
+            quantityRef.current?.focus();
+        }
+        // Mount-only: this form remounts fresh each time a row enters edit
+        // mode (the parent swaps element trees rather than re-rendering the
+        // same instance), so an empty dep array fires focus exactly once per
+        // edit-mode entry.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     const focusField = (field: HoldingErrorField) => {
         if (field === 'quantity') quantityRef.current?.focus();

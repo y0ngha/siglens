@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { usePortfolioHoldings } from '@/entities/portfolio/hooks/usePortfolioHoldings';
 import { cn } from '@/shared/lib/cn';
 import type {
@@ -71,6 +71,24 @@ function HoldingRow({
     isDeleting,
     deleteError,
 }: HoldingRowProps) {
+    const deleteButtonRef = useRef<HTMLButtonElement>(null);
+    const confirmDeleteButtonRef = useRef<HTMLButtonElement>(null);
+    const wasConfirmingDeleteRef = useRef(isConfirmingDelete);
+
+    // Move focus once on each delete-confirm transition instead of letting it
+    // drop to <body> when the row swaps its buttons out. Entering confirm ->
+    // focus "삭제 확정"; leaving confirm (cancel) -> return focus to "삭제".
+    // This is a row control swap, not a dialog, so we move focus once and do
+    // not trap it.
+    useEffect(() => {
+        if (isConfirmingDelete && !wasConfirmingDeleteRef.current) {
+            confirmDeleteButtonRef.current?.focus();
+        } else if (!isConfirmingDelete && wasConfirmingDeleteRef.current) {
+            deleteButtonRef.current?.focus();
+        }
+        wasConfirmingDeleteRef.current = isConfirmingDelete;
+    }, [isConfirmingDelete]);
+
     if (isEditing) {
         return (
             <li className={ROW_CHROME}>
@@ -79,6 +97,7 @@ function HoldingRow({
                     onSubmit={onSave}
                     submitting={isSaving}
                     onCancel={onCancelEdit}
+                    autoFocusFirstField
                 />
             </li>
         );
@@ -110,6 +129,7 @@ function HoldingRow({
                             삭제할까요?
                         </span>
                         <button
+                            ref={confirmDeleteButtonRef}
                             type="button"
                             onClick={onDelete}
                             disabled={isDeleting}
@@ -138,6 +158,7 @@ function HoldingRow({
                             수정
                         </button>
                         <button
+                            ref={deleteButtonRef}
                             type="button"
                             onClick={onRequestDelete}
                             aria-label={`${holding.symbol} 보유종목 삭제`}

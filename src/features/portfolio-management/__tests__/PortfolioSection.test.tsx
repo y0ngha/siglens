@@ -201,6 +201,21 @@ describe('PortfolioSection', () => {
         ).not.toBeInTheDocument();
     });
 
+    it('moves focus into the inline edit form (quantity field) when 수정 is clicked', async () => {
+        const user = userEvent.setup();
+        setHoldings({ holdings: [HOLDING] });
+        render(<PortfolioSection />);
+
+        const row = screen.getByText('AAPL').closest('li');
+        if (!row) throw new Error('holding row not found');
+
+        await user.click(
+            within(row).getByRole('button', { name: 'AAPL 보유종목 수정' })
+        );
+
+        expect(within(row).getByLabelText('수량')).toHaveFocus();
+    });
+
     it('shows the row-level delete error and keeps the row when remove.mutateAsync resolves an error', async () => {
         const user = userEvent.setup();
         const { remove } = setHoldings({ holdings: [HOLDING] });
@@ -254,6 +269,41 @@ describe('PortfolioSection', () => {
             within(row).getByRole('button', { name: 'AAPL 보유종목 삭제' })
         ).toBeInTheDocument();
         expect(remove.mutateAsync).not.toHaveBeenCalled();
+    });
+
+    it('moves focus to "삭제 확정" when 삭제 is clicked', async () => {
+        const user = userEvent.setup();
+        setHoldings({ holdings: [HOLDING] });
+        render(<PortfolioSection />);
+
+        const row = screen.getByText('AAPL').closest('li');
+        if (!row) throw new Error('holding row not found');
+
+        await user.click(
+            within(row).getByRole('button', { name: 'AAPL 보유종목 삭제' })
+        );
+
+        expect(
+            within(row).getByRole('button', { name: '삭제 확정' })
+        ).toHaveFocus();
+    });
+
+    it('returns focus to "삭제" when the delete confirm is cancelled', async () => {
+        const user = userEvent.setup();
+        setHoldings({ holdings: [HOLDING] });
+        render(<PortfolioSection />);
+
+        const row = screen.getByText('AAPL').closest('li');
+        if (!row) throw new Error('holding row not found');
+
+        await user.click(
+            within(row).getByRole('button', { name: 'AAPL 보유종목 삭제' })
+        );
+        await user.click(within(row).getByRole('button', { name: '취소' }));
+
+        expect(
+            within(row).getByRole('button', { name: 'AAPL 보유종목 삭제' })
+        ).toHaveFocus();
     });
 
     it('renders an error state instead of the empty state when the list query fails, and refetch() is called on 다시 시도', async () => {
