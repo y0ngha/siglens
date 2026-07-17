@@ -85,12 +85,12 @@ export function HoldingForm({
         if (autoFocusFirstField && isEditMode) {
             quantityRef.current?.focus();
         }
-        // Mount-only: this form remounts fresh each time a row enters edit
-        // mode (the parent swaps element trees rather than re-rendering the
-        // same instance), so an empty dep array fires focus exactly once per
+        // This form remounts fresh each time a row enters edit mode (the
+        // parent swaps element trees rather than re-rendering the same
+        // instance), so autoFocusFirstField/isEditMode are stable for the
+        // instance's lifetime and this still fires focus exactly once per
         // edit-mode entry.
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    }, [autoFocusFirstField, isEditMode]);
 
     const focusField = (field: HoldingErrorField) => {
         if (field === 'quantity') quantityRef.current?.focus();
