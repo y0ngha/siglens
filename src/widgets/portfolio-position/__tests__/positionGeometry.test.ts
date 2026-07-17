@@ -50,6 +50,14 @@ describe('computePosition', () => {
         expect(model!.currentClamped).toBe('below');
     });
 
+    it('current < avg(손실 포지션) → returnPct는 음수 부호·크기가 정확하다', () => {
+        // avg=180, current=150 → returnPct=(150-180)/180*100 ≈ -16.666...
+        const model = computePosition(inputs({ avg: 180, current: 150 }));
+        expect(model).not.toBeNull();
+        expect(model!.returnPct).toBeLessThan(0);
+        expect(model!.returnPct).toBeCloseTo(-16.6667, 4);
+    });
+
     it('degenerate range(high===low) → null', () => {
         expect(
             computePosition(inputs({ low52w: 100, high52w: 100 }))
