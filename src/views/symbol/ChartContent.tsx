@@ -205,6 +205,12 @@ export function ChartContent({
     const { clusteredKeyLevels, validatedActionPrices, reconciledActionLines } =
         useAnalysisDerivedData(analysis, bars);
 
+    // 광고 노출 게이트. AdBanner/AnalysisProgress/AnalysisPanel의 isFreeUser는
+    // "Pro에게는 false를 전달"이 규약이므로(각 컴포넌트 기본값 true), tier가 'pro'가
+    // 아닐 때만 광고를 노출한다. tier는 hydration 전 DEFAULT_TIER('free')로 폴백되어
+    // 로딩 중에는 free와 동일하게 취급된다(기존 기본값 true와 일치).
+    const isFreeUser = tier !== 'pro';
+
     const analysisContent = useMemo(() => {
         const hasNarrative = !isFallbackAnalysis(analysis);
 
@@ -227,6 +233,7 @@ export function ChartContent({
                     <AnalysisProgress
                         phaseIndex={progressPhaseIndex}
                         tipIndex={progressTipIndex}
+                        isFreeUser={isFreeUser}
                     />
                 ) : (
                     <AnalysisStatusBanner status={analysisStatus} />
@@ -265,6 +272,7 @@ export function ChartContent({
                     indicatorCount={indicatorCount}
                     skillCount={skillCount}
                     lockedInfoDepth={lockedInfoDepth}
+                    isFreeUser={isFreeUser}
                 />
                 {/* 서사가 있어도(캐시된 분석을 표시 중) 봇 판정이면 안내를 additive로
                     덧붙인다 — 자동 트리거/수동 재분석이 봇으로 오판돼 차단된 사실을
@@ -295,6 +303,7 @@ export function ChartContent({
         indicatorCount,
         skillCount,
         lockedInfoDepth,
+        isFreeUser,
     ]);
 
     // timeframe을 React.Fragment key로 전달 — Suspense 경계 밖에서 timeframe 변경 시 자식 트리를 강제 remount한다.
