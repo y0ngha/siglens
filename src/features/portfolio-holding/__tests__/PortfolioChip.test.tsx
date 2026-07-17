@@ -90,11 +90,17 @@ describe('PortfolioChipMounted / PortfolioChip', () => {
         ).toBeInTheDocument();
     });
 
-    it('renders nothing while the holdings query is loading, even for a logged-in user', () => {
+    it('renders a fixed-size loading placeholder (not the chip button) while the holdings query is loading for a logged-in user', () => {
         setCurrentUser(USER);
         setHoldings({ holdings: [], isLoading: true });
         const { container } = render(<PortfolioChipMounted symbol="AAPL" />);
-        expect(container).toBeEmptyDOMElement();
+        expect(container).not.toBeEmptyDOMElement();
+        expect(
+            screen.queryByRole('button', { name: '평단 설정' })
+        ).not.toBeInTheDocument();
+        const placeholder = container.querySelector('[aria-hidden="true"]');
+        expect(placeholder).toBeInTheDocument();
+        expect(placeholder).toHaveClass('animate-pulse');
     });
 
     it('renders nothing (not the false "설정" state) when the holdings query errors', () => {

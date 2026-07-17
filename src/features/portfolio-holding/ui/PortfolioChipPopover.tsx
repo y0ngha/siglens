@@ -103,7 +103,6 @@ export function PortfolioChipPopover({
         <div
             ref={panelRef}
             role="dialog"
-            aria-modal="true"
             aria-labelledby={titleId}
             tabIndex={-1}
             className={cn(

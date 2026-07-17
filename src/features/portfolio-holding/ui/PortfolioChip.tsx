@@ -35,13 +35,24 @@ export function PortfolioChip({ symbol }: PortfolioChipProps) {
 
     // Rendering during hydration risks an SSR/CSR text mismatch (the holdings
     // query is client-only and gated on isHydrated itself) — same rationale
-    // as FearGreedHeaderChipMounted, except here we simply hide until ready
-    // rather than show a skeleton, since an unset holding renders nothing
-    // visually distinct from "not yet known". The same hide-don't-flash
-    // treatment applies while the query is loading or has failed: rendering
-    // the "설정" (unset) button in either state would falsely tell a member
-    // with existing holdings that nothing is set yet.
-    if (!isHydrated || isLoading || isError) return null;
+    // as FearGreedHeaderChipMounted. Before hydration we render nothing at
+    // all so SSR and the first client paint stay identical (no hydration
+    // mismatch). Once hydrated, a member with the holdings query still
+    // loading gets a fixed-size placeholder (mirrors
+    // FearGreedHeaderChipMounted's skeleton) so the resolved chip doesn't
+    // pop into the flex-wrap header cluster and shift its siblings (CLS). On
+    // error we still hide entirely: rendering the "설정" (unset) button would
+    // falsely tell a member with existing holdings that nothing is set yet.
+    if (!isHydrated) return null;
+    if (isError) return null;
+    if (isLoading) {
+        return (
+            <span
+                className="bg-secondary-700/40 inline-flex h-9 w-24 animate-pulse rounded-lg"
+                aria-hidden="true"
+            />
+        );
+    }
 
     const label =
         holding === null
