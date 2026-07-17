@@ -343,7 +343,7 @@ describe('registerAction', () => {
                     { error: null },
                     makeConsentFormData({ name: '   ' })
                 )
-            ).rejects.toThrow('NEXT_REDIRECT:/');
+            ).rejects.toThrow('NEXT_REDIRECT:/onboarding');
             expect(mockRegister).toHaveBeenCalledWith(
                 expect.objectContaining({ name: undefined }),
                 expect.objectContaining({
@@ -517,10 +517,41 @@ describe('registerAction', () => {
 
             await expect(
                 registerAction({ error: null }, makeConsentFormData())
-            ).rejects.toThrow('NEXT_REDIRECT:/');
+            ).rejects.toThrow('NEXT_REDIRECT:/onboarding');
 
             expect(errorSpy).not.toHaveBeenCalled();
             errorSpy.mockRestore();
+        });
+    });
+
+    describe('가입 후 라우팅 정책', () => {
+        it('돌아갈 곳(next)이 없으면 온보딩 화면으로 리다이렉트한다', async () => {
+            mockRegister.mockResolvedValue({ ok: true, user: FAKE_USER });
+            mockLogin.mockResolvedValue({
+                ok: true,
+                user: FAKE_USER,
+                session: { id: 's1' } as never,
+                cookie: FAKE_COOKIE,
+            });
+            await expect(
+                registerAction({ error: null }, makeConsentFormData())
+            ).rejects.toThrow('NEXT_REDIRECT:/onboarding');
+        });
+
+        it('특정 페이지(next=/AAPL)에서 가입했으면 그 페이지로 리다이렉트한다', async () => {
+            mockRegister.mockResolvedValue({ ok: true, user: FAKE_USER });
+            mockLogin.mockResolvedValue({
+                ok: true,
+                user: FAKE_USER,
+                session: { id: 's1' } as never,
+                cookie: FAKE_COOKIE,
+            });
+            await expect(
+                registerAction(
+                    { error: null },
+                    makeConsentFormData({ next: '/AAPL' })
+                )
+            ).rejects.toThrow('NEXT_REDIRECT:/AAPL');
         });
     });
 });

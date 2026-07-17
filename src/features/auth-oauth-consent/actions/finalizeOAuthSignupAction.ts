@@ -1,7 +1,10 @@
 'use server';
 
 import type { FinalizeOAuthSignupState } from '@/shared/lib/auth/formTypes';
-import { sanitizeNextPath } from '@/shared/lib/auth/redirect';
+import {
+    resolvePostSignupDestination,
+    sanitizeNextPath,
+} from '@/shared/lib/auth/redirect';
 import {
     applyAuthCookie,
     createAuthHintCookie,
@@ -133,7 +136,7 @@ export async function finalizeOAuthSignupAction(
             })
         );
 
-        redirect(sanitizeNextPath(consumed.next));
+        redirect(resolvePostSignupDestination(sanitizeNextPath(consumed.next)));
     } catch (err) {
         // Re-throw Next.js redirect (not an error — it's a control-flow signal).
         if (err instanceof Error && err.message.startsWith('NEXT_REDIRECT')) {

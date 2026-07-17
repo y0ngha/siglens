@@ -1,7 +1,10 @@
 'use server';
 
 import type { SignupFormState } from '@/shared/lib/auth/formTypes';
-import { sanitizeNextPath } from '@/shared/lib/auth/redirect';
+import {
+    resolvePostSignupDestination,
+    sanitizeNextPath,
+} from '@/shared/lib/auth/redirect';
 import {
     applyAuthCookie,
     createAuthHintCookie,
@@ -134,7 +137,7 @@ export async function registerAction(
                 secure,
             })
         );
-        redirect(next);
+        redirect(resolvePostSignupDestination(next));
     } catch (err) {
         // Re-throw Next.js redirect (not an error — it's a control-flow signal).
         if (err instanceof Error && err.message.startsWith('NEXT_REDIRECT')) {
