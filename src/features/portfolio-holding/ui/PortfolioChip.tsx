@@ -45,8 +45,8 @@ export function PortfolioChip({ symbol }: PortfolioChipProps) {
 
     const label =
         holding === null
-            ? '내 평단 설정'
-            : `내 평단 $${trimTrailingZeros(holding.averagePrice)} · ${trimTrailingZeros(holding.quantity)}주`;
+            ? '평단 설정'
+            : `평단 $${trimTrailingZeros(holding.averagePrice)} · ${trimTrailingZeros(holding.quantity)}주`;
 
     return (
         <div className="relative inline-block">

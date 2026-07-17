@@ -86,7 +86,7 @@ describe('PortfolioChipMounted / PortfolioChip', () => {
         setHoldings({ holdings: [], isLoading: false, isError: false });
         render(<PortfolioChipMounted symbol="AAPL" />);
         expect(
-            screen.getByRole('button', { name: '내 평단 설정' })
+            screen.getByRole('button', { name: '평단 설정' })
         ).toBeInTheDocument();
     });
 
@@ -103,7 +103,7 @@ describe('PortfolioChipMounted / PortfolioChip', () => {
         const { container } = render(<PortfolioChipMounted symbol="AAPL" />);
         expect(container).toBeEmptyDOMElement();
         expect(
-            screen.queryByRole('button', { name: '내 평단 설정' })
+            screen.queryByRole('button', { name: '평단 설정' })
         ).not.toBeInTheDocument();
     });
 
@@ -112,7 +112,7 @@ describe('PortfolioChipMounted / PortfolioChip', () => {
         setHoldings({ holdings: [AAPL_HOLDING] });
         render(<PortfolioChipMounted symbol="AAPL" />);
         expect(
-            screen.getByRole('button', { name: '내 평단 $150.5 · 10주' })
+            screen.getByRole('button', { name: '평단 $150.5 · 10주' })
         ).toBeInTheDocument();
     });
 
@@ -126,7 +126,7 @@ describe('PortfolioChipMounted / PortfolioChip', () => {
         });
         render(<PortfolioChipMounted symbol="AAPL" />);
 
-        await user.click(screen.getByRole('button', { name: '내 평단 설정' }));
+        await user.click(screen.getByRole('button', { name: '평단 설정' }));
         // PortfolioChipPopover is next/dynamic(ssr:false)-loaded, so it mounts
         // asynchronously after the click — await its appearance instead of a
         // synchronous getByRole.
@@ -159,7 +159,7 @@ describe('PortfolioChipMounted / PortfolioChip', () => {
         });
         render(<PortfolioChipMounted symbol="AAPL" />);
 
-        await user.click(screen.getByRole('button', { name: '내 평단 설정' }));
+        await user.click(screen.getByRole('button', { name: '평단 설정' }));
         await user.type(await screen.findByLabelText('수량'), '0');
         await user.type(screen.getByLabelText('평단'), '150.5');
         await user.click(screen.getByRole('button', { name: '저장' }));
@@ -178,7 +178,7 @@ describe('PortfolioChipMounted / PortfolioChip', () => {
         render(<PortfolioChipMounted symbol="AAPL" />);
 
         await user.click(
-            screen.getByRole('button', { name: '내 평단 $150.5 · 10주' })
+            screen.getByRole('button', { name: '평단 $150.5 · 10주' })
         );
 
         expect(await screen.findByLabelText('수량')).toHaveValue('10');
@@ -194,7 +194,7 @@ describe('PortfolioChipMounted / PortfolioChip', () => {
         );
         render(<PortfolioChipMounted symbol="AAPL" />);
 
-        await user.click(screen.getByRole('button', { name: '내 평단 설정' }));
+        await user.click(screen.getByRole('button', { name: '평단 설정' }));
         await user.type(await screen.findByLabelText('수량'), '10');
         await user.type(screen.getByLabelText('평단'), '150.5');
         await user.click(screen.getByRole('button', { name: '저장' }));
@@ -215,7 +215,7 @@ describe('PortfolioChipMounted / PortfolioChip', () => {
         setHoldings({ holdings: [] });
         render(<PortfolioChipMounted symbol="AAPL" />);
 
-        await user.click(screen.getByRole('button', { name: '내 평단 설정' }));
+        await user.click(screen.getByRole('button', { name: '평단 설정' }));
         expect(await screen.findByRole('dialog')).toBeInTheDocument();
 
         await user.keyboard('{Escape}');

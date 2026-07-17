@@ -13,7 +13,7 @@ import type {
 
 const FIELD_LABEL = 'text-secondary-400 mb-1 block text-xs font-medium';
 const FIELD_INPUT =
-    'bg-secondary-950 border-secondary-700 text-secondary-100 placeholder-secondary-500 focus:border-primary-500 focus:ring-primary-500/40 h-10 w-full rounded-md border px-3 text-sm tabular-nums transition-colors outline-none focus:ring-2';
+    'bg-secondary-950 border-secondary-700 text-secondary-100 placeholder-secondary-400 focus:border-primary-500 focus:ring-primary-500/40 h-10 w-full rounded-md border px-3 text-sm tabular-nums transition-colors outline-none focus:ring-2';
 const FIELD_INPUT_ERROR =
     'border-ui-danger focus:border-ui-danger focus:ring-ui-danger/40';
 const SYMBOL_CHIP =
