@@ -1,5 +1,8 @@
 export const DEFAULT_REDIRECT_PATH = '/';
 
+/** Post-signup holdings onboarding screen — see `resolvePostSignupDestination` below. */
+export const POST_SIGNUP_ONBOARDING_PATH = '/onboarding';
+
 const PATH_PREFIX = '/';
 const PROTOCOL_RELATIVE_PREFIX = '//';
 const BACKSLASH_HOST_PREFIX = '/\\';
@@ -22,5 +25,5 @@ export function sanitizeNextPath(input: string | null | undefined): string {
  * page (e.g. /AAPL) returns there instead. Callers pass an already-sanitized next.
  */
 export function resolvePostSignupDestination(next: string): string {
-    return next === DEFAULT_REDIRECT_PATH ? '/onboarding' : next;
+    return next === DEFAULT_REDIRECT_PATH ? POST_SIGNUP_ONBOARDING_PATH : next;
 }
