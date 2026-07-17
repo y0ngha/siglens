@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { usePortfolioHoldings } from '@/entities/portfolio/hooks/usePortfolioHoldings';
+import { cn } from '@/shared/lib/cn';
 import type {
     PortfolioHoldingView,
     RawHoldingInput,
@@ -20,7 +21,7 @@ const DANGER_BUTTON =
 function SkeletonLine({ className }: { className?: string }) {
     return (
         <div
-            className={`bg-secondary-800 animate-pulse rounded ${className ?? ''}`}
+            className={cn('bg-secondary-800 animate-pulse rounded', className)}
         />
     );
 }

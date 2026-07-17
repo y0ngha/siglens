@@ -145,6 +145,14 @@ describe('TickerAutocomplete', () => {
         expect(handleSearchClick).toHaveBeenCalledTimes(1);
     });
 
+    it('hides the search button in picker mode (navigateOnSelect=false)', () => {
+        setupAutocomplete();
+        render(<TickerAutocomplete navigateOnSelect={false} />);
+        expect(
+            screen.queryByRole('button', { name: '검색' })
+        ).not.toBeInTheDocument();
+    });
+
     it('renders koreanName in result item display', () => {
         setupAutocomplete({
             query: 'A',

@@ -126,13 +126,15 @@ export function TickerAutocomplete({
                     </div>
                 )}
             </div>
-            <button
-                type="button"
-                onClick={handleSearchClick}
-                className={cn(BUTTON_BASE, BUTTON_SIZE[size])}
-            >
-                검색
-            </button>
+            {navigateOnSelect !== false && (
+                <button
+                    type="button"
+                    onClick={handleSearchClick}
+                    className={cn(BUTTON_BASE, BUTTON_SIZE[size])}
+                >
+                    검색
+                </button>
+            )}
         </div>
     );
 }
