@@ -158,9 +158,9 @@ describe('AnalysisPanel', () => {
             />
         );
 
-        // Fixed per-group sample (3), not the (possibly zero) detected count.
+        // Friendly curiosity-hook title for the free upsell card.
         expect(
-            screen.getByText(/대표 스킬 3개로 분석한 요약이에요/)
+            screen.getByText(/더 깊은 분석이 궁금하신가요\?/)
         ).toBeInTheDocument();
         // Member skill total is threaded from countSkillFiles.
         expect(
@@ -211,7 +211,7 @@ describe('AnalysisPanel', () => {
         );
 
         expect(
-            screen.queryByText(/대표 스킬 3개로 분석한 요약이에요/)
+            screen.queryByText(/더 깊은 분석이 궁금하신가요\?/)
         ).not.toBeInTheDocument();
         expect(
             screen.queryByRole('link', { name: '회원가입' })
@@ -262,7 +262,7 @@ describe('AnalysisPanel', () => {
         );
 
         expect(
-            screen.queryByText(/대표 스킬 3개로 분석한 요약이에요/)
+            screen.queryByText(/더 깊은 분석이 궁금하신가요\?/)
         ).not.toBeInTheDocument();
     });
 
@@ -289,7 +289,7 @@ describe('AnalysisPanel', () => {
 
         // The single consolidated upsell card is present with one CTA.
         expect(
-            screen.getByText(/대표 스킬 3개로 분석한 요약이에요/)
+            screen.getByText(/더 깊은 분석이 궁금하신가요\?/)
         ).toBeInTheDocument();
         const signupLinks = screen.getAllByRole('link', { name: '회원가입' });
         expect(signupLinks).toHaveLength(1);
