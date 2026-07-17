@@ -19,6 +19,17 @@ export async function deletePortfolioHoldingAction(
         };
     }
 
+    // Server-action args are attacker-controlled at runtime regardless of the
+    // declared `string` parameter type — a hostile client can post any JSON
+    // value. Guard before `.trim()`, which throws a TypeError on non-strings.
+    if (typeof symbol !== 'string') {
+        return {
+            status: 'error',
+            code: 'invalid_symbol',
+            message: '유효하지 않은 종목 코드입니다.',
+        };
+    }
+
     const canonical = symbol.trim().toUpperCase();
     if (!isAdmissibleSymbolShape(canonical)) {
         return {

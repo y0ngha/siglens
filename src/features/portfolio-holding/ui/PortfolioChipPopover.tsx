@@ -115,6 +115,7 @@ export function PortfolioChipPopover({
                         placeholder="예: 10"
                         value={quantity}
                         onChange={e => setQuantity(e.target.value)}
+                        aria-describedby={error ? errorId : undefined}
                         className={FIELD_INPUT}
                     />
                 </div>
@@ -135,16 +136,12 @@ export function PortfolioChipPopover({
                         placeholder="예: 152.35"
                         value={averagePrice}
                         onChange={e => setAveragePrice(e.target.value)}
+                        aria-describedby={error ? errorId : undefined}
                         className={FIELD_INPUT}
                     />
                 </div>
 
-                <div
-                    id={errorId}
-                    role="alert"
-                    aria-live="polite"
-                    className="min-h-5 text-sm"
-                >
+                <div id={errorId} role="alert" className="min-h-5 text-sm">
                     {error && <span className="text-ui-danger">{error}</span>}
                 </div>
 
