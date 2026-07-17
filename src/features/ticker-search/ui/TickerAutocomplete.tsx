@@ -28,12 +28,15 @@ interface TickerAutocompleteProps {
     className?: string;
     size?: TickerAutocompleteSize;
     onSelect?: (symbol: string) => void;
+    /** See useAutocomplete's navigateOnSelect — pass false to use this as a plain value-picker inside a form. */
+    navigateOnSelect?: boolean;
 }
 
 export function TickerAutocomplete({
     className,
     size = 'sm',
     onSelect,
+    navigateOnSelect,
 }: TickerAutocompleteProps) {
     const {
         query,
@@ -49,7 +52,7 @@ export function TickerAutocomplete({
         handleSearchClick,
         navigate,
         prefetch,
-    } = useAutocomplete({ onSelect });
+    } = useAutocomplete({ onSelect, navigateOnSelect });
 
     const isKorean = isKoreanInput(query);
 

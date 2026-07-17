@@ -1,4 +1,5 @@
 import { ApiKeySection } from '@/features/api-key-management';
+import { PortfolioSection } from '@/features/portfolio-management';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { getRegisteredProvidersAction } from '@/entities/api-key/actions';
 import { TIER_LABEL } from '@/shared/lib/auth/tierLabel';
@@ -61,6 +62,13 @@ async function AccountContent() {
                 className="ring-secondary-800 bg-secondary-900/80 space-y-4 rounded-2xl p-6 ring-1 backdrop-blur-xl"
             >
                 <ApiKeySection registeredProviders={registeredProviders} />
+            </section>
+
+            <section
+                aria-label="보유종목"
+                className="ring-secondary-800 bg-secondary-900/80 space-y-4 rounded-2xl p-6 ring-1 backdrop-blur-xl"
+            >
+                <PortfolioSection />
             </section>
 
             <section

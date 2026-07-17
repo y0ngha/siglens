@@ -15,6 +15,14 @@ import { useTickerSearch } from './useTickerSearch';
 
 interface UseAutocompleteOptions {
     onSelect?: (symbol: string) => void;
+    /**
+     * Whether selecting a result also navigates to `/{symbol}`. Defaults to true
+     * (the search-bar behavior used by SymbolSearchPanel/Header). Callers that embed
+     * this as a plain value-picker inside a form (e.g. portfolio-management's
+     * HoldingForm) must pass false — selecting a ticker there must fill the field,
+     * not route away from the page mid-form.
+     */
+    navigateOnSelect?: boolean;
 }
 
 interface UseAutocompleteReturn {
@@ -35,6 +43,7 @@ interface UseAutocompleteReturn {
 
 export function useAutocomplete({
     onSelect,
+    navigateOnSelect = true,
 }: UseAutocompleteOptions = {}): UseAutocompleteReturn {
     const [query, setQuery] = useState('');
     const [isClosed, setIsClosed] = useState(false);
@@ -57,9 +66,9 @@ export function useAutocomplete({
             setIsClosed(true);
             setSelectedIndex(-1);
             onSelect?.(symbol);
-            router.push(`/${symbol}`);
+            if (navigateOnSelect) router.push(`/${symbol}`);
         },
-        [onSelect, router]
+        [navigateOnSelect, onSelect, router]
     );
 
     const prefetch = useCallback(
