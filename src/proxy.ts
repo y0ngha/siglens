@@ -16,6 +16,7 @@ const RESERVED_FIRST_SEGMENTS = new Set([
     'economy',
     'market',
     'news',
+    'onboarding',
     'share',
     'backtesting',
     'terms',
