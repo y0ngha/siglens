@@ -337,6 +337,16 @@ export function useAnalysis({
     const holdingAvgPrice = holding?.averagePrice ?? null;
     const prevHoldingAvgPriceRef = useRef<string | null>(holdingAvgPrice);
     const hasHandledHoldingHydrationRef = useRef(false);
+    // `useSymbolHolding` reads from a SINGLE, non-symbol-keyed React Query
+    // (`QUERY_KEYS.portfolioHoldings()`) and `.find()`s the current symbol out
+    // of the full list — it is NOT re-fetched per symbol. On a client-side nav
+    // from symbol X to symbol Y, `isLoading` can stay `false` throughout (the
+    // list is already warm) while the derived `holdingAvgPrice` VALUE changes
+    // (X's avg → Y's avg-or-none) on the very same render as `symbol`. Without
+    // this ref, that reads as "the avg changed" and fires a spurious
+    // `restartAnalysis()` — discarding the fresh SSR `initialAnalysis` for Y
+    // (already server-personalized) for a redundant submit+poll.
+    const prevHoldingSymbolRef = useRef(symbol);
 
     // `@y0ngha/siglens-core`가 부분 응답(누락된 배열/객체)을 돌려줄 수 있으므로
     // 소스에서 1회 정규화해 타입 계약을 런타임에서 다시 보장한다. 이 결과를
@@ -612,11 +622,28 @@ export function useAnalysis({
     // null → 실제 홀딩, 또는 그 반대)은 사용자 의도 변경이 아니므로 재분석을 트리거하지
     // 않는다 — 초기 마운트 분석은 이미 서버가 자체적으로 홀딩을 읽어 개인화했다. force를
     // 주지 않는다 — 같은 버킷의 다른 회원과 캐시를 공유하고 싶기 때문.
+    //
+    // SYMBOL 가드: `holdingAvgPrice`는 위 `useSymbolHolding` 주석대로 심볼별로
+    // 격리된 값이 아니라, 공유 쿼리에서 현재 symbol로 `.find()`한 파생값이다.
+    // 클라이언트 사이드 nav로 symbol이 바뀌면 avg 값도 함께 바뀌지만 이는 "이
+    // 심볼의 평단이 바뀐 것"이 아니라 "보고 있는 심볼이 바뀐 것"이므로, model/
+    // reasoning effect와 달리 avg 비교만으로는 의도를 구분할 수 없다. symbol
+    // 변경을 감지하면 마운트 시와 동일하게 ref들을 새 심볼 기준으로 재동기화만
+    // 하고 restartAnalysis는 호출하지 않는다 — 새 심볼의 초기 분석도 이미
+    // 서버가 자체적으로 홀딩을 읽어 개인화했다. 같은 심볼을 보는 중에 avg가
+    // 바뀌는 경우(홀딩 칩으로 직접 set/edit)만 진짜 사용자 의도 변경이다.
     useEffect(() => {
         if (!isHoldingResolved) return;
 
-        if (!hasHandledHoldingHydrationRef.current) {
+        // symbol ref는 resolved일 때만 전진시킨다 — 그렇지 않으면 symbol이
+        // unresolved 구간(isLoading=true) 도중에 바뀐 뒤 다음 resolved 렌더에서
+        // 이미 "처리된" symbol처럼 보여 resync 없이 avg 비교로 새 버전이 흘러가
+        // 스푸리어스 restart가 나갈 수 있다.
+        const symbolChanged = symbol !== prevHoldingSymbolRef.current;
+
+        if (!hasHandledHoldingHydrationRef.current || symbolChanged) {
             hasHandledHoldingHydrationRef.current = true;
+            prevHoldingSymbolRef.current = symbol;
             prevHoldingAvgPriceRef.current = holdingAvgPrice;
             return;
         }
@@ -626,7 +653,13 @@ export function useAnalysis({
         prevHoldingAvgPriceRef.current = holdingAvgPrice;
 
         restartAnalysis();
-    }, [holdingAvgPrice, isHoldingResolved, isTierHydrated, restartAnalysis]);
+    }, [
+        symbol,
+        holdingAvgPrice,
+        isHoldingResolved,
+        isTierHydrated,
+        restartAnalysis,
+    ]);
 
     useEffect(() => {
         if (isTierHydrated === false) return;

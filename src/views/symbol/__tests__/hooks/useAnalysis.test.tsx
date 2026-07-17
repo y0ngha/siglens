@@ -672,7 +672,7 @@ describe('useAnalysis', () => {
             expect(mockSubmit).not.toHaveBeenCalled();
         });
 
-        it('does not restart while the holding query is still loading (client-side symbol nav race)', async () => {
+        it('does not restart while the holding query is still loading (isLoading toggling on the SAME symbol)', async () => {
             mockSubmit.mockResolvedValue({
                 status: 'cached',
                 result: INITIAL_ANALYSIS,
@@ -693,8 +693,8 @@ describe('useAnalysis', () => {
                 { wrapper: makeWrapper() }
             );
 
-            // 심볼 nav로 쿼리가 다시 loading 상태가 되면서 홀딩 값이 잠깐 바뀐 것처럼
-            // 보여도, 아직 loading 중이면 재분석을 트리거하지 않는다.
+            // 같은 심볼(AAPL)에서 쿼리가 다시 loading 상태가 되면서 홀딩 값이 잠깐
+            // 바뀐 것처럼 보여도, 아직 loading 중이면 재분석을 트리거하지 않는다.
             mockUseSymbolHolding.mockReturnValue({
                 holding: {
                     symbol: 'AAPL',
@@ -733,6 +733,67 @@ describe('useAnalysis', () => {
             await waitFor(() => {
                 expect(mockSubmit).toHaveBeenCalledTimes(1);
             });
+        });
+
+        it('does not restart on a client-side symbol nav even though isLoading stays false and the avg VALUE changes (shared, non-symbol-keyed holdings query)', async () => {
+            mockSubmit.mockResolvedValue({
+                status: 'cached',
+                result: INITIAL_ANALYSIS,
+                lockedInfoDepth: [],
+            });
+            // 최초 심볼(AAPL) — 홀딩 보유, 평단 100. 초기 hydration 세팅이므로
+            // 재분석을 트리거하지 않는다.
+            mockUseSymbolHolding.mockReturnValue({
+                holding: {
+                    symbol: 'AAPL',
+                    companyName: null,
+                    fmpSymbol: null,
+                    quantity: '10',
+                    averagePrice: '100',
+                    updatedAt: '2026-01-01T00:00:00Z',
+                },
+                isHydrated: true,
+                isLoading: false,
+                isError: false,
+                save: {} as never,
+            });
+
+            const { rerender } = renderHook(
+                ({ symbol }: { symbol: string }) =>
+                    useAnalysis(
+                        makeOptions({ symbol, initialAnalysisFailed: false })
+                    ),
+                {
+                    wrapper: makeWrapper(),
+                    initialProps: { symbol: 'AAPL' },
+                }
+            );
+
+            expect(mockSubmit).not.toHaveBeenCalled();
+
+            // 실제 nav 재현: `useSymbolHolding`은 심볼별로 격리된 쿼리가 아니라
+            // 공유 쿼리에서 `.find()`한 파생값이므로, MSFT로 nav하면 isLoading은
+            // 계속 false인 채 symbol과 holding(avg)이 SAME 렌더에서 함께 바뀐다
+            // (MSFT는 홀딩이 없다고 가정 — avg 값이 '100' → null로 변경).
+            mockUseSymbolHolding.mockReturnValue({
+                holding: null,
+                isHydrated: true,
+                isLoading: false,
+                isError: false,
+                save: {} as never,
+            });
+            rerender({ symbol: 'MSFT' });
+
+            // `restartAnalysis` → `mutate`는 마이크로태스크를 거쳐 mutationFn을
+            // 호출하므로, rerender 직후 동기 단언은 스푸리어스 restart를 놓친다
+            // (react-query의 dispatch가 다음 tick으로 미뤄짐). 한 tick 플러시한
+            // 뒤에 단언해야 버그가 있을 때 이 테스트가 실제로 실패한다.
+            await new Promise(resolve => setTimeout(resolve, 0));
+
+            // symbol 변경으로 인한 avg 변경은 "홀딩 값이 실제로 바뀐 것"이 아니라
+            // "보고 있는 심볼이 바뀐 것"이므로 재분석을 트리거하지 않아야 한다 —
+            // MSFT의 초기 분석은 이미 서버가 자체적으로 홀딩을 읽어 개인화했다.
+            expect(mockSubmit).not.toHaveBeenCalled();
         });
     });
 
