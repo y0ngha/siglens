@@ -48,6 +48,13 @@ vi.mock('@/widgets/chart', () => ({
 vi.mock('@/widgets/analysis', () => ({
     AnalysisPanel: () => <div data-testid="analysis-panel" />,
 }));
+// portfolio-position 위젯은 react-query 훅(useCurrentUser/useSymbolHolding)에
+// 의존한다 — 이 파일은 @/entities/auth를 이미 별도로 mock하지만 QueryClientProvider가
+// 없는 트리이므로 useSymbolHolding까지 실제 구현으로 렌더하면 크래시한다. 이
+// 파일의 관심사(anon nudge race)와 무관하므로 no-op stub으로 대체한다.
+vi.mock('@/widgets/portfolio-position', () => ({
+    PositionSectionMounted: () => null,
+}));
 
 vi.mock('@/shared/ui/BotBlockedNotice', () => ({
     BotBlockedNotice: () => <div data-testid="bot-blocked-notice" />,
