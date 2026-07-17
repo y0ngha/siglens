@@ -93,9 +93,16 @@ export class DrizzlePortfolioRepository implements PortfolioHoldingRepository {
                             portfolioHoldings.userId,
                             portfolioHoldings.symbol,
                         ],
+                        // COALESCE preserves the previously-stored metadata when the
+                        // incoming value is null — a null here always means "symbol
+                        // resolution degraded on this edit", never "known to be
+                        // empty" (a genuine null from getAssetInfo is rejected as
+                        // symbol_not_found before reaching upsert). Without this,
+                        // editing quantity/price during an FMP outage would silently
+                        // wipe out the correct companyName/fmpSymbol saved earlier.
                         set: {
-                            companyName: input.companyName,
-                            fmpSymbol: input.fmpSymbol,
+                            companyName: sql`coalesce(${input.companyName}, ${portfolioHoldings.companyName})`,
+                            fmpSymbol: sql`coalesce(${input.fmpSymbol}, ${portfolioHoldings.fmpSymbol})`,
                             quantity: input.quantity,
                             averagePrice: input.averagePrice,
                             updatedAt: sql`now()`,

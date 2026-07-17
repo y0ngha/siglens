@@ -5,7 +5,7 @@ vi.mock('@/shared/lib/sleep', () => ({
     sleep: vi.fn().mockResolvedValue(undefined),
 }));
 
-import { and, eq } from 'drizzle-orm';
+import { and, eq, is, SQL } from 'drizzle-orm';
 import { portfolioHoldings } from '@/shared/db/schema';
 import { DrizzlePortfolioRepository } from '@/entities/portfolio/api';
 import type { SiglensDatabase } from '@/shared/db/types';
@@ -123,15 +123,77 @@ describe('DrizzlePortfolioRepository.upsert', () => {
         const [conflictArgs] = onConflictDoUpdate.mock.calls[0] ?? [];
         const { target, set } = conflictArgs as {
             target: unknown[];
-            set: { quantity: string; averagePrice: string };
+            set: {
+                companyName: unknown;
+                fmpSymbol: unknown;
+                quantity: string;
+                averagePrice: string;
+            };
         };
         expect(target).toEqual([
             portfolioHoldings.userId,
             portfolioHoldings.symbol,
         ]);
+        // quantity/averagePrice are the intended edit — always overwritten with
+        // the raw incoming value.
         expect(set.quantity).toBe('10');
         expect(set.averagePrice).toBe('150');
         expect(returning).toHaveBeenCalledTimes(1);
+
+        // companyName/fmpSymbol must NOT be raw overwrites — they're COALESCE
+        // SQL expressions so a degraded (null) resolution on an unrelated edit
+        // preserves the previously-stored metadata instead of wiping it out.
+        expect(is(set.companyName, SQL)).toBe(true);
+        expect(is(set.fmpSymbol, SQL)).toBe(true);
+
+        const companyNameChunks = (set.companyName as SQL).queryChunks;
+        expect(
+            (companyNameChunks[0] as { value: string[] }).value[0]
+        ).toContain('coalesce(');
+        expect(companyNameChunks[1]).toBe('Apple Inc.');
+        expect(companyNameChunks[3]).toBe(portfolioHoldings.companyName);
+
+        const fmpSymbolChunks = (set.fmpSymbol as SQL).queryChunks;
+        expect((fmpSymbolChunks[0] as { value: string[] }).value[0]).toContain(
+            'coalesce('
+        );
+        expect(fmpSymbolChunks[1]).toBe('AAPL');
+        expect(fmpSymbolChunks[3]).toBe(portfolioHoldings.fmpSymbol);
+    });
+
+    it('degrades to preserving existing metadata: COALESCE with a null input keeps the stored column reference (never overwrites with null)', async () => {
+        const { db, onConflictDoUpdate } = makeUpsertDb([holdingRow]);
+        const repo = new DrizzlePortfolioRepository(db);
+
+        // Simulates savePortfolioHoldingAction degrading companyName/fmpSymbol to
+        // null when getAssetInfo throws (FMP outage) mid-edit — quantity/price
+        // are still the real edit and must still be written.
+        await repo.upsert({
+            ...UPSERT_INPUT,
+            companyName: null,
+            fmpSymbol: null,
+            quantity: '25',
+        });
+
+        const [conflictArgs] = onConflictDoUpdate.mock.calls[0] ?? [];
+        const { set } = conflictArgs as {
+            set: {
+                companyName: unknown;
+                fmpSymbol: unknown;
+                quantity: string;
+            };
+        };
+
+        expect(set.quantity).toBe('25');
+        const companyNameChunks = (set.companyName as SQL).queryChunks;
+        // The bound parameter is null; COALESCE falls back to the existing
+        // stored column at query time rather than writing null.
+        expect(companyNameChunks[1]).toBeNull();
+        expect(companyNameChunks[3]).toBe(portfolioHoldings.companyName);
+
+        const fmpSymbolChunks = (set.fmpSymbol as SQL).queryChunks;
+        expect(fmpSymbolChunks[1]).toBeNull();
+        expect(fmpSymbolChunks[3]).toBe(portfolioHoldings.fmpSymbol);
     });
 
     it('throws when the database returns no row (defensive guard)', async () => {
