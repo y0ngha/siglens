@@ -1,10 +1,18 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { useRef, useState } from 'react';
 import { cn } from '@/shared/lib/cn';
 import { trimTrailingZeros } from '@/shared/lib/trimTrailingZeros';
 import { useSymbolHolding } from '../hooks/useSymbolHolding';
-import { PortfolioChipPopover } from './PortfolioChipPopover';
+
+// Code-split: the popover pulls in the holding form + mutation code, which
+// only members who actually open it should download. Guests (and members who
+// never click the chip) never fetch this bundle.
+const PortfolioChipPopover = dynamic(
+    () => import('./PortfolioChipPopover').then(m => m.PortfolioChipPopover),
+    { ssr: false }
+);
 
 interface PortfolioChipProps {
     symbol: string;

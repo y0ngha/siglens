@@ -159,9 +159,6 @@ function HoldingRow({
 
 /** Account-page section for managing the member's portfolio holdings: list + inline edit + inline delete confirm + add form. */
 export function PortfolioSection() {
-    const { holdings, isHydrated, isLoading, isError, refetch, save, remove } =
-        usePortfolioHoldings();
-
     const [editingSymbol, setEditingSymbol] = useState<string | null>(null);
     const [confirmingDeleteSymbol, setConfirmingDeleteSymbol] = useState<
         string | null
@@ -170,6 +167,9 @@ export function PortfolioSection() {
         symbol: string;
         message: string;
     } | null>(null);
+
+    const { holdings, isHydrated, isLoading, isError, refetch, save, remove } =
+        usePortfolioHoldings();
 
     const isLoadingState = !isHydrated || isLoading;
 

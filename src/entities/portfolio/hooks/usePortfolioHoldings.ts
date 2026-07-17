@@ -15,13 +15,13 @@ import {
     deletePortfolioHoldingAction,
     getPortfolioHoldingsAction,
     savePortfolioHoldingAction,
-} from '@/entities/portfolio/actions';
+} from '../actions';
 import type {
     PortfolioHoldingView,
     RawHoldingInput,
     SavePortfolioResult,
     DeletePortfolioResult,
-} from '@/entities/portfolio';
+} from '../model';
 
 interface UsePortfolioHoldingsReturn {
     holdings: PortfolioHoldingView[];

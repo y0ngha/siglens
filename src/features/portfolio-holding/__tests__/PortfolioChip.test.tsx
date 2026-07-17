@@ -127,10 +127,13 @@ describe('PortfolioChipMounted / PortfolioChip', () => {
         render(<PortfolioChipMounted symbol="AAPL" />);
 
         await user.click(screen.getByRole('button', { name: '내 평단 설정' }));
-        expect(screen.getByRole('dialog')).toBeInTheDocument();
+        // PortfolioChipPopover is next/dynamic(ssr:false)-loaded, so it mounts
+        // asynchronously after the click — await its appearance instead of a
+        // synchronous getByRole.
+        expect(await screen.findByRole('dialog')).toBeInTheDocument();
 
         await user.type(screen.getByLabelText('수량'), '10');
-        await user.type(screen.getByLabelText('평균 단가'), '150.5');
+        await user.type(screen.getByLabelText('평단'), '150.5');
         await user.click(screen.getByRole('button', { name: '저장' }));
 
         await waitFor(() => {
@@ -157,8 +160,8 @@ describe('PortfolioChipMounted / PortfolioChip', () => {
         render(<PortfolioChipMounted symbol="AAPL" />);
 
         await user.click(screen.getByRole('button', { name: '내 평단 설정' }));
-        await user.type(screen.getByLabelText('수량'), '0');
-        await user.type(screen.getByLabelText('평균 단가'), '150.5');
+        await user.type(await screen.findByLabelText('수량'), '0');
+        await user.type(screen.getByLabelText('평단'), '150.5');
         await user.click(screen.getByRole('button', { name: '저장' }));
 
         expect(
@@ -178,8 +181,8 @@ describe('PortfolioChipMounted / PortfolioChip', () => {
             screen.getByRole('button', { name: '내 평단 $150.5 · 10주' })
         );
 
-        expect(screen.getByLabelText('수량')).toHaveValue('10');
-        expect(screen.getByLabelText('평균 단가')).toHaveValue('150.5');
+        expect(await screen.findByLabelText('수량')).toHaveValue('10');
+        expect(screen.getByLabelText('평단')).toHaveValue('150.5');
     });
 
     it('closes the popover on Escape', async () => {
@@ -189,7 +192,7 @@ describe('PortfolioChipMounted / PortfolioChip', () => {
         render(<PortfolioChipMounted symbol="AAPL" />);
 
         await user.click(screen.getByRole('button', { name: '내 평단 설정' }));
-        expect(screen.getByRole('dialog')).toBeInTheDocument();
+        expect(await screen.findByRole('dialog')).toBeInTheDocument();
 
         await user.keyboard('{Escape}');
         expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
