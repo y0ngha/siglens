@@ -90,7 +90,7 @@ describe('PortfolioSection', () => {
 
         await user.type(screen.getByLabelText('종목 티커 검색'), 'AAPL');
         await user.type(screen.getByLabelText('수량'), '10');
-        await user.type(screen.getByLabelText('평균 단가'), '150.5');
+        await user.type(screen.getByLabelText('평단'), '150.5');
         await user.click(screen.getByRole('button', { name: '추가' }));
 
         await waitFor(() => {
@@ -114,7 +114,7 @@ describe('PortfolioSection', () => {
 
         await user.type(screen.getByLabelText('종목 티커 검색'), 'ZZZZ');
         await user.type(screen.getByLabelText('수량'), '10');
-        await user.type(screen.getByLabelText('평균 단가'), '150.5');
+        await user.type(screen.getByLabelText('평단'), '150.5');
         await user.click(screen.getByRole('button', { name: '추가' }));
 
         expect(

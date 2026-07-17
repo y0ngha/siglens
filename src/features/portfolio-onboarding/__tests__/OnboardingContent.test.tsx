@@ -52,10 +52,10 @@ describe('OnboardingContent', () => {
         expect(mockPush).toHaveBeenCalledWith('/');
     });
 
-    it('완료 클릭 시 홈으로 이동한다', async () => {
+    it('시작하기 클릭 시 홈으로 이동한다', async () => {
         const user = userEvent.setup();
         render(<OnboardingContent />);
-        await user.click(screen.getByRole('button', { name: '완료' }));
+        await user.click(screen.getByRole('button', { name: '시작하기' }));
         expect(mockPush).toHaveBeenCalledWith('/');
     });
 });

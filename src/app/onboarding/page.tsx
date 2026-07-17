@@ -30,13 +30,16 @@ export async function OnboardingGuard() {
 
 function OnboardingSkeleton() {
     return (
-        <div className="space-y-6" aria-hidden="true">
-            <div className="space-y-3">
-                <div className="bg-secondary-800 h-6 w-28 animate-pulse rounded-full" />
-                <div className="bg-secondary-800 h-7 w-64 animate-pulse rounded" />
-                <div className="bg-secondary-800 h-4 w-full max-w-md animate-pulse rounded" />
+        <div role="status" aria-busy="true" aria-live="polite">
+            <span className="sr-only">불러오는 중이에요</span>
+            <div className="space-y-6" aria-hidden="true">
+                <div className="space-y-3">
+                    <div className="bg-secondary-800 h-6 w-28 animate-pulse rounded-full" />
+                    <div className="bg-secondary-800 h-7 w-64 animate-pulse rounded" />
+                    <div className="bg-secondary-800 h-4 w-full max-w-md animate-pulse rounded" />
+                </div>
+                <div className="ring-secondary-800 bg-secondary-900/80 h-48 animate-pulse rounded-2xl ring-1" />
             </div>
-            <div className="ring-secondary-800 bg-secondary-900/80 h-48 animate-pulse rounded-2xl ring-1" />
         </div>
     );
 }

@@ -54,7 +54,7 @@ export function OnboardingContent() {
                     onClick={goHome}
                     className={PRIMARY_BUTTON}
                 >
-                    완료
+                    시작하기
                 </button>
             </div>
         </div>

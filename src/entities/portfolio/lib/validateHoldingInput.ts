@@ -39,14 +39,14 @@ export function validateHoldingInput(
         return {
             ok: false,
             code: 'invalid_quantity',
-            message: '수량을 올바르게 입력해 주세요.',
+            message: '0보다 큰 수량을 입력해 주세요 (소수점 8자리까지)',
         };
     const p = checkDecimal(input.averagePrice, PRICE_SCALE, PRICE_MAX);
     if (!p.ok)
         return {
             ok: false,
             code: 'invalid_price',
-            message: '평균 단가를 올바르게 입력해 주세요.',
+            message: '0보다 큰 평균 단가를 입력해 주세요 (소수점 8자리까지)',
         };
     return { ok: true, symbol, quantity: q.value, averagePrice: p.value };
 }

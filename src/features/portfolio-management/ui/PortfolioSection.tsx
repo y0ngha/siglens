@@ -16,7 +16,7 @@ const ROW_CHROME =
 const ACTION_BUTTON =
     'border-secondary-700 text-secondary-300 hover:bg-secondary-800 focus-visible:ring-primary-500 rounded-md border px-3 py-1.5 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50';
 const DANGER_BUTTON =
-    'text-ui-danger border-ui-danger/40 hover:bg-ui-danger/10 focus-visible:ring-ui-danger rounded-md border px-3 py-1.5 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50';
+    'text-ui-danger-text border-ui-danger/40 hover:bg-ui-danger/10 focus-visible:ring-ui-danger rounded-md border px-3 py-1.5 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50';
 
 function SkeletonLine({ className }: { className?: string }) {
     return (
@@ -28,13 +28,16 @@ function SkeletonLine({ className }: { className?: string }) {
 
 function HoldingsSkeleton() {
     return (
-        <div className="space-y-2" aria-hidden="true">
-            {[0, 1].map(i => (
-                <div key={i} className={ROW_CHROME}>
-                    <SkeletonLine className="h-4 w-24" />
-                    <SkeletonLine className="mt-2 h-3 w-40" />
-                </div>
-            ))}
+        <div role="status" aria-busy="true" aria-live="polite">
+            <span className="sr-only">보유종목을 불러오는 중이에요</span>
+            <div className="space-y-2" aria-hidden="true">
+                {[0, 1].map(i => (
+                    <div key={i} className={ROW_CHROME}>
+                        <SkeletonLine className="h-4 w-24" />
+                        <SkeletonLine className="mt-2 h-3 w-40" />
+                    </div>
+                ))}
+            </div>
         </div>
     );
 }
@@ -187,7 +190,7 @@ export function PortfolioSection() {
                     보유종목
                 </h2>
                 <p className="text-secondary-400 mt-1 text-sm">
-                    등록하면 내 평균 단가 기준으로 분석을 받을 수 있어요.
+                    등록하면 내 평단 기준으로 분석을 받을 수 있어요.
                 </p>
             </div>
 
