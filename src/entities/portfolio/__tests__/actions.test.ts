@@ -255,6 +255,29 @@ describe('savePortfolioHoldingAction', () => {
         }
     });
 
+    it('getAssetInfo가 name null / fmpSymbol undefined를 반환하면 upsert에 둘 다 null로 전달된다', async () => {
+        mockGetCurrentUser.mockResolvedValue(AUTHED_USER);
+        mockGetAssetInfo.mockResolvedValue({
+            symbol: 'AAPL',
+            name: null,
+            fmpSymbol: undefined,
+        } as never);
+
+        const result = await savePortfolioHoldingAction({
+            symbol: 'AAPL',
+            quantity: '10',
+            averagePrice: '150.5',
+        });
+
+        expect(mockUpsert).toHaveBeenCalledWith(
+            expect.objectContaining({
+                companyName: null,
+                fmpSymbol: null,
+            })
+        );
+        expect(result.status).toBe('ok');
+    });
+
     it('upsert 실패 시 storage_unavailable 에러를 반환하고 console.error로 로그를 남긴다', async () => {
         mockGetCurrentUser.mockResolvedValue(AUTHED_USER);
         mockGetAssetInfo.mockResolvedValue({
@@ -335,6 +358,15 @@ describe('deletePortfolioHoldingAction', () => {
             'user-1',
             'AAPL'
         );
+        expect(result).toEqual({ status: 'ok' });
+    });
+
+    it('삭제 대상이 없어도(deleteByUserAndSymbol이 false) status: ok를 반환한다 (no-op 성공, spec §8)', async () => {
+        mockGetCurrentUser.mockResolvedValue(AUTHED_USER);
+        mockDeleteByUserAndSymbol.mockResolvedValue(false);
+
+        const result = await deletePortfolioHoldingAction('AAPL');
+
         expect(result).toEqual({ status: 'ok' });
     });
 

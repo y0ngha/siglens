@@ -232,6 +232,7 @@ export interface UpsertPortfolioHoldingInput {
 /** Persistence operations for member portfolio holdings. */
 export interface PortfolioHoldingRepository {
     findByUser(userId: string): Promise<PortfolioHoldingRecord[]>;
+    /** Forward-provisioned for subsystems B/C (spec §4); no production caller yet. */
     findByUserAndSymbol(
         userId: string,
         symbol: string

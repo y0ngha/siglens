@@ -221,4 +221,54 @@ describe('PortfolioChipMounted / PortfolioChip', () => {
         await user.keyboard('{Escape}');
         expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     });
+
+    it('surfaces a storage_unavailable error with no field focus (fieldForErrorCode default branch)', async () => {
+        const user = userEvent.setup();
+        setCurrentUser(USER);
+        const { save } = setHoldings({ holdings: [] });
+        (save.mutateAsync as ReturnType<typeof vi.fn>).mockResolvedValue({
+            status: 'error',
+            code: 'storage_unavailable',
+            message: '저장에 실패했어요. 잠시 후 다시 시도해 주세요.',
+        });
+        render(<PortfolioChipMounted symbol="AAPL" />);
+
+        await user.click(screen.getByRole('button', { name: '평단 설정' }));
+        await user.type(await screen.findByLabelText('수량'), '10');
+        await user.type(screen.getByLabelText('평단'), '150.5');
+        await user.click(screen.getByRole('button', { name: '저장' }));
+
+        expect(
+            await screen.findByText(
+                '저장에 실패했어요. 잠시 후 다시 시도해 주세요.'
+            )
+        ).toBeInTheDocument();
+        // No dedicated field for this code — neither input should receive focus.
+        expect(screen.getByLabelText('수량')).not.toHaveFocus();
+        expect(screen.getByLabelText('평단')).not.toHaveFocus();
+    });
+
+    it('moves focus to the averagePrice field on an invalid_price error', async () => {
+        const user = userEvent.setup();
+        setCurrentUser(USER);
+        const { save } = setHoldings({ holdings: [] });
+        (save.mutateAsync as ReturnType<typeof vi.fn>).mockResolvedValue({
+            status: 'error',
+            code: 'invalid_price',
+            message: '0보다 큰 평균 단가를 입력해 주세요 (소수점 8자리까지)',
+        });
+        render(<PortfolioChipMounted symbol="AAPL" />);
+
+        await user.click(screen.getByRole('button', { name: '평단 설정' }));
+        await user.type(await screen.findByLabelText('수량'), '10');
+        await user.type(screen.getByLabelText('평단'), '0');
+        await user.click(screen.getByRole('button', { name: '저장' }));
+
+        expect(
+            await screen.findByText(
+                '0보다 큰 평균 단가를 입력해 주세요 (소수점 8자리까지)'
+            )
+        ).toBeInTheDocument();
+        expect(screen.getByLabelText('평단')).toHaveFocus();
+    });
 });

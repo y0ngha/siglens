@@ -37,6 +37,13 @@ export class DrizzlePortfolioRepository implements PortfolioHoldingRepository {
             .where(eq(portfolioHoldings.userId, userId));
     }
 
+    /**
+     * Intentionally has no production caller yet — spec §4-mandated and
+     * forward-provisioned for subsystem B ("where am I" position lookup for
+     * a single symbol) and subsystem C (personalized analysis keyed off one
+     * holding). Kept in place (and unit-tested) as a deliberate seam rather
+     * than accidental dead code.
+     */
     async findByUserAndSymbol(
         userId: string,
         symbol: string
