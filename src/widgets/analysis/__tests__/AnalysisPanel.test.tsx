@@ -160,49 +160,74 @@ describe('AnalysisPanel', () => {
         expect(
             screen.getByText('상세 분석과 매매 전략은 회원에게 제공됩니다.')
         ).toBeInTheDocument();
-        // Two signup entry points exist for free: the detail lock card and the
-        // sampled-skill nudge. Both must point at /signup.
+        // Exactly two signup entry points exist for free: the detail lock card
+        // and the sampled-skill nudge card. Both must point at /signup.
         const signupLinks = screen.getAllByRole('link', { name: '회원가입' });
-        expect(signupLinks.length).toBeGreaterThan(0);
+        expect(signupLinks).toHaveLength(2);
         signupLinks.forEach(link =>
             expect(link).toHaveAttribute('href', '/signup')
         );
     });
 
-    it('shows a friendly sampled-skill nudge for free tier without exposing a skill count', () => {
+    it('shows a friendly sampled-skill card for free tier with the fixed sample and the member skill total', () => {
         render(
             <AnalysisPanel
                 symbol="AAPL"
                 analysis={makeAnalysis()}
                 keyLevels={EMPTY_KEY_LEVELS}
                 timeframe="1Day"
+                skillCount={42}
                 lockedInfoDepth={['partial_detail']}
             />
         );
 
+        // Fixed per-group sample (3), not the (possibly zero) detected count.
         expect(
-            screen.getByText(/비회원에게는 대표 스킬 분석만 제공돼요/)
+            screen.getByText(/대표 스킬 3개로 분석했어요/)
         ).toBeInTheDocument();
-        // The "회원가입" here is a <Link>, so the trailing copy lives in a
-        // separate text node; assert it directly instead of spanning the link.
+        // Member skill total is threaded from countSkillFiles.
         expect(
-            screen.getByText(/하면 전체 스킬 분석을 볼 수 있어요/)
+            screen.getByText(
+                /회원가입 후 42개 스킬을 모두 적용한 분석 결과를 확인할 수 있어요/
+            )
         ).toBeInTheDocument();
     });
 
-    it('does not show the sampled-skill nudge for members (nothing locked)', () => {
+    it('falls back to a countless message when the member skill total is unavailable (0)', () => {
         render(
             <AnalysisPanel
                 symbol="AAPL"
                 analysis={makeAnalysis()}
                 keyLevels={EMPTY_KEY_LEVELS}
                 timeframe="1Day"
+                skillCount={0}
+                lockedInfoDepth={['partial_detail']}
+            />
+        );
+
+        // Degraded skill catalogue: never promise "0개 스킬".
+        expect(screen.queryByText(/0개 스킬/)).not.toBeInTheDocument();
+        expect(
+            screen.getByText(
+                /회원가입 후 전체 스킬을 적용한 분석 결과를 확인할 수 있어요/
+            )
+        ).toBeInTheDocument();
+    });
+
+    it('does not show the sampled-skill card for members (nothing locked)', () => {
+        render(
+            <AnalysisPanel
+                symbol="AAPL"
+                analysis={makeAnalysis()}
+                keyLevels={EMPTY_KEY_LEVELS}
+                timeframe="1Day"
+                skillCount={42}
                 lockedInfoDepth={[]}
             />
         );
 
         expect(
-            screen.queryByText(/비회원에게는 대표 스킬 분석만 제공돼요/)
+            screen.queryByText(/대표 스킬 3개로 분석했어요/)
         ).not.toBeInTheDocument();
     });
 
@@ -280,7 +305,7 @@ describe('AnalysisPanel', () => {
             screen.getByText('상세 분석과 매매 전략은 회원에게 제공됩니다.')
         ).toBeInTheDocument();
         const signupLinks = screen.getAllByRole('link', { name: '회원가입' });
-        expect(signupLinks.length).toBeGreaterThan(0);
+        expect(signupLinks).toHaveLength(2);
         signupLinks.forEach(link =>
             expect(link).toHaveAttribute('href', '/signup')
         );

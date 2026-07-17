@@ -153,7 +153,7 @@ export function ChartContent({
     } = useSymbolModel();
 
     // analysis → symbol-page 역방향 import를 제거하기 위해 여기서 context를 읽어 내려보낸다.
-    const { indicatorCount } = useSymbolPageContext();
+    const { indicatorCount, skillCount } = useSymbolPageContext();
 
     const {
         analysis,
@@ -251,6 +251,7 @@ export function ChartContent({
                     actionPricesVisible={actionPricesVisible}
                     onActionPricesVisibilityChange={setActionPricesVisible}
                     indicatorCount={indicatorCount}
+                    skillCount={skillCount}
                     lockedInfoDepth={lockedInfoDepth}
                 />
                 {/* 서사가 있어도(캐시된 분석을 표시 중) 봇 판정이면 안내를 additive로
@@ -280,6 +281,7 @@ export function ChartContent({
         setActionPricesVisible,
         marketProfile,
         indicatorCount,
+        skillCount,
         lockedInfoDepth,
     ]);
 

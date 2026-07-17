@@ -41,6 +41,7 @@ interface SymbolPageClientProps {
     initialLockedInfoDepth?: readonly TierInfoDepth[];
     initialAnalysisFailed: boolean;
     indicatorCount: number;
+    skillCount: number;
     /**
      * Market profile resolved server-side from AssetInfo — passed down to avoid
      * recomputing marketProfileOf(assetInfo) on the client for ChartContent.
@@ -57,6 +58,7 @@ export function SymbolPageClient({
     initialLockedInfoDepth = [],
     initialAnalysisFailed,
     indicatorCount,
+    skillCount,
     marketProfile,
 }: SymbolPageClientProps) {
     const { tier, isTierHydrated } = useSymbolModel();
@@ -77,7 +79,10 @@ export function SymbolPageClient({
     const isMobileViewport = useIsMobileViewport();
 
     return (
-        <SymbolPageProvider indicatorCount={indicatorCount}>
+        <SymbolPageProvider
+            indicatorCount={indicatorCount}
+            skillCount={skillCount}
+        >
             {/* Chart page fills the first viewport via SymbolLayout's sticky-footer
                 jail: site header(3.5rem)를 viewport에서 뺀 jail 컨테이너 안에서
                 SymbolLayoutHeader가 자기 자리 + page main(flex-1)이 잔여를 차지하고,

@@ -101,6 +101,7 @@ describe('SymbolPageClient', () => {
         initialAnalysis: {} as AnalysisResponse,
         initialAnalysisFailed: false,
         indicatorCount: 20,
+        skillCount: 30,
     };
 
     it('renders without crashing', () => {
