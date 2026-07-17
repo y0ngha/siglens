@@ -9,7 +9,7 @@ import type {
     SavePortfolioResult,
 } from '@/entities/portfolio';
 import { HoldingForm } from './HoldingForm';
-import { trimTrailingZeros } from '../lib/formatDecimal';
+import { trimTrailingZeros } from '@/shared/lib/trimTrailingZeros';
 
 const ROW_CHROME =
     'ring-secondary-800 bg-secondary-900/60 rounded-xl p-4 ring-1';

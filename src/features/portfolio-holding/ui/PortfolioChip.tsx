@@ -2,7 +2,7 @@
 
 import { useRef, useState } from 'react';
 import { cn } from '@/shared/lib/cn';
-import { trimTrailingZeros } from '../lib/formatDecimal';
+import { trimTrailingZeros } from '@/shared/lib/trimTrailingZeros';
 import { useSymbolHolding } from '../hooks/useSymbolHolding';
 import { PortfolioChipPopover } from './PortfolioChipPopover';
 
@@ -15,13 +15,14 @@ interface PortfolioChipProps {
  * the symbol page. Visually mirrors ReasoningToggle/ModelSelector's control
  * sizing (h-9, rounded-lg border) so it reads as part of the same cluster.
  *
- * This header cluster mounts twice (desktop + mobile) — no mount-time side
- * effects here, only local UI state, so a second mount is safe.
+ * Keep this component free of mount-time side effects for parity with the
+ * dual-mounted fear-greed chip and to stay safe if the header layout later
+ * duplicates this cluster.
  */
 export function PortfolioChip({ symbol }: PortfolioChipProps) {
-    const { holding, isHydrated, save } = useSymbolHolding(symbol);
-    const triggerRef = useRef<HTMLButtonElement>(null);
     const [isOpen, setIsOpen] = useState(false);
+    const triggerRef = useRef<HTMLButtonElement>(null);
+    const { holding, isHydrated, save } = useSymbolHolding(symbol);
 
     // Rendering during hydration risks an SSR/CSR text mismatch (the holdings
     // query is client-only and gated on isHydrated itself) — same rationale

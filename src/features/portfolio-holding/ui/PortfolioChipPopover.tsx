@@ -5,7 +5,7 @@ import { useEscapeKey } from '@/shared/hooks/useEscapeKey';
 import { useFocusTrap } from '@/shared/hooks/useFocusTrap';
 import { useOnClickOutside } from '@/shared/hooks/useOnClickOutside';
 import { cn } from '@/shared/lib/cn';
-import { trimTrailingZeros } from '../lib/formatDecimal';
+import { trimTrailingZeros } from '@/shared/lib/trimTrailingZeros';
 import type { PortfolioHoldingView } from '@/entities/portfolio';
 import type { UseSymbolHoldingReturn } from '../hooks/useSymbolHolding';
 
@@ -39,12 +39,6 @@ export function PortfolioChipPopover({
 }: PortfolioChipPopoverProps) {
     const titleId = useId();
     const errorId = useId();
-    const panelRef = useRef<HTMLDivElement>(null);
-
-    useFocusTrap(panelRef, true);
-    useEscapeKey(onClose, true);
-    useOnClickOutside([panelRef, triggerRef], onClose);
-
     const [quantity, setQuantity] = useState(
         holding ? trimTrailingZeros(holding.quantity) : ''
     );
@@ -52,10 +46,15 @@ export function PortfolioChipPopover({
         holding ? trimTrailingZeros(holding.averagePrice) : ''
     );
     const [error, setError] = useState<string | null>(null);
+    const panelRef = useRef<HTMLDivElement>(null);
+
+    useFocusTrap(panelRef, true);
+    useEscapeKey(onClose, true);
+    useOnClickOutside([panelRef, triggerRef], onClose);
 
     const canSubmit = quantity.length > 0 && averagePrice.length > 0;
 
-    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
         e.preventDefault();
         if (!canSubmit || save.isPending) return;
         setError(null);

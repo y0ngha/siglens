@@ -1,4 +1,4 @@
-import { trimTrailingZeros } from '../lib/formatDecimal';
+import { trimTrailingZeros } from '../trimTrailingZeros';
 
 describe('trimTrailingZeros', () => {
     it('passes through an integer string with no dot unchanged', () => {

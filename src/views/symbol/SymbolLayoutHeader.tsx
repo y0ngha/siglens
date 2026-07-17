@@ -116,9 +116,7 @@ export function SymbolLayoutHeader({ symbol }: SymbolLayoutHeaderProps) {
                         canUse={canUseReasoning}
                         onLockedClick={openSignupNudge}
                     />
-                    <Suspense fallback={null}>
-                        <PortfolioChipMounted symbol={ticker} />
-                    </Suspense>
+                    <PortfolioChipMounted symbol={ticker} />
                 </div>
 
                 <ErrorBoundary fallback={null}>

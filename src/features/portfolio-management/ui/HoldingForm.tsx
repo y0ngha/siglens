@@ -3,7 +3,7 @@
 import { useId, useState } from 'react';
 import { TickerAutocomplete } from '@/features/ticker-search';
 import { cn } from '@/shared/lib/cn';
-import { trimTrailingZeros } from '../lib/formatDecimal';
+import { trimTrailingZeros } from '@/shared/lib/trimTrailingZeros';
 import type {
     PortfolioHoldingView,
     RawHoldingInput,
@@ -49,7 +49,7 @@ export function HoldingForm({
     const canSubmit =
         symbol.length > 0 && quantity.length > 0 && averagePrice.length > 0;
 
-    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
         e.preventDefault();
         if (!canSubmit || submitting) return;
         setError(null);
