@@ -1,5 +1,12 @@
 # Changelog
 
+# [0.41.0](https://github.com/y0ngha/siglens/compare/v0.40.0...v0.41.0) (2026-07-17)
+
+
+### Features
+
+* **analysis:** render the free-tier skill nudge as its own card ([19a9cbf](https://github.com/y0ngha/siglens/commit/19a9cbf97014a1a9a9fcf05151bb726eed5f622b))
+
 # [0.40.0](https://github.com/y0ngha/siglens/compare/v0.39.0...v0.40.0) (2026-07-16)
 
 
