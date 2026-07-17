@@ -47,6 +47,20 @@ vi.mock('@/shared/lib/formatAnalyzedAt', () => ({
 vi.mock('@/entities/analysis', () => ({
     isAnalysisStale: () => false,
 }));
+// personalized-analysis 투명성 배지(§FIX 2)가 소비하는 홀딩 소스. 실제
+// `useSymbolHolding`은 react-query + 서버 액션 체인을 거치는데, 이 통합 테스트는
+// QueryClientProvider 없이 AnalysisPanel을 렌더하므로 그대로 두면 크래시한다.
+// 이 파일의 관심사(모델 선택 ↔ 분석 패널 상호작용)와 무관하므로 "홀딩 없음"
+// no-op 목으로 대체한다.
+vi.mock('@/features/portfolio-holding', () => ({
+    useSymbolHolding: () => ({
+        holding: null,
+        isHydrated: true,
+        isLoading: false,
+        isError: false,
+        save: {} as never,
+    }),
+}));
 vi.mock('@/widgets/analysis/AnalysisProgress', () => ({
     AnalysisProgress: () => <div data-testid="analysis-progress" />,
 }));

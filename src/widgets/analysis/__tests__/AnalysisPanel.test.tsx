@@ -34,6 +34,31 @@ vi.mock('@/shared/lib/formatAnalyzedAt', () => ({
 vi.mock('@/entities/analysis', () => ({
     isAnalysisStale: () => false,
 }));
+// personalized-analysis 투명성 배지(§FIX 2)가 소비하는 홀딩 소스. 실제
+// `useSymbolHolding`은 react-query 기반이라 QueryClientProvider 없는 이 테스트
+// 트리에서 그대로 렌더하면 크래시한다 — 배지 게이트 테스트가 개별적으로
+// mockReturnValue를 덮어쓸 수 있도록 hoisted 목으로 대체한다. 기본값은
+// "홀딩 없음"이라 배지-무관 기존 테스트는 영향받지 않는다.
+const { mockUseSymbolHolding } = vi.hoisted(() => ({
+    mockUseSymbolHolding: vi.fn(
+        (): {
+            holding: unknown;
+            isHydrated: boolean;
+            isLoading: boolean;
+            isError: boolean;
+            save: unknown;
+        } => ({
+            holding: null,
+            isHydrated: true,
+            isLoading: false,
+            isError: false,
+            save: {} as never,
+        })
+    ),
+}));
+vi.mock('@/features/portfolio-holding', () => ({
+    useSymbolHolding: mockUseSymbolHolding,
+}));
 // indicatorCount는 이제 AnalysisPanel에 prop으로 전달한다.
 // useSymbolPageContext / ANALYSIS_PHASES / ANALYSIS_TIPS mock이 더 이상 필요 없다.
 vi.mock('../AnalysisProgress', () => ({
@@ -1361,5 +1386,125 @@ describe('AnalysisPanel — missing/partial field resilience', () => {
         // 섹션 헤더 '추세선' 1 + fallback 라벨 '추세선' 1 = 정확히 2개.
         const trendlineTexts = screen.getAllByText('추세선');
         expect(trendlineTexts.length).toBe(2);
+    });
+});
+
+describe('AnalysisPanel — personalized-analysis 투명성 배지 (§FIX 2)', () => {
+    const HOLDING = {
+        symbol: 'AAPL',
+        companyName: null,
+        fmpSymbol: null,
+        quantity: '10',
+        averagePrice: '150',
+        updatedAt: '2026-01-01T00:00:00Z',
+    };
+
+    const NO_HOLDING = {
+        holding: null,
+        isHydrated: true,
+        isLoading: false,
+        isError: false,
+        save: {} as never,
+    };
+
+    afterEach(() => {
+        // AnalysisPanel의 `captureNow` effect(useEffectEvent + startTransition)가
+        // mount 직후 추가 렌더를 유발해 `useSymbolHolding`이 두 번 호출된다 —
+        // `mockReturnValueOnce`는 첫 호출에서 소진돼 마지막(진짜 화면에 반영되는)
+        // 렌더에는 기본값이 적용되므로 여기서는 지속형 `mockReturnValue`를 쓰고,
+        // 테스트 간 누수를 막기 위해 매번 "홀딩 없음" 기본값으로 되돌린다.
+        mockUseSymbolHolding.mockReturnValue(NO_HOLDING);
+    });
+
+    it('member 티어 + 보유 평단이 있으면 배지를 노출한다', () => {
+        mockUseSymbolHolding.mockReturnValue({
+            holding: HOLDING,
+            isHydrated: true,
+            isLoading: false,
+            isError: false,
+            save: {} as never,
+        });
+
+        render(
+            <AnalysisPanel
+                symbol="AAPL"
+                analysis={makeAnalysis()}
+                keyLevels={EMPTY_KEY_LEVELS}
+                timeframe="1Day"
+                tier="member"
+            />
+        );
+
+        expect(
+            screen.getByTestId('personalized-analysis-badge')
+        ).toBeInTheDocument();
+        expect(
+            screen.getByText('내 평단 기준으로 분석했어요')
+        ).toBeInTheDocument();
+    });
+
+    it('free 티어면 보유 평단이 있어도 배지를 숨긴다', () => {
+        mockUseSymbolHolding.mockReturnValue({
+            holding: HOLDING,
+            isHydrated: true,
+            isLoading: false,
+            isError: false,
+            save: {} as never,
+        });
+
+        render(
+            <AnalysisPanel
+                symbol="AAPL"
+                analysis={makeAnalysis()}
+                keyLevels={EMPTY_KEY_LEVELS}
+                timeframe="1Day"
+                tier="free"
+            />
+        );
+
+        expect(
+            screen.queryByTestId('personalized-analysis-badge')
+        ).not.toBeInTheDocument();
+    });
+
+    it('보유 평단이 없으면 member/pro여도 배지를 숨긴다', () => {
+        // 기본 mock(holding: null)을 그대로 사용한다.
+        render(
+            <AnalysisPanel
+                symbol="AAPL"
+                analysis={makeAnalysis()}
+                keyLevels={EMPTY_KEY_LEVELS}
+                timeframe="1Day"
+                tier="pro"
+            />
+        );
+
+        expect(
+            screen.queryByTestId('personalized-analysis-badge')
+        ).not.toBeInTheDocument();
+    });
+
+    it('비회원(게스트, tier 미전달)이면 보유 평단이 있어도 배지를 숨긴다', () => {
+        mockUseSymbolHolding.mockReturnValue({
+            holding: HOLDING,
+            isHydrated: true,
+            isLoading: false,
+            isError: false,
+            save: {} as never,
+        });
+
+        render(
+            <AnalysisPanel
+                symbol="AAPL"
+                analysis={makeAnalysis()}
+                keyLevels={EMPTY_KEY_LEVELS}
+                timeframe="1Day"
+                // tier prop 미전달 — 게스트/하위 호환 호출부와 동일하게 기본값 'free'로 처리된다.
+            />
+        );
+
+        expect(
+            screen.queryByTestId('personalized-analysis-badge')
+        ).not.toBeInTheDocument();
     });
 });

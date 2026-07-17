@@ -24,6 +24,7 @@ import type {
     PriceScenario,
     RiskLevel,
     StrategyResult,
+    Tier,
     TierInfoDepth,
     Timeframe,
     Trend,
@@ -33,6 +34,7 @@ import type {
 import { HIGH_CONFIDENCE_WEIGHT } from '@y0ngha/siglens-core';
 import { cn } from '@/shared/lib/cn';
 import { isFallbackAnalysis } from '@/entities/chat-message';
+import { useSymbolHolding } from '@/features/portfolio-holding';
 import {
     parseStructuredSummary,
     type SkillSummarySection,
@@ -308,6 +310,23 @@ function TrendBadge({ trend }: TrendBadgeProps) {
             )}
         >
             {display.label}
+        </span>
+    );
+}
+
+/**
+ * "내 평단 기준으로 분석했어요" 투명성 배지 — personalized-analysis-by-position-bucket
+ * spec, Subsystem C. 회원이 이 심볼에 보유 평단을 등록해 서버가 포지션 버킷을 반영한
+ * 개인화 분석을 돌려줬을 때만 렌더된다(호출부 게이트: `tier !== 'free' && holding != null`).
+ * 색상만으로 의미를 전달하지 않도록 실제 문구를 포함한 텍스트 배지로 구성했다.
+ */
+function PersonalizedAnalysisBadge() {
+    return (
+        <span
+            data-testid="personalized-analysis-badge"
+            className="border-primary-400/40 bg-primary-400/10 text-primary-300 inline-flex items-center gap-1 rounded px-2 py-0.5 text-xs font-medium whitespace-nowrap"
+        >
+            내 평단 기준으로 분석했어요
         </span>
     );
 }
@@ -775,6 +794,13 @@ interface AnalysisPanelProps {
      * "회원가입 후 N개 스킬" 문구에 사용한다.
      */
     skillCount?: number;
+    /**
+     * 현재 사용자 tier. personalized-analysis 투명성 배지(§FIX 2) 게이트에만
+     * 쓰인다 — `isFreeUser`는 광고 노출 여부(AdBanner)를 위한 별개 boolean이라
+     * member/pro를 구분하지 못한다. 미전달 시 'free'로 취급해 배지를 숨긴다
+     * (하위 호환 — 이 prop을 모르는 기존 호출부/테스트는 안전하게 배지 없음).
+     */
+    tier?: Tier;
 }
 
 export function AnalysisPanel({
@@ -795,6 +821,7 @@ export function AnalysisPanel({
     lockedInfoDepth = [],
     indicatorCount = 0,
     skillCount = 0,
+    tier = 'free',
 }: AnalysisPanelProps) {
     const [copyState, setCopyState] = useState<'idle' | 'copied' | 'failed'>(
         'idle'
@@ -803,6 +830,10 @@ export function AnalysisPanel({
     // 클라이언트 hydration 시점의 시각이 다를 수 있어 stale 평가는 client mount
     // 이후로 미룬다. `now`가 null인 동안에는 배너가 표시되지 않는다.
     const [now, setNow] = useState<Date | null>(null);
+    // personalized-analysis 투명성 배지(§FIX 2)의 홀딩 소스. 공유 포트폴리오
+    // 쿼리에서 이 symbol만 `.find()`하는 얕은 훅이라 QueryClientProvider가 없는
+    // 컨텍스트(이 컴포넌트의 일부 단위 테스트)에서는 반드시 모킹돼야 한다.
+    const { holding } = useSymbolHolding(symbol);
     const hasLockedDetails = lockedInfoDepth.length > 0;
     const hasLockedPartialDetail =
         hasLockedDetails && lockedInfoDepth.includes('partial_detail');
@@ -816,6 +847,13 @@ export function AnalysisPanel({
     // 신뢰도로 오표시하는 것을 막는다.
     const hasLockedConfidence =
         hasLockedDetails && lockedInfoDepth.includes('confidence');
+    // personalized-analysis 투명성 배지(§FIX 2) 노출 게이트. free/게스트(tier
+    // 미해석 시 기본값 'free')·홀딩 미보유는 절대 노출하지 않는다.
+    // isFallbackAnalysis도 함께 배제한다 — 서사가 없는 placeholder 응답에
+    // "내 평단 기준으로 분석했어요"라고 말하는 건 오해를 준다(TrendBadge·summary와
+    // 동일한 신호로 가드).
+    const showPersonalizedBadge =
+        tier !== 'free' && holding != null && !isFallbackAnalysis(analysis);
     const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const resetCopyStateLater = (): void => {
@@ -961,6 +999,7 @@ export function AnalysisPanel({
                     )}
                 </div>
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-2 sm:justify-end">
+                    {showPersonalizedBadge && <PersonalizedAnalysisBadge />}
                     {analysis.analyzedAt && (
                         <time
                             dateTime={analysis.analyzedAt}
