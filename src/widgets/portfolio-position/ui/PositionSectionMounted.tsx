@@ -34,11 +34,13 @@ export function PositionSectionMounted({
     if (!user) return null;
     if (holding === null) return null;
 
+    const avg = Number(holding.averagePrice);
+
     const model = computePosition({
         low52w,
         high52w,
         current: lastClose,
-        avg: Number(holding.averagePrice),
+        avg,
     });
     if (model === null) return null;
 
@@ -49,7 +51,7 @@ export function PositionSectionMounted({
             low52w={low52w}
             high52w={high52w}
             current={lastClose}
-            avg={Number(holding.averagePrice)}
+            avg={avg}
         />
     );
 }
