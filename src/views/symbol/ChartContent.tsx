@@ -5,7 +5,7 @@ import { usePublishSymbolChat } from '@/features/symbol-chat';
 import { cn } from '@/shared/lib/cn';
 import { PWA_TRIGGER_EVENT } from '@/shared/lib/pwaEvents';
 import { BotBlockedNotice } from '@/shared/ui/BotBlockedNotice';
-import { AnalysisPanel } from '@/widgets/analysis';
+import { AnalysisPanel, AnalysisProgress } from '@/widgets/analysis';
 import { ChartSkeleton, useChartSync } from '@/widgets/chart';
 import {
     type AnalysisResponse,
@@ -218,7 +218,19 @@ export function ChartContent({
         // DOM에도 항상 남고, 봇으로 오판된 실사용자에게도 actionable hint가 유지된다.
         return !hasNarrative ? (
             <div className="flex flex-col gap-3">
-                <AnalysisStatusBanner status={analysisStatus} />
+                {/* 첫 분석(서사 없음) 중에는 작은 텍스트 배너 대신, 캐시된 분석
+                    재분석 시 AnalysisPanel이 쓰는 것과 동일한 AnalysisProgress(스피너·
+                    페이즈·스켈레톤)를 노출한다. 모바일 바텀시트의 좁은 Peek에서도 분석
+                    진행 상태를 분명히 인지하게 하고, 로딩 UI를 한 컴포넌트로 일원화한다.
+                    분석 중이 아닐 때(에러/idle)는 기존 상태 배너가 에러 또는 무렌더. */}
+                {displayAnalyzing ? (
+                    <AnalysisProgress
+                        phaseIndex={progressPhaseIndex}
+                        tipIndex={progressTipIndex}
+                    />
+                ) : (
+                    <AnalysisStatusBanner status={analysisStatus} />
+                )}
                 <TechnicalFactsSummary
                     symbol={symbol}
                     bars={bars}

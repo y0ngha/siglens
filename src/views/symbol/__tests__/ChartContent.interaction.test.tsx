@@ -82,6 +82,23 @@ vi.mock('@/widgets/analysis/hooks/useAnalysisProgress', () => ({
 vi.mock('@/features/symbol-chat', () => ({ usePublishSymbolChat: vi.fn() }));
 vi.mock('@/widgets/analysis', () => ({
     AnalysisPanel: () => <div data-testid="analysis-panel" />,
+    // 서사 없는 첫 분석의 로딩 인디케이터. ChartContent는 이 컴포넌트를
+    // displayAnalyzing 분기에서 렌더하므로 배너와 구분되는 stub으로 대체한다.
+    AnalysisProgress: ({
+        phaseIndex,
+        tipIndex,
+    }: {
+        phaseIndex: number;
+        tipIndex: number;
+    }) => (
+        <div
+            data-testid="analysis-progress"
+            role="status"
+            aria-label="AI 분석 진행 중"
+            data-phase={phaseIndex}
+            data-tip={tipIndex}
+        />
+    ),
 }));
 
 function analysisReturn(
@@ -136,13 +153,20 @@ describe('ChartContent', () => {
     });
 
     describe('상태 배너', () => {
-        it('분석 중이면 "AI 분석 중…" 배너를 렌더한다', () => {
+        it('분석 중(서사 없음)이면 텍스트 배너가 아닌 AnalysisProgress 로딩 인디케이터를 렌더한다', () => {
             displayMock.mockReturnValue({
                 displayAnalyzing: true,
                 handleProgressFinished: vi.fn(),
             });
             renderChart();
-            expect(screen.getByText('AI 분석 중…')).toBeInTheDocument();
+            // 모바일 바텀시트에서도 진행 상태가 보이도록, 작은 텍스트 배너 대신
+            // 스피너·페이즈를 갖춘 AnalysisProgress를 노출한다(이 PR의 핵심 동작).
+            const progress = screen.getByTestId('analysis-progress');
+            expect(progress).toBeInTheDocument();
+            expect(progress).toHaveAttribute('role', 'status');
+            expect(progress).toHaveAttribute('aria-label', 'AI 분석 진행 중');
+            // 구식 인라인 텍스트 배너는 더 이상 렌더되지 않는다.
+            expect(screen.queryByText('AI 분석 중…')).toBeNull();
         });
 
         it('분석 에러가 있으면 에러 메시지 배너를 렌더한다', () => {

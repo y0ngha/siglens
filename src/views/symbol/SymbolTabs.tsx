@@ -43,7 +43,11 @@ export function SymbolTabs({ symbol }: SymbolTabsProps) {
     return (
         <nav
             aria-label="분석 종류"
-            className="border-secondary-700 flex overflow-x-auto border-b"
+            // overflow-x-auto만 두면 CSS 명세상 overflow-y가 visible→auto로 승격되고,
+            // 각 탭 링크의 -mb-px가 1px 세로 오버플로를 만들어 모바일에서 원치 않는
+            // 세로 스크롤(바)이 생긴다. overflow-y-hidden으로 세로 스크롤을 차단하고
+            // 가로 스크롤만 유지한다.
+            className="border-secondary-700 flex overflow-x-auto overflow-y-hidden border-b"
         >
             {tabs.map(t => {
                 const href = t.hrefBuilder(upper);
