@@ -1,9 +1,8 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { useCurrentUser } from '@/entities/auth';
-import { useSymbolHolding } from '@/features/portfolio-holding/hooks/useSymbolHolding';
-import { computePosition } from '../lib/positionGeometry';
-import { PositionCard } from './PositionCard';
+import { useHydrated } from '@/shared/hooks/useHydrated';
 
 interface PositionSectionMountedProps {
     symbol: string;
@@ -12,14 +11,26 @@ interface PositionSectionMountedProps {
     lastClose: number;
 }
 
+// Code-split: PositionSection pulls in useSymbolHolding (the holdings query)
+// plus the gauge/geometry/card code, which only a present, hydrated member
+// should ever download. Because this component gates BEFORE rendering
+// PositionSection below, a guest (or a not-yet-hydrated paint) never mounts
+// the lazy component, so the chunk is never requested and
+// getPortfolioHoldingsAction is never fired. Mirrors PortfolioChip's
+// PortfolioChipPopover split.
+const PositionSection = dynamic(
+    () => import('./PositionSection').then(m => m.PositionSection),
+    { ssr: false }
+);
+
 /**
- * Presence-gates "내 위치" on: hydrated + a present member + a holding for
- * this symbol + a geometrically valid 52-week range. Mirrors
+ * Light presence gate for "내 위치": hydrated + a present member only. Kept
+ * free of `useSymbolHolding` itself (that lives in the lazy-loaded
+ * PositionSection) so every hydrated GUEST — the common case — never fires
+ * the holdings query and never downloads the gauge bundle. Mirrors
  * PortfolioChipMounted's null-until-hydrated discipline (client-only query,
  * no SSR/hydration mismatch) with an explicit `useCurrentUser` gate as
- * belt-and-suspenders. Guests, members without a holding, and a degenerate
- * range (bars still loading / FMP degraded) all render nothing — this is a
- * presentation-only widget, never an error state.
+ * belt-and-suspenders.
  */
 export function PositionSectionMounted({
     symbol,
@@ -27,31 +38,18 @@ export function PositionSectionMounted({
     high52w,
     lastClose,
 }: PositionSectionMountedProps) {
+    const isHydrated = useHydrated();
     const { data: user } = useCurrentUser();
-    const { holding, isHydrated } = useSymbolHolding(symbol);
 
     if (!isHydrated) return null;
     if (!user) return null;
-    if (holding === null) return null;
-
-    const avg = Number(holding.averagePrice);
-
-    const model = computePosition({
-        low52w,
-        high52w,
-        current: lastClose,
-        avg,
-    });
-    if (model === null) return null;
 
     return (
-        <PositionCard
+        <PositionSection
             symbol={symbol}
-            model={model}
             low52w={low52w}
             high52w={high52w}
-            current={lastClose}
-            avg={avg}
+            lastClose={lastClose}
         />
     );
 }
