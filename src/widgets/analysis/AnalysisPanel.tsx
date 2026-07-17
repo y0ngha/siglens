@@ -51,6 +51,13 @@ import { formatAnalyzedAt } from '@/shared/lib/formatAnalyzedAt';
 import { isAnalysisStale } from '@/entities/analysis';
 import { StaleAnalysisBanner } from './StaleAnalysisBanner';
 
+/**
+ * free 티어에 그룹당 노출되는 대표 스킬 상한. siglens-core의
+ * `sampleSkillsForTier`(FREE_TIER_GROUP_CAP) 정책과 일치해야 한다. 정책상
+ * 고정 상한이므로 실측 감지 개수(0일 수 있음) 대신 이 값을 안내에 사용한다.
+ */
+const FREE_TIER_SKILL_SAMPLE = 3;
+
 function formatCooldown(ms: number): string {
     const totalSec = Math.ceil(ms / MS_PER_SECOND);
     const minutes = Math.floor(totalSec / SECONDS_PER_MINUTE);
@@ -763,6 +770,11 @@ interface AnalysisPanelProps {
      * analysis → symbol-page 역방향 의존을 제거하기 위해 prop으로 전달한다.
      */
     indicatorCount?: number;
+    /**
+     * 회원이 적용받는 전체 차트 패턴 + 전략 스킬 카탈로그 수. free 안내 카드에서
+     * "회원가입 후 N개 스킬" 문구에 사용한다.
+     */
+    skillCount?: number;
 }
 
 export function AnalysisPanel({
@@ -782,6 +794,7 @@ export function AnalysisPanel({
     isFreeUser = true,
     lockedInfoDepth = [],
     indicatorCount = 0,
+    skillCount = 0,
 }: AnalysisPanelProps) {
     const [copyState, setCopyState] = useState<'idle' | 'copied' | 'failed'>(
         'idle'
@@ -1294,21 +1307,29 @@ export function AnalysisPanel({
                         </div>
                     )}
 
-                    {/* free 티어는 그룹당 최대 3개로 샘플된 대표 스킬만 노출된다.
-                        결과가 잘렸다는 사실을 감추지 않고 친절하게 회원가입을
-                        안내한다. 스킬 감지 개수는 노출하지 않는다. 0개일 수 있어
-                        오해를 주기 때문이다. */}
+                    {/* free 티어는 그룹당 최대 FREE_TIER_SKILL_SAMPLE개로 샘플된
+                        대표 스킬만 적용해 분석된다. 결과가 잘렸다는 사실을 감추지
+                        않고, 회원이 적용받는 전체 스킬 수(skillCount)를 함께 보여
+                        친절하게 회원가입을 안내하는 카드다. 상단 상세 잠금 카드와
+                        동일한 시각 언어를 따른다. */}
                     {hasLockedDetails && (
-                        <p className="text-secondary-500 text-xs leading-relaxed">
-                            비회원에게는 대표 스킬 분석만 제공돼요.{' '}
+                        <div className="border-secondary-700 flex flex-col items-center justify-center gap-2 rounded-lg border p-4 text-center">
+                            <p className="text-secondary-100 text-sm font-semibold">
+                                대표 스킬 {FREE_TIER_SKILL_SAMPLE}개로
+                                분석했어요.
+                            </p>
+                            <p className="text-secondary-300 text-xs leading-relaxed">
+                                {skillCount > 0
+                                    ? `회원가입 후 ${skillCount}개 스킬을 모두 적용한 분석 결과를 확인할 수 있어요.`
+                                    : '회원가입 후 전체 스킬을 적용한 분석 결과를 확인할 수 있어요.'}
+                            </p>
                             <Link
                                 href="/signup"
-                                className="text-primary-400 hover:text-primary-300 focus-visible:ring-primary-500 rounded underline focus-visible:ring-1 focus-visible:outline-none"
+                                className="bg-primary-600 hover:bg-primary-700 focus-visible:ring-primary-500 rounded px-3 py-1.5 text-sm font-semibold text-white transition-colors focus-visible:ring-1 focus-visible:outline-none"
                             >
                                 회원가입
                             </Link>
-                            하면 전체 스킬 분석을 볼 수 있어요.
-                        </p>
+                        </div>
                     )}
                 </>
             )}

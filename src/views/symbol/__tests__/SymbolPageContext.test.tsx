@@ -5,19 +5,23 @@ import {
 } from '@/views/symbol/SymbolPageContext';
 
 describe('SymbolPageContext', () => {
-    it('provides indicatorCount to consumers', () => {
+    it('provides indicatorCount and skillCount to consumers', () => {
         function Consumer() {
             const ctx = useSymbolPageContext();
-            return <span data-testid="count">{ctx.indicatorCount}</span>;
+            return (
+                <span data-testid="count">
+                    {ctx.indicatorCount}/{ctx.skillCount}
+                </span>
+            );
         }
 
         render(
-            <SymbolPageProvider indicatorCount={42}>
+            <SymbolPageProvider indicatorCount={42} skillCount={30}>
                 <Consumer />
             </SymbolPageProvider>
         );
 
-        expect(screen.getByTestId('count').textContent).toBe('42');
+        expect(screen.getByTestId('count').textContent).toBe('42/30');
     });
 
     it('throws when used outside provider', () => {
@@ -34,7 +38,7 @@ describe('SymbolPageContext', () => {
 
     it('renders children', () => {
         render(
-            <SymbolPageProvider indicatorCount={0}>
+            <SymbolPageProvider indicatorCount={0} skillCount={0}>
                 <span data-testid="child">hello</span>
             </SymbolPageProvider>
         );

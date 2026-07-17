@@ -30,7 +30,7 @@ vi.mock('@/shared/hooks/useIsMobileViewport', () => ({
 }));
 vi.mock('../SymbolPageContext', () => ({
     SymbolPageProvider: ({ children }: { children: ReactNode }) => children,
-    useSymbolPageContext: () => ({ indicatorCount: 13 }),
+    useSymbolPageContext: () => ({ indicatorCount: 13, skillCount: 30 }),
 }));
 vi.mock('@/features/symbol-model', () => ({
     useSymbolModel: vi.fn(() => ({ tier: 'free', isTierHydrated: true })),
@@ -52,6 +52,7 @@ describe('SymbolPageClient 가시 h1', () => {
                 initialAnalysis={FALLBACK_ANALYSIS}
                 initialAnalysisFailed={true}
                 indicatorCount={13}
+                skillCount={30}
             />
         );
         const h1 = screen.getByRole('heading', { level: 1 });
