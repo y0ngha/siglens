@@ -15,3 +15,12 @@ export function sanitizeNextPath(input: string | null | undefined): string {
         return DEFAULT_REDIRECT_PATH;
     return input;
 }
+
+/**
+ * Post-signup routing policy: a brand-new member with no specific return target
+ * lands on the holdings onboarding screen; a member who signed up from a specific
+ * page (e.g. /AAPL) returns there instead. Callers pass an already-sanitized next.
+ */
+export function resolvePostSignupDestination(next: string): string {
+    return next === DEFAULT_REDIRECT_PATH ? '/onboarding' : next;
+}
