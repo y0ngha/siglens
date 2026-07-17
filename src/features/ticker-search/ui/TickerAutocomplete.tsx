@@ -30,6 +30,18 @@ interface TickerAutocompleteProps {
     onSelect?: (symbol: string) => void;
     /** See useAutocomplete's navigateOnSelect — pass false to use this as a plain value-picker inside a form. */
     navigateOnSelect?: boolean;
+    /**
+     * Overrides the input's own visual styling (bg/height/border/focus ring)
+     * to match a specific host form — e.g. HoldingForm's sibling quantity/price
+     * inputs — without changing the default appearance for other consumers
+     * (Header, SymbolSearchPanel). Merged on top of the size-based defaults via
+     * `cn`/`twMerge`, so later utility classes win over earlier ones.
+     */
+    inputClassName?: string;
+    /** Forwarded to the underlying input so a host form can associate its own field-level error message. */
+    ariaInvalid?: boolean;
+    /** Forwarded to the underlying input so a host form can associate its own field-level error message. */
+    ariaDescribedby?: string;
 }
 
 export function TickerAutocomplete({
@@ -37,6 +49,9 @@ export function TickerAutocomplete({
     size = 'sm',
     onSelect,
     navigateOnSelect,
+    inputClassName,
+    ariaInvalid,
+    ariaDescribedby,
 }: TickerAutocompleteProps) {
     const {
         query,
@@ -82,6 +97,8 @@ export function TickerAutocomplete({
                             ? `${OPTION_ID_PREFIX}-${selectedIndex}`
                             : undefined
                     }
+                    aria-invalid={ariaInvalid}
+                    aria-describedby={ariaDescribedby}
                     type="text"
                     value={query}
                     onChange={handleChange}
@@ -91,7 +108,8 @@ export function TickerAutocomplete({
                     className={cn(
                         INPUT_BASE,
                         INPUT_SIZE[size],
-                        'w-full min-w-0'
+                        'w-full min-w-0',
+                        inputClassName
                     )}
                 />
                 {isOpen && (

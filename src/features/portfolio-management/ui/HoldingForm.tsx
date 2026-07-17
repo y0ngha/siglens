@@ -1,10 +1,11 @@
 'use client';
 
-import { useId, useState } from 'react';
+import { useId, useRef, useState } from 'react';
 import { TickerAutocomplete } from '@/features/ticker-search';
 import { cn } from '@/shared/lib/cn';
 import { trimTrailingZeros } from '@/shared/lib/trimTrailingZeros';
 import type {
+    PortfolioActionErrorCode,
     PortfolioHoldingView,
     RawHoldingInput,
     SavePortfolioResult,
@@ -13,10 +14,30 @@ import type {
 const FIELD_LABEL = 'text-secondary-400 mb-1 block text-xs font-medium';
 const FIELD_INPUT =
     'bg-secondary-950 border-secondary-700 text-secondary-100 placeholder-secondary-500 focus:border-primary-500 focus:ring-primary-500/40 h-10 w-full rounded-md border px-3 text-sm tabular-nums transition-colors outline-none focus:ring-2';
+const FIELD_INPUT_ERROR =
+    'border-ui-danger focus:border-ui-danger focus:ring-ui-danger/40';
+const SYMBOL_CHIP =
+    'border-secondary-700 bg-secondary-950 flex h-10 items-center justify-between rounded-md border px-3';
 const BUTTON_PRIMARY =
     'bg-primary-600 hover:bg-primary-700 focus-visible:ring-primary-500 inline-flex h-10 shrink-0 items-center justify-center rounded-md px-4 text-sm font-semibold text-white transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50';
 const BUTTON_GHOST =
     'text-secondary-400 hover:text-secondary-200 focus-visible:ring-primary-500 inline-flex h-10 shrink-0 items-center justify-center px-2 text-sm transition-colors focus-visible:ring-2 focus-visible:outline-none';
+
+/** Which field a `PortfolioActionErrorCode` should be surfaced against; codes with no dedicated field (e.g. storage/auth failures) render only the alert message. */
+type HoldingErrorField = 'symbol' | 'quantity' | 'averagePrice' | null;
+
+function fieldForErrorCode(code: PortfolioActionErrorCode): HoldingErrorField {
+    switch (code) {
+        case 'invalid_symbol':
+            return 'symbol';
+        case 'invalid_quantity':
+            return 'quantity';
+        case 'invalid_price':
+            return 'averagePrice';
+        default:
+            return null;
+    }
+}
 
 interface HoldingFormProps {
     /** Present -> edit mode (symbol is fixed, read-only). Absent -> add mode (symbol picked via autocomplete). */
@@ -45,18 +66,34 @@ export function HoldingForm({
         initial ? trimTrailingZeros(initial.averagePrice) : ''
     );
     const [error, setError] = useState<string | null>(null);
+    const [errorField, setErrorField] = useState<HoldingErrorField>(null);
 
-    const canSubmit =
-        symbol.length > 0 && quantity.length > 0 && averagePrice.length > 0;
+    const symbolFieldRef = useRef<HTMLDivElement>(null);
+    const quantityRef = useRef<HTMLInputElement>(null);
+    const priceRef = useRef<HTMLInputElement>(null);
+
+    const focusField = (field: HoldingErrorField) => {
+        if (field === 'quantity') quantityRef.current?.focus();
+        else if (field === 'averagePrice') priceRef.current?.focus();
+        else if (field === 'symbol') {
+            symbolFieldRef.current
+                ?.querySelector<HTMLElement>('input, button')
+                ?.focus();
+        }
+    };
 
     const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
         e.preventDefault();
-        if (!canSubmit || submitting) return;
+        if (submitting) return;
         setError(null);
+        setErrorField(null);
         try {
             const result = await onSubmit({ symbol, quantity, averagePrice });
             if (result.status === 'error') {
                 setError(result.message);
+                const field = fieldForErrorCode(result.code);
+                setErrorField(field);
+                focusField(field);
                 return;
             }
             if (isEditMode) {
@@ -78,7 +115,7 @@ export function HoldingForm({
             className="flex flex-col gap-3"
         >
             <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-                <div className="min-w-0 flex-1">
+                <div ref={symbolFieldRef} className="min-w-0 flex-1">
                     <span id={`${formId}-symbol-label`} className={FIELD_LABEL}>
                         종목
                     </span>
@@ -93,7 +130,12 @@ export function HoldingForm({
                             {symbol}
                         </div>
                     ) : symbol ? (
-                        <div className="border-secondary-700 bg-secondary-950 flex h-10 items-center justify-between rounded-md border px-3">
+                        <div
+                            className={cn(
+                                SYMBOL_CHIP,
+                                errorField === 'symbol' && 'border-ui-danger'
+                            )}
+                        >
                             <span className="text-secondary-100 text-sm font-semibold">
                                 {symbol}
                             </span>
@@ -110,6 +152,16 @@ export function HoldingForm({
                             size="sm"
                             navigateOnSelect={false}
                             onSelect={setSymbol}
+                            inputClassName={cn(
+                                'bg-secondary-950 h-10 rounded-md focus:ring-2',
+                                errorField === 'symbol'
+                                    ? FIELD_INPUT_ERROR
+                                    : 'focus:border-primary-500 focus:ring-primary-500/40'
+                            )}
+                            ariaInvalid={errorField === 'symbol'}
+                            ariaDescribedby={
+                                errorField === 'symbol' ? errorId : undefined
+                            }
                         />
                     )}
                 </div>
@@ -121,17 +173,24 @@ export function HoldingForm({
                         수량
                     </label>
                     <input
+                        ref={quantityRef}
                         id={`${formId}-quantity`}
                         name="quantity"
                         type="text"
                         inputMode="decimal"
                         autoComplete="off"
                         required
-                        placeholder="예: 10"
+                        placeholder="예: 10…"
                         value={quantity}
                         onChange={e => setQuantity(e.target.value)}
-                        aria-describedby={error ? errorId : undefined}
-                        className={FIELD_INPUT}
+                        aria-invalid={errorField === 'quantity'}
+                        aria-describedby={
+                            errorField === 'quantity' ? errorId : undefined
+                        }
+                        className={cn(
+                            FIELD_INPUT,
+                            errorField === 'quantity' && FIELD_INPUT_ERROR
+                        )}
                     />
                 </div>
                 <div className="w-full sm:w-32">
@@ -139,26 +198,33 @@ export function HoldingForm({
                         htmlFor={`${formId}-average-price`}
                         className={FIELD_LABEL}
                     >
-                        평균 단가
+                        평단
                     </label>
                     <input
+                        ref={priceRef}
                         id={`${formId}-average-price`}
                         name="averagePrice"
                         type="text"
                         inputMode="decimal"
                         autoComplete="off"
                         required
-                        placeholder="예: 152.35"
+                        placeholder="예: 152.35…"
                         value={averagePrice}
                         onChange={e => setAveragePrice(e.target.value)}
-                        aria-describedby={error ? errorId : undefined}
-                        className={FIELD_INPUT}
+                        aria-invalid={errorField === 'averagePrice'}
+                        aria-describedby={
+                            errorField === 'averagePrice' ? errorId : undefined
+                        }
+                        className={cn(
+                            FIELD_INPUT,
+                            errorField === 'averagePrice' && FIELD_INPUT_ERROR
+                        )}
                     />
                 </div>
                 <div className="flex shrink-0 items-center gap-1">
                     <button
                         type="submit"
-                        disabled={!canSubmit || submitting}
+                        disabled={submitting}
                         aria-busy={submitting}
                         className={BUTTON_PRIMARY}
                     >

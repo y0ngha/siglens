@@ -6,16 +6,35 @@ import { useFocusTrap } from '@/shared/hooks/useFocusTrap';
 import { useOnClickOutside } from '@/shared/hooks/useOnClickOutside';
 import { cn } from '@/shared/lib/cn';
 import { trimTrailingZeros } from '@/shared/lib/trimTrailingZeros';
-import type { PortfolioHoldingView } from '@/entities/portfolio';
+import type {
+    PortfolioActionErrorCode,
+    PortfolioHoldingView,
+} from '@/entities/portfolio';
 import type { UseSymbolHoldingReturn } from '../hooks/useSymbolHolding';
 
 const FIELD_LABEL = 'text-secondary-400 mb-1 block text-xs font-medium';
 const FIELD_INPUT =
     'bg-secondary-950 border-secondary-700 text-secondary-100 placeholder-secondary-500 focus:border-primary-500 focus:ring-primary-500/40 h-10 w-full rounded-md border px-3 text-sm tabular-nums transition-colors outline-none focus:ring-2';
+const FIELD_INPUT_ERROR =
+    'border-ui-danger focus:border-ui-danger focus:ring-ui-danger/40';
 const BUTTON_PRIMARY =
     'bg-primary-600 hover:bg-primary-700 focus-visible:ring-primary-500 inline-flex h-9 flex-1 items-center justify-center rounded-md px-4 text-sm font-semibold text-white transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50';
 const BUTTON_GHOST =
     'text-secondary-400 hover:text-secondary-200 focus-visible:ring-primary-500 inline-flex h-9 items-center justify-center rounded-md px-3 text-sm transition-colors focus-visible:ring-2 focus-visible:outline-none';
+
+/** Which field a `PortfolioActionErrorCode` should be surfaced against. The symbol here is fixed (not user-editable), so `invalid_symbol` has no dedicated field — it renders only the alert message. */
+type PopoverErrorField = 'quantity' | 'averagePrice' | null;
+
+function fieldForErrorCode(code: PortfolioActionErrorCode): PopoverErrorField {
+    switch (code) {
+        case 'invalid_quantity':
+            return 'quantity';
+        case 'invalid_price':
+            return 'averagePrice';
+        default:
+            return null;
+    }
+}
 
 interface PortfolioChipPopoverProps {
     symbol: string;
@@ -46,18 +65,20 @@ export function PortfolioChipPopover({
         holding ? trimTrailingZeros(holding.averagePrice) : ''
     );
     const [error, setError] = useState<string | null>(null);
+    const [errorField, setErrorField] = useState<PopoverErrorField>(null);
     const panelRef = useRef<HTMLDivElement>(null);
+    const quantityRef = useRef<HTMLInputElement>(null);
+    const priceRef = useRef<HTMLInputElement>(null);
 
     useFocusTrap(panelRef, true);
     useEscapeKey(onClose, true);
     useOnClickOutside([panelRef, triggerRef], onClose);
 
-    const canSubmit = quantity.length > 0 && averagePrice.length > 0;
-
     const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
         e.preventDefault();
-        if (!canSubmit || save.isPending) return;
+        if (save.isPending) return;
         setError(null);
+        setErrorField(null);
         try {
             const result = await save.mutateAsync({
                 symbol,
@@ -66,6 +87,10 @@ export function PortfolioChipPopover({
             });
             if (result.status === 'error') {
                 setError(result.message);
+                const field = fieldForErrorCode(result.code);
+                setErrorField(field);
+                if (field === 'quantity') quantityRef.current?.focus();
+                else if (field === 'averagePrice') priceRef.current?.focus();
                 return;
             }
             onClose();
@@ -106,17 +131,24 @@ export function PortfolioChipPopover({
                         수량
                     </label>
                     <input
+                        ref={quantityRef}
                         id={`${titleId}-quantity`}
                         name="quantity"
                         type="text"
                         inputMode="decimal"
                         autoComplete="off"
                         required
-                        placeholder="예: 10"
+                        placeholder="예: 10…"
                         value={quantity}
                         onChange={e => setQuantity(e.target.value)}
-                        aria-describedby={error ? errorId : undefined}
-                        className={FIELD_INPUT}
+                        aria-invalid={errorField === 'quantity'}
+                        aria-describedby={
+                            errorField === 'quantity' ? errorId : undefined
+                        }
+                        className={cn(
+                            FIELD_INPUT,
+                            errorField === 'quantity' && FIELD_INPUT_ERROR
+                        )}
                     />
                 </div>
                 <div>
@@ -124,20 +156,27 @@ export function PortfolioChipPopover({
                         htmlFor={`${titleId}-average-price`}
                         className={FIELD_LABEL}
                     >
-                        평균 단가
+                        평단
                     </label>
                     <input
+                        ref={priceRef}
                         id={`${titleId}-average-price`}
                         name="averagePrice"
                         type="text"
                         inputMode="decimal"
                         autoComplete="off"
                         required
-                        placeholder="예: 152.35"
+                        placeholder="예: 152.35…"
                         value={averagePrice}
                         onChange={e => setAveragePrice(e.target.value)}
-                        aria-describedby={error ? errorId : undefined}
-                        className={FIELD_INPUT}
+                        aria-invalid={errorField === 'averagePrice'}
+                        aria-describedby={
+                            errorField === 'averagePrice' ? errorId : undefined
+                        }
+                        className={cn(
+                            FIELD_INPUT,
+                            errorField === 'averagePrice' && FIELD_INPUT_ERROR
+                        )}
                     />
                 </div>
 
@@ -148,7 +187,7 @@ export function PortfolioChipPopover({
                 <div className="flex items-center gap-2">
                     <button
                         type="submit"
-                        disabled={!canSubmit || save.isPending}
+                        disabled={save.isPending}
                         aria-busy={save.isPending}
                         className={BUTTON_PRIMARY}
                     >
