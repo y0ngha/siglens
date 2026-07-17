@@ -12,6 +12,7 @@ import { ShareButton } from '@/widgets/share';
 import { FearGreedHeaderChipMounted } from './FearGreedHeaderChipMounted';
 import { PremiumModelGateModal } from '@/features/premium-gate';
 import { ReasoningToggle } from '@/features/reasoning-toggle';
+import { PortfolioChipMounted } from '@/features/portfolio-holding';
 import { LLM_PROVIDER_LABELS } from '@/shared/lib/llmProviderLabels';
 
 interface SymbolLayoutHeaderProps {
@@ -115,6 +116,9 @@ export function SymbolLayoutHeader({ symbol }: SymbolLayoutHeaderProps) {
                         canUse={canUseReasoning}
                         onLockedClick={openSignupNudge}
                     />
+                    <Suspense fallback={null}>
+                        <PortfolioChipMounted symbol={ticker} />
+                    </Suspense>
                 </div>
 
                 <ErrorBoundary fallback={null}>

@@ -113,6 +113,12 @@ vi.mock('@/widgets/share', () => ({
     ShareButton: () => <button data-testid="share-button">공유</button>,
 }));
 
+vi.mock('@/features/portfolio-holding', () => ({
+    PortfolioChipMounted: () => (
+        <span data-testid="portfolio-chip">portfolio</span>
+    ),
+}));
+
 describe('SymbolLayoutHeader', () => {
     beforeEach(() => {
         mockOpenSignupNudge.mockReset();
