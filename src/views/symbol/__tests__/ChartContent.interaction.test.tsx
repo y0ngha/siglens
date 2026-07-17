@@ -47,14 +47,9 @@ vi.mock('../hooks/useActionPricesVisibility', () => ({
         setActionPricesVisible: vi.fn(),
     }),
 }));
+const symbolModelMock = vi.fn();
 vi.mock('@/features/symbol-model/model/SymbolModelContext', () => ({
-    useSymbolModel: () => ({
-        modelId: 'gemini-2.5-flash',
-        isHydrated: true,
-        reasoning: false,
-        isReasoningHydrated: true,
-        openSignupNudge: vi.fn(),
-    }),
+    useSymbolModel: () => symbolModelMock(),
 }));
 vi.mock('@/features/analysis-nudge', () => ({
     useAnonAnalysisNudge: () => ({
@@ -81,15 +76,21 @@ vi.mock('@/widgets/analysis/hooks/useAnalysisProgress', () => ({
 }));
 vi.mock('@/features/symbol-chat', () => ({ usePublishSymbolChat: vi.fn() }));
 vi.mock('@/widgets/analysis', () => ({
-    AnalysisPanel: () => <div data-testid="analysis-panel" />,
+    // isFreeUser는 광고 게이팅 prop이다. Pro tier에서 false가 실제로 전달되는지
+    // 검증할 수 있도록 data 속성으로 노출한다(회귀 방지 — fix-log PR #690).
+    AnalysisPanel: ({ isFreeUser }: { isFreeUser?: boolean }) => (
+        <div data-testid="analysis-panel" data-free-user={String(isFreeUser)} />
+    ),
     // 서사 없는 첫 분석의 로딩 인디케이터. ChartContent는 이 컴포넌트를
     // displayAnalyzing 분기에서 렌더하므로 배너와 구분되는 stub으로 대체한다.
     AnalysisProgress: ({
         phaseIndex,
         tipIndex,
+        isFreeUser,
     }: {
         phaseIndex: number;
         tipIndex: number;
+        isFreeUser?: boolean;
     }) => (
         <div
             data-testid="analysis-progress"
@@ -97,6 +98,7 @@ vi.mock('@/widgets/analysis', () => ({
             aria-label="AI 분석 진행 중"
             data-phase={phaseIndex}
             data-tip={tipIndex}
+            data-free-user={String(isFreeUser)}
         />
     ),
 }));
@@ -116,6 +118,22 @@ function analysisReturn(
         cooldownNotice: null,
         ...overrides,
     };
+}
+
+// 서사가 있는(= fallback이 아닌) 분석. summary만 sentinel에서 벗어나면
+// isFallbackAnalysis가 false를 반환해 ChartContent가 AnalysisPanel을 렌더한다.
+const NARRATIVE_ANALYSIS = { ...FALLBACK_ANALYSIS, summary: 'AAPL 상승 추세' };
+
+function setTier(tier: 'free' | 'pro'): void {
+    symbolModelMock.mockReturnValue({
+        modelId: 'gemini-2.5-flash',
+        isHydrated: true,
+        reasoning: false,
+        isReasoningHydrated: true,
+        tier,
+        isTierHydrated: true,
+        openSignupNudge: vi.fn(),
+    });
 }
 
 const props = {
@@ -150,6 +168,16 @@ describe('ChartContent', () => {
             handleProgressFinished: vi.fn(),
         });
         analysisMock.mockReturnValue(analysisReturn());
+        // 기본값: free tier(하이드레이션 완료). isFreeUser = tier !== 'pro'가 true다.
+        symbolModelMock.mockReturnValue({
+            modelId: 'gemini-2.5-flash',
+            isHydrated: true,
+            reasoning: false,
+            isReasoningHydrated: true,
+            tier: 'free',
+            isTierHydrated: true,
+            openSignupNudge: vi.fn(),
+        });
     });
 
     describe('상태 배너', () => {
@@ -205,6 +233,61 @@ describe('ChartContent', () => {
             expect(screen.getByText(/기술적 지표 요약/)).toBeInTheDocument();
             // idle(분석 중 아님)이므로 진행 배너는 없다.
             expect(screen.queryByText('AI 분석 중…')).toBeNull();
+        });
+    });
+
+    // isFreeUser는 광고 게이팅 prop이다. 기본값 true에 의존하면 Pro 사용자에게
+    // 광고가 새는 회귀가 발생했었다(fix-log PR #690). ChartContent가 tier로
+    // 계산한 값이 AnalysisProgress·AnalysisPanel 양쪽에 정확히 전달되는지 검증한다.
+    describe('광고 게이팅(isFreeUser) 전달', () => {
+        it('free tier면 AnalysisProgress에 isFreeUser=true를 전달한다', () => {
+            setTier('free');
+            displayMock.mockReturnValue({
+                displayAnalyzing: true,
+                handleProgressFinished: vi.fn(),
+            });
+            renderChart();
+            expect(screen.getByTestId('analysis-progress')).toHaveAttribute(
+                'data-free-user',
+                'true'
+            );
+        });
+
+        it('pro tier면 AnalysisProgress에 isFreeUser=false를 전달한다', () => {
+            setTier('pro');
+            displayMock.mockReturnValue({
+                displayAnalyzing: true,
+                handleProgressFinished: vi.fn(),
+            });
+            renderChart();
+            expect(screen.getByTestId('analysis-progress')).toHaveAttribute(
+                'data-free-user',
+                'false'
+            );
+        });
+
+        it('free tier면 AnalysisPanel에 isFreeUser=true를 전달한다', () => {
+            setTier('free');
+            analysisMock.mockReturnValue(
+                analysisReturn({ analysis: NARRATIVE_ANALYSIS })
+            );
+            renderChart();
+            expect(screen.getByTestId('analysis-panel')).toHaveAttribute(
+                'data-free-user',
+                'true'
+            );
+        });
+
+        it('pro tier면 AnalysisPanel에 isFreeUser=false를 전달한다', () => {
+            setTier('pro');
+            analysisMock.mockReturnValue(
+                analysisReturn({ analysis: NARRATIVE_ANALYSIS })
+            );
+            renderChart();
+            expect(screen.getByTestId('analysis-panel')).toHaveAttribute(
+                'data-free-user',
+                'false'
+            );
         });
     });
 

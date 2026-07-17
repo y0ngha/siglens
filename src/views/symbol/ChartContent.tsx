@@ -205,8 +205,9 @@ export function ChartContent({
     const { clusteredKeyLevels, validatedActionPrices, reconciledActionLines } =
         useAnalysisDerivedData(analysis, bars);
 
-    // 광고 노출 게이트. AdBanner/AnalysisProgress/AnalysisPanel의 isFreeUser는
-    // "Pro에게는 false를 전달"이 규약이므로(각 컴포넌트 기본값 true), tier가 'pro'가
+    // 광고 노출 게이트. AnalysisProgress/AnalysisPanel의 isFreeUser는 기본값 true라
+    // "Pro에게는 명시적으로 false를 전달"하는 게 규약이다(둘 다 내부에서 AdBanner로
+    // 전달하며, AdBanner의 isFreeUser는 기본값 없는 필수 prop이다). tier가 'pro'가
     // 아닐 때만 광고를 노출한다. tier는 hydration 전 DEFAULT_TIER('free')로 폴백되어
     // 로딩 중에는 free와 동일하게 취급된다(기존 기본값 true와 일치).
     const isFreeUser = tier !== 'pro';
