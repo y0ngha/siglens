@@ -10,8 +10,11 @@ import { AUTH_STORAGE_STATE } from './e2e/support/authUser';
  *              depends on it. testDir is overridden to e2e/setup because the
  *              setup file lives outside the specs dir.
  *
- *   authed   → account-*.spec.ts. Runs with the seeded user's storageState so
- *              proxy.ts's /account forward-guard is satisfied. Depends on setup.
+ *   authed   → account-*.spec.ts, plus portfolio-holdings.spec.ts (exercises
+ *              the account-page holdings section + symbol-page header chip,
+ *              both member-only surfaces). Runs with the seeded user's
+ *              storageState so proxy.ts's /account forward-guard is satisfied.
+ *              Depends on setup.
  *
  *   chromium → every OTHER spec (Tier 1 + auth-login/signup/reset/oauth), with
  *   / webkit    NO storageState (anonymous). Both testIgnore the account specs
@@ -22,7 +25,7 @@ import { AUTH_STORAGE_STATE } from './e2e/support/authUser';
  * `globalSetup` (migrate + seed, incl. the auth user) still runs once before
  * all projects, so the user exists before the setup project tries to log in.
  */
-const ACCOUNT_SPECS = /account-.*\.spec\.ts/;
+const ACCOUNT_SPECS = /(account-.*|portfolio-holdings)\.spec\.ts/;
 
 export default defineConfig({
     testDir: './e2e/specs',
