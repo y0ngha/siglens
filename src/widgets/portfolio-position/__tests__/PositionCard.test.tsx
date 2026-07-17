@@ -29,7 +29,7 @@ function renderCard(
 }
 
 describe('PositionCard', () => {
-    it('수익률이 양수면(returnPct >= 0) 수익률 리드아웃이 ui-success-text, 52주 고점 대비(음수)는 ui-danger-text를 사용한다', () => {
+    it('수익률이 양수면(returnPct >= 0) 수익률 리드아웃이 ui-success-text, 최근 고점 대비(음수)는 ui-danger-text를 사용한다', () => {
         // avg=150, current=180 → returnPct=+20 (양수), pctFromHigh=(150-200)/200*100=-25 (음수)
         const { getByText } = renderCard({
             low52w: 100,

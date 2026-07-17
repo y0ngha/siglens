@@ -45,7 +45,9 @@ function ReadoutRow({ label, value, valueClassName }: ReadoutRowProps) {
 /**
  * "내 위치" 카드 — TechnicalFactsSummary/계정 카드와 동일 chrome(bg-secondary-800
  * rounded-lg)을 사용해 사이드바에서 한 벌처럼 보이게 한다. PositionGauge를
- * 감싸고 수치 리드아웃(52주 고/저·현재가·내 평단·%대비·수익률·범위 위치)을 표시한다.
+ * 감싸고 수치 리드아웃(최근 고/저·현재가·내 평단·%대비·수익률·범위 위치)을 표시한다.
+ * 범위는 "52주"가 아니라 현재 선택된 타임프레임의 최근 252개 봉 기준(technicalFacts.ts)
+ * 이므로 TechnicalFactsSummary와 동일하게 타임프레임-중립 문구를 쓴다.
  */
 export function PositionCard({
     symbol,
@@ -77,17 +79,17 @@ export function PositionCard({
                 avg={avg}
             />
             <dl className="text-secondary-300 grid grid-cols-1 gap-2 text-sm">
-                <ReadoutRow label="52주 고점" value={formatUsd(high52w)} />
-                <ReadoutRow label="52주 저점" value={formatUsd(low52w)} />
+                <ReadoutRow label="최근 고점" value={formatUsd(high52w)} />
+                <ReadoutRow label="최근 저점" value={formatUsd(low52w)} />
                 <ReadoutRow label="현재가" value={formatUsd(current)} />
                 <ReadoutRow label="내 평단" value={formatUsd(avg)} />
                 <ReadoutRow
-                    label="52주 고점 대비"
+                    label="최근 고점 대비"
                     value={formatSignedPercent(model.pctFromHigh)}
                     valueClassName={signColorClass(model.pctFromHigh)}
                 />
                 <ReadoutRow
-                    label="52주 저점 대비"
+                    label="최근 저점 대비"
                     value={formatSignedPercent(model.pctAboveLow)}
                     valueClassName={signColorClass(model.pctAboveLow)}
                 />
@@ -97,7 +99,7 @@ export function PositionCard({
                     valueClassName={signColorClass(model.returnPct)}
                 />
                 <ReadoutRow
-                    label="52주 범위의 위치"
+                    label="최근 범위의 위치"
                     value={`${model.rangePositionPct.toFixed(0)}% 지점`}
                 />
             </dl>

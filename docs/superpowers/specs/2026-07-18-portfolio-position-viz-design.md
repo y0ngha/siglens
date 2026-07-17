@@ -7,14 +7,14 @@
 
 ## 1. Goal
 
-Show a logged-in member **where their average purchase price sits** for a symbol — did they buy near the 52-week high or low? A vertical, banded range gauge marks the member's average price and the current price against the 52-week high/low range, with profit/loss and range-position context.
+Show a logged-in member **where their average purchase price sits** for a symbol — did they buy near the recent high or low? A vertical, banded range gauge marks the member's average price and the current price against the recent high/low range (last 252 bars of the selected timeframe — see §3), with profit/loss and range-position context.
 
 ## 2. Confirmed decisions (from brainstorming)
 
 | Decision | Choice |
 |---|---|
-| Visual form | **Vertical banded range gauge** (52-week high→low, 20% bands, avg-price + current-price markers) |
-| Range basis | **52-week high/low only** (no detected-key-level overlay) |
+| Visual form | **Vertical banded range gauge** (recent high→low over the last 252 bars, 20% bands, avg-price + current-price markers) |
+| Range basis | **Recent high/low only** (last 252 bars of the selected timeframe — NOT a fixed 52 weeks; no detected-key-level overlay) |
 | Cross-repo scope | **siglens-local, ZERO `@y0ngha/siglens-core` changes** (raw range % arithmetic, same class as the existing `technicalFacts.ts` — passes the SCOPE guard §6: display-format arithmetic, not an indicator/signal/threshold rule) |
 
 ## 3. Data sources (all client-side, already available)
@@ -38,7 +38,7 @@ export interface PositionModel {
     // normalized 0..1 positions within [low, high] (clamped)
     avgPos: number;
     currentPos: number;
-    avgClamped: 'above' | 'below' | null;   // avg outside the 52w range
+    avgClamped: 'above' | 'below' | null;   // avg outside the recent [low, high] range
     currentClamped: 'above' | 'below' | null;
     // display percentages
     pctFromHigh: number;      // (avg - high) / high * 100  (negative below high)
@@ -58,7 +58,7 @@ export function computePosition(input: PositionInputs): PositionModel | null;
 **Field guards** (mirror the existing precedent `technicalFacts.ts:121`):
 - `pctAboveLow`: when `low <= 0`, return `0` (do NOT divide by `low`). `pctFromHigh` is safe once range-valid (`high > low >= 0 ⇒ high > 0`) but apply the same defensive `high > 0` short-circuit for parity.
 
-- **Clamp**: if `avg > high52w` → `avgPos = 1`, `avgClamped = 'above'` ("52주 고점보다 높은 곳에서 매수"); if `avg < low52w` → `avgPos = 0`, `avgClamped = 'below'`. Same for current. Handles the "초고점에서 샀는지" case.
+- **Clamp**: if `avg > high52w` → `avgPos = 1`, `avgClamped = 'above'` ("최근 고점보다 높은 곳에서 매수"); if `avg < low52w` → `avgPos = 0`, `avgClamped = 'below'`. Same for current. Handles the "초고점에서 샀는지" case.
 - `Number(decimalString)` is acceptable (presentation-only, not persisted), **paired with the finite/`>0` guards above**.
 - Bands generated inclusive-low / exclusive-high so `avgPos === 0.2` lands deterministically in the second band.
 
@@ -68,15 +68,17 @@ export function computePosition(input: PositionInputs): PositionModel | null;
 
 New widget slice **`widgets/portfolio-position`** (mirrors `widgets/fear-greed`):
 - `ui/PositionGauge.tsx` — a hand-rolled `<svg viewBox>` (FearGreedGauge idiom): a vertical bar split into 5×20% bands, `role="img"` + a descriptive Korean `aria-label` embedding avg / current / returnPct / range-position. Two markers: **내 평단** (◆) and **현재가** (▶), positioned by `avgPos`/`currentPos`.
+  - **In-SVG marker label precision:** the fixed-width `viewBox` can clip the in-SVG "내 평단 $X" / "현재가 $Y" text for high-priced tickers (e.g. BRK.A ~$600,000). These two in-SVG marker labels ONLY use a compact abbreviation (≥$100k → `$600K`); the `aria-label` and the `PositionCard` dl readout always keep the full, unabbreviated value.
   - **Band palette — NEUTRAL gradient, not high=red.** Do NOT encode "near-high = danger" (a critical-review + product concern: it reads as a false sell-signal and edges toward analysis semantics). Use a subtle neutral gradient of `secondary-*` tones (top slightly lighter → bottom slightly darker, or a uniform low-emphasis fill) via `currentColor` (FearGreed idiom). The MEANING is carried by the markers + the colored readouts, not by band color. Explicit band→token table (top→bottom band 1..5): `text-secondary-600/40`, `text-secondary-600/30`, `text-secondary-700/30`, `text-secondary-700/40`, `text-secondary-800/40` (tune for contrast; no raw Tailwind palette, no `chart-*` on bands). Gridlines at each 20% in `secondary-700`.
   - **Marker overlap (avg ≈ current):** when `|avgPos - currentPos|` is within a small epsilon, dodge — offset the two markers horizontally (◆ left of the bar, ▶ right of the bar) and/or stack their value labels so break-even (the most common state) stays readable.
   - `lastClose` (current) MUST come from the same `facts` source that feeds `TechnicalFactsSummary` so the two never disagree.
-- `ui/PositionCard.tsx` (or inline) — the surrounding card with the readouts: 52주 고점/저점, 현재가, 내 평단, 고점대비 %, 저점대비 %, **수익률**(returnPct), 범위 내 위치 %. Card chrome matches the technical-facts/account cards.
+- `ui/PositionCard.tsx` (or inline) — the surrounding card with the readouts: 최근 고점/저점, 현재가, 내 평단, 고점대비 %, 저점대비 %, **수익률**(returnPct, single source of truth — the gauge does not duplicate this caption), 범위 내 위치 %. Card chrome matches the technical-facts/account cards.
   - **Color tokens (DESIGN.md §AA):** the small-text readouts (`수익률`, `% 대비`) use `text-ui-success-text` (≥0) / `text-ui-danger-text` (<0) — the AA-contrast text variants, NOT `text-chart-bullish/bearish` (chart-* is graphics-only). Neutral labels use `text-secondary-400`.
-- `ui/PositionSectionMounted.tsx` — gating wrapper: renders only when a member is present AND has a holding for this symbol AND `computePosition` is non-null. Uses `useSymbolHolding(symbol)`; renders `null` until hydrated (mirror `PortfolioChipMounted`, incl. an explicit `useCurrentUser` presence gate as belt-and-suspenders). No holding / guest / degraded-range → `null`.
+- `ui/PositionSectionMounted.tsx` — LIGHT presence gate: `useHydrated()` + `useCurrentUser()` only (no holdings query here). Renders `null` until hydrated and `null` for a guest (mirror `PortfolioChipMounted`'s null-until-hydrated discipline). Once gated in, it `next/dynamic(..., { ssr: false })`-loads `ui/PositionSection.tsx`, so a guest — the common case — never downloads the gauge bundle and never fires `getPortfolioHoldingsAction`.
+- `ui/PositionSection.tsx` — the lazy-loaded inner: calls `useSymbolHolding(symbol)`, requires a holding for this symbol AND `computePosition` non-null, renders `PositionCard`. No holding / degraded-range → `null`. Mirrors `PortfolioChip`'s split with `PortfolioChipPopover` (code-split so only the audience that needs it downloads it).
 - `index.ts` barrel → `PositionSectionMounted`.
 
-**Copy** (Korean, verify against components at build time): heading `내 위치`, marker labels `내 평단` / `현재가`, `수익률 +11%`, `52주 고점 대비 -16%`, `52주 저점 대비 +30%`, range note `52주 범위의 54% 지점`, out-of-range note `52주 고점보다 높은 곳에서 매수` / `52주 저점보다 낮은 곳에서 매수`. `aria-label` example: `"AAPL 내 위치: 평단 $300, 현재가 $333, 수익률 +11%, 52주 범위의 54% 지점"`.
+**Copy** (Korean, timeframe-neutral — NOT "52주", since the range is the last 252 bars of whichever timeframe is selected, not a fixed 52 weeks; matches `TechnicalFactsSummary`'s neutral phrasing. Verify against components at build time): heading `내 위치`, marker labels `내 평단` / `현재가`, `수익률 +11%`, `최근 고점 대비 -16%`, `최근 저점 대비 +30%`, range note `최근 범위의 54% 지점`, out-of-range note `최근 고점보다 높은 곳에서 매수` / `최근 저점보다 낮은 곳에서 매수`. `aria-label` example: `"AAPL 내 위치: 평단 $300, 현재가 $333, 수익률 +11.0%, 최근 범위의 54% 지점"` (aria-label return% precision matches the visible `toFixed(1)` readout — no separate `toFixed(0)` rounding for screen readers).
 
 **Mobile:** the widget also lands in the mobile analysis bottom sheet (`SNAP_PEEK`). Give the gauge a defined `min-height` and a compact form so it stays legible in the height-constrained sheet.
 
@@ -91,9 +93,9 @@ Mount `PositionSectionMounted` **client-side only**, inside `ChartContent.tsx`'s
 ## 7. Gating, edge cases, resilience
 
 - **Visibility**: member + holding-for-this-symbol + valid range only. Mirrors A's presence gating (not tier). Not rendered for guests / no-holding / degraded.
-- **avg outside 52w range**: clamp marker + show the out-of-range note (§4/§5).
+- **avg outside the recent [low, high] range**: clamp marker + show the out-of-range note (§4/§5).
 - **No bars / FMP degraded**: `buildTechnicalFacts` yields no usable range → `computePosition` returns `null` → widget renders nothing (no error).
-- **Hydration**: render `null` until `useSymbolHolding` hydrated (no SSR/ISR impact — client-only, like the chip; must not enter crawlable SSR HTML or force `[symbol]` dynamic).
+- **Hydration**: `PositionSectionMounted` renders `null` until `useHydrated()` resolves (no SSR/ISR impact — client-only, like the chip; must not enter crawlable SSR HTML or force `[symbol]` dynamic). The holdings query itself (`useSymbolHolding`) lives in the lazy-loaded `PositionSection` and only ever runs for a hydrated, present member.
 - **P&L note**: `returnPct` uses `current` vs `avg` (unrealized return on the position), colored bullish (≥0) / bearish (<0) per chart tokens.
 
 ## 8. FSD / boundaries

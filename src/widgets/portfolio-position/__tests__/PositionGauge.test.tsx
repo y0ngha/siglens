@@ -66,28 +66,28 @@ describe('PositionGauge', () => {
         expect(label).toContain('AAPL');
         expect(label).toContain('$150');
         expect(label).toContain('$180');
-        expect(label).toContain('수익률 +20%');
-        expect(label).toContain('52주 범위의 50% 지점');
+        expect(label).toContain('수익률 +20.0%');
+        expect(label).toContain('최근 범위의 50% 지점');
     });
 
-    it('avg가 52주 고점보다 높으면(clamped=above) 고점 초과 안내를 노출한다', () => {
+    it('avg가 최근 고점보다 높으면(clamped=above) 고점 초과 안내를 노출한다', () => {
         const { getByText } = renderGauge({
             low52w: 100,
             high52w: 200,
             avg: 250,
             current: 220,
         });
-        expect(getByText('52주 고점보다 높은 곳에서 매수')).toBeInTheDocument();
+        expect(getByText('최근 고점보다 높은 곳에서 매수')).toBeInTheDocument();
     });
 
-    it('avg가 52주 저점보다 낮으면(clamped=below) 저점 미달 안내를 노출한다', () => {
+    it('avg가 최근 저점보다 낮으면(clamped=below) 저점 미달 안내를 노출한다', () => {
         const { getByText } = renderGauge({
             low52w: 100,
             high52w: 200,
             avg: 50,
             current: 60,
         });
-        expect(getByText('52주 저점보다 낮은 곳에서 매수')).toBeInTheDocument();
+        expect(getByText('최근 저점보다 낮은 곳에서 매수')).toBeInTheDocument();
     });
 
     it('clamp되지 않으면(avgClamped=null) out-of-range 안내가 없다', () => {
@@ -141,18 +141,45 @@ describe('PositionGauge', () => {
         expect(avg.x).toBe(current.x);
     });
 
-    it('수익률이 양수면 ui-success-text 토큰을 사용한다', () => {
-        const { container } = renderGauge({ avg: 150, current: 180 }); // returnPct +20
-        const readout = container.querySelector('.text-ui-success-text');
-        expect(readout).not.toBeNull();
-        expect(readout?.textContent).toContain('+20.0%');
+    // 수익률 색상 토큰(ui-success-text/ui-danger-text)의 리드아웃은 PositionCard
+    // 쪽 dl row 하나로 단일화됐다(중복 제거) — 색상 단언은 PositionCard.test.tsx가
+    // 담당하고, 여기서는 Gauge가 더 이상 수익률 캡션을 렌더하지 않음을 확인한다.
+    it('수익률 캡션을 중복 렌더하지 않는다(PositionCard의 dl row가 유일한 소스)', () => {
+        const { container, queryByText } = renderGauge({
+            avg: 150,
+            current: 180,
+        });
+        expect(queryByText(/^수익률/)).toBeNull();
+        expect(container.querySelector('.text-ui-success-text')).toBeNull();
+        expect(container.querySelector('.text-ui-danger-text')).toBeNull();
     });
 
-    it('수익률이 음수면 ui-danger-text 토큰을 사용한다', () => {
-        const { container } = renderGauge({ avg: 180, current: 150 }); // returnPct -16.7
-        const readout = container.querySelector('.text-ui-danger-text');
-        expect(readout).not.toBeNull();
-        expect(readout?.textContent).toContain('%');
-        expect(container.querySelector('.text-ui-success-text')).toBeNull();
+    it('아리아 레이블의 수익률 정밀도가 화면 표시(0.1 단위)와 동일하다(toFixed(1))', () => {
+        const { container } = renderGauge({
+            low52w: 100,
+            high52w: 200,
+            avg: 180,
+            current: 150, // returnPct = (150-180)/180*100 ≈ -16.666...
+        });
+        const svg = container.querySelector('svg[role="img"]');
+        const label = svg?.getAttribute('aria-label') ?? '';
+        expect(label).toContain('수익률 -16.7%');
+    });
+
+    it('고가 종목(예: BRK.A대) in-SVG 마커 라벨은 축약 표기($XXXk)를 쓴다 — dl/aria-label은 전체 값 유지', () => {
+        const { container } = renderGauge({
+            low52w: 400_000,
+            high52w: 700_000,
+            avg: 600_000,
+            current: 650_000,
+        });
+        const svg = container.querySelector('svg[role="img"]');
+        // in-SVG 마커 라벨: 축약
+        expect(svg?.textContent).toContain('$600K');
+        expect(svg?.textContent).toContain('$650K');
+        expect(svg?.textContent).not.toContain('$600,000');
+        // aria-label: 정밀도 유지(전체 값)
+        expect(svg?.getAttribute('aria-label')).toContain('$600,000');
+        expect(svg?.getAttribute('aria-label')).toContain('$650,000');
     });
 });

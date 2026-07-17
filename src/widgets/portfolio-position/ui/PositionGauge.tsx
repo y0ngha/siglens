@@ -1,5 +1,4 @@
 import { formatUsdPrice } from '@/shared/lib/priceFormat';
-import { cn } from '@/shared/lib/cn';
 import type { PositionModel } from '../lib/positionGeometry';
 
 interface PositionGaugeProps {
@@ -16,6 +15,18 @@ function formatUsd(value: number): string {
     return `$${formatUsdPrice(value)}`;
 }
 
+/** in-SVG 마커 라벨 폭이 고정 viewBox라 고가 종목(예: BRK.A $600,000+)에서
+ * 잘릴 수 있어 이 마커 텍스트에서만 축약한다. dl 리드아웃(PositionCard)과
+ * aria-label은 정밀도를 위해 항상 전체 값을 쓴다. */
+const IN_SVG_COMPACT_THRESHOLD = 100_000;
+
+function formatUsdCompactForSvgLabel(value: number): string {
+    if (Math.abs(value) >= IN_SVG_COMPACT_THRESHOLD) {
+        return `$${Math.round(value / 1000)}K`;
+    }
+    return formatUsd(value);
+}
+
 const GAUGE_VIEWBOX_W = 260;
 const GAUGE_VIEWBOX_H = 260;
 
@@ -27,7 +38,7 @@ const BAR_CENTER_X = BAR_X + BAR_WIDTH / 2;
 
 /**
  * 5×20% 구간 팔레트 — NEUTRAL 그라디언트, high=위험 의미 부여 금지(design §5).
- * 상단(52주 고점 인접)일수록 밝고 하단(저점 인접)일수록 어둡다. 의미는 마커 +
+ * 상단(최근 고점 인접)일수록 밝고 하단(저점 인접)일수록 어둡다. 의미는 마커 +
  * 색상 리드아웃이 담당하고 밴드 색은 순수 시각 리듬만 준다.
  * top→bottom 순서로 정의 — BANDS[i]는 low52w에서 i번째 구간(0=최저)이므로
  * 렌더 시 역순 인덱싱(BAND_COUNT - 1 - i)으로 매핑한다.
@@ -59,19 +70,19 @@ function buildAriaLabel(
     const returnSign = model.returnPct >= 0 ? '+' : '';
     return (
         `${symbol} 내 위치: 평단 ${avgDisplay}, 현재가 ${currentDisplay}, ` +
-        `수익률 ${returnSign}${model.returnPct.toFixed(0)}%, ` +
-        `52주 범위의 ${model.rangePositionPct.toFixed(0)}% 지점`
+        `수익률 ${returnSign}${model.returnPct.toFixed(1)}%, ` +
+        `최근 범위의 ${model.rangePositionPct.toFixed(0)}% 지점`
     );
 }
 
 function outOfRangeNote(clamped: 'above' | 'below' | null): string | null {
-    if (clamped === 'above') return '52주 고점보다 높은 곳에서 매수';
-    if (clamped === 'below') return '52주 저점보다 낮은 곳에서 매수';
+    if (clamped === 'above') return '최근 고점보다 높은 곳에서 매수';
+    if (clamped === 'below') return '최근 저점보다 낮은 곳에서 매수';
     return null;
 }
 
 /**
- * 회원 평단·현재가를 52주 고/저 범위 안에서 시각화하는 세로 밴드 게이지.
+ * 회원 평단·현재가를 최근 고/저 범위 안에서 시각화하는 세로 밴드 게이지.
  * FearGreedGauge와 동일 idiom(viewBox + currentColor 세그먼트 + role="img")을 따른다.
  * 순수 프레젠테이션 — bands/positions는 전달받은 PositionModel에서만 파생한다.
  */
@@ -96,9 +107,8 @@ export function PositionGauge({
     const avgY = yFromPos(model.avgPos);
     const currentY = yFromPos(model.currentPos);
 
-    const returnColorClass =
-        model.returnPct >= 0 ? 'text-ui-success-text' : 'text-ui-danger-text';
-    const returnSign = model.returnPct >= 0 ? '+' : '';
+    const avgDisplaySvg = formatUsdCompactForSvgLabel(avg);
+    const currentDisplaySvg = formatUsdCompactForSvgLabel(current);
 
     return (
         <div
@@ -111,14 +121,14 @@ export function PositionGauge({
                 role="img"
                 aria-label={ariaLabel}
             >
-                {/* 52주 고점/저점 눈금 라벨 */}
+                {/* 최근 고점/저점 눈금 라벨 */}
                 <text
                     x={BAR_CENTER_X}
                     y={BAR_TOP - 12}
                     textAnchor="middle"
                     className="text-secondary-400 fill-current text-[10px] font-medium tabular-nums"
                 >
-                    {formatUsd(high52w)}
+                    {formatUsdCompactForSvgLabel(high52w)}
                 </text>
                 <text
                     x={BAR_CENTER_X}
@@ -126,7 +136,7 @@ export function PositionGauge({
                     textAnchor="middle"
                     className="text-secondary-400 fill-current text-[10px] font-medium tabular-nums"
                 >
-                    {formatUsd(low52w)}
+                    {formatUsdCompactForSvgLabel(low52w)}
                 </text>
 
                 {model.bands.map((band, i) => {
@@ -195,7 +205,9 @@ export function PositionGauge({
                     className="fill-current text-[10px] font-medium tabular-nums"
                 >
                     <tspan className="fill-secondary-400">내 평단 </tspan>
-                    <tspan className="fill-secondary-100">{avgDisplay}</tspan>
+                    <tspan className="fill-secondary-100">
+                        {avgDisplaySvg}
+                    </tspan>
                 </text>
 
                 {/* 현재가 (▶) */}
@@ -217,19 +229,10 @@ export function PositionGauge({
                 >
                     <tspan className="fill-secondary-400">현재가 </tspan>
                     <tspan className="fill-secondary-100">
-                        {currentDisplay}
+                        {currentDisplaySvg}
                     </tspan>
                 </text>
             </svg>
-            <div
-                className={cn(
-                    'text-xs font-semibold tabular-nums',
-                    returnColorClass
-                )}
-            >
-                수익률 {returnSign}
-                {model.returnPct.toFixed(1)}%
-            </div>
             {note && (
                 <p className="text-secondary-400 text-center text-xs">{note}</p>
             )}
