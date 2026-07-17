@@ -206,6 +206,40 @@ export interface UserApiKeyRepository {
     ): Promise<boolean>;
 }
 
+/** A persisted portfolio holding row — one row per (user, symbol); the user inputs the average price directly (not a lot ledger). */
+export interface PortfolioHoldingRecord {
+    id: string;
+    userId: string;
+    symbol: string; // canonical UPPERCASE
+    companyName: string | null;
+    fmpSymbol: string | null;
+    quantity: string; // decimal string (numeric(24,8))
+    averagePrice: string; // decimal string (numeric(20,8))
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+/** Input for inserting or replacing a user's holding for one symbol. */
+export interface UpsertPortfolioHoldingInput {
+    userId: string;
+    symbol: string; // caller passes canonical UPPERCASE
+    companyName: string | null;
+    fmpSymbol: string | null;
+    quantity: string;
+    averagePrice: string;
+}
+
+/** Persistence operations for member portfolio holdings. */
+export interface PortfolioHoldingRepository {
+    findByUser(userId: string): Promise<PortfolioHoldingRecord[]>;
+    findByUserAndSymbol(
+        userId: string,
+        symbol: string
+    ): Promise<PortfolioHoldingRecord | null>;
+    upsert(input: UpsertPortfolioHoldingInput): Promise<PortfolioHoldingRecord>;
+    deleteByUserAndSymbol(userId: string, symbol: string): Promise<boolean>;
+}
+
 /**
  * Persistence operations for the Korean ticker store. Backs the bilingual
  * search and asset metadata flows by exposing the cached `korean_tickers` rows.
