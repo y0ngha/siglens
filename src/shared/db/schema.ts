@@ -175,6 +175,40 @@ export const userApiKeys = pgTable(
     ]
 );
 
+/** Member portfolio holdings — one row per (user, symbol); the user inputs the average price directly (not a lot ledger). */
+export const portfolioHoldings = pgTable(
+    'portfolio_holdings',
+    {
+        id: uuid('id').primaryKey().defaultRandom(),
+        userId: uuid('user_id')
+            .notNull()
+            .references(() => users.id, { onDelete: 'cascade' }),
+        symbol: varchar('symbol', { length: SYMBOL_MAX_LENGTH }).notNull(),
+        companyName: text('company_name'),
+        fmpSymbol: text('fmp_symbol'),
+        // numeric maps to string in Drizzle; treat as decimal strings, never JS floats.
+        quantity: numeric('quantity', { precision: 24, scale: 8 }).notNull(),
+        averagePrice: numeric('average_price', {
+            precision: 20,
+            scale: 8,
+        }).notNull(),
+        createdAt: timestamp('created_at', { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+        updatedAt: timestamp('updated_at', { withTimezone: true })
+            .notNull()
+            .defaultNow()
+            .$onUpdateFn(nowFn),
+    },
+    table => [
+        index('portfolio_holdings_user_id_idx').on(table.userId),
+        uniqueIndex('portfolio_holdings_user_symbol_uidx').on(
+            table.userId,
+            table.symbol
+        ),
+    ]
+);
+
 /** Korean stock ticker metadata — keyed by ticker symbol. */
 export const koreanTickers = pgTable('korean_tickers', {
     symbol: varchar('symbol', { length: SYMBOL_MAX_LENGTH }).primaryKey(),
