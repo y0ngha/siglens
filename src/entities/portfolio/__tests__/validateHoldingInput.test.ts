@@ -92,4 +92,49 @@ describe('validateHoldingInput', () => {
             }).ok
         ).toBe(true);
     });
+    it('rejects price beyond scale (>8 decimals)', () => {
+        expect(
+            validateHoldingInput({
+                symbol: 'AAPL',
+                quantity: '1',
+                averagePrice: '1.123456789',
+            })
+        ).toMatchObject({ ok: false, code: 'invalid_price' });
+    });
+    it('accepts quantity exactly at QUANTITY_MAX (boundary is inclusive)', () => {
+        expect(
+            validateHoldingInput({
+                symbol: 'AAPL',
+                quantity: '1000000000',
+                averagePrice: '1',
+            }).ok
+        ).toBe(true);
+    });
+    it('rejects quantity one above QUANTITY_MAX', () => {
+        expect(
+            validateHoldingInput({
+                symbol: 'AAPL',
+                quantity: '1000000001',
+                averagePrice: '1',
+            })
+        ).toMatchObject({ ok: false, code: 'invalid_quantity' });
+    });
+    it('rejects a leading-dot decimal string (no leading digit)', () => {
+        expect(
+            validateHoldingInput({
+                symbol: 'AAPL',
+                quantity: '.5',
+                averagePrice: '1',
+            })
+        ).toMatchObject({ ok: false, code: 'invalid_quantity' });
+    });
+    it('rejects a trailing-dot decimal string (no fractional digit)', () => {
+        expect(
+            validateHoldingInput({
+                symbol: 'AAPL',
+                quantity: '5.',
+                averagePrice: '1',
+            })
+        ).toMatchObject({ ok: false, code: 'invalid_quantity' });
+    });
 });

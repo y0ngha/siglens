@@ -17,7 +17,10 @@ export const metadata: Metadata = {
 };
 
 // Reads cookies via getCurrentUser — must be inside Suspense for PPR.
-async function OnboardingGuard() {
+// Exported (rather than module-private) so tests can `await OnboardingGuard()`
+// directly and assert the unauthenticated redirect target, mirroring the
+// `MarketContent` export pattern in `src/app/market/page.tsx`.
+export async function OnboardingGuard() {
     const user = await getCurrentUser();
     if (!user) {
         redirect('/login?next=/onboarding');

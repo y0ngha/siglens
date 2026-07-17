@@ -12,7 +12,12 @@ vi.mock('next/navigation', () => ({
     redirect: vi.fn(),
 }));
 
-import { metadata } from '@/app/onboarding/page';
+import { redirect } from 'next/navigation';
+import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
+import { metadata, OnboardingGuard } from '@/app/onboarding/page';
+
+const mockGetCurrentUser = vi.mocked(getCurrentUser);
+const mockRedirect = vi.mocked(redirect);
 
 describe('Onboarding page', () => {
     it('exports metadata with onboarding title', () => {
@@ -29,5 +34,31 @@ describe('Onboarding page', () => {
         expect(metadata.alternates?.canonical).toBe(
             'https://siglens.io/onboarding'
         );
+    });
+
+    describe('OnboardingGuard', () => {
+        beforeEach(() => {
+            vi.clearAllMocks();
+        });
+
+        it('redirects unauthenticated visitors to /login?next=/onboarding', async () => {
+            mockGetCurrentUser.mockResolvedValue(null);
+
+            await OnboardingGuard();
+
+            expect(mockRedirect).toHaveBeenCalledWith(
+                '/login?next=/onboarding'
+            );
+        });
+
+        it('does not redirect an authenticated member', async () => {
+            mockGetCurrentUser.mockResolvedValue({
+                id: 'user-1',
+            } as never);
+
+            await OnboardingGuard();
+
+            expect(mockRedirect).not.toHaveBeenCalled();
+        });
     });
 });

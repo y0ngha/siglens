@@ -5,6 +5,7 @@ vi.mock('@/shared/lib/sleep', () => ({
     sleep: vi.fn().mockResolvedValue(undefined),
 }));
 
+import { and, eq } from 'drizzle-orm';
 import { portfolioHoldings } from '@/shared/db/schema';
 import { DrizzlePortfolioRepository } from '@/entities/portfolio/api';
 import type { SiglensDatabase } from '@/shared/db/types';
@@ -163,7 +164,7 @@ describe('DrizzlePortfolioRepository.upsert', () => {
 });
 
 describe('DrizzlePortfolioRepository.findByUser', () => {
-    it('filters by userId and returns rows', async () => {
+    it('filters by the userId column with the exact userId value and returns rows', async () => {
         const rows = [
             holdingRow,
             { ...holdingRow, id: 'holding-2', symbol: 'MSFT' },
@@ -175,6 +176,20 @@ describe('DrizzlePortfolioRepository.findByUser', () => {
 
         expect(result).toEqual(rows);
         expect(where).toHaveBeenCalledTimes(1);
+        expect(where.mock.calls[0]?.[0]).toEqual(
+            eq(portfolioHoldings.userId, 'user-1')
+        );
+    });
+
+    it('scopes the filter to the requesting userId, not some other user', async () => {
+        const { db, where } = makeFindByUserDb([]);
+        const repo = new DrizzlePortfolioRepository(db);
+
+        await repo.findByUser('user-1');
+
+        expect(where.mock.calls[0]?.[0]).not.toEqual(
+            eq(portfolioHoldings.userId, 'some-other-user')
+        );
     });
 
     it('returns an empty array when the user has no holdings', async () => {
@@ -223,5 +238,19 @@ describe('DrizzlePortfolioRepository.deleteByUserAndSymbol', () => {
             repo.deleteByUserAndSymbol('user-1', 'AAPL')
         ).resolves.toBe(true);
         expect(returning).toHaveBeenCalledTimes(1);
+    });
+
+    it("filters by both the userId and symbol columns with the exact values, so it cannot delete another user's row", async () => {
+        const { db, where } = makeDeleteDb([{ id: 'holding-1' }]);
+        const repo = new DrizzlePortfolioRepository(db);
+
+        await repo.deleteByUserAndSymbol('user-1', 'AAPL');
+
+        expect(where.mock.calls[0]?.[0]).toEqual(
+            and(
+                eq(portfolioHoldings.userId, 'user-1'),
+                eq(portfolioHoldings.symbol, 'AAPL')
+            )
+        );
     });
 });
