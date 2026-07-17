@@ -11,6 +11,14 @@ import { getEmailDebug } from './emailHelper';
  * logging out cannot invalidate the storageState the `setup` project minted for
  * the sibling account-* specs. Use a unique (Date.now()-suffixed) email so
  * there is no collision across runs/workers.
+ *
+ * The default post-signup redirect target is not stable: a no-`next` signup
+ * now lands on /onboarding (resolvePostSignupDestination maps '/' →
+ * '/onboarding'), where previously it landed on '/'. Rather than assert
+ * authentication on whatever page signup happens to redirect to, this helper
+ * navigates to /account (auth-guarded, renders the site header) so the auth
+ * assertion is decoupled from the post-signup route and won't regress again
+ * if that route changes.
  */
 export async function signupThrowawayUser(
     page: Page,
@@ -47,8 +55,11 @@ export async function signupThrowawayUser(
     await page.getByLabel('모두 동의').check();
     await page.getByRole('button', { name: '회원가입' }).click();
 
-    // Registered + authenticated → off /signup.
+    // Registered + authenticated. The default signup redirect target changed
+    // (a no-`next` signup now lands on /onboarding); navigate to a stable authed
+    // page so this helper's auth assertion is decoupled from the post-signup route.
     await page.waitForURL(url => !url.pathname.startsWith('/signup'));
+    await page.goto('/account');
     await expect(page.getByRole('button', { name: /사용자 메뉴/ })).toBeVisible(
         {
             timeout: 15_000,
