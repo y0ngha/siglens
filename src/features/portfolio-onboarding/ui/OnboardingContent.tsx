@@ -29,7 +29,7 @@ export function OnboardingContent() {
                     보유종목을 등록해 보세요
                 </h1>
                 <p className="text-secondary-400 text-sm">
-                    지금 등록하면 내 평균 단가를 기준으로 분석을 받을 수 있어요.
+                    지금 등록하면 내 평단을 기준으로 분석을 받을 수 있어요.
                     나중에 계정 설정에서도 추가할 수 있어요.
                 </p>
             </header>

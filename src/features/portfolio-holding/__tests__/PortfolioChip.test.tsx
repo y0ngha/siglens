@@ -185,6 +185,30 @@ describe('PortfolioChipMounted / PortfolioChip', () => {
         expect(screen.getByLabelText('평단')).toHaveValue('150.5');
     });
 
+    it('handles save.mutateAsync throwing: surfaces a generic error and keeps the dialog usable', async () => {
+        const user = userEvent.setup();
+        setCurrentUser(USER);
+        const { save } = setHoldings({ holdings: [] });
+        (save.mutateAsync as ReturnType<typeof vi.fn>).mockRejectedValue(
+            new Error('network down')
+        );
+        render(<PortfolioChipMounted symbol="AAPL" />);
+
+        await user.click(screen.getByRole('button', { name: '내 평단 설정' }));
+        await user.type(await screen.findByLabelText('수량'), '10');
+        await user.type(screen.getByLabelText('평단'), '150.5');
+        await user.click(screen.getByRole('button', { name: '저장' }));
+
+        expect(
+            await screen.findByText(
+                '요청 처리 중 문제가 발생했어요. 다시 시도해 주세요.'
+            )
+        ).toBeInTheDocument();
+        // Dialog stays open and the save button resets (not stuck submitting).
+        expect(screen.getByRole('dialog')).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: '저장' })).toBeEnabled();
+    });
+
     it('closes the popover on Escape', async () => {
         const user = userEvent.setup();
         setCurrentUser(USER);

@@ -181,4 +181,26 @@ describe('usePortfolioHoldings', () => {
             expect(result.current.holdings).toEqual([]);
         });
     });
+
+    it('remove.mutateAsync does NOT invalidate when the action returns an error result', async () => {
+        mockDeletePortfolioHoldingAction.mockResolvedValue({
+            status: 'error',
+            code: 'unknown',
+            message: '삭제에 실패했어요. 다시 시도해 주세요.',
+        });
+        mockGetPortfolioHoldingsAction.mockResolvedValue([HOLDING]);
+
+        const { result } = renderHook(() => usePortfolioHoldings(), {
+            wrapper: makeWrapper(),
+        });
+
+        await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+        await act(async () => {
+            await result.current.remove.mutateAsync('AAPL');
+        });
+
+        expect(mockGetPortfolioHoldingsAction).toHaveBeenCalledTimes(1);
+        expect(result.current.holdings).toEqual([HOLDING]);
+    });
 });

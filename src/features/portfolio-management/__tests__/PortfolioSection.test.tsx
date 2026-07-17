@@ -156,6 +156,106 @@ describe('PortfolioSection', () => {
         ).not.toBeInTheDocument();
     });
 
+    it('edits a holding: opens inline form, submits, and returns to display mode on ok', async () => {
+        const user = userEvent.setup();
+        const { save } = setHoldings({ holdings: [HOLDING] });
+        (save.mutateAsync as ReturnType<typeof vi.fn>).mockResolvedValue({
+            status: 'ok',
+            holding: { ...HOLDING, quantity: '20.00000000' },
+        });
+        render(<PortfolioSection />);
+
+        const row = screen.getByText('AAPL').closest('li');
+        if (!row) throw new Error('holding row not found');
+
+        await user.click(
+            within(row).getByRole('button', { name: 'AAPL 보유종목 수정' })
+        );
+
+        // Inline edit form: symbol is read-only text, quantity/averagePrice pre-filled.
+        expect(
+            within(row).getByRole('button', { name: '저장' })
+        ).toBeInTheDocument();
+        const quantityInput = within(row).getByLabelText('수량');
+        expect(quantityInput).toHaveValue('10');
+        await user.clear(quantityInput);
+        await user.type(quantityInput, '20');
+        await user.click(within(row).getByRole('button', { name: '저장' }));
+
+        await waitFor(() => {
+            expect(save.mutateAsync).toHaveBeenCalledWith({
+                symbol: 'AAPL',
+                quantity: '20',
+                averagePrice: '150.5',
+            });
+        });
+
+        // Edit form closes -> row is back in display mode (수정/삭제 buttons visible again).
+        await waitFor(() => {
+            expect(
+                within(row).getByRole('button', { name: 'AAPL 보유종목 수정' })
+            ).toBeInTheDocument();
+        });
+        expect(
+            within(row).queryByRole('button', { name: '저장' })
+        ).not.toBeInTheDocument();
+    });
+
+    it('shows the row-level delete error and keeps the row when remove.mutateAsync resolves an error', async () => {
+        const user = userEvent.setup();
+        const { remove } = setHoldings({ holdings: [HOLDING] });
+        (remove.mutateAsync as ReturnType<typeof vi.fn>).mockResolvedValue({
+            status: 'error',
+            code: 'unknown',
+            message: '삭제에 실패했어요. 다시 시도해 주세요.',
+        });
+        render(<PortfolioSection />);
+
+        const row = screen.getByText('AAPL').closest('li');
+        if (!row) throw new Error('holding row not found');
+
+        await user.click(
+            within(row).getByRole('button', { name: 'AAPL 보유종목 삭제' })
+        );
+        await user.click(
+            within(row).getByRole('button', { name: '삭제 확정' })
+        );
+
+        expect(
+            await within(row).findByText(
+                '삭제에 실패했어요. 다시 시도해 주세요.'
+            )
+        ).toBeInTheDocument();
+        // Row is not removed - the symbol is still on screen.
+        expect(screen.getByText('AAPL')).toBeInTheDocument();
+    });
+
+    it('restores the normal row buttons without deleting when 취소 is clicked on the delete confirm', async () => {
+        const user = userEvent.setup();
+        const { remove } = setHoldings({ holdings: [HOLDING] });
+        render(<PortfolioSection />);
+
+        const row = screen.getByText('AAPL').closest('li');
+        if (!row) throw new Error('holding row not found');
+
+        await user.click(
+            within(row).getByRole('button', { name: 'AAPL 보유종목 삭제' })
+        );
+        expect(
+            within(row).getByRole('button', { name: '삭제 확정' })
+        ).toBeInTheDocument();
+
+        await user.click(within(row).getByRole('button', { name: '취소' }));
+
+        expect(
+            within(row).queryByRole('button', { name: '삭제 확정' })
+        ).not.toBeInTheDocument();
+        expect(
+            within(row).getByRole('button', { name: 'AAPL 보유종목 삭제' })
+        ).toBeInTheDocument();
+        expect(remove.mutateAsync).not.toHaveBeenCalled();
+    });
+
     it('renders an error state instead of the empty state when the list query fails, and refetch() is called on 다시 시도', async () => {
         const user = userEvent.setup();
         const { refetch } = setHoldings({ holdings: [], isError: true });

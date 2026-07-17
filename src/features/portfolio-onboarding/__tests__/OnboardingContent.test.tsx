@@ -33,7 +33,7 @@ describe('OnboardingContent', () => {
         ).toBeInTheDocument();
         expect(
             screen.getByText(
-                '지금 등록하면 내 평균 단가를 기준으로 분석을 받을 수 있어요. 나중에 계정 설정에서도 추가할 수 있어요.'
+                '지금 등록하면 내 평단을 기준으로 분석을 받을 수 있어요. 나중에 계정 설정에서도 추가할 수 있어요.'
             )
         ).toBeInTheDocument();
     });
