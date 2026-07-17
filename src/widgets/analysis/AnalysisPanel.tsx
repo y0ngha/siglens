@@ -1291,7 +1291,7 @@ export function AnalysisPanel({
                                         ? `회원가입하면 ${skillCount}개 스킬을 모두 적용한 상세 분석을 받아볼 수 있어요.`
                                         : '회원가입하면 전체 스킬을 적용한 상세 분석을 받아볼 수 있어요.'}
                                 </p>
-                                <p className="text-secondary-400 text-[11px] leading-relaxed">
+                                <p className="text-secondary-400 text-xs leading-relaxed">
                                     보조지표 심층 분석 · 캔들 패턴 · 핵심
                                     지지·저항 레벨 · 진입·손절·익절 매매
                                     시나리오
