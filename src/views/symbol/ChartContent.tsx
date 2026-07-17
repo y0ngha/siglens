@@ -5,7 +5,7 @@ import { usePublishSymbolChat } from '@/features/symbol-chat';
 import { cn } from '@/shared/lib/cn';
 import { PWA_TRIGGER_EVENT } from '@/shared/lib/pwaEvents';
 import { BotBlockedNotice } from '@/shared/ui/BotBlockedNotice';
-import { AnalysisPanel } from '@/widgets/analysis';
+import { AnalysisPanel, AnalysisProgress } from '@/widgets/analysis';
 import { ChartSkeleton, useChartSync } from '@/widgets/chart';
 import {
     type AnalysisResponse,
@@ -205,6 +205,18 @@ export function ChartContent({
     const { clusteredKeyLevels, validatedActionPrices, reconciledActionLines } =
         useAnalysisDerivedData(analysis, bars);
 
+    // 광고 노출 게이트. AnalysisProgress/AnalysisPanel의 isFreeUser는 기본값 true라
+    // "Pro에게는 명시적으로 false를 전달"하는 게 규약이다(둘 다 내부에서 AdBanner로
+    // 전달하며, AdBanner의 isFreeUser는 기본값 없는 필수 prop이다). tier가 'pro'가
+    // 아닐 때만 광고를 노출한다. tier는 hydration 전 DEFAULT_TIER('free')로 폴백되어
+    // 로딩 중에는 free와 동일하게 취급된다(기존 기본값 true와 일치).
+    //
+    // ⚠️ 광고 제거는 '결제(pro)' 전용 혜택이라 member는 의도적으로 광고 노출 대상이다.
+    // 이는 기능 게이팅 축(canUseReasoning = tier !== 'free', isFreeTier = tier === 'free'
+    // — 둘 다 member를 pro와 함께 취급)과 다른 별개의 축이다. 따라서 여기서는 'free' 대신
+    // 'pro'를 기준으로 판별한다(member ≠ 광고 면제).
+    const isFreeUser = tier !== 'pro';
+
     const analysisContent = useMemo(() => {
         const hasNarrative = !isFallbackAnalysis(analysis);
 
@@ -218,7 +230,20 @@ export function ChartContent({
         // DOM에도 항상 남고, 봇으로 오판된 실사용자에게도 actionable hint가 유지된다.
         return !hasNarrative ? (
             <div className="flex flex-col gap-3">
-                <AnalysisStatusBanner status={analysisStatus} />
+                {/* 첫 분석(서사 없음) 중에는 작은 텍스트 배너 대신, 캐시된 분석
+                    재분석 시 AnalysisPanel이 쓰는 것과 동일한 AnalysisProgress(스피너·
+                    페이즈·스켈레톤)를 노출한다. 모바일 바텀시트의 좁은 Peek에서도 분석
+                    진행 상태를 분명히 인지하게 하고, 로딩 UI를 한 컴포넌트로 일원화한다.
+                    분석 중이 아닐 때(에러/idle)는 기존 상태 배너가 에러 또는 무렌더. */}
+                {displayAnalyzing ? (
+                    <AnalysisProgress
+                        phaseIndex={progressPhaseIndex}
+                        tipIndex={progressTipIndex}
+                        isFreeUser={isFreeUser}
+                    />
+                ) : (
+                    <AnalysisStatusBanner status={analysisStatus} />
+                )}
                 <TechnicalFactsSummary
                     symbol={symbol}
                     bars={bars}
@@ -253,6 +278,7 @@ export function ChartContent({
                     indicatorCount={indicatorCount}
                     skillCount={skillCount}
                     lockedInfoDepth={lockedInfoDepth}
+                    isFreeUser={isFreeUser}
                 />
                 {/* 서사가 있어도(캐시된 분석을 표시 중) 봇 판정이면 안내를 additive로
                     덧붙인다 — 자동 트리거/수동 재분석이 봇으로 오판돼 차단된 사실을
@@ -283,6 +309,7 @@ export function ChartContent({
         indicatorCount,
         skillCount,
         lockedInfoDepth,
+        isFreeUser,
     ]);
 
     // timeframe을 React.Fragment key로 전달 — Suspense 경계 밖에서 timeframe 변경 시 자식 트리를 강제 remount한다.

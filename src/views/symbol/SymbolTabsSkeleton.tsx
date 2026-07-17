@@ -11,7 +11,9 @@ export function SymbolTabsSkeleton() {
     return (
         <nav
             aria-hidden="true"
-            className="border-secondary-700 flex overflow-x-auto border-b"
+            // 실제 SymbolTabs와 동일하게 overflow-y-hidden으로 세로 스크롤 승격을 막는다
+            // (overflow-x-auto 단독은 overflow-y를 auto로 승격시켜 세로 스크롤바를 유발).
+            className="border-secondary-700 flex overflow-x-auto overflow-y-hidden border-b"
         >
             {Array.from({ length: SKELETON_PILL_COUNT }, (_, i) => (
                 <span
