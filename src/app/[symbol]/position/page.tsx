@@ -97,9 +97,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     // 공유로 얻는다), 재미있는 후킹 카피의 가치가 색인 여부와 무관하게 살아있다.
     // (색인용 콘텐츠 전략은 별도 랜딩 페이지로 다루기로 보류 — 사용자 결정.)
     const positionTitle = `${displayName} 내 위치 — 내 평단은 몇 층?`;
+    // 후킹 키워드(아파트/옥상/지하)는 반드시 displayName **앞**에 온다. displayName은
+    // koreanName+name+ticker 조합(buildDisplayName)이라 종목마다 길이가 크게 달라지고
+    // (예: IBM처럼 긴 조합은 70자+), 뒤에 붙이면 SEO_DESCRIPTION_MAX_LENGTH(120) clamp에
+    // 잘려나가 메타포 자체가 사라진다 — front-load해야 어떤 displayName 길이에서도
+    // 세 키워드가 120자 이내에 살아남는다.
     const positionDescription = clampSeoDescription(
-        `${displayName} 최근 52주 범위를 아파트로, 내 평단을 '층'으로 보여드려요. ` +
-            `내 매수가는 옥상(고점)일까 지하(저점)일까? 로그인하고 내 위치를 확인해보세요.`
+        `내 평단은 이 종목 '아파트'의 몇 층일까? 옥상(고점)일까 지하(저점)일까 — ` +
+            `${displayName}의 최근 52주 범위에서 내 매수가의 위치를 확인해보세요.`
     );
     return {
         ...NOINDEX_SYMBOL_METADATA,
