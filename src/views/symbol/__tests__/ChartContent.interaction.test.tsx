@@ -83,12 +83,6 @@ vi.mock('@/features/symbol-chat', () => ({ usePublishSymbolChat: vi.fn() }));
 vi.mock('@/widgets/analysis', () => ({
     AnalysisPanel: () => <div data-testid="analysis-panel" />,
 }));
-// portfolio-position 위젯은 react-query 훅(useCurrentUser/useSymbolHolding)에
-// 의존한다 — QueryClientProvider 없는 이 테스트 트리에서 실제 훅을 호출하면
-// 크래시하므로 상호작용 테스트와 무관한 이 위젯은 no-op stub으로 대체한다.
-vi.mock('@/widgets/portfolio-position', () => ({
-    PositionSectionMounted: () => null,
-}));
 
 function analysisReturn(
     overrides: Partial<UseAnalysisResult> = {}

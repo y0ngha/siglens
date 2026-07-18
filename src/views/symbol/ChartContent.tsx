@@ -34,10 +34,8 @@ import { useSymbolPageContext } from './SymbolPageContext';
 import { TechnicalFactsSummary } from './TechnicalFactsSummary';
 import type { AnalysisStatus } from './utils/analysisStatus';
 import { getAnalysisStatus } from './utils/analysisStatus';
-import { buildTechnicalFacts } from './utils/technicalFacts';
 import { buildChatState } from './utils/buildChatState';
 import { useRegisterShareable, deriveChartStatus } from '@/features/share';
-import { PositionSectionMounted } from '@/widgets/portfolio-position';
 
 const StockChart = dynamic(
     () => import('@/widgets/chart/StockChart').then(mod => mod.StockChart),
@@ -208,14 +206,6 @@ export function ChartContent({
     const { clusteredKeyLevels, validatedActionPrices, reconciledActionLines } =
         useAnalysisDerivedData(analysis, bars);
 
-    // TechnicalFactsSummary는 그대로 두고(§6 — SSR/SEO fallback 계약을 건드리지
-    // 않기 위해 prop 변경 금지), 여기서 별도로 같은 유틸을 호출해 원시 range
-    // 숫자(low52w/high52w/lastClose)만 위젯에 프리미티브로 내려보낸다.
-    const facts = useMemo(
-        () => buildTechnicalFacts(bars, indicators),
-        [bars, indicators]
-    );
-
     const analysisContent = useMemo(() => {
         const hasNarrative = !isFallbackAnalysis(analysis);
 
@@ -236,14 +226,6 @@ export function ChartContent({
                     indicators={indicators}
                     marketProfile={marketProfile}
                 />
-                {facts && (
-                    <PositionSectionMounted
-                        symbol={symbol}
-                        low52w={facts.low52w}
-                        high52w={facts.high52w}
-                        lastClose={facts.lastClose}
-                    />
-                )}
                 {isBotBlocked && <BotBlockedNotice />}
             </div>
         ) : (
@@ -255,14 +237,6 @@ export function ChartContent({
                     indicators={indicators}
                     marketProfile={marketProfile}
                 />
-                {facts && (
-                    <PositionSectionMounted
-                        symbol={symbol}
-                        low52w={facts.low52w}
-                        high52w={facts.high52w}
-                        lastClose={facts.lastClose}
-                    />
-                )}
                 <AnalysisPanel
                     symbol={symbol}
                     analysis={analysis}
@@ -293,7 +267,6 @@ export function ChartContent({
         isBotBlocked,
         bars,
         indicators,
-        facts,
         isAnalyzing,
         symbol,
         analysisStatus,

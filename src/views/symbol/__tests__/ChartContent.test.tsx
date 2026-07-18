@@ -46,13 +46,6 @@ vi.mock('@/widgets/analysis', () => ({
     ),
 }));
 
-// portfolio-position 위젯은 react-query 훅(useCurrentUser/useSymbolHolding)에
-// 의존한다 — 이 테스트 트리에는 QueryClientProvider가 없어 실제 구현을 렌더하면
-// 크래시한다. 이 파일의 관심사(슬롯/스크롤/넛지)와 무관하므로 no-op stub으로 대체한다.
-vi.mock('@/widgets/portfolio-position', () => ({
-    PositionSectionMounted: () => null,
-}));
-
 vi.mock('@/shared/ui/BotBlockedNotice', () => ({
     BotBlockedNotice: () => <div data-testid="bot-blocked-notice" />,
 }));

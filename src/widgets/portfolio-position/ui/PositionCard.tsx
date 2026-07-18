@@ -2,7 +2,6 @@ import { useId } from 'react';
 import { cn } from '@/shared/lib/cn';
 import { formatUsdPrice } from '@/shared/lib/priceFormat';
 import type { PositionModel } from '../lib/positionGeometry';
-import { PositionGauge } from './PositionGauge';
 
 interface PositionCardProps {
     symbol: string;
@@ -44,13 +43,13 @@ function ReadoutRow({ label, value, valueClassName }: ReadoutRowProps) {
 
 /**
  * "내 위치" 카드 — TechnicalFactsSummary/계정 카드와 동일 chrome(bg-secondary-800
- * rounded-lg)을 사용해 사이드바에서 한 벌처럼 보이게 한다. PositionGauge를
- * 감싸고 수치 리드아웃(최근 고/저·현재가·내 평단·%대비·수익률·범위 위치)을 표시한다.
+ * rounded-lg)을 사용해 사이드바에서 한 벌처럼 보이게 한다. 수치 리드아웃
+ * (최근 고/저·현재가·내 평단·%대비·수익률·범위 위치)만 표시하는 standalone 카드다.
  * 범위는 "52주"가 아니라 현재 선택된 타임프레임의 최근 252개 봉 기준(technicalFacts.ts)
  * 이므로 TechnicalFactsSummary와 동일하게 타임프레임-중립 문구를 쓴다.
  */
 export function PositionCard({
-    symbol,
+    symbol: _symbol,
     model,
     low52w,
     high52w,
@@ -70,14 +69,6 @@ export function PositionCard({
             >
                 내 위치
             </h2>
-            <PositionGauge
-                symbol={symbol}
-                model={model}
-                low52w={low52w}
-                high52w={high52w}
-                current={current}
-                avg={avg}
-            />
             <dl className="text-secondary-300 grid grid-cols-1 gap-2 text-sm">
                 <ReadoutRow label="최근 고점" value={formatUsd(high52w)} />
                 <ReadoutRow label="최근 저점" value={formatUsd(low52w)} />
