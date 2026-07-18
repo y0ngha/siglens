@@ -90,8 +90,9 @@ const GROUND_FRONT_Y = ROOF_FRONT_Y + BUILDING_H; // 정면 모서리 바닥(270
 const GROUND_EAVE_Y = ROOF_EAVE_Y + BUILDING_H; // 좌/우 모서리 바닥(245)
 
 // 옥상 위(하늘)/지하 마커 배치 — avgClamped·currentClamped 'above'/'below' 대칭 처리.
-const SKY_Y = ROOF_BACK_Y - 34;
-const BASEMENT_Y = GROUND_FRONT_Y + 34;
+const SKY_BASEMENT_OFFSET = 34;
+const SKY_Y = ROOF_BACK_Y - SKY_BASEMENT_OFFSET;
+const BASEMENT_Y = GROUND_FRONT_Y + SKY_BASEMENT_OFFSET;
 
 const HIGH_LABEL_Y = ROOF_BACK_Y - 12;
 const LOW_LABEL_Y = GROUND_FRONT_Y + 18;
@@ -101,6 +102,13 @@ const DODGE_EPSILON = 0.04;
 const DODGE_X_OFFSET = 11;
 const MARKER_HALF = 6;
 const LABEL_GAP = 12;
+
+/** avg/current out-of-range 안내 텍스트를 각자의 마커 라벨 바로 아래에 두는 세로 간격. */
+const NOTE_Y_OFFSET = 12;
+
+/** 지면 타원(ellipse)을 건물 정면 모서리 바닥보다 살짝 아래로, 좌/우 외곽선보다 살짝 넓게 그린다. */
+const GROUND_ELLIPSE_CY_OFFSET = 6;
+const GROUND_ELLIPSE_RX_OFFSET = 14;
 
 interface Point {
     x: number;
@@ -132,6 +140,26 @@ interface FloorFaces {
 const WINDOW_T_STARTS = [0.28, 0.58] as const;
 const WINDOW_T_WIDTH = 0.14;
 const WINDOW_Y_INSET = 8;
+
+/**
+ * 벽면 하나(outerTop→frontTop 변)를 따라 창문 2개의 폴리곤 좌표를 계산한다.
+ * 좌/우 벽면 모두 frontTop을 공유하고 outerTop만 다르므로, 이 outerTop을
+ * 파라미터화해 좌/우 양쪽에서 재사용한다.
+ */
+function computeWindows(outerTop: Point, frontTop: Point): Point[][] {
+    return WINDOW_T_STARTS.map(t => {
+        const top1 = lerp(outerTop, frontTop, t);
+        const top2 = lerp(outerTop, frontTop, t + WINDOW_T_WIDTH);
+        const bottom1: Point = { x: top1.x, y: top1.y + WINDOW_Y_INSET };
+        const bottom2: Point = { x: top2.x, y: top2.y + WINDOW_Y_INSET };
+        return [
+            { x: top1.x, y: top1.y + WINDOW_Y_INSET / 2 },
+            { x: top2.x, y: top2.y + WINDOW_Y_INSET / 2 },
+            bottom2,
+            bottom1,
+        ];
+    });
+}
 
 /** 층(floor) 하나의 좌/우 벽면 폴리곤 + 창문 장식 좌표를 계산한다. */
 function computeFloorFaces(bandIndexFromLow: number): FloorFaces {
@@ -170,30 +198,8 @@ function computeFloorFaces(bandIndexFromLow: number): FloorFaces {
         rightOuterBottom,
     ]);
 
-    const windowsLeft = WINDOW_T_STARTS.map(t => {
-        const top1 = lerp(leftOuterTop, frontTop, t);
-        const top2 = lerp(leftOuterTop, frontTop, t + WINDOW_T_WIDTH);
-        const bottom1: Point = { x: top1.x, y: top1.y + WINDOW_Y_INSET };
-        const bottom2: Point = { x: top2.x, y: top2.y + WINDOW_Y_INSET };
-        return [
-            { x: top1.x, y: top1.y + WINDOW_Y_INSET / 2 },
-            { x: top2.x, y: top2.y + WINDOW_Y_INSET / 2 },
-            bottom2,
-            bottom1,
-        ];
-    });
-    const windowsRight = WINDOW_T_STARTS.map(t => {
-        const top1 = lerp(rightOuterTop, frontTop, t);
-        const top2 = lerp(rightOuterTop, frontTop, t + WINDOW_T_WIDTH);
-        const bottom1: Point = { x: top1.x, y: top1.y + WINDOW_Y_INSET };
-        const bottom2: Point = { x: top2.x, y: top2.y + WINDOW_Y_INSET };
-        return [
-            { x: top1.x, y: top1.y + WINDOW_Y_INSET / 2 },
-            { x: top2.x, y: top2.y + WINDOW_Y_INSET / 2 },
-            bottom2,
-            bottom1,
-        ];
-    });
+    const windowsLeft = computeWindows(leftOuterTop, frontTop);
+    const windowsRight = computeWindows(rightOuterTop, frontTop);
 
     return { left, right, windowsLeft, windowsRight };
 }
@@ -348,28 +354,18 @@ export function PositionBuilding({
                             {/* 층 경계선(정면 모서리) */}
                             <line
                                 x1={CENTER_X - ISO_DX}
-                                y1={
-                                    ROOF_EAVE_Y + (BAND_COUNT - 1 - i) * FLOOR_H
-                                }
+                                y1={ROOF_EAVE_Y + litIndex * FLOOR_H}
                                 x2={CENTER_X}
-                                y2={
-                                    ROOF_FRONT_Y +
-                                    (BAND_COUNT - 1 - i) * FLOOR_H
-                                }
+                                y2={ROOF_FRONT_Y + litIndex * FLOOR_H}
                                 stroke="currentColor"
                                 strokeWidth={0.75}
                                 className="text-secondary-950/40"
                             />
                             <line
                                 x1={CENTER_X}
-                                y1={
-                                    ROOF_FRONT_Y +
-                                    (BAND_COUNT - 1 - i) * FLOOR_H
-                                }
+                                y1={ROOF_FRONT_Y + litIndex * FLOOR_H}
                                 x2={CENTER_X + ISO_DX}
-                                y2={
-                                    ROOF_EAVE_Y + (BAND_COUNT - 1 - i) * FLOOR_H
-                                }
+                                y2={ROOF_EAVE_Y + litIndex * FLOOR_H}
                                 stroke="currentColor"
                                 strokeWidth={0.75}
                                 className="text-secondary-950/40"
@@ -420,8 +416,8 @@ export function PositionBuilding({
                 {/* 지면 */}
                 <ellipse
                     cx={CENTER_X}
-                    cy={GROUND_FRONT_Y + 6}
-                    rx={ISO_DX + 14}
+                    cy={GROUND_FRONT_Y + GROUND_ELLIPSE_CY_OFFSET}
+                    rx={ISO_DX + GROUND_ELLIPSE_RX_OFFSET}
                     ry={ISO_DY / 2}
                     fill="currentColor"
                     className="text-secondary-950/40"
@@ -455,7 +451,7 @@ export function PositionBuilding({
                     <text
                         data-testid="avg-out-of-range-note"
                         x={CENTER_X - ISO_DX - LABEL_GAP}
-                        y={avgY + 12}
+                        y={avgY + NOTE_Y_OFFSET}
                         textAnchor="end"
                         className="fill-secondary-400 text-[9px]"
                     >
@@ -491,7 +487,7 @@ export function PositionBuilding({
                     <text
                         data-testid="current-out-of-range-note"
                         x={CENTER_X + ISO_DX + LABEL_GAP}
-                        y={currentY + 12}
+                        y={currentY + NOTE_Y_OFFSET}
                         textAnchor="start"
                         className="fill-secondary-400 text-[9px]"
                     >
