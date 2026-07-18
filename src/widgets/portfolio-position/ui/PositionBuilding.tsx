@@ -307,21 +307,29 @@ export function PositionBuilding({
     // pinnedFloor를 닫는다.
     useEscapeKey(() => setPinnedFloor(null), pinnedFloor !== null);
 
-    // model.bands.length는 volumeByBand 인덱싱(아래)과 describeAvgFloor 둘 다에
-    // 필요해 컴포넌트 최상단에서 한 번만 계산한다(단일 source, 중복 선언 금지).
-    // useMemo(floorTooltips) 바로 앞에 둔 것도 그 의존값으로 필요하기 때문이다.
-    const bandCount = model.bands.length;
-
     // 전체 밴드의 툴팁 콘텐츠를 한 번만 계산해 활성 층 파생(아래)과 렌더 루프
     // (층별 hover 콘텐츠 조회) 둘 다 재사용한다 — 같은 band index를 두 곳에서
     // 따로 계산하지 않는다(MISTAKES #2, buildFloorTooltips 주석 참고). 매 렌더
     // 재계산을 막기 위해 useMemo로 감싼다(MISTAKES #10 — props/state 파생
-    // 배열/객체는 useMemo).
+    // 배열/객체는 useMemo). model.bands.length는 이미 model에 포함돼 있으므로
+    // deps는 model만으로 충분하다(별도 bandCount 파생값을 deps에 얹지 않는다).
     const floorTooltips = useMemo(
         () =>
-            buildFloorTooltips(model, volumeByBand, low52w, high52w, bandCount),
-        [model, volumeByBand, low52w, high52w, bandCount]
+            buildFloorTooltips(
+                model,
+                volumeByBand,
+                low52w,
+                high52w,
+                model.bands.length
+            ),
+        [model, volumeByBand, low52w, high52w]
     );
+
+    // model.bands.length는 volumeByBand 인덱싱(아래)과 describeAvgFloor 둘 다에
+    // 필요해 파생 변수 구간에서 한 번만 계산한다(단일 source, 중복 선언 금지).
+    // 모든 hook 호출(useState/useRef/useOnClickOutside/useEscapeKey/useMemo) 뒤에
+    // 둔다(Custom Hook Declaration Order — CONVENTIONS.md).
+    const bandCount = model.bands.length;
 
     const avgDisplay = formatUsd(avg);
     const currentDisplay = formatUsd(current);
