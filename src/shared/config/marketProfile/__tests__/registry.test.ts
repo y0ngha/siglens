@@ -20,6 +20,7 @@ describe('market profile registry', () => {
                 'options',
                 'fear-greed',
                 'overall',
+                'position',
             ]);
             expect(d.allowedTimeframes).toEqual([
                 '5Min',
@@ -41,7 +42,13 @@ describe('market profile registry', () => {
             expect(d.assetClass).toBe('crypto');
             expect(d.exchangeWhitelist).toBeNull();
             expect(d.searchSource).toBe('crypto-store');
-            expect(d.tabs).toEqual(['chart', 'news', 'fear-greed', 'overall']);
+            expect(d.tabs).toEqual([
+                'chart',
+                'news',
+                'fear-greed',
+                'overall',
+                'position',
+            ]);
             expect(d.allowedTimeframes).toEqual(['5Min', '1Hour', '1Day']);
             expect(d.priceFormat.precision).toEqual({
                 kind: 'dynamic-by-magnitude',

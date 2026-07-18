@@ -14,7 +14,8 @@ export type TabKey =
     | 'congress'
     | 'options'
     | 'fear-greed'
-    | 'overall';
+    | 'overall'
+    | 'position';
 
 /**
  * Composite market-profile key — one entry per REAL tradable market.

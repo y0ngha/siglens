@@ -1,8 +1,8 @@
 import { TABS } from '@/views/symbol/utils/symbolTabsConfig';
 
 describe('TABS (symbolTabsConfig)', () => {
-    it('contains all 8 analysis tabs', () => {
-        expect(TABS).toHaveLength(8);
+    it('contains all 9 analysis tabs', () => {
+        expect(TABS).toHaveLength(9);
     });
 
     it('has unique keys', () => {
@@ -70,5 +70,19 @@ describe('TABS (symbolTabsConfig)', () => {
         for (const tab of TABS) {
             expect(tab.label.length).toBeGreaterThan(0);
         }
+    });
+
+    it('position tab href is /{symbol}/position', () => {
+        const tab = TABS.find(t => t.key === 'position')!;
+        expect(tab).toBeDefined();
+        expect(tab.label).toBe('내 위치');
+        expect(tab.hrefBuilder('AAPL')).toBe('/AAPL/position');
+    });
+
+    it('position tab is positioned after overall tab (last)', () => {
+        const overallIdx = TABS.findIndex(t => t.key === 'overall');
+        const positionIdx = TABS.findIndex(t => t.key === 'position');
+        expect(positionIdx).toBe(overallIdx + 1);
+        expect(positionIdx).toBe(TABS.length - 1);
     });
 });

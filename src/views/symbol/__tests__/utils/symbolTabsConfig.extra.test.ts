@@ -14,6 +14,7 @@ describe('tabsFor', () => {
             'news',
             'fear-greed',
             'overall',
+            'position',
         ]);
     });
 });
