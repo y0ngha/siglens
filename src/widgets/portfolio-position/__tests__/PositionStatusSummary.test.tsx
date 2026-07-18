@@ -28,6 +28,22 @@ describe('PositionStatusSummary', () => {
         expect(container).toBeEmptyDOMElement();
     });
 
+    it('스코프 펜스: 매수/매도·목표가·진입·추천·손절·익절 등 AI 조언 도메인 언어를 렌더하지 않는다(순수 포지션 사실만 — SCOPE.md §0)', () => {
+        // 이 결정적 요약은 P&L·범위·거리 같은 사실만 보여야 하고, 매매 판단
+        // 언어(core AI 분석 도메인)가 새어들면 실패해야 한다 — 스코프 펜스를
+        // 암묵적 렌더 집합이 아니라 falsifiable 단언으로 잠근다.
+        const { container } = render(
+            <PositionStatusSummary
+                status={status()}
+                avgRaw="150"
+                quantityRaw="10"
+            />
+        );
+        expect(container.textContent ?? '').not.toMatch(
+            /매수|매도|목표가|진입|추천|손절|익절/
+        );
+    });
+
     it('평단·수량을 trimTrailingZeros로 다듬어 표시한다', () => {
         const { getByText } = render(
             <PositionStatusSummary

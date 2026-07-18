@@ -1,4 +1,3 @@
-import { useId } from 'react';
 import { cn } from '@/shared/lib/cn';
 import { formatSignedPercent, formatSignedUsd } from '@/shared/lib/priceFormat';
 import { trimTrailingZeros } from '@/shared/lib/trimTrailingZeros';
@@ -51,8 +50,6 @@ export function PositionStatusSummary({
     avgRaw,
     quantityRaw,
 }: PositionStatusSummaryProps) {
-    const headingId = useId();
-
     if (status === null) return null;
 
     const avgDisplay = `$${trimTrailingZeros(avgRaw)}`;
@@ -69,10 +66,9 @@ export function PositionStatusSummary({
             data-testid="position-status-summary"
             className="bg-secondary-800 flex flex-col gap-3 rounded-lg p-4"
         >
-            <h2
-                id={headingId}
-                className="text-secondary-200 text-sm font-semibold"
-            >
+            {/* 시각 헤딩. 접근명은 위 section의 aria-label(전체 포지션 요약)이
+                담당하므로 h2에 id/aria-labelledby 연결을 두지 않는다. */}
+            <h2 className="text-secondary-200 text-sm font-semibold">
                 내 포지션
             </h2>
             <dl className="text-secondary-300 grid grid-cols-1 gap-2 text-sm">
