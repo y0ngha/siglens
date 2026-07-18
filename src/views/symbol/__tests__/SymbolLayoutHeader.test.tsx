@@ -1,4 +1,5 @@
 import { render, screen, fireEvent, within } from '@testing-library/react';
+import { useState } from 'react';
 import { SymbolLayoutHeader } from '@/views/symbol/SymbolLayoutHeader';
 
 vi.mock('next/link', () => ({
@@ -53,28 +54,6 @@ vi.mock('@/features/symbol-model/model/SymbolModelContext', () => ({
     useSymbolModel: mockUseSymbolModel,
 }));
 
-vi.mock('@/features/reasoning-toggle', () => ({
-    ReasoningToggle: ({
-        checked,
-        canUse,
-        onChange,
-        onLockedClick,
-    }: {
-        checked: boolean;
-        canUse: boolean;
-        onChange: (v: boolean) => void;
-        onLockedClick?: () => void;
-    }) => (
-        <button
-            type="button"
-            data-testid="reasoning-toggle"
-            onClick={() => (canUse ? onChange(!checked) : onLockedClick?.())}
-        >
-            {canUse ? (checked ? 'on' : 'off') : 'locked'}
-        </button>
-    ),
-}));
-
 vi.mock('@/views/symbol/SymbolTabs', () => ({
     SymbolTabs: () => <nav data-testid="symbol-tabs">tabs</nav>,
 }));
@@ -83,13 +62,61 @@ vi.mock('@/views/symbol/SymbolTabsSkeleton', () => ({
     SymbolTabsSkeleton: () => <div data-testid="tabs-skeleton">loading</div>,
 }));
 
+// The header only wires props through to AnalysisSettingsMenu now — the real
+// ModelSelector/ReasoningToggle behavior (gear popover open/close, focus,
+// active dot, gating) is covered by AnalysisSettingsMenu's own test file.
+// This fake mirrors just enough of the real widget's shape (gear trigger +
+// popover disclosure) so header tests that need to reach the model
+// selector/reasoning toggle can do so by opening the gear first, matching
+// the real interaction shape instead of bypassing it.
 vi.mock('@/widgets/analysis', () => ({
-    ModelSelector: ({
-        selectedModel,
+    AnalysisSettingsMenu: ({
+        modelId,
+        reasoning,
+        canUseReasoning,
+        setReasoning,
+        openSignupNudge,
     }: {
-        selectedModel: string;
+        modelId: string;
+        reasoning: boolean;
+        canUseReasoning: boolean;
+        setReasoning: (v: boolean) => void;
+        openSignupNudge: () => void;
         [key: string]: unknown;
-    }) => <div data-testid="model-selector">{selectedModel}</div>,
+    }) => {
+        const [open, setOpen] = useState(false);
+        return (
+            <div>
+                <button
+                    type="button"
+                    data-testid="settings-gear"
+                    onClick={() => setOpen(o => !o)}
+                >
+                    분석 설정
+                </button>
+                {open && (
+                    <div data-testid="settings-popover">
+                        <div data-testid="model-selector">{modelId}</div>
+                        <button
+                            type="button"
+                            data-testid="reasoning-toggle"
+                            onClick={() =>
+                                canUseReasoning
+                                    ? setReasoning(!reasoning)
+                                    : openSignupNudge()
+                            }
+                        >
+                            {canUseReasoning
+                                ? reasoning
+                                    ? 'on'
+                                    : 'off'
+                                : 'locked'}
+                        </button>
+                    </div>
+                )}
+            </div>
+        );
+    },
 }));
 
 // Throw-capable so the ErrorBoundary fallback={null} path can be exercised.
@@ -154,14 +181,18 @@ describe('SymbolLayoutHeader', () => {
         expect(screen.getByText(/애플/)).toBeDefined();
     });
 
-    it('renders the model selector', () => {
+    it('renders the 분석 설정 gear (model selector + reasoning toggle are consolidated behind it)', () => {
         render(<SymbolLayoutHeader symbol="aapl" />);
-        expect(screen.getByTestId('model-selector')).toBeDefined();
+        expect(screen.getByTestId('settings-gear')).toBeDefined();
+        // Collapsed by default — the model selector isn't in the DOM until
+        // the gear is opened, mirroring the real AnalysisSettingsMenu.
+        expect(screen.queryByTestId('model-selector')).toBeNull();
     });
 
-    it('renders AI model label text', () => {
+    it('opening the gear reveals the model selector', () => {
         render(<SymbolLayoutHeader symbol="aapl" />);
-        expect(screen.getByText('AI 분석 모델')).toBeDefined();
+        fireEvent.click(screen.getByTestId('settings-gear'));
+        expect(screen.getByTestId('model-selector')).toBeDefined();
     });
 
     it('renders the portfolio holding chip', () => {
@@ -175,6 +206,7 @@ describe('SymbolLayoutHeader', () => {
         );
 
         render(<SymbolLayoutHeader symbol="aapl" />);
+        fireEvent.click(screen.getByTestId('settings-gear'));
         const toggle = screen.getByTestId('reasoning-toggle');
         expect(toggle).toBeDefined();
         expect(toggle.textContent).toBe('locked');
@@ -186,6 +218,7 @@ describe('SymbolLayoutHeader', () => {
         );
 
         render(<SymbolLayoutHeader symbol="aapl" />);
+        fireEvent.click(screen.getByTestId('settings-gear'));
         const toggle = screen.getByTestId('reasoning-toggle');
         expect(toggle).toBeDefined();
         expect(toggle.textContent).toBe('on');
@@ -198,6 +231,7 @@ describe('SymbolLayoutHeader', () => {
         );
 
         render(<SymbolLayoutHeader symbol="aapl" />);
+        fireEvent.click(screen.getByTestId('settings-gear'));
         fireEvent.click(screen.getByTestId('reasoning-toggle'));
 
         expect(setReasoning).toHaveBeenCalledWith(true);
@@ -211,6 +245,7 @@ describe('SymbolLayoutHeader', () => {
         );
 
         render(<SymbolLayoutHeader symbol="aapl" />);
+        fireEvent.click(screen.getByTestId('settings-gear'));
         // The header does NOT render the modal itself — the provider owns the
         // single instance. Clicking the locked toggle only calls the opener.
         expect(mockOpenSignupNudge).not.toHaveBeenCalled();
@@ -249,36 +284,34 @@ describe('SymbolLayoutHeader', () => {
         }
     });
 
-    // 모바일 헤더 재배치(공포·탐욕 칩+공유 = 1행, 모델 라벨+셀렉터+추론 토글+보유종목
-    // 칩 = 2행)에 대한 회귀 커버리지. CSS(sm:hidden 등)는 jsdom에서 적용되지 않으므로
-    // DOM 그룹핑으로 검증한다 — 두 행이 같은 컨트롤 컨테이너의 형제이고, 각 행에
-    // 기대한 컨트롤이 모여 있는지 확인해 '외톨이 칩 행' 회귀를 잡는다. 보유종목
-    // 칩은 master의 flex-col 재배치(#690)와 이 브랜치의 PortfolioChipMounted가
-    // 합쳐진 병합 지점이므로, 2행에 남아있는지 명시적으로 단언한다.
-    it('모바일 컨트롤: 공포·탐욕 칩+공유 버튼이 한 행, 모델 셀렉터+추론 토글+보유종목 칩이 다른 행에 그룹된다', () => {
+    // 헤더 디클러터(분석 설정 기어 도입) 이후의 단일 행 회귀 커버리지. 이전엔
+    // 모바일에서 두 줄(공포·탐욕+공유 / 모델·토글·보유종목 칩)로 쌓았지만, 모델
+    // 셀렉터+추론 토글이 기어 팝오버 뒤로 합쳐지면서 남는 컨트롤은 [평단 칩]
+    // [공유][기어] 3개의 아이콘 버튼뿐이라 모바일도 데스크톱도 한 행으로
+    // 충분해졌다 — 헤더가 더 짧아졌는지(웹킷 회귀 가드) 검증하는 구조적
+    // 증거이기도 하다. CSS(sm:hidden 등)는 jsdom에서 적용되지 않으므로 DOM
+    // 그룹핑으로 검증한다: 공유 버튼·보유종목 칩·설정 기어가 같은 클러스터의
+    // 형제이고, 그 클러스터는 모바일 공포·탐욕 칩과 같은 단일 컨트롤 행의
+    // 형제다(더 이상 별도의 '외톨이 칩 행'이 없다).
+    it('모바일 컨트롤 단일 행: 공포·탐욕 칩과 [평단 칩][공유][분석 설정 기어] 클러스터가 하나의 컨트롤 행에 모인다', () => {
         render(<SymbolLayoutHeader symbol="aapl" />);
 
-        // 공유 버튼이 속한 행: 모바일 공포·탐욕 칩과 같은 컨테이너에 있다.
-        const shareRow = screen.getByTestId('share-button').parentElement;
-        expect(shareRow).not.toBeNull();
+        // 공유 버튼·보유종목 칩·설정 기어는 같은 버튼 클러스터의 형제다.
+        const buttonCluster = screen.getByTestId('share-button').parentElement;
+        expect(buttonCluster).not.toBeNull();
         expect(
-            within(shareRow as HTMLElement).getByTestId('fear-greed-chip')
+            within(buttonCluster as HTMLElement).getByTestId('portfolio-chip')
+        ).toBeInTheDocument();
+        expect(
+            within(buttonCluster as HTMLElement).getByTestId('settings-gear')
         ).toBeInTheDocument();
 
-        // 모델 셀렉터가 속한 행: 추론 토글, 보유종목 칩과 같은 컨테이너에 있다.
-        const controlRow = screen.getByTestId('model-selector').parentElement;
+        // 그 클러스터는 모바일 공포·탐욕 칩과 같은 단일 컨트롤 행의 형제다 —
+        // 더 이상 칩만 홀로 떨어진 별도 행이 없다.
+        const controlRow = (buttonCluster as HTMLElement).parentElement;
         expect(controlRow).not.toBeNull();
         expect(
-            within(controlRow as HTMLElement).getByTestId('reasoning-toggle')
+            within(controlRow as HTMLElement).getByTestId('fear-greed-chip')
         ).toBeInTheDocument();
-        expect(
-            within(controlRow as HTMLElement).getByTestId('portfolio-chip')
-        ).toBeInTheDocument();
-
-        // 두 행은 서로 다른 그룹이지만 같은 컨트롤 컨테이너의 형제다.
-        expect(shareRow).not.toBe(controlRow);
-        expect((shareRow as HTMLElement).parentElement).toBe(
-            (controlRow as HTMLElement).parentElement
-        );
     });
 });
