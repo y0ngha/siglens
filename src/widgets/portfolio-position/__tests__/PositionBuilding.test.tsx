@@ -1,4 +1,4 @@
-import { render } from '@testing-library/react';
+import { fireEvent, render } from '@testing-library/react';
 import { computePosition, type PositionModel } from '../lib/positionGeometry';
 import {
     AVG_LABEL_PREFIX,
@@ -21,7 +21,8 @@ function model(overrides: Partial<Parameters<typeof computePosition>[0]> = {}) {
 
 function renderBuilding(
     input: Partial<Parameters<typeof computePosition>[0]> = {},
-    m: PositionModel = model(input)
+    m: PositionModel = model(input),
+    volumeByBand?: readonly number[] | null
 ) {
     return render(
         <PositionBuilding
@@ -31,6 +32,7 @@ function renderBuilding(
             high52w={input.high52w ?? 200}
             current={input.current ?? 180}
             avg={input.avg ?? 150}
+            volumeByBand={volumeByBand}
         />
     );
 }
@@ -325,5 +327,97 @@ describe('PositionBuilding', () => {
         expect(svg?.getAttribute('class')).toContain('max-w-[280px]');
         expect(svg?.getAttribute('class')).toContain('sm:max-w-[340px]');
         expect(svg?.getAttribute('class')).toContain('lg:max-w-[440px]');
+    });
+
+    describe('floor hover — volume-by-price (design §floor-hover)', () => {
+        // low52w=100, high52w=200, bandCount=5 → width=20 → bands
+        // [100,120) [120,140) [140,160) [160,180) [180,200]
+        const VOLUME_BY_BAND = [10, 20, 30, 25, 15];
+
+        it('without volumeByBand, floors are non-interactive (no tabIndex/aria-label) and the building is unchanged', () => {
+            const { container, queryByTestId } = renderBuilding();
+            const floors = container.querySelectorAll(
+                '[data-testid="building-floor"]'
+            );
+            expect(floors).toHaveLength(5);
+            floors.forEach(floor => {
+                expect(floor.hasAttribute('tabindex')).toBe(false);
+                expect(floor.hasAttribute('aria-label')).toBe(false);
+                expect(floor.querySelector('title')).toBeNull();
+            });
+            expect(queryByTestId('floor-volume-readout')).toBeNull();
+        });
+
+        it('with volumeByBand, each floor exposes its band price-range + volume % via aria-label and a native <title>', () => {
+            const { container } = renderBuilding({}, undefined, VOLUME_BY_BAND);
+            const floors = Array.from(
+                container.querySelectorAll('[data-testid="building-floor"]')
+            );
+            expect(floors).toHaveLength(5);
+
+            const expected = [
+                '$100–$120 · 최근 거래량 10%',
+                '$120–$140 · 최근 거래량 20%',
+                '$140–$160 · 최근 거래량 30%',
+                '$160–$180 · 최근 거래량 25%',
+                '$180–$200 · 최근 거래량 15%',
+            ];
+
+            floors.forEach((floor, i) => {
+                expect(floor.getAttribute('tabindex')).toBe('0');
+                expect(floor.getAttribute('aria-label')).toBe(expected[i]);
+                expect(floor.querySelector('title')?.textContent).toBe(
+                    expected[i]
+                );
+            });
+        });
+
+        it('hovering (mouseEnter) a floor reveals its band info in the below-building readout; mouseLeave clears it', () => {
+            const { container, getByTestId } = renderBuilding(
+                {},
+                undefined,
+                VOLUME_BY_BAND
+            );
+            const floors = container.querySelectorAll(
+                '[data-testid="building-floor"]'
+            );
+            const readout = getByTestId('floor-volume-readout');
+            expect(readout.textContent?.trim()).toBe('');
+
+            fireEvent.mouseEnter(floors[2]); // band index 2 → [140,160), 30%
+            expect(readout.textContent).toBe('$140–$160 · 최근 거래량 30%');
+
+            fireEvent.mouseLeave(floors[2]);
+            expect(readout.textContent?.trim()).toBe('');
+        });
+
+        it('keyboard focus on a floor also reveals its band info (a11y parity with hover); blur clears it', () => {
+            const { container, getByTestId } = renderBuilding(
+                {},
+                undefined,
+                VOLUME_BY_BAND
+            );
+            const floors = container.querySelectorAll(
+                '[data-testid="building-floor"]'
+            );
+            const readout = getByTestId('floor-volume-readout');
+
+            fireEvent.focus(floors[0]); // band index 0 → [100,120), 10%
+            expect(readout.textContent).toBe('$100–$120 · 최근 거래량 10%');
+
+            fireEvent.blur(floors[0]);
+            expect(readout.textContent?.trim()).toBe('');
+        });
+
+        it('the below-building readout is aria-hidden (band info is already exposed per-floor via aria-label, avoiding double-announce)', () => {
+            const { getByTestId } = renderBuilding(
+                {},
+                undefined,
+                VOLUME_BY_BAND
+            );
+            expect(
+                getByTestId('floor-volume-readout').getAttribute('aria-hidden')
+            ).toBe('true');
+        });
     });
 });

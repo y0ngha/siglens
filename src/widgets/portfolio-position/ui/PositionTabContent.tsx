@@ -24,6 +24,9 @@ interface PositionTabContentProps {
     low52w: number | null;
     high52w: number | null;
     lastClose: number | null;
+    /** 5개 가격대별 최근 거래량 비중(%) — optional, 서버가 집계 못하면 null/undefined.
+     * PositionBuilding의 층 hover에만 쓰인다(design §volume-by-price). */
+    volumeByBand?: readonly number[] | null;
 }
 
 function PositionAuthSkeleton() {
@@ -55,6 +58,7 @@ export function PositionTabContent({
     low52w,
     high52w,
     lastClose,
+    volumeByBand,
 }: PositionTabContentProps) {
     const isHydrated = useHydrated();
     const { data: user, isLoading } = useCurrentUser();
@@ -72,6 +76,7 @@ export function PositionTabContent({
             low52w={low52w}
             high52w={high52w}
             lastClose={lastClose}
+            volumeByBand={volumeByBand}
         />
     );
 }

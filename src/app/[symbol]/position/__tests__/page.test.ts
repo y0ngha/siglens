@@ -23,9 +23,20 @@ vi.mock('@/views/symbol', () => ({
     SymbolPageHeading: ({ children }: { children: React.ReactNode }) =>
         children,
 }));
-vi.mock('@/widgets/portfolio-position', () => ({
-    PositionTabContent: () => null,
-}));
+// PositionTabContent is stubbed (client component, not under test here). But
+// computeVolumeByBand is a real pure function the page's server data path
+// calls directly — pull the actual implementation from its own lean lib
+// module (not the full barrel, which would also drag in PositionTabContent's
+// 'use client' dependency graph) so the "server data path" tests below
+// exercise the real aggregation, not a stub.
+vi.mock('@/widgets/portfolio-position', async () => {
+    const { computeVolumeByBand } =
+        await import('@/widgets/portfolio-position/lib/volumeByBand');
+    return {
+        PositionTabContent: () => null,
+        computeVolumeByBand,
+    };
+});
 vi.mock('next/navigation', () => ({
     notFound: vi.fn(() => {
         throw new Error('NEXT_NOT_FOUND');
@@ -183,7 +194,7 @@ describe('PositionPage server data path (static, cookies-free)', () => {
         mockIsTabAllowedForSymbol.mockResolvedValue(true);
     });
 
-    it('uses getBarsStatic (never getBarsAction) → quantizeBarsDataToLastClosed → buildTechnicalFacts, and threads low/high/lastClose into PositionTabContent', async () => {
+    it('uses getBarsStatic (never getBarsAction) → quantizeBarsDataToLastClosed → buildTechnicalFacts, and threads low/high/lastClose/volumeByBand into PositionTabContent', async () => {
         mockGetBarsStatic.mockResolvedValue(RAW_BARS as never);
         mockQuantize.mockReturnValue(RAW_BARS as never);
 
@@ -201,14 +212,19 @@ describe('PositionPage server data path (static, cookies-free)', () => {
             low52w: number | null;
             high52w: number | null;
             lastClose: number | null;
+            volumeByBand: number[] | null;
         };
         expect(props.symbol).toBe('AAPL');
         expect(props.low52w).toBe(85);
         expect(props.high52w).toBe(110);
         expect(props.lastClose).toBe(100);
+        // low=85,high=110,bandCount=5 → width=5 → bands [85,90)[90,95)[95,100)
+        // [100,105)[105,110]. RAW_BARS: close=90(vol 1)→band1, close=100(vol 1)
+        // →band3, evenly split → 50/50.
+        expect(props.volumeByBand).toEqual([0, 50, 0, 50, 0]);
     });
 
-    it('degrades to null low/high/lastClose (never throws) when getBarsStatic fails', async () => {
+    it('degrades to null low/high/lastClose/volumeByBand (never throws) when getBarsStatic fails', async () => {
         mockGetBarsStatic.mockRejectedValue(new Error('FMP down'));
 
         const tree = await PositionPage({
@@ -220,10 +236,12 @@ describe('PositionPage server data path (static, cookies-free)', () => {
             low52w: number | null;
             high52w: number | null;
             lastClose: number | null;
+            volumeByBand: number[] | null;
         };
         expect(props.low52w).toBeNull();
         expect(props.high52w).toBeNull();
         expect(props.lastClose).toBeNull();
+        expect(props.volumeByBand).toBeNull();
     });
 
     it('degrades to null when buildTechnicalFacts cannot compute (e.g. <2 bars)', async () => {
@@ -240,6 +258,36 @@ describe('PositionPage server data path (static, cookies-free)', () => {
         const island = findElementByType(tree, PositionTabContent);
         const props = island?.props as { low52w: number | null };
         expect(props.low52w).toBeNull();
+    });
+
+    it('degrades volumeByBand to null (while low/high/lastClose still resolve) when the recent bars carry zero total volume', async () => {
+        mockGetBarsStatic.mockResolvedValue({
+            bars: [
+                { time: 1, open: 90, high: 95, low: 85, close: 90, volume: 0 },
+                {
+                    time: 2,
+                    open: 100,
+                    high: 110,
+                    low: 95,
+                    close: 100,
+                    volume: 0,
+                },
+            ],
+            indicators: { rsi: [null, null], macd: [{ histogram: null }] },
+        } as never);
+        mockQuantize.mockImplementation((data: unknown) => data as never);
+
+        const tree = await PositionPage({
+            params: Promise.resolve({ symbol: 'aapl' }),
+        });
+
+        const island = findElementByType(tree, PositionTabContent);
+        const props = island?.props as {
+            low52w: number | null;
+            volumeByBand: number[] | null;
+        };
+        expect(props.low52w).toBe(85); // range still resolves — only volume is degraded
+        expect(props.volumeByBand).toBeNull();
     });
 });
 

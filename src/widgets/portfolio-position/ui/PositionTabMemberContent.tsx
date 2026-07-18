@@ -11,6 +11,8 @@ interface PositionTabMemberContentProps {
     low52w: number | null;
     high52w: number | null;
     lastClose: number | null;
+    /** 5개 가격대별 최근 거래량 비중(%) — optional. PositionBuilding으로 그대로 전달만 한다. */
+    volumeByBand?: readonly number[] | null;
 }
 
 function PositionSkeleton() {
@@ -56,6 +58,7 @@ export function PositionTabMemberContent({
     low52w,
     high52w,
     lastClose,
+    volumeByBand,
 }: PositionTabMemberContentProps) {
     const { holding, isLoading, isError } = useSymbolHolding(symbol);
 
@@ -94,6 +97,7 @@ export function PositionTabMemberContent({
                 high52w={high52w}
                 current={lastClose}
                 avg={avg}
+                volumeByBand={volumeByBand}
                 // `sm:max-w-[N]` + `sm:w-auto`(원래 코드)는 데스크톱에서 의도한 만큼
                 // 커지지 않는다: svg가 `w-full`(퍼센티지)만 갖고 명시 width/height 속성이
                 // 없어서, flex row에서 이 wrapper의 shrink-to-fit 계산이 svg의 UA 기본

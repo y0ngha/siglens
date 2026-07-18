@@ -7,3 +7,4 @@ export {
     type PositionInputs,
     type PositionBand,
 } from './lib/positionGeometry';
+export { computeVolumeByBand } from './lib/volumeByBand';

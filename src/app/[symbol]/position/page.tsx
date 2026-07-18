@@ -1,4 +1,7 @@
-import { PositionTabContent } from '@/widgets/portfolio-position';
+import {
+    computeVolumeByBand,
+    PositionTabContent,
+} from '@/widgets/portfolio-position';
 import { getBlockedSymbolMetadata } from '@/app/[symbol]/symbolIndexabilityMetadata';
 import { SymbolPageHeading } from '@/views/symbol';
 import {
@@ -14,7 +17,10 @@ import { isTabAllowedForSymbol } from '@/entities/ticker/api';
 import { getBarsStatic, quantizeBarsDataToLastClosed } from '@/entities/bars';
 import { marketProfileOf } from '@/shared/config/marketProfile';
 import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
-import { buildTechnicalFacts } from '@/views/symbol/utils/technicalFacts';
+import {
+    buildTechnicalFacts,
+    RECENT_BARS_WINDOW,
+} from '@/views/symbol/utils/technicalFacts';
 import {
     clampSeoDescription,
     NOINDEX_SYMBOL_METADATA,
@@ -96,7 +102,15 @@ interface PriceRange {
     low52w: number;
     high52w: number;
     lastClose: number;
+    /** 5개 가격대별 최근 거래량 비중(%), index 0=최저가 밴드. 집계 불가(예:
+     * 전체 거래량 0)면 null — PositionBuilding은 그 경우 층 hover를 생략한다. */
+    volumeByBand: number[] | null;
 }
+
+// PositionBuilding(‘use client’)의 BAND_COUNT와 반드시 같아야 한다. 그 상수는
+// export되지 않고(순수 프레젠테이션 상수) 이 서버 컴포넌트가 클라이언트 UI
+// 파일의 내부 상수를 끌어올 이유도 없어 계약으로 문서화하고 리터럴을 둔다.
+const VOLUME_BAND_COUNT = 5;
 
 /**
  * 최근 가격 범위(공개 데이터)만 서버에서 계산한다. getBarsStatic은
@@ -125,10 +139,21 @@ async function resolvePriceRange(
         );
         const facts = buildTechnicalFacts(quantized.bars, quantized.indicators);
         if (facts === null) return null;
+        // buildTechnicalFacts가 low52w/high52w를 도출한 것과 동일한
+        // RECENT_BARS_WINDOW(252봉) 창을 재사용한다 — 그렇지 않으면 밴드 범위
+        // [low,high]와 집계 대상 봉의 시간창이 어긋난다.
+        const recentBars = quantized.bars.slice(-RECENT_BARS_WINDOW);
+        const volumeByBand = computeVolumeByBand(
+            recentBars,
+            facts.low52w,
+            facts.high52w,
+            VOLUME_BAND_COUNT
+        );
         return {
             low52w: facts.low52w,
             high52w: facts.high52w,
             lastClose: facts.lastClose,
+            volumeByBand,
         };
     } catch (e) {
         console.error('[PositionPage] resolvePriceRange failed:', e);
@@ -192,6 +217,7 @@ export default async function PositionPage({ params }: Props) {
                 low52w={range?.low52w ?? null}
                 high52w={range?.high52w ?? null}
                 lastClose={range?.lastClose ?? null}
+                volumeByBand={range?.volumeByBand ?? null}
             />
         </main>
     );

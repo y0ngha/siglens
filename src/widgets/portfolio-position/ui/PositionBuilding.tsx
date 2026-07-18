@@ -1,3 +1,6 @@
+'use client';
+
+import { useState } from 'react';
 import { cn } from '@/shared/lib/cn';
 import {
     dynamicDecimals,
@@ -14,6 +17,15 @@ interface PositionBuildingProps {
     current: number;
     avg: number;
     className?: string;
+    /**
+     * 5개 가격대(밴드)별 최근(52주/252봉) 거래량 비중(%), index 0=최저가
+     * 밴드(positionGeometry의 BANDS/이 컴포넌트의 층 순서와 동일). optional —
+     * null/undefined면 층 hover가 완전히 비활성화되고 건물은 이 prop이
+     * 추가되기 전과 동일하게 렌더된다(`/portfolio` 압축 카드는 이 prop을
+     * 전달하지 않아 항상 이 상태다). 순수 raw 히스토그램 — 시그널/해석 없음
+     * (scope fence, volumeByBand.ts와 동일 원칙).
+     */
+    volumeByBand?: readonly number[] | null;
 }
 
 /**
@@ -60,6 +72,32 @@ function outOfRangeNote(clamped: 'above' | 'below' | null): string | null {
     if (clamped === 'above') return '최근 고점보다 높은 곳';
     if (clamped === 'below') return '최근 저점보다 낮은 곳';
     return null;
+}
+
+/** band index(0=최저가)의 가격 구간 — low/high를 bandCount개 동일 폭으로 나눈다.
+ * volumeByBand.ts의 밴드 경계 컨벤션(inclusive-low/exclusive-high, 마지막
+ * 밴드만 상한 포함)과 동일 산식이라 두 값이 항상 같은 구간을 가리킨다. */
+function bandPriceRange(
+    low: number,
+    high: number,
+    index: number,
+    bandCount: number
+): { bandLow: number; bandHigh: number } {
+    const width = (high - low) / bandCount;
+    return {
+        bandLow: low + index * width,
+        bandHigh: low + (index + 1) * width,
+    };
+}
+
+/** 층 hover/focus 시 노출하는 문구 — aria-label·<title>·건물 아래 리드아웃
+ * 3곳에서 동일 문자열을 재사용해 드리프트를 막는다. */
+function formatFloorTooltip(
+    bandLow: number,
+    bandHigh: number,
+    volumePct: number
+): string {
+    return `${formatUsd(bandLow)}–${formatUsd(bandHigh)} · 최근 거래량 ${Math.round(volumePct)}%`;
 }
 
 /* ------------------------------------------------------------------------ *
@@ -300,6 +338,7 @@ export function PositionBuilding({
     current,
     avg,
     className,
+    volumeByBand,
 }: PositionBuildingProps) {
     const avgDisplay = formatUsd(avg);
     const currentDisplay = formatUsd(current);
@@ -307,6 +346,34 @@ export function PositionBuilding({
 
     const avgNote = outOfRangeNote(model.avgClamped);
     const currentNote = outOfRangeNote(model.currentClamped);
+
+    // 층 hover/focus 상태 — volumeByBand가 없으면 절대 set되지 않아(아래 이벤트
+    // 핸들러가 통째로 붙지 않음) 항상 null로 남고, 건물은 이 기능 추가 전과
+    // 동일하게 렌더된다.
+    const [activeFloorIndex, setActiveFloorIndex] = useState<number | null>(
+        null
+    );
+    const bandCount = model.bands.length;
+    const activeVolumePct =
+        activeFloorIndex !== null ? volumeByBand?.[activeFloorIndex] : null;
+    let activeFloorTooltip: string | null = null;
+    if (
+        activeFloorIndex !== null &&
+        typeof activeVolumePct === 'number' &&
+        Number.isFinite(activeVolumePct)
+    ) {
+        const { bandLow, bandHigh } = bandPriceRange(
+            low52w,
+            high52w,
+            activeFloorIndex,
+            bandCount
+        );
+        activeFloorTooltip = formatFloorTooltip(
+            bandLow,
+            bandHigh,
+            activeVolumePct
+        );
+    }
 
     // avg≈current면 두 마커(★/●)가 같은 좌표에서 겹쳐 하나로 보인다 — 좌우로
     // 벌려 break-even(가장 흔한 상태)에서도 두 마커가 구분되게 한다.
@@ -378,11 +445,51 @@ export function PositionBuilding({
                 {model.bands.map((band, i) => {
                     const faces = computeFloorFaces(i);
                     const litIndex = BAND_COUNT - 1 - i;
+
+                    const volumePct = volumeByBand?.[i];
+                    const isInteractive =
+                        typeof volumePct === 'number' &&
+                        Number.isFinite(volumePct);
+                    const isActive = isInteractive && activeFloorIndex === i;
+                    let floorTooltip: string | null = null;
+                    if (isInteractive) {
+                        const { bandLow, bandHigh } = bandPriceRange(
+                            low52w,
+                            high52w,
+                            i,
+                            bandCount
+                        );
+                        floorTooltip = formatFloorTooltip(
+                            bandLow,
+                            bandHigh,
+                            volumePct
+                        );
+                    }
+
+                    // 핸들러는 아래에서 isInteractive일 때만 <g>에 붙으므로 여기선
+                    // 별도 가드가 필요 없다.
+                    const activate = () => setActiveFloorIndex(i);
+                    const deactivate = () =>
+                        setActiveFloorIndex(prev => (prev === i ? null : prev));
+
                     return (
                         <g
                             key={`${band.fromPct}-${band.toPct}`}
                             data-testid="building-floor"
+                            tabIndex={isInteractive ? 0 : undefined}
+                            role={isInteractive ? 'group' : undefined}
+                            aria-label={floorTooltip ?? undefined}
+                            className={
+                                isInteractive ? 'cursor-pointer' : undefined
+                            }
+                            onMouseEnter={isInteractive ? activate : undefined}
+                            onMouseLeave={
+                                isInteractive ? deactivate : undefined
+                            }
+                            onFocus={isInteractive ? activate : undefined}
+                            onBlur={isInteractive ? deactivate : undefined}
                         >
+                            {floorTooltip && <title>{floorTooltip}</title>}
                             <polygon
                                 points={faces.left}
                                 fill="currentColor"
@@ -430,6 +537,29 @@ export function PositionBuilding({
                                 strokeWidth={0.75}
                                 className="text-secondary-950/40"
                             />
+                            {/* hover/focus 하이라이트 — 시각 피드백 전용(aria-hidden),
+                                기존 face 폴리곤의 currentColor 그라디언트는 그대로 두고
+                                위에 얇은 테두리만 덧그린다. */}
+                            {isActive && (
+                                <>
+                                    <polygon
+                                        points={faces.left}
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth={1.5}
+                                        className="text-primary-400 pointer-events-none"
+                                        aria-hidden="true"
+                                    />
+                                    <polygon
+                                        points={faces.right}
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth={1.5}
+                                        className="text-primary-400 pointer-events-none"
+                                        aria-hidden="true"
+                                    />
+                                </>
+                            )}
                         </g>
                     );
                 })}
@@ -572,6 +702,21 @@ export function PositionBuilding({
                 수익률 {formatSignedPercent(model.returnPct)} · 최근 범위의{' '}
                 {model.rangePositionPct.toFixed(0)}% 지점
             </p>
+
+            {/* 층 hover/focus 리드아웃 — 시각 사용자(마우스 hover·키보드 focus 둘 다)용
+                보강 표시. 접근성 채널은 각 층 <g>의 aria-label이 담당하므로(포커스 시
+                이미 announce됨) 이 줄은 중복 announce를 막기 위해 aria-hidden이다.
+                volumeByBand가 없으면 아예 렌더하지 않아 건물이 이 기능 추가 전과
+                DOM 상 동일하게 유지된다. */}
+            {volumeByBand && (
+                <p
+                    data-testid="floor-volume-readout"
+                    aria-hidden="true"
+                    className="text-secondary-300 min-h-[1rem] text-center text-xs tabular-nums"
+                >
+                    {activeFloorTooltip ?? ' '}
+                </p>
+            )}
         </div>
     );
 }
