@@ -132,6 +132,16 @@ export interface UseAnalysisResult {
     reanalyzeCooldownMs: number;
     /** 사용자가 쿨다운 중에 재분석 버튼을 눌렀을 때 갱신되는 알림. */
     cooldownNotice: CooldownNotice | null;
+    /**
+     * 서버가 THIS 제출에서 실제로 개인화(포지션 버킷) 캐시 키를 사용했는지 여부
+     * (personalized-analysis-by-position-bucket spec, Subsystem C — 배지 정직성
+     * 감사 이후). `submitAnalysisAction`이 반환하는 `personalized` 플래그를 그대로
+     * 미러링한다 — 홀딩 존재 여부가 아니라, 서버가 실제로 `:pos=<bucket>` 키로
+     * 분석을 조회/제출했는지가 유일한 진실값이다. `AnalysisPanel`의 배지가 이
+     * 값으로 게이트되어야 한다(holding 존재만으로는 안 됨 — 서버 쿼트 읽기 실패나
+     * 자유 티어 등으로 홀딩이 있어도 no-bucket으로 디그레이드될 수 있다).
+     */
+    isPersonalized: boolean;
 }
 
 export function useAnalysis({
@@ -163,6 +173,10 @@ export function useAnalysis({
     const [isPolling, setIsPolling] = useState(false);
     const [pollError, setPollError] = useState<string | null>(null);
     const [isBotBlocked, setIsBotBlocked] = useState(false);
+    // 서버가 THIS 제출에서 개인화(포지션 버킷) 캐시 키를 실제로 썼는지 여부.
+    // submitAnalysisAction의 `personalized` 플래그를 그대로 미러링 — 배지의
+    // 유일한 진실값(personalized-analysis-by-position-bucket spec, Subsystem C).
+    const [isPersonalized, setIsPersonalized] = useState(false);
     // 초기 마운트 시 서버 분석 실패 여부를 캡처한다.
     // useState 초기화로 마운트 시 1회만 평가되며, 이후 prop 변경이 있어도 갱신되지 않는다.
     // useRef를 쓰지 않는 이유: 렌더 중 접근이 필요해 react-hooks/refs 룰을 위반하기 때문.
@@ -242,10 +256,17 @@ export function useAnalysis({
             setPollError(null);
             setAnalysisResult(null);
             setIsBotBlocked(false);
+            // 새 제출이 시작됨 — 이전 결과의 personalized 여부는 더 이상 유효하지
+            // 않다. 새 서버 응답이 올 때까지 false로 되돌린다.
+            setIsPersonalized(false);
         },
         onSuccess: (data, variables) => {
             if (data.status === 'cached') {
                 currentJobIdRef.current = null;
+                // free 조기 반환 분기에서도 세팅 — free는 어차피 personalized가
+                // 항상 false이므로(resolveHoldingPositionBucket이 free를 스킵)
+                // 무해하지만, 두 분기 모두 명시적으로 서버 값을 반영해 둔다.
+                setIsPersonalized(data.personalized ?? false);
                 if (
                     latestTierRef.current === 'free' &&
                     (data.lockedInfoDepth?.length ?? 0) === 0
@@ -275,6 +296,11 @@ export function useAnalysis({
                 setIsPolling(true);
                 // submitted 단계에서는 쿨다운을 시작하지 않는다.
                 // polling 완료(done) 시에만 쿨다운을 시작한다.
+                // 서버가 이미 이 제출을 personalized 캐시 키로 enqueue했는지
+                // 여부 — 아래 폴링 useEffect의 done/error 핸들러는 이 값을
+                // 건드리지 않는다(폴링은 결과 조회일 뿐, personalized 여부는
+                // submit 시점에 이미 확정됨).
+                setIsPersonalized(data.personalized ?? false);
             } else if (data.status === 'miss_no_trigger') {
                 // 별도 boolean 상태로 추적하는 이유: 이 훅은 useMutation 기반이라
                 // useQuery처럼 에러 브랜치 narrowing으로 비-데이터 상태를 표현할
@@ -282,13 +308,16 @@ export function useAnalysis({
                 // 기반이라 BotBlockedError 던지기로 동일 의미를 표현한다.
                 currentJobIdRef.current = null;
                 setIsBotBlocked(true);
+                setIsPersonalized(false);
             } else if (data.status === 'key_error') {
                 currentJobIdRef.current = null;
                 setPollError(data.error);
+                setIsPersonalized(false);
             } else {
                 // tier gate / 일일 사용 한도 초과
                 currentJobIdRef.current = null;
                 setPollError(data.error.message);
+                setIsPersonalized(false);
                 if (variables.force) {
                     void releaseReanalyzeCooldown(
                         latestRef.current.symbol,
@@ -735,5 +764,6 @@ export function useAnalysis({
         handleReanalyze,
         reanalyzeCooldownMs,
         cooldownNotice,
+        isPersonalized,
     };
 }

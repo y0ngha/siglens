@@ -24,7 +24,6 @@ import type {
     PriceScenario,
     RiskLevel,
     StrategyResult,
-    Tier,
     TierInfoDepth,
     Timeframe,
     Trend,
@@ -34,7 +33,6 @@ import type {
 import { HIGH_CONFIDENCE_WEIGHT } from '@y0ngha/siglens-core';
 import { cn } from '@/shared/lib/cn';
 import { isFallbackAnalysis } from '@/entities/chat-message';
-import { useSymbolHolding } from '@/features/portfolio-holding';
 import {
     parseStructuredSummary,
     type SkillSummarySection,
@@ -316,8 +314,17 @@ function TrendBadge({ trend }: TrendBadgeProps) {
 
 /**
  * "내 평단 기준으로 분석했어요" 투명성 배지 — personalized-analysis-by-position-bucket
- * spec, Subsystem C. 회원이 이 심볼에 보유 평단을 등록해 서버가 포지션 버킷을 반영한
- * 개인화 분석을 돌려줬을 때만 렌더된다(호출부 게이트: `tier !== 'free' && holding != null`).
+ * spec, Subsystem C. 서버(`submitAnalysisAction`)가 THIS 제출을 실제로 포지션
+ * 버킷 캐시 키(`:pos=<bucket>`)로 조회/제출했을 때만 렌더된다(호출부 게이트:
+ * `isPersonalized` prop — 서버-authoritative 플래그, `useAnalysis`가
+ * `submitAnalysisAction`의 응답을 그대로 미러링해 threading한다).
+ *
+ * 과거에는 `tier !== 'free' && holding != null`(홀딩의 단순 존재 여부)로
+ * 게이트했으나, 4건의 독립 사전-PR 감사에서 동일한 정직성 문제가 지적됐다: 홀딩이
+ * 있어도 (a) 신선한 회원 로드 시 tier hydration이 끝나기 전까지 화면엔 아직
+ * SSR의 공유 no-bucket shell이 떠 있거나, (b) 서버 쿼트 읽기 실패/평단 값
+ * degenerate로 `resolveHoldingPositionBucket`이 `undefined`(no-bucket)로
+ * degrade하는 경우, 배지가 "개인화됐다"고 거짓 주장을 하는 두 창이 있었다.
  * 색상만으로 의미를 전달하지 않도록 실제 문구를 포함한 텍스트 배지로 구성했다.
  */
 function PersonalizedAnalysisBadge() {
@@ -795,12 +802,13 @@ interface AnalysisPanelProps {
      */
     skillCount?: number;
     /**
-     * 현재 사용자 tier. personalized-analysis 투명성 배지(§FIX 2) 게이트에만
-     * 쓰인다 — `isFreeUser`는 광고 노출 여부(AdBanner)를 위한 별개 boolean이라
-     * member/pro를 구분하지 못한다. 미전달 시 'free'로 취급해 배지를 숨긴다
+     * 서버(`submitAnalysisAction`)가 THIS 제출에서 실제로 개인화(포지션 버킷)
+     * 캐시 키를 사용했는지 여부 — personalized-analysis 투명성 배지(§FIX 2)의
+     * 유일한 게이트. `useAnalysis`가 `submitAnalysisAction`의 `personalized`
+     * 응답 필드를 그대로 threading한다. 미전달 시 `false`로 취급해 배지를 숨긴다
      * (하위 호환 — 이 prop을 모르는 기존 호출부/테스트는 안전하게 배지 없음).
      */
-    tier?: Tier;
+    isPersonalized?: boolean;
 }
 
 export function AnalysisPanel({
@@ -821,7 +829,7 @@ export function AnalysisPanel({
     lockedInfoDepth = [],
     indicatorCount = 0,
     skillCount = 0,
-    tier = 'free',
+    isPersonalized = false,
 }: AnalysisPanelProps) {
     const [copyState, setCopyState] = useState<'idle' | 'copied' | 'failed'>(
         'idle'
@@ -830,10 +838,6 @@ export function AnalysisPanel({
     // 클라이언트 hydration 시점의 시각이 다를 수 있어 stale 평가는 client mount
     // 이후로 미룬다. `now`가 null인 동안에는 배너가 표시되지 않는다.
     const [now, setNow] = useState<Date | null>(null);
-    // personalized-analysis 투명성 배지(§FIX 2)의 홀딩 소스. 공유 포트폴리오
-    // 쿼리에서 이 symbol만 `.find()`하는 얕은 훅이라 QueryClientProvider가 없는
-    // 컨텍스트(이 컴포넌트의 일부 단위 테스트)에서는 반드시 모킹돼야 한다.
-    const { holding } = useSymbolHolding(symbol);
     const hasLockedDetails = lockedInfoDepth.length > 0;
     const hasLockedPartialDetail =
         hasLockedDetails && lockedInfoDepth.includes('partial_detail');
@@ -847,13 +851,14 @@ export function AnalysisPanel({
     // 신뢰도로 오표시하는 것을 막는다.
     const hasLockedConfidence =
         hasLockedDetails && lockedInfoDepth.includes('confidence');
-    // personalized-analysis 투명성 배지(§FIX 2) 노출 게이트. free/게스트(tier
-    // 미해석 시 기본값 'free')·홀딩 미보유는 절대 노출하지 않는다.
-    // isFallbackAnalysis도 함께 배제한다 — 서사가 없는 placeholder 응답에
-    // "내 평단 기준으로 분석했어요"라고 말하는 건 오해를 준다(TrendBadge·summary와
-    // 동일한 신호로 가드).
+    // personalized-analysis 투명성 배지(§FIX 2) 노출 게이트. 서버-authoritative
+    // `isPersonalized` 플래그가 유일한 진실값이다 — 회원의 홀딩 존재 여부가 아니라
+    // 서버가 THIS 제출에서 실제로 포지션 버킷 캐시 키를 썼는지만 본다(위
+    // `PersonalizedAnalysisBadge` 주석 참조). isFallbackAnalysis도 함께
+    // 배제한다 — 서사가 없는 placeholder 응답에 "내 평단 기준으로 분석했어요"라고
+    // 말하는 건 오해를 준다(TrendBadge·summary와 동일한 신호로 가드).
     const showPersonalizedBadge =
-        tier !== 'free' && holding != null && !isFallbackAnalysis(analysis);
+        isPersonalized && !isFallbackAnalysis(analysis);
     const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const resetCopyStateLater = (): void => {

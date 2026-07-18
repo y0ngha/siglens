@@ -167,6 +167,7 @@ export function ChartContent({
         handleReanalyze,
         reanalyzeCooldownMs,
         cooldownNotice,
+        isPersonalized,
     } = useAnalysis({
         symbol,
         companyName,
@@ -279,7 +280,7 @@ export function ChartContent({
                     indicatorCount={indicatorCount}
                     skillCount={skillCount}
                     lockedInfoDepth={lockedInfoDepth}
-                    tier={tier}
+                    isPersonalized={isPersonalized}
                 />
                 {/* 서사가 있어도(캐시된 분석을 표시 중) 봇 판정이면 안내를 additive로
                     덧붙인다 — 자동 트리거/수동 재분석이 봇으로 오판돼 차단된 사실을
@@ -311,7 +312,7 @@ export function ChartContent({
         indicatorCount,
         skillCount,
         lockedInfoDepth,
-        tier,
+        isPersonalized,
     ]);
 
     // timeframe을 React.Fragment key로 전달 — Suspense 경계 밖에서 timeframe 변경 시 자식 트리를 강제 remount한다.

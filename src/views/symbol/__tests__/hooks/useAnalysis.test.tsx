@@ -921,6 +921,178 @@ describe('useAnalysis', () => {
         });
     });
 
+    // 서버-authoritative `personalized` 플래그 threading (personalized-analysis-
+    // by-position-bucket spec, Subsystem C — 배지 정직성 수정). `submitAnalysisAction`의
+    // `personalized` 필드를 `isPersonalized`로 그대로 미러링한다 — 홀딩 존재
+    // 여부가 아니라 서버가 실제로 포지션 버킷 캐시 키를 썼는지가 유일한 진실값.
+    describe('isPersonalized (personalized-analysis-by-position-bucket spec, Subsystem C — 배지 정직성 수정)', () => {
+        // 마운트 시 자동 재시도(§ initialAnalysisFailedAtMount 이펙트)를 발화시켜
+        // submit이 실제로 나가도록 initialAnalysisFailed: true를 사용한다 — 기본
+        // makeOptions()는 mount 시 아무 submit도 트리거하지 않는다.
+        it('cached + personalized: true → isPersonalized가 true로 세팅된다', async () => {
+            mockSubmit.mockResolvedValue({
+                status: 'cached',
+                result: INITIAL_ANALYSIS,
+                lockedInfoDepth: [],
+                personalized: true,
+            });
+
+            const { result } = renderHook(
+                () => useAnalysis(makeOptions({ initialAnalysisFailed: true })),
+                { wrapper: makeWrapper() }
+            );
+
+            await waitFor(() => {
+                expect(result.current.isPersonalized).toBe(true);
+            });
+        });
+
+        it('cached + personalized: false → isPersonalized는 false로 유지된다', async () => {
+            mockSubmit.mockResolvedValue({
+                status: 'cached',
+                result: INITIAL_ANALYSIS,
+                lockedInfoDepth: [],
+                personalized: false,
+            });
+
+            const { result } = renderHook(
+                () => useAnalysis(makeOptions({ initialAnalysisFailed: true })),
+                { wrapper: makeWrapper() }
+            );
+
+            await waitFor(() => {
+                expect(mockSubmit).toHaveBeenCalled();
+            });
+            expect(result.current.isPersonalized).toBe(false);
+        });
+
+        it('cached + personalized 필드 부재(하위 호환) → isPersonalized는 false로 유지된다', async () => {
+            mockSubmit.mockResolvedValue({
+                status: 'cached',
+                result: INITIAL_ANALYSIS,
+                lockedInfoDepth: [],
+                // personalized 필드 자체가 없는 롤링 배포 중 구버전 응답을 모사한다.
+            });
+
+            const { result } = renderHook(
+                () => useAnalysis(makeOptions({ initialAnalysisFailed: true })),
+                { wrapper: makeWrapper() }
+            );
+
+            await waitFor(() => {
+                expect(mockSubmit).toHaveBeenCalled();
+            });
+            expect(result.current.isPersonalized).toBe(false);
+        });
+
+        it('submitted + personalized: true → 폴링 done 이후에도 isPersonalized가 true로 유지된다', async () => {
+            mockSubmit.mockResolvedValue({
+                status: 'submitted',
+                jobId: 'job-personalized-1',
+                personalized: true,
+            });
+            mockPoll.mockResolvedValue({
+                status: 'done',
+                result: INITIAL_ANALYSIS,
+                lockedInfoDepth: [],
+            });
+
+            const { result } = renderHook(
+                () => useAnalysis(makeOptions({ initialAnalysisFailed: true })),
+                { wrapper: makeWrapper() }
+            );
+
+            // submit 시점에 이미 true — 폴링 done/error 핸들러는 이 값을 건드리지 않는다.
+            await waitFor(() => {
+                expect(result.current.isPersonalized).toBe(true);
+            });
+
+            await waitFor(() => {
+                expect(result.current.analysisResult).not.toBeNull();
+            });
+            expect(result.current.isPersonalized).toBe(true);
+        });
+
+        it('새 제출이 시작되면(onMutate) isPersonalized가 false로 리셋된다', async () => {
+            // isModelHydrated를 false→true→false→true로 토글해 initialAnalysisFailedAtMount
+            // 이펙트를 두 번 발화시킨다(이 이펙트엔 1회성 가드가 없어 deps 변경마다
+            // 조건이 충족되면 다시 mutate를 호출한다) — handleReanalyze의 쿨다운 획득
+            // 비동기 경로를 우회해 두 번째 submit을 결정적으로 트리거하는 가장 단순한 방법이다.
+            let resolveSecondSubmit:
+                | ((value: {
+                      status: 'cached';
+                      result: AnalysisResponse;
+                      lockedInfoDepth: never[];
+                      personalized: boolean;
+                  }) => void)
+                | undefined;
+            mockSubmit
+                .mockResolvedValueOnce({
+                    status: 'cached',
+                    result: INITIAL_ANALYSIS,
+                    lockedInfoDepth: [],
+                    personalized: true,
+                })
+                .mockImplementationOnce(
+                    () =>
+                        new Promise(resolve => {
+                            resolveSecondSubmit = resolve;
+                        })
+                );
+
+            const { result, rerender } = renderHook(
+                ({ isModelHydrated }: { isModelHydrated: boolean }) =>
+                    useAnalysis(
+                        makeOptions({
+                            initialAnalysisFailed: true,
+                            isModelHydrated,
+                        })
+                    ),
+                {
+                    wrapper: makeWrapper(),
+                    initialProps: { isModelHydrated: false },
+                }
+            );
+
+            rerender({ isModelHydrated: true });
+
+            await waitFor(() => {
+                expect(result.current.isPersonalized).toBe(true);
+            });
+
+            // 두 번째 submit 트리거 — onMutate가 즉시 false로 되돌려야 한다(새 서버
+            // 응답 도착 전까지 이전 결과의 personalized 상태를 이어받지 않는다).
+            rerender({ isModelHydrated: false });
+            rerender({ isModelHydrated: true });
+
+            await waitFor(() => {
+                expect(mockSubmit).toHaveBeenCalledTimes(2);
+            });
+            expect(result.current.isPersonalized).toBe(false);
+
+            resolveSecondSubmit?.({
+                status: 'cached',
+                result: INITIAL_ANALYSIS,
+                lockedInfoDepth: [],
+                personalized: false,
+            });
+        });
+
+        it('miss_no_trigger → isPersonalized는 false다', async () => {
+            mockSubmit.mockResolvedValue({ status: 'miss_no_trigger' });
+
+            const { result } = renderHook(
+                () => useAnalysis(makeOptions({ initialAnalysisFailed: true })),
+                { wrapper: makeWrapper() }
+            );
+
+            await waitFor(() => {
+                expect(result.current.isBotBlocked).toBe(true);
+            });
+            expect(result.current.isPersonalized).toBe(false);
+        });
+    });
+
     // 소스 정규화 — useAnalysis는 부분 initialAnalysis(누락된 배열/객체)를
     // normalizeAnalysisResponse로 정규화해 다운스트림(AnalysisPanel 등)에
     // 타입 계약을 보장한다.

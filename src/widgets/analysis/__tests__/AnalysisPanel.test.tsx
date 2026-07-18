@@ -34,31 +34,6 @@ vi.mock('@/shared/lib/formatAnalyzedAt', () => ({
 vi.mock('@/entities/analysis', () => ({
     isAnalysisStale: () => false,
 }));
-// personalized-analysis 투명성 배지(§FIX 2)가 소비하는 홀딩 소스. 실제
-// `useSymbolHolding`은 react-query 기반이라 QueryClientProvider 없는 이 테스트
-// 트리에서 그대로 렌더하면 크래시한다 — 배지 게이트 테스트가 개별적으로
-// mockReturnValue를 덮어쓸 수 있도록 hoisted 목으로 대체한다. 기본값은
-// "홀딩 없음"이라 배지-무관 기존 테스트는 영향받지 않는다.
-const { mockUseSymbolHolding } = vi.hoisted(() => ({
-    mockUseSymbolHolding: vi.fn(
-        (): {
-            holding: unknown;
-            isHydrated: boolean;
-            isLoading: boolean;
-            isError: boolean;
-            save: unknown;
-        } => ({
-            holding: null,
-            isHydrated: true,
-            isLoading: false,
-            isError: false,
-            save: {} as never,
-        })
-    ),
-}));
-vi.mock('@/features/portfolio-holding', () => ({
-    useSymbolHolding: mockUseSymbolHolding,
-}));
 // indicatorCount는 이제 AnalysisPanel에 prop으로 전달한다.
 // useSymbolPageContext / ANALYSIS_PHASES / ANALYSIS_TIPS mock이 더 이상 필요 없다.
 vi.mock('../AnalysisProgress', () => ({
@@ -97,6 +72,7 @@ import type {
     StrategyResult,
 } from '@y0ngha/siglens-core';
 
+import { FALLBACK_ANALYSIS } from '@/entities/chat-message';
 import { AnalysisPanel } from '../AnalysisPanel';
 
 function makeAnalysis(
@@ -1390,48 +1366,18 @@ describe('AnalysisPanel — missing/partial field resilience', () => {
 });
 
 describe('AnalysisPanel — personalized-analysis 투명성 배지 (§FIX 2)', () => {
-    const HOLDING = {
-        symbol: 'AAPL',
-        companyName: null,
-        fmpSymbol: null,
-        quantity: '10',
-        averagePrice: '150',
-        updatedAt: '2026-01-01T00:00:00Z',
-    };
-
-    const NO_HOLDING = {
-        holding: null,
-        isHydrated: true,
-        isLoading: false,
-        isError: false,
-        save: {} as never,
-    };
-
-    afterEach(() => {
-        // AnalysisPanel의 `captureNow` effect(useEffectEvent + startTransition)가
-        // mount 직후 추가 렌더를 유발해 `useSymbolHolding`이 두 번 호출된다 —
-        // `mockReturnValueOnce`는 첫 호출에서 소진돼 마지막(진짜 화면에 반영되는)
-        // 렌더에는 기본값이 적용되므로 여기서는 지속형 `mockReturnValue`를 쓰고,
-        // 테스트 간 누수를 막기 위해 매번 "홀딩 없음" 기본값으로 되돌린다.
-        mockUseSymbolHolding.mockReturnValue(NO_HOLDING);
-    });
-
-    it('member 티어 + 보유 평단이 있으면 배지를 노출한다', () => {
-        mockUseSymbolHolding.mockReturnValue({
-            holding: HOLDING,
-            isHydrated: true,
-            isLoading: false,
-            isError: false,
-            save: {} as never,
-        });
-
+    // 4건의 독립 사전-PR 감사가 지적한 정직성 갭 수정: 배지는 이제 홀딩 존재
+    // 여부(tier + useSymbolHolding)가 아니라 서버-authoritative `isPersonalized`
+    // prop 하나로만 게이트된다 — submitAnalysisAction이 THIS 제출에서 실제로
+    // 포지션 버킷 캐시 키를 썼는지의 유일한 진실값이다.
+    it('isPersonalized=true + 서사가 있는 분석이면 배지를 노출한다', () => {
         render(
             <AnalysisPanel
                 symbol="AAPL"
                 analysis={makeAnalysis()}
                 keyLevels={EMPTY_KEY_LEVELS}
                 timeframe="1Day"
-                tier="member"
+                isPersonalized
             />
         );
 
@@ -1443,22 +1389,14 @@ describe('AnalysisPanel — personalized-analysis 투명성 배지 (§FIX 2)', (
         ).toBeInTheDocument();
     });
 
-    it('free 티어면 보유 평단이 있어도 배지를 숨긴다', () => {
-        mockUseSymbolHolding.mockReturnValue({
-            holding: HOLDING,
-            isHydrated: true,
-            isLoading: false,
-            isError: false,
-            save: {} as never,
-        });
-
+    it('isPersonalized=false면 배지를 숨긴다', () => {
         render(
             <AnalysisPanel
                 symbol="AAPL"
                 analysis={makeAnalysis()}
                 keyLevels={EMPTY_KEY_LEVELS}
                 timeframe="1Day"
-                tier="free"
+                isPersonalized={false}
             />
         );
 
@@ -1467,15 +1405,15 @@ describe('AnalysisPanel — personalized-analysis 투명성 배지 (§FIX 2)', (
         ).not.toBeInTheDocument();
     });
 
-    it('보유 평단이 없으면 member/pro여도 배지를 숨긴다', () => {
-        // 기본 mock(holding: null)을 그대로 사용한다.
+    it('isPersonalized prop 미전달(하위 호환 기본값 false)이면 배지를 숨긴다', () => {
         render(
             <AnalysisPanel
                 symbol="AAPL"
                 analysis={makeAnalysis()}
                 keyLevels={EMPTY_KEY_LEVELS}
                 timeframe="1Day"
-                tier="pro"
+                // isPersonalized prop 미전달 — 이 prop을 모르는 기존 호출부/테스트와
+                // 동일하게 기본값 false로 처리되어 배지가 숨겨진다.
             />
         );
 
@@ -1484,22 +1422,14 @@ describe('AnalysisPanel — personalized-analysis 투명성 배지 (§FIX 2)', (
         ).not.toBeInTheDocument();
     });
 
-    it('비회원(게스트, tier 미전달)이면 보유 평단이 있어도 배지를 숨긴다', () => {
-        mockUseSymbolHolding.mockReturnValue({
-            holding: HOLDING,
-            isHydrated: true,
-            isLoading: false,
-            isError: false,
-            save: {} as never,
-        });
-
+    it('isPersonalized=true여도 fallback(서사 없음) 분석이면 배지를 숨긴다', () => {
         render(
             <AnalysisPanel
                 symbol="AAPL"
-                analysis={makeAnalysis()}
+                analysis={FALLBACK_ANALYSIS}
                 keyLevels={EMPTY_KEY_LEVELS}
                 timeframe="1Day"
-                // tier prop 미전달 — 게스트/하위 호환 호출부와 동일하게 기본값 'free'로 처리된다.
+                isPersonalized
             />
         );
 

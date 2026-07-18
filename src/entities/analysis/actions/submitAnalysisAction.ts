@@ -28,9 +28,21 @@ import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveAssetClass';
 import { getDescriptor } from '@/shared/config/marketProfile';
 
-/** Final return type — core's gated result + our siglens-side gate errors. */
+/**
+ * Final return type — core's gated result + our siglens-side gate errors.
+ *
+ * `personalized` is a server-authoritative flag threaded alongside the gated
+ * result: it tells the client whether THIS submission actually targeted a
+ * personalized (`:pos=<bucket>`) cache key (`positionBucket !== undefined`),
+ * as opposed to merely "this member happens to have a holding". The client
+ * badge (`AnalysisPanel`'s `personalized-analysis-badge`) must gate on this,
+ * not on holding existence — see `resolveHoldingPositionBucket` for why a
+ * holding can still degrade to no-bucket (quote-read failure, degenerate
+ * avg price, free tier, etc). Optional because `AnalysisGateBlockedResult`
+ * (the blocked-gate branch) never carries it.
+ */
 export type SubmitAnalysisActionResult =
-    | SubmitAnalysisGatedResult
+    | (SubmitAnalysisGatedResult & { personalized?: boolean })
     | AnalysisGateBlockedResult;
 
 /**
@@ -128,7 +140,31 @@ export async function submitAnalysisAction(
             const tier = await resolveTierOnly(userId);
             const { e2eCachedTechnical } =
                 await import('@/shared/api/e2eAnalysisStub');
-            return e2eCachedTechnical(tier);
+            // The E2E stub returns a fixture BEFORE any bucket is ever
+            // computed (submitAnalysis/resolveHoldingPositionBucket never
+            // runs on this branch), so `personalized` can't be derived the
+            // normal way here. To keep the badge wiring exercisable under
+            // E2E without lying, we approximate it the same way
+            // `resolveHoldingPositionBucket` gates (tier !== 'free' and a
+            // holding exists) — the actual bucket/quote resolution is
+            // irrelevant to E2E since the fixture never reflects it anyway.
+            let personalized = false;
+            if (tier !== 'free' && userId !== null) {
+                try {
+                    const { db } = getDatabaseClient();
+                    const holding = await new DrizzlePortfolioRepository(
+                        db
+                    ).findByUserAndSymbol(userId, symbol.toUpperCase());
+                    personalized = holding !== null;
+                } catch (error) {
+                    console.error(
+                        '[submitAnalysisAction] E2E personalized-flag holding read failed, degrading to false:',
+                        error
+                    );
+                    personalized = false;
+                }
+            }
+            return { ...e2eCachedTechnical(tier), personalized };
         }
 
         const requestHeaders = await headers();
@@ -150,22 +186,25 @@ export async function submitAnalysisAction(
                 fmpSymbol,
                 marketDataProvider
             );
-            return await submitAnalysis(
-                symbol,
-                companyName,
-                timeframe,
-                force,
-                fmpSymbol,
-                {
-                    modelId,
-                    skipEnqueueIfMiss,
-                    marketDataProvider,
-                    assetClass,
-                    tierContext: { userId, tier },
-                    reasoning: resolveReasoning(tier, reasoning),
-                    positionBucket,
-                }
-            );
+            return {
+                ...(await submitAnalysis(
+                    symbol,
+                    companyName,
+                    timeframe,
+                    force,
+                    fmpSymbol,
+                    {
+                        modelId,
+                        skipEnqueueIfMiss,
+                        marketDataProvider,
+                        assetClass,
+                        tierContext: { userId, tier },
+                        reasoning: resolveReasoning(tier, reasoning),
+                        positionBucket,
+                    }
+                )),
+                personalized: positionBucket !== undefined,
+            };
         }
 
         const gate = await resolveTierAndByok(userId, modelId);
@@ -181,25 +220,28 @@ export async function submitAnalysisAction(
             marketDataProvider
         );
 
-        return await submitAnalysis(
-            symbol,
-            companyName,
-            timeframe,
-            force,
-            fmpSymbol,
-            {
-                modelId,
-                skipEnqueueIfMiss,
-                marketDataProvider,
-                assetClass,
-                tierContext: { userId, tier: gate.tier },
-                reasoning: resolveReasoning(gate.tier, reasoning),
-                positionBucket,
-                ...(gate.userApiKey !== undefined
-                    ? { userApiKey: gate.userApiKey }
-                    : {}),
-            }
-        );
+        return {
+            ...(await submitAnalysis(
+                symbol,
+                companyName,
+                timeframe,
+                force,
+                fmpSymbol,
+                {
+                    modelId,
+                    skipEnqueueIfMiss,
+                    marketDataProvider,
+                    assetClass,
+                    tierContext: { userId, tier: gate.tier },
+                    reasoning: resolveReasoning(gate.tier, reasoning),
+                    positionBucket,
+                    ...(gate.userApiKey !== undefined
+                        ? { userApiKey: gate.userApiKey }
+                        : {}),
+                }
+            )),
+            personalized: positionBucket !== undefined,
+        };
     } catch (err) {
         console.error('[submitAnalysisAction] unexpected error:', err);
         return { status: 'error', error: buildGateError('unexpected_error') };
