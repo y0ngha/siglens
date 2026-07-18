@@ -1,8 +1,13 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
-import { computePosition, type PositionModel } from '../lib/positionGeometry';
+import {
+    BAND_COUNT,
+    computePosition,
+    type PositionModel,
+} from '../lib/positionGeometry';
 import {
     AVG_LABEL_PREFIX,
     CURRENT_LABEL_PREFIX,
+    describeAvgFloor,
     estimateSvgLabelWidth,
     formatUsdCompactForSvgLabel,
     PositionBuilding,
@@ -77,9 +82,10 @@ describe('PositionBuilding', () => {
             avg: 250,
             current: 180,
         });
-        expect(getByTestId('avg-out-of-range-note').textContent).toContain(
+        expect(getByTestId('avg-floor-note').textContent).toContain(
             '최근 고점보다 높은'
         );
+        expect(getByTestId('avg-floor-note').textContent).toContain('옥상 위');
         expect(queryByTestId('current-out-of-range-note')).toBeNull();
     });
 
@@ -90,13 +96,16 @@ describe('PositionBuilding', () => {
             avg: 50,
             current: 120,
         });
-        expect(getByTestId('avg-out-of-range-note').textContent).toContain(
+        expect(getByTestId('avg-floor-note').textContent).toContain(
             '최근 저점보다 낮은'
+        );
+        expect(getByTestId('avg-floor-note').textContent).toContain(
+            '지하 세대'
         );
     });
 
-    it('current가 최근 고점보다 높으면(clamped=above) — avg는 정상 범위여도 별도로 옥상 위 안내를 노출한다', () => {
-        const { getByTestId, queryByTestId } = renderBuilding({
+    it('current가 최근 고점보다 높으면(clamped=above) — avg는 정상 범위여도 별도로 옥상 위 안내를 노출하고, ★평단은 (범위 안이므로) 옥상/지하 문구 없이 층 정보만 보여준다', () => {
+        const { getByTestId } = renderBuilding({
             low52w: 100,
             high52w: 200,
             avg: 150,
@@ -105,7 +114,10 @@ describe('PositionBuilding', () => {
         expect(getByTestId('current-out-of-range-note').textContent).toContain(
             '최근 고점보다 높은'
         );
-        expect(queryByTestId('avg-out-of-range-note')).toBeNull();
+        const avgFloorNoteText = getByTestId('avg-floor-note').textContent;
+        expect(avgFloorNoteText).toContain('층');
+        expect(avgFloorNoteText).not.toContain('옥상');
+        expect(avgFloorNoteText).not.toContain('지하');
     });
 
     it('current가 최근 저점보다 낮으면(clamped=below) 별도로 지하 안내를 노출한다', () => {
@@ -120,15 +132,15 @@ describe('PositionBuilding', () => {
         );
     });
 
-    it('avg·current 둘 다 범위 안이면(clamped=null) out-of-range 안내가 없다', () => {
-        const { queryByTestId } = renderBuilding({
+    it('avg·current 둘 다 범위 안이면(clamped=null) current out-of-range 안내는 없지만, ★평단은 층 안내를 보여준다(avgPos 0.5 → 3층 · 중층)', () => {
+        const { getByTestId, queryByTestId } = renderBuilding({
             low52w: 100,
             high52w: 200,
-            avg: 150,
+            avg: 150, // avgPos 0.5 → floorIndex 2 (of 5) → 3층 · 중층
             current: 180,
         });
-        expect(queryByTestId('avg-out-of-range-note')).toBeNull();
         expect(queryByTestId('current-out-of-range-note')).toBeNull();
+        expect(getByTestId('avg-floor-note').textContent).toBe('3층 · 중층');
     });
 
     it('avg≈current(임계값 미만 차이)면 마커를 좌우로 dodge한다', () => {
@@ -227,7 +239,28 @@ describe('PositionBuilding', () => {
         expect(text).not.toMatch(/좋은|잘함|추천|매수 타이밍/);
     });
 
-    it('aria-label에 평단/현재가/수익률/범위 위치%가 모두 포함된다', () => {
+    describe('★평단 층 안내(avg-floor-note)는 위치 서술만 — 매수/매도·진입 퀄리티 평가 언어 금지', () => {
+        // "잘 사셨어요", "좋은 진입", "성공적인 저점 매수", "고점 물림" 등으로 새는지
+        // below/above/in-range 세 상태 모두에서 확인한다(scope fence 회귀 방지).
+        const EVALUATIVE_WORDS = /잘\s?사|좋은|성공|물림|추천|타이밍|진입/;
+
+        it.each([
+            { name: 'below(지하)', avg: 50, current: 120 },
+            { name: 'above(옥상 위)', avg: 250, current: 180 },
+            { name: 'in-range(중층)', avg: 150, current: 180 },
+        ])('$name 상태에서 평가 언어가 없다', ({ avg, current }) => {
+            const { getByTestId } = renderBuilding({
+                low52w: 100,
+                high52w: 200,
+                avg,
+                current,
+            });
+            const note = getByTestId('avg-floor-note').textContent ?? '';
+            expect(note).not.toMatch(EVALUATIVE_WORDS);
+        });
+    });
+
+    it('aria-label에 평단/현재가/수익률/범위 위치%/★평단 층 안내가 모두 포함된다(스크린리더가 층 정보도 받는다)', () => {
         const { container } = renderBuilding({
             low52w: 100,
             high52w: 200,
@@ -241,6 +274,34 @@ describe('PositionBuilding', () => {
         expect(label).toContain('$180');
         expect(label).toContain('수익률 +20.0%');
         expect(label).toContain('최근 범위의 50% 지점');
+        expect(label).toContain('3층 · 중층');
+    });
+
+    it('aria-label의 ★평단 층 안내는 avgClamped가 above/below일 때 옥상 위/지하 문구로 바뀐다', () => {
+        const above = renderBuilding({
+            low52w: 100,
+            high52w: 200,
+            avg: 250,
+            current: 180,
+        });
+        expect(
+            above.container
+                .querySelector('svg[role="img"]')
+                ?.getAttribute('aria-label')
+        ).toContain('옥상 위');
+        above.unmount();
+
+        const below = renderBuilding({
+            low52w: 100,
+            high52w: 200,
+            avg: 50,
+            current: 120,
+        });
+        expect(
+            below.container
+                .querySelector('svg[role="img"]')
+                ?.getAttribute('aria-label')
+        ).toContain('지하 세대');
     });
 
     it('고가 종목(예: BRK.A대) in-SVG 라벨은 축약 표기($XXXK)를 쓴다 — aria-label은 전체 값 유지', () => {
@@ -514,5 +575,48 @@ describe('PositionBuilding', () => {
             fireEvent.mouseLeave(floors[2]);
             expect(readout.textContent?.trim()).toBe('');
         });
+    });
+});
+
+describe('describeAvgFloor', () => {
+    it('avgClamped=below면 지하 문구(옥상/층 계산과 무관, avgPos 값은 쓰이지 않는다)', () => {
+        expect(describeAvgFloor(0, 'below', BAND_COUNT)).toBe(
+            '지하 세대 · 최근 저점보다 낮은 곳'
+        );
+        expect(describeAvgFloor(0.99, 'below', BAND_COUNT)).toBe(
+            '지하 세대 · 최근 저점보다 낮은 곳'
+        );
+    });
+
+    it('avgClamped=above면 옥상 위 문구(옥상/층 계산과 무관, avgPos 값은 쓰이지 않는다)', () => {
+        expect(describeAvgFloor(0, 'above', BAND_COUNT)).toBe(
+            '옥상 위 · 최근 고점보다 높은 곳'
+        );
+        expect(describeAvgFloor(1, 'above', BAND_COUNT)).toBe(
+            '옥상 위 · 최근 고점보다 높은 곳'
+        );
+    });
+
+    it.each([
+        // avgPos, expected — BAND_COUNT=5: floorIndex = clamp(floor(avgPos*5), 0, 4)
+        { avgPos: 0, expected: '1층 · 저층' }, // 경계: 정확히 0
+        { avgPos: 0.05, expected: '1층 · 저층' },
+        { avgPos: 0.2, expected: '2층 · 중층' }, // floorIndex 1
+        { avgPos: 0.4, expected: '3층 · 중층' }, // floorIndex 2
+        { avgPos: 0.59, expected: '3층 · 중층' }, // 스펙 예시: 59% → 3층/중층
+        { avgPos: 0.6, expected: '4층 · 고층' }, // floorIndex 3
+        { avgPos: 0.8, expected: '5층 · 펜트하우스' }, // floorIndex 4 (최상층)
+        { avgPos: 1, expected: '5층 · 펜트하우스' }, // 경계: 정확히 1
+    ])(
+        'avgClamped=null, avgPos=$avgPos → $expected',
+        ({ avgPos, expected }) => {
+            expect(describeAvgFloor(avgPos, null, BAND_COUNT)).toBe(expected);
+        }
+    );
+
+    it('bandCount이 달라져도(테스트용 임의 값) 최하층=저층, 최상층=펜트하우스 경계를 지킨다', () => {
+        expect(describeAvgFloor(0, null, 3)).toBe('1층 · 저층');
+        expect(describeAvgFloor(1, null, 3)).toBe('3층 · 펜트하우스');
+        expect(describeAvgFloor(0.5, null, 3)).toBe('2층 · 중층');
     });
 });

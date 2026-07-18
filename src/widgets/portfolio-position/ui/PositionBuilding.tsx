@@ -65,13 +65,14 @@ function buildAriaLabel(
     symbol: string,
     model: PositionModel,
     avgDisplay: string,
-    currentDisplay: string
+    currentDisplay: string,
+    avgFloorNote: string
 ): string {
     const returnSign = model.returnPct >= 0 ? '+' : '';
     return (
         `${symbol} 내 위치: 평단 ${avgDisplay}, 현재가 ${currentDisplay}, ` +
         `수익률 ${returnSign}${model.returnPct.toFixed(1)}%, ` +
-        `최근 범위의 ${model.rangePositionPct.toFixed(0)}% 지점`
+        `최근 범위의 ${model.rangePositionPct.toFixed(0)}% 지점, ${avgFloorNote}`
     );
 }
 
@@ -79,6 +80,49 @@ function outOfRangeNote(clamped: 'above' | 'below' | null): string | null {
     if (clamped === 'above') return '최근 고점보다 높은 곳';
     if (clamped === 'below') return '최근 저점보다 낮은 곳';
     return null;
+}
+
+/**
+ * floorIndex(0=최저가 인접 층)를 저층/중층/고층/펜트하우스 중 하나로 서술한다.
+ * 최하층은 항상 저층, 최상층(bandCount-1)은 항상 펜트하우스 — 그 사이는 3등분해
+ * 저층 쪽 절반은 중층, 그 위는 고층으로 갈린다(BAND_COUNT=5 기준: 0→저층,
+ * 1~2→중층, 3→고층, 4→펜트하우스). bandCount가 바뀌어도(테스트 등) 안전하게
+ * 동작하도록 리터럴 인덱스가 아니라 bandCount 비율로 경계를 계산한다.
+ */
+function describeFloorTier(floorIndex: number, bandCount: number): string {
+    if (bandCount <= 1 || floorIndex === bandCount - 1) return '펜트하우스';
+    if (floorIndex === 0) return '저층';
+    const midBoundary = Math.floor((bandCount * 2) / 3);
+    return floorIndex < midBoundary ? '중층' : '고층';
+}
+
+/**
+ * ★평단이 건물의 몇 층에 해당하는지 위트 있게 서술한다 — 아파트 메타포의 연장.
+ * 순수 포지셔닝 서술만 담당한다(scope fence): 매수/매도 판단이나 진입
+ * 퀄리티 평가("잘 사셨어요", "좋은 진입" 등) 언어는 절대 포함하지 않는다 — 그
+ * 의미는 siglens-core 분석 도메인의 몫이지 이 프레젠테이션 컴포넌트의 몫이
+ * 아니다. avgClamped가 'above'/'below'면 범위 밖(옥상 위/지하) 문구를, null이면
+ * avgPos·bandCount로 실제 층수를 계산해 저층/중층/고층/펜트하우스 중 하나를
+ * 고른다. avgClamped==='above'|'below' 케이스는 기존 outOfRangeNote와 동일한
+ * 부분 문자열("최근 고점보다 높은"/"최근 저점보다 낮은")을 포함해 기존 소비처와
+ * 문구 결이 어긋나지 않게 한다. aria-label·마커 아래 노트 등 ★평단을 서술하는
+ * 모든 소비처가 이 하나의 빌더를 거쳐 파생해 문구 드리프트를 막는다
+ * (buildFloorTooltipContent와 동일 원칙).
+ */
+export function describeAvgFloor(
+    avgPos: number,
+    avgClamped: 'above' | 'below' | null,
+    bandCount: number
+): string {
+    if (avgClamped === 'above') return '옥상 위 · 최근 고점보다 높은 곳';
+    if (avgClamped === 'below') return '지하 세대 · 최근 저점보다 낮은 곳';
+
+    const floorIndex = Math.min(
+        bandCount - 1,
+        Math.max(0, Math.floor(avgPos * bandCount))
+    );
+    const floorNumber = floorIndex + 1;
+    return `${floorNumber}층 · ${describeFloorTier(floorIndex, bandCount)}`;
 }
 
 /** band index(0=최저가)의 가격 구간 — low/high를 bandCount개 동일 폭으로 나눈다.
@@ -370,11 +414,24 @@ export function PositionBuilding({
     className,
     volumeByBand,
 }: PositionBuildingProps) {
+    // model.bands.length는 volumeByBand 인덱싱(아래)과 describeAvgFloor 둘 다에
+    // 필요해 컴포넌트 최상단에서 한 번만 계산한다(단일 source, 중복 선언 금지).
+    const bandCount = model.bands.length;
     const avgDisplay = formatUsd(avg);
     const currentDisplay = formatUsd(current);
-    const ariaLabel = buildAriaLabel(symbol, model, avgDisplay, currentDisplay);
+    const avgFloorNote = describeAvgFloor(
+        model.avgPos,
+        model.avgClamped,
+        bandCount
+    );
+    const ariaLabel = buildAriaLabel(
+        symbol,
+        model,
+        avgDisplay,
+        currentDisplay,
+        avgFloorNote
+    );
 
-    const avgNote = outOfRangeNote(model.avgClamped);
     const currentNote = outOfRangeNote(model.currentClamped);
 
     // 층 hover/focus/tap(pin) 상태 — volumeByBand가 없으면 절대 set되지 않아
@@ -423,7 +480,6 @@ export function PositionBuilding({
         enabled: pinnedFloor !== null,
     });
 
-    const bandCount = model.bands.length;
     const activeVolumePct =
         activeFloor !== null ? volumeByBand?.[activeFloor.index] : null;
     let activeFloorTooltipContent: FloorTooltipContent | null = null;
@@ -742,18 +798,25 @@ export function PositionBuilding({
                         {avgDisplaySvg}
                     </tspan>
                 </text>
-                {avgNote && (
-                    <text
-                        data-testid="avg-out-of-range-note"
-                        x={CENTER_X - ISO_DX - LABEL_GAP}
-                        y={avgY + NOTE_Y_OFFSET}
-                        textAnchor="end"
-                        className="fill-secondary-400 text-[10px]"
-                    >
-                        {model.avgClamped === 'above' ? '☁ ' : '▽B1 '}
-                        {avgNote}
-                    </text>
-                )}
+                {/* ★평단 층 안내 — 범위 밖(above/below)이면 기존 옥상 위/지하 문구를,
+                    범위 안이면(clamped=null) describeAvgFloor가 계산한 실제 층수를
+                    보여준다(이전엔 범위 안일 때 아무 안내도 없었다). 위치 서술만
+                    담당 — 매수/매도 판단 언어 금지(scope fence, 위 describeAvgFloor
+                    주석 참고). */}
+                <text
+                    data-testid="avg-floor-note"
+                    x={CENTER_X - ISO_DX - LABEL_GAP}
+                    y={avgY + NOTE_Y_OFFSET}
+                    textAnchor="end"
+                    className="fill-secondary-400 text-[10px]"
+                >
+                    {model.avgClamped === 'above'
+                        ? '☁ '
+                        : model.avgClamped === 'below'
+                          ? '▽B1 '
+                          : ''}
+                    {avgFloorNote}
+                </text>
 
                 {/* 현재가 (●) */}
                 <g
