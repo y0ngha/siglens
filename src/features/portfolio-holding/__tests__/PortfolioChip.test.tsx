@@ -154,6 +154,36 @@ describe('PortfolioChipMounted / PortfolioChip', () => {
         });
     });
 
+    it('strips a typed minus sign from quantity/averagePrice so a negative value can never be submitted', async () => {
+        const user = userEvent.setup();
+        setCurrentUser(USER);
+        const { save } = setHoldings({ holdings: [] });
+        (save.mutateAsync as ReturnType<typeof vi.fn>).mockResolvedValue({
+            status: 'ok',
+            holding: AAPL_HOLDING,
+        });
+        render(<PortfolioChipMounted symbol="AAPL" />);
+
+        await user.click(screen.getByRole('button', { name: '평단 설정' }));
+        expect(await screen.findByRole('dialog')).toBeInTheDocument();
+
+        await user.type(screen.getByLabelText('수량'), '-10');
+        await user.type(screen.getByLabelText('평단'), '-150.5');
+
+        expect(screen.getByLabelText('수량')).toHaveValue('10');
+        expect(screen.getByLabelText('평단')).toHaveValue('150.5');
+
+        await user.click(screen.getByRole('button', { name: '저장' }));
+
+        await waitFor(() => {
+            expect(save.mutateAsync).toHaveBeenCalledWith({
+                symbol: 'AAPL',
+                quantity: '10',
+                averagePrice: '150.5',
+            });
+        });
+    });
+
     it('surfaces the error message when the save mutation returns an error result', async () => {
         const user = userEvent.setup();
         setCurrentUser(USER);

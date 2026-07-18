@@ -68,6 +68,19 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     // (익명에겐 얇고 차트와 중복인) 가격 층 조합은 크롤 예산 낭비이자 콘텐츠
     // 클러스터 희석이라 항상 noindex다(디자인 §배치 1). ★평단/수익률은 client
     // 전용(hydration+user 게이트)이라 SSR HTML에는 절대 실리지 않는다.
+    //
+    // seo-audit 재검토(2026-07): 이 노인덱스 결정을 뒤집을 만한 근거가 없어 유지한다.
+    // 익명 방문자에게 SSR로 실리는 유일한 공개 콘텐츠는 low52w/high52w/lastClose
+    // 세 숫자뿐이고(sr-only 섹션 + PositionCta), 그마저도 동일한
+    // `buildTechnicalFacts`/`getBarsStatic` 파생값이 이미 인덱싱된 `[symbol]`(차트)·
+    // `overall`(기술적 요약) 페이지에 노출돼 있어 새 콘텐츠가 아니라 중복이다. 회원의
+    // 실제 평단·수익률(이 페이지의 핵심 가치)은 client-only라 크롤러는 절대 볼 수
+    // 없고, 대신 "보유종목 등록하기" CTA만 보게 된다 — 수천 심볼 × 이 얇은 템플릿은
+    // 전형적인 thin/doorway 패턴이라 index:true 전환은 권장하지 않는다. fundamental/
+    // overall/news 등 sibling 탭들은 심볼별로 substantive하고 서로 다른 AI 생성
+    // 콘텐츠(재무 지표, 4축 시나리오, 기사 목록)를 갖고 있어 이 판단과 대비된다.
+    // 같은 이유로 sitemap(`buildPopularEntries`)에도 이 라우트를 추가하지 않는다 —
+    // 이미 noindex인 라우트를 sitemap에 넣는 것 자체가 상호 모순 신호다.
     return {
         ...NOINDEX_SYMBOL_METADATA,
         title: `${displayName} 내 위치`,
@@ -150,7 +163,18 @@ export default async function PositionPage({ params }: Props) {
     );
 
     return (
-        <main className="mx-auto max-w-5xl space-y-6 px-4 py-8">
+        // `w-full`은 필수다: 이 <main>은 SymbolLayoutJail의 `flex flex-col` 컨테이너의
+        // 직계 flex item이다. flex item에 `mx-auto`(양쪽 auto margin)를 걸면 cross-axis
+        // stretch가 비활성화되고(CSS Flexbox §9.4 stretch 조건 = "neither margin is auto"),
+        // width가 max-w-5xl까지 채워지는 대신 자식의 shrink-to-fit(콘텐츠 폭)로 줄어든다.
+        // fundamental/overall은 콘텐츠(카드·표)가 우연히 1024px보다 넓어 이 버그가
+        // 드러나지 않았을 뿐 — CTA 카드 하나뿐인 이 탭(비회원/미보유)이나 options/news
+        // (동일 패턴으로 이미 `w-full` 적용됨)처럼 콘텐츠가 좁으면 <main> 전체가
+        // shrink-wrap돼 heading까지 화면 중앙에 떠 보인다(데스크톱만 — 모바일은 available
+        // width가 max-width보다 좁아 항상 꽉 채워지므로 증상이 없다). `w-full`로 width를
+        // auto가 아닌 명시값(100%)으로 만들면 stretch 비활성 조건을 우회해 sibling과
+        // 동일하게 max-w-5xl까지 채워진다.
+        <main className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8">
             <SymbolPageHeading>{displayName} 내 위치</SymbolPageHeading>
             {/* JS 미실행 크롤러용 개요 — 개인화 데이터(★/수익률)는 전혀 포함하지 않는다.
                 이 페이지는 항상 noindex이므로 SEO 신호 목적이 아니라 스크린리더

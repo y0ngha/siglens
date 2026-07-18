@@ -315,4 +315,15 @@ describe('PositionBuilding', () => {
             })
         ).not.toThrow();
     });
+
+    // Mobile stays 280px unchanged (already right-sized); sm/lg caps are raised
+    // to match PositionTabMemberContent's wrapper widths (340px/440px) so this
+    // svg's own max-w isn't the bottleneck once the wrapper grows.
+    it('raises the desktop max-width caps (sm/lg) while keeping the mobile base cap at 280px', () => {
+        const { container } = renderBuilding();
+        const svg = container.querySelector('svg[role="img"]');
+        expect(svg?.getAttribute('class')).toContain('max-w-[280px]');
+        expect(svg?.getAttribute('class')).toContain('sm:max-w-[340px]');
+        expect(svg?.getAttribute('class')).toContain('lg:max-w-[440px]');
+    });
 });

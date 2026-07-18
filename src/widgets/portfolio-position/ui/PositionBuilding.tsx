@@ -344,7 +344,15 @@ export function PositionBuilding({
         >
             <svg
                 viewBox={`0 0 ${VIEWBOX_W} ${VIEWBOX_H}`}
-                className="h-full w-full max-w-[280px]"
+                // Base (mobile) cap stays 280px — mobile is already right-sized. sm/lg
+                // caps are raised to match PositionTabMemberContent's wrapper widths
+                // (340px/440px, see that file's comment for why `w-*` and not `max-w-*`
+                // is used there) so this svg's own cap isn't the bottleneck. The
+                // `/portfolio` compact card (PositionHoldingCard) passes its own
+                // `max-w-[200px]` override via the `className` prop on the OUTER div, which
+                // stays below every one of these caps at all breakpoints, so it is
+                // unaffected by this change.
+                className="h-full w-full max-w-[280px] sm:max-w-[340px] lg:max-w-[440px]"
                 role="img"
                 aria-label={ariaLabel}
             >

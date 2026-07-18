@@ -5,6 +5,7 @@ import { useEscapeKey } from '@/shared/hooks/useEscapeKey';
 import { useFocusTrap } from '@/shared/hooks/useFocusTrap';
 import { useOnClickOutside } from '@/shared/hooks/useOnClickOutside';
 import { cn } from '@/shared/lib/cn';
+import { stripNegativeSign } from '@/shared/lib/stripNegativeSign';
 import { trimTrailingZeros } from '@/shared/lib/trimTrailingZeros';
 import type {
     PortfolioActionErrorCode,
@@ -140,7 +141,9 @@ export function PortfolioChipPopover({
                         required
                         placeholder="예: 10…"
                         value={quantity}
-                        onChange={e => setQuantity(e.target.value)}
+                        onChange={e =>
+                            setQuantity(stripNegativeSign(e.target.value))
+                        }
                         aria-invalid={errorField === 'quantity'}
                         aria-describedby={
                             errorField === 'quantity' ? errorId : undefined
@@ -168,7 +171,9 @@ export function PortfolioChipPopover({
                         required
                         placeholder="예: 152.35…"
                         value={averagePrice}
-                        onChange={e => setAveragePrice(e.target.value)}
+                        onChange={e =>
+                            setAveragePrice(stripNegativeSign(e.target.value))
+                        }
                         aria-invalid={errorField === 'averagePrice'}
                         aria-describedby={
                             errorField === 'averagePrice' ? errorId : undefined

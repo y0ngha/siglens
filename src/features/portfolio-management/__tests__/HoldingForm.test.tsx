@@ -61,6 +61,32 @@ describe('HoldingForm', () => {
         expect(screen.getByLabelText('평단')).toHaveValue('');
     });
 
+    it('strips a typed minus sign from quantity/averagePrice so a negative value can never be submitted', async () => {
+        const user = userEvent.setup();
+        const onSubmit = vi.fn().mockResolvedValue({
+            status: 'ok',
+            holding: HOLDING,
+        });
+        render(<HoldingForm onSubmit={onSubmit} />);
+
+        await user.type(screen.getByLabelText('종목 티커 검색'), 'AAPL');
+        await user.type(screen.getByLabelText('수량'), '-10');
+        await user.type(screen.getByLabelText('평단'), '-150.5');
+
+        expect(screen.getByLabelText('수량')).toHaveValue('10');
+        expect(screen.getByLabelText('평단')).toHaveValue('150.5');
+
+        await user.click(screen.getByRole('button', { name: '추가' }));
+
+        await waitFor(() => {
+            expect(onSubmit).toHaveBeenCalledWith({
+                symbol: 'AAPL',
+                quantity: '10',
+                averagePrice: '150.5',
+            });
+        });
+    });
+
     it('add mode: the 변경 button clears the selected symbol and returns to the autocomplete', async () => {
         const user = userEvent.setup();
         const onSubmit = vi.fn();
