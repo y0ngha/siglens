@@ -97,13 +97,34 @@ export function SymbolLayoutHeader({ symbol }: SymbolLayoutHeaderProps) {
                     </ErrorBoundary>
                 </div>
 
-                <div className="flex flex-wrap items-center justify-end gap-x-2 gap-y-2 sm:order-3 sm:shrink-0 sm:flex-nowrap">
-                    <ShareButton />
-                    {/* label + selector는 항상 한 유닛으로 wrap한다 — 분리하면
-                        좁은 화면에서 라벨만 앞 행에 남고 셀렉터가 다음 행으로
-                        떨어지는 orphan이 생긴다. */}
-                    <div className="flex shrink-0 items-center gap-2">
-                        <span className="text-secondary-400 text-xs whitespace-nowrap">
+                {/* 컨트롤 영역. 데스크톱(sm+)은 [공유][모델 라벨·셀렉터·토글·보유종목 칩]을
+                    한 줄에 우측 정렬(기존과 동일). 모바일은 세로로 쌓아 두 줄로
+                    정돈한다 — 기존엔 컨트롤이 flex-wrap으로 지그재그 wrap되고
+                    공포·탐욕 칩이 외톨이 행으로 떨어져 어수선했다. */}
+                <div className="flex flex-col gap-2 sm:order-3 sm:shrink-0 sm:flex-row sm:items-center sm:gap-2">
+                    {/* 모바일 첫 줄: 공포·탐욕 칩(좌) + 공유 버튼(우)을 양끝 정렬해
+                        외톨이 칩 행을 제거한다. 데스크톱에서는 칩이 브레드크럼 옆에
+                        인라인으로 있으므로 sm:hidden으로 숨기고 공유 버튼만 남는다. */}
+                    <div className="flex items-center justify-between gap-2">
+                        <ErrorBoundary fallback={null}>
+                            <Suspense fallback={null}>
+                                <span className="sm:hidden">
+                                    <FearGreedHeaderChipMounted
+                                        symbol={ticker}
+                                        fmpSymbol={assetInfo?.fmpSymbol}
+                                    />
+                                </span>
+                            </Suspense>
+                        </ErrorBoundary>
+                        <ShareButton />
+                    </div>
+                    {/* 모바일 둘째 줄: 모델 셀렉터 + 상세분석 토글 + 보유종목 칩을
+                        우측 정렬. "AI 분석 모델" 라벨은 좁은 모바일 폭 확보를 위해
+                        숨기고 sm+에서만 노출한다(셀렉터 자체로 의미 전달). 데스크톱은
+                        공유 버튼과 한 줄로 붙어 기존 배치를 유지한다. 보유종목(평단)
+                        칩은 가장 오른쪽에 두어 팝오버 우측 정렬 앵커를 유지한다. */}
+                    <div className="flex items-center justify-end gap-2">
+                        <span className="text-secondary-400 hidden text-xs whitespace-nowrap sm:inline">
                             AI 분석 모델
                         </span>
                         <ModelSelector
@@ -114,26 +135,15 @@ export function SymbolLayoutHeader({ symbol }: SymbolLayoutHeaderProps) {
                             showLabel={false}
                             dropdownAlign="right"
                         />
+                        <ReasoningToggle
+                            checked={reasoning}
+                            onChange={setReasoning}
+                            canUse={canUseReasoning}
+                            onLockedClick={openSignupNudge}
+                        />
+                        <PortfolioChipMounted symbol={ticker} />
                     </div>
-                    <ReasoningToggle
-                        checked={reasoning}
-                        onChange={setReasoning}
-                        canUse={canUseReasoning}
-                        onLockedClick={openSignupNudge}
-                    />
-                    <PortfolioChipMounted symbol={ticker} />
                 </div>
-
-                <ErrorBoundary fallback={null}>
-                    <Suspense fallback={null}>
-                        <div className="sm:hidden">
-                            <FearGreedHeaderChipMounted
-                                symbol={ticker}
-                                fmpSymbol={assetInfo?.fmpSymbol}
-                            />
-                        </div>
-                    </Suspense>
-                </ErrorBoundary>
             </div>
 
             <div className="-mx-4 mt-3">

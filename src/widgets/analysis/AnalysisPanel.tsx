@@ -51,13 +51,6 @@ import { formatAnalyzedAt } from '@/shared/lib/formatAnalyzedAt';
 import { isAnalysisStale } from '@/entities/analysis';
 import { StaleAnalysisBanner } from './StaleAnalysisBanner';
 
-/**
- * free 티어에 그룹당 노출되는 대표 스킬 상한. siglens-core의
- * `sampleSkillsForTier`(FREE_TIER_GROUP_CAP) 정책과 일치해야 한다. 정책상
- * 고정 상한이므로 실측 감지 개수(0일 수 있음) 대신 이 값을 안내에 사용한다.
- */
-const FREE_TIER_SKILL_SAMPLE = 3;
-
 function formatCooldown(ms: number): string {
     const totalSec = Math.ceil(ms / MS_PER_SECOND);
     const minutes = Math.floor(totalSec / SECONDS_PER_MINUTE);
@@ -1069,9 +1062,9 @@ export function AnalysisPanel({
                 </p>
             )}
             <p className="text-secondary-500 font-mono text-xs">
-                {/* free 티어는 대표 스킬만 샘플되어 감지 개수가 0일 수 있으므로,
-                    오해를 주지 않도록 개수 세그먼트를 숨기고 인디케이터 적용
-                    수만 노출한다. 대표 스킬 안내는 아래 nudge가 담당한다. */}
+                {/* free 티어는 스킬이 그룹당 소수만 샘플되어 감지 개수가 0일 수
+                    있으므로, 오해를 주지 않도록 개수 세그먼트를 숨기고 인디케이터
+                    적용 수만 노출한다. 회원가입 안내는 아래 업셀 카드가 담당한다. */}
                 {!hasLockedDetails && (
                     <>
                         {detectedPatterns.length +
@@ -1109,40 +1102,9 @@ export function AnalysisPanel({
                 결과가 한 번에 드러나도록 하기 위함이다. */}
             {!showProgress && (
                 <>
-                    {hasLockedDetails && (
-                        <div className="border-secondary-700 relative overflow-hidden rounded-lg border">
-                            {/* 블러 스켈레톤은 장식용 배경이다. absolute로 카드를
-                                채우되 높이는 아래 CTA 레이어가 결정하므로, 문구가
-                                길어져도 CTA가 카드 밖으로 잘리지 않는다. */}
-                            <div
-                                className="pointer-events-none absolute inset-0 p-4 blur-sm select-none"
-                                aria-hidden
-                            >
-                                <div className="bg-secondary-700/60 h-3 w-2/5 rounded" />
-                                <div className="bg-secondary-700/40 mt-3 h-3 w-full rounded" />
-                                <div className="bg-secondary-700/40 mt-2 h-3 w-4/5 rounded" />
-                                <div className="bg-secondary-700/40 mt-2 h-3 w-full rounded" />
-                                <div className="bg-secondary-700/40 mt-2 h-3 w-3/5 rounded" />
-                            </div>
-                            <div className="bg-secondary-900/55 relative flex flex-col items-center justify-center gap-2 p-4 text-center">
-                                <p className="text-secondary-100 text-sm font-semibold">
-                                    상세 분석과 매매 전략은 회원에게 제공됩니다.
-                                </p>
-                                <p className="text-secondary-300 text-xs leading-relaxed">
-                                    보조지표 심층 분석, 캔들 패턴, 리스크·핵심
-                                    지지·저항 레벨, 진입·손절·익절 매매
-                                    시나리오까지 회원가입 후 모두 확인할 수
-                                    있어요.
-                                </p>
-                                <Link
-                                    href="/signup"
-                                    className="bg-primary-600 hover:bg-primary-700 focus-visible:ring-primary-500 rounded px-3 py-1.5 text-sm font-semibold text-white transition-colors focus-visible:ring-1 focus-visible:outline-none"
-                                >
-                                    회원가입
-                                </Link>
-                            </div>
-                        </div>
-                    )}
+                    {/* free 티어의 상세 잠금 안내와 스킬 샘플 안내는 패널 하단의
+                        단일 업셀 카드(아래)로 통합했다. 회원가입 CTA를 한 번만
+                        노출해 중복을 없앤다. */}
                     <div className="border-secondary-700 border-t" />
 
                     {!hasLockedActionDetail &&
@@ -1351,25 +1313,29 @@ export function AnalysisPanel({
                         </div>
                     )}
 
-                    {/* free 티어는 그룹당 최대 FREE_TIER_SKILL_SAMPLE개로 샘플된
-                        대표 스킬만 적용해 분석된다. 결과가 잘렸다는 사실을 감추지
-                        않고, 회원이 적용받는 전체 스킬 수(skillCount)를 함께 보여
-                        친절하게 회원가입을 안내하는 카드다. 상단 상세 잠금 카드와
-                        동일한 시각 언어를 따른다. */}
+                    {/* free 티어 단일 업셀 카드. 궁금증을 유발하는 친절한 구어체로
+                        회원 전용 상세 항목 + 전체 스킬 수를 한 카드에 모아, 패널
+                        하단에서 회원가입 CTA를 한 번만 노출한다(중복 제거). */}
                     {hasLockedDetails && (
-                        <div className="border-secondary-700 flex flex-col items-center justify-center gap-2 rounded-lg border p-4 text-center">
-                            <p className="text-secondary-100 text-sm font-semibold">
-                                대표 스킬 {FREE_TIER_SKILL_SAMPLE}개로
-                                분석했어요.
-                            </p>
-                            <p className="text-secondary-300 text-xs leading-relaxed">
-                                {skillCount > 0
-                                    ? `회원가입 후 ${skillCount}개 스킬을 모두 적용한 분석 결과를 확인할 수 있어요.`
-                                    : '회원가입 후 전체 스킬을 적용한 분석 결과를 확인할 수 있어요.'}
-                            </p>
+                        <div className="border-secondary-700 bg-secondary-800/40 flex flex-col items-center gap-3 rounded-lg border p-5 text-center">
+                            <div className="flex flex-col gap-1.5">
+                                <p className="text-secondary-100 text-sm font-semibold text-balance">
+                                    더 깊은 분석이 궁금하신가요?
+                                </p>
+                                <p className="text-secondary-300 text-xs leading-relaxed text-balance">
+                                    {skillCount > 0
+                                        ? `회원가입하면 ${skillCount}개 스킬을 모두 적용한 상세 분석을 받아볼 수 있어요.`
+                                        : '회원가입하면 전체 스킬을 적용한 상세 분석을 받아볼 수 있어요.'}
+                                </p>
+                                <p className="text-secondary-400 text-xs leading-relaxed">
+                                    보조지표 심층 분석, 캔들 패턴, 핵심
+                                    지지·저항 레벨, 매매 시나리오까지 담겨
+                                    있어요.
+                                </p>
+                            </div>
                             <Link
                                 href="/signup"
-                                className="bg-primary-600 hover:bg-primary-700 focus-visible:ring-primary-500 rounded px-3 py-1.5 text-sm font-semibold text-white transition-colors focus-visible:ring-1 focus-visible:outline-none"
+                                className="bg-primary-600 hover:bg-primary-700 focus-visible:ring-primary-500 rounded-md px-4 py-2 text-sm font-semibold text-white transition-colors focus-visible:ring-1 focus-visible:outline-none"
                             >
                                 회원가입
                             </Link>
