@@ -89,6 +89,23 @@ export function formatSignedPercent(value: number): string {
     return `${sign}${value.toFixed(1)}%`;
 }
 
+/**
+ * "+$12.34" / "-$12.34" — signed USD delta with dynamic-by-magnitude decimals
+ * (sub-$1 safe via dynamicDecimals, e.g. "+$0.00012345" for a sub-cent
+ * position). Companion to formatSignedPercent for delta displays like
+ * unrealized P&L, where formatUsdCurrency's fixed 2dp would flatten small
+ * tokens to "$0.00".
+ */
+export function formatSignedUsd(value: number): string {
+    const sign = value >= 0 ? '+' : '-';
+    const digits = dynamicDecimals(value);
+    const magnitude = Math.abs(value).toLocaleString('en-US', {
+        minimumFractionDigits: digits,
+        maximumFractionDigits: digits,
+    });
+    return `${sign}$${magnitude}`;
+}
+
 export function formatPriceChange(percent: number): PriceChangeDisplay {
     const isUp = percent >= 0;
     return {

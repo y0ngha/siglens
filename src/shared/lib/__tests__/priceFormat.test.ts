@@ -4,6 +4,7 @@ import {
     formatUsdCurrency,
     formatPriceChange,
     formatPrice,
+    formatSignedUsd,
     dynamicDecimals,
 } from '@/shared/lib/priceFormat';
 import type { PricePrecision } from '@/shared/config/marketProfile';
@@ -105,6 +106,28 @@ describe('dynamicDecimals', () => {
         expect(dynamicDecimals(NaN)).toBe(2);
         expect(dynamicDecimals(Infinity)).toBe(2);
         expect(dynamicDecimals(-Infinity)).toBe(2);
+    });
+});
+
+describe('formatSignedUsd', () => {
+    it('prefixes a positive delta with +$', () => {
+        expect(formatSignedUsd(300)).toBe('+$300.00');
+    });
+
+    it('prefixes a negative delta with -$ (magnitude, not double sign)', () => {
+        expect(formatSignedUsd(-150)).toBe('-$150.00');
+    });
+
+    it('treats zero as positive (+$0.00)', () => {
+        expect(formatSignedUsd(0)).toBe('+$0.00');
+    });
+
+    it('is sub-$1 safe via dynamicDecimals (does not flatten to $0.00)', () => {
+        expect(formatSignedUsd(0.1)).toBe('+$0.10000');
+    });
+
+    it('adds thousands separators for large magnitudes', () => {
+        expect(formatSignedUsd(1234.5)).toBe('+$1,234.50');
     });
 });
 

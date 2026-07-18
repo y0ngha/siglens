@@ -157,6 +157,19 @@ vi.mock('@/shared/lib/pwaEvents', () => ({
     PWA_TRIGGER_EVENT: 'pwa-trigger',
 }));
 
+// "내 포지션" 요약(PositionStatusSummary)의 소스 — react-query 기반이라
+// QueryClientProvider 없는 이 트리에서 그대로 렌더하면 크래시한다. 이 파일의
+// 관심사(비회원 넛지 race)와 무관하므로 "홀딩 없음"으로 고정한다.
+vi.mock('@/features/portfolio-holding', () => ({
+    useSymbolHolding: vi.fn(() => ({
+        holding: null,
+        isHydrated: true,
+        isLoading: false,
+        isError: false,
+        save: {} as never,
+    })),
+}));
+
 // The two seams the real bug lives in: login-state resolution
 // (`useCurrentUser`) and the localStorage-backed distinct-symbol counter
 // (`anonAnalysisCount`). `@/features/analysis-nudge` itself is left unmocked.

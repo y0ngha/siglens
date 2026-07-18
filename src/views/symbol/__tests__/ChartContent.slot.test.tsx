@@ -88,6 +88,18 @@ vi.mock('@/features/symbol-chat', () => ({ usePublishSymbolChat: vi.fn() }));
 vi.mock('@/widgets/analysis', () => ({
     AnalysisPanel: () => <div data-testid="analysis-panel" />,
 }));
+// "내 포지션" 요약(PositionStatusSummary)의 소스 — react-query 기반이라
+// QueryClientProvider 없는 이 트리에서 그대로 렌더하면 크래시한다. 이 파일의
+// 관심사(슬롯 분기)와 무관하므로 "홀딩 없음"으로 고정한다.
+vi.mock('@/features/portfolio-holding', () => ({
+    useSymbolHolding: () => ({
+        holding: null,
+        isHydrated: true,
+        isLoading: false,
+        isError: false,
+        save: {} as never,
+    }),
+}));
 
 function analysisReturn(analysis: AnalysisResponse): UseAnalysisResult {
     return {
