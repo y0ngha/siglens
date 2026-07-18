@@ -75,33 +75,46 @@ describe('PositionBuilding', () => {
         expect(currentXY.y).toBeLessThan(avgXY.y);
     });
 
-    it('avg가 최근 고점보다 높으면(clamped=above) 옥상 위(하늘) 안내를 노출한다', () => {
-        const { getByTestId, queryByTestId } = renderBuilding({
+    it('avg가 최근 고점보다 높으면(clamped=above) 시각 노트는 메타포 phrase(옥상 위)만 — 설명 절은 폭 초과로 좌측이 잘리므로 aria-label로 옮겨 담는다', () => {
+        const { getByTestId, queryByTestId, container } = renderBuilding({
             low52w: 100,
             high52w: 200,
             avg: 250,
             current: 180,
         });
-        expect(getByTestId('avg-floor-note').textContent).toContain(
+        // 시각 노트(SVG <text>)는 폭 제약(SVG_LABEL_AVAILABLE_WIDTH=118px)을 받아
+        // 메타포 phrase만 — 설명 절("최근 고점보다 높은 곳")까지 붙으면 좌측이 잘린다.
+        expect(getByTestId('avg-floor-note').textContent).toContain('옥상 위');
+        expect(getByTestId('avg-floor-note').textContent).not.toContain(
             '최근 고점보다 높은'
         );
-        expect(getByTestId('avg-floor-note').textContent).toContain('옥상 위');
+        // 폭 제약이 없는 aria-label은 설명 절까지 전체 문구를 그대로 담는다(AT 정보량 유지).
+        expect(
+            container
+                .querySelector('svg[role="img"]')
+                ?.getAttribute('aria-label')
+        ).toContain('최근 고점보다 높은');
         expect(queryByTestId('current-out-of-range-note')).toBeNull();
     });
 
-    it('avg가 최근 저점보다 낮으면(clamped=below) 지하 안내를 노출한다', () => {
-        const { getByTestId } = renderBuilding({
+    it('avg가 최근 저점보다 낮으면(clamped=below) 시각 노트는 지하 세대만 — 설명 절은 aria-label로', () => {
+        const { getByTestId, container } = renderBuilding({
             low52w: 100,
             high52w: 200,
             avg: 50,
             current: 120,
         });
         expect(getByTestId('avg-floor-note').textContent).toContain(
-            '최근 저점보다 낮은'
-        );
-        expect(getByTestId('avg-floor-note').textContent).toContain(
             '지하 세대'
         );
+        expect(getByTestId('avg-floor-note').textContent).not.toContain(
+            '최근 저점보다 낮은'
+        );
+        expect(
+            container
+                .querySelector('svg[role="img"]')
+                ?.getAttribute('aria-label')
+        ).toContain('최근 저점보다 낮은');
     });
 
     it('current가 최근 고점보다 높으면(clamped=above) — avg는 정상 범위여도 별도로 옥상 위 안내를 노출하고, ★평단은 (범위 안이므로) 옥상/지하 문구 없이 층 정보만 보여준다', () => {
@@ -365,6 +378,30 @@ describe('PositionBuilding', () => {
             const currentXEnd = SVG_LABEL_AVAILABLE_WIDTH - currentLabelWidth;
             expect(avgXStart).toBeGreaterThanOrEqual(0);
             expect(currentXEnd).toBeGreaterThanOrEqual(0);
+        }
+    );
+
+    it.each([
+        { name: 'above(옥상 위)', avg: 250, current: 180, prefix: '☁ ' },
+        { name: 'below(지하 세대)', avg: 50, current: 120, prefix: '▽B1 ' },
+    ])(
+        '범위 밖($name) avg-floor-note 시각 노트는 SVG_LABEL_AVAILABLE_WIDTH를 넘지 않는다(좌측 클리핑 방지, design audit)',
+        ({ avg, current, prefix }) => {
+            const { getByTestId } = renderBuilding({
+                low52w: 100,
+                high52w: 200,
+                avg,
+                current,
+            });
+            // 렌더된 시각 노트 텍스트(prefix + phrase)의 보수적 추정 폭이 end-anchored
+            // 여유 폭 이내여야 좌측(메타포 phrase)이 잘리지 않는다. 설명 절까지 붙었던
+            // 이전 문구(예: "☁ 옥상 위 · 최근 고점보다 높은 곳" ≈ 153px)는 이 한계를
+            // 넘겨 phrase가 잘렸다 — 시각 노트를 phrase만으로 축약해 회귀를 막는다.
+            const noteText = getByTestId('avg-floor-note').textContent ?? '';
+            expect(noteText.startsWith(prefix)).toBe(true);
+            expect(estimateSvgLabelWidth(noteText)).toBeLessThanOrEqual(
+                SVG_LABEL_AVAILABLE_WIDTH
+            );
         }
     );
 

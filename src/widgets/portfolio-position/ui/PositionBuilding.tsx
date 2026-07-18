@@ -109,13 +109,21 @@ function describeFloorTier(floorIndex: number, bandCount: number): string {
  * 모든 소비처가 이 하나의 빌더를 거쳐 파생해 문구 드리프트를 막는다
  * (buildFloorTooltipContent와 동일 원칙).
  */
+/** 범위 밖 ★평단의 아파트 메타포 phrase(방향만) — describeAvgFloor(전체 문구)와
+ * avgFloorVisualNote(시각 노트, 폭 제약)가 함께 파생하는 단일 소스라 리터럴을
+ * 양쪽에 중복 선언하지 않는다. */
+const ROOFTOP_METAPHOR = '옥상 위';
+const BASEMENT_METAPHOR = '지하 세대';
+
 export function describeAvgFloor(
     avgPos: number,
     avgClamped: 'above' | 'below' | null,
     bandCount: number
 ): string {
-    if (avgClamped === 'above') return '옥상 위 · 최근 고점보다 높은 곳';
-    if (avgClamped === 'below') return '지하 세대 · 최근 저점보다 낮은 곳';
+    if (avgClamped === 'above')
+        return `${ROOFTOP_METAPHOR} · 최근 고점보다 높은 곳`;
+    if (avgClamped === 'below')
+        return `${BASEMENT_METAPHOR} · 최근 저점보다 낮은 곳`;
 
     const floorIndex = Math.min(
         bandCount - 1,
@@ -123,6 +131,25 @@ export function describeAvgFloor(
     );
     const floorNumber = floorIndex + 1;
     return `${floorNumber}층 · ${describeFloorTier(floorIndex, bandCount)}`;
+}
+
+/**
+ * SVG 시각 노트(<text data-testid="avg-floor-note">) 전용 문구 — 범위 밖
+ * (above/below)이면 메타포 phrase("옥상 위"/"지하 세대")만 반환한다. 뒤 설명
+ * 절("· 최근 고점보다 높은 곳" 등)까지 붙이면 end-anchored 노트 폭이
+ * SVG_LABEL_AVAILABLE_WIDTH(118px)를 넘겨 좌측(메타포 phrase)이 잘린다(design
+ * audit). 마커가 지붕 위/바닥 아래 중앙에 떠 방향은 위치가 이미 말해주고,
+ * return-readout의 "최근 범위의 N% 지점"도 함께 보여 시각 정보 손실은 없다.
+ * 범위 안이면 "N층 · tier"(78px, 폭 안전)를 그대로 보여준다. 설명 절을 포함한
+ * 전체 문구는 aria-label(describeAvgFloor)이 계속 담아 AT 정보량은 유지한다.
+ */
+function avgFloorVisualNote(
+    avgClamped: 'above' | 'below' | null,
+    fullNote: string
+): string {
+    if (avgClamped === 'above') return ROOFTOP_METAPHOR;
+    if (avgClamped === 'below') return BASEMENT_METAPHOR;
+    return fullNote;
 }
 
 /** band index(0=최저가)의 가격 구간 — low/high를 bandCount개 동일 폭으로 나눈다.
@@ -423,6 +450,11 @@ export function PositionBuilding({
         model.avgPos,
         model.avgClamped,
         bandCount
+    );
+    // 시각 노트는 폭 제약을 받아 범위 밖에서 phrase만, aria-label은 전체 문구.
+    const avgFloorNoteVisual = avgFloorVisualNote(
+        model.avgClamped,
+        avgFloorNote
     );
     const ariaLabel = buildAriaLabel(
         symbol,
@@ -815,7 +847,7 @@ export function PositionBuilding({
                         : model.avgClamped === 'below'
                           ? '▽B1 '
                           : ''}
-                    {avgFloorNote}
+                    {avgFloorNoteVisual}
                 </text>
 
                 {/* 현재가 (●) */}
