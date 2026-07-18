@@ -133,11 +133,44 @@ describe('generateMetadata', () => {
         const metadata = await generateMetadata({
             params: Promise.resolve({ symbol: 'aapl' }),
         });
+        // 색인 방침은 불변: noindex + self-canonical 유지(후킹 카피 추가와 무관).
         expect(metadata.robots).toEqual({ index: false, follow: false });
-        expect(metadata.title).toBe('Apple Inc. 내 위치');
         expect(metadata.alternates).toEqual({
             canonical: 'https://siglens.io/AAPL/position',
         });
+    });
+
+    it('노출용 카피는 "평단 = 몇 층" 아파트 메타포로 후킹 강화 — title/description/OG/Twitter에 반영(색인은 여전히 noindex)', async () => {
+        const metadata = await generateMetadata({
+            params: Promise.resolve({ symbol: 'aapl' }),
+        });
+        // 후킹 title: 종목 표시명 + 메타포 훅.
+        expect(metadata.title).toBe('Apple Inc. 내 위치 — 내 평단은 몇 층?');
+        // 후킹 description: 아파트/층 메타포 키워드를 담고, SEO_DESCRIPTION_MAX_LENGTH(120) 이내.
+        const description = metadata.description ?? '';
+        expect(description).toContain('아파트');
+        expect(description).toContain('옥상');
+        expect(description).toContain('지하');
+        expect([...description].length).toBeLessThanOrEqual(120);
+        // OG/Twitter 카드에도 동일 후킹 카피가 실려 소셜 공유·링크 프리뷰에서 노출된다.
+        expect(metadata.openGraph?.title).toBe(metadata.title);
+        expect(metadata.openGraph?.description).toBe(metadata.description);
+        expect(metadata.twitter?.title).toBe(metadata.title);
+        expect(metadata.twitter?.description).toBe(metadata.description);
+        // OG url은 self-canonical과 일치해야 공유 카드가 올바른 페이지를 가리킨다.
+        const og = metadata.openGraph as
+            | {
+                  url?: unknown;
+                  siteName?: unknown;
+                  type?: unknown;
+                  locale?: unknown;
+              }
+            | undefined;
+        expect(og?.url).toBe('https://siglens.io/AAPL/position');
+        // 페이지 openGraph가 root layout을 replace하므로 브랜딩 필드가 유실되면 안 된다.
+        expect(og?.siteName).toBe('Siglens');
+        expect(og?.type).toBe('website');
+        expect(og?.locale).toBe('ko_KR');
     });
 });
 

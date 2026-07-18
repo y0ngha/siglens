@@ -25,6 +25,7 @@ import {
 import {
     clampSeoDescription,
     NOINDEX_SYMBOL_METADATA,
+    SITE_NAME,
     SITE_URL,
 } from '@/shared/lib/seo';
 import type { Metadata } from 'next';
@@ -88,14 +89,40 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     // 콘텐츠(재무 지표, 4축 시나리오, 기사 목록)를 갖고 있어 이 판단과 대비된다.
     // 같은 이유로 sitemap(`buildPopularEntries`)에도 이 라우트를 추가하지 않는다 —
     // 이미 noindex인 라우트를 sitemap에 넣는 것 자체가 상호 모순 신호다.
+    //
+    // seo-audit 재검토(2026-07-19): 색인 방침은 위 근거대로 noindex를 유지하되,
+    // title/description/OG/Twitter 카피는 "평단 위치 = 아파트 몇 층" 메타포로 후킹
+    // 강화한다. noindex 페이지라도 이 메타는 크롤러가 아니라 **소셜 공유(OG 카드)·
+    // 브라우저 탭·메신저 링크 프리뷰**에서 그대로 노출되므로(발견성은 SERP가 아닌
+    // 공유로 얻는다), 재미있는 후킹 카피의 가치가 색인 여부와 무관하게 살아있다.
+    // (색인용 콘텐츠 전략은 별도 랜딩 페이지로 다루기로 보류 — 사용자 결정.)
+    const positionTitle = `${displayName} 내 위치 — 내 평단은 몇 층?`;
+    const positionDescription = clampSeoDescription(
+        `${displayName} 최근 52주 범위를 아파트로, 내 평단을 '층'으로 보여드려요. ` +
+            `내 매수가는 옥상(고점)일까 지하(저점)일까? 로그인하고 내 위치를 확인해보세요.`
+    );
     return {
         ...NOINDEX_SYMBOL_METADATA,
-        title: `${displayName} 내 위치`,
-        description: clampSeoDescription(
-            `${displayName}의 최근 가격 범위에서 내 평단이 어디에 위치하는지 확인하세요.`
-        ),
+        title: positionTitle,
+        description: positionDescription,
         alternates: { canonical: url },
-        openGraph: { url },
+        openGraph: {
+            // 페이지 레벨 openGraph는 root layout의 것을 deep-merge가 아니라
+            // 통째로 replace하므로(Next.js 얕은 병합), sibling 심볼 페이지
+            // (symbolMetadataFromSeo)와 동일하게 type/siteName/locale을 다시
+            // 명시해야 소셜 카드에서 og:site_name·og:locale이 유실되지 않는다.
+            type: 'website',
+            siteName: SITE_NAME,
+            title: positionTitle,
+            description: positionDescription,
+            url,
+            locale: 'ko_KR',
+        },
+        twitter: {
+            card: 'summary_large_image',
+            title: positionTitle,
+            description: positionDescription,
+        },
     };
 }
 
