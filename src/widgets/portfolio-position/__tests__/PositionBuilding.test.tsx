@@ -452,6 +452,7 @@ describe('PositionBuilding', () => {
             floors.forEach(floor => {
                 expect(floor.hasAttribute('tabindex')).toBe(false);
                 expect(floor.hasAttribute('aria-label')).toBe(false);
+                expect(floor.hasAttribute('role')).toBe(false);
                 expect(floor.querySelector('title')).toBeNull();
                 // 클릭해도 pinnedFloor가 절대 set되지 않는다(onClick 핸들러 자체가
                 // 붙지 않음) — floating 툴팁 DOM이 전혀 나타나지 않는다.
@@ -472,6 +473,9 @@ describe('PositionBuilding', () => {
             floors.forEach((floor, i) => {
                 expect(floor.getAttribute('tabindex')).toBe('0');
                 expect(floor.getAttribute('aria-label')).toBe(EXPECTED[i]);
+                // Interactive floors are click/tap-activated controls, so they expose
+                // role="button" (not role="group") for correct AT semantics.
+                expect(floor.getAttribute('role')).toBe('button');
                 // PRIMARY requirement: native <title> (unstyled OS hover box +
                 // ~1s browser delay) is removed, replaced by the styled tooltip.
                 expect(floor.querySelector('title')).toBeNull();
@@ -571,6 +575,53 @@ describe('PositionBuilding', () => {
             ).toBeInTheDocument();
 
             fireEvent.click(floors[3]);
+            expect(screen.queryByTestId('floor-tooltip')).toBeNull();
+        });
+
+        it.each([
+            { key: 'Enter', name: 'Enter' },
+            { key: ' ', name: 'Space' },
+        ])(
+            '$name key toggles the pinned tooltip on a focused floor (role="button" keyboard parity with click)',
+            ({ key }) => {
+                const { container } = renderBuilding(
+                    {},
+                    undefined,
+                    VOLUME_BY_BAND
+                );
+                const floors = container.querySelectorAll(
+                    '[data-testid="building-floor"]'
+                );
+                expect(screen.queryByTestId('floor-tooltip')).toBeNull();
+
+                fireEvent.keyDown(floors[3], { key }); // band index 3 → [160,180), 25%
+                expect(
+                    within(screen.getByTestId('floor-tooltip')).getByText(
+                        '$160–$180 · 거주율 25%'
+                    )
+                ).toBeInTheDocument();
+
+                fireEvent.keyDown(floors[3], { key });
+                expect(screen.queryByTestId('floor-tooltip')).toBeNull();
+            }
+        );
+
+        it('Space key prevents the default scroll action (WAI-ARIA APG button keyboard semantics)', () => {
+            const { container } = renderBuilding({}, undefined, VOLUME_BY_BAND);
+            const floors = container.querySelectorAll(
+                '[data-testid="building-floor"]'
+            );
+            const event = fireEvent.keyDown(floors[0], { key: ' ' });
+            // fireEvent returns false when preventDefault() was called.
+            expect(event).toBe(false);
+        });
+
+        it('ignores non-activation keys (e.g. Tab) — no pin toggle', () => {
+            const { container } = renderBuilding({}, undefined, VOLUME_BY_BAND);
+            const floors = container.querySelectorAll(
+                '[data-testid="building-floor"]'
+            );
+            fireEvent.keyDown(floors[0], { key: 'Tab' });
             expect(screen.queryByTestId('floor-tooltip')).toBeNull();
         });
 

@@ -152,6 +152,11 @@ function avgFloorVisualNote(
     return fullNote;
 }
 
+interface BandPriceRange {
+    bandLow: number;
+    bandHigh: number;
+}
+
 /** band index(0=최저가)의 가격 구간 — low/high를 bandCount개 동일 폭으로 나눈다.
  * volumeByBand.ts의 밴드 경계 컨벤션(inclusive-low/exclusive-high, 마지막
  * 밴드만 상한 포함)과 동일 산식이라 두 값이 항상 같은 구간을 가리킨다. */
@@ -160,7 +165,7 @@ function bandPriceRange(
     high: number,
     index: number,
     bandCount: number
-): { bandLow: number; bandHigh: number } {
+): BandPriceRange {
     const width = (high - low) / bandCount;
     return {
         bandLow: low + index * width,
@@ -197,6 +202,55 @@ function buildFloorTooltipContent(
  * 여기선 괄호로 이어붙여 하나의 문자열로 합친다. */
 function formatFloorTooltipText(content: FloorTooltipContent): string {
     return `${content.main} (${content.qualifier})`;
+}
+
+/**
+ * 층(band) 전체(0..bandCount-1)의 툴팁 콘텐츠를 한 번에 계산한다 — 활성 층
+ * 파생(컴포넌트 상단, floating 툴팁/below-building 리드아웃용)과 렌더 루프
+ * (층별 aria-label용) 둘 다 이 하나의 배열에서 파생해 같은 band index가
+ * 두 곳에서 따로 계산되지 않게 한다(단일 source, MISTAKES #2). volumePct가
+ * 없거나 유한하지 않은 밴드(비인터랙티브)는 null.
+ */
+function buildFloorTooltips(
+    model: PositionModel,
+    volumeByBand: readonly number[] | null | undefined,
+    low52w: number,
+    high52w: number,
+    bandCount: number
+): readonly (FloorTooltipContent | null)[] {
+    return model.bands.map((_, i) => {
+        const volumePct = volumeByBand?.[i];
+        if (typeof volumePct !== 'number' || !Number.isFinite(volumePct)) {
+            return null;
+        }
+        const { bandLow, bandHigh } = bandPriceRange(
+            low52w,
+            high52w,
+            i,
+            bandCount
+        );
+        return buildFloorTooltipContent(bandLow, bandHigh, volumePct);
+    });
+}
+
+/** hover(마우스)·focus(키보드)·pinned(클릭/탭) 중 활성 상태인 층 하나를 가리킨다
+ * — index는 model.bands의 band index, rect는 activate/toggleClick 시점에
+ * 캡처한 floating 툴팁 anchor 좌표(getBoundingClientRect). */
+interface FloorPointer {
+    index: number;
+    rect: DOMRect;
+}
+
+/**
+ * 활성 층(activeFloor)의 툴팁 콘텐츠 — floorTooltips(전체 밴드 배열)에서
+ * activeFloor.index로 조회한다. activeFloor가 없으면 null(guard clause).
+ */
+function computeActiveFloorTooltipContent(
+    activeFloor: FloorPointer | null,
+    floorTooltips: readonly (FloorTooltipContent | null)[]
+): FloorTooltipContent | null {
+    if (activeFloor === null) return null;
+    return floorTooltips[activeFloor.index] ?? null;
 }
 
 /* ------------------------------------------------------------------------ *
@@ -441,6 +495,44 @@ export function PositionBuilding({
     className,
     volumeByBand,
 }: PositionBuildingProps) {
+    // 층 hover/focus/tap(pin) 상태 — volumeByBand가 없으면 절대 set되지 않아
+    // (아래 이벤트 핸들러가 통째로 붙지 않음) 항상 null로 남고, 건물은 이 기능
+    // 추가 전과 동일하게 렌더된다.
+    //
+    // hover(마우스 hover·키보드 focus)와 pinned(클릭/탭 토글)를 별도 state로 둔다
+    // — 하나로 합치면 "마우스로 hover 중인 층을 클릭"할 때 focus 이벤트가 먼저
+    // activate를 호출해버려 클릭의 toggle 로직이 방금 연 툴팁을 곧바로 닫아버리는
+    // 경합이 생긴다(hover가 이미 켠 상태를 click이 "이미 켜져 있었다"고 오판).
+    // 분리하면 hover/focus는 즉시 미리보기를, 클릭/탭은 그와 무관하게 "고정"
+    // 여부만 토글해 데스크톱 hover와 모바일 tap-to-toggle이 서로 간섭하지 않는다.
+    // 활성 층은 hover가 있으면 hover를 우선하고, 없으면 pinned를 쓴다.
+    const [hoverFloor, setHoverFloor] = useState<FloorPointer | null>(null);
+    const [pinnedFloor, setPinnedFloor] = useState<FloorPointer | null>(null);
+
+    // floating 툴팁의 fixed 좌표 + "최초 측정 전엔 숨김"(InfoTooltip과 동일 idiom,
+    // shared/lib/tooltipPosition의 getTooltipPosition을 그대로 재사용). "이 인덱스는
+    // 이미 측정됐다"를 별도 state(measuredFloorIndex)로 들고 렌더 중에
+    // activeFloor.index와 비교해 tooltipPositioned를 파생한다 — setState-in-effect
+    // (cascading render 경고)를 피하려고 useEffect로 "층이 바뀌면 리셋"하는 대신,
+    // 값 비교 자체가 자연스럽게 리셋 역할을 한다(측정된 적 없는 새 인덱스는 항상
+    // 불일치 → invisible).
+    const [tooltipPosition, setTooltipPosition] = useState<TooltipPosition>({
+        top: 0,
+        left: 0,
+    });
+    const [measuredFloorIndex, setMeasuredFloorIndex] = useState<number | null>(
+        null
+    );
+
+    const containerRef = useRef<HTMLDivElement>(null);
+
+    // 탭/클릭으로 고정(pinned)한 층은 건물 바깥을 클릭/탭하면 닫힌다(InfoTooltip과
+    // 동일한 useOnClickOutside). hover 미리보기는 mouseleave/blur가 이미 처리하므로
+    // 여기선 pinnedFloor만 정리한다.
+    useOnClickOutside(containerRef, () => setPinnedFloor(null), {
+        enabled: pinnedFloor !== null,
+    });
+
     // model.bands.length는 volumeByBand 인덱싱(아래)과 describeAvgFloor 둘 다에
     // 필요해 컴포넌트 최상단에서 한 번만 계산한다(단일 source, 중복 선언 금지).
     const bandCount = model.bands.length;
@@ -466,72 +558,24 @@ export function PositionBuilding({
 
     const currentNote = outOfRangeNote(model.currentClamped);
 
-    // 층 hover/focus/tap(pin) 상태 — volumeByBand가 없으면 절대 set되지 않아
-    // (아래 이벤트 핸들러가 통째로 붙지 않음) 항상 null로 남고, 건물은 이 기능
-    // 추가 전과 동일하게 렌더된다.
-    //
-    // hover(마우스 hover·키보드 focus)와 pinned(클릭/탭 토글)를 별도 state로 둔다
-    // — 하나로 합치면 "마우스로 hover 중인 층을 클릭"할 때 focus 이벤트가 먼저
-    // activate를 호출해버려 클릭의 toggle 로직이 방금 연 툴팁을 곧바로 닫아버리는
-    // 경합이 생긴다(hover가 이미 켠 상태를 click이 "이미 켜져 있었다"고 오판).
-    // 분리하면 hover/focus는 즉시 미리보기를, 클릭/탭은 그와 무관하게 "고정"
-    // 여부만 토글해 데스크톱 hover와 모바일 tap-to-toggle이 서로 간섭하지 않는다.
-    // 활성 층은 hover가 있으면 hover를 우선하고, 없으면 pinned를 쓴다.
-    const [hoverFloor, setHoverFloor] = useState<{
-        index: number;
-        rect: DOMRect;
-    } | null>(null);
-    const [pinnedFloor, setPinnedFloor] = useState<{
-        index: number;
-        rect: DOMRect;
-    } | null>(null);
     const activeFloor = hoverFloor ?? pinnedFloor;
-
-    // floating 툴팁의 fixed 좌표 + "최초 측정 전엔 숨김"(InfoTooltip과 동일 idiom,
-    // shared/lib/tooltipPosition의 getTooltipPosition을 그대로 재사용). "이 인덱스는
-    // 이미 측정됐다"를 별도 state(measuredFloorIndex)로 들고 렌더 중에
-    // activeFloor.index와 비교해 tooltipPositioned를 파생한다 — setState-in-effect
-    // (cascading render 경고)를 피하려고 useEffect로 "층이 바뀌면 리셋"하는 대신,
-    // 값 비교 자체가 자연스럽게 리셋 역할을 한다(측정된 적 없는 새 인덱스는 항상
-    // 불일치 → invisible).
-    const [tooltipPosition, setTooltipPosition] = useState<TooltipPosition>({
-        top: 0,
-        left: 0,
-    });
-    const [measuredFloorIndex, setMeasuredFloorIndex] = useState<number | null>(
-        null
-    );
     const tooltipPositioned =
         activeFloor !== null && measuredFloorIndex === activeFloor.index;
 
-    // 탭/클릭으로 고정(pinned)한 층은 건물 바깥을 클릭/탭하면 닫힌다(InfoTooltip과
-    // 동일한 useOnClickOutside). hover 미리보기는 mouseleave/blur가 이미 처리하므로
-    // 여기선 pinnedFloor만 정리한다.
-    const containerRef = useRef<HTMLDivElement>(null);
-    useOnClickOutside(containerRef, () => setPinnedFloor(null), {
-        enabled: pinnedFloor !== null,
-    });
-
-    const activeVolumePct =
-        activeFloor !== null ? volumeByBand?.[activeFloor.index] : null;
-    let activeFloorTooltipContent: FloorTooltipContent | null = null;
-    if (
-        activeFloor !== null &&
-        typeof activeVolumePct === 'number' &&
-        Number.isFinite(activeVolumePct)
-    ) {
-        const { bandLow, bandHigh } = bandPriceRange(
-            low52w,
-            high52w,
-            activeFloor.index,
-            bandCount
-        );
-        activeFloorTooltipContent = buildFloorTooltipContent(
-            bandLow,
-            bandHigh,
-            activeVolumePct
-        );
-    }
+    // 전체 밴드의 툴팁 콘텐츠를 한 번만 계산해 활성 층 파생(아래)과 렌더 루프
+    // (층별 aria-label) 둘 다 재사용한다 — 같은 band index를 두 곳에서 따로
+    // 계산하지 않는다(MISTAKES #2, buildFloorTooltips 주석 참고).
+    const floorTooltips = buildFloorTooltips(
+        model,
+        volumeByBand,
+        low52w,
+        high52w,
+        bandCount
+    );
+    const activeFloorTooltipContent = computeActiveFloorTooltipContent(
+        activeFloor,
+        floorTooltips
+    );
     const activeFloorTooltipText = activeFloorTooltipContent
         ? formatFloorTooltipText(activeFloorTooltipContent)
         : null;
@@ -608,33 +652,18 @@ export function PositionBuilding({
                     const faces = computeFloorFaces(i);
                     const litIndex = BAND_COUNT - 1 - i;
 
-                    const volumePct = volumeByBand?.[i];
-                    const isInteractive =
-                        typeof volumePct === 'number' &&
-                        Number.isFinite(volumePct);
+                    const floorTooltip = floorTooltips[i];
+                    const isInteractive = floorTooltip !== null;
                     const isActive = isInteractive && activeFloor?.index === i;
-                    let floorTooltipText: string | null = null;
-                    if (isInteractive) {
-                        const { bandLow, bandHigh } = bandPriceRange(
-                            low52w,
-                            high52w,
-                            i,
-                            bandCount
-                        );
-                        floorTooltipText = formatFloorTooltipText(
-                            buildFloorTooltipContent(
-                                bandLow,
-                                bandHigh,
-                                volumePct
-                            )
-                        );
-                    }
+                    const floorTooltipText = floorTooltip
+                        ? formatFloorTooltipText(floorTooltip)
+                        : null;
 
                     // 핸들러는 아래에서 isInteractive일 때만 <g>에 붙으므로 여기선
                     // 별도 가드가 필요 없다. activate/deactivate는 hover(마우스)·focus
-                    // (키보드) 미리보기, toggleClick은 클릭/탭 "고정" — 서로 다른 state라
-                    // 데스크톱에서 hover 중인 층을 클릭해도 hover가 방금 연 툴팁을
-                    // click이 곧바로 닫아버리는 경합이 없다(상단 state 주석 참고).
+                    // (키보드) 미리보기, togglePin(클릭/탭/Enter/Space)은 "고정" — 서로
+                    // 다른 state라 데스크톱에서 hover 중인 층을 클릭해도 hover가 방금 연
+                    // 툴팁을 click이 곧바로 닫아버리는 경합이 없다(상단 state 주석 참고).
                     const activate = (e: React.SyntheticEvent<SVGGElement>) => {
                         setHoverFloor({
                             index: i,
@@ -645,11 +674,23 @@ export function PositionBuilding({
                         setHoverFloor(prev =>
                             prev?.index === i ? null : prev
                         );
-                    const toggleClick = (e: React.MouseEvent<SVGGElement>) => {
-                        const rect = e.currentTarget.getBoundingClientRect();
+                    const togglePin = (rect: DOMRect) => {
                         setPinnedFloor(prev =>
                             prev?.index === i ? null : { index: i, rect }
                         );
+                    };
+                    const toggleClick = (e: React.MouseEvent<SVGGElement>) => {
+                        togglePin(e.currentTarget.getBoundingClientRect());
+                    };
+                    // Enter/Space activate the same pin-toggle as a click — role="button"
+                    // requires this keyboard parity (WAI-ARIA APG). Space also scrolls the
+                    // page by default on non-form elements, so it's prevented here.
+                    const handleKeyDown = (
+                        e: React.KeyboardEvent<SVGGElement>
+                    ) => {
+                        if (e.key !== 'Enter' && e.key !== ' ') return;
+                        if (e.key === ' ') e.preventDefault();
+                        togglePin(e.currentTarget.getBoundingClientRect());
                     };
 
                     return (
@@ -657,7 +698,7 @@ export function PositionBuilding({
                             key={`${band.fromPct}-${band.toPct}`}
                             data-testid="building-floor"
                             tabIndex={isInteractive ? 0 : undefined}
-                            role={isInteractive ? 'group' : undefined}
+                            role={isInteractive ? 'button' : undefined}
                             aria-label={floorTooltipText ?? undefined}
                             // 네이티브 <title>의 OS 기본 사각 hover box(및 ~1s 지연)를
                             // 걷어내고 이 컴포넌트 자체의 styled 툴팁으로 대체했다(design
@@ -680,6 +721,9 @@ export function PositionBuilding({
                             onFocus={isInteractive ? activate : undefined}
                             onBlur={isInteractive ? deactivate : undefined}
                             onClick={isInteractive ? toggleClick : undefined}
+                            onKeyDown={
+                                isInteractive ? handleKeyDown : undefined
+                            }
                         >
                             <polygon
                                 points={faces.left}

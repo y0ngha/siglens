@@ -66,6 +66,13 @@ export function AnalysisSettingsMenu({
     const titleId = useId();
     const { isOpen, toggle, close } = usePopoverToggle([triggerRef, panelRef]);
 
+    // Mirrors PortfolioChipPopover: a focus trap owns initial focus, Tab
+    // cycling, and restoring focus to the trigger on EVERY close path
+    // (Escape, click-outside, re-toggle) via its unmount/deactivate cleanup,
+    // so we don't hand-roll a partial (Escape-only) restore here.
+    useFocusTrap(panelRef, isOpen);
+    useEscapeKey(close, isOpen);
+
     // Active = a non-default choice is in effect: reasoning turned on, or a
     // model other than the app-wide default free model is selected. Read
     // from the same source of truth `useSelectedModel` falls back to
@@ -79,13 +86,6 @@ export function AnalysisSettingsMenu({
     const accessibleLabel = isActive
         ? `분석 설정 · 현재 모델: ${modelDisplay.label} (변경됨)`
         : `분석 설정 · 현재 모델: ${modelDisplay.label}`;
-
-    // Mirrors PortfolioChipPopover: a focus trap owns initial focus, Tab
-    // cycling, and restoring focus to the trigger on EVERY close path
-    // (Escape, click-outside, re-toggle) via its unmount/deactivate cleanup,
-    // so we don't hand-roll a partial (Escape-only) restore here.
-    useFocusTrap(panelRef, isOpen);
-    useEscapeKey(close, isOpen);
 
     return (
         <div className="relative">
