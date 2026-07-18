@@ -130,7 +130,7 @@ export function IndicatorSettingsModal({
                 onClick={open}
                 aria-label="보조지표 설정"
                 aria-haspopup="dialog"
-                className="bg-secondary-800/80 text-secondary-400 hover:bg-secondary-700 focus-visible:ring-primary-500 flex h-8 w-8 items-center justify-center rounded transition-colors hover:text-white focus-visible:ring-1 focus-visible:outline-none"
+                className="bg-secondary-900/85 text-secondary-400 hover:bg-secondary-700/90 focus-visible:ring-primary-500 flex h-11 w-11 touch-manipulation items-center justify-center rounded-lg backdrop-blur-sm transition-colors hover:text-white focus-visible:ring-1 focus-visible:outline-none"
             >
                 <GearIcon />
             </button>
