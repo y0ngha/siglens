@@ -82,6 +82,13 @@ describe('computeVolumeByBand', () => {
         expect(result).toEqual([100, 0, 0, 0, 0]);
     });
 
+    it('a bar with close < low (out-of-window close, e.g. an intrabar dip below the 52w low) is clamped into band 0, not dropped or negatively indexed', () => {
+        // close=80 < low=100 → rawIndex = floor((80-100)/20) = -1, clamped to 0.
+        const bars: Bar[] = [bar(80, 100), bar(190, 100)];
+        const result = computeVolumeByBand(bars, 100, 200, 5);
+        expect(result).toEqual([50, 0, 0, 0, 50]);
+    });
+
     it('ignores bars with non-finite close or non-finite/non-positive volume, still aggregating the rest', () => {
         const bars: Bar[] = [
             bar(110, 100),

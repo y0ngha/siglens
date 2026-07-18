@@ -1,4 +1,5 @@
 import {
+    BAND_COUNT,
     computeVolumeByBand,
     PositionTabContent,
 } from '@/widgets/portfolio-position';
@@ -107,11 +108,6 @@ interface PriceRange {
     volumeByBand: number[] | null;
 }
 
-// PositionBuilding(‘use client’)의 BAND_COUNT와 반드시 같아야 한다. 그 상수는
-// export되지 않고(순수 프레젠테이션 상수) 이 서버 컴포넌트가 클라이언트 UI
-// 파일의 내부 상수를 끌어올 이유도 없어 계약으로 문서화하고 리터럴을 둔다.
-const VOLUME_BAND_COUNT = 5;
-
 /**
  * 최근 가격 범위(공개 데이터)만 서버에서 계산한다. getBarsStatic은
  * cookies()를 읽지 않는 정적 캐시 경로라 ISR cold-gen에서 안전하다
@@ -147,7 +143,7 @@ async function resolvePriceRange(
             recentBars,
             facts.low52w,
             facts.high52w,
-            VOLUME_BAND_COUNT
+            BAND_COUNT
         );
         return {
             low52w: facts.low52w,

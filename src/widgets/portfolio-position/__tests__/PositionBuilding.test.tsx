@@ -1,4 +1,4 @@
-import { fireEvent, render } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { computePosition, type PositionModel } from '../lib/positionGeometry';
 import {
     AVG_LABEL_PREFIX,
@@ -334,7 +334,18 @@ describe('PositionBuilding', () => {
         // [100,120) [120,140) [140,160) [160,180) [180,200]
         const VOLUME_BY_BAND = [10, 20, 30, 25, 15];
 
-        it('without volumeByBand, floors are non-interactive (no tabIndex/aria-label) and the building is unchanged', () => {
+        // buildFloorTooltipContent/formatFloorTooltipText의 apartment-metaphor
+        // 문구("거주율 N% (최근 52주 거래량 기준)")를 테스트에서 재계산하지 않고
+        // 이 배열 하나로 못박아 소스와 동일하게 유지한다.
+        const EXPECTED = [
+            '$100–$120 · 거주율 10% (최근 52주 거래량 기준)',
+            '$120–$140 · 거주율 20% (최근 52주 거래량 기준)',
+            '$140–$160 · 거주율 30% (최근 52주 거래량 기준)',
+            '$160–$180 · 거주율 25% (최근 52주 거래량 기준)',
+            '$180–$200 · 거주율 15% (최근 52주 거래량 기준)',
+        ];
+
+        it('without volumeByBand, floors are non-interactive (no tabIndex/aria-label/onClick) and no tooltip infra renders — DOM unchanged', () => {
             const { container, queryByTestId } = renderBuilding();
             const floors = container.querySelectorAll(
                 '[data-testid="building-floor"]'
@@ -344,35 +355,32 @@ describe('PositionBuilding', () => {
                 expect(floor.hasAttribute('tabindex')).toBe(false);
                 expect(floor.hasAttribute('aria-label')).toBe(false);
                 expect(floor.querySelector('title')).toBeNull();
+                // 클릭해도 pinnedFloor가 절대 set되지 않는다(onClick 핸들러 자체가
+                // 붙지 않음) — floating 툴팁 DOM이 전혀 나타나지 않는다.
+                fireEvent.click(floor);
             });
             expect(queryByTestId('floor-volume-readout')).toBeNull();
+            expect(screen.queryByTestId('floor-tooltip')).toBeNull();
+            expect(screen.queryByRole('tooltip')).toBeNull();
         });
 
-        it('with volumeByBand, each floor exposes its band price-range + volume % via aria-label and a native <title>', () => {
+        it('with volumeByBand, each floor exposes its band price-range + resident-share via aria-label — the native <title> is gone', () => {
             const { container } = renderBuilding({}, undefined, VOLUME_BY_BAND);
             const floors = Array.from(
                 container.querySelectorAll('[data-testid="building-floor"]')
             );
             expect(floors).toHaveLength(5);
 
-            const expected = [
-                '$100–$120 · 최근 거래량 10%',
-                '$120–$140 · 최근 거래량 20%',
-                '$140–$160 · 최근 거래량 30%',
-                '$160–$180 · 최근 거래량 25%',
-                '$180–$200 · 최근 거래량 15%',
-            ];
-
             floors.forEach((floor, i) => {
                 expect(floor.getAttribute('tabindex')).toBe('0');
-                expect(floor.getAttribute('aria-label')).toBe(expected[i]);
-                expect(floor.querySelector('title')?.textContent).toBe(
-                    expected[i]
-                );
+                expect(floor.getAttribute('aria-label')).toBe(EXPECTED[i]);
+                // PRIMARY requirement: native <title> (unstyled OS hover box +
+                // ~1s browser delay) is removed, replaced by the styled tooltip.
+                expect(floor.querySelector('title')).toBeNull();
             });
         });
 
-        it('hovering (mouseEnter) a floor reveals its band info in the below-building readout; mouseLeave clears it', () => {
+        it('hovering (mouseEnter) a floor reveals its band info in the below-building readout AND the styled floating tooltip immediately (no native delay); mouseLeave clears both', () => {
             const { container, getByTestId } = renderBuilding(
                 {},
                 undefined,
@@ -383,15 +391,26 @@ describe('PositionBuilding', () => {
             );
             const readout = getByTestId('floor-volume-readout');
             expect(readout.textContent?.trim()).toBe('');
+            expect(screen.queryByTestId('floor-tooltip')).toBeNull();
 
             fireEvent.mouseEnter(floors[2]); // band index 2 → [140,160), 30%
-            expect(readout.textContent).toBe('$140–$160 · 최근 거래량 30%');
+            expect(readout.textContent).toBe(EXPECTED[2]);
+
+            const tooltip = screen.getByTestId('floor-tooltip');
+            expect(tooltip.getAttribute('role')).toBe('tooltip');
+            expect(
+                within(tooltip).getByText('$140–$160 · 거주율 30%')
+            ).toBeInTheDocument();
+            expect(
+                within(tooltip).getByText('최근 52주 거래량 기준')
+            ).toBeInTheDocument();
 
             fireEvent.mouseLeave(floors[2]);
             expect(readout.textContent?.trim()).toBe('');
+            expect(screen.queryByTestId('floor-tooltip')).toBeNull();
         });
 
-        it('keyboard focus on a floor also reveals its band info (a11y parity with hover); blur clears it', () => {
+        it('keyboard focus on a floor also reveals its band info + the styled tooltip (a11y parity with hover); blur clears both', () => {
             const { container, getByTestId } = renderBuilding(
                 {},
                 undefined,
@@ -403,10 +422,16 @@ describe('PositionBuilding', () => {
             const readout = getByTestId('floor-volume-readout');
 
             fireEvent.focus(floors[0]); // band index 0 → [100,120), 10%
-            expect(readout.textContent).toBe('$100–$120 · 최근 거래량 10%');
+            expect(readout.textContent).toBe(EXPECTED[0]);
+            expect(
+                within(screen.getByTestId('floor-tooltip')).getByText(
+                    '$100–$120 · 거주율 10%'
+                )
+            ).toBeInTheDocument();
 
             fireEvent.blur(floors[0]);
             expect(readout.textContent?.trim()).toBe('');
+            expect(screen.queryByTestId('floor-tooltip')).toBeNull();
         });
 
         it('the below-building readout is aria-hidden (band info is already exposed per-floor via aria-label, avoiding double-announce)', () => {
@@ -418,6 +443,76 @@ describe('PositionBuilding', () => {
             expect(
                 getByTestId('floor-volume-readout').getAttribute('aria-hidden')
             ).toBe('true');
+        });
+
+        it('interactive floors remove the native focus square (outline-none) and stay touch-tappable — the isActive highlight (hover/focus/click) is the intentional replacement, never a bare invisible focus', () => {
+            const { container } = renderBuilding({}, undefined, VOLUME_BY_BAND);
+            const floors = container.querySelectorAll(
+                '[data-testid="building-floor"]'
+            );
+            floors.forEach(floor => {
+                expect(floor.getAttribute('class')).toContain('outline-none');
+                expect(floor.getAttribute('class')).toContain(
+                    'touch-manipulation'
+                );
+            });
+        });
+
+        it('clicking (tap-to-toggle, mobile parity) a floor shows the styled tooltip without any prior hover/focus; clicking it again dismisses it', () => {
+            const { container } = renderBuilding({}, undefined, VOLUME_BY_BAND);
+            const floors = container.querySelectorAll(
+                '[data-testid="building-floor"]'
+            );
+            expect(screen.queryByTestId('floor-tooltip')).toBeNull();
+
+            fireEvent.click(floors[3]); // band index 3 → [160,180), 25%
+            expect(
+                within(screen.getByTestId('floor-tooltip')).getByText(
+                    '$160–$180 · 거주율 25%'
+                )
+            ).toBeInTheDocument();
+
+            fireEvent.click(floors[3]);
+            expect(screen.queryByTestId('floor-tooltip')).toBeNull();
+        });
+
+        it('clicking outside the building dismisses a click-pinned tooltip', () => {
+            const { container } = renderBuilding({}, undefined, VOLUME_BY_BAND);
+            const floors = container.querySelectorAll(
+                '[data-testid="building-floor"]'
+            );
+
+            fireEvent.click(floors[1]);
+            expect(screen.getByTestId('floor-tooltip')).toBeInTheDocument();
+
+            // useOnClickOutside listens on pointerdown, not click.
+            fireEvent.pointerDown(document.body);
+            expect(screen.queryByTestId('floor-tooltip')).toBeNull();
+        });
+
+        it('deactivate false-path: mouseLeave/blur on a floor that is NOT the active one leaves the active floor untouched (prev.index !== i branch)', () => {
+            const { container, getByTestId } = renderBuilding(
+                {},
+                undefined,
+                VOLUME_BY_BAND
+            );
+            const floors = container.querySelectorAll(
+                '[data-testid="building-floor"]'
+            );
+            const readout = getByTestId('floor-volume-readout');
+
+            fireEvent.mouseEnter(floors[2]); // activates floor 2
+            expect(readout.textContent).toBe(EXPECTED[2]);
+
+            // floor 0 was never activated — its mouseLeave must be a no-op for
+            // floor 2's still-active state (setHoverFloor's `prev?.index === i
+            // ? null : prev` false branch).
+            fireEvent.mouseLeave(floors[0]);
+            expect(readout.textContent).toBe(EXPECTED[2]);
+            expect(screen.getByTestId('floor-tooltip')).toBeInTheDocument();
+
+            fireEvent.mouseLeave(floors[2]);
+            expect(readout.textContent?.trim()).toBe('');
         });
     });
 });

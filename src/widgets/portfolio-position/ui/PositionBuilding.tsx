@@ -1,13 +1,20 @@
 'use client';
 
-import { useState } from 'react';
+import type React from 'react';
+import { useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { cn } from '@/shared/lib/cn';
+import { useOnClickOutside } from '@/shared/hooks/useOnClickOutside';
+import {
+    getTooltipPosition,
+    type TooltipPosition,
+} from '@/shared/lib/tooltipPosition';
 import {
     dynamicDecimals,
     formatSignedPercent,
     formatUsdPrice,
 } from '@/shared/lib/priceFormat';
-import type { PositionModel } from '../lib/positionGeometry';
+import { BAND_COUNT, type PositionModel } from '../lib/positionGeometry';
 
 interface PositionBuildingProps {
     symbol: string;
@@ -90,14 +97,35 @@ function bandPriceRange(
     };
 }
 
-/** 층 hover/focus 시 노출하는 문구 — aria-label·<title>·건물 아래 리드아웃
- * 3곳에서 동일 문자열을 재사용해 드리프트를 막는다. */
-function formatFloorTooltip(
+interface FloorTooltipContent {
+    readonly main: string;
+    readonly qualifier: string;
+}
+
+/**
+ * 층 hover/focus/tap 시 노출하는 문구 — "거주율"(아파트 메타포)로 그 가격대에
+ * 몰린 거래량 비중을 서술한다. 실제 주주 명부가 아니라 "이 가격대에서 거래가
+ * 얼마나 몰렸는가"의 친근한 은유일 뿐이라, qualifier로 52주 거래량 기준 raw
+ * 지표라는 걸 항상 함께 밝힌다(scope fence — 지지/저항 같은 매수·매도 해석으로
+ * 오독되지 않게). aria-label·below-building 리드아웃·floating 툴팁 3곳 모두
+ * formatFloorTooltipText를 거쳐 이 하나의 빌더에서 파생해 문구 드리프트를 막는다.
+ */
+function buildFloorTooltipContent(
     bandLow: number,
     bandHigh: number,
     volumePct: number
-): string {
-    return `${formatUsd(bandLow)}–${formatUsd(bandHigh)} · 최근 거래량 ${Math.round(volumePct)}%`;
+): FloorTooltipContent {
+    return {
+        main: `${formatUsd(bandLow)}–${formatUsd(bandHigh)} · 거주율 ${Math.round(volumePct)}%`,
+        qualifier: '최근 52주 거래량 기준',
+    };
+}
+
+/** aria-label·below-building 리드아웃처럼 단일 plain-text가 필요한 소비처용 — floating
+ * 툴팁은 main/qualifier를 두 줄로 나눠 렌더하지만(qualifier를 시각적으로 muted 처리),
+ * 여기선 괄호로 이어붙여 하나의 문자열로 합친다. */
+function formatFloorTooltipText(content: FloorTooltipContent): string {
+    return `${content.main} (${content.qualifier})`;
 }
 
 /* ------------------------------------------------------------------------ *
@@ -123,7 +151,9 @@ const ISO_DX = 50; // 지붕 마름모 반폭(가로)
 const ISO_DY = 25; // 지붕 마름모 반폭(세로, 2:1 비율 → dx의 절반)
 
 const FLOOR_H = 30; // 층당 세로 픽셀 높이
-const BAND_COUNT = 5;
+// BAND_COUNT는 positionGeometry.ts에서 import(geometry의 단일 source of
+// truth) — model.bands.length·[symbol]/position/page.tsx의 히스토그램 버킷
+// 개수와 항상 같아야 하는 3자 계약이라 여기서 리터럴을 재선언하지 않는다.
 const BUILDING_H = FLOOR_H * BAND_COUNT; // 150
 
 const ROOF_BACK_Y = 70; // 지붕 마름모의 뒤쪽(가장 먼) 꼭짓점
@@ -347,33 +377,76 @@ export function PositionBuilding({
     const avgNote = outOfRangeNote(model.avgClamped);
     const currentNote = outOfRangeNote(model.currentClamped);
 
-    // 층 hover/focus 상태 — volumeByBand가 없으면 절대 set되지 않아(아래 이벤트
-    // 핸들러가 통째로 붙지 않음) 항상 null로 남고, 건물은 이 기능 추가 전과
-    // 동일하게 렌더된다.
-    const [activeFloorIndex, setActiveFloorIndex] = useState<number | null>(
+    // 층 hover/focus/tap(pin) 상태 — volumeByBand가 없으면 절대 set되지 않아
+    // (아래 이벤트 핸들러가 통째로 붙지 않음) 항상 null로 남고, 건물은 이 기능
+    // 추가 전과 동일하게 렌더된다.
+    //
+    // hover(마우스 hover·키보드 focus)와 pinned(클릭/탭 토글)를 별도 state로 둔다
+    // — 하나로 합치면 "마우스로 hover 중인 층을 클릭"할 때 focus 이벤트가 먼저
+    // activate를 호출해버려 클릭의 toggle 로직이 방금 연 툴팁을 곧바로 닫아버리는
+    // 경합이 생긴다(hover가 이미 켠 상태를 click이 "이미 켜져 있었다"고 오판).
+    // 분리하면 hover/focus는 즉시 미리보기를, 클릭/탭은 그와 무관하게 "고정"
+    // 여부만 토글해 데스크톱 hover와 모바일 tap-to-toggle이 서로 간섭하지 않는다.
+    // 활성 층은 hover가 있으면 hover를 우선하고, 없으면 pinned를 쓴다.
+    const [hoverFloor, setHoverFloor] = useState<{
+        index: number;
+        rect: DOMRect;
+    } | null>(null);
+    const [pinnedFloor, setPinnedFloor] = useState<{
+        index: number;
+        rect: DOMRect;
+    } | null>(null);
+    const activeFloor = hoverFloor ?? pinnedFloor;
+
+    // floating 툴팁의 fixed 좌표 + "최초 측정 전엔 숨김"(InfoTooltip과 동일 idiom,
+    // shared/lib/tooltipPosition의 getTooltipPosition을 그대로 재사용). "이 인덱스는
+    // 이미 측정됐다"를 별도 state(measuredFloorIndex)로 들고 렌더 중에
+    // activeFloor.index와 비교해 tooltipPositioned를 파생한다 — setState-in-effect
+    // (cascading render 경고)를 피하려고 useEffect로 "층이 바뀌면 리셋"하는 대신,
+    // 값 비교 자체가 자연스럽게 리셋 역할을 한다(측정된 적 없는 새 인덱스는 항상
+    // 불일치 → invisible).
+    const [tooltipPosition, setTooltipPosition] = useState<TooltipPosition>({
+        top: 0,
+        left: 0,
+    });
+    const [measuredFloorIndex, setMeasuredFloorIndex] = useState<number | null>(
         null
     );
+    const tooltipPositioned =
+        activeFloor !== null && measuredFloorIndex === activeFloor.index;
+
+    // 탭/클릭으로 고정(pinned)한 층은 건물 바깥을 클릭/탭하면 닫힌다(InfoTooltip과
+    // 동일한 useOnClickOutside). hover 미리보기는 mouseleave/blur가 이미 처리하므로
+    // 여기선 pinnedFloor만 정리한다.
+    const containerRef = useRef<HTMLDivElement>(null);
+    useOnClickOutside(containerRef, () => setPinnedFloor(null), {
+        enabled: pinnedFloor !== null,
+    });
+
     const bandCount = model.bands.length;
     const activeVolumePct =
-        activeFloorIndex !== null ? volumeByBand?.[activeFloorIndex] : null;
-    let activeFloorTooltip: string | null = null;
+        activeFloor !== null ? volumeByBand?.[activeFloor.index] : null;
+    let activeFloorTooltipContent: FloorTooltipContent | null = null;
     if (
-        activeFloorIndex !== null &&
+        activeFloor !== null &&
         typeof activeVolumePct === 'number' &&
         Number.isFinite(activeVolumePct)
     ) {
         const { bandLow, bandHigh } = bandPriceRange(
             low52w,
             high52w,
-            activeFloorIndex,
+            activeFloor.index,
             bandCount
         );
-        activeFloorTooltip = formatFloorTooltip(
+        activeFloorTooltipContent = buildFloorTooltipContent(
             bandLow,
             bandHigh,
             activeVolumePct
         );
     }
+    const activeFloorTooltipText = activeFloorTooltipContent
+        ? formatFloorTooltipText(activeFloorTooltipContent)
+        : null;
 
     // avg≈current면 두 마커(★/●)가 같은 좌표에서 겹쳐 하나로 보인다 — 좌우로
     // 벌려 break-even(가장 흔한 상태)에서도 두 마커가 구분되게 한다.
@@ -403,6 +476,7 @@ export function PositionBuilding({
 
     return (
         <div
+            ref={containerRef}
             className={cn(
                 'flex min-h-[280px] flex-col items-center gap-2',
                 className
@@ -450,8 +524,8 @@ export function PositionBuilding({
                     const isInteractive =
                         typeof volumePct === 'number' &&
                         Number.isFinite(volumePct);
-                    const isActive = isInteractive && activeFloorIndex === i;
-                    let floorTooltip: string | null = null;
+                    const isActive = isInteractive && activeFloor?.index === i;
+                    let floorTooltipText: string | null = null;
                     if (isInteractive) {
                         const { bandLow, bandHigh } = bandPriceRange(
                             low52w,
@@ -459,18 +533,36 @@ export function PositionBuilding({
                             i,
                             bandCount
                         );
-                        floorTooltip = formatFloorTooltip(
-                            bandLow,
-                            bandHigh,
-                            volumePct
+                        floorTooltipText = formatFloorTooltipText(
+                            buildFloorTooltipContent(
+                                bandLow,
+                                bandHigh,
+                                volumePct
+                            )
                         );
                     }
 
                     // 핸들러는 아래에서 isInteractive일 때만 <g>에 붙으므로 여기선
-                    // 별도 가드가 필요 없다.
-                    const activate = () => setActiveFloorIndex(i);
+                    // 별도 가드가 필요 없다. activate/deactivate는 hover(마우스)·focus
+                    // (키보드) 미리보기, toggleClick은 클릭/탭 "고정" — 서로 다른 state라
+                    // 데스크톱에서 hover 중인 층을 클릭해도 hover가 방금 연 툴팁을
+                    // click이 곧바로 닫아버리는 경합이 없다(상단 state 주석 참고).
+                    const activate = (e: React.SyntheticEvent<SVGGElement>) => {
+                        setHoverFloor({
+                            index: i,
+                            rect: e.currentTarget.getBoundingClientRect(),
+                        });
+                    };
                     const deactivate = () =>
-                        setActiveFloorIndex(prev => (prev === i ? null : prev));
+                        setHoverFloor(prev =>
+                            prev?.index === i ? null : prev
+                        );
+                    const toggleClick = (e: React.MouseEvent<SVGGElement>) => {
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        setPinnedFloor(prev =>
+                            prev?.index === i ? null : { index: i, rect }
+                        );
+                    };
 
                     return (
                         <g
@@ -478,9 +570,20 @@ export function PositionBuilding({
                             data-testid="building-floor"
                             tabIndex={isInteractive ? 0 : undefined}
                             role={isInteractive ? 'group' : undefined}
-                            aria-label={floorTooltip ?? undefined}
+                            aria-label={floorTooltipText ?? undefined}
+                            // 네이티브 <title>의 OS 기본 사각 hover box(및 ~1s 지연)를
+                            // 걷어내고 이 컴포넌트 자체의 styled 툴팁으로 대체했다(design
+                            // §floor-hover 개정). 포커스 시 그려지는 브라우저 기본 사각
+                            // outline도 같은 이유로 제거 — 대신 아래 isActive 하이라이트
+                            // (hover·focus·클릭 모두에서 동일하게 뜨는 primary-400 스트로크)
+                            // 가 "outline 대체물" 역할을 한다(never bare outline-none).
+                            // hover가 클릭보다 먼저 이 오버레이를 켜기 때문에(요소를
+                            // 클릭하려면 먼저 마우스가 올라가 있어야 함) 클릭 시에만
+                            // 튀어나오는 "포커스 링" 이슈도 자연히 없다.
                             className={
-                                isInteractive ? 'cursor-pointer' : undefined
+                                isInteractive
+                                    ? 'cursor-pointer touch-manipulation outline-none'
+                                    : undefined
                             }
                             onMouseEnter={isInteractive ? activate : undefined}
                             onMouseLeave={
@@ -488,8 +591,8 @@ export function PositionBuilding({
                             }
                             onFocus={isInteractive ? activate : undefined}
                             onBlur={isInteractive ? deactivate : undefined}
+                            onClick={isInteractive ? toggleClick : undefined}
                         >
-                            {floorTooltip && <title>{floorTooltip}</title>}
                             <polygon
                                 points={faces.left}
                                 fill="currentColor"
@@ -703,20 +806,73 @@ export function PositionBuilding({
                 {model.rangePositionPct.toFixed(0)}% 지점
             </p>
 
-            {/* 층 hover/focus 리드아웃 — 시각 사용자(마우스 hover·키보드 focus 둘 다)용
-                보강 표시. 접근성 채널은 각 층 <g>의 aria-label이 담당하므로(포커스 시
-                이미 announce됨) 이 줄은 중복 announce를 막기 위해 aria-hidden이다.
-                volumeByBand가 없으면 아예 렌더하지 않아 건물이 이 기능 추가 전과
-                DOM 상 동일하게 유지된다. */}
+            {/* 층 hover/focus/탭 리드아웃 — 시각 사용자(마우스 hover·키보드 focus·탭
+                모두)용 보강 표시. 접근성 채널은 각 층 <g>의 aria-label이 담당하므로
+                (포커스 시 이미 announce됨) 이 줄은 중복 announce를 막기 위해
+                aria-hidden이다. volumeByBand가 없으면 아예 렌더하지 않아 건물이 이
+                기능 추가 전과 DOM 상 동일하게 유지된다. */}
             {volumeByBand && (
                 <p
                     data-testid="floor-volume-readout"
                     aria-hidden="true"
                     className="text-secondary-300 min-h-[1rem] text-center text-xs tabular-nums"
                 >
-                    {activeFloorTooltip ?? ' '}
+                    {activeFloorTooltipText ?? ' '}
                 </p>
             )}
+
+            {/* Floor floating 툴팁 — SVG 자체 bounds에 클리핑되지 않도록 document.body로
+                포털한다(InfoTooltip과 동일한 idiom: fixed 좌표 + getTooltipPosition +
+                최초 측정 전 invisible). 활성 층의 실제 화면 좌표(getBoundingClientRect,
+                activate/toggleClick에서 캡처)를 anchor로 써 280/340/440px 세 breakpoint
+                모두에서 viewBox 스케일과 무관하게 정확히 그 층 옆에 뜬다.
+                pointer-events-none이라 툴팁 자체를 클릭해도 outside-click 판정에
+                끼어들지 않는다(useOnClickOutside에 별도 tooltipRef가 필요 없다). */}
+            {activeFloor !== null &&
+                activeFloorTooltipContent !== null &&
+                typeof document !== 'undefined' &&
+                createPortal(
+                    <div
+                        ref={el => {
+                            if (!el) return;
+                            const tooltipRect = el.getBoundingClientRect();
+                            const pos = getTooltipPosition(
+                                activeFloor.rect,
+                                tooltipRect,
+                                window.innerWidth
+                            );
+                            if (
+                                pos.top !== tooltipPosition.top ||
+                                pos.left !== tooltipPosition.left
+                            ) {
+                                setTooltipPosition(pos);
+                            }
+                            if (measuredFloorIndex !== activeFloor.index) {
+                                setMeasuredFloorIndex(activeFloor.index);
+                            }
+                        }}
+                        role="tooltip"
+                        data-testid="floor-tooltip"
+                        className={cn(
+                            'bg-secondary-800 border-secondary-600 pointer-events-none fixed top-(--tt) left-(--tl) z-9999 max-w-[220px] rounded border p-2 text-xs leading-relaxed shadow-lg',
+                            tooltipPositioned ? 'visible' : 'invisible'
+                        )}
+                        style={
+                            {
+                                '--tt': `${tooltipPosition.top}px`,
+                                '--tl': `${tooltipPosition.left}px`,
+                            } as React.CSSProperties
+                        }
+                    >
+                        <p className="text-secondary-100 font-medium tabular-nums">
+                            {activeFloorTooltipContent.main}
+                        </p>
+                        <p className="text-secondary-400 mt-0.5 text-[10px]">
+                            {activeFloorTooltipContent.qualifier}
+                        </p>
+                    </div>,
+                    document.body
+                )}
         </div>
     );
 }

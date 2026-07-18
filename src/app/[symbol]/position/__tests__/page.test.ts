@@ -32,9 +32,12 @@ vi.mock('@/views/symbol', () => ({
 vi.mock('@/widgets/portfolio-position', async () => {
     const { computeVolumeByBand } =
         await import('@/widgets/portfolio-position/lib/volumeByBand');
+    const { BAND_COUNT } =
+        await import('@/widgets/portfolio-position/lib/positionGeometry');
     return {
         PositionTabContent: () => null,
         computeVolumeByBand,
+        BAND_COUNT,
     };
 });
 vi.mock('next/navigation', () => ({

@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import type { UseQueryResult } from '@tanstack/react-query';
 import { useCurrentUser } from '@/entities/auth';
 import { useSymbolHolding } from '@/features/portfolio-holding';
@@ -163,5 +163,47 @@ describe('PositionTabContent', () => {
             await screen.findByTestId('position-member-content')
         ).toBeInTheDocument();
         expect(mockUseSymbolHolding).toHaveBeenCalledWith('AAPL');
+    });
+
+    // Only the two endpoints (page.tsx → computeVolumeByBand, PositionBuilding
+    // itself) had coverage for the floor-hover feature — this closes the gap
+    // by threading a real, non-null volumeByBand through the FULL client chain
+    // (PositionTabContent → lazy PositionTabMemberContent → PositionBuilding)
+    // and proving a floor actually activates end-to-end, not just that the
+    // prop is passed down untouched.
+    it('threads a non-null volumeByBand through PositionTabMemberContent into PositionBuilding, activating floor hover end-to-end', async () => {
+        mockUseHydrated.mockReturnValue(true);
+        setCurrentUser(USER);
+        mockUseSymbolHolding.mockReturnValue({
+            holding: AAPL_HOLDING,
+            isHydrated: true,
+            isLoading: false,
+            isError: false,
+            save: { mutateAsync: vi.fn() } as unknown as ReturnType<
+                typeof useSymbolHolding
+            >['save'],
+        });
+        const VOLUME_BY_BAND = [10, 20, 30, 25, 15];
+        render(
+            <PositionTabContent
+                symbol="AAPL"
+                low52w={100}
+                high52w={200}
+                lastClose={180}
+                volumeByBand={VOLUME_BY_BAND}
+            />
+        );
+
+        const building = await screen.findByTestId('position-building');
+        const floors = within(building).getAllByTestId('building-floor');
+        expect(floors).toHaveLength(5);
+        // band index 0 → [100,120), 10% — proves volumeByBand[0] made it all
+        // the way down (not silently dropped by a component in the chain).
+        expect(floors[0].getAttribute('aria-label')).toBe(
+            '$100–$120 · 거주율 10% (최근 52주 거래량 기준)'
+        );
+
+        fireEvent.mouseEnter(floors[0]);
+        expect(await screen.findByTestId('floor-tooltip')).toBeInTheDocument();
     });
 });
