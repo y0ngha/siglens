@@ -164,6 +164,11 @@ describe('SymbolLayoutHeader', () => {
         expect(screen.getByText('AI 분석 모델')).toBeDefined();
     });
 
+    it('renders the portfolio holding chip', () => {
+        render(<SymbolLayoutHeader symbol="aapl" />);
+        expect(screen.getByTestId('portfolio-chip')).toBeDefined();
+    });
+
     it('still renders the reasoning toggle for free/anonymous tier (canUseReasoning=false), locked rather than hidden', () => {
         mockUseSymbolModel.mockReturnValueOnce(
             symbolModelValue({ canUseReasoning: false })
@@ -244,11 +249,13 @@ describe('SymbolLayoutHeader', () => {
         }
     });
 
-    // 모바일 헤더 재배치(공포·탐욕 칩+공유 = 1행, 모델 셀렉터+추론 토글 = 2행)에 대한
-    // 회귀 커버리지. CSS(sm:hidden 등)는 jsdom에서 적용되지 않으므로 DOM 그룹핑으로
-    // 검증한다 — 두 행이 같은 컨트롤 컨테이너의 형제이고, 각 행에 기대한 컨트롤이 모여
-    // 있는지 확인해 '외톨이 칩 행' 회귀를 잡는다.
-    it('모바일 컨트롤: 공포·탐욕 칩+공유 버튼이 한 행, 모델 셀렉터+추론 토글이 다른 행에 그룹된다', () => {
+    // 모바일 헤더 재배치(공포·탐욕 칩+공유 = 1행, 모델 라벨+셀렉터+추론 토글+보유종목
+    // 칩 = 2행)에 대한 회귀 커버리지. CSS(sm:hidden 등)는 jsdom에서 적용되지 않으므로
+    // DOM 그룹핑으로 검증한다 — 두 행이 같은 컨트롤 컨테이너의 형제이고, 각 행에
+    // 기대한 컨트롤이 모여 있는지 확인해 '외톨이 칩 행' 회귀를 잡는다. 보유종목
+    // 칩은 master의 flex-col 재배치(#690)와 이 브랜치의 PortfolioChipMounted가
+    // 합쳐진 병합 지점이므로, 2행에 남아있는지 명시적으로 단언한다.
+    it('모바일 컨트롤: 공포·탐욕 칩+공유 버튼이 한 행, 모델 셀렉터+추론 토글+보유종목 칩이 다른 행에 그룹된다', () => {
         render(<SymbolLayoutHeader symbol="aapl" />);
 
         // 공유 버튼이 속한 행: 모바일 공포·탐욕 칩과 같은 컨테이너에 있다.
@@ -258,11 +265,14 @@ describe('SymbolLayoutHeader', () => {
             within(shareRow as HTMLElement).getByTestId('fear-greed-chip')
         ).toBeInTheDocument();
 
-        // 모델 셀렉터가 속한 행: 추론 토글과 같은 컨테이너에 있다.
+        // 모델 셀렉터가 속한 행: 추론 토글, 보유종목 칩과 같은 컨테이너에 있다.
         const controlRow = screen.getByTestId('model-selector').parentElement;
         expect(controlRow).not.toBeNull();
         expect(
             within(controlRow as HTMLElement).getByTestId('reasoning-toggle')
+        ).toBeInTheDocument();
+        expect(
+            within(controlRow as HTMLElement).getByTestId('portfolio-chip')
         ).toBeInTheDocument();
 
         // 두 행은 서로 다른 그룹이지만 같은 컨트롤 컨테이너의 형제다.
