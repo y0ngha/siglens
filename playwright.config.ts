@@ -13,9 +13,12 @@ import { AUTH_STORAGE_STATE } from './e2e/support/authUser';
  *   authed   → account-*.spec.ts, plus portfolio-holdings.spec.ts,
  *              portfolio-position.spec.ts, and personalized-analysis.spec.ts
  *              (exercise the account-page holdings section + symbol-page
- *              header chip + the member-only "내 위치" position gauge + the
- *              member-only "내 평단 기준으로 분석했어요" personalized-analysis
- *              badge — all member-only surfaces). Runs with the seeded user's
+ *              header chip + the member-only "내 위치" position-building
+ *              surfaces — the `[symbol]/position` tab and the `/portfolio`
+ *              page (the position gauge that used to live on the analysis
+ *              page was removed; see PositionBuilding) — + the member-only
+ *              "내 평단 기준으로 분석했어요" personalized-analysis badge — all
+ *              member-only surfaces). Runs with the seeded user's
  *              storageState so proxy.ts's /account forward-guard is
  *              satisfied. Depends on setup.
  *
