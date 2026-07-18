@@ -4,15 +4,15 @@ import {
     computePosition,
     type PositionModel,
 } from '../lib/positionGeometry';
+import { PositionBuilding } from '../ui/PositionBuilding';
 import {
     AVG_LABEL_PREFIX,
     CURRENT_LABEL_PREFIX,
     describeAvgFloor,
     estimateSvgLabelWidth,
     formatUsdCompactForSvgLabel,
-    PositionBuilding,
     SVG_LABEL_AVAILABLE_WIDTH,
-} from '../ui/PositionBuilding';
+} from '../lib/positionBuildingNotes';
 
 function model(overrides: Partial<Parameters<typeof computePosition>[0]> = {}) {
     return computePosition({
