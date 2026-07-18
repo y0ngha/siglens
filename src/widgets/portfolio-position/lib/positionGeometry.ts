@@ -16,11 +16,21 @@ export interface PositionBand {
     toPct: number;
 }
 
+/**
+ * avg/current가 52주 범위를 벗어났을 때 어느 방향인지('above'=고점 초과,
+ * 'below'=저점 미만), 범위 안이면 null. avgClamped/currentClamped와
+ * PositionBuilding의 파생 함수들(outOfRangeNote, frontY, describeAvgFloor,
+ * avgFloorVisualNote)이 모두 이 하나의 타입을 공유한다 — union literal을
+ * 파일마다 따로 반복 선언하지 않는다(CONVENTIONS: 2개 이상 멤버 union literal은
+ * 타입 alias로 추출).
+ */
+export type RangeClamp = 'above' | 'below' | null;
+
 export interface PositionModel {
     avgPos: number; // 0..1, [low,high] 내 정규화(clamped)
     currentPos: number; // 0..1, clamped
-    avgClamped: 'above' | 'below' | null;
-    currentClamped: 'above' | 'below' | null;
+    avgClamped: RangeClamp;
+    currentClamped: RangeClamp;
     pctFromHigh: number; // (avg - high) / high * 100
     pctAboveLow: number; // (avg - low) / low * 100, low<=0이면 0으로 가드
     returnPct: number; // (current - avg) / avg * 100
@@ -56,7 +66,7 @@ function clampedDirection(
     value: number,
     low: number,
     high: number
-): 'above' | 'below' | null {
+): RangeClamp {
     if (value > high) return 'above';
     if (value < low) return 'below';
     return null;

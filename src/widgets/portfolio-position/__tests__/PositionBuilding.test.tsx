@@ -443,7 +443,7 @@ describe('PositionBuilding', () => {
             '$180–$200 · 거주율 15% (최근 52주 거래량 기준)',
         ];
 
-        it('without volumeByBand, floors are non-interactive (no tabIndex/aria-label/onClick) and no tooltip infra renders — DOM unchanged', () => {
+        it('without volumeByBand, floors are non-interactive (no tabIndex/aria-label/role/onClick) and no tooltip infra renders — DOM unchanged', () => {
             const { container, queryByTestId } = renderBuilding();
             const floors = container.querySelectorAll(
                 '[data-testid="building-floor"]'
@@ -463,23 +463,41 @@ describe('PositionBuilding', () => {
             expect(screen.queryByRole('tooltip')).toBeNull();
         });
 
-        it('with volumeByBand, each floor exposes its band price-range + resident-share via aria-label — the native <title> is gone', () => {
+        it('with volumeByBand, floors stay visual-only under svg role="img" — no role/tabIndex/aria-label (WAI-ARIA forbids focusable descendants inside role="img"), and the native <title> is gone', () => {
             const { container } = renderBuilding({}, undefined, VOLUME_BY_BAND);
             const floors = Array.from(
                 container.querySelectorAll('[data-testid="building-floor"]')
             );
             expect(floors).toHaveLength(5);
 
-            floors.forEach((floor, i) => {
-                expect(floor.getAttribute('tabindex')).toBe('0');
-                expect(floor.getAttribute('aria-label')).toBe(EXPECTED[i]);
-                // Interactive floors are click/tap-activated controls, so they expose
-                // role="button" (not role="group") for correct AT semantics.
-                expect(floor.getAttribute('role')).toBe('button');
+            floors.forEach(floor => {
+                // Floors are a pointer-only visual enhancement (design decision,
+                // round-2 review): the parent <svg role="img"> flattens any
+                // focusable/interactive descendant out of the accessibility tree,
+                // so exposing role="button"/tabIndex/aria-label here would be
+                // dead-for-AT and misleading. Essential info (avg/current/return%/
+                // range%/floor note) already lives in the svg's own aria-label.
+                expect(floor.hasAttribute('tabindex')).toBe(false);
+                expect(floor.hasAttribute('role')).toBe(false);
+                expect(floor.hasAttribute('aria-label')).toBe(false);
                 // PRIMARY requirement: native <title> (unstyled OS hover box +
                 // ~1s browser delay) is removed, replaced by the styled tooltip.
                 expect(floor.querySelector('title')).toBeNull();
+                // Pointer affordances stay: pointer cursor + touch-friendly tap target.
+                expect(floor.getAttribute('class')).toContain('cursor-pointer');
+                expect(floor.getAttribute('class')).toContain(
+                    'touch-manipulation'
+                );
             });
+        });
+
+        it('the essential position summary remains on the svg role="img" aria-label regardless of floor hover state', () => {
+            const { container } = renderBuilding({}, undefined, VOLUME_BY_BAND);
+            const svg = container.querySelector('svg[role="img"]');
+            const label = svg?.getAttribute('aria-label') ?? '';
+            expect(label).toContain('AAPL');
+            expect(label).toContain('수익률');
+            expect(label).toContain('최근 범위의');
         });
 
         it('hovering (mouseEnter) a floor reveals its band info in the below-building readout AND the styled floating tooltip immediately (no native delay); mouseLeave clears both', () => {
@@ -498,8 +516,13 @@ describe('PositionBuilding', () => {
             fireEvent.mouseEnter(floors[2]); // band index 2 → [140,160), 30%
             expect(readout.textContent).toBe(EXPECTED[2]);
 
+            // The floating tooltip is a pointer-only visual enhancement portaled
+            // outside the svg's role="img" subtree — it has no accessible role
+            // (aria-hidden, no aria-describedby trigger) so it never double-announces
+            // alongside the svg's own aria-label (MISTAKES a11y #3).
             const tooltip = screen.getByTestId('floor-tooltip');
-            expect(tooltip.getAttribute('role')).toBe('tooltip');
+            expect(tooltip.hasAttribute('role')).toBe(false);
+            expect(tooltip.getAttribute('aria-hidden')).toBe('true');
             expect(
                 within(tooltip).getByText('$140–$160 · 거주율 30%')
             ).toBeInTheDocument();
@@ -508,30 +531,6 @@ describe('PositionBuilding', () => {
             ).toBeInTheDocument();
 
             fireEvent.mouseLeave(floors[2]);
-            expect(readout.textContent?.trim()).toBe('');
-            expect(screen.queryByTestId('floor-tooltip')).toBeNull();
-        });
-
-        it('keyboard focus on a floor also reveals its band info + the styled tooltip (a11y parity with hover); blur clears both', () => {
-            const { container, getByTestId } = renderBuilding(
-                {},
-                undefined,
-                VOLUME_BY_BAND
-            );
-            const floors = container.querySelectorAll(
-                '[data-testid="building-floor"]'
-            );
-            const readout = getByTestId('floor-volume-readout');
-
-            fireEvent.focus(floors[0]); // band index 0 → [100,120), 10%
-            expect(readout.textContent).toBe(EXPECTED[0]);
-            expect(
-                within(screen.getByTestId('floor-tooltip')).getByText(
-                    '$100–$120 · 거주율 10%'
-                )
-            ).toBeInTheDocument();
-
-            fireEvent.blur(floors[0]);
             expect(readout.textContent?.trim()).toBe('');
             expect(screen.queryByTestId('floor-tooltip')).toBeNull();
         });
@@ -547,20 +546,7 @@ describe('PositionBuilding', () => {
             ).toBe('true');
         });
 
-        it('interactive floors remove the native focus square (outline-none) and stay touch-tappable — the isActive highlight (hover/focus/click) is the intentional replacement, never a bare invisible focus', () => {
-            const { container } = renderBuilding({}, undefined, VOLUME_BY_BAND);
-            const floors = container.querySelectorAll(
-                '[data-testid="building-floor"]'
-            );
-            floors.forEach(floor => {
-                expect(floor.getAttribute('class')).toContain('outline-none');
-                expect(floor.getAttribute('class')).toContain(
-                    'touch-manipulation'
-                );
-            });
-        });
-
-        it('clicking (tap-to-toggle, mobile parity) a floor shows the styled tooltip without any prior hover/focus; clicking it again dismisses it', () => {
+        it('clicking (tap-to-toggle, mobile parity) a floor shows the styled tooltip without any prior hover; clicking it again dismisses it', () => {
             const { container } = renderBuilding({}, undefined, VOLUME_BY_BAND);
             const floors = container.querySelectorAll(
                 '[data-testid="building-floor"]'
@@ -578,54 +564,18 @@ describe('PositionBuilding', () => {
             expect(screen.queryByTestId('floor-tooltip')).toBeNull();
         });
 
-        it.each([
-            { key: 'Enter', name: 'Enter' },
-            { key: ' ', name: 'Space' },
-        ])(
-            '$name key toggles the pinned tooltip on a focused floor (role="button" keyboard parity with click)',
-            ({ key }) => {
-                const { container } = renderBuilding(
-                    {},
-                    undefined,
-                    VOLUME_BY_BAND
-                );
-                const floors = container.querySelectorAll(
-                    '[data-testid="building-floor"]'
-                );
-                expect(screen.queryByTestId('floor-tooltip')).toBeNull();
-
-                fireEvent.keyDown(floors[3], { key }); // band index 3 → [160,180), 25%
-                expect(
-                    within(screen.getByTestId('floor-tooltip')).getByText(
-                        '$160–$180 · 거주율 25%'
-                    )
-                ).toBeInTheDocument();
-
-                fireEvent.keyDown(floors[3], { key });
-                expect(screen.queryByTestId('floor-tooltip')).toBeNull();
-            }
-        );
-
-        it('Space key prevents the default scroll action (WAI-ARIA APG button keyboard semantics)', () => {
+        it('floors do not respond to keyboard activation (Enter/Space/Tab) — they are visual-only, not focusable controls (role="img" forbids interactive descendants)', () => {
             const { container } = renderBuilding({}, undefined, VOLUME_BY_BAND);
             const floors = container.querySelectorAll(
                 '[data-testid="building-floor"]'
             );
-            const event = fireEvent.keyDown(floors[0], { key: ' ' });
-            // fireEvent returns false when preventDefault() was called.
-            expect(event).toBe(false);
-        });
-
-        it('ignores non-activation keys (e.g. Tab) — no pin toggle', () => {
-            const { container } = renderBuilding({}, undefined, VOLUME_BY_BAND);
-            const floors = container.querySelectorAll(
-                '[data-testid="building-floor"]'
-            );
+            fireEvent.keyDown(floors[0], { key: 'Enter' });
+            fireEvent.keyDown(floors[0], { key: ' ' });
             fireEvent.keyDown(floors[0], { key: 'Tab' });
             expect(screen.queryByTestId('floor-tooltip')).toBeNull();
         });
 
-        it('clicking outside the building dismisses a click-pinned tooltip', () => {
+        it('clicking outside the building dismisses a click-pinned tooltip (pointerdown path)', () => {
             const { container } = renderBuilding({}, undefined, VOLUME_BY_BAND);
             const floors = container.querySelectorAll(
                 '[data-testid="building-floor"]'
@@ -639,7 +589,24 @@ describe('PositionBuilding', () => {
             expect(screen.queryByTestId('floor-tooltip')).toBeNull();
         });
 
-        it('deactivate false-path: mouseLeave/blur on a floor that is NOT the active one leaves the active floor untouched (prev.index !== i branch)', () => {
+        it('Escape dismisses a click-pinned tooltip (WCAG 1.4.13 keyboard-dismiss path, same idiom as InfoTooltip)', () => {
+            const { container } = renderBuilding({}, undefined, VOLUME_BY_BAND);
+            const floors = container.querySelectorAll(
+                '[data-testid="building-floor"]'
+            );
+
+            fireEvent.click(floors[3]); // band index 3 → [160,180), 25%
+            expect(
+                within(screen.getByTestId('floor-tooltip')).getByText(
+                    '$160–$180 · 거주율 25%'
+                )
+            ).toBeInTheDocument();
+
+            fireEvent.keyDown(document, { key: 'Escape' });
+            expect(screen.queryByTestId('floor-tooltip')).toBeNull();
+        });
+
+        it('deactivate false-path: mouseLeave on a floor that is NOT the active one leaves the active floor untouched (prev.index !== i branch)', () => {
             const { container, getByTestId } = renderBuilding(
                 {},
                 undefined,

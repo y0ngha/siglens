@@ -1,9 +1,10 @@
 'use client';
 
 import type React from 'react';
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { cn } from '@/shared/lib/cn';
+import { useEscapeKey } from '@/shared/hooks/useEscapeKey';
 import { useOnClickOutside } from '@/shared/hooks/useOnClickOutside';
 import {
     getTooltipPosition,
@@ -14,7 +15,11 @@ import {
     formatSignedPercent,
     formatUsdPrice,
 } from '@/shared/lib/priceFormat';
-import { BAND_COUNT, type PositionModel } from '../lib/positionGeometry';
+import {
+    BAND_COUNT,
+    type PositionModel,
+    type RangeClamp,
+} from '../lib/positionGeometry';
 
 interface PositionBuildingProps {
     symbol: string;
@@ -76,7 +81,7 @@ function buildAriaLabel(
     );
 }
 
-function outOfRangeNote(clamped: 'above' | 'below' | null): string | null {
+function outOfRangeNote(clamped: RangeClamp): string | null {
     if (clamped === 'above') return '최근 고점보다 높은 곳';
     if (clamped === 'below') return '최근 저점보다 낮은 곳';
     return null;
@@ -117,7 +122,7 @@ const BASEMENT_METAPHOR = '지하 세대';
 
 export function describeAvgFloor(
     avgPos: number,
-    avgClamped: 'above' | 'below' | null,
+    avgClamped: RangeClamp,
     bandCount: number
 ): string {
     if (avgClamped === 'above')
@@ -143,10 +148,7 @@ export function describeAvgFloor(
  * 범위 안이면 "N층 · tier"(78px, 폭 안전)를 그대로 보여준다. 설명 절을 포함한
  * 전체 문구는 aria-label(describeAvgFloor)이 계속 담아 AT 정보량은 유지한다.
  */
-function avgFloorVisualNote(
-    avgClamped: 'above' | 'below' | null,
-    fullNote: string
-): string {
+function avgFloorVisualNote(avgClamped: RangeClamp, fullNote: string): string {
     if (avgClamped === 'above') return ROOFTOP_METAPHOR;
     if (avgClamped === 'below') return BASEMENT_METAPHOR;
     return fullNote;
@@ -179,11 +181,12 @@ interface FloorTooltipContent {
 }
 
 /**
- * 층 hover/focus/tap 시 노출하는 문구 — "거주율"(아파트 메타포)로 그 가격대에
- * 몰린 거래량 비중을 서술한다. 실제 주주 명부가 아니라 "이 가격대에서 거래가
- * 얼마나 몰렸는가"의 친근한 은유일 뿐이라, qualifier로 52주 거래량 기준 raw
- * 지표라는 걸 항상 함께 밝힌다(scope fence — 지지/저항 같은 매수·매도 해석으로
- * 오독되지 않게). aria-label·below-building 리드아웃·floating 툴팁 3곳 모두
+ * 층 hover/tap 시 노출하는 문구 — "거주율"(아파트 메타포)로 그 가격대에 몰린
+ * 거래량 비중을 서술한다. 실제 주주 명부가 아니라 "이 가격대에서 거래가 얼마나
+ * 몰렸는가"의 친근한 은유일 뿐이라, qualifier로 52주 거래량 기준 raw 지표라는 걸
+ * 항상 함께 밝힌다(scope fence — 지지/저항 같은 매수·매도 해석으로 오독되지
+ * 않게). below-building 리드아웃·floating 툴팁 2곳(둘 다 포인터 전용 시각
+ * 보강, role="img" 자손이라 접근성 트리엔 노출되지 않는다) 모두
  * formatFloorTooltipText를 거쳐 이 하나의 빌더에서 파생해 문구 드리프트를 막는다.
  */
 function buildFloorTooltipContent(
@@ -197,9 +200,9 @@ function buildFloorTooltipContent(
     };
 }
 
-/** aria-label·below-building 리드아웃처럼 단일 plain-text가 필요한 소비처용 — floating
- * 툴팁은 main/qualifier를 두 줄로 나눠 렌더하지만(qualifier를 시각적으로 muted 처리),
- * 여기선 괄호로 이어붙여 하나의 문자열로 합친다. */
+/** below-building 리드아웃처럼 단일 plain-text가 필요한 소비처용 — floating 툴팁은
+ * main/qualifier를 두 줄로 나눠 렌더하지만(qualifier를 시각적으로 muted 처리), 여기선
+ * 괄호로 이어붙여 하나의 문자열로 합친다. */
 function formatFloorTooltipText(content: FloorTooltipContent): string {
     return `${content.main} (${content.qualifier})`;
 }
@@ -207,9 +210,9 @@ function formatFloorTooltipText(content: FloorTooltipContent): string {
 /**
  * 층(band) 전체(0..bandCount-1)의 툴팁 콘텐츠를 한 번에 계산한다 — 활성 층
  * 파생(컴포넌트 상단, floating 툴팁/below-building 리드아웃용)과 렌더 루프
- * (층별 aria-label용) 둘 다 이 하나의 배열에서 파생해 같은 band index가
- * 두 곳에서 따로 계산되지 않게 한다(단일 source, MISTAKES #2). volumePct가
- * 없거나 유한하지 않은 밴드(비인터랙티브)는 null.
+ * (층별 isInteractive/isActive 판정용) 둘 다 이 하나의 배열에서 파생해 같은
+ * band index가 두 곳에서 따로 계산되지 않게 한다(단일 source, MISTAKES #2).
+ * volumePct가 없거나 유한하지 않은 밴드(비인터랙티브)는 null.
  */
 function buildFloorTooltips(
     model: PositionModel,
@@ -233,9 +236,9 @@ function buildFloorTooltips(
     });
 }
 
-/** hover(마우스)·focus(키보드)·pinned(클릭/탭) 중 활성 상태인 층 하나를 가리킨다
- * — index는 model.bands의 band index, rect는 activate/toggleClick 시점에
- * 캡처한 floating 툴팁 anchor 좌표(getBoundingClientRect). */
+/** hover(마우스)·pinned(클릭/탭) 중 활성 상태인 층 하나를 가리킨다 — index는
+ * model.bands의 band index, rect는 activate/toggleClick 시점에 캡처한 floating
+ * 툴팁 anchor 좌표(getBoundingClientRect). */
 interface FloorPointer {
     index: number;
     rect: DOMRect;
@@ -369,7 +372,7 @@ function pointsAttr(points: readonly Point[]): string {
 }
 
 /** pos(0..1, high=1)를 건물 정면 모서리의 y좌표로 변환한다. clamped면 옥상 위/지하 고정 좌표를 쓴다. */
-function frontY(pos: number, clamped: 'above' | 'below' | null): number {
+function frontY(pos: number, clamped: RangeClamp): number {
     if (clamped === 'above') return SKY_Y;
     if (clamped === 'below') return BASEMENT_Y;
     return ROOF_FRONT_Y + (1 - pos) * BUILDING_H;
@@ -495,17 +498,18 @@ export function PositionBuilding({
     className,
     volumeByBand,
 }: PositionBuildingProps) {
-    // 층 hover/focus/tap(pin) 상태 — volumeByBand가 없으면 절대 set되지 않아
-    // (아래 이벤트 핸들러가 통째로 붙지 않음) 항상 null로 남고, 건물은 이 기능
-    // 추가 전과 동일하게 렌더된다.
+    // 층 hover/tap(pin) 상태 — volumeByBand가 없으면 절대 set되지 않아(아래 이벤트
+    // 핸들러가 통째로 붙지 않음) 항상 null로 남고, 건물은 이 기능 추가 전과 동일하게
+    // 렌더된다. 마우스/터치 전용(포인터 어포던스) — 층 <g>는 role="img" 자손이라
+    // 키보드 포커스를 받지 않는다(아래 렌더 루프의 role="img" 주석 참고).
     //
-    // hover(마우스 hover·키보드 focus)와 pinned(클릭/탭 토글)를 별도 state로 둔다
-    // — 하나로 합치면 "마우스로 hover 중인 층을 클릭"할 때 focus 이벤트가 먼저
-    // activate를 호출해버려 클릭의 toggle 로직이 방금 연 툴팁을 곧바로 닫아버리는
-    // 경합이 생긴다(hover가 이미 켠 상태를 click이 "이미 켜져 있었다"고 오판).
-    // 분리하면 hover/focus는 즉시 미리보기를, 클릭/탭은 그와 무관하게 "고정"
-    // 여부만 토글해 데스크톱 hover와 모바일 tap-to-toggle이 서로 간섭하지 않는다.
-    // 활성 층은 hover가 있으면 hover를 우선하고, 없으면 pinned를 쓴다.
+    // hover(마우스 진입)와 pinned(클릭/탭 토글)를 별도 state로 둔다 — 마우스로
+    // 클릭하려면 먼저 그 위에 마우스가 올라가 있어야 하므로 hover가 항상 click보다
+    // 먼저 켜진다. 하나로 합치면 "hover 중인 층을 클릭"할 때 toggle 로직이 "이미
+    // 켜져 있었다"고 오판해 방금 연 툴팁을 곧바로 닫아버리는 경합이 생긴다. 분리하면
+    // hover는 즉시 미리보기를, 클릭/탭은 그와 무관하게 "고정" 여부만 토글해 데스크톱
+    // hover와 모바일 tap-to-toggle이 서로 간섭하지 않는다. 활성 층은 hover가 있으면
+    // hover를 우선하고, 없으면 pinned를 쓴다.
     const [hoverFloor, setHoverFloor] = useState<FloorPointer | null>(null);
     const [pinnedFloor, setPinnedFloor] = useState<FloorPointer | null>(null);
 
@@ -533,9 +537,30 @@ export function PositionBuilding({
         enabled: pinnedFloor !== null,
     });
 
+    // WCAG 1.4.13 — 클릭/탭으로 고정(pinned)한 툴팁은 Escape로도 닫을 수 있어야
+    // 한다(InfoTooltip.tsx와 동일 idiom). useOnClickOutside는 pointerdown만
+    // 처리하므로 키보드 사용자용 dismiss 경로가 별도로 필요하다. 층 <g> 자체는
+    // 더 이상 포커스 가능하지 않지만(아래 렌더 루프의 role="img" 주석 참고),
+    // 이 Escape 핸들러는 문서 전역에 바인딩되므로 포커스 위치와 무관하게
+    // pinnedFloor를 닫는다.
+    useEscapeKey(() => setPinnedFloor(null), pinnedFloor !== null);
+
     // model.bands.length는 volumeByBand 인덱싱(아래)과 describeAvgFloor 둘 다에
     // 필요해 컴포넌트 최상단에서 한 번만 계산한다(단일 source, 중복 선언 금지).
+    // useMemo(floorTooltips) 바로 앞에 둔 것도 그 의존값으로 필요하기 때문이다.
     const bandCount = model.bands.length;
+
+    // 전체 밴드의 툴팁 콘텐츠를 한 번만 계산해 활성 층 파생(아래)과 렌더 루프
+    // (층별 hover 콘텐츠 조회) 둘 다 재사용한다 — 같은 band index를 두 곳에서
+    // 따로 계산하지 않는다(MISTAKES #2, buildFloorTooltips 주석 참고). 매 렌더
+    // 재계산을 막기 위해 useMemo로 감싼다(MISTAKES #10 — props/state 파생
+    // 배열/객체는 useMemo).
+    const floorTooltips = useMemo(
+        () =>
+            buildFloorTooltips(model, volumeByBand, low52w, high52w, bandCount),
+        [model, volumeByBand, low52w, high52w, bandCount]
+    );
+
     const avgDisplay = formatUsd(avg);
     const currentDisplay = formatUsd(current);
     const avgFloorNote = describeAvgFloor(
@@ -562,16 +587,6 @@ export function PositionBuilding({
     const tooltipPositioned =
         activeFloor !== null && measuredFloorIndex === activeFloor.index;
 
-    // 전체 밴드의 툴팁 콘텐츠를 한 번만 계산해 활성 층 파생(아래)과 렌더 루프
-    // (층별 aria-label) 둘 다 재사용한다 — 같은 band index를 두 곳에서 따로
-    // 계산하지 않는다(MISTAKES #2, buildFloorTooltips 주석 참고).
-    const floorTooltips = buildFloorTooltips(
-        model,
-        volumeByBand,
-        low52w,
-        high52w,
-        bandCount
-    );
     const activeFloorTooltipContent = computeActiveFloorTooltipContent(
         activeFloor,
         floorTooltips
@@ -655,15 +670,12 @@ export function PositionBuilding({
                     const floorTooltip = floorTooltips[i];
                     const isInteractive = floorTooltip !== null;
                     const isActive = isInteractive && activeFloor?.index === i;
-                    const floorTooltipText = floorTooltip
-                        ? formatFloorTooltipText(floorTooltip)
-                        : null;
 
                     // 핸들러는 아래에서 isInteractive일 때만 <g>에 붙으므로 여기선
-                    // 별도 가드가 필요 없다. activate/deactivate는 hover(마우스)·focus
-                    // (키보드) 미리보기, togglePin(클릭/탭/Enter/Space)은 "고정" — 서로
-                    // 다른 state라 데스크톱에서 hover 중인 층을 클릭해도 hover가 방금 연
-                    // 툴팁을 click이 곧바로 닫아버리는 경합이 없다(상단 state 주석 참고).
+                    // 별도 가드가 필요 없다. activate/deactivate는 hover(마우스) 미리보기,
+                    // togglePin(클릭/탭)은 "고정" — 서로 다른 state라 데스크톱에서 hover
+                    // 중인 층을 클릭해도 hover가 방금 연 툴팁을 click이 곧바로 닫아버리는
+                    // 경합이 없다(상단 state 주석 참고).
                     const activate = (e: React.SyntheticEvent<SVGGElement>) => {
                         setHoverFloor({
                             index: i,
@@ -682,48 +694,35 @@ export function PositionBuilding({
                     const toggleClick = (e: React.MouseEvent<SVGGElement>) => {
                         togglePin(e.currentTarget.getBoundingClientRect());
                     };
-                    // Enter/Space activate the same pin-toggle as a click — role="button"
-                    // requires this keyboard parity (WAI-ARIA APG). Space also scrolls the
-                    // page by default on non-form elements, so it's prevented here.
-                    const handleKeyDown = (
-                        e: React.KeyboardEvent<SVGGElement>
-                    ) => {
-                        if (e.key !== 'Enter' && e.key !== ' ') return;
-                        if (e.key === ' ') e.preventDefault();
-                        togglePin(e.currentTarget.getBoundingClientRect());
-                    };
 
                     return (
                         <g
                             key={`${band.fromPct}-${band.toPct}`}
                             data-testid="building-floor"
-                            tabIndex={isInteractive ? 0 : undefined}
-                            role={isInteractive ? 'button' : undefined}
-                            aria-label={floorTooltipText ?? undefined}
-                            // 네이티브 <title>의 OS 기본 사각 hover box(및 ~1s 지연)를
-                            // 걷어내고 이 컴포넌트 자체의 styled 툴팁으로 대체했다(design
-                            // §floor-hover 개정). 포커스 시 그려지는 브라우저 기본 사각
-                            // outline도 같은 이유로 제거 — 대신 아래 isActive 하이라이트
-                            // (hover·focus·클릭 모두에서 동일하게 뜨는 primary-400 스트로크)
-                            // 가 "outline 대체물" 역할을 한다(never bare outline-none).
-                            // hover가 클릭보다 먼저 이 오버레이를 켜기 때문에(요소를
-                            // 클릭하려면 먼저 마우스가 올라가 있어야 함) 클릭 시에만
-                            // 튀어나오는 "포커스 링" 이슈도 자연히 없다.
+                            // ⚠️ 의도적으로 role/tabIndex/키보드 핸들러가 없다(이전 라운드의
+                            // role="button"+tabIndex+onKeyDown 시도를 되돌렸다). 이 <g>는
+                            // 부모 <svg role="img">의 자손이다 — WAI-ARIA는 role="img" 서브트리
+                            // 안의 포커스 가능/인터랙티브한 자손을 접근성 트리에서 통째로
+                            // flatten한다(role="button"을 줘도 스크린리더는 절대 못 읽고,
+                            // 포커스만 "보이지 않게" 걸려 키보드 사용자가 갇힌다). 그래서 층
+                            // hover/tap 툴팁("거주율 N%")은 마우스/터치를 쓰는 시각 사용자
+                            // 전용 보강일 뿐이다 — 핵심 정보(평단/현재가/수익률/range%/floor
+                            // 안내)는 이미 svg 자체의 role="img" aria-label에 전부 담겨 있다
+                            // (buildAriaLabel). 그러므로 여기 남기는 건 포인터 어포던스
+                            // (onMouseEnter/onMouseLeave=hover, onClick=탭-투-핀, 터치는
+                            // hover가 없어 클릭으로 대체)뿐이다. aria-hidden은 별도로 줄
+                            // 필요 없다 — role="img"가 이미 자손 전체를 접근성 트리에서
+                            // 제외한다.
                             className={
                                 isInteractive
-                                    ? 'cursor-pointer touch-manipulation outline-none'
+                                    ? 'cursor-pointer touch-manipulation'
                                     : undefined
                             }
                             onMouseEnter={isInteractive ? activate : undefined}
                             onMouseLeave={
                                 isInteractive ? deactivate : undefined
                             }
-                            onFocus={isInteractive ? activate : undefined}
-                            onBlur={isInteractive ? deactivate : undefined}
                             onClick={isInteractive ? toggleClick : undefined}
-                            onKeyDown={
-                                isInteractive ? handleKeyDown : undefined
-                            }
                         >
                             <polygon
                                 points={faces.left}
@@ -772,7 +771,7 @@ export function PositionBuilding({
                                 strokeWidth={0.75}
                                 className="text-secondary-950/40"
                             />
-                            {/* hover/focus 하이라이트 — 시각 피드백 전용(aria-hidden),
+                            {/* hover/pinned(클릭) 하이라이트 — 시각 피드백 전용(aria-hidden),
                                 기존 face 폴리곤의 currentColor 그라디언트는 그대로 두고
                                 위에 얇은 테두리만 덧그린다. */}
                             {isActive && (
@@ -945,11 +944,13 @@ export function PositionBuilding({
                 {model.rangePositionPct.toFixed(0)}% 지점
             </p>
 
-            {/* 층 hover/focus/탭 리드아웃 — 시각 사용자(마우스 hover·키보드 focus·탭
-                모두)용 보강 표시. 접근성 채널은 각 층 <g>의 aria-label이 담당하므로
-                (포커스 시 이미 announce됨) 이 줄은 중복 announce를 막기 위해
-                aria-hidden이다. volumeByBand가 없으면 아예 렌더하지 않아 건물이 이
-                기능 추가 전과 DOM 상 동일하게 유지된다. */}
+            {/* 층 hover/탭 리드아웃 — 마우스/터치를 쓰는 시각 사용자 전용 보강 표시다
+                (층 <g>는 role="img" 자손이라 키보드 포커스를 받지 않는다, 위 렌더
+                루프 주석 참고). 접근성 채널은 이미 svg 자체의 role="img" aria-label
+                (buildAriaLabel)이 핵심 정보를 전달하므로 이 줄은 중복 announce를
+                막기 위해 aria-hidden이다 — floating 툴팁(아래)과 동일한 "시각
+                전용" 취급. volumeByBand가 없으면 아예 렌더하지 않아 건물이 이 기능
+                추가 전과 DOM 상 동일하게 유지된다. */}
             {volumeByBand && (
                 <p
                     data-testid="floor-volume-readout"
@@ -966,7 +967,17 @@ export function PositionBuilding({
                 activate/toggleClick에서 캡처)를 anchor로 써 280/340/440px 세 breakpoint
                 모두에서 viewBox 스케일과 무관하게 정확히 그 층 옆에 뜬다.
                 pointer-events-none이라 툴팁 자체를 클릭해도 outside-click 판정에
-                끼어들지 않는다(useOnClickOutside에 별도 tooltipRef가 필요 없다). */}
+                끼어들지 않는다(useOnClickOutside에 별도 tooltipRef가 필요 없다).
+
+                role="tooltip"이 아니라 aria-hidden="true"다 — 이 노드는 document.body
+                최상위로 포털되어 svg role="img" 서브트리 **밖**에 산다. role="tooltip"을
+                쓰려면 반드시 트리거 요소의 aria-describedby로 연결돼야 하는데(WAI-ARIA,
+                MISTAKES a11y #3), 층 <g>는 위 렌더 루프 주석대로 의도적으로 인터랙티브/
+                포커스 가능한 요소가 아니므로 그런 트리거가 없다. role="tooltip"만
+                남기면 트리거 없이 announce되는 고아 노드가 돼(이전 라운드 결함) 스크린
+                리더가 svg aria-label과 무관하게 이 텍스트를 뜬금없이 읽는다. 그래서
+                below-building 리드아웃(위)과 동일하게 순수 시각 보강으로 다뤄
+                접근성 트리에서 제외한다. */}
             {activeFloor !== null &&
                 activeFloorTooltipContent !== null &&
                 typeof document !== 'undefined' &&
@@ -990,7 +1001,7 @@ export function PositionBuilding({
                                 setMeasuredFloorIndex(activeFloor.index);
                             }
                         }}
-                        role="tooltip"
+                        aria-hidden="true"
                         data-testid="floor-tooltip"
                         className={cn(
                             'bg-secondary-800 border-secondary-600 pointer-events-none fixed top-(--tt) left-(--tl) z-9999 max-w-[220px] rounded border p-2 text-xs leading-relaxed shadow-lg',

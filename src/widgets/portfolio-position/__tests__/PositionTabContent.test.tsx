@@ -197,13 +197,16 @@ describe('PositionTabContent', () => {
         const building = await screen.findByTestId('position-building');
         const floors = within(building).getAllByTestId('building-floor');
         expect(floors).toHaveLength(5);
-        // band index 0 → [100,120), 10% — proves volumeByBand[0] made it all
-        // the way down (not silently dropped by a component in the chain).
-        expect(floors[0].getAttribute('aria-label')).toBe(
-            '$100–$120 · 거주율 10% (최근 52주 거래량 기준)'
-        );
 
+        // band index 0 → [100,120), 10% — proves volumeByBand[0] made it all
+        // the way down the chain (not silently dropped by a component along the
+        // way). The floor <g> itself carries no aria-label (visual-only, see
+        // PositionBuilding's role="img" comment) — the hover-triggered floating
+        // tooltip is where that band content actually surfaces.
         fireEvent.mouseEnter(floors[0]);
-        expect(await screen.findByTestId('floor-tooltip')).toBeInTheDocument();
+        const tooltip = await screen.findByTestId('floor-tooltip');
+        expect(
+            within(tooltip).getByText('$100–$120 · 거주율 10%')
+        ).toBeInTheDocument();
     });
 });
