@@ -1,11 +1,13 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useId, useRef } from 'react';
 import { DEEPSEEK_V4_FLASH_MODEL, type ModelId } from '@y0ngha/siglens-core';
 import { ReasoningToggle } from '@/features/reasoning-toggle';
 import { useEscapeKey } from '@/shared/hooks/useEscapeKey';
+import { useFocusTrap } from '@/shared/hooks/useFocusTrap';
 import { usePopoverToggle } from '@/shared/hooks/usePopoverToggle';
 import { cn } from '@/shared/lib/cn';
+import { getModelDisplay } from '@/shared/lib/modelDisplay';
 import { ModelSelector } from './ModelSelector';
 
 interface AnalysisSettingsMenuProps {
@@ -61,6 +63,7 @@ export function AnalysisSettingsMenu({
 }: AnalysisSettingsMenuProps) {
     const triggerRef = useRef<HTMLButtonElement>(null);
     const panelRef = useRef<HTMLDivElement>(null);
+    const titleId = useId();
     const { isOpen, toggle, close } = usePopoverToggle([triggerRef, panelRef]);
 
     // Active = a non-default choice is in effect: reasoning turned on, or a
@@ -69,25 +72,20 @@ export function AnalysisSettingsMenu({
     // (`DEEPSEEK_V4_FLASH_MODEL`) rather than hardcoding a model id here.
     const isActive = reasoning || modelId !== DEEPSEEK_V4_FLASH_MODEL;
 
-    const handleClose = (): void => {
-        close();
-        triggerRef.current?.focus();
-    };
+    // Same source ModelSelector reads its own trigger label from — the gear's
+    // accessible name/title surface the active model without widening the
+    // header row back out (declutter is intentional; see module doc).
+    const modelDisplay = getModelDisplay(modelId);
+    const accessibleLabel = isActive
+        ? `분석 설정 · 현재 모델: ${modelDisplay.label} (변경됨)`
+        : `분석 설정 · 현재 모델: ${modelDisplay.label}`;
 
-    useEscapeKey(handleClose, isOpen);
-
-    // On open, hand focus to the first focusable control inside the panel —
-    // the ModelSelector's own trigger button is rendered first, before the
-    // ReasoningToggle's tooltip/switch buttons, so a plain "first button in
-    // the panel" query reaches it without needing ModelSelector to forward
-    // a ref (it doesn't, and we're not reimplementing it to add one).
-    useEffect(() => {
-        if (!isOpen) return;
-        const id = setTimeout(() => {
-            panelRef.current?.querySelector('button')?.focus();
-        }, 0);
-        return () => clearTimeout(id);
-    }, [isOpen]);
+    // Mirrors PortfolioChipPopover: a focus trap owns initial focus, Tab
+    // cycling, and restoring focus to the trigger on EVERY close path
+    // (Escape, click-outside, re-toggle) via its unmount/deactivate cleanup,
+    // so we don't hand-roll a partial (Escape-only) restore here.
+    useFocusTrap(panelRef, isOpen);
+    useEscapeKey(close, isOpen);
 
     return (
         <div className="relative">
@@ -97,7 +95,8 @@ export function AnalysisSettingsMenu({
                 onClick={toggle}
                 aria-haspopup="dialog"
                 aria-expanded={isOpen}
-                aria-label={isActive ? '분석 설정 (변경됨)' : '분석 설정'}
+                aria-label={accessibleLabel}
+                title={accessibleLabel}
                 className={cn(
                     'border-secondary-700 text-secondary-300 relative inline-flex size-11 items-center justify-center rounded-lg border',
                     'hover:border-secondary-600 hover:bg-secondary-700/30 hover:text-secondary-100',
@@ -118,10 +117,14 @@ export function AnalysisSettingsMenu({
                 <div
                     ref={panelRef}
                     role="dialog"
-                    aria-label="분석 설정"
-                    className="border-secondary-600 bg-secondary-800 absolute top-full right-0 z-50 mt-1 flex w-72 max-w-[calc(100vw-2rem)] flex-col gap-3 overscroll-contain rounded-lg border p-3 shadow-lg"
+                    aria-labelledby={titleId}
+                    tabIndex={-1}
+                    className="border-secondary-700 bg-secondary-900 absolute top-full right-0 z-50 mt-1 flex w-72 max-w-[calc(100vw-2rem)] flex-col gap-3 overscroll-contain rounded-lg border p-3 shadow-2xl outline-none"
                 >
-                    <h2 className="text-secondary-100 text-xs font-semibold tracking-wide">
+                    <h2
+                        id={titleId}
+                        className="text-secondary-100 text-xs font-semibold tracking-wide"
+                    >
                         분석 설정
                     </h2>
                     <ModelSelector

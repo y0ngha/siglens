@@ -58,6 +58,23 @@ describe('AnalysisSettingsMenu', () => {
         ).toBeInTheDocument();
     });
 
+    it('names the dialog via aria-labelledby pointing at the visible <h2>, not a redundant aria-label', async () => {
+        const user = userEvent.setup();
+        renderMenu();
+
+        await user.click(gearButton());
+
+        const dialog = screen.getByRole('dialog');
+        const labelledById = dialog.getAttribute('aria-labelledby');
+        expect(labelledById).toBeTruthy();
+        expect(dialog.getAttribute('aria-label')).toBeNull();
+
+        const heading = document.getElementById(labelledById!);
+        expect(heading).not.toBeNull();
+        expect(heading?.tagName).toBe('H2');
+        expect(heading?.textContent).toBe('분석 설정');
+    });
+
     it('closes the popover on a second gear click', async () => {
         const user = userEvent.setup();
         renderMenu();
@@ -82,7 +99,7 @@ describe('AnalysisSettingsMenu', () => {
         expect(document.activeElement).toBe(gearButton());
     });
 
-    it('click outside closes the popover', async () => {
+    it('click outside closes the popover and returns focus to the gear', async () => {
         const user = userEvent.setup();
         render(
             <div>
@@ -105,6 +122,7 @@ describe('AnalysisSettingsMenu', () => {
         fireEvent.pointerDown(screen.getByTestId('outside'));
 
         expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+        expect(document.activeElement).toBe(gearButton());
     });
 
     it('on open, moves focus to the model selector trigger', async () => {
@@ -120,27 +138,36 @@ describe('AnalysisSettingsMenu', () => {
         });
     });
 
-    it('shows no active dot and a plain aria-label when reasoning is off and the model is the default', () => {
+    it('shows no active dot and surfaces the current model (no "변경됨" suffix) when reasoning is off and the model is the default', () => {
         renderMenu({ reasoning: false, modelId: DEEPSEEK_V4_FLASH_MODEL });
 
         const gear = gearButton();
-        expect(gear.getAttribute('aria-label')).toBe('분석 설정');
+        expect(gear.getAttribute('aria-label')).toBe(
+            '분석 설정 · 현재 모델: DeepSeek Flash'
+        );
+        expect(gear.getAttribute('title')).toBe(
+            '분석 설정 · 현재 모델: DeepSeek Flash'
+        );
         expect(gear.querySelector('.bg-primary-500')).toBeNull();
     });
 
-    it('shows the active dot and an updated aria-label when reasoning is on', () => {
+    it('shows the active dot and appends "변경됨" to the model-bearing aria-label when reasoning is on', () => {
         renderMenu({ reasoning: true, modelId: DEEPSEEK_V4_FLASH_MODEL });
 
         const gear = gearButton();
-        expect(gear.getAttribute('aria-label')).toBe('분석 설정 (변경됨)');
+        expect(gear.getAttribute('aria-label')).toBe(
+            '분석 설정 · 현재 모델: DeepSeek Flash (변경됨)'
+        );
         expect(gear.querySelector('.bg-primary-500')).not.toBeNull();
     });
 
-    it('shows the active dot when a non-default model is selected', () => {
+    it('shows the active dot and the selected model name when a non-default model is selected', () => {
         renderMenu({ reasoning: false, modelId: 'gemini-2.5-flash' });
 
         const gear = gearButton();
-        expect(gear.getAttribute('aria-label')).toBe('분석 설정 (변경됨)');
+        expect(gear.getAttribute('aria-label')).toBe(
+            '분석 설정 · 현재 모델: Flash (변경됨)'
+        );
         expect(gear.querySelector('.bg-primary-500')).not.toBeNull();
     });
 
@@ -193,5 +220,26 @@ describe('AnalysisSettingsMenu', () => {
         await user.click(flashOption!);
 
         expect(handleModelChange).toHaveBeenCalledWith('gemini-2.5-flash');
+    });
+
+    it('Escape closes only the innermost open layer: dismisses the model listbox first, then the panel on a second press', async () => {
+        const user = userEvent.setup();
+        renderMenu();
+
+        await user.click(gearButton());
+        await user.click(
+            screen.getByRole('button', { name: 'AI 분석 모델 선택' })
+        );
+        expect(screen.getByRole('listbox')).toBeInTheDocument();
+
+        await user.keyboard('{Escape}');
+
+        expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+        expect(screen.getByRole('dialog')).toBeInTheDocument();
+
+        await user.keyboard('{Escape}');
+
+        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+        expect(document.activeElement).toBe(gearButton());
     });
 });

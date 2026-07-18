@@ -79,7 +79,12 @@ export function ModelSelector({
                 break;
             }
             case 'Escape':
+                // Stop this from also reaching AnalysisSettingsMenu's
+                // document-level Escape listener — Escape should collapse
+                // only the innermost open layer (this listbox), not the
+                // whole settings popover it's nested in.
                 e.preventDefault();
+                e.stopPropagation();
                 close();
                 triggerRef.current?.focus();
                 break;
@@ -89,7 +94,7 @@ export function ModelSelector({
     return (
         <div className={cn('flex flex-row items-center gap-3', className)}>
             {showLabel && (
-                <span className="text-secondary-500 text-xs font-medium tracking-[0.15em] whitespace-nowrap uppercase">
+                <span className="text-secondary-400 text-xs font-medium tracking-[0.15em] whitespace-nowrap uppercase">
                     AI MODEL
                 </span>
             )}
