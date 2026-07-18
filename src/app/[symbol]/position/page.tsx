@@ -106,6 +106,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         `내 평단은 이 종목 '아파트'의 몇 층일까? 옥상(고점)일까 지하(저점)일까 — ` +
             `${displayName}의 최근 52주 범위에서 내 매수가의 위치를 확인해보세요.`
     );
+    // 탭 title(positionTitle)은 root layout의 title.template이 "| Siglens"를
+    // 붙여주지만, OG/Twitter는 페이지 레벨에서 root layout을 deep-merge가 아니라
+    // 통째로 replace한다 — sibling 심볼 페이지(symbolMetadataFromSeo의
+    // title/fullTitle 분리 패턴)와 동일하게, 소셜 카드 전용으로 브랜드 suffix를
+    // 직접 붙인 fullTitle을 만들어 써야 og:title/twitter:title에서 브랜딩이
+    // 유실되지 않는다.
+    const positionFullTitle = `${positionTitle} | ${SITE_NAME}`;
     return {
         ...NOINDEX_SYMBOL_METADATA,
         title: positionTitle,
@@ -118,14 +125,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
             // 명시해야 소셜 카드에서 og:site_name·og:locale이 유실되지 않는다.
             type: 'website',
             siteName: SITE_NAME,
-            title: positionTitle,
+            title: positionFullTitle,
             description: positionDescription,
             url,
             locale: 'ko_KR',
         },
         twitter: {
             card: 'summary_large_image',
-            title: positionTitle,
+            title: positionFullTitle,
             description: positionDescription,
         },
     };

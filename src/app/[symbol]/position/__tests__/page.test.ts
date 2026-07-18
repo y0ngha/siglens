@@ -57,6 +57,7 @@ import { isTabAllowedForSymbol } from '@/entities/ticker/api';
 import { getBarsStatic, quantizeBarsDataToLastClosed } from '@/entities/bars';
 import { PositionTabContent } from '@/widgets/portfolio-position';
 import { findElementByType } from '@/__tests__/utils/findElementByType';
+import { SEO_DESCRIPTION_MAX_LENGTH } from '@/shared/lib/seo';
 import type { MockedFunction } from 'vitest';
 
 const mockGetAssetInfoResilient = getAssetInfoResilient as MockedFunction<
@@ -146,16 +147,25 @@ describe('generateMetadata', () => {
         });
         // 후킹 title: 종목 표시명 + 메타포 훅.
         expect(metadata.title).toBe('Apple Inc. 내 위치 — 내 평단은 몇 층?');
-        // 후킹 description: 아파트/층 메타포 키워드를 담고, SEO_DESCRIPTION_MAX_LENGTH(120) 이내.
+        // 후킹 description: 아파트/층 메타포 키워드를 담고, SEO_DESCRIPTION_MAX_LENGTH 이내.
         const description = metadata.description ?? '';
         expect(description).toContain('아파트');
         expect(description).toContain('옥상');
         expect(description).toContain('지하');
-        expect([...description].length).toBeLessThanOrEqual(120);
-        // OG/Twitter 카드에도 동일 후킹 카피가 실려 소셜 공유·링크 프리뷰에서 노출된다.
-        expect(metadata.openGraph?.title).toBe(metadata.title);
+        expect([...description].length).toBeLessThanOrEqual(
+            SEO_DESCRIPTION_MAX_LENGTH
+        );
+        // OG/Twitter 카드는 root layout의 title.template("| Siglens" suffix)이
+        // 페이지 레벨 openGraph/twitter를 replace(merge 아님)하며 무력화되므로,
+        // sibling 심볼 페이지(symbolMetadataFromSeo의 fullTitle 패턴)와 동일하게
+        // 브랜드 suffix가 직접 실려야 한다 — metadata.title과 달라야 정상이다.
+        expect(metadata.openGraph?.title).toBe(
+            'Apple Inc. 내 위치 — 내 평단은 몇 층? | Siglens'
+        );
         expect(metadata.openGraph?.description).toBe(metadata.description);
-        expect(metadata.twitter?.title).toBe(metadata.title);
+        expect(metadata.twitter?.title).toBe(
+            'Apple Inc. 내 위치 — 내 평단은 몇 층? | Siglens'
+        );
         expect(metadata.twitter?.description).toBe(metadata.description);
         // OG url은 self-canonical과 일치해야 공유 카드가 올바른 페이지를 가리킨다.
         // as 캐스트 근거(CONVENTIONS.md §TypeScript 7): generateMetadata의 openGraph 리턴은
@@ -197,7 +207,9 @@ describe('generateMetadata', () => {
         });
 
         const description = metadata.description ?? '';
-        expect([...description].length).toBeLessThanOrEqual(120);
+        expect([...description].length).toBeLessThanOrEqual(
+            SEO_DESCRIPTION_MAX_LENGTH
+        );
         expect(description).toContain('아파트');
         expect(description).toContain('옥상');
         expect(description).toContain('지하');
