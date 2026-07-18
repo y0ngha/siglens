@@ -212,18 +212,6 @@ export function ChartContent({
     const { clusteredKeyLevels, validatedActionPrices, reconciledActionLines } =
         useAnalysisDerivedData(analysis, bars);
 
-    // 광고 노출 게이트. AnalysisProgress/AnalysisPanel의 isFreeUser는 기본값 true라
-    // "Pro에게는 명시적으로 false를 전달"하는 게 규약이다(둘 다 내부에서 AdBanner로
-    // 전달하며, AdBanner의 isFreeUser는 기본값 없는 필수 prop이다). tier가 'pro'가
-    // 아닐 때만 광고를 노출한다. tier는 hydration 전 DEFAULT_TIER('free')로 폴백되어
-    // 로딩 중에는 free와 동일하게 취급된다(기존 기본값 true와 일치).
-    //
-    // ⚠️ 광고 제거는 '결제(pro)' 전용 혜택이라 member는 의도적으로 광고 노출 대상이다.
-    // 이는 기능 게이팅 축(canUseReasoning = tier !== 'free', isFreeTier = tier === 'free'
-    // — 둘 다 member를 pro와 함께 취급)과 다른 별개의 축이다. 따라서 여기서는 'free' 대신
-    // 'pro'를 기준으로 판별한다(member ≠ 광고 면제).
-    const isFreeUser = tier !== 'pro';
-
     // "내 포지션" 결정적(non-AI) 요약 — "내 평단 기준으로 분석했어요" 배지 옆에
     // 노출한다. useAnalysis가 내부적으로 같은 심볼의 useSymbolHolding을 이미
     // 호출하지만 그 훅의 holding은 반환되지 않으므로 여기서 독립적으로 다시
@@ -239,6 +227,18 @@ export function ChartContent({
         isLoading: isHoldingLoading,
         isError: isHoldingError,
     } = useSymbolHolding(symbol);
+
+    // 광고 노출 게이트. AnalysisProgress/AnalysisPanel의 isFreeUser는 기본값 true라
+    // "Pro에게는 명시적으로 false를 전달"하는 게 규약이다(둘 다 내부에서 AdBanner로
+    // 전달하며, AdBanner의 isFreeUser는 기본값 없는 필수 prop이다). tier가 'pro'가
+    // 아닐 때만 광고를 노출한다. tier는 hydration 전 DEFAULT_TIER('free')로 폴백되어
+    // 로딩 중에는 free와 동일하게 취급된다(기존 기본값 true와 일치).
+    //
+    // ⚠️ 광고 제거는 '결제(pro)' 전용 혜택이라 member는 의도적으로 광고 노출 대상이다.
+    // 이는 기능 게이팅 축(canUseReasoning = tier !== 'free', isFreeTier = tier === 'free'
+    // — 둘 다 member를 pro와 함께 취급)과 다른 별개의 축이다. 따라서 여기서는 'free' 대신
+    // 'pro'를 기준으로 판별한다(member ≠ 광고 면제).
+    const isFreeUser = tier !== 'pro';
 
     // scope fence: 여기서 만드는 값은 순수 산술(평가손익/수익률/범위 위치/고저점
     // 거리)뿐이다 — 매수/매도 판단·목표가·진입구간 등 core AI 도메인 값은 절대

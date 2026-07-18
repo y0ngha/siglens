@@ -124,15 +124,18 @@ describe('PositionStatusSummary', () => {
         expect(getByText('+$0.10000')).toBeInTheDocument();
     });
 
-    it('aria-label에 평가손익·수익률·범위·거리 요약이 담긴다', () => {
-        const { getByRole } = render(
+    it('region은 "내 포지션" 헤딩으로 이름 지어지고(aria-labelledby→h2), 수치 행은 내용으로 제공된다', () => {
+        const { getByRole, getByText } = render(
             <PositionStatusSummary
                 status={status()}
                 avgRaw="150"
                 quantityRaw="10"
             />
         );
-        const section = getByRole('region', { name: /평가손익 \+\$300\.00/ });
+        // 접근명은 시각 헤딩과 동기화(MISTAKES a11y #1.7, 형제 PositionCard와 동일 패턴).
+        const section = getByRole('region', { name: '내 포지션' });
         expect(section).toBeInTheDocument();
+        // 수치(평가손익 등)는 region의 내용으로 읽힌다 — 접근명이 아니라 dl 콘텐츠.
+        expect(getByText('+$300.00')).toBeInTheDocument();
     });
 });

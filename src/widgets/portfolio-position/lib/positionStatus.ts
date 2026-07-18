@@ -11,7 +11,6 @@
  * `model.currentPos`(0..1, clamped)를 100배해 rangePositionPct로 쓴다.
  */
 
-import { formatSignedPercent, formatSignedUsd } from '@/shared/lib/priceFormat';
 import { computePosition } from './positionGeometry';
 
 export interface PositionStatusInputs {
@@ -65,25 +64,4 @@ export function computePositionStatus(
         distanceToHighPct,
         distanceToLowPct,
     };
-}
-
-/**
- * PositionStatusSummary의 aria-label 문구. buildAriaLabel(positionBuildingNotes.ts)과
- * 동일 스타일 — formatSignedUsd/formatSignedPercent를 그대로 재사용해 화면에 보이는
- * 텍스트와 aria-label 문구가 같은 포맷터를 거치게 하고(드리프트 방지) sub-$1 자산도
- * dynamicDecimals로 안전하게 표시한다.
- */
-export function buildPositionStatusAriaLabel(
-    status: PositionStatus,
-    avgDisplay: string,
-    quantityDisplay: string
-): string {
-    return (
-        `내 포지션: 평단 ${avgDisplay}, 수량 ${quantityDisplay}, ` +
-        `평가손익 ${formatSignedUsd(status.unrealizedPnl)}, ` +
-        `수익률 ${formatSignedPercent(status.returnPct)}, ` +
-        `현재가는 최근 범위의 ${status.rangePositionPct.toFixed(0)}% 지점, ` +
-        `최근 고점까지 ${formatSignedPercent(status.distanceToHighPct)}, ` +
-        `최근 저점까지 ${formatSignedPercent(status.distanceToLowPct)}`
-    );
 }

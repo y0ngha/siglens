@@ -12,7 +12,6 @@ export {
 export { computeVolumeByBand } from './lib/volumeByBand';
 export {
     computePositionStatus,
-    buildPositionStatusAriaLabel,
     type PositionStatus,
     type PositionStatusInputs,
 } from './lib/positionStatus';

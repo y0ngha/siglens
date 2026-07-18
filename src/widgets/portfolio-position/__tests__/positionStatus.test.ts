@@ -1,8 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-    buildPositionStatusAriaLabel,
     computePositionStatus,
-    type PositionStatus,
     type PositionStatusInputs,
 } from '../lib/positionStatus';
 
@@ -81,20 +79,5 @@ describe('computePositionStatus', () => {
 
     it('current가 비유한값이면 null을 전파한다', () => {
         expect(computePositionStatus(inputs({ current: NaN }))).toBeNull();
-    });
-});
-
-describe('buildPositionStatusAriaLabel', () => {
-    it('평단·수량 표시 문자열과 계산된 손익/수익률/범위/거리를 모두 포함한다', () => {
-        const status = computePositionStatus(inputs()) as PositionStatus;
-        const label = buildPositionStatusAriaLabel(status, '$150', '10주');
-
-        expect(label).toContain('평단 $150');
-        expect(label).toContain('수량 10주');
-        expect(label).toContain('평가손익 +$300.00');
-        expect(label).toContain('수익률 +20.0%');
-        expect(label).toContain('최근 범위의 80% 지점');
-        expect(label).toContain('최근 고점까지 +11.1%');
-        expect(label).toContain('최근 저점까지 -44.4%');
     });
 });
