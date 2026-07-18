@@ -1035,7 +1035,15 @@ describe('useAnalysis', () => {
             expect(result.current.isPersonalized).toBe(true);
         });
 
-        it('submitted + personalized: true, poll이 error를 반환하면 isPersonalized는 false로 유지된다', async () => {
+        it('submitted + personalized: true인 job의 폴링이 error로 끝나면 personalized 배지가 노출되지 않는다', async () => {
+            // 이 동작은 'submitted' 시점에 이미 isPersonalized가 false로 설정되고
+            // poll 'done' 전까지 아무도 true로 바꾸지 않기 때문에 성립한다 —
+            // 즉 이 테스트는 end-to-end 동작(에러로 끝난 폴링에는 personalized
+            // 배지가 뜨지 않는다)을 검증하는 것이지, error/catch 분기의
+            // setIsPersonalized(false) 리셋 메커니즘 자체를 lock하는 것은 아니다.
+            // 그 리셋들은 향후 변경으로 poll 진입 전에 플래그가 true가 되는
+            // 경로가 생기더라도 stale over-claim을 남기지 않기 위한
+            // defense-in-depth다.
             mockSubmit.mockResolvedValue({
                 status: 'submitted',
                 jobId: 'job-personalized-2',

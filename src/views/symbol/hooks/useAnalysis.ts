@@ -546,6 +546,10 @@ export function useAnalysis({
                                 ? "죄송합니다. AI 서버가 불안정합니다. 잠시 후 다시 시도해 주세요. 반복해서 발생할 경우 하단 '오류 제보하기'를 이용해 주세요."
                                 : result.error;
                         setPollError(errorMessage);
+                        // defensive: for the current flow the flag is already false
+                        // entering any poll (set false on 'submitted'); reset again
+                        // on failure so a future change that sets it earlier can't
+                        // leave a stale over-claim.
                         setIsPersonalized(false);
                         if (lastForceRef.current) {
                             void releaseReanalyzeCooldown(
@@ -562,6 +566,10 @@ export function useAnalysis({
                     if (cancelled) break;
                     currentJobIdRef.current = null;
                     setPollError('분석 결과 조회에 실패했습니다.');
+                    // defensive: for the current flow the flag is already false
+                    // entering any poll (set false on 'submitted'); reset again
+                    // on failure so a future change that sets it earlier can't
+                    // leave a stale over-claim.
                     setIsPersonalized(false);
                     if (lastForceRef.current) {
                         void releaseReanalyzeCooldown(
@@ -690,15 +698,19 @@ export function useAnalysis({
         const symbolChanged = symbol !== prevHoldingSymbolRef.current;
 
         if (!hasHandledHoldingHydrationRef.current || symbolChanged) {
+            // On a soft symbol nav (the hook persists across nav — ChartContent is
+            // keyed only by timeframe, not symbol) the previous symbol's personalized
+            // flag must not leak onto the new symbol's no-bucket SSR seed, so reset it.
+            // Guard on symbolChanged ONLY: the first-hydration case needs no reset
+            // (isPersonalized already initializes false), and resetting there would
+            // race the tier-hydration mount re-submit — a warm personalized 'cached'
+            // result can land BEFORE the holdings query resolves, and an unconditional
+            // reset here would then wrongly clear the correct badge with no re-submit
+            // to restore it.
+            if (symbolChanged) setIsPersonalized(false);
             hasHandledHoldingHydrationRef.current = true;
             prevHoldingSymbolRef.current = symbol;
             prevHoldingAvgPriceRef.current = holdingAvgPrice;
-            // symbol이 바뀌면 화면은 새 symbol의 SSR seed(공유 no-bucket peek —
-            // 절대 personalized일 수 없다)로 돌아가 있다가 fresh submit이
-            // 도착해야 personalized로 갱신된다. 이 ref/훅이 리마운트 없이
-            // 유지되는 경로(soft nav)에서 이전 symbol의 isPersonalized=true가
-            // 새 symbol의 base 분석 위로 새어 나가지 않도록 여기서 되돌린다.
-            setIsPersonalized(false);
             return;
         }
 
