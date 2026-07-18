@@ -16,6 +16,8 @@ const RESERVED_FIRST_SEGMENTS = new Set([
     'economy',
     'market',
     'news',
+    'onboarding',
+    'portfolio',
     'share',
     'backtesting',
     'terms',
@@ -89,7 +91,14 @@ export function proxy(req: NextRequest): NextResponse {
     }
 
     if (AUTH_REQUIRED_PATHS.some(p => pathname.startsWith(p)) && !hasSession) {
-        return NextResponse.redirect(new URL('/login', req.url));
+        // page-level guards (e.g. `PortfolioGuard`, `OnboardingGuard`) redirect
+        // unauthenticated visitors to `/login?next=<path>` so login returns them
+        // to where they were headed — the proxy's forward guard fires first for
+        // these same paths, so it must preserve `next=` too, or a guest hitting
+        // `/portfolio` directly loses the return path entirely.
+        const loginUrl = new URL('/login', req.url);
+        loginUrl.searchParams.set('next', pathname);
+        return NextResponse.redirect(loginUrl);
     }
 
     return NextResponse.next();
@@ -102,7 +111,7 @@ const GUEST_ONLY_PATHS = new Set([
     '/reset-password',
 ]);
 
-const AUTH_REQUIRED_PATHS = ['/account'];
+const AUTH_REQUIRED_PATHS = ['/account', '/portfolio'];
 
 export const config = {
     matcher: [

@@ -305,6 +305,32 @@ function TrendBadge({ trend }: TrendBadgeProps) {
     );
 }
 
+/**
+ * "내 평단 기준으로 분석했어요" 투명성 배지 — personalized-analysis-by-position-bucket
+ * spec, Subsystem C. 서버(`submitAnalysisAction`)가 THIS 제출을 실제로 포지션
+ * 버킷 캐시 키(`:pos=<bucket>`)로 조회/제출했을 때만 렌더된다(호출부 게이트:
+ * `isPersonalized` prop — 서버-authoritative 플래그, `useAnalysis`가
+ * `submitAnalysisAction`의 응답을 그대로 미러링해 threading한다).
+ *
+ * 과거에는 `tier !== 'free' && holding != null`(홀딩의 단순 존재 여부)로
+ * 게이트했으나, 4건의 독립 사전-PR 감사에서 동일한 정직성 문제가 지적됐다: 홀딩이
+ * 있어도 (a) 신선한 회원 로드 시 tier hydration이 끝나기 전까지 화면엔 아직
+ * SSR의 공유 no-bucket shell이 떠 있거나, (b) 서버 쿼트 읽기 실패/평단 값
+ * degenerate로 `resolveHoldingPositionBucket`이 `undefined`(no-bucket)로
+ * degrade하는 경우, 배지가 "개인화됐다"고 거짓 주장을 하는 두 창이 있었다.
+ * 색상만으로 의미를 전달하지 않도록 실제 문구를 포함한 텍스트 배지로 구성했다.
+ */
+function PersonalizedAnalysisBadge() {
+    return (
+        <span
+            data-testid="personalized-analysis-badge"
+            className="border-primary-400/40 bg-primary-400/10 text-primary-300 inline-flex items-center gap-1 rounded px-2 py-0.5 text-xs font-medium whitespace-nowrap"
+        >
+            내 평단 기준으로 분석했어요
+        </span>
+    );
+}
+
 interface ChevronIconProps {
     isOpen: boolean;
 }
@@ -768,6 +794,14 @@ interface AnalysisPanelProps {
      * "회원가입 후 N개 스킬" 문구에 사용한다.
      */
     skillCount?: number;
+    /**
+     * 서버(`submitAnalysisAction`)가 THIS 제출에서 실제로 개인화(포지션 버킷)
+     * 캐시 키를 사용했는지 여부 — personalized-analysis 투명성 배지(§FIX 2)의
+     * 유일한 게이트. `useAnalysis`가 `submitAnalysisAction`의 `personalized`
+     * 응답 필드를 그대로 threading한다. 미전달 시 `false`로 취급해 배지를 숨긴다
+     * (하위 호환 — 이 prop을 모르는 기존 호출부/테스트는 안전하게 배지 없음).
+     */
+    isPersonalized?: boolean;
 }
 
 export function AnalysisPanel({
@@ -788,6 +822,7 @@ export function AnalysisPanel({
     lockedInfoDepth = [],
     indicatorCount = 0,
     skillCount = 0,
+    isPersonalized = false,
 }: AnalysisPanelProps) {
     const [copyState, setCopyState] = useState<'idle' | 'copied' | 'failed'>(
         'idle'
@@ -809,6 +844,14 @@ export function AnalysisPanel({
     // 신뢰도로 오표시하는 것을 막는다.
     const hasLockedConfidence =
         hasLockedDetails && lockedInfoDepth.includes('confidence');
+    // personalized-analysis 투명성 배지(§FIX 2) 노출 게이트. 서버-authoritative
+    // `isPersonalized` 플래그가 유일한 진실값이다 — 회원의 홀딩 존재 여부가 아니라
+    // 서버가 THIS 제출에서 실제로 포지션 버킷 캐시 키를 썼는지만 본다(위
+    // `PersonalizedAnalysisBadge` 주석 참조). isFallbackAnalysis도 함께
+    // 배제한다 — 서사가 없는 placeholder 응답에 "내 평단 기준으로 분석했어요"라고
+    // 말하는 건 오해를 준다(TrendBadge·summary와 동일한 신호로 가드).
+    const showPersonalizedBadge =
+        isPersonalized && !isFallbackAnalysis(analysis);
     const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const resetCopyStateLater = (): void => {
@@ -954,10 +997,11 @@ export function AnalysisPanel({
                     )}
                 </div>
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-2 sm:justify-end">
+                    {showPersonalizedBadge && <PersonalizedAnalysisBadge />}
                     {analysis.analyzedAt && (
                         <time
                             dateTime={analysis.analyzedAt}
-                            className="text-secondary-500 text-xs whitespace-nowrap"
+                            className="text-secondary-400 text-xs whitespace-nowrap"
                         >
                             {formatAnalyzedAt(analysis.analyzedAt)}
                         </time>
@@ -969,7 +1013,7 @@ export function AnalysisPanel({
                             disabled={showProgress || isAnalyzing}
                             className={cn(
                                 // [공통 스타일]
-                                'focus-visible:ring-primary-500 rounded border px-2 py-1 text-xs font-medium whitespace-nowrap transition-colors focus-visible:ring-1 focus-visible:outline-none',
+                                'focus-visible:ring-primary-500 min-h-11 touch-manipulation rounded border px-2 py-1 text-xs font-medium whitespace-nowrap transition-colors focus-visible:ring-1 focus-visible:outline-none',
 
                                 // [1. 로딩/분석 중 상태]
                                 (showProgress || isAnalyzing) &&

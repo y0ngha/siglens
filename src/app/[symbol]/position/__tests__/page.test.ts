@@ -1,0 +1,276 @@
+/**
+ * `[symbol]/position` page tests — mirrors overall/fear-greed sibling patterns:
+ * revalidate literal, generateMetadata branches (always noindex), body guards
+ * (invalid ticker / unresolvable-degraded / missing asset → notFound), the
+ * static-path server data composition (getBarsStatic → quantize →
+ * buildTechnicalFacts, never getBarsAction/cookies), and an SSR crawl-safety
+ * check that no personalized marker (★/평단/수익률) ever appears in the
+ * server-rendered shell.
+ */
+
+vi.mock('@/entities/ticker', () => ({
+    buildDisplayName: vi.fn((assetInfo: { name: string }) => assetInfo.name),
+    getAssetInfoResilient: vi.fn(),
+}));
+vi.mock('@/entities/ticker/api', () => ({
+    isTabAllowedForSymbol: vi.fn().mockResolvedValue(true),
+}));
+vi.mock('@/entities/bars', () => ({
+    getBarsStatic: vi.fn(),
+    quantizeBarsDataToLastClosed: vi.fn((data: unknown) => data),
+}));
+vi.mock('@/views/symbol', () => ({
+    SymbolPageHeading: ({ children }: { children: React.ReactNode }) =>
+        children,
+}));
+vi.mock('@/widgets/portfolio-position', () => ({
+    PositionTabContent: () => null,
+}));
+vi.mock('next/navigation', () => ({
+    notFound: vi.fn(() => {
+        throw new Error('NEXT_NOT_FOUND');
+    }),
+}));
+
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import {
+    generateMetadata,
+    default as PositionPage,
+    revalidate,
+} from '@/app/[symbol]/position/page';
+import { getAssetInfoResilient } from '@/entities/ticker';
+import { isTabAllowedForSymbol } from '@/entities/ticker/api';
+import { getBarsStatic, quantizeBarsDataToLastClosed } from '@/entities/bars';
+import { PositionTabContent } from '@/widgets/portfolio-position';
+import { findElementByType } from '@/__tests__/utils/findElementByType';
+import type { MockedFunction } from 'vitest';
+
+const mockGetAssetInfoResilient = getAssetInfoResilient as MockedFunction<
+    typeof getAssetInfoResilient
+>;
+const mockIsTabAllowedForSymbol = isTabAllowedForSymbol as MockedFunction<
+    typeof isTabAllowedForSymbol
+>;
+const mockGetBarsStatic = getBarsStatic as MockedFunction<typeof getBarsStatic>;
+const mockQuantize = quantizeBarsDataToLastClosed as MockedFunction<
+    typeof quantizeBarsDataToLastClosed
+>;
+
+const AAPL_ASSET_INFO = {
+    symbol: 'AAPL',
+    name: 'Apple Inc.',
+    koreanName: '애플',
+    fmpSymbol: 'AAPL',
+};
+
+// bars 2개 이상 + prev.close != 0 이어야 buildTechnicalFacts가 null을 반환하지 않는다.
+const RAW_BARS = {
+    bars: [
+        { time: 1, open: 90, high: 95, low: 85, close: 90, volume: 1 },
+        { time: 2, open: 100, high: 110, low: 95, close: 100, volume: 1 },
+    ],
+    indicators: { rsi: [null, null], macd: [{ histogram: null }] },
+};
+
+describe('Position page ISR route config', () => {
+    it('exports revalidate = 43200 (literal — required for Next.js static analysis)', () => {
+        // MISTAKES §15: route segment config must be a literal, not an imported constant
+        expect(revalidate).toBe(43200);
+    });
+});
+
+describe('generateMetadata', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mockGetAssetInfoResilient.mockResolvedValue({
+            assetInfo: AAPL_ASSET_INFO,
+            degraded: false,
+        } as never);
+        mockIsTabAllowedForSymbol.mockResolvedValue(true);
+    });
+
+    it('returns noindex for an invalid ticker shape', async () => {
+        const metadata = await generateMetadata({
+            params: Promise.resolve({ symbol: '!!!invalid' }),
+        });
+        expect(metadata.robots).toEqual({ index: false, follow: false });
+    });
+
+    it('returns noindex when infra-degraded (unresolvable)', async () => {
+        mockGetAssetInfoResilient.mockResolvedValue({
+            assetInfo: null,
+            degraded: true,
+        } as never);
+        const metadata = await generateMetadata({
+            params: Promise.resolve({ symbol: 'aapl' }),
+        });
+        expect(metadata.robots).toEqual({ index: false, follow: false });
+    });
+
+    it('returns noindex when the tab is not allowed for this market profile', async () => {
+        mockIsTabAllowedForSymbol.mockResolvedValue(false);
+        const metadata = await generateMetadata({
+            params: Promise.resolve({ symbol: 'aapl' }),
+        });
+        expect(metadata.robots).toEqual({ index: false, follow: false });
+    });
+
+    it('is ALWAYS noindex for a valid, resolvable symbol — this tab is a personalized surface (design §배치 1)', async () => {
+        const metadata = await generateMetadata({
+            params: Promise.resolve({ symbol: 'aapl' }),
+        });
+        expect(metadata.robots).toEqual({ index: false, follow: false });
+        expect(metadata.title).toBe('Apple Inc. 내 위치');
+        expect(metadata.alternates).toEqual({
+            canonical: 'https://siglens.io/AAPL/position',
+        });
+    });
+});
+
+describe('PositionPage body guards', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mockIsTabAllowedForSymbol.mockResolvedValue(true);
+        mockGetBarsStatic.mockResolvedValue(RAW_BARS as never);
+        mockQuantize.mockImplementation((data: unknown) => data as never);
+    });
+
+    it('notFound() for an invalid ticker shape', async () => {
+        await expect(
+            PositionPage({ params: Promise.resolve({ symbol: '!!!' }) })
+        ).rejects.toThrow('NEXT_NOT_FOUND');
+    });
+
+    it('notFound() when unresolvable-degraded (digit-first symbol, both sources down)', async () => {
+        mockGetAssetInfoResilient.mockResolvedValue({
+            assetInfo: null,
+            degraded: true,
+        } as never);
+        await expect(
+            PositionPage({ params: Promise.resolve({ symbol: '1inchusd' }) })
+        ).rejects.toThrow('NEXT_NOT_FOUND');
+    });
+
+    it('notFound() when assetInfo resolves to null (non-degraded, real 404)', async () => {
+        mockGetAssetInfoResilient.mockResolvedValue({
+            assetInfo: null,
+            degraded: false,
+        } as never);
+        await expect(
+            PositionPage({ params: Promise.resolve({ symbol: 'aapl' }) })
+        ).rejects.toThrow('NEXT_NOT_FOUND');
+    });
+
+    it('notFound() when the tab is not allowed for this market profile', async () => {
+        mockGetAssetInfoResilient.mockResolvedValue({
+            assetInfo: AAPL_ASSET_INFO,
+            degraded: false,
+        } as never);
+        mockIsTabAllowedForSymbol.mockResolvedValue(false);
+        await expect(
+            PositionPage({ params: Promise.resolve({ symbol: 'aapl' }) })
+        ).rejects.toThrow('NEXT_NOT_FOUND');
+    });
+});
+
+describe('PositionPage server data path (static, cookies-free)', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mockGetAssetInfoResilient.mockResolvedValue({
+            assetInfo: AAPL_ASSET_INFO,
+            degraded: false,
+        } as never);
+        mockIsTabAllowedForSymbol.mockResolvedValue(true);
+    });
+
+    it('uses getBarsStatic (never getBarsAction) → quantizeBarsDataToLastClosed → buildTechnicalFacts, and threads low/high/lastClose into PositionTabContent', async () => {
+        mockGetBarsStatic.mockResolvedValue(RAW_BARS as never);
+        mockQuantize.mockReturnValue(RAW_BARS as never);
+
+        const tree = await PositionPage({
+            params: Promise.resolve({ symbol: 'aapl' }),
+        });
+
+        expect(mockGetBarsStatic).toHaveBeenCalledWith('AAPL', '1Day', 'AAPL');
+        expect(mockQuantize).toHaveBeenCalled();
+
+        const island = findElementByType(tree, PositionTabContent);
+        expect(island).not.toBeNull();
+        const props = island?.props as {
+            symbol: string;
+            low52w: number | null;
+            high52w: number | null;
+            lastClose: number | null;
+        };
+        expect(props.symbol).toBe('AAPL');
+        expect(props.low52w).toBe(85);
+        expect(props.high52w).toBe(110);
+        expect(props.lastClose).toBe(100);
+    });
+
+    it('degrades to null low/high/lastClose (never throws) when getBarsStatic fails', async () => {
+        mockGetBarsStatic.mockRejectedValue(new Error('FMP down'));
+
+        const tree = await PositionPage({
+            params: Promise.resolve({ symbol: 'aapl' }),
+        });
+
+        const island = findElementByType(tree, PositionTabContent);
+        const props = island?.props as {
+            low52w: number | null;
+            high52w: number | null;
+            lastClose: number | null;
+        };
+        expect(props.low52w).toBeNull();
+        expect(props.high52w).toBeNull();
+        expect(props.lastClose).toBeNull();
+    });
+
+    it('degrades to null when buildTechnicalFacts cannot compute (e.g. <2 bars)', async () => {
+        mockGetBarsStatic.mockResolvedValue({
+            bars: [{ time: 1, open: 1, high: 1, low: 1, close: 1, volume: 1 }],
+            indicators: {},
+        } as never);
+        mockQuantize.mockImplementation((data: unknown) => data as never);
+
+        const tree = await PositionPage({
+            params: Promise.resolve({ symbol: 'aapl' }),
+        });
+
+        const island = findElementByType(tree, PositionTabContent);
+        const props = island?.props as { low52w: number | null };
+        expect(props.low52w).toBeNull();
+    });
+});
+
+describe('PositionPage — SSR crawl safety (no personalized data in the server shell)', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mockGetAssetInfoResilient.mockResolvedValue({
+            assetInfo: AAPL_ASSET_INFO,
+            degraded: false,
+        } as never);
+        mockIsTabAllowedForSymbol.mockResolvedValue(true);
+        mockGetBarsStatic.mockResolvedValue(RAW_BARS as never);
+        mockQuantize.mockReturnValue(RAW_BARS as never);
+    });
+
+    it('the server-rendered element tree never contains ★/평단/수익률 — those only ever render inside the client-only PositionTabContent', async () => {
+        const tree = await PositionPage({
+            params: Promise.resolve({ symbol: 'aapl' }),
+        });
+        // Functions (component refs) are dropped by JSON.stringify — this only
+        // inspects the static string content the RSC itself produced.
+        const serialized = JSON.stringify(tree);
+        expect(serialized).not.toContain('★');
+        expect(serialized).not.toContain('평단');
+        expect(serialized).not.toContain('수익률');
+    });
+
+    // ISR cold-gen-500 규약(§Task): getBarsAction은 cookies()를 읽어 request-scope
+    // 밖(unstable_cache 내부/이 vitest 노드 환경)에서 호출되면 즉시 throw한다.
+    // 위 "server data path" describe 블록의 모든 케이스가 getBarsStatic만 mock한
+    // 채로(getBarsAction은 손대지 않은 채) 정상적으로 resolve/degrade하는 것 자체가
+    // 이 셸이 cookies()/connection()을 요구하는 경로를 타지 않는다는 행동 증거다 —
+    // 소스 grep 단언은 구현 세부 검사라 이 레포 컨벤션상 지양한다(financials 선례).
+});

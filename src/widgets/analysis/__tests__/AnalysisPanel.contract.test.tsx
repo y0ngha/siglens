@@ -25,6 +25,19 @@ vi.mock('@/shared/lib/formatAnalyzedAt', () => ({
 vi.mock('@/entities/analysis', () => ({
     isAnalysisStale: () => false,
 }));
+// personalized-analysis 투명성 배지(§FIX 2)가 소비하는 홀딩 소스 — 실제 구현은
+// react-query 기반이라 QueryClientProvider 없는 이 테스트 트리에서 그대로
+// 렌더하면 크래시한다. 이 파일의 관심사(코어 출력 계약)와 무관하므로
+// "홀딩 없음"으로 고정한 no-op 목으로 대체한다.
+vi.mock('@/features/portfolio-holding', () => ({
+    useSymbolHolding: () => ({
+        holding: null,
+        isHydrated: true,
+        isLoading: false,
+        isError: false,
+        save: {} as never,
+    }),
+}));
 vi.mock('../AnalysisProgress', () => ({
     AnalysisProgress: () => <div data-testid="analysis-progress" />,
 }));

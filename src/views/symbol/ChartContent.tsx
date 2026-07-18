@@ -165,6 +165,7 @@ export function ChartContent({
         handleReanalyze,
         reanalyzeCooldownMs,
         cooldownNotice,
+        isPersonalized,
     } = useAnalysis({
         symbol,
         companyName,
@@ -278,6 +279,7 @@ export function ChartContent({
                     indicatorCount={indicatorCount}
                     skillCount={skillCount}
                     lockedInfoDepth={lockedInfoDepth}
+                    isPersonalized={isPersonalized}
                     isFreeUser={isFreeUser}
                 />
                 {/* 서사가 있어도(캐시된 분석을 표시 중) 봇 판정이면 안내를 additive로
@@ -309,6 +311,7 @@ export function ChartContent({
         indicatorCount,
         skillCount,
         lockedInfoDepth,
+        isPersonalized,
         isFreeUser,
     ]);
 

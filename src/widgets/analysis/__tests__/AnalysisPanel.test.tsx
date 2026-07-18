@@ -72,6 +72,7 @@ import type {
     StrategyResult,
 } from '@y0ngha/siglens-core';
 
+import { FALLBACK_ANALYSIS } from '@/entities/chat-message';
 import { AnalysisPanel } from '../AnalysisPanel';
 
 function makeAnalysis(
@@ -1346,5 +1347,79 @@ describe('AnalysisPanel — missing/partial field resilience', () => {
         // 섹션 헤더 '추세선' 1 + fallback 라벨 '추세선' 1 = 정확히 2개.
         const trendlineTexts = screen.getAllByText('추세선');
         expect(trendlineTexts.length).toBe(2);
+    });
+});
+
+describe('AnalysisPanel — personalized-analysis 투명성 배지 (§FIX 2)', () => {
+    // 4건의 독립 사전-PR 감사가 지적한 정직성 갭 수정: 배지는 이제 홀딩 존재
+    // 여부(tier + useSymbolHolding)가 아니라 서버-authoritative `isPersonalized`
+    // prop 하나로만 게이트된다 — submitAnalysisAction이 THIS 제출에서 실제로
+    // 포지션 버킷 캐시 키를 썼는지의 유일한 진실값이다.
+    it('isPersonalized=true + 서사가 있는 분석이면 배지를 노출한다', () => {
+        render(
+            <AnalysisPanel
+                symbol="AAPL"
+                analysis={makeAnalysis()}
+                keyLevels={EMPTY_KEY_LEVELS}
+                timeframe="1Day"
+                isPersonalized
+            />
+        );
+
+        expect(
+            screen.getByTestId('personalized-analysis-badge')
+        ).toBeInTheDocument();
+        expect(
+            screen.getByText('내 평단 기준으로 분석했어요')
+        ).toBeInTheDocument();
+    });
+
+    it('isPersonalized=false면 배지를 숨긴다', () => {
+        render(
+            <AnalysisPanel
+                symbol="AAPL"
+                analysis={makeAnalysis()}
+                keyLevels={EMPTY_KEY_LEVELS}
+                timeframe="1Day"
+                isPersonalized={false}
+            />
+        );
+
+        expect(
+            screen.queryByTestId('personalized-analysis-badge')
+        ).not.toBeInTheDocument();
+    });
+
+    it('isPersonalized prop 미전달(하위 호환 기본값 false)이면 배지를 숨긴다', () => {
+        render(
+            <AnalysisPanel
+                symbol="AAPL"
+                analysis={makeAnalysis()}
+                keyLevels={EMPTY_KEY_LEVELS}
+                timeframe="1Day"
+                // isPersonalized prop 미전달 — 이 prop을 모르는 기존 호출부/테스트와
+                // 동일하게 기본값 false로 처리되어 배지가 숨겨진다.
+            />
+        );
+
+        expect(
+            screen.queryByTestId('personalized-analysis-badge')
+        ).not.toBeInTheDocument();
+    });
+
+    it('isPersonalized=true여도 fallback(서사 없음) 분석이면 배지를 숨긴다', () => {
+        render(
+            <AnalysisPanel
+                symbol="AAPL"
+                analysis={FALLBACK_ANALYSIS}
+                keyLevels={EMPTY_KEY_LEVELS}
+                timeframe="1Day"
+                isPersonalized
+            />
+        );
+
+        expect(
+            screen.queryByTestId('personalized-analysis-badge')
+        ).not.toBeInTheDocument();
     });
 });

@@ -3,15 +3,21 @@
 import { headers } from 'next/headers';
 import {
     submitAnalysis,
+    type MarketDataProvider,
     type ModelId,
+    type PositionBucket,
     type SubmitAnalysisGatedResult,
+    type Tier,
     type Timeframe,
 } from '@y0ngha/siglens-core';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
+import { getDatabaseClient } from '@/shared/db/client';
+import { DrizzlePortfolioRepository } from '@/entities/portfolio/api';
 import {
     resolveTierAndByok,
     resolveTierOnly,
     resolveReasoning,
+    resolvePositionBucket,
     buildGateError,
 } from '@/shared/lib/byokGate';
 import { isBot } from '@/shared/api/isBot';
@@ -22,10 +28,78 @@ import { sessionSpecFor } from '@/shared/api/market/sessionSpecFor';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveAssetClass';
 import { getDescriptor } from '@/shared/config/marketProfile';
 
-/** Final return type — core's gated result + our siglens-side gate errors. */
+/**
+ * Final return type — core's gated result + our siglens-side gate errors.
+ *
+ * `personalized` is a server-authoritative flag threaded alongside the gated
+ * result: it tells the client whether THIS submission actually targeted a
+ * personalized (`:pos=<bucket>`) cache key (`positionBucket !== undefined`),
+ * as opposed to merely "this member happens to have a holding". The client
+ * badge (`AnalysisPanel`'s `personalized-analysis-badge`) must gate on this,
+ * not on holding existence — see `resolveHoldingPositionBucket` for why a
+ * holding can still degrade to no-bucket (quote-read failure, degenerate
+ * avg price, free tier, etc). Optional because `AnalysisGateBlockedResult`
+ * (the blocked-gate branch) never carries it.
+ */
 export type SubmitAnalysisActionResult =
-    | SubmitAnalysisGatedResult
+    | (SubmitAnalysisGatedResult & { personalized?: boolean })
     | AnalysisGateBlockedResult;
+
+/**
+ * Server-reads the member's holding for `symbol` (if any) plus the current
+ * cached price, then derives a coarse position bucket via
+ * `resolvePositionBucket` (personalized-analysis-by-position-bucket spec,
+ * Subsystem C). The average price NEVER comes from the client — it is
+ * re-read from the DB on every call, which is the whole point: a
+ * client-passed avg would be spoofable and would poison the shared analysis
+ * cache (the bucket folds into `buildAnalysisCacheKey`).
+ *
+ * Skips the DB/price reads entirely for anonymous or free-tier callers (free
+ * tier never gets a bucket — mirrors `resolveReasoning`), and degrades to
+ * `undefined` (no bucket, i.e. the shared/base analysis) on ANY failure —
+ * a holding-read or price-read error must never block the underlying
+ * analysis submission.
+ *
+ * The current price comes from `marketDataProvider.getQuote` — the same
+ * Redis-cached quote (`quote:<SYMBOL>`, session-aware TTL) that
+ * `CachedMarketDataProvider` already serves for bars/today-quote reads, so
+ * this is normally a warm cache hit rather than a fresh FMP call. It is a
+ * real added dependency on every member-with-holding submit (even one that
+ * would otherwise be a pure cache hit on the analysis itself), but reusing
+ * the existing cached quote keeps the cost bounded. Note this is a close
+ * PROXY, not a guaranteed match: the quote cache can drift intraday from the
+ * analysis snapshot's own last-bar close (different TTLs/fetch times), so the
+ * position bucket can occasionally disagree with the price a user sees in
+ * the snapshot by a small margin. Acceptable for a coarse ~5-band bucket.
+ */
+async function resolveHoldingPositionBucket(
+    userId: string | null,
+    tier: Tier,
+    symbol: string,
+    fmpSymbol: string | undefined,
+    marketDataProvider: MarketDataProvider
+): Promise<PositionBucket | undefined> {
+    if (tier === 'free' || userId === null) return undefined;
+    try {
+        const { db } = getDatabaseClient();
+        const holding = await new DrizzlePortfolioRepository(
+            db
+        ).findByUserAndSymbol(userId, symbol.toUpperCase());
+        if (holding === null) return undefined;
+
+        const avgPrice = Number(holding.averagePrice);
+        const quote = await marketDataProvider.getQuote(fmpSymbol ?? symbol);
+        const currentPrice = quote?.price ?? null;
+
+        return resolvePositionBucket(tier, avgPrice, currentPrice);
+    } catch (error) {
+        console.error(
+            '[submitAnalysisAction] position bucket resolution failed, degrading to no-bucket:',
+            error
+        );
+        return undefined;
+    }
+}
 
 /** 서버사이드 tier + BYOK 게이트 후 core의 submitAnalysis에 위임. */
 export async function submitAnalysisAction(
@@ -66,7 +140,31 @@ export async function submitAnalysisAction(
             const tier = await resolveTierOnly(userId);
             const { e2eCachedTechnical } =
                 await import('@/shared/api/e2eAnalysisStub');
-            return e2eCachedTechnical(tier);
+            // The E2E stub returns a fixture BEFORE any bucket is ever
+            // computed (submitAnalysis/resolveHoldingPositionBucket never
+            // runs on this branch), so `personalized` can't be derived the
+            // normal way here. To keep the badge wiring exercisable under
+            // E2E without lying, we approximate it the same way
+            // `resolveHoldingPositionBucket` gates (tier !== 'free' and a
+            // holding exists) — the actual bucket/quote resolution is
+            // irrelevant to E2E since the fixture never reflects it anyway.
+            let personalized = false;
+            if (tier !== 'free' && userId !== null) {
+                try {
+                    const { db } = getDatabaseClient();
+                    const holding = await new DrizzlePortfolioRepository(
+                        db
+                    ).findByUserAndSymbol(userId, symbol.toUpperCase());
+                    personalized = holding !== null;
+                } catch (error) {
+                    console.error(
+                        '[submitAnalysisAction] E2E personalized-flag holding read failed, degrading to false:',
+                        error
+                    );
+                    personalized = false;
+                }
+            }
+            return { ...e2eCachedTechnical(tier), personalized };
         }
 
         const requestHeaders = await headers();
@@ -81,7 +179,49 @@ export async function submitAnalysisAction(
 
         if (modelId === undefined) {
             const tier = await resolveTierOnly(userId);
-            return await submitAnalysis(
+            const positionBucket = await resolveHoldingPositionBucket(
+                userId,
+                tier,
+                symbol,
+                fmpSymbol,
+                marketDataProvider
+            );
+            return {
+                ...(await submitAnalysis(
+                    symbol,
+                    companyName,
+                    timeframe,
+                    force,
+                    fmpSymbol,
+                    {
+                        modelId,
+                        skipEnqueueIfMiss,
+                        marketDataProvider,
+                        assetClass,
+                        tierContext: { userId, tier },
+                        reasoning: resolveReasoning(tier, reasoning),
+                        positionBucket,
+                    }
+                )),
+                personalized: positionBucket !== undefined,
+            };
+        }
+
+        const gate = await resolveTierAndByok(userId, modelId);
+        if (gate.kind === 'blocked') {
+            return { status: 'error', error: gate.error };
+        }
+
+        const positionBucket = await resolveHoldingPositionBucket(
+            userId,
+            gate.tier,
+            symbol,
+            fmpSymbol,
+            marketDataProvider
+        );
+
+        return {
+            ...(await submitAnalysis(
                 symbol,
                 companyName,
                 timeframe,
@@ -92,35 +232,16 @@ export async function submitAnalysisAction(
                     skipEnqueueIfMiss,
                     marketDataProvider,
                     assetClass,
-                    tierContext: { userId, tier },
-                    reasoning: resolveReasoning(tier, reasoning),
+                    tierContext: { userId, tier: gate.tier },
+                    reasoning: resolveReasoning(gate.tier, reasoning),
+                    positionBucket,
+                    ...(gate.userApiKey !== undefined
+                        ? { userApiKey: gate.userApiKey }
+                        : {}),
                 }
-            );
-        }
-
-        const gate = await resolveTierAndByok(userId, modelId);
-        if (gate.kind === 'blocked') {
-            return { status: 'error', error: gate.error };
-        }
-
-        return await submitAnalysis(
-            symbol,
-            companyName,
-            timeframe,
-            force,
-            fmpSymbol,
-            {
-                modelId,
-                skipEnqueueIfMiss,
-                marketDataProvider,
-                assetClass,
-                tierContext: { userId, tier: gate.tier },
-                reasoning: resolveReasoning(gate.tier, reasoning),
-                ...(gate.userApiKey !== undefined
-                    ? { userApiKey: gate.userApiKey }
-                    : {}),
-            }
-        );
+            )),
+            personalized: positionBucket !== undefined,
+        };
     } catch (err) {
         console.error('[submitAnalysisAction] unexpected error:', err);
         return { status: 'error', error: buildGateError('unexpected_error') };

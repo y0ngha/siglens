@@ -25,12 +25,44 @@ vi.mock('@/entities/auth/lib/getCurrentUser', () => ({
     getCurrentUser: vi.fn(),
 }));
 
+// Faithful in-line reimplementation of the real gate (real impl is bypassed —
+// this test file mocks the whole module) so tests can assert realistic
+// bucket derivations (e.g. a 10% gain → 'profit') without importing core.
+function fakeBucketize(avgPrice: number, currentPrice: number): string | null {
+    if (
+        !Number.isFinite(avgPrice) ||
+        !Number.isFinite(currentPrice) ||
+        avgPrice <= 0 ||
+        currentPrice <= 0
+    ) {
+        return null;
+    }
+    const r = (currentPrice - avgPrice) / avgPrice;
+    if (r >= 0.2) return 'deep-profit';
+    if (r >= 0.05) return 'profit';
+    if (r > -0.05) return 'near-breakeven';
+    if (r > -0.2) return 'loss';
+    return 'deep-loss';
+}
+
 vi.mock('@/shared/lib/byokGate', () => ({
     resolveTierAndByok: vi.fn(),
     resolveTierOnly: vi.fn(),
     resolveReasoning: vi.fn(
         (tier: string, clientReasoning?: boolean) =>
             tier !== 'free' && clientReasoning === true
+    ),
+    resolvePositionBucket: vi.fn(
+        (
+            tier: string,
+            avgPrice: number | null,
+            currentPrice: number | null
+        ) => {
+            if (tier === 'free' || avgPrice === null || currentPrice === null) {
+                return undefined;
+            }
+            return fakeBucketize(avgPrice, currentPrice) ?? undefined;
+        }
     ),
     buildGateError: vi.fn((code: string) => ({
         code,
@@ -44,6 +76,20 @@ vi.mock('@/shared/api/market/getCachedMarketDataProvider', () => ({
 
 vi.mock('@/entities/ticker/lib/resolveAssetClass', () => ({
     resolveMarketProfile: vi.fn().mockResolvedValue('us-equity'),
+}));
+
+vi.mock('@/shared/db/client', () => ({
+    getDatabaseClient: vi.fn(() => ({ db: {} })),
+}));
+
+const { mockFindByUserAndSymbol } = vi.hoisted(() => ({
+    mockFindByUserAndSymbol: vi.fn(),
+}));
+
+vi.mock('@/entities/portfolio/api', () => ({
+    DrizzlePortfolioRepository: vi.fn().mockImplementation(function () {
+        return { findByUserAndSymbol: mockFindByUserAndSymbol };
+    }),
 }));
 
 import { headers } from 'next/headers';
@@ -61,7 +107,10 @@ import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
 import { getCachedMarketDataProvider } from '@/shared/api/market/getCachedMarketDataProvider';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveAssetClass';
 
-const mockProvider = {} as import('@y0ngha/siglens-core').MarketDataProvider;
+const mockGetQuote = vi.fn();
+const mockProvider = {
+    getQuote: mockGetQuote,
+} as unknown as import('@y0ngha/siglens-core').MarketDataProvider;
 
 const mockHeaders = headers as MockedFunction<typeof headers>;
 
@@ -105,6 +154,10 @@ describe('submitAnalysisAction tier + BYOK gate', () => {
         mockSubmitAnalysis.mockResolvedValue(cachedResult);
         mockGetCurrentUser.mockResolvedValue(null);
         mockResolveTierOnly.mockResolvedValue('free');
+        // Default: no holding, no quote — most tests are unrelated to
+        // personalization and should see positionBucket stay undefined.
+        mockFindByUserAndSymbol.mockResolvedValue(null);
+        mockGetQuote.mockResolvedValue(null);
     });
 
     it('returns blocked result when gate.kind === "blocked"', async () => {
@@ -455,6 +508,235 @@ describe('submitAnalysisAction tier + BYOK gate', () => {
                 undefined,
                 expect.objectContaining({ assetClass: 'equity' })
             );
+        });
+    });
+
+    describe('positionBucket personalization (personalized-analysis-by-position-bucket spec, Subsystem C)', () => {
+        it('member with a profitable holding → submitAnalysis called with positionBucket: "profit"', async () => {
+            mockGetCurrentUser.mockResolvedValue({ id: 'u1' } as never);
+            mockResolveTierOnly.mockResolvedValue('member');
+            mockFindByUserAndSymbol.mockResolvedValue({
+                averagePrice: '100',
+            } as never);
+            mockGetQuote.mockResolvedValue({ price: 110 });
+
+            await submitAnalysisAction('AAPL', 'Apple', '1Day', false, '^AAPL');
+
+            expect(mockFindByUserAndSymbol).toHaveBeenCalledWith('u1', 'AAPL');
+            expect(mockGetQuote).toHaveBeenCalledWith('^AAPL');
+            expect(mockSubmitAnalysis).toHaveBeenCalledWith(
+                'AAPL',
+                'Apple',
+                '1Day',
+                false,
+                '^AAPL',
+                expect.objectContaining({ positionBucket: 'profit' })
+            );
+        });
+
+        it('free tier → no bucket, and never reads the holding/quote', async () => {
+            mockGetCurrentUser.mockResolvedValue({ id: 'u1' } as never);
+            mockResolveTierOnly.mockResolvedValue('free');
+
+            await submitAnalysisAction('AAPL', 'Apple', '1Day', false, '^AAPL');
+
+            expect(mockFindByUserAndSymbol).not.toHaveBeenCalled();
+            expect(mockGetQuote).not.toHaveBeenCalled();
+            expect(mockSubmitAnalysis).toHaveBeenCalledWith(
+                'AAPL',
+                'Apple',
+                '1Day',
+                false,
+                '^AAPL',
+                expect.objectContaining({ positionBucket: undefined })
+            );
+        });
+
+        it('no holding → no bucket, and skips the price read entirely', async () => {
+            mockGetCurrentUser.mockResolvedValue({ id: 'u1' } as never);
+            mockResolveTierOnly.mockResolvedValue('member');
+            mockFindByUserAndSymbol.mockResolvedValue(null);
+
+            await submitAnalysisAction('AAPL', 'Apple', '1Day', false, '^AAPL');
+
+            expect(mockFindByUserAndSymbol).toHaveBeenCalledWith('u1', 'AAPL');
+            expect(mockGetQuote).not.toHaveBeenCalled();
+            expect(mockSubmitAnalysis).toHaveBeenCalledWith(
+                'AAPL',
+                'Apple',
+                '1Day',
+                false,
+                '^AAPL',
+                expect.objectContaining({ positionBucket: undefined })
+            );
+        });
+
+        it('price-read failure → no bucket, and the analysis still submits', async () => {
+            mockGetCurrentUser.mockResolvedValue({ id: 'u1' } as never);
+            mockResolveTierOnly.mockResolvedValue('member');
+            mockFindByUserAndSymbol.mockResolvedValue({
+                averagePrice: '100',
+            } as never);
+            mockGetQuote.mockRejectedValue(new Error('quote fetch failed'));
+
+            const result = await submitAnalysisAction(
+                'AAPL',
+                'Apple',
+                '1Day',
+                false,
+                '^AAPL'
+            );
+
+            expect(result).toEqual({ ...cachedResult, personalized: false });
+            expect(mockSubmitAnalysis).toHaveBeenCalledWith(
+                'AAPL',
+                'Apple',
+                '1Day',
+                false,
+                '^AAPL',
+                expect.objectContaining({ positionBucket: undefined })
+            );
+        });
+
+        it('holding-read failure (DB error) → no bucket, and the analysis still submits', async () => {
+            mockGetCurrentUser.mockResolvedValue({ id: 'u1' } as never);
+            mockResolveTierOnly.mockResolvedValue('member');
+            mockFindByUserAndSymbol.mockRejectedValue(new Error('db down'));
+
+            const result = await submitAnalysisAction(
+                'AAPL',
+                'Apple',
+                '1Day',
+                false,
+                '^AAPL'
+            );
+
+            expect(result).toEqual({ ...cachedResult, personalized: false });
+            expect(mockGetQuote).not.toHaveBeenCalled();
+            expect(mockSubmitAnalysis).toHaveBeenCalledWith(
+                'AAPL',
+                'Apple',
+                '1Day',
+                false,
+                '^AAPL',
+                expect.objectContaining({ positionBucket: undefined })
+            );
+        });
+
+        it('anonymous caller (no userId) → no bucket, and never reads the holding', async () => {
+            mockGetCurrentUser.mockResolvedValue(null);
+            mockResolveTierOnly.mockResolvedValue('free');
+
+            await submitAnalysisAction('AAPL', 'Apple', '1Day', false, '^AAPL');
+
+            expect(mockFindByUserAndSymbol).not.toHaveBeenCalled();
+            expect(mockSubmitAnalysis).toHaveBeenCalledWith(
+                'AAPL',
+                'Apple',
+                '1Day',
+                false,
+                '^AAPL',
+                expect.objectContaining({ positionBucket: undefined })
+            );
+        });
+    });
+
+    // The `personalized` flag threaded on the action's return (server-authoritative
+    // signal for the AnalysisPanel badge, personalized-analysis-by-position-bucket
+    // spec Subsystem C — badge-honesty fix). It must be `true` exactly when
+    // `positionBucket !== undefined`, NOT merely when a holding exists — a holding
+    // can still degrade to no-bucket (quote failure, degenerate avg, free tier).
+    describe('personalized flag (badge-honesty fix)', () => {
+        it('member with a derivable bucket → personalized: true', async () => {
+            mockGetCurrentUser.mockResolvedValue({ id: 'u1' } as never);
+            mockResolveTierOnly.mockResolvedValue('member');
+            mockFindByUserAndSymbol.mockResolvedValue({
+                averagePrice: '100',
+            } as never);
+            mockGetQuote.mockResolvedValue({ price: 110 });
+
+            const result = await submitAnalysisAction(
+                'AAPL',
+                'Apple',
+                '1Day',
+                false,
+                '^AAPL'
+            );
+
+            expect(result).toEqual({ ...cachedResult, personalized: true });
+        });
+
+        it('free tier → personalized: false even though the shared analysis is cached', async () => {
+            mockGetCurrentUser.mockResolvedValue({ id: 'u1' } as never);
+            mockResolveTierOnly.mockResolvedValue('free');
+
+            const result = await submitAnalysisAction(
+                'AAPL',
+                'Apple',
+                '1Day',
+                false,
+                '^AAPL'
+            );
+
+            expect(result).toEqual({ ...cachedResult, personalized: false });
+        });
+
+        it('no holding → personalized: false', async () => {
+            mockGetCurrentUser.mockResolvedValue({ id: 'u1' } as never);
+            mockResolveTierOnly.mockResolvedValue('member');
+            mockFindByUserAndSymbol.mockResolvedValue(null);
+
+            const result = await submitAnalysisAction(
+                'AAPL',
+                'Apple',
+                '1Day',
+                false,
+                '^AAPL'
+            );
+
+            expect(result).toEqual({ ...cachedResult, personalized: false });
+        });
+
+        it('quote-degrade path (holding exists but price read fails) → personalized: false, NOT true just because a holding exists', async () => {
+            mockGetCurrentUser.mockResolvedValue({ id: 'u1' } as never);
+            mockResolveTierOnly.mockResolvedValue('member');
+            mockFindByUserAndSymbol.mockResolvedValue({
+                averagePrice: '100',
+            } as never);
+            mockGetQuote.mockRejectedValue(new Error('quote fetch failed'));
+
+            const result = await submitAnalysisAction(
+                'AAPL',
+                'Apple',
+                '1Day',
+                false,
+                '^AAPL'
+            );
+
+            expect(result).toEqual({ ...cachedResult, personalized: false });
+        });
+
+        it('gated (modelId set) branch also threads personalized: true when a bucket is derived', async () => {
+            mockGetCurrentUser.mockResolvedValue({ id: 'u1' } as never);
+            mockResolveTierAndByok.mockResolvedValue({
+                kind: 'allowed',
+                tier: 'member' as never,
+            });
+            mockFindByUserAndSymbol.mockResolvedValue({
+                averagePrice: '100',
+            } as never);
+            mockGetQuote.mockResolvedValue({ price: 110 });
+
+            const result = await submitAnalysisAction(
+                'AAPL',
+                'Apple',
+                '1Day',
+                false,
+                '^AAPL',
+                FREE_MODEL
+            );
+
+            expect(result).toEqual({ ...cachedResult, personalized: true });
         });
     });
 });

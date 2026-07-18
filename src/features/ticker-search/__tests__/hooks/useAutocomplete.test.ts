@@ -211,6 +211,20 @@ describe('useAutocomplete', () => {
         expect(mockPush).toHaveBeenCalledWith('/AAPL');
     });
 
+    it('does not call router.push when navigateOnSelect is false (still calls onSelect)', () => {
+        const onSelect = vi.fn();
+        const { result } = renderHook(() =>
+            useAutocomplete({ onSelect, navigateOnSelect: false })
+        );
+
+        act(() => {
+            result.current.navigate('AAPL');
+        });
+
+        expect(onSelect).toHaveBeenCalledWith('AAPL');
+        expect(mockPush).not.toHaveBeenCalled();
+    });
+
     it('resets state after navigate', () => {
         const { result } = renderHook(() => useAutocomplete());
 

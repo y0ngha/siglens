@@ -42,6 +42,9 @@ export const CURRENT_USER_STALE_TIME_MS = 5 * MS_PER_MINUTE;
 /** Registered LLM providers list refreshes only after the user adds/removes a key — short stale is fine. */
 export const REGISTERED_PROVIDERS_STALE_TIME_MS = MS_PER_MINUTE;
 
+/** A member's own holdings change only on their explicit edit — short stale is fine. */
+export const PORTFOLIO_HOLDINGS_STALE_TIME_MS = 5 * MS_PER_MINUTE;
+
 const upper = (s: string): string => s.toUpperCase();
 
 export const QUERY_KEYS = {
@@ -68,6 +71,7 @@ export const QUERY_KEYS = {
     userTier: () => ['user-tier'] as const,
     remainingTokens: () => ['chat', 'remaining-tokens'] as const,
     registeredProviders: () => ['llm', 'registered-providers'] as const,
+    portfolioHoldings: () => ['portfolio-holdings'] as const,
     // reasoning defaults to `false` on every analysis key below so existing
     // 2/3-arg call sites (pre-member-reasoning-toggle) keep resolving to the
     // exact same key they always have — only a member's explicit `true` value

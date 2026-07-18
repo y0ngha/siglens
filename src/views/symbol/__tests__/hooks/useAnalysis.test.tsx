@@ -39,6 +39,14 @@ vi.mock('@/shared/lib/sleep', () => ({
     sleep: vi.fn().mockResolvedValue(undefined),
 }));
 
+const { mockUseSymbolHolding } = vi.hoisted(() => ({
+    mockUseSymbolHolding: vi.fn(),
+}));
+
+vi.mock('@/features/portfolio-holding', () => ({
+    useSymbolHolding: mockUseSymbolHolding,
+}));
+
 const mockSubmit = submitAnalysisAction as MockedFunction<
     typeof submitAnalysisAction
 >;
@@ -110,6 +118,17 @@ describe('useAnalysis', () => {
         mockCancel.mockReset();
         mockCancel.mockResolvedValue(undefined);
         (getReanalyzeCooldownMs as Mock).mockResolvedValue(0);
+        // 대부분의 기존 테스트는 personalization과 무관하므로, 홀딩 쿼리가 즉시
+        // 해석 완료(hydrated, not loading)되고 홀딩이 없는 기본 상태로 둔다 —
+        // 그래야 홀딩-변경 effect가 "최초 hydration 세팅"만 캡처하고 재분석을
+        // 트리거하지 않는다.
+        mockUseSymbolHolding.mockReturnValue({
+            holding: null,
+            isHydrated: true,
+            isLoading: false,
+            isError: false,
+            save: {} as never,
+        });
 
         sendBeaconMock = vi.fn();
         Object.defineProperty(navigator, 'sendBeacon', {
@@ -560,6 +579,224 @@ describe('useAnalysis', () => {
         });
     });
 
+    describe('holding-change re-run (personalized-analysis-by-position-bucket spec, Subsystem C)', () => {
+        it('restarts analysis when the member holding avg changes after hydration', async () => {
+            mockSubmit.mockResolvedValue({
+                status: 'cached',
+                result: INITIAL_ANALYSIS,
+                lockedInfoDepth: [],
+            });
+            mockUseSymbolHolding.mockReturnValue({
+                holding: {
+                    symbol: 'AAPL',
+                    companyName: null,
+                    fmpSymbol: null,
+                    quantity: '10',
+                    averagePrice: '100',
+                    updatedAt: '2026-01-01T00:00:00Z',
+                },
+                isHydrated: true,
+                isLoading: false,
+                isError: false,
+                save: {} as never,
+            });
+
+            const { rerender } = renderHook(
+                () =>
+                    useAnalysis(makeOptions({ initialAnalysisFailed: false })),
+                { wrapper: makeWrapper() }
+            );
+
+            // 초기 hydration 세팅 — 재분석을 트리거하지 않는다.
+            expect(mockSubmit).not.toHaveBeenCalled();
+
+            mockUseSymbolHolding.mockReturnValue({
+                holding: {
+                    symbol: 'AAPL',
+                    companyName: null,
+                    fmpSymbol: null,
+                    quantity: '10',
+                    averagePrice: '150',
+                    updatedAt: '2026-01-02T00:00:00Z',
+                },
+                isHydrated: true,
+                isLoading: false,
+                isError: false,
+                save: {} as never,
+            });
+            rerender();
+
+            await waitFor(() => {
+                expect(mockSubmit).toHaveBeenCalledTimes(1);
+            });
+        });
+
+        it('does not restart on the hydration-driven initial holding resolution', async () => {
+            mockSubmit.mockResolvedValue({
+                status: 'cached',
+                result: INITIAL_ANALYSIS,
+                lockedInfoDepth: [],
+            });
+            mockUseSymbolHolding.mockReturnValue({
+                holding: null,
+                isHydrated: false,
+                isLoading: true,
+                isError: false,
+                save: {} as never,
+            });
+
+            const { rerender } = renderHook(
+                () =>
+                    useAnalysis(makeOptions({ initialAnalysisFailed: false })),
+                { wrapper: makeWrapper() }
+            );
+
+            mockUseSymbolHolding.mockReturnValue({
+                holding: {
+                    symbol: 'AAPL',
+                    companyName: null,
+                    fmpSymbol: null,
+                    quantity: '10',
+                    averagePrice: '100',
+                    updatedAt: '2026-01-01T00:00:00Z',
+                },
+                isHydrated: true,
+                isLoading: false,
+                isError: false,
+                save: {} as never,
+            });
+            rerender();
+
+            // 최초 hydration 완료(그 시점에 홀딩이 이미 존재)는 사용자 의도 변경이
+            // 아니므로 재분석을 트리거하지 않는다.
+            expect(mockSubmit).not.toHaveBeenCalled();
+        });
+
+        it('does not restart while the holding query is still loading (isLoading toggling on the SAME symbol)', async () => {
+            mockSubmit.mockResolvedValue({
+                status: 'cached',
+                result: INITIAL_ANALYSIS,
+                lockedInfoDepth: [],
+            });
+            // 최초 해석 완료 — 홀딩 없음으로 캡처.
+            mockUseSymbolHolding.mockReturnValue({
+                holding: null,
+                isHydrated: true,
+                isLoading: false,
+                isError: false,
+                save: {} as never,
+            });
+
+            const { rerender } = renderHook(
+                () =>
+                    useAnalysis(makeOptions({ initialAnalysisFailed: false })),
+                { wrapper: makeWrapper() }
+            );
+
+            // 같은 심볼(AAPL)에서 쿼리가 다시 loading 상태가 되면서 홀딩 값이 잠깐
+            // 바뀐 것처럼 보여도, 아직 loading 중이면 재분석을 트리거하지 않는다.
+            mockUseSymbolHolding.mockReturnValue({
+                holding: {
+                    symbol: 'AAPL',
+                    companyName: null,
+                    fmpSymbol: null,
+                    quantity: '10',
+                    averagePrice: '100',
+                    updatedAt: '2026-01-01T00:00:00Z',
+                },
+                isHydrated: true,
+                isLoading: true,
+                isError: false,
+                save: {} as never,
+            });
+            rerender();
+
+            expect(mockSubmit).not.toHaveBeenCalled();
+
+            // loading이 끝나야 비로소 (진짜 변경으로) 재분석이 트리거된다.
+            mockUseSymbolHolding.mockReturnValue({
+                holding: {
+                    symbol: 'AAPL',
+                    companyName: null,
+                    fmpSymbol: null,
+                    quantity: '10',
+                    averagePrice: '100',
+                    updatedAt: '2026-01-01T00:00:00Z',
+                },
+                isHydrated: true,
+                isLoading: false,
+                isError: false,
+                save: {} as never,
+            });
+            rerender();
+
+            await waitFor(() => {
+                expect(mockSubmit).toHaveBeenCalledTimes(1);
+            });
+        });
+
+        it('does not restart on a client-side symbol nav even though isLoading stays false and the avg VALUE changes (shared, non-symbol-keyed holdings query)', async () => {
+            mockSubmit.mockResolvedValue({
+                status: 'cached',
+                result: INITIAL_ANALYSIS,
+                lockedInfoDepth: [],
+            });
+            // 최초 심볼(AAPL) — 홀딩 보유, 평단 100. 초기 hydration 세팅이므로
+            // 재분석을 트리거하지 않는다.
+            mockUseSymbolHolding.mockReturnValue({
+                holding: {
+                    symbol: 'AAPL',
+                    companyName: null,
+                    fmpSymbol: null,
+                    quantity: '10',
+                    averagePrice: '100',
+                    updatedAt: '2026-01-01T00:00:00Z',
+                },
+                isHydrated: true,
+                isLoading: false,
+                isError: false,
+                save: {} as never,
+            });
+
+            const { rerender } = renderHook(
+                ({ symbol }: { symbol: string }) =>
+                    useAnalysis(
+                        makeOptions({ symbol, initialAnalysisFailed: false })
+                    ),
+                {
+                    wrapper: makeWrapper(),
+                    initialProps: { symbol: 'AAPL' },
+                }
+            );
+
+            expect(mockSubmit).not.toHaveBeenCalled();
+
+            // 실제 nav 재현: `useSymbolHolding`은 심볼별로 격리된 쿼리가 아니라
+            // 공유 쿼리에서 `.find()`한 파생값이므로, MSFT로 nav하면 isLoading은
+            // 계속 false인 채 symbol과 holding(avg)이 SAME 렌더에서 함께 바뀐다
+            // (MSFT는 홀딩이 없다고 가정 — avg 값이 '100' → null로 변경).
+            mockUseSymbolHolding.mockReturnValue({
+                holding: null,
+                isHydrated: true,
+                isLoading: false,
+                isError: false,
+                save: {} as never,
+            });
+            rerender({ symbol: 'MSFT' });
+
+            // `restartAnalysis` → `mutate`는 마이크로태스크를 거쳐 mutationFn을
+            // 호출하므로, rerender 직후 동기 단언은 스푸리어스 restart를 놓친다
+            // (react-query의 dispatch가 다음 tick으로 미뤄짐). 한 tick 플러시한
+            // 뒤에 단언해야 버그가 있을 때 이 테스트가 실제로 실패한다.
+            await new Promise(resolve => setTimeout(resolve, 0));
+
+            // symbol 변경으로 인한 avg 변경은 "홀딩 값이 실제로 바뀐 것"이 아니라
+            // "보고 있는 심볼이 바뀐 것"이므로 재분석을 트리거하지 않아야 한다 —
+            // MSFT의 초기 분석은 이미 서버가 자체적으로 홀딩을 읽어 개인화했다.
+            expect(mockSubmit).not.toHaveBeenCalled();
+        });
+    });
+
     describe('cancel', () => {
         it('polling 중 unmount 시 진행 중인 job을 cancel한다', async () => {
             mockSubmit.mockResolvedValue({
@@ -681,6 +918,295 @@ describe('useAnalysis', () => {
             unmount();
 
             expect(mockCancel).not.toHaveBeenCalled();
+        });
+    });
+
+    // 서버-authoritative `personalized` 플래그 threading (personalized-analysis-
+    // by-position-bucket spec, Subsystem C — 배지 정직성 수정). `submitAnalysisAction`의
+    // `personalized` 필드를 `isPersonalized`로 그대로 미러링한다 — 홀딩 존재
+    // 여부가 아니라 서버가 실제로 포지션 버킷 캐시 키를 썼는지가 유일한 진실값.
+    describe('isPersonalized (personalized-analysis-by-position-bucket spec, Subsystem C — 배지 정직성 수정)', () => {
+        // 마운트 시 자동 재시도(§ initialAnalysisFailedAtMount 이펙트)를 발화시켜
+        // submit이 실제로 나가도록 initialAnalysisFailed: true를 사용한다 — 기본
+        // makeOptions()는 mount 시 아무 submit도 트리거하지 않는다.
+        it('cached + personalized: true → isPersonalized가 true로 세팅된다', async () => {
+            mockSubmit.mockResolvedValue({
+                status: 'cached',
+                result: INITIAL_ANALYSIS,
+                lockedInfoDepth: [],
+                personalized: true,
+            });
+
+            const { result } = renderHook(
+                () => useAnalysis(makeOptions({ initialAnalysisFailed: true })),
+                { wrapper: makeWrapper() }
+            );
+
+            await waitFor(() => {
+                expect(result.current.isPersonalized).toBe(true);
+            });
+        });
+
+        it('cached + personalized: false → isPersonalized는 false로 유지된다', async () => {
+            mockSubmit.mockResolvedValue({
+                status: 'cached',
+                result: INITIAL_ANALYSIS,
+                lockedInfoDepth: [],
+                personalized: false,
+            });
+
+            const { result } = renderHook(
+                () => useAnalysis(makeOptions({ initialAnalysisFailed: true })),
+                { wrapper: makeWrapper() }
+            );
+
+            await waitFor(() => {
+                expect(mockSubmit).toHaveBeenCalled();
+            });
+            expect(result.current.isPersonalized).toBe(false);
+        });
+
+        it('cached + personalized 필드 부재(하위 호환) → isPersonalized는 false로 유지된다', async () => {
+            mockSubmit.mockResolvedValue({
+                status: 'cached',
+                result: INITIAL_ANALYSIS,
+                lockedInfoDepth: [],
+                // personalized 필드 자체가 없는 롤링 배포 중 구버전 응답을 모사한다.
+            });
+
+            const { result } = renderHook(
+                () => useAnalysis(makeOptions({ initialAnalysisFailed: true })),
+                { wrapper: makeWrapper() }
+            );
+
+            await waitFor(() => {
+                expect(mockSubmit).toHaveBeenCalled();
+            });
+            expect(result.current.isPersonalized).toBe(false);
+        });
+
+        it('submitted + personalized: true → 폴링 중에는 false, poll이 done을 반환한 뒤에야 true가 된다', async () => {
+            // submit이 'submitted'를 반환한 시점엔 화면에 아직 SSR의 no-bucket
+            // base 분석이 떠 있다(personalized 결과는 폴링이 끝나야 도착) — 배지가
+            // base 분석 위에서 거짓 주장을 하지 않으려면 이 구간에서 false여야
+            // 한다. poll을 명시적으로 제어해(resolveSecondSubmit 패턴과 동일)
+            // "폴링 중" 상태와 "poll done 이후" 상태를 각각 단언한다.
+            mockSubmit.mockResolvedValue({
+                status: 'submitted',
+                jobId: 'job-personalized-1',
+                personalized: true,
+            });
+            let resolvePoll:
+                | ((value: {
+                      status: 'done';
+                      result: AnalysisResponse;
+                      lockedInfoDepth: never[];
+                  }) => void)
+                | undefined;
+            mockPoll.mockImplementation(
+                () =>
+                    new Promise(resolve => {
+                        resolvePoll = resolve;
+                    })
+            );
+
+            const { result } = renderHook(
+                () => useAnalysis(makeOptions({ initialAnalysisFailed: true })),
+                { wrapper: makeWrapper() }
+            );
+
+            // submit이 resolve되어 폴링이 시작됐지만 poll 자체는 아직 pending —
+            // 이 구간에서는 isPersonalized가 false여야 한다.
+            await waitFor(() => {
+                expect(mockPoll).toHaveBeenCalled();
+            });
+            expect(result.current.isPersonalized).toBe(false);
+            expect(result.current.analysisResult).toBeNull();
+
+            resolvePoll?.({
+                status: 'done',
+                result: INITIAL_ANALYSIS,
+                lockedInfoDepth: [],
+            });
+
+            await waitFor(() => {
+                expect(result.current.analysisResult).not.toBeNull();
+            });
+            expect(result.current.isPersonalized).toBe(true);
+        });
+
+        it('submitted + personalized: true인 job의 폴링이 error로 끝나면 personalized 배지가 노출되지 않는다', async () => {
+            // 이 동작은 'submitted' 시점에 이미 isPersonalized가 false로 설정되고
+            // poll 'done' 전까지 아무도 true로 바꾸지 않기 때문에 성립한다 —
+            // 즉 이 테스트는 end-to-end 동작(에러로 끝난 폴링에는 personalized
+            // 배지가 뜨지 않는다)을 검증하는 것이지, error/catch 분기의
+            // setIsPersonalized(false) 리셋 메커니즘 자체를 lock하는 것은 아니다.
+            // 그 리셋들은 향후 변경으로 poll 진입 전에 플래그가 true가 되는
+            // 경로가 생기더라도 stale over-claim을 남기지 않기 위한
+            // defense-in-depth다.
+            mockSubmit.mockResolvedValue({
+                status: 'submitted',
+                jobId: 'job-personalized-2',
+                personalized: true,
+            });
+            mockPoll.mockResolvedValue({
+                status: 'error',
+                error: '분석 실패',
+            });
+
+            const { result } = renderHook(
+                () => useAnalysis(makeOptions({ initialAnalysisFailed: true })),
+                { wrapper: makeWrapper() }
+            );
+
+            await waitFor(() => {
+                expect(result.current.analysisError).toBe('분석 실패');
+            });
+            expect(result.current.isPersonalized).toBe(false);
+        });
+
+        it('새 제출이 시작되면(onMutate) isPersonalized가 false로 리셋된다', async () => {
+            // isModelHydrated를 false→true→false→true로 토글해 initialAnalysisFailedAtMount
+            // 이펙트를 두 번 발화시킨다(이 이펙트엔 1회성 가드가 없어 deps 변경마다
+            // 조건이 충족되면 다시 mutate를 호출한다) — handleReanalyze의 쿨다운 획득
+            // 비동기 경로를 우회해 두 번째 submit을 결정적으로 트리거하는 가장 단순한 방법이다.
+            let resolveSecondSubmit:
+                | ((value: {
+                      status: 'cached';
+                      result: AnalysisResponse;
+                      lockedInfoDepth: never[];
+                      personalized: boolean;
+                  }) => void)
+                | undefined;
+            mockSubmit
+                .mockResolvedValueOnce({
+                    status: 'cached',
+                    result: INITIAL_ANALYSIS,
+                    lockedInfoDepth: [],
+                    personalized: true,
+                })
+                .mockImplementationOnce(
+                    () =>
+                        new Promise(resolve => {
+                            resolveSecondSubmit = resolve;
+                        })
+                );
+
+            const { result, rerender } = renderHook(
+                ({ isModelHydrated }: { isModelHydrated: boolean }) =>
+                    useAnalysis(
+                        makeOptions({
+                            initialAnalysisFailed: true,
+                            isModelHydrated,
+                        })
+                    ),
+                {
+                    wrapper: makeWrapper(),
+                    initialProps: { isModelHydrated: false },
+                }
+            );
+
+            rerender({ isModelHydrated: true });
+
+            await waitFor(() => {
+                expect(result.current.isPersonalized).toBe(true);
+            });
+
+            // 두 번째 submit 트리거 — onMutate가 즉시 false로 되돌려야 한다(새 서버
+            // 응답 도착 전까지 이전 결과의 personalized 상태를 이어받지 않는다).
+            rerender({ isModelHydrated: false });
+            rerender({ isModelHydrated: true });
+
+            await waitFor(() => {
+                expect(mockSubmit).toHaveBeenCalledTimes(2);
+            });
+            expect(result.current.isPersonalized).toBe(false);
+
+            resolveSecondSubmit?.({
+                status: 'cached',
+                result: INITIAL_ANALYSIS,
+                lockedInfoDepth: [],
+                personalized: false,
+            });
+        });
+
+        it('miss_no_trigger → isPersonalized는 false다', async () => {
+            mockSubmit.mockResolvedValue({ status: 'miss_no_trigger' });
+
+            const { result } = renderHook(
+                () => useAnalysis(makeOptions({ initialAnalysisFailed: true })),
+                { wrapper: makeWrapper() }
+            );
+
+            await waitFor(() => {
+                expect(result.current.isBotBlocked).toBe(true);
+            });
+            expect(result.current.isPersonalized).toBe(false);
+        });
+
+        it('클라이언트 사이드 symbol nav 시 이전 symbol의 isPersonalized가 새 symbol로 새어 나가지 않는다', async () => {
+            // `ChartContent`는 symbol로 key되지 않고(§14 nav 회귀), 이 훅의
+            // holding-change effect도 symbol이 바뀌면 restartAnalysis 없이
+            // ref만 재동기화한다(prevHoldingSymbolRef 주석 참고) — 즉 이 훅은
+            // soft nav에서 리마운트 없이 유지될 수 있다. AAPL(개인화됨) →
+            // MSFT(홀딩 없음) nav 시, MSFT의 화면은 새 fresh submit이 오기
+            // 전까지 MSFT의 SSR seed(공유 no-bucket peek)이므로 AAPL 때의
+            // isPersonalized=true가 새어 나가면 안 된다.
+            mockSubmit.mockResolvedValue({
+                status: 'cached',
+                result: INITIAL_ANALYSIS,
+                lockedInfoDepth: [],
+                personalized: true,
+            });
+            mockUseSymbolHolding.mockReturnValue({
+                holding: {
+                    symbol: 'AAPL',
+                    companyName: null,
+                    fmpSymbol: null,
+                    quantity: '10',
+                    averagePrice: '100',
+                    updatedAt: '2026-01-01T00:00:00Z',
+                },
+                isHydrated: true,
+                isLoading: false,
+                isError: false,
+                save: {} as never,
+            });
+
+            const { result, rerender } = renderHook(
+                ({ symbol }: { symbol: string }) =>
+                    useAnalysis(
+                        makeOptions({
+                            symbol,
+                            initialAnalysisFailed: true,
+                        })
+                    ),
+                {
+                    wrapper: makeWrapper(),
+                    initialProps: { symbol: 'AAPL' },
+                }
+            );
+
+            await waitFor(() => {
+                expect(result.current.isPersonalized).toBe(true);
+            });
+
+            // MSFT로 nav — 공유 홀딩 쿼리는 isLoading false인 채 avg만 없어진다.
+            mockUseSymbolHolding.mockReturnValue({
+                holding: null,
+                isHydrated: true,
+                isLoading: false,
+                isError: false,
+                save: {} as never,
+            });
+            rerender({ symbol: 'MSFT' });
+
+            // holding-change effect의 setState는 마이크로태스크를 거치지 않고
+            // effect 본문에서 동기 호출되지만, `restartAnalysis` 트리거 여부와
+            // 대칭적으로 한 tick 플러시한 뒤 단언한다(sibling nav 테스트와 동일 패턴).
+            await new Promise(resolve => setTimeout(resolve, 0));
+
+            expect(result.current.isPersonalized).toBe(false);
         });
     });
 

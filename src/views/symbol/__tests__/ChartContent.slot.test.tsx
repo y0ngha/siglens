@@ -100,6 +100,7 @@ function analysisReturn(analysis: AnalysisResponse): UseAnalysisResult {
         handleReanalyze: vi.fn(),
         reanalyzeCooldownMs: 0,
         cooldownNotice: null,
+        isPersonalized: false,
     };
 }
 

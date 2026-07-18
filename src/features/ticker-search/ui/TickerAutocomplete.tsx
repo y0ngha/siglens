@@ -28,12 +28,40 @@ interface TickerAutocompleteProps {
     className?: string;
     size?: TickerAutocompleteSize;
     onSelect?: (symbol: string) => void;
+    /** See useAutocomplete's navigateOnSelect — pass false to use this as a plain value-picker inside a form. */
+    navigateOnSelect?: boolean;
+    /**
+     * Overrides the input's own visual styling (bg/height/border/focus ring)
+     * to match a specific host form — e.g. HoldingForm's sibling quantity/price
+     * inputs — without changing the default appearance for other consumers
+     * (Header, SymbolSearchPanel). Merged on top of the size-based defaults via
+     * `cn`/`twMerge`, so later utility classes win over earlier ones.
+     */
+    inputClassName?: string;
+    /** Forwarded to the underlying input so a host form can associate its own field-level error message. */
+    ariaInvalid?: boolean;
+    /** Forwarded to the underlying input so a host form can associate its own field-level error message. */
+    ariaDescribedby?: string;
+    /**
+     * Associates the input with a host form's own visible field label (e.g.
+     * HoldingForm's "종목" label) so the accessible name matches what's on
+     * screen, instead of the generic default "종목 티커 검색" aria-label.
+     * When provided, this takes over as the input's accessible name (the
+     * default `aria-label` is omitted) — other consumers that don't pass it
+     * keep the unchanged default behavior.
+     */
+    ariaLabelledby?: string;
 }
 
 export function TickerAutocomplete({
     className,
     size = 'sm',
     onSelect,
+    navigateOnSelect,
+    inputClassName,
+    ariaInvalid,
+    ariaDescribedby,
+    ariaLabelledby,
 }: TickerAutocompleteProps) {
     const {
         query,
@@ -49,7 +77,7 @@ export function TickerAutocomplete({
         handleSearchClick,
         navigate,
         prefetch,
-    } = useAutocomplete({ onSelect });
+    } = useAutocomplete({ onSelect, navigateOnSelect });
 
     const isKorean = isKoreanInput(query);
 
@@ -69,7 +97,8 @@ export function TickerAutocomplete({
                     name="symbol"
                     autoComplete="off"
                     role="combobox"
-                    aria-label="종목 티커 검색"
+                    aria-label={ariaLabelledby ? undefined : '종목 티커 검색'}
+                    aria-labelledby={ariaLabelledby}
                     aria-expanded={isOpen}
                     aria-haspopup="listbox"
                     aria-controls={LISTBOX_ID}
@@ -79,6 +108,8 @@ export function TickerAutocomplete({
                             ? `${OPTION_ID_PREFIX}-${selectedIndex}`
                             : undefined
                     }
+                    aria-invalid={ariaInvalid}
+                    aria-describedby={ariaDescribedby}
                     type="text"
                     value={query}
                     onChange={handleChange}
@@ -88,7 +119,8 @@ export function TickerAutocomplete({
                     className={cn(
                         INPUT_BASE,
                         INPUT_SIZE[size],
-                        'w-full min-w-0'
+                        'w-full min-w-0',
+                        inputClassName
                     )}
                 />
                 {isOpen && (
@@ -123,13 +155,15 @@ export function TickerAutocomplete({
                     </div>
                 )}
             </div>
-            <button
-                type="button"
-                onClick={handleSearchClick}
-                className={cn(BUTTON_BASE, BUTTON_SIZE[size])}
-            >
-                검색
-            </button>
+            {navigateOnSelect !== false && (
+                <button
+                    type="button"
+                    onClick={handleSearchClick}
+                    className={cn(BUTTON_BASE, BUTTON_SIZE[size])}
+                >
+                    검색
+                </button>
+            )}
         </div>
     );
 }

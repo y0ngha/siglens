@@ -46,6 +46,11 @@ export const TABS = [
         label: '종합',
         hrefBuilder: (s: string) => `/${s}/overall`,
     },
+    {
+        key: 'position',
+        label: '내 위치',
+        hrefBuilder: (s: string) => `/${s}/position`,
+    },
 ] as const;
 
 /** Tabs visible for a given market profile, in canonical order. */

@@ -183,6 +183,13 @@
             "when": 1783787755425,
             "tag": "0025_add_member_default_tier",
             "breakpoints": true
+        },
+        {
+            "idx": 26,
+            "version": "7",
+            "when": 1784264759984,
+            "tag": "0026_wandering_typhoid_mary",
+            "breakpoints": true
         }
     ]
 }

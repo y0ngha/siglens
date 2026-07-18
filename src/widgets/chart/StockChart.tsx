@@ -612,7 +612,10 @@ export function StockChart({
                 role="img"
                 aria-label={chartAriaLabel}
             />
-            <div className="absolute top-2 right-2 z-10">
+            {/* right-14로 우측 price-scale 라벨 열 안쪽으로 넣어 톱니바퀴가 가격
+                눈금 숫자와 겹치지 않게 한다 (top-2 right-2였을 때는 price-scale
+                라벨 위에 그대로 얹혀 시각적으로 충돌했다). */}
+            <div className="absolute top-2 right-14 z-10">
                 <IndicatorSettingsModal bindings={indicatorBindings} />
             </div>
             <div className="pointer-events-none absolute top-2 left-2 z-10 flex flex-col gap-1">

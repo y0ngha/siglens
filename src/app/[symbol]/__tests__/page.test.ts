@@ -309,7 +309,9 @@ describe('Symbol page', () => {
                 'AAPL',
                 DEEPSEEK_V4_FLASH_MODEL,
                 false,
-                'free'
+                'free',
+                undefined,
+                undefined
             );
             expect(props.initialAnalysis).toMatchObject(cached.result);
         });

@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { TickerAutocomplete } from '@/features/ticker-search/ui/TickerAutocomplete';
 import { useAutocomplete } from '@/features/ticker-search/hooks/useAutocomplete';
+import { isKoreanInput } from '@/entities/ticker';
 import type { TickerSearchResult } from '@/shared/lib/types';
 
 vi.mock('@/shared/db/client', () => ({
@@ -13,6 +14,7 @@ vi.mock('@/entities/ticker', () => ({
 }));
 
 const mockUseAutocomplete = vi.mocked(useAutocomplete);
+const mockIsKoreanInput = vi.mocked(isKoreanInput);
 
 const MOCK_RESULTS: TickerSearchResult[] = [
     {
@@ -145,6 +147,14 @@ describe('TickerAutocomplete', () => {
         expect(handleSearchClick).toHaveBeenCalledTimes(1);
     });
 
+    it('hides the search button in picker mode (navigateOnSelect=false)', () => {
+        setupAutocomplete();
+        render(<TickerAutocomplete navigateOnSelect={false} />);
+        expect(
+            screen.queryByRole('button', { name: '검색' })
+        ).not.toBeInTheDocument();
+    });
+
     it('renders koreanName in result item display', () => {
         setupAutocomplete({
             query: 'A',
@@ -173,5 +183,102 @@ describe('TickerAutocomplete', () => {
             'aria-expanded',
             'true'
         );
+    });
+
+    it('defaults to the generic aria-label when no ariaLabelledby is passed', () => {
+        setupAutocomplete();
+        render(<TickerAutocomplete />);
+        expect(screen.getByRole('combobox')).toHaveAttribute(
+            'aria-label',
+            '종목 티커 검색'
+        );
+        expect(screen.getByRole('combobox')).not.toHaveAttribute(
+            'aria-labelledby'
+        );
+    });
+
+    it('uses ariaLabelledby instead of the default aria-label when a host form provides its own visible label', () => {
+        setupAutocomplete();
+        render(<TickerAutocomplete ariaLabelledby="host-symbol-label" />);
+        const combobox = screen.getByRole('combobox');
+        expect(combobox).toHaveAttribute(
+            'aria-labelledby',
+            'host-symbol-label'
+        );
+        expect(combobox).not.toHaveAttribute('aria-label');
+    });
+
+    it('renders the lg size variant', () => {
+        setupAutocomplete();
+        render(<TickerAutocomplete size="lg" />);
+        expect(screen.getByRole('combobox')).toBeInTheDocument();
+        expect(
+            screen.getByRole('button', { name: '검색' })
+        ).toBeInTheDocument();
+    });
+
+    it('shows the Korean-aware no-results hint when the query looks like Korean input', () => {
+        mockIsKoreanInput.mockReturnValueOnce(true);
+        setupAutocomplete({
+            query: '애플',
+            isOpen: true,
+            isSearching: false,
+            results: [],
+        });
+        render(<TickerAutocomplete />);
+        expect(
+            screen.getByText('검색 결과 없음 — 티커(예: AAPL)로 검색해 보세요')
+        ).toBeInTheDocument();
+    });
+
+    it('omits the koreanName suffix in the result display when a result has no koreanName', () => {
+        setupAutocomplete({
+            query: 'A',
+            isOpen: true,
+            results: [{ ...MOCK_RESULTS[0], koreanName: undefined }],
+        });
+        render(<TickerAutocomplete />);
+        expect(screen.getByText('Apple Inc.')).toBeInTheDocument();
+        expect(screen.queryByText(/\(애플\)/)).not.toBeInTheDocument();
+    });
+
+    it('renders the crypto badge for a crypto result', () => {
+        setupAutocomplete({
+            query: 'BTC',
+            isOpen: true,
+            results: [
+                {
+                    symbol: 'BTCUSD',
+                    name: 'Bitcoin',
+                    koreanName: '비트코인',
+                    exchange: 'CRYPTO',
+                    exchangeFullName: 'Crypto',
+                    marketProfile: 'crypto',
+                },
+            ],
+        });
+        render(<TickerAutocomplete />);
+        expect(screen.getByText('코인')).toBeInTheDocument();
+    });
+
+    it('selects a result on click and prefetches on hover', async () => {
+        const user = userEvent.setup();
+        const navigate = vi.fn();
+        const prefetch = vi.fn();
+        setupAutocomplete({
+            query: 'A',
+            isOpen: true,
+            results: MOCK_RESULTS,
+            navigate,
+            prefetch,
+        });
+        render(<TickerAutocomplete />);
+
+        const [firstOption] = screen.getAllByRole('option');
+        await user.hover(firstOption);
+        expect(prefetch).toHaveBeenCalledWith('AAPL');
+
+        await user.click(firstOption);
+        expect(navigate).toHaveBeenCalledWith('AAPL');
     });
 });

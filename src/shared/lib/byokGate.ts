@@ -2,9 +2,11 @@ import 'server-only';
 
 import {
     TIER_CONFIG,
+    bucketizePosition,
     getProviderForModel,
     isPremiumModel,
     type ModelId,
+    type PositionBucket,
     type Tier,
 } from '@y0ngha/siglens-core';
 import { getDatabaseClient } from '@/shared/db/client';
@@ -81,6 +83,37 @@ export function resolveReasoning(
     clientReasoning?: boolean
 ): boolean {
     return tier !== 'free' && clientReasoning === true;
+}
+
+/**
+ * Server-side gate deriving the coarse position bucket used to personalize
+ * an analysis to a member's holding (personalized-analysis-by-position-bucket
+ * spec, Subsystem C).
+ *
+ * Free tier (anonymous included) never receives a bucket regardless of the
+ * inputs — mirrors `resolveReasoning`'s tier gate. `avgPrice`/`currentPrice`
+ * are expected to already be server-read values (the action layer is
+ * responsible for never trusting a client-supplied average); `null` for
+ * either (no holding, or a failed/unavailable price read) degrades to
+ * `undefined` (no bucket, i.e. the shared/base analysis and cache key).
+ * `bucketizePosition`'s own `null` (non-positive/non-finite inputs) is
+ * likewise folded into `undefined`.
+ *
+ * @param tier - Resolved caller tier.
+ * @param avgPrice - Member's server-read average cost basis for this symbol,
+ *   or `null` when no holding exists.
+ * @param currentPrice - Current (or last-cached) price used for the
+ *   analysis, or `null` when it could not be read.
+ */
+export function resolvePositionBucket(
+    tier: Tier,
+    avgPrice: number | null,
+    currentPrice: number | null
+): PositionBucket | undefined {
+    if (tier === 'free' || avgPrice === null || currentPrice === null) {
+        return undefined;
+    }
+    return bucketizePosition(avgPrice, currentPrice) ?? undefined;
 }
 
 /**

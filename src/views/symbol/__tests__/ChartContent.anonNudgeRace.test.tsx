@@ -75,6 +75,7 @@ vi.mock('@/views/symbol/hooks/useAnalysis', () => ({
         handleReanalyze: vi.fn(),
         reanalyzeCooldownMs: 0,
         cooldownNotice: null,
+        isPersonalized: false,
     })),
 }));
 

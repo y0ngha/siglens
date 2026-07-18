@@ -18,6 +18,7 @@ import {
     type Timeframe,
 } from '@y0ngha/siglens-core';
 import { MS_PER_MINUTE, MS_PER_SECOND } from '@/shared/config/time';
+import { useSymbolHolding } from '@/features/portfolio-holding';
 import {
     submitAnalysisAction,
     type SubmitAnalysisActionResult,
@@ -131,6 +132,16 @@ export interface UseAnalysisResult {
     reanalyzeCooldownMs: number;
     /** 사용자가 쿨다운 중에 재분석 버튼을 눌렀을 때 갱신되는 알림. */
     cooldownNotice: CooldownNotice | null;
+    /**
+     * 서버가 THIS 제출에서 실제로 개인화(포지션 버킷) 캐시 키를 사용했는지 여부
+     * (personalized-analysis-by-position-bucket spec, Subsystem C — 배지 정직성
+     * 감사 이후). `submitAnalysisAction`이 반환하는 `personalized` 플래그를 그대로
+     * 미러링한다 — 홀딩 존재 여부가 아니라, 서버가 실제로 `:pos=<bucket>` 키로
+     * 분석을 조회/제출했는지가 유일한 진실값이다. `AnalysisPanel`의 배지가 이
+     * 값으로 게이트되어야 한다(holding 존재만으로는 안 됨 — 서버 쿼트 읽기 실패나
+     * 자유 티어 등으로 홀딩이 있어도 no-bucket으로 디그레이드될 수 있다).
+     */
+    isPersonalized: boolean;
 }
 
 export function useAnalysis({
@@ -162,6 +173,10 @@ export function useAnalysis({
     const [isPolling, setIsPolling] = useState(false);
     const [pollError, setPollError] = useState<string | null>(null);
     const [isBotBlocked, setIsBotBlocked] = useState(false);
+    // 서버가 THIS 제출에서 개인화(포지션 버킷) 캐시 키를 실제로 썼는지 여부.
+    // submitAnalysisAction의 `personalized` 플래그를 그대로 미러링 — 배지의
+    // 유일한 진실값(personalized-analysis-by-position-bucket spec, Subsystem C).
+    const [isPersonalized, setIsPersonalized] = useState(false);
     // 초기 마운트 시 서버 분석 실패 여부를 캡처한다.
     // useState 초기화로 마운트 시 1회만 평가되며, 이후 prop 변경이 있어도 갱신되지 않는다.
     // useRef를 쓰지 않는 이유: 렌더 중 접근이 필요해 react-hooks/refs 룰을 위반하기 때문.
@@ -205,6 +220,13 @@ export function useAnalysis({
     const currentJobIdRef = useRef<string | null>(null);
     // polling 완료 시 force 경로 쿨다운 처리를 위해 마지막 요청의 force 여부를 추적
     const lastForceRef = useRef(false);
+    // submit이 'submitted'(캐시 미스 → 워커 enqueue)를 반환하면 서버가 이 제출을
+    // personalized(:pos=) 키로 enqueue했는지 여부를 여기 보관만 하고, 배지는 아직
+    // 켜지 않는다. 폴링 중 화면에 떠 있는 건 SSR의 no-bucket base 분석이라(page.tsx
+    // peekAnalysisStatic이 positionBucket=undefined로 고정) 결과가 실제로 도착하는
+    // poll 'done' 시점에 이 값을 적용해야 base 분석 위에 "개인화했어요"라고 거짓
+    // 주장하지 않는다.
+    const pendingPersonalizedRef = useRef(false);
 
     // 3. useMutation — submit
     const {
@@ -241,10 +263,18 @@ export function useAnalysis({
             setPollError(null);
             setAnalysisResult(null);
             setIsBotBlocked(false);
+            // 새 제출이 시작됨 — 이전 결과의 personalized 여부는 더 이상 유효하지
+            // 않다. 새 서버 응답이 올 때까지 false로 되돌린다.
+            setIsPersonalized(false);
+            pendingPersonalizedRef.current = false;
         },
         onSuccess: (data, variables) => {
             if (data.status === 'cached') {
                 currentJobIdRef.current = null;
+                // free 조기 반환 분기에서도 세팅 — free는 어차피 personalized가
+                // 항상 false이므로(resolveHoldingPositionBucket이 free를 스킵)
+                // 무해하지만, 두 분기 모두 명시적으로 서버 값을 반영해 둔다.
+                setIsPersonalized(data.personalized ?? false);
                 if (
                     latestTierRef.current === 'free' &&
                     (data.lockedInfoDepth?.length ?? 0) === 0
@@ -274,6 +304,14 @@ export function useAnalysis({
                 setIsPolling(true);
                 // submitted 단계에서는 쿨다운을 시작하지 않는다.
                 // polling 완료(done) 시에만 쿨다운을 시작한다.
+                // 서버가 이미 이 제출을 personalized 캐시 키로 enqueue했는지
+                // 여부는 여기서 알 수 있지만, 배지는 아직 켜지 않는다 — 폴링이
+                // 끝날 때까지 화면에 떠 있는 건 SSR의 no-bucket base 분석이므로,
+                // 지금 켜면 base 분석 위에 "개인화했어요"라고 거짓 주장하게 된다.
+                // 값은 ref에만 보관해 두고, 아래 폴링 useEffect의 'done' 핸들러가
+                // 실제로 화면을 personalized 결과로 교체하는 시점에 적용한다.
+                pendingPersonalizedRef.current = data.personalized ?? false;
+                setIsPersonalized(false);
             } else if (data.status === 'miss_no_trigger') {
                 // 별도 boolean 상태로 추적하는 이유: 이 훅은 useMutation 기반이라
                 // useQuery처럼 에러 브랜치 narrowing으로 비-데이터 상태를 표현할
@@ -281,13 +319,16 @@ export function useAnalysis({
                 // 기반이라 BotBlockedError 던지기로 동일 의미를 표현한다.
                 currentJobIdRef.current = null;
                 setIsBotBlocked(true);
+                setIsPersonalized(false);
             } else if (data.status === 'key_error') {
                 currentJobIdRef.current = null;
                 setPollError(data.error);
+                setIsPersonalized(false);
             } else {
                 // tier gate / 일일 사용 한도 초과
                 currentJobIdRef.current = null;
                 setPollError(data.error.message);
+                setIsPersonalized(false);
                 if (variables.force) {
                     void releaseReanalyzeCooldown(
                         latestRef.current.symbol,
@@ -315,6 +356,41 @@ export function useAnalysis({
         },
     });
 
+    // 5. useSymbolHolding — personalized-analysis-by-position-bucket spec
+    // (Subsystem C). Source of the member's holding for THIS symbol. The SSR
+    // `initialAnalysis` seed on mount is the shared no-bucket peek — a static
+    // ISR page (`src/app/[symbol]/page.tsx`'s `peekAnalysisStatic`) can't read
+    // the member's cookie, so that seed is NEVER personalized. A member's
+    // personalized analysis only ever arrives via a CLIENT re-submit: the
+    // tier-hydration effect below (§9) forces one on mount for members
+    // (`tier !== 'free'`), and this hook additionally catches a *later*
+    // holding edit (the member sets/edits their avg via the holding chip
+    // while already viewing the page) via its own effect (§9).
+    const {
+        holding,
+        isHydrated: isHoldingHydrated,
+        isLoading: isHoldingLoading,
+    } = useSymbolHolding(symbol);
+    // "Resolved" gates out two race windows: the query hasn't hydrated yet
+    // (isHoldingHydrated===false), and a client-side symbol nav that
+    // re-triggers isLoading on the shared holdings query. Treating an avg
+    // value as authoritative before this is true risks a premature
+    // no-bucket restart immediately followed by a bucketed one.
+    const isHoldingResolved = isHoldingHydrated && !isHoldingLoading;
+    const holdingAvgPrice = holding?.averagePrice ?? null;
+    const prevHoldingAvgPriceRef = useRef<string | null>(holdingAvgPrice);
+    const hasHandledHoldingHydrationRef = useRef(false);
+    // `useSymbolHolding` reads from a SINGLE, non-symbol-keyed React Query
+    // (`QUERY_KEYS.portfolioHoldings()`) and `.find()`s the current symbol out
+    // of the full list — it is NOT re-fetched per symbol. On a client-side nav
+    // from symbol X to symbol Y, `isLoading` can stay `false` throughout (the
+    // list is already warm) while the derived `holdingAvgPrice` VALUE changes
+    // (X's avg → Y's avg-or-none) on the very same render as `symbol`. Without
+    // this ref, that reads as "the avg changed" and fires a spurious extra
+    // `restartAnalysis()` on top of the tier-hydration effect's own re-submit
+    // for Y — a redundant second submit+poll racing the first.
+    const prevHoldingSymbolRef = useRef(symbol);
+
     // `@y0ngha/siglens-core`가 부분 응답(누락된 배열/객체)을 돌려줄 수 있으므로
     // 소스에서 1회 정규화해 타입 계약을 런타임에서 다시 보장한다. 이 결과를
     // AnalysisPanel·buildExpertAnalysisReport·useAnalysisDerivedData가 공유한다.
@@ -324,19 +400,20 @@ export function useAnalysis({
         [analysisResult, initialAnalysis]
     );
 
-    // 5. Derived variables
+    // 6. Derived variables
     const isAnalyzing =
         isSubmitting ||
         isPolling ||
         (initialAnalysisFailedAtMount &&
             (isModelHydrated === false ||
                 isReasoningHydrated === false ||
-                isTierHydrated === false));
+                isTierHydrated === false ||
+                !isHoldingResolved));
     const analysisError = submitError?.message ?? pollError ?? null;
     // 쿨다운 카운트다운이 활성화된 상태. effect deps에 사용해 불필요한 재시작을 방지한다.
     const isCountdownActive = reanalyzeCooldownMs > 0;
 
-    // 6. Handlers
+    // 7. Handlers
     // latestRef 패턴을 사용하므로 symbol을 deps에서 제외하고 안정적인 함수 참조를 유지한다.
     // Redis 기반 쿨다운을 atomic하게 점유한 뒤에만 mutation을 실행한다.
     const handleReanalyze = useCallback((): void => {
@@ -398,7 +475,7 @@ export function useAnalysis({
     }, []);
     usePageHideCancel(getPageHideJobs);
 
-    // 7. useLayoutEffect
+    // 8. useLayoutEffect
     // symbol, timeframe의 최신 렌더 값을 DOM 커밋 전에 동기 갱신하여
     // mutation 호출 시점에 stale closure를 방지한다.
     useLayoutEffect(() => {
@@ -409,7 +486,7 @@ export function useAnalysis({
         latestTierRef.current = tier;
     });
 
-    // 8. useEffect
+    // 9. useEffect
 
     // 폴링 — submit 결과가 'submitted'이면 polling 시작.
     // setState는 async IIFE 내부에서 호출되므로 react-hooks/set-state-in-effect 규칙 위반이 아니다.
@@ -448,6 +525,9 @@ export function useAnalysis({
                         setAnalysisResult(
                             normalizeAnalysisResponse(result.result)
                         );
+                        // 폴링이 실제로 personalized 결과를 화면에 반영하는 시점 —
+                        // submit 시점에 보관해 둔 서버 결정을 이제야 배지에 적용한다.
+                        setIsPersonalized(pendingPersonalizedRef.current);
                         // cached 경로와 동일한 롤링 배포 안전망. member/pro 호출자가
                         // lockedInfoDepth 없는 구버전 응답을 받아도 undefined가 아닌
                         // 빈 배열을 저장한다.
@@ -466,6 +546,11 @@ export function useAnalysis({
                                 ? "죄송합니다. AI 서버가 불안정합니다. 잠시 후 다시 시도해 주세요. 반복해서 발생할 경우 하단 '오류 제보하기'를 이용해 주세요."
                                 : result.error;
                         setPollError(errorMessage);
+                        // defensive: for the current flow the flag is already false
+                        // entering any poll (set false on 'submitted'); reset again
+                        // on failure so a future change that sets it earlier can't
+                        // leave a stale over-claim.
+                        setIsPersonalized(false);
                         if (lastForceRef.current) {
                             void releaseReanalyzeCooldown(
                                 latestRef.current.symbol,
@@ -481,6 +566,11 @@ export function useAnalysis({
                     if (cancelled) break;
                     currentJobIdRef.current = null;
                     setPollError('분석 결과 조회에 실패했습니다.');
+                    // defensive: for the current flow the flag is already false
+                    // entering any poll (set false on 'submitted'); reset again
+                    // on failure so a future change that sets it earlier can't
+                    // leave a stale over-claim.
+                    setIsPersonalized(false);
                     if (lastForceRef.current) {
                         void releaseReanalyzeCooldown(
                             latestRef.current.symbol,
@@ -503,12 +593,17 @@ export function useAnalysis({
     // 서버에서 초기 AI 분석이 실패한 경우, localStorage hydration이 완료된 뒤 자동으로 재분석을 실행한다.
     // isModelHydrated=false 동안에는 기본값(DEFAULT_MODEL)이 사용 중이므로 hydration 완료까지 대기한다.
     // isReasoningHydrated도 동일하게 대기한다 — 그렇지 않으면 회원의 저장된 reasoning=true가
-    // 반영되기 전에 reasoning=false(기본값)로 초기 재시도가 나가버린다.
+    // 반영되기 전에 reasoning=false(기본값)로 초기 재시도가 나가버린다. isHoldingResolved도
+    // 동일한 이유로 대기한다(personalized-analysis-by-position-bucket spec, Subsystem C) —
+    // 서버가 이 재시도에서도 자체적으로 홀딩을 다시 읽어 개인화하므로 정합성 문제는 아니지만,
+    // 다른 hydration 게이트와 일관되게 홀딩 쿼리가 아직 진행 중인 채로 재시도가 나가는 것을
+    // 피한다.
     useEffect(() => {
         if (!initialAnalysisFailedAtMount) return;
         if (isModelHydrated === false) return;
         if (isReasoningHydrated === false) return;
         if (isTierHydrated === false) return;
+        if (!isHoldingResolved) return;
         // 초기 실패 재시도는 이미 reset/cancel 없이 진행 — 진행 중인 작업이 없는 상태에서만 도달한다.
         mutate({
             symbol: latestRef.current.symbol,
@@ -523,6 +618,7 @@ export function useAnalysis({
         isModelHydrated,
         isReasoningHydrated,
         isTierHydrated,
+        isHoldingResolved,
         initialAnalysisFailedAtMount,
     ]);
 
@@ -575,6 +671,61 @@ export function useAnalysis({
         // 동일 이유(latestReasoningRef가 이 effect보다 늦게 갱신될 수 있음).
         restartAnalysis(undefined, reasoning);
     }, [reasoning, isReasoningHydrated, isTierHydrated, restartAnalysis]);
+
+    // 회원의 보유 평단이 하이드레이션 이후 실제로 변경되면 재분석(다른 캐시 키) —
+    // reasoning 변경 effect와 완전히 동일한 패턴(personalized-analysis-by-position-bucket
+    // spec, Subsystem C). 홀딩 쿼리의 hydration/loading으로 인한 초기 값 세팅(마운트 직후
+    // null → 실제 홀딩, 또는 그 반대)은 사용자 의도 변경이 아니므로 재분석을 트리거하지
+    // 않는다 — 초기 마운트 분석은 이미 서버가 자체적으로 홀딩을 읽어 개인화했다. force를
+    // 주지 않는다 — 같은 버킷의 다른 회원과 캐시를 공유하고 싶기 때문.
+    //
+    // SYMBOL 가드: `holdingAvgPrice`는 위 `useSymbolHolding` 주석대로 심볼별로
+    // 격리된 값이 아니라, 공유 쿼리에서 현재 symbol로 `.find()`한 파생값이다.
+    // 클라이언트 사이드 nav로 symbol이 바뀌면 avg 값도 함께 바뀌지만 이는 "이
+    // 심볼의 평단이 바뀐 것"이 아니라 "보고 있는 심볼이 바뀐 것"이므로, model/
+    // reasoning effect와 달리 avg 비교만으로는 의도를 구분할 수 없다. symbol
+    // 변경을 감지하면 마운트 시와 동일하게 ref들을 새 심볼 기준으로 재동기화만
+    // 하고 restartAnalysis는 호출하지 않는다 — 새 심볼의 초기 분석도 이미
+    // 서버가 자체적으로 홀딩을 읽어 개인화했다. 같은 심볼을 보는 중에 avg가
+    // 바뀌는 경우(홀딩 칩으로 직접 set/edit)만 진짜 사용자 의도 변경이다.
+    useEffect(() => {
+        if (!isHoldingResolved) return;
+
+        // symbol ref는 resolved일 때만 전진시킨다 — 그렇지 않으면 symbol이
+        // unresolved 구간(isLoading=true) 도중에 바뀐 뒤 다음 resolved 렌더에서
+        // 이미 "처리된" symbol처럼 보여 resync 없이 avg 비교로 새 버전이 흘러가
+        // 스푸리어스 restart가 나갈 수 있다.
+        const symbolChanged = symbol !== prevHoldingSymbolRef.current;
+
+        if (!hasHandledHoldingHydrationRef.current || symbolChanged) {
+            // On a soft symbol nav (the hook persists across nav — ChartContent is
+            // keyed only by timeframe, not symbol) the previous symbol's personalized
+            // flag must not leak onto the new symbol's no-bucket SSR seed, so reset it.
+            // Guard on symbolChanged ONLY: the first-hydration case needs no reset
+            // (isPersonalized already initializes false), and resetting there would
+            // race the tier-hydration mount re-submit — a warm personalized 'cached'
+            // result can land BEFORE the holdings query resolves, and an unconditional
+            // reset here would then wrongly clear the correct badge with no re-submit
+            // to restore it.
+            if (symbolChanged) setIsPersonalized(false);
+            hasHandledHoldingHydrationRef.current = true;
+            prevHoldingSymbolRef.current = symbol;
+            prevHoldingAvgPriceRef.current = holdingAvgPrice;
+            return;
+        }
+
+        if (holdingAvgPrice === prevHoldingAvgPriceRef.current) return;
+        if (isTierHydrated === false) return;
+        prevHoldingAvgPriceRef.current = holdingAvgPrice;
+
+        restartAnalysis();
+    }, [
+        symbol,
+        holdingAvgPrice,
+        isHoldingResolved,
+        isTierHydrated,
+        restartAnalysis,
+    ]);
 
     useEffect(() => {
         if (isTierHydrated === false) return;
@@ -650,5 +801,6 @@ export function useAnalysis({
         handleReanalyze,
         reanalyzeCooldownMs,
         cooldownNotice,
+        isPersonalized,
     };
 }

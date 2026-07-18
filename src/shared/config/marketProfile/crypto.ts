@@ -16,7 +16,8 @@ export const CRYPTO_DESCRIPTOR: MarketProfileDescriptor = {
     exchangeWhitelist: null, // FMP crypto exchange is "CRYPTO"/"CCC"; classify via DB
     searchSource: 'crypto-store',
     // 15Min/30Min/4Hour are NOT supported by FMP crypto intraday endpoints.
-    tabs: ['chart', 'news', 'fear-greed', 'overall'],
+    // 'position'도 허용 — 크립토 보유종목도 평단/현재가가 해석 가능해 "내 위치"가 의미 있다.
+    tabs: ['chart', 'news', 'fear-greed', 'overall', 'position'],
     defaultTimeframe: '1Day',
     allowedTimeframes: ['5Min', '1Hour', '1Day'],
     seo: {

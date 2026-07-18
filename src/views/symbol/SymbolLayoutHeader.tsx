@@ -12,6 +12,7 @@ import { ShareButton } from '@/widgets/share';
 import { FearGreedHeaderChipMounted } from './FearGreedHeaderChipMounted';
 import { PremiumModelGateModal } from '@/features/premium-gate';
 import { ReasoningToggle } from '@/features/reasoning-toggle';
+import { PortfolioChipMounted } from '@/features/portfolio-holding';
 import { LLM_PROVIDER_LABELS } from '@/shared/lib/llmProviderLabels';
 
 interface SymbolLayoutHeaderProps {
@@ -96,7 +97,7 @@ export function SymbolLayoutHeader({ symbol }: SymbolLayoutHeaderProps) {
                     </ErrorBoundary>
                 </div>
 
-                {/* 컨트롤 영역. 데스크톱(sm+)은 [공유][모델 라벨·셀렉터·토글]을
+                {/* 컨트롤 영역. 데스크톱(sm+)은 [공유][모델 라벨·셀렉터·토글·보유종목 칩]을
                     한 줄에 우측 정렬(기존과 동일). 모바일은 세로로 쌓아 두 줄로
                     정돈한다 — 기존엔 컨트롤이 flex-wrap으로 지그재그 wrap되고
                     공포·탐욕 칩이 외톨이 행으로 떨어져 어수선했다. */}
@@ -117,10 +118,11 @@ export function SymbolLayoutHeader({ symbol }: SymbolLayoutHeaderProps) {
                         </ErrorBoundary>
                         <ShareButton />
                     </div>
-                    {/* 모바일 둘째 줄: 모델 셀렉터 + 상세분석 토글을 우측 정렬.
-                        "AI 분석 모델" 라벨은 좁은 모바일 폭 확보를 위해 숨기고
-                        sm+에서만 노출한다(셀렉터 자체로 의미 전달). 데스크톱은
-                        공유 버튼과 한 줄로 붙어 기존 배치를 유지한다. */}
+                    {/* 모바일 둘째 줄: 모델 셀렉터 + 상세분석 토글 + 보유종목 칩을
+                        우측 정렬. "AI 분석 모델" 라벨은 좁은 모바일 폭 확보를 위해
+                        숨기고 sm+에서만 노출한다(셀렉터 자체로 의미 전달). 데스크톱은
+                        공유 버튼과 한 줄로 붙어 기존 배치를 유지한다. 보유종목(평단)
+                        칩은 가장 오른쪽에 두어 팝오버 우측 정렬 앵커를 유지한다. */}
                     <div className="flex items-center justify-end gap-2">
                         <span className="text-secondary-400 hidden text-xs whitespace-nowrap sm:inline">
                             AI 분석 모델
@@ -139,6 +141,7 @@ export function SymbolLayoutHeader({ symbol }: SymbolLayoutHeaderProps) {
                             canUse={canUseReasoning}
                             onLockedClick={openSignupNudge}
                         />
+                        <PortfolioChipMounted symbol={ticker} />
                     </div>
                 </div>
             </div>
