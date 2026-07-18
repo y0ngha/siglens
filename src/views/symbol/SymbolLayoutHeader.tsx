@@ -99,17 +99,22 @@ export function SymbolLayoutHeader({ symbol }: SymbolLayoutHeaderProps) {
 
                 <div className="flex flex-wrap items-center justify-end gap-x-2 gap-y-2 sm:order-3 sm:shrink-0 sm:flex-nowrap">
                     <ShareButton />
-                    <span className="text-secondary-400 text-xs whitespace-nowrap">
-                        AI 분석 모델
-                    </span>
-                    <ModelSelector
-                        selectedModel={modelId}
-                        onModelChange={handleModelChange}
-                        allowedModels={allowedModels}
-                        className="w-28 sm:w-32 lg:w-36"
-                        showLabel={false}
-                        dropdownAlign="right"
-                    />
+                    {/* label + selector는 항상 한 유닛으로 wrap한다 — 분리하면
+                        좁은 화면에서 라벨만 앞 행에 남고 셀렉터가 다음 행으로
+                        떨어지는 orphan이 생긴다. */}
+                    <div className="flex shrink-0 items-center gap-2">
+                        <span className="text-secondary-400 text-xs whitespace-nowrap">
+                            AI 분석 모델
+                        </span>
+                        <ModelSelector
+                            selectedModel={modelId}
+                            onModelChange={handleModelChange}
+                            allowedModels={allowedModels}
+                            className="w-28 sm:w-32 lg:w-36"
+                            showLabel={false}
+                            dropdownAlign="right"
+                        />
+                    </div>
                     <ReasoningToggle
                         checked={reasoning}
                         onChange={setReasoning}

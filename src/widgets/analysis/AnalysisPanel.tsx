@@ -1008,7 +1008,7 @@ export function AnalysisPanel({
                     {analysis.analyzedAt && (
                         <time
                             dateTime={analysis.analyzedAt}
-                            className="text-secondary-500 text-xs whitespace-nowrap"
+                            className="text-secondary-400 text-xs whitespace-nowrap"
                         >
                             {formatAnalyzedAt(analysis.analyzedAt)}
                         </time>
@@ -1020,7 +1020,7 @@ export function AnalysisPanel({
                             disabled={showProgress || isAnalyzing}
                             className={cn(
                                 // [공통 스타일]
-                                'focus-visible:ring-primary-500 rounded border px-2 py-1 text-xs font-medium whitespace-nowrap transition-colors focus-visible:ring-1 focus-visible:outline-none',
+                                'focus-visible:ring-primary-500 min-h-11 touch-manipulation rounded border px-2 py-1 text-xs font-medium whitespace-nowrap transition-colors focus-visible:ring-1 focus-visible:outline-none',
 
                                 // [1. 로딩/분석 중 상태]
                                 (showProgress || isAnalyzing) &&

@@ -93,7 +93,7 @@ export function ModelSelector({
                     AI MODEL
                 </span>
             )}
-            <div className="relative flex-1">
+            <div className="relative min-w-0 flex-1">
                 <button
                     ref={triggerRef}
                     type="button"
@@ -103,11 +103,11 @@ export function ModelSelector({
                     aria-expanded={isOpen}
                     aria-label="AI 분석 모델 선택"
                     className={cn(
-                        'border-secondary-700 hover:bg-secondary-700/30 focus-visible:ring-primary-500 flex w-full items-center justify-between rounded-md border px-3 py-2 transition-colors focus-visible:ring-1 focus-visible:outline-none',
+                        'border-secondary-700 hover:bg-secondary-700/30 focus-visible:ring-primary-500 flex min-h-11 w-full touch-manipulation items-center justify-between rounded-md border px-3 py-2 transition-colors focus-visible:ring-1 focus-visible:outline-none',
                         disabled && 'cursor-not-allowed opacity-60'
                     )}
                 >
-                    <span className="text-secondary-300 text-xs font-medium">
+                    <span className="text-secondary-300 truncate text-xs font-medium">
                         {selectedDisplay.label}
                     </span>
                     <span

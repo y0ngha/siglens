@@ -101,8 +101,12 @@ export function ReasoningToggle({
                 disabled={disabled}
                 onClick={handleClick}
                 className={cn(
-                    'focus-visible:ring-primary-500 relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors focus-visible:ring-1 focus-visible:outline-none',
-                    effectiveChecked ? 'bg-primary-600' : 'bg-secondary-700',
+                    // The hit area is expanded to a 44px (min-h-11 min-w-11)
+                    // touch target while the *visual* track underneath stays
+                    // the compact h-5 w-9 pill — the track span below carries
+                    // the background color so the switch doesn't visually
+                    // grow, only its tappable area does.
+                    'focus-visible:ring-primary-500 relative inline-flex min-h-11 min-w-11 shrink-0 touch-manipulation items-center justify-center rounded-full transition-colors focus-visible:ring-1 focus-visible:outline-none',
                     // A genuine `disabled` (true no-op) always wins the cursor:
                     // it must read as non-operable (cursor-not-allowed) even when
                     // also locked, so this precedence matches `handleClick`, where
@@ -114,20 +118,28 @@ export function ReasoningToggle({
                     // clickable so the click opens the signup nudge
                     // (cursor-pointer, not cursor-not-allowed; no native
                     // `disabled` which would swallow onClick).
-                    locked &&
-                        !disabled &&
-                        'bg-secondary-800 cursor-pointer opacity-50'
+                    locked && !disabled && 'cursor-pointer opacity-50'
                 )}
             >
                 <span
-                    aria-hidden="true"
                     className={cn(
-                        'inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform',
+                        'pointer-events-none inline-flex h-5 w-9 items-center rounded-full transition-colors',
                         effectiveChecked
-                            ? 'translate-x-[18px]'
-                            : 'translate-x-1'
+                            ? 'bg-primary-600'
+                            : 'bg-secondary-700',
+                        locked && !disabled && 'bg-secondary-800'
                     )}
-                />
+                >
+                    <span
+                        aria-hidden="true"
+                        className={cn(
+                            'inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform',
+                            effectiveChecked
+                                ? 'translate-x-[18px]'
+                                : 'translate-x-1'
+                        )}
+                    />
+                </span>
             </button>
         </div>
     );

@@ -21,7 +21,9 @@ interface PortfolioChipProps {
 /**
  * Header chip that shows/sets the current symbol's holding without leaving
  * the symbol page. Visually mirrors ReasoningToggle/ModelSelector's control
- * sizing (h-9, rounded-lg border) so it reads as part of the same cluster.
+ * language (rounded-lg border) so it reads as part of the same cluster; the
+ * trigger is sized to a min-h-11 (44px) mobile touch target rather than a
+ * fixed h-9 to meet WCAG 2.5.8 target size.
  *
  * Keep this component free of mount-time side effects for parity with the
  * dual-mounted fear-greed chip and to stay safe if the header layout later
@@ -48,7 +50,7 @@ export function PortfolioChip({ symbol }: PortfolioChipProps) {
     if (isLoading) {
         return (
             <span
-                className="bg-secondary-700/40 inline-flex h-9 w-24 animate-pulse rounded-lg"
+                className="bg-secondary-700/40 inline-flex min-h-11 w-24 animate-pulse rounded-lg"
                 aria-hidden="true"
             />
         );
@@ -68,7 +70,7 @@ export function PortfolioChip({ symbol }: PortfolioChipProps) {
                 aria-expanded={isOpen}
                 onClick={() => setIsOpen(open => !open)}
                 className={cn(
-                    'inline-flex h-9 items-center gap-1 rounded-lg border px-2.5 text-xs font-medium whitespace-nowrap tabular-nums transition-colors',
+                    'inline-flex min-h-11 touch-manipulation items-center gap-1 rounded-lg border px-2.5 text-xs font-medium whitespace-nowrap tabular-nums transition-colors',
                     'focus-visible:ring-primary-500 focus-visible:ring-2 focus-visible:outline-none',
                     holding === null
                         ? 'border-secondary-700 text-secondary-300 hover:border-secondary-600 hover:bg-secondary-700/30 hover:text-secondary-100'

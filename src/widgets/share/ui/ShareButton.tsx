@@ -49,7 +49,7 @@ export function ShareButton() {
                 disabled={isMutating}
                 onClick={onClick}
                 className={cn(
-                    'border-secondary-700 text-secondary-300 inline-flex size-9 min-h-11 items-center justify-center rounded-lg border',
+                    'border-secondary-700 text-secondary-300 inline-flex size-11 items-center justify-center rounded-lg border',
                     'hover:border-secondary-600 hover:bg-secondary-700/30 hover:text-secondary-100',
                     'focus-visible:ring-primary-500 focus-visible:ring-2 focus-visible:outline-none',
                     'touch-manipulation transition-colors'
