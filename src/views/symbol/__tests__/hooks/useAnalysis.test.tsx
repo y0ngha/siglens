@@ -985,16 +985,65 @@ describe('useAnalysis', () => {
             expect(result.current.isPersonalized).toBe(false);
         });
 
-        it('submitted + personalized: true → 폴링 done 이후에도 isPersonalized가 true로 유지된다', async () => {
+        it('submitted + personalized: true → 폴링 중에는 false, poll이 done을 반환한 뒤에야 true가 된다', async () => {
+            // submit이 'submitted'를 반환한 시점엔 화면에 아직 SSR의 no-bucket
+            // base 분석이 떠 있다(personalized 결과는 폴링이 끝나야 도착) — 배지가
+            // base 분석 위에서 거짓 주장을 하지 않으려면 이 구간에서 false여야
+            // 한다. poll을 명시적으로 제어해(resolveSecondSubmit 패턴과 동일)
+            // "폴링 중" 상태와 "poll done 이후" 상태를 각각 단언한다.
             mockSubmit.mockResolvedValue({
                 status: 'submitted',
                 jobId: 'job-personalized-1',
                 personalized: true,
             });
-            mockPoll.mockResolvedValue({
+            let resolvePoll:
+                | ((value: {
+                      status: 'done';
+                      result: AnalysisResponse;
+                      lockedInfoDepth: never[];
+                  }) => void)
+                | undefined;
+            mockPoll.mockImplementation(
+                () =>
+                    new Promise(resolve => {
+                        resolvePoll = resolve;
+                    })
+            );
+
+            const { result } = renderHook(
+                () => useAnalysis(makeOptions({ initialAnalysisFailed: true })),
+                { wrapper: makeWrapper() }
+            );
+
+            // submit이 resolve되어 폴링이 시작됐지만 poll 자체는 아직 pending —
+            // 이 구간에서는 isPersonalized가 false여야 한다.
+            await waitFor(() => {
+                expect(mockPoll).toHaveBeenCalled();
+            });
+            expect(result.current.isPersonalized).toBe(false);
+            expect(result.current.analysisResult).toBeNull();
+
+            resolvePoll?.({
                 status: 'done',
                 result: INITIAL_ANALYSIS,
                 lockedInfoDepth: [],
+            });
+
+            await waitFor(() => {
+                expect(result.current.analysisResult).not.toBeNull();
+            });
+            expect(result.current.isPersonalized).toBe(true);
+        });
+
+        it('submitted + personalized: true, poll이 error를 반환하면 isPersonalized는 false로 유지된다', async () => {
+            mockSubmit.mockResolvedValue({
+                status: 'submitted',
+                jobId: 'job-personalized-2',
+                personalized: true,
+            });
+            mockPoll.mockResolvedValue({
+                status: 'error',
+                error: '분석 실패',
             });
 
             const { result } = renderHook(
@@ -1002,15 +1051,10 @@ describe('useAnalysis', () => {
                 { wrapper: makeWrapper() }
             );
 
-            // submit 시점에 이미 true — 폴링 done/error 핸들러는 이 값을 건드리지 않는다.
             await waitFor(() => {
-                expect(result.current.isPersonalized).toBe(true);
+                expect(result.current.analysisError).toBe('분석 실패');
             });
-
-            await waitFor(() => {
-                expect(result.current.analysisResult).not.toBeNull();
-            });
-            expect(result.current.isPersonalized).toBe(true);
+            expect(result.current.isPersonalized).toBe(false);
         });
 
         it('새 제출이 시작되면(onMutate) isPersonalized가 false로 리셋된다', async () => {
@@ -1089,6 +1133,71 @@ describe('useAnalysis', () => {
             await waitFor(() => {
                 expect(result.current.isBotBlocked).toBe(true);
             });
+            expect(result.current.isPersonalized).toBe(false);
+        });
+
+        it('클라이언트 사이드 symbol nav 시 이전 symbol의 isPersonalized가 새 symbol로 새어 나가지 않는다', async () => {
+            // `ChartContent`는 symbol로 key되지 않고(§14 nav 회귀), 이 훅의
+            // holding-change effect도 symbol이 바뀌면 restartAnalysis 없이
+            // ref만 재동기화한다(prevHoldingSymbolRef 주석 참고) — 즉 이 훅은
+            // soft nav에서 리마운트 없이 유지될 수 있다. AAPL(개인화됨) →
+            // MSFT(홀딩 없음) nav 시, MSFT의 화면은 새 fresh submit이 오기
+            // 전까지 MSFT의 SSR seed(공유 no-bucket peek)이므로 AAPL 때의
+            // isPersonalized=true가 새어 나가면 안 된다.
+            mockSubmit.mockResolvedValue({
+                status: 'cached',
+                result: INITIAL_ANALYSIS,
+                lockedInfoDepth: [],
+                personalized: true,
+            });
+            mockUseSymbolHolding.mockReturnValue({
+                holding: {
+                    symbol: 'AAPL',
+                    companyName: null,
+                    fmpSymbol: null,
+                    quantity: '10',
+                    averagePrice: '100',
+                    updatedAt: '2026-01-01T00:00:00Z',
+                },
+                isHydrated: true,
+                isLoading: false,
+                isError: false,
+                save: {} as never,
+            });
+
+            const { result, rerender } = renderHook(
+                ({ symbol }: { symbol: string }) =>
+                    useAnalysis(
+                        makeOptions({
+                            symbol,
+                            initialAnalysisFailed: true,
+                        })
+                    ),
+                {
+                    wrapper: makeWrapper(),
+                    initialProps: { symbol: 'AAPL' },
+                }
+            );
+
+            await waitFor(() => {
+                expect(result.current.isPersonalized).toBe(true);
+            });
+
+            // MSFT로 nav — 공유 홀딩 쿼리는 isLoading false인 채 avg만 없어진다.
+            mockUseSymbolHolding.mockReturnValue({
+                holding: null,
+                isHydrated: true,
+                isLoading: false,
+                isError: false,
+                save: {} as never,
+            });
+            rerender({ symbol: 'MSFT' });
+
+            // holding-change effect의 setState는 마이크로태스크를 거치지 않고
+            // effect 본문에서 동기 호출되지만, `restartAnalysis` 트리거 여부와
+            // 대칭적으로 한 tick 플러시한 뒤 단언한다(sibling nav 테스트와 동일 패턴).
+            await new Promise(resolve => setTimeout(resolve, 0));
+
             expect(result.current.isPersonalized).toBe(false);
         });
     });

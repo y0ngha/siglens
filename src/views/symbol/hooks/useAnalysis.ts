@@ -220,6 +220,13 @@ export function useAnalysis({
     const currentJobIdRef = useRef<string | null>(null);
     // polling 완료 시 force 경로 쿨다운 처리를 위해 마지막 요청의 force 여부를 추적
     const lastForceRef = useRef(false);
+    // submit이 'submitted'(캐시 미스 → 워커 enqueue)를 반환하면 서버가 이 제출을
+    // personalized(:pos=) 키로 enqueue했는지 여부를 여기 보관만 하고, 배지는 아직
+    // 켜지 않는다. 폴링 중 화면에 떠 있는 건 SSR의 no-bucket base 분석이라(page.tsx
+    // peekAnalysisStatic이 positionBucket=undefined로 고정) 결과가 실제로 도착하는
+    // poll 'done' 시점에 이 값을 적용해야 base 분석 위에 "개인화했어요"라고 거짓
+    // 주장하지 않는다.
+    const pendingPersonalizedRef = useRef(false);
 
     // 3. useMutation — submit
     const {
@@ -259,6 +266,7 @@ export function useAnalysis({
             // 새 제출이 시작됨 — 이전 결과의 personalized 여부는 더 이상 유효하지
             // 않다. 새 서버 응답이 올 때까지 false로 되돌린다.
             setIsPersonalized(false);
+            pendingPersonalizedRef.current = false;
         },
         onSuccess: (data, variables) => {
             if (data.status === 'cached') {
@@ -297,10 +305,13 @@ export function useAnalysis({
                 // submitted 단계에서는 쿨다운을 시작하지 않는다.
                 // polling 완료(done) 시에만 쿨다운을 시작한다.
                 // 서버가 이미 이 제출을 personalized 캐시 키로 enqueue했는지
-                // 여부 — 아래 폴링 useEffect의 done/error 핸들러는 이 값을
-                // 건드리지 않는다(폴링은 결과 조회일 뿐, personalized 여부는
-                // submit 시점에 이미 확정됨).
-                setIsPersonalized(data.personalized ?? false);
+                // 여부는 여기서 알 수 있지만, 배지는 아직 켜지 않는다 — 폴링이
+                // 끝날 때까지 화면에 떠 있는 건 SSR의 no-bucket base 분석이므로,
+                // 지금 켜면 base 분석 위에 "개인화했어요"라고 거짓 주장하게 된다.
+                // 값은 ref에만 보관해 두고, 아래 폴링 useEffect의 'done' 핸들러가
+                // 실제로 화면을 personalized 결과로 교체하는 시점에 적용한다.
+                pendingPersonalizedRef.current = data.personalized ?? false;
+                setIsPersonalized(false);
             } else if (data.status === 'miss_no_trigger') {
                 // 별도 boolean 상태로 추적하는 이유: 이 훅은 useMutation 기반이라
                 // useQuery처럼 에러 브랜치 narrowing으로 비-데이터 상태를 표현할
@@ -346,12 +357,15 @@ export function useAnalysis({
     });
 
     // 5. useSymbolHolding — personalized-analysis-by-position-bucket spec
-    // (Subsystem C). Source of the member's holding for THIS symbol. The
-    // INITIAL analysis on mount is already personalized WITHOUT any client
-    // involvement — submitAnalysisAction server-reads the holding itself —
-    // so this hook exists purely to catch a *subsequent* change (the member
-    // sets/edits their avg via the holding chip while already viewing the
-    // page) via the effect below (§9).
+    // (Subsystem C). Source of the member's holding for THIS symbol. The SSR
+    // `initialAnalysis` seed on mount is the shared no-bucket peek — a static
+    // ISR page (`src/app/[symbol]/page.tsx`'s `peekAnalysisStatic`) can't read
+    // the member's cookie, so that seed is NEVER personalized. A member's
+    // personalized analysis only ever arrives via a CLIENT re-submit: the
+    // tier-hydration effect below (§9) forces one on mount for members
+    // (`tier !== 'free'`), and this hook additionally catches a *later*
+    // holding edit (the member sets/edits their avg via the holding chip
+    // while already viewing the page) via its own effect (§9).
     const {
         holding,
         isHydrated: isHoldingHydrated,
@@ -372,9 +386,9 @@ export function useAnalysis({
     // from symbol X to symbol Y, `isLoading` can stay `false` throughout (the
     // list is already warm) while the derived `holdingAvgPrice` VALUE changes
     // (X's avg → Y's avg-or-none) on the very same render as `symbol`. Without
-    // this ref, that reads as "the avg changed" and fires a spurious
-    // `restartAnalysis()` — discarding the fresh SSR `initialAnalysis` for Y
-    // (already server-personalized) for a redundant submit+poll.
+    // this ref, that reads as "the avg changed" and fires a spurious extra
+    // `restartAnalysis()` on top of the tier-hydration effect's own re-submit
+    // for Y — a redundant second submit+poll racing the first.
     const prevHoldingSymbolRef = useRef(symbol);
 
     // `@y0ngha/siglens-core`가 부분 응답(누락된 배열/객체)을 돌려줄 수 있으므로
@@ -511,6 +525,9 @@ export function useAnalysis({
                         setAnalysisResult(
                             normalizeAnalysisResponse(result.result)
                         );
+                        // 폴링이 실제로 personalized 결과를 화면에 반영하는 시점 —
+                        // submit 시점에 보관해 둔 서버 결정을 이제야 배지에 적용한다.
+                        setIsPersonalized(pendingPersonalizedRef.current);
                         // cached 경로와 동일한 롤링 배포 안전망. member/pro 호출자가
                         // lockedInfoDepth 없는 구버전 응답을 받아도 undefined가 아닌
                         // 빈 배열을 저장한다.
@@ -529,6 +546,7 @@ export function useAnalysis({
                                 ? "죄송합니다. AI 서버가 불안정합니다. 잠시 후 다시 시도해 주세요. 반복해서 발생할 경우 하단 '오류 제보하기'를 이용해 주세요."
                                 : result.error;
                         setPollError(errorMessage);
+                        setIsPersonalized(false);
                         if (lastForceRef.current) {
                             void releaseReanalyzeCooldown(
                                 latestRef.current.symbol,
@@ -544,6 +562,7 @@ export function useAnalysis({
                     if (cancelled) break;
                     currentJobIdRef.current = null;
                     setPollError('분석 결과 조회에 실패했습니다.');
+                    setIsPersonalized(false);
                     if (lastForceRef.current) {
                         void releaseReanalyzeCooldown(
                             latestRef.current.symbol,
@@ -674,6 +693,12 @@ export function useAnalysis({
             hasHandledHoldingHydrationRef.current = true;
             prevHoldingSymbolRef.current = symbol;
             prevHoldingAvgPriceRef.current = holdingAvgPrice;
+            // symbol이 바뀌면 화면은 새 symbol의 SSR seed(공유 no-bucket peek —
+            // 절대 personalized일 수 없다)로 돌아가 있다가 fresh submit이
+            // 도착해야 personalized로 갱신된다. 이 ref/훅이 리마운트 없이
+            // 유지되는 경로(soft nav)에서 이전 symbol의 isPersonalized=true가
+            // 새 symbol의 base 분석 위로 새어 나가지 않도록 여기서 되돌린다.
+            setIsPersonalized(false);
             return;
         }
 
