@@ -69,6 +69,12 @@ async function AccountContent() {
                 className="ring-secondary-800 bg-secondary-900/80 space-y-4 rounded-2xl p-6 ring-1 backdrop-blur-xl"
             >
                 <PortfolioSection />
+                <Link
+                    href="/portfolio"
+                    className="border-secondary-700 text-secondary-200 hover:bg-secondary-800 focus-visible:ring-primary-500 inline-flex min-h-11 touch-manipulation items-center justify-center rounded-md border px-4 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                >
+                    내 포트폴리오 위치 보기
+                </Link>
             </section>
 
             <section

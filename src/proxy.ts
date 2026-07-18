@@ -17,6 +17,7 @@ const RESERVED_FIRST_SEGMENTS = new Set([
     'market',
     'news',
     'onboarding',
+    'portfolio',
     'share',
     'backtesting',
     'terms',
@@ -103,7 +104,7 @@ const GUEST_ONLY_PATHS = new Set([
     '/reset-password',
 ]);
 
-const AUTH_REQUIRED_PATHS = ['/account'];
+const AUTH_REQUIRED_PATHS = ['/account', '/portfolio'];
 
 export const config = {
     matcher: [
