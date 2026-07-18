@@ -101,20 +101,31 @@ export function ReasoningToggle({
                 disabled={disabled}
                 onClick={handleClick}
                 className={cn(
-                    // Layout-neutral 44px touch target: the button's own box
-                    // stays the compact h-5 w-9 visual pill (its rendered
+                    // Layout-neutral touch target: the button's own box stays
+                    // the compact h-5 w-9 visual pill (its rendered
                     // background = the track) so it doesn't inflate the
                     // symbol-page header's wrapped-controls row height. The
-                    // 44px (WCAG 2.5.8 AAA) tappable area instead comes from
-                    // the `before:` pseudo-element below, which is absolutely
-                    // positioned (out of flow) with a negative inset, so it
-                    // extends the hit area without occupying layout space.
-                    // (A prior version grew the button's own min-h/min-w to
-                    // 44px directly — that pushed the header taller on short
+                    // tappable area instead comes from the `before:`
+                    // pseudo-element below, which is absolutely positioned
+                    // (out of flow) with a negative inset, so it extends the
+                    // hit area without occupying layout space. (A prior
+                    // version grew the button's own min-h/min-w to 44px
+                    // directly — that pushed the header taller on short
                     // mobile viewports, shoving the tab nav down into the
                     // floating chat panel's overlap band; see the webkit
                     // regression fixed alongside this comment.)
-                    "focus-visible:ring-primary-500 relative inline-flex h-5 w-9 shrink-0 touch-manipulation items-center rounded-full transition-colors before:absolute before:-inset-x-1 before:-inset-y-3 before:content-[''] focus-visible:ring-1 focus-visible:outline-none",
+                    //
+                    // Trade-off: the header row uses `gap-y-2` (8px) between
+                    // wrapped lines, so an out-of-flow hit area can only grow
+                    // by up to 4px on each of the top/bottom edges before it
+                    // bleeds into the row above/below and causes mis-taps on
+                    // wrap. `-inset-y-3` (12px/side) exceeded that, giving a
+                    // full 44px (WCAG 2.5.5 AAA) box that overlapped the
+                    // adjacent row. `-inset-y-1` (4px/side) stays exactly
+                    // within the gap — the resulting ~28px tall hit area
+                    // still clears the WCAG 2.5.8 (AA) 24px minimum without
+                    // any overhang or layout inflation.
+                    "focus-visible:ring-primary-500 relative inline-flex h-5 w-9 shrink-0 touch-manipulation items-center rounded-full transition-colors before:absolute before:-inset-x-1 before:-inset-y-1 before:content-[''] focus-visible:ring-1 focus-visible:outline-none",
                     effectiveChecked ? 'bg-primary-600' : 'bg-secondary-700',
                     locked && !disabled && 'bg-secondary-800',
                     // A genuine `disabled` (true no-op) always wins the cursor:

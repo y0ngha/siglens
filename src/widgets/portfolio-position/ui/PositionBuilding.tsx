@@ -1,5 +1,9 @@
 import { cn } from '@/shared/lib/cn';
-import { dynamicDecimals, formatUsdPrice } from '@/shared/lib/priceFormat';
+import {
+    dynamicDecimals,
+    formatSignedPercent,
+    formatUsdPrice,
+} from '@/shared/lib/priceFormat';
 import type { PositionModel } from '../lib/positionGeometry';
 
 interface PositionBuildingProps {
@@ -29,16 +33,13 @@ function formatUsd(value: number): string {
  * 이 라벨에서만 축약한다. aria-label은 정밀도를 위해 항상 전체 값을 쓴다. */
 const IN_SVG_COMPACT_THRESHOLD = 100_000;
 
-function formatUsdCompactForSvgLabel(value: number): string {
+/** Exported so the clipping-regression test can build the exact string the
+ * component renders (avoids a second, potentially-drifting copy in the test). */
+export function formatUsdCompactForSvgLabel(value: number): string {
     if (Math.abs(value) >= IN_SVG_COMPACT_THRESHOLD) {
         return `$${Math.round(value / 1000)}K`;
     }
     return formatUsd(value);
-}
-
-function formatSignedPercent(value: number): string {
-    const sign = value >= 0 ? '+' : '';
-    return `${sign}${value.toFixed(1)}%`;
 }
 
 function buildAriaLabel(
@@ -71,7 +72,12 @@ function outOfRangeNote(clamped: 'above' | 'below' | null): string | null {
  * 마커·라벨은 이 투영과 무관하게 항상 upright(수평/수직) 좌표에 배치한다.
  * ------------------------------------------------------------------------ */
 
-const VIEWBOX_W = 280;
+// 280 → 360: widened horizontally (audit finding #1) so the avg/current
+// marker labels never clip for realistic per-share prices (up to ~$99,999
+// before IN_SVG_COMPACT_THRESHOLD kicks in). Building geometry below (ISO_DX,
+// FLOOR_H, ...) is unchanged — the extra width is pure side padding for
+// labels, which already lived in the margins by design.
+const VIEWBOX_W = 360;
 const VIEWBOX_H = 360;
 const CENTER_X = VIEWBOX_W / 2;
 
@@ -97,11 +103,19 @@ const BASEMENT_Y = GROUND_FRONT_Y + SKY_BASEMENT_OFFSET;
 const HIGH_LABEL_Y = ROOF_BACK_Y - 12;
 const LOW_LABEL_Y = GROUND_FRONT_Y + 18;
 
-/** avg/current가 이 값 미만 차이일 때 겹침을 막기 위해 마커를 좌우로 dodge한다. */
-const DODGE_EPSILON = 0.04;
 const DODGE_X_OFFSET = 11;
 const MARKER_HALF = 6;
 const LABEL_GAP = 12;
+
+/**
+ * avg/current가 이 값 미만 차이일 때 겹침을 막기 위해 마커를 좌우로 dodge한다.
+ * frontY 스케일은 pos(0..1) 전체가 BUILDING_H(150px)에 대응하므로, 마커 자체의
+ * 시각적 높이(다이아몬드 마커 = MARKER_HALF*2 = 12px)보다 좁은 y 간격에서는 항상
+ * 마커가 겹친다. 이전 값 0.04(6px 간격)는 이 12px 마커 높이보다 작아 6~12px
+ * 사이의 near-break-even 케이스가 dodge 없이 겹쳐 보였다(audit finding #6) — 마커
+ * 높이 자체를 임계값으로 삼아 겹침이 발생할 수 있는 모든 간격에서 dodge되도록 한다.
+ */
+const DODGE_EPSILON = (MARKER_HALF * 2) / BUILDING_H;
 
 /** avg/current out-of-range 안내 텍스트를 각자의 마커 라벨 바로 아래에 두는 세로 간격. */
 const NOTE_Y_OFFSET = 12;
@@ -109,6 +123,44 @@ const NOTE_Y_OFFSET = 12;
 /** 지면 타원(ellipse)을 건물 정면 모서리 바닥보다 살짝 아래로, 좌/우 외곽선보다 살짝 넓게 그린다. */
 const GROUND_ELLIPSE_CY_OFFSET = 6;
 const GROUND_ELLIPSE_RX_OFFSET = 14;
+
+/**
+ * in-SVG 마커 라벨 prefix — aria-label(buildAriaLabel, "평단"/"현재가" 전체 표기,
+ * 폭 제약 없음)과 별개로 고정 viewBox 폭 제약을 받는 시각 라벨 전용이다. "내
+ * 평단"/"현재가"보다 짧게 둬(audit finding #1) 4자리 이상 가격에서도 라벨이
+ * viewBox를 벗어나지 않게 한다.
+ */
+export const AVG_LABEL_PREFIX = '★ 평단 ';
+export const CURRENT_LABEL_PREFIX = '● 현재 ';
+
+/**
+ * 마커 라벨의 텍스트 anchor(text-anchor="end"/"start")에서 viewBox 가장자리까지
+ * 남은 여유 폭 — avg 라벨은 왼쪽(CENTER_X - ISO_DX - LABEL_GAP만큼 안쪽에서 anchor,
+ * 거기서 왼쪽으로 텍스트가 자란다), current 라벨은 대칭으로 오른쪽. CENTER_X가
+ * viewBox 중앙이므로 두 방향의 여유 폭은 같다.
+ */
+export const SVG_LABEL_AVAILABLE_WIDTH = CENTER_X - ISO_DX - LABEL_GAP;
+
+/**
+ * 글자 하나당 대략적인 렌더 폭(px) 추정 — text-[10px] font-medium tabular-nums
+ * 라벨 전용. jsdom에는 실제 텍스트 레이아웃 엔진이 없어(getBBox/
+ * getComputedTextLength 모두 throw) 클리핑 회귀 테스트가 이 추정치로 "라벨이
+ * viewBox 안에 들어가는가"를 검증한다. 한글/심볼(★●)은 정사각형에 가깝게
+ * (~1em) 넓고, 숫자·구두점은 더 좁게(~0.6em) — 실제보다 과소평가하지 않도록
+ * 보수적으로(넉넉하게) 잡는다.
+ */
+function estimateGlyphWidthPx(ch: string): number {
+    if (ch === ' ') return 3;
+    if (/[ㄱ-힣★●]/.test(ch)) return 10; // 한글 + 마커 심볼(★●)
+    return 6; // 숫자, $, 쉼표, 마침표
+}
+
+export function estimateSvgLabelWidth(text: string): number {
+    return Array.from(text).reduce(
+        (sum, ch) => sum + estimateGlyphWidthPx(ch),
+        0
+    );
+}
 
 interface Point {
     x: number;
@@ -442,7 +494,9 @@ export function PositionBuilding({
                     dominantBaseline="middle"
                     className="fill-current text-[10px] font-medium tabular-nums"
                 >
-                    <tspan className="fill-secondary-400">★ 내 평단 </tspan>
+                    <tspan className="fill-secondary-400">
+                        {AVG_LABEL_PREFIX}
+                    </tspan>
                     <tspan className="fill-secondary-100">
                         {avgDisplaySvg}
                     </tspan>
@@ -453,7 +507,7 @@ export function PositionBuilding({
                         x={CENTER_X - ISO_DX - LABEL_GAP}
                         y={avgY + NOTE_Y_OFFSET}
                         textAnchor="end"
-                        className="fill-secondary-400 text-[9px]"
+                        className="fill-secondary-400 text-[10px]"
                     >
                         {model.avgClamped === 'above' ? '☁ ' : '▽B1 '}
                         {avgNote}
@@ -478,7 +532,9 @@ export function PositionBuilding({
                     dominantBaseline="middle"
                     className="fill-current text-[10px] font-medium tabular-nums"
                 >
-                    <tspan className="fill-secondary-400">● 현재가 </tspan>
+                    <tspan className="fill-secondary-400">
+                        {CURRENT_LABEL_PREFIX}
+                    </tspan>
                     <tspan className="fill-secondary-100">
                         {currentDisplaySvg}
                     </tspan>
@@ -489,7 +545,7 @@ export function PositionBuilding({
                         x={CENTER_X + ISO_DX + LABEL_GAP}
                         y={currentY + NOTE_Y_OFFSET}
                         textAnchor="start"
-                        className="fill-secondary-400 text-[9px]"
+                        className="fill-secondary-400 text-[10px]"
                     >
                         {model.currentClamped === 'above' ? '☁ ' : '▽B1 '}
                         {currentNote}

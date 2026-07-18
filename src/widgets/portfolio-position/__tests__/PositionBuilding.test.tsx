@@ -1,6 +1,13 @@
 import { render } from '@testing-library/react';
 import { computePosition, type PositionModel } from '../lib/positionGeometry';
-import { PositionBuilding } from '../ui/PositionBuilding';
+import {
+    AVG_LABEL_PREFIX,
+    CURRENT_LABEL_PREFIX,
+    estimateSvgLabelWidth,
+    formatUsdCompactForSvgLabel,
+    PositionBuilding,
+    SVG_LABEL_AVAILABLE_WIDTH,
+} from '../ui/PositionBuilding';
 
 function model(overrides: Partial<Parameters<typeof computePosition>[0]> = {}) {
     return computePosition({
@@ -138,6 +145,22 @@ describe('PositionBuilding', () => {
         expect(avg.x).not.toBe(current.x);
     });
 
+    it('avg/current 분리가 6~12px 사이(구 epsilon 0.04 미만에서는 dodge 미적용이었던 구간)여도 dodge가 적용된다(audit finding #6)', () => {
+        const { container } = renderBuilding({
+            low52w: 100,
+            high52w: 200,
+            avg: 150, // avgPos 0.5
+            current: 156, // currentPos 0.56 → |Δpos| = 0.06 (9px) — 구 0.04 epsilon 미만이라 dodge 안 됐던 구간
+        });
+        const avg = transformXY(
+            container.querySelector('[data-testid="avg-marker"]')
+        );
+        const current = transformXY(
+            container.querySelector('[data-testid="current-marker"]')
+        );
+        expect(avg.x).not.toBe(current.x);
+    });
+
     it('avg/current가 충분히 떨어져 있으면(dodge 미적용) 마커가 같은 x(건물 정면 모서리)에 정렬된다', () => {
         const { container } = renderBuilding({
             low52w: 100,
@@ -244,6 +267,43 @@ describe('PositionBuilding', () => {
         expect(svg?.textContent).not.toMatch(/\$0(?!\.\d)/);
         expect(svg?.getAttribute('aria-label')).not.toMatch(/\$0(?!\.\d)/);
     });
+
+    it.each([
+        { name: '$1,234.56', avg: 1234.56, current: 4321.09 },
+        { name: '~$4,000', avg: 3987.65, current: 3500 },
+    ])(
+        '4자리 가격($name)에서 in-SVG 라벨이 축약 없이 전체 정밀도로 렌더되면서도 viewBox를 벗어나지 않는다(클리핑 방지, audit finding #1)',
+        ({ avg, current }) => {
+            const { container } = renderBuilding({
+                low52w: 1000,
+                high52w: 5000,
+                avg,
+                current,
+            });
+            const svg = container.querySelector('svg[role="img"]');
+
+            // 라벨이 (축약 없이) 렌더돼 있다.
+            const avgPrice = formatUsdCompactForSvgLabel(avg);
+            const currentPrice = formatUsdCompactForSvgLabel(current);
+            expect(avgPrice).not.toContain('K'); // IN_SVG_COMPACT_THRESHOLD(100,000) 미만
+            expect(svg?.textContent).toContain(avgPrice);
+            expect(svg?.textContent).toContain(currentPrice);
+
+            // jsdom에는 실제 텍스트 레이아웃이 없어(getBBox 미구현) 컴포넌트와 동일한
+            // 보수적 폭 추정치로 "라벨 시작 x가 viewBox(0) 안쪽인가"를 검증한다 —
+            // 여유 폭(SVG_LABEL_AVAILABLE_WIDTH)보다 라벨 폭이 좁아야 클리핑이 없다.
+            const avgLabelWidth = estimateSvgLabelWidth(
+                AVG_LABEL_PREFIX + avgPrice
+            );
+            const currentLabelWidth = estimateSvgLabelWidth(
+                CURRENT_LABEL_PREFIX + currentPrice
+            );
+            const avgXStart = SVG_LABEL_AVAILABLE_WIDTH - avgLabelWidth;
+            const currentXEnd = SVG_LABEL_AVAILABLE_WIDTH - currentLabelWidth;
+            expect(avgXStart).toBeGreaterThanOrEqual(0);
+            expect(currentXEnd).toBeGreaterThanOrEqual(0);
+        }
+    );
 
     it('crash 없이 렌더된다(break-even 모델)', () => {
         expect(() =>

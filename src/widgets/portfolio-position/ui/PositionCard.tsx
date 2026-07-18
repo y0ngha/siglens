@@ -1,10 +1,9 @@
 import { useId } from 'react';
 import { cn } from '@/shared/lib/cn';
-import { formatUsdPrice } from '@/shared/lib/priceFormat';
+import { formatSignedPercent, formatUsdPrice } from '@/shared/lib/priceFormat';
 import type { PositionModel } from '../lib/positionGeometry';
 
 interface PositionCardProps {
-    symbol: string;
     model: PositionModel;
     low52w: number;
     high52w: number;
@@ -14,11 +13,6 @@ interface PositionCardProps {
 
 function formatUsd(value: number): string {
     return `$${formatUsdPrice(value)}`;
-}
-
-function formatSignedPercent(value: number): string {
-    const sign = value >= 0 ? '+' : '';
-    return `${sign}${value.toFixed(1)}%`;
 }
 
 /** ≥0면 성공, <0면 위험 — AA 텍스트 변형 토큰(DESIGN.md §AA), chart-*는 그래픽 전용이라 미사용. */
@@ -49,7 +43,6 @@ function ReadoutRow({ label, value, valueClassName }: ReadoutRowProps) {
  * 이므로 TechnicalFactsSummary와 동일하게 타임프레임-중립 문구를 쓴다.
  */
 export function PositionCard({
-    symbol: _symbol,
     model,
     low52w,
     high52w,

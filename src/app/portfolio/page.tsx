@@ -1,11 +1,14 @@
 import { PositionHoldingCard } from './PositionHoldingCard';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
-import { getPortfolioHoldingsAction } from '@/entities/portfolio/actions';
+import { DrizzlePortfolioRepository } from '@/entities/portfolio/api';
+import { toView } from '@/entities/portfolio/lib/toView';
+import { getDatabaseClient } from '@/shared/db/client';
 import { SITE_NAME, SITE_URL } from '@/shared/lib/seo';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
+import type { PortfolioHoldingView } from '@/entities/portfolio';
 
 // noindex 페이지에도 canonical/og:url을 명시한다 (login/signup/account/onboarding
 // 정책과 일관). 외부에 변형 URL이 공유되더라도 "원본은 /portfolio 하나"라는 신호를
@@ -19,24 +22,44 @@ export const metadata: Metadata = {
 };
 
 /**
- * Reads cookies via getCurrentUser/getPortfolioHoldingsAction — must be inside
- * Suspense for PPR. Exported (rather than module-private) so tests can `await
- * PortfolioGuard()` directly and assert the unauthenticated redirect target,
- * mirroring the `OnboardingGuard` export pattern in `src/app/onboarding/page.tsx`.
+ * Reads cookies via getCurrentUser — must be inside Suspense for PPR. Exported
+ * (rather than module-private) so tests can `await PortfolioGuard()` directly
+ * and assert the unauthenticated redirect target, mirroring the
+ * `OnboardingGuard` export pattern in `src/app/onboarding/page.tsx`.
  *
- * Server cost is bounded to a single holdings DB read (`findByUser`, via
- * `getPortfolioHoldingsAction`) — per-holding price ranges are NEVER fetched
- * here. Each `PositionHoldingCard` lazily fetches its own symbol's bars on the
- * client once scrolled into view, so this dynamic (non-cached) page never fans
- * out into an unbounded N-symbol FMP fetch per visit.
+ * Reads the user's holdings directly via `DrizzlePortfolioRepository` (the
+ * same repo `getPortfolioHoldingsAction` wraps) instead of calling that
+ * action, for two reasons: (1) the action re-resolves `getCurrentUser()`
+ * internally, which would resolve the session twice per request; (2) the
+ * action deliberately lets a transient DB read failure propagate (it's
+ * designed as a React Query `queryFn`, where a thrown error just flips
+ * `isError` — see its own doc comment), but here that would hit the *page's*
+ * root error boundary instead. The try/catch below degrades to an in-page
+ * `PortfolioErrorState` so a transient blip never breaks the whole page.
+ *
+ * Server cost is still bounded to a single holdings DB read — per-holding
+ * price ranges are NEVER fetched here. Each `PositionHoldingCard` lazily
+ * fetches its own symbol's bars on the client once scrolled into view, so
+ * this dynamic (non-cached) page never fans out into an unbounded N-symbol
+ * FMP fetch per visit.
  */
 export async function PortfolioGuard() {
-    const [user, holdings] = await Promise.all([
-        getCurrentUser(),
-        getPortfolioHoldingsAction(),
-    ]);
+    const user = await getCurrentUser();
     if (!user) {
         redirect('/login?next=/portfolio');
+    }
+
+    let holdings: PortfolioHoldingView[];
+    try {
+        const { db } = getDatabaseClient();
+        const rows = await new DrizzlePortfolioRepository(db).findByUser(
+            user.id
+        );
+        holdings = rows
+            .map(toView)
+            .toSorted((a, b) => a.symbol.localeCompare(b.symbol));
+    } catch {
+        return <PortfolioErrorState />;
     }
 
     if (holdings.length === 0) {
@@ -77,6 +100,25 @@ export function PortfolioEmptyState() {
             >
                 보유종목 등록해보기
             </Link>
+        </section>
+    );
+}
+
+// Exported (not module-private) for the same reason as `PortfolioEmptyState`
+// — tests locate it via `findElementByType` on the unrendered tree returned
+// by `PortfolioGuard()` when the holdings read throws.
+export function PortfolioErrorState() {
+    return (
+        <section
+            data-testid="portfolio-error-state"
+            className="border-secondary-700 bg-secondary-800/40 flex flex-col items-start gap-3 rounded-xl border p-6"
+        >
+            <p className="text-secondary-100 text-sm font-semibold">
+                포트폴리오를 불러오지 못했어요
+            </p>
+            <p className="text-secondary-400 text-sm leading-relaxed">
+                잠시 후 다시 시도해 주세요.
+            </p>
         </section>
     );
 }

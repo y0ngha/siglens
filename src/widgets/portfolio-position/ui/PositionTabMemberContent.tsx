@@ -94,11 +94,10 @@ export function PositionTabMemberContent({
                 high52w={high52w}
                 current={lastClose}
                 avg={avg}
-                className="sm:w-1/2"
+                className="sm:w-auto sm:max-w-[320px] sm:shrink-0"
             />
-            <div className="sm:flex-1">
+            <div className="sm:min-w-0 sm:flex-1">
                 <PositionCard
-                    symbol={symbol}
                     model={model}
                     low52w={low52w}
                     high52w={high52w}

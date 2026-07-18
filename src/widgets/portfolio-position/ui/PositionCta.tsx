@@ -33,7 +33,7 @@ export function PositionCta({ low52w, high52w }: PositionCtaProps) {
             {low52w !== null && high52w !== null && (
                 <p
                     data-testid="position-cta-range"
-                    className="text-secondary-500 text-xs tabular-nums"
+                    className="text-secondary-400 text-xs tabular-nums"
                 >
                     최근 범위 {formatUsd(low52w)} ~ {formatUsd(high52w)}
                 </p>

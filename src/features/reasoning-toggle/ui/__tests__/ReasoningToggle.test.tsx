@@ -263,6 +263,31 @@ describe('ReasoningToggle', () => {
         expect(onLockedClick).not.toHaveBeenCalled();
     });
 
+    it('keeps its own layout box compact (h-5 w-9, no min-h-11) while extending the tap area via an out-of-flow before: pseudo — guards the mobile symbol-header webkit regression (no header-row inflation)', () => {
+        render(
+            <ReasoningToggle checked={false} onChange={vi.fn()} canUse={true} />
+        );
+        const toggle = screen.getByRole('switch');
+
+        // The button's own rendered box must stay the compact visual pill —
+        // growing it (e.g. back to min-h-11/min-w-11) would inflate the
+        // symbol-page header's wrapped-controls row height and shove the tab
+        // nav under the floating chat panel (the webkit e2e regression this
+        // guards against).
+        expect(toggle.className).toContain('h-5');
+        expect(toggle.className).toContain('w-9');
+        expect(toggle.className).not.toContain('min-h-11');
+        expect(toggle.className).not.toContain('min-w-11');
+
+        // The 44px WCAG 2.5.5 (AAA) tap area is infeasible without either
+        // overhanging the header's 8px row gap or inflating the box, so the
+        // out-of-flow `before:` pseudo only extends 4px/side (within the
+        // gap) — still clearing the WCAG 2.5.8 (AA) 24px minimum.
+        expect(toggle.className).toContain('before:absolute');
+        expect(toggle.className).toContain('before:-inset-x-1');
+        expect(toggle.className).toContain('before:-inset-y-1');
+    });
+
     it('non-member: clicking the locked switch calls onLockedClick, not onChange', () => {
         const onChange = vi.fn();
         const onLockedClick = vi.fn();

@@ -78,6 +78,17 @@ export function formatPrice(value: number, spec: PriceFormatConfig): string {
     }).format(value);
 }
 
+/**
+ * "+12.3%" / "-4.5%" — signed percent with one decimal place. Extracted from
+ * three byte-identical copies (PositionBuilding/PositionHoldingCard/PositionCard —
+ * rule-of-three, DESIGN.md/CONVENTIONS.md dedupe guidance) into a single shared
+ * helper next to the other price-formatting utilities.
+ */
+export function formatSignedPercent(value: number): string {
+    const sign = value >= 0 ? '+' : '';
+    return `${sign}${value.toFixed(1)}%`;
+}
+
 export function formatPriceChange(percent: number): PriceChangeDisplay {
     const isUp = percent >= 0;
     return {

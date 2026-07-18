@@ -18,7 +18,6 @@ function renderCard(
 ) {
     return render(
         <PositionCard
-            symbol="AAPL"
             model={m}
             low52w={input.low52w ?? 100}
             high52w={input.high52w ?? 200}

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { getBarsAction } from '@/entities/bars/actions';
 import { DEFAULT_TIMEFRAME } from '@/shared/config/market';
@@ -10,7 +11,11 @@ import {
     computePosition,
     PositionBuilding,
 } from '@/widgets/portfolio-position';
-import { dynamicDecimals, formatUsdPrice } from '@/shared/lib/priceFormat';
+import {
+    dynamicDecimals,
+    formatSignedPercent,
+    formatUsdPrice,
+} from '@/shared/lib/priceFormat';
 import { cn } from '@/shared/lib/cn';
 import type { PortfolioHoldingView } from '@/entities/portfolio';
 
@@ -29,11 +34,6 @@ function formatUsd(value: number): string {
         return `$${value.toFixed(dynamicDecimals(value))}`;
     }
     return `$${formatUsdPrice(value)}`;
-}
-
-function formatSignedPercent(value: number): string {
-    const sign = value >= 0 ? '+' : '';
-    return `${sign}${value.toFixed(1)}%`;
 }
 
 /**
@@ -71,6 +71,11 @@ function useInViewOnce<T extends Element>(): [
     return [setNode, isVisible];
 }
 
+// resolved 카드 본문(building min-h-280 + gap-3 + dl 3행)의 대략적 높이에 맞춰
+// skeleton/degraded도 같은 min-h를 잡는다 — 그렇지 않으면 lazy-resolve 시점에
+// 카드 높이가 확 늘어나 스크롤 위치가 튀는 CLS가 발생한다(audit finding #9).
+const CARD_BODY_MIN_H = 'min-h-[350px]';
+
 function CardSkeleton({ symbol }: { symbol: string }) {
     return (
         <div
@@ -78,7 +83,10 @@ function CardSkeleton({ symbol }: { symbol: string }) {
             aria-busy="true"
             aria-live="polite"
             data-testid="holding-card-loading"
-            className="flex h-40 w-full max-w-[200px] flex-col items-center justify-center gap-2"
+            className={cn(
+                CARD_BODY_MIN_H,
+                'flex w-full max-w-[200px] flex-col items-center justify-center gap-2'
+            )}
         >
             <span className="sr-only">{symbol} 위치를 불러오는 중이에요</span>
             <div
@@ -98,10 +106,13 @@ function CardDegraded({ avg, message }: CardDegradedProps) {
     return (
         <div
             data-testid="holding-card-degraded"
-            className="border-secondary-700 flex h-40 w-full max-w-[200px] flex-col items-center justify-center gap-1 rounded-lg border border-dashed p-3 text-center"
+            className={cn(
+                CARD_BODY_MIN_H,
+                'border-secondary-700 flex w-full max-w-[200px] flex-col items-center justify-center gap-1 rounded-lg border border-dashed p-3 text-center'
+            )}
         >
             <span className="text-secondary-400 text-xs">{message}</span>
-            <span className="text-secondary-500 text-xs tabular-nums">
+            <span className="text-secondary-400 text-xs tabular-nums">
                 평단 {formatUsd(avg)}
             </span>
         </div>
@@ -145,69 +156,81 @@ export function PositionHoldingCard({ holding }: PositionHoldingCardProps) {
         isSettled && (isError || facts === null || model === null);
 
     return (
-        <div
-            ref={setNode}
-            data-testid="portfolio-holding-card"
-            className="ring-secondary-800 bg-secondary-900/60 flex flex-col items-center gap-3 rounded-xl p-4 ring-1"
+        // 그리드 카드 전체를 해당 종목의 "내 위치" 탭으로 가는 내비게이션 어포던스로
+        // 만든다(audit finding #8) — hover/focus-visible은 Link(바깥)에서, 실제
+        // 시각 chrome(ring/bg/padding)은 안쪽 div가 그대로 유지해 기존 시각을
+        // 보존한다. IntersectionObserver 대상(ref)도 안쪽 div에 그대로 둔다.
+        <Link
+            href={`/${holding.symbol}/position`}
+            className="focus-visible:ring-primary-500 group block rounded-xl transition-shadow focus-visible:ring-2 focus-visible:outline-none"
         >
-            <div className="flex w-full items-baseline justify-between gap-2">
-                <span className="text-secondary-100 text-sm font-semibold">
-                    {holding.symbol}
-                </span>
-                {holding.companyName && (
-                    <span className="text-secondary-400 truncate text-xs">
-                        {holding.companyName}
+            <div
+                ref={setNode}
+                data-testid="portfolio-holding-card"
+                className="ring-secondary-800 group-hover:ring-secondary-600 bg-secondary-900/60 flex flex-col items-center gap-3 rounded-xl p-4 ring-1 transition-colors"
+            >
+                <div className="flex w-full items-baseline justify-between gap-2">
+                    <span className="text-secondary-100 text-sm font-semibold">
+                        {holding.symbol}
                     </span>
-                )}
-            </div>
+                    {holding.companyName && (
+                        <span className="text-secondary-400 truncate text-xs">
+                            {holding.companyName}
+                        </span>
+                    )}
+                </div>
 
-            {!isSettled && <CardSkeleton symbol={holding.symbol} />}
+                {!isSettled && <CardSkeleton symbol={holding.symbol} />}
 
-            {isSettled && isDegraded && (
-                <CardDegraded
-                    avg={avg}
-                    message={
-                        isAvgValid
-                            ? '범위 데이터를 불러오지 못했어요'
-                            : '데이터 부족'
-                    }
-                />
-            )}
-
-            {isSettled && !isDegraded && facts !== null && model !== null && (
-                <>
-                    <PositionBuilding
-                        symbol={holding.symbol}
-                        model={model}
-                        low52w={facts.low52w}
-                        high52w={facts.high52w}
-                        current={facts.lastClose}
+                {isSettled && isDegraded && (
+                    <CardDegraded
                         avg={avg}
-                        className="max-w-[200px]"
+                        message={
+                            isAvgValid
+                                ? '범위 데이터를 불러오지 못했어요'
+                                : '데이터 부족'
+                        }
                     />
-                    <dl className="text-secondary-300 grid w-full grid-cols-2 gap-x-2 gap-y-1 text-xs">
-                        <dt className="text-secondary-500">평단</dt>
-                        <dd className="text-right tabular-nums">
-                            {formatUsd(avg)}
-                        </dd>
-                        <dt className="text-secondary-500">현재가</dt>
-                        <dd className="text-right tabular-nums">
-                            {formatUsd(facts.lastClose)}
-                        </dd>
-                        <dt className="text-secondary-500">수익률</dt>
-                        <dd
-                            className={cn(
-                                'text-right tabular-nums',
-                                model.returnPct >= 0
-                                    ? 'text-ui-success-text'
-                                    : 'text-ui-danger-text'
-                            )}
-                        >
-                            {formatSignedPercent(model.returnPct)}
-                        </dd>
-                    </dl>
-                </>
-            )}
-        </div>
+                )}
+
+                {isSettled &&
+                    !isDegraded &&
+                    facts !== null &&
+                    model !== null && (
+                        <>
+                            <PositionBuilding
+                                symbol={holding.symbol}
+                                model={model}
+                                low52w={facts.low52w}
+                                high52w={facts.high52w}
+                                current={facts.lastClose}
+                                avg={avg}
+                                className="max-w-[200px]"
+                            />
+                            <dl className="text-secondary-300 grid w-full grid-cols-2 gap-x-2 gap-y-1 text-xs">
+                                <dt className="text-secondary-400">평단</dt>
+                                <dd className="text-right tabular-nums">
+                                    {formatUsd(avg)}
+                                </dd>
+                                <dt className="text-secondary-400">현재가</dt>
+                                <dd className="text-right tabular-nums">
+                                    {formatUsd(facts.lastClose)}
+                                </dd>
+                                <dt className="text-secondary-400">수익률</dt>
+                                <dd
+                                    className={cn(
+                                        'text-right tabular-nums',
+                                        model.returnPct >= 0
+                                            ? 'text-ui-success-text'
+                                            : 'text-ui-danger-text'
+                                    )}
+                                >
+                                    {formatSignedPercent(model.returnPct)}
+                                </dd>
+                            </dl>
+                        </>
+                    )}
+            </div>
+        </Link>
     );
 }

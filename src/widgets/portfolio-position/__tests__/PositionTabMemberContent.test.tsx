@@ -64,6 +64,21 @@ describe('PositionTabMemberContent', () => {
         expect(screen.getByText('내 위치')).toBeInTheDocument();
     });
 
+    it('gives the building column an intrinsic width (not sm:w-1/2) so the readout card takes the remaining desktop space instead of leaving a dead gutter (audit finding #2)', () => {
+        setHolding({ holding: AAPL_HOLDING });
+        render(
+            <PositionTabMemberContent
+                symbol="AAPL"
+                low52w={100}
+                high52w={200}
+                lastClose={180}
+            />
+        );
+        const building = screen.getByTestId('position-building');
+        expect(building.className).not.toContain('sm:w-1/2');
+        expect(building.className).toContain('sm:shrink-0');
+    });
+
     it('renders the CTA (not the building) when the member has no holding for this symbol', () => {
         setHolding({ holding: null });
         render(
