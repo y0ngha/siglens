@@ -1,4 +1,5 @@
 import { test, expect } from '../support/fixtures';
+import type { Page } from '@playwright/test';
 
 /**
  * Model-gate spec: proves the guest-reachable branches of the symbol-header
@@ -9,15 +10,22 @@ import { test, expect } from '../support/fixtures';
  * package runtime, NOT the unit/integration mocks in
  * src/__integration__/modelSelectorFlow.test.tsx):
  *
- *   - The selector lives in the symbol layout header
- *     (widgets/symbol-page/SymbolLayoutHeader → widgets/analysis/ModelSelector).
- *     Its trigger is a `<button aria-label="AI 분석 모델 선택">` with
- *     `aria-haspopup="listbox"`; clicking it opens a `role="listbox"`
- *     (aria-label "AI 분석 모델 목록") of `role="option"` rows. Each option shows
- *     a short label + the model's full name, and non-free models carry a "PRO"
- *     badge. On `/AAPL` this header selector is the ONLY ModelSelector mounted
- *     — the chat-panel one only mounts when the floating chat is opened, which
- *     a guest does not do here — so an aria-label lookup is unambiguous.
+ *   - The selector no longer sits directly in the symbol layout header. This
+ *     PR consolidated it behind a "분석 설정" gear popover
+ *     (widgets/analysis/AnalysisSettingsMenu, mounted from SymbolLayoutHeader)
+ *     together with the reasoning toggle. The gear's own trigger is a
+ *     `<button>` whose accessible name starts with `분석 설정 · 현재 모델: {label}`
+ *     (e.g. "분석 설정 · 현재 모델: DeepSeek Flash"; a " (변경됨)" suffix is appended
+ *     once reasoning is on or a non-default model is selected). The popover is
+ *     closed by default, so every test below opens it first
+ *     (`openAnalysisSettings`) before it can locate the nested ModelSelector's
+ *     `<button aria-label="AI 분석 모델 선택">` trigger (`aria-haspopup="listbox"`);
+ *     clicking THAT opens a `role="listbox"` (aria-label "AI 분석 모델 목록") of
+ *     `role="option"` rows. Each option shows a short label + the model's full
+ *     name, and non-free models carry a "PRO" badge. On `/AAPL` this gear's
+ *     ModelSelector is the ONLY one mounted — the chat-panel one only mounts
+ *     when the floating chat is opened, which a guest does not do here — so an
+ *     aria-label lookup is unambiguous.
  *
  *   - allowedModels is the SAME full list for every tier
  *     (getAllowedModels(tier) is tier-independent in this build): premium
@@ -65,11 +73,21 @@ const MODEL_STORAGE_KEY = 'siglens:selected-analysis-model';
 const AUTH_GATE_TITLE = '프리미엄 모델 사용 안내';
 const AUTH_GATE_CTA = '회원가입 하러 가기';
 
+/**
+ * Opens the "분석 설정" gear popover (AnalysisSettingsMenu) that now houses
+ * the ModelSelector — it is closed by default, so every test needs this
+ * before it can locate the `AI 분석 모델 선택` trigger nested inside it.
+ */
+async function openAnalysisSettings(page: Page) {
+    await page.getByRole('button', { name: /^분석 설정/ }).click();
+}
+
 test.describe('model gate (guest)', () => {
     test('selecting a free model applies without a gate modal', async ({
         page,
     }) => {
         await page.goto('/AAPL');
+        await openAnalysisSettings(page);
 
         // Default selection is the free DeepSeek Flash — its label shows on
         // the trigger before we touch anything.
@@ -93,8 +111,14 @@ test.describe('model gate (guest)', () => {
             })
             .click();
 
-        // No gate modal appears for a free model …
-        await expect(page.getByRole('dialog')).toHaveCount(0);
+        // No gate modal appears for a free model — scope the dialog check to
+        // exclude the "분석 설정" gear popover's own `role="dialog"`
+        // (AnalysisSettingsMenu), which stays open for the rest of this test
+        // now that ModelSelector lives inside it (only its internal listbox
+        // closes on selection, not the gear).
+        await expect(
+            page.getByRole('dialog').filter({ hasNotText: '분석 설정' })
+        ).toHaveCount(0);
         // … the popover closes …
         await expect(listbox).toBeHidden();
         // … and the free selection actually applied: the trigger now shows the
@@ -116,6 +140,7 @@ test.describe('model gate (guest)', () => {
         page,
     }) => {
         await page.goto('/AAPL');
+        await openAnalysisSettings(page);
 
         const trigger = page.getByRole('button', {
             name: SELECTOR_TRIGGER_NAME,
@@ -158,6 +183,7 @@ test.describe('model gate (guest)', () => {
         page,
     }) => {
         await page.goto('/AAPL');
+        await openAnalysisSettings(page);
 
         const trigger = page.getByRole('button', {
             name: SELECTOR_TRIGGER_NAME,
@@ -172,9 +198,19 @@ test.describe('model gate (guest)', () => {
         const gate = page.getByRole('dialog', { name: AUTH_GATE_TITLE });
         await expect(gate).toBeVisible();
 
-        // Escape dismisses the gate (useEscapeKey) without applying the model.
+        // Escape dismisses the gate (useEscapeKey). NOTE: PremiumModelGateModal
+        // is rendered by the symbol layout header, OUTSIDE the "분석 설정" gear
+        // popover — but AnalysisSettingsMenu ALSO owns a document-level Escape
+        // listener (to close the gear itself) for as long as it is open, and
+        // neither listener stops the other's propagation. So this single
+        // Escape press collapses BOTH layers: the gate dialog closes AND the
+        // gear popover closes (which unmounts the nested ModelSelector, incl.
+        // `trigger`). Re-open the gear afterwards to inspect the model
+        // selection that survived the gate.
         await page.keyboard.press('Escape');
         await expect(gate).toBeHidden();
+
+        await openAnalysisSettings(page);
         await expect(trigger).toContainText(FREE_DEFAULT_LABEL);
         const stored = await page.evaluate(
             key => localStorage.getItem(key),

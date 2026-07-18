@@ -11,6 +11,8 @@ interface PositionTabMemberContentProps {
     low52w: number | null;
     high52w: number | null;
     lastClose: number | null;
+    /** 5개 가격대별 최근 거래량 비중(%) — optional. PositionBuilding으로 그대로 전달만 한다. */
+    volumeByBand?: readonly number[] | null;
 }
 
 function PositionSkeleton() {
@@ -56,6 +58,7 @@ export function PositionTabMemberContent({
     low52w,
     high52w,
     lastClose,
+    volumeByBand,
 }: PositionTabMemberContentProps) {
     const { holding, isLoading, isError } = useSymbolHolding(symbol);
 
@@ -94,7 +97,17 @@ export function PositionTabMemberContent({
                 high52w={high52w}
                 current={lastClose}
                 avg={avg}
-                className="sm:w-auto sm:max-w-[320px] sm:shrink-0"
+                volumeByBand={volumeByBand}
+                // `sm:max-w-[N]` + `sm:w-auto`(원래 코드)는 데스크톱에서 의도한 만큼
+                // 커지지 않는다: svg가 `w-full`(퍼센티지)만 갖고 명시 width/height 속성이
+                // 없어서, flex row에서 이 wrapper의 shrink-to-fit 계산이 svg의 UA 기본
+                // intrinsic 크기(300×150 CSS px, 퍼센티지는 intrinsic 크기에 기여 못함)로
+                // 수렴해버려 max-w-[320px]를 걸어도 실측 300px에서 멈췄다(실증:
+                // getBoundingClientRect). `w-auto`+`max-w-*` 대신 명시적 `w-*`로 폭을
+                // 고정해 이 순환 의존을 끊는다 — sm(640~1023, 태블릿) 340px, lg(1024+,
+                // 진짜 데스크톱) 440px. PositionBuilding의 svg도 동일 브레이크포인트로
+                // max-width를 맞춰야 한다(그렇지 않으면 svg 자체의 280px 캡이 병목이 된다).
+                className="sm:w-[340px] sm:shrink-0 lg:w-[440px]"
             />
             <div className="sm:min-w-0 sm:flex-1">
                 <PositionCard

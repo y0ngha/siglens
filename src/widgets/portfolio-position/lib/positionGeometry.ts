@@ -16,11 +16,21 @@ export interface PositionBand {
     toPct: number;
 }
 
+/**
+ * avg/current가 52주 범위를 벗어났을 때 어느 방향인지('above'=고점 초과,
+ * 'below'=저점 미만), 범위 안이면 null. avgClamped/currentClamped와
+ * PositionBuilding의 파생 함수들(outOfRangeNote, frontY, describeAvgFloor,
+ * avgFloorVisualNote)이 모두 이 하나의 타입을 공유한다 — union literal을
+ * 파일마다 따로 반복 선언하지 않는다(CONVENTIONS: 2개 이상 멤버 union literal은
+ * 타입 alias로 추출).
+ */
+export type RangeClamp = 'above' | 'below' | null;
+
 export interface PositionModel {
     avgPos: number; // 0..1, [low,high] 내 정규화(clamped)
     currentPos: number; // 0..1, clamped
-    avgClamped: 'above' | 'below' | null;
-    currentClamped: 'above' | 'below' | null;
+    avgClamped: RangeClamp;
+    currentClamped: RangeClamp;
     pctFromHigh: number; // (avg - high) / high * 100
     pctAboveLow: number; // (avg - low) / low * 100, low<=0이면 0으로 가드
     returnPct: number; // (current - avg) / avg * 100
@@ -28,7 +38,14 @@ export interface PositionModel {
     bands: readonly PositionBand[]; // 20% 단위 5개 구간
 }
 
-const BAND_COUNT = 5;
+/**
+ * 밴드(가격대 구간) 개수 — 이 상수가 geometry의 source of truth다. 층 hover
+ * 기능이 정확하려면 PositionBuilding의 렌더 층 개수와 `[symbol]/position/page.tsx`가
+ * computeVolumeByBand에 넘기는 거래량 히스토그램 버킷 개수가 이 값과 항상 같아야
+ * 한다 — 둘 다 이 export(BAND_COUNT)를 직접 import해 단일 소스로 묶는다
+ * (audit finding: 세 값이 암묵적으로만 같았던 걸 명시적 커플링으로 전환).
+ */
+export const BAND_COUNT = 5;
 const BAND_WIDTH_PCT = 100 / BAND_COUNT;
 
 const BANDS: readonly PositionBand[] = Array.from(
@@ -49,7 +66,7 @@ function clampedDirection(
     value: number,
     low: number,
     high: number
-): 'above' | 'below' | null {
+): RangeClamp {
     if (value > high) return 'above';
     if (value < low) return 'below';
     return null;

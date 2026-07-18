@@ -79,6 +79,29 @@ describe('PositionTabMemberContent', () => {
         expect(building.className).toContain('sm:shrink-0');
     });
 
+    // Regression guard for the "building too small on desktop" fix. A prior version
+    // used `sm:w-auto sm:max-w-[320px]`, but since the inner svg has no explicit
+    // width/height attribute (only a percentage `w-full`), a flex row's
+    // shrink-to-fit sizing for this wrapper collapsed to the SVG's UA-default
+    // intrinsic size (300×150 CSS px) regardless of the max-w cap — empirically
+    // verified against a running dev server. Explicit `w-*` (not `w-auto`+`max-w-*`)
+    // sidesteps that by giving the flex item a definite width.
+    it('sizes the building column with explicit desktop widths (sm/lg), not an auto-shrinking max-w cap', () => {
+        setHolding({ holding: AAPL_HOLDING });
+        render(
+            <PositionTabMemberContent
+                symbol="AAPL"
+                low52w={100}
+                high52w={200}
+                lastClose={180}
+            />
+        );
+        const building = screen.getByTestId('position-building');
+        expect(building.className).toContain('sm:w-[340px]');
+        expect(building.className).toContain('lg:w-[440px]');
+        expect(building.className).not.toContain('sm:w-auto');
+    });
+
     it('renders the CTA (not the building) when the member has no holding for this symbol', () => {
         setHolding({ holding: null });
         render(

@@ -3,6 +3,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { TickerAutocomplete } from '@/features/ticker-search';
 import { cn } from '@/shared/lib/cn';
+import { stripNegativeSign } from '@/shared/lib/stripNegativeSign';
 import { trimTrailingZeros } from '@/shared/lib/trimTrailingZeros';
 import type {
     PortfolioActionErrorCode,
@@ -219,7 +220,9 @@ export function HoldingForm({
                         required
                         placeholder="예: 10…"
                         value={quantity}
-                        onChange={e => setQuantity(e.target.value)}
+                        onChange={e =>
+                            setQuantity(stripNegativeSign(e.target.value))
+                        }
                         aria-invalid={errorField === 'quantity'}
                         aria-describedby={
                             errorField === 'quantity' ? errorId : undefined
@@ -247,7 +250,9 @@ export function HoldingForm({
                         required
                         placeholder="예: 152.35…"
                         value={averagePrice}
-                        onChange={e => setAveragePrice(e.target.value)}
+                        onChange={e =>
+                            setAveragePrice(stripNegativeSign(e.target.value))
+                        }
                         aria-invalid={errorField === 'averagePrice'}
                         aria-describedby={
                             errorField === 'averagePrice' ? errorId : undefined

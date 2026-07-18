@@ -7,11 +7,10 @@ import { SymbolTabs } from './SymbolTabs';
 import { SymbolTabsSkeleton } from './SymbolTabsSkeleton';
 import { useAssetInfo } from '@/entities/ticker/hooks/useAssetInfo';
 import { useSymbolModel } from '@/features/symbol-model';
-import { ModelSelector } from '@/widgets/analysis';
+import { AnalysisSettingsMenu } from '@/widgets/analysis';
 import { ShareButton } from '@/widgets/share';
 import { FearGreedHeaderChipMounted } from './FearGreedHeaderChipMounted';
 import { PremiumModelGateModal } from '@/features/premium-gate';
-import { ReasoningToggle } from '@/features/reasoning-toggle';
 import { PortfolioChipMounted } from '@/features/portfolio-holding';
 import { LLM_PROVIDER_LABELS } from '@/shared/lib/llmProviderLabels';
 
@@ -24,7 +23,8 @@ interface SymbolLayoutHeaderProps {
  * Layout-level header rendered on every `/[symbol]/*` page.
  *
  * Contains the page-agnostic UI: SIGLENS logo, ticker breadcrumb, SymbolTabs,
- * and the shared AI model selector so all 4 analysis tabs use the same model.
+ * and the shared "분석 설정" gear (model selector + reasoning toggle) so all
+ * analysis tabs use the same model/reasoning state.
  * Chart-specific controls (TimeframeSelector) live inside the chart page's own
  * scroll-locked container so the layout stays free of `useSearchParams` (which
  * would force the whole route to be dynamic under Next.js Cache Components).
@@ -97,51 +97,38 @@ export function SymbolLayoutHeader({ symbol }: SymbolLayoutHeaderProps) {
                     </ErrorBoundary>
                 </div>
 
-                {/* 컨트롤 영역. 데스크톱(sm+)은 [공유][모델 라벨·셀렉터·토글·보유종목 칩]을
-                    한 줄에 우측 정렬(기존과 동일). 모바일은 세로로 쌓아 두 줄로
-                    정돈한다 — 기존엔 컨트롤이 flex-wrap으로 지그재그 wrap되고
-                    공포·탐욕 칩이 외톨이 행으로 떨어져 어수선했다. */}
-                <div className="flex flex-col gap-2 sm:order-3 sm:shrink-0 sm:flex-row sm:items-center sm:gap-2">
-                    {/* 모바일 첫 줄: 공포·탐욕 칩(좌) + 공유 버튼(우)을 양끝 정렬해
-                        외톨이 칩 행을 제거한다. 데스크톱에서는 칩이 브레드크럼 옆에
-                        인라인으로 있으므로 sm:hidden으로 숨기고 공유 버튼만 남는다. */}
-                    <div className="flex items-center justify-between gap-2">
-                        <ErrorBoundary fallback={null}>
-                            <Suspense fallback={null}>
-                                <span className="sm:hidden">
-                                    <FearGreedHeaderChipMounted
-                                        symbol={ticker}
-                                        fmpSymbol={assetInfo?.fmpSymbol}
-                                    />
-                                </span>
-                            </Suspense>
-                        </ErrorBoundary>
-                        <ShareButton />
-                    </div>
-                    {/* 모바일 둘째 줄: 모델 셀렉터 + 상세분석 토글 + 보유종목 칩을
-                        우측 정렬. "AI 분석 모델" 라벨은 좁은 모바일 폭 확보를 위해
-                        숨기고 sm+에서만 노출한다(셀렉터 자체로 의미 전달). 데스크톱은
-                        공유 버튼과 한 줄로 붙어 기존 배치를 유지한다. 보유종목(평단)
-                        칩은 가장 오른쪽에 두어 팝오버 우측 정렬 앵커를 유지한다. */}
-                    <div className="flex items-center justify-end gap-2">
-                        <span className="text-secondary-400 hidden text-xs whitespace-nowrap sm:inline">
-                            AI 분석 모델
-                        </span>
-                        <ModelSelector
-                            selectedModel={modelId}
-                            onModelChange={handleModelChange}
-                            allowedModels={allowedModels}
-                            className="w-28 sm:w-32 lg:w-36"
-                            showLabel={false}
-                            dropdownAlign="right"
-                        />
-                        <ReasoningToggle
-                            checked={reasoning}
-                            onChange={setReasoning}
-                            canUse={canUseReasoning}
-                            onLockedClick={openSignupNudge}
-                        />
+                {/* 컨트롤 영역. 모델 셀렉터 + 상세분석 토글은 AnalysisSettingsMenu의
+                    "⚙ 분석 설정" 팝오버 뒤로 합쳐 헤더 컨트롤 행에서 제거했다(헤더
+                    디클러터) — 남는 건 [평단 칩][공유][설정 기어] 3개의 size-11
+                    아이콘형 컨트롤뿐이라 모바일도 데스크톱도 단일 행으로 충분하다.
+                    이전엔 모바일에서 두 줄(공포·탐욕+공유 / 모델·토글·평단)로 쌓아야
+                    했지만, 이제 한 줄에 다 들어가 헤더 높이가 늘어나지 않는다(웹킷
+                    회귀 가드 — 탭 내비가 채팅 패널 아래로 밀리지 않도록 헤더가 커지면
+                    안 된다는 제약은 여전히 유효하며, 이 변경은 그 제약을 오히려
+                    더 여유 있게 만족시킨다). */}
+                <div className="flex items-center justify-between gap-2 sm:order-3 sm:shrink-0 sm:justify-end">
+                    <ErrorBoundary fallback={null}>
+                        <Suspense fallback={null}>
+                            <span className="sm:hidden">
+                                <FearGreedHeaderChipMounted
+                                    symbol={ticker}
+                                    fmpSymbol={assetInfo?.fmpSymbol}
+                                />
+                            </span>
+                        </Suspense>
+                    </ErrorBoundary>
+                    <div className="flex items-center gap-2">
                         <PortfolioChipMounted symbol={ticker} />
+                        <ShareButton />
+                        <AnalysisSettingsMenu
+                            modelId={modelId}
+                            allowedModels={allowedModels}
+                            handleModelChange={handleModelChange}
+                            reasoning={reasoning}
+                            setReasoning={setReasoning}
+                            canUseReasoning={canUseReasoning}
+                            openSignupNudge={openSignupNudge}
+                        />
                     </div>
                 </div>
             </div>

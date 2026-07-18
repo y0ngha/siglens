@@ -1,10 +1,40 @@
+'use client';
+
+import type React from 'react';
+import { useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { cn } from '@/shared/lib/cn';
+import { useEscapeKey } from '@/shared/hooks/useEscapeKey';
+import { useOnClickOutside } from '@/shared/hooks/useOnClickOutside';
 import {
-    dynamicDecimals,
-    formatSignedPercent,
-    formatUsdPrice,
-} from '@/shared/lib/priceFormat';
-import type { PositionModel } from '../lib/positionGeometry';
+    getTooltipPosition,
+    type TooltipPosition,
+} from '@/shared/lib/tooltipPosition';
+import { formatSignedPercent } from '@/shared/lib/priceFormat';
+import {
+    BAND_COUNT,
+    type PositionModel,
+    type RangeClamp,
+} from '../lib/positionGeometry';
+import {
+    AVG_LABEL_PREFIX,
+    avgFloorPrefixGlyph,
+    avgFloorVisualNote,
+    buildAriaLabel,
+    buildFloorTooltips,
+    CENTER_X,
+    computeActiveFloorTooltipContent,
+    CURRENT_LABEL_PREFIX,
+    describeAvgFloor,
+    formatFloorTooltipText,
+    formatUsd,
+    formatUsdCompactForSvgLabel,
+    type FloorPointer,
+    ISO_DX,
+    LABEL_GAP,
+    outOfRangeNote,
+    VIEWBOX_W,
+} from '../lib/positionBuildingNotes';
 
 interface PositionBuildingProps {
     symbol: string;
@@ -14,52 +44,15 @@ interface PositionBuildingProps {
     current: number;
     avg: number;
     className?: string;
-}
-
-/**
- * "$300" 형태 — sub-$1 정밀도 자산군(암호화폐 등)은 고정 2자리 포맷이 "$0"으로
- * 뭉개지므로(예: $0.0006 → "$0") shared/lib/priceFormat의 dynamicDecimals(이미
- * crypto 지표 포맷에 쓰이는 유틸)로 유효자리를 보존한다. PositionGauge는 이 케이스를
- * §6에서 스코프 밖으로 punt했지만, 이 컴포넌트는 misleading "$0"을 최소 방어선으로 삼는다.
- */
-function formatUsd(value: number): string {
-    if (value !== 0 && Math.abs(value) < 1) {
-        return `$${value.toFixed(dynamicDecimals(value))}`;
-    }
-    return `$${formatUsdPrice(value)}`;
-}
-
-/** in-SVG 라벨 폭이 고정 viewBox라 고가 종목(예: BRK.A $600,000+)에서 잘릴 수 있어
- * 이 라벨에서만 축약한다. aria-label은 정밀도를 위해 항상 전체 값을 쓴다. */
-const IN_SVG_COMPACT_THRESHOLD = 100_000;
-
-/** Exported so the clipping-regression test can build the exact string the
- * component renders (avoids a second, potentially-drifting copy in the test). */
-export function formatUsdCompactForSvgLabel(value: number): string {
-    if (Math.abs(value) >= IN_SVG_COMPACT_THRESHOLD) {
-        return `$${Math.round(value / 1000)}K`;
-    }
-    return formatUsd(value);
-}
-
-function buildAriaLabel(
-    symbol: string,
-    model: PositionModel,
-    avgDisplay: string,
-    currentDisplay: string
-): string {
-    const returnSign = model.returnPct >= 0 ? '+' : '';
-    return (
-        `${symbol} 내 위치: 평단 ${avgDisplay}, 현재가 ${currentDisplay}, ` +
-        `수익률 ${returnSign}${model.returnPct.toFixed(1)}%, ` +
-        `최근 범위의 ${model.rangePositionPct.toFixed(0)}% 지점`
-    );
-}
-
-function outOfRangeNote(clamped: 'above' | 'below' | null): string | null {
-    if (clamped === 'above') return '최근 고점보다 높은 곳';
-    if (clamped === 'below') return '최근 저점보다 낮은 곳';
-    return null;
+    /**
+     * 5개 가격대(밴드)별 최근(52주/252봉) 거래량 비중(%), index 0=최저가
+     * 밴드(positionGeometry의 BANDS/이 컴포넌트의 층 순서와 동일). optional —
+     * null/undefined면 층 hover가 완전히 비활성화되고 건물은 이 prop이
+     * 추가되기 전과 동일하게 렌더된다(`/portfolio` 압축 카드는 이 prop을
+     * 전달하지 않아 항상 이 상태다). 순수 raw 히스토그램 — 시그널/해석 없음
+     * (scope fence, volumeByBand.ts와 동일 원칙).
+     */
+    volumeByBand?: readonly number[] | null;
 }
 
 /* ------------------------------------------------------------------------ *
@@ -72,20 +65,21 @@ function outOfRangeNote(clamped: 'above' | 'below' | null): string | null {
  * 마커·라벨은 이 투영과 무관하게 항상 upright(수평/수직) 좌표에 배치한다.
  * ------------------------------------------------------------------------ */
 
+// VIEWBOX_W/CENTER_X/ISO_DX/LABEL_GAP moved to lib/positionBuildingNotes.ts
+// (single source shared with SVG_LABEL_AVAILABLE_WIDTH there) — imported above.
 // 280 → 360: widened horizontally (audit finding #1) so the avg/current
 // marker labels never clip for realistic per-share prices (up to ~$99,999
 // before IN_SVG_COMPACT_THRESHOLD kicks in). Building geometry below (ISO_DX,
 // FLOOR_H, ...) is unchanged — the extra width is pure side padding for
 // labels, which already lived in the margins by design.
-const VIEWBOX_W = 360;
 const VIEWBOX_H = 360;
-const CENTER_X = VIEWBOX_W / 2;
 
-const ISO_DX = 50; // 지붕 마름모 반폭(가로)
 const ISO_DY = 25; // 지붕 마름모 반폭(세로, 2:1 비율 → dx의 절반)
 
 const FLOOR_H = 30; // 층당 세로 픽셀 높이
-const BAND_COUNT = 5;
+// BAND_COUNT는 positionGeometry.ts에서 import(geometry의 단일 source of
+// truth) — model.bands.length·[symbol]/position/page.tsx의 히스토그램 버킷
+// 개수와 항상 같아야 하는 3자 계약이라 여기서 리터럴을 재선언하지 않는다.
 const BUILDING_H = FLOOR_H * BAND_COUNT; // 150
 
 const ROOF_BACK_Y = 70; // 지붕 마름모의 뒤쪽(가장 먼) 꼭짓점
@@ -105,7 +99,6 @@ const LOW_LABEL_Y = GROUND_FRONT_Y + 18;
 
 const DODGE_X_OFFSET = 11;
 const MARKER_HALF = 6;
-const LABEL_GAP = 12;
 
 /**
  * avg/current가 이 값 미만 차이일 때 겹침을 막기 위해 마커를 좌우로 dodge한다.
@@ -124,43 +117,8 @@ const NOTE_Y_OFFSET = 12;
 const GROUND_ELLIPSE_CY_OFFSET = 6;
 const GROUND_ELLIPSE_RX_OFFSET = 14;
 
-/**
- * in-SVG 마커 라벨 prefix — aria-label(buildAriaLabel, "평단"/"현재가" 전체 표기,
- * 폭 제약 없음)과 별개로 고정 viewBox 폭 제약을 받는 시각 라벨 전용이다. "내
- * 평단"/"현재가"보다 짧게 둬(audit finding #1) 4자리 이상 가격에서도 라벨이
- * viewBox를 벗어나지 않게 한다.
- */
-export const AVG_LABEL_PREFIX = '★ 평단 ';
-export const CURRENT_LABEL_PREFIX = '● 현재 ';
-
-/**
- * 마커 라벨의 텍스트 anchor(text-anchor="end"/"start")에서 viewBox 가장자리까지
- * 남은 여유 폭 — avg 라벨은 왼쪽(CENTER_X - ISO_DX - LABEL_GAP만큼 안쪽에서 anchor,
- * 거기서 왼쪽으로 텍스트가 자란다), current 라벨은 대칭으로 오른쪽. CENTER_X가
- * viewBox 중앙이므로 두 방향의 여유 폭은 같다.
- */
-export const SVG_LABEL_AVAILABLE_WIDTH = CENTER_X - ISO_DX - LABEL_GAP;
-
-/**
- * 글자 하나당 대략적인 렌더 폭(px) 추정 — text-[10px] font-medium tabular-nums
- * 라벨 전용. jsdom에는 실제 텍스트 레이아웃 엔진이 없어(getBBox/
- * getComputedTextLength 모두 throw) 클리핑 회귀 테스트가 이 추정치로 "라벨이
- * viewBox 안에 들어가는가"를 검증한다. 한글/심볼(★●)은 정사각형에 가깝게
- * (~1em) 넓고, 숫자·구두점은 더 좁게(~0.6em) — 실제보다 과소평가하지 않도록
- * 보수적으로(넉넉하게) 잡는다.
- */
-function estimateGlyphWidthPx(ch: string): number {
-    if (ch === ' ') return 3;
-    if (/[ㄱ-힣★●]/.test(ch)) return 10; // 한글 + 마커 심볼(★●)
-    return 6; // 숫자, $, 쉼표, 마침표
-}
-
-export function estimateSvgLabelWidth(text: string): number {
-    return Array.from(text).reduce(
-        (sum, ch) => sum + estimateGlyphWidthPx(ch),
-        0
-    );
-}
+// AVG_LABEL_PREFIX/CURRENT_LABEL_PREFIX/SVG_LABEL_AVAILABLE_WIDTH/
+// estimateSvgLabelWidth moved to lib/positionBuildingNotes.ts — imported above.
 
 interface Point {
     x: number;
@@ -176,7 +134,7 @@ function pointsAttr(points: readonly Point[]): string {
 }
 
 /** pos(0..1, high=1)를 건물 정면 모서리의 y좌표로 변환한다. clamped면 옥상 위/지하 고정 좌표를 쓴다. */
-function frontY(pos: number, clamped: 'above' | 'below' | null): number {
+function frontY(pos: number, clamped: RangeClamp): number {
     if (clamped === 'above') return SKY_Y;
     if (clamped === 'below') return BASEMENT_Y;
     return ROOF_FRONT_Y + (1 - pos) * BUILDING_H;
@@ -300,13 +258,112 @@ export function PositionBuilding({
     current,
     avg,
     className,
+    volumeByBand,
 }: PositionBuildingProps) {
+    // 층 hover/tap(pin) 상태 — volumeByBand가 없으면 절대 set되지 않아(아래 이벤트
+    // 핸들러가 통째로 붙지 않음) 항상 null로 남고, 건물은 이 기능 추가 전과 동일하게
+    // 렌더된다. 마우스/터치 전용(포인터 어포던스) — 층 <g>는 role="img" 자손이라
+    // 키보드 포커스를 받지 않는다(아래 렌더 루프의 role="img" 주석 참고).
+    //
+    // hover(마우스 진입)와 pinned(클릭/탭 토글)를 별도 state로 둔다 — 마우스로
+    // 클릭하려면 먼저 그 위에 마우스가 올라가 있어야 하므로 hover가 항상 click보다
+    // 먼저 켜진다. 하나로 합치면 "hover 중인 층을 클릭"할 때 toggle 로직이 "이미
+    // 켜져 있었다"고 오판해 방금 연 툴팁을 곧바로 닫아버리는 경합이 생긴다. 분리하면
+    // hover는 즉시 미리보기를, 클릭/탭은 그와 무관하게 "고정" 여부만 토글해 데스크톱
+    // hover와 모바일 tap-to-toggle이 서로 간섭하지 않는다. 활성 층은 hover가 있으면
+    // hover를 우선하고, 없으면 pinned를 쓴다.
+    const [hoverFloor, setHoverFloor] = useState<FloorPointer | null>(null);
+    const [pinnedFloor, setPinnedFloor] = useState<FloorPointer | null>(null);
+
+    // floating 툴팁의 fixed 좌표 + "최초 측정 전엔 숨김"(InfoTooltip과 동일 idiom,
+    // shared/lib/tooltipPosition의 getTooltipPosition을 그대로 재사용). "이 인덱스는
+    // 이미 측정됐다"를 별도 state(measuredFloorIndex)로 들고 렌더 중에
+    // activeFloor.index와 비교해 tooltipPositioned를 파생한다 — setState-in-effect
+    // (cascading render 경고)를 피하려고 useEffect로 "층이 바뀌면 리셋"하는 대신,
+    // 값 비교 자체가 자연스럽게 리셋 역할을 한다(측정된 적 없는 새 인덱스는 항상
+    // 불일치 → invisible).
+    const [tooltipPosition, setTooltipPosition] = useState<TooltipPosition>({
+        top: 0,
+        left: 0,
+    });
+    const [measuredFloorIndex, setMeasuredFloorIndex] = useState<number | null>(
+        null
+    );
+
+    const containerRef = useRef<HTMLDivElement>(null);
+
+    // 탭/클릭으로 고정(pinned)한 층은 건물 바깥을 클릭/탭하면 닫힌다(InfoTooltip과
+    // 동일한 useOnClickOutside). hover 미리보기는 mouseleave/blur가 이미 처리하므로
+    // 여기선 pinnedFloor만 정리한다.
+    useOnClickOutside(containerRef, () => setPinnedFloor(null), {
+        enabled: pinnedFloor !== null,
+    });
+
+    // WCAG 1.4.13 — 클릭/탭으로 고정(pinned)한 툴팁은 Escape로도 닫을 수 있어야
+    // 한다(InfoTooltip.tsx와 동일 idiom). useOnClickOutside는 pointerdown만
+    // 처리하므로 키보드 사용자용 dismiss 경로가 별도로 필요하다. 층 <g> 자체는
+    // 더 이상 포커스 가능하지 않지만(아래 렌더 루프의 role="img" 주석 참고),
+    // 이 Escape 핸들러는 문서 전역에 바인딩되므로 포커스 위치와 무관하게
+    // pinnedFloor를 닫는다.
+    useEscapeKey(() => setPinnedFloor(null), pinnedFloor !== null);
+
+    // 전체 밴드의 툴팁 콘텐츠를 한 번만 계산해 활성 층 파생(아래)과 렌더 루프
+    // (층별 hover 콘텐츠 조회) 둘 다 재사용한다 — 같은 band index를 두 곳에서
+    // 따로 계산하지 않는다(MISTAKES #2, buildFloorTooltips 주석 참고). 매 렌더
+    // 재계산을 막기 위해 useMemo로 감싼다(MISTAKES #10 — props/state 파생
+    // 배열/객체는 useMemo). model.bands.length는 이미 model에 포함돼 있으므로
+    // deps는 model만으로 충분하다(별도 bandCount 파생값을 deps에 얹지 않는다).
+    const floorTooltips = useMemo(
+        () =>
+            buildFloorTooltips(
+                model,
+                volumeByBand,
+                low52w,
+                high52w,
+                model.bands.length
+            ),
+        [model, volumeByBand, low52w, high52w]
+    );
+
+    // model.bands.length는 volumeByBand 인덱싱(아래)과 describeAvgFloor 둘 다에
+    // 필요해 파생 변수 구간에서 한 번만 계산한다(단일 source, 중복 선언 금지).
+    // 모든 hook 호출(useState/useRef/useOnClickOutside/useEscapeKey/useMemo) 뒤에
+    // 둔다(Custom Hook Declaration Order — CONVENTIONS.md).
+    const bandCount = model.bands.length;
+
     const avgDisplay = formatUsd(avg);
     const currentDisplay = formatUsd(current);
-    const ariaLabel = buildAriaLabel(symbol, model, avgDisplay, currentDisplay);
+    const avgFloorNote = describeAvgFloor(
+        model.avgPos,
+        model.avgClamped,
+        bandCount
+    );
+    // 시각 노트는 폭 제약을 받아 범위 밖에서 phrase만, aria-label은 전체 문구.
+    const avgFloorNoteVisual = avgFloorVisualNote(
+        model.avgClamped,
+        avgFloorNote
+    );
+    const ariaLabel = buildAriaLabel(
+        symbol,
+        model,
+        avgDisplay,
+        currentDisplay,
+        avgFloorNote
+    );
 
-    const avgNote = outOfRangeNote(model.avgClamped);
     const currentNote = outOfRangeNote(model.currentClamped);
+
+    const activeFloor = hoverFloor ?? pinnedFloor;
+    const tooltipPositioned =
+        activeFloor !== null && measuredFloorIndex === activeFloor.index;
+
+    const activeFloorTooltipContent = computeActiveFloorTooltipContent(
+        activeFloor,
+        floorTooltips
+    );
+    const activeFloorTooltipText = activeFloorTooltipContent
+        ? formatFloorTooltipText(activeFloorTooltipContent)
+        : null;
 
     // avg≈current면 두 마커(★/●)가 같은 좌표에서 겹쳐 하나로 보인다 — 좌우로
     // 벌려 break-even(가장 흔한 상태)에서도 두 마커가 구분되게 한다.
@@ -336,6 +393,7 @@ export function PositionBuilding({
 
     return (
         <div
+            ref={containerRef}
             className={cn(
                 'flex min-h-[280px] flex-col items-center gap-2',
                 className
@@ -344,7 +402,15 @@ export function PositionBuilding({
         >
             <svg
                 viewBox={`0 0 ${VIEWBOX_W} ${VIEWBOX_H}`}
-                className="h-full w-full max-w-[280px]"
+                // Base (mobile) cap stays 280px — mobile is already right-sized. sm/lg
+                // caps are raised to match PositionTabMemberContent's wrapper widths
+                // (340px/440px, see that file's comment for why `w-*` and not `max-w-*`
+                // is used there) so this svg's own cap isn't the bottleneck. The
+                // `/portfolio` compact card (PositionHoldingCard) passes its own
+                // `max-w-[200px]` override via the `className` prop on the OUTER div, which
+                // stays below every one of these caps at all breakpoints, so it is
+                // unaffected by this change.
+                className="h-full w-full max-w-[280px] sm:max-w-[340px] lg:max-w-[440px]"
                 role="img"
                 aria-label={ariaLabel}
             >
@@ -370,10 +436,63 @@ export function PositionBuilding({
                 {model.bands.map((band, i) => {
                     const faces = computeFloorFaces(i);
                     const litIndex = BAND_COUNT - 1 - i;
+
+                    const floorTooltip = floorTooltips[i];
+                    const isInteractive = floorTooltip !== null;
+                    const isActive = isInteractive && activeFloor?.index === i;
+
+                    // 핸들러는 아래에서 isInteractive일 때만 <g>에 붙으므로 여기선
+                    // 별도 가드가 필요 없다. activate/deactivate는 hover(마우스) 미리보기,
+                    // togglePin(클릭/탭)은 "고정" — 서로 다른 state라 데스크톱에서 hover
+                    // 중인 층을 클릭해도 hover가 방금 연 툴팁을 click이 곧바로 닫아버리는
+                    // 경합이 없다(상단 state 주석 참고).
+                    const activate = (e: React.SyntheticEvent<SVGGElement>) => {
+                        setHoverFloor({
+                            index: i,
+                            rect: e.currentTarget.getBoundingClientRect(),
+                        });
+                    };
+                    const deactivate = () =>
+                        setHoverFloor(prev =>
+                            prev?.index === i ? null : prev
+                        );
+                    const togglePin = (rect: DOMRect) => {
+                        setPinnedFloor(prev =>
+                            prev?.index === i ? null : { index: i, rect }
+                        );
+                    };
+                    const toggleClick = (e: React.MouseEvent<SVGGElement>) => {
+                        togglePin(e.currentTarget.getBoundingClientRect());
+                    };
+
                     return (
                         <g
                             key={`${band.fromPct}-${band.toPct}`}
                             data-testid="building-floor"
+                            // ⚠️ 의도적으로 role/tabIndex/키보드 핸들러가 없다(이전 라운드의
+                            // role="button"+tabIndex+onKeyDown 시도를 되돌렸다). 이 <g>는
+                            // 부모 <svg role="img">의 자손이다 — WAI-ARIA는 role="img" 서브트리
+                            // 안의 포커스 가능/인터랙티브한 자손을 접근성 트리에서 통째로
+                            // flatten한다(role="button"을 줘도 스크린리더는 절대 못 읽고,
+                            // 포커스만 "보이지 않게" 걸려 키보드 사용자가 갇힌다). 그래서 층
+                            // hover/tap 툴팁("거주율 N%")은 마우스/터치를 쓰는 시각 사용자
+                            // 전용 보강일 뿐이다 — 핵심 정보(평단/현재가/수익률/range%/floor
+                            // 안내)는 이미 svg 자체의 role="img" aria-label에 전부 담겨 있다
+                            // (buildAriaLabel). 그러므로 여기 남기는 건 포인터 어포던스
+                            // (onMouseEnter/onMouseLeave=hover, onClick=탭-투-핀, 터치는
+                            // hover가 없어 클릭으로 대체)뿐이다. aria-hidden은 별도로 줄
+                            // 필요 없다 — role="img"가 이미 자손 전체를 접근성 트리에서
+                            // 제외한다.
+                            className={
+                                isInteractive
+                                    ? 'cursor-pointer touch-manipulation'
+                                    : undefined
+                            }
+                            onMouseEnter={isInteractive ? activate : undefined}
+                            onMouseLeave={
+                                isInteractive ? deactivate : undefined
+                            }
+                            onClick={isInteractive ? toggleClick : undefined}
                         >
                             <polygon
                                 points={faces.left}
@@ -422,6 +541,29 @@ export function PositionBuilding({
                                 strokeWidth={0.75}
                                 className="text-secondary-950/40"
                             />
+                            {/* hover/pinned(클릭) 하이라이트 — 시각 피드백 전용(aria-hidden),
+                                기존 face 폴리곤의 currentColor 그라디언트는 그대로 두고
+                                위에 얇은 테두리만 덧그린다. */}
+                            {isActive && (
+                                <>
+                                    <polygon
+                                        points={faces.left}
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth={1.5}
+                                        className="text-primary-400 pointer-events-none"
+                                        aria-hidden="true"
+                                    />
+                                    <polygon
+                                        points={faces.right}
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth={1.5}
+                                        className="text-primary-400 pointer-events-none"
+                                        aria-hidden="true"
+                                    />
+                                </>
+                            )}
                         </g>
                     );
                 })}
@@ -501,18 +643,22 @@ export function PositionBuilding({
                         {avgDisplaySvg}
                     </tspan>
                 </text>
-                {avgNote && (
-                    <text
-                        data-testid="avg-out-of-range-note"
-                        x={CENTER_X - ISO_DX - LABEL_GAP}
-                        y={avgY + NOTE_Y_OFFSET}
-                        textAnchor="end"
-                        className="fill-secondary-400 text-[10px]"
-                    >
-                        {model.avgClamped === 'above' ? '☁ ' : '▽B1 '}
-                        {avgNote}
-                    </text>
-                )}
+                {/* ★평단 층 안내 — 범위 밖(above/below)이면 기존 옥상 위/지하 문구를,
+                    범위 안이면(clamped=null) describeAvgFloor가 계산한 실제 층수를
+                    보여준다(이전엔 범위 안일 때 아무 안내도 없었다). 위치 서술만
+                    담당 — 매수/매도 판단 언어 금지(scope fence, 위 describeAvgFloor
+                    주석 참고). */}
+                <text
+                    data-testid="avg-floor-note"
+                    x={CENTER_X - ISO_DX - LABEL_GAP}
+                    y={avgY + NOTE_Y_OFFSET}
+                    textAnchor="end"
+                    className="fill-secondary-400 text-[10px]"
+                >
+                    {/* nested ternary 대신 early-return 헬퍼로 분기(FF.md §1-E) */}
+                    {avgFloorPrefixGlyph(model.avgClamped)}
+                    {avgFloorNoteVisual}
+                </text>
 
                 {/* 현재가 (●) */}
                 <g
@@ -564,6 +710,86 @@ export function PositionBuilding({
                 수익률 {formatSignedPercent(model.returnPct)} · 최근 범위의{' '}
                 {model.rangePositionPct.toFixed(0)}% 지점
             </p>
+
+            {/* 층 hover/탭 리드아웃 — 마우스/터치를 쓰는 시각 사용자 전용 보강 표시다
+                (층 <g>는 role="img" 자손이라 키보드 포커스를 받지 않는다, 위 렌더
+                루프 주석 참고). 접근성 채널은 이미 svg 자체의 role="img" aria-label
+                (buildAriaLabel)이 핵심 정보를 전달하므로 이 줄은 중복 announce를
+                막기 위해 aria-hidden이다 — floating 툴팁(아래)과 동일한 "시각
+                전용" 취급. volumeByBand가 없으면 아예 렌더하지 않아 건물이 이 기능
+                추가 전과 DOM 상 동일하게 유지된다. */}
+            {volumeByBand && (
+                <p
+                    data-testid="floor-volume-readout"
+                    aria-hidden="true"
+                    className="text-secondary-300 min-h-[1rem] text-center text-xs tabular-nums"
+                >
+                    {activeFloorTooltipText ?? ' '}
+                </p>
+            )}
+
+            {/* Floor floating 툴팁 — SVG 자체 bounds에 클리핑되지 않도록 document.body로
+                포털한다(InfoTooltip과 동일한 idiom: fixed 좌표 + getTooltipPosition +
+                최초 측정 전 invisible). 활성 층의 실제 화면 좌표(getBoundingClientRect,
+                activate/toggleClick에서 캡처)를 anchor로 써 280/340/440px 세 breakpoint
+                모두에서 viewBox 스케일과 무관하게 정확히 그 층 옆에 뜬다.
+                pointer-events-none이라 툴팁 자체를 클릭해도 outside-click 판정에
+                끼어들지 않는다(useOnClickOutside에 별도 tooltipRef가 필요 없다).
+
+                role="tooltip"이 아니라 aria-hidden="true"다 — 이 노드는 document.body
+                최상위로 포털되어 svg role="img" 서브트리 **밖**에 산다. role="tooltip"을
+                쓰려면 반드시 트리거 요소의 aria-describedby로 연결돼야 하는데(WAI-ARIA,
+                MISTAKES a11y #3), 층 <g>는 위 렌더 루프 주석대로 의도적으로 인터랙티브/
+                포커스 가능한 요소가 아니므로 그런 트리거가 없다. role="tooltip"만
+                남기면 트리거 없이 announce되는 고아 노드가 돼(이전 라운드 결함) 스크린
+                리더가 svg aria-label과 무관하게 이 텍스트를 뜬금없이 읽는다. 그래서
+                below-building 리드아웃(위)과 동일하게 순수 시각 보강으로 다뤄
+                접근성 트리에서 제외한다. */}
+            {activeFloor !== null &&
+                activeFloorTooltipContent !== null &&
+                typeof document !== 'undefined' &&
+                createPortal(
+                    <div
+                        ref={el => {
+                            if (!el) return;
+                            const tooltipRect = el.getBoundingClientRect();
+                            const pos = getTooltipPosition(
+                                activeFloor.rect,
+                                tooltipRect,
+                                window.innerWidth
+                            );
+                            if (
+                                pos.top !== tooltipPosition.top ||
+                                pos.left !== tooltipPosition.left
+                            ) {
+                                setTooltipPosition(pos);
+                            }
+                            if (measuredFloorIndex !== activeFloor.index) {
+                                setMeasuredFloorIndex(activeFloor.index);
+                            }
+                        }}
+                        aria-hidden="true"
+                        data-testid="floor-tooltip"
+                        className={cn(
+                            'bg-secondary-800 border-secondary-600 pointer-events-none fixed top-(--tt) left-(--tl) z-9999 max-w-[220px] rounded border p-2 text-xs leading-relaxed shadow-lg',
+                            tooltipPositioned ? 'visible' : 'invisible'
+                        )}
+                        style={
+                            {
+                                '--tt': `${tooltipPosition.top}px`,
+                                '--tl': `${tooltipPosition.left}px`,
+                            } as React.CSSProperties
+                        }
+                    >
+                        <p className="text-secondary-100 font-medium tabular-nums">
+                            {activeFloorTooltipContent.main}
+                        </p>
+                        <p className="text-secondary-400 mt-0.5 text-[10px]">
+                            {activeFloorTooltipContent.qualifier}
+                        </p>
+                    </div>,
+                    document.body
+                )}
         </div>
     );
 }

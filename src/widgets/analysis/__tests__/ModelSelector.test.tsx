@@ -100,4 +100,32 @@ describe('ModelSelector', () => {
         await user.keyboard('{Escape}');
         expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
     });
+
+    it('Escape does not propagate past the dropdown, so an ancestor Escape listener (e.g. a wrapping settings popover) does not also fire', async () => {
+        const user = userEvent.setup();
+        renderSelector();
+
+        await user.click(
+            screen.getByRole('button', { name: 'AI 분석 모델 선택' })
+        );
+        expect(screen.getByRole('listbox')).toBeInTheDocument();
+
+        const outerHandler = vi.fn();
+        document.addEventListener('keydown', outerHandler);
+        try {
+            await user.keyboard('{Escape}');
+        } finally {
+            document.removeEventListener('keydown', outerHandler);
+        }
+
+        expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+        expect(outerHandler).not.toHaveBeenCalled();
+    });
+
+    it('renders the "AI MODEL" label with AA-contrast-safe secondary-400 text, not secondary-500', () => {
+        renderSelector();
+        const label = screen.getByText('AI MODEL');
+        expect(label.className).toContain('text-secondary-400');
+        expect(label.className).not.toContain('text-secondary-500');
+    });
 });

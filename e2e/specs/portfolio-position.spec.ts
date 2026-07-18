@@ -210,9 +210,12 @@ test.describe('position widget placement (authed storageState)', () => {
         // aria-label's avg segment is pinned ($192, this spec's own input);
         // the bars-derived segments (현재가/수익률/범위 위치) are asserted by
         // shape only — see file-level comment on why they can't be pinned.
+        // The aria-label always ends with a trailing floor note (e.g. "3층 ·
+        // 중층" in-range, or "옥상 위 · …" / "지하 세대 · …" out-of-range) appended
+        // after "…지점" — not pinned to a specific floor, just required present.
         const img = building.getByRole('img', { name: /^AAPL 내 위치:/ });
         await expect(img).toHaveAccessibleName(
-            /^AAPL 내 위치: 평단 \$192, 현재가 \$[\d,.]+, 수익률 [+-][\d.]+%, 최근 범위의 \d+% 지점$/
+            /^AAPL 내 위치: 평단 \$192, 현재가 \$[\d,.]+, 수익률 [+-][\d.]+%, 최근 범위의 \d+% 지점, .+$/
         );
 
         const region = positionRegion(page);
