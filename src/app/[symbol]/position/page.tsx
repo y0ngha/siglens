@@ -96,15 +96,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     // 브라우저 탭·메신저 링크 프리뷰**에서 그대로 노출되므로(발견성은 SERP가 아닌
     // 공유로 얻는다), 재미있는 후킹 카피의 가치가 색인 여부와 무관하게 살아있다.
     // (색인용 콘텐츠 전략은 별도 랜딩 페이지로 다루기로 보류 — 사용자 결정.)
-    const positionTitle = `${displayName} 내 위치 — 내 평단은 몇 층?`;
     // 후킹 키워드(아파트/옥상/지하)는 반드시 displayName **앞**에 온다. displayName은
     // koreanName+name+ticker 조합(buildDisplayName)이라 종목마다 길이가 크게 달라지고
-    // (예: IBM처럼 긴 조합은 70자+), 뒤에 붙이면 SEO_DESCRIPTION_MAX_LENGTH(120) clamp에
-    // 잘려나가 메타포 자체가 사라진다 — front-load해야 어떤 displayName 길이에서도
-    // 세 키워드가 120자 이내에 살아남는다.
+    // (예: IBM처럼 긴 조합은 70자+), 뒤에 붙이면 title/OG의 truncation(브라우저 탭·
+    // 메신저 프리뷰) 또는 SEO_DESCRIPTION_MAX_LENGTH(120) clamp에 잘려나가 메타포
+    // 자체가 사라진다 — front-load해야 어떤 displayName 길이에서도 세 키워드가
+    // 살아남는다.
+    const positionTitle = `내 평단은 몇 층? — ${displayName} 내 위치`;
     const positionDescription = clampSeoDescription(
         `내 평단은 이 종목 '아파트'의 몇 층일까? 옥상(고점)일까 지하(저점)일까 — ` +
-            `${displayName}의 최근 52주 범위에서 내 매수가의 위치를 확인해보세요.`
+            `${displayName}의 최근 52주 범위에서 내 평단의 위치를 확인해보세요.`
     );
     // 탭 title(positionTitle)은 root layout의 title.template이 "| Siglens"를
     // 붙여주지만, OG/Twitter는 페이지 레벨에서 root layout을 deep-merge가 아니라

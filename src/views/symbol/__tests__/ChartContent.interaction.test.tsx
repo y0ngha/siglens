@@ -238,6 +238,70 @@ describe('ChartContent', () => {
                 screen.queryByTestId('position-status-summary')
             ).not.toBeInTheDocument();
         });
+
+        it.each([
+            [
+                'isHydrated:false',
+                { isHydrated: false, isLoading: false, isError: false },
+            ],
+            [
+                'isLoading:true',
+                { isHydrated: true, isLoading: true, isError: false },
+            ],
+            [
+                'isError:true',
+                { isHydrated: true, isLoading: false, isError: true },
+            ],
+        ])(
+            '홀딩은 있지만 아직 resolve되지 않았으면(%s) "내 포지션" 요약을 렌더하지 않는다 — isHoldingResolved 게이트',
+            (_label, resolutionFlags) => {
+                analysisMock.mockReturnValue(
+                    analysisReturn({ analysis: NARRATIVE_ANALYSIS })
+                );
+                symbolHoldingMock.mockReturnValue({
+                    holding: {
+                        symbol: 'AAPL',
+                        companyName: 'Apple Inc.',
+                        fmpSymbol: 'AAPL',
+                        quantity: '10',
+                        averagePrice: '100',
+                        updatedAt: new Date().toISOString(),
+                    },
+                    ...resolutionFlags,
+                    save: {} as never,
+                });
+
+                renderChart();
+
+                expect(
+                    screen.queryByTestId('position-status-summary')
+                ).not.toBeInTheDocument();
+            }
+        );
+
+        it('홀딩이 있고 resolve됐어도 분석이 서사 없는 FALLBACK이면 "내 포지션" 요약을 렌더하지 않는다 — narrative 게이트', () => {
+            // analysisMock은 beforeEach 기본값(FALLBACK_ANALYSIS, 서사 없음) 그대로.
+            symbolHoldingMock.mockReturnValue({
+                holding: {
+                    symbol: 'AAPL',
+                    companyName: 'Apple Inc.',
+                    fmpSymbol: 'AAPL',
+                    quantity: '10',
+                    averagePrice: '100',
+                    updatedAt: new Date().toISOString(),
+                },
+                isHydrated: true,
+                isLoading: false,
+                isError: false,
+                save: {} as never,
+            });
+
+            renderChart();
+
+            expect(
+                screen.queryByTestId('position-status-summary')
+            ).not.toBeInTheDocument();
+        });
     });
 
     describe('상태 배너', () => {

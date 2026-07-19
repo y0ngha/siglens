@@ -145,13 +145,17 @@ describe('generateMetadata', () => {
         const metadata = await generateMetadata({
             params: Promise.resolve({ symbol: 'aapl' }),
         });
-        // 후킹 title: 종목 표시명 + 메타포 훅.
-        expect(metadata.title).toBe('Apple Inc. 내 위치 — 내 평단은 몇 층?');
+        // 후킹 title: 메타포 훅이 displayName **앞**에 front-load — title/OG
+        // truncation(브라우저 탭·메신저 프리뷰)에서도 훅이 먼저 살아남는다.
+        expect(metadata.title).toBe('내 평단은 몇 층? — Apple Inc. 내 위치');
         // 후킹 description: 아파트/층 메타포 키워드를 담고, SEO_DESCRIPTION_MAX_LENGTH 이내.
         const description = metadata.description ?? '';
         expect(description).toContain('아파트');
         expect(description).toContain('옥상');
         expect(description).toContain('지하');
+        // 용어는 "평단"으로 통일 — "매수가"는 쓰지 않는다.
+        expect(description).toContain('평단');
+        expect(description).not.toContain('매수가');
         expect([...description].length).toBeLessThanOrEqual(
             SEO_DESCRIPTION_MAX_LENGTH
         );
@@ -160,11 +164,11 @@ describe('generateMetadata', () => {
         // sibling 심볼 페이지(symbolMetadataFromSeo의 fullTitle 패턴)와 동일하게
         // 브랜드 suffix가 직접 실려야 한다 — metadata.title과 달라야 정상이다.
         expect(metadata.openGraph?.title).toBe(
-            'Apple Inc. 내 위치 — 내 평단은 몇 층? | Siglens'
+            '내 평단은 몇 층? — Apple Inc. 내 위치 | Siglens'
         );
         expect(metadata.openGraph?.description).toBe(metadata.description);
         expect(metadata.twitter?.title).toBe(
-            'Apple Inc. 내 위치 — 내 평단은 몇 층? | Siglens'
+            '내 평단은 몇 층? — Apple Inc. 내 위치 | Siglens'
         );
         expect(metadata.twitter?.description).toBe(metadata.description);
         // OG url은 self-canonical과 일치해야 공유 카드가 올바른 페이지를 가리킨다.
