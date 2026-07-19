@@ -25,6 +25,7 @@ import {
 import {
     clampSeoDescription,
     NOINDEX_SYMBOL_METADATA,
+    SITE_NAME,
     SITE_URL,
 } from '@/shared/lib/seo';
 import type { Metadata } from 'next';
@@ -88,14 +89,52 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     // 콘텐츠(재무 지표, 4축 시나리오, 기사 목록)를 갖고 있어 이 판단과 대비된다.
     // 같은 이유로 sitemap(`buildPopularEntries`)에도 이 라우트를 추가하지 않는다 —
     // 이미 noindex인 라우트를 sitemap에 넣는 것 자체가 상호 모순 신호다.
+    //
+    // seo-audit 재검토(2026-07-19): 색인 방침은 위 근거대로 noindex를 유지하되,
+    // title/description/OG/Twitter 카피는 "평단 위치 = 아파트 몇 층" 메타포로 후킹
+    // 강화한다. noindex 페이지라도 이 메타는 크롤러가 아니라 **소셜 공유(OG 카드)·
+    // 브라우저 탭·메신저 링크 프리뷰**에서 그대로 노출되므로(발견성은 SERP가 아닌
+    // 공유로 얻는다), 재미있는 후킹 카피의 가치가 색인 여부와 무관하게 살아있다.
+    // (색인용 콘텐츠 전략은 별도 랜딩 페이지로 다루기로 보류 — 사용자 결정.)
+    const positionTitle = `${displayName} 내 위치 — 내 평단은 몇 층?`;
+    // 후킹 키워드(아파트/옥상/지하)는 반드시 displayName **앞**에 온다. displayName은
+    // koreanName+name+ticker 조합(buildDisplayName)이라 종목마다 길이가 크게 달라지고
+    // (예: IBM처럼 긴 조합은 70자+), 뒤에 붙이면 SEO_DESCRIPTION_MAX_LENGTH(120) clamp에
+    // 잘려나가 메타포 자체가 사라진다 — front-load해야 어떤 displayName 길이에서도
+    // 세 키워드가 120자 이내에 살아남는다.
+    const positionDescription = clampSeoDescription(
+        `내 평단은 이 종목 '아파트'의 몇 층일까? 옥상(고점)일까 지하(저점)일까 — ` +
+            `${displayName}의 최근 52주 범위에서 내 매수가의 위치를 확인해보세요.`
+    );
+    // 탭 title(positionTitle)은 root layout의 title.template이 "| Siglens"를
+    // 붙여주지만, OG/Twitter는 페이지 레벨에서 root layout을 deep-merge가 아니라
+    // 통째로 replace한다 — sibling 심볼 페이지(symbolMetadataFromSeo의
+    // title/fullTitle 분리 패턴)와 동일하게, 소셜 카드 전용으로 브랜드 suffix를
+    // 직접 붙인 fullTitle을 만들어 써야 og:title/twitter:title에서 브랜딩이
+    // 유실되지 않는다.
+    const positionFullTitle = `${positionTitle} | ${SITE_NAME}`;
     return {
         ...NOINDEX_SYMBOL_METADATA,
-        title: `${displayName} 내 위치`,
-        description: clampSeoDescription(
-            `${displayName}의 최근 가격 범위에서 내 평단이 어디에 위치하는지 확인하세요.`
-        ),
+        title: positionTitle,
+        description: positionDescription,
         alternates: { canonical: url },
-        openGraph: { url },
+        openGraph: {
+            // 페이지 레벨 openGraph는 root layout의 것을 deep-merge가 아니라
+            // 통째로 replace하므로(Next.js 얕은 병합), sibling 심볼 페이지
+            // (symbolMetadataFromSeo)와 동일하게 type/siteName/locale을 다시
+            // 명시해야 소셜 카드에서 og:site_name·og:locale이 유실되지 않는다.
+            type: 'website',
+            siteName: SITE_NAME,
+            title: positionFullTitle,
+            description: positionDescription,
+            url,
+            locale: 'ko_KR',
+        },
+        twitter: {
+            card: 'summary_large_image',
+            title: positionFullTitle,
+            description: positionDescription,
+        },
     };
 }
 

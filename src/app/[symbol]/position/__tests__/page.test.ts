@@ -57,6 +57,7 @@ import { isTabAllowedForSymbol } from '@/entities/ticker/api';
 import { getBarsStatic, quantizeBarsDataToLastClosed } from '@/entities/bars';
 import { PositionTabContent } from '@/widgets/portfolio-position';
 import { findElementByType } from '@/__tests__/utils/findElementByType';
+import { SEO_DESCRIPTION_MAX_LENGTH } from '@/shared/lib/seo';
 import type { MockedFunction } from 'vitest';
 
 const mockGetAssetInfoResilient = getAssetInfoResilient as MockedFunction<
@@ -133,11 +134,85 @@ describe('generateMetadata', () => {
         const metadata = await generateMetadata({
             params: Promise.resolve({ symbol: 'aapl' }),
         });
+        // 색인 방침은 불변: noindex + self-canonical 유지(후킹 카피 추가와 무관).
         expect(metadata.robots).toEqual({ index: false, follow: false });
-        expect(metadata.title).toBe('Apple Inc. 내 위치');
         expect(metadata.alternates).toEqual({
             canonical: 'https://siglens.io/AAPL/position',
         });
+    });
+
+    it('노출용 카피는 "평단 = 몇 층" 아파트 메타포로 후킹 강화 — title/description/OG/Twitter에 반영(색인은 여전히 noindex)', async () => {
+        const metadata = await generateMetadata({
+            params: Promise.resolve({ symbol: 'aapl' }),
+        });
+        // 후킹 title: 종목 표시명 + 메타포 훅.
+        expect(metadata.title).toBe('Apple Inc. 내 위치 — 내 평단은 몇 층?');
+        // 후킹 description: 아파트/층 메타포 키워드를 담고, SEO_DESCRIPTION_MAX_LENGTH 이내.
+        const description = metadata.description ?? '';
+        expect(description).toContain('아파트');
+        expect(description).toContain('옥상');
+        expect(description).toContain('지하');
+        expect([...description].length).toBeLessThanOrEqual(
+            SEO_DESCRIPTION_MAX_LENGTH
+        );
+        // OG/Twitter 카드는 root layout의 title.template("| Siglens" suffix)이
+        // 페이지 레벨 openGraph/twitter를 replace(merge 아님)하며 무력화되므로,
+        // sibling 심볼 페이지(symbolMetadataFromSeo의 fullTitle 패턴)와 동일하게
+        // 브랜드 suffix가 직접 실려야 한다 — metadata.title과 달라야 정상이다.
+        expect(metadata.openGraph?.title).toBe(
+            'Apple Inc. 내 위치 — 내 평단은 몇 층? | Siglens'
+        );
+        expect(metadata.openGraph?.description).toBe(metadata.description);
+        expect(metadata.twitter?.title).toBe(
+            'Apple Inc. 내 위치 — 내 평단은 몇 층? | Siglens'
+        );
+        expect(metadata.twitter?.description).toBe(metadata.description);
+        // OG url은 self-canonical과 일치해야 공유 카드가 올바른 페이지를 가리킨다.
+        // as 캐스트 근거(CONVENTIONS.md §TypeScript 7): generateMetadata의 openGraph 리턴은
+        // 항상 object 리터럴(url/siteName/type/locale 포함)이지 함수형이 아니므로 이
+        // 테스트가 읽는 4개 필드에 한해 `Metadata['openGraph']` 유니온을 좁히는 것은
+        // 런타임과 어긋나지 않는다 — 소스(page.tsx generateMetadata)가 그 형태를
+        // 무조건 반환함을 위 expect들이 이미 실행 경로로 증명한다.
+        const og = metadata.openGraph as
+            | {
+                  url?: unknown;
+                  siteName?: unknown;
+                  type?: unknown;
+                  locale?: unknown;
+              }
+            | undefined;
+        expect(og?.url).toBe('https://siglens.io/AAPL/position');
+        // 페이지 openGraph가 root layout을 replace하므로 브랜딩 필드가 유실되면 안 된다.
+        expect(og?.siteName).toBe('Siglens');
+        expect(og?.type).toBe('website');
+        expect(og?.locale).toBe('ko_KR');
+    });
+
+    it('긴 displayName(코리안네임+영문명+티커 조합, 70자+)에서도 아파트/옥상/지하 메타포가 120자 clamp에서 살아남는다 — front-load 회귀 가드', async () => {
+        // buildDisplayName 목은 assetInfo.name을 그대로 반환하므로(위 vi.mock 참고),
+        // name에 직접 buildDisplayName의 실제 출력 형태(koreanName, name (TICKER))를
+        // 흉내 낸 긴 문자열을 넣어 "긴 displayName" 케이스를 재현한다.
+        mockGetAssetInfoResilient.mockResolvedValue({
+            assetInfo: {
+                symbol: 'IBM',
+                name: '인터내셔널 비즈니스 머신즈, International Business Machines Corp (IBM)',
+                koreanName: '인터내셔널 비즈니스 머신즈',
+                fmpSymbol: 'IBM',
+            },
+            degraded: false,
+        } as never);
+
+        const metadata = await generateMetadata({
+            params: Promise.resolve({ symbol: 'ibm' }),
+        });
+
+        const description = metadata.description ?? '';
+        expect([...description].length).toBeLessThanOrEqual(
+            SEO_DESCRIPTION_MAX_LENGTH
+        );
+        expect(description).toContain('아파트');
+        expect(description).toContain('옥상');
+        expect(description).toContain('지하');
     });
 });
 
