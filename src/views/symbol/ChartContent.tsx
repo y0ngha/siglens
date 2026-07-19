@@ -228,23 +228,12 @@ export function ChartContent({
         isError: isHoldingError,
     } = useSymbolHolding(symbol);
 
-    // 광고 노출 게이트. AnalysisProgress/AnalysisPanel의 isFreeUser는 기본값 true라
-    // "Pro에게는 명시적으로 false를 전달"하는 게 규약이다(둘 다 내부에서 AdBanner로
-    // 전달하며, AdBanner의 isFreeUser는 기본값 없는 필수 prop이다). tier가 'pro'가
-    // 아닐 때만 광고를 노출한다. tier는 hydration 전 DEFAULT_TIER('free')로 폴백되어
-    // 로딩 중에는 free와 동일하게 취급된다(기존 기본값 true와 일치).
-    //
-    // ⚠️ 광고 제거는 '결제(pro)' 전용 혜택이라 member는 의도적으로 광고 노출 대상이다.
-    // 이는 기능 게이팅 축(canUseReasoning = tier !== 'free', isFreeTier = tier === 'free'
-    // — 둘 다 member를 pro와 함께 취급)과 다른 별개의 축이다. 따라서 여기서는 'free' 대신
-    // 'pro'를 기준으로 판별한다(member ≠ 광고 면제).
-    const isFreeUser = tier !== 'pro';
-
     // scope fence: 여기서 만드는 값은 순수 산술(평가손익/수익률/범위 위치/고저점
     // 거리)뿐이다 — 매수/매도 판단·목표가·진입구간 등 core AI 도메인 값은 절대
     // 포함하지 않는다(SCOPE.md §0). low52w/high52w/current는 TechnicalFactsSummary와
     // 동일하게 buildTechnicalFacts(bars, indicators)에서 얻어 캐시-프리(순수 함수,
-    // 서버 재조회 없음) 상태를 유지한다.
+    // 서버 재조회 없음) 상태를 유지한다. 훅(useMemo)이므로 파생 변수(isFreeUser 등)보다
+    // 먼저 선언한다(Custom Hook Declaration Order, MISTAKES #17).
     const positionStatus = useMemo(() => {
         const isHoldingResolved =
             isHoldingHydrated && !isHoldingLoading && !isHoldingError;
@@ -268,6 +257,18 @@ export function ChartContent({
         bars,
         indicators,
     ]);
+
+    // 광고 노출 게이트. AnalysisProgress/AnalysisPanel의 isFreeUser는 기본값 true라
+    // "Pro에게는 명시적으로 false를 전달"하는 게 규약이다(둘 다 내부에서 AdBanner로
+    // 전달하며, AdBanner의 isFreeUser는 기본값 없는 필수 prop이다). tier가 'pro'가
+    // 아닐 때만 광고를 노출한다. tier는 hydration 전 DEFAULT_TIER('free')로 폴백되어
+    // 로딩 중에는 free와 동일하게 취급된다(기존 기본값 true와 일치).
+    //
+    // ⚠️ 광고 제거는 '결제(pro)' 전용 혜택이라 member는 의도적으로 광고 노출 대상이다.
+    // 이는 기능 게이팅 축(canUseReasoning = tier !== 'free', isFreeTier = tier === 'free'
+    // — 둘 다 member를 pro와 함께 취급)과 다른 별개의 축이다. 따라서 여기서는 'free' 대신
+    // 'pro'를 기준으로 판별한다(member ≠ 광고 면제).
+    const isFreeUser = tier !== 'pro';
 
     const analysisContent = useMemo(() => {
         const hasNarrative = !isFallbackAnalysis(analysis);

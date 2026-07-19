@@ -30,9 +30,12 @@ export interface PositionStatus {
     returnPct: number;
     /** [low52w, high52w] 안에서 current(현재가)의 위치, 0..100(clamped). avg 기준이 아니다. */
     rangePositionPct: number;
-    /** (high52w - current) / current * 100 — 항상 >= 0 (high52w >= current). */
+    /** (high52w - current) / current * 100. 현재 유일 호출부(ChartContent)는 high52w를
+     * current를 포함한 봉 배열에서 뽑으므로 통상 >= 0이지만, computePositionStatus 자체는
+     * high52w >= current를 강제하지 않는다 — 임의 current > high52w 입력에선 음수가 될 수 있다. */
     distanceToHighPct: number;
-    /** (low52w - current) / current * 100 — 항상 <= 0 (low52w <= current). */
+    /** (low52w - current) / current * 100. 마찬가지로 현재 호출부에선 통상 <= 0이나,
+     * 함수가 low52w <= current를 보장하지는 않는다(임의 입력에선 양수 가능). */
     distanceToLowPct: number;
 }
 
