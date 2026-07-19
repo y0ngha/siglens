@@ -1,5 +1,23 @@
 # Changelog
 
+# [0.45.0](https://github.com/y0ngha/siglens/compare/v0.44.0...v0.45.0) (2026-07-19)
+
+
+### Bug Fixes
+
+* **position:** add og/twitter card images, front-load title hook, cover holding-gate branches (audit) ([7f02b2c](https://github.com/y0ngha/siglens/commit/7f02b2ced073264b6f62af74f58605b78c14dcb5))
+* **position:** drop dead useId, lock scope-fence with negative assertion ([199d5b5](https://github.com/y0ngha/siglens/commit/199d5b5166c616d3b9a90bcdec40185c6f50fc88))
+* **position:** hook order + aria-labelledby heading sync (match PositionCard) ([164b984](https://github.com/y0ngha/siglens/commit/164b984144a4c267807799494b91a023906a4501))
+* **position:** move positionStatus useMemo before derived var; accurate distance-sign comment ([fb101f9](https://github.com/y0ngha/siglens/commit/fb101f9af26a62c49a99eb711cefa156e2f7326f))
+* **seo:** add | Siglens brand to OG/Twitter title; use SEO_DESCRIPTION_MAX_LENGTH in tests ([e93a1ed](https://github.com/y0ngha/siglens/commit/e93a1ed2cffc338f477a6c0f954de291ec5f11ba))
+* **seo:** front-load 아파트/옥상/지하 metaphor so it survives description clamp; test long name + cast comment ([cb7f813](https://github.com/y0ngha/siglens/commit/cb7f813045212689724f39805836a6170df532e6))
+
+
+### Features
+
+* **position:** deterministic 내 포지션 summary beside AI analysis (P&L, range, distances) ([f4b18d3](https://github.com/y0ngha/siglens/commit/f4b18d3f1a992a72c4075249aad4cfd0f8428779))
+* **seo:** apartment-metaphor hook copy + OG/Twitter cards for 내 위치 page ([cee1672](https://github.com/y0ngha/siglens/commit/cee167274e4e4ae9d5776bde757326c4c4fd3659))
+
 # [0.44.0](https://github.com/y0ngha/siglens/compare/v0.43.0...v0.44.0) (2026-07-18)
 
 
