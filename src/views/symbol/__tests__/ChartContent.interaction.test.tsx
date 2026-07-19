@@ -102,6 +102,14 @@ vi.mock('@/widgets/analysis', () => ({
         />
     ),
 }));
+// "내 포지션" 요약(PositionStatusSummary)의 소스 — react-query 기반이라
+// QueryClientProvider 없는 이 트리에서 그대로 렌더하면 크래시한다. vi.fn()으로
+// mockable하게 둬 "내 포지션 요약" describe 블록이 holding-present 케이스를
+// 별도로 override할 수 있게 한다(기본값은 beforeEach에서 "홀딩 없음").
+const symbolHoldingMock = vi.fn();
+vi.mock('@/features/portfolio-holding', () => ({
+    useSymbolHolding: () => symbolHoldingMock(),
+}));
 
 function analysisReturn(
     overrides: Partial<UseAnalysisResult> = {}
@@ -178,6 +186,57 @@ describe('ChartContent', () => {
             tier: 'free',
             isTierHydrated: true,
             openSignupNudge: vi.fn(),
+        });
+        // 기본값: 홀딩 없음 — 대부분의 테스트는 "내 포지션" 요약과 무관하다.
+        symbolHoldingMock.mockReturnValue({
+            holding: null,
+            isHydrated: true,
+            isLoading: false,
+            isError: false,
+            save: {} as never,
+        });
+    });
+
+    describe('내 포지션 요약', () => {
+        // bars 목: high52w=120, low52w=90, lastClose=110 (useBars mock 참고).
+        it('회원이 이 심볼의 홀딩을 갖고 있고 서사가 있으면 "내 포지션" 요약을 AI 분석 옆에 렌더한다', () => {
+            analysisMock.mockReturnValue(
+                analysisReturn({ analysis: NARRATIVE_ANALYSIS })
+            );
+            symbolHoldingMock.mockReturnValue({
+                holding: {
+                    symbol: 'AAPL',
+                    companyName: 'Apple Inc.',
+                    fmpSymbol: 'AAPL',
+                    quantity: '10',
+                    averagePrice: '100',
+                    updatedAt: new Date().toISOString(),
+                },
+                isHydrated: true,
+                isLoading: false,
+                isError: false,
+                save: {} as never,
+            });
+
+            renderChart();
+
+            expect(
+                screen.getByTestId('position-status-summary')
+            ).toBeInTheDocument();
+            expect(screen.getByText('$100 · 10주')).toBeInTheDocument();
+        });
+
+        it('홀딩이 없으면(비회원 또는 미등록) "내 포지션" 요약을 렌더하지 않는다', () => {
+            analysisMock.mockReturnValue(
+                analysisReturn({ analysis: NARRATIVE_ANALYSIS })
+            );
+            // symbolHoldingMock은 beforeEach 기본값(holding: null) 그대로.
+
+            renderChart();
+
+            expect(
+                screen.queryByTestId('position-status-summary')
+            ).not.toBeInTheDocument();
         });
     });
 

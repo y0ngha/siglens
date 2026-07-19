@@ -4396,14 +4396,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@y0ngha/siglens-core@npm:0.37.0":
-  version: 0.37.0
-  resolution: "@y0ngha/siglens-core@npm:0.37.0::__archiveUrl=https%3A%2F%2Fnpm.pkg.github.com%2Fdownload%2F%40y0ngha%2Fsiglens-core%2F0.37.0%2F241c066ccdc66b21128b97a77b98b09be59684fa"
+"@y0ngha/siglens-core@npm:0.39.0":
+  version: 0.39.0
+  resolution: "@y0ngha/siglens-core@npm:0.39.0::__archiveUrl=https%3A%2F%2Fnpm.pkg.github.com%2Fdownload%2F%40y0ngha%2Fsiglens-core%2F0.39.0%2F2a5b96af9612257efd66351d851cbe7636f94809"
   dependencies:
     jsonrepair: "npm:^3.14.0"
   peerDependencies:
     "@upstash/redis": ^1.37.0
-  checksum: 10c0/f8aff83c0b8f73492607e2d3e4761aac065276e94b5ef08967f1b81d6959ec1d068155f646ae523660fa7c909d47672916de7438820171d6c32f2c5e94973f1e
+  checksum: 10c0/be08a87ae3e6e5e4216812e2c297aab17b0efb1904cf4f7112cc5d857a105ed3748a274280c4327350b2a3ddb866074be2c5adf3f7530dc53d4cae70674e91b4
   languageName: node
   linkType: hard
 
@@ -11888,7 +11888,7 @@ __metadata:
     "@typescript/native-preview": "npm:7.0.0-dev.20260704.1"
     "@upstash/redis": "npm:^1.37.0"
     "@vitest/coverage-v8": "npm:^4.1.9"
-    "@y0ngha/siglens-core": "npm:0.37.0"
+    "@y0ngha/siglens-core": "npm:0.39.0"
     babel-plugin-react-compiler: "npm:^1.0.0"
     bcryptjs: "npm:^3.0.3"
     clsx: "npm:^2.1.1"

@@ -2,11 +2,16 @@
 
 import { isFallbackAnalysis } from '@/entities/chat-message';
 import { usePublishSymbolChat } from '@/features/symbol-chat';
+import { useSymbolHolding } from '@/features/portfolio-holding';
 import { cn } from '@/shared/lib/cn';
 import { PWA_TRIGGER_EVENT } from '@/shared/lib/pwaEvents';
 import { BotBlockedNotice } from '@/shared/ui/BotBlockedNotice';
 import { AnalysisPanel, AnalysisProgress } from '@/widgets/analysis';
 import { ChartSkeleton, useChartSync } from '@/widgets/chart';
+import {
+    computePositionStatus,
+    PositionStatusSummary,
+} from '@/widgets/portfolio-position';
 import {
     type AnalysisResponse,
     type TierInfoDepth,
@@ -35,6 +40,7 @@ import { TechnicalFactsSummary } from './TechnicalFactsSummary';
 import type { AnalysisStatus } from './utils/analysisStatus';
 import { getAnalysisStatus } from './utils/analysisStatus';
 import { buildChatState } from './utils/buildChatState';
+import { buildTechnicalFacts } from './utils/technicalFacts';
 import { useRegisterShareable, deriveChartStatus } from '@/features/share';
 
 const StockChart = dynamic(
@@ -206,6 +212,52 @@ export function ChartContent({
     const { clusteredKeyLevels, validatedActionPrices, reconciledActionLines } =
         useAnalysisDerivedData(analysis, bars);
 
+    // "내 포지션" 결정적(non-AI) 요약 — "내 평단 기준으로 분석했어요" 배지 옆에
+    // 노출한다. useAnalysis가 내부적으로 같은 심볼의 useSymbolHolding을 이미
+    // 호출하지만 그 훅의 holding은 반환되지 않으므로 여기서 독립적으로 다시
+    // 구독한다 — react-query가 동일 queryKey(QUERY_KEYS.portfolioHoldings())로
+    // 중복 조회를 캐시-dedupe하므로 추가 네트워크 요청은 없다(PortfolioChip/
+    // PositionTabContent와 동일한 기존 패턴). SSR/비회원 안전성은 hook 자체가
+    // 보장한다: hydration 전에는 isHydrated=false, 비회원은 서버 액션이 항상
+    // holdings=[]를 반환하므로 두 경우 모두 holding=null → 아래 게이트가 렌더를
+    // 막는다(별도 useCurrentUser 체크 불필요).
+    const {
+        holding: symbolHolding,
+        isHydrated: isHoldingHydrated,
+        isLoading: isHoldingLoading,
+        isError: isHoldingError,
+    } = useSymbolHolding(symbol);
+
+    // scope fence: 여기서 만드는 값은 순수 산술(평가손익/수익률/범위 위치/고저점
+    // 거리)뿐이다 — 매수/매도 판단·목표가·진입구간 등 core AI 도메인 값은 절대
+    // 포함하지 않는다(SCOPE.md §0). low52w/high52w/current는 TechnicalFactsSummary와
+    // 동일하게 buildTechnicalFacts(bars, indicators)에서 얻어 캐시-프리(순수 함수,
+    // 서버 재조회 없음) 상태를 유지한다. 훅(useMemo)이므로 파생 변수(isFreeUser 등)보다
+    // 먼저 선언한다(Custom Hook Declaration Order, MISTAKES #17).
+    const positionStatus = useMemo(() => {
+        const isHoldingResolved =
+            isHoldingHydrated && !isHoldingLoading && !isHoldingError;
+        if (!isHoldingResolved || symbolHolding === null) return null;
+
+        const facts = buildTechnicalFacts(bars, indicators);
+        if (facts === null) return null;
+
+        return computePositionStatus({
+            avg: Number(symbolHolding.averagePrice),
+            quantity: Number(symbolHolding.quantity),
+            current: facts.lastClose,
+            low52w: facts.low52w,
+            high52w: facts.high52w,
+        });
+    }, [
+        isHoldingHydrated,
+        isHoldingLoading,
+        isHoldingError,
+        symbolHolding,
+        bars,
+        indicators,
+    ]);
+
     // 광고 노출 게이트. AnalysisProgress/AnalysisPanel의 isFreeUser는 기본값 true라
     // "Pro에게는 명시적으로 false를 전달"하는 게 규약이다(둘 다 내부에서 AdBanner로
     // 전달하며, AdBanner의 isFreeUser는 기본값 없는 필수 prop이다). tier가 'pro'가
@@ -282,6 +334,17 @@ export function ChartContent({
                     isPersonalized={isPersonalized}
                     isFreeUser={isFreeUser}
                 />
+                {/* "내 포지션" 결정적 요약 — 홀딩이 있는 회원에게만, AI 분석
+                    바로 옆에 노출한다(personalized-analysis 배지와 동일 이웃).
+                    positionStatus가 null이면(비회원/홀딩 없음/가격 데이터 미비)
+                    PositionStatusSummary 자체도 null을 렌더하므로 이중 가드다. */}
+                {positionStatus !== null && symbolHolding !== null && (
+                    <PositionStatusSummary
+                        status={positionStatus}
+                        avgRaw={symbolHolding.averagePrice}
+                        quantityRaw={symbolHolding.quantity}
+                    />
+                )}
                 {/* 서사가 있어도(캐시된 분석을 표시 중) 봇 판정이면 안내를 additive로
                     덧붙인다 — 자동 트리거/수동 재분석이 봇으로 오판돼 차단된 사실을
                     stale 분석만 보던 실사용자가 인지하도록(PR #530 리뷰 반영). 두 분기가
@@ -313,6 +376,8 @@ export function ChartContent({
         lockedInfoDepth,
         isPersonalized,
         isFreeUser,
+        positionStatus,
+        symbolHolding,
     ]);
 
     // timeframe을 React.Fragment key로 전달 — Suspense 경계 밖에서 timeframe 변경 시 자식 트리를 강제 remount한다.
