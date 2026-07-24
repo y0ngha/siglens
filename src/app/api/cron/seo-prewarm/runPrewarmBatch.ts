@@ -1,5 +1,5 @@
 import 'server-only';
-import { revalidatePath, revalidateTag } from 'next/cache';
+import { revalidateTag } from 'next/cache';
 import type { SeoSnapshotTab } from '@/entities/seo-snapshot';
 import { DrizzleSeoSnapshotRepository } from '@/entities/seo-snapshot/api';
 import {
@@ -15,7 +15,7 @@ import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilie
 import { getFmpErrorStatus } from '@/shared/api/fmp/fmpUserMessage';
 import { POPULAR_CRYPTOS } from '@/shared/config/popular-cryptos';
 import { addFmpBudget, getFmpBudgetUsed, isInFlight } from './lock';
-import { TAB_PATHS, TAB_SEAMS, resolveHarvest } from './harvest';
+import { TAB_SEAMS, resolveHarvest } from './harvest';
 
 export interface PrewarmBatchCounts {
     submitted: number;
@@ -38,14 +38,22 @@ const TAB_ORDER: readonly SeoSnapshotTab[] = [
     'options',
     'overall',
 ];
-// spec §8 추정치 — 모니터링용, 정밀 계측 아님.
-const FMP_CALLS_PER_EQUITY = 22;
-const FMP_CALLS_PER_CRYPTO = 2;
+// spec §8 추정치 — 모니터링용, 정밀 계측 아님. 심볼 전체 탭 수 기준 총량을
+// 실제 seam이 "실행된" 탭 수에 비례 배분한다(탭 하나당 평균 FMP 호출수).
+// equity: 22 calls / 7 tabs ≈ 3. crypto: 2 calls / 3 tabs(CRYPTO_TABS) ≈ 1.
+// in-flight로 스킵된 탭·이미 fresh인 탭은 seam을 호출하지 않으므로 예산에서
+// 제외된다 — 그렇지 않으면 실제 FMP 호출이 0건인데도 예산이 계상되어
+// getFmpBudgetUsed가 실사용량을 과대평가한다.
+const FMP_CALLS_PER_TAB_EQUITY = 3;
+const FMP_CALLS_PER_TAB_CRYPTO = 1;
 
 const CRYPTO_SYMBOL_SET = new Set<string>(POPULAR_CRYPTOS);
 
+// findGeneratedAtMap(api.ts)이 UPPERCASE 심볼로 키를 저장/조회하므로
+// 여기서도 대문자화해야 한다 — 소문자 심볼이 유입되면(현재는 화이트리스트가
+// 우연히 전부 대문자라 드러나지 않음) freshness lookup이 항상 miss한다.
 function snapshotKey(symbol: string, tab: SeoSnapshotTab): string {
-    return `${symbol}:${tab}`;
+    return `${symbol.toUpperCase()}:${tab}`;
 }
 
 /**
@@ -115,6 +123,9 @@ async function processSymbol(
     const fmpSymbol = assetInfo?.fmpSymbol;
 
     let freshTabCount = 0;
+    // 실제로 TAB_SEAMS[tab]을 호출한(=FMP 호출이 발생했을 수 있는) 탭 수.
+    // 이미 fresh거나 in-flight로 스킵된 탭은 seam이 아예 안 불리므로 제외한다.
+    let seamsRunForSymbol = 0;
 
     for (const tab of TAB_ORDER) {
         if (!u.tabs.includes(tab)) continue;
@@ -130,6 +141,7 @@ async function processSymbol(
 
         if (await isInFlight(u.symbol, tab)) continue;
 
+        seamsRunForSymbol++;
         try {
             const result = await TAB_SEAMS[tab]({
                 symbol: u.symbol,
@@ -158,16 +170,19 @@ async function processSymbol(
         }
     }
 
-    const fmpCalls = CRYPTO_SYMBOL_SET.has(u.symbol.toUpperCase())
-        ? FMP_CALLS_PER_CRYPTO
-        : FMP_CALLS_PER_EQUITY;
-    await addFmpBudget(fmpCalls);
+    if (seamsRunForSymbol > 0) {
+        const fmpCallsPerTab = CRYPTO_SYMBOL_SET.has(u.symbol.toUpperCase())
+            ? FMP_CALLS_PER_TAB_CRYPTO
+            : FMP_CALLS_PER_TAB_EQUITY;
+        await addFmpBudget(fmpCallsPerTab * seamsRunForSymbol);
+    }
 
     if (u.tabs.length > 0 && freshTabCount === u.tabs.length) {
+        // pages는 이 단계에서 스냅샷을 읽지 않는다 — revalidatePath는 동일한
+        // HTML을 재생성만 하는 순수 ISR-write 비용이다. revalidateTag는
+        // `seo-snapshot:{symbol}` 태그의 정확한 무효화 지점으로, render 단계가
+        // 이 태그의 소비자를 추가하기 전까지는 무해한 no-op이다.
         revalidateTag(`seo-snapshot:${u.symbol}`, 'max');
-        for (const tab of u.tabs) {
-            revalidatePath(TAB_PATHS[tab](u.symbol));
-        }
         counts.revalidated++;
     }
 }

@@ -159,6 +159,21 @@ describe('runPrewarmBatch', () => {
         expect(counts.harvested).toBe(1);
     });
 
+    it('심볼이 소문자/혼합 대소문자여도 UPPERCASE generatedAtMap 키와 매칭해 fresh로 판정한다', async () => {
+        // findGeneratedAtMap(api.ts)은 항상 UPPERCASE 키로 저장한다. universe에
+        // 소문자 심볼이 섞여 들어와도 freshness lookup이 miss하지 않아야 한다.
+        universe({ symbol: 'aapl', tabs: ['technical'] });
+        mockFindGeneratedAtMap.mockResolvedValue(
+            new Map([[key('AAPL', 'technical'), BOUNDARY]])
+        );
+
+        const counts = await runPrewarmBatch();
+
+        expect(counts.submitted).toBe(0);
+        expect(counts.harvested).toBe(0);
+        expect(mockPrewarmTechnical).not.toHaveBeenCalled();
+    });
+
     it('cached 결과는 upsert하고, 전 탭이 fresh해지면 revalidate한다', async () => {
         universe({ symbol: 'MSFT', tabs: ['technical', 'overall'] });
         mockFindGeneratedAtMap.mockResolvedValue(new Map());
@@ -209,10 +224,10 @@ describe('runPrewarmBatch', () => {
             'seo-snapshot:MSFT',
             'max'
         );
-        expect(mockRevalidatePath).toHaveBeenCalledWith('/MSFT');
-        expect(mockRevalidatePath).toHaveBeenCalledWith('/MSFT/overall');
+        expect(mockRevalidatePath).not.toHaveBeenCalled();
         expect(counts.revalidated).toBe(1);
-        expect(mockAddFmpBudget).toHaveBeenCalledWith(22);
+        // 2탭 모두 seam이 실제로 실행됨 → equity per-tab(3) × 2 = 6.
+        expect(mockAddFmpBudget).toHaveBeenCalledWith(6);
     });
 
     it('submitted 결과는 markInFlight만 하고 upsert하지 않는다', async () => {
@@ -256,6 +271,8 @@ describe('runPrewarmBatch', () => {
         expect(mockMarkInFlight).not.toHaveBeenCalled();
         expect(counts.submitted).toBe(0);
         expect(counts.harvested).toBe(0);
+        // 유일한 stale 탭이 in-flight 스킵 → seam 실행 0건 → FMP 예산 0 추가.
+        expect(mockAddFmpBudget).not.toHaveBeenCalled();
     });
 
     it('FMP 402 에러는 해당 유닛만 격리하고 배치는 계속 진행한다', async () => {
@@ -332,7 +349,7 @@ describe('runPrewarmBatch', () => {
         expect(counts.revalidated).toBe(0);
     });
 
-    it('크립토 심볼은 FMP 예산을 2로 계상한다', async () => {
+    it('크립토 심볼은 실행된 seam 1개당 FMP 예산을 1로 계상한다', async () => {
         universe({ symbol: 'BTCUSD', tabs: ['technical'] });
         mockPrewarmTechnical.mockResolvedValue({
             status: 'cached',
@@ -341,7 +358,32 @@ describe('runPrewarmBatch', () => {
 
         await runPrewarmBatch();
 
-        expect(mockAddFmpBudget).toHaveBeenCalledWith(2);
+        expect(mockAddFmpBudget).toHaveBeenCalledWith(1);
+    });
+
+    it('assetInfo.name이 falsy(빈 문자열/undefined)면 companyName은 symbol로 폴백한다', async () => {
+        universe({ symbol: 'NONAME', tabs: ['technical'] });
+        mockGetAssetInfoResilient.mockResolvedValue({
+            assetInfo: {
+                symbol: 'NONAME',
+                name: undefined,
+                fmpSymbol: undefined,
+            },
+            degraded: false,
+        });
+        mockPrewarmTechnical.mockResolvedValue({
+            status: 'cached',
+            result: {},
+        });
+
+        await runPrewarmBatch();
+
+        expect(mockPrewarmTechnical).toHaveBeenCalledWith(
+            'NONAME',
+            'NONAME',
+            undefined,
+            false
+        );
     });
 
     it('getAssetInfoResilient가 degrade되면 companyName=symbol, fmpSymbol=undefined로 폴백한다', async () => {
@@ -376,6 +418,72 @@ describe('runPrewarmBatch', () => {
         const counts = await runPrewarmBatch();
 
         expect(counts.fmpBudgetUsed).toBe(123);
+    });
+
+    it('청크 내 한 심볼이 예외를 던져도(getAssetInfoResilient throw) 형제 심볼들은 정상 처리된다', async () => {
+        // SYMBOL_CONCURRENCY=3 — 동일 청크에 3개를 넣어 BAD가 outer catch로
+        // 격리되고 GOOD1/GOOD2는 영향받지 않음을 검증한다.
+        universe(
+            { symbol: 'GOOD1', tabs: ['technical'] },
+            { symbol: 'BAD', tabs: ['technical'] },
+            { symbol: 'GOOD2', tabs: ['technical'] }
+        );
+        mockGetAssetInfoResilient.mockImplementation((symbol: string) => {
+            if (symbol === 'BAD')
+                return Promise.reject(new Error('asset info boom'));
+            return Promise.resolve({
+                assetInfo: { symbol, name: symbol, fmpSymbol: undefined },
+                degraded: false,
+            });
+        });
+        mockPrewarmTechnical.mockResolvedValue({
+            status: 'cached',
+            result: {},
+        });
+        const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+        const counts = await runPrewarmBatch();
+
+        expect(errSpy).toHaveBeenCalledWith(
+            '[seo-prewarm] BAD failed:',
+            expect.any(Error)
+        );
+        // GOOD1/GOOD2 둘 다 harvest되어야 한다 — BAD의 실패가 형제를 막지 않는다.
+        expect(counts.harvested).toBe(2);
+        expect(mockPrewarmTechnical).toHaveBeenCalledWith(
+            'GOOD1',
+            'GOOD1',
+            undefined,
+            false
+        );
+        expect(mockPrewarmTechnical).toHaveBeenCalledWith(
+            'GOOD2',
+            'GOOD2',
+            undefined,
+            false
+        );
+        errSpy.mockRestore();
+    });
+
+    it('일부 탭이 이미 fresh인 심볼은 그 탭의 seam을 호출하지 않고도 freshTabCount에 반영하며, 나머지 탭이 harvest되면 revalidate한다', async () => {
+        universe({ symbol: 'H', tabs: ['technical', 'overall'] });
+        mockFindGeneratedAtMap.mockResolvedValue(
+            new Map([[key('H', 'technical'), BOUNDARY]])
+        );
+        mockPrewarmOverall.mockResolvedValue({
+            status: 'cached',
+            result: { c: 3 },
+        });
+
+        const counts = await runPrewarmBatch();
+
+        expect(mockPrewarmTechnical).not.toHaveBeenCalled();
+        expect(mockPrewarmOverall).toHaveBeenCalled();
+        expect(counts.harvested).toBe(1);
+        expect(mockRevalidateTag).toHaveBeenCalledWith('seo-snapshot:H', 'max');
+        expect(counts.revalidated).toBe(1);
+        // technical은 이미 fresh라 seam이 안 불렸으니 예산엔 overall 1탭분만.
+        expect(mockAddFmpBudget).toHaveBeenCalledWith(3);
     });
 
     it('한 심볼의 일부 탭이 stale로 남으면 revalidate하지 않는다', async () => {

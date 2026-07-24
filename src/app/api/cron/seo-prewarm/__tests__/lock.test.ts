@@ -1,24 +1,35 @@
 vi.mock('server-only', () => ({}));
 
-const { mockGet, mockSet, mockDel, mockIncrby, mockExpire, mockRedis } =
+const { mockGet, mockSet, mockIncrby, mockExpire, mockEval, mockRedis } =
     vi.hoisted(() => {
         const mockGet = vi.fn();
         const mockSet = vi.fn();
-        const mockDel = vi.fn();
         const mockIncrby = vi.fn();
         const mockExpire = vi.fn();
+        const mockEval = vi.fn();
         const mockRedis: Pick<
             import('@upstash/redis').Redis,
-            'get' | 'set' | 'del' | 'incrby' | 'expire'
+            'get' | 'set' | 'incrby' | 'expire' | 'eval'
         > = {
             get: mockGet,
             set: mockSet,
-            del: mockDel,
             incrby: mockIncrby,
             expire: mockExpire,
+            eval: mockEval,
         };
-        return { mockGet, mockSet, mockDel, mockIncrby, mockExpire, mockRedis };
+        return {
+            mockGet,
+            mockSet,
+            mockIncrby,
+            mockExpire,
+            mockEval,
+            mockRedis,
+        };
     });
+
+vi.mock('crypto', () => ({
+    randomUUID: vi.fn(() => 'token-1'),
+}));
 
 vi.mock('@/shared/cache/redisClient', () => ({
     getRedisClient: vi.fn(() => mockRedis),
@@ -49,32 +60,35 @@ describe('seo-prewarm lock', () => {
     });
 
     describe('acquirePrewarmLock', () => {
-        it('SET NX EX(900)을 올바른 키로 호출한다', async () => {
+        it('SET NX EX(900)을 랜덤 토큰 값으로 올바른 키에 호출한다', async () => {
             mockSet.mockResolvedValue('OK');
             await acquirePrewarmLock();
             expect(mockSet).toHaveBeenCalledWith(
                 'seo-prewarm:lock',
-                String(Date.now()),
-                { nx: true, ex: 900 }
+                'token-1',
+                {
+                    nx: true,
+                    ex: 900,
+                }
             );
         });
 
-        it("'OK' 응답 시 true 반환", async () => {
+        it("'OK' 응답 시 발급한 토큰 문자열을 반환한다", async () => {
             mockSet.mockResolvedValue('OK');
-            expect(await acquirePrewarmLock()).toBe(true);
+            expect(await acquirePrewarmLock()).toBe('token-1');
         });
 
-        it('null 응답 시(락 이미 존재) false 반환', async () => {
+        it('null 응답 시(락 이미 존재) null 반환', async () => {
             mockSet.mockResolvedValue(null);
-            expect(await acquirePrewarmLock()).toBe(false);
+            expect(await acquirePrewarmLock()).toBeNull();
         });
 
-        it('redis null이면 false 반환, throw 없음', async () => {
+        it('redis null이면 null 반환, throw 없음', async () => {
             vi.mocked(getRedisClient).mockReturnValue(null);
             const errSpy = vi
                 .spyOn(console, 'error')
                 .mockImplementation(() => {});
-            await expect(acquirePrewarmLock()).resolves.toBe(false);
+            await expect(acquirePrewarmLock()).resolves.toBeNull();
             expect(mockSet).not.toHaveBeenCalled();
             expect(errSpy).toHaveBeenCalled();
             errSpy.mockRestore();
@@ -82,15 +96,45 @@ describe('seo-prewarm lock', () => {
     });
 
     describe('releasePrewarmLock', () => {
-        it('DEL을 올바른 키로 호출한다', async () => {
-            await releasePrewarmLock();
-            expect(mockDel).toHaveBeenCalledWith('seo-prewarm:lock');
+        it('저장된 값이 토큰과 일치하는 compare-and-delete eval을 올바른 키/인자로 호출한다', async () => {
+            mockEval.mockResolvedValue(1);
+            await releasePrewarmLock('token-1');
+            expect(mockEval).toHaveBeenCalledWith(
+                expect.stringContaining("redis.call('get', KEYS[1])"),
+                ['seo-prewarm:lock'],
+                ['token-1']
+            );
+        });
+
+        it('저장된 값이 토큰과 일치하면 DEL이 실행된다(eval이 1을 반환)', async () => {
+            mockEval.mockResolvedValue(1);
+            await expect(
+                releasePrewarmLock('token-1')
+            ).resolves.toBeUndefined();
+            expect(mockEval).toHaveBeenCalledTimes(1);
+        });
+
+        it('저장된 값이 토큰과 다르면(다른 실행이 이미 재획득) eval이 0을 반환하고 DEL하지 않는다', async () => {
+            mockEval.mockResolvedValue(0);
+            await expect(
+                releasePrewarmLock('stale-token')
+            ).resolves.toBeUndefined();
+            // eval 자체는 호출되지만(원자적 비교는 Lua 내부에서 일어남),
+            // 반환값 0은 실제 DEL이 일어나지 않았음을 뜻한다 — 여기서는 eval
+            // 호출까지만 검증하고 실제 조건 분기는 스크립트 문자열로 커버한다.
+            expect(mockEval).toHaveBeenCalledWith(
+                expect.any(String),
+                ['seo-prewarm:lock'],
+                ['stale-token']
+            );
         });
 
         it('redis null이면 noop, throw 없음', async () => {
             vi.mocked(getRedisClient).mockReturnValue(null);
-            await expect(releasePrewarmLock()).resolves.toBeUndefined();
-            expect(mockDel).not.toHaveBeenCalled();
+            await expect(
+                releasePrewarmLock('token-1')
+            ).resolves.toBeUndefined();
+            expect(mockEval).not.toHaveBeenCalled();
         });
     });
 

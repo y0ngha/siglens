@@ -32,7 +32,8 @@ export async function PATCH(request: Request): Promise<Response> {
     if (!safeBearerCompare(request.headers.get('authorization'), expected)) {
         return new Response(null, { status: HTTP_STATUS_UNAUTHORIZED });
     }
-    if (!(await acquirePrewarmLock())) {
+    const token = await acquirePrewarmLock();
+    if (token === null) {
         return new Response(null, { status: HTTP_STATUS_NO_CONTENT });
     }
     after(async () => {
@@ -42,7 +43,7 @@ export async function PATCH(request: Request): Promise<Response> {
         } catch (error) {
             console.error('[seo-prewarm] batch failed:', error);
         } finally {
-            await releasePrewarmLock();
+            await releasePrewarmLock(token);
         }
     });
     return new Response(null, { status: HTTP_STATUS_ACCEPTED });
