@@ -1,0 +1,100 @@
+const { mockAfter } = vi.hoisted(() => ({ mockAfter: vi.fn() }));
+
+vi.mock('next/server', () => ({ after: mockAfter }));
+
+vi.mock('../lock', () => ({
+    acquirePrewarmLock: vi.fn(),
+    releasePrewarmLock: vi.fn(),
+}));
+
+vi.mock('../runPrewarmBatch', () => ({
+    runPrewarmBatch: vi.fn(),
+}));
+
+import { constants } from 'node:http2';
+import { PATCH } from '@/app/api/cron/seo-prewarm/route';
+import {
+    acquirePrewarmLock,
+    releasePrewarmLock,
+} from '@/app/api/cron/seo-prewarm/lock';
+import { runPrewarmBatch } from '@/app/api/cron/seo-prewarm/runPrewarmBatch';
+
+const {
+    HTTP_STATUS_UNAUTHORIZED,
+    HTTP_STATUS_NO_CONTENT,
+    HTTP_STATUS_ACCEPTED,
+} = constants;
+
+function makeRequest(authorization?: string): Request {
+    return new Request('http://localhost/api/cron/seo-prewarm', {
+        method: 'PATCH',
+        headers: authorization ? { authorization } : undefined,
+    });
+}
+
+describe('PATCH /api/cron/seo-prewarm', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        process.env.CRON_SECRET = 'test-secret';
+    });
+
+    it('CRON_SECRET이 설정되지 않으면 401을 반환한다', async () => {
+        delete process.env.CRON_SECRET;
+        const res = await PATCH(makeRequest('Bearer test-secret'));
+        expect(res.status).toBe(HTTP_STATUS_UNAUTHORIZED);
+        expect(acquirePrewarmLock).not.toHaveBeenCalled();
+    });
+
+    it('Bearer 토큰이 틀리면 401을 반환한다', async () => {
+        const res = await PATCH(makeRequest('Bearer wrong-secret'));
+        expect(res.status).toBe(HTTP_STATUS_UNAUTHORIZED);
+        expect(acquirePrewarmLock).not.toHaveBeenCalled();
+    });
+
+    it('Authorization 헤더가 없으면 401을 반환한다', async () => {
+        const res = await PATCH(makeRequest());
+        expect(res.status).toBe(HTTP_STATUS_UNAUTHORIZED);
+    });
+
+    it('Bearer 토큰이 맞아도 락 획득에 실패하면 204를 반환하고 after는 예약되지 않는다', async () => {
+        vi.mocked(acquirePrewarmLock).mockResolvedValue(false);
+        const res = await PATCH(makeRequest('Bearer test-secret'));
+        expect(res.status).toBe(HTTP_STATUS_NO_CONTENT);
+        expect(mockAfter).not.toHaveBeenCalled();
+    });
+
+    it('Bearer 토큰이 맞고 락을 획득하면 202를 즉시 반환하고 after가 1회 예약된다', async () => {
+        vi.mocked(acquirePrewarmLock).mockResolvedValue(true);
+        const res = await PATCH(makeRequest('Bearer test-secret'));
+        expect(res.status).toBe(HTTP_STATUS_ACCEPTED);
+        expect(mockAfter).toHaveBeenCalledTimes(1);
+        expect(runPrewarmBatch).not.toHaveBeenCalled();
+    });
+
+    it('예약된 after 콜백을 실행하면 runPrewarmBatch 후 releasePrewarmLock을 호출한다', async () => {
+        vi.mocked(acquirePrewarmLock).mockResolvedValue(true);
+        vi.mocked(runPrewarmBatch).mockResolvedValue({
+            submitted: 1,
+            harvested: 2,
+            revalidated: 3,
+            remaining: 4,
+            fmpBudgetUsed: 5,
+        });
+        await PATCH(makeRequest('Bearer test-secret'));
+        const callback = mockAfter.mock.calls[0][0] as () => Promise<void>;
+        await callback();
+        expect(runPrewarmBatch).toHaveBeenCalledTimes(1);
+        expect(releasePrewarmLock).toHaveBeenCalledTimes(1);
+    });
+
+    it('배치가 throw해도 releasePrewarmLock을 호출한다(finally)', async () => {
+        vi.mocked(acquirePrewarmLock).mockResolvedValue(true);
+        vi.mocked(runPrewarmBatch).mockRejectedValue(new Error('boom'));
+        const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+        await PATCH(makeRequest('Bearer test-secret'));
+        const callback = mockAfter.mock.calls[0][0] as () => Promise<void>;
+        await callback();
+        expect(releasePrewarmLock).toHaveBeenCalledTimes(1);
+        errSpy.mockRestore();
+    });
+});
