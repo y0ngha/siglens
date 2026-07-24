@@ -190,6 +190,13 @@
             "when": 1784264759984,
             "tag": "0026_wandering_typhoid_mary",
             "breakpoints": true
+        },
+        {
+            "idx": 27,
+            "version": "7",
+            "when": 1784906423081,
+            "tag": "0027_warm_gertrude_yorkes",
+            "breakpoints": true
         }
     ]
 }
