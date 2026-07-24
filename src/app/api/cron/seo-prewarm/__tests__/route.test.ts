@@ -51,6 +51,15 @@ describe('PATCH /api/cron/seo-prewarm', () => {
         expect(acquirePrewarmLock).not.toHaveBeenCalled();
     });
 
+    it('Bearer 토큰이 길이는 같지만 내용이 틀리면 401을 반환한다(timingSafeEqual 경로, length 얼리리턴 아님)', async () => {
+        // 'wrongsecret'은 'test-secret'과 동일하게 11자 — `Bearer <secret>` 전체 길이가
+        // 같으므로 safeBearerCompare의 `a.length !== b.length` 얼리리턴을 우회하고
+        // timingSafeEqual이 실제로 false를 반환하는 경로를 검증한다.
+        const res = await PATCH(makeRequest('Bearer wrongsecret'));
+        expect(res.status).toBe(HTTP_STATUS_UNAUTHORIZED);
+        expect(acquirePrewarmLock).not.toHaveBeenCalled();
+    });
+
     it('Authorization 헤더가 없으면 401을 반환한다', async () => {
         const res = await PATCH(makeRequest());
         expect(res.status).toBe(HTTP_STATUS_UNAUTHORIZED);

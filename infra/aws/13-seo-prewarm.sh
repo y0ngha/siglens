@@ -166,6 +166,12 @@ for RULE in "$RULE_EVENING" "$RULE_EARLY"; do
   log "alarm siglens-seo-prewarm-${ALARM_SUFFIX}-failed ready (AWS/Events FailedInvocations, RuleName=$RULE)"
 done
 
+# ⚠️ 로그 그룹 순서 주의: 아래 put-metric-filter 호출들은 로그 그룹 /siglens/app이
+# 이미 존재한다는 전제다(10-logs.sh 또는 첫 인스턴스 부팅이 생성). 그룹이 아직 없으면
+# put-metric-filter는 에러를 던지지만 `|| true`로 조용히 무시되므로 필터가 안 걸린 채로
+# 스크립트가 "성공"한 것처럼 보인다 — 10-logs.sh(또는 최초 배포)가 먼저 돈 뒤 반드시
+# 이 스크립트를 재실행할 것.
+#
 # 배치 실패: route.ts의 after() catch가 '[seo-prewarm] batch failed:'를 남긴다
 # (runPrewarmBatch 전체가 던진 경우만 — 심볼/탭 단위 실패는 fail-open으로 격리되어
 # 여기 안 잡힌다. 배치 자체가 깨지는 구조적 문제만 신호).
@@ -181,6 +187,22 @@ aws cloudwatch put-metric-alarm --alarm-name siglens-seo-prewarm-batch-failed \
   --comparison-operator GreaterThanThreshold --treat-missing-data notBreaching \
   --region "$REGION" $ACTIONS
 
+# redis 불가용: lock.ts의 acquirePrewarmLock이 redis 미구성/장애 시 fail-closed로
+# null을 반환하고 '[seo-prewarm] redis unavailable — cannot run'을 남긴다. 이 경로는
+# route가 204(2xx)를 반환하므로 EventBridge FailedInvocations도, batch-failed 로그도
+# 안 남는다 — cron이 조용히 죽어있어도 알람이 없는 사각지대. 이 필터+알람으로 잡는다.
+aws logs put-metric-filter --log-group-name /siglens/app \
+  --filter-name siglens-seo-prewarm-redis-unavailable \
+  --filter-pattern '"[seo-prewarm] redis unavailable — cannot run"' \
+  --metric-transformations metricName=SeoPrewarmRedisUnavailable,metricNamespace=Siglens/SeoPrewarm,metricValue=1 \
+  --region "$REGION" || true
+# 1시간에 1회라도 발생하면 신호(락 자체를 못 잡는 상태라 배치가 전혀 안 돈다).
+aws cloudwatch put-metric-alarm --alarm-name siglens-seo-prewarm-redis-unavailable \
+  --namespace Siglens/SeoPrewarm --metric-name SeoPrewarmRedisUnavailable \
+  --statistic Sum --period 3600 --evaluation-periods 1 --threshold 0 \
+  --comparison-operator GreaterThanThreshold --treat-missing-data notBreaching \
+  --region "$REGION" $ACTIONS
+
 # FMP 429 버스트: best-effort/placeholder. fmpRetry.ts(isFmpTransientError)가 429를
 # 자동 재시도(10s/15s/20s)하지만, withRetry.ts는 재시도 시도 자체를 로그로 남기지
 # 않는다 — 즉 429는 조용히 흡수되고 이 저장소 어디에도 안정적인 "429" 로그 문자열이
@@ -192,4 +214,4 @@ aws cloudwatch put-metric-alarm --alarm-name siglens-seo-prewarm-batch-failed \
 # TODO: fmpRetry.ts / withRetry.ts에 429 전용 로그 라인이 추가되면 이 알람을 채운다.
 log "skipped fmp-429 alarm: no stable log marker exists yet (see comment above) — batch-failed alarm covers structural failure in the meantime"
 
-log "seo-prewarm alarms ready (batch-failed; fmp-429 skipped, see log above)"
+log "seo-prewarm alarms ready (batch-failed, redis-unavailable; fmp-429 skipped, see log above)"
