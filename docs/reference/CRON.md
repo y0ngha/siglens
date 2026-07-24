@@ -14,7 +14,22 @@
   - 배치 전체 실패: `[seo-prewarm] batch failed: ...` → CloudWatch 알람 `siglens-seo-prewarm-batch-failed`(1시간 3회 초과 시)
   - 심볼/탭 단위 실패는 fail-open으로 격리되어 배치를 중단시키지 않는다(`[seo-prewarm] unit-error ...`, `[seo-prewarm] fmp-402 ...`). 402는 심볼별 플랜/쿼터 이슈라 정책상 알람을 걸지 않는다.
   - FMP 429(rate limit)는 `fmpRetry.ts`가 10s/15s/20s로 자동 재시도하지만, 재시도 자체를 로그로 남기지 않는다 — 안정적인 429 로그 문자열이 없어 전용 알람은 아직 없다(best-effort, `13-seo-prewarm.sh`에 TODO로 남겨둠). 429가 배치에 영향을 줄 만큼 누적되면 batch-failed 알람이 구조적 실패로 잡아낸다.
-- **부트스트랩(수동, 1회)**: 첫 태그 배포 전에 `bash infra/aws/13-seo-prewarm.sh`를 수동 실행해 IAM 역할·Connection·API Destination·Rule 2개·타겟·알람을 생성한다(멱등, 재실행 가능). deploy 파이프라인 어디서도 자동 호출하지 않는다. **이 레포 최초의 EventBridge 사용이므로, 스크립트 실행 직후 딜리버리 스파이크(수동 invoke 또는 실제 스케줄 1회 대기)로 202가 실제로 오는지 검증하기 전까지는 스케줄을 신뢰하지 말 것.** `put-targets`의 `HttpParameters` wiring은 실전 미검증 상태다.
+- **부트스트랩(수동, 1회)**: 첫 태그 배포 전에 다음을 순서대로 수행한다.
+  1. `yarn db:migrate` — `seo_analysis_snapshots` 테이블(마이그레이션 `0027`)을 적용한다. 중복 실행 무해(이미 있으면 no-op). 이 테이블 없이 배치를 돌리면 select/upsert가 즉시 실패한다.
+  2. `bash infra/aws/13-seo-prewarm.sh`를 수동 실행해 IAM 역할·Connection·API Destination·Rule 2개·타겟·알람(batch-failed + 딜리버리 부재)을 생성한다(멱등, 재실행 가능). deploy 파이프라인 어디서도 자동 호출하지 않는다.
+
+  **이 레포 최초의 EventBridge 사용이므로, 스크립트 실행 직후 딜리버리 스파이크(수동 invoke 또는 실제 스케줄 1회 대기)로 202가 실제로 오는지 검증하기 전까지는 스케줄을 신뢰하지 말 것.** `put-targets`의 `HttpParameters` wiring은 실전 미검증 상태다. `13-seo-prewarm.sh`는 Connection이 `AUTHORIZED` 상태에 도달할 때까지 짧게 폴링(최대 12회 × 5s)한다 — 시간 내 도달하지 못해도 스크립트를 죽이지 않고 경고만 남기므로, 로그에 `WARNING: connection ... did not reach AUTHORIZED`가 보이면 수동으로 `aws events describe-connection --name siglens-seo-prewarm --query ConnectionState`를 재확인할 것.
+
+- **딜리버리 부재 알람(OPS-1)**: 배치 내부 실패(`batch failed` 로그)는 `siglens-seo-prewarm-batch-failed`가 잡지만, EventBridge가 애초에 타겟 호출 자체를 실패하면(Connection 미인증, IAM, API Destination 오류 등) 앱 로그에는 아무 흔적도 남지 않는다. `13-seo-prewarm.sh`가 Rule별로 `AWS/Events` `FailedInvocations`(dimension `RuleName`) 알람(`siglens-seo-prewarm-evening-failed` / `-early-failed`, 5분간 1건 초과)을 함께 생성해 이 공백을 커버한다.
+
+- **롤백 / kill-switch**: cron을 즉시 끄려면 Rule을 비활성화한다(인스턴트, 멱등, 재실행 가능):
+  ```bash
+  aws events disable-rule --name siglens-seo-prewarm-evening
+  aws events disable-rule --name siglens-seo-prewarm-early
+  ```
+  다시 켤 때는 `enable-rule`로 동일하게 되돌린다. 리소스 자체(Connection/API Destination/Role)는 그대로 남으므로 재프로비저닝이 필요 없다.
+
+- **하트비트 알람은 첫 성공 실행 후에 추가할 것**: `[seo-prewarm] batch done` 로그에 대한 metric filter + "N시간 무성공" 알람은 매력적이지만, 배포 직후(첫 스케줄 실행 전)에 만들면 정상적인 "아직 한 번도 안 돎" 상태를 즉시 알람으로 오탐한다. 딜리버리 스파이크로 첫 202/`batch done`을 확인한 뒤에 추가한다.
 
 ## Pending Follow-ups
 

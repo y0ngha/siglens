@@ -23,8 +23,10 @@
 #
 # 전제: --profile siglens (또는 AWS_PROFILE) 로 다음 권한이 필요하다:
 #       events:*, iam:CreateRole/GetRole/PutRolePolicy, logs:PutMetricFilter,
-#       cloudwatch:PutMetricAlarm, sns:CreateTopic. CRON_SECRET은
-#       04-params.sh가 이미 SSM /siglens/CRON_SECRET에 게시했어야 한다.
+#       cloudwatch:PutMetricAlarm, sns:CreateTopic, secretsmanager:* (create-connection이
+#       API_KEY 인증 정보를 담는 관리형 시크릿을 내부적으로 생성한다 — 투명하지만 권한은
+#       명시적으로 필요). CRON_SECRET은 04-params.sh가 이미 SSM /siglens/CRON_SECRET에
+#       게시했어야 한다.
 #
 set -euo pipefail
 
@@ -82,6 +84,29 @@ fi
 CONNECTION_ARN="$(aws events describe-connection --name "$CONNECTION_NAME" \
   --query ConnectionArn --output text --region "$REGION")"
 
+# Connection 생성/갱신은 비동기로 AUTHORIZED 상태에 도달한다(관리형 시크릿 생성 포함).
+# API Destination이 이 Connection을 인증에 쓰므로, AUTHORIZED 전에 스케줄이 돌면
+# 초기 호출들이 조용히 인증 실패할 수 있다 — 짧게 폴링해 상태를 눈으로 확인한다.
+# 실패해도 스크립트 전체를 죽이지 않는다(나머지 리소스는 여전히 유용하고, 딜리버리
+# 스파이크 검증 단계에서 어차피 재확인한다).
+CONN_POLL_ATTEMPTS=12
+CONN_POLL_INTERVAL_SECONDS=5
+conn_authorized=false
+for ((i = 1; i <= CONN_POLL_ATTEMPTS; i++)); do
+  CONN_STATE="$(aws events describe-connection --name "$CONNECTION_NAME" \
+    --query ConnectionState --output text --region "$REGION" 2>/dev/null || echo "UNKNOWN")"
+  if [ "$CONN_STATE" = "AUTHORIZED" ]; then
+    conn_authorized=true
+    log "connection $CONNECTION_NAME is AUTHORIZED (attempt $i/$CONN_POLL_ATTEMPTS)"
+    break
+  fi
+  log "connection $CONNECTION_NAME state=$CONN_STATE, waiting... (attempt $i/$CONN_POLL_ATTEMPTS)"
+  sleep "$CONN_POLL_INTERVAL_SECONDS"
+done
+if [ "$conn_authorized" != true ]; then
+  log "WARNING: connection $CONNECTION_NAME did not reach AUTHORIZED within $((CONN_POLL_ATTEMPTS * CONN_POLL_INTERVAL_SECONDS))s (state=$CONN_STATE) — continuing script, but verify manually before trusting the schedule (aws events describe-connection --name $CONNECTION_NAME)"
+fi
+
 ### 4) API Destination — PATCH https://siglens.io/api/cron/seo-prewarm ###
 if ! aws events describe-api-destination --name "$DESTINATION_NAME" --region "$REGION" >/dev/null 2>&1; then
   aws events create-api-destination --name "$DESTINATION_NAME" \
@@ -122,10 +147,24 @@ done
 
 log "seo-prewarm eventbridge schedule ready — RUN A DELIVERY SPIKE before trusting the schedule (manual invoke or watch first scheduled 202, see docs/reference/CRON.md)"
 
-### 6) 알람 — batch-failure + (best-effort) FMP 429 버스트 ###
+### 6) 알람 — batch-failure + delivery-absence(OPS-1) + (best-effort) FMP 429 버스트 ###
 # 07-alarms.sh와 동일 패턴: SNS 토픽 idempotent 생성, alarm+ok 양방향 통지.
 ALARM_SNS="${ALARM_SNS:-$(aws sns create-topic --name siglens-alerts --query TopicArn --output text --region "$REGION")}"
 ACTIONS="--alarm-actions $ALARM_SNS --ok-actions $ALARM_SNS"
+
+# 딜리버리 부재 알람(OPS-1): 배치 내부 실패는 batch-failed가 잡지만, EventBridge가
+# 애초에 타겟 호출 자체를 실패하면(Connection 미인증, API Destination 오류, IAM 등)
+# 우리 앱 로그에는 아무 흔적도 안 남는다 — AWS/Events FailedInvocations로 그 공백을 잡는다.
+for RULE in "$RULE_EVENING" "$RULE_EARLY"; do
+  ALARM_SUFFIX=$([ "$RULE" = "$RULE_EVENING" ] && echo "evening" || echo "early")
+  aws cloudwatch put-metric-alarm --alarm-name "siglens-seo-prewarm-${ALARM_SUFFIX}-failed" \
+    --namespace AWS/Events --metric-name FailedInvocations \
+    --dimensions Name=RuleName,Value="$RULE" \
+    --statistic Sum --period 300 --evaluation-periods 1 --threshold 0 \
+    --comparison-operator GreaterThanThreshold --treat-missing-data notBreaching \
+    --region "$REGION" $ACTIONS
+  log "alarm siglens-seo-prewarm-${ALARM_SUFFIX}-failed ready (AWS/Events FailedInvocations, RuleName=$RULE)"
+done
 
 # 배치 실패: route.ts의 after() catch가 '[seo-prewarm] batch failed:'를 남긴다
 # (runPrewarmBatch 전체가 던진 경우만 — 심볼/탭 단위 실패는 fail-open으로 격리되어
