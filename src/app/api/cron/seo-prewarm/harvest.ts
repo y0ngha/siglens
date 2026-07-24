@@ -23,17 +23,6 @@ import type { PrewarmBatchCounts } from './runPrewarmBatch';
  */
 const PREWARM_MODEL_ID = DEEPSEEK_V4_FLASH_MODEL;
 
-/** `[symbol]` ISR 라우트 경로 빌더 — 탭별 revalidatePath 대상. */
-export const TAB_PATHS: Record<SeoSnapshotTab, (symbol: string) => string> = {
-    technical: symbol => `/${symbol}`,
-    overall: symbol => `/${symbol}/overall`,
-    fundamental: symbol => `/${symbol}/fundamental`,
-    financials: symbol => `/${symbol}/financials`,
-    congress: symbol => `/${symbol}/congress`,
-    news: symbol => `/${symbol}/news`,
-    options: symbol => `/${symbol}/options`,
-};
-
 interface TabSeamContext {
     symbol: string;
     companyName: string;

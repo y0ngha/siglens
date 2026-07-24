@@ -1,5 +1,4 @@
 import { DEEPSEEK_V4_FLASH_MODEL } from '@y0ngha/siglens-core';
-import type { SeoSnapshotTab } from '@/entities/seo-snapshot';
 import type { PrewarmBatchCounts } from '../runPrewarmBatch';
 import type { SeamOutcome } from '../harvest';
 
@@ -43,7 +42,7 @@ vi.mock('@/entities/options-chain/lib/prewarmSubmitOptions', () => ({
     prewarmOptions: mockPrewarmOptions,
 }));
 
-import { TAB_PATHS, TAB_SEAMS, resolveHarvest } from '../harvest';
+import { TAB_SEAMS, resolveHarvest } from '../harvest';
 
 const CTX = {
     symbol: 'AAPL',
@@ -60,27 +59,6 @@ function makeCounts(): PrewarmBatchCounts {
         fmpBudgetUsed: 0,
     };
 }
-
-describe('TAB_PATHS', () => {
-    const expected: Record<SeoSnapshotTab, string> = {
-        technical: '/AAPL',
-        overall: '/AAPL/overall',
-        fundamental: '/AAPL/fundamental',
-        financials: '/AAPL/financials',
-        congress: '/AAPL/congress',
-        news: '/AAPL/news',
-        options: '/AAPL/options',
-    };
-
-    for (const [tab, expectedPath] of Object.entries(expected) as [
-        SeoSnapshotTab,
-        string,
-    ][]) {
-        it(`builds ${tab} path`, () => {
-            expect(TAB_PATHS[tab]('AAPL')).toBe(expectedPath);
-        });
-    }
-});
 
 describe('TAB_SEAMS', () => {
     beforeEach(() => {

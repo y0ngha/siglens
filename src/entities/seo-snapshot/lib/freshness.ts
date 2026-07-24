@@ -1,15 +1,15 @@
 import { getEasternOffsetHours } from '@/shared/lib/eastern';
+import { MS_PER_DAY, MS_PER_HOUR, MS_PER_MINUTE } from '@/shared/config/time';
 
 const CLOSE_HOUR_ET = 16;
-const SETTLE_BUFFER_MS = 30 * 60 * 1000; // 30min — EOD 데이터 정착 대기 (spec §6)
-const DAY_MS = 24 * 60 * 60 * 1000;
+const SETTLE_BUFFER_MS = 30 * MS_PER_MINUTE; // 30min — EOD 데이터 정착 대기 (spec §6)
 
 /** 해당 UTC 날짜(자정)의 16:00 ET를 UTC Date로 환산. */
 function closeUtcFor(utcMidnight: Date): Date {
     const offset = getEasternOffsetHours(utcMidnight); // -4(EDT) | -5(EST)
     // 16:00 ET = (16 - offset):00 UTC  (EDT: 20:00, EST: 21:00)
     return new Date(
-        utcMidnight.getTime() + (CLOSE_HOUR_ET - offset) * 60 * 60 * 1000
+        utcMidnight.getTime() + (CLOSE_HOUR_ET - offset) * MS_PER_HOUR
     );
 }
 
@@ -36,7 +36,7 @@ export function lastCompletedEtCloseWithBuffer(now: Date): Date {
         ) {
             return close;
         }
-        midnight = new Date(midnight.getTime() - DAY_MS);
+        midnight = new Date(midnight.getTime() - MS_PER_DAY);
     }
     return closeUtcFor(midnight); // unreachable — 7일 내 주중 마감 항상 존재
 }
