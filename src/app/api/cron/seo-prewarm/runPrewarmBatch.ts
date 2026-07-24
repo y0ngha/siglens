@@ -1,15 +1,13 @@
 import 'server-only';
 import { revalidateTag } from 'next/cache';
-import type { SeoSnapshotTab } from '@/entities/seo-snapshot';
-import { DrizzleSeoSnapshotRepository } from '@/entities/seo-snapshot/api';
 import {
     buildPrewarmUniverse,
-    type PrewarmSymbol,
-} from '@/entities/seo-snapshot/lib/applicability';
-import {
     isSnapshotFresh,
     lastCompletedEtCloseWithBuffer,
-} from '@/entities/seo-snapshot/lib/freshness';
+    type PrewarmSymbol,
+    type SeoSnapshotTab,
+} from '@/entities/seo-snapshot';
+import { DrizzleSeoSnapshotRepository } from '@/entities/seo-snapshot/api';
 import { getDatabaseClient } from '@/shared/db/client';
 import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
 import { getFmpErrorStatus } from '@/shared/api/fmp/fmpUserMessage';
@@ -182,7 +180,7 @@ async function processSymbol(
         // HTML을 재생성만 하는 순수 ISR-write 비용이다. revalidateTag는
         // `seo-snapshot:{symbol}` 태그의 정확한 무효화 지점으로, render 단계가
         // 이 태그의 소비자를 추가하기 전까지는 무해한 no-op이다.
-        revalidateTag(`seo-snapshot:${u.symbol}`, 'max');
+        revalidateTag(`seo-snapshot:${u.symbol.toUpperCase()}`, 'max');
         counts.revalidated++;
     }
 }
