@@ -26,6 +26,13 @@ import {
 import { fetchOptionsSnapshot } from '../../lib/optionsDataCache';
 import { prewarmOptions } from '../../lib/prewarmSubmitOptions';
 
+const SEAM_SOURCE = readFileSync(
+    fileURLToPath(
+        new URL('../../lib/prewarmSubmitOptions.ts', import.meta.url)
+    ),
+    'utf8'
+);
+
 const mockSubmitOptionsAnalysis = vi.mocked(submitOptionsAnalysis);
 const mockFetchOptionsSnapshot = vi.mocked(fetchOptionsSnapshot);
 
@@ -149,12 +156,8 @@ describe('prewarmOptions', () => {
     });
 
     it('static guard: the seam source contains no request-context calls', () => {
-        const src = readFileSync(
-            fileURLToPath(
-                new URL('../../lib/prewarmSubmitOptions.ts', import.meta.url)
-            ),
-            'utf8'
+        expect(SEAM_SOURCE).not.toMatch(
+            /next\/headers|getCurrentUser|isBot|cookies|draftMode/
         );
-        expect(src).not.toMatch(/next\/headers|getCurrentUser|isBot|cookies/);
     });
 });

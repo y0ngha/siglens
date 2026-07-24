@@ -468,12 +468,71 @@ describe('prewarmOverall', () => {
             expect.objectContaining({ upcomingCalendar: [next] })
         );
     });
+
+    it('fail-soft: when fetchOptionsSnapshot rejects, still calls submitOverallAnalysis with optionsSnapshot:undefined (does not throw)', async () => {
+        const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        mockFetchOptionsSnapshot.mockRejectedValueOnce(
+            new Error('options fetch boom')
+        );
+
+        await expect(prewarmOverall('AAPL', 'Apple Inc.', false)).resolves.toBe(
+            SUBMITTED_RESULT
+        );
+
+        expect(mockSubmitOverallAnalysis).toHaveBeenCalledWith(
+            expect.objectContaining({ optionsSnapshot: undefined })
+        );
+        expect(warnSpy).toHaveBeenCalledWith(
+            '[prewarmOverall] options snapshot fetch failed:',
+            expect.any(Error)
+        );
+        warnSpy.mockRestore();
+    });
+
+    it('fail-soft: when getFinancialsSnapshot rejects, still calls submitOverallAnalysis with financialsScorecard:undefined (does not throw)', async () => {
+        const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        mockGetFinancialsSnapshot.mockRejectedValueOnce(
+            new Error('financials snapshot boom')
+        );
+
+        await expect(prewarmOverall('AAPL', 'Apple Inc.', false)).resolves.toBe(
+            SUBMITTED_RESULT
+        );
+
+        expect(mockSubmitOverallAnalysis).toHaveBeenCalledWith(
+            expect.objectContaining({ financialsScorecard: undefined })
+        );
+        expect(warnSpy).toHaveBeenCalledWith(
+            '[prewarmOverall] financials scorecard fetch failed:',
+            expect.any(Error)
+        );
+        warnSpy.mockRestore();
+    });
+
+    it('fail-soft: when computeFinancialsScorecard throws (post-fetch), still calls submitOverallAnalysis with financialsScorecard:undefined (does not throw)', async () => {
+        const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        mockGetFinancialsSnapshot.mockResolvedValueOnce(
+            {} as FinancialsSnapshot
+        );
+        mockComputeFinancialsScorecard.mockImplementationOnce(() => {
+            throw new Error('scorecard compute boom');
+        });
+
+        await expect(prewarmOverall('AAPL', 'Apple Inc.', false)).resolves.toBe(
+            SUBMITTED_RESULT
+        );
+
+        expect(mockSubmitOverallAnalysis).toHaveBeenCalledWith(
+            expect.objectContaining({ financialsScorecard: undefined })
+        );
+        warnSpy.mockRestore();
+    });
 });
 
 describe('prewarm seam static guard', () => {
     it('the shared prewarmSubmits.ts source contains no request-context calls', () => {
         expect(SEAM_SOURCE).not.toMatch(
-            /next\/headers|getCurrentUser|isBot|cookies/
+            /next\/headers|getCurrentUser|isBot|cookies|draftMode/
         );
     });
 });

@@ -42,6 +42,11 @@ import { getNextEarningsReport } from '@/entities/earnings-report';
 import { resolveAssetClass } from '@/entities/ticker/lib/resolveAssetClass';
 import { prewarmNews } from '../../lib/prewarmSubmitNews';
 
+const SEAM_SOURCE = readFileSync(
+    fileURLToPath(new URL('../../lib/prewarmSubmitNews.ts', import.meta.url)),
+    'utf8'
+);
+
 const mockSubmitNewsAnalysis = vi.mocked(submitNewsAnalysis);
 const MockNewsRepository = DrizzleNewsRepository as MockedClass<
     typeof DrizzleNewsRepository
@@ -167,12 +172,8 @@ describe('prewarmNews', () => {
     });
 
     it('static guard: the seam source contains no request-context calls', () => {
-        const src = readFileSync(
-            fileURLToPath(
-                new URL('../../lib/prewarmSubmitNews.ts', import.meta.url)
-            ),
-            'utf8'
+        expect(SEAM_SOURCE).not.toMatch(
+            /next\/headers|getCurrentUser|isBot|cookies|draftMode/
         );
-        expect(src).not.toMatch(/next\/headers|getCurrentUser|isBot|cookies/);
     });
 });
