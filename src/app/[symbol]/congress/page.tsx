@@ -5,6 +5,7 @@ import { getProfileResilient } from '@/app/[symbol]/fundamental/getProfileResili
 import { CongressDegraded } from '@/app/[symbol]/congress/CongressDegraded';
 import { CongressTradesTable, CongressTrendSummary } from '@/widgets/congress';
 import { SymbolPageHeading } from '@/views/symbol';
+import { CongressSnapshotProse } from '@/views/symbol/snapshot/renderers/CongressSnapshotProse';
 import { CrossLinkCards } from '@/shared/ui/CrossLinkCards';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import {
@@ -12,6 +13,7 @@ import {
     type SymbolRouteParams,
 } from '@/shared/config/market';
 import { isUnresolvableDegraded } from '@/shared/lib/symbolGuard';
+import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/lib/getSnapshotStatic';
 import {
     buildAssetAboutNode,
     buildDisplayName,
@@ -106,11 +108,19 @@ export default async function CongressPage({ params }: Props) {
 
     // getProfileResilient uses ['fundamental:profile', upper] key, shared with
     // ProfileSection inside the fundamental page, so there is no extra FMP round-trip.
-    const [{ profile, degraded: profileDegraded }, { assetInfo, degraded }] =
-        await Promise.all([
-            getProfileResilient(upper),
-            getAssetInfoResilient(upper),
-        ]);
+    // snapshots: ISR-safe (staticSymbolCache-wrapped, fail-open []) — see
+    // getSeoSnapshotsStatic JSDoc. revalidateSeconds mirrors this page's
+    // `export const revalidate` literal (86400) above.
+    const [
+        { profile, degraded: profileDegraded },
+        { assetInfo, degraded },
+        snapshots,
+    ] = await Promise.all([
+        getProfileResilient(upper),
+        getAssetInfoResilient(upper),
+        getSeoSnapshotsStatic(upper, 86400),
+    ]);
+    const congressSnapshot = snapshots.find(s => s.tab === 'congress');
 
     // degraded + digit-first 심볼 = crypto_assets DB와 FMP가 동시 다운 중이고 resolve 불가
     // → 차트 페이지와 동일한 notFound 처리로 sibling 일관성 유지.
@@ -123,9 +133,16 @@ export default async function CongressPage({ params }: Props) {
     const displayName = assetInfo ? buildDisplayName(assetInfo, upper) : upper;
 
     // FMP 인프라 일시 실패: 500 대신 degrade 안내(200)를 렌더한다. 다음 revalidate에
-    // 인프라가 복구되면 정상 데이터로 자동 갱신된다.
+    // 인프라가 복구되면 정상 데이터로 자동 갱신된다. 스냅샷이 있으면 degrade 중에도
+    // 크롤러에게 프로즈 콘텐츠를 보여준다(spec §7 — degraded 분기에서도 스냅샷 유지).
     if (profileDegraded) {
-        return <CongressDegraded displayName={displayName} symbol={upper} />;
+        return (
+            <CongressDegraded
+                displayName={displayName}
+                symbol={upper}
+                snapshotContent={congressSnapshot?.content}
+            />
+        );
     }
 
     // profile === null = FMP 200 + 빈 결과 = 실존하지 않는 종목 → 404.
@@ -140,7 +157,13 @@ export default async function CongressPage({ params }: Props) {
         await getCongressPageData(upper);
 
     if (tradesDegraded) {
-        return <CongressDegraded displayName={displayName} symbol={upper} />;
+        return (
+            <CongressDegraded
+                displayName={displayName}
+                symbol={upper}
+                snapshotContent={congressSnapshot?.content}
+            />
+        );
     }
 
     const { fullTitle, description, url } = buildSymbolCongressSeoContent(
@@ -221,6 +244,18 @@ export default async function CongressPage({ params }: Props) {
                 </section>
 
                 <CongressTrendSummary symbol={upper} />
+
+                {/* CongressTrendSummary is a client component that fetches its
+                    analysis via a client-side hook — during ISR generation it
+                    bakes its loading skeleton into the static HTML (no crawlable
+                    AI text). This adds the pre-warmed SEO snapshot prose as a
+                    plain SSR sibling so crawlers see real analysis text. Renders
+                    null when no snapshot exists (spec 2026-07-24 Task 7b). */}
+                <CongressSnapshotProse
+                    content={congressSnapshot?.content}
+                    symbol={upper}
+                    displayName={displayName}
+                />
 
                 <CongressTradesTable trades={trades} />
 

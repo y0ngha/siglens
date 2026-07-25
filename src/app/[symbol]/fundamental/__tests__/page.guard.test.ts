@@ -44,6 +44,9 @@ vi.mock('@/app/[symbol]/fundamental/FundamentalDegraded', () => ({
 vi.mock('@/shared/cache/staticSymbolCache', () => ({
     staticSymbolCache: vi.fn(),
 }));
+vi.mock('@/entities/seo-snapshot/lib/getSnapshotStatic', () => ({
+    getSeoSnapshotsStatic: vi.fn().mockResolvedValue([]),
+}));
 // Widget mocks to avoid deep import chains.
 vi.mock('@/widgets/fundamental/FundamentalAiSummary', () => ({
     FundamentalAiSummary: () => null,

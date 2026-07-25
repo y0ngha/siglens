@@ -1,6 +1,7 @@
 import { OptionsPageClient } from '@/widgets/options/OptionsPageClient';
 import { getBlockedSymbolMetadata } from '@/app/[symbol]/symbolIndexabilityMetadata';
 import { SymbolPageHeading } from '@/views/symbol';
+import { OptionsSnapshotProse } from '@/views/symbol/snapshot/renderers/OptionsSnapshotProse';
 import { OptionsEmptyState } from '@/widgets/options/OptionsEmptyState';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import {
@@ -8,6 +9,7 @@ import {
     isAdmissibleSymbolShape,
 } from '@/shared/config/market';
 import { isUnresolvableDegraded } from '@/shared/lib/symbolGuard';
+import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/lib/getSnapshotStatic';
 import {
     buildAssetAboutNode,
     buildDisplayName,
@@ -122,7 +124,7 @@ export default async function OptionsPage({ params }: Props) {
     // Hard-404 crypto symbols before the hasOptionsMarket call — this tab is equity-only.
     if (!(await isTabAllowedForSymbol(upper, 'options'))) notFound();
 
-    const [{ assetInfo, degraded }, hasOptions] = await Promise.all([
+    const [{ assetInfo, degraded }, hasOptions, snapshots] = await Promise.all([
         getAssetInfoResilient(upper),
         // ISR degrade guard: hasOptionsMarket는 Yahoo 인프라 실패 시 throw한다.
         // throw가 ISR 캐시에 0-byte 빈 결과를 굳히는 것을 막으려면 여기서 흡수해야 한다.
@@ -140,15 +142,38 @@ export default async function OptionsPage({ params }: Props) {
             );
             return false;
         }),
+        // ISR-safe (staticSymbolCache-wrapped, fail-open []) — see
+        // getSeoSnapshotsStatic JSDoc. revalidateSeconds mirrors this page's
+        // `export const revalidate` literal (43200) above.
+        getSeoSnapshotsStatic(upper, 43200),
     ]);
+    const optionsSnapshot = snapshots.find(s => s.tab === 'options');
 
     // degraded + digit-first 심볼 = 두 데이터 소스가 동시 다운 중이고 resolve 불가
     // → 차트 페이지와 동일한 notFound 처리로 sibling 일관성 유지.
     if (isUnresolvableDegraded(upper, degraded)) notFound();
     if (!assetInfo) notFound();
-    if (!hasOptions) return <OptionsEmptyState symbol={upper} />;
 
     const displayName = buildDisplayName(assetInfo, upper);
+
+    // 옵션 시장이 없으면(또는 조회 실패로 degrade되면) OptionsEmptyState를 렌더한다.
+    // 스냅샷이 있으면 이 분기에서도 프로즈를 유지한다(spec §7 — degraded 분기에서도
+    // 스냅샷 유지). OptionsSnapshotProse 자체가 콘텐츠 없으면 null을 반환한다.
+    if (!hasOptions) {
+        return (
+            <OptionsEmptyState
+                symbol={upper}
+                snapshotSlot={
+                    <OptionsSnapshotProse
+                        content={optionsSnapshot?.content}
+                        symbol={upper}
+                        displayName={displayName}
+                    />
+                }
+            />
+        );
+    }
+
     // ISR degrade guard: fetchOptionsSnapshot는 Yahoo 인프라 실패 시 throw한다.
     // throw가 ISR 캐시에 0-byte 빈 결과를 굳히는 것을 막으려면 여기서 흡수해야 한다.
     // null로 degrade → 이미 존재하는 null 분기(OptionsEmptyState)로 자연스럽게 빠진다.
@@ -165,7 +190,20 @@ export default async function OptionsPage({ params }: Props) {
         );
         return null;
     });
-    if (snapshot === null) return <OptionsEmptyState symbol={upper} />;
+    if (snapshot === null) {
+        return (
+            <OptionsEmptyState
+                symbol={upper}
+                snapshotSlot={
+                    <OptionsSnapshotProse
+                        content={optionsSnapshot?.content}
+                        symbol={upper}
+                        displayName={displayName}
+                    />
+                }
+            />
+        );
+    }
 
     const expirations = snapshot.chains.map(c => c.expirationDate);
     const slots = mapExpirationsToSlots(expirations, new Date());
@@ -271,6 +309,18 @@ export default async function OptionsPage({ params }: Props) {
                         </p>
                     ) : null}
                 </section>
+                {/* OptionsAiAnalysis (inside OptionsPageClient) is a client
+                    component that fetches its analysis via a client-side hook —
+                    during ISR generation it bakes its loading skeleton into the
+                    static HTML (no crawlable AI text). This adds the pre-warmed
+                    SEO snapshot prose as a plain SSR sibling so crawlers see real
+                    analysis text. Renders null when no snapshot exists (spec
+                    2026-07-24 Task 7b). */}
+                <OptionsSnapshotProse
+                    content={optionsSnapshot?.content}
+                    symbol={upper}
+                    displayName={displayName}
+                />
                 <HydrationBoundary state={dehydrate(queryClient)}>
                     <OptionsPageClient
                         symbol={upper}

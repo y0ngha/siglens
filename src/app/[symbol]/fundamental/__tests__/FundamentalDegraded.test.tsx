@@ -52,4 +52,30 @@ describe('FundamentalDegraded', () => {
         expect(links).toHaveAttribute('data-symbol', 'TSLA');
         expect(links).toHaveAttribute('data-current', 'fundamental');
     });
+
+    it('renders the SEO snapshot prose when snapshotContent is present (spec §7)', () => {
+        render(
+            <FundamentalDegraded
+                displayName="애플"
+                symbol="AAPL"
+                snapshotContent={{
+                    overallConclusionKo:
+                        '밸류에이션은 업종 평균 대비 낮습니다.',
+                    overallSentiment: 'bullish',
+                    categoryAssessments: [],
+                    riskFactorsKo: [],
+                }}
+            />
+        );
+
+        expect(
+            screen.getByText('밸류에이션은 업종 평균 대비 낮습니다.')
+        ).toBeInTheDocument();
+    });
+
+    it('omits the snapshot prose section when snapshotContent is absent', () => {
+        render(<FundamentalDegraded displayName="애플" symbol="AAPL" />);
+
+        expect(screen.queryByText('최근 분석 요약')).not.toBeInTheDocument();
+    });
 });

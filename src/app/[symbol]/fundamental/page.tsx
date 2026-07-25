@@ -26,6 +26,7 @@ import { ProfileCard } from '@/widgets/fundamental/sections/ProfileCard';
 import { ProfitabilityCard } from '@/widgets/fundamental/sections/ProfitabilityCard';
 import { ValuationCard } from '@/widgets/fundamental/sections/ValuationCard';
 import { SymbolPageHeading } from '@/views/symbol';
+import { FundamentalSnapshotProse } from '@/views/symbol/snapshot/renderers/FundamentalSnapshotProse';
 import { CrossLinkCards } from '@/shared/ui/CrossLinkCards';
 import { SectionSkeleton } from '@/views/symbol/SectionSkeleton';
 import { JsonLd } from '@/shared/ui/JsonLd';
@@ -35,6 +36,7 @@ import {
 } from '@/shared/config/market';
 import { isUnresolvableDegraded } from '@/shared/lib/symbolGuard';
 import { SECONDS_PER_DAY } from '@/shared/config/time';
+import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/lib/getSnapshotStatic';
 import {
     buildAssetAboutNode,
     buildDisplayName,
@@ -462,11 +464,19 @@ export default async function FundamentalPage({ params }: Props) {
     // assetInfo는 한국어 종목명을 displayName에 합치기 위해 병렬로 가져온다.
     // getProfileResilient는 ['fundamental:profile', upper] 키를 ProfileSection과 공유한다
     // → cross-request ISR 캐시 + 같은 요청 React.cache 공유(추가 FMP round-trip 없음).
-    const [{ profile, degraded: profileDegraded }, { assetInfo, degraded }] =
-        await Promise.all([
-            getProfileResilient(upper),
-            getAssetInfoResilient(upper),
-        ]);
+    // snapshots: ISR-safe (staticSymbolCache-wrapped, fail-open []) — see
+    // getSeoSnapshotsStatic JSDoc. revalidateSeconds mirrors this page's
+    // `export const revalidate` literal (86400) above.
+    const [
+        { profile, degraded: profileDegraded },
+        { assetInfo, degraded },
+        snapshots,
+    ] = await Promise.all([
+        getProfileResilient(upper),
+        getAssetInfoResilient(upper),
+        getSeoSnapshotsStatic(upper, 86400),
+    ]);
+    const fundamentalSnapshot = snapshots.find(s => s.tab === 'fundamental');
 
     // degraded + digit-first 심볼 = crypto_assets DB와 FMP가 동시 다운 중이고 resolve 불가
     // → 차트 페이지와 동일한 notFound 처리로 sibling 일관성 유지.
@@ -474,9 +484,16 @@ export default async function FundamentalPage({ params }: Props) {
     const displayName = assetInfo ? buildDisplayName(assetInfo, upper) : upper;
     // FMP 인프라 일시 실패: 500 대신 degrade 안내(200)를 렌더한다. generateMetadata가
     // 동일 조건을 noindex 처리하므로 이 thin 페이지는 색인되지 않고, 다음 revalidate에
-    // 인프라가 복구되면 정상 데이터로 자동 갱신된다.
+    // 인프라가 복구되면 정상 데이터로 자동 갱신된다. 스냅샷이 있으면 degrade 중에도
+    // 크롤러에게 프로즈 콘텐츠를 보여준다(spec §7 — degraded 분기에서도 스냅샷 유지).
     if (profileDegraded) {
-        return <FundamentalDegraded displayName={displayName} symbol={upper} />;
+        return (
+            <FundamentalDegraded
+                displayName={displayName}
+                symbol={upper}
+                snapshotContent={fundamentalSnapshot?.content}
+            />
+        );
     }
     // profile === null = FMP 200 + 빈 결과 = 실존하지 않는 종목 → 404.
     if (profile === null) {
@@ -579,6 +596,19 @@ export default async function FundamentalPage({ params }: Props) {
                         <FundamentalAiSummary symbol={upper} />
                     </Suspense>
                 </ErrorBoundary>
+
+                {/* FundamentalAiSummary is a client component ('use client') that
+                    fetches its analysis via a client-side hook — during ISR
+                    generation it has no data yet and bakes its loading skeleton
+                    into the static HTML (no crawlable AI text). This section adds
+                    the pre-warmed SEO snapshot prose as a plain SSR sibling so
+                    crawlers see real analysis text. Renders null when no snapshot
+                    exists (spec 2026-07-24 Task 7b). */}
+                <FundamentalSnapshotProse
+                    content={fundamentalSnapshot?.content}
+                    symbol={upper}
+                    displayName={displayName}
+                />
 
                 <Suspense fallback={<SectionSkeleton />}>
                     <ValuationSection symbol={upper} />

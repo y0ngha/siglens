@@ -44,6 +44,9 @@ vi.mock('@/entities/financials-statements', () => ({
     getFinancialsSnapshot: vi.fn(),
     isEmptyFinancialsSnapshot: vi.fn().mockReturnValue(false),
 }));
+vi.mock('@/entities/seo-snapshot/lib/getSnapshotStatic', () => ({
+    getSeoSnapshotsStatic: vi.fn().mockResolvedValue([]),
+}));
 vi.mock('@/widgets/financials/FinancialsAiSummary', () => ({
     FinancialsAiSummary: () => null,
 }));

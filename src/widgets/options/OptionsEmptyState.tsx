@@ -1,7 +1,17 @@
 import Link from 'next/link';
+import type { ReactNode } from 'react';
 
 interface OptionsEmptyStateProps {
     symbol: string;
+    /**
+     * Pre-rendered SEO snapshot prose section (`<OptionsSnapshotProse />`),
+     * composed by the caller (app layer — this widget must not import
+     * `@/views/**` directly per FSD dependency direction: widgets sit below
+     * pages/views). `undefined` renders nothing extra. Threaded through so
+     * this branch stays crawlable when a pre-warmed snapshot exists — spec
+     * 2026-07-24 §7: "본문 degraded 분기에서도 섹션 유지".
+     */
+    snapshotSlot?: ReactNode;
 }
 
 const FALLBACK_LINK_CLASSES =
@@ -34,7 +44,10 @@ const FALLBACK_PAGES = [
     },
 ] as const;
 
-export function OptionsEmptyState({ symbol }: OptionsEmptyStateProps) {
+export function OptionsEmptyState({
+    symbol,
+    snapshotSlot,
+}: OptionsEmptyStateProps) {
     return (
         <main className="mx-auto max-w-5xl px-4 py-16">
             <div className="border-secondary-700 bg-secondary-800 rounded-xl border p-8 text-center">
@@ -64,6 +77,9 @@ export function OptionsEmptyState({ symbol }: OptionsEmptyStateProps) {
                     ))}
                 </nav>
             </div>
+            {snapshotSlot && (
+                <div className="mt-6 text-left">{snapshotSlot}</div>
+            )}
         </main>
     );
 }

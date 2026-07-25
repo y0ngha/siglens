@@ -13,6 +13,7 @@ import { AnalystActions } from '@/widgets/news/sections/AnalystActions';
 import { EventCalendar } from '@/widgets/news/sections/EventCalendar';
 import { NewsList } from '@/widgets/news/sections/NewsList';
 import { SymbolPageHeading } from '@/views/symbol';
+import { NewsSnapshotProse } from '@/views/symbol/snapshot/renderers/NewsSnapshotProse';
 import { CrossLinkCards } from '@/shared/ui/CrossLinkCards';
 import { SectionSkeleton } from '@/views/symbol/SectionSkeleton';
 import { JsonLd } from '@/shared/ui/JsonLd';
@@ -26,6 +27,7 @@ import {
     buildDisplayName,
     getAssetInfoResilient,
 } from '@/entities/ticker';
+import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/lib/getSnapshotStatic';
 import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
 import { SECONDS_PER_HALF_DAY } from '@/shared/config/time';
 import { getTodayIsoDay } from '@/shared/lib/getTodayIsoDay';
@@ -279,16 +281,25 @@ export default async function NewsPage({ params }: Props) {
     // ISR degrade guard: getNewsList(Postgres)가 throw하면 ISR 캐시에 0-byte 빈 결과가
     // 굳는 것을 막으려면 여기서 흡수해야 한다. [] 로 degrade → newsListJsonLd가 null이
     // 되고 페이지 크롬(heading/AI summary/CrossLinks 등)은 유지된다.
-    const newsItems = await staticSymbolCache(
-        [NEWS_LIST_CACHE_KEY, upper],
-        upper,
-        () => getNewsList(upper),
-        [`news:${upper}`],
-        SECONDS_PER_HALF_DAY
-    ).catch((e: unknown) => {
-        console.error('[NewsPage] getNewsList failed, degrading to []:', e);
-        return [] as Awaited<ReturnType<typeof getNewsList>>;
-    });
+    //
+    // Promise.all로 병렬화 — snapshots read는 서로 독립이라 직렬 await할 이유가 없다.
+    const [newsItems, snapshots] = await Promise.all([
+        staticSymbolCache(
+            [NEWS_LIST_CACHE_KEY, upper],
+            upper,
+            () => getNewsList(upper),
+            [`news:${upper}`],
+            SECONDS_PER_HALF_DAY
+        ).catch((e: unknown) => {
+            console.error('[NewsPage] getNewsList failed, degrading to []:', e);
+            return [] as Awaited<ReturnType<typeof getNewsList>>;
+        }),
+        // ISR-safe (staticSymbolCache-wrapped, fail-open []) — see
+        // getSeoSnapshotsStatic JSDoc. revalidateSeconds mirrors this page's
+        // `export const revalidate` literal (43200) above.
+        getSeoSnapshotsStatic(upper, 43200),
+    ]);
+    const newsSnapshot = snapshots.find(s => s.tab === 'news');
     // At least one AI-enriched card means aggregate analysis can start immediately.
     const hasEnrichedNews = newsItems.some(item => item.sentiment !== null);
 
@@ -330,6 +341,19 @@ export default async function NewsPage({ params }: Props) {
                     displayName={displayName}
                     assetClass={assetClass}
                     items={newsItems}
+                />
+                {/* NewsAiSummary (below) is a client component that fetches its
+                    aggregate analysis via a client-side hook — during ISR
+                    generation it bakes its loading skeleton into the static HTML
+                    (no crawlable AI text). This adds the pre-warmed SEO snapshot
+                    prose as a plain SSR sibling, complementary to the
+                    deterministic NewsFactsSummary above (list-based facts) — both
+                    coexist. Renders null when no snapshot exists (spec
+                    2026-07-24 Task 7b). */}
+                <NewsSnapshotProse
+                    content={newsSnapshot?.content}
+                    symbol={upper}
+                    displayName={displayName}
                 />
                 <section className="sr-only">
                     <h2>{displayName} 뉴스 분석 개요</h2>

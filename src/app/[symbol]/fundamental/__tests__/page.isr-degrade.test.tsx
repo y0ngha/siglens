@@ -61,6 +61,9 @@ vi.mock('@/app/[symbol]/fundamental/fundamentalData', () => ({
 vi.mock('@/app/[symbol]/fundamental/FundamentalDegraded', () => ({
     FundamentalDegraded: () => <div data-testid="fundamental-degraded" />,
 }));
+vi.mock('@/entities/seo-snapshot/lib/getSnapshotStatic', () => ({
+    getSeoSnapshotsStatic: vi.fn().mockResolvedValue([]),
+}));
 // staticSymbolCache: call fetcher() directly so tests stay pure (no I/O).
 // This is the key — section functions call staticSymbolCache(..., fetcher),
 // and we must route that call to the fetcher so the rejection propagates to
