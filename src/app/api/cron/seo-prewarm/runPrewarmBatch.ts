@@ -12,6 +12,7 @@ import { getDatabaseClient } from '@/shared/db/client';
 import { getAssetInfoResilient } from '@/entities/ticker/lib/getAssetInfoResilient';
 import { getFmpErrorStatus } from '@/shared/api/fmp/fmpUserMessage';
 import { POPULAR_CRYPTOS } from '@/shared/config/popular-cryptos';
+import { withConcurrencyLimit } from '@/shared/lib/withConcurrencyLimit';
 import { addFmpBudget, getFmpBudgetUsed, isInFlight } from './lock';
 import { TAB_SEAMS, resolveHarvest } from './harvest';
 
@@ -89,21 +90,16 @@ export async function runPrewarmBatch(): Promise<PrewarmBatchCounts> {
         fmpBudgetUsed: 0,
     };
 
-    for (let i = 0; i < batch.length; i += SYMBOL_CONCURRENCY) {
-        const chunk = batch.slice(i, i + SYMBOL_CONCURRENCY);
-        await Promise.all(
-            chunk.map(u =>
-                processSymbol(u, boundary, generatedAtMap, repo, counts).catch(
-                    error => {
-                        console.error(
-                            `[seo-prewarm] ${u.symbol} failed:`,
-                            error
-                        );
-                    }
-                )
-            )
-        );
-    }
+    // 심볼당 .catch로 에러를 흡수해 processSymbol이 절대 reject하지 않게 만든 뒤
+    // withConcurrencyLimit에 위임한다 — 격리는 이 .catch가 보장하므로
+    // Promise.allSettled 기반 청크 처리와도 동일하게 안전하다.
+    await withConcurrencyLimit(batch, SYMBOL_CONCURRENCY, u =>
+        processSymbol(u, boundary, generatedAtMap, repo, counts).catch(
+            error => {
+                console.error(`[seo-prewarm] ${u.symbol} failed:`, error);
+            }
+        )
+    );
 
     counts.fmpBudgetUsed = await getFmpBudgetUsed();
     return counts;

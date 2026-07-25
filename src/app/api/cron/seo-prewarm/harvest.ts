@@ -14,15 +14,6 @@ import { prewarmOptions } from '@/entities/options-chain/api';
 import { markInFlight } from './lock';
 import type { PrewarmBatchCounts } from './runPrewarmBatch';
 
-/**
- * 익명/free 방문자의 기본 모델(anonymous writer)과 정합하는 pre-warm 전용
- * 상수 — `prewarmSubmits.ts`의 `PREWARM_MODEL_ID`와 동일 값. 저장소에 넣을
- * `model` 필드도 이 값으로 통일한다: 어떤 축의 cached 결과도 자체적으로
- * 모델 식별자를 싣지 않는다(spec 2026-07-24 Task 9 결의 §"resolveHarvest"
- * — 각 결과 타입에 model 필드가 없음을 확인).
- */
-const PREWARM_MODEL_ID = DEEPSEEK_V4_FLASH_MODEL;
-
 interface TabSeamContext {
     symbol: string;
     companyName: string;
@@ -89,7 +80,11 @@ export async function resolveHarvest(
             symbol,
             tab,
             content: result.result,
-            model: PREWARM_MODEL_ID,
+            // 저장소 `model` 필드는 seam이 보낸 modelId(DEEPSEEK_V4_FLASH_MODEL)와
+            // 통일한다: 어떤 축의 cached 결과도 자체적으로 모델 식별자를 싣지
+            // 않는다(spec 2026-07-24 Task 9 결의 §"resolveHarvest" — 각 결과
+            // 타입에 model 필드가 없음을 확인).
+            model: DEEPSEEK_V4_FLASH_MODEL,
             generatedAt: new Date(),
         });
         counts.harvested++;

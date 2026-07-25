@@ -534,7 +534,7 @@ describe('prewarmOverall', () => {
 });
 
 describe('prewarm seam static guard', () => {
-    it('the shared prewarmSubmits.ts source contains no request-context calls', () => {
+    it('the shared entities/analysis/api.ts source contains no request-context calls', () => {
         expect(SEAM_SOURCE).not.toMatch(
             /next\/headers|getCurrentUser|isBot|cookies|draftMode/
         );

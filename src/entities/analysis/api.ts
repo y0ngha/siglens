@@ -38,18 +38,18 @@ import { fetchOptionsSnapshot } from '@/entities/options-chain/lib/optionsDataCa
 import { isOpenInterestSnapshotStale } from '@/shared/lib/options/openInterestStale';
 
 /**
- * 익명/free 방문자가 실제로 보내는 기본 모델. `SymbolModelContext`의
+ * 이 파일의 모든 seam이 `modelId: DEEPSEEK_V4_FLASH_MODEL`을 직접 명시 전달하는
+ * 이유 — 익명/free 방문자가 실제로 보내는 기본 모델이다. `SymbolModelContext`의
  * `useSelectedModel` 기본값(`DEFAULT_MODEL = DEEPSEEK_V4_FLASH_MODEL`)과
  * 동일 — `[symbol]/page.tsx`·`[symbol]/overall/page.tsx`의 SSR peek도 이
- * 상수로 캐시를 읽는다. core의 각 submit 함수는 `modelId`를 옵션으로 받을 때
+ * 값으로 캐시를 읽는다. core의 각 submit 함수는 `modelId`를 옵션으로 받을 때
  * "생략(undefined)"에 대해 서로 다르게 동작한다: technical(`submitAnalysis`)만
  * 내부적으로 `DEFAULT_ANALYSIS_MODEL_ID`('analysis-worker')로 폴백하고, 나머지
  * 축(fundamental/financials/congress/news/options/overall)은 `modelId`를
  * 캐시 키에 그대로 사용하므로 생략 시 실제 방문자가 쓰는 키와 어긋난다. 그래서
- * 모든 seam이 이 상수를 명시적으로 전달해 anonymous writer와 캐시 키를
- * 맞춘다(스펙 §7 캐시 키 5축 정합).
+ * 모든 seam이 `DEEPSEEK_V4_FLASH_MODEL`을 명시적으로 전달해 anonymous writer와
+ * 캐시 키를 맞춘다(스펙 §7 캐시 키 5축 정합).
  */
-const PREWARM_MODEL_ID = DEEPSEEK_V4_FLASH_MODEL;
 
 /**
  * SEO pre-warm 전용 technical submit (spec 2026-07-24 §4 seam).
@@ -71,7 +71,7 @@ export async function prewarmTechnical(
         sessionSpecFor(marketProfile)
     );
     return submitAnalysis(symbol, companyName, '1Day', force, fmpSymbol, {
-        modelId: PREWARM_MODEL_ID,
+        modelId: DEEPSEEK_V4_FLASH_MODEL,
         skipEnqueueIfMiss: false,
         marketDataProvider,
         assetClass,
@@ -91,7 +91,7 @@ export async function prewarmFundamental(
 ): Promise<SubmitFundamentalAnalysisResult> {
     return submitFundamentalAnalysis({
         symbol,
-        modelId: PREWARM_MODEL_ID,
+        modelId: DEEPSEEK_V4_FLASH_MODEL,
         dataProvider: getFundamentalDataProvider(),
         tier: 'free',
         reasoning: false,
@@ -110,7 +110,7 @@ export async function prewarmFinancials(
 ): Promise<SubmitFinancialsAnalysisResult> {
     return submitFinancialsAnalysis({
         symbol,
-        modelId: PREWARM_MODEL_ID,
+        modelId: DEEPSEEK_V4_FLASH_MODEL,
         dataProvider: getFinancialStatementsProvider(),
         tier: 'free',
         reasoning: false,
@@ -130,7 +130,7 @@ export async function prewarmCongress(
 ): Promise<SubmitCongressTrendResult> {
     return submitCongressTrend({
         symbol,
-        modelId: PREWARM_MODEL_ID,
+        modelId: DEEPSEEK_V4_FLASH_MODEL,
         dataProvider: getCongressTradesProvider(),
         skipEnqueueIfMiss: false,
         reasoning: false,
@@ -201,7 +201,7 @@ export async function prewarmOverall(
         symbol,
         companyName,
         timeframe: '1Day',
-        modelId: PREWARM_MODEL_ID,
+        modelId: DEEPSEEK_V4_FLASH_MODEL,
         fundamentalProvider: getFundamentalDataProvider(),
         marketDataProvider,
         newsItems: enrichedNews,
