@@ -77,9 +77,15 @@ export function OptionsEmptyState({
                     ))}
                 </nav>
             </div>
-            {snapshotSlot && (
-                <div className="mt-6 text-left">{snapshotSlot}</div>
-            )}
+            {/* audit fix FIX 9: `snapshotSlot` is now `undefined` (not an
+                always-truthy React element) when the caller has no renderable
+                prose (options/page.tsx computes this via `hasOptionsProse`),
+                so this `&&` no longer produces an empty `div.mt-6` when
+                `OptionsSnapshotProse` would have returned null internally.
+                `text-center` (the empty-state card's own alignment, above)
+                isn't an ancestor of this sibling div, so the `text-left`
+                override here was a no-op — dropped. */}
+            {snapshotSlot && <div className="mt-6">{snapshotSlot}</div>}
         </main>
     );
 }

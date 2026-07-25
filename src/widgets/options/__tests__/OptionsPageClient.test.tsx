@@ -112,6 +112,25 @@ describe('OptionsPageClient', () => {
         expect(screen.getByTestId('ai-analysis')).toBeInTheDocument();
     });
 
+    // audit fix FIX 2: hasSnapshotProse=true means the SSR-persistent
+    // OptionsSnapshotProse (rendered by page.tsx above this component) is
+    // already showing the same AI conclusion (summary/perExpiration/signals)
+    // — mounting the widget too would duplicate that text for sighted users
+    // and screen readers.
+    it('does not render AI analysis section when hasSnapshotProse is true (FIX 2)', () => {
+        render(
+            <OptionsPageClient
+                symbol="AAPL"
+                companyName="Apple"
+                snapshot={SNAPSHOT}
+                slots={SLOTS}
+                hasSnapshotProse
+            />
+        );
+        expect(screen.queryByTestId('ai-analysis')).not.toBeInTheDocument();
+        expect(screen.queryByTestId('stale-notice')).not.toBeInTheDocument();
+    });
+
     it('renders metrics row', () => {
         render(
             <OptionsPageClient

@@ -33,6 +33,16 @@ interface OptionsPageClientProps {
     companyName: string;
     snapshot: OptionsSnapshot;
     slots: ReadonlyArray<SlotMapping | null>;
+    /**
+     * `true` when the SSR-persistent `<OptionsSnapshotProse>` (rendered by
+     * `options/page.tsx` above this component) is already showing the same AI
+     * conclusion. Suppresses the client `OptionsAiAnalysis` widget (and its
+     * stale-data notice) to avoid rendering the same summary/perExpiration/
+     * signals content twice (audit fix FIX 2 — mirrors the XOR gating used by
+     * the other 4 duplicated tabs). Defaults to `false` so existing callers
+     * that don't pass it keep today's behavior.
+     */
+    hasSnapshotProse?: boolean;
 }
 
 const isSlotMapping = (s: SlotMapping | null): s is SlotMapping => s !== null;
@@ -48,6 +58,7 @@ export function OptionsPageClient({
     companyName,
     snapshot,
     slots,
+    hasSnapshotProse = false,
 }: OptionsPageClientProps) {
     // 훅 선언 순서(CONVENTIONS.md / MISTAKES.md §17):
     //   useState/useRef → 사용자 정의 훅 → useMemo/useCallback → derived → handlers → useEffect.
@@ -97,7 +108,12 @@ export function OptionsPageClient({
         // page.tsx가 이미 <main> landmark로 감싸므로 여기는 일반 컨테이너만.
         // 중첩 <main>은 invalid HTML이고 screen reader landmark navigation을
         // 깬다.
-        <div className="mx-auto max-w-5xl space-y-6 px-4 py-6">
+        // audit fix FIX 3: `mx-auto max-w-5xl px-4` 제거 — page.tsx의 <main>이
+        // 이미 동일 max-width+px를 적용하고 있어(single source), 이 div가
+        // 다시 적용하면 이중 inset(양쪽 16px씩)이 걸려 위(OptionsSnapshotProse
+        // 카드)와 폭이 어긋난다. `space-y-6 py-6`만 유지 — 세로 간격/패딩은
+        // 이 컨테이너 고유 관심사라 유지한다.
+        <div className="space-y-6 py-6">
             <ExpirationSelector
                 slots={validSlots}
                 value={expirationDate}
@@ -106,23 +122,32 @@ export function OptionsPageClient({
 
             {oiStale && <OptionsStaleDataBanner />}
 
-            {/* OI/호가가 비어 있으면 prompt에 들어가는 핵심 지표(Max Pain,
-                P/C, top OI/IV/mid·spread)가 모두 무력화되므로, 분석 호출 자체를
-                건너뛰고 안내 카드를 보여준다. ErrorBoundary 분기는 정상
+            {/* audit fix FIX 2: XOR — OptionsAiAnalysis (client widget) and the
+                SSR-persistent OptionsSnapshotProse (rendered by page.tsx above
+                this component) both render the same AI conclusion (summary/
+                perExpiration/signals). Showing both duplicated the text for
+                sighted users and screen readers and doubled as a
+                duplicate-content SEO risk. When the snapshot prose is already
+                showing that content, skip this whole block — the stale notice
+                is moot too, since there's no live widget analysis to warn
+                about. OI/호가가 비어 있으면 prompt에 들어가는 핵심 지표(Max
+                Pain, P/C, top OI/IV/mid·spread)가 모두 무력화되므로, 분석 호출
+                자체를 건너뛰고 안내 카드를 보여준다. ErrorBoundary 분기는 정상
                 경로에서만 필요. */}
-            {oiStale ? (
-                <OptionsAiAnalysisStaleNotice />
-            ) : (
-                <ErrorBoundary FallbackComponent={OptionsAiAnalysisError}>
-                    <OptionsAiAnalysis
-                        symbol={symbol}
-                        companyName={companyName}
-                        expirationDate={expirationDate}
-                        modelId={modelId}
-                        reasoning={reasoning}
-                    />
-                </ErrorBoundary>
-            )}
+            {!hasSnapshotProse &&
+                (oiStale ? (
+                    <OptionsAiAnalysisStaleNotice />
+                ) : (
+                    <ErrorBoundary FallbackComponent={OptionsAiAnalysisError}>
+                        <OptionsAiAnalysis
+                            symbol={symbol}
+                            companyName={companyName}
+                            expirationDate={expirationDate}
+                            modelId={modelId}
+                            reasoning={reasoning}
+                        />
+                    </ErrorBoundary>
+                ))}
 
             <OptionsMetricsRow
                 expirationDate={expirationDate}

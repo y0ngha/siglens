@@ -1,7 +1,10 @@
 import { OptionsPageClient } from '@/widgets/options/OptionsPageClient';
 import { getBlockedSymbolMetadata } from '@/app/[symbol]/symbolIndexabilityMetadata';
 import { SymbolPageHeading } from '@/views/symbol';
-import { OptionsSnapshotProse } from '@/views/symbol/snapshot/renderers/OptionsSnapshotProse';
+import {
+    OptionsSnapshotProse,
+    hasOptionsProse,
+} from '@/views/symbol/snapshot/renderers/OptionsSnapshotProse';
 import { OptionsEmptyState } from '@/widgets/options/OptionsEmptyState';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import {
@@ -167,6 +170,16 @@ export default async function OptionsPage({ params }: Props) {
         getSeoSnapshotsStatic(upper, 43200),
     ]);
     const optionsSnapshot = snapshots.find(s => s.tab === 'options');
+    // audit fix FIX 2: XOR 게이트 — 스냅샷 프로즈가 렌더 가능하면(hasOptionsProse)
+    // 그것만 보여주고, 클라이언트 AI 위젯(OptionsAiAnalysis, OptionsPageClient
+    // 내부)은 렌더하지 않는다. 두 소스가 동일 필드(summary/perExpiration/
+    // signals)를 같은 순서로 중복 렌더하던 문제(같은 결론을 사용자에게 두 번,
+    // 스크린리더에 두 번, 중복 콘텐츠 SEO 리스크)를 해소한다.
+    // `OverallSnapshotProse.hasOverallProse` 패턴과 동일 — narrowOptionsContent를
+    // 재사용해 프로즈 컴포넌트와 동일 판단. audit fix FIX 9에서도 재사용된다
+    // (OptionsEmptyState의 snapshotSlot을 truthy-element가 아닌 이 boolean으로
+    // 게이팅).
+    const showOptionsProse = hasOptionsProse(optionsSnapshot?.content);
 
     // degraded + digit-first 심볼 = 두 데이터 소스가 동시 다운 중이고 resolve 불가
     // → 차트 페이지와 동일한 notFound 처리로 sibling 일관성 유지.
@@ -183,11 +196,13 @@ export default async function OptionsPage({ params }: Props) {
             <OptionsEmptyState
                 symbol={upper}
                 snapshotSlot={
-                    <OptionsSnapshotProse
-                        content={optionsSnapshot?.content}
-                        symbol={upper}
-                        displayName={displayName}
-                    />
+                    showOptionsProse ? (
+                        <OptionsSnapshotProse
+                            content={optionsSnapshot?.content}
+                            symbol={upper}
+                            displayName={displayName}
+                        />
+                    ) : undefined
                 }
             />
         );
@@ -214,11 +229,13 @@ export default async function OptionsPage({ params }: Props) {
             <OptionsEmptyState
                 symbol={upper}
                 snapshotSlot={
-                    <OptionsSnapshotProse
-                        content={optionsSnapshot?.content}
-                        symbol={upper}
-                        displayName={displayName}
-                    />
+                    showOptionsProse ? (
+                        <OptionsSnapshotProse
+                            content={optionsSnapshot?.content}
+                            symbol={upper}
+                            displayName={displayName}
+                        />
+                    ) : undefined
                 }
             />
         );
@@ -309,7 +326,14 @@ export default async function OptionsPage({ params }: Props) {
                 상태(OptionsEmptyState)는 자체적으로 <main>을 가지지만, 옵션
                 데이터가 있는 정상 path도 동일하게 main으로 감싸야 sibling 일관성
                 과 a11y landmark navigation이 유지된다. */}
-            <main className="mx-auto w-full max-w-5xl px-4 py-8">
+            {/* audit fix FIX 3: space-y-6 added — all 6 sibling pages have it,
+                and its absence left the h1 flush against the snapshot card
+                below. (The redundant `mx-auto max-w-5xl px-4` that
+                OptionsPageClient used to re-apply internally is removed there
+                — see OptionsPageClient.tsx — so this <main>'s max-width is the
+                single source and the snapshot card no longer reads ~32px wider
+                than the cards beneath it.) */}
+            <main className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8">
                 <SymbolPageHeading>
                     {displayName} 옵션 시장 분석
                 </SymbolPageHeading>
@@ -328,13 +352,19 @@ export default async function OptionsPage({ params }: Props) {
                         </p>
                     ) : null}
                 </section>
-                {/* OptionsAiAnalysis (inside OptionsPageClient) is a client
-                    component that fetches its analysis via a client-side hook —
-                    during ISR generation it bakes its loading skeleton into the
-                    static HTML (no crawlable AI text). This adds the pre-warmed
-                    SEO snapshot prose as a plain SSR sibling so crawlers see real
-                    analysis text. Renders null when no snapshot exists (spec
-                    2026-07-24 Task 7b). */}
+                {/* audit fix FIX 2: XOR — OptionsAiAnalysis (client widget,
+                    inside OptionsPageClient below) and OptionsSnapshotProse
+                    both render the same AI conclusion (summary/perExpiration/
+                    signals). Showing both duplicated the text for sighted
+                    users and screen readers and doubled as a duplicate-content
+                    SEO risk. OptionsAiAnalysis fetches its analysis via a
+                    client-side hook — during ISR generation it bakes its
+                    loading skeleton into the static HTML (no crawlable AI
+                    text) until it hydrates — so this prose covers crawlers
+                    either way; `hasSnapshotProse` (below) additionally tells
+                    OptionsPageClient to skip mounting the widget when this
+                    prose is already showing the same content. Renders null
+                    when no snapshot exists (spec 2026-07-24 Task 7b). */}
                 <OptionsSnapshotProse
                     content={optionsSnapshot?.content}
                     symbol={upper}
@@ -346,6 +376,7 @@ export default async function OptionsPage({ params }: Props) {
                         companyName={displayName}
                         snapshot={snapshot}
                         slots={slots}
+                        hasSnapshotProse={showOptionsProse}
                     />
                 </HydrationBoundary>
             </main>

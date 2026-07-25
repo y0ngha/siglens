@@ -82,6 +82,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { ReactNode } from 'react';
 import OptionsPage from '@/app/[symbol]/options/page';
 import { OptionsSnapshotProse } from '@/views/symbol/snapshot/renderers/OptionsSnapshotProse';
+import { OptionsPageClient } from '@/widgets/options/OptionsPageClient';
 import { getAssetInfoResilient } from '@/entities/ticker';
 import {
     fetchOptionsSnapshot,
@@ -127,7 +128,7 @@ describe('OptionsPage — SEO snapshot prose (Task 7b)', () => {
         mockGetAssetInfoResilient.mockResolvedValue(EQUITY_ASSET_INFO);
     });
 
-    it('옵션 시장 있고 스냅샷 있으면 OptionsSnapshotProse를 렌더한다', async () => {
+    it('옵션 시장 있고 스냅샷 있으면 OptionsSnapshotProse를 렌더하고, OptionsPageClient에 hasSnapshotProse=true를 전달해 중복 AI 위젯을 숨긴다 (audit fix FIX 2)', async () => {
         mockHasOptionsMarket.mockResolvedValue(true);
         mockFetchOptionsSnapshot.mockResolvedValue(OPTIONS_SNAPSHOT);
         mockGetSeoSnapshotsStatic.mockResolvedValue([
@@ -149,9 +150,13 @@ describe('OptionsPage — SEO snapshot prose (Task 7b)', () => {
         expect((prose?.props as { content: unknown }).content).toEqual(
             SNAPSHOT_CONTENT
         );
+        const client = findElementByType(tree, OptionsPageClient);
+        expect(
+            (client?.props as { hasSnapshotProse: unknown }).hasSnapshotProse
+        ).toBe(true);
     });
 
-    it('스냅샷 없으면(빈 배열) content가 undefined로 전달된다(렌더러가 자체 null 반환)', async () => {
+    it('스냅샷 없으면(빈 배열) content가 undefined로 전달되고(렌더러가 자체 null 반환), OptionsPageClient에는 hasSnapshotProse=false가 전달된다', async () => {
         mockHasOptionsMarket.mockResolvedValue(true);
         mockFetchOptionsSnapshot.mockResolvedValue(OPTIONS_SNAPSHOT);
         mockGetSeoSnapshotsStatic.mockResolvedValue([]);
@@ -163,6 +168,10 @@ describe('OptionsPage — SEO snapshot prose (Task 7b)', () => {
         const prose = findElementByType(tree, OptionsSnapshotProse);
         expect(prose).not.toBeNull();
         expect((prose?.props as { content: unknown }).content).toBeUndefined();
+        const client = findElementByType(tree, OptionsPageClient);
+        expect(
+            (client?.props as { hasSnapshotProse: unknown }).hasSnapshotProse
+        ).toBe(false);
     });
 
     it('getSeoSnapshotsStatic은 페이지의 revalidate 리터럴(43200)로 호출된다', async () => {
@@ -204,6 +213,25 @@ describe('OptionsPage — SEO snapshot prose (Task 7b)', () => {
         expect((prose?.props as { content: unknown }).content).toEqual(
             SNAPSHOT_CONTENT
         );
+    });
+
+    // audit fix FIX 9: OptionsEmptyState.tsx did `{snapshotSlot && ...}` where
+    // snapshotSlot was always a truthy <OptionsSnapshotProse> element even
+    // when its internal content was empty — producing an empty `div.mt-6`
+    // (24px dead gap). The fix makes the CALLER gate with `hasOptionsProse`
+    // and pass `undefined` (not an element) when there's nothing to show.
+    it('옵션 시장 없음(hasOptions:false) + 스냅샷 없음 분기에서는 snapshotSlot이 undefined로 전달된다 — 빈 div.mt-6 방지(audit fix FIX 9)', async () => {
+        mockHasOptionsMarket.mockResolvedValue(false);
+        mockGetSeoSnapshotsStatic.mockResolvedValue([]);
+
+        const tree = await OptionsPage({
+            params: Promise.resolve({ symbol: 'aapl' }),
+        });
+
+        const emptyStateEl = tree as unknown as {
+            props: { snapshotSlot: ReactNode };
+        };
+        expect(emptyStateEl.props.snapshotSlot).toBeUndefined();
     });
 
     it('fetchOptionsSnapshot 실패(null degrade) 분기에서도 스냅샷 프로즈가 OptionsEmptyState의 snapshotSlot으로 전달된다(spec §7)', async () => {
