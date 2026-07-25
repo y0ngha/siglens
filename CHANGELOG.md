@@ -1,5 +1,55 @@
 # Changelog
 
+# [0.46.0](https://github.com/y0ngha/siglens/compare/v0.45.0...v0.46.0) (2026-07-25)
+
+
+### Bug Fixes
+
+* **isr:** index.test.mjs에 upstashRest mock 추가 + readonly 토큰 폴백 단순화 ([6ac6ebc](https://github.com/y0ngha/siglens/commit/6ac6ebc8aac6f77a5cabb9e8b7e062187ff9356e)), closes [#699](https://github.com/y0ngha/siglens/issues/699)
+* **seo-prewarm:** fair batch selection + cold-cache polling + audit fixes A-H ([595060e](https://github.com/y0ngha/siglens/commit/595060ea1555ea1c2804c4bec41ea8a9229a5ef7))
+* **seo-prewarm:** honor legacy in-flight markers instead of re-submitting (PR [#698](https://github.com/y0ngha/siglens/issues/698) review) ([23d2995](https://github.com/y0ngha/siglens/commit/23d29953eea41e90bc5af0f7d45b257299948b77))
+* **seo-prewarm:** lock CAS release + case-norm + budget precision + drop premature revalidatePath (audit) ([670d5cf](https://github.com/y0ngha/siglens/commit/670d5cfc6758850ba7df851e46d545838cc8fef7))
+* **seo-prewarm:** normalize Upstash job-agnostic inflight marker (FIX 3, verified) ([0ed2f21](https://github.com/y0ngha/siglens/commit/0ed2f21f892e3912cd86b1db22dbc82f55ec6a53))
+* **seo-prewarm:** redis-unavailable dead-cron alarm + equal-length bearer reject test (audit r2) ([fc33d8b](https://github.com/y0ngha/siglens/commit/fc33d8b90455ea2ead3f3a97b904a1dc9b75920e))
+* **seo-prewarm:** stop re-typing revalidate literal in 9 page files (PR [#698](https://github.com/y0ngha/siglens/issues/698) round-3 FIX 1) ([3b9d11b](https://github.com/y0ngha/siglens/commit/3b9d11b96d142cd89649f80bb57d807390b1888e))
+* **seo-render:** apply markdown sanitizer to remaining 5 tab renderers (audit FIX 4) ([d63832a](https://github.com/y0ngha/siglens/commit/d63832a077e5df6f750d2775f2a700764792f448))
+* **seo-render:** fear-greed page adds per-symbol group/ranking narrative + fixes mixed-language ordinal (audit FIX 6) ([c9f4ace](https://github.com/y0ngha/siglens/commit/c9f4ace0a35d20d65cd7ba71d0f69142dd29ec52))
+* **seo-render:** indexability gate on renderability, not row existence (audit FIX 1) ([e73d4ce](https://github.com/y0ngha/siglens/commit/e73d4ceddd3f460f7296e0b076e6ed1e885e5ec4))
+* **seo-render:** move chart-page snapshot prose out of the fixed jail ([c985aea](https://github.com/y0ngha/siglens/commit/c985aea605923a6ee41458b8198056a34c5d6c11))
+* **seo-render:** options page layout gap + XOR widget + empty snapshotSlot bug ([eef6d6c](https://github.com/y0ngha/siglens/commit/eef6d6c83308ec27f02e62e3412110607c6ddcc2))
+* **seo-render:** overall renderer surfaces 4-axis bullets + markdown sanitizer (audit FIX 2, FIX 4) ([a0afba1](https://github.com/y0ngha/siglens/commit/a0afba186ec4b65ca5e77768164a990459f511dc))
+* **seo-render:** snapshot meta descriptions lead with subject + clamp at sentence boundary (audit FIX 5) ([e8720fb](https://github.com/y0ngha/siglens/commit/e8720fb6a635451c7b6da2a133eab16c5d929ee5))
+* **seo-render:** technical renderer surfaces skill-detection prose + corrects free-tier JSDoc (audit FIX 3) ([7c12c44](https://github.com/y0ngha/siglens/commit/7c12c4492d00ff252cad07cef5dd02a9b6262c7e))
+* **seo-render:** XOR-gate duplicate AI widgets on congress/fundamental/financials/news ([d76baf5](https://github.com/y0ngha/siglens/commit/d76baf53e640d3b31f48ed669455eb940e1699b2))
+* **seo:** prototype-chain-unsafe type guards in snapshot prose renderers ([a57b4bc](https://github.com/y0ngha/siglens/commit/a57b4bca7c5dd9dd7808dd7ddccd0372125132df))
+* **seo:** tab-scope indexability gate + mount snapshot prose outside Suspense ([ff0c789](https://github.com/y0ngha/siglens/commit/ff0c789e3d7b654df12b2497e25a0bbf957a09b8))
+
+
+### Features
+
+* **analysis:** prewarmTechnical server-only seam ([4bb9f6f](https://github.com/y0ngha/siglens/commit/4bb9f6f4c10660ecdc130c67ac817fc5df7973ed))
+* **fear-greed:** server-computed factor narrative SSR ([1aad261](https://github.com/y0ngha/siglens/commit/1aad2615945e4215793e69d0660c8e4dd6898af4))
+* **infra:** EventBridge seo-prewarm schedule + alarms + CRON.md AWS 개정 ([933a564](https://github.com/y0ngha/siglens/commit/933a5647f00020e5b7a3043b8be7f7e1eeaa2ca4))
+* **infra:** seo-prewarm delivery-failure alarm + AUTHORIZED poll + rollback runbook (audit) ([bfc4dbb](https://github.com/y0ngha/siglens/commit/bfc4dbbd8ad58ca9bbf12d37d09faeba5f1dfaa6))
+* **isr:** 태그 스토어를 Upstash 정렬셋으로 외부화 ([e04b1dc](https://github.com/y0ngha/siglens/commit/e04b1dc4bd04a2b6b0f9b32d7e8679325dc5c2ec))
+* **prewarm:** server-only submit seams for all 7 tabs ([fa982c5](https://github.com/y0ngha/siglens/commit/fa982c5e727031734041d97ecd8692e5dacaca78))
+* **seo-prewarm:** batch orchestration (select→run→harvest→revalidate, error-isolated) ([67125a4](https://github.com/y0ngha/siglens/commit/67125a4f18e4bbce459ea901e0958b38e6c1688b))
+* **seo-prewarm:** cron route skeleton (auth + lock + 202/after) ([c80f0a8](https://github.com/y0ngha/siglens/commit/c80f0a80978c526776f6799bcdf15345a769cbbc))
+* **seo-prewarm:** redis root lock, in-flight marker, fmp budget counter ([4e0b04a](https://github.com/y0ngha/siglens/commit/4e0b04abef14a34254167b65d6337b94d636d05d))
+* **seo-snapshot:** add model + drizzle repository ([8d9b3e5](https://github.com/y0ngha/siglens/commit/8d9b3e51a4c4b4feebd64b58cb8d75288f697b82))
+* **seo-snapshot:** add seo_analysis_snapshots table ([70eec91](https://github.com/y0ngha/siglens/commit/70eec9153d0cb038b4d60dd3741730a5d97625c8))
+* **seo-snapshot:** applicability matrix + prewarm universe ([ff80b7b](https://github.com/y0ngha/siglens/commit/ff80b7b54cb9879ba9a09aba8255337f5516faf6))
+* **seo-snapshot:** ET-close freshness engine with settle buffer ([0ab2540](https://github.com/y0ngha/siglens/commit/0ab25406243ca95f39267c670934686f70668b29))
+* **seo-snapshot:** ISR-safe static snapshot read helper ([add9095](https://github.com/y0ngha/siglens/commit/add90950e36b3a19531eed1b000669ad1335be73))
+* **seo:** block Googlebot OG/twitter-image crawl (budget reclaim) ([0d4af83](https://github.com/y0ngha/siglens/commit/0d4af83dff189986c00ffb7df57ea1974ac1dcde))
+* **seo:** degraded-with-snapshot stays indexable (hasSnapshot guard) ([3ba2887](https://github.com/y0ngha/siglens/commit/3ba2887f0fc221e9a3d7ce0e73db646c91efb216))
+* **seo:** snapshot-derived unique meta descriptions per tab ([e46f7e7](https://github.com/y0ngha/siglens/commit/e46f7e7596ebcedf81e97c0b35760fde947dd15c))
+* **symbol:** mount snapshot prose across fundamental/financials/congress/options/news SSR ([4f49bc6](https://github.com/y0ngha/siglens/commit/4f49bc6d8698c147e0fc958dcd8d4f0946c8fd81))
+* **symbol:** mount snapshot prose in chart + overall SSR (snapshot-first, peek fallback) ([11589a1](https://github.com/y0ngha/siglens/commit/11589a16a795f8c675ad28fa8308bf7757ace147))
+* **views:** fundamental/financials/congress/options/news snapshot prose renderers ([f35dc50](https://github.com/y0ngha/siglens/commit/f35dc50c33de081fbf1bf87053ba1a17ed498187))
+* **views:** overall snapshot prose renderer ([d1e172f](https://github.com/y0ngha/siglens/commit/d1e172f59e11fbaa218b60a71a5a2859b26b5ae8))
+* **views:** snapshot summary section shell + technical prose renderer ([ccbdabf](https://github.com/y0ngha/siglens/commit/ccbdabfb7df96f27aeee42726cb3e67491aac15a))
+
 # [0.45.0](https://github.com/y0ngha/siglens/compare/v0.44.0...v0.45.0) (2026-07-19)
 
 
