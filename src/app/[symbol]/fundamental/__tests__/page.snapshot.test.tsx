@@ -120,6 +120,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import FundamentalPage from '@/app/[symbol]/fundamental/page';
 import { FundamentalDegraded } from '@/app/[symbol]/fundamental/FundamentalDegraded';
 import { FundamentalSnapshotProse } from '@/views/symbol/snapshot/renderers/FundamentalSnapshotProse';
+import { FundamentalAiSummary } from '@/widgets/fundamental/FundamentalAiSummary';
 import { getAssetInfoResilient } from '@/entities/ticker';
 import { getProfileResilient } from '@/app/[symbol]/fundamental/getProfileResilient';
 import { findElementByType } from '@/__tests__/utils/findElementByType';
@@ -161,7 +162,7 @@ describe('FundamentalPage — SEO snapshot prose (Task 7b)', () => {
         mockGetProfileResilient.mockResolvedValue(PROFILE_OK);
     });
 
-    it('스냅샷 있으면 FundamentalSnapshotProse를 렌더한다', async () => {
+    it('스냅샷 있으면 FundamentalSnapshotProse를 렌더하고, 중복되는 AI 위젯(FundamentalAiSummary)은 렌더하지 않는다 (audit fix FIX 2)', async () => {
         mockGetSeoSnapshotsStatic.mockResolvedValue([
             {
                 symbol: 'AAPL',
@@ -181,21 +182,21 @@ describe('FundamentalPage — SEO snapshot prose (Task 7b)', () => {
         expect((prose?.props as { content: unknown }).content).toEqual(
             SNAPSHOT_CONTENT
         );
+        expect(findElementByType(tree, FundamentalAiSummary)).toBeNull();
     });
 
-    it('스냅샷 없으면(빈 배열) content가 undefined로 전달된다(렌더러가 자체 null 반환)', async () => {
+    it('스냅샷 없으면(빈 배열) FundamentalSnapshotProse 대신 FundamentalAiSummary(AI 위젯)를 렌더한다 (audit fix FIX 2)', async () => {
         mockGetSeoSnapshotsStatic.mockResolvedValue([]);
 
         const tree = await FundamentalPage({
             params: Promise.resolve({ symbol: 'aapl' }),
         });
 
-        const prose = findElementByType(tree, FundamentalSnapshotProse);
-        expect(prose).not.toBeNull();
-        expect((prose?.props as { content: unknown }).content).toBeUndefined();
+        expect(findElementByType(tree, FundamentalSnapshotProse)).toBeNull();
+        expect(findElementByType(tree, FundamentalAiSummary)).not.toBeNull();
     });
 
-    it('다른 탭(overall)의 스냅샷은 fundamental 슬롯에 전달되지 않는다', async () => {
+    it('다른 탭(overall)의 스냅샷은 fundamental 슬롯에 전달되지 않아 FundamentalAiSummary(AI 위젯)로 폴백한다', async () => {
         mockGetSeoSnapshotsStatic.mockResolvedValue([
             {
                 symbol: 'AAPL',
@@ -210,8 +211,8 @@ describe('FundamentalPage — SEO snapshot prose (Task 7b)', () => {
             params: Promise.resolve({ symbol: 'aapl' }),
         });
 
-        const prose = findElementByType(tree, FundamentalSnapshotProse);
-        expect((prose?.props as { content: unknown }).content).toBeUndefined();
+        expect(findElementByType(tree, FundamentalSnapshotProse)).toBeNull();
+        expect(findElementByType(tree, FundamentalAiSummary)).not.toBeNull();
     });
 
     it('getSeoSnapshotsStatic은 페이지의 revalidate 리터럴(86400)로 호출된다', async () => {

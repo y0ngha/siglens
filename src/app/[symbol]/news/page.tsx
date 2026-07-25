@@ -13,7 +13,10 @@ import { AnalystActions } from '@/widgets/news/sections/AnalystActions';
 import { EventCalendar } from '@/widgets/news/sections/EventCalendar';
 import { NewsList } from '@/widgets/news/sections/NewsList';
 import { SymbolPageHeading } from '@/views/symbol';
-import { NewsSnapshotProse } from '@/views/symbol/snapshot/renderers/NewsSnapshotProse';
+import {
+    NewsSnapshotProse,
+    hasNewsProse,
+} from '@/views/symbol/snapshot/renderers/NewsSnapshotProse';
 import { CrossLinkCards } from '@/shared/ui/CrossLinkCards';
 import { SectionSkeleton } from '@/views/symbol/SectionSkeleton';
 import { JsonLd } from '@/shared/ui/JsonLd';
@@ -318,6 +321,15 @@ export default async function NewsPage({ params }: Props) {
         getSeoSnapshotsStatic(upper, 43200),
     ]);
     const newsSnapshot = snapshots.find(s => s.tab === 'news');
+    // audit fix FIX 2: XOR 게이트 — 스냅샷 프로즈가 렌더 가능하면(hasNewsProse)
+    // 그것만 보여주고, 클라이언트 AI 위젯(NewsAiSummary)은 렌더하지 않는다. 두
+    // 소스가 동일 필드(currentDriverKo/keyEventsKo/upcomingEventsKo)를 같은
+    // 순서로 중복 렌더하던 문제(같은 결론을 사용자에게 두 번, 스크린리더에 두
+    // 번, 중복 콘텐츠 SEO 리스크)를 해소한다. NewsFactsSummary(결정론적 DB
+    // 목록 사실)는 이 게이트 대상이 아니다 — 계속 공존한다.
+    // `OverallSnapshotProse.hasOverallProse` 패턴과 동일 — narrowNewsContent를
+    // 재사용해 프로즈 컴포넌트와 동일 판단.
+    const showNewsProse = hasNewsProse(newsSnapshot?.content);
     // At least one AI-enriched card means aggregate analysis can start immediately.
     const hasEnrichedNews = newsItems.some(item => item.sentiment !== null);
 
@@ -381,15 +393,29 @@ export default async function NewsPage({ params }: Props) {
                             : `${displayName}의 최신 뉴스 분위기와 핵심 이슈를 한국어로 정리합니다.`}
                     </p>
                 </section>
-                <NewsAiSummaryErrorBoundary>
-                    <Suspense fallback={<NewsAiSummarySkeleton />}>
-                        <NewsAiSummary
-                            symbol={upper}
-                            companyName={assetInfo.name}
-                            hasEnrichedNews={hasEnrichedNews}
-                        />
-                    </Suspense>
-                </NewsAiSummaryErrorBoundary>
+                {/* audit fix FIX 2: XOR — NewsAiSummary (client widget) and
+                    NewsSnapshotProse (SSR prose, above) both render the same AI
+                    conclusion (currentDriverKo/keyEventsKo/upcomingEventsKo).
+                    Showing both duplicated the text for sighted users and
+                    screen readers and doubled as a duplicate-content SEO risk.
+                    When the snapshot is renderable, skip the widget; it stays
+                    the fallback for when no snapshot exists — NewsAiSummary is
+                    a client component that fetches its aggregate analysis via a
+                    client-side hook, so during ISR generation it bakes its
+                    loading skeleton into the static HTML (no crawlable AI text)
+                    until it hydrates. NewsFactsSummary above is unaffected —
+                    it's deterministic DB-list facts, not an AI conclusion. */}
+                {!showNewsProse && (
+                    <NewsAiSummaryErrorBoundary>
+                        <Suspense fallback={<NewsAiSummarySkeleton />}>
+                            <NewsAiSummary
+                                symbol={upper}
+                                companyName={assetInfo.name}
+                                hasEnrichedNews={hasEnrichedNews}
+                            />
+                        </Suspense>
+                    </NewsAiSummaryErrorBoundary>
+                )}
 
                 <Suspense fallback={<SectionSkeleton />}>
                     <NewsListSection symbol={upper} />

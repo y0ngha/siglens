@@ -92,6 +92,7 @@ vi.mock('@/shared/lib/seo', async importOriginal => ({
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import FinancialsPage from '@/app/[symbol]/financials/page';
 import { FinancialsSnapshotProse } from '@/views/symbol/snapshot/renderers/FinancialsSnapshotProse';
+import { FinancialsAiSummary } from '@/widgets/financials/FinancialsAiSummary';
 import { getAssetInfoResilient } from '@/entities/ticker';
 import { getProfileResilient } from '@/app/[symbol]/fundamental/getProfileResilient';
 import { isEmptyFinancialsSnapshot } from '@/entities/financials-statements';
@@ -136,7 +137,7 @@ describe('FinancialsPage — SEO snapshot prose (Task 7b)', () => {
         mockIsEmptyFinancialsSnapshot.mockReturnValue(false);
     });
 
-    it('스냅샷 있으면 FinancialsSnapshotProse를 렌더한다', async () => {
+    it('스냅샷 있으면 FinancialsSnapshotProse를 렌더하고, 중복되는 AI 위젯(FinancialsAiSummary)은 렌더하지 않는다 (audit fix FIX 2)', async () => {
         mockGetSeoSnapshotsStatic.mockResolvedValue([
             {
                 symbol: 'AAPL',
@@ -156,18 +157,18 @@ describe('FinancialsPage — SEO snapshot prose (Task 7b)', () => {
         expect((prose?.props as { content: unknown }).content).toEqual(
             SNAPSHOT_CONTENT
         );
+        expect(findElementByType(tree, FinancialsAiSummary)).toBeNull();
     });
 
-    it('스냅샷 없으면(빈 배열) content가 undefined로 전달된다(렌더러가 자체 null 반환)', async () => {
+    it('스냅샷 없으면(빈 배열) FinancialsSnapshotProse 대신 FinancialsAiSummary(AI 위젯)를 렌더한다 (audit fix FIX 2)', async () => {
         mockGetSeoSnapshotsStatic.mockResolvedValue([]);
 
         const tree = await FinancialsPage({
             params: Promise.resolve({ symbol: 'aapl' }),
         });
 
-        const prose = findElementByType(tree, FinancialsSnapshotProse);
-        expect(prose).not.toBeNull();
-        expect((prose?.props as { content: unknown }).content).toBeUndefined();
+        expect(findElementByType(tree, FinancialsSnapshotProse)).toBeNull();
+        expect(findElementByType(tree, FinancialsAiSummary)).not.toBeNull();
     });
 
     it('getSeoSnapshotsStatic은 페이지의 revalidate 리터럴(86400)로 호출된다', async () => {

@@ -26,7 +26,10 @@ import { ProfileCard } from '@/widgets/fundamental/sections/ProfileCard';
 import { ProfitabilityCard } from '@/widgets/fundamental/sections/ProfitabilityCard';
 import { ValuationCard } from '@/widgets/fundamental/sections/ValuationCard';
 import { SymbolPageHeading } from '@/views/symbol';
-import { FundamentalSnapshotProse } from '@/views/symbol/snapshot/renderers/FundamentalSnapshotProse';
+import {
+    FundamentalSnapshotProse,
+    hasFundamentalProse,
+} from '@/views/symbol/snapshot/renderers/FundamentalSnapshotProse';
 import { CrossLinkCards } from '@/shared/ui/CrossLinkCards';
 import { SectionSkeleton } from '@/views/symbol/SectionSkeleton';
 import { JsonLd } from '@/shared/ui/JsonLd';
@@ -495,6 +498,16 @@ export default async function FundamentalPage({ params }: Props) {
         getSeoSnapshotsStatic(upper, 86400),
     ]);
     const fundamentalSnapshot = snapshots.find(s => s.tab === 'fundamental');
+    // audit fix FIX 2: XOR 게이트 — 스냅샷 프로즈가 렌더 가능하면(hasFundamentalProse)
+    // 그것만 보여주고, 클라이언트 AI 위젯(FundamentalAiSummary)은 렌더하지 않는다.
+    // 두 소스가 동일 필드(overallConclusionKo/categoryAssessments/riskFactorsKo)를
+    // 같은 순서로 중복 렌더하던 문제(같은 결론을 사용자에게 두 번, 스크린리더에
+    // 두 번, 중복 콘텐츠 SEO 리스크)를 해소한다. `OverallSnapshotProse
+    // .hasOverallProse` 패턴과 동일 — narrowFundamentalContent를 재사용해 프로즈
+    // 컴포넌트와 동일 판단.
+    const showFundamentalProse = hasFundamentalProse(
+        fundamentalSnapshot?.content
+    );
 
     // degraded + digit-first 심볼 = crypto_assets DB와 FMP가 동시 다운 중이고 resolve 불가
     // → 차트 페이지와 동일한 notFound 처리로 sibling 일관성 유지.
@@ -609,24 +622,32 @@ export default async function FundamentalPage({ params }: Props) {
                     <ProfileSection symbol={upper} />
                 </Suspense>
 
-                <ErrorBoundary FallbackComponent={FundamentalAiSummaryError}>
-                    <Suspense fallback={<FundamentalAiSummarySkeleton />}>
-                        <FundamentalAiSummary symbol={upper} />
-                    </Suspense>
-                </ErrorBoundary>
-
-                {/* FundamentalAiSummary is a client component ('use client') that
-                    fetches its analysis via a client-side hook — during ISR
-                    generation it has no data yet and bakes its loading skeleton
-                    into the static HTML (no crawlable AI text). This section adds
-                    the pre-warmed SEO snapshot prose as a plain SSR sibling so
-                    crawlers see real analysis text. Renders null when no snapshot
-                    exists (spec 2026-07-24 Task 7b). */}
-                <FundamentalSnapshotProse
-                    content={fundamentalSnapshot?.content}
-                    symbol={upper}
-                    displayName={displayName}
-                />
+                {/* audit fix FIX 2: XOR — FundamentalAiSummary (client widget) and
+                    FundamentalSnapshotProse (SSR prose) both render the same AI
+                    conclusion (overallConclusionKo/categoryAssessments/
+                    riskFactorsKo). Showing both duplicated the text for sighted
+                    users and screen readers and doubled as a duplicate-content
+                    SEO risk. When the snapshot is renderable, show the prose
+                    only; the widget stays the fallback for when no snapshot
+                    exists — FundamentalAiSummary ('use client') fetches its
+                    analysis via a client-side hook, so during ISR generation it
+                    has no data yet and bakes its loading skeleton into the
+                    static HTML (no crawlable AI text) until it hydrates. */}
+                {showFundamentalProse ? (
+                    <FundamentalSnapshotProse
+                        content={fundamentalSnapshot?.content}
+                        symbol={upper}
+                        displayName={displayName}
+                    />
+                ) : (
+                    <ErrorBoundary
+                        FallbackComponent={FundamentalAiSummaryError}
+                    >
+                        <Suspense fallback={<FundamentalAiSummarySkeleton />}>
+                            <FundamentalAiSummary symbol={upper} />
+                        </Suspense>
+                    </ErrorBoundary>
+                )}
 
                 <Suspense fallback={<SectionSkeleton />}>
                     <ValuationSection symbol={upper} />

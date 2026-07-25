@@ -120,6 +120,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import NewsPage, { generateMetadata } from '@/app/[symbol]/news/page';
 import { NewsFactsSummary } from '@/widgets/news';
 import { NewsSnapshotProse } from '@/views/symbol/snapshot/renderers/NewsSnapshotProse';
+import { NewsAiSummary } from '@/widgets/news/NewsAiSummary';
 import { getAssetInfoResilient } from '@/entities/ticker';
 import { findElementByType } from '@/__tests__/utils/findElementByType';
 
@@ -149,7 +150,7 @@ describe('NewsPage — SEO snapshot prose (Task 7b, dual-section with NewsFactsS
         mockGetAssetInfoResilient.mockResolvedValue(EQUITY_ASSET_INFO);
     });
 
-    it('스냅샷 있으면 NewsSnapshotProse를 렌더하고, 기존 NewsFactsSummary도 공존한다', async () => {
+    it('스냅샷 있으면 NewsSnapshotProse를 렌더하고, 결정론적 NewsFactsSummary는 공존하지만 중복되는 AI 위젯(NewsAiSummary)은 렌더하지 않는다 (audit fix FIX 2)', async () => {
         mockGetSeoSnapshotsStatic.mockResolvedValue([
             {
                 symbol: 'AAPL',
@@ -172,9 +173,11 @@ describe('NewsPage — SEO snapshot prose (Task 7b, dual-section with NewsFactsS
         // Complementary, not exclusive — the deterministic DB-list facts section
         // still renders alongside the AI prose.
         expect(findElementByType(tree, NewsFactsSummary)).not.toBeNull();
+        // But the duplicate AI-conclusion widget must NOT render.
+        expect(findElementByType(tree, NewsAiSummary)).toBeNull();
     });
 
-    it('스냅샷 없으면(빈 배열) content가 undefined로 전달되고 NewsFactsSummary는 그대로 렌더된다', async () => {
+    it('스냅샷 없으면(빈 배열) content가 undefined로 전달되고 NewsFactsSummary·NewsAiSummary(AI 위젯) 모두 그대로 렌더된다', async () => {
         mockGetSeoSnapshotsStatic.mockResolvedValue([]);
 
         const tree = await NewsPage({
@@ -185,9 +188,10 @@ describe('NewsPage — SEO snapshot prose (Task 7b, dual-section with NewsFactsS
         expect(prose).not.toBeNull();
         expect((prose?.props as { content: unknown }).content).toBeUndefined();
         expect(findElementByType(tree, NewsFactsSummary)).not.toBeNull();
+        expect(findElementByType(tree, NewsAiSummary)).not.toBeNull();
     });
 
-    it('다른 탭(overall)의 스냅샷은 news 슬롯에 전달되지 않는다', async () => {
+    it('다른 탭(overall)의 스냅샷은 news 슬롯에 전달되지 않아 NewsAiSummary(AI 위젯)로 폴백한다', async () => {
         mockGetSeoSnapshotsStatic.mockResolvedValue([
             {
                 symbol: 'AAPL',
@@ -204,6 +208,7 @@ describe('NewsPage — SEO snapshot prose (Task 7b, dual-section with NewsFactsS
 
         const prose = findElementByType(tree, NewsSnapshotProse);
         expect((prose?.props as { content: unknown }).content).toBeUndefined();
+        expect(findElementByType(tree, NewsAiSummary)).not.toBeNull();
     });
 
     it('getSeoSnapshotsStatic은 페이지의 revalidate 리터럴(43200)로 호출된다', async () => {

@@ -10,7 +10,10 @@ import { FinancialsAiSummary } from '@/widgets/financials/FinancialsAiSummary';
 import { FinancialsScorecard } from '@/widgets/financials/FinancialsScorecard';
 import { FinancialsStatements } from '@/widgets/financials/FinancialsStatements';
 import { SymbolPageHeading } from '@/views/symbol';
-import { FinancialsSnapshotProse } from '@/views/symbol/snapshot/renderers/FinancialsSnapshotProse';
+import {
+    FinancialsSnapshotProse,
+    hasFinancialsProse,
+} from '@/views/symbol/snapshot/renderers/FinancialsSnapshotProse';
 import { CrossLinkCards } from '@/shared/ui/CrossLinkCards';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import {
@@ -146,6 +149,14 @@ export default async function FinancialsPage({ params }: Props) {
         getSeoSnapshotsStatic(upper, 86400),
     ]);
     const financialsSnapshot = snapshots.find(s => s.tab === 'financials');
+    // audit fix FIX 2: XOR 게이트 — 스냅샷 프로즈가 렌더 가능하면(hasFinancialsProse)
+    // 그것만 보여주고, 클라이언트 AI 위젯(FinancialsAiSummary)은 렌더하지 않는다.
+    // 두 소스가 동일 필드(overallConclusionKo/axisAssessments/riskFactorsKo)를
+    // 같은 순서로 중복 렌더하던 문제(같은 결론을 사용자에게 두 번, 스크린리더에
+    // 두 번, 중복 콘텐츠 SEO 리스크)를 해소한다. `OverallSnapshotProse
+    // .hasOverallProse` 패턴과 동일 — narrowFinancialsContent를 재사용해 프로즈
+    // 컴포넌트와 동일 판단.
+    const showFinancialsProse = hasFinancialsProse(financialsSnapshot?.content);
 
     // degraded + digit-first 심볼 = crypto_assets DB와 FMP가 동시 다운 중이고 resolve 불가
     // → 차트 페이지와 동일한 notFound 처리로 sibling 일관성 유지.
@@ -267,19 +278,26 @@ export default async function FinancialsPage({ params }: Props) {
 
                 <FinancialsScorecard scorecard={scorecard} />
 
-                <FinancialsAiSummary symbol={upper} />
-
-                {/* FinancialsAiSummary is a client component that fetches its
-                    analysis via a client-side hook — during ISR generation it
-                    bakes its loading skeleton into the static HTML (no crawlable
-                    AI text). This adds the pre-warmed SEO snapshot prose as a
-                    plain SSR sibling so crawlers see real analysis text. Renders
-                    null when no snapshot exists (spec 2026-07-24 Task 7b). */}
-                <FinancialsSnapshotProse
-                    content={financialsSnapshot?.content}
-                    symbol={upper}
-                    displayName={displayName}
-                />
+                {/* audit fix FIX 2: XOR — FinancialsAiSummary (client widget) and
+                    FinancialsSnapshotProse (SSR prose) both render the same AI
+                    conclusion (overallConclusionKo/axisAssessments/
+                    riskFactorsKo). Showing both duplicated the text for sighted
+                    users and screen readers and doubled as a duplicate-content
+                    SEO risk. When the snapshot is renderable, show the prose
+                    only; the widget stays the fallback for when no snapshot
+                    exists — FinancialsAiSummary fetches its analysis via a
+                    client-side hook, so during ISR generation it bakes its
+                    loading skeleton into the static HTML (no crawlable AI text)
+                    until it hydrates. */}
+                {showFinancialsProse ? (
+                    <FinancialsSnapshotProse
+                        content={financialsSnapshot?.content}
+                        symbol={upper}
+                        displayName={displayName}
+                    />
+                ) : (
+                    <FinancialsAiSummary symbol={upper} />
+                )}
 
                 <FinancialsStatements
                     symbol={upper}
