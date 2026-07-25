@@ -1,0 +1,180 @@
+import type { NewsSentiment } from '@y0ngha/siglens-core';
+import { SnapshotSummarySection } from '../SnapshotSummarySection';
+
+interface NewsSnapshotProseProps {
+    /**
+     * `seo_analysis_snapshots.content` — 저장소에는 `unknown`으로 보관된다
+     * (harvest.ts가 `prewarmNews`(→core `submitNewsAnalysis`)의
+     * `status==='cached'` 분기에서 얻은 `result.result: NewsAnalysisResponse`를
+     * 그대로 저장, `src/entities/news-article/lib/prewarmSubmitNews.ts`).
+     * 여기서 다시 방어적으로 좁힌다.
+     *
+     * `FundamentalSnapshotProse`와 같은 이유로 이 값은 core
+     * `filterAnalysisResult`(technical 전용 info-depth 필드 마스킹)의 대상이
+     * 아니다 — news submit 경로(`submitNewsAnalysis.js`)는 `tier`를 BYOK
+     * 게이트·usage 한도·스킬 샘플링·캐시 키에만 사용하고, 응답 필드 자체를
+     * tier로 마스킹하는 코드 경로가 없다. free tier로 pre-warm해도 전 필드가
+     * 그대로 채워진다.
+     */
+    content: unknown;
+    symbol: string;
+    displayName: string;
+}
+
+const SENTIMENT_LABEL: Record<NewsSentiment, string> = {
+    bullish: '긍정',
+    neutral: '중립',
+    bearish: '부정',
+};
+
+function isSentiment(value: unknown): value is NewsSentiment {
+    return typeof value === 'string' && value in SENTIMENT_LABEL;
+}
+
+interface NarrowedNewsContent {
+    currentDriverKo: string;
+    overallSentiment: NewsSentiment | null;
+    keyEventsKo: string[];
+    upcomingEventsKo: string[];
+}
+
+/**
+ * `content`를 news 결과 모양으로 좁힌다.
+ *
+ * `currentDriverKo`(현재 가격 동인 설명 문단), `keyEventsKo`(핵심 이벤트
+ * 목록), `upcomingEventsKo`(다가오는 주요 일정 목록)가 프로즈 소스다. 이
+ * 응답은 tier 마스킹을 거치지 않으므로 세 필드 전부 값이 채워질 수 있다.
+ */
+function narrowNewsContent(content: unknown): NarrowedNewsContent | null {
+    if (typeof content !== 'object' || content === null) return null;
+
+    const record = content as Record<string, unknown>;
+    const currentDriverKo =
+        typeof record.currentDriverKo === 'string'
+            ? record.currentDriverKo.trim()
+            : '';
+    const overallSentiment = isSentiment(record.overallSentiment)
+        ? record.overallSentiment
+        : null;
+
+    const keyEventsKo = Array.isArray(record.keyEventsKo)
+        ? record.keyEventsKo.filter(
+              (item): item is string => typeof item === 'string'
+          )
+        : [];
+
+    const upcomingEventsKo = Array.isArray(record.upcomingEventsKo)
+        ? record.upcomingEventsKo.filter(
+              (item): item is string => typeof item === 'string'
+          )
+        : [];
+
+    if (
+        currentDriverKo.length === 0 &&
+        keyEventsKo.length === 0 &&
+        upcomingEventsKo.length === 0
+    ) {
+        return null;
+    }
+
+    return { currentDriverKo, overallSentiment, keyEventsKo, upcomingEventsKo };
+}
+
+/**
+ * SEO pre-warm 스냅샷의 news 탭 프로즈 렌더러 — Task 6, 마지막(일곱 번째) 탭
+ * 렌더러. `currentDriverKo`를 문단으로(`\n` 기준 분리), `overallSentiment`가
+ * 있으면 리드 문구로, `keyEventsKo`를 핵심 이벤트 목록으로,
+ * `upcomingEventsKo`를 다가오는 주요 일정 목록으로 렌더한다.
+ *
+ * 네 프로즈 소스 중 단 하나도 값이 없으면 아무것도 렌더하지 않아 — 빈 셸
+ * 없이 — 호출부가 기존 placeholder로 폴백하도록 한다. UA 분기 없음 —
+ * 사용자·크롤러에게 동일한 마크업(cloaking-safe).
+ */
+export function NewsSnapshotProse({
+    content,
+    symbol,
+    displayName,
+}: NewsSnapshotProseProps) {
+    const narrowed = narrowNewsContent(content);
+    if (narrowed === null) return null;
+
+    const driverParagraphs = narrowed.currentDriverKo
+        .split('\n')
+        .map(line => line.trim())
+        .filter(line => line.length > 0);
+
+    return (
+        <SnapshotSummarySection displayName={displayName}>
+            <div className="text-secondary-300 space-y-4 text-sm leading-6">
+                {narrowed.overallSentiment !== null && (
+                    <p className="text-secondary-200 font-medium">
+                        {symbol} 뉴스 종합 심리:{' '}
+                        {SENTIMENT_LABEL[narrowed.overallSentiment]}
+                    </p>
+                )}
+
+                {driverParagraphs.length > 0 && (
+                    <div className="space-y-2">
+                        {driverParagraphs.map(line => (
+                            <p key={line}>{line}</p>
+                        ))}
+                    </div>
+                )}
+
+                {narrowed.keyEventsKo.length > 0 && (
+                    <div>
+                        <h3 className="text-secondary-100 mb-1.5 text-sm font-semibold">
+                            핵심 이벤트
+                        </h3>
+                        <ul
+                            aria-label={`${symbol} 핵심 이벤트 목록`}
+                            className="space-y-1"
+                        >
+                            {narrowed.keyEventsKo.map((event, i) => (
+                                <li
+                                    key={`event-${i}-${event}`}
+                                    className="flex gap-2"
+                                >
+                                    <span
+                                        aria-hidden="true"
+                                        className="mt-0.5 shrink-0"
+                                    >
+                                        •
+                                    </span>
+                                    {event}
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                )}
+
+                {narrowed.upcomingEventsKo.length > 0 && (
+                    <div>
+                        <h3 className="text-secondary-100 mb-1.5 text-sm font-semibold">
+                            다가오는 주요 일정
+                        </h3>
+                        <ul
+                            aria-label={`${symbol} 다가오는 주요 일정 목록`}
+                            className="space-y-1"
+                        >
+                            {narrowed.upcomingEventsKo.map((event, i) => (
+                                <li
+                                    key={`upcoming-${i}-${event}`}
+                                    className="flex gap-2"
+                                >
+                                    <span
+                                        aria-hidden="true"
+                                        className="mt-0.5 shrink-0"
+                                    >
+                                        •
+                                    </span>
+                                    {event}
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                )}
+            </div>
+        </SnapshotSummarySection>
+    );
+}
