@@ -49,6 +49,22 @@ describe('TechnicalSnapshotProse', () => {
         ).toBeInTheDocument();
     });
 
+    it('summary의 markdown 마커(**bold**, - 목록)를 제거한다 (FIX 4)', () => {
+        render(
+            <TechnicalSnapshotProse
+                content={buildFixture({
+                    summary: '**강조**된 요약\n- 첫 번째 근거\n- 두 번째 근거',
+                })}
+                symbol="AAPL"
+                displayName="Apple Inc."
+            />
+        );
+
+        expect(screen.getByText('강조된 요약')).toBeInTheDocument();
+        expect(screen.getByText('첫 번째 근거')).toBeInTheDocument();
+        expect(screen.getByText('두 번째 근거')).toBeInTheDocument();
+    });
+
     it('trend가 유효하면 방향성 리드 문구를 렌더한다', () => {
         render(
             <TechnicalSnapshotProse
@@ -99,6 +115,159 @@ describe('TechnicalSnapshotProse', () => {
 
         expect(container.textContent ?? '').not.toContain('[object Object]');
         expect(screen.getByText(SUMMARY_TEXT)).toBeInTheDocument();
+    });
+
+    // FIX 3 (audit): free tier's allowed info-depth includes 'skill_detection'
+    // (core FREE_INFO_DEPTH) — patternSummaries/strategyResults pass through
+    // filterAnalysisResult UNMASKED for free tier (only confidenceWeight is
+    // zeroed, gated by the separate 'confidence' depth). This renderer had
+    // never read either field, dropping ~6 prose entries per symbol on the
+    // most-crawled route.
+    it('patternSummaries를 차트 패턴 라벨 붙은 목록으로 렌더한다 (FIX 3)', () => {
+        render(
+            <TechnicalSnapshotProse
+                content={buildFixture({
+                    patternSummaries: [
+                        {
+                            id: 'p1',
+                            patternName: 'head_and_shoulders',
+                            skillName: 'head-and-shoulders',
+                            detected: true,
+                            trend: 'bearish',
+                            summary:
+                                '헤드앤숄더 패턴이 형성되며 하락 반전 가능성을 시사합니다.',
+                            confidenceWeight: 0,
+                        },
+                    ] as never,
+                })}
+                symbol="AAPL"
+                displayName="Apple Inc."
+            />
+        );
+
+        expect(screen.getByText('차트 패턴')).toBeInTheDocument();
+        expect(
+            screen.getByText(
+                '헤드앤숄더 패턴이 형성되며 하락 반전 가능성을 시사합니다.'
+            )
+        ).toBeInTheDocument();
+        expect(screen.getByText(/head_and_shoulders/)).toBeInTheDocument();
+    });
+
+    it('strategyResults를 전략 시그널 라벨 붙은 목록으로 렌더한다 (FIX 3)', () => {
+        render(
+            <TechnicalSnapshotProse
+                content={buildFixture({
+                    strategyResults: [
+                        {
+                            id: 's1',
+                            strategyName: 'trend-following',
+                            trend: 'bullish',
+                            summary:
+                                '추세추종 전략이 매수 신호를 발생시켰습니다.',
+                            confidenceWeight: 0,
+                        },
+                    ] as never,
+                })}
+                symbol="AAPL"
+                displayName="Apple Inc."
+            />
+        );
+
+        expect(screen.getByText('전략 시그널')).toBeInTheDocument();
+        expect(
+            screen.getByText('추세추종 전략이 매수 신호를 발생시켰습니다.')
+        ).toBeInTheDocument();
+        expect(screen.getByText(/trend-following/)).toBeInTheDocument();
+    });
+
+    it('patternSummaries/strategyResults가 null이거나 빈 배열이면 두 섹션 다 렌더하지 않는다 (FIX 3)', () => {
+        render(
+            <TechnicalSnapshotProse
+                content={buildFixture({
+                    patternSummaries: null,
+                    strategyResults: [],
+                })}
+                symbol="AAPL"
+                displayName="Apple Inc."
+            />
+        );
+
+        expect(screen.queryByText('차트 패턴')).not.toBeInTheDocument();
+        expect(screen.queryByText('전략 시그널')).not.toBeInTheDocument();
+    });
+
+    it('patternSummaries 항목의 summary가 비어있으면 해당 항목은 건너뛴다 (FIX 3)', () => {
+        render(
+            <TechnicalSnapshotProse
+                content={buildFixture({
+                    patternSummaries: [
+                        {
+                            id: 'p1',
+                            patternName: 'doji',
+                            skillName: 'doji',
+                            detected: false,
+                            trend: 'neutral',
+                            summary: '',
+                            confidenceWeight: 0,
+                        },
+                    ] as never,
+                })}
+                symbol="AAPL"
+                displayName="Apple Inc."
+            />
+        );
+
+        expect(screen.queryByText('차트 패턴')).not.toBeInTheDocument();
+    });
+
+    it('patternSummaries의 trend가 __proto__여도 throw 없이 렌더한다 (FIX 3, 프로토타입 체인 가드)', () => {
+        const { container } = render(
+            <TechnicalSnapshotProse
+                content={buildFixture({
+                    patternSummaries: [
+                        {
+                            id: 'p1',
+                            patternName: 'unsafe-pattern',
+                            skillName: 'unsafe',
+                            detected: true,
+                            trend: '__proto__' as never,
+                            summary: '패턴 요약 텍스트입니다.',
+                            confidenceWeight: 0,
+                        },
+                    ] as never,
+                })}
+                symbol="AAPL"
+                displayName="Apple Inc."
+            />
+        );
+
+        expect(container.textContent ?? '').not.toContain('[object Object]');
+        expect(screen.getByText('패턴 요약 텍스트입니다.')).toBeInTheDocument();
+    });
+
+    it('patternSummaries/strategyResults 항목의 summary에서 마크다운 마커를 제거한다 (FIX 4)', () => {
+        render(
+            <TechnicalSnapshotProse
+                content={buildFixture({
+                    patternSummaries: [
+                        {
+                            id: 'p1',
+                            patternName: 'bull-flag',
+                            skillName: 'bull-flag',
+                            detected: true,
+                            trend: 'bullish',
+                            summary: '**강한** 상승 신호입니다.',
+                            confidenceWeight: 0,
+                        },
+                    ] as never,
+                })}
+                symbol="AAPL"
+                displayName="Apple Inc."
+            />
+        );
+
+        expect(screen.getByText('강한 상승 신호입니다.')).toBeInTheDocument();
     });
 
     it('content가 unknown 방어 대상(null·비객체)이어도 렌더하지 않는다', () => {
