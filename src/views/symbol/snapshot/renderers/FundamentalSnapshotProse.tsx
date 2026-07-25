@@ -3,6 +3,7 @@ import type {
     FundamentalSentiment,
 } from '@y0ngha/siglens-core';
 import { SnapshotSummarySection } from '../SnapshotSummarySection';
+import { SnapshotBulletList } from '../SnapshotBulletList';
 import { stripSnapshotMarkdown } from '../lib/stripSnapshotMarkdown';
 import { createEnumGuard } from '../lib/createEnumGuard';
 import { narrowStringArray } from '../lib/narrowStringArray';
@@ -210,35 +211,13 @@ export function FundamentalSnapshotProse({
                     </div>
                 )}
 
-                {narrowed.riskFactorsKo.length > 0 && (
-                    <div>
-                        <h3 className="text-secondary-200 mb-1.5 text-sm font-semibold">
-                            위험 요인
-                        </h3>
-                        <ul
-                            role="list"
-                            aria-label={`${symbol} 위험 요인 목록`}
-                            className="space-y-1"
-                        >
-                            {narrowed.riskFactorsKo.map((risk, i) => (
-                                <li
-                                    key={`risk-${i}-${risk}`}
-                                    className="flex gap-2"
-                                >
-                                    <span
-                                        aria-hidden="true"
-                                        className="mt-0.5 shrink-0"
-                                    >
-                                        •
-                                    </span>
-                                    <span className="min-w-0 break-words">
-                                        {risk}
-                                    </span>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-                )}
+                <SnapshotBulletList
+                    title="위험 요인"
+                    symbol={symbol}
+                    ariaSuffix="위험 요인"
+                    items={narrowed.riskFactorsKo}
+                    keyPrefix="risk"
+                />
             </div>
         </SnapshotSummarySection>
     );

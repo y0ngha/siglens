@@ -1,5 +1,6 @@
 import type { OverallScenarioName } from '@y0ngha/siglens-core';
 import { SnapshotSummarySection } from '../SnapshotSummarySection';
+import { SnapshotBulletList } from '../SnapshotBulletList';
 import { stripSnapshotMarkdown } from '../lib/stripSnapshotMarkdown';
 import { createEnumGuard } from '../lib/createEnumGuard';
 import { narrowStringArray } from '../lib/narrowStringArray';
@@ -75,56 +76,6 @@ function formatScenarioBullet(scenario: NarrowedScenario): string | null {
         return `${trigger} (예상 가격대: ${priceRange})`;
     }
     return trigger.length > 0 ? trigger : `예상 가격대: ${priceRange}`;
-}
-
-interface AxisBulletListProps {
-    title: string;
-    symbol: string;
-    ariaSuffix: string;
-    items: string[];
-    keyPrefix: string;
-}
-
-/**
- * Shared list markup for the four-axis bullet arrays (FIX 2) — factored out
- * so the five near-identical blocks (기술적 분석/펀더멘털/뉴스/옵션/재무제표)
- * can't drift from the `role="list"` (FIX 7a) / `min-w-0 break-words` (FIX
- * 7b) contract the other lists in this renderer already follow. Renders
- * nothing when `items` is empty — callers don't need their own length guard.
- */
-function AxisBulletList({
-    title,
-    symbol,
-    ariaSuffix,
-    items,
-    keyPrefix,
-}: AxisBulletListProps) {
-    if (items.length === 0) return null;
-
-    return (
-        <div>
-            <h3 className="text-secondary-200 mb-1.5 text-sm font-semibold">
-                {title}
-            </h3>
-            <ul
-                role="list"
-                aria-label={`${symbol} ${ariaSuffix} 목록`}
-                className="space-y-1"
-            >
-                {items.map((item, i) => (
-                    <li
-                        key={`${keyPrefix}-${i}-${item}`}
-                        className="flex gap-2"
-                    >
-                        <span aria-hidden="true" className="mt-0.5 shrink-0">
-                            •
-                        </span>
-                        <span className="min-w-0 break-words">{item}</span>
-                    </li>
-                ))}
-            </ul>
-        </div>
-    );
 }
 
 interface NarrowedOverallContent {
@@ -302,35 +253,35 @@ export function OverallSnapshotProse({
                     </div>
                 )}
 
-                <AxisBulletList
+                <SnapshotBulletList
                     title="기술적 분석"
                     symbol={symbol}
                     ariaSuffix="기술적 분석"
                     items={narrowed.technicalBulletsKo}
                     keyPrefix="technical-bullet"
                 />
-                <AxisBulletList
+                <SnapshotBulletList
                     title="펀더멘털"
                     symbol={symbol}
                     ariaSuffix="펀더멘털"
                     items={narrowed.fundamentalBulletsKo}
                     keyPrefix="fundamental-bullet"
                 />
-                <AxisBulletList
+                <SnapshotBulletList
                     title="뉴스"
                     symbol={symbol}
                     ariaSuffix="뉴스"
                     items={narrowed.newsBulletsKo}
                     keyPrefix="news-bullet"
                 />
-                <AxisBulletList
+                <SnapshotBulletList
                     title="옵션"
                     symbol={symbol}
                     ariaSuffix="옵션"
                     items={narrowed.optionsBulletsKo}
                     keyPrefix="options-bullet"
                 />
-                <AxisBulletList
+                <SnapshotBulletList
                     title="재무제표"
                     symbol={symbol}
                     ariaSuffix="재무제표"
@@ -338,125 +289,34 @@ export function OverallSnapshotProse({
                     keyPrefix="financials-bullet"
                 />
 
-                {narrowed.bullishBullets.length > 0 && (
-                    <div>
-                        <h3 className="text-secondary-200 mb-1.5 text-sm font-semibold">
-                            강세 시나리오
-                        </h3>
-                        <ul
-                            role="list"
-                            aria-label={`${symbol} 강세 시나리오 목록`}
-                            className="space-y-1"
-                        >
-                            {narrowed.bullishBullets.map((bullet, i) => (
-                                <li
-                                    key={`bullish-${i}-${bullet}`}
-                                    className="flex gap-2"
-                                >
-                                    <span
-                                        aria-hidden="true"
-                                        className="mt-0.5 shrink-0"
-                                    >
-                                        •
-                                    </span>
-                                    <span className="min-w-0 break-words">
-                                        {bullet}
-                                    </span>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-                )}
-
-                {narrowed.neutralBullets.length > 0 && (
-                    <div>
-                        <h3 className="text-secondary-200 mb-1.5 text-sm font-semibold">
-                            중립 시나리오
-                        </h3>
-                        <ul
-                            role="list"
-                            aria-label={`${symbol} 중립 시나리오 목록`}
-                            className="space-y-1"
-                        >
-                            {narrowed.neutralBullets.map((bullet, i) => (
-                                <li
-                                    key={`neutral-${i}-${bullet}`}
-                                    className="flex gap-2"
-                                >
-                                    <span
-                                        aria-hidden="true"
-                                        className="mt-0.5 shrink-0"
-                                    >
-                                        •
-                                    </span>
-                                    <span className="min-w-0 break-words">
-                                        {bullet}
-                                    </span>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-                )}
-
-                {narrowed.bearishBullets.length > 0 && (
-                    <div>
-                        <h3 className="text-secondary-200 mb-1.5 text-sm font-semibold">
-                            약세 시나리오
-                        </h3>
-                        <ul
-                            role="list"
-                            aria-label={`${symbol} 약세 시나리오 목록`}
-                            className="space-y-1"
-                        >
-                            {narrowed.bearishBullets.map((bullet, i) => (
-                                <li
-                                    key={`bearish-${i}-${bullet}`}
-                                    className="flex gap-2"
-                                >
-                                    <span
-                                        aria-hidden="true"
-                                        className="mt-0.5 shrink-0"
-                                    >
-                                        •
-                                    </span>
-                                    <span className="min-w-0 break-words">
-                                        {bullet}
-                                    </span>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-                )}
-
-                {narrowed.riskFactorsKo.length > 0 && (
-                    <div>
-                        <h3 className="text-secondary-200 mb-1.5 text-sm font-semibold">
-                            위험 요인
-                        </h3>
-                        <ul
-                            role="list"
-                            aria-label={`${symbol} 위험 요인 목록`}
-                            className="space-y-1"
-                        >
-                            {narrowed.riskFactorsKo.map((risk, i) => (
-                                <li
-                                    key={`risk-${i}-${risk}`}
-                                    className="flex gap-2"
-                                >
-                                    <span
-                                        aria-hidden="true"
-                                        className="mt-0.5 shrink-0"
-                                    >
-                                        •
-                                    </span>
-                                    <span className="min-w-0 break-words">
-                                        {risk}
-                                    </span>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-                )}
+                <SnapshotBulletList
+                    title="강세 시나리오"
+                    symbol={symbol}
+                    ariaSuffix="강세 시나리오"
+                    items={narrowed.bullishBullets}
+                    keyPrefix="bullish"
+                />
+                <SnapshotBulletList
+                    title="중립 시나리오"
+                    symbol={symbol}
+                    ariaSuffix="중립 시나리오"
+                    items={narrowed.neutralBullets}
+                    keyPrefix="neutral"
+                />
+                <SnapshotBulletList
+                    title="약세 시나리오"
+                    symbol={symbol}
+                    ariaSuffix="약세 시나리오"
+                    items={narrowed.bearishBullets}
+                    keyPrefix="bearish"
+                />
+                <SnapshotBulletList
+                    title="위험 요인"
+                    symbol={symbol}
+                    ariaSuffix="위험 요인"
+                    items={narrowed.riskFactorsKo}
+                    keyPrefix="risk"
+                />
             </div>
         </SnapshotSummarySection>
     );

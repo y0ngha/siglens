@@ -10,6 +10,9 @@ import { FACTOR_LABEL, formatFactorRaw } from '@/shared/lib/fearGreedLabels';
 // 조금 더 자주 언급하도록 한다(크롤 텍스트는 정보 밀도가 UI 배지보다 중요).
 const LOW_PERCENTILE_MAX = 25;
 const HIGH_PERCENTILE_MIN = 75;
+// factor/group 점수 percentile 척도의 중앙값. "평소 수준"에서 얼마나 벗어났는지
+// 판단하는 기준점으로 findMostExtremeFactor·buildFearGreedFactorRankingLine이 공유한다.
+const MEDIAN_PERCENTILE = 50;
 
 function factorInterpretation(pctile: number): string {
     if (pctile < LOW_PERCENTILE_MAX) {
@@ -82,13 +85,15 @@ export function buildFearGreedGroupComparisonLine(
     return `${GROUP_LABEL[leader.name]} 그룹 점수(${leaderScore}점)가 ${GROUP_LABEL[lagging.name]} 그룹(${laggingScore}점)보다 ${gap}점 높아 ${GROUP_LABEL[leader.name]} 우위 흐름입니다.`;
 }
 
-/** 50(중앙값)에서 가장 멀리 떨어진(=가장 두드러진) factor를 고른다. 동률이면 원 순서(Flow → Trend) 중 먼저 나온 쪽을 유지한다(Array.sort는 stable). */
+/** MEDIAN_PERCENTILE(중앙값)에서 가장 멀리 떨어진(=가장 두드러진) factor를 고른다. 동률이면 원 순서(Flow → Trend) 중 먼저 나온 쪽을 유지한다(Array.sort는 stable). */
 function findMostExtremeFactor(
     factors: readonly FearGreedFactor[]
 ): FearGreedFactor | null {
     if (factors.length === 0) return null;
     return factors.toSorted(
-        (a, b) => Math.abs(b.percentile - 50) - Math.abs(a.percentile - 50)
+        (a, b) =>
+            Math.abs(b.percentile - MEDIAN_PERCENTILE) -
+            Math.abs(a.percentile - MEDIAN_PERCENTILE)
     )[0]!;
 }
 
@@ -106,7 +111,7 @@ export function buildFearGreedFactorRankingLine(
     if (top === null) return null;
 
     const pctile = Math.round(top.percentile);
-    const direction = pctile >= 50 ? '높게' : '낮게';
+    const direction = pctile >= MEDIAN_PERCENTILE ? '높게' : '낮게';
 
     return `${allFactors.length}개 지표 중 가장 두드러진 지표는 ${FACTOR_LABEL[top.key]}로, ${pctile}번째 퍼센타일을 기록해 평소보다 ${direction} 나타나고 있습니다.`;
 }

@@ -1,5 +1,6 @@
 import type { NewsSentiment } from '@y0ngha/siglens-core';
 import { SnapshotSummarySection } from '../SnapshotSummarySection';
+import { SnapshotBulletList } from '../SnapshotBulletList';
 import { stripSnapshotMarkdown } from '../lib/stripSnapshotMarkdown';
 import { createEnumGuard } from '../lib/createEnumGuard';
 import { narrowStringArray } from '../lib/narrowStringArray';
@@ -134,65 +135,20 @@ export function NewsSnapshotProse({
                     </div>
                 )}
 
-                {narrowed.keyEventsKo.length > 0 && (
-                    <div>
-                        <h3 className="text-secondary-200 mb-1.5 text-sm font-semibold">
-                            핵심 이벤트
-                        </h3>
-                        <ul
-                            role="list"
-                            aria-label={`${symbol} 핵심 이벤트 목록`}
-                            className="space-y-1"
-                        >
-                            {narrowed.keyEventsKo.map((event, i) => (
-                                <li
-                                    key={`event-${i}-${event}`}
-                                    className="flex gap-2"
-                                >
-                                    <span
-                                        aria-hidden="true"
-                                        className="mt-0.5 shrink-0"
-                                    >
-                                        •
-                                    </span>
-                                    <span className="min-w-0 break-words">
-                                        {event}
-                                    </span>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-                )}
-
-                {narrowed.upcomingEventsKo.length > 0 && (
-                    <div>
-                        <h3 className="text-secondary-200 mb-1.5 text-sm font-semibold">
-                            다가오는 주요 일정
-                        </h3>
-                        <ul
-                            role="list"
-                            aria-label={`${symbol} 다가오는 주요 일정 목록`}
-                            className="space-y-1"
-                        >
-                            {narrowed.upcomingEventsKo.map((event, i) => (
-                                <li
-                                    key={`upcoming-${i}-${event}`}
-                                    className="flex gap-2"
-                                >
-                                    <span
-                                        aria-hidden="true"
-                                        className="mt-0.5 shrink-0"
-                                    >
-                                        •
-                                    </span>
-                                    <span className="min-w-0 break-words">
-                                        {event}
-                                    </span>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-                )}
+                <SnapshotBulletList
+                    title="핵심 이벤트"
+                    symbol={symbol}
+                    ariaSuffix="핵심 이벤트"
+                    items={narrowed.keyEventsKo}
+                    keyPrefix="event"
+                />
+                <SnapshotBulletList
+                    title="다가오는 주요 일정"
+                    symbol={symbol}
+                    ariaSuffix="다가오는 주요 일정"
+                    items={narrowed.upcomingEventsKo}
+                    keyPrefix="upcoming"
+                />
             </div>
         </SnapshotSummarySection>
     );

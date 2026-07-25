@@ -1,5 +1,6 @@
 import type { CongressSentiment } from '@y0ngha/siglens-core';
 import { SnapshotSummarySection } from '../SnapshotSummarySection';
+import { SnapshotBulletList } from '../SnapshotBulletList';
 import { stripSnapshotMarkdown } from '../lib/stripSnapshotMarkdown';
 import { createEnumGuard } from '../lib/createEnumGuard';
 import { narrowStringArray } from '../lib/narrowStringArray';
@@ -138,35 +139,13 @@ export function CongressSnapshotProse({
                     </div>
                 )}
 
-                {narrowed.notableMembersKo.length > 0 && (
-                    <div>
-                        <h3 className="text-secondary-200 mb-1.5 text-sm font-semibold">
-                            주목할 인물
-                        </h3>
-                        <ul
-                            role="list"
-                            aria-label={`${symbol} 주목할 인물 목록`}
-                            className="space-y-1"
-                        >
-                            {narrowed.notableMembersKo.map((member, i) => (
-                                <li
-                                    key={`member-${i}-${member}`}
-                                    className="flex gap-2"
-                                >
-                                    <span
-                                        aria-hidden="true"
-                                        className="mt-0.5 shrink-0"
-                                    >
-                                        •
-                                    </span>
-                                    <span className="min-w-0 break-words">
-                                        {member}
-                                    </span>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-                )}
+                <SnapshotBulletList
+                    title="주목할 인물"
+                    symbol={symbol}
+                    ariaSuffix="주목할 인물"
+                    items={narrowed.notableMembersKo}
+                    keyPrefix="member"
+                />
 
                 {narrowed.riskNoteKo.length > 0 && (
                     <div>
