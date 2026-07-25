@@ -1,0 +1,126 @@
+import { describe, it, expect } from 'vitest';
+import { render, screen } from '@testing-library/react';
+import type { OverallAnalysisResponse } from '@y0ngha/siglens-core';
+import { OverallSnapshotProse } from '../renderers/OverallSnapshotProse';
+
+// 스냅샷 저장소 content는 harvest.ts가 core prewarmOverall(→submitOverallAnalysis)의
+// status==='cached' 분기에서 얻은 result.result(OverallAnalysisResponse)를 그대로
+// 저장한 unknown이다. `pollOverallAnalysis`/`peekOverallAnalysisCache` JSDoc이 명시하듯
+// overall은 technical과 달리 `filterAnalysisResult`(info-depth 필드 마스킹) 대상이
+// 아니다 — "OverallAnalysisResponse는 필드별 게이팅 detail이 없는 synthesized
+// headline/bullet narrative"라 free tier로 pre-warm해도 전 필드가 그대로 채워진다.
+// 이 타입을 그대로 fixture에 대입해두면 core 쪽 필드명이 바뀔 때 이 테스트가
+// 컴파일 단계에서부터 깨진다.
+const HEADLINE_TEXT =
+    'AAPL은 대형 기술주로 견조한 실적과 함께 단기 상승 추세를 이어가고 있습니다.';
+const CONCLUSION_TEXT =
+    '기술적 분석에 따르면 단기 이동평균선이 장기 이동평균선을 상향 돌파하며 모멘텀이 우세합니다. 다만 뉴스 분석에서는 규제 리스크가 부각되고 있어 방향이 엇갈린 구간으로 판단합니다.';
+
+function buildFixture(
+    overrides: Partial<OverallAnalysisResponse> = {}
+): OverallAnalysisResponse {
+    return {
+        headlineKo: HEADLINE_TEXT,
+        technicalBulletsKo: [],
+        fundamentalBulletsKo: [],
+        newsBulletsKo: [],
+        optionsBulletsKo: [],
+        financialsBulletsKo: [],
+        integratedConclusionKo: CONCLUSION_TEXT,
+        scenarios: [
+            {
+                name: 'bullish',
+                triggerConditionKo:
+                    '200일선을 상향 돌파하고 거래량이 급증하는 경우',
+                priceRangeKo: '210 ~ 230 달러',
+            },
+            {
+                name: 'neutral',
+                triggerConditionKo: '박스권 등락이 지속되는 경우',
+                priceRangeKo: '190 ~ 210 달러',
+            },
+            {
+                name: 'bearish',
+                triggerConditionKo: '180 지지선이 붕괴되는 경우',
+                priceRangeKo: '160 ~ 180 달러',
+            },
+        ],
+        riskFactorsKo: [],
+        ...overrides,
+    };
+}
+
+describe('OverallSnapshotProse', () => {
+    it('headline·conclusion·강세/약세 시나리오가 모두 채워지면 눈에 보이는 텍스트로 렌더한다', () => {
+        const { container } = render(
+            <OverallSnapshotProse
+                content={buildFixture()}
+                symbol="AAPL"
+                displayName="Apple Inc."
+            />
+        );
+
+        const text = container.textContent?.trim() ?? '';
+        expect(text.length).toBeGreaterThan(40);
+        expect(text).toContain(HEADLINE_TEXT);
+        expect(text).toContain(CONCLUSION_TEXT);
+        expect(text).toContain(
+            '200일선을 상향 돌파하고 거래량이 급증하는 경우'
+        );
+        expect(text).toContain('180 지지선이 붕괴되는 경우');
+        expect(
+            screen.getByRole('heading', { name: '최근 분석 요약' })
+        ).toBeInTheDocument();
+    });
+
+    it('모든 프로즈 필드가 비어있거나 content가 비객체면 아무것도 렌더하지 않는다', () => {
+        const { container: emptyContainer } = render(
+            <OverallSnapshotProse
+                content={buildFixture({
+                    headlineKo: '',
+                    integratedConclusionKo: '',
+                    scenarios: [],
+                })}
+                symbol="AAPL"
+                displayName="Apple Inc."
+            />
+        );
+        expect(emptyContainer.textContent?.trim()).toBe('');
+
+        const { container: nullContainer } = render(
+            <OverallSnapshotProse
+                content={null}
+                symbol="AAPL"
+                displayName="Apple Inc."
+            />
+        );
+        expect(nullContainer.textContent?.trim()).toBe('');
+
+        const { container: stringContainer } = render(
+            <OverallSnapshotProse
+                content="not-an-object"
+                symbol="AAPL"
+                displayName="Apple Inc."
+            />
+        );
+        expect(stringContainer.textContent?.trim()).toBe('');
+    });
+
+    it('headline만 있고 시나리오가 비어있으면 headline만 렌더하고 빈 시나리오 목록은 렌더하지 않는다', () => {
+        render(
+            <OverallSnapshotProse
+                content={buildFixture({
+                    integratedConclusionKo: '',
+                    scenarios: [],
+                })}
+                symbol="AAPL"
+                displayName="Apple Inc."
+            />
+        );
+
+        expect(screen.getByText(HEADLINE_TEXT)).toBeInTheDocument();
+        expect(screen.queryByText('강세 시나리오')).not.toBeInTheDocument();
+        expect(screen.queryByText('약세 시나리오')).not.toBeInTheDocument();
+        expect(screen.queryByText(CONCLUSION_TEXT)).not.toBeInTheDocument();
+    });
+});
