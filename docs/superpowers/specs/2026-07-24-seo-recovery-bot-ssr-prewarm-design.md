@@ -118,7 +118,7 @@ seo_analysis_snapshots {
 - "최근 완료된 ET 정규장 마감" 시각은 **siglens가 직접 계산**한다 — core `getEtSessionStatus`는 open/closed/weekend 상태만 반환하고 마감 타임스탬프를 주지 않는다. 계산: 현재 ET 기준 가장 최근의 평일 16:00 ET (+**정착 버퍼 30분** — EOD 데이터 확정 대기, EDT 첫 유효 틱 ≈ 20:30 UTC).
 - **미국 휴장일 캘린더는 도입하지 않는다**: 휴장일에 마감 경계를 잘못 산정해도 결과는 "전 거래일과 동일 데이터로 1회 재생성 또는 캐시 HIT 수확" — 무해한 낭비로 명시적 허용.
 - 크립토는 동일 일일 앵커 사용.
-- **탭별 캐시 만료 비균일 대응 (v3 확정)**: technical·overall은 core가 KST 05시 앵커로 만료(=마감 직후 만료, 항상 신선 생성)되지만, fundamental·financials·news·options·congress는 **write 시점 기준 평탄 24h TTL**이라 submit이 <24h 캐시를 반환할 수 있다. 수확 시 **콘텐츠의 자체 생성 시각이 최근 마감 이후일 때만 `generatedAt` 갱신**, 이전이면 **core `force` 파라미터로 재생성**한다 — 3차 검토에서 `force` 존재 확정: `submitAnalysis`(positional)·fundamental·financials·congress·options 옵션 객체에 있음. **유일한 예외 news는 `force` 없음** — 뉴스는 자연 일일 갱신이므로 콘텐츠 자체 시각을 정직 저장으로 갈음.
+- **탭별 캐시 만료 비균일 대응 (v3.2 — 구현 중 재설계)**: ⚠️ 구현 중 실측으로 **5탭(overall·fundamental·financials·congress·news)의 cached 결과에 타임스탬프 필드가 없음**이 확인됨(technical·options만 `analyzedAt` 보유). 따라서 "콘텐츠 자체 시각으로 신선도 판정" 불가 → 폐기. **최종 설계: 신선도는 오직 우리 `seo_analysis_snapshots.generatedAt`으로만 판정**한다. 배치는 우리 스냅샷이 stale/없음인 유닛만 선정하고, `force=false`로 submit → `cached`면 즉시 수확(`generatedAt = 수확 시각` 스탬프) → 다음 거래일 boundary에 자동 stale 재처리. 근거: technical·overall은 core KST-05 앵커(=장마감)로 만료돼 마감 후 cron엔 이미 만료 → miss→submit→**자연히 매일 신선 재생성**(§6 "필수 매일 재생성" 충족). fundamental·financials·congress는 느린 데이터라 cached(전일) 수확 무방. news는 최대 ~1일 stale 가능하나 §2("일 단위 수렴")·§12("즉시 회복 아님") 허용. `force` 파라미터는 7탭 전부 지원되나(향후 수동 재warm용) 본 배치에선 미사용(항상 false). overall union의 `pending_dependencies` 상태는 `submitted`와 동일 처리(in-flight 마킹).
 
 **용량 모델 (v2 재산정 — 2-pass 기준)**:
 - 심볼당 방문 2회 필요(submit 패스 + 수확 패스). 필요 방문 ≈ 290×2 = **580회/일**.
@@ -155,12 +155,12 @@ seo_analysis_snapshots {
 **결론: FMP 플랜 업그레이드 불필요.** 구조적 가드:
 1. **심볼 동시성 캡(3)** — 제출 단위 페이싱으로는 core 내부 13콜 병렬을 못 막으므로, 동시 처리 심볼 수 자체를 제한(순간 버스트 ~40콜 상한)
 2. **Redis 루트 락** — invocation 중첩 차단
-3. **429/402 대응**: `fmpRetry`는 429를 백오프+Retry-After로 재시도하지만 **402는 즉시 실패(비재시도) 실증** → Redis 일일 FMP 카운터로 예산 추적, 402 감지 시 당일 잔여 배치 즉시 중단(fail-open — 익일 재시도), CloudWatch 402/429 알람
+3. **에러 격리 (v3.1 정정 — 사용자 정책)**: **402는 특정 심볼에서만 발생하는 국소 이슈이므로 당일 중단을 하지 않는다** — 해당 유닛만 skip(이전 스냅샷 유지, fail-open)하고 배치는 계속한다. 429는 `fmpRetry`의 백오프+Retry-After 재시도(기존)로 처리. **500·예상치 못한 4xx도 유닛 단위로 격리**해 배치가 깨지지 않게 한다(기존 방어로직 위에 유닛 try/catch). Redis 일일 FMP 카운터는 모니터링용으로 유지
 
 ## 9. 에러 처리
 
 - **fail-open**: 생성 실패 시 이전 스냅샷 유지 — SSR 커버리지 절대 후퇴 없음.
-- CloudWatch 알람 2종(07-alarms.sh 패턴): cron 연속 실패, FMP 402/429.
+- CloudWatch 알람 2종(07-alarms.sh 패턴): cron 연속 실패, FMP 429 버스트. (402는 심볼 국소 이슈라 알람 제외 — 로그 분류만.)
 - 불가능 콤보는 매트릭스 사전 제외 — 무한 재시도 없음.
 - **워커 백프레셔 (v3 — 구속 제약은 방문 용량이 아니라 워커 처리량)**: 필요 생성 ~1,913/일 vs 워커 ~4/분 = ~1,920/일 상한 — 여유 제로. 특히 technical·overall(주식 261×2=522+)은 KST 05시 앵커 만료라 **매일 강제 재생성분**. 따라서 목표는 "일 단위 갱신으로 수렴"(§2)이며 첫 사이클·워커 혼잡일은 다일 수렴 허용(fail-open이라 SSR 무회귀). 구현 중 워커 처리량 실측 후 심볼/틱·창 폭 조정.
 - ~~**revalidate 제약**: S3 cacheHandler 태그 스토어가 in-process Map — 즉시 반영은 **ASG desired=1에서만 보장**(현재 desired=1, max=4 스케일아웃 경로 존재). 스케일아웃 시 타 인스턴스는 ISR TTL(6~24h)로 지연 수렴 — 일 단위 SEO 신선도에는 허용. 태그 스토어 외부화는 후속 과제(§11).~~
