@@ -155,9 +155,12 @@ const ZADD_CHUNK = 500;
 export async function zaddGreater(key, entries) {
     for (let i = 0; i < entries.length; i += ZADD_CHUNK) {
         const chunk = entries.slice(i, i + ZADD_CHUNK);
-        const args = [key, 'GT'];
-        for (const [score, member] of chunk) args.push(score, member);
-        await command(['ZADD', ...args]);
+        await command([
+            'ZADD',
+            key,
+            'GT',
+            ...chunk.flatMap(([score, member]) => [score, member]),
+        ]);
     }
 }
 

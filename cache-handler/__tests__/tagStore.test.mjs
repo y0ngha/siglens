@@ -35,10 +35,15 @@ import {
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const HOUR_MS = 60 * 60 * 1000;
+
+// ⚠️ 아래 4개는 `tagStore.mjs`의 **동명 private 상수를 복제한 값**이다(그쪽이 export하지
+// 않아 부득이하게 재정의). 프로덕션 쪽 값만 바뀌고 여기가 안 따라오면 테스트가 조용히
+// 잘못된 기대값으로 통과한다 — tagStore.mjs를 수정하면 여기도 함께 갱신할 것.
 const RETENTION_MS = 7 * DAY_MS;
 const KEY_TTL_SECONDS = 30 * 24 * 60 * 60;
 const REFRESH_INTERVAL_MS = 5_000;
 const BOOTSTRAP_AWAIT_MS = 1_000;
+
 const NOW = 1_700_000_000_000;
 
 // ensureTagsFresh()의 백그라운드(부트스트랩 이후) sync는 await되지 않는다 — 호출 시점에
