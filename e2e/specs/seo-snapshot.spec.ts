@@ -46,7 +46,13 @@ import { seedSeoSnapshot } from '../support/seoSnapshotSeeder';
 const SEEDED_SYMBOL = 'SEOQAX';
 const SEEDED_SUMMARY =
     'E2E 시드 분석 요약: SEOQAX 종목은 최근 뚜렷한 상승 추세를 유지하며 거래량 증가와 함께 견조한 흐름을 보이고 있습니다.';
-const SNAPSHOT_HEADING = '최근 분석 요약';
+// UI audit FIX 6: SnapshotSummarySection's per-tab `title` prop is now wired
+// up (previously dead code — every renderer fell through to the shared
+// default '최근 분석 요약'). The technical/chart tab now renders its own
+// tab-specific heading; keep this marker in sync with
+// TechnicalSnapshotProse's `title="기술적 분석 요약"` call and
+// docs/reference/CRON.md's verification curl.
+const SNAPSHOT_HEADING = '기술적 분석 요약';
 
 // Never requested by any other spec in this suite (see the ISR-caching
 // comment above) — reused across the "no snapshot" and "longtail noindex"
