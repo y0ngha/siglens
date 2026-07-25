@@ -72,9 +72,36 @@ describe('FearGreedFactsSummary', () => {
         expect(getByText(/Buy\/Sell 불균형/)).toBeInTheDocument();
         expect(getByText(/POC 거리/)).toBeInTheDocument();
         expect(getByText(/MA200 거리/)).toBeInTheDocument();
-        expect(getByText(/52주 위치/)).toBeInTheDocument();
+        // FIX 6's factor-ranking narrative sentence also mentions "52주
+        // 위치" (it's this fixture's most extreme factor) — anchor on the
+        // per-factor line's "라벨: 값" shape so this assertion targets only
+        // that line, not both.
+        expect(getByText(/52주 위치: /)).toBeInTheDocument();
         // confidence footer.
         expect(getByText(/표본 220/)).toBeInTheDocument();
+    });
+
+    // FIX 6 (audit, option b): group comparison + factor ranking narrative
+    // sentences, built from FIXTURE_SNAPSHOT's group scores (Flow 58, Trend
+    // 66) and factor percentiles.
+    it('그룹 비교·factor 랭킹 서사 문장을 렌더한다 (FIX 6)', () => {
+        (computeFearGreedIndex as Mock).mockReturnValue(FIXTURE_SNAPSHOT);
+
+        const { getByText } = render(
+            <FearGreedFactsSummary
+                symbol="AAPL"
+                bars={fakeBars}
+                buySellVolume={fakeBsv}
+            />
+        );
+
+        expect(
+            getByText(
+                '추세 그룹 점수(66점)가 수급 그룹(58점)보다 8점 높아 추세 우위 흐름입니다.'
+            )
+        ).toBeInTheDocument();
+        expect(getByText(/가장 두드러진 지표는/)).toBeInTheDocument();
+        expect(getByText(/52주 위치로, 95번째 퍼센타일/)).toBeInTheDocument();
     });
 
     it('computeFearGreedIndex가 null이면(데이터 부족) 아무것도 렌더하지 않는다', () => {

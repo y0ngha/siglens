@@ -178,7 +178,11 @@ describe('SymbolFearGreedPage — SSR factor summary wiring', () => {
         ).toBeInTheDocument();
         expect(screen.getByText(/71 \/ 100/)).toBeInTheDocument();
         expect(screen.getByText(/거래량 z/)).toBeInTheDocument();
-        expect(screen.getByText(/52주 위치/)).toBeInTheDocument();
+        // FIX 6's factor-ranking narrative sentence can also mention "52주
+        // 위치" when it's the most extreme factor — anchor on the
+        // per-factor line's "라벨: 값" shape so this assertion targets only
+        // that line.
+        expect(screen.getByText(/52주 위치: /)).toBeInTheDocument();
     });
 
     it('Worst: bars 빈 배열이면 factor summary가 없고 페이지는 정상 resolve된다', async () => {

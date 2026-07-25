@@ -8,7 +8,11 @@ import {
     SENTIMENT_LABEL_TEXT,
     formatConfidenceFooter,
 } from '@/shared/lib/fearGreedLabels';
-import { buildFearGreedFactorLines } from './utils/fearGreedFacts';
+import {
+    buildFearGreedFactorLines,
+    buildFearGreedGroupComparisonLine,
+    buildFearGreedFactorRankingLine,
+} from './utils/fearGreedFacts';
 
 interface FearGreedFactsSummaryProps {
     symbol: string;
@@ -35,6 +39,12 @@ export function FearGreedFactsSummary({
 
     const score = Math.round(snapshot.score);
     const factorLines = buildFearGreedFactorLines(snapshot);
+    // audit fix FIX 6 (option b): genuinely per-symbol narrative sentences
+    // built from group scores / factor ranking (numbers that already exist
+    // in `snapshot` but were unused) — materially improves the
+    // unique:boilerplate ratio over the fixed-template factor lines alone.
+    const groupComparisonLine = buildFearGreedGroupComparisonLine(snapshot);
+    const factorRankingLine = buildFearGreedFactorRankingLine(snapshot);
 
     return (
         <section
@@ -56,6 +66,8 @@ export function FearGreedFactsSummary({
                 </div>
             </dl>
             <div className="text-secondary-300 space-y-1 text-sm leading-6">
+                {groupComparisonLine !== null && <p>{groupComparisonLine}</p>}
+                {factorRankingLine !== null && <p>{factorRankingLine}</p>}
                 {factorLines.map((line, i) => (
                     <p key={`line-${i}-${line}`}>{line}</p>
                 ))}
