@@ -52,12 +52,12 @@ function readEnv() {
     }
 
     // 읽기 전용 토큰이 있으면 sync 경로에 최소 권한으로 쓴다(앱 redisClient와 동일 관례).
-    // 빈 문자열은 미설정으로 취급한다.
+    // 빈 문자열도 falsy라 미설정과 동일하게 쓰기 토큰으로 대체된다.
     const readonly = process.env.UPSTASH_REDIS_REST_READONLY_TOKEN;
     return {
         target: parsed,
         writeToken: token,
-        readToken: readonly ? readonly : token,
+        readToken: readonly || token,
     };
 }
 

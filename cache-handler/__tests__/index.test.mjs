@@ -1,9 +1,25 @@
 import { vi } from 'vitest';
 
-const { getEntry, setEntry, mockConfig } = vi.hoisted(() => ({
+const {
+    getEntry,
+    setEntry,
+    mockConfig,
+    isUpstashConfigured,
+    zaddGreater,
+    zrangeFromScore,
+    zremBelowScore,
+    serverTimeMs,
+    expireKey,
+} = vi.hoisted(() => ({
     getEntry: vi.fn(),
     setEntry: vi.fn(),
     mockConfig: { disabled: false },
+    isUpstashConfigured: vi.fn(() => true),
+    zaddGreater: vi.fn(async () => {}),
+    zrangeFromScore: vi.fn(async () => ({ pairs: [], rawLength: 0 })),
+    zremBelowScore: vi.fn(async () => {}),
+    serverTimeMs: vi.fn(async () => Date.now()),
+    expireKey: vi.fn(async () => {}),
 }));
 
 vi.mock('../s3Store.mjs', () => ({
@@ -13,15 +29,46 @@ vi.mock('../s3Store.mjs', () => ({
 // config.disabled를 테스트에서 토글할 수 있도록 mutable 객체로 mock.
 // vi.mock 팩토리는 호이스트되므로 mutable 참조도 vi.hoisted로 끌어올려야 한다.
 vi.mock('../config.mjs', () => ({ config: mockConfig }));
+// Upstash를 반드시 mock한다. 이게 없으면 (a) UPSTASH_* env가 설정된 환경에서 유닛 테스트가
+// 실제 Redis로 네트워크 I/O를 하고(.env.e2e는 실제로 이 키들을 설정한다), (b) env가 없는
+// 환경에서는 isUpstashConfigured()가 false라 get()/revalidateTag()의 신규 통합 지점이
+// 항상 조기 반환돼 커버리지가 100%로 보이면서도 실제로는 아무것도 검증하지 못한다.
+vi.mock('../upstashRest.mjs', () => ({
+    isUpstashConfigured,
+    zaddGreater,
+    zrangeFromScore,
+    zremBelowScore,
+    serverTimeMs,
+    expireKey,
+}));
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import CacheHandler, { collectTags } from '../index.mjs';
 import { _resetForTest, markRevalidated } from '../tagStore.mjs';
 
+// 무효화 시각은 현실적인 epoch ms여야 한다. 태그 스토어는 sync마다 보존 기간(7d)이 지난
+// 엔트리를 정리하므로, 1000·2000 같은 1970년대 값을 쓰면 병합 직후 정리돼 테스트가 무너진다.
+const NOW = Date.now();
+
+/** 수동으로 resolve할 수 있는 promise — 비동기 순서를 단언하는 데 쓴다. */
+function deferred() {
+    let resolve;
+    const promise = new Promise(r => {
+        resolve = r;
+    });
+    return { promise, resolve };
+}
+
 beforeEach(() => {
     getEntry.mockReset();
     setEntry.mockReset();
     mockConfig.disabled = false;
+    isUpstashConfigured.mockReturnValue(true);
+    zaddGreater.mockReset().mockResolvedValue(undefined);
+    zrangeFromScore.mockReset().mockResolvedValue({ pairs: [], rawLength: 0 });
+    zremBelowScore.mockReset().mockResolvedValue(undefined);
+    serverTimeMs.mockReset().mockResolvedValue(NOW);
+    expireKey.mockReset().mockResolvedValue(undefined);
     _resetForTest();
 });
 
@@ -45,10 +92,10 @@ describe('CacheHandler.get', () => {
     });
 
     it('태그가 lastModified 이후 revalidate됐으면 null(stale)', async () => {
-        markRevalidated('news:AAPL', 2000);
+        markRevalidated('news:AAPL', NOW - 1000);
         getEntry.mockResolvedValueOnce({
             value: { html: 'old' },
-            lastModified: 1000,
+            lastModified: NOW - 2000,
             tags: ['news:AAPL'],
         });
         expect(
@@ -253,15 +300,175 @@ describe('CacheHandler.resetRequestCache', () => {
 });
 
 describe('CacheHandler.revalidateTag', () => {
-    it('string과 string[] 모두 처리한다(read-your-writes)', async () => {
+    it('string 인자를 처리한다(read-your-writes)', async () => {
         const h = new CacheHandler({});
         await h.revalidateTag('news:AAPL');
-        await h.revalidateTag(['symbol:TSLA']);
         getEntry.mockResolvedValue({
             value: 'v',
             lastModified: 0,
             tags: ['news:AAPL'],
         });
         expect(await h.get('/x', { kind: 'APP_PAGE' })).toBeNull(); // revalidatedAt > 0 > lastModified
+    });
+
+    it('string[] 인자를 처리한다(배열을 키로 쓰지 않는다)', async () => {
+        const h = new CacheHandler({});
+        await h.revalidateTag(['symbol:TSLA']);
+        getEntry.mockResolvedValue({
+            value: 'v',
+            lastModified: 0,
+            tags: ['symbol:TSLA'],
+        });
+        expect(await h.get('/x', { kind: 'APP_PAGE' })).toBeNull();
+    });
+
+    it('무효화를 원격 태그 로그에 정규화된 배열로 전파한다', async () => {
+        await new CacheHandler({}).revalidateTag('news:AAPL');
+        expect(zaddGreater).toHaveBeenCalledTimes(1);
+        const [key, entries] = zaddGreater.mock.calls[0];
+        expect(key).toBe('siglens:isr:tags');
+        expect(entries).toHaveLength(1);
+        expect(entries[0][1]).toBe('news:AAPL');
+        expect(typeof entries[0][0]).toBe('number');
+    });
+
+    it('원격 기록이 실패해도 throw하지 않고 로컬 무효화는 유지된다', async () => {
+        zaddGreater.mockRejectedValueOnce(new Error('upstash down'));
+        const h = new CacheHandler({});
+        await expect(h.revalidateTag('news:AAPL')).resolves.toBeUndefined();
+        getEntry.mockResolvedValue({
+            value: 'v',
+            lastModified: 0,
+            tags: ['news:AAPL'],
+        });
+        expect(await h.get('/x', { kind: 'APP_PAGE' })).toBeNull();
+    });
+
+    it('유효/무효 태그가 섞이면 유효한 태그만 원격 발행하고 로컬에도 그것만 기록한다', async () => {
+        const h = new CacheHandler({});
+        await h.revalidateTag(['', null, 'ok']);
+
+        // 원격에는 'ok'만 발행된다.
+        expect(zaddGreater).toHaveBeenCalledTimes(1);
+        const [key, entries] = zaddGreater.mock.calls[0];
+        expect(key).toBe('siglens:isr:tags');
+        expect(entries).toEqual([[expect.any(Number), 'ok']]);
+
+        // ''는 로컬 맵에도 기록되지 않았으므로, ''로 태그된 엔트리는 무효화되지 않는다(hit 유지).
+        getEntry.mockResolvedValueOnce({
+            value: 'v',
+            lastModified: 0,
+            tags: [''],
+        });
+        expect(await h.get('/x', { kind: 'APP_PAGE' })).toEqual({
+            lastModified: 0,
+            value: 'v',
+        });
+    });
+
+    it('revalidateTag([])는 원격 호출 없이 반환한다', async () => {
+        await new CacheHandler({}).revalidateTag([]);
+        expect(zaddGreater).not.toHaveBeenCalled();
+    });
+
+    it("revalidateTag('')는 원격 호출 없이 반환한다", async () => {
+        await new CacheHandler({}).revalidateTag('');
+        expect(zaddGreater).not.toHaveBeenCalled();
+    });
+});
+
+// 이 describe가 이 변경의 존재 이유를 지킨다 — 다른 인스턴스가 기록한 무효화를
+// 이 인스턴스의 get()이 실제로 반영하는지. get()에서 ensureTagsFresh() 호출을 지우거나
+// maxRevalidatedAt 아래로 내리면 여기서 잡힌다.
+describe('CacheHandler.get — 멀티 인스턴스 태그 전파', () => {
+    it('다른 인스턴스가 무효화한 엔트리를 stale로 판정한다', async () => {
+        // 로컬 맵은 비어 있고, 원격 태그 로그에만 무효화 기록이 있는 상태.
+        getEntry.mockResolvedValueOnce({
+            value: { html: 'hi' },
+            lastModified: NOW - 2000,
+            tags: ['news:AAPL'],
+        });
+        zrangeFromScore.mockResolvedValueOnce({
+            pairs: [['news:AAPL', NOW - 1000]],
+            rawLength: 2,
+        });
+
+        expect(
+            await new CacheHandler({}).get('/AAPL', { kind: 'APP_PAGE' })
+        ).toBeNull();
+    });
+
+    it('원격 무효화가 엔트리보다 오래됐으면 hit을 유지한다', async () => {
+        getEntry.mockResolvedValueOnce({
+            value: { html: 'hi' },
+            lastModified: NOW - 1000,
+            tags: ['news:AAPL'],
+        });
+        zrangeFromScore.mockResolvedValueOnce({
+            pairs: [['news:AAPL', NOW - 2000]],
+            rawLength: 2,
+        });
+
+        expect(
+            await new CacheHandler({}).get('/AAPL', { kind: 'APP_PAGE' })
+        ).toEqual({ lastModified: NOW - 1000, value: { html: 'hi' } });
+    });
+
+    it('freshness 판정 전에 원격 병합을 기다린다(순서 보장)', async () => {
+        const gate = deferred();
+        getEntry.mockResolvedValueOnce({
+            value: { html: 'hi' },
+            lastModified: NOW - 2000,
+            tags: ['news:AAPL'],
+        });
+        zrangeFromScore.mockReturnValueOnce(gate.promise);
+
+        let settled = false;
+        const pending = new CacheHandler({})
+            .get('/AAPL', { kind: 'APP_PAGE' })
+            .then(result => {
+                settled = true;
+                return result;
+            });
+
+        await Promise.resolve();
+        expect(settled).toBe(false); // 아직 병합을 기다리는 중
+
+        gate.resolve({ pairs: [['news:AAPL', NOW - 1000]], rawLength: 2 });
+        expect(await pending).toBeNull(); // 병합된 무효화가 판정에 반영됨
+    });
+
+    it('원격 조회가 실패해도 get은 정상 응답한다(fail-open)', async () => {
+        zrangeFromScore.mockRejectedValueOnce(new Error('upstash down'));
+        getEntry.mockResolvedValueOnce({
+            value: { html: 'hi' },
+            lastModified: NOW - 1000,
+            tags: ['news:AAPL'],
+        });
+
+        expect(
+            await new CacheHandler({}).get('/AAPL', { kind: 'APP_PAGE' })
+        ).toEqual({ lastModified: NOW - 1000, value: { html: 'hi' } });
+    });
+
+    it('캐시 miss에서는 원격을 조회하지 않는다(무효화할 엔트리가 없음)', async () => {
+        getEntry.mockResolvedValueOnce(null);
+        await new CacheHandler({}).get('/AAPL', { kind: 'APP_PAGE' });
+        expect(zrangeFromScore).not.toHaveBeenCalled();
+    });
+
+    it('Upstash 미설정이면 원격을 조회하지 않고 로컬 판정만 한다', async () => {
+        isUpstashConfigured.mockReturnValue(false);
+        markRevalidated('news:AAPL', 2000);
+        getEntry.mockResolvedValueOnce({
+            value: { html: 'hi' },
+            lastModified: 1000,
+            tags: ['news:AAPL'],
+        });
+
+        expect(
+            await new CacheHandler({}).get('/AAPL', { kind: 'APP_PAGE' })
+        ).toBeNull();
+        expect(zrangeFromScore).not.toHaveBeenCalled();
     });
 });
