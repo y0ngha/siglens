@@ -443,4 +443,11 @@ export const POPULAR_TICKERS = [
     'JCI',
     'HONA',
     'APP',
+
+    // --- Trending (2026-07-25) ---
+    'SKHY',
+    'CARR',
+    'GSK',
+    'SAP',
+    'DLR',
 ] as const;
