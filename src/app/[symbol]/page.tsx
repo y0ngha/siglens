@@ -62,10 +62,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         return NOINDEX_SYMBOL_METADATA;
     }
     const { assetInfo, degraded } = await getAssetInfoResilient(ticker);
-    const blockedMetadata = getBlockedSymbolMetadata({
+    const blockedMetadata = await getBlockedSymbolMetadata({
         symbol: ticker,
         assetInfo,
         degraded,
+        revalidateSeconds: 21600,
     });
     if (blockedMetadata) return blockedMetadata;
     if (!assetInfo) return NOINDEX_SYMBOL_METADATA;
