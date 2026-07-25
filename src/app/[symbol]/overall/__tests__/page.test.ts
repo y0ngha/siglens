@@ -4,7 +4,15 @@
  * OverallContent에 전달된 initialAnalysis prop을 검증한다.
  */
 
+// spy → vi.mock → imports order (MISTAKES.md Tests §17).
+const { mockGetSeoSnapshotsStatic } = vi.hoisted(() => ({
+    mockGetSeoSnapshotsStatic: vi.fn(),
+}));
+
 // vi.mock은 hoist되지만 import/first와 가독성을 위해 모든 import 위에 둔다.
+vi.mock('@/entities/seo-snapshot/lib/getSnapshotStatic', () => ({
+    getSeoSnapshotsStatic: mockGetSeoSnapshotsStatic,
+}));
 vi.mock('@/widgets/overall/OverallContent', () => ({
     OverallContent: () => null,
 }));
@@ -87,6 +95,9 @@ describe('Overall page ISR route config', () => {
 describe('generateMetadata', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        // getBlockedSymbolMetadata reads snapshots only on the degraded path
+        // (symbolIndexabilityMetadata.ts) — default to no-snapshot here.
+        mockGetSeoSnapshotsStatic.mockResolvedValue([]);
         mockGetAssetInfoResilient.mockResolvedValue({
             assetInfo: {
                 symbol: 'AAPL',
@@ -150,6 +161,7 @@ describe('Overall page (narrative seed)', () => {
     beforeEach(() => {
         mockGetAssetInfoResilient.mockReset();
         mockPeekOverall.mockReset();
+        mockGetSeoSnapshotsStatic.mockReset();
         mockGetAssetInfoResilient.mockResolvedValue({
             assetInfo: {
                 symbol: 'AAPL',
@@ -159,6 +171,9 @@ describe('Overall page (narrative seed)', () => {
             },
             degraded: false,
         } as never);
+        // Default: no SEO snapshot row — this describe covers peek/initialAnalysis
+        // seeding, which is orthogonal to the snapshot section.
+        mockGetSeoSnapshotsStatic.mockResolvedValue([]);
     });
 
     it('peek HIT 시 캐시된 종합 분석을 initialAnalysis로 전달한다', async () => {
@@ -191,6 +206,24 @@ describe('Overall page (narrative seed)', () => {
         const props = await getOverallProps();
 
         expect(props.initialAnalysis).toBeUndefined();
+    });
+
+    it('peek 모델 상수(DEEPSEEK_V4_FLASH_MODEL)가 SEO pre-warm 스냅샷 저장 모델과 동일 참조다 (spec §7 5축 캐시 키 정합)', async () => {
+        // harvest.ts는 이 상수를 PREWARM_MODEL_ID = DEEPSEEK_V4_FLASH_MODEL로 스냅샷
+        // content.model에 저장한다. 이 페이지가 peek을 호출할 때 쓰는 modelId 인자가
+        // core에서 import한 그 상수(mock 모듈에서도 동일 참조)임을 고정해 캐시 키 5축
+        // 정합을 지킨다.
+        mockPeekOverall.mockResolvedValue(null);
+
+        await getOverallProps();
+
+        expect(mockPeekOverall).toHaveBeenCalledWith(
+            'AAPL',
+            'Apple Inc.',
+            '1Day',
+            DEEPSEEK_V4_FLASH_MODEL,
+            false
+        );
     });
 
     // hasEnrichedNews 분기 (MISTAKES.md §Tests 18): true/false 두 경로 모두 검증.

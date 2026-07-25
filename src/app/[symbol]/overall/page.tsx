@@ -1,6 +1,7 @@
 import { OverallContent } from '@/widgets/overall/OverallContent';
 import { getBlockedSymbolMetadata } from '@/app/[symbol]/symbolIndexabilityMetadata';
 import { OverallFactualFallback, OverallFactsSummary } from '@/widgets/overall';
+import { OverallSnapshotProse } from '@/views/symbol/snapshot/renderers/OverallSnapshotProse';
 import { SymbolPageHeading } from '@/views/symbol';
 import { CrossLinkCards } from '@/shared/ui/CrossLinkCards';
 import { JsonLd } from '@/shared/ui/JsonLd';
@@ -31,6 +32,7 @@ import {
     DEEPSEEK_V4_FLASH_MODEL,
     peekOverallAnalysisCache,
 } from '@y0ngha/siglens-core';
+import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/lib/getSnapshotStatic';
 import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
 import { SECONDS_PER_HALF_DAY } from '@/shared/config/time';
 import type { Metadata } from 'next';
@@ -117,7 +119,7 @@ export default async function OverallPage({ params }: Props) {
     //
     // Promise.all로 병렬화 — 두 호출은 서로 독립이라 직렬 await할 이유가 없다.
     // cold path(둘 다 캐시 miss)에서 TTFB가 ~max(t1, t2) 수준으로 줄어든다.
-    const [newsItems, cachedOverall] = await Promise.all([
+    const [newsItems, cachedOverall, snapshots] = await Promise.all([
         staticSymbolCache(
             [NEWS_LIST_CACHE_KEY, upper],
             upper,
@@ -154,8 +156,20 @@ export default async function OverallPage({ params }: Props) {
             );
             return null;
         }),
+        // ISR-safe (staticSymbolCache-wrapped, fail-open []) — see
+        // getSeoSnapshotsStatic JSDoc. revalidateSeconds mirrors this page's
+        // `export const revalidate` literal (43200) above.
+        getSeoSnapshotsStatic(upper, 43200),
     ]);
     const hasEnrichedNews = newsItems.some(item => item.sentiment !== null);
+
+    // snapshot-first, 기존 peek fallback 유지 (spec §7): 스냅샷 행이 있으면 그것을
+    // canonical SSR 분석으로 쓰고(아래 Suspense fallback의 `overallSnapshot !== undefined`
+    // 분기), 없으면 기존 peek(cachedOverall) 결과로, 그것도 없으면 기존
+    // OverallFactualFallback placeholder로 내려간다. "행 존재"를 게이트로 쓴다 — content
+    // 파싱 실패(malformed) 여부까지 여기서 재검증하지 않는다(OverallSnapshotProse 자체가
+    // 방어적으로 null 렌더하므로 이중 파싱을 피한다).
+    const overallSnapshot = snapshots.find(s => s.tab === 'overall');
 
     const displayName = buildDisplayName(assetInfo, upper);
     const marketProfile = marketProfileOf(assetInfo);
@@ -300,12 +314,21 @@ export default async function OverallPage({ params }: Props) {
                     )}
                 </section>
                 {/* fallback은 두 역할을 겸한다: (1) useSearchParams CSR-bailout 서브트리가
-                    hydration 전 비어 보이는 flash/CLS 방지, (2) cached 종합 분석이 있으면
-                    크롤러가 JS 없이도 분석 텍스트를 읽을 수 있도록 SSR HTML에 박는다.
-                    캐시 MISS 시에는 서버가 이미 가진 사실 데이터로 폴백한다. */}
+                    hydration 전 비어 보이는 flash/CLS 방지, (2) 분석 텍스트를 크롤러가
+                    JS 없이도 읽을 수 있도록 SSR HTML에 박는다. snapshot-first, 기존 peek
+                    fallback 유지(spec §7) — 스냅샷 있으면 스냅샷, 없으면 기존 peek
+                    (cachedOverall) 결과, 그것도 없으면 기존 placeholder로 내려간다.
+                    스냅샷과 peek을 동시에 렌더하면 동일 AI 분석 텍스트가 중복되므로
+                    `overallSnapshot !== undefined` 분기로 상호 배타 처리한다. */}
                 <Suspense
                     fallback={
-                        cachedOverall ? (
+                        overallSnapshot !== undefined ? (
+                            <OverallSnapshotProse
+                                content={overallSnapshot.content}
+                                symbol={upper}
+                                displayName={displayName}
+                            />
+                        ) : cachedOverall ? (
                             <OverallFactsSummary
                                 symbol={upper}
                                 analysis={cachedOverall}

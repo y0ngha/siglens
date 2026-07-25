@@ -1,3 +1,11 @@
+// spy → vi.mock → imports order (MISTAKES.md Tests §17).
+const { mockGetSeoSnapshotsStatic } = vi.hoisted(() => ({
+    mockGetSeoSnapshotsStatic: vi.fn(),
+}));
+
+vi.mock('@/entities/seo-snapshot/lib/getSnapshotStatic', () => ({
+    getSeoSnapshotsStatic: mockGetSeoSnapshotsStatic,
+}));
 vi.mock('@/views/symbol/SymbolPageClient', () => ({
     SymbolPageClient: () => null,
 }));
@@ -131,6 +139,10 @@ describe('Symbol page', () => {
     describe('generateMetadata', () => {
         beforeEach(() => {
             vi.clearAllMocks();
+            // getBlockedSymbolMetadata reads snapshots only on the degraded path
+            // (symbolIndexabilityMetadata.ts) — default to no-snapshot so degraded
+            // cases here don't spuriously flip to indexable via hasSnapshot.
+            mockGetSeoSnapshotsStatic.mockResolvedValue([]);
             mockEvaluateSymbolIndexability.mockImplementation(
                 ({ assetInfo, degraded }) => {
                     if (degraded) {
@@ -275,6 +287,7 @@ describe('Symbol page', () => {
             // 의존하는 두 mock만 선택적으로 초기화한다.
             mockGetAssetInfoResilient.mockReset();
             mockPeekAnalysisCache.mockReset();
+            mockGetSeoSnapshotsStatic.mockReset();
             mockGetAssetInfoResilient.mockResolvedValue({
                 assetInfo: {
                     symbol: 'AAPL',
@@ -284,6 +297,9 @@ describe('Symbol page', () => {
                 },
                 degraded: false,
             } as never);
+            // Default: no SEO snapshot row — this describe covers peek/initialAnalysis
+            // seeding, which is orthogonal to the snapshot section.
+            mockGetSeoSnapshotsStatic.mockResolvedValue([]);
         });
 
         async function getClientProps(): Promise<ClientSeedProps> {
@@ -334,6 +350,27 @@ describe('Symbol page', () => {
             expect(props.initialAnalysis).toMatchObject({
                 summary: 'fallback',
             });
+        });
+
+        it('peek 모델 상수(DEEPSEEK_V4_FLASH_MODEL)가 SEO pre-warm 스냅샷 저장 모델과 동일 참조다 (spec §7 5축 캐시 키 정합)', async () => {
+            // harvest.ts는 이 상수를 PREWARM_MODEL_ID = DEEPSEEK_V4_FLASH_MODEL로 스냅샷
+            // content.model에 저장한다. peek이 다른 모델 상수로 조회하면 스냅샷이 가리키는
+            // 캐시 엔트리와 어긋나 5축 정합이 깨진다 — 여기선 페이지가 peek을 호출할 때 쓰는
+            // modelId 인자가 core에서 import한 그 상수(mock 모듈에서도 동일 참조)임을 고정한다.
+            mockPeekAnalysisCache.mockResolvedValue(null);
+
+            await getClientProps();
+
+            expect(mockPeekAnalysisCache).toHaveBeenCalledWith(
+                'AAPL',
+                '1Day',
+                'AAPL',
+                DEEPSEEK_V4_FLASH_MODEL,
+                false,
+                'free',
+                undefined,
+                undefined
+            );
         });
 
         it('seed 여부와 무관하게 initialAnalysisFailed=true를 유지한다 (순수 additive)', async () => {
@@ -410,6 +447,7 @@ describe('Symbol page', () => {
             vi.clearAllMocks();
             // Restore stable defaults cleared by vi.clearAllMocks().
             mockPeekAnalysisCache.mockResolvedValue(null);
+            mockGetSeoSnapshotsStatic.mockResolvedValue([]);
         });
 
         it('branch-taken: degraded + non-US ticker shape calls notFound()', async () => {

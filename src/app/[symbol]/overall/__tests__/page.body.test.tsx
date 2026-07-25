@@ -10,6 +10,13 @@
  */
 
 // MISTAKES §17: all vi.mock + vi.hoisted above imports.
+const { mockGetSeoSnapshotsStatic } = vi.hoisted(() => ({
+    mockGetSeoSnapshotsStatic: vi.fn(),
+}));
+
+vi.mock('@/entities/seo-snapshot/lib/getSnapshotStatic', () => ({
+    getSeoSnapshotsStatic: mockGetSeoSnapshotsStatic,
+}));
 vi.mock('@/shared/ui/JsonLd', () => ({ JsonLd: () => null }));
 vi.mock('next/navigation', () => ({
     notFound: vi.fn(),
@@ -112,6 +119,9 @@ const CRYPTO_ASSET_INFO = {
 describe('OverallPage — isEquity body branching', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        // Default: no SEO snapshot row — this suite covers isEquity copy
+        // branching, which is orthogonal to the snapshot section.
+        mockGetSeoSnapshotsStatic.mockResolvedValue([]);
     });
 
     describe('SymbolPageHeading (h1 region)', () => {

@@ -1,8 +1,10 @@
 import { SymbolPageClient } from '@/views/symbol/SymbolPageClient';
 import { TechnicalFactsSummary, buildChartPageHeading } from '@/views/symbol';
+import { TechnicalSnapshotProse } from '@/views/symbol/snapshot/renderers/TechnicalSnapshotProse';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { FALLBACK_ANALYSIS } from '@/entities/chat-message';
 import { getBlockedSymbolMetadata } from '@/app/[symbol]/symbolIndexabilityMetadata';
+import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/lib/getSnapshotStatic';
 import { DEEPSEEK_V4_FLASH_MODEL } from '@y0ngha/siglens-core';
 import {
     normalizeAnalysisResponse,
@@ -90,10 +92,17 @@ export default async function SymbolPage({ params }: Props) {
     // 다른 5개 sibling 페이지(news/fundamental/options/overall/fear-greed)와 일관:
     // 잘못된 ticker 형식은 본문에서도 notFound로 즉시 차단한다 (generateMetadata 가드와 짝).
     if (!isAdmissibleSymbolShape(ticker)) notFound();
-    const [{ assetInfo, degraded }, skillCounts] = await Promise.all([
-        getAssetInfoResilient(ticker),
-        countSkillFiles(),
-    ]);
+    const [{ assetInfo, degraded }, skillCounts, snapshots] = await Promise.all(
+        [
+            getAssetInfoResilient(ticker),
+            countSkillFiles(),
+            // ISR-safe (staticSymbolCache-wrapped, fail-open []) — see
+            // getSeoSnapshotsStatic JSDoc. revalidateSeconds mirrors this page's
+            // `export const revalidate` literal (21600) above.
+            getSeoSnapshotsStatic(ticker, 21600),
+        ]
+    );
+    const technicalSnapshot = snapshots.find(s => s.tab === 'technical');
     // 확장된 게이트(SYMBOL_EDGE_RE)는 crypto 심볼을 수용하기 위해 이전 VALID_TICKER_RE보다
     // 넓다. 정상 조건에서 crypto 심볼은 crypto_assets DB에서 직접 해결된다(degrade 없음).
     // crypto_assets DB와 FMP가 동시에 다운된 경우에만 예외적으로 degrade 가능하며, 이는
@@ -265,6 +274,18 @@ export default async function SymbolPage({ params }: Props) {
                                 <h1 className="sr-only">
                                     {buildChartPageHeading(displayName)}
                                 </h1>
+                                {/* AI 스냅샷 프로즈(snapshot-first)와 결정적 수치 FactLayer는
+                                    상호보완적이라 둘 다 렌더한다(spec §7) — peekAnalysisStatic
+                                    결과(cachedAnalysis)는 오늘도 SSR 프로즈로 렌더되지 않고
+                                    initialAnalysis로 CSR-bailout 클라이언트에만 seed되므로
+                                    (아래 SymbolPageClient), 여기엔 중복 위험이 없다. 스냅샷이
+                                    없으면 TechnicalSnapshotProse가 null을 반환해 빈 셸도
+                                    없다. */}
+                                <TechnicalSnapshotProse
+                                    content={technicalSnapshot?.content}
+                                    symbol={ticker}
+                                    displayName={displayName}
+                                />
                                 {quantizedFactBars &&
                                 quantizedFactBars.bars.length > 0 ? (
                                     <TechnicalFactsSummary
