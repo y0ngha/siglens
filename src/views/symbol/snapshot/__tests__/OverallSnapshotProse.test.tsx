@@ -227,6 +227,157 @@ describe('OverallSnapshotProse', () => {
     });
 });
 
+describe('OverallSnapshotProse — FIX 2 (4축 bullet 배열)', () => {
+    it('technicalBulletsKo를 기술적 분석 라벨 붙은 목록으로 렌더한다', () => {
+        render(
+            <OverallSnapshotProse
+                content={buildFixture({
+                    technicalBulletsKo: [
+                        'RSI가 과매수 구간에 진입했습니다.',
+                        'MACD가 골든크로스를 형성했습니다.',
+                    ],
+                })}
+                symbol="AAPL"
+                displayName="Apple Inc."
+            />
+        );
+
+        expect(screen.getByText('기술적 분석')).toBeInTheDocument();
+        expect(
+            screen.getByText('RSI가 과매수 구간에 진입했습니다.')
+        ).toBeInTheDocument();
+        expect(
+            screen.getByText('MACD가 골든크로스를 형성했습니다.')
+        ).toBeInTheDocument();
+    });
+
+    it('fundamentalBulletsKo를 펀더멘털 라벨 붙은 목록으로 렌더한다', () => {
+        render(
+            <OverallSnapshotProse
+                content={buildFixture({
+                    fundamentalBulletsKo: ['PER이 업종 평균 대비 낮습니다.'],
+                })}
+                symbol="AAPL"
+                displayName="Apple Inc."
+            />
+        );
+
+        expect(screen.getByText('펀더멘털')).toBeInTheDocument();
+        expect(
+            screen.getByText('PER이 업종 평균 대비 낮습니다.')
+        ).toBeInTheDocument();
+    });
+
+    it('newsBulletsKo를 뉴스 라벨 붙은 목록으로 렌더한다', () => {
+        render(
+            <OverallSnapshotProse
+                content={buildFixture({
+                    newsBulletsKo: ['최근 실적 발표가 긍정적이었습니다.'],
+                })}
+                symbol="AAPL"
+                displayName="Apple Inc."
+            />
+        );
+
+        expect(screen.getByText('뉴스')).toBeInTheDocument();
+        expect(
+            screen.getByText('최근 실적 발표가 긍정적이었습니다.')
+        ).toBeInTheDocument();
+    });
+
+    it('optionsBulletsKo를 옵션 라벨 붙은 목록으로 렌더한다', () => {
+        render(
+            <OverallSnapshotProse
+                content={buildFixture({
+                    optionsBulletsKo: ['콜옵션 프리미엄이 우세합니다.'],
+                })}
+                symbol="AAPL"
+                displayName="Apple Inc."
+            />
+        );
+
+        expect(screen.getByText('옵션')).toBeInTheDocument();
+        expect(
+            screen.getByText('콜옵션 프리미엄이 우세합니다.')
+        ).toBeInTheDocument();
+    });
+
+    it('financialsBulletsKo를 재무제표 라벨 붙은 목록으로 렌더한다', () => {
+        render(
+            <OverallSnapshotProse
+                content={buildFixture({
+                    financialsBulletsKo: ['영업이익이 5년 연속 증가했습니다.'],
+                })}
+                symbol="AAPL"
+                displayName="Apple Inc."
+            />
+        );
+
+        expect(screen.getByText('재무제표')).toBeInTheDocument();
+        expect(
+            screen.getByText('영업이익이 5년 연속 증가했습니다.')
+        ).toBeInTheDocument();
+    });
+
+    it('다섯 bullet 배열이 모두 비어있으면 다섯 섹션 헤딩 모두 렌더하지 않는다', () => {
+        render(
+            <OverallSnapshotProse
+                content={buildFixture()}
+                symbol="AAPL"
+                displayName="Apple Inc."
+            />
+        );
+
+        expect(screen.queryByText('기술적 분석')).not.toBeInTheDocument();
+        expect(screen.queryByText('펀더멘털')).not.toBeInTheDocument();
+        expect(screen.queryByText('뉴스')).not.toBeInTheDocument();
+        expect(screen.queryByText('옵션')).not.toBeInTheDocument();
+        expect(screen.queryByText('재무제표')).not.toBeInTheDocument();
+    });
+
+    it('headline/conclusion/시나리오가 전부 비어도 bullet 배열 하나만 있으면 렌더한다 (hasOverallProse와 정합)', () => {
+        const content = buildFixture({
+            headlineKo: '',
+            integratedConclusionKo: '',
+            scenarios: [],
+            technicalBulletsKo: ['RSI가 과매수 구간입니다.'],
+        });
+
+        expect(hasOverallProse(content)).toBe(true);
+        render(
+            <OverallSnapshotProse
+                content={content}
+                symbol="AAPL"
+                displayName="Apple Inc."
+            />
+        );
+        expect(
+            screen.getByText('RSI가 과매수 구간입니다.')
+        ).toBeInTheDocument();
+    });
+});
+
+describe('OverallSnapshotProse — FIX 4 (markdown marker 제거)', () => {
+    it('headline/conclusion/bullet의 **bold**·- 목록 마커를 제거한다', () => {
+        render(
+            <OverallSnapshotProse
+                content={buildFixture({
+                    headlineKo: '**AAPL** 강세 전환',
+                    integratedConclusionKo: '- 첫 번째 근거\n- 두 번째 근거',
+                    technicalBulletsKo: ['**RSI** 과매수 구간'],
+                })}
+                symbol="AAPL"
+                displayName="Apple Inc."
+            />
+        );
+
+        expect(screen.getByText('AAPL 강세 전환')).toBeInTheDocument();
+        expect(screen.getByText('첫 번째 근거')).toBeInTheDocument();
+        expect(screen.getByText('두 번째 근거')).toBeInTheDocument();
+        expect(screen.getByText('RSI 과매수 구간')).toBeInTheDocument();
+    });
+});
+
 describe('hasOverallProse', () => {
     it('narrowOverallContent가 성공하는 content에는 true를 반환한다', () => {
         expect(hasOverallProse(buildFixture())).toBe(true);

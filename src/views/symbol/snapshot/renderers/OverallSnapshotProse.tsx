@@ -1,5 +1,6 @@
 import type { OverallScenarioName } from '@y0ngha/siglens-core';
 import { SnapshotSummarySection } from '../SnapshotSummarySection';
+import { stripSnapshotMarkdown } from '../lib/stripSnapshotMarkdown';
 
 interface OverallSnapshotProseProps {
     /**
@@ -46,10 +47,12 @@ function narrowScenario(value: unknown): NarrowedScenario | null {
 
     const triggerConditionKo =
         typeof record.triggerConditionKo === 'string'
-            ? record.triggerConditionKo
+            ? stripSnapshotMarkdown(record.triggerConditionKo)
             : '';
     const priceRangeKo =
-        typeof record.priceRangeKo === 'string' ? record.priceRangeKo : '';
+        typeof record.priceRangeKo === 'string'
+            ? stripSnapshotMarkdown(record.priceRangeKo)
+            : '';
 
     return { name: record.name, triggerConditionKo, priceRangeKo };
 }
@@ -70,6 +73,56 @@ function formatScenarioBullet(scenario: NarrowedScenario): string | null {
     return trigger.length > 0 ? trigger : `예상 가격대: ${priceRange}`;
 }
 
+interface AxisBulletListProps {
+    title: string;
+    symbol: string;
+    ariaSuffix: string;
+    items: string[];
+    keyPrefix: string;
+}
+
+/**
+ * Shared list markup for the four-axis bullet arrays (FIX 2) — factored out
+ * so the five near-identical blocks (기술적 분석/펀더멘털/뉴스/옵션/재무제표)
+ * can't drift from the `role="list"` (FIX 7a) / `min-w-0 break-words` (FIX
+ * 7b) contract the other lists in this renderer already follow. Renders
+ * nothing when `items` is empty — callers don't need their own length guard.
+ */
+function AxisBulletList({
+    title,
+    symbol,
+    ariaSuffix,
+    items,
+    keyPrefix,
+}: AxisBulletListProps) {
+    if (items.length === 0) return null;
+
+    return (
+        <div>
+            <h3 className="text-secondary-200 mb-1.5 text-sm font-semibold">
+                {title}
+            </h3>
+            <ul
+                role="list"
+                aria-label={`${symbol} ${ariaSuffix} 목록`}
+                className="space-y-1"
+            >
+                {items.map((item, i) => (
+                    <li
+                        key={`${keyPrefix}-${i}-${item}`}
+                        className="flex gap-2"
+                    >
+                        <span aria-hidden="true" className="mt-0.5 shrink-0">
+                            •
+                        </span>
+                        <span className="min-w-0 break-words">{item}</span>
+                    </li>
+                ))}
+            </ul>
+        </div>
+    );
+}
+
 interface NarrowedOverallContent {
     headlineKo: string;
     integratedConclusionKo: string;
@@ -77,6 +130,20 @@ interface NarrowedOverallContent {
     neutralBullets: string[];
     bearishBullets: string[];
     riskFactorsKo: string[];
+    technicalBulletsKo: string[];
+    fundamentalBulletsKo: string[];
+    newsBulletsKo: string[];
+    optionsBulletsKo: string[];
+    financialsBulletsKo: string[];
+}
+
+/** Narrows an `unknown` field to a trimmed, markdown-stripped string array. */
+function narrowStringArray(value: unknown): string[] {
+    if (!Array.isArray(value)) return [];
+    return value
+        .filter((item): item is string => typeof item === 'string')
+        .map(item => stripSnapshotMarkdown(item).trim())
+        .filter(item => item.length > 0);
 }
 
 /**
@@ -91,16 +158,26 @@ interface NarrowedOverallContent {
  * `OverallFactsSummary`가 세 시나리오 전부를 렌더하므로, neutral을 빼면
  * 대체 전보다 텍스트가 줄어드는 회귀였다). `riskFactorsKo`도
  * `OverallFactsSummary`와 동일하게 위험 요인 목록으로 노출한다.
+ *
+ * `technicalBulletsKo`/`fundamentalBulletsKo`/`newsBulletsKo`/
+ * `optionsBulletsKo`/`financialsBulletsKo`도 좁힌다(audit fix FIX 2) — core
+ * `OverallAnalysisResponse`는 이 다섯 필드를 REQUIRED 배열로 선언하고
+ * (`responseSchemas.js`), overall도 다른 필드들과 동일하게 tier 마스킹
+ * 대상이 아니므로(위 JSDoc) free tier pre-warm에도 전부 채워진다. 이전
+ * 렌더러는 이 다섯 배열을 전혀 읽지 않아 심볼당 400~900자 규모의 크롤
+ * 가능 텍스트가 저장은 되고도 버려지고 있었다.
  */
 function narrowOverallContent(content: unknown): NarrowedOverallContent | null {
     if (typeof content !== 'object' || content === null) return null;
 
     const record = content as Record<string, unknown>;
     const headlineKo =
-        typeof record.headlineKo === 'string' ? record.headlineKo.trim() : '';
+        typeof record.headlineKo === 'string'
+            ? stripSnapshotMarkdown(record.headlineKo).trim()
+            : '';
     const integratedConclusionKo =
         typeof record.integratedConclusionKo === 'string'
-            ? record.integratedConclusionKo.trim()
+            ? stripSnapshotMarkdown(record.integratedConclusionKo).trim()
             : '';
 
     const scenarios = Array.isArray(record.scenarios)
@@ -120,11 +197,12 @@ function narrowOverallContent(content: unknown): NarrowedOverallContent | null {
         .map(formatScenarioBullet)
         .filter((bullet): bullet is string => bullet !== null);
 
-    const riskFactorsKo = Array.isArray(record.riskFactorsKo)
-        ? record.riskFactorsKo.filter(
-              (item): item is string => typeof item === 'string'
-          )
-        : [];
+    const riskFactorsKo = narrowStringArray(record.riskFactorsKo);
+    const technicalBulletsKo = narrowStringArray(record.technicalBulletsKo);
+    const fundamentalBulletsKo = narrowStringArray(record.fundamentalBulletsKo);
+    const newsBulletsKo = narrowStringArray(record.newsBulletsKo);
+    const optionsBulletsKo = narrowStringArray(record.optionsBulletsKo);
+    const financialsBulletsKo = narrowStringArray(record.financialsBulletsKo);
 
     if (
         headlineKo.length === 0 &&
@@ -132,7 +210,12 @@ function narrowOverallContent(content: unknown): NarrowedOverallContent | null {
         bullishBullets.length === 0 &&
         neutralBullets.length === 0 &&
         bearishBullets.length === 0 &&
-        riskFactorsKo.length === 0
+        riskFactorsKo.length === 0 &&
+        technicalBulletsKo.length === 0 &&
+        fundamentalBulletsKo.length === 0 &&
+        newsBulletsKo.length === 0 &&
+        optionsBulletsKo.length === 0 &&
+        financialsBulletsKo.length === 0
     ) {
         return null;
     }
@@ -140,6 +223,11 @@ function narrowOverallContent(content: unknown): NarrowedOverallContent | null {
     return {
         headlineKo,
         integratedConclusionKo,
+        technicalBulletsKo,
+        fundamentalBulletsKo,
+        newsBulletsKo,
+        optionsBulletsKo,
+        financialsBulletsKo,
         bullishBullets,
         neutralBullets,
         bearishBullets,
@@ -175,8 +263,14 @@ export function hasOverallProse(content: unknown): boolean {
  * (audit fix — 이전에는 neutral 시나리오와 riskFactorsKo를 드롭해 이 렌더러가
  * 대체하는 `OverallFactsSummary`보다 텍스트가 적었다).
  *
- * 다섯 프로즈 소스(headline/conclusion/강세 목록/중립 목록/약세 목록) 모두와
- * riskFactorsKo가 값이 없으면 아무것도 렌더하지 않아 — 빈 셸 없이 — 호출부가
+ * `technicalBulletsKo`/`fundamentalBulletsKo`/`newsBulletsKo`/
+ * `optionsBulletsKo`/`financialsBulletsKo`도 각각 라벨 붙은 목록(기술적
+ * 분석/펀더멘털/뉴스/옵션/재무제표)으로 렌더한다(audit fix FIX 2) — 배열이
+ * 비어있으면 해당 섹션 헤딩 자체를 렌더하지 않는다(다른 목록 섹션들과
+ * 동일한 "값 있을 때만" 계약).
+ *
+ * 모든 프로즈 소스(headline/conclusion/네 시나리오/위험 요인/4축 bullet
+ * 다섯 배열)가 값이 없으면 아무것도 렌더하지 않아 — 빈 셸 없이 — 호출부가
  * 기존 placeholder로 폴백하도록 한다(위 `hasOverallProse`가 그 분기를
  * 담당). UA 분기 없음 — 사용자·크롤러에게 동일한 마크업(cloaking-safe).
  */
@@ -212,6 +306,42 @@ export function OverallSnapshotProse({
                         ))}
                     </div>
                 )}
+
+                <AxisBulletList
+                    title="기술적 분석"
+                    symbol={symbol}
+                    ariaSuffix="기술적 분석"
+                    items={narrowed.technicalBulletsKo}
+                    keyPrefix="technical-bullet"
+                />
+                <AxisBulletList
+                    title="펀더멘털"
+                    symbol={symbol}
+                    ariaSuffix="펀더멘털"
+                    items={narrowed.fundamentalBulletsKo}
+                    keyPrefix="fundamental-bullet"
+                />
+                <AxisBulletList
+                    title="뉴스"
+                    symbol={symbol}
+                    ariaSuffix="뉴스"
+                    items={narrowed.newsBulletsKo}
+                    keyPrefix="news-bullet"
+                />
+                <AxisBulletList
+                    title="옵션"
+                    symbol={symbol}
+                    ariaSuffix="옵션"
+                    items={narrowed.optionsBulletsKo}
+                    keyPrefix="options-bullet"
+                />
+                <AxisBulletList
+                    title="재무제표"
+                    symbol={symbol}
+                    ariaSuffix="재무제표"
+                    items={narrowed.financialsBulletsKo}
+                    keyPrefix="financials-bullet"
+                />
 
                 {narrowed.bullishBullets.length > 0 && (
                     <div>
