@@ -152,11 +152,11 @@ describe('seo-prewarm lock', () => {
     });
 
     describe('markInFlight', () => {
-        it('ex:1800과 대문자화된 심볼 키로 SET을 호출한다(jobId 생략 시 legacy 값 1)', async () => {
+        it("ex:1800과 대문자화된 심볼 키로 SET을 호출한다(jobId 생략 시 job-agnostic sentinel 'pending')", async () => {
             await markInFlight('aapl', 'overall');
             expect(mockSet).toHaveBeenCalledWith(
                 'seo-prewarm:inflight:AAPL:overall',
-                '1',
+                'pending',
                 { ex: 1800 }
             );
         });
@@ -179,19 +179,42 @@ describe('seo-prewarm lock', () => {
         });
     });
 
-    describe('getInFlightMarker (FIX 1, PR #698 리뷰)', () => {
-        it('get이 jobId 문자열을 반환하면 { present: true, jobId }를 반환한다', async () => {
-            mockGet.mockResolvedValue('job-99');
+    describe('getInFlightMarker (FIX 1, PR #698 리뷰; FIX 3, 실증)', () => {
+        it('get이 (uuid) jobId 문자열을 반환하면 { present: true, jobId }를 반환한다', async () => {
+            mockGet.mockResolvedValue('a1b2c3d4-uuid');
             expect(await getInFlightMarker('aapl', 'overall')).toEqual({
                 present: true,
-                jobId: 'job-99',
+                jobId: 'a1b2c3d4-uuid',
             });
             expect(mockGet).toHaveBeenCalledWith(
                 'seo-prewarm:inflight:AAPL:overall'
             );
         });
 
-        it("get이 legacy 값 '1'을 반환하면 { present: true, jobId: null }을 반환한다(재개 불가하지만 in-flight)", async () => {
+        // FIX 3(실증) — 실제 @upstash/redis 왕복에서는 job-agnostic sentinel이
+        // JS **string** `'1'`이 아니라 **number** `1`로 돌아온다(기본
+        // automaticDeserialization의 JSON.parse가 유효 JSON 리터럴인 '1'을
+        // number로 역직렬화하기 때문). 이전 테스트가 문자열 '1'을 mock해서
+        // 프로덕션이 절대 만들지 않는 상태를 검증했고, 그 결과 `value === '1'`
+        // 분기가 죽은 코드인 채로 그린을 받았다 — 이 fixture가 그 결함의
+        // 재발 방지선이다.
+        it('get이 number 1(실제 Upstash JSON.parse 역직렬화 결과)을 반환하면 { present: true, jobId: null }을 반환한다', async () => {
+            mockGet.mockResolvedValue(1);
+            expect(await getInFlightMarker('aapl', 'overall')).toEqual({
+                present: true,
+                jobId: null,
+            });
+        });
+
+        it("get이 job-agnostic sentinel 문자열 'pending'을 반환하면 { present: true, jobId: null }을 반환한다", async () => {
+            mockGet.mockResolvedValue('pending');
+            expect(await getInFlightMarker('aapl', 'overall')).toEqual({
+                present: true,
+                jobId: null,
+            });
+        });
+
+        it("get이 legacy 문자열 '1'을 반환해도(구버전 마커와의 하위호환) { present: true, jobId: null }을 반환한다", async () => {
             mockGet.mockResolvedValue('1');
             expect(await getInFlightMarker('aapl', 'overall')).toEqual({
                 present: true,
