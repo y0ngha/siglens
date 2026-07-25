@@ -15,6 +15,7 @@ export function evaluateSymbolIndexability({
     symbol,
     assetInfo,
     degraded,
+    hasSnapshot,
 }: SymbolIndexabilityInput): SymbolIndexabilityDecision {
     const upper = symbol.toUpperCase();
 
@@ -27,6 +28,18 @@ export function evaluateSymbolIndexability({
     }
 
     if (degraded) {
+        // Whitelisted symbols with a stored SEO snapshot can stay indexable even
+        // while degraded — the body renders substantive snapshot content instead
+        // of the thin degraded shell. Non-whitelisted or snapshot-less degraded
+        // pages stay noindex (this must NOT move below the whitelist checks below,
+        // or a degraded, snapshot-less popular symbol would get indexed).
+        const whitelisted =
+            POPULAR_TICKER_SET.has(upper) ||
+            POPULAR_CRYPTO_SET.has(upper) ||
+            APPROVED_LONGTAIL_SET.has(upper);
+        if (hasSnapshot === true && whitelisted) {
+            return { indexable: true, reason: 'degraded-with-snapshot' };
+        }
         return { indexable: false, reason: 'degraded' };
     }
 

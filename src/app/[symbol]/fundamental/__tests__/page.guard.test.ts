@@ -44,6 +44,9 @@ vi.mock('@/app/[symbol]/fundamental/FundamentalDegraded', () => ({
 vi.mock('@/shared/cache/staticSymbolCache', () => ({
     staticSymbolCache: vi.fn(),
 }));
+vi.mock('@/entities/seo-snapshot/lib/getSnapshotStatic', () => ({
+    getSeoSnapshotsStatic: vi.fn().mockResolvedValue([]),
+}));
 // Widget mocks to avoid deep import chains.
 vi.mock('@/widgets/fundamental/FundamentalAiSummary', () => ({
     FundamentalAiSummary: () => null,
@@ -115,6 +118,7 @@ import { NOINDEX_SYMBOL_METADATA } from '@/shared/lib/seo';
 import { isTabAllowedForSymbol } from '@/entities/ticker/api';
 import { getAssetInfoResilient } from '@/entities/ticker';
 import { getProfileResilient } from '@/app/[symbol]/fundamental/getProfileResilient';
+import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/lib/getSnapshotStatic';
 import { notFound } from 'next/navigation';
 import FundamentalPage, {
     generateMetadata,
@@ -130,6 +134,9 @@ const mockGetAssetInfoResilient = getAssetInfoResilient as MockedFunction<
 >;
 const mockGetProfileResilient = getProfileResilient as MockedFunction<
     typeof getProfileResilient
+>;
+const mockGetSeoSnapshotsStatic = getSeoSnapshotsStatic as MockedFunction<
+    typeof getSeoSnapshotsStatic
 >;
 
 describe('Fundamental page ISR route config', () => {
@@ -246,5 +253,71 @@ describe('Fundamental generateMetadata crypto NOINDEX guard', () => {
         // indexable.  NOINDEX_SYMBOL_METADATA always has robots.index: false, so
         // checking robots is undefined is the positive falsifiable signal.
         expect(result.robots).toBeUndefined();
+    });
+});
+
+/**
+ * spec 2026-07-24 Task 8 — generateMetadata should use the pre-warmed
+ * snapshot's `overallConclusionKo` prose as the <meta name="description">
+ * when a fundamental snapshot row exists, falling back to the (here empty
+ * per the seo mock) templated description otherwise.
+ */
+describe('Fundamental generateMetadata snapshot-derived description', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mockIsTabAllowed.mockResolvedValue(true);
+        mockGetAssetInfoResilient.mockResolvedValue({
+            assetInfo: {
+                symbol: 'AAPL',
+                name: 'Apple Inc.',
+                koreanName: '애플',
+                fmpSymbol: 'AAPL',
+            },
+            degraded: false,
+        } as Awaited<ReturnType<typeof getAssetInfoResilient>>);
+        mockGetProfileResilient.mockResolvedValue({
+            profile: { sector: 'Technology', description: '' },
+            degraded: false,
+        } as Awaited<ReturnType<typeof getProfileResilient>>);
+    });
+
+    it('uses the snapshot overallConclusionKo when a fundamental snapshot row exists', async () => {
+        mockGetSeoSnapshotsStatic.mockResolvedValue([
+            {
+                symbol: 'AAPL',
+                tab: 'fundamental',
+                content: {
+                    overallConclusionKo:
+                        'PER은 업종 평균 대비 높지만 성장성이 이를 상쇄합니다.',
+                },
+                model: 'deepseek-v4-flash',
+                generatedAt: new Date(),
+                updatedAt: new Date(),
+            },
+        ] as Awaited<ReturnType<typeof getSeoSnapshotsStatic>>);
+
+        const result = await generateMetadata({
+            params: Promise.resolve({ symbol: 'AAPL' }),
+        });
+
+        // FIX 5 (audit): description is prefixed with the resolved display
+        // name (subject; buildDisplayName is mocked to 'Apple Inc.' above)
+        // before clamping.
+        expect(result.description).toBe(
+            'Apple Inc. — PER은 업종 평균 대비 높지만 성장성이 이를 상쇄합니다.'
+        );
+    });
+
+    it('falls back to the templated description when no fundamental snapshot exists', async () => {
+        mockGetSeoSnapshotsStatic.mockResolvedValue([]);
+
+        const result = await generateMetadata({
+            params: Promise.resolve({ symbol: 'AAPL' }),
+        });
+
+        // The seo mock in this file stubs buildSymbolFundamentalSeoContent to
+        // return description: '' — asserting that value confirms the templated
+        // path (not the snapshot path) was taken.
+        expect(result.description).toBe('');
     });
 });

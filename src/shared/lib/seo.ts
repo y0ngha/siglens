@@ -133,6 +133,134 @@ export function clampSeoDescription(text: string): string {
     );
 }
 
+/**
+ * Maps each SEO pre-warm snapshot tab to the primary Korean prose field its
+ * `content` carries (verified against `src/views/symbol/snapshot/renderers/*`,
+ * spec 2026-07-24 Task 4~6): technical→`summary`, overall→`headlineKo`,
+ * fundamental/financials→`overallConclusionKo`, congress→`summaryKo`,
+ * options→`summary`, news→`currentDriverKo`.
+ *
+ * Declared as `Record<string, string>` (not `SeoSnapshotTab`) — `shared` may not
+ * import `entities/seo-snapshot` (FSD layer direction: entities→shared, not the
+ * reverse). Callers in `entities`/`app` pass the typed `SeoSnapshotTab` value,
+ * which structurally satisfies `string`.
+ */
+const SNAPSHOT_META_DESCRIPTION_FIELD: Record<string, string> = {
+    technical: 'summary',
+    overall: 'headlineKo',
+    fundamental: 'overallConclusionKo',
+    financials: 'overallConclusionKo',
+    congress: 'summaryKo',
+    options: 'summary',
+    news: 'currentDriverKo',
+};
+
+/** Collapses `\n`-separated topic lines into a single space-joined line (mirrors the renderers' paragraph-split convention, but for a one-line `<meta description>` excerpt). */
+function collapseToSingleLine(text: string): string {
+    return text
+        .split('\n')
+        .map(line => line.trim())
+        .filter(line => line.length > 0)
+        .join(' ');
+}
+
+// FIX 5 (audit): only accept a sentence-ending punctuation mark as a clamp
+// point if it falls within this many code points of the hard cutoff — a
+// boundary near the START of an over-length string would clamp far shorter
+// than necessary, wasting most of the SERP snippet budget.
+const SENTENCE_BOUNDARY_SEARCH_WINDOW = 40;
+const SENTENCE_TERMINATORS = new Set(['.', '!', '?']);
+
+/** True when `codePoints[index]` is a `.` sitting between two digits (a decimal point, e.g. "3.5%"), not a sentence-ending period. */
+function isDecimalPoint(codePoints: readonly string[], index: number): boolean {
+    if (codePoints[index] !== '.') return false;
+    const prev = codePoints[index - 1];
+    const next = codePoints[index + 1];
+    return (
+        prev !== undefined &&
+        next !== undefined &&
+        /\d/.test(prev) &&
+        /\d/.test(next)
+    );
+}
+
+/**
+ * Clamps `text` to `maxLength` code points, preferring to cut at the last
+ * sentence-ending punctuation (`.`/`!`/`?`) within
+ * {@link SENTENCE_BOUNDARY_SEARCH_WINDOW} code points of the hard cutoff
+ * (audit fix FIX 5) — a full final sentence reads better in a SERP snippet
+ * than a mid-sentence cut. Falls back to the original hard-truncate +
+ * ellipsis behavior (matching {@link clampSeoDescription}) when no boundary
+ * is found in that window. Code-point based throughout, same as
+ * `clampSeoDescription`, to avoid splitting a surrogate pair.
+ */
+function clampAtSentenceBoundary(text: string, maxLength: number): string {
+    const codePoints = [...text];
+    if (codePoints.length <= maxLength) return text;
+
+    const truncated = codePoints.slice(0, maxLength - 1);
+    const windowStart = Math.max(
+        0,
+        truncated.length - SENTENCE_BOUNDARY_SEARCH_WINDOW
+    );
+    for (let i = truncated.length - 1; i >= windowStart; i--) {
+        const char = truncated[i];
+        if (
+            char !== undefined &&
+            SENTENCE_TERMINATORS.has(char) &&
+            !isDecimalPoint(codePoints, i)
+        ) {
+            return truncated
+                .slice(0, i + 1)
+                .join('')
+                .trimEnd();
+        }
+    }
+    return truncated.join('').trimEnd() + '…';
+}
+
+/**
+ * Derives a unique `<meta name="description">` excerpt from a pre-warmed SEO
+ * snapshot's primary prose field, for the given tab, prefixed with `subject`
+ * (audit fix FIX 5). Returns `null` when the tab is unrecognized, `content`
+ * is not an object, the field is missing/not a string, or the field is empty
+ * after trimming — callers should fall back to the existing templated
+ * `buildSymbol*SeoContent(...).description` in that case (spec 2026-07-24
+ * Task 8; unchanged by FIX 5).
+ *
+ * `subject` (ticker or `"${koreanName}, ${name} (${ticker})"` display name,
+ * matching the value each of the 7 `generateMetadata` call sites already
+ * resolves) is prefixed BEFORE clamping — every templated builder
+ * (`buildSymbol*SeoContent`) leads with the subject, and the target queries
+ * ("AAPL 주가 전망") need it for the bolded query-term match in the SERP
+ * snippet; raw prose alone was losing that.
+ *
+ * `content` is deliberately `unknown` — the same defensive-narrowing contract
+ * as the `*SnapshotProse` renderers (storage type is `unknown`, tab-specific
+ * schemas differ). This function does NOT validate the full response shape,
+ * only the single field it reads.
+ */
+export function buildSnapshotMetaDescription(
+    tab: string,
+    content: unknown,
+    subject: string
+): string | null {
+    const field = SNAPSHOT_META_DESCRIPTION_FIELD[tab];
+    if (field === undefined) return null;
+    if (typeof content !== 'object' || content === null) return null;
+
+    const raw = (content as Record<string, unknown>)[field];
+    if (typeof raw !== 'string') return null;
+
+    const singleLine = collapseToSingleLine(raw);
+    if (singleLine.length === 0) return null;
+
+    return clampAtSentenceBoundary(
+        `${subject} — ${singleLine}`,
+        SEO_DESCRIPTION_MAX_LENGTH
+    );
+}
+
 // "보조지표 25종" 같은 동적 숫자는 Skills 개수가 바뀌면 stale되므로 질적 표현으로 둔다
 // (M7에서 FAQ JSON-LD에 적용한 정책을 SITE_DESCRIPTION에도 일관 적용).
 export const SITE_DESCRIPTION = clampSeoDescription(

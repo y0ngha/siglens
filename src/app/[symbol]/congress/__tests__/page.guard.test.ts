@@ -33,6 +33,9 @@ vi.mock('@/app/[symbol]/congress/CongressDegraded', () => ({
 vi.mock('@/entities/congress-trades', () => ({
     getCongressTradesResilient: vi.fn(),
 }));
+vi.mock('@/entities/seo-snapshot/lib/getSnapshotStatic', () => ({
+    getSeoSnapshotsStatic: vi.fn().mockResolvedValue([]),
+}));
 vi.mock('@/widgets/congress', () => ({
     CongressTrendSummary: () => null,
     CongressTradesTable: () => null,

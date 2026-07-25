@@ -1,3 +1,11 @@
+// spy → vi.mock → imports order (MISTAKES.md Tests §17).
+const { mockGetSeoSnapshotsStatic } = vi.hoisted(() => ({
+    mockGetSeoSnapshotsStatic: vi.fn(),
+}));
+
+vi.mock('@/entities/seo-snapshot/lib/getSnapshotStatic', () => ({
+    getSeoSnapshotsStatic: mockGetSeoSnapshotsStatic,
+}));
 vi.mock('@/views/symbol/SymbolPageClient', () => ({
     SymbolPageClient: () => null,
 }));
@@ -8,6 +16,9 @@ vi.mock('@/entities/chat-message', () => ({
 vi.mock('@y0ngha/siglens-core', () => ({
     DEEPSEEK_V4_FLASH_MODEL: 'deepseek-v4-flash',
     peekAnalysisCache: vi.fn(),
+    // Task 9: @/views/symbol barrel now also exports FearGreedFactsSummary,
+    // which pulls in fearGreedLabels → POC_WINDOW_DEFAULT at module scope.
+    POC_WINDOW_DEFAULT: 60,
 }));
 vi.mock('@/shared/config/market', async importOriginal => ({
     ...(await importOriginal<typeof import('@/shared/config/market')>()),
@@ -99,6 +110,7 @@ import {
 } from '@y0ngha/siglens-core';
 import { evaluateSymbolIndexability } from '@/entities/symbol-indexability';
 import { SymbolPageClient } from '@/views/symbol/SymbolPageClient';
+import { TechnicalSnapshotProse } from '@/views/symbol/snapshot/renderers/TechnicalSnapshotProse';
 import { findElementByType } from '@/__tests__/utils/findElementByType';
 import { notFound } from 'next/navigation';
 import type { MockedFunction } from 'vitest';
@@ -131,6 +143,10 @@ describe('Symbol page', () => {
     describe('generateMetadata', () => {
         beforeEach(() => {
             vi.clearAllMocks();
+            // getBlockedSymbolMetadata reads snapshots only on the degraded path
+            // (symbolIndexabilityMetadata.ts) — default to no-snapshot so degraded
+            // cases here don't spuriously flip to indexable via hasSnapshot.
+            mockGetSeoSnapshotsStatic.mockResolvedValue([]);
             mockEvaluateSymbolIndexability.mockImplementation(
                 ({ assetInfo, degraded }) => {
                     if (degraded) {
@@ -168,6 +184,64 @@ describe('Symbol page', () => {
             });
 
             expect(metadata.title).toBe('AAPL 차트');
+        });
+
+        it('uses the snapshot-derived description when a technical snapshot exists (spec 2026-07-24 Task 8)', async () => {
+            mockGetAssetInfoResilient.mockResolvedValue({
+                assetInfo: {
+                    symbol: 'AAPL',
+                    name: 'Apple Inc.',
+                    koreanName: '애플',
+                    fmpSymbol: 'AAPL',
+                },
+                degraded: false,
+            } as never);
+            mockGetSeoSnapshotsStatic.mockResolvedValue([
+                {
+                    symbol: 'AAPL',
+                    tab: 'technical',
+                    content: {
+                        summary: 'AAPL은 200일선 위에서 상승 추세입니다.',
+                    },
+                    model: 'deepseek-v4-flash',
+                    generatedAt: new Date(),
+                    updatedAt: new Date(),
+                },
+            ]);
+
+            const metadata = await generateMetadata({
+                params: Promise.resolve({ symbol: 'aapl' }),
+            });
+
+            // FIX 5 (audit): description is prefixed with the resolved
+            // display name (subject; buildDisplayName is mocked to
+            // 'Apple Inc.' in this suite) before clamping.
+            expect(metadata.description).toBe(
+                'Apple Inc. — AAPL은 200일선 위에서 상승 추세입니다.'
+            );
+            // og/twitter keep the templated copy — only the search-facing
+            // <meta name="description"> is overridden (spec 2026-07-24 Task 8).
+            const og = metadata.openGraph as Record<string, unknown>;
+            expect(og.description).toBe('desc');
+        });
+
+        it('falls back to the templated description when no technical snapshot exists', async () => {
+            mockGetAssetInfoResilient.mockResolvedValue({
+                assetInfo: {
+                    symbol: 'AAPL',
+                    name: 'Apple Inc.',
+                    koreanName: '애플',
+                    fmpSymbol: 'AAPL',
+                },
+                degraded: false,
+            } as never);
+            mockGetSeoSnapshotsStatic.mockResolvedValue([]);
+
+            const metadata = await generateMetadata({
+                params: Promise.resolve({ symbol: 'aapl' }),
+            });
+
+            expect(metadata.description).toBe('desc');
         });
 
         it('canonical excludes tf — ISR page uses clean canonical regardless of query params', async () => {
@@ -275,6 +349,7 @@ describe('Symbol page', () => {
             // 의존하는 두 mock만 선택적으로 초기화한다.
             mockGetAssetInfoResilient.mockReset();
             mockPeekAnalysisCache.mockReset();
+            mockGetSeoSnapshotsStatic.mockReset();
             mockGetAssetInfoResilient.mockResolvedValue({
                 assetInfo: {
                     symbol: 'AAPL',
@@ -284,6 +359,9 @@ describe('Symbol page', () => {
                 },
                 degraded: false,
             } as never);
+            // Default: no SEO snapshot row — this describe covers peek/initialAnalysis
+            // seeding, which is orthogonal to the snapshot section.
+            mockGetSeoSnapshotsStatic.mockResolvedValue([]);
         });
 
         async function getClientProps(): Promise<ClientSeedProps> {
@@ -334,6 +412,27 @@ describe('Symbol page', () => {
             expect(props.initialAnalysis).toMatchObject({
                 summary: 'fallback',
             });
+        });
+
+        it('peek 모델 상수(DEEPSEEK_V4_FLASH_MODEL)가 SEO pre-warm 스냅샷 저장 모델과 동일 참조다 (spec §7 5축 캐시 키 정합)', async () => {
+            // harvest.ts는 이 상수를 PREWARM_MODEL_ID = DEEPSEEK_V4_FLASH_MODEL로 스냅샷
+            // content.model에 저장한다. peek이 다른 모델 상수로 조회하면 스냅샷이 가리키는
+            // 캐시 엔트리와 어긋나 5축 정합이 깨진다 — 여기선 페이지가 peek을 호출할 때 쓰는
+            // modelId 인자가 core에서 import한 그 상수(mock 모듈에서도 동일 참조)임을 고정한다.
+            mockPeekAnalysisCache.mockResolvedValue(null);
+
+            await getClientProps();
+
+            expect(mockPeekAnalysisCache).toHaveBeenCalledWith(
+                'AAPL',
+                '1Day',
+                'AAPL',
+                DEEPSEEK_V4_FLASH_MODEL,
+                false,
+                'free',
+                undefined,
+                undefined
+            );
         });
 
         it('seed 여부와 무관하게 initialAnalysisFailed=true를 유지한다 (순수 additive)', async () => {
@@ -387,6 +486,75 @@ describe('Symbol page', () => {
             expect(serialized).not.toContain('FAQPage');
         });
 
+        // audit fix FIX 1: TechnicalSnapshotProse must be a PERSISTENT server
+        // sibling OUTSIDE the Suspense fallback — React destroys the fallback
+        // subtree on hydration, so JS-executing crawlers (Googlebot renderer
+        // included) never see prose that only lives inside `fallback`.
+        // findElementByType only follows `.props.children` (never
+        // `.props.fallback`), so it is a reliable proxy for "is this element a
+        // plain sibling, not buried in the fallback prop" — it would have
+        // returned null against the pre-fix tree (prose nested in
+        // `<Suspense fallback={...}>`).
+        it('mounts TechnicalSnapshotProse as a sibling OUTSIDE the Suspense fallback (FIX 1)', async () => {
+            mockPeekAnalysisCache.mockResolvedValue(null);
+
+            const tree = await SymbolPage({
+                params: Promise.resolve({ symbol: 'aapl' }),
+            });
+
+            expect(
+                findElementByType(tree, TechnicalSnapshotProse)
+            ).not.toBeNull();
+        });
+
+        // UI audit FIX 1: TechnicalSnapshotProse used to be the FIRST child of
+        // <main>, sharing the fixed-height jail's flex budget with the chart —
+        // it visually squeezed/clipped the chart and rendered before the
+        // (fallback) h1 in DOM order (heading-order inversion, WCAG 1.3.1). The
+        // fix moves it to the LAST child of <main>, after the chart wrapper,
+        // and makes <main> itself the scroll container (overflow-y-auto) so
+        // the chart wrapper (h-full + shrink-0) never competes for height.
+        it('mounts TechnicalSnapshotProse as the LAST child of <main>, after the chart wrapper (FIX 1)', async () => {
+            mockPeekAnalysisCache.mockResolvedValue(null);
+
+            const tree = await SymbolPage({
+                params: Promise.resolve({ symbol: 'aapl' }),
+            });
+
+            const main = findElementByType(tree, 'main');
+            if (main === null) throw new Error('<main> not found in tree');
+
+            const mainChildren = (main.props as { children: unknown }).children;
+            if (!Array.isArray(mainChildren)) {
+                throw new Error('<main> children is not an array');
+            }
+
+            // Last element of <main> must be TechnicalSnapshotProse — proves it
+            // is no longer the first flex child competing with the chart, and
+            // (since the fallback/client h1 lives inside the earlier chart
+            // wrapper child) that it renders after the h1 in DOM order.
+            const lastChild = mainChildren.at(-1);
+            expect(lastChild?.type).toBe(TechnicalSnapshotProse);
+        });
+
+        // UI audit FIX 1: <main> must be the scroll container so content
+        // below the chart wrapper is reachable (not permanently clipped by
+        // the sticky-footer jail's overflow-hidden, which the definite-height
+        // regression guard in SymbolLayoutClient.test.tsx forbids changing).
+        it('gives <main> overflow-y-auto so below-chart content is reachable, not clipped (FIX 1)', async () => {
+            mockPeekAnalysisCache.mockResolvedValue(null);
+
+            const tree = await SymbolPage({
+                params: Promise.resolve({ symbol: 'aapl' }),
+            });
+
+            const main = findElementByType(tree, 'main');
+            if (main === null) throw new Error('<main> not found in tree');
+
+            const className = (main.props as { className: string }).className;
+            expect(className).toContain('overflow-y-auto');
+        });
+
         it('does not render hidden keyword stuffing copy', async () => {
             mockPeekAnalysisCache.mockResolvedValue(null);
 
@@ -410,6 +578,7 @@ describe('Symbol page', () => {
             vi.clearAllMocks();
             // Restore stable defaults cleared by vi.clearAllMocks().
             mockPeekAnalysisCache.mockResolvedValue(null);
+            mockGetSeoSnapshotsStatic.mockResolvedValue([]);
         });
 
         it('branch-taken: degraded + non-US ticker shape calls notFound()', async () => {

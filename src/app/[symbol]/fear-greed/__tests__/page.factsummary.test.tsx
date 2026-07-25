@@ -1,0 +1,213 @@
+/**
+ * Fear-greed page SSR factor summary wiring tests.
+ *
+ * Verifies `FearGreedFactsSummary` (server-computed, crawlable factor summary —
+ * see Task 9) is mounted as a server sibling in the initial HTML:
+ * - Happy: bars present → factor summary text appears in the rendered SSR tree.
+ * - Worst: bars empty → factor summary absent, page still resolves.
+ * - Worst: getBarsStatic throws → factor summary absent, page still resolves
+ *   (existing .catch(→null) degrade path, unchanged by this feature).
+ *
+ * `computeFearGreedIndex` itself is unit-tested by
+ * FearGreedFactsSummary.test.tsx; this suite only verifies page-level wiring,
+ * so `computeFearGreedIndex` is mocked to a fixed snapshot (mirrors
+ * useFearGreed.test.tsx / FearGreedFactsSummary.test.tsx convention — real
+ * walk-forward fixtures need 90+ bars, irrelevant to wiring).
+ */
+
+// MISTAKES §17: all vi.mock + vi.hoisted declarations must come before imports.
+const { mockGetAssetInfoResilient, mockGetBarsStatic } = vi.hoisted(() => ({
+    mockGetAssetInfoResilient: vi.fn(),
+    mockGetBarsStatic: vi.fn(),
+}));
+
+vi.mock('@y0ngha/siglens-core', async () => {
+    const actual = await vi.importActual('@y0ngha/siglens-core');
+    return {
+        ...actual,
+        computeFearGreedIndex: vi.fn(() => ({
+            score: 71,
+            label: 'GREED',
+            groups: [
+                {
+                    name: 'Flow',
+                    score: 68,
+                    factors: [
+                        { key: 'volume_z', rawValue: 1.1, percentile: 70 },
+                        {
+                            key: 'buysell_imbalance',
+                            rawValue: 0.2,
+                            percentile: 72,
+                        },
+                        {
+                            key: 'poc_distance',
+                            rawValue: 0.05,
+                            percentile: 60,
+                        },
+                    ],
+                },
+                {
+                    name: 'Trend',
+                    score: 74,
+                    factors: [
+                        {
+                            key: 'ma200_distance',
+                            rawValue: 0.12,
+                            percentile: 80,
+                        },
+                        {
+                            key: 'range_position',
+                            rawValue: 0.88,
+                            percentile: 85,
+                        },
+                    ],
+                },
+            ],
+            confidence: 'normal',
+            sampleSize: 300,
+            warning: null,
+        })),
+    };
+});
+
+vi.mock('@tanstack/react-query', () => ({
+    dehydrate: () => ({}),
+    HydrationBoundary: () => null,
+    QueryClient: function MockQueryClientClass() {
+        return { setQueryData: vi.fn() };
+    },
+}));
+
+vi.mock('@/entities/ticker', () => ({
+    buildAssetAboutNode: vi.fn().mockReturnValue(undefined),
+    buildDisplayName: vi.fn().mockReturnValue('Apple Inc.'),
+    getAssetInfoResilient: (ticker: string) =>
+        mockGetAssetInfoResilient(ticker),
+}));
+
+vi.mock('@/entities/bars', () => ({
+    getBarsStatic: (symbol: string, timeframe: string, fmpSymbol?: string) =>
+        mockGetBarsStatic(symbol, timeframe, fmpSymbol),
+    // page-level unit under test is the wiring, not quantization — pass through.
+    quantizeBarsDataToLastClosed: (data: unknown) => data,
+}));
+
+vi.mock('next/navigation', () => ({
+    notFound: vi.fn(() => {
+        throw new Error('NEXT_NOT_FOUND');
+    }),
+}));
+
+vi.mock('@/widgets/fear-greed/FearGreedPage', () => ({
+    FearGreedPage: () => null,
+}));
+vi.mock('@/widgets/fear-greed', () => ({
+    FearGreedPageError: () => null,
+}));
+// Keep FearGreedFactsSummary real (subject under test) — only stub the
+// unrelated barrel export.
+vi.mock('@/views/symbol', async importOriginal => ({
+    ...(await importOriginal<typeof import('@/views/symbol')>()),
+    SymbolPageHeading: () => null,
+}));
+vi.mock('@/shared/ui/CrossLinkCards', () => ({
+    CrossLinkCards: () => null,
+}));
+vi.mock('@/shared/ui/JsonLd', () => ({ JsonLd: () => null }));
+vi.mock('react-error-boundary', () => ({
+    ErrorBoundary: ({ children }: { children: React.ReactNode }) => children,
+}));
+vi.mock('@/shared/lib/seo', async importOriginal => ({
+    ...(await importOriginal<typeof import('@/shared/lib/seo')>()),
+    buildBreadcrumbJsonLd: vi.fn().mockReturnValue({}),
+    buildSymbolSeoContent: vi.fn().mockReturnValue({ url: '' }),
+    resolveSymbolFearGreedSeoContent: vi
+        .fn()
+        .mockReturnValue({ fullTitle: '', description: '', url: '' }),
+    SITE_NAME: 'Siglens',
+    SITE_URL: 'https://siglens.io',
+    NOINDEX_SYMBOL_METADATA: {
+        robots: { index: false, follow: false },
+        alternates: { canonical: null },
+    },
+}));
+
+import { describe, expect, it, beforeEach, vi } from 'vitest';
+import { render, screen } from '@testing-library/react';
+import SymbolFearGreedPage from '@/app/[symbol]/fear-greed/page';
+
+const EQUITY_ASSET_INFO = {
+    symbol: 'AAPL',
+    name: 'Apple Inc.',
+    fmpSymbol: 'AAPL',
+};
+
+const BARS_WITH_DATA = {
+    bars: [
+        { time: 1, open: 1, high: 2, low: 0.5, close: 1.5, volume: 100 },
+        { time: 2, open: 1.5, high: 2.5, low: 1, close: 2, volume: 120 },
+    ],
+    indicators: {
+        buySellVolume: [
+            { buyVolume: 60, sellVolume: 40 },
+            { buyVolume: 70, sellVolume: 50 },
+        ],
+    },
+};
+
+describe('SymbolFearGreedPage — SSR factor summary wiring', () => {
+    beforeEach(() => {
+        mockGetAssetInfoResilient.mockReset();
+        mockGetBarsStatic.mockReset();
+        mockGetAssetInfoResilient.mockResolvedValue({
+            assetInfo: EQUITY_ASSET_INFO,
+            degraded: false,
+        });
+    });
+
+    it('Happy: bars 있으면 SSR HTML에 FearGreedFactsSummary 텍스트(점수·factor)가 렌더된다', async () => {
+        mockGetBarsStatic.mockResolvedValue(BARS_WITH_DATA);
+
+        const tree = await SymbolFearGreedPage({
+            params: Promise.resolve({ symbol: 'aapl' }),
+        });
+        render(tree);
+
+        expect(
+            screen.getByText(/AAPL 공포 탐욕 지수 요약/)
+        ).toBeInTheDocument();
+        expect(screen.getByText(/71 \/ 100/)).toBeInTheDocument();
+        expect(screen.getByText(/거래량 z/)).toBeInTheDocument();
+        // FIX 6's factor-ranking narrative sentence can also mention "52주
+        // 위치" when it's the most extreme factor — anchor on the
+        // per-factor line's "라벨: 값" shape so this assertion targets only
+        // that line.
+        expect(screen.getByText(/52주 위치: /)).toBeInTheDocument();
+    });
+
+    it('Worst: bars 빈 배열이면 factor summary가 없고 페이지는 정상 resolve된다', async () => {
+        mockGetBarsStatic.mockResolvedValue({ bars: [], indicators: {} });
+
+        const tree = await SymbolFearGreedPage({
+            params: Promise.resolve({ symbol: 'aapl' }),
+        });
+        render(tree);
+
+        expect(
+            screen.queryByText(/공포 탐욕 지수 요약/)
+        ).not.toBeInTheDocument();
+    });
+
+    it('Worst: getBarsStatic 실패(throw)해도 페이지가 깨지지 않고 factor summary는 생략된다', async () => {
+        mockGetBarsStatic.mockRejectedValue(new Error('bars infra down'));
+
+        const tree = await SymbolFearGreedPage({
+            params: Promise.resolve({ symbol: 'aapl' }),
+        });
+        render(tree);
+
+        expect(
+            screen.queryByText(/공포 탐욕 지수 요약/)
+        ).not.toBeInTheDocument();
+    });
+});

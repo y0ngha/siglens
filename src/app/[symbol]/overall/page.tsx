@@ -1,6 +1,10 @@
 import { OverallContent } from '@/widgets/overall/OverallContent';
 import { getBlockedSymbolMetadata } from '@/app/[symbol]/symbolIndexabilityMetadata';
 import { OverallFactualFallback, OverallFactsSummary } from '@/widgets/overall';
+import {
+    hasOverallProse,
+    OverallSnapshotProse,
+} from '@/views/symbol/snapshot/renderers/OverallSnapshotProse';
 import { SymbolPageHeading } from '@/views/symbol';
 import { CrossLinkCards } from '@/shared/ui/CrossLinkCards';
 import { JsonLd } from '@/shared/ui/JsonLd';
@@ -20,6 +24,7 @@ import { getNewsList } from '@/entities/news-article/api';
 import { NEWS_LIST_CACHE_KEY } from '@/entities/news-article';
 import {
     buildBreadcrumbJsonLd,
+    buildSnapshotMetaDescription,
     buildSymbolSeoContent,
     buildSymbolWebPageJsonLd,
     resolveSymbolOverallSeoContent,
@@ -31,6 +36,7 @@ import {
     DEEPSEEK_V4_FLASH_MODEL,
     peekOverallAnalysisCache,
 } from '@y0ngha/siglens-core';
+import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/lib/getSnapshotStatic';
 import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
 import { SECONDS_PER_HALF_DAY } from '@/shared/config/time';
 import type { Metadata } from 'next';
@@ -57,10 +63,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         return NOINDEX_SYMBOL_METADATA;
     }
     const { assetInfo, degraded } = await getAssetInfoResilient(upper);
-    const blockedMetadata = getBlockedSymbolMetadata({
+    const blockedMetadata = await getBlockedSymbolMetadata({
         symbol: upper,
         assetInfo,
         degraded,
+        revalidateSeconds: revalidate,
+        tab: 'overall',
     });
     if (blockedMetadata) return blockedMetadata;
     if (!assetInfo) return NOINDEX_SYMBOL_METADATA;
@@ -71,7 +79,23 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         displayName,
         koreanName: assetInfo.koreanName,
     });
-    return symbolMetadataFromSeo(seo);
+    const metadata = symbolMetadataFromSeo(seo);
+
+    // snapshot-derived unique description (spec 2026-07-24 Task 8). Same
+    // getSeoSnapshotsStatic(upper, revalidate) call the page body makes below —
+    // unstable_cache dedupes it within this render, so this is a cache hit, not
+    // an extra DB round-trip. Falls back to the templated description when no
+    // snapshot exists (backward compatible). og/twitter keep the templated copy
+    // — only the search-facing <meta name="description"> is overridden.
+    const snap = (await getSeoSnapshotsStatic(upper, revalidate)).find(
+        s => s.tab === 'overall'
+    );
+    const snapshotDescription = snap
+        ? buildSnapshotMetaDescription('overall', snap.content, displayName)
+        : null;
+    return snapshotDescription
+        ? { ...metadata, description: snapshotDescription }
+        : metadata;
 }
 
 // `?tf=` is read by the client component (useSearchParams); canonical URL excludes it so search engines see one URL per page.
@@ -116,7 +140,7 @@ export default async function OverallPage({ params }: Props) {
     //
     // Promise.all로 병렬화 — 두 호출은 서로 독립이라 직렬 await할 이유가 없다.
     // cold path(둘 다 캐시 miss)에서 TTFB가 ~max(t1, t2) 수준으로 줄어든다.
-    const [newsItems, cachedOverall] = await Promise.all([
+    const [newsItems, cachedOverall, snapshots] = await Promise.all([
         staticSymbolCache(
             [NEWS_LIST_CACHE_KEY, upper],
             upper,
@@ -153,8 +177,25 @@ export default async function OverallPage({ params }: Props) {
             );
             return null;
         }),
+        // ISR-safe (staticSymbolCache-wrapped, fail-open []) — see
+        // getSeoSnapshotsStatic JSDoc. revalidateSeconds mirrors this page's
+        // `export const revalidate` literal above.
+        getSeoSnapshotsStatic(upper, revalidate),
     ]);
     const hasEnrichedNews = newsItems.some(item => item.sentiment !== null);
+
+    // snapshot-first, 기존 peek fallback 유지 (spec §7): 스냅샷이 실제로 렌더 가능하면
+    // 그것을 canonical SSR 분석으로 쓰고, 아니면 기존 peek(cachedOverall) 결과로, 그것도
+    // 없으면 기존 OverallFactualFallback placeholder로 내려간다.
+    //
+    // "행 존재"가 아니라 "렌더 가능 여부"(`hasOverallProse`)를 게이트로 쓴다(audit fix
+    // FIX 1b) — 행은 있지만 content가 malformed라 OverallSnapshotProse가 null을
+    // 반환하는 경우, 행 존재만 보고 게이트했다면 peek/placeholder 체인까지 스킵돼
+    // 섹션이 통째로 비어버리는(오늘 baseline보다 더 나쁜) 회귀가 생긴다.
+    // hasOverallProse는 OverallSnapshotProse 내부와 동일한 narrowOverallContent를
+    // 재사용하므로 두 판단이 어긋날 수 없다.
+    const overallSnapshot = snapshots.find(s => s.tab === 'overall');
+    const showSnapshotProse = hasOverallProse(overallSnapshot?.content);
 
     const displayName = buildDisplayName(assetInfo, upper);
     const marketProfile = marketProfileOf(assetInfo);
@@ -298,13 +339,31 @@ export default async function OverallPage({ params }: Props) {
                         </>
                     )}
                 </section>
+                {/* AI 스냅샷 프로즈는 Suspense fallback이 아니라 PERSISTENT server
+                    sibling으로 마운트한다(audit fix — fallback 안에 두면 React가
+                    boundary resolve 시 클라이언트에서 그 서브트리를 DESTROY한다:
+                    정적 HTML에는 fallback이 박히지만, hydration 후 JS를 실행하는
+                    크롤러(Googlebot 렌더러 포함)에게는 사라진다). 나머지 5개
+                    sibling 탭과 동일한 plain SSR sibling 패턴을 따른다.
+                    `showSnapshotProse`(hasOverallProse) 게이트로 peek/placeholder
+                    체인과 상호 배타 처리한다 — 동일 AI 분석 텍스트 중복 방지. */}
+                {showSnapshotProse && (
+                    <OverallSnapshotProse
+                        content={overallSnapshot?.content}
+                        symbol={upper}
+                        displayName={displayName}
+                    />
+                )}
                 {/* fallback은 두 역할을 겸한다: (1) useSearchParams CSR-bailout 서브트리가
-                    hydration 전 비어 보이는 flash/CLS 방지, (2) cached 종합 분석이 있으면
-                    크롤러가 JS 없이도 분석 텍스트를 읽을 수 있도록 SSR HTML에 박는다.
-                    캐시 MISS 시에는 서버가 이미 가진 사실 데이터로 폴백한다. */}
+                    hydration 전 비어 보이는 flash/CLS 방지, (2) 분석 텍스트를 크롤러가
+                    JS 없이도 읽을 수 있도록 SSR HTML에 박는다. snapshot-first, 기존 peek
+                    fallback 유지(spec §7) — 스냅샷이 렌더 가능하면 위에서 이미 프로즈를
+                    보여줬으므로 이 fallback은 peek(cachedOverall) 결과로, 그것도 없으면
+                    기존 placeholder로 내려간다. `showSnapshotProse` 게이트로 스냅샷
+                    프로즈와 peek을 동시에 렌더하지 않아 중복이 없다. */}
                 <Suspense
                     fallback={
-                        cachedOverall ? (
+                        showSnapshotProse ? null : cachedOverall ? (
                             <OverallFactsSummary
                                 symbol={upper}
                                 analysis={cachedOverall}

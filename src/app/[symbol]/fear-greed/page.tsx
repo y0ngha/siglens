@@ -2,7 +2,7 @@ import { FearGreedPage } from '@/widgets/fear-greed/FearGreedPage';
 import { getBlockedSymbolMetadata } from '@/app/[symbol]/symbolIndexabilityMetadata';
 import { ErrorBoundary } from 'react-error-boundary';
 import { FearGreedPageError } from '@/widgets/fear-greed';
-import { SymbolPageHeading } from '@/views/symbol';
+import { FearGreedFactsSummary, SymbolPageHeading } from '@/views/symbol';
 import { CrossLinkCards } from '@/shared/ui/CrossLinkCards';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import {
@@ -34,6 +34,7 @@ import {
     HydrationBoundary,
     QueryClient,
 } from '@tanstack/react-query';
+import type { BarsData } from '@y0ngha/siglens-core';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
@@ -60,10 +61,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         return NOINDEX_SYMBOL_METADATA;
     }
     const { assetInfo, degraded } = await getAssetInfoResilient(ticker);
-    const blockedMetadata = getBlockedSymbolMetadata({
+    const blockedMetadata = await getBlockedSymbolMetadata({
         symbol: ticker,
         assetInfo,
         degraded,
+        revalidateSeconds: revalidate,
     });
     if (blockedMetadata) return blockedMetadata;
     if (!assetInfo) return NOINDEX_SYMBOL_METADATA;
@@ -174,22 +176,26 @@ export default async function SymbolFearGreedPage({ params }: Props) {
         console.error('[FearGreedPage] getBarsStatic failed:', e);
         return null;
     });
+    // quantizedFgBars also feeds FearGreedFactsSummary (SSR factor summary below) —
+    // hoisted out of the if-block so both the RQ seed and the SSR fact layer share
+    // the same lockstep-quantized bars/indicators.
+    let quantizedFgBars: BarsData | null = null;
     if (fgBars !== null) {
         // updatedAt 명시: RQ dehydrate 기본은 Date.now()라 매 ISR 재생성마다 다른 timestamp가
         // HTML에 박혀 ISR write churn 발생. 마지막 완료 봉의 time으로 고정.
         // Session arg mirrors the chart page pattern: crypto (always-open) must strip
         // the forming bar with CRYPTO_SESSION, not US_EQUITY_SESSION (the default).
-        const quantized = quantizeBarsDataToLastClosed(
+        quantizedFgBars = quantizeBarsDataToLastClosed(
             fgBars,
             new Date(),
             sessionSpecFor(marketProfileOf(assetInfo))
         );
         // Bar.time은 seconds (epoch) — RQ dataUpdatedAt은 milliseconds.
-        const lastBarSec = quantized.bars.at(-1)?.time ?? 0;
+        const lastBarSec = quantizedFgBars.bars.at(-1)?.time ?? 0;
         const stableUpdatedAt = lastBarSec * MS_PER_SECOND;
         queryClient.setQueryData(
             QUERY_KEYS.bars(symbol, DEFAULT_TIMEFRAME, assetInfo.fmpSymbol),
-            quantized,
+            quantizedFgBars,
             { updatedAt: stableUpdatedAt }
         );
     }
@@ -244,6 +250,18 @@ export default async function SymbolFearGreedPage({ params }: Props) {
                         안전합니다.
                     </p>
                 </section>
+                {/* 서버 계산 factor 요약 — crawler는 JS 미실행이라 아래 클라 게이지
+                    (FearGreedPage)의 점수·factor 수치를 절대 못 본다. 여기서
+                    이미 로드된 quantizedFgBars(bars+indicators)로 동일 수치를
+                    SSR HTML에 박아 크롤 가능하게 한다(결정적, AI/pre-warm 무관).
+                    사용자에게도 동일하게 보이므로 클로킹 아님. */}
+                {quantizedFgBars && quantizedFgBars.bars.length > 0 && (
+                    <FearGreedFactsSummary
+                        symbol={ticker}
+                        bars={quantizedFgBars.bars}
+                        buySellVolume={quantizedFgBars.indicators.buySellVolume}
+                    />
+                )}
                 <HydrationBoundary state={dehydrate(queryClient)}>
                     <ErrorBoundary FallbackComponent={FearGreedPageError}>
                         <FearGreedPage

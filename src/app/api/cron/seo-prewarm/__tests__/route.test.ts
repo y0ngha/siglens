@@ -108,4 +108,23 @@ describe('PATCH /api/cron/seo-prewarm', () => {
         expect(releasePrewarmLock).toHaveBeenCalledWith('token-1');
         errSpy.mockRestore();
     });
+
+    it('FIX H(감사) — acquirePrewarmLock이 throw해도(Upstash 장애) 204를 반환하고 after는 예약되지 않는다', async () => {
+        vi.mocked(acquirePrewarmLock).mockRejectedValue(
+            new Error('upstash timeout')
+        );
+        const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+        const res = await PATCH(makeRequest('Bearer test-secret'));
+
+        expect(res.status).toBe(HTTP_STATUS_NO_CONTENT);
+        expect(mockAfter).not.toHaveBeenCalled();
+        expect(runPrewarmBatch).not.toHaveBeenCalled();
+        expect(errSpy).toHaveBeenCalledWith(
+            '[seo-prewarm] redis unavailable — lock acquire threw:',
+            expect.any(Error)
+        );
+
+        errSpy.mockRestore();
+    });
 });

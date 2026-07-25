@@ -1,8 +1,10 @@
 import { SymbolPageClient } from '@/views/symbol/SymbolPageClient';
 import { TechnicalFactsSummary, buildChartPageHeading } from '@/views/symbol';
+import { TechnicalSnapshotProse } from '@/views/symbol/snapshot/renderers/TechnicalSnapshotProse';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import { FALLBACK_ANALYSIS } from '@/entities/chat-message';
 import { getBlockedSymbolMetadata } from '@/app/[symbol]/symbolIndexabilityMetadata';
+import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/lib/getSnapshotStatic';
 import { DEEPSEEK_V4_FLASH_MODEL } from '@y0ngha/siglens-core';
 import {
     normalizeAnalysisResponse,
@@ -27,6 +29,7 @@ import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/shared/config/queryConfig';
 import { MS_PER_SECOND } from '@/shared/config/time';
 import {
     buildBreadcrumbJsonLd,
+    buildSnapshotMetaDescription,
     buildSymbolWebPageJsonLd,
     resolveSymbolSeoContent,
     symbolMetadataFromSeo,
@@ -62,10 +65,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         return NOINDEX_SYMBOL_METADATA;
     }
     const { assetInfo, degraded } = await getAssetInfoResilient(ticker);
-    const blockedMetadata = getBlockedSymbolMetadata({
+    const blockedMetadata = await getBlockedSymbolMetadata({
         symbol: ticker,
         assetInfo,
         degraded,
+        revalidateSeconds: revalidate,
+        tab: 'technical',
     });
     if (blockedMetadata) return blockedMetadata;
     if (!assetInfo) return NOINDEX_SYMBOL_METADATA;
@@ -80,7 +85,23 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
             koreanName: assetInfo.koreanName,
         }
     );
-    return symbolMetadataFromSeo(seo);
+    const metadata = symbolMetadataFromSeo(seo);
+
+    // snapshot-derived unique description (spec 2026-07-24 Task 8). Same
+    // getSeoSnapshotsStatic(ticker, revalidate) call the page body makes below —
+    // unstable_cache dedupes it within this render, so this is a cache hit, not
+    // an extra DB round-trip. Falls back to the templated description when no
+    // snapshot exists (backward compatible). og/twitter keep the templated copy
+    // — only the search-facing <meta name="description"> is overridden.
+    const snap = (await getSeoSnapshotsStatic(ticker, revalidate)).find(
+        s => s.tab === 'technical'
+    );
+    const snapshotDescription = snap
+        ? buildSnapshotMetaDescription('technical', snap.content, displayName)
+        : null;
+    return snapshotDescription
+        ? { ...metadata, description: snapshotDescription }
+        : metadata;
 }
 
 export default async function SymbolPage({ params }: Props) {
@@ -89,10 +110,17 @@ export default async function SymbolPage({ params }: Props) {
     // 다른 5개 sibling 페이지(news/fundamental/options/overall/fear-greed)와 일관:
     // 잘못된 ticker 형식은 본문에서도 notFound로 즉시 차단한다 (generateMetadata 가드와 짝).
     if (!isAdmissibleSymbolShape(ticker)) notFound();
-    const [{ assetInfo, degraded }, skillCounts] = await Promise.all([
-        getAssetInfoResilient(ticker),
-        countSkillFiles(),
-    ]);
+    const [{ assetInfo, degraded }, skillCounts, snapshots] = await Promise.all(
+        [
+            getAssetInfoResilient(ticker),
+            countSkillFiles(),
+            // ISR-safe (staticSymbolCache-wrapped, fail-open []) — see
+            // getSeoSnapshotsStatic JSDoc. revalidateSeconds mirrors this page's
+            // `export const revalidate` literal above.
+            getSeoSnapshotsStatic(ticker, revalidate),
+        ]
+    );
+    const technicalSnapshot = snapshots.find(s => s.tab === 'technical');
     // 확장된 게이트(SYMBOL_EDGE_RE)는 crypto 심볼을 수용하기 위해 이전 VALID_TICKER_RE보다
     // 넓다. 정상 조건에서 crypto 심볼은 crypto_assets DB에서 직접 해결된다(degrade 없음).
     // crypto_assets DB와 FMP가 동시에 다운된 경우에만 예외적으로 degrade 가능하며, 이는
@@ -227,13 +255,24 @@ export default async function SymbolPage({ params }: Props) {
                 outer div는 flex-1로 viewport를 채우는 구조라 그 위 한 단을 main으로
                 감싸 sr-only 보조 설명과 chart 본문을 하나의 랜드마크로 묶는다.
                 가시 h1은 jail 제약상 SymbolPageClient의 timeframe bar 안에 둔다. */}
-            {/* 차트 페이지는 CrossLinkCards를 본문에 두지 않는다 — SymbolLayout의
-                sticky-footer jail이 main(flex-1) 안에서 chart+AI가 첫 viewport를
-                채우게 하므로, 카드를 추가하면 jail 안 flex 분배가 깨져 chart 가시
-                영역이 침범된다. cross-link 역할은 layout header의 SymbolTabs가
-                충분히 수행 (탭으로 sibling 페이지 전환 가능). SEO internal-link
-                측면에서도 SymbolTabs는 anchor 기반이라 crawler가 follow 가능. */}
-            <main className="flex min-h-0 flex-1 flex-col">
+            {/* 차트 페이지는 CrossLinkCards를 본문에 두지 않는다 — cross-link 역할은
+                layout header의 SymbolTabs가 충분히 수행한다 (탭으로 sibling 페이지
+                전환 가능; anchor 기반이라 crawler도 follow 가능). TechnicalSnapshotProse는
+                아래에서 별도 처리한다 (overflow-y-auto 참고). */}
+            {/* audit fix FIX 1: SymbolLayout의 sticky-footer jail(SymbolLayoutClient.tsx)은
+                차트 라우트에서 definite height + overflow-hidden으로 고정된다 — AI 분석
+                패널이 길어져도 차트 행이 늘어나지 않게 하는 회귀 가드(SymbolLayoutClient
+                .test.tsx)라 그 계약은 건드리지 않는다. 대신 이 <main> 자체가
+                overflow-y-auto를 갖는 스크롤 컨테이너가 된다: 아래 wrapper div는
+                `h-full shrink-0`으로 잡아 main의 전체 높이를 항상 그대로 차지하므로
+                (basis 100%, shrink 금지) chart+AI 영역은 TechnicalSnapshotProse의
+                존재 여부와 무관하게 절대 압축되지 않는다. 프로즈는 그 wrapper 뒤에
+                오는 sibling이라 총 콘텐츠 높이가 main의 고정 높이를 넘으면(즉, 프로즈가
+                실제로 존재하면) main 자신이 내부 스크롤로 노출한다 — 이전처럼
+                overflow-hidden에 잘려 사라지지 않는다. h1(SymbolPageClient 또는
+                fallback 안)이 프로즈보다 DOM에서 먼저 오므로 heading 위계(WCAG 1.3.1)도
+                함께 해결된다. */}
+            <main className="flex min-h-0 flex-1 flex-col overflow-y-auto">
                 <section className="sr-only">
                     {/* 차트 h1은 SymbolPageClient(이 section보다 DOM 뒤)에 있어,
                         여기에 heading을 두면 h1보다 먼저 나와 위계가 역전된다
@@ -244,65 +283,92 @@ export default async function SymbolPage({ params }: Props) {
                         있는 차트 페이지입니다.
                     </p>
                 </section>
-                <HydrationBoundary state={dehydrate(queryClient)}>
-                    {/* fallback은 두 역할을 겸한다:
-                        1. CLS 방지 — 차트 영역(flex-1)을 미리 차지해 useSearchParams
-                           CSR-bailout 서브트리가 hydration 전 비어 보이는 flash를 막는다.
-                        2. FactLayer SSR — bars가 있으면 TechnicalFactsSummary를 fallback으로
-                           렌더해 크롤러(JS 미실행)가 기술적 지표 요약 텍스트를 SSR HTML로
-                           받는다. 사용자는 hydration 후 인터랙티브 SymbolPageClient로 교체된다. */}
-                    <Suspense
-                        fallback={
-                            <>
-                                {/* SSR 크롤용 h1: 가시 h1은 SymbolPageClient(useSearchParams
-                                    CSR-bailout)에 있어 SSR HTML에 박히지 않는다. hydration 후
-                                    그 가시 h1으로 교체되는 이 fallback에 동일 텍스트의 sr-only
-                                    h1을 둬, JS 미실행 크롤러(Naver Yeti 등)가 메인 페이지 h1을
-                                    받게 한다(나머지 5라우트의 SymbolPageHeading h1과 정합). fallback이
-                                    hydration 시 교체되므로 가시 클라 h1과 동시 존재하지 않아 h1 중복은
-                                    없고, 텍스트가 동일해 cloaking도 아니다. */}
-                                <h1 className="sr-only">
-                                    {buildChartPageHeading(displayName)}
-                                </h1>
-                                {quantizedFactBars &&
-                                quantizedFactBars.bars.length > 0 ? (
-                                    <TechnicalFactsSummary
-                                        symbol={ticker}
-                                        bars={quantizedFactBars.bars}
-                                        indicators={
-                                            quantizedFactBars.indicators
-                                        }
-                                        marketProfile={marketProfile}
-                                    />
-                                ) : (
-                                    <div
-                                        className="bg-secondary-900 flex min-h-0 flex-1 flex-col overflow-hidden"
-                                        aria-hidden="true"
-                                    />
-                                )}
-                            </>
-                        }
-                    >
-                        <SymbolPageClient
-                            symbol={symbol}
-                            companyName={assetInfo.name}
-                            displayName={displayName}
-                            initialAnalysis={initialAnalysis}
-                            initialLockedInfoDepth={
-                                cachedAnalysis?.lockedInfoDepth ?? []
+                {/* h-full + shrink-0: main의 전체 높이를 basis로 고정하고 shrink를
+                    금지해, 뒤따르는 TechnicalSnapshotProse가 있어도 이 chart+AI
+                    영역은 절대 압축되지 않는다(위 audit fix FIX 1 주석 참고). */}
+                <div className="flex h-full shrink-0 flex-col">
+                    <HydrationBoundary state={dehydrate(queryClient)}>
+                        {/* fallback은 두 역할을 겸한다:
+                            1. CLS 방지 — 차트 영역(flex-1)을 미리 차지해 useSearchParams
+                               CSR-bailout 서브트리가 hydration 전 비어 보이는 flash를 막는다.
+                            2. FactLayer SSR — bars가 있으면 TechnicalFactsSummary를 fallback으로
+                               렌더해 크롤러(JS 미실행)가 기술적 지표 요약 텍스트를 SSR HTML로
+                               받는다. 사용자는 hydration 후 인터랙티브 SymbolPageClient로 교체된다. */}
+                        <Suspense
+                            fallback={
+                                <>
+                                    {/* SSR 크롤용 h1: 가시 h1은 SymbolPageClient(useSearchParams
+                                        CSR-bailout)에 있어 SSR HTML에 박히지 않는다. hydration 후
+                                        그 가시 h1으로 교체되는 이 fallback에 동일 텍스트의 sr-only
+                                        h1을 둬, JS 미실행 크롤러(Naver Yeti 등)가 메인 페이지 h1을
+                                        받게 한다(나머지 5라우트의 SymbolPageHeading h1과 정합). fallback이
+                                        hydration 시 교체되므로 가시 클라 h1과 동시 존재하지 않아 h1 중복은
+                                        없고, 텍스트가 동일해 cloaking도 아니다. */}
+                                    <h1 className="sr-only">
+                                        {buildChartPageHeading(displayName)}
+                                    </h1>
+                                    {quantizedFactBars &&
+                                    quantizedFactBars.bars.length > 0 ? (
+                                        <TechnicalFactsSummary
+                                            symbol={ticker}
+                                            bars={quantizedFactBars.bars}
+                                            indicators={
+                                                quantizedFactBars.indicators
+                                            }
+                                            marketProfile={marketProfile}
+                                        />
+                                    ) : (
+                                        <div
+                                            className="bg-secondary-900 flex min-h-0 flex-1 flex-col overflow-hidden"
+                                            aria-hidden="true"
+                                        />
+                                    )}
+                                </>
                             }
-                            // 순수 additive: 캐시 seed 여부와 무관하게 클라이언트는
-                            // 마운트 시 useAnalysis가 자동으로 재분석을 트리거하도록
-                            // 항상 true를 유지한다(봇은 enqueue가 skip되어 생성 안 됨).
-                            initialAnalysisFailed={true}
-                            indicatorCount={skillCounts.indicators}
-                            skillCount={
-                                skillCounts.patterns + skillCounts.strategies
-                            }
-                            marketProfile={marketProfile}
-                        />
-                    </Suspense>
-                </HydrationBoundary>
+                        >
+                            <SymbolPageClient
+                                symbol={symbol}
+                                companyName={assetInfo.name}
+                                displayName={displayName}
+                                initialAnalysis={initialAnalysis}
+                                initialLockedInfoDepth={
+                                    cachedAnalysis?.lockedInfoDepth ?? []
+                                }
+                                // 순수 additive: 캐시 seed 여부와 무관하게 클라이언트는
+                                // 마운트 시 useAnalysis가 자동으로 재분석을 트리거하도록
+                                // 항상 true를 유지한다(봇은 enqueue가 skip되어 생성 안 됨).
+                                initialAnalysisFailed={true}
+                                indicatorCount={skillCounts.indicators}
+                                skillCount={
+                                    skillCounts.patterns +
+                                    skillCounts.strategies
+                                }
+                                marketProfile={marketProfile}
+                            />
+                        </Suspense>
+                    </HydrationBoundary>
+                </div>
+                {/* AI 스냅샷 프로즈는 Suspense fallback이 아니라 PERSISTENT server
+                    sibling으로 마운트한다(audit fix — spec §7의 "SSR-only" 의도와
+                    달리 Suspense fallback 안에 두면 React가 boundary resolve 시
+                    클라이언트에서 그 서브트리를 DESTROY한다: Next.js 정적 HTML에는
+                    fallback이 박히지만, hydration 후 JS를 실행하는 크롤러(Googlebot
+                    렌더러 포함)에게는 사라진다). 나머지 5개 sibling 탭(fundamental/
+                    financials/congress/options/news)과 동일하게 plain SSR sibling
+                    패턴을 따른다. peekAnalysisStatic 결과(cachedAnalysis)는 SSR
+                    프로즈로 렌더되지 않고 initialAnalysis로 CSR-bailout
+                    클라이언트에만 seed되므로(위 SymbolPageClient) 여기엔 중복
+                    위험이 없다. 스냅샷이 없으면 TechnicalSnapshotProse가 null을
+                    반환해 빈 셸도 없다.
+                    audit fix FIX 1: 위 chart wrapper 뒤로 옮겨 (a) h1보다 DOM에서
+                    뒤에 오게 하고(heading 위계, WCAG 1.3.1), (b) chart+AI 영역의
+                    flex 분배에서 완전히 제외해(wrapper가 shrink-0) 더 이상 첫 viewport
+                    높이를 두고 경쟁하지 않는다. */}
+                <TechnicalSnapshotProse
+                    content={technicalSnapshot?.content}
+                    symbol={ticker}
+                    displayName={displayName}
+                />
             </main>
         </>
     );

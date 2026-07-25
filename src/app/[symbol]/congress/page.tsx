@@ -5,6 +5,10 @@ import { getProfileResilient } from '@/app/[symbol]/fundamental/getProfileResili
 import { CongressDegraded } from '@/app/[symbol]/congress/CongressDegraded';
 import { CongressTradesTable, CongressTrendSummary } from '@/widgets/congress';
 import { SymbolPageHeading } from '@/views/symbol';
+import {
+    CongressSnapshotProse,
+    hasCongressProse,
+} from '@/views/symbol/snapshot/renderers/CongressSnapshotProse';
 import { CrossLinkCards } from '@/shared/ui/CrossLinkCards';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import {
@@ -12,6 +16,7 @@ import {
     type SymbolRouteParams,
 } from '@/shared/config/market';
 import { isUnresolvableDegraded } from '@/shared/lib/symbolGuard';
+import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/lib/getSnapshotStatic';
 import {
     buildAssetAboutNode,
     buildDisplayName,
@@ -19,6 +24,7 @@ import {
 } from '@/entities/ticker';
 import {
     buildBreadcrumbJsonLd,
+    buildSnapshotMetaDescription,
     buildSymbolCongressSeoContent,
     buildSymbolSeoContent,
     buildSymbolWebPageJsonLd,
@@ -59,10 +65,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         return NOINDEX_SYMBOL_METADATA;
     }
     const { assetInfo, degraded } = await getAssetInfoResilient(upper);
-    const blockedMetadata = getBlockedSymbolMetadata({
+    const blockedMetadata = await getBlockedSymbolMetadata({
         symbol: upper,
         assetInfo,
         degraded,
+        revalidateSeconds: revalidate,
+        tab: 'congress',
     });
     if (blockedMetadata) return blockedMetadata;
 
@@ -89,7 +97,23 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         displayName,
         koreanName: assetInfo?.koreanName,
     });
-    return symbolMetadataFromSeo(seo);
+    const metadata = symbolMetadataFromSeo(seo);
+
+    // snapshot-derived unique description (spec 2026-07-24 Task 8). Same
+    // getSeoSnapshotsStatic(upper, revalidate) call the page body makes below —
+    // unstable_cache dedupes it within this render, so this is a cache hit, not
+    // an extra DB round-trip. Falls back to the templated description when no
+    // snapshot exists (backward compatible). og/twitter keep the templated copy
+    // — only the search-facing <meta name="description"> is overridden.
+    const snap = (await getSeoSnapshotsStatic(upper, revalidate)).find(
+        s => s.tab === 'congress'
+    );
+    const snapshotDescription = snap
+        ? buildSnapshotMetaDescription('congress', snap.content, displayName)
+        : null;
+    return snapshotDescription
+        ? { ...metadata, description: snapshotDescription }
+        : metadata;
 }
 
 export default async function CongressPage({ params }: Props) {
@@ -105,11 +129,26 @@ export default async function CongressPage({ params }: Props) {
 
     // getProfileResilient uses ['fundamental:profile', upper] key, shared with
     // ProfileSection inside the fundamental page, so there is no extra FMP round-trip.
-    const [{ profile, degraded: profileDegraded }, { assetInfo, degraded }] =
-        await Promise.all([
-            getProfileResilient(upper),
-            getAssetInfoResilient(upper),
-        ]);
+    // snapshots: ISR-safe (staticSymbolCache-wrapped, fail-open []) — see
+    // getSeoSnapshotsStatic JSDoc. revalidateSeconds mirrors this page's
+    // `export const revalidate` literal above.
+    const [
+        { profile, degraded: profileDegraded },
+        { assetInfo, degraded },
+        snapshots,
+    ] = await Promise.all([
+        getProfileResilient(upper),
+        getAssetInfoResilient(upper),
+        getSeoSnapshotsStatic(upper, revalidate),
+    ]);
+    const congressSnapshot = snapshots.find(s => s.tab === 'congress');
+    // audit fix FIX 2: XOR 게이트 — 스냅샷 프로즈가 렌더 가능하면(hasCongressProse)
+    // 그것만 보여주고, 클라이언트 AI 위젯(CongressTrendSummary)은 렌더하지 않는다.
+    // 두 소스가 동일 필드(summaryKo/notableMembersKo/riskNoteKo)를 같은 순서로
+    // 중복 렌더하던 문제(같은 결론을 사용자에게 두 번, 스크린리더에 두 번, 중복
+    // 콘텐츠 SEO 리스크)를 해소한다. `OverallSnapshotProse.hasOverallProse` 패턴과
+    // 동일 — narrowCongressContent를 재사용해 프로즈 컴포넌트와 동일 판단.
+    const showCongressProse = hasCongressProse(congressSnapshot?.content);
 
     // degraded + digit-first 심볼 = crypto_assets DB와 FMP가 동시 다운 중이고 resolve 불가
     // → 차트 페이지와 동일한 notFound 처리로 sibling 일관성 유지.
@@ -122,9 +161,16 @@ export default async function CongressPage({ params }: Props) {
     const displayName = assetInfo ? buildDisplayName(assetInfo, upper) : upper;
 
     // FMP 인프라 일시 실패: 500 대신 degrade 안내(200)를 렌더한다. 다음 revalidate에
-    // 인프라가 복구되면 정상 데이터로 자동 갱신된다.
+    // 인프라가 복구되면 정상 데이터로 자동 갱신된다. 스냅샷이 있으면 degrade 중에도
+    // 크롤러에게 프로즈 콘텐츠를 보여준다(spec §7 — degraded 분기에서도 스냅샷 유지).
     if (profileDegraded) {
-        return <CongressDegraded displayName={displayName} symbol={upper} />;
+        return (
+            <CongressDegraded
+                displayName={displayName}
+                symbol={upper}
+                snapshotContent={congressSnapshot?.content}
+            />
+        );
     }
 
     // profile === null = FMP 200 + 빈 결과 = 실존하지 않는 종목 → 404.
@@ -139,7 +185,13 @@ export default async function CongressPage({ params }: Props) {
         await getCongressPageData(upper);
 
     if (tradesDegraded) {
-        return <CongressDegraded displayName={displayName} symbol={upper} />;
+        return (
+            <CongressDegraded
+                displayName={displayName}
+                symbol={upper}
+                snapshotContent={congressSnapshot?.content}
+            />
+        );
     }
 
     const { fullTitle, description, url } = buildSymbolCongressSeoContent(
@@ -219,7 +271,25 @@ export default async function CongressPage({ params }: Props) {
                     </p>
                 </section>
 
-                <CongressTrendSummary symbol={upper} />
+                {/* audit fix FIX 2: XOR — CongressTrendSummary (client widget) and
+                    CongressSnapshotProse (SSR prose) both render the same AI
+                    conclusion (summaryKo/notableMembersKo/riskNoteKo). Showing
+                    both duplicated the text for sighted users and screen readers
+                    and doubled as a duplicate-content SEO risk. When the snapshot
+                    is renderable, show the prose only; the widget stays the
+                    fallback for when no snapshot exists — CongressTrendSummary is
+                    a client component that fetches its analysis via a client-side
+                    hook, so during ISR generation it bakes its loading skeleton
+                    into the static HTML (no crawlable AI text) until it hydrates. */}
+                {showCongressProse ? (
+                    <CongressSnapshotProse
+                        content={congressSnapshot?.content}
+                        symbol={upper}
+                        displayName={displayName}
+                    />
+                ) : (
+                    <CongressTrendSummary symbol={upper} />
+                )}
 
                 <CongressTradesTable trades={trades} />
 

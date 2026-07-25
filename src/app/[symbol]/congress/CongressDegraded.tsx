@@ -1,10 +1,19 @@
 import { SymbolPageHeading } from '@/views/symbol';
+import { CongressSnapshotProse } from '@/views/symbol/snapshot/renderers/CongressSnapshotProse';
 import { CrossLinkCards } from '@/shared/ui/CrossLinkCards';
 
 interface CongressDegradedProps {
     /** Resolved display name (Korean+English+ticker, or bare-ticker fallback). */
     displayName: string;
     symbol: string;
+    /**
+     * `seo_analysis_snapshots.content` for the congress tab, when a
+     * pre-warmed snapshot exists. Threaded through so degraded pages stay
+     * crawlable — spec 2026-07-24 §7: "본문 degraded 분기에서도 섹션 유지".
+     * `CongressSnapshotProse` itself renders `null` when the content is
+     * absent/empty, so this prop is safe to pass unconditionally.
+     */
+    snapshotContent?: unknown;
 }
 
 /**
@@ -25,10 +34,16 @@ interface CongressDegradedProps {
 export function CongressDegraded({
     displayName,
     symbol,
+    snapshotContent,
 }: CongressDegradedProps) {
     return (
         <main className="mx-auto max-w-5xl space-y-6 px-4 py-8">
             <SymbolPageHeading>{displayName} 의회 거래</SymbolPageHeading>
+            <CongressSnapshotProse
+                content={snapshotContent}
+                symbol={symbol}
+                displayName={displayName}
+            />
             <section className="border-secondary-800 bg-secondary-900/40 rounded-lg border px-5 py-8 text-center">
                 <p className="text-secondary-200 text-sm font-medium">
                     의회 거래 데이터를 일시적으로 불러올 수 없어요

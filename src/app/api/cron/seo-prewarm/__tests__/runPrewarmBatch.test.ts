@@ -1,6 +1,9 @@
 const {
-    mockIsInFlight,
     mockMarkInFlight,
+    mockGetInFlightMarker,
+    mockIsSkipped,
+    mockMarkSkipped,
+    mockClearInFlight,
     mockAddFmpBudget,
     mockGetFmpBudgetUsed,
     mockRevalidateTag,
@@ -15,10 +18,20 @@ const {
     mockPrewarmCongress,
     mockPrewarmNews,
     mockPrewarmOptions,
+    mockPrewarmPollTechnical,
+    mockPrewarmPollOverall,
+    mockPrewarmPollFundamental,
+    mockPrewarmPollFinancials,
+    mockPrewarmPollCongress,
+    mockPrewarmPollNews,
+    mockPrewarmPollOptions,
     mockBuildPrewarmUniverse,
 } = vi.hoisted(() => ({
-    mockIsInFlight: vi.fn(),
     mockMarkInFlight: vi.fn(),
+    mockGetInFlightMarker: vi.fn(),
+    mockIsSkipped: vi.fn(),
+    mockMarkSkipped: vi.fn(),
+    mockClearInFlight: vi.fn(),
     mockAddFmpBudget: vi.fn(),
     mockGetFmpBudgetUsed: vi.fn(),
     mockRevalidateTag: vi.fn(),
@@ -33,12 +46,22 @@ const {
     mockPrewarmCongress: vi.fn(),
     mockPrewarmNews: vi.fn(),
     mockPrewarmOptions: vi.fn(),
+    mockPrewarmPollTechnical: vi.fn(),
+    mockPrewarmPollOverall: vi.fn(),
+    mockPrewarmPollFundamental: vi.fn(),
+    mockPrewarmPollFinancials: vi.fn(),
+    mockPrewarmPollCongress: vi.fn(),
+    mockPrewarmPollNews: vi.fn(),
+    mockPrewarmPollOptions: vi.fn(),
     mockBuildPrewarmUniverse: vi.fn(),
 }));
 
 vi.mock('../lock', () => ({
-    isInFlight: mockIsInFlight,
     markInFlight: mockMarkInFlight,
+    getInFlightMarker: mockGetInFlightMarker,
+    isSkipped: mockIsSkipped,
+    markSkipped: mockMarkSkipped,
+    clearInFlight: mockClearInFlight,
     addFmpBudget: mockAddFmpBudget,
     getFmpBudgetUsed: mockGetFmpBudgetUsed,
 }));
@@ -78,24 +101,32 @@ vi.mock('@/entities/analysis/api', () => ({
     prewarmFundamental: mockPrewarmFundamental,
     prewarmFinancials: mockPrewarmFinancials,
     prewarmCongress: mockPrewarmCongress,
+    prewarmPollTechnical: mockPrewarmPollTechnical,
+    prewarmPollOverall: mockPrewarmPollOverall,
+    prewarmPollFundamental: mockPrewarmPollFundamental,
+    prewarmPollFinancials: mockPrewarmPollFinancials,
+    prewarmPollCongress: mockPrewarmPollCongress,
 }));
 
 vi.mock('@/entities/news-article/api', () => ({
     prewarmNews: mockPrewarmNews,
+    prewarmPollNews: mockPrewarmPollNews,
 }));
 
 vi.mock('@/entities/options-chain/api', () => ({
     prewarmOptions: mockPrewarmOptions,
+    prewarmPollOptions: mockPrewarmPollOptions,
 }));
 
 import type { SeoSnapshotTab } from '@/entities/seo-snapshot';
 import type { PrewarmSymbol } from '@/entities/seo-snapshot/lib/applicability';
 import { lastCompletedEtCloseWithBuffer } from '@/entities/seo-snapshot/lib/freshness';
-import { runPrewarmBatch } from '../runPrewarmBatch';
+import { runPrewarmBatch, type PrewarmClock } from '../runPrewarmBatch';
 
 const FIXED_NOW = new Date('2026-07-25T13:00:00.000Z');
 const BOUNDARY = lastCompletedEtCloseWithBuffer(FIXED_NOW);
 const STALE_DATE = new Date(BOUNDARY.getTime() - 24 * 60 * 60 * 1000);
+const BATCH_DEADLINE_MS = 600_000;
 
 function universe(...symbols: PrewarmSymbol[]): void {
     mockBuildPrewarmUniverse.mockReturnValue(symbols);
@@ -105,6 +136,22 @@ function key(symbol: string, tab: SeoSnapshotTab): string {
     return `${symbol}:${tab}`;
 }
 
+/**
+ * FIX G/Z 테스트 전용 시뮬레이션 clock — `now()`는 누적 경과 시간을, `sleep(ms)`는
+ * 그 경과 시간을 실제로 진행시킨다(실제 wall-clock 대기 없음). 동시성(Promise.all)
+ * 하에서도 "총 sleep 호출 시간의 합"이라는 불변식은 유지되므로 call-count 기반
+ * mock보다 견고하다.
+ */
+function makeSimClock(startMs: number): PrewarmClock {
+    let t = startMs;
+    return {
+        now: () => t,
+        sleep: async (ms: number) => {
+            t += ms;
+        },
+    };
+}
+
 describe('runPrewarmBatch', () => {
     beforeEach(() => {
         vi.clearAllMocks();
@@ -112,7 +159,11 @@ describe('runPrewarmBatch', () => {
         vi.setSystemTime(FIXED_NOW);
 
         mockFindGeneratedAtMap.mockResolvedValue(new Map());
-        mockIsInFlight.mockResolvedValue(false);
+        mockGetInFlightMarker.mockResolvedValue({
+            present: false,
+            jobId: null,
+        });
+        mockIsSkipped.mockResolvedValue(false);
         mockAddFmpBudget.mockResolvedValue(0);
         mockGetFmpBudgetUsed.mockResolvedValue(0);
         mockGetFmpErrorStatus.mockReturnValue(null);
@@ -226,51 +277,6 @@ describe('runPrewarmBatch', () => {
         expect(mockAddFmpBudget).toHaveBeenCalledWith(6);
     });
 
-    it('submitted 결과는 markInFlight만 하고 upsert하지 않는다', async () => {
-        universe({ symbol: 'NVDA', tabs: ['technical'] });
-        mockPrewarmTechnical.mockResolvedValue({
-            status: 'submitted',
-            jobId: 'job-1',
-        });
-
-        const counts = await runPrewarmBatch();
-
-        expect(mockMarkInFlight).toHaveBeenCalledWith('NVDA', 'technical');
-        expect(mockUpsert).not.toHaveBeenCalled();
-        expect(counts.submitted).toBe(1);
-        expect(counts.harvested).toBe(0);
-        expect(counts.revalidated).toBe(0);
-    });
-
-    it('overall의 pending_dependencies는 submitted와 동일하게 처리한다', async () => {
-        universe({ symbol: 'TSLA', tabs: ['overall'] });
-        mockPrewarmOverall.mockResolvedValue({
-            status: 'pending_dependencies',
-            pendingJobs: {},
-        });
-
-        const counts = await runPrewarmBatch();
-
-        expect(mockMarkInFlight).toHaveBeenCalledWith('TSLA', 'overall');
-        expect(mockUpsert).not.toHaveBeenCalled();
-        expect(counts.submitted).toBe(1);
-        expect(counts.harvested).toBe(0);
-    });
-
-    it('in-flight인 탭은 스킵하고 seam을 호출하지 않는다', async () => {
-        universe({ symbol: 'GOOGL', tabs: ['technical'] });
-        mockIsInFlight.mockResolvedValue(true);
-
-        const counts = await runPrewarmBatch();
-
-        expect(mockPrewarmTechnical).not.toHaveBeenCalled();
-        expect(mockMarkInFlight).not.toHaveBeenCalled();
-        expect(counts.submitted).toBe(0);
-        expect(counts.harvested).toBe(0);
-        // 유일한 stale 탭이 in-flight 스킵 → seam 실행 0건 → FMP 예산 0 추가.
-        expect(mockAddFmpBudget).not.toHaveBeenCalled();
-    });
-
     it('FMP 402 에러는 해당 유닛만 격리하고 배치는 계속 진행한다', async () => {
         universe(
             { symbol: 'A', tabs: ['technical', 'overall'] },
@@ -315,7 +321,7 @@ describe('runPrewarmBatch', () => {
         errSpy.mockRestore();
     });
 
-    it('SYMBOLS_PER_TICK(10)을 초과하면 나머지는 remaining으로 잡힌다', async () => {
+    it('SYMBOLS_PER_TICK(6, FIX Z 재조정)을 초과하면 나머지는 remaining으로 잡힌다', async () => {
         const symbols: PrewarmSymbol[] = Array.from({ length: 15 }, (_, i) => ({
             symbol: `SYM${i}`,
             tabs: ['technical'] as SeoSnapshotTab[],
@@ -325,24 +331,30 @@ describe('runPrewarmBatch', () => {
             status: 'submitted',
             jobId: 'job',
         });
+        mockPrewarmPollTechnical.mockResolvedValue({ status: 'processing' });
 
-        const counts = await runPrewarmBatch();
+        const clock = makeSimClock(FIXED_NOW.getTime());
+        const counts = await runPrewarmBatch(clock);
 
-        expect(mockPrewarmTechnical).toHaveBeenCalledTimes(10);
-        expect(counts.remaining).toBe(5);
+        expect(mockPrewarmTechnical).toHaveBeenCalledTimes(6);
+        expect(counts.remaining).toBe(9);
     });
 
-    it('options seam이 null을 반환하면 스킵하고 upsert하지 않는다', async () => {
+    it('options seam이 null을 반환하면 스킵하고 upsert하지 않으며 backoff(FIX C) 마커를 남긴다', async () => {
         universe({ symbol: 'D', tabs: ['options'] });
         mockPrewarmOptions.mockResolvedValue(null);
+        const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
         const counts = await runPrewarmBatch();
 
         expect(mockUpsert).not.toHaveBeenCalled();
         expect(mockMarkInFlight).not.toHaveBeenCalled();
+        expect(mockMarkSkipped).toHaveBeenCalledWith('D', 'options');
         expect(counts.submitted).toBe(0);
         expect(counts.harvested).toBe(0);
         expect(counts.revalidated).toBe(0);
+
+        warnSpy.mockRestore();
     });
 
     it('크립토 심볼은 실행된 seam 1개당 FMP 예산을 1로 계상한다', async () => {
@@ -482,7 +494,7 @@ describe('runPrewarmBatch', () => {
         expect(mockAddFmpBudget).toHaveBeenCalledWith(3);
     });
 
-    it('한 심볼의 일부 탭이 stale로 남으면 revalidate하지 않는다', async () => {
+    it('한 심볼의 일부 탭이 stale로 남으면 revalidate하지 않는다(FIX Z — submitted+jobId는 즉시 poll된다)', async () => {
         universe({ symbol: 'G', tabs: ['technical', 'overall'] });
         mockPrewarmTechnical.mockResolvedValue({
             status: 'cached',
@@ -492,12 +504,427 @@ describe('runPrewarmBatch', () => {
             status: 'submitted',
             jobId: 'job',
         });
+        mockPrewarmPollOverall.mockResolvedValue({ status: 'processing' });
 
-        const counts = await runPrewarmBatch();
+        const clock = makeSimClock(FIXED_NOW.getTime());
+        const counts = await runPrewarmBatch(clock);
 
         expect(counts.harvested).toBe(1);
         expect(counts.submitted).toBe(1);
+        expect(mockPrewarmPollOverall).toHaveBeenCalledWith('job');
         expect(mockRevalidateTag).not.toHaveBeenCalled();
         expect(counts.revalidated).toBe(0);
+    });
+
+    // ── FIX A(감사) — 공정 선별: 회전 오프셋 + resumable 우선 + backoff 배제 ──
+
+    it('회전 오프셋 — freshCount만큼 배치 후보 시작점이 회전한다(Math.random 없이 결정적)', async () => {
+        // 3개는 이미 전 탭 fresh(freshCount=3에 기여), 10개는 stale(S0..S9).
+        const freshOnes: PrewarmSymbol[] = Array.from(
+            { length: 3 },
+            (_, i) => ({
+                symbol: `FRESH${i}`,
+                tabs: ['technical'] as SeoSnapshotTab[],
+            })
+        );
+        const staleOnes: PrewarmSymbol[] = Array.from(
+            { length: 10 },
+            (_, i) => ({
+                symbol: `S${i}`,
+                tabs: ['technical'] as SeoSnapshotTab[],
+            })
+        );
+        universe(...freshOnes, ...staleOnes);
+        mockFindGeneratedAtMap.mockResolvedValue(
+            new Map(freshOnes.map(f => [key(f.symbol, 'technical'), BOUNDARY]))
+        );
+        mockPrewarmTechnical.mockResolvedValue({
+            status: 'cached',
+            result: {},
+        });
+
+        await runPrewarmBatch();
+
+        // freshCount=3 → offset=3%10=3 → 회전된 순서 S3..S8(6개, SYMBOLS_PER_TICK=6)가
+        // 선택되고 S0,S1,S2,S9는 이번 tick엔 선택되지 않는다(멤버십만 검증 — 동시
+        // Promise.all 처리라 호출 "순서"는 검증하지 않는다).
+        const calledSymbols = mockPrewarmTechnical.mock.calls.map(c => c[0]);
+        expect(calledSymbols).toHaveLength(6);
+        for (const s of ['S3', 'S4', 'S5', 'S6', 'S7', 'S8']) {
+            expect(calledSymbols).toContain(s);
+        }
+        for (const s of ['S0', 'S1', 'S2', 'S9']) {
+            expect(calledSymbols).not.toContain(s);
+        }
+    });
+
+    it('resumable(in-flight jobId 보유) 심볼을 신규 stale 심볼보다 먼저 채운다(FIX A/Z)', async () => {
+        const freshOnes: PrewarmSymbol[] = Array.from(
+            { length: 6 },
+            (_, i) => ({
+                symbol: `F${i}`,
+                tabs: ['technical'] as SeoSnapshotTab[],
+            })
+        );
+        universe({ symbol: 'RESUME', tabs: ['technical'] }, ...freshOnes);
+        mockGetInFlightMarker.mockImplementation(async (symbol: string) =>
+            symbol === 'RESUME'
+                ? { present: true, jobId: 'job-x' }
+                : { present: false, jobId: null }
+        );
+        mockPrewarmPollTechnical.mockResolvedValue({ status: 'processing' });
+        mockPrewarmTechnical.mockResolvedValue({
+            status: 'cached',
+            result: {},
+        });
+
+        const clock = makeSimClock(FIXED_NOW.getTime());
+        const counts = await runPrewarmBatch(clock);
+
+        expect(mockPrewarmTechnical).not.toHaveBeenCalledWith(
+            'RESUME',
+            expect.anything(),
+            expect.anything(),
+            expect.anything()
+        );
+        expect(mockPrewarmPollTechnical).toHaveBeenCalledWith('job-x');
+        // 7개 stale(RESUME + F0..F5) 중 배치 6자리 = RESUME(resumable, 항상 포함) +
+        // fresh 5개(6개 중 1개는 이번 tick에서 밀려난다).
+        expect(mockPrewarmTechnical).toHaveBeenCalledTimes(5);
+        expect(counts.remaining).toBe(1);
+    });
+
+    it('기존 in-flight jobId가 있으면 재제출 대신 poll-resume한다(FIX Z) — submit(seam)은 호출되지 않고 예산도 계상되지 않는다', async () => {
+        universe({ symbol: 'GOOGL', tabs: ['technical'] });
+        mockGetInFlightMarker.mockResolvedValue({
+            present: true,
+            jobId: 'existing-job',
+        });
+        mockPrewarmPollTechnical.mockResolvedValue({
+            status: 'done',
+            result: { a: 1 },
+        });
+
+        const counts = await runPrewarmBatch();
+
+        expect(mockPrewarmTechnical).not.toHaveBeenCalled();
+        expect(mockPrewarmPollTechnical).toHaveBeenCalledWith('existing-job');
+        expect(mockUpsert).toHaveBeenCalled();
+        expect(counts.harvested).toBe(1);
+        // resume-poll은 새 FMP 호출이 아니다 — 예산에 계상되지 않는다.
+        expect(mockAddFmpBudget).not.toHaveBeenCalled();
+    });
+
+    // ── FIX 1(감사, PR #698 리뷰) — legacy in-flight 마커(present, jobId 없음) ──
+
+    it('legacy 마커(present, jobId 없음)가 있는 유닛은 재제출되지 않는다(seam 미호출) — 회귀 가드', async () => {
+        // 픽스 전에는 getInFlightJobId만 확인해 legacy 마커를 "in-flight 아님"으로
+        // 오판하고 매 tick 재제출했다(overall의 pending_dependencies가 실제 사례).
+        universe(
+            { symbol: 'LEGACY', tabs: ['technical'] },
+            { symbol: 'NEXT', tabs: ['technical'] }
+        );
+        mockGetInFlightMarker.mockImplementation(async (symbol: string) =>
+            symbol === 'LEGACY'
+                ? { present: true, jobId: null }
+                : { present: false, jobId: null }
+        );
+        mockPrewarmTechnical.mockResolvedValue({
+            status: 'cached',
+            result: {},
+        });
+
+        const counts = await runPrewarmBatch();
+
+        // LEGACY의 seam(submit)은 호출되지 않는다 — 재제출 금지(호출된 심볼
+        // 중 'LEGACY'가 없는지 직접 검사한다 — expect.anything()은 실제
+        // fmpSymbol=undefined 인자와 결코 매칭되지 않아 .not.toHaveBeenCalledWith가
+        // 그런 매처들과 섞이면 무조건 통과하는 약한 단언이 되므로 피한다).
+        const calledSymbols = mockPrewarmTechnical.mock.calls.map(c => c[0]);
+        expect(calledSymbols).not.toContain('LEGACY');
+        // poll도 호출되지 않는다 — legacy 마커는 resume-poll 대상이 아니다.
+        expect(mockPrewarmPollTechnical).not.toHaveBeenCalled();
+        // NEXT는 정상 처리된다.
+        expect(mockPrewarmTechnical).toHaveBeenCalledWith(
+            'NEXT',
+            'X Inc.',
+            undefined,
+            false
+        );
+        // LEGACY는 selectFairBatch 단계에서 'blocked'로 배제되어 배치 슬롯을
+        // 소비하지 않는다 — staleSymbols 2개 중 배치엔 NEXT 1개만 들어가고
+        // LEGACY는 remaining으로 남는다(재시도 대기, 재제출 아님).
+        expect(counts.remaining).toBe(1);
+        expect(counts.harvested).toBe(1); // NEXT만 harvest.
+        expect(mockMarkInFlight).not.toHaveBeenCalledWith(
+            'LEGACY',
+            'technical',
+            expect.anything()
+        );
+    });
+
+    it('jobId 있는 마커는 여전히 poll-resume된다(legacy 마커와의 회귀 구분 가드)', async () => {
+        universe({ symbol: 'RESUMABLE', tabs: ['technical'] });
+        mockGetInFlightMarker.mockResolvedValue({
+            present: true,
+            jobId: 'job-resume',
+        });
+        mockPrewarmPollTechnical.mockResolvedValue({
+            status: 'done',
+            result: { warmed: true },
+        });
+
+        const counts = await runPrewarmBatch();
+
+        expect(mockPrewarmTechnical).not.toHaveBeenCalled();
+        expect(mockPrewarmPollTechnical).toHaveBeenCalledWith('job-resume');
+        expect(counts.harvested).toBe(1);
+    });
+
+    it('마커가 아예 없는 유닛은 오늘도 정상 submit된다(회귀 없음 가드)', async () => {
+        universe({ symbol: 'NOMARKER', tabs: ['technical'] });
+        mockGetInFlightMarker.mockResolvedValue({
+            present: false,
+            jobId: null,
+        });
+        mockPrewarmTechnical.mockResolvedValue({
+            status: 'cached',
+            result: {},
+        });
+
+        const counts = await runPrewarmBatch();
+
+        expect(mockPrewarmTechnical).toHaveBeenCalledWith(
+            'NOMARKER',
+            'X Inc.',
+            undefined,
+            false
+        );
+        expect(counts.harvested).toBe(1);
+    });
+
+    // ── FIX C(감사) — terminal skip(backoff) ──
+
+    it('모든 stale 탭이 backoff(skip) 중인 심볼은 배제되고 슬롯이 다음 심볼로 간다', async () => {
+        universe(
+            { symbol: 'SKIPPED', tabs: ['technical'] },
+            { symbol: 'NEXT', tabs: ['technical'] }
+        );
+        mockIsSkipped.mockImplementation(
+            async (symbol: string) => symbol === 'SKIPPED'
+        );
+        mockPrewarmTechnical.mockResolvedValue({
+            status: 'cached',
+            result: {},
+        });
+
+        const counts = await runPrewarmBatch();
+
+        expect(mockPrewarmTechnical).toHaveBeenCalledTimes(1);
+        expect(mockPrewarmTechnical).toHaveBeenCalledWith(
+            'NEXT',
+            'X Inc.', // beforeEach의 mockGetAssetInfoResilient 기본값
+            undefined,
+            false
+        );
+        expect(counts.harvested).toBe(1);
+    });
+
+    it('terminal skip 후 다음 tick에서 같은 유닛이 재선별되지 않는다(FIX C 회귀 가드) — 선별 단계가 backoff 마커를 존중한다', async () => {
+        universe({ symbol: 'ERRSYM', tabs: ['technical'] });
+        mockPrewarmTechnical.mockResolvedValue({ status: 'error' });
+        const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+        // tick 1 — terminal skip → markSkipped가 실제로 호출된다.
+        await runPrewarmBatch();
+        expect(mockPrewarmTechnical).toHaveBeenCalledTimes(1);
+        expect(mockMarkSkipped).toHaveBeenCalledWith('ERRSYM', 'technical');
+
+        // tick 2 — 방금 세팅된 backoff 마커가 있다고 가정(isSkipped=true)하면
+        // 선별 단계에서 배제되어 seam이 다시 호출되지 않아야 한다.
+        mockIsSkipped.mockResolvedValue(true);
+        mockPrewarmTechnical.mockClear();
+
+        await runPrewarmBatch();
+        expect(mockPrewarmTechnical).not.toHaveBeenCalled();
+
+        warnSpy.mockRestore();
+    });
+
+    // ── FIX G(감사) — 배치 wall-clock 데드라인 ──
+
+    it('배치 데드라인 초과 시 남은 청크를 건너뛰고 부분 counts를 반환하며 로그를 남긴다', async () => {
+        // 6개 stale 심볼(SYMBOL_CONCURRENCY=3 → 2청크), 전부 즉시 cached로 끝나
+        // 폴링 없음 → clock.now() 호출은 [배치데드라인 계산, 청크0 사전체크,
+        // 청크1 사전체크] 정확히 3회뿐이라 call-count 기반 목이 안전하다.
+        const symbols: PrewarmSymbol[] = Array.from({ length: 6 }, (_, i) => ({
+            symbol: `SYM${i}`,
+            tabs: ['technical'] as SeoSnapshotTab[],
+        }));
+        universe(...symbols);
+        mockPrewarmTechnical.mockResolvedValue({
+            status: 'cached',
+            result: {},
+        });
+        const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+        const base = FIXED_NOW.getTime();
+        let calls = 0;
+        const now = () => {
+            calls++;
+            return calls <= 2 ? base : base + BATCH_DEADLINE_MS + 1;
+        };
+        const sleep = vi.fn().mockResolvedValue(undefined);
+
+        const counts = await runPrewarmBatch({ now, sleep });
+
+        expect(mockPrewarmTechnical).toHaveBeenCalledTimes(3); // 청크0(3개)만 처리됨
+        expect(counts.remaining).toBe(3); // 청크1의 3개가 remaining으로
+        expect(warnSpy).toHaveBeenCalledWith(
+            '[seo-prewarm] batch deadline reached — 3 symbols processed, 3 remaining'
+        );
+
+        warnSpy.mockRestore();
+    });
+
+    it('정상 배치는 데드라인에 영향받지 않는다 — 데드라인 로그가 없다', async () => {
+        universe({ symbol: 'NORMAL', tabs: ['technical'] });
+        mockPrewarmTechnical.mockResolvedValue({
+            status: 'cached',
+            result: {},
+        });
+        const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+        await runPrewarmBatch();
+
+        expect(warnSpy).not.toHaveBeenCalledWith(
+            expect.stringContaining('batch deadline reached')
+        );
+
+        warnSpy.mockRestore();
+    });
+
+    // ── FIX Z(감사) — submit 후 즉시 poll(콜드 캐시를 실제로 데운다) ──
+
+    it('submitted+jobId → poll이 done을 반환하면 upsert가 일어나고 counts.harvested가 증가한다(콜드 캐시 워밍의 핵심 회귀 가드)', async () => {
+        universe({ symbol: 'COLD', tabs: ['technical'] });
+        mockPrewarmTechnical.mockResolvedValue({
+            status: 'submitted',
+            jobId: 'job-cold',
+        });
+        mockPrewarmPollTechnical.mockResolvedValue({
+            status: 'done',
+            result: { warmed: true },
+        });
+
+        const counts = await runPrewarmBatch();
+
+        expect(mockMarkInFlight).toHaveBeenCalledWith(
+            'COLD',
+            'technical',
+            'job-cold'
+        );
+        expect(mockPrewarmPollTechnical).toHaveBeenCalledWith('job-cold');
+        expect(mockUpsert).toHaveBeenCalledWith(
+            expect.objectContaining({
+                symbol: 'COLD',
+                tab: 'technical',
+                content: { warmed: true },
+            })
+        );
+        expect(counts.harvested).toBe(1);
+        expect(counts.submitted).toBe(1);
+    });
+
+    it('poll이 cap(60s)까지 processing이면 harvest 없이 counts.submitted만 늘어나고 in-flight 마커는 유지된다', async () => {
+        universe({ symbol: 'SLOW', tabs: ['technical'] });
+        mockPrewarmTechnical.mockResolvedValue({
+            status: 'submitted',
+            jobId: 'job-slow',
+        });
+        mockPrewarmPollTechnical.mockResolvedValue({ status: 'processing' });
+
+        const clock = makeSimClock(FIXED_NOW.getTime());
+        const counts = await runPrewarmBatch(clock);
+
+        expect(mockMarkInFlight).toHaveBeenCalledWith(
+            'SLOW',
+            'technical',
+            'job-slow'
+        );
+        // 최초 1회 + elapsedMs가 0,5000,...,55000일 때마다 재시도(12회) = 13회에서
+        // elapsedMs가 60000에 도달해 캡에 걸려 멈춘다.
+        expect(mockPrewarmPollTechnical).toHaveBeenCalledTimes(13);
+        expect(mockUpsert).not.toHaveBeenCalled();
+        expect(counts.submitted).toBe(1);
+        expect(counts.harvested).toBe(0);
+        // "여전히 processing"은 markSkipped/clearInFlight 어느 쪽도 건드리지 않는다
+        // (다음 tick이 이어서 poll할 수 있게 in-flight 마커를 그대로 둔다).
+        expect(mockMarkSkipped).not.toHaveBeenCalled();
+        expect(mockClearInFlight).not.toHaveBeenCalled();
+    });
+
+    it('poll이 throw하면 해당 유닛만 격리되고 배치는 계속 진행한다(fail-open)', async () => {
+        universe({ symbol: 'POLLTHROW', tabs: ['technical'] });
+        mockPrewarmTechnical.mockResolvedValue({
+            status: 'submitted',
+            jobId: 'job-e',
+        });
+        mockPrewarmPollTechnical.mockRejectedValue(new Error('poll boom'));
+        const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+        const counts = await runPrewarmBatch();
+
+        expect(errSpy).toHaveBeenCalledWith(
+            '[seo-prewarm] unit-error POLLTHROW:technical',
+            expect.any(Error)
+        );
+        expect(counts.harvested).toBe(0);
+        errSpy.mockRestore();
+    });
+
+    it('poll이 status=error를 반환하면(throw 아님) terminal skip 처리되고 배치는 계속 진행한다', async () => {
+        universe({ symbol: 'POLLBAD', tabs: ['technical'] });
+        mockPrewarmTechnical.mockResolvedValue({
+            status: 'submitted',
+            jobId: 'job-b',
+        });
+        mockPrewarmPollTechnical.mockResolvedValue({
+            status: 'error',
+            error: 'worker failed',
+        });
+        const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+        const counts = await runPrewarmBatch();
+
+        expect(mockMarkSkipped).toHaveBeenCalledWith('POLLBAD', 'technical');
+        expect(counts.harvested).toBe(0);
+
+        warnSpy.mockRestore();
+    });
+
+    it('poll 루프 중 배치 데드라인에 걸리면 processing 상태 그대로 정리하고 남긴다(FIX G × Z)', async () => {
+        universe({ symbol: 'DEADPOLL', tabs: ['technical'] });
+        mockPrewarmTechnical.mockResolvedValue({
+            status: 'submitted',
+            jobId: 'job-d',
+        });
+        mockPrewarmPollTechnical.mockResolvedValue({ status: 'processing' });
+
+        const base = FIXED_NOW.getTime();
+        let t = base;
+        // 첫 sleep에서 배치 데드라인(10min)을 훌쩍 넘겨버린다 — poll 루프가
+        // 유닛 캡(60s)까지 다 못 가고 배치 데드라인에 먼저 걸려야 한다.
+        const now = () => t;
+        const sleep = vi.fn().mockImplementation(async () => {
+            t += BATCH_DEADLINE_MS;
+        });
+
+        const counts = await runPrewarmBatch({ now, sleep });
+
+        // 최초 1회(즉시) + sleep 후 재확인 1회 = 2회에서 멈춘다(12회까지 안 감).
+        expect(mockPrewarmPollTechnical).toHaveBeenCalledTimes(2);
+        expect(counts.submitted).toBe(1);
+        expect(counts.harvested).toBe(0);
     });
 });

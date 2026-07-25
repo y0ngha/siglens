@@ -51,6 +51,9 @@ vi.mock('@/entities/news-article', () => ({
 vi.mock('@/entities/news-article/api', () => ({
     getNewsList: vi.fn(),
 }));
+vi.mock('@/entities/seo-snapshot/lib/getSnapshotStatic', () => ({
+    getSeoSnapshotsStatic: vi.fn().mockResolvedValue([]),
+}));
 
 vi.mock('@/widgets/news/NewsAiSummary', () => ({
     NewsAiSummary: () => null,

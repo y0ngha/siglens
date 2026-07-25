@@ -73,6 +73,34 @@ export default function robots(): MetadataRoute.Robots {
                 disallow: ['/api/'],
             },
             {
+                // Googlebot 전용 그룹. `/[symbol]/**/opengraph-image`, `/[symbol]/**/twitter-image`는
+                // 종목 페이지마다 동적 생성되는 PNG로, Search Console 크롤 통계 기준 크롤
+                // 예산의 상당 부분(61GB)을 여기서 소모하고 있었다 — 실제 콘텐츠 페이지 대신
+                // 이 이미지 URL을 반복 크롤하느라 예산이 낭비되는 구조. Disallow로 회수해
+                // 실제 종목 콘텐츠 페이지 크롤에 예산을 재배분한다.
+                //
+                // ⚠️ robots.txt 그룹 배타성 foot-gun: Googlebot은 가장 구체적인 그룹(자기
+                // 이름과 정확히 일치하는 그룹)만 읽고 `*` 그룹을 상속하지 않는다. 따라서 이
+                // 그룹은 `*` 그룹의 baseline(`allow: '/'`, `disallow: ['/api/']`)을 그대로
+                // 복제해야 한다 — 복제하지 않으면 Googlebot이 /api/ 차단 등 baseline 규칙을
+                // 잃는다. 앞으로 `*` 그룹에만 규칙을 추가하고 여기 반영을 잊으면 parity 테스트가
+                // 즉시 실패하도록 가드돼 있다(src/app/__tests__/robots.test.ts).
+                //
+                // Googlebot-Image는 별도 그룹이 없어도 이 Googlebot 그룹으로 fallback되므로
+                // (더 구체적인 "Googlebot-Image" 그룹이 없으면 "Googlebot" 그룹을 따른다)
+                // 별도 그룹을 만들 필요가 없다 — 이 disallow가 Google 이미지 검색에서도 함께
+                // 적용된다.
+                //
+                // Trade-off: Google 이미지 검색에서 이 OG/twitter-image가 빠지는 손실은
+                // 감수한다(원래 이미지 검색 노출 목적으로 만든 자산이 아니다). 소셜 크롤러
+                // (Twitterbot, facebookexternalhit 등)는 카드 렌더링을 위해 이 경로를
+                // 반드시 fetch해야 하지만 영향 없음 — 이들은 자체 그룹을 갖거나(별도 UA)
+                // robots.txt 자체를 사실상 무시하고 OG 메타 태그 fetch를 강행한다.
+                userAgent: 'Googlebot',
+                allow: '/',
+                disallow: ['/api/', '/*/opengraph-image', '/*/twitter-image'],
+            },
+            {
                 userAgent: [
                     ...ANTHROPIC_CRAWLER_USER_AGENTS,
                     ...GOOGLE_NON_SEARCH_USER_AGENTS,

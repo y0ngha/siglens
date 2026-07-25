@@ -2,6 +2,8 @@ vi.mock('@/shared/lib/seo', () => ({
     SITE_URL: 'https://siglens.io',
 }));
 
+import type { MetadataRoute } from 'next';
+
 import robots, { AI_CRAWLER_CRAWL_DELAY_SECONDS } from '@/app/robots';
 
 describe('robots', () => {
@@ -118,6 +120,75 @@ describe('robots', () => {
     it('points sitemap to the correct URL', () => {
         const result = robots();
         expect(result.sitemap).toBe('https://siglens.io/sitemap.xml');
+    });
+
+    describe('Googlebot OG/twitter-image crawl budget 회수', () => {
+        // 그룹 배열에서 userAgent(string | string[])가 정확히 'Googlebot' 하나뿐인
+        // 그룹을 찾는다 — crawl-delay 통합 그룹(GoogleOther 등)과 혼동 방지.
+        const findGroupByUserAgent = (
+            rules: MetadataRoute.Robots['rules'],
+            userAgent: string
+        ) => {
+            const list = Array.isArray(rules) ? rules : [rules];
+            return list.find(rule =>
+                Array.isArray(rule.userAgent)
+                    ? rule.userAgent.length === 1 &&
+                      rule.userAgent[0] === userAgent
+                    : rule.userAgent === userAgent
+            );
+        };
+
+        it('Googlebot 전용 그룹이 존재하고 OG/twitter-image 경로를 disallow한다', () => {
+            const result = robots();
+            const googlebotGroup = findGroupByUserAgent(
+                result.rules,
+                'Googlebot'
+            );
+            expect(googlebotGroup).toBeDefined();
+            expect(googlebotGroup?.disallow).toEqual(
+                expect.arrayContaining([
+                    '/*/opengraph-image',
+                    '/*/twitter-image',
+                ])
+            );
+        });
+
+        it('Googlebot 그룹은 여전히 allow: "/" 로 검색 색인을 보존한다', () => {
+            const result = robots();
+            const googlebotGroup = findGroupByUserAgent(
+                result.rules,
+                'Googlebot'
+            );
+            expect(googlebotGroup?.allow).toBe('/');
+        });
+
+        it('foot-gun guard: Googlebot 그룹이 `*` 그룹의 baseline(allow/disallow)을 그대로 replicate한다 — Googlebot은 `*` 그룹을 상속하지 않으므로 이 parity가 깨지면 향후 `*` 전용 규칙이 Googlebot에는 적용되지 않는다', () => {
+            const result = robots();
+            const wildcardGroup = findGroupByUserAgent(result.rules, '*');
+            const googlebotGroup = findGroupByUserAgent(
+                result.rules,
+                'Googlebot'
+            );
+            expect(wildcardGroup).toBeDefined();
+            expect(googlebotGroup).toBeDefined();
+
+            expect(googlebotGroup?.allow).toEqual(wildcardGroup?.allow);
+
+            const wildcardDisallow = Array.isArray(wildcardGroup?.disallow)
+                ? wildcardGroup.disallow
+                : wildcardGroup?.disallow
+                  ? [wildcardGroup.disallow]
+                  : [];
+            const googlebotDisallow = Array.isArray(googlebotGroup?.disallow)
+                ? googlebotGroup.disallow
+                : googlebotGroup?.disallow
+                  ? [googlebotGroup.disallow]
+                  : [];
+
+            for (const rule of wildcardDisallow) {
+                expect(googlebotDisallow).toContain(rule);
+            }
+        });
     });
 
     it('AI 학습/스크레이퍼 크롤러는 전면 Disallow 대신 crawl-delay 그룹으로 허용한다', () => {

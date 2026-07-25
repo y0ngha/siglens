@@ -1,10 +1,20 @@
-import { inArray } from 'drizzle-orm';
+import { eq, inArray } from 'drizzle-orm';
 import { seoAnalysisSnapshots } from '@/shared/db/schema';
 import { DrizzleSeoSnapshotRepository } from '@/entities/seo-snapshot/api';
 import type { SiglensDatabase } from '@/shared/db/types';
 
 const generatedAt = new Date('2026-07-24T00:00:00.000Z');
 const updatedAt = new Date('2026-07-24T00:00:01.000Z');
+
+const snapshotRow = {
+    id: 'snapshot-1',
+    symbol: 'AAPL',
+    tab: 'technical',
+    content: { summary: 'bullish' },
+    model: 'deepseek-v4-flash',
+    generatedAt,
+    updatedAt,
+};
 
 const UPSERT_INPUT = {
     symbol: 'aapl',
@@ -80,6 +90,28 @@ describe('DrizzleSeoSnapshotRepository.upsert', () => {
         expect(set.model).toBe('deepseek-v4-flash');
         expect(set.generatedAt).toBe(generatedAt);
         expect(set.updatedAt).toBeInstanceOf(Date);
+    });
+});
+
+describe('DrizzleSeoSnapshotRepository.findBySymbol', () => {
+    it('queries with the uppercased symbol and returns rows', async () => {
+        const rows = [snapshotRow, { ...snapshotRow, tab: 'overall' }];
+        const { db, where } = makeFindBySymbolDb(rows);
+        const repo = new DrizzleSeoSnapshotRepository(db);
+
+        const result = await repo.findBySymbol('aapl');
+
+        expect(result).toEqual(rows);
+        expect(where.mock.calls[0]?.[0]).toEqual(
+            eq(seoAnalysisSnapshots.symbol, 'AAPL')
+        );
+    });
+
+    it('returns an empty array when no snapshots exist', async () => {
+        const { db } = makeFindBySymbolDb([]);
+        const repo = new DrizzleSeoSnapshotRepository(db);
+
+        await expect(repo.findBySymbol('AAPL')).resolves.toEqual([]);
     });
 });
 

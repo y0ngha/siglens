@@ -49,4 +49,21 @@ describe('OptionsEmptyState', () => {
         expect(screen.getByText('뉴스 분석')).toBeInTheDocument();
         expect(screen.getByText('공포 탐욕 지수')).toBeInTheDocument();
     });
+
+    it('renders snapshotSlot when provided (Task 7b — SEO snapshot prose composed by the caller)', () => {
+        render(
+            <OptionsEmptyState
+                symbol="TSLA"
+                snapshotSlot={<div data-testid="snapshot-slot-stub" />}
+            />
+        );
+        expect(screen.getByTestId('snapshot-slot-stub')).toBeInTheDocument();
+    });
+
+    it('renders nothing extra when snapshotSlot is omitted (existing behavior unchanged)', () => {
+        const { container } = render(<OptionsEmptyState symbol="TSLA" />);
+        expect(
+            container.querySelector('[data-testid="snapshot-slot-stub"]')
+        ).toBeNull();
+    });
 });

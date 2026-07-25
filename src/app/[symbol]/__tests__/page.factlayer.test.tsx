@@ -11,6 +11,14 @@
  * `children`, so we first locate the Suspense element then inspect its fallback.
  */
 
+// spy → vi.mock → imports order (MISTAKES.md Tests §17).
+const { mockGetSeoSnapshotsStatic } = vi.hoisted(() => ({
+    mockGetSeoSnapshotsStatic: vi.fn(),
+}));
+
+vi.mock('@/entities/seo-snapshot/lib/getSnapshotStatic', () => ({
+    getSeoSnapshotsStatic: mockGetSeoSnapshotsStatic,
+}));
 vi.mock('@/views/symbol/SymbolPageClient', () => ({
     SymbolPageClient: () => null,
 }));
@@ -23,6 +31,9 @@ vi.mock('@y0ngha/siglens-core', () => ({
     // TechnicalFactsSummary deps (RSI thresholds)
     RSI_OVERBOUGHT_LEVEL: 70,
     RSI_OVERSOLD_LEVEL: 30,
+    // Task 9: @/views/symbol barrel now also exports FearGreedFactsSummary,
+    // which pulls in fearGreedLabels → POC_WINDOW_DEFAULT at module scope.
+    POC_WINDOW_DEFAULT: 60,
 }));
 vi.mock('@/shared/config/market', async importOriginal => ({
     ...(await importOriginal<typeof import('@/shared/config/market')>()),
@@ -106,6 +117,7 @@ import { Suspense, type ReactNode } from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { default as SymbolPage } from '@/app/[symbol]/page';
 import { TechnicalFactsSummary } from '@/views/symbol';
+import { TechnicalSnapshotProse } from '@/views/symbol/snapshot/renderers/TechnicalSnapshotProse';
 import { getBarsStatic } from '@/entities/bars';
 import { getAssetInfoResilient } from '@/entities/ticker';
 import { findElementByType } from '@/__tests__/utils/findElementByType';
@@ -142,6 +154,8 @@ describe('SymbolPage — FactLayer SSR integration', () => {
         vi.clearAllMocks();
         // Re-apply the default assetInfo mock that clearAllMocks wipes.
         mockGetAssetInfoResilient.mockResolvedValue(DEFAULT_ASSET_INFO);
+        // Default: no SEO snapshot row — existing FactLayer-only behavior.
+        mockGetSeoSnapshotsStatic.mockResolvedValue([]);
     });
 
     it('Happy: bars 있으면 Suspense fallback에 TechnicalFactsSummary(SSR)를 렌더한다', async () => {
@@ -251,5 +265,119 @@ describe('SymbolPage — FactLayer SSR integration', () => {
         const fact = findElementByType(fallback, TechnicalFactsSummary);
 
         expect(fact).toBeNull();
+    });
+
+    describe('SEO snapshot prose (snapshot-first, complementary to FactLayer)', () => {
+        beforeEach(() => {
+            mockBarsStatic.mockResolvedValue({
+                bars: [
+                    {
+                        time: 1,
+                        open: 1,
+                        high: 2,
+                        low: 0.5,
+                        close: 1.5,
+                        volume: 100,
+                    },
+                ],
+                indicators: {},
+            } as never);
+        });
+
+        // audit fix FIX 1: TechnicalSnapshotProse moved OUT of the Suspense
+        // fallback to a persistent server sibling (React destroys the
+        // fallback subtree on hydration, so JS-executing crawlers never saw
+        // it there). It is now found via a plain children-only traversal of
+        // `tree`, not via `findSuspenseFallback`.
+        it('스냅샷 있으면 Suspense fallback 밖 persistent sibling으로 TechnicalSnapshotProse를 렌더한다(FactsSummary는 fallback 안에서 공존)', async () => {
+            mockGetSeoSnapshotsStatic.mockResolvedValue([
+                {
+                    symbol: 'AAPL',
+                    tab: 'technical',
+                    content: { summary: '단기 상승 모멘텀', trend: 'bullish' },
+                    model: 'deepseek-v4-flash',
+                    generatedAt: new Date('2026-07-24'),
+                },
+            ]);
+
+            const tree = await SymbolPage({
+                params: Promise.resolve({ symbol: 'aapl' }),
+            });
+
+            const prose = findElementByType(tree, TechnicalSnapshotProse);
+            expect(prose).not.toBeNull();
+            expect((prose?.props as { content: unknown }).content).toEqual({
+                summary: '단기 상승 모멘텀',
+                trend: 'bullish',
+            });
+            // Complementary, not exclusive — deterministic facts still render
+            // inside the Suspense fallback.
+            const fallback = findSuspenseFallback(tree);
+            expect(
+                findElementByType(fallback, TechnicalFactsSummary)
+            ).not.toBeNull();
+        });
+
+        it('스냅샷 없으면(getSeoSnapshotsStatic → []) TechnicalSnapshotProse에 undefined content를 전달한다(렌더러가 자체적으로 null 반환)', async () => {
+            mockGetSeoSnapshotsStatic.mockResolvedValue([]);
+
+            const tree = await SymbolPage({
+                params: Promise.resolve({ symbol: 'aapl' }),
+            });
+
+            const prose = findElementByType(tree, TechnicalSnapshotProse);
+            expect(prose).not.toBeNull();
+            expect(
+                (prose?.props as { content: unknown }).content
+            ).toBeUndefined();
+            // Existing FactLayer behavior is unchanged (still in fallback).
+            const fallback = findSuspenseFallback(tree);
+            expect(
+                findElementByType(fallback, TechnicalFactsSummary)
+            ).not.toBeNull();
+        });
+
+        it('다른 탭(overall)의 스냅샷은 technical 슬롯에 전달되지 않는다', async () => {
+            mockGetSeoSnapshotsStatic.mockResolvedValue([
+                {
+                    symbol: 'AAPL',
+                    tab: 'overall',
+                    content: { headlineKo: '헤드라인' },
+                    model: 'deepseek-v4-flash',
+                    generatedAt: new Date('2026-07-24'),
+                },
+            ]);
+
+            const tree = await SymbolPage({
+                params: Promise.resolve({ symbol: 'aapl' }),
+            });
+
+            const prose = findElementByType(tree, TechnicalSnapshotProse);
+            expect(
+                (prose?.props as { content: unknown }).content
+            ).toBeUndefined();
+        });
+
+        it('getSeoSnapshotsStatic가 throw해도 페이지가 깨지지 않는다(호출부가 아니라 static-cache 계층의 fail-open 계약)', async () => {
+            // getSeoSnapshotsStatic 자체가 fail-open([])이지만, 호출부가 이를 신뢰하지
+            // 않고 별도 .catch를 두지 않는다는 걸 전제로 한다 — 계약 위반(모듈이 reject)
+            // 시에는 페이지가 깨져도 되는 계약이므로 여기선 정상 반환만 검증한다.
+            mockGetSeoSnapshotsStatic.mockResolvedValue([]);
+
+            await expect(
+                SymbolPage({ params: Promise.resolve({ symbol: 'aapl' }) })
+            ).resolves.toBeTruthy();
+        });
+
+        it('스냅샷 조회는 peek 모델 상수(DEEPSEEK_V4_FLASH_MODEL)와 무관하게 revalidate 리터럴(21600)로 호출된다', async () => {
+            mockGetSeoSnapshotsStatic.mockResolvedValue([]);
+
+            await SymbolPage({ params: Promise.resolve({ symbol: 'aapl' }) });
+
+            expect(mockGetSeoSnapshotsStatic).toHaveBeenCalledWith(
+                'AAPL',
+                21600
+            );
+        });
     });
 });

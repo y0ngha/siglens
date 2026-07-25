@@ -14,3 +14,6 @@ export { buildChartPageHeading } from './utils/chartPageHeading';
 // 경량 순수 컴포넌트(priceFormat/technicalFacts util만 의존) — heavy 컴포넌트 deep-import
 // 정책에 해당하지 않아 barrel로 노출한다. app route의 FactLayer SSR fallback이 소비.
 export { TechnicalFactsSummary } from './TechnicalFactsSummary';
+// TechnicalFactsSummary와 동일한 결정적 사실 층 패턴 — fear-greed 페이지의 SSR
+// 서버 계산 factor 요약. app route가 소비.
+export { FearGreedFactsSummary } from './fearGreed/FearGreedFactsSummary';

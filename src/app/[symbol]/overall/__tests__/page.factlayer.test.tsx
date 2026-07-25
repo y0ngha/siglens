@@ -10,6 +10,14 @@
  * so we locate the Suspense element then inspect its fallback.
  */
 
+// spy → vi.mock → imports order (MISTAKES.md Tests §17).
+const { mockGetSeoSnapshotsStatic } = vi.hoisted(() => ({
+    mockGetSeoSnapshotsStatic: vi.fn(),
+}));
+
+vi.mock('@/entities/seo-snapshot/lib/getSnapshotStatic', () => ({
+    getSeoSnapshotsStatic: mockGetSeoSnapshotsStatic,
+}));
 vi.mock('@/widgets/overall/OverallContent', () => ({
     OverallContent: () => null,
 }));
@@ -76,6 +84,7 @@ import { Suspense, type ReactNode } from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { default as OverallPage } from '@/app/[symbol]/overall/page';
 import { OverallFactsSummary, OverallFactualFallback } from '@/widgets/overall';
+import { OverallSnapshotProse } from '@/views/symbol/snapshot/renderers/OverallSnapshotProse';
 import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
 import { NEWS_LIST_CACHE_KEY } from '@/entities/news-article';
 import { findElementByType } from '@/__tests__/utils/findElementByType';
@@ -97,7 +106,11 @@ function findSuspenseFallback(tree: ReactNode): ReactNode {
 }
 
 describe('OverallPage — FactLayer SSR integration', () => {
-    beforeEach(() => vi.clearAllMocks());
+    beforeEach(() => {
+        vi.clearAllMocks();
+        // Default: no SEO snapshot row — existing peek-first behavior.
+        mockGetSeoSnapshotsStatic.mockResolvedValue([]);
+    });
 
     it('Happy: cached 종합 분석 있으면 Suspense fallback에 OverallFactsSummary(SSR)를 렌더한다', async () => {
         const cached = {
@@ -204,6 +217,140 @@ describe('OverallPage — FactLayer SSR integration', () => {
             factualFallback?.props as { newsItems: unknown[] }
         ).toMatchObject({
             newsItems: [],
+        });
+    });
+
+    describe('SEO snapshot prose (snapshot-first, peek fallback, placeholder last)', () => {
+        const OVERALL_SNAPSHOT_ROW = {
+            symbol: 'AAPL',
+            tab: 'overall',
+            content: {
+                headlineKo: '강세 우위 스냅샷',
+                integratedConclusionKo: '스냅샷 종합 결론',
+                scenarios: [
+                    {
+                        name: 'bullish' as const,
+                        triggerConditionKo: '조건',
+                        priceRangeKo: '$180~$200',
+                    },
+                ],
+                technicalBulletsKo: [],
+                fundamentalBulletsKo: [],
+                newsBulletsKo: [],
+                optionsBulletsKo: [],
+                riskFactorsKo: [],
+            },
+            model: 'deepseek-v4-flash',
+            generatedAt: new Date('2026-07-24'),
+        };
+
+        // audit fix FIX 1 / FIX 1b: OverallSnapshotProse moved OUT of the
+        // Suspense fallback to a persistent server sibling (React destroys
+        // the fallback subtree on hydration, so JS-executing crawlers never
+        // saw it there). It is now found via a plain children-only traversal
+        // of `tree`, not via `findSuspenseFallback`. The fallback itself is
+        // `null` (suppressed) when the snapshot renders, per FIX 1b.
+        it('스냅샷 있으면 peek HIT이어도 Suspense 밖 persistent sibling으로 OverallSnapshotProse를 렌더하고 fallback은 suppress한다(중복 방지)', async () => {
+            mockGetSeoSnapshotsStatic.mockResolvedValue([OVERALL_SNAPSHOT_ROW]);
+            mockStatic.mockImplementation(async (key: readonly unknown[]) => {
+                if (key[0] === NEWS_LIST_CACHE_KEY) return [] as never;
+                return { headlineKo: 'peek 결과' } as never;
+            });
+
+            const tree = await OverallPage({
+                params: Promise.resolve({ symbol: 'aapl' }),
+            });
+
+            const prose = findElementByType(tree, OverallSnapshotProse);
+            expect(prose).not.toBeNull();
+            expect((prose?.props as { content: unknown }).content).toEqual(
+                OVERALL_SNAPSHOT_ROW.content
+            );
+            expect(findSuspenseFallback(tree)).toBeNull();
+        });
+
+        it('스냅샷 없고 peek HIT이면 기존대로 OverallFactsSummary를 렌더한다(peek fallback 유지)', async () => {
+            mockGetSeoSnapshotsStatic.mockResolvedValue([]);
+            mockStatic.mockImplementation(async (key: readonly unknown[]) => {
+                if (key[0] === NEWS_LIST_CACHE_KEY) return [] as never;
+                return { headlineKo: 'peek 결과' } as never;
+            });
+
+            const tree = await OverallPage({
+                params: Promise.resolve({ symbol: 'aapl' }),
+            });
+            const fallback = findSuspenseFallback(tree);
+
+            expect(
+                findElementByType(fallback, OverallSnapshotProse)
+            ).toBeNull();
+            expect(
+                findElementByType(fallback, OverallFactsSummary)
+            ).not.toBeNull();
+        });
+
+        it('스냅샷 없고 peek MISS면 기존대로 OverallFactualFallback을 렌더한다(placeholder 최종 단계)', async () => {
+            mockGetSeoSnapshotsStatic.mockResolvedValue([]);
+            mockStatic.mockImplementation(async (key: readonly unknown[]) => {
+                if (key[0] === NEWS_LIST_CACHE_KEY) return [] as never;
+                return null as never;
+            });
+
+            const tree = await OverallPage({
+                params: Promise.resolve({ symbol: 'aapl' }),
+            });
+            const fallback = findSuspenseFallback(tree);
+
+            expect(
+                findElementByType(fallback, OverallSnapshotProse)
+            ).toBeNull();
+            expect(findElementByType(fallback, OverallFactsSummary)).toBeNull();
+            expect(
+                findElementByType(fallback, OverallFactualFallback)
+            ).not.toBeNull();
+        });
+
+        it('다른 탭(technical)의 스냅샷은 overall 슬롯에 쓰이지 않는다(peek fallback으로 내려간다)', async () => {
+            mockGetSeoSnapshotsStatic.mockResolvedValue([
+                {
+                    symbol: 'AAPL',
+                    tab: 'technical',
+                    content: { summary: '기술적 요약' },
+                    model: 'deepseek-v4-flash',
+                    generatedAt: new Date('2026-07-24'),
+                },
+            ]);
+            mockStatic.mockImplementation(async (key: readonly unknown[]) => {
+                if (key[0] === NEWS_LIST_CACHE_KEY) return [] as never;
+                return { headlineKo: 'peek 결과' } as never;
+            });
+
+            const tree = await OverallPage({
+                params: Promise.resolve({ symbol: 'aapl' }),
+            });
+            const fallback = findSuspenseFallback(tree);
+
+            expect(
+                findElementByType(fallback, OverallSnapshotProse)
+            ).toBeNull();
+            expect(
+                findElementByType(fallback, OverallFactsSummary)
+            ).not.toBeNull();
+        });
+
+        it('getSeoSnapshotsStatic는 이 페이지의 revalidate 리터럴(43200)로 호출된다', async () => {
+            mockGetSeoSnapshotsStatic.mockResolvedValue([]);
+            mockStatic.mockImplementation(async (key: readonly unknown[]) => {
+                if (key[0] === NEWS_LIST_CACHE_KEY) return [] as never;
+                return null as never;
+            });
+
+            await OverallPage({ params: Promise.resolve({ symbol: 'aapl' }) });
+
+            expect(mockGetSeoSnapshotsStatic).toHaveBeenCalledWith(
+                'AAPL',
+                43200
+            );
         });
     });
 });

@@ -1,4 +1,5 @@
 import { test, expect } from '../support/fixtures';
+import { normalizeReactSsrText } from '../support/ssrText';
 
 /**
  * [symbol] ISR + structured-data SEO (crawler-facing) — Tier 4 cross-cutting.
@@ -40,10 +41,6 @@ function rootJsonLdTypes(html: string): string[] {
 
 function countH1(html: string): number {
     return (html.match(/<h1[\s>]/g) ?? []).length;
-}
-
-function normalizeReactSsrText(html: string): string {
-    return html.replace(/<!--[\s\S]*?-->/g, '');
 }
 
 test.describe('symbol SEO + ISR (crawler-facing)', () => {

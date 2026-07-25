@@ -61,6 +61,49 @@ describe('evaluateSymbolIndexability', () => {
         ).toEqual({ indexable: true, reason: 'curated-crypto' });
     });
 
+    it('allows degraded whitelisted symbols with a stored snapshot', () => {
+        expect(
+            evaluateSymbolIndexability({
+                symbol: 'AAPL',
+                assetInfo: asset('AAPL'),
+                degraded: true,
+                hasSnapshot: true,
+            })
+        ).toEqual({ indexable: true, reason: 'degraded-with-snapshot' });
+    });
+
+    it('blocks degraded whitelisted symbols without a stored snapshot', () => {
+        expect(
+            evaluateSymbolIndexability({
+                symbol: 'AAPL',
+                assetInfo: asset('AAPL'),
+                degraded: true,
+                hasSnapshot: false,
+            })
+        ).toEqual({ indexable: false, reason: 'degraded' });
+    });
+
+    it('blocks degraded non-whitelisted symbols even with a stored snapshot', () => {
+        expect(
+            evaluateSymbolIndexability({
+                symbol: 'ZZZOF',
+                assetInfo: asset('ZZZOF'),
+                degraded: true,
+                hasSnapshot: true,
+            })
+        ).toEqual({ indexable: false, reason: 'degraded' });
+    });
+
+    it('blocks degraded symbols when hasSnapshot is omitted (back-compat)', () => {
+        expect(
+            evaluateSymbolIndexability({
+                symbol: 'AAPL',
+                assetInfo: asset('AAPL'),
+                degraded: true,
+            })
+        ).toEqual({ indexable: false, reason: 'degraded' });
+    });
+
     it('blocks unapproved longtail tickers by default', () => {
         expect(
             evaluateSymbolIndexability({

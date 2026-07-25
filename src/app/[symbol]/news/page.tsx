@@ -13,6 +13,10 @@ import { AnalystActions } from '@/widgets/news/sections/AnalystActions';
 import { EventCalendar } from '@/widgets/news/sections/EventCalendar';
 import { NewsList } from '@/widgets/news/sections/NewsList';
 import { SymbolPageHeading } from '@/views/symbol';
+import {
+    NewsSnapshotProse,
+    hasNewsProse,
+} from '@/views/symbol/snapshot/renderers/NewsSnapshotProse';
 import { CrossLinkCards } from '@/shared/ui/CrossLinkCards';
 import { SectionSkeleton } from '@/views/symbol/SectionSkeleton';
 import { JsonLd } from '@/shared/ui/JsonLd';
@@ -26,6 +30,7 @@ import {
     buildDisplayName,
     getAssetInfoResilient,
 } from '@/entities/ticker';
+import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/lib/getSnapshotStatic';
 import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
 import { SECONDS_PER_HALF_DAY } from '@/shared/config/time';
 import { getTodayIsoDay } from '@/shared/lib/getTodayIsoDay';
@@ -33,6 +38,7 @@ import { todayKstIsoDate } from '@/shared/lib/dateKey';
 import { getFmpUserFacingMessage } from '@/shared/api/fmp/fmpUserMessage';
 import {
     buildBreadcrumbJsonLd,
+    buildSnapshotMetaDescription,
     buildSymbolSeoContent,
     buildSymbolWebPageJsonLd,
     resolveSymbolNewsSeoContent,
@@ -70,10 +76,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         return NOINDEX_SYMBOL_METADATA;
     }
     const { assetInfo, degraded } = await getAssetInfoResilient(upper);
-    const blockedMetadata = getBlockedSymbolMetadata({
+    const blockedMetadata = await getBlockedSymbolMetadata({
         symbol: upper,
         assetInfo,
         degraded,
+        revalidateSeconds: revalidate,
+        tab: 'news',
     });
     if (blockedMetadata) return blockedMetadata;
     if (!assetInfo) return NOINDEX_SYMBOL_METADATA;
@@ -84,7 +92,23 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         displayName,
         koreanName: assetInfo.koreanName,
     });
-    return symbolMetadataFromSeo(seo);
+    const metadata = symbolMetadataFromSeo(seo);
+
+    // snapshot-derived unique description (spec 2026-07-24 Task 8). Same
+    // getSeoSnapshotsStatic(upper, revalidate) call the page body makes below —
+    // unstable_cache dedupes it within this render, so this is a cache hit, not
+    // an extra DB round-trip. Falls back to the templated description when no
+    // snapshot exists (backward compatible). og/twitter keep the templated copy
+    // — only the search-facing <meta name="description"> is overridden.
+    const snap = (await getSeoSnapshotsStatic(upper, revalidate)).find(
+        s => s.tab === 'news'
+    );
+    const snapshotDescription = snap
+        ? buildSnapshotMetaDescription('news', snap.content, displayName)
+        : null;
+    return snapshotDescription
+        ? { ...metadata, description: snapshotDescription }
+        : metadata;
 }
 
 interface SymbolSectionProps {
@@ -278,16 +302,34 @@ export default async function NewsPage({ params }: Props) {
     // ISR degrade guard: getNewsList(Postgres)가 throw하면 ISR 캐시에 0-byte 빈 결과가
     // 굳는 것을 막으려면 여기서 흡수해야 한다. [] 로 degrade → newsListJsonLd가 null이
     // 되고 페이지 크롬(heading/AI summary/CrossLinks 등)은 유지된다.
-    const newsItems = await staticSymbolCache(
-        [NEWS_LIST_CACHE_KEY, upper],
-        upper,
-        () => getNewsList(upper),
-        [`news:${upper}`],
-        SECONDS_PER_HALF_DAY
-    ).catch((e: unknown) => {
-        console.error('[NewsPage] getNewsList failed, degrading to []:', e);
-        return [] as Awaited<ReturnType<typeof getNewsList>>;
-    });
+    //
+    // Promise.all로 병렬화 — snapshots read는 서로 독립이라 직렬 await할 이유가 없다.
+    const [newsItems, snapshots] = await Promise.all([
+        staticSymbolCache(
+            [NEWS_LIST_CACHE_KEY, upper],
+            upper,
+            () => getNewsList(upper),
+            [`news:${upper}`],
+            SECONDS_PER_HALF_DAY
+        ).catch((e: unknown) => {
+            console.error('[NewsPage] getNewsList failed, degrading to []:', e);
+            return [] as Awaited<ReturnType<typeof getNewsList>>;
+        }),
+        // ISR-safe (staticSymbolCache-wrapped, fail-open []) — see
+        // getSeoSnapshotsStatic JSDoc. revalidateSeconds mirrors this page's
+        // `export const revalidate` literal above.
+        getSeoSnapshotsStatic(upper, revalidate),
+    ]);
+    const newsSnapshot = snapshots.find(s => s.tab === 'news');
+    // audit fix FIX 2: XOR 게이트 — 스냅샷 프로즈가 렌더 가능하면(hasNewsProse)
+    // 그것만 보여주고, 클라이언트 AI 위젯(NewsAiSummary)은 렌더하지 않는다. 두
+    // 소스가 동일 필드(currentDriverKo/keyEventsKo/upcomingEventsKo)를 같은
+    // 순서로 중복 렌더하던 문제(같은 결론을 사용자에게 두 번, 스크린리더에 두
+    // 번, 중복 콘텐츠 SEO 리스크)를 해소한다. NewsFactsSummary(결정론적 DB
+    // 목록 사실)는 이 게이트 대상이 아니다 — 계속 공존한다.
+    // `OverallSnapshotProse.hasOverallProse` 패턴과 동일 — narrowNewsContent를
+    // 재사용해 프로즈 컴포넌트와 동일 판단.
+    const showNewsProse = hasNewsProse(newsSnapshot?.content);
     // At least one AI-enriched card means aggregate analysis can start immediately.
     const hasEnrichedNews = newsItems.some(item => item.sentiment !== null);
 
@@ -330,6 +372,19 @@ export default async function NewsPage({ params }: Props) {
                     assetClass={assetClass}
                     items={newsItems}
                 />
+                {/* NewsAiSummary (below) is a client component that fetches its
+                    aggregate analysis via a client-side hook — during ISR
+                    generation it bakes its loading skeleton into the static HTML
+                    (no crawlable AI text). This adds the pre-warmed SEO snapshot
+                    prose as a plain SSR sibling, complementary to the
+                    deterministic NewsFactsSummary above (list-based facts) — both
+                    coexist. Renders null when no snapshot exists (spec
+                    2026-07-24 Task 7b). */}
+                <NewsSnapshotProse
+                    content={newsSnapshot?.content}
+                    symbol={upper}
+                    displayName={displayName}
+                />
                 <section className="sr-only">
                     <h2>{displayName} 뉴스 분석 개요</h2>
                     <p>
@@ -338,15 +393,29 @@ export default async function NewsPage({ params }: Props) {
                             : `${displayName}의 최신 뉴스 분위기와 핵심 이슈를 한국어로 정리합니다.`}
                     </p>
                 </section>
-                <NewsAiSummaryErrorBoundary>
-                    <Suspense fallback={<NewsAiSummarySkeleton />}>
-                        <NewsAiSummary
-                            symbol={upper}
-                            companyName={assetInfo.name}
-                            hasEnrichedNews={hasEnrichedNews}
-                        />
-                    </Suspense>
-                </NewsAiSummaryErrorBoundary>
+                {/* audit fix FIX 2: XOR — NewsAiSummary (client widget) and
+                    NewsSnapshotProse (SSR prose, above) both render the same AI
+                    conclusion (currentDriverKo/keyEventsKo/upcomingEventsKo).
+                    Showing both duplicated the text for sighted users and
+                    screen readers and doubled as a duplicate-content SEO risk.
+                    When the snapshot is renderable, skip the widget; it stays
+                    the fallback for when no snapshot exists — NewsAiSummary is
+                    a client component that fetches its aggregate analysis via a
+                    client-side hook, so during ISR generation it bakes its
+                    loading skeleton into the static HTML (no crawlable AI text)
+                    until it hydrates. NewsFactsSummary above is unaffected —
+                    it's deterministic DB-list facts, not an AI conclusion. */}
+                {!showNewsProse && (
+                    <NewsAiSummaryErrorBoundary>
+                        <Suspense fallback={<NewsAiSummarySkeleton />}>
+                            <NewsAiSummary
+                                symbol={upper}
+                                companyName={assetInfo.name}
+                                hasEnrichedNews={hasEnrichedNews}
+                            />
+                        </Suspense>
+                    </NewsAiSummaryErrorBoundary>
+                )}
 
                 <Suspense fallback={<SectionSkeleton />}>
                     <NewsListSection symbol={upper} />

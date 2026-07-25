@@ -10,6 +10,10 @@ import { FinancialsAiSummary } from '@/widgets/financials/FinancialsAiSummary';
 import { FinancialsScorecard } from '@/widgets/financials/FinancialsScorecard';
 import { FinancialsStatements } from '@/widgets/financials/FinancialsStatements';
 import { SymbolPageHeading } from '@/views/symbol';
+import {
+    FinancialsSnapshotProse,
+    hasFinancialsProse,
+} from '@/views/symbol/snapshot/renderers/FinancialsSnapshotProse';
 import { CrossLinkCards } from '@/shared/ui/CrossLinkCards';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import {
@@ -17,6 +21,7 @@ import {
     type SymbolRouteParams,
 } from '@/shared/config/market';
 import { isUnresolvableDegraded } from '@/shared/lib/symbolGuard';
+import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/lib/getSnapshotStatic';
 import {
     buildAssetAboutNode,
     buildDisplayName,
@@ -24,6 +29,7 @@ import {
 } from '@/entities/ticker';
 import {
     buildBreadcrumbJsonLd,
+    buildSnapshotMetaDescription,
     buildSymbolFinancialsSeoContent,
     buildSymbolSeoContent,
     buildSymbolWebPageJsonLd,
@@ -63,10 +69,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         return NOINDEX_SYMBOL_METADATA;
     }
     const { assetInfo, degraded } = await getAssetInfoResilient(upper);
-    const blockedMetadata = getBlockedSymbolMetadata({
+    const blockedMetadata = await getBlockedSymbolMetadata({
         symbol: upper,
         assetInfo,
         degraded,
+        revalidateSeconds: revalidate,
+        tab: 'financials',
     });
     if (blockedMetadata) return blockedMetadata;
 
@@ -95,7 +103,23 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         displayName,
         koreanName: assetInfo?.koreanName,
     });
-    return symbolMetadataFromSeo(seo);
+    const metadata = symbolMetadataFromSeo(seo);
+
+    // snapshot-derived unique description (spec 2026-07-24 Task 8). Same
+    // getSeoSnapshotsStatic(upper, revalidate) call the page body makes below —
+    // unstable_cache dedupes it within this render, so this is a cache hit, not
+    // an extra DB round-trip. Falls back to the templated description when no
+    // snapshot exists (backward compatible). og/twitter keep the templated copy
+    // — only the search-facing <meta name="description"> is overridden.
+    const snap = (await getSeoSnapshotsStatic(upper, revalidate)).find(
+        s => s.tab === 'financials'
+    );
+    const snapshotDescription = snap
+        ? buildSnapshotMetaDescription('financials', snap.content, displayName)
+        : null;
+    return snapshotDescription
+        ? { ...metadata, description: snapshotDescription }
+        : metadata;
 }
 
 export default async function FinancialsPage({ params }: Props) {
@@ -112,11 +136,27 @@ export default async function FinancialsPage({ params }: Props) {
     // Gate via profile — same pattern as the fundamental page.
     // getProfileResilient uses ['fundamental:profile', upper] key, shared with
     // ProfileSection inside the fundamental page, so there is no extra FMP round-trip.
-    const [{ profile, degraded: profileDegraded }, { assetInfo, degraded }] =
-        await Promise.all([
-            getProfileResilient(upper),
-            getAssetInfoResilient(upper),
-        ]);
+    // snapshots: ISR-safe (staticSymbolCache-wrapped, fail-open []) — see
+    // getSeoSnapshotsStatic JSDoc. revalidateSeconds mirrors this page's
+    // `export const revalidate` literal above.
+    const [
+        { profile, degraded: profileDegraded },
+        { assetInfo, degraded },
+        snapshots,
+    ] = await Promise.all([
+        getProfileResilient(upper),
+        getAssetInfoResilient(upper),
+        getSeoSnapshotsStatic(upper, revalidate),
+    ]);
+    const financialsSnapshot = snapshots.find(s => s.tab === 'financials');
+    // audit fix FIX 2: XOR 게이트 — 스냅샷 프로즈가 렌더 가능하면(hasFinancialsProse)
+    // 그것만 보여주고, 클라이언트 AI 위젯(FinancialsAiSummary)은 렌더하지 않는다.
+    // 두 소스가 동일 필드(overallConclusionKo/axisAssessments/riskFactorsKo)를
+    // 같은 순서로 중복 렌더하던 문제(같은 결론을 사용자에게 두 번, 스크린리더에
+    // 두 번, 중복 콘텐츠 SEO 리스크)를 해소한다. `OverallSnapshotProse
+    // .hasOverallProse` 패턴과 동일 — narrowFinancialsContent를 재사용해 프로즈
+    // 컴포넌트와 동일 판단.
+    const showFinancialsProse = hasFinancialsProse(financialsSnapshot?.content);
 
     // degraded + digit-first 심볼 = crypto_assets DB와 FMP가 동시 다운 중이고 resolve 불가
     // → 차트 페이지와 동일한 notFound 처리로 sibling 일관성 유지.
@@ -125,9 +165,16 @@ export default async function FinancialsPage({ params }: Props) {
     const displayName = assetInfo ? buildDisplayName(assetInfo, upper) : upper;
 
     // FMP 인프라 일시 실패: 500 대신 degrade 안내(200)를 렌더한다. 다음 revalidate에
-    // 인프라가 복구되면 정상 데이터로 자동 갱신된다.
+    // 인프라가 복구되면 정상 데이터로 자동 갱신된다. 스냅샷이 있으면 degrade 중에도
+    // 크롤러에게 프로즈 콘텐츠를 보여준다(spec §7 — degraded 분기에서도 스냅샷 유지).
     if (profileDegraded) {
-        return <FinancialsDegraded displayName={displayName} symbol={upper} />;
+        return (
+            <FinancialsDegraded
+                displayName={displayName}
+                symbol={upper}
+                snapshotContent={financialsSnapshot?.content}
+            />
+        );
     }
 
     // profile === null = FMP 200 + 빈 결과 = 실존하지 않는 종목 → 404.
@@ -140,9 +187,15 @@ export default async function FinancialsPage({ params }: Props) {
 
     // profile은 정상이나 6종 재무 fetch가 모두 비면(FMP 일시 장애) scorecard가 전 축 F로
     // 오인 렌더되고 색인된다. all-empty면 degrade UI로 전환하고(메타도 noindex로 일치),
-    // 다음 revalidate에 데이터가 복구되면 자동 정상화된다.
+    // 다음 revalidate에 데이터가 복구되면 자동 정상화된다. 스냅샷이 있으면 이 분기에서도 유지.
     if (isEmptyFinancialsSnapshot(snapshot)) {
-        return <FinancialsDegraded displayName={displayName} symbol={upper} />;
+        return (
+            <FinancialsDegraded
+                displayName={displayName}
+                symbol={upper}
+                snapshotContent={financialsSnapshot?.content}
+            />
+        );
     }
 
     const { fullTitle, description, url } = buildSymbolFinancialsSeoContent(
@@ -225,7 +278,26 @@ export default async function FinancialsPage({ params }: Props) {
 
                 <FinancialsScorecard scorecard={scorecard} />
 
-                <FinancialsAiSummary symbol={upper} />
+                {/* audit fix FIX 2: XOR — FinancialsAiSummary (client widget) and
+                    FinancialsSnapshotProse (SSR prose) both render the same AI
+                    conclusion (overallConclusionKo/axisAssessments/
+                    riskFactorsKo). Showing both duplicated the text for sighted
+                    users and screen readers and doubled as a duplicate-content
+                    SEO risk. When the snapshot is renderable, show the prose
+                    only; the widget stays the fallback for when no snapshot
+                    exists — FinancialsAiSummary fetches its analysis via a
+                    client-side hook, so during ISR generation it bakes its
+                    loading skeleton into the static HTML (no crawlable AI text)
+                    until it hydrates. */}
+                {showFinancialsProse ? (
+                    <FinancialsSnapshotProse
+                        content={financialsSnapshot?.content}
+                        symbol={upper}
+                        displayName={displayName}
+                    />
+                ) : (
+                    <FinancialsAiSummary symbol={upper} />
+                )}
 
                 <FinancialsStatements
                     symbol={upper}

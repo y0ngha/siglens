@@ -5,6 +5,11 @@ import {
     submitFundamentalAnalysis,
     submitFinancialsAnalysis,
     submitCongressTrend,
+    pollAnalysis,
+    pollOverallAnalysis,
+    pollFundamentalAnalysis,
+    pollFinancialsAnalysis,
+    pollCongressTrend,
     isEtRegularSessionOpen,
     computeFinancialsScorecard,
     DEEPSEEK_V4_FLASH_MODEL,
@@ -13,6 +18,11 @@ import {
     type SubmitFundamentalAnalysisResult,
     type SubmitFinancialsAnalysisResult,
     type SubmitCongressTrendResult,
+    type PollAnalysisResult,
+    type PollOverallAnalysisResult,
+    type PollFundamentalAnalysisResult,
+    type PollFinancialsAnalysisResult,
+    type PollCongressTrendResult,
     type EnrichedNewsItem,
     type FinancialsScorecard,
     type OptionsSnapshot,
@@ -216,4 +226,53 @@ export async function prewarmOverall(
         financialsScorecard,
         ...(force ? { force: true } : {}),
     });
+}
+
+/**
+ * FIX Z(감사) — pre-warm 전용 poll seam. `submitAnalysisAction`이 아니라 이
+ * 파일의 `prewarmTechnical`과 짝을 이루는, request-context 없는(after() 컨텍스트
+ * 실행) 전용 경로다. actions/ 아래의 poll 액션은 요청 헤더·세션 사용자 조회
+ * 함수를 호출해 request scope가 필요하므로 여기서 재사용할 수 없다.
+ *
+ * `tier: 'free'`는 익명 방문자와 동일한 caller-tier timeframe 게이트를
+ * 재현한다 — prewarmTechnical의 submit이 쓰는 tierContext와 동일 값이어야
+ * 폴 시점에 intraday 결과가 잘못 걸러지지 않는다(core JSDoc의 "caller-tier
+ * timeframe gate" 불변식).
+ */
+export async function prewarmPollTechnical(
+    jobId: string
+): Promise<PollAnalysisResult> {
+    return pollAnalysis(jobId, { tier: 'free' });
+}
+
+/** FIX Z(감사) — `prewarmOverall`과 짝을 이루는 pre-warm 전용 poll seam. */
+export async function prewarmPollOverall(
+    jobId: string
+): Promise<PollOverallAnalysisResult> {
+    return pollOverallAnalysis(jobId, { tier: 'free' });
+}
+
+/**
+ * FIX Z(감사) — `prewarmFundamental`과 짝을 이루는 pre-warm 전용 poll seam.
+ * fundamental/financials/congress/news/options는 timeframe 게이트가 없어
+ * `tier`를 받지 않는다(core 시그니처 참고) — technical/overall과의 차이.
+ */
+export async function prewarmPollFundamental(
+    jobId: string
+): Promise<PollFundamentalAnalysisResult> {
+    return pollFundamentalAnalysis(jobId);
+}
+
+/** FIX Z(감사) — `prewarmFinancials`와 짝을 이루는 pre-warm 전용 poll seam. */
+export async function prewarmPollFinancials(
+    jobId: string
+): Promise<PollFinancialsAnalysisResult> {
+    return pollFinancialsAnalysis(jobId);
+}
+
+/** FIX Z(감사) — `prewarmCongress`와 짝을 이루는 pre-warm 전용 poll seam. */
+export async function prewarmPollCongress(
+    jobId: string
+): Promise<PollCongressTrendResult> {
+    return pollCongressTrend(jobId);
 }

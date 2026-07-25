@@ -4,6 +4,7 @@ export interface SymbolIndexabilityInput {
     symbol: string;
     assetInfo: AssetInfo | null;
     degraded: boolean;
+    hasSnapshot?: boolean;
 }
 
 export type SymbolIndexabilityReason =
@@ -13,6 +14,7 @@ export type SymbolIndexabilityReason =
     | 'invalid-symbol'
     | 'asset-missing'
     | 'degraded'
+    | 'degraded-with-snapshot'
     | 'longtail-default-blocked';
 
 export interface SymbolIndexabilityDecision {

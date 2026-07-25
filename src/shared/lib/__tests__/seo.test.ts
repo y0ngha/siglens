@@ -8,6 +8,7 @@ import {
     buildSymbolOptionsSeoContent,
     buildBreadcrumbJsonLd,
     buildSymbolWebPageJsonLd,
+    buildSnapshotMetaDescription,
     symbolMetadataFromSeo,
     clampSeoDescription,
     SEO_DESCRIPTION_MAX_LENGTH,
@@ -589,6 +590,184 @@ describe('buildSymbolOptionsSeoContent', () => {
         const content = buildSymbolOptionsSeoContent('AAPL');
         expect(content.title).toContain('Max Pain');
     });
+});
+
+describe('buildSnapshotMetaDescription', () => {
+    it.each([
+        [
+            'technical',
+            'summary',
+            'AAPL은 200일선 위에서 상승 추세를 이어가고 있습니다.',
+        ],
+        [
+            'overall',
+            'headlineKo',
+            'AAPL, 실적 호조에 힘입어 강세 시나리오 우세',
+        ],
+        [
+            'fundamental',
+            'overallConclusionKo',
+            'PER은 업종 평균 대비 높지만 성장성이 이를 상쇄합니다.',
+        ],
+        [
+            'financials',
+            'overallConclusionKo',
+            '매출과 영업이익이 5년 연속 증가하는 추세입니다.',
+        ],
+        [
+            'congress',
+            'summaryKo',
+            '최근 3개월간 상원 의원들의 순매수가 우세했습니다.',
+        ],
+        [
+            'options',
+            'summary',
+            '콜옵션 프리미엄이 풋옵션 대비 높게 형성되어 있습니다.',
+        ],
+        [
+            'news',
+            'currentDriverKo',
+            '최근 실적 발표 이후 주가가 강세를 보이고 있습니다.',
+        ],
+    ] as const)(
+        '%s tab — extracts the primary prose field (%s), prefixes the subject, and clamps it',
+        (tab, field, prose) => {
+            const content = { [field]: prose };
+            expect(buildSnapshotMetaDescription(tab, content, 'AAPL')).toBe(
+                clampSeoDescription(`AAPL — ${prose}`)
+            );
+        }
+    );
+
+    it('collapses multi-line prose into a single space-joined line, prefixed with the subject', () => {
+        const content = {
+            summary:
+                '첫 번째 문단입니다.\n두 번째 문단입니다.\n\n세 번째 문단입니다.',
+        };
+        expect(buildSnapshotMetaDescription('technical', content, 'AAPL')).toBe(
+            'AAPL — 첫 번째 문단입니다. 두 번째 문단입니다. 세 번째 문단입니다.'
+        );
+    });
+
+    // FIX 5 (audit): every templated builder (buildSymbol*SeoContent) leads
+    // with the subject (ticker/company name) — losing it here forfeits the
+    // bolded query-term match in the SERP snippet for queries like
+    // "AAPL 주가 전망".
+    it('starts with the subject (FIX 5)', () => {
+        const content = { summary: '상승 추세를 이어가고 있습니다.' };
+        const result = buildSnapshotMetaDescription(
+            'technical',
+            content,
+            '애플, Apple Inc. (AAPL)'
+        );
+        expect(result?.startsWith('애플, Apple Inc. (AAPL) — ')).toBe(true);
+    });
+
+    // FIX 5 (audit): clamp at the last sentence boundary under the limit
+    // instead of a mid-sentence hard cut, when one exists.
+    it('clamps an over-length multi-sentence result at the last sentence boundary under the limit (FIX 5)', () => {
+        const long = Array(20).fill('첫 문장입니다.').join(' ');
+        const content = { summary: long };
+        const result = buildSnapshotMetaDescription(
+            'technical',
+            content,
+            'AAPL'
+        );
+
+        expect(result).not.toBeNull();
+        expect([...(result as string)].length).toBeLessThanOrEqual(
+            SEO_DESCRIPTION_MAX_LENGTH
+        );
+        expect(result?.startsWith('AAPL — ')).toBe(true);
+        // A sentence boundary exists well within the search window (every
+        // ~8 chars) — the clamp must land on it, not fall back to a
+        // mid-sentence ellipsis cut.
+        expect(result?.endsWith('.')).toBe(true);
+        expect(result?.endsWith('…')).toBe(false);
+    });
+
+    it('clamps an over-length single-line result with no sentence boundary to SEO_DESCRIPTION_MAX_LENGTH with an ellipsis', () => {
+        const long = 'a'.repeat(SEO_DESCRIPTION_MAX_LENGTH + 50);
+        const content = { summary: long };
+        const result = buildSnapshotMetaDescription(
+            'technical',
+            content,
+            'AAPL'
+        );
+        expect(result).not.toBeNull();
+        expect([...(result as string)].length).toBeLessThanOrEqual(
+            SEO_DESCRIPTION_MAX_LENGTH
+        );
+        expect(result?.endsWith('…')).toBe(true);
+    });
+
+    it('returns null for an unrecognized tab', () => {
+        expect(
+            buildSnapshotMetaDescription(
+                'unknown-tab',
+                { summary: 'x' },
+                'AAPL'
+            )
+        ).toBeNull();
+    });
+
+    it('returns null when content is not an object', () => {
+        expect(
+            buildSnapshotMetaDescription('technical', null, 'AAPL')
+        ).toBeNull();
+        expect(
+            buildSnapshotMetaDescription('technical', undefined, 'AAPL')
+        ).toBeNull();
+        expect(
+            buildSnapshotMetaDescription('technical', 'a string', 'AAPL')
+        ).toBeNull();
+        expect(
+            buildSnapshotMetaDescription('technical', 42, 'AAPL')
+        ).toBeNull();
+    });
+
+    it('returns null when the primary field is missing', () => {
+        expect(
+            buildSnapshotMetaDescription(
+                'technical',
+                { trend: 'bullish' },
+                'AAPL'
+            )
+        ).toBeNull();
+    });
+
+    it('returns null when the primary field is not a string', () => {
+        expect(
+            buildSnapshotMetaDescription('technical', { summary: 123 }, 'AAPL')
+        ).toBeNull();
+        expect(
+            buildSnapshotMetaDescription(
+                'overall',
+                { headlineKo: null },
+                'AAPL'
+            )
+        ).toBeNull();
+    });
+
+    it('returns null when the primary field is an empty or whitespace-only string', () => {
+        expect(
+            buildSnapshotMetaDescription('technical', { summary: '' }, 'AAPL')
+        ).toBeNull();
+        expect(
+            buildSnapshotMetaDescription(
+                'news',
+                { currentDriverKo: '   \n  ' },
+                'AAPL'
+            )
+        ).toBeNull();
+    });
+
+    // Call-site contract (unchanged by FIX 5): a null return from this
+    // function is the caller's signal to fall back to the templated
+    // buildSymbol*SeoContent(...).description — verified at each of the 7
+    // page.tsx call sites via `snapshotDescription ?? metadata.description`.
+    // Nothing in this function's own return value changes that contract; the
+    // null-returning cases above are exactly the fallback trigger.
 });
 
 describe('buildSymbolWebPageJsonLd', () => {

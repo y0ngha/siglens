@@ -1,0 +1,248 @@
+/**
+ * SEO snapshot prose integration tests for the fundamental page — Task 7b.
+ *
+ * FundamentalAiSummary is a client component that fetches its analysis via a
+ * client-side hook, so during ISR generation it bakes its loading skeleton
+ * into the static HTML (no crawlable AI text). This suite verifies that
+ * `FundamentalSnapshotProse` is mounted as a plain SSR sibling, reads the
+ * snapshot with the page's exact revalidate literal (86400), and stays wired
+ * through the FMP-profile-degraded branch (spec 2026-07-24 §7).
+ *
+ * Strategy: invoke the RSC directly (no render) and traverse the returned
+ * element tree with findElementByType, mirroring page.factlayer.test.tsx /
+ * overall/page.body.test.tsx.
+ */
+
+// MISTAKES §17: all vi.mock + vi.hoisted above imports.
+const { mockGetSeoSnapshotsStatic } = vi.hoisted(() => ({
+    mockGetSeoSnapshotsStatic: vi.fn(),
+}));
+
+vi.mock('@/entities/seo-snapshot/lib/getSnapshotStatic', () => ({
+    getSeoSnapshotsStatic: mockGetSeoSnapshotsStatic,
+}));
+vi.mock('@/entities/ticker/api', () => ({
+    isTabAllowedForSymbol: vi.fn().mockResolvedValue(true),
+}));
+vi.mock('@/entities/ticker', () => ({
+    buildAssetAboutNode: vi.fn().mockReturnValue(undefined),
+    buildDisplayName: vi.fn().mockReturnValue('Apple Inc.'),
+    getAssetInfoResilient: vi.fn(),
+}));
+vi.mock('next/navigation', () => ({
+    notFound: vi.fn(),
+}));
+vi.mock('@/app/[symbol]/fundamental/getProfileResilient', () => ({
+    getProfileResilient: vi.fn(),
+}));
+vi.mock('@/app/[symbol]/fundamental/fundamentalData', () => ({
+    getAnalystEstimates: vi.fn().mockResolvedValue(null),
+    getCashFlowStatement: vi.fn().mockResolvedValue(null),
+    getFinancialScores: vi.fn().mockResolvedValue(null),
+    getGradesConsensus: vi.fn().mockResolvedValue(null),
+    getIncomeStatementGrowth: vi.fn().mockResolvedValue(null),
+    getKeyMetricsTtm: vi.fn().mockResolvedValue(null),
+    getPriceTargetConsensus: vi.fn().mockResolvedValue(null),
+    getPriceTargetSummary: vi.fn().mockResolvedValue(null),
+    getProfile: vi.fn().mockResolvedValue(null),
+    getProfileDescriptionKo: vi.fn().mockResolvedValue(null),
+    getRatiosTtm: vi.fn().mockResolvedValue(null),
+    getStockPeers: vi.fn().mockResolvedValue([]),
+}));
+vi.mock('@/shared/cache/staticSymbolCache', () => ({
+    staticSymbolCache: vi.fn(
+        (
+            _key: readonly string[],
+            _symbol: string,
+            fetcher: () => Promise<unknown>
+        ) => fetcher()
+    ),
+}));
+vi.mock('@/widgets/fundamental/FundamentalAiSummary', () => ({
+    FundamentalAiSummary: () => null,
+}));
+vi.mock('@/widgets/fundamental/FundamentalAiSummaryError', () => ({
+    FundamentalAiSummaryError: () => null,
+}));
+vi.mock('@/widgets/fundamental/FundamentalAiSummarySkeleton', () => ({
+    FundamentalAiSummarySkeleton: () => null,
+}));
+vi.mock('@/widgets/fundamental/sections/FinancialHealthCard', () => ({
+    FinancialHealthCard: () => null,
+}));
+vi.mock('@/widgets/fundamental/sections/FutureDirectionCard', () => ({
+    FutureDirectionCard: () => null,
+}));
+vi.mock('@/widgets/fundamental/sections/GrowthChart', () => ({
+    GrowthChart: () => null,
+}));
+vi.mock('@/widgets/fundamental/sections/PeersTable', () => ({
+    PeersTable: () => null,
+}));
+vi.mock('@/widgets/fundamental/sections/ProfileCard', () => ({
+    ProfileCard: () => null,
+}));
+vi.mock('@/widgets/fundamental/sections/ProfitabilityCard', () => ({
+    ProfitabilityCard: () => null,
+}));
+vi.mock('@/widgets/fundamental/sections/ValuationCard', () => ({
+    ValuationCard: () => null,
+}));
+vi.mock('@/views/symbol', () => ({
+    SymbolPageHeading: ({ children }: { children: unknown }) => children,
+}));
+vi.mock('@/shared/ui/CrossLinkCards', () => ({
+    CrossLinkCards: () => null,
+}));
+vi.mock('@/views/symbol/SectionSkeleton', () => ({
+    SectionSkeleton: () => null,
+}));
+vi.mock('@/shared/ui/JsonLd', () => ({ JsonLd: () => null }));
+vi.mock('@/shared/lib/seo', async importOriginal => ({
+    ...(await importOriginal<typeof import('@/shared/lib/seo')>()),
+    buildBreadcrumbJsonLd: vi.fn().mockReturnValue({}),
+    buildSymbolSeoContent: vi.fn().mockReturnValue({ url: '' }),
+    buildSymbolFundamentalSeoContent: vi.fn().mockReturnValue({
+        title: '',
+        fullTitle: '',
+        description: '',
+        url: '',
+        keywords: [],
+    }),
+    SITE_NAME: 'Siglens',
+    SITE_URL: 'https://siglens.io',
+}));
+vi.mock('react-error-boundary', () => ({
+    ErrorBoundary: ({ children }: { children: React.ReactNode }) => children,
+}));
+
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import FundamentalPage from '@/app/[symbol]/fundamental/page';
+import { FundamentalDegraded } from '@/app/[symbol]/fundamental/FundamentalDegraded';
+import { FundamentalSnapshotProse } from '@/views/symbol/snapshot/renderers/FundamentalSnapshotProse';
+import { FundamentalAiSummary } from '@/widgets/fundamental/FundamentalAiSummary';
+import { getAssetInfoResilient } from '@/entities/ticker';
+import { getProfileResilient } from '@/app/[symbol]/fundamental/getProfileResilient';
+import { findElementByType } from '@/__tests__/utils/findElementByType';
+
+const mockGetAssetInfoResilient = vi.mocked(getAssetInfoResilient);
+const mockGetProfileResilient = vi.mocked(getProfileResilient);
+
+const EQUITY_ASSET_INFO = {
+    assetInfo: {
+        symbol: 'AAPL',
+        name: 'Apple Inc.',
+        koreanName: '애플',
+        fmpSymbol: 'AAPL',
+    },
+    degraded: false,
+} as Awaited<ReturnType<typeof getAssetInfoResilient>>;
+
+const PROFILE_OK = {
+    profile: { sector: 'Technology', description: 'A tech company.' },
+    degraded: false,
+} as Awaited<ReturnType<typeof getProfileResilient>>;
+
+const PROFILE_DEGRADED = {
+    profile: null,
+    degraded: true,
+} as Awaited<ReturnType<typeof getProfileResilient>>;
+
+const SNAPSHOT_CONTENT = {
+    overallConclusionKo: '밸류에이션은 업종 평균 대비 낮은 편입니다.',
+    overallSentiment: 'bullish',
+    categoryAssessments: [],
+    riskFactorsKo: [],
+};
+
+describe('FundamentalPage — SEO snapshot prose (Task 7b)', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mockGetAssetInfoResilient.mockResolvedValue(EQUITY_ASSET_INFO);
+        mockGetProfileResilient.mockResolvedValue(PROFILE_OK);
+    });
+
+    it('스냅샷 있으면 FundamentalSnapshotProse를 렌더하고, 중복되는 AI 위젯(FundamentalAiSummary)은 렌더하지 않는다 (audit fix FIX 2)', async () => {
+        mockGetSeoSnapshotsStatic.mockResolvedValue([
+            {
+                symbol: 'AAPL',
+                tab: 'fundamental',
+                content: SNAPSHOT_CONTENT,
+                model: 'deepseek-v4-flash',
+                generatedAt: new Date('2026-07-24'),
+            },
+        ]);
+
+        const tree = await FundamentalPage({
+            params: Promise.resolve({ symbol: 'aapl' }),
+        });
+
+        const prose = findElementByType(tree, FundamentalSnapshotProse);
+        expect(prose).not.toBeNull();
+        expect((prose?.props as { content: unknown }).content).toEqual(
+            SNAPSHOT_CONTENT
+        );
+        expect(findElementByType(tree, FundamentalAiSummary)).toBeNull();
+    });
+
+    it('스냅샷 없으면(빈 배열) FundamentalSnapshotProse 대신 FundamentalAiSummary(AI 위젯)를 렌더한다 (audit fix FIX 2)', async () => {
+        mockGetSeoSnapshotsStatic.mockResolvedValue([]);
+
+        const tree = await FundamentalPage({
+            params: Promise.resolve({ symbol: 'aapl' }),
+        });
+
+        expect(findElementByType(tree, FundamentalSnapshotProse)).toBeNull();
+        expect(findElementByType(tree, FundamentalAiSummary)).not.toBeNull();
+    });
+
+    it('다른 탭(overall)의 스냅샷은 fundamental 슬롯에 전달되지 않아 FundamentalAiSummary(AI 위젯)로 폴백한다', async () => {
+        mockGetSeoSnapshotsStatic.mockResolvedValue([
+            {
+                symbol: 'AAPL',
+                tab: 'overall',
+                content: { headlineKo: '헤드라인' },
+                model: 'deepseek-v4-flash',
+                generatedAt: new Date('2026-07-24'),
+            },
+        ]);
+
+        const tree = await FundamentalPage({
+            params: Promise.resolve({ symbol: 'aapl' }),
+        });
+
+        expect(findElementByType(tree, FundamentalSnapshotProse)).toBeNull();
+        expect(findElementByType(tree, FundamentalAiSummary)).not.toBeNull();
+    });
+
+    it('getSeoSnapshotsStatic은 페이지의 revalidate 리터럴(86400)로 호출된다', async () => {
+        mockGetSeoSnapshotsStatic.mockResolvedValue([]);
+
+        await FundamentalPage({ params: Promise.resolve({ symbol: 'aapl' }) });
+
+        expect(mockGetSeoSnapshotsStatic).toHaveBeenCalledWith('AAPL', 86400);
+    });
+
+    it('profile degraded 분기에서도 스냅샷 콘텐츠가 FundamentalDegraded에 전달된다(spec §7)', async () => {
+        mockGetProfileResilient.mockResolvedValue(PROFILE_DEGRADED);
+        mockGetSeoSnapshotsStatic.mockResolvedValue([
+            {
+                symbol: 'AAPL',
+                tab: 'fundamental',
+                content: SNAPSHOT_CONTENT,
+                model: 'deepseek-v4-flash',
+                generatedAt: new Date('2026-07-24'),
+            },
+        ]);
+
+        const tree = await FundamentalPage({
+            params: Promise.resolve({ symbol: 'aapl' }),
+        });
+
+        expect(findElementByType(tree, FundamentalDegraded)).not.toBeNull();
+        const degraded = findElementByType(tree, FundamentalDegraded);
+        expect(
+            (degraded?.props as { snapshotContent: unknown }).snapshotContent
+        ).toEqual(SNAPSHOT_CONTENT);
+    });
+});

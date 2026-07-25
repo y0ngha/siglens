@@ -23,4 +23,29 @@ describe('FinancialsDegraded', () => {
     it('renders the cross links with financials marked current', () => {
         expect(screen.getByText('지금 보는 페이지예요')).toBeInTheDocument();
     });
+
+    it('renders the SEO snapshot prose when snapshotContent is present (spec §7)', () => {
+        render(
+            <FinancialsDegraded
+                displayName="애플"
+                symbol="AAPL"
+                snapshotContent={{
+                    overallConclusionKo: '현금창출력이 견조합니다.',
+                    overallSentiment: 'bullish',
+                    axisAssessments: [],
+                    riskFactorsKo: [],
+                }}
+            />
+        );
+
+        expect(
+            screen.getByText('현금창출력이 견조합니다.')
+        ).toBeInTheDocument();
+    });
+
+    it('omits the snapshot prose section when snapshotContent is absent', () => {
+        render(<FinancialsDegraded displayName="애플" symbol="AAPL" />);
+
+        expect(screen.queryByText('최근 분석 요약')).not.toBeInTheDocument();
+    });
 });

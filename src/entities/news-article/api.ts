@@ -10,9 +10,11 @@ import type {
     NewsSentiment,
     EnrichedNewsItem,
     SubmitNewsAnalysisResult,
+    PollNewsAnalysisResult,
 } from '@y0ngha/siglens-core';
 import {
     submitNewsAnalysis,
+    pollNewsAnalysis,
     DEEPSEEK_V4_FLASH_MODEL,
 } from '@y0ngha/siglens-core';
 import { NEON_TRANSIENT_RETRY } from '@/shared/db/isNeonTransientError';
@@ -325,4 +327,15 @@ export async function prewarmNews(
         assetClass,
         ...(force ? { force: true } : {}),
     });
+}
+
+/**
+ * FIX Z(감사) — `prewarmNews`와 짝을 이루는 pre-warm 전용 poll seam.
+ * `pollNewsAnalysisAction`(actions/)은 request-context가 필요할 수 있어
+ * 재사용하지 않는다 — cron의 after() 컨텍스트 전용 경로.
+ */
+export async function prewarmPollNews(
+    jobId: string
+): Promise<PollNewsAnalysisResult> {
+    return pollNewsAnalysis(jobId);
 }

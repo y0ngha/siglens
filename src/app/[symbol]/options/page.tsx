@@ -1,6 +1,10 @@
 import { OptionsPageClient } from '@/widgets/options/OptionsPageClient';
 import { getBlockedSymbolMetadata } from '@/app/[symbol]/symbolIndexabilityMetadata';
 import { SymbolPageHeading } from '@/views/symbol';
+import {
+    OptionsSnapshotProse,
+    hasOptionsProse,
+} from '@/views/symbol/snapshot/renderers/OptionsSnapshotProse';
 import { OptionsEmptyState } from '@/widgets/options/OptionsEmptyState';
 import { JsonLd } from '@/shared/ui/JsonLd';
 import {
@@ -8,6 +12,7 @@ import {
     isAdmissibleSymbolShape,
 } from '@/shared/config/market';
 import { isUnresolvableDegraded } from '@/shared/lib/symbolGuard';
+import { getSeoSnapshotsStatic } from '@/entities/seo-snapshot/lib/getSnapshotStatic';
 import {
     buildAssetAboutNode,
     buildDisplayName,
@@ -23,6 +28,7 @@ import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
 import { SECONDS_PER_HALF_DAY } from '@/shared/config/time';
 import {
     buildBreadcrumbJsonLd,
+    buildSnapshotMetaDescription,
     buildSymbolOptionsSeoContent,
     buildSymbolSeoContent,
     buildSymbolWebPageJsonLd,
@@ -88,10 +94,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
             return false;
         }),
     ]);
-    const blockedMetadata = getBlockedSymbolMetadata({
+    const blockedMetadata = await getBlockedSymbolMetadata({
         symbol: upper,
         assetInfo,
         degraded,
+        revalidateSeconds: revalidate,
+        tab: 'options',
     });
     if (blockedMetadata) return blockedMetadata;
     if (!assetInfo) return NOINDEX_SYMBOL_METADATA;
@@ -102,12 +110,29 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         koreanName: assetInfo.koreanName,
         hasOptions,
     });
+    const metadata = symbolMetadataFromSeo(seo);
+
+    // snapshot-derived unique description (spec 2026-07-24 Task 8). Same
+    // getSeoSnapshotsStatic(upper, revalidate) call the page body makes below —
+    // unstable_cache dedupes it within this render, so this is a cache hit, not
+    // an extra DB round-trip. Falls back to the templated description when no
+    // snapshot exists (backward compatible). og/twitter keep the templated copy
+    // — only the search-facing <meta name="description"> is overridden.
+    const snap = (await getSeoSnapshotsStatic(upper, revalidate)).find(
+        s => s.tab === 'options'
+    );
+    const snapshotDescription = snap
+        ? buildSnapshotMetaDescription('options', snap.content, displayName)
+        : null;
+    const description = snapshotDescription ?? metadata.description;
+
     // 옵션 없는 종목은 본문 OptionsEmptyState에서 sibling 분석 페이지
     // (차트/펀더멘털/뉴스 등)로 안내하므로, crawler가 그 internal link를
     // 따라갈 수 있도록 follow는 true를 유지한다. noindex이지만 follow:true는
     // "이 페이지는 색인 말고, 링크는 따라가라"는 정확한 의도 표현.
     return {
-        ...symbolMetadataFromSeo(seo),
+        ...metadata,
+        description,
         ...(hasOptions ? {} : { robots: { index: false, follow: true } }),
     };
 }
@@ -121,7 +146,7 @@ export default async function OptionsPage({ params }: Props) {
     // Hard-404 crypto symbols before the hasOptionsMarket call — this tab is equity-only.
     if (!(await isTabAllowedForSymbol(upper, 'options'))) notFound();
 
-    const [{ assetInfo, degraded }, hasOptions] = await Promise.all([
+    const [{ assetInfo, degraded }, hasOptions, snapshots] = await Promise.all([
         getAssetInfoResilient(upper),
         // ISR degrade guard: hasOptionsMarket는 Yahoo 인프라 실패 시 throw한다.
         // throw가 ISR 캐시에 0-byte 빈 결과를 굳히는 것을 막으려면 여기서 흡수해야 한다.
@@ -139,15 +164,50 @@ export default async function OptionsPage({ params }: Props) {
             );
             return false;
         }),
+        // ISR-safe (staticSymbolCache-wrapped, fail-open []) — see
+        // getSeoSnapshotsStatic JSDoc. revalidateSeconds mirrors this page's
+        // `export const revalidate` literal above.
+        getSeoSnapshotsStatic(upper, revalidate),
     ]);
+    const optionsSnapshot = snapshots.find(s => s.tab === 'options');
+    // audit fix FIX 2: XOR 게이트 — 스냅샷 프로즈가 렌더 가능하면(hasOptionsProse)
+    // 그것만 보여주고, 클라이언트 AI 위젯(OptionsAiAnalysis, OptionsPageClient
+    // 내부)은 렌더하지 않는다. 두 소스가 동일 필드(summary/perExpiration/
+    // signals)를 같은 순서로 중복 렌더하던 문제(같은 결론을 사용자에게 두 번,
+    // 스크린리더에 두 번, 중복 콘텐츠 SEO 리스크)를 해소한다.
+    // `OverallSnapshotProse.hasOverallProse` 패턴과 동일 — narrowOptionsContent를
+    // 재사용해 프로즈 컴포넌트와 동일 판단. audit fix FIX 9에서도 재사용된다
+    // (OptionsEmptyState의 snapshotSlot을 truthy-element가 아닌 이 boolean으로
+    // 게이팅).
+    const showOptionsProse = hasOptionsProse(optionsSnapshot?.content);
 
     // degraded + digit-first 심볼 = 두 데이터 소스가 동시 다운 중이고 resolve 불가
     // → 차트 페이지와 동일한 notFound 처리로 sibling 일관성 유지.
     if (isUnresolvableDegraded(upper, degraded)) notFound();
     if (!assetInfo) notFound();
-    if (!hasOptions) return <OptionsEmptyState symbol={upper} />;
 
     const displayName = buildDisplayName(assetInfo, upper);
+
+    // 옵션 시장이 없으면(또는 조회 실패로 degrade되면) OptionsEmptyState를 렌더한다.
+    // 스냅샷이 있으면 이 분기에서도 프로즈를 유지한다(spec §7 — degraded 분기에서도
+    // 스냅샷 유지). OptionsSnapshotProse 자체가 콘텐츠 없으면 null을 반환한다.
+    if (!hasOptions) {
+        return (
+            <OptionsEmptyState
+                symbol={upper}
+                snapshotSlot={
+                    showOptionsProse ? (
+                        <OptionsSnapshotProse
+                            content={optionsSnapshot?.content}
+                            symbol={upper}
+                            displayName={displayName}
+                        />
+                    ) : undefined
+                }
+            />
+        );
+    }
+
     // ISR degrade guard: fetchOptionsSnapshot는 Yahoo 인프라 실패 시 throw한다.
     // throw가 ISR 캐시에 0-byte 빈 결과를 굳히는 것을 막으려면 여기서 흡수해야 한다.
     // null로 degrade → 이미 존재하는 null 분기(OptionsEmptyState)로 자연스럽게 빠진다.
@@ -164,7 +224,22 @@ export default async function OptionsPage({ params }: Props) {
         );
         return null;
     });
-    if (snapshot === null) return <OptionsEmptyState symbol={upper} />;
+    if (snapshot === null) {
+        return (
+            <OptionsEmptyState
+                symbol={upper}
+                snapshotSlot={
+                    showOptionsProse ? (
+                        <OptionsSnapshotProse
+                            content={optionsSnapshot?.content}
+                            symbol={upper}
+                            displayName={displayName}
+                        />
+                    ) : undefined
+                }
+            />
+        );
+    }
 
     const expirations = snapshot.chains.map(c => c.expirationDate);
     const slots = mapExpirationsToSlots(expirations, new Date());
@@ -251,7 +326,14 @@ export default async function OptionsPage({ params }: Props) {
                 상태(OptionsEmptyState)는 자체적으로 <main>을 가지지만, 옵션
                 데이터가 있는 정상 path도 동일하게 main으로 감싸야 sibling 일관성
                 과 a11y landmark navigation이 유지된다. */}
-            <main className="mx-auto w-full max-w-5xl px-4 py-8">
+            {/* audit fix FIX 3: space-y-6 added — all 6 sibling pages have it,
+                and its absence left the h1 flush against the snapshot card
+                below. (The redundant `mx-auto max-w-5xl px-4` that
+                OptionsPageClient used to re-apply internally is removed there
+                — see OptionsPageClient.tsx — so this <main>'s max-width is the
+                single source and the snapshot card no longer reads ~32px wider
+                than the cards beneath it.) */}
+            <main className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8">
                 <SymbolPageHeading>
                     {displayName} 옵션 시장 분석
                 </SymbolPageHeading>
@@ -270,12 +352,31 @@ export default async function OptionsPage({ params }: Props) {
                         </p>
                     ) : null}
                 </section>
+                {/* audit fix FIX 2: XOR — OptionsAiAnalysis (client widget,
+                    inside OptionsPageClient below) and OptionsSnapshotProse
+                    both render the same AI conclusion (summary/perExpiration/
+                    signals). Showing both duplicated the text for sighted
+                    users and screen readers and doubled as a duplicate-content
+                    SEO risk. OptionsAiAnalysis fetches its analysis via a
+                    client-side hook — during ISR generation it bakes its
+                    loading skeleton into the static HTML (no crawlable AI
+                    text) until it hydrates — so this prose covers crawlers
+                    either way; `hasSnapshotProse` (below) additionally tells
+                    OptionsPageClient to skip mounting the widget when this
+                    prose is already showing the same content. Renders null
+                    when no snapshot exists (spec 2026-07-24 Task 7b). */}
+                <OptionsSnapshotProse
+                    content={optionsSnapshot?.content}
+                    symbol={upper}
+                    displayName={displayName}
+                />
                 <HydrationBoundary state={dehydrate(queryClient)}>
                     <OptionsPageClient
                         symbol={upper}
                         companyName={displayName}
                         snapshot={snapshot}
                         slots={slots}
+                        hasSnapshotProse={showOptionsProse}
                     />
                 </HydrationBoundary>
             </main>
