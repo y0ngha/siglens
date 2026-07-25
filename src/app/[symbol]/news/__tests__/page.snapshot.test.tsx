@@ -117,7 +117,7 @@ vi.mock('@/shared/api/fmp/fmpUserMessage', () => ({
 }));
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import NewsPage from '@/app/[symbol]/news/page';
+import NewsPage, { generateMetadata } from '@/app/[symbol]/news/page';
 import { NewsFactsSummary } from '@/widgets/news';
 import { NewsSnapshotProse } from '@/views/symbol/snapshot/renderers/NewsSnapshotProse';
 import { getAssetInfoResilient } from '@/entities/ticker';
@@ -220,5 +220,58 @@ describe('NewsPage — SEO snapshot prose (Task 7b, dual-section with NewsFactsS
         await expect(
             NewsPage({ params: Promise.resolve({ symbol: 'aapl' }) })
         ).resolves.toBeTruthy();
+    });
+});
+
+/**
+ * spec 2026-07-24 Task 8 — generateMetadata should use the pre-warmed
+ * snapshot's `currentDriverKo` prose as the <meta name="description"> when a
+ * news snapshot row exists, falling back to the templated description
+ * (resolveSymbolNewsSeoContent's mocked `description: 'd'`) otherwise.
+ */
+describe('NewsPage generateMetadata — snapshot-derived description (Task 8)', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mockGetAssetInfoResilient.mockResolvedValue(EQUITY_ASSET_INFO);
+    });
+
+    it('uses the snapshot currentDriverKo when a news snapshot row exists', async () => {
+        mockGetSeoSnapshotsStatic.mockResolvedValue([
+            {
+                symbol: 'AAPL',
+                tab: 'news',
+                content: SNAPSHOT_CONTENT,
+                model: 'deepseek-v4-flash',
+                generatedAt: new Date('2026-07-24'),
+            },
+        ]);
+
+        const metadata = await generateMetadata({
+            params: Promise.resolve({ symbol: 'aapl' }),
+        });
+
+        expect(metadata.description).toBe(SNAPSHOT_CONTENT.currentDriverKo);
+        // og description keeps the templated copy — only the search-facing
+        // <meta name="description"> is overridden.
+        const og = metadata.openGraph as Record<string, unknown>;
+        expect(og.description).toBe('d');
+    });
+
+    it('falls back to the templated description when no news snapshot exists', async () => {
+        mockGetSeoSnapshotsStatic.mockResolvedValue([]);
+
+        const metadata = await generateMetadata({
+            params: Promise.resolve({ symbol: 'aapl' }),
+        });
+
+        expect(metadata.description).toBe('d');
+    });
+
+    it('getSeoSnapshotsStatic is called with the page revalidate literal (43200) in generateMetadata too', async () => {
+        mockGetSeoSnapshotsStatic.mockResolvedValue([]);
+
+        await generateMetadata({ params: Promise.resolve({ symbol: 'aapl' }) });
+
+        expect(mockGetSeoSnapshotsStatic).toHaveBeenCalledWith('AAPL', 43200);
     });
 });

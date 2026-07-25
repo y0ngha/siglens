@@ -25,6 +25,7 @@ import { staticSymbolCache } from '@/shared/cache/staticSymbolCache';
 import { SECONDS_PER_HALF_DAY } from '@/shared/config/time';
 import {
     buildBreadcrumbJsonLd,
+    buildSnapshotMetaDescription,
     buildSymbolOptionsSeoContent,
     buildSymbolSeoContent,
     buildSymbolWebPageJsonLd,
@@ -105,12 +106,29 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         koreanName: assetInfo.koreanName,
         hasOptions,
     });
+    const metadata = symbolMetadataFromSeo(seo);
+
+    // snapshot-derived unique description (spec 2026-07-24 Task 8). Same
+    // getSeoSnapshotsStatic(upper, 43200) call the page body makes below —
+    // unstable_cache dedupes it within this render, so this is a cache hit, not
+    // an extra DB round-trip. Falls back to the templated description when no
+    // snapshot exists (backward compatible). og/twitter keep the templated copy
+    // — only the search-facing <meta name="description"> is overridden.
+    const snap = (await getSeoSnapshotsStatic(upper, 43200)).find(
+        s => s.tab === 'options'
+    );
+    const snapshotDescription = snap
+        ? buildSnapshotMetaDescription('options', snap.content)
+        : null;
+    const description = snapshotDescription ?? metadata.description;
+
     // 옵션 없는 종목은 본문 OptionsEmptyState에서 sibling 분석 페이지
     // (차트/펀더멘털/뉴스 등)로 안내하므로, crawler가 그 internal link를
     // 따라갈 수 있도록 follow는 true를 유지한다. noindex이지만 follow:true는
     // "이 페이지는 색인 말고, 링크는 따라가라"는 정확한 의도 표현.
     return {
-        ...symbolMetadataFromSeo(seo),
+        ...metadata,
+        description,
         ...(hasOptions ? {} : { robots: { index: false, follow: true } }),
     };
 }

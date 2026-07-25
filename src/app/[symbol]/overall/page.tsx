@@ -21,6 +21,7 @@ import { getNewsList } from '@/entities/news-article/api';
 import { NEWS_LIST_CACHE_KEY } from '@/entities/news-article';
 import {
     buildBreadcrumbJsonLd,
+    buildSnapshotMetaDescription,
     buildSymbolSeoContent,
     buildSymbolWebPageJsonLd,
     resolveSymbolOverallSeoContent,
@@ -74,7 +75,23 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         displayName,
         koreanName: assetInfo.koreanName,
     });
-    return symbolMetadataFromSeo(seo);
+    const metadata = symbolMetadataFromSeo(seo);
+
+    // snapshot-derived unique description (spec 2026-07-24 Task 8). Same
+    // getSeoSnapshotsStatic(upper, 43200) call the page body makes below —
+    // unstable_cache dedupes it within this render, so this is a cache hit, not
+    // an extra DB round-trip. Falls back to the templated description when no
+    // snapshot exists (backward compatible). og/twitter keep the templated copy
+    // — only the search-facing <meta name="description"> is overridden.
+    const snap = (await getSeoSnapshotsStatic(upper, 43200)).find(
+        s => s.tab === 'overall'
+    );
+    const snapshotDescription = snap
+        ? buildSnapshotMetaDescription('overall', snap.content)
+        : null;
+    return snapshotDescription
+        ? { ...metadata, description: snapshotDescription }
+        : metadata;
 }
 
 // `?tf=` is read by the client component (useSearchParams); canonical URL excludes it so search engines see one URL per page.

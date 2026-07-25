@@ -8,6 +8,7 @@ import {
     buildSymbolOptionsSeoContent,
     buildBreadcrumbJsonLd,
     buildSymbolWebPageJsonLd,
+    buildSnapshotMetaDescription,
     symbolMetadataFromSeo,
     clampSeoDescription,
     SEO_DESCRIPTION_MAX_LENGTH,
@@ -588,6 +589,114 @@ describe('buildSymbolOptionsSeoContent', () => {
     it('defaults hasOptions to true', () => {
         const content = buildSymbolOptionsSeoContent('AAPL');
         expect(content.title).toContain('Max Pain');
+    });
+});
+
+describe('buildSnapshotMetaDescription', () => {
+    it.each([
+        [
+            'technical',
+            'summary',
+            'AAPL은 200일선 위에서 상승 추세를 이어가고 있습니다.',
+        ],
+        [
+            'overall',
+            'headlineKo',
+            'AAPL, 실적 호조에 힘입어 강세 시나리오 우세',
+        ],
+        [
+            'fundamental',
+            'overallConclusionKo',
+            'PER은 업종 평균 대비 높지만 성장성이 이를 상쇄합니다.',
+        ],
+        [
+            'financials',
+            'overallConclusionKo',
+            '매출과 영업이익이 5년 연속 증가하는 추세입니다.',
+        ],
+        [
+            'congress',
+            'summaryKo',
+            '최근 3개월간 상원 의원들의 순매수가 우세했습니다.',
+        ],
+        [
+            'options',
+            'summary',
+            '콜옵션 프리미엄이 풋옵션 대비 높게 형성되어 있습니다.',
+        ],
+        [
+            'news',
+            'currentDriverKo',
+            '최근 실적 발표 이후 주가가 강세를 보이고 있습니다.',
+        ],
+    ] as const)(
+        '%s tab — extracts the primary prose field (%s) and clamps it',
+        (tab, field, prose) => {
+            const content = { [field]: prose };
+            expect(buildSnapshotMetaDescription(tab, content)).toBe(
+                clampSeoDescription(prose)
+            );
+        }
+    );
+
+    it('collapses multi-line prose into a single space-joined line', () => {
+        const content = {
+            summary:
+                '첫 번째 문단입니다.\n두 번째 문단입니다.\n\n세 번째 문단입니다.',
+        };
+        expect(buildSnapshotMetaDescription('technical', content)).toBe(
+            '첫 번째 문단입니다. 두 번째 문단입니다. 세 번째 문단입니다.'
+        );
+    });
+
+    it('clamps an over-length single-line result to SEO_DESCRIPTION_MAX_LENGTH', () => {
+        const long = 'a'.repeat(SEO_DESCRIPTION_MAX_LENGTH + 50);
+        const content = { summary: long };
+        const result = buildSnapshotMetaDescription('technical', content);
+        expect(result).not.toBeNull();
+        expect([...(result as string)].length).toBeLessThanOrEqual(
+            SEO_DESCRIPTION_MAX_LENGTH
+        );
+        expect(result?.endsWith('…')).toBe(true);
+    });
+
+    it('returns null for an unrecognized tab', () => {
+        expect(
+            buildSnapshotMetaDescription('unknown-tab', { summary: 'x' })
+        ).toBeNull();
+    });
+
+    it('returns null when content is not an object', () => {
+        expect(buildSnapshotMetaDescription('technical', null)).toBeNull();
+        expect(buildSnapshotMetaDescription('technical', undefined)).toBeNull();
+        expect(
+            buildSnapshotMetaDescription('technical', 'a string')
+        ).toBeNull();
+        expect(buildSnapshotMetaDescription('technical', 42)).toBeNull();
+    });
+
+    it('returns null when the primary field is missing', () => {
+        expect(
+            buildSnapshotMetaDescription('technical', { trend: 'bullish' })
+        ).toBeNull();
+    });
+
+    it('returns null when the primary field is not a string', () => {
+        expect(
+            buildSnapshotMetaDescription('technical', { summary: 123 })
+        ).toBeNull();
+        expect(
+            buildSnapshotMetaDescription('overall', { headlineKo: null })
+        ).toBeNull();
+    });
+
+    it('returns null when the primary field is an empty or whitespace-only string', () => {
+        expect(
+            buildSnapshotMetaDescription('technical', { summary: '' })
+        ).toBeNull();
+        expect(
+            buildSnapshotMetaDescription('news', { currentDriverKo: '   \n  ' })
+        ).toBeNull();
     });
 });
 

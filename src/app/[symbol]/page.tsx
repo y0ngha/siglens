@@ -29,6 +29,7 @@ import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/shared/config/queryConfig';
 import { MS_PER_SECOND } from '@/shared/config/time';
 import {
     buildBreadcrumbJsonLd,
+    buildSnapshotMetaDescription,
     buildSymbolWebPageJsonLd,
     resolveSymbolSeoContent,
     symbolMetadataFromSeo,
@@ -83,7 +84,23 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
             koreanName: assetInfo.koreanName,
         }
     );
-    return symbolMetadataFromSeo(seo);
+    const metadata = symbolMetadataFromSeo(seo);
+
+    // snapshot-derived unique description (spec 2026-07-24 Task 8). Same
+    // getSeoSnapshotsStatic(ticker, 21600) call the page body makes below —
+    // unstable_cache dedupes it within this render, so this is a cache hit, not
+    // an extra DB round-trip. Falls back to the templated description when no
+    // snapshot exists (backward compatible). og/twitter keep the templated copy
+    // — only the search-facing <meta name="description"> is overridden.
+    const snap = (await getSeoSnapshotsStatic(ticker, 21600)).find(
+        s => s.tab === 'technical'
+    );
+    const snapshotDescription = snap
+        ? buildSnapshotMetaDescription('technical', snap.content)
+        : null;
+    return snapshotDescription
+        ? { ...metadata, description: snapshotDescription }
+        : metadata;
 }
 
 export default async function SymbolPage({ params }: Props) {

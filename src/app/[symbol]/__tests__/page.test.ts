@@ -182,6 +182,61 @@ describe('Symbol page', () => {
             expect(metadata.title).toBe('AAPL 차트');
         });
 
+        it('uses the snapshot-derived description when a technical snapshot exists (spec 2026-07-24 Task 8)', async () => {
+            mockGetAssetInfoResilient.mockResolvedValue({
+                assetInfo: {
+                    symbol: 'AAPL',
+                    name: 'Apple Inc.',
+                    koreanName: '애플',
+                    fmpSymbol: 'AAPL',
+                },
+                degraded: false,
+            } as never);
+            mockGetSeoSnapshotsStatic.mockResolvedValue([
+                {
+                    symbol: 'AAPL',
+                    tab: 'technical',
+                    content: {
+                        summary: 'AAPL은 200일선 위에서 상승 추세입니다.',
+                    },
+                    model: 'deepseek-v4-flash',
+                    generatedAt: new Date(),
+                    updatedAt: new Date(),
+                },
+            ]);
+
+            const metadata = await generateMetadata({
+                params: Promise.resolve({ symbol: 'aapl' }),
+            });
+
+            expect(metadata.description).toBe(
+                'AAPL은 200일선 위에서 상승 추세입니다.'
+            );
+            // og/twitter keep the templated copy — only the search-facing
+            // <meta name="description"> is overridden (spec 2026-07-24 Task 8).
+            const og = metadata.openGraph as Record<string, unknown>;
+            expect(og.description).toBe('desc');
+        });
+
+        it('falls back to the templated description when no technical snapshot exists', async () => {
+            mockGetAssetInfoResilient.mockResolvedValue({
+                assetInfo: {
+                    symbol: 'AAPL',
+                    name: 'Apple Inc.',
+                    koreanName: '애플',
+                    fmpSymbol: 'AAPL',
+                },
+                degraded: false,
+            } as never);
+            mockGetSeoSnapshotsStatic.mockResolvedValue([]);
+
+            const metadata = await generateMetadata({
+                params: Promise.resolve({ symbol: 'aapl' }),
+            });
+
+            expect(metadata.description).toBe('desc');
+        });
+
         it('canonical excludes tf — ISR page uses clean canonical regardless of query params', async () => {
             mockGetAssetInfoResilient.mockResolvedValue({
                 assetInfo: {
