@@ -65,6 +65,31 @@ describe('FinancialsSnapshotProse', () => {
         expect(screen.getByText(/재무제표 종합 평가/)).toBeInTheDocument();
     });
 
+    it('overallSentiment·axis가 __proto__여도 throw 없이 렌더하고 [object Object]를 노출하지 않는다 (audit fix — prototype-chain-unsafe guard)', () => {
+        // 방어 이전엔 `'__proto__' in SENTIMENT_LABEL`/`AXIS_LABEL`이 true였고
+        // MAP['__proto__']가 Object.prototype을 반환해 React child로 렌더 시 throw했다.
+        // Object.hasOwn 가드는 own property만 인정한다.
+        const { container } = render(
+            <FinancialsSnapshotProse
+                content={buildFixture({
+                    overallSentiment: '__proto__' as never,
+                    axisAssessments: [
+                        {
+                            axis: '__proto__' as never,
+                            sentiment: 'bullish',
+                            rationaleKo: RATIONALE_TEXT,
+                        },
+                    ],
+                })}
+                symbol="AAPL"
+                displayName="Apple Inc."
+            />
+        );
+
+        expect(container.textContent ?? '').not.toContain('[object Object]');
+        expect(screen.getByText(CONCLUSION_TEXT)).toBeInTheDocument();
+    });
+
     it('모든 프로즈 필드가 비어있거나 content가 비객체면 아무것도 렌더하지 않는다', () => {
         const { container: emptyContainer } = render(
             <FinancialsSnapshotProse

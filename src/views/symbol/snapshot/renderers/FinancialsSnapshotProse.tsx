@@ -28,7 +28,11 @@ const SENTIMENT_LABEL: Record<FinancialsSentiment, string> = {
 };
 
 function isSentiment(value: unknown): value is FinancialsSentiment {
-    return typeof value === 'string' && value in SENTIMENT_LABEL;
+    // Object.hasOwn (not `value in SENTIMENT_LABEL`) — `in` walks the
+    // prototype chain (`'__proto__' in SENTIMENT_LABEL` is true), which can
+    // crash React rendering or leak function source on malformed JSONB
+    // (audit fix — see TechnicalSnapshotProse.isTrend for the full rationale).
+    return typeof value === 'string' && Object.hasOwn(SENTIMENT_LABEL, value);
 }
 
 // `src/widgets/financials/axisLabels.ts`의 AXIS_LABEL_KO와 동일 라벨 —
@@ -42,7 +46,8 @@ const AXIS_LABEL: Record<FinancialsAxis, string> = {
 };
 
 function isAxis(value: unknown): value is FinancialsAxis {
-    return typeof value === 'string' && value in AXIS_LABEL;
+    // Object.hasOwn — see isSentiment above for the prototype-chain rationale.
+    return typeof value === 'string' && Object.hasOwn(AXIS_LABEL, value);
 }
 
 interface NarrowedAxisAssessment {

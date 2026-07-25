@@ -33,7 +33,11 @@ const TONE_LABEL: Record<OptionsTone, string> = {
 };
 
 function isTone(value: unknown): value is OptionsTone {
-    return typeof value === 'string' && value in TONE_LABEL;
+    // Object.hasOwn (not `value in TONE_LABEL`) — `in` walks the prototype
+    // chain (`'__proto__' in TONE_LABEL` is true), which can crash React
+    // rendering or leak function source on malformed JSONB (audit fix — see
+    // TechnicalSnapshotProse.isTrend for the full rationale).
+    return typeof value === 'string' && Object.hasOwn(TONE_LABEL, value);
 }
 
 const SIGNAL_KIND_LABEL: Record<OptionsSignalKind, string> = {
@@ -44,7 +48,8 @@ const SIGNAL_KIND_LABEL: Record<OptionsSignalKind, string> = {
 };
 
 function isSignalKind(value: unknown): value is OptionsSignalKind {
-    return typeof value === 'string' && value in SIGNAL_KIND_LABEL;
+    // Object.hasOwn — see isTone above for the prototype-chain rationale.
+    return typeof value === 'string' && Object.hasOwn(SIGNAL_KIND_LABEL, value);
 }
 
 interface NarrowedPerExpiration {

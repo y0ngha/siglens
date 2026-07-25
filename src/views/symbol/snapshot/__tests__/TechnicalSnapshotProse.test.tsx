@@ -85,6 +85,22 @@ describe('TechnicalSnapshotProse', () => {
         expect(container.textContent?.trim()).toBe('');
     });
 
+    it('trend가 __proto__여도 throw 없이 렌더하고 [object Object]를 노출하지 않는다 (audit fix — prototype-chain-unsafe guard)', () => {
+        // 방어 이전엔 `'__proto__' in TREND_LABEL`이 true였고 TREND_LABEL['__proto__']가
+        // Object.prototype을 반환해 React child로 렌더 시 throw했다(malformed JSONB로
+        // 인한 ISR 생성 500 리스크). Object.hasOwn 가드는 own property만 인정한다.
+        const { container } = render(
+            <TechnicalSnapshotProse
+                content={buildFixture({ trend: '__proto__' as never })}
+                symbol="AAPL"
+                displayName="Apple Inc."
+            />
+        );
+
+        expect(container.textContent ?? '').not.toContain('[object Object]');
+        expect(screen.getByText(SUMMARY_TEXT)).toBeInTheDocument();
+    });
+
     it('content가 unknown 방어 대상(null·비객체)이어도 렌더하지 않는다', () => {
         const { container: nullContainer } = render(
             <TechnicalSnapshotProse

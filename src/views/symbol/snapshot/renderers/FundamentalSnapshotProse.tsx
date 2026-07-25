@@ -31,7 +31,11 @@ const SENTIMENT_LABEL: Record<FundamentalSentiment, string> = {
 };
 
 function isSentiment(value: unknown): value is FundamentalSentiment {
-    return typeof value === 'string' && value in SENTIMENT_LABEL;
+    // Object.hasOwn (not `value in SENTIMENT_LABEL`) — `in` walks the
+    // prototype chain (`'__proto__' in SENTIMENT_LABEL` is true), which can
+    // crash React rendering or leak function source on malformed JSONB
+    // (audit fix — see TechnicalSnapshotProse.isTrend for the full rationale).
+    return typeof value === 'string' && Object.hasOwn(SENTIMENT_LABEL, value);
 }
 
 const CATEGORY_LABEL: Record<FundamentalCategory, string> = {
@@ -43,7 +47,8 @@ const CATEGORY_LABEL: Record<FundamentalCategory, string> = {
 };
 
 function isCategory(value: unknown): value is FundamentalCategory {
-    return typeof value === 'string' && value in CATEGORY_LABEL;
+    // Object.hasOwn — see isSentiment above for the prototype-chain rationale.
+    return typeof value === 'string' && Object.hasOwn(CATEGORY_LABEL, value);
 }
 
 interface NarrowedCategoryAssessment {

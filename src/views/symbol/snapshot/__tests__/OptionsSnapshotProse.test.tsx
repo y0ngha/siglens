@@ -67,6 +67,36 @@ describe('OptionsSnapshotProse', () => {
         expect(screen.getByText(/2026-08-15 \(강세\)/)).toBeInTheDocument();
     });
 
+    it('tone·signal kind가 __proto__여도 throw 없이 렌더하고 [object Object]를 노출하지 않는다 (audit fix — prototype-chain-unsafe guard)', () => {
+        // 방어 이전엔 `'__proto__' in TONE_LABEL`/`SIGNAL_KIND_LABEL`이 true였고
+        // MAP['__proto__']가 Object.prototype을 반환해 React child로 렌더 시 throw했다.
+        // Object.hasOwn 가드는 own property만 인정한다.
+        const { container } = render(
+            <OptionsSnapshotProse
+                content={buildFixture({
+                    perExpiration: [
+                        {
+                            expirationDate: '2026-08-15',
+                            commentary: COMMENTARY_TEXT,
+                            tone: '__proto__' as never,
+                        },
+                    ],
+                    signals: [
+                        {
+                            kind: '__proto__' as never,
+                            message: '콜 옵션 거래량이 급증했습니다.',
+                        },
+                    ],
+                })}
+                symbol="AAPL"
+                displayName="Apple Inc."
+            />
+        );
+
+        expect(container.textContent ?? '').not.toContain('[object Object]');
+        expect(screen.getByText(COMMENTARY_TEXT)).toBeInTheDocument();
+    });
+
     it('모든 프로즈 필드가 비어있거나 content가 비객체면 아무것도 렌더하지 않는다', () => {
         const { container: emptyContainer } = render(
             <OptionsSnapshotProse

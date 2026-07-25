@@ -21,7 +21,12 @@ const TREND_LABEL: Record<Trend, string> = {
 };
 
 function isTrend(value: unknown): value is Trend {
-    return typeof value === 'string' && value in TREND_LABEL;
+    // Object.hasOwn (not `value in TREND_LABEL`) — `in` walks the prototype
+    // chain, so `'__proto__' in TREND_LABEL` is true and `TREND_LABEL['__proto__']`
+    // yields `Object.prototype`, which React throws on when rendered as a
+    // child ("Objects are not valid as a React child") — a malformed JSONB
+    // `trend` value could crash ISR generation (audit fix).
+    return typeof value === 'string' && Object.hasOwn(TREND_LABEL, value);
 }
 
 interface NarrowedTechnicalContent {

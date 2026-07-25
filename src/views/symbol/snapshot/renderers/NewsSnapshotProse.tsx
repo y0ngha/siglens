@@ -28,7 +28,11 @@ const SENTIMENT_LABEL: Record<NewsSentiment, string> = {
 };
 
 function isSentiment(value: unknown): value is NewsSentiment {
-    return typeof value === 'string' && value in SENTIMENT_LABEL;
+    // Object.hasOwn (not `value in SENTIMENT_LABEL`) — `in` walks the
+    // prototype chain (`'__proto__' in SENTIMENT_LABEL` is true), which can
+    // crash React rendering or leak function source on malformed JSONB
+    // (audit fix — see TechnicalSnapshotProse.isTrend for the full rationale).
+    return typeof value === 'string' && Object.hasOwn(SENTIMENT_LABEL, value);
 }
 
 interface NarrowedNewsContent {
