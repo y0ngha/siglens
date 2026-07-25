@@ -95,7 +95,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         symbol: upper,
         assetInfo,
         degraded,
-        revalidateSeconds: 86400,
+        revalidateSeconds: revalidate,
         tab: 'fundamental',
     });
     if (blockedMetadata) return blockedMetadata;
@@ -121,12 +121,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const metadata = symbolMetadataFromSeo(seo);
 
     // snapshot-derived unique description (spec 2026-07-24 Task 8). Same
-    // getSeoSnapshotsStatic(upper, 86400) call the page body makes below —
+    // getSeoSnapshotsStatic(upper, revalidate) call the page body makes below —
     // unstable_cache dedupes it within this render, so this is a cache hit, not
     // an extra DB round-trip. Falls back to the templated description when no
     // snapshot exists (backward compatible). og/twitter keep the templated copy
     // — only the search-facing <meta name="description"> is overridden.
-    const snap = (await getSeoSnapshotsStatic(upper, 86400)).find(
+    const snap = (await getSeoSnapshotsStatic(upper, revalidate)).find(
         s => s.tab === 'fundamental'
     );
     const snapshotDescription = snap
@@ -487,7 +487,7 @@ export default async function FundamentalPage({ params }: Props) {
     // → cross-request ISR 캐시 + 같은 요청 React.cache 공유(추가 FMP round-trip 없음).
     // snapshots: ISR-safe (staticSymbolCache-wrapped, fail-open []) — see
     // getSeoSnapshotsStatic JSDoc. revalidateSeconds mirrors this page's
-    // `export const revalidate` literal (86400) above.
+    // `export const revalidate` literal above.
     const [
         { profile, degraded: profileDegraded },
         { assetInfo, degraded },
@@ -495,7 +495,7 @@ export default async function FundamentalPage({ params }: Props) {
     ] = await Promise.all([
         getProfileResilient(upper),
         getAssetInfoResilient(upper),
-        getSeoSnapshotsStatic(upper, 86400),
+        getSeoSnapshotsStatic(upper, revalidate),
     ]);
     const fundamentalSnapshot = snapshots.find(s => s.tab === 'fundamental');
     // audit fix FIX 2: XOR 게이트 — 스냅샷 프로즈가 렌더 가능하면(hasFundamentalProse)

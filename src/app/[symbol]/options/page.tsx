@@ -98,7 +98,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         symbol: upper,
         assetInfo,
         degraded,
-        revalidateSeconds: 43200,
+        revalidateSeconds: revalidate,
         tab: 'options',
     });
     if (blockedMetadata) return blockedMetadata;
@@ -113,12 +113,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const metadata = symbolMetadataFromSeo(seo);
 
     // snapshot-derived unique description (spec 2026-07-24 Task 8). Same
-    // getSeoSnapshotsStatic(upper, 43200) call the page body makes below —
+    // getSeoSnapshotsStatic(upper, revalidate) call the page body makes below —
     // unstable_cache dedupes it within this render, so this is a cache hit, not
     // an extra DB round-trip. Falls back to the templated description when no
     // snapshot exists (backward compatible). og/twitter keep the templated copy
     // — only the search-facing <meta name="description"> is overridden.
-    const snap = (await getSeoSnapshotsStatic(upper, 43200)).find(
+    const snap = (await getSeoSnapshotsStatic(upper, revalidate)).find(
         s => s.tab === 'options'
     );
     const snapshotDescription = snap
@@ -166,8 +166,8 @@ export default async function OptionsPage({ params }: Props) {
         }),
         // ISR-safe (staticSymbolCache-wrapped, fail-open []) — see
         // getSeoSnapshotsStatic JSDoc. revalidateSeconds mirrors this page's
-        // `export const revalidate` literal (43200) above.
-        getSeoSnapshotsStatic(upper, 43200),
+        // `export const revalidate` literal above.
+        getSeoSnapshotsStatic(upper, revalidate),
     ]);
     const optionsSnapshot = snapshots.find(s => s.tab === 'options');
     // audit fix FIX 2: XOR 게이트 — 스냅샷 프로즈가 렌더 가능하면(hasOptionsProse)

@@ -59,7 +59,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         symbol: upper,
         assetInfo,
         degraded,
-        revalidateSeconds: 43200,
+        revalidateSeconds: revalidate,
     });
     if (blockedMetadata) return blockedMetadata;
     if (!assetInfo) return NOINDEX_SYMBOL_METADATA;

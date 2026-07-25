@@ -69,7 +69,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         symbol: ticker,
         assetInfo,
         degraded,
-        revalidateSeconds: 21600,
+        revalidateSeconds: revalidate,
         tab: 'technical',
     });
     if (blockedMetadata) return blockedMetadata;
@@ -88,12 +88,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const metadata = symbolMetadataFromSeo(seo);
 
     // snapshot-derived unique description (spec 2026-07-24 Task 8). Same
-    // getSeoSnapshotsStatic(ticker, 21600) call the page body makes below —
+    // getSeoSnapshotsStatic(ticker, revalidate) call the page body makes below —
     // unstable_cache dedupes it within this render, so this is a cache hit, not
     // an extra DB round-trip. Falls back to the templated description when no
     // snapshot exists (backward compatible). og/twitter keep the templated copy
     // — only the search-facing <meta name="description"> is overridden.
-    const snap = (await getSeoSnapshotsStatic(ticker, 21600)).find(
+    const snap = (await getSeoSnapshotsStatic(ticker, revalidate)).find(
         s => s.tab === 'technical'
     );
     const snapshotDescription = snap
@@ -116,8 +116,8 @@ export default async function SymbolPage({ params }: Props) {
             countSkillFiles(),
             // ISR-safe (staticSymbolCache-wrapped, fail-open []) — see
             // getSeoSnapshotsStatic JSDoc. revalidateSeconds mirrors this page's
-            // `export const revalidate` literal (21600) above.
-            getSeoSnapshotsStatic(ticker, 21600),
+            // `export const revalidate` literal above.
+            getSeoSnapshotsStatic(ticker, revalidate),
         ]
     );
     const technicalSnapshot = snapshots.find(s => s.tab === 'technical');

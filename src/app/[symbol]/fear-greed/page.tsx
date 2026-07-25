@@ -65,7 +65,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         symbol: ticker,
         assetInfo,
         degraded,
-        revalidateSeconds: 86400,
+        revalidateSeconds: revalidate,
     });
     if (blockedMetadata) return blockedMetadata;
     if (!assetInfo) return NOINDEX_SYMBOL_METADATA;

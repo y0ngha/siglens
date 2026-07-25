@@ -73,7 +73,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         symbol: upper,
         assetInfo,
         degraded,
-        revalidateSeconds: 86400,
+        revalidateSeconds: revalidate,
         tab: 'financials',
     });
     if (blockedMetadata) return blockedMetadata;
@@ -106,12 +106,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const metadata = symbolMetadataFromSeo(seo);
 
     // snapshot-derived unique description (spec 2026-07-24 Task 8). Same
-    // getSeoSnapshotsStatic(upper, 86400) call the page body makes below —
+    // getSeoSnapshotsStatic(upper, revalidate) call the page body makes below —
     // unstable_cache dedupes it within this render, so this is a cache hit, not
     // an extra DB round-trip. Falls back to the templated description when no
     // snapshot exists (backward compatible). og/twitter keep the templated copy
     // — only the search-facing <meta name="description"> is overridden.
-    const snap = (await getSeoSnapshotsStatic(upper, 86400)).find(
+    const snap = (await getSeoSnapshotsStatic(upper, revalidate)).find(
         s => s.tab === 'financials'
     );
     const snapshotDescription = snap
@@ -138,7 +138,7 @@ export default async function FinancialsPage({ params }: Props) {
     // ProfileSection inside the fundamental page, so there is no extra FMP round-trip.
     // snapshots: ISR-safe (staticSymbolCache-wrapped, fail-open []) — see
     // getSeoSnapshotsStatic JSDoc. revalidateSeconds mirrors this page's
-    // `export const revalidate` literal (86400) above.
+    // `export const revalidate` literal above.
     const [
         { profile, degraded: profileDegraded },
         { assetInfo, degraded },
@@ -146,7 +146,7 @@ export default async function FinancialsPage({ params }: Props) {
     ] = await Promise.all([
         getProfileResilient(upper),
         getAssetInfoResilient(upper),
-        getSeoSnapshotsStatic(upper, 86400),
+        getSeoSnapshotsStatic(upper, revalidate),
     ]);
     const financialsSnapshot = snapshots.find(s => s.tab === 'financials');
     // audit fix FIX 2: XOR 게이트 — 스냅샷 프로즈가 렌더 가능하면(hasFinancialsProse)
