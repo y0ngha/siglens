@@ -300,8 +300,11 @@ describe('Fundamental generateMetadata snapshot-derived description', () => {
             params: Promise.resolve({ symbol: 'AAPL' }),
         });
 
+        // FIX 5 (audit): description is prefixed with the resolved display
+        // name (subject; buildDisplayName is mocked to 'Apple Inc.' above)
+        // before clamping.
         expect(result.description).toBe(
-            'PER은 업종 평균 대비 높지만 성장성이 이를 상쇄합니다.'
+            'Apple Inc. — PER은 업종 평균 대비 높지만 성장성이 이를 상쇄합니다.'
         );
     });
 

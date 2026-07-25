@@ -115,7 +115,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         s => s.tab === 'financials'
     );
     const snapshotDescription = snap
-        ? buildSnapshotMetaDescription('financials', snap.content)
+        ? buildSnapshotMetaDescription('financials', snap.content, displayName)
         : null;
     return snapshotDescription
         ? { ...metadata, description: snapshotDescription }

@@ -255,7 +255,12 @@ describe('NewsPage generateMetadata — snapshot-derived description (Task 8)', 
             params: Promise.resolve({ symbol: 'aapl' }),
         });
 
-        expect(metadata.description).toBe(SNAPSHOT_CONTENT.currentDriverKo);
+        // FIX 5 (audit): description is prefixed with the resolved display
+        // name (subject; buildDisplayName mocked above to `assetInfo.name`)
+        // before clamping.
+        expect(metadata.description).toBe(
+            `Apple Inc. — ${SNAPSHOT_CONTENT.currentDriverKo}`
+        );
         // og description keeps the templated copy — only the search-facing
         // <meta name="description"> is overridden.
         const og = metadata.openGraph as Record<string, unknown>;
