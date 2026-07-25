@@ -145,6 +145,29 @@ aws s3 rm s3://siglens-isr-cache/ --recursive --region ap-northeast-2
 - 실패 로그가 없으면 메트릭 데이터가 수집되지 않으며, 알람의 `--treat-missing-data notBreaching` 설정이 이를 `OK`로 처리한다 (고볼륨 로그 그룹에 불필요한 0-데이터포인트를 만들지 않기 위해 `defaultValue`는 의도적으로 생략).
 - **해석**: 일시적 S3 hiccup은 낮은 빈도로 정상. 알람 발화 = 5분간 5건 초과 = 구조적 실패(IAM 퍼미션 박탈, 버킷 삭제, IMDS 차단 등). 즉시 조사 필요.
 
+### `siglens-isr-tag-failures` 알람 (2026-07-25 추가)
+
+멀티 인스턴스 태그 전파(`cache-handler/tagStore.mjs`)의 fail-open을 잡는다. **위 알람과 별개여야 하는 이유가 두 가지다:**
+
+1. **리터럴이 다르다** — 로그가 `[isr-cache] tag sync|publish|prune failed`라 위 필터에 안 걸린다.
+2. **임계값 계산이 다르다** — tagStore는 스코프당 60초 로그 스로틀이 있어 완전 장애여도 300초에 최대 5줄뿐이다. 위 알람의 "5 **초과**" 조건에는 영원히 도달하지 못한다.
+
+- **메트릭**: `Siglens/ISRCache` / `IsrTagFailures`
+- **필터**: `?"[isr-cache] tag sync failed" ?"[isr-cache] tag publish failed" ?"[isr-cache] tag prune failed"`
+- **임계값**: `period=900`(최대 15줄/스코프) / Sum ≥ 5 / 2주기 → 지속 장애 시 약 30분 내 발화, 일시적 blip(≤2줄)은 무시
+- **해석**: 발화 = 이 인스턴스가 다른 인스턴스의 무효화를 놓치고 있음 → stale HTML이 `revalidate` TTL(6~24h)까지 서빙된다. Upstash 상태, `UPSTASH_REDIS_REST_*` SSM 값, 일일 명령 한도를 확인할 것.
+- **`tag publish failed`가 더 심각하다** — 이 인스턴스가 만든 무효화를 **다른 모든 인스턴스**가 영구히 놓친다는 뜻이다.
+
+### 태그 동기화 전용 킬 스위치 (`ISR_TAG_SYNC_DISABLED`)
+
+`ISR_CACHE_DISABLED`는 S3 핸들러 **전체**를 꺼서 디스크 포화 리스크를 되살린다. 태그 전파만 문제일 때(예: Upstash 명령 한도 초과가 앱 기능까지 위협) 이것만 끈다:
+
+```bash
+aws ssm put-parameter --name /siglens/ISR_TAG_SYNC_DISABLED --value true --type String --overwrite --region ap-northeast-2
+```
+
+적용은 `ISR_CACHE_DISABLED`와 동일하게 인스턴스 교체가 필요하다(§1 참조). 끈 동안은 각 인스턴스가 자기 로컬 맵만 보는 이 변경 이전 동작으로 돌아간다 — `desired=1`을 유지해야 한다.
+
 ### `siglens-disk-high` — 캐시 외부화 회귀 카나리
 
 - 기존 디스크 모니터링 알람(85% 임계값 불변).
@@ -174,12 +197,22 @@ aws s3 ls s3://siglens-isr-cache/ --recursive --summarize | tail -2
 `deploy.sh`는 롤백용 `prev-isr-buildid` SSM 파라미터를 유지하지 않는다.
 롤백 시 수동으로 이전 SHA의 캐시 prefix가 유효한지 확인해야 한다(14일 내이면 존재).
 
-### 멀티인스턴스 태그 전파
+### 멀티인스턴스 태그 전파 — ✅ 2026-07-25 해소
 
-S3 마커 기반 `buildId` 전파는 현재 ASG 인스턴스 수가 1개일 때 단순하다.
-ASG 스케일아웃(인스턴스 추가) 시 신규 인스턴스는 이미지 내 `GIT_SHA`를 그대로 읽으므로
-별도 전파 없이 동일 prefix를 쓴다 — 현재 구조상 문제 없음.
-향후 Blue/Green 배포나 가중치 라우팅 도입 시 `DynamoDB` buildId 레지스트리(spec §8)로 확장 검토.
+~~로컬 in-process 태그 맵이라 스케일아웃 시 다른 인스턴스의 `revalidateTag`가 전파되지 않음.~~
+
+Upstash Redis 정렬셋(`siglens:isr:tags`)으로 외부화됐다. 설계·보장 범위·미보장 창은
+[`../superpowers/specs/2026-07-25-isr-tagstore-multi-instance-design.md`](../superpowers/specs/2026-07-25-isr-tagstore-multi-instance-design.md).
+
+운영상 알아둘 것:
+- **`ASG desired=1`은 더 이상 전제가 아니다.** 단 §7의 "재생성 중 무효화 창"은 남아 있다
+- **Upstash 명령량이 늘었다** — 트래픽이 있을 때 인스턴스당 5초에 1회(≈17k/일/인스턴스).
+  앱이 쓰는 것과 같은 DB이므로 플랜 한도에 여유가 있는지 확인할 것
+- **롤백**: `cache-handler/`를 되돌리면 즉시 로컬 전용 복귀. 태그 로그 키는 30d TTL로 스스로
+  소멸하나 즉시 정리하려면 `DEL siglens:isr:tags`
+
+`buildId` prefix 전파는 별개 주제로, 스케일아웃 시 신규 인스턴스가 이미지 내 `GIT_SHA`를
+그대로 읽어 동일 prefix를 쓰므로 현재 구조상 문제 없다. 향후 Blue/Green 도입 시 재검토.
 
 ### IAM 파일 버킷명 동기화
 
