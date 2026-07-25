@@ -504,6 +504,54 @@ describe('Symbol page', () => {
             ).not.toBeNull();
         });
 
+        // UI audit FIX 1: TechnicalSnapshotProse used to be the FIRST child of
+        // <main>, sharing the fixed-height jail's flex budget with the chart —
+        // it visually squeezed/clipped the chart and rendered before the
+        // (fallback) h1 in DOM order (heading-order inversion, WCAG 1.3.1). The
+        // fix moves it to the LAST child of <main>, after the chart wrapper,
+        // and makes <main> itself the scroll container (overflow-y-auto) so
+        // the chart wrapper (h-full + shrink-0) never competes for height.
+        it('mounts TechnicalSnapshotProse as the LAST child of <main>, after the chart wrapper (FIX 1)', async () => {
+            mockPeekAnalysisCache.mockResolvedValue(null);
+
+            const tree = await SymbolPage({
+                params: Promise.resolve({ symbol: 'aapl' }),
+            });
+
+            const main = findElementByType(tree, 'main');
+            if (main === null) throw new Error('<main> not found in tree');
+
+            const mainChildren = (main.props as { children: unknown }).children;
+            if (!Array.isArray(mainChildren)) {
+                throw new Error('<main> children is not an array');
+            }
+
+            // Last element of <main> must be TechnicalSnapshotProse — proves it
+            // is no longer the first flex child competing with the chart, and
+            // (since the fallback/client h1 lives inside the earlier chart
+            // wrapper child) that it renders after the h1 in DOM order.
+            const lastChild = mainChildren.at(-1);
+            expect(lastChild?.type).toBe(TechnicalSnapshotProse);
+        });
+
+        // UI audit FIX 1: <main> must be the scroll container so content
+        // below the chart wrapper is reachable (not permanently clipped by
+        // the sticky-footer jail's overflow-hidden, which the definite-height
+        // regression guard in SymbolLayoutClient.test.tsx forbids changing).
+        it('gives <main> overflow-y-auto so below-chart content is reachable, not clipped (FIX 1)', async () => {
+            mockPeekAnalysisCache.mockResolvedValue(null);
+
+            const tree = await SymbolPage({
+                params: Promise.resolve({ symbol: 'aapl' }),
+            });
+
+            const main = findElementByType(tree, 'main');
+            if (main === null) throw new Error('<main> not found in tree');
+
+            const className = (main.props as { className: string }).className;
+            expect(className).toContain('overflow-y-auto');
+        });
+
         it('does not render hidden keyword stuffing copy', async () => {
             mockPeekAnalysisCache.mockResolvedValue(null);
 
