@@ -16,6 +16,9 @@ vi.mock('@/entities/chat-message', () => ({
 vi.mock('@y0ngha/siglens-core', () => ({
     DEEPSEEK_V4_FLASH_MODEL: 'deepseek-v4-flash',
     peekAnalysisCache: vi.fn(),
+    // Task 9: @/views/symbol barrel now also exports FearGreedFactsSummary,
+    // which pulls in fearGreedLabels → POC_WINDOW_DEFAULT at module scope.
+    POC_WINDOW_DEFAULT: 60,
 }));
 vi.mock('@/shared/config/market', async importOriginal => ({
     ...(await importOriginal<typeof import('@/shared/config/market')>()),

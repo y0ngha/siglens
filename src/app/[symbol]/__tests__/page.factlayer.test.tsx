@@ -31,6 +31,9 @@ vi.mock('@y0ngha/siglens-core', () => ({
     // TechnicalFactsSummary deps (RSI thresholds)
     RSI_OVERBOUGHT_LEVEL: 70,
     RSI_OVERSOLD_LEVEL: 30,
+    // Task 9: @/views/symbol barrel now also exports FearGreedFactsSummary,
+    // which pulls in fearGreedLabels → POC_WINDOW_DEFAULT at module scope.
+    POC_WINDOW_DEFAULT: 60,
 }));
 vi.mock('@/shared/config/market', async importOriginal => ({
     ...(await importOriginal<typeof import('@/shared/config/market')>()),

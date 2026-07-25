@@ -81,6 +81,7 @@ vi.mock('@/widgets/fear-greed', () => ({
 }));
 vi.mock('@/views/symbol', () => ({
     SymbolPageHeading: () => null,
+    FearGreedFactsSummary: () => null,
 }));
 vi.mock('@/shared/ui/CrossLinkCards', () => ({
     CrossLinkCards: () => null,
