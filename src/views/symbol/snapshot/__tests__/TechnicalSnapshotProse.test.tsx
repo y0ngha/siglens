@@ -45,7 +45,7 @@ describe('TechnicalSnapshotProse', () => {
         expect(text.length).toBeGreaterThan(40);
         expect(text).toContain(SUMMARY_TEXT);
         expect(
-            screen.getByRole('heading', { name: '최근 분석 요약' })
+            screen.getByRole('heading', { name: '기술적 분석 요약' })
         ).toBeInTheDocument();
     });
 

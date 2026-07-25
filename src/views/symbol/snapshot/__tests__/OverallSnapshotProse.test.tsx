@@ -72,8 +72,49 @@ describe('OverallSnapshotProse', () => {
         );
         expect(text).toContain('180 지지선이 붕괴되는 경우');
         expect(
-            screen.getByRole('heading', { name: '최근 분석 요약' })
+            screen.getByRole('heading', { name: '종합 분석 결론' })
         ).toBeInTheDocument();
+    });
+
+    // audit fix FIX 7a: Tailwind v4 preflight sets `ul { list-style: none }`,
+    // which drops the list role in Safari+VoiceOver. Every <ul> must carry an
+    // explicit role="list" to restore it.
+    it('모든 <ul>이 role="list"를 갖는다(FIX 7a)', () => {
+        render(
+            <OverallSnapshotProse
+                content={buildFixture()}
+                symbol="AAPL"
+                displayName="Apple Inc."
+            />
+        );
+
+        const lists = screen.getAllByRole('list');
+        // 강세/중립/약세 시나리오 3개 <ul> (riskFactorsKo는 이 fixture에서 빈 배열).
+        expect(lists.length).toBeGreaterThanOrEqual(3);
+    });
+
+    // audit fix FIX 7b: a bare text node next to the shrink-0 bullet span is
+    // an anonymous flex item with min-width:auto — a long unbreakable run can
+    // overflow and widen the document. The text must be wrapped in a
+    // min-w-0 break-words span.
+    it('불릿 텍스트가 min-w-0 break-words span으로 감싸져 있다(FIX 7b)', () => {
+        const { container } = render(
+            <OverallSnapshotProse
+                content={buildFixture()}
+                symbol="AAPL"
+                displayName="Apple Inc."
+            />
+        );
+
+        const wrapped = container.querySelectorAll('span.min-w-0.break-words');
+        expect(wrapped.length).toBeGreaterThan(0);
+        expect(
+            Array.from(wrapped).some(el =>
+                el.textContent?.includes(
+                    '200일선을 상향 돌파하고 거래량이 급증하는 경우'
+                )
+            )
+        ).toBe(true);
     });
 
     it('모든 프로즈 필드가 비어있거나 content가 비객체면 아무것도 렌더하지 않는다', () => {

@@ -49,7 +49,7 @@ describe('FundamentalSnapshotProse', () => {
         expect(text).toContain('밸류에이션');
         expect(text).toContain('규제 리스크가 부각되고 있습니다.');
         expect(
-            screen.getByRole('heading', { name: '최근 분석 요약' })
+            screen.getByRole('heading', { name: '펀더멘털 종합 평가' })
         ).toBeInTheDocument();
     });
 
@@ -62,7 +62,12 @@ describe('FundamentalSnapshotProse', () => {
             />
         );
 
-        expect(screen.getByText(/펀더멘털 종합 평가/)).toBeInTheDocument();
+        // getByText는 이제 h2 타이틀과 lead 문구(AAPL 펀더멘털 종합 평가: ...) 둘 다에 매치돼
+        // "Found multiple elements"로 실패한다(audit fix FIX 6 — 타이틀이 더 이상
+        // dead code가 아니게 됨). lead 문구만 특정해 검증한다.
+        expect(
+            screen.getByText(new RegExp(`AAPL 펀더멘털 종합 평가`))
+        ).toBeInTheDocument();
     });
 
     it('overallSentiment·category가 __proto__여도 throw 없이 렌더하고 [object Object]를 노출하지 않는다 (audit fix — prototype-chain-unsafe guard)', () => {

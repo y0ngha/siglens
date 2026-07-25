@@ -32,7 +32,28 @@ export async function PATCH(request: Request): Promise<Response> {
     if (!safeBearerCompare(request.headers.get('authorization'), expected)) {
         return new Response(null, { status: HTTP_STATUS_UNAUTHORIZED });
     }
-    const token = await acquirePrewarmLock();
+
+    // FIX H(감사) — acquirePrewarmLock은 redis 미구성(unconfigured) 시엔
+    // fail-closed로 null을 반환하지만, Upstash 장애/타임아웃처럼 redis.set()
+    // 자체가 REJECT하는 경우는 별도다: getRedisClient()가 연결 상태를 미리
+    // 검증하지 않으므로 그 예외가 그대로 여기로 전파되면 500이 나가고,
+    // EventBridge는 5xx를 공격적으로 재시도한다(기본 최대 185회/24h) — 락 보유
+    // 중 204를 반환하는 설계 의도(재시도 폭풍 방지)와 정확히 반대되는 결과다.
+    // 어떤 이유로 던지든 204로 흡수해 EventBridge가 2xx로 보고 재시도하지
+    // 않게 한다. `[seo-prewarm] redis unavailable` 접두는 13-seo-prewarm.sh의
+    // CloudWatch metric filter(FIX F)와 의도적으로 동일한 마커를 재사용한다 —
+    // "redis 미구성"과 "redis 장애로 lock 획득 자체가 던짐" 두 경로 모두 같은
+    // 필터 하나로 잡는다.
+    let token: string | null;
+    try {
+        token = await acquirePrewarmLock();
+    } catch (error) {
+        console.error(
+            '[seo-prewarm] redis unavailable — lock acquire threw:',
+            error
+        );
+        return new Response(null, { status: HTTP_STATUS_NO_CONTENT });
+    }
     if (token === null) {
         return new Response(null, { status: HTTP_STATUS_NO_CONTENT });
     }

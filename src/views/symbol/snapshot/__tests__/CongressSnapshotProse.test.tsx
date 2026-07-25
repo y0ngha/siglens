@@ -47,7 +47,7 @@ describe('CongressSnapshotProse', () => {
             '공시 지연으로 최신 거래는 반영되지 않았을 수 있습니다.'
         );
         expect(
-            screen.getByRole('heading', { name: '최근 분석 요약' })
+            screen.getByRole('heading', { name: '의회 거래 동향 요약' })
         ).toBeInTheDocument();
     });
 

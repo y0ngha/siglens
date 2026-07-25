@@ -1,31 +1,41 @@
 vi.mock('server-only', () => ({}));
 
-const { mockGet, mockSet, mockIncrby, mockExpire, mockEval, mockRedis } =
-    vi.hoisted(() => {
-        const mockGet = vi.fn();
-        const mockSet = vi.fn();
-        const mockIncrby = vi.fn();
-        const mockExpire = vi.fn();
-        const mockEval = vi.fn();
-        const mockRedis: Pick<
-            import('@upstash/redis').Redis,
-            'get' | 'set' | 'incrby' | 'expire' | 'eval'
-        > = {
-            get: mockGet,
-            set: mockSet,
-            incrby: mockIncrby,
-            expire: mockExpire,
-            eval: mockEval,
-        };
-        return {
-            mockGet,
-            mockSet,
-            mockIncrby,
-            mockExpire,
-            mockEval,
-            mockRedis,
-        };
-    });
+const {
+    mockGet,
+    mockSet,
+    mockDel,
+    mockIncrby,
+    mockExpire,
+    mockEval,
+    mockRedis,
+} = vi.hoisted(() => {
+    const mockGet = vi.fn();
+    const mockSet = vi.fn();
+    const mockDel = vi.fn();
+    const mockIncrby = vi.fn();
+    const mockExpire = vi.fn();
+    const mockEval = vi.fn();
+    const mockRedis: Pick<
+        import('@upstash/redis').Redis,
+        'get' | 'set' | 'del' | 'incrby' | 'expire' | 'eval'
+    > = {
+        get: mockGet,
+        set: mockSet,
+        del: mockDel,
+        incrby: mockIncrby,
+        expire: mockExpire,
+        eval: mockEval,
+    };
+    return {
+        mockGet,
+        mockSet,
+        mockDel,
+        mockIncrby,
+        mockExpire,
+        mockEval,
+        mockRedis,
+    };
+});
 
 vi.mock('crypto', () => ({
     randomUUID: vi.fn(() => 'token-1'),
@@ -41,6 +51,10 @@ import {
     releasePrewarmLock,
     markInFlight,
     isInFlight,
+    getInFlightJobId,
+    clearInFlight,
+    markSkipped,
+    isSkipped,
     addFmpBudget,
     getFmpBudgetUsed,
 } from '../lock';
@@ -139,11 +153,20 @@ describe('seo-prewarm lock', () => {
     });
 
     describe('markInFlight', () => {
-        it('ex:1800과 대문자화된 심볼 키로 SET을 호출한다', async () => {
+        it('ex:1800과 대문자화된 심볼 키로 SET을 호출한다(jobId 생략 시 legacy 값 1)', async () => {
             await markInFlight('aapl', 'overall');
             expect(mockSet).toHaveBeenCalledWith(
                 'seo-prewarm:inflight:AAPL:overall',
                 '1',
+                { ex: 1800 }
+            );
+        });
+
+        it('jobId를 전달하면 그 값을 SET한다(FIX Z — 다음 tick이 resume-poll할 수 있게)', async () => {
+            await markInFlight('aapl', 'overall', 'job-99');
+            expect(mockSet).toHaveBeenCalledWith(
+                'seo-prewarm:inflight:AAPL:overall',
+                'job-99',
                 { ex: 1800 }
             );
         });
@@ -174,6 +197,91 @@ describe('seo-prewarm lock', () => {
         it('redis null이면 false 반환, throw 없음', async () => {
             vi.mocked(getRedisClient).mockReturnValue(null);
             await expect(isInFlight('aapl', 'overall')).resolves.toBe(false);
+            expect(mockGet).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('getInFlightJobId (FIX Z)', () => {
+        it('get이 jobId 문자열을 반환하면 그대로 반환한다', async () => {
+            mockGet.mockResolvedValue('job-99');
+            expect(await getInFlightJobId('aapl', 'overall')).toBe('job-99');
+            expect(mockGet).toHaveBeenCalledWith(
+                'seo-prewarm:inflight:AAPL:overall'
+            );
+        });
+
+        it("get이 legacy 값 '1'을 반환하면 null(재개 불가)을 반환한다", async () => {
+            mockGet.mockResolvedValue('1');
+            expect(await getInFlightJobId('aapl', 'overall')).toBeNull();
+        });
+
+        it('get이 null을 반환하면 null을 반환한다', async () => {
+            mockGet.mockResolvedValue(null);
+            expect(await getInFlightJobId('aapl', 'overall')).toBeNull();
+        });
+
+        it('redis null이면 null 반환, throw 없음', async () => {
+            vi.mocked(getRedisClient).mockReturnValue(null);
+            await expect(
+                getInFlightJobId('aapl', 'overall')
+            ).resolves.toBeNull();
+            expect(mockGet).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('clearInFlight (FIX Z)', () => {
+        it('대문자화된 심볼 키로 DEL을 호출한다', async () => {
+            await clearInFlight('aapl', 'overall');
+            expect(mockDel).toHaveBeenCalledWith(
+                'seo-prewarm:inflight:AAPL:overall'
+            );
+        });
+
+        it('redis null이면 noop, throw 없음', async () => {
+            vi.mocked(getRedisClient).mockReturnValue(null);
+            await expect(
+                clearInFlight('aapl', 'overall')
+            ).resolves.toBeUndefined();
+            expect(mockDel).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('markSkipped (FIX C)', () => {
+        it('ex:21600(6h)과 대문자화된 심볼 키로 SET을 호출한다', async () => {
+            await markSkipped('aapl', 'overall');
+            expect(mockSet).toHaveBeenCalledWith(
+                'seo-prewarm:skip:AAPL:overall',
+                '1',
+                { ex: 21600 }
+            );
+        });
+
+        it('redis null이면 noop, throw 없음', async () => {
+            vi.mocked(getRedisClient).mockReturnValue(null);
+            await expect(
+                markSkipped('aapl', 'overall')
+            ).resolves.toBeUndefined();
+            expect(mockSet).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('isSkipped (FIX C)', () => {
+        it('get이 non-null을 반환하면 true', async () => {
+            mockGet.mockResolvedValue('1');
+            expect(await isSkipped('aapl', 'overall')).toBe(true);
+            expect(mockGet).toHaveBeenCalledWith(
+                'seo-prewarm:skip:AAPL:overall'
+            );
+        });
+
+        it('get이 null을 반환하면 false', async () => {
+            mockGet.mockResolvedValue(null);
+            expect(await isSkipped('aapl', 'overall')).toBe(false);
+        });
+
+        it('redis null이면 false 반환, throw 없음', async () => {
+            vi.mocked(getRedisClient).mockReturnValue(null);
+            await expect(isSkipped('aapl', 'overall')).resolves.toBe(false);
             expect(mockGet).not.toHaveBeenCalled();
         });
     });

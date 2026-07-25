@@ -12,6 +12,10 @@ const LOCK_KEY = 'seo-prewarm:lock';
 const LOCK_TTL_SECONDS = 900; // 15min ≥ 최대 배치 시간 (spec §6 락 라이프사이클)
 const INFLIGHT_TTL_SECONDS = 1800; // 30min
 const FMP_BUDGET_TTL_SECONDS = 172800; // 2d — 날짜 키 자연 롤오버, TTL은 청소용
+// FIX C(감사) — terminal skip(error/miss_no_trigger/no_trades/no_chains_error/null)
+// 상태의 (symbol, tab)에 6h backoff를 건다. 5분 tick 기준 그대로 두면 하룻밤에
+// ~96회 재시도되며 head 슬롯을 영구 점유한다 — 6h TTL이면 하룻밤에 최대 ~2회로 줄어든다.
+const SKIP_TTL_SECONDS = 21600; // 6h
 
 /**
  * SET NX EX로 루트 락을 획득하고, 성공 시 이번 실행 고유의 소유 토큰을 반환한다.
@@ -50,13 +54,24 @@ export async function releasePrewarmLock(token: string): Promise<void> {
     await redis.eval(RELEASE_LOCK_SCRIPT, [LOCK_KEY], [token]);
 }
 
-/** (symbol, tab) 조합을 in-flight로 마킹해 중복 워커 enqueue를 막는다. */
-export async function markInFlight(symbol: string, tab: string): Promise<void> {
+/**
+ * (symbol, tab) 조합을 in-flight로 마킹해 중복 워커 enqueue를 막는다.
+ *
+ * FIX Z(감사) — `jobId`를 함께 저장하면(생략 시 legacy 값 `'1'`) 다음 tick이
+ * 새 job을 다시 submit하는 대신 이 값으로 기존 job을 이어서 poll할 수 있다
+ * (`getInFlightJobId` 참고). `pending_dependencies`처럼 단일 jobId가 없는
+ * 경우엔 `jobId`를 생략해 legacy 마커(재개 불가, 자연 TTL 만료 후 재시도)로 남긴다.
+ */
+export async function markInFlight(
+    symbol: string,
+    tab: string,
+    jobId?: string
+): Promise<void> {
     const redis = getRedisClient();
     if (redis === null) return;
     await redis.set(
         `seo-prewarm:inflight:${symbol.toUpperCase()}:${tab}`,
-        '1',
+        jobId ?? '1',
         {
             ex: INFLIGHT_TTL_SECONDS,
         }
@@ -74,6 +89,54 @@ export async function isInFlight(
         (await redis.get(
             `seo-prewarm:inflight:${symbol.toUpperCase()}:${tab}`
         )) !== null
+    );
+}
+
+/**
+ * in-flight로 마킹된 (symbol, tab)의 resumable jobId를 조회한다.
+ * 마커가 없거나 legacy 값(`'1'`, jobId 없이 마킹된 경우 — 예: pending_dependencies)이면
+ * null을 반환한다 — null은 "재개 불가, 새로 submit해야 함"을 뜻한다.
+ */
+export async function getInFlightJobId(
+    symbol: string,
+    tab: string
+): Promise<string | null> {
+    const redis = getRedisClient();
+    if (redis === null) return null;
+    const value = await redis.get<string>(
+        `seo-prewarm:inflight:${symbol.toUpperCase()}:${tab}`
+    );
+    if (value === null || value === '1') return null;
+    return String(value);
+}
+
+/** in-flight 마커를 즉시 제거한다(FIX Z) — job이 done/error로 확정되면 다음 tick이
+ * 만료(최대 30min)를 기다리지 않고 바로 최신 상태(fresh 또는 backoff)를 반영하게 한다. */
+export async function clearInFlight(
+    symbol: string,
+    tab: string
+): Promise<void> {
+    const redis = getRedisClient();
+    if (redis === null) return;
+    await redis.del(`seo-prewarm:inflight:${symbol.toUpperCase()}:${tab}`);
+}
+
+/** (symbol, tab) 조합을 terminal-skip(backoff) 상태로 마킹한다(FIX C, TTL 6h). */
+export async function markSkipped(symbol: string, tab: string): Promise<void> {
+    const redis = getRedisClient();
+    if (redis === null) return;
+    await redis.set(`seo-prewarm:skip:${symbol.toUpperCase()}:${tab}`, '1', {
+        ex: SKIP_TTL_SECONDS,
+    });
+}
+
+/** (symbol, tab) 조합이 현재 backoff(skip) 상태인지 조회한다(FIX C). */
+export async function isSkipped(symbol: string, tab: string): Promise<boolean> {
+    const redis = getRedisClient();
+    if (redis === null) return false;
+    return (
+        (await redis.get(`seo-prewarm:skip:${symbol.toUpperCase()}:${tab}`)) !==
+        null
     );
 }
 

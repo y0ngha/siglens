@@ -56,8 +56,8 @@ export function FearGreedFactsSummary({
                 </div>
             </dl>
             <div className="text-secondary-300 space-y-1 text-sm leading-6">
-                {factorLines.map(line => (
-                    <p key={line}>{line}</p>
+                {factorLines.map((line, i) => (
+                    <p key={`line-${i}-${line}`}>{line}</p>
                 ))}
             </div>
             <p className="text-secondary-400 text-xs">

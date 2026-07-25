@@ -44,7 +44,7 @@ describe('NewsSnapshotProse', () => {
             '다음 분기 실적 발표가 2주 후 예정되어 있습니다.'
         );
         expect(
-            screen.getByRole('heading', { name: '최근 분석 요약' })
+            screen.getByRole('heading', { name: '뉴스 종합 심리' })
         ).toBeInTheDocument();
     });
 
@@ -57,7 +57,12 @@ describe('NewsSnapshotProse', () => {
             />
         );
 
-        expect(screen.getByText(/뉴스 종합 심리/)).toBeInTheDocument();
+        // getByText는 이제 h2 타이틀과 lead 문구(AAPL 뉴스 종합 심리: ...) 둘 다에 매치돼
+        // "Found multiple elements"로 실패한다(audit fix FIX 6 — 타이틀이 더 이상
+        // dead code가 아니게 됨). lead 문구만 특정해 검증한다.
+        expect(
+            screen.getByText(new RegExp(`AAPL 뉴스 종합 심리`))
+        ).toBeInTheDocument();
     });
 
     it('overallSentiment가 __proto__여도 throw 없이 렌더하고 [object Object]를 노출하지 않는다 (audit fix — prototype-chain-unsafe guard)', () => {

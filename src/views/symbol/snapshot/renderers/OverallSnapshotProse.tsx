@@ -194,7 +194,10 @@ export function OverallSnapshotProse({
         .filter(line => line.length > 0);
 
     return (
-        <SnapshotSummarySection displayName={displayName}>
+        <SnapshotSummarySection
+            title="종합 분석 결론"
+            displayName={displayName}
+        >
             <div className="text-secondary-300 space-y-4 text-sm leading-6">
                 {narrowed.headlineKo.length > 0 && (
                     <p className="text-secondary-200 font-medium">
@@ -204,30 +207,36 @@ export function OverallSnapshotProse({
 
                 {conclusionParagraphs.length > 0 && (
                     <div className="space-y-2">
-                        {conclusionParagraphs.map(line => (
-                            <p key={line}>{line}</p>
+                        {conclusionParagraphs.map((line, i) => (
+                            <p key={`line-${i}-${line}`}>{line}</p>
                         ))}
                     </div>
                 )}
 
                 {narrowed.bullishBullets.length > 0 && (
                     <div>
-                        <h3 className="text-secondary-100 mb-1.5 text-sm font-semibold">
+                        <h3 className="text-secondary-200 mb-1.5 text-sm font-semibold">
                             강세 시나리오
                         </h3>
                         <ul
+                            role="list"
                             aria-label={`${symbol} 강세 시나리오 목록`}
                             className="space-y-1"
                         >
-                            {narrowed.bullishBullets.map(bullet => (
-                                <li key={bullet} className="flex gap-2">
+                            {narrowed.bullishBullets.map((bullet, i) => (
+                                <li
+                                    key={`bullish-${i}-${bullet}`}
+                                    className="flex gap-2"
+                                >
                                     <span
                                         aria-hidden="true"
                                         className="mt-0.5 shrink-0"
                                     >
                                         •
                                     </span>
-                                    {bullet}
+                                    <span className="min-w-0 break-words">
+                                        {bullet}
+                                    </span>
                                 </li>
                             ))}
                         </ul>
@@ -236,22 +245,28 @@ export function OverallSnapshotProse({
 
                 {narrowed.neutralBullets.length > 0 && (
                     <div>
-                        <h3 className="text-secondary-100 mb-1.5 text-sm font-semibold">
+                        <h3 className="text-secondary-200 mb-1.5 text-sm font-semibold">
                             중립 시나리오
                         </h3>
                         <ul
+                            role="list"
                             aria-label={`${symbol} 중립 시나리오 목록`}
                             className="space-y-1"
                         >
-                            {narrowed.neutralBullets.map(bullet => (
-                                <li key={bullet} className="flex gap-2">
+                            {narrowed.neutralBullets.map((bullet, i) => (
+                                <li
+                                    key={`neutral-${i}-${bullet}`}
+                                    className="flex gap-2"
+                                >
                                     <span
                                         aria-hidden="true"
                                         className="mt-0.5 shrink-0"
                                     >
                                         •
                                     </span>
-                                    {bullet}
+                                    <span className="min-w-0 break-words">
+                                        {bullet}
+                                    </span>
                                 </li>
                             ))}
                         </ul>
@@ -260,22 +275,28 @@ export function OverallSnapshotProse({
 
                 {narrowed.bearishBullets.length > 0 && (
                     <div>
-                        <h3 className="text-secondary-100 mb-1.5 text-sm font-semibold">
+                        <h3 className="text-secondary-200 mb-1.5 text-sm font-semibold">
                             약세 시나리오
                         </h3>
                         <ul
+                            role="list"
                             aria-label={`${symbol} 약세 시나리오 목록`}
                             className="space-y-1"
                         >
-                            {narrowed.bearishBullets.map(bullet => (
-                                <li key={bullet} className="flex gap-2">
+                            {narrowed.bearishBullets.map((bullet, i) => (
+                                <li
+                                    key={`bearish-${i}-${bullet}`}
+                                    className="flex gap-2"
+                                >
                                     <span
                                         aria-hidden="true"
                                         className="mt-0.5 shrink-0"
                                     >
                                         •
                                     </span>
-                                    {bullet}
+                                    <span className="min-w-0 break-words">
+                                        {bullet}
+                                    </span>
                                 </li>
                             ))}
                         </ul>
@@ -284,10 +305,11 @@ export function OverallSnapshotProse({
 
                 {narrowed.riskFactorsKo.length > 0 && (
                     <div>
-                        <h3 className="text-secondary-100 mb-1.5 text-sm font-semibold">
+                        <h3 className="text-secondary-200 mb-1.5 text-sm font-semibold">
                             위험 요인
                         </h3>
                         <ul
+                            role="list"
                             aria-label={`${symbol} 위험 요인 목록`}
                             className="space-y-1"
                         >
@@ -302,7 +324,9 @@ export function OverallSnapshotProse({
                                     >
                                         •
                                     </span>
-                                    {risk}
+                                    <span className="min-w-0 break-words">
+                                        {risk}
+                                    </span>
                                 </li>
                             ))}
                         </ul>

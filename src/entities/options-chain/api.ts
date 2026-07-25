@@ -1,9 +1,11 @@
 import 'server-only';
 import {
     submitOptionsAnalysis,
+    pollOptionsAnalysis,
     mapExpirationsToSlots,
     DEEPSEEK_V4_FLASH_MODEL,
     type SubmitOptionsAnalysisResult,
+    type PollOptionsAnalysisResult,
     type SlotMapping,
 } from '@y0ngha/siglens-core';
 import { fetchOptionsSnapshot } from './lib/optionsDataCache';
@@ -56,4 +58,15 @@ export async function prewarmOptions(
         skipEnqueueIfMiss: false,
         ...(force ? { force: true } : {}),
     });
+}
+
+/**
+ * FIX Z(감사) — `prewarmOptions`와 짝을 이루는 pre-warm 전용 poll seam.
+ * options의 poll은 request-context에 의존하는 별도 액션이 없다(현재
+ * `OptionsPageClient`가 클라 훅으로 직접 polling) — 신규 server-only seam.
+ */
+export async function prewarmPollOptions(
+    jobId: string
+): Promise<PollOptionsAnalysisResult> {
+    return pollOptionsAnalysis(jobId);
 }

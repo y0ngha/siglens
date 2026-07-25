@@ -12,9 +12,14 @@ const DEFAULT_TITLE = '최근 분석 요약';
 
 /**
  * pre-warm된 SEO 분석 스냅샷의 프로즈 콘텐츠를 감싸는 재사용 셸.
- * `TechnicalFactsSummary`와 동일한 컨테이너/헤딩 컨벤션(bg-secondary-800
- * 카드, text-secondary-200 헤딩)을 따르는 순수 프레젠테이션 서버 컴포넌트다
- * — 'use client' 없음, 데이터 페칭 없음, request context 접근 없음.
+ *
+ * audit fix FIX 4: 카드 셸은 `TechnicalFactsSummary`(Suspense-fallback
+ * 대역이라 `bg-secondary-800 rounded-lg p-4`가 정당화되는 예외 케이스)가
+ * 아니라, 이 섹션들이 실제로 나란히 놓이는 제품 전역 우세 패턴(67곳)인
+ * `border-secondary-700 bg-secondary-800 rounded-xl border p-6`을 따른다 —
+ * 이전 셸은 소수 패턴(5곳)이라 이 섹션들이 주변 카드보다 부실해 보였다.
+ * 순수 프레젠테이션 서버 컴포넌트다 — 'use client' 없음, 데이터 페칭 없음,
+ * request context 접근 없음.
  *
  * 프레임은 항상 그린다: 스냅샷·프로즈 존재 여부 판단은 호출부 책임이다.
  * 프로즈가 없을 때 빈 셸을 렌더하지 않으려면 호출부가 이 컴포넌트를 아예
@@ -35,12 +40,22 @@ export function SnapshotSummarySection({
     return (
         <section
             aria-labelledby={headingId}
-            className="bg-secondary-800 flex flex-col gap-3 rounded-lg p-4"
+            className="border-secondary-700 bg-secondary-800 flex flex-col gap-4 rounded-xl border p-6"
         >
             <div className="flex flex-col gap-1">
+                {/*
+                 * audit fix FIX 5: 헤딩 램프가 역전돼 있었다 — 이 h2가
+                 * text-secondary-200/text-sm이고, 각 렌더러 내부 h3들이
+                 * text-secondary-100/text-sm이라 h3가 자기 h2보다 더 밝고
+                 * 같은 크기였다. 제품의 다른 카드 h2 컨벤션(text-lg
+                 * font-semibold tracking-tight)으로 맞추고, h3는
+                 * text-secondary-200(DESIGN.md:363 "subsection headers are
+                 * neutral text-secondary-200")으로 낮춘다 — h3 쪽은 각
+                 * *SnapshotProse.tsx 렌더러에서 처리.
+                 */}
                 <h2
                     id={headingId}
-                    className="text-secondary-200 text-sm font-semibold"
+                    className="text-secondary-100 text-lg font-semibold tracking-tight"
                 >
                     {title}
                 </h2>

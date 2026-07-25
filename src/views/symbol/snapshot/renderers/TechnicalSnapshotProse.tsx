@@ -85,15 +85,18 @@ export function TechnicalSnapshotProse({
         .filter(line => line.length > 0);
 
     return (
-        <SnapshotSummarySection displayName={displayName}>
+        <SnapshotSummarySection
+            title="기술적 분석 요약"
+            displayName={displayName}
+        >
             <div className="text-secondary-300 space-y-2 text-sm leading-6">
                 {narrowed.trend !== null && (
                     <p className="text-secondary-200 font-medium">
                         {symbol} 기술적 방향성: {TREND_LABEL[narrowed.trend]}
                     </p>
                 )}
-                {paragraphs.map(line => (
-                    <p key={line}>{line}</p>
+                {paragraphs.map((line, i) => (
+                    <p key={`line-${i}-${line}`}>{line}</p>
                 ))}
             </div>
         </SnapshotSummarySection>

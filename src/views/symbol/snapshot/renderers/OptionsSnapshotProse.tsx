@@ -6,7 +6,7 @@ interface OptionsSnapshotProseProps {
      * `seo_analysis_snapshots.content` — 저장소에는 `unknown`으로 보관된다
      * (harvest.ts가 `prewarmOptions`(→core `submitOptionsAnalysis`)의
      * `status==='cached'` 분기에서 얻은 `result.result: OptionsAnalysisResponse`를
-     * 그대로 저장, `src/entities/options-chain/lib/prewarmSubmitOptions.ts`).
+     * 그대로 저장, `src/entities/options-chain/api.ts`).
      * 여기서 다시 방어적으로 좁힌다.
      *
      * `FundamentalSnapshotProse`와 같은 이유로 이 값은 core
@@ -133,6 +133,21 @@ function narrowOptionsContent(content: unknown): NarrowedOptionsContent | null {
 }
 
 /**
+ * `options/page.tsx`(→ `OptionsPageClient`)가 `<OptionsSnapshotProse>`를
+ * 렌더할지 아니면 클라이언트 AI 위젯(`OptionsAiAnalysis`)을 렌더할지 판단하는
+ * 예측기(audit fix FIX 2 — `OverallSnapshotProse.hasOverallProse` 패턴). 두
+ * 소스가 같은 필드(summary/perExpiration/signals)를 같은 순서로 중복 렌더하던
+ * 문제를 XOR 게이팅으로 해소한다.
+ *
+ * `narrowOptionsContent`를 그대로 재사용해 이 예측기와 컴포넌트가 서로 다른
+ * 판단을 내릴 수 없게 한다(단일 진실 소스). `OptionsEmptyState`의
+ * `snapshotSlot` 게이트(audit fix FIX 9)에서도 재사용된다.
+ */
+export function hasOptionsProse(content: unknown): boolean {
+    return narrowOptionsContent(content) !== null;
+}
+
+/**
  * SEO pre-warm 스냅샷의 options 탭 프로즈 렌더러 — Task 6, 여섯 번째 탭
  * 렌더러. `summary`를 리드 문단으로, `perExpiration`을 만기 날짜+톤 라벨
  * 붙은 해설 목록으로, `signals`를 시그널 종류 라벨 붙은 목록으로 렌더한다.
@@ -154,7 +169,10 @@ export function OptionsSnapshotProse({
     if (narrowed === null) return null;
 
     return (
-        <SnapshotSummarySection displayName={displayName}>
+        <SnapshotSummarySection
+            title="옵션 시장 요약"
+            displayName={displayName}
+        >
             <div className="text-secondary-300 space-y-4 text-sm leading-6">
                 {narrowed.summary.length > 0 && (
                     <p className="text-secondary-200 font-medium">
@@ -164,10 +182,11 @@ export function OptionsSnapshotProse({
 
                 {narrowed.perExpiration.length > 0 && (
                     <div>
-                        <h3 className="text-secondary-100 mb-1.5 text-sm font-semibold">
+                        <h3 className="text-secondary-200 mb-1.5 text-sm font-semibold">
                             만기별 해석
                         </h3>
                         <ul
+                            role="list"
                             aria-label={`${symbol} 만기별 해석 목록`}
                             className="space-y-2"
                         >
@@ -187,10 +206,11 @@ export function OptionsSnapshotProse({
 
                 {narrowed.signals.length > 0 && (
                     <div>
-                        <h3 className="text-secondary-100 mb-1.5 text-sm font-semibold">
+                        <h3 className="text-secondary-200 mb-1.5 text-sm font-semibold">
                             시그널
                         </h3>
                         <ul
+                            role="list"
                             aria-label={`${symbol} 옵션 시그널 목록`}
                             className="space-y-1"
                         >
@@ -205,7 +225,7 @@ export function OptionsSnapshotProse({
                                     >
                                         •
                                     </span>
-                                    <span>
+                                    <span className="min-w-0 break-words">
                                         {signal.kind !== null &&
                                             `[${SIGNAL_KIND_LABEL[signal.kind]}] `}
                                         {signal.message}

@@ -1,9 +1,9 @@
 import 'server-only';
 
-import { inArray } from 'drizzle-orm';
+import { eq, inArray } from 'drizzle-orm';
 import { seoAnalysisSnapshots } from '@/shared/db/schema';
 import type { SiglensDatabase } from '@/shared/db/types';
-import type { SeoSnapshotUpsertInput } from './model';
+import type { SeoAnalysisSnapshot, SeoSnapshotUpsertInput } from './model';
 
 /**
  * Drizzle ORM implementation backed by Neon PostgreSQL. One row per
@@ -36,6 +36,20 @@ export class DrizzleSeoSnapshotRepository {
                     updatedAt: new Date(),
                 },
             });
+    }
+
+    /**
+     * Consumed by `getSeoSnapshotsStatic` (entities/seo-snapshot/lib/getSnapshotStatic.ts)
+     * — the read path all 7 tab pages + `generateMetadata` use to surface
+     * pre-warmed snapshots. Do not remove as YAGNI without checking that caller first.
+     */
+    async findBySymbol(symbol: string): Promise<SeoAnalysisSnapshot[]> {
+        const rows = await this.db
+            .select()
+            .from(seoAnalysisSnapshots)
+            .where(eq(seoAnalysisSnapshots.symbol, symbol.toUpperCase()));
+
+        return rows as SeoAnalysisSnapshot[];
     }
 
     async findGeneratedAtMap(symbols: string[]): Promise<Map<string, Date>> {

@@ -9,7 +9,7 @@ interface FundamentalSnapshotProseProps {
      * `seo_analysis_snapshots.content` — 저장소에는 `unknown`으로 보관된다
      * (harvest.ts가 core `prewarmFundamental`(→`submitFundamentalAnalysis`)의
      * `status==='cached'` 분기에서 얻은 `result.result: FundamentalAnalysisResponse`를
-     * 그대로 저장, `src/entities/analysis/lib/prewarmSubmits.ts`). 여기서 다시
+     * 그대로 저장, `src/entities/analysis/api.ts`). 여기서 다시
      * 방어적으로 좁힌다.
      *
      * `OverallSnapshotProse`와 같은 이유로 이 값은 core `filterAnalysisResult`
@@ -130,6 +130,20 @@ function narrowFundamentalContent(
 }
 
 /**
+ * `fundamental/page.tsx`가 `<FundamentalSnapshotProse>`를 렌더할지 아니면
+ * 클라이언트 AI 위젯(`FundamentalAiSummary`)을 렌더할지 판단하는
+ * 예측기(audit fix FIX 2 — `OverallSnapshotProse.hasOverallProse` 패턴). 두
+ * 소스가 같은 필드(overallConclusionKo/categoryAssessments/riskFactorsKo)를
+ * 같은 순서로 중복 렌더하던 문제를 XOR 게이팅으로 해소한다.
+ *
+ * `narrowFundamentalContent`를 그대로 재사용해 이 예측기와 컴포넌트가 서로
+ * 다른 판단을 내릴 수 없게 한다(단일 진실 소스).
+ */
+export function hasFundamentalProse(content: unknown): boolean {
+    return narrowFundamentalContent(content) !== null;
+}
+
+/**
  * SEO pre-warm 스냅샷의 fundamental 탭 프로즈 렌더러 —
  * `TechnicalSnapshotProse`/`OverallSnapshotProse`가 세운 패턴(spec
  * 2026-07-24 Task 4~5)을 따르는 세 번째 탭 렌더러(Task 6). `overallConclusionKo`를
@@ -155,7 +169,10 @@ export function FundamentalSnapshotProse({
         .filter(line => line.length > 0);
 
     return (
-        <SnapshotSummarySection displayName={displayName}>
+        <SnapshotSummarySection
+            title="펀더멘털 종합 평가"
+            displayName={displayName}
+        >
             <div className="text-secondary-300 space-y-4 text-sm leading-6">
                 {narrowed.overallSentiment !== null && (
                     <p className="text-secondary-200 font-medium">
@@ -166,23 +183,24 @@ export function FundamentalSnapshotProse({
 
                 {conclusionParagraphs.length > 0 && (
                     <div className="space-y-2">
-                        {conclusionParagraphs.map(line => (
-                            <p key={line}>{line}</p>
+                        {conclusionParagraphs.map((line, i) => (
+                            <p key={`line-${i}-${line}`}>{line}</p>
                         ))}
                     </div>
                 )}
 
                 {narrowed.categoryAssessments.length > 0 && (
                     <div>
-                        <h3 className="text-secondary-100 mb-1.5 text-sm font-semibold">
+                        <h3 className="text-secondary-200 mb-1.5 text-sm font-semibold">
                             카테고리별 평가
                         </h3>
                         <ul
+                            role="list"
                             aria-label={`${symbol} 카테고리별 평가 목록`}
                             className="space-y-2"
                         >
-                            {narrowed.categoryAssessments.map(a => (
-                                <li key={a.category}>
+                            {narrowed.categoryAssessments.map((a, i) => (
+                                <li key={`${a.category}-${i}`}>
                                     <span className="text-secondary-200 font-medium">
                                         {CATEGORY_LABEL[a.category]}
                                         {a.sentiment !== null &&
@@ -199,10 +217,11 @@ export function FundamentalSnapshotProse({
 
                 {narrowed.riskFactorsKo.length > 0 && (
                     <div>
-                        <h3 className="text-secondary-100 mb-1.5 text-sm font-semibold">
+                        <h3 className="text-secondary-200 mb-1.5 text-sm font-semibold">
                             위험 요인
                         </h3>
                         <ul
+                            role="list"
                             aria-label={`${symbol} 위험 요인 목록`}
                             className="space-y-1"
                         >
@@ -217,7 +236,9 @@ export function FundamentalSnapshotProse({
                                     >
                                         •
                                     </span>
-                                    {risk}
+                                    <span className="min-w-0 break-words">
+                                        {risk}
+                                    </span>
                                 </li>
                             ))}
                         </ul>

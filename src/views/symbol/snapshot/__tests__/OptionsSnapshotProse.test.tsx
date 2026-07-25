@@ -51,7 +51,7 @@ describe('OptionsSnapshotProse', () => {
         expect(text).toContain('2026-08-15');
         expect(text).toContain('콜 옵션 거래량이 급증했습니다.');
         expect(
-            screen.getByRole('heading', { name: '최근 분석 요약' })
+            screen.getByRole('heading', { name: '옵션 시장 요약' })
         ).toBeInTheDocument();
     });
 
