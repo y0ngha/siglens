@@ -599,3 +599,33 @@ export const sharedAnalyses = pgTable(
         uniqueIndex('shared_analyses_content_uq').on(table.contentHash),
     ]
 );
+
+/**
+ * SEO 분석 스냅샷 — 심볼×탭당 last-known-good 1행 (spec 2026-07-24 §5).
+ * SSR "최근 분석 요약" 섹션의 유일한 데이터 소스. pre-warm cron만 write하고
+ * 실패 시 이전 행이 유지된다(fail-open). content는 core 정규화 타입드 결과
+ * (탭별 스키마 상이 — HTML 아님, 렌더러가 산문 변환).
+ */
+export const seoAnalysisSnapshots = pgTable(
+    'seo_analysis_snapshots',
+    {
+        id: uuid('id').primaryKey().defaultRandom(),
+        symbol: varchar('symbol', { length: SYMBOL_MAX_LENGTH }).notNull(),
+        tab: varchar('tab', { length: 16 }).notNull(),
+        content: jsonb('content').notNull(),
+        model: varchar('model', { length: 64 }).notNull(),
+        generatedAt: timestamp('generated_at', {
+            withTimezone: true,
+        }).notNull(),
+        updatedAt: timestamp('updated_at', { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+    },
+    table => [
+        uniqueIndex('seo_analysis_snapshots_symbol_tab_uq').on(
+            table.symbol,
+            table.tab
+        ),
+        index('seo_analysis_snapshots_symbol_idx').on(table.symbol),
+    ]
+);

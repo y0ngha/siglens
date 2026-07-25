@@ -8,6 +8,12 @@ import type {
     NewsImpact,
     NewsItem,
     NewsSentiment,
+    EnrichedNewsItem,
+    SubmitNewsAnalysisResult,
+} from '@y0ngha/siglens-core';
+import {
+    submitNewsAnalysis,
+    DEEPSEEK_V4_FLASH_MODEL,
 } from '@y0ngha/siglens-core';
 import { NEON_TRANSIENT_RETRY } from '@/shared/db/isNeonTransientError';
 import { getDatabaseClient } from '@/shared/db/client';
@@ -15,7 +21,13 @@ import { news } from '@/shared/db/schema';
 import type { SiglensDatabase } from '@/shared/db/types';
 import type { NewsDisplayItem } from '@/shared/lib/types';
 import { withRetry } from '@/shared/lib/withRetry';
-import { NEWS_LOOKBACK_MS } from './lib/newsLookback';
+import {
+    NEWS_LOOKBACK_MS,
+    NEWS_ANALYSIS_LOOKBACK_MS,
+} from './lib/newsLookback';
+import { buildAnalysisNewsItems } from './lib/buildAnalysisNewsItems';
+import { getNextEarningsReport } from '@/entities/earnings-report';
+import { resolveAssetClass } from '@/entities/ticker/lib/resolveAssetClass';
 
 /** Domain-level row returned from the `news` table; extends the display projection with persistence-only fields. */
 export interface NewsRow extends NewsDisplayItem {
@@ -264,4 +276,53 @@ function toNewsRow(row: NewsDbRow): NewsRow {
         priceImpact: toNewsImpact(row.priceImpact),
         analyzedAt: row.analyzedAt,
     };
+}
+
+/**
+ * SEO pre-warm 전용 news submit (spec 2026-07-24 §4 seam, Task 7).
+ * `submitNewsAnalysisAction`의 비봇 경로를 요청-컨텍스트 없이 재현한다
+ * (캐시 키 5축 정합: model default / tier free / reasoning false / 동일
+ * fingerprint). 차이는 skipEnqueueIfMiss:false와 force 뿐.
+ *
+ * modelId는 익명/free 방문자가 실제로 보내는 기본값(`DEEPSEEK_V4_FLASH_MODEL`
+ * — `SymbolModelContext`의 `useSelectedModel` 기본값과 동일)을 명시 전달한다.
+ * core의 news submit 옵션은 `modelId`를 그대로 캐시 키에 사용하고 내부
+ * fallback이 없으므로, 생략하면 익명 writer가 쓰는 키와 어긋난다.
+ *
+ * DB I/O(DrizzleNewsRepository)·cross-entity 조합(earnings-report)·외부 core
+ * submit 호출을 하는 orchestration seam이라 entities/{slice}/lib/(순수 함수
+ * 전용)이 아니라 api.ts에 위치한다 — MISTAKES.md Architecture §0.7.
+ *
+ * ⚠️ 요청 헤더 읽기·세션 사용자 조회·봇 판별·쿠키 접근 금지 — cron의
+ * after() 컨텍스트에서 실행되며 React 요청 스코프가 없다.
+ */
+export async function prewarmNews(
+    symbol: string,
+    companyName: string,
+    force: boolean
+): Promise<SubmitNewsAnalysisResult> {
+    const assetClass = await resolveAssetClass(symbol);
+    const { db } = getDatabaseClient();
+    const [rows, next] = await Promise.all([
+        new DrizzleNewsRepository(db).listBySymbol(
+            symbol,
+            NEWS_ANALYSIS_LOOKBACK_MS
+        ),
+        getNextEarningsReport(symbol, db),
+    ]);
+    const enrichedNews: ReadonlyArray<EnrichedNewsItem> =
+        buildAnalysisNewsItems(rows);
+
+    return submitNewsAnalysis({
+        symbol,
+        companyName,
+        modelId: DEEPSEEK_V4_FLASH_MODEL,
+        news: enrichedNews,
+        upcomingCalendar: next !== null ? [next] : [],
+        tier: 'free',
+        reasoning: false,
+        skipEnqueueIfMiss: false,
+        assetClass,
+        ...(force ? { force: true } : {}),
+    });
 }

@@ -1,4 +1,6 @@
 import type { Mock } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 // withRetry 내부 sleep을 즉시 resolve로 stubbing해서 retry 케이스의 실제
 // 대기 시간을 없앤다. retry 발생 시 sleep이 호출되는 것만 검증.
 // `vi.mock` 은 import 위로 호이스트되어야 static import 보다 먼저 평가된다
@@ -7,10 +9,55 @@ vi.mock('@/shared/lib/sleep', () => ({
     sleep: vi.fn().mockResolvedValue(undefined),
 }));
 
-import type { NewsCardAnalysis, NewsItem } from '@y0ngha/siglens-core';
+// prewarmNews만 부분 목킹 대상 — submitNewsAnalysis(core)는 대체하고 나머지는
+// 실제 구현을 통과시켜 DrizzleNewsRepository 등 이 파일이 검증하는 실제
+// 클래스와 충돌하지 않는다(같은 모듈이라 전체 목킹은 self-mock 문제를 만든다).
+vi.mock('@y0ngha/siglens-core', async () => {
+    const actual = await vi.importActual<typeof import('@y0ngha/siglens-core')>(
+        '@y0ngha/siglens-core'
+    );
+    return {
+        ...actual,
+        submitNewsAnalysis: vi.fn(),
+    };
+});
+
+vi.mock('@/shared/db/client', () => ({
+    getDatabaseClient: vi.fn(),
+}));
+
+vi.mock('@/entities/earnings-report', () => ({
+    getNextEarningsReport: vi.fn(),
+}));
+
+vi.mock('@/entities/ticker/lib/resolveAssetClass', () => ({
+    resolveAssetClass: vi.fn(),
+}));
+
+import type {
+    NewsCardAnalysis,
+    NewsItem,
+    SubmitNewsAnalysisResult,
+    EarningsCalendarItem,
+} from '@y0ngha/siglens-core';
+import {
+    submitNewsAnalysis,
+    DEEPSEEK_V4_FLASH_MODEL,
+} from '@y0ngha/siglens-core';
 import type { SiglensDatabase } from '@/shared/db/types';
-import { DrizzleNewsRepository } from '@/entities/news-article/api';
+import {
+    DrizzleNewsRepository,
+    prewarmNews,
+} from '@/entities/news-article/api';
 import type { NewsRow } from '@/entities/news-article';
+import { getDatabaseClient } from '@/shared/db/client';
+import { getNextEarningsReport } from '@/entities/earnings-report';
+import { resolveAssetClass } from '@/entities/ticker/lib/resolveAssetClass';
+
+const SEAM_SOURCE = readFileSync(
+    fileURLToPath(new URL('../api.ts', import.meta.url)),
+    'utf8'
+);
 
 const baseItem: NewsItem = {
     id: 'abc123',
@@ -337,5 +384,134 @@ describe('DrizzleNewsRepository', () => {
             expect(result.category).toBeNull();
             expect(result.priceImpact).toBeNull();
         });
+    });
+});
+
+describe('prewarmNews', () => {
+    const mockSubmitNewsAnalysis = vi.mocked(submitNewsAnalysis);
+    const mockGetDatabaseClient = vi.mocked(getDatabaseClient);
+    const mockGetNextEarningsReport = vi.mocked(getNextEarningsReport);
+    const mockResolveAssetClass = vi.mocked(resolveAssetClass);
+
+    const ANALYZED_ROW = {
+        id: 'abc123',
+        symbol: 'AAPL',
+        source: 'Reuters',
+        url: 'https://reuters.com/aapl',
+        publishedAt: new Date('2025-07-01T10:00:00.000Z'),
+        titleEn: 'Apple earnings beat',
+        bodyEn: 'Apple reported...',
+        titleKo: '애플 실적 예상치 상회',
+        bodyKo: '애플이 보고했다...',
+        summaryKo: '긍정적 실적 발표',
+        sentiment: 'bullish',
+        priceImpact: 'medium',
+        category: 'earnings',
+        analyzedAt: new Date('2025-07-01T11:00:00.000Z'),
+    };
+
+    const UNANALYZED_ROW = {
+        ...ANALYZED_ROW,
+        id: 'def456',
+        titleKo: null,
+        bodyKo: null,
+        summaryKo: null,
+        priceImpact: null,
+        sentiment: null,
+        category: null,
+        analyzedAt: null,
+    };
+
+    const NEXT_EARNINGS: EarningsCalendarItem = {
+        symbol: 'AAPL',
+        earningsDate: '2025-08-01',
+        epsActual: null,
+        epsEstimated: 1.4,
+        revenueActual: null,
+        revenueEstimated: 88_000_000_000,
+        lastUpdated: '2025-07-15',
+    };
+
+    const SUBMITTED_RESULT: SubmitNewsAnalysisResult = {
+        status: 'submitted',
+        jobId: 'job-news-001',
+    };
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mockSubmitNewsAnalysis.mockResolvedValue(SUBMITTED_RESULT);
+        mockResolveAssetClass.mockResolvedValue('equity');
+        mockGetNextEarningsReport.mockResolvedValue(null);
+        const { db } = makeSelectDb([]);
+        mockGetDatabaseClient.mockReturnValue({
+            db,
+        } as unknown as ReturnType<typeof getDatabaseClient>);
+    });
+
+    it('calls submitNewsAnalysis with the anonymous-free branch shape', async () => {
+        await prewarmNews('AAPL', 'Apple Inc.', false);
+
+        expect(mockSubmitNewsAnalysis).toHaveBeenCalledWith(
+            expect.objectContaining({
+                symbol: 'AAPL',
+                companyName: 'Apple Inc.',
+                modelId: DEEPSEEK_V4_FLASH_MODEL,
+                tier: 'free',
+                reasoning: false,
+                skipEnqueueIfMiss: false,
+                assetClass: 'equity',
+            })
+        );
+    });
+
+    it('threads force:true when requested', async () => {
+        await prewarmNews('AAPL', 'Apple Inc.', true);
+
+        expect(mockSubmitNewsAnalysis).toHaveBeenCalledWith(
+            expect.objectContaining({ force: true })
+        );
+    });
+
+    it('omits force when not requested', async () => {
+        await prewarmNews('AAPL', 'Apple Inc.', false);
+
+        const callArg = mockSubmitNewsAnalysis.mock.calls[0]?.[0];
+        expect(callArg).not.toHaveProperty('force');
+    });
+
+    it('filters out unanalyzed rows (titleKo null) and threads enriched news', async () => {
+        const { db } = makeSelectDb([ANALYZED_ROW, UNANALYZED_ROW]);
+        mockGetDatabaseClient.mockReturnValue({
+            db,
+        } as unknown as ReturnType<typeof getDatabaseClient>);
+
+        await prewarmNews('AAPL', 'Apple Inc.', false);
+
+        const callArg = mockSubmitNewsAnalysis.mock.calls[0]?.[0];
+        expect(callArg?.news).toHaveLength(1);
+    });
+
+    it('includes upcomingCalendar when next earnings exist', async () => {
+        mockGetNextEarningsReport.mockResolvedValueOnce(NEXT_EARNINGS);
+
+        await prewarmNews('AAPL', 'Apple Inc.', false);
+
+        expect(mockSubmitNewsAnalysis).toHaveBeenCalledWith(
+            expect.objectContaining({ upcomingCalendar: [NEXT_EARNINGS] })
+        );
+    });
+
+    it('upcomingCalendar is empty when there is no next earnings', async () => {
+        await prewarmNews('AAPL', 'Apple Inc.', false);
+
+        expect(mockSubmitNewsAnalysis).toHaveBeenCalledWith(
+            expect.objectContaining({ upcomingCalendar: [] })
+        );
+    });
+
+    it('static guard: the seam source (api.ts) contains no request-context calls', () => {
+        expect(SEAM_SOURCE).not.toMatch(
+            /next\/headers|getCurrentUser|isBot|cookies|draftMode/
+        );
     });
 });

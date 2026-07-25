@@ -259,6 +259,13 @@ const eslintConfig = defineConfig([
             // client 번들에 포함되는 ticker barrel에 노출할 수 없어 lib 경로에서 deep import해야 한다.
             'src/instrumentation.ts',
             'src/instrumentation.node.ts',
+            // SEO pre-warm submit seam(spec 2026-07-24)이 lib/(순수 함수 전용)에서
+            // api.ts로 이전됨(PR #697 리뷰 픽스 — MISTAKES.md §0.7: DB read/외부 fetch/job
+            // enqueue를 하는 orchestration은 entities/{slice}/lib/이 아니라 api.ts). actions/*와
+            // 동일한 이유로 barrel에 없는 server-only 내부 구현(DrizzleNewsRepository,
+            // resolveMarketProfile/resolveAssetClass 등)에 deep import가 필요하다.
+            'src/entities/analysis/api.ts',
+            'src/entities/news-article/api.ts',
         ],
         rules: {
             'no-restricted-imports': [
