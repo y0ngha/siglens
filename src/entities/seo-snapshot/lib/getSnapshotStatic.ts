@@ -25,9 +25,21 @@ export function getSeoSnapshotsStatic(
         async () => {
             try {
                 const { db } = getDatabaseClient();
-                return await new DrizzleSeoSnapshotRepository(db).findBySymbol(
-                    upper
+                const rows = await new DrizzleSeoSnapshotRepository(
+                    db
+                ).findBySymbol(upper);
+                // Observability (audit fix FIX 7): if every renderer
+                // null-renders (malformed content, a core schema drift, a
+                // tab-key mismatch), the system otherwise emits ZERO
+                // output — indistinguishable from "working as intended,
+                // just no snapshot yet". This runs once per symbol per
+                // cache-fill (inside the unstable_cache fetcher, not per
+                // request), so volume is bounded — greppable in CloudWatch
+                // `/siglens/app` as ground truth that reads are happening.
+                console.info(
+                    `[getSeoSnapshotsStatic] ${upper}: ${rows.length} snapshot row(s)`
                 );
+                return rows;
             } catch (error) {
                 console.error(
                     '[getSeoSnapshotsStatic] read failed, degrading:',

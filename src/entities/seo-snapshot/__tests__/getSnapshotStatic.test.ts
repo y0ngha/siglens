@@ -85,6 +85,18 @@ describe('getSeoSnapshotsStatic', () => {
         expect(result).toEqual(SNAPSHOTS);
     });
 
+    it('성공 시 행 수를 info 로그로 남긴다 (audit fix FIX 7 — 전 렌더러 null-render 시 유일한 관측 신호)', async () => {
+        const infoSpy = vi.spyOn(console, 'info').mockImplementation(() => {});
+
+        await getSeoSnapshotsStatic('AAPL', 3600);
+
+        expect(infoSpy).toHaveBeenCalledWith(
+            '[getSeoSnapshotsStatic] AAPL: 1 snapshot row(s)'
+        );
+
+        infoSpy.mockRestore();
+    });
+
     it('findBySymbol이 reject해도 throw하지 않고 []로 fail-open degrade한다', async () => {
         const errorSpy = vi
             .spyOn(console, 'error')

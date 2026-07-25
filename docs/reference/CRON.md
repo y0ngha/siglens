@@ -31,6 +31,43 @@
 
 - **하트비트 알람은 첫 성공 실행 후에 추가할 것**: `[seo-prewarm] batch done` 로그에 대한 metric filter + "N시간 무성공" 알람은 매력적이지만, 배포 직후(첫 스케줄 실행 전)에 만들면 정상적인 "아직 한 번도 안 돎" 상태를 즉시 알람으로 오탐한다. 딜리버리 스파이크로 첫 202/`batch done`을 확인한 뒤에 추가한다.
 
+### Phase 2 — SSR prewarm rendering 배포 런북
+
+Phase 1(위 `seo-prewarm` cron — 스냅샷을 `seo_analysis_snapshots`에 적재)과 Phase 2(적재된 스냅샷을 `[symbol]` 라우트 SSR에서 렌더 — `TechnicalSnapshotProse` 등 7개 탭 렌더러)는 별도 배포 단위다. Phase 2는 Phase 1이 채운 데이터에 의존하므로 배포 순서를 지켜야 한다.
+
+**배포 순서**:
+
+1. `yarn db:migrate` — migration `0027`(`seo_analysis_snapshots` 테이블)을 적용한다. 중복 실행 무해.
+2. `bash infra/aws/13-seo-prewarm.sh` 수동 실행 + 위 "부트스트랩" 절차의 딜리버리 스파이크로 202가 실제로 오는지 검증한다.
+3. Phase 1 앱을 배포한다(cron이 스냅샷을 적재하기 시작).
+4. **cron이 최소 2번의 완전한 밤(≥2 full nights) 동안 돌게 두고** 행이 쌓이는지 확인한다:
+   ```sql
+   SELECT count(*), count(DISTINCT symbol) FROM seo_analysis_snapshots;
+   ```
+   유니버스는 290개 심볼 / 1913개 심볼×탭 조합이며, head-of-line 배칭 특성상 전체 커버리지까지 대략 3일 밤이 걸린다.
+5. Phase 2를 배포한다.
+
+**Phase 2를 일찍 배포해도 안전하다** — fail-open 설계(`getSeoSnapshotsStatic`가 읽기 실패·빈 결과 시 `[]`로 degrade)라 행이 없으면 각 렌더러가 `null`을 반환해 기존 placeholder(peek/FactsSummary 등)로 자연스럽게 폴백한다. 다만 행이 쌓이기 전까지는 아무것도 렌더하지 않는다 — "안전"과 "효과 있음"은 다른 질문이다.
+
+**배포 후 검증(이것이 기능이 실제로 작동하는지 확인하는 유일한 신호 — 아래 FIX 7 로그 참고)**:
+
+```bash
+for p in "" /overall /news /fundamental /financials /congress /options; do
+  printf '%s: ' "$p"
+  curl -s "https://siglens.io/AAPL$p?cb=$(date +%s)" | grep -c '최근 분석 요약'
+done   # expect 1 per tab that has a row; a row of zeros = silently dead
+curl -s "https://siglens.io/AAPL/overall?cb=$(date +%s)" | grep -o '<meta name="description"[^>]*>'   # must NOT be the templated copy
+curl -s https://siglens.io/robots.txt   # Googlebot group present WITH the /api/ baseline
+curl -sI "https://siglens.io/AAPL" | grep -i 'x-nextjs-cache'   # ISR still caching, not no-store
+curl -s https://siglens.io/ZZZZ | grep 'name="robots"'   # noindex, nofollow (degrade invariant)
+```
+
+ISR 캐시 키는 `GIT_SHA` prefix가 붙어 매 릴리스마다 cold-start한다 — 위 curl은 배포 직후 **첫 요청**에서 바로 프로즈가 보여야 한다(TTL 대기 불필요).
+
+**롤백**: Phase 2 되돌리기는 순수 read-path 변경(스키마/인프라 변경 없음)이라 Phase 1과 독립적이고 깨끗하다. 단, Google이 robots.txt를 ~24h 캐싱하므로 롤백 후에도 OG-block(있었다면)이 잠깐 유지될 수 있다.
+
+**추적할 알려진 갭(여기서 고치지 않음)**: `cache-handler/tagStore.mjs`는 in-process Map이다(ASG desired=1 가정 하에 문서화됨). Phase 2로 `seo-snapshot:{SYM}` 태그에 실제 consumer가 생겼으므로, ASG가 1을 넘어 스케일하면 서빙하지 않는 인스턴스는 자기 TTL까지 무효화되지 않는다. 별도 follow-up 이슈로 추적할 것.
+
 ## Pending Follow-ups
 
 | 테이블 | 작업 | 상태 |
