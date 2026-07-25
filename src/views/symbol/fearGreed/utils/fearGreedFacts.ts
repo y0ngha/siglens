@@ -87,7 +87,7 @@ function findMostExtremeFactor(
     factors: readonly FearGreedFactor[]
 ): FearGreedFactor | null {
     if (factors.length === 0) return null;
-    return [...factors].sort(
+    return factors.toSorted(
         (a, b) => Math.abs(b.percentile - 50) - Math.abs(a.percentile - 50)
     )[0]!;
 }

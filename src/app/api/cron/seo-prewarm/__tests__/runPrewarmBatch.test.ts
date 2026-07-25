@@ -1,7 +1,6 @@
 const {
-    mockIsInFlight,
     mockMarkInFlight,
-    mockGetInFlightJobId,
+    mockGetInFlightMarker,
     mockIsSkipped,
     mockMarkSkipped,
     mockClearInFlight,
@@ -28,9 +27,8 @@ const {
     mockPrewarmPollOptions,
     mockBuildPrewarmUniverse,
 } = vi.hoisted(() => ({
-    mockIsInFlight: vi.fn(),
     mockMarkInFlight: vi.fn(),
-    mockGetInFlightJobId: vi.fn(),
+    mockGetInFlightMarker: vi.fn(),
     mockIsSkipped: vi.fn(),
     mockMarkSkipped: vi.fn(),
     mockClearInFlight: vi.fn(),
@@ -59,9 +57,8 @@ const {
 }));
 
 vi.mock('../lock', () => ({
-    isInFlight: mockIsInFlight,
     markInFlight: mockMarkInFlight,
-    getInFlightJobId: mockGetInFlightJobId,
+    getInFlightMarker: mockGetInFlightMarker,
     isSkipped: mockIsSkipped,
     markSkipped: mockMarkSkipped,
     clearInFlight: mockClearInFlight,
@@ -162,8 +159,10 @@ describe('runPrewarmBatch', () => {
         vi.setSystemTime(FIXED_NOW);
 
         mockFindGeneratedAtMap.mockResolvedValue(new Map());
-        mockIsInFlight.mockResolvedValue(false);
-        mockGetInFlightJobId.mockResolvedValue(null);
+        mockGetInFlightMarker.mockResolvedValue({
+            present: false,
+            jobId: null,
+        });
         mockIsSkipped.mockResolvedValue(false);
         mockAddFmpBudget.mockResolvedValue(0);
         mockGetFmpBudgetUsed.mockResolvedValue(0);
@@ -568,8 +567,10 @@ describe('runPrewarmBatch', () => {
             })
         );
         universe({ symbol: 'RESUME', tabs: ['technical'] }, ...freshOnes);
-        mockGetInFlightJobId.mockImplementation(async (symbol: string) =>
-            symbol === 'RESUME' ? 'job-x' : null
+        mockGetInFlightMarker.mockImplementation(async (symbol: string) =>
+            symbol === 'RESUME'
+                ? { present: true, jobId: 'job-x' }
+                : { present: false, jobId: null }
         );
         mockPrewarmPollTechnical.mockResolvedValue({ status: 'processing' });
         mockPrewarmTechnical.mockResolvedValue({
@@ -595,7 +596,10 @@ describe('runPrewarmBatch', () => {
 
     it('기존 in-flight jobId가 있으면 재제출 대신 poll-resume한다(FIX Z) — submit(seam)은 호출되지 않고 예산도 계상되지 않는다', async () => {
         universe({ symbol: 'GOOGL', tabs: ['technical'] });
-        mockGetInFlightJobId.mockResolvedValue('existing-job');
+        mockGetInFlightMarker.mockResolvedValue({
+            present: true,
+            jobId: 'existing-job',
+        });
         mockPrewarmPollTechnical.mockResolvedValue({
             status: 'done',
             result: { a: 1 },
@@ -609,6 +613,94 @@ describe('runPrewarmBatch', () => {
         expect(counts.harvested).toBe(1);
         // resume-poll은 새 FMP 호출이 아니다 — 예산에 계상되지 않는다.
         expect(mockAddFmpBudget).not.toHaveBeenCalled();
+    });
+
+    // ── FIX 1(감사, PR #698 리뷰) — legacy in-flight 마커(present, jobId 없음) ──
+
+    it('legacy 마커(present, jobId 없음)가 있는 유닛은 재제출되지 않는다(seam 미호출) — 회귀 가드', async () => {
+        // 픽스 전에는 getInFlightJobId만 확인해 legacy 마커를 "in-flight 아님"으로
+        // 오판하고 매 tick 재제출했다(overall의 pending_dependencies가 실제 사례).
+        universe(
+            { symbol: 'LEGACY', tabs: ['technical'] },
+            { symbol: 'NEXT', tabs: ['technical'] }
+        );
+        mockGetInFlightMarker.mockImplementation(async (symbol: string) =>
+            symbol === 'LEGACY'
+                ? { present: true, jobId: null }
+                : { present: false, jobId: null }
+        );
+        mockPrewarmTechnical.mockResolvedValue({
+            status: 'cached',
+            result: {},
+        });
+
+        const counts = await runPrewarmBatch();
+
+        // LEGACY의 seam(submit)은 호출되지 않는다 — 재제출 금지(호출된 심볼
+        // 중 'LEGACY'가 없는지 직접 검사한다 — expect.anything()은 실제
+        // fmpSymbol=undefined 인자와 결코 매칭되지 않아 .not.toHaveBeenCalledWith가
+        // 그런 매처들과 섞이면 무조건 통과하는 약한 단언이 되므로 피한다).
+        const calledSymbols = mockPrewarmTechnical.mock.calls.map(c => c[0]);
+        expect(calledSymbols).not.toContain('LEGACY');
+        // poll도 호출되지 않는다 — legacy 마커는 resume-poll 대상이 아니다.
+        expect(mockPrewarmPollTechnical).not.toHaveBeenCalled();
+        // NEXT는 정상 처리된다.
+        expect(mockPrewarmTechnical).toHaveBeenCalledWith(
+            'NEXT',
+            'X Inc.',
+            undefined,
+            false
+        );
+        // LEGACY는 selectFairBatch 단계에서 'blocked'로 배제되어 배치 슬롯을
+        // 소비하지 않는다 — staleSymbols 2개 중 배치엔 NEXT 1개만 들어가고
+        // LEGACY는 remaining으로 남는다(재시도 대기, 재제출 아님).
+        expect(counts.remaining).toBe(1);
+        expect(counts.harvested).toBe(1); // NEXT만 harvest.
+        expect(mockMarkInFlight).not.toHaveBeenCalledWith(
+            'LEGACY',
+            'technical',
+            expect.anything()
+        );
+    });
+
+    it('jobId 있는 마커는 여전히 poll-resume된다(legacy 마커와의 회귀 구분 가드)', async () => {
+        universe({ symbol: 'RESUMABLE', tabs: ['technical'] });
+        mockGetInFlightMarker.mockResolvedValue({
+            present: true,
+            jobId: 'job-resume',
+        });
+        mockPrewarmPollTechnical.mockResolvedValue({
+            status: 'done',
+            result: { warmed: true },
+        });
+
+        const counts = await runPrewarmBatch();
+
+        expect(mockPrewarmTechnical).not.toHaveBeenCalled();
+        expect(mockPrewarmPollTechnical).toHaveBeenCalledWith('job-resume');
+        expect(counts.harvested).toBe(1);
+    });
+
+    it('마커가 아예 없는 유닛은 오늘도 정상 submit된다(회귀 없음 가드)', async () => {
+        universe({ symbol: 'NOMARKER', tabs: ['technical'] });
+        mockGetInFlightMarker.mockResolvedValue({
+            present: false,
+            jobId: null,
+        });
+        mockPrewarmTechnical.mockResolvedValue({
+            status: 'cached',
+            result: {},
+        });
+
+        const counts = await runPrewarmBatch();
+
+        expect(mockPrewarmTechnical).toHaveBeenCalledWith(
+            'NOMARKER',
+            'X Inc.',
+            undefined,
+            false
+        );
+        expect(counts.harvested).toBe(1);
     });
 
     // ── FIX C(감사) — terminal skip(backoff) ──

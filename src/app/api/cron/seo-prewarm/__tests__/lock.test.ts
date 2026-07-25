@@ -50,8 +50,7 @@ import {
     acquirePrewarmLock,
     releasePrewarmLock,
     markInFlight,
-    isInFlight,
-    getInFlightJobId,
+    getInFlightMarker,
     clearInFlight,
     markSkipped,
     isSkipped,
@@ -180,51 +179,39 @@ describe('seo-prewarm lock', () => {
         });
     });
 
-    describe('isInFlight', () => {
-        it('get이 non-null을 반환하면 true', async () => {
-            mockGet.mockResolvedValue('1');
-            expect(await isInFlight('aapl', 'overall')).toBe(true);
-            expect(mockGet).toHaveBeenCalledWith(
-                'seo-prewarm:inflight:AAPL:overall'
-            );
-        });
-
-        it('get이 null을 반환하면 false', async () => {
-            mockGet.mockResolvedValue(null);
-            expect(await isInFlight('aapl', 'overall')).toBe(false);
-        });
-
-        it('redis null이면 false 반환, throw 없음', async () => {
-            vi.mocked(getRedisClient).mockReturnValue(null);
-            await expect(isInFlight('aapl', 'overall')).resolves.toBe(false);
-            expect(mockGet).not.toHaveBeenCalled();
-        });
-    });
-
-    describe('getInFlightJobId (FIX Z)', () => {
-        it('get이 jobId 문자열을 반환하면 그대로 반환한다', async () => {
+    describe('getInFlightMarker (FIX 1, PR #698 리뷰)', () => {
+        it('get이 jobId 문자열을 반환하면 { present: true, jobId }를 반환한다', async () => {
             mockGet.mockResolvedValue('job-99');
-            expect(await getInFlightJobId('aapl', 'overall')).toBe('job-99');
+            expect(await getInFlightMarker('aapl', 'overall')).toEqual({
+                present: true,
+                jobId: 'job-99',
+            });
             expect(mockGet).toHaveBeenCalledWith(
                 'seo-prewarm:inflight:AAPL:overall'
             );
         });
 
-        it("get이 legacy 값 '1'을 반환하면 null(재개 불가)을 반환한다", async () => {
+        it("get이 legacy 값 '1'을 반환하면 { present: true, jobId: null }을 반환한다(재개 불가하지만 in-flight)", async () => {
             mockGet.mockResolvedValue('1');
-            expect(await getInFlightJobId('aapl', 'overall')).toBeNull();
+            expect(await getInFlightMarker('aapl', 'overall')).toEqual({
+                present: true,
+                jobId: null,
+            });
         });
 
-        it('get이 null을 반환하면 null을 반환한다', async () => {
+        it('get이 null을 반환하면 { present: false, jobId: null }을 반환한다', async () => {
             mockGet.mockResolvedValue(null);
-            expect(await getInFlightJobId('aapl', 'overall')).toBeNull();
+            expect(await getInFlightMarker('aapl', 'overall')).toEqual({
+                present: false,
+                jobId: null,
+            });
         });
 
-        it('redis null이면 null 반환, throw 없음', async () => {
+        it('redis null이면 { present: false, jobId: null } 반환, throw 없음', async () => {
             vi.mocked(getRedisClient).mockReturnValue(null);
-            await expect(
-                getInFlightJobId('aapl', 'overall')
-            ).resolves.toBeNull();
+            await expect(getInFlightMarker('aapl', 'overall')).resolves.toEqual(
+                { present: false, jobId: null }
+            );
             expect(mockGet).not.toHaveBeenCalled();
         });
     });

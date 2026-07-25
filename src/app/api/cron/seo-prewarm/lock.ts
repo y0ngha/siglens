@@ -59,8 +59,15 @@ export async function releasePrewarmLock(token: string): Promise<void> {
  *
  * FIX Z(감사) — `jobId`를 함께 저장하면(생략 시 legacy 값 `'1'`) 다음 tick이
  * 새 job을 다시 submit하는 대신 이 값으로 기존 job을 이어서 poll할 수 있다
- * (`getInFlightJobId` 참고). `pending_dependencies`처럼 단일 jobId가 없는
- * 경우엔 `jobId`를 생략해 legacy 마커(재개 불가, 자연 TTL 만료 후 재시도)로 남긴다.
+ * (`getInFlightMarker` 참고). `pending_dependencies`처럼 단일 jobId가 없는
+ * 경우엔 `jobId`를 생략해 legacy 마커로 남긴다.
+ *
+ * FIX 1(감사, PR #698 리뷰) — legacy 마커(jobId 없음)는 "재개 불가"이지만
+ * "in-flight가 아님"은 아니다: 여전히 이 (symbol, tab)은 다른 워커가 처리
+ * 중이거나 poll 불가능한 방식(예: `pending_dependencies`의 축별 pendingJobs)으로
+ * 진행 중이므로, 소비자는 이를 "지금 이 tick엔 손대지 말고 TTL 만료를
+ * 기다려라"로 해석해야 한다(재제출 금지). `getInFlightMarker`가 이 구분을
+ * `{ present, jobId }`로 노출한다.
  */
 export async function markInFlight(
     symbol: string,
@@ -78,36 +85,33 @@ export async function markInFlight(
     );
 }
 
-/** (symbol, tab) 조합이 현재 in-flight 상태인지 조회한다. */
-export async function isInFlight(
-    symbol: string,
-    tab: string
-): Promise<boolean> {
-    const redis = getRedisClient();
-    if (redis === null) return false;
-    return (
-        (await redis.get(
-            `seo-prewarm:inflight:${symbol.toUpperCase()}:${tab}`
-        )) !== null
-    );
-}
-
 /**
- * in-flight로 마킹된 (symbol, tab)의 resumable jobId를 조회한다.
- * 마커가 없거나 legacy 값(`'1'`, jobId 없이 마킹된 경우 — 예: pending_dependencies)이면
- * null을 반환한다 — null은 "재개 불가, 새로 submit해야 함"을 뜻한다.
+ * (symbol, tab) 마커 상태를 단일 Redis GET으로 조회한다(FIX 1, 감사 PR #698
+ * 리뷰). 이전엔 `isInFlight`(마커 존재?)와 `getInFlightJobId`(resumable
+ * jobId?)가 별도 함수였는데, `isInFlight`는 프로덕션 어디서도 호출되지 않는
+ * 죽은 코드였고 `getInFlightJobId`만 쓰였다. 그 결과 legacy 마커(jobId 없이
+ * `markInFlight`된 경우 — 예: `overall`의 `pending_dependencies`)가 있는
+ * (symbol, tab)도 `getInFlightJobId`가 null을 반환해 "in-flight 아님"으로
+ * 오판되어 매 5분 tick마다 재제출됐다(FMP 예산 재계상 포함) — `markInFlight`의
+ * 문서화된 의도("재개 불가, 자연 TTL 만료 후 재시도")와 정면으로 어긋났다.
+ *
+ * `present`는 마커 존재 여부(legacy 포함), `jobId`는 resume-poll 가능한 값
+ * (마커가 없거나 legacy 값 `'1'`이면 null)이다. 호출부는 세 상태를 모두
+ * 구분해야 한다: jobId 있음(poll 재개) / present만 true(이번 tick엔 skip,
+ * TTL 만료 대기) / present도 false(신규 submit).
  */
-export async function getInFlightJobId(
+export async function getInFlightMarker(
     symbol: string,
     tab: string
-): Promise<string | null> {
+): Promise<{ present: boolean; jobId: string | null }> {
     const redis = getRedisClient();
-    if (redis === null) return null;
+    if (redis === null) return { present: false, jobId: null };
     const value = await redis.get<string>(
         `seo-prewarm:inflight:${symbol.toUpperCase()}:${tab}`
     );
-    if (value === null || value === '1') return null;
-    return String(value);
+    if (value === null) return { present: false, jobId: null };
+    if (value === '1') return { present: true, jobId: null };
+    return { present: true, jobId: String(value) };
 }
 
 /** in-flight 마커를 즉시 제거한다(FIX Z) — job이 done/error로 확정되면 다음 tick이

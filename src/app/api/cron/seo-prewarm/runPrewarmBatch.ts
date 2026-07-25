@@ -15,7 +15,7 @@ import { POPULAR_CRYPTOS } from '@/shared/config/popular-cryptos';
 import {
     addFmpBudget,
     getFmpBudgetUsed,
-    getInFlightJobId,
+    getInFlightMarker,
     isSkipped,
     markInFlight,
 } from './lock';
@@ -196,22 +196,32 @@ export async function runPrewarmBatch(
  * 넘어가 전부 stale로 리셋되면 freshCount도 자연히 0으로 함께 리셋된다 —
  * Math.random이나 별도 Redis 커서 없이 이미 계산해둔 값만으로 결정적 회전을 얻는다.
  *
- * ② bounded in-flight/backoff 스캔: `getInFlightJobId`/`isSkipped`는 (symbol, tab)당
+ * ② bounded in-flight/backoff 스캔: `getInFlightMarker`/`isSkipped`는 (symbol, tab)당
  * 비동기 Redis 조회라 유니버스 전체(290×≤7)를 매 tick 걸면 ~1900회 왕복이 든다.
  * 대신 후보 폭을 `SYMBOLS_PER_TICK * CANDIDATE_WINDOW_MULTIPLIER`개로 제한하고,
- * 그 창 안에서만 심볼당 최대 2회(jobId 조회 1 + jobId 없을 때만 skip 조회 1)×stale
+ * 그 창 안에서만 심볼당 최대 2회(마커 조회 1 + 마커가 아예 없을 때만 skip 조회 1)×stale
  * 탭 수를 조회한다 — worst case `SYMBOLS_PER_TICK * CANDIDATE_WINDOW_MULTIPLIER
  * (=18) × 7탭 × 2 = 252회/tick`(≪1900). 탭 하나에서라도 resumable jobId를
  * 찾으면 그 시점에서 심볼을 즉시 'resumable' 분류하고 나머지 탭은 조회하지
- * 않는다(조기 종료로 실제 평균은 이보다 훨씬 낮다).
+ * 않는다(조기 종료로 실제 평균은 이보다 훨씬 낮다). FIX 1(감사, PR #698
+ * 리뷰) — 마커가 legacy(jobId 없이 존재)면 skip 조회 자체를 생략하므로
+ * (present 자체가 "이번 tick엔 손대지 마라"는 뜻) 실측 평균은 이보다 더 낮다.
+ *
+ * FIX 2(감사, PR #698 리뷰) — 이 창 안의 후보 분류(`classifySymbol`)는 서로
+ * 독립적이고 순서에 의존하지 않으므로 `Promise.all`로 병렬 실행한다(이전엔
+ * `for`-루프 안에서 순차 `await` — worst case 252회 왕복이 전부 직렬이었다).
+ * 배치 결과의 순서는 "원래 후보(회전) 순서 안에서 resumable을 먼저, 그다음
+ * fresh"로 재구성해 회전 정책의 결정성을 유지한다 — Promise.all은 완료 순서가
+ * 아니라 입력 순서로 결과 배열을 반환하므로 이 재구성이 안전하다.
  *
  * FIX Z(감사) — in-flight는 더 이상 "배제" 대상이 아니다: 폴링을 도입한 뒤로는
  * in-flight(jobId 보유) 심볼이 "진행 중"이라 폴하면 실제로 진척이 있다. 그래서
  * resumable(in-flight jobId 보유) 심볼을 fresh(신규 stale) 심볼보다 먼저 채운다
  * — "in-flight 유닛을 먼저 poll하고, 남는 슬롯을 새 stale 심볼로 채운다."
  *
- * FIX C(감사) — 모든 stale 탭이 backoff(skip) 상태인 심볼은 'blocked'로
- * 분류해 배제한다(terminal skip이 head 슬롯을 영구 점유하는 걸 막는다).
+ * FIX C(감사) — 모든 stale 탭이 backoff(skip) 상태이거나 legacy in-flight
+ * 마커로 막혀 있는 심볼은 'blocked'로 분류해 배제한다(terminal skip 또는
+ * resume 불가 in-flight가 head 슬롯을 영구 점유하는 걸 막는다).
  */
 async function selectFairBatch(
     staleSymbols: PrewarmSymbol[],
@@ -227,24 +237,38 @@ async function selectFairBatch(
         SYMBOLS_PER_TICK * CANDIDATE_WINDOW_MULTIPLIER
     );
 
+    const windowCandidates: PrewarmSymbol[] = Array.from(
+        { length: windowSize },
+        (_, i) => staleSymbols[(offset + i) % staleSymbols.length]
+    );
+    // FIX 2 — 분류는 서로 독립적이므로 병렬로 돌리고, 결과는 windowCandidates와
+    // 같은(=원래 회전 순서) 인덱스로 되돌아온다.
+    const classifications = await Promise.all(
+        windowCandidates.map(candidate =>
+            classifySymbol(candidate, generatedAtMap, boundary)
+        )
+    );
+
     const resumable: PrewarmSymbol[] = [];
     const fresh: PrewarmSymbol[] = [];
-    for (let i = 0; i < windowSize; i++) {
-        const candidate = staleSymbols[(offset + i) % staleSymbols.length];
-        const candidacy = await classifySymbol(
-            candidate,
-            generatedAtMap,
-            boundary
-        );
+    windowCandidates.forEach((candidate, i) => {
+        const candidacy = classifications[i];
         if (candidacy === 'resumable') resumable.push(candidate);
         else if (candidacy === 'fresh') fresh.push(candidate);
-        // 'blocked' → 배제(모든 stale 탭이 backoff 중).
-    }
+        // 'blocked' → 배제(모든 stale 탭이 backoff 또는 legacy in-flight 중).
+    });
     return [...resumable, ...fresh].slice(0, SYMBOLS_PER_TICK);
 }
 
 type SymbolCandidacy = 'resumable' | 'fresh' | 'blocked';
 
+/**
+ * FIX 1(감사, PR #698 리뷰) — `selectFairBatch`의 후보 분류와 `processSymbol`의
+ * 실제 처리가 반드시 같은 규칙을 써야 한다: 마커가 legacy(jobId 없음)인 탭은
+ * "actionable"이 아니다(재제출 대상 아님) — `processSymbol`이 그 탭을 skip하는
+ * 것과 동일하게, 여기서도 그런 탭만 있는 심볼은 'blocked'로 분류해 배치 슬롯을
+ * 소비하지 않게 한다.
+ */
 async function classifySymbol(
     u: PrewarmSymbol,
     generatedAtMap: Map<string, Date>,
@@ -261,8 +285,9 @@ async function classifySymbol(
 
     let anyActionable = false;
     for (const tab of staleTabs) {
-        if ((await getInFlightJobId(u.symbol, tab)) !== null)
-            return 'resumable';
+        const marker = await getInFlightMarker(u.symbol, tab);
+        if (marker.jobId !== null) return 'resumable';
+        if (marker.present) continue; // legacy 마커 — 이번 tick엔 actionable 아님(TTL 대기).
         if (!(await isSkipped(u.symbol, tab))) anyActionable = true;
     }
     return anyActionable ? 'fresh' : 'blocked';
@@ -325,18 +350,28 @@ async function processSymbol(
         }
 
         try {
-            const existingJobId = await getInFlightJobId(u.symbol, tab);
+            const marker = await getInFlightMarker(u.symbol, tab);
             let outcome: SeamOutcome | null;
 
-            if (existingJobId !== null) {
+            if (marker.jobId !== null) {
                 // FIX Z — 이전 tick이 submit만 하고 못 끝낸 job을 재제출하는
                 // 대신 이어서 poll한다(in-flight = "진행 중" → 실제로 진척시킨다.
                 // FIX A가 in-flight를 선별에서 배제하던 방식의 역방향 보완).
                 outcome = await pollUntilSettled(
-                    () => TAB_POLLS[tab](existingJobId),
+                    () => TAB_POLLS[tab](marker.jobId!),
                     batchDeadline,
                     clock
                 );
+            } else if (marker.present) {
+                // FIX 1(감사, PR #698 리뷰) — legacy 마커(jobId 없이 마킹된
+                // 경우 — 예: `pending_dependencies`)는 resume-poll은 못 하지만
+                // 여전히 in-flight다. `getInFlightJobId`만 쓰던 이전 코드는
+                // 이 경우를 "in-flight 아님"으로 오판해 매 tick 재제출했다
+                // (FMP 예산 재계상 포함) — `markInFlight`가 문서화한 "재개
+                // 불가, 자연 TTL 만료 후 재시도" 의도와 어긋났다. 여기서는
+                // 재제출하지 않고 이번 tick은 건너뛴다 — TTL(30min)이
+                // 만료되면 다음 tick이 마커 없음으로 보고 새로 submit한다.
+                continue;
             } else {
                 if (await isSkipped(u.symbol, tab)) continue; // FIX C: terminal backoff 중.
 
