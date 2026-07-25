@@ -1,5 +1,10 @@
 import { getEntry, setEntry } from './s3Store.mjs';
-import { markRevalidated, maxRevalidatedAt } from './tagStore.mjs';
+import {
+    ensureTagsFresh,
+    markRevalidated,
+    maxRevalidatedAt,
+    publishRevalidated,
+} from './tagStore.mjs';
 import { config } from './config.mjs';
 
 // Next 16.2가 set()에 넘기는 페이지 태그 헤더 키.
@@ -63,6 +68,10 @@ export default class CacheHandler {
         if (config.disabled) return null; // 런타임 비상 킬스위치
         const entry = await getEntry(cacheKey, ctx?.kind);
         if (!entry) return null;
+        // 멀티 인스턴스: 다른 인스턴스가 기록한 revalidateTag를 로컬 맵에 병합한다.
+        // 콜드 인스턴스의 최초 1회만 실제로 await되고(공유 S3 엔트리를 fresh로 오판하지
+        // 않도록), 이후에는 백그라운드로 돌아 read 경로에 지연을 더하지 않는다.
+        await ensureTagsFresh();
         // soft invalidation: 엔트리 태그 중 하나라도 lastModified 이후 revalidate됐으면 stale.
         if (maxRevalidatedAt(entry.tags || []) > entry.lastModified)
             return null;
@@ -107,10 +116,19 @@ export default class CacheHandler {
 
     // durations(Next16 SWR profile)는 soft invalidation에선 무시하고 now만 기록한다.
     async revalidateTag(tags) {
-        const arr = Array.isArray(tags) ? tags : [tags];
+        // 로컬과 원격이 같은 집합을 보도록 여기서 한 번만 정규화·필터한다.
+        // (필터가 publishRevalidated에만 있으면 빈 문자열 같은 값이 로컬 맵에만 남는다.)
+        const arr = (Array.isArray(tags) ? tags : [tags]).filter(
+            tag => typeof tag === 'string' && tag.length > 0
+        );
+        if (arr.length === 0) return;
+
         const now = Date.now();
+        // 로컬 먼저 — 이 인스턴스의 read-your-writes는 원격 성패와 무관하게 보장된다.
         arr.forEach(tag => markRevalidated(tag, now));
+        // 그다음 durable 기록. 실패해도 throw하지 않고 로컬 전용으로 degrade한다.
+        await publishRevalidated(arr, now);
     }
 
-    resetRequestCache() {} // 로컬 태그맵은 per-request 상태가 아니므로 no-op
+    resetRequestCache() {} // 태그맵은 per-request 상태가 아니므로 no-op
 }

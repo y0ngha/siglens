@@ -163,7 +163,8 @@ seo_analysis_snapshots {
 - CloudWatch 알람 2종(07-alarms.sh 패턴): cron 연속 실패, FMP 402/429.
 - 불가능 콤보는 매트릭스 사전 제외 — 무한 재시도 없음.
 - **워커 백프레셔 (v3 — 구속 제약은 방문 용량이 아니라 워커 처리량)**: 필요 생성 ~1,913/일 vs 워커 ~4/분 = ~1,920/일 상한 — 여유 제로. 특히 technical·overall(주식 261×2=522+)은 KST 05시 앵커 만료라 **매일 강제 재생성분**. 따라서 목표는 "일 단위 갱신으로 수렴"(§2)이며 첫 사이클·워커 혼잡일은 다일 수렴 허용(fail-open이라 SSR 무회귀). 구현 중 워커 처리량 실측 후 심볼/틱·창 폭 조정.
-- **revalidate 제약**: S3 cacheHandler 태그 스토어가 in-process Map — 즉시 반영은 **ASG desired=1에서만 보장**(현재 desired=1, max=4 스케일아웃 경로 존재). 스케일아웃 시 타 인스턴스는 ISR TTL(6~24h)로 지연 수렴 — 일 단위 SEO 신선도에는 허용. 태그 스토어 외부화는 후속 과제(§11).
+- ~~**revalidate 제약**: S3 cacheHandler 태그 스토어가 in-process Map — 즉시 반영은 **ASG desired=1에서만 보장**(현재 desired=1, max=4 스케일아웃 경로 존재). 스케일아웃 시 타 인스턴스는 ISR TTL(6~24h)로 지연 수렴 — 일 단위 SEO 신선도에는 허용. 태그 스토어 외부화는 후속 과제(§11).~~
+  → **2026-07-25 해소**: 태그 스토어를 Upstash Redis 정렬셋으로 외부화해 스케일아웃 시에도 **기존 캐시 엔트리에 대한 무효화**가 5초 내 전파된다. `ASG desired=1`은 더 이상 이 기능의 전제가 아니다. 단 무효화 시점에 **재생성 중이던** 엔트리는 렌더 완료 시각이 lastModified가 되어 TTL까지 fresh로 남는다(선행 레이스, 단일 인스턴스에서도 동일). 상세: [`2026-07-25-isr-tagstore-multi-instance-design.md`](./2026-07-25-isr-tagstore-multi-instance-design.md) §7.
 
 ## 10. 테스트
 

@@ -79,7 +79,10 @@ COPY --chown=node:node --from=builder /app/node_modules/tslib ./node_modules/tsl
 # 도달 가능하게 만드는 전이 의존(transitive dep)의 누락은 잡지 못한다. 실제로
 # S3Client를 construct하면 의존 트리를 더 깊게 로드해 그런 누락을 빌드에서 잡는다.
 RUN node -e "const {S3Client}=require('@aws-sdk/client-s3'); new S3Client({region:'ap-northeast-2'}); console.log('aws-sdk ok')" || (echo 'FAIL: @aws-sdk/client-s3 load/construct' && exit 1)
-RUN node -e "require('node:fs').accessSync('./cache-handler/index.mjs')" || (echo 'FAIL: cache-handler 누락' && exit 1)
+# accessSync는 index.mjs 하나만 본다 — 형제 모듈(tagStore/upstashRest/s3Store/...)이 빠지면
+# 빌드는 통과하고 서버 기동 시 ESM resolution 크래시로 터진다(crash-loop → ASG 인스턴스 교체).
+# 실제로 import해 그래프 전체를 로드시켜 빌드 단계에서 잡는다.
+RUN node --input-type=module -e "await import('./cache-handler/index.mjs'); console.log('cache-handler ok')" || (echo 'FAIL: cache-handler 모듈 그래프 로드 실패' && exit 1)
 USER node
 EXPOSE 3000
 ENTRYPOINT ["/sbin/tini", "--"]

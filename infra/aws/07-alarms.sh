@@ -49,4 +49,22 @@ aws logs put-metric-filter --log-group-name /siglens/app \
 aws cloudwatch put-metric-alarm --alarm-name siglens-isr-cache-failures --namespace Siglens/ISRCache \
   --metric-name IsrCacheFailures --statistic Sum --period 300 --evaluation-periods 1 --threshold 5 \
   --comparison-operator GreaterThanThreshold --treat-missing-data notBreaching $ACTIONS
-log "alarms created (5xx, unhealthy, cpu-credits, disk, mem, isr-cache-failures)"
+
+# 태그 스토어(tagStore.mjs) fail-open 가시성 — 위 s3 필터와 별개의 알람이어야 한다.
+#
+# 1) 리터럴이 다르다: 로그는 '[isr-cache] tag sync|publish|prune failed'라 위 필터에 안 걸린다.
+# 2) 임계값 계산이 다르다: tagStore는 스코프당 60초 스로틀이라 완전 장애여도 300초에
+#    최대 5줄뿐 → 위 알람의 '5 초과' 조건에 영원히 도달하지 못한다.
+#    그래서 period 900(최대 15줄/스코프) + threshold 5 이상 + 2주기로 잡는다.
+#    지속 장애 → 약 30분 내 발화, 일시적 blip(≤2줄) → 무시.
+#
+# 태그 동기화가 죽으면 다른 인스턴스의 무효화를 놓쳐 stale HTML을 revalidate TTL(6~24h)
+# 동안 서빙한다. 조용히 degrade하므로 알람이 유일한 신호다.
+aws logs put-metric-filter --log-group-name /siglens/app \
+  --filter-name siglens-isr-tag-failures \
+  --filter-pattern '?"[isr-cache] tag sync failed" ?"[isr-cache] tag publish failed" ?"[isr-cache] tag prune failed"' \
+  --metric-transformations metricName=IsrTagFailures,metricNamespace=Siglens/ISRCache,metricValue=1
+aws cloudwatch put-metric-alarm --alarm-name siglens-isr-tag-failures --namespace Siglens/ISRCache \
+  --metric-name IsrTagFailures --statistic Sum --period 900 --evaluation-periods 2 --threshold 5 \
+  --comparison-operator GreaterThanOrEqualToThreshold --treat-missing-data notBreaching $ACTIONS
+log "alarms created (5xx, unhealthy, cpu-credits, disk, mem, isr-cache-failures, isr-tag-failures)"

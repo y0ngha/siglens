@@ -170,9 +170,13 @@ cacheHandler 등록은 **빌드 타임 결정**이라 런타임 토글 불가. �
 
 | 단계 | 트리거 | 조치 |
 |---|---|---|
-| **현재** | 단일 인스턴스 | 로컬 in-process 태그맵 |
-| **1차** | 재시작 무효화 휘발 문제 / 가끔 멀티 | **S3 태그 마커**(`siglens-isr/tags/{tag}`에 revalidatedAt 객체) — DynamoDB 없이 S3만으로 영속+멀티 전파 |
-| **2차** | 상시 `desired≥2` + 태그 조회 레이턴시 중요 | **DynamoDB 태그 스토어**(soft invalidation, PK=tag/revalidatedAt 한 컬럼) |
+| ~~**현재**~~ | 단일 인스턴스 | 로컬 in-process 태그맵 |
+| **1차 ✅ 완료(2026-07-25)** | `desired≥2` 안전성 확보 | **Upstash Redis 정렬셋** — [`2026-07-25-isr-tagstore-multi-instance-design.md`](./2026-07-25-isr-tagstore-multi-instance-design.md) |
+| **2차** | 태그 로그 규모가 Upstash 한도에 근접 | DynamoDB 태그 스토어 (현재 불필요) |
+
+1차는 예정했던 S3 태그 마커 대신 **Redis 정렬셋**으로 구현했다 — 태그당 객체 GET이 필요한 S3보다
+증분 범위 조회(`ZRANGE BYSCORE`)가 레이턴시·비용 모두 유리하고, Upstash는 이미 프로비저닝돼 있어
+인프라 변경이 0이다. 상세 근거는 위 문서 §3.
 
 `tagStore.mjs` 상단 주석에도 이 경로를 명시한다.
 
@@ -181,7 +185,8 @@ cacheHandler 등록은 **빌드 타임 결정**이라 런타임 토글 불가. �
 - **커스텀 코드 유지보수**(최대 리스크): S3 검증 라이브러리 없음 → Next 내부 계약(ctx kind/key 형식/durations) 변경에 취약. 완화: OpenNext 구현 참고 + 철저한 단위 테스트 + `NEXT_PRIVATE_DEBUG_CACHE` 검증
 - **staging 부재**: 통합 검증이 배포 후 수동에 의존 (§6)
 - **cacheComponents 부채**: 미래에 `use cache` 활성화 시 `cacheHandlers`(복수) 마이그레이션 필요
-- **로컬 태그맵 한계**: 재시작 시 무효화 휘발(크래시 한정, 배포는 prefix 격리로 무관) / 멀티 전파 없음(스케일아웃 순간) — 둘 다 시간 `revalidate`가 백업
+- ~~**로컬 태그맵 한계**: 재시작 시 무효화 휘발(크래시 한정, 배포는 prefix 격리로 무관) / 멀티 전파 없음(스케일아웃 순간) — 둘 다 시간 `revalidate`가 백업~~
+  → **2026-07-25 해소**: Redis 정렬셋 전파 도입으로 멀티 인스턴스 전파와 재시작 후 복원(부트스트랩 시 보존 기간 전체 학습)이 모두 해결됐다. §8 참조
 
 ## 10. 비용 (추정)
 

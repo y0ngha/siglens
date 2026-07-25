@@ -59,6 +59,9 @@ const coverageConfig = {
         'src/widgets/**/*.{ts,tsx}',
         'src/app/**/*.{ts,tsx}',
         'src/proxy.ts',
+        // ISR 캐시 핸들러는 src/ 밖의 평문 ESM이지만 프로덕션 코드다. include에 없으면
+        // 90% 임계값이 적용되지 않아 커버리지가 조용히 썩는다.
+        'cache-handler/**/*.mjs',
     ],
     exclude: [
         '**/*.d.ts',

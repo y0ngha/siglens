@@ -98,7 +98,8 @@ siglens-isr/{GIT_SHA}/fetch/{encodeURIComponent(key)}.cache   FETCH
 - **커스텀 코드 (최대 리스크)**: S3 검증 라이브러리 없음 → Next 내부 계약(ctx `kind`/`key` 형식, `x-next-cache-tags` 헤더, CacheHandlerValue shape)에 직접 의존. Next 업그레이드 시 깨질 수 있음. 완화: 철저한 단위 테스트 + `NEXT_PRIVATE_DEBUG_CACHE` 검증.
 - **staging 부재**: 실 S3 I/O 자동 검증 불가 → 배포 후 수동 검증 게이트에 의존(통합 테스트는 기본 스킵).
 - **standalone 트레이싱**: cacheHandler가 비활성(E2E)이면 Next가 SDK를 트레이싱 안 함 → Dockerfile 명시 COPY + `require.resolve` 빌드 게이트로 보강. COPY 누락 시 런타임 ENOSPC가 아니라 빌드 실패로 잡아야 함.
-- **로컬 태그맵 휘발**: 인스턴스 재시작 시 무효화 휘발(배포는 prefix 격리라 무관), 멀티 인스턴스 전파 없음 → 둘 다 시간 `revalidate`가 백업.
+- ~~**로컬 태그맵 휘발**: 인스턴스 재시작 시 무효화 휘발(배포는 prefix 격리라 무관), 멀티 인스턴스 전파 없음 → 둘 다 시간 `revalidate`가 백업.~~
+  → **2026-07-25 해소**: Redis 정렬셋 전파 도입. 재시작 후에도 부트스트랩 sync가 보존 기간(7d) 전체를 학습하고, 멀티 인스턴스는 5초 내 수렴한다.
 - **배포마다 전체 cold**: 새 prefix → 외부 API/CPU 스파이크(현 빈-캐시 재시작과 동일 수준, on-demand라 점진 재생성).
 
 ---
