@@ -110,6 +110,7 @@ import {
 } from '@y0ngha/siglens-core';
 import { evaluateSymbolIndexability } from '@/entities/symbol-indexability';
 import { SymbolPageClient } from '@/views/symbol/SymbolPageClient';
+import { TechnicalSnapshotProse } from '@/views/symbol/snapshot/renderers/TechnicalSnapshotProse';
 import { findElementByType } from '@/__tests__/utils/findElementByType';
 import { notFound } from 'next/navigation';
 import type { MockedFunction } from 'vitest';
@@ -480,6 +481,27 @@ describe('Symbol page', () => {
             const serialized = JSON.stringify(tree);
 
             expect(serialized).not.toContain('FAQPage');
+        });
+
+        // audit fix FIX 1: TechnicalSnapshotProse must be a PERSISTENT server
+        // sibling OUTSIDE the Suspense fallback — React destroys the fallback
+        // subtree on hydration, so JS-executing crawlers (Googlebot renderer
+        // included) never see prose that only lives inside `fallback`.
+        // findElementByType only follows `.props.children` (never
+        // `.props.fallback`), so it is a reliable proxy for "is this element a
+        // plain sibling, not buried in the fallback prop" — it would have
+        // returned null against the pre-fix tree (prose nested in
+        // `<Suspense fallback={...}>`).
+        it('mounts TechnicalSnapshotProse as a sibling OUTSIDE the Suspense fallback (FIX 1)', async () => {
+            mockPeekAnalysisCache.mockResolvedValue(null);
+
+            const tree = await SymbolPage({
+                params: Promise.resolve({ symbol: 'aapl' }),
+            });
+
+            expect(
+                findElementByType(tree, TechnicalSnapshotProse)
+            ).not.toBeNull();
         });
 
         it('does not render hidden keyword stuffing copy', async () => {

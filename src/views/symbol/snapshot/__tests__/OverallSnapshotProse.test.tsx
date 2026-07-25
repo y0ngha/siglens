@@ -1,7 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import type { OverallAnalysisResponse } from '@y0ngha/siglens-core';
-import { OverallSnapshotProse } from '../renderers/OverallSnapshotProse';
+import {
+    hasOverallProse,
+    OverallSnapshotProse,
+} from '../renderers/OverallSnapshotProse';
 
 // 스냅샷 저장소 content는 harvest.ts가 core prewarmOverall(→submitOverallAnalysis)의
 // status==='cached' 분기에서 얻은 result.result(OverallAnalysisResponse)를 그대로
@@ -120,7 +123,90 @@ describe('OverallSnapshotProse', () => {
 
         expect(screen.getByText(HEADLINE_TEXT)).toBeInTheDocument();
         expect(screen.queryByText('강세 시나리오')).not.toBeInTheDocument();
+        expect(screen.queryByText('중립 시나리오')).not.toBeInTheDocument();
         expect(screen.queryByText('약세 시나리오')).not.toBeInTheDocument();
         expect(screen.queryByText(CONCLUSION_TEXT)).not.toBeInTheDocument();
+    });
+
+    // FIX 3 (audit): OverallFactsSummary(peek path this renderer replaces) renders
+    // ALL scenarios including neutral PLUS riskFactorsKo — the snapshot renderer had
+    // dropped both, emitting LESS crawlable text than the peek path it replaced.
+    it('중립 시나리오를 강세/약세와 동일하게 라벨 붙은 목록으로 렌더한다 (FIX 3)', () => {
+        render(
+            <OverallSnapshotProse
+                content={buildFixture()}
+                symbol="AAPL"
+                displayName="Apple Inc."
+            />
+        );
+
+        expect(screen.getByText('중립 시나리오')).toBeInTheDocument();
+        expect(
+            screen.getByText(
+                '박스권 등락이 지속되는 경우 (예상 가격대: 190 ~ 210 달러)'
+            )
+        ).toBeInTheDocument();
+    });
+
+    it('riskFactorsKo를 위험 요인 라벨 붙은 목록으로 렌더한다 (FIX 3)', () => {
+        const RISK_TEXT = '규제 리스크가 부각되고 있습니다.';
+        render(
+            <OverallSnapshotProse
+                content={buildFixture({ riskFactorsKo: [RISK_TEXT] })}
+                symbol="AAPL"
+                displayName="Apple Inc."
+            />
+        );
+
+        expect(screen.getByText('위험 요인')).toBeInTheDocument();
+        expect(screen.getByText(RISK_TEXT)).toBeInTheDocument();
+    });
+
+    it('중립 시나리오·riskFactorsKo가 모두 비어있으면 두 섹션 다 렌더하지 않는다 (FIX 3)', () => {
+        render(
+            <OverallSnapshotProse
+                content={buildFixture({
+                    scenarios: [
+                        {
+                            name: 'bullish',
+                            triggerConditionKo:
+                                '200일선을 상향 돌파하고 거래량이 급증하는 경우',
+                            priceRangeKo: '210 ~ 230 달러',
+                        },
+                    ],
+                    riskFactorsKo: [],
+                })}
+                symbol="AAPL"
+                displayName="Apple Inc."
+            />
+        );
+
+        expect(screen.queryByText('중립 시나리오')).not.toBeInTheDocument();
+        expect(screen.queryByText('위험 요인')).not.toBeInTheDocument();
+    });
+});
+
+describe('hasOverallProse', () => {
+    it('narrowOverallContent가 성공하는 content에는 true를 반환한다', () => {
+        expect(hasOverallProse(buildFixture())).toBe(true);
+    });
+
+    it('모든 프로즈 필드가 비어있으면 false를 반환한다 (peek/placeholder 체인으로 폴백해야 함)', () => {
+        expect(
+            hasOverallProse(
+                buildFixture({
+                    headlineKo: '',
+                    integratedConclusionKo: '',
+                    scenarios: [],
+                    riskFactorsKo: [],
+                })
+            )
+        ).toBe(false);
+    });
+
+    it('content가 null·비객체·undefined면 false를 반환한다', () => {
+        expect(hasOverallProse(null)).toBe(false);
+        expect(hasOverallProse('not-an-object')).toBe(false);
+        expect(hasOverallProse(undefined)).toBe(false);
     });
 });

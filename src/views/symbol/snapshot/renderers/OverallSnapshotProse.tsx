@@ -74,7 +74,9 @@ interface NarrowedOverallContent {
     headlineKo: string;
     integratedConclusionKo: string;
     bullishBullets: string[];
+    neutralBullets: string[];
     bearishBullets: string[];
+    riskFactorsKo: string[];
 }
 
 /**
@@ -84,9 +86,11 @@ interface NarrowedOverallContent {
  * `bullishBulletsKo`/`bearishBulletsKo` 같은 전용 배열 필드가 없다 — 대신
  * `scenarios: OverallScenario[]`(각 `{ name: 'bullish'|'neutral'|'bearish',
  * triggerConditionKo, priceRangeKo }`)로 강세/중립/약세 세 시나리오를 표현한다.
- * 이 렌더러는 `scenarios`에서 `name==='bullish'`/`'bearish'` 항목만 골라
- * trigger+priceRange를 합성한 bullet 문자열로 변환한다(`neutral`은 렌더 대상
- * 아님 — "강세 시나리오"/"약세 시나리오" 두 목록만 요구됨).
+ * 이 렌더러는 세 시나리오 전부를 trigger+priceRange를 합성한 bullet 문자열로
+ * 변환한다(audit fix — 이전에는 `neutral`을 드롭했다. 대체 대상인
+ * `OverallFactsSummary`가 세 시나리오 전부를 렌더하므로, neutral을 빼면
+ * 대체 전보다 텍스트가 줄어드는 회귀였다). `riskFactorsKo`도
+ * `OverallFactsSummary`와 동일하게 위험 요인 목록으로 노출한다.
  */
 function narrowOverallContent(content: unknown): NarrowedOverallContent | null {
     if (typeof content !== 'object' || content === null) return null;
@@ -107,16 +111,28 @@ function narrowOverallContent(content: unknown): NarrowedOverallContent | null {
         .filter(s => s.name === 'bullish')
         .map(formatScenarioBullet)
         .filter((bullet): bullet is string => bullet !== null);
+    const neutralBullets = scenarios
+        .filter(s => s.name === 'neutral')
+        .map(formatScenarioBullet)
+        .filter((bullet): bullet is string => bullet !== null);
     const bearishBullets = scenarios
         .filter(s => s.name === 'bearish')
         .map(formatScenarioBullet)
         .filter((bullet): bullet is string => bullet !== null);
 
+    const riskFactorsKo = Array.isArray(record.riskFactorsKo)
+        ? record.riskFactorsKo.filter(
+              (item): item is string => typeof item === 'string'
+          )
+        : [];
+
     if (
         headlineKo.length === 0 &&
         integratedConclusionKo.length === 0 &&
         bullishBullets.length === 0 &&
-        bearishBullets.length === 0
+        neutralBullets.length === 0 &&
+        bearishBullets.length === 0 &&
+        riskFactorsKo.length === 0
     ) {
         return null;
     }
@@ -125,8 +141,29 @@ function narrowOverallContent(content: unknown): NarrowedOverallContent | null {
         headlineKo,
         integratedConclusionKo,
         bullishBullets,
+        neutralBullets,
         bearishBullets,
+        riskFactorsKo,
     };
+}
+
+/**
+ * `overall/page.tsx`가 `<OverallSnapshotProse>`를 렌더할지(스냅샷 프로즈)
+ * 아니면 기존 peek/placeholder 체인(`OverallFactsSummary`/
+ * `OverallFactualFallback`)으로 폴백할지 판단하는 예측기(audit fix FIX 1b).
+ *
+ * 페이지는 이전에 "행 존재 여부"(`overallSnapshot !== undefined`)로
+ * 분기했다 — 그러나 행은 있지만 `content`가 `narrowOverallContent`를
+ * 통과하지 못하면(malformed JSONB) `OverallSnapshotProse`가 `null`을
+ * 반환하는데, 페이지는 이미 peek 분기를 건너뛴 상태라 섹션 전체가
+ * 아무것도 렌더하지 않는 회귀가 생긴다 — 오늘의 baseline(스냅샷 없을 때
+ * peek/placeholder를 보여주던 것)보다 더 나쁜 결과다.
+ *
+ * `narrowOverallContent`를 그대로 재사용해 이 예측기와 컴포넌트가 서로
+ * 다른 판단을 내릴 수 없게 한다(단일 진실 소스).
+ */
+export function hasOverallProse(content: unknown): boolean {
+    return narrowOverallContent(content) !== null;
 }
 
 /**
@@ -134,12 +171,14 @@ function narrowOverallContent(content: unknown): NarrowedOverallContent | null {
  * 세운 패턴(spec 2026-07-24 Task 4)을 그대로 따르는 두 번째 탭 렌더러(Task 5).
  * `headlineKo`를 리드 문구로, `integratedConclusionKo`를 문단으로(`\n` 기준
  * 분리 — technical `summary`의 토픽 구분 관례와 동일하게 방어적으로 처리),
- * 강세/약세 시나리오를 각각 라벨 붙은 목록으로 렌더한다.
+ * 강세/중립/약세 시나리오와 위험 요인을 각각 라벨 붙은 목록으로 렌더한다
+ * (audit fix — 이전에는 neutral 시나리오와 riskFactorsKo를 드롭해 이 렌더러가
+ * 대체하는 `OverallFactsSummary`보다 텍스트가 적었다).
  *
- * 네 프로즈 소스(headline/conclusion/강세 목록/약세 목록) 중 단 하나도 값이
- * 없으면 아무것도 렌더하지 않아 — 빈 셸 없이 — 호출부가 기존 placeholder로
- * 폴백하도록 한다. UA 분기 없음 — 사용자·크롤러에게 동일한 마크업
- * (cloaking-safe).
+ * 다섯 프로즈 소스(headline/conclusion/강세 목록/중립 목록/약세 목록) 모두와
+ * riskFactorsKo가 값이 없으면 아무것도 렌더하지 않아 — 빈 셸 없이 — 호출부가
+ * 기존 placeholder로 폴백하도록 한다(위 `hasOverallProse`가 그 분기를
+ * 담당). UA 분기 없음 — 사용자·크롤러에게 동일한 마크업(cloaking-safe).
  */
 export function OverallSnapshotProse({
     content,
@@ -195,6 +234,30 @@ export function OverallSnapshotProse({
                     </div>
                 )}
 
+                {narrowed.neutralBullets.length > 0 && (
+                    <div>
+                        <h3 className="text-secondary-100 mb-1.5 text-sm font-semibold">
+                            중립 시나리오
+                        </h3>
+                        <ul
+                            aria-label={`${symbol} 중립 시나리오 목록`}
+                            className="space-y-1"
+                        >
+                            {narrowed.neutralBullets.map(bullet => (
+                                <li key={bullet} className="flex gap-2">
+                                    <span
+                                        aria-hidden="true"
+                                        className="mt-0.5 shrink-0"
+                                    >
+                                        •
+                                    </span>
+                                    {bullet}
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                )}
+
                 {narrowed.bearishBullets.length > 0 && (
                     <div>
                         <h3 className="text-secondary-100 mb-1.5 text-sm font-semibold">
@@ -213,6 +276,33 @@ export function OverallSnapshotProse({
                                         •
                                     </span>
                                     {bullet}
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                )}
+
+                {narrowed.riskFactorsKo.length > 0 && (
+                    <div>
+                        <h3 className="text-secondary-100 mb-1.5 text-sm font-semibold">
+                            위험 요인
+                        </h3>
+                        <ul
+                            aria-label={`${symbol} 위험 요인 목록`}
+                            className="space-y-1"
+                        >
+                            {narrowed.riskFactorsKo.map((risk, i) => (
+                                <li
+                                    key={`risk-${i}-${risk}`}
+                                    className="flex gap-2"
+                                >
+                                    <span
+                                        aria-hidden="true"
+                                        className="mt-0.5 shrink-0"
+                                    >
+                                        •
+                                    </span>
+                                    {risk}
                                 </li>
                             ))}
                         </ul>

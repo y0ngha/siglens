@@ -70,6 +70,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         assetInfo,
         degraded,
         revalidateSeconds: 21600,
+        tab: 'technical',
     });
     if (blockedMetadata) return blockedMetadata;
     if (!assetInfo) return NOINDEX_SYMBOL_METADATA;
@@ -271,6 +272,23 @@ export default async function SymbolPage({ params }: Props) {
                         있는 차트 페이지입니다.
                     </p>
                 </section>
+                {/* AI 스냅샷 프로즈는 Suspense fallback이 아니라 PERSISTENT server
+                    sibling으로 마운트한다(audit fix — spec §7의 "SSR-only" 의도와
+                    달리 Suspense fallback 안에 두면 React가 boundary resolve 시
+                    클라이언트에서 그 서브트리를 DESTROY한다: Next.js 정적 HTML에는
+                    fallback이 박히지만, hydration 후 JS를 실행하는 크롤러(Googlebot
+                    렌더러 포함)에게는 사라진다). 나머지 5개 sibling 탭(fundamental/
+                    financials/congress/options/news)과 동일하게 plain SSR sibling
+                    패턴을 따른다. peekAnalysisStatic 결과(cachedAnalysis)는 SSR
+                    프로즈로 렌더되지 않고 initialAnalysis로 CSR-bailout
+                    클라이언트에만 seed되므로(아래 SymbolPageClient) 여기엔 중복
+                    위험이 없다. 스냅샷이 없으면 TechnicalSnapshotProse가 null을
+                    반환해 빈 셸도 없다. */}
+                <TechnicalSnapshotProse
+                    content={technicalSnapshot?.content}
+                    symbol={ticker}
+                    displayName={displayName}
+                />
                 <HydrationBoundary state={dehydrate(queryClient)}>
                     {/* fallback은 두 역할을 겸한다:
                         1. CLS 방지 — 차트 영역(flex-1)을 미리 차지해 useSearchParams
@@ -291,18 +309,6 @@ export default async function SymbolPage({ params }: Props) {
                                 <h1 className="sr-only">
                                     {buildChartPageHeading(displayName)}
                                 </h1>
-                                {/* AI 스냅샷 프로즈(snapshot-first)와 결정적 수치 FactLayer는
-                                    상호보완적이라 둘 다 렌더한다(spec §7) — peekAnalysisStatic
-                                    결과(cachedAnalysis)는 오늘도 SSR 프로즈로 렌더되지 않고
-                                    initialAnalysis로 CSR-bailout 클라이언트에만 seed되므로
-                                    (아래 SymbolPageClient), 여기엔 중복 위험이 없다. 스냅샷이
-                                    없으면 TechnicalSnapshotProse가 null을 반환해 빈 셸도
-                                    없다. */}
-                                <TechnicalSnapshotProse
-                                    content={technicalSnapshot?.content}
-                                    symbol={ticker}
-                                    displayName={displayName}
-                                />
                                 {quantizedFactBars &&
                                 quantizedFactBars.bars.length > 0 ? (
                                     <TechnicalFactsSummary

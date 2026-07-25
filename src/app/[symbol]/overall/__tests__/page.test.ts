@@ -75,7 +75,10 @@ import {
     peekOverallAnalysisCache,
 } from '@y0ngha/siglens-core';
 import { OverallContent } from '@/widgets/overall/OverallContent';
+import { OverallFactsSummary, OverallFactualFallback } from '@/widgets/overall';
+import { OverallSnapshotProse } from '@/views/symbol/snapshot/renderers/OverallSnapshotProse';
 import { findElementByType } from '@/__tests__/utils/findElementByType';
+import { Suspense, isValidElement, type ReactNode } from 'react';
 import type { MockedFunction } from 'vitest';
 
 const mockGetAssetInfoResilient = getAssetInfoResilient as MockedFunction<
@@ -272,5 +275,110 @@ describe('Overall page (narrative seed)', () => {
         const props = await getOverallProps();
         // 페이지가 throw 안 함 + hasEnrichedNews=false로 client가 폴링 시작
         expect(props.hasEnrichedNews).toBe(false);
+    });
+});
+
+// audit fix FIX 1 / FIX 1b: OverallSnapshotProse must be a PERSISTENT server
+// sibling OUTSIDE the Suspense fallback — React destroys the fallback subtree
+// on hydration, so JS-executing crawlers (Googlebot renderer included) never
+// see prose that only lives inside `fallback`. findElementByType only follows
+// `.props.children` (never `.props.fallback`), so it is a reliable proxy for
+// "is this element a plain sibling, not buried in the fallback prop" — it
+// would have returned null against the pre-fix tree.
+describe('Overall page snapshot prose placement (FIX 1 / FIX 1b)', () => {
+    // Local helper (test-only): descends through `.props.children` until it
+    // hits the page's <Suspense>, then returns that Suspense's `fallback`
+    // prop node so we can assert what's INSIDE the fallback subtree —
+    // findElementByType intentionally never does this (see file-header note).
+    function findSuspenseFallback(node: ReactNode): ReactNode {
+        if (Array.isArray(node)) {
+            for (const child of node) {
+                const result = findSuspenseFallback(child);
+                if (result !== undefined) return result;
+            }
+            return undefined;
+        }
+        if (!isValidElement(node)) return undefined;
+        if (node.type === Suspense) {
+            return (node.props as { fallback?: ReactNode }).fallback;
+        }
+        const childProps = node.props as { children?: ReactNode };
+        return findSuspenseFallback(childProps.children);
+    }
+
+    beforeEach(() => {
+        mockGetAssetInfoResilient.mockReset();
+        mockPeekOverall.mockReset();
+        mockGetSeoSnapshotsStatic.mockReset();
+        mockGetAssetInfoResilient.mockResolvedValue({
+            assetInfo: {
+                symbol: 'AAPL',
+                name: 'Apple Inc.',
+                koreanName: '애플',
+                fmpSymbol: 'AAPL',
+            },
+            degraded: false,
+        } as never);
+    });
+
+    it('(a) valid snapshot: OverallSnapshotProse renders as a sibling OUTSIDE Suspense; FactsSummary/FactualFallback suppressed', async () => {
+        mockPeekOverall.mockResolvedValue(null);
+        mockGetSeoSnapshotsStatic.mockResolvedValue([
+            {
+                symbol: 'AAPL',
+                tab: 'overall',
+                content: { headlineKo: 'valid headline' },
+                model: 'deepseek-v4-flash',
+                generatedAt: new Date(),
+                updatedAt: new Date(),
+            },
+        ]);
+
+        const tree = await OverallPage({
+            params: Promise.resolve({ symbol: 'aapl' }),
+        });
+
+        expect(findElementByType(tree, OverallSnapshotProse)).not.toBeNull();
+        expect(findSuspenseFallback(tree)).toBeNull();
+    });
+
+    it('(b) row present but content malformed: prose does NOT render, peek/fallback chain renders instead (regression guard — this must fail against row-existence gating)', async () => {
+        const cached = { headlineKo: 'cached overall' };
+        mockPeekOverall.mockResolvedValue(cached as never);
+        mockGetSeoSnapshotsStatic.mockResolvedValue([
+            {
+                symbol: 'AAPL',
+                tab: 'overall',
+                // Malformed: none of the fields narrowOverallContent recognizes
+                // are present, so hasOverallProse(content) === false.
+                content: { unrelatedField: 'nope' },
+                model: 'deepseek-v4-flash',
+                generatedAt: new Date(),
+                updatedAt: new Date(),
+            },
+        ]);
+
+        const tree = await OverallPage({
+            params: Promise.resolve({ symbol: 'aapl' }),
+        });
+
+        expect(findElementByType(tree, OverallSnapshotProse)).toBeNull();
+        const fallback = findSuspenseFallback(tree);
+        expect(findElementByType(fallback, OverallFactsSummary)).not.toBeNull();
+    });
+
+    it('(c) no snapshot row: peek/fallback chain renders as today (OverallFactualFallback when no peek either)', async () => {
+        mockPeekOverall.mockResolvedValue(null);
+        mockGetSeoSnapshotsStatic.mockResolvedValue([]);
+
+        const tree = await OverallPage({
+            params: Promise.resolve({ symbol: 'aapl' }),
+        });
+
+        expect(findElementByType(tree, OverallSnapshotProse)).toBeNull();
+        const fallback = findSuspenseFallback(tree);
+        expect(
+            findElementByType(fallback, OverallFactualFallback)
+        ).not.toBeNull();
     });
 });

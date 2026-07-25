@@ -71,6 +71,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         assetInfo,
         degraded,
         revalidateSeconds: 86400,
+        tab: 'financials',
     });
     if (blockedMetadata) return blockedMetadata;
 

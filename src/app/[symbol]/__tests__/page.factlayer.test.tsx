@@ -284,7 +284,12 @@ describe('SymbolPage — FactLayer SSR integration', () => {
             } as never);
         });
 
-        it('스냅샷 있으면 Suspense fallback에 TechnicalSnapshotProse를 렌더한다(FactsSummary와 공존)', async () => {
+        // audit fix FIX 1: TechnicalSnapshotProse moved OUT of the Suspense
+        // fallback to a persistent server sibling (React destroys the
+        // fallback subtree on hydration, so JS-executing crawlers never saw
+        // it there). It is now found via a plain children-only traversal of
+        // `tree`, not via `findSuspenseFallback`.
+        it('스냅샷 있으면 Suspense fallback 밖 persistent sibling으로 TechnicalSnapshotProse를 렌더한다(FactsSummary는 fallback 안에서 공존)', async () => {
             mockGetSeoSnapshotsStatic.mockResolvedValue([
                 {
                     symbol: 'AAPL',
@@ -298,15 +303,16 @@ describe('SymbolPage — FactLayer SSR integration', () => {
             const tree = await SymbolPage({
                 params: Promise.resolve({ symbol: 'aapl' }),
             });
-            const fallback = findSuspenseFallback(tree);
 
-            const prose = findElementByType(fallback, TechnicalSnapshotProse);
+            const prose = findElementByType(tree, TechnicalSnapshotProse);
             expect(prose).not.toBeNull();
             expect((prose?.props as { content: unknown }).content).toEqual({
                 summary: '단기 상승 모멘텀',
                 trend: 'bullish',
             });
-            // Complementary, not exclusive — deterministic facts still render.
+            // Complementary, not exclusive — deterministic facts still render
+            // inside the Suspense fallback.
+            const fallback = findSuspenseFallback(tree);
             expect(
                 findElementByType(fallback, TechnicalFactsSummary)
             ).not.toBeNull();
@@ -318,14 +324,14 @@ describe('SymbolPage — FactLayer SSR integration', () => {
             const tree = await SymbolPage({
                 params: Promise.resolve({ symbol: 'aapl' }),
             });
-            const fallback = findSuspenseFallback(tree);
 
-            const prose = findElementByType(fallback, TechnicalSnapshotProse);
+            const prose = findElementByType(tree, TechnicalSnapshotProse);
             expect(prose).not.toBeNull();
             expect(
                 (prose?.props as { content: unknown }).content
             ).toBeUndefined();
-            // Existing FactLayer behavior is unchanged.
+            // Existing FactLayer behavior is unchanged (still in fallback).
+            const fallback = findSuspenseFallback(tree);
             expect(
                 findElementByType(fallback, TechnicalFactsSummary)
             ).not.toBeNull();
@@ -345,9 +351,8 @@ describe('SymbolPage — FactLayer SSR integration', () => {
             const tree = await SymbolPage({
                 params: Promise.resolve({ symbol: 'aapl' }),
             });
-            const fallback = findSuspenseFallback(tree);
 
-            const prose = findElementByType(fallback, TechnicalSnapshotProse);
+            const prose = findElementByType(tree, TechnicalSnapshotProse);
             expect(
                 (prose?.props as { content: unknown }).content
             ).toBeUndefined();

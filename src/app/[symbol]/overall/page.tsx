@@ -1,7 +1,10 @@
 import { OverallContent } from '@/widgets/overall/OverallContent';
 import { getBlockedSymbolMetadata } from '@/app/[symbol]/symbolIndexabilityMetadata';
 import { OverallFactualFallback, OverallFactsSummary } from '@/widgets/overall';
-import { OverallSnapshotProse } from '@/views/symbol/snapshot/renderers/OverallSnapshotProse';
+import {
+    hasOverallProse,
+    OverallSnapshotProse,
+} from '@/views/symbol/snapshot/renderers/OverallSnapshotProse';
 import { SymbolPageHeading } from '@/views/symbol';
 import { CrossLinkCards } from '@/shared/ui/CrossLinkCards';
 import { JsonLd } from '@/shared/ui/JsonLd';
@@ -65,6 +68,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         assetInfo,
         degraded,
         revalidateSeconds: 43200,
+        tab: 'overall',
     });
     if (blockedMetadata) return blockedMetadata;
     if (!assetInfo) return NOINDEX_SYMBOL_METADATA;
@@ -180,13 +184,18 @@ export default async function OverallPage({ params }: Props) {
     ]);
     const hasEnrichedNews = newsItems.some(item => item.sentiment !== null);
 
-    // snapshot-first, 기존 peek fallback 유지 (spec §7): 스냅샷 행이 있으면 그것을
-    // canonical SSR 분석으로 쓰고(아래 Suspense fallback의 `overallSnapshot !== undefined`
-    // 분기), 없으면 기존 peek(cachedOverall) 결과로, 그것도 없으면 기존
-    // OverallFactualFallback placeholder로 내려간다. "행 존재"를 게이트로 쓴다 — content
-    // 파싱 실패(malformed) 여부까지 여기서 재검증하지 않는다(OverallSnapshotProse 자체가
-    // 방어적으로 null 렌더하므로 이중 파싱을 피한다).
+    // snapshot-first, 기존 peek fallback 유지 (spec §7): 스냅샷이 실제로 렌더 가능하면
+    // 그것을 canonical SSR 분석으로 쓰고, 아니면 기존 peek(cachedOverall) 결과로, 그것도
+    // 없으면 기존 OverallFactualFallback placeholder로 내려간다.
+    //
+    // "행 존재"가 아니라 "렌더 가능 여부"(`hasOverallProse`)를 게이트로 쓴다(audit fix
+    // FIX 1b) — 행은 있지만 content가 malformed라 OverallSnapshotProse가 null을
+    // 반환하는 경우, 행 존재만 보고 게이트했다면 peek/placeholder 체인까지 스킵돼
+    // 섹션이 통째로 비어버리는(오늘 baseline보다 더 나쁜) 회귀가 생긴다.
+    // hasOverallProse는 OverallSnapshotProse 내부와 동일한 narrowOverallContent를
+    // 재사용하므로 두 판단이 어긋날 수 없다.
     const overallSnapshot = snapshots.find(s => s.tab === 'overall');
+    const showSnapshotProse = hasOverallProse(overallSnapshot?.content);
 
     const displayName = buildDisplayName(assetInfo, upper);
     const marketProfile = marketProfileOf(assetInfo);
@@ -330,22 +339,31 @@ export default async function OverallPage({ params }: Props) {
                         </>
                     )}
                 </section>
+                {/* AI 스냅샷 프로즈는 Suspense fallback이 아니라 PERSISTENT server
+                    sibling으로 마운트한다(audit fix — fallback 안에 두면 React가
+                    boundary resolve 시 클라이언트에서 그 서브트리를 DESTROY한다:
+                    정적 HTML에는 fallback이 박히지만, hydration 후 JS를 실행하는
+                    크롤러(Googlebot 렌더러 포함)에게는 사라진다). 나머지 5개
+                    sibling 탭과 동일한 plain SSR sibling 패턴을 따른다.
+                    `showSnapshotProse`(hasOverallProse) 게이트로 peek/placeholder
+                    체인과 상호 배타 처리한다 — 동일 AI 분석 텍스트 중복 방지. */}
+                {showSnapshotProse && (
+                    <OverallSnapshotProse
+                        content={overallSnapshot?.content}
+                        symbol={upper}
+                        displayName={displayName}
+                    />
+                )}
                 {/* fallback은 두 역할을 겸한다: (1) useSearchParams CSR-bailout 서브트리가
                     hydration 전 비어 보이는 flash/CLS 방지, (2) 분석 텍스트를 크롤러가
                     JS 없이도 읽을 수 있도록 SSR HTML에 박는다. snapshot-first, 기존 peek
-                    fallback 유지(spec §7) — 스냅샷 있으면 스냅샷, 없으면 기존 peek
-                    (cachedOverall) 결과, 그것도 없으면 기존 placeholder로 내려간다.
-                    스냅샷과 peek을 동시에 렌더하면 동일 AI 분석 텍스트가 중복되므로
-                    `overallSnapshot !== undefined` 분기로 상호 배타 처리한다. */}
+                    fallback 유지(spec §7) — 스냅샷이 렌더 가능하면 위에서 이미 프로즈를
+                    보여줬으므로 이 fallback은 peek(cachedOverall) 결과로, 그것도 없으면
+                    기존 placeholder로 내려간다. `showSnapshotProse` 게이트로 스냅샷
+                    프로즈와 peek을 동시에 렌더하지 않아 중복이 없다. */}
                 <Suspense
                     fallback={
-                        overallSnapshot !== undefined ? (
-                            <OverallSnapshotProse
-                                content={overallSnapshot.content}
-                                symbol={upper}
-                                displayName={displayName}
-                            />
-                        ) : cachedOverall ? (
+                        showSnapshotProse ? null : cachedOverall ? (
                             <OverallFactsSummary
                                 symbol={upper}
                                 analysis={cachedOverall}

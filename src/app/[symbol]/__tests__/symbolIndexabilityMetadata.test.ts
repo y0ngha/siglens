@@ -37,6 +37,7 @@ describe('getBlockedSymbolMetadata', () => {
             assetInfo: ASSET_INFO,
             degraded: false,
             revalidateSeconds: 21600,
+            tab: 'technical',
         });
 
         expect(mockGetSeoSnapshotsStatic).not.toHaveBeenCalled();
@@ -60,13 +61,14 @@ describe('getBlockedSymbolMetadata', () => {
             assetInfo: ASSET_INFO,
             degraded: false,
             revalidateSeconds: 21600,
+            tab: 'technical',
         });
 
         expect(mockGetSeoSnapshotsStatic).not.toHaveBeenCalled();
         expect(result).toEqual(NOINDEX_SYMBOL_METADATA);
     });
 
-    it('reads snapshots on the degraded path and threads hasSnapshot=true when a snapshot exists', async () => {
+    it('reads snapshots on the degraded path and threads hasSnapshot=true when a same-tab snapshot exists', async () => {
         mockGetSeoSnapshotsStatic.mockResolvedValue([
             { symbol: 'AAPL', tab: 'technical' },
         ]);
@@ -80,6 +82,7 @@ describe('getBlockedSymbolMetadata', () => {
             assetInfo: ASSET_INFO,
             degraded: true,
             revalidateSeconds: 21600,
+            tab: 'technical',
         });
 
         expect(mockGetSeoSnapshotsStatic).toHaveBeenCalledWith('AAPL', 21600);
@@ -104,6 +107,7 @@ describe('getBlockedSymbolMetadata', () => {
             assetInfo: ASSET_INFO,
             degraded: true,
             revalidateSeconds: 43200,
+            tab: 'technical',
         });
 
         expect(mockGetSeoSnapshotsStatic).toHaveBeenCalledWith('AAPL', 43200);
@@ -112,6 +116,65 @@ describe('getBlockedSymbolMetadata', () => {
             assetInfo: ASSET_INFO,
             degraded: true,
             hasSnapshot: false,
+        });
+        expect(result).toEqual(NOINDEX_SYMBOL_METADATA);
+    });
+
+    // Regression guard for FIX 2 (audit): a degraded+whitelisted symbol with a
+    // snapshot row for a DIFFERENT tab must NOT be flipped indexable. Before
+    // this fix, hasSnapshot was `(await getSeoSnapshotsStatic(...)).length > 0`
+    // — true for ANY tab's row — so e.g. a degraded `/congress` with only a
+    // `technical` row was marked indexable while its body renders the thin
+    // degraded shell.
+    it('a snapshot row for a DIFFERENT tab does NOT flip hasSnapshot to true (regression guard)', async () => {
+        mockGetSeoSnapshotsStatic.mockResolvedValue([
+            { symbol: 'AAPL', tab: 'technical' },
+        ]);
+        mockEvaluateSymbolIndexability.mockReturnValue({
+            indexable: false,
+            reason: 'degraded',
+        });
+
+        const result = await getBlockedSymbolMetadata({
+            symbol: 'AAPL',
+            assetInfo: ASSET_INFO,
+            degraded: true,
+            revalidateSeconds: 86400,
+            tab: 'congress',
+        });
+
+        expect(mockGetSeoSnapshotsStatic).toHaveBeenCalledWith('AAPL', 86400);
+        expect(mockEvaluateSymbolIndexability).toHaveBeenCalledWith({
+            symbol: 'AAPL',
+            assetInfo: ASSET_INFO,
+            degraded: true,
+            hasSnapshot: false,
+        });
+        expect(result).toEqual(NOINDEX_SYMBOL_METADATA);
+    });
+
+    // fear-greed/position pass no `tab` — the DB read must be skipped entirely
+    // and hasSnapshot must stay undefined so the existing degraded→noindex
+    // behavior is preserved (never flipped indexable by another tab's row).
+    it('skips the DB read entirely and keeps hasSnapshot=undefined when no tab is given (fear-greed/position)', async () => {
+        mockEvaluateSymbolIndexability.mockReturnValue({
+            indexable: false,
+            reason: 'degraded',
+        });
+
+        const result = await getBlockedSymbolMetadata({
+            symbol: 'AAPL',
+            assetInfo: ASSET_INFO,
+            degraded: true,
+            revalidateSeconds: 86400,
+        });
+
+        expect(mockGetSeoSnapshotsStatic).not.toHaveBeenCalled();
+        expect(mockEvaluateSymbolIndexability).toHaveBeenCalledWith({
+            symbol: 'AAPL',
+            assetInfo: ASSET_INFO,
+            degraded: true,
+            hasSnapshot: undefined,
         });
         expect(result).toEqual(NOINDEX_SYMBOL_METADATA);
     });

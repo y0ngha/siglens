@@ -244,7 +244,13 @@ describe('OverallPage — FactLayer SSR integration', () => {
             generatedAt: new Date('2026-07-24'),
         };
 
-        it('스냅샷 있으면 peek HIT이어도 OverallSnapshotProse를 렌더하고 OverallFactsSummary는 렌더하지 않는다(중복 방지)', async () => {
+        // audit fix FIX 1 / FIX 1b: OverallSnapshotProse moved OUT of the
+        // Suspense fallback to a persistent server sibling (React destroys
+        // the fallback subtree on hydration, so JS-executing crawlers never
+        // saw it there). It is now found via a plain children-only traversal
+        // of `tree`, not via `findSuspenseFallback`. The fallback itself is
+        // `null` (suppressed) when the snapshot renders, per FIX 1b.
+        it('스냅샷 있으면 peek HIT이어도 Suspense 밖 persistent sibling으로 OverallSnapshotProse를 렌더하고 fallback은 suppress한다(중복 방지)', async () => {
             mockGetSeoSnapshotsStatic.mockResolvedValue([OVERALL_SNAPSHOT_ROW]);
             mockStatic.mockImplementation(async (key: readonly unknown[]) => {
                 if (key[0] === NEWS_LIST_CACHE_KEY) return [] as never;
@@ -254,17 +260,13 @@ describe('OverallPage — FactLayer SSR integration', () => {
             const tree = await OverallPage({
                 params: Promise.resolve({ symbol: 'aapl' }),
             });
-            const fallback = findSuspenseFallback(tree);
 
-            const prose = findElementByType(fallback, OverallSnapshotProse);
+            const prose = findElementByType(tree, OverallSnapshotProse);
             expect(prose).not.toBeNull();
             expect((prose?.props as { content: unknown }).content).toEqual(
                 OVERALL_SNAPSHOT_ROW.content
             );
-            expect(findElementByType(fallback, OverallFactsSummary)).toBeNull();
-            expect(
-                findElementByType(fallback, OverallFactualFallback)
-            ).toBeNull();
+            expect(findSuspenseFallback(tree)).toBeNull();
         });
 
         it('스냅샷 없고 peek HIT이면 기존대로 OverallFactsSummary를 렌더한다(peek fallback 유지)', async () => {
