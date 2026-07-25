@@ -70,7 +70,13 @@ describe('getBlockedSymbolMetadata', () => {
 
     it('reads snapshots on the degraded path and threads hasSnapshot=true when a same-tab snapshot exists', async () => {
         mockGetSeoSnapshotsStatic.mockResolvedValue([
-            { symbol: 'AAPL', tab: 'technical' },
+            // content must be RENDERABLE (FIX 1), not merely present — a
+            // valid `summary` passes narrowTechnicalContent/hasTechnicalProse.
+            {
+                symbol: 'AAPL',
+                tab: 'technical',
+                content: { summary: '유효한 기술적 분석 요약 텍스트입니다.' },
+            },
         ]);
         mockEvaluateSymbolIndexability.mockReturnValue({
             indexable: true,
@@ -144,6 +150,42 @@ describe('getBlockedSymbolMetadata', () => {
         });
 
         expect(mockGetSeoSnapshotsStatic).toHaveBeenCalledWith('AAPL', 86400);
+        expect(mockEvaluateSymbolIndexability).toHaveBeenCalledWith({
+            symbol: 'AAPL',
+            assetInfo: ASSET_INFO,
+            degraded: true,
+            hasSnapshot: false,
+        });
+        expect(result).toEqual(NOINDEX_SYMBOL_METADATA);
+    });
+
+    // FIX 1 (audit): a same-tab row whose `content` is malformed (fails the
+    // renderer's narrowing) must NOT flip hasSnapshot to true. Before this
+    // fix, `hasSnapshot` was `.some(s => s.tab === tab)` — TRUE for any
+    // same-tab row regardless of whether its content renders — so a
+    // degraded+whitelisted symbol with a malformed `technical` row was marked
+    // indexable while `TechnicalSnapshotProse` null-renders the thin
+    // degraded shell for that same content.
+    it('a same-tab row whose content is malformed does NOT flip hasSnapshot to true (FIX 1 regression guard)', async () => {
+        mockGetSeoSnapshotsStatic.mockResolvedValue([
+            // missing `summary` (and no other narrowable field) — fails
+            // narrowTechnicalContent, so hasTechnicalProse(content) === false.
+            { symbol: 'AAPL', tab: 'technical', content: { foo: 'bar' } },
+        ]);
+        mockEvaluateSymbolIndexability.mockReturnValue({
+            indexable: false,
+            reason: 'degraded',
+        });
+
+        const result = await getBlockedSymbolMetadata({
+            symbol: 'AAPL',
+            assetInfo: ASSET_INFO,
+            degraded: true,
+            revalidateSeconds: 21600,
+            tab: 'technical',
+        });
+
+        expect(mockGetSeoSnapshotsStatic).toHaveBeenCalledWith('AAPL', 21600);
         expect(mockEvaluateSymbolIndexability).toHaveBeenCalledWith({
             symbol: 'AAPL',
             assetInfo: ASSET_INFO,

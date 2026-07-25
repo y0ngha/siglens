@@ -62,6 +62,19 @@ function narrowTechnicalContent(
 }
 
 /**
+ * `technical/page.tsx`(차트 페이지, `src/app/[symbol]/page.tsx`)가 이 탭의
+ * 스냅샷 행을 indexable 신호로 쓸지 판단하는 예측기(audit fix FIX 1 —
+ * `OverallSnapshotProse.hasOverallProse` 패턴). 행이 존재해도 `content`가
+ * `narrowTechnicalContent`를 통과 못 하면(malformed JSONB) 렌더러가 `null`을
+ * 반환해 본문은 얇은 degraded shell인데 메타데이터만 indexable로 마킹되는
+ * 회귀를 막는다 — `narrowTechnicalContent`를 그대로 재사용해 이 예측기와
+ * 컴포넌트가 서로 다른 판단을 내릴 수 없게 한다(단일 진실 소스).
+ */
+export function hasTechnicalProse(content: unknown): boolean {
+    return narrowTechnicalContent(content) !== null;
+}
+
+/**
  * SEO pre-warm 스냅샷의 technical 탭 프로즈 렌더러 — 7개 탭 렌더러가 따를
  * 첫 패턴(spec 2026-07-24 Task 4). `summary`(Korean 멀티토픽 요약, `\n`으로
  * 토픽 구분)를 문단으로, `trend`가 있으면 방향성 리드 문구를 렌더한다.
