@@ -4,6 +4,8 @@ import type {
 } from '@y0ngha/siglens-core';
 import { SnapshotSummarySection } from '../SnapshotSummarySection';
 import { stripSnapshotMarkdown } from '../lib/stripSnapshotMarkdown';
+import { createEnumGuard } from '../lib/createEnumGuard';
+import { narrowStringArray } from '../lib/narrowStringArray';
 
 interface FundamentalSnapshotProseProps {
     /**
@@ -31,13 +33,10 @@ const SENTIMENT_LABEL: Record<FundamentalSentiment, string> = {
     bearish: '부정',
 };
 
-function isSentiment(value: unknown): value is FundamentalSentiment {
-    // Object.hasOwn (not `value in SENTIMENT_LABEL`) — `in` walks the
-    // prototype chain (`'__proto__' in SENTIMENT_LABEL` is true), which can
-    // crash React rendering or leak function source on malformed JSONB
-    // (audit fix — see TechnicalSnapshotProse.isTrend for the full rationale).
-    return typeof value === 'string' && Object.hasOwn(SENTIMENT_LABEL, value);
-}
+// See createEnumGuard's JSDoc for the Object.hasOwn / prototype-chain
+// rationale (audit fix; PR #698 round-2 review FIX 3 extracted the shared
+// implementation).
+const isSentiment = createEnumGuard(SENTIMENT_LABEL);
 
 const CATEGORY_LABEL: Record<FundamentalCategory, string> = {
     valuation: '밸류에이션',
@@ -47,10 +46,7 @@ const CATEGORY_LABEL: Record<FundamentalCategory, string> = {
     futureDirection: '미래 방향',
 };
 
-function isCategory(value: unknown): value is FundamentalCategory {
-    // Object.hasOwn — see isSentiment above for the prototype-chain rationale.
-    return typeof value === 'string' && Object.hasOwn(CATEGORY_LABEL, value);
-}
+const isCategory = createEnumGuard(CATEGORY_LABEL);
 
 interface NarrowedCategoryAssessment {
     category: FundamentalCategory;
@@ -110,12 +106,7 @@ function narrowFundamentalContent(
               .filter(a => a !== null)
         : [];
 
-    const riskFactorsKo = Array.isArray(record.riskFactorsKo)
-        ? record.riskFactorsKo
-              .filter((item): item is string => typeof item === 'string')
-              .map(item => stripSnapshotMarkdown(item).trim())
-              .filter(item => item.length > 0)
-        : [];
+    const riskFactorsKo = narrowStringArray(record.riskFactorsKo);
 
     if (
         overallConclusionKo.length === 0 &&

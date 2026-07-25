@@ -1,6 +1,8 @@
 import type { CongressSentiment } from '@y0ngha/siglens-core';
 import { SnapshotSummarySection } from '../SnapshotSummarySection';
 import { stripSnapshotMarkdown } from '../lib/stripSnapshotMarkdown';
+import { createEnumGuard } from '../lib/createEnumGuard';
+import { narrowStringArray } from '../lib/narrowStringArray';
 
 interface CongressSnapshotProseProps {
     /**
@@ -26,13 +28,10 @@ const SENTIMENT_LABEL: Record<CongressSentiment, string> = {
     bearish: '매도 우위',
 };
 
-function isSentiment(value: unknown): value is CongressSentiment {
-    // Object.hasOwn (not `value in SENTIMENT_LABEL`) — `in` walks the
-    // prototype chain (`'__proto__' in SENTIMENT_LABEL` is true), which can
-    // crash React rendering or leak function source on malformed JSONB
-    // (audit fix — see TechnicalSnapshotProse.isTrend for the full rationale).
-    return typeof value === 'string' && Object.hasOwn(SENTIMENT_LABEL, value);
-}
+// See createEnumGuard's JSDoc for the Object.hasOwn / prototype-chain
+// rationale (audit fix; PR #698 round-2 review FIX 3 extracted the shared
+// implementation).
+const isSentiment = createEnumGuard(SENTIMENT_LABEL);
 
 interface NarrowedCongressContent {
     summaryKo: string;
@@ -62,12 +61,7 @@ function narrowCongressContent(
         ? record.overallSentiment
         : null;
 
-    const notableMembersKo = Array.isArray(record.notableMembersKo)
-        ? record.notableMembersKo
-              .filter((item): item is string => typeof item === 'string')
-              .map(item => stripSnapshotMarkdown(item).trim())
-              .filter(item => item.length > 0)
-        : [];
+    const notableMembersKo = narrowStringArray(record.notableMembersKo);
 
     const riskNoteKo =
         typeof record.riskNoteKo === 'string'

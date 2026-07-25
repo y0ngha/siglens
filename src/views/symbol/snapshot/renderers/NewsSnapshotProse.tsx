@@ -1,6 +1,8 @@
 import type { NewsSentiment } from '@y0ngha/siglens-core';
 import { SnapshotSummarySection } from '../SnapshotSummarySection';
 import { stripSnapshotMarkdown } from '../lib/stripSnapshotMarkdown';
+import { createEnumGuard } from '../lib/createEnumGuard';
+import { narrowStringArray } from '../lib/narrowStringArray';
 
 interface NewsSnapshotProseProps {
     /**
@@ -28,13 +30,10 @@ const SENTIMENT_LABEL: Record<NewsSentiment, string> = {
     bearish: '부정',
 };
 
-function isSentiment(value: unknown): value is NewsSentiment {
-    // Object.hasOwn (not `value in SENTIMENT_LABEL`) — `in` walks the
-    // prototype chain (`'__proto__' in SENTIMENT_LABEL` is true), which can
-    // crash React rendering or leak function source on malformed JSONB
-    // (audit fix — see TechnicalSnapshotProse.isTrend for the full rationale).
-    return typeof value === 'string' && Object.hasOwn(SENTIMENT_LABEL, value);
-}
+// See createEnumGuard's JSDoc for the Object.hasOwn / prototype-chain
+// rationale (audit fix; PR #698 round-2 review FIX 3 extracted the shared
+// implementation).
+const isSentiment = createEnumGuard(SENTIMENT_LABEL);
 
 interface NarrowedNewsContent {
     currentDriverKo: string;
@@ -62,19 +61,8 @@ function narrowNewsContent(content: unknown): NarrowedNewsContent | null {
         ? record.overallSentiment
         : null;
 
-    const keyEventsKo = Array.isArray(record.keyEventsKo)
-        ? record.keyEventsKo
-              .filter((item): item is string => typeof item === 'string')
-              .map(item => stripSnapshotMarkdown(item).trim())
-              .filter(item => item.length > 0)
-        : [];
-
-    const upcomingEventsKo = Array.isArray(record.upcomingEventsKo)
-        ? record.upcomingEventsKo
-              .filter((item): item is string => typeof item === 'string')
-              .map(item => stripSnapshotMarkdown(item).trim())
-              .filter(item => item.length > 0)
-        : [];
+    const keyEventsKo = narrowStringArray(record.keyEventsKo);
+    const upcomingEventsKo = narrowStringArray(record.upcomingEventsKo);
 
     if (
         currentDriverKo.length === 0 &&

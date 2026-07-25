@@ -1,6 +1,7 @@
 import type { Trend } from '@y0ngha/siglens-core';
 import { SnapshotSummarySection } from '../SnapshotSummarySection';
 import { stripSnapshotMarkdown } from '../lib/stripSnapshotMarkdown';
+import { createEnumGuard } from '../lib/createEnumGuard';
 
 interface TechnicalSnapshotProseProps {
     /**
@@ -21,14 +22,10 @@ const TREND_LABEL: Record<Trend, string> = {
     neutral: '보합',
 };
 
-function isTrend(value: unknown): value is Trend {
-    // Object.hasOwn (not `value in TREND_LABEL`) — `in` walks the prototype
-    // chain, so `'__proto__' in TREND_LABEL` is true and `TREND_LABEL['__proto__']`
-    // yields `Object.prototype`, which React throws on when rendered as a
-    // child ("Objects are not valid as a React child") — a malformed JSONB
-    // `trend` value could crash ISR generation (audit fix).
-    return typeof value === 'string' && Object.hasOwn(TREND_LABEL, value);
-}
+// See createEnumGuard's JSDoc for the Object.hasOwn / prototype-chain
+// rationale (audit fix; PR #698 round-2 review FIX 3 extracted the shared
+// implementation).
+const isTrend = createEnumGuard(TREND_LABEL);
 
 interface NarrowedSkillDetection {
     /** `patternName` (pattern) or `strategyName` (strategy) — the skill identifier. */

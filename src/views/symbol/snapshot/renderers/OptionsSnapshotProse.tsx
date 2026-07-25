@@ -1,6 +1,7 @@
 import type { OptionsSignalKind, OptionsTone } from '@y0ngha/siglens-core';
 import { SnapshotSummarySection } from '../SnapshotSummarySection';
 import { stripSnapshotMarkdown } from '../lib/stripSnapshotMarkdown';
+import { createEnumGuard } from '../lib/createEnumGuard';
 
 interface OptionsSnapshotProseProps {
     /**
@@ -33,13 +34,10 @@ const TONE_LABEL: Record<OptionsTone, string> = {
     neutral: '중립',
 };
 
-function isTone(value: unknown): value is OptionsTone {
-    // Object.hasOwn (not `value in TONE_LABEL`) — `in` walks the prototype
-    // chain (`'__proto__' in TONE_LABEL` is true), which can crash React
-    // rendering or leak function source on malformed JSONB (audit fix — see
-    // TechnicalSnapshotProse.isTrend for the full rationale).
-    return typeof value === 'string' && Object.hasOwn(TONE_LABEL, value);
-}
+// See createEnumGuard's JSDoc for the Object.hasOwn / prototype-chain
+// rationale (audit fix; PR #698 round-2 review FIX 3 extracted the shared
+// implementation).
+const isTone = createEnumGuard(TONE_LABEL);
 
 const SIGNAL_KIND_LABEL: Record<OptionsSignalKind, string> = {
     bullish: '강세',
@@ -48,10 +46,7 @@ const SIGNAL_KIND_LABEL: Record<OptionsSignalKind, string> = {
     neutral: '중립',
 };
 
-function isSignalKind(value: unknown): value is OptionsSignalKind {
-    // Object.hasOwn — see isTone above for the prototype-chain rationale.
-    return typeof value === 'string' && Object.hasOwn(SIGNAL_KIND_LABEL, value);
-}
+const isSignalKind = createEnumGuard(SIGNAL_KIND_LABEL);
 
 interface NarrowedPerExpiration {
     expirationDate: string;

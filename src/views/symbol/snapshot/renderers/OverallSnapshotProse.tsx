@@ -1,6 +1,8 @@
 import type { OverallScenarioName } from '@y0ngha/siglens-core';
 import { SnapshotSummarySection } from '../SnapshotSummarySection';
 import { stripSnapshotMarkdown } from '../lib/stripSnapshotMarkdown';
+import { createEnumGuard } from '../lib/createEnumGuard';
+import { narrowStringArray } from '../lib/narrowStringArray';
 
 interface OverallSnapshotProseProps {
     /**
@@ -21,18 +23,20 @@ interface OverallSnapshotProseProps {
     displayName: string;
 }
 
-const VALID_SCENARIO_NAMES: readonly OverallScenarioName[] = [
-    'bullish',
-    'neutral',
-    'bearish',
-];
+// Guard-only label map — the scenario section headings below are hardcoded
+// Korean strings ("강세 시나리오" / ...), not derived from this map, but its
+// keys must cover exactly `OverallScenarioName`'s members (PR #698 round-2
+// review FIX 3: converted from an `Array.includes` membership check to the
+// shared `createEnumGuard` factory — semantics are equivalent, both reject
+// any string outside {bullish, neutral, bearish}). See createEnumGuard's
+// JSDoc for the Object.hasOwn / prototype-chain rationale.
+const SCENARIO_NAME_LABEL: Record<OverallScenarioName, string> = {
+    bullish: '강세',
+    neutral: '중립',
+    bearish: '약세',
+};
 
-function isScenarioName(value: unknown): value is OverallScenarioName {
-    return (
-        typeof value === 'string' &&
-        (VALID_SCENARIO_NAMES as readonly string[]).includes(value)
-    );
-}
+const isScenarioName = createEnumGuard(SCENARIO_NAME_LABEL);
 
 interface NarrowedScenario {
     name: OverallScenarioName;
@@ -135,15 +139,6 @@ interface NarrowedOverallContent {
     newsBulletsKo: string[];
     optionsBulletsKo: string[];
     financialsBulletsKo: string[];
-}
-
-/** Narrows an `unknown` field to a trimmed, markdown-stripped string array. */
-function narrowStringArray(value: unknown): string[] {
-    if (!Array.isArray(value)) return [];
-    return value
-        .filter((item): item is string => typeof item === 'string')
-        .map(item => stripSnapshotMarkdown(item).trim())
-        .filter(item => item.length > 0);
 }
 
 /**
