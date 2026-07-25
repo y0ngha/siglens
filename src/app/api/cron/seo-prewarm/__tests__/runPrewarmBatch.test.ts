@@ -4,7 +4,6 @@ const {
     mockAddFmpBudget,
     mockGetFmpBudgetUsed,
     mockRevalidateTag,
-    mockRevalidatePath,
     mockUpsert,
     mockFindGeneratedAtMap,
     mockGetAssetInfoResilient,
@@ -23,7 +22,6 @@ const {
     mockAddFmpBudget: vi.fn(),
     mockGetFmpBudgetUsed: vi.fn(),
     mockRevalidateTag: vi.fn(),
-    mockRevalidatePath: vi.fn(),
     mockUpsert: vi.fn(),
     mockFindGeneratedAtMap: vi.fn(),
     mockGetAssetInfoResilient: vi.fn(),
@@ -47,7 +45,6 @@ vi.mock('../lock', () => ({
 
 vi.mock('next/cache', () => ({
     revalidateTag: mockRevalidateTag,
-    revalidatePath: mockRevalidatePath,
 }));
 
 vi.mock('@/entities/seo-snapshot/api', () => ({
@@ -75,7 +72,7 @@ vi.mock('@/shared/api/fmp/fmpUserMessage', () => ({
     getFmpErrorStatus: mockGetFmpErrorStatus,
 }));
 
-vi.mock('@/entities/analysis/lib/prewarmSubmits', () => ({
+vi.mock('@/entities/analysis/api', () => ({
     prewarmTechnical: mockPrewarmTechnical,
     prewarmOverall: mockPrewarmOverall,
     prewarmFundamental: mockPrewarmFundamental,
@@ -83,11 +80,11 @@ vi.mock('@/entities/analysis/lib/prewarmSubmits', () => ({
     prewarmCongress: mockPrewarmCongress,
 }));
 
-vi.mock('@/entities/news-article/lib/prewarmSubmitNews', () => ({
+vi.mock('@/entities/news-article/api', () => ({
     prewarmNews: mockPrewarmNews,
 }));
 
-vi.mock('@/entities/options-chain/lib/prewarmSubmitOptions', () => ({
+vi.mock('@/entities/options-chain/api', () => ({
     prewarmOptions: mockPrewarmOptions,
 }));
 
@@ -224,7 +221,6 @@ describe('runPrewarmBatch', () => {
             'seo-snapshot:MSFT',
             'max'
         );
-        expect(mockRevalidatePath).not.toHaveBeenCalled();
         expect(counts.revalidated).toBe(1);
         // 2탭 모두 seam이 실제로 실행됨 → equity per-tab(3) × 2 = 6.
         expect(mockAddFmpBudget).toHaveBeenCalledWith(6);

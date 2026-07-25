@@ -12,7 +12,7 @@ vi.mock('@y0ngha/siglens-core', async () => {
     };
 });
 
-vi.mock('../../lib/optionsDataCache', () => ({
+vi.mock('../lib/optionsDataCache', () => ({
     fetchOptionsSnapshot: vi.fn(),
 }));
 
@@ -23,13 +23,11 @@ import {
     type OptionsSnapshot,
     type OptionsChain,
 } from '@y0ngha/siglens-core';
-import { fetchOptionsSnapshot } from '../../lib/optionsDataCache';
-import { prewarmOptions } from '../../lib/prewarmSubmitOptions';
+import { fetchOptionsSnapshot } from '../lib/optionsDataCache';
+import { prewarmOptions } from '../api';
 
 const SEAM_SOURCE = readFileSync(
-    fileURLToPath(
-        new URL('../../lib/prewarmSubmitOptions.ts', import.meta.url)
-    ),
+    fileURLToPath(new URL('../api.ts', import.meta.url)),
     'utf8'
 );
 

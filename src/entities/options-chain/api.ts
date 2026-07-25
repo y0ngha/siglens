@@ -6,7 +6,7 @@ import {
     type SubmitOptionsAnalysisResult,
     type SlotMapping,
 } from '@y0ngha/siglens-core';
-import { fetchOptionsSnapshot } from './optionsDataCache';
+import { fetchOptionsSnapshot } from './lib/optionsDataCache';
 
 const isSlotMapping = (s: SlotMapping | null): s is SlotMapping => s !== null;
 

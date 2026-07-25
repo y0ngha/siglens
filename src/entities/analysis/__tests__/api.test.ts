@@ -117,7 +117,7 @@ import {
     prewarmFinancials,
     prewarmCongress,
     prewarmOverall,
-} from '../../lib/prewarmSubmits';
+} from '../api';
 
 const mockProvider = {
     getQuote: vi.fn(),
@@ -153,7 +153,7 @@ const mockFetchOptionsSnapshot = vi.mocked(fetchOptionsSnapshot);
 const mockIsOiStale = vi.mocked(isOpenInterestSnapshotStale);
 
 const SEAM_SOURCE = readFileSync(
-    fileURLToPath(new URL('../../lib/prewarmSubmits.ts', import.meta.url)),
+    fileURLToPath(new URL('../api.ts', import.meta.url)),
     'utf8'
 );
 
@@ -524,6 +524,10 @@ describe('prewarmOverall', () => {
 
         expect(mockSubmitOverallAnalysis).toHaveBeenCalledWith(
             expect.objectContaining({ financialsScorecard: undefined })
+        );
+        expect(warnSpy).toHaveBeenCalledWith(
+            '[prewarmOverall] financials scorecard fetch failed:',
+            expect.any(Error)
         );
         warnSpy.mockRestore();
     });

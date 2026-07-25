@@ -26,7 +26,7 @@ vi.mock('../lock', () => ({
     markInFlight: mockMarkInFlight,
 }));
 
-vi.mock('@/entities/analysis/lib/prewarmSubmits', () => ({
+vi.mock('@/entities/analysis/api', () => ({
     prewarmTechnical: mockPrewarmTechnical,
     prewarmOverall: mockPrewarmOverall,
     prewarmFundamental: mockPrewarmFundamental,
@@ -34,11 +34,11 @@ vi.mock('@/entities/analysis/lib/prewarmSubmits', () => ({
     prewarmCongress: mockPrewarmCongress,
 }));
 
-vi.mock('@/entities/news-article/lib/prewarmSubmitNews', () => ({
+vi.mock('@/entities/news-article/api', () => ({
     prewarmNews: mockPrewarmNews,
 }));
 
-vi.mock('@/entities/options-chain/lib/prewarmSubmitOptions', () => ({
+vi.mock('@/entities/options-chain/api', () => ({
     prewarmOptions: mockPrewarmOptions,
 }));
 

@@ -1,13 +1,9 @@
 import 'server-only';
 
-import { and, eq, inArray } from 'drizzle-orm';
+import { inArray } from 'drizzle-orm';
 import { seoAnalysisSnapshots } from '@/shared/db/schema';
 import type { SiglensDatabase } from '@/shared/db/types';
-import type {
-    SeoAnalysisSnapshot,
-    SeoSnapshotTab,
-    SeoSnapshotUpsertInput,
-} from './model';
+import type { SeoSnapshotUpsertInput } from './model';
 
 /**
  * Drizzle ORM implementation backed by Neon PostgreSQL. One row per
@@ -40,32 +36,6 @@ export class DrizzleSeoSnapshotRepository {
                     updatedAt: new Date(),
                 },
             });
-    }
-
-    async findBySymbol(symbol: string): Promise<SeoAnalysisSnapshot[]> {
-        const rows = await this.db
-            .select()
-            .from(seoAnalysisSnapshots)
-            .where(eq(seoAnalysisSnapshots.symbol, symbol.toUpperCase()));
-
-        return rows as SeoAnalysisSnapshot[];
-    }
-
-    async findBySymbolAndTab(
-        symbol: string,
-        tab: SeoSnapshotTab
-    ): Promise<SeoAnalysisSnapshot | null> {
-        const rows = await this.db
-            .select()
-            .from(seoAnalysisSnapshots)
-            .where(
-                and(
-                    eq(seoAnalysisSnapshots.symbol, symbol.toUpperCase()),
-                    eq(seoAnalysisSnapshots.tab, tab)
-                )
-            );
-
-        return (rows[0] as SeoAnalysisSnapshot | undefined) ?? null;
     }
 
     async findGeneratedAtMap(symbols: string[]): Promise<Map<string, Date>> {

@@ -8,9 +8,9 @@ import {
     prewarmFundamental,
     prewarmFinancials,
     prewarmCongress,
-} from '@/entities/analysis/lib/prewarmSubmits';
-import { prewarmNews } from '@/entities/news-article/lib/prewarmSubmitNews';
-import { prewarmOptions } from '@/entities/options-chain/lib/prewarmSubmitOptions';
+} from '@/entities/analysis/api';
+import { prewarmNews } from '@/entities/news-article/api';
+import { prewarmOptions } from '@/entities/options-chain/api';
 import { markInFlight } from './lock';
 import type { PrewarmBatchCounts } from './runPrewarmBatch';
 
