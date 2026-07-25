@@ -38,7 +38,15 @@ const PROSE_PREDICATE_BY_TAB: Record<
     options: hasOptionsProse,
 };
 
-/** Returns whether `content` renders visible prose for the given snapshot `tab`. */
+/**
+ * Returns whether `content` renders visible prose for the given snapshot
+ * `tab`. `tab` is typed as `SeoSnapshotTab`, but this function is called with
+ * DB-sourced row data (`getSeoSnapshotsStatic` results) that isn't
+ * compiler-checked at the call site — an unrecognized tab string must return
+ * `false`, not throw, so a malformed/legacy row can never crash metadata
+ * generation (PR #698 round-2 review FIX 1).
+ */
 export function hasProseForTab(tab: SeoSnapshotTab, content: unknown): boolean {
-    return PROSE_PREDICATE_BY_TAB[tab](content);
+    const predicate = PROSE_PREDICATE_BY_TAB[tab];
+    return predicate !== undefined && predicate(content);
 }
