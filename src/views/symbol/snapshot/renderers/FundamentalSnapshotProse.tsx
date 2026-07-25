@@ -3,6 +3,7 @@ import type {
     FundamentalSentiment,
 } from '@y0ngha/siglens-core';
 import { SnapshotSummarySection } from '../SnapshotSummarySection';
+import { stripSnapshotMarkdown } from '../lib/stripSnapshotMarkdown';
 
 interface FundamentalSnapshotProseProps {
     /**
@@ -68,7 +69,9 @@ function narrowCategoryAssessment(
         category: record.category,
         sentiment: isSentiment(record.sentiment) ? record.sentiment : null,
         rationaleKo:
-            typeof record.rationaleKo === 'string' ? record.rationaleKo : '',
+            typeof record.rationaleKo === 'string'
+                ? stripSnapshotMarkdown(record.rationaleKo).trim()
+                : '',
     };
 }
 
@@ -95,7 +98,7 @@ function narrowFundamentalContent(
     const record = content as Record<string, unknown>;
     const overallConclusionKo =
         typeof record.overallConclusionKo === 'string'
-            ? record.overallConclusionKo.trim()
+            ? stripSnapshotMarkdown(record.overallConclusionKo).trim()
             : '';
     const overallSentiment = isSentiment(record.overallSentiment)
         ? record.overallSentiment
@@ -108,9 +111,10 @@ function narrowFundamentalContent(
         : [];
 
     const riskFactorsKo = Array.isArray(record.riskFactorsKo)
-        ? record.riskFactorsKo.filter(
-              (item): item is string => typeof item === 'string'
-          )
+        ? record.riskFactorsKo
+              .filter((item): item is string => typeof item === 'string')
+              .map(item => stripSnapshotMarkdown(item).trim())
+              .filter(item => item.length > 0)
         : [];
 
     if (

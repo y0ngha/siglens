@@ -1,5 +1,6 @@
 import type { OptionsSignalKind, OptionsTone } from '@y0ngha/siglens-core';
 import { SnapshotSummarySection } from '../SnapshotSummarySection';
+import { stripSnapshotMarkdown } from '../lib/stripSnapshotMarkdown';
 
 interface OptionsSnapshotProseProps {
     /**
@@ -62,7 +63,9 @@ function narrowPerExpiration(value: unknown): NarrowedPerExpiration | null {
     if (typeof value !== 'object' || value === null) return null;
     const record = value as Record<string, unknown>;
     const commentary =
-        typeof record.commentary === 'string' ? record.commentary.trim() : '';
+        typeof record.commentary === 'string'
+            ? stripSnapshotMarkdown(record.commentary).trim()
+            : '';
     if (commentary.length === 0) return null;
 
     return {
@@ -84,7 +87,9 @@ function narrowSignal(value: unknown): NarrowedSignal | null {
     if (typeof value !== 'object' || value === null) return null;
     const record = value as Record<string, unknown>;
     const message =
-        typeof record.message === 'string' ? record.message.trim() : '';
+        typeof record.message === 'string'
+            ? stripSnapshotMarkdown(record.message).trim()
+            : '';
     if (message.length === 0) return null;
 
     return {
@@ -111,7 +116,9 @@ function narrowOptionsContent(content: unknown): NarrowedOptionsContent | null {
 
     const record = content as Record<string, unknown>;
     const summary =
-        typeof record.summary === 'string' ? record.summary.trim() : '';
+        typeof record.summary === 'string'
+            ? stripSnapshotMarkdown(record.summary).trim()
+            : '';
 
     const perExpiration = Array.isArray(record.perExpiration)
         ? record.perExpiration.map(narrowPerExpiration).filter(e => e !== null)

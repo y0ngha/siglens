@@ -116,6 +116,24 @@ describe('CongressSnapshotProse', () => {
         expect(stringContainer.textContent?.trim()).toBe('');
     });
 
+    it('summaryKo·notableMembersKo·riskNoteKo의 markdown 마커를 제거한다 (FIX 4)', () => {
+        render(
+            <CongressSnapshotProse
+                content={buildFixture({
+                    summaryKo: '**순매수** 우위 흐름',
+                    notableMembersKo: ['- 낸시 펠로시 의원 매수'],
+                    riskNoteKo: '`공시 지연` 45일',
+                })}
+                symbol="AAPL"
+                displayName="Apple Inc."
+            />
+        );
+
+        expect(screen.getByText('순매수 우위 흐름')).toBeInTheDocument();
+        expect(screen.getByText('낸시 펠로시 의원 매수')).toBeInTheDocument();
+        expect(screen.getByText('공시 지연 45일')).toBeInTheDocument();
+    });
+
     it('요약만 있고 주목할 인물·참고 사항이 비어있으면 요약만 렌더하고 빈 항목은 렌더하지 않는다', () => {
         render(
             <CongressSnapshotProse

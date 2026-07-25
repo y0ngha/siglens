@@ -116,6 +116,24 @@ describe('NewsSnapshotProse', () => {
         expect(stringContainer.textContent?.trim()).toBe('');
     });
 
+    it('currentDriverKo·keyEventsKo·upcomingEventsKo의 markdown 마커를 제거한다 (FIX 4)', () => {
+        render(
+            <NewsSnapshotProse
+                content={buildFixture({
+                    currentDriverKo: '**신제품 판매 호조** 소식',
+                    keyEventsKo: ['- 신제품 출시 발표'],
+                    upcomingEventsKo: ['`실적 발표` 2주 후'],
+                })}
+                symbol="AAPL"
+                displayName="Apple Inc."
+            />
+        );
+
+        expect(screen.getByText('신제품 판매 호조 소식')).toBeInTheDocument();
+        expect(screen.getByText('신제품 출시 발표')).toBeInTheDocument();
+        expect(screen.getByText('실적 발표 2주 후')).toBeInTheDocument();
+    });
+
     it('현재 동인만 있고 핵심 이벤트·다가오는 일정이 비어있으면 동인만 렌더하고 빈 목록은 렌더하지 않는다', () => {
         render(
             <NewsSnapshotProse

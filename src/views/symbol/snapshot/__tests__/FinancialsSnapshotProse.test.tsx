@@ -128,6 +128,32 @@ describe('FinancialsSnapshotProse', () => {
         expect(stringContainer.textContent?.trim()).toBe('');
     });
 
+    it('overallConclusionKo·rationaleKo·riskFactorsKo의 markdown 마커를 제거한다 (FIX 4)', () => {
+        render(
+            <FinancialsSnapshotProse
+                content={buildFixture({
+                    overallConclusionKo: '**재무 건전성** 우수',
+                    axisAssessments: [
+                        {
+                            axis: 'growth',
+                            sentiment: 'bullish',
+                            rationaleKo: '`매출 성장률` 업종 평균 상회',
+                        },
+                    ],
+                    riskFactorsKo: ['- 부채비율 상승'],
+                })}
+                symbol="AAPL"
+                displayName="Apple Inc."
+            />
+        );
+
+        expect(screen.getByText('재무 건전성 우수')).toBeInTheDocument();
+        expect(
+            screen.getByText('매출 성장률 업종 평균 상회')
+        ).toBeInTheDocument();
+        expect(screen.getByText('부채비율 상승')).toBeInTheDocument();
+    });
+
     it('결론만 있고 축별 평가·위험 요인이 비어있으면 결론만 렌더하고 빈 목록은 렌더하지 않는다', () => {
         render(
             <FinancialsSnapshotProse

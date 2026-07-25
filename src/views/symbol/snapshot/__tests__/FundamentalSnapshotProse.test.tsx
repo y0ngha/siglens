@@ -128,6 +128,30 @@ describe('FundamentalSnapshotProse', () => {
         expect(stringContainer.textContent?.trim()).toBe('');
     });
 
+    it('overallConclusionKo·rationaleKo·riskFactorsKo의 markdown 마커를 제거한다 (FIX 4)', () => {
+        render(
+            <FundamentalSnapshotProse
+                content={buildFixture({
+                    overallConclusionKo: '**프리미엄** 정당화 구간',
+                    categoryAssessments: [
+                        {
+                            category: 'valuation',
+                            sentiment: 'neutral',
+                            rationaleKo: '`PER` 업종 평균 대비 높음',
+                        },
+                    ],
+                    riskFactorsKo: ['- 규제 리스크'],
+                })}
+                symbol="AAPL"
+                displayName="Apple Inc."
+            />
+        );
+
+        expect(screen.getByText('프리미엄 정당화 구간')).toBeInTheDocument();
+        expect(screen.getByText('PER 업종 평균 대비 높음')).toBeInTheDocument();
+        expect(screen.getByText('규제 리스크')).toBeInTheDocument();
+    });
+
     it('결론만 있고 카테고리 평가·위험 요인이 비어있으면 결론만 렌더하고 빈 목록은 렌더하지 않는다', () => {
         render(
             <FundamentalSnapshotProse

@@ -1,5 +1,6 @@
 import type { NewsSentiment } from '@y0ngha/siglens-core';
 import { SnapshotSummarySection } from '../SnapshotSummarySection';
+import { stripSnapshotMarkdown } from '../lib/stripSnapshotMarkdown';
 
 interface NewsSnapshotProseProps {
     /**
@@ -55,22 +56,24 @@ function narrowNewsContent(content: unknown): NarrowedNewsContent | null {
     const record = content as Record<string, unknown>;
     const currentDriverKo =
         typeof record.currentDriverKo === 'string'
-            ? record.currentDriverKo.trim()
+            ? stripSnapshotMarkdown(record.currentDriverKo).trim()
             : '';
     const overallSentiment = isSentiment(record.overallSentiment)
         ? record.overallSentiment
         : null;
 
     const keyEventsKo = Array.isArray(record.keyEventsKo)
-        ? record.keyEventsKo.filter(
-              (item): item is string => typeof item === 'string'
-          )
+        ? record.keyEventsKo
+              .filter((item): item is string => typeof item === 'string')
+              .map(item => stripSnapshotMarkdown(item).trim())
+              .filter(item => item.length > 0)
         : [];
 
     const upcomingEventsKo = Array.isArray(record.upcomingEventsKo)
-        ? record.upcomingEventsKo.filter(
-              (item): item is string => typeof item === 'string'
-          )
+        ? record.upcomingEventsKo
+              .filter((item): item is string => typeof item === 'string')
+              .map(item => stripSnapshotMarkdown(item).trim())
+              .filter(item => item.length > 0)
         : [];
 
     if (

@@ -1,5 +1,6 @@
 import type { CongressSentiment } from '@y0ngha/siglens-core';
 import { SnapshotSummarySection } from '../SnapshotSummarySection';
+import { stripSnapshotMarkdown } from '../lib/stripSnapshotMarkdown';
 
 interface CongressSnapshotProseProps {
     /**
@@ -54,19 +55,24 @@ function narrowCongressContent(
 
     const record = content as Record<string, unknown>;
     const summaryKo =
-        typeof record.summaryKo === 'string' ? record.summaryKo.trim() : '';
+        typeof record.summaryKo === 'string'
+            ? stripSnapshotMarkdown(record.summaryKo).trim()
+            : '';
     const overallSentiment = isSentiment(record.overallSentiment)
         ? record.overallSentiment
         : null;
 
     const notableMembersKo = Array.isArray(record.notableMembersKo)
-        ? record.notableMembersKo.filter(
-              (item): item is string => typeof item === 'string'
-          )
+        ? record.notableMembersKo
+              .filter((item): item is string => typeof item === 'string')
+              .map(item => stripSnapshotMarkdown(item).trim())
+              .filter(item => item.length > 0)
         : [];
 
     const riskNoteKo =
-        typeof record.riskNoteKo === 'string' ? record.riskNoteKo.trim() : '';
+        typeof record.riskNoteKo === 'string'
+            ? stripSnapshotMarkdown(record.riskNoteKo).trim()
+            : '';
 
     if (
         summaryKo.length === 0 &&

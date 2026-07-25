@@ -130,6 +130,32 @@ describe('OptionsSnapshotProse', () => {
         expect(stringContainer.textContent?.trim()).toBe('');
     });
 
+    it('summary·commentary·message의 markdown 마커를 제거한다 (FIX 4)', () => {
+        render(
+            <OptionsSnapshotProse
+                content={buildFixture({
+                    summary: '**콜 매수세** 우세',
+                    perExpiration: [
+                        {
+                            expirationDate: '2026-08-15',
+                            commentary: '`OI` 풋 대비 두 배 이상',
+                            tone: 'bullish',
+                        },
+                    ],
+                    signals: [
+                        { kind: 'bullish', message: '- 콜 옵션 거래량 급증' },
+                    ],
+                })}
+                symbol="AAPL"
+                displayName="Apple Inc."
+            />
+        );
+
+        expect(screen.getByText('콜 매수세 우세')).toBeInTheDocument();
+        expect(screen.getByText('OI 풋 대비 두 배 이상')).toBeInTheDocument();
+        expect(screen.getByText(/콜 옵션 거래량 급증/)).toBeInTheDocument();
+    });
+
     it('summary만 있고 perExpiration·signals가 비어있으면 summary만 렌더하고 빈 목록은 렌더하지 않는다', () => {
         render(
             <OptionsSnapshotProse
