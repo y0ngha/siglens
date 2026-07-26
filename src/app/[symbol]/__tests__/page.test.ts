@@ -183,7 +183,9 @@ describe('Symbol page', () => {
                 params: Promise.resolve({ symbol: 'aapl' }),
             });
 
-            expect(metadata.title).toBe('AAPL 차트');
+            // symbolMetadataFromSeo가 title을 { absolute }로 감싸 루트 레이아웃의
+            // title.template("%s | Siglens" 자동 접미사)을 무시한다(Task 6).
+            expect(metadata.title).toEqual({ absolute: 'AAPL 차트' });
         });
 
         it('uses the snapshot-derived description when a technical snapshot exists (spec 2026-07-24 Task 8)', async () => {

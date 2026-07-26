@@ -21,12 +21,14 @@ describe('buildSymbolSeoContent', () => {
         const content = buildSymbolSeoContent('aapl');
 
         expect(content.ticker).toBe('AAPL');
-        expect(content.title).toBe(
-            'AAPL 주가 분석 — 차트와 매매 신호, 지지선·저항선'
-        );
-        expect(content.fullTitle).toBe(
-            'AAPL 주가 분석 — 차트와 매매 신호, 지지선·저항선 | Siglens'
-        );
+        // core(주가 전망)만 단언한다 — tail(차트·매매 신호)은
+        // composeSymbolTitle이 예산 압박 시 가장 먼저 버리는 서술이라,
+        // 전체 문자열을 고정하면 카피 문구만 바뀌어도 이 테스트가 깨진다.
+        // 알고리즘 자체(어떤 조건에서 tail/한국어명이 버려지는지)를 고정하는
+        // 리터럴 단언은 seo.composeSymbolTitle.test.ts의 책임이다.
+        expect(content.title).toContain('AAPL');
+        expect(content.title).toContain('주가 전망');
+        expect(content.fullTitle).toBe(`${content.title} | Siglens`);
         expect(content.description).toContain('AAPL');
         expect(content.url).toBe('https://siglens.io/AAPL');
         expect(content.keywords).toContain('AAPL 주가');
@@ -52,9 +54,10 @@ describe('buildSymbolSeoContent', () => {
 describe('buildSymbolFundamentalSeoContent', () => {
     it('소문자 입력을 대문자로 정규화하고 title/fullTitle이 일관된 형태다', () => {
         const content = buildSymbolFundamentalSeoContent('aapl');
-        expect(content.title).toBe(
-            'AAPL 펀더멘털 — PER, ROE와 애널리스트 컨센서스'
-        );
+        // core(펀더멘털)만 단언한다 — tail은 composeSymbolTitle이 예산
+        // 압박 시 가장 먼저 버리는 서술이라 전체 문자열을 고정하지 않는다.
+        expect(content.title).toContain('AAPL');
+        expect(content.title).toContain('펀더멘털');
         expect(content.fullTitle).toBe(`${content.title} | Siglens`);
     });
 
@@ -158,9 +161,11 @@ describe('buildSymbolFinancialsSeoContent', () => {
 
     it('title 형식이 일관된다 — 매출·이익·현금흐름 구조', () => {
         const content = buildSymbolFinancialsSeoContent('TSLA');
-        expect(content.title).toBe(
-            'TSLA 재무제표 — 매출·이익·현금흐름 5년 추이'
-        );
+        // core(재무제표)만 단언한다 — tail(매출·이익·현금흐름)은
+        // composeSymbolTitle이 예산 압박 시 가장 먼저 버리는 서술이라,
+        // 전체 문자열을 고정하면 카피 문구만 바뀌어도 이 테스트가 깨진다.
+        expect(content.title).toContain('TSLA');
+        expect(content.title).toContain('재무제표');
         expect(content.fullTitle).toBe(`${content.title} | Siglens`);
     });
 
@@ -232,9 +237,11 @@ describe('buildSymbolFinancialsSeoContent', () => {
 describe('buildSymbolNewsSeoContent', () => {
     it('소문자 입력을 대문자로 정규화하고 title/fullTitle이 일관된 형태다', () => {
         const content = buildSymbolNewsSeoContent('aapl');
-        expect(content.title).toBe(
-            'AAPL 뉴스 — 호재 분위기, 어닝과 실적, 애널리스트 등급'
-        );
+        // core(뉴스)만 단언한다 — tail(호재 분위기와 애널리스트 등급)은
+        // composeSymbolTitle이 예산 압박 시 가장 먼저 버리는 서술이라
+        // 전체 문자열을 고정하지 않는다.
+        expect(content.title).toContain('AAPL');
+        expect(content.title).toContain('뉴스');
         expect(content.fullTitle).toBe(`${content.title} | Siglens`);
     });
 
@@ -316,9 +323,11 @@ describe('buildSymbolNewsSeoContent', () => {
 describe('buildSymbolOverallSeoContent', () => {
     it('소문자 입력을 대문자로 정규화하고 title/fullTitle이 일관된 형태다', () => {
         const content = buildSymbolOverallSeoContent('aapl');
-        expect(content.title).toBe(
-            'AAPL 종합 분석 — 강세와 약세 시나리오, 위험 요인'
-        );
+        // core(종합 분석)만 단언한다 — tail(강세·약세 시나리오)은
+        // composeSymbolTitle이 예산 압박 시 가장 먼저 버리는 서술이라
+        // 전체 문자열을 고정하지 않는다.
+        expect(content.title).toContain('AAPL');
+        expect(content.title).toContain('종합 분석');
         expect(content.fullTitle).toBe(`${content.title} | Siglens`);
     });
 
@@ -836,7 +845,9 @@ describe('symbolMetadataFromSeo', () => {
     it('title/description/keywords를 그대로 매핑한다', () => {
         const meta = symbolMetadataFromSeo(baseSeo);
 
-        expect(meta.title).toBe(baseSeo.title);
+        // title은 { absolute } 형태다 — 루트 레이아웃의 title.template
+        // ("%s | Siglens" 자동 접미사)를 무시하기 위함(Task 6).
+        expect(meta.title).toEqual({ absolute: baseSeo.title });
         expect(meta.description).toBe(baseSeo.description);
         expect(meta.keywords).toEqual(baseSeo.keywords);
     });
@@ -864,18 +875,29 @@ describe('symbolMetadataFromSeo', () => {
         const tw = meta.twitter as Record<string, unknown>;
 
         expect(tw['card']).toBe('summary_large_image');
+        // twitter.title은 fullTitle(브랜드 포함) — 소셜 카드는 SERP 폭
+        // 제약이 없고 브랜드 노출이 도움이 된다(Task 6).
         expect(tw['title']).toBe(baseSeo.fullTitle);
+        expect(tw['title']).toContain('Siglens');
         expect(tw['description']).toBe(baseSeo.description);
     });
 
-    it('openGraph.title이 fullTitle(브랜드 포함)이고 meta.title이 title(브랜드 제외)이다', () => {
+    it('openGraph.title이 fullTitle(브랜드 포함)이고 meta.title이 absolute(브랜드 제외)이다', () => {
         const meta = symbolMetadataFromSeo(baseSeo);
         const og = meta.openGraph as Record<string, unknown>;
 
-        // title은 루트 레이아웃이 "| Siglens" 자동 추가 → 브랜드 미포함
-        expect(meta.title).toBe(baseSeo.title);
-        expect(meta.title).not.toContain('Siglens');
-        // openGraph/twitter title은 fullTitle(브랜드 포함) 사용
+        // title은 { absolute }로 루트 레이아웃의 "| Siglens" 자동 접미사를
+        // 무시한다 → 브랜드 미포함(Task 6, `| Siglens` 8 폭단위를 검색 의도
+        // 카피로 되돌린다).
+        // as 캐스팅 근거: symbolMetadataFromSeo는 항상 title을 { absolute }
+        // 형태로만 반환한다(구현 참고) — Next.js Metadata['title'] 유니온
+        // (string | TemplateString | null)을 좁히는 것이지 검증 안 된 값을
+        // 단언하는 게 아니다.
+        const titleMeta = meta.title as { absolute: string };
+        expect(titleMeta.absolute).toBe(baseSeo.title);
+        expect(titleMeta.absolute).not.toContain('Siglens');
+        // openGraph/twitter title은 fullTitle(브랜드 포함) 사용 —
+        // 소셜 카드는 SERP 폭 제약이 없고 브랜드 노출이 도움이 된다.
         expect(og['title']).toContain('Siglens');
     });
 });

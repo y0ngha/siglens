@@ -134,6 +134,192 @@ export function clampSeoDescription(text: string): string {
 }
 
 /**
+ * SERP에서 차지하는 시각적 폭을 근사한다 — 한글·전각 2, 그 외 1.
+ *
+ * Google 데스크톱 title 예산은 약 58~60 폭단위다. 글자 수로 재면 한글 제목의
+ * 잘림을 예측할 수 없다: `AAPL 주가 분석 — 차트와 매매 신호, 지지선·저항선 | Siglens`은
+ * 41글자지만 58 폭단위로 이미 경계에 있다(2026-07-26 실측 — 이 함수로 직접 측정).
+ *
+ * 코드포인트 기준으로 순회해 서로게이트 페어를 쪼개지 않는다
+ * ({@link clampSeoDescription}과 동일한 방침).
+ */
+export function seoTitleWidth(text: string): number {
+    return [...text].reduce(
+        (width, ch) =>
+            width + (isFullWidthCodePoint(ch.codePointAt(0) ?? 0) ? 2 : 1),
+        0
+    );
+}
+
+/**
+ * 전각으로 취급할 코드포인트인지.
+ *
+ * 커버 범위: 한글 자모(U+1100–U+115F), 한글 음절(U+AC00–U+D7A3), CJK 통합
+ * 표의문자 등(U+2E80–U+A4CF), CJK 호환 한자(U+F900–U+FAFF), CJK 호환 기호
+ * (U+FE30–U+FE6F), 전각 형태(U+FF00–U+FF60, U+FFE0–U+FFE6), 그리고 이모지는
+ * Miscellaneous Symbols and Pictographs(U+1F300–U+1F64F)·Supplemental
+ * Symbols and Pictographs(U+1F900–U+1F9FF) 두 블록만 전각으로 취급한다.
+ * 범위는 Unicode East Asian Width의 W/F 구간 중 이 서비스가 실제로 다루는
+ * 것만 추렸다.
+ *
+ * 커버되지 않는 이모지 블록도 있다 — Transport and Map Symbols(🚀 U+1F680),
+ * Miscellaneous Symbols(⭐ U+2B50), Dingbats(✅ U+2705)는 모두 1 폭단위로
+ * 계산된다(실측 확인됨). 현재 12개 title 템플릿은 이모지를 쓰지 않으므로
+ * 범위를 넓히지 않았다 — 넓히면 이미 실측해 둔 폭 수치가 전부 달라진다.
+ *
+ * Ambiguous-width 문자(`·` U+00B7, `—` U+2014, `…` U+2026)는 Unicode East
+ * Asian Width 기준 Ambiguous(A) 등급이라 한국어 로케일 SERP에서는 넓게
+ * 렌더링될 수 있지만, 이 함수는 의도적으로 좁은(1 폭단위) 문자로 취급한다.
+ * `—`·`·`는 사실상 모든 title 템플릿에 등장해 2로 세면 12개 템플릿을 전부
+ * 재조정해야 하는데, `SEO_TITLE_MAX_WIDTH`(55)는 이미 58~60 예산 대비
+ * 3~5 폭단위 여유가 있어 그 재조정의 안전 이득이 작다. 게다가 Google의
+ * 실제 절단은 픽셀 기준이라 어떤 유닛 모델도 근사치일 뿐이다. 이 문단은
+ * 좁게 처리한 것이 실수가 아니라 의도된 선택임을 남기기 위한 것이다.
+ */
+function isFullWidthCodePoint(cp: number): boolean {
+    return (
+        (cp >= 0x1100 && cp <= 0x115f) || // 한글 자모
+        (cp >= 0x2e80 && cp <= 0xa4cf) || // CJK 부수 ~ 이(Yi)
+        (cp >= 0xac00 && cp <= 0xd7a3) || // 한글 음절
+        (cp >= 0xf900 && cp <= 0xfaff) || // CJK 호환 한자
+        (cp >= 0xfe30 && cp <= 0xfe6f) || // CJK 호환 기호
+        (cp >= 0xff00 && cp <= 0xff60) || // 전각 형태
+        (cp >= 0xffe0 && cp <= 0xffe6) ||
+        (cp >= 0x1f300 && cp <= 0x1f64f) || // 이모지 (Misc Symbols and Pictographs)
+        (cp >= 0x1f900 && cp <= 0x1f9ff) // 이모지 (Supplemental Symbols and Pictographs)
+    );
+}
+
+/**
+ * title 폭 상한. Google 데스크톱 예산 58~60에서 안전 여유를 둔 값이다.
+ *
+ * 이 상한은 **안전망**이지 상시 절단 수단이 아니다. 정상 템플릿은 클램프 없이
+ * 통과해야 하며, `ASE 테크놀로지 홀딩스(ASX)`(26 폭단위) 같은 예외적으로 긴
+ * 한국어명에서만 발동한다.
+ */
+export const SEO_TITLE_MAX_WIDTH = 55;
+
+/**
+ * 폭 상한을 넘으면 어절 경계에서 잘라 말줄임표를 붙인다.
+ *
+ * 말줄임표 자체가 1 폭단위를 쓰므로 예산에서 미리 뺀다. 공백이 없어 경계를
+ * 찾지 못하면 폭 기준으로 그냥 자른다(무한정 길어지는 것보다 낫다).
+ *
+ * `maxWidth`가 1 미만이면 말줄임표(1 폭단위)조차 담을 자리가 없으므로
+ * 빈 문자열을 반환한다 — 그 외에는 예산이 0 밑으로 내려가지 않도록
+ * `Math.max(0, maxWidth - 1)`로 방어한다.
+ */
+export function clampSeoTitle(
+    title: string,
+    maxWidth: number = SEO_TITLE_MAX_WIDTH
+): string {
+    if (seoTitleWidth(title) <= maxWidth) return title;
+    if (maxWidth < 1) return '';
+
+    const budget = Math.max(0, maxWidth - 1);
+    const chars = [...title];
+    let width = 0;
+    let cut = 0;
+    // reduce 대신 for loop을 쓰는 이유: 조기 break와 index(cut = i + 1)가
+    // 핵심 로직이라 CONVENTIONS §Coding Paradigm의 명시적 예외에 해당한다.
+    for (let i = 0; i < chars.length; i++) {
+        const ch = chars[i];
+        if (ch === undefined) break;
+        const w = seoTitleWidth(ch);
+        if (width + w > budget) break;
+        width += w;
+        cut = i + 1;
+    }
+
+    const head = chars.slice(0, cut).join('');
+    const lastSpace = head.lastIndexOf(' ');
+    const body = lastSpace > 0 ? head.slice(0, lastSpace) : head;
+    return `${body.trimEnd()}…`;
+}
+
+/**
+ * title 전용 짧은 주어 — `애플(AAPL)`.
+ *
+ * `buildDisplayName`(`애플, Apple Inc. (AAPL)`, 21자·23 폭단위)은 H1·본문용이라
+ * title에는 너무 길다. title 예산 58~60 폭단위 중 23 폭단위를 주어에 쓰면
+ * 검색 의도를 드러낼 자리가 남지 않는다.
+ *
+ * `entities/ticker`가 아니라 여기 두는 이유: 12개 SEO 빌더가 전부
+ * `BuildSymbolSeoOptions`(또는 이를 extends한 타입)를 받고 그 안에 `koreanName`이
+ * 이미 있다. 여기서 파생하면 호출부 시그니처를 하나도 바꾸지 않는다.
+ *
+ * 중복 판정(`koreanName`이 티커와 사실상 같은 값)은 대소문자를 무시한다
+ * (`kr.toUpperCase() !== upper`) — 티커 레이어의 나머지 비교도 전부
+ * 대소문자 무시다(`searchTickerAction.ts`의 `.toLowerCase()`, `api.ts`의
+ * SQL `lower(...)`). `ticker`가 빈 문자열이면 `koreanName`만 반환해
+ * `'애플()'` 같은 빈 괄호 출력을 막는다.
+ *
+ * 이 함수는 trim과 대소문자 무시 중복 제거를 적용하지만, 형제 키워드
+ * 빌더(`buildSymbolKeywords` 등)는 `koreanName`을 truthy 체크만 거쳐
+ * 원시값 그대로 보간한다 — 의도적 비대칭이다. `keywords` 메타 태그는
+ * 2009년경부터 Google·Naver 모두 무시하므로, 그쪽을 맞춰 고치는 것은
+ * 낭비다.
+ */
+export function buildTitleSubject(ticker: string, koreanName?: string): string {
+    const upper = ticker.toUpperCase();
+    const kr = koreanName?.trim();
+    if (!kr) return upper;
+    if (!upper) return kr;
+    if (kr.toUpperCase() === upper) return upper;
+    return `${kr}(${upper})`;
+}
+
+export interface ComposeSymbolTitleArgs {
+    ticker: string;
+    koreanName?: string;
+    /** 검색 매칭을 만드는 키워드. 티커를 줄여서라도 보존한다 — `core` 자체가 예산(55 폭단위)을
+     *  넘지 않는 한 잘리지 않는다. 예: `공포 탐욕 지수` */
+    core: string;
+    /** 예산이 남을 때만 붙는 서술. 가장 먼저 버려진다. 예: `차트·매매 신호` */
+    tail?: string;
+}
+
+/**
+ * 심볼 title을 예산 안에서 조립한다 — 3단으로 물러난다.
+ *
+ * 1. `한국어명(TICKER) core — tail`
+ * 2. `한국어명(TICKER) core`            tail을 버린다
+ * 3. `TICKER core — tail` 또는 `TICKER core`   한국어명을 버린다
+ *
+ * **버리는 순서가 설계의 핵심이다.** 검색 매칭을 만드는 건 `주가 전망`·`공포 탐욕 지수`
+ * 같은 core이지 뒤의 서술이 아니다. 단순 클램프(뒤에서 자르기)를 쓰면 긴 한국어명을 가진
+ * 종목에서 core가 통째로 날아간다 — 실측상 264개 중 90개(34%)가 그 경우였다.
+ *
+ * 3단까지 가는 종목은 실측 2개뿐이다(NVDL 47, LABU 42 폭단위). 둘 다 레버리지 ETF로
+ * 한국어명이 서술적이고(`그래닛셰어스 2배 레버리지 NVDA 데일리 ETF`) 실제 검색어는
+ * 티커다. 그래서 이 경우 한국어명을 **자르지 않고 버린다** — 중간에 잘린 이름은
+ * SERP에서 읽히지 않는 데다 검색어와도 맞지 않는다.
+ */
+export function composeSymbolTitle(args: ComposeSymbolTitleArgs): string {
+    const { ticker, koreanName, core, tail } = args;
+    const withTail = (subject: string) =>
+        tail ? `${subject} ${core} — ${tail}` : `${subject} ${core}`;
+    const fits = (t: string) => seoTitleWidth(t) <= SEO_TITLE_MAX_WIDTH;
+
+    const subject = buildTitleSubject(ticker, koreanName);
+    const full = withTail(subject);
+    if (fits(full)) return full;
+
+    const coreOnly = `${subject} ${core}`;
+    if (fits(coreOnly)) return coreOnly;
+
+    const bare = buildTitleSubject(ticker);
+    const coreSuffix = ` ${core}`;
+    const bareFull = withTail(bare);
+    if (fits(bareFull)) return bareFull;
+
+    // 마지막 방어선: core는 그대로 두고 티커 쪽만 줄인다. `clampSeoTitle`을 전체
+    // 문자열에 걸면 뒤에서부터 자르므로 core가 깎인다 — 3단 설계의 목적이 무너진다.
+    const tickerBudget = SEO_TITLE_MAX_WIDTH - seoTitleWidth(coreSuffix);
+    return `${clampSeoTitle(bare, tickerBudget)}${coreSuffix}`;
+}
+
+/**
  * Maps each SEO pre-warm snapshot tab to the primary Korean prose field its
  * `content` carries (verified against `src/views/symbol/snapshot/renderers/*`,
  * spec 2026-07-24 Task 4~6): technical→`summary`, overall→`headlineKo`,
@@ -319,7 +505,12 @@ export function buildSymbolSeoContent(
     opts: BuildSymbolSeoOptions = {}
 ): SymbolSeoContent {
     const ticker = symbol.toUpperCase();
-    const title = `${ticker} 주가 분석 — 차트와 매매 신호, 지지선·저항선`;
+    const title = composeSymbolTitle({
+        ticker,
+        koreanName: opts.koreanName,
+        core: '주가 전망',
+        tail: '차트·매매 신호',
+    });
     const displayName = opts.displayName ?? ticker;
     return {
         ticker,
@@ -405,13 +596,22 @@ export function buildSymbolWebPageJsonLd(params: {
  * SymbolSeoContent의 `title/fullTitle/description/url/keywords` 5개 필드를
  * Next.js Metadata 형태로 매핑한다. 동일한 구조가 8 곳에 중복됐던 것을 제거.
  *
+ * `title`은 `{ absolute: title }`로 반환해 루트 레이아웃의 `title.template`
+ * (`%s | Siglens` 자동 접미사)을 무시한다 — `| Siglens` 8글자(폭단위 8)를
+ * 2,247개 URL 전부에서 검색 의도 카피에 되돌려준다. 브랜드 검색어("siglens")는
+ * 이미 자연 순위 2.0위라 title 폭을 추가로 쓸 이유가 없다. `/backtesting`이
+ * 같은 `absolute` 메커니즘을 쓰지만 그쪽은 반대로 `fullTitle`(브랜드 포함)을
+ * 넣는다 — 단일 페이지라 폭 제약이 이만큼 타이트하지 않고 브랜드 노출도 원해서다.
+ * `openGraph.title`·`twitter.title`은 그대로 `fullTitle`을 쓴다 — 소셜 카드는
+ * SERP 폭 제약이 없고 브랜드 노출이 도움이 된다.
+ *
  * options/page.tsx의 `robots` 스프레드는 호출측이 직접 추가해야 한다:
  * `return { ...symbolMetadataFromSeo(seo), ...(hasOptions ? {} : { robots }) };`
  */
 export function symbolMetadataFromSeo(seo: SymbolSeoContent): Metadata {
     const { title, fullTitle, description, url, keywords } = seo;
     return {
-        title,
+        title: { absolute: title },
         description,
         keywords,
         alternates: { canonical: url },
@@ -484,8 +684,12 @@ export function buildSymbolFinancialsSeoContent(
     opts: BuildSymbolSeoOptions = {}
 ): SymbolSeoContent {
     const upper = symbol.toUpperCase();
-    // Root layout template appends "| Siglens" — exclude brand name to prevent duplication.
-    const title = `${upper} 재무제표 — 매출·이익·현금흐름 5년 추이`;
+    const title = composeSymbolTitle({
+        ticker: upper,
+        koreanName: opts.koreanName,
+        core: '재무제표',
+        tail: '매출·이익·현금흐름',
+    });
     const fullTitle = `${title} | ${SITE_NAME}`;
     const subject = opts.displayName ?? upper;
     return {
@@ -542,8 +746,12 @@ export function buildSymbolCongressSeoContent(
     opts: BuildSymbolSeoOptions = {}
 ): SymbolSeoContent {
     const upper = symbol.toUpperCase();
-    // Root layout template appends "| Siglens" — exclude brand name to prevent duplication.
-    const title = `${upper} 의회 거래 — 상원·하원 의원 매매 공시`;
+    const title = composeSymbolTitle({
+        ticker: upper,
+        koreanName: opts.koreanName,
+        core: '의회 거래',
+        tail: '상원·하원 매매 공시',
+    });
     const fullTitle = `${title} | ${SITE_NAME}`;
     const subject = opts.displayName ?? upper;
     return {
@@ -598,8 +806,12 @@ export function buildSymbolFundamentalSeoContent(
     opts: BuildSymbolSeoOptions = {}
 ): SymbolSeoContent {
     const upper = symbol.toUpperCase();
-    // Root layout template appends "| Siglens" — exclude brand name to prevent duplication.
-    const title = `${upper} 펀더멘털 — PER, ROE와 애널리스트 컨센서스`;
+    const title = composeSymbolTitle({
+        ticker: upper,
+        koreanName: opts.koreanName,
+        core: '펀더멘털',
+        tail: 'PER·ROE와 컨센서스',
+    });
     const fullTitle = `${title} | ${SITE_NAME}`;
     const subject = opts.displayName ?? upper;
     return {
@@ -675,8 +887,17 @@ export function buildSymbolOptionsSeoContent(
     const subject = opts.displayName ?? upper;
     const hasOptions = opts.hasOptions ?? true;
     const title = hasOptions
-        ? `${upper} 옵션 분석 — Max Pain · OI · Put/Call · ATM IV`
-        : `${upper} 옵션 분석`;
+        ? composeSymbolTitle({
+              ticker: upper,
+              koreanName: opts.koreanName,
+              core: '옵션 분석',
+              tail: 'Max Pain·OI·Put/Call',
+          })
+        : composeSymbolTitle({
+              ticker: upper,
+              koreanName: opts.koreanName,
+              core: '옵션 분석',
+          });
     const fullTitle = `${title} | ${SITE_NAME}`;
     return {
         ticker: upper,
@@ -725,8 +946,12 @@ export function buildSymbolNewsSeoContent(
     opts: BuildSymbolSeoOptions = {}
 ): SymbolSeoContent {
     const upper = symbol.toUpperCase();
-    // Root layout template appends "| Siglens" — exclude brand name to prevent duplication.
-    const title = `${upper} 뉴스 — 호재 분위기, 어닝과 실적, 애널리스트 등급`;
+    const title = composeSymbolTitle({
+        ticker: upper,
+        koreanName: opts.koreanName,
+        core: '뉴스',
+        tail: '호재 분위기와 애널리스트 등급',
+    });
     const fullTitle = `${title} | ${SITE_NAME}`;
     const subject = opts.displayName ?? upper;
     return {
@@ -789,8 +1014,12 @@ export function buildSymbolOverallSeoContent(
     opts: BuildSymbolSeoOptions = {}
 ): SymbolSeoContent {
     const upper = symbol.toUpperCase();
-    // Root layout template appends "| Siglens" — exclude brand name to prevent duplication.
-    const title = `${upper} 종합 분석 — 강세와 약세 시나리오, 위험 요인`;
+    const title = composeSymbolTitle({
+        ticker: upper,
+        koreanName: opts.koreanName,
+        core: '종합 분석',
+        tail: '강세·약세 시나리오',
+    });
     const fullTitle = `${title} | ${SITE_NAME}`;
     const subject = opts.displayName ?? upper;
     return {
@@ -871,9 +1100,12 @@ export function buildCryptoSymbolSeoContent(
 ): SymbolSeoContent {
     const ticker = symbol.toUpperCase();
     const displayName = opts.displayName ?? ticker;
-    // L1: ticker-led format keeps title under ~55 chars including "| Siglens" suffix,
-    // fitting the ~60-char SERP safe zone without dropping crypto-relevant keywords.
-    const title = `${ticker} 시세 분석 — ${displayName} 차트와 매매 신호`;
+    const title = composeSymbolTitle({
+        ticker,
+        koreanName: opts.koreanName,
+        core: '시세 전망',
+        tail: '차트·매매 신호',
+    });
     return {
         ticker,
         title,
@@ -902,8 +1134,10 @@ export interface ResolveSymbolSeoOpts {
 /**
  * Resolves the correct chart-page SEO content for a symbol based on its asset
  * class. Crypto pages use `buildCryptoSymbolSeoContent` (price-framed copy:
- * "시세 분석", no koreanName); stock/ETF/Index pages use `buildSymbolSeoContent`
- * (equity-framed copy: "주가 분석", with optional koreanName).
+ * "시세 전망"); stock/ETF/Index pages use `buildSymbolSeoContent` (equity-framed
+ * copy: "주가 전망"). Both branches forward `koreanName` — `composeSymbolTitle`
+ * (spec 2026-07-26 title surgery) injects the Korean name for either asset
+ * class when one is available.
  *
  * Centralising this ternary here prevents the two call sites in
  * `src/app/[symbol]/page.tsx` (`generateMetadata` and `SymbolPage`) from
@@ -917,6 +1151,7 @@ export function resolveSymbolSeoContent(
     if (assetClass === 'crypto') {
         return buildCryptoSymbolSeoContent(ticker, {
             displayName: opts.displayName,
+            koreanName: opts.koreanName ?? undefined,
         });
     }
     return buildSymbolSeoContent(ticker, {
@@ -933,7 +1168,12 @@ export function buildCryptoSymbolNewsSeoContent(
     const ticker = symbol.toUpperCase();
     const subject = opts.displayName ?? ticker;
     // Crypto news focuses on price catalysts and market sentiment — not earnings or analyst ratings.
-    const title = `${ticker} 코인 뉴스 — 호재 악재와 크립토 시장 분위기`;
+    const title = composeSymbolTitle({
+        ticker,
+        koreanName: opts.koreanName,
+        core: '코인 뉴스',
+        tail: '호재 악재와 시장 분위기',
+    });
     const fullTitle = `${title} | ${SITE_NAME}`;
     return {
         ticker,
@@ -980,6 +1220,7 @@ export function resolveSymbolNewsSeoContent(
     if (assetClass === 'crypto') {
         return buildCryptoSymbolNewsSeoContent(ticker, {
             displayName: opts.displayName,
+            koreanName: opts.koreanName ?? undefined,
         });
     }
     return buildSymbolNewsSeoContent(ticker, {
@@ -996,7 +1237,12 @@ export function buildCryptoSymbolOverallSeoContent(
     const ticker = symbol.toUpperCase();
     const subject = opts.displayName ?? ticker;
     // Crypto overall axes: chart trend, news sentiment, fear-greed — no earnings/fundamental.
-    const title = `${ticker} 코인 종합 분석 — 강세와 약세 시나리오, 위험 요인`;
+    const title = composeSymbolTitle({
+        ticker,
+        koreanName: opts.koreanName,
+        core: '코인 종합 분석',
+        tail: '강세·약세 시나리오',
+    });
     const fullTitle = `${title} | ${SITE_NAME}`;
     return {
         ticker,
@@ -1040,6 +1286,7 @@ export function resolveSymbolOverallSeoContent(
     if (assetClass === 'crypto') {
         return buildCryptoSymbolOverallSeoContent(ticker, {
             displayName: opts.displayName,
+            koreanName: opts.koreanName ?? undefined,
         });
     }
     return buildSymbolOverallSeoContent(ticker, {
@@ -1056,7 +1303,12 @@ export function buildCryptoSymbolFearGreedSeoContent(
     const ticker = symbol.toUpperCase();
     const subject = opts.displayName ?? ticker;
     // Title/description mirrors the stock builder but substitutes coin-appropriate language.
-    const title = `${ticker} 공포 탐욕 지수 — 0~100 점수와 5단계 코인 분위기`;
+    const title = composeSymbolTitle({
+        ticker,
+        koreanName: opts.koreanName,
+        core: '공포 탐욕 지수',
+        tail: '0~100 점수와 5단계',
+    });
     const fullTitle = `${title} | ${SITE_NAME}`;
     return {
         ticker,
@@ -1105,6 +1357,7 @@ export function resolveSymbolFearGreedSeoContent(
     if (assetClass === 'crypto') {
         return buildCryptoSymbolFearGreedSeoContent(ticker, {
             displayName: opts.displayName,
+            koreanName: opts.koreanName ?? undefined,
         });
     }
     return buildSymbolFearGreedSeoContent(ticker, {
@@ -1122,8 +1375,12 @@ export function buildSymbolFearGreedSeoContent(
 ): SymbolSeoContent {
     const upper = symbol.toUpperCase();
     const subject = opts.displayName ?? upper;
-    // Root layout template appends "| Siglens" — exclude brand name to prevent duplication.
-    const title = `${upper} 공포 탐욕 지수 — 0~100 점수와 5단계 분위기`;
+    const title = composeSymbolTitle({
+        ticker: upper,
+        koreanName: opts.koreanName,
+        core: '공포 탐욕 지수',
+        tail: '0~100 점수와 5단계',
+    });
     const fullTitle = `${title} | ${SITE_NAME}`;
     return {
         ticker: upper,

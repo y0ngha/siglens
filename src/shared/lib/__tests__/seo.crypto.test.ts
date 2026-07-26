@@ -20,7 +20,9 @@ describe('buildCryptoSymbolSeoContent', () => {
             displayName: 'Bitcoin USD',
         });
         expect(c.ticker).toBe('BTCUSD');
-        expect(c.title).toContain('시세 분석');
+        // core(시세 전망)만 단언한다 — tail(차트·매매 신호)은 composeSymbolTitle이
+        // 예산 압박 시 가장 먼저 버리는 서술이라 전체 문자열을 고정하지 않는다.
+        expect(c.title).toContain('시세 전망');
         expect(c.title).not.toContain('주가');
         expect(c.description).toContain('Bitcoin USD');
         expect(c.url).toBe('https://siglens.io/BTCUSD');
@@ -32,9 +34,12 @@ describe('buildCryptoSymbolSeoContent', () => {
         const c = buildCryptoSymbolSeoContent('BTCUSD', {
             displayName: 'Bitcoin USD',
         });
-        // Format: "{TICKER} 시세 분석 — {displayName} 차트와 매매 신호"
-        expect(c.title).toMatch(/^BTCUSD 시세 분석/);
-        expect(c.title).toContain('Bitcoin USD');
+        // composeSymbolTitle 도입 이후 title은 ticker/koreanName만 조합한다 —
+        // displayName은 더 이상 title에 보간되지 않는다. 예전 방식(`${ticker}
+        // 시세 분석 — ${displayName} 차트와 매매 신호`)은 64 폭단위까지 오버플로우
+        // 했었다 — 이 displayName 누수 제거를 검증하는 전용 테스트는
+        // seo.cryptoTitleComposition.test.ts에 있다.
+        expect(c.title).toMatch(/^BTCUSD 시세 전망/);
     });
 
     it('falls back to ticker as display name', () => {
@@ -57,8 +62,9 @@ describe('resolveSymbolSeoContent', () => {
         const c = resolveSymbolSeoContent('BTCUSD', 'crypto', {
             displayName: 'Bitcoin USD',
         });
-        // buildCryptoSymbolSeoContent produces "BTCUSD 시세 분석 — Bitcoin USD 차트와 매매 신호"
-        expect(c.title).toContain('시세 분석');
+        // buildCryptoSymbolSeoContent produces "BTCUSD 시세 전망 — 차트·매매 신호" 형태.
+        // core(시세 전망)만 단언한다 — tail은 예산 압박 시 가장 먼저 버려진다.
+        expect(c.title).toContain('시세 전망');
         expect(c.title).not.toContain('주가');
         // crypto keywords use 시세/가격, not 주가/주가 전망
         expect(c.keywords).toContain('BTCUSD 시세');
@@ -71,10 +77,12 @@ describe('resolveSymbolSeoContent', () => {
             displayName: 'Apple Inc.',
             koreanName: '애플',
         });
-        // buildSymbolSeoContent produces "AAPL 주가 분석 — 차트와 매매 신호, 지지선·저항선"
-        expect(c.title).toBe(
-            'AAPL 주가 분석 — 차트와 매매 신호, 지지선·저항선'
-        );
+        // buildSymbolSeoContent produces "애플(AAPL) 주가 전망 — 차트·매매 신호" 형태.
+        // core(주가 전망)만 단언한다 — tail은 composeSymbolTitle이 예산 압박 시
+        // 가장 먼저 버리는 서술이라 전체 문자열을 고정하지 않는다.
+        expect(c.title).toContain('AAPL');
+        expect(c.title).toContain('주가 전망');
+        expect(c.title).not.toContain('시세');
         // stock keywords use 주가, not 시세
         expect(c.keywords).toContain('AAPL 주가');
         expect(c.keywords).toContain('애플 주가');
@@ -137,14 +145,16 @@ describe('resolveSymbolNewsSeoContent', () => {
         expect(c.url).toBe('https://siglens.io/BTCUSD/news');
     });
 
-    it('equity → buildSymbolNewsSeoContent (어닝/실적/애널리스트 copy preserved)', () => {
+    it('equity → buildSymbolNewsSeoContent (동일 빌더로 위임되며 core가 보존된다)', () => {
         const c = resolveSymbolNewsSeoContent('AAPL', 'equity', {
             displayName: '애플, Apple Inc. (AAPL)',
             koreanName: '애플',
         });
-        // Stock builder title contains 어닝 and 애널리스트
-        expect(c.title).toContain('어닝');
-        expect(c.title).toContain('애널리스트');
+        // core(뉴스)만 단언한다 — 어닝/실적 카피는 title 재설계에서 제거됐고,
+        // 남은 tail(호재 분위기와 애널리스트 등급)도 composeSymbolTitle이 예산
+        // 압박 시 가장 먼저 버리는 서술이라 고정하지 않는다.
+        expect(c.title).toContain('AAPL');
+        expect(c.title).toContain('뉴스');
         // Verify equity builder is unchanged
         const stock = buildSymbolNewsSeoContent('AAPL', {
             displayName: '애플, Apple Inc. (AAPL)',
@@ -222,12 +232,14 @@ describe('resolveSymbolOverallSeoContent', () => {
 });
 
 describe('buildCryptoSymbolFearGreedSeoContent', () => {
-    it('title is crypto-framed (코인 분위기)', () => {
+    it('title은 공포 탐욕 지수 core를 담는다 (코인 특화 표현은 keywords에서만 유지)', () => {
         const c = buildCryptoSymbolFearGreedSeoContent('BTCUSD', {
             displayName: 'Bitcoin USD',
         });
+        // composeSymbolTitle 도입 이후 크립토 fear-greed title은 주식과 동일한
+        // core/tail(공포 탐욕 지수 / 0~100 점수와 5단계)을 쓴다 — "코인" 표현은
+        // title에서 빠지고 keywords에서만 크립토 특화가 유지된다(아래 keywords 테스트).
         expect(c.title).toContain('공포 탐욕 지수');
-        expect(c.title).toContain('코인');
     });
 
     it('description is within 120 chars and mentions subject', () => {
