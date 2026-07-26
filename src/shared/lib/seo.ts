@@ -134,6 +134,43 @@ export function clampSeoDescription(text: string): string {
 }
 
 /**
+ * SERP에서 차지하는 시각적 폭을 근사한다 — 한글·전각 2, 그 외 1.
+ *
+ * Google 데스크톱 title 예산은 약 58~60 폭단위다. 글자 수로 재면 한글 제목의
+ * 잘림을 예측할 수 없다: `AAPL 주가 분석 — 차트와 매매 신호, 지지선·저항선 | Siglens`은
+ * 41글자지만 59 폭단위로 이미 경계에 있다(2026-07-26 실측).
+ *
+ * 코드포인트 기준으로 순회해 서로게이트 페어를 쪼개지 않는다
+ * ({@link clampSeoDescription}과 동일한 방침).
+ */
+export function seoTitleWidth(text: string): number {
+    let width = 0;
+    for (const ch of text) {
+        const cp = ch.codePointAt(0) ?? 0;
+        width += isFullWidthCodePoint(cp) ? 2 : 1;
+    }
+    return width;
+}
+
+/**
+ * 전각으로 취급할 코드포인트인지. 한글(자모·음절), CJK, 전각 기호, 이모지를 포함한다.
+ * 범위는 Unicode East Asian Width의 W/F 구간 중 이 서비스가 실제로 다루는 것만 추렸다.
+ */
+function isFullWidthCodePoint(cp: number): boolean {
+    return (
+        (cp >= 0x1100 && cp <= 0x115f) || // 한글 자모
+        (cp >= 0x2e80 && cp <= 0xa4cf) || // CJK 부수 ~ 이(Yi)
+        (cp >= 0xac00 && cp <= 0xd7a3) || // 한글 음절
+        (cp >= 0xf900 && cp <= 0xfaff) || // CJK 호환 한자
+        (cp >= 0xfe30 && cp <= 0xfe6f) || // CJK 호환 기호
+        (cp >= 0xff00 && cp <= 0xff60) || // 전각 형태
+        (cp >= 0xffe0 && cp <= 0xffe6) ||
+        (cp >= 0x1f300 && cp <= 0x1f64f) || // 이모지
+        (cp >= 0x1f900 && cp <= 0x1f9ff)
+    );
+}
+
+/**
  * Maps each SEO pre-warm snapshot tab to the primary Korean prose field its
  * `content` carries (verified against `src/views/symbol/snapshot/renderers/*`,
  * spec 2026-07-24 Task 4~6): technical→`summary`, overall→`headlineKo`,
