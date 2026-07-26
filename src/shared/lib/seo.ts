@@ -1084,9 +1084,12 @@ export function buildCryptoSymbolSeoContent(
 ): SymbolSeoContent {
     const ticker = symbol.toUpperCase();
     const displayName = opts.displayName ?? ticker;
-    // L1: ticker-led format keeps title under ~55 chars including "| Siglens" suffix,
-    // fitting the ~60-char SERP safe zone without dropping crypto-relevant keywords.
-    const title = `${ticker} 시세 분석 — ${displayName} 차트와 매매 신호`;
+    const title = composeSymbolTitle({
+        ticker,
+        koreanName: opts.koreanName,
+        core: '시세 전망',
+        tail: '차트·매매 신호',
+    });
     return {
         ticker,
         title,
@@ -1115,8 +1118,10 @@ export interface ResolveSymbolSeoOpts {
 /**
  * Resolves the correct chart-page SEO content for a symbol based on its asset
  * class. Crypto pages use `buildCryptoSymbolSeoContent` (price-framed copy:
- * "시세 분석", no koreanName); stock/ETF/Index pages use `buildSymbolSeoContent`
- * (equity-framed copy: "주가 분석", with optional koreanName).
+ * "시세 전망"); stock/ETF/Index pages use `buildSymbolSeoContent` (equity-framed
+ * copy: "주가 전망"). Both branches forward `koreanName` — `composeSymbolTitle`
+ * (spec 2026-07-26 title surgery) injects the Korean name for either asset
+ * class when one is available.
  *
  * Centralising this ternary here prevents the two call sites in
  * `src/app/[symbol]/page.tsx` (`generateMetadata` and `SymbolPage`) from
@@ -1130,6 +1135,7 @@ export function resolveSymbolSeoContent(
     if (assetClass === 'crypto') {
         return buildCryptoSymbolSeoContent(ticker, {
             displayName: opts.displayName,
+            koreanName: opts.koreanName ?? undefined,
         });
     }
     return buildSymbolSeoContent(ticker, {
@@ -1146,7 +1152,12 @@ export function buildCryptoSymbolNewsSeoContent(
     const ticker = symbol.toUpperCase();
     const subject = opts.displayName ?? ticker;
     // Crypto news focuses on price catalysts and market sentiment — not earnings or analyst ratings.
-    const title = `${ticker} 코인 뉴스 — 호재 악재와 크립토 시장 분위기`;
+    const title = composeSymbolTitle({
+        ticker,
+        koreanName: opts.koreanName,
+        core: '코인 뉴스',
+        tail: '호재 악재와 시장 분위기',
+    });
     const fullTitle = `${title} | ${SITE_NAME}`;
     return {
         ticker,
@@ -1193,6 +1204,7 @@ export function resolveSymbolNewsSeoContent(
     if (assetClass === 'crypto') {
         return buildCryptoSymbolNewsSeoContent(ticker, {
             displayName: opts.displayName,
+            koreanName: opts.koreanName ?? undefined,
         });
     }
     return buildSymbolNewsSeoContent(ticker, {
@@ -1209,7 +1221,12 @@ export function buildCryptoSymbolOverallSeoContent(
     const ticker = symbol.toUpperCase();
     const subject = opts.displayName ?? ticker;
     // Crypto overall axes: chart trend, news sentiment, fear-greed — no earnings/fundamental.
-    const title = `${ticker} 코인 종합 분석 — 강세와 약세 시나리오, 위험 요인`;
+    const title = composeSymbolTitle({
+        ticker,
+        koreanName: opts.koreanName,
+        core: '코인 종합 분석',
+        tail: '강세·약세 시나리오',
+    });
     const fullTitle = `${title} | ${SITE_NAME}`;
     return {
         ticker,
@@ -1253,6 +1270,7 @@ export function resolveSymbolOverallSeoContent(
     if (assetClass === 'crypto') {
         return buildCryptoSymbolOverallSeoContent(ticker, {
             displayName: opts.displayName,
+            koreanName: opts.koreanName ?? undefined,
         });
     }
     return buildSymbolOverallSeoContent(ticker, {
@@ -1269,7 +1287,12 @@ export function buildCryptoSymbolFearGreedSeoContent(
     const ticker = symbol.toUpperCase();
     const subject = opts.displayName ?? ticker;
     // Title/description mirrors the stock builder but substitutes coin-appropriate language.
-    const title = `${ticker} 공포 탐욕 지수 — 0~100 점수와 5단계 코인 분위기`;
+    const title = composeSymbolTitle({
+        ticker,
+        koreanName: opts.koreanName,
+        core: '공포 탐욕 지수',
+        tail: '0~100 점수와 5단계',
+    });
     const fullTitle = `${title} | ${SITE_NAME}`;
     return {
         ticker,
@@ -1318,6 +1341,7 @@ export function resolveSymbolFearGreedSeoContent(
     if (assetClass === 'crypto') {
         return buildCryptoSymbolFearGreedSeoContent(ticker, {
             displayName: opts.displayName,
+            koreanName: opts.koreanName ?? undefined,
         });
     }
     return buildSymbolFearGreedSeoContent(ticker, {
