@@ -845,7 +845,9 @@ describe('symbolMetadataFromSeo', () => {
     it('title/description/keywords를 그대로 매핑한다', () => {
         const meta = symbolMetadataFromSeo(baseSeo);
 
-        expect(meta.title).toBe(baseSeo.title);
+        // title은 { absolute } 형태다 — 루트 레이아웃의 title.template
+        // ("%s | Siglens" 자동 접미사)를 무시하기 위함(Task 6).
+        expect(meta.title).toEqual({ absolute: baseSeo.title });
         expect(meta.description).toBe(baseSeo.description);
         expect(meta.keywords).toEqual(baseSeo.keywords);
     });
@@ -873,18 +875,25 @@ describe('symbolMetadataFromSeo', () => {
         const tw = meta.twitter as Record<string, unknown>;
 
         expect(tw['card']).toBe('summary_large_image');
+        // twitter.title은 fullTitle(브랜드 포함) — 소셜 카드는 SERP 폭
+        // 제약이 없고 브랜드 노출이 도움이 된다(Task 6).
         expect(tw['title']).toBe(baseSeo.fullTitle);
+        expect(tw['title']).toContain('Siglens');
         expect(tw['description']).toBe(baseSeo.description);
     });
 
-    it('openGraph.title이 fullTitle(브랜드 포함)이고 meta.title이 title(브랜드 제외)이다', () => {
+    it('openGraph.title이 fullTitle(브랜드 포함)이고 meta.title이 absolute(브랜드 제외)이다', () => {
         const meta = symbolMetadataFromSeo(baseSeo);
         const og = meta.openGraph as Record<string, unknown>;
 
-        // title은 루트 레이아웃이 "| Siglens" 자동 추가 → 브랜드 미포함
-        expect(meta.title).toBe(baseSeo.title);
-        expect(meta.title).not.toContain('Siglens');
-        // openGraph/twitter title은 fullTitle(브랜드 포함) 사용
+        // title은 { absolute }로 루트 레이아웃의 "| Siglens" 자동 접미사를
+        // 무시한다 → 브랜드 미포함(Task 6, `| Siglens` 8 폭단위를 검색 의도
+        // 카피로 되돌린다).
+        const titleMeta = meta.title as { absolute: string };
+        expect(titleMeta.absolute).toBe(baseSeo.title);
+        expect(titleMeta.absolute).not.toContain('Siglens');
+        // openGraph/twitter title은 fullTitle(브랜드 포함) 사용 —
+        // 소셜 카드는 SERP 폭 제약이 없고 브랜드 노출이 도움이 된다.
         expect(og['title']).toContain('Siglens');
     });
 });

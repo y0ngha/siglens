@@ -589,13 +589,22 @@ export function buildSymbolWebPageJsonLd(params: {
  * SymbolSeoContent의 `title/fullTitle/description/url/keywords` 5개 필드를
  * Next.js Metadata 형태로 매핑한다. 동일한 구조가 8 곳에 중복됐던 것을 제거.
  *
+ * `title`은 `{ absolute: title }`로 반환해 루트 레이아웃의 `title.template`
+ * (`%s | Siglens` 자동 접미사)을 무시한다 — `| Siglens` 8글자(폭단위 8)를
+ * 2,247개 URL 전부에서 검색 의도 카피에 되돌려준다. 브랜드 검색어("siglens")는
+ * 이미 자연 순위 2.0위라 title 폭을 추가로 쓸 이유가 없다. `/backtesting`이
+ * 같은 `absolute` 메커니즘을 쓰지만 그쪽은 반대로 `fullTitle`(브랜드 포함)을
+ * 넣는다 — 단일 페이지라 폭 제약이 이만큼 타이트하지 않고 브랜드 노출도 원해서다.
+ * `openGraph.title`·`twitter.title`은 그대로 `fullTitle`을 쓴다 — 소셜 카드는
+ * SERP 폭 제약이 없고 브랜드 노출이 도움이 된다.
+ *
  * options/page.tsx의 `robots` 스프레드는 호출측이 직접 추가해야 한다:
  * `return { ...symbolMetadataFromSeo(seo), ...(hasOptions ? {} : { robots }) };`
  */
 export function symbolMetadataFromSeo(seo: SymbolSeoContent): Metadata {
     const { title, fullTitle, description, url, keywords } = seo;
     return {
-        title,
+        title: { absolute: title },
         description,
         keywords,
         alternates: { canonical: url },
