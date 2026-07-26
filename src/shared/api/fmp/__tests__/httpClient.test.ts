@@ -357,3 +357,64 @@ describe('fmpGet 함수는', () => {
         });
     });
 });
+
+// 2026-07-26 관측성 개선 회귀 가드(감사 재검토 #1).
+// 402가 3,014건 찍혔는데 심볼 귀속이 없어 조치 자체가 불가능했다. 이 스레딩이
+// 조용히 사라지면(예: 4번째 인자 누락, `?? query.symbols` 제거) 전체 스위트는
+// 그대로 통과하면서 다음 402 폭주가 다시 추적 불가능해진다.
+describe('fmpGet 오류의 심볼 귀속은', () => {
+    beforeEach(() => {
+        vi.stubGlobal('fetch', mockFetch);
+        mockFetch.mockReset();
+        vi.mocked(readFmpConfig).mockReturnValue({ apiKey: 'test-fmp-key' });
+    });
+
+    afterEach(() => {
+        vi.unstubAllGlobals();
+    });
+
+    it('query.symbol을 오류에 실어 메시지와 필드로 노출한다', async () => {
+        mockFetch.mockResolvedValue({
+            ok: false,
+            status: 402,
+            headers: { get: () => null },
+        });
+
+        await expect(
+            fmpGet('historical-price-eod/full', { symbol: 'AAPL' })
+        ).rejects.toMatchObject({ symbol: 'AAPL', status: 402 });
+    });
+
+    it('뉴스 엔드포인트의 symbols(복수) 파라미터도 귀속한다', async () => {
+        mockFetch.mockResolvedValue({
+            ok: false,
+            status: 402,
+            headers: { get: () => null },
+        });
+
+        // pre-warm이 뉴스를 적재하면서 밤마다 불리는 경로 — 폴백이 없으면
+        // 하필 이 호출만 `FMP news/crypto 402`로 남아 조치가 불가능해진다.
+        const err = await fmpGet('news/crypto', {
+            symbols: 'BTCUSD',
+        }).catch((e: unknown) => e);
+
+        expect(err).toBeInstanceOf(FmpHttpError);
+        expect((err as FmpHttpError).symbol).toBe('BTCUSD');
+        expect((err as Error).message).toBe('FMP news/crypto 402 (BTCUSD)');
+    });
+
+    it('심볼이 없는 엔드포인트는 기존 메시지 형식을 유지한다', async () => {
+        mockFetch.mockResolvedValue({
+            ok: false,
+            status: 402,
+            headers: { get: () => null },
+        });
+
+        const err = await fmpGet('economic-indicators', {}).catch(
+            (e: unknown) => e
+        );
+
+        expect((err as FmpHttpError).symbol).toBeNull();
+        expect((err as Error).message).toBe('FMP economic-indicators 402');
+    });
+});
