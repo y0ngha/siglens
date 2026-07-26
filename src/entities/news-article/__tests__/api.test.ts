@@ -34,6 +34,24 @@ vi.mock('@/entities/ticker/lib/resolveAssetClass', () => ({
     resolveAssetClass: vi.fn(),
 }));
 
+// prewarmNews는 listBySymbol을 읽기 전에 ingestNewsForSymbol을 호출한다(SEO
+// pre-warm news livelock 수정 — api.ts prewarmNews doc-comment 참고).
+// ingestNewsForSymbol 자체(FMP fetch + upsert 조합)는 ingestNewsForSymbol.test.ts가
+// 별도로 검증하므로, 여기서는 prewarmNews가 그 seam을 올바른 순서/fail-open으로
+// 호출하는지만 확인하기 위해 mock한다.
+vi.mock('../lib/ingestNewsForSymbol', async importOriginal => {
+    // NewsIngestWriteError는 실제 클래스를 그대로 노출한다 — prewarmNews가
+    // `instanceof`로 DB 장애를 구분하므로 가짜 클래스면 판별이 무의미해진다.
+    const actual =
+        await importOriginal<typeof import('../lib/ingestNewsForSymbol')>();
+    return { ...actual, ingestNewsForSymbol: vi.fn() };
+});
+
+const { mockRevalidateTag } = vi.hoisted(() => ({
+    mockRevalidateTag: vi.fn(),
+}));
+vi.mock('next/cache', () => ({ revalidateTag: mockRevalidateTag }));
+
 import type {
     NewsCardAnalysis,
     NewsItem,
@@ -53,6 +71,11 @@ import type { NewsRow } from '@/entities/news-article';
 import { getDatabaseClient } from '@/shared/db/client';
 import { getNextEarningsReport } from '@/entities/earnings-report';
 import { resolveAssetClass } from '@/entities/ticker/lib/resolveAssetClass';
+import { NEWS_ANALYSIS_LOOKBACK_MS } from '../lib/newsLookback';
+import {
+    ingestNewsForSymbol,
+    NewsIngestWriteError,
+} from '../lib/ingestNewsForSymbol';
 
 const SEAM_SOURCE = readFileSync(
     fileURLToPath(new URL('../api.ts', import.meta.url)),
@@ -392,6 +415,7 @@ describe('prewarmNews', () => {
     const mockGetDatabaseClient = vi.mocked(getDatabaseClient);
     const mockGetNextEarningsReport = vi.mocked(getNextEarningsReport);
     const mockResolveAssetClass = vi.mocked(resolveAssetClass);
+    const mockIngestNewsForSymbol = vi.mocked(ingestNewsForSymbol);
 
     const ANALYZED_ROW = {
         id: 'abc123',
@@ -442,6 +466,7 @@ describe('prewarmNews', () => {
         mockSubmitNewsAnalysis.mockResolvedValue(SUBMITTED_RESULT);
         mockResolveAssetClass.mockResolvedValue('equity');
         mockGetNextEarningsReport.mockResolvedValue(null);
+        mockIngestNewsForSymbol.mockResolvedValue(null);
         const { db } = makeSelectDb([]);
         mockGetDatabaseClient.mockReturnValue({
             db,
@@ -513,5 +538,126 @@ describe('prewarmNews', () => {
         expect(SEAM_SOURCE).not.toMatch(
             /next\/headers|getCurrentUser|isBot|cookies|draftMode/
         );
+    });
+
+    describe('ingest-before-read (SEO pre-warm news livelock fix)', () => {
+        it('calls ingestNewsForSymbol before reading listBySymbol from DB', async () => {
+            const callOrder: string[] = [];
+            const { db, orderBy } = makeSelectDb([]);
+            orderBy.mockImplementation(() => {
+                callOrder.push('listBySymbol');
+                return Promise.resolve([]);
+            });
+            mockGetDatabaseClient.mockReturnValue({
+                db,
+            } as unknown as ReturnType<typeof getDatabaseClient>);
+            mockIngestNewsForSymbol.mockImplementationOnce(async () => {
+                callOrder.push('ingestNewsForSymbol');
+                return null;
+            });
+
+            await prewarmNews('AAPL', 'Apple Inc.', false);
+
+            expect(callOrder).toEqual(['ingestNewsForSymbol', 'listBySymbol']);
+        });
+
+        // 감사 F1 회귀 가드. cron이 DB를 채워도 news 목록 캐시(태그 `news:{SYMBOL}`,
+        // 12h)를 무효화하지 않으면 Fix B의 최대 성과가 최대 12시간 노출되지 않는다.
+        it('새로 적재된 기사가 있으면 news 태그를 무효화한다', async () => {
+            const { db } = makeSelectDb([]);
+            mockGetDatabaseClient.mockReturnValue({
+                db,
+            } as unknown as ReturnType<typeof getDatabaseClient>);
+            mockIngestNewsForSymbol.mockResolvedValueOnce({
+                fresh: [{}, {}] as unknown as NewsItem[],
+                upsertSettled: [
+                    { status: 'fulfilled', value: true },
+                    { status: 'fulfilled', value: false },
+                ],
+            });
+
+            await prewarmNews('aapl', 'Apple Inc.', false);
+
+            expect(mockRevalidateTag).toHaveBeenCalledWith('news:AAPL', 'max');
+        });
+
+        it('변경된 기사가 없으면 무효화하지 않는다(무효화 폭풍 방지)', async () => {
+            const { db } = makeSelectDb([]);
+            mockGetDatabaseClient.mockReturnValue({
+                db,
+            } as unknown as ReturnType<typeof getDatabaseClient>);
+            mockIngestNewsForSymbol.mockResolvedValueOnce({
+                fresh: [{}] as unknown as NewsItem[],
+                upsertSettled: [{ status: 'fulfilled', value: false }],
+            });
+
+            await prewarmNews('AAPL', 'Apple Inc.', false);
+
+            expect(mockRevalidateTag).not.toHaveBeenCalled();
+        });
+
+        // 감사 F2 회귀 가드. DB 광역 장애를 fail-open으로 삼키면 비어 있는 DB를
+        // 그대로 분석해 빈약한 스냅샷이 generatedAt=now로 굳어, 다음 거래일
+        // 경계까지 재시도조차 되지 않는다.
+        it('DB 쓰기 장애(NewsIngestWriteError)는 삼키지 않고 올려보낸다', async () => {
+            mockIngestNewsForSymbol.mockRejectedValueOnce(
+                new NewsIngestWriteError(9, 10)
+            );
+
+            await expect(
+                prewarmNews('AAPL', 'Apple Inc.', false)
+            ).rejects.toBeInstanceOf(NewsIngestWriteError);
+        });
+
+        it('ingest 실패(reject)해도 fail-open으로 DB의 기존 뉴스로 분석을 계속 진행한다', async () => {
+            mockIngestNewsForSymbol.mockRejectedValueOnce(
+                new Error('FMP outage')
+            );
+            const errorSpy = vi
+                .spyOn(console, 'error')
+                .mockImplementation(() => undefined);
+            const { db } = makeSelectDb([ANALYZED_ROW]);
+            mockGetDatabaseClient.mockReturnValue({
+                db,
+            } as unknown as ReturnType<typeof getDatabaseClient>);
+
+            await expect(
+                prewarmNews('AAPL', 'Apple Inc.', false)
+            ).resolves.toEqual(SUBMITTED_RESULT);
+
+            expect(mockSubmitNewsAnalysis).toHaveBeenCalledTimes(1);
+            errorSpy.mockRestore();
+        });
+
+        // 감사 재검토 #2 회귀 가드. 2인자 호출로 되돌리면 180일 기본값이 살아나
+        // 295심볼 × 최대 1000건을 매일 밤 Neon에 쓰게 된다(읽는 건 30일치뿐).
+        it('cron 경로는 분석 창(30일) lookback으로 적재한다', async () => {
+            const { db } = makeSelectDb([]);
+            mockGetDatabaseClient.mockReturnValue({
+                db,
+            } as unknown as ReturnType<typeof getDatabaseClient>);
+            mockIngestNewsForSymbol.mockResolvedValueOnce(null);
+
+            await prewarmNews('AAPL', 'Apple Inc.', false);
+
+            expect(mockIngestNewsForSymbol).toHaveBeenCalledWith(
+                'AAPL',
+                expect.anything(),
+                NEWS_ANALYSIS_LOOKBACK_MS
+            );
+        });
+
+        it('submit 페이로드(model/tier/reasoning)는 ingest 도입 전과 동일하다', async () => {
+            await prewarmNews('AAPL', 'Apple Inc.', false);
+
+            expect(mockSubmitNewsAnalysis).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    modelId: DEEPSEEK_V4_FLASH_MODEL,
+                    tier: 'free',
+                    reasoning: false,
+                    skipEnqueueIfMiss: false,
+                })
+            );
+        });
     });
 });

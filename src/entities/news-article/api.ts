@@ -1,4 +1,5 @@
 import 'server-only';
+import { revalidateTag } from 'next/cache';
 
 import { cache } from 'react';
 import { and, desc, eq, gte, sql } from 'drizzle-orm';
@@ -28,6 +29,10 @@ import {
     NEWS_ANALYSIS_LOOKBACK_MS,
 } from './lib/newsLookback';
 import { buildAnalysisNewsItems } from './lib/buildAnalysisNewsItems';
+import {
+    ingestNewsForSymbol,
+    NewsIngestWriteError,
+} from './lib/ingestNewsForSymbol';
 import { getNextEarningsReport } from '@/entities/earnings-report';
 import { resolveAssetClass } from '@/entities/ticker/lib/resolveAssetClass';
 
@@ -297,6 +302,21 @@ function toNewsRow(row: NewsDbRow): NewsRow {
  *
  * ⚠️ 요청 헤더 읽기·세션 사용자 조회·봇 판별·쿠키 접근 금지 — cron의
  * after() 컨텍스트에서 실행되며 React 요청 스코프가 없다.
+ *
+ * **ingest-before-read (2026-07-26 감사)** — `listBySymbol`을 읽기 전에
+ * `ingestNewsForSymbol`로 FMP news를 먼저 채운다. 원래는 사람이 news 탭을
+ * 방문할 때만(`ensureNewsCardsAnalyzedAction`) news 테이블이 채워졌는데,
+ * pre-warm cron은 그 방문을 절대 만들지 않으므로 최근 30일(`NEWS_ANALYSIS_LOOKBACK_MS`)
+ * 안에 아무도 안 본 심볼은 `listBySymbol`이 항상 빈 배열을 반환해 news 분석이
+ * 영구 실패했다 — `overall`도 news에 의존하므로 함께 실패했다. 실측: 하베스트된
+ * 221개 심볼 중 44개(20%)가 이 창에 걸렸고, 저-트래픽 크립토 알트코인이 가장
+ * 심했다(처리된 크립토 ~15개 중 11개가 적용 가능한 3개 탭 중 technical만 확보).
+ * cron은 사람 방문에 기대지 않고 스스로 완결돼야 한다(self-sufficient).
+ *
+ * ingest 실패(FMP 장애/402 등)는 fail-open — 배치의 다른 단위 격리 철학과
+ * 동일하게 여기서 삼켜서 DB에 이미 있는 뉴스만으로 분석을 진행한다. FMP
+ * 신규 호출 비용: pre-warm 방문마다 심볼당 1회 추가. 유니버스 295개, FMP
+ * 한도 분당 300req, 배치는 5분 tick당 6심볼만 처리하므로 무시 가능한 증가분이다.
  */
 export async function prewarmNews(
     symbol: string,
@@ -305,11 +325,44 @@ export async function prewarmNews(
 ): Promise<SubmitNewsAnalysisResult> {
     const assetClass = await resolveAssetClass(symbol);
     const { db } = getDatabaseClient();
+    const repo = new DrizzleNewsRepository(db);
+
+    // cron은 방문 트래픽에 기대지 않는다 — 위 doc-comment "ingest-before-read" 참고.
+    //
+    // lookback을 분석 창(30일)으로 좁힌다: 사람 방문 경로는 뉴스 **목록**(180일)을
+    // 채워야 하지만 cron은 바로 아래 `listBySymbol(NEWS_ANALYSIS_LOOKBACK_MS)`로
+    // 30일치만 읽는다. 180일치를 받아 upsert하면 매일 밤 295심볼에 대해 읽지도 않을
+    // 기사를 Neon에 쓰게 되고, 그 왕복이 배치 데드라인을 갉아먹는다(감사 F5).
+    const ingested = await ingestNewsForSymbol(
+        symbol,
+        repo,
+        NEWS_ANALYSIS_LOOKBACK_MS
+    ).catch((err: unknown) => {
+        // DB 광역 장애(과반 upsert 실패)는 삼키지 않고 올려보낸다 — 삼키면 비어 있는
+        // DB를 그대로 분석해 빈약한 스냅샷을 generatedAt=now로 굳혀버려 다음 거래일
+        // 경계까지 재시도조차 안 된다. 위로 던지면 배치의 유닛 단위 catch가 스냅샷을
+        // 쓰지 않고 다음 tick이 재시도한다(감사 F2).
+        if (err instanceof NewsIngestWriteError) throw err;
+        // FMP 장애·402 등은 fail-open — DB에 이미 있는 뉴스로 계속 진행한다.
+        console.error(`[prewarmNews] ingest failed for ${symbol}:`, err);
+        return null;
+    });
+
+    // 새로 적재된 기사가 있으면 news 목록 캐시를 무효화한다. 이게 없으면 cron이
+    // DB를 채워도 `getNewsList`의 staticSymbolCache(태그 `news:{SYMBOL}`, 12h)가
+    // 빈 목록을 계속 서빙해, Fix B의 최대 성과가 최대 12시간 노출되지 않는다(감사 F1).
+    // `revalidateTag('seo-snapshot:…')`는 다른 태그이고 전 탭 수렴 시에만 발화하므로
+    // 이 경로를 대신하지 못한다.
+    const changedCount =
+        ingested?.upsertSettled.filter(
+            r => r.status === 'fulfilled' && r.value === true
+        ).length ?? 0;
+    if (changedCount > 0) {
+        revalidateTag(`news:${symbol.toUpperCase()}`, 'max');
+    }
+
     const [rows, next] = await Promise.all([
-        new DrizzleNewsRepository(db).listBySymbol(
-            symbol,
-            NEWS_ANALYSIS_LOOKBACK_MS
-        ),
+        repo.listBySymbol(symbol, NEWS_ANALYSIS_LOOKBACK_MS),
         getNextEarningsReport(symbol, db),
     ]);
     const enrichedNews: ReadonlyArray<EnrichedNewsItem> =

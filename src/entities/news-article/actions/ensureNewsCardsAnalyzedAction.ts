@@ -2,19 +2,14 @@
 
 import { getDatabaseClient } from '@/shared/db/client';
 import { DrizzleNewsRepository } from '@/entities/news-article/api';
-import { getNewsClient } from '../lib/getNewsClient';
-import {
-    getFmpUserFacingMessage,
-    isFmpPaymentRequiredError,
-    logFmpPaymentRequiredError,
-} from '@/shared/api/fmp/fmpUserMessage';
+import { ingestNewsForSymbol } from '../lib/ingestNewsForSymbol';
 import {
     DISABLED_THINKING_BUDGET,
     NEWS_CARD_ANALYSIS_POLL_INTERVAL_MS as POLL_INTERVAL_MS,
     POLL_MAX_ATTEMPTS,
 } from '../lib/newsAnalysisConstants';
 import { NEWS_LOOKBACK_MS } from '../lib/newsLookback';
-import { isRecentlyFetched, markFetched } from '../lib/newsRefreshFlag';
+import { isRecentlyFetched } from '../lib/newsRefreshFlag';
 import { revalidateTag } from 'next/cache';
 import { sleep } from '@/shared/lib/sleep';
 import { MS_PER_SECOND } from '@/shared/config/time';
@@ -24,8 +19,6 @@ import {
     submitNewsCardAnalysis,
     type NewsItem,
 } from '@y0ngha/siglens-core';
-import { getDescriptor } from '@/shared/config/marketProfile';
-import { resolveMarketProfile } from '@/entities/ticker/lib/resolveAssetClass';
 
 /**
  * Submit card analysis for a single item and wait for the worker to finish,
@@ -85,56 +78,16 @@ export async function ensureNewsCardsAnalyzedAction(
         return;
     }
 
-    const profileId = await resolveMarketProfile(symbol);
-    const newsSource = getDescriptor(profileId).newsSource;
-    const newsClient = getNewsClient(newsSource);
     const { db } = getDatabaseClient();
     const repo = new DrizzleNewsRepository(db);
 
-    const fresh = await newsClient
-        .fetchNewsForPeriod(symbol, NEWS_LOOKBACK_MS)
-        .catch((err: unknown) => {
-            logFmpPaymentRequiredError(err);
-            if (
-                getFmpUserFacingMessage(err) === null &&
-                !isFmpPaymentRequiredError(err)
-            ) {
-                console.error(
-                    '[ensureNewsCardsAnalyzedAction] FMP fetch failed:',
-                    err
-                );
-            }
-            return null;
-        });
-    if (fresh === null) return;
-
-    // Upsert all items first so the DB row exists before attachAnalysis runs.
-    //
-    // We deliberately do NOT wrap upsert + analyze in a drizzle transaction:
-    // the analyze step calls an external LLM worker (`submitNewsCardAnalysis`)
-    // which can take seconds to minutes, and a long-lived DB transaction would
-    // hold connection-pool slots and risk pool exhaustion. Instead we use
-    // Promise.allSettled and aggregate failure stats — and abort early if a
-    // majority of upserts fail (likely a DB-wide outage, not transient).
-    const upsertSettled = await Promise.allSettled(
-        fresh.map(item => repo.upsertNewsItem(item))
-    );
-    const upsertFailures = upsertSettled.filter(r => r.status === 'rejected');
-    if (upsertFailures.length > 0) {
-        console.error(
-            `[ensureNewsCardsAnalyzedAction] ${upsertFailures.length}/${fresh.length} upserts failed`,
-            upsertFailures.map(f => (f.status === 'rejected' ? f.reason : null))
-        );
-    }
-    if (upsertFailures.length > fresh.length / 2) {
-        // Majority of upserts failed — almost certainly a DB-wide outage.
-        // Throw so the caller (Server Action / waitUntil) knows to retry
-        // rather than silently proceeding to analyze partial data.
-        throw new Error(
-            `[ensureNewsCardsAnalyzedAction] majority upsert failure (${upsertFailures.length}/${fresh.length})`
-        );
-    }
-    await markFetched(symbol);
+    // FMP fetch + DB upsert + failure aggregation + markFetched는
+    // ingestNewsForSymbol(lib/)로 추출됨 — prewarmNews(api.ts)도 이 경로를
+    // 재사용한다(SEO pre-warm cron의 news livelock 수정, 20%/altcoin 측정치는
+    // 그 함수의 doc-comment 참고).
+    const ingestResult = await ingestNewsForSymbol(symbol, repo);
+    if (ingestResult === null) return;
+    const { fresh, upsertSettled } = ingestResult;
 
     // FMP에서 새 뉴스가 하나도 없으면(fresh 빈) 무효화·분석 모두 불필요하다 — unanalyzed도
     // 항상 빈 배열이 되므로 listBySymbol DB 쿼리를 스킵한다. (fresh.length>0이지만 모두 no-op인
