@@ -216,6 +216,24 @@ export function clampSeoTitle(
 }
 
 /**
+ * title 전용 짧은 주어 — `애플(AAPL)`.
+ *
+ * `buildDisplayName`(`애플, Apple Inc. (AAPL)`, 22자)은 H1·본문용이라 title에는
+ * 너무 길다. title 예산 58~60 폭단위 중 22자를 주어에 쓰면 검색 의도를 드러낼
+ * 자리가 남지 않는다.
+ *
+ * `entities/ticker`가 아니라 여기 두는 이유: 12개 SEO 빌더가 전부
+ * `BuildSymbolSeoOptions`(또는 이를 extends한 타입)를 받고 그 안에 `koreanName`이
+ * 이미 있다. 여기서 파생하면 호출부 시그니처를 하나도 바꾸지 않는다.
+ */
+export function buildTitleSubject(ticker: string, koreanName?: string): string {
+    const upper = ticker.toUpperCase();
+    const kr = koreanName?.trim();
+    if (!kr || kr === upper) return upper;
+    return `${kr}(${upper})`;
+}
+
+/**
  * Maps each SEO pre-warm snapshot tab to the primary Korean prose field its
  * `content` carries (verified against `src/views/symbol/snapshot/renderers/*`,
  * spec 2026-07-24 Task 4~6): technical→`summary`, overall→`headlineKo`,
