@@ -1,6 +1,7 @@
 import { render, screen, fireEvent, within } from '@testing-library/react';
 import { useState } from 'react';
 import { SymbolLayoutHeader } from '@/views/symbol/SymbolLayoutHeader';
+import { useAssetInfo } from '@/entities/ticker/hooks/useAssetInfo';
 
 vi.mock('next/link', () => ({
     default: ({
@@ -313,5 +314,37 @@ describe('SymbolLayoutHeader', () => {
         expect(
             within(controlRow as HTMLElement).getByTestId('fear-greed-chip')
         ).toBeInTheDocument();
+    });
+
+    it('renders the premium gate modal when the context exposes one', () => {
+        mockUseSymbolModel.mockReturnValue(
+            symbolModelValue({
+                gateModal: { mode: 'upgrade', provider: 'google' },
+            })
+        );
+
+        render(<SymbolLayoutHeader symbol="aapl" />);
+
+        expect(screen.getByTestId('gate-modal')).toBeInTheDocument();
+    });
+
+    it('omits the company-name segment when the name is just the ticker', () => {
+        // Unseeded symbols come back with name === ticker. Rendering
+        // "AAPL, AAPL (AAPL)" would be nonsense, so the breadcrumb drops the
+        // company segment and separates the Korean name with a space instead
+        // of a comma.
+        vi.mocked(useAssetInfo).mockReturnValueOnce({
+            name: 'AAPL',
+            koreanName: '애플',
+            fmpSymbol: 'AAPL',
+        } as ReturnType<typeof useAssetInfo>);
+
+        render(<SymbolLayoutHeader symbol="aapl" />);
+
+        expect(screen.getByText('(AAPL)')).toBeInTheDocument();
+        expect(screen.getByText(/애플/)).toBeInTheDocument();
+        // The Korean name must not be followed by a comma when no company
+        // name segment follows it.
+        expect(screen.queryByText(/애플,/)).not.toBeInTheDocument();
     });
 });

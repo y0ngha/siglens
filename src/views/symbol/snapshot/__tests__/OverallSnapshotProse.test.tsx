@@ -402,3 +402,89 @@ describe('hasOverallProse', () => {
         expect(hasOverallProse(undefined)).toBe(false);
     });
 });
+
+describe('OverallSnapshotProse — scenarios 방어적 좁히기', () => {
+    // scenarios는 JSONB에서 unknown으로 올라오므로 원소별로 신뢰할 수 없다.
+    // malformed 원소가 페이지를 throw로 날리지 않고 조용히 걸러지는지 확인한다.
+    it('malformed 시나리오 원소를 걸러낸다', () => {
+        render(
+            <OverallSnapshotProse
+                content={{
+                    headlineKo: '종합 헤드라인',
+                    scenarios: [
+                        null,
+                        'not-an-object',
+                        {
+                            name: 'not-a-scenario',
+                            triggerConditionKo: '무시됨',
+                        },
+                        {
+                            name: 'bullish',
+                            triggerConditionKo: '저항 돌파 시',
+                            priceRangeKo: '210~225',
+                        },
+                    ],
+                }}
+                symbol="AAPL"
+                displayName="Apple Inc."
+            />
+        );
+
+        expect(
+            screen.getByText('저항 돌파 시 (예상 가격대: 210~225)')
+        ).toBeInTheDocument();
+        expect(screen.queryByText('무시됨')).not.toBeInTheDocument();
+        expect(screen.queryByText('중립 시나리오')).not.toBeInTheDocument();
+        expect(screen.queryByText('약세 시나리오')).not.toBeInTheDocument();
+    });
+
+    it('trigger·priceRange 중 하나만 유효하면 그 하나로 bullet을 합성한다', () => {
+        render(
+            <OverallSnapshotProse
+                content={{
+                    scenarios: [
+                        // priceRangeKo가 문자열이 아니므로 trigger만 남는다.
+                        {
+                            name: 'bullish',
+                            triggerConditionKo: '거래량 동반 상승',
+                            priceRangeKo: 123,
+                        },
+                        // triggerConditionKo가 문자열이 아니므로 가격대만 남는다.
+                        {
+                            name: 'neutral',
+                            triggerConditionKo: null,
+                            priceRangeKo: '195~205',
+                        },
+                    ],
+                }}
+                symbol="AAPL"
+                displayName="Apple Inc."
+            />
+        );
+
+        expect(screen.getByText('거래량 동반 상승')).toBeInTheDocument();
+        expect(screen.getByText('예상 가격대: 195~205')).toBeInTheDocument();
+    });
+
+    it('trigger·priceRange가 둘 다 비면 그 시나리오 섹션 자체를 렌더하지 않는다', () => {
+        render(
+            <OverallSnapshotProse
+                content={{
+                    headlineKo: '헤드라인만 유효',
+                    scenarios: [
+                        {
+                            name: 'bearish',
+                            triggerConditionKo: '   ',
+                            priceRangeKo: '',
+                        },
+                    ],
+                }}
+                symbol="AAPL"
+                displayName="Apple Inc."
+            />
+        );
+
+        expect(screen.getByText('헤드라인만 유효')).toBeInTheDocument();
+        expect(screen.queryByText('약세 시나리오')).not.toBeInTheDocument();
+    });
+});

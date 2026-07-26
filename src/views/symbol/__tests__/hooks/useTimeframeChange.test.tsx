@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 import type { Timeframe } from '@y0ngha/siglens-core';
 import { useTimeframeChange } from '@/views/symbol/hooks/useTimeframeChange';
 import { getBarsAction } from '@/entities/bars/actions';
+import { useAssetInfo } from '@/entities/ticker/hooks/useAssetInfo';
 
 const mockReplace = vi.fn();
 const mockGet = vi.fn().mockReturnValue(null);
@@ -211,5 +212,89 @@ describe('useTimeframeChange', () => {
             expect(result.current.timeframeChangeCount).toBe(1);
         });
         expect(mockReplace).not.toHaveBeenCalled();
+    });
+
+    it('prefetches bars and navigates when a member picks a new timeframe', async () => {
+        const { result } = renderHook(
+            () => useTimeframeChange('AAPL', false, true),
+            {
+                wrapper: makeWrapper(),
+            }
+        );
+
+        act(() => {
+            result.current.handleTimeframeChange('1Week' as Timeframe);
+        });
+
+        // The prefetch must be issued from the event handler, not during render:
+        // useSuspenseQuery calling a Server Action mid-render collides with
+        // Next's internal router state update.
+        await waitFor(() => {
+            expect(getBarsAction).toHaveBeenCalledWith(
+                'AAPL',
+                '1Week',
+                undefined
+            );
+        });
+        expect(mockReplace).toHaveBeenCalledWith('/AAPL?tf=1Week', {
+            scroll: false,
+        });
+        await waitFor(() => {
+            expect(result.current.timeframeChangeCount).toBe(1);
+        });
+    });
+
+    it('passes the resolved fmpSymbol into the prefetch query key', async () => {
+        vi.mocked(useAssetInfo).mockReturnValueOnce({
+            fmpSymbol: 'BTCUSD',
+        } as ReturnType<typeof useAssetInfo>);
+
+        const { result } = renderHook(
+            () => useTimeframeChange('BTC', false, true),
+            {
+                wrapper: makeWrapper(),
+            }
+        );
+
+        act(() => {
+            result.current.handleTimeframeChange('1Week' as Timeframe);
+        });
+
+        await waitFor(() => {
+            expect(getBarsAction).toHaveBeenCalledWith(
+                'BTC',
+                '1Week',
+                'BTCUSD'
+            );
+        });
+    });
+
+    it('does not double-count when the URL catches up to a navigation it initiated', async () => {
+        const { result, rerender } = renderHook(
+            () => useTimeframeChange('AAPL', false, true),
+            {
+                wrapper: makeWrapper(),
+            }
+        );
+
+        act(() => {
+            result.current.handleTimeframeChange('1Week' as Timeframe);
+        });
+
+        await waitFor(() => {
+            expect(result.current.timeframeChangeCount).toBe(1);
+        });
+
+        // router.replace is mocked, so simulate the search param landing after
+        // the transition. The pending-navigation ref must absorb this so the
+        // count stays at 1 — an extra increment would re-trigger the analysis
+        // refresh for a timeframe change the user only made once.
+        mockGet.mockReturnValue('1Week');
+        rerender();
+
+        await waitFor(() => {
+            expect(result.current.timeframe).toBe('1Week');
+        });
+        expect(result.current.timeframeChangeCount).toBe(1);
     });
 });
