@@ -45,11 +45,30 @@ const SYMBOLS_PER_TICK = 6;
 const SYMBOL_CONCURRENCY = 3;
 // FIX A(감사) — bounded in-flight/backoff 후보 스캔 폭. selectFairBatch 참고.
 const CANDIDATE_WINDOW_MULTIPLIER = 3;
+// 회전 오프셋의 시간 눈금 — EventBridge 스케줄 간격(5분, 13-seo-prewarm.sh)과 맞춘다.
+//
+// ⚠️ **불변식**: `BATCH_DEADLINE_MS + 스케줄주기 ≤ CANDIDATE_WINDOW_MULTIPLIER × TICK_ROTATION_MS`
+//
+// 회전 폭을 결정하는 건 스케줄 주기가 아니라 **배치가 실제로 시작되는 간격**이다.
+// Redis 루트 락(LOCK_TTL 900s)이 중첩 실행을 막으므로, 앞 배치가 데드라인까지
+// 쓰면 다음 시작은 `BATCH_DEADLINE_MS` 뒤의 첫 스케줄 tick이다. 그 간격만큼
+// offset이 뛰고, 뜀폭이 창 폭(`SYMBOLS_PER_TICK × CANDIDATE_WINDOW_MULTIPLIER` = 18)을
+// 넘으면 창과 창 사이에 **영영 후보가 되지 않는 구멍**이 생긴다 — livelock과 같은
+// 부류의 기아가 재발한다.
+//
+// 현재 값: 600s(데드라인) + 300s(스케줄) = 900s = 15분 → 전진 18 = 창 18.
+// **여유 없이 경계에 정확히 걸쳐 있다.** 따라서 `BATCH_DEADLINE_MS`를 늘리는 것만으로도
+// (EventBridge를 건드리지 않아도) 불변식이 깨진다 — 아래 BATCH_DEADLINE_MS 주석 참조.
+// 스케줄이나 데드라인을 바꾸려면 `CANDIDATE_WINDOW_MULTIPLIER`를 함께 올릴 것.
+const TICK_ROTATION_MS = 5 * 60 * 1000;
 // FIX G(감사) — 배치 전체 wall-clock 상한. LOCK_TTL_SECONDS(900s)보다 충분히
 // 작고 5분 tick 주기보다는 커서, 정상 배치가 잘리지 않으면서도 락 만료 전에
 // 반드시 끝나 "락 만료 → 다음 tick이 새 락 획득 → 배치 2개 동시 실행" 오버랩을
 // 막는다(FMP 429 폭풍 중 심볼당 최악 ~75s(10s 타임아웃 + 10/15/20s 재시도)로
 // 10심볼 배치가 900s를 넘길 수 있었던 문제).
+// ⚠️ 이 값을 늘리면 회전 불변식이 깨진다 — `TICK_ROTATION_MS` 주석의
+// `BATCH_DEADLINE_MS + 스케줄주기 ≤ 15분`을 반드시 함께 확인할 것. 현재 정확히
+// 경계값(600s + 300s = 900s)이라 여유가 없다.
 const BATCH_DEADLINE_MS = 600_000; // 10min
 // FIX Z(감사) — poll 간격/유닛(심볼×탭)당 상한. 60s 안에 못 끝나면 이번 tick은
 // 포기하고 in-flight(jobId) 마커를 남겨 다음 tick이 이어서 poll한다(배치를
@@ -127,15 +146,11 @@ export async function runPrewarmBatch(
                 )
         )
     );
-    // FIX A(감사) — "이번 tick 기준 전 탭이 fresh로 완료된 심볼 수"를 회전
-    // 오프셋으로 쓴다. selectFairBatch의 doc-comment 참고.
-    const freshCount = universe.length - staleSymbols.length;
-
     const batch = await selectFairBatch(
         staleSymbols,
         generatedAtMap,
         boundary,
-        freshCount
+        clock.now()
     );
     const counts: PrewarmBatchCounts = {
         submitted: 0,
@@ -190,11 +205,21 @@ export async function runPrewarmBatch(
  * 항상 index 0부터 뽑았다. `lastCompletedEtCloseWithBuffer`가 매 거래일 넘어갈
  * 때마다 boundary를 갱신해 전 심볼이 하룻밤 새 다시 stale이 되므로, 매일 밤
  * 선택이 index 0부터 재시작돼 유니버스 tail(POPULAR_CRYPTOS 29종, `buildPrewarmUniverse`가
- * 배열 끝에 붙임)이 평일엔 영원히 도달하지 못했다. offset을 "이번 tick 기준
- * 전 탭이 fresh로 완료된 심볼 수"(freshCount)로 잡으면, 밤 동안 처리가
- * 진행될수록 offset이 단조 증가해 시작점이 앞으로 흘러가고, 다음날 boundary가
- * 넘어가 전부 stale로 리셋되면 freshCount도 자연히 0으로 함께 리셋된다 —
- * Math.random이나 별도 Redis 커서 없이 이미 계산해둔 값만으로 결정적 회전을 얻는다.
+ * 배열 끝에 붙임)이 평일엔 영원히 도달하지 못했다.
+ *
+ * ⚠️ **offset은 진행도가 아니라 시각에서 파생해야 한다** (2026-07-26 인시던트).
+ * 최초 구현은 offset을 "전 탭이 fresh로 완료된 심볼 수"(freshCount)로 잡았다.
+ * 진행이 있을 때는 잘 흘러가지만, 창 안 후보가 **전부 blocked**가 되는 순간
+ * 아무것도 완료되지 않아 freshCount가 얼어붙고, 그러면 offset도 얼어붙어
+ * 다음 tick이 **같은 창을 재검사**한다 — 스스로 빠져나올 수 없는 livelock이다.
+ * 첫 야간 운영에서 실제로 발생했다: `submitted:0 / remaining:153`이 반복되며
+ * 221/295 심볼에서 정지(skip 마커 69 + in-flight 7이 창 18칸을 덮음).
+ *
+ * 그래서 offset을 tick 시각에서 뽑는다 — `floor(now / TICK_ROTATION_MS) *
+ * SYMBOLS_PER_TICK`. 진행 여부와 무관하게 매 tick 창이 `SYMBOLS_PER_TICK`칸씩
+ * 전진하므로 blocked 구간을 반드시 통과하고, 유니버스 tail 도달 문제(위 원래
+ * 목적)도 그대로 해결된다. Math.random이나 Redis 커서 없이 결정적이며,
+ * 같은 tick 안의 재시도(EventBridge 재전송)는 같은 offset을 얻어 멱등이다.
  *
  * ② bounded in-flight/backoff 스캔: `getInFlightMarker`/`isSkipped`는 (symbol, tab)당
  * 비동기 Redis 조회라 유니버스 전체(290×≤7)를 매 tick 걸면 ~1900회 왕복이 든다.
@@ -227,11 +252,14 @@ async function selectFairBatch(
     staleSymbols: PrewarmSymbol[],
     generatedAtMap: Map<string, Date>,
     boundary: Date,
-    freshCount: number
+    nowMs: number
 ): Promise<PrewarmSymbol[]> {
     if (staleSymbols.length === 0) return [];
 
-    const offset = freshCount % staleSymbols.length;
+    // 회전 오프셋은 **시각**에서 파생한다(아래 doc-comment ① 참조).
+    const offset =
+        (Math.floor(nowMs / TICK_ROTATION_MS) * SYMBOLS_PER_TICK) %
+        staleSymbols.length;
     const windowSize = Math.min(
         staleSymbols.length,
         SYMBOLS_PER_TICK * CANDIDATE_WINDOW_MULTIPLIER

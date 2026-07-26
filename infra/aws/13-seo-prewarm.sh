@@ -134,6 +134,17 @@ DEST_ARN="$(aws events describe-api-destination --name "$DESTINATION_NAME" \
 ### 5) Rule 3개 (UTC) — EventBridge cron은 UTC 고정이라 20:30–03:59 창을 자정
 ###    경계로 쪼개고, 20시대는 AWS cron이 "시간별로 다른 분(minute) 필터"를
 ###    표현할 수 없어 21-23시(매시 0/5)와 별도 규칙으로 나눈다. 전부 5분 간격.
+###
+### ⚠️ **5분 간격은 앱 코드와 묶인 계약이다 — 임의로 늘리지 말 것.**
+### `runPrewarmBatch.ts`의 배치 선정은 회전 창(window)을 쓰는데, invocation당
+### 전진 폭이 `SYMBOLS_PER_TICK × (스케줄주기 / TICK_ROTATION_MS)`이고 이 값이
+### 창 폭(`SYMBOLS_PER_TICK × CANDIDATE_WINDOW_MULTIPLIER` = 18)을 넘으면 창 사이에
+### 영영 후보가 되지 않는 구멍이 생겨 일부 심볼이 영구히 pre-warm되지 않는다.
+### 불변식: **BATCH_DEADLINE_MS + 스케줄주기 ≤ 15분**. 락이 중첩을 막으므로 실제
+### 회전 폭을 정하는 건 "배치가 시작되는 간격"이고, 앞 배치가 데드라인까지 쓰면
+### 그만큼 뒤로 밀린다. 현재 600s + 300s = 900s = 15분으로 **경계에 정확히 걸쳐
+### 있어 여유가 없다**. 스케줄이나 BATCH_DEADLINE_MS를 늘리려면
+### `CANDIDATE_WINDOW_MULTIPLIER`를 함께 올릴 것.
 # FIX Z(감사) — 20,25분 두 슬롯을 빼고 30분부터 시작(cron(0/5 20-23 ...)이면
 # 20:00/20:05/...도 포함되므로, 30분부터 도는 조밀한 표현이 없어 명시 리스트로 튼다).
 aws events put-rule --name "$RULE_EVENING" \
