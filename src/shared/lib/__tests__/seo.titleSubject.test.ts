@@ -24,4 +24,12 @@ describe('buildTitleSubject', () => {
     it('티커를 대문자로 정규화한다', () => {
         expect(buildTitleSubject('aapl', '애플')).toBe('애플(AAPL)');
     });
+
+    it('한국어명이 티커의 대소문자만 다른 값이어도 중복을 피해 티커만 반환한다', () => {
+        expect(buildTitleSubject('SOXL', 'soxl')).toBe('SOXL');
+    });
+
+    it('티커가 빈 문자열이면 한국어명만 반환한다 (빈 괄호 방지)', () => {
+        expect(buildTitleSubject('', '애플')).toBe('애플');
+    });
 });

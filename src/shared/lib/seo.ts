@@ -138,23 +138,43 @@ export function clampSeoDescription(text: string): string {
  *
  * Google 데스크톱 title 예산은 약 58~60 폭단위다. 글자 수로 재면 한글 제목의
  * 잘림을 예측할 수 없다: `AAPL 주가 분석 — 차트와 매매 신호, 지지선·저항선 | Siglens`은
- * 41글자지만 59 폭단위로 이미 경계에 있다(2026-07-26 실측).
+ * 41글자지만 58 폭단위로 이미 경계에 있다(2026-07-26 실측 — 이 함수로 직접 측정).
  *
  * 코드포인트 기준으로 순회해 서로게이트 페어를 쪼개지 않는다
  * ({@link clampSeoDescription}과 동일한 방침).
  */
 export function seoTitleWidth(text: string): number {
-    let width = 0;
-    for (const ch of text) {
-        const cp = ch.codePointAt(0) ?? 0;
-        width += isFullWidthCodePoint(cp) ? 2 : 1;
-    }
-    return width;
+    return [...text].reduce(
+        (width, ch) =>
+            width + (isFullWidthCodePoint(ch.codePointAt(0) ?? 0) ? 2 : 1),
+        0
+    );
 }
 
 /**
- * 전각으로 취급할 코드포인트인지. 한글(자모·음절), CJK, 전각 기호, 이모지를 포함한다.
- * 범위는 Unicode East Asian Width의 W/F 구간 중 이 서비스가 실제로 다루는 것만 추렸다.
+ * 전각으로 취급할 코드포인트인지.
+ *
+ * 커버 범위: 한글 자모(U+1100–U+115F), 한글 음절(U+AC00–U+D7A3), CJK 통합
+ * 표의문자 등(U+2E80–U+A4CF), CJK 호환 한자(U+F900–U+FAFF), CJK 호환 기호
+ * (U+FE30–U+FE6F), 전각 형태(U+FF00–U+FF60, U+FFE0–U+FFE6), 그리고 이모지는
+ * Miscellaneous Symbols and Pictographs(U+1F300–U+1F64F)·Supplemental
+ * Symbols and Pictographs(U+1F900–U+1F9FF) 두 블록만 전각으로 취급한다.
+ * 범위는 Unicode East Asian Width의 W/F 구간 중 이 서비스가 실제로 다루는
+ * 것만 추렸다.
+ *
+ * 커버되지 않는 이모지 블록도 있다 — Transport and Map Symbols(🚀 U+1F680),
+ * Miscellaneous Symbols(⭐ U+2B50), Dingbats(✅ U+2705)는 모두 1 폭단위로
+ * 계산된다(실측 확인됨). 현재 12개 title 템플릿은 이모지를 쓰지 않으므로
+ * 범위를 넓히지 않았다 — 넓히면 이미 실측해 둔 폭 수치가 전부 달라진다.
+ *
+ * Ambiguous-width 문자(`·` U+00B7, `—` U+2014, `…` U+2026)는 Unicode East
+ * Asian Width 기준 Ambiguous(A) 등급이라 한국어 로케일 SERP에서는 넓게
+ * 렌더링될 수 있지만, 이 함수는 의도적으로 좁은(1 폭단위) 문자로 취급한다.
+ * `—`·`·`는 사실상 모든 title 템플릿에 등장해 2로 세면 12개 템플릿을 전부
+ * 재조정해야 하는데, `SEO_TITLE_MAX_WIDTH`(55)는 이미 58~60 예산 대비
+ * 3~5 폭단위 여유가 있어 그 재조정의 안전 이득이 작다. 게다가 Google의
+ * 실제 절단은 픽셀 기준이라 어떤 유닛 모델도 근사치일 뿐이다. 이 문단은
+ * 좁게 처리한 것이 실수가 아니라 의도된 선택임을 남기기 위한 것이다.
  */
 function isFullWidthCodePoint(cp: number): boolean {
     return (
@@ -165,8 +185,8 @@ function isFullWidthCodePoint(cp: number): boolean {
         (cp >= 0xfe30 && cp <= 0xfe6f) || // CJK 호환 기호
         (cp >= 0xff00 && cp <= 0xff60) || // 전각 형태
         (cp >= 0xffe0 && cp <= 0xffe6) ||
-        (cp >= 0x1f300 && cp <= 0x1f64f) || // 이모지
-        (cp >= 0x1f900 && cp <= 0x1f9ff)
+        (cp >= 0x1f300 && cp <= 0x1f64f) || // 이모지 (Misc Symbols and Pictographs)
+        (cp >= 0x1f900 && cp <= 0x1f9ff) // 이모지 (Supplemental Symbols and Pictographs)
     );
 }
 
@@ -174,7 +194,7 @@ function isFullWidthCodePoint(cp: number): boolean {
  * title 폭 상한. Google 데스크톱 예산 58~60에서 안전 여유를 둔 값이다.
  *
  * 이 상한은 **안전망**이지 상시 절단 수단이 아니다. 정상 템플릿은 클램프 없이
- * 통과해야 하며, `ASE 테크놀로지 홀딩스`(24 폭단위) 같은 예외적으로 긴
+ * 통과해야 하며, `ASE 테크놀로지 홀딩스(ASX)`(26 폭단위) 같은 예외적으로 긴
  * 한국어명에서만 발동한다.
  */
 export const SEO_TITLE_MAX_WIDTH = 55;
@@ -184,17 +204,24 @@ export const SEO_TITLE_MAX_WIDTH = 55;
  *
  * 말줄임표 자체가 1 폭단위를 쓰므로 예산에서 미리 뺀다. 공백이 없어 경계를
  * 찾지 못하면 폭 기준으로 그냥 자른다(무한정 길어지는 것보다 낫다).
+ *
+ * `maxWidth`가 1 미만이면 말줄임표(1 폭단위)조차 담을 자리가 없으므로
+ * 빈 문자열을 반환한다 — 그 외에는 예산이 0 밑으로 내려가지 않도록
+ * `Math.max(0, maxWidth - 1)`로 방어한다.
  */
 export function clampSeoTitle(
     title: string,
     maxWidth: number = SEO_TITLE_MAX_WIDTH
 ): string {
     if (seoTitleWidth(title) <= maxWidth) return title;
+    if (maxWidth < 1) return '';
 
-    const budget = maxWidth - 1;
+    const budget = Math.max(0, maxWidth - 1);
     const chars = [...title];
     let width = 0;
     let cut = 0;
+    // reduce 대신 for loop을 쓰는 이유: 조기 break와 index(cut = i + 1)가
+    // 핵심 로직이라 CONVENTIONS §Coding Paradigm의 명시적 예외에 해당한다.
     for (let i = 0; i < chars.length; i++) {
         const ch = chars[i];
         if (ch === undefined) break;
@@ -213,18 +240,32 @@ export function clampSeoTitle(
 /**
  * title 전용 짧은 주어 — `애플(AAPL)`.
  *
- * `buildDisplayName`(`애플, Apple Inc. (AAPL)`, 22자)은 H1·본문용이라 title에는
- * 너무 길다. title 예산 58~60 폭단위 중 22자를 주어에 쓰면 검색 의도를 드러낼
- * 자리가 남지 않는다.
+ * `buildDisplayName`(`애플, Apple Inc. (AAPL)`, 21자·23 폭단위)은 H1·본문용이라
+ * title에는 너무 길다. title 예산 58~60 폭단위 중 23 폭단위를 주어에 쓰면
+ * 검색 의도를 드러낼 자리가 남지 않는다.
  *
  * `entities/ticker`가 아니라 여기 두는 이유: 12개 SEO 빌더가 전부
  * `BuildSymbolSeoOptions`(또는 이를 extends한 타입)를 받고 그 안에 `koreanName`이
  * 이미 있다. 여기서 파생하면 호출부 시그니처를 하나도 바꾸지 않는다.
+ *
+ * 중복 판정(`koreanName`이 티커와 사실상 같은 값)은 대소문자를 무시한다
+ * (`kr.toUpperCase() !== upper`) — 티커 레이어의 나머지 비교도 전부
+ * 대소문자 무시다(`searchTickerAction.ts`의 `.toLowerCase()`, `api.ts`의
+ * SQL `lower(...)`). `ticker`가 빈 문자열이면 `koreanName`만 반환해
+ * `'애플()'` 같은 빈 괄호 출력을 막는다.
+ *
+ * 이 함수는 trim과 대소문자 무시 중복 제거를 적용하지만, 형제 키워드
+ * 빌더(`buildSymbolKeywords` 등)는 `koreanName`을 truthy 체크만 거쳐
+ * 원시값 그대로 보간한다 — 의도적 비대칭이다. `keywords` 메타 태그는
+ * 2009년경부터 Google·Naver 모두 무시하므로, 그쪽을 맞춰 고치는 것은
+ * 낭비다.
  */
 export function buildTitleSubject(ticker: string, koreanName?: string): string {
     const upper = ticker.toUpperCase();
     const kr = koreanName?.trim();
-    if (!kr || kr === upper) return upper;
+    if (!kr) return upper;
+    if (!upper) return kr;
+    if (kr.toUpperCase() === upper) return upper;
     return `${kr}(${upper})`;
 }
 
