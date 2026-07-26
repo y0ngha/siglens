@@ -1,5 +1,24 @@
 # Changelog
 
+# [0.48.0](https://github.com/y0ngha/siglens/compare/v0.47.1...v0.48.0) (2026-07-26)
+
+
+### Bug Fixes
+
+* **seo:** 리뷰 반영 — JSDoc 실측값 정정, 대소문자 무시 dedup, 테스트 falsifiable화 ([9ef425d](https://github.com/y0ngha/siglens/commit/9ef425dc6a87c3b9ebb8f79a6e16a51c4e8a0e53))
+* **seo:** clampSeoTitle 어절 경계 단언 정정 — 말줄임표 앞 공백 제거 ([34705d5](https://github.com/y0ngha/siglens/commit/34705d58523a27ee6897e511d13483347e563fd7))
+
+
+### Features
+
+* **seo:** 심볼 title에서 | Siglens 접미사 제거 (OG는 유지) ([dfc26fc](https://github.com/y0ngha/siglens/commit/dfc26fc767a4875f24f797b9d27e1fbaf1184033))
+* **seo:** 주식 title 템플릿 8개에 한국어 회사명 주입 ([f64d870](https://github.com/y0ngha/siglens/commit/f64d8702715ebea055fda45df43177f4606819dc))
+* **seo:** 크립토 title 템플릿 4개를 주식과 동일 형태로 통일 ([18128c0](https://github.com/y0ngha/siglens/commit/18128c0641fc9ccda7983b31326e61270d4ae8ce))
+* **seo:** SERP 폭 근사 함수 seoTitleWidth 추가 ([7d4ce79](https://github.com/y0ngha/siglens/commit/7d4ce79ff5c540d497942add0c237eeb252a2997))
+* **seo:** title 3단 조합 composeSymbolTitle 추가 — core 보존 우선 ([f0ff49c](https://github.com/y0ngha/siglens/commit/f0ff49c8e341fa6e423f86a13c5137d577329896))
+* **seo:** title 전용 주어 buildTitleSubject 추가 ([b9819ca](https://github.com/y0ngha/siglens/commit/b9819cae84aa0cc491f4f56037638a630224e3f7))
+* **seo:** title 폭 클램프 clampSeoTitle 추가 (상한 55) ([041de68](https://github.com/y0ngha/siglens/commit/041de6886e8af391cf0df5890e06becc5db5e4e3))
+
 ## [0.47.1](https://github.com/y0ngha/siglens/compare/v0.47.0...v0.47.1) (2026-07-26)
 
 
