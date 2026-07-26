@@ -182,11 +182,8 @@ export const SEO_TITLE_MAX_WIDTH = 55;
 /**
  * 폭 상한을 넘으면 어절 경계에서 잘라 말줄임표를 붙인다.
  *
- * 어절 경계에서 자를 때는 잘린 단어와 말줄임표가 바로 붙어 보이지 않도록
- * 공백을 하나 남겨 ` …` 형태로 만든다(예: `...Max Pain · OI …`). 말줄임표
- * 자체가 1 폭단위, 구분 공백이 1 폭단위를 쓰므로 예산에서 미리 뺀다. 공백이
- * 없어 경계를 찾지 못하면 구분 공백 없이 폭 기준으로 그냥 자른다(무한정
- * 길어지는 것보다 낫다).
+ * 말줄임표 자체가 1 폭단위를 쓰므로 예산에서 미리 뺀다. 공백이 없어 경계를
+ * 찾지 못하면 폭 기준으로 그냥 자른다(무한정 길어지는 것보다 낫다).
  */
 export function clampSeoTitle(
     title: string,
@@ -209,10 +206,8 @@ export function clampSeoTitle(
 
     const head = chars.slice(0, cut).join('');
     const lastSpace = head.lastIndexOf(' ');
-    if (lastSpace > 0) {
-        return `${head.slice(0, lastSpace)} …`;
-    }
-    return `${head.trimEnd()}…`;
+    const body = lastSpace > 0 ? head.slice(0, lastSpace) : head;
+    return `${body.trimEnd()}…`;
 }
 
 /**

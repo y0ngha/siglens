@@ -46,7 +46,13 @@ describe('clampSeoTitle', () => {
         const clamped = clampSeoTitle(long);
         expect(seoTitleWidth(clamped)).toBeLessThanOrEqual(SEO_TITLE_MAX_WIDTH);
         expect(clamped.endsWith('…')).toBe(true);
-        expect(clamped).not.toMatch(/\S…$/);
+        // 어절 중간에서 잘리지 않는다 — 말줄임표를 뗀 본문이 원문의 접두사이고,
+        // 원문에서 그 바로 다음 문자가 공백(=어절 경계)이어야 한다.
+        // 이전 단언(`/\S…$/`)은 이 성질이 아니라 "말줄임표 앞 공백"이라는
+        // 별개의 타이포그래피 규칙을 강제했다.
+        const body = clamped.slice(0, -1);
+        expect(long.startsWith(body)).toBe(true);
+        expect(long[body.length]).toBe(' ');
     });
 
     it('공백이 없는 초장문도 상한을 넘기지 않는다', () => {
