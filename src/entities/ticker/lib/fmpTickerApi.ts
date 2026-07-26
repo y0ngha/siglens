@@ -1,6 +1,7 @@
 import { MS_PER_SECOND } from '@/shared/config/time';
 import type { TickerSearchResult } from '@/shared/lib/types';
 import { tryReadFmpConfig } from '@y0ngha/siglens-core';
+import { toFmpSearchSymbol } from '@/shared/lib/fmpSymbol';
 import type { FmpSearchResult } from '../model';
 
 const FMP_BASE_URL = 'https://financialmodelingprep.com/stable';
@@ -78,8 +79,18 @@ async function fetchFmpEndpoint(
         return [];
     }
 
+    // `search-symbol`은 심볼 조회이므로 FMP 표기로 정규화한다 — 미국 dual-class 주식은
+    // FMP에서 하이픈 표기다(`BRK.B` → `BRK-B`). 정규화가 없으면 캐시·DB에 없는 dual-class
+    // 심볼이 영영 해결되지 않아 하드 404가 된다(`asset_translations`에 점 포함 심볼 0건).
+    // 정규화 규칙과 안전성 근거는 `toFmpSearchSymbol` JSDoc 참조.
+    //
+    // `search-name`은 회사명 질의라 그대로 보낸다 — 대문자화조차 하지 않는다(이름 검색의
+    // 입력을 여기서 바꾸면 검색 UI 동작이 조용히 달라진다).
+    const normalizedQuery =
+        endpoint === 'search-symbol' ? toFmpSearchSymbol(query) : query;
+
     const params = new URLSearchParams({
-        query,
+        query: normalizedQuery,
         limit: String(FMP_SEARCH_LIMIT),
         apikey: config.apiKey,
     });
@@ -130,6 +141,25 @@ async function fetchFmpEndpoint(
     // (`filterUsExchanges`, `toTickerSearchResult`).
     // 200 + 빈 배열은 정상적인 "매칭 없음"이므로 throwOnInfraFailure여도 throw하지 않는다.
     return toFmpSearchResults(raw);
+}
+
+/**
+ * `search-symbol` 응답에서 앱 심볼에 해당하는 row를 고른다 — 없으면 첫 US row로 폴백.
+ *
+ * 정확 일치 비교는 반드시 **FMP 표기** 기준이어야 한다. `searchBySymbol`이 질의를
+ * 정규화해 보내므로(`HEI.A` → `HEI-A`) 응답 row의 symbol도 하이픈 형태로 돌아온다.
+ * 호출부가 앱 표기(`HEI.A`)와 그대로 비교하면 점 포함 심볼은 절대 일치하지 않아
+ * 안전망이 **조용히 죽고**, 최대 20개 US row 중 FMP가 먼저 준 것이 URL에 묶인다.
+ *
+ * 정규화를 아는 코드를 이 파일 한 곳에 모아 두려고 헬퍼로 뺐다 — 호출부가 각자
+ * `toFmpSearchSymbol`을 다시 적용하면 두 곳이 어긋날 수 있다(감사 R3).
+ */
+export function findExactUsMatch(
+    usResults: FmpSearchResult[],
+    appSymbol: string
+): FmpSearchResult | undefined {
+    const fmpQuery = toFmpSearchSymbol(appSymbol);
+    return usResults.find(r => r.symbol === fmpQuery) ?? usResults[0];
 }
 
 export async function searchBySymbol(
