@@ -100,17 +100,28 @@ test.describe('crypto symbol page', () => {
         // the seeded crypto_assets row (BTCUSD). The page body guard calls
         // isTabAllowedForSymbol('BTCUSD', 'options') → false → notFound().
         //
-        // Next.js App Router streams the layout shell first and then replaces the
-        // page segment with the nearest not-found.tsx. The HTTP response is 200
-        // (the shell is committed before the page segment resolves — see
-        // not-found.spec.ts for the framework-level documentation of this
-        // behavior). We therefore assert the rendered outcome rather than the
-        // raw HTTP status, which is an unreliable implementation detail here.
+        // ⚠️ 200을 단언하는 것은 **의도된 잔여 동작**을 고정하기 위해서다 — 버그를
+        // 정당화하는 게 아니다.
+        //
+        // 2026-07-26에 심볼 **존재** 판정을 `[symbol]/layout.tsx`로 올려 진짜 404를
+        // 내보내게 바꿨다(Next 16.2는 Suspense 경계 안에서 던진 notFound()의 상태를
+        // 200으로 남긴다 — not-found.spec.ts 참조). 하지만 **탭 가용성** 판정은 어느
+        // 탭인지 알아야 해서 레이아웃으로 올릴 수 없고, 부모 `[symbol]/loading.tsx`의
+        // Suspense가 자식 세그먼트 레이아웃까지 감싸므로 탭별 layout.tsx도 해결책이
+        // 아니다. 그래서 이 경로만 200 + 404 UI로 남는다.
+        //
+        // 노출은 제한적이다 — sitemap-crypto.xml은 `/`,`/overall`,`/news`,`/fear-greed`만
+        // 싣고 탭 바도 크립토에선 이 탭들을 숨기므로 내부 링크가 없다. 게다가 이 응답은
+        // noindex 메타를 달고 나가므로 색인 위험이 아니라 크롤 예산 비용에 가깝다.
+        //
+        // 이 단언이 실패하면(예: 404로 바뀌면) 잔여 문제가 해소된 것이므로, 이 테스트와
+        // layout.tsx의 관련 주석을 함께 갱신하면 된다.
         //
         // Without the seed this route would resolve getAssetInfo as null and call
         // notFound() via a different code path, so seeding BTCUSD is load-bearing
         // for testing the isTabAllowedForSymbol seam specifically.
-        await page.goto('/BTCUSD/options');
+        const response = await page.goto('/BTCUSD/options');
+        expect(response?.status()).toBe(200);
 
         // The global not-found.tsx renders this heading.
         await expect(

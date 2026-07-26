@@ -1,4 +1,5 @@
 import {
+    findExactUsMatch,
     filterUsExchanges,
     searchByName,
     searchBySymbol,
@@ -81,6 +82,58 @@ describe('searchBySymbol/searchByName', () => {
         expect(url).toContain('search-symbol');
         expect(url).toContain('query=AAPL');
         expect(url).toContain('apikey=test-key');
+    });
+
+    it('search-symbol 질의는 FMP 표기로 정규화한다 (dual-class)', async () => {
+        // FMP는 미국 dual-class를 하이픈으로 쓴다. 정규화가 없으면 `BRK.B` 질의가
+        // 빈 배열로 돌아와 캐시·DB에 없는 심볼이 영영 404가 된다(2026-07-26 라이브 실측).
+        mockFetch.mockResolvedValueOnce({
+            ok: true,
+            json: async () => [apple],
+        });
+        await searchBySymbol('BRK.B');
+        const url = mockFetch.mock.calls[0][0] as string;
+        expect(url).toContain('query=BRK-B');
+        expect(url).not.toContain('query=BRK.B');
+    });
+
+    it('별칭에 없는 심볼은 그대로 통과시킨다', async () => {
+        mockFetch.mockResolvedValueOnce({
+            ok: true,
+            json: async () => [apple],
+        });
+        await searchBySymbol('AAPL');
+        expect(mockFetch.mock.calls[0][0] as string).toContain('query=AAPL');
+    });
+
+    it('소문자로 들어와도 별칭이 적용된다', async () => {
+        mockFetch.mockResolvedValueOnce({
+            ok: true,
+            json: async () => [apple],
+        });
+        await searchBySymbol('brk.b');
+        expect(mockFetch.mock.calls[0][0] as string).toContain('query=BRK-B');
+    });
+
+    it('search-name은 회사명 질의라 별칭을 적용하지 않는다', async () => {
+        mockFetch.mockResolvedValueOnce({
+            ok: true,
+            json: async () => [apple],
+        });
+        await searchByName('BRK.B');
+        const url = mockFetch.mock.calls[0][0] as string;
+        expect(url).toContain('query=BRK.B');
+    });
+
+    it('search-name은 입력을 그대로 통과시킨다 (대소문자 보존)', async () => {
+        // 대문자 입력만 검증하면 `.toUpperCase()`를 되살려도 통과한다 — 소문자로 고정해
+        // pass-through를 실제로 falsifiable하게 만든다.
+        mockFetch.mockResolvedValueOnce({
+            ok: true,
+            json: async () => [apple],
+        });
+        await searchByName('brk.b');
+        expect(mockFetch.mock.calls[0][0] as string).toContain('query=brk.b');
     });
 
     it('searchByName은 search-name 엔드포인트를 호출한다', async () => {
@@ -194,5 +247,47 @@ describe('searchBySymbol/searchByName', () => {
                 searchBySymbol('AAPL', { throwOnInfraFailure: true })
             ).rejects.toThrow();
         });
+    });
+});
+
+/**
+ * P3 안전망 회귀 가드.
+ *
+ * `searchBySymbol`이 질의를 FMP 표기로 정규화하므로(`HEI.A` → `HEI-A`) 응답 row도
+ * 하이픈 형태다. 앱 표기와 그대로 비교하면 dual-class는 절대 일치하지 않아 안전망이
+ * 죽고, FMP가 먼저 준 아무 row가 URL에 묶인다. decoy를 앞에 두어 이를 falsifiable하게
+ * 고정한다 — 비교 기준을 앱 표기로 되돌리면 이 테스트가 실패한다.
+ */
+describe('findExactUsMatch', () => {
+    const row = (symbol: string) => ({
+        symbol,
+        name: symbol,
+        currency: 'USD',
+        exchange: 'NYSE',
+        exchangeFullName: 'New York Stock Exchange',
+    });
+
+    it('dual-class는 하이픈 표기로 정확 일치시킨다 (decoy가 앞에 있어도)', () => {
+        const results = [row('HEIA'), row('HEI-A')];
+        expect(findExactUsMatch(results, 'HEI.A')?.symbol).toBe('HEI-A');
+    });
+
+    it('별칭 맵에 있는 심볼도 동일하게 동작한다', () => {
+        const results = [row('BRKB'), row('BRK-B')];
+        expect(findExactUsMatch(results, 'BRK.B')?.symbol).toBe('BRK-B');
+    });
+
+    it('점 없는 심볼은 앱 표기 그대로 정확 일치시킨다', () => {
+        const results = [row('AAPLX'), row('AAPL')];
+        expect(findExactUsMatch(results, 'AAPL')?.symbol).toBe('AAPL');
+    });
+
+    it('정확 일치가 없으면 첫 US row로 폴백한다', () => {
+        const results = [row('ZZZ'), row('YYY')];
+        expect(findExactUsMatch(results, 'HEI.A')?.symbol).toBe('ZZZ');
+    });
+
+    it('빈 결과는 undefined', () => {
+        expect(findExactUsMatch([], 'AAPL')).toBeUndefined();
     });
 });

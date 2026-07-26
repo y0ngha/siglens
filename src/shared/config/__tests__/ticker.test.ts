@@ -92,4 +92,59 @@ describe('symbol shape checks', () => {
         expect(isAdmissibleSymbolShape('!@#')).toBe(false);
         expect(isAdmissibleSymbolShape('TOOOOOOOOOOOOOOOOONG')).toBe(false); // > 16
     });
+
+    describe('해외 거래소 접미사 차단', () => {
+        // 2026-07-25 프로덕션 로그에서 FMP 402를 유발한 접미사 전량 + 주요 거래소.
+        it.each([
+            'HVO.L', // London
+            'AOTI.L',
+            'SHOP.TO', // Toronto
+            'XYZ.V', // TSX Venture
+            'ABC.CN', // Canadian Securities Exchange
+            'BHP.AX', // ASX
+            '7203.T', // Tokyo
+            '0700.HK', // HKEX
+            'SAP.DE', // Xetra
+            'BAC.PR.K', // 미국 우선주 표기 — FMP가 해석 못 하므로 동일하게 차단
+        ])("'%s'를 거부한다", symbol => {
+            expect(isAdmissibleSymbolShape(symbol)).toBe(false);
+        });
+
+        it('소문자로 들어와도 동일하게 거부한다', () => {
+            expect(isAdmissibleSymbolShape('hvo.l')).toBe(false);
+        });
+    });
+
+    describe('허용 접미사 통과', () => {
+        it.each(['BRK.A', 'BRK.B', 'BF.B', 'HEI.A', 'LGF.C'])(
+            "미국 클래스 구분자 '%s'는 계속 허용한다",
+            symbol => {
+                expect(isAdmissibleSymbolShape(symbol)).toBe(true);
+            }
+        );
+
+        it.each(['ACAB.U', 'ACAB.W', 'ACAB.WS'])(
+            "SPAC 유닛·워런트 '%s'는 계속 허용한다",
+            symbol => {
+                expect(isAdmissibleSymbolShape(symbol)).toBe(true);
+            }
+        );
+
+        it('점이 없는 심볼은 이 규칙의 영향을 받지 않는다', () => {
+            expect(isAdmissibleSymbolShape('AAPL')).toBe(true);
+            expect(isAdmissibleSymbolShape('PBR-A')).toBe(true);
+            expect(isAdmissibleSymbolShape('BTCUSD')).toBe(true);
+        });
+
+        it('점으로 시작하거나 끝나는 입력을 거부한다', () => {
+            expect(isAdmissibleSymbolShape('.L')).toBe(false);
+            expect(isAdmissibleSymbolShape('AAPL.')).toBe(false);
+        });
+
+        it('SYMBOL_EDGE_RE 자체는 넓은 superset으로 유지된다', () => {
+            // 정규식은 형상만 본다 — 접미사 판정은 isAdmissibleSymbolShape의 책임이다.
+            // proxy.ts가 정규식이 아니라 함수를 쓰도록 바뀐 이유이기도 하다.
+            expect(SYMBOL_EDGE_RE.test('HVO.L')).toBe(true);
+        });
+    });
 });

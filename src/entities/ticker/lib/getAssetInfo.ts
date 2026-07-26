@@ -13,7 +13,11 @@ import {
     buildAssetInfoCacheKey,
 } from './cacheKeys';
 import { tryGetTickerDatabaseClient } from './db';
-import { filterUsExchanges, searchBySymbol } from './fmpTickerApi';
+import {
+    filterUsExchanges,
+    findExactUsMatch,
+    searchBySymbol,
+} from './fmpTickerApi';
 import { translateCompanyNames } from './koreanTranslator';
 import { getKoreanNames, setKoreanTickers } from './koreanNameStore';
 import type { AssetInfoMatch } from './backgroundTask';
@@ -243,7 +247,9 @@ export async function getAssetInfo(symbol: string): Promise<AssetInfo | null> {
         throwOnInfraFailure: true,
     });
     const usResults = filterUsExchanges(fmpResults);
-    const match = usResults.find(r => r.symbol === upper) ?? usResults[0];
+    // 정확 일치 비교는 FMP 표기 기준이어야 한다 — 정규화를 아는 코드는 fmpTickerApi에
+    // 모여 있다(findExactUsMatch JSDoc 참조). 점이 없는 심볼은 정규화가 항등이라 종전과 동일.
+    const match = findExactUsMatch(usResults, upper);
     if (!match) return null;
 
     const { symbol: fmpSymbol, name, exchange, exchangeFullName } = match;

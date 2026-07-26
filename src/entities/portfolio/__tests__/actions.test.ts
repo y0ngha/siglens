@@ -338,6 +338,30 @@ describe('deletePortfolioHoldingAction', () => {
         expect(mockDeleteByUserAndSymbol).not.toHaveBeenCalled();
     });
 
+    /**
+     * 회귀 가드 — 삭제는 **저장 당시보다 엄격해지면 안 된다**.
+     *
+     * `isAdmissibleSymbolShape`은 2026-07-26에 해외 거래소 접미사를 거부하도록 좁혀졌다
+     * ("이 심볼을 조회·색인할 가치가 있는가" = admission 판정). 그런데
+     * `savePortfolioHoldingAction`은 `getAssetInfo` throw를 삼키고 저장을 진행하므로
+     * `HVO.L` 같은 행이 이미 저장돼 있을 수 있다. 삭제 게이트를 admission 판정으로
+     * 되돌리면 그 행들이 `invalid_symbol`로 거부돼 **영구 삭제 불가**가 된다
+     * (리포지토리는 `deleteByUserAndSymbol`만 노출).
+     *
+     * 이 테스트가 없으면 가드를 되돌려도 스위트가 전부 green으로 통과한다.
+     */
+    it('admission 판정에서 탈락하는 심볼도 이미 저장된 행이면 삭제할 수 있다', async () => {
+        mockGetCurrentUser.mockResolvedValue(AUTHED_USER);
+
+        const result = await deletePortfolioHoldingAction('HVO.L');
+
+        expect(result).toEqual({ status: 'ok' });
+        expect(mockDeleteByUserAndSymbol).toHaveBeenCalledWith(
+            'user-1',
+            'HVO.L'
+        );
+    });
+
     it('symbol이 문자열이 아니면(hostile client) invalid_symbol 에러를 반환하고 throw하지 않는다', async () => {
         mockGetCurrentUser.mockResolvedValue(AUTHED_USER);
 

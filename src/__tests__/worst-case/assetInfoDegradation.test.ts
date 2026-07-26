@@ -18,9 +18,16 @@ vi.mock('@/entities/ticker/lib/db', () => ({
 const mockSearchBySymbol = vi.fn().mockResolvedValue([]);
 const mockFilterUsExchanges = vi.fn().mockReturnValue([]);
 
-vi.mock('@/entities/ticker/lib/fmpTickerApi', () => ({
+vi.mock('@/entities/ticker/lib/fmpTickerApi', async () => ({
     searchBySymbol: (...args: unknown[]) => mockSearchBySymbol(...args),
     filterUsExchanges: (...args: unknown[]) => mockFilterUsExchanges(...args),
+    // `findExactUsMatch`는 정규화 규칙(dot→hyphen)을 품고 있어 stub하면 안 된다 —
+    // 이 스펙은 degrade 체인만 검증하므로 실제 구현을 그대로 쓴다.
+    findExactUsMatch: (
+        await vi.importActual<
+            typeof import('@/entities/ticker/lib/fmpTickerApi')
+        >('@/entities/ticker/lib/fmpTickerApi')
+    ).findExactUsMatch,
 }));
 
 vi.mock('@/entities/ticker/lib/koreanNameStore', () => ({
