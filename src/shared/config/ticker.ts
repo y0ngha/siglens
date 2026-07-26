@@ -74,9 +74,13 @@ export const SUPPORTED_DOT_SUFFIXES: ReadonlySet<string> = new Set([
  * 규칙으로 접미사를 떼어내야 하므로 여기 한 곳에만 둔다. 각자 `lastIndexOf('.')`를
  * 구현하면 "통과했는데 정규화는 안 되는" 하드 404가 조용히 생긴다.
  */
-export function splitDotSuffix(
-    upper: string
-): { base: string; suffix: string } | null {
+/** {@link splitDotSuffix}의 반환 타입 — 점 앞뒤로 쪼갠 base/suffix 쌍. */
+export interface SymbolDotSuffixParts {
+    base: string;
+    suffix: string;
+}
+
+export function splitDotSuffix(upper: string): SymbolDotSuffixParts | null {
     const lastDot = upper.lastIndexOf('.');
     if (lastDot <= 0) return null;
     return { base: upper.slice(0, lastDot), suffix: upper.slice(lastDot + 1) };

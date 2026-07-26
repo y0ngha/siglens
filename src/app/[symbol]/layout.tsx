@@ -129,14 +129,14 @@ export default async function SymbolLayout({
     );
 }
 
-// floating chat은 `params`만 받아 async RSC로 동작한다.
+// `params`만 받는 async RSC 세그먼트들의 공유 베이스 — floating chat은 이 형태 그대로
+// 쓰고, chrome은 여기에 `assetInfo`를 얹어 확장한다.
 interface SymbolLayoutSegmentProps {
     params: Promise<{ symbol: string }>;
 }
 
-interface SymbolLayoutChromeProps {
+interface SymbolLayoutChromeProps extends SymbolLayoutSegmentProps {
     assetInfo: AssetInfo;
-    params: Promise<{ symbol: string }>;
 }
 
 /**

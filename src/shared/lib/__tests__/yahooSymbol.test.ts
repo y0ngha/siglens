@@ -36,4 +36,22 @@ describe('toYahooSymbol — 허용 접미사 dot→hyphen', () => {
         expect(toYahooSymbol('AAPL')).toBe('AAPL');
         expect(toYahooSymbol('PBR-A')).toBe('PBR-A');
     });
+
+    // fmpSymbol.test.ts의 '소문자 dual-class도 정규화된다'와 짝을 이룬다 — splitDotSuffix가
+    // 내부적으로 대문자화한 base/suffix로 재조립하므로, 별칭 맵 매칭 여부와 무관하게
+    // 소문자 입력도 정규화된 대문자-하이픈 표기로 나온다.
+    //
+    // ⚠️ 대칭은 **정규화되는 분기에 한정**된다. 정규화 대상이 아닌 입력은 두 함수가 갈린다
+    // (실측: `toYahooSymbol('aapl')` → `'aapl'`, `toFmpSearchSymbol('aapl')` → `'AAPL'`).
+    // Yahoo 쪽은 "별칭·허용 접미사 외에는 손대지 않는다"는 원래 계약을 지키는 것이고,
+    // 유일한 호출부(`YahooOptionsAdapter`)가 이미 대문자 심볼을 넘기므로 실사용 차이는 없다.
+    it('소문자 dual-class도 정규화된다', () => {
+        expect(toYahooSymbol('hei.a')).toBe('HEI-A');
+        expect(toYahooSymbol('brk.b')).toBe('BRK-B');
+    });
+
+    it('정규화 대상이 아닌 입력은 대소문자를 포함해 그대로 통과시킨다', () => {
+        expect(toYahooSymbol('aapl')).toBe('aapl');
+        expect(toYahooSymbol('vod.l')).toBe('vod.l');
+    });
 });
