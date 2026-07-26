@@ -269,6 +269,49 @@ export function buildTitleSubject(ticker: string, koreanName?: string): string {
     return `${kr}(${upper})`;
 }
 
+export interface ComposeSymbolTitleArgs {
+    ticker: string;
+    koreanName?: string;
+    /** 검색 매칭을 만드는 키워드. 어떤 경우에도 잘리지 않는다. 예: `공포 탐욕 지수` */
+    core: string;
+    /** 예산이 남을 때만 붙는 서술. 가장 먼저 버려진다. 예: `차트·매매 신호` */
+    tail?: string;
+}
+
+/**
+ * 심볼 title을 예산 안에서 조립한다 — 3단으로 물러난다.
+ *
+ * 1. `한국어명(TICKER) core — tail`
+ * 2. `한국어명(TICKER) core`            tail을 버린다
+ * 3. `TICKER core — tail` 또는 `TICKER core`   한국어명을 버린다
+ *
+ * **버리는 순서가 설계의 핵심이다.** 검색 매칭을 만드는 건 `주가 전망`·`공포 탐욕 지수`
+ * 같은 core이지 뒤의 서술이 아니다. 단순 클램프(뒤에서 자르기)를 쓰면 긴 한국어명을 가진
+ * 종목에서 core가 통째로 날아간다 — 실측상 264개 중 90개(34%)가 그 경우였다.
+ *
+ * 3단까지 가는 종목은 실측 2개뿐이다(NVDL 47, LABU 42 폭단위). 둘 다 레버리지 ETF로
+ * 한국어명이 서술적이고(`그래닛셰어스 2배 레버리지 NVDA 데일리 ETF`) 실제 검색어는
+ * 티커다. 그래서 이 경우 한국어명을 **자르지 않고 버린다** — 중간에 잘린 이름은
+ * SERP에서 읽히지 않는 데다 검색어와도 맞지 않는다.
+ */
+export function composeSymbolTitle(args: ComposeSymbolTitleArgs): string {
+    const { ticker, koreanName, core, tail } = args;
+    const withTail = (subject: string) =>
+        tail ? `${subject} ${core} — ${tail}` : `${subject} ${core}`;
+    const fits = (t: string) => seoTitleWidth(t) <= SEO_TITLE_MAX_WIDTH;
+
+    const subject = buildTitleSubject(ticker, koreanName);
+    const full = withTail(subject);
+    if (fits(full)) return full;
+
+    const coreOnly = `${subject} ${core}`;
+    if (fits(coreOnly)) return coreOnly;
+
+    const bare = buildTitleSubject(ticker);
+    const bareFull = withTail(bare);
+    return fits(bareFull) ? bareFull : clampSeoTitle(`${bare} ${core}`);
+}
+
 /**
  * Maps each SEO pre-warm snapshot tab to the primary Korean prose field its
  * `content` carries (verified against `src/views/symbol/snapshot/renderers/*`,
