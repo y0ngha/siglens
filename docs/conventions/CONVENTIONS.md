@@ -436,14 +436,21 @@ entities/       90%
 features/       90%
 shared/         90%
 widgets/        90%
+views/          90%
 app/            90%
 src/proxy.ts    90%
+cache-handler/  90%
 ```
 
 The project target is 90% coverage across all measured FSD layers.
 Current Vitest coverage includes `src/entities/**`, `src/features/**`, `src/shared/**`,
-`src/widgets/**`, `src/app/**`, and `src/proxy.ts`, excluding declaration files,
-barrel files, type/model-only files, and test utilities.
+`src/widgets/**`, `src/views/**`, `src/app/**`, `src/proxy.ts`, and `cache-handler/**`,
+excluding declaration files, barrel files, type/model-only files, and test utilities.
+
+`src/views/**` is the FSD `pages` layer — it lives under `views/` because creating
+`src/pages/` would activate Next's legacy Pages Router. `cache-handler/**` sits outside
+`src/` but is production code (the S3-backed ISR cache handler); leaving it out of
+`include` would silently exempt it from the threshold.
 
 UI layers are part of the coverage target. Prefer unit tests for pure view utilities,
 hook tests for stateful UI behavior, component tests for user-visible states, and

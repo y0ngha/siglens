@@ -14,7 +14,7 @@ Feature-Sliced Design (FSD) 6-layer 아키텍처를 기반으로 한다.
 ┌─────────────────────────────────────────┐
 │        app (Next.js App Router)         │  RSC, Route Handler — composition root
 ├─────────────────────────────────────────┤
-│              pages (FSD)                │  (현재 미사용, 향후 확장 예약)
+│              pages (FSD)                │  `src/views/` — 페이지 단위 조합 (아래 주석 참고)
 ├─────────────────────────────────────────┤
 │            widgets (UI 조합)            │  Client Components, 차트, 패널, 레이아웃
 ├─────────────────────────────────────────┤
@@ -25,6 +25,12 @@ Feature-Sliced Design (FSD) 6-layer 아키텍처를 기반으로 한다.
 │        shared (공유 유틸리티)             │  lib, config, ui, hooks, db, email, api
 └─────────────────────────────────────────┘
 ```
+
+> **FSD `pages` 레이어는 `src/pages/`가 아니라 `src/views/`에 있다.** App Router
+> 프로젝트에 `src/pages/` 디렉터리를 만들면 Next.js가 레거시 Pages Router를
+> 활성화하기 때문이다. `eslint.config.mjs`의 `boundaries/elements`가
+> `{ type: 'pages', pattern: 'src/views/*' }`로 이 매핑을 강제하므로, 의존성
+> 규칙과 커버리지 게이트에서 이 레이어는 `pages`로 취급된다.
 
 ---
 
@@ -156,6 +162,10 @@ import { DrizzleUserRepository } from '@/entities/auth/api'; // server-only → 
     │   ├── hooks/        # 범용 React hooks (useDialog, useEscapeKey 등)
     │   ├── lib/          # 순수 유틸리티 (cn, chartColors, priceFormat, seo 등)
     │   └── ui/           # Primitive UI 컴포넌트 (tabs, tooltip 등)
+    ├── views            # FSD pages 레이어 (src/pages/는 Pages Router를 켜므로 사용 불가)
+    │   ├── share/       # 공유 스냅샷 페이지 조합 (kindPanelRegistry)
+    │   └── symbol/      # 심볼 페이지 조합 — 차트/분석 컨텐츠, 헤더, 탭,
+    │                    #   모바일 시트, snapshot 프로즈 렌더러
     └── widgets
         ├── analysis/
         ├── backtesting/
@@ -171,8 +181,7 @@ import { DrizzleUserRepository } from '@/entities/auth/api'; // server-only → 
         ├── notice-popup/ # 긴급 공지 모달 (경로 매칭, localStorage dismiss, 우선순위)
         ├── options/
         ├── overall/
-        ├── share/        # ShareButton, ShareSheet, ShareTriggerDialog, SharePreparingModal
-        └── symbol-page/
+        └── share/        # ShareButton, ShareSheet, ShareTriggerDialog, SharePreparingModal
 ```
 
 > 각 슬라이스(entity, feature, widget)는 `__tests__/` 서브폴더에 테스트를 colocate한다.
