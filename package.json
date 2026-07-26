@@ -3,7 +3,7 @@
     "version": "0.48.0",
     "private": true,
     "author": "신용하 <dev.y0ngha@gmail.com>",
-    "license": "PolyForm-Noncommercial-1.0.0",
+    "license": "MIT",
     "scripts": {
         "copy:backtesting": "mkdir -p public/backtesting && cp src/app/backtesting/data.json public/backtesting/data.json",
         "clear:backtesting": "rm -rf public/backtesting/*",

@@ -5,7 +5,7 @@
 **AI technical analysis for US stocks and crypto — enter a ticker, get the read.**
 
 ![Status](https://img.shields.io/badge/status-production-brightgreen)
-![License](https://img.shields.io/badge/license-PolyForm--Noncommercial--1.0.0-blue)
+![License](https://img.shields.io/badge/license-MIT-blue)
 ![Next.js](https://img.shields.io/badge/Next.js-16.2-black)
 ![React](https://img.shields.io/badge/React-19.2-61dafb?logo=react)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue)
@@ -371,7 +371,7 @@ Skills have no public review-and-merge workflow yet either. The system is delibe
 
 ## License
 
-[PolyForm Noncommercial License 1.0.0](./LICENSE)
+[MIT License](./LICENSE)
 
 ---
 

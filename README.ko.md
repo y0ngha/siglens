@@ -5,7 +5,7 @@
 **미국 주식과 암호화폐 AI 기술적 분석 — 티커만 넣으면 해석까지.**
 
 ![Status](https://img.shields.io/badge/status-production-brightgreen)
-![License](https://img.shields.io/badge/license-PolyForm--Noncommercial--1.0.0-blue)
+![License](https://img.shields.io/badge/license-MIT-blue)
 ![Next.js](https://img.shields.io/badge/Next.js-16.2-black)
 ![React](https://img.shields.io/badge/React-19.2-61dafb?logo=react)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue)
@@ -371,7 +371,7 @@ Skills도 아직 공개된 리뷰·머지 워크플로가 없습니다. Markdown
 
 ## 라이선스
 
-[PolyForm Noncommercial License 1.0.0](./LICENSE)
+[MIT License](./LICENSE)
 
 ---
 
