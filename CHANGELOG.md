@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.47.1](https://github.com/y0ngha/siglens/compare/v0.47.0...v0.47.1) (2026-07-26)
+
+
+### Bug Fixes
+
+* **seo:** notFound()의 soft 404 제거 + 해외 거래소 접미사 사전 차단 ([86ee27b](https://github.com/y0ngha/siglens/commit/86ee27be44e9c71166b389b03c6281ef3eb91205))
+
 # [0.47.0](https://github.com/y0ngha/siglens/compare/v0.46.0...v0.47.0) (2026-07-26)
 
 
