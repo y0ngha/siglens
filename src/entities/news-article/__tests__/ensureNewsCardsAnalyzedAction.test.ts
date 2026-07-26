@@ -73,6 +73,7 @@ import type {
 import { DrizzleNewsRepository } from '@/entities/news-article/api';
 import { isRecentlyFetched, markFetched } from '../lib/newsRefreshFlag';
 import { getAssetInfo } from '@/entities/ticker/lib/getAssetInfo';
+import { NewsIngestWriteError } from '../lib/ingestNewsForSymbol';
 
 const MockNewsRepository = DrizzleNewsRepository as MockedClass<
     typeof DrizzleNewsRepository
@@ -315,7 +316,12 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
             expect(mockMarkFetched).toHaveBeenCalledWith('AAPL');
         });
 
-        it('majority-failure: 과반 reject → throw, revalidateTag 미도달', async () => {
+        // fire-and-forget 계약(파일 docstring, MISTAKES.md "Fire-and-Forget
+        // Operations §2") — NewsIngestWriteError는 throw하지 않고 삼킨다(PR #700 리뷰).
+        it('majority-failure: 과반 reject → throw하지 않고 삼키며, revalidateTag 미도달', async () => {
+            const errorSpy = vi
+                .spyOn(console, 'error')
+                .mockImplementation(() => undefined);
             mockFetchNewsForPeriod.mockResolvedValue([
                 NEWS_ITEM_1,
                 NEWS_ITEM_2,
@@ -324,11 +330,13 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
                 .mockRejectedValueOnce(new Error('DB down'))
                 .mockRejectedValueOnce(new Error('DB down'));
 
-            await expect(ensureNewsCardsAnalyzedAction('AAPL')).rejects.toThrow(
-                'majority upsert failure'
-            );
+            await expect(
+                ensureNewsCardsAnalyzedAction('AAPL')
+            ).resolves.toBeUndefined();
 
             expect(revalidateTagSpy).not.toHaveBeenCalled();
+            expect(errorSpy).toHaveBeenCalled();
+            errorSpy.mockRestore();
         });
 
         it('empty-fresh: upsertSettled 비어 changedCount=0 → markFetched 호출, revalidateTag 미호출', async () => {
@@ -508,21 +516,56 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
             expect(mockSubmitNewsCardAnalysis).toHaveBeenCalledTimes(2);
         });
 
-        it('upsert 과반 실패 시 에러를 throw한다', async () => {
+        it('upsert 과반 실패 시 throw하지 않고 삼킨 뒤 조용히 리턴한다', async () => {
+            const errorSpy = vi
+                .spyOn(console, 'error')
+                .mockImplementation(() => undefined);
             mockFetchNewsForPeriod.mockResolvedValue([
                 NEWS_ITEM_1,
                 NEWS_ITEM_2,
             ]);
-            // Both upserts fail → 2/2 > 50%, triggers majority-failure throw.
+            // Both upserts fail → 2/2 > 50%, triggers majority-failure throw
+            // inside ingestNewsForSymbol — but this fire-and-forget call site
+            // must swallow it (PR #700 review), not propagate.
             mockUpsertNewsItem
                 .mockRejectedValueOnce(new Error('DB down'))
                 .mockRejectedValueOnce(new Error('DB down'));
 
-            await expect(ensureNewsCardsAnalyzedAction('AAPL')).rejects.toThrow(
-                'majority upsert failure'
-            );
+            await expect(
+                ensureNewsCardsAnalyzedAction('AAPL')
+            ).resolves.toBeUndefined();
 
             expect(mockSubmitNewsCardAnalysis).not.toHaveBeenCalled();
+            expect(errorSpy).toHaveBeenCalled();
+            errorSpy.mockRestore();
+        });
+
+        // PR #700 리뷰 — 이 액션은 fire-and-forget(waitUntil) 계약이므로
+        // NewsIngestWriteError를 절대 위로 던지면 안 된다. prewarmNews(cron)와
+        // 대칭적인 반대 계약: 여기선 삼키고 로그만 남긴다.
+        it('NewsIngestWriteError를 삼키고 지정된 접두사로 로깅한다', async () => {
+            const errorSpy = vi
+                .spyOn(console, 'error')
+                .mockImplementation(() => undefined);
+            mockFetchNewsForPeriod.mockResolvedValue([
+                NEWS_ITEM_1,
+                NEWS_ITEM_2,
+            ]);
+            mockUpsertNewsItem
+                .mockRejectedValueOnce(new Error('DB down'))
+                .mockRejectedValueOnce(new Error('DB down'));
+
+            await expect(
+                ensureNewsCardsAnalyzedAction('AAPL')
+            ).resolves.toBeUndefined();
+
+            expect(errorSpy).toHaveBeenCalledWith(
+                expect.stringContaining(
+                    '[ensureNewsCardsAnalyzedAction] ingest failed for AAPL:'
+                ),
+                expect.any(NewsIngestWriteError)
+            );
+            errorSpy.mockRestore();
         });
 
         it('카드 분석 실패 시 reject하지 않고 계속 진행한다', async () => {
@@ -761,22 +804,30 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
             );
         });
 
-        it('upsert 과반 실패 시 markFetched를 호출하지 않는다', async () => {
+        it('upsert 과반 실패 시 markFetched를 호출하지 않고, throw도 하지 않는다', async () => {
+            const errorSpy = vi
+                .spyOn(console, 'error')
+                .mockImplementation(() => undefined);
             mockIsRecentlyFetched.mockResolvedValue(false);
             mockFetchNewsForPeriod.mockResolvedValue([
                 NEWS_ITEM_1,
                 NEWS_ITEM_2,
             ]);
-            // Both upserts fail → majority failure → action throws before markFetched.
+            // Both upserts fail → majority failure inside ingestNewsForSymbol,
+            // but the action swallows NewsIngestWriteError (fire-and-forget
+            // contract, PR #700 review) instead of propagating it — markFetched
+            // still never runs because the throw happens before it.
             mockUpsertNewsItem
                 .mockRejectedValueOnce(new Error('DB down'))
                 .mockRejectedValueOnce(new Error('DB down'));
 
             await expect(
                 ensureNewsCardsAnalyzedAction('AAPL', { skipAnalysis: true })
-            ).rejects.toThrow('majority upsert failure');
+            ).resolves.toBeUndefined();
 
             expect(mockMarkFetched).not.toHaveBeenCalled();
+            expect(errorSpy).toHaveBeenCalled();
+            errorSpy.mockRestore();
         });
     });
 });

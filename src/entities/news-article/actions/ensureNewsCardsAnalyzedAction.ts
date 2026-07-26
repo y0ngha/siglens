@@ -2,7 +2,10 @@
 
 import { getDatabaseClient } from '@/shared/db/client';
 import { DrizzleNewsRepository } from '@/entities/news-article/api';
-import { ingestNewsForSymbol } from '../lib/ingestNewsForSymbol';
+import {
+    ingestNewsForSymbol,
+    NewsIngestWriteError,
+} from '../lib/ingestNewsForSymbol';
 import {
     DISABLED_THINKING_BUDGET,
     NEWS_CARD_ANALYSIS_POLL_INTERVAL_MS as POLL_INTERVAL_MS,
@@ -85,7 +88,26 @@ export async function ensureNewsCardsAnalyzedAction(
     // ingestNewsForSymbol(lib/)로 추출됨 — prewarmNews(api.ts)도 이 경로를
     // 재사용한다(SEO pre-warm cron의 news livelock 수정, 20%/altcoin 측정치는
     // 그 함수의 doc-comment 참고).
-    const ingestResult = await ingestNewsForSymbol(symbol, repo);
+    //
+    // NewsIngestWriteError(과반 upsert 실패, DB 광역 장애 추정)는 여기서 삼킨다 —
+    // 이 액션은 fire-and-forget 계약(위 docstring, MISTAKES.md "Fire-and-Forget
+    // Operations §2")이라 절대 throw해선 안 된다(PR #700 리뷰). prewarmNews(cron)는
+    // 반대로 이 throw를 그대로 위로 올려보내야 한다 — 배치의 유닛 단위 catch가
+    // 빈 스냅샷을 굳히지 않고 다음 tick에 재시도하도록(감사 F2) — 그 경로는 여기서
+    // 건드리지 않는다.
+    let ingestResult;
+    try {
+        ingestResult = await ingestNewsForSymbol(symbol, repo);
+    } catch (err) {
+        if (err instanceof NewsIngestWriteError) {
+            console.error(
+                `[ensureNewsCardsAnalyzedAction] ingest failed for ${symbol}:`,
+                err
+            );
+            return;
+        }
+        throw err;
+    }
     if (ingestResult === null) return;
     const { fresh, upsertSettled } = ingestResult;
 

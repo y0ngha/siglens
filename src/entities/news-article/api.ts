@@ -34,7 +34,8 @@ import {
     NewsIngestWriteError,
 } from './lib/ingestNewsForSymbol';
 import { getNextEarningsReport } from '@/entities/earnings-report';
-import { resolveAssetClass } from '@/entities/ticker/lib/resolveAssetClass';
+import { resolveMarketProfile } from '@/entities/ticker/lib/resolveAssetClass';
+import { getDescriptor } from '@/shared/config/marketProfile';
 
 /** Domain-level row returned from the `news` table; extends the display projection with persistence-only fields. */
 export interface NewsRow extends NewsDisplayItem {
@@ -323,7 +324,14 @@ export async function prewarmNews(
     companyName: string,
     force: boolean
 ): Promise<SubmitNewsAnalysisResult> {
-    const assetClass = await resolveAssetClass(symbol);
+    // 리뷰 지적(PR #700): resolveAssetClass()는 내부적으로
+    // resolveMarketProfile() → getAssetInfo()를 호출하는데, 아래
+    // ingestNewsForSymbol도 profileId를 안 넘기면 resolveMarketProfile을 다시
+    // 호출해 심볼당 밤마다 getAssetInfo Redis 왕복이 중복된다. 여기서 프로필을
+    // 한 번만 resolve하고 assetClass는 그 결과에서 파생(resolveAssetClass가
+    // 내부적으로 하는 것과 동일)한 뒤 ingestNewsForSymbol에 그대로 전달한다.
+    const profileId = await resolveMarketProfile(symbol);
+    const assetClass = getDescriptor(profileId).assetClass;
     const { db } = getDatabaseClient();
     const repo = new DrizzleNewsRepository(db);
 
@@ -336,7 +344,8 @@ export async function prewarmNews(
     const ingested = await ingestNewsForSymbol(
         symbol,
         repo,
-        NEWS_ANALYSIS_LOOKBACK_MS
+        NEWS_ANALYSIS_LOOKBACK_MS,
+        profileId
     ).catch((err: unknown) => {
         // DB 광역 장애(과반 upsert 실패)는 삼키지 않고 올려보낸다 — 삼키면 비어 있는
         // DB를 그대로 분석해 빈약한 스냅샷을 generatedAt=now로 굳혀버려 다음 거래일

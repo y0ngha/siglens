@@ -3,7 +3,10 @@ import 'server-only';
 import type { NewsItem } from '@y0ngha/siglens-core';
 import type { DrizzleNewsRepository } from '../api';
 import { getNewsClient } from './getNewsClient';
-import { getDescriptor } from '@/shared/config/marketProfile';
+import {
+    getDescriptor,
+    type MarketProfileId,
+} from '@/shared/config/marketProfile';
 import { resolveMarketProfile } from '@/entities/ticker/lib/resolveAssetClass';
 import { NEWS_LOOKBACK_MS } from './newsLookback';
 import { markFetched } from './newsRefreshFlag';
@@ -75,14 +78,22 @@ const UPSERT_CONCURRENCY = 10;
  * treat that as "nothing new to ingest" and fall back to whatever is already
  * in the DB. Throws when a majority of upserts fail (likely a DB-wide outage)
  * so callers can distinguish "no new news" from "DB write failure".
+ *
+ * `profileId` is optional: when the caller already resolved the
+ * `MarketProfileId` (e.g. `prewarmNews` needs it separately to derive
+ * `assetClass`), pass it through here to skip a second `resolveMarketProfile`
+ * → `getAssetInfo` Redis round-trip per symbol per night (PR #700 review).
+ * When omitted, this function resolves it itself — `ensureNewsCardsAnalyzedAction`
+ * relies on that default and is unaffected.
  */
 export async function ingestNewsForSymbol(
     symbol: string,
     repo: DrizzleNewsRepository,
-    lookbackMs: number = NEWS_LOOKBACK_MS
+    lookbackMs: number = NEWS_LOOKBACK_MS,
+    profileId?: MarketProfileId
 ): Promise<NewsIngestResult | null> {
-    const profileId = await resolveMarketProfile(symbol);
-    const newsSource = getDescriptor(profileId).newsSource;
+    const resolvedProfileId = profileId ?? (await resolveMarketProfile(symbol));
+    const newsSource = getDescriptor(resolvedProfileId).newsSource;
     const newsClient = getNewsClient(newsSource);
 
     const fresh = await newsClient
