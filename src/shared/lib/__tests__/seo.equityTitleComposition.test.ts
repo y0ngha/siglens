@@ -10,6 +10,10 @@ import {
     seoTitleWidth,
     SEO_TITLE_MAX_WIDTH,
 } from '@/shared/lib/seo';
+import {
+    SEO_WORST_CASE_KOREAN_NAME,
+    SEO_WORST_CASE_TICKER,
+} from '@/__tests__/utils/seoTitleFixtures';
 
 type EquityBuilder = (
     symbol: string,
@@ -26,11 +30,6 @@ const EQUITY_BUILDERS: readonly (readonly [string, EquityBuilder, string])[] = [
     ['overall', buildSymbolOverallSeoContent, '종합 분석'],
     ['fear-greed', buildSymbolFearGreedSeoContent, '공포 탐욕 지수'],
 ];
-
-// 264개 화이트리스트 중 실측 최대 폭 종목 — 레버리지 ETF라 한국어명이 서술적이고
-// 검색어는 티커 자체다(composeSymbolTitle의 3단 강등 문서 참고).
-const WORST_CASE_KOREAN_NAME = '그래닛셰어스 2배 레버리지 NVDA 데일리 ETF';
-const WORST_CASE_TICKER = 'NVDL';
 
 describe('주식 title 템플릿 8개 — 한국어 회사명 주입', () => {
     it.each(EQUITY_BUILDERS)(
@@ -63,8 +62,8 @@ describe('주식 title 템플릿 8개 — 한국어 회사명 주입', () => {
     it.each(EQUITY_BUILDERS)(
         '%s: 실측 최악 케이스(NVDL)도 폭 상한 55를 넘지 않고 core가 살아남는다',
         (_name, build, core) => {
-            const { title } = build(WORST_CASE_TICKER, {
-                koreanName: WORST_CASE_KOREAN_NAME,
+            const { title } = build(SEO_WORST_CASE_TICKER, {
+                koreanName: SEO_WORST_CASE_KOREAN_NAME,
             });
             expect(seoTitleWidth(title)).toBeLessThanOrEqual(
                 SEO_TITLE_MAX_WIDTH

@@ -889,6 +889,10 @@ describe('symbolMetadataFromSeo', () => {
         // title은 { absolute }로 루트 레이아웃의 "| Siglens" 자동 접미사를
         // 무시한다 → 브랜드 미포함(Task 6, `| Siglens` 8 폭단위를 검색 의도
         // 카피로 되돌린다).
+        // as 캐스팅 근거: symbolMetadataFromSeo는 항상 title을 { absolute }
+        // 형태로만 반환한다(구현 참고) — Next.js Metadata['title'] 유니온
+        // (string | TemplateString | null)을 좁히는 것이지 검증 안 된 값을
+        // 단언하는 게 아니다.
         const titleMeta = meta.title as { absolute: string };
         expect(titleMeta.absolute).toBe(baseSeo.title);
         expect(titleMeta.absolute).not.toContain('Siglens');

@@ -272,7 +272,8 @@ export function buildTitleSubject(ticker: string, koreanName?: string): string {
 export interface ComposeSymbolTitleArgs {
     ticker: string;
     koreanName?: string;
-    /** 검색 매칭을 만드는 키워드. 어떤 경우에도 잘리지 않는다. 예: `공포 탐욕 지수` */
+    /** 검색 매칭을 만드는 키워드. 티커를 줄여서라도 보존한다 — `core` 자체가 예산(55 폭단위)을
+     *  넘지 않는 한 잘리지 않는다. 예: `공포 탐욕 지수` */
     core: string;
     /** 예산이 남을 때만 붙는 서술. 가장 먼저 버려진다. 예: `차트·매매 신호` */
     tail?: string;
@@ -308,8 +309,14 @@ export function composeSymbolTitle(args: ComposeSymbolTitleArgs): string {
     if (fits(coreOnly)) return coreOnly;
 
     const bare = buildTitleSubject(ticker);
+    const coreSuffix = ` ${core}`;
     const bareFull = withTail(bare);
-    return fits(bareFull) ? bareFull : clampSeoTitle(`${bare} ${core}`);
+    if (fits(bareFull)) return bareFull;
+
+    // 마지막 방어선: core는 그대로 두고 티커 쪽만 줄인다. `clampSeoTitle`을 전체
+    // 문자열에 걸면 뒤에서부터 자르므로 core가 깎인다 — 3단 설계의 목적이 무너진다.
+    const tickerBudget = SEO_TITLE_MAX_WIDTH - seoTitleWidth(coreSuffix);
+    return `${clampSeoTitle(bare, tickerBudget)}${coreSuffix}`;
 }
 
 /**

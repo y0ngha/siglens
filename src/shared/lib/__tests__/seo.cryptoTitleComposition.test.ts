@@ -6,6 +6,10 @@ import {
     seoTitleWidth,
     SEO_TITLE_MAX_WIDTH,
 } from '@/shared/lib/seo';
+import {
+    SEO_WORST_CASE_KOREAN_NAME,
+    SEO_WORST_CASE_TICKER,
+} from '@/__tests__/utils/seoTitleFixtures';
 
 type CryptoBuilder = (
     symbol: string,
@@ -18,11 +22,6 @@ const CRYPTO_BUILDERS: readonly (readonly [string, CryptoBuilder, string])[] = [
     ['overall', buildCryptoSymbolOverallSeoContent, '코인 종합 분석'],
     ['fear-greed', buildCryptoSymbolFearGreedSeoContent, '공포 탐욕 지수'],
 ];
-
-// 주식과 동일한 실측 최대 폭 형태 — 크립토 화이트리스트에도 서술적인 긴
-// 한국어명(예: 래핑/스테이킹 파생 토큰)이 존재할 수 있어 동일 강등 경로를 검증한다.
-const WORST_CASE_KOREAN_NAME = '그래닛셰어스 2배 레버리지 NVDA 데일리 ETF';
-const WORST_CASE_TICKER = 'NVDL';
 
 describe('크립토 title 템플릿 4개 — 주식과 동일한 조합 형태로 통일', () => {
     it.each(CRYPTO_BUILDERS)(
@@ -53,10 +52,13 @@ describe('크립토 title 템플릿 4개 — 주식과 동일한 조합 형태�
     );
 
     it.each(CRYPTO_BUILDERS)(
+        // 주식과 동일한 실측 최대 폭 fixture(SEO_WORST_CASE_*)를 재사용한다 —
+        // 크립토 화이트리스트에도 서술적인 긴 한국어명(예: 래핑/스테이킹 파생
+        // 토큰)이 존재할 수 있어 주식과 동일한 강등 경로를 검증한다.
         '%s: 실측 최악 케이스도 폭 상한 55를 넘지 않고 core가 살아남는다',
         (_name, build, core) => {
-            const { title } = build(WORST_CASE_TICKER, {
-                koreanName: WORST_CASE_KOREAN_NAME,
+            const { title } = build(SEO_WORST_CASE_TICKER, {
+                koreanName: SEO_WORST_CASE_KOREAN_NAME,
             });
             expect(seoTitleWidth(title)).toBeLessThanOrEqual(
                 SEO_TITLE_MAX_WIDTH
