@@ -11,7 +11,12 @@
 - [ARCHITECTURE.md](./architecture/ARCHITECTURE.md) — FSD 레이어 구조, 의존 방향, 폴더 레이아웃
 - [SCOPE.md](./architecture/SCOPE.md) — siglens vs siglens-core 분담(결정 트리, 안티패턴)
 - [PERFORMANCE_BASELINE.md](./architecture/PERFORMANCE_BASELINE.md) — 성능 baseline & 액션 플랜
+
+### 운영 런북
+- [DEPLOY_RUNBOOK.md](./architecture/DEPLOY_RUNBOOK.md) — **운영 문제 시 첫 진입점.** 배포·롤백, 알람 대응, 증상별 트리아지, 부트스트랩 체크리스트
+- [ISR_CACHE_HANDLER.md](./architecture/ISR_CACHE_HANDLER.md) — S3 ISR 캐시 핸들러, 킬 스위치, 태그 스토어, 수동 캐시 정리
 - [ISR_REVALIDATE.md](./architecture/ISR_REVALIDATE.md) — ISR revalidate 정책(페이지별 값·근거, Fast Origin Transfer 절감)
+- [CDN_CACHING.md](./architecture/CDN_CACHING.md) — Cloudflare 캐싱·WAF·봇 보호
 
 ## conventions/ — 작성 규칙
 - [CONVENTIONS.md](./conventions/CONVENTIONS.md) — 코딩 컨벤션, 네이밍, 타입, 테스트 커버리지

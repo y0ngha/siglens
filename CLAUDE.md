@@ -284,6 +284,9 @@ yarn format
 | `docs/architecture/ARCHITECTURE.md` | Layer structure, dependency direction rules, folder layout |
 | `docs/architecture/PERFORMANCE_BASELINE.md` | 성능 baseline & 개선 액션 플랜 |
 | `docs/architecture/ISR_REVALIDATE.md` | ISR `revalidate` 정책 — 페이지별 값·근거, Fast Origin Transfer 절감, cron 미도입 결정 |
+| `docs/architecture/DEPLOY_RUNBOOK.md` | **운영 문제 시 첫 진입점** — 배포·롤백, 알람별 1차 대응, 증상별 트리아지, 부트스트랩 체크리스트 |
+| `docs/architecture/ISR_CACHE_HANDLER.md` | S3 ISR 캐시 핸들러 런북 — 킬 스위치, 태그 스토어, 수동 캐시 정리 |
+| `docs/architecture/CDN_CACHING.md` | Cloudflare 캐싱·WAF·봇 보호 런북 |
 | `docs/product/SERVICE.md` | Product overview, target users, tech stack, Skills system |
 | `docs/product/DOMAIN.md` | Indicator calculation specs, candle patterns, Skills system, business rules |
 | `docs/product/AUTH.md` | 인증·세션·OAuth·이메일 토큰 흐름 (인증은 옵션) |
