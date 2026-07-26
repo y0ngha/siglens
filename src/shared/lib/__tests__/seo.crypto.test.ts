@@ -71,10 +71,12 @@ describe('resolveSymbolSeoContent', () => {
             displayName: 'Apple Inc.',
             koreanName: '애플',
         });
-        // buildSymbolSeoContent produces "AAPL 주가 분석 — 차트와 매매 신호, 지지선·저항선"
-        expect(c.title).toBe(
-            'AAPL 주가 분석 — 차트와 매매 신호, 지지선·저항선'
-        );
+        // buildSymbolSeoContent produces "애플(AAPL) 주가 전망 — 차트·매매 신호" 형태.
+        // core(주가 전망)만 단언한다 — tail은 composeSymbolTitle이 예산 압박 시
+        // 가장 먼저 버리는 서술이라 전체 문자열을 고정하지 않는다.
+        expect(c.title).toContain('AAPL');
+        expect(c.title).toContain('주가 전망');
+        expect(c.title).not.toContain('시세');
         // stock keywords use 주가, not 시세
         expect(c.keywords).toContain('AAPL 주가');
         expect(c.keywords).toContain('애플 주가');
@@ -137,14 +139,16 @@ describe('resolveSymbolNewsSeoContent', () => {
         expect(c.url).toBe('https://siglens.io/BTCUSD/news');
     });
 
-    it('equity → buildSymbolNewsSeoContent (어닝/실적/애널리스트 copy preserved)', () => {
+    it('equity → buildSymbolNewsSeoContent (동일 빌더로 위임되며 core가 보존된다)', () => {
         const c = resolveSymbolNewsSeoContent('AAPL', 'equity', {
             displayName: '애플, Apple Inc. (AAPL)',
             koreanName: '애플',
         });
-        // Stock builder title contains 어닝 and 애널리스트
-        expect(c.title).toContain('어닝');
-        expect(c.title).toContain('애널리스트');
+        // core(뉴스)만 단언한다 — 어닝/실적 카피는 title 재설계에서 제거됐고,
+        // 남은 tail(호재 분위기와 애널리스트 등급)도 composeSymbolTitle이 예산
+        // 압박 시 가장 먼저 버리는 서술이라 고정하지 않는다.
+        expect(c.title).toContain('AAPL');
+        expect(c.title).toContain('뉴스');
         // Verify equity builder is unchanged
         const stock = buildSymbolNewsSeoContent('AAPL', {
             displayName: '애플, Apple Inc. (AAPL)',

@@ -498,7 +498,12 @@ export function buildSymbolSeoContent(
     opts: BuildSymbolSeoOptions = {}
 ): SymbolSeoContent {
     const ticker = symbol.toUpperCase();
-    const title = `${ticker} 주가 분석 — 차트와 매매 신호, 지지선·저항선`;
+    const title = composeSymbolTitle({
+        ticker,
+        koreanName: opts.koreanName,
+        core: '주가 전망',
+        tail: '차트·매매 신호',
+    });
     const displayName = opts.displayName ?? ticker;
     return {
         ticker,
@@ -663,8 +668,12 @@ export function buildSymbolFinancialsSeoContent(
     opts: BuildSymbolSeoOptions = {}
 ): SymbolSeoContent {
     const upper = symbol.toUpperCase();
-    // Root layout template appends "| Siglens" — exclude brand name to prevent duplication.
-    const title = `${upper} 재무제표 — 매출·이익·현금흐름 5년 추이`;
+    const title = composeSymbolTitle({
+        ticker: upper,
+        koreanName: opts.koreanName,
+        core: '재무제표',
+        tail: '매출·이익·현금흐름',
+    });
     const fullTitle = `${title} | ${SITE_NAME}`;
     const subject = opts.displayName ?? upper;
     return {
@@ -721,8 +730,12 @@ export function buildSymbolCongressSeoContent(
     opts: BuildSymbolSeoOptions = {}
 ): SymbolSeoContent {
     const upper = symbol.toUpperCase();
-    // Root layout template appends "| Siglens" — exclude brand name to prevent duplication.
-    const title = `${upper} 의회 거래 — 상원·하원 의원 매매 공시`;
+    const title = composeSymbolTitle({
+        ticker: upper,
+        koreanName: opts.koreanName,
+        core: '의회 거래',
+        tail: '상원·하원 매매 공시',
+    });
     const fullTitle = `${title} | ${SITE_NAME}`;
     const subject = opts.displayName ?? upper;
     return {
@@ -777,8 +790,12 @@ export function buildSymbolFundamentalSeoContent(
     opts: BuildSymbolSeoOptions = {}
 ): SymbolSeoContent {
     const upper = symbol.toUpperCase();
-    // Root layout template appends "| Siglens" — exclude brand name to prevent duplication.
-    const title = `${upper} 펀더멘털 — PER, ROE와 애널리스트 컨센서스`;
+    const title = composeSymbolTitle({
+        ticker: upper,
+        koreanName: opts.koreanName,
+        core: '펀더멘털',
+        tail: 'PER·ROE와 컨센서스',
+    });
     const fullTitle = `${title} | ${SITE_NAME}`;
     const subject = opts.displayName ?? upper;
     return {
@@ -854,8 +871,17 @@ export function buildSymbolOptionsSeoContent(
     const subject = opts.displayName ?? upper;
     const hasOptions = opts.hasOptions ?? true;
     const title = hasOptions
-        ? `${upper} 옵션 분석 — Max Pain · OI · Put/Call · ATM IV`
-        : `${upper} 옵션 분석`;
+        ? composeSymbolTitle({
+              ticker: upper,
+              koreanName: opts.koreanName,
+              core: '옵션 분석',
+              tail: 'Max Pain·OI·Put/Call',
+          })
+        : composeSymbolTitle({
+              ticker: upper,
+              koreanName: opts.koreanName,
+              core: '옵션 분석',
+          });
     const fullTitle = `${title} | ${SITE_NAME}`;
     return {
         ticker: upper,
@@ -904,8 +930,12 @@ export function buildSymbolNewsSeoContent(
     opts: BuildSymbolSeoOptions = {}
 ): SymbolSeoContent {
     const upper = symbol.toUpperCase();
-    // Root layout template appends "| Siglens" — exclude brand name to prevent duplication.
-    const title = `${upper} 뉴스 — 호재 분위기, 어닝과 실적, 애널리스트 등급`;
+    const title = composeSymbolTitle({
+        ticker: upper,
+        koreanName: opts.koreanName,
+        core: '뉴스',
+        tail: '호재 분위기와 애널리스트 등급',
+    });
     const fullTitle = `${title} | ${SITE_NAME}`;
     const subject = opts.displayName ?? upper;
     return {
@@ -968,8 +998,12 @@ export function buildSymbolOverallSeoContent(
     opts: BuildSymbolSeoOptions = {}
 ): SymbolSeoContent {
     const upper = symbol.toUpperCase();
-    // Root layout template appends "| Siglens" — exclude brand name to prevent duplication.
-    const title = `${upper} 종합 분석 — 강세와 약세 시나리오, 위험 요인`;
+    const title = composeSymbolTitle({
+        ticker: upper,
+        koreanName: opts.koreanName,
+        core: '종합 분석',
+        tail: '강세·약세 시나리오',
+    });
     const fullTitle = `${title} | ${SITE_NAME}`;
     const subject = opts.displayName ?? upper;
     return {
@@ -1301,8 +1335,12 @@ export function buildSymbolFearGreedSeoContent(
 ): SymbolSeoContent {
     const upper = symbol.toUpperCase();
     const subject = opts.displayName ?? upper;
-    // Root layout template appends "| Siglens" — exclude brand name to prevent duplication.
-    const title = `${upper} 공포 탐욕 지수 — 0~100 점수와 5단계 분위기`;
+    const title = composeSymbolTitle({
+        ticker: upper,
+        koreanName: opts.koreanName,
+        core: '공포 탐욕 지수',
+        tail: '0~100 점수와 5단계',
+    });
     const fullTitle = `${title} | ${SITE_NAME}`;
     return {
         ticker: upper,

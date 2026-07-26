@@ -21,12 +21,14 @@ describe('buildSymbolSeoContent', () => {
         const content = buildSymbolSeoContent('aapl');
 
         expect(content.ticker).toBe('AAPL');
-        expect(content.title).toBe(
-            'AAPL 주가 분석 — 차트와 매매 신호, 지지선·저항선'
-        );
-        expect(content.fullTitle).toBe(
-            'AAPL 주가 분석 — 차트와 매매 신호, 지지선·저항선 | Siglens'
-        );
+        // core(주가 전망)만 단언한다 — tail(차트·매매 신호)은
+        // composeSymbolTitle이 예산 압박 시 가장 먼저 버리는 서술이라,
+        // 전체 문자열을 고정하면 카피 문구만 바뀌어도 이 테스트가 깨진다.
+        // 알고리즘 자체(어떤 조건에서 tail/한국어명이 버려지는지)를 고정하는
+        // 리터럴 단언은 seo.composeSymbolTitle.test.ts의 책임이다.
+        expect(content.title).toContain('AAPL');
+        expect(content.title).toContain('주가 전망');
+        expect(content.fullTitle).toBe(`${content.title} | Siglens`);
         expect(content.description).toContain('AAPL');
         expect(content.url).toBe('https://siglens.io/AAPL');
         expect(content.keywords).toContain('AAPL 주가');
@@ -52,9 +54,10 @@ describe('buildSymbolSeoContent', () => {
 describe('buildSymbolFundamentalSeoContent', () => {
     it('소문자 입력을 대문자로 정규화하고 title/fullTitle이 일관된 형태다', () => {
         const content = buildSymbolFundamentalSeoContent('aapl');
-        expect(content.title).toBe(
-            'AAPL 펀더멘털 — PER, ROE와 애널리스트 컨센서스'
-        );
+        // core(펀더멘털)만 단언한다 — tail은 composeSymbolTitle이 예산
+        // 압박 시 가장 먼저 버리는 서술이라 전체 문자열을 고정하지 않는다.
+        expect(content.title).toContain('AAPL');
+        expect(content.title).toContain('펀더멘털');
         expect(content.fullTitle).toBe(`${content.title} | Siglens`);
     });
 
@@ -158,9 +161,11 @@ describe('buildSymbolFinancialsSeoContent', () => {
 
     it('title 형식이 일관된다 — 매출·이익·현금흐름 구조', () => {
         const content = buildSymbolFinancialsSeoContent('TSLA');
-        expect(content.title).toBe(
-            'TSLA 재무제표 — 매출·이익·현금흐름 5년 추이'
-        );
+        // core(재무제표)만 단언한다 — tail(매출·이익·현금흐름)은
+        // composeSymbolTitle이 예산 압박 시 가장 먼저 버리는 서술이라,
+        // 전체 문자열을 고정하면 카피 문구만 바뀌어도 이 테스트가 깨진다.
+        expect(content.title).toContain('TSLA');
+        expect(content.title).toContain('재무제표');
         expect(content.fullTitle).toBe(`${content.title} | Siglens`);
     });
 
@@ -232,9 +237,11 @@ describe('buildSymbolFinancialsSeoContent', () => {
 describe('buildSymbolNewsSeoContent', () => {
     it('소문자 입력을 대문자로 정규화하고 title/fullTitle이 일관된 형태다', () => {
         const content = buildSymbolNewsSeoContent('aapl');
-        expect(content.title).toBe(
-            'AAPL 뉴스 — 호재 분위기, 어닝과 실적, 애널리스트 등급'
-        );
+        // core(뉴스)만 단언한다 — tail(호재 분위기와 애널리스트 등급)은
+        // composeSymbolTitle이 예산 압박 시 가장 먼저 버리는 서술이라
+        // 전체 문자열을 고정하지 않는다.
+        expect(content.title).toContain('AAPL');
+        expect(content.title).toContain('뉴스');
         expect(content.fullTitle).toBe(`${content.title} | Siglens`);
     });
 
@@ -316,9 +323,11 @@ describe('buildSymbolNewsSeoContent', () => {
 describe('buildSymbolOverallSeoContent', () => {
     it('소문자 입력을 대문자로 정규화하고 title/fullTitle이 일관된 형태다', () => {
         const content = buildSymbolOverallSeoContent('aapl');
-        expect(content.title).toBe(
-            'AAPL 종합 분석 — 강세와 약세 시나리오, 위험 요인'
-        );
+        // core(종합 분석)만 단언한다 — tail(강세·약세 시나리오)은
+        // composeSymbolTitle이 예산 압박 시 가장 먼저 버리는 서술이라
+        // 전체 문자열을 고정하지 않는다.
+        expect(content.title).toContain('AAPL');
+        expect(content.title).toContain('종합 분석');
         expect(content.fullTitle).toBe(`${content.title} | Siglens`);
     });
 
