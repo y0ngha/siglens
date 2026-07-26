@@ -169,4 +169,61 @@ describe('OptionsSnapshotProse', () => {
         expect(screen.queryByText('만기별 해석')).not.toBeInTheDocument();
         expect(screen.queryByText('시그널')).not.toBeInTheDocument();
     });
+
+    // content는 JSONB에서 unknown으로 올라오므로 배열 원소 하나하나가 신뢰할 수
+    // 없다. 유효 항목만 남기고 나머지를 조용히 버리는 경로 — 이게 깨지면
+    // malformed 원소 하나가 페이지 전체를 throw로 날린다.
+    it('perExpiration·signals의 malformed 원소를 걸러내고 유효 항목만 렌더한다', () => {
+        render(
+            <OptionsSnapshotProse
+                content={{
+                    summary: SUMMARY_TEXT,
+                    perExpiration: [
+                        null,
+                        'not-an-object',
+                        { commentary: 123 },
+                        { commentary: '   ' },
+                        {
+                            commentary: '유효한 만기 해설',
+                            expirationDate: 20260101,
+                        },
+                    ],
+                    signals: [
+                        null,
+                        { message: 42 },
+                        { message: '' },
+                        { message: '유효한 시그널', kind: 'not-a-kind' },
+                    ],
+                }}
+                symbol="AAPL"
+                displayName="Apple Inc."
+            />
+        );
+
+        expect(screen.getByText('유효한 만기 해설')).toBeInTheDocument();
+        expect(screen.getByText('유효한 시그널')).toBeInTheDocument();
+        // 만기 1건 + 시그널 1건만 살아남는다.
+        expect(screen.getAllByRole('listitem')).toHaveLength(2);
+        // 숫자 expirationDate는 ''로 떨어지고, 인식 못 하는 kind는 라벨을 붙이지 않는다.
+        expect(screen.queryByText(/20260101/)).not.toBeInTheDocument();
+        expect(screen.queryByText(/not-a-kind/)).not.toBeInTheDocument();
+    });
+
+    it('세 프로즈 소스 중 signals만 유효하면 시그널 목록만 렌더한다', () => {
+        render(
+            <OptionsSnapshotProse
+                content={{
+                    summary: '   ',
+                    perExpiration: [{ commentary: '' }],
+                    signals: [{ message: '변동성 확대', kind: 'volatility' }],
+                }}
+                symbol="AAPL"
+                displayName="Apple Inc."
+            />
+        );
+
+        expect(screen.getByText('시그널')).toBeInTheDocument();
+        expect(screen.getByText(/변동성 확대/)).toBeInTheDocument();
+        expect(screen.queryByText('만기별 해석')).not.toBeInTheDocument();
+    });
 });

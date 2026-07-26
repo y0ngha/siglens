@@ -57,6 +57,10 @@ const coverageConfig = {
         'src/features/**/*.{ts,tsx}',
         'src/shared/**/*.{ts,tsx}',
         'src/widgets/**/*.{ts,tsx}',
+        // FSD pages 레이어(src/pages/는 Pages Router를 켜므로 views/로 둔다).
+        // 페이지 조합 + 훅·유틸이 실제 로직을 갖는 레이어인데 include에서
+        // 빠져 있어 90% 임계값이 적용되지 않았다.
+        'src/views/**/*.{ts,tsx}',
         'src/app/**/*.{ts,tsx}',
         'src/proxy.ts',
         // ISR 캐시 핸들러는 src/ 밖의 평문 ESM이지만 프로덕션 코드다. include에 없으면

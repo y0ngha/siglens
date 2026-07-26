@@ -107,7 +107,12 @@ describe('useAnalysis — branch coverage', () => {
         mockPoll.mockReset();
         mockCancel.mockReset();
         mockCancel.mockResolvedValue(undefined);
+        // mockReset (not just re-stubbing) so call history cannot leak between
+        // tests: a `not.toHaveBeenCalled()` assertion further down would
+        // otherwise see calls made by an earlier test in this file.
+        mockTryAcquire.mockReset();
         mockTryAcquire.mockResolvedValue({ ok: true });
+        mockRelease.mockReset();
         mockRelease.mockResolvedValue(undefined);
         (getReanalyzeCooldownMs as Mock).mockResolvedValue(0);
     });
@@ -479,6 +484,135 @@ describe('useAnalysis — branch coverage', () => {
             expect(result.current.reanalyzeCooldownMs).toBe(2000);
 
             vi.useRealTimers();
+        });
+    });
+
+    describe('poll loop: processing keeps polling', () => {
+        it('keeps polling while status is processing and settles on done', async () => {
+            mockSubmit.mockResolvedValue({
+                status: 'submitted',
+                jobId: 'job-processing',
+            });
+            mockPoll
+                .mockResolvedValueOnce({ status: 'processing' })
+                .mockResolvedValueOnce({ status: 'processing' })
+                .mockResolvedValueOnce({
+                    status: 'done',
+                    result: CACHED_RESULT,
+                    lockedInfoDepth: [],
+                });
+
+            const { result } = renderHook(
+                () => useAnalysis(makeOptions({ initialAnalysisFailed: true })),
+                { wrapper: makeWrapper() }
+            );
+
+            await waitFor(() => {
+                expect(result.current.analysisResult).toMatchObject(
+                    CACHED_RESULT
+                );
+            });
+            // The two 'processing' ticks must not have terminated the loop.
+            expect(mockPoll).toHaveBeenCalledTimes(3);
+            expect(result.current.isAnalyzing).toBe(false);
+        });
+    });
+
+    describe('forced reanalyze', () => {
+        it('starts the full cooldown when a forced poll completes, tolerating a legacy response with no lock metadata', async () => {
+            mockSubmit.mockResolvedValue({
+                status: 'submitted',
+                jobId: 'job-forced',
+            });
+            // `lockedInfoDepth` is intentionally absent: a rolling deploy can
+            // serve this shape from an older instance, and `undefined` reaching
+            // state would crash downstream `.length` consumers.
+            // The cast is the point of the test: `PollAnalysisResult` declares
+            // `lockedInfoDepth` as required, but a rolling deploy can serve a
+            // payload without it, and TypeScript cannot stop that at runtime.
+            mockPoll.mockResolvedValueOnce({
+                status: 'done',
+                result: CACHED_RESULT,
+            } as unknown as Awaited<ReturnType<typeof pollAnalysisAction>>);
+
+            const { result } = renderHook(() => useAnalysis(makeOptions()), {
+                wrapper: makeWrapper(),
+            });
+
+            act(() => {
+                result.current.handleReanalyze();
+            });
+
+            await waitFor(() => {
+                expect(result.current.analysisResult).toMatchObject(
+                    CACHED_RESULT
+                );
+            });
+            expect(result.current.lockedInfoDepth).toEqual([]);
+            expect(result.current.reanalyzeCooldownMs).toBeGreaterThan(0);
+        });
+
+        it('ignores a reanalyze request issued before the tier has hydrated', () => {
+            const { result } = renderHook(
+                () => useAnalysis({ ...makeOptions(), isTierHydrated: false }),
+                { wrapper: makeWrapper() }
+            );
+
+            act(() => {
+                result.current.handleReanalyze();
+            });
+
+            // Not even the cooldown slot is claimed — claiming it and then
+            // bailing would lock the user out of a reanalyze they never got.
+            expect(mockTryAcquire).not.toHaveBeenCalled();
+            expect(mockSubmit).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('cancel failures stay silent', () => {
+        it('warns instead of throwing when the unmount cancel rejects', async () => {
+            const warnSpy = vi
+                .spyOn(console, 'warn')
+                .mockImplementation(() => {});
+            mockSubmit.mockResolvedValue({
+                status: 'submitted',
+                jobId: 'job-unmount',
+            });
+            // One 'processing' tick, then a poll that never settles: `sleep` is
+            // mocked to resolve immediately, so a repeating 'processing' would
+            // spin the loop hot and kill the worker.
+            mockPoll
+                .mockResolvedValueOnce({ status: 'processing' })
+                .mockImplementation(() => new Promise(() => {}));
+            mockCancel.mockRejectedValue(new Error('cancel boom'));
+
+            const { unmount } = renderHook(
+                () => useAnalysis(makeOptions({ initialAnalysisFailed: true })),
+                { wrapper: makeWrapper() }
+            );
+
+            // Wait for the poll to actually start: that proves the submit
+            // resolved to 'submitted' and the job id ref is populated, which is
+            // what the unmount cleanup keys off. Waiting on `isAnalyzing` alone
+            // is satisfied while the submit is still in flight, so the unmount
+            // could land before there is any job to cancel.
+            await waitFor(() => {
+                expect(mockPoll).toHaveBeenCalled();
+            });
+
+            // Unmounting with a job in flight fires the fire-and-forget cancel.
+            // Its rejection must be swallowed — an unhandled rejection here
+            // would surface as a test-environment crash in production too.
+            unmount();
+
+            await waitFor(() => {
+                expect(warnSpy).toHaveBeenCalledWith(
+                    '[useAnalysis] cancel failed',
+                    expect.any(Error)
+                );
+            });
+
+            warnSpy.mockRestore();
         });
     });
 });
