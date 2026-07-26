@@ -44,7 +44,6 @@ export const POPULAR_OPTIONS_TICKERS = [
     'BMY',
     'BP',
     'BRK-B',
-    'BRK.B',
     'BSX',
     'BTQ',
     'C',

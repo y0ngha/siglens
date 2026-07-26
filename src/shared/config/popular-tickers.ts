@@ -142,7 +142,6 @@ export const POPULAR_TICKERS = [
     'META',
     'TSLA',
     'NFLX',
-    'BRK.B',
     'SPY',
     'QQQ',
     'IWM',
