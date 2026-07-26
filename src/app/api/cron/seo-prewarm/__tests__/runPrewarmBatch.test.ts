@@ -518,15 +518,7 @@ describe('runPrewarmBatch', () => {
 
     // ── FIX A(감사) — 공정 선별: 회전 오프셋 + resumable 우선 + backoff 배제 ──
 
-    it('회전 오프셋 — freshCount만큼 배치 후보 시작점이 회전한다(Math.random 없이 결정적)', async () => {
-        // 3개는 이미 전 탭 fresh(freshCount=3에 기여), 10개는 stale(S0..S9).
-        const freshOnes: PrewarmSymbol[] = Array.from(
-            { length: 3 },
-            (_, i) => ({
-                symbol: `FRESH${i}`,
-                tabs: ['technical'] as SeoSnapshotTab[],
-            })
-        );
+    it('회전 오프셋 — tick 시각에서 결정적으로 파생된다(Math.random·Redis 커서 없이)', async () => {
         const staleOnes: PrewarmSymbol[] = Array.from(
             { length: 10 },
             (_, i) => ({
@@ -534,28 +526,62 @@ describe('runPrewarmBatch', () => {
                 tabs: ['technical'] as SeoSnapshotTab[],
             })
         );
-        universe(...freshOnes, ...staleOnes);
-        mockFindGeneratedAtMap.mockResolvedValue(
-            new Map(freshOnes.map(f => [key(f.symbol, 'technical'), BOUNDARY]))
-        );
+        universe(...staleOnes);
+        mockFindGeneratedAtMap.mockResolvedValue(new Map());
         mockPrewarmTechnical.mockResolvedValue({
             status: 'cached',
             result: {},
         });
 
-        await runPrewarmBatch();
+        // tick = floor(now / 5분) → offset = (tick × SYMBOLS_PER_TICK) % 10.
+        // tick을 3으로 잡으면 offset = 18 % 10 = 8 → S8,S9,S0..S3이 선택된다.
+        const TICK_MS = 5 * 60 * 1000;
+        await runPrewarmBatch(makeSimClock(3 * TICK_MS));
 
-        // freshCount=3 → offset=3%10=3 → 회전된 순서 S3..S8(6개, SYMBOLS_PER_TICK=6)가
-        // 선택되고 S0,S1,S2,S9는 이번 tick엔 선택되지 않는다(멤버십만 검증 — 동시
-        // Promise.all 처리라 호출 "순서"는 검증하지 않는다).
         const calledSymbols = mockPrewarmTechnical.mock.calls.map(c => c[0]);
         expect(calledSymbols).toHaveLength(6);
-        for (const s of ['S3', 'S4', 'S5', 'S6', 'S7', 'S8']) {
+        for (const s of ['S8', 'S9', 'S0', 'S1', 'S2', 'S3']) {
             expect(calledSymbols).toContain(s);
         }
-        for (const s of ['S0', 'S1', 'S2', 'S9']) {
+        for (const s of ['S4', 'S5', 'S6', 'S7']) {
             expect(calledSymbols).not.toContain(s);
         }
+    });
+
+    // 2026-07-26 인시던트 회귀 가드.
+    // 이전 구현은 offset을 freshCount(= universe - stale)에서 뽑았다. 창 안 후보가
+    // 전부 blocked면 아무것도 완료되지 않아 freshCount가 얼어붙고, 그러면 offset도
+    // 얼어붙어 다음 tick이 같은 창을 재검사한다 — 스스로 못 빠져나오는 livelock.
+    // 실제 운영에서 `submitted:0 / remaining:153`이 반복되며 221/295에서 정지했다.
+    // 시각 기반 offset은 진행 여부와 무관하게 창을 전진시키므로 반드시 통과한다.
+    it('창이 전부 blocked여도 다음 tick엔 다른 창을 본다(livelock 회귀 가드)', async () => {
+        const staleOnes: PrewarmSymbol[] = Array.from(
+            { length: 40 },
+            (_, i) => ({
+                symbol: `S${i}`,
+                tabs: ['technical'] as SeoSnapshotTab[],
+            })
+        );
+        universe(...staleOnes);
+        mockFindGeneratedAtMap.mockResolvedValue(new Map());
+        mockPrewarmTechnical.mockResolvedValue({
+            status: 'cached',
+            result: {},
+        });
+
+        const TICK_MS = 5 * 60 * 1000;
+        await runPrewarmBatch(makeSimClock(0 * TICK_MS));
+        const first = mockPrewarmTechnical.mock.calls.map(c => c[0]);
+        mockPrewarmTechnical.mockClear();
+
+        // 진행이 전혀 없었다고 가정(스냅샷 맵 그대로 = freshCount 불변)해도
+        // 다음 tick은 다른 심볼 집합을 선택해야 한다.
+        await runPrewarmBatch(makeSimClock(1 * TICK_MS));
+        const second = mockPrewarmTechnical.mock.calls.map(c => c[0]);
+
+        expect(second).toHaveLength(6);
+        expect(second).not.toEqual(first);
+        expect(second.some(s => !first.includes(s))).toBe(true);
     });
 
     it('resumable(in-flight jobId 보유) 심볼을 신규 stale 심볼보다 먼저 채운다(FIX A/Z)', async () => {
@@ -755,8 +781,10 @@ describe('runPrewarmBatch', () => {
 
     it('배치 데드라인 초과 시 남은 청크를 건너뛰고 부분 counts를 반환하며 로그를 남긴다', async () => {
         // 6개 stale 심볼(SYMBOL_CONCURRENCY=3 → 2청크), 전부 즉시 cached로 끝나
-        // 폴링 없음 → clock.now() 호출은 [배치데드라인 계산, 청크0 사전체크,
-        // 청크1 사전체크] 정확히 3회뿐이라 call-count 기반 목이 안전하다.
+        // 폴링 없음 → clock.now() 호출은 [배치데드라인 계산, 회전 오프셋 산출,
+        // 청크0 사전체크, 청크1 사전체크] 정확히 4회뿐이라 call-count 기반 목이
+        // 안전하다. (회전 오프셋도 clock에서 뽑으므로 3회가 아니라 4회다 —
+        // livelock 수정으로 offset이 시각 파생이 되면서 한 칸 늘었다.)
         const symbols: PrewarmSymbol[] = Array.from({ length: 6 }, (_, i) => ({
             symbol: `SYM${i}`,
             tabs: ['technical'] as SeoSnapshotTab[],
@@ -772,7 +800,9 @@ describe('runPrewarmBatch', () => {
         let calls = 0;
         const now = () => {
             calls++;
-            return calls <= 2 ? base : base + BATCH_DEADLINE_MS + 1;
+            // 1=데드라인 계산, 2=회전 오프셋, 3=청크0 사전체크(아직 여유),
+            // 4=청크1 사전체크(데드라인 초과).
+            return calls <= 3 ? base : base + BATCH_DEADLINE_MS + 1;
         };
         const sleep = vi.fn().mockResolvedValue(undefined);
 

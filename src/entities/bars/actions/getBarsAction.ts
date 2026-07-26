@@ -14,17 +14,10 @@ import {
     getFmpUserFacingMessage,
     logFmpPaymentRequiredError,
 } from '@/shared/api/fmp/fmpUserMessage';
-import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
-import { resolveTierOnly } from '@/shared/lib/byokGate';
+import { resolveCallerTier } from '@/entities/auth/lib/resolveCallerTier';
 
 async function resolveBarsTier(): Promise<Tier> {
-    try {
-        const user = await getCurrentUser();
-        return await resolveTierOnly(user?.id ?? null);
-    } catch (error) {
-        console.error('[getBarsAction] Failed to resolve caller tier:', error);
-        return 'free';
-    }
+    return resolveCallerTier('getBarsAction');
 }
 
 export async function getBarsAction(

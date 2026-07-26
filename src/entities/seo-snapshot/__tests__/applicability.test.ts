@@ -32,16 +32,16 @@ describe('applicableTabsFor', () => {
 
 describe('buildPrewarmUniverse', () => {
     // 실패 시 상수 목록 변경 — 스펙 §5 수치도 함께 갱신
-    it('전체 유닛 수 = 265×7 + 1×6 + 29×3 = 1948 (spec §5 실측)', () => {
+    it('전체 유닛 수 = 264×7 + 1×6 + 29×3 = 1941 (spec §5 실측)', () => {
         const units = buildPrewarmUniverse().reduce(
             (n, u) => n + u.tabs.length,
             0
         );
-        expect(units).toBe(1948);
+        expect(units).toBe(1941);
     });
 
     // 실패 시 상수 목록 변경 — 스펙 §5 수치도 함께 갱신
-    it('심볼 수 = 295 (POPULAR_TICKERS 266 + POPULAR_CRYPTOS 29)', () => {
-        expect(buildPrewarmUniverse()).toHaveLength(295);
+    it('심볼 수 = 294 (POPULAR_TICKERS 265 + POPULAR_CRYPTOS 29)', () => {
+        expect(buildPrewarmUniverse()).toHaveLength(294);
     });
 });

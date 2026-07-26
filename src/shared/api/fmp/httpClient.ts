@@ -68,7 +68,19 @@ export async function fmpGet<T>(
             const retryAfter = parseRetryAfterSeconds(
                 res.headers.get('Retry-After')
             );
-            const error = new FmpHttpError(path, res.status, retryAfter);
+            // 정규화 전 원본 심볼을 실어 보낸다 — 로그에서 심볼 귀속이 되어야
+            // 402 같은 심볼 국소 오류를 실제로 조치할 수 있다(FmpHttpError 주석 참조).
+            //
+            // `symbols`(복수) 폴백이 필요한 이유: FMP 뉴스 엔드포인트(news/stock,
+            // news/crypto)는 파라미터명이 `symbols`다. pre-warm이 뉴스를 적재하게
+            // 되면서 이 경로가 밤마다 심볼당 1회(유니버스 295개 → ~300회) 불리는데, 폴백이 없으면 하필 그 호출만
+            // 귀속이 안 돼 `FMP news/crypto 402`처럼 조치 불가능한 형태로 남는다(감사 F3).
+            const error = new FmpHttpError(
+                path,
+                res.status,
+                retryAfter,
+                query.symbol ?? query.symbols
+            );
             logFmpPaymentRequiredError(error);
             throw error;
         }

@@ -5,8 +5,7 @@ import {
     type Tier,
     pollAnalysis,
 } from '@y0ngha/siglens-core';
-import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
-import { resolveTierOnly } from '@/shared/lib/byokGate';
+import { resolveCallerTier } from '@/entities/auth/lib/resolveCallerTier';
 
 export async function pollAnalysisAction(
     jobId: string
@@ -14,16 +13,7 @@ export async function pollAnalysisAction(
     // 해석 실패 시 free로 fail-closed 처리한다. 상위 tier로 오인해 잠긴
     // 상세를 노출하는 것보다, 실제로는 회원인 호출자가 일시적으로 free
     // 취급되는 편이 안전하다.
-    let tier: Tier = 'free';
-    try {
-        const user = await getCurrentUser();
-        tier = await resolveTierOnly(user?.id ?? null);
-    } catch (error) {
-        console.error(
-            '[pollAnalysisAction] Failed to resolve caller tier:',
-            error
-        );
-    }
+    const tier: Tier = await resolveCallerTier('pollAnalysisAction');
 
     try {
         return await pollAnalysis(jobId, { tier });
