@@ -171,6 +171,51 @@ function isFullWidthCodePoint(cp: number): boolean {
 }
 
 /**
+ * title 폭 상한. Google 데스크톱 예산 58~60에서 안전 여유를 둔 값이다.
+ *
+ * 이 상한은 **안전망**이지 상시 절단 수단이 아니다. 정상 템플릿은 클램프 없이
+ * 통과해야 하며, `ASE 테크놀로지 홀딩스`(24 폭단위) 같은 예외적으로 긴
+ * 한국어명에서만 발동한다.
+ */
+export const SEO_TITLE_MAX_WIDTH = 55;
+
+/**
+ * 폭 상한을 넘으면 어절 경계에서 잘라 말줄임표를 붙인다.
+ *
+ * 어절 경계에서 자를 때는 잘린 단어와 말줄임표가 바로 붙어 보이지 않도록
+ * 공백을 하나 남겨 ` …` 형태로 만든다(예: `...Max Pain · OI …`). 말줄임표
+ * 자체가 1 폭단위, 구분 공백이 1 폭단위를 쓰므로 예산에서 미리 뺀다. 공백이
+ * 없어 경계를 찾지 못하면 구분 공백 없이 폭 기준으로 그냥 자른다(무한정
+ * 길어지는 것보다 낫다).
+ */
+export function clampSeoTitle(
+    title: string,
+    maxWidth: number = SEO_TITLE_MAX_WIDTH
+): string {
+    if (seoTitleWidth(title) <= maxWidth) return title;
+
+    const budget = maxWidth - 1;
+    const chars = [...title];
+    let width = 0;
+    let cut = 0;
+    for (let i = 0; i < chars.length; i++) {
+        const ch = chars[i];
+        if (ch === undefined) break;
+        const w = seoTitleWidth(ch);
+        if (width + w > budget) break;
+        width += w;
+        cut = i + 1;
+    }
+
+    const head = chars.slice(0, cut).join('');
+    const lastSpace = head.lastIndexOf(' ');
+    if (lastSpace > 0) {
+        return `${head.slice(0, lastSpace)} …`;
+    }
+    return `${head.trimEnd()}…`;
+}
+
+/**
  * Maps each SEO pre-warm snapshot tab to the primary Korean prose field its
  * `content` carries (verified against `src/views/symbol/snapshot/renderers/*`,
  * spec 2026-07-24 Task 4~6): technical→`summary`, overall→`headlineKo`,
