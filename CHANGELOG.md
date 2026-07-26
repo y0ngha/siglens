@@ -1,5 +1,15 @@
 # Changelog
 
+# [0.47.0](https://github.com/y0ngha/siglens/compare/v0.46.0...v0.47.0) (2026-07-26)
+
+
+### Bug Fixes
+
+* **cache:** tier 해석 로그 노이즈 해결 — 동적 범위 판별자 분리 ([66aed5f](https://github.com/y0ngha/siglens/commit/66aed5ff12647e4f0f27dd909b6033ff65085120))
+* **fmp:** 에러 로그의 심볼 귀속 추가 ([b7dde5c](https://github.com/y0ngha/siglens/commit/b7dde5c0945e0e6715af2ab3aa89b83460b4e071))
+* **news:** 뉴스 자동 적재 로직 추출 및 pre-warm 통합 ([dc8a6c4](https://github.com/y0ngha/siglens/commit/dc8a6c4ce64240bd5bb7c5b0c11e2f63c50c09ac))
+* **seo-prewarm:** 회전 livelock 수정 — tick 시각 기반 offset ([2c3bcfa](https://github.com/y0ngha/siglens/commit/2c3bcfacaa9cb8eda4a6d435876afac421931593))
+
 # [0.46.0](https://github.com/y0ngha/siglens/compare/v0.45.0...v0.46.0) (2026-07-25)
 
 
