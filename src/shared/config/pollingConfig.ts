@@ -31,9 +31,39 @@ export const NEWS_CARD_EMPTY_SNAPSHOT_MAX_POLLS = 20;
 export const NEWS_CARD_MAX_POLL_DURATION_MS = 5 * MS_PER_MINUTE;
 
 /**
- * Analysis job polling — overall hard ceiling shared across long-running LLM
- * jobs (Congress, Financials, etc.).  If the worker stalls in `processing` for
- * longer than this, the poll loop breaks and surfaces an error so the user can
- * retry rather than seeing an infinite skeleton.
+ * Analysis job polling — hard ceiling for a single continuous poll loop,
+ * shared across long-running LLM jobs (Congress, Financials, etc.). If the
+ * worker stalls in `processing` for longer than this, the poll loop breaks
+ * and surfaces an error so the user can retry rather than seeing an infinite
+ * skeleton.
+ *
+ * This is a per-loop budget, not a per-hook-lifetime one — a flow with
+ * multiple SEQUENTIAL poll loops must re-arm it (capture a fresh
+ * `Date.now()` baseline) for each loop rather than sharing one clock across
+ * all of them. `useOverallAnalysis` is the one caller with two such loops
+ * (waiting on axis dependencies, then polling its own final job) — see
+ * `fetchOverallAnalysis` in `widgets/overall/hooks/useOverallAnalysis.ts`.
+ * Without re-arming, a slow-but-healthy dependency phase can eat the whole
+ * budget and turn a real, in-flight final job into an immediate, spurious
+ * timeout that also orphans the worker job (nothing cancels it once the hook
+ * has already surfaced the error).
  */
 export const ANALYSIS_POLL_MAX_DURATION_MS = 5 * MS_PER_MINUTE;
+
+/**
+ * User-facing error message surfaced when a poll loop exceeds
+ * {@link ANALYSIS_POLL_MAX_DURATION_MS}. Shared by exactly the six analysis
+ * poll hooks that use this literal string — chart, financials, fundamental,
+ * news, options, and overall — so the message stays identical across all of
+ * them and isn't re-typed (and re-drifted) at each call site.
+ *
+ * `useCongressTrend.ts` and `useMacroBriefingPoll.ts` also poll against
+ * {@link ANALYSIS_POLL_MAX_DURATION_MS} but are deliberately NOT on this
+ * list: congress throws its own domain-specific `Error` message, and
+ * macro-briefing surfaces a `'poll_timeout'` error code (not a message
+ * string) so the widget can render its own inline copy. Do not widen this
+ * JSDoc's hook list without also switching those two call sites to import
+ * and use this constant.
+ */
+export const ANALYSIS_POLL_TIMEOUT_MESSAGE =
+    '분석이 너무 오래 걸립니다. 잠시 후 다시 시도해 주세요.';

@@ -12,6 +12,10 @@ import {
     submitNewsAnalysisAction,
 } from '@/entities/news-article/actions';
 import { isGateBlockedResult } from '@/entities/analysis';
+import {
+    ANALYSIS_POLL_MAX_DURATION_MS,
+    ANALYSIS_POLL_TIMEOUT_MESSAGE,
+} from '@/shared/config/pollingConfig';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
 import type { NewsAnalysisResponse } from '@y0ngha/siglens-core';
@@ -276,6 +280,56 @@ describe('useNewsAnalysis — branch coverage', () => {
         if (result.current.status !== 'error')
             throw new Error('expected error');
         expect(result.current.error.message).toContain('오류가 발생했습니다');
+    });
+
+    it('poll ceiling → error state when job stalls beyond ANALYSIS_POLL_MAX_DURATION_MS', async () => {
+        // Job is submitted, then repeatedly polls as 'processing' (a
+        // genuinely stalled job). Date.now() is keyed off an observable
+        // event — the poll mock flipping `stalled` — rather than a raw
+        // Date.now() call count: counting calls is brittle because any extra
+        // Date.now() from React Query/React internals shifts the count and
+        // silently breaks the freeze.
+        mockSubmit.mockResolvedValue({
+            status: 'submitted',
+            jobId: 'job-news-stalled',
+        } as never);
+        const frozenStart = Date.now();
+        let stalled = false;
+        mockPoll.mockImplementation(async () => {
+            stalled = true;
+            return { status: 'processing' } as never;
+        });
+        const dateSpy = vi
+            .spyOn(Date, 'now')
+            .mockImplementation(() =>
+                stalled
+                    ? frozenStart + ANALYSIS_POLL_MAX_DURATION_MS + 1
+                    : frozenStart
+            );
+
+        try {
+            const { result } = renderHook(
+                () =>
+                    useNewsAnalysis(
+                        'AAPL',
+                        'Apple Inc.',
+                        'gemini-2.5-flash-lite'
+                    ),
+                { wrapper: makeWrapper() }
+            );
+
+            await waitFor(() => {
+                expect(result.current.status).toBe('error');
+            });
+
+            if (result.current.status !== 'error')
+                throw new Error('expected error state');
+            expect(result.current.error.message).toBe(
+                ANALYSIS_POLL_TIMEOUT_MESSAGE
+            );
+        } finally {
+            dateSpy.mockRestore();
+        }
     });
 
     it('error that is not an Error instance gets wrapped', async () => {

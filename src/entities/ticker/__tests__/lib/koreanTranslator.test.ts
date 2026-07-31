@@ -1,3 +1,5 @@
+import { MODEL_SPECS } from '@y0ngha/siglens-core';
+
 const { callGeminiMock } = vi.hoisted(() => ({
     callGeminiMock: vi.fn(),
 }));
@@ -21,7 +23,11 @@ describe('translateCompanyNames', () => {
     beforeEach(() => {
         callGeminiMock.mockReset();
         process.env.TRANSLATE_API_KEY = 'server-api-key';
-        process.env.TRANSLATE_MODEL = 'gemini-test';
+        // 사고 비활성화(thinkingBudget: 0)를 지원하는 유효한 Gemini 모델 ID를
+        // 사용 — config.ts의 TRANSLATE_MODEL 검증(FIX 3)이 알 수 없는 값이나
+        // 사고 비활성화 미지원 모델을 기본 모델로 폴백시키므로, 임의 문자열은
+        // 더 이상 그대로 통과하지 않는다.
+        process.env.TRANSLATE_MODEL = 'gemini-2.5-flash';
     });
 
     afterEach(() => {
@@ -53,7 +59,8 @@ describe('translateCompanyNames', () => {
         expect(callGeminiMock).toHaveBeenCalledWith({
             serverApiKey: 'server-api-key',
             userApiKey: undefined,
-            model: 'gemini-test',
+            // 리터럴이 아니라 MODEL_SPECS에서 파생한 값과 비교한다 — REQUIRED 6.
+            model: MODEL_SPECS['gemini-2.5-flash'].apiModelId,
             contents: expect.stringContaining('AAPL: Apple Inc.'),
             thinkingBudget: 0,
         });
@@ -73,11 +80,30 @@ describe('translateCompanyNames', () => {
         ).resolves.toEqual({});
     });
 
-    it('호출 실패 시 빈 객체 반환', async () => {
-        callGeminiMock.mockRejectedValue(new Error('failed'));
+    it('호출 실패 시 빈 객체 반환 + console.error로 진단 정보를 남긴다', async () => {
+        const errorSpy = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => {});
+        const boom = new Error('failed');
+        callGeminiMock.mockRejectedValue(boom);
+
         await expect(
             translateCompanyNames([{ symbol: 'AAPL', name: 'Apple Inc.' }])
         ).resolves.toEqual({});
+
+        // 우아한 디그레이드(빈 객체)는 유지하되, 실패가 더 이상 조용히
+        // 삼켜지지 않는다는 것이 이 테스트의 핵심 — FIX 3(b).
+        expect(errorSpy).toHaveBeenCalledWith(
+            '[koreanTranslator] translateCompanyNames failed',
+            expect.objectContaining({
+                // 리터럴이 아니라 MODEL_SPECS에서 파생한 값과 비교한다 — REQUIRED 6.
+                model: MODEL_SPECS['gemini-2.5-flash'].apiModelId,
+                entryCount: 1,
+                error: boom,
+            })
+        );
+
+        errorSpy.mockRestore();
     });
 
     it('TRANSLATE_MODEL 미설정 시 기본 모델을 사용한다', async () => {
@@ -85,7 +111,10 @@ describe('translateCompanyNames', () => {
         callGeminiMock.mockResolvedValue('{}');
         await translateCompanyNames([{ symbol: 'AAPL', name: 'Apple' }]);
         expect(callGeminiMock).toHaveBeenCalledWith(
-            expect.objectContaining({ model: 'gemini-2.5-flash' })
+            // 리터럴이 아니라 MODEL_SPECS에서 파생한 값과 비교한다 — REQUIRED 6.
+            expect.objectContaining({
+                model: MODEL_SPECS['gemini-2.5-flash-lite'].apiModelId,
+            })
         );
     });
 });
@@ -94,7 +123,11 @@ describe('translateCompanyDescription', () => {
     beforeEach(() => {
         callGeminiMock.mockReset();
         process.env.TRANSLATE_API_KEY = 'server-api-key';
-        process.env.TRANSLATE_MODEL = 'gemini-test';
+        // 사고 비활성화(thinkingBudget: 0)를 지원하는 유효한 Gemini 모델 ID를
+        // 사용 — config.ts의 TRANSLATE_MODEL 검증(FIX 3)이 알 수 없는 값이나
+        // 사고 비활성화 미지원 모델을 기본 모델로 폴백시키므로, 임의 문자열은
+        // 더 이상 그대로 통과하지 않는다.
+        process.env.TRANSLATE_MODEL = 'gemini-2.5-flash';
     });
 
     afterEach(() => {
@@ -130,11 +163,28 @@ describe('translateCompanyDescription', () => {
         );
     });
 
-    it('LLM 호출 실패 시 null을 반환한다', async () => {
-        callGeminiMock.mockRejectedValue(new Error('failed'));
+    it('LLM 호출 실패 시 null을 반환 + console.error로 진단 정보를 남긴다', async () => {
+        const errorSpy = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => {});
+        const boom = new Error('failed');
+        callGeminiMock.mockRejectedValue(boom);
+
         await expect(
             translateCompanyDescription('Description.')
         ).resolves.toBeNull();
+
+        expect(errorSpy).toHaveBeenCalledWith(
+            '[koreanTranslator] translateCompanyDescription failed',
+            expect.objectContaining({
+                // 리터럴이 아니라 MODEL_SPECS에서 파생한 값과 비교한다 — REQUIRED 6.
+                model: MODEL_SPECS['gemini-2.5-flash'].apiModelId,
+                descriptionLength: 'Description.'.length,
+                error: boom,
+            })
+        );
+
+        errorSpy.mockRestore();
     });
 
     it('빈 응답은 null로 반환한다', async () => {

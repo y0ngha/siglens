@@ -191,5 +191,44 @@ describe('callGeminiChat', () => {
                 })
             );
         });
+
+        // Boundary contract (GeminiChatOptions.thinkingBudget JSDoc): this
+        // adapter does not validate the value — it forwards any defined
+        // number verbatim, including Gemini's documented "-1 = dynamic
+        // thinking" sentinel and a NaN a caller bug might produce. Whether a
+        // given model accepts the value is left to the Gemini API to reject
+        // loudly (400), not to this provider-neutral wrapper to silently
+        // coerce.
+        it('thinkingBudget이 음수(-1, dynamic thinking sentinel)여도 그대로 전달한다', async () => {
+            mockGenerateContent.mockResolvedValue({ text: 'ok' });
+
+            await callGeminiChat({ ...BASE_OPTIONS, thinkingBudget: -1 });
+
+            expect(mockGenerateContent).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    config: { thinkingConfig: { thinkingBudget: -1 } },
+                })
+            );
+        });
+
+        it('thinkingBudget이 NaN이어도 그대로 전달한다', async () => {
+            mockGenerateContent.mockResolvedValue({ text: 'ok' });
+
+            await callGeminiChat({ ...BASE_OPTIONS, thinkingBudget: NaN });
+
+            const call = mockGenerateContent.mock.calls[0][0];
+            expect(call).toHaveProperty('config.thinkingConfig.thinkingBudget');
+            expect(
+                Number.isNaN(
+                    (
+                        call as {
+                            config: {
+                                thinkingConfig: { thinkingBudget: number };
+                            };
+                        }
+                    ).config.thinkingConfig.thinkingBudget
+                )
+            ).toBe(true);
+        });
     });
 });
