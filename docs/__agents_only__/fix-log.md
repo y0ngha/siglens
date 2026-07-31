@@ -127,7 +127,8 @@
   - Context: Added suffix to old Opus label ('Opus 4.7'), clarifying the version relationship.
 
 ## [feat/latest-llm-models | siglens | R1 recommended]
-- Violation: E2E spec header contained stale hand-maintained free/premium model enumeration (copy of arrays that change independently). Comment claimed claude-opus-4-turbo was free when it was pro-only in actual TIER_CONFIG.
+- Violation: E2E spec header contained a stale hand-maintained free/premium model enumeration (a prose copy of TIER_CONFIG.models that drifts every time a generation lands). It was missing all six new models and both DeepSeek models, and labelled gemini-2.5-flash-lite "(default)" while the default is deepseek-v4-flash.
   - Rule: Test data must not be duplicated from production without continuous sync; outdated comments hide test/prod divergence
-  - Context: Removed enum, replaced with dynamic check: getModelsFor('free_tier') + getModelsFor('pro_tier').
+  - Context: Deleted the enumeration and replaced it with a prose pointer to siglens-core `src/domain/tier.ts` (TIER_CONFIG.models), plus a note that "free" means server-key-funded rather than cheap. No code change — the spec's assertions already read the list at runtime.
+  - Correction (2026-07-31): this entry originally cited a model id `claude-opus-4-turbo` and a replacement helper `getModelsFor('free_tier')`. Neither exists in any of the three repos; both were fabricated when the entry was written. A deployment audit caught it. Fix-log entries feed MISTAKES.md promotion, so an invented detail here becomes a permanent false "recurring pattern" — verify every symbol name in an entry against the repo before writing it.
 

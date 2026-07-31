@@ -8,6 +8,7 @@ import {
     pollCongressTrendAction,
     cancelCongressTrendJobAction,
 } from '@/entities/analysis/actions';
+import { isGateBlockedResult } from '@/entities/analysis';
 import { sleep } from '@/shared/lib/sleep';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
 import { ANALYSIS_POLL_INTERVAL_MS } from '@/shared/config/pollingConfig';
@@ -65,6 +66,12 @@ async function fetchCongressTrend(
         throw new NoCongressTradesError();
     }
     if (submitted.status === 'error') {
+        // BYOK/tier 게이트 차단(AnalysisGateBlockedResult) vs. core의
+        // fetch_failed(문자열 error) — 두 `status: 'error'` 변형을 구분해야
+        // 한다(mirrors useFinancialsAnalysis).
+        if (isGateBlockedResult(submitted)) {
+            throw new Error(submitted.error.message);
+        }
         throw new Error(
             submitted.error ?? '의회 거래 데이터를 불러오지 못했습니다.'
         );

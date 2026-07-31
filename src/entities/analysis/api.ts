@@ -132,7 +132,9 @@ export async function prewarmFinancials(
 /**
  * SEO pre-warm 전용 congress submit (spec 2026-07-24 §4 seam, Task 7).
  * `submitCongressTrendAction`의 비봇 경로를 request-context 없이 재현한다.
- * congress는 공개 데이터라 BYOK 게이트가 없다(액션과 동일 — `resolveTierOnly`만 사용).
+ * 이 경로는 액션 레이어(BYOK 게이트 포함)를 우회해 core를 직접 호출한다 — 실 사용자
+ * 컨텍스트가 없는 pre-warm이라 gate 대상이 아니다. 항상 free-tier 비프리미엄 모델
+ * (DEEPSEEK_V4_FLASH_MODEL)만 사용하므로 프리미엄/BYOK 상황 자체가 발생하지 않는다.
  */
 export async function prewarmCongress(
     symbol: string,
