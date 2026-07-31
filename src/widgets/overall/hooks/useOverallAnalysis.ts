@@ -30,7 +30,6 @@ import {
 import { sleep } from '@/shared/lib/sleep';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
 import {
-    ANALYSIS_POLL_MAX_DURATION_MS,
     ANALYSIS_POLL_TIMEOUT_MESSAGE,
     AUGMENT_AND_OVERALL_POLL_INTERVAL_MS,
 } from '@/shared/config/pollingConfig';
@@ -38,6 +37,7 @@ import type { CancelJobEntry } from '@/shared/lib/types';
 import { useHydrated } from '@/shared/hooks/useHydrated';
 import { usePageHideCancel } from '@/shared/hooks/usePageHideCancel';
 import { BotBlockedError } from '@/shared/lib/BotBlockedError';
+import { hasExceededPollCeiling } from '@/shared/lib/pollCeiling';
 import type { OverallAnalysisState, ProgressState } from '../types';
 import { axesForAssetClass } from '../utils/axesForAssetClass';
 
@@ -142,7 +142,7 @@ async function waitForDependencies(
 
     while (applicableAxes.some(axis => remainingJobs[axis] !== undefined)) {
         throwIfAborted(signal);
-        if (Date.now() - pollStartTime >= ANALYSIS_POLL_MAX_DURATION_MS) {
+        if (hasExceededPollCeiling(pollStartTime)) {
             throw new OverallAnalysisError(ANALYSIS_POLL_TIMEOUT_MESSAGE);
         }
         await sleep(AUGMENT_AND_OVERALL_POLL_INTERVAL_MS);
@@ -345,10 +345,7 @@ async function fetchOverallAnalysis(
 
     try {
         while (!signal.aborted) {
-            if (
-                Date.now() - finalPollStartTime >=
-                ANALYSIS_POLL_MAX_DURATION_MS
-            ) {
+            if (hasExceededPollCeiling(finalPollStartTime)) {
                 throw new OverallAnalysisError(ANALYSIS_POLL_TIMEOUT_MESSAGE);
             }
             await sleep(AUGMENT_AND_OVERALL_POLL_INTERVAL_MS);

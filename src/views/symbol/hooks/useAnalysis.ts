@@ -33,11 +33,11 @@ import {
 } from '@/entities/analysis';
 import { sleep } from '@/shared/lib/sleep';
 import {
-    ANALYSIS_POLL_MAX_DURATION_MS,
     ANALYSIS_POLL_TIMEOUT_MESSAGE,
     CHART_ANALYSIS_POLL_INTERVAL_MS,
 } from '@/shared/config/pollingConfig';
 import { usePageHideCancel } from '@/shared/hooks/usePageHideCancel';
+import { hasExceededPollCeiling } from '@/shared/lib/pollCeiling';
 import type { CancelJobEntry } from '@/shared/lib/types';
 
 interface AnalyzeMutationVariables {
@@ -514,10 +514,7 @@ export function useAnalysis({
 
         void (async () => {
             while (!cancelled) {
-                if (
-                    Date.now() - pollStartTime >=
-                    ANALYSIS_POLL_MAX_DURATION_MS
-                ) {
+                if (hasExceededPollCeiling(pollStartTime)) {
                     currentJobIdRef.current = null;
                     setPollError(ANALYSIS_POLL_TIMEOUT_MESSAGE);
                     setIsPersonalized(false);
