@@ -18,11 +18,15 @@ vi.mock('@/entities/auth/lib/getCurrentUser', () => ({
 }));
 
 vi.mock('@/shared/lib/byokGate', () => ({
-    resolveTierOnly: vi.fn(),
+    resolveTierAndByok: vi.fn(),
     resolveReasoning: vi.fn(
         (tier: string, clientReasoning?: boolean) =>
             tier !== 'free' && clientReasoning === true
     ),
+    buildGateError: vi.fn((code: string) => ({
+        code,
+        message: `mock-${code}`,
+    })),
 }));
 
 vi.mock('@/shared/api/e2eAnalysisStub', () => ({
@@ -44,7 +48,8 @@ import {
 } from '@y0ngha/siglens-core';
 import { getCongressTradesProvider } from '@/shared/api/fmp/getCongressTradesProvider';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
-import { resolveTierOnly } from '@/shared/lib/byokGate';
+import { resolveTierAndByok } from '@/shared/lib/byokGate';
+import type { AnalysisGateError } from '@/shared/lib/types';
 import { submitCongressTrendAction } from '../actions/submitCongressTrendAction';
 
 const mockHeaders = headers as MockedFunction<typeof headers>;
@@ -58,8 +63,8 @@ const mockGetCongressTradesProvider =
 const mockGetCurrentUser = getCurrentUser as MockedFunction<
     typeof getCurrentUser
 >;
-const mockResolveTierOnly = resolveTierOnly as MockedFunction<
-    typeof resolveTierOnly
+const mockResolveTierAndByok = resolveTierAndByok as MockedFunction<
+    typeof resolveTierAndByok
 >;
 
 const CACHED_RESULT: SubmitCongressTrendResult = {
@@ -78,6 +83,12 @@ const SUBMITTED_RESULT: SubmitCongressTrendResult = {
 };
 
 const MODEL_ID = 'gemini-2.5-flash' as ModelId;
+const PREMIUM_MODEL = 'claude-opus-4-7' as ModelId;
+
+const gateError: AnalysisGateError = {
+    code: 'tier_premium_blocked',
+    message: 'mock-tier_premium_blocked',
+};
 
 describe('submitCongressTrendAction 함수는', () => {
     beforeEach(() => {
@@ -86,9 +97,12 @@ describe('submitCongressTrendAction 함수는', () => {
         mockGetCongressTradesProvider.mockReturnValue({} as never);
         mockSubmitCongressTrend.mockResolvedValue(SUBMITTED_RESULT);
         mockGetCurrentUser.mockReset();
-        mockResolveTierOnly.mockReset();
+        mockResolveTierAndByok.mockReset();
         mockGetCurrentUser.mockResolvedValue(null);
-        mockResolveTierOnly.mockResolvedValue('free');
+        mockResolveTierAndByok.mockResolvedValue({
+            kind: 'allowed',
+            tier: 'free' as never,
+        });
     });
 
     it('siglens-core submitCongressTrend에 symbol과 modelId를 전달한다', async () => {
@@ -131,6 +145,19 @@ describe('submitCongressTrendAction 함수는', () => {
         expect(result).toBe(SUBMITTED_RESULT);
     });
 
+    it('underlying 함수의 error(fetch_failed) 결과를 그대로 반환한다', async () => {
+        const FETCH_FAILED_RESULT: SubmitCongressTrendResult = {
+            status: 'error',
+            code: 'fetch_failed',
+            error: 'FMP congress trades fetch failed',
+        };
+        mockSubmitCongressTrend.mockResolvedValueOnce(FETCH_FAILED_RESULT);
+
+        const result = await submitCongressTrendAction('AAPL', MODEL_ID);
+
+        expect(result).toBe(FETCH_FAILED_RESULT);
+    });
+
     it('passes skipEnqueueIfMiss: true to siglens-core when request UA is a bot', async () => {
         mockHeaders.mockResolvedValueOnce(
             new Headers({
@@ -157,15 +184,157 @@ describe('submitCongressTrendAction 함수는', () => {
         );
     });
 
-    describe('reasoning forwarding', () => {
-        it('resolves tier via getCurrentUser + resolveTierOnly and forwards reasoning: true for member tier', async () => {
+    describe('BYOK 게이트', () => {
+        it('returns blocked result when gate.kind === "blocked" (free/anonymous + premium model)', async () => {
+            mockGetCurrentUser.mockResolvedValue(null);
+            mockResolveTierAndByok.mockResolvedValue({
+                kind: 'blocked',
+                error: gateError,
+            });
+
+            const result = await submitCongressTrendAction(
+                'AAPL',
+                PREMIUM_MODEL
+            );
+
+            expect(result).toEqual({ status: 'error', error: gateError });
+            // Gate fires before the (expensive) core submit call.
+            expect(mockSubmitCongressTrend).not.toHaveBeenCalled();
+        });
+
+        it('returns blocked result for a member with a premium model but no stored key', async () => {
             mockGetCurrentUser.mockResolvedValue({ id: 'u1' } as never);
-            mockResolveTierOnly.mockResolvedValue('member');
+            mockResolveTierAndByok.mockResolvedValue({
+                kind: 'blocked',
+                error: gateError,
+            });
+
+            const result = await submitCongressTrendAction(
+                'AAPL',
+                PREMIUM_MODEL
+            );
+
+            expect(result).toEqual({ status: 'error', error: gateError });
+            expect(mockResolveTierAndByok).toHaveBeenCalledWith(
+                'u1',
+                PREMIUM_MODEL
+            );
+            expect(mockSubmitCongressTrend).not.toHaveBeenCalled();
+        });
+
+        it('forwards userApiKey when a member has a stored BYOK key for a premium model', async () => {
+            mockGetCurrentUser.mockResolvedValue({ id: 'u1' } as never);
+            mockResolveTierAndByok.mockResolvedValue({
+                kind: 'allowed',
+                tier: 'member' as never,
+                userApiKey: 'usr-key',
+            });
+            mockSubmitCongressTrend.mockResolvedValueOnce(CACHED_RESULT);
+
+            await submitCongressTrendAction('AAPL', PREMIUM_MODEL);
+
+            expect(mockSubmitCongressTrend).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    userApiKey: 'usr-key',
+                    tier: 'member',
+                })
+            );
+        });
+
+        it('omits userApiKey when not present in the gate result', async () => {
+            mockGetCurrentUser.mockResolvedValue({ id: 'u1' } as never);
+            mockResolveTierAndByok.mockResolvedValue({
+                kind: 'allowed',
+                tier: 'pro' as never,
+                // no userApiKey
+            });
+            mockSubmitCongressTrend.mockResolvedValueOnce(CACHED_RESULT);
+
+            await submitCongressTrendAction('AAPL', PREMIUM_MODEL);
+
+            const callArg = mockSubmitCongressTrend.mock.calls[0]?.[0];
+            expect(callArg).toBeDefined();
+            expect(callArg).not.toHaveProperty('userApiKey');
+        });
+
+        it('pro tier is allowed without a stored key even for a premium model', async () => {
+            mockGetCurrentUser.mockResolvedValue({ id: 'u1' } as never);
+            mockResolveTierAndByok.mockResolvedValue({
+                kind: 'allowed',
+                tier: 'pro' as never,
+            });
+            mockSubmitCongressTrend.mockResolvedValueOnce(SUBMITTED_RESULT);
+
+            const result = await submitCongressTrendAction(
+                'AAPL',
+                PREMIUM_MODEL
+            );
+
+            expect(result).toBe(SUBMITTED_RESULT);
+            expect(mockSubmitCongressTrend).toHaveBeenCalledWith(
+                expect.objectContaining({ tier: 'pro' })
+            );
+        });
+
+        it('a free model is unaffected by the BYOK gate for free/anonymous callers', async () => {
+            mockGetCurrentUser.mockResolvedValue(null);
+            mockResolveTierAndByok.mockResolvedValue({
+                kind: 'allowed',
+                tier: 'free' as never,
+            });
+            mockSubmitCongressTrend.mockResolvedValueOnce(CACHED_RESULT);
+
+            const result = await submitCongressTrendAction('AAPL', MODEL_ID);
+
+            expect(result).toBe(CACHED_RESULT);
+            expect(mockSubmitCongressTrend).toHaveBeenCalledWith(
+                expect.objectContaining({ tier: 'free', modelId: MODEL_ID })
+            );
+            expect(
+                mockSubmitCongressTrend.mock.calls[0]?.[0]
+            ).not.toHaveProperty('userApiKey');
+        });
+
+        it('passes null userId when getCurrentUser returns null', async () => {
+            mockGetCurrentUser.mockResolvedValue(null);
+            mockResolveTierAndByok.mockResolvedValue({
+                kind: 'allowed',
+                tier: 'free' as never,
+            });
+            mockSubmitCongressTrend.mockResolvedValueOnce(CACHED_RESULT);
+
+            await submitCongressTrendAction('AAPL', MODEL_ID);
+
+            expect(mockResolveTierAndByok).toHaveBeenCalledWith(null, MODEL_ID);
+        });
+
+        it('returns unexpected_error result when an unexpected error is thrown', async () => {
+            mockGetCurrentUser.mockResolvedValue({ id: 'u1' } as never);
+            mockResolveTierAndByok.mockRejectedValue(
+                new Error('db connection failed')
+            );
+
+            const result = await submitCongressTrendAction('AAPL', MODEL_ID);
+
+            expect(result).toMatchObject({
+                status: 'error',
+                error: expect.objectContaining({ code: 'unexpected_error' }),
+            });
+        });
+    });
+
+    describe('reasoning forwarding', () => {
+        it('resolves tier via getCurrentUser + resolveTierAndByok and forwards reasoning: true for member tier', async () => {
+            mockGetCurrentUser.mockResolvedValue({ id: 'u1' } as never);
+            mockResolveTierAndByok.mockResolvedValue({
+                kind: 'allowed',
+                tier: 'member' as never,
+            });
             mockSubmitCongressTrend.mockResolvedValueOnce(CACHED_RESULT);
 
             await submitCongressTrendAction('AAPL', MODEL_ID, true);
 
-            expect(mockResolveTierOnly).toHaveBeenCalledWith('u1');
+            expect(mockResolveTierAndByok).toHaveBeenCalledWith('u1', MODEL_ID);
             expect(mockSubmitCongressTrend).toHaveBeenCalledWith(
                 expect.objectContaining({ reasoning: true })
             );
@@ -173,12 +342,15 @@ describe('submitCongressTrendAction 함수는', () => {
 
         it('resolves tier as free (null userId) for anonymous callers', async () => {
             mockGetCurrentUser.mockResolvedValue(null);
-            mockResolveTierOnly.mockResolvedValue('free');
+            mockResolveTierAndByok.mockResolvedValue({
+                kind: 'allowed',
+                tier: 'free' as never,
+            });
             mockSubmitCongressTrend.mockResolvedValueOnce(CACHED_RESULT);
 
             await submitCongressTrendAction('AAPL', MODEL_ID, true);
 
-            expect(mockResolveTierOnly).toHaveBeenCalledWith(null);
+            expect(mockResolveTierAndByok).toHaveBeenCalledWith(null, MODEL_ID);
             expect(mockSubmitCongressTrend).toHaveBeenCalledWith(
                 expect.objectContaining({ reasoning: false })
             );
@@ -186,7 +358,10 @@ describe('submitCongressTrendAction 함수는', () => {
 
         it('defaults reasoning to false when omitted', async () => {
             mockGetCurrentUser.mockResolvedValue({ id: 'u1' } as never);
-            mockResolveTierOnly.mockResolvedValue('member');
+            mockResolveTierAndByok.mockResolvedValue({
+                kind: 'allowed',
+                tier: 'member' as never,
+            });
             mockSubmitCongressTrend.mockResolvedValueOnce(CACHED_RESULT);
 
             await submitCongressTrendAction('AAPL', MODEL_ID);
@@ -202,7 +377,7 @@ describe('submitCongressTrendAction 함수는', () => {
             await submitCongressTrendAction('AAPL', MODEL_ID);
 
             expect(mockGetCurrentUser).toHaveBeenCalled();
-            expect(mockResolveTierOnly).toHaveBeenCalledWith(null);
+            expect(mockResolveTierAndByok).toHaveBeenCalledWith(null, MODEL_ID);
             expect(mockSubmitCongressTrend).toHaveBeenCalledWith(
                 expect.objectContaining({ reasoning: false, tier: 'free' })
             );
@@ -214,7 +389,7 @@ describe('submitCongressTrendAction 함수는', () => {
             await submitCongressTrendAction('AAPL', MODEL_ID, false);
 
             expect(mockGetCurrentUser).toHaveBeenCalled();
-            expect(mockResolveTierOnly).toHaveBeenCalledWith(null);
+            expect(mockResolveTierAndByok).toHaveBeenCalledWith(null, MODEL_ID);
             expect(mockSubmitCongressTrend).toHaveBeenCalledWith(
                 expect.objectContaining({ reasoning: false, tier: 'free' })
             );

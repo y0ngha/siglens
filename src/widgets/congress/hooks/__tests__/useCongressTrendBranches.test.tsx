@@ -17,6 +17,7 @@ import {
     pollCongressTrendAction,
     submitCongressTrendAction,
 } from '@/entities/analysis/actions';
+import { isGateBlockedResult } from '@/entities/analysis';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import type { CongressTrendResponse } from '@y0ngha/siglens-core';
@@ -26,6 +27,10 @@ vi.mock('@/entities/analysis/actions', () => ({
     submitCongressTrendAction: vi.fn(),
     pollCongressTrendAction: vi.fn(),
     cancelCongressTrendJobAction: vi.fn().mockResolvedValue(undefined),
+}));
+
+vi.mock('@/entities/analysis', () => ({
+    isGateBlockedResult: vi.fn().mockReturnValue(false),
 }));
 
 vi.mock('@/shared/lib/sleep', () => ({
@@ -52,6 +57,7 @@ const mockCancel = cancelCongressTrendJobAction as MockedFunction<
 >;
 const mockUseHydrated = vi.mocked(useHydrated);
 const mockUsePageHideCancel = usePageHideCancel as unknown as Mock;
+const mockIsGateBlocked = isGateBlockedResult as unknown as Mock;
 
 const CONGRESS_RESULT: CongressTrendResponse = {
     summaryKo: '의회 매수세 우위',
@@ -84,6 +90,7 @@ describe('useCongressTrend — branch coverage', () => {
         mockCancel.mockResolvedValue(undefined);
         mockUseHydrated.mockReturnValue(true);
         mockUsePageHideCancel.mockReset();
+        mockIsGateBlocked.mockReturnValue(false);
     });
 
     afterEach(() => {
@@ -309,6 +316,37 @@ describe('useCongressTrend — branch coverage', () => {
                 expect(result.current.status).toBe('done');
             });
             expect(mockSubmit).toHaveBeenCalledTimes(2);
+        });
+    });
+
+    describe('BYOK 게이트 차단', () => {
+        it('게이트 차단 결과는 error.message를 그대로 사용한 Error로 throw된다', async () => {
+            mockIsGateBlocked.mockReturnValue(true);
+            mockSubmit.mockResolvedValue({
+                status: 'error',
+                error: {
+                    code: 'tier_premium_blocked',
+                    message:
+                        '선택한 모델은 프리미엄 등급에서만 사용 가능합니다.',
+                },
+            } as never);
+
+            const wrapper = makeWrapper();
+            const { result } = renderHook(
+                () => useCongressTrend('AAPL', 'claude-opus-4-7'),
+                { wrapper }
+            );
+
+            await waitFor(() => {
+                expect(result.current.status).toBe('error');
+            });
+
+            if (result.current.status !== 'error') {
+                throw new Error('expected error state');
+            }
+            expect(result.current.error.message).toBe(
+                '선택한 모델은 프리미엄 등급에서만 사용 가능합니다.'
+            );
         });
     });
 
