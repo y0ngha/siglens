@@ -166,7 +166,7 @@ describe('AnalysisSettingsMenu', () => {
 
         const gear = gearButton();
         expect(gear.getAttribute('aria-label')).toBe(
-            '분석 설정 · 현재 모델: Flash (변경됨)'
+            '분석 설정 · 현재 모델: Flash 2.5 (변경됨)'
         );
         expect(gear.querySelector('.bg-primary-500')).not.toBeNull();
     });
