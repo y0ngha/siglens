@@ -8,24 +8,43 @@ import {
 } from '@y0ngha/siglens-core';
 import { getCongressTradesProvider } from '@/shared/api/fmp/getCongressTradesProvider';
 import { getCurrentUser } from '@/entities/auth/lib/getCurrentUser';
-import { resolveTierOnly, resolveReasoning } from '@/shared/lib/byokGate';
+import {
+    resolveTierAndByok,
+    resolveReasoning,
+    buildGateError,
+} from '@/shared/lib/byokGate';
 import { isBot } from '@/shared/api/isBot';
 import { isE2E } from '@/shared/api/e2eEnv';
+import type { AnalysisGateBlockedResult } from '@/shared/lib/types';
 
 /**
- * Final return type — congress data is fully public, so there is no tier-gate
- * or BYOK variant. The action returns the core result union directly.
+ * Final return type — core's congress result union + our siglens-side gate
+ * errors (mirrors submitFinancialsAnalysisAction / submitFundamentalAnalysisAction).
  */
-export type SubmitCongressTrendActionResult = SubmitCongressTrendResult;
+export type SubmitCongressTrendActionResult =
+    | SubmitCongressTrendResult
+    | AnalysisGateBlockedResult;
 
 /**
- * Server Action: submit a congressional-trade trend analysis job via
- * siglens-core. Returns `cached | submitted | no_trades | miss_no_trigger |
- * error`.
+ * Server Action: tier + BYOK gate, then submit a congressional-trade trend
+ * analysis job via siglens-core. Returns `cached | submitted | no_trades |
+ * miss_no_trigger | error`.
  *
- * §Public access: congress filings are public data. No usage-limit check and
- * no BYOK gate are applied — `resolveTierAndByok` is intentionally absent
- * (only the lighter `resolveTierOnly` runs, for reasoning gating).
+ * §Public access vs. premium models: congress *filings* are public data — at
+ * the type level, core's `SubmitCongressTrendOptions` has no `usage`/`now`
+ * field at all, unlike `SubmitAnalysisOptions`/`SubmitFinancialsAnalysisOptions`,
+ * so there is no daily usage-limit check to wire up here. But a
+ * caller can still request a premium `modelId`, and `resolveTierAndByok`
+ * gates exactly like every other submit action (free/anonymous + premium →
+ * blocked unless the caller has a stored BYOK key; pro or a free model →
+ * allowed). This was previously missing — congress was the only analysis
+ * surface with no BYOK gate. The fix is two functional wins, not a cost or
+ * security one: (a) the gate is what actually forwards the member's stored
+ * key to core as `userApiKey` (→ `X-AI-API-KEY`), so a premium model works
+ * at all here — without it a member with a registered key had no way to
+ * reach a premium model through this action; and (b) an ungated call now
+ * fails fast with a localized `tier_premium_blocked` message instead of
+ * being submitted and only rejected later, at poll time, by the worker.
  *
  * §Bot guard: `skipEnqueueIfMiss = isBot(headers)` so crawlers never trigger
  * LLM worker dispatches.
@@ -34,10 +53,10 @@ export type SubmitCongressTrendActionResult = SubmitCongressTrendResult;
  * imports are lazy/dynamic so they land in a server-only chunk that the prod
  * bundle never ships (mirrors submitFinancialsAnalysisAction).
  *
- * §Reasoning: congress has no BYOK/premium gate, but the "깊은 생각" toggle
- * (member-reasoning-toggle spec Part A) still requires the caller tier.
- * `resolveTierOnly` also supplies the core tier policy, and
- * `resolveReasoning` forces `false` for anonymous/free callers.
+ * §Reasoning: the "깊은 생각" toggle (member-reasoning-toggle spec Part A)
+ * still requires the caller tier. `resolveReasoning` forces `false` for
+ * anonymous/free callers, using the tier resolved by the gate above (so a
+ * single DB round-trip serves both concerns).
  */
 export async function submitCongressTrendAction(
     symbol: string,
@@ -65,26 +84,29 @@ export async function submitCongressTrendAction(
         const skipEnqueueIfMiss = isBot(requestHeaders);
 
         const user = await getCurrentUser();
-        const tier = await resolveTierOnly(user?.id ?? null);
-        const resolvedReasoning = resolveReasoning(tier, reasoning);
+        const userId = user?.id ?? null;
+
+        const gate = await resolveTierAndByok(userId, modelId);
+        if (gate.kind === 'blocked') {
+            return { status: 'error', error: gate.error };
+        }
 
         return await submitCongressTrend({
             symbol,
             modelId,
             dataProvider: getCongressTradesProvider(),
+            tier: gate.tier,
+            reasoning: resolveReasoning(gate.tier, reasoning),
             skipEnqueueIfMiss,
-            reasoning: resolvedReasoning,
-            tier,
+            ...(gate.userApiKey !== undefined
+                ? { userApiKey: gate.userApiKey }
+                : {}),
         });
     } catch (error) {
         // MISTAKES §0.7: server actions must not propagate raw exceptions to
-        // the client. Map any unexpected failure into the `fetch_failed` result
-        // shape so the widget can render the typed error state.
-        console.error('[submitCongressTrendAction] failed:', error);
-        return {
-            status: 'error',
-            code: 'fetch_failed',
-            error: String(error),
-        };
+        // the client. Mirrors the sibling submit actions' catch-all shape so
+        // the hook's `isGateBlockedResult` check stays a reliable discriminant.
+        console.error('[submitCongressTrendAction] unexpected error:', error);
+        return { status: 'error', error: buildGateError('unexpected_error') };
     }
 }
