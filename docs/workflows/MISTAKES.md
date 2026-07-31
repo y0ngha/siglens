@@ -724,6 +724,19 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     ❌ render(); await findByText('first'); fireEvent.keyDown(document, { key: 'Escape' }); await findByText('second')  // Esc lost on CI
     ✅ await waitFor(() => expect(getByRole('dialog')).toHaveFocus()); fireEvent.keyDown(...)  // listener guaranteed attached
     → Passes locally (single + full suite), fails only on CI; never blind-bump timeouts (see docs/qa/EMPIRICAL_VERIFICATION.md §4) (PR #562)
+
+20. Individual test names (it()) must accurately describe what assertions verify
+    → Test name must match the actual behavior asserted — overstated or broader test names hide incomplete coverage
+    → When assertions only verify a subset of what the name claims, either rename the test or add assertions to match the name
+    → Test titles referencing 'remaining', 'all', 'every' must verify the full set via derived logic, not hardcoded lists
+    → Applies to unit tests, integration tests, and E2E specs where individual assertions must be falsifiable by their name
+    ❌ it('member-only model', () => expect(isPremiumModel('claude-opus-5')).toBe(true))  // isPremiumModel only checks "not in free list", doesn't distinguish member vs pro
+    ❌ it('uses 32_768 for remaining Gemini models', () => hardcodedGeminiList.forEach(...))  // doesn't test derived complement, misses new Gemini additions
+    ❌ it('ensures fullName uniqueness', () => expect(new Set(getFullNames()).size === getFullNames().length).toBe(true))  // doesn't verify label uniqueness despite title suggesting comprehensive uniqueness
+    ✅ it('non-free model', () => expect(isPremiumModel('claude-opus-5')).toBe(true))  // name matches assertion scope
+    ✅ it('default budget for unclassified Gemini models', () => derived.forEach(...))  // name matches implementation (derived, not hardcoded)
+    ✅ it('ensures model label and fullName uniqueness', () => { expect(new Set(getLabels()).size).toBe(getLabels().length); expect(new Set(getFullNames()).size).toBe(getFullNames().length); })  // name and assertions aligned
+    → Recurring: 3+ occurrences across siglens-core and siglens PR review cycles
 ```
 
 ---

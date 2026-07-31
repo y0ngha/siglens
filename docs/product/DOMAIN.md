@@ -1686,15 +1686,19 @@ src/shared/config/llmProviders.ts
 
 ```typescript
 // @y0ngha/siglens-core 에서 export — domain 측에서 그대로 사용
-type AIProvider = 'claude' | 'gemini' | 'chatgpt';
+type AIProvider = 'claude' | 'gemini' | 'chatgpt' | 'deepseek';
 type ModelId =
     // Claude
     | 'claude-haiku-4-5' | 'claude-sonnet-4-6' | 'claude-opus-4-7'
+    | 'claude-sonnet-5' | 'claude-opus-5'
     // Gemini
     | 'gemini-2.5-flash-lite' | 'gemini-2.5-flash' | 'gemini-2.5-pro'
     | 'gemini-3-flash-preview' | 'gemini-3.1-pro-preview'
+    | 'gemini-3.5-flash-lite' | 'gemini-3.6-flash'
     // ChatGPT
-    | 'gpt-5-mini' | 'gpt-5.4' | 'gpt-5.5';
+    | 'gpt-5-mini' | 'gpt-5.4' | 'gpt-5.5' | 'gpt-5.6-terra' | 'gpt-5.6-sol'
+    // DeepSeek
+    | 'deepseek-v4-flash' | 'deepseek-v4-pro';
 
 type UserTier = 'free' | 'member' | 'pro';
 ```

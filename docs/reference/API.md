@@ -328,7 +328,7 @@ Worker(`/worker`)는 siglens-core의 `submitAnalysis` / `submitBriefing` / `canc
 interface AnalyzeRequest {
     jobId: string;
     prompt: string;
-    model: AIModel;     // siglens-core의 TierModel — 아래 11종 중 하나
+    model: AIModel;     // siglens-core의 TierModel — 아래 19종 중 하나
 }
 ```
 
@@ -340,13 +340,21 @@ interface AnalyzeRequest {
 | `gemini-2.5-flash-lite` | Gemini | ✅ |
 | `claude-haiku-4-5` | Claude | ✅ |
 | `gpt-5-mini` | ChatGPT | ✅ |
+| `deepseek-v4-flash` | DeepSeek | ✅ |
+| `deepseek-v4-pro` | DeepSeek | ✅ |
 | `gemini-2.5-pro` | Gemini | ❌ user key |
 | `gemini-3-flash-preview` | Gemini | ❌ user key |
 | `gemini-3.1-pro-preview` | Gemini | ❌ user key |
+| `gemini-3.5-flash-lite` | Gemini | ❌ user key |
+| `gemini-3.6-flash` | Gemini | ❌ user key |
 | `claude-sonnet-4-6` | Claude | ❌ user key |
 | `claude-opus-4-7` | Claude | ❌ user key |
+| `claude-sonnet-5` | Claude | ❌ user key |
+| `claude-opus-5` | Claude | ❌ user key |
 | `gpt-5.4` | ChatGPT | ❌ user key |
 | `gpt-5.5` | ChatGPT | ❌ user key |
+| `gpt-5.6-terra` | ChatGPT | ❌ user key |
+| `gpt-5.6-sol` | ChatGPT | ❌ user key |
 
 `siglens 제공` 모델은 `siglens-core`의 `TIER_CONFIG.models.free`와 동일하다. 갱신 시 worker `models.ts`의 `SIGLENS_PROVIDED_MODELS`도 자동 동기화된다.
 
