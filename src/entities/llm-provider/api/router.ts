@@ -2,21 +2,9 @@ import { callAnthropicChat } from './anthropic';
 import { callGeminiChat } from './gemini';
 import { callOpenaiChat } from './openai';
 import { callDeepseekChat } from './deepseek';
-import type {
-    ActiveModelId,
-    CallAiProviderOptions,
-} from '@y0ngha/siglens-core';
+import type { CallAiProviderOptions } from '@y0ngha/siglens-core';
 import { MODEL_SPECS, getProviderForModel } from '@y0ngha/siglens-core';
-
-/**
- * Type guard verifying that a raw string is a known {@link ActiveModelId}.
- *
- * Using `model in MODEL_SPECS` narrows the union without an unsafe cast,
- * preventing silent misrouting if upstream callers pass an unknown model.
- */
-function isActiveModelId(model: string): model is ActiveModelId {
-    return model in MODEL_SPECS;
-}
+import { isActiveModelId } from '@/shared/lib/isActiveModelId';
 
 /**
  * Route a provider-neutral AI call to the correct SDK adapter.
@@ -33,6 +21,8 @@ export async function callAiProviderRouter(
     // surfaces with our message instead of being shadowed by the generic throw
     // inside `getProviderForModel`. Also makes the subsequent `MODEL_SPECS[...]`
     // and `getProviderForModel` calls type-safe without an `as` cast.
+    // See `isActiveModelId` (`shared/lib/isActiveModelId.ts`) for why
+    // `Object.hasOwn` — not `in` — is required here.
     if (!isActiveModelId(options.model)) {
         throw new Error(`[router] Unknown model: ${options.model}`);
     }

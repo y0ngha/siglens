@@ -11,10 +11,14 @@ import {
 import { isGateBlockedResult } from '@/entities/analysis';
 import { sleep } from '@/shared/lib/sleep';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
-import { ANALYSIS_POLL_INTERVAL_MS } from '@/shared/config/pollingConfig';
+import {
+    ANALYSIS_POLL_INTERVAL_MS,
+    ANALYSIS_POLL_TIMEOUT_MESSAGE,
+} from '@/shared/config/pollingConfig';
 import { usePageHideCancel } from '@/shared/hooks/usePageHideCancel';
 import { useHydrated } from '@/shared/hooks/useHydrated';
 import { BotBlockedError } from '@/shared/lib/BotBlockedError';
+import { hasExceededPollCeiling } from '@/shared/lib/pollCeiling';
 import type {
     CancelJobEntry,
     OptionsExpirationSelector,
@@ -67,9 +71,13 @@ async function fetchOptionsAnalysis(
     }
 
     onJobId(submitted.jobId);
+    const pollStartTime = Date.now();
     try {
         const { jobId } = submitted;
         while (!signal.aborted) {
+            if (hasExceededPollCeiling(Date.now() - pollStartTime)) {
+                throw new Error(ANALYSIS_POLL_TIMEOUT_MESSAGE);
+            }
             await sleep(ANALYSIS_POLL_INTERVAL_MS);
             if (signal.aborted) break;
             const polled = await pollOptionsAnalysisAction(jobId);

@@ -29,11 +29,15 @@ import {
 } from '@/entities/options-chain/actions';
 import { sleep } from '@/shared/lib/sleep';
 import { QUERY_KEYS } from '@/shared/config/queryConfig';
-import { AUGMENT_AND_OVERALL_POLL_INTERVAL_MS } from '@/shared/config/pollingConfig';
+import {
+    ANALYSIS_POLL_TIMEOUT_MESSAGE,
+    AUGMENT_AND_OVERALL_POLL_INTERVAL_MS,
+} from '@/shared/config/pollingConfig';
 import type { CancelJobEntry } from '@/shared/lib/types';
 import { useHydrated } from '@/shared/hooks/useHydrated';
 import { usePageHideCancel } from '@/shared/hooks/usePageHideCancel';
 import { BotBlockedError } from '@/shared/lib/BotBlockedError';
+import { hasExceededPollCeiling } from '@/shared/lib/pollCeiling';
 import type { OverallAnalysisState, ProgressState } from '../types';
 import { axesForAssetClass } from '../utils/axesForAssetClass';
 
@@ -110,13 +114,26 @@ async function pollDependencyJob(
  *
  * `applicableAxes`는 asset class에 따라 결정된 축 목록이다. crypto는
  * ['technical', 'news']만 폴링하고 fundamental/options는 무시한다.
+ *
+ * `pollStartTime`은 이 dependency 대기 단계(fetchOverallAnalysis가
+ * submitUntilReady를 처음 호출하는 시점)의 시작 시각이다 — dependency 폴링이
+ * 재귀 재submit(최대 MAX_SUBMIT_RETRY_DEPTH회)을 거쳐도 리셋하지 않고 그대로
+ * 전달해, "의존성이 계속 pending으로 되돌아가는" 비정상 흐름을 하나의
+ * 천장(ANALYSIS_POLL_MAX_DURATION_MS)으로 묶는다. 이어지는 최종 overall
+ * 폴링(fetchOverallAnalysis 하단)은 이 시각을 공유하지 않고 별도의 새
+ * `Date.now()` 기준으로 다시 시작한다 — ANALYSIS_POLL_MAX_DURATION_MS의
+ * JSDoc(pollingConfig.ts) 참고. 두 단계가 하나의 시계를 공유하면, 느리지만
+ * 정상적으로 진행 중인 dependency 단계가 예산을 모두 소진해 실제로는
+ * 정상 진행 중인 최종 job을 즉시 타임아웃시키고(worker job은 취소되지 않아
+ * orphan) 사용자에게 거짓 실패로 보이게 된다.
  */
 async function waitForDependencies(
     initialPendingJobs: Record<OverallAxis, string | undefined>,
     signal: AbortSignal,
     onProgress: (p: ProgressState) => void,
     onJobsUpdate: (jobs: CurrentJobs) => void,
-    applicableAxes: readonly OverallAxis[]
+    applicableAxes: readonly OverallAxis[],
+    pollStartTime: number
 ): Promise<void> {
     let remainingJobs = { ...initialPendingJobs };
     let retryCount = 0;
@@ -125,6 +142,9 @@ async function waitForDependencies(
 
     while (applicableAxes.some(axis => remainingJobs[axis] !== undefined)) {
         throwIfAborted(signal);
+        if (hasExceededPollCeiling(Date.now() - pollStartTime)) {
+            throw new OverallAnalysisError(ANALYSIS_POLL_TIMEOUT_MESSAGE);
+        }
         await sleep(AUGMENT_AND_OVERALL_POLL_INTERVAL_MS);
         throwIfAborted(signal);
 
@@ -180,6 +200,7 @@ async function submitUntilReady(
     onProgress: (p: ProgressState) => void,
     onJobsUpdate: (jobs: CurrentJobs) => void,
     applicableAxes: readonly OverallAxis[],
+    pollStartTime: number,
     options: { force?: boolean; reasoning?: boolean } = {},
     depth = 0
 ): Promise<
@@ -216,7 +237,8 @@ async function submitUntilReady(
         signal,
         onProgress,
         onJobsUpdate,
-        applicableAxes
+        applicableAxes,
+        pollStartTime
     );
     throwIfAborted(signal);
 
@@ -234,6 +256,7 @@ async function submitUntilReady(
         onProgress,
         onJobsUpdate,
         applicableAxes,
+        pollStartTime,
         { reasoning: options.reasoning },
         depth + 1
     );
@@ -263,6 +286,11 @@ async function fetchOverallAnalysis(
 
     onProgress({ phase: 'submitting' });
 
+    // dependency 대기 단계 전용 천장의 시작 시각 — waitForDependencies JSDoc
+    // 참고. 재귀 재submit(MAX_SUBMIT_RETRY_DEPTH회)을 거쳐도 리셋되지 않지만,
+    // 아래 최종 overall 폴링 단계와는 공유하지 않는다(별도 재무장 — 아래 참고).
+    const dependencyPollStartTime = Date.now();
+
     const submitted = await submitUntilReady(
         symbol,
         companyName,
@@ -272,6 +300,7 @@ async function fetchOverallAnalysis(
         onProgress,
         trackedUpdate,
         applicableAxes,
+        dependencyPollStartTime,
         options
     );
 
@@ -307,8 +336,18 @@ async function fetchOverallAnalysis(
     trackedUpdate({ phase: 'overall', jobId });
     onProgress({ phase: 'polling' });
 
+    // 최종 overall job 자체의 폴링 천장 — 위 dependencyPollStartTime과는 별개로
+    // 여기서 새로 무장한다(re-armed). ANALYSIS_POLL_MAX_DURATION_MS는 "단일
+    // 연속 폴 루프"당 예산이지 훅 전체 수명의 예산이 아니다(pollingConfig.ts
+    // JSDoc 참고) — dependency 단계가 오래 걸렸다는 이유로 이제 막 enqueue된
+    // 정상 job이 즉시 타임아웃되는 것을 막는다.
+    const finalPollStartTime = Date.now();
+
     try {
         while (!signal.aborted) {
+            if (hasExceededPollCeiling(Date.now() - finalPollStartTime)) {
+                throw new OverallAnalysisError(ANALYSIS_POLL_TIMEOUT_MESSAGE);
+            }
             await sleep(AUGMENT_AND_OVERALL_POLL_INTERVAL_MS);
             throwIfAborted(signal);
 

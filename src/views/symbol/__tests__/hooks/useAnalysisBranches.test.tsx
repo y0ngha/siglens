@@ -16,6 +16,10 @@ import {
     tryAcquireReanalyzeCooldown,
     releaseReanalyzeCooldown,
 } from '@/entities/analysis';
+import {
+    ANALYSIS_POLL_MAX_DURATION_MS,
+    ANALYSIS_POLL_TIMEOUT_MESSAGE,
+} from '@/shared/config/pollingConfig';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor, act } from '@testing-library/react';
 import type { AnalysisResponse, Timeframe } from '@y0ngha/siglens-core';
@@ -515,6 +519,67 @@ describe('useAnalysis — branch coverage', () => {
             // The two 'processing' ticks must not have terminated the loop.
             expect(mockPoll).toHaveBeenCalledTimes(3);
             expect(result.current.isAnalyzing).toBe(false);
+        });
+    });
+
+    describe('poll ceiling — stalled job beyond ANALYSIS_POLL_MAX_DURATION_MS', () => {
+        it('surfaces a visible error and releases the cooldown for a forced request', async () => {
+            // Mirrors the financials/options/fundamental/news/overall
+            // poll-ceiling tests (congress remains on the older call-count
+            // pattern — see useCongressTrendBranches.test.tsx — it was not
+            // touched by this branch). Job is submitted, then repeatedly
+            // polls as 'processing' (a genuinely stalled job). Date.now() is
+            // keyed off an observable event — the poll mock flipping
+            // `stalled` — rather than a raw Date.now() call count: counting
+            // calls is brittle because any extra Date.now() from React
+            // Query/React internals (or a future line earlier in the hook)
+            // shifts the count and silently breaks the freeze.
+            mockSubmit.mockResolvedValue({
+                status: 'submitted',
+                jobId: 'job-stalled',
+            });
+            const frozenStart = Date.now();
+            let stalled = false;
+            mockPoll.mockImplementation(async () => {
+                stalled = true;
+                return { status: 'processing' };
+            });
+            const dateSpy = vi
+                .spyOn(Date, 'now')
+                .mockImplementation(() =>
+                    stalled
+                        ? frozenStart + ANALYSIS_POLL_MAX_DURATION_MS + 1
+                        : frozenStart
+                );
+
+            try {
+                const { result } = renderHook(
+                    () => useAnalysis(makeOptions()),
+                    {
+                        wrapper: makeWrapper(),
+                    }
+                );
+
+                act(() => {
+                    result.current.handleReanalyze();
+                });
+
+                await waitFor(() => {
+                    expect(result.current.analysisError).toBe(
+                        ANALYSIS_POLL_TIMEOUT_MESSAGE
+                    );
+                });
+
+                expect(result.current.isAnalyzing).toBe(false);
+                // handleReanalyze always submits with force=true, so the
+                // ceiling timeout must release the Redis cooldown the same
+                // way the other error branches do — otherwise the user is
+                // locked out of retrying for the full 5-minute window.
+                expect(mockRelease).toHaveBeenCalled();
+                expect(result.current.reanalyzeCooldownMs).toBe(0);
+            } finally {
+                dateSpy.mockRestore();
+            }
         });
     });
 

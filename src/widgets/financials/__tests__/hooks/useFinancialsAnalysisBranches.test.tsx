@@ -13,7 +13,10 @@ import {
     submitFinancialsAnalysisAction,
 } from '@/entities/analysis/actions';
 import { isGateBlockedResult } from '@/entities/analysis';
-import { ANALYSIS_POLL_MAX_DURATION_MS } from '@/shared/config/pollingConfig';
+import {
+    ANALYSIS_POLL_MAX_DURATION_MS,
+    ANALYSIS_POLL_TIMEOUT_MESSAGE,
+} from '@/shared/config/pollingConfig';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
 import type { FinancialsAnalysisResponse } from '@y0ngha/siglens-core';
@@ -336,27 +339,32 @@ describe('useFinancialsAnalysis — branch coverage', () => {
     });
 
     it('poll ceiling → error state when job stalls beyond ANALYSIS_POLL_MAX_DURATION_MS', async () => {
-        // Arrange: job is submitted but poll always returns 'processing'.
-        // Freeze Date.now() past the ceiling on the first check so the loop
-        // breaks immediately without iterating (avoids needing many poll calls).
+        // Mirrors the overall/options/fundamental/news poll-ceiling tests
+        // (congress remains on the older call-count pattern — see
+        // useCongressTrendBranches.test.tsx — it was not touched by this
+        // branch): job is submitted, then repeatedly polls as 'processing'
+        // (a genuinely stalled job). Date.now() is keyed off an observable
+        // event — the poll mock flipping `stalled` — rather than a raw
+        // Date.now() call count: counting calls is brittle because any extra
+        // Date.now() from React Query/React internals shifts the count and
+        // silently breaks the freeze.
         mockSubmit.mockResolvedValue({
             status: 'submitted',
             jobId: 'job-stalled',
         } as never);
-        // poll resolves with 'processing' status (not 'done' / 'error')
-        mockPoll.mockResolvedValue({ status: 'processing' } as never);
-
-        const realNow = Date.now;
-        const frozenStart = realNow();
-        let callCount = 0;
-        const dateSpy = vi.spyOn(Date, 'now').mockImplementation(() => {
-            // First call (pollStart = Date.now()) returns current time.
-            // Second call (ceiling check inside while loop) returns time past ceiling.
-            callCount += 1;
-            return callCount === 1
-                ? frozenStart
-                : frozenStart + ANALYSIS_POLL_MAX_DURATION_MS + 1;
+        const frozenStart = Date.now();
+        let stalled = false;
+        mockPoll.mockImplementation(async () => {
+            stalled = true;
+            return { status: 'processing' } as never;
         });
+        const dateSpy = vi
+            .spyOn(Date, 'now')
+            .mockImplementation(() =>
+                stalled
+                    ? frozenStart + ANALYSIS_POLL_MAX_DURATION_MS + 1
+                    : frozenStart
+            );
 
         try {
             const { result } = renderHook(
@@ -370,8 +378,8 @@ describe('useFinancialsAnalysis — branch coverage', () => {
 
             if (result.current.status !== 'error')
                 throw new Error('expected error state');
-            expect(result.current.error.message).toContain(
-                '너무 오래 걸립니다'
+            expect(result.current.error.message).toBe(
+                ANALYSIS_POLL_TIMEOUT_MESSAGE
             );
         } finally {
             dateSpy.mockRestore();

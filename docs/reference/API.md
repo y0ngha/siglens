@@ -303,9 +303,18 @@ FMP_API_KEY=    # 필수. 없으면 검색 결과 빈 배열 반환
 ### 환경변수
 
 ```
-TRANSLATE_API_KEY=              # 필수. 없으면 번역 비활성화
-TRANSLATE_MODEL=gemini-2.5-flash  # 기본값
+TRANSLATE_API_KEY=                    # 필수. 없으면 번역 비활성화
+TRANSLATE_MODEL=gemini-2.5-flash-lite # 기본값 — 프로덕션 실측값(사고 비활성화 시 thoughts=0)과 일치
 ```
+
+`TRANSLATE_MODEL`은 `src/entities/ticker/lib/config.ts`에서 검증된다: siglens-core의
+`MODEL_SPECS`에 존재하는 Gemini provider 모델이면서, `thinkingBudget: 0`(koreanTranslator.ts가
+하드코딩하는 값)을 라이브로 지원 확인된 모델(`GEMINI_MODELS_SUPPORTING_DISABLED_THINKING`)만
+통과한다 — Gemini가 아닌 모델(Claude 등), MODEL_SPECS에 없는 값, 그리고 사고 비활성화를
+지원하지 않는 것으로 확인된 Gemini 모델(예: `gemini-3.1-pro-preview`, `gemini-3.5-flash-lite`,
+`gemini-3.6-flash` — 0을 400으로 거부)은 모두 거부된다. 미설정·빈 문자열은 조용히 기본값으로
+처리되고, 그 외 알 수 없는/미지원 값은 기본값으로 폴백하면서 경고를 로깅한다(프로세스당 최초
+1회만).
 
 ---
 

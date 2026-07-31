@@ -32,8 +32,12 @@ import {
     normalizeAnalysisResponse,
 } from '@/entities/analysis';
 import { sleep } from '@/shared/lib/sleep';
-import { CHART_ANALYSIS_POLL_INTERVAL_MS } from '@/shared/config/pollingConfig';
+import {
+    ANALYSIS_POLL_TIMEOUT_MESSAGE,
+    CHART_ANALYSIS_POLL_INTERVAL_MS,
+} from '@/shared/config/pollingConfig';
 import { usePageHideCancel } from '@/shared/hooks/usePageHideCancel';
+import { hasExceededPollCeiling } from '@/shared/lib/pollCeiling';
 import type { CancelJobEntry } from '@/shared/lib/types';
 
 interface AnalyzeMutationVariables {
@@ -501,9 +505,29 @@ export function useAnalysis({
 
         const jobId = submitData.jobId;
         let cancelled = false;
+        // financials/congress/macro-briefing 폴링과 동일한 천장 패턴 —
+        // 워커가 status를 한 번도 못 쓰고 stall되면 이 루프가 영원히 도는 것을
+        // 막는다. 초과 시 다른 error 분기와 동일한 가시적 오류 상태로 전환하고
+        // 쿨다운도 함께 해제한다(그렇지 않으면 5분 재분석 쿨다운에 추가로
+        // 잠겨 사용자가 재시도조차 못 한다).
+        const pollStartTime = Date.now();
 
         void (async () => {
             while (!cancelled) {
+                if (hasExceededPollCeiling(Date.now() - pollStartTime)) {
+                    currentJobIdRef.current = null;
+                    setPollError(ANALYSIS_POLL_TIMEOUT_MESSAGE);
+                    setIsPersonalized(false);
+                    if (lastForceRef.current) {
+                        void releaseReanalyzeCooldown(
+                            latestRef.current.symbol,
+                            latestTimeframeRef.current
+                        );
+                        setReanalyzeCooldownMs(0);
+                    }
+                    setIsPolling(false);
+                    return;
+                }
                 await sleep(CHART_ANALYSIS_POLL_INTERVAL_MS);
                 if (cancelled) break;
 

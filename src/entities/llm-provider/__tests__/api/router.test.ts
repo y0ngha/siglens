@@ -170,5 +170,27 @@ describe('callAiProviderRouter', () => {
             expect(mockCallGeminiWithKeyFallback).not.toHaveBeenCalled();
             expect(mockCallDeepseekChat).not.toHaveBeenCalled();
         });
+
+        // `MODEL_SPECS`는 일반 객체 리터럴이라 `'constructor' in MODEL_SPECS`는
+        // `Object.prototype`을 통해 상속된 값 때문에 `true`가 된다. `isActiveModelId`가
+        // `in` 대신 `Object.hasOwn`을 쓰는 이유가 바로 이것 — own-property가 아닌
+        // 프로토타입 체인의 키는 여전히 거부되어야 한다.
+        it.each(['constructor', 'toString', 'valueOf', '__proto__'])(
+            "프로토타입 체인 키 '%s'는 own-property가 아니므로 [router] Unknown model 에러를 던진다",
+            async prototypeKey => {
+                await expect(
+                    callAiProviderRouter({
+                        ...BASE_OPTIONS,
+                        model: prototypeKey,
+                    })
+                ).rejects.toThrow(`[router] Unknown model: ${prototypeKey}`);
+
+                expect(mockGetProviderForModel).not.toHaveBeenCalled();
+                expect(mockCallAnthropicChat).not.toHaveBeenCalled();
+                expect(mockCallOpenaiChat).not.toHaveBeenCalled();
+                expect(mockCallGeminiWithKeyFallback).not.toHaveBeenCalled();
+                expect(mockCallDeepseekChat).not.toHaveBeenCalled();
+            }
+        );
     });
 });
