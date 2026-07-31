@@ -1,5 +1,5 @@
-import type { ActiveModelId } from '@y0ngha/siglens-core';
 import { MODEL_SPECS, isGeminiModel } from '@y0ngha/siglens-core';
+import { isActiveModelId } from '@/shared/lib/isActiveModelId';
 import type { TranslatorConfig } from '../model';
 
 // 프로덕션에 실제로 설정된 값(gemini-2.5-flash-lite)과 일치시킨다.
@@ -42,17 +42,17 @@ const GEMINI_MODELS_SUPPORTING_DISABLED_THINKING: ReadonlySet<string> = new Set(
 /**
  * `TRANSLATE_MODEL`이 siglens-core의 Gemini 모델 집합에 속하고,
  * `thinkingBudget: 0`(koreanTranslator.ts가 하드코딩하는 값)을 지원하는지
- * 검증한다. `Object.hasOwn`으로 먼저 own-property 존재를 좁힌 뒤(`in`
- * 연산자와 달리 프로토타입 체인의 `toString`/`constructor` 같은 값이 통과하지
- * 못한다 — router.ts의 `isActiveModelId`와 동일 패턴), `isGeminiModel`로
- * provider를, `GEMINI_MODELS_SUPPORTING_DISABLED_THINKING`으로 사고
- * 비활성화 지원 여부를 확인한다. 세 조건 중 하나라도 실패하면 이 모델로
- * 번역을 호출할 때마다 Gemini가 400을 던진다.
+ * 검증한다. 먼저 `isActiveModelId`(`shared/lib/isActiveModelId.ts` — 프로토타입
+ * 체인 키를 own-property 체크로 걸러내는 이유는 그 파일 JSDoc 참고)로
+ * `ActiveModelId`로 좁힌 뒤, `isGeminiModel`로 provider를,
+ * `GEMINI_MODELS_SUPPORTING_DISABLED_THINKING`으로 사고 비활성화 지원 여부를
+ * 확인한다. 세 조건 중 하나라도 실패하면 이 모델로 번역을 호출할 때마다
+ * Gemini가 400을 던진다.
  */
 function isValidGeminiModel(value: string): boolean {
     return (
-        Object.hasOwn(MODEL_SPECS, value) &&
-        isGeminiModel(value as ActiveModelId) &&
+        isActiveModelId(value) &&
+        isGeminiModel(value) &&
         GEMINI_MODELS_SUPPORTING_DISABLED_THINKING.has(value)
     );
 }
@@ -71,20 +71,21 @@ function isValidGeminiModel(value: string): boolean {
  * 것은 하나뿐이다 — 나머지 둘(unset/빈 문자열, invalid raw)은 검증 없이
  * `DEFAULT_TRANSLATE_MODEL`을 그대로 넘긴다(`_getDefaultTranslateModelForTest`의
  * 문서·config.test.ts의 self-consistency 테스트 참고). 그래서 이 함수는
- * `Object.hasOwn(MODEL_SPECS, value)`가 거짓인 입력(예: siglens-core가
- * `DEFAULT_TRANSLATE_MODEL`을 rename/제거)에도 `MODEL_SPECS[...]` 인덱싱으로
- * TypeError를 던지지 않는다 — 대신 `value`를 그대로 apiModelId로 반환한다
- * (오늘의 "모든 Gemini 행이 apiModelId === key"인 상태와 동일한 값이라 안전한
- * 폴백이다). 이렇게 해야 하는 이유: `tryReadTranslatorConfig()`는
- * `translateCompanyNames`/`translateCompanyDescription`의 try/catch **밖**에서
- * 호출되므로, 여기서 던지면 문서화된 우아한 디그레이드(빈 객체/`null`)가
- * 아니라 미처리 예외가 된다. miss일 때 반환한 값이 실제 Gemini API에서
- * 거부되더라도, 그 실패는 `callTranslateGemini` 호출부의 try/catch 안에서
- * 일어나므로 여전히 로깅 후 디그레이드된다.
+ * `isActiveModelId(value)`(`shared/lib/isActiveModelId.ts`)가 거짓인 입력
+ * (예: siglens-core가 `DEFAULT_TRANSLATE_MODEL`을 rename/제거)에도
+ * `MODEL_SPECS[...]` 인덱싱으로 TypeError를 던지지 않는다 — 대신 `value`를
+ * 그대로 apiModelId로 반환한다(오늘의 "모든 Gemini 행이 apiModelId === key"인
+ * 상태와 동일한 값이라 안전한 폴백이다). 이렇게 해야 하는 이유:
+ * `tryReadTranslatorConfig()`는 `translateCompanyNames`/
+ * `translateCompanyDescription`의 try/catch **밖**에서 호출되므로, 여기서
+ * 던지면 문서화된 우아한 디그레이드(빈 객체/`null`)가 아니라 미처리 예외가
+ * 된다. miss일 때 반환한 값이 실제 Gemini API에서 거부되더라도, 그 실패는
+ * `callTranslateGemini` 호출부의 try/catch 안에서 일어나므로 여전히 로깅 후
+ * 디그레이드된다.
  */
 function toApiModelId(value: string): string {
-    if (!Object.hasOwn(MODEL_SPECS, value)) return value;
-    return MODEL_SPECS[value as ActiveModelId].apiModelId;
+    if (!isActiveModelId(value)) return value;
+    return MODEL_SPECS[value].apiModelId;
 }
 
 /**

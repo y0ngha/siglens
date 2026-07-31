@@ -2,28 +2,9 @@ import { callAnthropicChat } from './anthropic';
 import { callGeminiChat } from './gemini';
 import { callOpenaiChat } from './openai';
 import { callDeepseekChat } from './deepseek';
-import type {
-    ActiveModelId,
-    CallAiProviderOptions,
-} from '@y0ngha/siglens-core';
+import type { CallAiProviderOptions } from '@y0ngha/siglens-core';
 import { MODEL_SPECS, getProviderForModel } from '@y0ngha/siglens-core';
-
-/**
- * Type guard verifying that a raw string is a known {@link ActiveModelId}.
- *
- * Uses `Object.hasOwn` (not the `in` operator) to narrow the union without an
- * unsafe cast. `in` also matches inherited `Object.prototype` keys (`toString`,
- * `constructor`, `valueOf`, `__proto__`, …) since `MODEL_SPECS` is a plain
- * object literal — `'constructor' in MODEL_SPECS` is `true` even though
- * `MODEL_SPECS` has no own `constructor` model entry. `Object.hasOwn` only
- * matches own properties, so those prototype-chain keys correctly fail the
- * guard and fall through to the `[router] Unknown model` throw below instead
- * of letting `MODEL_SPECS[options.model]` resolve to an inherited
- * function/object that would misbehave on the subsequent `.apiModelId` access.
- */
-function isActiveModelId(model: string): model is ActiveModelId {
-    return Object.hasOwn(MODEL_SPECS, model);
-}
+import { isActiveModelId } from '@/shared/lib/isActiveModelId';
 
 /**
  * Route a provider-neutral AI call to the correct SDK adapter.
@@ -40,6 +21,8 @@ export async function callAiProviderRouter(
     // surfaces with our message instead of being shadowed by the generic throw
     // inside `getProviderForModel`. Also makes the subsequent `MODEL_SPECS[...]`
     // and `getProviderForModel` calls type-safe without an `as` cast.
+    // See `isActiveModelId` (`shared/lib/isActiveModelId.ts`) for why
+    // `Object.hasOwn` — not `in` — is required here.
     if (!isActiveModelId(options.model)) {
         throw new Error(`[router] Unknown model: ${options.model}`);
     }
