@@ -37,7 +37,7 @@ describe('ModelSelector', () => {
         expect(
             screen.getByRole('button', { name: 'AI 분석 모델 선택' })
         ).toBeInTheDocument();
-        expect(screen.getByText('Flash Lite')).toBeInTheDocument();
+        expect(screen.getByText('Flash Lite 2.5')).toBeInTheDocument();
     });
 
     it('opens dropdown on trigger click and shows allowed models', async () => {
@@ -50,8 +50,8 @@ describe('ModelSelector', () => {
 
         const listbox = screen.getByRole('listbox');
         expect(listbox).toBeInTheDocument();
-        expect(screen.getByText('Flash')).toBeInTheDocument();
-        expect(screen.getByText('Sonnet')).toBeInTheDocument();
+        expect(screen.getByText('Flash 2.5')).toBeInTheDocument();
+        expect(screen.getByText('Sonnet 4.6')).toBeInTheDocument();
     });
 
     it('clicking a model option calls onModelChange and closes dropdown', async () => {

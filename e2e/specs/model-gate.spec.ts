@@ -34,15 +34,15 @@ import type { Page } from '@playwright/test';
  *     (no session ⇒ currentUserAction returns null) selecting a non-free model
  *     opens PremiumModelGateModal in `auth` mode and does NOT apply the model.
  *
- *   - Free vs premium (from siglens-core isFreeModel — note several Claude/GPT
- *     models are FREE here):
- *       free   : gemini-2.5-flash-lite (default), gemini-2.5-flash,
- *                claude-haiku-4-5, gpt-5-mini
- *       premium: gemini-2.5-pro, claude-sonnet-4-6, claude-opus-4-7,
- *                gemini-3.1-pro-preview, gemini-3-flash-preview, gpt-5.4, gpt-5.5
+ *   - Free vs premium comes from siglens-core `isFreeModel`, i.e. membership in
+ *     `TIER_CONFIG.models.free` (siglens-core `src/domain/tier.ts`) — free means
+ *     "siglens pays with its own server key", NOT "cheap": a Claude and a GPT
+ *     model are free while some cheap Gemini ones are not. Do NOT re-enumerate
+ *     that list here: it grows every time a model generation lands and a
+ *     hand-maintained copy silently goes stale. Read it from tier.ts.
  *     The default/selected model is deepseek-v4-flash → trigger shows
  *     "DeepSeek Flash". We exercise the premium branch with "Claude Sonnet 4.6"
- *     (label "Sonnet", non-free ⇒ guest auth gate).
+ *     (label "Sonnet 4.6", non-free ⇒ guest auth gate).
  *
  *   - The gate modal is a `role="dialog"` (aria-labelledby the
  *     "프리미엄 모델 사용 안내" heading in auth mode) with a `<Link role="link">`
@@ -63,10 +63,15 @@ import type { Page } from '@playwright/test';
 const SELECTOR_TRIGGER_NAME = 'AI 분석 모델 선택';
 const SELECTOR_LISTBOX_NAME = 'AI 분석 모델 목록';
 const FREE_DEFAULT_LABEL = 'DeepSeek Flash'; // deepseek-v4-flash — the free default model's trigger label
-// A free, non-default option. Matched by EXACT accessible name (label +
-// fullName), because the substring "Gemini 2.5 Flash" also occurs inside the
-// default option's name "Flash Lite Gemini 2.5 Flash Lite".
-const FREE_OPTION_ACCESSIBLE_NAME = 'Flash Gemini 2.5 Flash';
+// A free, non-default option, matched by its full accessible name (label +
+// fullName). `exact: true` below is defensive: labels now carry their
+// generation, so this string is not a substring of any other option's name,
+// but an accessible-name lookup is substring-based by default and the option
+// list grows with every model generation.
+const FREE_OPTION_ACCESSIBLE_NAME = 'Flash 2.5 Gemini 2.5 Flash';
+// The same option's trigger label. Labels carry their generation, so this is
+// no longer a prefix of any other option's label ("Flash Lite 2.5", "Flash 3.6").
+const FREE_OPTION_LABEL = 'Flash 2.5';
 const PREMIUM_OPTION_FULLNAME = 'Claude Sonnet 4.6'; // non-free ⇒ guest auth gate
 const PREMIUM_MODEL_ID = 'claude-sonnet-4-6';
 const MODEL_STORAGE_KEY = 'siglens:selected-analysis-model';
@@ -102,8 +107,7 @@ test.describe('model gate (guest)', () => {
             name: SELECTOR_LISTBOX_NAME,
         });
         await expect(listbox).toBeVisible();
-        // Exact name match — "Flash Lite" option's name contains this substring,
-        // so an exact lookup is required to disambiguate.
+        // Exact name match — see FREE_OPTION_ACCESSIBLE_NAME above.
         await listbox
             .getByRole('option', {
                 name: FREE_OPTION_ACCESSIBLE_NAME,
@@ -122,9 +126,9 @@ test.describe('model gate (guest)', () => {
         // … the popover closes …
         await expect(listbox).toBeHidden();
         // … and the free selection actually applied: the trigger now shows the
-        // new model's label exactly (not "Flash Lite"), and the persisted
-        // localStorage value reflects it.
-        await expect(trigger).toHaveText(/\bFlash\b/);
+        // newly picked model's label and no longer the default's, and the
+        // persisted localStorage value reflects it.
+        await expect(trigger).toContainText(FREE_OPTION_LABEL);
         await expect(trigger).not.toContainText(FREE_DEFAULT_LABEL);
         await expect
             .poll(() =>

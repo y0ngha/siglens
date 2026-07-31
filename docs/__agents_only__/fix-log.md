@@ -115,3 +115,19 @@
 - Violation: Hot-looping mocked poll interval (vitest worker exit). `@/shared/lib/sleep` mocked to resolve immediately; polling action stubbed to return `{status:'processing'}` indefinitely → while loop spins with no yield → vitest worker killed ("Worker exited unexpectedly")
   - Rule: Test best practices — Mocked polling loops must have a terminating stub that yields eventually (return one processing tick, then never-settling promise)
   - Context: useAnalysisBranches.test.tsx polling action stub. Fixed by returning a single {status:'processing'} response, then a promise that never settles, allowing loop to yield before next poll.
+
+## [feat/latest-llm-models | siglens-core | R1 recommended]
+- Violation: Public API union widening (TierModel/ModelId/ActiveModelId +6 members, TIER_CONFIG literals +6 rows) shipped without updating docs/PUBLIC_API.md. Identical pattern had prior precedent (PR #166 logged same model-union widening).
+  - Rule: MISTAKES.md §Code Review — Public API documentation must be updated atomically with the API it describes
+  - Context: Added public-api.md update to same commit + test forcing struct evolution (MODEL_SPECS satisfies Record<ActiveModelId, ...>).
+
+## [feat/latest-llm-models | siglens | R1 recommended]
+- Violation: Label versioning inconsistency — 'Opus 5' next to unversioned 'Opus' (=4.7) made the old model appear current on collapsed trigger, misleading users about which version they selected.
+  - Rule: User-facing text must match code state; version numbers in labels must be consistent
+  - Context: Added suffix to old Opus label ('Opus 4.7'), clarifying the version relationship.
+
+## [feat/latest-llm-models | siglens | R1 recommended]
+- Violation: E2E spec header contained stale hand-maintained free/premium model enumeration (copy of arrays that change independently). Comment claimed claude-opus-4-turbo was free when it was pro-only in actual TIER_CONFIG.
+  - Rule: Test data must not be duplicated from production without continuous sync; outdated comments hide test/prod divergence
+  - Context: Removed enum, replaced with dynamic check: getModelsFor('free_tier') + getModelsFor('pro_tier').
+
