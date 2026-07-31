@@ -70,7 +70,7 @@ async function fetchFinancialsAnalysis(
     try {
         const { jobId } = submitted;
         while (!signal.aborted) {
-            if (hasExceededPollCeiling(pollStart)) {
+            if (hasExceededPollCeiling(Date.now() - pollStart)) {
                 throw new Error(ANALYSIS_POLL_TIMEOUT_MESSAGE);
             }
             await sleep(ANALYSIS_POLL_INTERVAL_MS);

@@ -57,13 +57,6 @@ function isValidGeminiModel(value: string): boolean {
     );
 }
 
-// resolveTranslateModel()은 요청마다(티커 검색·자산정보 페이지마다) 호출되므로,
-// 경고 자체를 매번 로깅하면 잘못 설정된 env 하나가 지속적인 로그 노이즈가
-// 된다. 모듈 레벨 once-flag로 첫 경고 이후는 조용히 넘어간다 — 검증 로직
-// 자체는 매 호출 그대로 수행한다(모듈 로드 시점 평가는 빌드 타임에 env를
-// 고정시켜 버려서 안 됨).
-let hasWarnedAboutInvalidTranslateModel = false;
-
 /**
  * `MODEL_SPECS`의 내부 키(예: 'gemini-2.5-flash-lite')를 실제 Gemini SDK
  * 호출에 써야 하는 `apiModelId`로 변환한다. router.ts의 `callAiProviderRouter`가
@@ -95,40 +88,79 @@ function toApiModelId(value: string): string {
 }
 
 /**
+ * `resolveTranslateModel()`의 반환값. 경고 로깅은 이 함수의 책임이 아니라
+ * (entities/lib은 순수 검증만 — 로깅/once-flag 같은 side effect는
+ * `tryReadTranslatorConfig()` 경계로 옮겨졌다), 폴백이 "알 수 없는 값 때문에
+ * 일어났다"는 사실과 그 원본 값을 `invalidRawValue`로 caller에 전달해
+ * caller가 경고 여부·문구를 결정하게 한다. 미설정/빈 문자열 폴백은
+ * `invalidRawValue: null`로 — 이 두 경우는 경고 대상이 아니다(아래 JSDoc 참고).
+ */
+interface ResolveTranslateModelResult {
+    apiModelId: string;
+    /**
+     * 폴백을 유발한 "알 수 없는" 원본 env 값. 미설정/빈 문자열처럼 조용히
+     * 폴백해야 하는 경우, 또는 애초에 폴백이 없었던 경우(유효한 값)는 `null`.
+     */
+    invalidRawValue: string | null;
+}
+
+/**
  * `TRANSLATE_MODEL` env 값을 검증한다. 유효한 Gemini 모델 ID(사고 비활성화
  * 지원 포함)면 그 `apiModelId`를, 아니면(미설정·빈 문자열·알 수 없는 값·사고
- * 비활성화 미지원 모델) 기본 모델의 `apiModelId`로 폴백하면서 경고를
- * 로깅한다(최초 1회만).
+ * 비활성화 미지원 모델) 기본 모델의 `apiModelId`로 폴백한다.
+ *
+ * entities/lib의 순수 함수 규칙(`docs/conventions/CONVENTIONS.md` §"Pure
+ * Function Rules")에 따라 이 함수는 `console.warn`을 직접 호출하지 않는다 —
+ * 대신 "알 수 없는 값 때문에 폴백했다"는 신호를 `invalidRawValue`로 반환하고,
+ * 실제 로깅(및 최초 1회만 로깅하는 once-flag)은 `tryReadTranslatorConfig()`가
+ * 경계에서 수행한다.
  *
  * `??`만으로는 빈 문자열(`TRANSLATE_MODEL=""`)을 걸러내지 못한다 — nullish
  * coalescing은 `''`을 값으로 취급해 그대로 통과시키고, 검증 없는 이전
  * 구현에서는 이 빈 문자열이 그대로 Gemini SDK에 전달되어 조용히 실패했다
  * (koreanTranslator.ts가 모든 에러를 `{}`/`null`로 삼키므로 한국어 이름이
- * 소리 없이 사라진다). 여기서 빈 문자열도 "알 수 없는 값"과 동일하게
- * 취급해 경고 후 기본값으로 폴백한다.
+ * 소리 없이 사라진다). 여기서 빈 문자열도 "미설정"과 동일하게 조용히
+ * 취급해(`invalidRawValue: null`) 경고 없이 기본값으로 폴백한다.
  */
-function resolveTranslateModel(): string {
+function resolveTranslateModel(): ResolveTranslateModelResult {
     const raw = process.env.TRANSLATE_MODEL;
     if (raw === undefined || raw === '')
-        return toApiModelId(DEFAULT_TRANSLATE_MODEL);
-    if (isValidGeminiModel(raw)) return toApiModelId(raw);
+        return {
+            apiModelId: toApiModelId(DEFAULT_TRANSLATE_MODEL),
+            invalidRawValue: null,
+        };
+    if (isValidGeminiModel(raw))
+        return { apiModelId: toApiModelId(raw), invalidRawValue: null };
 
-    if (!hasWarnedAboutInvalidTranslateModel) {
-        hasWarnedAboutInvalidTranslateModel = true;
-        console.warn(
-            `[tryReadTranslatorConfig] TRANSLATE_MODEL="${raw}" is not a known Gemini model in siglens-core's MODEL_SPECS that supports a disabled thinking budget. ` +
-                `Falling back to default "${DEFAULT_TRANSLATE_MODEL}" — Korean translations would otherwise silently fail or 400.`
-        );
-    }
-    return toApiModelId(DEFAULT_TRANSLATE_MODEL);
+    return {
+        apiModelId: toApiModelId(DEFAULT_TRANSLATE_MODEL),
+        invalidRawValue: raw,
+    };
 }
+
+// tryReadTranslatorConfig()은 요청마다(티커 검색·자산정보 페이지마다) 호출되므로,
+// 경고 자체를 매번 로깅하면 잘못 설정된 env 하나가 지속적인 로그 노이즈가
+// 된다. 모듈 레벨 once-flag로 첫 경고 이후는 조용히 넘어간다 — 검증 로직
+// 자체(resolveTranslateModel)는 매 호출 그대로 수행한다(모듈 로드 시점 평가는
+// 빌드 타임에 env를 고정시켜 버려서 안 됨).
+let hasWarnedAboutInvalidTranslateModel = false;
 
 export function tryReadTranslatorConfig(): TranslatorConfig | null {
     const apiKey = process.env.TRANSLATE_API_KEY;
     if (!apiKey) return null;
+
+    const { apiModelId, invalidRawValue } = resolveTranslateModel();
+    if (invalidRawValue !== null && !hasWarnedAboutInvalidTranslateModel) {
+        hasWarnedAboutInvalidTranslateModel = true;
+        console.warn(
+            `[tryReadTranslatorConfig] TRANSLATE_MODEL="${invalidRawValue}" is not a known Gemini model in siglens-core's MODEL_SPECS that supports a disabled thinking budget. ` +
+                `Falling back to default "${DEFAULT_TRANSLATE_MODEL}" — Korean translations would otherwise silently fail or 400.`
+        );
+    }
+
     return {
         apiKey,
-        model: resolveTranslateModel(),
+        model: apiModelId,
     };
 }
 

@@ -75,7 +75,7 @@ async function fetchCongressTrend(
     try {
         const { jobId } = submitted;
         while (!signal.aborted) {
-            if (hasExceededPollCeiling(pollStartTime)) {
+            if (hasExceededPollCeiling(Date.now() - pollStartTime)) {
                 throw new Error(
                     '동향 해석이 응답하지 않습니다. 잠시 후 다시 시도해 주세요.'
                 );

@@ -514,7 +514,7 @@ export function useAnalysis({
 
         void (async () => {
             while (!cancelled) {
-                if (hasExceededPollCeiling(pollStartTime)) {
+                if (hasExceededPollCeiling(Date.now() - pollStartTime)) {
                     currentJobIdRef.current = null;
                     setPollError(ANALYSIS_POLL_TIMEOUT_MESSAGE);
                     setIsPersonalized(false);

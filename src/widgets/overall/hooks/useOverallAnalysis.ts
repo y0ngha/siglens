@@ -142,7 +142,7 @@ async function waitForDependencies(
 
     while (applicableAxes.some(axis => remainingJobs[axis] !== undefined)) {
         throwIfAborted(signal);
-        if (hasExceededPollCeiling(pollStartTime)) {
+        if (hasExceededPollCeiling(Date.now() - pollStartTime)) {
             throw new OverallAnalysisError(ANALYSIS_POLL_TIMEOUT_MESSAGE);
         }
         await sleep(AUGMENT_AND_OVERALL_POLL_INTERVAL_MS);
@@ -345,7 +345,7 @@ async function fetchOverallAnalysis(
 
     try {
         while (!signal.aborted) {
-            if (hasExceededPollCeiling(finalPollStartTime)) {
+            if (hasExceededPollCeiling(Date.now() - finalPollStartTime)) {
                 throw new OverallAnalysisError(ANALYSIS_POLL_TIMEOUT_MESSAGE);
             }
             await sleep(AUGMENT_AND_OVERALL_POLL_INTERVAL_MS);

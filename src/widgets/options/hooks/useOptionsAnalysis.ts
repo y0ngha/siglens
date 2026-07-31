@@ -75,7 +75,7 @@ async function fetchOptionsAnalysis(
     try {
         const { jobId } = submitted;
         while (!signal.aborted) {
-            if (hasExceededPollCeiling(pollStartTime)) {
+            if (hasExceededPollCeiling(Date.now() - pollStartTime)) {
                 throw new Error(ANALYSIS_POLL_TIMEOUT_MESSAGE);
             }
             await sleep(ANALYSIS_POLL_INTERVAL_MS);
