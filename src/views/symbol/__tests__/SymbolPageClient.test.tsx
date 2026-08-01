@@ -68,7 +68,7 @@ vi.mock('@/entities/ticker/hooks/useAssetInfo', () => ({
 
 vi.mock('@/views/symbol/hooks/useMobileSheet', () => ({
     useMobileSheet: vi.fn(() => ({
-        sheetSnap: 0.15,
+        sheetSnap: 0.2,
         setSheetSnap: vi.fn(),
         mobileSheetContent: null,
         setMobileSheetContent: vi.fn(),

@@ -89,15 +89,15 @@ test.describe('모바일 차트 페이지 입력 도달성 (authed, 시트 마�
 
             const centerX = box.x + box.width / 2;
             const centerY = box.y + box.height / 2;
-            const isOnTop = await page.evaluate(
-                ({ x, y }) => {
+            // ⚠️ 여기서 `document.querySelector('[role="dialog"]')`로 다시 찾으면
+            // 안 된다 — 모바일에는 role=dialog가 **둘**(vaul 분석 시트와 포털된
+            // 이 팝오버) 있고, 시트가 body에 먼저 포털되므로 querySelector는 시트를
+            // 집는다. 그러면 팝오버가 정상적으로 맨 위에 있어도 단언이 실패한다.
+            // Playwright가 접근 가능한 이름으로 이미 특정한 요소를 그대로 넘긴다.
+            const isOnTop = await dialog.evaluate(
+                (dialogEl, { x, y }) => {
                     const el = document.elementFromPoint(x, y);
-                    const dialogEl = document.querySelector('[role="dialog"]');
-                    return (
-                        el !== null &&
-                        dialogEl !== null &&
-                        dialogEl.contains(el)
-                    );
+                    return el !== null && dialogEl.contains(el);
                 },
                 { x: centerX, y: centerY }
             );

@@ -201,7 +201,7 @@ describe('useMobileSheetDrag — touch event branches', () => {
             fireTouchEnd(scrollEl, 600);
         });
 
-        expect(onSnapChange).toHaveBeenCalledWith(0.15); // SNAP_PEEK
+        expect(onSnapChange).toHaveBeenCalledWith(0.2); // SNAP_PEEK
     });
 
     it('touchend snaps to HALF when dragged past half threshold (>12% vh) but below peek', () => {
