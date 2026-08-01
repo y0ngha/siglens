@@ -1,5 +1,19 @@
 # Changelog
 
+# [0.49.0](https://github.com/y0ngha/siglens/compare/v0.48.0...v0.49.0) (2026-08-01)
+
+
+### Bug Fixes
+
+* 분석 폴링 타임아웃, 번역모델 검증 및 Gemini 가드 추가 ([3853462](https://github.com/y0ngha/siglens/commit/3853462867e0f01fcd2ca26700ea69fe65551403))
+* Congress BYOK 게이트 누락 수정 ([d03bf46](https://github.com/y0ngha/siglens/commit/d03bf4667c50b334ae94dd156f83d88accd8d4ff))
+* JSDoc 정확성 + prototype-chain 안전장치 + 폴 상한 추출 ([9211fda](https://github.com/y0ngha/siglens/commit/9211fdafd5f6dd42a59cbd0efcf2ae13950c84cc))
+
+
+### Features
+
+* siglens-core 0.40.0 업그레이드 및 6개 신규 LLM 모델 지원 ([a5c74e8](https://github.com/y0ngha/siglens/commit/a5c74e89bd5aab74774e35392856dde43d7b75e0))
+
 # [0.48.0](https://github.com/y0ngha/siglens/compare/v0.47.1...v0.48.0) (2026-07-26)
 
 
