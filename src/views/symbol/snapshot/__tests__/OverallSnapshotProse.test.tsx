@@ -5,6 +5,7 @@ import {
     hasOverallProse,
     OverallSnapshotProse,
 } from '../renderers/OverallSnapshotProse';
+import { LIVE_ANALYSIS_CROSS_REF } from '../lib/liveAnalysisCrossRef';
 
 // 스냅샷 저장소 content는 harvest.ts가 core prewarmOverall(→submitOverallAnalysis)의
 // status==='cached' 분기에서 얻은 result.result(OverallAnalysisResponse)를 그대로
@@ -515,11 +516,7 @@ describe('OverallSnapshotProse — 기준일 표기 + 라이브 분석 상호참
             />
         );
 
-        expect(
-            screen.getByText(
-                '실시간 AI 분석 결과는 분석 패널에서 따로 제공됩니다.'
-            )
-        ).toBeInTheDocument();
+        expect(screen.getByText(LIVE_ANALYSIS_CROSS_REF)).toBeInTheDocument();
     });
 
     it('generatedAt이 없어도 헤딩은 그대로 렌더한다', () => {

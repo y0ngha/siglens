@@ -2,6 +2,7 @@ import type { Trend } from '@y0ngha/siglens-core';
 import { SnapshotSummarySection } from '../SnapshotSummarySection';
 import { stripSnapshotMarkdown } from '../lib/stripSnapshotMarkdown';
 import { createEnumGuard } from '../lib/createEnumGuard';
+import { LIVE_ANALYSIS_CROSS_REF } from '../lib/liveAnalysisCrossRef';
 
 interface TechnicalSnapshotProseProps {
     /**
@@ -163,14 +164,9 @@ export function TechnicalSnapshotProse({
             asOf={generatedAt}
         >
             <div className="text-secondary-300 space-y-4 text-sm leading-6">
-                {/*
-                 * 이 탭은 라이브 AI 분석 패널과 이 과거 스냅샷이 같은 화면에 놓인다.
-                 * 급변동일에는 두 값이 크게 어긋나므로(관측: 라이브 $308.91/RSI 43.2
-                 * vs 스냅샷 $333.43/RSI 61.66), 어느 쪽이 실시간인지 본문에서도 한 번
-                 * 더 못박는다.
-                 */}
+                {/* 근거는 LIVE_ANALYSIS_CROSS_REF JSDoc 참고 — 두 탭이 동일 문구를 쓴다. */}
                 <p className="text-secondary-400 text-xs">
-                    실시간 AI 분석 결과는 분석 패널에서 따로 제공됩니다.
+                    {LIVE_ANALYSIS_CROSS_REF}
                 </p>
                 <div className="space-y-2">
                     {narrowed.trend !== null && (
