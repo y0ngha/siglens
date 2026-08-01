@@ -86,9 +86,31 @@ export async function getSeoSnapshotsStatic(
      * 경계가 여기 하나뿐이므로 여기서 되살린다. 미스 경로에서는 `new Date(date)`가
      * 사실상 무연산이라 두 경로가 같은 형태로 수렴한다.
      */
-    return rows.map(row => ({
+    const rehydrated = rows.map(row => ({
         ...row,
         generatedAt: new Date(row.generatedAt),
         updatedAt: new Date(row.updatedAt),
     }));
+
+    /*
+     * A1(감사): 캐시에 이미 저장된 malformed 값(예: 손상된 JSONB, 수동 DB
+     * 편집)이 `new Date(...)`로도 유효한 날짜로 되살아나지 않으면(Invalid
+     * Date), 그 행을 렌더로 넘기지 않고 여기서 드롭한다. `formatSnapshotAsOf`가
+     * `null`을 반환해 SnapshotSummarySection이 안전하게 고정 캡션으로
+     * degrade하긴 하지만, 애초에 malformed 캐시 값이 렌더 경계까지 도달하지
+     * 않게 막는 편이 더 이르고 안전한 방어선이다. 위 max-age 필터와 동일하게
+     * droppedCount를 warn 로그로 남긴다 — 운영자가 원인(캐시 손상)을 구분할 수
+     * 있게 한다.
+     */
+    const valid = rehydrated.filter(
+        row => !Number.isNaN(row.generatedAt.getTime())
+    );
+    const invalidCount = rehydrated.length - valid.length;
+    if (invalidCount > 0) {
+        console.warn(
+            `[getSeoSnapshotsStatic] ${upper}: dropped ${invalidCount} row(s) with an invalid generatedAt (cache corruption?)`
+        );
+    }
+
+    return valid;
 }

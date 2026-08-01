@@ -38,6 +38,12 @@ const DEFAULT_TITLE = '최근 분석 요약';
  * 모두 렌더 중 `new Date()`를 호출하지 않는다 — `asOf`는 항상 DB 행의
  * `generatedAt`에서 와야 하며, 그래야 같은 캐시 엔트리가 재검증 시점과 무관하게
  * 항상 같은 문자열을 렌더한다(결정적 출력 유지, cold-gen dynamic API 회피).
+ *
+ * A1(감사): `formatSnapshotAsOf`는 Invalid Date에 `null`을 반환한다(throw하지
+ * 않음). 배지("지난 AI 분석")와 캡션 문구는 반드시 같은 조건에서 갈려야 한다 —
+ * 그래서 포맷된 문자열을 먼저 계산해두고, `null`을 `asOf === undefined`와
+ * 완전히 동일하게 취급한다. 조건이 갈라지면 배지는 뜨는데 캡션은 고정 문구인
+ * (또는 그 반대인) 자기모순적 렌더가 생긴다.
  */
 export function SnapshotSummarySection({
     title = DEFAULT_TITLE,
@@ -46,10 +52,11 @@ export function SnapshotSummarySection({
     children,
 }: SnapshotSummarySectionProps) {
     const headingId = useId();
+    const formattedAsOf = asOf === undefined ? null : formatSnapshotAsOf(asOf);
     const caption =
-        asOf === undefined
+        formattedAsOf === null
             ? `${displayName} · 전일 장마감 기준`
-            : `${displayName} · ${formatSnapshotAsOf(asOf)} 미국 장마감 기준`;
+            : `${displayName} · ${formattedAsOf} 미국 장마감 기준`;
 
     return (
         <section
@@ -74,7 +81,7 @@ export function SnapshotSummarySection({
                     >
                         {title}
                     </h2>
-                    {asOf !== undefined && (
+                    {formattedAsOf !== null && (
                         <span className="border-secondary-600 text-secondary-300 bg-secondary-900/60 rounded-full border px-2 py-0.5 text-xs font-medium">
                             지난 AI 분석
                         </span>

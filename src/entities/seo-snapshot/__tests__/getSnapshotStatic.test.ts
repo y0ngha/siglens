@@ -239,5 +239,36 @@ describe('getSeoSnapshotsStatic', () => {
                 }).format(result[0].generatedAt)
             ).not.toThrow();
         });
+
+        // A1(감사): 캐시-히트 rehydrate가 malformed generatedAt(예: 손상된
+        // JSONB, 되살릴 수 없는 값)까지 Date로 되살리지는 못한다 — 이 경우
+        // Invalid Date가 렌더까지 흘러가지 않도록 여기서 드롭해야 한다.
+        it('rehydrate 후 generatedAt이 Invalid Date인 행은 드롭한다', async () => {
+            const warnSpy = vi
+                .spyOn(console, 'warn')
+                .mockImplementation(() => {});
+            const malformedRow = {
+                symbol: 'AAPL',
+                tab: 'technical' as const,
+                content: {},
+                model: 'test-model',
+                generatedAt: 'not-a-date',
+                updatedAt: 'not-a-date',
+            };
+            mockStaticSymbolCache.mockImplementationOnce(() =>
+                Promise.resolve([malformedRow])
+            );
+
+            const result = await getSeoSnapshotsStatic('AAPL', 3600);
+
+            expect(result).toEqual([]);
+            expect(warnSpy).toHaveBeenCalledWith(
+                expect.stringContaining(
+                    '[getSeoSnapshotsStatic] AAPL: dropped 1 row(s) with an invalid generatedAt'
+                )
+            );
+
+            warnSpy.mockRestore();
+        });
     });
 });
