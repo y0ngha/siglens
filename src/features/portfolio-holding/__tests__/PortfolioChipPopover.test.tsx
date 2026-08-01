@@ -1,5 +1,5 @@
 import { createRef } from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import type { PortfolioHoldingView } from '@/entities/portfolio';
 import { PortfolioChipPopover } from '../ui/PortfolioChipPopover';
 
@@ -75,5 +75,32 @@ describe('PortfolioChipPopover', () => {
         expect(dialog).toBeInTheDocument();
         expect(document.activeElement).not.toBe(document.body);
         expect(dialog.contains(document.activeElement)).toBe(true);
+    });
+
+    // C4(감사): 모바일에서는 백드롭이 트리거를 완전히 덮으므로, 닫힘은 전적으로
+    // useOnClickOutside가 백드롭 pointerdown에서 발화하는지에 달려 있다 —
+    // 이 경로는 지금까지 테스트되지 않았다.
+    describe('모바일 닫힘 경로 (C4 감사)', () => {
+        it('백드롭을 pointerdown하면 닫히고, 패널 안쪽을 pointerdown하면 열린 채 유지된다', () => {
+            const { onClose } = renderPopover(true);
+
+            const backdrop = document.querySelector(
+                '[data-testid="popover-backdrop"]'
+            );
+            expect(backdrop).not.toBeNull();
+            // backdrop 자체를 대상으로 pointerdown — 패널 안쪽이 아니다.
+            fireEvent.pointerDown(backdrop as Element);
+
+            expect(onClose).toHaveBeenCalledTimes(1);
+        });
+
+        it('패널 안쪽(예: 수량 입력)을 pointerdown하면 onClose가 호출되지 않는다', () => {
+            const { onClose } = renderPopover(true);
+
+            fireEvent.pointerDown(screen.getByLabelText('수량'));
+
+            expect(onClose).not.toHaveBeenCalled();
+            expect(screen.getByRole('dialog')).toBeInTheDocument();
+        });
     });
 });

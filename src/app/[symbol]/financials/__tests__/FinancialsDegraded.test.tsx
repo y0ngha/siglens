@@ -48,4 +48,27 @@ describe('FinancialsDegraded', () => {
 
         expect(screen.queryByText('최근 분석 요약')).not.toBeInTheDocument();
     });
+
+    // C2(감사): snapshotGeneratedAt이 프로즈 셸까지 실제로 전달되는지는 지금까지
+    // 테스트가 없었다(grep snapshotGeneratedAt src/app | grep __tests__는 아무것도
+    // 반환하지 않았다) — 이 prop을 통째로 지워도 전 스위트가 그린이었다.
+    it('renders the dated caption when snapshotGeneratedAt is present (C1 감사)', () => {
+        render(
+            <FinancialsDegraded
+                displayName="애플"
+                symbol="AAPL"
+                snapshotContent={{
+                    overallConclusionKo: '현금창출력이 견조합니다.',
+                    overallSentiment: 'bullish',
+                    axisAssessments: [],
+                    riskFactorsKo: [],
+                }}
+                snapshotGeneratedAt={new Date('2026-07-31T20:00:00Z')}
+            />
+        );
+
+        expect(
+            screen.getByText(/2026년 7월 31일 미국 장마감 기준/)
+        ).toBeInTheDocument();
+    });
 });
