@@ -25,6 +25,8 @@ interface OptionsSnapshotProseProps {
     content: unknown;
     symbol: string;
     displayName: string;
+    /** 스냅샷 행의 `generatedAt`. 셸이 기준일 캡션과 "지난 AI 분석" 배지를 렌더하는 데 쓴다. */
+    generatedAt?: Date;
 }
 
 const TONE_LABEL: Record<OptionsTone, string> = {
@@ -166,6 +168,7 @@ export function OptionsSnapshotProse({
     content,
     symbol,
     displayName,
+    generatedAt,
 }: OptionsSnapshotProseProps) {
     const narrowed = narrowOptionsContent(content);
     if (narrowed === null) return null;
@@ -174,6 +177,7 @@ export function OptionsSnapshotProse({
         <SnapshotSummarySection
             title="옵션 시장 요약"
             displayName={displayName}
+            asOf={generatedAt}
         >
             <div className="text-secondary-300 space-y-4 text-sm leading-6">
                 {narrowed.summary.length > 0 && (

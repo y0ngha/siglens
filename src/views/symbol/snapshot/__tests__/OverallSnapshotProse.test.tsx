@@ -488,3 +488,52 @@ describe('OverallSnapshotProse — scenarios 방어적 좁히기', () => {
         expect(screen.queryByText('약세 시나리오')).not.toBeInTheDocument();
     });
 });
+
+describe('OverallSnapshotProse — 기준일 표기 + 라이브 분석 상호참조', () => {
+    it('generatedAt이 있으면 기준일 캡션과 "지난 AI 분석" 배지를 렌더한다', () => {
+        render(
+            <OverallSnapshotProse
+                content={buildFixture()}
+                symbol="AAPL"
+                displayName="Apple Inc."
+                generatedAt={new Date('2026-07-31T20:00:00Z')}
+            />
+        );
+
+        expect(screen.getByText('지난 AI 분석')).toBeInTheDocument();
+        expect(
+            screen.getByText(/2026년 7월 31일 미국 장마감 기준/)
+        ).toBeInTheDocument();
+    });
+
+    it('라이브 분석 패널을 가리키는 상호참조 문장을 렌더한다', () => {
+        render(
+            <OverallSnapshotProse
+                content={buildFixture()}
+                symbol="AAPL"
+                displayName="Apple Inc."
+            />
+        );
+
+        expect(
+            screen.getByText(
+                '실시간 AI 분석 결과는 분석 패널에서 따로 제공됩니다.'
+            )
+        ).toBeInTheDocument();
+    });
+
+    it('generatedAt이 없어도 헤딩은 그대로 렌더한다', () => {
+        render(
+            <OverallSnapshotProse
+                content={buildFixture()}
+                symbol="AAPL"
+                displayName="Apple Inc."
+            />
+        );
+
+        expect(
+            screen.getByRole('heading', { name: '종합 분석 결론' })
+        ).toBeInTheDocument();
+        expect(screen.queryByText('지난 AI 분석')).not.toBeInTheDocument();
+    });
+});

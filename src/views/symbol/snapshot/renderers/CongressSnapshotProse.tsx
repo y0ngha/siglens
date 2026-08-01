@@ -21,6 +21,8 @@ interface CongressSnapshotProseProps {
     content: unknown;
     symbol: string;
     displayName: string;
+    /** 스냅샷 행의 `generatedAt`. 셸이 기준일 캡션과 "지난 AI 분석" 배지를 렌더하는 데 쓴다. */
+    generatedAt?: Date;
 }
 
 const SENTIMENT_LABEL: Record<CongressSentiment, string> = {
@@ -109,6 +111,7 @@ export function CongressSnapshotProse({
     content,
     symbol,
     displayName,
+    generatedAt,
 }: CongressSnapshotProseProps) {
     const narrowed = narrowCongressContent(content);
     if (narrowed === null) return null;
@@ -122,6 +125,7 @@ export function CongressSnapshotProse({
         <SnapshotSummarySection
             title="의회 거래 동향 요약"
             displayName={displayName}
+            asOf={generatedAt}
         >
             <div className="text-secondary-300 space-y-4 text-sm leading-6">
                 {narrowed.overallSentiment !== null && (

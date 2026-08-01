@@ -22,6 +22,8 @@ interface OverallSnapshotProseProps {
     content: unknown;
     symbol: string;
     displayName: string;
+    /** 스냅샷 행의 `generatedAt`. 셸이 기준일 캡션과 "지난 AI 분석" 배지를 렌더하는 데 쓴다. */
+    generatedAt?: Date;
 }
 
 // Guard-only label map — the scenario section headings below are hardcoded
@@ -224,6 +226,7 @@ export function OverallSnapshotProse({
     content,
     symbol,
     displayName,
+    generatedAt,
 }: OverallSnapshotProseProps) {
     const narrowed = narrowOverallContent(content);
     if (narrowed === null) return null;
@@ -237,8 +240,18 @@ export function OverallSnapshotProse({
         <SnapshotSummarySection
             title="종합 분석 결론"
             displayName={displayName}
+            asOf={generatedAt}
         >
             <div className="text-secondary-300 space-y-4 text-sm leading-6">
+                {/*
+                 * 이 탭은 라이브 AI 분석 패널과 이 과거 스냅샷이 같은 화면에 놓인다.
+                 * 급변동일에는 두 값이 크게 어긋나므로(관측: 라이브 $308.91/RSI 43.2
+                 * vs 스냅샷 $333.43/RSI 61.66), 어느 쪽이 실시간인지 본문에서도 한 번
+                 * 더 못박는다.
+                 */}
+                <p className="text-secondary-400 text-xs">
+                    실시간 AI 분석 결과는 분석 패널에서 따로 제공됩니다.
+                </p>
                 {narrowed.headlineKo.length > 0 && (
                     <p className="text-secondary-200 font-medium">
                         {narrowed.headlineKo}
