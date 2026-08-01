@@ -211,7 +211,7 @@ export const sharedAnalyses = pgTable('shared_analyses', {
 | 다이얼로그/모달 | `useDialog()` (focus-trap + escape + click-outside + trigger 포커스 복원) | `widgets/layout/ContactDialog.tsx`, `widgets/chat/UserApiKeyRequiredModal.tsx` |
 | 데스크톱 팝오버 | `usePopoverToggle(refs)` + `useEscapeKey` | `widgets/layout/HeaderUserMenu.tsx`, `widgets/analysis/ModelSelector.tsx` |
 | 복사 | `useCopyToClipboard()` (`{ copied, copy }`) | `widgets/analysis/AnalysisPanel.tsx` copy 버튼 |
-| 모바일 시트(필요 시) | `vaul` `Drawer` + `useRestoreBodyPointerEvents()` | `views/symbol/MobileAnalysisSheet.tsx` |
+| 모바일 시트(필요 시) | `vaul` `Drawer` | `views/symbol/MobileAnalysisSheet.tsx` |
 | 아이콘 | inline 20×20 `fill="currentColor"` SVG | `shared/ui/EyeIcon.tsx` 하우스 스타일 |
 | 클래스 합성 | `cn()` | `shared/lib/cn.ts` |
 

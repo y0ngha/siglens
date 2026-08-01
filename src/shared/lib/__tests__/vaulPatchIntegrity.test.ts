@@ -9,9 +9,10 @@ import path from 'node:path';
  * modal 모드로 동작해, 모바일 분석 시트 **밖**의 모든 입력이 포커스를 빼앗긴다.
  * `.yarn/patches/vaul-npm-1.1.2-*.patch`가 passthrough를 복구한다.
  *
- * 이 테스트가 존재하는 이유: `resolutions`가 `vaul@npm:1.1.2`에 핀되어 있어
- * 버전을 올리면 패치가 **조용히** 빠지고 `yarn install`은 성공한다. 설치된
- * 산출물을 직접 읽는 것만이 유실을 잡아낸다.
+ * 이 테스트가 존재하는 이유: `package.json`의 `dependencies.vaul`이
+ * `patch:vaul@npm%3A1.1.2#~/.yarn/patches/...`로 핀되어 있어, `yarn up vaul`이나
+ * Renovate가 버전을 올리면 패치 지정자가 통째로 교체되며 조용히 빠지고
+ * `yarn install`은 성공한다. 설치된 산출물을 직접 읽는 것만이 유실을 잡아낸다.
  */
 const require = createRequire(import.meta.url);
 
@@ -31,20 +32,46 @@ function readVaulBuild(fileName: string): string {
     return readFileSync(path.join(resolveVaulDistDir(), fileName), 'utf8');
 }
 
+/**
+ * vaul의 번들(index.mjs/index.js)은 minify되지 않은 채로도 수만 자에 달해서,
+ * `expect(source).toMatch(...)`가 실패하면 Vitest diff에 번들 전체가 그대로
+ * 찍혀 실제 원인(패치 유실)이 출력 속에 묻힌다. 매칭 지점 주변만 잘라
+ * 실패 메시지를 읽을 수 있는 크기로 유지한다. 검증 강도(정규식 자체)는
+ * 그대로 두고 입력만 좁힌다.
+ */
+function extractWindow(source: string, marker: string): string {
+    const idx = source.indexOf(marker);
+    if (idx === -1) {
+        // 마커 자체가 사라진 경우(패치가 완전히 유실된 경우)에도 번들
+        // 전체를 쏟아내지 않도록 앞부분만 반환한다 — 아래 toContain이
+        // 이 상태를 명확히 실패시킨다.
+        return source.slice(0, 200);
+    }
+    return source.slice(Math.max(0, idx - 60), idx + 160);
+}
+
 describe('vaul patch integrity', () => {
     it('ESM 빌드가 Radix Dialog Root에 modal을 전달한다', () => {
         const source = readVaulBuild('index.mjs');
+        const snippet = extractWindow(source, 'DialogPrimitive.Root');
 
-        expect(source).toContain('createElement(DialogPrimitive.Root, {');
-        expect(source).toMatch(
+        expect(snippet).toContain('createElement(DialogPrimitive.Root, {');
+        expect(snippet).toMatch(
             /createElement\(DialogPrimitive\.Root,\s*\{\s*modal: modal,/
         );
     });
 
     it('CJS 빌드가 Radix Dialog Root에 modal을 전달한다', () => {
         const source = readVaulBuild('index.js');
+        const snippet = extractWindow(
+            source,
+            'DialogPrimitive__namespace.Root'
+        );
 
-        expect(source).toMatch(
+        expect(snippet).toContain(
+            'createElement(DialogPrimitive__namespace.Root, {'
+        );
+        expect(snippet).toMatch(
             /createElement\(DialogPrimitive__namespace\.Root,\s*\{\s*modal: modal,/
         );
     });
