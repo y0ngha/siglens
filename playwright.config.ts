@@ -24,15 +24,34 @@ import { AUTH_STORAGE_STATE } from './e2e/support/authUser';
  *
  *   chromium → every OTHER spec (Tier 1 + auth-login/signup/reset/oauth), with
  *   / webkit    NO storageState (anonymous). Both testIgnore the account specs
- *              so they never run authed; the authed project's testMatch
- *              conversely excludes them from the anon projects. webkit keeps its
- *              @webkit grep and only runs the iPhone-tagged subset.
+ *              AND the authed-mobile spec so neither ever runs them; the
+ *              authed/authed-mobile projects' testMatch conversely excludes
+ *              those specs from the anon projects. webkit keeps its @webkit
+ *              grep and only runs the iPhone-tagged subset.
+ *
+ *   authed-mobile → mobile-input-reachability.spec.ts only. Mobile viewport
+ *              (Pixel 7) + the seeded user's storageState — the ONE project
+ *              that opens the chart route on a mobile viewport while logged
+ *              in, which is what the member-only holding popover needs
+ *              (PortfolioChipMounted only renders for a resolved user).
+ *              `authed` alone can't cover this: it's Desktop Chrome, where
+ *              MobileAnalysisSheet never mounts (SymbolPageClient.tsx gates
+ *              on useIsMobileViewport, `(max-width: 767px)`), so nothing
+ *              would exercise the sheet-open input-reachability regression.
+ *              Depends on setup, same as authed.
  *
  * `globalSetup` (migrate + seed, incl. the auth user) still runs once before
  * all projects, so the user exists before the setup project tries to log in.
  */
 const ACCOUNT_SPECS =
     /(account-.*|portfolio-(holdings|position)|personalized-analysis)\.spec\.ts/;
+
+/**
+ * 모바일 뷰포트 + 로그인 상태에서만 의미가 있는 스펙. `authed`가 Desktop Chrome
+ * 전용이라 모바일에서 차트 라우트에 실제 입력을 시도하는 프로젝트가 아예 없었고,
+ * 그 공백에서 "시트 밖 입력이 전부 막히는" P0 결함이 전 스위트를 통과했다.
+ */
+const AUTHED_MOBILE_SPECS = /mobile-input-reachability\.spec\.ts/;
 
 export default defineConfig({
     testDir: './e2e/specs',
@@ -77,14 +96,23 @@ export default defineConfig({
             },
         },
         {
+            name: 'authed-mobile',
+            testMatch: AUTHED_MOBILE_SPECS,
+            dependencies: ['setup'],
+            use: {
+                ...devices['Pixel 7'],
+                storageState: AUTH_STORAGE_STATE,
+            },
+        },
+        {
             name: 'chromium',
-            testIgnore: ACCOUNT_SPECS,
+            testIgnore: [ACCOUNT_SPECS, AUTHED_MOBILE_SPECS],
             use: { ...devices['Desktop Chrome'] },
         },
         {
             name: 'webkit',
             grep: /@webkit/,
-            testIgnore: ACCOUNT_SPECS,
+            testIgnore: [ACCOUNT_SPECS, AUTHED_MOBILE_SPECS],
             use: { ...devices['iPhone 14'] },
         },
     ],

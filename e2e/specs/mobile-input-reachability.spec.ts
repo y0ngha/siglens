@@ -1,0 +1,108 @@
+import { test, expect } from '../support/fixtures';
+
+/**
+ * 모바일 차트 페이지에서 분석 바텀시트가 마운트된 상태로도 시트 **밖** UI가
+ * 정상 동작하는지 고정한다.
+ *
+ * 회귀 배경: vaul 1.1.2가 `modal={false}`를 내부 Radix Dialog에 전달하지 않아
+ * Radix가 modal 모드로 돌았고, FocusScope가 시트 밖 입력의 포커스를 즉시
+ * 되돌려 평단 팝오버·헤더 검색·챗봇 입력이 전부 먹통이었다.
+ * `.yarn/patches`의 vaul 패치가 그 passthrough를 복구한다.
+ *
+ * 비회원도 닿는 헤더 검색·챗봇은 `mobile-analysis-sheet.spec.ts`가 맡고,
+ * 여기서는 로그인이 필요한 평단 팝오버와 레이아웃 불변식만 검사한다.
+ */
+test.describe('모바일 차트 페이지 입력 도달성 (authed, 시트 마운트 상태)', () => {
+    test.beforeEach(async ({ page }) => {
+        await page.goto('/AAPL');
+        // 시트는 rAF + 50ms 뒤에 열린다. 열리기 전에 단언하면 공허하게 통과한다.
+        await expect(page.locator('[data-vaul-drawer]')).toBeVisible();
+    });
+
+    test('평단 팝오버의 수량·평단 입력에 실제로 타이핑할 수 있다', async ({
+        page,
+    }) => {
+        await page.getByRole('button', { name: /평단/ }).first().tap();
+
+        const dialog = page.getByRole('dialog', { name: /AAPL 평단 설정/ });
+        await expect(dialog).toBeVisible();
+
+        const quantity = dialog.getByLabel('수량');
+        const averagePrice = dialog.getByLabel('평단');
+
+        await quantity.tap();
+        await quantity.fill('12');
+        await averagePrice.tap();
+        await averagePrice.fill('321.5');
+
+        // 값이 실제로 반영돼야 한다 — 포커스를 빼앗기면 빈 문자열로 남는다.
+        await expect(quantity).toHaveValue('12');
+        await expect(averagePrice).toHaveValue('321.5');
+    });
+
+    test('평단 팝오버가 뷰포트 안에 완전히 들어온다', async ({ page }) => {
+        await page.getByRole('button', { name: /평단/ }).first().tap();
+
+        const dialog = page.getByRole('dialog', { name: /AAPL 평단 설정/ });
+        await expect(dialog).toBeVisible();
+
+        await expect(async () => {
+            const box = await dialog.boundingBox();
+            const viewport = page.viewportSize();
+            expect(box).not.toBeNull();
+            expect(viewport).not.toBeNull();
+            if (box === null || viewport === null) return;
+
+            expect(box.x).toBeGreaterThanOrEqual(0);
+            expect(box.x + box.width).toBeLessThanOrEqual(viewport.width);
+            expect(box.y).toBeGreaterThanOrEqual(0);
+        }).toPass();
+    });
+
+    test('평단 팝오버가 분석 시트에 가려지지 않는다', async ({ page }) => {
+        await page.getByRole('button', { name: /평단/ }).first().tap();
+
+        const dialog = page.getByRole('dialog', { name: /AAPL 평단 설정/ });
+        await expect(dialog).toBeVisible();
+
+        // 헤더는 relative z-40으로 스택 컨텍스트를 만들고 시트는 body 포털의 z-50이라,
+        // 팝오버가 헤더 안에 남아 있으면 시트 아래로 합성된다. body로 포털됐는지 확인.
+        const isPortaledToBody = await dialog.evaluate(
+            el => el.closest('header') === null
+        );
+        expect(isPortaledToBody).toBe(true);
+    });
+
+    test('시트 밖 앱 트리에 aria-hidden이 붙지 않는다', async ({ page }) => {
+        const headerAriaHidden = await page
+            .locator('header')
+            .first()
+            .getAttribute('aria-hidden');
+
+        expect(headerAriaHidden).toBeNull();
+    });
+
+    test('초기 스냅에서 캔들·거래량 차트가 시트에 가려지지 않는다', async ({
+        page,
+    }) => {
+        const sheet = page.locator('[data-vaul-drawer]');
+        const candles = page.getByRole('img', { name: /캔들 차트/ });
+        const volume = page.getByRole('img', { name: /거래량 차트/ });
+
+        // vaul의 스냅 애니메이션이 끝날 때까지 재시도한다.
+        await expect(async () => {
+            const sheetBox = await sheet.boundingBox();
+            expect(sheetBox).not.toBeNull();
+            if (sheetBox === null) return;
+
+            for (const chart of [candles, volume]) {
+                const chartBox = await chart.boundingBox();
+                expect(chartBox).not.toBeNull();
+                if (chartBox === null) return;
+                expect(chartBox.y + chartBox.height).toBeLessThanOrEqual(
+                    sheetBox.y
+                );
+            }
+        }).toPass();
+    });
+});
