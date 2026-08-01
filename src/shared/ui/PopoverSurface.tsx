@@ -1,7 +1,8 @@
 'use client';
 
-import { type ReactNode } from 'react';
+import { type ReactNode, type RefObject } from 'react';
 import { createPortal } from 'react-dom';
+import { cn } from '@/shared/lib/cn';
 
 /**
  * 헤더 앵커드 팝오버를 모바일에서 화면 중앙 모달로 승격시키는 공유 표면.
@@ -14,7 +15,7 @@ import { createPortal } from 'react-dom';
  * 가로 오버플로우도 같이 해결된다 — 앵커(칩) 기준 `right-0` 정렬이 좁은 화면에서
  * 왼쪽으로 넘치던 문제(iPhone SE에서 x=−88px)가, 뷰포트 중앙 정렬로 원천 차단된다.
  *
- * 데스크탑에서는 아무것도 하지 않고 children을 제자리에 렌더한다.
+ * 데스크탑에서는 아무것도 하지 않고 패널을 제자리에 렌더한다.
  *
  * `isMobile`은 반드시 호출자가 프롭으로 넘겨야 한다 — 이전에는 이 컴포넌트가
  * 내부에서 `useIsMobileViewport()`를 직접 호출했는데, 그 훅은 `false`로
@@ -23,7 +24,7 @@ import { createPortal } from 'react-dom';
  * 위치에서 Fragment와 Portal은 서로 다른 fiber 타입이라 React가 그 사이에서
  * **패널 서브트리 전체를 unmount 후 remount**한다. 이 remount는 두 가지를
  * 조용히 깨뜨린다: (1) `useFocusTrap`의 effect deps(`[active, ref]`)가 둘 다
- *안정적이라 remount 후 재무장되지 않아 포커스 트랩이 죽는다(Tab이 다이얼로그
+ * 안정적이라 remount 후 재무장되지 않아 포커스 트랩이 죽는다(Tab이 다이얼로그
  * 밖으로 새 나간다) — 실측: 데스크탑은 `activeElement`가 input, 모바일은
  * `BODY`. (2) 포털 이전의 첫 커밋이 앵커드(화면 밖일 수 있는) 레이아웃 클래스로
  * 페인트된다 — `next/dynamic({ssr:false})`로 열 때마다 새로 마운트되는
@@ -31,14 +32,81 @@ import { createPortal } from 'react-dom';
  * 첫 렌더 시점부터 이미 알고 있어야 하므로(자신도 같은 값을 배치 클래스에 쓴다),
  * 이 프롭으로 값을 받으면 PopoverSurface의 return 위치가 처음부터 고정돼
  * remount 자체가 발생하지 않는다.
+ *
+ * A3(감사): 이 컴포넌트가 패널 `<div>`(dialog role, aria-labelledby, tabIndex,
+ * 배치 클래스, `aria-modal`)를 직접 소유한다 — 이전에는 이 컴포넌트가
+ * children(=children 안에 캡슐화된 패널 div)의 포털 여부만 결정하고, 각
+ * 호출부가 각자 `isMobile`을 다시 분기해 `POPOVER_PANEL_MOBILE`/
+ * `POPOVER_PANEL_DESKTOP` 중 하나를 골라 붙였다. 두 분기(포털 여부 vs 배치
+ * 클래스)가 서로 다른 파일 세 곳에 흩어져 있어 그 둘이 항상 일치한다는
+ * 보장이 타입도 lint도 아니었다 — 셋째 소비자가 클래스 분기를 깜빡하면
+ * `fixed inset-0 flex` 백드롭 안에 `absolute top-full right-0`가 아무 에러
+ * 없이 렌더됐다. 이제 단일 `isMobile` 값에서 포털 여부·배치 클래스·
+ * `aria-modal`을 모두 이 파일 하나가 결정한다(단일 진실 소스).
+ *
+ * A2(감사): 모바일에서만 `aria-modal="true"`를 단다 — 모바일 패널은
+ * `fixed inset-0` 백드롭 뒤에 포털된 실질적 모달 다이얼로그라 스크린리더
+ * 사용자가 다이얼로그 밖(시각적으로는 백드롭에 가려진) 콘텐츠로 스와이프해
+ * 나갈 수 있으면 안 된다(`IndicatorSettingsModal`과 동일 패턴). 데스크탑
+ * 앵커드 팝오버는 진짜 모달이 아니므로(백드롭 없음, 페이지 나머지가 여전히
+ * 상호작용 가능) `aria-modal`을 달지 않는다 — 이전 커밋(34358ab4)이 데스크탑
+ * 경로에서 이를 의도적으로 제거한 판단은 유효하다. 이번 변경은 모바일
+ * 경로에만 추가하는 것으로 그 판단을 뒤집지 않는다.
  */
 interface PopoverSurfaceProps {
     children: ReactNode;
     isMobile: boolean;
+    /** 패널 `<div>`의 ref — `useFocusTrap`/`useOnClickOutside`가 참조한다. */
+    dialogRef: RefObject<HTMLDivElement | null>;
+    /** 패널 제목 `<h2>`의 id. `aria-labelledby`에 그대로 연결된다. */
+    titleId: string;
+    /** 배치 클래스 뒤에 병합되는 호출부별 스타일(배경·보더·padding 등). */
+    className?: string;
+    /**
+     * 데스크탑 배치에만 추가되는 클래스(예: 트리거와의 간격을 위한
+     * `mt-2`/`mt-1`). 모바일은 뷰포트 중앙 정렬이라 이 여백이 필요 없다.
+     */
+    desktopClassName?: string;
 }
 
-export function PopoverSurface({ children, isMobile }: PopoverSurfaceProps) {
-    if (!isMobile) return <>{children}</>;
+/** 모바일(포털) 경로에서 패널이 쓰는 배치 클래스. 뷰포트 중앙, 화면 밖으로 나갈 수 없다. */
+const POPOVER_PANEL_MOBILE = 'w-full max-w-sm';
+
+/** 데스크탑에서 트리거에 앵커되는 기존 배치 클래스. */
+const POPOVER_PANEL_DESKTOP =
+    'absolute top-full right-0 z-50 w-72 max-w-[calc(100vw-2rem)]';
+
+export function PopoverSurface({
+    children,
+    isMobile,
+    dialogRef,
+    titleId,
+    className,
+    desktopClassName,
+}: PopoverSurfaceProps) {
+    const panel = (
+        <div
+            ref={dialogRef}
+            role="dialog"
+            aria-modal={isMobile ? true : undefined}
+            aria-labelledby={titleId}
+            tabIndex={-1}
+            className={cn(
+                isMobile ? POPOVER_PANEL_MOBILE : POPOVER_PANEL_DESKTOP,
+                !isMobile && desktopClassName,
+                className
+            )}
+        >
+            {children}
+        </div>
+    );
+
+    // A4(감사): SSR 중 `document`는 존재하지 않는다. 이전에는 이 분기가 없었고,
+    // 오직 다른 파일들의 불변식(이 컴포넌트를 마운트하는 소비자가 전부
+    // `'use client'`이고 `next/dynamic({ssr:false})`이거나 열림 상태에서만
+    // 렌더됨)에 기대어서만 안전했다 — 그 불변식이 이 파일 안에 강제되어
+    // 있지 않았다. 데스크탑과 동일하게 포털하지 않고 패널을 그대로 반환한다.
+    if (!isMobile || typeof document === 'undefined') return panel;
 
     return createPortal(
         <div
@@ -46,15 +114,8 @@ export function PopoverSurface({ children, isMobile }: PopoverSurfaceProps) {
             role="presentation"
             className="bg-secondary-950/80 fixed inset-0 z-60 flex items-center justify-center overscroll-contain p-4 backdrop-blur-sm"
         >
-            {children}
+            {panel}
         </div>,
         document.body
     );
 }
-
-/** 모바일(포털) 경로에서 패널이 쓰는 배치 클래스. 뷰포트 중앙, 화면 밖으로 나갈 수 없다. */
-export const POPOVER_PANEL_MOBILE = 'w-full max-w-sm';
-
-/** 데스크탑에서 트리거에 앵커되는 기존 배치 클래스. */
-export const POPOVER_PANEL_DESKTOP =
-    'absolute top-full right-0 z-50 w-72 max-w-[calc(100vw-2rem)]';

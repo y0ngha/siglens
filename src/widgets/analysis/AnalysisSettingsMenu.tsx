@@ -10,11 +10,7 @@ import { usePopoverToggle } from '@/shared/hooks/usePopoverToggle';
 import { cn } from '@/shared/lib/cn';
 import { getModelDisplay } from '@/shared/lib/modelDisplay';
 import { GearIcon } from '@/shared/ui/GearIcon';
-import {
-    POPOVER_PANEL_DESKTOP,
-    POPOVER_PANEL_MOBILE,
-    PopoverSurface,
-} from '@/shared/ui/PopoverSurface';
+import { PopoverSurface } from '@/shared/ui/PopoverSurface';
 import { ModelSelector } from './ModelSelector';
 
 interface AnalysisSettingsMenuProps {
@@ -102,39 +98,34 @@ export function AnalysisSettingsMenu({
             </button>
 
             {isOpen && (
-                <PopoverSurface isMobile={isMobileViewport}>
-                    <div
-                        ref={panelRef}
-                        role="dialog"
-                        aria-labelledby={titleId}
-                        tabIndex={-1}
-                        className={cn(
-                            isMobileViewport
-                                ? POPOVER_PANEL_MOBILE
-                                : `${POPOVER_PANEL_DESKTOP} mt-1`,
-                            'border-secondary-700 bg-secondary-900 flex flex-col gap-3',
-                            'overscroll-contain rounded-lg border p-3 shadow-2xl outline-none'
-                        )}
+                <PopoverSurface
+                    isMobile={isMobileViewport}
+                    dialogRef={panelRef}
+                    titleId={titleId}
+                    desktopClassName="mt-1"
+                    className={cn(
+                        'border-secondary-700 bg-secondary-900 flex flex-col gap-3',
+                        'overscroll-contain rounded-lg border p-3 shadow-2xl outline-none'
+                    )}
+                >
+                    <h2
+                        id={titleId}
+                        className="text-secondary-100 text-xs font-semibold tracking-wide"
                     >
-                        <h2
-                            id={titleId}
-                            className="text-secondary-100 text-xs font-semibold tracking-wide"
-                        >
-                            분석 설정
-                        </h2>
-                        <ModelSelector
-                            selectedModel={modelId}
-                            onModelChange={handleModelChange}
-                            allowedModels={allowedModels}
-                            className="w-full"
-                        />
-                        <ReasoningToggle
-                            checked={reasoning}
-                            onChange={setReasoning}
-                            canUse={canUseReasoning}
-                            onLockedClick={openSignupNudge}
-                        />
-                    </div>
+                        분석 설정
+                    </h2>
+                    <ModelSelector
+                        selectedModel={modelId}
+                        onModelChange={handleModelChange}
+                        allowedModels={allowedModels}
+                        className="w-full"
+                    />
+                    <ReasoningToggle
+                        checked={reasoning}
+                        onChange={setReasoning}
+                        canUse={canUseReasoning}
+                        onLockedClick={openSignupNudge}
+                    />
                 </PopoverSurface>
             )}
         </div>
