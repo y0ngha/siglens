@@ -75,12 +75,34 @@ test.describe('모바일 차트 페이지 입력 도달성 (authed, 시트 마�
         const dialog = page.getByRole('dialog', { name: /AAPL 평단 설정/ });
         await expect(dialog).toBeVisible();
 
-        // 헤더는 relative z-40으로 스택 컨텍스트를 만들고 시트는 body 포털의 z-50이라,
-        // 팝오버가 헤더 안에 남아 있으면 시트 아래로 합성된다. body로 포털됐는지 확인.
-        const isPortaledToBody = await dialog.evaluate(
-            el => el.closest('header') === null
-        );
-        expect(isPortaledToBody).toBe(true);
+        // B4(감사): 이전에는 `el.closest('header') === null`("body로
+        // 포털됐다")만 확인했다 — 이건 z-index 합성 순서와 무관한 신호라,
+        // z-60을 z-40으로 낮춰 실제로 시트 아래에 깔려도 이 단언은 여전히
+        // 참이었다(포털은 됐지만 가려짐). 실제로 중요한 건 다이얼로그
+        // 중심점에서 elementFromPoint가 실제로 다이얼로그(또는 그 후손)를
+        // 되돌리는지다 — 뭔가가 그 위에 그려져 있으면 그 뭔가가 대신
+        // 잡힌다.
+        await expect(async () => {
+            const box = await dialog.boundingBox();
+            expect(box).not.toBeNull();
+            if (box === null) return;
+
+            const centerX = box.x + box.width / 2;
+            const centerY = box.y + box.height / 2;
+            const isOnTop = await page.evaluate(
+                ({ x, y }) => {
+                    const el = document.elementFromPoint(x, y);
+                    const dialogEl = document.querySelector('[role="dialog"]');
+                    return (
+                        el !== null &&
+                        dialogEl !== null &&
+                        dialogEl.contains(el)
+                    );
+                },
+                { x: centerX, y: centerY }
+            );
+            expect(isOnTop).toBe(true);
+        }).toPass({ timeout: 15_000 });
     });
 
     test('시트 밖 앱 트리에 aria-hidden이 붙지 않는다', async ({ page }) => {
