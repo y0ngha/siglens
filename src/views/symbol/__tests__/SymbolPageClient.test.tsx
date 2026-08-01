@@ -1,5 +1,8 @@
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import type { ComponentType } from 'react';
+import { useMobileSheet } from '@/views/symbol/hooks/useMobileSheet';
+import { SNAP_FULL, SNAP_PEEK } from '@/views/symbol/constants/mobileSheet';
 import type { AnalysisResponse, Timeframe } from '@y0ngha/siglens-core';
 import { SymbolPageClient } from '@/views/symbol/SymbolPageClient';
 import { useHydrated } from '@/shared/hooks/useHydrated';
@@ -107,6 +110,35 @@ describe('SymbolPageClient', () => {
     it('renders without crashing', () => {
         const { container } = render(<SymbolPageClient {...defaultProps} />);
         expect(container.firstElementChild).toBeDefined();
+    });
+
+    /*
+     * 시트를 여는 유일한 방법이 PEEK 띠 드래그뿐이면, 툴바 접힘으로 띠가 얇아졌을 때
+     * AI 분석 패널에 접근할 수 없게 된다(띠 = snap − 0.03이고 vaul은 innerHeight,
+     * 시트는 svh 기준이라 두 단위가 벌어지면 띠가 줄어든다). 그래서 시트 **밖**에
+     * 항상 살아 있는 버튼을 둔다. 이 버튼이 사라지면 그 안전장치가 사라진다.
+     */
+    it('시트를 여는 버튼이 시트 밖에 있고, 누르면 전체 스냅으로 연다', async () => {
+        const setSheetSnap = vi.fn();
+        vi.mocked(useMobileSheet).mockReturnValue({
+            sheetSnap: SNAP_PEEK,
+            setSheetSnap,
+            mobileSheetContent: null,
+            setMobileSheetContent: vi.fn(),
+        });
+
+        render(<SymbolPageClient {...defaultProps} />);
+
+        const openButton = screen.getByRole('button', { name: 'AI 분석 보기' });
+        // 시트 밖이어야 한다 — 시트 안에 있으면 띠가 사라질 때 같이 사라진다.
+        expect(openButton.closest('[data-testid="mobile-sheet"]')).toBeNull();
+        expect(
+            openButton.closest('[data-testid="mobile-analysis-sheet"]')
+        ).toBeNull();
+
+        await userEvent.click(openButton);
+
+        expect(setSheetSnap).toHaveBeenCalledWith(SNAP_FULL);
     });
 
     it('wraps content in SymbolPageProvider', () => {
