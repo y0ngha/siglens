@@ -9,6 +9,13 @@ import { PortfolioChipMounted } from '@/features/portfolio-holding/ui/PortfolioC
 
 vi.mock('@/entities/auth');
 vi.mock('@/entities/portfolio/hooks/usePortfolioHoldings');
+// This suite exercises the chip's own open/save/error lifecycle, not the
+// mobile-vs-desktop popover placement (that's covered by
+// PortfolioChipPopover.test.tsx) — mock the viewport hook to a fixed desktop
+// value so these tests don't depend on jsdom's unimplemented matchMedia.
+vi.mock('@/shared/hooks/useIsMobileViewport', () => ({
+    useIsMobileViewport: () => false,
+}));
 
 const mockUseCurrentUser = vi.mocked(useCurrentUser);
 const mockUsePortfolioHoldings = vi.mocked(usePortfolioHoldings);

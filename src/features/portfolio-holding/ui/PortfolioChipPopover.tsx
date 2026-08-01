@@ -3,10 +3,16 @@
 import { type RefObject, useId, useRef, useState } from 'react';
 import { useEscapeKey } from '@/shared/hooks/useEscapeKey';
 import { useFocusTrap } from '@/shared/hooks/useFocusTrap';
+import { useIsMobileViewport } from '@/shared/hooks/useIsMobileViewport';
 import { useOnClickOutside } from '@/shared/hooks/useOnClickOutside';
 import { cn } from '@/shared/lib/cn';
 import { stripNegativeSign } from '@/shared/lib/stripNegativeSign';
 import { trimTrailingZeros } from '@/shared/lib/trimTrailingZeros';
+import {
+    POPOVER_PANEL_DESKTOP,
+    POPOVER_PANEL_MOBILE,
+    PopoverSurface,
+} from '@/shared/ui/PopoverSurface';
 import type {
     PortfolioActionErrorCode,
     PortfolioHoldingView,
@@ -70,6 +76,7 @@ export function PortfolioChipPopover({
     const panelRef = useRef<HTMLDivElement>(null);
     const quantityRef = useRef<HTMLInputElement>(null);
     const priceRef = useRef<HTMLInputElement>(null);
+    const isMobileViewport = useIsMobileViewport();
 
     useFocusTrap(panelRef, true);
     useEscapeKey(onClose, true);
@@ -101,112 +108,124 @@ export function PortfolioChipPopover({
     };
 
     return (
-        <div
-            ref={panelRef}
-            role="dialog"
-            aria-labelledby={titleId}
-            tabIndex={-1}
-            className={cn(
-                'border-secondary-700 bg-secondary-900 absolute top-full right-0 z-50 mt-2 w-72 max-w-[calc(100vw-2rem)]',
-                'overscroll-contain rounded-lg border p-4 shadow-2xl outline-none',
-                'motion-safe:animate-[fade-in_150ms_ease-out]'
-            )}
-        >
-            <h2
-                id={titleId}
-                className="text-secondary-100 mb-3 text-sm font-semibold"
+        <PopoverSurface>
+            <div
+                ref={panelRef}
+                role="dialog"
+                aria-labelledby={titleId}
+                tabIndex={-1}
+                className={cn(
+                    isMobileViewport
+                        ? POPOVER_PANEL_MOBILE
+                        : `${POPOVER_PANEL_DESKTOP} mt-2`,
+                    'border-secondary-700 bg-secondary-900',
+                    'overscroll-contain rounded-lg border p-4 shadow-2xl outline-none',
+                    'motion-safe:animate-[fade-in_150ms_ease-out]'
+                )}
             >
-                {symbol.toUpperCase()} 평단 설정
-            </h2>
+                <h2
+                    id={titleId}
+                    className="text-secondary-100 mb-3 text-sm font-semibold"
+                >
+                    {symbol.toUpperCase()} 평단 설정
+                </h2>
 
-            <form
-                onSubmit={handleSubmit}
-                noValidate
-                className="flex flex-col gap-3"
-            >
-                <div>
-                    <label
-                        htmlFor={`${titleId}-quantity`}
-                        className={FIELD_LABEL}
-                    >
-                        수량
-                    </label>
-                    <input
-                        ref={quantityRef}
-                        id={`${titleId}-quantity`}
-                        name="quantity"
-                        type="text"
-                        inputMode="decimal"
-                        autoComplete="off"
-                        required
-                        placeholder="예: 10…"
-                        value={quantity}
-                        onChange={e =>
-                            setQuantity(stripNegativeSign(e.target.value))
-                        }
-                        aria-invalid={errorField === 'quantity'}
-                        aria-describedby={
-                            errorField === 'quantity' ? errorId : undefined
-                        }
-                        className={cn(
-                            FIELD_INPUT,
-                            errorField === 'quantity' && FIELD_INPUT_ERROR
+                <form
+                    onSubmit={handleSubmit}
+                    noValidate
+                    className="flex flex-col gap-3"
+                >
+                    <div>
+                        <label
+                            htmlFor={`${titleId}-quantity`}
+                            className={FIELD_LABEL}
+                        >
+                            수량
+                        </label>
+                        <input
+                            ref={quantityRef}
+                            id={`${titleId}-quantity`}
+                            name="quantity"
+                            type="text"
+                            inputMode="decimal"
+                            autoComplete="off"
+                            required
+                            placeholder="예: 10…"
+                            value={quantity}
+                            onChange={e =>
+                                setQuantity(stripNegativeSign(e.target.value))
+                            }
+                            aria-invalid={errorField === 'quantity'}
+                            aria-describedby={
+                                errorField === 'quantity' ? errorId : undefined
+                            }
+                            className={cn(
+                                FIELD_INPUT,
+                                errorField === 'quantity' && FIELD_INPUT_ERROR
+                            )}
+                        />
+                    </div>
+                    <div>
+                        <label
+                            htmlFor={`${titleId}-average-price`}
+                            className={FIELD_LABEL}
+                        >
+                            평단
+                        </label>
+                        <input
+                            ref={priceRef}
+                            id={`${titleId}-average-price`}
+                            name="averagePrice"
+                            type="text"
+                            inputMode="decimal"
+                            autoComplete="off"
+                            required
+                            placeholder="예: 152.35…"
+                            value={averagePrice}
+                            onChange={e =>
+                                setAveragePrice(
+                                    stripNegativeSign(e.target.value)
+                                )
+                            }
+                            aria-invalid={errorField === 'averagePrice'}
+                            aria-describedby={
+                                errorField === 'averagePrice'
+                                    ? errorId
+                                    : undefined
+                            }
+                            className={cn(
+                                FIELD_INPUT,
+                                errorField === 'averagePrice' &&
+                                    FIELD_INPUT_ERROR
+                            )}
+                        />
+                    </div>
+
+                    <div id={errorId} role="alert" className="min-h-5 text-sm">
+                        {error && (
+                            <span className="text-ui-danger">{error}</span>
                         )}
-                    />
-                </div>
-                <div>
-                    <label
-                        htmlFor={`${titleId}-average-price`}
-                        className={FIELD_LABEL}
-                    >
-                        평단
-                    </label>
-                    <input
-                        ref={priceRef}
-                        id={`${titleId}-average-price`}
-                        name="averagePrice"
-                        type="text"
-                        inputMode="decimal"
-                        autoComplete="off"
-                        required
-                        placeholder="예: 152.35…"
-                        value={averagePrice}
-                        onChange={e =>
-                            setAveragePrice(stripNegativeSign(e.target.value))
-                        }
-                        aria-invalid={errorField === 'averagePrice'}
-                        aria-describedby={
-                            errorField === 'averagePrice' ? errorId : undefined
-                        }
-                        className={cn(
-                            FIELD_INPUT,
-                            errorField === 'averagePrice' && FIELD_INPUT_ERROR
-                        )}
-                    />
-                </div>
+                    </div>
 
-                <div id={errorId} role="alert" className="min-h-5 text-sm">
-                    {error && <span className="text-ui-danger">{error}</span>}
-                </div>
-
-                <div className="flex items-center gap-2">
-                    <button
-                        type="submit"
-                        disabled={save.isPending}
-                        aria-busy={save.isPending}
-                        className={BUTTON_PRIMARY}
-                    >
-                        {save.isPending ? '저장 중…' : '저장'}
-                    </button>
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        className={BUTTON_GHOST}
-                    >
-                        취소
-                    </button>
-                </div>
-            </form>
-        </div>
+                    <div className="flex items-center gap-2">
+                        <button
+                            type="submit"
+                            disabled={save.isPending}
+                            aria-busy={save.isPending}
+                            className={BUTTON_PRIMARY}
+                        >
+                            {save.isPending ? '저장 중…' : '저장'}
+                        </button>
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className={BUTTON_GHOST}
+                        >
+                            취소
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </PopoverSurface>
     );
 }
