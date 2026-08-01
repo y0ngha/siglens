@@ -69,8 +69,15 @@ interface PopoverSurfaceProps {
     desktopClassName?: string;
 }
 
-/** 모바일(포털) 경로에서 패널이 쓰는 배치 클래스. 뷰포트 중앙, 화면 밖으로 나갈 수 없다. */
-const POPOVER_PANEL_MOBILE = 'w-full max-w-sm';
+/**
+ * 모바일(포털) 경로에서 패널이 쓰는 배치 클래스. 뷰포트 중앙, 화면 밖으로 나갈 수 없다.
+ *
+ * `my-auto`가 필수다 — 백드롭이 `items-start`(아래 참고)로 바뀌면서 패널이 기본적으로
+ * 백드롭 상단에 붙는다. `my-auto`는 패널이 백드롭보다 짧을 때(대부분의 경우) 위아래
+ * 여백을 균등 분배해 중앙 정렬을 되돌리고, 패널이 백드롭보다 길 때는 auto margin이
+ * 0으로 수렴해 백드롭 스크롤에 그대로 맡긴다 — 두 케이스 모두 이 한 줄로 해결된다.
+ */
+const POPOVER_PANEL_MOBILE = 'w-full max-w-sm my-auto';
 
 /** 데스크탑에서 트리거에 앵커되는 기존 배치 클래스. */
 const POPOVER_PANEL_DESKTOP =
@@ -108,11 +115,17 @@ export function PopoverSurface({
     // 있지 않았다. 데스크탑과 동일하게 포털하지 않고 패널을 그대로 반환한다.
     if (!isMobile || typeof document === 'undefined') return panel;
 
+    // 짧은 뷰포트에서 패널이 넘칠 수 있다 — `items-center`인 채로 스크롤이 없으면
+    // fixed 컨테이너는 위아래로 똑같이 넘쳐서 넘친 만큼이 그냥 도달 불가능해진다
+    // (예: iPhone SE 가로모드 375×667, 크롬 UI 제외 후 ~285~320px인데 평단
+    // 팝오버는 ~312px가 필요 — 저장/취소 버튼 줄이 화면 밖으로 밀린다). `items-start`
+    // + `overflow-y-auto`로 백드롭 자체를 스크롤 컨테이너로 만들고, 짧은 패널의
+    // 중앙 정렬은 패널 쪽 `my-auto`(위)가 대신 담당한다.
     return createPortal(
         <div
             data-testid="popover-backdrop"
             role="presentation"
-            className="bg-secondary-950/80 fixed inset-0 z-60 flex items-center justify-center overscroll-contain p-4 backdrop-blur-sm"
+            className="bg-secondary-950/80 fixed inset-0 z-60 flex items-start justify-center overflow-y-auto overscroll-contain p-4 backdrop-blur-sm"
         >
             {panel}
         </div>,

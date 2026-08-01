@@ -56,6 +56,29 @@ describe('PopoverSurface', () => {
         expect(backdrop).toHaveAttribute('role', 'presentation');
     });
 
+    // WILL-BREAK(감사): 백드롭이 `items-center`인데 스크롤이 없으면, 뷰포트보다
+    // 큰 패널은 위아래로 똑같이 넘쳐서 넘친 만큼이 도달 불가능해진다(예: iPhone SE
+    // 가로모드에서 평단 팝오버의 저장/취소 버튼 줄). 클래스 단언이지만 여기서는
+    // 정당하다 — 실패 모드 자체가 "이 유틸리티 클래스가 없다"이기 때문에,
+    // 클래스 존재 여부가 곧 회귀 여부다. `my-auto`는 패널 쪽(POPOVER_PANEL_MOBILE)에
+    // 있어 백드롭이 짧은 패널을 여전히 중앙 정렬하면서, 긴 패널은 스크롤로
+    // 도달 가능하게 만든다.
+    it('모바일 backdrop은 items-start + overflow-y-auto로 뷰포트보다 큰 패널도 스크롤해 도달 가능하게 한다', () => {
+        renderSurface(true);
+
+        const backdrop = document.querySelector(
+            '[data-testid="popover-backdrop"]'
+        );
+        expect(backdrop?.className).toContain('items-start');
+        expect(backdrop?.className).toContain('overflow-y-auto');
+    });
+
+    it('모바일 패널은 my-auto로 짧은 백드롭 안에서 중앙 정렬을 유지한다', () => {
+        const { dialogRef } = renderSurface(true);
+
+        expect(dialogRef.current?.className).toContain('my-auto');
+    });
+
     // B2(감사): 이전에는 isMobile={true}로 마운트한 뒤 다시 isMobile={true}로
     // 리렌더해 "노드가 같다"고 단언했다 — isMobile이 안 바뀌면 리렌더해도 같은
     // 자리에서 같은 컴포넌트가 다시 렌더될 뿐이라, PopoverSurface가
