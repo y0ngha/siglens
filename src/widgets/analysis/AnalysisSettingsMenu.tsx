@@ -5,10 +5,16 @@ import { DEEPSEEK_V4_FLASH_MODEL, type ModelId } from '@y0ngha/siglens-core';
 import { ReasoningToggle } from '@/features/reasoning-toggle';
 import { useEscapeKey } from '@/shared/hooks/useEscapeKey';
 import { useFocusTrap } from '@/shared/hooks/useFocusTrap';
+import { useIsMobileViewport } from '@/shared/hooks/useIsMobileViewport';
 import { usePopoverToggle } from '@/shared/hooks/usePopoverToggle';
 import { cn } from '@/shared/lib/cn';
 import { getModelDisplay } from '@/shared/lib/modelDisplay';
 import { GearIcon } from '@/shared/ui/GearIcon';
+import {
+    POPOVER_PANEL_DESKTOP,
+    POPOVER_PANEL_MOBILE,
+    PopoverSurface,
+} from '@/shared/ui/PopoverSurface';
 import { ModelSelector } from './ModelSelector';
 
 interface AnalysisSettingsMenuProps {
@@ -46,6 +52,7 @@ export function AnalysisSettingsMenu({
     const panelRef = useRef<HTMLDivElement>(null);
     const titleId = useId();
     const { isOpen, toggle, close } = usePopoverToggle([triggerRef, panelRef]);
+    const isMobileViewport = useIsMobileViewport();
 
     // Mirrors PortfolioChipPopover: a focus trap owns initial focus, Tab
     // cycling, and restoring focus to the trigger on EVERY close path
@@ -95,32 +102,40 @@ export function AnalysisSettingsMenu({
             </button>
 
             {isOpen && (
-                <div
-                    ref={panelRef}
-                    role="dialog"
-                    aria-labelledby={titleId}
-                    tabIndex={-1}
-                    className="border-secondary-700 bg-secondary-900 absolute top-full right-0 z-50 mt-1 flex w-72 max-w-[calc(100vw-2rem)] flex-col gap-3 overscroll-contain rounded-lg border p-3 shadow-2xl outline-none"
-                >
-                    <h2
-                        id={titleId}
-                        className="text-secondary-100 text-xs font-semibold tracking-wide"
+                <PopoverSurface>
+                    <div
+                        ref={panelRef}
+                        role="dialog"
+                        aria-labelledby={titleId}
+                        tabIndex={-1}
+                        className={cn(
+                            isMobileViewport
+                                ? POPOVER_PANEL_MOBILE
+                                : `${POPOVER_PANEL_DESKTOP} mt-1`,
+                            'border-secondary-700 bg-secondary-900 flex flex-col gap-3',
+                            'overscroll-contain rounded-lg border p-3 shadow-2xl outline-none'
+                        )}
                     >
-                        분석 설정
-                    </h2>
-                    <ModelSelector
-                        selectedModel={modelId}
-                        onModelChange={handleModelChange}
-                        allowedModels={allowedModels}
-                        className="w-full"
-                    />
-                    <ReasoningToggle
-                        checked={reasoning}
-                        onChange={setReasoning}
-                        canUse={canUseReasoning}
-                        onLockedClick={openSignupNudge}
-                    />
-                </div>
+                        <h2
+                            id={titleId}
+                            className="text-secondary-100 text-xs font-semibold tracking-wide"
+                        >
+                            분석 설정
+                        </h2>
+                        <ModelSelector
+                            selectedModel={modelId}
+                            onModelChange={handleModelChange}
+                            allowedModels={allowedModels}
+                            className="w-full"
+                        />
+                        <ReasoningToggle
+                            checked={reasoning}
+                            onChange={setReasoning}
+                            canUse={canUseReasoning}
+                            onLockedClick={openSignupNudge}
+                        />
+                    </div>
+                </PopoverSurface>
             )}
         </div>
     );

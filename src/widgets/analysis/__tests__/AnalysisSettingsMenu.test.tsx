@@ -44,7 +44,31 @@ function gearButton() {
     return screen.getByRole('button', { name: /^분석 설정/ });
 }
 
+// AnalysisSettingsMenu now reads useIsMobileViewport (for the PopoverSurface
+// mobile/desktop split, see the nested describe below) — jsdom has no
+// matchMedia implementation, so every test needs it stubbed. Default to
+// desktop; the mobile-placement tests override with their own stub.
+function mockViewport(isMobile: boolean) {
+    vi.stubGlobal(
+        'matchMedia',
+        vi.fn().mockImplementation((query: string) => ({
+            matches: isMobile,
+            media: query,
+            addEventListener: vi.fn(),
+            removeEventListener: vi.fn(),
+        }))
+    );
+}
+
 describe('AnalysisSettingsMenu', () => {
+    beforeEach(() => {
+        mockViewport(false);
+    });
+
+    afterEach(() => {
+        vi.unstubAllGlobals();
+    });
+
     it('opens the popover on gear click', async () => {
         const user = userEvent.setup();
         renderMenu();
@@ -241,5 +265,34 @@ describe('AnalysisSettingsMenu', () => {
 
         expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
         expect(document.activeElement).toBe(gearButton());
+    });
+
+    describe('모바일에서의 팝오버 배치', () => {
+        it('데스크탑에서는 트리거 앵커 내부에 absolute/right-0로 렌더한다', async () => {
+            mockViewport(false);
+            const user = userEvent.setup();
+            renderMenu();
+
+            await user.click(gearButton());
+
+            const dialog = screen.getByRole('dialog');
+            expect(gearButton().parentElement).toContainElement(dialog);
+            expect(dialog.className).toContain('absolute');
+            expect(dialog.className).toContain('right-0');
+        });
+
+        it('모바일에서는 body로 포털되어 트리거 앵커 밖에서 렌더한다 — 헤더의 z-40 스택 컨텍스트를 탈출해야 시트 위에 뜬다', async () => {
+            mockViewport(true);
+            const user = userEvent.setup();
+            renderMenu();
+
+            await user.click(gearButton());
+
+            const dialog = screen.getByRole('dialog');
+            expect(gearButton().parentElement).not.toContainElement(dialog);
+            expect(
+                document.querySelector('[data-testid="popover-backdrop"]')
+            ).not.toBeNull();
+        });
     });
 });
