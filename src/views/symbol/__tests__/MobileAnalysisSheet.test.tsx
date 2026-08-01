@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { MobileAnalysisSheet } from '@/views/symbol/MobileAnalysisSheet';
 import { SNAP_HALF } from '@/views/symbol/constants/mobileSheet';
 import { useMobileAnalysisSheet } from '@/views/symbol/hooks/useMobileAnalysisSheet';
@@ -142,54 +142,26 @@ describe('MobileAnalysisSheet', () => {
         );
     });
 
-    // vaul 1.1.2 leaks `pointer-events: none` onto <body> even with modal={false},
-    // which makes the tabs and floating buttons outside the sheet unclickable.
-    // These cover the repair effect — without them the whole guard could be
-    // deleted and every assertion above would still pass.
-    describe('body pointer-events repair', () => {
-        afterEach(() => {
-            document.body.style.pointerEvents = '';
-        });
+    // Task 1의 vaul 패치로 Radix가 non-modal로 동작하므로 body pointer-events를
+    // 되돌릴 필요가 없어졌다. 훅이 되살아나면(= 근본 원인을 다시 땜질하면)
+    // 이 단언이 깨진다.
+    it('body를 감시하는 MutationObserver를 설치하지 않는다', () => {
+        const observeSpy = vi.spyOn(MutationObserver.prototype, 'observe');
 
-        function renderSheet() {
-            return render(
-                <MobileAnalysisSheet
-                    activeSnap={SNAP_HALF}
-                    onActiveSnapChange={vi.fn()}
-                >
-                    <span>content</span>
-                </MobileAnalysisSheet>
-            );
-        }
+        render(
+            <MobileAnalysisSheet
+                activeSnap={SNAP_HALF}
+                onActiveSnapChange={vi.fn()}
+            >
+                <span>content</span>
+            </MobileAnalysisSheet>
+        );
 
-        it('repairs pointer-events already blocked at mount time', () => {
-            document.body.style.pointerEvents = 'none';
+        const bodyObservations = observeSpy.mock.calls.filter(
+            ([target]) => target === document.body
+        );
+        expect(bodyObservations).toHaveLength(0);
 
-            renderSheet();
-
-            expect(document.body.style.pointerEvents).toBe('auto');
-        });
-
-        it('repairs pointer-events blocked after mount', async () => {
-            renderSheet();
-
-            document.body.style.pointerEvents = 'none';
-
-            await waitFor(() => {
-                expect(document.body.style.pointerEvents).toBe('auto');
-            });
-        });
-
-        it('stops repairing once unmounted', async () => {
-            const { unmount } = renderSheet();
-
-            unmount();
-            document.body.style.pointerEvents = 'none';
-
-            // Give the observer a chance to fire before asserting it did not.
-            await new Promise(resolve => setTimeout(resolve, 0));
-
-            expect(document.body.style.pointerEvents).toBe('none');
-        });
+        observeSpy.mockRestore();
     });
 });
