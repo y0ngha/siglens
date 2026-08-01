@@ -23,12 +23,12 @@ import { SNAPSHOT_MAX_AGE_MS, type SeoAnalysisSnapshot } from '../model';
  * existing placeholder path, which is already the safe fail-open behavior —
  * no new failure mode is introduced.
  */
-export function getSeoSnapshotsStatic(
+export async function getSeoSnapshotsStatic(
     symbol: string,
     revalidateSeconds: number
 ): Promise<SeoAnalysisSnapshot[]> {
     const upper = symbol.toUpperCase();
-    return staticSymbolCache(
+    const rows = await staticSymbolCache(
         ['seo-snapshots', upper],
         upper,
         async () => {
@@ -74,4 +74,21 @@ export function getSeoSnapshotsStatic(
         [`seo-snapshot:${upper}`],
         revalidateSeconds
     );
+
+    /*
+     * `unstable_cache`는 결과를 JSON으로 직렬화한다(`JSON.stringify` → 히트 시
+     * `JSON.parse`). `Date`는 이 왕복을 견디지 못해, 타입은 `Date`인 채로 값만
+     * ISO 문자열로 돌아온다. 캐시 미스 렌더에서는 진짜 `Date`라 문제가 드러나지
+     * 않다가, 히트 렌더에서 `Intl.DateTimeFormat.format()`이 `RangeError:
+     * Invalid time value`를 던진다 — 그것도 fetcher 안이 아니라 React 렌더 안이라
+     * 이 함수의 try/catch로는 잡히지 않는다.
+     *
+     * 경계가 여기 하나뿐이므로 여기서 되살린다. 미스 경로에서는 `new Date(date)`가
+     * 사실상 무연산이라 두 경로가 같은 형태로 수렴한다.
+     */
+    return rows.map(row => ({
+        ...row,
+        generatedAt: new Date(row.generatedAt),
+        updatedAt: new Date(row.updatedAt),
+    }));
 }

@@ -203,4 +203,41 @@ describe('getSeoSnapshotsStatic', () => {
             warnSpy.mockRestore();
         });
     });
+
+    describe('캐시 히트 JSON 왕복 rehydrate', () => {
+        it('캐시 히트로 JSON 왕복을 거친 행도 Date로 되살린다', async () => {
+            // unstable_cache는 결과를 JSON.stringify → JSON.parse 한다. Date가 ISO
+            // 문자열로 돌아오면 렌더의 Intl.DateTimeFormat.format()이 RangeError를
+            // 던진다(타입은 Date라 컴파일 단계에서는 드러나지 않는다).
+            const row = {
+                symbol: 'AAPL',
+                tab: 'technical' as const,
+                content: {},
+                model: 'test-model',
+                generatedAt: new Date('2026-07-31T20:00:00Z'),
+                updatedAt: new Date('2026-07-31T20:00:00Z'),
+            };
+            // 캐시 계층이 실제로 하는 일을 그대로 흉내낸다: staticSymbolCache
+            // mock이 fetcher를 호출하는 대신 이미 JSON 왕복을 거친 값을 직접
+            // resolve하도록 이 테스트에서만 구현을 덮어쓴다(캐시 히트 시뮬레이션).
+            const roundTripped = JSON.parse(JSON.stringify([row]));
+            mockStaticSymbolCache.mockImplementationOnce(() =>
+                Promise.resolve(roundTripped)
+            );
+
+            const result = await getSeoSnapshotsStatic('AAPL', 3600);
+
+            expect(result[0].generatedAt).toBeInstanceOf(Date);
+            expect(result[0].updatedAt).toBeInstanceOf(Date);
+            // 실제 증상까지 재현: 되살리지 않으면 여기서 RangeError가 난다.
+            expect(() =>
+                new Intl.DateTimeFormat('ko-KR', {
+                    timeZone: 'America/New_York',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                }).format(result[0].generatedAt)
+            ).not.toThrow();
+        });
+    });
 });
