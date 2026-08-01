@@ -88,7 +88,10 @@ export function PortfolioChipPopover({
     const quantityRef = useRef<HTMLInputElement>(null);
     const priceRef = useRef<HTMLInputElement>(null);
 
-    useFocusTrap(panelRef, true);
+    // `isMobile`을 rearmKey로 넘긴다 — 뷰포트가 뒤집히면 PopoverSurface가 인라인
+    // 렌더 ↔ 포털 사이를 오가며 패널 노드를 교체하는데, ref의 identity는 그대로라
+    // 트랩이 새 노드에 다시 무장되지 않는다(기기 회전 시 포커스가 body로 떨어짐).
+    useFocusTrap(panelRef, true, isMobile);
     useEscapeKey(onClose, true);
     useOnClickOutside([panelRef, triggerRef], onClose);
 

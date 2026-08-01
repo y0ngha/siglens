@@ -1,5 +1,6 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useFocusTrap } from '@/shared/hooks/useFocusTrap';
 
 interface DialogProps {
@@ -136,6 +137,42 @@ describe('useFocusTrap', () => {
         rerender(<Harness active={false} />);
         // Should not throw, focus stays wherever it is
         expect(document.activeElement).not.toBe(trigger);
+    });
+
+    /*
+     * 컨테이너 노드가 교체되는 상황(PopoverSurface가 뷰포트 폭 변화로 인라인 렌더
+     * ↔ createPortal 사이를 오갈 때 — 기기 회전이 실제 시나리오) 재무장 여부.
+     *
+     * effect deps는 `[active, ref, rearmKey]`인데 `ref` 객체의 identity는 `.current`가
+     * 다른 노드를 가리키게 바뀌어도 그대로다. rearmKey가 없으면 트랩이 새 노드에
+     * 다시 무장되지 않아 포커스가 body로 떨어지고 Tab이 다이얼로그 밖으로 샌다.
+     */
+    it('rearmKey가 바뀌면 교체된 컨테이너 노드에 트랩을 다시 무장한다', () => {
+        function RemountingDialog({
+            portaled,
+        }: {
+            readonly portaled: boolean;
+        }) {
+            const ref = useRef<HTMLDivElement>(null);
+            useFocusTrap(ref, true, portaled);
+            const panel = (
+                <div ref={ref} role="dialog" tabIndex={-1} data-testid="dialog">
+                    <button data-testid="dialog-close">close</button>
+                </div>
+            );
+            // Fragment ↔ Portal은 같은 위치의 서로 다른 fiber 타입이라
+            // React가 그 사이에서 서브트리를 unmount 후 remount한다.
+            return portaled ? createPortal(panel, document.body) : panel;
+        }
+
+        const { rerender } = render(<RemountingDialog portaled={false} />);
+        expect(document.activeElement).toBe(screen.getByTestId('dialog-close'));
+
+        rerender(<RemountingDialog portaled={true} />);
+
+        // 노드가 교체됐어도 포커스는 새 다이얼로그 안에 있어야 한다.
+        const dialog = screen.getByTestId('dialog');
+        expect(dialog.contains(document.activeElement)).toBe(true);
     });
 
     it('Shift+Tab wraps when focus is on the container itself', () => {
