@@ -294,5 +294,19 @@ describe('AnalysisSettingsMenu', () => {
                 document.querySelector('[data-testid="popover-backdrop"]')
             ).not.toBeNull();
         });
+
+        it('모바일에서 열려도 포커스 트랩이 다이얼로그 안에 포커스를 둔다 — isMobile을 PopoverSurface에 프롭으로 넘겨 Fragment↔Portal remount로 트랩이 무력화되지 않는다', async () => {
+            mockViewport(true);
+            const user = userEvent.setup();
+            renderMenu();
+
+            await user.click(gearButton());
+
+            const dialog = screen.getByRole('dialog');
+            await waitFor(() => {
+                expect(document.activeElement).not.toBe(document.body);
+                expect(dialog.contains(document.activeElement)).toBe(true);
+            });
+        });
     });
 });

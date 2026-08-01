@@ -30,6 +30,16 @@ test.describe('모바일 차트 페이지 입력 도달성 (authed, 시트 마�
         const quantity = dialog.getByLabel('수량');
         const averagePrice = dialog.getByLabel('평단');
 
+        // 회귀 고정: PopoverSurface가 내부에서 useIsMobileViewport()를 읽던
+        // 시절에는 마운트 직후 Fragment→Portal로 fiber 타입이 바뀌며 패널
+        // 서브트리가 remount돼 focus trap의 초기 포커스가 무효화됐다(포커스가
+        // body에 남음). isMobile을 프롭으로 끌어올린 지금은 첫 커밋부터
+        // 값이 확정돼 있어 트랩이 그대로 살아남는다 — 시트 열림 애니메이션과
+        // 겹칠 수 있어 toPass()로 재시도한다.
+        await expect(async () => {
+            await expect(quantity).toBeFocused();
+        }).toPass();
+
         await quantity.tap();
         await quantity.fill('12');
         await averagePrice.tap();

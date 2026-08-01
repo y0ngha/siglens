@@ -102,7 +102,7 @@ export function AnalysisSettingsMenu({
             </button>
 
             {isOpen && (
-                <PopoverSurface>
+                <PopoverSurface isMobile={isMobileViewport}>
                     <div
                         ref={panelRef}
                         role="dialog"

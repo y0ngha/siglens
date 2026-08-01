@@ -3,7 +3,6 @@
 import { type RefObject, useId, useRef, useState } from 'react';
 import { useEscapeKey } from '@/shared/hooks/useEscapeKey';
 import { useFocusTrap } from '@/shared/hooks/useFocusTrap';
-import { useIsMobileViewport } from '@/shared/hooks/useIsMobileViewport';
 import { useOnClickOutside } from '@/shared/hooks/useOnClickOutside';
 import { cn } from '@/shared/lib/cn';
 import { stripNegativeSign } from '@/shared/lib/stripNegativeSign';
@@ -49,6 +48,21 @@ interface PortfolioChipPopoverProps {
     save: UseSymbolHoldingReturn['save'];
     triggerRef: RefObject<HTMLButtonElement | null>;
     onClose: () => void;
+    /**
+     * Viewport read hoisted from `PortfolioChip` (see its JSDoc). This
+     * component is `next/dynamic({ ssr: false })`-loaded and only ever mounts
+     * once the popover is already open, so an internal `useIsMobileViewport()`
+     * call here would start at `false` and only resolve after this
+     * component's own effect runs — on EVERY open. That flips `PopoverSurface`
+     * from a Fragment to a Portal after mount (different fiber types at the
+     * same position), which unmounts/remounts the whole panel subtree: the
+     * focus trap's effect deps (`[active, ref]`) are both stable so it never
+     * re-arms, and the very first commit paints the anchored (potentially
+     * off-screen) desktop layout before the remount corrects it. Taking the
+     * value as a prop means it is already resolved by the time this component
+     * mounts, so there is nothing to flip.
+     */
+    isMobile: boolean;
 }
 
 /**
@@ -62,6 +76,7 @@ export function PortfolioChipPopover({
     save,
     triggerRef,
     onClose,
+    isMobile,
 }: PortfolioChipPopoverProps) {
     const titleId = useId();
     const errorId = useId();
@@ -76,7 +91,6 @@ export function PortfolioChipPopover({
     const panelRef = useRef<HTMLDivElement>(null);
     const quantityRef = useRef<HTMLInputElement>(null);
     const priceRef = useRef<HTMLInputElement>(null);
-    const isMobileViewport = useIsMobileViewport();
 
     useFocusTrap(panelRef, true);
     useEscapeKey(onClose, true);
@@ -108,14 +122,14 @@ export function PortfolioChipPopover({
     };
 
     return (
-        <PopoverSurface>
+        <PopoverSurface isMobile={isMobile}>
             <div
                 ref={panelRef}
                 role="dialog"
                 aria-labelledby={titleId}
                 tabIndex={-1}
                 className={cn(
-                    isMobileViewport
+                    isMobile
                         ? POPOVER_PANEL_MOBILE
                         : `${POPOVER_PANEL_DESKTOP} mt-2`,
                     'border-secondary-700 bg-secondary-900',

@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import type { UseQueryResult } from '@tanstack/react-query';
 import { useCurrentUser } from '@/entities/auth';
 import { usePortfolioHoldings } from '@/entities/portfolio/hooks/usePortfolioHoldings';
+import { useIsMobileViewport } from '@/shared/hooks/useIsMobileViewport';
 import type { PortfolioHoldingView } from '@/entities/portfolio';
 import type { AuthUserRecord } from '@/shared/lib/auth/types';
 import { PortfolioChipMounted } from '@/features/portfolio-holding/ui/PortfolioChipMounted';
@@ -11,14 +12,18 @@ vi.mock('@/entities/auth');
 vi.mock('@/entities/portfolio/hooks/usePortfolioHoldings');
 // This suite exercises the chip's own open/save/error lifecycle, not the
 // mobile-vs-desktop popover placement (that's covered by
-// PortfolioChipPopover.test.tsx) — mock the viewport hook to a fixed desktop
-// value so these tests don't depend on jsdom's unimplemented matchMedia.
+// PortfolioChipPopover.test.tsx) — mock the viewport hook so these tests
+// don't depend on jsdom's unimplemented matchMedia. Default to desktop
+// (`false`); the mobile-branch test below overrides it, since PortfolioChip
+// is now the component that owns this read (hoisted from PortfolioChipPopover
+// — see PortfolioChip.tsx JSDoc for why).
 vi.mock('@/shared/hooks/useIsMobileViewport', () => ({
-    useIsMobileViewport: () => false,
+    useIsMobileViewport: vi.fn(() => false),
 }));
 
 const mockUseCurrentUser = vi.mocked(useCurrentUser);
 const mockUsePortfolioHoldings = vi.mocked(usePortfolioHoldings);
+const mockUseIsMobileViewport = vi.mocked(useIsMobileViewport);
 
 type CurrentUserResult = UseQueryResult<AuthUserRecord | null>;
 type Holdings = ReturnType<typeof usePortfolioHoldings>;
@@ -73,6 +78,7 @@ function setHoldings(overrides: Partial<Holdings>) {
 describe('PortfolioChipMounted / PortfolioChip', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        mockUseIsMobileViewport.mockReturnValue(false);
         setHoldings({ holdings: [] });
     });
 
@@ -313,5 +319,29 @@ describe('PortfolioChipMounted / PortfolioChip', () => {
             )
         ).toBeInTheDocument();
         expect(screen.getByLabelText('평단')).toHaveFocus();
+    });
+
+    // PortfolioChip now owns the useIsMobileViewport() read (hoisted from
+    // PortfolioChipPopover — see PortfolioChip.tsx JSDoc for why: the popover
+    // is next/dynamic({ssr:false}) and only mounts on open, so if it read the
+    // hook itself, every open would start unresolved and remount the panel
+    // once it settled, disarming the focus trap). This test exercises that
+    // mobile branch, which the file-wide desktop mock previously skipped
+    // entirely.
+    it('모바일 뷰포트에서 열어도 포커스 트랩이 다이얼로그 안에 포커스를 두고, 정상적으로 입력할 수 있다', async () => {
+        mockUseIsMobileViewport.mockReturnValue(true);
+        const user = userEvent.setup();
+        setCurrentUser(USER);
+        setHoldings({ holdings: [] });
+        render(<PortfolioChipMounted symbol="AAPL" />);
+
+        await user.click(screen.getByRole('button', { name: '평단 설정' }));
+        const dialog = await screen.findByRole('dialog');
+
+        expect(document.activeElement).not.toBe(document.body);
+        expect(dialog.contains(document.activeElement)).toBe(true);
+
+        await user.type(await screen.findByLabelText('수량'), '10');
+        expect(screen.getByLabelText('수량')).toHaveValue('10');
     });
 });
